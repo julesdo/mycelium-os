@@ -1,0 +1,30 @@
+<script lang="ts">
+	import { Section, Row, Column, Img, Text } from '@better-svelte-email/components';
+	import { cn } from '$lib/utils.js';
+	import { LEGAL_CONFIG } from '$lib/config/legal';
+
+	let {
+		appName = LEGAL_CONFIG.brandName,
+		class: className
+	}: {
+		appName?: string;
+		class?: string;
+	} = $props();
+</script>
+
+<Section class={cn('mb-8', className)}>
+	<Row>
+		<Column align="left" class="px-6">
+			<Img
+				src="__BASEURL__/logo-email.png"
+				width="28"
+				height="28"
+				alt={`${appName} Logo`}
+				class="my-0 mr-2 inline-block align-middle"
+			/>
+			<Text class="my-0 inline-block align-middle text-[20px] font-bold text-black">
+				{appName}
+			</Text>
+		</Column>
+	</Row>
+</Section>
