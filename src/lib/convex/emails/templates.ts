@@ -12,6 +12,10 @@ import type {
 	AdminReplyNotificationEmailData,
 	NewTicketAdminNotificationEmailData,
 	NewUserSignupNotificationEmailData,
+	ReservationConfirmationEmailData,
+	ReservationCancellationEmailData,
+	ReservationReminderEmailData,
+	MaintenanceScheduledEmailData,
 	RenderedEmail
 } from '../../emails/templates/types';
 import {
@@ -26,7 +30,15 @@ import {
 	NEWTICKETADMINNOTIFICATION_HTML,
 	NEWTICKETADMINNOTIFICATION_TEXT,
 	NEWUSERSIGNUPNOTIFICATION_HTML,
-	NEWUSERSIGNUPNOTIFICATION_TEXT
+	NEWUSERSIGNUPNOTIFICATION_TEXT,
+	RESERVATIONCONFIRMATION_HTML,
+	RESERVATIONCONFIRMATION_TEXT,
+	RESERVATIONCANCELLATION_HTML,
+	RESERVATIONCANCELLATION_TEXT,
+	RESERVATIONREMINDER_HTML,
+	RESERVATIONREMINDER_TEXT,
+	MAINTENANCESCHEDULED_HTML,
+	MAINTENANCESCHEDULED_TEXT
 } from './_generated/index.js';
 import { requireEnv } from '../env';
 import { t, DEFAULT_LOCALE } from '../i18n/translations';
@@ -245,6 +257,101 @@ export function renderNewTicketAdminNotificationEmail(
 	return {
 		html: renderTemplate(NEWTICKETADMINNOTIFICATION_HTML, templateData),
 		text: renderTemplate(NEWTICKETADMINNOTIFICATION_TEXT, textData)
+	};
+}
+
+export function renderReservationConfirmationEmail(
+	data: ReservationConfirmationEmailData
+): RenderedEmail {
+	const baseUrl = getBaseUrl();
+	const templateData = {
+		userName: escapeHtml(data.userName),
+		vehicleLabel: escapeHtml(data.vehicleLabel),
+		startDate: escapeHtml(data.startDate),
+		endDate: escapeHtml(data.endDate),
+		location: escapeHtml(data.location),
+		purpose: escapeHtml(data.purpose),
+		reservationUrl: escapeHtml(data.reservationUrl),
+		baseUrl: escapeHtml(baseUrl)
+	};
+	const textData = { ...data, baseUrl };
+	return {
+		html: renderTemplate(RESERVATIONCONFIRMATION_HTML, templateData),
+		text: renderTemplate(RESERVATIONCONFIRMATION_TEXT, textData)
+	};
+}
+
+export function renderReservationCancellationEmail(
+	data: ReservationCancellationEmailData
+): RenderedEmail {
+	const baseUrl = getBaseUrl();
+	const templateData = {
+		userName: escapeHtml(data.userName),
+		vehicleLabel: escapeHtml(data.vehicleLabel),
+		startDate: escapeHtml(data.startDate),
+		endDate: escapeHtml(data.endDate),
+		purpose: escapeHtml(data.purpose),
+		baseUrl: escapeHtml(baseUrl)
+	};
+	const textData = { ...data, baseUrl };
+	return {
+		html: renderTemplate(RESERVATIONCANCELLATION_HTML, templateData),
+		text: renderTemplate(RESERVATIONCANCELLATION_TEXT, textData)
+	};
+}
+
+export function renderReservationReminderEmail(data: ReservationReminderEmailData): RenderedEmail {
+	const baseUrl = getBaseUrl();
+	const templateData = {
+		userName: escapeHtml(data.userName),
+		vehicleLabel: escapeHtml(data.vehicleLabel),
+		startDate: escapeHtml(data.startDate),
+		endDate: escapeHtml(data.endDate),
+		location: escapeHtml(data.location),
+		purpose: escapeHtml(data.purpose),
+		reservationUrl: escapeHtml(data.reservationUrl),
+		baseUrl: escapeHtml(baseUrl)
+	};
+	const textData = { ...data, baseUrl };
+	return {
+		html: renderTemplate(RESERVATIONREMINDER_HTML, templateData),
+		text: renderTemplate(RESERVATIONREMINDER_TEXT, textData)
+	};
+}
+
+export function renderMaintenanceScheduledEmail(
+	data: MaintenanceScheduledEmailData
+): RenderedEmail {
+	const baseUrl = getBaseUrl();
+	const notesHtml = data.notes
+		? `<div style="background:#fef9c3;border-radius:6px;padding:12px;margin-bottom:16px;"><p style="margin:0;font-size:13px;color:#713f12;"><strong>Notes :</strong> ${escapeHtml(data.notes)}</p></div>`
+		: '';
+	const notesText = data.notes ? `Notes : ${data.notes}\n\n` : '';
+	const templateData = {
+		garageName: escapeHtml(data.garageName),
+		vehicleLabel: escapeHtml(data.vehicleLabel),
+		maintenanceType: escapeHtml(data.maintenanceType),
+		scheduledDate: escapeHtml(data.scheduledDate),
+		organizationName: escapeHtml(data.organizationName),
+		contactEmail: escapeHtml(data.contactEmail),
+		notesHtml,
+		adminUrl: escapeHtml(data.adminUrl),
+		baseUrl: escapeHtml(baseUrl)
+	};
+	const textData = {
+		garageName: data.garageName,
+		vehicleLabel: data.vehicleLabel,
+		maintenanceType: data.maintenanceType,
+		scheduledDate: data.scheduledDate,
+		organizationName: data.organizationName,
+		contactEmail: data.contactEmail,
+		notesText,
+		adminUrl: data.adminUrl,
+		baseUrl
+	};
+	return {
+		html: renderTemplate(MAINTENANCESCHEDULED_HTML, templateData),
+		text: renderTemplate(MAINTENANCESCHEDULED_TEXT, textData)
 	};
 }
 

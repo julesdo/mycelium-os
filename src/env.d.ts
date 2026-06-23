@@ -305,6 +305,52 @@ export type CoercedEnvSchema = {
   CI?: string;
   
   /**
+   * **SMARTCAR_APPLICATION_ID** 🔐 _sensitive_  
+   * Smartcar Application ID (v3 — used in the Connect OAuth URL as application_id)  
+   * Get from: https://dashboard.smartcar.com → Share Connect link → URL param application_id  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  SMARTCAR_APPLICATION_ID?: string;
+  
+  /**
+   * **SMARTCAR_CLIENT_ID** 🔐 _sensitive_  
+   * Smartcar M2M Client ID (v3 — used for server-to-server API token requests)  
+   * Get from: https://dashboard.smartcar.com → API Credentials tab  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  SMARTCAR_CLIENT_ID?: string;
+  
+  /**
+   * **SMARTCAR_CLIENT_SECRET** 🔐 _sensitive_  
+   * Smartcar M2M Client Secret (v3 — used for server-to-server API token requests)  
+   * Get from: https://dashboard.smartcar.com → API Credentials tab → generate secret  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  SMARTCAR_CLIENT_SECRET?: string;
+  
+  /**
+   * **SMARTCAR_APP_MANAGEMENT_TOKEN** 🔐 _sensitive_  
+   * Smartcar App Management Token (used for webhook signature verification)  
+   * Get from: https://dashboard.smartcar.com → Applications → Management Token  
+   * Set as Convex env var: bunx convex env set SMARTCAR_APP_MANAGEMENT_TOKEN <token>  
+   * Webhook URL prod:  https://{deployment}.convex.site/smartcar-webhook  
+   * Webhook URL local: ngrok http {CONVEX_SITE_PORT} → use the ngrok HTTPS URL  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  SMARTCAR_APP_MANAGEMENT_TOKEN?: string;
+  
+  /**
+   * **SMARTCAR_WEBHOOK_ID** 🔐 _sensitive_  
+   * Smartcar Webhook ID — used to auto-subscribe vehicles to VEHICLE_STATE events  
+   * (location-preciselocation, odometer, battery) for real-time push to the dashboard.  
+   * Get from: https://dashboard.smartcar.com → Webhooks → copy the webhook UUID  
+   * Set as Convex env var: bunx convex env set SMARTCAR_WEBHOOK_ID <id>  
+   * Also configure Location.PreciseLocation as a trigger signal in the Smartcar dashboard.  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  SMARTCAR_WEBHOOK_ID?: string;
+  
+  /**
    * **RESEND_API_KEY** 🔐 _sensitive_  
    * Resend API key for local email preview sending  
    * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
@@ -321,11 +367,11 @@ export type CoercedEnvSchema = {
   
 };
 
-type _CoercedEnvSchema_8eb0ae17 = CoercedEnvSchema;
+type _CoercedEnvSchema_8fb0a3f2 = CoercedEnvSchema;
 
 declare module 'varlock/env' {
-  export interface TypedEnvSchema extends Readonly<_CoercedEnvSchema_8eb0ae17> {}
-  export interface PublicTypedEnvSchema extends Readonly<Pick<_CoercedEnvSchema_8eb0ae17, 'VARLOCK_ENV' | 'CONVEX_DEPLOYMENT' | 'PUBLIC_CONVEX_URL' | 'PUBLIC_CONVEX_SITE_URL' | 'VITE_TOLGEE_API_URL' | 'VITE_TOLGEE_API_KEY' | 'PUBLIC_POSTHOG_API_KEY' | 'PUBLIC_POSTHOG_HOST' | 'PUBLIC_POSTHOG_PROXY_HOST' | 'PUBLIC_SENTRY_DSN' | 'PUBLIC_SNAPDOM_PROXY_URL' | 'PUBLIC_SITE_URL' | 'CONVEX_PROJECT_ID' | 'NODE_ADAPTER' | 'VERCEL_ENV' | 'VERCEL_URL' | 'VERCEL_GIT_COMMIT_REF' | 'WORKERS_CI' | 'WORKERS_CI_BRANCH' | 'WORKERS_CI_COMMIT_SHA' | 'WORKERS_NAME' | 'WORKERS_SUBDOMAIN' | 'CF_PAGES' | 'CF_PAGES_URL' | 'CF_PAGES_BRANCH' | 'PRODUCTION_BRANCH' | 'CI'>> {}
+  export interface TypedEnvSchema extends Readonly<_CoercedEnvSchema_8fb0a3f2> {}
+  export interface PublicTypedEnvSchema extends Readonly<Pick<_CoercedEnvSchema_8fb0a3f2, 'VARLOCK_ENV' | 'CONVEX_DEPLOYMENT' | 'PUBLIC_CONVEX_URL' | 'PUBLIC_CONVEX_SITE_URL' | 'VITE_TOLGEE_API_URL' | 'VITE_TOLGEE_API_KEY' | 'PUBLIC_POSTHOG_API_KEY' | 'PUBLIC_POSTHOG_HOST' | 'PUBLIC_POSTHOG_PROXY_HOST' | 'PUBLIC_SENTRY_DSN' | 'PUBLIC_SNAPDOM_PROXY_URL' | 'PUBLIC_SITE_URL' | 'CONVEX_PROJECT_ID' | 'NODE_ADAPTER' | 'VERCEL_ENV' | 'VERCEL_URL' | 'VERCEL_GIT_COMMIT_REF' | 'WORKERS_CI' | 'WORKERS_CI_BRANCH' | 'WORKERS_CI_COMMIT_SHA' | 'WORKERS_NAME' | 'WORKERS_SUBDOMAIN' | 'CF_PAGES' | 'CF_PAGES_URL' | 'CF_PAGES_BRANCH' | 'PRODUCTION_BRANCH' | 'CI'>> {}
 }
 
 
@@ -335,17 +381,17 @@ export type EnvSchemaAsStrings = {
       : (CoercedEnvSchema[Property] extends boolean ? ('true' | 'false') : string)
 };
 
-type _EnvSchemaAsStrings_8eb0ae17 = EnvSchemaAsStrings;
+type _EnvSchemaAsStrings_8fb0a3f2 = EnvSchemaAsStrings;
 declare global {
 
   // add types for global import.meta.env
-  interface ImportMetaEnv extends _EnvSchemaAsStrings_8eb0ae17 {}
+  interface ImportMetaEnv extends _EnvSchemaAsStrings_8fb0a3f2 {}
   interface ImportMeta {
     readonly env: ImportMetaEnv;
   }
 
   // add types for global process.env
   namespace NodeJS {
-    interface ProcessEnv extends _EnvSchemaAsStrings_8eb0ae17 {}
+    interface ProcessEnv extends _EnvSchemaAsStrings_8fb0a3f2 {}
   }
 }

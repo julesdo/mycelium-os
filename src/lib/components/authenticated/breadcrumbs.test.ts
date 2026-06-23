@@ -52,11 +52,10 @@ describe('buildBreadcrumbs', () => {
 	});
 
 	it('renders a 4-level path with cumulative hrefs through dynamic-looking segments', () => {
-		expect(buildBreadcrumbs('/en/admin/users/abc-123/members', 'admin', 'Admin', 'en')).toEqual([
+		expect(buildBreadcrumbs('/en/admin/settings/members', 'admin', 'Admin', 'en')).toEqual([
 			{ label: 'Admin', href: '/en/admin', isLast: false },
-			{ label: 'Users', href: '/en/admin/users', isLast: false },
-			{ label: 'Abc 123', href: '/en/admin/users/abc-123', isLast: false },
-			{ label: 'Members', href: '/en/admin/users/abc-123/members', isLast: true }
+			{ label: 'Settings', href: '/en/admin/settings', isLast: false },
+			{ label: 'Members', href: '/en/admin/settings/members', isLast: true }
 		]);
 	});
 

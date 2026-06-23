@@ -15,7 +15,7 @@
 <PostHogIdentify />
 <SupportTicketMigrationBootstrap />
 <MarketingHeader />
-<div class="flex min-h-svh flex-col pt-4 sm:pt-0">
+<div class="flex min-h-svh flex-col bg-background">
 	<main id="main-content" class="flex-1">
 		{@render children?.()}
 	</main>

@@ -202,17 +202,11 @@ const authFirstPattern: Handle = async function authFirstPattern({ event, resolv
 		redirect(307, destination);
 	}
 
-	// Admin routes require authentication AND admin role
-	if (isAdminRoute(pathname)) {
-		if (!authenticated) {
-			const destination = `/${lang}/signin?redirectTo=${encodeURIComponent(event.url.pathname + safeUrlSearch(event.url))}`;
-			redirect(307, destination);
-		}
-		// Check admin role from JWT payload (fast, no Convex query needed)
-		const payload = decodeJwtPayload(event.locals.token!);
-		if (payload?.role !== 'admin') {
-			redirect(307, `/${lang}/app`);
-		}
+	// Admin routes require authentication (role check delegated to admin/+layout.server.ts
+	// to allow both Better Auth platform admins and Convex ORG_ADMINs)
+	if (isAdminRoute(pathname) && !authenticated) {
+		const destination = `/${lang}/signin?redirectTo=${encodeURIComponent(event.url.pathname + safeUrlSearch(event.url))}`;
+		redirect(307, destination);
 	}
 
 	return resolve(event);

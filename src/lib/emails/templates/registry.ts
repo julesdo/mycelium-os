@@ -73,6 +73,53 @@ export const EMAIL_TEMPLATES: Record<string, TemplateConfig> = {
 			signupTime: '__ETA_signupTime__',
 			adminDashboardLink: '__ETA_adminDashboardLink__'
 		}
+	},
+	ReservationConfirmationEmail: {
+		outputName: 'reservationConfirmation',
+		props: {
+			userName: '__ETA_userName__',
+			vehicleLabel: '__ETA_vehicleLabel__',
+			startDate: '__ETA_startDate__',
+			endDate: '__ETA_endDate__',
+			location: '__ETA_location__',
+			purpose: '__ETA_purpose__',
+			reservationUrl: '__ETA_reservationUrl__'
+		}
+	},
+	ReservationCancellationEmail: {
+		outputName: 'reservationCancellation',
+		props: {
+			userName: '__ETA_userName__',
+			vehicleLabel: '__ETA_vehicleLabel__',
+			startDate: '__ETA_startDate__',
+			endDate: '__ETA_endDate__',
+			purpose: '__ETA_purpose__'
+		}
+	},
+	ReservationReminderEmail: {
+		outputName: 'reservationReminder',
+		props: {
+			userName: '__ETA_userName__',
+			vehicleLabel: '__ETA_vehicleLabel__',
+			startDate: '__ETA_startDate__',
+			endDate: '__ETA_endDate__',
+			location: '__ETA_location__',
+			purpose: '__ETA_purpose__',
+			reservationUrl: '__ETA_reservationUrl__'
+		}
+	},
+	MaintenanceScheduledEmail: {
+		outputName: 'maintenanceScheduled',
+		props: {
+			garageName: '__ETA_garageName__',
+			vehicleLabel: '__ETA_vehicleLabel__',
+			maintenanceType: '__ETA_maintenanceType__',
+			scheduledDate: '__ETA_scheduledDate__',
+			organizationName: '__ETA_organizationName__',
+			contactEmail: '__ETA_contactEmail__',
+			notes: '__ETA_notes__',
+			adminUrl: '__ETA_adminUrl__'
+		}
 	}
 };
 

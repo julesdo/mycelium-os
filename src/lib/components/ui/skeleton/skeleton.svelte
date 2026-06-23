@@ -12,6 +12,7 @@
 <div
 	bind:this={ref}
 	data-slot="skeleton"
-	class={cn('animate-pulse rounded-md bg-muted', className)}
+	class={cn('skeleton-shimmer rounded-lg', className)}
+	aria-hidden="true"
 	{...restProps}
 ></div>

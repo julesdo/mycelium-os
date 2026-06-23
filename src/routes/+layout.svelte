@@ -18,6 +18,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { watch } from 'runed';
 	import { devNotice } from '$lib/dev/notice';
+	import { afterNavigate } from '$app/navigation';
 	import de from '../i18n/de.json';
 	import en from '../i18n/en.json';
 	import es from '../i18n/es.json';
@@ -76,6 +77,17 @@
 			}
 		);
 	}
+
+	afterNavigate((nav) => {
+		if (!browser || !nav.from) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		if (nav.to?.url.pathname.includes('/admin/settings')) return;
+		const main = document.getElementById('main-content');
+		if (!main) return;
+		main.classList.remove('page-enter');
+		void main.offsetWidth;
+		main.classList.add('page-enter');
+	});
 </script>
 
 <ModeWatcher />

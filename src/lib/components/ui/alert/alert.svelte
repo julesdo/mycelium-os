@@ -2,12 +2,12 @@
 	import { type VariantProps, tv } from 'tailwind-variants';
 
 	export const alertVariants = tv({
-		base: "grid gap-0.5 rounded-lg border px-4 py-3 text-left text-sm has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4 group/alert relative w-full",
+		base: "grid gap-0.5 rounded-xl border px-4 py-3 text-left text-sm has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4 group/alert relative w-full",
 		variants: {
 			variant: {
-				default: 'bg-card text-card-foreground',
+				default: 'bg-card text-card-foreground shadow-glass-outline',
 				destructive:
-					'text-destructive bg-card *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current'
+					'text-destructive bg-card shadow-[0_0_0_1px_oklch(0_0_0/0.07),0_2px_5px_oklch(0_0_0/0.06),inset_0_1px_0_oklch(1_0_0/0.60)] dark:shadow-[0_0_0_1px_oklch(1_0_0/0.10),0_2px_8px_oklch(0_0_0/0.28),inset_0_1px_0_oklch(1_0_0/0.10)] *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current'
 			}
 		},
 		defaultVariants: {

@@ -1,12 +1,12 @@
 export const LEGAL_CONFIG = {
-	brandName: 'SaaS Starter',
-	companyName: 'SaaS Starter Inc.',
-	operatorName: 'Daniel Sticker',
-	address: '123 Main Street, Suite 100, San Francisco, CA 94102',
+	brandName: 'AI.MYCELIUM',
+	companyName: 'Mycelium Inc.',
+	operatorName: 'Mycelium',
+	address: '123 Main Street, Suite 100, Berlin, Germany',
 	email: {
-		user: 'daniel',
-		domain: 'sticker',
-		tld: 'name'
+		user: 'mycelium',
+		domain: 'mycelium',
+		tld: 'com'
 	}
 } as const;
 

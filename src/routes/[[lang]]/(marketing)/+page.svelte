@@ -1,14 +1,33 @@
-<script>
-	import SEOHead from '$lib/components/SEOHead.svelte';
+<script lang="ts">
 	import { getTranslate } from '@tolgee/svelte';
-	import HeroFive from '$blocks/hero/hero-five.svelte';
-	import IntegrationOne from '$blocks/integration/integration-one.svelte';
-	import LazyCustomerSupport from '$lib/components/customer-support/lazy-customer-support.svelte';
+	import SEOHead from '$lib/components/SEOHead.svelte';
+	import {
+		HeroSection,
+		FeaturesSection,
+		AgentsSection,
+		HowItWorksSection,
+		AgenticDemoSection,
+		ModulesSection,
+		PricingSection,
+		FaqSection,
+		CtaSection
+	} from '$lib/components/marketing/landing';
+
 	const { t } = getTranslate();
 </script>
 
-<SEOHead title={$t('meta.home.title')} description={$t('meta.home.description')} />
-<LazyCustomerSupport />
+<SEOHead title={$t('landing.meta.title')} description={$t('landing.meta.description')} />
 
-<HeroFive />
-<IntegrationOne />
+<div class="min-h-screen">
+	<HeroSection />
+	<FeaturesSection />
+	<AgentsSection />
+	<HowItWorksSection />
+	<AgenticDemoSection />
+	<ModulesSection />
+	<PricingSection />
+	<FaqSection />
+	<CtaSection />
+
+	<div class="h-3"></div>
+</div>

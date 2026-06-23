@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Kbd from '$lib/components/ui/kbd/index.js';
 	import { cn } from '$lib/utils.js';
 	import { getTranslate } from '@tolgee/svelte';
-	import { cmdOrCtrl } from '$lib/hooks/is-mac.svelte';
 	import { useGlobalSearchContext } from './context.svelte';
+	import SearchIcon from '@lucide/svelte/icons/search';
 
 	interface Props {
 		class?: string;
@@ -18,20 +17,11 @@
 </script>
 
 <Button
-	variant="secondary"
-	class={cn(
-		'relative h-8 w-full justify-start bg-card pl-3 font-medium text-foreground shadow-none md:w-48 lg:w-56 xl:w-64',
-		className
-	)}
+	variant="ghost"
+	size="icon"
+	class={cn('topbar-brand-btn size-9 rounded-xl', className)}
 	onclick={() => globalSearch.openMenu()}
 	aria-label={$t('search.command.trigger_aria_label')}
 >
-	<span class="hidden lg:inline-flex">{$t('search.command.trigger_desktop')}</span>
-	<span class="inline-flex lg:hidden">{$t('search.command.trigger_mobile')}</span>
-	<div class="absolute inset-y-0 end-1.5 hidden items-center gap-1 sm:flex">
-		<Kbd.Group>
-			<Kbd.Root class="border">{cmdOrCtrl}</Kbd.Root>
-			<Kbd.Root class="border">K</Kbd.Root>
-		</Kbd.Group>
-	</div>
+	<SearchIcon class="size-4" />
 </Button>

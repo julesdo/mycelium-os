@@ -1,33 +1,32 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import SEOHead from '$lib/components/SEOHead.svelte';
-	import { Separator } from '$lib/components/ui/separator/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { T, getTranslate } from '@tolgee/svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import * as v from 'valibot';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import AccountSettings from './account-settings.svelte';
 	import PasswordSettings from './password-settings.svelte';
 	import EmailSettings from './email-settings.svelte';
 	import SecuritySettings from './security-settings.svelte';
+	import GoogleCalendarConnect from '$lib/components/integrations/GoogleCalendarConnect.svelte';
+	import MicrosoftCalendarConnect from '$lib/components/integrations/MicrosoftCalendarConnect.svelte';
+	import UserCircleIcon from '@lucide/svelte/icons/user-circle';
+	import LockIcon from '@lucide/svelte/icons/lock';
+	import MailIcon from '@lucide/svelte/icons/mail';
+	import ShieldIcon from '@lucide/svelte/icons/shield';
+	import PlugIcon from '@lucide/svelte/icons/plug';
 
-	interface Props {
-		data: PageData;
-	}
-
+	interface Props { data: PageData; }
 	let { data }: Props = $props();
-
 	let user = $derived(data.user);
 	const { t } = getTranslate();
-	const SETTINGS_TABS = ['account', 'password', 'email', 'security'] as const;
+
+	const SETTINGS_TABS = ['account', 'password', 'email', 'security', 'integrations'] as const;
 	type SettingsTab = (typeof SETTINGS_TABS)[number];
 	const DEFAULT_SETTINGS_TAB: SettingsTab = 'account';
-	// Read the active tab from page.url, which SvelteKit populates during SSR, so
-	// the right tab renders on first paint with no hydration flash; write with
-	// goto. useSearchParams reads the URL client-only and would flash the account
-	// tab on a deep link. See AGENTS.md "Client-set view state".
 	const tabFallback = v.fallback(v.picklist(SETTINGS_TABS), DEFAULT_SETTINGS_TAB);
 	const activeTab = $derived(
 		v.parse(tabFallback, page.url.searchParams.get('tab') ?? DEFAULT_SETTINGS_TAB)
@@ -40,58 +39,74 @@
 		else url.searchParams.set('tab', value);
 		goto(resolve(url.pathname + url.search), { keepFocus: true, noScroll: true });
 	}
+
+	const tabs = [
+		{ value: 'account',      label: 'Profil',        icon: UserCircleIcon },
+		{ value: 'password',     label: 'Mot de passe',  icon: LockIcon       },
+		{ value: 'email',        label: 'E-mail',        icon: MailIcon       },
+		{ value: 'security',     label: 'Sécurité',      icon: ShieldIcon     },
+		{ value: 'integrations', label: 'Intégrations',  icon: PlugIcon       },
+	];
 </script>
 
 <SEOHead title={$t('meta.app.settings.title')} description={$t('meta.app.settings.description')} />
 
-<div class="flex flex-1 flex-col px-4 lg:px-6">
-	<div class="mx-auto w-full max-w-3xl flex-1 space-y-6">
-		<div>
-			<h2 class="text-2xl font-bold tracking-tight">
-				<T keyName="settings.title" />
-			</h2>
-			<p class="text-muted-foreground">
-				<T keyName="settings.description" />
-			</p>
-		</div>
+<div class="flex flex-col gap-5 px-4 pb-24 pt-3 lg:pb-8 lg:px-6 xl:px-8 2xl:px-16">
 
-		<Separator />
+	<!-- ── Header ──────────────────────────────────────────────────────────── -->
+	<div>
+		<h1 class="text-xl font-black tracking-tight">Réglages</h1>
+		<p class="mt-0.5 text-sm text-muted-foreground">Gérez votre compte et vos préférences</p>
+	</div>
 
-		<Tabs.Root value={activeTab} onValueChange={updateTab} class="space-y-6">
-			<Tabs.List>
-				<Tabs.Trigger value="account">
-					<T keyName="settings.tabs.account" />
+	<!-- ── Tabs ──────────────────────────────────────────────────────────── -->
+	<Tabs.Root value={activeTab} onValueChange={(v) => updateTab(v)}>
+		<Tabs.List class="self-start">
+			{#each tabs as tab}
+				<Tabs.Trigger value={tab.value} class="gap-1.5">
+					<tab.icon class="size-3.5 shrink-0" />
+					{tab.label}
 				</Tabs.Trigger>
-				<Tabs.Trigger value="password">
-					<T keyName="settings.tabs.password" />
-				</Tabs.Trigger>
-				<Tabs.Trigger value="email">
-					<T keyName="settings.tabs.email" />
-				</Tabs.Trigger>
-				<Tabs.Trigger value="security">
-					<T keyName="settings.tabs.security" />
-				</Tabs.Trigger>
-			</Tabs.List>
+			{/each}
+		</Tabs.List>
 
-			<Tabs.Content value="account" class="space-y-6">
+		<!-- ── Content ─────────────────────────────────────────────────────── -->
+		<div class="mt-6 max-w-xl">
+
+			<Tabs.Content value="account">
 				{#if user}
 					<AccountSettings {user} />
 				{/if}
 			</Tabs.Content>
 
-			<Tabs.Content value="password" class="space-y-6">
+			<Tabs.Content value="password">
 				<PasswordSettings />
 			</Tabs.Content>
 
-			<Tabs.Content value="email" class="space-y-6">
+			<Tabs.Content value="email">
 				{#if user}
 					<EmailSettings {user} />
 				{/if}
 			</Tabs.Content>
 
-			<Tabs.Content value="security" class="space-y-6">
+			<Tabs.Content value="security">
 				<SecuritySettings />
 			</Tabs.Content>
-		</Tabs.Root>
-	</div>
+
+			<Tabs.Content value="integrations">
+				<div class="flex flex-col gap-5">
+					<div>
+						<p class="text-sm font-bold">Intégrations calendrier</p>
+						<p class="mt-0.5 text-sm text-muted-foreground">
+							Connectez votre calendrier pour synchroniser automatiquement vos réservations.
+						</p>
+					</div>
+					<GoogleCalendarConnect />
+					<MicrosoftCalendarConnect />
+				</div>
+			</Tabs.Content>
+
+		</div>
+	</Tabs.Root>
+
 </div>

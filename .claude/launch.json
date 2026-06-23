@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev"],
+      "port": 20173,
+      "autoPort": false
+    },
+    {
+      "name": "dev:cloud",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev:cloud"],
+      "port": 20173,
+      "autoPort": false
+    },
+    {
+      "name": "dev:test",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev:test"],
+      "port": 21173,
+      "autoPort": false
+    }
+  ]
+}

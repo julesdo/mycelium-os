@@ -33,6 +33,12 @@ export interface NavItem {
 	kbd?: string[];
 	/** When true, clicking the main button does nothing (e.g. already on empty thread) */
 	disableNav?: boolean;
+	/** When true, renders a section separator instead of a nav item */
+	divider?: boolean;
+	/** Label displayed above the section (used with divider: true) */
+	sectionLabel?: string;
+	/** Short label for compact views (e.g. bottom nav bar) */
+	shortLabel?: string;
 }
 
 export interface HeaderDropdownItem {
@@ -56,9 +62,23 @@ export interface FooterLink {
 	kbd?: string[];
 }
 
+/**
+ * A topbar nav group: either a single standalone link (items.length === 1)
+ * or a dropdown cluster (items.length > 1) with a shared label trigger.
+ */
+export interface TopbarNavGroup {
+	/** Trigger label shown in the topbar pill */
+	label: string;
+	icon?: LucideIcon;
+	/** Items inside the dropdown. If only one item, renders as a direct link. */
+	items: NavItem[];
+}
+
 export interface SidebarConfig {
 	header: HeaderConfig;
 	navItems: NavItem[];
+	/** Groups for the compact topbar nav. Sidebar uses navItems instead. */
+	topbarGroups?: TopbarNavGroup[];
 	footerLinks?: FooterLink[];
 }
 

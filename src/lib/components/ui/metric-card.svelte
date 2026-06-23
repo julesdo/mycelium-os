@@ -1,22 +1,16 @@
 <script lang="ts">
 	import TrendingDownIcon from '@lucide/svelte/icons/trending-down';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
 	import { cn } from '$lib/utils.js';
-	import type { Component } from 'svelte';
 
 	interface Props {
 		label: string;
 		value: string | number;
-		icon?: Component<{ class?: string }>;
-		trend?: {
-			value: string;
-			direction: 'up' | 'down' | 'neutral';
-		};
+		trend?: { value: string; direction: 'up' | 'down' | 'neutral' };
 		description?: string;
-		subtitle?: string;
-		variant?: 'default' | 'destructive';
+		href?: string;
+		variant?: 'default' | 'accent' | 'destructive';
 		loading?: boolean;
 		class?: string;
 	}
@@ -24,81 +18,91 @@
 	let {
 		label,
 		value,
-		icon,
 		trend,
 		description,
-		subtitle,
+		href,
 		variant = 'default',
 		loading = false,
 		class: className
 	}: Props = $props();
 </script>
 
-<Card.Root
-	class={cn('@container/card', variant === 'destructive' && 'border-destructive/50', className)}
+<div
 	data-slot="card"
+	class={cn(
+		'group/card relative overflow-hidden rounded-3xl transition-all duration-200',
+		variant === 'accent'
+			? 'brand-glow bg-[var(--brand)]'
+			: 'bg-card hover:shadow-md',
+		className
+	)}
 >
-	<Card.Header>
-		<Card.Description class={cn(variant === 'destructive' && 'text-destructive')}>
-			{label}
-		</Card.Description>
-		<Card.Title
-			class={cn(
-				'flex items-center gap-2 text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-				variant === 'destructive' && 'text-destructive'
-			)}
-		>
-			{#if icon}
-				{@const Icon = icon}
-				<Icon class="size-5" />
+	{#if variant !== 'accent'}
+		<div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/20"></div>
+	{/if}
+
+	<div class="flex flex-col px-4 py-4">
+		<!-- Label row + arrow -->
+		<div class="mb-2.5 flex items-center justify-between gap-2">
+			<span class={cn(
+				'text-[11px] font-bold tracking-[0.09em] uppercase',
+				variant === 'accent' ? 'text-[var(--brand-foreground)]/55' : 'text-muted-foreground'
+			)}>
+				{label}
+			</span>
+			{#if href}
+				<a
+					{href}
+					class={cn(
+						'flex size-6 shrink-0 items-center justify-center rounded-full transition-colors',
+						variant === 'accent'
+							? 'bg-[var(--brand-foreground)]/10 text-[var(--brand-foreground)]/50 hover:bg-[var(--brand-foreground)]/18'
+							: 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+					)}
+					aria-label="Voir détails"
+				>
+					<ArrowUpRightIcon class="size-3" />
+				</a>
 			{/if}
-			<span class="relative inline-block">
-				<!-- Invisible placeholder to reserve space -->
-				<span class="invisible">{value}</span>
-				<!-- Animated value positioned on top -->
-				{#if !loading}
-					<span style="--enter-delay: 40ms;" class="absolute inset-0 animate-enter-blur-up">
-						{value}
+		</div>
+
+		<!-- Value -->
+		<div class={cn(
+			'font-mono text-4xl font-bold tabular-nums leading-none tracking-tight',
+			variant === 'accent' ? 'text-[var(--brand-foreground)]' : 'text-foreground',
+			loading && 'invisible'
+		)}>
+			{#if !loading}
+				<span class="animate-enter-blur-up inline-block" style="--enter-delay: 40ms">{value}</span>
+			{:else}
+				{value}
+			{/if}
+		</div>
+
+		<!-- Trend / description -->
+		{#if trend || description}
+			<div class="mt-2 flex items-center gap-1.5">
+				{#if trend}
+					<span class={cn(
+						'inline-flex items-center gap-0.5 text-[11px] font-semibold',
+						variant === 'accent'
+							? 'text-[var(--brand-foreground)]/50'
+							: trend.direction === 'down'
+								? 'text-destructive'
+								: 'text-emerald-600 dark:text-emerald-400'
+					)}>
+						{#if trend.direction === 'up'}<TrendingUpIcon class="size-3" />{/if}
+						{#if trend.direction === 'down'}<TrendingDownIcon class="size-3" />{/if}
+						{trend.value}
 					</span>
 				{/if}
-			</span>
-		</Card.Title>
-		{#if trend}
-			<Card.Action>
-				<Badge
-					variant="outline"
-					class={cn(
-						trend.direction === 'down' && 'text-destructive',
-						trend.direction === 'up' && 'text-emerald-600 dark:text-emerald-500'
-					)}
-				>
-					{#if trend.direction === 'up'}
-						<TrendingUpIcon class="size-3" />
-					{:else if trend.direction === 'down'}
-						<TrendingDownIcon class="size-3" />
-					{/if}
-					{trend.value}
-				</Badge>
-			</Card.Action>
+				{#if description}
+					<span class={cn(
+						'text-[11px]',
+						variant === 'accent' ? 'text-[var(--brand-foreground)]/45' : 'text-muted-foreground'
+					)}>{description}</span>
+				{/if}
+			</div>
 		{/if}
-	</Card.Header>
-	{#if description || subtitle}
-		<Card.Footer class="flex-col items-start gap-1.5 text-sm">
-			{#if description}
-				<div class="line-clamp-1 flex gap-2 font-medium">
-					{description}
-					{#if trend?.direction === 'up'}
-						<TrendingUpIcon class="size-4" />
-					{:else if trend?.direction === 'down'}
-						<TrendingDownIcon class="size-4" />
-					{/if}
-				</div>
-			{/if}
-			{#if subtitle}
-				<div class="text-muted-foreground">
-					{subtitle}
-				</div>
-			{/if}
-		</Card.Footer>
-	{/if}
-</Card.Root>
+	</div>
+</div>

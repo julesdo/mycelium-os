@@ -8,7 +8,7 @@
 		userEmail = 'user@example.com',
 		signupMethod = 'Email',
 		signupTime = 'Jan 15, 2026 at 3:45 PM',
-		adminDashboardLink = 'https://example.com/admin/users'
+		adminDashboardLink = 'https://example.com/admin/settings/members'
 	}: {
 		userName?: string;
 		userEmail?: string;

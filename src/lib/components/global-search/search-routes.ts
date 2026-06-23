@@ -47,53 +47,69 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		keywords: ['forgot password', 'reset']
 	},
 	{
-		href: '/app/community-chat',
+		href: '/app/reservations',
 		access: 'authenticated',
 		group: 'app',
-		titleKey: 'app.sidebar.community_chat',
-		keywords: ['chat', 'community']
-	},
-	{
-		href: '/app/ai-chat',
-		access: 'authenticated',
-		group: 'app',
-		titleKey: 'app.sidebar.ai_chat',
-		keywords: ['ai', 'chat', 'assistant', 'bot']
+		keywords: ['réservations', 'mes réservations', 'reservations', 'booking']
 	},
 	{
 		href: '/app/settings',
 		access: 'authenticated',
 		group: 'app',
 		titleKey: 'settings.title',
-		keywords: ['settings', 'account']
+		keywords: ['paramètres', 'compte', 'settings', 'account', 'profil', 'intégrations']
 	},
 	{
 		href: '/admin/dashboard',
 		access: 'admin',
 		group: 'admin',
 		titleKey: 'admin.sidebar.dashboard',
-		keywords: ['admin dashboard']
+		keywords: ['tableau de bord', 'dashboard', 'admin']
 	},
 	{
-		href: '/admin/users',
+		href: '/admin/fleet',
 		access: 'admin',
 		group: 'admin',
-		titleKey: 'admin.sidebar.users',
-		keywords: ['users', 'admin users']
+		keywords: ['flotte', 'véhicules', 'fleet', 'voitures', 'importer']
 	},
 	{
+		href: '/admin/reservations',
+		access: 'admin',
+		group: 'admin',
+		keywords: ['réservations', 'calendrier', 'planning', 'calendar']
+	},
+{
 		href: '/admin/support',
 		access: 'admin',
 		group: 'admin',
 		titleKey: 'admin.sidebar.support',
-		keywords: ['support', 'tickets']
+		keywords: ['support', 'tickets', 'messages']
 	},
 	{
 		href: '/admin/settings',
 		access: 'admin',
 		group: 'admin',
 		titleKey: 'admin.sidebar.settings',
-		keywords: ['admin settings']
+		keywords: ['paramètres', 'settings', 'organisation', 'admin']
+	},
+	{
+		href: '/admin/settings/members',
+		access: 'admin',
+		group: 'admin',
+		keywords: ['membres', 'invitations', 'équipe', 'team', 'inviter', 'rôles']
+	},
+	{
+		href: '/admin/settings/plans',
+		access: 'admin',
+		group: 'admin',
+		keywords: ['plans', 'facturation', 'abonnement', 'tarifs', 'billing', 'forfait']
+	},
+	{
+		href: '/admin/maintenance',
+		access: 'admin',
+		group: 'admin',
+		titleKey: 'admin.sidebar.maintenance',
+		keywords: ['maintenance', 'entretien', 'révision', 'vidange', 'garage', 'pneus', 'freins']
 	}
 ];
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { T } from '@tolgee/svelte';
 
 	interface Props {
@@ -9,15 +10,7 @@
 </script>
 
 {#if isAdmin}
-	<span
-		class="inline-flex items-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground ring-1 ring-primary/20 ring-inset"
-	>
-		<T keyName="admin.settings.type_admin" />
-	</span>
+	<Badge variant="default"><T keyName="admin.settings.type_admin" /></Badge>
 {:else}
-	<span
-		class="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground ring-1 ring-secondary/20 ring-inset"
-	>
-		<T keyName="admin.settings.type_custom" />
-	</span>
+	<Badge variant="secondary"><T keyName="admin.settings.type_custom" /></Badge>
 {/if}

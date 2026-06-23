@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_mycelium_mappings"
+        name="Mycelium Category Mappings"
+        parent="account.menu_finance_configuration"
+        action="action_mycelium_mapping_tree"
+        sequence="90"/>
+
+    <record id="action_mycelium_mapping_tree" model="ir.actions.act_window">
+        <field name="name">Mycelium Category Mappings</field>
+        <field name="res_model">mycelium.category.mapping</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

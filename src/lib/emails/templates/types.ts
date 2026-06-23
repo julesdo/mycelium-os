@@ -128,3 +128,42 @@ export type RenderedEmail = {
 	html: string;
 	text: string;
 };
+
+export type ReservationConfirmationEmailData = {
+	userName: string;
+	vehicleLabel: string;
+	startDate: string;
+	endDate: string;
+	location: string;
+	purpose: string;
+	reservationUrl: string;
+};
+
+export type ReservationCancellationEmailData = {
+	userName: string;
+	vehicleLabel: string;
+	startDate: string;
+	endDate: string;
+	purpose: string;
+};
+
+export type ReservationReminderEmailData = {
+	userName: string;
+	vehicleLabel: string;
+	startDate: string;
+	endDate: string;
+	location: string;
+	purpose: string;
+	reservationUrl: string;
+};
+
+export type MaintenanceScheduledEmailData = {
+	garageName: string;
+	vehicleLabel: string;
+	maintenanceType: string;
+	scheduledDate: string;
+	organizationName: string;
+	contactEmail: string;
+	notes?: string;
+	adminUrl: string;
+};

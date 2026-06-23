@@ -36,6 +36,6 @@
 	}}
 	{...restProps}
 >
-	<PanelLeftIcon />
+	<PanelLeftIcon strokeWidth={1} />
 	<span class="sr-only">{$t('aria.toggle_sidebar')}</span>
 </Button>

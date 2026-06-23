@@ -72,7 +72,7 @@
 				     colour. pointer-events-none keeps the row link clickable. -->
 				{#if sub.timestamp}
 					<span
-						class="pointer-events-none absolute inset-y-0 -right-2 flex items-center justify-end overflow-hidden rounded-r-md bg-sidebar-accent-hover [mask-image:linear-gradient(to_right,transparent,#000_1rem)] pr-3 pl-5 text-xs whitespace-nowrap text-muted-foreground opacity-0 group-hover/menu-sub-item:opacity-100 group-active/menu-sub-item:translate-y-px group-has-data-[active=true]/menu-sub-item:bg-sidebar-accent"
+						class="pointer-events-none absolute inset-y-0 -right-2 flex items-center justify-end overflow-hidden rounded-r-md bg-sidebar-accent-hover [mask-image:linear-gradient(to_right,transparent,#000_1rem)] pr-3 pl-5 text-xs whitespace-nowrap text-sidebar-foreground/50 opacity-0 group-hover/menu-sub-item:opacity-100 group-active/menu-sub-item:translate-y-px group-has-data-[active=true]/menu-sub-item:bg-sidebar-accent"
 					>
 						{dateFormatter.format(sub.timestamp)}
 					</span>
@@ -82,7 +82,7 @@
 		{#if hasMore}
 			<Sidebar.MenuSubItem>
 				<button
-					class="w-full px-2 py-1 text-left text-xs text-muted-foreground hover:text-foreground active:translate-y-px"
+					class="w-full px-2 py-1 text-left text-xs text-sidebar-foreground/40 hover:text-sidebar-foreground active:translate-y-px"
 					onclick={() => {
 						haptic.trigger('light');
 						displayLimit += THREAD_LOAD_MORE_STEP;

@@ -1,0 +1,10 @@
+export { default as HeroSection } from './hero-section.svelte';
+export { default as ProofSection } from './proof-section.svelte';
+export { default as FeaturesSection } from './features-section.svelte';
+export { default as AgentsSection } from './agents-section.svelte';
+export { default as HowItWorksSection } from './how-it-works-section.svelte';
+export { default as ModulesSection } from './modules-section.svelte';
+export { default as PricingSection } from './pricing-section.svelte';
+export { default as FaqSection } from './faq-section.svelte';
+export { default as CtaSection } from './cta-section.svelte';
+export { default as AgenticDemoSection } from './agentic-demo-section.svelte';

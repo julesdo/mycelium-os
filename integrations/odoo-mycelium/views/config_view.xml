@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Category Mapping tree/form views -->
+    <record id="view_mycelium_mapping_tree" model="ir.ui.view">
+        <field name="name">mycelium.category.mapping.tree</field>
+        <field name="model">mycelium.category.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Mycelium Category Mappings" editable="bottom">
+                <field name="mycelium_category"/>
+                <field name="account_id"/>
+                <field name="analytic_account_id" optional="show"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Settings form extension -->
+    <record id="res_config_settings_view_mycelium" model="ir.ui.view">
+        <field name="name">res.config.settings.view.mycelium</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div class="app_settings_block" data-string="Mycelium Fleet OS" id="mycelium_settings" data-key="mycelium">
+                    <h2>Mycelium Fleet OS</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">API Key</span>
+                                <div class="text-muted">
+                                    Clé API Mycelium commençant par <code>myc_live_</code>.
+                                    Générez-la dans Mycelium → Paramètres → Intégrations → Développeurs.
+                                </div>
+                                <div class="content-group">
+                                    <div class="row">
+                                        <label class="col-lg-3 col-form-label" for="mycelium_api_key">API Key</label>
+                                        <div class="col-lg-9">
+                                            <field name="mycelium_api_key" widget="char" placeholder="myc_live_..."/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <label class="col-lg-3 col-form-label" for="mycelium_api_base">API URL</label>
+                                        <div class="col-lg-9">
+                                            <field name="mycelium_api_base"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <label class="col-lg-3 col-form-label" for="mycelium_journal_id">Journal comptable</label>
+                                        <div class="col-lg-9">
+                                            <field name="mycelium_journal_id" domain="[('type','=','purchase')]"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt8" attrs="{'invisible': [('mycelium_last_sync','=',False)]}">
+                                        <label class="col-lg-3 col-form-label">Dernière sync</label>
+                                        <div class="col-lg-9">
+                                            <field name="mycelium_last_sync" readonly="1"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

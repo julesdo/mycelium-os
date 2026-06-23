@@ -1,4 +1,4 @@
-import { mutation } from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { v, ConvexError } from 'convex/values';
 import { PROFILE_IMAGE_ALLOWED_TYPES, PROFILE_IMAGE_MAX_SIZE } from './constants';
 import { authComponent } from './auth';
@@ -84,6 +84,18 @@ export const updateProfileImage = mutation({
 			throw error;
 		}
 
+		return await ctx.storage.getUrl(args.storageId);
+	}
+});
+
+
+export const getProfileImageUrl = query({
+	args: { storageId: v.id('_storage') },
+	handler: async (ctx, args) => {
+		const metadata = await ctx.db.system.get(args.storageId);
+		if (!metadata) {
+			throw new ConvexError('File not found');
+		}
 		return await ctx.storage.getUrl(args.storageId);
 	}
 });

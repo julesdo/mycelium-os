@@ -2,19 +2,19 @@
 	import PostHogIdentify from '$lib/components/analytics/PostHogIdentify.svelte';
 	import SupportTicketMigrationBootstrap from '$lib/components/customer-support/support-ticket-migration-bootstrap.svelte';
 	import { AuthenticatedLayout, getAppSidebarConfig } from '$lib/components/authenticated';
-	import type { NavSubItem } from '$lib/components/authenticated/types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { tick } from 'svelte';
 	import { localizedHref } from '$lib/utils/i18n';
-	import { useQuery, useConvexClient } from '@mmailaender/convex-svelte';
+	import { useQuery } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api';
-	import { getTranslate } from '@tolgee/svelte';
 	import type { LayoutData } from './$types';
 	import type { Snippet } from 'svelte';
-
-	const { t } = getTranslate();
+	import { browser } from '$app/environment';
+	import WelcomeModal from '$lib/components/onboarding/WelcomeModal.svelte';
+	import CopilotFab from '$lib/components/copilot/copilot-fab.svelte';
+	import CopilotPanel from '$lib/components/copilot/copilot-panel.svelte';
 
 	interface Props {
 		children?: Snippet;
@@ -23,51 +23,29 @@
 
 	let { children, data }: Props = $props();
 
-	const client = useConvexClient();
 	const viewer = $derived(data.viewer as typeof data.viewer & { role?: string });
 
-	// AI chat threads for sidebar.
-	// Load a generous batch upfront; display limit is managed client-side
-	// inside SidebarThreadList (same pattern as t3code) so "Show more"
-	// never triggers a server re-fetch or parent re-render.
-	const threadsQuery = useQuery(api.aiChat.threads.listThreads, () => ({ limit: 50 }));
-	const aiChatThreads = $derived(threadsQuery.data?.threads ?? []);
-
-	// Pre-warm thread: always keep one empty thread ready for instant "new chat"
-	const warmThreadQuery = useQuery(api.aiChat.threads.getWarmThread, {});
-	const warmThreadId = $derived(warmThreadQuery.data?.threadId ?? null);
-
-	let ensureWarmInFlight = $state(false);
-
+	// Guard: redirect to onboarding if user has no organization
+	const myOrgQuery = useQuery(api.organizations.getMyOrg, {});
 	$effect(() => {
-		if (warmThreadQuery.data === null && !ensureWarmInFlight && viewer) {
-			ensureWarmInFlight = true;
-			client.mutation(api.aiChat.threads.getOrCreateWarmThread, {}).finally(() => {
-				ensureWarmInFlight = false;
-			});
+		if (myOrgQuery.data === null) {
+			goto(resolve(localizedHref('/onboarding/organization')));
 		}
 	});
 
-	// Chat pages need fullControl (manage own scroll containers)
+	// Pages that manage their own scroll container (fullscreen, no outer padding/scroll)
 	const fullControl = $derived(
-		page.url.pathname.includes('/app/ai-chat') || page.url.pathname.includes('/app/community-chat')
+		/\/app\/reservations\/new\/?$/.test(page.url.pathname)
 	);
 
-	// Keyboard shortcuts for sidebar navigation (⌃⇧1-2, ⌘., ⌘,)
+	// Keyboard shortcuts: Cmd+. → Admin, Cmd+, → Settings
 	function handleKeydown(e: KeyboardEvent) {
 		const target = e.target as HTMLElement;
 		if (target.closest('input, textarea, [contenteditable]')) return;
 
 		let url: string | undefined;
 
-		// Ctrl+Shift+number for sidebar nav (avoids macOS ⌘⇧3/4 screenshot conflict)
-		if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey) {
-			const shiftRoutes: Record<string, string> = {
-				Digit1: localizedHref('/app/community-chat'),
-				Digit2: localizedHref(warmThreadId ? `/app/ai-chat?thread=${warmThreadId}` : '/app/ai-chat')
-			};
-			url = shiftRoutes[e.code];
-		} else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+		if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
 			const plainRoutes: Record<string, string> = {
 				'.': localizedHref('/admin'),
 				',': localizedHref('/app/settings')
@@ -83,22 +61,33 @@
 		});
 	}
 
-	// Generate sidebar config based on current page state
 	const sidebarConfig = $derived(
 		getAppSidebarConfig(
-			{ pathname: page.url.pathname, search: page.url.search, lang: page.params.lang },
-			viewer?.role,
-			aiChatThreads,
-			warmThreadId,
-			$t('ai_chat.thread.no_messages')
+			{ pathname: page.url.pathname, lang: page.params.lang },
+			viewer?.role
 		)
 	);
 
-	// Thread sub-items passed as separate prop to avoid snippet re-render
-	// destroying autoAnimate DOM nodes (see authenticated-sidebar.svelte)
-	const threadSubItems: NavSubItem[] = $derived(
-		sidebarConfig.navItems.find((i) => i.collapsible)?.subItems ?? []
+	// --- Onboarding salarié ---
+	const appStorageKey = $derived(
+		viewer?._id ? `mycelium:onboarding:app:${viewer._id}` : null
 	);
+
+	let showAppWelcome = $state(false);
+
+	$effect(() => {
+		if (!browser || !appStorageKey) return;
+		if (!localStorage.getItem(appStorageKey)) {
+			showAppWelcome = true;
+		}
+	});
+
+	function handleAppWelcomeDone() {
+		showAppWelcome = false;
+		if (browser && appStorageKey) {
+			localStorage.setItem(appStorageKey, 'done');
+		}
+	}
 </script>
 
 <svelte:document onkeydown={handleKeydown} />
@@ -108,6 +97,7 @@
 
 <AuthenticatedLayout
 	{sidebarConfig}
+	navMode="app-topbar"
 	user={viewer
 		? {
 				name: viewer.name ?? 'User',
@@ -119,8 +109,16 @@
 	routePrefix="app"
 	rootLabel="App"
 	{fullControl}
-	{threadSubItems}
-	sidebarOpen={data.sidebarOpen}
 >
 	{@render children?.()}
 </AuthenticatedLayout>
+
+<WelcomeModal
+	bind:open={showAppWelcome}
+	userName={viewer?.name ?? ''}
+	mode="app"
+	onDone={handleAppWelcomeDone}
+/>
+
+<CopilotFab />
+<CopilotPanel />

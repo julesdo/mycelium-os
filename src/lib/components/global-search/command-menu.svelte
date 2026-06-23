@@ -12,6 +12,11 @@
 	import { useQuery } from '@mmailaender/convex-svelte';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import CornerDownLeftIcon from '@lucide/svelte/icons/corner-down-left';
+	import CarIcon from '@lucide/svelte/icons/car';
+	import CalendarIcon from '@lucide/svelte/icons/calendar';
+	import PlusCircleIcon from '@lucide/svelte/icons/plus-circle';
+	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
+	import UploadIcon from '@lucide/svelte/icons/upload';
 	import CommandMenuItem from './command-menu-item.svelte';
 	import {
 		SEARCH_ROUTES,
@@ -76,6 +81,41 @@
 			isAuthenticated: auth.isAuthenticated,
 			role: auth.isAuthenticated ? (viewer.data?.role ?? null) : null
 		};
+	});
+
+	let searchValue = $state('');
+
+	const vehiclesQuery = useQuery(api.vehicles.listVehicles, {});
+	const recentReservationsQuery = useQuery(api.reservations.getRecentForSearch, {});
+
+	const isAdmin = $derived(
+		effectiveAuth.isAuthenticated && effectiveAuth.role?.toLowerCase() === 'admin'
+	);
+
+	const filteredVehicles = $derived.by(() => {
+		if (!searchValue.trim() || !vehiclesQuery.data) return [];
+		const q = searchValue.toLowerCase();
+		return vehiclesQuery.data
+			.filter(
+				(v) =>
+					v.brand.toLowerCase().includes(q) ||
+					v.model.toLowerCase().includes(q) ||
+					v.registration.toLowerCase().includes(q)
+			)
+			.slice(0, 5);
+	});
+
+	const filteredReservations = $derived.by(() => {
+		if (!searchValue.trim() || !recentReservationsQuery.data) return [];
+		const q = searchValue.toLowerCase();
+		return recentReservationsQuery.data
+			.filter(
+				(r) =>
+					r.purpose.toLowerCase().includes(q) ||
+					r.brand.toLowerCase().includes(q) ||
+					r.model.toLowerCase().includes(q)
+			)
+			.slice(0, 5);
 	});
 
 	const groupOrder: SearchRouteGroup[] = ['public', 'authentication', 'app', 'admin'];
@@ -198,11 +238,18 @@
 			<Dialog.Description>{$t('search.command.dialog_description')}</Dialog.Description>
 		</Dialog.Header>
 		<Command.Root class="rounded-none bg-transparent">
-			<Command.Input placeholder={$t('search.command.input_placeholder')} />
+			<Command.Input
+				placeholder={$t('search.command.input_placeholder')}
+				oninput={(e) => {
+					searchValue = (e.currentTarget as HTMLInputElement).value;
+				}}
+			/>
 			<Command.List tabindex={-1} class="no-scrollbar min-h-80 scroll-pt-2 scroll-pb-1.5">
 				<Command.Empty class="py-12 text-center text-sm text-muted-foreground">
 					{$t('search.command.no_results')}
 				</Command.Empty>
+
+				<!-- Navigation routes -->
 				{#each groupedRoutes as group (group.group)}
 					<Command.Group
 						heading={group.heading}
@@ -224,6 +271,97 @@
 						{/each}
 					</Command.Group>
 				{/each}
+
+				<!-- Véhicules (admin, résultats live) -->
+				{#if isAdmin && filteredVehicles.length > 0}
+					<Command.Group
+						heading="Véhicules"
+						class="!p-0 [&_[data-command-group-heading]]:scroll-mt-16 [&_[data-command-group-heading]]:!p-3 [&_[data-command-group-heading]]:!pb-1"
+					>
+						{#each filteredVehicles as vehicle (vehicle._id)}
+							<CommandMenuItem
+								value="{vehicle.brand} {vehicle.model} {vehicle.registration}"
+								onSelect={() =>
+									runCommand(() => void goto(resolve(localizedHref('/admin/fleet'))))}
+							>
+								<CarIcon class="size-4 shrink-0" />
+								<span class="flex-1 truncate"
+									>{vehicle.brand}
+									{vehicle.model}</span
+								>
+								<span class="text-xs text-muted-foreground">{vehicle.registration}</span>
+							</CommandMenuItem>
+						{/each}
+					</Command.Group>
+				{/if}
+
+				<!-- Réservations récentes (authenticated, résultats live) -->
+				{#if effectiveAuth.isAuthenticated && filteredReservations.length > 0}
+					<Command.Group
+						heading="Réservations"
+						class="!p-0 [&_[data-command-group-heading]]:scroll-mt-16 [&_[data-command-group-heading]]:!p-3 [&_[data-command-group-heading]]:!pb-1"
+					>
+						{#each filteredReservations as res (res._id)}
+							<CommandMenuItem
+								value="{res.purpose} {res.brand} {res.model} {res.registration}"
+								onSelect={() =>
+									runCommand(() =>
+										void goto(
+											resolve(
+												localizedHref(
+													isAdmin ? `/admin/reservations/${res._id}` : '/app/reservations'
+												)
+											)
+										)
+									)}
+							>
+								<CalendarIcon class="size-4 shrink-0" />
+								<span class="flex-1 truncate">{res.purpose}</span>
+								<span class="text-xs text-muted-foreground"
+									>{res.brand}
+									{res.model}</span
+								>
+							</CommandMenuItem>
+						{/each}
+					</Command.Group>
+				{/if}
+
+				<!-- Actions rapides (pas de recherche active) -->
+				{#if effectiveAuth.isAuthenticated && !searchValue.trim()}
+					<Command.Group
+						heading="Actions rapides"
+						class="!p-0 [&_[data-command-group-heading]]:scroll-mt-16 [&_[data-command-group-heading]]:!p-3 [&_[data-command-group-heading]]:!pb-1"
+					>
+						<CommandMenuItem
+							value="nouvelle réservation créer réserver véhicule"
+							onSelect={() =>
+								runCommand(() => void goto(resolve(localizedHref('/app/reservations'))))}
+						>
+							<PlusCircleIcon class="size-4 shrink-0" />
+							Nouvelle réservation
+						</CommandMenuItem>
+						{#if isAdmin}
+							<CommandMenuItem
+								value="inviter membre équipe collaborateur utilisateur"
+								onSelect={() =>
+									runCommand(() =>
+										void goto(resolve(localizedHref('/admin/settings/members')))
+									)}
+							>
+								<UserPlusIcon class="size-4 shrink-0" />
+								Inviter un membre
+							</CommandMenuItem>
+							<CommandMenuItem
+								value="importer véhicules flotte csv fichier"
+								onSelect={() =>
+									runCommand(() => void goto(resolve(localizedHref('/admin/fleet'))))}
+							>
+								<UploadIcon class="size-4 shrink-0" />
+								Importer des véhicules
+							</CommandMenuItem>
+						{/if}
+					</Command.Group>
+				{/if}
 			</Command.List>
 		</Command.Root>
 		<div

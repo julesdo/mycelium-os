@@ -94,7 +94,7 @@
 				return;
 			}
 			toast.success($t('app.user_menu.impersonation_stopped'));
-			goto(resolve(localizedHref('/admin/users')));
+			goto(resolve(localizedHref('/admin/settings/members')));
 		} catch {
 			toast.error($t('app.user_menu.impersonation_stop_failed'));
 		}
@@ -115,7 +115,7 @@
 				{#snippet child({ props })}
 					<Button
 						variant="ghost"
-						class="h-12 w-full justify-start gap-2 px-2 data-[state=open]:bg-muted {isImpersonating
+						class="h-12 w-full justify-start gap-2 px-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground {isImpersonating
 							? 'ring-2 ring-warning'
 							: ''}"
 						{...props}
