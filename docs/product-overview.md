@@ -7,7 +7,7 @@
 
 ## 1. Qu'est-ce que Mycelium
 
-Mycelium est un **Fleet Operating System** pour PME et ETI. Ce n'est pas un outil de car sharing entre salariés (Mobeelity), ni un logiciel de fleet management classique basé sur la télématique hardware (Ubiwan). C'est la plateforme qui unifie deux univers qui n'ont jamais été réconciliés dans un seul outil : l'expérience salarié et l'automatisation de gestion CFO/RH.
+Mycelium est un **Fleet Operating System** pour PME et ETI. Ce n'est pas un outil de car sharing entre salariés, ni un logiciel de fleet management classique basé sur la télématique hardware. C'est la plateforme qui unifie deux univers qui n'ont jamais été réconciliés dans un seul outil : l'expérience salarié et l'automatisation de gestion CFO/RH.
 
 La plupart des entreprises de 50 à 500 salariés gèrent encore leur flotte avec des fichiers Excel, des échanges WhatsApp et des tableaux partagés mal synchronisés. Mycelium remplace tout ça par un système opérationnel unique où les salariés réservent un véhicule en langage naturel, et où le gestionnaire pilote sa flotte avec des insights automatiques produits par des agents IA spécialisés.
 
