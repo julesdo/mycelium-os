@@ -12,6 +12,7 @@
 	import ActivityFeed from '$lib/components/dashboard/ActivityFeed.svelte';
 	import DashboardFilters, { type Period } from '$lib/components/dashboard/DashboardFilters.svelte';
 	import FleetSiteCard from '$lib/components/dashboard/FleetSiteCard.svelte';
+	import GettingStartedCard from '$lib/components/dashboard/GettingStartedCard.svelte';
 	import CarIcon from '@lucide/svelte/icons/car';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import CheckCircleIcon from '@lucide/svelte/icons/check-circle';
@@ -42,9 +43,12 @@
 	function updateURL(p: Period, sites: string[], from: string, to: string) {
 		const url = new URL(page.url);
 		url.searchParams.set('period', p);
-		sites.length > 0 ? url.searchParams.set('sites', sites.join(',')) : url.searchParams.delete('sites');
-		p === 'custom' && from ? url.searchParams.set('from', from) : url.searchParams.delete('from');
-		p === 'custom' && to ? url.searchParams.set('to', to) : url.searchParams.delete('to');
+		if (sites.length > 0) url.searchParams.set('sites', sites.join(','));
+		else url.searchParams.delete('sites');
+		if (p === 'custom' && from) url.searchParams.set('from', from);
+		else url.searchParams.delete('from');
+		if (p === 'custom' && to) url.searchParams.set('to', to);
+		else url.searchParams.delete('to');
 		goto(resolve(url.pathname + url.search), { noScroll: true, replaceState: true });
 	}
 
@@ -73,31 +77,44 @@
 		attentionArgs.sites = sites;
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const fleetStats      = useQuery((api as any).dashboard.getFleetStats,       statsArgs);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const usageData       = useQuery((api as any).dashboard.getUsageOverTime,    usageArgs);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const attentionData   = useQuery((api as any).dashboard.getAttentionNeeded,  attentionArgs);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const availableSitesQ = useQuery((api as any).dashboard.getAvailableSites,   {});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const orgData         = useQuery((api as any).organizations.getMyOrg,        {});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const activityData    = useQuery((api as any).dashboard.getRecentActivity,   {});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const siteDistData    = useQuery((api as any).dashboard.getSiteDistribution, {});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const vehicleLocData  = useQuery((api as any).dashboard.getVehicleLocations, {});
+	const fleetStats = useQuery((api as any).dashboard.getFleetStats, statsArgs);
 
-	const stats          = $derived(fleetStats.data ?? { total: 0, available: 0, inUse: 0, maintenance: 0, retired: 0 });
-	const isLoading      = $derived(fleetStats.isLoading);
+	const usageData = useQuery((api as any).dashboard.getUsageOverTime, usageArgs);
+
+	const attentionData = useQuery((api as any).dashboard.getAttentionNeeded, attentionArgs);
+
+	const availableSitesQ = useQuery((api as any).dashboard.getAvailableSites, {});
+
+	const orgData = useQuery((api as any).organizations.getMyOrg, {});
+
+	const activityData = useQuery((api as any).dashboard.getRecentActivity, {});
+
+	const siteDistData = useQuery((api as any).dashboard.getSiteDistribution, {});
+
+	const vehicleLocData = useQuery((api as any).dashboard.getVehicleLocations, {});
+
+	const stats = $derived(
+		fleetStats.data ?? { total: 0, available: 0, inUse: 0, maintenance: 0, retired: 0 }
+	);
+	const isLoading = $derived(fleetStats.isLoading);
 	const availableSites = $derived(availableSitesQ.data ?? []);
-	const usageRate      = $derived(stats.total > 0 ? Math.round((stats.available / stats.total) * 100) : 0);
+	const usageRate = $derived(
+		stats.total > 0 ? Math.round((stats.available / stats.total) * 100) : 0
+	);
 
-	function handlePeriodChange(p: Period) { period = p; updateURL(p, selectedSites, customFrom, customTo); }
-	function handleCustomRangeChange(from: string, to: string) { customFrom = from; customTo = to; updateURL(period, selectedSites, from, to); }
-	function handleSitesChange(sites: string[]) { selectedSites = sites; updateURL(period, sites, customFrom, customTo); }
+	function handlePeriodChange(p: Period) {
+		period = p;
+		updateURL(p, selectedSites, customFrom, customTo);
+	}
+	function handleCustomRangeChange(from: string, to: string) {
+		customFrom = from;
+		customTo = to;
+		updateURL(period, selectedSites, from, to);
+	}
+	function handleSitesChange(sites: string[]) {
+		selectedSites = sites;
+		updateURL(period, sites, customFrom, customTo);
+	}
 
 	const chartLabel = $derived(() => {
 		if (period === '7d') return 'Réservations · 7 jours';
@@ -105,7 +122,10 @@
 		if (period === '90d') return 'Réservations · 90 jours';
 		if (period === '12m') return 'Réservations · 12 mois';
 		if (period === 'custom' && customFrom && customTo) {
-			const f = new Date(customFrom).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+			const f = new Date(customFrom).toLocaleDateString('fr-FR', {
+				day: 'numeric',
+				month: 'short'
+			});
 			const t = new Date(customTo).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 			return `Réservations · ${f} → ${t}`;
 		}
@@ -115,8 +135,7 @@
 
 <SEOHead title="Dashboard — Mycelium Fleet" description="Vue d'ensemble de votre flotte" />
 
-<div class="flex flex-col gap-4 px-4 pb-8 pt-1 lg:px-6">
-
+<div class="flex flex-col gap-4 px-4 pt-1 pb-8 lg:px-6">
 	<!-- Compact header: org + dispo badge + filters -->
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<div class="flex items-center gap-2">
@@ -125,14 +144,21 @@
 				<span class="text-border">·</span>
 			{/if}
 			{#if !isLoading && stats.total > 0}
-				<Badge variant="default" class="bg-[var(--brand)] text-[var(--brand-foreground)] shadow-glass-brand">
+				<Badge
+					variant="default"
+					class="bg-[var(--brand)] text-[var(--brand-foreground)] shadow-glass-brand"
+				>
 					<span class="size-1.5 rounded-full bg-[var(--brand-foreground)]/70"></span>
 					{usageRate}% disponible
 				</Badge>
 			{/if}
 		</div>
 		<DashboardFilters
-			{period} {customFrom} {customTo} {selectedSites} {availableSites}
+			{period}
+			{customFrom}
+			{customTo}
+			{selectedSites}
+			{availableSites}
 			onPeriodChange={handlePeriodChange}
 			onCustomRangeChange={handleCustomRangeChange}
 			onSitesChange={handleSitesChange}
@@ -153,22 +179,47 @@
 			/>
 		</div>
 		<div style="--enter-delay: 50ms" class="animate-enter-blur-up">
-			<KPICard label="Total flotte" value={stats.total} loading={isLoading} href="./fleet" class="h-full" />
+			<KPICard
+				label="Total flotte"
+				value={stats.total}
+				loading={isLoading}
+				href="./fleet"
+				class="h-full"
+			/>
 		</div>
 		<div style="--enter-delay: 90ms" class="animate-enter-blur-up">
-			<KPICard label="En utilisation" value={stats.inUse} loading={isLoading} href="./fleet" class="h-full" />
+			<KPICard
+				label="En utilisation"
+				value={stats.inUse}
+				loading={isLoading}
+				href="./fleet"
+				class="h-full"
+			/>
 		</div>
 		<div style="--enter-delay: 130ms" class="animate-enter-blur-up">
-			<KPICard label="Maintenance" value={stats.maintenance} loading={isLoading} href="./fleet" class="h-full" />
+			<KPICard
+				label="Maintenance"
+				value={stats.maintenance}
+				loading={isLoading}
+				href="./fleet"
+				class="h-full"
+			/>
 		</div>
 	</div>
 
+	<!-- Getting started checklist — visible tant que l'onboarding n'est pas complet -->
+	<GettingStartedCard />
+
 	<!-- Charts row -->
 	<div class="grid grid-cols-1 gap-3 @4xl/main:grid-cols-12">
-
 		<!-- Usage chart — fond normal -->
-		<div class="relative overflow-hidden rounded-2xl bg-card px-5 py-4 @4xl/main:col-span-8" data-slot="card">
-			<div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent dark:via-white/8"></div>
+		<div
+			class="relative overflow-hidden rounded-2xl bg-card px-5 py-4 @4xl/main:col-span-8"
+			data-slot="card"
+		>
+			<div
+				class="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/70 to-transparent dark:via-white/8"
+			></div>
 			<div class="mb-4 flex items-center justify-between gap-3">
 				<div>
 					<h2 class="text-sm font-semibold text-foreground">{chartLabel()}</h2>
@@ -177,7 +228,7 @@
 				{#if usageData.data}
 					{@const total = usageData.data.reduce((s, d) => s + d.count, 0)}
 					<div class="flex items-baseline gap-1">
-						<span class="text-2xl font-bold tabular-nums text-foreground">{total}</span>
+						<span class="text-2xl font-bold text-foreground tabular-nums">{total}</span>
 						<span class="text-xs text-muted-foreground">total</span>
 					</div>
 				{/if}
@@ -190,8 +241,13 @@
 		</div>
 
 		<!-- Status gauge -->
-		<div class="relative overflow-hidden rounded-2xl bg-card px-5 py-4 @4xl/main:col-span-4" data-slot="card">
-			<div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent dark:via-white/8"></div>
+		<div
+			class="relative overflow-hidden rounded-2xl bg-card px-5 py-4 @4xl/main:col-span-4"
+			data-slot="card"
+		>
+			<div
+				class="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/70 to-transparent dark:via-white/8"
+			></div>
 			<h2 class="mb-0.5 text-sm font-semibold text-foreground">Répartition flotte</h2>
 			<p class="mb-4 text-xs text-muted-foreground">Statut actuel</p>
 			{#if !isLoading}
@@ -224,24 +280,29 @@
 
 	<!-- Bottom row -->
 	<div class="grid grid-cols-1 gap-3 @4xl/main:grid-cols-2">
-
 		<!-- Attention -->
 		<div class="relative overflow-hidden rounded-2xl bg-card px-5 py-4" data-slot="card">
-			<div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent dark:via-white/8"></div>
+			<div
+				class="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/70 to-transparent dark:via-white/8"
+			></div>
 			<div class="mb-3 flex items-center justify-between">
 				<div>
 					<h2 class="text-sm font-semibold text-foreground">Attention requise</h2>
 					<p class="text-xs text-muted-foreground">Véhicules à traiter</p>
 				</div>
 				{#if attentionData.data}
-					{@const n = attentionData.data.leaseEndingSoon.length + attentionData.data.maintenanceDue.length}
+					{@const n =
+						attentionData.data.leaseEndingSoon.length + attentionData.data.maintenanceDue.length}
 					{#if n > 0}
 						<Badge variant="destructive" class="px-1.5 py-0">{n}</Badge>
 					{/if}
 				{/if}
 			</div>
 			{#if attentionData.data}
-				<AttentionList leaseEndingSoon={attentionData.data.leaseEndingSoon} maintenanceDue={attentionData.data.maintenanceDue} />
+				<AttentionList
+					leaseEndingSoon={attentionData.data.leaseEndingSoon}
+					maintenanceDue={attentionData.data.maintenanceDue}
+				/>
 			{:else}
 				<div class="flex flex-col gap-2">
 					{#each Array(3) as _, i (i)}
@@ -253,7 +314,9 @@
 
 		<!-- Activité -->
 		<div class="relative overflow-hidden rounded-2xl bg-card px-5 py-4" data-slot="card">
-			<div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent dark:via-white/8"></div>
+			<div
+				class="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/70 to-transparent dark:via-white/8"
+			></div>
 			<h2 class="mb-0.5 text-sm font-semibold text-foreground">Activité récente</h2>
 			<p class="mb-3 text-xs text-muted-foreground">Dernières actions sur la flotte</p>
 			{#if activityData.data}

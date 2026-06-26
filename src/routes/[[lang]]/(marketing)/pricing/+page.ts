@@ -1,3 +1,3 @@
-// Pricing page uses useCustomer() for billing-dependent UI (plan badges, manage/upgrade buttons).
-// Autumn state doesn't recover on prerendered pages (page.data.autumnState frozen at build time).
+// Pricing page uses Convex subscription queries for billing-dependent UI.
+// Keep prerender false so subscription state is always fresh.
 export const prerender = false;

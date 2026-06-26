@@ -34,22 +34,28 @@
 
 	// ─── Reactive query args ──────────────────────────────────────────────────
 	const profileArgs = $state({ targetUserId: page.params.userId });
-	$effect(() => { profileArgs.targetUserId = page.params.userId; });
+	$effect(() => {
+		profileArgs.targetUserId = page.params.userId;
+	});
 
 	const restrictionArgs = $state({ targetUserId: page.params.userId });
-	$effect(() => { restrictionArgs.targetUserId = page.params.userId; });
+	$effect(() => {
+		restrictionArgs.targetUserId = page.params.userId;
+	});
 
 	const reservationArgs = $state({ targetUserId: page.params.userId });
-	$effect(() => { reservationArgs.targetUserId = page.params.userId; });
+	$effect(() => {
+		reservationArgs.targetUserId = page.params.userId;
+	});
 
 	// ─── Queries ──────────────────────────────────────────────────────────────
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	const profileQuery = useQuery((api as any).drivers.getDriverProfile, profileArgs);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	const restrictionsQuery = useQuery((api as any).drivers.getDriverRestrictions, restrictionArgs);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	const reservationsQuery = useQuery((api as any).drivers.listDriverReservations, reservationArgs);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	const userInfoQuery = useQuery((api as any).drivers.getDriverUserInfo, profileArgs);
 
 	const profile = $derived(profileQuery.data ?? null);
@@ -61,9 +67,7 @@
 	// ─── Derived status ───────────────────────────────────────────────────────
 	const now = Date.now();
 	const isExpired = $derived(
-		profile?.licenseExpiryDate
-			? new Date(profile.licenseExpiryDate).getTime() < now
-			: false
+		profile?.licenseExpiryDate ? new Date(profile.licenseExpiryDate).getTime() < now : false
 	);
 	const isExpiringSoon = $derived.by(() => {
 		if (!profile?.licenseExpiryDate) return false;
@@ -103,14 +107,19 @@
 
 	// ─── Restriction form state ───────────────────────────────────────────────
 	let showRestrictionForm = $state(false);
-	type RestrictionType = 'NO_LONG_DISTANCE' | 'NO_UTILITY' | 'NO_TRUCK' | 'MAX_KM_PER_MONTH' | 'SITE_ONLY';
+	type RestrictionType =
+		| 'NO_LONG_DISTANCE'
+		| 'NO_UTILITY'
+		| 'NO_TRUCK'
+		| 'MAX_KM_PER_MONTH'
+		| 'SITE_ONLY';
 	let newRestrictionType = $state<RestrictionType>('NO_UTILITY');
 	let newRestrictionValue = $state('');
 	let newRestrictionReason = $state('');
 	let addingRestriction = $state(false);
 
 	const RESTRICTION_LABELS: Record<RestrictionType, string> = {
-		NO_LONG_DISTANCE: "Pas de long trajet",
+		NO_LONG_DISTANCE: 'Pas de long trajet',
 		NO_UTILITY: "Pas d'utilitaire",
 		NO_TRUCK: 'Pas de camion',
 		MAX_KM_PER_MONTH: 'Km max/mois',
@@ -134,6 +143,7 @@
 	};
 
 	function toggleCategory(cat: LicenseCategory) {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const next = new Set(selectedCategories);
 		if (next.has(cat)) next.delete(cat);
 		else next.add(cat);
@@ -162,7 +172,6 @@
 	async function handleSaveProfile() {
 		saving = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await client.mutation((api as any).drivers.upsertDriverProfile, {
 				targetUserId: page.params.userId,
 				licenseNumber: licenseNumber || undefined,
@@ -184,7 +193,6 @@
 	async function handleValidateLicense() {
 		validating = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await client.mutation((api as any).drivers.validateDriverLicense, {
 				targetUserId: page.params.userId
 			});
@@ -199,7 +207,6 @@
 	async function handleAddRestriction() {
 		addingRestriction = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await client.mutation((api as any).drivers.addDriverRestriction, {
 				targetUserId: page.params.userId,
 				type: newRestrictionType,
@@ -219,9 +226,8 @@
 
 	async function handleRemoveRestriction(restrictionId: string) {
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await client.mutation((api as any).drivers.removeDriverRestriction, {
-				restrictionId: restrictionId as any // eslint-disable-line @typescript-eslint/no-explicit-any
+				restrictionId: restrictionId as any
 			});
 			toast.success('Restriction supprimée');
 		} catch (err) {
@@ -245,6 +251,7 @@
 		<!-- Header -->
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<div class="flex items-center gap-3">
+				<!-- eslint-disable local/no-hardcoded-aria-label -->
 				<Button
 					variant="ghost"
 					size="icon-sm"
@@ -253,11 +260,12 @@
 				>
 					<ArrowLeftIcon class="size-4" />
 				</Button>
+				<!-- eslint-enable local/no-hardcoded-aria-label -->
 
 				{#if userInfo?.image}
-					<img src={userInfo.image} alt="" class="size-10 rounded-full object-cover shrink-0" />
+					<img src={userInfo.image} alt="" class="size-10 shrink-0 rounded-full object-cover" />
 				{:else}
-					<div class="size-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+					<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
 						<span class="text-sm font-semibold text-muted-foreground">
 							{(userInfo?.name ?? userInfo?.email ?? '?')[0].toUpperCase()}
 						</span>
@@ -297,7 +305,9 @@
 				<Tabs.Trigger value="restrictions">
 					Restrictions
 					{#if restrictions.length > 0}
-						<span class="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+						<span
+							class="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground"
+						>
 							{restrictions.length}
 						</span>
 					{/if}
@@ -305,7 +315,9 @@
 				<Tabs.Trigger value="history">
 					Historique
 					{#if reservations.length > 0}
-						<span class="ml-1.5 tabular-nums rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground">
+						<span
+							class="ml-1.5 rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground tabular-nums"
+						>
 							{reservations.length}
 						</span>
 					{/if}
@@ -327,13 +339,13 @@
 							<div class="space-y-1.5">
 								<p class="text-sm font-medium">Catégories</p>
 								<div class="flex flex-wrap gap-2">
-									{#each ALL_CATEGORIES as cat}
+									{#each ALL_CATEGORIES as cat (cat)}
 										<button
 											type="button"
 											class="rounded-md border px-3 py-1 text-xs font-medium transition-colors
 												{selectedCategories.has(cat)
-													? 'border-primary bg-primary/10 text-primary'
-													: 'border-border text-muted-foreground hover:border-border/80 hover:text-foreground'}"
+												? 'border-primary bg-primary/10 text-primary'
+												: 'border-border text-muted-foreground hover:border-border/80 hover:text-foreground'}"
 											onclick={() => toggleCategory(cat)}
 										>
 											{cat}
@@ -375,13 +387,13 @@
 								bind:value={profileNotes}
 								rows={3}
 								placeholder="Notes visibles par les gestionnaires uniquement"
-								class="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+								class="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 							></textarea>
 						</div>
 						<div class="flex justify-end">
 							<Button onclick={handleSaveProfile} disabled={saving} class="gap-1.5">
 								{#if saving}
-									<LoaderCircleIcon class="size-3.5 animate-spin" />
+									<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />
 								{/if}
 								Enregistrer
 							</Button>
@@ -403,20 +415,38 @@
 							<div class="space-y-4">
 								<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
 									<div>
-										<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Numéro</p>
+										<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+											Numéro
+										</p>
 										<p class="mt-1 text-sm font-medium">{profile.licenseNumber ?? '—'}</p>
 									</div>
 									<div>
-										<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catégories</p>
-										<p class="mt-1 text-sm font-medium">{profile.licenseCategories?.join(', ') ?? '—'}</p>
+										<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+											Catégories
+										</p>
+										<p class="mt-1 text-sm font-medium">
+											{profile.licenseCategories?.join(', ') ?? '—'}
+										</p>
 									</div>
 									<div>
-										<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Délivré le</p>
-										<p class="mt-1 text-sm">{profile.licenseIssuedDate ? formatDate(profile.licenseIssuedDate) : '—'}</p>
+										<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+											Délivré le
+										</p>
+										<p class="mt-1 text-sm">
+											{profile.licenseIssuedDate ? formatDate(profile.licenseIssuedDate) : '—'}
+										</p>
 									</div>
 									<div>
-										<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Expire le</p>
-										<p class="mt-1 text-sm {isExpired ? 'font-medium text-red-600 dark:text-red-400' : isExpiringSoon ? 'font-medium text-amber-600 dark:text-amber-400' : ''}">
+										<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+											Expire le
+										</p>
+										<p
+											class="mt-1 text-sm {isExpired
+												? 'font-medium text-red-600 dark:text-red-400'
+												: isExpiringSoon
+													? 'font-medium text-amber-600 dark:text-amber-400'
+													: ''}"
+										>
 											{profile.licenseExpiryDate ? formatDate(profile.licenseExpiryDate) : '—'}
 											{#if isExpired}<span class="ml-1 text-xs">(expiré)</span>{/if}
 										</p>
@@ -430,7 +460,9 @@
 								{/if}
 
 								{#if !profile.licenseValidated && profile.licenseNumber}
-									<div class="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+									<div
+										class="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3"
+									>
 										<div class="flex-1">
 											<p class="text-sm font-medium">Valider ce permis</p>
 											<p class="text-xs text-muted-foreground">
@@ -444,7 +476,7 @@
 											disabled={validating}
 										>
 											{#if validating}
-												<LoaderCircleIcon class="size-3.5 animate-spin" />
+												<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />
 											{:else}
 												<CheckIcon class="size-3.5" />
 											{/if}
@@ -466,18 +498,24 @@
 					</Card.Header>
 					<Card.Content>
 						{#if !profile?.formations?.length}
-							<EmptyState title="Aucune formation" description="Aucune formation enregistrée pour ce conducteur.">
+							<EmptyState
+								title="Aucune formation"
+								description="Aucune formation enregistrée pour ce conducteur."
+							>
 								{#snippet icon()}<UsersIcon class="size-10" />{/snippet}
 							</EmptyState>
 						{:else}
 							<div class="space-y-2">
-								{#each profile.formations as f}
-									<div class="flex items-center justify-between rounded-lg border border-border p-3">
+								{#each profile.formations as f, fi (fi)}
+									<div
+										class="flex items-center justify-between rounded-lg border border-border p-3"
+									>
 										<div>
 											<p class="text-sm font-medium">{f.type}</p>
 											<p class="text-xs text-muted-foreground">
 												Obtenu le {formatDate(f.obtainedDate)}
-												{#if f.expiryDate} · Expire le {formatDate(f.expiryDate)}{/if}
+												{#if f.expiryDate}
+													· Expire le {formatDate(f.expiryDate)}{/if}
 											</p>
 										</div>
 									</div>
@@ -505,15 +543,15 @@
 					</Card.Header>
 					<Card.Content class="space-y-4">
 						{#if showRestrictionForm}
-							<div class="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+							<div class="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
 								<div class="space-y-1.5">
 									<label for="restriction-type" class="text-sm font-medium">Type</label>
 									<select
 										id="restriction-type"
 										bind:value={newRestrictionType}
-										class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+										class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:outline-none"
 									>
-										{#each Object.entries(RESTRICTION_LABELS) as [key, label]}
+										{#each Object.entries(RESTRICTION_LABELS) as [key, label] (key)}
 											<option value={key}>{label}</option>
 										{/each}
 									</select>
@@ -521,17 +559,23 @@
 								{#if newRestrictionType === 'MAX_KM_PER_MONTH' || newRestrictionType === 'SITE_ONLY'}
 									<div class="space-y-1.5">
 										<label for="restriction-value" class="text-sm font-medium">
-											{newRestrictionType === 'MAX_KM_PER_MONTH' ? 'Kilomètres max/mois' : 'Site autorisé'}
+											{newRestrictionType === 'MAX_KM_PER_MONTH'
+												? 'Kilomètres max/mois'
+												: 'Site autorisé'}
 										</label>
 										<Input
 											id="restriction-value"
 											bind:value={newRestrictionValue}
-											placeholder={newRestrictionType === 'MAX_KM_PER_MONTH' ? 'Ex: 1000' : 'Ex: Paris Nord'}
+											placeholder={newRestrictionType === 'MAX_KM_PER_MONTH'
+												? 'Ex: 1000'
+												: 'Ex: Paris Nord'}
 										/>
 									</div>
 								{/if}
 								<div class="space-y-1.5">
-									<label for="restriction-reason" class="text-sm font-medium">Raison (optionnel)</label>
+									<label for="restriction-reason" class="text-sm font-medium"
+										>Raison (optionnel)</label
+									>
 									<Input
 										id="restriction-reason"
 										bind:value={newRestrictionReason}
@@ -539,9 +583,14 @@
 									/>
 								</div>
 								<div class="flex gap-2">
-									<Button size="sm" onclick={handleAddRestriction} disabled={addingRestriction} class="gap-1.5">
+									<Button
+										size="sm"
+										onclick={handleAddRestriction}
+										disabled={addingRestriction}
+										class="gap-1.5"
+									>
 										{#if addingRestriction}
-											<LoaderCircleIcon class="size-3.5 animate-spin" />
+											<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />
 										{/if}
 										Ajouter
 									</Button>
@@ -556,8 +605,10 @@
 							<p class="text-sm text-muted-foreground">Aucune restriction configurée.</p>
 						{:else}
 							<div class="space-y-2">
-								{#each restrictions as r}
-									<div class="flex items-center justify-between rounded-lg border border-border p-3">
+								{#each restrictions as r (r._id)}
+									<div
+										class="flex items-center justify-between rounded-lg border border-border p-3"
+									>
 										<div class="flex items-center gap-3">
 											<RestrictionBadge type={r.type} value={r.value} />
 											{#if r.reason}
@@ -599,7 +650,10 @@
 							</div>
 						{:else if reservations.length === 0}
 							<div class="p-6">
-								<EmptyState title="Aucune réservation" description="Ce conducteur n'a pas encore de réservation.">
+								<EmptyState
+									title="Aucune réservation"
+									description="Ce conducteur n'a pas encore de réservation."
+								>
 									{#snippet icon()}<UsersIcon class="size-10" />{/snippet}
 								</EmptyState>
 							</div>
@@ -607,20 +661,31 @@
 							<table class="w-full text-sm">
 								<thead>
 									<tr class="border-b border-border bg-muted/40">
-										<th class="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Période</th>
-										<th class="hidden px-4 py-2.5 text-left text-xs font-medium text-muted-foreground sm:table-cell">Objet</th>
-										<th class="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Statut</th>
+										<th class="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground"
+											>Période</th
+										>
+										<th
+											class="hidden px-4 py-2.5 text-left text-xs font-medium text-muted-foreground sm:table-cell"
+											>Objet</th
+										>
+										<th class="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground"
+											>Statut</th
+										>
 									</tr>
 								</thead>
 								<tbody class="divide-y divide-border">
-									{#each reservations as r}
+									{#each reservations as r (r._id)}
 										<tr>
 											<td class="px-4 py-3 text-xs text-muted-foreground">
 												{formatTs(r.startDate)} → {formatTs(r.endDate)}
 											</td>
 											<td class="hidden px-4 py-3 sm:table-cell">{r.purpose}</td>
 											<td class="px-4 py-3">
-												<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {STATUS_STYLES[r.status] ?? 'bg-muted text-muted-foreground'}">
+												<span
+													class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {STATUS_STYLES[
+														r.status
+													] ?? 'bg-muted text-muted-foreground'}"
+												>
 													{STATUS_LABELS[r.status] ?? r.status}
 												</span>
 											</td>

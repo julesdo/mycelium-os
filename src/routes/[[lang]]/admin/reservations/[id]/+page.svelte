@@ -27,7 +27,6 @@
 
 	const client = useConvexClient();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const resQuery = useQuery((api as any).reservations.getReservationWithDetails, {
 		reservationId: page.params.id
 	});
@@ -121,7 +120,6 @@
 		if (!res) return;
 		submitting = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await client.mutation((api as any).reservations.updateReservation, {
 				reservationId: res._id,
 				startDate: new Date(editStartStr).getTime(),
@@ -148,7 +146,6 @@
 		if (!res || !confirm("Confirmer l'annulation de cette réservation ?")) return;
 		cancelling = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await client.mutation((api as any).reservations.cancelReservation, {
 				reservationId: res._id
 			});
@@ -194,6 +191,7 @@
 		<!-- Header -->
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<div class="flex items-center gap-3">
+				<!-- eslint-disable local/no-hardcoded-aria-label -->
 				<Button
 					variant="ghost"
 					size="icon-sm"
@@ -202,11 +200,14 @@
 				>
 					<ArrowLeftIcon class="size-4" />
 				</Button>
+				<!-- eslint-enable local/no-hardcoded-aria-label -->
 				<div>
 					<div class="flex items-center gap-2.5">
 						<h1 class="text-xl font-bold">Réservation #{shortId(res._id)}</h1>
 						<span
-							class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {STATUS_STYLES[res.status] ?? ''}"
+							class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {STATUS_STYLES[
+								res.status
+							] ?? ''}"
 						>
 							{STATUS_LABELS[res.status] ?? res.status}
 						</span>
@@ -231,7 +232,7 @@
 						</Button>
 						<Button size="sm" onclick={handleSave} disabled={submitting}>
 							{#if submitting}
-								<LoaderCircleIcon class="size-3.5 animate-spin" />
+								<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />
 							{:else}
 								<CheckIcon class="size-4" />
 							{/if}
@@ -264,7 +265,7 @@
 			<Card.Root>
 				<Card.Header class="pb-2">
 					<Card.Title
-						class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+						class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
 					>
 						<CarIcon class="size-3.5" />
 						Véhicule
@@ -294,7 +295,7 @@
 			<Card.Root>
 				<Card.Header class="pb-2">
 					<Card.Title
-						class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+						class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
 					>
 						<CalendarIcon class="size-3.5" />
 						Dates
@@ -309,14 +310,21 @@
 							</div>
 							<div class="flex flex-col gap-1.5">
 								<Label for="edit-end">Fin</Label>
-								<Input id="edit-end" type="datetime-local" bind:value={editEndStr} min={editStartStr} />
+								<Input
+									id="edit-end"
+									type="datetime-local"
+									bind:value={editEndStr}
+									min={editStartStr}
+								/>
 							</div>
 						</div>
 					{:else}
 						<div class="flex flex-col gap-1">
 							<p class="text-base font-medium">{formatDate(res.startDate)}</p>
 							<p class="text-sm text-muted-foreground">→ {formatDate(res.endDate)}</p>
-							<p class="mt-1 text-xs text-muted-foreground">{durationLabel(res.startDate, res.endDate)}</p>
+							<p class="mt-1 text-xs text-muted-foreground">
+								{durationLabel(res.startDate, res.endDate)}
+							</p>
 						</div>
 					{/if}
 				</Card.Content>
@@ -325,9 +333,7 @@
 			<!-- Details card -->
 			<Card.Root class="lg:col-span-2">
 				<Card.Header class="pb-2">
-					<Card.Title
-						class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-					>
+					<Card.Title class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 						Détails
 					</Card.Title>
 				</Card.Header>
@@ -344,32 +350,28 @@
 					{:else}
 						<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 							<div>
-								<p class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+								<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 									Motif
 								</p>
 								<p class="text-sm">{res.purpose}</p>
 							</div>
 							{#if res.notes}
 								<div>
-									<p
-										class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-									>
+									<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 										Notes
 									</p>
 									<p class="text-sm text-muted-foreground">{res.notes}</p>
 								</div>
 							{/if}
 							<div>
-								<p class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+								<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 									Créée le
 								</p>
 								<p class="text-sm text-muted-foreground">{formatDate(res.createdAt)}</p>
 							</div>
 							{#if res.updatedAt !== res.createdAt}
 								<div>
-									<p
-										class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-									>
+									<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 										Modifiée le
 									</p>
 									<p class="text-sm text-muted-foreground">{formatDate(res.updatedAt)}</p>

@@ -1,8 +1,6 @@
-import { internalAction } from './_generated/server';
 import { v, ConvexError } from 'convex/values';
-import { components, internal } from './_generated/api';
+import { components } from './_generated/api';
 import { authedQuery, authedMutation } from './functions';
-import { getAutumnSdk } from './autumn';
 
 export const list = authedQuery({
 	args: {},
@@ -55,10 +53,6 @@ export const list = authedQuery({
 
 /**
  * Send a community chat message.
- *
- * Mutation (not action) so Convex optimistic updates work.
- * Billing is enforced client-side via Autumn customer balance;
- * usage tracking is scheduled as a fire-and-forget internalAction.
  */
 export const send = authedMutation({
 	args: { body: v.string() },
@@ -72,26 +66,6 @@ export const send = authedMutation({
 			userId: ctx.user._id
 		});
 
-		await ctx.scheduler.runAfter(0, internal.messages.trackMessageUsage, {
-			userId: ctx.user._id
-		});
-
 		return { messageId };
-	}
-});
-
-/**
- * Track community chat message usage via Autumn SDK.
- * Scheduled from the send mutation (fire-and-forget).
- */
-export const trackMessageUsage = internalAction({
-	args: { userId: v.string() },
-	handler: async (_ctx, { userId }) => {
-		const sdk = await getAutumnSdk();
-		await sdk.track({
-			customer_id: userId,
-			feature_id: 'messages',
-			value: 1
-		});
 	}
 });

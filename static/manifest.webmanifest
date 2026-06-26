@@ -1,0 +1,62 @@
+{
+  "name": "Mycelium Fleet OS",
+  "short_name": "Mycelium",
+  "description": "Fleet Operating System — reservations, compliance & AI copilot for your company vehicles.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#e8df00",
+  "background_color": "#09090b",
+  "lang": "en",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New reservation",
+      "short_name": "Reserve",
+      "url": "/app/reservations/new",
+      "icons": [{ "src": "/favicon.png", "sizes": "48x48" }]
+    },
+    {
+      "name": "Fleet dashboard",
+      "short_name": "Dashboard",
+      "url": "/admin/dashboard",
+      "icons": [{ "src": "/favicon.png", "sizes": "48x48" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mockup-admin.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Fleet dashboard"
+    },
+    {
+      "src": "/screenshots/mockup-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile concierge"
+    }
+  ]
+}

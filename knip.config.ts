@@ -55,11 +55,6 @@ export default {
 		'marked',
 		'konva',
 		'svelte-konva',
-		// Used by autumn integration in Convex
-		'autumn-js',
-		'atmn',
-		// Sub-package of autumn-js, imported directly in Convex files
-		'@useautumn/convex',
 		// Re-exported by @tolgee/svelte
 		'@tolgee/web'
 	],

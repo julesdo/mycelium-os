@@ -6,7 +6,6 @@
 	import { FormatIcu } from '@tolgee/format-icu';
 	import { ModeWatcher } from 'mode-watcher';
 	import AppAuthProvider from '$lib/components/app/app-auth-provider.svelte';
-	import AppAutumnProvider from '$lib/components/app/app-autumn-provider.svelte';
 	import AppPostHogBootstrap from '$lib/components/app/app-posthog-bootstrap.svelte';
 	import { setGlobalSearchContext } from '$lib/components/global-search/context.svelte';
 	import GlobalSearchShell from '$lib/components/global-search/global-search-shell.svelte';
@@ -95,21 +94,19 @@
 <AppPostHogBootstrap />
 
 <AppAuthProvider>
-	<AppAutumnProvider>
-		<Toaster />
-		<RouteProgress />
+	<Toaster />
+	<RouteProgress />
 
-		<Tooltip.Provider>
-			<TolgeeProvider {tolgee}>
-				<a
-					href="#main-content"
-					class="sr-only z-50 focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:rounded-md focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:text-foreground focus-visible:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-				>
-					<T keyName="a11y.skip_to_content" />
-				</a>
-				<GlobalSearchShell />
-				{@render children()}
-			</TolgeeProvider>
-		</Tooltip.Provider>
-	</AppAutumnProvider>
+	<Tooltip.Provider>
+		<TolgeeProvider {tolgee}>
+			<a
+				href="#main-content"
+				class="sr-only z-50 focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:rounded-md focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:text-foreground focus-visible:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+			>
+				<T keyName="a11y.skip_to_content" />
+			</a>
+			<GlobalSearchShell />
+			{@render children()}
+		</TolgeeProvider>
+	</Tooltip.Provider>
 </AppAuthProvider>

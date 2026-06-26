@@ -27,13 +27,13 @@
 			<div use:reveal={{ delay: i * 50 }}>
 				<PricingCard
 					tier={plan.tier}
-					price={plan.price}
+					price={$t(plan.priceKey)}
 					perMonth={$t('landing.pricing.per_month')}
 					sub={$t(plan.subKey)}
 					agents={$t(plan.agentsKey)}
 					features={plan.featureKeys.map((k) => $t(k))}
 					cta={$t(plan.ctaKey)}
-					href={plan.id === 'scale' ? aboutHref : signupHref}
+					href={plan.id === 'enterprise' ? aboutHref : signupHref}
 					featured={plan.featured}
 				/>
 			</div>

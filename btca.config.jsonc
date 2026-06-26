@@ -387,13 +387,6 @@
 		},
 		{
 			"type": "git",
-			"name": "autumnJs",
-			"url": "https://github.com/useautumn/autumn",
-			"branch": "dev",
-			"specialNotes": "Autumn billing SDK and integrations. Package autumn-js current npm repository is useautumn/autumn; default branch dev. Check SDK constructor, Convex integration, check/track/checkout/attach, and migration notes."
-		},
-		{
-			"type": "git",
 			"name": "adapterNode",
 			"url": "https://github.com/sveltejs/kit",
 			"branch": "main",

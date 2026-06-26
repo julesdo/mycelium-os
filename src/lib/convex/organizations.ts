@@ -3,6 +3,7 @@ import { action, internalAction, query } from './_generated/server';
 import { authedQuery, authedMutation } from './functions';
 import { components, internal } from './_generated/api';
 import { resend, assertResendApiKey } from './emails/resend';
+import { assertSeatAvailable, resolveEffectivePlan } from './billing';
 import { requireEnv } from './env';
 import { shouldSkipTestEmail } from './emails/helpers';
 
@@ -150,7 +151,7 @@ export const updateOrganization = authedMutation({
 			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
 			.unique();
 
-		if (!profile?.currentOrganizationId) throw new ConvexError("Aucune organisation active");
+		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
 
 		const membership = await ctx.db
 			.query('organizationMembers')
@@ -160,7 +161,7 @@ export const updateOrganization = authedMutation({
 			.unique();
 
 		if (!membership || membership.role !== 'ORG_ADMIN') {
-			throw new ConvexError('Accès refusé : seul un ORG_ADMIN peut modifier l\'organisation');
+			throw new ConvexError("Accès refusé : seul un ORG_ADMIN peut modifier l'organisation");
 		}
 
 		await ctx.db.patch(profile.currentOrganizationId, {
@@ -173,6 +174,93 @@ export const updateOrganization = authedMutation({
 			distanceUnit: args.distanceUnit,
 			timezone: args.timezone,
 			locale: args.locale
+		});
+	}
+});
+
+export const generateOrgLogoUploadUrl = authedMutation({
+	args: {},
+	handler: async (ctx) => {
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+
+		const membership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', profile.currentOrganizationId!).eq('userId', ctx.user._id)
+			)
+			.unique();
+		if (!membership || membership.role !== 'ORG_ADMIN') {
+			throw new ConvexError("Accès refusé : seul un ORG_ADMIN peut modifier l'organisation");
+		}
+
+		return ctx.storage.generateUploadUrl();
+	}
+});
+
+export const saveOrgLogo = authedMutation({
+	args: { storageId: v.id('_storage') },
+	handler: async (ctx, { storageId }) => {
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+
+		const membership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', profile.currentOrganizationId!).eq('userId', ctx.user._id)
+			)
+			.unique();
+		if (!membership || membership.role !== 'ORG_ADMIN') {
+			throw new ConvexError("Accès refusé : seul un ORG_ADMIN peut modifier l'organisation");
+		}
+
+		// Delete previous logo from storage if exists
+		const org = await ctx.db.get(profile.currentOrganizationId);
+		if (org?.logoStorageId && org.logoStorageId !== storageId) {
+			await ctx.storage.delete(org.logoStorageId);
+		}
+
+		const logoUrl = await ctx.storage.getUrl(storageId);
+		if (!logoUrl) throw new ConvexError('Fichier introuvable');
+
+		await ctx.db.patch(profile.currentOrganizationId, { logoStorageId: storageId, logoUrl });
+		return logoUrl;
+	}
+});
+
+export const deleteOrgLogo = authedMutation({
+	args: {},
+	handler: async (ctx) => {
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+
+		const membership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', profile.currentOrganizationId!).eq('userId', ctx.user._id)
+			)
+			.unique();
+		if (!membership || membership.role !== 'ORG_ADMIN') {
+			throw new ConvexError("Accès refusé : seul un ORG_ADMIN peut modifier l'organisation");
+		}
+
+		const org = await ctx.db.get(profile.currentOrganizationId);
+		if (org?.logoStorageId) {
+			await ctx.storage.delete(org.logoStorageId);
+		}
+
+		await ctx.db.patch(profile.currentOrganizationId, {
+			logoStorageId: undefined,
+			logoUrl: undefined
 		});
 	}
 });
@@ -213,9 +301,7 @@ export const listOrganizationMembers = authedQuery({
 
 		const callerMembership = await ctx.db
 			.query('organizationMembers')
-			.withIndex('by_org_and_user', (q) =>
-				q.eq('organizationId', orgId).eq('userId', ctx.user._id)
-			)
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
 			.unique();
 		if (!callerMembership || callerMembership.role === 'ORG_MEMBER') {
 			throw new ConvexError('Accès refusé : rôle ORG_ADMIN ou ORG_MANAGER requis');
@@ -226,7 +312,13 @@ export const listOrganizationMembers = authedQuery({
 			.withIndex('by_organization', (q) => q.eq('organizationId', orgId))
 			.collect();
 
-		type BAUser = { id?: string; name?: string; email?: string; image?: string };
+		type BAUser = {
+			id?: string;
+			name?: string;
+			email?: string;
+			image?: string;
+			emailVerified?: boolean;
+		};
 		type AdapterResult = { page: unknown[]; isDone: boolean; continueCursor: string | null };
 
 		// Fetch each user individually with eq filter (more reliable than `in` operator)
@@ -241,13 +333,14 @@ export const listOrganizationMembers = authedQuery({
 						joinedAt: m.joinedAt,
 						name: ctx.user.name ?? null,
 						email: ctx.user.email ?? null,
-						image: ctx.user.image ?? null
+						image: ctx.user.image ?? null,
+						emailVerified: ctx.user.emailVerified ?? false
 					};
 				}
 
 				const result = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
 					model: 'user',
-					where: [{ field: 'id', operator: 'eq' as const, value: m.userId }],
+					where: [{ field: '_id', operator: 'eq' as const, value: m.userId }],
 					paginationOpts: { cursor: null, numItems: 1 }
 				})) as AdapterResult;
 
@@ -259,7 +352,8 @@ export const listOrganizationMembers = authedQuery({
 					joinedAt: m.joinedAt,
 					name: user?.name ?? null,
 					email: user?.email ?? null,
-					image: user?.image ?? null
+					image: user?.image ?? null,
+					emailVerified: user?.emailVerified ?? false
 				};
 			})
 		);
@@ -271,13 +365,10 @@ export const listOrganizationMembers = authedQuery({
 export const inviteOrganizationMember = authedMutation({
 	args: {
 		email: v.string(),
-		role: v.union(
-			v.literal('ORG_ADMIN'),
-			v.literal('ORG_MANAGER'),
-			v.literal('ORG_MEMBER')
-		)
+		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER')),
+		skipEmail: v.optional(v.boolean())
 	},
-	handler: async (ctx, { email, role }) => {
+	handler: async (ctx, { email, role, skipEmail }) => {
 		const profile = await ctx.db
 			.query('userProfiles')
 			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
@@ -287,13 +378,14 @@ export const inviteOrganizationMember = authedMutation({
 
 		const callerMembership = await ctx.db
 			.query('organizationMembers')
-			.withIndex('by_org_and_user', (q) =>
-				q.eq('organizationId', orgId).eq('userId', ctx.user._id)
-			)
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
 			.unique();
 		if (!callerMembership || callerMembership.role !== 'ORG_ADMIN') {
 			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
 		}
+
+		// Enforce seat quota before sending invite
+		await assertSeatAvailable(ctx, orgId);
 
 		const existing = await ctx.db
 			.query('organizationInvitations')
@@ -317,30 +409,134 @@ export const inviteOrganizationMember = authedMutation({
 			createdAt: now
 		});
 
-		const org = await ctx.db.get(orgId);
-		const roleLabel = role === 'ORG_ADMIN' ? 'Administrateur'
-			: role === 'ORG_MANAGER' ? 'Gestionnaire'
-			: 'Membre';
+		if (!skipEmail) {
+			const org = await ctx.db.get(orgId);
+			const roleLabel =
+				role === 'ORG_ADMIN'
+					? 'Administrateur'
+					: role === 'ORG_MANAGER'
+						? 'Gestionnaire'
+						: 'Membre';
 
-		await ctx.scheduler.runAfter(0, internal.organizations.sendOrgInvitationEmail, {
-			email,
-			orgName: org?.name ?? '',
-			roleLabel,
-			token
-		});
+			await ctx.scheduler.runAfter(0, internal.organizations.sendOrgInvitationEmail, {
+				email,
+				orgName: org?.name ?? '',
+				roleLabel,
+				token
+			});
+		}
 
 		return { token };
+	}
+});
+
+export const bulkInviteOrganizationMembers = authedMutation({
+	args: {
+		invites: v.array(
+			v.object({
+				email: v.string(),
+				role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER'))
+			})
+		),
+		skipEmail: v.optional(v.boolean())
+	},
+	handler: async (ctx, { invites, skipEmail }) => {
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+		const orgId = profile.currentOrganizationId;
+
+		const callerMembership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
+			.unique();
+		if (!callerMembership || callerMembership.role !== 'ORG_ADMIN') {
+			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
+		}
+
+		// Check seat quota upfront for all invites at once
+		const org = await ctx.db.get(orgId);
+		if (!org) throw new ConvexError('Organisation introuvable');
+
+		const { tier, seatsAllowed } = resolveEffectivePlan(org);
+		if (tier === 'none') {
+			throw new ConvexError('Aucun abonnement actif.');
+		}
+		const memberCount = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_organization', (q) => q.eq('organizationId', orgId))
+			.collect()
+			.then((r) => r.length);
+
+		const slotsLeft = seatsAllowed - memberCount;
+		if (invites.length > slotsLeft) {
+			throw new ConvexError(
+				`Quota insuffisant : ${slotsLeft} siège(s) disponible(s) pour ${invites.length} invitation(s).`
+			);
+		}
+
+		const now = Date.now();
+		const results: { email: string; success: boolean; token?: string; error?: string }[] = [];
+
+		for (const invite of invites) {
+			const email = invite.email.trim().toLowerCase();
+			try {
+				const existing = await ctx.db
+					.query('organizationInvitations')
+					.withIndex('by_org_and_email', (q) => q.eq('organizationId', orgId).eq('email', email))
+					.first();
+
+				if (existing && !existing.acceptedAt && existing.expiresAt > now) {
+					results.push({ email, success: false, error: 'Invitation déjà en attente' });
+					continue;
+				}
+
+				const token = crypto.randomUUID();
+				await ctx.db.insert('organizationInvitations', {
+					organizationId: orgId,
+					email,
+					role: invite.role,
+					token,
+					invitedBy: ctx.user._id,
+					expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+					createdAt: now
+				});
+
+				if (!skipEmail) {
+					const roleLabel =
+						invite.role === 'ORG_ADMIN'
+							? 'Administrateur'
+							: invite.role === 'ORG_MANAGER'
+								? 'Gestionnaire'
+								: 'Membre';
+					await ctx.scheduler.runAfter(0, internal.organizations.sendOrgInvitationEmail, {
+						email,
+						orgName: org.name ?? '',
+						roleLabel,
+						token
+					});
+				}
+
+				results.push({ email, success: true, token });
+			} catch (err) {
+				results.push({
+					email,
+					success: false,
+					error: err instanceof ConvexError ? (err.data as string) : 'Erreur inconnue'
+				});
+			}
+		}
+
+		return { results };
 	}
 });
 
 export const updateMemberRole = authedMutation({
 	args: {
 		memberId: v.id('organizationMembers'),
-		role: v.union(
-			v.literal('ORG_ADMIN'),
-			v.literal('ORG_MANAGER'),
-			v.literal('ORG_MEMBER')
-		)
+		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER'))
 	},
 	handler: async (ctx, { memberId, role }) => {
 		const profile = await ctx.db
@@ -352,9 +548,7 @@ export const updateMemberRole = authedMutation({
 
 		const callerMembership = await ctx.db
 			.query('organizationMembers')
-			.withIndex('by_org_and_user', (q) =>
-				q.eq('organizationId', orgId).eq('userId', ctx.user._id)
-			)
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
 			.unique();
 		if (!callerMembership || callerMembership.role !== 'ORG_ADMIN') {
 			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
@@ -384,9 +578,7 @@ export const listOrgInvitations = authedQuery({
 
 		const callerMembership = await ctx.db
 			.query('organizationMembers')
-			.withIndex('by_org_and_user', (q) =>
-				q.eq('organizationId', orgId).eq('userId', ctx.user._id)
-			)
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
 			.unique();
 		if (!callerMembership || callerMembership.role === 'ORG_MEMBER') return [];
 
@@ -402,6 +594,7 @@ export const listOrgInvitations = authedQuery({
 				_id: inv._id,
 				email: inv.email,
 				role: inv.role,
+				token: inv.token,
 				createdAt: inv.createdAt,
 				expiresAt: inv.expiresAt
 			}));
@@ -420,9 +613,7 @@ export const cancelInvitation = authedMutation({
 
 		const callerMembership = await ctx.db
 			.query('organizationMembers')
-			.withIndex('by_org_and_user', (q) =>
-				q.eq('organizationId', orgId).eq('userId', ctx.user._id)
-			)
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
 			.unique();
 		if (!callerMembership || callerMembership.role !== 'ORG_ADMIN') {
 			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
@@ -434,6 +625,85 @@ export const cancelInvitation = authedMutation({
 		}
 
 		await ctx.db.delete(invitationId);
+	}
+});
+
+export const acceptInvitationDirect = authedMutation({
+	args: { invitationId: v.id('organizationInvitations') },
+	handler: async (ctx, { invitationId }) => {
+		// 1. Require ORG_ADMIN
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+		const orgId = profile.currentOrganizationId;
+
+		const callerMembership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
+			.unique();
+		if (!callerMembership || callerMembership.role !== 'ORG_ADMIN') {
+			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
+		}
+
+		// 2. Invitation must belong to same org and be still valid
+		const invitation = await ctx.db.get(invitationId);
+		if (!invitation || invitation.organizationId !== orgId) {
+			throw new ConvexError('Invitation introuvable dans cette organisation');
+		}
+		if (invitation.acceptedAt) throw new ConvexError('Invitation déjà utilisée');
+		if (invitation.expiresAt < Date.now()) throw new ConvexError('Invitation expirée');
+
+		// 3. Look up the user by email in Better Auth
+		type BAUser = { _id: string; email: string; emailVerified?: boolean };
+		type AdapterResult = { page: unknown[]; isDone: boolean; continueCursor: string | null };
+
+		const result = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+			model: 'user',
+			where: [{ field: 'email', operator: 'eq' as const, value: invitation.email }],
+			paginationOpts: { cursor: null, numItems: 1 }
+		})) as AdapterResult;
+
+		const user = (result.page as BAUser[])[0];
+		if (!user) {
+			throw new ConvexError(
+				"Aucun compte trouvé pour cet email. La personne doit d'abord créer son compte via le lien d'invitation."
+			);
+		}
+
+		// 4. Not already a member
+		const existingMember = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', user._id))
+			.unique();
+		if (existingMember) {
+			throw new ConvexError("Cet utilisateur est déjà membre de l'organisation");
+		}
+
+		// 5. Add as member + mark invitation accepted + update user profile
+		await ctx.db.insert('organizationMembers', {
+			organizationId: orgId,
+			userId: user._id,
+			role: invitation.role,
+			joinedAt: Date.now()
+		});
+
+		await ctx.db.patch(invitationId, { acceptedAt: Date.now() });
+
+		const userProfile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', user._id))
+			.unique();
+
+		if (userProfile) {
+			await ctx.db.patch(userProfile._id, { currentOrganizationId: orgId });
+		} else {
+			await ctx.db.insert('userProfiles', {
+				userId: user._id,
+				currentOrganizationId: orgId
+			});
+		}
 	}
 });
 
@@ -559,6 +829,64 @@ export const sendOrgInvitationEmail = internalAction({
 	}
 });
 
+export const verifyMemberEmail = authedMutation({
+	args: { memberId: v.id('organizationMembers') },
+	handler: async (ctx, { memberId }) => {
+		// 1. Require ORG_ADMIN
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+		const orgId = profile.currentOrganizationId;
+
+		const callerMembership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
+			.unique();
+		if (!callerMembership || callerMembership.role !== 'ORG_ADMIN') {
+			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
+		}
+
+		// 2. Target must belong to the same org
+		const member = await ctx.db.get(memberId);
+		if (!member || member.organizationId !== orgId) {
+			throw new ConvexError('Membre introuvable dans cette organisation');
+		}
+
+		// 3. Cannot self-verify (admin is already authenticated = verified)
+		if (member.userId === ctx.user._id) {
+			throw new ConvexError('Action non autorisée sur votre propre compte');
+		}
+
+		// 4. Check current verification status — prevent no-op
+		type BAUser = { _id: string; email?: string; emailVerified?: boolean };
+		type AdapterResult = { page: unknown[]; isDone: boolean; continueCursor: string | null };
+
+		const result = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+			model: 'user',
+			where: [{ field: '_id', operator: 'eq' as const, value: member.userId }],
+			paginationOpts: { cursor: null, numItems: 1 }
+		})) as AdapterResult;
+
+		const user = (result.page as BAUser[])[0];
+		if (!user) throw new ConvexError('Compte utilisateur introuvable');
+
+		if (user.emailVerified === true) {
+			throw new ConvexError("L'email de ce membre est déjà vérifié");
+		}
+
+		// 5. Set emailVerified = true via the Better Auth adapter
+		await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+			input: {
+				model: 'user',
+				where: [{ field: '_id', operator: 'eq', value: member.userId }],
+				update: { emailVerified: true }
+			}
+		});
+	}
+});
+
 export const removeOrganizationMember = authedMutation({
 	args: { memberId: v.id('organizationMembers') },
 	handler: async (ctx, { memberId }) => {
@@ -571,9 +899,7 @@ export const removeOrganizationMember = authedMutation({
 
 		const callerMembership = await ctx.db
 			.query('organizationMembers')
-			.withIndex('by_org_and_user', (q) =>
-				q.eq('organizationId', orgId).eq('userId', ctx.user._id)
-			)
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
 			.unique();
 		if (!callerMembership || callerMembership.role !== 'ORG_ADMIN') {
 			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
@@ -588,5 +914,41 @@ export const removeOrganizationMember = authedMutation({
 		}
 
 		await ctx.db.delete(memberId);
+	}
+});
+
+export const getOnboardingProgress = authedQuery({
+	args: {},
+	handler: async (ctx) => {
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) return null;
+		const orgId = profile.currentOrganizationId;
+
+		const [vehicleCount, memberCount, firstReservation] = await Promise.all([
+			ctx.db
+				.query('vehicles')
+				.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+				.take(1)
+				.then((r) => r.length),
+			ctx.db
+				.query('organizationMembers')
+				.withIndex('by_organization', (q) => q.eq('organizationId', orgId))
+				.take(2)
+				.then((r) => r.length),
+			ctx.db
+				.query('reservations')
+				.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+				.first()
+		]);
+
+		return {
+			orgCreated: true,
+			vehicleAdded: vehicleCount > 0,
+			teamInvited: memberCount > 1,
+			firstReservation: firstReservation !== null
+		};
 	}
 });

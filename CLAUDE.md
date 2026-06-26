@@ -126,30 +126,49 @@ Les agents custom dans `.claude/agents/*.md` tournent en mode "text generation o
 - **P_I18N** ✅ — `organizations` schema : +`country`, +`currency`, +`distanceUnit`, +`timezone`, +`locale` (tous optionnels, jamais hardcodés). `updateOrganization` accepte ces champs. Page `/admin/settings/organization` : nouvelle card "Localisation & Currency" (pays/devise/unité/fuseau).
 - **P15 refactor** ✅ — `mileageRates.ts` (defaults FR/GB/SE/NO/DK par catégorie ELECTRIC/HYBRID/THERMAL/UTILITY). Table `mileageRateConfigs`. Champs `mileageExpenses` refactorisés (`distance`+`distanceUnit`+`vehicleCategory`+`ratePerUnit`). `expense-form.svelte` : sélecteur catégorie, calcul live multi-devise, 100% FR, `h-10` touch-friendly. Export CSV international.
 
-### 🔄 En cours / Prochains sprints (post-pivot Global Day-1)
+### ✅ Sprint 2 livré (juin 2026 — monétisation + distribution UK)
 
-**Priorités P1 (sprint 2 — monétisation + distribution UK) :**
-- **P_PADDLE** — Webhooks Paddle : endpoints `/api/webhooks/paddle` pour provisioning auto `organizationId` + seats + modules à la réception du paiement
-- **P25** — Connecteurs Xero + QuickBooks (remplacent Pennylane comme canal #1/#2)
-- **P_BIK** — Module BiK UK : `bik-rates.ts` HMRC + affichage Essential/Pro + conseils IA Optimiseur Business
+- **P_PADDLE** ✅ — `paddle.ts` Convex : webhooks Paddle, provisioning auto `organizationId` + seats + modules à réception paiement. Page `/admin/settings/plans` avec paliers Essential/Professional/Business.
+- **P25** ✅ — `integrations/xeroConnector.ts` + `integrations/quickbooksConnector.ts` : connecteurs natifs Xero et QuickBooks (sync coûts/IK → compta, OAuth, mapping catégories), réutilisent la couche `AccountingConnector` de P23.
+- **P_BIK** ✅ — `bik.ts` + `bikRates.ts` (barèmes HMRC par catégorie/liste price) + page `/admin/finance/bik/` : calcul avantage en nature UK par salarié et véhicule, affichage Essential/Pro, export.
 
-**Priorités P2 (sprint 3 — nordiques) :**
-- **P19** — Rapport carbone CSRD Scope 1-2-3 (facteurs ADEME/IEA/DEFRA par pays) + PDF ESRS E1
-- **P22** — Smartcar API intégration (web-flow autorisation, odomètre, SoC batterie, localisation — zéro hardware)
-- **P20** — Agent Compliance Officer (Agent 4)
-- **P21** — Admin settings : membres & invitations
-- **P18** — Optimisation fiscale (TVS, AEN, TVA — France, secondaire)
+### ✅ Sprint 3 livré (juin 2026 — nordiques + conformité)
 
-### 📋 Backlog MVP (8 semaines)
+- **P19** ✅ — `carbon.ts` + `carbonFactors.ts` (facteurs ADEME/IEA/DEFRA par pays/énergie) + page `/admin/sustainability/` (dashboard Scope 1-2-3) + page `/admin/sustainability/esrs-e1/` (rapport PDF ESRS E1 conforme CSRD).
+- **P22** ✅ — `smartcar.ts` : intégration Smartcar API v3 M2M, web-flow autorisation par véhicule, sync odomètre/SoC batterie/localisation — zéro hardware.
+- **P20** ✅ — `compliance.ts` + page `/admin/compliance/` : Agent Compliance Officer (Agent 4), surveillance BiK UK + CSRD nordiques + conformité auto, alertes proactives.
+- **P21** ✅ — page `/admin/settings/members/` + route `/join/[token]/` : gestion membres org, invitations par email avec lien token, rôles ORG_ADMIN/ORG_MEMBER.
+- **P18** ✅ — `fiscal.ts` + `fiscalRates.ts` + page `/admin/finance/fiscal/` : TVS, AEN, TVA France, tableau récapitulatif liasse fiscale.
 
-- S1 : Setup et auth multi-tenant
-- S2 : Onboarding entreprise et import flotte CSV
-- S3 : Dashboard entreprise basique
-- S4 : Agent Concierge IA + réservation côté salarié
-- S5 : Logique réservation et calendrier
-- S6 : Notifications et intégrations calendaires
-- S7 : Polish UX/UI complet
-- S8 : Bug fixing et premier client beta
+### ✅ Fonctionnalités supplémentaires livrées (hors roadmap initiale)
+
+- **Support interne** ✅ — `src/lib/convex/support/` (threads, messages, agents, ownership) + page `/admin/support/` : système de tickets support interne.
+- **Settings notifications** ✅ — page `/admin/settings/notifications/` : configuration des destinataires et préférences de notifications par org.
+- **Profil utilisateur app** ✅ — page `/app/profile/` : profil salarié (photo, infos perso, permis).
+- **Vue admin dépenses** ✅ — page `/admin/expenses/` : vue agrégée des notes de frais de tous les salariés pour les ORG_ADMIN.
+
+### ✅ Sprint 4 livré (juin 2026 — polish & beta)
+
+- **P_PADDLE_NATIVE** ✅ — `autumn.ts` vidé (stub commenté), toutes références `@useautumn/convex` / `autumn-js` supprimées. `paddle.ts` : webhooks Paddle, provisioning auto org+seats+modules, `getMySubscription` query, `getPortalUrl` action (portal Paddle natif). Page `/admin/settings/plans` : checkout Paddle.js overlay, portal billing, affichage tier/seats/date renouvellement.
+- **Polish onboarding** ✅ — Wizard 4 étapes `/onboarding/organization` : (1) Org info name/SIREN/sector/size → `createOrganization`, (2) Localisation pays/devise/unité/fuseau → `updateOrganization` (7 pays pré-configurés GB/FR/SE/NO/DK/DE/NL), (3) Inviter l'équipe emails+rôles → `inviteOrganizationMember`, (4) Écran succès avec liens rapides. Query `getOnboardingProgress` + composant `GettingStartedCard` dans dashboard (checklist 4 étapes, disparaît quand tout est fait, dismissable localStorage).
+- **Billing system complet** ✅ — `billing.ts` module central : `resolveEffectivePlan()` (dev bypass si PADDLE_API_KEY absent, devPlan flag, trial actif, subscription Paddle, none), `PLAN_FEATURES` matrix (essential/professional/business/enterprise), `planHasFeature()`, `assertFeatureAccess()`, `assertSeatAvailable()` (quota conducteurs). Schema : +`freeTrialEndsAt`, +`devPlan`. Mutations : `startFreeTrial` (15 jours Professional), `activateDevPlan` (dev uniquement, seatsIncluded=9999). Query `getBillingStatus` (tier, isDev, seatsUsed/Allowed, trialDaysLeft). Frontend : `TrialBanner` (admin layout, countdown urgence), `SubscriptionGate` (wrapper feature-gating avec CTA upgrade/trial), `DevPlanActivator` (banner page plans). Pages gated : BiK UK (professional+), Sustainability/CSRD (professional+), Compliance (professional+). Quota siège branché sur `inviteOrganizationMember`. Onboarding step 4 : offre trial (prod) ou devPlan (dev auto-détecté via VITE_PADDLE_CLIENT_TOKEN absent).
+- **P_SMARTCAR_SYNC** ✅ — Cron daily `smartcarSync` déjà en place dans `crons.ts` → `internal.smartcar.syncSmartcarForAllOrgs`.
+
+### 🔄 Prochains (sprint 5)
+
+- **P_CSRD_PDF** — Export PDF ESRS E1 signable (actuellement `window.print()` — remplacer par PDF généré côté client avec métadonnées conformes CSRD).
+- **Polish & beta** — Lighthouse 80+, 0 bug critique, 3 clients beta actifs.
+
+### 📋 Backlog MVP (8 semaines — référence historique)
+
+- S1 : Setup et auth multi-tenant ✅
+- S2 : Onboarding entreprise et import flotte CSV ✅
+- S3 : Dashboard entreprise basique ✅
+- S4 : Agent Concierge IA + réservation côté salarié ✅
+- S5 : Logique réservation et calendrier ✅
+- S6 : Notifications et intégrations calendaires ✅
+- S7 : Polish UX/UI complet — en cours
+- S8 : Bug fixing et premier client beta — en cours
 
 ## Décisions architecturales clés
 
@@ -157,8 +176,9 @@ Les agents custom dans `.claude/agents/*.md` tournent en mode "text generation o
 - PWA only, pas de native
 - Import manuel CSV pour la flotte (Smartcar API en P22 pour télématique sans hardware)
 - Devise/distanceUnit/timezone abstraites dans l'objet `organization` — jamais hardcodées
-- Facturation via Paddle (MoR) — Stripe non retenu
+- **Facturation via Paddle (MoR) — Stripe non retenu**
 - Distribution via app stores (Xero, QuickBooks, Odoo) — pas de sales outbound
+- ⚠️ **`autumn.ts` présent dans le code mais NON RETENU** — Autumn doit être supprimé et remplacé par l'intégration Paddle native. Ne pas étendre autumn.ts ni l'utiliser dans de nouveaux fichiers.
 
 ## Liens utiles
 

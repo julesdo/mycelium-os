@@ -51,8 +51,15 @@ references/
 
 *.local*
 
-.opencode/plans
+# AI tool workspaces (internal, not for version control)
+.opencode/
+.agents/
+
 .eslintcache
+
+# Internal design assets (inspiration, not production)
+docs/DA/
+docs/lp-inspi/
 
 # local convex dev deployment
 .convex

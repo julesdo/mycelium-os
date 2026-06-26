@@ -18,15 +18,13 @@ type RequiredKeys = {
  *
  * Convex bundles and statically analyzes modules before env vars are available.
  * `createApi()` in adapter.ts calls `createAuthOptions()` at load time to
- * extract the Better Auth schema, and `new Autumn()` in autumn.ts runs at
- * top level, so these vars must return something during analysis.
+ * extract the Better Auth schema, so these vars must return something during analysis.
  * Placeholders are never used at runtime -- build-time validation
  * (validate-convex-env.ts) ensures the real values are set before deploy.
  */
 const ANALYSIS_PLACEHOLDERS: Partial<Record<string, string>> = {
 	BETTER_AUTH_SECRET: 'placeholder-secret-for-analysis',
-	SITE_URL: 'https://placeholder.invalid',
-	AUTUMN_SECRET_KEY: 'placeholder-key-for-analysis'
+	SITE_URL: 'https://placeholder.invalid'
 };
 
 export type RequireEnvOptions = {

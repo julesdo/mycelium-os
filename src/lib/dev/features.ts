@@ -51,9 +51,9 @@ export const DEV_FEATURES = [
 		docs: '.env.convex.example'
 	},
 	{
-		name: 'Billing (Autumn)',
+		name: 'Billing (Paddle)',
 		scope: 'convex',
-		missing: ['AUTUMN_SECRET_KEY'],
+		missing: ['PADDLE_API_KEY', 'PADDLE_WEBHOOK_SECRET'],
 		docs: '.env.convex.example'
 	},
 	{

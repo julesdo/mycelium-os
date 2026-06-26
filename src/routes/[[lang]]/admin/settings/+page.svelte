@@ -8,6 +8,11 @@
 	import { api } from '$lib/convex/_generated/api.js';
 	import { toast } from 'svelte-sonner';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
+	import Building2Icon from '@lucide/svelte/icons/building-2';
+	import UploadIcon from '@lucide/svelte/icons/upload';
+	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+
+	const anyApi = api as any;
 
 	const convexClient = useConvexClient();
 
@@ -58,10 +63,64 @@
 	const isOrgAdmin = $derived(membershipQuery.data?.role === 'ORG_ADMIN');
 	const isLoading = $derived(orgQuery.isLoading || membershipQuery.isLoading);
 
+	// --- Logo upload ---
+	let logoPreview = $state<string | null>(null);
+	let isUploadingLogo = $state(false);
+	let isDeletingLogo = $state(false);
+	const currentLogoUrl = $derived(logoPreview ?? (orgQuery.data as any)?.logoUrl ?? null);
+
+	async function handleLogoFile(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+		if (!file.type.startsWith('image/')) {
+			toast.error('Format non supporté. Utilisez PNG, JPG ou SVG.');
+			return;
+		}
+		if (file.size > 2 * 1024 * 1024) {
+			toast.error('Fichier trop lourd. Maximum 2 Mo.');
+			return;
+		}
+		isUploadingLogo = true;
+		try {
+			const uploadUrl = await convexClient.mutation(
+				anyApi.organizations.generateOrgLogoUploadUrl,
+				{}
+			);
+			const res = await fetch(uploadUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': file.type },
+				body: file
+			});
+			if (!res.ok) throw new Error(`Upload échoué : ${res.status}`);
+			const { storageId } = await res.json();
+			const url = await convexClient.mutation(anyApi.organizations.saveOrgLogo, { storageId });
+			logoPreview = url;
+			toast.success('Logo mis à jour');
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Erreur lors de l'upload");
+		} finally {
+			isUploadingLogo = false;
+		}
+	}
+
+	async function handleDeleteLogo() {
+		isDeletingLogo = true;
+		try {
+			await convexClient.mutation(anyApi.organizations.deleteOrgLogo, {});
+			logoPreview = null;
+			toast.success('Logo supprimé');
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression');
+		} finally {
+			isDeletingLogo = false;
+		}
+	}
+
 	function validate(): boolean {
 		const errs: Record<string, Array<{ message: string }>> = {};
 		if (!name.trim()) errs.name = [{ message: 'Le nom est obligatoire' }];
-		if (siren && !/^\d{9}$/.test(siren)) errs.siren = [{ message: 'Le SIREN doit comporter 9 chiffres' }];
+		if (siren && !/^\d{9}$/.test(siren))
+			errs.siren = [{ message: 'Le SIREN doit comporter 9 chiffres' }];
 		errors = errs;
 		return Object.keys(errs).length === 0;
 	}
@@ -93,7 +152,7 @@
 		<Card.Root>
 			<Card.Content class="p-6">
 				<div class="flex items-center justify-center py-8">
-					<LoaderCircleIcon class="size-6 animate-spin text-muted-foreground" />
+					<LoaderCircleIcon class="size-6 text-muted-foreground motion-safe:animate-spin" />
 				</div>
 			</Card.Content>
 		</Card.Root>
@@ -195,7 +254,7 @@
 						{#if isOrgAdmin}
 							<Button type="submit" disabled={isSubmitting} class="w-full sm:w-auto">
 								{#if isSubmitting}
-									<LoaderCircleIcon class="mr-2 size-4 animate-spin" />
+									<LoaderCircleIcon class="mr-2 size-4 motion-safe:animate-spin" />
 									Enregistrement...
 								{:else}
 									Enregistrer les modifications
@@ -204,6 +263,69 @@
 						{/if}
 					</Field.Group>
 				</form>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- Logo -->
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>Logo de l'organisation</Card.Title>
+				<Card.Description
+					>Affiché dans les emails, exports PDF et rapports. PNG, JPG ou SVG, max 2 Mo.</Card.Description
+				>
+			</Card.Header>
+			<Card.Content class="p-6 pt-0">
+				<div class="flex items-center gap-5">
+					<div
+						class="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted"
+					>
+						{#if currentLogoUrl}
+							<img src={currentLogoUrl} alt="Logo" class="size-full object-contain p-1" />
+						{:else}
+							<Building2Icon class="size-8 text-muted-foreground/40" />
+						{/if}
+					</div>
+					{#if isOrgAdmin}
+						<div class="flex flex-col gap-2">
+							<label
+								class="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground {isUploadingLogo
+									? 'pointer-events-none opacity-50'
+									: ''}"
+							>
+								{#if isUploadingLogo}
+									<LoaderCircleIcon class="size-4 motion-safe:animate-spin" />
+									Upload en cours...
+								{:else}
+									<UploadIcon class="size-4" />
+									{currentLogoUrl ? 'Remplacer le logo' : 'Choisir un fichier'}
+								{/if}
+								<input
+									type="file"
+									accept="image/png,image/jpeg,image/svg+xml,image/webp"
+									class="sr-only"
+									disabled={isUploadingLogo}
+									onchange={handleLogoFile}
+								/>
+							</label>
+							{#if currentLogoUrl}
+								<Button
+									variant="ghost"
+									size="sm"
+									class="justify-start gap-2 px-3 text-destructive hover:text-destructive"
+									disabled={isDeletingLogo}
+									onclick={handleDeleteLogo}
+								>
+									{#if isDeletingLogo}
+										<LoaderCircleIcon class="size-4 motion-safe:animate-spin" />
+									{:else}
+										<Trash2Icon class="size-4" />
+									{/if}
+									Supprimer le logo
+								</Button>
+							{/if}
+						</div>
+					{/if}
+				</div>
 			</Card.Content>
 		</Card.Root>
 	{/if}

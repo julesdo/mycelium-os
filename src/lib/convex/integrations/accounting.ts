@@ -1,5 +1,6 @@
 import { v, ConvexError } from 'convex/values';
 import {
+	action,
 	internalAction,
 	internalMutation,
 	internalQuery,
@@ -8,6 +9,7 @@ import {
 import { internal } from '../_generated/api';
 import { authedQuery, authedMutation } from '../functions';
 import { getUserOrg, requireOrgAdmin } from '../lib/auth';
+import { authComponent } from '../auth';
 import type { Id } from '../_generated/dataModel';
 import {
 	xeroConnector,
@@ -21,6 +23,19 @@ import {
 	qbGetChartOfAccounts,
 	QB_DEFAULT_MAPPING
 } from './quickbooksConnector';
+import {
+	freeagentConnector,
+	faRefreshToken,
+	FREEAGENT_DEFAULT_MAPPING
+} from './freeagentConnector';
+import { fortnoxConnector, fxRefreshToken, FORTNOX_DEFAULT_MAPPING } from './fortnoxConnector';
+import { vismaConnector, vismaRefreshToken, VISMA_DEFAULT_MAPPING } from './vismaConnector';
+import {
+	tripletexConnector,
+	tripletexCreateSession,
+	TRIPLETEX_DEFAULT_MAPPING
+} from './tripletexConnector';
+import { economicConnector, ECONOMIC_DEFAULT_MAPPING } from './economicConnector';
 
 // ─── Encryption (AES-256-GCM, Web Crypto) ────────────────────────────────────
 
@@ -57,7 +72,15 @@ function requireEncryptionKey(): string {
 
 // ─── Default category mappings per provider ───────────────────────────────────
 
-export { XERO_DEFAULT_MAPPING, QB_DEFAULT_MAPPING };
+export {
+	XERO_DEFAULT_MAPPING,
+	QB_DEFAULT_MAPPING,
+	FREEAGENT_DEFAULT_MAPPING,
+	FORTNOX_DEFAULT_MAPPING,
+	VISMA_DEFAULT_MAPPING,
+	TRIPLETEX_DEFAULT_MAPPING,
+	ECONOMIC_DEFAULT_MAPPING
+};
 
 export const DEFAULT_PCG_MAPPING: Record<string, { code: string; label: string }> = {
 	LEASING: { code: '6132', label: 'Locations mobilières (leasing)' },
@@ -142,7 +165,12 @@ const pennylaneConnector: AccountingConnector = {
 			external_reference: `mycelium:${payload.myceliumId}`
 		};
 		if (payload.externalId) {
-			const res = await pennylaneRequest('PUT', `/supplier_invoices/${payload.externalId}`, token, invoiceBody);
+			const res = await pennylaneRequest(
+				'PUT',
+				`/supplier_invoices/${payload.externalId}`,
+				token,
+				invoiceBody
+			);
 			if (!res.ok) throw new Error(`PENNYLANE_UPDATE_${res.status}:${await res.text()}`);
 			return { externalId: payload.externalId };
 		}
@@ -158,8 +186,14 @@ const pennylaneConnector: AccountingConnector = {
 				const res = await pennylaneRequest('GET', `/supplier_invoices/${externalId}`, token);
 				if (!res.ok) continue;
 				const inv = (await res.json()) as { status?: string; paid_at?: string };
-				results.push({ externalId, isPaid: inv.status === 'paid', paidAt: inv.paid_at ? Date.parse(inv.paid_at) : undefined });
-			} catch { /* skip */ }
+				results.push({
+					externalId,
+					isPaid: inv.status === 'paid',
+					paidAt: inv.paid_at ? Date.parse(inv.paid_at) : undefined
+				});
+			} catch {
+				/* skip */
+			}
 		}
 		return results;
 	}
@@ -175,13 +209,15 @@ const sageConnector: AccountingConnector = {
 			purchase_invoice: {
 				date: new Date(payload.date).toISOString().slice(0, 10),
 				reference: `mycelium:${payload.myceliumId}`,
-				invoice_lines: [{
-					ledger_account_id: mapping.externalAccountCode,
-					total_amount: payload.amountTtc,
-					tax_amount: payload.vatAmount ?? 0,
-					description: payload.label,
-					...(mapping.analyticAxis ? { analytics_codes: [mapping.analyticAxis] } : {})
-				}]
+				invoice_lines: [
+					{
+						ledger_account_id: mapping.externalAccountCode,
+						total_amount: payload.amountTtc,
+						tax_amount: payload.vatAmount ?? 0,
+						description: payload.label,
+						...(mapping.analyticAxis ? { analytics_codes: [mapping.analyticAxis] } : {})
+					}
+				]
 			}
 		};
 		const method = payload.externalId ? 'PUT' : 'POST';
@@ -213,7 +249,9 @@ const sageConnector: AccountingConnector = {
 					isPaid: inv.status?.id === 'paid',
 					paidAt: inv.paid_on ? Date.parse(inv.paid_on) : undefined
 				});
-			} catch { /* skip */ }
+			} catch {
+				/* skip */
+			}
 		}
 		return results;
 	}
@@ -296,6 +334,123 @@ const quickbooksAdapter: AccountingConnector = {
 	}
 };
 
+// ─── FreeAgent adapter ────────────────────────────────────────────────────────
+
+const freeagentAdapter: AccountingConnector = {
+	async pushCost(token, mapping, payload) {
+		return freeagentConnector.pushCost(token, mapping.externalAccountCode, {
+			myceliumId: payload.myceliumId,
+			amountTtc: payload.amountTtc,
+			vatAmount: payload.vatAmount,
+			date: payload.date,
+			label: payload.label,
+			externalId: payload.externalId
+		});
+	},
+	async pullPaymentStatuses(token, pairs) {
+		return freeagentConnector.pullPaymentStatuses(token, pairs);
+	}
+};
+
+// ─── Fortnox adapter ──────────────────────────────────────────────────────────
+
+const fortnoxAdapter: AccountingConnector = {
+	async pushCost(token, mapping, payload) {
+		return fortnoxConnector.pushCost(token, mapping.externalAccountCode, {
+			myceliumId: payload.myceliumId,
+			amountTtc: payload.amountTtc,
+			vatAmount: payload.vatAmount,
+			date: payload.date,
+			label: payload.label,
+			externalId: payload.externalId
+		});
+	},
+	async pullPaymentStatuses(token, pairs) {
+		return fortnoxConnector.pullPaymentStatuses(token, pairs);
+	}
+};
+
+// ─── Visma eAccounting adapter ────────────────────────────────────────────────
+
+const vismaAdapter: AccountingConnector = {
+	async pushCost(token, mapping, payload) {
+		return vismaConnector.pushCost(token, mapping.externalAccountCode, {
+			myceliumId: payload.myceliumId,
+			amountTtc: payload.amountTtc,
+			vatAmount: payload.vatAmount,
+			date: payload.date,
+			label: payload.label,
+			externalId: payload.externalId
+		});
+	},
+	async pullPaymentStatuses(token, pairs) {
+		return vismaConnector.pullPaymentStatuses(token, pairs);
+	}
+};
+
+// ─── Tripletex adapter — creates a daily session from employee + consumer tokens
+
+const tripletexAdapter: AccountingConnector = {
+	async pushCost(employeeToken, mapping, payload) {
+		const consumerToken = process.env.TRIPLETEX_CONSUMER_TOKEN;
+		if (!consumerToken)
+			throw new Error('TRIPLETEX_CONSUMER_TOKEN not configured in Convex dashboard');
+		const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+		const { token: sessionToken } = await tripletexCreateSession(
+			consumerToken,
+			employeeToken,
+			tomorrow
+		);
+		return tripletexConnector.pushCost(sessionToken, mapping.externalAccountCode, {
+			myceliumId: payload.myceliumId,
+			amountTtc: payload.amountTtc,
+			vatAmount: payload.vatAmount,
+			date: payload.date,
+			label: payload.label,
+			externalId: payload.externalId
+		});
+	},
+	async pullPaymentStatuses(employeeToken, pairs) {
+		const consumerToken = process.env.TRIPLETEX_CONSUMER_TOKEN;
+		if (!consumerToken) return [];
+		const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+		const { token: sessionToken } = await tripletexCreateSession(
+			consumerToken,
+			employeeToken,
+			tomorrow
+		);
+		return tripletexConnector.pullPaymentStatuses(sessionToken, pairs);
+	}
+};
+
+// ─── e-conomic adapter — appSecretToken from env, grant token from storage ─────
+
+const economicAdapter: AccountingConnector = {
+	async pushCost(agreementGrantToken, mapping, payload) {
+		const appSecretToken = process.env.ECONOMIC_APP_SECRET_TOKEN;
+		if (!appSecretToken)
+			throw new Error('ECONOMIC_APP_SECRET_TOKEN not configured in Convex dashboard');
+		return economicConnector.pushCost(
+			appSecretToken,
+			agreementGrantToken,
+			parseInt(mapping.externalAccountCode, 10),
+			{
+				myceliumId: payload.myceliumId,
+				amountTtc: payload.amountTtc,
+				vatAmount: payload.vatAmount,
+				date: payload.date,
+				label: payload.label,
+				externalId: payload.externalId
+			}
+		);
+	},
+	async pullPaymentStatuses(agreementGrantToken, pairs) {
+		const appSecretToken = process.env.ECONOMIC_APP_SECRET_TOKEN;
+		if (!appSecretToken) return [];
+		return economicConnector.pullPaymentStatuses(appSecretToken, agreementGrantToken, pairs);
+	}
+};
+
 // ─── Connector registry ────────────────────────────────────────────────────────
 
 const connectors: Record<string, AccountingConnector> = {
@@ -303,8 +458,295 @@ const connectors: Record<string, AccountingConnector> = {
 	sage: sageConnector,
 	ebp: ebpConnector,
 	xero: xeroAdapter,
-	quickbooks: quickbooksAdapter
+	quickbooks: quickbooksAdapter,
+	freeagent: freeagentAdapter,
+	fortnox: fortnoxAdapter,
+	visma: vismaAdapter,
+	tripletex: tripletexAdapter,
+	economic: economicAdapter
 };
+
+// ─── API key connect (action — encryption dans Convex, clé en clair jamais dans SvelteKit) ──
+
+export const getUserOrgForAction = internalQuery({
+	args: { userId: v.string() },
+	handler: async (ctx, { userId }) => {
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', userId))
+			.unique();
+		if (!profile?.currentOrganizationId) return null;
+		const membership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', profile.currentOrganizationId!).eq('userId', userId)
+			)
+			.unique();
+		return {
+			organizationId: profile.currentOrganizationId,
+			isAdmin: membership?.role === 'ORG_ADMIN'
+		};
+	}
+});
+
+export const connectWithApiKeyInternal = internalMutation({
+	args: {
+		provider: v.union(
+			v.literal('pennylane'),
+			v.literal('sage'),
+			v.literal('ebp'),
+			v.literal('tripletex'),
+			v.literal('economic')
+		),
+		organizationId: v.id('organizations'),
+		encryptedApiKey: v.string(),
+		connectedBy: v.string()
+	},
+	handler: async (ctx, { provider, organizationId, encryptedApiKey, connectedBy }) => {
+		const existing = await ctx.db
+			.query('accountingIntegrations')
+			.withIndex('by_org_and_provider', (q) =>
+				q.eq('organizationId', organizationId).eq('provider', provider)
+			)
+			.first();
+
+		if (existing) {
+			await ctx.db.patch(existing._id, {
+				encryptedAccessToken: encryptedApiKey,
+				status: 'CONNECTED',
+				lastSyncError: undefined
+			});
+			await ctx.scheduler.runAfter(0, internal.integrations.accounting.seedDefaultMappings, {
+				integrationId: existing._id,
+				organizationId
+			});
+			return;
+		}
+
+		const integrationId = await ctx.db.insert('accountingIntegrations', {
+			organizationId,
+			provider,
+			status: 'CONNECTED',
+			encryptedAccessToken: encryptedApiKey,
+			syncCosts: true,
+			syncVehicles: false,
+			syncExpenses: true,
+			connectedBy,
+			connectedAt: Date.now()
+		});
+		await ctx.scheduler.runAfter(0, internal.integrations.accounting.seedDefaultMappings, {
+			integrationId,
+			organizationId
+		});
+	}
+});
+
+// Public action — called directly from the wizard, auth token auto-inclus par le client Convex
+export const connectApiKeyProvider = action({
+	args: {
+		provider: v.union(
+			v.literal('pennylane'),
+			v.literal('sage'),
+			v.literal('ebp'),
+			v.literal('tripletex'),
+			v.literal('economic')
+		),
+		apiKey: v.string()
+	},
+	handler: async (ctx, { provider, apiKey }) => {
+		const trimmed = apiKey.trim();
+		if (!trimmed) throw new ConvexError('Clé API requise');
+
+		const user = await authComponent.getAuthUser(ctx as any);
+		if (!user) throw new ConvexError('Non authentifié');
+
+		const orgData = await ctx.runQuery(internal.integrations.accounting.getUserOrgForAction, {
+			userId: user._id
+		});
+		if (!orgData) throw new ConvexError('Aucune organisation sélectionnée');
+		if (!orgData.isAdmin) throw new ConvexError('Accès réservé aux administrateurs');
+
+		const encryptionKey = process.env.ACCOUNTING_ENCRYPTION_KEY;
+		if (!encryptionKey)
+			throw new ConvexError('ACCOUNTING_ENCRYPTION_KEY non configuré dans Convex dashboard');
+
+		const encryptedApiKey = await encryptToken(trimmed, encryptionKey);
+
+		await ctx.runMutation(internal.integrations.accounting.connectWithApiKeyInternal, {
+			provider,
+			organizationId: orgData.organizationId,
+			encryptedApiKey,
+			connectedBy: user._id
+		});
+	}
+});
+
+// ─── OAuth state management ───────────────────────────────────────────────────
+
+export const lookupOAuthState = internalQuery({
+	args: { state: v.string() },
+	handler: async (ctx, { state }) =>
+		ctx.db
+			.query('oauthStates')
+			.withIndex('by_state', (q) => q.eq('state', state))
+			.first()
+});
+
+export const consumeOAuthState = internalMutation({
+	args: { stateId: v.id('oauthStates') },
+	handler: async (ctx, { stateId }) => ctx.db.delete(stateId)
+});
+
+// Called from the frontend — stores CSRF state + returns the provider OAuth URL
+export const createOAuthStart = authedMutation({
+	args: {
+		provider: v.union(
+			v.literal('xero'),
+			v.literal('quickbooks'),
+			v.literal('freeagent'),
+			v.literal('fortnox'),
+			v.literal('visma')
+		)
+	},
+	handler: async (ctx, { provider }) => {
+		const { user, organizationId } = await getUserOrg(ctx);
+		await requireOrgAdmin(ctx, organizationId, user._id);
+
+		const convexSiteUrl = process.env.CONVEX_SITE_URL;
+		if (!convexSiteUrl)
+			throw new ConvexError('CONVEX_SITE_URL non configuré dans Convex dashboard');
+
+		const state = crypto.randomUUID();
+		await ctx.db.insert('oauthStates', {
+			state,
+			provider,
+			organizationId,
+			userId: user._id,
+			createdAt: Date.now()
+		});
+
+		const redirectUri = `${convexSiteUrl}/${provider}/callback`;
+
+		if (provider === 'xero') {
+			const clientId = process.env.XERO_CLIENT_ID;
+			if (!clientId) throw new ConvexError('XERO_CLIENT_ID manquant dans Convex dashboard');
+			return `https://login.xero.com/identity/connect/authorize?${new URLSearchParams({
+				response_type: 'code',
+				client_id: clientId,
+				redirect_uri: redirectUri,
+				scope: 'accounting.transactions accounting.settings accounting.contacts offline_access',
+				state
+			})}`;
+		}
+		if (provider === 'quickbooks') {
+			const clientId = process.env.QB_CLIENT_ID;
+			if (!clientId) throw new ConvexError('QB_CLIENT_ID manquant dans Convex dashboard');
+			return `https://appcenter.intuit.com/connect/oauth2?${new URLSearchParams({
+				client_id: clientId,
+				scope: 'com.intuit.quickbooks.accounting',
+				redirect_uri: redirectUri,
+				response_type: 'code',
+				state
+			})}`;
+		}
+		if (provider === 'freeagent') {
+			const clientId = process.env.FA_CLIENT_ID;
+			if (!clientId) throw new ConvexError('FA_CLIENT_ID manquant dans Convex dashboard');
+			return `https://api.freeagent.com/v2/approve_app?${new URLSearchParams({
+				response_type: 'code',
+				client_id: clientId,
+				redirect_uri: redirectUri,
+				state
+			})}`;
+		}
+		if (provider === 'fortnox') {
+			const clientId = process.env.FX_CLIENT_ID;
+			if (!clientId) throw new ConvexError('FX_CLIENT_ID manquant dans Convex dashboard');
+			return `https://apps.fortnox.se/oauth-v1/auth?${new URLSearchParams({
+				client_id: clientId,
+				redirect_uri: redirectUri,
+				scope: 'supplierinvoice',
+				response_type: 'code',
+				state,
+				access_type: 'offline'
+			})}`;
+		}
+		// visma
+		const clientId = process.env.VISMA_CLIENT_ID;
+		if (!clientId) throw new ConvexError('VISMA_CLIENT_ID manquant dans Convex dashboard');
+		return `https://identity.vismaonline.com/connect/authorize?${new URLSearchParams({
+			client_id: clientId,
+			redirect_uri: redirectUri,
+			scope: 'ea:purchase ea:accounting offline_access',
+			response_type: 'code',
+			state
+		})}`;
+	}
+});
+
+// Internal version of connectWithOAuth — called by httpAction callbacks (no auth context)
+export const connectWithOAuthInternal = internalMutation({
+	args: {
+		provider: v.union(
+			v.literal('xero'),
+			v.literal('quickbooks'),
+			v.literal('freeagent'),
+			v.literal('fortnox'),
+			v.literal('visma')
+		),
+		organizationId: v.id('organizations'),
+		encryptedAccessToken: v.string(),
+		encryptedRefreshToken: v.string(),
+		tokenExpiresAt: v.number(),
+		externalCompanyId: v.string(),
+		externalCompanyName: v.optional(v.string()),
+		connectedByUserId: v.string()
+	},
+	handler: async (ctx, args) => {
+		const existing = await ctx.db
+			.query('accountingIntegrations')
+			.withIndex('by_org_and_provider', (q) =>
+				q.eq('organizationId', args.organizationId).eq('provider', args.provider)
+			)
+			.first();
+
+		if (existing) {
+			await ctx.db.patch(existing._id, {
+				encryptedAccessToken: args.encryptedAccessToken,
+				encryptedRefreshToken: args.encryptedRefreshToken,
+				tokenExpiresAt: args.tokenExpiresAt,
+				externalCompanyId: args.externalCompanyId,
+				status: 'CONNECTED',
+				lastSyncError: undefined
+			});
+			await ctx.scheduler.runAfter(0, internal.integrations.accounting.seedDefaultMappings, {
+				integrationId: existing._id,
+				organizationId: args.organizationId
+			});
+			return existing._id;
+		}
+
+		const integrationId = await ctx.db.insert('accountingIntegrations', {
+			organizationId: args.organizationId,
+			provider: args.provider,
+			status: 'CONNECTED',
+			encryptedAccessToken: args.encryptedAccessToken,
+			encryptedRefreshToken: args.encryptedRefreshToken,
+			tokenExpiresAt: args.tokenExpiresAt,
+			externalCompanyId: args.externalCompanyId,
+			syncCosts: true,
+			syncVehicles: false,
+			syncExpenses: true,
+			connectedBy: args.connectedByUserId,
+			connectedAt: Date.now()
+		});
+		await ctx.scheduler.runAfter(0, internal.integrations.accounting.seedDefaultMappings, {
+			integrationId,
+			organizationId: args.organizationId
+		});
+		return integrationId;
+	}
+});
 
 // ─── Internal queries ─────────────────────────────────────────────────────────
 
@@ -380,9 +822,7 @@ export const listFailedLogs = internalQuery({
 		for (const integ of integrations) {
 			const failed = await ctx.db
 				.query('accountingSyncLogs')
-				.withIndex('by_status', (q) =>
-					q.eq('integrationId', integ._id).eq('status', 'FAILED')
-				)
+				.withIndex('by_status', (q) => q.eq('integrationId', integ._id).eq('status', 'FAILED'))
 				.filter((q) => q.lt(q.field('attempts'), 5))
 				.collect();
 			logs.push(...failed);
@@ -502,9 +942,7 @@ export const updateTokensAfterRefresh = internalMutation({
 	handler: async (ctx, args) => {
 		await ctx.db.patch(args.integrationId, {
 			encryptedAccessToken: args.encryptedAccessToken,
-			...(args.encryptedRefreshToken
-				? { encryptedRefreshToken: args.encryptedRefreshToken }
-				: {}),
+			...(args.encryptedRefreshToken ? { encryptedRefreshToken: args.encryptedRefreshToken } : {}),
 			tokenExpiresAt: args.tokenExpiresAt
 		});
 	}
@@ -535,9 +973,21 @@ export const seedDefaultMappings = internalMutation({
 		if (!integration) return;
 
 		const mappingTable =
-			integration.provider === 'xero' ? XERO_DEFAULT_MAPPING
-			: integration.provider === 'quickbooks' ? QB_DEFAULT_MAPPING
-			: DEFAULT_PCG_MAPPING;
+			integration.provider === 'xero'
+				? XERO_DEFAULT_MAPPING
+				: integration.provider === 'quickbooks'
+					? QB_DEFAULT_MAPPING
+					: integration.provider === 'freeagent'
+						? FREEAGENT_DEFAULT_MAPPING
+						: integration.provider === 'fortnox'
+							? FORTNOX_DEFAULT_MAPPING
+							: integration.provider === 'visma'
+								? VISMA_DEFAULT_MAPPING
+								: integration.provider === 'tripletex'
+									? TRIPLETEX_DEFAULT_MAPPING
+									: integration.provider === 'economic'
+										? ECONOMIC_DEFAULT_MAPPING
+										: DEFAULT_PCG_MAPPING;
 
 		for (const [category, defaults] of Object.entries(mappingTable)) {
 			const existing = await ctx.db
@@ -554,9 +1004,12 @@ export const seedDefaultMappings = internalMutation({
 					externalAccountCode: defaults.code,
 					externalAccountLabel: defaults.label,
 					analyticAxis: 'Fleet',
-					vatRate: (category === 'CARBURANT' && integration.provider !== 'xero' && integration.provider !== 'quickbooks')
-						? 20
-						: undefined
+					vatRate:
+						category === 'CARBURANT' &&
+						integration.provider !== 'xero' &&
+						integration.provider !== 'quickbooks'
+							? 20
+							: undefined
 				});
 			}
 		}
@@ -694,11 +1147,10 @@ export const connectWithApiKey = authedMutation({
 				status: 'CONNECTED',
 				lastSyncError: undefined
 			});
-			await ctx.scheduler.runAfter(
-				0,
-				internal.integrations.accounting.seedDefaultMappings,
-				{ integrationId: existing._id, organizationId }
-			);
+			await ctx.scheduler.runAfter(0, internal.integrations.accounting.seedDefaultMappings, {
+				integrationId: existing._id,
+				organizationId
+			});
 			return existing._id;
 		}
 
@@ -713,11 +1165,10 @@ export const connectWithApiKey = authedMutation({
 			connectedBy: user._id,
 			connectedAt: now
 		});
-		await ctx.scheduler.runAfter(
-			0,
-			internal.integrations.accounting.seedDefaultMappings,
-			{ integrationId, organizationId }
-		);
+		await ctx.scheduler.runAfter(0, internal.integrations.accounting.seedDefaultMappings, {
+			integrationId,
+			organizationId
+		});
 		return integrationId;
 	}
 });
@@ -784,14 +1235,14 @@ export const triggerManualSync = authedMutation({
 		await requireOrgAdmin(ctx, organizationId, user._id);
 
 		const integration = await ctx.db.get(integrationId);
-		if (!integration || integration.organizationId !== organizationId || integration.status !== 'CONNECTED') {
+		if (
+			!integration ||
+			integration.organizationId !== organizationId ||
+			integration.status !== 'CONNECTED'
+		) {
 			throw new ConvexError('Intégration non disponible');
 		}
-		await ctx.scheduler.runAfter(
-			0,
-			internal.integrations.accounting.processRetryQueue,
-			{}
-		);
+		await ctx.scheduler.runAfter(0, internal.integrations.accounting.processRetryQueue, {});
 	}
 });
 
@@ -819,21 +1270,63 @@ async function getDecryptedToken(
 	if (needsRefresh) {
 		try {
 			const refreshToken = await decryptToken(integration.encryptedRefreshToken!, key);
-			let newTokens: { access_token: string; refresh_token?: string; expires_in: number } | null = null;
+			let newTokens: { access_token: string; refresh_token?: string; expires_in: number } | null =
+				null;
 
 			if (integration.provider === 'xero') {
 				const clientId = process.env.XERO_CLIENT_ID;
 				const clientSecret = process.env.XERO_CLIENT_SECRET;
 				if (clientId && clientSecret) {
 					const res = await xeroRefreshToken(refreshToken, clientId, clientSecret);
-					newTokens = { access_token: res.access_token, refresh_token: res.refresh_token, expires_in: res.expires_in };
+					newTokens = {
+						access_token: res.access_token,
+						refresh_token: res.refresh_token,
+						expires_in: res.expires_in
+					};
 				}
 			} else if (integration.provider === 'quickbooks') {
 				const clientId = process.env.QB_CLIENT_ID;
 				const clientSecret = process.env.QB_CLIENT_SECRET;
 				if (clientId && clientSecret) {
 					const res = await qbRefreshToken(refreshToken, clientId, clientSecret);
-					newTokens = { access_token: res.access_token, refresh_token: res.refresh_token, expires_in: res.expires_in };
+					newTokens = {
+						access_token: res.access_token,
+						refresh_token: res.refresh_token,
+						expires_in: res.expires_in
+					};
+				}
+			} else if (integration.provider === 'freeagent') {
+				const clientId = process.env.FA_CLIENT_ID;
+				const clientSecret = process.env.FA_CLIENT_SECRET;
+				if (clientId && clientSecret) {
+					const res = await faRefreshToken(refreshToken, clientId, clientSecret);
+					newTokens = {
+						access_token: res.access_token,
+						refresh_token: res.refresh_token,
+						expires_in: res.expires_in
+					};
+				}
+			} else if (integration.provider === 'fortnox') {
+				const clientId = process.env.FX_CLIENT_ID;
+				const clientSecret = process.env.FX_CLIENT_SECRET;
+				if (clientId && clientSecret) {
+					const res = await fxRefreshToken(refreshToken, clientId, clientSecret);
+					newTokens = {
+						access_token: res.access_token,
+						refresh_token: res.refresh_token,
+						expires_in: res.expires_in
+					};
+				}
+			} else if (integration.provider === 'visma') {
+				const clientId = process.env.VISMA_CLIENT_ID;
+				const clientSecret = process.env.VISMA_CLIENT_SECRET;
+				if (clientId && clientSecret) {
+					const res = await vismaRefreshToken(refreshToken, clientId, clientSecret);
+					newTokens = {
+						access_token: res.access_token,
+						refresh_token: res.refresh_token,
+						expires_in: res.expires_in
+					};
 				}
 			}
 
@@ -944,10 +1437,9 @@ export const pushEntityToAccounting = internalAction({
 		organizationId: v.id('organizations')
 	},
 	handler: async (ctx, { entityType, entityId, organizationId }) => {
-		const integration = await ctx.runQuery(
-			internal.integrations.accounting.getIntegrationForOrg,
-			{ organizationId }
-		);
+		const integration = await ctx.runQuery(internal.integrations.accounting.getIntegrationForOrg, {
+			organizationId
+		});
 		if (!integration) return;
 		if (entityType === 'COST' && !integration.syncCosts) return;
 		if (entityType === 'EXPENSE' && !integration.syncExpenses) return;
@@ -974,7 +1466,8 @@ export const pushEntityToAccounting = internalAction({
 			});
 
 			const categoryMapping: CategoryMapping = {
-				externalAccountCode: mapping?.externalAccountCode ?? DEFAULT_PCG_MAPPING[cost.category]?.code ?? '6068',
+				externalAccountCode:
+					mapping?.externalAccountCode ?? DEFAULT_PCG_MAPPING[cost.category]?.code ?? '6068',
 				analyticAxis: mapping?.analyticAxis ?? 'Flotte',
 				vatRate: mapping?.vatRate
 			};
@@ -1029,7 +1522,8 @@ export const pushEntityToAccounting = internalAction({
 			});
 
 			const categoryMapping: CategoryMapping = {
-				externalAccountCode: mapping?.externalAccountCode ?? DEFAULT_PCG_MAPPING['IK']?.code ?? '6251',
+				externalAccountCode:
+					mapping?.externalAccountCode ?? DEFAULT_PCG_MAPPING['IK']?.code ?? '6251',
 				analyticAxis: mapping?.analyticAxis ?? 'Fleet',
 				vatRate: undefined
 			};
@@ -1069,10 +1563,7 @@ export const pushEntityToAccounting = internalAction({
 export const processRetryQueue = internalAction({
 	args: {},
 	handler: async (ctx) => {
-		const failedLogs = await ctx.runQuery(
-			internal.integrations.accounting.listFailedLogs,
-			{}
-		);
+		const failedLogs = await ctx.runQuery(internal.integrations.accounting.listFailedLogs, {});
 		for (const log of failedLogs) {
 			await ctx.scheduler.runAfter(0, internal.integrations.accounting.pushEntityToAccounting, {
 				entityType: log.entityType,
@@ -1134,24 +1625,28 @@ export const pullPaymentStatuses = internalAction({
 			const token = await getDecryptedToken(ctx, integration);
 			if (!token) continue;
 
-			const pairs = await ctx.runQuery(
-				internal.integrations.accounting.listSyncedCostIds,
-				{ integrationId: integration._id }
-			);
+			const pairs = await ctx.runQuery(internal.integrations.accounting.listSyncedCostIds, {
+				integrationId: integration._id
+			});
 			if (!pairs.length) continue;
 
 			// Batch into groups of 20 to respect rate limits
 			for (let i = 0; i < pairs.length; i += 20) {
 				const batch = pairs.slice(i, i + 20);
 				try {
-					const statuses = await connector.pullPaymentStatuses(token, batch, integration.externalCompanyId);
+					const statuses = await connector.pullPaymentStatuses(
+						token,
+						batch,
+						integration.externalCompanyId
+					);
 					for (const s of statuses) {
 						const pair = batch.find((p) => p.externalId === s.externalId);
 						if (!pair) continue;
-						await ctx.runMutation(
-							internal.integrations.accounting.updateCostPaymentStatus,
-							{ costId: pair.costId, isPaid: s.isPaid, paidAt: s.paidAt }
-						);
+						await ctx.runMutation(internal.integrations.accounting.updateCostPaymentStatus, {
+							costId: pair.costId,
+							isPaid: s.isPaid,
+							paidAt: s.paidAt
+						});
 					}
 				} catch {
 					// Partial failure — continue with next batch

@@ -11,7 +11,6 @@ import { aiChatRateLimiter } from './rateLimit';
 import { listMessagesForThread } from '../support/messageListing';
 import { authedMutation } from '../functions';
 import { authComponent } from '../auth';
-import { getAutumnSdk } from '../autumn';
 import { requireAiChatThreadRecord } from './ownership';
 
 const THREAD_PREVIEW_LENGTH = 100;
@@ -115,20 +114,6 @@ export const createAIResponse = internalAction({
 		userId: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {
-		// Check AI chat message allowance via direct SDK (no auth context in internalAction).
-		// See: https://github.com/useautumn/autumn-js/issues/51
-		if (args.userId) {
-			const sdk = await getAutumnSdk();
-			const checkResult = await sdk.check({
-				customer_id: args.userId,
-				feature_id: 'ai_chat_messages'
-			});
-			if (checkResult.data && !checkResult.data.allowed) {
-				console.warn(`[createAIResponse] AI chat limit reached for user ${args.userId}`);
-				return;
-			}
-		}
-
 		const result = await aiChatAgent.streamText(
 			ctx,
 			{ threadId: args.threadId, userId: args.userId },
@@ -153,16 +138,6 @@ export const createAIResponse = internalAction({
 						? responseText.slice(0, THREAD_PREVIEW_LENGTH)
 						: responseText,
 				lastMessageAt: Date.now()
-			});
-		}
-
-		// Track usage after successful AI response
-		if (args.userId) {
-			const sdk = await getAutumnSdk();
-			await sdk.track({
-				customer_id: args.userId,
-				feature_id: 'ai_chat_messages',
-				value: 1
 			});
 		}
 	}

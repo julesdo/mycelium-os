@@ -120,7 +120,7 @@ export const agents: Agent[] = [
 		nameKey: 'landing.agents.concierge.name',
 		roleKey: 'landing.agents.concierge.role',
 		descKey: 'landing.agents.concierge.desc',
-		tier: 'Starter',
+		tier: 'Essential',
 		featured: true
 	},
 	{
@@ -129,7 +129,7 @@ export const agents: Agent[] = [
 		nameKey: 'landing.agents.manager.name',
 		roleKey: 'landing.agents.manager.role',
 		descKey: 'landing.agents.manager.desc',
-		tier: 'Pro'
+		tier: 'Professional'
 	},
 	{
 		id: 'optimizer',
@@ -145,7 +145,7 @@ export const agents: Agent[] = [
 		nameKey: 'landing.agents.compliance.name',
 		roleKey: 'landing.agents.compliance.role',
 		descKey: 'landing.agents.compliance.desc',
-		tier: 'Business'
+		tier: 'Professional'
 	},
 	{
 		id: 'negotiator',
@@ -153,7 +153,7 @@ export const agents: Agent[] = [
 		nameKey: 'landing.agents.negotiator.name',
 		roleKey: 'landing.agents.negotiator.role',
 		descKey: 'landing.agents.negotiator.desc',
-		tier: 'Scale'
+		tier: 'Business'
 	},
 	{
 		id: 'coach',
@@ -161,7 +161,7 @@ export const agents: Agent[] = [
 		nameKey: 'landing.agents.coach.name',
 		roleKey: 'landing.agents.coach.role',
 		descKey: 'landing.agents.coach.desc',
-		tier: 'Scale'
+		tier: 'Business'
 	}
 ];
 
@@ -247,7 +247,7 @@ export const modules: Module[] = [
 export type PricingTier = {
 	id: string;
 	tier: string;
-	price: string;
+	priceKey: string;
 	subKey: string;
 	agentsKey: string;
 	featureKeys: string[];
@@ -257,39 +257,40 @@ export type PricingTier = {
 
 export const pricingTiers: PricingTier[] = [
 	{
-		id: 'starter',
-		tier: 'Starter',
-		price: '290',
-		subKey: 'landing.pricing.starter.sub',
-		agentsKey: 'landing.pricing.starter.agents',
+		id: 'essential',
+		tier: 'Essential',
+		priceKey: 'landing.pricing.essential.price',
+		subKey: 'landing.pricing.essential.sub',
+		agentsKey: 'landing.pricing.essential.agents',
 		featureKeys: [
-			'landing.pricing.starter.f1',
-			'landing.pricing.starter.f2',
-			'landing.pricing.starter.f3',
-			'landing.pricing.starter.f4',
-			'landing.pricing.starter.f5'
+			'landing.pricing.essential.f1',
+			'landing.pricing.essential.f2',
+			'landing.pricing.essential.f3',
+			'landing.pricing.essential.f4',
+			'landing.pricing.essential.f5'
 		],
 		ctaKey: 'landing.pricing.cta_start'
 	},
 	{
-		id: 'pro',
-		tier: 'Pro',
-		price: '590',
-		subKey: 'landing.pricing.pro.sub',
-		agentsKey: 'landing.pricing.pro.agents',
+		id: 'professional',
+		tier: 'Professional',
+		priceKey: 'landing.pricing.professional.price',
+		subKey: 'landing.pricing.professional.sub',
+		agentsKey: 'landing.pricing.professional.agents',
 		featureKeys: [
-			'landing.pricing.pro.f1',
-			'landing.pricing.pro.f2',
-			'landing.pricing.pro.f3',
-			'landing.pricing.pro.f4',
-			'landing.pricing.pro.f5'
+			'landing.pricing.professional.f1',
+			'landing.pricing.professional.f2',
+			'landing.pricing.professional.f3',
+			'landing.pricing.professional.f4',
+			'landing.pricing.professional.f5'
 		],
-		ctaKey: 'landing.pricing.cta_start'
+		ctaKey: 'landing.pricing.cta_start',
+		featured: true
 	},
 	{
 		id: 'business',
 		tier: 'Business',
-		price: '990',
+		priceKey: 'landing.pricing.business.price',
 		subKey: 'landing.pricing.business.sub',
 		agentsKey: 'landing.pricing.business.agents',
 		featureKeys: [
@@ -299,21 +300,20 @@ export const pricingTiers: PricingTier[] = [
 			'landing.pricing.business.f4',
 			'landing.pricing.business.f5'
 		],
-		ctaKey: 'landing.pricing.cta_start',
-		featured: true
+		ctaKey: 'landing.pricing.cta_start'
 	},
 	{
-		id: 'scale',
-		tier: 'Scale',
-		price: '1490',
-		subKey: 'landing.pricing.scale.sub',
-		agentsKey: 'landing.pricing.scale.agents',
+		id: 'enterprise',
+		tier: 'Enterprise',
+		priceKey: 'landing.pricing.enterprise.price',
+		subKey: 'landing.pricing.enterprise.sub',
+		agentsKey: 'landing.pricing.enterprise.agents',
 		featureKeys: [
-			'landing.pricing.scale.f1',
-			'landing.pricing.scale.f2',
-			'landing.pricing.scale.f3',
-			'landing.pricing.scale.f4',
-			'landing.pricing.scale.f5'
+			'landing.pricing.enterprise.f1',
+			'landing.pricing.enterprise.f2',
+			'landing.pricing.enterprise.f3',
+			'landing.pricing.enterprise.f4',
+			'landing.pricing.enterprise.f5'
 		],
 		ctaKey: 'landing.pricing.cta_contact'
 	}

@@ -38,7 +38,7 @@ Key product features to reference:
 - Backend powered by Convex (real-time database + serverless functions)
 - Authentication with Convex Auth (OAuth and email/password)
 - Internationalization with Tolgee (cloud-hosted translations)
-- Billing integration with Autumn
+- Billing with Paddle (subscriptions, webhooks, customer portal)
 - Email system with Resend
 - Analytics with PostHog
 - UI components from shadcn-svelte and Skeleton UI

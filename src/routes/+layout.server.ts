@@ -1,6 +1,5 @@
 import type { LayoutServerLoad } from './$types';
 import { api } from '$lib/convex/_generated/api';
-import { createAutumnHandlers } from '@stickerdaniel/convex-autumn-svelte/sveltekit/server';
 import { createServerConvexHttpClient } from '$lib/server/convex-http';
 
 type JwtViewer = {
@@ -56,55 +55,26 @@ function getViewerFromJwt(token: string | undefined): JwtViewer | null {
 }
 
 export const load: LayoutServerLoad = async (event) => {
-	// Enables targeted invalidation via invalidate('autumn:customer') to refetch only customer data
-	event.depends('autumn:customer');
 	// Enables targeted invalidation when client-side auth state diverges from server state.
-	// Prerendered pages bake authState.isAuthenticated: false at build time — when the client
-	// recovers a session from cookies, AppAuthProvider detects the mismatch and calls
-	// invalidate('app:auth') to re-run this load with fresh cookies.
 	event.depends('app:auth');
 
-	// Check if JWT token exists (set by handleAuth in hooks.server.ts)
 	const isAuthenticated = !!event.locals.token;
 	const authState = { isAuthenticated };
 	const fallbackViewer = getViewerFromJwt(event.locals.token);
 
-	// Only create Convex/Autumn clients when authenticated (avoids invalid URL during prerendering)
-	let customer = null;
 	let viewer = null;
 
 	if (isAuthenticated) {
 		const client = createServerConvexHttpClient({ token: event.locals.token });
-
-		const { getCustomer } = createAutumnHandlers({
-			convexApi: (api as any).autumn,
-			createClient: () => client
+		viewer = await client.query(api.auth.getCurrentUser, {}).catch((e) => {
+			console.error('[+layout.server.ts] Viewer lookup failed, falling back to JWT payload:', e);
+			return fallbackViewer;
 		});
-
-		// Fetch customer and viewer in PARALLEL for faster initial load
-		// Wrap in try-catch to handle failures gracefully (e.g., in CI)
-		[customer, viewer] = await Promise.all([
-			getCustomer(event).catch((e) => {
-				console.error('[+layout.server.ts] Autumn getCustomer failed:', e);
-				return null;
-			}),
-			client.query(api.auth.getCurrentUser, {}).catch((e) => {
-				console.error('[+layout.server.ts] Viewer lookup failed, falling back to JWT payload:', e);
-				return fallbackViewer;
-			})
-		]);
 	}
 
 	return {
 		authState,
-		autumnState: {
-			customer,
-			_timeFetched: Date.now()
-		},
 		viewer,
-		// Persisted sidebar state (set by handleSidebarState in hooks.server.ts).
-		// Forwarded to Sidebar.Provider so the authenticated shell renders the
-		// correct open/collapsed state on first paint.
 		sidebarOpen: event.locals.sidebarOpen
 	};
 };

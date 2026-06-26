@@ -195,30 +195,42 @@ export default defineSchema({
 		sector: v.optional(v.string()),
 		size: v.optional(v.string()),
 		plan: v.union(v.literal('flat'), v.literal('per_seat')),
+		logoUrl: v.optional(v.string()),
+		logoStorageId: v.optional(v.id('_storage')),
 		// Internationalisation
-		country: v.optional(v.string()),       // ISO 3166-1 alpha-2 — 'FR' | 'GB' | 'SE' | 'NO' | 'DK'
-		currency: v.optional(v.string()),      // 'EUR' | 'GBP' | 'SEK' | 'NOK' | 'DKK'
+		country: v.optional(v.string()), // ISO 3166-1 alpha-2 — 'FR' | 'GB' | 'SE' | 'NO' | 'DK'
+		currency: v.optional(v.string()), // 'EUR' | 'GBP' | 'SEK' | 'NOK' | 'DKK'
 		distanceUnit: v.optional(v.union(v.literal('km'), v.literal('mile'))),
-		timezone: v.optional(v.string()),      // IANA — 'Europe/London', 'Europe/Paris'…
-		locale: v.optional(v.string()),        // BCP 47 — 'en-GB', 'fr-FR', 'sv-SE'…
+		timezone: v.optional(v.string()), // IANA — 'Europe/London', 'Europe/Paris'…
+		locale: v.optional(v.string()), // BCP 47 — 'en-GB', 'fr-FR', 'sv-SE'…
 		// Paddle billing
 		paddleSubscriptionId: v.optional(v.string()),
 		paddleCustomerId: v.optional(v.string()),
-		paddlePlanTier: v.optional(v.union(
-			v.literal('essential'),
-			v.literal('professional'),
-			v.literal('business'),
-			v.literal('enterprise')
-		)),
-		paddleStatus: v.optional(v.union(
-			v.literal('active'),
-			v.literal('trialing'),
-			v.literal('paused'),
-			v.literal('past_due'),
-			v.literal('canceled')
-		)),
+		paddlePlanTier: v.optional(
+			v.union(
+				v.literal('essential'),
+				v.literal('professional'),
+				v.literal('business'),
+				v.literal('enterprise')
+			)
+		),
+		paddleStatus: v.optional(
+			v.union(
+				v.literal('active'),
+				v.literal('trialing'),
+				v.literal('paused'),
+				v.literal('past_due'),
+				v.literal('canceled')
+			)
+		),
 		paddleCurrentPeriodEnd: v.optional(v.number()),
 		seatsIncluded: v.optional(v.number()),
+		// Free trial (15 days, Professional equivalent)
+		freeTrialEndsAt: v.optional(v.number()),
+		// Dev plan — full access, only activatable when PADDLE_API_KEY is absent
+		devPlan: v.optional(v.boolean()),
+		// Dev-only simulated tier — overrides 'dev' when no PADDLE_API_KEY, for testing feature gating
+		simulatedTier: v.optional(v.string()),
 		createdAt: v.number()
 	})
 		.index('by_name', ['name'])
@@ -257,14 +269,15 @@ export default defineSchema({
 	// User profiles - currentOrganizationId séparé du schéma Better Auth (auto-généré)
 	userProfiles: defineTable({
 		userId: v.string(), // Better Auth string ID
-		currentOrganizationId: v.optional(v.id('organizations'))
+		currentOrganizationId: v.optional(v.id('organizations')),
+		hasUsedFreeTrial: v.optional(v.boolean()) // anti-abus : trial unique par userId
 	}).index('by_userId', ['userId']),
 
 	// Vehicles - flotte de véhicules d'une organisation
 	vehicles: defineTable({
 		organizationId: v.id('organizations'),
 		registration: v.string(), // immatriculation
-		vin: v.optional(v.string()),          // VIN 17 caractères (clé de liaison Smartcar)
+		vin: v.optional(v.string()), // VIN 17 caractères (clé de liaison Smartcar)
 		brand: v.string(),
 		model: v.string(),
 		year: v.number(),
@@ -285,21 +298,21 @@ export default defineSchema({
 		location: v.optional(v.string()),
 		notes: v.optional(v.string()),
 		activeIncidentId: v.optional(v.id('incidents')),
-		co2Gkm: v.optional(v.number()),           // émissions CO2 WLTP en g/km
-		purchasePrice: v.optional(v.number()),    // prix d'achat TTC en €
-		p11dValue: v.optional(v.number()),        // UK P11D list price in GBP (for BiK)
+		co2Gkm: v.optional(v.number()), // émissions CO2 WLTP en g/km
+		purchasePrice: v.optional(v.number()), // prix d'achat TTC en €
+		p11dValue: v.optional(v.number()), // UK P11D list price in GBP (for BiK)
 		electricRangeMiles: v.optional(v.number()), // PHEV electric range (for BiK band)
 		// Smartcar telemetry (updated by Smartcar sync job)
-		smartcarVehicleId: v.optional(v.string()),  // Smartcar vehicle UUID
-		smartcarUserId: v.optional(v.string()),     // Smartcar user_id du conducteur (per-vehicle OAuth)
-		smartcarOdometer: v.optional(v.number()),   // km, last synced
+		smartcarVehicleId: v.optional(v.string()), // Smartcar vehicle UUID
+		smartcarUserId: v.optional(v.string()), // Smartcar user_id du conducteur (per-vehicle OAuth)
+		smartcarOdometer: v.optional(v.number()), // km, last synced
 		smartcarBatteryPercent: v.optional(v.number()), // SoC % (EV/PHEV only)
 		smartcarBatteryRange: v.optional(v.number()), // km of range remaining
 		smartcarLatitude: v.optional(v.number()),
 		smartcarLongitude: v.optional(v.number()),
-		smartcarLastSync: v.optional(v.number()),   // ms timestamp
-		insuranceExpiryDate: v.optional(v.string()),     // ISO date "2026-12-31"
-		ctExpiryDate: v.optional(v.string()),            // date contrôle technique
+		smartcarLastSync: v.optional(v.number()), // ms timestamp
+		insuranceExpiryDate: v.optional(v.string()), // ISO date "2026-12-31"
+		ctExpiryDate: v.optional(v.string()), // date contrôle technique
 		registrationExpiryDate: v.optional(v.string()), // validité carte grise
 		insurerName: v.optional(v.string()),
 		policyNumber: v.optional(v.string()),
@@ -687,16 +700,18 @@ export default defineSchema({
 	// Mileage rate configs — taux par catégorie de véhicule, configurables par org
 	mileageRateConfigs: defineTable({
 		organizationId: v.id('organizations'),
-		rates: v.array(v.object({
-			category: v.union(
-				v.literal('ELECTRIC'),
-				v.literal('HYBRID'),
-				v.literal('THERMAL'),
-				v.literal('UTILITY')
-			),
-			ratePerUnit: v.number(),
-			label: v.optional(v.string())
-		})),
+		rates: v.array(
+			v.object({
+				category: v.union(
+					v.literal('ELECTRIC'),
+					v.literal('HYBRID'),
+					v.literal('THERMAL'),
+					v.literal('UTILITY')
+				),
+				ratePerUnit: v.number(),
+				label: v.optional(v.string())
+			})
+		),
 		updatedAt: v.number()
 	}).index('by_org', ['organizationId']),
 
@@ -709,17 +724,19 @@ export default defineSchema({
 		departureLocation: v.string(),
 		arrivalLocation: v.string(),
 		roundTrip: v.boolean(),
-		distance: v.optional(v.number()),        // valeur numérique (km ou miles selon distanceUnit)
+		distance: v.optional(v.number()), // valeur numérique (km ou miles selon distanceUnit)
 		distanceUnit: v.optional(v.union(v.literal('km'), v.literal('mile'))),
-		distanceKm: v.optional(v.number()),      // legacy field (pre-P15 refactor)
-		fiscalPower: v.optional(v.number()),     // legacy field (pre-P15 refactor)
-		vehicleCategory: v.optional(v.union(
-			v.literal('ELECTRIC'),
-			v.literal('HYBRID'),
-			v.literal('THERMAL'),
-			v.literal('UTILITY')
-		)),
-		ratePerUnit: v.optional(v.number()),         // taux appliqué au moment du calcul (audit trail)
+		distanceKm: v.optional(v.number()), // legacy field (pre-P15 refactor)
+		fiscalPower: v.optional(v.number()), // legacy field (pre-P15 refactor)
+		vehicleCategory: v.optional(
+			v.union(
+				v.literal('ELECTRIC'),
+				v.literal('HYBRID'),
+				v.literal('THERMAL'),
+				v.literal('UTILITY')
+			)
+		),
+		ratePerUnit: v.optional(v.number()), // taux appliqué au moment du calcul (audit trail)
 		vehicleDescription: v.optional(v.string()),
 		calculatedAmount: v.number(),
 		status: v.union(
@@ -752,7 +769,12 @@ export default defineSchema({
 			v.literal('ebp'),
 			v.literal('xero'),
 			v.literal('quickbooks'),
-			v.literal('odoo')
+			v.literal('odoo'),
+			v.literal('freeagent'),
+			v.literal('fortnox'),
+			v.literal('visma'),
+			v.literal('tripletex'),
+			v.literal('economic')
 		),
 		status: v.union(v.literal('CONNECTED'), v.literal('DISCONNECTED'), v.literal('ERROR')),
 		encryptedAccessToken: v.string(),
@@ -801,17 +823,47 @@ export default defineSchema({
 		.index('by_entity', ['entityType', 'entityId'])
 		.index('by_status', ['integrationId', 'status']),
 
+	// Comms integrations — Slack / Microsoft Teams incoming webhooks, org-level
+	commsIntegrations: defineTable({
+		organizationId: v.id('organizations'),
+		provider: v.union(v.literal('slack'), v.literal('teams')),
+		encryptedWebhookUrl: v.string(),
+		label: v.optional(v.string()), // user-defined channel label e.g. "#fleet-alerts"
+		isActive: v.boolean(),
+		connectedBy: v.string(),
+		connectedAt: v.number(),
+		lastUsedAt: v.optional(v.number()),
+		lastError: v.optional(v.string())
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_provider', ['organizationId', 'provider']),
+
+	// OAuth CSRF state — stores state UUID during OAuth flow (expires after 10 min)
+	oauthStates: defineTable({
+		state: v.string(),
+		provider: v.union(
+			v.literal('xero'),
+			v.literal('quickbooks'),
+			v.literal('freeagent'),
+			v.literal('fortnox'),
+			v.literal('visma')
+		),
+		organizationId: v.id('organizations'),
+		userId: v.string(),
+		createdAt: v.number()
+	}).index('by_state', ['state']),
+
 	// Smartcar connections — one per organization (v3 M2M: store userId, not tokens)
 	smartcarConnections: defineTable({
 		organizationId: v.id('organizations'),
-		smartcarUserId: v.optional(v.string()),        // v3: Smartcar user_id from Connect redirect
+		smartcarUserId: v.optional(v.string()), // v3: Smartcar user_id from Connect redirect
 		// Legacy v2 fields (kept optional for backward compat)
 		encryptedAccessToken: v.optional(v.string()),
 		encryptedRefreshToken: v.optional(v.string()),
 		accessTokenExpiry: v.optional(v.number()),
 		connectedAt: v.number(),
 		connectedByUserId: v.string(),
-		cachedVehicleList: v.optional(v.string()),     // JSON array of { id, make, model, year, vin }
+		cachedVehicleList: v.optional(v.string()) // JSON array of { id, make, model, year, vin }
 	}).index('by_org', ['organizationId']),
 
 	// API public keys — clés scopées par organisation pour l'API REST v1
@@ -972,12 +1024,12 @@ export default defineSchema({
 	vehicleAssignments: defineTable({
 		organizationId: v.id('organizations'),
 		vehicleId: v.id('vehicles'),
-		userId: v.string(),                              // salarié bénéficiaire
-		startDate: v.string(),                           // ISO date début attribution
-		endDate: v.optional(v.string()),                 // ISO date fin (undefined = actif)
-		fuelPaidByCompany: v.boolean(),                  // carburant personnel payé par l'entreprise
+		userId: v.string(), // salarié bénéficiaire
+		startDate: v.string(), // ISO date début attribution
+		endDate: v.optional(v.string()), // ISO date fin (undefined = actif)
+		fuelPaidByCompany: v.boolean(), // carburant personnel payé par l'entreprise
 		privateUseAllowed: v.boolean(),
-		privateKmPerYear: v.optional(v.number()),        // km privés déclarés/estimés
+		privateKmPerYear: v.optional(v.number()), // km privés déclarés/estimés
 		aenMethod: v.union(v.literal('FORFAITAIRE'), v.literal('REEL')),
 		notes: v.optional(v.string()),
 		createdBy: v.string(),
@@ -1009,11 +1061,7 @@ export default defineSchema({
 				scope: v.union(v.literal('SCOPE1'), v.literal('SCOPE2'))
 			})
 		),
-		dataSource: v.union(
-			v.literal('FUEL_IMPORT'),
-			v.literal('COST_ESTIMATE'),
-			v.literal('MANUAL')
-		),
+		dataSource: v.union(v.literal('FUEL_IMPORT'), v.literal('COST_ESTIMATE'), v.literal('MANUAL')),
 		pdfStorageId: v.optional(v.string()),
 		generatedBy: v.string(),
 		generatedAt: v.number()
@@ -1046,7 +1094,7 @@ export default defineSchema({
 		.index('by_entity', ['entityType', 'entityId'])
 		.index('by_org_and_type', ['organizationId', 'alertType'])
 		.index('by_org_and_resolved', ['organizationId', 'resolvedAt'])
-		.index('by_entity_type_horizon', ['entityId', 'alertType', 'horizon']),
+		.index('by_entity_type_horizon', ['entityId', 'alertType', 'horizon'])
 
 	// Note: The agent component automatically creates the following tables:
 	// - agent:threads - Conversation threads for customer support

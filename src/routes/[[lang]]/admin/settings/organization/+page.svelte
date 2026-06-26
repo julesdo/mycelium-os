@@ -72,7 +72,8 @@
 	function validate(): boolean {
 		const errs: Record<string, Array<{ message: string }>> = {};
 		if (!name.trim()) errs.name = [{ message: 'Le nom est obligatoire' }];
-		if (siren && !/^\d{9}$/.test(siren)) errs.siren = [{ message: 'Le SIREN doit comporter 9 chiffres' }];
+		if (siren && !/^\d{9}$/.test(siren))
+			errs.siren = [{ message: 'Le SIREN doit comporter 9 chiffres' }];
 		errors = errs;
 		return Object.keys(errs).length === 0;
 	}
@@ -113,7 +114,7 @@
 		<Card.Root>
 			<Card.Content class="p-6">
 				<div class="flex items-center justify-center py-8">
-					<LoaderCircleIcon class="size-6 animate-spin text-muted-foreground" />
+					<LoaderCircleIcon class="size-6 text-muted-foreground motion-safe:animate-spin" />
 				</div>
 			</Card.Content>
 		</Card.Root>
@@ -215,7 +216,7 @@
 						{#if isOrgAdmin}
 							<Button type="submit" disabled={isSubmitting} class="w-full sm:w-auto">
 								{#if isSubmitting}
-									<LoaderCircleIcon class="mr-2 size-4 animate-spin" />
+									<LoaderCircleIcon class="mr-2 size-4 motion-safe:animate-spin" />
 									Enregistrement...
 								{:else}
 									Enregistrer les modifications
@@ -232,7 +233,8 @@
 			<Card.Header>
 				<Card.Title>Localisation & Currency</Card.Title>
 				<Card.Description>
-					Sets the currency, distance unit, and timezone used across the platform and for mileage reimbursements.
+					Sets the currency, distance unit, and timezone used across the platform and for mileage
+					reimbursements.
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="p-6 pt-0">
@@ -302,7 +304,11 @@
 									disabled={isSubmitting || !isOrgAdmin}
 								>
 									<Select.Trigger class="w-full">
-										{distanceUnit === 'mile' ? 'Miles (mi)' : distanceUnit === 'km' ? 'Kilometres (km)' : 'Select unit'}
+										{distanceUnit === 'mile'
+											? 'Miles (mi)'
+											: distanceUnit === 'km'
+												? 'Kilometres (km)'
+												: 'Select unit'}
 									</Select.Trigger>
 									<Select.Content>
 										<Select.Item value="km">Kilometres (km)</Select.Item>
@@ -327,7 +333,7 @@
 						{#if isOrgAdmin}
 							<Button type="submit" disabled={isSubmitting} class="w-full sm:w-auto">
 								{#if isSubmitting}
-									<LoaderCircleIcon class="mr-2 size-4 animate-spin" />
+									<LoaderCircleIcon class="mr-2 size-4 motion-safe:animate-spin" />
 									Enregistrement...
 								{:else}
 									Enregistrer les modifications

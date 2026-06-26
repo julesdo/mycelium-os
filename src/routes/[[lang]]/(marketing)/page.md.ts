@@ -41,9 +41,9 @@ export const marketingMarkdown: MarketingMarkdownDocument = {
 					description: 'Authentication, sessions, OAuth, and passkeys'
 				},
 				{
-					label: 'Autumn',
-					href: 'https://useautumn.com/',
-					description: 'Billing, feature gates, and subscription workflows'
+					label: 'Paddle',
+					href: 'https://paddle.com/',
+					description: 'Billing, subscriptions, and international payments (MoR)'
 				},
 				{
 					label: 'Tolgee',

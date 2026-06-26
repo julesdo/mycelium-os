@@ -19,8 +19,13 @@
 	import MenuIcon from '@lucide/svelte/icons/menu';
 	import XIcon from '@lucide/svelte/icons/x';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import Building2Icon from '@lucide/svelte/icons/building-2';
 	import { cn } from '$lib/utils';
 	import Logo from '../icons/logo.svelte';
+	import { useQuery, useConvexClient } from '@mmailaender/convex-svelte';
+	import { api } from '$lib/convex/_generated/api.js';
 
 	const { t } = getTranslate();
 
@@ -32,6 +37,37 @@
 	let { config, user }: Props = $props();
 
 	let mobileMenuOpen = $state(false);
+
+	// Org switcher
+	const convexClient = useConvexClient();
+	const orgsQuery = useQuery(api.organizations.listMyOrganizations, {});
+	const currentOrgQuery = useQuery(api.organizations.getMyOrg, {});
+	const orgs = $derived(orgsQuery.data ?? []);
+	const currentOrg = $derived(currentOrgQuery.data);
+	let isSwitching = $state(false);
+
+	async function switchOrg(orgId: string) {
+		if (isSwitching || orgId === currentOrg?._id) return;
+		isSwitching = true;
+		try {
+			await convexClient.mutation(api.organizations.switchOrganization, {
+				organizationId: orgId as any
+			});
+			window.location.reload();
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Impossible de changer d'organisation");
+			isSwitching = false;
+		}
+	}
+
+	function orgInitials(name: string): string {
+		return name
+			.split(/\s+/)
+			.map((w) => w[0])
+			.slice(0, 2)
+			.join('')
+			.toUpperCase();
+	}
 
 	const initials = $derived(
 		(user?.name ?? '')
@@ -93,7 +129,7 @@
 							'flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-150',
 							groupActive
 								? 'topbar-nav-pill-active'
-								: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-white/6 hover:ring-1 hover:ring-inset hover:ring-black/[0.04] dark:hover:ring-white/[0.06]'
+								: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:ring-1 hover:ring-black/[0.04] hover:ring-inset dark:hover:bg-white/6 dark:hover:ring-white/[0.06]'
 						)}
 					>
 						{#if group.icon}
@@ -113,14 +149,16 @@
 										'flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-150 focus:outline-none',
 										groupActive
 											? 'topbar-nav-pill-active'
-											: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-white/6 hover:ring-1 hover:ring-inset hover:ring-black/[0.04] dark:hover:ring-white/[0.06]'
+											: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:ring-1 hover:ring-black/[0.04] hover:ring-inset dark:hover:bg-white/6 dark:hover:ring-white/[0.06]'
 									)}
 								>
 									{#if group.icon}
 										<group.icon class="size-3.5 shrink-0" />
 									{/if}
 									{group.label}
-									<ChevronDownIcon class="size-3 shrink-0 opacity-50 transition-transform [[data-state=open]_&]:rotate-180" />
+									<ChevronDownIcon
+										class="size-3 shrink-0 opacity-50 transition-transform [[data-state=open]_&]:rotate-180"
+									/>
 								</button>
 							{/snippet}
 						</DropdownMenu.Trigger>
@@ -130,12 +168,17 @@
 									<a href={resolve(item.url)}>
 										<DropdownMenu.Item
 											class={cn(
-												'gap-2.5 py-2 cursor-pointer',
+												'cursor-pointer gap-2.5 py-2',
 												item.isActive && 'bg-muted font-medium text-foreground'
 											)}
 										>
 											{#if item.icon}
-												<item.icon class={cn('size-4 shrink-0', item.isActive ? 'text-foreground' : 'text-muted-foreground')} />
+												<item.icon
+													class={cn(
+														'size-4 shrink-0',
+														item.isActive ? 'text-foreground' : 'text-muted-foreground'
+													)}
+												/>
 											{/if}
 											<T keyName={item.translationKey} />
 											{#if item.isActive}
@@ -168,7 +211,7 @@
 						{#snippet child({ props })}
 							<button
 								type="button"
-								class="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm font-medium transition-all duration-150 hover:bg-muted/60 hover:ring-1 hover:ring-inset hover:ring-black/[0.04] dark:hover:bg-white/6 dark:hover:ring-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+								class="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm font-medium transition-all duration-150 hover:bg-muted/60 hover:ring-1 hover:ring-black/[0.04] hover:ring-inset focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 dark:hover:bg-white/6 dark:hover:ring-white/[0.06]"
 								{...props}
 							>
 								<Avatar.Root class="size-7 rounded-lg ring-1 ring-border/50 after:rounded-lg">
@@ -181,7 +224,7 @@
 							</button>
 						{/snippet}
 					</DropdownMenu.Trigger>
-					<DropdownMenu.Content align="end" class="w-60">
+					<DropdownMenu.Content align="end" class="w-64">
 						<DropdownMenu.Label class="p-0 font-normal">
 							<div class="flex items-center gap-3 px-3 py-3">
 								<Avatar.Root class="size-9 rounded-xl ring-1 ring-border/50 after:rounded-xl">
@@ -197,6 +240,59 @@
 							</div>
 						</DropdownMenu.Label>
 						<DropdownMenu.Separator />
+
+						<!-- Organisation switcher -->
+						{#if currentOrg}
+							<DropdownMenu.Label
+								class="px-3 py-1 text-[10px] font-medium tracking-wider text-muted-foreground/70 uppercase"
+							>
+								Organisation
+							</DropdownMenu.Label>
+							{#each orgs as org (org._id)}
+								{@const isActive = org._id === currentOrg._id}
+								<DropdownMenu.Item
+									class="mx-1 gap-2.5 rounded-lg py-2"
+									onSelect={() => switchOrg(org._id)}
+									disabled={isSwitching}
+								>
+									<div
+										class="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded text-[10px] font-bold
+										{(org as any).logoUrl
+											? ''
+											: isActive
+												? 'bg-primary/15 text-primary'
+												: 'bg-muted text-muted-foreground'}"
+									>
+										{#if (org as any).logoUrl}
+											<img
+												src={(org as any).logoUrl}
+												alt={org.name}
+												class="size-full object-contain"
+											/>
+										{:else}
+											{orgInitials(org.name)}
+										{/if}
+									</div>
+									<span class="min-w-0 flex-1 truncate text-sm">{org.name}</span>
+									{#if isActive}
+										<CheckIcon class="size-3.5 shrink-0 text-primary" />
+									{/if}
+								</DropdownMenu.Item>
+							{/each}
+							<DropdownMenu.Item
+								class="mx-1 gap-2.5 rounded-lg py-2 text-muted-foreground"
+								onSelect={() => {
+									window.location.href = localizedHref('/onboarding/organization');
+								}}
+							>
+								<div class="flex size-5 shrink-0 items-center justify-center rounded bg-muted">
+									<PlusIcon class="size-3" />
+								</div>
+								<span class="text-sm">Créer une organisation</span>
+							</DropdownMenu.Item>
+							<DropdownMenu.Separator />
+						{/if}
+
 						<DropdownMenu.Group>
 							<a href={resolve(localizedHref('/app'))}>
 								<DropdownMenu.Item class="gap-2.5 py-2">

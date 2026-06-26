@@ -1,6 +1,7 @@
-import { v } from 'convex/values';
-import { httpAction, internalMutation, internalQuery } from './_generated/server';
+import { v, ConvexError } from 'convex/values';
+import { httpAction, internalMutation, internalQuery, query, action } from './_generated/server';
 import { internal } from './_generated/api';
+import { authComponent } from './auth';
 import type { Id } from './_generated/dataModel';
 
 // Plan tier → seats mapping (matches CLAUDE.md pricing)
@@ -13,7 +14,9 @@ const PLAN_SEATS: Record<string, number> = {
 
 // Price ID → plan tier (configured via env PADDLE_PRICE_<TIER>)
 // Resolved at call time so env vars can differ per deployment
-function resolvePlanTier(priceId: string): 'essential' | 'professional' | 'business' | 'enterprise' | null {
+function resolvePlanTier(
+	priceId: string
+): 'essential' | 'professional' | 'business' | 'enterprise' | null {
 	const env = process.env;
 	if (priceId === env.PADDLE_PRICE_ESSENTIAL) return 'essential';
 	if (priceId === env.PADDLE_PRICE_PROFESSIONAL) return 'professional';
@@ -27,13 +30,19 @@ function mapPaddleStatus(
 	status: string
 ): 'active' | 'trialing' | 'paused' | 'past_due' | 'canceled' {
 	switch (status) {
-		case 'active': return 'active';
-		case 'trialing': return 'trialing';
-		case 'paused': return 'paused';
-		case 'past_due': return 'past_due';
+		case 'active':
+			return 'active';
+		case 'trialing':
+			return 'trialing';
+		case 'paused':
+			return 'paused';
+		case 'past_due':
+			return 'past_due';
 		case 'canceled':
-		case 'cancelled': return 'canceled';
-		default: return 'active';
+		case 'cancelled':
+			return 'canceled';
+		default:
+			return 'canceled';
 	}
 }
 
@@ -47,8 +56,8 @@ export const upsertSubscription = internalMutation({
 		currentPeriodEnd: v.number(), // Unix timestamp ms
 		// From Paddle custom_data on the checkout
 		organizationId: v.optional(v.string()), // existing org upgrade
-		userId: v.optional(v.string()),         // new customer signup
-		orgName: v.optional(v.string()),        // used when creating a new org
+		userId: v.optional(v.string()), // new customer signup
+		orgName: v.optional(v.string()) // used when creating a new org
 	},
 	handler: async (ctx, args) => {
 		const tier = resolvePlanTier(args.priceId);
@@ -95,9 +104,7 @@ export const upsertSubscription = internalMutation({
 		// New customer — find org by paddle customer ID (previous sub or trial)
 		const byCustomer = await ctx.db
 			.query('organizations')
-			.withIndex('by_paddle_customer', (q) =>
-				q.eq('paddleCustomerId', args.paddleCustomerId)
-			)
+			.withIndex('by_paddle_customer', (q) => q.eq('paddleCustomerId', args.paddleCustomerId))
 			.first();
 
 		if (byCustomer) {
@@ -248,7 +255,11 @@ export const webhookHandler = httpAction(async (ctx, req) => {
 
 // HMAC-SHA256 verification for Paddle webhook signature
 // Header format: "ts=<timestamp>;h1=<hex_digest>"
-async function verifyPaddleSignature(body: string, header: string, secret: string): Promise<boolean> {
+async function verifyPaddleSignature(
+	body: string,
+	header: string,
+	secret: string
+): Promise<boolean> {
 	const parts = Object.fromEntries(
 		header.split(';').map((p) => {
 			const idx = p.indexOf('=');
@@ -258,6 +269,10 @@ async function verifyPaddleSignature(body: string, header: string, secret: strin
 	const ts = parts['ts'];
 	const h1 = parts['h1'];
 	if (!ts || !h1) return false;
+
+	// Reject replayed webhooks older than 5 seconds (Paddle recommendation)
+	const now = Math.floor(Date.now() / 1000);
+	if (Math.abs(now - parseInt(ts, 10)) > 5) return false;
 
 	const key = await crypto.subtle.importKey(
 		'raw',
@@ -285,6 +300,88 @@ type PaddleSubscriptionData = {
 	current_billing_period?: { ends_at: string };
 	custom_data?: { organization_id?: string; user_id?: string; org_name?: string };
 };
+
+// Public query: current authenticated user's org subscription status
+export const getMySubscription = query({
+	args: {},
+	handler: async (ctx) => {
+		const user = await authComponent.getAuthUser(ctx);
+		if (!user) return null;
+
+		const membership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_user', (q) => q.eq('userId', user._id))
+			.first();
+		if (!membership) return null;
+
+		const org = await ctx.db.get(membership.organizationId);
+		if (!org) return null;
+
+		return {
+			paddlePlanTier: org.paddlePlanTier ?? null,
+			paddleStatus: org.paddleStatus ?? null,
+			paddleCurrentPeriodEnd: org.paddleCurrentPeriodEnd ?? null,
+			seatsIncluded: org.seatsIncluded ?? null,
+			organizationId: org._id,
+			paddleCustomerId: org.paddleCustomerId ?? null
+		};
+	}
+});
+
+// Internal query: org Paddle customer ID for a given user (used by getPortalUrl action)
+export const _getOrgByUser = internalQuery({
+	args: { userId: v.string() },
+	handler: async (ctx, { userId }) => {
+		const membership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_user', (q) => q.eq('userId', userId))
+			.first();
+		if (!membership) return null;
+		const org = await ctx.db.get(membership.organizationId);
+		if (!org) return null;
+		return { paddleCustomerId: org.paddleCustomerId ?? null };
+	}
+});
+
+// Public action: generate a Paddle customer portal URL for the authenticated user's org
+export const getPortalUrl = action({
+	args: {},
+	handler: async (ctx): Promise<string | null> => {
+		const user = await authComponent.getAuthUser(ctx);
+		if (!user) throw new ConvexError('Authentication required');
+
+		const orgData = await ctx.runQuery(internal.paddle._getOrgByUser, { userId: user._id });
+		if (!orgData?.paddleCustomerId) return null;
+
+		const apiKey = process.env.PADDLE_API_KEY;
+		if (!apiKey) throw new Error('PADDLE_API_KEY not configured');
+
+		const isSandbox = process.env.PADDLE_ENVIRONMENT === 'sandbox';
+		const paddleApiBase = isSandbox ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com';
+
+		const res = await fetch(
+			`${paddleApiBase}/customers/${orgData.paddleCustomerId}/portal-sessions`,
+			{
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({})
+			}
+		);
+
+		if (!res.ok) {
+			const errText = await res.text();
+			throw new Error(`Paddle API error ${res.status}: ${errText}`);
+		}
+
+		const data = (await res.json()) as {
+			data?: { urls?: { general?: { overview?: string } } };
+		};
+		return data.data?.urls?.general?.overview ?? null;
+	}
+});
 
 // Read subscription status for billing page
 export const getSubscriptionStatus = internalQuery({

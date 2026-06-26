@@ -7,6 +7,9 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import Building2Icon from '@lucide/svelte/icons/building-2';
 	import Loader2Icon from '@lucide/svelte/icons/loader-2';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import { page } from '$app/state';
+	import { localizedHref } from '$lib/utils/i18n';
 
 	const convexClient = useConvexClient();
 	const orgsQuery = useQuery(api.organizations.listMyOrganizations, {});
@@ -22,7 +25,6 @@
 		if (isSwitching || orgId === currentOrg?._id) return;
 		isSwitching = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await convexClient.mutation(api.organizations.switchOrganization, {
 				organizationId: orgId as any
 			});
@@ -45,18 +47,8 @@
 
 {#if !currentOrg}
 	<!-- Not loaded yet or no org — silent -->
-{:else if !showSwitcher}
-	<!-- Single org: static, no dropdown -->
-	<div class="flex items-center gap-2 px-2 py-1.5">
-		<div
-			class="bg-sidebar-primary/15 text-sidebar-primary flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-semibold"
-		>
-			<Building2Icon class="size-4" />
-		</div>
-		<span data-testid="current-org-name" class="truncate text-sm font-medium">{currentOrg.name}</span>
-	</div>
 {:else}
-	<!-- Multiple orgs: dropdown switcher -->
+	<!-- Always a dropdown: single or multiple orgs -->
 	<DropdownMenu.Root>
 		<DropdownMenu.Trigger>
 			{#snippet child({ props })}
@@ -65,49 +57,71 @@
 					data-testid="org-switcher-trigger"
 					{...props}
 					disabled={isSwitching}
-					aria-label="Changer d'organisation — {currentOrg.name}"
-					class="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150 disabled:cursor-wait disabled:opacity-60"
+					aria-label="Organisation — {currentOrg.name}"
+					class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground disabled:cursor-wait disabled:opacity-60"
 				>
 					<div
-						class="bg-sidebar-primary/15 text-sidebar-primary flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-semibold"
+						class="flex size-7 shrink-0 items-center justify-center rounded-md bg-sidebar-primary/15 text-xs font-semibold text-sidebar-primary"
 					>
 						{#if isSwitching}
-							<Loader2Icon class="size-4 animate-spin" />
-						{:else}
+							<Loader2Icon class="size-4 motion-safe:animate-spin" />
+						{:else if orgs.length > 1}
 							{initials(currentOrg.name)}
+						{:else}
+							<Building2Icon class="size-4" />
 						{/if}
 					</div>
-					<span data-testid="current-org-name" class="min-w-0 flex-1 truncate font-medium">{currentOrg.name}</span>
-					<ChevronsUpDownIcon class="text-sidebar-foreground/40 size-4 shrink-0" />
+					<span data-testid="current-org-name" class="min-w-0 flex-1 truncate font-medium"
+						>{currentOrg.name}</span
+					>
+					<ChevronsUpDownIcon class="size-4 shrink-0 text-sidebar-foreground/40" />
 				</button>
 			{/snippet}
 		</DropdownMenu.Trigger>
 
-		<DropdownMenu.Content data-testid="org-switcher-menu" align="start" side="right" sideOffset={8} class="w-56">
-			<DropdownMenu.Label class="text-muted-foreground px-2 py-1 text-xs font-medium">
-				Organisations
-			</DropdownMenu.Label>
-			<DropdownMenu.Separator />
-			{#each orgs as org (org._id)}
-				{@const isActive = org._id === currentOrg._id}
-				<DropdownMenu.Item
-					data-testid="org-switcher-item"
-					data-org-name={org.name}
-					class="flex cursor-pointer items-center gap-2"
-					onSelect={() => switchOrg(org._id)}
-				>
-					<div
-						class="flex size-6 shrink-0 items-center justify-center rounded text-xs font-semibold transition-colors duration-150
-						{isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}"
+		<DropdownMenu.Content
+			data-testid="org-switcher-menu"
+			align="start"
+			side="right"
+			sideOffset={8}
+			class="w-56"
+		>
+			{#if orgs.length > 1}
+				<DropdownMenu.Label class="px-2 py-1 text-xs font-medium text-muted-foreground">
+					Organisations
+				</DropdownMenu.Label>
+				<DropdownMenu.Separator />
+				{#each orgs as org (org._id)}
+					{@const isActive = org._id === currentOrg._id}
+					<DropdownMenu.Item
+						data-testid="org-switcher-item"
+						data-org-name={org.name}
+						class="flex cursor-pointer items-center gap-2"
+						onSelect={() => switchOrg(org._id)}
 					>
-						{initials(org.name)}
-					</div>
-					<span class="min-w-0 flex-1 truncate">{org.name}</span>
-					{#if isActive}
-						<CheckIcon class="text-primary ml-auto size-4 shrink-0" />
-					{/if}
-				</DropdownMenu.Item>
-			{/each}
+						<div
+							class="flex size-6 shrink-0 items-center justify-center rounded text-xs font-semibold transition-colors duration-150
+							{isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}"
+						>
+							{initials(org.name)}
+						</div>
+						<span class="min-w-0 flex-1 truncate">{org.name}</span>
+						{#if isActive}
+							<CheckIcon class="ml-auto size-4 shrink-0 text-primary" />
+						{/if}
+					</DropdownMenu.Item>
+				{/each}
+				<DropdownMenu.Separator />
+			{/if}
+			<DropdownMenu.Item
+				class="flex cursor-pointer items-center gap-2 text-muted-foreground"
+				onSelect={() => {
+					window.location.href = localizedHref('/onboarding/organization');
+				}}
+			>
+				<PlusIcon class="size-4 shrink-0" />
+				<span>Créer une organisation</span>
+			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>
 {/if}

@@ -20,7 +20,8 @@
 	import { localizedHref } from '$lib/utils/i18n';
 	import { haptic } from '$lib/hooks/use-haptic.svelte';
 	import { toast } from 'svelte-sonner';
-	import { useCustomer, useAutumnOperation } from '@stickerdaniel/convex-autumn-svelte/sveltekit';
+	import { useQuery, useAction } from '@mmailaender/convex-svelte';
+	import { api } from '$lib/convex/_generated/api';
 
 	const { t } = getTranslate();
 
@@ -32,11 +33,16 @@
 	let { user, isImpersonating = false }: Props = $props();
 	const sidebar = useSidebar();
 
-	// Autumn subscription state
-	const autumn = useCustomer();
-	const upgradeOperation = useAutumnOperation(autumn.checkout);
-	const portalOperation = useAutumnOperation(autumn.openBillingPortal);
-	const isPro = $derived(autumn.customer?.products?.some((p) => p.id === 'pro') ?? false);
+	// Paddle subscription state
+	const subscriptionQuery = useQuery(api.paddle.getMySubscription, {});
+	const portalAction = useAction(api.paddle.getPortalUrl);
+	const currentPlan = $derived(subscriptionQuery.data?.paddlePlanTier ?? null);
+	const isActiveSubscription = $derived(
+		subscriptionQuery.data?.paddleStatus === 'active' ||
+			subscriptionQuery.data?.paddleStatus === 'trialing'
+	);
+
+	let isPortalLoading = $state(false);
 
 	const initials = $derived(
 		(user.name ?? '')
@@ -49,28 +55,22 @@
 			.slice(0, 2) || '?'
 	);
 
-	async function handleUpgrade() {
-		haptic.trigger('light');
-		const result = await upgradeOperation.execute({
-			productId: 'pro',
-			successUrl: page.url.origin + '/app/community-chat?upgraded=true'
-		});
-		if (result?.url) {
-			window.location.href = result.url;
-		} else if (upgradeOperation.error) {
-			haptic.trigger('error');
-			toast.error($t('billing.checkout_failed'));
-			console.error('Checkout failed:', upgradeOperation.error);
-		}
-	}
-
 	async function handleBilling() {
 		haptic.trigger('light');
-		await portalOperation.execute({});
-		if (portalOperation.error) {
+		isPortalLoading = true;
+		try {
+			const url = await portalAction({});
+			if (url) {
+				window.location.href = url;
+			} else {
+				goto(resolve(localizedHref('/admin/settings/plans')));
+			}
+		} catch (err) {
 			haptic.trigger('error');
 			toast.error($t('billing.portal_failed'));
-			console.error('Billing portal failed:', portalOperation.error);
+			console.error('Billing portal failed:', err);
+		} finally {
+			isPortalLoading = false;
 		}
 	}
 
@@ -147,11 +147,11 @@
 						<div class="grid flex-1 text-left text-sm leading-tight">
 							<span class="flex items-center gap-1.5 truncate font-medium">
 								{user.name}
-								{#if isPro}
+								{#if currentPlan && isActiveSubscription}
 									<Badge
-										class="h-auto bg-purple-500/15 px-1.5 py-0.5 text-[10px] leading-none text-purple-400"
+										class="h-auto bg-[var(--brand)]/15 px-1.5 py-0.5 text-[10px] leading-none text-[var(--brand)] capitalize"
 									>
-										<T keyName="app.user_menu.pro_badge" />
+										{currentPlan}
 									</Badge>
 								{/if}
 							</span>
@@ -160,16 +160,14 @@
 					</div>
 				</DropdownMenu.Label>
 				<DropdownMenu.Separator />
-				{#if !isPro}
+				{#if !currentPlan || !isActiveSubscription}
 					<DropdownMenu.Group>
-						<DropdownMenu.Item onclick={handleUpgrade} disabled={upgradeOperation.isLoading}>
-							{#if upgradeOperation.isLoading}
-								<LoaderCircleIcon class="motion-safe:animate-spin" />
-							{:else}
+						<a href={resolve(localizedHref('/admin/settings/plans'))}>
+							<DropdownMenu.Item>
 								<SparklesIcon />
-							{/if}
-							<T keyName="app.user_menu.upgrade_pro" />
-						</DropdownMenu.Item>
+								<T keyName="app.user_menu.upgrade_pro" />
+							</DropdownMenu.Item>
+						</a>
 					</DropdownMenu.Group>
 					<DropdownMenu.Separator />
 				{/if}
@@ -180,8 +178,8 @@
 							<T keyName="app.user_menu.settings" />
 						</DropdownMenu.Item>
 					</a>
-					<DropdownMenu.Item onclick={handleBilling} disabled={portalOperation.isLoading}>
-						{#if portalOperation.isLoading}
+					<DropdownMenu.Item onclick={handleBilling} disabled={isPortalLoading}>
+						{#if isPortalLoading}
 							<LoaderCircleIcon class="motion-safe:animate-spin" />
 						{:else}
 							<CreditCardIcon />

@@ -42,24 +42,38 @@
 	}
 
 	const STATUS_CONFIG: Record<ViolationStatus, { label: string; class: string }> = {
-		RECEIVED:   { label: 'Reçue',      class: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' },
-		IDENTIFIED: { label: 'Identifié',  class: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
-		NOTIFIED:   { label: 'Notifié',    class: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
-		PAID:       { label: 'Payée',      class: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
-		CONTESTED:  { label: 'Contestée',  class: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
-		CLOSED:     { label: 'Clôturée',   class: 'bg-muted text-muted-foreground' }
+		RECEIVED: {
+			label: 'Reçue',
+			class: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+		},
+		IDENTIFIED: {
+			label: 'Identifié',
+			class: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
+		},
+		NOTIFIED: {
+			label: 'Notifié',
+			class: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400'
+		},
+		PAID: {
+			label: 'Payée',
+			class: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+		},
+		CONTESTED: {
+			label: 'Contestée',
+			class: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400'
+		},
+		CLOSED: { label: 'Clôturée', class: 'bg-muted text-muted-foreground' }
 	};
 
 	const PAYMENT_LABELS: Record<PaymentDecision, string> = {
 		PENDING: '—',
 		COMPANY: 'Entreprise',
-		DRIVER:  'Conducteur'
+		DRIVER: 'Conducteur'
 	};
 
 	// ── Queries ───────────────────────────────────────────────────────────────────
 	const client = useConvexClient();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const violationsQuery = useQuery((api as any).violations.listViolations, {});
 	const allViolations = $derived<ViolationRow[]>(violationsQuery.data ?? []);
 	const isLoading = $derived(violationsQuery.isLoading);
@@ -68,15 +82,15 @@
 	let activeTab = $state<ViolationStatus | 'all'>('all');
 
 	const filtered = $derived(
-		activeTab === 'all'
-			? allViolations
-			: allViolations.filter((v) => v.status === activeTab)
+		activeTab === 'all' ? allViolations : allViolations.filter((v) => v.status === activeTab)
 	);
 
 	// ── KPIs ──────────────────────────────────────────────────────────────────────
 	const stats = $derived.by(() => {
-		const total   = allViolations.length;
-		const pending = allViolations.filter((v) => v.status === 'RECEIVED' || v.status === 'IDENTIFIED').length;
+		const total = allViolations.length;
+		const pending = allViolations.filter(
+			(v) => v.status === 'RECEIVED' || v.status === 'IDENTIFIED'
+		).length;
 		const notified = allViolations.filter((v) => v.status === 'NOTIFIED').length;
 		const totalAmount = allViolations.reduce((s, v) => s + v.amount, 0);
 		return { total, pending, notified, totalAmount };
@@ -84,12 +98,32 @@
 
 	// ── Status tabs with counts ────────────────────────────────────────────────────
 	const statusTabs = $derived([
-		{ value: 'all' as const,       label: 'Toutes',    count: stats.total },
-		{ value: 'RECEIVED' as const,  label: 'Reçues',    count: allViolations.filter(v => v.status === 'RECEIVED').length },
-		{ value: 'IDENTIFIED' as const,label: 'Identifié', count: allViolations.filter(v => v.status === 'IDENTIFIED').length },
-		{ value: 'NOTIFIED' as const,  label: 'Notifié',   count: allViolations.filter(v => v.status === 'NOTIFIED').length },
-		{ value: 'PAID' as const,      label: 'Payée',     count: allViolations.filter(v => v.status === 'PAID').length },
-		{ value: 'CLOSED' as const,    label: 'Clôturée',  count: allViolations.filter(v => v.status === 'CLOSED' || v.status === 'CONTESTED').length }
+		{ value: 'all' as const, label: 'Toutes', count: stats.total },
+		{
+			value: 'RECEIVED' as const,
+			label: 'Reçues',
+			count: allViolations.filter((v) => v.status === 'RECEIVED').length
+		},
+		{
+			value: 'IDENTIFIED' as const,
+			label: 'Identifié',
+			count: allViolations.filter((v) => v.status === 'IDENTIFIED').length
+		},
+		{
+			value: 'NOTIFIED' as const,
+			label: 'Notifié',
+			count: allViolations.filter((v) => v.status === 'NOTIFIED').length
+		},
+		{
+			value: 'PAID' as const,
+			label: 'Payée',
+			count: allViolations.filter((v) => v.status === 'PAID').length
+		},
+		{
+			value: 'CLOSED' as const,
+			label: 'Clôturée',
+			count: allViolations.filter((v) => v.status === 'CLOSED' || v.status === 'CONTESTED').length
+		}
 	]);
 
 	// ── Add modal ─────────────────────────────────────────────────────────────────
@@ -105,7 +139,6 @@
 		if (!processingViolation) return;
 		processing = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await client.mutation((api as any).violations.processViolation, {
 				violationId: processingViolation._id,
 				paymentDecision: processDecision,
@@ -129,7 +162,6 @@
 		if (!updatingViolation) return;
 		updating = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			await client.mutation((api as any).violations.updateViolationStatus, {
 				violationId: updatingViolation._id,
 				status: updateStatus
@@ -147,13 +179,14 @@
 </script>
 
 <div class="flex flex-col gap-6 px-4 pb-8 lg:px-6 xl:px-8 2xl:px-16">
-
 	<!-- Header -->
 	<div class="flex items-center justify-between gap-4">
 		<div class="flex items-center gap-2">
 			<h1 class="text-base font-semibold">Contraventions</h1>
 			{#if !isLoading && allViolations.length > 0}
-				<span class="tabular-nums rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+				<span
+					class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground tabular-nums"
+				>
 					{allViolations.length}
 				</span>
 			{/if}
@@ -187,7 +220,6 @@
 				</div>
 			</div>
 		</div>
-
 	{:else if isEmpty}
 		<!-- Empty state -->
 		<div class="flex flex-1 items-center justify-center py-16">
@@ -204,7 +236,6 @@
 				{/snippet}
 			</EmptyState>
 		</div>
-
 	{:else}
 		<!-- KPI Cards -->
 		<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -233,12 +264,14 @@
 					<Tabs.Trigger value={tab.value}>
 						{tab.label}
 						{#if tab.count > 0}
-							<span class={cn(
-								'ml-1.5 tabular-nums rounded-full px-1.5 text-[11px] font-semibold',
-								activeTab === tab.value
-									? 'bg-muted text-muted-foreground'
-									: 'bg-muted text-muted-foreground/60'
-							)}>{tab.count}</span>
+							<span
+								class={cn(
+									'ml-1.5 rounded-full px-1.5 text-[11px] font-semibold tabular-nums',
+									activeTab === tab.value
+										? 'bg-muted text-muted-foreground'
+										: 'bg-muted text-muted-foreground/60'
+								)}>{tab.count}</span
+							>
 						{/if}
 					</Tabs.Trigger>
 				{/each}
@@ -261,12 +294,20 @@
 				<table class="w-full text-sm">
 					<thead>
 						<tr class="border-b border-border bg-muted/40">
-							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Véhicule</th>
+							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Véhicule</th
+							>
 							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Date</th>
-							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Infraction</th>
-							<th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Montant</th>
-							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Conducteur</th>
-							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Prise en charge</th>
+							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground"
+								>Infraction</th
+							>
+							<th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Montant</th
+							>
+							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground"
+								>Conducteur</th
+							>
+							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground"
+								>Prise en charge</th
+							>
 							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Statut</th>
 							<th class="w-10 px-3 py-3"></th>
 						</tr>
@@ -302,7 +343,9 @@
 											<span class="truncate">{v.driver.name ?? v.driver.email}</span>
 										</div>
 									{:else}
-										<span class="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+										<span
+											class="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400"
+										>
 											<AlertTriangleIcon class="size-3" />
 											À identifier
 										</span>
@@ -312,7 +355,12 @@
 									{PAYMENT_LABELS[v.paymentDecision ?? 'PENDING']}
 								</td>
 								<td class="px-4 py-3">
-									<span class={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium', statusCfg.class)}>
+									<span
+										class={cn(
+											'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+											statusCfg.class
+										)}
+									>
 										{statusCfg.label}
 									</span>
 								</td>
@@ -322,6 +370,7 @@
 											{#snippet child({ props })}
 												<Button variant="ghost" size="icon-sm" class="size-7" {...props}>
 													<DotsHorizontalIcon class="size-4" />
+													<!-- eslint-disable-next-line local/no-hardcoded-sr-only -->
 													<span class="sr-only">Actions</span>
 												</Button>
 											{/snippet}
@@ -350,9 +399,7 @@
 											{/if}
 											{#if v.documentUrl}
 												<DropdownMenu.Separator />
-												<DropdownMenu.Item
-													onclick={() => window.open(v.documentUrl!, '_blank')}
-												>
+												<DropdownMenu.Item onclick={() => window.open(v.documentUrl!, '_blank')}>
 													<ExternalLinkIcon class="size-3.5" />
 													Voir le document
 												</DropdownMenu.Item>
@@ -370,15 +417,14 @@
 </div>
 
 <!-- Saisie contravention -->
-<ViolationForm
-	bind:open={showForm}
-	onclose={() => (showForm = false)}
-/>
+<ViolationForm bind:open={showForm} onclose={() => (showForm = false)} />
 
 <!-- Modal traitement -->
 <Dialog.Root
 	open={!!processingViolation}
-	onOpenChange={(o) => { if (!o) processingViolation = null; }}
+	onOpenChange={(o) => {
+		if (!o) processingViolation = null;
+	}}
 >
 	<Dialog.Portal>
 		<Dialog.Overlay />
@@ -398,7 +444,7 @@
 							type="button"
 							onclick={() => (processDecision = 'COMPANY')}
 							class={cn(
-								'rounded-xl border px-4 py-3 text-sm font-medium transition-all text-left',
+								'rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all',
 								processDecision === 'COMPANY'
 									? 'border-primary bg-primary/8 text-primary'
 									: 'border-border bg-muted/20 text-muted-foreground hover:bg-muted/40'
@@ -411,7 +457,7 @@
 							type="button"
 							onclick={() => (processDecision = 'DRIVER')}
 							class={cn(
-								'rounded-xl border px-4 py-3 text-sm font-medium transition-all text-left',
+								'rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all',
 								processDecision === 'DRIVER'
 									? 'border-primary bg-primary/8 text-primary'
 									: 'border-border bg-muted/20 text-muted-foreground hover:bg-muted/40'
@@ -440,7 +486,7 @@
 				</Button>
 				<Button onclick={handleProcess} disabled={processing}>
 					{#if processing}
-						<LoaderCircleIcon class="size-3.5 animate-spin" />
+						<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />
 					{/if}
 					Confirmer
 				</Button>
@@ -452,7 +498,9 @@
 <!-- Modal statut -->
 <Dialog.Root
 	open={!!updatingViolation}
-	onOpenChange={(o) => { if (!o) updatingViolation = null; }}
+	onOpenChange={(o) => {
+		if (!o) updatingViolation = null;
+	}}
 >
 	<Dialog.Portal>
 		<Dialog.Overlay />
@@ -465,11 +513,7 @@
 			</Dialog.Header>
 
 			<div class="flex flex-col gap-2 py-2">
-				{#each [
-					{ value: 'PAID' as const,      label: 'Payée',      desc: 'L\'amende a été réglée' },
-					{ value: 'CONTESTED' as const, label: 'Contestée',  desc: 'Un recours a été déposé' },
-					{ value: 'CLOSED' as const,    label: 'Clôturée',   desc: 'Dossier archivé' }
-				] as opt (opt.value)}
+				{#each [{ value: 'PAID' as const, label: 'Payée', desc: "L'amende a été réglée" }, { value: 'CONTESTED' as const, label: 'Contestée', desc: 'Un recours a été déposé' }, { value: 'CLOSED' as const, label: 'Clôturée', desc: 'Dossier archivé' }] as opt (opt.value)}
 					<button
 						type="button"
 						onclick={() => (updateStatus = opt.value)}
@@ -492,7 +536,7 @@
 				</Button>
 				<Button onclick={handleStatusUpdate} disabled={updating}>
 					{#if updating}
-						<LoaderCircleIcon class="size-3.5 animate-spin" />
+						<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />
 					{/if}
 					Confirmer
 				</Button>

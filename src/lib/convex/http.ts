@@ -15,6 +15,13 @@ import {
 } from './integrations/publicApi';
 import { webhookHandler as paddleWebhookHandler } from './paddle';
 import { handleSmartcarWebhook } from './smartcar';
+import {
+	xeroCallbackHandler,
+	quickbooksCallbackHandler,
+	freeagentCallbackHandler,
+	fortnoxCallbackHandler,
+	vismaCallbackHandler
+} from './integrations/oauthHandlers';
 
 const http = httpRouter();
 
@@ -43,6 +50,18 @@ http.route({ path: '/api/manager/chat', method: 'OPTIONS', handler: managerChat 
 // Compliance Officer streaming endpoint (SSE) — ORG_ADMIN/ORG_MANAGER only
 http.route({ path: '/api/compliance/chat', method: 'POST', handler: complianceChat });
 http.route({ path: '/api/compliance/chat', method: 'OPTIONS', handler: complianceChat });
+
+// OAuth callbacks — register each URL in the respective developer portal:
+//   Xero Developer Portal: https://developer.xero.com/
+//   QuickBooks App Center: https://developer.intuit.com/
+//   FreeAgent Developer: https://dev.freeagent.com/
+//   Fortnox Developer: https://developer.fortnox.se/
+//   Visma eAccounting: https://developer.vismaonline.com/
+http.route({ path: '/xero/callback', method: 'GET', handler: xeroCallbackHandler });
+http.route({ path: '/quickbooks/callback', method: 'GET', handler: quickbooksCallbackHandler });
+http.route({ path: '/freeagent/callback', method: 'GET', handler: freeagentCallbackHandler });
+http.route({ path: '/fortnox/callback', method: 'GET', handler: fortnoxCallbackHandler });
+http.route({ path: '/visma/callback', method: 'GET', handler: vismaCallbackHandler });
 
 // Paddle webhook — https://your-deployment.convex.site/paddle-webhook
 // Configure in Paddle Dashboard → Notifications

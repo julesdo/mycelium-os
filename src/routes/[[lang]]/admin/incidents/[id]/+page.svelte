@@ -23,10 +23,12 @@
 	import type { Id } from '$lib/convex/_generated/dataModel.js';
 
 	const lang = $derived(page.params.lang as string | undefined);
-	function localHref(path: string) { return lang ? `/${lang}${path}` : path; }
+	function localHref(path: string) {
+		return lang ? `/${lang}${path}` : path;
+	}
 
 	const client = useConvexClient();
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	const anyApi = api as any;
 	const incidentId = page.params.id as Id<'incidents'>;
 	const incidentQuery = useQuery(anyApi.incidents.getIncident, { incidentId });
@@ -34,28 +36,50 @@
 	const incident = $derived(incidentQuery.data);
 	const isLoading = $derived(incidentQuery.isLoading);
 
-	type IncidentStatus = 'DECLARED' | 'SENT_TO_INSURER' | 'EXPERTISE' | 'REPAIR' | 'CLOSED' | 'CONTESTED';
+	type IncidentStatus =
+		| 'DECLARED'
+		| 'SENT_TO_INSURER'
+		| 'EXPERTISE'
+		| 'REPAIR'
+		| 'CLOSED'
+		| 'CONTESTED';
 
 	const STATUS_CONFIG: Record<IncidentStatus, { label: string; class: string }> = {
-		DECLARED:        { label: 'Déclaré',          class: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' },
-		SENT_TO_INSURER: { label: 'Envoyé assureur',  class: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
-		EXPERTISE:       { label: 'Expertise',         class: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
-		REPAIR:          { label: 'Réparation',        class: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
-		CLOSED:          { label: 'Clôturé',           class: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
-		CONTESTED:       { label: 'Contesté',          class: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' }
+		DECLARED: {
+			label: 'Déclaré',
+			class: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+		},
+		SENT_TO_INSURER: {
+			label: 'Envoyé assureur',
+			class: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
+		},
+		EXPERTISE: {
+			label: 'Expertise',
+			class: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400'
+		},
+		REPAIR: {
+			label: 'Réparation',
+			class: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400'
+		},
+		CLOSED: {
+			label: 'Clôturé',
+			class: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+		},
+		CONTESTED: {
+			label: 'Contesté',
+			class: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+		}
 	};
 
 	const STATUS_STEPS: { key: IncidentStatus; label: string }[] = [
-		{ key: 'DECLARED',        label: 'Déclaré' },
+		{ key: 'DECLARED', label: 'Déclaré' },
 		{ key: 'SENT_TO_INSURER', label: 'Envoyé assureur' },
-		{ key: 'EXPERTISE',       label: 'Expertise' },
-		{ key: 'REPAIR',          label: 'Réparation' },
-		{ key: 'CLOSED',          label: 'Clôturé' }
+		{ key: 'EXPERTISE', label: 'Expertise' },
+		{ key: 'REPAIR', label: 'Réparation' },
+		{ key: 'CLOSED', label: 'Clôturé' }
 	];
 
-	const currentStepIndex = $derived(
-		STATUS_STEPS.findIndex(s => s.key === incident?.status)
-	);
+	const currentStepIndex = $derived(STATUS_STEPS.findIndex((s) => s.key === incident?.status));
 
 	// ── Pré-remplissage ──────────────────────────────────────────────────────────
 	let insurerEmail = $state('');
@@ -69,7 +93,8 @@
 			insurerEmail = incident.insurerEmail ?? '';
 			insurerReference = incident.insurerReference ?? '';
 			franchiseAmount = incident.franchiseAmount != null ? String(incident.franchiseAmount) : '';
-			estimatedRepairCost = incident.estimatedRepairCost != null ? String(incident.estimatedRepairCost) : '';
+			estimatedRepairCost =
+				incident.estimatedRepairCost != null ? String(incident.estimatedRepairCost) : '';
 			closingNotes = incident.closingNotes ?? '';
 		}
 	});
@@ -86,7 +111,7 @@
 				incidentId,
 				insurerEmail: insurerEmail.trim()
 			});
-			toast.success('Dossier envoyé à l\'assureur');
+			toast.success("Dossier envoyé à l'assureur");
 			showSendDialog = false;
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Erreur');
@@ -125,7 +150,6 @@
 </script>
 
 <div class="flex flex-col gap-6 px-4 pb-8 lg:px-6 xl:px-8 2xl:px-16">
-
 	{#if isLoading}
 		<div class="flex flex-col gap-6">
 			<div class="flex items-center gap-3">
@@ -145,7 +169,6 @@
 				</div>
 			</div>
 		</div>
-
 	{:else if !incident}
 		<EmptyState
 			title="Sinistre introuvable"
@@ -158,13 +181,13 @@
 				</Button>
 			{/snippet}
 		</EmptyState>
-
 	{:else}
 		{@const statusCfg = STATUS_CONFIG[incident.status as IncidentStatus]}
 
 		<!-- Header -->
-		<div class="flex items-center justify-between gap-4 flex-wrap">
+		<div class="flex flex-wrap items-center justify-between gap-4">
 			<div class="flex items-center gap-3">
+				<!-- eslint-disable local/no-hardcoded-aria-label -->
 				<Button
 					variant="ghost"
 					size="icon-sm"
@@ -173,19 +196,30 @@
 				>
 					<ArrowLeftIcon class="size-4" />
 				</Button>
+				<!-- eslint-enable local/no-hardcoded-aria-label -->
 				<div class="flex flex-col gap-0.5">
 					<div class="flex flex-wrap items-center gap-2">
 						<h1 class="text-xl font-bold">
-							{incident.vehicle?.brand ?? ''} {incident.vehicle?.model ?? ''}
+							{incident.vehicle?.brand ?? ''}
+							{incident.vehicle?.model ?? ''}
 						</h1>
 						{#if statusCfg}
-							<span class={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', statusCfg.class)}>
+							<span
+								class={cn(
+									'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+									statusCfg.class
+								)}
+							>
 								{statusCfg.label}
 							</span>
 						{/if}
 					</div>
 					<p class="text-sm text-muted-foreground">
-						{incident.vehicle?.registration ?? '—'} · Déclaré le {format(new Date(incident.createdAt), 'd MMMM yyyy', { locale: fr })}
+						{incident.vehicle?.registration ?? '—'} · Déclaré le {format(
+							new Date(incident.createdAt),
+							'd MMMM yyyy',
+							{ locale: fr }
+						)}
 					</p>
 				</div>
 			</div>
@@ -196,7 +230,9 @@
 						<Button
 							variant="outline"
 							size="sm"
-							onclick={() => { showSendDialog = true; }}
+							onclick={() => {
+								showSendDialog = true;
+							}}
 						>
 							<SendIcon class="size-3.5" />
 							Envoyer à l'assureur
@@ -204,7 +240,10 @@
 					{/if}
 					<Button
 						size="sm"
-						onclick={() => { newStatus = ''; showUpdateDialog = true; }}
+						onclick={() => {
+							newStatus = '';
+							showUpdateDialog = true;
+						}}
 					>
 						<CheckIcon class="size-3.5" />
 						Mettre à jour
@@ -215,27 +254,29 @@
 
 		<!-- Body -->
 		<div class="grid gap-4 lg:grid-cols-3">
-
 			<!-- Main column -->
 			<div class="flex flex-col gap-4 lg:col-span-2">
-
 				<!-- Timeline -->
 				<div class="overflow-hidden rounded-2xl border border-border bg-card">
 					<div class="border-b border-border px-4 py-3">
-						<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Progression du dossier</p>
+						<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+							Progression du dossier
+						</p>
 					</div>
 					<div class="px-4 py-4">
 						<div class="relative">
-							<div class="absolute left-3 top-3.5 bottom-3.5 w-0.5 bg-border"></div>
+							<div class="absolute top-3.5 bottom-3.5 left-3 w-0.5 bg-border"></div>
 							{#each STATUS_STEPS as step, i (step.key)}
 								{@const done = i <= currentStepIndex}
 								<div class="relative flex items-center gap-3 pb-4 last:pb-0">
-									<div class={cn(
-										'relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold',
-										done
-											? 'border-[var(--brand)] bg-[var(--brand)] text-background'
-											: 'border-border bg-card text-muted-foreground'
-									)}>
+									<div
+										class={cn(
+											'relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold',
+											done
+												? 'border-[var(--brand)] bg-[var(--brand)] text-background'
+												: 'border-border bg-card text-muted-foreground'
+										)}
+									>
 										{#if done}
 											<CheckIcon class="size-3" />
 										{:else}
@@ -254,12 +295,18 @@
 				<!-- Circonstances -->
 				<div class="overflow-hidden rounded-2xl border border-border bg-card">
 					<div class="border-b border-border px-4 py-3">
-						<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Circonstances</p>
+						<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+							Circonstances
+						</p>
 					</div>
 					<div class="divide-y divide-border text-sm">
 						<div class="flex items-center gap-3 px-4 py-3">
 							<span class="w-32 shrink-0 text-muted-foreground">Date</span>
-							<span class="font-medium">{format(new Date(incident.incidentDate), "d MMMM yyyy 'à' HH:mm", { locale: fr })}</span>
+							<span class="font-medium"
+								>{format(new Date(incident.incidentDate), "d MMMM yyyy 'à' HH:mm", {
+									locale: fr
+								})}</span
+							>
 						</div>
 						<div class="flex items-center gap-3 px-4 py-3">
 							<span class="w-32 shrink-0 text-muted-foreground">Lieu</span>
@@ -267,18 +314,23 @@
 						</div>
 						<div class="flex items-center gap-3 px-4 py-3">
 							<span class="w-32 shrink-0 text-muted-foreground">Tiers impliqué</span>
-							<span class="font-medium">{incident.thirdPartyInvolved ? 'Oui' : 'Non'}{incident.thirdPartyInfo ? ` — ${incident.thirdPartyInfo}` : ''}</span>
+							<span class="font-medium"
+								>{incident.thirdPartyInvolved ? 'Oui' : 'Non'}{incident.thirdPartyInfo
+									? ` — ${incident.thirdPartyInfo}`
+									: ''}</span
+							>
 						</div>
 						{#if incident.insurerReference}
 							<div class="flex items-center gap-3 px-4 py-3">
 								<span class="w-32 shrink-0 text-muted-foreground">Réf. assureur</span>
-								<span class="font-medium font-mono">{incident.insurerReference}</span>
+								<span class="font-mono font-medium">{incident.insurerReference}</span>
 							</div>
 						{/if}
 						{#if incident.franchiseAmount != null}
 							<div class="flex items-center gap-3 px-4 py-3">
 								<span class="w-32 shrink-0 text-muted-foreground">Franchise</span>
-								<span class="font-medium">{incident.franchiseAmount.toLocaleString('fr-FR')} €</span>
+								<span class="font-medium">{incident.franchiseAmount.toLocaleString('fr-FR')} €</span
+								>
 							</div>
 						{/if}
 					</div>
@@ -287,25 +339,40 @@
 				<!-- Description -->
 				<div class="overflow-hidden rounded-2xl border border-border bg-card">
 					<div class="border-b border-border px-4 py-3">
-						<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description</p>
+						<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+							Description
+						</p>
 					</div>
-					<p class="px-4 py-4 text-sm leading-relaxed whitespace-pre-wrap">{incident.description}</p>
+					<p class="px-4 py-4 text-sm leading-relaxed whitespace-pre-wrap">
+						{incident.description}
+					</p>
 				</div>
 
 				<!-- Photos -->
 				{#if incident.photoUrls?.length}
 					<div class="overflow-hidden rounded-2xl border border-border bg-card">
 						<div class="border-b border-border px-4 py-3">
-							<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+							<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 								Photos ({incident.photoUrls.length})
 							</p>
 						</div>
 						<div class="grid grid-cols-2 gap-2 p-4 sm:grid-cols-3">
 							{#each incident.photoUrls as photo, i (i)}
 								{#if photo.url}
-									<a href={photo.url} target="_blank" rel="noopener" class="group relative block overflow-hidden rounded-xl">
-										<img src={photo.url} alt={photo.label} class="h-32 w-full object-cover transition-opacity group-hover:opacity-90" />
-										<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5">
+									<a
+										href={photo.url}
+										target="_blank"
+										rel="noopener"
+										class="group relative block overflow-hidden rounded-xl"
+									>
+										<img
+											src={photo.url}
+											alt={photo.label}
+											class="h-32 w-full object-cover transition-opacity group-hover:opacity-90"
+										/>
+										<div
+											class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-2 py-1.5"
+										>
 											<p class="truncate text-[10px] text-white">{photo.label}</p>
 										</div>
 									</a>
@@ -320,9 +387,11 @@
 			<div class="flex flex-col gap-4">
 				<div class="overflow-hidden rounded-2xl border border-border bg-card">
 					<div class="border-b border-border px-4 py-3">
-						<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Véhicule</p>
+						<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+							Véhicule
+						</p>
 					</div>
-					<div class="px-4 py-4 text-sm space-y-1">
+					<div class="space-y-1 px-4 py-4 text-sm">
 						<p class="font-semibold">{incident.vehicle?.brand} {incident.vehicle?.model}</p>
 						<p class="font-mono text-muted-foreground">{incident.vehicle?.registration}</p>
 					</div>
@@ -331,23 +400,35 @@
 				{#if incident.insurerEmail}
 					<div class="overflow-hidden rounded-2xl border border-border bg-card">
 						<div class="border-b border-border px-4 py-3">
-							<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assureur</p>
+							<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+								Assureur
+							</p>
 						</div>
 						<div class="px-4 py-4 text-sm">
 							<p class="font-medium break-all">{incident.insurerEmail}</p>
 							{#if incident.insurerReference}
-								<p class="mt-1 font-mono text-xs text-muted-foreground">Réf. {incident.insurerReference}</p>
+								<p class="mt-1 font-mono text-xs text-muted-foreground">
+									Réf. {incident.insurerReference}
+								</p>
 							{/if}
 						</div>
 					</div>
 				{/if}
 
 				{#if incident.status === 'CLOSED' && incident.closingNotes}
-					<div class="overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900/30 dark:bg-emerald-900/10">
-						<div class="border-b border-emerald-200 dark:border-emerald-900/30 px-4 py-3">
-							<p class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Clôture</p>
+					<div
+						class="overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900/30 dark:bg-emerald-900/10"
+					>
+						<div class="border-b border-emerald-200 px-4 py-3 dark:border-emerald-900/30">
+							<p
+								class="text-xs font-semibold tracking-wide text-emerald-700 uppercase dark:text-emerald-400"
+							>
+								Clôture
+							</p>
 						</div>
-						<p class="px-4 py-4 text-sm text-emerald-800 dark:text-emerald-300 leading-relaxed">{incident.closingNotes}</p>
+						<p class="px-4 py-4 text-sm leading-relaxed text-emerald-800 dark:text-emerald-300">
+							{incident.closingNotes}
+						</p>
 					</div>
 				{/if}
 			</div>
@@ -376,9 +457,11 @@
 				/>
 			</div>
 			<div class="mt-4 flex items-center justify-between">
-				<Button variant="ghost" onclick={() => (showSendDialog = false)} disabled={sendingEmail}>Annuler</Button>
+				<Button variant="ghost" onclick={() => (showSendDialog = false)} disabled={sendingEmail}
+					>Annuler</Button
+				>
 				<Button onclick={handleSendToInsurer} disabled={sendingEmail || !insurerEmail.trim()}>
-					{#if sendingEmail}<LoaderCircleIcon class="size-3.5 animate-spin" />{/if}
+					{#if sendingEmail}<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />{/if}
 					Envoyer
 				</Button>
 			</div>
@@ -403,13 +486,7 @@
 				<div class="flex flex-col gap-1.5">
 					<Label>Nouveau statut</Label>
 					<div class="grid grid-cols-2 gap-2">
-						{#each [
-							{ value: 'SENT_TO_INSURER', label: 'Envoyé assureur', desc: 'Dossier transmis' },
-							{ value: 'EXPERTISE',       label: 'Expertise',        desc: 'Expert mandaté' },
-							{ value: 'REPAIR',          label: 'Réparation',       desc: 'Garage en cours' },
-							{ value: 'CLOSED',          label: 'Clôturer',         desc: 'Dossier terminé' },
-							{ value: 'CONTESTED',       label: 'Contester',        desc: 'Recours en cours' }
-						] as opt (opt.value)}
+						{#each [{ value: 'SENT_TO_INSURER', label: 'Envoyé assureur', desc: 'Dossier transmis' }, { value: 'EXPERTISE', label: 'Expertise', desc: 'Expert mandaté' }, { value: 'REPAIR', label: 'Réparation', desc: 'Garage en cours' }, { value: 'CLOSED', label: 'Clôturer', desc: 'Dossier terminé' }, { value: 'CONTESTED', label: 'Contester', desc: 'Recours en cours' }] as opt (opt.value)}
 							{#if incident && opt.value !== incident.status}
 								<button
 									type="button"
@@ -447,21 +524,30 @@
 				{#if newStatus === 'CLOSED' || newStatus === 'CONTESTED'}
 					<div class="flex flex-col gap-1.5">
 						<Label for="upd-notes">Notes de clôture</Label>
-						<Textarea id="upd-notes" bind:value={closingNotes} rows={2} placeholder="Résumé du règlement…" />
+						<Textarea
+							id="upd-notes"
+							bind:value={closingNotes}
+							rows={2}
+							placeholder="Résumé du règlement…"
+						/>
 					</div>
 				{/if}
 
 				{#if newStatus === 'CLOSED' && franchiseAmount}
 					<p class="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-						Un coût <span class="font-semibold text-foreground">SINISTRE de {franchiseAmount} €</span> sera imputé au véhicule et le statut passera à DISPONIBLE.
+						Un coût <span class="font-semibold text-foreground"
+							>SINISTRE de {franchiseAmount} €</span
+						> sera imputé au véhicule et le statut passera à DISPONIBLE.
 					</p>
 				{/if}
 			</div>
 
 			<div class="mt-4 flex items-center justify-between">
-				<Button variant="ghost" onclick={() => (showUpdateDialog = false)} disabled={updatingStatus}>Annuler</Button>
+				<Button variant="ghost" onclick={() => (showUpdateDialog = false)} disabled={updatingStatus}
+					>Annuler</Button
+				>
 				<Button onclick={handleUpdateStatus} disabled={updatingStatus || !newStatus}>
-					{#if updatingStatus}<LoaderCircleIcon class="size-3.5 animate-spin" />{/if}
+					{#if updatingStatus}<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />{/if}
 					Confirmer
 				</Button>
 			</div>

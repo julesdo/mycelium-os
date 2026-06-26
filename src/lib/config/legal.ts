@@ -1,12 +1,13 @@
 export const LEGAL_CONFIG = {
-	brandName: 'AI.MYCELIUM',
-	companyName: 'Mycelium Inc.',
+	brandName: 'Mycelium Fleet OS',
+	companyName: 'Mycelium SAS',
 	operatorName: 'Mycelium',
-	address: '123 Main Street, Suite 100, Berlin, Germany',
+	// TODO: replace with registered address once confirmed
+	address: 'Paris, France',
 	email: {
-		user: 'mycelium',
+		user: 'legal',
 		domain: 'mycelium',
-		tld: 'com'
+		tld: 'io'
 	}
 } as const;
 

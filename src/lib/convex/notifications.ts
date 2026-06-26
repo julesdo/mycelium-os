@@ -47,9 +47,7 @@ export const getUnreadCount = authedQuery({
 	handler: async (ctx) => {
 		const unread = await ctx.db
 			.query('notifications')
-			.withIndex('by_user_unread', (q) =>
-				q.eq('userId', ctx.user._id).eq('isRead', false)
-			)
+			.withIndex('by_user_unread', (q) => q.eq('userId', ctx.user._id).eq('isRead', false))
 			.collect();
 		return unread.length;
 	}
@@ -72,9 +70,7 @@ export const markAllAsRead = authedMutation({
 	handler: async (ctx) => {
 		const unread = await ctx.db
 			.query('notifications')
-			.withIndex('by_user_unread', (q) =>
-				q.eq('userId', ctx.user._id).eq('isRead', false)
-			)
+			.withIndex('by_user_unread', (q) => q.eq('userId', ctx.user._id).eq('isRead', false))
 			.collect();
 		await Promise.all(unread.map((n) => ctx.db.patch(n._id, { isRead: true })));
 		return null;
@@ -122,6 +118,26 @@ export const createNotification = internalMutation({
 			isRead: false,
 			createdAt: Date.now()
 		});
+
+		// Fan-out to Slack/Teams for admin-relevant alert types
+		const COMMS_ALERT_TYPES = new Set([
+			'MAINTENANCE_DUE',
+			'LEASE_EXPIRING',
+			'LICENSE_EXPIRING',
+			'LICENSE_EXPIRED',
+			'VIOLATION_RECEIVED',
+			'CONFLICT_DETECTED'
+		]);
+		if (COMMS_ALERT_TYPES.has(args.type)) {
+			await ctx.scheduler.runAfter(0, internal.comms.sendCommsNotification, {
+				organizationId: args.organizationId,
+				type: args.type,
+				title: args.title,
+				message: args.message,
+				link: args.link
+			});
+		}
+
 		return null;
 	}
 });

@@ -23,7 +23,6 @@
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import type { Id } from '$lib/convex/_generated/dataModel.js';
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const anyApi = api as any;
 	const client = useConvexClient();
 
@@ -32,37 +31,94 @@
 
 	const allIncidents = $derived(incidentsQuery.data ?? []);
 	const isLoading = $derived(incidentsQuery.isLoading);
-	const stats = $derived(statsQuery.data ?? { total: 0, open: 0, sentToInsurer: 0, closed: 0, totalFranchise: 0 });
+	const stats = $derived(
+		statsQuery.data ?? { total: 0, open: 0, sentToInsurer: 0, closed: 0, totalFranchise: 0 }
+	);
 
-	type IncidentStatus = 'DECLARED' | 'SENT_TO_INSURER' | 'EXPERTISE' | 'REPAIR' | 'CLOSED' | 'CONTESTED';
+	type IncidentStatus =
+		| 'DECLARED'
+		| 'SENT_TO_INSURER'
+		| 'EXPERTISE'
+		| 'REPAIR'
+		| 'CLOSED'
+		| 'CONTESTED';
 	let activeTab = $state<IncidentStatus | 'all'>('all');
 
 	const STATUS_CONFIG: Record<IncidentStatus, { label: string; class: string }> = {
-		DECLARED:        { label: 'Déclaré',          class: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' },
-		SENT_TO_INSURER: { label: 'Envoyé assureur',  class: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
-		EXPERTISE:       { label: 'Expertise',         class: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
-		REPAIR:          { label: 'Réparation',        class: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
-		CLOSED:          { label: 'Clôturé',           class: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
-		CONTESTED:       { label: 'Contesté',          class: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' }
+		DECLARED: {
+			label: 'Déclaré',
+			class: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+		},
+		SENT_TO_INSURER: {
+			label: 'Envoyé assureur',
+			class: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
+		},
+		EXPERTISE: {
+			label: 'Expertise',
+			class: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400'
+		},
+		REPAIR: {
+			label: 'Réparation',
+			class: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400'
+		},
+		CLOSED: {
+			label: 'Clôturé',
+			class: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+		},
+		CONTESTED: {
+			label: 'Contesté',
+			class: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+		}
 	};
 
-	interface IncidentItem { status: string; [k: string]: unknown }
+	interface IncidentItem {
+		status: string;
+		[k: string]: unknown;
+	}
 
 	const filtered = $derived(
-		activeTab === 'all' ? allIncidents : allIncidents.filter((i: IncidentItem) => i.status === activeTab)
+		activeTab === 'all'
+			? allIncidents
+			: allIncidents.filter((i: IncidentItem) => i.status === activeTab)
 	);
 
 	const statusTabs = $derived([
 		{ value: 'all' as const, label: 'Tous', count: stats.total },
-		{ value: 'DECLARED' as const, label: 'Déclaré', count: allIncidents.filter((i: IncidentItem) => i.status === 'DECLARED').length },
-		{ value: 'SENT_TO_INSURER' as const, label: 'Assureur', count: allIncidents.filter((i: IncidentItem) => i.status === 'SENT_TO_INSURER').length },
-		{ value: 'EXPERTISE' as const, label: 'Expertise', count: allIncidents.filter((i: IncidentItem) => i.status === 'EXPERTISE').length },
-		{ value: 'REPAIR' as const, label: 'Réparation', count: allIncidents.filter((i: IncidentItem) => i.status === 'REPAIR').length },
-		{ value: 'CLOSED' as const, label: 'Clôturé', count: allIncidents.filter((i: IncidentItem) => i.status === 'CLOSED' || i.status === 'CONTESTED').length }
+		{
+			value: 'DECLARED' as const,
+			label: 'Déclaré',
+			count: allIncidents.filter((i: IncidentItem) => i.status === 'DECLARED').length
+		},
+		{
+			value: 'SENT_TO_INSURER' as const,
+			label: 'Assureur',
+			count: allIncidents.filter((i: IncidentItem) => i.status === 'SENT_TO_INSURER').length
+		},
+		{
+			value: 'EXPERTISE' as const,
+			label: 'Expertise',
+			count: allIncidents.filter((i: IncidentItem) => i.status === 'EXPERTISE').length
+		},
+		{
+			value: 'REPAIR' as const,
+			label: 'Réparation',
+			count: allIncidents.filter((i: IncidentItem) => i.status === 'REPAIR').length
+		},
+		{
+			value: 'CLOSED' as const,
+			label: 'Clôturé',
+			count: allIncidents.filter(
+				(i: IncidentItem) => i.status === 'CLOSED' || i.status === 'CONTESTED'
+			).length
+		}
 	]);
 
 	// ── Send to insurer dialog ────────────────────────────────────────────────────
-	interface IncidentRow { _id: Id<'incidents'>; insurerEmail?: string; [k: string]: unknown }
+	interface IncidentRow {
+		_id: Id<'incidents'>;
+		insurerEmail?: string;
+		[k: string]: unknown;
+	}
 	let sendingIncident = $state<IncidentRow | null>(null);
 	let insurerEmailInput = $state('');
 	let sendingEmail = $state(false);
@@ -75,7 +131,7 @@
 				incidentId: sendingIncident._id,
 				insurerEmail: insurerEmailInput.trim()
 			});
-			toast.success('Dossier envoyé à l\'assureur');
+			toast.success("Dossier envoyé à l'assureur");
 			sendingIncident = null;
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Erreur');
@@ -87,14 +143,16 @@
 	const isEmpty = $derived(!isLoading && allIncidents.length === 0);
 </script>
 
+<!-- eslint-disable svelte/no-navigation-without-resolve, local/no-hardcoded-sr-only -->
 <div class="flex flex-col gap-6 px-4 pb-8 lg:px-6 xl:px-8 2xl:px-16">
-
 	<!-- Header -->
 	<div class="flex items-center justify-between gap-4">
 		<div class="flex items-center gap-2">
 			<h1 class="text-base font-semibold">Sinistres</h1>
 			{#if !isLoading && allIncidents.length > 0}
-				<span class="tabular-nums rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+				<span
+					class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground tabular-nums"
+				>
 					{stats.total}
 				</span>
 			{/if}
@@ -122,7 +180,6 @@
 				</div>
 			</div>
 		</div>
-
 	{:else if isEmpty}
 		<div class="flex flex-1 items-center justify-center py-16">
 			<EmptyState
@@ -132,16 +189,11 @@
 				{#snippet icon()}<ShieldAlertIcon class="size-12" />{/snippet}
 			</EmptyState>
 		</div>
-
 	{:else}
 		<!-- KPI Cards -->
 		<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
 			<MetricCard label="Dossiers ouverts" value={stats.open} variant="accent" />
-			<MetricCard
-				label="Total sinistres"
-				value={stats.total}
-				description="Depuis l'ouverture"
-			/>
+			<MetricCard label="Total sinistres" value={stats.total} description="Depuis l'ouverture" />
 			<MetricCard
 				label="Chez assureur"
 				value={stats.sentToInsurer}
@@ -161,10 +213,14 @@
 					<Tabs.Trigger value={tab.value}>
 						{tab.label}
 						{#if tab.count > 0}
-							<span class={cn(
-								'ml-1.5 tabular-nums rounded-full px-1.5 text-[11px] font-semibold',
-								activeTab === tab.value ? 'bg-muted text-muted-foreground' : 'bg-muted text-muted-foreground/60'
-							)}>{tab.count}</span>
+							<span
+								class={cn(
+									'ml-1.5 rounded-full px-1.5 text-[11px] font-semibold tabular-nums',
+									activeTab === tab.value
+										? 'bg-muted text-muted-foreground'
+										: 'bg-muted text-muted-foreground/60'
+								)}>{tab.count}</span
+							>
 						{/if}
 					</Tabs.Trigger>
 				{/each}
@@ -185,10 +241,17 @@
 				<table class="w-full text-sm">
 					<thead>
 						<tr class="border-b border-border bg-muted/40">
-							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Véhicule</th>
-							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground hidden sm:table-cell">Lieu</th>
+							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Véhicule</th
+							>
+							<th
+								class="hidden px-4 py-3 text-left text-xs font-medium text-muted-foreground sm:table-cell"
+								>Lieu</th
+							>
 							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Date</th>
-							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground hidden md:table-cell">Franchise</th>
+							<th
+								class="hidden px-4 py-3 text-left text-xs font-medium text-muted-foreground md:table-cell"
+								>Franchise</th
+							>
 							<th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Statut</th>
 							<th class="w-10 px-3 py-3"></th>
 						</tr>
@@ -203,22 +266,33 @@
 								<td class="px-4 py-3">
 									{#if incident.vehicle}
 										<p class="font-medium">{incident.vehicle.brand} {incident.vehicle.model}</p>
-										<p class="font-mono text-xs text-muted-foreground">{incident.vehicle.registration}</p>
+										<p class="font-mono text-xs text-muted-foreground">
+											{incident.vehicle.registration}
+										</p>
 									{:else}
 										<span class="text-muted-foreground">—</span>
 									{/if}
 								</td>
-								<td class="max-w-[160px] px-4 py-3 text-muted-foreground truncate hidden sm:table-cell">
+								<td
+									class="hidden max-w-[160px] truncate px-4 py-3 text-muted-foreground sm:table-cell"
+								>
 									{incident.location}
 								</td>
-								<td class="px-4 py-3 text-muted-foreground whitespace-nowrap">
+								<td class="px-4 py-3 whitespace-nowrap text-muted-foreground">
 									{format(new Date(incident.incidentDate), 'd MMM yyyy', { locale: fr })}
 								</td>
-								<td class="px-4 py-3 text-muted-foreground hidden md:table-cell">
-									{incident.franchiseAmount != null ? `${incident.franchiseAmount.toLocaleString('fr-FR')} €` : '—'}
+								<td class="hidden px-4 py-3 text-muted-foreground md:table-cell">
+									{incident.franchiseAmount != null
+										? `${incident.franchiseAmount.toLocaleString('fr-FR')} €`
+										: '—'}
 								</td>
 								<td class="px-4 py-3">
-									<span class={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', cfg?.class)}>
+									<span
+										class={cn(
+											'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+											cfg?.class
+										)}
+									>
 										{cfg?.label ?? incident.status}
 									</span>
 								</td>
@@ -228,6 +302,7 @@
 											{#snippet child({ props })}
 												<Button variant="ghost" size="icon-sm" class="size-7" {...props}>
 													<DotsHorizontalIcon class="size-4" />
+
 													<span class="sr-only">Actions</span>
 												</Button>
 											{/snippet}
@@ -238,10 +313,12 @@
 											</DropdownMenu.Item>
 											{#if incident.status === 'DECLARED'}
 												<DropdownMenu.Separator />
-												<DropdownMenu.Item onclick={() => {
-													sendingIncident = incident as IncidentRow;
-													insurerEmailInput = (incident as IncidentRow).insurerEmail ?? '';
-												}}>
+												<DropdownMenu.Item
+													onclick={() => {
+														sendingIncident = incident as IncidentRow;
+														insurerEmailInput = (incident as IncidentRow).insurerEmail ?? '';
+													}}
+												>
 													<SendIcon class="size-3.5" />
 													Envoyer à l'assureur
 												</DropdownMenu.Item>
@@ -261,7 +338,9 @@
 <!-- Dialog envoi assureur -->
 <Dialog.Root
 	open={!!sendingIncident}
-	onOpenChange={(o) => { if (!o) sendingIncident = null; }}
+	onOpenChange={(o) => {
+		if (!o) sendingIncident = null;
+	}}
 >
 	<Dialog.Portal>
 		<Dialog.Overlay />
@@ -282,9 +361,11 @@
 				/>
 			</div>
 			<div class="mt-4 flex items-center justify-between">
-				<Button variant="ghost" onclick={() => (sendingIncident = null)} disabled={sendingEmail}>Annuler</Button>
+				<Button variant="ghost" onclick={() => (sendingIncident = null)} disabled={sendingEmail}
+					>Annuler</Button
+				>
 				<Button onclick={handleSendToInsurer} disabled={sendingEmail || !insurerEmailInput.trim()}>
-					{#if sendingEmail}<LoaderCircleIcon class="size-3.5 animate-spin" />{/if}
+					{#if sendingEmail}<LoaderCircleIcon class="size-3.5 motion-safe:animate-spin" />{/if}
 					Envoyer
 				</Button>
 			</div>

@@ -91,13 +91,13 @@
 					model: v.model,
 					registration: v.registration,
 					status: v.status,
-					site: v.site ?? '—',
+					site: v.site ?? '—'
 				},
 				geometry: {
 					type: 'Point',
-					coordinates: [v.longitude!, v.latitude!],
-				},
-			})),
+					coordinates: [v.longitude!, v.latitude!]
+				}
+			}))
 		};
 	}
 
@@ -108,7 +108,7 @@
 
 		map.addSource(SOURCE_ID, {
 			type: 'geojson',
-			data: buildGeoJSON(gpsVehicles),
+			data: buildGeoJSON(gpsVehicles)
 		});
 
 		map.addLayer({
@@ -118,15 +118,19 @@
 			paint: {
 				'circle-radius': 16,
 				'circle-color': [
-					'match', ['get', 'status'],
-					'AVAILABLE', '#4ade80',
-					'IN_USE', '#60a5fa',
-					'MAINTENANCE', '#fb923c',
-					'#6b7280',
+					'match',
+					['get', 'status'],
+					'AVAILABLE',
+					'#4ade80',
+					'IN_USE',
+					'#60a5fa',
+					'MAINTENANCE',
+					'#fb923c',
+					'#6b7280'
 				],
 				'circle-opacity': 0.18,
-				'circle-stroke-width': 0,
-			},
+				'circle-stroke-width': 0
+			}
 		});
 
 		map.addLayer({
@@ -136,16 +140,20 @@
 			paint: {
 				'circle-radius': 7,
 				'circle-color': [
-					'match', ['get', 'status'],
-					'AVAILABLE', '#4ade80',
-					'IN_USE', '#60a5fa',
-					'MAINTENANCE', '#fb923c',
-					'#6b7280',
+					'match',
+					['get', 'status'],
+					'AVAILABLE',
+					'#4ade80',
+					'IN_USE',
+					'#60a5fa',
+					'MAINTENANCE',
+					'#fb923c',
+					'#6b7280'
 				],
 				'circle-stroke-width': 2,
 				'circle-stroke-color': '#ffffff',
-				'circle-opacity': 0.95,
-			},
+				'circle-opacity': 0.95
+			}
 		});
 
 		map.on('click', LAYER_CIRCLES, (e) => {
@@ -172,8 +180,12 @@
 				.addTo(map);
 		});
 
-		map.on('mouseenter', LAYER_CIRCLES, () => { map.getCanvas().style.cursor = 'pointer'; });
-		map.on('mouseleave', LAYER_CIRCLES, () => { map.getCanvas().style.cursor = ''; });
+		map.on('mouseenter', LAYER_CIRCLES, () => {
+			map.getCanvas().style.cursor = 'pointer';
+		});
+		map.on('mouseleave', LAYER_CIRCLES, () => {
+			map.getCanvas().style.cursor = '';
+		});
 	}
 
 	let mapInitialized = $state(false);
@@ -196,7 +208,7 @@
 				if (vl.length === 0) return [2.3488, 48.8534];
 				return [
 					vl.reduce((s, v) => s + v.longitude!, 0) / vl.length,
-					vl.reduce((s, v) => s + v.latitude!, 0) / vl.length,
+					vl.reduce((s, v) => s + v.latitude!, 0) / vl.length
 				];
 			})();
 
@@ -207,7 +219,7 @@
 				zoom: gpsVehicles.length === 0 ? 4 : gpsVehicles.length === 1 ? 12 : 6,
 				fadeDuration: 0,
 				renderWorldCopies: false,
-				attributionControl: { compact: true },
+				attributionControl: { compact: true }
 			});
 
 			mapInstance.on('load', () => {
@@ -225,7 +237,9 @@
 			});
 
 			// Hard timeout — never spin forever
-			setTimeout(() => { if (!mapReady) mapReady = true; }, 8000);
+			setTimeout(() => {
+				if (!mapReady) mapReady = true;
+			}, 8000);
 		})();
 	});
 
@@ -233,7 +247,9 @@
 	$effect(() => {
 		if (!mapReady || !mapInstance) return;
 		const vl = gpsVehicles; // track
-		const source = mapInstance.getSource(SOURCE_ID) as import('maplibre-gl').GeoJSONSource | undefined;
+		const source = mapInstance.getSource(SOURCE_ID) as
+			| import('maplibre-gl').GeoJSONSource
+			| undefined;
 		if (source) source.setData(buildGeoJSON(vl));
 	});
 
@@ -246,14 +262,17 @@
 
 <div class="relative overflow-hidden rounded-2xl bg-card" data-slot="card">
 	<!-- Glass top highlight -->
-	<div class="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent dark:via-white/8"></div>
+	<div
+		class="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-linear-to-r from-transparent via-white/70 to-transparent dark:via-white/8"
+	></div>
 
 	<div class="flex flex-col @4xl/main:flex-row">
-
 		<!-- MAP PANEL — fixed height on mobile, flex-stretch on desktop -->
 		<div class="relative h-[280px] flex-1 @4xl/main:h-auto">
 			{#if loading}
-				<div class="absolute inset-0 animate-pulse rounded-t-2xl bg-muted @4xl/main:rounded-l-2xl @4xl/main:rounded-tr-none"></div>
+				<div
+					class="absolute inset-0 animate-pulse rounded-t-2xl bg-muted @4xl/main:rounded-l-2xl @4xl/main:rounded-tr-none"
+				></div>
 			{:else}
 				<!-- Map canvas container — must be absolute inset-0 so height is guaranteed -->
 				<div
@@ -263,30 +282,45 @@
 
 					<!-- Loading spinner until MapLibre 'load' fires -->
 					{#if !mapReady}
-						<div class="absolute inset-0 flex items-center justify-center bg-muted/50 backdrop-blur-sm">
+						<div
+							class="absolute inset-0 flex items-center justify-center bg-muted/50 backdrop-blur-sm"
+						>
 							<div class="flex gap-1.5">
 								<span class="size-1.5 animate-pulse rounded-full bg-muted-foreground/50"></span>
-								<span class="size-1.5 animate-pulse rounded-full bg-muted-foreground/50 [animation-delay:150ms]"></span>
-								<span class="size-1.5 animate-pulse rounded-full bg-muted-foreground/50 [animation-delay:300ms]"></span>
+								<span
+									class="size-1.5 animate-pulse rounded-full bg-muted-foreground/50 [animation-delay:150ms]"
+								></span>
+								<span
+									class="size-1.5 animate-pulse rounded-full bg-muted-foreground/50 [animation-delay:300ms]"
+								></span>
 							</div>
 						</div>
 					{/if}
 				</div>
 
 				<!-- Bottom overlays (above map) -->
-				<div class="absolute bottom-3 left-3 right-3 z-10 flex items-end justify-between gap-2">
+				<div class="absolute right-3 bottom-3 left-3 z-10 flex items-end justify-between gap-2">
 					{#if gpsVehicles.length > 0}
-						<div class="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-2.5 py-1 text-[10px] font-medium text-muted-foreground backdrop-blur">
+						<div
+							class="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-2.5 py-1 text-[10px] font-medium text-muted-foreground backdrop-blur"
+						>
 							<RadioIcon class="size-2.5 text-emerald-500" />
-							{gpsVehicles.length} véhicule{gpsVehicles.length > 1 ? 's' : ''} localisé{gpsVehicles.length > 1 ? 's' : ''}
+							{gpsVehicles.length} véhicule{gpsVehicles.length > 1 ? 's' : ''} localisé{gpsVehicles.length >
+							1
+								? 's'
+								: ''}
 						</div>
 					{:else if pendingSync.length > 0}
-						<div class="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/80 px-2.5 py-1 text-[10px] text-muted-foreground/70 backdrop-blur">
+						<div
+							class="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/80 px-2.5 py-1 text-[10px] text-muted-foreground/70 backdrop-blur"
+						>
 							<MapPinIcon class="size-2.5" />
 							GPS non disponible — sync requis
 						</div>
 					{:else}
-						<div class="flex items-center gap-1.5 rounded-full border border-border/40 bg-card/80 px-2.5 py-1 text-[10px] text-muted-foreground/60 backdrop-blur">
+						<div
+							class="flex items-center gap-1.5 rounded-full border border-border/40 bg-card/80 px-2.5 py-1 text-[10px] text-muted-foreground/60 backdrop-blur"
+						>
 							<MapPinIcon class="size-2.5" />
 							Connectez Smartcar pour la localisation
 						</div>
@@ -303,7 +337,9 @@
 				</div>
 
 				{#if gpsVehicles.length === 0 && pendingSync.length === 0 && mapReady}
-					<div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/10">
+					<div
+						class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/10"
+					>
 						<MapPinIcon class="size-7 text-muted-foreground/20" />
 					</div>
 				{/if}
@@ -311,14 +347,18 @@
 		</div>
 
 		<!-- SITE LIST PANEL — min-h forces the flex container to stretch the map panel too -->
-		<div class="flex w-full flex-col px-5 py-4 @4xl/main:w-[220px] @4xl/main:min-h-[320px] @4xl/main:shrink-0 @4xl/main:border-l @4xl/main:border-border/50">
-
+		<div
+			class="flex w-full flex-col px-5 py-4 @4xl/main:min-h-[320px] @4xl/main:w-[220px] @4xl/main:shrink-0 @4xl/main:border-l @4xl/main:border-border/50"
+		>
 			<div class="mb-3 flex items-center justify-between">
 				<div>
 					<h2 class="text-sm font-semibold text-foreground">Sites</h2>
 					<p class="text-[11px] text-muted-foreground">
 						{#if !loading}
-							{sites.length} site{sites.length > 1 ? 's' : ''} · {sites.reduce((a, s) => a + s.total, 0)} véhicules
+							{sites.length} site{sites.length > 1 ? 's' : ''} · {sites.reduce(
+								(a, s) => a + s.total,
+								0
+							)} véhicules
 						{:else}
 							Chargement…
 						{/if}
@@ -338,53 +378,73 @@
 			{#if loading}
 				<div class="flex flex-col gap-2">
 					{#each Array(3) as _, i (i)}
-						<div class="h-9 animate-pulse rounded-lg bg-muted" style="animation-delay: {i * 60}ms"></div>
+						<div
+							class="h-9 animate-pulse rounded-lg bg-muted"
+							style="animation-delay: {i * 60}ms"
+						></div>
 					{/each}
 				</div>
 			{:else if sites.length === 0}
 				<div class="flex flex-1 flex-col items-center justify-center gap-1.5 py-6 text-center">
 					<MapPinIcon class="size-6 text-muted-foreground/30" />
-					<p class="text-[11px] text-muted-foreground/70">Aucun site.<br />Ajoutez un emplacement<br />à vos véhicules.</p>
+					<p class="text-[11px] text-muted-foreground/70">
+						Aucun site.<br />Ajoutez un emplacement<br />à vos véhicules.
+					</p>
 				</div>
 			{:else}
 				<div class="flex flex-col gap-1">
 					{#each sites as s, i (s.site)}
 						<div
-							class="animate-enter-blur-up group flex flex-col gap-1 rounded-xl px-2.5 py-2 transition-colors hover:bg-muted/50"
+							class="group flex animate-enter-blur-up flex-col gap-1 rounded-xl px-2.5 py-2 transition-colors hover:bg-muted/50"
 							style="--enter-delay: {i * 35}ms"
 						>
 							<div class="flex items-center gap-2">
-								<span class="size-1.5 shrink-0 rounded-full" style="background: {healthColor(s)}"></span>
-								<span class="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground">{s.site}</span>
-								<span class="shrink-0 text-[11px] font-bold tabular-nums text-foreground">{s.total}</span>
+								<span class="size-1.5 shrink-0 rounded-full" style="background: {healthColor(s)}"
+								></span>
+								<span class="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground"
+									>{s.site}</span
+								>
+								<span class="shrink-0 text-[11px] font-bold text-foreground tabular-nums"
+									>{s.total}</span
+								>
 							</div>
 							<div class="relative ml-3.5 h-1 overflow-hidden rounded-full bg-muted">
 								<div
 									class="absolute inset-y-0 left-0 rounded-full"
-									style="width: {s.total > 0 ? (s.available / s.total) * 100 : 0}%; background: oklch(0.72 0.17 145); opacity: 0.85"
+									style="width: {s.total > 0
+										? (s.available / s.total) * 100
+										: 0}%; background: oklch(0.72 0.17 145); opacity: 0.85"
 								></div>
 								<div
 									class="absolute inset-y-0 rounded-full"
-									style="left: {s.total > 0 ? (s.available / s.total) * 100 : 0}%; width: {s.total > 0 ? (s.inUse / s.total) * 100 : 0}%; background: oklch(0.62 0.19 248); opacity: 0.85"
+									style="left: {s.total > 0 ? (s.available / s.total) * 100 : 0}%; width: {s.total >
+									0
+										? (s.inUse / s.total) * 100
+										: 0}%; background: oklch(0.62 0.19 248); opacity: 0.85"
 								></div>
 								<div
 									class="absolute inset-y-0 rounded-full"
-									style="left: {s.total > 0 ? ((s.available + s.inUse) / s.total) * 100 : 0}%; width: {s.total > 0 ? (s.maintenance / s.total) * 100 : 0}%; background: oklch(0.78 0.20 70); opacity: 0.85"
+									style="left: {s.total > 0
+										? ((s.available + s.inUse) / s.total) * 100
+										: 0}%; width: {s.total > 0
+										? (s.maintenance / s.total) * 100
+										: 0}%; background: oklch(0.78 0.20 70); opacity: 0.85"
 								></div>
 							</div>
-							<p class="ml-3.5 text-[10px] tabular-nums text-muted-foreground/70">{availPct(s)}% dispo</p>
+							<p class="ml-3.5 text-[10px] text-muted-foreground/70 tabular-nums">
+								{availPct(s)}% dispo
+							</p>
 						</div>
 					{/each}
 				</div>
 
-				<div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/40 pt-3">
-					{#each [
-						{ label: 'Dispo', color: 'oklch(0.72 0.17 145)' },
-						{ label: 'En cours', color: 'oklch(0.62 0.19 248)' },
-						{ label: 'Maint.', color: 'oklch(0.78 0.20 70)' }
-					] as leg}
+				<div
+					class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/40 pt-3"
+				>
+					{#each [{ label: 'Dispo', color: 'oklch(0.72 0.17 145)' }, { label: 'En cours', color: 'oklch(0.62 0.19 248)' }, { label: 'Maint.', color: 'oklch(0.78 0.20 70)' }] as leg}
 						<div class="flex items-center gap-1">
-							<span class="size-1.5 rounded-sm" style="background: {leg.color}; opacity: 0.85"></span>
+							<span class="size-1.5 rounded-sm" style="background: {leg.color}; opacity: 0.85"
+							></span>
 							<span class="text-[10px] text-muted-foreground">{leg.label}</span>
 						</div>
 					{/each}

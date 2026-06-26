@@ -14,6 +14,8 @@
 	import Tour, { type TourStep } from '$lib/components/onboarding/Tour.svelte';
 	import CopilotFab from '$lib/components/copilot/copilot-fab.svelte';
 	import CopilotPanel from '$lib/components/copilot/copilot-panel.svelte';
+	import TrialBanner from '$lib/components/billing/TrialBanner.svelte';
+	import PlanSelectionModal from '$lib/components/billing/PlanSelectionModal.svelte';
 
 	interface Props {
 		children?: Snippet;
@@ -36,13 +38,11 @@
 	// Full control mode for pages that manage their own scroll/padding
 	const fullControl = $derived(
 		page.url.pathname.endsWith('/admin/fleet') ||
-		page.url.pathname.includes('/admin/finance/fiscal')
+			page.url.pathname.includes('/admin/finance/fiscal')
 	);
 
 	// --- Onboarding ---
-	const storageKey = $derived(
-		viewer?._id ? `mycelium:onboarding:admin:${viewer._id}` : null
-	);
+	const storageKey = $derived(viewer?._id ? `mycelium:onboarding:admin:${viewer._id}` : null);
 
 	let showWelcome = $state(false);
 	let showTour = $state(false);
@@ -79,25 +79,28 @@
 		{
 			selector: '[href*="/admin/dashboard"]',
 			title: 'Tableau de bord',
-			description: "Vue d'ensemble de votre flotte : taux d'utilisation, véhicules disponibles et réservations du jour.",
+			description:
+				"Vue d'ensemble de votre flotte : taux d'utilisation, véhicules disponibles et réservations du jour.",
 			placement: 'bottom'
 		},
 		{
 			selector: '[href*="/admin/fleet"]',
 			title: 'Gestion de la flotte',
-			description: 'Importez vos véhicules, gérez leur disponibilité et suivez leur état en temps réel.',
+			description:
+				'Importez vos véhicules, gérez leur disponibilité et suivez leur état en temps réel.',
 			placement: 'bottom'
 		},
 		{
 			selector: '[href*="/admin/reservations"]',
 			title: 'Réservations',
-			description: 'Toutes les réservations de vos équipes, avec la possibilité d\'intervenir à tout moment.',
+			description:
+				"Toutes les réservations de vos équipes, avec la possibilité d'intervenir à tout moment.",
 			placement: 'bottom'
 		},
 		{
 			selector: '[href*="/admin/settings"]',
 			title: 'Paramètres',
-			description: "Configurez votre organisation, les règles de réservation et les notifications.",
+			description: 'Configurez votre organisation, les règles de réservation et les notifications.',
 			placement: 'bottom'
 		}
 	];
@@ -155,6 +158,7 @@
 	sidebarOpen={data.sidebarOpen}
 	showOrgSwitcher={true}
 >
+	<TrialBanner />
 	{@render children?.()}
 </AuthenticatedLayout>
 
@@ -172,5 +176,6 @@
 	onSkip={handleTourSkip}
 />
 
+<PlanSelectionModal />
 <CopilotFab defaultAgent="manager" />
 <CopilotPanel />
