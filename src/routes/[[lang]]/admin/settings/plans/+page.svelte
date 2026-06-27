@@ -13,11 +13,9 @@
 	import CalendarIcon from '@lucide/svelte/icons/calendar';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import TerminalIcon from '@lucide/svelte/icons/terminal';
-	import ZapIcon from '@lucide/svelte/icons/zap';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
-	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
 	import DevPlanActivator from '$lib/components/billing/DevPlanActivator.svelte';
@@ -49,8 +47,6 @@
 	);
 	const seatsAllowed = $derived(billingStatus?.seatsAllowed ?? null);
 	const seatsUsed = $derived(billingStatus?.seatsUsed ?? 0);
-	const trialDaysLeft = $derived(billingStatus?.trialDaysLeft ?? null);
-	const trialEndsAt = $derived(billingStatus?.trialEndsAt ?? null);
 	const hasPaddleKey = !!import.meta.env.VITE_PADDLE_CLIENT_TOKEN;
 	const isSandbox = import.meta.env.VITE_PADDLE_SANDBOX === 'true';
 
@@ -68,16 +64,6 @@
 				: seatsPct >= 70
 					? 'bg-amber-500'
 					: 'bg-emerald-500'
-	);
-
-	const trialEndFormatted = $derived(
-		trialEndsAt
-			? new Date(trialEndsAt).toLocaleDateString('fr-FR', {
-					day: 'numeric',
-					month: 'long',
-					year: 'numeric'
-				})
-			: null
 	);
 
 	// Plan display data
@@ -106,12 +92,6 @@
 			color: 'bg-primary/10 text-primary',
 			price: 'Sur devis'
 		},
-		trial: {
-			label: 'Essai',
-			desc: 'Accès Professional — essai 15 jours',
-			color: 'bg-amber-500/12 text-amber-700 dark:text-amber-400',
-			price: 'Gratuit'
-		},
 		dev: {
 			label: 'Dev',
 			desc: 'Accès illimité — environnement développement',
@@ -129,72 +109,72 @@
 		{
 			key: 'concierge',
 			label: 'Agent Concierge IA',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'fleet',
 			label: 'Gestion flotte & calendrier',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'reservations',
 			label: 'Réservations & planification',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'notifications',
 			label: 'Notifications email',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'expenses',
 			label: 'Notes de frais IK',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'drivers',
 			label: 'Gestion conducteurs & permis',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'incidents',
 			label: 'Sinistres & contraventions',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'maintenance',
 			label: 'Maintenance & alertes',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'finance',
 			label: 'Suivi financier & coûts',
-			tiers: ['essential', 'professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['essential', 'professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'xero',
 			label: 'Sync Xero',
-			tiers: ['professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'quickbooks',
 			label: 'Sync QuickBooks',
-			tiers: ['professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'bik',
 			label: 'Avantage en nature BiK UK',
-			tiers: ['professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'compliance',
 			label: 'Agent Compliance Officer',
-			tiers: ['professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'csrd',
 			label: 'Durabilité CSRD / ESG',
-			tiers: ['professional', 'business', 'enterprise', 'trial', 'dev']
+			tiers: ['professional', 'business', 'enterprise', 'dev']
 		},
 		{
 			key: 'optimizer',
@@ -249,25 +229,9 @@
 	let showChangePlan = $state(false);
 	const isDevCurrent = $derived(effectiveTier === 'dev');
 
-	// Trial + plan selection (when no plan active)
-	let trialLoading = $state(false);
-	const showTrialCTA = $derived(
-		billingStatus != null && billingStatus.tier === 'none' && !billingStatus.isDev
+	const hasActivePlan = $derived(
+		effectiveTier !== null && effectiveTier !== 'none' && effectiveTier !== 'free'
 	);
-	const isOnTrial = $derived(effectiveTier === 'trial');
-	const hasActivePlan = $derived(effectiveTier !== null && effectiveTier !== 'none');
-
-	async function startTrial() {
-		trialLoading = true;
-		try {
-			await convexClient.mutation((api as any).billing.startFreeTrial, {});
-			toast.success('Essai gratuit démarré — 15 jours accès Professional !');
-		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Erreur');
-		} finally {
-			trialLoading = false;
-		}
-	}
 
 	// Paddle checkout
 	const PADDLE_PRICES: Record<string, string> = {
@@ -494,7 +458,7 @@
 		<!-- Hero card -->
 		<Card.Root class="overflow-hidden">
 			<!-- Subtle top accent -->
-			{#if effectiveTier === 'professional' || effectiveTier === 'trial'}
+			{#if effectiveTier === 'professional'}
 				<div class="h-px bg-linear-to-r from-transparent via-[var(--brand)] to-transparent"></div>
 			{:else if effectiveTier === 'business'}
 				<div class="h-px bg-linear-to-r from-transparent via-violet-500 to-transparent"></div>
@@ -508,8 +472,6 @@
 						>
 							{#if effectiveTier === 'dev'}
 								<TerminalIcon class="size-5 text-[var(--brand)]" />
-							{:else if effectiveTier === 'trial'}
-								<ZapIcon class="size-5 text-amber-500" />
 							{:else}
 								<CreditCardIcon class="size-5 text-muted-foreground" />
 							{/if}
@@ -522,8 +484,6 @@
 								>
 									{#if effectiveTier === 'dev'}
 										Dev
-									{:else if effectiveTier === 'trial'}
-										Essai · {trialDaysLeft}j
 									{:else}
 										{statusLabel[subscriptionQuery.data?.paddleStatus ?? ''] ?? 'Actif'}
 									{/if}
@@ -548,18 +508,12 @@
 						{/if}
 						<Button
 							size="sm"
-							class={isOnTrial ? 'bg-[var(--brand)] text-black hover:bg-[var(--brand)]/90' : ''}
-							variant={isOnTrial ? 'default' : 'outline'}
+							variant="outline"
 							onclick={() => {
 								showChangePlan = !showChangePlan;
 							}}
 						>
-							{#if isOnTrial}
-								<ArrowUpRightIcon class="mr-1.5 size-3.5" />
-								Souscrire maintenant
-							{:else}
-								Changer de plan
-							{/if}
+							Changer de plan
 						</Button>
 					</div>
 				</div>
@@ -613,25 +567,10 @@
 					<div class="mb-3 flex items-center gap-2">
 						<CalendarIcon class="size-4 text-muted-foreground" />
 						<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-							{effectiveTier === 'trial' ? "Fin d'essai" : 'Renouvellement'}
+							Renouvellement
 						</span>
 					</div>
-					{#if effectiveTier === 'trial' && trialEndFormatted}
-						<p class="text-sm font-semibold">{trialEndFormatted}</p>
-						{#if trialDaysLeft !== null}
-							<p
-								class="mt-1 text-xs {trialDaysLeft <= 3
-									? 'text-destructive'
-									: trialDaysLeft <= 7
-										? 'text-amber-600 dark:text-amber-400'
-										: 'text-muted-foreground'}"
-							>
-								{trialDaysLeft} jour{trialDaysLeft !== 1 ? 's' : ''} restant{trialDaysLeft !== 1
-									? 's'
-									: ''}
-							</p>
-						{/if}
-					{:else if periodEnd}
+					{#if periodEnd}
 						<p class="text-sm font-semibold">{periodEnd}</p>
 						<p class="mt-1 text-xs text-muted-foreground">Renouvellement automatique</p>
 					{:else if effectiveTier === 'dev'}
@@ -773,9 +712,7 @@
 					</div>
 
 					{#each PLANS_FOR_CHANGE as plan (plan.id)}
-						{@const isCurrent =
-							effectiveTier === plan.id ||
-							(effectiveTier === 'trial' && plan.id === 'professional')}
+						{@const isCurrent = effectiveTier === plan.id}
 						{@const loading = isPaddleLoading === plan.id}
 						<div
 							class="relative flex flex-col rounded-xl border p-4
@@ -791,7 +728,7 @@
 								<span
 									class="absolute top-3 right-3 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary uppercase"
 								>
-									{effectiveTier === 'trial' ? 'Essai actif' : 'Actuel'}
+									Actuel
 								</span>
 							{/if}
 
@@ -838,14 +775,6 @@
 								>
 									{isPortalLoading ? '...' : 'Gérer'}
 								</Button>
-							{:else if isCurrent && effectiveTier === 'trial'}
-								<Button
-									class="w-full bg-[var(--brand)] text-xs text-black hover:bg-[var(--brand)]/90"
-									onclick={() => handleCheckout(plan.id)}
-									disabled={loading || isPaddleLoading !== null}
-								>
-									{loading ? 'Traitement...' : 'Souscrire maintenant'}
-								</Button>
 							{:else}
 								<Button
 									class="w-full text-xs {plan.popular
@@ -885,31 +814,6 @@
 		<!-- ═══════════════════════════════════════════════════════════════
 		     NO PLAN — SELECTION VIEW (fallback; modal normally intercepts)
 		     ═══════════════════════════════════════════════════════════════ -->
-
-		<!-- Trial CTA -->
-		{#if showTrialCTA}
-			<div
-				class="flex flex-col gap-3 rounded-xl border border-[var(--brand)]/30 bg-[var(--brand)]/6 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-			>
-				<div class="flex items-start gap-3">
-					<ZapIcon class="mt-0.5 size-4 shrink-0 text-[var(--brand)]" />
-					<div>
-						<p class="text-sm font-medium">Essai gratuit de 15 jours</p>
-						<p class="mt-0.5 text-xs text-muted-foreground">
-							Accès complet au plan Professional. Aucune carte bancaire requise.
-						</p>
-					</div>
-				</div>
-				<Button
-					class="shrink-0 bg-[var(--brand)] text-black hover:bg-[var(--brand)]/90"
-					onclick={startTrial}
-					disabled={trialLoading}
-				>
-					{#if trialLoading}<LoaderCircleIcon class="mr-2 size-4 motion-safe:animate-spin" />{/if}
-					Démarrer l'essai gratuit
-				</Button>
-			</div>
-		{/if}
 
 		<!-- Plan cards -->
 		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

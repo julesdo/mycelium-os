@@ -14,7 +14,6 @@
 	import Tour, { type TourStep } from '$lib/components/onboarding/Tour.svelte';
 	import CopilotFab from '$lib/components/copilot/copilot-fab.svelte';
 	import CopilotPanel from '$lib/components/copilot/copilot-panel.svelte';
-	import TrialBanner from '$lib/components/billing/TrialBanner.svelte';
 	import PlanSelectionModal from '$lib/components/billing/PlanSelectionModal.svelte';
 
 	interface Props {
@@ -158,7 +157,6 @@
 	sidebarOpen={data.sidebarOpen}
 	showOrgSwitcher={true}
 >
-	<TrialBanner />
 	{@render children?.()}
 </AuthenticatedLayout>
 

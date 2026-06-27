@@ -84,13 +84,11 @@
 								>
 									<T keyName={member.roleKey} />
 								</span>
-								<a
-									href="#"
-									draggable={false}
-									class="inline-block text-sm tracking-wide no-drag group-hover:translate-y-0 group-hover:text-primary group-hover:opacity-100 hover:underline active:translate-y-px motion-safe:translate-y-8 motion-safe:opacity-0 motion-safe:transition-all motion-safe:duration-300"
+								<span
+									class="inline-block text-sm tracking-wide no-drag group-hover:translate-y-0 group-hover:text-primary group-hover:opacity-100 motion-safe:translate-y-8 motion-safe:opacity-0 motion-safe:transition-all motion-safe:duration-300"
 								>
 									<T keyName="team.linktree" />
-								</a>
+								</span>
 							</div>
 						</div>
 					</div>

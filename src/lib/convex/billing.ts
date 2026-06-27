@@ -5,7 +5,30 @@ import type { Doc } from './_generated/dataModel';
 
 // ── Plan feature matrix ───────────────────────────────────────────────────────
 
+export const FREE_VEHICLE_LIMIT = 10;
+
 export const PLAN_FEATURES = {
+	free: {
+		fleet: true,
+		reservations: true,
+		concierge: false,
+		notifications: true,
+		expenses: false,
+		drivers: false,
+		incidents: false,
+		maintenance: true,
+		bik: false,
+		csrd: false,
+		optimizer: false,
+		compliance: false,
+		xero: false,
+		quickbooks: false,
+		coach: false,
+		negotiator: false,
+		finance: false,
+		violations: false,
+		support: false
+	},
 	essential: {
 		fleet: true,
 		reservations: true,
@@ -94,25 +117,23 @@ export const PLAN_FEATURES = {
 
 export type PlanFeature = keyof (typeof PLAN_FEATURES)['business'];
 export type PlanTier =
+	| 'free'
 	| 'essential'
 	| 'professional'
 	| 'business'
 	| 'enterprise'
 	| 'dev'
-	| 'trial'
 	| 'none';
 
-// Seat limits per tier
+// Seat limits per tier (vehicle limit for free is enforced separately)
 export const PLAN_SEATS: Record<string, number> = {
+	free: 9999,
 	essential: 50,
 	professional: 150,
 	business: 300,
 	enterprise: 9999,
-	dev: 9999,
-	trial: 150
+	dev: 9999
 };
-
-export const TRIAL_DAYS = 15;
 
 // ── Core resolver ─────────────────────────────────────────────────────────────
 
@@ -120,13 +141,11 @@ export const TRIAL_DAYS = 15;
 // 1. Dev bypass (PADDLE_API_KEY absent) → 'dev'
 // 2. devPlan flag → 'dev'
 // 3. Active Paddle subscription → paddlePlanTier
-// 4. Active free trial → 'trial' (Professional features)
-// 5. Nothing → 'none'
+// 4. Nothing → 'free' (open core, permanent, limited features)
 export function resolveEffectivePlan(org: Doc<'organizations'>): {
 	tier: PlanTier;
 	isDev: boolean;
 	seatsAllowed: number;
-	trialEndsAt: number | null;
 } {
 	const isDev = !process.env.PADDLE_API_KEY;
 
@@ -135,14 +154,14 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
 		// Allow simulating a specific plan tier for feature-gating tests
 		if (org.simulatedTier) {
 			const tier = org.simulatedTier as PlanTier;
-			return { tier, isDev: true, seatsAllowed: PLAN_SEATS[tier] ?? 50, trialEndsAt: null };
+			return { tier, isDev: true, seatsAllowed: PLAN_SEATS[tier] ?? 50 };
 		}
-		return { tier: 'dev', isDev: true, seatsAllowed: 9999, trialEndsAt: null };
+		return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
 	}
 
 	// Explicit dev plan (only settable when PADDLE_API_KEY was absent at the time)
 	if (org.devPlan) {
-		return { tier: 'dev', isDev: false, seatsAllowed: 9999, trialEndsAt: null };
+		return { tier: 'dev', isDev: false, seatsAllowed: 9999 };
 	}
 
 	// Active Paddle subscription
@@ -151,28 +170,16 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
 		return {
 			tier,
 			isDev: false,
-			seatsAllowed: org.seatsIncluded ?? PLAN_SEATS[tier] ?? 50,
-			trialEndsAt: null
+			seatsAllowed: org.seatsIncluded ?? PLAN_SEATS[tier] ?? 50
 		};
 	}
 
-	// Free trial
-	if (org.freeTrialEndsAt && org.freeTrialEndsAt > Date.now()) {
-		return {
-			tier: 'trial',
-			isDev: false,
-			seatsAllowed: PLAN_SEATS['trial'] ?? 150,
-			trialEndsAt: org.freeTrialEndsAt
-		};
-	}
-
-	return { tier: 'none', isDev: false, seatsAllowed: 0, trialEndsAt: null };
+	return { tier: 'free', isDev: false, seatsAllowed: PLAN_SEATS.free };
 }
 
 export function planHasFeature(tier: PlanTier, feature: PlanFeature): boolean {
 	if (tier === 'dev') return true;
-	if (tier === 'trial') return PLAN_FEATURES.professional[feature];
-	if (tier === 'none') return false;
+	if (tier === 'free' || tier === 'none') return PLAN_FEATURES.free[feature];
 	return PLAN_FEATURES[tier]?.[feature] ?? false;
 }
 
@@ -190,7 +197,7 @@ export const getBillingStatus = authedQuery({
 		const org = await ctx.db.get(profile.currentOrganizationId);
 		if (!org) return null;
 
-		const { tier, isDev, seatsAllowed, trialEndsAt } = resolveEffectivePlan(org);
+		const { tier, isDev, seatsAllowed } = resolveEffectivePlan(org);
 
 		const memberCount = await ctx.db
 			.query('organizationMembers')
@@ -198,21 +205,14 @@ export const getBillingStatus = authedQuery({
 			.collect()
 			.then((r) => r.length);
 
-		const trialDaysLeft = trialEndsAt
-			? Math.max(0, Math.ceil((trialEndsAt - Date.now()) / 86400000))
-			: null;
-
 		return {
 			tier,
 			isDev,
 			seatsUsed: memberCount,
 			seatsAllowed,
-			trialDaysLeft,
-			trialEndsAt,
 			paddleStatus: org.paddleStatus ?? null,
 			paddlePlanTier: org.paddlePlanTier ?? null,
-			paddleCurrentPeriodEnd: org.paddleCurrentPeriodEnd ?? null,
-			hasUsedFreeTrial: profile.hasUsedFreeTrial ?? false
+			paddleCurrentPeriodEnd: org.paddleCurrentPeriodEnd ?? null
 		};
 	}
 });
@@ -236,43 +236,6 @@ export const _getOrgBillingStatus = internalQuery({
 });
 
 // ── Mutations ─────────────────────────────────────────────────────────────────
-
-export const startFreeTrial = authedMutation({
-	args: {},
-	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
-
-		// Anti-abus : un seul essai gratuit par utilisateur, toutes orgs confondues
-		if (profile.hasUsedFreeTrial) {
-			throw new ConvexError(
-				"Vous avez déjà bénéficié d'un essai gratuit. Souscrivez un plan pour continuer."
-			);
-		}
-
-		const org = await ctx.db.get(profile.currentOrganizationId);
-		if (!org) throw new ConvexError('Organisation introuvable');
-
-		// Already has an active subscription
-		if (org.paddleStatus === 'active' || org.paddleStatus === 'trialing') {
-			throw new ConvexError('Votre organisation a déjà un abonnement actif.');
-		}
-
-		// Already used a trial on this org
-		if (org.freeTrialEndsAt) {
-			throw new ConvexError("Cette organisation a déjà bénéficié de l'essai gratuit.");
-		}
-
-		const trialEnd = Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000;
-		await ctx.db.patch(profile.currentOrganizationId, { freeTrialEndsAt: trialEnd });
-		await ctx.db.patch(profile._id, { hasUsedFreeTrial: true });
-
-		return { trialEndsAt: trialEnd };
-	}
-});
 
 // Set a simulated plan tier in dev mode (no PADDLE_API_KEY) for testing feature gating.
 // Pass undefined/null to reset back to full 'dev' access.
@@ -344,10 +307,9 @@ export async function assertSeatAvailable(
 	if (!org) throw new ConvexError('Organisation introuvable');
 
 	const { tier, seatsAllowed } = resolveEffectivePlan(org);
+	if (tier === 'free') return; // free tier = membres illimités
 	if (tier === 'none') {
-		throw new ConvexError(
-			'Aucun abonnement actif. Démarrez un essai gratuit ou souscrivez un plan.'
-		);
+		throw new ConvexError('Aucun abonnement actif. Souscrivez un plan pour continuer.');
 	}
 
 	const memberCount = await ctx.db

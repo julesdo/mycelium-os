@@ -4,7 +4,7 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { useConvexClient, useQuery } from '@mmailaender/convex-svelte';
+	import { useConvexClient } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api.js';
 	import { goto } from '$app/navigation';
 	import { localizedHref } from '$lib/utils/i18n';
@@ -13,13 +13,10 @@
 	import CheckCircleIcon from '@lucide/svelte/icons/check-circle';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import TrashIcon from '@lucide/svelte/icons/trash-2';
-	import ZapIcon from '@lucide/svelte/icons/zap';
 	import TerminalIcon from '@lucide/svelte/icons/terminal';
 	import Logo from '$lib/components/icons/logo.svelte';
 
 	const convexClient = useConvexClient();
-	const billingQuery = useQuery(api.billing.getBillingStatus, {});
-	const alreadyUsedTrial = $derived(billingQuery.data?.hasUsedFreeTrial ?? false);
 
 	// ── wizard state ──────────────────────────────────────────────────────────
 	let step = $state(0); // 0=org, 1=locale, 2=team, 3=done
@@ -289,23 +286,8 @@
 	// Detect dev mode: VITE_PADDLE_CLIENT_TOKEN absent = no Paddle configured
 	const isPaddleDev = !import.meta.env.VITE_PADDLE_CLIENT_TOKEN;
 
-	let trialLoading = $state(false);
 	let devPlanLoading = $state(false);
-	let trialStarted = $state(false);
 	let devPlanActivated = $state(false);
-
-	async function startTrial() {
-		trialLoading = true;
-		try {
-			await convexClient.mutation(api.billing.startFreeTrial, {});
-			trialStarted = true;
-			toast.success('Essai gratuit démarré — 15 jours accès Professional !');
-		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Erreur');
-		} finally {
-			trialLoading = false;
-		}
-	}
 
 	async function activateDevPlan() {
 		devPlanLoading = true;
@@ -702,26 +684,15 @@
 									✓ Plan dev activé — accès illimité
 								</p>
 							</div>
-						{:else if trialStarted}
-							<div
-								class="w-full rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-left"
-							>
-								<p class="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-									✓ Essai gratuit démarré — 15 jours Professional
-								</p>
-							</div>
-						{:else if alreadyUsedTrial}
-							<!-- User already consumed their trial on a previous org -->
+						{:else}
+							<!-- Prod: open core — invite to upgrade when ready -->
 							<div class="w-full rounded-lg border border-border bg-muted/40 px-4 py-3 text-left">
-								<div class="flex items-start gap-2.5">
-									<ZapIcon class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-									<div class="flex-1">
-										<p class="text-xs font-medium">Essai déjà utilisé</p>
-										<p class="text-[11px] text-muted-foreground">
-											Votre compte a déjà bénéficié d'un essai gratuit. Souscrivez un plan pour
-											accéder aux fonctionnalités avancées.
-										</p>
-									</div>
+								<div class="flex-1">
+									<p class="text-xs font-medium">Vous êtes sur le plan gratuit</p>
+									<p class="text-[11px] text-muted-foreground">
+										Accès aux fonctionnalités de base jusqu'à 10 véhicules. Passez à un plan payant
+										quand vous êtes prêt pour débloquer toutes les fonctionnalités.
+									</p>
 								</div>
 								<Button
 									size="sm"
@@ -730,32 +701,6 @@
 									href="/admin/settings/plans"
 								>
 									Voir les plans
-								</Button>
-							</div>
-						{:else}
-							<!-- Prod: offer free trial -->
-							<div
-								class="w-full rounded-lg border border-[var(--brand)]/30 bg-[var(--brand)]/5 px-4 py-3 text-left"
-							>
-								<div class="flex items-start gap-2.5">
-									<ZapIcon class="mt-0.5 size-4 shrink-0 text-[var(--brand)]" />
-									<div class="flex-1">
-										<p class="text-xs font-medium">Essai gratuit — 15 jours</p>
-										<p class="text-[11px] text-muted-foreground">
-											Accédez au plan Professional : BiK UK, CSRD, sync Xero/QuickBooks.
-										</p>
-									</div>
-								</div>
-								<Button
-									size="sm"
-									class="mt-2.5 w-full bg-[var(--brand)] text-xs text-black hover:bg-[var(--brand)]/90"
-									onclick={startTrial}
-									disabled={trialLoading}
-								>
-									{#if trialLoading}<LoaderCircleIcon
-											class="mr-1.5 size-3 motion-safe:animate-spin"
-										/>{/if}
-									Démarrer l'essai gratuit
 								</Button>
 							</div>
 						{/if}

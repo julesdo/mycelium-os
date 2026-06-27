@@ -1,10 +1,11 @@
 import { v, ConvexError } from 'convex/values';
 import { authedQuery, authedMutation } from './functions';
 import { getUserOrg, requireOrgAdmin } from './lib/auth';
+import { resolveEffectivePlan, FREE_VEHICLE_LIMIT } from './billing';
 
 function isValidRegistration(reg: string): boolean {
 	// 2–12 chars, uppercase letters/digits/hyphens/spaces (covers FR, EU, temp plates)
-	return /^[A-Z0-9][A-Z0-9 \-]{0,10}[A-Z0-9]$/i.test(reg.trim());
+	return /^[A-Z0-9][A-Z0-9 -]{0,10}[A-Z0-9]$/i.test(reg.trim());
 }
 
 const energyValidator = v.union(v.literal('THERMAL'), v.literal('HYBRID'), v.literal('ELECTRIC'));
@@ -114,6 +115,14 @@ export const createVehicle = authedMutation({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 
+		const org = await ctx.db.get(organizationId);
+		if (org) {
+			const { tier } = resolveEffectivePlan(org);
+			if (tier === 'free' && existing.length >= FREE_VEHICLE_LIMIT) {
+				throw new ConvexError('VEHICLE_LIMIT_REACHED');
+			}
+		}
+
 		if (existing.some((v) => v.registration === fields.registration)) {
 			throw new ConvexError(
 				`Immatriculation "${fields.registration}" déjà existante dans l'organisation`
@@ -214,6 +223,10 @@ export const bulkCreateVehicles = authedMutation({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 
+		const org = await ctx.db.get(organizationId);
+		const { tier } = org ? resolveEffectivePlan(org) : { tier: 'free' as const };
+		const freeSlots = tier === 'free' ? Math.max(0, FREE_VEHICLE_LIMIT - existing.length) : null;
+
 		const existingRegistrations = new Set(existing.map((v) => v.registration));
 		const seenInBatch = new Set<string>();
 		const skippedRegistrations: string[] = [];
@@ -225,6 +238,11 @@ export const bulkCreateVehicles = authedMutation({
 				existingRegistrations.has(vehicle.registration) ||
 				seenInBatch.has(vehicle.registration)
 			) {
+				skippedRegistrations.push(vehicle.registration);
+				continue;
+			}
+
+			if (freeSlots !== null && inserted >= freeSlots) {
 				skippedRegistrations.push(vehicle.registration);
 				continue;
 			}

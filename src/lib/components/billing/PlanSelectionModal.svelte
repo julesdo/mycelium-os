@@ -1,12 +1,9 @@
 <script lang="ts">
 	import { useQuery, useAction } from '@mmailaender/convex-svelte';
-	import { useConvexClient } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import CheckIcon from '@lucide/svelte/icons/check';
-	import ZapIcon from '@lucide/svelte/icons/zap';
-	import MailIcon from '@lucide/svelte/icons/mail';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
@@ -14,7 +11,6 @@
 	const billingQ = useQuery((api as any).billing.getBillingStatus, {});
 	const membershipQ = useQuery(api.organizations.getMyOrgMembership, {});
 	const portalAction = useAction(api.paddle.getPortalUrl);
-	const convexClient = useConvexClient();
 
 	const status = $derived(billingQ.data);
 	const membership = $derived(membershipQ.data);
@@ -29,7 +25,7 @@
 		!billingQ.isLoading &&
 			!membershipQ.isLoading &&
 			status != null &&
-			status.tier === 'none' &&
+			(status.tier === 'none' || status.tier === 'free') &&
 			membership?.role === 'ORG_ADMIN' &&
 			!isOnPlansPage
 	);
@@ -75,7 +71,6 @@
 	}
 
 	let checkoutLoading = $state<string | null>(null);
-	let trialLoading = $state(false);
 
 	async function handleCheckout(tierId: string) {
 		if (!hasPaddleKey) return;
@@ -97,18 +92,6 @@
 			toast.error('Erreur lors du paiement. Réessayez ou contactez le support.');
 		} finally {
 			checkoutLoading = null;
-		}
-	}
-
-	async function startTrial() {
-		trialLoading = true;
-		try {
-			await convexClient.mutation((api as any).billing.startFreeTrial, {});
-			toast.success('Essai gratuit démarré — 15 jours accès Professional !');
-		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Erreur');
-		} finally {
-			trialLoading = false;
 		}
 	}
 
@@ -170,38 +153,9 @@
 			</div>
 			<h2 class="text-xl font-semibold tracking-tight">Choisissez votre plan</h2>
 			<p class="mt-1 text-sm text-muted-foreground">
-				Commencez par un essai gratuit de 15 jours ou souscrivez directement. Sans engagement.
+				Vous êtes sur le plan gratuit. Passez à un plan payant pour débloquer toutes les
+				fonctionnalités.
 			</p>
-		</div>
-
-		<!-- Trial CTA -->
-		<div
-			class="mx-8 mb-6 flex items-center justify-between gap-4 rounded-xl border border-[var(--brand)]/25 bg-[var(--brand)]/8 px-5 py-4"
-		>
-			<div class="flex items-start gap-3">
-				<ZapIcon class="mt-0.5 size-4 shrink-0 text-[var(--brand)]" />
-				<div>
-					<p class="text-sm font-medium">Essai gratuit de 15 jours</p>
-					<p class="text-xs text-muted-foreground">
-						Accès complet au plan Professional. Aucune carte bancaire requise.
-					</p>
-				</div>
-			</div>
-			<Button
-				class="shrink-0 bg-[var(--brand)] text-black hover:bg-[var(--brand)]/90"
-				onclick={startTrial}
-				disabled={trialLoading}
-			>
-				{#if trialLoading}<LoaderCircleIcon class="mr-2 size-4 motion-safe:animate-spin" />{/if}
-				Démarrer gratuitement
-			</Button>
-		</div>
-
-		<!-- Divider -->
-		<div class="relative mx-8 mb-6 flex items-center gap-3">
-			<div class="h-px flex-1 bg-border"></div>
-			<span class="text-xs text-muted-foreground">ou choisissez un plan</span>
-			<div class="h-px flex-1 bg-border"></div>
 		</div>
 
 		<!-- Plan cards -->
@@ -252,6 +206,7 @@
 							onclick={() => handleCheckout(plan.id)}
 							disabled={loading || checkoutLoading !== null}
 						>
+							{#if loading}<LoaderCircleIcon class="mr-2 size-4 motion-safe:animate-spin" />{/if}
 							{loading ? 'Traitement...' : `Choisir ${plan.name}`}
 						</Button>
 					{/if}
