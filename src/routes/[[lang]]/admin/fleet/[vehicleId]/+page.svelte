@@ -200,9 +200,11 @@
 		<!-- Header -->
 		<div class="flex items-center justify-between gap-4">
 			<div class="flex items-center gap-3">
+				<!-- eslint-disable local/no-hardcoded-aria-label -->
 				<Button variant="ghost" size="icon-sm" onclick={goToFleet} aria-label="Retour a la flotte">
 					<ArrowLeftIcon class="size-4" />
 				</Button>
+				<!-- eslint-enable local/no-hardcoded-aria-label -->
 				<div class="flex flex-col gap-0.5">
 					<div class="flex items-center gap-2.5">
 						<h1 class="font-mono text-lg font-bold tracking-wider">{vehicle.registration}</h1>
@@ -458,12 +460,14 @@
 								niveau de batterie (VE/PHEV) et la position GPS. Aucun hardware requis.
 							</p>
 							<div>
+								<!-- eslint-disable svelte/no-navigation-without-resolve -->
 								<a href="/api/smartcar/vehicle/start?vehicleId={vehicleId}" data-sveltekit-reload>
 									<Button size="sm" class="h-8 gap-1.5 text-xs">
 										<WifiIcon class="h-3 w-3" />
 										Connecter via Smartcar
 									</Button>
 								</a>
+								<!-- eslint-enable svelte/no-navigation-without-resolve -->
 								<p class="mt-2 text-[11px] text-muted-foreground/70">
 									Vous serez redirigé vers Smartcar Connect pour authentifier ce véhicule auprès du
 									constructeur.

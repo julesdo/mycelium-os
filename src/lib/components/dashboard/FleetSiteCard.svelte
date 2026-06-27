@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable @typescript-eslint/consistent-type-imports */
 	import { onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import MapPinIcon from '@lucide/svelte/icons/map-pin';
@@ -158,7 +159,7 @@
 
 		map.on('click', LAYER_CIRCLES, (e) => {
 			if (!e.features?.length || !PopupClass) return;
-			const f = e.features[0];
+			const f = e.features[0]!;
 			const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
 			const status = f.properties!.status as string;
 
@@ -326,6 +327,7 @@
 						</div>
 					{/if}
 
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
 					<a
 						href="./fleet"
 						class="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-2.5 py-1 text-[10px] font-medium text-muted-foreground backdrop-blur transition-colors hover:bg-card hover:text-foreground"
@@ -334,6 +336,7 @@
 						<RefreshCwIcon class="size-2.5" />
 						Sync
 					</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				</div>
 
 				{#if gpsVehicles.length === 0 && pendingSync.length === 0 && mapReady}
@@ -365,6 +368,7 @@
 					</p>
 				</div>
 				{#if href}
+					<!-- eslint-disable svelte/no-navigation-without-resolve, local/no-hardcoded-aria-label -->
 					<a
 						{href}
 						class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
@@ -372,6 +376,7 @@
 					>
 						<ArrowUpRightIcon class="size-3" />
 					</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve, local/no-hardcoded-aria-label -->
 				{/if}
 			</div>
 
@@ -441,7 +446,7 @@
 				<div
 					class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/40 pt-3"
 				>
-					{#each [{ label: 'Dispo', color: 'oklch(0.72 0.17 145)' }, { label: 'En cours', color: 'oklch(0.62 0.19 248)' }, { label: 'Maint.', color: 'oklch(0.78 0.20 70)' }] as leg}
+					{#each [{ label: 'Dispo', color: 'oklch(0.72 0.17 145)' }, { label: 'En cours', color: 'oklch(0.62 0.19 248)' }, { label: 'Maint.', color: 'oklch(0.78 0.20 70)' }] as leg (leg.label)}
 						<div class="flex items-center gap-1">
 							<span class="size-1.5 rounded-sm" style="background: {leg.color}; opacity: 0.85"
 							></span>

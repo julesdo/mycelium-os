@@ -32,7 +32,6 @@
 	const client = useConvexClient();
 	const currentUserId = getContext<string>('currentUserId');
 
-	 
 	const anyApi = api as any;
 
 	const membersQuery = useQuery(anyApi.organizations.listOrganizationMembers, {});
@@ -243,7 +242,7 @@
 			.filter(Boolean);
 		if (!lines.length) return [];
 		// Skip header if first line looks like a header
-		const firstLower = lines[0].toLowerCase();
+		const firstLower = lines[0]!.toLowerCase();
 		const dataLines =
 			firstLower.startsWith('email') || firstLower === 'mail' ? lines.slice(1) : lines;
 		return dataLines.map((line): ParsedRow => {

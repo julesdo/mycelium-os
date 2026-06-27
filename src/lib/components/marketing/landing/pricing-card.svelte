@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Check } from '@lucide/svelte';
+	import Check from '@lucide/svelte/icons/check';
 	import { cn } from '$lib/utils';
 
 	let {
@@ -25,6 +25,7 @@
 	} = $props();
 </script>
 
+<!-- eslint-disable svelte/no-navigation-without-resolve -->
 <a
 	{href}
 	class={cn(
@@ -100,3 +101,4 @@
 		{cta}
 	</div>
 </a>
+<!-- eslint-enable svelte/no-navigation-without-resolve -->

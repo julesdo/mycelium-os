@@ -1,22 +1,20 @@
 import type { Component } from 'svelte';
 import type { IconProps } from '@lucide/svelte';
-import {
-	MessageSquareText,
-	BarChart3,
-	TrendingUp,
-	ShieldCheck,
-	Banknote,
-	Trophy,
-	Car,
-	CalendarCheck,
-	CalendarRange,
-	LayoutDashboard,
-	Receipt,
-	Wrench,
-	Camera,
-	Coins,
-	Leaf
-} from '@lucide/svelte';
+import MessageSquareText from '@lucide/svelte/icons/message-square-text';
+import BarChart3 from '@lucide/svelte/icons/bar-chart-3';
+import TrendingUp from '@lucide/svelte/icons/trending-up';
+import ShieldCheck from '@lucide/svelte/icons/shield-check';
+import Banknote from '@lucide/svelte/icons/banknote';
+import Trophy from '@lucide/svelte/icons/trophy';
+import Car from '@lucide/svelte/icons/car';
+import CalendarCheck from '@lucide/svelte/icons/calendar-check';
+import CalendarRange from '@lucide/svelte/icons/calendar-range';
+import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
+import Receipt from '@lucide/svelte/icons/receipt';
+import Wrench from '@lucide/svelte/icons/wrench';
+import Camera from '@lucide/svelte/icons/camera';
+import Coins from '@lucide/svelte/icons/coins';
+import Leaf from '@lucide/svelte/icons/leaf';
 
 type LucideIcon = Component<IconProps>;
 

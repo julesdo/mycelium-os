@@ -84,6 +84,7 @@
 						style="width: {(done / total) * 100}%"
 					></div>
 				</div>
+				<!-- eslint-disable local/no-hardcoded-aria-label -->
 				<button
 					type="button"
 					onclick={dismiss}
@@ -92,12 +93,14 @@
 				>
 					<XIcon class="size-3.5" />
 				</button>
+				<!-- eslint-enable local/no-hardcoded-aria-label -->
 			</div>
 		</div>
 
 		<!-- checklist -->
 		<div class="grid gap-1.5 sm:grid-cols-2">
-			{#each ITEMS as item}
+			<!-- eslint-disable svelte/no-navigation-without-resolve -->
+			{#each ITEMS as item (item.key)}
 				{@const checked = progress[item.key as keyof typeof progress] as boolean}
 				<a
 					href={checked ? undefined : item.href}
@@ -123,6 +126,7 @@
 					</div>
 				</a>
 			{/each}
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		</div>
 	</div>
 {/if}

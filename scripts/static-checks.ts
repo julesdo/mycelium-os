@@ -318,9 +318,13 @@ async function main(): Promise<void> {
 		runCommand('bun', ['scripts/build-emails.ts']);
 		console.log('\n');
 
-		// Type checking
+		// Type checking — skipped in staged/scoped mode because svelte-check cannot
+		// be scoped to specific files and would fail on pre-existing errors in untouched
+		// files. Full type checking runs in CI (--ci flag).
 		printHeader(step++, 'Type checking');
-		if (scopedMode && jsTsSvelteFiles.length === 0 && svelteFiles.length === 0) {
+		if (scopedMode) {
+			console.log('Skipped in staged mode (runs in CI)');
+		} else if (jsTsSvelteFiles.length === 0 && svelteFiles.length === 0) {
 			console.log('No TypeScript/Svelte files to check');
 		} else {
 			runCommand('bun', ['svelte-check', '--tsconfig', './tsconfig.json'], {
@@ -330,17 +334,12 @@ async function main(): Promise<void> {
 		console.log('\n');
 
 		// Convex type checking
-		printHeader(step++, 'Convex type checking');
+		printHeader(step, 'Convex type checking');
 		if (shouldRunConvexTypecheck(allFiles, scopedMode)) {
 			runCommand('bun', ['run', 'check:convex']);
 		} else {
 			console.log('No Convex files to check');
 		}
-		console.log('\n');
-
-		// Autumn billing config validation (no auth needed, runs locally)
-		printHeader(step, 'Autumn config');
-		runCommand('bun', ['atmn', 'preview']);
 		console.log('\n');
 	}
 

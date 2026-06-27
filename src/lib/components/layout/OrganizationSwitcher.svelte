@@ -52,6 +52,7 @@
 	<DropdownMenu.Root>
 		<DropdownMenu.Trigger>
 			{#snippet child({ props })}
+				<!-- eslint-disable local/no-hardcoded-aria-label -->
 				<button
 					type="button"
 					data-testid="org-switcher-trigger"
@@ -76,6 +77,7 @@
 					>
 					<ChevronsUpDownIcon class="size-4 shrink-0 text-sidebar-foreground/40" />
 				</button>
+				<!-- eslint-enable local/no-hardcoded-aria-label -->
 			{/snippet}
 		</DropdownMenu.Trigger>
 

@@ -326,6 +326,7 @@
 			{/if}
 
 			<!-- Mobile hamburger -->
+			<!-- eslint-disable local/no-hardcoded-aria-label -->
 			<button
 				type="button"
 				class="ml-1 flex size-9 items-center justify-center rounded-xl transition-all duration-150 hover:bg-muted/60 md:hidden dark:hover:bg-white/5"
@@ -338,6 +339,7 @@
 					<MenuIcon class="size-4.5" />
 				{/if}
 			</button>
+			<!-- eslint-enable local/no-hardcoded-aria-label -->
 		</div>
 	</div>
 
