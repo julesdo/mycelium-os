@@ -1,5 +1,6 @@
 export { default as HeroSection } from './hero-section.svelte';
 export { default as ProofSection } from './proof-section.svelte';
+export { default as IntegrationsMarquee } from './integrations-marquee.svelte';
 export { default as FeaturesSection } from './features-section.svelte';
 export { default as AgentsSection } from './agents-section.svelte';
 export { default as HowItWorksSection } from './how-it-works-section.svelte';

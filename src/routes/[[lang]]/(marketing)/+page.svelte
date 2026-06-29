@@ -4,6 +4,7 @@
 	import {
 		HeroSection,
 		FeaturesSection,
+		IntegrationsMarquee,
 		AgentsSection,
 		HowItWorksSection,
 		AgenticDemoSection,
@@ -20,6 +21,7 @@
 
 <div class="min-h-screen">
 	<HeroSection />
+	<IntegrationsMarquee />
 	<FeaturesSection />
 	<AgentsSection />
 	<HowItWorksSection />
