@@ -3,24 +3,36 @@
 	import { resolve } from '$app/paths';
 	import Logo from '$lib/components/icons/logo.svelte';
 	import { LEGAL_CONFIG } from '$lib/config/legal';
+	import { getTranslate } from '@tolgee/svelte';
+
+	const { t } = getTranslate();
+
+	interface Props {
+		onOpenCookieSettings?: () => void;
+	}
+
+	let { onOpenCookieSettings }: Props = $props();
 
 	const year = new Date().getFullYear();
 
 	const links = [
-		{ label: 'Tarifs', href: localizedHref('/pricing') },
-		{ label: 'À propos', href: localizedHref('/about') },
-		{ label: 'Confidentialité', href: localizedHref('/privacy') },
-		{ label: 'CGU', href: localizedHref('/terms') }
+		{ label: 'Pricing', href: localizedHref('/pricing') },
+		{ label: 'About', href: localizedHref('/about') },
+		{ label: 'Privacy', href: localizedHref('/privacy') },
+		{ label: 'Terms', href: localizedHref('/terms') },
+		{ label: 'Legal notice', href: localizedHref('/impressum') }
 	];
 </script>
 
 <footer class="border-t border-border bg-background">
-	<div class="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-10">
+	<div
+		class="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-10"
+	>
 		<!-- Logo -->
 		<a
 			href={resolve(localizedHref('/'))}
 			class="flex items-center gap-2.5 transition-opacity hover:opacity-75"
-			aria-label="Mycelium"
+			aria-label={$t('aria.logo')}
 		>
 			<span
 				class="flex size-7 shrink-0 items-center justify-center rounded-xl bg-[var(--brand)]"
@@ -41,6 +53,15 @@
 					{link.label}
 				</a>
 			{/each}
+			{#if onOpenCookieSettings}
+				<button
+					type="button"
+					onclick={onOpenCookieSettings}
+					class="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground"
+				>
+					Cookie settings
+				</button>
+			{/if}
 			<span class="text-xs text-muted-foreground/50">© {year} {LEGAL_CONFIG.companyName}</span>
 		</div>
 	</div>

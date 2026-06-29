@@ -1412,7 +1412,9 @@
 		"target": "Target",
 		"toggle_sidebar": "Toggle Sidebar",
 		"toggle_theme": "Toggle theme",
-		"view": "View"
+		"view": "View",
+		"cookie_consent": "Cookie consent",
+		"logo": "Mycelium"
 	},
 	"auth": {
 		"back_to_home": "Back to home",

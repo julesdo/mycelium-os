@@ -3,6 +3,7 @@
 	import SupportTicketMigrationBootstrap from '$lib/components/customer-support/support-ticket-migration-bootstrap.svelte';
 	import MarketingFooter from '$lib/components/marketing/marketing-footer.svelte';
 	import MarketingHeader from '$lib/components/marketing/marketing-header.svelte';
+	import CookieBanner from '$lib/components/marketing/cookie-banner.svelte';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -10,6 +11,8 @@
 	}
 
 	let { children }: Props = $props();
+
+	let cookieBanner: CookieBanner | undefined = $state();
 </script>
 
 <PostHogIdentify />
@@ -19,5 +22,6 @@
 	<main id="main-content" class="flex-1">
 		{@render children?.()}
 	</main>
-	<MarketingFooter />
+	<MarketingFooter onOpenCookieSettings={() => cookieBanner?.openCookieSettings()} />
 </div>
+<CookieBanner bind:this={cookieBanner} />

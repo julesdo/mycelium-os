@@ -1411,7 +1411,9 @@
 		"target": "Cible",
 		"toggle_sidebar": "Basculer la barre latérale",
 		"toggle_theme": "Changer le thème",
-		"view": "Voir"
+		"view": "Voir",
+		"cookie_consent": "Consentement aux cookies",
+		"logo": "Mycelium"
 	},
 	"auth": {
 		"back_to_home": "Retour à l'accueil",

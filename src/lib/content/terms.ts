@@ -2,57 +2,269 @@ import { LEGAL_CONFIG } from '$lib/config/legal';
 
 export const termsMarkdown = `# Terms of Service
 
-Last Updated: March 18, 2026
+**Last Updated: ${LEGAL_CONFIG.effectiveDate}**
 
 ---
 
-${LEGAL_CONFIG.operatorName} ("we", "us", "our"), provides the ${LEGAL_CONFIG.brandName} service (described below) to you through the website and its related services (collectively, such services, including any new features and applications, the "Service"), subject to the following Terms of Service (as amended from time to time, the "Terms of Service"). We reserve the right, at our sole discretion, to change or modify portions of these Terms of Service at any time. If we do this, we will post the changes on this page and will indicate at the top of this page the date these terms were last revised. Your continued use of the Service after the date any such changes become effective constitutes your acceptance of the new Terms of Service.
+These Terms of Service ("**Terms**") govern your access to and use of ${LEGAL_CONFIG.brandName} (the "**Service**"), operated by ${LEGAL_CONFIG.companyName}, a French simplified joint-stock company (*société par actions simplifiée*) registered in the Paris Trade and Companies Register ("**Mycelium**", "**we**", "**us**", or "**our**").
 
-By using the Service or by clicking to accept the Terms of Service when this option is made available to you, you accept and agree to be bound and abide by these Terms of Service and our [Privacy Policy](privacy). If you do not want to agree to these Terms of Service or the Privacy Policy, you must not access or use the Service.
+By creating an account, clicking "I agree", or otherwise accessing the Service, the organisation you represent ("**Customer**", "**you**", or "**your**") agrees to be bound by these Terms. If you are accepting these Terms on behalf of a company, you represent that you have the authority to bind that company. If you do not agree, do not use the Service.
 
-## I. Service Description and Modifications.
+We reserve the right to modify these Terms at any time. We will provide at least **30 days' notice** of material changes via email to the account administrator. Your continued use of the Service after the effective date of any changes constitutes acceptance.
 
-The Service is a web application template and starter kit, provided as a personal project. The source code is available under the terms of its open-source license on GitHub. Features and availability may change without notice. We reserve the right to modify or discontinue, temporarily or permanently, the Service (or any part thereof) with or without notice in our sole discretion. You agree that we will not be liable to you or to any third party for any modification, suspension or discontinuance of the Service.
+---
 
-## II. Registration and Accounts.
+## 1. The Service
 
-You may be required to register in order to access and use certain features of the Service. If you register, you agree to provide and maintain true, accurate, current and complete information about yourself. Registration data and certain other information about you are governed by our [Privacy Policy](privacy).
+### 1.1 Description
 
-You are responsible for maintaining the confidentiality of your password and account and are fully responsible for any and all activities that occur under your password or account. You agree to immediately notify us of any unauthorized use of your password or account or any other breach of security, and to ensure that you exit from your account at the end of each session when accessing the Service. We will not be liable for any loss or damage arising from your failure to comply with this section.
+Mycelium Fleet OS is a cloud-based fleet operating system for small and mid-sized businesses, providing:
 
-## III. User Content.
+- Fleet management: vehicle catalogue, status tracking, CSV import.
+- Reservation management: booking workflow, conflict detection, calendar.
+- AI agents: Concierge (employee-facing), Manager Assistant (CFO/HR-facing), Fleet Optimiser, Compliance Officer, and related agents, powered by the Anthropic Claude API.
+- Financial tracking: cost management, mileage expense claims (indemnités kilométriques), fuel card import.
+- Driver management: licence compliance, restrictions, training records.
+- Incident and violation management.
+- Maintenance scheduling and alerting.
+- Integrations: Xero, QuickBooks, Odoo, Smartcar, Google Calendar, Outlook.
+- Sustainability reporting: ESRS E1 / CSRD dashboards.
+- UK Benefit-in-Kind (BiK) calculation.
 
-You are solely responsible for all information, data, text, or other materials ("User Content") that you upload, post, or otherwise use via the Service. You agree not to upload any User Content that infringes any intellectual property or other proprietary rights of any party, contains software viruses or any other code designed to interrupt or destroy functionality, is unlawful, harmful, threatening, abusive, or otherwise objectionable, or violates any applicable law or regulation.
+### 1.2 Feature Availability
 
-## IV. Intellectual Property Rights.
+Features available to you depend on the plan your organisation has subscribed to. Mycelium reserves the right to add, modify, or discontinue features with reasonable notice. We will not remove core features of a paid plan without offering a reasonable alternative or a pro-rata refund for the unused period.
 
-You acknowledge and agree that the Service may contain content or features ("Service Content") that are protected by copyright, patent, trademark, trade secret or other proprietary rights and laws. Except as expressly authorized herein, you agree not to modify, copy, frame, scrape, rent, lease, loan, sell, distribute or create derivative works based on the Service or the Service Content, in whole or in part. The technology and software underlying the Service are our property. You agree not to copy, modify, create a derivative work of, reverse engineer, reverse assemble or otherwise attempt to discover any source code. Any rights not expressly granted herein are reserved.
+### 1.3 Service Level
 
-## V. Indemnity and Release.
+We target 99.5% monthly uptime for the Service. Scheduled maintenance windows will be communicated at least 48 hours in advance. No formal SLA is offered on the Free or Essential plans; Business and Enterprise customers may request a separate SLA addendum.
 
-To the extent permitted under applicable law, you agree to release, indemnify and hold us harmless from any and all losses, damages, expenses, including reasonable attorneys' fees, rights, claims, actions of any kind and injury arising out of or relating to your use of the Service, any User Content, your connection to the Service, your violation of these Terms of Service or your violation of any rights of another.
+---
 
-## VI. Disclaimer of Warranties.
+## 2. Accounts and Organisations
 
-Your use of the Service is at your sole risk. To the fullest extent permitted by law, the Service is provided on an "as is" and "as available" basis. We expressly disclaim all warranties, representations and conditions of any kind, whether express, implied or statutory, including, but not limited to the implied warranties and conditions of merchantability, fitness for a particular purpose, title and non-infringement. We make no warranty that the Service will meet your requirements, that it will be uninterrupted, timely, secure, or error-free, or that the results obtained from use of the Service will be accurate or reliable.
+### 2.1 Registration
 
-## VII. Limitation of Liability.
+You must provide accurate, complete, and current registration information. The person completing registration represents and warrants that they have authority to bind the organisation to these Terms.
 
-You expressly understand and agree that we will not be liable for any indirect, incidental, special or consequential losses, or direct or indirect loss of profits, goodwill, use or data, whether based on contract, tort, negligence, strict liability or otherwise, resulting from the use or the inability to use the Service, unauthorized access to or alteration of your transmissions or data, statements or conduct of any third party on the Service, or any other matter relating to the Service. In no event will our total liability to you for all damages, losses or causes of action exceed the amount you have paid us in the last six (6) months, or, if greater, one hundred dollars ($100).
+### 2.2 Account Security
 
-Some jurisdictions do not allow the disclaimer or exclusion of certain warranties or the limitation or exclusion of liability for certain losses. Nothing in these Terms of Service will exclude or limit our liability to you for any matter for which it would be illegal to exclude or attempt to exclude liability.
+You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. You must notify us immediately of any suspected unauthorised access at legal@mycelium.io.
 
-## VIII. Termination.
+### 2.3 Multi-Tenancy
 
-We may suspend or terminate your account (or any part thereof) or use of the Service if we believe that you have violated or acted inconsistently with these Terms of Service. You may delete your account at any time through the account settings. Upon termination, we may immediately deactivate or delete your account and all related information and files and bar any further access to such files or the Service. You agree that we will not be liable to you or any third party for any termination of your access to the Service.
+The Service uses strict multi-tenant data isolation. Each organisation's data is logically separated by a unique \`organizationId\`. You must not attempt to access data of another organisation.
 
-## IX. Data Protection.
+### 2.4 Inviting Members
 
-We process personal data in accordance with our [Privacy Policy](privacy) and applicable data protection law, including the General Data Protection Regulation (GDPR). To the extent that we process personal data on your behalf, we will do so only in accordance with your instructions and applicable law.
+Account administrators may invite employees to join their organisation on the Service. By inviting a user, you confirm that you have a legitimate basis (e.g. employment relationship) to process that individual's personal data via the Service.
 
-## X. Governing Law and Jurisdiction.
+---
 
-These Terms of Service shall be governed by and interpreted in accordance with the laws of the Federal Republic of Germany. Any disputes shall be subject to the jurisdiction of the courts in Germany. If you are a consumer and habitually reside in the European Union, the laws of the territory in which you reside will apply to any claim that you have against us arising out of or relating to these Terms of Service, and you may resolve your claim in any competent court in that territory.
+## 3. Subscription Plans and Payment
 
-## Questions?
-`;
+### 3.1 Plans
+
+We currently offer the following plans:
+
+| Plan | Included Conductors | Monthly Price (excl. VAT) |
+|---|---|---|
+| **Free** | Up to 10 vehicles | £0 / €0 |
+| **Essential** | 50 | £420 / €490 |
+| **Professional** | 150 | £750 / €890 |
+| **Business** | 300 | £1,250 / €1,490 |
+| **Enterprise** | Unlimited | Quotation |
+
+Prices are exclusive of applicable taxes (VAT, UK sales tax). Overage is charged at £6–£8 / €5–€8 per additional conductor per month, depending on plan.
+
+### 3.2 Payment Processing — Paddle as Merchant of Record
+
+All payments for paid plans are processed by **Paddle.com Market Ltd** ("**Paddle**"), our Merchant of Record. When you subscribe to a paid plan:
+
+- Your purchase contract for billing and tax purposes is between **you and Paddle**, not directly with Mycelium.
+- Paddle handles all payment collection, VAT/GST calculation, invoicing, and tax remittance in your jurisdiction.
+- Paddle's terms of service and privacy policy apply to payment processing.
+- Mycelium provisions and manages your access to the Service features.
+
+Paddle may use Stripe or other payment networks to process card transactions. Mycelium never stores or has access to your full payment card details.
+
+### 3.3 Billing Cycle
+
+Subscriptions are billed monthly in advance. The billing cycle starts on the date you first subscribe to a paid plan.
+
+### 3.4 Upgrades and Downgrades
+
+You may upgrade your plan at any time; the upgrade is effective immediately and prorated. Downgrades take effect at the start of the next billing cycle.
+
+### 3.5 Cancellation
+
+You may cancel your subscription at any time via the billing portal (Paddle's Customer Portal). Upon cancellation, your subscription continues until the end of the current billing period. We do not offer prorated refunds for partial months, except where required by applicable law.
+
+### 3.6 Free Plan Limitations
+
+The Free plan provides permanent, time-unlimited access to core features (fleet management, reservations, maintenance, notifications) for up to **10 vehicles**. No credit card is required. Mycelium reserves the right to modify Free plan limitations with 60 days' notice.
+
+### 3.7 Failed Payments
+
+If a payment fails, Paddle will retry according to their retry schedule. Access to paid features may be suspended after 10 days of failed payment. We will notify you by email before suspension.
+
+---
+
+## 4. Acceptable Use
+
+You agree not to use the Service to:
+
+- Violate any applicable law or regulation.
+- Infringe the intellectual property rights of Mycelium or any third party.
+- Transmit malicious code, viruses, or perform denial-of-service attacks.
+- Scrape, reverse-engineer, or attempt to extract the Service's source code or underlying models.
+- Resell, sublicense, or offer the Service to third parties without our express written consent.
+- Process personal data in violation of applicable data protection law.
+- Input data that is false, misleading, or fraudulent.
+
+Mycelium reserves the right to suspend or terminate accounts that violate these restrictions, with or without prior notice depending on severity.
+
+---
+
+## 5. AI Features and Acceptable Use of AI Agents
+
+### 5.1 Nature of AI Output
+
+Our AI agents (Concierge, Manager Assistant, Fleet Optimiser, Compliance Officer, and others) are powered by the Anthropic Claude API. AI-generated outputs are provided for informational and operational assistance purposes only. They do not constitute legal, financial, tax, or regulatory advice.
+
+### 5.2 No Training on Customer Data
+
+Prompts sent to our AI agents are processed in real time and are not used to train Anthropic's models or any Mycelium models. This is enforced via our data processing agreement with Anthropic.
+
+### 5.3 Your Responsibility
+
+You are responsible for reviewing AI-generated content before acting on it. Mycelium is not liable for decisions made based solely on AI output, including fleet optimisation recommendations, compliance alerts, or financial projections.
+
+---
+
+## 6. Data Processing and GDPR
+
+### 6.1 Data Processing Agreement
+
+By accepting these Terms, you also agree to our **Data Processing Agreement (DPA)**, which is incorporated herein by reference and available at [mycelium.io/legal/dpa]. The DPA governs Mycelium's processing of personal data on your behalf as a data processor, including details of sub-processors, technical and organisational measures, and international transfer mechanisms.
+
+### 6.2 Your Obligations as Controller
+
+As the data controller for your employees' and drivers' personal data, you are responsible for:
+
+- Having a lawful basis for processing that personal data via the Service.
+- Providing appropriate data protection notices to individuals whose data you input.
+- Responding to data subject requests (we will assist you as required by the DPA).
+- Ensuring that any personal data you input is accurate and not excessive.
+
+### 6.3 UK GDPR
+
+For UK-based Customers, all references to the GDPR in these Terms include the UK GDPR. The applicable supervisory authority is the Information Commissioner's Office (ICO).
+
+---
+
+## 7. Confidentiality
+
+Each party agrees to keep the other's confidential information strictly confidential and not to disclose it to any third party without prior written consent, except: (i) to employees or contractors who need to know it for the purposes of these Terms; (ii) as required by law or regulation; or (iii) with the other party's prior written consent. This obligation survives termination of these Terms for a period of 3 years.
+
+"Confidential information" includes, but is not limited to, any non-public technical, business, financial, or operational information disclosed in connection with the Service.
+
+---
+
+## 8. Intellectual Property
+
+### 8.1 Mycelium's IP
+
+The Service, including its software, algorithms, AI agent architectures, user interface, branding, and documentation, is owned by Mycelium and protected by French, EU, and international intellectual property law. These Terms grant you a limited, non-exclusive, non-transferable, revocable licence to use the Service during your subscription term solely for your internal business operations.
+
+### 8.2 Your Data
+
+You retain full ownership of all data you input into the Service ("**Customer Data**"). You grant Mycelium a limited licence to process Customer Data solely to provide and improve the Service. We do not use Customer Data for any other purpose.
+
+### 8.3 Feedback
+
+If you provide us with feedback or suggestions about the Service, you grant Mycelium a perpetual, royalty-free licence to use that feedback without any obligation of compensation or attribution.
+
+---
+
+## 9. Third-Party Integrations
+
+The Service integrates with third-party platforms including Xero, QuickBooks, Odoo, Smartcar, Google Calendar, and Microsoft Outlook. Your use of these integrations is also subject to the relevant third party's terms. Mycelium is not responsible for the availability, accuracy, or policies of third-party services.
+
+---
+
+## 10. Warranties and Disclaimers
+
+**Mycelium warrants** that the Service will perform materially in accordance with its documentation during your subscription term.
+
+**Except as expressly stated above**, the Service is provided "**as is**" and "**as available**". To the maximum extent permitted by applicable law, Mycelium disclaims all implied warranties, including fitness for a particular purpose, merchantability, and non-infringement. We do not warrant that the Service will be uninterrupted, error-free, or completely secure.
+
+Certain jurisdictions do not permit the exclusion of implied warranties. If you are a consumer (which is unlikely for a B2B fleet management platform), statutory rights under your local law remain unaffected.
+
+---
+
+## 11. Limitation of Liability
+
+To the maximum extent permitted by applicable law:
+
+1. **Indirect losses**: Neither party will be liable for any indirect, incidental, consequential, punitive, or special damages, including loss of profits, goodwill, data, or business opportunity, even if advised of the possibility of such losses.
+
+2. **Aggregate cap**: Mycelium's total aggregate liability to you arising out of or in connection with these Terms, whether in contract, tort (including negligence), or otherwise, shall not exceed the **total fees paid by you to Mycelium (or Paddle on Mycelium's behalf) in the 12 months preceding the claim**.
+
+3. **Uncapped losses**: Nothing in these Terms limits either party's liability for: (i) death or personal injury caused by negligence; (ii) fraud or fraudulent misrepresentation; (iii) any liability that cannot be excluded or limited by applicable law.
+
+---
+
+## 12. Indemnification
+
+You agree to indemnify, defend, and hold harmless Mycelium and its officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses (including reasonable legal fees) arising from: (i) your violation of these Terms; (ii) your violation of applicable law; (iii) your processing of personal data in a manner that violates data protection law; or (iv) content or data you submit that infringes third-party rights.
+
+---
+
+## 13. Term and Termination
+
+### 13.1 Term
+
+These Terms begin on the date you first create an account and continue until terminated.
+
+### 13.2 Termination by You
+
+You may terminate at any time by cancelling your subscription and deleting your account. Termination does not entitle you to a refund except as required by applicable law.
+
+### 13.3 Termination by Mycelium
+
+We may terminate or suspend your account immediately if you: (i) materially breach these Terms and fail to cure within 14 days of notice; (ii) violate the Acceptable Use Policy; (iii) become insolvent or subject to insolvency proceedings; or (iv) pose a security risk to the Service or other customers.
+
+### 13.4 Effect of Termination
+
+Upon termination, your licence to use the Service ceases. You may request an export of your Customer Data within 30 days of termination. After 30 days, Customer Data will be deleted in accordance with our Privacy Policy.
+
+---
+
+## 14. Governing Law and Dispute Resolution
+
+These Terms are governed by the **laws of France**, without regard to its conflict-of-law provisions.
+
+**Dispute resolution**: The parties will first attempt to resolve any dispute in good faith within 30 days of written notice. If unresolved, disputes shall be submitted to the exclusive jurisdiction of the **courts of Paris, France**.
+
+**EU Consumer carve-out**: If you are a consumer habitually resident in the EU, you may also bring proceedings in your country of residence, and the mandatory consumer protection laws of your country apply.
+
+**UK carve-out**: For UK Customers, mandatory provisions of UK law, including the Consumer Rights Act 2015, are not excluded by this clause.
+
+---
+
+## 15. General
+
+**Entire Agreement.** These Terms, together with the Privacy Policy, DPA, and any plan-specific addenda, constitute the entire agreement between you and Mycelium regarding the Service.
+
+**Severability.** If any provision is found invalid or unenforceable, the remaining provisions continue in full effect.
+
+**No Waiver.** Failure to enforce any right does not constitute a waiver of that right.
+
+**Assignment.** You may not assign your rights under these Terms without our prior written consent. Mycelium may assign these Terms in connection with a merger, acquisition, or sale of substantially all of its assets.
+
+**Force Majeure.** Neither party is liable for delays caused by circumstances beyond their reasonable control, including natural disasters, internet outages, or government actions.
+
+**Language.** The English version of these Terms is the governing version. Any translations are provided for convenience only.
+
+**Contact.** For legal notices: `;
