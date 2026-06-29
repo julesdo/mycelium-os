@@ -54,6 +54,9 @@ references/
 # AI tool workspaces (internal, not for version control)
 .opencode/
 .agents/
+.claude/
+.cursor/
+.codex/
 
 .eslintcache
 
