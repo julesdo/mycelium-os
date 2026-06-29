@@ -1,6 +1,27 @@
 # Normalize line endings
 * text=auto eol=lf
 
+# Binary files — no line ending conversion (prevents Vercel unpack issues)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.riv binary
+*.psb binary
+*.psd binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.mp4 binary
+*.mp3 binary
+*.zip binary
+bun.lockb binary
+
 # Collapse generated files in GitHub PR diffs
 **/convex/_generated/** linguist-generated
 **/betterAuth/_generated/** linguist-generated
