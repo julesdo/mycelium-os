@@ -1,7 +1,7 @@
 <script lang="ts">
-	// Clearbit logo API — no auth required, high-quality logos
+	// Google Favicon API — no auth, CDN-backed, same fallback used in admin integrations page
 	function logoUrl(domain: string): string {
-		return `https://logo.clearbit.com/${domain}`;
+		return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=128`;
 	}
 
 	const ROW1 = [
