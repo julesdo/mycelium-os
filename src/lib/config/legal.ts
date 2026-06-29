@@ -1,14 +1,16 @@
 export const LEGAL_CONFIG = {
 	brandName: 'Mycelium Fleet OS',
-	companyName: 'Mycelium SAS',
+	companyName: 'Jules-Camille Doré',
 	operatorName: 'Mycelium',
-	// TODO: replace with registered address once confirmed with legal counsel
-	address: '75001 Paris, France',
-	// TODO: fill in once registered
-	siren: 'XXX XXX XXX',
-	rcs: 'Paris',
-	// TODO: fill in once obtained
-	vatNumber: 'FR XX XXX XXX XXX',
+	legalForm: 'Entrepreneur Individuel',
+	tradeName: 'Thumbbb Agency',
+	address: '77 Rue de Campeyraut, 33000 Bordeaux, France',
+	siren: '879 853 026',
+	siret: '879 853 026 00026',
+	rcs: 'Non inscrit au RCS',
+	rne: 'Inscrit au RNE (INPI)',
+	vatNumber: 'FR37879853026',
+	naf: '62.01Z',
 	effectiveDate: 'June 29, 2026',
 	email: {
 		user: 'legal',
