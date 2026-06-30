@@ -9,3 +9,4 @@ export { default as PricingSection } from './pricing-section.svelte';
 export { default as FaqSection } from './faq-section.svelte';
 export { default as CtaSection } from './cta-section.svelte';
 export { default as AgenticDemoSection } from './agentic-demo-section.svelte';
+export { default as SimulatorTeaserSection } from './simulator-teaser-section.svelte';

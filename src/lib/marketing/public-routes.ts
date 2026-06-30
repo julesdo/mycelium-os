@@ -4,6 +4,7 @@ import { marketingMarkdown as homeMarketingMarkdown } from '../../routes/[[lang]
 import { marketingMarkdown as impressumMarketingMarkdown } from '../../routes/[[lang]]/(marketing)/impressum/page.md';
 import { marketingMarkdown as pricingMarketingMarkdown } from '../../routes/[[lang]]/(marketing)/pricing/page.md';
 import { marketingMarkdown as privacyMarketingMarkdown } from '../../routes/[[lang]]/(marketing)/privacy/page.md';
+import { marketingMarkdown as simulatorMarketingMarkdown } from '../../routes/[[lang]]/(marketing)/simulator/page.md';
 import { marketingMarkdown as termsMarketingMarkdown } from '../../routes/[[lang]]/(marketing)/terms/page.md';
 
 export type PublicMarketingRouteKey =
@@ -12,11 +13,12 @@ export type PublicMarketingRouteKey =
 	| 'pricing'
 	| 'privacy'
 	| 'terms'
-	| 'impressum';
+	| 'impressum'
+	| 'simulator';
 
 export interface PublicMarketingRouteDefinition {
 	key: PublicMarketingRouteKey;
-	pathSuffix: '' | '/about' | '/pricing' | '/privacy' | '/terms' | '/impressum';
+	pathSuffix: '' | '/about' | '/pricing' | '/privacy' | '/terms' | '/impressum' | '/simulator';
 }
 
 export interface MatchedPublicMarketingRoute {
@@ -30,7 +32,8 @@ export const PUBLIC_MARKETING_ROUTES: PublicMarketingRouteDefinition[] = [
 	{ key: 'pricing', pathSuffix: '/pricing' },
 	{ key: 'privacy', pathSuffix: '/privacy' },
 	{ key: 'terms', pathSuffix: '/terms' },
-	{ key: 'impressum', pathSuffix: '/impressum' }
+	{ key: 'impressum', pathSuffix: '/impressum' },
+	{ key: 'simulator', pathSuffix: '/simulator' }
 ];
 
 const MARKETING_DOCUMENTS = {
@@ -39,13 +42,14 @@ const MARKETING_DOCUMENTS = {
 	pricing: pricingMarketingMarkdown,
 	privacy: privacyMarketingMarkdown,
 	terms: termsMarketingMarkdown,
-	impressum: impressumMarketingMarkdown
+	impressum: impressumMarketingMarkdown,
+	simulator: simulatorMarketingMarkdown
 } as const;
 
 export function matchPublicMarketingRoute(pathname: string): MatchedPublicMarketingRoute | null {
 	const normalizedPath = pathname !== '/' ? pathname.replace(/\/+$/, '') : pathname;
 	const match = normalizedPath.match(
-		/^\/([a-z]{2})(?:\/(about|pricing|privacy|terms|impressum))?$/
+		/^\/([a-z]{2})(?:\/(about|pricing|privacy|terms|impressum|simulator))?$/
 	);
 
 	if (!match) {

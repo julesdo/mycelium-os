@@ -4,7 +4,8 @@
 	import { localizedHref } from '$lib/utils/i18n';
 	import { resolve } from '$app/paths';
 	import Logo from '$lib/components/icons/logo.svelte';
-	import { Menu, X } from '@lucide/svelte';
+	import Menu from '@lucide/svelte/icons/menu';
+	import X from '@lucide/svelte/icons/x';
 	import { authClient } from '$lib/auth-client';
 	import { useAuth } from '@mmailaender/convex-better-auth-svelte/svelte';
 	import { T, getTranslate } from '@tolgee/svelte';
@@ -33,21 +34,25 @@
 	let scrollY = $state(0);
 	const scrolled = $derived(scrollY > 40);
 
-	const navLinks = [
+	type NavLink = { key: string; href: string; label?: string };
+	const navLinks: NavLink[] = [
 		{ key: 'nav.features', href: '/#features' },
 		{ key: 'nav.agents', href: '/#agents' },
+		{ key: 'nav.simulator', href: localizedHref('/simulator'), label: 'Simulateur TCO' },
 		{ key: 'nav.pricing', href: localizedHref('/pricing') },
 		{ key: 'nav.about', href: localizedHref('/about') }
 	];
-
 </script>
 
 <svelte:window bind:scrollY />
 
-<header class={cn(
-	'fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,box-shadow] duration-300',
-	scrolled && 'border-b border-border bg-background/90 backdrop-blur-md shadow-[0_1px_12px_-4px_oklch(0_0_0/0.08)]'
-)}>
+<header
+	class={cn(
+		'fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,box-shadow] duration-300',
+		scrolled &&
+			'border-b border-border bg-background/90 shadow-[0_1px_12px_-4px_oklch(0_0_0/0.08)] backdrop-blur-md'
+	)}
+>
 	<div class="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4 sm:px-8">
 		<!-- Logo -->
 		<a
@@ -67,10 +72,10 @@
 		<nav class="hidden items-center gap-1 lg:flex">
 			{#each navLinks as link (link.key)}
 				<a
-					href={link.href}
+					href={resolve(link.href)}
 					class="inline-flex h-8 items-center rounded-full px-4 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
 				>
-					{$t(link.key)}
+					{link.label ?? $t(link.key)}
 				</a>
 			{/each}
 		</nav>
@@ -127,17 +132,19 @@
 
 	<!-- Mobile menu -->
 	{#if menuOpen}
-		<div class="mx-4 rounded-2xl border border-border bg-background/95 p-4 shadow-lg backdrop-blur-xl lg:hidden">
+		<div
+			class="mx-4 rounded-2xl border border-border bg-background/95 p-4 shadow-lg backdrop-blur-xl lg:hidden"
+		>
 			<nav>
 				<ul class="mb-4 space-y-0.5">
 					{#each navLinks as link (link.key)}
 						<li>
 							<a
-								href={link.href}
+								href={resolve(link.href)}
 								onclick={() => (menuOpen = false)}
 								class="flex h-10 items-center rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 							>
-								{$t(link.key)}
+								{link.label ?? $t(link.key)}
 							</a>
 						</li>
 					{/each}

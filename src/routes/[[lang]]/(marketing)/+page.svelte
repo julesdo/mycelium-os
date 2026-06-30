@@ -9,6 +9,7 @@
 		HowItWorksSection,
 		AgenticDemoSection,
 		ModulesSection,
+		SimulatorTeaserSection,
 		PricingSection,
 		FaqSection,
 		CtaSection
@@ -27,6 +28,7 @@
 	<HowItWorksSection />
 	<AgenticDemoSection />
 	<ModulesSection />
+	<SimulatorTeaserSection />
 	<PricingSection />
 	<FaqSection />
 	<CtaSection />
