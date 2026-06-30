@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useConvexClient, useQuery } from '@mmailaender/convex-svelte';
-	import { env } from '$env/static/public';
+	import { PUBLIC_LOGO_DEV_TOKEN, PUBLIC_CONVEX_SITE_URL } from '$env/static/public';
 	import { api } from '$lib/convex/_generated/api.js';
 	import { toast } from 'svelte-sonner';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -74,7 +74,7 @@
 	// ─── Logo helper ──────────────────────────────────────────────────────────
 
 	function getLogoUrl(domain: string): string {
-		const token = env.PUBLIC_LOGO_DEV_TOKEN;
+		const token = PUBLIC_LOGO_DEV_TOKEN;
 		if (token) return `https://img.logo.dev/${domain}?token=${token}&size=64&format=png`;
 		return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
 	}
@@ -1534,7 +1534,7 @@
 				<div class="rounded-lg border border-border/50 bg-muted/30 px-4 py-3">
 					<p class="text-xs font-medium text-muted-foreground">Base URL</p>
 					<code class="text-xs"
-						>{env.PUBLIC_CONVEX_SITE_URL ?? 'https://yourapp.convex.site'}/api/v1</code
+						>{PUBLIC_CONVEX_SITE_URL ?? 'https://yourapp.convex.site'}/api/v1</code
 					>
 					<p class="mt-2 text-[10px] text-muted-foreground/70">
 						Endpoints : <code>GET /costs</code>, <code>POST /costs</code>,
