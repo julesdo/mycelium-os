@@ -240,12 +240,12 @@
 					onOAuth={handleOAuth}
 					onPasskey={handlePasskeyLogin}
 				/>
-				<div class="relative hidden bg-muted md:block">
+				<div class="relative hidden overflow-hidden bg-muted md:block">
 					<img
-						src="/placeholder.svg"
+						src="/screenshots/mockup-admin.png"
 						alt=""
 						draggable="false"
-						class="absolute inset-0 h-full w-full object-cover select-none dark:brightness-[0.2] dark:grayscale"
+						class="absolute inset-0 h-full w-full object-cover object-left-top select-none"
 					/>
 				</div>
 			</Card.Content>

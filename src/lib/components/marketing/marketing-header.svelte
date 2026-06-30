@@ -35,13 +35,13 @@
 	const scrolled = $derived(scrollY > 40);
 
 	type NavLink = { key: string; href: string; label?: string };
-	const navLinks: NavLink[] = [
+	const navLinks = $derived<NavLink[]>([
 		{ key: 'nav.features', href: '/#features' },
 		{ key: 'nav.agents', href: '/#agents' },
 		{ key: 'nav.simulator', href: localizedHref('/simulator'), label: 'Simulateur TCO' },
 		{ key: 'nav.pricing', href: localizedHref('/pricing') },
 		{ key: 'nav.about', href: localizedHref('/about') }
-	];
+	]);
 </script>
 
 <svelte:window bind:scrollY />
