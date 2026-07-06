@@ -12,63 +12,86 @@ Chaque prompt est autonome, numéroté par priorité MVP, et conçu pour minimis
 
 ---
 
-## 🎯 Axe stratégique prioritaire — Distribution DNVB via intégrations comptables
+## 🎯 Axe stratégique prioritaire — Service de conciergerie Mycelium Fleet Care
 
-> **Nouvelle priorité (juin 2026).** Mycelium est une DNVB B2B : **le produit est le canal de distribution**. Les intégrations comptables ne sont pas une feature, c'est un **canal d'acquisition** — on se place là où le DAF passe déjà 2h/semaine. Doctrine complète, carte des canaux, plan 90 jours et template mail partnerships : **[/docs/specs/distribution-integrations-strategy.md](../specs/distribution-integrations-strategy.md)**.
+> **Nouvelle priorité (juillet 2026).** Mycelium devient un service de conciergerie automobile pour PME : le logiciel automatise, un concierge humain agit. Roadmap complète (6 chapitres du cycle de vie véhicule, dashboard concierge multi-org, nouveaux agents IA, modèle économique) : **[/docs/ROADMAP-CONCIERGE.md](../ROADMAP-CONCIERGE.md)**.
 >
-> | # | Prompt | Rôle | Priorité |
-> |---|--------|------|----------|
-> | **P23** | Intégration **Pennylane** + couche d'abstraction `AccountingConnector` | Connecteur de référence, canal #1 (~250k PME) | **🔥 Top — démarrer en premier** |
-> | **P24** | Connecteurs **Sage / EBP / Odoo** + API publique & Webhooks | Multiplie les canaux (réutilise P23) | Haute |
+> | #       | Prompt                                                             | Rôle                                                                           | Priorité   |
+> | ------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------- |
+> | **P26** | Table `concierge_tasks` + moteur de priorisation                   | Fondation de toute la conciergerie — démarrer en premier                       | **🔥 Top** |
+> | **P27** | Dashboard Concierge multi-organisation (`/concierge`)              | Poste de travail quotidien du concierge humain                                 | **🔥 Top** |
+> | **P28** | Compliance Officer — séquence J-60/J-30/J-7 + brouillons de rappel | Étend l'agent existant (P20), anticipe les échéances                           | Haute      |
+> | **P29** | Portail client Fleet Care (`/app/fleet-care`)                      | Preuve de valeur perçue côté client — "votre flotte est entre de bonnes mains" | Haute      |
+> | **P30** | Agent Concierge Dashboard — briefing matinal                       | Clôture le Chapitre 3 (vie quotidienne) du service                             | Haute      |
 >
-> Ces prompts **passent devant** le reste du backlog V1.5/V2 hors features déjà livrées.
+> Ces prompts couvrent le **Chapitre 3 — Vie quotidienne** de la roadmap conciergerie (point d'entrée du service, M1-M3). Ils **passent devant** le reste du backlog V2 hors features déjà livrées.
+
+## 🎯 Axe stratégique précédent — Distribution DNVB via intégrations comptables
+
+> Mycelium est une DNVB B2B : **le produit est le canal de distribution**. Les intégrations comptables ne sont pas une feature, c'est un **canal d'acquisition** — on se place là où le DAF passe déjà 2h/semaine. Doctrine complète, carte des canaux, plan 90 jours et template mail partnerships : **[/docs/specs/distribution-integrations-strategy.md](../specs/distribution-integrations-strategy.md)**.
+>
+> | #       | Prompt                                                                 | Rôle                                          | Priorité |
+> | ------- | ---------------------------------------------------------------------- | --------------------------------------------- | -------- |
+> | **P23** | Intégration **Pennylane** + couche d'abstraction `AccountingConnector` | Connecteur de référence, canal #1 (~250k PME) | ✅ Fait  |
+> | **P24** | Connecteurs **Sage / EBP / Odoo** + API publique & Webhooks            | Multiplie les canaux (réutilise P23)          | ✅ Fait  |
 
 ## Table des priorités
 
 ### V1 — MVP Pool Sharing Light ✅ LIVRÉ
 
-| # | Prompt | Sprint | Version | Effort | Statut |
-|---|--------|--------|---------|--------|--------|
-| P01 | Gestion flotte (CRUD + CSV import) | S2 | V1 | 3j | ✅ Fait |
-| P02 | Réservations (logique + conflits) | S3 | V1 | 3j | ✅ Fait |
-| P03 | Agent Concierge IA | S4 | V1 | 4j | ✅ Fait |
-| P04 | Dashboard admin (KPIs réels) | S3 | V1 | 2j | ✅ Fait |
-| P05 | Calendrier flotte resource view | S5 | V1 | 3j | ✅ Fait |
-| P06 | Notifications in-app + emails | S6 | V1 | 2j | ✅ Fait |
+| #   | Prompt                             | Sprint | Version | Effort | Statut  |
+| --- | ---------------------------------- | ------ | ------- | ------ | ------- |
+| P01 | Gestion flotte (CRUD + CSV import) | S2     | V1      | 3j     | ✅ Fait |
+| P02 | Réservations (logique + conflits)  | S3     | V1      | 3j     | ✅ Fait |
+| P03 | Agent Concierge IA                 | S4     | V1      | 4j     | ✅ Fait |
+| P04 | Dashboard admin (KPIs réels)       | S3     | V1      | 2j     | ✅ Fait |
+| P05 | Calendrier flotte resource view    | S5     | V1      | 3j     | ✅ Fait |
+| P06 | Notifications in-app + emails      | S6     | V1      | 2j     | ✅ Fait |
 
 ### V1.5 — Premiers payants
 
-| # | Prompt | Sprint | Version | Effort | Bloque |
-|---|--------|--------|---------|--------|--------|
-| P07 | Agent Gestionnaire DAF | S6 | V1.5 | 4j | ✅ Fait |
-| P09 | Maintenance & alertes conformité | S7 | V1.5 | 3j | ✅ Fait |
-| P11 | Gestion conducteurs & conformité permis | S9 | V1.5 | 3j | P12, P20 |
-| P12 | États des lieux & contraventions | S9 | V1.5 | 3j | P16 |
-| P13 | Copilote IA flottant (FAB + panneau) | S10 | V1.5 | 2j | — |
-| P14 | Google Calendar & Outlook sync | S10 | V1 | 3j | — |
-| P15 | Notes de frais IK | S11 | V1 | 3j | — |
-| **P23** | **🔥 Intégration Pennylane + couche compta (canal DNVB #1)** | **S12** | **V1.5** | **5j** | **P24** |
-| P21 | Admin settings : membres & invitations | S11 | V1.5 | 2j | — |
+| #       | Prompt                                                       | Sprint  | Version  | Effort | Bloque   |
+| ------- | ------------------------------------------------------------ | ------- | -------- | ------ | -------- |
+| P07     | Agent Gestionnaire DAF                                       | S6      | V1.5     | 4j     | ✅ Fait  |
+| P09     | Maintenance & alertes conformité                             | S7      | V1.5     | 3j     | ✅ Fait  |
+| P11     | Gestion conducteurs & conformité permis                      | S9      | V1.5     | 3j     | P12, P20 |
+| P12     | États des lieux & contraventions                             | S9      | V1.5     | 3j     | P16      |
+| P13     | Copilote IA flottant (FAB + panneau)                         | S10     | V1.5     | 2j     | —        |
+| P14     | Google Calendar & Outlook sync                               | S10     | V1       | 3j     | —        |
+| P15     | Notes de frais IK                                            | S11     | V1       | 3j     | —        |
+| **P23** | **🔥 Intégration Pennylane + couche compta (canal DNVB #1)** | **S12** | **V1.5** | **5j** | **P24**  |
+| P21     | Admin settings : membres & invitations                       | S11     | V1.5     | 2j     | —        |
 
 ### V2 — Indispensable au DAF
 
-| # | Prompt | Sprint | Version | Effort | Bloque |
-|---|--------|--------|---------|--------|--------|
-| P08 | Tracking financier + dashboard coûts | S7 | V2 | 4j | ✅ Fait |
-| P10 | Agent Optimiseur flotte (background) | S8 | V2 | 4j | ✅ Fait |
-| P16 | Gestion des sinistres | S12 | V2 | 3j | P18 |
-| P17 | Finance avancée : import carburant | S12 | V2 | 4j | P18, P19 |
-| P18 | Optimisation fiscale (TVS, AEN, TVA) | S13 | V2 | 4j | — |
-| P19 | Rapport carbone & CSRD basique | S13 | V2 | 3j | — |
-| P20 | Agent Compliance Officer (Agent 4) | S14 | V2 | 3j | — |
-| P22 | Smartcar API — Données véhicules OEM | S14 | V2 | 3j | — |
-| **P24** | **Connecteurs Sage/EBP/Odoo + API publique (canaux DNVB)** | **S13** | **V2** | **6j** | — |
+| #       | Prompt                                                     | Sprint  | Version | Effort | Bloque   |
+| ------- | ---------------------------------------------------------- | ------- | ------- | ------ | -------- |
+| P08     | Tracking financier + dashboard coûts                       | S7      | V2      | 4j     | ✅ Fait  |
+| P10     | Agent Optimiseur flotte (background)                       | S8      | V2      | 4j     | ✅ Fait  |
+| P16     | Gestion des sinistres                                      | S12     | V2      | 3j     | P18      |
+| P17     | Finance avancée : import carburant                         | S12     | V2      | 4j     | P18, P19 |
+| P18     | Optimisation fiscale (TVS, AEN, TVA)                       | S13     | V2      | 4j     | —        |
+| P19     | Rapport carbone & CSRD basique                             | S13     | V2      | 3j     | —        |
+| P20     | Agent Compliance Officer (Agent 4)                         | S14     | V2      | 3j     | —        |
+| P22     | Smartcar API — Données véhicules OEM                       | S14     | V2      | 3j     | —        |
+| **P24** | **Connecteurs Sage/EBP/Odoo + API publique (canaux DNVB)** | **S13** | **V2**  | **6j** | —        |
+
+### V3 — Service Fleet Care (conciergerie) — Chapitre 3 en cours
+
+| #       | Prompt                                                  | Sprint           | Version | Effort | Bloque                 |
+| ------- | ------------------------------------------------------- | ---------------- | ------- | ------ | ---------------------- |
+| **P26** | **🔥 Table `concierge_tasks` + moteur de priorisation** | **Concierge S1** | **V3**  | **3j** | **P27, P28, P29, P30** |
+| **P27** | **🔥 Dashboard Concierge multi-organisation**           | **Concierge S2** | **V3**  | **8j** | **P29, P30**           |
+| P28     | Compliance Officer — séquence J-60/J-30/J-7 + rappels   | Concierge S2     | V3      | 3j     | —                      |
+| P29     | Portail client Fleet Care                               | Concierge S3     | V3      | 5j     | —                      |
+| P30     | Agent Concierge Dashboard — briefing matinal            | Concierge S3     | V3      | 2j     | —                      |
 
 ---
 
 ## Cheat sheet stack — À mémoriser dans chaque session
 
 ### Stack technique exacte
+
 - **Frontend** : SvelteKit 2.x + Svelte 5 (runes obligatoires)
 - **Backend** : Convex (réactif, pas de REST)
 - **Auth** : Better Auth via composant Convex (`authComponent`)
@@ -77,6 +100,7 @@ Chaque prompt est autonome, numéroté par priorité MVP, et conçu pour minimis
 - **IA** : Claude API (Anthropic) via Convex actions
 
 ### Svelte 5 — Runes uniquement (JAMAIS l'ancienne syntaxe)
+
 ```svelte
 <!-- CORRECT -->
 let count = $state(0);
@@ -89,6 +113,7 @@ $: doubled = count * 2;
 ```
 
 ### Pattern Convex universel
+
 ```typescript
 // Toutes les fonctions authed utilisent ces helpers
 import { authedQuery, authedMutation } from './functions';
@@ -104,10 +129,12 @@ export const maQuery = authedQuery({
 ```
 
 ### Multi-tenancy — RÈGLE ABSOLUE
+
 **Chaque query/mutation doit commencer par `getUserOrg(ctx)`** pour isoler les données par organisation.
 Ne jamais retourner de données sans filtrer par `organizationId`.
 
 ### Imports SvelteKit ← Convex
+
 ```typescript
 // Dans les fichiers .svelte ou +page.ts
 import { useQuery, useMutation } from 'convex-svelte';
@@ -119,19 +146,20 @@ const createVehicle = useMutation(api.vehicles.createVehicle);
 ```
 
 ### Guard ORG_ADMIN (pattern UI)
+
 ```svelte
 <script lang="ts">
-  import { useQuery } from 'convex-svelte';
-  import { api } from '$lib/convex/_generated/api';
-  import { goto } from '$app/navigation';
+	import { useQuery } from 'convex-svelte';
+	import { api } from '$lib/convex/_generated/api';
+	import { goto } from '$app/navigation';
 
-  const membership = useQuery(api.organizations.getMyOrgMembership, {});
-  
-  $effect(() => {
-    if (membership.data && membership.data.role !== 'ORG_ADMIN') {
-      goto('/app');
-    }
-  });
+	const membership = useQuery(api.organizations.getMyOrgMembership, {});
+
+	$effect(() => {
+		if (membership.data && membership.data.role !== 'ORG_ADMIN') {
+			goto('/app');
+		}
+	});
 </script>
 ```
 

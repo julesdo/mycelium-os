@@ -33,10 +33,14 @@ const alertTypeValidator = v.union(
 );
 
 type AlertType =
-	| 'INSURANCE_EXPIRING' | 'INSURANCE_EXPIRED'
-	| 'CT_EXPIRING' | 'CT_EXPIRED'
-	| 'LICENSE_EXPIRING' | 'LICENSE_EXPIRED'
-	| 'REGISTRATION_EXPIRING' | 'REGISTRATION_EXPIRED';
+	| 'INSURANCE_EXPIRING'
+	| 'INSURANCE_EXPIRED'
+	| 'CT_EXPIRING'
+	| 'CT_EXPIRED'
+	| 'LICENSE_EXPIRING'
+	| 'LICENSE_EXPIRED'
+	| 'REGISTRATION_EXPIRING'
+	| 'REGISTRATION_EXPIRED';
 
 type Horizon = '30_DAYS' | '7_DAYS' | 'EXPIRED';
 
@@ -102,7 +106,19 @@ export const createAlert = internalMutation({
 		entityLabel: v.string()
 	},
 	handler: async (ctx, args) => {
-		await ctx.db.insert('complianceAlerts', { ...args, createdAt: Date.now() });
+		const alertId = await ctx.db.insert('complianceAlerts', { ...args, createdAt: Date.now() });
+
+		await ctx.scheduler.runAfter(0, internal.concierge.tasks.upsertTaskFromSource, {
+			organizationId: args.organizationId,
+			sourceType: 'COMPLIANCE_ALERT',
+			sourceId: alertId,
+			title: `${args.alertType.replace(/_/g, ' ')} — ${args.entityLabel}`,
+			description: `Échéance : ${args.expiryDate}`,
+			dueDate: new Date(args.expiryDate).getTime(),
+			isRegulatory: true
+		});
+
+		return alertId;
 	}
 });
 
@@ -143,8 +159,13 @@ export const checkComplianceForOrg = internalAction({
 			if (vehicle.ctExpiryDate) {
 				const d = daysUntil(vehicle.ctExpiryDate, now);
 				await maybeAlert(ctx, {
-					organizationId, entityType: 'VEHICLE', entityId: vehicle._id,
-					baseType: 'CT', expiryDate: vehicle.ctExpiryDate, daysLeft: d, entityLabel: `CT — ${label}`
+					organizationId,
+					entityType: 'VEHICLE',
+					entityId: vehicle._id,
+					baseType: 'CT',
+					expiryDate: vehicle.ctExpiryDate,
+					daysLeft: d,
+					entityLabel: `CT — ${label}`
 				});
 			}
 
@@ -152,8 +173,13 @@ export const checkComplianceForOrg = internalAction({
 			if (vehicle.insuranceExpiryDate) {
 				const d = daysUntil(vehicle.insuranceExpiryDate, now);
 				await maybeAlert(ctx, {
-					organizationId, entityType: 'VEHICLE', entityId: vehicle._id,
-					baseType: 'INSURANCE', expiryDate: vehicle.insuranceExpiryDate, daysLeft: d, entityLabel: `Assurance — ${label}`
+					organizationId,
+					entityType: 'VEHICLE',
+					entityId: vehicle._id,
+					baseType: 'INSURANCE',
+					expiryDate: vehicle.insuranceExpiryDate,
+					daysLeft: d,
+					entityLabel: `Assurance — ${label}`
 				});
 			}
 
@@ -161,8 +187,13 @@ export const checkComplianceForOrg = internalAction({
 			if (vehicle.registrationExpiryDate) {
 				const d = daysUntil(vehicle.registrationExpiryDate, now);
 				await maybeAlert(ctx, {
-					organizationId, entityType: 'VEHICLE', entityId: vehicle._id,
-					baseType: 'REGISTRATION', expiryDate: vehicle.registrationExpiryDate, daysLeft: d, entityLabel: `Carte grise — ${label}`
+					organizationId,
+					entityType: 'VEHICLE',
+					entityId: vehicle._id,
+					baseType: 'REGISTRATION',
+					expiryDate: vehicle.registrationExpiryDate,
+					daysLeft: d,
+					entityLabel: `Carte grise — ${label}`
 				});
 			}
 		}
@@ -176,8 +207,12 @@ export const checkComplianceForOrg = internalAction({
 			if (!profile.licenseExpiryDate) continue;
 			const d = daysUntil(profile.licenseExpiryDate, now);
 			await maybeAlert(ctx, {
-				organizationId, entityType: 'DRIVER', entityId: profile.userId,
-				baseType: 'LICENSE', expiryDate: profile.licenseExpiryDate, daysLeft: d,
+				organizationId,
+				entityType: 'DRIVER',
+				entityId: profile.userId,
+				baseType: 'LICENSE',
+				expiryDate: profile.licenseExpiryDate,
+				daysLeft: d,
 				entityLabel: `Permis conducteur (${profile.userId})`
 			});
 		}
@@ -198,7 +233,8 @@ async function maybeAlert(
 		entityLabel: string;
 	}
 ) {
-	const { organizationId, entityType, entityId, baseType, expiryDate, daysLeft, entityLabel } = params;
+	const { organizationId, entityType, entityId, baseType, expiryDate, daysLeft, entityLabel } =
+		params;
 
 	let alertType: AlertType;
 	let horizon: Horizon;
@@ -217,12 +253,20 @@ async function maybeAlert(
 	}
 
 	const existing = await ctx.runQuery(internal.compliance.getActiveAlert, {
-		entityId, alertType, horizon
+		entityId,
+		alertType,
+		horizon
 	});
 	if (existing) return;
 
 	await ctx.runMutation(internal.compliance.createAlert, {
-		organizationId, entityType, entityId, alertType, horizon, expiryDate, entityLabel
+		organizationId,
+		entityType,
+		entityId,
+		alertType,
+		horizon,
+		expiryDate,
+		entityLabel
 	});
 }
 
@@ -277,10 +321,10 @@ export const sendWeeklyComplianceDigest = internalAction({
 
 			const emails: string[] = [];
 			for (const userId of adminUserIds) {
-				const user = await ctx.runQuery(components.betterAuth.adapter.findOne, {
+				const user = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
 					model: 'user',
 					where: [{ field: '_id', operator: 'eq', value: userId }]
-				}) as { email?: string } | null;
+				})) as { email?: string } | null;
 				if (user?.email) emails.push(user.email);
 			}
 			if (emails.length === 0) continue;

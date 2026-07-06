@@ -31,7 +31,9 @@ function getWeekStart(): string {
 	const now = new Date();
 	const day = now.getUTCDay();
 	const diff = day === 0 ? -6 : 1 - day;
-	const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
+	const monday = new Date(
+		Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff)
+	);
 	return monday.toISOString().slice(0, 10);
 }
 
@@ -124,9 +126,10 @@ export const collectFleetDataForOrg = internalQuery({
 
 			const vCosts = costs.filter((c) => c.vehicleId === v._id);
 			const totalCost90Days = Math.round(vCosts.reduce((sum, c) => sum + c.amount, 0) * 100) / 100;
-			const leasingCost = Math.round(
-				vCosts.filter((c) => c.category === 'LEASING').reduce((sum, c) => sum + c.amount, 0) * 100
-			) / 100;
+			const leasingCost =
+				Math.round(
+					vCosts.filter((c) => c.category === 'LEASING').reduce((sum, c) => sum + c.amount, 0) * 100
+				) / 100;
 
 			return {
 				label: `${v.brand} ${v.model} (${v.registration})`,
@@ -144,9 +147,8 @@ export const collectFleetDataForOrg = internalQuery({
 
 		const costsByCategory: Record<string, number> = {};
 		for (const c of costs) {
-			costsByCategory[c.category] = Math.round(
-				((costsByCategory[c.category] ?? 0) + c.amount) * 100
-			) / 100;
+			costsByCategory[c.category] =
+				Math.round(((costsByCategory[c.category] ?? 0) + c.amount) * 100) / 100;
 		}
 
 		return {
@@ -167,8 +169,26 @@ export const saveReport = internalMutation({
 		weekOf: v.string(),
 		recommendations: v.array(recommendationValidator)
 	},
-	handler: async (ctx, args) =>
-		ctx.db.insert('optimizerReports', { ...args, createdAt: Date.now() })
+	handler: async (ctx, args) => {
+		const reportId = await ctx.db.insert('optimizerReports', { ...args, createdAt: Date.now() });
+
+		// Tâches concierge pour les recommandations high priority uniquement
+		const highRecs = args.recommendations.filter((r) => r.priority === 'high');
+		for (const rec of highRecs) {
+			// sourceId déterministe pour l'idempotence : une seule tâche par type par semaine par org
+			const sourceId = `${args.organizationId}_${args.weekOf}_${rec.type}`;
+			await ctx.scheduler.runAfter(0, internal.concierge.tasks.upsertTaskFromSource, {
+				organizationId: args.organizationId,
+				sourceType: 'OPTIMIZER_RECOMMENDATION',
+				sourceId,
+				title: rec.title.slice(0, 120),
+				description: rec.description,
+				isRegulatory: false
+			});
+		}
+
+		return reportId;
+	}
 });
 
 export const sendOptimizerReportEmail = internalMutation({
@@ -202,7 +222,7 @@ export const sendOptimizerReportEmail = internalMutation({
 		const medium = recommendations.filter((r) => r.priority === 'medium');
 		const low = recommendations.filter((r) => r.priority === 'low');
 
-		function renderRec(r: typeof recommendations[number]): string {
+		function renderRec(r: (typeof recommendations)[number]): string {
 			const saving = r.estimatedSaving
 				? `<div style="margin-top:6px;color:#16a34a;font-size:13px;font-weight:600;">Économie estimée : ${r.estimatedSaving.toLocaleString('fr-FR')} €/an</div>`
 				: '';
@@ -358,9 +378,10 @@ export const runFleetOptimizerForOrg = internalAction({
 			title: r.title.slice(0, 120),
 			description: r.description,
 			estimatedSaving: typeof r.estimatedSaving === 'number' ? r.estimatedSaving : undefined,
-			priority: (['high', 'medium', 'low'].includes(r.priority)
-				? r.priority
-				: 'low') as 'high' | 'medium' | 'low',
+			priority: (['high', 'medium', 'low'].includes(r.priority) ? r.priority : 'low') as
+				| 'high'
+				| 'medium'
+				| 'low',
 			actionLabel: r.actionLabel?.slice(0, 40)
 		}));
 

@@ -293,6 +293,18 @@ export const runMaintenanceDetection = internalMutation({
 						vehicleId: vehicle._id
 					});
 				}
+
+				// Tâche concierge pour les sévérités CRITIQUE et URGENT uniquement
+				if (topSeverity === 'CRITIQUE' || topSeverity === 'URGENT') {
+					await ctx.scheduler.runAfter(0, internal.concierge.tasks.upsertTaskFromSource, {
+						organizationId: orgId,
+						sourceType: 'MAINTENANCE',
+						sourceId: vehicle._id,
+						title,
+						description: message,
+						isRegulatory: false
+					});
+				}
 			}
 		}
 

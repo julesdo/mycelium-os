@@ -2,7 +2,7 @@ import { v, ConvexError } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { authedQuery, authedMutation } from './functions';
 import { getUserOrg, requireOrgAdmin } from './lib/auth';
-import { components } from './_generated/api';
+import { components, internal } from './_generated/api';
 
 export const generateViolationUploadUrl = authedMutation({
 	args: {},
@@ -63,6 +63,17 @@ export const createViolation = authedMutation({
 			updatedAt: now
 		});
 
+		// Tâche concierge
+		const vehicleLabel = `${vehicle.brand} ${vehicle.model} (${vehicle.registration})`;
+		await ctx.scheduler.runAfter(0, internal.concierge.tasks.upsertTaskFromSource, {
+			organizationId,
+			sourceType: 'VIOLATION',
+			sourceId: violationId,
+			title: `Contravention ${args.amount}€ — ${vehicleLabel}`,
+			description: args.description.slice(0, 200),
+			isRegulatory: false
+		});
+
 		return { violationId, identifiedDriver: reservation?.userId ?? null };
 	}
 });
@@ -108,11 +119,7 @@ export const processViolation = authedMutation({
 export const updateViolationStatus = authedMutation({
 	args: {
 		violationId: v.id('trafficViolations'),
-		status: v.union(
-			v.literal('PAID'),
-			v.literal('CONTESTED'),
-			v.literal('CLOSED')
-		),
+		status: v.union(v.literal('PAID'), v.literal('CONTESTED'), v.literal('CLOSED')),
 		notes: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {
@@ -129,6 +136,13 @@ export const updateViolationStatus = authedMutation({
 			notes: args.notes ?? violation.notes,
 			updatedAt: Date.now()
 		});
+
+		if (args.status === 'PAID' || args.status === 'CLOSED') {
+			await ctx.scheduler.runAfter(0, internal.concierge.tasks.resolveTaskFromSource, {
+				sourceType: 'VIOLATION',
+				sourceId: args.violationId
+			});
+		}
 	}
 });
 
@@ -184,7 +198,9 @@ export const listViolations = authedQuery({
 			}
 		}
 
-		const driverUserIds = [...new Set(violations.map((v) => v.driverUserId).filter(Boolean))] as string[];
+		const driverUserIds = [
+			...new Set(violations.map((v) => v.driverUserId).filter(Boolean))
+		] as string[];
 		const driverMap = new Map<string, { name: string | null; email: string }>();
 		if (driverUserIds.length > 0) {
 			const usersRaw = (await ctx.runQuery(components.betterAuth.adapter.findMany, {

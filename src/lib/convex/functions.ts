@@ -87,3 +87,110 @@ export const adminMutation = customMutation(
 		return { user };
 	})
 );
+
+// ─── Mycelium internal staff guards ──────────────────────────────────────────
+//
+// Two-level security:
+//   Level 1 — JWT role='admin'  : "vous êtes staff Mycelium"        (sans DB)
+//   Level 2 — myceliumStaff row : "votre niveau d'accès interne"    (1 DB lookup)
+//
+// Bootstrap : si myceliumStaff est vide et role='admin' → super_admin implicite
+// (cas du tout premier fondateur avant que le système soit initialisé).
+//
+// Jamais accessible aux ORG_ADMIN clients — role Better Auth 'admin' leur est
+// strictement interdit (seuls les comptes Mycelium l'obtiennent via setUserRole).
+
+// Lookup dans myceliumStaff — cast any nécessaire jusqu'à ce que `convex dev`
+// régénère les types après l'ajout de la table dans schema.ts.
+// Table intentionnellement petite (<50 lignes) : collect+find est acceptable.
+async function resolveStaffRole(
+	ctx: any,
+	user: BetterAuthUser
+): Promise<'super_admin' | 'concierge' | null> {
+	const allStaff = (await ctx.db.query('myceliumStaff').collect()) as Array<{
+		userId: string;
+		staffRole: 'super_admin' | 'concierge';
+	}>;
+
+	const record = allStaff.find((r) => r.userId === user._id);
+	if (record) return record.staffRole;
+
+	// Bootstrap : table vide → premier admin fondateur = super_admin implicite
+	if (allStaff.length === 0) return 'super_admin';
+
+	return null; // admin Better Auth sans fiche staff = accès refusé
+}
+
+/**
+ * Query réservée aux super admins Mycelium (fondateurs, direction technique).
+ * Donne accès à toutes les données et actions sensibles cross-org.
+ */
+export const superAdminQuery = customQuery(
+	query,
+	customCtx(async (ctx) => {
+		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
+		if (!user || user.role !== 'admin') {
+			throw new ConvexError('Unauthorized: Mycelium staff access required');
+		}
+		const staffRole = await resolveStaffRole(ctx, user);
+		if (staffRole !== 'super_admin') {
+			throw new ConvexError('Unauthorized: Super Admin access required');
+		}
+		return { user, staffRole };
+	})
+);
+
+/**
+ * Mutation réservée aux super admins Mycelium.
+ */
+export const superAdminMutation = customMutation(
+	mutation,
+	customCtx(async (ctx) => {
+		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
+		if (!user || user.role !== 'admin') {
+			throw new ConvexError('Unauthorized: Mycelium staff access required');
+		}
+		const staffRole = await resolveStaffRole(ctx, user);
+		if (staffRole !== 'super_admin') {
+			throw new ConvexError('Unauthorized: Super Admin access required');
+		}
+		return { user, staffRole };
+	})
+);
+
+/**
+ * Query accessible aux concierges ET aux super admins Mycelium.
+ * Usage : dashboard concierge, gestion tâches clients.
+ */
+export const conciergeQuery = customQuery(
+	query,
+	customCtx(async (ctx) => {
+		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
+		if (!user || user.role !== 'admin') {
+			throw new ConvexError('Unauthorized: Mycelium staff access required');
+		}
+		const staffRole = await resolveStaffRole(ctx, user);
+		if (!staffRole) {
+			throw new ConvexError('Unauthorized: Concierge or Super Admin access required');
+		}
+		return { user, staffRole };
+	})
+);
+
+/**
+ * Mutation accessible aux concierges ET aux super admins Mycelium.
+ */
+export const conciergeMutation = customMutation(
+	mutation,
+	customCtx(async (ctx) => {
+		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
+		if (!user || user.role !== 'admin') {
+			throw new ConvexError('Unauthorized: Mycelium staff access required');
+		}
+		const staffRole = await resolveStaffRole(ctx, user);
+		if (!staffRole) {
+			throw new ConvexError('Unauthorized: Concierge or Super Admin access required');
+		}
+		return { user, staffRole };
+	})
+);

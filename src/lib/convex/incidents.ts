@@ -69,6 +69,17 @@ export const declareIncident = authedMutation({
 		// Véhicule → MAINTENANCE
 		await ctx.db.patch(args.vehicleId, { status: 'MAINTENANCE', activeIncidentId: incidentId });
 
+		// Tâche concierge
+		const vehicleLabel = `${vehicle.brand} ${vehicle.model} (${vehicle.registration})`;
+		await ctx.scheduler.runAfter(0, internal.concierge.tasks.upsertTaskFromSource, {
+			organizationId,
+			sourceType: 'INCIDENT',
+			sourceId: incidentId,
+			title: `Sinistre déclaré — ${vehicleLabel}`,
+			description: args.description.slice(0, 200),
+			isRegulatory: false
+		});
+
 		// Notifier tous les ORG_ADMIN
 		const admins = await ctx.db
 			.query('organizationMembers')
@@ -131,6 +142,14 @@ export const updateIncidentStatus = authedMutation({
 			closedAt: args.status === 'CLOSED' ? now : incident.closedAt,
 			updatedAt: now
 		});
+
+		// Résoudre la tâche concierge quand le sinistre se clôture
+		if (args.status === 'CLOSED') {
+			await ctx.scheduler.runAfter(0, internal.concierge.tasks.resolveTaskFromSource, {
+				sourceType: 'INCIDENT',
+				sourceId: args.incidentId
+			});
+		}
 
 		// Clôture avec franchise → créer un coût SINISTRE
 		if (args.status === 'CLOSED') {

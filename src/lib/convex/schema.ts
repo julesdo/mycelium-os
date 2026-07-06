@@ -1094,7 +1094,63 @@ export default defineSchema({
 		.index('by_entity', ['entityType', 'entityId'])
 		.index('by_org_and_type', ['organizationId', 'alertType'])
 		.index('by_org_and_resolved', ['organizationId', 'resolvedAt'])
-		.index('by_entity_type_horizon', ['entityId', 'alertType', 'horizon'])
+		.index('by_entity_type_horizon', ['entityId', 'alertType', 'horizon']),
+
+	// Concierge tasks — file de tâches unifiée cross-modules pour le service Fleet Care
+	concierge_tasks: defineTable({
+		organizationId: v.id('organizations'),
+		sourceType: v.union(
+			v.literal('COMPLIANCE_ALERT'),
+			v.literal('INCIDENT'),
+			v.literal('VIOLATION'),
+			v.literal('MAINTENANCE'),
+			v.literal('OPTIMIZER_RECOMMENDATION'),
+			v.literal('MANUAL')
+		),
+		sourceId: v.optional(v.string()),
+		priority: v.union(
+			v.literal('CRITICAL'),
+			v.literal('URGENT'),
+			v.literal('NORMAL'),
+			v.literal('INFO')
+		),
+		priorityScore: v.number(),
+		title: v.string(),
+		description: v.string(),
+		dueDate: v.optional(v.number()),
+		status: v.union(
+			v.literal('OPEN'),
+			v.literal('IN_PROGRESS'),
+			v.literal('SNOOZED'),
+			v.literal('DONE')
+		),
+		snoozedUntil: v.optional(v.number()),
+		assignedTo: v.optional(v.string()),
+		completedAt: v.optional(v.number()),
+		completionNotes: v.optional(v.string()),
+		createdAt: v.number(),
+		updatedAt: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_status_and_priority', ['status', 'priorityScore'])
+		.index('by_assigned', ['assignedTo', 'status'])
+		.index('by_org_and_status', ['organizationId', 'status'])
+		.index('by_source', ['sourceType', 'sourceId']),
+
+	// Mycelium internal staff — séparé des ORG_ADMIN clients.
+	// role Better Auth 'admin' = premier filtre (JWT, sans DB).
+	// staffRole ici = deuxième filtre (niveau d'accès interne).
+	// Bootstrap : si table vide + role='admin' → super_admin implicite (fondateur).
+	myceliumStaff: defineTable({
+		userId: v.string(), // Better Auth user ID
+		staffRole: v.union(v.literal('super_admin'), v.literal('concierge')),
+		email: v.string(), // dénormalisé pour affichage
+		name: v.string(), // dénormalisé pour affichage
+		addedBy: v.string(), // userId de qui a ajouté
+		addedAt: v.number()
+	})
+		.index('by_userId', ['userId'])
+		.index('by_role', ['staffRole'])
 
 	// Note: The agent component automatically creates the following tables:
 	// - agent:threads - Conversation threads for customer support
