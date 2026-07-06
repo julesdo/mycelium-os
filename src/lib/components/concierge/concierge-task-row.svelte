@@ -10,6 +10,8 @@
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 
 	interface Props {
 		id: Id<'concierge_tasks'>;
@@ -125,14 +127,9 @@
 >
 	<!-- Badge priorité -->
 	<div class="mt-0.5 shrink-0">
-		<span
-			class={cn(
-				'inline-flex rounded border px-1.5 py-0.5 text-[10px] font-bold tracking-wider',
-				pConfig.class
-			)}
-		>
+		<Badge variant="outline" class={cn('text-[10px] font-bold tracking-wider uppercase', pConfig.class)}>
 			{pConfig.label}
-		</span>
+		</Badge>
 	</div>
 
 	<!-- Contenu -->
@@ -163,43 +160,19 @@
 		<span class="text-[10px] text-muted-foreground">{timeAgo()}</span>
 		<div class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 			{#if status === 'OPEN'}
-				<button
-					type="button"
-					onclick={markInProgress}
-					disabled={loading}
-					title="Prendre en charge"
-					class="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors hover:bg-[var(--brand)] hover:text-[var(--brand-foreground)]"
-				>
+				<Button variant="ghost" size="icon-xs" onclick={markInProgress} disabled={loading} title="Prendre en charge">
 					<PlayIcon class="size-3" />
-				</button>
+				</Button>
 			{/if}
-			<button
-				type="button"
-				onclick={snooze1h}
-				disabled={loading}
-				title="Snoozer 1h"
-				class="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors hover:bg-muted/80"
-			>
+			<Button variant="ghost" size="icon-xs" onclick={snooze1h} disabled={loading} title="Snoozer 1h">
 				<ClockIcon class="size-3" />
-			</button>
-			<button
-				type="button"
-				onclick={markDone}
-				disabled={loading}
-				title="Marquer traité"
-				class="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors hover:bg-emerald-500 hover:text-white"
-			>
+			</Button>
+			<Button variant="ghost" size="icon-xs" onclick={markDone} disabled={loading} title="Marquer traité">
 				<CheckIcon class="size-3" />
-			</button>
-			<a
-				href={resolve(localizedHref(`/admin/dashboard`))}
-				target="_blank"
-				rel="noopener"
-				title="Ouvrir le dashboard client"
-				class="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors hover:bg-muted/80"
-			>
+			</Button>
+			<Button variant="ghost" size="icon-xs" href={resolve(localizedHref(`/admin/dashboard`))} target="_blank" rel="noopener" title="Dashboard client">
 				<ExternalLinkIcon class="size-3" />
-			</a>
+			</Button>
 		</div>
 	</div>
 </div>

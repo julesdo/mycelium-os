@@ -4,12 +4,14 @@
 	import { page } from '$app/state';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { cn } from '$lib/utils.js';
+	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
-	import HeadphonesIcon from '@lucide/svelte/icons/headphones';
+	import Logo from '$lib/components/icons/logo.svelte';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 	import LayoutListIcon from '@lucide/svelte/icons/layout-list';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
-	import { resolve } from '$app/paths';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -40,34 +42,38 @@
 </script>
 
 <div class="min-h-screen bg-background">
-	<!-- Topbar fixe -->
-	<header class="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur-sm">
-		<div class="mx-auto flex max-w-screen-2xl items-center gap-6 px-6 py-0">
-			<!-- Logo / titre -->
-			<div class="flex items-center gap-2.5 py-3">
-				<div
-					class="flex size-7 items-center justify-center rounded-lg bg-[var(--brand)] text-[var(--brand-foreground)]"
-				>
-					<HeadphonesIcon class="size-3.5" />
-				</div>
-				<span class="text-sm font-bold text-foreground">Fleet Care</span>
+	<header class="admin-topbar sticky top-0 z-20 h-[62px] shrink-0">
+		<div class="flex h-full items-center gap-4 px-6">
+			<!-- Logo Mycelium -->
+			<a
+				href={resolve(localizedHref('/admin/dashboard'))}
+				class="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-80"
+			>
 				<span
-					class="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase"
+					class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[var(--brand)] shadow-sm ring-1 ring-[var(--brand-foreground)]/10"
+					style="box-shadow: 0 1px 3px oklch(0.92 0.23 103 / 0.3), inset 0 1px 0 oklch(1 0 0 / 0.25)"
 				>
-					Interne
+					<Logo class="size-8 text-[var(--brand-foreground)]" />
 				</span>
-			</div>
+				<span class="hidden text-sm font-semibold tracking-tight sm:block">Mycelium</span>
+			</a>
+
+			<div class="hidden h-5 w-px bg-border/60 md:block"></div>
+
+			<Badge variant="outline" class="text-[10px] font-medium tracking-wider uppercase">
+				Interne
+			</Badge>
 
 			<!-- Nav tabs -->
-			<nav class="flex h-full items-center gap-1">
+			<nav class="flex h-full items-center gap-0.5">
 				{#each navItems as item (item.href)}
 					<a
 						href={resolve(item.href)}
 						class={cn(
-							'flex items-center gap-1.5 border-b-2 px-3 py-3.5 text-xs font-medium transition-colors',
+							'flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-150',
 							item.active
-								? 'border-[var(--brand)] text-foreground'
-								: 'border-transparent text-muted-foreground hover:text-foreground'
+								? 'topbar-nav-pill-active'
+								: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:ring-1 hover:ring-black/[0.04] hover:ring-inset dark:hover:bg-white/6 dark:hover:ring-white/[0.06]'
 						)}
 					>
 						<item.icon class="size-3.5" />
@@ -76,30 +82,26 @@
 				{/each}
 			</nav>
 
-			<!-- Droite : lien admin -->
-			<div class="ml-auto flex items-center">
+			<!-- Droite -->
+			<div class="ml-auto flex items-center gap-3">
 				{#if isSuperAdmin}
-					<span
-						class="mr-3 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-amber-600 uppercase dark:text-amber-400"
-					>
+					<Badge class="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
 						Super Admin
-					</span>
+					</Badge>
 				{:else if myRole.data}
-					<span
-						class="mr-3 rounded border border-border bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase"
-					>
-						Concierge
-					</span>
+					<Badge variant="secondary">Concierge</Badge>
 				{/if}
-				<a
+
+				<Button
+					variant="ghost"
+					size="sm"
 					href={resolve(localizedHref('/admin/dashboard'))}
 					target="_blank"
 					rel="noopener"
-					class="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
 				>
-					<ExternalLinkIcon class="size-3" />
+					<ExternalLinkIcon class="size-3.5" />
 					Admin
-				</a>
+				</Button>
 			</div>
 		</div>
 	</header>

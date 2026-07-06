@@ -2,6 +2,7 @@
 	import ConciergeTaskRow from './concierge-task-row.svelte';
 	import type { Id } from '$lib/convex/_generated/dataModel';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	type Task = {
 		_id: Id<'concierge_tasks'>;
@@ -42,7 +43,7 @@
 	{#if loading}
 		<div class="space-y-2">
 			{#each { length: 4 } as _, i (i)}
-				<div class="h-16 animate-pulse rounded-xl bg-muted"></div>
+				<Skeleton class="h-16 rounded-xl" />
 			{/each}
 		</div>
 	{:else if tasks.length === 0}
