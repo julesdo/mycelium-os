@@ -41,8 +41,8 @@
 	]);
 </script>
 
-<div class="min-h-screen bg-background">
-	<header class="admin-topbar sticky top-0 z-20 h-[62px] shrink-0">
+<div class="flex h-screen flex-col overflow-hidden bg-background">
+	<header class="admin-topbar shrink-0 h-[62px]">
 		<div class="flex h-full items-center gap-4 px-6">
 			<!-- Logo Mycelium -->
 			<a
@@ -106,5 +106,7 @@
 		</div>
 	</header>
 
-	{@render children()}
+	<div class="flex-1 overflow-auto">
+		{@render children()}
+	</div>
 </div>
