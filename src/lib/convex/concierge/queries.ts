@@ -11,10 +11,19 @@ export const getAggregatedQueue = conciergeQuery({
 		organizationId: v.optional(v.id('organizations'))
 	},
 	handler: async (ctx, args) => {
-		// ctx.user garanti role==='admin' par adminQuery
 		let tasks = await ctx.db.query('concierge_tasks').withIndex('by_status_and_priority').collect();
 
 		tasks = tasks.filter((t) => t.status !== 'DONE');
+
+		// Concierges : restreindre aux orgs assignées
+		if (ctx.staffRole === 'concierge') {
+			const accesses = await ctx.db
+				.query('conciergeOrgAccess')
+				.withIndex('by_concierge', (q) => q.eq('conciergeUserId', ctx.user._id))
+				.collect();
+			const allowedIds = new Set(accesses.map((a) => a.organizationId));
+			tasks = tasks.filter((t) => allowedIds.has(t.organizationId));
+		}
 
 		if (args.statusFilter && args.statusFilter.length > 0) {
 			tasks = tasks.filter((t) => args.statusFilter!.includes(t.status));
@@ -43,7 +52,17 @@ export const getAggregatedQueue = conciergeQuery({
 export const getClientHealthGrid = conciergeQuery({
 	args: {},
 	handler: async (ctx) => {
-		const orgs = await ctx.db.query('organizations').collect();
+		let orgs = await ctx.db.query('organizations').collect();
+
+		// Concierges : filtrer sur leurs orgs assignées uniquement
+		if (ctx.staffRole === 'concierge') {
+			const accesses = await ctx.db
+				.query('conciergeOrgAccess')
+				.withIndex('by_concierge', (q) => q.eq('conciergeUserId', ctx.user._id))
+				.collect();
+			const allowedIds = new Set(accesses.map((a) => a.organizationId));
+			orgs = orgs.filter((o) => allowedIds.has(o._id));
+		}
 
 		return await Promise.all(
 			orgs.map(async (org) => {

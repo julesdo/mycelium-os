@@ -253,6 +253,109 @@ export const getAvailableConciergeForOrg = authedQuery({
 	}
 });
 
+// ─── Accès org par concierge ─────────────────────────────────────────────────
+
+export const assignOrgToConcierge = superAdminMutation({
+	args: {
+		conciergeUserId: v.string(),
+		organizationId: v.id('organizations')
+	},
+	handler: async (ctx, args) => {
+		// Vérifie que c'est bien un concierge (pas super_admin)
+		const staff = await ctx.db
+			.query('myceliumStaff')
+			.withIndex('by_userId', (q) => q.eq('userId', args.conciergeUserId))
+			.unique();
+		if (!staff) throw new ConvexError('Membre staff introuvable.');
+		if (staff.staffRole !== 'concierge') {
+			throw new ConvexError('Les super admins ont déjà accès à toutes les orgs.');
+		}
+
+		// Évite les doublons
+		const existing = await ctx.db
+			.query('conciergeOrgAccess')
+			.withIndex('by_concierge_and_org', (q) =>
+				q.eq('conciergeUserId', args.conciergeUserId).eq('organizationId', args.organizationId)
+			)
+			.unique();
+		if (existing) return { success: true };
+
+		await ctx.db.insert('conciergeOrgAccess', {
+			conciergeUserId: args.conciergeUserId,
+			organizationId: args.organizationId,
+			assignedAt: Date.now(),
+			assignedBy: ctx.user._id
+		});
+		return { success: true };
+	}
+});
+
+export const removeOrgFromConcierge = superAdminMutation({
+	args: {
+		conciergeUserId: v.string(),
+		organizationId: v.id('organizations')
+	},
+	handler: async (ctx, args) => {
+		const existing = await ctx.db
+			.query('conciergeOrgAccess')
+			.withIndex('by_concierge_and_org', (q) =>
+				q.eq('conciergeUserId', args.conciergeUserId).eq('organizationId', args.organizationId)
+			)
+			.unique();
+		if (existing) await ctx.db.delete(existing._id);
+		return { success: true };
+	}
+});
+
+export const listConciergeOrgAccess = superAdminQuery({
+	args: { conciergeUserId: v.string() },
+	handler: async (ctx, args) => {
+		const accesses = await ctx.db
+			.query('conciergeOrgAccess')
+			.withIndex('by_concierge', (q) => q.eq('conciergeUserId', args.conciergeUserId))
+			.collect();
+
+		const orgs = await Promise.all(
+			accesses.map(async (a) => {
+				const org = await ctx.db.get(a.organizationId);
+				return org ? { ...a, orgName: org.name, country: org.country ?? null } : null;
+			})
+		);
+		return orgs.filter(Boolean);
+	}
+});
+
+// Retourne les orgs accessibles pour l'utilisateur courant :
+// - super_admin → toutes les orgs
+// - concierge → uniquement les orgs assignées
+export const getMyAccessibleOrgs = authedQuery({
+	args: {},
+	handler: async (ctx) => {
+		// Vérification rôle staff
+		const allStaff = await ctx.db.query('myceliumStaff').collect();
+		const record = allStaff.find((r) => r.userId === ctx.user._id);
+		const staffRole = record?.staffRole ?? (allStaff.length === 0 ? 'super_admin' : null);
+
+		if (!staffRole) return null; // Pas staff → pas d'accès
+
+		if (staffRole === 'super_admin') {
+			const orgs = await ctx.db.query('organizations').collect();
+			return orgs.map((o) => ({ _id: o._id, name: o.name, country: o.country ?? null, tier: o.paddlePlanTier ?? 'essential' }));
+		}
+
+		// Concierge : orgs assignées seulement
+		const accesses = await ctx.db
+			.query('conciergeOrgAccess')
+			.withIndex('by_concierge', (q) => q.eq('conciergeUserId', ctx.user._id))
+			.collect();
+
+		const orgs = await Promise.all(accesses.map((a) => ctx.db.get(a.organizationId)));
+		return orgs
+			.filter(Boolean)
+			.map((o) => ({ _id: o!._id, name: o!.name, country: o!.country ?? null, tier: o!.paddlePlanTier ?? 'essential' }));
+	}
+});
+
 // ─── Invitations staff ────────────────────────────────────────────────────────
 
 function generateToken(): string {

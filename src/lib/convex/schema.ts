@@ -1194,6 +1194,19 @@ export default defineSchema({
 		.index('by_token', ['token'])
 		.index('by_inviter', ['invitedBy']),
 
+	// ── Accès org par concierge ──────────────────────────────────────────────────
+	// Super admins ont accès à TOUTES les orgs (pas d'entrée ici).
+	// Concierges ont accès uniquement aux orgs listées ici.
+	conciergeOrgAccess: defineTable({
+		conciergeUserId: v.string(),        // userId Better Auth du concierge
+		organizationId: v.id('organizations'),
+		assignedAt: v.number(),
+		assignedBy: v.string()              // userId du super_admin qui a assigné
+	})
+		.index('by_concierge', ['conciergeUserId'])
+		.index('by_org', ['organizationId'])
+		.index('by_concierge_and_org', ['conciergeUserId', 'organizationId']),
+
 	// ── Escalade humaine (client → concierge Mycelium) ──────────────────────────
 	// Créée depuis le CopilotPanel quand le client clique "Parler à un humain".
 	// Le concierge répond depuis /concierge/[orgId].

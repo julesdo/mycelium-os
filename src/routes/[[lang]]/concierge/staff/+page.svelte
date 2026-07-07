@@ -12,6 +12,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import SuperAdminConfirmModal from '$lib/components/concierge/super-admin-confirm-modal.svelte';
+	import ConciergeOrgAccessDialog from '$lib/components/concierge/ConciergeOrgAccessDialog.svelte';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import HeadphonesIcon from '@lucide/svelte/icons/headphones';
 	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
@@ -23,6 +24,7 @@
 	import LinkIcon from '@lucide/svelte/icons/link';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import BuildingIcon from '@lucide/svelte/icons/building-2';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
@@ -288,6 +290,9 @@
 		pendingAction = null;
 	}
 
+	// ── Gestion accès orgs par concierge ───────────────────────────────────────
+	let orgAccessTarget = $state<{ userId: string; name: string } | null>(null);
+
 	const roleConfig = {
 		super_admin: { label: 'Super Admin', icon: ShieldIcon },
 		concierge: { label: 'Concierge', icon: HeadphonesIcon }
@@ -305,6 +310,15 @@
 <svelte:head>
 	<title>Équipe Mycelium — Fleet Care</title>
 </svelte:head>
+
+{#if orgAccessTarget}
+	<ConciergeOrgAccessDialog
+		open={!!orgAccessTarget}
+		conciergeUserId={orgAccessTarget.userId}
+		conciergeName={orgAccessTarget.name}
+		onclose={() => (orgAccessTarget = null)}
+	/>
+{/if}
 
 <SuperAdminConfirmModal
 	open={modalOpen}
@@ -643,7 +657,17 @@
 													<CheckIcon class="ml-auto size-3.5 opacity-50" />
 												{/if}
 											</DropdownMenu.Item>
+											{#if member.staffRole === 'concierge'}
 											<DropdownMenu.Separator />
+											<DropdownMenu.Item
+												class="gap-2"
+												onclick={() => (orgAccessTarget = { userId: member.userId, name: member.name })}
+											>
+												<BuildingIcon class="size-3.5" />
+												Gérer l'accès aux orgs
+											</DropdownMenu.Item>
+										{/if}
+										<DropdownMenu.Separator />
 											<DropdownMenu.Item
 												class="text-destructive focus:text-destructive"
 												onclick={() => (memberToRemove = { userId: member.userId, name: member.name })}
