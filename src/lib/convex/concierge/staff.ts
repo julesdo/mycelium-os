@@ -1,6 +1,7 @@
 import { v, ConvexError } from 'convex/values';
-import { superAdminQuery, superAdminMutation, conciergeQuery, conciergeMutation, authedQuery } from '../functions';
+import { superAdminQuery, superAdminMutation, conciergeQuery, conciergeMutation, authedQuery, authedMutation } from '../functions';
 import { components } from '../_generated/api';
+import { query } from '../_generated/server';
 
 // Gestion du staff interne Mycelium — super_admin seulement.
 // Ces fonctions ne sont jamais accessibles aux clients.
@@ -249,5 +250,150 @@ export const getAvailableConciergeForOrg = authedQuery({
 			availabilityStatus: best.availabilityStatus ?? 'offline',
 			bio: best.bio ?? null
 		};
+	}
+});
+
+// ─── Invitations staff ────────────────────────────────────────────────────────
+
+function generateToken(): string {
+	const bytes = new Uint8Array(32);
+	crypto.getRandomValues(bytes);
+	return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+export const createStaffInvitation = superAdminMutation({
+	args: {
+		staffRole: v.union(v.literal('super_admin'), v.literal('concierge')),
+		invitedEmail: v.optional(v.string())
+	},
+	handler: async (ctx, args) => {
+		const token = generateToken();
+		await ctx.db.insert('staffInvitations', {
+			token,
+			staffRole: args.staffRole,
+			invitedBy: ctx.user._id,
+			invitedByName: ctx.user.name ?? ctx.user.email ?? 'Super Admin',
+			invitedEmail: args.invitedEmail?.toLowerCase().trim() || undefined,
+			createdAt: Date.now(),
+			expiresAt: Date.now() + SEVEN_DAYS
+		});
+		return { token };
+	}
+});
+
+export const listStaffInvitations = superAdminQuery({
+	args: {},
+	handler: async (ctx) => {
+		const all = await ctx.db
+			.query('staffInvitations')
+			.withIndex('by_inviter', (q) => q.eq('invitedBy', ctx.user._id))
+			.order('desc')
+			.collect();
+		// Retourne uniquement les invitations valides (non utilisées, non expirées)
+		const now = Date.now();
+		return all.filter((i) => !i.usedAt && i.expiresAt > now);
+	}
+});
+
+export const revokeStaffInvitation = superAdminMutation({
+	args: { invitationId: v.id('staffInvitations') },
+	handler: async (ctx, args) => {
+		const inv = await ctx.db.get(args.invitationId);
+		if (!inv) throw new ConvexError('Invitation introuvable.');
+		await ctx.db.delete(args.invitationId);
+	}
+});
+
+// Query publique — accessible sans authentification (page /staff-join/[token])
+export const getStaffInvitationByToken = query({
+	args: { token: v.string() },
+	handler: async (ctx, args) => {
+		if (!args.token || args.token.length !== 64) return null;
+		const inv = await ctx.db
+			.query('staffInvitations')
+			.withIndex('by_token', (q) => q.eq('token', args.token))
+			.unique();
+		if (!inv) return null;
+		if (inv.usedAt) return { status: 'used' as const };
+		if (inv.expiresAt < Date.now()) return { status: 'expired' as const };
+		return {
+			status: 'valid' as const,
+			staffRole: inv.staffRole,
+			invitedByName: inv.invitedByName,
+			invitedEmail: inv.invitedEmail ?? null,
+			expiresAt: inv.expiresAt
+		};
+	}
+});
+
+export const acceptStaffInvitation = authedMutation({
+	args: { token: v.string() },
+	handler: async (ctx, args) => {
+		const inv = await ctx.db
+			.query('staffInvitations')
+			.withIndex('by_token', (q) => q.eq('token', args.token))
+			.unique();
+
+		if (!inv) throw new ConvexError('Invitation introuvable ou invalide.');
+		if (inv.usedAt) throw new ConvexError('Cette invitation a déjà été utilisée.');
+		if (inv.expiresAt < Date.now()) throw new ConvexError('Cette invitation a expiré.');
+
+		// Si l'invitation est restreinte à un email, vérifier la correspondance
+		if (inv.invitedEmail && inv.invitedEmail !== ctx.user.email?.toLowerCase()) {
+			throw new ConvexError(
+				`Cette invitation est réservée à ${inv.invitedEmail}. Connectez-vous avec ce compte.`
+			);
+		}
+
+		// Vérifier qu'il n'est pas déjà staff
+		const existing = await ctx.db
+			.query('myceliumStaff')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (existing) throw new ConvexError('Vous êtes déjà membre du staff Mycelium.');
+
+		// Élever le rôle Better Auth à 'admin'
+		await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+			input: {
+				model: 'user',
+				where: [{ field: '_id', operator: 'eq', value: ctx.user._id }],
+				update: { role: 'admin' }
+			}
+		});
+
+		// Détacher des organisations clientes
+		const memberships = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
+			.collect();
+		for (const m of memberships) await ctx.db.delete(m._id);
+
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (profile?.currentOrganizationId) {
+			await ctx.db.patch(profile._id, { currentOrganizationId: undefined });
+		}
+
+		// Créer la fiche staff
+		await ctx.db.insert('myceliumStaff', {
+			userId: ctx.user._id,
+			staffRole: inv.staffRole,
+			email: ctx.user.email ?? '',
+			name: ctx.user.name ?? ctx.user.email ?? 'Staff Mycelium',
+			addedBy: inv.invitedBy,
+			addedAt: Date.now()
+		});
+
+		// Marquer l'invitation comme utilisée
+		await ctx.db.patch(inv._id, {
+			usedAt: Date.now(),
+			usedByUserId: ctx.user._id
+		});
+
+		return { staffRole: inv.staffRole };
 	}
 });

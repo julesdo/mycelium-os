@@ -1176,6 +1176,24 @@ export default defineSchema({
 		.index('by_role', ['staffRole'])
 		.index('by_availability', ['availabilityStatus']),
 
+	// ── Invitations staff Mycelium ───────────────────────────────────────────────
+	// Générées par un super_admin depuis /concierge/staff.
+	// Token aléatoire 64 hex chars, usage unique, expiration 7 jours.
+	// La personne invitée clique le lien /staff-join/[token] pour rejoindre.
+	staffInvitations: defineTable({
+		token: v.string(),                      // 32 bytes → 64 hex chars (plain, URL-safe)
+		staffRole: v.union(v.literal('super_admin'), v.literal('concierge')),
+		invitedBy: v.string(),                  // userId du super_admin
+		invitedByName: v.string(),              // dénormalisé pour affichage
+		invitedEmail: v.optional(v.string()),   // si renseigné, restreint à cet email
+		createdAt: v.number(),
+		expiresAt: v.number(),                  // createdAt + 7 jours
+		usedAt: v.optional(v.number()),
+		usedByUserId: v.optional(v.string())
+	})
+		.index('by_token', ['token'])
+		.index('by_inviter', ['invitedBy']),
+
 	// ── Escalade humaine (client → concierge Mycelium) ──────────────────────────
 	// Créée depuis le CopilotPanel quand le client clique "Parler à un humain".
 	// Le concierge répond depuis /concierge/[orgId].
