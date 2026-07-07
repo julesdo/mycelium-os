@@ -1,42 +1,47 @@
 <script lang="ts">
 	import { useQuery, useMutation } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api';
-	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
-	import SuperAdminConfirmModal from '$lib/components/concierge/super-admin-confirm-modal.svelte';
+	import * as Table from '$lib/components/ui/table/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Label } from '$lib/components/ui/label';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import SuperAdminConfirmModal from '$lib/components/concierge/super-admin-confirm-modal.svelte';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import HeadphonesIcon from '@lucide/svelte/icons/headphones';
-	import Trash2Icon from '@lucide/svelte/icons/trash-2';
-	import PlusIcon from '@lucide/svelte/icons/plus';
+	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
+	import MoreHorizontalIcon from '@lucide/svelte/icons/ellipsis';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import CheckIcon from '@lucide/svelte/icons/check';
-	import XIcon from '@lucide/svelte/icons/x';
 
 	const staff = useQuery(api['concierge/staff'].listMyceliumStaff, {});
 	const addMember = useMutation(api['concierge/staff'].addStaffMember);
 	const updateRole = useMutation(api['concierge/staff'].updateStaffRole);
 	const removeMember = useMutation(api['concierge/staff'].removeStaffMember);
 
-	let showAddForm = $state(false);
+	// --- Ajout ---
+	let showAddDialog = $state(false);
 	let newEmail = $state('');
 	let newRole = $state<'super_admin' | 'concierge'>('concierge');
 	let addLoading = $state(false);
 
-	type PendingAction =
-		| { type: 'add'; email: string; name: string }
-		| { type: 'promote'; userId: string; name: string; email: string };
-
-	let pendingAction = $state<PendingAction | null>(null);
-	let modalOpen = $state(false);
-	let confirmRemoveId = $state<string | null>(null);
+	function resetAddDialog() {
+		newEmail = '';
+		newRole = 'concierge';
+		showAddDialog = false;
+	}
 
 	function handleAddIntent() {
 		if (!newEmail.trim()) return;
 		if (newRole === 'super_admin') {
 			pendingAction = { type: 'add', email: newEmail.trim(), name: newEmail.trim() };
+			showAddDialog = false;
 			modalOpen = true;
 		} else {
 			executeAdd(newEmail.trim(), 'concierge');
@@ -47,11 +52,8 @@
 		addLoading = true;
 		try {
 			await addMember({ email, staffRole });
-			toast.success(
-				`${email} ajouté(e) en tant que ${staffRole === 'super_admin' ? 'Super Admin' : 'Concierge'}.`
-			);
-			newEmail = '';
-			showAddForm = false;
+			toast.success(`${email} ajouté(e) en tant que ${roleConfig[staffRole].label}.`);
+			resetAddDialog();
 		} catch (err: unknown) {
 			toast.error(err instanceof Error ? err.message : "Erreur lors de l'ajout.");
 		} finally {
@@ -59,19 +61,50 @@
 		}
 	}
 
-	function handlePromoteIntent(userId: string, name: string, email: string) {
-		pendingAction = { type: 'promote', userId, name, email };
-		modalOpen = true;
-	}
+	// --- Changement de rôle ---
+	let changingRoleId = $state<string | null>(null);
 
 	async function handleRoleChange(userId: string, staffRole: 'super_admin' | 'concierge') {
-		if (staffRole === 'super_admin') return;
+		changingRoleId = userId;
 		try {
 			await updateRole({ userId, staffRole });
 			toast.success('Rôle mis à jour.');
 		} catch (err: unknown) {
 			toast.error(err instanceof Error ? err.message : 'Erreur.');
+		} finally {
+			changingRoleId = null;
 		}
+	}
+
+	// --- Suppression ---
+	let memberToRemove = $state<{ userId: string; name: string } | null>(null);
+	let removing = $state(false);
+
+	async function confirmRemove() {
+		if (!memberToRemove || removing) return;
+		removing = true;
+		try {
+			await removeMember({ userId: memberToRemove.userId });
+			toast.success('Membre retiré du staff Mycelium.');
+			memberToRemove = null;
+		} catch (err: unknown) {
+			toast.error(err instanceof Error ? err.message : 'Erreur.');
+		} finally {
+			removing = false;
+		}
+	}
+
+	// --- Confirmation promotion super_admin ---
+	type PendingAction =
+		| { type: 'add'; email: string; name: string }
+		| { type: 'promote'; userId: string; name: string; email: string };
+
+	let pendingAction = $state<PendingAction | null>(null);
+	let modalOpen = $state(false);
+
+	function handlePromoteIntent(userId: string, name: string, email: string) {
+		pendingAction = { type: 'promote', userId, name, email };
+		modalOpen = true;
 	}
 
 	async function handleModalConfirm() {
@@ -79,44 +112,42 @@
 		if (!pendingAction) return;
 		if (pendingAction.type === 'add') {
 			await executeAdd(pendingAction.email, 'super_admin');
-		} else if (pendingAction.type === 'promote') {
+		} else {
+			changingRoleId = pendingAction.userId;
 			try {
 				await updateRole({ userId: pendingAction.userId, staffRole: 'super_admin' });
 				toast.success(`${pendingAction.name} est maintenant Super Admin.`);
 			} catch (err: unknown) {
 				toast.error(err instanceof Error ? err.message : 'Erreur.');
+			} finally {
+				changingRoleId = null;
 			}
 		}
 		pendingAction = null;
 	}
 
-	function handleModalCancel() {
-		modalOpen = false;
-		pendingAction = null;
-	}
-
-	async function handleRemove(userId: string) {
-		try {
-			await removeMember({ userId });
-			toast.success('Membre retiré du staff Mycelium.');
-			confirmRemoveId = null;
-		} catch (err: unknown) {
-			toast.error(err instanceof Error ? err.message : 'Erreur.');
-		}
-	}
-
+	// --- Config rôles ---
 	const roleConfig = {
-		super_admin: {
-			label: 'Super Admin',
-			description: 'Accès complet — toutes orgs, billing, gestion équipe',
-			icon: ShieldIcon
-		},
-		concierge: {
-			label: 'Concierge',
-			description: 'File de tâches clients, actions rapides',
-			icon: HeadphonesIcon
-		}
+		super_admin: { label: 'Super Admin', icon: ShieldIcon },
+		concierge: { label: 'Concierge', icon: HeadphonesIcon }
 	};
+
+	function getInitials(name: string): string {
+		return name
+			.split(' ')
+			.map((w) => w[0])
+			.slice(0, 2)
+			.join('')
+			.toUpperCase();
+	}
+
+	function formatDate(ts: number): string {
+		return new Date(ts).toLocaleDateString('fr-FR', {
+			day: '2-digit',
+			month: 'short',
+			year: 'numeric'
+		});
+	}
 </script>
 
 <svelte:head>
@@ -129,203 +160,268 @@
 	targetEmail={pendingAction?.type === 'add' ? pendingAction.email : (pendingAction?.email ?? '')}
 	action={pendingAction?.type === 'add' ? 'add' : 'promote'}
 	onconfirm={handleModalConfirm}
-	oncancel={handleModalCancel}
+	oncancel={() => { modalOpen = false; pendingAction = null; }}
 />
 
-<main class="mx-auto max-w-screen-lg px-6 py-8">
-	<!-- En-tête -->
-	<div class="mb-8 flex items-start justify-between">
+<div class="flex flex-col gap-6 px-4 pt-5 pb-8 md:pt-7 lg:px-6 xl:px-8 2xl:px-16">
+
+	<!-- Header -->
+	<div class="flex items-center justify-between gap-3">
 		<div>
-			<h1 class="text-2xl font-bold tracking-tight">Équipe Mycelium</h1>
-			<p class="text-sm text-muted-foreground">
-				Gérez qui a accès à l'espace interne Fleet Care. Réservé aux super admins.
+			<h1 class="text-base font-semibold tracking-tight">Équipe Mycelium</h1>
+			<p class="mt-0.5 text-[13px] text-muted-foreground">
+				Accès à l'espace interne Fleet Care — réservé aux super admins.
 			</p>
 		</div>
-		<Button onclick={() => { showAddForm = !showAddForm; }}>
-			<PlusIcon class="size-4" />
+		<Button size="sm" onclick={() => (showAddDialog = true)}>
+			<UserPlusIcon class="size-4" />
 			Ajouter un membre
 		</Button>
 	</div>
 
-	<!-- Formulaire ajout -->
-	{#if showAddForm}
-		<div class="relative mb-6 overflow-hidden rounded-xl border border-[var(--brand)]/30 bg-[var(--brand)]/5 p-5">
-			<div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/20"></div>
-			<p class="mb-1 text-sm font-semibold text-foreground">Ajouter un membre staff</p>
-			<p class="mb-4 text-xs text-muted-foreground">
-				L'utilisateur doit déjà avoir créé son compte sur Mycelium. Entrez son email exact.
-			</p>
+	<!-- Table membres -->
+	<Card.Root>
+		<Card.Content class="p-0">
+			{#if staff.isLoading}
+				<div class="divide-y divide-border">
+					{#each { length: 3 } as _, i (i)}
+						<div class="flex items-center gap-3 px-4 py-3">
+							<Skeleton class="size-8 shrink-0 rounded-full" />
+							<div class="flex flex-1 flex-col gap-1.5">
+								<Skeleton class="h-4 w-28" />
+								<Skeleton class="h-3 w-40" />
+							</div>
+							<Skeleton class="h-5 w-20 rounded-full" />
+							<Skeleton class="h-4 w-16" />
+						</div>
+					{/each}
+				</div>
+			{:else if !staff.data || staff.data.length === 0}
+				<div class="flex flex-col items-center justify-center py-14 text-center">
+					<ShieldIcon class="mb-3 size-7 text-muted-foreground/30" />
+					<p class="text-sm font-medium text-muted-foreground">Aucun membre staff enregistré</p>
+					<p class="mt-1 text-xs text-muted-foreground/50">
+						Mode bootstrap — vous êtes super admin implicite (table vide).
+					</p>
+				</div>
+			{:else}
+				<Table.Root>
+					<Table.Header>
+						<Table.Row class="hover:bg-transparent">
+							<Table.Head class="pl-4">Membre</Table.Head>
+							<Table.Head>Rôle</Table.Head>
+							<Table.Head class="hidden sm:table-cell">Ajouté le</Table.Head>
+							<Table.Head class="w-10 pr-3">
+								<span class="sr-only">Actions</span>
+							</Table.Head>
+						</Table.Row>
+					</Table.Header>
+					<Table.Body>
+						{#each staff.data as member (member.userId)}
+							{@const cfg = roleConfig[member.staffRole]}
+							<Table.Row>
+								<Table.Cell class="pl-4">
+									<div class="flex items-center gap-3">
+										<Avatar.Root class="size-8 shrink-0">
+											<Avatar.Fallback class="text-xs">
+												{getInitials(member.name)}
+											</Avatar.Fallback>
+										</Avatar.Root>
+										<div class="min-w-0">
+											<p class="truncate text-sm font-medium leading-tight">{member.name}</p>
+											<p class="truncate text-xs text-muted-foreground">{member.email}</p>
+										</div>
+									</div>
+								</Table.Cell>
 
-			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+								<Table.Cell>
+									{#if member.staffRole === 'super_admin'}
+										<Badge class="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+											<ShieldIcon class="size-3" />
+											{cfg.label}
+										</Badge>
+									{:else}
+										<Badge variant="secondary">
+											<HeadphonesIcon class="size-3" />
+											{cfg.label}
+										</Badge>
+									{/if}
+								</Table.Cell>
+
+								<Table.Cell class="hidden text-sm text-muted-foreground sm:table-cell">
+									{formatDate(member.addedAt)}
+								</Table.Cell>
+
+								<Table.Cell class="pr-3">
+									<DropdownMenu.Root>
+										<DropdownMenu.Trigger>
+											{#snippet child({ props })}
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													{...props}
+													disabled={changingRoleId === member.userId}
+												>
+													{#if changingRoleId === member.userId}
+														<LoaderCircleIcon class="size-4 motion-safe:animate-spin" />
+													{:else}
+														<MoreHorizontalIcon class="size-4" />
+													{/if}
+												</Button>
+											{/snippet}
+										</DropdownMenu.Trigger>
+										<DropdownMenu.Content align="end">
+											<DropdownMenu.Label class="text-xs font-medium text-muted-foreground">
+												Changer le rôle
+											</DropdownMenu.Label>
+											<DropdownMenu.Item
+												class="gap-2"
+												disabled={member.staffRole === 'concierge'}
+												onclick={() => handleRoleChange(member.userId, 'concierge')}
+											>
+												<HeadphonesIcon class="size-3.5" />
+												Concierge
+												{#if member.staffRole === 'concierge'}
+													<CheckIcon class="ml-auto size-3.5 opacity-50" />
+												{/if}
+											</DropdownMenu.Item>
+											<DropdownMenu.Item
+												class="gap-2"
+												disabled={member.staffRole === 'super_admin'}
+												onclick={() => handlePromoteIntent(member.userId, member.name, member.email)}
+											>
+												<ShieldIcon class="size-3.5 text-amber-500" />
+												Super Admin
+												{#if member.staffRole === 'super_admin'}
+													<CheckIcon class="ml-auto size-3.5 opacity-50" />
+												{/if}
+											</DropdownMenu.Item>
+											<DropdownMenu.Separator />
+											<DropdownMenu.Item
+												class="text-destructive focus:text-destructive"
+												onclick={() => (memberToRemove = { userId: member.userId, name: member.name })}
+											>
+												Retirer du staff
+											</DropdownMenu.Item>
+										</DropdownMenu.Content>
+									</DropdownMenu.Root>
+								</Table.Cell>
+							</Table.Row>
+						{/each}
+					</Table.Body>
+				</Table.Root>
+			{/if}
+		</Card.Content>
+	</Card.Root>
+
+	<!-- Note sécurité -->
+	<p class="text-xs text-muted-foreground">
+		<span class="font-semibold text-foreground">Sécurité :</span>
+		Chaque membre a le rôle
+		<code class="rounded bg-muted px-1 font-mono text-[10px]">admin</code>
+		dans Better Auth + une fiche en base. Double verrou — les clients ORG_ADMIN n'ont jamais accès.
+	</p>
+</div>
+
+<!-- Dialog ajouter un membre -->
+<Dialog.Root
+	open={showAddDialog}
+	onOpenChange={(v) => { if (!v) resetAddDialog(); }}
+>
+	<Dialog.Content class="sm:max-w-md">
+		<Dialog.Header>
+			<Dialog.Title>Ajouter un membre staff</Dialog.Title>
+			<Dialog.Description>
+				L'utilisateur doit déjà avoir créé son compte sur Mycelium.
+			</Dialog.Description>
+		</Dialog.Header>
+
+		<div class="flex flex-col gap-4">
+			<div class="flex flex-col gap-1.5">
+				<Label for="staff-email">Adresse email</Label>
 				<Input
+					id="staff-email"
 					type="email"
 					placeholder="prenom@mycelium.io"
 					bind:value={newEmail}
-					class="flex-1"
 					onkeydown={(e) => { if (e.key === 'Enter') handleAddIntent(); }}
 				/>
-
-				<!-- Sélecteur rôle — toggle pattern validé -->
-				<div class="flex gap-2">
-					{#each ['concierge', 'super_admin'] as const as role (role)}
-						{@const cfg = roleConfig[role]}
-						<button
-							type="button"
-							onclick={() => { newRole = role; }}
-							class={cn(
-								'flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium transition-all',
-								newRole === role
-									? role === 'super_admin'
-										? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-										: 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand-foreground)]'
-									: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'
-							)}
-						>
-							<cfg.icon class="size-3.5" />
-							{cfg.label}
-						</button>
-					{/each}
-				</div>
-
-				<div class="flex items-center gap-2">
-					<Button onclick={handleAddIntent} disabled={addLoading || !newEmail.trim()}>
-						{#if newRole === 'super_admin'}
-							<ShieldIcon class="size-4 text-amber-400" />
-						{:else}
-							<CheckIcon class="size-4" />
-						{/if}
-						{newRole === 'super_admin' ? 'Continuer…' : 'Confirmer'}
-					</Button>
-					<Button variant="outline" onclick={() => { showAddForm = false; newEmail = ''; }}>
-						<XIcon class="size-4" />
-						Annuler
-					</Button>
-				</div>
 			</div>
 
-			<p class="mt-3 text-xs text-muted-foreground">
-				<span class="font-semibold">{roleConfig[newRole].label} :</span>
-				{roleConfig[newRole].description}
-				{#if newRole === 'super_admin'}
-					<span class="ml-1 font-semibold text-amber-600 dark:text-amber-400">
-						Une confirmation supplémentaire sera demandée.
-					</span>
-				{/if}
-			</p>
-		</div>
-	{/if}
-
-	<!-- Liste membres -->
-	{#if staff.isLoading}
-		<div class="space-y-3">
-			{#each { length: 3 } as _, i (i)}
-				<Skeleton class="h-16 rounded-xl" />
-			{/each}
-		</div>
-	{:else if !staff.data || staff.data.length === 0}
-		<div class="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 py-16 text-center">
-			<ShieldIcon class="mb-3 size-8 text-muted-foreground/40" />
-			<p class="text-sm font-medium text-muted-foreground">Aucun membre staff enregistré</p>
-			<p class="mt-1 text-xs text-muted-foreground/60">
-				Mode bootstrap — vous êtes super admin par défaut en tant que premier admin.
-			</p>
-		</div>
-	{:else}
-		<div class="space-y-2">
-			{#each staff.data as member (member.userId)}
-				{@const cfg = roleConfig[member.staffRole]}
-				<div class="group relative overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-sm">
-					<div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/20"></div>
-
-					<div class="flex items-center gap-4 px-5 py-4">
-						<!-- Avatar initiales -->
-						<div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-sm font-bold text-muted-foreground">
-							{member.name.charAt(0).toUpperCase()}
-						</div>
-
-						<!-- Infos -->
-						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm font-semibold text-foreground">{member.name}</p>
-							<p class="truncate text-xs text-muted-foreground">{member.email}</p>
-						</div>
-
-						<!-- Badge rôle -->
-						{#if member.staffRole === 'super_admin'}
-							<Badge class="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-								<ShieldIcon class="size-3" />
-								{cfg.label}
-							</Badge>
-						{:else}
-							<Badge variant="secondary" class="shrink-0">
-								<HeadphonesIcon class="size-3" />
-								{cfg.label}
-							</Badge>
-						{/if}
-
-						<!-- Boutons changement de rôle (hover) -->
-						<div class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-							{#if member.staffRole === 'concierge'}
-								<Button
-									variant="ghost"
-									size="xs"
-									onclick={() => handlePromoteIntent(member.userId, member.name, member.email)}
-									class="border border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400"
-								>
-									<ShieldIcon class="size-3" />
-									Super Admin
-								</Button>
-							{:else}
-								<Button
-									variant="ghost"
-									size="xs"
-									onclick={() => handleRoleChange(member.userId, 'concierge')}
-								>
-									<HeadphonesIcon class="size-3" />
-									Concierge
-								</Button>
-							{/if}
-						</div>
-
-						<!-- Date ajout -->
-						<p class="hidden shrink-0 text-[10px] text-muted-foreground sm:block">
-							{new Date(member.addedAt).toLocaleDateString('fr-FR')}
-						</p>
-
-						<!-- Suppression -->
-						{#if confirmRemoveId === member.userId}
-							<div class="flex items-center gap-1.5">
-								<span class="text-xs text-destructive">Confirmer ?</span>
-								<Button variant="danger" size="icon-xs" onclick={() => handleRemove(member.userId)}>
-									<CheckIcon class="size-3.5" />
-								</Button>
-								<Button variant="outline" size="icon-xs" onclick={() => { confirmRemoveId = null; }}>
-									<XIcon class="size-3.5" />
-								</Button>
-							</div>
-						{:else}
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onclick={() => { confirmRemoveId = member.userId; }}
-								class="shrink-0 opacity-0 transition-all group-hover:opacity-100 hover:text-destructive"
-							>
-								<Trash2Icon class="size-3.5" />
-							</Button>
-						{/if}
-					</div>
+			<div class="flex flex-col gap-1.5">
+				<Label>Rôle</Label>
+				<div class="flex gap-2">
+					<button
+						type="button"
+						onclick={() => (newRole = 'concierge')}
+						class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {newRole === 'concierge'
+							? 'border-[var(--brand)]/60 bg-[var(--brand)]/8 text-foreground'
+							: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
+					>
+						<HeadphonesIcon class="size-4" />
+						Concierge
+					</button>
+					<button
+						type="button"
+						onclick={() => (newRole = 'super_admin')}
+						class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {newRole === 'super_admin'
+							? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+							: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
+					>
+						<ShieldIcon class="size-4" />
+						Super Admin
+					</button>
 				</div>
-			{/each}
+				<p class="text-xs text-muted-foreground">
+					{newRole === 'super_admin'
+						? 'Accès complet — toutes orgs, billing, gestion équipe. Une confirmation sera demandée.'
+						: 'File de tâches clients et actions rapides.'}
+				</p>
+			</div>
 		</div>
-	{/if}
 
-	<!-- Note de sécurité -->
-	<div class="mt-8 rounded-xl border border-border bg-muted/40 px-4 py-3">
-		<p class="text-xs text-muted-foreground">
-			<span class="font-semibold text-foreground">Sécurité :</span>
-			Les membres listés ici ont le rôle
-			<code class="rounded bg-muted px-1 font-mono text-[10px]">admin</code> dans Better Auth (premier
-			filtre JWT) et une fiche staff en base (deuxième filtre). Les clients ORG_ADMIN n'ont jamais
-			accès à ces routes.
-		</p>
-	</div>
-</main>
+		<Dialog.Footer>
+			<Button variant="outline" onclick={resetAddDialog} disabled={addLoading}>Annuler</Button>
+			<Button
+				onclick={handleAddIntent}
+				disabled={addLoading || !newEmail.trim()}
+				class={newRole === 'super_admin' ? 'border-amber-500/40 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400' : ''}
+				variant={newRole === 'super_admin' ? 'outline' : 'default'}
+			>
+				{#if addLoading}
+					<LoaderCircleIcon class="size-4 motion-safe:animate-spin" />
+				{:else if newRole === 'super_admin'}
+					<ShieldIcon class="size-4" />
+				{/if}
+				{addLoading ? 'Ajout…' : newRole === 'super_admin' ? 'Continuer…' : 'Ajouter'}
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
+
+<!-- Dialog confirmation suppression -->
+<Dialog.Root
+	open={!!memberToRemove}
+	onOpenChange={(v) => { if (!v) memberToRemove = null; }}
+>
+	<Dialog.Content class="sm:max-w-sm">
+		<Dialog.Header>
+			<Dialog.Title>Retirer ce membre ?</Dialog.Title>
+			<Dialog.Description>
+				<strong>{memberToRemove?.name ?? 'Ce membre'}</strong> perdra l'accès à l'espace concierge.
+				Son compte Mycelium reste intact.
+			</Dialog.Description>
+		</Dialog.Header>
+		<Dialog.Footer>
+			<Button variant="outline" onclick={() => (memberToRemove = null)} disabled={removing}>
+				Annuler
+			</Button>
+			<Button variant="destructive" onclick={confirmRemove} disabled={removing}>
+				{#if removing}
+					<LoaderCircleIcon class="size-4 motion-safe:animate-spin" />
+				{/if}
+				Retirer
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
