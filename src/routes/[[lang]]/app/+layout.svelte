@@ -25,9 +25,17 @@
 
 	const viewer = $derived(data.viewer as typeof data.viewer & { role?: string });
 
+	// Guard: staff Mycelium (role='admin') → portail concierge, jamais onboarding
+	$effect(() => {
+		if (viewer?.role === 'admin') {
+			goto(resolve(localizedHref('/concierge')));
+		}
+	});
+
 	// Guard: redirect to onboarding if user has no organization
 	const myOrgQuery = useQuery(api.organizations.getMyOrg, {});
 	$effect(() => {
+		if (viewer?.role === 'admin') return; // déjà géré ci-dessus
 		if (myOrgQuery.data === null) {
 			goto(resolve(localizedHref('/onboarding/organization')));
 		}

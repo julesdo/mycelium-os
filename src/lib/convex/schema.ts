@@ -1155,10 +1155,59 @@ export default defineSchema({
 		email: v.string(), // dénormalisé pour affichage
 		name: v.string(), // dénormalisé pour affichage
 		addedBy: v.string(), // userId de qui a ajouté
-		addedAt: v.number()
+		addedAt: v.number(),
+		// Profil concierge visible côté client
+		avatarUrl: v.optional(v.string()),
+		avatarStorageId: v.optional(v.id('_storage')),
+		specialty: v.optional(v.union(
+			v.literal('fleet_ops'),
+			v.literal('compliance'),
+			v.literal('finance'),
+			v.literal('generalist')
+		)),
+		availabilityStatus: v.optional(v.union(
+			v.literal('online'),
+			v.literal('busy'),
+			v.literal('offline')
+		)),
+		bio: v.optional(v.string()) // 1 ligne ex: "Spécialiste maintenance & conformité UK"
 	})
 		.index('by_userId', ['userId'])
 		.index('by_role', ['staffRole'])
+		.index('by_availability', ['availabilityStatus']),
+
+	// ── Escalade humaine (client → concierge Mycelium) ──────────────────────────
+	// Créée depuis le CopilotPanel quand le client clique "Parler à un humain".
+	// Le concierge répond depuis /concierge/[orgId].
+
+	humanAssistRequests: defineTable({
+		organizationId: v.id('organizations'),
+		requesterId: v.string(),       // userId Better Auth du client
+		requesterName: v.string(),     // dénormalisé pour affichage côté concierge
+		status: v.union(
+			v.literal('pending'),       // en attente d'un concierge
+			v.literal('in_progress'),   // concierge assigné et en train de répondre
+			v.literal('closed')         // conversation terminée
+		),
+		summary: v.optional(v.string()), // résumé du contexte IA passé (3 derniers msgs)
+		assignedConciergeId: v.optional(v.string()),
+		createdAt: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_status', ['organizationId', 'status'])
+		.index('by_requester', ['requesterId']),
+
+	humanAssistMessages: defineTable({
+		requestId: v.id('humanAssistRequests'),
+		organizationId: v.id('organizations'),
+		senderType: v.union(v.literal('client'), v.literal('concierge')),
+		senderName: v.string(),
+		senderAvatarUrl: v.optional(v.string()),
+		content: v.string(),
+		createdAt: v.number()
+	})
+		.index('by_request', ['requestId'])
+		.index('by_org', ['organizationId']),
 
 	// Note: The agent component automatically creates the following tables:
 	// - agent:threads - Conversation threads for customer support

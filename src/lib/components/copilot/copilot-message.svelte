@@ -28,11 +28,20 @@
 		isStreaming?: boolean;
 		toolCall?: string | null;
 		widget?: CopilotWidget;
+		// 'ai' = agent IA, 'human' = concierge humain Mycelium
+		source?: 'ai' | 'human';
+		humanName?: string;
+		humanAvatarUrl?: string | null;
 		onVehicleSelect?: (vehicleId: string, startDate?: string, endDate?: string) => void;
 		onVehicleAlt?: () => void;
 	};
 
-	let { role, content, isStreaming = false, toolCall = null, widget, onVehicleSelect, onVehicleAlt }: Props = $props();
+	let { role, content, isStreaming = false, toolCall = null, widget, source = 'ai', humanName, humanAvatarUrl, onVehicleSelect, onVehicleAlt }: Props = $props();
+
+	function getInitials(name?: string): string {
+		if (!name) return 'M';
+		return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+	}
 
 	function renderMarkdown(raw: string): string {
 		let text = raw
@@ -114,57 +123,81 @@
 		</div>
 	</div>
 {:else}
-	<div class="flex flex-col gap-2">
-		<!-- Tool call indicator -->
-		{#if toolCall}
-			<div class="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
-				<span class="inline-block size-1.5 animate-pulse rounded-full bg-[var(--brand)]"></span>
-				{TOOL_LABELS[toolCall] ?? 'Analyse en cours…'}
+	<div class="flex gap-2.5">
+		<!-- Avatar IA ou humain -->
+		{#if source === 'human'}
+			<div class="mt-0.5 size-7 shrink-0 overflow-hidden rounded-full ring-2 ring-border">
+				{#if humanAvatarUrl}
+					<img src={humanAvatarUrl} alt={humanName ?? 'Concierge'} class="h-full w-full object-cover" />
+				{:else}
+					<div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-500 to-purple-600 text-[10px] font-bold text-white">
+						{getInitials(humanName)}
+					</div>
+				{/if}
+			</div>
+		{:else}
+			<div class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/15 ring-1 ring-[var(--brand)]/25">
+				<span class="text-[10px] font-black text-[var(--brand-foreground)] dark:text-[var(--brand)]">M</span>
 			</div>
 		{/if}
 
-		<!-- Widget -->
-		{#if widget}
-			{#if widget.widget === 'fleet_summary'}
-				<CopilotFleetSummaryWidget data={widget} />
-			{:else if widget.widget === 'fleet_utilization'}
-				<CopilotFleetUtilizationWidget data={widget} />
-			{:else if widget.widget === 'cost_breakdown'}
-				<CopilotCostBreakdownWidget data={widget} />
-			{:else if widget.widget === 'maintenance_overview'}
-				<CopilotMaintenanceWidget data={widget} />
-			{:else if widget.widget === 'compliance_status'}
-				<CopilotComplianceWidget data={widget} />
-			{:else if widget.widget === 'vehicle_proposal'}
-				<CopilotVehicleProposalWidget
-					data={widget}
-					onSelect={onVehicleSelect}
-					onAlt={onVehicleAlt}
-				/>
-			{:else if widget.widget === 'reservation_confirmed'}
-				<div class="flex flex-col gap-1.5 rounded-xl border border-emerald-200/50 bg-emerald-50/50 px-3 py-2.5 dark:border-emerald-900/30 dark:bg-emerald-950/20">
-					<div class="flex items-center gap-2">
-						<CheckCircleIcon class="size-4 text-emerald-500" />
-						<span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Réservation confirmée</span>
-					</div>
-					<p class="text-sm font-medium">{widget.reservation.vehicle}</p>
-					<div class="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-						<CalendarIcon class="size-3" />
-						{formatDate(widget.reservation.startDate)} → {formatDate(widget.reservation.endDate)}
-					</div>
+		<div class="flex min-w-0 flex-1 flex-col gap-1.5">
+			<!-- Source label -->
+			{#if source === 'human' && humanName}
+				<p class="text-[11px] font-semibold text-foreground/70">{humanName} <span class="font-normal text-muted-foreground/60">· Concierge Mycelium</span></p>
+			{/if}
+
+			<!-- Tool call indicator -->
+			{#if toolCall}
+				<div class="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+					<span class="inline-block size-1.5 animate-pulse rounded-full bg-[var(--brand)]"></span>
+					{TOOL_LABELS[toolCall] ?? 'Analyse en cours…'}
 				</div>
 			{/if}
-		{/if}
 
-		<!-- Text content with styled markdown -->
-		{#if content}
-			<div class="copilot-prose text-sm text-foreground {isStreaming ? 'streaming-cursor' : ''}">
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html renderedContent}
-			</div>
-		{:else if isStreaming && !widget}
-			<span class="inline-block size-1.5 animate-pulse rounded-full bg-[var(--brand)]"></span>
-		{/if}
+			<!-- Widget -->
+			{#if widget}
+				{#if widget.widget === 'fleet_summary'}
+					<CopilotFleetSummaryWidget data={widget} />
+				{:else if widget.widget === 'fleet_utilization'}
+					<CopilotFleetUtilizationWidget data={widget} />
+				{:else if widget.widget === 'cost_breakdown'}
+					<CopilotCostBreakdownWidget data={widget} />
+				{:else if widget.widget === 'maintenance_overview'}
+					<CopilotMaintenanceWidget data={widget} />
+				{:else if widget.widget === 'compliance_status'}
+					<CopilotComplianceWidget data={widget} />
+				{:else if widget.widget === 'vehicle_proposal'}
+					<CopilotVehicleProposalWidget
+						data={widget}
+						onSelect={onVehicleSelect}
+						onAlt={onVehicleAlt}
+					/>
+				{:else if widget.widget === 'reservation_confirmed'}
+					<div class="flex flex-col gap-1.5 rounded-xl border border-emerald-200/50 bg-emerald-50/50 px-3 py-2.5 dark:border-emerald-900/30 dark:bg-emerald-950/20">
+						<div class="flex items-center gap-2">
+							<CheckCircleIcon class="size-4 text-emerald-500" />
+							<span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Réservation confirmée</span>
+						</div>
+						<p class="text-sm font-medium">{widget.reservation.vehicle}</p>
+						<div class="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+							<CalendarIcon class="size-3" />
+							{formatDate(widget.reservation.startDate)} → {formatDate(widget.reservation.endDate)}
+						</div>
+					</div>
+				{/if}
+			{/if}
+
+			<!-- Text content with styled markdown -->
+			{#if content}
+				<div class="copilot-prose text-sm text-foreground {isStreaming ? 'streaming-cursor' : ''}">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html renderedContent}
+				</div>
+			{:else if isStreaming && !widget}
+				<span class="inline-block size-1.5 animate-pulse rounded-full bg-[var(--brand)]"></span>
+			{/if}
+		</div>
 	</div>
 {/if}
 

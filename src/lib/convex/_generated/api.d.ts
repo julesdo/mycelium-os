@@ -47,6 +47,7 @@ import type * as comms from "../comms.js";
 import type * as compliance from "../compliance.js";
 import type * as concierge_clientPortal from "../concierge/clientPortal.js";
 import type * as concierge_health from "../concierge/health.js";
+import type * as concierge_humanAssist from "../concierge/humanAssist.js";
 import type * as concierge_mutations from "../concierge/mutations.js";
 import type * as concierge_priority from "../concierge/priority.js";
 import type * as concierge_queries from "../concierge/queries.js";
@@ -190,6 +191,7 @@ declare const fullApi: ApiFromModules<{
   compliance: typeof compliance;
   "concierge/clientPortal": typeof concierge_clientPortal;
   "concierge/health": typeof concierge_health;
+  "concierge/humanAssist": typeof concierge_humanAssist;
   "concierge/mutations": typeof concierge_mutations;
   "concierge/priority": typeof concierge_priority;
   "concierge/queries": typeof concierge_queries;

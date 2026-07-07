@@ -22,16 +22,180 @@
 
 <button
 	onclick={() => copilot.toggle(defaultAgent)}
-	class="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand)] transition-transform hover:scale-105 active:scale-95 print:hidden"
-	style="box-shadow: 0 4px 24px oklch(0.92 0.23 103 / 0.35), 0 1px 3px oklch(0 0 0 / 0.20), inset 0 1px 0 oklch(1 0 0 / 0.35)"
-	aria-label={copilot.isOpen ? 'Fermer le copilote IA' : 'Ouvrir le copilote IA (Cmd+K)'}
+	class="copilot-fab print:hidden"
+	class:copilot-fab--open={copilot.isOpen}
+	aria-label={copilot.isOpen ? 'Fermer Mycelium Assist' : 'Ouvrir Mycelium Assist (⌘K)'}
+	aria-expanded={copilot.isOpen}
 >
-	<!-- Glass reflection -->
+	<!-- Glass top reflection -->
 	<div class="pointer-events-none absolute inset-x-0 top-0 h-px rounded-full bg-gradient-to-r from-transparent via-white/80 to-transparent"></div>
 
+	<!-- Ripple on open -->
 	{#if copilot.isOpen}
-		<XIcon class="h-5 w-5 text-black" />
-	{:else}
-		<BotIcon class="h-6 w-6 text-black" />
+		<span class="fab-ripple"></span>
 	{/if}
+
+	<!-- Icon morph -->
+	<span class="fab-icon-wrap" class:fab-icon-wrap--open={copilot.isOpen}>
+		<BotIcon class="fab-icon fab-icon--bot" />
+		<XIcon class="fab-icon fab-icon--x" />
+	</span>
+
+	<!-- Keyboard hint tooltip (desktop only) -->
+	<span class="fab-tooltip" aria-hidden="true">
+		{#if copilot.isOpen}Fermer{:else}Assist ⌘K{/if}
+	</span>
 </button>
+
+<style>
+.copilot-fab {
+	position: fixed;
+	bottom: 24px;
+	right: 24px;
+	z-index: 49;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	height: 52px;
+	border-radius: 999px;
+
+	background: var(--brand, oklch(0.92 0.23 103));
+	box-shadow:
+		0 4px 20px oklch(0.92 0.23 103 / 0.38),
+		0 1px 4px oklch(0 0 0 / 0.18),
+		inset 0 1px 0 oklch(1 0 0 / 0.38);
+
+	transition:
+		transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+		box-shadow 0.2s ease,
+		background 0.2s ease;
+
+	-webkit-tap-highlight-color: transparent;
+	overflow: hidden;
+}
+
+.copilot-fab:hover {
+	transform: scale(1.08);
+	box-shadow:
+		0 6px 28px oklch(0.92 0.23 103 / 0.48),
+		0 2px 6px oklch(0 0 0 / 0.18),
+		inset 0 1px 0 oklch(1 0 0 / 0.4);
+}
+
+.copilot-fab:active {
+	transform: scale(0.93);
+	transition-duration: 0.1s;
+}
+
+.copilot-fab--open {
+	background: hsl(var(--foreground));
+	box-shadow:
+		0 4px 20px oklch(0 0 0 / 0.25),
+		0 1px 4px oklch(0 0 0 / 0.18),
+		inset 0 1px 0 oklch(1 0 0 / 0.1);
+}
+
+.copilot-fab--open:hover {
+	box-shadow:
+		0 6px 28px oklch(0 0 0 / 0.3),
+		0 2px 6px oklch(0 0 0 / 0.15),
+		inset 0 1px 0 oklch(1 0 0 / 0.08);
+}
+
+/* ── Ripple on open ──────────────────────────────────────────────────────── */
+.fab-ripple {
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background: oklch(1 0 0 / 0.15);
+	animation: fab-ripple 0.4s ease-out forwards;
+}
+
+@keyframes fab-ripple {
+	from { opacity: 1; transform: scale(0.6); }
+	to   { opacity: 0; transform: scale(1.4); }
+}
+
+/* ── Icon morph ─────────────────────────────────────────────────────────── */
+.fab-icon-wrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+}
+
+:global(.fab-icon) {
+	position: absolute;
+	width: 20px;
+	height: 20px;
+	color: black;
+	transition:
+		opacity 0.2s ease,
+		transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:global(.fab-icon--bot) {
+	opacity: 1;
+	transform: scale(1) rotate(0deg);
+}
+
+:global(.fab-icon--x) {
+	opacity: 0;
+	transform: scale(0.5) rotate(-45deg);
+}
+
+.fab-icon-wrap--open :global(.fab-icon--bot) {
+	opacity: 0;
+	transform: scale(0.5) rotate(45deg);
+}
+
+.fab-icon-wrap--open :global(.fab-icon--x) {
+	opacity: 1;
+	transform: scale(1) rotate(0deg);
+	color: hsl(var(--background));
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+.fab-tooltip {
+	position: absolute;
+	right: calc(100% + 10px);
+	top: 50%;
+	transform: translateY(-50%) translateX(4px);
+	white-space: nowrap;
+	padding: 5px 9px;
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 600;
+	background: hsl(var(--popover));
+	color: hsl(var(--popover-foreground));
+	border: 1px solid hsl(var(--border));
+	box-shadow: 0 2px 8px oklch(0 0 0 / 0.1);
+	pointer-events: none;
+	opacity: 0;
+	transition:
+		opacity 0.15s ease,
+		transform 0.15s ease;
+}
+
+@media (hover: hover) {
+	.copilot-fab:hover .fab-tooltip {
+		opacity: 1;
+		transform: translateY(-50%) translateX(0);
+	}
+}
+
+/* Mobile: no tooltip, bigger tap area */
+@media (max-width: 767px) {
+	.copilot-fab {
+		bottom: 20px;
+		right: 20px;
+		width: 56px;
+		height: 56px;
+	}
+	.fab-tooltip { display: none; }
+}
+</style>
