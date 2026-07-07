@@ -7,7 +7,6 @@ import IdCardIcon from '@lucide/svelte/icons/id-card';
 import ServerCogIcon from '@lucide/svelte/icons/server-cog';
 import SettingsIcon from '@lucide/svelte/icons/settings';
 import FileTextIcon from '@lucide/svelte/icons/file-text';
-import HeartHandshakeIcon from '@lucide/svelte/icons/heart-handshake';
 import Logo from '$lib/components/icons/logo.svelte';
 import { LEGAL_CONFIG } from '$lib/config/legal';
 import type { SidebarConfig } from '../types';
@@ -79,19 +78,7 @@ export function getAppSidebarConfig(pageState: PageState, userRole?: string): Si
 					pathname.startsWith(`/${lang}/app/settings`) ||
 					pathname.startsWith('/app/settings')
 			},
-			...(userRole === 'admin' || userRole === 'ORG_ADMIN'
-				? [
-						{
-							translationKey: 'app.sidebar.fleet_care',
-							shortLabel: 'Fleet Care',
-							url: localizedHref('/app/fleet-care'),
-							icon: HeartHandshakeIcon,
-							isActive:
-								pathname.startsWith(`/${lang}/app/fleet-care`) ||
-								pathname.startsWith('/app/fleet-care')
-						}
-					]
-				: [])
+			// Fleet Care est intégré dans la page Accueil via un segment switcher — pas d'entrée séparée
 		],
 		footerLinks:
 			userRole === 'admin' || userRole === 'ORG_ADMIN' || userRole === 'ORG_MANAGER'
