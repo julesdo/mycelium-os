@@ -15,8 +15,9 @@ function daysUntil(isoDate: string, nowMs: number): number {
 }
 
 const THRESHOLDS = [
-	{ days: 7, horizon: '7_DAYS' as const },
-	{ days: 30, horizon: '30_DAYS' as const }
+	{ days: 60, horizon: '60_DAYS' as const },
+	{ days: 30, horizon: '30_DAYS' as const },
+	{ days: 7, horizon: '7_DAYS' as const }
 ];
 
 // ─── Internal queries ─────────────────────────────────────────────────────────
@@ -42,13 +43,13 @@ type AlertType =
 	| 'REGISTRATION_EXPIRING'
 	| 'REGISTRATION_EXPIRED';
 
-type Horizon = '30_DAYS' | '7_DAYS' | 'EXPIRED';
+type Horizon = '60_DAYS' | '30_DAYS' | '7_DAYS' | 'EXPIRED';
 
 export const getActiveAlert = internalQuery({
 	args: {
 		entityId: v.string(),
 		alertType: alertTypeValidator,
-		horizon: v.union(v.literal('30_DAYS'), v.literal('7_DAYS'), v.literal('EXPIRED'))
+		horizon: v.union(v.literal('60_DAYS'), v.literal('30_DAYS'), v.literal('7_DAYS'), v.literal('EXPIRED'))
 	},
 	handler: async (ctx, { entityId, alertType, horizon }) => {
 		return ctx.db
@@ -101,19 +102,22 @@ export const createAlert = internalMutation({
 		entityType: v.union(v.literal('VEHICLE'), v.literal('DRIVER')),
 		entityId: v.string(),
 		alertType: alertTypeValidator,
-		horizon: v.union(v.literal('30_DAYS'), v.literal('7_DAYS'), v.literal('EXPIRED')),
+		horizon: v.union(v.literal('60_DAYS'), v.literal('30_DAYS'), v.literal('7_DAYS'), v.literal('EXPIRED')),
 		expiryDate: v.string(),
 		entityLabel: v.string()
 	},
 	handler: async (ctx, args) => {
 		const alertId = await ctx.db.insert('complianceAlerts', { ...args, createdAt: Date.now() });
 
+		const isUrgent = args.horizon === '7_DAYS' || args.horizon === 'EXPIRED';
+		const horizonLabel = { '60_DAYS': 'J-60', '30_DAYS': 'J-30', '7_DAYS': 'J-7', 'EXPIRED': 'Expiré' }[args.horizon];
+
 		await ctx.scheduler.runAfter(0, internal.concierge.tasks.upsertTaskFromSource, {
 			organizationId: args.organizationId,
 			sourceType: 'COMPLIANCE_ALERT',
-			sourceId: alertId,
-			title: `${args.alertType.replace(/_/g, ' ')} — ${args.entityLabel}`,
-			description: `Échéance : ${args.expiryDate}`,
+			sourceId: `${args.entityId}:${args.alertType}`,
+			title: `${args.alertType.replace(/_/g, ' ')} — ${args.entityLabel} (${horizonLabel})`,
+			description: `Échéance : ${args.expiryDate}. ${isUrgent ? 'Action requise rapidement.' : 'À anticiper.'}`,
 			dueDate: new Date(args.expiryDate).getTime(),
 			isRegulatory: true
 		});
@@ -248,6 +252,9 @@ async function maybeAlert(
 	} else if (daysLeft <= 30) {
 		alertType = `${baseType}_EXPIRING` as AlertType;
 		horizon = '30_DAYS';
+	} else if (daysLeft <= 60) {
+		alertType = `${baseType}_EXPIRING` as AlertType;
+		horizon = '60_DAYS';
 	} else {
 		return;
 	}
@@ -314,6 +321,7 @@ export const sendWeeklyComplianceDigest = internalAction({
 			const expired = alerts.filter((a) => a.horizon === 'EXPIRED');
 			const critical = alerts.filter((a) => a.horizon === '7_DAYS');
 			const warning = alerts.filter((a) => a.horizon === '30_DAYS');
+			const notice = alerts.filter((a) => a.horizon === '60_DAYS');
 
 			const adminUserIds = await ctx.runQuery(internal.compliance.getAdminUserIdsForOrg, {
 				organizationId: org._id
@@ -335,6 +343,7 @@ export const sendWeeklyComplianceDigest = internalAction({
 				expired,
 				critical,
 				warning,
+				notice,
 				complianceUrl: `${siteUrl}/admin/compliance`
 			});
 
@@ -358,9 +367,10 @@ function buildDigestHtml(params: {
 	expired: AlertItem[];
 	critical: AlertItem[];
 	warning: AlertItem[];
+	notice: AlertItem[];
 	complianceUrl: string;
 }): string {
-	const { orgName, expired, critical, warning, complianceUrl } = params;
+	const { orgName, expired, critical, warning, notice, complianceUrl } = params;
 
 	const section = (title: string, color: string, items: AlertItem[]) => {
 		if (!items.length) return '';
@@ -385,6 +395,7 @@ function buildDigestHtml(params: {
     ${section('🔴 Éléments expirés', '#dc2626', expired)}
     ${section('🟠 Expiration dans 7 jours', '#d97706', critical)}
     ${section('🟡 Expiration dans 30 jours', '#ca8a04', warning)}
+    ${section('🔵 Expiration dans 60 jours', '#2563eb', notice)}
     <div style="margin-top:24px;padding-top:20px;border-top:1px solid #e5e7eb;">
       <a href="${complianceUrl}" style="display:inline-block;background:#f5e642;color:#0f0f0f;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">
         Gérer les alertes →
@@ -405,7 +416,7 @@ export const listActiveAlerts = authedQuery({
 	args: {
 		entityType: v.optional(v.union(v.literal('VEHICLE'), v.literal('DRIVER'))),
 		alertType: v.optional(v.string()),
-		horizon: v.optional(v.union(v.literal('30_DAYS'), v.literal('7_DAYS'), v.literal('EXPIRED')))
+		horizon: v.optional(v.union(v.literal('60_DAYS'), v.literal('30_DAYS'), v.literal('7_DAYS'), v.literal('EXPIRED')))
 	},
 	handler: async (ctx, { entityType, alertType, horizon }) => {
 		const { organizationId } = await getUserOrg(ctx);
@@ -420,8 +431,8 @@ export const listActiveAlerts = authedQuery({
 		if (alertType) alerts = alerts.filter((a) => a.alertType === alertType);
 		if (horizon) alerts = alerts.filter((a) => a.horizon === horizon);
 
-		// Sort: EXPIRED first, then 7_DAYS, then 30_DAYS
-		const order = { EXPIRED: 0, '7_DAYS': 1, '30_DAYS': 2 };
+		// Sort: EXPIRED first, then 7_DAYS, then 30_DAYS, then 60_DAYS
+		const order = { EXPIRED: 0, '7_DAYS': 1, '30_DAYS': 2, '60_DAYS': 3 };
 		return alerts.sort((a, b) => (order[a.horizon] ?? 9) - (order[b.horizon] ?? 9));
 	}
 });
@@ -440,6 +451,7 @@ export const getComplianceStats = authedQuery({
 			expired: alerts.filter((a) => a.horizon === 'EXPIRED').length,
 			critical: alerts.filter((a) => a.horizon === '7_DAYS').length,
 			warning: alerts.filter((a) => a.horizon === '30_DAYS').length,
+			notice: alerts.filter((a) => a.horizon === '60_DAYS').length,
 			total: alerts.length
 		};
 	}

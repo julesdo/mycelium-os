@@ -578,6 +578,14 @@ export default defineSchema({
 		),
 		documentStorageId: v.optional(v.string()),
 		notes: v.optional(v.string()),
+		disputeStatus: v.optional(
+			v.union(
+				v.literal('NONE'),
+				v.literal('CONTESTED'),
+				v.literal('WON'),
+				v.literal('LOST')
+			)
+		),
 		createdBy: v.string(),
 		createdAt: v.number(),
 		updatedAt: v.number()
@@ -1084,7 +1092,7 @@ export default defineSchema({
 			v.literal('REGISTRATION_EXPIRING'),
 			v.literal('REGISTRATION_EXPIRED')
 		),
-		horizon: v.union(v.literal('30_DAYS'), v.literal('7_DAYS'), v.literal('EXPIRED')),
+		horizon: v.union(v.literal('60_DAYS'), v.literal('30_DAYS'), v.literal('7_DAYS'), v.literal('EXPIRED')),
 		expiryDate: v.string(),
 		entityLabel: v.string(),
 		resolvedAt: v.optional(v.number()),

@@ -17,6 +17,7 @@ import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { authComponent } from '../auth';
 import { getBikRate, calculateBik, fuelTypeFromEnergy, currentTaxYear } from '../bikRates';
+import { generateReminderText } from '../reminderTemplates';
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
@@ -479,6 +480,58 @@ export const toolGetFullComplianceDashboard = internalQuery({
 	},
 });
 
+// ─── Tool: generateReminderDraft ──────────────────────────────────────────────
+// Génère un brouillon de message de rappel — jamais envoyé automatiquement
+
+export const toolGenerateReminderDraft = internalQuery({
+	args: {
+		organizationId: v.id('organizations'),
+		alertId: v.string()
+	},
+	handler: async (ctx, { organizationId, alertId }) => {
+		const alert = await ctx.db.get(alertId as Id<'complianceAlerts'>);
+		if (!alert || alert.organizationId !== organizationId) {
+			return { error: 'Alerte introuvable' };
+		}
+		const draft = generateReminderText(alert.alertType, alert.entityLabel, alert.expiryDate);
+		return {
+			draft,
+			alertType: alert.alertType,
+			entityLabel: alert.entityLabel,
+			expiryDate: alert.expiryDate,
+			horizon: alert.horizon,
+			warning: 'Ce brouillon doit être relu et validé par le concierge avant tout envoi au client.'
+		};
+	}
+});
+
+// ─── Tool: listDocumentsToRenew ───────────────────────────────────────────────
+
+export const toolListDocumentsToRenew = internalQuery({
+	args: {
+		organizationId: v.id('organizations'),
+		vehicleId: v.string()
+	},
+	handler: async (ctx, { organizationId, vehicleId }) => {
+		const alerts = await ctx.db
+			.query('complianceAlerts')
+			.withIndex('by_entity', (q) => q.eq('entityType', 'VEHICLE').eq('entityId', vehicleId))
+			.filter((q) => q.eq(q.field('resolvedAt'), undefined))
+			.collect();
+
+		const orgAlerts = alerts.filter((a) => a.organizationId === organizationId);
+
+		return orgAlerts.map((a) => ({
+			alertId: a._id,
+			alertType: a.alertType,
+			entityLabel: a.entityLabel,
+			expiryDate: a.expiryDate,
+			horizon: a.horizon,
+			createdAt: a.createdAt
+		}));
+	}
+});
+
 // ─── Tool definitions for Claude ──────────────────────────────────────────────
 
 const complianceTools = [
@@ -540,6 +593,28 @@ const complianceTools = [
 			type: 'object',
 			properties: {},
 			required: [],
+		},
+	},
+	{
+		name: 'generateReminderDraft',
+		description: "Génère un brouillon de message de rappel client pour une alerte compliance donnée. Ne l'envoie JAMAIS — retourne uniquement le texte pour validation humaine.",
+		input_schema: {
+			type: 'object',
+			properties: {
+				alertId: { type: 'string', description: 'ID de l\'alerte compliance (complianceAlerts._id)' }
+			},
+			required: ['alertId'],
+		},
+	},
+	{
+		name: 'listDocumentsToRenew',
+		description: "Liste tous les documents à renouveler pour un véhicule donné (assurance, CT, immatriculation), toutes échéances confondues.",
+		input_schema: {
+			type: 'object',
+			properties: {
+				vehicleId: { type: 'string', description: 'ID du véhicule (vehicles._id)' }
+			},
+			required: ['vehicleId'],
 		},
 	},
 ];
@@ -824,6 +899,18 @@ export const chat = httpAction(async (ctx, req) => {
 									case 'getMaintenanceComplianceStatus':
 										result = await ctx.runQuery(iCo.toolGetMaintenanceComplianceStatus, { organizationId });
 										push({ type: 'widget', widget: 'maintenance_compliance', ...result as object });
+										break;
+									case 'generateReminderDraft':
+										result = await ctx.runQuery(iCo.toolGenerateReminderDraft, {
+											organizationId,
+											alertId: input.alertId as string
+										});
+										break;
+									case 'listDocumentsToRenew':
+										result = await ctx.runQuery(iCo.toolListDocumentsToRenew, {
+											organizationId,
+											vehicleId: input.vehicleId as string
+										});
 										break;
 									default:
 										result = { error: `Outil inconnu: ${tool.name}` };

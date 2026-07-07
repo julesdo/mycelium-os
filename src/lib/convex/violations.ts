@@ -4,6 +4,32 @@ import { authedQuery, authedMutation } from './functions';
 import { getUserOrg, requireOrgAdmin } from './lib/auth';
 import { components, internal } from './_generated/api';
 
+export const updateDisputeStatus = authedMutation({
+	args: {
+		violationId: v.id('trafficViolations'),
+		disputeStatus: v.union(
+			v.literal('NONE'),
+			v.literal('CONTESTED'),
+			v.literal('WON'),
+			v.literal('LOST')
+		)
+	},
+	handler: async (ctx, args) => {
+		const { user, organizationId } = await getUserOrg(ctx);
+		await requireOrgAdmin(ctx, organizationId, user._id);
+
+		const violation = await ctx.db.get(args.violationId);
+		if (!violation || violation.organizationId !== organizationId) {
+			throw new ConvexError('Contravention introuvable');
+		}
+
+		await ctx.db.patch(args.violationId, {
+			disputeStatus: args.disputeStatus,
+			updatedAt: Date.now()
+		});
+	}
+});
+
 export const generateViolationUploadUrl = authedMutation({
 	args: {},
 	handler: async (ctx) => {

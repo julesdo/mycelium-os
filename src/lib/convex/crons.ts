@@ -112,4 +112,12 @@ crons.daily(
 	{}
 );
 
+// Concierge daily briefing — 7h UTC, avant l'arrivée de l'équipe
+crons.daily(
+	'conciergeDailyBriefing',
+	{ hourUTC: 7, minuteUTC: 0 },
+	internal.agents.conciergeDashboard.runDailyConciergeBriefing,
+	{}
+);
+
 export default crons;
