@@ -26,6 +26,20 @@ Chaque prompt est autonome, numéroté par priorité MVP, et conçu pour minimis
 >
 > Ces prompts couvrent le **Chapitre 3 — Vie quotidienne** de la roadmap conciergerie (point d'entrée du service, M1-M3). Ils **passent devant** le reste du backlog V2 hors features déjà livrées.
 
+## 🎯 Axe stratégique commercial — Démos, Sales & Réorganisation UX
+
+> **Vision commerciale complète (juillet 2026).** Trois chantiers liés : simplification UX admin/concierge, comptes démo commerciaux avec simulation temps réel, et espace Sales mobile-first avec gamification + Agent Commercial IA. Spec complète : **[/docs/specs/vision-commerciale-complete.md](../specs/vision-commerciale-complete.md)**.
+>
+> | #       | Prompt                                                                        | Rôle                                                                        | Sprint        |
+> | ------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------- |
+> | **P31** | Sidebar admin simplifiée (10 → 6 sections avec onglets)                       | UX client — quick win, zéro régression                                      | Commercial S1 |
+> | **P32** | Inbox concierge unifiée (tickets + Human Assist + SLA)                        | Zendesk interne — cœur du nouveau concierge                                 | Commercial S1 |
+> | **P33** | Fleet Observer + Client 360 (5 onglets `/concierge/[orgId]`)                  | Concierge voit ce que le client voit — différenciateur clé                  | Commercial S2 |
+> | **P34** | Comptes démo — fondation (schema + wizard + générateur 7 templates)            | Arme de conversion #1 du commercial                                         | Commercial S2 |
+> | **P35** | Démo simulation & conversion (engine temps réel + modale bloquante + dashboard) | Flotte vivante + modale d'urgence = conversion                              | Commercial S3 |
+> | **P36** | Espace `/sales` fondations (rôle + layout mobile + pipeline + chat concierge) | Outil commercial dédié, mobile-first                                        | Commercial S2 |
+> | **P37** | Sales gamification + Agent Commercial IA (Agent 7) + signaux upsell           | Clôture la boucle commerciale — comportements vertueux + IA prédictive      | Commercial S3 |
+
 ## 🎯 Axe stratégique précédent — Distribution DNVB via intégrations comptables
 
 > Mycelium est une DNVB B2B : **le produit est le canal de distribution**. Les intégrations comptables ne sont pas une feature, c'est un **canal d'acquisition** — on se place là où le DAF passe déjà 2h/semaine. Doctrine complète, carte des canaux, plan 90 jours et template mail partnerships : **[/docs/specs/distribution-integrations-strategy.md](../specs/distribution-integrations-strategy.md)**.
@@ -85,6 +99,18 @@ Chaque prompt est autonome, numéroté par priorité MVP, et conçu pour minimis
 | P28     | Compliance Officer — séquence J-60/J-30/J-7 + rappels   | Concierge S2     | V3      | 3j     | —                      |
 | P29     | Portail client Fleet Care                               | Concierge S3     | V3      | 5j     | —                      |
 | P30     | Agent Concierge Dashboard — briefing matinal            | Concierge S3     | V3      | 2j     | —                      |
+
+### V4 — Commercial OS (démos, sales, UX)
+
+| #       | Prompt                                                               | Sprint        | Version | Effort  | Bloque       |
+| ------- | -------------------------------------------------------------------- | ------------- | ------- | ------- | ------------ |
+| **P31** | **Sidebar admin simplifiée (10 → 6 sections avec onglets)**          | Commercial S1 | V4      | 3j      | P33          |
+| **P32** | **Inbox concierge unifiée (tickets + SLA + thread 3 colonnes)**      | Commercial S1 | V4      | 4j      | P33          |
+| P33     | Fleet Observer + Client 360 (5 onglets `/concierge/[orgId]`)         | Commercial S2 | V4      | 4–5j    | —            |
+| **P34** | **Comptes démo — fondation (schema + wizard + générateur 7 templates)** | Commercial S2 | V4   | 4j      | P35          |
+| P35     | Démo simulation & conversion (engine + modale bloquante + dashboard) | Commercial S3 | V4      | 4j      | —            |
+| **P36** | **Espace `/sales` fondations (rôle + layout mobile + pipeline)**     | Commercial S2 | V4      | 4j      | P37          |
+| P37     | Sales gamification + Agent Commercial IA (Agent 7) + signaux upsell  | Commercial S3 | V4      | 4–5j    | —            |
 
 ---
 
