@@ -1,6 +1,7 @@
 <script lang="ts">
 	import NavUser from '../nav-user.svelte';
 	import OrganizationSwitcher from '../layout/OrganizationSwitcher.svelte';
+	import PlatformOrgSwitcher from './platform-org-switcher-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
@@ -55,8 +56,12 @@
 <Sidebar.Root collapsible="offcanvas" {...restProps}>
 	<Sidebar.Header>
 		{#if showOrgSwitcher}
-			<OrganizationSwitcher />
-			<Sidebar.Separator />
+			{#if user?.role === 'admin'}
+				<PlatformOrgSwitcher />
+			{:else}
+				<OrganizationSwitcher />
+				<Sidebar.Separator />
+			{/if}
 		{/if}
 		<Sidebar.Menu>
 			<Sidebar.MenuItem>

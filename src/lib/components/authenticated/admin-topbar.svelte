@@ -12,13 +12,13 @@
 	import type { SidebarConfig, User } from './types';
 	import CommandTrigger from '$lib/components/global-search/command-trigger.svelte';
 	import NotificationCenter from '$lib/components/notifications/NotificationCenter.svelte';
+	import PlatformOrgSwitcher from './platform-org-switcher.svelte';
 	import LightSwitch from '$lib/components/ui/light-switch/light-switch.svelte';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import AppWindowIcon from '@lucide/svelte/icons/app-window';
 	import MenuIcon from '@lucide/svelte/icons/menu';
 	import XIcon from '@lucide/svelte/icons/x';
-	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import Building2Icon from '@lucide/svelte/icons/building-2';
@@ -80,9 +80,6 @@
 			.slice(0, 2) || '?'
 	);
 
-	// Groups for desktop topbar — fall back to flat navItems if not defined
-	const topbarGroups = $derived(config.topbarGroups ?? []);
-	// Flat items for mobile menu (unchanged)
 	const navItems = $derived(config.navItems.filter((item) => !item.divider));
 
 	async function signOut() {
@@ -115,87 +112,35 @@
 		<!-- Divider -->
 		<div class="hidden h-5 w-px bg-border/60 md:block"></div>
 
-		<!-- Desktop nav — grouped -->
-		<nav class="hidden flex-1 items-center gap-0.5 md:flex">
-			{#each topbarGroups as group (group.label)}
-				{@const groupActive = group.items.some((i) => i.isActive)}
-
-				{#if group.items.length === 1}
-					<!-- Standalone link pill -->
-					{@const item = group.items[0]}
+		<!-- Desktop nav — underline tabs aligned with topbar separator -->
+		<nav class="hidden h-full flex-1 items-stretch md:flex">
+			{#each navItems as item (item.translationKey)}
+				{#if item.url}
 					<a
-						href={resolve(item.url ?? '#')}
+						href={resolve(item.url)}
 						class={cn(
-							'flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-150',
-							groupActive
-								? 'topbar-nav-pill-active'
-								: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:ring-1 hover:ring-black/[0.04] hover:ring-inset dark:hover:bg-white/6 dark:hover:ring-white/[0.06]'
+							'flex items-center gap-2 border-b-2 px-3.5 text-sm font-medium transition-colors duration-150',
+							item.isActive
+								? 'border-[var(--brand)] text-foreground'
+								: 'border-transparent text-muted-foreground hover:text-foreground'
 						)}
 					>
-						{#if group.icon}
-							<group.icon class="size-3.5 shrink-0" />
+						{#if item.icon}
+							<item.icon class="size-3.5 shrink-0" />
 						{/if}
-						{group.label}
+						<T keyName={item.translationKey} />
 					</a>
-				{:else}
-					<!-- Dropdown group -->
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger>
-							{#snippet child({ props })}
-								<button
-									type="button"
-									{...props}
-									class={cn(
-										'flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-150 focus:outline-none',
-										groupActive
-											? 'topbar-nav-pill-active'
-											: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:ring-1 hover:ring-black/[0.04] hover:ring-inset dark:hover:bg-white/6 dark:hover:ring-white/[0.06]'
-									)}
-								>
-									{#if group.icon}
-										<group.icon class="size-3.5 shrink-0" />
-									{/if}
-									{group.label}
-									<ChevronDownIcon
-										class="size-3 shrink-0 opacity-50 transition-transform [[data-state=open]_&]:rotate-180"
-									/>
-								</button>
-							{/snippet}
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content align="start" class="w-52" sideOffset={6}>
-							{#each group.items as item (item.translationKey)}
-								{#if item.url}
-									<a href={resolve(item.url)}>
-										<DropdownMenu.Item
-											class={cn(
-												'cursor-pointer gap-2.5 py-2',
-												item.isActive && 'bg-muted font-medium text-foreground'
-											)}
-										>
-											{#if item.icon}
-												<item.icon
-													class={cn(
-														'size-4 shrink-0',
-														item.isActive ? 'text-foreground' : 'text-muted-foreground'
-													)}
-												/>
-											{/if}
-											<T keyName={item.translationKey} />
-											{#if item.isActive}
-												<span class="ml-auto size-1.5 rounded-full bg-primary"></span>
-											{/if}
-										</DropdownMenu.Item>
-									</a>
-								{/if}
-							{/each}
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
 				{/if}
 			{/each}
 		</nav>
 
 		<!-- Right actions -->
-		<div class="ml-auto flex shrink-0 items-center gap-0.5">
+		<div class="ml-auto flex shrink-0 items-center gap-2">
+			{#if user?.role === 'admin'}
+				<PlatformOrgSwitcher />
+				<div class="hidden h-5 w-px bg-border/60 md:block"></div>
+			{/if}
+
 			<div class="hidden items-center gap-0.5 md:flex">
 				<CommandTrigger />
 				<NotificationCenter />

@@ -6,7 +6,6 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
-	import SettingsTabNav from '$lib/components/admin/SettingsTabNav.svelte';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import XIcon from '@lucide/svelte/icons/x';
 	import CreditCardIcon from '@lucide/svelte/icons/credit-card';
@@ -434,8 +433,6 @@
 		}
 	];
 </script>
-
-<SettingsTabNav />
 
 <div class="flex flex-col gap-6">
 	<div>

@@ -20,6 +20,8 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import BuildingIcon from '@lucide/svelte/icons/building-2';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import { previewAsEmployee } from '$lib/stores/preview-as-employee.svelte';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -223,6 +225,18 @@
 				{:else if myRole.data}
 					<Badge variant="secondary">Concierge</Badge>
 				{/if}
+
+				<Button
+					variant="ghost"
+					size="sm"
+					onclick={() => {
+						previewAsEmployee.enter();
+						goto(resolve(localizedHref('/app')));
+					}}
+				>
+					<EyeIcon class="size-3.5" />
+					Aperçu salarié
+				</Button>
 
 				<Button
 					variant="ghost"

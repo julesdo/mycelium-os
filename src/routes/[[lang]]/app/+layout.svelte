@@ -15,6 +15,8 @@
 	import WelcomeModal from '$lib/components/onboarding/WelcomeModal.svelte';
 	import CopilotFab from '$lib/components/copilot/copilot-fab.svelte';
 	import CopilotPanel from '$lib/components/copilot/copilot-panel.svelte';
+	import { previewAsEmployee } from '$lib/stores/preview-as-employee.svelte';
+	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
 	interface Props {
 		children?: Snippet;
@@ -25,9 +27,9 @@
 
 	const viewer = $derived(data.viewer as typeof data.viewer & { role?: string });
 
-	// Guard: staff Mycelium (role='admin') → portail concierge, jamais onboarding
+	// Guard: staff Mycelium (role='admin') → portail concierge, sauf mode preview explicite
 	$effect(() => {
-		if (viewer?.role === 'admin') {
+		if (viewer?.role === 'admin' && !previewAsEmployee.active) {
 			goto(resolve(localizedHref('/concierge')));
 		}
 	});
@@ -35,11 +37,18 @@
 	// Guard: redirect to onboarding if user has no organization
 	const myOrgQuery = useQuery(api.organizations.getMyOrg, {});
 	$effect(() => {
-		if (viewer?.role === 'admin') return; // déjà géré ci-dessus
+		if (viewer?.role === 'admin') return; // géré ci-dessus
 		if (myOrgQuery.data === null) {
 			goto(resolve(localizedHref('/onboarding/organization')));
 		}
 	});
+
+	const isPlatformAdmin = $derived(viewer?.role === 'admin');
+
+	function exitPreview() {
+		previewAsEmployee.exit();
+		goto(resolve(localizedHref('/concierge')));
+	}
 
 	// Pages that manage their own scroll container (fullscreen, no outer padding/scroll)
 	const fullControl = $derived(
@@ -127,6 +136,20 @@
 	mode="app"
 	onDone={handleAppWelcomeDone}
 />
+
+{#if isPlatformAdmin && previewAsEmployee.active}
+	<div class="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 lg:bottom-6">
+		<button
+			type="button"
+			onclick={exitPreview}
+			class="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-600 shadow-lg backdrop-blur-md transition-all hover:bg-amber-500/20 dark:text-amber-400"
+			style="box-shadow: 0 4px 20px oklch(0.75 0.18 85 / 0.20), 0 1px 3px oklch(0 0 0 / 0.12)"
+		>
+			<EyeOffIcon class="size-4 shrink-0" />
+			Quitter l'aperçu salarié
+		</button>
+	</div>
+{/if}
 
 <CopilotFab />
 <CopilotPanel />

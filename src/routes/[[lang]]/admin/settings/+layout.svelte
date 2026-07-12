@@ -40,16 +40,16 @@
 			<p class="text-sm text-muted-foreground">Organisation</p>
 		</div>
 
-		<!-- Tab nav — DA pill style -->
-		<div class="flex items-center gap-1 border-b border-border/60 pb-0">
+		<!-- Tab nav -->
+		<div class="flex items-center gap-1 border-b border-border/60">
 			{#each tabs as tab (tab.id)}
 				<a
 					href={localHref(tab.href)}
 					class={cn(
-						'relative -mb-px px-3 py-2 text-sm transition-colors',
+						'-mb-px border-b-2 px-3 py-2 text-sm transition-colors',
 						isActive(tab)
-							? 'font-semibold text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-foreground'
-							: 'text-muted-foreground hover:text-foreground'
+							? 'border-foreground font-semibold text-foreground'
+							: 'border-transparent text-muted-foreground hover:text-foreground'
 					)}
 				>
 					{tab.label}

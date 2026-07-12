@@ -153,7 +153,7 @@
 				name: viewer.name ?? 'Admin',
 				email: viewer.email ?? '',
 				image: viewer.image ?? undefined,
-				role: viewer.role ?? 'admin'
+				role: viewer.role ?? 'user'
 			}
 		: undefined}
 	routePrefix="admin"

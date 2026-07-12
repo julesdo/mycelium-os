@@ -3,7 +3,6 @@
 	import * as Field from '$lib/components/ui/field/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import SettingsTabNav from '$lib/components/admin/SettingsTabNav.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { useConvexClient, useQuery } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api.js';
@@ -148,7 +147,6 @@
 	}
 </script>
 
-<SettingsTabNav />
 
 <div class="flex flex-col gap-6">
 	{#if isLoading}

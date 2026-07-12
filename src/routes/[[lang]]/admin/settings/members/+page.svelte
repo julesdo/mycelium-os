@@ -3,7 +3,6 @@
 	import { useConvexClient, useQuery } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api.js';
 	import { toast } from 'svelte-sonner';
-	import SettingsTabNav from '$lib/components/admin/SettingsTabNav.svelte';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
@@ -303,7 +302,6 @@
 	}
 </script>
 
-<SettingsTabNav />
 
 <div class="flex flex-col gap-6">
 	<!-- Header -->

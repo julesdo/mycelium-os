@@ -11,6 +11,7 @@
 	import type { SidebarConfig, User } from './types';
 	import NotificationCenter from '$lib/components/notifications/NotificationCenter.svelte';
 	import LightSwitch from '$lib/components/ui/light-switch/light-switch.svelte';
+	import PlatformOrgSwitcher from './platform-org-switcher.svelte';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import { cn } from '$lib/utils';
 	import Logo from '../icons/logo.svelte';
@@ -91,7 +92,12 @@
 		</nav>
 
 		<!-- Right actions — always visible -->
-		<div class="ml-auto flex shrink-0 items-center gap-0.5">
+		<div class="ml-auto flex shrink-0 items-center gap-2">
+			{#if user?.role === 'admin'}
+				<PlatformOrgSwitcher />
+				<div class="hidden h-5 w-px bg-border/60 md:block"></div>
+			{/if}
+
 			<NotificationCenter />
 
 			<div class="mx-1.5 hidden h-5 w-px bg-border/60 md:block"></div>
