@@ -15,6 +15,7 @@
 	import CarIcon from '@lucide/svelte/icons/car';
 	import UploadIcon from '@lucide/svelte/icons/upload';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+	import FleetTabNav from '$lib/components/admin/FleetTabNav.svelte';
 
 	type Status = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED';
 	type Energy = 'THERMAL' | 'HYBRID' | 'ELECTRIC';
@@ -121,11 +122,13 @@
 	const isLoading = $derived(vehiclesQuery.isLoading);
 </script>
 
+<FleetTabNav />
+
 <!--
 	fullControl mode: ce composant gère lui-même sa hauteur.
 	h-full remplit exactement le conteneur (100svh - topbar 62px).
 -->
-<div class="flex h-full flex-col px-4 pt-5 md:pt-7 lg:px-6 xl:px-8 2xl:px-16">
+<div class="flex min-h-0 flex-1 flex-col px-4 pt-5 md:pt-7 lg:px-6 xl:px-8 2xl:px-16">
 
 	<!-- Header (toujours visible) -->
 	<div class="mb-6 flex shrink-0 items-start justify-between">

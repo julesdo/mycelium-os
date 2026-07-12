@@ -231,6 +231,29 @@ export default defineSchema({
 		devPlan: v.optional(v.boolean()),
 		// Dev-only simulated tier — overrides 'dev' when no PADDLE_API_KEY, for testing feature gating
 		simulatedTier: v.optional(v.string()),
+		// Demo accounts — orgs créées par le commercial pour les prospects
+		isDemo: v.optional(v.boolean()),
+		demoConfig: v.optional(v.object({
+			templateId: v.union(
+				v.literal('services'), v.literal('btp'), v.literal('distribution'),
+				v.literal('sante'), v.literal('commerce'), v.literal('vtc'), v.literal('public')
+			),
+			createdBy: v.string(),
+			commercialName: v.string(),
+			commercialPhone: v.string(),
+			commercialCalendlyUrl: v.optional(v.string()),
+			prospectName: v.string(),
+			prospectEmail: v.optional(v.string()),
+			prospectCity: v.optional(v.string()),
+			notes: v.optional(v.string()),
+			expiresAt: v.number(),
+			extendedCount: v.number(),
+			isExpired: v.boolean(),
+			convertedAt: v.optional(v.number()),
+			conversionSource: v.optional(v.union(
+				v.literal('call'), v.literal('calendly'), v.literal('self_serve')
+			))
+		})),
 		createdAt: v.number()
 	})
 		.index('by_name', ['name'])
@@ -1145,13 +1168,45 @@ export default defineSchema({
 		.index('by_org_and_status', ['organizationId', 'status'])
 		.index('by_source', ['sourceType', 'sourceId']),
 
+	// Demo vehicle positions — positions simulées pour les org démo (mises à jour par le cron P35)
+	demoVehiclePositions: defineTable({
+		vehicleId: v.id('vehicles'),
+		organizationId: v.id('organizations'),
+		lat: v.number(),
+		lng: v.number(),
+		speed: v.number(),
+		heading: v.number(),
+		status: v.union(
+			v.literal('moving'),
+			v.literal('parked'),
+			v.literal('charging'),
+			v.literal('idle')
+		),
+		fuelOrSocPercent: v.number(),
+		odometerKm: v.number(),
+		updatedAt: v.number()
+	})
+		.index('by_vehicle', ['vehicleId'])
+		.index('by_org', ['organizationId']),
+
+	// Demo access tokens — liens magiques pour accès prospect sans mot de passe
+	demoAccessTokens: defineTable({
+		token: v.string(),
+		organizationId: v.id('organizations'),
+		createdAt: v.number(),
+		lastUsedAt: v.optional(v.number()),
+		usedCount: v.number()
+	})
+		.index('by_token', ['token'])
+		.index('by_org', ['organizationId']),
+
 	// Mycelium internal staff — séparé des ORG_ADMIN clients.
 	// role Better Auth 'admin' = premier filtre (JWT, sans DB).
 	// staffRole ici = deuxième filtre (niveau d'accès interne).
 	// Bootstrap : si table vide + role='admin' → super_admin implicite (fondateur).
 	myceliumStaff: defineTable({
 		userId: v.string(), // Better Auth user ID
-		staffRole: v.union(v.literal('super_admin'), v.literal('concierge')),
+		staffRole: v.union(v.literal('super_admin'), v.literal('concierge'), v.literal('sales')),
 		email: v.string(), // dénormalisé pour affichage
 		name: v.string(), // dénormalisé pour affichage
 		addedBy: v.string(), // userId de qui a ajouté
@@ -1182,7 +1237,7 @@ export default defineSchema({
 	// La personne invitée clique le lien /staff-join/[token] pour rejoindre.
 	staffInvitations: defineTable({
 		token: v.string(),                      // 32 bytes → 64 hex chars (plain, URL-safe)
-		staffRole: v.union(v.literal('super_admin'), v.literal('concierge')),
+		staffRole: v.union(v.literal('super_admin'), v.literal('concierge'), v.literal('sales')),
 		invitedBy: v.string(),                  // userId du super_admin
 		invitedByName: v.string(),              // dénormalisé pour affichage
 		invitedEmail: v.optional(v.string()),   // si renseigné, restreint à cet email
@@ -1239,6 +1294,208 @@ export default defineSchema({
 	})
 		.index('by_request', ['requestId'])
 		.index('by_org', ['organizationId']),
+
+	// ── Timeline client (P33 — Client 360) ──────────────────────────────────────
+	// Événements chronologiques par org : onboarding, plan changes, incidents, notes.
+	clientTimelineEvents: defineTable({
+		organizationId: v.id('organizations'),
+		type: v.union(
+			v.literal('ONBOARDING'),
+			v.literal('PLAN_CHANGE'),
+			v.literal('INCIDENT'),
+			v.literal('MAINTENANCE'),
+			v.literal('TICKET_CREATED'),
+			v.literal('TICKET_RESOLVED'),
+			v.literal('PAYMENT'),
+			v.literal('ALERT_COMPLIANCE'),
+			v.literal('CONCIERGE_NOTE')
+		),
+		title: v.string(),
+		description: v.optional(v.string()),
+		severity: v.optional(v.union(v.literal('info'), v.literal('warning'), v.literal('critical'))),
+		sourceId: v.optional(v.string()),
+		createdBy: v.optional(v.string()),
+		occurredAt: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_time', ['organizationId', 'occurredAt']),
+
+	// ── Tickets concierge unifiés (P32 — Inbox Concierge) ───────────────────────
+	// Couche d'agrégation cross-sources : Human Assist, support, tâches critiques.
+	// Ne remplace pas les tables sources, les enrichit d'un hub unifié avec SLA.
+	conciergeTickets: defineTable({
+		organizationId: v.id('organizations'),
+		sourceType: v.union(
+			v.literal('HUMAN_ASSIST'),
+			v.literal('SUPPORT_TICKET'),
+			v.literal('CONCIERGE_TASK'),
+			v.literal('SALES_MESSAGE'),
+			v.literal('MANUAL')
+		),
+		sourceId: v.optional(v.string()),
+		status: v.union(
+			v.literal('NEW'),
+			v.literal('IN_PROGRESS'),
+			v.literal('WAITING_CLIENT'),
+			v.literal('RESOLVED'),
+			v.literal('CLOSED')
+		),
+		priority: v.union(
+			v.literal('URGENT'),
+			v.literal('HIGH'),
+			v.literal('NORMAL'),
+			v.literal('LOW')
+		),
+		title: v.string(),
+		summary: v.string(),
+		assignedTo: v.optional(v.string()),
+		firstResponseAt: v.optional(v.number()),
+		resolvedAt: v.optional(v.number()),
+		slaDeadline: v.optional(v.number()),
+		satisfactionEmoji: v.optional(
+			v.union(v.literal('good'), v.literal('neutral'), v.literal('bad'))
+		),
+		createdAt: v.number(),
+		updatedAt: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_status', ['status', 'priority'])
+		.index('by_assigned', ['assignedTo', 'status'])
+		.index('by_source', ['sourceType', 'sourceId'])
+		.index('by_org_and_status', ['organizationId', 'status']),
+
+	// Messages dans un ticket concierge (fil de conversation)
+	conciergeTicketMessages: defineTable({
+		ticketId: v.id('conciergeTickets'),
+		authorId: v.string(),
+		authorRole: v.union(
+			v.literal('concierge'),
+			v.literal('super_admin'),
+			v.literal('client')
+		),
+		content: v.string(),
+		attachmentIds: v.optional(v.array(v.string())),
+		isInternal: v.boolean(),
+		createdAt: v.number()
+	})
+		.index('by_ticket', ['ticketId'])
+		.index('by_ticket_and_time', ['ticketId', 'createdAt']),
+
+	// ── Gamification commerciale (P37) ───────────────────────────────────────────
+
+	salesGamification: defineTable({
+		salesUserId: v.string(),
+		totalPoints: v.number(),
+		level: v.number(),
+		currentStreakDays: v.number(),
+		longestStreakDays: v.number(),
+		lastActivityDate: v.string(),   // YYYY-MM-DD
+		weeklyPoints: v.number(),
+		monthlyPoints: v.number(),
+		weekResetAt: v.number(),
+		monthResetAt: v.number()
+	})
+		.index('by_user', ['salesUserId'])
+		.index('by_weekly_points', ['weeklyPoints']),
+
+	salesBadges: defineTable({
+		salesUserId: v.string(),
+		badgeId: v.string(),
+		earnedAt: v.number(),
+		context: v.optional(v.string())
+	}).index('by_user', ['salesUserId']),
+
+	salesChallenges: defineTable({
+		salesUserId: v.string(),
+		weekStartDate: v.string(),      // ISO YYYY-MM-DD du lundi
+		challenges: v.array(v.object({
+			id: v.string(),
+			title: v.string(),
+			description: v.string(),
+			difficulty: v.union(v.literal('easy'), v.literal('medium'), v.literal('hard')),
+			targetValue: v.number(),
+			currentValue: v.number(),
+			points: v.number(),
+			completed: v.boolean(),
+			completedAt: v.optional(v.number())
+		}))
+	}).index('by_user_and_week', ['salesUserId', 'weekStartDate']),
+
+	salesSignals: defineTable({
+		salesUserId: v.string(),
+		prospectId: v.optional(v.id('salesProspects')),
+		organizationId: v.optional(v.id('organizations')),
+		type: v.union(
+			v.literal('demo_login'),
+			v.literal('demo_expiring'),
+			v.literal('demo_expired'),
+			v.literal('upsell_seat_limit'),
+			v.literal('upsell_feature_request'),
+			v.literal('churn_risk'),
+			v.literal('renewal_approaching')
+		),
+		title: v.string(),
+		body: v.string(),
+		priority: v.union(v.literal('low'), v.literal('medium'), v.literal('high')),
+		readAt: v.optional(v.number()),
+		dismissedAt: v.optional(v.number()),
+		createdAt: v.number()
+	})
+		.index('by_sales', ['salesUserId'])
+		.index('by_sales_and_priority', ['salesUserId', 'priority']),
+
+	// ── Espace Commercial (P36) ──────────────────────────────────────────────────
+
+	salesProspects: defineTable({
+		salesUserId: v.string(),          // Better Auth user ID du commercial
+		companyName: v.string(),
+		sector: v.string(),
+		estimatedFleetSize: v.number(),
+		country: v.string(),
+		contactName: v.string(),
+		contactEmail: v.optional(v.string()),
+		contactPhone: v.optional(v.string()),
+		stage: v.union(
+			v.literal('discovery'),
+			v.literal('demo'),
+			v.literal('negotiation'),
+			v.literal('won'),
+			v.literal('lost')
+		),
+		lostReason: v.optional(v.string()),
+		demoOrgId: v.optional(v.id('organizations')),
+		realOrgId: v.optional(v.id('organizations')),
+		notes: v.optional(v.string()),
+		lastActivityAt: v.number(),
+		createdAt: v.number()
+	})
+		.index('by_sales', ['salesUserId'])
+		.index('by_stage', ['salesUserId', 'stage'])
+		.index('by_demo_org', ['demoOrgId']),
+
+	salesConciergeThreads: defineTable({
+		organizationId: v.optional(v.id('organizations')),
+		prospectId: v.optional(v.id('salesProspects')),
+		salesUserId: v.string(),
+		conciergeUserIds: v.array(v.string()),
+		lastMessageAt: v.number(),
+		unreadBySales: v.boolean(),
+		unreadByConcierge: v.boolean()
+	})
+		.index('by_sales', ['salesUserId'])
+		.index('by_org', ['organizationId']),
+
+	salesConciergeMessages: defineTable({
+		threadId: v.id('salesConciergeThreads'),
+		authorId: v.string(),
+		authorRole: v.union(v.literal('sales'), v.literal('concierge'), v.literal('super_admin')),
+		content: v.string(),
+		taggedEntityId: v.optional(v.string()),
+		taggedEntityName: v.optional(v.string()),
+		createdAt: v.number()
+	})
+		.index('by_thread', ['threadId'])
+		.index('by_thread_and_time', ['threadId', 'createdAt']),
 
 	// Note: The agent component automatically creates the following tables:
 	// - agent:threads - Conversation threads for customer support

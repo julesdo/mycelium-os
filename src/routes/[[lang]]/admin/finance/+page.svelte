@@ -22,6 +22,7 @@
 	import ExportModal from '$lib/components/finance/ExportModal.svelte';
 	import FuelIcon from '@lucide/svelte/icons/fuel';
 	import ReceiptIcon from '@lucide/svelte/icons/landmark';
+	import FinanceTabNav from '$lib/components/admin/FinanceTabNav.svelte';
 
 	// ── URL param helpers ────────────────────────────────────────────────────────
 
@@ -132,6 +133,8 @@
 		goto(resolve(path));
 	}
 </script>
+
+<FinanceTabNav />
 
 <SEOHead title="Finance — Mycelium Fleet" description="Reporting financier de votre flotte" />
 

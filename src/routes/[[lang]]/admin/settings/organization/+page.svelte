@@ -6,6 +6,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { useConvexClient, useQuery } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api.js';
+	import SettingsTabNav from '$lib/components/admin/SettingsTabNav.svelte';
 	import { toast } from 'svelte-sonner';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import Building2Icon from '@lucide/svelte/icons/building-2';
@@ -104,6 +105,8 @@
 		}
 	}
 </script>
+
+<SettingsTabNav />
 
 <div class="flex flex-col gap-6 px-4 lg:px-6 xl:px-8 2xl:px-16">
 	<div class="flex items-center gap-2">

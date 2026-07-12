@@ -8,6 +8,7 @@
 	import { EmptyState } from '$lib/components/ui/empty-state/index.js';
 	import MetricCard from '$lib/components/ui/metric-card.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import ConformiteTabNav from '$lib/components/admin/ConformiteTabNav.svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -142,6 +143,8 @@
 
 	const isEmpty = $derived(!isLoading && allIncidents.length === 0);
 </script>
+
+<ConformiteTabNav />
 
 <!-- eslint-disable svelte/no-navigation-without-resolve, local/no-hardcoded-sr-only -->
 <div class="flex flex-col gap-6 px-4 pb-8 lg:px-6 xl:px-8 2xl:px-16">

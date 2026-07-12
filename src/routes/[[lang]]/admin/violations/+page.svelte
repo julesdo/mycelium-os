@@ -10,6 +10,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import ConformiteTabNav from '$lib/components/admin/ConformiteTabNav.svelte';
 	import ViolationForm from '$lib/components/violations/violation-form.svelte';
 	import { toast } from 'svelte-sonner';
 	import { format } from 'date-fns';
@@ -177,6 +178,8 @@
 
 	const isEmpty = $derived(!isLoading && allViolations.length === 0);
 </script>
+
+<ConformiteTabNav />
 
 <div class="flex flex-col gap-6 px-4 pb-8 lg:px-6 xl:px-8 2xl:px-16">
 	<!-- Header -->

@@ -1,6 +1,7 @@
 import { v, ConvexError } from 'convex/values';
 import { authedQuery, authedMutation, conciergeQuery, conciergeMutation } from '../functions';
 import { getUserOrg } from '../lib/auth';
+import { internal } from '../_generated/api';
 
 // ─── Côté client ─────────────────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ export const createRequest = authedMutation({
 
 		if (existing) return existing._id;
 
-		return await ctx.db.insert('humanAssistRequests', {
+		const requestId = await ctx.db.insert('humanAssistRequests', {
 			organizationId,
 			requesterId: user._id,
 			requesterName: user.name ?? user.email ?? 'Utilisateur',
@@ -28,6 +29,17 @@ export const createRequest = authedMutation({
 			summary: args.summary,
 			createdAt: Date.now()
 		});
+
+		await ctx.scheduler.runAfter(0, internal.concierge.tickets.upsertTicketFromSource, {
+			organizationId,
+			sourceType: 'HUMAN_ASSIST',
+			sourceId: requestId,
+			title: `Human Assist — ${user.name ?? user.email ?? 'Utilisateur'}`,
+			summary: args.summary?.slice(0, 150) ?? "Demande d'assistance",
+			priority: 'HIGH'
+		});
+
+		return requestId;
 	}
 });
 

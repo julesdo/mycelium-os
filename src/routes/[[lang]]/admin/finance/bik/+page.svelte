@@ -7,6 +7,7 @@
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import SEOHead from '$lib/components/SEOHead.svelte';
+	import ConformiteTabNav from '$lib/components/admin/ConformiteTabNav.svelte';
 	import MetricCard from '$lib/components/ui/metric-card.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
@@ -125,6 +126,8 @@
 		THERMAL: 'text-muted-foreground'
 	};
 </script>
+
+<ConformiteTabNav />
 
 <SEOHead title="BiK UK — Fleet OS" description="Benefit in Kind calculations for your UK fleet" />
 

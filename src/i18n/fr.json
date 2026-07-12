@@ -1145,7 +1145,14 @@
 			"expenses": "Notes de frais IK",
 			"fiscal": "Bilan fiscal",
 			"bik": "BiK UK",
-			"sustainability": "Bilan Carbone"
+			"sustainability": "Bilan Carbone",
+			"costs": "Coûts",
+			"fuelImport": "Carburant",
+			"integrations": "Intégrations",
+			"organization": "Organisation",
+			"members": "Équipe",
+			"notifications": "Notifications",
+			"plans": "Plans"
 		},
 		"support": {
 			"all_statuses": "Tous les statuts",

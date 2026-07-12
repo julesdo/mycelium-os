@@ -7,6 +7,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
+	import ConformiteTabNav from '$lib/components/admin/ConformiteTabNav.svelte';
 	import ShieldAlertIcon from '@lucide/svelte/icons/shield-alert';
 	import BotIcon from '@lucide/svelte/icons/bot';
 	import FileTextIcon from '@lucide/svelte/icons/file-text';
@@ -43,6 +44,8 @@
 		HIGH: 'Risque élevé'
 	};
 </script>
+
+<ConformiteTabNav />
 
 <SubscriptionGate feature="compliance" requiredPlan="professional">
 	<div class="space-y-6 px-4 py-6 md:px-6">

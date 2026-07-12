@@ -15,6 +15,7 @@
 	import CheckCircle2Icon from '@lucide/svelte/icons/check-circle-2';
 	import ClipboardListIcon from '@lucide/svelte/icons/clipboard-list';
 	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
+	import FleetTabNav from '$lib/components/admin/FleetTabNav.svelte';
 
 	const lang = $derived(page.params.lang as string | undefined);
 
@@ -77,6 +78,8 @@
 		return { label: 'Incomplet', class: 'bg-muted text-muted-foreground', icon: 'incomplete' };
 	}
 </script>
+
+<FleetTabNav />
 
 <div class="flex flex-col gap-6 px-4 pb-8 lg:px-6 xl:px-8 2xl:px-16">
 

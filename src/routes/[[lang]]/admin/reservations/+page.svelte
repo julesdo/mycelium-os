@@ -1,7 +1,10 @@
 <script lang="ts">
 	import CalendarIcon from '@lucide/svelte/icons/calendar';
 	import FleetCalendar from '$lib/components/calendar/FleetCalendar.svelte';
+	import FleetTabNav from '$lib/components/admin/FleetTabNav.svelte';
 </script>
+
+<FleetTabNav />
 
 <div class="flex flex-col gap-6 px-4 lg:px-6 xl:px-8">
 	<div>

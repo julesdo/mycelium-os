@@ -15,6 +15,8 @@
 	import CopilotFab from '$lib/components/copilot/copilot-fab.svelte';
 	import CopilotPanel from '$lib/components/copilot/copilot-panel.svelte';
 	import PlanSelectionModal from '$lib/components/billing/PlanSelectionModal.svelte';
+	import DemoBanner from '$lib/components/demo/DemoBanner.svelte';
+	import DemoConversionModal from '$lib/components/demo/DemoConversionModal.svelte';
 
 	interface Props {
 		children?: Snippet;
@@ -140,6 +142,8 @@
 <PostHogIdentify />
 <SupportTicketMigrationBootstrap />
 
+<DemoBanner />
+
 <AuthenticatedLayout
 	{sidebarConfig}
 	{fullControl}
@@ -166,6 +170,8 @@
 	mode="admin"
 	onDone={handleWelcomeDone}
 />
+
+<DemoConversionModal />
 
 <Tour
 	steps={ADMIN_TOUR_STEPS}

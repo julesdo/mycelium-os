@@ -106,10 +106,10 @@ export const adminMutation = customMutation(
 async function resolveStaffRole(
 	ctx: any,
 	user: BetterAuthUser
-): Promise<'super_admin' | 'concierge' | null> {
+): Promise<'super_admin' | 'concierge' | 'sales' | null> {
 	const allStaff = (await ctx.db.query('myceliumStaff').collect()) as Array<{
 		userId: string;
-		staffRole: 'super_admin' | 'concierge';
+		staffRole: 'super_admin' | 'concierge' | 'sales';
 	}>;
 
 	const record = allStaff.find((r) => r.userId === user._id);
@@ -190,6 +190,43 @@ export const conciergeMutation = customMutation(
 		const staffRole = await resolveStaffRole(ctx, user);
 		if (!staffRole) {
 			throw new ConvexError('Unauthorized: Concierge or Super Admin access required');
+		}
+		return { user, staffRole };
+	})
+);
+
+/**
+ * Query accessible aux commerciaux ET aux super admins Mycelium.
+ * Usage : pipeline prospects, chat sales↔concierge.
+ */
+export const salesQuery = customQuery(
+	query,
+	customCtx(async (ctx) => {
+		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
+		if (!user || user.role !== 'admin') {
+			throw new ConvexError('Unauthorized: Mycelium staff access required');
+		}
+		const staffRole = await resolveStaffRole(ctx, user);
+		if (staffRole !== 'sales' && staffRole !== 'super_admin') {
+			throw new ConvexError("Accès réservé à l'équipe commerciale");
+		}
+		return { user, staffRole };
+	})
+);
+
+/**
+ * Mutation accessible aux commerciaux ET aux super admins Mycelium.
+ */
+export const salesMutation = customMutation(
+	mutation,
+	customCtx(async (ctx) => {
+		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
+		if (!user || user.role !== 'admin') {
+			throw new ConvexError('Unauthorized: Mycelium staff access required');
+		}
+		const staffRole = await resolveStaffRole(ctx, user);
+		if (staffRole !== 'sales' && staffRole !== 'super_admin') {
+			throw new ConvexError("Accès réservé à l'équipe commerciale");
 		}
 		return { user, staffRole };
 	})

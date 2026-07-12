@@ -6,6 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import SEOHead from '$lib/components/SEOHead.svelte';
+	import FinanceTabNav from '$lib/components/admin/FinanceTabNav.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
@@ -310,9 +311,11 @@
 	const TAB_LABELS: Record<Tab, string> = { tvs: 'TVS par véhicule', aen: 'Avantage en nature', tva: 'TVA récupérable' };
 </script>
 
+<FinanceTabNav />
+
 <SEOHead title="Bilan fiscal — Finance — Mycelium Fleet" description="TVS, avantage en nature et TVA récupérable" />
 
-<div class="flex h-full flex-col gap-4 px-4 pb-6 lg:px-6 xl:px-8">
+<div class="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-6 lg:px-6 xl:px-8">
 
 	<!-- Header -->
 	<div class="flex flex-wrap items-start justify-between gap-3">

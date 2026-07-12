@@ -6,6 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import SEOHead from '$lib/components/SEOHead.svelte';
+	import FinanceTabNav from '$lib/components/admin/FinanceTabNav.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import FuelAnomalyCard from '$lib/components/finance/FuelAnomalyCard.svelte';
@@ -217,6 +218,8 @@
 
 	const STEPS = ['Upload', 'Validation', 'Confirmation'] as const;
 </script>
+
+<FinanceTabNav />
 
 <SEOHead
 	title="Import Carburant — Finance — Mycelium Fleet"

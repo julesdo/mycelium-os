@@ -5,6 +5,7 @@ import { resend } from './emails/resend';
 import { chat } from './agents/concierge';
 import { chat as managerChat } from './agents/manager';
 import { chat as complianceChat } from './agents/compliance';
+import { chat as salesAgentChat } from './agents/salesAgent';
 import {
 	listCostsHandler,
 	createCostHandler,
@@ -50,6 +51,10 @@ http.route({ path: '/api/manager/chat', method: 'OPTIONS', handler: managerChat 
 // Compliance Officer streaming endpoint (SSE) — ORG_ADMIN/ORG_MANAGER only
 http.route({ path: '/api/compliance/chat', method: 'POST', handler: complianceChat });
 http.route({ path: '/api/compliance/chat', method: 'OPTIONS', handler: complianceChat });
+
+// Agent Commercial streaming endpoint (SSE) — sales/super_admin staff only
+http.route({ path: '/api/sales/agent', method: 'POST', handler: salesAgentChat });
+http.route({ path: '/api/sales/agent', method: 'OPTIONS', handler: salesAgentChat });
 
 // OAuth callbacks — register each URL in the respective developer portal:
 //   Xero Developer Portal: https://developer.xero.com/

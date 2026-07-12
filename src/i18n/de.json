@@ -1145,7 +1145,14 @@
 			"expenses": "Km-Vergütung",
 			"fiscal": "Steuerbericht",
 			"bik": "BiK UK",
-			"sustainability": "CO2-Bericht"
+			"sustainability": "CO2-Bericht",
+			"costs": "Kosten",
+			"fuelImport": "Kraftstoff",
+			"integrations": "Integrationen",
+			"organization": "Organisation",
+			"members": "Team",
+			"notifications": "Benachrichtigungen",
+			"plans": "Pläne"
 		},
 		"support": {
 			"all_statuses": "Alle Status",

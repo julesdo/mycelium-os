@@ -1145,7 +1145,14 @@
 			"expenses": "Gastos IK",
 			"fiscal": "Balance fiscal",
 			"bik": "BiK UK",
-			"sustainability": "Huella de carbono"
+			"sustainability": "Huella de carbono",
+			"costs": "Costos",
+			"fuelImport": "Combustible",
+			"integrations": "Integraciones",
+			"organization": "Organización",
+			"members": "Equipo",
+			"notifications": "Notificaciones",
+			"plans": "Planes"
 		},
 		"support": {
 			"all_statuses": "Todos los estados",

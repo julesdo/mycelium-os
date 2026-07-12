@@ -1146,7 +1146,14 @@
 			"expenses": "Mileage Expenses",
 			"fiscal": "Tax Report",
 			"bik": "BiK UK",
-			"sustainability": "Carbon Report"
+			"sustainability": "Carbon Report",
+			"costs": "Costs",
+			"fuelImport": "Fuel",
+			"integrations": "Integrations",
+			"organization": "Organisation",
+			"members": "Team",
+			"notifications": "Notifications",
+			"plans": "Plans"
 		},
 		"support": {
 			"all_statuses": "All statuses",

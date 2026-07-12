@@ -15,6 +15,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
+	import FleetTabNav from '$lib/components/admin/FleetTabNav.svelte';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import LayoutListIcon from '@lucide/svelte/icons/layout-list';
@@ -151,6 +152,8 @@
 		goto(resolve(localHref(`/admin/maintenance/${_id}`)));
 	}
 </script>
+
+<FleetTabNav />
 
 <div class="flex flex-col gap-6 px-4 pb-8 lg:px-6 xl:px-8 2xl:px-16">
 	<!-- Header -->

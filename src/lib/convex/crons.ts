@@ -120,4 +120,54 @@ crons.daily(
 	{}
 );
 
+// Demo simulation: vehicle positions updated every 5 minutes
+crons.interval(
+	'simulateDemoFleets',
+	{ minutes: 5 },
+	internal.demo.simulation.updateAllDemoPositions,
+	{}
+);
+
+// Demo daily events + expiration check: 6h UTC
+crons.daily(
+	'generateDemoEvents',
+	{ hourUTC: 6, minuteUTC: 30 },
+	internal.demo.simulation.generateAllDailyDemoEvents,
+	{}
+);
+
+// ── Sales gamification & signals ─────────────────────────────────────────────
+
+// Check streaks sales : quotidien 5h UTC (avant que les commerciaux arrivent)
+crons.daily(
+	'updateSalesStreaks',
+	{ hourUTC: 5, minuteUTC: 30 },
+	internal.sales.gamification.checkDailyStreaks,
+	{}
+);
+
+// Génère les défis hebdo des commerciaux : lundi 7h UTC
+crons.weekly(
+	'generateWeeklySalesChallenges',
+	{ dayOfWeek: 'monday', hourUTC: 7, minuteUTC: 0 },
+	internal.sales.challenges.generateAllWeeklyChallenges,
+	{}
+);
+
+// Détecte signaux upsell (démos expirant, etc.) : quotidien 9h UTC
+crons.daily(
+	'detectSalesUpsellSignals',
+	{ hourUTC: 9, minuteUTC: 0 },
+	internal.sales.signals.detectUpsellSignals,
+	{}
+);
+
+// Reset points hebdomadaires : dimanche 23h50 UTC (avant lundi)
+crons.weekly(
+	'resetWeeklySalesPoints',
+	{ dayOfWeek: 'sunday', hourUTC: 23, minuteUTC: 50 },
+	internal.sales.gamification.resetWeeklyPoints,
+	{}
+);
+
 export default crons;

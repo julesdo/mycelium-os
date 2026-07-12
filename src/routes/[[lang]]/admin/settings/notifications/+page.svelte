@@ -1,5 +1,8 @@
 <script lang="ts">
+	import SettingsTabNav from '$lib/components/admin/SettingsTabNav.svelte';
 </script>
+
+<SettingsTabNav />
 
 <div class="flex flex-col gap-6">
 	<div>

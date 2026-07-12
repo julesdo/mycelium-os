@@ -13,6 +13,8 @@
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import LayoutListIcon from '@lucide/svelte/icons/layout-list';
 	import UsersIcon from '@lucide/svelte/icons/users';
+	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import PlayCircleIcon from '@lucide/svelte/icons/play-circle';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import CheckIcon from '@lucide/svelte/icons/check';
@@ -63,12 +65,27 @@
 
 	const navItems = $derived([
 		{
+			href: localizedHref('/concierge/inbox'),
+			label: 'Inbox',
+			icon: InboxIcon,
+			active: page.url.pathname.includes('/concierge/inbox')
+		},
+		{
 			href: localizedHref('/concierge'),
 			label: 'File de tâches',
 			icon: LayoutListIcon,
 			active:
-				page.url.pathname.match(/\/concierge\/?$/) ||
-				(page.url.pathname.includes('/concierge/') && !page.url.pathname.includes('/staff'))
+				!!page.url.pathname.match(/\/concierge\/?$/) ||
+				(page.url.pathname.includes('/concierge/') &&
+					!page.url.pathname.includes('/staff') &&
+					!page.url.pathname.includes('/inbox') &&
+					!page.url.pathname.includes('/demos'))
+		},
+		{
+			href: localizedHref('/concierge/demos'),
+			label: 'Démos',
+			icon: PlayCircleIcon,
+			active: page.url.pathname.includes('/concierge/demos')
 		},
 		...(isSuperAdmin
 			? [

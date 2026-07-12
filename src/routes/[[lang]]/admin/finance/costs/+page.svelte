@@ -7,6 +7,7 @@
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import SEOHead from '$lib/components/SEOHead.svelte';
+	import FinanceTabNav from '$lib/components/admin/FinanceTabNav.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -151,6 +152,8 @@
 
 	const CATEGORIES = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label }));
 </script>
+
+<FinanceTabNav />
 
 <SEOHead title="Coûts — Finance — Mycelium Fleet" description="Gestion des coûts de flotte" />
 

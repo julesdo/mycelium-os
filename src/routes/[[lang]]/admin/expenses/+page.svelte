@@ -13,6 +13,7 @@
 	import ClockIcon from '@lucide/svelte/icons/clock';
 	import CheckCircleIcon from '@lucide/svelte/icons/check-circle';
 	import UsersIcon from '@lucide/svelte/icons/users';
+	import FinanceTabNav from '$lib/components/admin/FinanceTabNav.svelte';
 	import SearchIcon from '@lucide/svelte/icons/search';
 
 	const currentYear = new Date().getFullYear();
@@ -93,6 +94,8 @@
 		new Set(allExpenses.map((e: { userId: string }) => e.userId)).size
 	);
 </script>
+
+<FinanceTabNav />
 
 <div class="flex flex-col gap-5 px-4 pb-8 pt-3 lg:px-6 xl:px-8">
 

@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
 	import SEOHead from '$lib/components/SEOHead.svelte';
+	import ConformiteTabNav from '$lib/components/admin/ConformiteTabNav.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import MetricCard from '$lib/components/ui/metric-card.svelte';
@@ -121,6 +122,8 @@
 	// ── Helpers ───────────────────────────────────────────────────────────────
 	const hasReport = $derived(reports.some((r: any) => r.year === selectedYear));
 </script>
+
+<ConformiteTabNav />
 
 <SEOHead
 	title="Bilan Carbone — Mycelium Fleet"
