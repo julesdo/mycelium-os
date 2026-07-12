@@ -52,7 +52,7 @@
 	position: fixed;
 	bottom: 24px;
 	right: 24px;
-	z-index: 49;
+	z-index: 9997;
 
 	display: flex;
 	align-items: center;

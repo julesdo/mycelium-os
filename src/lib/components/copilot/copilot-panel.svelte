@@ -724,7 +724,7 @@
 		display: block;
 		position: fixed;
 		inset: 0;
-		z-index: 40;
+		z-index: 9998;
 		background: oklch(0 0 0 / 0.55);
 		backdrop-filter: blur(2px);
 		opacity: 0;
@@ -742,15 +742,15 @@
 	position: fixed;
 	bottom: 0;
 	right: 0;
-	z-index: 50;
+	z-index: 9999;
 	display: flex;
 	flex-direction: column;
 	width: 100%;
 	height: 100dvh;
-	background: hsl(var(--background));
-	border-left: 1px solid hsl(var(--border));
+	background: var(--background);
+	border-left: 1px solid var(--border);
+	isolation: isolate;
 
-	/* Desktop: slide from right */
 	transform: translateX(calc(100% + 1px));
 	opacity: 0;
 	visibility: hidden;
@@ -772,31 +772,28 @@
 		transform 0.32s cubic-bezier(0.32, 0.72, 0, 1),
 		opacity 0.22s ease,
 		visibility 0s linear 0s;
-	/* Premium shadow */
 	box-shadow:
-		-1px 0 0 hsl(var(--border)),
-		-24px 0 48px oklch(0 0 0 / 0.10),
-		-8px 0 16px oklch(0 0 0 / 0.06);
+		-1px 0 0 var(--border),
+		-24px 0 48px oklch(0 0 0 / 0.12),
+		-8px 0 16px oklch(0 0 0 / 0.07);
 }
 
-/* Mobile: slide from bottom */
 @media (max-width: 767px) {
 	.copilot-panel {
 		transform: translateY(100%);
 		border-left: none;
-		border-top: 1px solid hsl(var(--border));
+		border-top: 1px solid var(--border);
 		border-radius: 20px 20px 0 0;
 		box-shadow: none;
 	}
 	.copilot-panel--open {
 		transform: translateY(0);
 		box-shadow:
-			0 -4px 32px oklch(0 0 0 / 0.12),
-			0 -1px 0 hsl(var(--border));
+			0 -4px 32px oklch(0 0 0 / 0.14),
+			0 -1px 0 var(--border);
 	}
 }
 
-/* Desktop width */
 @media (min-width: 768px) {
 	.copilot-panel {
 		width: 420px;
@@ -806,12 +803,11 @@
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .copilot-header {
 	position: relative;
-	border-bottom: 1px solid hsl(var(--border) / 0.6);
-	background: hsl(var(--background) / 0.97);
-	backdrop-filter: blur(8px);
+	z-index: 2;
+	border-bottom: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+	background: var(--background);
 }
 
-/* Mobile: drag handle hint */
 @media (max-width: 767px) {
 	.copilot-header::before {
 		content: '';
@@ -819,7 +815,7 @@
 		width: 36px;
 		height: 4px;
 		border-radius: 2px;
-		background: hsl(var(--muted-foreground) / 0.25);
+		background: color-mix(in oklch, var(--muted-foreground) 25%, transparent);
 		margin: 10px auto 0;
 	}
 }
@@ -842,7 +838,7 @@
 	border-radius: 10px;
 	font-size: 11px;
 	font-weight: 600;
-	color: hsl(var(--muted-foreground));
+	color: var(--muted-foreground);
 	transition:
 		color 0.15s ease,
 		background 0.18s ease,
@@ -852,8 +848,8 @@
 }
 
 .copilot-tab:hover {
-	color: hsl(var(--foreground));
-	background: hsl(var(--muted) / 0.5);
+	color: var(--foreground);
+	background: color-mix(in oklch, var(--muted) 50%, transparent);
 }
 
 .copilot-tab:active {
@@ -876,12 +872,9 @@
 /* ── Concierge card ─────────────────────────────────────────────────────────── */
 .concierge-card {
 	position: relative;
-	border-bottom: 1px solid hsl(var(--border) / 0.5);
-	background: linear-gradient(
-		to bottom,
-		hsl(var(--muted) / 0.25),
-		hsl(var(--muted) / 0.05)
-	);
+	z-index: 1;
+	border-bottom: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+	background: color-mix(in oklch, var(--muted) 40%, var(--background));
 }
 
 /* ── Messages area ──────────────────────────────────────────────────────────── */
@@ -891,14 +884,9 @@
 	overscroll-behavior: contain;
 	-webkit-overflow-scrolling: touch;
 	scroll-behavior: smooth;
-}
-
-/* Inset shadow at top to indicate scrollable content */
-.copilot-messages-area {
-	background:
-		linear-gradient(hsl(var(--background)) 30%, transparent) top / 100% 16px,
-		radial-gradient(farthest-side at 50% 0, oklch(0 0 0 / 0.06), transparent) top / 100% 8px;
-	background-attachment: local, scroll;
+	background: var(--background);
+	position: relative;
+	z-index: 0;
 }
 
 /* ── Quick prompt buttons ───────────────────────────────────────────────────── */
@@ -909,10 +897,10 @@
 	gap: 8px;
 	padding: 10px 14px;
 	border-radius: 12px;
-	border: 1px solid hsl(var(--border) / 0.6);
-	background: hsl(var(--card) / 0.6);
+	border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+	background: color-mix(in oklch, var(--card) 60%, var(--background));
 	font-size: 12.5px;
-	color: hsl(var(--foreground) / 0.8);
+	color: color-mix(in oklch, var(--foreground) 80%, transparent);
 	text-align: left;
 	position: relative;
 	overflow: hidden;
@@ -934,9 +922,9 @@
 }
 
 .quick-prompt-btn:hover {
-	border-color: hsl(var(--border));
-	background: hsl(var(--card));
-	color: hsl(var(--foreground));
+	border-color: var(--border);
+	background: var(--card);
+	color: var(--foreground);
 	transform: translateY(-1px);
 	box-shadow: 0 2px 8px oklch(0 0 0 / 0.06);
 }
@@ -954,13 +942,13 @@
 
 .prompt-arrow {
 	font-size: 13px;
-	color: hsl(var(--muted-foreground) / 0.4);
+	color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
 	transition: transform 0.15s ease, color 0.15s ease;
 }
 
 .quick-prompt-btn:hover .prompt-arrow {
 	transform: translateX(3px);
-	color: hsl(var(--muted-foreground));
+	color: var(--muted-foreground);
 }
 
 /* ── Human CTA button ──────────────────────────────────────────────────────── */
@@ -970,8 +958,8 @@
 	display: block;
 	padding: 10px 14px;
 	border-radius: 14px;
-	border: 1px solid hsl(var(--border) / 0.7);
-	background: hsl(var(--card) / 0.5);
+	border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+	background: color-mix(in oklch, var(--card) 50%, var(--background));
 	transition:
 		border-color 0.15s ease,
 		background 0.15s ease,
@@ -999,11 +987,12 @@
 
 /* ── Input area ────────────────────────────────────────────────────────────── */
 .copilot-input-area {
-	border-top: 1px solid hsl(var(--border) / 0.5);
+	position: relative;
+	z-index: 2;
+	border-top: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
 	padding: 12px 12px;
 	padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-	background: hsl(var(--background) / 0.97);
-	backdrop-filter: blur(8px);
+	background: var(--background);
 }
 
 .copilot-input-wrap {
@@ -1012,17 +1001,17 @@
 	gap: 8px;
 	padding: 8px 10px 8px 14px;
 	border-radius: 16px;
-	border: 1px solid hsl(var(--border));
-	background: hsl(var(--background));
+	border: 1px solid var(--border);
+	background: var(--background);
 	transition:
 		border-color 0.15s ease,
 		box-shadow 0.2s ease;
 }
 
 .copilot-input-wrap:focus-within {
-	border-color: hsl(var(--ring) / 0.6);
+	border-color: color-mix(in oklch, var(--ring) 60%, transparent);
 	box-shadow:
-		0 0 0 3px hsl(var(--ring) / 0.08),
+		0 0 0 3px color-mix(in oklch, var(--ring) 8%, transparent),
 		0 1px 3px oklch(0 0 0 / 0.04);
 }
 
@@ -1034,12 +1023,12 @@
 	line-height: 1.5;
 	min-height: 22px;
 	max-height: 120px;
-	color: hsl(var(--foreground));
+	color: var(--foreground);
 	outline: none;
 }
 
 .copilot-textarea::placeholder {
-	color: hsl(var(--muted-foreground) / 0.45);
+	color: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
 }
 
 .copilot-textarea:disabled {
@@ -1055,8 +1044,8 @@
 	height: 34px;
 	border-radius: 10px;
 	flex-shrink: 0;
-	color: hsl(var(--muted-foreground));
-	background: hsl(var(--muted) / 0.4);
+	color: var(--muted-foreground);
+	background: color-mix(in oklch, var(--muted) 40%, transparent);
 	transition:
 		background 0.15s ease,
 		color 0.15s ease,
@@ -1098,7 +1087,7 @@
 	margin-top: 6px;
 	text-align: center;
 	font-size: 10px;
-	color: hsl(var(--muted-foreground) / 0.35);
+	color: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
 	letter-spacing: 0.01em;
 }
 
@@ -1113,8 +1102,8 @@
 	gap: 8px;
 	padding: 8px 12px;
 	border-radius: 10px;
-	border: 1px solid hsl(var(--border) / 0.5);
-	background: hsl(var(--muted) / 0.3);
+	border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+	background: color-mix(in oklch, var(--muted) 30%, var(--background));
 }
 
 .status-banner--pending {
