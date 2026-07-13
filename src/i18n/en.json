@@ -1,4 +1,4 @@
-﻿{
+{
 	"a11y": {
 		"skip_to_content": "Skip to content"
 	},
@@ -2234,12 +2234,12 @@
 	},
 	"landing": {
 		"hero": {
-			"eyebrow": "The Fleet OS for French SMEs",
-			"title": "Fleet management, finally intelligent.",
-			"lede": "Mycelium unifies bookings, finance oversight and regulatory compliance in one system, orchestrated by specialised AI agents.",
-			"cta_primary": "Start free",
+			"eyebrow": "The concierge service for your company fleet",
+			"title": "Your fleet, managed and optimised.",
+			"lede": "Human concierges and specialised AI agents handle the operations of your fleet. You keep the control, you lose the tasks.",
+			"cta_primary": "Book a demo",
 			"cta_secondary": "See pricing",
-			"reassurance": "15-minute onboarding · CSV import · No commitment · Data hosted in Europe",
+			"reassurance": "No commitment · 15-min onboarding · Data hosted in Europe",
 			"chat": {
 				"user": "I need a vehicle on Thursday to drive to Lyon.",
 				"agent": "The Peugeot 3008 is available Thursday. Shall I book it for you?",
@@ -2250,41 +2250,42 @@
 		},
 		"proof": {
 			"agents": "Specialised AI agents",
-			"onboarding": "To get up and running",
+			"onboarding": "To be fully operational",
+			"training": "Training required for employees",
 			"modules": "Modules included from day one",
 			"hosting": "Data hosted in Europe"
 		},
 		"features": {
-			"eyebrow": "Included modules",
-			"title": "Everything an SME fleet needs. Nothing it does not.",
-			"lede": "Every module is available from day one. Import your fleet, invite your teams, and you are live.",
+			"eyebrow": "What we handle for you",
+			"title": "All fleet operations. No effort on your part.",
+			"lede": "From booking to compliance, we take care of what takes time, so your teams focus on what matters.",
 			"fleet": {
-				"title": "Your fleet, down to the minute.",
-				"desc": "Import your vehicles by CSV, manage statuses in real time, assign by site or department. Employees book directly, with conflicts detected automatically.",
+				"title": "Your vehicles, in order.",
+				"desc": "Import, status tracking, assignment by site or department. Employees book directly — conflicts are caught before they happen.",
 				"b1": "CSV import in 90 seconds",
 				"b2": "Automatic conflict detection",
 				"b3": "Filters by site, category and status",
 				"b4": "Week and month calendar views"
 			},
 			"dashboard": {
-				"title": "The finance director's dashboard.",
-				"desc": "Real-time KPIs, usage charts, cost tracking by category and vehicle. The essentials at a glance, without opening a spreadsheet.",
+				"title": "Your costs, under control.",
+				"desc": "Real-time KPIs, cost tracking by category and vehicle, accounting exports. The essentials at a glance, without opening a spreadsheet.",
 				"b1": "Real-time fleet KPIs",
 				"b2": "Costs per vehicle and category",
 				"b3": "Accounting exports (CSV, Silae)",
 				"b4": "Mileage expenses with URSSAF scale"
 			},
 			"compliance": {
-				"title": "Zero regulatory oversights.",
-				"desc": "Expired licence, overdue inspection, unprocessed fine. Mycelium watches continuously and alerts the right people automatically.",
+				"title": "Your compliance, assured.",
+				"desc": "Expired licence, overdue inspection, outstanding fine. Mycelium watches and alerts automatically — before it becomes a problem.",
 				"b1": "Licence alerts at 60, 30 and 7 days",
 				"b2": "Automatic inspection and insurance reminders",
 				"b3": "Fine workflow with driver identification",
 				"b4": "CSRD report, scope 1+2+3"
 			},
 			"concierge": {
-				"title": "Book by talking, naturally.",
-				"desc": "The Concierge understands your need in natural language, searches your fleet in real time, and confirms the booking without a form or an extra click.",
+				"title": "Your bookings, in plain language.",
+				"desc": "The employee says what they need. The Concierge searches, proposes and confirms — no form, no unnecessary click, no training.",
 				"b1": "Natural-language dates ('Thursday', 'in 3 days')",
 				"b2": "Automatic conflict detection and resolution",
 				"b3": "Cancellation and changes in the same conversation",
@@ -2315,9 +2316,13 @@
 			}
 		},
 		"agents": {
-			"eyebrow": "Six specialists, always on",
-			"title": "The management work gets done while you sleep.",
-			"lede": "Bookings, compliance, costs, driving. Each one watches over part of your fleet and acts before you have to ask.",
+			"eyebrow": "Your dedicated team",
+			"title": "Humans and AI agents watching over your fleet.",
+			"lede": "Every fleet has a dedicated team: human concierges for support, and specialised AI agents for automation. Together, they cover everything you should no longer do manually.",
+			"human_badge": "Included in every plan",
+			"human_title": "A human concierge dedicated to your fleet",
+			"human_desc": "Available by chat and email, they know your fleet, handle complex cases and look after your teams' experience day to day.",
+			"ai_label": "Backed by 6 specialised AI agents",
 			"concierge": {
 				"name": "Concierge",
 				"role": "Employee",
@@ -2355,20 +2360,20 @@
 			"lede": "Right now, Mycelium agents are running for hundreds of fleets. Bookings, compliance, costs, driving — each agent watches over its specialty while your teams focus on the business."
 		},
 		"steps": {
-			"eyebrow": "Getting started",
-			"title": "Up and running in 15 minutes.",
+			"eyebrow": "How it works",
+			"title": "Operational from the first week.",
 			"lede": "Bookings, compliance alerts, weekly reports. Mycelium runs even while you sleep.",
 			"s1": {
-				"title": "Import your fleet",
-				"desc": "Drop in your CSV file. Mycelium maps the columns automatically. 15 vehicles imported in 90 seconds."
+				"title": "You hand us your fleet",
+				"desc": "CSV import in 15 minutes. Our team sets up your account, invites your staff and reviews the data with you."
 			},
 			"s2": {
-				"title": "Invite your teams",
-				"desc": "Employees get an email. Admins set the roles. Everyone sees only what concerns them."
+				"title": "Our team takes over",
+				"desc": "From day one, bookings, alerts and reports activate. Your dedicated human + AI team operates continuously."
 			},
 			"s3": {
-				"title": "The agents do the rest",
-				"desc": "Bookings, compliance alerts, weekly reports. Mycelium runs even while you sleep."
+				"title": "You oversee, we operate",
+				"desc": "A simple dashboard to stay in control. Repetitive tasks no longer reach you."
 			}
 		},
 		"modules": {
@@ -2468,40 +2473,40 @@
 			"contact_prefix": "A question that is not listed?",
 			"contact_link": "Get in touch",
 			"q1": {
-				"q": "What is Mycelium Fleet OS?",
-				"a": "Mycelium is the first fleet management platform built for French SMEs. It replaces scattered tools (spreadsheets, emails, siloed software) with one unified system, from employee booking to finance oversight."
+				"q": "What is a fleet concierge service?",
+				"a": "Mycelium is not just software. It is a service: human concierges, backed by specialised AI agents, handle your fleet operations. You get a dedicated team without hiring."
 			},
 			"q2": {
-				"q": "How long does it take to start?",
-				"a": "Full onboarding takes 15 minutes: import your vehicle CSV, set up your team roles, and the Concierge AI is live. No training needed for employees, everything happens in natural language."
+				"q": "What makes it different from standard fleet software?",
+				"a": "Fleet software gives you tools to use. Mycelium does the work for you. Bookings, alerts, reports, compliance — our team handles it. You log in to oversee, not to operate."
 			},
 			"q3": {
-				"q": "How does booking through the Concierge work?",
-				"a": "The employee opens the chat and describes the need in plain language. The agent checks availability, proposes suitable vehicles and confirms the booking, while verifying any licence restrictions."
+				"q": "Who responds when something happens?",
+				"a": "A human concierge from your dedicated team, reachable by chat or email. AI agents handle standard cases automatically. For anything out of the ordinary, a real person steps in."
 			},
 			"q4": {
-				"q": "Is data hosted in Europe?",
-				"a": "Yes, all data is hosted on European infrastructure. Mycelium is built for GDPR compliance with strict per-organisation isolation."
+				"q": "How long until everything is up and running?",
+				"a": "Technical onboarding takes 15 minutes. Our teams walk you through role setup, fleet import and first scenarios. Most clients are fully operational within 48 hours."
 			},
 			"q5": {
-				"q": "What is the difference between tiers?",
-				"a": "Each tier adds more AI agents and a larger driver quota. Essential covers booking and basic fleet management. Professional adds accounting sync (Xero, QuickBooks) and compliance tools. Business adds the full AI suite — Fleet Optimiser, Cost Negotiator, and Driver Coach."
+				"q": "Do we keep control of our data?",
+				"a": "Yes. Your data is hosted in Europe, isolated per organisation, GDPR compliant. You can export everything at any time. Mycelium never uses your data to train models."
 			},
 			"q6": {
-				"q": "Is there a mobile app?",
-				"a": "Mycelium is a Progressive Web App that installs on iOS and Android from the browser. It works offline for condition reports and syncs as soon as you reconnect."
+				"q": "How many hours do we get back per month?",
+				"a": "Our clients report an average of 4 to 8 hours saved per week for the fleet manager, and a notable drop in HR back-and-forth around bookings. ROI is visible from month one."
 			}
 		},
 		"cta": {
-			"title": "Your fleet deserves better than a spreadsheet.",
-			"lede": "Join the French SMEs running their fleet from a single platform.",
-			"primary": "Get started from €490/mo",
-			"secondary": "Talk to the team",
-			"reassurance": "CSV import · 15-minute onboarding · No commitment · Support included"
+			"title": "Your fleet deserves to be managed, not monitored.",
+			"lede": "Book a 30-minute demo. We show you how Mycelium fits your fleet and what your teams get back from the first week.",
+			"primary": "Book a free demo",
+			"secondary": "See pricing",
+			"reassurance": "No commitment · Response within 24h · Data hosted in Europe"
 		},
 		"meta": {
-			"title": "The Fleet OS for French SMEs",
-			"description": "Bookings, finance oversight and regulatory compliance in one system, orchestrated by specialised AI agents. Up and running in 15 minutes."
+			"title": "Mycelium — Corporate fleet concierge service",
+			"description": "Manage and optimise your company fleet without spending time on it. Human concierges and specialised AI agents handle everything. Operational in 15 minutes."
 		}
 	}
 }

@@ -1,4 +1,4 @@
-﻿{
+{
 	"a11y": {
 		"skip_to_content": "Aller au contenu"
 	},
@@ -2233,12 +2233,12 @@
 	},
 	"landing": {
 		"hero": {
-			"eyebrow": "Le Fleet OS des PME françaises",
-			"title": "La gestion de flotte, enfin intelligente.",
-			"lede": "Mycelium réunit réservations, pilotage financier et conformité réglementaire dans un seul système, orchestré par des agents IA spécialisés.",
-			"cta_primary": "Démarrer gratuitement",
+			"eyebrow": "Le service de conciergerie pour flottes d'entreprise",
+			"title": "Votre flotte, gérée et optimisée.",
+			"lede": "Des concierges humains et des agents IA spécialisés prennent en charge l'opérationnel de votre flotte. Vous gardez le contrôle, vous perdez les tâches.",
+			"cta_primary": "Demander une démo",
 			"cta_secondary": "Voir les tarifs",
-			"reassurance": "Onboarding en 15 minutes · Import CSV · Sans engagement · Données hébergées en Europe",
+			"reassurance": "Sans engagement · Onboarding 15 min · Données hébergées en Europe",
 			"chat": {
 				"user": "J'ai besoin d'un véhicule jeudi pour aller à Lyon.",
 				"agent": "Le Peugeot 3008 est disponible jeudi. Je le réserve pour vous ?",
@@ -2249,41 +2249,42 @@
 		},
 		"proof": {
 			"agents": "Agents IA spécialisés",
-			"onboarding": "Pour être opérationnel",
+			"onboarding": "Pour être pleinement opérationnel",
+			"training": "Formation requise côté salarié",
 			"modules": "Modules inclus dès le départ",
 			"hosting": "Données hébergées en Europe"
 		},
 		"features": {
-			"eyebrow": "Modules inclus",
-			"title": "Tout ce dont une flotte PME a besoin. Rien de superflu.",
-			"lede": "Chaque module est disponible dès le premier jour. Importez votre flotte, invitez vos équipes, et c'est parti.",
+			"eyebrow": "Ce qu'on gère pour vous",
+			"title": "Tout l'opérationnel de votre flotte. Sans effort de votre part.",
+			"lede": "De la réservation à la conformité, nous prenons en charge ce qui prend du temps, pour que vos équipes se concentrent sur ce qui compte.",
 			"fleet": {
-				"title": "Votre flotte, à la minute près.",
-				"desc": "Importez vos véhicules en CSV, gérez les statuts en temps réel, assignez par site ou par département. Les salariés réservent directement, les conflits sont détectés automatiquement.",
+				"title": "Vos véhicules, en ordre.",
+				"desc": "Import, suivi des statuts, attribution par site ou département. Les salariés réservent directement — les conflits sont détectés avant même de se produire.",
 				"b1": "Import CSV en 90 secondes",
 				"b2": "Détection de conflits automatique",
 				"b3": "Filtres par site, catégorie et statut",
 				"b4": "Vues calendrier semaine et mois"
 			},
 			"dashboard": {
-				"title": "Le tableau de bord du DAF.",
-				"desc": "KPI en temps réel, graphiques d'utilisation, suivi des coûts par catégorie et par véhicule. L'essentiel d'un coup d'œil, sans ouvrir un tableur.",
+				"title": "Vos coûts, sous contrôle.",
+				"desc": "KPIs en temps réel, suivi des dépenses par catégorie et véhicule, export comptable. L'essentiel d'un coup d'œil, sans ouvrir un tableur.",
 				"b1": "KPI flotte en temps réel",
 				"b2": "Coûts par véhicule et catégorie",
 				"b3": "Exports comptables (CSV, Silae)",
 				"b4": "Notes de frais au barème URSSAF"
 			},
 			"compliance": {
-				"title": "Zéro oubli réglementaire.",
-				"desc": "Permis expiré, contrôle technique dépassé, contravention non traitée. Mycelium surveille en continu et alerte automatiquement les bonnes personnes.",
+				"title": "Votre conformité, assurée.",
+				"desc": "Permis expiré, contrôle technique dépassé, contravention en attente. Mycelium surveille et alerte automatiquement — avant que ça devienne un problème.",
 				"b1": "Alertes permis à 60, 30 et 7 jours",
 				"b2": "Rappels contrôle technique et assurance",
 				"b3": "Workflow contraventions avec identification du conducteur",
 				"b4": "Rapport CSRD, scope 1+2+3"
 			},
 			"concierge": {
-				"title": "Réservez en parlant, naturellement.",
-				"desc": "Le Concierge comprend votre besoin en langage naturel, cherche en temps réel dans votre flotte et confirme la réservation sans formulaire ni clic superflu.",
+				"title": "Vos réservations, en langage naturel.",
+				"desc": "Le salarié dit ce dont il a besoin. L'agent Concierge cherche, propose et confirme — sans formulaire, sans clic inutile, sans formation.",
 				"b1": "Dates en langage naturel («jeudi», «dans 3 jours»)",
 				"b2": "Détection et résolution de conflits automatique",
 				"b3": "Annulation et modification dans la même conversation",
@@ -2314,9 +2315,13 @@
 			}
 		},
 		"agents": {
-			"eyebrow": "Six spécialistes, en arrière-plan",
-			"title": "Le travail de gestion se fait pendant que vous dormez.",
-			"lede": "Réservations, conformité, coûts, conduite. Chacun veille sur un pan de votre flotte et agit avant qu’on le lui demande.",
+			"eyebrow": "Votre équipe dédiée",
+			"title": "Des humains et des agents IA qui veillent sur votre flotte.",
+			"lede": "Chaque flotte a une équipe dédiée : des concierges humains pour l’accompagnement, et des agents IA spécialisés pour l’automatisation. Ensemble, ils couvrent tout ce que vous ne devriez plus faire manuellement.",
+			"human_badge": "Inclus dans chaque plan",
+			"human_title": "Un concierge humain dédié à votre flotte",
+			"human_desc": "Disponible par chat et email, il connaît votre flotte, gère les cas complexes et veille sur l’expérience de vos équipes au quotidien.",
+			"ai_label": "Renforcé par 6 agents IA spécialisés",
 			"concierge": {
 				"name": "Concierge",
 				"role": "Salarié",
@@ -2354,20 +2359,20 @@
 			"lede": "En ce moment, les agents Mycelium tournent pour des centaines de flottes. Réservations, conformité, coûts, conduite — chaque agent veille sur sa spécialité pendant que vos équipes se concentrent sur le business."
 		},
 		"steps": {
-			"eyebrow": "Mise en route",
-			"title": "Opérationnel en 15 minutes.",
+			"eyebrow": "Comment ça marche",
+			"title": "Opérationnel dès la première semaine.",
 			"lede": "Réservations, alertes de conformité, rapports hebdomadaires. Mycelium tourne même quand vous dormez.",
 			"s1": {
-				"title": "Importez votre flotte",
-				"desc": "Glissez votre fichier CSV. Mycelium mappe les colonnes automatiquement. 15 véhicules importés en 90 secondes."
+				"title": "Vous nous confiez votre flotte",
+				"desc": "Import CSV en 15 minutes. Nos équipes configurent votre compte, invitent vos collaborateurs et vérifient les données avec vous."
 			},
 			"s2": {
-				"title": "Invitez vos équipes",
-				"desc": "Les salariés reçoivent un email. Les admins configurent les rôles. Chacun voit uniquement ce qui le concerne."
+				"title": "Notre équipe prend la main",
+				"desc": "Dès le lendemain, réservations, alertes et rapports s'activent. Votre équipe dédiée humaine + IA opère en continu."
 			},
 			"s3": {
-				"title": "Les agents font le reste",
-				"desc": "Réservations, alertes de conformité, rapports hebdomadaires. Mycelium tourne même quand vous dormez."
+				"title": "Vous pilotez, on opère",
+				"desc": "Un tableau de bord simple pour garder le contrôle. Les tâches répétitives ne vous atteignent plus."
 			}
 		},
 		"modules": {
@@ -2467,40 +2472,40 @@
 			"contact_prefix": "Une question qui n'est pas listée ?",
 			"contact_link": "Contactez-nous",
 			"q1": {
-				"q": "Qu'est-ce que Mycelium Fleet OS ?",
-				"a": "Mycelium est la première plateforme de gestion de flotte conçue pour les PME françaises. Elle remplace les outils dispersés (tableurs, emails, logiciels en silo) par un système unifié, de la réservation salarié au pilotage financier."
+				"q": "Qu'est-ce qu'une conciergerie de flotte ?",
+				"a": "Mycelium n'est pas un simple logiciel. C'est un service : des concierges humains, renforcés par des agents IA spécialisés, prennent en charge l'opérationnel de votre flotte. Vous bénéficiez d'une équipe dédiée sans recruter."
 			},
 			"q2": {
-				"q": "Combien de temps pour démarrer ?",
-				"a": "L'onboarding complet prend 15 minutes : importez votre fichier CSV de véhicules, configurez les rôles de vos équipes, et le Concierge IA est opérationnel. Aucune formation nécessaire côté salarié, tout se fait en langage naturel."
+				"q": "Quelle différence avec un logiciel de flotte classique ?",
+				"a": "Un logiciel vous donne des outils à utiliser. Mycelium fait le travail pour vous. Les réservations, les alertes, les rapports, la conformité — notre équipe s'en charge. Vous vous connectez pour piloter, pas pour opérer."
 			},
 			"q3": {
-				"q": "Comment fonctionne la réservation via le Concierge ?",
-				"a": "Le salarié ouvre le chat et décrit son besoin en langage naturel. L'agent cherche les disponibilités, propose des véhicules adaptés et confirme la réservation, tout en vérifiant les éventuelles restrictions de permis."
+				"q": "Qui répond quand quelque chose se passe ?",
+				"a": "Un concierge humain de votre équipe dédiée, joignable par chat ou email. Les agents IA traitent les cas standards automatiquement. Pour tout ce qui sort de l'ordinaire, un vrai interlocuteur prend la main."
 			},
 			"q4": {
-				"q": "Les données sont-elles hébergées en Europe ?",
+				"q": "Combien de temps avant que tout soit opérationnel ?",
 				"a": "Oui, toutes les données sont hébergées sur des infrastructures européennes. Mycelium est conçu pour respecter le RGPD avec un isolement strict par organisation."
 			},
 			"q5": {
-				"q": "Quelle est la différence entre les paliers ?",
+				"q": "Est-ce qu'on garde le contrôle de nos données ?",
 				"a": "Chaque palier ajoute des agents IA et un quota conducteurs plus grand. Essential couvre la réservation et la gestion de flotte de base. Professional ajoute la synchronisation comptable (Xero, QuickBooks) et la conformité. Business ajoute la suite IA complète — Optimiseur, Négociateur de coûts et Coach conducteurs."
 			},
 			"q6": {
-				"q": "Existe-t-il une application mobile ?",
-				"a": "Mycelium est une Progressive Web App qui s'installe sur iOS et Android depuis le navigateur. Elle fonctionne hors-ligne pour les états des lieux et se synchronise dès la reconnexion."
+				"q": "Combien d’heures récupère-t-on par mois ?",
+				"a": "Nos clients rapportent en moyenne 4 à 8 heures économisées par semaine pour le gestionnaire de flotte, et une réduction sensible des allers-retours RH autour des réservations. Le ROI s'observe dès le premier mois."
 			}
 		},
 		"cta": {
-			"title": "Votre flotte mérite mieux qu’un tableur.",
-			"lede": "Rejoignez les PME françaises qui pilotent leur flotte depuis une seule plateforme.",
-			"primary": "Démarrer à partir de 490 €/mois",
-			"secondary": "Parler à l'équipe",
-			"reassurance": "Import CSV · Onboarding 15 minutes · Sans engagement · Support inclus"
+			"title": "Votre flotte mérite d’être gérée, pas surveillée.",
+			"lede": "Demandez une démo de 30 minutes. On vous montre comment Mycelium s'adapte à votre flotte et ce que vos équipes récupèrent dès la première semaine.",
+			"primary": "Demander une démo gratuite",
+			"secondary": "Voir les tarifs",
+			"reassurance": "Sans engagement · Réponse sous 24h · Données hébergées en Europe"
 		},
 		"meta": {
-			"title": "Le Fleet OS des PME françaises",
-			"description": "Réservations, pilotage financier et conformité réglementaire dans un seul système, orchestré par des agents IA spécialisés. Opérationnel en 15 minutes."
+			"title": "Mycelium — Conciergerie de flotte d'entreprise",
+			"description": "Gérez et optimisez votre flotte d'entreprise sans y passer du temps. Des concierges humains et des agents IA spécialisés s'occupent de tout. Opérationnel en 15 minutes."
 		}
 	}
 }

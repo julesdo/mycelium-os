@@ -3,12 +3,10 @@
 	import SEOHead from '$lib/components/SEOHead.svelte';
 	import {
 		HeroSection,
+		ProofSection,
 		FeaturesSection,
-		IntegrationsMarquee,
-		AgentsSection,
 		HowItWorksSection,
-		AgenticDemoSection,
-		ModulesSection,
+		AgentsSection,
 		SimulatorTeaserSection,
 		PricingSection,
 		FaqSection,
@@ -22,12 +20,10 @@
 
 <div class="min-h-screen">
 	<HeroSection />
-	<IntegrationsMarquee />
+	<ProofSection />
 	<FeaturesSection />
-	<AgentsSection />
 	<HowItWorksSection />
-	<AgenticDemoSection />
-	<ModulesSection />
+	<AgentsSection />
 	<SimulatorTeaserSection />
 	<PricingSection />
 	<FaqSection />

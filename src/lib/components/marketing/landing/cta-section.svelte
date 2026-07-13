@@ -20,13 +20,13 @@
 
 		<div class="mt-10 flex flex-wrap items-center justify-center gap-3">
 			<a
-				href={resolve(localizedHref('/signup'))}
+				href={resolve(localizedHref('/about'))}
 				class="inline-flex h-12 items-center rounded-full bg-[var(--brand)] px-8 text-sm font-semibold text-[var(--brand-foreground)] transition-opacity hover:opacity-90"
 			>
 				{$t('landing.cta.primary')}
 			</a>
 			<a
-				href={resolve(localizedHref('/about'))}
+				href={resolve(localizedHref('/pricing'))}
 				class="inline-flex h-12 items-center rounded-full border border-border px-8 text-sm font-semibold text-foreground transition-colors hover:bg-muted/40"
 			>
 				{$t('landing.cta.secondary')}

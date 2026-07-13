@@ -47,7 +47,7 @@
 				use:reveal={{ delay: 120 }}
 			>
 				<a
-					href={resolve(localizedHref('/signup'))}
+					href={resolve(localizedHref('/about'))}
 					class="inline-flex h-12 items-center gap-2 rounded-full bg-[var(--brand)] px-7 text-sm font-semibold text-[var(--brand-foreground)] transition-opacity hover:opacity-90"
 				>
 					{$t('landing.hero.cta_primary')}

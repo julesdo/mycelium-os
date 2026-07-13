@@ -32,8 +32,8 @@ export type ProofStat = {
 
 export const proofStats: ProofStat[] = [
 	{ id: 'agents', value: '6', labelKey: 'landing.proof.agents' },
-	{ id: 'onboarding', value: '15 min', labelKey: 'landing.proof.onboarding' },
-	{ id: 'modules', value: '9', labelKey: 'landing.proof.modules' },
+	{ id: 'onboarding', value: '< 48h', labelKey: 'landing.proof.onboarding' },
+	{ id: 'training', value: '0', labelKey: 'landing.proof.training' },
 	{ id: 'hosting', value: 'EU', labelKey: 'landing.proof.hosting' }
 ];
 
