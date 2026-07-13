@@ -8,8 +8,10 @@
 
 	let { data }: { data: PageData } = $props();
 
+	const locale = $derived(page.params.lang === 'en' ? 'en-GB' : page.params.lang === 'de' ? 'de-DE' : page.params.lang === 'es' ? 'es-ES' : 'fr-FR');
+
 	const expiryDateLabel = $derived(
-		new Date(data.expiresAt).toLocaleDateString('fr-FR', {
+		new Date(data.expiresAt).toLocaleDateString(locale, {
 			day: 'numeric',
 			month: 'long',
 			year: 'numeric'
@@ -18,10 +20,10 @@
 
 	const lang = $derived(page.params.lang ?? '');
 	const base = $derived(lang ? `/${lang}` : '');
-	const returnTo = $derived(`${base}/admin/dashboard`);
+	const connectUrl = $derived(`${base}/demo/${data.token}/connect`);
 
-	const signupUrl = $derived(`${base}/signup?demo_token=${data.token}&return_to=${encodeURIComponent(returnTo)}`);
-	const signinUrl = $derived(`${base}/signin?demo_token=${data.token}&return_to=${encodeURIComponent(returnTo)}`);
+	const signupUrl = $derived(`${base}/signup?redirectTo=${encodeURIComponent(connectUrl)}`);
+	const signinUrl = $derived(`${base}/signin?redirectTo=${encodeURIComponent(connectUrl)}`);
 </script>
 
 <svelte:head>

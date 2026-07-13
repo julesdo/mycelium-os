@@ -4,6 +4,8 @@
 	import type { Id } from '$lib/convex/_generated/dataModel';
 	import TicketRow from './TicketRow.svelte';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import { resolve } from '$app/paths';
+	import { localizedHref } from '$lib/utils/i18n';
 
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
@@ -30,7 +32,10 @@
 	{:else}
 		<div class="divide-y divide-border/60">
 			{#each tickets.data ?? [] as ticket (ticket._id)}
-				<TicketRow {ticket} />
+				<TicketRow
+					{ticket}
+					href={resolve(localizedHref(`/concierge/${organizationId}/tickets/${ticket._id}`))}
+				/>
 			{/each}
 		</div>
 	{/if}

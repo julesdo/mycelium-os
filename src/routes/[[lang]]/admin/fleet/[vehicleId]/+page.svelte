@@ -26,6 +26,10 @@
 	import GaugeIcon from '@lucide/svelte/icons/gauge';
 	import MapPinIcon from '@lucide/svelte/icons/map-pin';
 	import CheckCircle2Icon from '@lucide/svelte/icons/check-circle-2';
+	import CalendarIcon from '@lucide/svelte/icons/calendar';
+	import UserIcon from '@lucide/svelte/icons/user';
+	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
+	import { RESERVATION_STATUS_CONFIG } from '$lib/components/reservations/status.js';
 
 	type Status = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED';
 
@@ -103,6 +107,34 @@
 	function onEditSuccess() {
 		showEditDialog = false;
 		toast.success('Modifications enregistrees');
+	}
+
+	// ─── Historique des réservations ──────────────────────────────────────────────
+
+	const reservationsQuery = useQuery((api as any).reservations.listReservationsForVehicle, {
+		vehicleId: page.params.vehicleId
+	});
+
+	function formatPeriod(start: number, end: number): string {
+		const startD = new Date(start);
+		const endD = new Date(end);
+		const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
+		const startStr = startD.toLocaleDateString('fr-FR', opts);
+		const endStr = endD.toLocaleDateString('fr-FR', { ...opts, year: 'numeric' });
+		const startTime = startD.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+		const endTime = endD.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+		const samDay = startD.toDateString() === endD.toDateString();
+		if (samDay) return `${startStr} · ${startTime} → ${endTime}`;
+		return `${startStr} ${startTime} → ${endStr} ${endTime}`;
+	}
+
+	function formatDuration(start: number, end: number): string {
+		const mins = Math.round((end - start) / 60_000);
+		if (mins < 60) return `${mins} min`;
+		const h = Math.floor(mins / 60), m = mins % 60;
+		if (h < 24) return m > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${h}h`;
+		const d = Math.floor(h / 24), rh = h % 24;
+		return rh > 0 ? `${d}j ${rh}h` : `${d}j`;
 	}
 
 	// ─── Télématique Smartcar ─────────────────────────────────────────────────────
@@ -610,14 +642,90 @@
 
 			<!-- Onglet Historique -->
 			<Tabs.Content value="history" class="mt-4">
-				<div
-					class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/20 py-20 text-center"
-				>
-					<p class="text-sm font-medium">Historique des reservations</p>
-					<p class="max-w-xs text-xs text-muted-foreground">
-						L'historique des reservations sera disponible en S5, apres l'implementation du module de
-						calendrier et de gestion des reservations.
-					</p>
+				<div class="flex flex-col gap-4">
+					<!-- En-tête -->
+					<div class="flex items-center justify-between">
+						<p class="text-sm text-muted-foreground">
+							{#if reservationsQuery.data}
+								{reservationsQuery.data.length} réservation{reservationsQuery.data.length !== 1 ? 's' : ''}
+							{/if}
+						</p>
+					</div>
+
+					{#if reservationsQuery.isLoading}
+						<Card.Root>
+							<Card.Content class="p-0">
+								{#each [1, 2, 3, 4] as i (i)}
+									<div class="flex items-center gap-4 border-b border-border/50 px-4 py-3 last:border-0">
+										<Skeleton class="h-4 w-32" />
+										<Skeleton class="h-4 w-24" />
+										<Skeleton class="h-4 w-40 flex-1" />
+										<Skeleton class="h-5 w-20 rounded-full" />
+									</div>
+								{/each}
+							</Card.Content>
+						</Card.Root>
+					{:else if !reservationsQuery.data || reservationsQuery.data.length === 0}
+						<div class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/20 py-16 text-center">
+							<CalendarIcon class="size-8 text-muted-foreground/40" />
+							<div>
+								<p class="text-sm font-medium">Aucune réservation</p>
+								<p class="mt-0.5 text-xs text-muted-foreground">Ce véhicule n'a pas encore été réservé.</p>
+							</div>
+						</div>
+					{:else}
+						<Card.Root>
+							<Card.Content class="p-0">
+								<!-- En-tête tableau -->
+								<div class="hidden grid-cols-[1fr_160px_160px_100px_32px] gap-4 border-b border-border/50 px-4 py-2 sm:grid">
+									<p class="text-xs font-medium text-muted-foreground">Période</p>
+									<p class="text-xs font-medium text-muted-foreground">Conducteur</p>
+									<p class="text-xs font-medium text-muted-foreground">Objet</p>
+									<p class="text-xs font-medium text-muted-foreground">Statut</p>
+									<span></span>
+								</div>
+
+								{#each reservationsQuery.data as r (r._id)}
+									{@const statusCfg = RESERVATION_STATUS_CONFIG[r.status as keyof typeof RESERVATION_STATUS_CONFIG]}
+									<a
+										href={localHref(`/admin/reservations/${r._id}`)}
+										class="group flex flex-col gap-1.5 border-b border-border/40 px-4 py-3 transition-colors hover:bg-muted/30 last:border-0 sm:grid sm:grid-cols-[1fr_160px_160px_100px_32px] sm:items-center sm:gap-4"
+									>
+										<!-- Période -->
+										<div class="flex flex-col gap-0.5">
+											<span class="text-xs font-medium tabular-nums">
+												{formatPeriod(r.startDate, r.endDate)}
+											</span>
+											<span class="text-[10px] text-muted-foreground tabular-nums">
+												{formatDuration(r.startDate, r.endDate)}
+											</span>
+										</div>
+
+										<!-- Conducteur -->
+										<div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+											<UserIcon class="size-3 shrink-0" />
+											<span class="truncate">
+												{r.userName ?? r.userEmail ?? '—'}
+											</span>
+										</div>
+
+										<!-- Objet -->
+										<p class="line-clamp-1 text-xs text-foreground/70">
+											{r.purpose}
+										</p>
+
+										<!-- Statut -->
+										<span class="inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {statusCfg?.class ?? ''}">
+											{statusCfg?.label ?? r.status}
+										</span>
+
+										<!-- Lien -->
+										<ExternalLinkIcon class="size-3.5 shrink-0 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/60 sm:ml-auto" />
+									</a>
+								{/each}
+							</Card.Content>
+						</Card.Root>
+					{/if}
 				</div>
 			</Tabs.Content>
 		</Tabs.Root>

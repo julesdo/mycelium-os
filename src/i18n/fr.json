@@ -1,4 +1,4 @@
-{
+﻿{
 	"a11y": {
 		"skip_to_content": "Aller au contenu"
 	},
@@ -1931,7 +1931,7 @@
 				"0": "Tout l'Essential",
 				"1": "Jusqu'à 150 conducteurs",
 				"2": "Sync Xero & QuickBooks",
-				"3": "Compliance Officer (BiK UK, CSRD lite)",
+				"3": "Compliance Officer (URSSAF, CSRD)",
 				"4": "Gestion des permis conducteurs",
 				"5": "Suivi sinistres & contraventions"
 			},
@@ -2356,6 +2356,7 @@
 		"steps": {
 			"eyebrow": "Mise en route",
 			"title": "Opérationnel en 15 minutes.",
+			"lede": "Réservations, alertes de conformité, rapports hebdomadaires. Mycelium tourne même quand vous dormez.",
 			"s1": {
 				"title": "Importez votre flotte",
 				"desc": "Glissez votre fichier CSV. Mycelium mappe les colonnes automatiquement. 15 véhicules importés en 90 secondes."
@@ -2435,7 +2436,7 @@
 				"agents": "3 agents IA",
 				"f1": "Tout l'Essential",
 				"f2": "Sync Xero & QuickBooks",
-				"f3": "Compliance Officer (BiK UK, CSRD lite)",
+				"f3": "Compliance Officer (URSSAF, CSRD)",
 				"f4": "Gestion des permis conducteurs",
 				"f5": "Suivi sinistres & contraventions"
 			},

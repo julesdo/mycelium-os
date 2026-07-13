@@ -1,6 +1,8 @@
 import { v, ConvexError } from 'convex/values';
 import { internalMutation } from '../_generated/server';
+import { internal } from '../_generated/api';
 import { conciergeQuery, conciergeMutation } from '../functions';
+import type { Id } from '../_generated/dataModel';
 
 const SLA_FIRST_RESPONSE_MS: Record<string, number> = {
 	URGENT: 15 * 60 * 1000,
@@ -65,6 +67,16 @@ export const listInboxTickets = conciergeQuery({
 	}
 });
 
+type UnifiedMessage = {
+	_id: string;
+	authorId: string;
+	authorRole: 'concierge' | 'super_admin' | 'client';
+	senderName: string | null;
+	content: string;
+	isInternal: boolean;
+	createdAt: number;
+};
+
 export const getTicket = conciergeQuery({
 	args: { ticketId: v.id('conciergeTickets') },
 	handler: async (ctx, { ticketId }) => {
@@ -82,10 +94,71 @@ export const getTicket = conciergeQuery({
 		}
 
 		const org = await ctx.db.get(ticket.organizationId);
-		const messages = await ctx.db
+
+		const ticketMessages = await ctx.db
 			.query('conciergeTicketMessages')
 			.withIndex('by_ticket_and_time', (q) => q.eq('ticketId', ticketId))
 			.collect();
+
+		// Resolve staff display names for messages authored by concierge/admin users
+		const staffIds = [...new Set(ticketMessages.map((m) => m.authorId))];
+		const staffNameMap = new Map<string, string>();
+		await Promise.all(
+			staffIds.map(async (uid) => {
+				const staff = await ctx.db
+					.query('myceliumStaff')
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					.withIndex('by_userId', (q) => q.eq('userId', uid as any))
+					.unique();
+				if (staff) staffNameMap.set(uid, staff.name);
+			})
+		);
+
+		let messages: UnifiedMessage[];
+
+		if (ticket.sourceType === 'HUMAN_ASSIST' && ticket.sourceId) {
+			// Pour les tickets HUMAN_ASSIST, le vrai fil client<>concierge est dans
+			// humanAssistMessages. On fusionne avec les notes internes du ticket.
+			const request = await ctx.db.get(ticket.sourceId as Id<'humanAssistRequests'>);
+			const humanMessages = request
+				? await ctx.db
+						.query('humanAssistMessages')
+						.withIndex('by_request', (q) => q.eq('requestId', request._id))
+						.order('asc')
+						.collect()
+				: [];
+
+			const normalizedHuman: UnifiedMessage[] = humanMessages.map((m) => ({
+				_id: m._id as string,
+				authorId: m.senderType === 'client' ? (request?.requesterId ?? 'client') : m.senderName,
+				authorRole: m.senderType as 'client' | 'concierge',
+				senderName: m.senderName,
+				content: m.content,
+				isInternal: false,
+				createdAt: m.createdAt
+			}));
+
+			// Notes internes du ticket (jamais relayées au client)
+				const internalNotes: UnifiedMessage[] = ticketMessages
+				.filter((m) => m.isInternal)
+				.map((m) => ({
+					_id: m._id as string,
+					authorId: m.authorId,
+					authorRole: m.authorRole,
+					senderName: staffNameMap.get(m.authorId) ?? m.senderName ?? null,
+					content: m.content,
+					isInternal: true,
+					createdAt: m.createdAt
+				}));
+
+			messages = [...normalizedHuman, ...internalNotes].sort((a, b) => a.createdAt - b.createdAt);
+		} else {
+			messages = ticketMessages.map((m) => ({
+				...m,
+				_id: m._id as string,
+				senderName: staffNameMap.get(m.authorId) ?? m.senderName ?? null
+			}));
+		}
 
 		return { ...ticket, orgName: org?.name, messages };
 	}
@@ -153,11 +226,13 @@ export const sendTicketMessage = conciergeMutation({
 		const ticket = await ctx.db.get(ticketId);
 		if (!ticket) throw new ConvexError('Ticket introuvable');
 
+		const now = Date.now();
+
 		if (!ticket.firstResponseAt && !isInternal) {
 			await ctx.db.patch(ticketId, {
-				firstResponseAt: Date.now(),
+				firstResponseAt: now,
 				status: 'IN_PROGRESS',
-				updatedAt: Date.now()
+				updatedAt: now
 			});
 		}
 
@@ -167,8 +242,47 @@ export const sendTicketMessage = conciergeMutation({
 			authorRole: ctx.staffRole === 'super_admin' ? 'super_admin' : 'concierge',
 			content,
 			isInternal,
-			createdAt: Date.now()
+			createdAt: now
 		});
+
+		// Pour les tickets HUMAN_ASSIST : relayer les réponses non-internes au client
+		// via humanAssistMessages — la seule table lue par le CopilotPanel salarié.
+		if (!isInternal && ticket.sourceType === 'HUMAN_ASSIST' && ticket.sourceId) {
+			const requestId = ticket.sourceId as Id<'humanAssistRequests'>;
+			const request = await ctx.db.get(requestId);
+			if (request && request.status !== 'closed') {
+				if (!request.assignedConciergeId) {
+					await ctx.db.patch(requestId, {
+						status: 'in_progress',
+						assignedConciergeId: ctx.user._id
+					});
+				}
+				const staffProfile = await ctx.db
+					.query('myceliumStaff')
+					.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+					.unique();
+
+				await ctx.db.insert('humanAssistMessages', {
+					requestId,
+					organizationId: ticket.organizationId,
+					senderType: 'concierge',
+					senderName: ctx.user.name ?? ctx.user.email ?? 'Concierge Mycelium',
+					senderAvatarUrl: staffProfile?.avatarUrl ?? undefined,
+					content,
+					createdAt: now
+				});
+
+				// Notifier le salarié que son concierge a répondu
+				await ctx.scheduler.runAfter(0, internal.notifications.createNotification, {
+					organizationId: ticket.organizationId,
+					userId: request.requesterId,
+					type: 'HUMAN_ASSIST_REPLY',
+					title: 'Votre concierge a répondu',
+					message: content.length > 80 ? content.slice(0, 80) + '…' : content,
+					link: '/app'
+				});
+			}
+		}
 	}
 });
 
@@ -178,10 +292,11 @@ export const resolveTicket = conciergeMutation({
 		closingNote: v.optional(v.string())
 	},
 	handler: async (ctx, { ticketId, closingNote }) => {
+		const now = Date.now();
 		await ctx.db.patch(ticketId, {
 			status: 'RESOLVED',
-			resolvedAt: Date.now(),
-			updatedAt: Date.now()
+			resolvedAt: now,
+			updatedAt: now
 		});
 		if (closingNote) {
 			await ctx.db.insert('conciergeTicketMessages', {
@@ -190,9 +305,25 @@ export const resolveTicket = conciergeMutation({
 				authorRole: ctx.staffRole === 'super_admin' ? 'super_admin' : 'concierge',
 				content: closingNote,
 				isInternal: true,
-				createdAt: Date.now()
+				createdAt: now
 			});
 		}
+	}
+});
+
+export const reassignTicket = conciergeMutation({
+	args: {
+		ticketId: v.id('conciergeTickets'),
+		assignedTo: v.optional(v.string())
+	},
+	handler: async (ctx, { ticketId, assignedTo }) => {
+		const ticket = await ctx.db.get(ticketId);
+		if (!ticket) throw new ConvexError('Ticket introuvable');
+		await ctx.db.patch(ticketId, {
+			assignedTo,
+			status: assignedTo && ticket.status === 'NEW' ? 'IN_PROGRESS' : ticket.status,
+			updatedAt: Date.now()
+		});
 	}
 });
 

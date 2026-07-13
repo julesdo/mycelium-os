@@ -636,7 +636,8 @@ export default defineSchema({
 			v.literal('LICENSE_EXPIRED'),
 			v.literal('VIOLATION_RECEIVED'),
 			v.literal('INSPECTION_REQUIRED'),
-			v.literal('INCIDENT_DECLARED')
+			v.literal('INCIDENT_DECLARED'),
+			v.literal('HUMAN_ASSIST_REPLY')
 		),
 		title: v.string(),
 		message: v.string(),
@@ -1352,6 +1353,7 @@ export default defineSchema({
 		firstResponseAt: v.optional(v.number()),
 		resolvedAt: v.optional(v.number()),
 		slaDeadline: v.optional(v.number()),
+		slaBreachedAt: v.optional(v.number()),
 		satisfactionEmoji: v.optional(
 			v.union(v.literal('good'), v.literal('neutral'), v.literal('bad'))
 		),
@@ -1374,6 +1376,7 @@ export default defineSchema({
 			v.literal('client')
 		),
 		content: v.string(),
+		senderName: v.optional(v.string()),
 		attachmentIds: v.optional(v.array(v.string())),
 		isInternal: v.boolean(),
 		createdAt: v.number()

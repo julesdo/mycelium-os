@@ -112,6 +112,15 @@ crons.daily(
 	{}
 );
 
+// SLA breach detection: escalade les tickets sans premier retour passé deadline
+// Toutes les 30 min pour capturer les SLA URGENT (15 min) dans un délai raisonnable
+crons.interval(
+	'checkConciergeSla',
+	{ minutes: 30 },
+	internal.concierge.sla.checkSlaBreach,
+	{}
+);
+
 // Concierge daily briefing — 7h UTC, avant l'arrivée de l'équipe
 crons.daily(
 	'conciergeDailyBriefing',

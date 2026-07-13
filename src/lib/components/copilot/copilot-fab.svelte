@@ -1,9 +1,23 @@
 <script lang="ts">
 	import { copilot, type AgentType } from './copilot-store.svelte.js';
+	import { useQuery } from '@mmailaender/convex-svelte';
+	import { api } from '$lib/convex/_generated/api';
 	import BotIcon from '@lucide/svelte/icons/bot';
 	import XIcon from '@lucide/svelte/icons/x';
 
 	let { defaultAgent = 'concierge' }: { defaultAgent?: AgentType } = $props();
+
+	// Demande Human Assist active — pour le badge sur le FAB
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const activeRequestQ = useQuery((api as any)['concierge/humanAssist'].getMyActiveRequest, {});
+	const hasActiveRequest = $derived(
+		!!activeRequestQ.data && activeRequestQ.data.request.status !== 'closed'
+	);
+	const hasUnread = $derived(
+		hasActiveRequest &&
+		(activeRequestQ.data?.messages ?? []).some((m: any) => m.senderType === 'concierge') &&
+		!copilot.isOpen
+	);
 
 	function handleKeydown(e: KeyboardEvent) {
 		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -41,9 +55,16 @@
 		<XIcon class="fab-icon fab-icon--x" />
 	</span>
 
+	<!-- Badge conversation humaine active -->
+	{#if hasUnread && !copilot.isOpen}
+		<span class="fab-badge" aria-label="Nouveau message de votre concierge"></span>
+	{:else if hasActiveRequest && !copilot.isOpen}
+		<span class="fab-badge fab-badge--pulse" aria-label="Conversation en cours avec votre concierge"></span>
+	{/if}
+
 	<!-- Keyboard hint tooltip (desktop only) -->
 	<span class="fab-tooltip" aria-hidden="true">
-		{#if copilot.isOpen}Fermer{:else}Assist ⌘K{/if}
+		{#if copilot.isOpen}Fermer{:else if hasActiveRequest}Concierge actif{:else}Assist ⌘K{/if}
 	</span>
 </button>
 
@@ -197,5 +218,28 @@
 		height: 56px;
 	}
 	.fab-tooltip { display: none; }
+}
+
+/* ── Badge conversation humaine ─────────────────────────────────────────────── */
+.fab-badge {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: oklch(0.55 0.18 295);
+	border: 2px solid var(--background, #fff);
+	box-shadow: 0 0 0 1px oklch(0.55 0.18 295 / 0.3);
+}
+
+.fab-badge--pulse {
+	background: oklch(0.7 0.12 145);
+	animation: fab-badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes fab-badge-pulse {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50% { opacity: 0.7; transform: scale(0.9); }
 }
 </style>

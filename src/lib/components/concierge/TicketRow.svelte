@@ -4,7 +4,7 @@
 	import SlaTimer from './SlaTimer.svelte';
 	import BuildingIcon from '@lucide/svelte/icons/building-2';
 
-	let { ticket }: { ticket: Record<string, any> } = $props();
+	let { ticket, href }: { ticket: Record<string, any>; href?: string } = $props();
 
 	const PRIORITY_DOT: Record<string, string> = {
 		URGENT: 'bg-red-500',
@@ -14,16 +14,16 @@
 	};
 
 	const SOURCE_LABEL: Record<string, string> = {
-		HUMAN_ASSIST: 'Human Assist',
+		HUMAN_ASSIST: 'Demande client',
 		SUPPORT_TICKET: 'Support',
-		CONCIERGE_TASK: 'Tâche auto',
+		CONCIERGE_TASK: 'Automatique',
 		SALES_MESSAGE: 'Commercial',
 		MANUAL: 'Manuel'
 	};
 </script>
 
 <a
-	href={resolve(localizedHref(`/concierge/inbox/${ticket._id}`))}
+	href={href ?? resolve(localizedHref(`/concierge/inbox/${ticket._id}`))}
 	class="flex items-start gap-3 px-6 py-3.5 transition-colors hover:bg-muted/40"
 >
 	<span class="mt-2 size-2 shrink-0 rounded-full {PRIORITY_DOT[ticket.priority] ?? 'bg-muted'}"></span>

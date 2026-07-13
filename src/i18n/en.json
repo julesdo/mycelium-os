@@ -1,4 +1,4 @@
-{
+﻿{
 	"a11y": {
 		"skip_to_content": "Skip to content"
 	},
@@ -1942,7 +1942,7 @@
 				"2": "Fleet Optimizer (weekly AI insights)",
 				"3": "Cost Negotiator agent",
 				"4": "Driver Coach (eco-driving & safety)",
-				"5": "BiK AI advice"
+				"5": "Company car benefits AI advice"
 			},
 			"enterprise": {
 				"0": "Unlimited drivers",
@@ -1961,7 +1961,7 @@
 				"button_manage": "Manage Subscription",
 				"description": "For fleets up to 50 drivers",
 				"name": "Essential",
-				"price": "£420 / month"
+				"price": "490 € / month"
 			},
 			"professional": {
 				"button": "Get Professional",
@@ -1969,7 +1969,7 @@
 				"button_manage": "Manage Subscription",
 				"description": "Accounting sync & compliance tools",
 				"name": "Professional",
-				"price": "£750 / month"
+				"price": "890 € / month"
 			},
 			"business": {
 				"button": "Get Business",
@@ -1977,7 +1977,7 @@
 				"button_manage": "Manage Subscription",
 				"description": "Full AI fleet intelligence suite",
 				"name": "Business",
-				"price": "£1,250 / month"
+				"price": "1 490 € / month"
 			},
 			"enterprise": {
 				"button": "Contact Sales",
@@ -2357,6 +2357,7 @@
 		"steps": {
 			"eyebrow": "Getting started",
 			"title": "Up and running in 15 minutes.",
+			"lede": "Bookings, compliance alerts, weekly reports. Mycelium runs even while you sleep.",
 			"s1": {
 				"title": "Import your fleet",
 				"desc": "Drop in your CSV file. Mycelium maps the columns automatically. 15 vehicles imported in 90 seconds."
@@ -2419,9 +2420,9 @@
 			"popular": "Most chosen",
 			"cta_start": "Get started",
 			"cta_contact": "Contact us",
-			"footnote": "All prices excluding VAT · Overage: £5–8 per driver beyond quota · Data hosted in Europe",
+			"footnote": "All prices excluding VAT · Overage: €5–8 per driver beyond quota · Data hosted in Europe",
 			"essential": {
-				"price": "£420",
+				"price": "490 €",
 				"sub": "50 drivers included",
 				"agents": "1 AI agent",
 				"f1": "AI Concierge",
@@ -2431,24 +2432,24 @@
 				"f5": "Standard support"
 			},
 			"professional": {
-				"price": "£750",
+				"price": "890 €",
 				"sub": "150 drivers included",
 				"agents": "3 AI agents",
 				"f1": "Everything in Essential",
 				"f2": "Xero & QuickBooks sync",
-				"f3": "Compliance Officer (BiK UK)",
+				"f3": "Compliance Officer (URSSAF, CSRD)",
 				"f4": "Driver licence management",
 				"f5": "Incident & violation tracking"
 			},
 			"business": {
-				"price": "£1,250",
+				"price": "1 490 €",
 				"sub": "300 drivers included",
 				"agents": "6 AI agents",
 				"f1": "Everything in Professional",
 				"f2": "Fleet Optimiser (weekly AI insights)",
 				"f3": "Cost Negotiator agent",
 				"f4": "Driver Coach (eco-driving)",
-				"f5": "BiK AI advice"
+				"f5": "Company car benefits AI advice"
 			},
 			"enterprise": {
 				"price": "Custom",
@@ -2494,7 +2495,7 @@
 		"cta": {
 			"title": "Your fleet deserves better than a spreadsheet.",
 			"lede": "Join the French SMEs running their fleet from a single platform.",
-			"primary": "Get started from £420/mo",
+			"primary": "Get started from €490/mo",
 			"secondary": "Talk to the team",
 			"reassurance": "CSV import · 15-minute onboarding · No commitment · Support included"
 		},

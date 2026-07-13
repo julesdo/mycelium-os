@@ -12,6 +12,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import LayoutListIcon from '@lucide/svelte/icons/layout-list';
+	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
 	import PlayCircleIcon from '@lucide/svelte/icons/play-circle';
@@ -35,7 +36,7 @@
 	const activeOrgId = $derived.by(() => {
 		const match = page.url.pathname.match(/\/concierge\/([^/]+)/);
 		const id = match?.[1];
-		if (!id || id === 'staff') return null;
+		if (!id || ['staff', 'inbox', 'demos'].includes(id)) return null;
 		return id;
 	});
 
@@ -74,14 +75,15 @@
 		},
 		{
 			href: localizedHref('/concierge'),
-			label: 'File de tâches',
+			label: 'Clients',
 			icon: LayoutListIcon,
 			active:
 				!!page.url.pathname.match(/\/concierge\/?$/) ||
 				(page.url.pathname.includes('/concierge/') &&
 					!page.url.pathname.includes('/staff') &&
 					!page.url.pathname.includes('/inbox') &&
-					!page.url.pathname.includes('/demos'))
+					!page.url.pathname.includes('/demos') &&
+					!page.url.pathname.includes('/dashboard'))
 		},
 		{
 			href: localizedHref('/concierge/demos'),
@@ -92,8 +94,14 @@
 		...(isSuperAdmin
 			? [
 					{
+						href: localizedHref('/concierge/dashboard'),
+						label: 'Dashboard',
+						icon: LayoutDashboardIcon,
+						active: page.url.pathname.includes('/concierge/dashboard')
+					},
+					{
 						href: localizedHref('/concierge/staff'),
-						label: 'Équipe Mycelium',
+						label: 'Équipe',
 						icon: UsersIcon,
 						active: page.url.pathname.includes('/concierge/staff')
 					}

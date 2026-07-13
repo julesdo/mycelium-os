@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
+import { internal } from '../_generated/api';
 import { calculatePriorityScore, scoreToPriorityLabel } from './priority';
 
 const sourceTypeValidator = v.union(
@@ -50,6 +51,8 @@ export const upsertTaskFromSource = internalMutation({
 		});
 		const priority = scoreToPriorityLabel(priorityScore);
 
+		let taskId: string;
+
 		if (existing) {
 			await ctx.db.patch(existing._id, {
 				title: args.title,
@@ -59,22 +62,37 @@ export const upsertTaskFromSource = internalMutation({
 				priorityScore,
 				updatedAt: Date.now()
 			});
-			return existing._id;
+			taskId = existing._id as string;
+		} else {
+			const newId = await ctx.db.insert('concierge_tasks', {
+				organizationId: args.organizationId,
+				sourceType: args.sourceType,
+				sourceId: args.sourceId,
+				priority,
+				priorityScore,
+				title: args.title,
+				description: args.description,
+				dueDate: args.dueDate,
+				status: 'OPEN',
+				createdAt: Date.now(),
+				updatedAt: Date.now()
+			});
+			taskId = newId as string;
 		}
 
-		return await ctx.db.insert('concierge_tasks', {
-			organizationId: args.organizationId,
-			sourceType: args.sourceType,
-			sourceId: args.sourceId,
-			priority,
-			priorityScore,
-			title: args.title,
-			description: args.description,
-			dueDate: args.dueDate,
-			status: 'OPEN',
-			createdAt: Date.now(),
-			updatedAt: Date.now()
-		});
+		// Bridge M1: tâches CRITICAL/URGENT → ticket concierge pour traitement humain
+		if (priority === 'CRITICAL' || priority === 'URGENT') {
+			await ctx.scheduler.runAfter(0, internal.concierge.tickets.upsertTicketFromSource, {
+				organizationId: args.organizationId,
+				sourceType: 'CONCIERGE_TASK',
+				sourceId: taskId,
+				title: args.title,
+				summary: args.description,
+				priority: priority === 'CRITICAL' ? 'URGENT' : 'HIGH'
+			});
+		}
+
+		return taskId;
 	}
 });
 

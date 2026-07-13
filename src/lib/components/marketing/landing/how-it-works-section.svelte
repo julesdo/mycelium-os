@@ -13,7 +13,7 @@
 			{$t('landing.steps.title')}
 		</h2>
 		<p class="mt-4 text-base leading-relaxed text-muted-foreground">
-			{$t('landing.agents.lede')}
+			{$t('landing.steps.lede')}
 		</p>
 	</div>
 

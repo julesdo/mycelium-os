@@ -26,7 +26,8 @@ const notificationTypeValidator = v.union(
 	v.literal('LICENSE_EXPIRING'),
 	v.literal('LICENSE_EXPIRED'),
 	v.literal('VIOLATION_RECEIVED'),
-	v.literal('INSPECTION_REQUIRED')
+	v.literal('INSPECTION_REQUIRED'),
+	v.literal('HUMAN_ASSIST_REPLY')
 );
 
 // ─── In-app notifications — public API ────────────────────────────────────────

@@ -7,6 +7,7 @@
 	import MetricCard from '$lib/components/ui/metric-card.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import * as Popover from '$lib/components/ui/popover/index.js';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
 	import PlayIcon from '@lucide/svelte/icons/play';
 	import ClockIcon from '@lucide/svelte/icons/clock';
@@ -127,9 +128,32 @@
 		finally { loadingId = null; }
 	}
 
-	async function doSnooze(id: Id<'concierge_tasks'>) {
+	function nextWeekday(hour = 9): number {
+		const d = new Date();
+		d.setDate(d.getDate() + 1);
+		if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+		if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+		d.setHours(hour, 0, 0, 0);
+		return d.getTime();
+	}
+
+	function nextMonday(hour = 9): number {
+		const d = new Date();
+		const daysUntilMonday = (8 - d.getDay()) % 7 || 7;
+		d.setDate(d.getDate() + daysUntilMonday);
+		d.setHours(hour, 0, 0, 0);
+		return d.getTime();
+	}
+
+	const SNOOZE_OPTIONS = [
+		{ label: '+1 heure', ms: () => Date.now() + 3_600_000 },
+		{ label: 'Demain 9h', ms: () => nextWeekday(9) },
+		{ label: 'Lundi 9h', ms: () => nextMonday(9) }
+	];
+
+	async function doSnooze(id: Id<'concierge_tasks'>, ms: number) {
 		loadingId = id;
-		try { await snoozeTask({ taskId: id, snoozedUntil: Date.now() + 3_600_000 }); }
+		try { await snoozeTask({ taskId: id, snoozedUntil: ms }); }
 		finally { loadingId = null; }
 	}
 </script>
@@ -310,9 +334,27 @@
 							{:else if task.status === 'IN_PROGRESS'}
 								<span class="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">En cours</span>
 							{/if}
-							<Button variant="ghost" size="icon-xs" onclick={() => doSnooze(task._id)} disabled={isLoading} title="Snoozer 1h">
-								<ClockIcon class="size-3" />
-							</Button>
+							<Popover.Root>
+								<Popover.Trigger>
+									{#snippet child({ props })}
+										<Button {...props} variant="ghost" size="icon-xs" disabled={isLoading} title="Snoozer">
+											<ClockIcon class="size-3" />
+										</Button>
+									{/snippet}
+								</Popover.Trigger>
+								<Popover.Content class="w-40 p-1" align="end">
+									{#each SNOOZE_OPTIONS as opt (opt.label)}
+										<button
+											type="button"
+											onclick={() => doSnooze(task._id, opt.ms())}
+											class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[12px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+										>
+											<ClockIcon class="size-3 shrink-0" />
+											{opt.label}
+										</button>
+									{/each}
+								</Popover.Content>
+							</Popover.Root>
 							<Button variant="outline" size="xs" onclick={() => markDone(task._id)} disabled={isLoading} class="h-6 gap-1 px-2 text-[11px]">
 								<CheckIcon class="size-3" />Traité
 							</Button>

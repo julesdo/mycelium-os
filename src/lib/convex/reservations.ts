@@ -2,7 +2,8 @@ import { v, ConvexError } from 'convex/values';
 import { internalMutation } from './_generated/server';
 import { authedQuery, authedMutation } from './functions';
 import { hasConflict, hasMaintenanceConflict } from './lib/reservations';
-import { internal } from './_generated/api';
+import { internal, components } from './_generated/api';
+import { parseBetterAuthUsers } from './admin/types';
 
 function formatDateShort(ts: number): string {
 	return new Intl.DateTimeFormat('fr-FR', {
@@ -66,6 +67,67 @@ export const listReservations = authedQuery({
 		}
 
 		return reservations;
+	}
+});
+
+export const listReservationsForVehicle = authedQuery({
+	args: { vehicleId: v.id('vehicles') },
+	handler: async (ctx, { vehicleId }) => {
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+		const orgId = profile.currentOrganizationId;
+
+		const membership = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', orgId).eq('userId', ctx.user._id)
+			)
+			.unique();
+		if (!membership || membership.role === 'ORG_MEMBER') {
+			throw new ConvexError('Accès refusé : rôle ORG_ADMIN ou ORG_MANAGER requis');
+		}
+
+		const vehicle = await ctx.db.get(vehicleId);
+		if (!vehicle || vehicle.organizationId !== orgId) {
+			throw new ConvexError('Véhicule introuvable ou non autorisé');
+		}
+
+		const reservations = await ctx.db
+			.query('reservations')
+			.withIndex('by_vehicle', (q) => q.eq('vehicleId', vehicleId))
+			.order('desc')
+			.collect();
+
+		const userIds = [...new Set(reservations.map((r) => r.userId))];
+		let userInfoMap = new Map<string, { name: string | null; email: string }>();
+
+		if (userIds.length > 0) {
+			const usersRaw = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+				model: 'user',
+				where: [{ field: '_id', operator: 'in', value: userIds }],
+				paginationOpts: { cursor: null, numItems: userIds.length + 10 }
+			})) as { page: unknown[] };
+			const parsed = parseBetterAuthUsers(usersRaw.page);
+			userInfoMap = new Map(parsed.map((u) => [u._id, { name: u.name ?? null, email: u.email }]));
+		}
+
+		return reservations.map((r) => {
+			const user = userInfoMap.get(r.userId) ?? null;
+			return {
+				_id: r._id,
+				startDate: r.startDate,
+				endDate: r.endDate,
+				purpose: r.purpose,
+				status: r.status,
+				notes: r.notes ?? null,
+				createdAt: r.createdAt,
+				userName: user?.name ?? null,
+				userEmail: user?.email ?? null
+			};
+		});
 	}
 });
 
