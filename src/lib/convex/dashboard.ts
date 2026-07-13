@@ -205,24 +205,39 @@ export const getRecentActivity = authedQuery({
 export const getVehicleLocations = authedQuery({
 	args: {},
 	handler: async (ctx) => {
-		const { organizationId } = await getUserOrg(ctx);
+		const { organizationId, org } = await getUserOrg(ctx);
 		const vehicles = await ctx.db
 			.query('vehicles')
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 
-		return vehicles.map((v) => ({
-			_id: v._id as string,
-			brand: v.brand,
-			model: v.model,
-			registration: v.registration,
-			status: v.status,
-			site: v.location?.trim() ?? null,
-			latitude: v.smartcarLatitude ?? null,
-			longitude: v.smartcarLongitude ?? null,
-			lastSync: v.smartcarLastSync ?? null,
-			smartcarLinked: !!v.smartcarVehicleId,
-		}));
+		// Pour les orgs démo, lire les positions simulées depuis demoVehiclePositions
+		const demoPositions = new Map<string, { lat: number; lng: number; updatedAt: number }>();
+		if (org.isDemo) {
+			const positions = await ctx.db
+				.query('demoVehiclePositions')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect();
+			for (const p of positions) {
+				demoPositions.set(p.vehicleId, { lat: p.lat, lng: p.lng, updatedAt: p.updatedAt });
+			}
+		}
+
+		return vehicles.map((v) => {
+			const demoPos = demoPositions.get(v._id);
+			return {
+				_id: v._id as string,
+				brand: v.brand,
+				model: v.model,
+				registration: v.registration,
+				status: v.status,
+				site: v.location?.trim() ?? null,
+				latitude: demoPos?.lat ?? v.smartcarLatitude ?? null,
+				longitude: demoPos?.lng ?? v.smartcarLongitude ?? null,
+				lastSync: demoPos?.updatedAt ?? v.smartcarLastSync ?? null,
+				smartcarLinked: !!v.smartcarVehicleId,
+			};
+		});
 	}
 });
 
