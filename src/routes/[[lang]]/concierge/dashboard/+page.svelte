@@ -135,7 +135,7 @@
 				style="box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06)">
 				<div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
-				{@const maxCount = Math.max(...d.chargeParConcierge.map(c => c.count), 1)}
+				{@const maxCount = d.chargeParConcierge.reduce((m, c) => Math.max(m, c.count), 1)}
 				<div class="divide-y divide-border/50">
 					{#each d.chargeParConcierge.sort((a, b) => b.count - a.count) as item (item.name)}
 						<div class="flex items-center gap-4 px-5 py-3">
