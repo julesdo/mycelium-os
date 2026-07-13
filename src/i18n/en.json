@@ -2255,6 +2255,15 @@
 			"modules": "Modules included from day one",
 			"hosting": "Data hosted in Europe"
 		},
+		"human": {
+			"eyebrow": "Human concierge",
+			"title": "AI optimises. Humans guide you.",
+			"desc": "Every Mycelium account is supported by a dedicated concierge. Guided onboarding, complex questions, exceptional situations — a real person who knows your fleet and responds within 4 hours.",
+			"t1": "Step-by-step onboarding with your dedicated concierge",
+			"t2": "Response guaranteed within 4 business hours",
+			"t3": "One point of contact per account — not a chatbot",
+			"img_alt": "Mycelium concierge team at work"
+		},
 		"features": {
 			"eyebrow": "What we handle for you",
 			"title": "All fleet operations. No effort on your part.",

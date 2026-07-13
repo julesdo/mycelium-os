@@ -8,6 +8,7 @@
 		HowItWorksSection,
 		AgentsSection,
 		SimulatorTeaserSection,
+		HumanConciergeSection,
 		PricingSection,
 		FaqSection,
 		CtaSection
@@ -25,6 +26,7 @@
 	<HowItWorksSection />
 	<AgentsSection />
 	<SimulatorTeaserSection />
+	<HumanConciergeSection />
 	<PricingSection />
 	<FaqSection />
 	<CtaSection />

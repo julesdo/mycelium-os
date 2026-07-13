@@ -10,3 +10,4 @@ export { default as FaqSection } from './faq-section.svelte';
 export { default as CtaSection } from './cta-section.svelte';
 export { default as AgenticDemoSection } from './agentic-demo-section.svelte';
 export { default as SimulatorTeaserSection } from './simulator-teaser-section.svelte';
+export { default as HumanConciergeSection } from './human-concierge-section.svelte';

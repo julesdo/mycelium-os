@@ -2254,6 +2254,15 @@
 			"modules": "Modules inclus dès le départ",
 			"hosting": "Données hébergées en Europe"
 		},
+		"human": {
+			"eyebrow": "Concierge humain",
+			"title": "L'IA optimise. Les humains vous accompagnent.",
+			"desc": "Chaque compte Mycelium est suivi par un concierge dédié. Onboarding guidé, questions complexes, situations exceptionnelles — une personne réelle qui connaît votre flotte et répond en moins de 4 heures.",
+			"t1": "Onboarding guidé pas à pas par votre concierge",
+			"t2": "Réponse garantie en moins de 4 heures ouvrées",
+			"t3": "Un interlocuteur unique par compte, pas un chatbot",
+			"img_alt": "Équipe concierge Mycelium au travail"
+		},
 		"features": {
 			"eyebrow": "Ce qu'on gère pour vous",
 			"title": "Tout l'opérationnel de votre flotte. Sans effort de votre part.",
