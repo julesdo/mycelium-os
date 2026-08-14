@@ -472,9 +472,40 @@ L'effort de test suit la distribution du risque, il n'est pas uniforme.
 |---|---|---|
 | `referentiel.ts` | Unitaire, exhaustif | Chaque ligne du barème : `AB` → bio **et** durable · `HVE3` → durable seul · `LABEL_ROUGE` → durable seul · « local » → rien · « fait maison » → rien |
 | Agrégation | Unitaire | Jeu de lignes fabriqué aux ratios connus d'avance, incluant le seuil 60 % viande/poisson et l'exclusion du non-alimentaire du dénominateur |
-| Extraction CSV | Unitaire | Fichiers d'exemple, colonnes manquantes, montants malformés, encodages |
-| Classification par Claude | **Aucun test unitaire** | Non déterministe. Sa validation est la gate : 100 lignes vérifiées à la main, < 5 % d'erreur |
+| Extraction CSV et PDF | Unitaire | Fixtures synthétiques (6.1), colonnes manquantes, montants malformés, encodages |
+| Classification par Claude | **Aucun test unitaire** | Non déterministe. Sa validation est la gate : 100 lignes vérifiées à la main sur un **vrai** jeu de factures, < 5 % d'erreur |
 | Parcours dépôt → rapport | Playwright E2E | **Phase 2**, pas en V0 |
+
+### 6.1 Fixtures synthétiques
+
+Un générateur de factures fournisseurs synthétiques est construit **au jour 1 de la phase 1**, et
+ses sorties sont commitées comme fixtures. Elles sont reproductibles, exemptes de donnée client, et
+leur vérité terrain est connue au centime — ce qui rend les tests d'agrégation exacts plutôt
+qu'approximatifs.
+
+Le générateur produit délibérément les pathologies du terrain, pas des factures propres :
+
+- libellés tronqués ou codés (`CAR RD 4/4 AB 2K5`, `REF 88213`)
+- **avoirs** : lignes négatives, qui doivent réduire numérateur **et** dénominateur
+- frais de port, consignes et emballages : non-alimentaire mêlé aux denrées
+- totaux intermédiaires de bas de page ressemblant à des lignes produit
+- remises de ligne, unités hétérogènes (kg, pièce, colis, litre)
+- mention de label tantôt dans le libellé, tantôt en colonne séparée, tantôt absente
+
+### 6.2 Pourquoi les fixtures ne remplacent pas la gate
+
+Les fixtures valident le **code**. La gate valide le **classifieur face au réel**. Ce sont deux
+choses différentes, et la seconde ne peut pas être simulée : des fixtures écrites par l'auteur du
+classifieur héritent de ses angles morts. En particulier, le gisement `proofStatus = TO_JUSTIFY` —
+les produits réellement labellisés dont la facture ne porte pas la mention — est par construction
+impossible à générer, puisqu'il faudrait connaître d'avance la réponse que l'on cherche à détecter.
+Or c'est le point 6 du livrable diagnostic, celui qui rembourse la prestation.
+
+Les jeux de factures publics (SROIE, CORD et assimilés) sont des benchmarks d'OCR génériques : ni
+format de grossiste alimentaire français, ni label EGalim. Ils ne conviennent pas.
+
+**Un seul vrai jeu de factures suffit pour la gate.** Un restaurant a exactement les mêmes factures
+fournisseurs qu'une cantine.
 
 Le référentiel porte le risque maximal : une règle de dérivation fausse contamine tous les rapports
 silencieusement, et engage la responsabilité de conseil. C'est le seul endroit où la couverture doit
@@ -495,7 +526,7 @@ silencieusement, et engage la responsabilité de conseil. C'est le seul endroit 
 
 **Découpage de la phase 1** — chaque jour produit quelque chose de vérifiable :
 
-1. Schéma EGalim + `referentiel.ts` + extraction CSV
+1. Schéma EGalim + `referentiel.ts` + **générateur de fixtures (6.1)** + extraction CSV
 2. Extraction PDF texte + normalisation des libellés et des fournisseurs
 3. Classification par lots + `productLabels` + garde-fou de coût
 4. File de revue `/ops/revue` + agrégation des trois ratios
@@ -517,7 +548,7 @@ tourne pas.
 
 | Risque | Gravité | Parade |
 |---|---|---|
-| **Absence de jeu de factures réel** | **Bloquant** — la gate est invérifiable et la prospection ne peut pas démarrer | À déclencher immédiatement, hors code. Le patron du Pompon est le chemin le plus court : un restaurant a les mêmes factures fournisseurs qu'une cantine |
+| **Absence de jeu de factures réel** | Élevée — **sur la gate uniquement**, le développement n'est pas bloqué | Fixtures synthétiques (6.1) pour tout le développement et les tests unitaires. Pour la gate, un seul vrai jeu suffit : le patron du Pompon est le chemin le plus court. À demander avant le 28 août, sans urgence de calendrier |
 | Référentiel erroné | Élevée — contamine tous les rapports, engage la responsabilité de conseil | Revue de code explicite par Jules avant le premier rapport client · tests unitaires exhaustifs · version tracée sur chaque classification |
 | Hétérogénéité des PDF fournisseurs | Moyenne | Parade d'abord commerciale : le script d'appel réclame l'export comptable ou l'accès au portail du grossiste (80 % du travail d'extraction économisé, doc 05) |
 | Dérive de coût API | Faible | Plafond dur par lot + suivi dans `classificationJobs` |
