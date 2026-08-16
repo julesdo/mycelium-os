@@ -12,7 +12,6 @@ import authSchema from './betterAuth/schema';
 import authConfig from './auth.config';
 import { requireEnv, googleOAuth, githubOAuth } from './env';
 import { getFounderWelcomeDelay } from './emails/helpers';
-import { incrementCounter } from './admin/counters';
 import { devNotice } from '../dev/notice';
 
 // Required for triggers to work - references internal auth functions
@@ -124,15 +123,6 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 			onCreate: async (ctx, user) => {
 				const seededLocalAdmin = isLocalSeededAdmin(user);
 
-				// --- Materialized dashboard counters ---
-				await incrementCounter(ctx, 'totalUsers', 1);
-				if (user.role === 'admin') {
-					await incrementCounter(ctx, 'adminCount', 1);
-				}
-				if (user.banned === true) {
-					await incrementCounter(ctx, 'bannedCount', 1);
-				}
-
 				// Send signup stats email immediately only for already-verified users
 				// (e.g. OAuth providers with verified emails)
 				if (user.emailVerified && !seededLocalAdmin) {
@@ -194,16 +184,9 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 
 			/**
 			 * Called when a user is deleted
-			 * - Decrements materialized dashboard counters
 			 */
-			onDelete: async (ctx, user) => {
-				await incrementCounter(ctx, 'totalUsers', -1);
-				if (user.role === 'admin') {
-					await incrementCounter(ctx, 'adminCount', -1);
-				}
-				if (user.banned === true) {
-					await incrementCounter(ctx, 'bannedCount', -1);
-				}
+			onDelete: async () => {
+				// No-op: materialized dashboard counters removed with admin/counters.ts
 			},
 
 			/**
@@ -218,21 +201,7 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 				const becameVerified = oldUser.emailVerified !== true && newUser.emailVerified === true;
 				const wasAdmin = oldUser.role === 'admin';
 				const isAdmin = newUser.role === 'admin';
-				const wasBanned = oldUser.banned === true;
-				const isBanned = newUser.banned === true;
 				const seededLocalAdmin = isLocalSeededAdmin(newUser);
-
-				// --- Materialized dashboard counters ---
-				if (!wasAdmin && isAdmin) {
-					await incrementCounter(ctx, 'adminCount', 1);
-				} else if (wasAdmin && !isAdmin) {
-					await incrementCounter(ctx, 'adminCount', -1);
-				}
-				if (!wasBanned && isBanned) {
-					await incrementCounter(ctx, 'bannedCount', 1);
-				} else if (wasBanned && !isBanned) {
-					await incrementCounter(ctx, 'bannedCount', -1);
-				}
 
 				if (becameVerified && !seededLocalAdmin) {
 					await scheduleNewUserSignupNotification(ctx, newUser);

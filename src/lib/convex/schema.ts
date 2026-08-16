@@ -1,7 +1,6 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { vEmailEvent } from '@convex-dev/resend';
-import { supportThreadFields } from './support/supportThreadFields';
 
 export default defineSchema({
 	// Note: Better Auth component manages its own tables (users, sessions, accounts, verifications)
