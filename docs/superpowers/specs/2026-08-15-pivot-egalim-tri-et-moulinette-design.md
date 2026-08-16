@@ -166,10 +166,23 @@ besoin. Ils sont lus et transposés **avant** d'être supprimés — pas de `git
 
 | Module | Ce qu'il apporte |
 |---|---|
-| `fuelImport.ts` + `fuelParsers.ts` + wizard `/admin/finance/fuel-import` | Le pipeline complet : parsing multi-format, détection automatique de provider, normalisation, **règles d'anomalie → file de revue humaine Accept/Reject**, écriture idempotente, `internalAction` asynchrone auto-replanifiée |
+| `fuelImport.ts` + `fuelParsers.ts` + wizard `/admin/finance/fuel-import` | Le pipeline : parsing multi-format, détection automatique de provider, normalisation, **règles d'anomalie → file de revue humaine Accept/Reject**, écriture idempotente |
 | `ImportFleetModal` / `ImportCostsModal` | Wizard d'import CSV en 3 étapes (dépôt → mapping de colonnes → validation) → devient le parcours de dépôt de factures |
-| `agents/compliance.ts` | Surveillance de seuils et alertes proactives → mécanique de l'étage 2 |
-| `agents/concierge.ts` + `agents/prompts.ts` | Pattern d'appel Claude depuis une action Convex : lots, `cache_control`, sortie structurée |
+| `maintenance/detector.ts` | Surveillance de seuils, **dédoublonnage d'alertes**, génération de notification → mécanique de l'étage 2 |
+| `agents/concierge.ts` + `agents/prompts.ts` + `optimizer.ts` | Pattern d'appel Claude depuis une action Convex : `cache_control`, sortie structurée |
+
+> **Correction du 15/08/2026, après lecture effective des sources.** Trois attributions de ce
+> tableau étaient fausses et sont rectifiées ci-dessus :
+>
+> 1. `processFuelImport` **ne découpe pas en lots et ne se re-planifie pas** — il traite le fichier
+>    entier en un seul appel d'action, une mutation par ligne. Le découpage en lots auto-replanifiés
+>    est donc du **travail neuf** pour la Moulinette, pas une transposition.
+> 2. `agents/compliance.ts` est un **agent de questions-réponses en lecture seule** sur une table
+>    alimentée ailleurs. Le dédoublonnage et la génération d'alertes sont dans
+>    `maintenance/detector.ts`.
+> 3. **Aucun chemin d'appel à Claude n'implémente de retry ni de backoff** (`concierge.ts`,
+>    `compliance.ts`, `optimizer.ts` abandonnent tous sur `fetch` en échec). La robustesse décrite
+>    en 4.3 est intégralement à construire.
 
 ### 2.7 La landing publique
 
@@ -375,9 +388,12 @@ structuration par Claude en sortie typée), **PDF scanné / photo** (OCR).
 
 **Étape 4 — Classification.** Lots d'environ 50 libellés par appel Claude, référentiel en
 `cache_control`, sortie structurée. L'action Convex traite un lot puis **se re-planifie** pour le
-suivant — le pattern de `processFuelImport`. Idempotent : un libellé déjà présent dans
-`productLabels` avec le `REFERENTIEL_VERSION` courant n'est pas reclassé, donc relancer un lot est
-toujours sûr.
+suivant. Idempotent : un libellé déjà présent dans `productLabels` avec le `REFERENTIEL_VERSION`
+courant n'est pas reclassé, donc relancer un lot est toujours sûr.
+
+> Le découpage en lots auto-replanifiés est **à construire** : contrairement à ce que supposait la
+> première rédaction, `processFuelImport` traite son fichier en un seul appel. Compter une
+> demi-journée de plus au jour 3 de la phase 1.
 
 **Étape 5 — Revue humaine.** Partent en file d'arbitrage :
 
@@ -407,6 +423,10 @@ dans un dépôt de quarante fichiers bloque le premier diagnostic réel.
 
 Même logique sur les appels Claude : 3 tentatives avec backoff exponentiel, puis le lot bascule en
 revue manuelle. Jamais d'échec silencieux, jamais de blocage global.
+
+Aucun code existant ne fait ça : les trois chemins d'appel à Claude du legacy abandonnent sur un
+`fetch` en échec, sans retry. C'est donc du travail neuf, et il compte d'autant plus que la
+Moulinette appelle Claude bien plus souvent que ne le faisaient les agents Fleet.
 
 ### 4.4 Garde-fou de coût
 

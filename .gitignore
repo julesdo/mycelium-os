@@ -48,6 +48,9 @@ Library/
 
 react-reference
 references/
+# Exception : les gabarits archivés du pivot EGalim sont de la doc versionnée,
+# pas des références externes. Sans cette ligne, `git add` les ignore en silence.
+!docs/superpowers/references/
 
 *.local*
 
