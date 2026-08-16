@@ -1,6 +1,6 @@
 import { internalMutation, internalQuery, query, mutation } from './_generated/server';
 import { v } from 'convex/values';
-import { components, internal } from './_generated/api';
+import { components } from './_generated/api';
 import type { GenericMutationCtx } from 'convex/server';
 import type { DataModel } from './_generated/dataModel';
 import { resend, assertResendApiKey } from './emails/resend';
@@ -120,25 +120,6 @@ export const createNotification = internalMutation({
 			createdAt: Date.now()
 		});
 
-		// Fan-out to Slack/Teams for admin-relevant alert types
-		const COMMS_ALERT_TYPES = new Set([
-			'MAINTENANCE_DUE',
-			'LEASE_EXPIRING',
-			'LICENSE_EXPIRING',
-			'LICENSE_EXPIRED',
-			'VIOLATION_RECEIVED',
-			'CONFLICT_DETECTED'
-		]);
-		if (COMMS_ALERT_TYPES.has(args.type)) {
-			await ctx.scheduler.runAfter(0, internal.comms.sendCommsNotification, {
-				organizationId: args.organizationId,
-				type: args.type,
-				title: args.title,
-				message: args.message,
-				link: args.link
-			});
-		}
-
 		return null;
 	}
 });
@@ -149,16 +130,6 @@ function formatDateFr(timestamp: number): string {
 		year: 'numeric',
 		month: 'long',
 		day: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit',
-		timeZone: 'Europe/Paris'
-	}).format(new Date(timestamp));
-}
-
-function formatDateShort(timestamp: number): string {
-	return new Intl.DateTimeFormat('fr-FR', {
-		day: 'numeric',
-		month: 'short',
 		hour: '2-digit',
 		minute: '2-digit',
 		timeZone: 'Europe/Paris'
@@ -306,47 +277,6 @@ export const sendReservationReminder = internalMutation({
 				{ name: 'X-Email-Template', value: 'reservation-reminder' }
 			]
 		});
-
-		return null;
-	}
-});
-
-// Called daily by cron at 17:00 UTC (18h or 19h Paris selon saison).
-// Queries all reservations starting tomorrow and sends J-1 reminders.
-// Full table scan is acceptable at MVP scale; add a date index in V2.
-export const sendDailyReminders = internalMutation({
-	args: {},
-	returns: v.null(),
-	handler: async (ctx) => {
-		const now = new Date();
-		now.setUTCHours(0, 0, 0, 0);
-		const tomorrowStart = now.getTime() + 24 * 60 * 60 * 1000;
-		const tomorrowEnd = tomorrowStart + 24 * 60 * 60 * 1000;
-
-		const reservations = await ctx.db.query('reservations').collect();
-		const tomorrowReservations = reservations.filter(
-			(r) =>
-				r.startDate >= tomorrowStart &&
-				r.startDate < tomorrowEnd &&
-				(r.status === 'PENDING' || r.status === 'CONFIRMED')
-		);
-
-		for (const r of tomorrowReservations) {
-			await ctx.scheduler.runAfter(0, internal.notifications.sendReservationReminder, {
-				reservationId: r._id
-			});
-
-			const vehicle = await ctx.db.get(r.vehicleId);
-			const vehicleLabel = vehicle ? `${vehicle.brand} ${vehicle.model}` : 'Véhicule';
-			await ctx.scheduler.runAfter(0, internal.notifications.createNotification, {
-				organizationId: r.organizationId,
-				userId: r.userId,
-				type: 'RESERVATION_REMINDER',
-				title: 'Rappel : réservation demain',
-				message: `${vehicleLabel} · ${formatDateShort(r.startDate)}`,
-				link: `/app/reservations/${r._id}`
-			});
-		}
 
 		return null;
 	}
