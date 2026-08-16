@@ -2,10 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { useQuery } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { localizedHref } from '$lib/utils/i18n';
 	import type { PlanFeature } from '$lib/convex/billing.js';
-	import ZapIcon from '@lucide/svelte/icons/zap';
 	import LockIcon from '@lucide/svelte/icons/lock';
 
 	interface Props {
@@ -53,13 +50,5 @@
 				Votre plan actuel ne donne pas accès à cette fonctionnalité.
 			</p>
 		</div>
-		<!-- eslint-disable svelte/no-navigation-without-resolve -->
-		<a href={localizedHref('/admin/settings/plans')}>
-			<Button size="sm" class="bg-[var(--brand)] text-black hover:bg-[var(--brand)]/90">
-				<ZapIcon class="mr-1.5 size-3.5" />
-				Passer à {PLAN_LABELS[requiredPlan] ?? requiredPlan}
-			</Button>
-		</a>
-		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	</div>
 {/if}

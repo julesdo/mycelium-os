@@ -54,7 +54,7 @@
 	<!-- Header client -->
 	<div class="shrink-0 border-b border-border bg-background/95 backdrop-blur-sm">
 		<div class="flex items-center gap-3 px-6 py-3">
-			<Button variant="ghost" size="icon" href={resolve(localizedHref('/concierge'))}>
+			<Button variant="ghost" size="icon" href={resolve(localizedHref('/ops'))}>
 				<ArrowLeftIcon class="size-4" />
 			</Button>
 

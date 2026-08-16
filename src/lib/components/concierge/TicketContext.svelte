@@ -79,7 +79,7 @@
 		<div class="space-y-1.5">
 			<p class="text-[11px] font-medium text-muted-foreground">Liens rapides</p>
 			<a
-				href="/concierge/{organizationId}"
+				href="/ops/{organizationId}"
 				class="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
 			>
 				<BuildingIcon class="size-3.5" />

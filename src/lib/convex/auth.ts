@@ -4,27 +4,16 @@ import { convex } from '@convex-dev/better-auth/plugins';
 import { components, internal } from './_generated/api';
 import { type DataModel } from './_generated/dataModel';
 import { query } from './_generated/server';
-import type { GenericMutationCtx } from 'convex/server';
 import { passkey } from '@better-auth/passkey';
 import { admin } from 'better-auth/plugins/admin';
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import authSchema from './betterAuth/schema';
 import authConfig from './auth.config';
 import { requireEnv, googleOAuth, githubOAuth } from './env';
-import { getFounderWelcomeDelay } from './emails/helpers';
 import { devNotice } from '../dev/notice';
 
 // Required for triggers to work - references internal auth functions
 const authFunctions: AuthFunctions = internal.auth;
-
-type SignupMethod = 'Email' | 'Google' | 'GitHub';
-
-type SignupNotificationUser = {
-	_id: string;
-	name?: string | null;
-	email: string;
-	createdAt: number;
-};
 
 type BetterAuthCallbackArg<T extends (...args: any[]) => Promise<void>> = Parameters<T>[0];
 
@@ -47,59 +36,6 @@ function requireAuthUserEmail(
 	return email;
 }
 
-function isLocalSeededAdmin(user: { email: string }): boolean {
-	const localSeededAdminEmail = process.env.LOCAL_SEEDED_ADMIN_EMAIL?.trim().toLowerCase();
-	return (
-		process.env.LOCAL_CONVEX_DEV === 'true' &&
-		!!localSeededAdminEmail &&
-		user.email.toLowerCase() === localSeededAdminEmail
-	);
-}
-
-const detectSignupMethod = async (
-	ctx: GenericMutationCtx<DataModel>,
-	userId: string
-): Promise<SignupMethod> => {
-	const accountResult = await ctx.runQuery(components.betterAuth.adapter.findMany, {
-		model: 'account',
-		paginationOpts: { cursor: null, numItems: 1 },
-		where: [{ field: 'userId', operator: 'eq', value: userId }]
-	});
-	const account = accountResult.page[0] as { providerId?: string } | undefined;
-	return account?.providerId === 'google'
-		? 'Google'
-		: account?.providerId === 'github'
-			? 'GitHub'
-			: 'Email';
-};
-
-const formatSignupTime = (timestamp: number): string => {
-	return new Date(timestamp).toLocaleString('en-US', {
-		month: 'short',
-		day: 'numeric',
-		year: 'numeric',
-		hour: 'numeric',
-		minute: '2-digit',
-		hour12: true
-	});
-};
-
-const scheduleNewUserSignupNotification = async (
-	ctx: GenericMutationCtx<DataModel>,
-	user: SignupNotificationUser
-): Promise<void> => {
-	const signupMethod = await detectSignupMethod(ctx, user._id);
-	const signupTime = formatSignupTime(user.createdAt);
-
-	// Schedule signup notification email (runs after transaction commits)
-	await ctx.scheduler.runAfter(0, internal.emails.send.sendNewUserSignupNotification, {
-		userName: user.name ?? undefined,
-		userEmail: user.email,
-		signupMethod,
-		signupTime
-	});
-};
-
 // The component client has methods needed for integrating Convex with Better Auth,
 // as well as helper methods for general use.
 // Using local schema to include admin plugin fields (role, banned, etc.)
@@ -111,76 +47,16 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 	triggers: {
 		user: {
 			/**
-			 * Called when a new user signs up
-			 * - Sends new user signup notification to admins only after verification
-			 * - Creates notification preferences if user is admin (rare)
+			 * Called when a new user signs up.
 			 *
-			 * Notification scheduling is intentionally unwrapped — it relies on
-			 * Convex transactional atomicity (scheduler + query cannot fail for
-			 * data created in the same flow). Preference sync IS wrapped because
-			 * it writes to a separate table with more failure modes.
+			 * No-op: signup-notification scheduling, the founder welcome-email
+			 * flow, and admin-notification-preference syncing were all removed
+			 * alongside the /admin space (EGalim pivot triage — see docs/agri/).
+			 * All three depended on Convex modules under admin/ that no longer
+			 * exist. The trigger is kept (not deleted) so future user-lifecycle
+			 * hooks have a home.
 			 */
-			onCreate: async (ctx, user) => {
-				const seededLocalAdmin = isLocalSeededAdmin(user);
-
-				// Send signup stats email immediately only for already-verified users
-				// (e.g. OAuth providers with verified emails)
-				if (user.emailVerified && !seededLocalAdmin) {
-					await scheduleNewUserSignupNotification(ctx, user);
-				}
-
-				// If new user is admin (rare but possible via seeding), create preferences
-				// Non-critical: don't block signup if preference creation fails
-				if (user.role === 'admin') {
-					try {
-						await ctx.runMutation(
-							internal.admin.notificationPreferences.mutations.upsertAdminPreferences,
-							{ userId: user._id, email: user.email }
-						);
-					} catch (error) {
-						console.error('Failed to create admin preferences:', error);
-					}
-				}
-
-				// Local seeded admin should not enqueue email-dependent onboarding jobs.
-				if (!seededLocalAdmin) {
-					const contactSetting = await ctx.db
-						.query('adminSettings')
-						.withIndex('by_key', (q: any) => q.eq('key', 'founderWelcome.contactUserId'))
-						.unique();
-
-					if (!contactSetting) {
-						return;
-					}
-
-					const delayMs = getFounderWelcomeDelay();
-					if (user.emailVerified) {
-						// OAuth signup: schedule immediately
-						const id = await ctx.db.insert('founderWelcomeEmails', {
-							userId: user._id,
-							signupEmail: user.email,
-							delayMs,
-							status: 'scheduled',
-							createdAt: Date.now()
-						});
-						const scheduledFnId = await ctx.scheduler.runAfter(
-							delayMs,
-							internal.emails.send.sendFounderWelcomeEmail,
-							{ founderWelcomeId: id }
-						);
-						await ctx.db.patch(id, { scheduledFnId });
-					} else {
-						// Email signup: wait for verification
-						await ctx.db.insert('founderWelcomeEmails', {
-							userId: user._id,
-							signupEmail: user.email,
-							delayMs,
-							status: 'pending_verification',
-							createdAt: Date.now()
-						});
-					}
-				}
-			},
+			onCreate: async () => {},
 
 			/**
 			 * Called when a user is deleted
@@ -190,69 +66,11 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 			},
 
 			/**
-			 * Called when a user is updated
-			 * - Sends signup notification when email becomes verified
-			 * - Detects admin role changes and syncs notification preferences
+			 * Called when a user is updated.
 			 *
-			 * Notification scheduling is intentionally unwrapped (see onCreate).
-			 * Preference sync IS wrapped to prevent blocking user updates.
+			 * No-op for the same reason as onCreate — see comment above.
 			 */
-			onUpdate: async (ctx, newUser, oldUser) => {
-				const becameVerified = oldUser.emailVerified !== true && newUser.emailVerified === true;
-				const wasAdmin = oldUser.role === 'admin';
-				const isAdmin = newUser.role === 'admin';
-				const seededLocalAdmin = isLocalSeededAdmin(newUser);
-
-				if (becameVerified && !seededLocalAdmin) {
-					await scheduleNewUserSignupNotification(ctx, newUser);
-
-					// Founder welcome email: schedule if pending
-					const founderRow = await ctx.db
-						.query('founderWelcomeEmails')
-						.withIndex('by_user', (q: any) => q.eq('userId', newUser._id))
-						.unique();
-
-					if (founderRow && founderRow.status === 'pending_verification') {
-						if (newUser.email === founderRow.signupEmail) {
-							const scheduledFnId = await ctx.scheduler.runAfter(
-								founderRow.delayMs,
-								internal.emails.send.sendFounderWelcomeEmail,
-								{ founderWelcomeId: founderRow._id }
-							);
-							await ctx.db.patch(founderRow._id, { status: 'scheduled', scheduledFnId });
-						} else {
-							await ctx.db.patch(founderRow._id, {
-								status: 'skipped',
-								skippedReason: 'email_changed'
-							});
-						}
-					}
-				}
-
-				try {
-					if (!wasAdmin && isAdmin) {
-						// Promoted to admin → activate/create preferences
-						await ctx.runMutation(
-							internal.admin.notificationPreferences.mutations.upsertAdminPreferences,
-							{ userId: newUser._id, email: newUser.email }
-						);
-					} else if (wasAdmin && !isAdmin) {
-						// Demoted from admin → deactivate preferences (keep dormant)
-						await ctx.runMutation(
-							internal.admin.notificationPreferences.mutations.deactivateAdminPreferences,
-							{ userId: newUser._id }
-						);
-					} else if (isAdmin && oldUser.email !== newUser.email) {
-						// Admin changed email → update preferences
-						await ctx.runMutation(
-							internal.admin.notificationPreferences.mutations.upsertAdminPreferences,
-							{ userId: newUser._id, email: newUser.email }
-						);
-					}
-				} catch (error) {
-					console.error('Failed to sync admin preferences on user update:', error);
-				}
-			}
+			onUpdate: async () => {}
 		}
 	}
 });

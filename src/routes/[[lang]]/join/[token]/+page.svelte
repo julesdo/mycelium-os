@@ -40,7 +40,7 @@
 		try {
 			await client.mutation(anyApi.organizations.acceptInvitation, { token });
 			toast.success('Bienvenue dans l\'organisation !');
-			goto(localizedHref('/admin'));
+			goto(localizedHref('/app'));
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Une erreur est survenue');
 		} finally {
@@ -117,8 +117,8 @@
 							Vous avez déjà rejoint cette organisation.
 						</p>
 					</div>
-					<Button href={localizedHref('/admin')} class="mt-2 w-full">
-						Accéder à l'espace admin
+					<Button href={localizedHref('/app')} class="mt-2 w-full">
+						Accéder à mon espace
 					</Button>
 				</div>
 

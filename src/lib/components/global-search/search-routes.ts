@@ -54,30 +54,11 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		keywords: ['paramètres', 'compte', 'settings', 'account', 'profil', 'intégrations']
 	},
 	{
-		href: '/admin/dashboard',
-		access: 'admin',
-		group: 'admin',
-		titleKey: 'admin.sidebar.dashboard',
-		keywords: ['tableau de bord', 'dashboard', 'admin']
-	},
-	{
-		href: '/admin/settings',
-		access: 'admin',
-		group: 'admin',
+		href: '/app/parametres',
+		access: 'authenticated',
+		group: 'app',
 		titleKey: 'admin.sidebar.settings',
-		keywords: ['paramètres', 'settings', 'organisation', 'admin']
-	},
-	{
-		href: '/admin/settings/members',
-		access: 'admin',
-		group: 'admin',
-		keywords: ['membres', 'invitations', 'équipe', 'team', 'inviter', 'rôles']
-	},
-	{
-		href: '/admin/settings/plans',
-		access: 'admin',
-		group: 'admin',
-		keywords: ['plans', 'facturation', 'abonnement', 'tarifs', 'billing', 'forfait']
+		keywords: ['paramètres', 'settings', 'organisation', 'entreprise']
 	}
 ];
 

@@ -12,7 +12,6 @@
 	import { useQuery } from '@mmailaender/convex-svelte';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import CornerDownLeftIcon from '@lucide/svelte/icons/corner-down-left';
-	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
 	import CommandMenuItem from './command-menu-item.svelte';
 	import {
 		SEARCH_ROUTES,
@@ -80,10 +79,6 @@
 	});
 
 	let searchValue = $state('');
-
-	const isAdmin = $derived(
-		effectiveAuth.isAuthenticated && effectiveAuth.role?.toLowerCase() === 'admin'
-	);
 
 	const groupOrder: SearchRouteGroup[] = ['public', 'authentication', 'app', 'admin'];
 	const groupKeyMap: Record<SearchRouteGroup, string> = {
@@ -238,23 +233,6 @@
 						{/each}
 					</Command.Group>
 				{/each}
-
-				<!-- Actions rapides (pas de recherche active) -->
-				{#if isAdmin && !searchValue.trim()}
-					<Command.Group
-						heading="Actions rapides"
-						class="!p-0 [&_[data-command-group-heading]]:scroll-mt-16 [&_[data-command-group-heading]]:!p-3 [&_[data-command-group-heading]]:!pb-1"
-					>
-						<CommandMenuItem
-							value="inviter membre équipe collaborateur utilisateur"
-							onSelect={() =>
-								runCommand(() => void goto(resolve(localizedHref('/admin/settings/members'))))}
-						>
-							<UserPlusIcon class="size-4 shrink-0" />
-							Inviter un membre
-						</CommandMenuItem>
-					</Command.Group>
-				{/if}
 			</Command.List>
 		</Command.Root>
 		<div

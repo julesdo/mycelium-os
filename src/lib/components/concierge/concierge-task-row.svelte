@@ -170,7 +170,7 @@
 			<Button variant="ghost" size="icon-xs" onclick={markDone} disabled={loading} title="Marquer traité">
 				<CheckIcon class="size-3" />
 			</Button>
-			<Button variant="ghost" size="icon-xs" href={resolve(localizedHref(`/admin/dashboard`))} target="_blank" rel="noopener" title="Dashboard client">
+			<Button variant="ghost" size="icon-xs" href={resolve(localizedHref(`/app`))} target="_blank" rel="noopener" title="Dashboard client">
 				<ExternalLinkIcon class="size-3" />
 			</Button>
 		</div>

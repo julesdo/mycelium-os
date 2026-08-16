@@ -80,7 +80,7 @@
 	afterNavigate((nav) => {
 		if (!browser || !nav.from) return;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		if (nav.to?.url.pathname.includes('/admin/settings')) return;
+		if (nav.to?.url.pathname.includes('/app/parametres')) return;
 		const main = document.getElementById('main-content');
 		if (!main) return;
 		main.classList.remove('page-enter');

@@ -16,7 +16,6 @@
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
 	import PlayCircleIcon from '@lucide/svelte/icons/play-circle';
-	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import SearchIcon from '@lucide/svelte/icons/search';
@@ -32,9 +31,9 @@
 
 	const isSuperAdmin = $derived(myRole.data?.staffRole === 'super_admin');
 
-	// Org active = org dans l'URL si on est sur /concierge/[orgId]
+	// Org active = org dans l'URL si on est sur /ops/[orgId]
 	const activeOrgId = $derived.by(() => {
-		const match = page.url.pathname.match(/\/concierge\/([^/]+)/);
+		const match = page.url.pathname.match(/\/ops\/([^/]+)/);
 		const id = match?.[1];
 		if (!id || ['staff', 'inbox', 'demos'].includes(id)) return null;
 		return id;
@@ -56,7 +55,7 @@
 	function selectOrg(orgId: string) {
 		orgSwitcherOpen = false;
 		orgSearch = '';
-		goto(resolve(localizedHref(`/concierge/${orgId}`)));
+		goto(resolve(localizedHref(`/ops/${orgId}`)));
 	}
 
 	const TIER_LABEL: Record<string, string> = {
@@ -68,42 +67,42 @@
 
 	const navItems = $derived([
 		{
-			href: localizedHref('/concierge/inbox'),
+			href: localizedHref('/ops/inbox'),
 			label: 'Inbox',
 			icon: InboxIcon,
-			active: page.url.pathname.includes('/concierge/inbox')
+			active: page.url.pathname.includes('/ops/inbox')
 		},
 		{
-			href: localizedHref('/concierge'),
+			href: localizedHref('/ops'),
 			label: 'Clients',
 			icon: LayoutListIcon,
 			active:
-				!!page.url.pathname.match(/\/concierge\/?$/) ||
-				(page.url.pathname.includes('/concierge/') &&
+				!!page.url.pathname.match(/\/ops\/?$/) ||
+				(page.url.pathname.includes('/ops/') &&
 					!page.url.pathname.includes('/staff') &&
 					!page.url.pathname.includes('/inbox') &&
 					!page.url.pathname.includes('/demos') &&
 					!page.url.pathname.includes('/dashboard'))
 		},
 		{
-			href: localizedHref('/concierge/demos'),
+			href: localizedHref('/ops/demos'),
 			label: 'Démos',
 			icon: PlayCircleIcon,
-			active: page.url.pathname.includes('/concierge/demos')
+			active: page.url.pathname.includes('/ops/demos')
 		},
 		...(isSuperAdmin
 			? [
 					{
-						href: localizedHref('/concierge/dashboard'),
+						href: localizedHref('/ops/dashboard'),
 						label: 'Dashboard',
 						icon: LayoutDashboardIcon,
-						active: page.url.pathname.includes('/concierge/dashboard')
+						active: page.url.pathname.includes('/ops/dashboard')
 					},
 					{
-						href: localizedHref('/concierge/staff'),
+						href: localizedHref('/ops/staff'),
 						label: 'Équipe',
 						icon: UsersIcon,
-						active: page.url.pathname.includes('/concierge/staff')
+						active: page.url.pathname.includes('/ops/staff')
 					}
 				]
 			: [])
@@ -115,7 +114,7 @@
 		<div class="flex h-full items-center gap-4 px-6">
 			<!-- Logo Mycelium -->
 			<a
-				href={resolve(localizedHref('/admin/dashboard'))}
+				href={resolve(localizedHref('/ops'))}
 				class="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-80"
 			>
 				<span
@@ -244,17 +243,6 @@
 				>
 					<EyeIcon class="size-3.5" />
 					Aperçu salarié
-				</Button>
-
-				<Button
-					variant="ghost"
-					size="sm"
-					href={resolve(localizedHref('/admin/dashboard'))}
-					target="_blank"
-					rel="noopener"
-				>
-					<ExternalLinkIcon class="size-3.5" />
-					Admin
 				</Button>
 			</div>
 		</div>

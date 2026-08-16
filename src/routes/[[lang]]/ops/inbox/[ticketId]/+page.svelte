@@ -5,13 +5,12 @@
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
 
-	const organizationId = $derived(page.params.organizationId);
 	const ticketId = $derived(page.params.ticketId as Id<'conciergeTickets'>);
-	const backHref = $derived(resolve(localizedHref(`/concierge/${organizationId}`)));
+	const backHref = $derived(resolve(localizedHref('/ops/inbox')));
 </script>
 
 <svelte:head>
-	<title>Ticket — Concierge Fleet Care</title>
+	<title>Ticket — Inbox Mycelium</title>
 </svelte:head>
 
 <TicketDetail {ticketId} {backHref} />

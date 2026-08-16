@@ -34,7 +34,7 @@
 			{#each tickets.data ?? [] as ticket (ticket._id)}
 				<TicketRow
 					{ticket}
-					href={resolve(localizedHref(`/concierge/${organizationId}/tickets/${ticket._id}`))}
+					href={resolve(localizedHref(`/ops/${organizationId}/tickets/${ticket._id}`))}
 				/>
 			{/each}
 		</div>

@@ -76,7 +76,7 @@
 	}
 
 	function goToConcierge() {
-		goto(resolve(localizedHref('/concierge')));
+		goto(resolve(localizedHref('/ops')));
 	}
 
 	const redirectTo = $derived(encodeURIComponent(`/${page.params.lang ?? 'fr'}/staff-join/${token}`));

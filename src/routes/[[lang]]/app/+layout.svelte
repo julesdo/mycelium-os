@@ -24,10 +24,10 @@
 
 	const viewer = $derived(data.viewer as typeof data.viewer & { role?: string });
 
-	// Guard: staff Mycelium (role='admin') → portail concierge, sauf mode preview explicite
+	// Guard: staff Mycelium (role='admin') → portail ops, sauf mode preview explicite
 	$effect(() => {
 		if (viewer?.role === 'admin' && !previewAsEmployee.active) {
-			goto(resolve(localizedHref('/concierge')));
+			goto(resolve(localizedHref('/ops')));
 		}
 	});
 
@@ -44,7 +44,7 @@
 
 	function exitPreview() {
 		previewAsEmployee.exit();
-		goto(resolve(localizedHref('/concierge')));
+		goto(resolve(localizedHref('/ops')));
 	}
 
 	// Pages that manage their own scroll container (fullscreen, no outer padding/scroll)
@@ -52,7 +52,7 @@
 		/\/app\/reservations\/new\/?$/.test(page.url.pathname)
 	);
 
-	// Keyboard shortcuts: Cmd+. → Admin, Cmd+, → Settings
+	// Keyboard shortcut: Cmd+, → Settings
 	function handleKeydown(e: KeyboardEvent) {
 		const target = e.target as HTMLElement;
 		if (target.closest('input, textarea, [contenteditable]')) return;
@@ -61,7 +61,6 @@
 
 		if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
 			const plainRoutes: Record<string, string> = {
-				'.': localizedHref('/admin'),
 				',': localizedHref('/app/settings')
 			};
 			url = plainRoutes[e.key];
@@ -76,10 +75,7 @@
 	}
 
 	const sidebarConfig = $derived(
-		getAppSidebarConfig(
-			{ pathname: page.url.pathname, lang: page.params.lang },
-			viewer?.role
-		)
+		getAppSidebarConfig({ pathname: page.url.pathname, lang: page.params.lang })
 	);
 
 	// --- Onboarding salarié ---

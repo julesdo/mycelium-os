@@ -304,11 +304,7 @@
 
 	function goDashboard() {
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(localizedHref('/admin/dashboard'));
-	}
-	function goFleet() {
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(localizedHref('/admin/fleet/new'));
+		goto(localizedHref('/app'));
 	}
 </script>
 
@@ -690,26 +686,15 @@
 								<div class="flex-1">
 									<p class="text-xs font-medium">Vous êtes sur le plan gratuit</p>
 									<p class="text-[11px] text-muted-foreground">
-										Accès aux fonctionnalités de base jusqu'à 10 véhicules. Passez à un plan payant
-										quand vous êtes prêt pour débloquer toutes les fonctionnalités.
+										Accès aux fonctionnalités de base. Passez à un plan payant quand vous êtes
+										prêt pour débloquer toutes les fonctionnalités.
 									</p>
 								</div>
-								<Button
-									size="sm"
-									variant="outline"
-									class="mt-2.5 w-full text-xs"
-									href="/admin/settings/plans"
-								>
-									Voir les plans
-								</Button>
 							</div>
 						{/if}
 
 						<div class="w-full space-y-2">
 							<Button class="w-full" onclick={goDashboard}>Accéder au tableau de bord →</Button>
-							<Button variant="outline" class="w-full" onclick={goFleet}
-								>Importer mes véhicules</Button
-							>
 						</div>
 					</div>
 				{/if}

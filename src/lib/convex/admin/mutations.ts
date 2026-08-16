@@ -1,5 +1,5 @@
 import { internalMutation, type MutationCtx } from '../_generated/server';
-import { components, internal } from '../_generated/api';
+import { components } from '../_generated/api';
 import { v, ConvexError } from 'convex/values';
 import type { BetterAuthUser } from './types';
 import { roleValidator, adminActionValidator, auditMetadataValidator } from './types';
@@ -70,8 +70,11 @@ export const createAuditLog = adminMutation({
  * Set user role (for initial admin setup or role changes)
  *
  * Updates a user's role and logs the action to the audit trail.
- * Also syncs notification preferences when promoting/demoting admins.
  * Uses the local BetterAuth schema which includes admin plugin fields.
+ *
+ * Note: this used to also sync admin notification preferences, but that
+ * feature (and its only UI, /admin/settings/notifications) was removed
+ * with the /admin space (EGalim pivot triage — see docs/agri/).
  *
  * @param args.userId - The ID of the user whose role to change
  * @param args.role - The new role to assign ('admin' or 'user')
@@ -96,9 +99,6 @@ export const setUserRole = adminMutation({
 			throw new ConvexError('User not found');
 		}
 
-		const wasAdmin = user.role === 'admin';
-		const isAdmin = args.role === 'admin';
-
 		// Update user role using the component adapter (now includes role field in schema)
 		await ctx.runMutation(components.betterAuth.adapter.updateOne, {
 			input: {
@@ -107,23 +107,6 @@ export const setUserRole = adminMutation({
 				update: { role: args.role }
 			}
 		});
-
-		// Sync notification preferences (explicit call to ensure consistency)
-		// This is redundant with Better Auth triggers but guarantees sync
-		// even if triggers fail or when editing via Convex Dashboard
-		if (!wasAdmin && isAdmin) {
-			// Promoted to admin → activate/create preferences
-			await ctx.runMutation(
-				internal.admin.notificationPreferences.mutations.upsertAdminPreferences,
-				{ userId: args.userId, email: user.email }
-			);
-		} else if (wasAdmin && !isAdmin) {
-			// Demoted from admin → deactivate preferences (keep dormant)
-			await ctx.runMutation(
-				internal.admin.notificationPreferences.mutations.deactivateAdminPreferences,
-				{ userId: args.userId }
-			);
-		}
 
 		// Log the action
 		await ctx.db.insert('adminAuditLogs', {
@@ -169,12 +152,6 @@ export const seedFirstAdmin = internalMutation({
 				where: [{ field: '_id', operator: 'eq', value: user._id }],
 				update: { role: 'admin' }
 			}
-		});
-
-		// Create notification preferences for the new admin
-		await ctx.runMutation(internal.admin.notificationPreferences.mutations.upsertAdminPreferences, {
-			userId: user._id,
-			email: user.email
 		});
 
 		console.log(`User ${args.email} has been set as admin`);

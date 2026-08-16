@@ -3,7 +3,6 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import AuthenticatedSidebar from './authenticated-sidebar.svelte';
 	import AuthenticatedHeader from './authenticated-header.svelte';
-	import AdminTopBar from './admin-topbar.svelte';
 	import AppTopBar from './app-topbar.svelte';
 	import AppBottomNav from './app-bottom-nav.svelte';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
@@ -23,8 +22,8 @@
 		sidebarOpen?: boolean;
 		/** Show OrganizationSwitcher in sidebar header */
 		showOrgSwitcher?: boolean;
-		/** Navigation mode: topbar for admin area, app-topbar for employee area */
-		navMode?: 'sidebar' | 'topbar' | 'app-topbar';
+		/** Navigation mode: app-topbar for the canteen space, sidebar otherwise */
+		navMode?: 'sidebar' | 'app-topbar';
 	}
 
 	let {
@@ -65,14 +64,10 @@
 		Passer au contenu principal
 	</a>
 
-	{#if navMode === 'topbar' || navMode === 'app-topbar'}
+	{#if navMode === 'app-topbar'}
 		<!-- Top bar layout — no sidebar, glass premium shell -->
 		<div class="flex h-svh flex-col overflow-hidden bg-background">
-			{#if navMode === 'app-topbar'}
-				<AppTopBar config={sidebarConfig} {user} />
-			{:else}
-				<AdminTopBar config={sidebarConfig} {user} />
-			{/if}
+			<AppTopBar config={sidebarConfig} {user} />
 
 			{#if fullControl}
 				<div id="main-content" class="@container/main flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -88,9 +83,7 @@
 				</div>
 			{/if}
 
-			{#if navMode === 'app-topbar'}
-				<AppBottomNav config={sidebarConfig} />
-			{/if}
+			<AppBottomNav config={sidebarConfig} />
 		</div>
 	{:else}
 		<!-- Sidebar layout (default) -->

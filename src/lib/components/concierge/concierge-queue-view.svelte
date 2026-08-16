@@ -197,7 +197,7 @@
 								<CheckIcon class="size-3" />
 							</Button>
 							<a
-								href={resolve(localizedHref(`/concierge/${task.organizationId}`))}
+								href={resolve(localizedHref(`/ops/${task.organizationId}`))}
 								class="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
 								title="Détail client"
 							>
@@ -269,7 +269,7 @@
 								<CheckIcon class="size-3" />
 							</Button>
 							<a
-								href={resolve(localizedHref(`/concierge/${task.organizationId}`))}
+								href={resolve(localizedHref(`/ops/${task.organizationId}`))}
 								class="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
 								title="Détail client"
 							>
@@ -336,7 +336,7 @@
 								<CheckIcon class="size-3" />
 							</Button>
 							<a
-								href={resolve(localizedHref(`/concierge/${task.organizationId}`))}
+								href={resolve(localizedHref(`/ops/${task.organizationId}`))}
 								class="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
 								title="Détail client"
 							>

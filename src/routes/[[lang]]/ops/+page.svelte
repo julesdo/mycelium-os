@@ -30,7 +30,7 @@
 	const clientCount   = $derived(healthGrid.data?.length ?? 0);
 
 	function onSelectOrg(id: string) {
-		goto(resolve(localizedHref(`/concierge/${id}`)));
+		goto(resolve(localizedHref(`/ops/${id}`)));
 	}
 </script>
 
