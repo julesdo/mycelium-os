@@ -3,7 +3,6 @@ import { cmdOrCtrl } from '$lib/hooks/is-mac.svelte';
 import HomeIcon from '@lucide/svelte/icons/house';
 import CalendarIcon from '@lucide/svelte/icons/calendar';
 import ShieldAlertIcon from '@lucide/svelte/icons/shield-alert';
-import IdCardIcon from '@lucide/svelte/icons/id-card';
 import ServerCogIcon from '@lucide/svelte/icons/server-cog';
 import SettingsIcon from '@lucide/svelte/icons/settings';
 import FileTextIcon from '@lucide/svelte/icons/file-text';
@@ -59,15 +58,6 @@ export function getAppSidebarConfig(pageState: PageState, userRole?: string): Si
 				isActive:
 					pathname.startsWith(`/${lang}/app/incidents`) ||
 					pathname.startsWith('/app/incidents')
-			},
-			{
-				translationKey: 'app.sidebar.profile',
-				shortLabel: 'Profil',
-				url: localizedHref('/app/profile'),
-				icon: IdCardIcon,
-				isActive:
-					pathname.startsWith(`/${lang}/app/profile`) ||
-					pathname.startsWith('/app/profile')
 			},
 			{
 				translationKey: 'app.sidebar.settings',
