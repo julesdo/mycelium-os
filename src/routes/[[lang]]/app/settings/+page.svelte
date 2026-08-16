@@ -11,20 +11,17 @@
 	import PasswordSettings from './password-settings.svelte';
 	import EmailSettings from './email-settings.svelte';
 	import SecuritySettings from './security-settings.svelte';
-	import GoogleCalendarConnect from '$lib/components/integrations/GoogleCalendarConnect.svelte';
-	import MicrosoftCalendarConnect from '$lib/components/integrations/MicrosoftCalendarConnect.svelte';
 	import UserCircleIcon from '@lucide/svelte/icons/user-circle';
 	import LockIcon from '@lucide/svelte/icons/lock';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
-	import PlugIcon from '@lucide/svelte/icons/plug';
 
 	interface Props { data: PageData; }
 	let { data }: Props = $props();
 	let user = $derived(data.user);
 	const { t } = getTranslate();
 
-	const SETTINGS_TABS = ['account', 'password', 'email', 'security', 'integrations'] as const;
+	const SETTINGS_TABS = ['account', 'password', 'email', 'security'] as const;
 	type SettingsTab = (typeof SETTINGS_TABS)[number];
 	const DEFAULT_SETTINGS_TAB: SettingsTab = 'account';
 	const tabFallback = v.fallback(v.picklist(SETTINGS_TABS), DEFAULT_SETTINGS_TAB);
@@ -45,7 +42,6 @@
 		{ value: 'password',     label: 'Mot de passe',  icon: LockIcon       },
 		{ value: 'email',        label: 'E-mail',        icon: MailIcon       },
 		{ value: 'security',     label: 'Sécurité',      icon: ShieldIcon     },
-		{ value: 'integrations', label: 'Intégrations',  icon: PlugIcon       },
 	];
 </script>
 
@@ -91,19 +87,6 @@
 
 			<Tabs.Content value="security">
 				<SecuritySettings />
-			</Tabs.Content>
-
-			<Tabs.Content value="integrations">
-				<div class="flex flex-col gap-5">
-					<div>
-						<p class="text-sm font-bold">Intégrations calendrier</p>
-						<p class="mt-0.5 text-sm text-muted-foreground">
-							Connectez votre calendrier pour synchroniser automatiquement vos réservations.
-						</p>
-					</div>
-					<GoogleCalendarConnect />
-					<MicrosoftCalendarConnect />
-				</div>
 			</Tabs.Content>
 
 		</div>

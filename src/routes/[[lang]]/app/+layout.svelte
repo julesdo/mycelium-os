@@ -1,6 +1,5 @@
 <script lang="ts">
 	import PostHogIdentify from '$lib/components/analytics/PostHogIdentify.svelte';
-	import SupportTicketMigrationBootstrap from '$lib/components/customer-support/support-ticket-migration-bootstrap.svelte';
 	import { AuthenticatedLayout, getAppSidebarConfig } from '$lib/components/authenticated';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -13,8 +12,6 @@
 	import type { Snippet } from 'svelte';
 	import { browser } from '$app/environment';
 	import WelcomeModal from '$lib/components/onboarding/WelcomeModal.svelte';
-	import CopilotFab from '$lib/components/copilot/copilot-fab.svelte';
-	import CopilotPanel from '$lib/components/copilot/copilot-panel.svelte';
 	import { previewAsEmployee } from '$lib/stores/preview-as-employee.svelte';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
@@ -110,7 +107,6 @@
 <svelte:document onkeydown={handleKeydown} />
 
 <PostHogIdentify />
-<SupportTicketMigrationBootstrap />
 
 <AuthenticatedLayout
 	{sidebarConfig}
@@ -150,6 +146,3 @@
 		</button>
 	</div>
 {/if}
-
-<CopilotFab />
-<CopilotPanel />

@@ -47,12 +47,6 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		keywords: ['forgot password', 'reset']
 	},
 	{
-		href: '/app/reservations',
-		access: 'authenticated',
-		group: 'app',
-		keywords: ['réservations', 'mes réservations', 'reservations', 'booking']
-	},
-	{
 		href: '/app/settings',
 		access: 'authenticated',
 		group: 'app',
@@ -65,25 +59,6 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		group: 'admin',
 		titleKey: 'admin.sidebar.dashboard',
 		keywords: ['tableau de bord', 'dashboard', 'admin']
-	},
-	{
-		href: '/admin/fleet',
-		access: 'admin',
-		group: 'admin',
-		keywords: ['flotte', 'véhicules', 'fleet', 'voitures', 'importer']
-	},
-	{
-		href: '/admin/reservations',
-		access: 'admin',
-		group: 'admin',
-		keywords: ['réservations', 'calendrier', 'planning', 'calendar']
-	},
-{
-		href: '/admin/support',
-		access: 'admin',
-		group: 'admin',
-		titleKey: 'admin.sidebar.support',
-		keywords: ['support', 'tickets', 'messages']
 	},
 	{
 		href: '/admin/settings',
@@ -103,13 +78,6 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		access: 'admin',
 		group: 'admin',
 		keywords: ['plans', 'facturation', 'abonnement', 'tarifs', 'billing', 'forfait']
-	},
-	{
-		href: '/admin/maintenance',
-		access: 'admin',
-		group: 'admin',
-		titleKey: 'admin.sidebar.maintenance',
-		keywords: ['maintenance', 'entretien', 'révision', 'vidange', 'garage', 'pneus', 'freins']
 	}
 ];
 

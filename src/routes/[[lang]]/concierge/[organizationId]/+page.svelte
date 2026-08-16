@@ -12,7 +12,6 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import OrgOverview from '$lib/components/concierge/OrgOverview.svelte';
 	import ClientInboxTab from '$lib/components/concierge/ClientInboxTab.svelte';
-	import FleetObserver from '$lib/components/concierge/FleetObserver.svelte';
 	import ClientTimeline from '$lib/components/concierge/ClientTimeline.svelte';
 	import ClientSignals from '$lib/components/concierge/ClientSignals.svelte';
 	import { healthScoreToColor } from '$lib/convex/concierge/health';
@@ -42,7 +41,6 @@
 	const TABS = [
 		{ value: 'overview', label: "Vue d'ensemble" },
 		{ value: 'inbox', label: 'Inbox' },
-		{ value: 'observer', label: 'Fleet Observer' },
 		{ value: 'timeline', label: 'Timeline' },
 		{ value: 'signals', label: 'Signaux' }
 	];
@@ -120,8 +118,6 @@
 			<OrgOverview {organizationId} />
 		{:else if activeTab === 'inbox'}
 			<ClientInboxTab {organizationId} />
-		{:else if activeTab === 'observer'}
-			<FleetObserver {organizationId} />
 		{:else if activeTab === 'timeline'}
 			<ClientTimeline {organizationId} />
 		{:else if activeTab === 'signals'}

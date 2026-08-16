@@ -1,6 +1,5 @@
 <script lang="ts">
 	import PostHogIdentify from '$lib/components/analytics/PostHogIdentify.svelte';
-	import SupportTicketMigrationBootstrap from '$lib/components/customer-support/support-ticket-migration-bootstrap.svelte';
 	import { AuthenticatedLayout, getAdminSidebarConfig } from '$lib/components/authenticated';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -12,11 +11,7 @@
 	import { browser } from '$app/environment';
 	import WelcomeModal from '$lib/components/onboarding/WelcomeModal.svelte';
 	import Tour, { type TourStep } from '$lib/components/onboarding/Tour.svelte';
-	import CopilotFab from '$lib/components/copilot/copilot-fab.svelte';
-	import CopilotPanel from '$lib/components/copilot/copilot-panel.svelte';
 	import PlanSelectionModal from '$lib/components/billing/PlanSelectionModal.svelte';
-	import DemoBanner from '$lib/components/demo/DemoBanner.svelte';
-	import DemoConversionModal from '$lib/components/demo/DemoConversionModal.svelte';
 
 	interface Props {
 		children?: Snippet;
@@ -140,9 +135,6 @@
 <svelte:document onkeydown={handleKeydown} />
 
 <PostHogIdentify />
-<SupportTicketMigrationBootstrap />
-
-<DemoBanner />
 
 <AuthenticatedLayout
 	{sidebarConfig}
@@ -171,8 +163,6 @@
 	onDone={handleWelcomeDone}
 />
 
-<DemoConversionModal />
-
 <Tour
 	steps={ADMIN_TOUR_STEPS}
 	active={showTour}
@@ -181,5 +171,3 @@
 />
 
 <PlanSelectionModal />
-<CopilotFab defaultAgent="manager" />
-<CopilotPanel />

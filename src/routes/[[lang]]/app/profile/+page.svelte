@@ -9,8 +9,6 @@
 	import * as Field from '$lib/components/ui/field/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
-	import RestrictionBadge from '$lib/components/drivers/restriction-badge.svelte';
-	import LicenseUpload from '$lib/components/drivers/license-upload.svelte';
 	import { toast } from 'svelte-sonner';
 	import { untrack } from 'svelte';
 	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
@@ -19,6 +17,9 @@
 	import IdCardIcon from '@lucide/svelte/icons/id-card';
 	import ShieldAlertIcon from '@lucide/svelte/icons/shield-alert';
 	import ReceiptIcon from '@lucide/svelte/icons/receipt';
+	import UploadIcon from '@lucide/svelte/icons/upload';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import Loader2Icon from '@lucide/svelte/icons/loader-2';
 
 	const client = useConvexClient();
 
@@ -61,6 +62,63 @@
 	);
 	let frontStorageId = $state(untrack(() => profile?.licenseFrontStorageId));
 	let backStorageId = $state(untrack(() => profile?.licenseBackStorageId));
+
+	// --- Inlined former RestrictionBadge component ---
+	type RestrictionType = 'NO_LONG_DISTANCE' | 'NO_UTILITY' | 'NO_TRUCK' | 'MAX_KM_PER_MONTH' | 'SITE_ONLY';
+	const RESTRICTION_LABELS: Record<RestrictionType, string> = {
+		NO_LONG_DISTANCE: 'Pas de long trajet',
+		NO_UTILITY: "Pas d'utilitaire",
+		NO_TRUCK: 'Pas de camion',
+		MAX_KM_PER_MONTH: 'Km max/mois',
+		SITE_ONLY: 'Site limité'
+	};
+	const RESTRICTION_COLORS: Record<RestrictionType, string> = {
+		NO_LONG_DISTANCE: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+		NO_UTILITY: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+		NO_TRUCK: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+		MAX_KM_PER_MONTH: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+		SITE_ONLY: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+	};
+
+	// --- Inlined former LicenseUpload component (front/back license photo upload) ---
+	let frontFileInput: HTMLInputElement | undefined = $state();
+	let backFileInput: HTMLInputElement | undefined = $state();
+	let frontUploading = $state(false);
+	let backUploading = $state(false);
+	let frontJustUploaded = $state(false);
+	let backJustUploaded = $state(false);
+
+	async function handleLicenseUpload(event: Event, side: 'front' | 'back') {
+		const file = (event.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+
+		if (side === 'front') frontUploading = true;
+		else backUploading = true;
+
+		try {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const uploadUrl = await client.mutation((api as any).drivers.generateLicenseUploadUrl, {});
+			const response = await fetch(uploadUrl as string, {
+				method: 'POST',
+				headers: { 'Content-Type': file.type },
+				body: file
+			});
+			if (!response.ok) throw new Error('Upload échoué');
+			const { storageId } = await response.json();
+			if (side === 'front') {
+				frontStorageId = storageId;
+				frontJustUploaded = true;
+			} else {
+				backStorageId = storageId;
+				backJustUploaded = true;
+			}
+		} catch {
+			// Échec silencieux : l'UI ne confirme simplement pas l'envoi.
+		} finally {
+			if (side === 'front') frontUploading = false;
+			else backUploading = false;
+		}
+	}
 
 	$effect(() => {
 		if (profile && !licenseNumber && !licenseExpiryDate) {
@@ -391,18 +449,56 @@
 						<div class="grid grid-cols-2 gap-3">
 							<div class="flex flex-col gap-2">
 								<p class="text-sm font-semibold">Recto</p>
-								<LicenseUpload
-									label="Recto"
-									currentStorageId={frontStorageId}
-									onUpload={(id) => (frontStorageId = id)}
+								<button
+									type="button"
+									class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 px-4 py-6 text-sm transition-colors hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500"
+									onclick={() => frontFileInput?.click()}
+									disabled={frontUploading}
+								>
+									{#if frontUploading}
+										<Loader2Icon class="h-4 w-4 animate-spin text-neutral-400" />
+										<span class="text-neutral-500">Envoi en cours…</span>
+									{:else if frontStorageId || frontJustUploaded}
+										<CheckIcon class="h-4 w-4 text-emerald-500" />
+										<span class="text-emerald-600 dark:text-emerald-400">Recto — envoyé</span>
+									{:else}
+										<UploadIcon class="h-4 w-4 text-neutral-400" />
+										<span class="text-neutral-500">Recto</span>
+									{/if}
+								</button>
+								<input
+									bind:this={frontFileInput}
+									type="file"
+									accept="image/*,application/pdf"
+									class="hidden"
+									onchange={(e) => handleLicenseUpload(e, 'front')}
 								/>
 							</div>
 							<div class="flex flex-col gap-2">
 								<p class="text-sm font-semibold">Verso</p>
-								<LicenseUpload
-									label="Verso"
-									currentStorageId={backStorageId}
-									onUpload={(id) => (backStorageId = id)}
+								<button
+									type="button"
+									class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 px-4 py-6 text-sm transition-colors hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500"
+									onclick={() => backFileInput?.click()}
+									disabled={backUploading}
+								>
+									{#if backUploading}
+										<Loader2Icon class="h-4 w-4 animate-spin text-neutral-400" />
+										<span class="text-neutral-500">Envoi en cours…</span>
+									{:else if backStorageId || backJustUploaded}
+										<CheckIcon class="h-4 w-4 text-emerald-500" />
+										<span class="text-emerald-600 dark:text-emerald-400">Verso — envoyé</span>
+									{:else}
+										<UploadIcon class="h-4 w-4 text-neutral-400" />
+										<span class="text-neutral-500">Verso</span>
+									{/if}
+								</button>
+								<input
+									bind:this={backFileInput}
+									type="file"
+									accept="image/*,application/pdf"
+									class="hidden"
+									onchange={(e) => handleLicenseUpload(e, 'back')}
 								/>
 							</div>
 						</div>
@@ -458,7 +554,9 @@
 					<div class="flex flex-col gap-2">
 						{#each restrictions as r}
 							<div class="flex items-start gap-3 rounded-2xl bg-card p-4 ring-1 ring-border/50 shadow-glass-card">
-								<RestrictionBadge type={r.type} value={r.value} />
+								<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {RESTRICTION_COLORS[r.type as RestrictionType]}">
+									{RESTRICTION_LABELS[r.type as RestrictionType]}{r.value ? ` (${r.value})` : ''}
+								</span>
 								{#if r.reason}
 									<p class="text-sm text-muted-foreground">{r.reason}</p>
 								{/if}
