@@ -1,23 +1,21 @@
 <script lang="ts">
-	import CalendarCheckIcon from '@lucide/svelte/icons/calendar-check';
-	import CalendarXIcon from '@lucide/svelte/icons/calendar-x';
-	import BellIcon from '@lucide/svelte/icons/bell';
-	import AlertTriangleIcon from '@lucide/svelte/icons/alert-triangle';
-	import CarIcon from '@lucide/svelte/icons/car';
-	import WrenchIcon from '@lucide/svelte/icons/wrench';
+	import FileTextIcon from '@lucide/svelte/icons/file-text';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import ListChecksIcon from '@lucide/svelte/icons/list-checks';
 	import TrendingDownIcon from '@lucide/svelte/icons/trending-down';
+	import CalendarClockIcon from '@lucide/svelte/icons/calendar-clock';
 	import FileWarningIcon from '@lucide/svelte/icons/file-warning';
+	import HeartHandshakeIcon from '@lucide/svelte/icons/heart-handshake';
 	import { cn } from '$lib/utils.js';
 
 	type NotificationType =
-		| 'RESERVATION_CONFIRMED'
-		| 'RESERVATION_CANCELLED'
-		| 'RESERVATION_REMINDER'
-		| 'CONFLICT_DETECTED'
-		| 'VEHICLE_RETURNED'
-		| 'MAINTENANCE_DUE'
-		| 'UNDERUTILIZED_VEHICLE'
-		| 'LEASE_EXPIRING';
+		| 'FACTURES_RECUES'
+		| 'DIAGNOSTIC_PRET'
+		| 'LIGNES_A_ARBITRER'
+		| 'RATIO_EN_DERIVE'
+		| 'DECLARATION_A_FAIRE'
+		| 'ATTESTATION_MANQUANTE'
+		| 'HUMAN_ASSIST_REPLY';
 
 	export type AppNotification = {
 		_id: string;
@@ -36,26 +34,24 @@
 
 	let { notification, onclick }: Props = $props();
 
-	const iconMap: Record<NotificationType, typeof CalendarCheckIcon> = {
-		RESERVATION_CONFIRMED: CalendarCheckIcon,
-		RESERVATION_CANCELLED: CalendarXIcon,
-		RESERVATION_REMINDER: BellIcon,
-		CONFLICT_DETECTED: AlertTriangleIcon,
-		VEHICLE_RETURNED: CarIcon,
-		MAINTENANCE_DUE: WrenchIcon,
-		UNDERUTILIZED_VEHICLE: TrendingDownIcon,
-		LEASE_EXPIRING: FileWarningIcon
+	const iconMap: Record<NotificationType, typeof FileTextIcon> = {
+		FACTURES_RECUES: FileTextIcon,
+		DIAGNOSTIC_PRET: SparklesIcon,
+		LIGNES_A_ARBITRER: ListChecksIcon,
+		RATIO_EN_DERIVE: TrendingDownIcon,
+		DECLARATION_A_FAIRE: CalendarClockIcon,
+		ATTESTATION_MANQUANTE: FileWarningIcon,
+		HUMAN_ASSIST_REPLY: HeartHandshakeIcon
 	};
 
 	const colorMap: Record<NotificationType, string> = {
-		RESERVATION_CONFIRMED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
-		RESERVATION_CANCELLED: 'bg-muted text-muted-foreground',
-		RESERVATION_REMINDER: 'bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300',
-		CONFLICT_DETECTED: 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300',
-		VEHICLE_RETURNED: 'bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
-		MAINTENANCE_DUE: 'bg-orange-100 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300',
-		UNDERUTILIZED_VEHICLE: 'bg-slate-100 text-slate-600 dark:bg-slate-400/15 dark:text-slate-300',
-		LEASE_EXPIRING: 'bg-purple-100 text-purple-700 dark:bg-purple-400/15 dark:text-purple-300'
+		FACTURES_RECUES: 'bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300',
+		DIAGNOSTIC_PRET: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
+		LIGNES_A_ARBITRER: 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300',
+		RATIO_EN_DERIVE: 'bg-red-100 text-red-700 dark:bg-red-400/15 dark:text-red-300',
+		DECLARATION_A_FAIRE: 'bg-purple-100 text-purple-700 dark:bg-purple-400/15 dark:text-purple-300',
+		ATTESTATION_MANQUANTE: 'bg-orange-100 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300',
+		HUMAN_ASSIST_REPLY: 'bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300'
 	};
 
 	function relativeTime(ts: number): string {

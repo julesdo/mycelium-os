@@ -155,25 +155,17 @@ export default defineSchema({
 		organizationId: v.id('organizations'),
 		userId: v.string(), // destinataire (Better Auth string ID)
 		type: v.union(
-			v.literal('RESERVATION_CONFIRMED'),
-			v.literal('RESERVATION_CANCELLED'),
-			v.literal('RESERVATION_REMINDER'),
-			v.literal('CONFLICT_DETECTED'),
-			v.literal('VEHICLE_RETURNED'),
-			v.literal('MAINTENANCE_DUE'),
-			v.literal('UNDERUTILIZED_VEHICLE'),
-			v.literal('LEASE_EXPIRING'),
-			v.literal('LICENSE_EXPIRING'),
-			v.literal('LICENSE_EXPIRED'),
-			v.literal('VIOLATION_RECEIVED'),
-			v.literal('INSPECTION_REQUIRED'),
-			v.literal('INCIDENT_DECLARED'),
+			v.literal('FACTURES_RECUES'),
+			v.literal('DIAGNOSTIC_PRET'),
+			v.literal('LIGNES_A_ARBITRER'),
+			v.literal('RATIO_EN_DERIVE'),
+			v.literal('DECLARATION_A_FAIRE'),
+			v.literal('ATTESTATION_MANQUANTE'),
 			v.literal('HUMAN_ASSIST_REPLY')
 		),
 		title: v.string(),
 		message: v.string(),
 		link: v.optional(v.string()),
-		vehicleId: v.optional(v.id('vehicles')), // pour dédoublonnage alertes flotte
 		isRead: v.boolean(),
 		createdAt: v.number()
 	})
