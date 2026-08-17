@@ -42,19 +42,33 @@ export const getMyOrgMembership = authedQuery({
 export const createOrganization = authedMutation({
 	args: {
 		name: v.string(),
-		siren: v.optional(v.string()),
-		sector: v.optional(v.string()),
-		size: v.optional(v.string())
+		siret: v.optional(v.string()),
+		etablissementType: v.optional(
+			v.union(
+				v.literal('RIE'),
+				v.literal('CLINIQUE'),
+				v.literal('EHPAD'),
+				v.literal('CRECHE'),
+				v.literal('ECOLE_PRIVEE'),
+				v.literal('AUTRE')
+			)
+		),
+		couvertsJour: v.optional(v.number()),
+		gestionDirecte: v.optional(v.boolean())
 	},
 	handler: async (ctx, args) => {
 		if (!args.name.trim()) throw new ConvexError('Le nom est obligatoire');
 
 		const orgId = await ctx.db.insert('organizations', {
 			name: args.name.trim(),
-			siren: args.siren,
-			sector: args.sector,
-			size: args.size,
-			plan: 'flat',
+			siret: args.siret,
+			etablissementType: args.etablissementType,
+			couvertsJour: args.couvertsJour,
+			gestionDirecte: args.gestionDirecte,
+			country: 'FR',
+			currency: 'EUR',
+			timezone: 'Europe/Paris',
+			locale: 'fr-FR',
 			createdAt: Date.now()
 		});
 
@@ -156,14 +170,19 @@ export const platformSwitchOrganization = adminMutation({
 export const updateOrganization = authedMutation({
 	args: {
 		name: v.string(),
-		siren: v.optional(v.string()),
-		sector: v.optional(v.string()),
-		size: v.optional(v.string()),
-		country: v.optional(v.string()),
-		currency: v.optional(v.string()),
-		distanceUnit: v.optional(v.union(v.literal('km'), v.literal('mile'))),
-		timezone: v.optional(v.string()),
-		locale: v.optional(v.string())
+		siret: v.optional(v.string()),
+		etablissementType: v.optional(
+			v.union(
+				v.literal('RIE'),
+				v.literal('CLINIQUE'),
+				v.literal('EHPAD'),
+				v.literal('CRECHE'),
+				v.literal('ECOLE_PRIVEE'),
+				v.literal('AUTRE')
+			)
+		),
+		couvertsJour: v.optional(v.number()),
+		gestionDirecte: v.optional(v.boolean())
 	},
 	handler: async (ctx, args) => {
 		if (!args.name.trim()) throw new ConvexError('Le nom est obligatoire');
@@ -188,14 +207,10 @@ export const updateOrganization = authedMutation({
 
 		await ctx.db.patch(profile.currentOrganizationId, {
 			name: args.name.trim(),
-			siren: args.siren,
-			sector: args.sector,
-			size: args.size,
-			country: args.country,
-			currency: args.currency,
-			distanceUnit: args.distanceUnit,
-			timezone: args.timezone,
-			locale: args.locale
+			siret: args.siret,
+			etablissementType: args.etablissementType,
+			couvertsJour: args.couvertsJour,
+			gestionDirecte: args.gestionDirecte
 		});
 	}
 });
@@ -326,7 +341,7 @@ export const listOrganizationMembers = authedQuery({
 			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
 			.unique();
 		if (!callerMembership || callerMembership.role === 'ORG_MEMBER') {
-			throw new ConvexError('Accès refusé : rôle ORG_ADMIN ou ORG_MANAGER requis');
+			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
 		}
 
 		const members = await ctx.db
@@ -387,7 +402,7 @@ export const listOrganizationMembers = authedQuery({
 export const inviteOrganizationMember = authedMutation({
 	args: {
 		email: v.string(),
-		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER')),
+		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER')),
 		skipEmail: v.optional(v.boolean())
 	},
 	handler: async (ctx, { email, role, skipEmail }) => {
@@ -433,12 +448,7 @@ export const inviteOrganizationMember = authedMutation({
 
 		if (!skipEmail) {
 			const org = await ctx.db.get(orgId);
-			const roleLabel =
-				role === 'ORG_ADMIN'
-					? 'Administrateur'
-					: role === 'ORG_MANAGER'
-						? 'Gestionnaire'
-						: 'Membre';
+			const roleLabel = role === 'ORG_ADMIN' ? 'Administrateur' : 'Membre';
 
 			await ctx.scheduler.runAfter(0, internal.organizations.sendOrgInvitationEmail, {
 				email,
@@ -457,7 +467,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 		invites: v.array(
 			v.object({
 				email: v.string(),
-				role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER'))
+				role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER'))
 			})
 		),
 		skipEmail: v.optional(v.boolean())
@@ -529,12 +539,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 				});
 
 				if (!skipEmail) {
-					const roleLabel =
-						invite.role === 'ORG_ADMIN'
-							? 'Administrateur'
-							: invite.role === 'ORG_MANAGER'
-								? 'Gestionnaire'
-								: 'Membre';
+					const roleLabel = invite.role === 'ORG_ADMIN' ? 'Administrateur' : 'Membre';
 					await ctx.scheduler.runAfter(0, internal.organizations.sendOrgInvitationEmail, {
 						email,
 						orgName: org.name ?? '',
@@ -560,7 +565,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 export const updateMemberRole = authedMutation({
 	args: {
 		memberId: v.id('organizationMembers'),
-		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER'))
+		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER'))
 	},
 	handler: async (ctx, { memberId, role }) => {
 		const profile = await ctx.db

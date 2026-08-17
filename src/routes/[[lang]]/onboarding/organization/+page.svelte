@@ -19,85 +19,32 @@
 	const convexClient = useConvexClient();
 
 	// ── wizard state ──────────────────────────────────────────────────────────
-	let step = $state(0); // 0=org, 1=locale, 2=team, 3=done
-	const STEPS = ['Organisation', 'Localisation', 'Équipe', "C'est parti !"];
+	let step = $state(0); // 0=cantine, 1=équipe, 2=done
+	const STEPS = ['Cantine', 'Équipe', "C'est parti !"];
 
-	// ── step 0 : organisation ─────────────────────────────────────────────────
+	// ── step 0 : cantine ──────────────────────────────────────────────────────
 	let name = $state('');
-	let siren = $state('');
-	let sector = $state('');
-	let size = $state('');
+	let siret = $state('');
+	let etablissementType = $state('');
+	let couvertsJour = $state<number | ''>('');
 	let orgErrors = $state<Record<string, Array<{ message: string }>>>({});
 	let orgSubmitting = $state(false);
 	let orgError = $state('');
 
-	let sirenLookupState = $state<'idle' | 'loading' | 'success' | 'error'>('idle');
-	let sirenNaf = $state<string | null>(null);
-	let sirenTimeout: ReturnType<typeof setTimeout> | undefined;
-
-	const sectors = [
-		{ value: 'technologie', label: 'Technologie & Informatique' },
-		{ value: 'finance', label: 'Finance & Assurance' },
-		{ value: 'commerce', label: 'Commerce & Distribution' },
-		{ value: 'industrie', label: 'Industrie & Fabrication' },
-		{ value: 'construction', label: 'Construction & BTP' },
-		{ value: 'transport', label: 'Transport & Logistique' },
-		{ value: 'sante', label: 'Santé & Médical' },
-		{ value: 'education', label: 'Éducation & Formation' },
-		{ value: 'agriculture', label: 'Agriculture' },
-		{ value: 'services', label: 'Services aux entreprises' },
-		{ value: 'autre', label: 'Autre' }
+	const etablissementTypes = [
+		{ value: 'RIE', label: 'RIE — Restaurant inter-entreprises' },
+		{ value: 'CLINIQUE', label: 'Clinique / établissement de santé' },
+		{ value: 'EHPAD', label: 'EHPAD' },
+		{ value: 'CRECHE', label: 'Crèche' },
+		{ value: 'ECOLE_PRIVEE', label: 'École privée' },
+		{ value: 'AUTRE', label: 'Autre' }
 	];
-
-	const sizes = [
-		{ value: '1-10', label: '1 à 10 salariés' },
-		{ value: '10-50', label: '10 à 50 salariés' },
-		{ value: '50-200', label: '50 à 200 salariés' },
-		{ value: '200-500', label: '200 à 500 salariés' },
-		{ value: '500+', label: '500+ salariés' }
-	];
-
-	function validateSiren(s: string): boolean {
-		if (!/^\d{9}$/.test(s)) return false;
-		let sum = 0;
-		for (let i = 0; i < 9; i++) {
-			let d = +s[8 - i]!;
-			if (i % 2 === 1) {
-				d *= 2;
-				if (d > 9) d -= 9;
-			}
-			sum += d;
-		}
-		return sum % 10 === 0;
-	}
-
-	$effect(() => {
-		const value = siren;
-		clearTimeout(sirenTimeout);
-		sirenNaf = null;
-		if (!value || !validateSiren(value)) {
-			sirenLookupState = 'idle';
-			return;
-		}
-		sirenLookupState = 'loading';
-		sirenTimeout = setTimeout(async () => {
-			try {
-				const result = await convexClient.action(api.organizations.lookupSiren, { siren: value });
-				if (result.name && !name) name = result.name;
-				sirenNaf = result.naf;
-				sirenLookupState = 'success';
-			} catch {
-				sirenLookupState = 'error';
-			}
-		}, 600);
-		return () => clearTimeout(sirenTimeout);
-	});
 
 	async function submitOrg() {
 		const errs: Record<string, Array<{ message: string }>> = {};
 		if (!name.trim()) errs.name = [{ message: 'Le nom est obligatoire' }];
-		if (siren && !validateSiren(siren))
-			errs.siren = [{ message: 'SIREN invalide — 9 chiffres, algorithme de Luhn' }];
+		if (siret && !/^\d{14}$/.test(siret))
+			errs.siret = [{ message: 'SIRET invalide — 14 chiffres' }];
 		orgErrors = errs;
 		if (Object.keys(errs).length > 0) return;
 
@@ -106,9 +53,16 @@
 		try {
 			await convexClient.mutation(api.organizations.createOrganization, {
 				name: name.trim(),
-				siren: siren || undefined,
-				sector: sector || undefined,
-				size: size || undefined
+				siret: siret || undefined,
+				etablissementType:
+					(etablissementType as
+						| 'RIE'
+						| 'CLINIQUE'
+						| 'EHPAD'
+						| 'CRECHE'
+						| 'ECOLE_PRIVEE'
+						| 'AUTRE') || undefined,
+				couvertsJour: couvertsJour === '' ? undefined : Number(couvertsJour)
 			});
 			step = 1;
 		} catch (err) {
@@ -118,106 +72,7 @@
 		}
 	}
 
-	// ── step 1 : localisation ─────────────────────────────────────────────────
-	type CountryPack = {
-		country: string;
-		currency: string;
-		distanceUnit: 'km' | 'mile';
-		timezone: string;
-		locale: string;
-		label: string;
-	};
-	const COUNTRY_PACKS: CountryPack[] = [
-		{
-			country: 'GB',
-			currency: 'GBP',
-			distanceUnit: 'mile',
-			timezone: 'Europe/London',
-			locale: 'en-GB',
-			label: 'Royaume-Uni (GBP)'
-		},
-		{
-			country: 'FR',
-			currency: 'EUR',
-			distanceUnit: 'km',
-			timezone: 'Europe/Paris',
-			locale: 'fr-FR',
-			label: 'France (EUR)'
-		},
-		{
-			country: 'SE',
-			currency: 'SEK',
-			distanceUnit: 'km',
-			timezone: 'Europe/Stockholm',
-			locale: 'sv-SE',
-			label: 'Suède (SEK)'
-		},
-		{
-			country: 'NO',
-			currency: 'NOK',
-			distanceUnit: 'km',
-			timezone: 'Europe/Oslo',
-			locale: 'nb-NO',
-			label: 'Norvège (NOK)'
-		},
-		{
-			country: 'DK',
-			currency: 'DKK',
-			distanceUnit: 'km',
-			timezone: 'Europe/Copenhagen',
-			locale: 'da-DK',
-			label: 'Danemark (DKK)'
-		},
-		{
-			country: 'DE',
-			currency: 'EUR',
-			distanceUnit: 'km',
-			timezone: 'Europe/Berlin',
-			locale: 'de-DE',
-			label: 'Allemagne (EUR)'
-		},
-		{
-			country: 'NL',
-			currency: 'EUR',
-			distanceUnit: 'km',
-			timezone: 'Europe/Amsterdam',
-			locale: 'nl-NL',
-			label: 'Pays-Bas (EUR)'
-		}
-	];
-
-	let selectedCountryCode = $state('GB');
-	let localeSubmitting = $state(false);
-	let localeError = $state('');
-
-	const selectedPack = $derived(
-		COUNTRY_PACKS.find((p) => p.country === selectedCountryCode) ?? COUNTRY_PACKS[0]!
-	);
-
-	async function submitLocale() {
-		localeSubmitting = true;
-		localeError = '';
-		try {
-			await convexClient.mutation(api.organizations.updateOrganization, {
-				name: name.trim(),
-				siren: siren || undefined,
-				sector: sector || undefined,
-				size: size || undefined,
-				country: selectedPack.country,
-				currency: selectedPack.currency,
-				distanceUnit: selectedPack.distanceUnit,
-				timezone: selectedPack.timezone,
-				locale: selectedPack.locale
-			});
-			step = 2;
-		} catch (err) {
-			localeError = err instanceof Error ? err.message : 'Une erreur est survenue';
-		} finally {
-			localeSubmitting = false;
-		}
-	}
-
-	// ── step 2 : inviter l'équipe ─────────────────────────────────────────────
+	// ── step 1 : inviter l'équipe ─────────────────────────────────────────────
 	type InviteEntry = {
 		email: string;
 		role: 'ORG_ADMIN' | 'ORG_MEMBER';
@@ -241,7 +96,7 @@
 		const toSend = invites.filter((e) => e.email.trim() !== '');
 
 		if (toSend.length === 0) {
-			step = 3;
+			step = 2;
 			return;
 		}
 
@@ -257,13 +112,13 @@
 
 		teamSubmitting = true;
 		await Promise.allSettled(
-			toSend.map(async (entry, i) => {
+			toSend.map(async (entry) => {
 				try {
 					await convexClient.mutation(api.organizations.inviteOrganizationMember, {
 						email: entry.email.trim(),
 						role: entry.role
 					});
-					invites = invites.map((e, idx) =>
+					invites = invites.map((e) =>
 						e.email === entry.email ? { ...e, sent: true, error: undefined } : e
 					);
 				} catch (err) {
@@ -275,14 +130,14 @@
 		teamSubmitting = false;
 
 		const anyError = invites.some((e) => e.error);
-		if (!anyError) step = 3;
+		if (!anyError) step = 2;
 	}
 
 	function skipTeam() {
-		step = 3;
+		step = 2;
 	}
 
-	// ── step 3 : done ─────────────────────────────────────────────────────────
+	// ── step 2 : done ─────────────────────────────────────────────────────────
 	// Detect dev mode: VITE_PADDLE_CLIENT_TOKEN absent = no Paddle configured
 	const isPaddleDev = !import.meta.env.VITE_PADDLE_CLIENT_TOKEN;
 
@@ -320,7 +175,7 @@
 					<Logo class="size-10 text-[var(--brand-foreground)]" />
 				</span>
 			</div>
-			<h1 class="text-xl font-semibold tracking-tight">Mycelium Fleet OS</h1>
+			<h1 class="text-xl font-semibold tracking-tight">Mycelium</h1>
 		</div>
 
 		<!-- Step indicator -->
@@ -370,12 +225,12 @@
 
 		<Card.Root>
 			<Card.Content class="p-6">
-				<!-- ─── Step 0 : organisation ────────────────────────────────── -->
+				<!-- ─── Step 0 : cantine ─────────────────────────────────────── -->
 				{#if step === 0}
 					<div class="mb-5">
-						<h2 class="text-base font-semibold">Votre organisation</h2>
+						<h2 class="text-base font-semibold">Votre cantine</h2>
 						<p class="text-sm text-muted-foreground">
-							Configurez les informations de base de votre entreprise.
+							Configurez les informations de base de votre établissement.
 						</p>
 					</div>
 
@@ -389,14 +244,14 @@
 						<Field.Group>
 							<Field.Field>
 								<Field.Label for="org-name"
-									>Nom de l'organisation <span class="text-destructive">*</span></Field.Label
+									>Nom de la cantine <span class="text-destructive">*</span></Field.Label
 								>
 								<Input
 									id="org-name"
 									data-testid="org-name-input"
 									type="text"
 									bind:value={name}
-									placeholder="Ex : ACME SAS"
+									placeholder="Ex : Cantine du Centre Hospitalier"
 									disabled={orgSubmitting}
 									aria-invalid={!!orgErrors.name?.length}
 								/>
@@ -404,52 +259,37 @@
 							</Field.Field>
 
 							<Field.Field>
-								<Field.Label for="siren"
-									>Numéro SIREN <span class="text-xs text-muted-foreground">(optionnel)</span
+								<Field.Label for="siret"
+									>Numéro SIRET <span class="text-xs text-muted-foreground">(optionnel)</span
 									></Field.Label
 								>
-								<div class="relative">
-									<Input
-										id="siren"
-										data-testid="org-siren-input"
-										type="text"
-										inputmode="numeric"
-										bind:value={siren}
-										placeholder="552032534"
-										maxlength={9}
-										disabled={orgSubmitting}
-										aria-invalid={!!orgErrors.siren?.length}
-										class={sirenLookupState === 'loading' ? 'pr-9' : ''}
-									/>
-									{#if sirenLookupState === 'loading'}
-										<div class="absolute inset-y-0 right-3 flex items-center">
-											<LoaderCircleIcon
-												class="size-4 text-muted-foreground motion-safe:animate-spin"
-											/>
-										</div>
-									{/if}
-								</div>
-								{#if sirenLookupState === 'success' && sirenNaf}
-									<Field.Description class="text-emerald-600 dark:text-emerald-400"
-										>✓ {sirenNaf}</Field.Description
-									>
-								{/if}
-								{#if sirenLookupState === 'error'}
-									<Field.Description class="text-amber-600 dark:text-amber-400"
-										>SIREN non trouvé — saisissez le nom manuellement</Field.Description
-									>
-								{/if}
-								<Field.Error data-testid="siren-error" errors={orgErrors.siren ?? []} />
+								<Input
+									id="siret"
+									data-testid="org-siret-input"
+									type="text"
+									inputmode="numeric"
+									bind:value={siret}
+									placeholder="55203253400012"
+									maxlength={14}
+									disabled={orgSubmitting}
+									aria-invalid={!!orgErrors.siret?.length}
+								/>
+								<Field.Error data-testid="siret-error" errors={orgErrors.siret ?? []} />
 							</Field.Field>
 
 							<Field.Field>
-								<Field.Label>Secteur d'activité</Field.Label>
-								<Select.Root type="single" value={sector} onValueChange={(v) => (sector = v)}>
+								<Field.Label>Type d'établissement</Field.Label>
+								<Select.Root
+									type="single"
+									value={etablissementType}
+									onValueChange={(v) => (etablissementType = v)}
+								>
 									<Select.Trigger class="w-full" disabled={orgSubmitting}>
-										{sectors.find((s) => s.value === sector)?.label ?? 'Sélectionner un secteur'}
+										{etablissementTypes.find((s) => s.value === etablissementType)?.label ??
+											"Sélectionner un type d'établissement"}
 									</Select.Trigger>
 									<Select.Content>
-										{#each sectors as s (s.value)}<Select.Item value={s.value}
+										{#each etablissementTypes as s (s.value)}<Select.Item value={s.value}
 												>{s.label}</Select.Item
 											>{/each}
 									</Select.Content>
@@ -457,16 +297,15 @@
 							</Field.Field>
 
 							<Field.Field>
-								<Field.Label>Taille de l'organisation</Field.Label>
-								<Select.Root type="single" value={size} onValueChange={(v) => (size = v)}>
-									<Select.Trigger class="w-full" disabled={orgSubmitting}>
-										{sizes.find((s) => s.value === size)?.label ?? 'Nombre de salariés'}
-									</Select.Trigger>
-									<Select.Content>
-										{#each sizes as s (s.value)}<Select.Item value={s.value}>{s.label}</Select.Item
-											>{/each}
-									</Select.Content>
-								</Select.Root>
+								<Field.Label for="couverts-jour">Couverts par jour</Field.Label>
+								<Input
+									id="couverts-jour"
+									type="number"
+									min="0"
+									bind:value={couvertsJour}
+									placeholder="Ex : 250"
+									disabled={orgSubmitting}
+								/>
 							</Field.Field>
 
 							{#if orgError}
@@ -490,64 +329,8 @@
 					</form>
 				{/if}
 
-				<!-- ─── Step 1 : localisation ────────────────────────────────── -->
+				<!-- ─── Step 1 : inviter l'équipe ────────────────────────────── -->
 				{#if step === 1}
-					<div class="mb-5">
-						<h2 class="text-base font-semibold">Localisation & devise</h2>
-						<p class="text-sm text-muted-foreground">
-							Définit la devise, l'unité de distance et les taux fiscaux applicables.
-						</p>
-					</div>
-
-					<div class="space-y-4">
-						<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-							{#each COUNTRY_PACKS as pack (pack.country)}
-								<button
-									type="button"
-									onclick={() => (selectedCountryCode = pack.country)}
-									class="flex flex-col gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-colors
-										{selectedCountryCode === pack.country
-										? 'border-[var(--brand)] bg-[var(--brand)]/5 ring-1 ring-[var(--brand)]'
-										: 'border-border hover:border-border/80 hover:bg-muted/40'}"
-								>
-									<span class="text-sm font-medium">{pack.country}</span>
-									<span class="text-[11px] text-muted-foreground"
-										>{pack.currency} · {pack.distanceUnit}</span
-									>
-								</button>
-							{/each}
-						</div>
-
-						<div class="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-							<div class="font-medium">{selectedPack.label}</div>
-							<div class="mt-1 text-xs text-muted-foreground">
-								Fuseau : {selectedPack.timezone} · Locale : {selectedPack.locale}
-							</div>
-						</div>
-
-						{#if localeError}
-							<p class="text-sm text-destructive">{localeError}</p>
-						{/if}
-
-						<div class="flex gap-2 pt-1">
-							<Button
-								variant="outline"
-								class="flex-1"
-								onclick={() => (step = 0)}
-								disabled={localeSubmitting}>← Retour</Button
-							>
-							<Button class="flex-1" onclick={submitLocale} disabled={localeSubmitting}>
-								{#if localeSubmitting}
-									<LoaderCircleIcon class="mr-2 size-4 motion-safe:animate-spin" />
-								{/if}
-								Continuer →
-							</Button>
-						</div>
-					</div>
-				{/if}
-
-				<!-- ─── Step 2 : inviter l'équipe ────────────────────────────── -->
-				{#if step === 2}
 					<div class="mb-5">
 						<h2 class="text-base font-semibold">Inviter votre équipe</h2>
 						<p class="text-sm text-muted-foreground">
@@ -619,7 +402,7 @@
 							<Button
 								variant="outline"
 								class="flex-1"
-								onclick={() => (step = 1)}
+								onclick={() => (step = 0)}
 								disabled={teamSubmitting}>← Retour</Button
 							>
 							<Button variant="ghost" onclick={skipTeam} disabled={teamSubmitting}>Passer</Button>
@@ -633,8 +416,8 @@
 					</div>
 				{/if}
 
-				<!-- ─── Step 3 : done ─────────────────────────────────────────── -->
-				{#if step === 3}
+				<!-- ─── Step 2 : done ─────────────────────────────────────────── -->
+				{#if step === 2}
 					<div class="flex flex-col items-center gap-4 py-2 text-center">
 						<div class="flex size-12 items-center justify-center rounded-full bg-[var(--brand)]/10">
 							<CheckCircleIcon class="size-6 text-[var(--brand)]" />
@@ -681,13 +464,12 @@
 								</p>
 							</div>
 						{:else}
-							<!-- Prod: open core — invite to upgrade when ready -->
+							<!-- Prod: aucun plan actif — inviter à démarrer un diagnostic -->
 							<div class="w-full rounded-lg border border-border bg-muted/40 px-4 py-3 text-left">
 								<div class="flex-1">
-									<p class="text-xs font-medium">Vous êtes sur le plan gratuit</p>
+									<p class="text-xs font-medium">Aucun abonnement actif</p>
 									<p class="text-[11px] text-muted-foreground">
-										Accès aux fonctionnalités de base. Passez à un plan payant quand vous êtes
-										prêt pour débloquer toutes les fonctionnalités.
+										Démarrez un diagnostic EGalim ou passez à un plan payant quand vous êtes prêt.
 									</p>
 								</div>
 							</div>

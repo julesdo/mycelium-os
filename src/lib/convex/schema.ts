@@ -42,31 +42,35 @@ export default defineSchema({
 		.index('by_target', ['targetUserId'])
 		.index('by_timestamp', ['timestamp']),
 
-	// Organizations - chaque entreprise cliente est une organisation
+	// Organizations — une cantine cliente = une organisation
 	organizations: defineTable({
 		name: v.string(),
-		siren: v.optional(v.string()),
-		sector: v.optional(v.string()),
-		size: v.optional(v.string()),
-		plan: v.union(v.literal('flat'), v.literal('per_seat')),
+		siret: v.optional(v.string()),
+		// Profil cantine
+		etablissementType: v.optional(
+			v.union(
+				v.literal('RIE'),
+				v.literal('CLINIQUE'),
+				v.literal('EHPAD'),
+				v.literal('CRECHE'),
+				v.literal('ECOLE_PRIVEE'),
+				v.literal('AUTRE')
+			)
+		),
+		couvertsJour: v.optional(v.number()),
+		gestionDirecte: v.optional(v.boolean()),
 		logoUrl: v.optional(v.string()),
 		logoStorageId: v.optional(v.id('_storage')),
-		// Internationalisation
-		country: v.optional(v.string()), // ISO 3166-1 alpha-2 — 'FR' | 'GB' | 'SE' | 'NO' | 'DK'
-		currency: v.optional(v.string()), // 'EUR' | 'GBP' | 'SEK' | 'NOK' | 'DKK'
-		distanceUnit: v.optional(v.union(v.literal('km'), v.literal('mile'))),
-		timezone: v.optional(v.string()), // IANA — 'Europe/London', 'Europe/Paris'…
-		locale: v.optional(v.string()), // BCP 47 — 'en-GB', 'fr-FR', 'sv-SE'…
-		// Paddle billing
+		// Localisation — figée FR pour la phase POC
+		country: v.optional(v.string()),
+		currency: v.optional(v.string()),
+		timezone: v.optional(v.string()),
+		locale: v.optional(v.string()),
+		// Paddle billing — étages commerciaux EGalim
 		paddleSubscriptionId: v.optional(v.string()),
 		paddleCustomerId: v.optional(v.string()),
 		paddlePlanTier: v.optional(
-			v.union(
-				v.literal('essential'),
-				v.literal('professional'),
-				v.literal('business'),
-				v.literal('enterprise')
-			)
+			v.union(v.literal('diagnostic'), v.literal('conformite'), v.literal('operateur'))
 		),
 		paddleStatus: v.optional(
 			v.union(
@@ -79,39 +83,12 @@ export default defineSchema({
 		),
 		paddleCurrentPeriodEnd: v.optional(v.number()),
 		seatsIncluded: v.optional(v.number()),
-		// Free trial (15 days, Professional equivalent)
 		freeTrialEndsAt: v.optional(v.number()),
-		// Dev plan — full access, only activatable when PADDLE_API_KEY is absent
 		devPlan: v.optional(v.boolean()),
-		// Dev-only simulated tier — overrides 'dev' when no PADDLE_API_KEY, for testing feature gating
 		simulatedTier: v.optional(v.string()),
-		// Demo accounts — orgs créées par le commercial pour les prospects
-		isDemo: v.optional(v.boolean()),
-		demoConfig: v.optional(v.object({
-			templateId: v.union(
-				v.literal('services'), v.literal('btp'), v.literal('distribution'),
-				v.literal('sante'), v.literal('commerce'), v.literal('vtc'), v.literal('public')
-			),
-			createdBy: v.string(),
-			commercialName: v.string(),
-			commercialPhone: v.string(),
-			commercialCalendlyUrl: v.optional(v.string()),
-			prospectName: v.string(),
-			prospectEmail: v.optional(v.string()),
-			prospectCity: v.optional(v.string()),
-			notes: v.optional(v.string()),
-			expiresAt: v.number(),
-			extendedCount: v.number(),
-			isExpired: v.boolean(),
-			convertedAt: v.optional(v.number()),
-			conversionSource: v.optional(v.union(
-				v.literal('call'), v.literal('calendly'), v.literal('self_serve')
-			))
-		})),
 		createdAt: v.number()
 	})
 		.index('by_name', ['name'])
-		.index('by_plan', ['plan'])
 		.index('by_paddle_subscription', ['paddleSubscriptionId'])
 		.index('by_paddle_customer', ['paddleCustomerId']),
 
@@ -119,7 +96,7 @@ export default defineSchema({
 	organizationMembers: defineTable({
 		organizationId: v.id('organizations'),
 		userId: v.string(), // Better Auth string ID
-		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER')),
+		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER')),
 		joinedAt: v.number()
 	})
 		.index('by_organization', ['organizationId'])
@@ -131,7 +108,7 @@ export default defineSchema({
 	organizationInvitations: defineTable({
 		organizationId: v.id('organizations'),
 		email: v.string(),
-		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER')),
+		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER')),
 		token: v.string(), // UUID unique pour le lien d'invitation
 		invitedBy: v.string(), // userId Better Auth
 		expiresAt: v.number(), // timestamp +7 jours
