@@ -8,8 +8,8 @@
  * session cookies can never bleed between them.
  *
  * Endpoints tested:
- *   1. /admin/settings/organization — org name shown in Card.Title
- *   2. /admin                       — org name shown in sidebar switcher
+ *   1. /app/parametres — org name shown in Card.Title
+ *   2. /app             — org name shown in the sidebar switcher
  */
 
 import { test, expect, chromium, type Browser } from '@playwright/test';
@@ -29,7 +29,7 @@ test.describe('Multi-tenant data isolation', () => {
 	});
 
 	// -----------------------------------------------------------------------
-	// Isolation on /admin/settings/organization
+	// Isolation on /app/parametres
 	// -----------------------------------------------------------------------
 	test('user A cannot see org B name on the settings page', async () => {
 		const { context: ctxA, orgName: orgAName, user: userA } = await createIsolatedUserWithOrg(
@@ -45,8 +45,8 @@ test.describe('Multi-tenant data isolation', () => {
 
 		try {
 			const pageA = await ctxA.newPage();
-			await pageA.goto('/admin/settings/organization');
-			await pageA.waitForURL(/\/admin\/settings\/organization/);
+			await pageA.goto('/app/parametres');
+			await pageA.waitForURL(/\/app\/parametres/);
 
 			// org-settings-name is in Card.Title which shows the live org name.
 			const orgTitle = pageA.getByTestId('org-settings-name');
@@ -62,9 +62,9 @@ test.describe('Multi-tenant data isolation', () => {
 	});
 
 	// -----------------------------------------------------------------------
-	// Isolation on /admin dashboard (sidebar org name)
+	// Isolation on /app (sidebar org name)
 	// -----------------------------------------------------------------------
-	test('user B cannot see org A name on the admin dashboard', async () => {
+	test('user B cannot see org A name on the app sidebar', async () => {
 		const { context: ctxA, orgName: orgAName, user: userA } = await createIsolatedUserWithOrg(
 			browser,
 			BASE_URL,
@@ -78,8 +78,8 @@ test.describe('Multi-tenant data isolation', () => {
 
 		try {
 			const pageB = await ctxB.newPage();
-			await pageB.goto('/admin');
-			await pageB.waitForURL(/\/admin/);
+			await pageB.goto('/app');
+			await pageB.waitForURL(/\/app/);
 
 			// The sidebar shows current-org-name for single-org users.
 			const orgName = pageB.getByTestId('current-org-name');
@@ -114,12 +114,8 @@ test.describe('Multi-tenant data isolation', () => {
 			const pageB = await ctxB.newPage();
 
 			await Promise.all([
-				pageA
-					.goto('/admin/settings/organization')
-					.then(() => pageA.waitForURL(/\/admin\/settings\/organization/)),
-				pageB
-					.goto('/admin/settings/organization')
-					.then(() => pageB.waitForURL(/\/admin\/settings\/organization/))
+				pageA.goto('/app/parametres').then(() => pageA.waitForURL(/\/app\/parametres/)),
+				pageB.goto('/app/parametres').then(() => pageB.waitForURL(/\/app\/parametres/))
 			]);
 
 			const nameInA = pageA.getByTestId('org-settings-name');
@@ -141,17 +137,17 @@ test.describe('Multi-tenant data isolation', () => {
 	});
 
 	// -----------------------------------------------------------------------
-	// Unauthenticated access redirects away from /admin
+	// Unauthenticated access redirects away from /app
 	// -----------------------------------------------------------------------
-	test('unauthenticated access to /admin redirects to signin', async () => {
+	test('unauthenticated access to /app redirects to signin', async () => {
 		const context = await browser.newContext(); // no cookies
 		try {
 			const page = await context.newPage();
-			await page.goto('/admin');
+			await page.goto('/app');
 
-			// Must be redirected away from /admin (to signin or onboarding).
-			await page.waitForURL((url) => !url.pathname.includes('/admin'), { timeout: 10_000 });
-			await expect(page).not.toHaveURL(/\/admin/);
+			// Must be redirected away from /app (to signin or onboarding).
+			await page.waitForURL((url) => !url.pathname.includes('/app'), { timeout: 10_000 });
+			await expect(page).not.toHaveURL(/\/app/);
 		} finally {
 			await context.close();
 		}

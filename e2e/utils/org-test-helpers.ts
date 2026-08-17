@@ -93,14 +93,40 @@ export async function setupFreshUserOnOnboarding(
 	await page.waitForURL(/\/onboarding\/organization/);
 }
 
+/** Mirrors the `etablissementTypes` options rendered by /onboarding/organization. */
+const ETABLISSEMENT_TYPE_LABELS: Record<string, string> = {
+	RIE: 'RIE — Restaurant inter-entreprises',
+	CLINIQUE: 'Clinique / établissement de santé',
+	EHPAD: 'EHPAD',
+	CRECHE: 'Crèche',
+	ECOLE_PRIVEE: 'École privée',
+	AUTRE: 'Autre'
+};
+
 /**
- * Fill the onboarding form and submit. Waits for the /admin redirect.
- * Returns the org name that was used.
+ * Fill the single-step onboarding form (name, établissement type, couverts/jour,
+ * optional SIRET) and submit. Waits for the /app redirect.
  */
-export async function completeOnboardingForm(page: Page, orgName: string): Promise<void> {
+export async function completeOnboardingForm(
+	page: Page,
+	orgName: string,
+	options: { etablissementType?: string; couvertsJour?: number; siret?: string } = {}
+): Promise<void> {
+	const { etablissementType = 'RIE', couvertsJour = 120, siret } = options;
+
 	await page.getByTestId('org-name-input').fill(orgName);
+
+	await page.getByRole('combobox').click();
+	await page.getByRole('option', { name: ETABLISSEMENT_TYPE_LABELS[etablissementType] }).click();
+
+	await page.getByTestId('couverts-jour-input').fill(String(couvertsJour));
+
+	if (siret) {
+		await page.getByTestId('org-siret-input').fill(siret);
+	}
+
 	await page.getByTestId('onboarding-submit').click();
-	await page.waitForURL(/\/admin/, { timeout: 15_000 });
+	await page.waitForURL(/\/app/, { timeout: 15_000 });
 }
 
 /**
