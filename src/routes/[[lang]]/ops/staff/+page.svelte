@@ -53,16 +53,8 @@
 	// ── Mon profil ─────────────────────────────────────────────────────────────
 	let editingProfile = $state(false);
 	let profileBio = $state('');
-	let profileSpecialty = $state<'fleet_ops' | 'compliance' | 'finance' | 'generalist'>('generalist');
 	let profileSaving = $state(false);
 	let avatarUploading = $state(false);
-
-	const SPECIALTY_OPTIONS = [
-		{ value: 'generalist',  label: 'Accompagnement flotte',        desc: 'Support généraliste toutes problématiques' },
-		{ value: 'fleet_ops',   label: 'Opérations flotte',            desc: 'Réservations, maintenance, véhicules' },
-		{ value: 'compliance',  label: 'Conformité & réglementation',  desc: 'BiK UK, CSRD, permis, assurances' },
-		{ value: 'finance',     label: 'Finance & coûts',              desc: 'Coûts, IK, intégrations comptables' }
-	] as const;
 
 	const AVAILABILITY_OPTIONS = [
 		{ value: 'online',  label: 'En ligne',   dot: 'bg-emerald-500', desc: 'Visible et disponible immédiatement' },
@@ -72,7 +64,6 @@
 
 	function startEditProfile() {
 		profileBio = myProfile.data?.bio ?? '';
-		profileSpecialty = (myProfile.data?.specialty as typeof profileSpecialty) ?? 'generalist';
 		editingProfile = true;
 	}
 
@@ -80,8 +71,7 @@
 		profileSaving = true;
 		try {
 			await updateMyProfile({
-				bio: profileBio.trim() || undefined,
-				specialty: profileSpecialty
+				bio: profileBio.trim() || undefined
 			});
 			toast.success('Profil mis à jour.');
 			editingProfile = false;
@@ -130,7 +120,7 @@
 
 	// ── Génération de lien d'invitation ────────────────────────────────────────
 	let showInviteDialog = $state(false);
-	let inviteRole = $state<'super_admin' | 'concierge'>('concierge');
+	let inviteRole = $state<'SUPER_ADMIN' | 'OPERATOR'>('OPERATOR');
 	let inviteEmail = $state('');
 	let inviteGenerating = $state(false);
 	let generatedToken = $state<string | null>(null);
@@ -138,7 +128,7 @@
 
 	function resetInviteDialog() {
 		showInviteDialog = false;
-		inviteRole = 'concierge';
+		inviteRole = 'OPERATOR';
 		inviteEmail = '';
 		inviteGenerating = false;
 		generatedToken = null;
@@ -192,27 +182,27 @@
 	// ── Ajout membre ────────────────────────────────────────────────────────────
 	let showAddDialog = $state(false);
 	let newEmail = $state('');
-	let newRole = $state<'super_admin' | 'concierge'>('concierge');
+	let newRole = $state<'SUPER_ADMIN' | 'OPERATOR'>('OPERATOR');
 	let addLoading = $state(false);
 
 	function resetAddDialog() {
 		newEmail = '';
-		newRole = 'concierge';
+		newRole = 'OPERATOR';
 		showAddDialog = false;
 	}
 
 	function handleAddIntent() {
 		if (!newEmail.trim()) return;
-		if (newRole === 'super_admin') {
+		if (newRole === 'SUPER_ADMIN') {
 			pendingAction = { type: 'add', email: newEmail.trim(), name: newEmail.trim() };
 			showAddDialog = false;
 			modalOpen = true;
 		} else {
-			executeAdd(newEmail.trim(), 'concierge');
+			executeAdd(newEmail.trim(), 'OPERATOR');
 		}
 	}
 
-	async function executeAdd(email: string, staffRole: 'super_admin' | 'concierge') {
+	async function executeAdd(email: string, staffRole: 'SUPER_ADMIN' | 'OPERATOR') {
 		addLoading = true;
 		try {
 			await addMember({ email, staffRole });
@@ -228,7 +218,7 @@
 	// ── Changement de rôle ──────────────────────────────────────────────────────
 	let changingRoleId = $state<string | null>(null);
 
-	async function handleRoleChange(userId: string, staffRole: 'super_admin' | 'concierge') {
+	async function handleRoleChange(userId: string, staffRole: 'SUPER_ADMIN' | 'OPERATOR') {
 		changingRoleId = userId;
 		try {
 			await updateRole({ userId, staffRole });
@@ -275,11 +265,11 @@
 		modalOpen = false;
 		if (!pendingAction) return;
 		if (pendingAction.type === 'add') {
-			await executeAdd(pendingAction.email, 'super_admin');
+			await executeAdd(pendingAction.email, 'SUPER_ADMIN');
 		} else {
 			changingRoleId = pendingAction.userId;
 			try {
-				await updateRole({ userId: pendingAction.userId, staffRole: 'super_admin' });
+				await updateRole({ userId: pendingAction.userId, staffRole: 'SUPER_ADMIN' });
 				toast.success(`${pendingAction.name} est maintenant Super Admin.`);
 			} catch (err: unknown) {
 				toast.error(err instanceof Error ? err.message : 'Erreur.');
@@ -294,8 +284,8 @@
 	let orgAccessTarget = $state<{ userId: string; name: string } | null>(null);
 
 	const roleConfig = {
-		super_admin: { label: 'Super Admin', icon: ShieldIcon },
-		concierge: { label: 'Concierge', icon: HeadphonesIcon }
+		SUPER_ADMIN: { label: 'Super Admin', icon: ShieldIcon },
+		OPERATOR: { label: 'Opérateur', icon: HeadphonesIcon }
 	};
 
 	function getInitials(name: string): string {
@@ -414,10 +404,6 @@
 
 						{#if !editingProfile}
 							<!-- Aperçu profil -->
-							<div class="flex flex-col gap-1">
-								<p class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Spécialité</p>
-								<p class="text-sm">{SPECIALTY_OPTIONS.find((o) => o.value === (me.specialty ?? 'generalist'))?.label ?? 'Accompagnement flotte'}</p>
-							</div>
 							{#if me.bio}
 								<div class="flex flex-col gap-1">
 									<p class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Bio</p>
@@ -427,24 +413,6 @@
 						{:else}
 							<!-- Édition profil -->
 							<div class="flex flex-col gap-3">
-								<div class="flex flex-col gap-1.5">
-									<Label for="specialty" class="text-[11px] uppercase tracking-wide text-muted-foreground">Spécialité</Label>
-									<div class="grid grid-cols-2 gap-2">
-										{#each SPECIALTY_OPTIONS as opt (opt.value)}
-											<button
-												type="button"
-												onclick={() => (profileSpecialty = opt.value)}
-												class="flex flex-col items-start rounded-xl border p-2.5 text-left text-[11px] transition-all {profileSpecialty === opt.value
-													? 'border-[var(--brand)]/50 bg-[var(--brand)]/8 text-foreground'
-													: 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'}"
-											>
-												<span class="font-semibold">{opt.label}</span>
-												<span class="mt-0.5 text-[10px] opacity-70">{opt.desc}</span>
-											</button>
-										{/each}
-									</div>
-								</div>
-
 								<div class="flex flex-col gap-1.5">
 									<Label for="bio-input" class="text-[11px] uppercase tracking-wide text-muted-foreground">Bio (1 ligne)</Label>
 									<Input
@@ -578,7 +546,7 @@
 								</Table.Cell>
 
 								<Table.Cell>
-									{#if member.staffRole === 'super_admin'}
+									{#if member.staffRole === 'SUPER_ADMIN'}
 										<Badge class="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
 											<ShieldIcon class="size-3" />
 											{cfg.label}
@@ -637,27 +605,27 @@
 											</DropdownMenu.Label>
 											<DropdownMenu.Item
 												class="gap-2"
-												disabled={member.staffRole === 'concierge'}
-												onclick={() => handleRoleChange(member.userId, 'concierge')}
+												disabled={member.staffRole === 'OPERATOR'}
+												onclick={() => handleRoleChange(member.userId, 'OPERATOR')}
 											>
 												<HeadphonesIcon class="size-3.5" />
 												Concierge
-												{#if member.staffRole === 'concierge'}
+												{#if member.staffRole === 'OPERATOR'}
 													<CheckIcon class="ml-auto size-3.5 opacity-50" />
 												{/if}
 											</DropdownMenu.Item>
 											<DropdownMenu.Item
 												class="gap-2"
-												disabled={member.staffRole === 'super_admin'}
+												disabled={member.staffRole === 'SUPER_ADMIN'}
 												onclick={() => handlePromoteIntent(member.userId, member.name, member.email)}
 											>
 												<ShieldIcon class="size-3.5 text-amber-500" />
 												Super Admin
-												{#if member.staffRole === 'super_admin'}
+												{#if member.staffRole === 'SUPER_ADMIN'}
 													<CheckIcon class="ml-auto size-3.5 opacity-50" />
 												{/if}
 											</DropdownMenu.Item>
-											{#if member.staffRole === 'concierge'}
+											{#if member.staffRole === 'OPERATOR'}
 											<DropdownMenu.Separator />
 											<DropdownMenu.Item
 												class="gap-2"
@@ -698,13 +666,13 @@
 			<h2 class="text-sm font-semibold">Invitations en attente</h2>
 			<div class="flex flex-col gap-2">
 				{#each pendingInvites.data as inv (inv._id)}
-					{@const cfg = roleConfig[inv.staffRole as 'super_admin' | 'concierge']}
+					{@const cfg = roleConfig[inv.staffRole as 'SUPER_ADMIN' | 'OPERATOR']}
 					<div class="relative overflow-hidden rounded-xl border border-border bg-card px-4 py-3">
 						<div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10"></div>
 						<div class="flex items-center justify-between gap-3">
 							<div class="flex items-center gap-3 min-w-0">
-								<div class="flex size-8 shrink-0 items-center justify-center rounded-lg {inv.staffRole === 'super_admin' ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-violet-50 dark:bg-violet-950/30'}">
-									{#if inv.staffRole === 'super_admin'}
+								<div class="flex size-8 shrink-0 items-center justify-center rounded-lg {inv.staffRole === 'SUPER_ADMIN' ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-violet-50 dark:bg-violet-950/30'}">
+									{#if inv.staffRole === 'SUPER_ADMIN'}
 										<ShieldIcon class="size-4 text-amber-500" />
 									{:else}
 										<HeadphonesIcon class="size-4 text-violet-500" />
@@ -816,8 +784,8 @@
 					<div class="flex gap-2">
 						<button
 							type="button"
-							onclick={() => (inviteRole = 'concierge')}
-							class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {inviteRole === 'concierge'
+							onclick={() => (inviteRole = 'OPERATOR')}
+							class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {inviteRole === 'OPERATOR'
 								? 'border-[var(--brand)]/60 bg-[var(--brand)]/8 text-foreground'
 								: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
 						>
@@ -826,8 +794,8 @@
 						</button>
 						<button
 							type="button"
-							onclick={() => (inviteRole = 'super_admin')}
-							class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {inviteRole === 'super_admin'
+							onclick={() => (inviteRole = 'SUPER_ADMIN')}
+							class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {inviteRole === 'SUPER_ADMIN'
 								? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400'
 								: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
 						>
@@ -836,7 +804,7 @@
 						</button>
 					</div>
 					<p class="text-xs text-muted-foreground">
-						{inviteRole === 'super_admin'
+						{inviteRole === 'SUPER_ADMIN'
 							? 'Accès complet à toutes les organisations.'
 							: 'File de tâches clients et assistance humaine.'}
 					</p>
@@ -902,8 +870,8 @@
 				<div class="flex gap-2">
 					<button
 						type="button"
-						onclick={() => (newRole = 'concierge')}
-						class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {newRole === 'concierge'
+						onclick={() => (newRole = 'OPERATOR')}
+						class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {newRole === 'OPERATOR'
 							? 'border-[var(--brand)]/60 bg-[var(--brand)]/8 text-foreground'
 							: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
 					>
@@ -912,8 +880,8 @@
 					</button>
 					<button
 						type="button"
-						onclick={() => (newRole = 'super_admin')}
-						class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {newRole === 'super_admin'
+						onclick={() => (newRole = 'SUPER_ADMIN')}
+						class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all {newRole === 'SUPER_ADMIN'
 							? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400'
 							: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
 					>
@@ -922,7 +890,7 @@
 					</button>
 				</div>
 				<p class="text-xs text-muted-foreground">
-					{newRole === 'super_admin'
+					{newRole === 'SUPER_ADMIN'
 						? 'Accès complet — toutes orgs, billing, gestion équipe. Une confirmation sera demandée.'
 						: 'File de tâches clients et actions rapides.'}
 				</p>
@@ -934,15 +902,15 @@
 			<Button
 				onclick={handleAddIntent}
 				disabled={addLoading || !newEmail.trim()}
-				class={newRole === 'super_admin' ? 'border-amber-500/40 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400' : ''}
-				variant={newRole === 'super_admin' ? 'outline' : 'default'}
+				class={newRole === 'SUPER_ADMIN' ? 'border-amber-500/40 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400' : ''}
+				variant={newRole === 'SUPER_ADMIN' ? 'outline' : 'default'}
 			>
 				{#if addLoading}
 					<LoaderCircleIcon class="size-4 motion-safe:animate-spin" />
-				{:else if newRole === 'super_admin'}
+				{:else if newRole === 'SUPER_ADMIN'}
 					<ShieldIcon class="size-4" />
 				{/if}
-				{addLoading ? 'Ajout…' : newRole === 'super_admin' ? 'Continuer…' : 'Ajouter'}
+				{addLoading ? 'Ajout…' : newRole === 'SUPER_ADMIN' ? 'Continuer…' : 'Ajouter'}
 			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>

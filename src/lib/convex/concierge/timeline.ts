@@ -4,7 +4,7 @@ import { conciergeQuery, conciergeMutation } from '../functions';
 export const getOrgTimeline = conciergeQuery({
 	args: { organizationId: v.id('organizations'), limit: v.optional(v.number()) },
 	handler: async (ctx, { organizationId, limit }) => {
-		if (ctx.staffRole === 'concierge') {
+		if (ctx.staffRole === 'OPERATOR') {
 			const access = await ctx.db
 				.query('conciergeOrgAccess')
 				.withIndex('by_concierge_and_org', (q) =>
@@ -27,8 +27,8 @@ export const addConciergeNote = conciergeMutation({
 		if (!note.trim()) throw new ConvexError('La note ne peut pas être vide.');
 		await ctx.db.insert('clientTimelineEvents', {
 			organizationId,
-			type: 'CONCIERGE_NOTE',
-			title: 'Note concierge',
+			type: 'NOTE_OPERATEUR',
+			title: 'Note opérateur',
 			description: note.trim(),
 			createdBy: ctx.user._id,
 			occurredAt: Date.now()

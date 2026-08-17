@@ -156,27 +156,18 @@ export default defineSchema({
 	// staffRole ici = deuxième filtre (niveau d'accès interne).
 	// Bootstrap : si table vide + role='admin' → super_admin implicite (fondateur).
 	myceliumStaff: defineTable({
-		userId: v.string(), // Better Auth user ID
-		staffRole: v.union(v.literal('super_admin'), v.literal('concierge'), v.literal('sales')),
-		email: v.string(), // dénormalisé pour affichage
-		name: v.string(), // dénormalisé pour affichage
-		addedBy: v.string(), // userId de qui a ajouté
+		userId: v.string(),
+		staffRole: v.union(v.literal('SUPER_ADMIN'), v.literal('OPERATOR')),
+		email: v.string(),
+		name: v.string(),
+		addedBy: v.string(),
 		addedAt: v.number(),
-		// Profil concierge visible côté client
 		avatarUrl: v.optional(v.string()),
 		avatarStorageId: v.optional(v.id('_storage')),
-		specialty: v.optional(v.union(
-			v.literal('fleet_ops'),
-			v.literal('compliance'),
-			v.literal('finance'),
-			v.literal('generalist')
-		)),
-		availabilityStatus: v.optional(v.union(
-			v.literal('online'),
-			v.literal('busy'),
-			v.literal('offline')
-		)),
-		bio: v.optional(v.string()) // 1 ligne ex: "Spécialiste maintenance & conformité UK"
+		availabilityStatus: v.optional(
+			v.union(v.literal('online'), v.literal('busy'), v.literal('offline'))
+		),
+		bio: v.optional(v.string())
 	})
 		.index('by_userId', ['userId'])
 		.index('by_role', ['staffRole'])
@@ -188,7 +179,7 @@ export default defineSchema({
 	// La personne invitée clique le lien /staff-join/[token] pour rejoindre.
 	staffInvitations: defineTable({
 		token: v.string(),                      // 32 bytes → 64 hex chars (plain, URL-safe)
-		staffRole: v.union(v.literal('super_admin'), v.literal('concierge'), v.literal('sales')),
+		staffRole: v.union(v.literal('SUPER_ADMIN'), v.literal('OPERATOR')),
 		invitedBy: v.string(),                  // userId du super_admin
 		invitedByName: v.string(),              // dénormalisé pour affichage
 		invitedEmail: v.optional(v.string()),   // si renseigné, restreint à cet email
@@ -252,14 +243,12 @@ export default defineSchema({
 		organizationId: v.id('organizations'),
 		type: v.union(
 			v.literal('ONBOARDING'),
-			v.literal('PLAN_CHANGE'),
-			v.literal('INCIDENT'),
-			v.literal('MAINTENANCE'),
-			v.literal('TICKET_CREATED'),
-			v.literal('TICKET_RESOLVED'),
-			v.literal('PAYMENT'),
-			v.literal('ALERT_COMPLIANCE'),
-			v.literal('CONCIERGE_NOTE')
+			v.literal('FACTURES_DEPOSEES'),
+			v.literal('DIAGNOSTIC_REMIS'),
+			v.literal('RATIO_MESURE'),
+			v.literal('DECLARATION_DEPOSEE'),
+			v.literal('ABONNEMENT'),
+			v.literal('NOTE_OPERATEUR')
 		),
 		title: v.string(),
 		description: v.optional(v.string()),
@@ -278,9 +267,7 @@ export default defineSchema({
 		organizationId: v.id('organizations'),
 		sourceType: v.union(
 			v.literal('HUMAN_ASSIST'),
-			v.literal('SUPPORT_TICKET'),
-			v.literal('CONCIERGE_TASK'),
-			v.literal('SALES_MESSAGE'),
+			v.literal('REVUE_LIGNES'),
 			v.literal('MANUAL')
 		),
 		sourceId: v.optional(v.string()),
@@ -321,7 +308,7 @@ export default defineSchema({
 		ticketId: v.id('conciergeTickets'),
 		authorId: v.string(),
 		authorRole: v.union(
-			v.literal('concierge'),
+			v.literal('operator'),
 			v.literal('super_admin'),
 			v.literal('client')
 		),

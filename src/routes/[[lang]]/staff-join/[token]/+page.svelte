@@ -37,7 +37,7 @@
 	let accepted = $state(false);
 
 	const ROLE_CONFIG = {
-		super_admin: {
+		SUPER_ADMIN: {
 			label: 'Super Admin',
 			description: 'Accès complet à toutes les organisations et à la gestion de l\'équipe Mycelium.',
 			Icon: ShieldIcon,
@@ -45,9 +45,9 @@
 			bg: 'bg-amber-50 dark:bg-amber-950/30',
 			border: 'border-amber-200/60 dark:border-amber-800/40'
 		},
-		concierge: {
-			label: 'Concierge',
-			description: 'Suivi Fleet Care des clients, gestion des tâches et assistance humaine.',
+		OPERATOR: {
+			label: 'Opérateur',
+			description: 'Suivi des cantines clientes, inbox tickets et assistance humaine.',
 			Icon: HeadphonesIcon,
 			color: 'text-violet-600 dark:text-violet-400',
 			bg: 'bg-violet-50 dark:bg-violet-950/30',
@@ -167,7 +167,7 @@
 						<h1 class="text-lg font-bold">Bienvenue dans l'équipe !</h1>
 						<p class="mt-1 text-sm text-muted-foreground">
 							Votre compte a été activé. Vous avez accès à votre espace
-							<strong>{inviteQ.data.staffRole === 'super_admin' ? 'Super Admin' : 'Concierge'}</strong>.
+							<strong>{inviteQ.data.staffRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Opérateur'}</strong>.
 						</p>
 						<p class="mt-2 text-xs text-muted-foreground/60">
 							Rechargez la page si vous ne voyez pas votre nouvel espace.

@@ -43,7 +43,7 @@ export const checkSlaBreach = internalMutation({
 			await ctx.db.insert('conciergeTicketMessages', {
 				ticketId: ticket._id,
 				authorId: '__system__',
-				authorRole: 'concierge',
+				authorRole: 'operator',
 				senderName: 'Système',
 				content: `⚠️ SLA dépassé — premier retour attendu depuis ${overdueLabel}. Priorité escaladée en URGENT.`,
 				isInternal: true,

@@ -51,7 +51,7 @@
 	let assigneeOpen = $state(false);
 	let reassigning = $state(false);
 
-	const isSuperAdmin = $derived(myRole.data?.staffRole === 'super_admin');
+	const isSuperAdmin = $derived(myRole.data?.staffRole === 'SUPER_ADMIN');
 
 	async function handleSend() {
 		if (!replyContent.trim() || sending) return;

@@ -29,7 +29,7 @@
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const accessibleOrgs = useQuery((api as any)['concierge/staff'].getMyAccessibleOrgs, {});
 
-	const isSuperAdmin = $derived(myRole.data?.staffRole === 'super_admin');
+	const isSuperAdmin = $derived(myRole.data?.staffRole === 'SUPER_ADMIN');
 
 	// Org active = org dans l'URL si on est sur /ops/[orgId]
 	const activeOrgId = $derived.by(() => {

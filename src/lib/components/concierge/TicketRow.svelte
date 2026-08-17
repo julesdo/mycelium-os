@@ -15,9 +15,7 @@
 
 	const SOURCE_LABEL: Record<string, string> = {
 		HUMAN_ASSIST: 'Demande client',
-		SUPPORT_TICKET: 'Support',
-		CONCIERGE_TASK: 'Automatique',
-		SALES_MESSAGE: 'Commercial',
+		REVUE_LIGNES: 'Revue de lignes',
 		MANUAL: 'Manuel'
 	};
 </script>

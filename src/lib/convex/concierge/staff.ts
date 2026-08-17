@@ -12,8 +12,8 @@ export const listMyceliumStaff = superAdminQuery({
 		const staff = await ctx.db.query('myceliumStaff').collect();
 		return staff.sort((a, b) => {
 			// super_admin en premier, puis par date d'ajout
-			if (a.staffRole === 'super_admin' && b.staffRole !== 'super_admin') return -1;
-			if (a.staffRole !== 'super_admin' && b.staffRole === 'super_admin') return 1;
+			if (a.staffRole === 'SUPER_ADMIN' && b.staffRole !== 'SUPER_ADMIN') return -1;
+			if (a.staffRole !== 'SUPER_ADMIN' && b.staffRole === 'SUPER_ADMIN') return 1;
 			return a.addedAt - b.addedAt;
 		});
 	}
@@ -22,7 +22,7 @@ export const listMyceliumStaff = superAdminQuery({
 export const addStaffMember = superAdminMutation({
 	args: {
 		email: v.string(),
-		staffRole: v.union(v.literal('super_admin'), v.literal('concierge'))
+		staffRole: v.union(v.literal('SUPER_ADMIN'), v.literal('OPERATOR'))
 	},
 	handler: async (ctx, args) => {
 		// Cherche l'utilisateur par email dans la table Better Auth
@@ -102,7 +102,7 @@ export const addStaffMember = superAdminMutation({
 export const updateStaffRole = superAdminMutation({
 	args: {
 		userId: v.string(),
-		staffRole: v.union(v.literal('super_admin'), v.literal('concierge'))
+		staffRole: v.union(v.literal('SUPER_ADMIN'), v.literal('OPERATOR'))
 	},
 	handler: async (ctx, args) => {
 		if (args.userId === ctx.user._id) {
@@ -167,12 +167,6 @@ export const getMyStaffProfile = conciergeQuery({
 
 export const updateMyProfile = conciergeMutation({
 	args: {
-		specialty: v.optional(v.union(
-			v.literal('fleet_ops'),
-			v.literal('compliance'),
-			v.literal('finance'),
-			v.literal('generalist')
-		)),
 		availabilityStatus: v.optional(v.union(
 			v.literal('online'),
 			v.literal('busy'),
@@ -188,7 +182,6 @@ export const updateMyProfile = conciergeMutation({
 		if (!record) throw new ConvexError('Profil staff introuvable.');
 
 		const patch: Record<string, unknown> = {};
-		if (args.specialty !== undefined) patch.specialty = args.specialty;
 		if (args.availabilityStatus !== undefined) patch.availabilityStatus = args.availabilityStatus;
 		if (args.bio !== undefined) patch.bio = args.bio;
 
@@ -246,7 +239,6 @@ export const getAvailableConciergeForOrg = authedQuery({
 		return {
 			name: best.name,
 			avatarUrl: best.avatarUrl ?? null,
-			specialty: best.specialty ?? 'generalist',
 			availabilityStatus: best.availabilityStatus ?? 'offline',
 			bio: best.bio ?? null
 		};
@@ -267,7 +259,7 @@ export const assignOrgToConcierge = superAdminMutation({
 			.withIndex('by_userId', (q) => q.eq('userId', args.conciergeUserId))
 			.unique();
 		if (!staff) throw new ConvexError('Membre staff introuvable.');
-		if (staff.staffRole !== 'concierge') {
+		if (staff.staffRole !== 'OPERATOR') {
 			throw new ConvexError('Les super admins ont déjà accès à toutes les orgs.');
 		}
 
@@ -334,11 +326,11 @@ export const getMyAccessibleOrgs = authedQuery({
 		// Vérification rôle staff
 		const allStaff = await ctx.db.query('myceliumStaff').collect();
 		const record = allStaff.find((r) => r.userId === ctx.user._id);
-		const staffRole = record?.staffRole ?? (allStaff.length === 0 ? 'super_admin' : null);
+		const staffRole = record?.staffRole ?? (allStaff.length === 0 ? 'SUPER_ADMIN' : null);
 
 		if (!staffRole) return null; // Pas staff → pas d'accès
 
-		if (staffRole === 'super_admin') {
+		if (staffRole === 'SUPER_ADMIN') {
 			const orgs = await ctx.db.query('organizations').collect();
 			return orgs.map((o) => ({ _id: o._id, name: o.name, country: o.country ?? null, tier: o.paddlePlanTier ?? 'diagnostic' }));
 		}
@@ -368,7 +360,7 @@ const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
 export const createStaffInvitation = superAdminMutation({
 	args: {
-		staffRole: v.union(v.literal('super_admin'), v.literal('concierge')),
+		staffRole: v.union(v.literal('SUPER_ADMIN'), v.literal('OPERATOR')),
 		invitedEmail: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {

@@ -106,17 +106,17 @@ export const adminMutation = customMutation(
 async function resolveStaffRole(
 	ctx: any,
 	user: BetterAuthUser
-): Promise<'super_admin' | 'concierge' | 'sales' | null> {
+): Promise<'SUPER_ADMIN' | 'OPERATOR' | null> {
 	const allStaff = (await ctx.db.query('myceliumStaff').collect()) as Array<{
 		userId: string;
-		staffRole: 'super_admin' | 'concierge' | 'sales';
+		staffRole: 'SUPER_ADMIN' | 'OPERATOR';
 	}>;
 
 	const record = allStaff.find((r) => r.userId === user._id);
 	if (record) return record.staffRole;
 
 	// Bootstrap : table vide → premier admin fondateur = super_admin implicite
-	if (allStaff.length === 0) return 'super_admin';
+	if (allStaff.length === 0) return 'SUPER_ADMIN';
 
 	return null; // admin Better Auth sans fiche staff = accès refusé
 }
@@ -133,7 +133,7 @@ export const superAdminQuery = customQuery(
 			throw new ConvexError('Unauthorized: Mycelium staff access required');
 		}
 		const staffRole = await resolveStaffRole(ctx, user);
-		if (staffRole !== 'super_admin') {
+		if (staffRole !== 'SUPER_ADMIN') {
 			throw new ConvexError('Unauthorized: Super Admin access required');
 		}
 		return { user, staffRole };
@@ -151,7 +151,7 @@ export const superAdminMutation = customMutation(
 			throw new ConvexError('Unauthorized: Mycelium staff access required');
 		}
 		const staffRole = await resolveStaffRole(ctx, user);
-		if (staffRole !== 'super_admin') {
+		if (staffRole !== 'SUPER_ADMIN') {
 			throw new ConvexError('Unauthorized: Super Admin access required');
 		}
 		return { user, staffRole };
@@ -159,8 +159,8 @@ export const superAdminMutation = customMutation(
 );
 
 /**
- * Query accessible aux concierges ET aux super admins Mycelium.
- * Usage : dashboard concierge, gestion tâches clients.
+ * Query accessible aux opérateurs ET aux super admins Mycelium.
+ * Usage : inbox tickets, timeline client, assistance humaine.
  */
 export const conciergeQuery = customQuery(
 	query,
@@ -171,14 +171,14 @@ export const conciergeQuery = customQuery(
 		}
 		const staffRole = await resolveStaffRole(ctx, user);
 		if (!staffRole) {
-			throw new ConvexError('Unauthorized: Concierge or Super Admin access required');
+			throw new ConvexError('Unauthorized: Operator or Super Admin access required');
 		}
 		return { user, staffRole };
 	})
 );
 
 /**
- * Mutation accessible aux concierges ET aux super admins Mycelium.
+ * Mutation accessible aux opérateurs ET aux super admins Mycelium.
  */
 export const conciergeMutation = customMutation(
 	mutation,
@@ -189,44 +189,7 @@ export const conciergeMutation = customMutation(
 		}
 		const staffRole = await resolveStaffRole(ctx, user);
 		if (!staffRole) {
-			throw new ConvexError('Unauthorized: Concierge or Super Admin access required');
-		}
-		return { user, staffRole };
-	})
-);
-
-/**
- * Query accessible aux commerciaux ET aux super admins Mycelium.
- * Usage : pipeline prospects, chat sales↔concierge.
- */
-export const salesQuery = customQuery(
-	query,
-	customCtx(async (ctx) => {
-		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
-		if (!user || user.role !== 'admin') {
-			throw new ConvexError('Unauthorized: Mycelium staff access required');
-		}
-		const staffRole = await resolveStaffRole(ctx, user);
-		if (staffRole !== 'sales' && staffRole !== 'super_admin') {
-			throw new ConvexError("Accès réservé à l'équipe commerciale");
-		}
-		return { user, staffRole };
-	})
-);
-
-/**
- * Mutation accessible aux commerciaux ET aux super admins Mycelium.
- */
-export const salesMutation = customMutation(
-	mutation,
-	customCtx(async (ctx) => {
-		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
-		if (!user || user.role !== 'admin') {
-			throw new ConvexError('Unauthorized: Mycelium staff access required');
-		}
-		const staffRole = await resolveStaffRole(ctx, user);
-		if (staffRole !== 'sales' && staffRole !== 'super_admin') {
-			throw new ConvexError("Accès réservé à l'équipe commerciale");
+			throw new ConvexError('Unauthorized: Operator or Super Admin access required');
 		}
 		return { user, staffRole };
 	})
