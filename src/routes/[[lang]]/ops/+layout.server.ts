@@ -12,7 +12,7 @@ function decodeJwtPayload(token: string): { role?: string } | null {
 }
 
 export const load: LayoutServerLoad = async ({ locals, params }) => {
-	const lang = params.lang ?? 'en';
+	const lang = params.lang ?? 'fr';
 	const token = locals.token;
 
 	if (!token) {

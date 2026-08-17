@@ -15,7 +15,7 @@ function decodeJwtRole(token: string): string | null {
 }
 
 export const load: LayoutServerLoad = async ({ locals, params }) => {
-	const lang = params.lang ?? 'en';
+	const lang = params.lang ?? 'fr';
 
 	if (!locals.token) {
 		redirect(307, `/${lang}/signin?redirectTo=/${lang}/onboarding/organization`);

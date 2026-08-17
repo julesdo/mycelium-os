@@ -18,11 +18,9 @@
 
 	let { items }: Props = $props();
 
-	// Locale-aware compact timestamp ("05/30, 02:35 PM" / "30.05., 14:35"),
-	// revealed on row hover. Reactive on the route language so switching locales
-	// reformats live.
+	// Locale-aware compact timestamp ("30/05, 14:35"), revealed on row hover.
 	const dateFormatter = $derived(
-		new Intl.DateTimeFormat(page.params.lang ?? 'en', {
+		new Intl.DateTimeFormat(page.params.lang ?? 'fr', {
 			day: '2-digit',
 			month: '2-digit',
 			hour: '2-digit',
