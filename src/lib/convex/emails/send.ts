@@ -6,8 +6,7 @@ import {
 	renderVerificationEmail,
 	renderPasswordResetEmail,
 	renderAdminReplyNotificationEmail,
-	renderNewTicketAdminNotificationEmail,
-	renderMaintenanceScheduledEmail
+	renderNewTicketAdminNotificationEmail
 } from './templates';
 import { requireEnv } from '../env';
 import type { NotificationMessage } from '../../emails/templates/types';
@@ -215,50 +214,5 @@ export const sendNewTicketAdminNotification = internalMutation({
 				{ name: 'X-Thread-ID', value: threadId }
 			]
 		});
-	}
-});
-
-export const sendMaintenanceScheduledEmail = internalMutation({
-	args: {
-		garageEmail: v.string(),
-		garageName: v.string(),
-		vehicleLabel: v.string(),
-		maintenanceType: v.string(),
-		scheduledDate: v.string(),
-		organizationName: v.string(),
-		contactEmail: v.string(),
-		notes: v.optional(v.string()),
-		adminUrl: v.string()
-	},
-	returns: v.null(),
-	handler: async (ctx, args) => {
-		if (!args.garageEmail || shouldSkipTestEmail('sendMaintenanceScheduledEmail', args.garageEmail))
-			return null;
-		assertResendApiKey();
-
-		const { html, text } = renderMaintenanceScheduledEmail({
-			garageName: args.garageName,
-			vehicleLabel: args.vehicleLabel,
-			maintenanceType: args.maintenanceType,
-			scheduledDate: args.scheduledDate,
-			organizationName: args.organizationName,
-			contactEmail: args.contactEmail,
-			notes: args.notes,
-			adminUrl: args.adminUrl
-		});
-
-		await resend.sendEmail(ctx, {
-			from: requireEnv('AUTH_EMAIL', { feature: 'email delivery' }),
-			to: args.garageEmail,
-			subject: `Rendez-vous entretien — ${args.vehicleLabel} le ${args.scheduledDate}`,
-			html,
-			text,
-			headers: [
-				{ name: 'X-Email-Category', value: 'maintenance' },
-				{ name: 'X-Email-Template', value: 'maintenance-scheduled' }
-			]
-		});
-
-		return null;
 	}
 });

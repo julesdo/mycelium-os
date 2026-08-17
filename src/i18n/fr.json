@@ -306,65 +306,6 @@
 				"copied_tooltip": "Copié !",
 				"tooltip": "Copier dans le presse-papiers"
 			},
-			"demo_assets": {
-				"actions": {
-					"delete_description": "Supprimer la ressource de démonstration « {name} » ? Les fichiers téléversés seront également supprimés.",
-					"delete_title": "Supprimer la ressource de démonstration",
-					"seed_data": "Initialiser les ressources de démonstration"
-				},
-				"dashboard_description": "Showcase médias et champs enrichis pour les téléversements, le markdown, le code et le JSON.",
-				"empty_description": "Créez une ressource de démonstration ou initialisez les données du showcase pour vérifier le rendu des champs enrichis.",
-				"empty_title": "Aucune ressource de démonstration",
-				"fields": {
-					"attachment": "Pièce jointe",
-					"attachment_help": "Téléversez un fichier téléchargeable pour vérifier le cycle de vie générique des fichiers.",
-					"code_snippet": "Extrait de code",
-					"content_summary": "Résumé du contenu",
-					"content_summary_help": "Aperçu calculé du markdown actuel et de la couverture des téléversements.",
-					"coverage": "Couverture",
-					"hero_image": "Image principale",
-					"hero_image_help": "Téléversez une image pour vérifier l’aperçu et la persistance de la ressource.",
-					"markdown_body": "Contenu Markdown",
-					"name": "Nom",
-					"price": "Prix (USD)",
-					"published_at": "Publié le",
-					"release_date": "Date de sortie",
-					"settings_json": "JSON de configuration",
-					"slug": "Slug",
-					"slug_help": "Lettres minuscules, chiffres et tirets uniquement."
-				},
-				"groups": {
-					"content": "Contenu",
-					"media": "Médias"
-				},
-				"metrics": {
-					"total": "Total des ressources",
-					"total_desc": "Tous les enregistrements de ressources de démonstration",
-					"with_attachments": "Avec pièces jointes",
-					"with_attachments_desc": "Ressources incluant un fichier téléchargeable",
-					"with_images": "Avec images",
-					"with_images_desc": "Ressources incluant une image principale"
-				},
-				"plural_label": "Ressources de démonstration",
-				"search_placeholder": "Rechercher des ressources de démonstration...",
-				"singular_label": "Ressource de démonstration",
-				"toasts": {
-					"deleted": "Ressource de démonstration supprimée",
-					"seeded": "Ressources de démonstration initialisées"
-				},
-				"validation": {
-					"invalid_json": "Le JSON de configuration doit être valide.",
-					"invalid_price": "Le prix doit être supérieur ou égal à zéro.",
-					"invalid_published_at": "La date et l’heure de publication doivent être valides.",
-					"invalid_release_date": "La date de sortie doit être valide.",
-					"invalid_slug": "Le slug doit utiliser uniquement des lettres minuscules, des chiffres et des tirets."
-				},
-				"values": {
-					"coverage_missing": "Téléversements manquants",
-					"coverage_partial": "Partiellement prêt",
-					"coverage_ready": "Prêt"
-				}
-			},
 			"detail_missing_description": "Cet enregistrement n’existe plus ou n’est pas visible pour la session admin actuelle.",
 			"detail_missing_title": "Enregistrement introuvable",
 			"email_events": {
@@ -482,7 +423,6 @@
 				"assignment": "Affectation",
 				"content": "Contenu",
 				"context": "Contexte",
-				"demo_data": "Demo Resources",
 				"detail": "Détail",
 				"event": "Événement",
 				"identity": "Identité",
@@ -1030,8 +970,6 @@
 			"saved": "Paramètres enregistrés",
 			"saving": "Enregistrement...",
 			"selected": "{selected} sur {total} sélectionnés",
-			"support_notifications": "Notifications de Support",
-			"support_notifications_desc": "Configurez les notifications par email pour les tickets de support nouveaux et rouverts non assignés.",
 			"tabs": {
 				"notifications": "Notifications",
 				"recipients": "Destinataires"
@@ -1044,7 +982,6 @@
 			"badges": {
 				"baseline_incomplete": "Réinitialisation requise",
 				"baseline_ready": "Base prête",
-				"demo_available": "Démo disponible",
 				"managed_by_reset": "Géré par réinitialisation",
 				"reference_surface": "Surface de référence",
 				"tool_only": "Outil uniquement"
@@ -1093,8 +1030,6 @@
 				"dashboard_title": "Composition du dashboard",
 				"settings_description": "Les paramètres restent un outil admin curé. La partie générique à vérifier est Destinataires des Notifications.",
 				"settings_title": "Curation des paramètres",
-				"support_description": "Le support utilise un workflow opérateur multi-panneaux personnalisé et ne doit pas être forcé dans une ressource générique.",
-				"support_title": "Workflow support",
 				"users_description": "L’ancienne table utilisateurs existe encore, mais la parité auth-managed se vérifie sur Utilisateurs gérés.",
 				"users_title": "Table utilisateurs historique"
 			},
@@ -1124,11 +1059,6 @@
 		"sidebar": {
 			"back_to_app": "Retour à l'App",
 			"dashboard": "Tableau de bord",
-			"drivers": "Conducteurs",
-			"finance": "Finance",
-			"fleet": "Flotte",
-			"maintenance": "Maintenance",
-			"reservations": "Réservations",
 			"sections": {
 				"communications": "Communications",
 				"framework": "Framework",
@@ -1137,97 +1067,13 @@
 			},
 			"settings": "Paramètres",
 			"showcase": "Showcase",
-			"support": "Support",
 			"users": "Utilisateurs",
-			"violations": "Contraventions",
-			"incidents": "Sinistres",
-			"compliance": "Conformité",
-			"expenses": "Notes de frais IK",
-			"fiscal": "Bilan fiscal",
-			"bik": "BiK UK",
-			"sustainability": "Bilan Carbone",
 			"costs": "Coûts",
-			"fuelImport": "Carburant",
 			"integrations": "Intégrations",
 			"organization": "Organisation",
 			"members": "Équipe",
 			"notifications": "Notifications",
 			"plans": "Plans"
-		},
-		"support": {
-			"all_statuses": "Tous les statuts",
-			"anonymous": "Anonyme",
-			"assignee": {
-				"not_assigned": "Non assigné",
-				"unassigned": "Non assigné"
-			},
-			"chat": {
-				"placeholder": "Répondre au client...",
-				"send_error": "Échec de l'envoi de la réponse. Veuillez réessayer."
-			},
-			"details": {
-				"assignee": "Assigné à",
-				"close_panel": "Fermer le panneau des détails",
-				"notes": "Notes Internes",
-				"open_panel": "Ouvrir le panneau des détails",
-				"page_url": "URL de la page",
-				"priority": "Priorité",
-				"status": "Statut",
-				"title": "Détails",
-				"user_notes": "Notes Utilisateur",
-				"user_notes_description": "Les notes sont enregistrées au niveau de l utilisateur et apparaissent dans tous leurs fils de support"
-			},
-			"email": {
-				"label": "Email de notification"
-			},
-			"fallback": {
-				"admin": "Admin",
-				"no_user": "Aucun utilisateur associé à ce fil"
-			},
-			"filter": {
-				"all": "Tous",
-				"my_inbox": "réception",
-				"unassigned": "Non assigné"
-			},
-			"filter_showing_completed": "Affiche les fils terminés, cliquer pour afficher les ouverts",
-			"filter_showing_open": "Affiche les fils ouverts, cliquer pour afficher les terminés",
-			"no_chats": "Aucun chat trouvé",
-			"no_done_chats": "Aucun chat terminé",
-			"no_email": "Pas d'e-mail",
-			"no_open_chats": "Aucun chat ouvert",
-			"note": {
-				"add": "Ajouter une note",
-				"adding": "Ajout en cours...",
-				"placeholder": "Ajouter une note interne..."
-			},
-			"priority": {
-				"high": "Haute",
-				"low": "Basse",
-				"medium": "Moyenne",
-				"none": "Aucune"
-			},
-			"search": {
-				"placeholder": "Rechercher des chats..."
-			},
-			"select_chat": "Sélectionnez un chat pour voir la conversation",
-			"select_chat_for_details": "Sélectionnez un chat pour voir les détails",
-			"status": {
-				"done": "Terminé",
-				"in_progress": "En cours",
-				"open": "Ouvert",
-				"resolved": "Résolu"
-			},
-			"thread": {
-				"badge": {
-					"new": "Nouveau"
-				},
-				"load_failed": "Échec du chargement",
-				"loading": "Chargement...",
-				"no_messages": "Aucun message",
-				"retry": "Réessayer"
-			},
-			"threads_title": "Fils de Support",
-			"title": "Chats de Support"
 		},
 		"title": "Panneau Admin",
 		"users": {
@@ -1348,7 +1194,6 @@
 			"admin_panel": "Panneau Admin",
 			"concierge": "Concierge",
 			"profile": "Mon profil conducteur",
-			"reservations": "Mes réservations",
 			"settings": "Paramètres",
 			"ai_chat": "Chat IA",
 			"community_chat": "Chat communautaire",
@@ -1356,10 +1201,7 @@
 			"docs": "Documentation",
 			"home": "Accueil",
 			"show_less": "Afficher moins",
-			"show_more": "Afficher plus",
-			"expenses": "Frais IK",
-			"incidents": "Sinistres",
-			"compliance": "Conformité"
+			"show_more": "Afficher plus"
 		},
 		"user_menu": {
 			"account": "Compte",
@@ -1559,16 +1401,6 @@
 		"support": {
 			"handoff": {
 				"response": "Bien sûr ! Je vous connecte maintenant. Veuillez entrer votre email ci-dessous et nous vous notifierons quand notre équipe de support aura répondu. En attendant, n'hésitez pas à ajouter des détails supplémentaires qui pourraient nous aider."
-			},
-			"rate_limit": {
-				"global": "Je suis actuellement très sollicité. Veuillez réessayer d'envoyer votre message dans un instant.",
-				"user": "Trop de messages. Veuillez patienter avant d'en envoyer un autre."
-			},
-			"summary": {
-				"default": "Nouvelle conversation de support"
-			},
-			"title": {
-				"default": "Support Client"
 			}
 		}
 	},
@@ -1811,10 +1643,6 @@
 			"showcase": {
 				"description": "Vérifiez manuellement le playground complet admin-v2 avec des données de base réinitialisables.",
 				"title": "Showcase admin-v2"
-			},
-			"support": {
-				"description": "Consultez et répondez aux conversations de support client.",
-				"title": "Boîte de support"
 			},
 			"users": {
 				"description": "Gérez les utilisateurs, les rôles et l'état des comptes.",
@@ -2107,95 +1935,6 @@
 			"security": "Sécurité"
 		},
 		"title": "Paramètres"
-	},
-	"support": {
-		"avatar": {
-			"team_member": "Membre de l'équipe"
-		},
-		"button": {
-			"start_new_conversation": "Démarrer une nouvelle conversation"
-		},
-		"chatbar": {
-			"placeholder": "Posez-moi une question…"
-		},
-		"greeting": {
-			"hi": "Salut",
-			"how_can_we_help": "Comment pouvons-nous vous aider aujourd'hui ?"
-		},
-		"header": {
-			"support_team": "Équipe de Support"
-		},
-		"message": {
-			"role_kai": "Kai",
-			"role_support": "Support",
-			"role_you": "Vous"
-		},
-		"screenshot": {
-			"action": {
-				"cancel": "Annuler (Échap)",
-				"redo": "Rétablir (Ctrl+Maj+Z)",
-				"undo": "Annuler (Ctrl+Z)"
-			},
-			"aria_label": "Éditeur de capture d'écran",
-			"capturing": "Capture en cours...",
-			"next": "Bug Marqué",
-			"tool": {
-				"arrow": "Flèche (A)",
-				"circle": "Cercle (C)",
-				"color": "Changer la couleur",
-				"pen": "Stylo (P)",
-				"rectangle": "Rectangle (R)"
-			},
-			"error": {
-				"title": "Impossible de réaliser la capture d'écran",
-				"description": "Une erreur s'est produite lors de la capture. Vous pouvez réessayer ou contacter le support si le problème persiste.",
-				"event_id": "Indiquez cet identifiant lorsque vous contactez le support : {id}",
-				"retry": "Réessayer",
-				"contact": "Contacter le support",
-				"cancel": "Annuler",
-				"email_subject": "Échec de la capture d'écran",
-				"email_body": "J'ai rencontré une erreur lors de la capture d'écran sur {url}.",
-				"email_reference": "Référence : {id}"
-			}
-		},
-		"suggestion": {
-			"bug_report_label": "Signaler un problème",
-			"bug_report_text": "J'ai trouvé un bug !",
-			"feature_request_label": "Demander une fonctionnalité",
-			"feature_request_text": "J'aimerais voir",
-			"help_label": "Aidez-moi avec...",
-			"help_text": "Aidez-moi à configurer le projet.",
-			"question_label": "Poser une question",
-			"question_text": "Pourquoi SaaS Starter ?"
-		},
-		"thread": {
-			"new_conversation": "Nouvelle conversation"
-		},
-		"time": {
-			"days_ago": "il y a {days} jours",
-			"few_seconds_ago": "il y a quelques secondes",
-			"hours_ago": "il y a {hours} heures",
-			"just_now": "à l'instant",
-			"minutes_ago": "il y a {minutes} minutes",
-			"one_hour_ago": "il y a 1 heure",
-			"one_minute_ago": "il y a 1 minute",
-			"yesterday": "hier"
-		},
-		"widget": {
-			"error": {
-				"rate_limit": "Doucement ! Veuillez attendre {seconds}s avant d'envoyer un autre message.",
-				"send_failed": "Échec de l'envoi du message. Veuillez réessayer."
-			},
-			"header": {
-				"bot_response": "Notre bot répondra instantanément",
-				"messages": "Messages",
-				"with_team": "Votre demande est auprès de notre équipe"
-			},
-			"input": {
-				"placeholder": "Tapez un message ou cliquez sur une suggestion...",
-				"placeholder_no_suggestions": "Tapez un message..."
-			}
-		}
 	},
 	"team": {
 		"description": "Pendant le processus de travail, nous effectuons des ajustements réguliers avec le client car il est la seule personne qui peut sentir si un nouveau costume lui va bien ou non.",

@@ -1,37 +1,32 @@
 /**
  * Backend translation helper for Convex functions.
- * Imports the same JSON translation files used by the frontend Tolgee setup.
+ * Imports the same JSON translation file used by the frontend Tolgee setup.
+ *
+ * EGalim est une loi française : une seule locale est supportée ('fr').
+ * Le paramètre `locale` des fonctions ci-dessous est conservé pour la
+ * compatibilité des appelants existants ; il est ignoré en pratique.
  *
  * Usage:
- *   import { t, extractLocaleFromUrl } from './i18n/translations';
+ *   import { t } from './i18n/translations';
  *
- *   // Translate a key with the user's locale
+ *   // Translate a key
  *   const message = t(userLocale, 'backend.support.handoff.response');
  *
  *   // With parameters
  *   const message = t(locale, 'settings.account.avatar.size_error', { size: '2MB' });
- *
- *   // Extract locale from a URL path
- *   const locale = extractLocaleFromUrl('/de/app/settings'); // returns 'de'
  */
 
-import en from '../../../i18n/en.json';
-import de from '../../../i18n/de.json';
-import es from '../../../i18n/es.json';
 import fr from '../../../i18n/fr.json';
 
 /** Supported locales */
-export const SUPPORTED_LOCALES = ['en', 'de', 'es', 'fr'] as const;
+export const SUPPORTED_LOCALES = ['fr'] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 /** Default locale used as fallback */
-export const DEFAULT_LOCALE: SupportedLocale = 'en';
+export const DEFAULT_LOCALE: SupportedLocale = 'fr';
 
 /** Translation data indexed by locale */
 const translations: Record<SupportedLocale, Record<string, unknown>> = {
-	en,
-	de,
-	es,
 	fr
 };
 
@@ -51,16 +46,16 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string | un
 }
 
 /**
- * Translate a key to the specified locale with optional parameter interpolation.
+ * Translate a key to French with optional parameter interpolation.
  *
- * @param locale - The target locale (e.g., 'en', 'de', 'es', 'fr')
+ * @param locale - Conservé pour compatibilité ; ignoré (une seule locale : 'fr')
  * @param key - The translation key in dot notation (e.g., 'admin.actions.ban')
  * @param params - Optional parameters to interpolate into the string
  * @returns The translated string, or the key itself if not found
  *
  * @example
- * t('de', 'admin.dialog.ban_description', { email: 'user@example.com' })
- * // Returns: "Möchten Sie user@example.com wirklich sperren? Der Zugriff auf die App wird blockiert."
+ * t('fr', 'admin.dialog.ban_description', { email: 'user@example.com' })
+ * // Returns: "Êtes-vous sûr de vouloir bannir user@example.com ? L'accès à l'app sera bloqué."
  */
 export function t(
 	locale: string | null | undefined,
@@ -92,9 +87,8 @@ export function t(
  * @returns The extracted locale or the default locale if not found
  *
  * @example
- * extractLocaleFromUrl('/de/app/settings') // returns 'de'
- * extractLocaleFromUrl('https://example.com/fr/support') // returns 'fr'
- * extractLocaleFromUrl('/app/settings') // returns 'en' (default)
+ * extractLocaleFromUrl('/fr/app/settings') // returns 'fr'
+ * extractLocaleFromUrl('/app/settings') // returns 'fr' (default)
  */
 export function extractLocaleFromUrl(url: string | null | undefined): SupportedLocale {
 	if (!url) return DEFAULT_LOCALE;

@@ -5,7 +5,7 @@ import { useLanguage as useLanguageContext } from '$lib/i18n/context';
 /**
  * Get the current language from context
  *
- * Use this when you need direct access to the language value (e.g., in LanguageSwitcher)
+ * Use this when you need direct access to the language value
  * Most components should use `localizedHref()` instead, which automatically reads language from page state
  */
 export { useLanguageContext as useLanguage };
