@@ -165,7 +165,7 @@
 		</div>
 
 		<p class="mt-6 text-center text-xs text-muted-foreground">
-			Mycelium Fleet OS &mdash; Plateforme de gestion de flotte pour PME
+			Mycelium &mdash; La conformité EGalim de votre cantine, mesurée et prouvée
 		</p>
 	</div>
 </div>

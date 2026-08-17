@@ -81,7 +81,7 @@
 </script>
 
 <svelte:head>
-	<title>Invitation Mycelium Fleet OS</title>
+	<title>Invitation Mycelium</title>
 </svelte:head>
 
 <div class="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
@@ -191,7 +191,7 @@
 							Rejoindre l'équipe Mycelium
 						</h1>
 						<p class="mt-1.5 text-sm text-muted-foreground">
-							Vous avez été invité(e) à accéder à la plateforme interne Mycelium Fleet OS.
+							Vous avez été invité(e) à accéder à la plateforme interne Mycelium.
 						</p>
 					</div>
 
@@ -277,6 +277,6 @@
 	</div>
 
 	<p class="mt-8 text-center text-xs text-muted-foreground/40">
-		Mycelium Fleet OS — Plateforme interne réservée au staff
+		Mycelium — Plateforme interne réservée au staff
 	</p>
 </div>

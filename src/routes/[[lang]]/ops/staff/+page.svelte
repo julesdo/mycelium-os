@@ -291,7 +291,7 @@
 </script>
 
 <svelte:head>
-	<title>Équipe Mycelium — Fleet Care</title>
+	<title>Équipe Mycelium</title>
 </svelte:head>
 
 {#if orgAccessTarget}
@@ -444,7 +444,7 @@
 		<div>
 			<h1 class="text-base font-semibold tracking-tight">Équipe Mycelium</h1>
 			<p class="mt-0.5 text-[13px] text-muted-foreground">
-				Accès à l'espace interne Fleet Care — réservé aux super admins.
+				Accès à l'espace interne Mycelium — réservé aux super admins.
 			</p>
 		</div>
 		<div class="flex items-center gap-2">

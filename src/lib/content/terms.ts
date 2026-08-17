@@ -18,7 +18,7 @@ We reserve the right to modify these Terms at any time. We will provide at least
 
 ### 1.1 Description
 
-Mycelium Fleet OS is a cloud-based fleet operating system for small and mid-sized businesses, providing:
+${LEGAL_CONFIG.brandName} is a cloud-based service for collective catering operators, providing:
 
 - Fleet management: vehicle catalogue, status tracking, CSV import.
 - Reservation management: booking workflow, conflict detection, calendar.
@@ -102,7 +102,7 @@ You may cancel your subscription at any time via the billing portal (Paddle's Cu
 
 ### 3.6 Free Plan Limitations
 
-The Free plan provides permanent, time-unlimited access to core features (fleet management, reservations, maintenance, notifications) for up to **10 vehicles**. No credit card is required. Mycelium reserves the right to modify Free plan limitations with 60 days' notice.
+The Free plan provides permanent, time-unlimited access to core features (compliance diagnostics, notifications) for up to **1 site**. No credit card is required. Mycelium reserves the right to modify Free plan limitations with 60 days' notice.
 
 ### 3.7 Failed Payments
 
@@ -199,7 +199,7 @@ The Service integrates with third-party platforms including Xero, QuickBooks, Od
 
 **Except as expressly stated above**, the Service is provided "**as is**" and "**as available**". To the maximum extent permitted by applicable law, Mycelium disclaims all implied warranties, including fitness for a particular purpose, merchantability, and non-infringement. We do not warrant that the Service will be uninterrupted, error-free, or completely secure.
 
-Certain jurisdictions do not permit the exclusion of implied warranties. If you are a consumer (which is unlikely for a B2B fleet management platform), statutory rights under your local law remain unaffected.
+Certain jurisdictions do not permit the exclusion of implied warranties. If you are a consumer (which is unlikely for a B2B compliance platform), statutory rights under your local law remain unaffected.
 
 ---
 

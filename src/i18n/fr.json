@@ -946,7 +946,7 @@
 				"setup_button": "Devenir personne de contact",
 				"setup_confirm": "Configurer",
 				"setup_title_label": "Votre titre",
-				"setup_title_placeholder": "ex. Fondateur de SaaS Starter",
+				"setup_title_placeholder": "ex. Fondateur de Mycelium",
 				"step_down": "Se retirer",
 				"step_down_confirm": "Se retirer en tant que personne de contact ? Les emails de bienvenue ne seront plus envoyés.",
 				"stepped_down": "Vous n'êtes plus la personne de contact",
@@ -1545,7 +1545,7 @@
 		"description": "Donne vie à ton SaaS en quelques minutes, pas en mois. Template open-source bourré de tech qui te fait shipper direct.",
 		"section_label": "Accueil",
 		"tagline": "Focus sur ton produit.\nLancement plus rapide.",
-		"title": "Modèle SaaS Starter"
+		"title": "Modèle Mycelium"
 	},
 	"impersonation": {
 		"banner_text": "Vous visualisez en tant qu'un autre utilisateur",
@@ -1740,12 +1740,12 @@
 		},
 		"current_plan": "Plan Actuel",
 		"current_plan_badge": "(Plan Actuel)",
-		"description": "Tarification transparente pour les flottes en croissance. Tous les plans incluent l'Agent Concierge et la gestion de flotte. Facturation mensuelle via Paddle — résiliation à tout moment.",
+		"description": "Tarification transparente pour les flottes en croissance. Tous les plans incluent l'Agent Concierge et la suivi de conformité. Facturation mensuelle via Paddle — résiliation à tout moment.",
 		"features": {
 			"essential": {
 				"0": "Jusqu'à 50 conducteurs",
 				"1": "Agent Concierge IA (réservation en langage naturel)",
-				"2": "Calendrier & gestion de flotte",
+				"2": "Calendrier & suivi de conformité",
 				"3": "Notifications email",
 				"4": "Import flotte CSV",
 				"5": "Support standard"
@@ -1808,7 +1808,7 @@
 				"price": "Sur devis"
 			}
 		},
-		"title": "Tarifs Fleet OS"
+		"title": "Tarifs Mycelium"
 	},
 	"search": {
 		"command": {
@@ -1974,7 +1974,7 @@
 		},
 		"pricing": {
 			"title": "Des tarifs transparents par palier.",
-			"lede": "Tous les plans incluent l'Agent Concierge et la gestion de flotte. Commencez petit, grandissez à votre rythme.",
+			"lede": "Tous les plans incluent l'Agent Concierge et la suivi de conformité. Commencez petit, grandissez à votre rythme.",
 			"per_month": "/mois",
 			"cta_start": "Démarrer",
 			"cta_contact": "Contacter",

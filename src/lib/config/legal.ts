@@ -1,5 +1,5 @@
 export const LEGAL_CONFIG = {
-	brandName: 'Mycelium Fleet OS',
+	brandName: 'Mycelium',
 	companyName: 'Jules-Camille Doré',
 	operatorName: 'Mycelium',
 	legalForm: 'Entrepreneur Individuel',

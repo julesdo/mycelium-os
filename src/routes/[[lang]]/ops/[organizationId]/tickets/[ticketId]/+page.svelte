@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>Ticket — Concierge Fleet Care</title>
+	<title>Ticket — Concierge Mycelium</title>
 </svelte:head>
 
 <TicketDetail {ticketId} {backHref} />
