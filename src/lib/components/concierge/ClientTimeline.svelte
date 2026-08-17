@@ -8,7 +8,10 @@
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const timeline = useQuery((api as any)['concierge/timeline'].getOrgTimeline, { organizationId, limit: 50 });
+	const timeline = useQuery((api as any)['concierge/timeline'].getOrgTimeline, () => ({
+		organizationId,
+		limit: 50
+	}));
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const addNote = useMutation((api as any)['concierge/timeline'].addConciergeNote);
 

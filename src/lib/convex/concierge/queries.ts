@@ -91,7 +91,7 @@ export const getServiceDashboard = superAdminQuery({
 			resolvedThisMonth: resolvedThisMonth.length,
 			newToday: newSinceMidnight.length,
 			slaRateThisMonth,
-			medianResponseMin: medianMs !== null ? Math.round(medianMs / 60_000) : null,
+			medianResponseMin: typeof medianMs === 'number' ? Math.round(medianMs / 60_000) : null,
 			chargeParConcierge
 		};
 	}

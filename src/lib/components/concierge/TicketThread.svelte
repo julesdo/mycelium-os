@@ -58,7 +58,8 @@
 		</div>
 	{:else}
 		{#each messages as msg, i (msg._id)}
-			{#if i === 0 || !isSameDay(messages[i - 1].createdAt, msg.createdAt)}
+			{@const prevMsg = messages[i - 1]}
+			{#if !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt)}
 				<div class="flex items-center gap-3 py-1">
 					<div class="h-px flex-1 bg-border/50"></div>
 					<span class="text-[10px] text-muted-foreground/60">{formatDate(msg.createdAt)}</span>

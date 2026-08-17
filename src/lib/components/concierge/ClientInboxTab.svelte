@@ -10,7 +10,9 @@
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const tickets = useQuery((api as any)['concierge/tickets'].listTicketsForOrg, { organizationId });
+	const tickets = useQuery((api as any)['concierge/tickets'].listTicketsForOrg, () => ({
+		organizationId
+	}));
 </script>
 
 <div class="flex h-full flex-col">

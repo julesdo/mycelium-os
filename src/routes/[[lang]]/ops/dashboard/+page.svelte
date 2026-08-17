@@ -9,7 +9,7 @@
 	import CheckCircleIcon from '@lucide/svelte/icons/check-circle-2';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 
-	const dash = useQuery(api['concierge/queries'].getServiceDashboard, {});
+	const dash = useQuery(api.concierge.queries.getServiceDashboard, {});
 
 	function formatMinutes(min: number | null): string {
 		if (min === null) return '—';

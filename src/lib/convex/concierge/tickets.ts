@@ -4,7 +4,7 @@ import { internal } from '../_generated/api';
 import { conciergeQuery, conciergeMutation } from '../functions';
 import type { Id } from '../_generated/dataModel';
 
-const SLA_FIRST_RESPONSE_MS: Record<string, number> = {
+const SLA_FIRST_RESPONSE_MS: Record<'URGENT' | 'HIGH' | 'NORMAL' | 'LOW', number> = {
 	URGENT: 15 * 60 * 1000,
 	HIGH: 60 * 60 * 1000,
 	NORMAL: 4 * 60 * 60 * 1000,

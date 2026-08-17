@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { useQuery, useMutation } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api';
+	import type { Id } from '$lib/convex/_generated/dataModel';
 	import { toast } from 'svelte-sonner';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -29,26 +30,18 @@
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const staff = useQuery(api['concierge/staff'].listMyceliumStaff, {});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const myProfile = useQuery((api as any)['concierge/staff'].getMyStaffProfile, {});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const pendingInvites = useQuery((api as any)['concierge/staff'].listStaffInvitations, {});
+	const staff = useQuery(api.concierge.staff.listMyceliumStaff, {});
+	const myProfile = useQuery(api.concierge.staff.getMyStaffProfile, {});
+	const pendingInvites = useQuery(api.concierge.staff.listStaffInvitations, {});
 
-	const addMember = useMutation(api['concierge/staff'].addStaffMember);
-	const updateRole = useMutation(api['concierge/staff'].updateStaffRole);
-	const removeMember = useMutation(api['concierge/staff'].removeStaffMember);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const updateMyProfile = useMutation((api as any)['concierge/staff'].updateMyProfile);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const generateAvatarUploadUrl = useMutation((api as any)['concierge/staff'].generateAvatarUploadUrl);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const saveAvatarUrl = useMutation((api as any)['concierge/staff'].saveAvatarUrl);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const createInvitation = useMutation((api as any)['concierge/staff'].createStaffInvitation);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const revokeInvitation = useMutation((api as any)['concierge/staff'].revokeStaffInvitation);
+	const addMember = useMutation(api.concierge.staff.addStaffMember);
+	const updateRole = useMutation(api.concierge.staff.updateStaffRole);
+	const removeMember = useMutation(api.concierge.staff.removeStaffMember);
+	const updateMyProfile = useMutation(api.concierge.staff.updateMyProfile);
+	const generateAvatarUploadUrl = useMutation(api.concierge.staff.generateAvatarUploadUrl);
+	const saveAvatarUrl = useMutation(api.concierge.staff.saveAvatarUrl);
+	const createInvitation = useMutation(api.concierge.staff.createStaffInvitation);
+	const revokeInvitation = useMutation(api.concierge.staff.revokeStaffInvitation);
 
 	// ── Mon profil ─────────────────────────────────────────────────────────────
 	let editingProfile = $state(false);
@@ -108,7 +101,7 @@
 				body: file
 			});
 			if (!uploadRes.ok) throw new Error('Upload échoué');
-			const { storageId } = await uploadRes.json() as { storageId: string };
+			const { storageId } = await uploadRes.json() as { storageId: Id<'_storage'> };
 			await saveAvatarUrl({ storageId });
 			toast.success('Photo de profil mise à jour.');
 		} catch (err: unknown) {
@@ -166,7 +159,7 @@
 		}
 	}
 
-	async function handleRevoke(invitationId: string) {
+	async function handleRevoke(invitationId: Id<'staffInvitations'>) {
 		try {
 			await revokeInvitation({ invitationId });
 			toast.success('Invitation révoquée.');

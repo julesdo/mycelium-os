@@ -25,9 +25,8 @@
 
 	let { children }: { children: Snippet } = $props();
 
-	const myRole = useQuery(api['concierge/queries'].getMyStaffRole, {});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const accessibleOrgs = useQuery((api as any)['concierge/staff'].getMyAccessibleOrgs, {});
+	const myRole = useQuery(api.concierge.queries.getMyStaffRole, {});
+	const accessibleOrgs = useQuery(api.concierge.staff.getMyAccessibleOrgs, {});
 
 	const isSuperAdmin = $derived(myRole.data?.staffRole === 'SUPER_ADMIN');
 

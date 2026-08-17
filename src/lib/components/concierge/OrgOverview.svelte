@@ -16,7 +16,9 @@
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const assistRequests = useQuery((api as any)['concierge/humanAssist'].listRequestsForOrg, { organizationId });
+	const assistRequests = useQuery((api as any)['concierge/humanAssist'].listRequestsForOrg, () => ({
+		organizationId
+	}));
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const replyAsConcierge = useMutation((api as any)['concierge/humanAssist'].replyAsConciege);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any

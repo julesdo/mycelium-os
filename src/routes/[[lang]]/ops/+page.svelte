@@ -11,8 +11,7 @@
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const accessibleOrgs = useQuery((api as any)['concierge/staff'].getMyAccessibleOrgs, {});
+	const accessibleOrgs = useQuery(api.concierge.staff.getMyAccessibleOrgs, {});
 
 	let search = $state('');
 

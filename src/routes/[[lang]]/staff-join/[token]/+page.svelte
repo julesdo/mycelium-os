@@ -6,7 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { toast } from 'svelte-sonner';
-	import type { LayoutData } from '../$types';
+	import type { PageData } from './$types';
 	import Logo from '$lib/components/icons/logo.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
@@ -18,7 +18,7 @@
 	import LogInIcon from '@lucide/svelte/icons/log-in';
 	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
 
-	interface Props { data: LayoutData; }
+	interface Props { data: PageData; }
 	let { data }: Props = $props();
 
 	const token = $derived(page.params.token as string);
@@ -26,12 +26,10 @@
 	const isLoggedIn = $derived(!!viewer);
 
 	// Query publique — pas besoin d'être connecté
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const inviteQ = useQuery((api as any)['concierge/staff'].getStaffInvitationByToken, { token });
+	const inviteQ = useQuery(api.concierge.staff.getStaffInvitationByToken, { token });
 
 	// Mutation d'acceptation (authed)
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const accept = useMutation((api as any)['concierge/staff'].acceptStaffInvitation);
+	const accept = useMutation(api.concierge.staff.acceptStaffInvitation);
 
 	let accepting = $state(false);
 	let accepted = $state(false);

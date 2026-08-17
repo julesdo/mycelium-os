@@ -52,7 +52,7 @@ export type PlanFeature = keyof (typeof PLAN_FEATURES)['operateur'];
 export type PlanTier = 'none' | 'diagnostic' | 'conformite' | 'operateur' | 'dev';
 
 // Nombre d'utilisateurs autorisés par étage (une cantine = 1 à 3 personnes)
-export const PLAN_SEATS: Record<string, number> = {
+export const PLAN_SEATS: Record<PlanTier, number> = {
 	none: 0,
 	diagnostic: 2,
 	conformite: 3,

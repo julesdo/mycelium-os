@@ -21,7 +21,9 @@
 
 	// Query des accès actuels du concierge
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const accessQ = useQuery((api as any)['concierge/staff'].listConciergeOrgAccess, { conciergeUserId });
+	const accessQ = useQuery((api as any)['concierge/staff'].listConciergeOrgAccess, () => ({
+		conciergeUserId
+	}));
 	// Toutes les orgs (super admin y a accès via getMyAccessibleOrgs qui retourne tout)
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const allOrgsQ = useQuery((api as any)['concierge/staff'].getMyAccessibleOrgs, {});

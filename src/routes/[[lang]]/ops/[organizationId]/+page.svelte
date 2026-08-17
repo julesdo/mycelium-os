@@ -18,8 +18,7 @@
 
 	const organizationId = $derived(page.params.organizationId as Id<'organizations'>);
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const accessibleOrgs = useQuery((api as any)['concierge/staff'].getMyAccessibleOrgs, {});
+	const accessibleOrgs = useQuery(api.concierge.staff.getMyAccessibleOrgs, {});
 	const org = $derived(accessibleOrgs.data?.find((o) => o._id === organizationId) ?? null);
 
 	let activeTab = $state('inbox');

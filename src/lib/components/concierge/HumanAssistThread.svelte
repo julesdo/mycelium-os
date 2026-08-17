@@ -12,7 +12,9 @@
 	let { requestId, summary }: Props = $props();
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const thread = useQuery((api as any)['concierge/humanAssist'].getRequestWithMessages, { requestId });
+	const thread = useQuery((api as any)['concierge/humanAssist'].getRequestWithMessages, () => ({
+		requestId
+	}));
 
 	function getInitials(name: string): string {
 		return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();

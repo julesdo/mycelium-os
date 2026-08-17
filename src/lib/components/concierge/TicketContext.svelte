@@ -21,7 +21,9 @@
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const context = useQuery((api as any)['concierge/tickets'].getTicketContext, { organizationId });
+	const context = useQuery((api as any)['concierge/tickets'].getTicketContext, () => ({
+		organizationId
+	}));
 </script>
 
 <div class="space-y-4">
