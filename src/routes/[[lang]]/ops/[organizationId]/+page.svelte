@@ -3,7 +3,6 @@
 	import { api } from '$lib/convex/_generated/api';
 	import type { Id } from '$lib/convex/_generated/dataModel';
 	import { page } from '$app/state';
-	import { cn } from '$lib/utils.js';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { resolve } from '$app/paths';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
@@ -14,40 +13,33 @@
 	import ClientInboxTab from '$lib/components/concierge/ClientInboxTab.svelte';
 	import ClientTimeline from '$lib/components/concierge/ClientTimeline.svelte';
 	import ClientSignals from '$lib/components/concierge/ClientSignals.svelte';
-	import { healthScoreToColor } from '$lib/convex/concierge/health';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import BuildingIcon from '@lucide/svelte/icons/building';
 
 	const organizationId = $derived(page.params.organizationId as Id<'organizations'>);
-	const detail = useQuery(api['concierge/queries'].getClientDetail, { organizationId });
 
-	let activeTab = $state('overview');
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const accessibleOrgs = useQuery((api as any)['concierge/staff'].getMyAccessibleOrgs, {});
+	const org = $derived(accessibleOrgs.data?.find((o) => o._id === organizationId) ?? null);
+
+	let activeTab = $state('inbox');
 
 	const TIER_LABEL: Record<string, string> = {
-		essential: 'Essential',
-		professional: 'Professional',
-		business: 'Business',
-		enterprise: 'Enterprise'
-	};
-
-	const scoreColor = $derived(detail.data ? healthScoreToColor(detail.data.healthScore) : 'green');
-	const barColorClass = { green: 'bg-emerald-500', yellow: 'bg-amber-500', red: 'bg-destructive' };
-	const scoreTextClass = {
-		green: 'text-emerald-600 dark:text-emerald-400',
-		yellow: 'text-amber-500 dark:text-amber-400',
-		red: 'text-destructive'
+		diagnostic: 'Diagnostic',
+		conformite: 'Conformité',
+		operateur: 'Opérateur'
 	};
 
 	const TABS = [
-		{ value: 'overview', label: "Vue d'ensemble" },
 		{ value: 'inbox', label: 'Inbox' },
 		{ value: 'timeline', label: 'Timeline' },
+		{ value: 'assistance', label: 'Assistance' },
 		{ value: 'signals', label: 'Signaux' }
 	];
 </script>
 
 <svelte:head>
-	<title>{detail.data?.organization.name ?? 'Client'} — Concierge Fleet Care</title>
+	<title>{org?.name ?? 'Client'} — Mycelium</title>
 </svelte:head>
 
 <div class="flex h-full flex-col">
@@ -58,43 +50,27 @@
 				<ArrowLeftIcon class="size-4" />
 			</Button>
 
-			{#if detail.data}
-				{@const org = detail.data.organization}
+			{#if org}
 				<div class="flex items-center gap-3">
-					{#if org.logoUrl}
-						<img src={org.logoUrl} alt={org.name} class="size-8 rounded-lg object-cover" />
-					{:else}
-						<div class="flex size-8 items-center justify-center rounded-lg bg-muted">
-							<BuildingIcon class="size-4 text-muted-foreground" />
-						</div>
-					{/if}
+					<div class="flex size-8 items-center justify-center rounded-lg bg-muted">
+						<BuildingIcon class="size-4 text-muted-foreground" />
+					</div>
 					<div>
 						<div class="flex items-center gap-2">
 							<h1 class="text-sm font-bold">{org.name}</h1>
-							{#if org.paddlePlanTier}
-								<Badge variant="outline" class="text-[10px]">{TIER_LABEL[org.paddlePlanTier] ?? org.paddlePlanTier}</Badge>
+							{#if org.tier}
+								<Badge variant="outline" class="text-[10px]">{TIER_LABEL[org.tier] ?? org.tier}</Badge>
 							{/if}
 						</div>
 						{#if org.country}
-							<p class="text-[10px] text-muted-foreground">{org.country}{org.sector ? ` · ${org.sector}` : ''}</p>
+							<p class="text-[10px] text-muted-foreground">{org.country}</p>
 						{/if}
 					</div>
 				</div>
-
-				<!-- Score santé -->
-				<div class="flex items-center gap-2">
-					<div class="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-						<div
-							class={cn('h-full rounded-full transition-all duration-500', barColorClass[scoreColor])}
-							style="width: {detail.data.healthScore}%"
-						></div>
-					</div>
-					<span class={cn('text-sm font-bold tabular-nums font-mono', scoreTextClass[scoreColor])}>
-						{detail.data.healthScore}/100
-					</span>
-				</div>
-			{:else if detail.isLoading}
+			{:else if accessibleOrgs.isLoading}
 				<Skeleton class="h-8 w-48 rounded-lg" />
+			{:else}
+				<span class="text-sm text-muted-foreground">Client introuvable ou accès refusé</span>
 			{/if}
 		</div>
 
@@ -114,12 +90,12 @@
 
 	<!-- Contenu onglet actif -->
 	<div class="flex-1 overflow-y-auto">
-		{#if activeTab === 'overview'}
-			<OrgOverview {organizationId} />
-		{:else if activeTab === 'inbox'}
+		{#if activeTab === 'inbox'}
 			<ClientInboxTab {organizationId} />
 		{:else if activeTab === 'timeline'}
 			<ClientTimeline {organizationId} />
+		{:else if activeTab === 'assistance'}
+			<OrgOverview {organizationId} />
 		{:else if activeTab === 'signals'}
 			<ClientSignals {organizationId} />
 		{/if}
