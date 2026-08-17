@@ -20,8 +20,7 @@
 
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const context = useQuery((api as any)['concierge/tickets'].getTicketContext, () => ({
+	const context = useQuery(api.concierge.tickets.getTicketContext, () => ({
 		organizationId
 	}));
 </script>

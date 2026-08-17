@@ -9,8 +9,7 @@
 
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const tickets = useQuery((api as any)['concierge/tickets'].listTicketsForOrg, () => ({
+	const tickets = useQuery(api.concierge.tickets.listTicketsForOrg, () => ({
 		organizationId
 	}));
 </script>

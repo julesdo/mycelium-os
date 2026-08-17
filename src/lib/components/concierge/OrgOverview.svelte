@@ -15,14 +15,11 @@
 
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const assistRequests = useQuery((api as any)['concierge/humanAssist'].listRequestsForOrg, () => ({
+	const assistRequests = useQuery(api.concierge.humanAssist.listRequestsForOrg, () => ({
 		organizationId
 	}));
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const replyAsConcierge = useMutation((api as any)['concierge/humanAssist'].replyAsConciege);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const closeByConcierge = useMutation((api as any)['concierge/humanAssist'].closeByConcierge);
+	const replyAsConcierge = useMutation(api.concierge.humanAssist.replyAsConciege);
+	const closeByConcierge = useMutation(api.concierge.humanAssist.closeByConcierge);
 
 	let expandedRequestId = $state<Id<'humanAssistRequests'> | null>(null);
 	let replyInputs = $state<Record<string, string>>({});

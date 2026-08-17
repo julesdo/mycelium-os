@@ -11,8 +11,7 @@
 
 	let { requestId, summary }: Props = $props();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const thread = useQuery((api as any)['concierge/humanAssist'].getRequestWithMessages, () => ({
+	const thread = useQuery(api.concierge.humanAssist.getRequestWithMessages, () => ({
 		requestId
 	}));
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { useQuery, useMutation } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api';
+	import type { Id } from '$lib/convex/_generated/dataModel';
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Button } from '$lib/components/ui/button';
@@ -20,33 +21,29 @@
 	let { open, conciergeUserId, conciergeName, onclose }: Props = $props();
 
 	// Query des accès actuels du concierge
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const accessQ = useQuery((api as any)['concierge/staff'].listConciergeOrgAccess, () => ({
+	const accessQ = useQuery(api.concierge.staff.listConciergeOrgAccess, () => ({
 		conciergeUserId
 	}));
 	// Toutes les orgs (super admin y a accès via getMyAccessibleOrgs qui retourne tout)
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const allOrgsQ = useQuery((api as any)['concierge/staff'].getMyAccessibleOrgs, {});
+	const allOrgsQ = useQuery(api.concierge.staff.getMyAccessibleOrgs, {});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const assignOrg = useMutation((api as any)['concierge/staff'].assignOrgToConcierge);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const removeOrg = useMutation((api as any)['concierge/staff'].removeOrgFromConcierge);
+	const assignOrg = useMutation(api.concierge.staff.assignOrgToConcierge);
+	const removeOrg = useMutation(api.concierge.staff.removeOrgFromConcierge);
 
 	let search = $state('');
 	let toggling = $state<string | null>(null);
 
+	// listConciergeOrgAccess joint les orgs et peut donc renvoyer des entrées nulles
+	// (accès orphelin dont l'organisation a été supprimée) : on les écarte.
 	const assignedIds = $derived(
-		new Set((accessQ.data ?? []).map((a: { organizationId: string }) => a.organizationId))
+		new Set((accessQ.data ?? []).flatMap((a) => (a ? [a.organizationId] : [])))
 	);
 
 	const filteredOrgs = $derived(
-		(allOrgsQ.data ?? []).filter((o: { name: string }) =>
-			o.name.toLowerCase().includes(search.toLowerCase())
-		)
+		(allOrgsQ.data ?? []).filter((o) => o.name.toLowerCase().includes(search.toLowerCase()))
 	);
 
-	async function toggle(orgId: string) {
+	async function toggle(orgId: Id<'organizations'>) {
 		if (toggling) return;
 		toggling = orgId;
 		try {
