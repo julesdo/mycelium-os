@@ -19,13 +19,6 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		keywords: ['home', 'landing']
 	},
 	{
-		href: '/pricing',
-		access: 'public',
-		group: 'public',
-		titleKey: 'nav.pricing',
-		keywords: ['pricing', 'plans', 'billing']
-	},
-	{
 		href: '/about',
 		access: 'public',
 		group: 'public',

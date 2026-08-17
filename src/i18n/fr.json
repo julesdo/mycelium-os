@@ -1727,14 +1727,9 @@
 	"nav": {
 		"about": "À propos",
 		"dashboard": "Tableau de bord",
-		"features": "Fonctionnalités",
-		"get_started": "Commencer",
 		"home": "Accueil",
 		"login": "Connexion",
-		"pricing": "Tarifs",
 		"signup": "S'inscrire",
-		"solution": "Solution",
-		"agents": "Agents IA",
 		"open_menu": "Ouvrir le menu",
 		"close_menu": "Fermer le menu"
 	},
@@ -1972,204 +1967,15 @@
 	},
 	"landing": {
 		"hero": {
-			"eyebrow": "Le service de conciergerie pour flottes d'entreprise",
-			"title": "Votre flotte, gérée et optimisée.",
-			"lede": "Des concierges humains et des agents IA spécialisés prennent en charge l'opérationnel de votre flotte. Vous gardez le contrôle, vous perdez les tâches.",
-			"cta_primary": "Demander une démo",
-			"cta_secondary": "Voir les tarifs",
-			"reassurance": "Sans engagement · Onboarding 15 min · Données hébergées en Europe",
-			"chat": {
-				"user": "J'ai besoin d'un véhicule jeudi pour aller à Lyon.",
-				"agent": "Le Peugeot 3008 est disponible jeudi. Je le réserve pour vous ?",
-				"vehicle": "Peugeot 3008 · Disponible",
-				"placeholder": "Décrivez votre besoin…"
-			},
-			"integrations_label": "Intégré dans vos solutions"
-		},
-		"proof": {
-			"agents": "Agents IA spécialisés",
-			"onboarding": "Pour être pleinement opérationnel",
-			"training": "Formation requise côté salarié",
-			"modules": "Modules inclus dès le départ",
-			"hosting": "Données hébergées en Europe"
-		},
-		"human": {
-			"eyebrow": "Concierge humain",
-			"title": "L'IA optimise. Les humains vous accompagnent.",
-			"desc": "Chaque compte Mycelium est suivi par un concierge dédié. Onboarding guidé, questions complexes, situations exceptionnelles — une personne réelle qui connaît votre flotte et répond en moins de 4 heures.",
-			"t1": "Onboarding guidé pas à pas par votre concierge",
-			"t2": "Réponse garantie en moins de 4 heures ouvrées",
-			"t3": "Un interlocuteur unique par compte, pas un chatbot",
-			"img_alt": "Équipe concierge Mycelium au travail"
-		},
-		"features": {
-			"eyebrow": "Ce qu'on gère pour vous",
-			"title": "Tout l'opérationnel de votre flotte. Sans effort de votre part.",
-			"lede": "De la réservation à la conformité, nous prenons en charge ce qui prend du temps, pour que vos équipes se concentrent sur ce qui compte.",
-			"fleet": {
-				"title": "Vos véhicules, en ordre.",
-				"desc": "Import, suivi des statuts, attribution par site ou département. Les salariés réservent directement — les conflits sont détectés avant même de se produire.",
-				"b1": "Import CSV en 90 secondes",
-				"b2": "Détection de conflits automatique",
-				"b3": "Filtres par site, catégorie et statut",
-				"b4": "Vues calendrier semaine et mois"
-			},
-			"dashboard": {
-				"title": "Vos coûts, sous contrôle.",
-				"desc": "KPIs en temps réel, suivi des dépenses par catégorie et véhicule, export comptable. L'essentiel d'un coup d'œil, sans ouvrir un tableur.",
-				"b1": "KPI flotte en temps réel",
-				"b2": "Coûts par véhicule et catégorie",
-				"b3": "Exports comptables (CSV, Silae)",
-				"b4": "Notes de frais au barème URSSAF"
-			},
-			"compliance": {
-				"title": "Votre conformité, assurée.",
-				"desc": "Permis expiré, contrôle technique dépassé, contravention en attente. Mycelium surveille et alerte automatiquement — avant que ça devienne un problème.",
-				"b1": "Alertes permis à 60, 30 et 7 jours",
-				"b2": "Rappels contrôle technique et assurance",
-				"b3": "Workflow contraventions avec identification du conducteur",
-				"b4": "Rapport CSRD, scope 1+2+3"
-			},
-			"concierge": {
-				"title": "Vos réservations, en langage naturel.",
-				"desc": "Le salarié dit ce dont il a besoin. L'agent Concierge cherche, propose et confirme — sans formulaire, sans clic inutile, sans formation.",
-				"b1": "Dates en langage naturel («jeudi», «dans 3 jours»)",
-				"b2": "Détection et résolution de conflits automatique",
-				"b3": "Annulation et modification dans la même conversation",
-				"b4": "Confirmation par email immédiate"
-			},
-			"mock": {
-				"fleet_title": "Flotte · 15 véhicules",
-				"available_badge": "8 disponibles",
-				"status_available": "Disponible",
-				"status_mission": "En mission",
-				"status_maintenance": "Maintenance",
-				"utilization": "Taux d'utilisation",
-				"vs_last_month": "vs mois dernier",
-				"maint_due": "Maintenances dues",
-				"costs_month": "Coûts ce mois",
-				"util_14d": "Utilisation sur 14 jours",
-				"vehicles_per_day": "Véhicules / jour",
-				"licenses": "Permis conducteurs",
-				"licenses_detail": "12 sur 12 valides",
-				"ct": "Contrôle technique",
-				"ct_detail": "2 véhicules à renouveler sous 45 jours",
-				"insurance": "Assurances véhicules",
-				"insurance_detail": "15 sur 15 en cours",
-				"violations": "Contraventions ouvertes",
-				"violations_detail": "1 en attente de traitement",
-				"csrd": "Rapport CSRD",
-				"csrd_detail": "Données 2025 complètes"
-			}
-		},
-		"agents": {
-			"eyebrow": "Votre équipe dédiée",
-			"title": "Des humains et des agents IA qui veillent sur votre flotte.",
-			"lede": "Chaque flotte a une équipe dédiée : des concierges humains pour l’accompagnement, et des agents IA spécialisés pour l’automatisation. Ensemble, ils couvrent tout ce que vous ne devriez plus faire manuellement.",
-			"human_badge": "Inclus dans chaque plan",
-			"human_title": "Un concierge humain dédié à votre flotte",
-			"human_desc": "Disponible par chat et email, il connaît votre flotte, gère les cas complexes et veille sur l’expérience de vos équipes au quotidien.",
-			"ai_label": "Renforcé par 6 agents IA spécialisés",
-			"concierge": {
-				"name": "Concierge",
-				"role": "Salarié",
-				"desc": "Réservation en langage naturel. Propose, confirme et annule en une seule conversation."
-			},
-			"manager": {
-				"name": "Assistant Gestionnaire",
-				"role": "DAF · RH",
-				"desc": "Interrogez votre flotte comme un analyste disponible jour et nuit."
-			},
-			"optimizer": {
-				"name": "Optimiseur de flotte",
-				"role": "Direction",
-				"desc": "Analyse hebdomadaire, détection de sous-utilisation, ROI chiffré."
-			},
-			"compliance": {
-				"name": "Compliance Officer",
-				"role": "RH · Gestionnaire",
-				"desc": "Permis, contrôles techniques, assurances, CSRD. Aucun oubli réglementaire."
-			},
-			"negotiator": {
-				"name": "Négociateur de coûts",
-				"role": "DAF",
-				"desc": "Identifie les économies potentielles et prépare vos arguments de négociation."
-			},
-			"coach": {
-				"name": "Coach conducteurs",
-				"role": "Salarié · RH",
-				"desc": "Score éco-conduite, feedback personnalisé, classement d'équipe."
-			}
-		},
-		"agents_demo": {
-			"label": "Orchestration en direct",
-			"title": "6 agents. Zéro tâche manuelle.",
-			"lede": "En ce moment, les agents Mycelium tournent pour des centaines de flottes. Réservations, conformité, coûts, conduite — chaque agent veille sur sa spécialité pendant que vos équipes se concentrent sur le business."
-		},
-		"steps": {
-			"eyebrow": "Comment ça marche",
-			"title": "Opérationnel dès la première semaine.",
-			"lede": "Réservations, alertes de conformité, rapports hebdomadaires. Mycelium tourne même quand vous dormez.",
-			"s1": {
-				"title": "Vous nous confiez votre flotte",
-				"desc": "Import CSV en 15 minutes. Nos équipes configurent votre compte, invitent vos collaborateurs et vérifient les données avec vous."
-			},
-			"s2": {
-				"title": "Notre équipe prend la main",
-				"desc": "Dès le lendemain, réservations, alertes et rapports s'activent. Votre équipe dédiée humaine + IA opère en continu."
-			},
-			"s3": {
-				"title": "Vous pilotez, on opère",
-				"desc": "Un tableau de bord simple pour garder le contrôle. Les tâches répétitives ne vous atteignent plus."
-			}
-		},
-		"modules": {
-			"eyebrow": "Tout inclus",
-			"title": "Tous les modules, dès le premier jour.",
-			"lede": "Aucun supplément sur l'essentiel. Choisissez un palier selon la taille de votre flotte et le nombre d'agents.",
-			"fleet": {
-				"title": "Gestion de flotte",
-				"desc": "Import CSV, CRUD complet, statuts en temps réel."
-			},
-			"reservations": {
-				"title": "Réservations IA",
-				"desc": "Via le Concierge ou un formulaire, avec détection de conflits automatique."
-			},
-			"calendar": {
-				"title": "Calendrier flotte",
-				"desc": "Vues jour, semaine et mois, glisser-déposer, création rapide."
-			},
-			"dashboard": {
-				"title": "Tableau de bord DAF",
-				"desc": "KPI en temps réel, graphiques d'utilisation, fil d'activité."
-			},
-			"finance": {
-				"title": "Suivi financier",
-				"desc": "Coûts par catégorie et véhicule, export comptable."
-			},
-			"maintenance": {
-				"title": "Maintenance & alertes",
-				"desc": "Planning des entretiens, alertes contrôle technique, assurance et permis."
-			},
-			"inspections": {
-				"title": "États des lieux",
-				"desc": "Photos guidées sur 6 angles, comparaison avant et après."
-			},
-			"expenses": {
-				"title": "Notes de frais IK",
-				"desc": "Barème URSSAF 2026, export Silae automatisé."
-			},
-			"carbon": {
-				"title": "Rapport carbone",
-				"desc": "Scope 1+2+3, facteurs ADEME, format CSRD."
-			}
+			"title": "Vous ne connaissez pas votre taux EGalim. Personne ne le connaît.",
+			"lede": "Depuis 2024, toute cantine — privée comprise — doit servir 50 % de produits durables dont 20 % de bio, et le déclarer chaque année. Nous calculons votre chiffre réel à partir de vos factures, et nous chiffrons l'écart en euros.",
+			"cta_primary": "Demander un diagnostic",
+			"cta_secondary": "En savoir plus"
 		},
 		"pricing": {
-			"eyebrow": "Tarifs",
 			"title": "Des tarifs transparents par palier.",
 			"lede": "Tous les plans incluent l'Agent Concierge et la gestion de flotte. Commencez petit, grandissez à votre rythme.",
 			"per_month": "/mois",
-			"popular": "Le plus choisi",
 			"cta_start": "Démarrer",
 			"cta_contact": "Contacter",
 			"footnote": "Tous les tarifs HT · Dépassement : 5 à 8 €/conducteur au-delà du quota · Données hébergées en Europe",
@@ -2215,45 +2021,40 @@
 			}
 		},
 		"faq": {
-			"eyebrow": "FAQ",
 			"title": "Questions fréquentes.",
 			"contact_prefix": "Une question qui n'est pas listée ?",
 			"contact_link": "Contactez-nous",
 			"q1": {
-				"q": "Qu'est-ce qu'une conciergerie de flotte ?",
-				"a": "Mycelium n'est pas un simple logiciel. C'est un service : des concierges humains, renforcés par des agents IA spécialisés, prennent en charge l'opérationnel de votre flotte. Vous bénéficiez d'une équipe dédiée sans recruter."
+				"q": "Le « local » compte-t-il dans le calcul ?",
+				"a": "Non. Le code de la commande publique interdit la préférence géographique directe. Seuls comptent le bio et les labels officiels : Label Rouge, AOP, AOC, IGP, STG, HVE niveau 3, pêche durable, commerce équitable. Beaucoup de gestionnaires se croient conformes et ne le sont pas."
 			},
 			"q2": {
-				"q": "Quelle différence avec un logiciel de flotte classique ?",
-				"a": "Un logiciel vous donne des outils à utiliser. Mycelium fait le travail pour vous. Les réservations, les alertes, les rapports, la conformité — notre équipe s'en charge. Vous vous connectez pour piloter, pas pour opérer."
+				"q": "Le HVE compte-t-il dans les 20 % de bio ?",
+				"a": "Non. Le HVE niveau 3 compte dans les 50 % de produits durables, mais pas dans les 20 % de bio, qui exigent le label AB ou son équivalent européen."
 			},
 			"q3": {
-				"q": "Qui répond quand quelque chose se passe ?",
-				"a": "Un concierge humain de votre équipe dédiée, joignable par chat ou email. Les agents IA traitent les cas standards automatiquement. Pour tout ce qui sort de l'ordinaire, un vrai interlocuteur prend la main."
+				"q": "Comment le ratio se calcule-t-il ?",
+				"a": "En valeur d'achat HT, ligne à ligne, sur douze mois de factures fournisseurs. Pour 300 couverts, cela représente 2 000 à 5 000 lignes par an. C'est la raison pour laquelle presque personne ne le fait à la main."
 			},
 			"q4": {
-				"q": "Combien de temps avant que tout soit opérationnel ?",
-				"a": "Oui, toutes les données sont hébergées sur des infrastructures européennes. Mycelium est conçu pour respecter le RGPD avec un isolement strict par organisation."
-			},
-			"q5": {
-				"q": "Est-ce qu'on garde le contrôle de nos données ?",
-				"a": "Chaque palier ajoute des agents IA et un quota conducteurs plus grand. Essential couvre la réservation et la gestion de flotte de base. Professional ajoute la synchronisation comptable (Xero, QuickBooks) et la conformité. Business ajoute la suite IA complète — Optimiseur, Négociateur de coûts et Coach conducteurs."
-			},
-			"q6": {
-				"q": "Combien d’heures récupère-t-on par mois ?",
-				"a": "Nos clients rapportent en moyenne 4 à 8 heures économisées par semaine pour le gestionnaire de flotte, et une réduction sensible des allers-retours RH autour des réservations. Le ROI s'observe dès le premier mois."
+				"q": "Garantissez-vous la conformité ?",
+				"a": "Non, et personne ne le peut honnêtement : le dénominateur inclut la totalité de vos achats alimentaires, y compris ceux qu'un prestataire extérieur ne maîtrise pas. Nous mesurons votre ratio, nous le faisons progresser, et nous en produisons la preuve. La déclaration reste signée par vous."
 			}
 		},
 		"cta": {
-			"title": "Votre flotte mérite d’être gérée, pas surveillée.",
-			"lede": "Demandez une démo de 30 minutes. On vous montre comment Mycelium s'adapte à votre flotte et ce que vos équipes récupèrent dès la première semaine.",
-			"primary": "Demander une démo gratuite",
-			"secondary": "Voir les tarifs",
-			"reassurance": "Sans engagement · Réponse sous 24h · Données hébergées en Europe"
+			"title": "Connaître votre taux EGalim, chiffrer l'écart, avancer vers la conformité.",
+			"lede": "Nous calculons votre ratio réel à partir de vos factures fournisseurs et vous montrons précisément où vous en êtes avant l'échéance du 31 mars.",
+			"primary": "Demander un diagnostic",
+			"secondary": "En savoir plus"
 		},
 		"meta": {
-			"title": "Mycelium — Conciergerie de flotte d'entreprise",
-			"description": "Gérez et optimisez votre flotte d'entreprise sans y passer du temps. Des concierges humains et des agents IA spécialisés s'occupent de tout. Opérationnel en 15 minutes."
+			"title": "Mycelium — Diagnostic EGalim pour la restauration collective",
+			"description": "Calculez votre taux EGalim réel à partir de vos factures fournisseurs et chiffrez l'écart en euros vers la conformité (50 % de produits durables dont 20 % de bio)."
+		},
+		"proof": {
+			"non_compliant": "des cantines déclarantes ne sont pas conformes",
+			"non_declaring": "des sites concernés ne déclarent rien du tout",
+			"deadline": "date limite de la télédéclaration annuelle"
 		}
 	}
 }

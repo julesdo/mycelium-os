@@ -64,7 +64,7 @@ export function renderMarketingMarkdown(
 		['canonical', canonical],
 		['route', context.pathname],
 		['lang_served', context.lang],
-		['content_language', 'en'],
+		['content_language', 'fr'],
 		['content_type', 'marketing-page']
 	];
 
@@ -134,23 +134,23 @@ function xmlEscape(value: string): string {
 
 export function renderLlmsTxt(origin: string): string {
 	const baseOrigin = origin.replace(/\/$/, '');
-	const [homeUrl, aboutUrl, pricingUrl, privacyUrl, termsUrl, impressumUrl] =
-		getLocalizedMarketingUrls(baseOrigin).filter((url) => url.startsWith(`${baseOrigin}/en`));
+	const [homeUrl, aboutUrl, privacyUrl, termsUrl, impressumUrl] = getLocalizedMarketingUrls(
+		baseOrigin
+	).filter((url) => url.startsWith(`${baseOrigin}/fr`));
 
 	return [
 		`# ${LEGAL_CONFIG.brandName}`,
 		'',
-		`> Public marketing content for the ${LEGAL_CONFIG.brandName} SvelteKit template.`,
+		`> Public marketing content for ${LEGAL_CONFIG.brandName}.`,
 		'',
 		'## Overview',
 		'',
-		`${LEGAL_CONFIG.brandName} is a full-stack starter built with SvelteKit, Convex, Better Auth, Tolgee, and modern SaaS infrastructure. This file only describes the public marketing pages.`,
+		`${LEGAL_CONFIG.brandName} is a full-stack SvelteKit + Convex application. This file only describes the public marketing pages.`,
 		'',
 		'## Canonical Pages',
 		'',
-		`- [Home](${homeUrl}): product overview, positioning, and core integrations`,
+		`- [Home](${homeUrl}): product overview and positioning`,
 		`- [About](${aboutUrl}): team overview and roles`,
-		`- [Pricing](${pricingUrl}): pricing tiers, included features, and billing notes`,
 		`- [Privacy Policy](${privacyUrl}): how personal data is collected, used, and protected`,
 		`- [Terms of Service](${termsUrl}): terms and conditions for using the service`,
 		`- [Impressum](${impressumUrl}): provider identification and contact details`,
@@ -161,7 +161,7 @@ export function renderLlmsTxt(origin: string): string {
 		'',
 		'## Notes',
 		'',
-		'- Markdown content is English-only in v1, even when requested on localized route variants.',
+		'- Markdown content is French-only.',
 		'- Authenticated application routes, admin routes, and API endpoints are intentionally excluded.',
 		''
 	].join('\n');
