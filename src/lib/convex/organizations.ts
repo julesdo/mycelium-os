@@ -941,38 +941,3 @@ export const removeOrganizationMember = authedMutation({
 	}
 });
 
-export const getOnboardingProgress = authedQuery({
-	args: {},
-	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) return null;
-		const orgId = profile.currentOrganizationId;
-
-		const [vehicleCount, memberCount, firstReservation] = await Promise.all([
-			ctx.db
-				.query('vehicles')
-				.withIndex('by_org', (q) => q.eq('organizationId', orgId))
-				.take(1)
-				.then((r) => r.length),
-			ctx.db
-				.query('organizationMembers')
-				.withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-				.take(2)
-				.then((r) => r.length),
-			ctx.db
-				.query('reservations')
-				.withIndex('by_org', (q) => q.eq('organizationId', orgId))
-				.first()
-		]);
-
-		return {
-			orgCreated: true,
-			vehicleAdded: vehicleCount > 0,
-			teamInvited: memberCount > 1,
-			firstReservation: firstReservation !== null
-		};
-	}
-});
