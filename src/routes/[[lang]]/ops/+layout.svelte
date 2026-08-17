@@ -59,10 +59,9 @@
 	}
 
 	const TIER_LABEL: Record<string, string> = {
-		essential: 'Ess.',
-		professional: 'Pro',
-		business: 'Biz',
-		enterprise: 'Ent.'
+		diagnostic: 'Diag.',
+		conformite: 'Conf.',
+		operateur: 'Opé.'
 	};
 
 	const navItems = $derived([

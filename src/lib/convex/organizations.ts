@@ -493,9 +493,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 		if (!org) throw new ConvexError('Organisation introuvable');
 
 		const { tier, seatsAllowed } = resolveEffectivePlan(org);
-		if (tier === 'free') {
-			// free tier = membres illimités, seatsAllowed = 9999
-		} else if (tier === 'none') {
+		if (tier === 'none') {
 			throw new ConvexError('Aucun abonnement actif.');
 		}
 		const memberCount = await ctx.db

@@ -195,7 +195,7 @@ export const getTicketContext = conciergeQuery({
 
 		return {
 			name: org.name,
-			tier: org.paddlePlanTier ?? 'essential',
+			tier: org.paddlePlanTier ?? 'diagnostic',
 			country: org.country ?? null,
 			assignedConcierges: staffList.filter(Boolean),
 			openTicketCount: openTickets.filter((t) => t.status !== 'RESOLVED').length

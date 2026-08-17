@@ -255,7 +255,7 @@ export type PricingTier = {
 
 export const pricingTiers: PricingTier[] = [
 	{
-		id: 'essential',
+		id: 'diagnostic',
 		tier: 'Essential',
 		priceKey: 'landing.pricing.essential.price',
 		subKey: 'landing.pricing.essential.sub',
@@ -270,7 +270,7 @@ export const pricingTiers: PricingTier[] = [
 		ctaKey: 'landing.pricing.cta_start'
 	},
 	{
-		id: 'professional',
+		id: 'conformite',
 		tier: 'Professional',
 		priceKey: 'landing.pricing.professional.price',
 		subKey: 'landing.pricing.professional.sub',
@@ -286,7 +286,7 @@ export const pricingTiers: PricingTier[] = [
 		featured: true
 	},
 	{
-		id: 'business',
+		id: 'operateur',
 		tier: 'Business',
 		priceKey: 'landing.pricing.business.price',
 		subKey: 'landing.pricing.business.sub',
@@ -301,7 +301,7 @@ export const pricingTiers: PricingTier[] = [
 		ctaKey: 'landing.pricing.cta_start'
 	},
 	{
-		id: 'enterprise',
+		id: 'custom',
 		tier: 'Enterprise',
 		priceKey: 'landing.pricing.enterprise.price',
 		subKey: 'landing.pricing.enterprise.sub',

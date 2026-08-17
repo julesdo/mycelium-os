@@ -30,9 +30,9 @@
 	});
 
 	const PADDLE_PRICES: Record<string, string> = {
-		essential: import.meta.env.VITE_PADDLE_PRICE_ESSENTIAL ?? '',
-		professional: import.meta.env.VITE_PADDLE_PRICE_PROFESSIONAL ?? '',
-		business: import.meta.env.VITE_PADDLE_PRICE_BUSINESS ?? ''
+		diagnostic: import.meta.env.VITE_PADDLE_PRICE_DIAGNOSTIC ?? '',
+		conformite: import.meta.env.VITE_PADDLE_PRICE_CONFORMITE ?? '',
+		operateur: import.meta.env.VITE_PADDLE_PRICE_OPERATEUR ?? ''
 	};
 
 	const currentTier = $derived(subscriptionQuery.data?.paddlePlanTier ?? null);
@@ -177,7 +177,7 @@
 				<CardHeader>
 					<CardTitle class="font-medium">
 						<T keyName="pricing.tiers.essential.name" />
-						{#if currentTier === 'essential' && isActive}
+						{#if currentTier === 'diagnostic' && isActive}
 							<span class="ml-2 text-xs font-normal text-muted-foreground">
 								<T keyName="pricing.current_plan_badge" />
 							</span>
@@ -189,7 +189,7 @@
 					<CardDescription class="text-sm">
 						<T keyName="pricing.tiers.essential.description" />
 					</CardDescription>
-					{#if currentTier === 'essential' && isActive}
+					{#if currentTier === 'diagnostic' && isActive}
 						<Button
 							variant="outline"
 							class="mt-4 w-full"
@@ -206,7 +206,7 @@
 						<Button
 							variant="outline"
 							class="mt-4 w-full"
-							onclick={() => handleCheckout('essential')}
+							onclick={() => handleCheckout('diagnostic')}
 							disabled={isPaddleLoading}
 						>
 							{#if isPaddleLoading}
@@ -240,7 +240,7 @@
 				<CardHeader>
 					<CardTitle class="font-medium">
 						<T keyName="pricing.tiers.professional.name" />
-						{#if currentTier === 'professional' && isActive}
+						{#if currentTier === 'conformite' && isActive}
 							<span class="ml-2 text-xs font-normal text-muted-foreground">
 								<T keyName="pricing.current_plan_badge" />
 							</span>
@@ -252,7 +252,7 @@
 					<CardDescription class="text-sm">
 						<T keyName="pricing.tiers.professional.description" />
 					</CardDescription>
-					{#if currentTier === 'professional' && isActive}
+					{#if currentTier === 'conformite' && isActive}
 						<Button
 							data-testid="pricing-manage-professional"
 							variant="outline"
@@ -270,7 +270,7 @@
 						<Button
 							data-testid="pricing-checkout-professional"
 							class="mt-4 w-full"
-							onclick={() => handleCheckout('professional')}
+							onclick={() => handleCheckout('conformite')}
 							disabled={isPaddleLoading}
 						>
 							{#if isPaddleLoading}
@@ -299,7 +299,7 @@
 				<CardHeader>
 					<CardTitle class="font-medium">
 						<T keyName="pricing.tiers.business.name" />
-						{#if currentTier === 'business' && isActive}
+						{#if currentTier === 'operateur' && isActive}
 							<span class="ml-2 text-xs font-normal text-muted-foreground">
 								<T keyName="pricing.current_plan_badge" />
 							</span>
@@ -311,7 +311,7 @@
 					<CardDescription class="text-sm">
 						<T keyName="pricing.tiers.business.description" />
 					</CardDescription>
-					{#if currentTier === 'business' && isActive}
+					{#if currentTier === 'operateur' && isActive}
 						<Button
 							data-testid="pricing-manage-business"
 							variant="outline"
@@ -329,7 +329,7 @@
 						<Button
 							data-testid="pricing-checkout-business"
 							class="mt-4 w-full"
-							onclick={() => handleCheckout('business')}
+							onclick={() => handleCheckout('operateur')}
 							disabled={isPaddleLoading}
 						>
 							{#if isPaddleLoading}

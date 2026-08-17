@@ -15,7 +15,6 @@ import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
 import type * as concierge_health from "../concierge/health.js";
 import type * as concierge_humanAssist from "../concierge/humanAssist.js";
-import type * as concierge_priority from "../concierge/priority.js";
 import type * as concierge_queries from "../concierge/queries.js";
 import type * as concierge_sla from "../concierge/sla.js";
 import type * as concierge_staff from "../concierge/staff.js";
@@ -73,7 +72,6 @@ declare const fullApi: ApiFromModules<{
   billing: typeof billing;
   "concierge/health": typeof concierge_health;
   "concierge/humanAssist": typeof concierge_humanAssist;
-  "concierge/priority": typeof concierge_priority;
   "concierge/queries": typeof concierge_queries;
   "concierge/sla": typeof concierge_sla;
   "concierge/staff": typeof concierge_staff;

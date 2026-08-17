@@ -33,7 +33,7 @@
 					agents={$t(plan.agentsKey)}
 					features={plan.featureKeys.map((k) => $t(k))}
 					cta={$t(plan.ctaKey)}
-					href={plan.id === 'enterprise' ? aboutHref : signupHref}
+					href={plan.id === 'custom' ? aboutHref : signupHref}
 					featured={plan.featured}
 				/>
 			</div>

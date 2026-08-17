@@ -7,29 +7,28 @@
 
 	interface Props {
 		feature: PlanFeature;
-		requiredPlan?: 'professional' | 'business';
+		requiredPlan?: 'conformite' | 'operateur';
 		children?: Snippet;
 	}
 
-	let { feature, requiredPlan = 'professional', children }: Props = $props();
+	let { feature, requiredPlan = 'conformite', children }: Props = $props();
 
 	const billingQ = useQuery((api as any).billing.getBillingStatus, {});
 	const status = $derived(billingQ.data);
 
 	const PLAN_LABELS: Record<string, string> = {
-		professional: 'Professional',
-		business: 'Business'
+		conformite: 'Conformité',
+		operateur: 'Opérateur'
 	};
 
 	const hasAccess = $derived(() => {
 		if (billingQ.isLoading) return true; // Optimistic while loading
 		if (!status) return false;
 		const { tier } = status;
-		if (tier === 'dev' || tier === 'enterprise') return true;
-		if (tier === 'business') return true;
-		if (tier === 'professional') return requiredPlan === 'professional';
-		if (tier === 'essential') return requiredPlan === 'professional';
-		return false; // free / none
+		if (tier === 'dev') return true;
+		if (tier === 'operateur') return true;
+		if (tier === 'conformite') return requiredPlan === 'conformite';
+		return false; // diagnostic / none — n'ont pas accès aux features gated
 	});
 </script>
 

@@ -340,7 +340,7 @@ export const getMyAccessibleOrgs = authedQuery({
 
 		if (staffRole === 'super_admin') {
 			const orgs = await ctx.db.query('organizations').collect();
-			return orgs.map((o) => ({ _id: o._id, name: o.name, country: o.country ?? null, tier: o.paddlePlanTier ?? 'essential' }));
+			return orgs.map((o) => ({ _id: o._id, name: o.name, country: o.country ?? null, tier: o.paddlePlanTier ?? 'diagnostic' }));
 		}
 
 		// Concierge : orgs assignées seulement
@@ -352,7 +352,7 @@ export const getMyAccessibleOrgs = authedQuery({
 		const orgs = await Promise.all(accesses.map((a) => ctx.db.get(a.organizationId)));
 		return orgs
 			.filter(Boolean)
-			.map((o) => ({ _id: o!._id, name: o!.name, country: o!.country ?? null, tier: o!.paddlePlanTier ?? 'essential' }));
+			.map((o) => ({ _id: o!._id, name: o!.name, country: o!.country ?? null, tier: o!.paddlePlanTier ?? 'diagnostic' }));
 	}
 });
 

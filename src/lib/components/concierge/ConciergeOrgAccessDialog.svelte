@@ -63,10 +63,9 @@
 	}
 
 	const TIER_COLOR: Record<string, string> = {
-		essential: 'text-slate-500',
-		professional: 'text-blue-500',
-		business: 'text-violet-500',
-		enterprise: 'text-amber-500'
+		diagnostic: 'text-slate-500',
+		conformite: 'text-blue-500',
+		operateur: 'text-violet-500'
 	};
 </script>
 
