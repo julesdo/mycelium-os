@@ -22,6 +22,7 @@ import type * as concierge_tickets from "../concierge/tickets.js";
 import type * as concierge_timeline from "../concierge/timeline.js";
 import type * as constants from "../constants.js";
 import type * as crons from "../crons.js";
+import type * as egalim_tables from "../egalim/tables.js";
 import type * as emails__generated_adminReplyNotification from "../emails/_generated/adminReplyNotification.js";
 import type * as emails__generated_index from "../emails/_generated/index.js";
 import type * as emails__generated_newTicketAdminNotification from "../emails/_generated/newTicketAdminNotification.js";
@@ -75,6 +76,7 @@ declare const fullApi: ApiFromModules<{
   "concierge/timeline": typeof concierge_timeline;
   constants: typeof constants;
   crons: typeof crons;
+  "egalim/tables": typeof egalim_tables;
   "emails/_generated/adminReplyNotification": typeof emails__generated_adminReplyNotification;
   "emails/_generated/index": typeof emails__generated_index;
   "emails/_generated/newTicketAdminNotification": typeof emails__generated_newTicketAdminNotification;
