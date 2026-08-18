@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
+import { normaliserLibelle } from './normalisation';
 
 /**
  * Les écritures en base de l'orchestration d'extraction (`extraction.ts`).
@@ -18,15 +19,6 @@ const vLigneAEnregistrer = v.object({
 });
 
 const vBaseTaux = v.object({ taux: v.number(), baseHT: v.number() });
-
-/**
- * Normalisation minimale et provisoire : espaces et casse seulement. La
- * normalisation robuste aux erreurs OCR (0/O, !/I, 3/E, nombres scindés...)
- * est la tâche P1-T7 — ne pas la préempter ici.
- */
-function normaliserBasique(rawLabel: string): string {
-	return rawLabel.trim().replace(/\s+/g, ' ').toUpperCase();
-}
 
 /**
  * Les retours des queries internes sont volontairement RESTREINTS aux champs
@@ -186,14 +178,15 @@ export const marquerReussite = internalMutation({
 				batchId: args.batchId,
 				documentId: args.documentId,
 				rawLabel: ligne.rawLabel,
-				normalizedLabel: normaliserBasique(ligne.rawLabel),
+				normalizedLabel: normaliserLibelle(ligne.rawLabel),
 				quantity: ligne.quantity,
 				unit: ligne.unit,
 				unitPrice: ligne.unitPrice,
 				amountHT: ligne.amountHT,
 				vatRate: ligne.vatRate,
 				invoiceDate: dateFacture,
-				// Pas de champs de classification ici : c'est la tâche P1-T7.
+				// Pas de champs de classification ici : c'est `classification.ts` qui les
+				// renseigne, par libellé distinct et non par ligne.
 				reviewStatus: 'AUTO'
 			});
 		}
