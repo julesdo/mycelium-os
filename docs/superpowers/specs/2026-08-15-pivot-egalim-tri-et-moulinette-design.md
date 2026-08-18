@@ -446,6 +446,37 @@ serveur coûte une journée et ne se justifie que sur demande client explicite.
 
 ---
 
+### 4.6 Décisions d'API Claude
+
+Vérifiées le 15/08/2026 contre la référence API. Elles conditionnent le coût et la fiabilité de
+la classification, et plusieurs corrigent une hypothèse fausse.
+
+| Sujet | Décision | Raison |
+|---|---|---|
+| SDK | **`@anthropic-ai/sdk`** (officiel, à installer) | Le projet n'a que `ai` (Vercel) + `@openrouter/ai-sdk-provider`. Le `cache_control` et les sorties typées passent par le SDK natif. |
+| Modèle | **`claude-opus-5`** | Défaut. Un modèle moins cher est un arbitrage de Jules, pas un choix par défaut. |
+| Sortie typée | **`output_config.format`** (`json_schema`) | **Le prefill assistant renvoie une 400 sur Opus 5.** La technique classique du `{"` en amorce est morte. |
+| Effort | `output_config: { effort: 'low' }`, thinking laissé actif | La classification n'est pas un raisonnement profond. Sur Opus 5, `low` reste excellent. |
+| Thinking | **ne pas désactiver** | Désactivé, Opus 5 peut faire fuiter des balises `<thinking>` dans la réponse. `effort: low` coûte moins cher sans ce risque. |
+| Échantillonnage | **aucun paramètre** | `temperature`, `top_p`, `top_k` renvoient une **400** sur Opus 5. |
+| Cache | `cache_control: { type: 'ephemeral' }` sur le dernier bloc système | Le référentiel y va en entier. Minimum cacheable : **512 tokens** sur Opus 5 — le référentiel les dépasse largement. |
+| `max_tokens` | 8 000 par lot de 50 libellés | Sous le seuil de 16 000 où le streaming devient nécessaire. |
+
+**Ordre de rendu du prompt : `tools` puis `system` puis `messages`.** Le référentiel est stable et va
+donc en premier, dans `system`, avec le point de cache sur son dernier bloc. Les libellés à classer
+partent dans `messages`, **après** le point de cache — sinon chaque lot réécrit le cache au lieu de
+le lire.
+
+**Vérification obligatoire :** `usage.cache_read_input_tokens`. S'il reste à zéro sur des lots
+successifs, le cache ne prend pas et le coût par diagnostic explose. Cause la plus probable : une
+date, un identifiant de lot ou un `Date.now()` glissé dans le prompt système.
+
+**Piste de phase 2 : l'API Batches** (`/v1/messages/batches`) donne **-50 % sur tous les tokens**,
+avec un traitement sous 24 h. Un diagnostic n'est pas sensible à la latence — le client dépose ses
+factures et reçoit son rapport plus tard. Ça diviserait le coût d'API par deux. Non retenu en V0
+parce que ça ajoute une machine à états (soumission, sondage, reprise) là où des appels synchrones
+par lots suffisent à prouver le produit.
+
 ## 5. Les deux espaces
 
 Fleet avait trois espaces (`/admin` DAF, `/app` salarié, `/concierge` staff). Une cantine n'a
