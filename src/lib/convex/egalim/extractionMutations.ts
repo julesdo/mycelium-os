@@ -119,7 +119,16 @@ export const marquerReussite = internalMutation({
 		totalHT: v.union(v.number(), v.null()),
 		basesParTaux: v.array(vBaseTaux),
 		invoiceDate: v.union(v.string(), v.null()),
-		invoiceNumber: v.union(v.string(), v.null())
+		invoiceNumber: v.union(v.string(), v.null()),
+		/**
+		 * Anomalie non bloquante constatée pendant l'extraction — typiquement des
+		 * lignes au montant illisible, écartées plutôt que devinées. Le document
+		 * reste exploitable, mais l'opérateur doit savoir que le dénominateur est
+		 * incomplet. Stockée dans `extractionError` malgré un statut `DONE` : un
+		 * `extractionError` non vide sur un document `DONE` est un avertissement,
+		 * pas un échec.
+		 */
+		avertissement: v.optional(v.string())
 	},
 	returns: v.null(),
 	handler: async (ctx, args) => {
@@ -148,7 +157,7 @@ export const marquerReussite = internalMutation({
 
 		await ctx.db.patch(args.documentId, {
 			extractionStatus: 'DONE',
-			extractionError: undefined,
+			extractionError: args.avertissement,
 			totalHT: args.totalHT ?? undefined,
 			basesParTaux: args.basesParTaux,
 			invoiceDate: args.invoiceDate ?? document.invoiceDate,

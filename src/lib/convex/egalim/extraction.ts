@@ -182,7 +182,12 @@ async function extraireDocumentAvecClaude(
 			illisible = true;
 			if (doc.raisonIllisible) raisonsIllisibles.push(doc.raisonIllisible);
 		}
-		if (doc.totaux.totalHT !== null && totaux.totalHT === null) {
+		// Le DERNIER morceau qui porte un total l'emporte : sur une facture
+		// multi-pages, le total HT et les bases de TVA sont imprimés en pied de
+		// document, pas en pied de page. Retenir le premier reviendrait à
+		// comparer toutes les lignes à un sous-total de page — la vérification
+		// échouerait systématiquement et brûlerait les deux relances.
+		if (doc.totaux.totalHT !== null) {
 			totaux = doc.totaux;
 		}
 		supplierName ??= doc.supplierName;
@@ -209,10 +214,18 @@ function agregerLignesBrutes(lignes: readonly LigneBrute[]): {
 	basesParTaux: Array<{ taux: number; baseHT: number }>;
 } {
 	const totalHT = lignes.reduce((s, l) => s + l.amountHT, 0);
+
+	// Une ventilation par taux n'a de sens que si TOUTES les lignes portent un
+	// taux : sinon la somme des bases ne peut pas retomber sur le total, et on
+	// stockerait une ventilation incohérente qui piégerait qui l'utilise.
+	if (lignes.some((l) => l.vatRate === undefined)) {
+		return { totalHT, basesParTaux: [] };
+	}
+
 	const parTaux = new Map<number, number>();
 	for (const ligne of lignes) {
-		if (ligne.vatRate === undefined) continue;
-		parTaux.set(ligne.vatRate, (parTaux.get(ligne.vatRate) ?? 0) + ligne.amountHT);
+		const taux = ligne.vatRate as number;
+		parTaux.set(taux, (parTaux.get(taux) ?? 0) + ligne.amountHT);
 	}
 	return { totalHT, basesParTaux: Array.from(parTaux, ([taux, baseHT]) => ({ taux, baseHT })) };
 }
@@ -231,6 +244,19 @@ async function traiterCsv(
 			erreur: resultat.erreur
 		});
 		return;
+	}
+
+	// `parseCsv` n'invente jamais un montant : une ligne dont le montant est
+	// illisible atterrit dans `lignesIgnorees` plutôt que d'être devinée. La
+	// jeter ici reviendrait à amputer le dénominateur en silence — exactement
+	// ce que la conception du parseur cherche à éviter. On la remonte donc à
+	// l'opérateur, en gardant le document exploitable.
+	let avertissement: string | undefined;
+	if (resultat.lignesIgnorees.length > 0) {
+		const apercu = resultat.lignesIgnorees.slice(0, 5).join(' | ');
+		const reste =
+			resultat.lignesIgnorees.length > 5 ? ` (+${resultat.lignesIgnorees.length - 5} autres)` : '';
+		avertissement = `${resultat.lignesIgnorees.length} ligne(s) au montant illisible, non comptées : ${apercu}${reste}`;
 	}
 
 	const { totalHT, basesParTaux } = agregerLignesBrutes(resultat.lignes);
@@ -252,7 +278,8 @@ async function traiterCsv(
 		totalHT,
 		basesParTaux,
 		invoiceDate: null,
-		invoiceNumber: null
+		invoiceNumber: null,
+		avertissement
 	});
 }
 
