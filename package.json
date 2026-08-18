@@ -46,6 +46,7 @@
 	},
 	"packageManager": "bun@1.3.9",
 	"dependencies": {
+		"@anthropic-ai/sdk": "^0.117.1",
 		"@better-auth/passkey": "~1.6.9",
 		"@better-svelte-email/components": "2.0.0",
 		"@better-svelte-email/server": "2.0.0",
@@ -95,6 +96,7 @@
 		"svelte-konva": "^1.0.1",
 		"svelte-streamdown": "^3.0.0",
 		"svelte-toolbelt": "^0.10.6",
+		"unpdf": "^1.8.1",
 		"valibot": "^1.2.0",
 		"varlock": "^1.1.0",
 		"web-haptics": "^0.0.6",
