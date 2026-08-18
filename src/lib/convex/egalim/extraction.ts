@@ -413,6 +413,13 @@ export const traiterDocument = internalAction({
 				erreur: erreur instanceof Error ? erreur.message : 'Erreur inattendue pendant l’extraction.'
 			});
 		}
+
+		// Réussite comme échec, le lot avance : deux fichiers illisibles sur
+		// quarante ne doivent pas empêcher le diagnostic sur les trente-huit
+		// autres.
+		await ctx.runMutation(internal.egalim.extractionMutations.enchainerSiLotTermine, {
+			batchId: document.batchId
+		});
 		return null;
 	}
 });

@@ -24,6 +24,7 @@ import type * as constants from "../constants.js";
 import type * as crons from "../crons.js";
 import type * as egalim_agregation from "../egalim/agregation.js";
 import type * as egalim_appariement from "../egalim/appariement.js";
+import type * as egalim_batches from "../egalim/batches.js";
 import type * as egalim_classificateurClaude from "../egalim/classificateurClaude.js";
 import type * as egalim_classification from "../egalim/classification.js";
 import type * as egalim_classificationMutations from "../egalim/classificationMutations.js";
@@ -97,6 +98,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   "egalim/agregation": typeof egalim_agregation;
   "egalim/appariement": typeof egalim_appariement;
+  "egalim/batches": typeof egalim_batches;
   "egalim/classificateurClaude": typeof egalim_classificateurClaude;
   "egalim/classification": typeof egalim_classification;
   "egalim/classificationMutations": typeof egalim_classificationMutations;

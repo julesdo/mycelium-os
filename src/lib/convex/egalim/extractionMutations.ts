@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
+import { internal } from '../_generated/api';
 import { normaliserLibelle } from './normalisation';
 
 /**
@@ -201,6 +202,41 @@ export const marquerReussite = internalMutation({
 			linesCount: args.lignes.length
 		});
 		return null;
+	}
+});
+
+/**
+ * Enchaîne sur la classification quand le DERNIER document du lot a fini de
+ * s'extraire, réussi ou échoué.
+ *
+ * Appelée après chaque document plutôt que planifiée à l'avance : c'est le
+ * seul endroit qui sait quand une extraction se termine, et l'ordre
+ * d'arrivée des documents n'est pas connu à l'avance. Le test « plus aucun
+ * PENDING » est fait en transaction, donc un seul appelant peut le voir
+ * passer à vrai.
+ */
+export const enchainerSiLotTermine = internalMutation({
+	args: { batchId: v.id('invoiceBatches') },
+	returns: v.boolean(),
+	handler: async (ctx, { batchId }) => {
+		const restants = await ctx.db
+			.query('invoiceDocuments')
+			.withIndex('by_batch_and_status', (q) =>
+				q.eq('batchId', batchId).eq('extractionStatus', 'PENDING')
+			)
+			.first();
+		if (restants) return false;
+
+		const batch = await ctx.db.get(batchId);
+		// Déjà passé à la suite : ne pas relancer une seconde chaîne.
+		if (!batch || batch.status !== 'EXTRACTING') return false;
+
+		await ctx.db.patch(batchId, { status: 'CLASSIFYING' });
+		await ctx.scheduler.runAfter(0, internal.egalim.classification.classifierLot, {
+			batchId,
+			offset: 0
+		});
+		return true;
 	}
 });
 
