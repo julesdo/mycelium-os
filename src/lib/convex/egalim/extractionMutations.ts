@@ -1,7 +1,9 @@
 import { v } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
 import { internal } from '../_generated/api';
-import { normaliserLibelle } from './normalisation';
+import type { MutationCtx } from '../_generated/server';
+import type { Id } from '../_generated/dataModel';
+import { normaliserLibelle, normaliserFournisseur } from './normalisation';
 
 /**
  * Les écritures en base de l'orchestration d'extraction (`extraction.ts`).
@@ -146,6 +148,52 @@ export const accumulerCout = internalMutation({
 	}
 });
 
+/**
+ * Rattache un nom de fournisseur imprimé à une fiche `suppliers` de
+ * l'organisation, en créant la fiche au besoin.
+ *
+ * Le rapprochement se fait sur le nom NORMALISÉ (formes juridiques retirées,
+ * substitutions d'OCR appliquées) : « POMONA », « Pomona S.A. » et
+ * « P0MONA SAS » désignent la même maison, et les compter séparément
+ * éclaterait les courriers de demande d'attestation en trois envois au même
+ * destinataire. `rawNames` garde toutes les graphies rencontrées.
+ */
+async function rattacherFournisseur(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	nomImprime: string | null
+): Promise<Id<'suppliers'> | undefined> {
+	if (!nomImprime || nomImprime.trim() === '') return undefined;
+
+	const nom = normaliserFournisseur(nomImprime);
+	if (nom === '') return undefined;
+
+	const existant = await ctx.db
+		.query('suppliers')
+		.withIndex('by_org_and_name', (q) =>
+			q.eq('organizationId', organizationId).eq('name', nom)
+		)
+		.first();
+
+	if (existant) {
+		if (!existant.rawNames.includes(nomImprime)) {
+			await ctx.db.patch(existant._id, { rawNames: [...existant.rawNames, nomImprime] });
+		}
+		return existant._id;
+	}
+
+	return await ctx.db.insert('suppliers', {
+		organizationId,
+		name: nom,
+		rawNames: [nomImprime],
+		// Le type et le statut d'attestation se renseignent plus tard, à la
+		// main : rien dans une facture ne dit si l'on a affaire à un grossiste
+		// ou à un producteur.
+		type: 'AUTRE',
+		attestationStatus: 'NONE'
+	});
+}
+
 export const marquerReussite = internalMutation({
 	args: {
 		documentId: v.id('invoiceDocuments'),
@@ -156,6 +204,13 @@ export const marquerReussite = internalMutation({
 		basesParTaux: v.array(vBaseTaux),
 		invoiceDate: v.union(v.string(), v.null()),
 		invoiceNumber: v.union(v.string(), v.null()),
+		/**
+		 * Nom du fournisseur tel qu'imprimé. Rattaché aux lignes parce que les
+		 * courriers de demande d'attestation se groupent par fournisseur, et
+		 * que ce sont eux qui rendent le diagnostic immédiatement rentable.
+		 * `null` pour un export comptable, qui ne le porte pas toujours.
+		 */
+		supplierName: v.optional(v.union(v.string(), v.null())),
 		/**
 		 * Anomalie non bloquante constatée pendant l'extraction — typiquement des
 		 * lignes au montant illisible, écartées plutôt que devinées. Le document
@@ -172,12 +227,18 @@ export const marquerReussite = internalMutation({
 		if (!document) return null;
 
 		const dateFacture = args.invoiceDate ?? document.invoiceDate ?? '';
+		const supplierId = await rattacherFournisseur(
+			ctx,
+			args.organizationId,
+			args.supplierName ?? null
+		);
 
 		for (const ligne of args.lignes) {
 			await ctx.db.insert('invoiceLines', {
 				organizationId: args.organizationId,
 				batchId: args.batchId,
 				documentId: args.documentId,
+				supplierId,
 				rawLabel: ligne.rawLabel,
 				normalizedLabel: normaliserLibelle(ligne.rawLabel),
 				quantity: ligne.quantity,
@@ -195,6 +256,7 @@ export const marquerReussite = internalMutation({
 		await ctx.db.patch(args.documentId, {
 			extractionStatus: 'DONE',
 			extractionError: args.avertissement,
+			supplierId,
 			totalHT: args.totalHT ?? undefined,
 			basesParTaux: args.basesParTaux,
 			invoiceDate: args.invoiceDate ?? document.invoiceDate,

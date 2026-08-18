@@ -358,7 +358,8 @@ async function traiterAvecClaude(
 				totalHT: resultat.doc.totaux.totalHT,
 				basesParTaux: resultat.doc.totaux.basesParTaux,
 				invoiceDate: resultat.doc.invoiceDate,
-				invoiceNumber: resultat.doc.invoiceNumber
+				invoiceNumber: resultat.doc.invoiceNumber,
+				supplierName: resultat.doc.supplierName
 			});
 			return;
 		}

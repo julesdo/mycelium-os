@@ -1,6 +1,7 @@
 import { v, ConvexError } from 'convex/values';
 import { conciergeQuery, conciergeMutation } from '../functions';
 import type { MutationCtx } from '../_generated/server';
+import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { REFERENTIEL_VERSION } from '../../egalim/referentiel';
 import type { Famille, Label } from '../../egalim/types';
@@ -225,6 +226,13 @@ async function arbitrer(
 		labelsPendingReview: libellesRestants.size,
 		status: libellesRestants.size === 0 ? 'READY' : batch.status
 	});
+
+	// Dernier libellé arbitré : le diagnostic se produit sans qu'on le
+	// demande. Le client voit son chiffre apparaître, il n'a pas à savoir
+	// qu'une file d'arbitrage existait.
+	if (libellesRestants.size === 0) {
+		await ctx.scheduler.runAfter(0, internal.egalim.diagnostics.produireSiPret, { batchId });
+	}
 
 	return lignes.length;
 }
