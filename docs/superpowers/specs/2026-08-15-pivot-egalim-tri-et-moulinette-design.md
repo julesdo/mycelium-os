@@ -384,7 +384,32 @@ Conséquences :
 chemin royal, réclamé en priorité par le script commercial), **PDF texte** (extraction du texte puis
 structuration par Claude en sortie typée), **PDF scanné / photo** (OCR).
 
-**Périmètre V0 : CSV et PDF texte uniquement.** L'OCR est explicitement reporté par le doc 05.
+> **Révision du 15/08/2026, après analyse d'une vraie facture.** Le périmètre initial — « CSV et PDF
+> texte uniquement, OCR reporté » — ne tient pas. Les factures arrivent en **PDF texte, PDF scanné,
+> image, photo, CSV, Excel et texte brut**, avec une **disposition différente par fournisseur** et
+> des erreurs de reconnaissance. Un parseur par forme ne survit pas à cette diversité : chaque
+> nouvelle disposition demande une heuristique de plus, et elle casse **silencieusement** — elle
+> produit des lignes fausses plutôt qu'une erreur.
+>
+> **Deux chemins remplacent la famille de parseurs :**
+>
+> | Entrée | Traitement |
+> |---|---|
+> | CSV, Excel | Parseur déterministe — déjà structuré, exact, gratuit |
+> | PDF, image, photo, texte brut | **Claude en extracteur**, sortie typée |
+>
+> Claude Opus 5 lit les images de documents nativement (2 576 px sur le grand côté). Une photo, une
+> page scannée et un texte océrisé passent par le même appel.
+>
+> **L'extraction n'est pas crue sur parole : elle est vérifiée.** Une facture porte ses propres
+> invariants — total HT, bases de TVA par taux. Si la somme des lignes extraites n'y retombe pas,
+> l'extraction est relancée en signalant l'écart, deux fois au maximum, puis le document part en
+> revue humaine. C'est ce qui rend une extraction par LLM fiable.
+>
+> **Conséquence de coût :** extraire coûte des tokens **par document**, là où classer coûte par
+> libellé distinct. Un dossier de quarante pages scannées pousse au-delà de la fourchette de 0,50 à
+> 2 € du doc 05. Trois leviers, dans l'ordre : réclamer l'export comptable (le chemin CSV est
+> gratuit), l'API Batches (−50 %), un modèle moins cher sur la seule extraction.
 
 **Étape 4 — Classification.** Lots d'environ 50 libellés par appel Claude, référentiel en
 `cache_control`, sortie structurée. L'action Convex traite un lot puis **se re-planifie** pour le
@@ -611,7 +636,8 @@ tourne pas.
 ## 9. Ce que cette spec ne couvre pas
 
 - La refonte complète de la landing publique (phase 2)
-- L'OCR des factures scannées et photographiées
+- L'apprentissage de la disposition propre à chaque fournisseur (chaque facture est relue de zéro)
+- La correction manuelle, ligne à ligne, d'une extraction en échec
 - Le générateur PDF serveur
 - Les étages 3, 4 et 5 : sourcing, producteurs, commandes, mandat de facturation, tournées
 - Le multi-sites du palier tarifaire L

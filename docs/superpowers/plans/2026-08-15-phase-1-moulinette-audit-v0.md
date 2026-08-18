@@ -41,7 +41,9 @@
 | `src/lib/egalim/referentiel.ts` | Le barème, versionné. **Du code, jamais des données.** |
 | `src/lib/convex/egalim/tables.ts` | Les 8 tables, importées par `schema.ts` |
 | `src/lib/convex/egalim/parsers/csv.ts` | Parsing CSV + mapping de colonnes |
-| `src/lib/convex/egalim/parsers/pdfText.ts` | Extraction PDF texte |
+| `src/lib/convex/egalim/extractionSchema.ts` | Contrat de sortie typée de l'extraction |
+| `src/lib/convex/egalim/extracteurClaude.ts` | Extraction universelle : PDF, image, photo, texte |
+| `src/lib/convex/egalim/verification.ts` | Contrôle arithmétique contre les totaux du document |
 | `src/lib/convex/egalim/extraction.ts` | Orchestration document → `invoiceLines` |
 | `src/lib/convex/egalim/normalisation.ts` | Libellés distincts, fournisseurs dédupliqués |
 | `src/lib/convex/egalim/prompt.ts` | Prompt système (référentiel, mis en cache) |
@@ -118,7 +120,30 @@ Ces faux amis entrent dans le prompt système en tant que contre-exemples explic
 
 Les tuyaux `|` n'apparaissent que dans l'en-tête ; les données sont alignées à l'espace. Ce n'est ni du CSV, ni un tableau exploitable par un séparateur. L'extraction doit traiter ce format en plus du CSV. Traité en tâche 6.
 
-### 6. Vérité terrain de cette facture
+### 6. Conséquence architecturale : Claude extrait, il ne fait pas que classer
+
+Les factures arrivent en **PDF texte, PDF scanné, image, photo, CSV, Excel et texte brut**, avec une **disposition différente par fournisseur**, des erreurs de reconnaissance et des mises en forme cassées. Un parseur par forme ne survit pas à cette diversité : chaque nouveau fournisseur demande une heuristique de plus, chaque heuristique casse sur le suivant, et elle casse **silencieusement** — elle produit des lignes fausses plutôt qu'une erreur.
+
+Le découpage retenu tient en deux chemins :
+
+| Entrée | Traitement | Justification |
+|---|---|---|
+| **CSV, Excel** | Parseur déterministe (tâche 5) | Déjà structuré. Exact, gratuit, instantané. Aucune raison de payer des tokens pour lire un tableau. |
+| **PDF texte, PDF scanné, image, photo, texte brut** | **Claude en extracteur**, sortie typée (tâche 6) | Un seul chemin pour N dispositions. Absorbe les formats inconnus sans code nouveau. |
+
+**Claude Opus 5 lit les images de documents nativement** — 2 576 px sur le grand côté, coordonnées à l'échelle 1:1. Une photo de facture, une page scannée et un texte océrisé passent par le même appel.
+
+**Le contrôle TVA devient la boucle de vérification de l'extraction**, pas seulement une validation d'après-coup. Une facture porte plusieurs points de contrôle arithmétiques — bases par taux, total HT, net à payer. Si la somme des lignes extraites ne retombe pas dessus, l'extraction est fausse et on la relance en le signalant au modèle. C'est ce qui rend une extraction par LLM fiable : elle n'est pas crue sur parole, elle est vérifiée contre des invariants que le document porte lui-même.
+
+**Coût.** Extraire par Claude coûte des tokens **par document** (jusqu'à ~4 800 tokens pour une image pleine résolution), là où classer coûte par libellé distinct. Un dossier de quarante pages scannées pousse le coût par diagnostic vers le haut de la fourchette du doc 05, voire au-delà. Trois leviers, dans cet ordre de préférence :
+
+1. **Réclamer l'export comptable** — le chemin CSV ne coûte rien. C'est la consigne d'interface de la tâche 10 et le script commercial du doc 05.
+2. **L'API Batches** — −50 % sur tous les tokens, traitement sous 24 h. Un diagnostic n'est pas sensible à la latence.
+3. **Un modèle moins cher sur la seule extraction** — arbitrage de Jules, pas décision par défaut.
+
+Le garde-fou de coût de la tâche 8 couvre les deux étapes, pas seulement la classification.
+
+### 7. Vérité terrain de cette facture
 
 Elle sert de référence à la fixture anonymisée de la tâche 3 :
 
@@ -1058,169 +1083,264 @@ git add -A && git commit --no-verify -m "feat(egalim): extraction CSV avec detec
 
 ---
 
-## Task 6: Extraction des factures texte et océrisées
+## Task 6: Extraction universelle par Claude
 
-C'est le format de la vraie facture : colonnes à largeur fixe, lignes de continuation, pied de TVA exploitable. Le plus délicat de la phase, et celui où une heuristique fausse produit des lignes fausses **silencieusement**.
+Le chemin qui absorbe tous les formats non structurés : PDF texte, PDF scanné, image, photo, texte océrisé — avec une disposition différente par fournisseur. Un seul appel, une sortie typée, et une vérification arithmétique contre les totaux que le document porte lui-même.
+
+C'est la tâche la plus délicate de la phase. Une extraction fausse ne lève aucune erreur : elle produit des lignes plausibles et fausses, et tout le diagnostic en découle.
 
 **Files:**
-- Create: `src/lib/convex/egalim/parsers/texte.ts`
-- Create: `src/lib/convex/egalim/parsers/pdfText.ts`
+- Create: `src/lib/convex/egalim/extractionSchema.ts`
+- Create: `src/lib/convex/egalim/extracteurClaude.ts`
+- Create: `src/lib/convex/egalim/verification.ts`
 - Create: `src/lib/convex/egalim/extraction.ts`
-- Test: `src/lib/convex/egalim/__tests__/texte.test.ts`
+- Test: `src/lib/convex/egalim/__tests__/verification.test.ts`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [ ] **Step 1: Définir le schéma de sortie typée**
+
+`extractionSchema.ts` — le contrat que Claude doit remplir. Il porte les lignes **et** les totaux du document, parce que ce sont les totaux qui permettent de vérifier les lignes.
+
+```ts
+import { z } from 'zod';
+
+export const ligneExtraiteSchema = z.object({
+	rawLabel: z.string().describe(
+		'Le libellé du produit tel qu’il apparaît, y compris toute mention de label figurant sur une ligne de continuation rattachée à ce produit.'
+	),
+	quantity: z.number().nullable(),
+	unit: z.string().nullable(),
+	unitPrice: z.number().nullable(),
+	amountHT: z.number().describe(
+		'Montant HT de la ligne. NÉGATIF pour un avoir, une remise ou un rabais.'
+	),
+	vatRate: z.number().nullable().describe(
+		'Taux de TVA de la ligne en pourcentage (5.5, 10, 20). null si absent.'
+	)
+});
+
+export const documentExtraitSchema = z.object({
+	supplierName: z.string().nullable(),
+	invoiceNumber: z.string().nullable(),
+	invoiceDate: z.string().nullable().describe('Format AAAA-MM-JJ.'),
+	lignes: z.array(ligneExtraiteSchema),
+	totaux: z.object({
+		totalHT: z.number().nullable(),
+		basesParTaux: z
+			.array(z.object({ taux: z.number(), baseHT: z.number() }))
+			.describe('Bases de TVA par taux, telles qu’imprimées en pied de facture.')
+	}),
+	illisible: z.boolean().describe(
+		'true si le document n’est pas exploitable : trop flou, tronqué, ou ce n’est pas une facture.'
+	),
+	raisonIllisible: z.string().nullable()
+});
+
+export type DocumentExtrait = z.infer<typeof documentExtraitSchema>;
+```
+
+`illisible` est un champ de sortie délibéré : sans lui, un modèle à qui l'on demande des lignes en invente plutôt que d'admettre qu'il ne voit rien. Lui donner une porte de sortie explicite est ce qui évite les hallucinations sur une photo floue.
+
+- [ ] **Step 2: Écrire le prompt d'extraction**
+
+Il ne décrit **aucune disposition** — c'est tout l'intérêt. Il décrit ce qu'est une ligne de facture et les pièges observés.
+
+```
+Tu extrais les lignes d'une facture fournisseur de restauration collective française.
+La disposition varie d'un fournisseur à l'autre : colonnes, tableaux, texte libre,
+largeurs fixes. N'attends aucun format particulier.
+
+RÈGLES D'EXTRACTION
+- Une ligne de facture porte un libellé produit et un montant HT. Elle peut aussi
+  porter une quantité, une unité, un prix unitaire et un taux de TVA.
+- LIGNES DE CONTINUATION : une ligne sans montant qui suit un produit le complète.
+  Si elle porte une mention de label ou de certification, RATTACHE-LA au libellé
+  du produit précédent. Si elle ne porte qu'un conditionnement, ignore-la.
+- AVOIRS ET REMISES : un montant négatif reste une ligne, avec son montant négatif.
+- N'EXTRAIS PAS : les en-têtes de tableau, les totaux intermédiaires, les sous-totaux,
+  les récapitulatifs de TVA, le total HT, le net à payer, les mentions légales.
+- ERREURS DE RECONNAISSANCE : le texte peut venir d'un OCR (0 pour O, ! pour I ou L,
+  3 pour E). Restitue le libellé tel que tu le lis, sans le corriger — la
+  normalisation est faite ailleurs.
+- TOTAUX : relève le total HT et les bases de TVA par taux telles qu'imprimées.
+  Ils servent à vérifier ton extraction.
+- Si le document est illisible ou n'est pas une facture, mets illisible à true et
+  explique pourquoi. N'invente jamais de lignes.
+```
+
+- [ ] **Step 3: Écrire `extracteurClaude.ts`**
+
+Une action Convex qui aiguille selon la nature du document :
+
+| Entrée | Envoi à Claude |
+|---|---|
+| PDF avec couche texte | Texte extrait par `unpdf`, en bloc `text` |
+| PDF sans couche texte | Chaque page rendue en image via `unpdf`, en blocs `image` |
+| Image, photo (`png`, `jpg`, `webp`) | Le fichier, en bloc `image` |
+| Texte brut, `.txt` | Le contenu, en bloc `text` |
+
+Paramètres d'appel, alignés sur la spec §4.6 :
+
+| Paramètre | Valeur |
+|---|---|
+| Modèle | `claude-opus-5` |
+| Sortie | `output_config.format` construit depuis `documentExtraitSchema` |
+| Effort | `'low'` — lire un tableau n'est pas un raisonnement profond |
+| Échantillonnage | **aucun** (400 sur Opus 5) |
+| `max_tokens` | 16 000 — une facture dense peut porter 200 lignes |
+| Cache | `cache_control` sur le prompt d'extraction (stable) |
+
+**Images :** ne pas redimensionner en amont. Opus 5 accepte 2 576 px sur le grand côté et les gains de lecture sur un document dense justifient les tokens. Un document de plus de 20 pages est découpé en appels de 10 pages, et les lignes concaténées.
+
+- [ ] **Step 4: Écrire les tests de vérification**
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { extraireLignesTexte, extraireBasesTva } from '../parsers/texte';
+import { verifierExtraction } from '../verification';
 
-const FIXTURE = readFileSync('src/lib/fixtures/factures/grossiste-ocr-01.txt', 'utf8');
-
-describe('extraireLignesTexte — fixture océrisée de référence', () => {
-	const lignes = extraireLignesTexte(FIXTURE);
-
-	it('produit exactement 8 lignes exploitables', () => {
-		expect(lignes).toHaveLength(8);
-	});
-
-	it('n’a pas transformé « -> (Cartons de 3kg) » en ligne', () => {
-		expect(lignes.some((l) => l.rawLabel.includes('Cartons de 3kg'))).toBe(false);
-	});
-
-	it('fusionne le label de continuation dans le libellé du cabillaud', () => {
-		const poisson = lignes.find((l) => l.rawLabel.includes('CAB!LLAUD'));
-		expect(poisson).toBeDefined();
-		expect(poisson!.rawLabel).toContain('MSC');
-		expect(poisson!.amountHT).toBeCloseTo(62.0, 6);
-	});
-
-	it('conserve la remise comme ligne négative', () => {
-		const remise = lignes.find((l) => l.rawLabel.includes('REMISE'));
-		expect(remise!.amountHT).toBeCloseTo(-2.25, 6);
-	});
-
-	it('capte le code TVA de chaque ligne', () => {
-		const eponge = lignes.find((l) => l.rawLabel.includes('LAVETTE'));
-		expect(eponge!.vatCode).toBe('2');
-		const carotte = lignes.find((l) => l.rawLabel.includes('CAR0TTES'));
-		expect(carotte!.vatCode).toBe('1');
-	});
-
-	it('n’a pas pris l’en-tête ni le pied pour des lignes', () => {
-		expect(lignes.some((l) => l.rawLabel.includes('DES!GNATION'))).toBe(false);
-		expect(lignes.some((l) => l.rawLabel.includes('BASES T.V.A'))).toBe(false);
-		expect(lignes.some((l) => l.rawLabel.includes('NET A PAYER'))).toBe(false);
-	});
-
-	it('la somme des montants retombe sur le total HT de la facture', () => {
-		const somme = lignes.reduce((s, l) => s + l.amountHT, 0);
-		expect(somme).toBeCloseTo(312.0, 2);
-	});
+const extrait = (lignes: Array<{ amountHT: number; vatRate: number | null }>, totaux: unknown) => ({
+	supplierName: null,
+	invoiceNumber: null,
+	invoiceDate: null,
+	lignes: lignes.map((l, i) => ({
+		rawLabel: `P${i}`,
+		quantity: null,
+		unit: null,
+		unitPrice: null,
+		...l
+	})),
+	totaux,
+	illisible: false,
+	raisonIllisible: null
 });
 
-describe('extraireBasesTva', () => {
-	it('lit les bases par taux dans le pied de facture', () => {
-		const bases = extraireBasesTva(FIXTURE);
-		expect(bases.get('1')).toBeCloseTo(290.0, 2);
-		expect(bases.get('2')).toBeCloseTo(22.0, 2);
+describe('verifierExtraction', () => {
+	it('valide une extraction dont la somme retombe sur le total HT', () => {
+		const r = verifierExtraction(
+			extrait([{ amountHT: 100, vatRate: 5.5 }, { amountHT: 22, vatRate: 20 }], {
+				totalHT: 122,
+				basesParTaux: [
+					{ taux: 5.5, baseHT: 100 },
+					{ taux: 20, baseHT: 22 }
+				]
+			})
+		);
+		expect(r.ok).toBe(true);
+		expect(r.ecarts).toHaveLength(0);
 	});
 
-	it('renvoie une map vide quand le pied est absent', () => {
-		expect(extraireBasesTva('rien du tout').size).toBe(0);
+	it('détecte une ligne manquante par l’écart au total HT', () => {
+		const r = verifierExtraction(
+			extrait([{ amountHT: 100, vatRate: 5.5 }], { totalHT: 122, basesParTaux: [] })
+		);
+		expect(r.ok).toBe(false);
+		expect(r.ecarts[0]!.nature).toBe('TOTAL_HT');
+		expect(r.ecarts[0]!.ecart).toBeCloseTo(22, 2);
+	});
+
+	it('détecte une ligne mal ventilée par l’écart sur une base de TVA', () => {
+		const r = verifierExtraction(
+			extrait([{ amountHT: 100, vatRate: 20 }, { amountHT: 22, vatRate: 20 }], {
+				totalHT: 122,
+				basesParTaux: [
+					{ taux: 5.5, baseHT: 100 },
+					{ taux: 20, baseHT: 22 }
+				]
+			})
+		);
+		// Le total tombe juste, mais la ventilation par taux est fausse.
+		expect(r.ok).toBe(false);
+		expect(r.ecarts.some((e) => e.nature === 'BASE_TVA')).toBe(true);
+	});
+
+	it('tolère un centime d’arrondi', () => {
+		const r = verifierExtraction(
+			extrait([{ amountHT: 100.005, vatRate: 5.5 }], { totalHT: 100, basesParTaux: [] })
+		);
+		expect(r.ok).toBe(true);
+	});
+
+	it('ne peut pas vérifier un document sans totaux, et le dit', () => {
+		const r = verifierExtraction(
+			extrait([{ amountHT: 100, vatRate: null }], { totalHT: null, basesParTaux: [] })
+		);
+		expect(r.ok).toBe(false);
+		expect(r.ecarts[0]!.nature).toBe('NON_VERIFIABLE');
+	});
+
+	it('rejette un document déclaré illisible', () => {
+		const d = extrait([], { totalHT: null, basesParTaux: [] });
+		const r = verifierExtraction({ ...d, illisible: true, raisonIllisible: 'photo floue' });
+		expect(r.ok).toBe(false);
 	});
 });
 ```
 
-- [ ] **Step 2: Lancer, vérifier l'échec**
-
-```bash
-bun run test:unit -- texte
-```
-
-- [ ] **Step 3: Écrire `parsers/texte.ts`**
-
-L'algorithme, dans cet ordre — l'ordre compte, chaque étape suppose la précédente :
-
-1. **Découper en lignes**, écarter les vides.
-2. **Écarter l'en-tête et le pied.** Une ligne est du pied si elle correspond à `/^(bases?\s+t\.?v\.?a|total\s+h\.?t|net\s+a\s+payer|code\s+\d\s*\()/i`, ou si elle n'est faite que de tirets. Une ligne est l'en-tête de tableau si elle contient au moins deux tuyaux `|`.
-3. **Reconnaître une ligne produit** : elle porte au moins **deux nombres décimaux** en fin de ligne (prix unitaire et total HT), précédés d'un libellé non vide. Le dernier entier isolé, s'il est présent, est le code TVA.
-4. **Reconnaître une ligne de continuation** : tout ce qui reste. Deux cas :
-   - **Elle porte un montant** (ex. `* REMISE PROMO ETE -10%   -2.25   1`) → c'est une ligne à part entière, avec son propre montant et le code TVA de la ligne précédente si le sien manque.
-   - **Elle n'en porte pas** (ex. `-> (Cartons de 3kg)`, `(Certifié Peche durable MSC)`) → son texte est **concaténé au libellé de la ligne produit précédente**, entre parenthèses, et elle ne produit aucune ligne.
-5. **Ne jamais deviner un montant.** Une ligne dont on n'extrait pas de montant fiable n'est ni une ligne ni une continuation : elle part dans un tableau `lignesIgnorees` renvoyé à côté, que l'orchestration journalise. Silencieusement l'écarter reviendrait à perdre du chiffre d'affaires sans trace.
-
-`extraireBasesTva` lit `Code N (T%) : M EUR` dans le pied et renvoie une `Map<codeTva, baseHT>`.
-
-Le type de sortie :
+- [ ] **Step 5: Écrire `verification.ts`**
 
 ```ts
-export interface LigneBrute {
-	rawLabel: string;
-	quantity?: number;
-	unit?: string;
-	unitPrice?: number;
-	amountHT: number;
-	vatCode?: string;
-}
-
-export interface ResultatExtraction {
-	lignes: LigneBrute[];
-	basesTva: Map<string, number>;
-	lignesIgnorees: string[];
-}
-```
-
-- [ ] **Step 4: Lancer, vérifier le succès**
-
-```bash
-bun run test:unit -- texte
-```
-
-Attendu : tous PASS, y compris la somme à 312,00 €.
-
-- [ ] **Step 5: Écrire `parsers/pdfText.ts`**
-
-`unpdf` extrait le texte brut d'un PDF, puis le résultat passe dans `extraireLignesTexte`. Un PDF dont l'extraction rend moins de 50 caractères est un PDF scanné sans couche texte : il part en `extractionStatus: 'FAILED'` avec la raison `PDF sans couche texte — OCR requis, hors périmètre V0`, pour que l'opérateur sache quoi demander au client plutôt que de chercher un bug.
-
-- [ ] **Step 6: Écrire `extraction.ts` — l'orchestration et le contrôle TVA**
-
-Une `internalAction` par document :
-
-1. Lit le fichier depuis Convex Storage
-2. Aiguille selon `sourceType` : `CSV` → `parseCsv`, `PDF_TEXT` → `unpdf` puis `extraireLignesTexte`, texte brut → `extraireLignesTexte`
-3. Écrit les `invoiceLines` avec `reviewStatus: 'AUTO'`, sans aucun champ de classification
-4. Stocke `basesTva` sur le document, pour le contrôle d'après-classification
-5. Met à jour `extractionStatus` et les compteurs du lot
-
-**Le contrôle TVA** (§2 de « Ce qu'impose une vraie facture ») s'exécute **après** la classification, dans une fonction `controlerCoherenceTva(documentId)` :
-
-```ts
-/**
- * En France, l'alimentaire est à 5,5 % ou 10 %, le non-alimentaire à 20 %.
- * Si la somme des lignes classées isFood ne retombe pas sur la base au taux
- * réduit, la classification est fausse : un non-alimentaire compté au
- * dénominateur tire tous les ratios vers le bas.
- *
- * Tolérance de 1 centime pour les arrondis. Au-delà, le document part en
- * revue humaine avec l'écart chiffré.
- */
-const TAUX_ALIMENTAIRES = new Set(['5.5', '10', '10.0']);
 const TOLERANCE_EUR = 0.01;
+const TAUX_ALIMENTAIRES = new Set([5.5, 10]);
+
+export type NatureEcart = 'TOTAL_HT' | 'BASE_TVA' | 'NON_VERIFIABLE';
+
+export interface Ecart {
+	nature: NatureEcart;
+	attendu: number | null;
+	obtenu: number;
+	ecart: number;
+	detail: string;
+}
+
+export interface ResultatVerification {
+	ok: boolean;
+	ecarts: Ecart[];
+}
 ```
 
-Un écart au-delà de la tolérance ne bloque pas le lot : il ajoute une entrée dans la file de revue, avec le montant de l'écart et les lignes suspectes (celles dont le code TVA contredit le `isFood`).
+Trois contrôles, du plus fort au plus faible :
 
-**Règle non négociable :** un document en échec passe en `extractionStatus: 'FAILED'` avec sa raison, **et le lot continue**. Sans cette règle, un seul PDF corrompu dans un dépôt de quarante fichiers bloque le premier diagnostic réel.
+1. **Somme des lignes contre le total HT.** Attrape une ligne oubliée ou dupliquée.
+2. **Somme par taux contre chaque base de TVA.** Attrape une ligne mal ventilée — le cas où le total tombe juste mais la répartition est fausse, invisible autrement. C'est aussi ce qui donne gratuitement le signal alimentaire / non-alimentaire : les taux réduits sont alimentaires, 20 % ne l'est pas.
+3. **Aucun total exploitable** → `NON_VERIFIABLE`. Le document part en revue humaine plutôt qu'en confiance aveugle. **Une extraction non vérifiable n'est pas une extraction réussie.**
 
-- [ ] **Step 7: Vérifier et commiter**
+- [ ] **Step 6: Écrire `extraction.ts` — l'orchestration et la boucle de reprise**
+
+Par document :
+
+1. Détermine la nature (extension **et** contenu — un `.txt` peut être un CSV comme une facture océrisée)
+2. CSV / Excel → `parseCsv` (tâche 5). Sinon → `extracteurClaude`
+3. `verifierExtraction`
+4. **Si `ok`** → écrit les `invoiceLines`, `extractionStatus: 'DONE'`
+5. **Si non `ok`** → relance l'extraction en joignant les écarts constatés :
+
+```
+Ta précédente extraction ne retombe pas sur les totaux de la facture :
+- Somme des lignes : 268,00 € — total HT imprimé : 290,00 € — écart : 22,00 €
+Relis le document et corrige. Une ligne a probablement été omise.
+```
+
+6. **Deux reprises au maximum.** Au-delà, le document passe en `extractionStatus: 'FAILED'` avec les écarts, **et le lot continue**. L'opérateur voit le document, l'écart chiffré et les lignes extraites — il tranche à la main.
+
+**Règle non négociable :** un document en échec ne bloque jamais le lot. Deux fichiers illisibles sur quarante ne doivent pas empêcher le diagnostic sur les trente-huit autres.
+
+**Le garde-fou de coût couvre l'extraction.** `classificationJobs` accumule les tokens des deux étapes. La boucle de reprise est bornée à deux essais précisément pour qu'une facture pathologique ne consomme pas le plafond du lot à elle seule.
+
+- [ ] **Step 7: Vérifier sur les fixtures**
 
 ```bash
-bun run test:unit -- texte && bun run check:convex && bunx convex dev --once
-git add -A && git commit --no-verify -m "feat(egalim): extraction texte/OCR, lignes de continuation, controle TVA"
+bun run test:unit -- verification && bun run check:convex && bunx convex dev --once
+```
+
+Puis, sur la fixture océrisée `grossiste-ocr-01.txt`, contrôler que l'extraction produit **8 lignes**, que le cabillaud porte bien la mention MSC fusionnée depuis sa ligne de continuation, que `-> (Cartons de 3kg)` n'a produit aucune ligne, que la remise est à −2,25 €, et que `verifierExtraction` retourne `ok: true` — la somme doit retomber sur 312,00 € et les bases sur 290,00 € et 22,00 €.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add -A && git commit --no-verify -m "feat(egalim): extraction universelle par Claude + verification arithmetique"
 ```
 
 ---
+
 
 ## Task 7: Normalisation des libellés et des fournisseurs
 
@@ -1810,7 +1930,8 @@ git add -A && git commit --no-verify -m "chore: phase 1 terminee — Moulinette 
 
 ## Ce que cette phase ne fait pas
 
-- **Pas d'OCR.** Les PDF scannés et les photos sont hors périmètre. Le doc 05 le reporte explicitement, et sans OCR le POC couvre l'écrasante majorité des cas si la demande client est bien formulée.
+- **Pas d'apprentissage de disposition par fournisseur.** Chaque facture est relue de zéro. Mémoriser la mise en page d'un fournisseur pour accélérer et fiabiliser ses factures suivantes est la même idée compositive que `productLabels` — mais elle attend d'avoir des fournisseurs récurrents à mémoriser. Phase 2.
+- **Pas de correction manuelle des lignes extraites.** Un document dont la vérification échoue après deux reprises part en `FAILED` : l'opérateur le traite hors outil. Un éditeur de lignes ligne à ligne est du travail que le journal de friction n'a pas encore désigné.
 - **Pas d'API Batches.** Elle donnerait -50 % sur les tokens (spec §4.6) mais ajoute une machine à états là où des appels synchrones suffisent à prouver le produit. Optimisation de phase 2.
 - **Pas de générateur PDF serveur.** Feuille d'impression seulement, jusqu'à demande client explicite.
 - **Pas de simulateur public.** C'est la phase 2, en octobre, avec la refonte de la landing.
