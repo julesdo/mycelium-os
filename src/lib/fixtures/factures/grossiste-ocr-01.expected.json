@@ -1,0 +1,20 @@
+{
+  "totalHT": 312.00,
+  "totalFoodHT": 290.00,
+  "durableHT": 106.00,
+  "bioHT": 0.00,
+  "meatFishTotalHT": 212.00,
+  "meatFishDurableHT": 62.00,
+  "ratios": { "durable": 0.3655172413793103, "bio": 0, "meatFishDurable": 0.29245283018867924 },
+  "vatCrossCheck": { "reducedRateBase": 290.00, "standardRateBase": 22.00 },
+  "lines": [
+    { "rawLabel": "CAR0TTES SABLES VRAC", "amountHT": 13.75, "vatRate": 5.5, "isFood": true, "family": "FRUITS_LEGUMES", "qualifyingLabels": [] },
+    { "rawLabel": "STEAK H. BOEUF V.B.F.", "amountHT": 150.00, "vatRate": 5.5, "isFood": true, "family": "VIANDE", "qualifyingLabels": [] },
+    { "rawLabel": "OEUF POULE PLEIN AIR", "amountHT": 22.50, "vatRate": 5.5, "isFood": true, "family": "LAITIERS", "qualifyingLabels": [] },
+    { "rawLabel": "REMISE PROMO ETE -10%", "amountHT": -2.25, "vatRate": 5.5, "isFood": true, "family": "LAITIERS", "qualifyingLabels": [] },
+    { "rawLabel": "P0MME GALA H.V.E 3", "amountHT": 44.00, "vatRate": 5.5, "isFood": true, "family": "FRUITS_LEGUMES", "qualifyingLabels": ["HVE3"] },
+    { "rawLabel": "FILET DE CAB!LLAUD (Certifié Peche durable MSC)", "amountHT": 62.00, "vatRate": 5.5, "isFood": true, "family": "POISSON", "qualifyingLabels": ["PECHE_DURABLE"] },
+    { "rawLabel": "LAVETTE Eponge BLEUE", "amountHT": 7.00, "vatRate": 20, "isFood": false, "family": "AUTRE", "qualifyingLabels": [] },
+    { "rawLabel": "FORFAIT FR!GO L!VRAISON", "amountHT": 15.00, "vatRate": 20, "isFood": false, "family": "AUTRE", "qualifyingLabels": [] }
+  ]
+}

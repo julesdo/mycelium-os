@@ -1,0 +1,19 @@
+DATE;DESIGNATION;FAMILLE;QUANTITE;UNITE;PU_HT;MONTANT_HT;TVA;LABEL
+05/09/2026;Poulet fermier entier;VIANDE;15,00;kg;8,40;126,00;5,50;Fermier
+05/09/2026;Boeuf haché 15% MG;VIANDE;20,00;kg;9,50;190,00;5,50;
+05/09/2026;Cabillaud filet surgelé;POISSON;10,00;kg;14,00;140,00;5,50;
+05/09/2026;Saumon fumé MSC;POISSON;6,00;kg;22,00;132,00;5,50;Pêche durable MSC
+06/09/2026;Carottes bio vrac;FRUITS_LEGUMES;40,00;kg;1,30;52,00;5,50;AB
+06/09/2026;Pommes de terre;FRUITS_LEGUMES;50,00;kg;0,90;45,00;5,50;
+06/09/2026;Yaourt nature bio 4x125g;LAITIERS;30,00;pièce;0,60;18,00;5,50;AB
+06/09/2026;Comté AOP;LAITIERS;8,00;kg;16,00;128,00;5,50;AOP
+06/09/2026;Lait UHT demi-écrémé 1L;LAITIERS;40,00;litre;0,95;38,00;5,50;
+07/09/2026;Riz basmati 5kg;EPICERIE_SECHE;6,00;colis;9,00;54,00;5,50;
+07/09/2026;Lentilles vertes bio;EPICERIE_SECHE;10,00;kg;3,20;32,00;5,50;AB
+07/09/2026;Café moulu équitable;EPICERIE_SECHE;5,00;kg;18,00;90,00;5,50;Commerce équitable
+07/09/2026;Tomates pelées 4/4;EPICERIE_APPERTISEE;12,00;boîte;2,10;25,20;5,50;
+07/09/2026;Compote pomme bio gourde;EPICERIE_APPERTISEE;24,00;pièce;0,55;13,20;5,50;AB
+08/09/2026;Jus de pomme brique 1L;BOISSONS;12,00;litre;1,40;16,80;5,50;
+08/09/2026;Eau minérale plate 1,5L;BOISSONS;24,00;pièce;0,35;8,40;5,50;
+08/09/2026;Sacs poubelle 110L;AUTRE;4,00;colis;12,00;48,00;20,00;
+08/09/2026;Essuie-tout bobine;AUTRE;3,00;colis;15,00;45,00;20,00;

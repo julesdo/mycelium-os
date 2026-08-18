@@ -1,0 +1,170 @@
+{
+  "totalHT": 631.7,
+  "totalFoodHT": 625.7,
+  "durableHT": 214,
+  "bioHT": 35,
+  "meatFishTotalHT": 419,
+  "meatFishDurableHT": 104,
+  "ratios": {
+    "durable": 0.3420169410260508,
+    "bio": 0.055937350167812046,
+    "meatFishDurable": 0.24821002386634844
+  },
+  "vatCrossCheck": {
+    "reducedRateBase": 625.7,
+    "standardRateBase": 6
+  },
+  "lines": [
+    {
+      "rawLabel": "Filet de poulet",
+      "quantite": 20,
+      "unite": "pièce",
+      "amountHT": 90,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "VIANDE",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "rawLabel": "Steak haché V.B.F.",
+      "quantite": 15,
+      "unite": "kg",
+      "amountHT": 135,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "VIANDE",
+      "qualifyingLabels": [],
+      "labelBrut": "VBF"
+    },
+    {
+      "rawLabel": "Filet de cabillaud MSC",
+      "quantite": 8,
+      "unite": "kg",
+      "amountHT": 104,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "POISSON",
+      "qualifyingLabels": [
+        "PECHE_DURABLE"
+      ],
+      "labelBrut": "MSC"
+    },
+    {
+      "rawLabel": "Thon albacore en boîte",
+      "quantite": 4,
+      "unite": "colis",
+      "amountHT": 90,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "POISSON",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "rawLabel": "Carottes bio",
+      "quantite": 30,
+      "unite": "kg",
+      "amountHT": 42,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "FRUITS_LEGUMES",
+      "qualifyingLabels": [
+        "AB"
+      ],
+      "labelBrut": "AB"
+    },
+    {
+      "rawLabel": "AVOIR - Carottes bio (retour)",
+      "quantite": -5,
+      "unite": "kg",
+      "amountHT": -7,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "FRUITS_LEGUMES",
+      "qualifyingLabels": [
+        "AB"
+      ],
+      "labelBrut": "AB"
+    },
+    {
+      "rawLabel": "Pommes de terre",
+      "quantite": 40,
+      "unite": "kg",
+      "amountHT": 34,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "FRUITS_LEGUMES",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "rawLabel": "AVOIR - Pommes de terre (retour)",
+      "quantite": -10,
+      "unite": "kg",
+      "amountHT": -8.5,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "FRUITS_LEGUMES",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "rawLabel": "Yaourts nature",
+      "quantite": 48,
+      "unite": "pièce",
+      "amountHT": 19.2,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "LAITIERS",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "rawLabel": "Fromage AOP",
+      "quantite": 5,
+      "unite": "kg",
+      "amountHT": 75,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "LAITIERS",
+      "qualifyingLabels": [
+        "AOP_AOC_IGP_STG"
+      ],
+      "labelBrut": "AOP"
+    },
+    {
+      "rawLabel": "Riz long grain",
+      "quantite": 3,
+      "unite": "colis",
+      "amountHT": 36,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "EPICERIE_SECHE",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "rawLabel": "Jus d'orange",
+      "quantite": 10,
+      "unite": "litre",
+      "amountHT": 16,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "BOISSONS",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "rawLabel": "Éponges grattantes",
+      "quantite": 6,
+      "unite": "pièce",
+      "amountHT": 6,
+      "vatRate": 20,
+      "isFood": false,
+      "family": "AUTRE",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    }
+  ]
+}

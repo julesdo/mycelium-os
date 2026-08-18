@@ -1,0 +1,17 @@
+DESIGNATION,LABEL,UNITE,QTE,MONTANT_HT,FAMILLE
+Filet de poulet,,pièce,20,90,00,VIANDE
+Steak haché V.B.F.,VBF,kg,15,135,00,VIANDE
+
+TOTAL PAGE 1,,,,,
+
+Filet de cabillaud MSC,MSC,kg,8,104,00,POISSON
+Thon albacore en boîte,,colis,4,90,00,POISSON
+Carottes bio,AB,kg,30,42,00,FRUITS_LEGUMES
+AVOIR - Carottes bio (retour),AB,kg,-5,-7,00,FRUITS_LEGUMES
+Pommes de terre,,kg,40,34,00,FRUITS_LEGUMES
+AVOIR - Pommes de terre (retour),,kg,-10,-8,50,FRUITS_LEGUMES
+Yaourts nature,,pièce,48,19,20,LAITIERS
+Fromage AOP,AOP,kg,5,75,00,LAITIERS
+Riz long grain,,colis,3,36,00,EPICERIE_SECHE
+Jus d'orange,,litre,10,16,00,BOISSONS
+Éponges grattantes,,pièce,6,6,00,AUTRE

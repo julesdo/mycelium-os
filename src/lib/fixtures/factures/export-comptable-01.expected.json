@@ -1,0 +1,269 @@
+{
+  "totalHT": 1201.6,
+  "totalFoodHT": 1108.6,
+  "durableHT": 591.2,
+  "bioHT": 115.2,
+  "meatFishTotalHT": 588,
+  "meatFishDurableHT": 258,
+  "ratios": {
+    "durable": 0.5332852246076133,
+    "bio": 0.10391484755547538,
+    "meatFishDurable": 0.4387755102040816
+  },
+  "vatCrossCheck": {
+    "reducedRateBase": 1108.6,
+    "standardRateBase": 93
+  },
+  "lines": [
+    {
+      "date": "05/09/2026",
+      "rawLabel": "Poulet fermier entier",
+      "quantite": 15,
+      "unite": "kg",
+      "puHT": 8.4,
+      "amountHT": 126,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "VIANDE",
+      "qualifyingLabels": [
+        "FERMIER"
+      ],
+      "labelBrut": "Fermier"
+    },
+    {
+      "date": "05/09/2026",
+      "rawLabel": "Boeuf haché 15% MG",
+      "quantite": 20,
+      "unite": "kg",
+      "puHT": 9.5,
+      "amountHT": 190,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "VIANDE",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "05/09/2026",
+      "rawLabel": "Cabillaud filet surgelé",
+      "quantite": 10,
+      "unite": "kg",
+      "puHT": 14,
+      "amountHT": 140,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "POISSON",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "05/09/2026",
+      "rawLabel": "Saumon fumé MSC",
+      "quantite": 6,
+      "unite": "kg",
+      "puHT": 22,
+      "amountHT": 132,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "POISSON",
+      "qualifyingLabels": [
+        "PECHE_DURABLE"
+      ],
+      "labelBrut": "Pêche durable MSC"
+    },
+    {
+      "date": "06/09/2026",
+      "rawLabel": "Carottes bio vrac",
+      "quantite": 40,
+      "unite": "kg",
+      "puHT": 1.3,
+      "amountHT": 52,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "FRUITS_LEGUMES",
+      "qualifyingLabels": [
+        "AB"
+      ],
+      "labelBrut": "AB"
+    },
+    {
+      "date": "06/09/2026",
+      "rawLabel": "Pommes de terre",
+      "quantite": 50,
+      "unite": "kg",
+      "puHT": 0.9,
+      "amountHT": 45,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "FRUITS_LEGUMES",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "06/09/2026",
+      "rawLabel": "Yaourt nature bio 4x125g",
+      "quantite": 30,
+      "unite": "pièce",
+      "puHT": 0.6,
+      "amountHT": 18,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "LAITIERS",
+      "qualifyingLabels": [
+        "AB"
+      ],
+      "labelBrut": "AB"
+    },
+    {
+      "date": "06/09/2026",
+      "rawLabel": "Comté AOP",
+      "quantite": 8,
+      "unite": "kg",
+      "puHT": 16,
+      "amountHT": 128,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "LAITIERS",
+      "qualifyingLabels": [
+        "AOP_AOC_IGP_STG"
+      ],
+      "labelBrut": "AOP"
+    },
+    {
+      "date": "06/09/2026",
+      "rawLabel": "Lait UHT demi-écrémé 1L",
+      "quantite": 40,
+      "unite": "litre",
+      "puHT": 0.95,
+      "amountHT": 38,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "LAITIERS",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "07/09/2026",
+      "rawLabel": "Riz basmati 5kg",
+      "quantite": 6,
+      "unite": "colis",
+      "puHT": 9,
+      "amountHT": 54,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "EPICERIE_SECHE",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "07/09/2026",
+      "rawLabel": "Lentilles vertes bio",
+      "quantite": 10,
+      "unite": "kg",
+      "puHT": 3.2,
+      "amountHT": 32,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "EPICERIE_SECHE",
+      "qualifyingLabels": [
+        "AB"
+      ],
+      "labelBrut": "AB"
+    },
+    {
+      "date": "07/09/2026",
+      "rawLabel": "Café moulu équitable",
+      "quantite": 5,
+      "unite": "kg",
+      "puHT": 18,
+      "amountHT": 90,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "EPICERIE_SECHE",
+      "qualifyingLabels": [
+        "COMMERCE_EQUITABLE"
+      ],
+      "labelBrut": "Commerce équitable"
+    },
+    {
+      "date": "07/09/2026",
+      "rawLabel": "Tomates pelées 4/4",
+      "quantite": 12,
+      "unite": "boîte",
+      "puHT": 2.1,
+      "amountHT": 25.2,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "EPICERIE_APPERTISEE",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "07/09/2026",
+      "rawLabel": "Compote pomme bio gourde",
+      "quantite": 24,
+      "unite": "pièce",
+      "puHT": 0.55,
+      "amountHT": 13.2,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "EPICERIE_APPERTISEE",
+      "qualifyingLabels": [
+        "AB"
+      ],
+      "labelBrut": "AB"
+    },
+    {
+      "date": "08/09/2026",
+      "rawLabel": "Jus de pomme brique 1L",
+      "quantite": 12,
+      "unite": "litre",
+      "puHT": 1.4,
+      "amountHT": 16.8,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "BOISSONS",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "08/09/2026",
+      "rawLabel": "Eau minérale plate 1,5L",
+      "quantite": 24,
+      "unite": "pièce",
+      "puHT": 0.35,
+      "amountHT": 8.4,
+      "vatRate": 5.5,
+      "isFood": true,
+      "family": "BOISSONS",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "08/09/2026",
+      "rawLabel": "Sacs poubelle 110L",
+      "quantite": 4,
+      "unite": "colis",
+      "puHT": 12,
+      "amountHT": 48,
+      "vatRate": 20,
+      "isFood": false,
+      "family": "AUTRE",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    },
+    {
+      "date": "08/09/2026",
+      "rawLabel": "Essuie-tout bobine",
+      "quantite": 3,
+      "unite": "colis",
+      "puHT": 15,
+      "amountHT": 45,
+      "vatRate": 20,
+      "isFood": false,
+      "family": "AUTRE",
+      "qualifyingLabels": [],
+      "labelBrut": ""
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+S.A.R.L. L3S C0MPT0IRS DU N0RD
+ZI. Est, 59000 LILL3
+Te! : 03.20.00.00.00  S!RET: 000000000 00000
+
+FACTURE N. F24-0001a       Date : 12 /09 /2026
+Cl!ent : CUISINE CENTRALE DEM0 (C-0001)
+
+QTE | UNITE | DES!GNATION | ORIG./LAB. | P.U. HT | T0TAL HT |TVA
+
+12.5   KG     CAR0TTES SABLES VRAC         FR       1.10      13.75   1
+10     COLIS  STEAK H. BOEUF V.B.F.        FRANCE   15.00     150.00  1
+              -> (Cartons de 3kg)
+5      Plaq   OEUF POULE PLEIN AIR         Code 1   4.50      22.50   1
+              * REMISE PROMO ETE -10%                         -2.25   1
+20     KG     P0MME GALA H.V.E 3           FR       2.20      44.00   1
+5      KG     FILET DE CAB!LLAUD           ATL. N.E 12.40     62.00   1
+              (Certifié Peche durable MSC)
+2      U      LAVETTE Eponge BLEUE         -        3.50      7.00    2
+1      F      FORFAIT FR!GO L!VRAISON      -        15.00     15.00   2
+
+------------------------------------------------------
+BASES T.V.A :
+Code 1 (5.5%) : 290.00 EUR  -> TVA : 15.95 EUR
+Code 2 (20.0%) : 22.00 EUR  -> TVA : 4.40 EUR
+
+Total H.T. : 312.00 EUR
+NET A PAYER TTC : 332.35 EUR
