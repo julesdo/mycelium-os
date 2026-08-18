@@ -57,6 +57,38 @@ function estRegularisationHorsAlimentaire(brute: ClassificationBrute): boolean {
 	return !brute.isFood && MENTIONS_REGULARISATION.test(brute.normalizedLabel);
 }
 
+/**
+ * Pourquoi ce libellé attend un arbitrage.
+ *
+ * Le motif change complètement le travail de l'opérateur : un VIANDE_POISSON
+ * à 0,97 de confiance se confirme d'un coup d'œil, un CONFIANCE_BASSE à 0,4
+ * demande de réfléchir. Sans le motif affiché, les deux se ressemblent et
+ * l'opérateur ralentit sur les deux.
+ *
+ * Dérivé de la ligne stockée, et non mémorisé : une seule source pour la
+ * décision d'envoyer en revue et pour son explication.
+ */
+export type MotifRevue =
+	| 'NON_CLASSE'
+	| 'VIANDE_POISSON'
+	| 'REGULARISATION'
+	| 'CONFIANCE_BASSE';
+
+export function motifRevue(ligne: {
+	normalizedLabel: string;
+	isFood?: boolean;
+	family?: Famille;
+	confidence?: number;
+}): MotifRevue {
+	// Le modèle n'a rien rendu pour ce libellé : rien à confirmer, tout à faire.
+	if (ligne.isFood === undefined || ligne.family === undefined) return 'NON_CLASSE';
+	if (FAMILLES_VIANDE_POISSON.includes(ligne.family)) return 'VIANDE_POISSON';
+	if (!ligne.isFood && MENTIONS_REGULARISATION.test(ligne.normalizedLabel)) {
+		return 'REGULARISATION';
+	}
+	return 'CONFIANCE_BASSE';
+}
+
 export interface Verdict {
 	isFood: boolean;
 	family: Famille;

@@ -38,6 +38,7 @@ import type * as egalim_parsers_csv from "../egalim/parsers/csv.js";
 import type * as egalim_prompt from "../egalim/prompt.js";
 import type * as egalim_promptExtraction from "../egalim/promptExtraction.js";
 import type * as egalim_reprise from "../egalim/reprise.js";
+import type * as egalim_revue from "../egalim/revue.js";
 import type * as egalim_tables from "../egalim/tables.js";
 import type * as egalim_verdict from "../egalim/verdict.js";
 import type * as egalim_verification from "../egalim/verification.js";
@@ -110,6 +111,7 @@ declare const fullApi: ApiFromModules<{
   "egalim/prompt": typeof egalim_prompt;
   "egalim/promptExtraction": typeof egalim_promptExtraction;
   "egalim/reprise": typeof egalim_reprise;
+  "egalim/revue": typeof egalim_revue;
   "egalim/tables": typeof egalim_tables;
   "egalim/verdict": typeof egalim_verdict;
   "egalim/verification": typeof egalim_verification;

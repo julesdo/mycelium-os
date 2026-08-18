@@ -15,6 +15,7 @@
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import ScaleIcon from '@lucide/svelte/icons/scale';
 	import PlayCircleIcon from '@lucide/svelte/icons/play-circle';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import CheckIcon from '@lucide/svelte/icons/check';
@@ -34,7 +35,7 @@
 	const activeOrgId = $derived.by(() => {
 		const match = page.url.pathname.match(/\/ops\/([^/]+)/);
 		const id = match?.[1];
-		if (!id || ['staff', 'inbox', 'demos'].includes(id)) return null;
+		if (!id || ['staff', 'inbox', 'demos', 'revue', 'dashboard'].includes(id)) return null;
 		return id;
 	});
 
@@ -71,6 +72,12 @@
 			active: page.url.pathname.includes('/ops/inbox')
 		},
 		{
+			href: localizedHref('/ops/revue'),
+			label: 'Arbitrage',
+			icon: ScaleIcon,
+			active: page.url.pathname.includes('/ops/revue')
+		},
+		{
 			href: localizedHref('/ops'),
 			label: 'Clients',
 			icon: LayoutListIcon,
@@ -79,6 +86,7 @@
 				(page.url.pathname.includes('/ops/') &&
 					!page.url.pathname.includes('/staff') &&
 					!page.url.pathname.includes('/inbox') &&
+					!page.url.pathname.includes('/revue') &&
 					!page.url.pathname.includes('/demos') &&
 					!page.url.pathname.includes('/dashboard'))
 		},
