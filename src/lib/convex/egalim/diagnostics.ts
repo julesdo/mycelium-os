@@ -79,6 +79,15 @@ async function produire(
 		.withIndex('by_batch', (q) => q.eq('batchId', batchId))
 		.collect();
 
+	// Un lot sans aucune ligne n'a rien mesuré. Produire quand même les ratios
+	// donnerait 0 % partout, présenté avec la même autorité qu'une vraie
+	// mesure. C'est le pire livrable possible : faux, et crédible.
+	if (lignes.length === 0) {
+		throw new ConvexError(
+			'Aucune ligne extraite sur ce lot : il n’y a rien à mesurer. Vérifiez les fichiers déposés.'
+		);
+	}
+
 	const classees = lignes.filter(
 		(
 			l

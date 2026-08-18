@@ -354,6 +354,23 @@ export const finaliserClassification = internalMutation({
 			lignes.filter((l) => l.reviewStatus === 'PENDING_REVIEW').map((l) => l.normalizedLabel)
 		);
 
+		// Aucune ligne : tous les fichiers ont échoué à l'extraction. Le lot est
+		// en échec, PAS prêt. Le laisser filer produirait un diagnostic à 0 %
+		// sur zéro ligne lue, remis à une cantine comme si c'était sa mesure.
+		if (lignes.length === 0) {
+			await ctx.db.patch(batchId, {
+				status: 'FAILED',
+				linesTotal: 0,
+				labelsPendingReview: 0
+			});
+			await ctx.db.patch(jobId, {
+				status: 'FAILED',
+				finishedAt: Date.now(),
+				error: 'Aucune ligne n’a pu être extraite des fichiers déposés.'
+			});
+			return null;
+		}
+
 		await ctx.db.patch(batchId, {
 			status: libellesEnRevue.size > 0 ? 'REVIEW' : 'READY',
 			linesTotal: lignes.length,
