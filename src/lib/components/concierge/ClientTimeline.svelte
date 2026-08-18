@@ -7,24 +7,23 @@
 
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const timeline = useQuery((api as any)['concierge/timeline'].getOrgTimeline, { organizationId, limit: 50 });
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const addNote = useMutation((api as any)['concierge/timeline'].addConciergeNote);
+	const timeline = useQuery(api.concierge.timeline.getOrgTimeline, () => ({
+		organizationId,
+		limit: 50
+	}));
+	const addNote = useMutation(api.concierge.timeline.addConciergeNote);
 
 	let noteContent = $state('');
 	let addingNote = $state(false);
 
 	const TYPE_CONFIG: Record<string, { label: string; dot: string }> = {
 		ONBOARDING: { label: 'Onboarding', dot: 'bg-emerald-500' },
-		PLAN_CHANGE: { label: 'Changement plan', dot: 'bg-blue-500' },
-		INCIDENT: { label: 'Sinistre', dot: 'bg-red-500' },
-		MAINTENANCE: { label: 'Maintenance', dot: 'bg-orange-400' },
-		TICKET_CREATED: { label: 'Ticket créé', dot: 'bg-amber-400' },
-		TICKET_RESOLVED: { label: 'Ticket résolu', dot: 'bg-emerald-400' },
-		PAYMENT: { label: 'Paiement', dot: 'bg-indigo-500' },
-		ALERT_COMPLIANCE: { label: 'Alerte conformité', dot: 'bg-red-400' },
-		CONCIERGE_NOTE: { label: 'Note concierge', dot: 'bg-muted-foreground/60' }
+		FACTURES_DEPOSEES: { label: 'Factures déposées', dot: 'bg-blue-500' },
+		DIAGNOSTIC_REMIS: { label: 'Diagnostic remis', dot: 'bg-emerald-400' },
+		RATIO_MESURE: { label: 'Ratio mesuré', dot: 'bg-amber-400' },
+		DECLARATION_DEPOSEE: { label: 'Télédéclaration déposée', dot: 'bg-indigo-500' },
+		ABONNEMENT: { label: 'Abonnement', dot: 'bg-indigo-500' },
+		NOTE_OPERATEUR: { label: 'Note opérateur', dot: 'bg-muted-foreground/60' }
 	};
 
 	function fmtDate(ts: number) {

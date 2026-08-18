@@ -16,7 +16,6 @@
 	const year = new Date().getFullYear();
 
 	const links = [
-		{ label: 'Pricing', href: localizedHref('/pricing') },
 		{ label: 'About', href: localizedHref('/about') },
 		{ label: 'Privacy', href: localizedHref('/privacy') },
 		{ label: 'Terms', href: localizedHref('/terms') },

@@ -18,13 +18,10 @@
 	import { watch } from 'runed';
 	import { devNotice } from '$lib/dev/notice';
 	import { afterNavigate } from '$app/navigation';
-	import de from '../i18n/de.json';
-	import en from '../i18n/en.json';
-	import es from '../i18n/es.json';
 	import fr from '../i18n/fr.json';
 	import './layout.css';
 
-	const translations: TolgeeStaticData = { en, de, es, fr };
+	const translations: TolgeeStaticData = { fr };
 
 	let { children } = $props();
 
@@ -51,9 +48,9 @@
 
 		staticData: translations,
 
-		availableLanguages: ['en', 'de', 'es', 'fr'],
-		defaultLanguage: 'en',
-		fallbackLanguage: 'en',
+		availableLanguages: ['fr'],
+		defaultLanguage: 'fr',
+		fallbackLanguage: 'fr',
 
 		apiUrl: import.meta.env.VITE_TOLGEE_API_URL,
 		apiKey: import.meta.env.VITE_TOLGEE_API_KEY
@@ -80,7 +77,7 @@
 	afterNavigate((nav) => {
 		if (!browser || !nav.from) return;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		if (nav.to?.url.pathname.includes('/admin/settings')) return;
+		if (nav.to?.url.pathname.includes('/app/parametres')) return;
 		const main = document.getElementById('main-content');
 		if (!main) return;
 		main.classList.remove('page-enter');

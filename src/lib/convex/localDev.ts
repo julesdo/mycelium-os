@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { components, internal } from './_generated/api';
+import { components } from './_generated/api';
 import { internalMutation, type MutationCtx } from './_generated/server';
 import { createAuth } from './auth';
 
@@ -94,11 +94,6 @@ export const ensureSeededAdmin = internalMutation({
 				}
 			});
 		}
-
-		await ctx.runMutation(internal.admin.notificationPreferences.mutations.upsertAdminPreferences, {
-			userId: user._id,
-			email
-		});
 
 		return {
 			created,

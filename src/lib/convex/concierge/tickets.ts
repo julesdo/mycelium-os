@@ -4,7 +4,7 @@ import { internal } from '../_generated/api';
 import { conciergeQuery, conciergeMutation } from '../functions';
 import type { Id } from '../_generated/dataModel';
 
-const SLA_FIRST_RESPONSE_MS: Record<string, number> = {
+const SLA_FIRST_RESPONSE_MS: Record<'URGENT' | 'HIGH' | 'NORMAL' | 'LOW', number> = {
 	URGENT: 15 * 60 * 1000,
 	HIGH: 60 * 60 * 1000,
 	NORMAL: 4 * 60 * 60 * 1000,
@@ -26,7 +26,7 @@ export const listInboxTickets = conciergeQuery({
 	},
 	handler: async (ctx, { filter, status }) => {
 		let allowedOrgIds: Set<string> | null = null;
-		if (ctx.staffRole === 'concierge') {
+		if (ctx.staffRole === 'OPERATOR') {
 			const accesses = await ctx.db
 				.query('conciergeOrgAccess')
 				.withIndex('by_concierge', (q) => q.eq('conciergeUserId', ctx.user._id))
@@ -70,7 +70,7 @@ export const listInboxTickets = conciergeQuery({
 type UnifiedMessage = {
 	_id: string;
 	authorId: string;
-	authorRole: 'concierge' | 'super_admin' | 'client';
+	authorRole: 'concierge' | 'operator' | 'super_admin' | 'client';
 	senderName: string | null;
 	content: string;
 	isInternal: boolean;
@@ -83,7 +83,7 @@ export const getTicket = conciergeQuery({
 		const ticket = await ctx.db.get(ticketId);
 		if (!ticket) return null;
 
-		if (ctx.staffRole === 'concierge') {
+		if (ctx.staffRole === 'OPERATOR') {
 			const access = await ctx.db
 				.query('conciergeOrgAccess')
 				.withIndex('by_concierge_and_org', (q) =>
@@ -195,7 +195,7 @@ export const getTicketContext = conciergeQuery({
 
 		return {
 			name: org.name,
-			tier: org.paddlePlanTier ?? 'essential',
+			tier: org.paddlePlanTier ?? 'diagnostic',
 			country: org.country ?? null,
 			assignedConcierges: staffList.filter(Boolean),
 			openTicketCount: openTickets.filter((t) => t.status !== 'RESOLVED').length
@@ -239,7 +239,7 @@ export const sendTicketMessage = conciergeMutation({
 		await ctx.db.insert('conciergeTicketMessages', {
 			ticketId,
 			authorId: ctx.user._id,
-			authorRole: ctx.staffRole === 'super_admin' ? 'super_admin' : 'concierge',
+			authorRole: ctx.staffRole === 'SUPER_ADMIN' ? 'super_admin' : 'operator',
 			content,
 			isInternal,
 			createdAt: now
@@ -302,7 +302,7 @@ export const resolveTicket = conciergeMutation({
 			await ctx.db.insert('conciergeTicketMessages', {
 				ticketId,
 				authorId: ctx.user._id,
-				authorRole: ctx.staffRole === 'super_admin' ? 'super_admin' : 'concierge',
+				authorRole: ctx.staffRole === 'SUPER_ADMIN' ? 'super_admin' : 'operator',
 				content: closingNote,
 				isInternal: true,
 				createdAt: now
@@ -330,7 +330,7 @@ export const reassignTicket = conciergeMutation({
 export const listTicketsForOrg = conciergeQuery({
 	args: { organizationId: v.id('organizations') },
 	handler: async (ctx, { organizationId }) => {
-		if (ctx.staffRole === 'concierge') {
+		if (ctx.staffRole === 'OPERATOR') {
 			const access = await ctx.db
 				.query('conciergeOrgAccess')
 				.withIndex('by_concierge_and_org', (q) =>
@@ -364,9 +364,7 @@ export const upsertTicketFromSource = internalMutation({
 		organizationId: v.id('organizations'),
 		sourceType: v.union(
 			v.literal('HUMAN_ASSIST'),
-			v.literal('SUPPORT_TICKET'),
-			v.literal('CONCIERGE_TASK'),
-			v.literal('SALES_MESSAGE'),
+			v.literal('REVUE_LIGNES'),
 			v.literal('MANUAL')
 		),
 		sourceId: v.string(),

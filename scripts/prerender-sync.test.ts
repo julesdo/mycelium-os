@@ -4,10 +4,10 @@ import { SUPPORTED_LOCALES } from '../src/lib/convex/i18n/translations';
 
 // These must stay in sync — if a language is added to languages.ts,
 // svelte.config.js prerender entries must be updated too.
-const SVELTE_CONFIG_LANGUAGES = ['en', 'de', 'es', 'fr'];
+const SVELTE_CONFIG_LANGUAGES = ['fr'];
 
 // Tolgee translation imports in +layout.svelte (hardcoded, must match canonical list)
-const TOLGEE_IMPORT_LANGUAGES = ['en', 'de', 'es', 'fr'];
+const TOLGEE_IMPORT_LANGUAGES = ['fr'];
 
 describe('language sync', () => {
 	const canonicalCodes = SUPPORTED_LANGUAGES.map((l) => l.code).sort();

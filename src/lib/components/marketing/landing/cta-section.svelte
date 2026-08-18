@@ -26,7 +26,7 @@
 				{$t('landing.cta.primary')}
 			</a>
 			<a
-				href={resolve(localizedHref('/pricing'))}
+				href={resolve(localizedHref('/about'))}
 				class="inline-flex h-12 items-center rounded-full border border-border px-8 text-sm font-semibold text-foreground transition-colors hover:bg-muted/40"
 			>
 				{$t('landing.cta.secondary')}

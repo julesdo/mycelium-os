@@ -42,19 +42,33 @@ export const getMyOrgMembership = authedQuery({
 export const createOrganization = authedMutation({
 	args: {
 		name: v.string(),
-		siren: v.optional(v.string()),
-		sector: v.optional(v.string()),
-		size: v.optional(v.string())
+		siret: v.optional(v.string()),
+		etablissementType: v.optional(
+			v.union(
+				v.literal('RIE'),
+				v.literal('CLINIQUE'),
+				v.literal('EHPAD'),
+				v.literal('CRECHE'),
+				v.literal('ECOLE_PRIVEE'),
+				v.literal('AUTRE')
+			)
+		),
+		couvertsJour: v.optional(v.number()),
+		gestionDirecte: v.optional(v.boolean())
 	},
 	handler: async (ctx, args) => {
 		if (!args.name.trim()) throw new ConvexError('Le nom est obligatoire');
 
 		const orgId = await ctx.db.insert('organizations', {
 			name: args.name.trim(),
-			siren: args.siren,
-			sector: args.sector,
-			size: args.size,
-			plan: 'flat',
+			siret: args.siret,
+			etablissementType: args.etablissementType,
+			couvertsJour: args.couvertsJour,
+			gestionDirecte: args.gestionDirecte,
+			country: 'FR',
+			currency: 'EUR',
+			timezone: 'Europe/Paris',
+			locale: 'fr-FR',
 			createdAt: Date.now()
 		});
 
@@ -156,14 +170,19 @@ export const platformSwitchOrganization = adminMutation({
 export const updateOrganization = authedMutation({
 	args: {
 		name: v.string(),
-		siren: v.optional(v.string()),
-		sector: v.optional(v.string()),
-		size: v.optional(v.string()),
-		country: v.optional(v.string()),
-		currency: v.optional(v.string()),
-		distanceUnit: v.optional(v.union(v.literal('km'), v.literal('mile'))),
-		timezone: v.optional(v.string()),
-		locale: v.optional(v.string())
+		siret: v.optional(v.string()),
+		etablissementType: v.optional(
+			v.union(
+				v.literal('RIE'),
+				v.literal('CLINIQUE'),
+				v.literal('EHPAD'),
+				v.literal('CRECHE'),
+				v.literal('ECOLE_PRIVEE'),
+				v.literal('AUTRE')
+			)
+		),
+		couvertsJour: v.optional(v.number()),
+		gestionDirecte: v.optional(v.boolean())
 	},
 	handler: async (ctx, args) => {
 		if (!args.name.trim()) throw new ConvexError('Le nom est obligatoire');
@@ -188,14 +207,10 @@ export const updateOrganization = authedMutation({
 
 		await ctx.db.patch(profile.currentOrganizationId, {
 			name: args.name.trim(),
-			siren: args.siren,
-			sector: args.sector,
-			size: args.size,
-			country: args.country,
-			currency: args.currency,
-			distanceUnit: args.distanceUnit,
-			timezone: args.timezone,
-			locale: args.locale
+			siret: args.siret,
+			etablissementType: args.etablissementType,
+			couvertsJour: args.couvertsJour,
+			gestionDirecte: args.gestionDirecte
 		});
 	}
 });
@@ -326,7 +341,7 @@ export const listOrganizationMembers = authedQuery({
 			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', ctx.user._id))
 			.unique();
 		if (!callerMembership || callerMembership.role === 'ORG_MEMBER') {
-			throw new ConvexError('Accès refusé : rôle ORG_ADMIN ou ORG_MANAGER requis');
+			throw new ConvexError('Accès refusé : rôle ORG_ADMIN requis');
 		}
 
 		const members = await ctx.db
@@ -387,7 +402,7 @@ export const listOrganizationMembers = authedQuery({
 export const inviteOrganizationMember = authedMutation({
 	args: {
 		email: v.string(),
-		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER')),
+		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER')),
 		skipEmail: v.optional(v.boolean())
 	},
 	handler: async (ctx, { email, role, skipEmail }) => {
@@ -433,12 +448,7 @@ export const inviteOrganizationMember = authedMutation({
 
 		if (!skipEmail) {
 			const org = await ctx.db.get(orgId);
-			const roleLabel =
-				role === 'ORG_ADMIN'
-					? 'Administrateur'
-					: role === 'ORG_MANAGER'
-						? 'Gestionnaire'
-						: 'Membre';
+			const roleLabel = role === 'ORG_ADMIN' ? 'Administrateur' : 'Membre';
 
 			await ctx.scheduler.runAfter(0, internal.organizations.sendOrgInvitationEmail, {
 				email,
@@ -457,7 +467,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 		invites: v.array(
 			v.object({
 				email: v.string(),
-				role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER'))
+				role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER'))
 			})
 		),
 		skipEmail: v.optional(v.boolean())
@@ -483,9 +493,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 		if (!org) throw new ConvexError('Organisation introuvable');
 
 		const { tier, seatsAllowed } = resolveEffectivePlan(org);
-		if (tier === 'free') {
-			// free tier = membres illimités, seatsAllowed = 9999
-		} else if (tier === 'none') {
+		if (tier === 'none') {
 			throw new ConvexError('Aucun abonnement actif.');
 		}
 		const memberCount = await ctx.db
@@ -529,12 +537,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 				});
 
 				if (!skipEmail) {
-					const roleLabel =
-						invite.role === 'ORG_ADMIN'
-							? 'Administrateur'
-							: invite.role === 'ORG_MANAGER'
-								? 'Gestionnaire'
-								: 'Membre';
+					const roleLabel = invite.role === 'ORG_ADMIN' ? 'Administrateur' : 'Membre';
 					await ctx.scheduler.runAfter(0, internal.organizations.sendOrgInvitationEmail, {
 						email,
 						orgName: org.name ?? '',
@@ -560,7 +563,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 export const updateMemberRole = authedMutation({
 	args: {
 		memberId: v.id('organizationMembers'),
-		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MANAGER'), v.literal('ORG_MEMBER'))
+		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER'))
 	},
 	handler: async (ctx, { memberId, role }) => {
 		const profile = await ctx.db
@@ -823,7 +826,7 @@ export const sendOrgInvitationEmail = internalAction({
 <body style="font-family: -apple-system, sans-serif; background: #0a0a0a; margin: 0; padding: 32px 16px;">
   <div style="max-width: 480px; margin: 0 auto; background: #111; border: 1px solid #222; border-radius: 16px; overflow: hidden;">
     <div style="padding: 24px; border-bottom: 1px solid #1a1a1a;">
-      <span style="color: #f5e642; font-size: 15px; font-weight: 700; letter-spacing: -0.01em;">Mycelium Fleet OS</span>
+      <span style="color: #f5e642; font-size: 15px; font-weight: 700; letter-spacing: -0.01em;">Mycelium</span>
     </div>
     <div style="padding: 32px 24px;">
       <h1 style="color: #fff; font-size: 20px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.02em;">
@@ -831,7 +834,7 @@ export const sendOrgInvitationEmail = internalAction({
       </h1>
       <p style="color: #888; font-size: 14px; margin: 0 0 24px; line-height: 1.6;">
         Vous avez été invité en tant que <strong style="color: #bbb;">${args.roleLabel}</strong>.
-        Cliquez sur le bouton ci-dessous pour créer votre compte et rejoindre la flotte.
+        Cliquez sur le bouton ci-dessous pour créer votre compte et rejoindre l'organisation.
       </p>
       <a href="${joinUrl}" style="display: inline-block; background: #f5e642; color: #000; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
         Rejoindre l'organisation
@@ -941,38 +944,3 @@ export const removeOrganizationMember = authedMutation({
 	}
 });
 
-export const getOnboardingProgress = authedQuery({
-	args: {},
-	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) return null;
-		const orgId = profile.currentOrganizationId;
-
-		const [vehicleCount, memberCount, firstReservation] = await Promise.all([
-			ctx.db
-				.query('vehicles')
-				.withIndex('by_org', (q) => q.eq('organizationId', orgId))
-				.take(1)
-				.then((r) => r.length),
-			ctx.db
-				.query('organizationMembers')
-				.withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-				.take(2)
-				.then((r) => r.length),
-			ctx.db
-				.query('reservations')
-				.withIndex('by_org', (q) => q.eq('organizationId', orgId))
-				.first()
-		]);
-
-		return {
-			orgCreated: true,
-			vehicleAdded: vehicleCount > 0,
-			teamInvited: memberCount > 1,
-			firstReservation: firstReservation !== null
-		};
-	}
-});

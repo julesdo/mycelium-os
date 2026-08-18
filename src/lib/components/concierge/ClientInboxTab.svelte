@@ -9,8 +9,9 @@
 
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const tickets = useQuery((api as any)['concierge/tickets'].listTicketsForOrg, { organizationId });
+	const tickets = useQuery(api.concierge.tickets.listTicketsForOrg, () => ({
+		organizationId
+	}));
 </script>
 
 <div class="flex h-full flex-col">
@@ -34,7 +35,7 @@
 			{#each tickets.data ?? [] as ticket (ticket._id)}
 				<TicketRow
 					{ticket}
-					href={resolve(localizedHref(`/concierge/${organizationId}/tickets/${ticket._id}`))}
+					href={resolve(localizedHref(`/ops/${organizationId}/tickets/${ticket._id}`))}
 				/>
 			{/each}
 		</div>

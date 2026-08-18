@@ -12,9 +12,10 @@ const adapter = process.env.WORKERS_CI
 		? node()
 		: auto();
 
-// Prerenderable marketing pages (pricing excluded — uses useCustomer() for billing UI)
+// Prerenderable marketing pages
 const PRERENDER_MARKETING_PAGES = ['', '/about', '/privacy', '/terms', '/impressum'];
-const LANGUAGES = ['en', 'de', 'es', 'fr'];
+// EGalim est une loi française : une seule langue est supportée.
+const LANGUAGES = ['fr'];
 const prerenderEntries = LANGUAGES.flatMap((lang) =>
 	PRERENDER_MARKETING_PAGES.map((page) => `/${lang}${page}`)
 );

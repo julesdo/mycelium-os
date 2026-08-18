@@ -7,7 +7,9 @@
 		messages: Array<{
 			_id: string;
 			authorId: string;
-			authorRole: 'concierge' | 'super_admin' | 'client';
+			// 'concierge' vient du fil humanAssistMessages (table non retypée) ;
+			// 'operator' / 'super_admin' viennent des notes internes conciergeTicketMessages.
+			authorRole: 'concierge' | 'operator' | 'super_admin' | 'client';
 			senderName?: string | null;
 			content: string;
 			isInternal: boolean;
@@ -56,7 +58,8 @@
 		</div>
 	{:else}
 		{#each messages as msg, i (msg._id)}
-			{#if i === 0 || !isSameDay(messages[i - 1].createdAt, msg.createdAt)}
+			{@const prevMsg = messages[i - 1]}
+			{#if !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt)}
 				<div class="flex items-center gap-3 py-1">
 					<div class="h-px flex-1 bg-border/50"></div>
 					<span class="text-[10px] text-muted-foreground/60">{formatDate(msg.createdAt)}</span>
@@ -68,7 +71,7 @@
 				<div class="flex items-center gap-2">
 					<span class="text-[11px] font-medium
 						{msg.authorRole === 'client' ? 'text-blue-500' : 'text-foreground'}">
-						{msg.senderName ?? (msg.authorRole === 'client' ? 'Client' : msg.authorRole === 'super_admin' ? 'Super Admin' : 'Concierge')}
+						{msg.senderName ?? (msg.authorRole === 'client' ? 'Client' : msg.authorRole === 'super_admin' ? 'Super Admin' : 'Opérateur')}
 					</span>
 					{#if msg.isInternal}
 						<span class="rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-600 dark:text-amber-400">

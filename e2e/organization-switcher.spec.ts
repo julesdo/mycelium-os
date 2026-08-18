@@ -1,10 +1,10 @@
 /**
  * organization-switcher.spec.ts
  *
- * Verifies the org-switcher feature in the admin sidebar:
+ * Verifies the org-switcher feature in the /app sidebar:
  *   - Trigger appears only when the user belongs to > 1 org
  *   - Clicking an entry switches the active org
- *   - The switch persists when navigating to other admin pages
+ *   - The switch persists when navigating to other /app pages
  *
  * Each test creates a fresh user who first creates org A (via onboarding),
  * then creates org B (by calling /api/org/create which wraps the Convex
@@ -95,9 +95,9 @@ test.describe('Organisation switcher', () => {
 
 		await createSecondOrg(page);
 
-		// Navigate to admin to refresh the sidebar.
-		await page.goto('/admin');
-		await page.waitForURL(/\/admin/);
+		// Navigate to /app to refresh the sidebar.
+		await page.goto('/app');
+		await page.waitForURL(/\/app/);
 
 		await expect(page.getByTestId('org-switcher-trigger')).toBeVisible();
 
@@ -115,9 +115,9 @@ test.describe('Organisation switcher', () => {
 
 		const orgBName = await createSecondOrg(page);
 
-		// Go to admin; after createSecondOrg we may already be there.
-		await page.goto('/admin');
-		await page.waitForURL(/\/admin/);
+		// Go to /app; after createSecondOrg we may already be there.
+		await page.goto('/app');
+		await page.waitForURL(/\/app/);
 
 		// Start on org A (switch explicitly in case we landed on org B).
 		if (!(await page.getByTestId('current-org-name').textContent())?.includes(orgAName)) {
@@ -147,8 +147,8 @@ test.describe('Organisation switcher', () => {
 
 		const orgBName = await createSecondOrg(page);
 
-		await page.goto('/admin');
-		await page.waitForURL(/\/admin/);
+		await page.goto('/app');
+		await page.waitForURL(/\/app/);
 
 		// Ensure we start on org A.
 		if (!(await page.getByTestId('current-org-name').textContent())?.includes(orgAName)) {
@@ -175,13 +175,13 @@ test.describe('Organisation switcher', () => {
 
 		const orgBName = await createSecondOrg(page);
 
-		await page.goto('/admin');
-		await page.waitForURL(/\/admin/);
+		await page.goto('/app');
+		await page.waitForURL(/\/app/);
 
 		await switchToOrg(page, orgBName);
 
-		await page.goto('/admin/settings/organization');
-		await page.waitForURL(/\/admin\/settings\/organization/);
+		await page.goto('/app/parametres');
+		await page.waitForURL(/\/app\/parametres/);
 
 		const settingsName = page.getByTestId('org-settings-name');
 		await expect(settingsName).toBeVisible();
@@ -202,8 +202,8 @@ test.describe('Organisation switcher', () => {
 
 		const orgBName = await createSecondOrg(page);
 
-		await page.goto('/admin');
-		await page.waitForURL(/\/admin/);
+		await page.goto('/app');
+		await page.waitForURL(/\/app/);
 
 		await page.getByTestId('org-switcher-trigger').click();
 

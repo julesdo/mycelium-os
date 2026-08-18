@@ -19,13 +19,6 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		keywords: ['home', 'landing']
 	},
 	{
-		href: '/pricing',
-		access: 'public',
-		group: 'public',
-		titleKey: 'nav.pricing',
-		keywords: ['pricing', 'plans', 'billing']
-	},
-	{
 		href: '/about',
 		access: 'public',
 		group: 'public',
@@ -47,12 +40,6 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		keywords: ['forgot password', 'reset']
 	},
 	{
-		href: '/app/reservations',
-		access: 'authenticated',
-		group: 'app',
-		keywords: ['réservations', 'mes réservations', 'reservations', 'booking']
-	},
-	{
 		href: '/app/settings',
 		access: 'authenticated',
 		group: 'app',
@@ -60,56 +47,11 @@ export const SEARCH_ROUTES: SearchRouteEntry[] = [
 		keywords: ['paramètres', 'compte', 'settings', 'account', 'profil', 'intégrations']
 	},
 	{
-		href: '/admin/dashboard',
-		access: 'admin',
-		group: 'admin',
-		titleKey: 'admin.sidebar.dashboard',
-		keywords: ['tableau de bord', 'dashboard', 'admin']
-	},
-	{
-		href: '/admin/fleet',
-		access: 'admin',
-		group: 'admin',
-		keywords: ['flotte', 'véhicules', 'fleet', 'voitures', 'importer']
-	},
-	{
-		href: '/admin/reservations',
-		access: 'admin',
-		group: 'admin',
-		keywords: ['réservations', 'calendrier', 'planning', 'calendar']
-	},
-{
-		href: '/admin/support',
-		access: 'admin',
-		group: 'admin',
-		titleKey: 'admin.sidebar.support',
-		keywords: ['support', 'tickets', 'messages']
-	},
-	{
-		href: '/admin/settings',
-		access: 'admin',
-		group: 'admin',
+		href: '/app/parametres',
+		access: 'authenticated',
+		group: 'app',
 		titleKey: 'admin.sidebar.settings',
-		keywords: ['paramètres', 'settings', 'organisation', 'admin']
-	},
-	{
-		href: '/admin/settings/members',
-		access: 'admin',
-		group: 'admin',
-		keywords: ['membres', 'invitations', 'équipe', 'team', 'inviter', 'rôles']
-	},
-	{
-		href: '/admin/settings/plans',
-		access: 'admin',
-		group: 'admin',
-		keywords: ['plans', 'facturation', 'abonnement', 'tarifs', 'billing', 'forfait']
-	},
-	{
-		href: '/admin/maintenance',
-		access: 'admin',
-		group: 'admin',
-		titleKey: 'admin.sidebar.maintenance',
-		keywords: ['maintenance', 'entretien', 'révision', 'vidange', 'garage', 'pneus', 'freins']
+		keywords: ['paramètres', 'settings', 'organisation', 'entreprise']
 	}
 ];
 

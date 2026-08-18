@@ -19,9 +19,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	const orgId = await client.mutation(api.organizations.createOrganization, {
 		name,
-		siren: typeof body?.siren === 'string' ? body.siren : undefined,
-		sector: typeof body?.sector === 'string' ? body.sector : undefined,
-		size: typeof body?.size === 'string' ? body.size : undefined
+		siret: typeof body?.siret === 'string' ? body.siret : undefined,
+		etablissementType:
+			typeof body?.etablissementType === 'string' ? body.etablissementType : undefined,
+		couvertsJour: typeof body?.couvertsJour === 'number' ? body.couvertsJour : undefined
 	});
 
 	return json({ orgId }, { status: 201 });

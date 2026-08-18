@@ -1,10 +1,9 @@
 import { type QueryCtx } from '../_generated/server';
 import { components } from '../_generated/api';
 import { v } from 'convex/values';
-import type { AdminUserData, BetterAuthUser, BetterAuthSession } from './types';
-import { parseBetterAuthUsers, parseBetterAuthSessions } from './types';
+import type { AdminUserData, BetterAuthUser } from './types';
+import { parseBetterAuthUsers } from './types';
 import { adminQuery } from '../functions';
-import { getCounters } from './counters';
 
 type ProviderFilter = 'credential' | 'google' | 'github' | 'passkey';
 
@@ -225,28 +224,6 @@ function mapAdminUser(user: BetterAuthUser, providers: string[] = []): AdminUser
 		createdAt: user.createdAt,
 		updatedAt: user.updatedAt
 	};
-}
-
-/**
- * Helper to fetch all users from the BetterAuth component
- */
-async function fetchAllUsers(ctx: QueryCtx): Promise<BetterAuthUser[]> {
-	const result = await ctx.runQuery(components.betterAuth.adapter.findMany, {
-		model: 'user',
-		paginationOpts: { cursor: null, numItems: 1000 }
-	});
-	return parseBetterAuthUsers(result.page);
-}
-
-/**
- * Helper to fetch all sessions from the BetterAuth component
- */
-async function fetchAllSessions(ctx: QueryCtx): Promise<BetterAuthSession[]> {
-	const result = await ctx.runQuery(components.betterAuth.adapter.findMany, {
-		model: 'session',
-		paginationOpts: { cursor: null, numItems: 1000 }
-	});
-	return parseBetterAuthSessions(result.page);
 }
 
 /**
@@ -535,46 +512,6 @@ export const resolveUsersLastPage = adminQuery({
 		return {
 			page: lastPage,
 			cursor
-		};
-	}
-});
-
-/**
- * Get dashboard metrics for admin
- *
- * Computes aggregate statistics for the admin dashboard including
- * user counts, active users, and recent signups.
- *
- * @returns Dashboard metrics object with:
- *   - totalUsers: Total number of registered users
- *   - adminCount: Number of users with admin role
- *   - bannedCount: Number of banned users
- *   - activeIn24h: Unique users active in last 24 hours
- *   - recentSignups: Users registered in last 7 days
- */
-export const getDashboardMetrics = adminQuery({
-	args: {},
-	handler: async (ctx) => {
-		// Static counts from materialized singleton (avoids loading all users)
-		const counters = await getCounters(ctx);
-
-		// Time-windowed metrics — bounded by recency, so full-scan is acceptable
-		const sessions = await fetchAllSessions(ctx);
-		const now = Date.now();
-		const oneDayAgo = now - 24 * 60 * 60 * 1000;
-		const activeIn24h = sessions.filter((s) => s.updatedAt && s.updatedAt > oneDayAgo);
-		const uniqueActiveUsers = new Set(activeIn24h.map((s) => s.userId));
-
-		const users = await fetchAllUsers(ctx);
-		const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-		const recentSignups = users.filter((u) => u.createdAt && u.createdAt > sevenDaysAgo).length;
-
-		return {
-			totalUsers: counters.totalUsers,
-			adminCount: counters.adminCount,
-			bannedCount: counters.bannedCount,
-			activeIn24h: uniqueActiveUsers.size,
-			recentSignups
 		};
 	}
 });

@@ -6,7 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { toast } from 'svelte-sonner';
-	import type { LayoutData } from '../$types';
+	import type { PageData } from './$types';
 	import Logo from '$lib/components/icons/logo.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
@@ -18,7 +18,7 @@
 	import LogInIcon from '@lucide/svelte/icons/log-in';
 	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
 
-	interface Props { data: LayoutData; }
+	interface Props { data: PageData; }
 	let { data }: Props = $props();
 
 	const token = $derived(page.params.token as string);
@@ -26,18 +26,16 @@
 	const isLoggedIn = $derived(!!viewer);
 
 	// Query publique — pas besoin d'être connecté
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const inviteQ = useQuery((api as any)['concierge/staff'].getStaffInvitationByToken, { token });
+	const inviteQ = useQuery(api.concierge.staff.getStaffInvitationByToken, { token });
 
 	// Mutation d'acceptation (authed)
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const accept = useMutation((api as any)['concierge/staff'].acceptStaffInvitation);
+	const accept = useMutation(api.concierge.staff.acceptStaffInvitation);
 
 	let accepting = $state(false);
 	let accepted = $state(false);
 
 	const ROLE_CONFIG = {
-		super_admin: {
+		SUPER_ADMIN: {
 			label: 'Super Admin',
 			description: 'Accès complet à toutes les organisations et à la gestion de l\'équipe Mycelium.',
 			Icon: ShieldIcon,
@@ -45,9 +43,9 @@
 			bg: 'bg-amber-50 dark:bg-amber-950/30',
 			border: 'border-amber-200/60 dark:border-amber-800/40'
 		},
-		concierge: {
-			label: 'Concierge',
-			description: 'Suivi Fleet Care des clients, gestion des tâches et assistance humaine.',
+		OPERATOR: {
+			label: 'Opérateur',
+			description: 'Suivi des cantines clientes, inbox tickets et assistance humaine.',
 			Icon: HeadphonesIcon,
 			color: 'text-violet-600 dark:text-violet-400',
 			bg: 'bg-violet-50 dark:bg-violet-950/30',
@@ -76,14 +74,14 @@
 	}
 
 	function goToConcierge() {
-		goto(resolve(localizedHref('/concierge')));
+		goto(resolve(localizedHref('/ops')));
 	}
 
 	const redirectTo = $derived(encodeURIComponent(`/${page.params.lang ?? 'fr'}/staff-join/${token}`));
 </script>
 
 <svelte:head>
-	<title>Invitation Mycelium Fleet OS</title>
+	<title>Invitation Mycelium</title>
 </svelte:head>
 
 <div class="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
@@ -167,7 +165,7 @@
 						<h1 class="text-lg font-bold">Bienvenue dans l'équipe !</h1>
 						<p class="mt-1 text-sm text-muted-foreground">
 							Votre compte a été activé. Vous avez accès à votre espace
-							<strong>{inviteQ.data.staffRole === 'super_admin' ? 'Super Admin' : 'Concierge'}</strong>.
+							<strong>{inviteQ.data.staffRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Opérateur'}</strong>.
 						</p>
 						<p class="mt-2 text-xs text-muted-foreground/60">
 							Rechargez la page si vous ne voyez pas votre nouvel espace.
@@ -193,7 +191,7 @@
 							Rejoindre l'équipe Mycelium
 						</h1>
 						<p class="mt-1.5 text-sm text-muted-foreground">
-							Vous avez été invité(e) à accéder à la plateforme interne Mycelium Fleet OS.
+							Vous avez été invité(e) à accéder à la plateforme interne Mycelium.
 						</p>
 					</div>
 
@@ -279,6 +277,6 @@
 	</div>
 
 	<p class="mt-8 text-center text-xs text-muted-foreground/40">
-		Mycelium Fleet OS — Plateforme interne réservée au staff
+		Mycelium — Plateforme interne réservée au staff
 	</p>
 </div>

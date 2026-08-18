@@ -30,7 +30,6 @@
 
 	const ROLE_LABELS: Record<string, string> = {
 		ORG_ADMIN: 'Administrateur',
-		ORG_MANAGER: 'Gestionnaire',
 		ORG_MEMBER: 'Membre'
 	};
 
@@ -40,7 +39,7 @@
 		try {
 			await client.mutation(anyApi.organizations.acceptInvitation, { token });
 			toast.success('Bienvenue dans l\'organisation !');
-			goto(localizedHref('/admin'));
+			goto(localizedHref('/app'));
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Une erreur est survenue');
 		} finally {
@@ -117,8 +116,8 @@
 							Vous avez déjà rejoint cette organisation.
 						</p>
 					</div>
-					<Button href={localizedHref('/admin')} class="mt-2 w-full">
-						Accéder à l'espace admin
+					<Button href={localizedHref('/app')} class="mt-2 w-full">
+						Accéder à mon espace
 					</Button>
 				</div>
 
@@ -166,7 +165,7 @@
 		</div>
 
 		<p class="mt-6 text-center text-xs text-muted-foreground">
-			Mycelium Fleet OS &mdash; Plateforme de gestion de flotte pour PME
+			Mycelium &mdash; La conformité EGalim de votre cantine, mesurée et prouvée
 		</p>
 	</div>
 </div>

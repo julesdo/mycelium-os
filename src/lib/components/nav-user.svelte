@@ -13,7 +13,6 @@
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import CreditCardIcon from '@lucide/svelte/icons/credit-card';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import UserXIcon from '@lucide/svelte/icons/user-x';
 	import { T, getTranslate } from '@tolgee/svelte';
@@ -63,7 +62,7 @@
 			if (url) {
 				window.location.href = url;
 			} else {
-				goto(resolve(localizedHref('/admin/settings/plans')));
+				toast.error($t('billing.portal_failed'));
 			}
 		} catch (err) {
 			haptic.trigger('error');
@@ -94,7 +93,7 @@
 				return;
 			}
 			toast.success($t('app.user_menu.impersonation_stopped'));
-			goto(resolve(localizedHref('/admin/settings/members')));
+			goto(resolve(localizedHref('/ops/staff')));
 		} catch {
 			toast.error($t('app.user_menu.impersonation_stop_failed'));
 		}
@@ -160,17 +159,6 @@
 					</div>
 				</DropdownMenu.Label>
 				<DropdownMenu.Separator />
-				{#if !currentPlan || !isActiveSubscription}
-					<DropdownMenu.Group>
-						<a href={resolve(localizedHref('/admin/settings/plans'))}>
-							<DropdownMenu.Item>
-								<SparklesIcon />
-								<T keyName="app.user_menu.upgrade_pro" />
-							</DropdownMenu.Item>
-						</a>
-					</DropdownMenu.Group>
-					<DropdownMenu.Separator />
-				{/if}
 				<DropdownMenu.Group>
 					<a href={resolve(localizedHref('/app/settings'))}>
 						<DropdownMenu.Item>

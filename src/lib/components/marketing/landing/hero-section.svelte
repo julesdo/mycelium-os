@@ -53,7 +53,7 @@
 					{$t('landing.hero.cta_primary')}
 				</a>
 				<a
-					href={resolve(localizedHref('/pricing'))}
+					href={resolve(localizedHref('/about'))}
 					class="inline-flex h-12 items-center gap-2 rounded-full border border-white/25 bg-white/10 px-7 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/15"
 				>
 					{$t('landing.hero.cta_secondary')}

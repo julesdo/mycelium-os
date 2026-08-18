@@ -4,24 +4,20 @@ import { internal } from './_generated/api';
 import { authComponent } from './auth';
 import type { Id } from './_generated/dataModel';
 
-// Plan tier → seats mapping (matches CLAUDE.md pricing)
+// Plan tier → seats mapping (matches CLAUDE.md pricing — échelle EGalim)
 const PLAN_SEATS: Record<string, number> = {
-	essential: 50,
-	professional: 150,
-	business: 300,
-	enterprise: 9999
+	diagnostic: 2,
+	conformite: 3,
+	operateur: 5
 };
 
 // Price ID → plan tier (configured via env PADDLE_PRICE_<TIER>)
 // Resolved at call time so env vars can differ per deployment
-function resolvePlanTier(
-	priceId: string
-): 'essential' | 'professional' | 'business' | 'enterprise' | null {
+function resolvePlanTier(priceId: string): 'diagnostic' | 'conformite' | 'operateur' | null {
 	const env = process.env;
-	if (priceId === env.PADDLE_PRICE_ESSENTIAL) return 'essential';
-	if (priceId === env.PADDLE_PRICE_PROFESSIONAL) return 'professional';
-	if (priceId === env.PADDLE_PRICE_BUSINESS) return 'business';
-	if (priceId === env.PADDLE_PRICE_ENTERPRISE) return 'enterprise';
+	if (priceId === env.PADDLE_PRICE_DIAGNOSTIC) return 'diagnostic';
+	if (priceId === env.PADDLE_PRICE_CONFORMITE) return 'conformite';
+	if (priceId === env.PADDLE_PRICE_OPERATEUR) return 'operateur';
 	return null;
 }
 
@@ -127,7 +123,10 @@ export const upsertSubscription = internalMutation({
 
 			const orgId = await ctx.db.insert('organizations', {
 				name: args.orgName ?? 'Mon entreprise',
-				plan: 'flat',
+				country: 'FR',
+				currency: 'EUR',
+				timezone: 'Europe/Paris',
+				locale: 'fr-FR',
 				paddleSubscriptionId: args.paddleSubscriptionId,
 				paddleCustomerId: args.paddleCustomerId,
 				paddlePlanTier: tier ?? undefined,

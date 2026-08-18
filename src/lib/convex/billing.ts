@@ -3,135 +3,60 @@ import { internalQuery, mutation } from './_generated/server';
 import { authedMutation, authedQuery } from './functions';
 import type { Doc } from './_generated/dataModel';
 
-// ── Plan feature matrix ───────────────────────────────────────────────────────
-
-export const FREE_VEHICLE_LIMIT = 10;
+// ── Plan feature matrix — échelle de valeur EGalim ─────────────────────────────
 
 export const PLAN_FEATURES = {
-	free: {
-		fleet: true,
-		reservations: true,
-		concierge: false,
-		notifications: true,
-		expenses: false,
-		drivers: false,
-		incidents: false,
-		maintenance: true,
-		bik: false,
-		csrd: false,
-		optimizer: false,
-		compliance: false,
-		xero: false,
-		quickbooks: false,
-		coach: false,
-		negotiator: false,
-		finance: false,
-		violations: false,
-		support: false
+	none: {
+		depotFactures: false,
+		diagnostic: false,
+		declaration: false,
+		suiviMensuel: false,
+		veilleReglementaire: false,
+		sourcing: false
 	},
-	essential: {
-		fleet: true,
-		reservations: true,
-		concierge: true,
-		notifications: true,
-		expenses: true,
-		drivers: true,
-		incidents: true,
-		maintenance: true,
-		bik: false,
-		csrd: false,
-		optimizer: false,
-		compliance: false,
-		xero: false,
-		quickbooks: false,
-		coach: false,
-		negotiator: false,
-		finance: true,
-		violations: true,
-		support: true
+	diagnostic: {
+		depotFactures: true,
+		diagnostic: true,
+		declaration: false,
+		suiviMensuel: false,
+		veilleReglementaire: false,
+		sourcing: false
 	},
-	professional: {
-		fleet: true,
-		reservations: true,
-		concierge: true,
-		notifications: true,
-		expenses: true,
-		drivers: true,
-		incidents: true,
-		maintenance: true,
-		bik: true,
-		csrd: true,
-		optimizer: false,
-		compliance: true,
-		xero: true,
-		quickbooks: true,
-		coach: false,
-		negotiator: false,
-		finance: true,
-		violations: true,
-		support: true
+	conformite: {
+		depotFactures: true,
+		diagnostic: true,
+		declaration: true,
+		suiviMensuel: true,
+		veilleReglementaire: true,
+		sourcing: false
 	},
-	business: {
-		fleet: true,
-		reservations: true,
-		concierge: true,
-		notifications: true,
-		expenses: true,
-		drivers: true,
-		incidents: true,
-		maintenance: true,
-		bik: true,
-		csrd: true,
-		optimizer: true,
-		compliance: true,
-		xero: true,
-		quickbooks: true,
-		coach: true,
-		negotiator: true,
-		finance: true,
-		violations: true,
-		support: true
+	operateur: {
+		depotFactures: true,
+		diagnostic: true,
+		declaration: true,
+		suiviMensuel: true,
+		veilleReglementaire: true,
+		sourcing: true
 	},
-	enterprise: {
-		fleet: true,
-		reservations: true,
-		concierge: true,
-		notifications: true,
-		expenses: true,
-		drivers: true,
-		incidents: true,
-		maintenance: true,
-		bik: true,
-		csrd: true,
-		optimizer: true,
-		compliance: true,
-		xero: true,
-		quickbooks: true,
-		coach: true,
-		negotiator: true,
-		finance: true,
-		violations: true,
-		support: true
+	dev: {
+		depotFactures: true,
+		diagnostic: true,
+		declaration: true,
+		suiviMensuel: true,
+		veilleReglementaire: true,
+		sourcing: true
 	}
 } as const;
 
-export type PlanFeature = keyof (typeof PLAN_FEATURES)['business'];
-export type PlanTier =
-	| 'free'
-	| 'essential'
-	| 'professional'
-	| 'business'
-	| 'enterprise'
-	| 'dev'
-	| 'none';
+export type PlanFeature = keyof (typeof PLAN_FEATURES)['operateur'];
+export type PlanTier = 'none' | 'diagnostic' | 'conformite' | 'operateur' | 'dev';
 
-// Seat limits per tier (vehicle limit for free is enforced separately)
-export const PLAN_SEATS: Record<string, number> = {
-	free: 9999,
-	essential: 50,
-	professional: 150,
-	business: 300,
-	enterprise: 9999,
+// Nombre d'utilisateurs autorisés par étage (une cantine = 1 à 3 personnes)
+export const PLAN_SEATS: Record<PlanTier, number> = {
+	none: 0,
+	diagnostic: 2,
+	conformite: 3,
+	operateur: 5,
 	dev: 9999
 };
 
@@ -166,20 +91,20 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
 
 	// Active Paddle subscription
 	if (org.paddleStatus === 'active' || org.paddleStatus === 'trialing') {
-		const tier = (org.paddlePlanTier ?? 'essential') as PlanTier;
+		const tier = (org.paddlePlanTier ?? 'conformite') as PlanTier;
 		return {
 			tier,
 			isDev: false,
-			seatsAllowed: org.seatsIncluded ?? PLAN_SEATS[tier] ?? 50
+			seatsAllowed: org.seatsIncluded ?? PLAN_SEATS[tier] ?? PLAN_SEATS.diagnostic
 		};
 	}
 
-	return { tier: 'free', isDev: false, seatsAllowed: PLAN_SEATS.free };
+	return { tier: 'none', isDev: false, seatsAllowed: PLAN_SEATS.none };
 }
 
 export function planHasFeature(tier: PlanTier, feature: PlanFeature): boolean {
 	if (tier === 'dev') return true;
-	if (tier === 'free' || tier === 'none') return PLAN_FEATURES.free[feature];
+	if (tier === 'none') return PLAN_FEATURES.none[feature];
 	return PLAN_FEATURES[tier]?.[feature] ?? false;
 }
 
@@ -280,7 +205,7 @@ export const activateDevPlan = authedMutation({
 // ── Backend guard helper (use in other Convex mutations/queries) ──────────────
 
 // Call this at the top of any gated mutation to enforce plan access.
-// Usage: await assertFeatureAccess(ctx, orgId, 'bik')
+// Usage: await assertFeatureAccess(ctx, orgId, 'sourcing')
 export async function assertFeatureAccess(
 	ctx: { db: { get: (id: any) => Promise<any>; query: any } },
 	organizationId: string,
@@ -293,7 +218,7 @@ export async function assertFeatureAccess(
 	if (!planHasFeature(tier, feature)) {
 		throw new ConvexError(
 			`Cette fonctionnalité nécessite un plan supérieur. Plan actuel : ${tier}. ` +
-				`Mettez à niveau votre abonnement sur /admin/settings/plans.`
+				`Mettez à niveau votre abonnement pour continuer.`
 		);
 	}
 }
@@ -307,7 +232,6 @@ export async function assertSeatAvailable(
 	if (!org) throw new ConvexError('Organisation introuvable');
 
 	const { tier, seatsAllowed } = resolveEffectivePlan(org);
-	if (tier === 'free') return; // free tier = membres illimités
 	if (tier === 'none') {
 		throw new ConvexError('Aucun abonnement actif. Souscrivez un plan pour continuer.');
 	}
@@ -320,7 +244,7 @@ export async function assertSeatAvailable(
 
 	if (memberCount >= seatsAllowed) {
 		throw new ConvexError(
-			`Quota de conducteurs atteint (${memberCount}/${seatsAllowed}). ` +
+			`Quota d'utilisateurs atteint (${memberCount}/${seatsAllowed}). ` +
 				`Mettez à niveau votre plan pour ajouter des membres supplémentaires.`
 		);
 	}

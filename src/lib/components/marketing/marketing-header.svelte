@@ -1,6 +1,5 @@
 <script lang="ts">
 	import LightSwitch from '$lib/components/ui/light-switch/light-switch.svelte';
-	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { resolve } from '$app/paths';
 	import Logo from '$lib/components/icons/logo.svelte';
@@ -35,13 +34,7 @@
 	const scrolled = $derived(scrollY > 40);
 
 	type NavLink = { key: string; href: string; label?: string };
-	const navLinks = $derived<NavLink[]>([
-		{ key: 'nav.features', href: '/#features' },
-		{ key: 'nav.agents', href: '/#agents' },
-		{ key: 'nav.simulator', href: localizedHref('/simulator'), label: 'Simulateur TCO' },
-		{ key: 'nav.pricing', href: localizedHref('/pricing') },
-		{ key: 'nav.about', href: localizedHref('/about') }
-	]);
+	const navLinks = $derived<NavLink[]>([{ key: 'nav.about', href: localizedHref('/about') }]);
 </script>
 
 <svelte:window bind:scrollY />
@@ -83,7 +76,6 @@
 		<!-- Desktop right -->
 		<div class="hidden items-center gap-2 lg:flex">
 			<LightSwitch variant="ghost" />
-			<LanguageSwitcher variant="ghost" />
 			<div class="mx-1 h-4 w-px bg-border"></div>
 
 			{#if showAuthButtons}
@@ -114,7 +106,6 @@
 		<!-- Mobile right -->
 		<div class="flex items-center gap-1 lg:hidden">
 			<LightSwitch variant="ghost" />
-			<LanguageSwitcher variant="ghost" />
 			<button
 				class="flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
 				onclick={() => (menuOpen = !menuOpen)}

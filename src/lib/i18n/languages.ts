@@ -1,5 +1,6 @@
 /**
- * Supported languages configuration for i18n
+ * Supported languages configuration for i18n.
+ * EGalim est une loi française : l'interface est monolingue.
  */
 
 export interface Language {
@@ -15,24 +16,6 @@ export interface Language {
 
 export const SUPPORTED_LANGUAGES: Language[] = [
 	{
-		code: 'en',
-		name: 'English',
-		nameEn: 'English',
-		flag: '🇺🇸'
-	},
-	{
-		code: 'de',
-		name: 'Deutsch',
-		nameEn: 'German',
-		flag: '🇩🇪'
-	},
-	{
-		code: 'es',
-		name: 'Español',
-		nameEn: 'Spanish',
-		flag: '🇪🇸'
-	},
-	{
 		code: 'fr',
 		name: 'Français',
 		nameEn: 'French',
@@ -41,7 +24,7 @@ export const SUPPORTED_LANGUAGES: Language[] = [
 ];
 
 /** Default language code */
-export const DEFAULT_LANGUAGE = 'en';
+export const DEFAULT_LANGUAGE = 'fr';
 
 /** Map of language codes for quick lookup */
 export const LANGUAGE_CODES = new Set(SUPPORTED_LANGUAGES.map((lang) => lang.code));
@@ -54,11 +37,10 @@ export function isSupportedLanguage(code: string | undefined): code is string {
 }
 
 /**
- * Get language by code or return default
+ * Get language by code or return default.
+ * Le paramètre est conservé pour la compatibilité des appelants ; une seule
+ * langue étant supportée, il est ignoré.
  */
-export function getLanguage(code: string | undefined): Language {
-	if (!code) {
-		return SUPPORTED_LANGUAGES.find((lang) => lang.code === DEFAULT_LANGUAGE)!;
-	}
-	return SUPPORTED_LANGUAGES.find((lang) => lang.code === code) ?? SUPPORTED_LANGUAGES[0]!;
+export function getLanguage(_code?: string): Language {
+	return SUPPORTED_LANGUAGES[0]!;
 }

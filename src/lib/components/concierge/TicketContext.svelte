@@ -7,23 +7,22 @@
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 
 	const TIER_LABEL: Record<string, string> = {
-		essential: 'Essential',
-		professional: 'Professional',
-		business: 'Business',
-		enterprise: 'Enterprise'
+		diagnostic: 'Diagnostic',
+		conformite: 'Conformité',
+		operateur: 'Opérateur'
 	};
 
 	const TIER_COLOR: Record<string, string> = {
-		essential: 'text-muted-foreground border-border/50',
-		professional: 'text-blue-600 border-blue-500/30 bg-blue-500/5 dark:text-blue-400',
-		business: 'text-purple-600 border-purple-500/30 bg-purple-500/5 dark:text-purple-400',
-		enterprise: 'text-amber-600 border-amber-500/30 bg-amber-500/10 dark:text-amber-400'
+		diagnostic: 'text-muted-foreground border-border/50',
+		conformite: 'text-blue-600 border-blue-500/30 bg-blue-500/5 dark:text-blue-400',
+		operateur: 'text-purple-600 border-purple-500/30 bg-purple-500/5 dark:text-purple-400'
 	};
 
 	let { organizationId }: { organizationId: Id<'organizations'> } = $props();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const context = useQuery((api as any)['concierge/tickets'].getTicketContext, { organizationId });
+	const context = useQuery(api.concierge.tickets.getTicketContext, () => ({
+		organizationId
+	}));
 </script>
 
 <div class="space-y-4">
@@ -79,7 +78,7 @@
 		<div class="space-y-1.5">
 			<p class="text-[11px] font-medium text-muted-foreground">Liens rapides</p>
 			<a
-				href="/concierge/{organizationId}"
+				href="/ops/{organizationId}"
 				class="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
 			>
 				<BuildingIcon class="size-3.5" />

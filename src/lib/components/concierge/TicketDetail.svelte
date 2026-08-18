@@ -22,21 +22,14 @@
 		backHref: string;
 	} = $props();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const ticket = useQuery((api as any)['concierge/tickets'].getTicket, { ticketId });
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const staff = useQuery((api as any)['concierge/staff'].listMyceliumStaff, {});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const myRole = useQuery(api['concierge/queries'].getMyStaffRole, {});
+	const ticket = useQuery(api.concierge.tickets.getTicket, () => ({ ticketId }));
+	const staff = useQuery(api.concierge.staff.listMyceliumStaff, {});
+	const myRole = useQuery(api.concierge.queries.getMyStaffRole, {});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const takeTicket = useMutation((api as any)['concierge/tickets'].takeTicket);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const sendMessage = useMutation((api as any)['concierge/tickets'].sendTicketMessage);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const resolveTicket = useMutation((api as any)['concierge/tickets'].resolveTicket);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const reassignTicket = useMutation((api as any)['concierge/tickets'].reassignTicket);
+	const takeTicket = useMutation(api.concierge.tickets.takeTicket);
+	const sendMessage = useMutation(api.concierge.tickets.sendTicketMessage);
+	const resolveTicket = useMutation(api.concierge.tickets.resolveTicket);
+	const reassignTicket = useMutation(api.concierge.tickets.reassignTicket);
 
 	let replyContent = $state('');
 	let isInternal = $state(false);
@@ -51,7 +44,7 @@
 	let assigneeOpen = $state(false);
 	let reassigning = $state(false);
 
-	const isSuperAdmin = $derived(myRole.data?.staffRole === 'super_admin');
+	const isSuperAdmin = $derived(myRole.data?.staffRole === 'SUPER_ADMIN');
 
 	async function handleSend() {
 		if (!replyContent.trim() || sending) return;

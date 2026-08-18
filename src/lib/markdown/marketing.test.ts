@@ -53,15 +53,15 @@ describe('marketing markdown helpers', () => {
 	it('renders frontmatter with requested route metadata', () => {
 		const markdown = renderMarketingMarkdown(sampleDocument, {
 			origin: 'https://example.com',
-			pathname: '/de/about',
-			lang: 'de'
+			pathname: '/fr/about',
+			lang: 'fr'
 		});
 
 		expect(markdown).toContain('title: "Sample Page"');
-		expect(markdown).toContain('route: "/de/about"');
-		expect(markdown).toContain('lang_served: "de"');
-		expect(markdown).toContain('content_language: "en"');
-		expect(markdown).toContain('canonical: "https://example.com/de/about"');
+		expect(markdown).toContain('route: "/fr/about"');
+		expect(markdown).toContain('lang_served: "fr"');
+		expect(markdown).toContain('content_language: "fr"');
+		expect(markdown).toContain('canonical: "https://example.com/fr/about"');
 		expect(markdown).toContain('## Overview');
 		expect(markdown).toContain('- First bullet');
 	});
@@ -69,8 +69,8 @@ describe('marketing markdown helpers', () => {
 	it('returns markdown responses with caching and vary headers', async () => {
 		const response = createMarketingMarkdownResponse(homeMarketingMarkdown, {
 			origin: 'https://example.com',
-			pathname: '/de',
-			lang: 'de'
+			pathname: '/fr',
+			lang: 'fr'
 		});
 
 		expect(response.status).toBe(200);
@@ -82,9 +82,9 @@ describe('marketing markdown helpers', () => {
 		expect(response.headers.get('cache-control')).not.toContain('s-maxage');
 
 		const body = await response.text();
-		expect(body).toContain('# Build & Ship Your Product Faster');
-		expect(body).toContain('lang_served: "de"');
-		expect(body).toContain('content_language: "en"');
+		expect(body).toContain(`# ${homeMarketingMarkdown.title}`);
+		expect(body).toContain('lang_served: "fr"');
+		expect(body).toContain('content_language: "fr"');
 	});
 
 	it('returns a 406 response when markdown is not accepted', async () => {
@@ -99,10 +99,10 @@ describe('marketing markdown helpers', () => {
 		const llms = renderLlmsTxt('https://example.com');
 
 		expect(llms).toContain(`# ${LEGAL_CONFIG.brandName}`);
-		expect(llms).toContain('https://example.com/en/about');
-		expect(llms).toContain('https://example.com/en/privacy');
-		expect(llms).toContain('https://example.com/en/terms');
-		expect(llms).toContain('https://example.com/en/impressum');
+		expect(llms).toContain('https://example.com/fr/about');
+		expect(llms).toContain('https://example.com/fr/privacy');
+		expect(llms).toContain('https://example.com/fr/terms');
+		expect(llms).toContain('https://example.com/fr/impressum');
 		expect(llms).toContain('Accept: text/markdown');
 	});
 
@@ -118,7 +118,7 @@ describe('marketing markdown helpers', () => {
 
 		expect(robots).toContain('User-agent: *');
 		expect(robots).toContain('Allow: /');
-		expect(robots).toContain('Disallow: /en/app');
+		expect(robots).toContain('Disallow: /fr/app');
 		expect(robots).toContain('Disallow: /fr/admin');
 		expect(robots).toContain('Sitemap: https://example.com/sitemap.xml');
 	});
@@ -135,14 +135,13 @@ describe('marketing markdown helpers', () => {
 		const sitemap = renderSitemapXml('https://example.com');
 
 		expect(sitemap).toContain('<?xml version="1.0" encoding="UTF-8"?>');
-		expect(sitemap).toContain('<loc>https://example.com/en</loc>');
-		expect(sitemap).toContain('<loc>https://example.com/de/about</loc>');
-		expect(sitemap).toContain('<loc>https://example.com/fr/pricing</loc>');
-		expect(sitemap).toContain('<loc>https://example.com/en/privacy</loc>');
-		expect(sitemap).toContain('<loc>https://example.com/en/terms</loc>');
-		expect(sitemap).toContain('<loc>https://example.com/en/impressum</loc>');
-		expect(sitemap).not.toContain('/en/app');
-		expect(sitemap).not.toContain('/en/admin');
+		expect(sitemap).toContain('<loc>https://example.com/fr</loc>');
+		expect(sitemap).toContain('<loc>https://example.com/fr/about</loc>');
+		expect(sitemap).toContain('<loc>https://example.com/fr/privacy</loc>');
+		expect(sitemap).toContain('<loc>https://example.com/fr/terms</loc>');
+		expect(sitemap).toContain('<loc>https://example.com/fr/impressum</loc>');
+		expect(sitemap).not.toContain('/fr/app');
+		expect(sitemap).not.toContain('/fr/admin');
 	});
 
 	it('returns sitemap responses as xml', () => {

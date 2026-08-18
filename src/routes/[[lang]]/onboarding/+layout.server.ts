@@ -15,7 +15,7 @@ function decodeJwtRole(token: string): string | null {
 }
 
 export const load: LayoutServerLoad = async ({ locals, params }) => {
-	const lang = params.lang ?? 'en';
+	const lang = params.lang ?? 'fr';
 
 	if (!locals.token) {
 		redirect(307, `/${lang}/signin?redirectTo=/${lang}/onboarding/organization`);
@@ -25,6 +25,6 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 	// L'onboarding ne leur est pas destiné : on les redirige vers leur portail.
 	const role = decodeJwtRole(locals.token);
 	if (role === 'admin') {
-		redirect(307, `/${lang}/concierge`);
+		redirect(307, `/${lang}/ops`);
 	}
 };

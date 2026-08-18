@@ -15,15 +15,13 @@
 
 	const SOURCE_LABEL: Record<string, string> = {
 		HUMAN_ASSIST: 'Demande client',
-		SUPPORT_TICKET: 'Support',
-		CONCIERGE_TASK: 'Automatique',
-		SALES_MESSAGE: 'Commercial',
+		REVUE_LIGNES: 'Revue de lignes',
 		MANUAL: 'Manuel'
 	};
 </script>
 
 <a
-	href={href ?? resolve(localizedHref(`/concierge/inbox/${ticket._id}`))}
+	href={href ?? resolve(localizedHref(`/ops/inbox/${ticket._id}`))}
 	class="flex items-start gap-3 px-6 py-3.5 transition-colors hover:bg-muted/40"
 >
 	<span class="mt-2 size-2 shrink-0 rounded-full {PRIORITY_DOT[ticket.priority] ?? 'bg-muted'}"></span>
