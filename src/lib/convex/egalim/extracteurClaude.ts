@@ -1,9 +1,10 @@
 'use node';
 
-import Anthropic, { APIConnectionError, InternalServerError, RateLimitError } from '@anthropic-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { documentExtraitSchema, type DocumentExtrait } from './extractionSchema';
 import { construirePromptExtraction } from './promptExtraction';
+import { avecReprise } from './reprise';
 
 /**
  * L'extracteur Claude universel : PDF, image, photo, texte brut OCR — tout ce
@@ -16,8 +17,6 @@ import { construirePromptExtraction } from './promptExtraction';
 
 const MODELE_EXTRACTION = 'claude-opus-5';
 const MAX_TOKENS = 16_000;
-const TENTATIVES_RESEAU = 3;
-const DELAI_BASE_MS = 500;
 
 const TYPES_IMAGE_ACCEPTES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
 type TypeImageAccepte = (typeof TYPES_IMAGE_ACCEPTES)[number];
@@ -101,37 +100,6 @@ function construireBlocsContenu(
 	}
 
 	return blocs;
-}
-
-/** 429, 5xx (dont 529 surchargé), et erreurs réseau : tout le reste est une vraie erreur de requête. */
-function estErreurTransitoire(erreur: unknown): boolean {
-	return (
-		erreur instanceof RateLimitError ||
-		erreur instanceof InternalServerError ||
-		erreur instanceof APIConnectionError
-	);
-}
-
-/**
- * 3 tentatives avec backoff exponentiel sur erreur transitoire. Un 400 (bug
- * de la requête, jamais transitoire) part immédiatement sans être rejoué.
- */
-async function avecReprise<T>(appel: () => Promise<T>): Promise<T> {
-	let derniereErreur: unknown;
-	for (let tentative = 1; tentative <= TENTATIVES_RESEAU; tentative++) {
-		try {
-			return await appel();
-		} catch (erreur) {
-			derniereErreur = erreur;
-			if (tentative === TENTATIVES_RESEAU || !estErreurTransitoire(erreur)) {
-				throw erreur;
-			}
-			const delaiMs = DELAI_BASE_MS * 2 ** (tentative - 1);
-			await new Promise((resolve) => setTimeout(resolve, delaiMs));
-		}
-	}
-	// Inatteignable : chaque itération ci-dessus renvoie ou relance.
-	throw derniereErreur;
 }
 
 /**

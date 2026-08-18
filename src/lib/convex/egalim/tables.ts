@@ -1,7 +1,7 @@
 import { defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
-const vFamille = v.union(
+export const vFamille = v.union(
 	v.literal('VIANDE'),
 	v.literal('POISSON'),
 	v.literal('FRUITS_LEGUMES'),
@@ -12,7 +12,7 @@ const vFamille = v.union(
 	v.literal('AUTRE')
 );
 
-const vLabel = v.union(
+export const vLabel = v.union(
 	v.literal('AB'),
 	v.literal('CONVERSION'),
 	v.literal('LABEL_ROUGE'),
@@ -115,7 +115,11 @@ export const egalimTables = {
 		.index('by_batch', ['batchId'])
 		.index('by_org_and_date', ['organizationId', 'invoiceDate'])
 		.index('by_batch_and_review', ['batchId', 'reviewStatus'])
-		.index('by_normalized_label', ['normalizedLabel']),
+		// Borné au lot, jamais global : appliquer une classification ne doit
+		// jamais faire LIRE les lignes d'une autre organisation. C'est aussi la
+		// bonne sémantique métier — un diagnostic livré est figé, un lot
+		// antérieur ne se reclasse pas.
+		.index('by_batch_and_label', ['batchId', 'normalizedLabel']),
 
 	// Cache global de classification par libellé distinct.
 	// SANS organizationId, délibérément : ne contient QUE la chaîne de libellé

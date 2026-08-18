@@ -7,6 +7,10 @@
 		/* These settings are not required by Convex and can be modified. */
 		"allowJs": true,
 		"strict": true,
+		// Aligné sur le tsconfig de l'app : sans lui, `check:convex` passe au vert
+		// sur des accès indexés non vérifiés que `check` refuse — et le backend
+		// dérive silencieusement vers une strictesse moindre que le reste.
+		"noUncheckedIndexedAccess": true,
 		"moduleResolution": "Bundler",
 		"jsx": "react-jsx",
 		"skipLibCheck": true,

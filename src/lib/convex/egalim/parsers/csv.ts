@@ -184,8 +184,9 @@ function reconcilierTokens(
 		let fusionne = false;
 		for (const i of indices) {
 			if (i < 0 || i + 1 >= resultat.length) continue;
-			const entier = resultat[i].trim();
-			const fraction = resultat[i + 1].trim();
+			const entier = resultat[i]?.trim();
+			const fraction = resultat[i + 1]?.trim();
+			if (entier === undefined || fraction === undefined) continue;
 			if (/^-?\d+$/.test(entier) && /^\d{1,2}$/.test(fraction)) {
 				resultat = [...resultat.slice(0, i), `${entier}.${fraction}`, ...resultat.slice(i + 2)];
 				indices = indices.map((j) => (j > i ? j - 1 : j));
@@ -213,13 +214,15 @@ export function parseCsv(contenu: string): ResultatCsv {
 	});
 
 	const rangees = resultatBrut.data.filter(
-		(rangee) => rangee.length > 1 || (rangee.length === 1 && rangee[0].trim() !== '')
+		(rangee) => rangee.length > 1 || (rangee.length === 1 && (rangee[0] ?? '').trim() !== '')
 	);
-	if (rangees.length === 0) {
+
+	const premiereRangee = rangees[0];
+	if (premiereRangee === undefined) {
 		return { lignes: [], lignesIgnorees: [], erreur: 'Fichier CSV vide.' };
 	}
 
-	const headers = rangees[0].map((h) => h.trim());
+	const headers = premiereRangee.map((h) => h.trim());
 	const mapping = detecterColonnes(headers);
 
 	if (mapping.label === null) {

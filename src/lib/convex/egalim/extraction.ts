@@ -10,6 +10,7 @@ import { decoderTexte, detecterColonnes, parseCsv, type LigneBrute } from './par
 import { extraireAvecClaude, type ContenuDocument, type UsageExtraction } from './extracteurClaude';
 import { verifierExtraction } from './verification';
 import type { DocumentExtrait } from './extractionSchema';
+import { CAP_EUR, estimerCout } from './cout';
 
 /**
  * L'orchestration d'extraction — un document, un chemin déterministe (CSV)
@@ -22,7 +23,6 @@ import type { DocumentExtrait } from './extractionSchema';
  * (voir `extractionMutations.ts`, qui vit à côté sans cette directive).
  */
 
-const CAP_EUR = 10;
 /** En plus de la tentative initiale : 3 appels Claude maximum par document. */
 const RELANCES_MAX = 2;
 const PAGES_PAR_APPEL = 10;
@@ -30,21 +30,6 @@ const SEUIL_DECOUPAGE_PAGES = 20;
 /** Vise une résolution proche du maximum accepté par Opus 5 (2576 px sur le grand côté) sans le dépasser largement. */
 const ECHELLE_RENDU_PDF = 3;
 const SEUIL_CARACTERES_COUCHE_TEXTE = 20;
-
-// Prix Opus 5 (liste), en dollars ; traités comme des euros dans `costEur` —
-// c'est un budget indicatif de pilotage, pas une facture, donc pas de
-// conversion de change ici.
-const PRIX_INPUT_PAR_TOKEN = 5 / 1_000_000;
-const PRIX_OUTPUT_PAR_TOKEN = 25 / 1_000_000;
-const FACTEUR_CACHE = 0.1;
-
-function estimerCout(usage: UsageExtraction): number {
-	return (
-		usage.tokensIn * PRIX_INPUT_PAR_TOKEN +
-		usage.cacheReadTokens * PRIX_INPUT_PAR_TOKEN * FACTEUR_CACHE +
-		usage.tokensOut * PRIX_OUTPUT_PAR_TOKEN
-	);
-}
 
 type Nature = 'CSV' | 'PDF' | 'IMAGE' | 'TEXTE';
 
@@ -109,10 +94,12 @@ function mediaTypeImage(filename: string, mimeType: string): string {
 
 function depuisDataUrl(dataUrl: string): { mediaType: string; base64: string } {
 	const correspondance = /^data:([^;]+);base64,(.+)$/s.exec(dataUrl);
-	if (!correspondance) {
+	const mediaType = correspondance?.[1];
+	const base64 = correspondance?.[2];
+	if (mediaType === undefined || base64 === undefined) {
 		throw new Error('Rendu de page PDF dans un format inattendu (pas une data URL base64).');
 	}
-	return { mediaType: correspondance[1], base64: correspondance[2] };
+	return { mediaType, base64 };
 }
 
 /** PDF avec couche texte → texte. PDF scanné → une image par page (haute résolution, jamais réduite). */
