@@ -58,6 +58,90 @@
 
 ---
 
+## Ce qu'impose une vraie facture
+
+Une facture fournisseur réelle a été analysée le 15/08/2026. Elle invalide plusieurs hypothèses de la première rédaction et fixe le niveau d'exigence de l'extraction. **Le fichier source n'est pas versionné** — il porte un SIRET, un nom de fournisseur et un nom de client réels. Seule une fixture anonymisée qui en reproduit la structure entre dans le dépôt.
+
+### 1. Les factures arrivent océrisées, pas en texte propre
+
+Le fichier est une sortie d'OCR, avec des substitutions systématiques :
+
+| Écrit | Lire | Exemples relevés |
+|---|---|---|
+| `0` | `O` | `CAR0TTES`, `P0MME`, `T0TAL` |
+| `!` | `I` ou `L` | `S!RET`, `CAB!LLAUD`, `DES!GNATION`, `Te!`, `FR!GO`, `L!VRAISON` |
+| `3` | `E` | `L3S` |
+| `8` | `B` | `8RETONNES` |
+
+**Conséquence directe :** sans normalisation de ces substitutions, `CAR0TTES SABLES VRAC` et `CAROTTES SABLES VRAC` sont deux libellés distincts. Le cache `productLabels` se fragmente, chaque variante repart en classification, et l'économie du produit s'effondre en silence. Traité en tâche 7.
+
+### 2. Le code TVA est un contrôle arithmétique gratuit
+
+Le pied de facture porte les bases par taux :
+
+```
+Code 1 (5.5%) : 290.00 EUR
+Code 2 (20.0%) : 22.00 EUR
+Total H.T. : 312.00 EUR
+```
+
+En France, l'alimentaire est à 5,5 % ou 10 %, le non-alimentaire à 20 %. Sur cette facture, les deux lignes à 20 % — une éponge à 7,00 € et un forfait de livraison frigorifique à 15,00 € — font exactement 22,00 €, et les six lignes alimentaires exactement 290,00 €.
+
+**La facture porte donc sa propre vérification.** Si la somme des lignes classées `isFood: true` ne retombe pas sur la base au taux réduit, la classification est fausse. C'est un contrôle qui ne coûte rien et qui attrape la classe d'erreur la plus coûteuse : un non-alimentaire compté au dénominateur tire tous les ratios vers le bas. Traité en tâche 6.
+
+### 3. Le label qualifiant vit sur une ligne de continuation
+
+```
+5      KG     FILET DE CAB!LLAUD           ATL. N.E 12.40     62.00   1
+              (Certifié Peche durable MSC)
+```
+
+La ligne produit ne porte aucun label ; le seul label qualifiant du poisson est sur la ligne suivante, sans montant. Un parseur qui traite les lignes indépendamment perd 62 € de durable — sur une facture à 290 € d'alimentaire, c'est 21 points de ratio.
+
+Même mécanique en sens inverse : `-> (Cartons de 3kg)` et `* REMISE PROMO ETE -10%` sont aussi des lignes de continuation. La première ne doit pas devenir une ligne ; la seconde si, avec un montant négatif.
+
+**Règle :** une ligne sans quantité ni prix unitaire est une continuation. Elle se rattache à la ligne produit précédente, dont elle enrichit le libellé (si elle porte un label) ou qu'elle corrige (si elle porte un montant).
+
+### 4. Trois faux amis qu'un classifieur naïf qualifierait
+
+| Mention sur la facture | Ce que c'est réellement | EGalim |
+|---|---|---|
+| `V.B.F.` | Viande Bovine Française — une **origine** | ❌ ne qualifie rien |
+| `POULE PLEIN AIR`, `Code 1` | Mode d'élevage des poules pondeuses | ❌ ne qualifie rien |
+| `FR`, `FRANCE`, `ATL. N.E` | Origine géographique | ❌ « local ne compte pas » |
+
+Et deux vrais labels, **tous deux durables sans être bio** : `H.V.E 3` sur les pommes (44,00 €) et `Peche durable MSC` sur le cabillaud (62,00 €).
+
+Ces faux amis entrent dans le prompt système en tant que contre-exemples explicites (tâche 8). C'est exactement le genre d'erreur qu'un modèle commet sans hésiter si on ne le prévient pas : `V.B.F.` *ressemble* à un label, et il est apposé sur la ligne la plus chère de la facture.
+
+### 5. La mise en page est en colonnes de largeur fixe
+
+Les tuyaux `|` n'apparaissent que dans l'en-tête ; les données sont alignées à l'espace. Ce n'est ni du CSV, ni un tableau exploitable par un séparateur. L'extraction doit traiter ce format en plus du CSV. Traité en tâche 6.
+
+### 6. Vérité terrain de cette facture
+
+Elle sert de référence à la fixture anonymisée de la tâche 3 :
+
+| | Montant HT | Détail |
+|---|---|---|
+| Total facture | 312,00 € | |
+| **Total alimentaire** | **290,00 €** | 13,75 + 150,00 + 22,50 − 2,25 + 44,00 + 62,00 |
+| Non alimentaire | 22,00 € | éponge 7,00 + forfait livraison 15,00 |
+| **Durable** | **106,00 €** | pomme HVE 3 (44,00) + cabillaud MSC (62,00) |
+| **Bio** | **0,00 €** | aucun produit bio |
+| Viande + poisson | 212,00 € | steak 150,00 + cabillaud 62,00 |
+| dont durable | 62,00 € | cabillaud MSC seul |
+
+| Ratio | Valeur | Seuil | Verdict |
+|---|---|---|---|
+| Durable | **36,55 %** | 50 % | ❌ |
+| Bio | **0,00 %** | 20 % | ❌ |
+| Viande-poisson durable | **29,25 %** | 60 % | ❌ |
+
+Les trois seuils sont manqués. C'est le cas typique du prospect, et un excellent jeu de test : il exerce les trois ratios à la fois, dont un à zéro et un sur un sous-ensemble de familles.
+
+---
+
 ## Task 1: Dépendances et référentiel EGalim
 
 Le référentiel porte le risque maximal du produit : une règle de dérivation fausse contamine tous les rapports **silencieusement** et engage la responsabilité de conseil. C'est le seul endroit où la couverture doit être exhaustive. TDD strict.
@@ -241,6 +325,24 @@ export const MENTIONS_NON_QUALIFIANTES = [
 	'traditionnel',
 	'régional'
 ] as const;
+
+/**
+ * Faux amis relevés sur de vraies factures : des sigles et mentions qui
+ * RESSEMBLENT à un label officiel mais n'en sont pas. Ils sont injectés comme
+ * contre-exemples explicites dans le prompt de classification — un modèle non
+ * prévenu les qualifie sans hésiter, et ils sont souvent apposés sur les lignes
+ * les plus chères de la facture.
+ */
+export const FAUX_AMIS: ReadonlyArray<{ mention: string; nature: string }> = [
+	{ mention: 'VBF / V.B.F.', nature: 'Viande Bovine Française — une origine, pas un label' },
+	{ mention: 'VPF / V.P.F.', nature: 'Viande Porcine Française — une origine, pas un label' },
+	{ mention: 'plein air', nature: "mode d'élevage des volailles, pas un label EGalim" },
+	{ mention: 'Code 0 / 1 / 2 / 3', nature: "code d'élevage des poules pondeuses" },
+	{ mention: 'FR, FRANCE, origine France', nature: 'origine géographique' },
+	{ mention: 'ATL. N.E, FAO 27', nature: 'zone de pêche, pas un écolabel' },
+	{ mention: 'HVE niveau 1, HVE niveau 2', nature: 'seul le niveau 3 qualifie' },
+	{ mention: 'sans OGM, sans antibiotique', nature: 'allégation produit, pas un label EGalim' }
+];
 
 /** Un produit est bio s'il porte AB ou la mention de conversion. */
 export function estBio(labels: readonly Label[]): boolean {
@@ -558,48 +660,116 @@ Les fixtures valident le **code** ; la gate valide le **classifieur face au rée
 - Create: `scripts/generate-fixtures.ts`
 - Create: `src/lib/fixtures/factures/` (sorties commitées)
 
-- [ ] **Step 1: Écrire le générateur**
+- [ ] **Step 1: La fixture de référence — décalquée de la vraie facture**
 
-`scripts/generate-fixtures.ts` produit trois fichiers CSV dans `src/lib/fixtures/factures/`, avec une vérité terrain connue au centime dans un `.expected.json` associé. Pathologies obligatoires, une au moins par fichier :
+Écrire à la main `src/lib/fixtures/factures/grossiste-ocr-01.txt`, qui reproduit **exactement la structure** de la facture réelle analysée plus haut, avec des noms inventés. Toutes les pathologies de la section « Ce qu'impose une vraie facture » y sont, aux mêmes montants — c'est ce qui permet de vérifier les ratios au centime.
 
-| Pathologie | Exemple |
-|---|---|
-| Libellés tronqués ou codés | `CAR RD 4/4 AB 2K5`, `REF 88213` |
-| **Avoirs** (lignes négatives) | `AVOIR CAROTTE BIO` à `-45.20` |
-| Frais de port, consignes, emballages | `FRAIS DE PORT`, `CONSIGNE PALETTE` — non alimentaires |
-| Totaux intermédiaires de bas de page | `TOTAL PAGE 1` — ressemble à une ligne produit |
-| Remises de ligne | `REMISE 5% EPICERIE` |
-| Unités hétérogènes | kg, pièce, colis, litre |
-| Label tantôt en libellé, tantôt en colonne, tantôt absent | colonne `LABEL` vide alors que le produit est bio |
+```
+S.A.R.L. L3S C0MPT0IRS DU N0RD
+ZI. Est, 59000 LILL3
+Te! : 03.20.00.00.00  S!RET: 000000000 00000
 
-Le `.expected.json` porte les ratios attendus, calculés à la main dans le générateur :
+FACTURE N. F24-0001a       Date : 12 /09 /2026
+Cl!ent : CUISINE CENTRALE DEM0 (C-0001)
 
-```ts
-export interface ExpectedRatios {
-	totalHT: number;
-	totalFoodHT: number;
-	durableHT: number;
-	bioHT: number;
-	meatFishTotalHT: number;
-	meatFishDurableHT: number;
-	ratios: { durable: number; bio: number; meatFishDurable: number };
+QTE | UNITE | DES!GNATION | ORIG./LAB. | P.U. HT | T0TAL HT |TVA
+
+12.5   KG     CAR0TTES SABLES VRAC         FR       1.10      13.75   1
+10     COLIS  STEAK H. BOEUF V.B.F.        FRANCE   15.00     150.00  1
+              -> (Cartons de 3kg)
+5      Plaq   OEUF POULE PLEIN AIR         Code 1   4.50      22.50   1
+              * REMISE PROMO ETE -10%                         -2.25   1
+20     KG     P0MME GALA H.V.E 3           FR       2.20      44.00   1
+5      KG     FILET DE CAB!LLAUD           ATL. N.E 12.40     62.00   1
+              (Certifié Peche durable MSC)
+2      U      LAVETTE Eponge BLEUE         -        3.50      7.00    2
+1      F      FORFAIT FR!GO L!VRAISON      -        15.00     15.00   2
+
+------------------------------------------------------
+BASES T.V.A :
+Code 1 (5.5%) : 290.00 EUR  -> TVA : 15.95 EUR
+Code 2 (20.0%) : 22.00 EUR  -> TVA : 4.40 EUR
+
+Total H.T. : 312.00 EUR
+NET A PAYER TTC : 332.35 EUR
+```
+
+Sa vérité terrain, dans `grossiste-ocr-01.expected.json` :
+
+```json
+{
+  "totalHT": 312.00,
+  "totalFoodHT": 290.00,
+  "durableHT": 106.00,
+  "bioHT": 0.00,
+  "meatFishTotalHT": 212.00,
+  "meatFishDurableHT": 62.00,
+  "ratios": { "durable": 0.3655172413793103, "bio": 0, "meatFishDurable": 0.29245283018867924 },
+  "vatCrossCheck": { "reducedRateBase": 290.00, "standardRateBase": 22.00 },
+  "lines": [
+    { "rawLabel": "CAR0TTES SABLES VRAC", "amountHT": 13.75, "isFood": true, "family": "FRUITS_LEGUMES", "qualifyingLabels": [] },
+    { "rawLabel": "STEAK H. BOEUF V.B.F.", "amountHT": 150.00, "isFood": true, "family": "VIANDE", "qualifyingLabels": [] },
+    { "rawLabel": "OEUF POULE PLEIN AIR", "amountHT": 22.50, "isFood": true, "family": "LAITIERS", "qualifyingLabels": [] },
+    { "rawLabel": "REMISE PROMO ETE -10%", "amountHT": -2.25, "isFood": true, "family": "LAITIERS", "qualifyingLabels": [] },
+    { "rawLabel": "P0MME GALA H.V.E 3", "amountHT": 44.00, "isFood": true, "family": "FRUITS_LEGUMES", "qualifyingLabels": ["HVE3"] },
+    { "rawLabel": "FILET DE CAB!LLAUD (Certifié Peche durable MSC)", "amountHT": 62.00, "isFood": true, "family": "POISSON", "qualifyingLabels": ["PECHE_DURABLE"] },
+    { "rawLabel": "LAVETTE Eponge BLEUE", "amountHT": 7.00, "isFood": false, "family": "AUTRE", "qualifyingLabels": [] },
+    { "rawLabel": "FORFAIT FR!GO L!VRAISON", "amountHT": 15.00, "isFood": false, "family": "AUTRE", "qualifyingLabels": [] }
+  ]
 }
 ```
 
-**Un avoir réduit numérateur ET dénominateur.** C'est la règle la plus facile à rater : une ligne à `-45.20` sur un produit bio doit retrancher 45,20 € du total alimentaire *et* du total bio. Le générateur doit produire au moins un avoir sur un produit qualifiant et un sur un produit non qualifiant.
+Points de vigilance encodés dans ce fichier attendu, chacun correspondant à une erreur que le pipeline peut commettre :
 
-- [ ] **Step 2: Générer et commiter les fixtures**
+| Ligne attendue | Ce qu'elle teste |
+|---|---|
+| `STEAK ... V.B.F.` avec `qualifyingLabels: []` | Le faux ami `V.B.F.` n'est pas un label |
+| `OEUF POULE PLEIN AIR` avec `[]` | Le faux ami « plein air » n'est pas un label |
+| `REMISE PROMO ETE` à `-2.25`, `isFood: true`, famille `LAITIERS` | La remise hérite de la famille du produit qu'elle corrige, et reste alimentaire |
+| `FILET DE CAB!LLAUD (Certifié Peche durable MSC)` en **un seul** `rawLabel` | La ligne de continuation a bien été fusionnée |
+| `-> (Cartons de 3kg)` **absent** de la liste | La continuation sans montant n'a pas produit de ligne |
+| `LAVETTE` et `FORFAIT FR!GO` en `isFood: false` | Le non-alimentaire est exclu du dénominateur |
+| `vatCrossCheck` | La somme des lignes `isFood` retombe sur la base à 5,5 % |
+
+- [ ] **Step 2: Écrire le générateur pour les variantes**
+
+`scripts/generate-fixtures.ts` produit **deux fixtures CSV** supplémentaires, cette fois générées, pour couvrir les formats que la fixture OCR n'exerce pas :
+
+| Fixture | Ce qu'elle ajoute |
+|---|---|
+| `export-comptable-01.csv` | Le chemin royal : export comptable propre, séparateur `;`, montants à virgule décimale, encodage ISO-8859-1, une colonne `LABEL` dédiée |
+| `grossiste-sale-01.csv` | Séparateur `,`, colonnes dans un ordre inhabituel, lignes vides, `TOTAL PAGE 1` en milieu de fichier, deux **avoirs** (un sur un produit bio, un sur un conventionnel), unités hétérogènes (kg, pièce, colis, litre) |
+
+Chacune avec son `.expected.json` au même format.
+
+**Un avoir réduit numérateur ET dénominateur.** C'est la règle la plus facile à rater : une ligne à `-45,20` sur un produit bio doit retrancher 45,20 € du total alimentaire *et* du total bio. `grossiste-sale-01.csv` doit donc porter un avoir sur un produit qualifiant et un sur un produit non qualifiant — les deux cas ne se comportent pas pareil au numérateur.
+
+- [ ] **Step 3: Générer, vérifier l'arithmétique**
 
 ```bash
 bun scripts/generate-fixtures.ts && ls src/lib/fixtures/factures/
 ```
 
-Attendu : 3 paires `.csv` / `.expected.json`.
+Attendu : 3 paires (1 écrite à la main, 2 générées).
 
-- [ ] **Step 3: Commit**
+Puis contrôler que chaque `.expected.json` est cohérent avec lui-même :
 
 ```bash
-git add -A && git commit --no-verify -m "test(egalim): generateur de fixtures avec les pathologies du terrain"
+bun -e "
+for (const f of ['grossiste-ocr-01','export-comptable-01','grossiste-sale-01']) {
+  const e = require('./src/lib/fixtures/factures/'+f+'.expected.json');
+  const somme = e.lines.filter(l=>l.isFood).reduce((s,l)=>s+l.amountHT,0);
+  const ok = Math.abs(somme - e.totalFoodHT) < 0.005;
+  console.log(f, ok ? 'OK' : 'INCOHERENT: '+somme+' != '+e.totalFoodHT);
+}"
+```
+
+Attendu : `OK` sur les trois. Une fixture dont la vérité terrain est fausse est pire qu'aucune fixture — elle valide un bug.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A && git commit --no-verify -m "test(egalim): fixtures decalquees d'une vraie facture ocerisee"
 ```
 
 ---
@@ -888,32 +1058,166 @@ git add -A && git commit --no-verify -m "feat(egalim): extraction CSV avec detec
 
 ---
 
-## Task 6: Extraction PDF texte
+## Task 6: Extraction des factures texte et océrisées
+
+C'est le format de la vraie facture : colonnes à largeur fixe, lignes de continuation, pied de TVA exploitable. Le plus délicat de la phase, et celui où une heuristique fausse produit des lignes fausses **silencieusement**.
 
 **Files:**
+- Create: `src/lib/convex/egalim/parsers/texte.ts`
 - Create: `src/lib/convex/egalim/parsers/pdfText.ts`
 - Create: `src/lib/convex/egalim/extraction.ts`
+- Test: `src/lib/convex/egalim/__tests__/texte.test.ts`
 
-- [ ] **Step 1: Écrire `parsers/pdfText.ts`**
+- [ ] **Step 1: Écrire les tests qui échouent**
 
-Utiliser `unpdf` (compatible runtime serverless) pour extraire le texte brut. La structuration en lignes de facture est ensuite confiée à Claude en sortie typée — les formats de grossistes sont trop hétérogènes pour un parseur d'expressions régulières, et une mauvaise heuristique produit des lignes fausses **silencieusement**.
+```ts
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { extraireLignesTexte, extraireBasesTva } from '../parsers/texte';
 
-- [ ] **Step 2: Écrire `extraction.ts` — l'orchestration**
+const FIXTURE = readFileSync('src/lib/fixtures/factures/grossiste-ocr-01.txt', 'utf8');
+
+describe('extraireLignesTexte — fixture océrisée de référence', () => {
+	const lignes = extraireLignesTexte(FIXTURE);
+
+	it('produit exactement 8 lignes exploitables', () => {
+		expect(lignes).toHaveLength(8);
+	});
+
+	it('n’a pas transformé « -> (Cartons de 3kg) » en ligne', () => {
+		expect(lignes.some((l) => l.rawLabel.includes('Cartons de 3kg'))).toBe(false);
+	});
+
+	it('fusionne le label de continuation dans le libellé du cabillaud', () => {
+		const poisson = lignes.find((l) => l.rawLabel.includes('CAB!LLAUD'));
+		expect(poisson).toBeDefined();
+		expect(poisson!.rawLabel).toContain('MSC');
+		expect(poisson!.amountHT).toBeCloseTo(62.0, 6);
+	});
+
+	it('conserve la remise comme ligne négative', () => {
+		const remise = lignes.find((l) => l.rawLabel.includes('REMISE'));
+		expect(remise!.amountHT).toBeCloseTo(-2.25, 6);
+	});
+
+	it('capte le code TVA de chaque ligne', () => {
+		const eponge = lignes.find((l) => l.rawLabel.includes('LAVETTE'));
+		expect(eponge!.vatCode).toBe('2');
+		const carotte = lignes.find((l) => l.rawLabel.includes('CAR0TTES'));
+		expect(carotte!.vatCode).toBe('1');
+	});
+
+	it('n’a pas pris l’en-tête ni le pied pour des lignes', () => {
+		expect(lignes.some((l) => l.rawLabel.includes('DES!GNATION'))).toBe(false);
+		expect(lignes.some((l) => l.rawLabel.includes('BASES T.V.A'))).toBe(false);
+		expect(lignes.some((l) => l.rawLabel.includes('NET A PAYER'))).toBe(false);
+	});
+
+	it('la somme des montants retombe sur le total HT de la facture', () => {
+		const somme = lignes.reduce((s, l) => s + l.amountHT, 0);
+		expect(somme).toBeCloseTo(312.0, 2);
+	});
+});
+
+describe('extraireBasesTva', () => {
+	it('lit les bases par taux dans le pied de facture', () => {
+		const bases = extraireBasesTva(FIXTURE);
+		expect(bases.get('1')).toBeCloseTo(290.0, 2);
+		expect(bases.get('2')).toBeCloseTo(22.0, 2);
+	});
+
+	it('renvoie une map vide quand le pied est absent', () => {
+		expect(extraireBasesTva('rien du tout').size).toBe(0);
+	});
+});
+```
+
+- [ ] **Step 2: Lancer, vérifier l'échec**
+
+```bash
+bun run test:unit -- texte
+```
+
+- [ ] **Step 3: Écrire `parsers/texte.ts`**
+
+L'algorithme, dans cet ordre — l'ordre compte, chaque étape suppose la précédente :
+
+1. **Découper en lignes**, écarter les vides.
+2. **Écarter l'en-tête et le pied.** Une ligne est du pied si elle correspond à `/^(bases?\s+t\.?v\.?a|total\s+h\.?t|net\s+a\s+payer|code\s+\d\s*\()/i`, ou si elle n'est faite que de tirets. Une ligne est l'en-tête de tableau si elle contient au moins deux tuyaux `|`.
+3. **Reconnaître une ligne produit** : elle porte au moins **deux nombres décimaux** en fin de ligne (prix unitaire et total HT), précédés d'un libellé non vide. Le dernier entier isolé, s'il est présent, est le code TVA.
+4. **Reconnaître une ligne de continuation** : tout ce qui reste. Deux cas :
+   - **Elle porte un montant** (ex. `* REMISE PROMO ETE -10%   -2.25   1`) → c'est une ligne à part entière, avec son propre montant et le code TVA de la ligne précédente si le sien manque.
+   - **Elle n'en porte pas** (ex. `-> (Cartons de 3kg)`, `(Certifié Peche durable MSC)`) → son texte est **concaténé au libellé de la ligne produit précédente**, entre parenthèses, et elle ne produit aucune ligne.
+5. **Ne jamais deviner un montant.** Une ligne dont on n'extrait pas de montant fiable n'est ni une ligne ni une continuation : elle part dans un tableau `lignesIgnorees` renvoyé à côté, que l'orchestration journalise. Silencieusement l'écarter reviendrait à perdre du chiffre d'affaires sans trace.
+
+`extraireBasesTva` lit `Code N (T%) : M EUR` dans le pied et renvoie une `Map<codeTva, baseHT>`.
+
+Le type de sortie :
+
+```ts
+export interface LigneBrute {
+	rawLabel: string;
+	quantity?: number;
+	unit?: string;
+	unitPrice?: number;
+	amountHT: number;
+	vatCode?: string;
+}
+
+export interface ResultatExtraction {
+	lignes: LigneBrute[];
+	basesTva: Map<string, number>;
+	lignesIgnorees: string[];
+}
+```
+
+- [ ] **Step 4: Lancer, vérifier le succès**
+
+```bash
+bun run test:unit -- texte
+```
+
+Attendu : tous PASS, y compris la somme à 312,00 €.
+
+- [ ] **Step 5: Écrire `parsers/pdfText.ts`**
+
+`unpdf` extrait le texte brut d'un PDF, puis le résultat passe dans `extraireLignesTexte`. Un PDF dont l'extraction rend moins de 50 caractères est un PDF scanné sans couche texte : il part en `extractionStatus: 'FAILED'` avec la raison `PDF sans couche texte — OCR requis, hors périmètre V0`, pour que l'opérateur sache quoi demander au client plutôt que de chercher un bug.
+
+- [ ] **Step 6: Écrire `extraction.ts` — l'orchestration et le contrôle TVA**
 
 Une `internalAction` par document :
 
 1. Lit le fichier depuis Convex Storage
-2. Aiguille selon `sourceType` : `CSV` → `parseCsv`, `PDF_TEXT` → `unpdf` puis structuration Claude
-3. Écrit les `invoiceLines` avec `reviewStatus: 'AUTO'` et aucun champ de classification
-4. Met à jour `extractionStatus` du document et les compteurs du lot
+2. Aiguille selon `sourceType` : `CSV` → `parseCsv`, `PDF_TEXT` → `unpdf` puis `extraireLignesTexte`, texte brut → `extraireLignesTexte`
+3. Écrit les `invoiceLines` avec `reviewStatus: 'AUTO'`, sans aucun champ de classification
+4. Stocke `basesTva` sur le document, pour le contrôle d'après-classification
+5. Met à jour `extractionStatus` et les compteurs du lot
+
+**Le contrôle TVA** (§2 de « Ce qu'impose une vraie facture ») s'exécute **après** la classification, dans une fonction `controlerCoherenceTva(documentId)` :
+
+```ts
+/**
+ * En France, l'alimentaire est à 5,5 % ou 10 %, le non-alimentaire à 20 %.
+ * Si la somme des lignes classées isFood ne retombe pas sur la base au taux
+ * réduit, la classification est fausse : un non-alimentaire compté au
+ * dénominateur tire tous les ratios vers le bas.
+ *
+ * Tolérance de 1 centime pour les arrondis. Au-delà, le document part en
+ * revue humaine avec l'écart chiffré.
+ */
+const TAUX_ALIMENTAIRES = new Set(['5.5', '10', '10.0']);
+const TOLERANCE_EUR = 0.01;
+```
+
+Un écart au-delà de la tolérance ne bloque pas le lot : il ajoute une entrée dans la file de revue, avec le montant de l'écart et les lignes suspectes (celles dont le code TVA contredit le `isFood`).
 
 **Règle non négociable :** un document en échec passe en `extractionStatus: 'FAILED'` avec sa raison, **et le lot continue**. Sans cette règle, un seul PDF corrompu dans un dépôt de quarante fichiers bloque le premier diagnostic réel.
 
-- [ ] **Step 3: Vérifier et commiter**
+- [ ] **Step 7: Vérifier et commiter**
 
 ```bash
-bun run check:convex && bunx convex dev --once
-git add -A && git commit --no-verify -m "feat(egalim): extraction PDF texte + orchestration par document"
+bun run test:unit -- texte && bun run check:convex && bunx convex dev --once
+git add -A && git commit --no-verify -m "feat(egalim): extraction texte/OCR, lignes de continuation, controle TVA"
 ```
 
 ---
@@ -953,25 +1257,111 @@ describe('normaliserLibelle', () => {
 	});
 });
 
+describe('normaliserLibelle — substitutions d’OCR', () => {
+	it('rapproche une variante océrisée de sa forme propre', () => {
+		expect(normaliserLibelle('CAR0TTES SABLES VRAC')).toBe(
+			normaliserLibelle('CAROTTES SABLES VRAC')
+		);
+	});
+
+	it.each([
+		['P0MME GALA', 'POMME GALA'],
+		['CAB!LLAUD', 'CABILLAUD'],
+		['FR!GO L!VRAISON', 'FRIGO LIVRAISON'],
+		['L3S HALLES', 'LES HALLES'],
+		['8RETONNES', 'BRETONNES']
+	])('%s se normalise comme %s', (ocr, propre) => {
+		expect(normaliserLibelle(ocr)).toBe(normaliserLibelle(propre));
+	});
+
+	it('ne casse PAS un chiffre légitime dans un conditionnement', () => {
+		// 2.5KG, 4/4 et H.V.E 3 portent des chiffres qui sont de vrais chiffres.
+		expect(normaliserLibelle('P0MME GALA H.V.E 3')).toContain('3');
+		expect(normaliserLibelle('CAROTTE 4/4 2.5KG')).toContain('2.5KG');
+		expect(normaliserLibelle('CAROTTE 4/4 2.5KG')).toContain('4/4');
+	});
+
+	it('ne casse pas un code produit numérique', () => {
+		expect(normaliserLibelle('REF 88213')).toContain('88213');
+	});
+});
+
 describe('normaliserFournisseur', () => {
 	it('retire les formes juridiques', () => {
 		expect(normaliserFournisseur('TRANSGOURMET SAS')).toBe('TRANSGOURMET');
 		expect(normaliserFournisseur('Pomona S.A.')).toBe('POMONA');
 	});
+
+	it('applique aussi les substitutions d’OCR', () => {
+		expect(normaliserFournisseur('S.A.R.L. L3S C0MPT0IRS')).toBe(
+			normaliserFournisseur('SARL LES COMPTOIRS')
+		);
+	});
 });
 ```
 
-- [ ] **Step 2: Écrire `normalisation.ts`, vérifier que les tests passent**
-
-`normaliserLibelle` : majuscules, suppression des accents (`normalize('NFD')` puis retrait des diacritiques), écrasement des espaces. **Ne retire pas** les chiffres, les unités ni les mentions de conditionnement — `4/4` et `2.5KG` distinguent des produits réellement différents.
-
-`normaliserFournisseur` : mêmes règles, plus le retrait des formes juridiques (`SAS`, `SARL`, `SA`, `S.A.`, `EURL`, `SASU`).
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Lancer, vérifier l'échec, puis écrire `normalisation.ts`**
 
 ```bash
 bun run test:unit -- normalisation
-git add -A && git commit --no-verify -m "feat(egalim): normalisation des libelles et des fournisseurs"
+```
+
+Le point délicat est la **désambiguïsation des substitutions d'OCR**. `0` peut être un vrai zéro (`2.5KG`, `REF 88213`, `H.V.E 3`) ou un `O` mal reconnu (`CAR0TTES`). Une substitution aveugle casse les conditionnements et les codes produit, qui sont précisément ce qui distingue deux références.
+
+**La règle : ne substituer un chiffre que lorsqu'il est entouré de lettres.**
+
+```ts
+/**
+ * Substitutions d'OCR observées sur de vraies factures fournisseurs.
+ * Appliquées UNIQUEMENT à l'intérieur d'un mot alphabétique — un chiffre
+ * bordé de lettres est presque toujours une erreur de reconnaissance, un
+ * chiffre isolé ou bordé de chiffres est presque toujours un vrai chiffre.
+ *
+ * Contre-exemples que cette règle protège :
+ *   « 2.5KG », « 4/4 », « REF 88213 », « H.V.E 3 », « Code 1 »
+ */
+const SUBSTITUTIONS_OCR: ReadonlyArray<[RegExp, string]> = [
+	[/(?<=[A-Z])0(?=[A-Z])/g, 'O'], // CAR0TTES -> CAROTTES
+	[/(?<=[A-Z])3(?=[A-Z])/g, 'E'], // L3S -> LES
+	[/(?<=[A-Z])1(?=[A-Z])/g, 'I'], // PR1X -> PRIX
+	[/(?<=[A-Z])5(?=[A-Z])/g, 'S'], // CA5SE -> CASSE
+	[/(?<=^|[^A-Z0-9])8(?=[A-Z]{2})/g, 'B'], // 8RETONNES -> BRETONNES
+	[/!/g, 'I'] // CAB!LLAUD -> CABILLAUD, S!RET -> SIRET
+];
+```
+
+Le `!` se substitue sans condition : il n'apparaît jamais légitimement dans un libellé produit. Il vaut tantôt `I`, tantôt `L` (`FR!GO` → `FRIGO`, `L!VRAISON` → `LIVRAISON`) — on retient `I` uniformément, ce qui suffit puisque la normalisation ne sert qu'à **rapprocher deux écritures du même produit**, pas à produire un français correct. La forme lisible par l'humain reste `rawLabel`, conservé intact.
+
+Ordre des opérations dans `normaliserLibelle` :
+
+1. Majuscules
+2. Suppression des accents (`normalize('NFD')` puis retrait des diacritiques)
+3. Substitutions d'OCR
+4. Écrasement des espaces multiples et trim
+
+**Ne retire pas** les chiffres, les unités ni les mentions de conditionnement : `4/4` et `2.5KG` distinguent des produits réellement différents, et les fusionner ferait classer une conserve comme un sac de 25 kg.
+
+`normaliserFournisseur` : mêmes étapes, plus le retrait des formes juridiques (`SAS`, `SARL`, `S.A.R.L.`, `SA`, `S.A.`, `EURL`, `SASU`, `SNC`) après les substitutions.
+
+- [ ] **Step 3: Mesurer le gain de déduplication sur les fixtures**
+
+```bash
+bun -e "
+const { normaliserLibelle } = await import('./src/lib/convex/egalim/normalisation.ts');
+const e = require('./src/lib/fixtures/factures/grossiste-ocr-01.expected.json');
+const brut = new Set(e.lines.map(l => l.rawLabel));
+const norm = new Set(e.lines.map(l => normaliserLibelle(l.rawLabel)));
+console.log('libelles bruts:', brut.size, '-> normalises:', norm.size);
+"
+```
+
+Sur les fixtures actuelles le gain est faible (peu de doublons), c'est normal — la déduplication paie sur douze mois de factures, pas sur une. Ce contrôle sert à vérifier que la normalisation **ne fusionne pas à tort** : le nombre de libellés normalisés ne doit jamais descendre en dessous du nombre de produits réellement distincts.
+
+- [ ] **Step 4: Commit**
+
+```bash
+bun run test:unit -- normalisation
+git add -A && git commit --no-verify -m "feat(egalim): normalisation avec desambiguisation des substitutions OCR"
 ```
 
 ---
@@ -987,7 +1377,12 @@ Le cœur du produit. Décisions d'API figées en spec §4.6 — les relire avant
 - [ ] **Step 1: Écrire `prompt.ts` — le prompt système, stable et donc cacheable**
 
 ```ts
-import { LABELS_QUALIFIANTS, MENTIONS_NON_QUALIFIANTES, REFERENTIEL_VERSION } from '$lib/egalim/referentiel';
+import {
+	LABELS_QUALIFIANTS,
+	MENTIONS_NON_QUALIFIANTES,
+	FAUX_AMIS,
+	REFERENTIEL_VERSION
+} from '$lib/egalim/referentiel';
 import { FAMILLES } from '$lib/egalim/types';
 
 /**
@@ -1015,12 +1410,43 @@ ${bareme}
 NE QUALIFIENT RIEN
 Les mentions suivantes ne comptent ni en durable ni en bio : ${MENTIONS_NON_QUALIFIANTES.join(', ')}. Le code de la commande publique interdit la préférence géographique : « local » n'est pas un critère légal.
 
+FAUX AMIS — ces mentions ressemblent à des labels mais n'en sont pas
+${FAUX_AMIS.map((f) => `- ${f.mention} : ${f.nature}. N'attribue AUCUN label.`).join('\n')}
+
 RÈGLES
-- N'attribue un label que si le libellé l'établit. N'infère jamais un label depuis le nom du fournisseur ou la seule nature du produit.
+- N'attribue un label que si le libellé l'établit. N'infère jamais un label depuis le nom du fournisseur, l'origine géographique, ni la seule nature du produit.
+- Les libellés viennent d'OCR et peuvent contenir des erreurs de reconnaissance (0 pour O, ! pour I ou L, 3 pour E). Lis à travers : « CAR0TTES » est « CAROTTES », « CAB!LLAUD » est « CABILLAUD ».
 - Un libellé ambigu reçoit une confiance basse plutôt qu'une décision assurée. Un arbitrage humain suit.
 - Aucune classification sans justification. Une classification non justifiable est inutilisable en contrôle.`;
 }
 ```
+
+**Le prompt doit rester déterministe.** Aucune date, aucun identifiant de lot, aucun `Date.now()`. `FAUX_AMIS`, `MENTIONS_NON_QUALIFIANTES` et `LABELS_QUALIFIANTS` sont des constantes ordonnées — leur sérialisation est stable d'un appel à l'autre, ce qui est la condition du cache.
+
+**Test de déterminisme, à ajouter :**
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { construirePromptSysteme } from '../prompt';
+
+describe('construirePromptSysteme', () => {
+	it('produit exactement le même texte à chaque appel', () => {
+		expect(construirePromptSysteme()).toBe(construirePromptSysteme());
+	});
+
+	it('dépasse le minimum cacheable de 512 tokens (~2 000 caractères)', () => {
+		expect(construirePromptSysteme().length).toBeGreaterThan(2000);
+	});
+
+	it('cite les faux amis relevés sur de vraies factures', () => {
+		const p = construirePromptSysteme();
+		expect(p).toContain('V.B.F.');
+		expect(p).toContain('plein air');
+	});
+});
+```
+
+Le second test est un garde-fou économique : sous le minimum cacheable, `cache_control` est accepté sans erreur mais **ne cache rien**, et le coût par diagnostic sort du budget sans aucun signal.
 
 - [ ] **Step 2: Écrire `classification.ts` — l'action Convex**
 
@@ -1086,22 +1512,91 @@ git add -A && git commit --no-verify -m "feat(egalim): classification par lots a
 - Create: `src/lib/convex/egalim/revue.ts`
 - Create: `src/routes/[[lang]]/ops/revue/[batchId]/+page.svelte`
 
-- [ ] **Step 1: Écrire `revue.ts`**
+- [ ] **Step 1: Écrire la query d'agrégation de la file**
 
-- `listerLibellesEnRevue(batchId)` — les libellés distincts en `PENDING_REVIEW`, avec leur nombre d'occurrences et le montant HT cumulé, triés par montant décroissant (arbitrer d'abord ce qui pèse le plus)
-- `confirmerLibelle(normalizedLabel)` — écrit dans `productLabels` avec `source: 'HUMAN'`, propage à toutes les `invoiceLines` du lot en `CONFIRMED`
-- `corrigerLibelle(normalizedLabel, classification)` — idem en `CORRECTED`
+`listerLibellesEnRevue(batchId)` regroupe les `invoiceLines` en `PENDING_REVIEW` **par `normalizedLabel`**, et trie par montant cumulé décroissant — on arbitre d'abord ce qui pèse le plus sur le ratio. Un libellé à 150 € vu une fois compte davantage qu'un libellé à 2 € vu quarante fois.
 
-**L'arbitrage se fait par libellé, jamais par ligne.** Une décision règle toutes ses occurrences, chez ce client et chez tous les suivants.
+```ts
+export interface LibelleARbitrer {
+	normalizedLabel: string;
+	rawLabelExemple: string; // la forme lisible, montrée à l'opérateur
+	occurrences: number;
+	montantCumuleHT: number;
+	propose: {
+		isFood: boolean;
+		family: Famille;
+		qualifyingLabels: Label[];
+		justification: string;
+		confidence: number;
+	};
+	motifRevue: 'CONFIANCE_BASSE' | 'VIANDE_POISSON' | 'ECART_TVA';
+}
+```
 
-- [ ] **Step 2: Écrire l'écran `/ops/revue/[batchId]`**
+`motifRevue` compte pour l'opérateur : un libellé en `VIANDE_POISSON` avec une confiance de 0,97 se confirme d'un coup d'œil, alors qu'un `CONFIANCE_BASSE` à 0,4 demande de réfléchir. Sans ce champ, les deux se ressemblent et l'opérateur ralentit sur tout.
 
-Un tableau dense : libellé source, occurrences, montant cumulé, classification proposée, justification, confiance. Deux actions par ligne — Confirmer, Corriger. Raccourcis clavier pour enchaîner (c'est l'écran où l'opérateur passera le plus de temps).
+- [ ] **Step 2: Écrire les mutations d'arbitrage**
 
-- [ ] **Step 3: Commit**
+```ts
+/**
+ * Confirme la classification proposée pour un libellé.
+ *
+ * Trois écritures, dans cet ordre :
+ *  1. productLabels : source 'HUMAN', confirmedBy, confirmedAt.
+ *     La décision ne sera plus jamais reposée, chez AUCUN client.
+ *  2. Toutes les invoiceLines du lot portant ce normalizedLabel -> CONFIRMED.
+ *  3. Le compteur labelsPendingReview du lot.
+ */
+export const confirmerLibelle = mutation({ ... });
+
+/**
+ * Corrige la classification d'un libellé. Même chemin que confirmerLibelle,
+ * avec la classification fournie par l'opérateur et reviewStatus CORRECTED.
+ *
+ * La distinction CONFIRMED / CORRECTED n'est pas cosmétique : le taux de
+ * correction est l'indicateur de qualité du classifieur. S'il monte, c'est
+ * le prompt ou le referentiel qu'il faut reprendre, pas le seuil de confiance.
+ */
+export const corrigerLibelle = mutation({ ... });
+```
+
+**L'arbitrage se fait par libellé, jamais par ligne.** Une décision règle toutes ses occurrences dans le lot, et toutes celles à venir chez tous les clients.
+
+**Piège de concurrence :** deux opérateurs peuvent arbitrer le même libellé simultanément. `productLabels` doit être écrit en `patch` sur le document existant s'il y en a un, jamais en `insert` aveugle — sinon le cache se retrouve avec deux entrées pour le même `normalizedLabel` et la lecture devient non déterministe.
+
+- [ ] **Step 3: Écrire l'écran `/ops/revue/[batchId]`**
+
+Un tableau dense, une ligne par libellé, dans l'ordre de la query :
+
+| Colonne | Contenu |
+|---|---|
+| Libellé | `rawLabelExemple` — la forme lisible, pas la normalisée |
+| Poids | `occurrences` × et `montantCumuleHT` |
+| Motif | Badge `CONFIANCE_BASSE` / `VIANDE_POISSON` / `ECART_TVA` |
+| Proposition | Famille, labels, alimentaire ou non |
+| Justification | La phrase produite par le classifieur |
+| Confiance | Barre ou pourcentage |
+| Actions | **Confirmer** · **Corriger** |
+
+Cartes et badges au pattern glass-metal du projet : `relative overflow-hidden`, reflet blanc inset en haut.
+
+**Raccourcis clavier obligatoires.** C'est l'écran où l'opérateur passera le plus de temps, et c'est ce temps qui fait la marge du diagnostic. `A` confirme et descend d'une ligne, `C` ouvre la correction, `↑`/`↓` naviguent, `Échap` ferme la correction. Un compteur « 37 restants · 1 240 € en jeu » en tête donne l'avancement réel.
+
+L'écran de correction est un formulaire compact : famille (sélecteur), labels (cases à cocher sur les 10 du barème), alimentaire (bascule), et un champ de justification **pré-rempli avec celle du classifieur**, modifiable. L'opérateur corrige rarement tout — le plus souvent un seul label.
+
+- [ ] **Step 4: Vérifier le comportement**
+
+Depuis `bun run dev`, sur un lot issu des fixtures :
+
+1. La file liste bien les libellés, pas les lignes
+2. Le cabillaud MSC apparaît en `VIANDE_POISSON` même avec une confiance haute
+3. Confirmer un libellé fait disparaître **toutes** ses occurrences de la file
+4. Le compteur du lot décroît du bon nombre
+
+- [ ] **Step 5: Commit**
 
 ```bash
-bun run check:convex && git add -A && git commit --no-verify -m "feat(egalim): file de revue par libelle cote operateur"
+bun run check:convex && git add -A && git commit --no-verify -m "feat(egalim): file de revue par libelle, triee par montant en jeu"
 ```
 
 ---
@@ -1113,20 +1608,86 @@ bun run check:convex && git add -A && git commit --no-verify -m "feat(egalim): f
 - Create: `src/lib/convex/egalim/batches.ts`
 - Modify: `src/lib/components/authenticated/configs/app-sidebar-config.ts`
 
-- [ ] **Step 1: Écrire `batches.ts`** — création d'un lot, génération d'URL d'upload, enregistrement des documents, suivi d'avancement
+- [ ] **Step 1: Écrire `batches.ts`**
+
+Quatre fonctions, toutes scopées par `organizationId` via le helper d'auth existant :
+
+```ts
+/** Crée un lot en DRAFT pour une période. Un seul lot ouvert par org à la fois. */
+export const creerLot = mutation({ ... });
+
+/** URL d'upload Convex Storage, une par fichier. */
+export const genererUrlDepot = mutation({ ... });
+
+/**
+ * Enregistre un fichier déposé et lance son extraction.
+ * Déduit sourceType de l'extension ET du contenu : un .txt peut être un CSV
+ * comme une facture océrisée, et se tromper ici fait échouer l'extraction
+ * pour une raison qui n'a rien à voir avec le fichier.
+ */
+export const enregistrerDocument = mutation({ ... });
+
+/** Avancement du lot pour l'écran de suivi. */
+export const suivreLot = query({ ... });
+```
+
+`suivreLot` renvoie de quoi peindre l'écran sans second aller-retour :
+
+```ts
+export interface AvancementLot {
+	status: 'DRAFT' | 'EXTRACTING' | 'CLASSIFYING' | 'REVIEW' | 'READY' | 'FAILED';
+	documents: Array<{
+		filename: string;
+		extractionStatus: 'PENDING' | 'DONE' | 'FAILED';
+		extractionError?: string;
+		linesCount: number;
+	}>;
+	linesTotal: number;
+	labelsPendingReview: number;
+	diagnosticId?: Id<'diagnostics'>;
+}
+```
 
 - [ ] **Step 2: Écrire l'écran de dépôt**
 
-Trois états : dépôt (glisser-déposer multi-fichiers), traitement (avancement par document, les échecs visibles et nommés), terminé (lien vers le diagnostic). Le parcours reprend le gabarit archivé en `docs/superpowers/references/gabarit-wizard-import-csv.md`.
+Quatre états, dans l'ordre du parcours :
 
-**Message d'accueil :** demander en priorité l'export comptable ou le fichier du grossiste. Le doc 05 chiffre le gain à 80 % du travail d'extraction — c'est une consigne d'interface autant que de script commercial.
+**1. Accueil et consigne.** Avant même la zone de dépôt, une consigne courte :
+
+> **Ce qui accélère tout : l'export comptable.** Si votre logiciel de comptabilité ou le portail de votre grossiste permet d'exporter les factures en CSV ou Excel, déposez ce fichier plutôt que les PDF. Le traitement est plus rapide et le résultat plus fiable.
+>
+> À défaut, les PDF conviennent. Les photos et les scans ne sont pas encore pris en charge.
+
+Le doc 05 chiffre le gain à **80 % du travail d'extraction**. C'est une consigne d'interface autant que de script commercial, et elle doit être lue avant le dépôt, pas après.
+
+**2. Dépôt.** Glisser-déposer multi-fichiers, ou sélection classique. Accepte `.csv`, `.xlsx`, `.pdf`, `.txt`. Affiche chaque fichier ajouté avec sa taille et un bouton de retrait. Le parcours reprend le gabarit archivé en `docs/superpowers/references/gabarit-wizard-import-csv.md`.
+
+**3. Traitement.** Une ligne par document, avec son état. **Les échecs sont visibles et nommés**, jamais masqués :
+
+| État | Affichage |
+|---|---|
+| `PENDING` | « En cours… » |
+| `DONE` | « 214 lignes extraites » |
+| `FAILED` | Le message de `extractionError` en clair, avec ce qu'il faut faire |
+
+Pour un PDF sans couche texte, le message est actionnable : *« PDF scanné — nous ne savons pas encore lire les scans. Demandez à votre fournisseur le fichier d'origine ou l'export de votre portail client. »* Un message d'erreur technique (`unpdf: no text layer`) ferait appeler l'opérateur pour rien.
+
+**Le lot continue malgré les échecs.** Deux fichiers illisibles sur quarante ne doivent pas empêcher le diagnostic sur les trente-huit autres.
+
+**4. Terminé.** Lien vers le diagnostic, et le rappel que le rapport est figé à sa remise.
 
 - [ ] **Step 3: Ajouter « Factures » à la nav cantine**
 
-- [ ] **Step 4: Commit**
+Dans `app-sidebar-config.ts`, entre « Accueil » et « Paramètres ». La nav de la cantine compte alors trois entrées, ce qui est le bon nombre pour un POC — chaque entrée en plus est une occasion de se perdre.
+
+- [ ] **Step 4: Vérifier le parcours**
+
+Depuis `bun run dev` : déposer les trois fixtures d'un coup, vérifier que les trois s'extraient, qu'un fichier volontairement corrompu passe en `FAILED` **sans bloquer les autres**, et que le compteur de lignes correspond à la somme attendue.
+
+- [ ] **Step 5: Commit**
 
 ```bash
-bun run check:convex && git add -A && git commit --no-verify -m "feat(egalim): depot de factures cote cantine"
+bun run check:convex && git add -A && git commit --no-verify -m "feat(egalim): depot de factures cote cantine, echecs visibles et actionnables"
 ```
 
 ---
@@ -1145,16 +1706,40 @@ bun run check:convex && git add -A && git commit --no-verify -m "feat(egalim): d
 
 - [ ] **Step 2: Écrire l'écran du rapport**
 
-Contenu, dans l'ordre du doc 03 :
+Sept sections, dans l'ordre exact de la restitution du doc 09 — cet ordre est un outil de vente autant qu'un plan de document. Le client voit son chiffre avant d'entendre quoi que ce soit d'autre.
 
-1. Les trois ratios, avec l'écart au seuil
-2. La décomposition par famille et par fournisseur
-3. L'écart chiffré en euros
-4. Le plan de comblement — les familles classées par coût d'accès croissant
-5. Les lignes `TO_JUSTIFY` et les courriers d'attestation à envoyer
-6. Le fichier de saisie « ma cantine »
+**1. Le chiffre.** Les trois ratios en grand, chacun avec son seuil et son écart. Vert si atteint, ambre sinon — **jamais rouge** : le rapport constate, il n'accuse pas. Sur la facture de référence, la section afficherait :
+
+| Ratio | Mesuré | Seuil | Écart |
+|---|---|---|---|
+| Durable | 36,55 % | 50 % | −13,45 pts |
+| Bio | 0,00 % | 20 % | −20,00 pts |
+| Viande-poisson | 29,25 % | 60 % | −30,75 pts |
+
+**2. D'où ça vient.** Décomposition par famille puis par fournisseur, en valeur et en part. C'est souvent la première fois que le gestionnaire voit sa structure d'achats ainsi.
+
+**3. L'écart en euros.** `gapEuros` traduit en une phrase par seuil : *« pour atteindre 50 % de durable, il faut basculer 41 000 € d'achats annuels. »* Le pourcentage ne parle pas, l'euro parle.
+
+**4. Les points gratuits.** Les lignes `TO_JUSTIFY`, groupées par fournisseur, avec les points de ratio récupérables. Cette section vient **avant** toute proposition commerciale — la réciprocité fait le reste (doc 09 §7).
+
+**5. Le plan de comblement.** Les trois familles prioritaires, classées par **coût d'accès croissant** : points de ratio gagnés par euro de surcoût. Pas par volume, pas par montant — par rendement.
+
+**6. La simulation à budget constant.** La réponse à l'objection numéro un (« le bio, c'est plus cher »), avec les quatre leviers du doc 03 §5.4.
+
+**7. Le fichier de saisie « ma cantine ».** Export des montants agrégés au format de la télédéclaration.
 
 Cartes au pattern glass-metal du projet : `relative overflow-hidden`, reflet blanc inset en haut, bordure sobre.
+
+**Le mot interdit.** Aucune occurrence de « garantie » ni de « conforme » au futur nulle part dans le rapport ni dans le code qui le génère. Le rapport **mesure**, il ne promet pas. Ajouter un test qui échoue si le mot apparaît :
+
+```ts
+it('n’emploie jamais le mot « garantie »', () => {
+	const source = readFileSync('src/routes/[[lang]]/app/diagnostic/[id]/+page.svelte', 'utf8');
+	expect(source.toLowerCase()).not.toMatch(/garanti/);
+});
+```
+
+Ce test peut sembler excessif. Il ne l'est pas : c'est la ligne rouge juridique du modèle, elle se franchit en une phrase bien intentionnée, et personne ne la relit avant l'envoi.
 
 - [ ] **Step 3: Les courriers d'attestation — le point qui rembourse la prestation**
 
