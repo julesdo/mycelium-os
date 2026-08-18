@@ -56,7 +56,7 @@ La restauration collective n'achète pas de façon uniforme sur l'année. Ignore
 
 **2. Le simulateur gratuit en ligne.** Une page publique : « calculez votre ratio EGalim en 5 minutes ». Le gestionnaire dépose une facture ou saisit sa répartition budgétaire, il reçoit une **estimation** de son ratio et son écart aux seuils. Le rapport complet est payant. C'est le même moteur que la Moulinette (donc coût marginal nul), c'est un aimant à prospects qualifiés, et ça se relaie sur LinkedIn et dans les réseaux professionnels. **À construire en octobre, à pousser fort en janvier.**
 
-**3. Le réseau direct.** Le Pompon (restaurateurs, chefs, gérants, fournisseurs), le contact producteur, les intros en cascade. Chaque conversation se termine par : *« tu connais qui d'autre qui gère une cantine ? »*
+**3. Le réseau direct.** Le réseau restauration du fondateur (restaurateurs, chefs, gérants, fournisseurs), le contact producteur, les intros en cascade. Chaque conversation se termine par : *« tu connais qui d'autre qui gère une cantine ? »*
 
 **4. Les producteurs eux-mêmes.** Un maraîcher qui livre déjà deux cantines connaît les gestionnaires du coin. C'est un canal sous-estimé et gratuit : on lui apporte du volume, il nous apporte des portes.
 

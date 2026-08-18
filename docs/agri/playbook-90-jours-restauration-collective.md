@@ -1,7 +1,7 @@
 # Playbook 90 jours — Opérateur de la conformité EGalim
 
 **Période : 15 août → 15 novembre 2026**
-**Jules — serveur au Pompon (Suresnes), ~15-20 h/semaine disponibles en journée, compétences digital/logiciel/vente, plateforme Mycelium déjà construite.**
+**Jules — serveur en restauration (Suresnes), ~15-20 h/semaine disponibles en journée, compétences digital/logiciel/vente, plateforme Mycelium déjà construite.**
 
 > **Révision du 15 août 2026.** Le playbook de juillet visait « 1 pilote signé fin M1 ». Il
 > supposait qu'on pouvait vendre du sourcing à un inconnu en trois semaines, en plein mois d'août,
@@ -63,7 +63,7 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 
 ### Semaine 3 (29 août - 4 septembre) — Tester, et ouvrir la boutique
 
-- [ ] **Tester la Moulinette sur un vrai jeu de factures.** Où en trouver : le patron du Pompon (un restaurant a les mêmes factures fournisseurs qu'une cantine), ou le premier prospect qui accepte de te confier un mois d'essai gratuit.
+- [ ] **Tester la Moulinette sur un vrai jeu de factures.** Où en trouver : un restaurateur du réseau (un restaurant a les mêmes factures fournisseurs qu'une cantine), ou le premier prospect qui accepte de te confier un mois d'essai gratuit.
 - [ ] **Vérifier le résultat à la main, ligne par ligne, sur 100 lignes.** Compter les erreurs. **🚪 Si le taux d'erreur dépasse 5 %, on ne prospecte pas : on corrige.** Un rapport faux détruit la crédibilité pour de bon, et engage la responsabilité de conseil.
 - [ ] **Ouvrir la micro-entreprise.** Prestation de services.
 - [ ] **Souscrire la RC pro**, en vérifiant qu'elle couvre **explicitement le conseil et l'audit**.
@@ -75,7 +75,7 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 
 - [ ] **80 appels sur les 60 lignes prioritaires** (avec relances). Script : [doc 09](business-plan/09-script-appel-cantine.md). L'accroche démarre **par le chiffre du prospect**.
 - [ ] **Objectif : 15 rendez-vous calés** sur la deuxième quinzaine de septembre.
-- [ ] Activer le réseau : patron du Pompon, contacts restauration, contact producteur. La question à poser systématiquement : *« tu connais qui, qui gère une cantine ou une cuisine collective ? »*
+- [ ] Activer le réseau : contacts restauration, contact producteur. La question à poser systématiquement : *« tu connais qui, qui gère une cantine ou une cuisine collective ? »*
 - [ ] Premiers messages LinkedIn ciblés + une publication sur le barème EGalim (le « local ne compte pas » fait toujours réagir).
 
 **🚪 Gate fin M1 (15 septembre)** : la Moulinette produit un rapport juste (< 5 % d'erreur vérifiée à la main) · 300 prospects dont 60 qualifiés · **15 rendez-vous calés** · 1 producteur qualifié · structure ouverte et assurée.
@@ -173,7 +173,7 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 ## Les 3 actions de cette semaine (15-21 août)
 
 1. **Monter le fichier de prospection** : open data « ma cantine » + SIRENE, 300 lignes, 60 qualifiées. C'est le livrable qui conditionne tout le reste.
-2. **Récupérer un vrai jeu de factures fournisseurs** pour tester la Moulinette. Le patron du Pompon est le chemin le plus court.
+2. **Récupérer un vrai jeu de factures fournisseurs** pour tester la Moulinette. Un restaurateur du réseau est le chemin le plus court.
 3. **Appeler le contact producteur** avec une seule question qui compte : *« aujourd'hui, tu touches combien au kilo sur ton meilleur canal, et tu livres toi-même ou pas ? »*
 
 ---

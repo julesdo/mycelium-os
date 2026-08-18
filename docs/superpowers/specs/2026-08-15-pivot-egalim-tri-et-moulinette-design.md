@@ -599,7 +599,7 @@ tourne pas.
 
 | Risque | Gravité | Parade |
 |---|---|---|
-| **Absence de jeu de factures réel** | Élevée — **sur la gate uniquement**, le développement n'est pas bloqué | Fixtures synthétiques (6.1) pour tout le développement et les tests unitaires. Pour la gate, un seul vrai jeu suffit : le patron du Pompon est le chemin le plus court. À demander avant le 28 août, sans urgence de calendrier |
+| **Absence de jeu de factures réel** | Élevée — **sur la gate uniquement**, le développement n'est pas bloqué | Fixtures synthétiques (6.1) pour tout le développement et les tests unitaires. Pour la gate, un seul vrai jeu suffit : un restaurateur du réseau est le chemin le plus court. À demander avant le 28 août, sans urgence de calendrier |
 | Référentiel erroné | Élevée — contamine tous les rapports, engage la responsabilité de conseil | Revue de code explicite par Jules avant le premier rapport client · tests unitaires exhaustifs · version tracée sur chaque classification |
 | Hétérogénéité des PDF fournisseurs | Moyenne | Parade d'abord commerciale : le script d'appel réclame l'export comptable ou l'accès au portail du grossiste (80 % du travail d'extraction économisé, doc 05) |
 | Dérive de coût API | Faible | Plafond dur par lot + suivi dans `classificationJobs` |

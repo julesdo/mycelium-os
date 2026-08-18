@@ -23,7 +23,7 @@
 
 Trois phases : (1) un commercial humain qui vend pour le producteur · (2) le catalogue et la prise de commande en ligne · (3) l'**engagement d'achat garanti sur volume et prix**, qui devient un collatéral bancaire pour le producteur.
 
-Cible d'entrée : les restaurants et cavistes de l'ouest parisien, en s'appuyant sur le fait que le fondateur travaille au Pompon et connaît le milieu.
+Cible d'entrée : les restaurants et cavistes de l'ouest parisien, en s'appuyant sur le fait que le fondateur travaille en restauration et connaît le milieu.
 
 ---
 
@@ -53,7 +53,7 @@ Un agent commercial en vin est un métier vieux de deux siècles, sans verrou : 
 | **Le refus du frais fragile au démarrage** (la chaîne du froid tue avant que le modèle soit prouvé) | Devenu le critère de sélection des familles de produits du pilote : [doc 03, section 5](business-plan/03-modele-offre-pricing.md) |
 | **La thèse du levier financier** (un débouché garanti est un collatéral bancaire pour le producteur) | Conservée intacte, décalée à l'étage 4 mûr. C'est toujours la vision de fond |
 | **Les gates de décision** et les scénarios A/B/C | Généralisés en critères d'abandon par étage : [doc 07, section 1](business-plan/07-objectifs-court-long-terme.md) |
-| **Le réseau** (Le Pompon, le contact producteur, la famille de la marraine) | Toujours le premier canal d'acquisition |
+| **Le réseau** (le réseau restauration, le contact producteur, la famille de la marraine) | Toujours le premier canal d'acquisition |
 | **La règle « on ne quitte pas le job »** | Durcie et chiffrée : MRR ≥ 1,5 × seuil, 3 mois de suite ([doc 06, section 5](business-plan/06-previsionnel-financier.md)) |
 
 **C'est beaucoup.** Le pivot n'a pas jeté le raisonnement, il a changé de client.
