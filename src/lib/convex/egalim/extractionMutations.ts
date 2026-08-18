@@ -28,14 +28,56 @@ function normaliserBasique(rawLabel: string): string {
 	return rawLabel.trim().replace(/\s+/g, ' ').toUpperCase();
 }
 
+/**
+ * Les retours des queries internes sont volontairement RESTREINTS aux champs
+ * que l'orchestration consomme, plutôt que de renvoyer le document entier.
+ * Deux raisons : le validateur reste court et lisible, et il n'existe pas de
+ * seconde description de la table qui pourrait diverger de `tables.ts`.
+ * Ajouter un champ ici est un geste délibéré, pas un effet de bord.
+ */
+const vDocumentPourExtraction = v.object({
+	_id: v.id('invoiceDocuments'),
+	organizationId: v.id('organizations'),
+	batchId: v.id('invoiceBatches'),
+	storageId: v.id('_storage'),
+	filename: v.string(),
+	mimeType: v.string()
+});
+
+const vJobPourExtraction = v.object({
+	_id: v.id('classificationJobs'),
+	status: v.union(
+		v.literal('RUNNING'),
+		v.literal('DONE'),
+		v.literal('FAILED'),
+		v.literal('CAPPED')
+	)
+});
+
 export const obtenirDocument = internalQuery({
 	args: { documentId: v.id('invoiceDocuments') },
-	handler: async (ctx, { documentId }) => ctx.db.get(documentId)
+	returns: v.union(vDocumentPourExtraction, v.null()),
+	handler: async (ctx, { documentId }) => {
+		const document = await ctx.db.get(documentId);
+		if (!document) return null;
+		return {
+			_id: document._id,
+			organizationId: document.organizationId,
+			batchId: document.batchId,
+			storageId: document.storageId,
+			filename: document.filename,
+			mimeType: document.mimeType
+		};
+	}
 });
 
 export const obtenirJob = internalQuery({
 	args: { jobId: v.id('classificationJobs') },
-	handler: async (ctx, { jobId }) => ctx.db.get(jobId)
+	returns: v.union(vJobPourExtraction, v.null()),
+	handler: async (ctx, { jobId }) => {
+		const job = await ctx.db.get(jobId);
+		return job ? { _id: job._id, status: job.status } : null;
+	}
 });
 
 /**
@@ -50,12 +92,13 @@ export const obtenirOuCreerJob = internalMutation({
 		organizationId: v.id('organizations'),
 		batchId: v.id('invoiceBatches')
 	},
+	returns: vJobPourExtraction,
 	handler: async (ctx, { organizationId, batchId }) => {
 		const existant = await ctx.db
 			.query('classificationJobs')
 			.withIndex('by_batch', (q) => q.eq('batchId', batchId))
 			.first();
-		if (existant) return existant;
+		if (existant) return { _id: existant._id, status: existant.status };
 
 		const jobId = await ctx.db.insert('classificationJobs', {
 			organizationId,
@@ -72,7 +115,7 @@ export const obtenirOuCreerJob = internalMutation({
 		});
 		const job = await ctx.db.get(jobId);
 		if (!job) throw new Error('classificationJobs introuvable juste après sa création.');
-		return job;
+		return { _id: job._id, status: job.status };
 	}
 });
 
@@ -164,6 +207,7 @@ export const marquerReussite = internalMutation({
 			invoiceNumber: args.invoiceNumber ?? document.invoiceNumber,
 			linesCount: args.lignes.length
 		});
+		return null;
 	}
 });
 
@@ -172,12 +216,14 @@ export const marquerEchec = internalMutation({
 		documentId: v.id('invoiceDocuments'),
 		erreur: v.string()
 	},
+	returns: v.null(),
 	handler: async (ctx, { documentId, erreur }) => {
 		const document = await ctx.db.get(documentId);
-		if (!document) return;
+		if (!document) return null;
 		await ctx.db.patch(documentId, {
 			extractionStatus: 'FAILED',
 			extractionError: erreur
 		});
+		return null;
 	}
 });

@@ -5,7 +5,7 @@ import { getDocumentProxy, extractText, renderPageAsImage } from 'unpdf';
 import { internalAction } from '../_generated/server';
 import { internal } from '../_generated/api';
 import type { ActionCtx } from '../_generated/server';
-import type { Doc } from '../_generated/dataModel';
+import type { Id } from '../_generated/dataModel';
 import { decoderTexte, detecterColonnes, parseCsv, type LigneBrute } from './parsers/csv';
 import { extraireAvecClaude, type ContenuDocument, type UsageExtraction } from './extracteurClaude';
 import { verifierExtraction } from './verification';
@@ -47,6 +47,21 @@ function estimerCout(usage: UsageExtraction): number {
 }
 
 type Nature = 'CSV' | 'PDF' | 'IMAGE' | 'TEXTE';
+
+/**
+ * Ce que l'orchestration a réellement besoin de savoir d'un document — et
+ * rien de plus. `obtenirDocument` ne renvoie que ces champs : élargir ce type
+ * oblige à élargir le validateur de retour en face, ce qui est le geste
+ * délibéré recherché.
+ */
+type DocumentPourExtraction = {
+	_id: Id<'invoiceDocuments'>;
+	organizationId: Id<'organizations'>;
+	batchId: Id<'invoiceBatches'>;
+	storageId: Id<'_storage'>;
+	filename: string;
+	mimeType: string;
+};
 
 const EXTENSIONS_IMAGE = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp']);
 
@@ -122,7 +137,7 @@ async function construireContenuPdf(buffer: Buffer): Promise<ContenuDocument> {
 
 async function construireContenu(
 	nature: Exclude<Nature, 'CSV'>,
-	document: Doc<'invoiceDocuments'>,
+	document: DocumentPourExtraction,
 	buffer: Buffer
 ): Promise<ContenuDocument> {
 	switch (nature) {
@@ -233,7 +248,7 @@ function agregerLignesBrutes(lignes: readonly LigneBrute[]): {
 /** CSV/Excel : parseur déterministe, jamais Claude — pas d'incertitude à vérifier, pas de coût. */
 async function traiterCsv(
 	ctx: ActionCtx,
-	document: Doc<'invoiceDocuments'>,
+	document: DocumentPourExtraction,
 	buffer: Buffer
 ): Promise<void> {
 	const resultat = parseCsv(decoderTexte(buffer));
@@ -286,7 +301,7 @@ async function traiterCsv(
 /** PDF / image / photo / texte brut : Claude, avec vérification et jusqu'à 2 relances. */
 async function traiterAvecClaude(
 	ctx: ActionCtx,
-	document: Doc<'invoiceDocuments'>,
+	document: DocumentPourExtraction,
 	nature: Exclude<Nature, 'CSV'>,
 	buffer: Buffer
 ): Promise<void> {
