@@ -8,6 +8,7 @@
  */
 
 import { ConvexHttpClient } from 'convex/browser';
+import { chromium, expect } from '@playwright/test';
 import { api } from '../src/lib/convex/_generated/api';
 import { setTimeout as sleep } from 'node:timers/promises';
 import 'varlock/auto-load';
@@ -109,6 +110,41 @@ async function waitForBackendReady(client: ConvexHttpClient, secret: string): Pr
 	}
 }
 
+/**
+ * Warm the CLIENT bundle before any test runs.
+ *
+ * waitForBackendReady gates on Convex, but nothing gated on the frontend being
+ * hydratable. On a cold stack, Vite discovers dependencies lazily on the first
+ * real browser request and triggers full page reloads while it re-optimizes.
+ * Every reload restarts hydration, and the sign-in form stays `disabled` until
+ * hydration completes — so signin.setup.ts timed out at 30s on a cold run and
+ * took the whole suite with it, with a symptom ("email input disabled") that
+ * looks exactly like a product bug and isn't one.
+ *
+ * One throwaway page load absorbs that cost once, here, where it is expected.
+ * Non-fatal by design: if this cannot settle, let the real test report the
+ * failure with its own diagnostics rather than failing setup opaquely.
+ */
+async function warmFrontend(siteUrl: string): Promise<void> {
+	const browser = await chromium.launch();
+	try {
+		const page = await browser.newPage();
+		await page.goto(`${siteUrl}/signin`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+		await page
+			.locator('[data-testid="email-input"]')
+			.waitFor({ state: 'attached', timeout: 60_000 });
+		await expect(page.locator('[data-testid="email-input"]')).toBeEnabled({ timeout: 90_000 });
+		console.log('[Setup] Frontend warmed (client bundle optimized, hydration confirmed)');
+	} catch (err) {
+		console.warn(
+			'[Setup] Frontend warm-up did not settle; tests will pay the cold-start cost:',
+			err instanceof Error ? err.message : err
+		);
+	} finally {
+		await browser.close();
+	}
+}
+
 async function globalSetup() {
 	const testSecret = process.env.AUTH_E2E_TEST_SECRET;
 	const convexUrl = resolveConvexUrl();
@@ -133,6 +169,9 @@ async function globalSetup() {
 
 	// Gate user creation on real backend readiness (not just the vite port being open).
 	await waitForBackendReady(client, testSecret);
+
+	// Puis sur le frontend : le port ouvert ne dit rien de l'hydratation.
+	await warmFrontend(SITE_URL);
 
 	const timestamp = Date.now();
 

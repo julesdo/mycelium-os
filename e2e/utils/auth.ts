@@ -15,8 +15,18 @@ export async function waitForAuthenticated(page: Page, timeout = 30000, maxRetri
 	const perAttemptTimeout = Math.max(5000, Math.floor(timeout / maxRetries));
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
-		await page.waitForURL(/\/[a-z]{2}\/app/, { timeout });
+		// `/app` OU `/onboarding` : depuis le pivot EGalim, une cantine DOIT avoir
+		// une organisation, et le layout applicatif renvoie vers l'onboarding tant
+		// qu'il n'y en a pas. Un utilisateur fraîchement créé est donc authentifié
+		// mais jamais sur `/app` — n'attendre que `/app` faisait expirer le setup
+		// partagé, et avec lui toute la suite.
+		await page.waitForURL(/\/[a-z]{2}\/(app|onboarding)/, { timeout });
 		await page.waitForLoadState('domcontentloaded', { timeout });
+
+		// L'onboarding prouve l'authentification : la session existe, c'est tout
+		// ce que le setup a besoin d'enregistrer. Le shell applicatif, lui,
+		// n'existe pas encore sur cette page.
+		if (/\/onboarding/.test(page.url())) return;
 
 		try {
 			await expect(page.locator('#user-menu-trigger')).toBeVisible({

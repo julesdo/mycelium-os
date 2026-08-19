@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { tick } from 'svelte';
+	import { tick, onMount } from 'svelte';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { useQuery } from '@mmailaender/convex-svelte';
 	import { api } from '$lib/convex/_generated/api';
@@ -41,6 +41,22 @@
 	});
 
 	const isPlatformAdmin = $derived(viewer?.role === 'admin');
+
+	/**
+	 * Marque l'hydratation terminée sur `<html>`.
+	 *
+	 * C'est le contrat qu'attend `e2e/utils/auth.ts` pour savoir que les
+	 * gestionnaires d'événements sont attachés et que la page est réellement
+	 * interactive. Personne ne le posait : le helper attendait un attribut qui
+	 * n'existait nulle part, et toute la suite Playwright expirait après la
+	 * connexion sur un symptôme trompeur, « app shell not ready ».
+	 *
+	 * Un `waitForLoadState` ne remplace pas ce signal : le DOM peut être
+	 * complet et rendu côté serveur alors qu'aucun clic ne fait encore rien.
+	 */
+	onMount(() => {
+		document.documentElement.setAttribute('data-hydrated', '');
+	});
 
 	function exitPreview() {
 		previewAsEmployee.exit();

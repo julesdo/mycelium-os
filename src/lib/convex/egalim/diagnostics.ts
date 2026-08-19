@@ -361,16 +361,25 @@ export const obtenirDiagnostic = authedQuery({
 			.withIndex('by_diagnostic', (q) => q.eq('diagnosticId', diagnosticId))
 			.collect();
 
+		const parId = new Map(lignes.map((l) => [l._id, l]));
+
 		const attestations = [];
 		for (const demande of demandes) {
 			const fournisseur = await ctx.db.get(demande.supplierId);
-			const produits = [
-				...new Set(
-					demande.lineIds
-						.map((id) => lignes.find((l) => l._id === id)?.rawLabel)
-						.filter((x): x is string => x !== undefined)
-				)
-			].slice(0, 30);
+			// Par index et non par recherche linéaire : `lineIds` peut porter des
+			// milliers d'entrées, et un `find` dans toutes les lignes du lot pour
+			// chacune ferait des millions d'itérations dans une query dont le
+			// temps CPU est plafonné. La coupe à 30 vient AVANT le parcours, pas
+			// après : au-delà, la liste ne sert plus le courrier.
+			const produits: string[] = [];
+			const vus = new Set<string>();
+			for (const id of demande.lineIds) {
+				const libelle = parId.get(id)?.rawLabel;
+				if (libelle === undefined || vus.has(libelle)) continue;
+				vus.add(libelle);
+				produits.push(libelle);
+				if (produits.length >= 30) break;
+			}
 
 			attestations.push({
 				attestationId: demande._id,
