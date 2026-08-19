@@ -90,7 +90,7 @@
 					<button
 						type="button"
 						onclick={() => (isFood = opt.v)}
-						class="flex h-11 items-center justify-center rounded-lg border px-2 text-center text-[13px] leading-tight font-medium transition-all sm:text-sm lg:h-10
+						class="flex h-12 items-center justify-center rounded-lg border px-2 text-center text-[13px] leading-tight font-medium transition-all sm:text-sm
 							{isFood === opt.v
 							? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]'
 							: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
@@ -111,7 +111,7 @@
 						<button
 							type="button"
 							onclick={() => (family = f)}
-							class="flex min-h-11 items-center justify-center rounded-lg border px-2 py-1.5 text-center text-[12px] leading-tight font-medium text-balance transition-all sm:text-[13px] lg:min-h-10
+							class="flex min-h-12 items-center justify-center rounded-lg border px-2 py-1.5 text-center text-[12px] leading-tight font-medium text-balance transition-all sm:text-[13px]
 								{family === f
 								? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]'
 								: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
@@ -134,7 +134,7 @@
 						<button
 							type="button"
 							onclick={() => basculerLabel(code)}
-							class="flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2.5 text-left text-[13px] leading-snug transition-all lg:min-h-10 lg:items-center
+							class="flex min-h-12 items-start gap-2 rounded-lg border px-3 py-2.5 text-left text-[13px] leading-snug transition-all lg:items-center
 								{actif ? 'border-[var(--brand)] bg-[var(--brand)]/10' : 'border-border bg-muted/40 hover:bg-muted'}"
 						>
 							<span
@@ -175,19 +175,19 @@
 			</p>
 		</div>
 
-		<!-- Pleine largeur et 44 px de haut sous lg : ces deux boutons se pressent
-			 au pouce entre deux rendez-vous. -->
+		<!-- 48 px de haut partout, et pleine largeur sous sm : ces deux boutons se
+			 pressent au pouce, debout dans l'économat, le doigt posé à plat. -->
 		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
 			<Button
 				variant="outline"
-				class="h-11 w-full sm:w-auto lg:h-9"
+				class="h-12 w-full sm:w-auto"
 				onclick={onannuler}
 				disabled={enCours}
 			>
 				Annuler
 			</Button>
 			<Button
-				class="h-11 w-full sm:w-auto lg:h-9"
+				class="h-12 w-full sm:w-auto"
 				onclick={valider}
 				disabled={enCours || justification.trim().length === 0}
 			>
