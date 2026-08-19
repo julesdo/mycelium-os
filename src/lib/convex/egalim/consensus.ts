@@ -29,6 +29,14 @@ export interface EntreeCache {
 export function doitEtreDemande(cache: EntreeCache | null, famille: Famille): boolean {
 	// Le filet juridique ne se délègue pas à une statistique : ces familles
 	// portent le seuil des 60 %, où une erreur coûte le plus cher.
+	//
+	// Cette garde double celle de `deriverVerdict` dans `verdict.ts`, et c'est
+	// délibéré : les deux fonctions répondent à des questions différentes
+	// (« ce verdict doit-il être arbitré ? » contre « faut-il redemander ce
+	// libellé à cette organisation ? »), mais l'invariant est le même et il est
+	// trop coûteux pour ne tenir qu'à un seul endroit. Les deux s'appuient sur
+	// la MÊME constante `FAMILLES_VIANDE_POISSON` : élargir la liste des
+	// familles sensibles se fait là-bas, une fois, et les deux suivent.
 	if (FAMILLES_VIANDE_POISSON.includes(famille)) return true;
 
 	if (cache === null) return true;
