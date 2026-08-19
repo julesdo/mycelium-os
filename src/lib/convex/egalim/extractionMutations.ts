@@ -194,51 +194,33 @@ async function rattacherFournisseur(
 	});
 }
 
-export const marquerReussite = internalMutation({
+/**
+ * Insère UNE TRANCHE de lignes. L'appelant boucle jusqu'à épuisement.
+ *
+ * `marquerReussite` insérait auparavant toutes les lignes d'un document en une
+ * seule transaction. Or le format qu'on recommande au client est l'export
+ * comptable ANNUEL : une cantine de 800 couverts dépasse largement les 8 000
+ * écritures autorisées, et l'argument entier franchissait aussi la limite de
+ * taille des arguments. Le fichier partait alors en échec, tout entier, avec
+ * pour seul message une erreur technique de Convex.
+ */
+export const enregistrerLignes = internalMutation({
 	args: {
 		documentId: v.id('invoiceDocuments'),
 		organizationId: v.id('organizations'),
 		batchId: v.id('invoiceBatches'),
 		lignes: v.array(vLigneAEnregistrer),
-		totalHT: v.union(v.number(), v.null()),
-		basesParTaux: v.array(vBaseTaux),
-		invoiceDate: v.union(v.string(), v.null()),
-		invoiceNumber: v.union(v.string(), v.null()),
-		/**
-		 * Nom du fournisseur tel qu'imprimé. Rattaché aux lignes parce que les
-		 * courriers de demande d'attestation se groupent par fournisseur, et
-		 * que ce sont eux qui rendent le diagnostic immédiatement rentable.
-		 * `null` pour un export comptable, qui ne le porte pas toujours.
-		 */
-		supplierName: v.optional(v.union(v.string(), v.null())),
-		/**
-		 * Anomalie non bloquante constatée pendant l'extraction — typiquement des
-		 * lignes au montant illisible, écartées plutôt que devinées. Le document
-		 * reste exploitable, mais l'opérateur doit savoir que le dénominateur est
-		 * incomplet. Stockée dans `extractionError` malgré un statut `DONE` : un
-		 * `extractionError` non vide sur un document `DONE` est un avertissement,
-		 * pas un échec.
-		 */
-		avertissement: v.optional(v.string())
+		invoiceDate: v.string(),
+		supplierId: v.optional(v.id('suppliers'))
 	},
 	returns: v.null(),
 	handler: async (ctx, args) => {
-		const document = await ctx.db.get(args.documentId);
-		if (!document) return null;
-
-		const dateFacture = args.invoiceDate ?? document.invoiceDate ?? '';
-		const supplierId = await rattacherFournisseur(
-			ctx,
-			args.organizationId,
-			args.supplierName ?? null
-		);
-
 		for (const ligne of args.lignes) {
 			await ctx.db.insert('invoiceLines', {
 				organizationId: args.organizationId,
 				batchId: args.batchId,
 				documentId: args.documentId,
-				supplierId,
+				supplierId: args.supplierId,
 				rawLabel: ligne.rawLabel,
 				normalizedLabel: normaliserLibelle(ligne.rawLabel),
 				quantity: ligne.quantity,
@@ -246,22 +228,72 @@ export const marquerReussite = internalMutation({
 				unitPrice: ligne.unitPrice,
 				amountHT: ligne.amountHT,
 				vatRate: ligne.vatRate,
-				invoiceDate: dateFacture,
-				// Pas de champs de classification ici : c'est `classification.ts` qui les
-				// renseigne, par libellé distinct et non par ligne.
+				invoiceDate: args.invoiceDate,
 				reviewStatus: 'AUTO'
 			});
 		}
+		return null;
+	}
+});
 
+/**
+ * Ouvre l'enregistrement d'un document : rattache son fournisseur et arrête la
+ * date de facture, que chaque tranche de lignes reprendra.
+ */
+export const ouvrirEnregistrement = internalMutation({
+	args: {
+		documentId: v.id('invoiceDocuments'),
+		organizationId: v.id('organizations'),
+		invoiceDate: v.union(v.string(), v.null()),
+		supplierName: v.optional(v.union(v.string(), v.null()))
+	},
+	returns: v.union(
+		v.object({
+			invoiceDate: v.string(),
+			supplierId: v.union(v.id('suppliers'), v.null())
+		}),
+		v.null()
+	),
+	handler: async (ctx, args) => {
+		const document = await ctx.db.get(args.documentId);
+		if (!document) return null;
+		const supplierId = await rattacherFournisseur(
+			ctx,
+			args.organizationId,
+			args.supplierName ?? null
+		);
+		return {
+			invoiceDate: args.invoiceDate ?? document.invoiceDate ?? '',
+			supplierId: supplierId ?? null
+		};
+	}
+});
+
+/** Clôt le document une fois toutes ses tranches insérées. */
+export const cloturerDocument = internalMutation({
+	args: {
+		documentId: v.id('invoiceDocuments'),
+		supplierId: v.union(v.id('suppliers'), v.null()),
+		totalHT: v.union(v.number(), v.null()),
+		basesParTaux: v.array(vBaseTaux),
+		invoiceDate: v.union(v.string(), v.null()),
+		invoiceNumber: v.union(v.string(), v.null()),
+		linesCount: v.number(),
+		avertissement: v.optional(v.string())
+	},
+	returns: v.null(),
+	handler: async (ctx, args) => {
+		const document = await ctx.db.get(args.documentId);
+		if (!document) return null;
 		await ctx.db.patch(args.documentId, {
 			extractionStatus: 'DONE',
 			extractionError: args.avertissement,
-			supplierId,
+			supplierId: args.supplierId ?? undefined,
 			totalHT: args.totalHT ?? undefined,
 			basesParTaux: args.basesParTaux,
 			invoiceDate: args.invoiceDate ?? document.invoiceDate,
 			invoiceNumber: args.invoiceNumber ?? document.invoiceNumber,
-			linesCount: args.lignes.length
+			linesCount: args.linesCount
 		});
 		return null;
 	}

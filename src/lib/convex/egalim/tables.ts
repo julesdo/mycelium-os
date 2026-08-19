@@ -210,7 +210,12 @@ export const egalimTables = {
 		organizationId: v.id('organizations'),
 		supplierId: v.id('suppliers'),
 		diagnosticId: v.id('diagnostics'),
-		lineIds: v.array(v.id('invoiceLines')),
+		// PAS de tableau d'identifiants de lignes : un fournisseur dont tout est
+		// à justifier sur trois ans dépasserait les 8 192 entrées autorisées dans
+		// un tableau Convex, et l'insertion ferait échouer la production du
+		// diagnostic entier. Les lignes se retrouvent par (batchId, supplierId,
+		// proofStatus) — le tableau n'était que de la dénormalisation.
+		lineCount: v.number(),
 		amountAtStake: v.number(),
 		status: v.union(
 			v.literal('DRAFT'),

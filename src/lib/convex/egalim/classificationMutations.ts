@@ -32,6 +32,21 @@ const vContexte = v.object({
 	)
 });
 
+/**
+ * Plafond d'écritures par transaction, largement sous la limite de Convex.
+ *
+ * Une tranche de 50 libellés touche autant de lignes qu'ils en portent, sans
+ * borne : sur un lot où « LIVRAISON », « CONSIGNE » et « EMBALLAGE » pèsent
+ * chacun des milliers de lignes, la transaction dépassait le plafond et
+ * l'exception tuait la chaîne. Les mutations rendent maintenant la main avec
+ * ce qu'il reste à faire, et l'appelant boucle.
+ *
+ * Limite résiduelle assumée : un libellé UNIQUE dépassant ce plafond à lui
+ * seul (plus de 2 000 occurrences dans un même lot, soit plusieurs années
+ * d'un même produit) reste écrit d'un bloc.
+ */
+const LIGNES_PAR_ECRITURE = 2000;
+
 /** Une confiance hors bornes est ramenée dans [0, 1] plutôt que de faire échouer le lot. */
 function borner(confidence: number): number {
 	if (!Number.isFinite(confidence)) return 0;
@@ -252,12 +267,21 @@ export const appliquerLibellesEnCache = internalMutation({
 		batchId: v.id('invoiceBatches'),
 		libelles: v.array(v.string())
 	},
-	returns: v.object({ restants: v.array(v.string()), appliques: v.number() }),
+	returns: v.object({
+		restants: v.array(v.string()),
+		appliques: v.number(),
+		/** Libellés non traités faute de budget d'écriture : l'appelant rappelle. */
+		aReprendre: v.array(v.string())
+	}),
 	handler: async (ctx, { batchId, libelles }) => {
 		const restants: string[] = [];
 		let appliques = 0;
+		let ecrites = 0;
 
-		for (const libelle of libelles) {
+		for (const [rang, libelle] of libelles.entries()) {
+			if (ecrites >= LIGNES_PAR_ECRITURE) {
+				return { restants, appliques, aReprendre: libelles.slice(rang) };
+			}
 			const cache = await ctx.db
 				.query('productLabels')
 				.withIndex('by_normalized_label', (q) => q.eq('normalizedLabel', libelle))
@@ -305,10 +329,11 @@ export const appliquerLibellesEnCache = internalMutation({
 			}
 
 			await ctx.db.patch(cache._id, { occurrences: cache.occurrences + lignes.length });
+			ecrites += lignes.length;
 			appliques += 1;
 		}
 
-		return { restants, appliques };
+		return { restants, appliques, aReprendre: [] };
 	}
 });
 
@@ -324,10 +349,13 @@ export const marquerLibellesNonClasses = internalMutation({
 		batchId: v.id('invoiceBatches'),
 		libelles: v.array(v.string())
 	},
-	returns: v.number(),
+	returns: v.object({ touchees: v.number(), aReprendre: v.array(v.string()) }),
 	handler: async (ctx, { batchId, libelles }) => {
 		let touchees = 0;
-		for (const libelle of libelles) {
+		for (const [rang, libelle] of libelles.entries()) {
+			if (touchees >= LIGNES_PAR_ECRITURE) {
+				return { touchees, aReprendre: libelles.slice(rang) };
+			}
 			const lignes = await ctx.db
 				.query('invoiceLines')
 				.withIndex('by_batch_and_label', (q) =>
@@ -339,7 +367,7 @@ export const marquerLibellesNonClasses = internalMutation({
 				touchees += 1;
 			}
 		}
-		return touchees;
+		return { touchees, aReprendre: [] };
 	}
 });
 

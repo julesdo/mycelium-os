@@ -282,10 +282,7 @@ async function traiterCsv(
 
 	const { totalHT, basesParTaux } = agregerLignesBrutes(resultat.lignes);
 
-	await ctx.runMutation(internal.egalim.extractionMutations.marquerReussite, {
-		documentId: document._id,
-		organizationId: document.organizationId,
-		batchId: document.batchId,
+	await enregistrerDocumentExtrait(ctx, document, {
 		lignes: resultat.lignes.map((l) => ({
 			// La mention de label d'une colonne dédiée rejoint le libellé, comme
 			// pour une ligne de continuation côté Claude — même sort en aval.
@@ -301,6 +298,76 @@ async function traiterCsv(
 		invoiceDate: null,
 		invoiceNumber: null,
 		avertissement
+	});
+}
+
+
+/** Lignes insérées par transaction. Bien en deçà du plafond d'écritures de Convex. */
+const LIGNES_PAR_TRANCHE = 500;
+
+interface LigneAEnregistrer {
+	rawLabel: string;
+	amountHT: number;
+	quantity?: number;
+	unit?: string;
+	unitPrice?: number;
+	vatRate?: number;
+}
+
+/**
+ * Enregistre un document extrait, par TRANCHES.
+ *
+ * Un export comptable annuel porte facilement plus de 10 000 lignes : les
+ * insérer d'un bloc franchissait à la fois le plafond d'écritures par
+ * transaction et la limite de taille des arguments, et faisait perdre le
+ * fichier entier. Le document ne passe à DONE qu'après la dernière tranche,
+ * donc un échec en cours laisse un document PENDING, pas un document
+ * faussement complet.
+ */
+async function enregistrerDocumentExtrait(
+	ctx: ActionCtx,
+	document: DocumentPourExtraction,
+	donnees: {
+		lignes: LigneAEnregistrer[];
+		totalHT: number | null;
+		basesParTaux: Array<{ taux: number; baseHT: number }>;
+		invoiceDate: string | null;
+		invoiceNumber: string | null;
+		supplierName?: string | null;
+		avertissement?: string;
+	}
+): Promise<void> {
+	const ouverture = await ctx.runMutation(
+		internal.egalim.extractionMutations.ouvrirEnregistrement,
+		{
+			documentId: document._id,
+			organizationId: document.organizationId,
+			invoiceDate: donnees.invoiceDate,
+			supplierName: donnees.supplierName
+		}
+	);
+	if (!ouverture) return;
+
+	for (let debut = 0; debut < donnees.lignes.length; debut += LIGNES_PAR_TRANCHE) {
+		await ctx.runMutation(internal.egalim.extractionMutations.enregistrerLignes, {
+			documentId: document._id,
+			organizationId: document.organizationId,
+			batchId: document.batchId,
+			lignes: donnees.lignes.slice(debut, debut + LIGNES_PAR_TRANCHE),
+			invoiceDate: ouverture.invoiceDate,
+			supplierId: ouverture.supplierId ?? undefined
+		});
+	}
+
+	await ctx.runMutation(internal.egalim.extractionMutations.cloturerDocument, {
+		documentId: document._id,
+		supplierId: ouverture.supplierId,
+		totalHT: donnees.totalHT,
+		basesParTaux: donnees.basesParTaux,
+		invoiceDate: donnees.invoiceDate,
+		invoiceNumber: donnees.invoiceNumber,
+		linesCount: donnees.lignes.length,
+		avertissement: donnees.avertissement
 	});
 }
 
@@ -376,10 +443,7 @@ async function traiterAvecClaude(
 
 		const verif = verifierExtraction(resultat.doc);
 		if (verif.ok) {
-			await ctx.runMutation(internal.egalim.extractionMutations.marquerReussite, {
-				documentId: document._id,
-				organizationId: document.organizationId,
-				batchId: document.batchId,
+			await enregistrerDocumentExtrait(ctx, document, {
 				lignes: resultat.doc.lignes.map((l) => ({
 					rawLabel: l.rawLabel,
 					amountHT: l.amountHT,

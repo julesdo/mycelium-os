@@ -25,6 +25,48 @@ import { CAP_EUR, estimerCout, usageDeLErreur } from './cout';
 const TAILLE_LOT = 50;
 
 /**
+ * Applique le cache en bouclant sur les reprises : la mutation rend la main
+ * quand son budget d'écriture est épuisé, elle ne lève pas.
+ */
+async function appliquerCacheEnEntier(
+	ctx: ActionCtx,
+	batchId: Id<'invoiceBatches'>,
+	libelles: readonly string[]
+): Promise<{ restants: string[]; appliques: number }> {
+	const restants: string[] = [];
+	let appliques = 0;
+	let aFaire = [...libelles];
+
+	while (aFaire.length > 0) {
+		const r = await ctx.runMutation(
+			internal.egalim.classificationMutations.appliquerLibellesEnCache,
+			{ batchId, libelles: aFaire }
+		);
+		restants.push(...r.restants);
+		appliques += r.appliques;
+		aFaire = r.aReprendre;
+	}
+
+	return { restants, appliques };
+}
+
+/** Même boucle pour l'envoi en arbitrage humain. */
+async function marquerNonClassesEnEntier(
+	ctx: ActionCtx,
+	batchId: Id<'invoiceBatches'>,
+	libelles: readonly string[]
+): Promise<void> {
+	let aFaire = [...libelles];
+	while (aFaire.length > 0) {
+		const r = await ctx.runMutation(
+			internal.egalim.classificationMutations.marquerLibellesNonClasses,
+			{ batchId, libelles: aFaire }
+		);
+		aFaire = r.aReprendre;
+	}
+}
+
+/**
  * Une tranche : les libellés déjà connus sont appliqués depuis le cache, le
  * reste part chez Claude.
  *
@@ -40,20 +82,14 @@ async function traiterTranche(
 	libelles: readonly string[],
 	budgetEpuise: boolean
 ): Promise<{ classes: number; echoues: number }> {
-	const { restants, appliques } = await ctx.runMutation(
-		internal.egalim.classificationMutations.appliquerLibellesEnCache,
-		{ batchId, libelles: [...libelles] }
-	);
+	const { restants, appliques } = await appliquerCacheEnEntier(ctx, batchId, libelles);
 
 	if (restants.length === 0) {
 		return { classes: appliques, echoues: 0 };
 	}
 
 	if (budgetEpuise) {
-		await ctx.runMutation(internal.egalim.classificationMutations.marquerLibellesNonClasses, {
-			batchId,
-			libelles: restants
-		});
+		await marquerNonClassesEnEntier(ctx, batchId, restants);
 		return { classes: appliques, echoues: restants.length };
 	}
 
@@ -78,10 +114,7 @@ async function traiterTranche(
 		}
 
 		// Ces libellés partent en arbitrage humain plutôt que de bloquer le lot.
-		await ctx.runMutation(internal.egalim.classificationMutations.marquerLibellesNonClasses, {
-			batchId,
-			libelles: restants
-		});
+		await marquerNonClassesEnEntier(ctx, batchId, restants);
 		return { classes: appliques, echoues: restants.length };
 	}
 
@@ -113,10 +146,7 @@ async function traiterTranche(
 	}
 
 	if (manquants.length > 0) {
-		await ctx.runMutation(internal.egalim.classificationMutations.marquerLibellesNonClasses, {
-			batchId,
-			libelles: manquants
-		});
+		await marquerNonClassesEnEntier(ctx, batchId, manquants);
 	}
 
 	return { classes: appliques + appariees.length, echoues: manquants.length };

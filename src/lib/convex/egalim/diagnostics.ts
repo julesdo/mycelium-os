@@ -250,25 +250,22 @@ async function creerDemandesAttestation(
 		.withIndex('by_batch', (q) => q.eq('batchId', batchId))
 		.collect();
 
-	const parFournisseur = new Map<
-		Id<'suppliers'>,
-		{ lineIds: Id<'invoiceLines'>[]; montant: number }
-	>();
+	const parFournisseur = new Map<Id<'suppliers'>, { lineCount: number; montant: number }>();
 
 	for (const l of lignes) {
 		if (l.proofStatus !== 'TO_JUSTIFY' || !l.supplierId) continue;
-		const acc = parFournisseur.get(l.supplierId) ?? { lineIds: [], montant: 0 };
-		acc.lineIds.push(l._id);
+		const acc = parFournisseur.get(l.supplierId) ?? { lineCount: 0, montant: 0 };
+		acc.lineCount += 1;
 		acc.montant += l.amountHT;
 		parFournisseur.set(l.supplierId, acc);
 	}
 
-	for (const [supplierId, { lineIds, montant }] of parFournisseur) {
+	for (const [supplierId, { lineCount, montant }] of parFournisseur) {
 		await ctx.db.insert('attestationRequests', {
 			organizationId,
 			supplierId,
 			diagnosticId,
-			lineIds,
+			lineCount,
 			amountAtStake: montant,
 			status: 'DRAFT'
 		});
@@ -361,25 +358,24 @@ export const obtenirDiagnostic = authedQuery({
 			.withIndex('by_diagnostic', (q) => q.eq('diagnosticId', diagnosticId))
 			.collect();
 
-		const parId = new Map(lignes.map((l) => [l._id, l]));
+		// Les produits à justifier, groupés par fournisseur, en UNE passe sur les
+		// lignes déjà en mémoire. La demande ne porte plus la liste de ses
+		// lignes : c'était un tableau non borné dans un document Convex, et un
+		// fournisseur dont tout est à justifier sur trois ans faisait échouer
+		// l'insertion, donc la production du diagnostic entier.
+		const produitsParFournisseur = new Map<string, string[]>();
+		for (const l of lignes) {
+			if (l.proofStatus !== 'TO_JUSTIFY' || !l.supplierId) continue;
+			const liste = produitsParFournisseur.get(l.supplierId) ?? [];
+			// Coupe à 30 : au-delà, la liste ne sert plus le courrier.
+			if (liste.length < 30 && !liste.includes(l.rawLabel)) liste.push(l.rawLabel);
+			produitsParFournisseur.set(l.supplierId, liste);
+		}
 
 		const attestations = [];
 		for (const demande of demandes) {
 			const fournisseur = await ctx.db.get(demande.supplierId);
-			// Par index et non par recherche linéaire : `lineIds` peut porter des
-			// milliers d'entrées, et un `find` dans toutes les lignes du lot pour
-			// chacune ferait des millions d'itérations dans une query dont le
-			// temps CPU est plafonné. La coupe à 30 vient AVANT le parcours, pas
-			// après : au-delà, la liste ne sert plus le courrier.
-			const produits: string[] = [];
-			const vus = new Set<string>();
-			for (const id of demande.lineIds) {
-				const libelle = parId.get(id)?.rawLabel;
-				if (libelle === undefined || vus.has(libelle)) continue;
-				vus.add(libelle);
-				produits.push(libelle);
-				if (produits.length >= 30) break;
-			}
+			const produits = produitsParFournisseur.get(demande.supplierId) ?? [];
 
 			attestations.push({
 				attestationId: demande._id,
