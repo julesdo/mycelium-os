@@ -63,8 +63,11 @@ Un abonnement au logiciel de conformité : dépôt de factures, mesure des trois
 confirmation, certificats et courriers de demande d'attestation.
 
 Les étages « opérateur » du modèle précédent (pilote substitution, abonnement opérateur,
-orchestration logistique) n'ont plus de porteur : il n'y a plus d'opérateur Mycelium.
+orchestration logistique) n'ont plus de porteur : il n'y a plus d'opérateur.
 ```
+
+Noter l'absence du mot « Mycelium » après « opérateur » : le contrôle de l'étape 5 cherche la
+chaîne « opérateur mycelium » et se déclencherait sur cette phrase, qui est pourtant une négation.
 
 - [ ] **Step 3: Corriger la section « Architecture »**
 
