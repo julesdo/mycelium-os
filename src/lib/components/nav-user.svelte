@@ -5,6 +5,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+	import { cn } from '$lib/utils.js';
 	import { authClient } from '$lib/auth-client';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -27,10 +28,32 @@
 	interface Props {
 		user: { name: string; email: string; avatar: string };
 		isImpersonating?: boolean;
+		/** Classes ajoutées au déclencheur. */
+		class?: string;
+		/**
+		 * Classes appliquées aux éléments qui n'ont de sens qu'en pleine largeur :
+		 * le nom, l'e-mail et le chevron. Le rail de `/app` s'en sert pour ne
+		 * laisser que l'avatar une fois replié.
+		 */
+		identityClass?: string;
+		/** Affiche l'e-mail sous le nom. Le rail s'en passe, faute de largeur. */
+		showEmail?: boolean;
 	}
 
-	let { user, isImpersonating = false }: Props = $props();
-	const sidebar = useSidebar();
+	let {
+		user,
+		isImpersonating = false,
+		class: className,
+		identityClass,
+		showEmail = true
+	}: Props = $props();
+
+	/**
+	 * `useSidebar()` lit un contexte, et le rail de `/app` n'a pas de
+	 * `Sidebar.Provider` au-dessus de lui. La valeur est donc `undefined` là-bas,
+	 * quoi qu'en dise le type de retour : d'où la lecture optionnelle plus bas.
+	 */
+	const sidebar = useSidebar() as ReturnType<typeof useSidebar> | undefined;
 
 	// Paddle subscription state
 	const subscriptionQuery = useQuery(api.paddle.getMySubscription, {});
@@ -114,26 +137,28 @@
 				{#snippet child({ props })}
 					<Button
 						variant="ghost"
-						class="h-12 w-full justify-start gap-2 px-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground {isImpersonating
-							? 'ring-2 ring-warning'
-							: ''}"
+						class={cn(
+							'h-12 w-full justify-start gap-2 px-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground',
+							isImpersonating && 'ring-2 ring-warning',
+							className
+						)}
 						{...props}
 					>
-						<Avatar.Root class="size-8 rounded-lg after:rounded-lg">
+						<Avatar.Root class="size-8 shrink-0 rounded-lg after:rounded-lg">
 							<Avatar.Image src={user.avatar} alt={user.name} class="rounded-lg" />
 							<Avatar.Fallback class="rounded-lg">{initials}</Avatar.Fallback>
 						</Avatar.Root>
-						<div class="grid flex-1 text-left text-sm leading-tight">
+						<div class={cn('grid flex-1 text-left text-sm leading-tight', identityClass)}>
 							<span class="truncate font-medium">{user.name}</span>
-							<span class="truncate text-xs">{user.email}</span>
+							{#if showEmail}<span class="truncate text-xs">{user.email}</span>{/if}
 						</div>
-						<ChevronsUpDownIcon class="ml-auto size-4" />
+						<ChevronsUpDownIcon class={cn('ml-auto size-4 shrink-0', identityClass)} />
 					</Button>
 				{/snippet}
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content
 				class="w-(--bits-dropdown-menu-anchor-width) min-w-56 rounded-lg"
-				side={sidebar.isMobile ? 'bottom' : 'right'}
+				side={sidebar?.isMobile ? 'bottom' : 'right'}
 				align="end"
 				sideOffset={4}
 			>

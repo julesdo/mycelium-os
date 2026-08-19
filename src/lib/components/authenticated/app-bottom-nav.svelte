@@ -40,7 +40,7 @@
 						<!-- Icon pill -->
 						<div
 							class={cn(
-								'flex size-9 items-center justify-center rounded-2xl transition-all duration-200',
+								'relative flex size-9 items-center justify-center rounded-2xl transition-all duration-200',
 								item.isActive
 									? 'bg-[var(--brand)] shadow-sm'
 									: 'group-hover:bg-muted/60'
@@ -55,6 +55,24 @@
 											: 'text-muted-foreground'
 									)}
 								/>
+							{/if}
+
+							<!--
+								Sous 768 px cette barre est la seule navigation : sans cette pastille,
+								le compteur de la file à confirmer serait invisible sur le format où le
+								gérant travaille le plus souvent, debout dans son économat.
+							-->
+							{#if item.badge}
+								<span
+									class={cn(
+										'absolute -top-0.5 -right-0.5 flex min-w-[18px] items-center justify-center rounded-full px-1 font-mono text-[10px] font-bold tabular-nums ring-2 ring-background',
+										item.isActive
+											? 'bg-foreground text-background'
+											: 'bg-[var(--brand)] text-[var(--brand-foreground)]'
+									)}
+								>
+									{item.badge}
+								</span>
 							{/if}
 						</div>
 

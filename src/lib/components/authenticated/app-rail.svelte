@@ -2,17 +2,19 @@
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { Button } from '$lib/components/ui/button';
+	import NavUser from '../nav-user.svelte';
 	import { cn } from '$lib/utils.js';
 	import { onMount } from 'svelte';
-	import type { SidebarConfig } from './types';
+	import type { SidebarConfig, User } from './types';
 	import CameraIcon from '@lucide/svelte/icons/camera';
 	import PanelLeftIcon from '@lucide/svelte/icons/panel-left';
 
 	interface Props {
 		config: SidebarConfig;
+		user?: User;
 	}
 
-	let { config }: Props = $props();
+	let { config, user }: Props = $props();
 
 	const navItems = $derived(config.navItems.filter((item) => !item.divider && item.url));
 
@@ -42,6 +44,7 @@
 	const largeur = $derived(deplie ? 'w-[72px] lg:w-60' : 'w-[72px]');
 	const alignement = $derived(deplie ? 'justify-center lg:justify-start' : 'justify-center');
 	const libelle = $derived(deplie ? 'hidden truncate lg:inline' : 'hidden');
+	const identite = $derived(deplie ? 'hidden lg:block' : 'hidden');
 	const pastille = $derived(
 		deplie ? 'absolute top-1 right-1 lg:static lg:ml-auto' : 'absolute top-1 right-1'
 	);
@@ -99,21 +102,38 @@
 		{/each}
 	</nav>
 
-	<!--
-		La bascule n'existe qu'à partir de 1024 px, là où le dépliage a un effet :
-		en tablette portrait, un bouton qui ne change rien serait un mensonge.
-	-->
-	<Button
-		variant="ghost"
-		onclick={basculer}
-		aria-label={deplie ? 'Replier le menu' : 'Déplier le menu'}
-		aria-expanded={deplie}
-		class={cn(
-			'mt-auto hidden h-auto min-h-12 gap-3 px-3 text-muted-foreground lg:flex',
-			deplie ? 'lg:justify-start' : 'lg:justify-center'
-		)}
-	>
-		<PanelLeftIcon class="size-5 shrink-0" />
-		<span class={cn('text-sm', libelle)}>Replier</span>
-	</Button>
+	<div class="mt-auto flex flex-col gap-1">
+		<!--
+			La bascule n'existe qu'à partir de 1024 px, là où le dépliage a un effet :
+			en tablette portrait, un bouton qui ne change rien serait un mensonge.
+		-->
+		<Button
+			variant="ghost"
+			onclick={basculer}
+			aria-label={deplie ? 'Replier le menu' : 'Déplier le menu'}
+			aria-expanded={deplie}
+			class={cn(
+				'hidden h-auto min-h-12 gap-3 px-3 text-muted-foreground lg:flex',
+				deplie ? 'lg:justify-start' : 'lg:justify-center'
+			)}
+		>
+			<PanelLeftIcon class="size-5 shrink-0" />
+			<span class={cn('text-sm', libelle)}>Replier</span>
+		</Button>
+
+		<!--
+			Le menu compte ferme le rail par le bas. C'est le seul accès à la
+			déconnexion depuis `/app` : sans lui, le gérant serait enfermé dans
+			l'application. Il porte aussi `#user-menu-trigger`, que `e2e/utils/auth.ts`
+			attend pour considérer le shell applicatif prêt et authentifié.
+		-->
+		{#if user}
+			<NavUser
+				user={{ name: user.name, email: user.email, avatar: user.image ?? '' }}
+				class={cn('h-auto min-h-12 px-2', alignement)}
+				identityClass={identite}
+				showEmail={false}
+			/>
+		{/if}
+	</div>
 </aside>

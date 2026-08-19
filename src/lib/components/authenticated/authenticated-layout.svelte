@@ -73,7 +73,7 @@
 			basse dans la colonne, sinon elle se retrouverait à côté du contenu.
 		-->
 		<div class="flex h-svh overflow-hidden bg-background">
-			<AppRail config={sidebarConfig} />
+			<AppRail config={sidebarConfig} {user} />
 			<div class="flex min-w-0 flex-1 flex-col">
 				<main id="main-content" class="@container/main min-h-0 flex-1 overflow-y-auto scrollbar-thin">
 					{@render children?.()}
