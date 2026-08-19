@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { calculerRatios, type LignePourAgregation } from '../agregation';
+import { calculerRatios, partNonConfirmee, type LignePourAgregation } from '../agregation';
 
 const ligne = (o: Partial<LignePourAgregation>): LignePourAgregation => ({
 	amountHT: 100,
@@ -119,4 +119,42 @@ describe('contre les fixtures — vérité terrain exacte', () => {
 			expect(r.meatFishDurable).toBeCloseTo(attendu.ratios.meatFishDurable, 10);
 		}
 	);
+});
+
+describe('partNonConfirmee', () => {
+	const ligne = (amountHT: number, reviewStatus: string) => ({
+		amountHT,
+		isFood: true,
+		reviewStatus: reviewStatus as 'AUTO' | 'PENDING_REVIEW' | 'CONFIRMED' | 'CORRECTED'
+	});
+
+	it('vaut zéro quand tout est confirmé', () => {
+		expect(partNonConfirmee([ligne(100, 'CONFIRMED'), ligne(50, 'CORRECTED')])).toBe(0);
+	});
+
+	it('compte AUTO et PENDING_REVIEW comme non confirmés', () => {
+		expect(partNonConfirmee([ligne(75, 'AUTO'), ligne(25, 'PENDING_REVIEW')])).toBe(1);
+	});
+
+	it('s’exprime en part du MONTANT, pas du nombre de lignes', () => {
+		// Une seule ligne non confirmée, mais elle pèse 90 % des achats.
+		const lignes = [ligne(900, 'AUTO'), ligne(50, 'CONFIRMED'), ligne(50, 'CONFIRMED')];
+		expect(partNonConfirmee(lignes)).toBeCloseTo(0.9, 5);
+	});
+
+	it('ignore le non-alimentaire, qui n’entre dans aucun ratio', () => {
+		const lignes = [
+			{ amountHT: 500, isFood: false, reviewStatus: 'AUTO' as const },
+			ligne(100, 'CONFIRMED')
+		];
+		expect(partNonConfirmee(lignes)).toBe(0);
+	});
+
+	it('vaut zéro sur un lot vide plutôt que NaN', () => {
+		expect(partNonConfirmee([])).toBe(0);
+	});
+
+	it('raisonne en valeur absolue : un avoir non confirmé pèse aussi', () => {
+		expect(partNonConfirmee([ligne(-200, 'AUTO'), ligne(200, 'CONFIRMED')])).toBeCloseTo(0.5, 5);
+	});
 });

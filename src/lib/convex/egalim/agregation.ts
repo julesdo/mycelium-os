@@ -71,3 +71,37 @@ export function calculerRatios(lignes: readonly LignePourAgregation[]): Ratios {
 		}
 	};
 }
+
+/** Une ligne, vue sous l'angle du seul état de confirmation. */
+export interface LignePourConfirmation {
+	amountHT: number;
+	isFood: boolean;
+	reviewStatus: 'AUTO' | 'PENDING_REVIEW' | 'CONFIRMED' | 'CORRECTED';
+}
+
+/**
+ * Quelle part des achats alimentaires repose encore sur une classification que
+ * personne n'a regardée.
+ *
+ * Exprimée en part du MONTANT et non du nombre de libellés : « 12 % de vos
+ * achats » dit ce qui est en jeu, là où « 37 libellés » ne dit pas si ça pèse
+ * 200 € ou 40 000 €.
+ *
+ * Raisonne en valeur absolue : un avoir de -400 € non confirmé pèse autant
+ * qu'un achat de 400 €, et se trompe aussi cher.
+ */
+export function partNonConfirmee(lignes: readonly LignePourConfirmation[]): number {
+	let total = 0;
+	let nonConfirme = 0;
+
+	for (const l of lignes) {
+		if (!l.isFood) continue;
+		const poids = Math.abs(l.amountHT);
+		total += poids;
+		if (l.reviewStatus === 'AUTO' || l.reviewStatus === 'PENDING_REVIEW') {
+			nonConfirme += poids;
+		}
+	}
+
+	return total > 0 ? nonConfirme / total : 0;
+}
