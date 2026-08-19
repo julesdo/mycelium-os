@@ -11,6 +11,17 @@
 	import { page } from '$app/state';
 	import { localizedHref } from '$lib/utils/i18n';
 
+	interface Props {
+		/**
+		 * Rail replié : seule la pastille d'initiales reste visible. Le nom
+		 * demeure dans le DOM, sans quoi rien ne dirait plus quelle cantine on
+		 * regarde pour un lecteur d'écran.
+		 */
+		compact?: boolean;
+	}
+
+	let { compact = false }: Props = $props();
+
 	const convexClient = useConvexClient();
 	const orgsQuery = useQuery(api.organizations.listMyOrganizations, {});
 	const currentOrgQuery = useQuery(api.organizations.getMyOrg, {});
@@ -72,10 +83,12 @@
 							<Building2Icon class="size-4" />
 						{/if}
 					</div>
-					<span data-testid="current-org-name" class="min-w-0 flex-1 truncate font-medium"
+					<span
+						data-testid="current-org-name"
+						class="min-w-0 flex-1 truncate font-medium {compact ? 'sr-only' : ''}"
 						>{currentOrg.name}</span
 					>
-					<ChevronsUpDownIcon class="size-4 shrink-0 text-sidebar-foreground/40" />
+					{#if !compact}<ChevronsUpDownIcon class="size-4 shrink-0 text-sidebar-foreground/40" />{/if}
 				</button>
 				<!-- eslint-enable local/no-hardcoded-aria-label -->
 			{/snippet}

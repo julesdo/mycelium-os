@@ -166,6 +166,7 @@ test.describe('Parcours EGalim de la cantine', () => {
 
 			await attendreAucunDebordement(page, 375, 812); // iPhone
 			await attendreAucunDebordement(page, 768, 1024); // iPad portrait
+			await attendreAucunDebordement(page, 1024, 768); // iPad paysage, le format de reference
 			await attendreAucunDebordement(page, 1280, 800); // desktop
 
 			// Puis avec du contenu réel : un lot ouvert et un document déposé.

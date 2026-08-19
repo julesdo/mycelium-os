@@ -3,6 +3,7 @@
 	import { localizedHref } from '$lib/utils/i18n';
 	import { Button } from '$lib/components/ui/button';
 	import NavUser from '../nav-user.svelte';
+	import OrganizationSwitcher from '../layout/OrganizationSwitcher.svelte';
 	import { cn } from '$lib/utils.js';
 	import { onMount } from 'svelte';
 	import type { SidebarConfig, User } from './types';
@@ -61,6 +62,18 @@
 		largeur
 	)}
 >
+	<!--
+		Quelle cantine on regarde, avant tout le reste.
+
+		Un gérant peut administrer plusieurs sites : sans ce repère, rien à
+		l'écran ne dit sur lequel il agit, et un dépôt de factures peut partir
+		dans le mauvais dossier. Replié, seule l'initiale reste visible ; c'est
+		assez pour distinguer deux établissements d'un coup d'œil.
+	-->
+	<div class={cn('mb-1', deplie ? 'lg:px-1' : '')}>
+		<OrganizationSwitcher compact={!deplie} />
+	</div>
+
 	<!-- Le geste de scan vit AU-DESSUS de la navigation, jamais dedans. -->
 	<Button
 		href={resolve(localizedHref('/app/factures'))}
