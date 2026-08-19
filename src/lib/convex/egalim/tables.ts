@@ -125,7 +125,14 @@ export const egalimTables = {
 		.index('by_batch_and_label', ['batchId', 'normalizedLabel'])
 		// « Cette organisation a-t-elle déjà confirmé ce libellé ? » se répond ici,
 		// côté client, sans que le cache global n'apprenne jamais qui confirme.
-		.index('by_org_and_label', ['organizationId', 'normalizedLabel']),
+		.index('by_org_and_label', ['organizationId', 'normalizedLabel'])
+		// La file de confirmation est transverse aux dépôts : elle interroge
+		// l'organisation, pas le lot. Sans cet index, il fallait lire TOUTES les
+		// lignes de l'organisation pour n'en garder que celles en attente — à
+		// ~3 000 lignes par an, le plafond des 16 000 lectures tombait vers la
+		// cinquième année de factures cumulées, et l'écran se serait mis à
+		// échouer sur une erreur technique illisible pour le gérant.
+		.index('by_org_and_review', ['organizationId', 'reviewStatus']),
 
 	// Cache global de classification par libellé distinct.
 	// SANS organizationId ET SANS utilisateur, délibérément : ne contient QUE la

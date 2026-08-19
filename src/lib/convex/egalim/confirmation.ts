@@ -61,12 +61,12 @@ export const listerAConfirmer = authedQuery({
 	handler: async (ctx) => {
 		const { organizationId } = await getUserOrg(ctx);
 
-		const lignes = await ctx.db
+		const enAttente = await ctx.db
 			.query('invoiceLines')
-			.withIndex('by_org_and_date', (q) => q.eq('organizationId', organizationId))
+			.withIndex('by_org_and_review', (q) =>
+				q.eq('organizationId', organizationId).eq('reviewStatus', 'PENDING_REVIEW')
+			)
 			.collect();
-
-		const enAttente = lignes.filter((l) => l.reviewStatus === 'PENDING_REVIEW');
 
 		const groupes = new Map<
 			string,
@@ -74,7 +74,7 @@ export const listerAConfirmer = authedQuery({
 				rawLabelExemple: string;
 				occurrences: number;
 				montantCumuleHT: number;
-				ligne: (typeof lignes)[number];
+				ligne: (typeof enAttente)[number];
 			}
 		>();
 
