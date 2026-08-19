@@ -4,6 +4,7 @@ import { internal } from '../_generated/api';
 import { authedMutation } from '../functions';
 import { REFERENTIEL_VERSION } from '../../egalim/referentiel';
 import { deriverVerdict, type ClassificationBrute } from './verdict';
+import { doitEtreDemande } from './consensus';
 import { vFamille, vLabel } from './tables';
 
 /**
@@ -228,6 +229,8 @@ export const appliquerClassification = internalMutation({
 				justification,
 				confidence: brute.confidence,
 				source: 'AUTO',
+				confirmationsCount: 0,
+				contested: false,
 				classifierVersion: REFERENTIEL_VERSION,
 				occurrences: lignes.length
 			});
@@ -295,6 +298,17 @@ export const appliquerLibellesEnCache = internalMutation({
 				continue;
 			}
 
+			// Le consensus décide si le libellé doit encore être posé au client.
+			// Viande et poisson y échappent : ils sont toujours demandés.
+			const encoreDemande = doitEtreDemande(
+				{
+					confidence: cache.confidence,
+					confirmationsCount: cache.confirmationsCount,
+					contested: cache.contested
+				},
+				cache.family
+			);
+
 			const verdict = deriverVerdict(
 				{
 					normalizedLabel: libelle,
@@ -323,7 +337,7 @@ export const appliquerLibellesEnCache = internalMutation({
 					justification: cache.justification,
 					confidence: cache.confidence,
 					proofStatus: verdict.proofStatus,
-					reviewStatus: verdict.reviewStatus,
+					reviewStatus: encoreDemande ? verdict.reviewStatus : 'CONFIRMED',
 					classifierVersion: cache.classifierVersion
 				});
 			}

@@ -232,7 +232,8 @@ async function arbitrer(
 		justification: args.justification,
 		confidence: 1,
 		source: 'HUMAN' as const,
-		confirmedBy: userId,
+		// `confirmedBy` a disparu du cache global : c'était un identifiant
+		// d'utilisateur dans une table partagée entre tous les clients.
 		confirmedAt: Date.now(),
 		classifierVersion: REFERENTIEL_VERSION
 	};
@@ -243,6 +244,8 @@ async function arbitrer(
 		await ctx.db.insert('productLabels', {
 			normalizedLabel: args.normalizedLabel,
 			...contenu,
+			confirmationsCount: 1,
+			contested: false,
 			occurrences: lignes.length
 		});
 	}

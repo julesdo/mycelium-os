@@ -122,12 +122,15 @@ export const egalimTables = {
 		// jamais faire LIRE les lignes d'une autre organisation. C'est aussi la
 		// bonne sémantique métier — un diagnostic livré est figé, un lot
 		// antérieur ne se reclasse pas.
-		.index('by_batch_and_label', ['batchId', 'normalizedLabel']),
+		.index('by_batch_and_label', ['batchId', 'normalizedLabel'])
+		// « Cette organisation a-t-elle déjà confirmé ce libellé ? » se répond ici,
+		// côté client, sans que le cache global n'apprenne jamais qui confirme.
+		.index('by_org_and_label', ['organizationId', 'normalizedLabel']),
 
 	// Cache global de classification par libellé distinct.
-	// SANS organizationId, délibérément : ne contient QUE la chaîne de libellé
-	// et sa classification. Jamais de montant, de quantité, de fournisseur ni
-	// de lien vers une organisation. Ce qui est mutualisé est du référentiel
+	// SANS organizationId ET SANS utilisateur, délibérément : ne contient QUE la
+	// chaîne de libellé et sa classification. Jamais de montant, de quantité, de
+	// fournisseur, ni aucune identité. Ce qui est mutualisé est du référentiel
 	// produit, pas de la donnée client.
 	productLabels: defineTable({
 		normalizedLabel: v.string(),
@@ -137,7 +140,26 @@ export const egalimTables = {
 		justification: v.string(),
 		confidence: v.number(),
 		source: v.union(v.literal('AUTO'), v.literal('HUMAN')),
-		confirmedBy: v.optional(v.string()),
+		/**
+		 * Combien d'organisations DISTINCTES ont confirmé ce libellé. Compteur nu :
+		 * la table n'apprend jamais lesquelles. La file ne demandant un libellé
+		 * qu'une fois par organisation, l'entier vaut bien un compte de clients
+		 * distincts.
+		 */
+		confirmationsCount: v.number(),
+		/**
+		 * Une correction a contredit le verdict établi. Le libellé redevient une
+		 * question posée à tous, au lieu d'être écrasé silencieusement.
+		 */
+		contested: v.boolean(),
+		/** Le verdict concurrent, tel quel. Ne révèle l'identité de personne. */
+		verdictConcurrent: v.optional(
+			v.object({
+				isFood: v.boolean(),
+				family: vFamille,
+				qualifyingLabels: v.array(vLabel)
+			})
+		),
 		confirmedAt: v.optional(v.number()),
 		classifierVersion: v.string(),
 		occurrences: v.number()
