@@ -116,7 +116,7 @@
 				return;
 			}
 			toast.success($t('app.user_menu.impersonation_stopped'));
-			goto(resolve(localizedHref('/ops/staff')));
+			goto(resolve(localizedHref('/app')));
 		} catch {
 			toast.error($t('app.user_menu.impersonation_stop_failed'));
 		}

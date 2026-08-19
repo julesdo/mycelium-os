@@ -484,11 +484,6 @@ export const finaliserClassification = internalMutation({
 			labelsPendingReview: libellesEnRevue.size
 		});
 
-		// Rien à arbitrer : le diagnostic se produit sans intervention.
-		if (libellesEnRevue.size === 0) {
-			await ctx.scheduler.runAfter(0, internal.egalim.diagnostics.produireSiPret, { batchId });
-		}
-
 		const job = await ctx.db.get(jobId);
 		await ctx.db.patch(jobId, {
 			// Un job plafonné le reste : le dire `DONE` masquerait que le lot est
