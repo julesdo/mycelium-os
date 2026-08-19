@@ -25,6 +25,55 @@ const vRatios = v.object({
 });
 
 /**
+ * Le nombre d'exercices que le sélecteur accepte de remonter.
+ *
+ * Une date aberrante sortie de l'OCR (« 2205 » lu pour « 2025 ») produirait
+ * sinon un sélecteur de cent quatre-vingts entrées, et un « 9999 » dépasserait
+ * la taille maximale d'un tableau Convex, faisant tomber l'écran entier avec
+ * lui. Aucune cantine n'a besoin de remonter trente exercices en arrière.
+ */
+const PROFONDEUR_MAX = 30;
+
+/**
+ * Les années couvertes par deux bornes de dates, la plus récente d'abord.
+ *
+ * Les deux arguments sont les `invoiceDate` BRUTS tels qu'ils sortent de la
+ * base : l'extraction rend la chaîne vide sur un PDF scanné illisible, et l'OCR
+ * peut rendre une année fantaisiste. La fonction est donc défensive là où le
+ * handler s'appuie déjà sur les bornes de son index — c'est cette défense que
+ * les tests verrouillent, parce qu'elle est le dernier filet du sélecteur.
+ *
+ * Deux comportements dégradés, assumés :
+ *
+ * 1. Une seule borne lisible ne dit rien de la profondeur de l'historique, et
+ *    on ne l'invente pas : on se réduit à cette année-là. C'est le seul fait
+ *    établi, et c'est l'exercice que le gérant vient déclarer. Rendre une liste
+ *    vide serait pire — le sélecteur disparaîtrait alors qu'il existe des
+ *    achats mesurables.
+ *
+ * 2. Des bornes incohérentes sont remises dans l'ordre plutôt que rejetées :
+ *    les deux dates existent bel et bien en base, seul leur ordre surprend.
+ */
+export function enumererAnnees(plusAncienne: string | null, plusRecente: string | null): string[] {
+	const annee = (date: string | null): number | null => {
+		if (date === null) return null;
+		const quatre = date.slice(0, 4);
+		return /^\d{4}$/.test(quatre) ? Number(quatre) : null;
+	};
+
+	const bornes = [annee(plusAncienne), annee(plusRecente)].filter((a): a is number => a !== null);
+	// Aucune ligne, ou aucune borne lisible : rien à proposer au sélecteur.
+	if (bornes.length === 0) return [];
+
+	const haute = Math.max(...bornes);
+	const plancher = Math.max(Math.min(...bornes), haute - PROFONDEUR_MAX);
+
+	const annees: string[] = [];
+	for (let a = haute; a >= plancher; a--) annees.push(String(a));
+	return annees;
+}
+
+/**
  * Les années pour lesquelles cette organisation a des achats, la plus récente d'abord.
  *
  * Deux lectures, pas un balayage. L'index `by_org_and_date` étant ordonné par
@@ -69,25 +118,7 @@ export const listerAnnees = authedQuery({
 		const plusAncienne = await borne('asc');
 		const plusRecente = await borne('desc');
 
-		const annee = (date: string | undefined): number | null => {
-			if (date === undefined) return null;
-			const quatre = date.slice(0, 4);
-			return /^\d{4}$/.test(quatre) ? Number(quatre) : null;
-		};
-
-		// Aucune ligne, ou deux bornes illisibles : rien à proposer au sélecteur.
-		const premiere = annee(plusAncienne?.invoiceDate);
-		const derniere = annee(plusRecente?.invoiceDate);
-		if (premiere === null || derniere === null) return [];
-
-		// Une date aberrante sortie de l'OCR (« 2205 » pour « 2025 ») ne doit ni
-		// produire un sélecteur de cent quatre-vingts entrées, ni dépasser la taille
-		// maximale d'un tableau Convex et faire échouer l'écran entier.
-		const plancher = Math.max(premiere, derniere - 30);
-
-		const annees: string[] = [];
-		for (let a = derniere; a >= plancher; a--) annees.push(String(a));
-		return annees;
+		return enumererAnnees(plusAncienne?.invoiceDate ?? null, plusRecente?.invoiceDate ?? null);
 	}
 });
 
