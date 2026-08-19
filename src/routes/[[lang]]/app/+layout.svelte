@@ -40,6 +40,9 @@
 		}
 	});
 
+	// Alimente la pastille « À confirmer » du rail.
+	const aConfirmerQuery = useQuery(api.egalim.confirmation.listerAConfirmer, {});
+
 	const isPlatformAdmin = $derived(viewer?.role === 'admin');
 
 	/**
@@ -91,7 +94,11 @@
 	}
 
 	const sidebarConfig = $derived(
-		getAppSidebarConfig({ pathname: page.url.pathname, lang: page.params.lang })
+		getAppSidebarConfig({
+			pathname: page.url.pathname,
+			lang: page.params.lang,
+			aConfirmer: aConfirmerQuery.data?.libelles.length ?? 0
+		})
 	);
 
 	// --- Onboarding salarié ---
@@ -122,7 +129,7 @@
 
 <AuthenticatedLayout
 	{sidebarConfig}
-	navMode="app-topbar"
+	navMode="app-rail"
 	user={viewer
 		? {
 				name: viewer.name ?? 'User',

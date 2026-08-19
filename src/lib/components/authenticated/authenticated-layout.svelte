@@ -4,6 +4,7 @@
 	import AuthenticatedSidebar from './authenticated-sidebar.svelte';
 	import AuthenticatedHeader from './authenticated-header.svelte';
 	import AppTopBar from './app-topbar.svelte';
+	import AppRail from './app-rail.svelte';
 	import AppBottomNav from './app-bottom-nav.svelte';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import type { Snippet } from 'svelte';
@@ -22,8 +23,8 @@
 		sidebarOpen?: boolean;
 		/** Show OrganizationSwitcher in sidebar header */
 		showOrgSwitcher?: boolean;
-		/** Navigation mode: app-topbar for the canteen space, sidebar otherwise */
-		navMode?: 'sidebar' | 'app-topbar';
+		/** Navigation mode: app-rail for the canteen space, sidebar otherwise */
+		navMode?: 'sidebar' | 'app-topbar' | 'app-rail';
 	}
 
 	let {
@@ -64,7 +65,23 @@
 		Passer au contenu principal
 	</a>
 
-	{#if navMode === 'app-topbar'}
+	{#if navMode === 'app-rail'}
+		<!--
+			Rail latéral à partir de 768 px, barre basse en dessous. Les deux
+			composants se relaient par media query : `AppRail` porte `hidden md:flex`,
+			`AppBottomNav` porte `md:hidden`. Le rail vit dans la rangée, la barre
+			basse dans la colonne, sinon elle se retrouverait à côté du contenu.
+		-->
+		<div class="flex h-svh overflow-hidden bg-background">
+			<AppRail config={sidebarConfig} />
+			<div class="flex min-w-0 flex-1 flex-col">
+				<main id="main-content" class="@container/main min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+					{@render children?.()}
+				</main>
+				<AppBottomNav config={sidebarConfig} />
+			</div>
+		</div>
+	{:else if navMode === 'app-topbar'}
 		<!-- Top bar layout — no sidebar, glass premium shell -->
 		<div class="flex h-svh flex-col overflow-hidden bg-background">
 			<AppTopBar config={sidebarConfig} {user} />
