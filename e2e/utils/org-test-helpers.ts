@@ -9,6 +9,7 @@
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../src/lib/convex/_generated/api';
 import { resolveConvexUrl } from './convex-url';
+import { resolveSiteUrl } from './site-url';
 import type { Page, BrowserContext } from '@playwright/test';
 
 const TEST_PASSWORD = 'TestPassword123!';
@@ -68,7 +69,14 @@ export async function signupAndVerify(baseUrl: string, user: FreshUser): Promise
  * page context. After this call page requests carry the session cookie.
  */
 export async function signinViaApi(page: Page, user: FreshUser): Promise<void> {
-	const res = await page.request.post('/api/auth/sign-in/email', {
+	// `Origin` explicite : `page.request` n'en pose pas, et BetterAuth refuse la
+	// requête avec un 403 « Missing or null Origin ». `signupAndVerify` juste
+	// au-dessus le posait déjà ; l'oubli ici ne se voyait que sur ce chemin.
+	// L'origine doit être celle que le backend a reçue comme SITE_URL, d'où la
+	// résolution partagée plutôt qu'une valeur en dur.
+	const origin = resolveSiteUrl();
+	const res = await page.request.post(`${origin}/api/auth/sign-in/email`, {
+		headers: { Origin: origin },
 		data: { email: user.email, password: user.password }
 	});
 	if (!res.ok()) {
@@ -142,7 +150,10 @@ export async function createIsolatedUserWithOrg(
 	const user = makeFreshUser(prefix);
 	const orgName = `OrgOf-${prefix}-${Date.now()}`;
 
-	const context = await browser.newContext();
+	// baseURL sur le contexte : un contexte cree a la main n'herite PAS des
+	// options `use` de la config, et tous les page.goto() relatifs du parcours
+	// (/onboarding/organization, /app/...) echouent sans lui.
+	const context = await browser.newContext({ baseURL: baseUrl });
 	const page = await context.newPage();
 
 	await setupFreshUserOnOnboarding(page, user, baseUrl);

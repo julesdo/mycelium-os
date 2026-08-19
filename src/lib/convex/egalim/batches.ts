@@ -151,6 +151,19 @@ export const enregistrerDocument = authedMutation({
 			throw new ConvexError(`Format non pris en charge : ${filename}. ${consigne}`);
 		}
 
+		// On n'accepte un fichier que sur un lot qui n'a pas encore quitté
+		// l'extraction. Plus loin, l'ajout de lignes décalerait la liste triée
+		// des libellés distincts que la classification parcourt par tranches :
+		// elle en sauterait, ou en rejouerait. Et repasser le lot en EXTRACTING
+		// déclencherait une SECONDE chaîne de classification en parallèle de
+		// celle qui tourne.
+		if (batch.status !== 'DRAFT' && batch.status !== 'EXTRACTING') {
+			await ctx.storage.delete(storageId);
+			throw new ConvexError(
+				'Ce dépôt est déjà passé au traitement. Ouvrez un nouveau dépôt pour ajouter des factures.'
+			);
+		}
+
 		const documentId = await ctx.db.insert('invoiceDocuments', {
 			organizationId,
 			batchId,

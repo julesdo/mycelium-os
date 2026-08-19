@@ -12,6 +12,7 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
+import { resolveSiteUrl } from './utils/site-url';
 import {
 	makeFreshUser,
 	setupFreshUserOnOnboarding,
@@ -21,7 +22,10 @@ import {
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
+// Meme resolution que playwright.config.ts : le stack de test isole tourne
+// sur un port calcule par projet, jamais sur 5173. La valeur en dur faisait
+// echouer ces specs avec un `fetch failed` opaque.
+const BASE_URL = resolveSiteUrl();
 
 // ---------------------------------------------------------------------------
 // Helper — create a second org for an already-authenticated user

@@ -13,9 +13,13 @@
  */
 
 import { test, expect, chromium, type Browser } from '@playwright/test';
+import { resolveSiteUrl } from './utils/site-url';
 import { createIsolatedUserWithOrg, deleteUserSafe } from './utils/org-test-helpers';
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
+// Meme resolution que playwright.config.ts : le stack de test isole tourne
+// sur un port calcule par projet, jamais sur 5173. La valeur en dur faisait
+// echouer ces specs avec un `fetch failed` opaque.
+const BASE_URL = resolveSiteUrl();
 
 test.describe('Multi-tenant data isolation', () => {
 	let browser: Browser;
