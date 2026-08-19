@@ -111,10 +111,9 @@ test.describe('Parcours EGalim de la cantine', () => {
 			// On affirme l'état d'ARRIVÉE, pas l'absence de l'état de départ :
 			// une assertion négative passerait à vide si elle s'évaluait avant
 			// que le statut ne bascule, et ne prouverait rien.
-			await expect(page.getByTestId('depot-statut-lot')).toContainText(
-				'Vérification par un opérateur',
-				{ timeout: 120_000 }
-			);
+			await expect(page.getByTestId('depot-statut-lot')).toContainText('À confirmer', {
+				timeout: 120_000
+			});
 		} finally {
 			await context.close();
 			await deleteUserSafe(user.email);
@@ -180,6 +179,45 @@ test.describe('Parcours EGalim de la cantine', () => {
 
 			await attendreAucunDebordement(page, 375, 812);
 			await attendreAucunDebordement(page, 768, 1024);
+			await attendreAucunDebordement(page, 1280, 800);
+		} finally {
+			await context.close();
+			await deleteUserSafe(user.email);
+		}
+	});
+	test('le parcours complet : amorçage, dépôt, confirmation', async () => {
+		test.setTimeout(240_000);
+
+		const { context, user } = await createIsolatedUserWithOrg(browser, BASE_URL, 'egalim-boucle');
+		try {
+			const page = await context.newPage();
+
+			// --- Amorçage : un chemin, surtout pas trois jauges à zéro ---
+			await page.goto('/app');
+			await expect(page.getByText('Commençons par vos factures')).toBeVisible({
+				timeout: 30_000
+			});
+
+			// --- Dépôt ---
+			await page.goto('/app/factures');
+			await expect(page.getByTestId('depot-ouvrir')).toBeVisible({ timeout: 30_000 });
+			await page.getByTestId('depot-libelle').fill('Factures boucle');
+			await page.getByTestId('depot-ouvrir').click();
+			await expect(page.getByTestId('depot-fichiers')).toBeAttached({ timeout: 30_000 });
+			await page.getByTestId('depot-fichiers').setInputFiles(EXPORT_COMPTABLE);
+			await expect(page.getByTestId('depot-lus')).toBeVisible({ timeout: 90_000 });
+
+			// --- La file de confirmation se remplit toute seule ---
+			// Sans clé d'API, la classification ne peut pas aboutir : tous les
+			// libellés partent en confirmation. C'est le comportement voulu.
+			await page.goto('/app/confirmer');
+			const confirmer = page.getByRole('button', { name: /Confirmer/ });
+			await expect(confirmer).toBeVisible({ timeout: 150_000 });
+
+			// --- L'écran tient sur les quatre formats, avec du contenu réel ---
+			await attendreAucunDebordement(page, 375, 812);
+			await attendreAucunDebordement(page, 768, 1024);
+			await attendreAucunDebordement(page, 1024, 768);
 			await attendreAucunDebordement(page, 1280, 800);
 		} finally {
 			await context.close();

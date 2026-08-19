@@ -554,7 +554,7 @@ Cordialement,`;
 
 <style>
 	/*
-	 * Le rapport est le document que l'opérateur laisse après la restitution.
+	 * Le rapport est le document que le gérant présente en contrôle.
 	 * Il doit sortir sur papier sans la navigation ni les boutons, et sans
 	 * qu'un tableau soit coupé au milieu d'une ligne.
 	 */

@@ -72,7 +72,7 @@
 		DRAFT: 'En attente de fichiers',
 		EXTRACTING: 'Lecture des factures',
 		CLASSIFYING: 'Classement des produits',
-		REVIEW: 'Vérification par un opérateur',
+		REVIEW: 'À confirmer',
 		READY: 'Prêt',
 		FAILED: 'Échec'
 	};
@@ -436,7 +436,7 @@
 				</a>
 			{:else if d.status === 'REVIEW'}
 				<CarteVerre>
-					<p class="text-sm font-medium">Un opérateur vérifie les produits sensibles.</p>
+					<p class="text-sm font-medium">Quelques produits attendent votre confirmation.</p>
 					<p class="mt-1 text-xs leading-relaxed text-muted-foreground">
 						<span class="font-mono tabular-nums">{d.labelsPendingReview}</span>
 						libellé{d.labelsPendingReview > 1 ? 's' : ''} en cours de vérification. La viande et le
