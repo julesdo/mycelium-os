@@ -8,7 +8,7 @@ import type { Id } from '../_generated/dataModel';
 import { classifierAvecClaude, type UsageClassification } from './classificateurClaude';
 import type { ClassificationClaude } from './classificationSchema';
 import { rapprocher } from './appariement';
-import { CAP_EUR, estimerCout } from './cout';
+import { CAP_EUR, estimerCout, usageDeLErreur } from './cout';
 
 /**
  * L'orchestration de la classification — le cœur du produit.
@@ -60,9 +60,24 @@ async function traiterTranche(
 	let resultat: { classifications: ClassificationClaude[]; usage: UsageClassification };
 	try {
 		resultat = await classifierAvecClaude({ libelles: restants });
-	} catch {
-		// L'appel a échoué malgré ses reprises : ces libellés partent en
-		// arbitrage humain plutôt que de bloquer le lot entier.
+	} catch (erreur) {
+		// Un appel émis est facturé, même si sa réponse est inexploitable. On
+		// compte donc son usage AVANT de renoncer, sinon le plafond ne se
+		// déclencherait jamais sur le chemin d'échec, qui est justement celui
+		// qui coûte le plus : chaque appel y est rejoué jusqu'à trois fois.
+		const perdu = usageDeLErreur(erreur);
+		if (perdu.tokensIn > 0 || perdu.tokensOut > 0) {
+			await ctx.runMutation(internal.egalim.extractionMutations.accumulerCout, {
+				jobId,
+				tokensIn: perdu.tokensIn,
+				tokensOut: perdu.tokensOut,
+				cacheReadTokens: perdu.cacheReadTokens,
+				coutEur: estimerCout(perdu),
+				capEur: CAP_EUR
+			});
+		}
+
+		// Ces libellés partent en arbitrage humain plutôt que de bloquer le lot.
 		await ctx.runMutation(internal.egalim.classificationMutations.marquerLibellesNonClasses, {
 			batchId,
 			libelles: restants
@@ -127,8 +142,8 @@ export const classifierLot = internalAction({
 	},
 	returns: v.null(),
 	handler: async (ctx, { batchId, offset }) => {
-		const contexte = await ctx.runQuery(
-			internal.egalim.classificationMutations.obtenirContexte,
+		const contexte = await ctx.runMutation(
+			internal.egalim.classificationMutations.obtenirOuOuvrirContexte,
 			{ batchId }
 		);
 		if (!contexte) return null;
@@ -162,19 +177,33 @@ export const classifierLot = internalAction({
 		// Un document voisin du même lot partage ce job de coût et a pu faire
 		// basculer le plafond entre deux tranches : on relit l'état, on ne le
 		// suppose pas.
-		const { classes, echoues } = await traiterTranche(
-			ctx,
-			batchId,
-			contexte.jobId,
-			libelles,
-			contexte.jobStatus === 'CAPPED'
-		);
+		//
+		// TOUTE la tranche est sous garde, y compris les écritures en base. Une
+		// exception ici — dépassement du plafond d'écritures, conflit persistant
+		// avec un arbitrage concurrent — empêcherait sinon d'atteindre la
+		// re-planification ci-dessous : le lot resterait bloqué en CLASSIFYING,
+		// sans reprise possible. On saute la tranche, on la note, on avance.
+		try {
+			const { classes, echoues } = await traiterTranche(
+				ctx,
+				batchId,
+				contexte.jobId,
+				libelles,
+				contexte.jobStatus === 'CAPPED'
+			);
 
-		await ctx.runMutation(internal.egalim.classificationMutations.avancerJob, {
-			jobId: contexte.jobId,
-			libellesClasses: classes,
-			libellesEchoues: echoues
-		});
+			await ctx.runMutation(internal.egalim.classificationMutations.avancerJob, {
+				jobId: contexte.jobId,
+				libellesClasses: classes,
+				libellesEchoues: echoues
+			});
+		} catch (erreur) {
+			await ctx.runMutation(internal.egalim.classificationMutations.noterEchecTranche, {
+				jobId: contexte.jobId,
+				libellesEchoues: libelles.length,
+				message: erreur instanceof Error ? erreur.message : 'Échec inattendu sur une tranche.'
+			});
+		}
 
 		await ctx.scheduler.runAfter(0, internal.egalim.classification.classifierLot, {
 			batchId,

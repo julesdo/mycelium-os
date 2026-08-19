@@ -72,6 +72,7 @@ import type * as organizations from "../organizations.js";
 import type * as paddle from "../paddle.js";
 import type * as previewDev from "../previewDev.js";
 import type * as storage from "../storage.js";
+import type * as tests from "../tests.js";
 import type * as users from "../users.js";
 import type * as utils_anonymousUser from "../utils/anonymousUser.js";
 import type * as utils_chatModel from "../utils/chatModel.js";
@@ -147,6 +148,7 @@ declare const fullApi: ApiFromModules<{
   paddle: typeof paddle;
   previewDev: typeof previewDev;
   storage: typeof storage;
+  tests: typeof tests;
   users: typeof users;
   "utils/anonymousUser": typeof utils_anonymousUser;
   "utils/chatModel": typeof utils_chatModel;

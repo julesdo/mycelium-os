@@ -10,7 +10,7 @@ import { decoderTexte, detecterColonnes, parseCsv, type LigneBrute } from './par
 import { extraireAvecClaude, type ContenuDocument, type UsageExtraction } from './extracteurClaude';
 import { verifierExtraction } from './verification';
 import type { DocumentExtrait } from './extractionSchema';
-import { CAP_EUR, estimerCout } from './cout';
+import { CAP_EUR, estimerCout, usageDeLErreur, ErreurAppelClaude } from './cout';
 
 /**
  * L'orchestration d'extraction — un document, un chemin déterministe (CSV)
@@ -170,10 +170,29 @@ async function extraireDocumentAvecClaude(
 
 	for (let debut = 0; debut < contenu.images.length; debut += PAGES_PAR_APPEL) {
 		const morceau = contenu.images.slice(debut, debut + PAGES_PAR_APPEL);
-		const { doc, usage } = await extraireAvecClaude({
-			contenu: { type: 'images', images: morceau },
-			messageRelance
-		});
+
+		let doc: DocumentExtrait;
+		let usage: UsageExtraction;
+		try {
+			({ doc, usage } = await extraireAvecClaude({
+				contenu: { type: 'images', images: morceau },
+				messageRelance
+			}));
+		} catch (erreur) {
+			// L'usage des morceaux DÉJÀ traités doit survivre à l'échec du
+			// morceau suivant. Sans ça, un PDF de 40 pages qui casse au
+			// cinquième appel perdait quatre appels Opus 5 sur des pages
+			// entières rendues en images : jamais comptés, jamais plafonnés.
+			const perdu = usageDeLErreur(erreur);
+			throw new ErreurAppelClaude(
+				erreur instanceof Error ? erreur.message : 'Échec de l’appel à Claude.',
+				{
+					tokensIn: usageTotal.tokensIn + perdu.tokensIn,
+					tokensOut: usageTotal.tokensOut + perdu.tokensOut,
+					cacheReadTokens: usageTotal.cacheReadTokens + perdu.cacheReadTokens
+				}
+			);
+		}
 
 		usageTotal.tokensIn += usage.tokensIn;
 		usageTotal.tokensOut += usage.tokensOut;
@@ -328,6 +347,20 @@ async function traiterAvecClaude(
 		try {
 			resultat = await extraireDocumentAvecClaude(contenu, messageRelance);
 		} catch (erreur) {
+			// Un appel émis est facturé, même si sa réponse est inexploitable.
+			// On le compte avant de renoncer, sans quoi le plafond ne se
+			// déclencherait jamais sur le chemin d'échec.
+			const perdu = usageDeLErreur(erreur);
+			if (perdu.tokensIn > 0 || perdu.tokensOut > 0) {
+				await ctx.runMutation(internal.egalim.extractionMutations.accumulerCout, {
+					jobId: job._id,
+					tokensIn: perdu.tokensIn,
+					tokensOut: perdu.tokensOut,
+					cacheReadTokens: perdu.cacheReadTokens,
+					coutEur: estimerCout(perdu),
+					capEur: CAP_EUR
+				});
+			}
 			dernierMessage = erreur instanceof Error ? erreur.message : 'Échec de l’appel à Claude.';
 			break;
 		}

@@ -5,6 +5,7 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { documentExtraitSchema, type DocumentExtrait } from './extractionSchema';
 import { construirePromptExtraction } from './promptExtraction';
 import { avecReprise } from './reprise';
+import { ErreurAppelClaude } from './cout';
 
 /**
  * L'extracteur Claude universel : PDF, image, photo, texte brut OCR — tout ce
@@ -136,39 +137,50 @@ export async function extraireAvecClaude(args: {
 		})
 	);
 
+	// Capture AVANT toute cause d'echec : l'appel a ete emis, donc facture.
+	// L'erreur le transportera jusqu'au comptable de couts.
+	const usage = {
+		tokensIn: response.usage.input_tokens,
+		tokensOut: response.usage.output_tokens,
+		cacheReadTokens: response.usage.cache_read_input_tokens ?? 0
+	};
+
 	if (response.stop_reason === 'refusal') {
-		throw new Error('Claude a refusé d’extraire ce document (stop_reason: refusal).');
+		throw new ErreurAppelClaude('Claude a refusé d’extraire ce document (stop_reason: refusal).', usage);
 	}
 	if (response.stop_reason === 'max_tokens') {
-		throw new Error(
-			`Réponse tronquée : la facture dépasse le budget de ${MAX_TOKENS} tokens de sortie.`
-		);
+		throw new ErreurAppelClaude(`Réponse tronquée : la facture dépasse le budget de ${MAX_TOKENS} tokens de sortie.`, usage);
 	}
 
 	const blocTexte = response.content.find(
 		(bloc): bloc is Anthropic.TextBlock => bloc.type === 'text'
 	);
 	if (!blocTexte) {
-		throw new Error('Réponse Claude sans bloc texte exploitable.');
+		throw new ErreurAppelClaude('Réponse Claude sans bloc texte exploitable.', usage);
 	}
 
 	let jsonBrut: unknown;
 	try {
 		jsonBrut = JSON.parse(blocTexte.text);
 	} catch {
-		throw new Error('La réponse de Claude n’est pas un JSON valide.');
+		throw new ErreurAppelClaude('La réponse de Claude n’est pas un JSON valide.', usage);
 	}
 
 	// Une réponse non conforme au schéma est une erreur, pas une donnée à
 	// rattraper : documentExtraitSchema.parse() lève si ce n'est pas conforme.
-	const doc = documentExtraitSchema.parse(jsonBrut);
+	let doc: DocumentExtrait;
+	try {
+		doc = documentExtraitSchema.parse(jsonBrut);
+	} catch {
+		// L'appel a bien été facturé : son usage doit remonter au plafond.
+		throw new ErreurAppelClaude(
+			'Réponse de Claude non conforme au schéma d’extraction.',
+			usage
+		);
+	}
 
 	return {
 		doc,
-		usage: {
-			tokensIn: response.usage.input_tokens,
-			tokensOut: response.usage.output_tokens,
-			cacheReadTokens: response.usage.cache_read_input_tokens ?? 0
-		}
+		usage
 	};
 }

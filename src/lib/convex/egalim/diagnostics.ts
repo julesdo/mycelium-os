@@ -196,6 +196,17 @@ export const produireSiPret = internalMutation({
 		const batch = await ctx.db.get(batchId);
 		if (!batch || batch.labelsPendingReview > 0) return null;
 
+		// La classification doit être ALLÉE À SON TERME, pas seulement avoir
+		// vidé la file d'arbitrage à un instant donné. `labelsPendingReview` à
+		// zéro ne dit rien pendant que la classification tourne encore : les
+		// libellés des tranches suivantes n'y sont simplement pas encore.
+		const job = await ctx.db
+			.query('classificationJobs')
+			.withIndex('by_batch', (q) => q.eq('batchId', batchId))
+			.first();
+		if (!job || job.finishedAt === undefined) return null;
+		if (batch.status !== 'READY' && batch.status !== 'REVIEW') return null;
+
 		const existant = await ctx.db
 			.query('diagnostics')
 			.withIndex('by_batch', (q) => q.eq('batchId', batchId))

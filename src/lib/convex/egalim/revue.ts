@@ -1,6 +1,6 @@
 import { v, ConvexError } from 'convex/values';
 import { conciergeQuery, conciergeMutation } from '../functions';
-import type { MutationCtx } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { REFERENTIEL_VERSION } from '../../egalim/referentiel';
@@ -16,6 +16,32 @@ import { vFamille, vLabel } from './tables';
  * clients via le cache global. C'est ce rapport de un à plusieurs qui rend le
  * diagnostic rentable : arbitrer 40 libellés couvre 3 000 lignes.
  */
+
+/**
+ * `conciergeQuery` et `conciergeMutation` n'établissent que le rôle staff, pas
+ * le PÉRIMÈTRE. Un `OPERATOR` n'a accès qu'aux organisations qui lui sont
+ * assignées dans `conciergeOrgAccess` ; un `SUPER_ADMIN` les voit toutes.
+ *
+ * Sans ce garde, la file d'arbitrage exposait à tout opérateur les libellés
+ * produits et les montants cumulés HT de n'importe quel client, et lui
+ * permettait d'en modifier les classifications. C'est le garde de
+ * `concierge/timeline.ts`, appliqué ici sur l'organisation du lot.
+ */
+async function dansLePerimetre(
+	ctx: QueryCtx,
+	staffRole: string,
+	userId: string,
+	organizationId: Id<'organizations'>
+): Promise<boolean> {
+	if (staffRole !== 'OPERATOR') return true;
+	const acces = await ctx.db
+		.query('conciergeOrgAccess')
+		.withIndex('by_concierge_and_org', (q) =>
+			q.eq('conciergeUserId', userId).eq('organizationId', organizationId)
+		)
+		.first();
+	return acces !== null;
+}
 
 const vMotif = v.union(
 	v.literal('NON_CLASSE'),
@@ -56,6 +82,11 @@ export const listerLibellesEnRevue = conciergeQuery({
 		montantTotalEnJeu: v.number()
 	}),
 	handler: async (ctx, { batchId }) => {
+		const batch = await ctx.db.get(batchId);
+		if (!batch || !(await dansLePerimetre(ctx, ctx.staffRole, ctx.user._id, batch.organizationId))) {
+			return { libelles: [], montantTotalEnJeu: 0 };
+		}
+
 		const lignes = await ctx.db
 			.query('invoiceLines')
 			.withIndex('by_batch_and_review', (q) =>
@@ -144,11 +175,15 @@ async function arbitrer(
 	ctx: MutationCtx,
 	args: DecisionArbitrage,
 	statutLigne: 'CONFIRMED' | 'CORRECTED',
-	userId: string
+	userId: string,
+	staffRole: string
 ): Promise<number> {
 	const { batchId } = args;
 	const batch = await ctx.db.get(batchId);
 	if (!batch) throw new ConvexError('Lot introuvable');
+	if (!(await dansLePerimetre(ctx, staffRole, userId, batch.organizationId))) {
+		throw new ConvexError("Acces refuse : cette organisation ne vous est pas assignee");
+	}
 
 	// Une décision humaine est certaine par construction : elle ne repassera
 	// jamais sous le seuil de confiance qui l'avait fait remonter.
@@ -222,15 +257,24 @@ async function arbitrer(
 		.collect();
 	const libellesRestants = new Set(restantes.map((l) => l.normalizedLabel));
 
+	// Le lot ne devient PRÊT que si la classification est TERMINÉE.
+	//
+	// Sans cette condition, un opérateur qui vide la file pendant que la
+	// classification tourne encore ferait passer le lot à READY sur une
+	// fraction des libellés, et le diagnostic serait figé sur cette fraction.
+	// Un rapport faux, et crédible, remis à une cantine.
+	const classificationFinie = batch.status === 'REVIEW';
+	const pretAPublier = libellesRestants.size === 0 && classificationFinie;
+
 	await ctx.db.patch(batchId, {
 		labelsPendingReview: libellesRestants.size,
-		status: libellesRestants.size === 0 ? 'READY' : batch.status
+		status: pretAPublier ? 'READY' : batch.status
 	});
 
 	// Dernier libellé arbitré : le diagnostic se produit sans qu'on le
 	// demande. Le client voit son chiffre apparaître, il n'a pas à savoir
 	// qu'une file d'arbitrage existait.
-	if (libellesRestants.size === 0) {
+	if (pretAPublier) {
 		await ctx.scheduler.runAfter(0, internal.egalim.diagnostics.produireSiPret, { batchId });
 	}
 
@@ -251,7 +295,7 @@ export const confirmerLibelle = conciergeMutation({
 		justification: v.string()
 	},
 	returns: v.number(),
-	handler: async (ctx, args) => arbitrer(ctx, args, 'CONFIRMED', ctx.user._id)
+	handler: async (ctx, args) => arbitrer(ctx, args, 'CONFIRMED', ctx.user._id, ctx.staffRole)
 });
 
 /**
@@ -271,7 +315,7 @@ export const corrigerLibelle = conciergeMutation({
 		justification: v.string()
 	},
 	returns: v.number(),
-	handler: async (ctx, args) => arbitrer(ctx, args, 'CORRECTED', ctx.user._id)
+	handler: async (ctx, args) => arbitrer(ctx, args, 'CORRECTED', ctx.user._id, ctx.staffRole)
 });
 
 /**
@@ -296,14 +340,24 @@ export const listerLotsAArbitrer = conciergeQuery({
 		})
 	),
 	handler: async (ctx) => {
-		const lots = await ctx.db.query('invoiceBatches').collect();
-		const enCours = lots.filter(
-			(l) => l.status === 'REVIEW' || l.status === 'CLASSIFYING' || l.status === 'EXTRACTING'
-		);
+		// Uniquement les lots REVIEW. Exposer un lot encore en EXTRACTING ou en
+		// CLASSIFYING inviterait l'opérateur à vider une file qui n'est pas
+		// close : il ferait passer le lot pour prêt sur une fraction des
+		// libellés, et le diagnostic serait figé sur cette fraction.
+		//
+		// Passe par l'index `by_status` : sans lui, c'était un scan complet de
+		// `invoiceBatches`, toutes organisations confondues, à chaque ouverture.
+		const enCours = await ctx.db
+			.query('invoiceBatches')
+			.withIndex('by_status', (q) => q.eq('status', 'REVIEW'))
+			.collect();
 
 		const nomsParOrg = new Map<string, string>();
 		const resultats = [];
 		for (const lot of enCours) {
+			if (!(await dansLePerimetre(ctx, ctx.staffRole, ctx.user._id, lot.organizationId))) {
+				continue;
+			}
 			let nom = nomsParOrg.get(lot.organizationId);
 			if (nom === undefined) {
 				const org = await ctx.db.get(lot.organizationId);
@@ -344,6 +398,7 @@ export const obtenirEnteteRevue = conciergeQuery({
 	handler: async (ctx, { batchId }) => {
 		const batch = await ctx.db.get(batchId);
 		if (!batch) return null;
+		if (!(await dansLePerimetre(ctx, ctx.staffRole, ctx.user._id, batch.organizationId))) return null;
 		const org = await ctx.db.get(batch.organizationId);
 		return {
 			label: batch.label,

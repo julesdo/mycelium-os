@@ -30,3 +30,35 @@ export function estimerCout(usage: UsageAppel): number {
 		usage.tokensOut * PRIX_OUTPUT_PAR_TOKEN
 	);
 }
+
+/**
+ * Erreur d'appel Claude qui TRANSPORTE l'usage déjà consommé.
+ *
+ * Un appel dont la réponse ne passe pas la validation de schéma a bien été
+ * émis, et donc facturé. Sans ce transport, l'usage se perdait avec
+ * l'exception : le plafond de 10 € ne se déclenchait jamais sur le chemin
+ * d'échec, qui est précisément celui qui coûte le plus, puisque chaque appel
+ * y est rejoué jusqu'à trois fois.
+ *
+ * Sur une extraction découpée en pages, l'usage accumulé des morceaux déjà
+ * traités voyage avec l'erreur du morceau fautif.
+ */
+export class ErreurAppelClaude extends Error {
+	readonly usage: UsageAppel;
+
+	constructor(message: string, usage: UsageAppel) {
+		super(message);
+		this.name = 'ErreurAppelClaude';
+		this.usage = usage;
+	}
+}
+
+/** L'usage porté par une erreur, ou zéro si elle n'en porte pas. */
+export function usageDeLErreur(erreur: unknown): UsageAppel {
+	if (erreur instanceof ErreurAppelClaude) return erreur.usage;
+	return { tokensIn: 0, tokensOut: 0, cacheReadTokens: 0 };
+}
+
+export function usageNul(): UsageAppel {
+	return { tokensIn: 0, tokensOut: 0, cacheReadTokens: 0 };
+}

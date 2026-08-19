@@ -69,20 +69,50 @@ export const listerLibellesDuLot = internalQuery({
 	}
 });
 
-export const obtenirContexte = internalQuery({
+/**
+ * Le contexte du lot, en CRÉANT le job de coût s'il n'existe pas encore.
+ *
+ * C'est une mutation et non une query, délibérément. Un lot composé
+ * uniquement d'exports comptables CSV n'a jamais appelé Claude : son job de
+ * coût n'existe pas, puisque seul le chemin Claude l'ouvre. Si on se
+ * contentait de lire, `classifierLot` sortirait sans rien faire et sans rien
+ * dire, le lot resterait bloqué en CLASSIFYING, et `lancerClassification`
+ * refuserait de le reprendre parce qu'il est justement CLASSIFYING. Une
+ * impasse sans issue, sur le chemin qu'on recommande au client.
+ */
+export const obtenirOuOuvrirContexte = internalMutation({
 	args: { batchId: v.id('invoiceBatches') },
 	returns: v.union(vContexte, v.null()),
 	handler: async (ctx, { batchId }) => {
 		const batch = await ctx.db.get(batchId);
 		if (!batch) return null;
 
-		const job = await ctx.db
+		const existant = await ctx.db
 			.query('classificationJobs')
 			.withIndex('by_batch', (q) => q.eq('batchId', batchId))
 			.first();
-		if (!job) return null;
+		if (existant) {
+			return {
+				organizationId: batch.organizationId,
+				jobId: existant._id,
+				jobStatus: existant.status
+			};
+		}
 
-		return { organizationId: batch.organizationId, jobId: job._id, jobStatus: job.status };
+		const jobId = await ctx.db.insert('classificationJobs', {
+			organizationId: batch.organizationId,
+			batchId,
+			status: 'RUNNING',
+			labelsTotal: 0,
+			labelsDone: 0,
+			labelsFailed: 0,
+			tokensIn: 0,
+			tokensOut: 0,
+			cacheReadTokens: 0,
+			costEur: 0,
+			startedAt: Date.now()
+		});
+		return { organizationId: batch.organizationId, jobId, jobStatus: 'RUNNING' as const };
 	}
 });
 
@@ -313,6 +343,29 @@ export const marquerLibellesNonClasses = internalMutation({
 	}
 });
 
+/**
+ * Une tranche entière a échoué en base. On l'enregistre sur le job plutôt que
+ * de laisser l'action mourir : la boucle continue, et la clôture rattrapera
+ * les lignes restées sans classification.
+ */
+export const noterEchecTranche = internalMutation({
+	args: {
+		jobId: v.id('classificationJobs'),
+		libellesEchoues: v.number(),
+		message: v.string()
+	},
+	returns: v.null(),
+	handler: async (ctx, { jobId, libellesEchoues, message }) => {
+		const job = await ctx.db.get(jobId);
+		if (!job) return null;
+		await ctx.db.patch(jobId, {
+			labelsFailed: job.labelsFailed + libellesEchoues,
+			error: job.error ? `${job.error} | ${message}` : message
+		});
+		return null;
+	}
+});
+
 export const avancerJob = internalMutation({
 	args: {
 		jobId: v.id('classificationJobs'),
@@ -349,6 +402,18 @@ export const finaliserClassification = internalMutation({
 			.query('invoiceLines')
 			.withIndex('by_batch', (q) => q.eq('batchId', batchId))
 			.collect();
+
+		// Filet de sécurité, et invariant de clôture : à ce point, AUCUNE ligne
+		// ne peut rester sans classification sans être dans la file d'arbitrage.
+		// Une tranche qui a échoué en base a pu laisser des lignes muettes ;
+		// sans ce rattrapage elles sortiraient du diagnostic sans que personne
+		// ne soit invité à les regarder.
+		for (const l of lignes) {
+			if (l.isFood === undefined && l.reviewStatus !== 'PENDING_REVIEW') {
+				await ctx.db.patch(l._id, { reviewStatus: 'PENDING_REVIEW' });
+				l.reviewStatus = 'PENDING_REVIEW';
+			}
+		}
 
 		const libellesEnRevue = new Set(
 			lignes.filter((l) => l.reviewStatus === 'PENDING_REVIEW').map((l) => l.normalizedLabel)

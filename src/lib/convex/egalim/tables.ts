@@ -47,7 +47,10 @@ export const egalimTables = {
 		createdAt: v.number()
 	})
 		.index('by_org', ['organizationId'])
-		.index('by_org_and_status', ['organizationId', 'status']),
+		// Toutes organisations confondues : c'est la file de travail de
+		// l'opérateur Mycelium, qui est transverse par nature. Sans cet index,
+		// la lister imposait un scan complet de la table à chaque ouverture.
+		.index('by_status', ['status']),
 
 	// Un fichier déposé
 	invoiceDocuments: defineTable({

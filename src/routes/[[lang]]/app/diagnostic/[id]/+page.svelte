@@ -6,6 +6,10 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import BarreAction from '$lib/components/egalim/app/BarreAction.svelte';
+	import BoutonVoirPlus from '$lib/components/egalim/app/BoutonVoirPlus.svelte';
+	import CarteTableau from '$lib/components/egalim/app/CarteTableau.svelte';
+	import CarteVerre from '$lib/components/egalim/app/CarteVerre.svelte';
 	import type { Famille } from '$lib/egalim/types';
 	import PrinterIcon from '@lucide/svelte/icons/printer';
 	import CopyIcon from '@lucide/svelte/icons/copy';
@@ -26,6 +30,20 @@
 		AUTRE: 'Autre'
 	};
 
+	/** Au-delà, sur téléphone, une liste devient un mur. */
+	const SEUIL_MOBILE = 5;
+
+	let famillesOuvertes = $state(false);
+	let fournisseursOuverts = $state(false);
+	let attestationsOuvertes = $state(false);
+
+	// Masquage en CSS et non en JS : tout reste dans le DOM, donc tout ressort à
+	// l'impression. Les classes sont écrites en toutes lettres, sinon Tailwind ne
+	// les génère pas.
+	function replieBloc(index: number, ouvert: boolean): string {
+		return !ouvert && index >= SEUIL_MOBILE ? 'hidden md:block' : 'block';
+	}
+
 	function euros(montant: number): string {
 		return `${montant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 	}
@@ -44,6 +62,11 @@
 			month: 'long',
 			year: 'numeric'
 		});
+	}
+
+	/** Une part n'existe pas quand il n'y a rien acheté : on ne l'invente pas. */
+	function part(numerateur: number, denominateur: number): string {
+		return denominateur !== 0 ? pourcent(numerateur / denominateur) : '-';
 	}
 
 	/** Les trois taux, avec leur seuil et leur écart en points. */
@@ -175,14 +198,22 @@ Cordialement,`;
 			<div>
 				<h1 class="text-2xl font-bold tracking-tight">Diagnostic EGalim</h1>
 				<p class="text-sm text-muted-foreground">
-					{d.organizationName} · achats du {d.periodStart} au {d.periodEnd}
+					{d.organizationName} · achats du
+					<span class="font-mono tabular-nums">{d.periodStart}</span>
+					au <span class="font-mono tabular-nums">{d.periodEnd}</span>
 				</p>
-				<p class="mt-1 text-xs text-muted-foreground">
-					Mesuré le {dateFr(d.computedAt)}, barème {d.classifierVersion}. Ce rapport est figé à
+				<p class="mt-1 text-xs leading-relaxed text-muted-foreground">
+					Mesuré le <span class="font-mono tabular-nums">{dateFr(d.computedAt)}</span>, barème
+					<span class="font-mono tabular-nums">{d.classifierVersion}</span>. Ce rapport est figé à
 					cette date : une nouvelle mesure produira un nouveau diagnostic.
 				</p>
 			</div>
-			<Button variant="outline" class="no-print h-11" onclick={() => window.print()}>
+			<!-- Sur téléphone, ce bouton vit dans la barre collante du bas. -->
+			<Button
+				variant="outline"
+				class="no-print hidden h-11 md:inline-flex"
+				onclick={() => window.print()}
+			>
 				<PrinterIcon class="size-4" />
 				Imprimer
 			</Button>
@@ -193,18 +224,11 @@ Cordialement,`;
 			<h2 class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
 				Vos trois taux
 			</h2>
-			<div class="grid gap-3 sm:grid-cols-3">
+			<!-- Un taux par ligne sur téléphone : trois colonnes de 100px ne se lisent pas. -->
+			<div class="grid gap-3 md:grid-cols-3">
 				{#each taux as t (t.cle)}
 					{@const atteint = t.mesure >= t.seuil}
-					<div
-						class="relative overflow-hidden rounded-3xl border p-4
-							{atteint
-							? 'border-emerald-500/40 bg-emerald-500/5'
-							: 'border-amber-500/40 bg-amber-500/5'}"
-					>
-						<div
-							class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/20"
-						></div>
+					<CarteVerre ton={atteint ? 'succes' : 'alerte'} class="rounded-3xl">
 						<p class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
 							{t.titre}
 						</p>
@@ -221,17 +245,21 @@ Cordialement,`;
 								? 'atteint'
 								: `${points((t.seuil - t.mesure) * 100)} manquants`}
 						</p>
-					</div>
+					</CarteVerre>
 				{/each}
 			</div>
-			<p class="text-xs text-muted-foreground">
-				Calculés en valeur d'achat HT sur {euros(d.ratios.totalFoodHT)} d'achats alimentaires,
-				sur {euros(d.ratios.totalHT)} d'achats au total.
+			<p class="text-xs leading-relaxed text-muted-foreground">
+				Calculés en valeur d'achat HT sur
+				<span class="font-mono tabular-nums">{euros(d.ratios.totalFoodHT)}</span>
+				d'achats alimentaires, sur
+				<span class="font-mono tabular-nums">{euros(d.ratios.totalHT)}</span>
+				d'achats au total.
 			</p>
 			{#if d.montantNonMesureHT !== 0}
-				<p class="text-xs text-amber-600 dark:text-amber-400">
-					{euros(d.montantNonMesureHT)} de lignes n'ont pas pu être classées et sont exclues du
-					calcul, plutôt que comptées comme non qualifiantes.
+				<p class="text-xs leading-relaxed text-amber-600 dark:text-amber-400">
+					<span class="font-mono tabular-nums">{euros(d.montantNonMesureHT)}</span>
+					de lignes n'ont pas pu être classées et sont exclues du calcul, plutôt que comptées comme
+					non qualifiantes.
 				</p>
 			{/if}
 		</section>
@@ -241,18 +269,13 @@ Cordialement,`;
 			<h2 class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
 				Ce que représente l'écart
 			</h2>
-			<div
-				class="relative overflow-hidden rounded-xl border border-border bg-card p-4"
-				style="box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06)"
-			>
-				<div
-					class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/20"
-				></div>
+			<CarteVerre>
 				<ul class="flex flex-col gap-2 text-sm">
 					{#each taux as t (t.cle)}
 						<li class="leading-relaxed">
 							{#if t.ecartEuros > 0}
-								Pour atteindre <strong>{pourcent(t.seuil)}</strong> sur
+								Pour atteindre <strong class="font-mono tabular-nums">{pourcent(t.seuil)}</strong>
+								sur
 								<em>{t.titre.toLowerCase()}</em>, il faut basculer
 								<strong class="font-mono tabular-nums">{euros(t.ecartEuros)}</strong>
 								d'achats vers des produits qualifiants.
@@ -265,7 +288,7 @@ Cordialement,`;
 				<p class="mt-3 text-xs text-muted-foreground">
 					Le pourcentage ne dit rien d'actionnable. L'euro, si.
 				</p>
-			</div>
+			</CarteVerre>
 		</section>
 
 		<!-- 4. Les points récupérables sans rien changer aux achats -->
@@ -274,68 +297,70 @@ Cordialement,`;
 				<h2 class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
 					Des points à récupérer sans changer un seul achat
 				</h2>
-				<div
-					class="relative overflow-hidden rounded-xl border border-[var(--brand)]/30 bg-[var(--brand)]/5 p-4"
-				>
-					<div
-						class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--brand)]/40 to-transparent"
-					></div>
+				<CarteVerre ton="accent">
 					<p class="text-sm leading-relaxed">
-						Certains produits portent une mention de label sur la facture, sans le justificatif
-						qui permettrait de la faire valoir en contrôle. Réclamer ces attestations à vos
-						fournisseurs vaut
+						Certains produits portent une mention de label sur la facture, sans le justificatif qui
+						permettrait de la faire valoir en contrôle. Réclamer ces attestations à vos fournisseurs
+						vaut
 						<strong class="font-mono tabular-nums">
 							{points(d.attestations.reduce((s, a) => s + a.pointsRecuperables, 0))}
 						</strong>
 						sur votre taux de durable, sans modifier une seule commande.
 					</p>
-				</div>
+				</CarteVerre>
 
-				{#each d.attestations as a (a.attestationId)}
-					<div
-						class="relative overflow-hidden rounded-xl border border-border bg-card p-4"
-						style="box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06)"
-					>
-						<div
-							class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/20"
-						></div>
-						<div class="flex flex-wrap items-start justify-between gap-3">
-							<div class="min-w-0">
-								<p class="text-sm font-semibold">{a.supplierName}</p>
-								<p class="mt-0.5 font-mono text-xs tabular-nums text-muted-foreground">
-									{euros(a.amountAtStake)} · {points(a.pointsRecuperables)} récupérables
-								</p>
+				{#each d.attestations as a, i (a.attestationId)}
+					<div class="deplie-a-l-impression {replieBloc(i, attestationsOuvertes)}">
+						<CarteVerre>
+							<div class="flex flex-wrap items-start justify-between gap-3">
+								<div class="min-w-0">
+									<p class="text-sm font-semibold">{a.supplierName}</p>
+									<p class="mt-0.5 font-mono text-xs tabular-nums text-muted-foreground">
+										{euros(a.amountAtStake)} · {points(a.pointsRecuperables)} récupérables
+									</p>
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									class="no-print h-11 lg:h-9"
+									onclick={() => copierCourrier(a)}
+								>
+									<CopyIcon class="size-3.5" />
+									Copier le courrier
+								</Button>
 							</div>
-							<Button
-								variant="outline"
-								size="sm"
-								class="no-print"
-								onclick={() => copierCourrier(a)}
-							>
-								<CopyIcon class="size-3.5" />
-								Copier le courrier
-							</Button>
-						</div>
-						<details class="mt-3">
-							<summary class="cursor-pointer text-xs text-muted-foreground">
-								{a.produits.length} produit{a.produits.length > 1 ? 's' : ''} concerné{a.produits
-									.length > 1
-									? 's'
-									: ''}
-							</summary>
-							<ul class="mt-2 flex flex-col gap-1">
-								{#each a.produits as p (p)}
-									<li class="text-xs text-muted-foreground">{p}</li>
-								{/each}
-							</ul>
-						</details>
-						<p class="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
-							<MailIcon class="mt-0.5 size-3.5 shrink-0" />
-							Le courrier part de votre messagerie et sous votre signature. Nous ne l'envoyons
-							pas à votre place.
-						</p>
+							<details class="mt-3">
+								<summary
+									class="flex min-h-11 cursor-pointer items-center text-xs text-muted-foreground lg:min-h-0"
+								>
+									{a.produits.length} produit{a.produits.length > 1 ? 's' : ''} concerné{a.produits
+										.length > 1
+										? 's'
+										: ''}
+								</summary>
+								<ul class="mt-2 flex flex-col gap-1">
+									{#each a.produits as p (p)}
+										<li class="text-xs text-muted-foreground">{p}</li>
+									{/each}
+								</ul>
+							</details>
+							<p class="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+								<MailIcon class="mt-0.5 size-3.5 shrink-0" />
+								Le courrier part de votre messagerie et sous votre signature. Nous ne l'envoyons pas
+								à votre place.
+							</p>
+						</CarteVerre>
 					</div>
 				{/each}
+
+				{#if d.attestations.length > SEUIL_MOBILE}
+					<BoutonVoirPlus
+						class="no-print md:hidden"
+						restants={d.attestations.length - SEUIL_MOBILE}
+						ouvert={attestationsOuvertes}
+						onbasculer={() => (attestationsOuvertes = !attestationsOuvertes)}
+					/>
+				{/if}
 			</section>
 		{/if}
 
@@ -345,8 +370,33 @@ Cordialement,`;
 				D'où viennent vos achats
 			</h2>
 
-			<div class="overflow-x-auto rounded-xl border border-border">
-				<table class="w-full min-w-[520px] text-sm">
+			<!-- Par famille. Sur téléphone, une ligne de tableau devient une carte. -->
+			<div class="ecran-etroit-seulement flex flex-col gap-2 md:hidden">
+				{#each d.byFamily as f, i (f.family)}
+					<div class={replieBloc(i, famillesOuvertes)}>
+						<CarteTableau
+							titre={FAMILLES_LISIBLES[f.family]}
+							valeurs={[
+								{ cle: 'Achats HT', valeur: euros(f.totalHT) },
+								{ cle: 'Dont durable', valeur: euros(f.durableHT) },
+								{ cle: 'Dont bio', valeur: euros(f.bioHT) },
+								{ cle: 'Part durable', valeur: part(f.durableHT, f.totalHT) }
+							]}
+						/>
+					</div>
+				{/each}
+				{#if d.byFamily.length > SEUIL_MOBILE}
+					<BoutonVoirPlus
+						class="no-print"
+						restants={d.byFamily.length - SEUIL_MOBILE}
+						ouvert={famillesOuvertes}
+						onbasculer={() => (famillesOuvertes = !famillesOuvertes)}
+					/>
+				{/if}
+			</div>
+
+			<div class="tableau-imprimable hidden overflow-x-auto rounded-xl border border-border md:block">
+				<table class="w-full text-sm">
 					<thead class="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
 						<tr>
 							<th class="px-3 py-2 text-left font-semibold">Famille</th>
@@ -360,11 +410,17 @@ Cordialement,`;
 						{#each d.byFamily as f (f.family)}
 							<tr class="border-t border-border/60">
 								<td class="px-3 py-2">{FAMILLES_LISIBLES[f.family]}</td>
-								<td class="px-3 py-2 text-right font-mono tabular-nums">{euros(f.totalHT)}</td>
-								<td class="px-3 py-2 text-right font-mono tabular-nums">{euros(f.durableHT)}</td>
-								<td class="px-3 py-2 text-right font-mono tabular-nums">{euros(f.bioHT)}</td>
-								<td class="px-3 py-2 text-right font-mono tabular-nums">
-									{f.totalHT !== 0 ? pourcent(f.durableHT / f.totalHT) : '—'}
+								<td class="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
+									{euros(f.totalHT)}
+								</td>
+								<td class="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
+									{euros(f.durableHT)}
+								</td>
+								<td class="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
+									{euros(f.bioHT)}
+								</td>
+								<td class="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
+									{part(f.durableHT, f.totalHT)}
 								</td>
 							</tr>
 						{/each}
@@ -372,8 +428,32 @@ Cordialement,`;
 				</table>
 			</div>
 
-			<div class="overflow-x-auto rounded-xl border border-border">
-				<table class="w-full min-w-[520px] text-sm">
+			<!-- Par fournisseur. -->
+			<div class="ecran-etroit-seulement flex flex-col gap-2 md:hidden">
+				{#each d.bySupplier as s, i (s.supplierName)}
+					<div class={replieBloc(i, fournisseursOuverts)}>
+						<CarteTableau
+							titre={s.supplierName}
+							valeurs={[
+								{ cle: 'Achats HT', valeur: euros(s.totalHT) },
+								{ cle: 'Dont durable', valeur: euros(s.durableHT) },
+								{ cle: 'Part durable', valeur: part(s.durableHT, s.totalHT) }
+							]}
+						/>
+					</div>
+				{/each}
+				{#if d.bySupplier.length > SEUIL_MOBILE}
+					<BoutonVoirPlus
+						class="no-print"
+						restants={d.bySupplier.length - SEUIL_MOBILE}
+						ouvert={fournisseursOuverts}
+						onbasculer={() => (fournisseursOuverts = !fournisseursOuverts)}
+					/>
+				{/if}
+			</div>
+
+			<div class="tableau-imprimable hidden overflow-x-auto rounded-xl border border-border md:block">
+				<table class="w-full text-sm">
 					<thead class="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
 						<tr>
 							<th class="px-3 py-2 text-left font-semibold">Fournisseur</th>
@@ -386,10 +466,14 @@ Cordialement,`;
 						{#each d.bySupplier as s (s.supplierName)}
 							<tr class="border-t border-border/60">
 								<td class="px-3 py-2">{s.supplierName}</td>
-								<td class="px-3 py-2 text-right font-mono tabular-nums">{euros(s.totalHT)}</td>
-								<td class="px-3 py-2 text-right font-mono tabular-nums">{euros(s.durableHT)}</td>
-								<td class="px-3 py-2 text-right font-mono tabular-nums">
-									{s.totalHT !== 0 ? pourcent(s.durableHT / s.totalHT) : '—'}
+								<td class="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
+									{euros(s.totalHT)}
+								</td>
+								<td class="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
+									{euros(s.durableHT)}
+								</td>
+								<td class="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
+									{part(s.durableHT, s.totalHT)}
 								</td>
 							</tr>
 						{/each}
@@ -406,13 +490,7 @@ Cordialement,`;
 				</h2>
 				<div class="flex flex-col gap-2">
 					{#each d.ouBasculer.slice(0, 3) as f (f.family)}
-						<div
-							class="relative overflow-hidden rounded-xl border border-border bg-card p-4"
-							style="box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06)"
-						>
-							<div
-								class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/20"
-							></div>
+						<CarteVerre>
 							<p class="text-sm font-semibold">{FAMILLES_LISIBLES[f.family]}</p>
 							<p class="mt-1 text-[13px] leading-relaxed text-muted-foreground">
 								<span class="font-mono tabular-nums">{euros(f.montantNonDurableHT)}</span>
@@ -422,12 +500,12 @@ Cordialement,`;
 								</span>
 								sur votre taux de durable.
 							</p>
-						</div>
+						</CarteVerre>
 					{/each}
 				</div>
-				<p class="text-xs text-muted-foreground">
-					Classement par montant basculable. Le surcoût réel dépend des prix que vos
-					fournisseurs vous proposent : il se chiffre au devis, pas au tableau.
+				<p class="text-xs leading-relaxed text-muted-foreground">
+					Classement par montant basculable. Le surcoût réel dépend des prix que vos fournisseurs
+					vous proposent : il se chiffre au devis, pas au tableau.
 				</p>
 			</section>
 		{/if}
@@ -437,24 +515,19 @@ Cordialement,`;
 			<h2 class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
 				Votre saisie sur « ma cantine »
 			</h2>
-			<div
-				class="relative overflow-hidden rounded-xl border border-border bg-card p-4"
-				style="box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06)"
-			>
-				<div
-					class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/20"
-				></div>
+			<CarteVerre>
 				<p class="text-sm leading-relaxed">
-					Les montants à reporter dans le formulaire de télédéclaration, agrégés au format
-					attendu. La déclaration reste faite et signée par votre établissement.
+					Les montants à reporter dans le formulaire de télédéclaration, agrégés au format attendu.
+					La déclaration reste faite et signée par votre établissement.
 				</p>
-				<div class="mt-3 overflow-x-auto rounded-lg border border-border">
-					<table class="w-full min-w-[420px] text-sm">
+				<!-- Deux colonnes : ce tableau tient sur un téléphone, il reste un tableau. -->
+				<div class="mt-3 overflow-hidden rounded-lg border border-border">
+					<table class="w-full text-sm">
 						<tbody>
 							{#each lignesMaCantine().slice(1, 4) as ligne (ligne[0])}
 								<tr class="border-b border-border/60 last:border-0">
-									<td class="px-3 py-2">{ligne[0]}</td>
-									<td class="px-3 py-2 text-right font-mono tabular-nums">
+									<td class="px-3 py-2 text-[13px]">{ligne[0]}</td>
+									<td class="whitespace-nowrap px-3 py-2 text-right font-mono text-[13px] tabular-nums">
 										{euros(Number(ligne[1]))}
 									</td>
 								</tr>
@@ -462,12 +535,20 @@ Cordialement,`;
 						</tbody>
 					</table>
 				</div>
-				<Button variant="outline" class="no-print mt-3 h-11" onclick={telechargerSaisie}>
+				<Button variant="outline" class="no-print mt-3 h-11 w-full sm:w-auto" onclick={telechargerSaisie}>
 					<DownloadIcon class="size-4" />
 					Télécharger le détail par famille
 				</Button>
-			</div>
+			</CarteVerre>
 		</section>
+
+		<!-- L'action de l'écran, sous le pouce, tant qu'on est sur téléphone. -->
+		<BarreAction class="no-print">
+			<Button class="h-11 w-full" onclick={() => window.print()}>
+				<PrinterIcon class="size-4" />
+				Imprimer le rapport
+			</Button>
+		</BarreAction>
 	{/if}
 </div>
 
@@ -489,6 +570,25 @@ Cordialement,`;
 		:global(body) {
 			background: white;
 			color: black;
+		}
+
+		/*
+		 * Sur papier on veut les tableaux, jamais les cartes qui les remplacent
+		 * sur téléphone. La largeur de page à l'impression est imprévisible, donc
+		 * on ne s'en remet pas au point de rupture `md:`.
+		 */
+		:global(.ecran-etroit-seulement) {
+			display: none !important;
+		}
+
+		:global(.tableau-imprimable) {
+			display: block !important;
+			overflow: visible !important;
+		}
+
+		/* Rien ne reste replié sur le papier. */
+		:global(.deplie-a-l-impression) {
+			display: block !important;
 		}
 
 		section {

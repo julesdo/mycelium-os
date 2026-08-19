@@ -5,6 +5,7 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { lotClasseSchema, type ClassificationClaude } from './classificationSchema';
 import { construirePromptSysteme } from './prompt';
 import { avecReprise } from './reprise';
+import { ErreurAppelClaude } from './cout';
 
 /**
  * L'appel de classification : un lot de libellés distincts, un appel. Le
@@ -75,37 +76,45 @@ export async function classifierAvecClaude(args: {
 		})
 	);
 
+	// Capture AVANT toute cause d'echec : l'appel a ete emis, donc facture.
+	// L'erreur le transportera jusqu'au comptable de couts.
+	const usage = {
+		tokensIn: response.usage.input_tokens,
+		tokensOut: response.usage.output_tokens,
+		cacheReadTokens: response.usage.cache_read_input_tokens ?? 0
+	};
+
 	if (response.stop_reason === 'refusal') {
-		throw new Error('Claude a refusé de classer ce lot (stop_reason: refusal).');
+		throw new ErreurAppelClaude('Claude a refusé de classer ce lot (stop_reason: refusal).', usage);
 	}
 	if (response.stop_reason === 'max_tokens') {
-		throw new Error(
-			`Réponse tronquée : le lot dépasse le budget de ${MAX_TOKENS} tokens de sortie.`
-		);
+		throw new ErreurAppelClaude(`Réponse tronquée : le lot dépasse le budget de ${MAX_TOKENS} tokens de sortie.`, usage);
 	}
 
 	const blocTexte = response.content.find(
 		(bloc): bloc is Anthropic.TextBlock => bloc.type === 'text'
 	);
 	if (!blocTexte) {
-		throw new Error('Réponse Claude sans bloc texte exploitable.');
+		throw new ErreurAppelClaude('Réponse Claude sans bloc texte exploitable.', usage);
 	}
 
 	let jsonBrut: unknown;
 	try {
 		jsonBrut = JSON.parse(blocTexte.text);
 	} catch {
-		throw new Error('La réponse de Claude n’est pas un JSON valide.');
+		throw new ErreurAppelClaude('La réponse de Claude n’est pas un JSON valide.', usage);
 	}
 
-	const lot = lotClasseSchema.parse(jsonBrut);
+	let lot;
+	try {
+		lot = lotClasseSchema.parse(jsonBrut);
+	} catch {
+		// L'appel a bien ete facture : son usage doit remonter au plafond.
+		throw new ErreurAppelClaude('Reponse de Claude non conforme au schema de classification.', usage);
+	}
 
 	return {
 		classifications: lot.classifications,
-		usage: {
-			tokensIn: response.usage.input_tokens,
-			tokensOut: response.usage.output_tokens,
-			cacheReadTokens: response.usage.cache_read_input_tokens ?? 0
-		}
+		usage
 	};
 }

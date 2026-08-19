@@ -82,15 +82,15 @@
 	<div class="flex flex-col gap-4">
 		<!-- Alimentaire ou non : la bascule qui décide de l'entrée au dénominateur -->
 		<div class="flex flex-col gap-2">
-			<Label class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
+			<Label class="text-[11px] font-bold tracking-[0.09em] text-muted-foreground uppercase">
 				Nature
 			</Label>
-			<div class="flex gap-2">
+			<div class="grid grid-cols-2 gap-2">
 				{#each [{ v: true, l: 'Alimentaire' }, { v: false, l: 'Hors alimentaire' }] as opt (String(opt.v))}
 					<button
 						type="button"
 						onclick={() => (isFood = opt.v)}
-						class="flex h-10 flex-1 items-center justify-center rounded-lg border text-sm font-medium transition-all
+						class="flex h-11 items-center justify-center rounded-lg border px-2 text-center text-[13px] leading-tight font-medium transition-all sm:text-sm lg:h-10
 							{isFood === opt.v
 							? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]'
 							: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
@@ -103,7 +103,7 @@
 
 		{#if isFood}
 			<div class="flex flex-col gap-2">
-				<Label class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
+				<Label class="text-[11px] font-bold tracking-[0.09em] text-muted-foreground uppercase">
 					Famille
 				</Label>
 				<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -111,7 +111,7 @@
 						<button
 							type="button"
 							onclick={() => (family = f)}
-							class="flex h-10 items-center justify-center rounded-lg border px-2 text-[13px] font-medium transition-all
+							class="flex min-h-11 items-center justify-center rounded-lg border px-2 py-1.5 text-center text-[12px] leading-tight font-medium text-balance transition-all sm:text-[13px] lg:min-h-10
 								{family === f
 								? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]'
 								: 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'}"
@@ -123,31 +123,31 @@
 			</div>
 
 			<div class="flex flex-col gap-2">
-				<Label class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
+				<Label class="text-[11px] font-bold tracking-[0.09em] text-muted-foreground uppercase">
 					Labels du barème
 				</Label>
-				<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+				<!-- Une colonne sous md : à 375 px, « Haute Valeur Environnementale
+					 niveau 3 » sur deux colonnes deviendrait illisible. -->
+				<div class="grid grid-cols-1 gap-2 md:grid-cols-2">
 					{#each CODES_LABELS as code (code)}
 						{@const actif = labels.includes(code)}
 						<button
 							type="button"
 							onclick={() => basculerLabel(code)}
-							class="flex min-h-10 items-center gap-2 rounded-lg border px-3 py-2 text-left text-[13px] transition-all
-								{actif
-								? 'border-[var(--brand)] bg-[var(--brand)]/10'
-								: 'border-border bg-muted/40 hover:bg-muted'}"
+							class="flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2.5 text-left text-[13px] leading-snug transition-all lg:min-h-10 lg:items-center
+								{actif ? 'border-[var(--brand)] bg-[var(--brand)]/10' : 'border-border bg-muted/40 hover:bg-muted'}"
 						>
 							<span
-								class="flex size-4 shrink-0 items-center justify-center rounded border
+								class="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border lg:mt-0
 									{actif ? 'border-[var(--brand)] bg-[var(--brand)]' : 'border-border'}"
 							>
 								{#if actif}
 									<span class="text-[10px] font-black text-[var(--brand-foreground)]">✓</span>
 								{/if}
 							</span>
-							<span class={actif ? 'text-[var(--brand)]' : 'text-muted-foreground'}>
+							<span class="min-w-0 {actif ? 'text-[var(--brand)]' : 'text-muted-foreground'}">
 								{LABELS_QUALIFIANTS[code].libelle}
-								<span class="ml-1 text-[11px] opacity-70">
+								<span class="ml-1 text-[11px] whitespace-nowrap opacity-70">
 									{LABELS_QUALIFIANTS[code].bio ? 'bio + durable' : 'durable'}
 								</span>
 							</span>
@@ -160,7 +160,7 @@
 		<div class="flex flex-col gap-2">
 			<Label
 				for="justification"
-				class="text-[11px] font-bold uppercase tracking-[0.09em] text-muted-foreground"
+				class="text-[11px] font-bold tracking-[0.09em] text-muted-foreground uppercase"
 			>
 				Justification
 			</Label>
@@ -175,9 +175,22 @@
 			</p>
 		</div>
 
-		<div class="flex items-center justify-end gap-2">
-			<Button variant="ghost" onclick={onannuler} disabled={enCours}>Annuler</Button>
-			<Button onclick={valider} disabled={enCours || justification.trim().length === 0}>
+		<!-- Pleine largeur et 44 px de haut sous lg : ces deux boutons se pressent
+			 au pouce entre deux rendez-vous. -->
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+			<Button
+				variant="outline"
+				class="h-11 w-full sm:w-auto lg:h-9"
+				onclick={onannuler}
+				disabled={enCours}
+			>
+				Annuler
+			</Button>
+			<Button
+				class="h-11 w-full sm:w-auto lg:h-9"
+				onclick={valider}
+				disabled={enCours || justification.trim().length === 0}
+			>
 				Enregistrer la correction
 			</Button>
 		</div>
