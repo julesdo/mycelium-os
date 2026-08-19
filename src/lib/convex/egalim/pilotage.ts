@@ -24,20 +24,70 @@ const vRatios = v.object({
 	totalHT: v.number()
 });
 
-/** Les années pour lesquelles cette organisation a des achats, la plus récente d'abord. */
+/**
+ * Les années pour lesquelles cette organisation a des achats, la plus récente d'abord.
+ *
+ * Deux lectures, pas un balayage. L'index `by_org_and_date` étant ordonné par
+ * date croissante, la première et la dernière ligne de l'organisation encadrent
+ * toutes les années présentes. Lire les ~3 000 lignes de chaque exercice pour
+ * n'en extraire que quatre caractères aurait fait tomber le plafond des 16 000
+ * lectures vers la cinquième année de factures cumulées — et comme c'est cette
+ * query qui alimente le sélecteur, l'écran entier serait tombé avec elle.
+ *
+ * Deux comportements dégradés, assumés :
+ *
+ * 1. Une année sans le moindre achat entre les deux bornes apparaît quand même
+ *    dans le sélecteur. Une cantine achetant tous les mois, le trou est
+ *    théorique ; et s'il se produit, `tableauDeBord` répond `aDesDonnees: false`
+ *    et l'écran affiche l'amorçage. Dégradé, pas faux.
+ *
+ * 2. `invoiceDate` vaut la chaîne vide quand l'extraction n'a pas su lire la
+ *    date. Les bornes de l'index écartent ces lignes par construction : une
+ *    chaîne vide trie avant `1000-01-01`, et un « N/A » après `9999-12-31`,
+ *    les lettres triant après les chiffres. Sans ces bornes, une seule date
+ *    illisible — qui trie en tête — aurait masqué du sélecteur tous les
+ *    exercices antérieurs au plus récent.
+ */
 export const listerAnnees = authedQuery({
 	args: {},
 	returns: v.array(v.string()),
 	handler: async (ctx) => {
 		const { organizationId } = await getUserOrg(ctx);
-		const lignes = await ctx.db
-			.query('invoiceLines')
-			.withIndex('by_org_and_date', (q) => q.eq('organizationId', organizationId))
-			.collect();
-		const annees = new Set(
-			lignes.map((l) => l.invoiceDate.slice(0, 4)).filter((a) => /^\d{4}$/.test(a))
-		);
-		return [...annees].sort().reverse();
+
+		const borne = (ordre: 'asc' | 'desc') =>
+			ctx.db
+				.query('invoiceLines')
+				.withIndex('by_org_and_date', (q) =>
+					q
+						.eq('organizationId', organizationId)
+						.gte('invoiceDate', '1000-01-01')
+						.lte('invoiceDate', '9999-12-31')
+				)
+				.order(ordre)
+				.first();
+
+		const plusAncienne = await borne('asc');
+		const plusRecente = await borne('desc');
+
+		const annee = (date: string | undefined): number | null => {
+			if (date === undefined) return null;
+			const quatre = date.slice(0, 4);
+			return /^\d{4}$/.test(quatre) ? Number(quatre) : null;
+		};
+
+		// Aucune ligne, ou deux bornes illisibles : rien à proposer au sélecteur.
+		const premiere = annee(plusAncienne?.invoiceDate);
+		const derniere = annee(plusRecente?.invoiceDate);
+		if (premiere === null || derniere === null) return [];
+
+		// Une date aberrante sortie de l'OCR (« 2205 » pour « 2025 ») ne doit ni
+		// produire un sélecteur de cent quatre-vingts entrées, ni dépasser la taille
+		// maximale d'un tableau Convex et faire échouer l'écran entier.
+		const plancher = Math.max(premiere, derniere - 30);
+
+		const annees: string[] = [];
+		for (let a = derniere; a >= plancher; a--) annees.push(String(a));
+		return annees;
 	}
 });
 
