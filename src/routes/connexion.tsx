@@ -64,6 +64,12 @@ function Connexion() {
 				</Button>
 
 				<p className="text-cladd-2xs text-cladd-fg-softer">
+					<Link to="/mot-de-passe-oublie" className="font-medium underline underline-offset-2">
+						Mot de passe oublié ?
+					</Link>
+				</p>
+
+				<p className="text-cladd-2xs text-cladd-fg-softer">
 					Vous n&rsquo;avez pas encore de compte ?{' '}
 					<Link to="/inscription" className="font-medium underline underline-offset-2">
 						En créer un
