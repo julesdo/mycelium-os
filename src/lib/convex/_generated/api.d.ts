@@ -30,6 +30,7 @@ import type * as egalim_extracteurClaude from "../egalim/extracteurClaude.js";
 import type * as egalim_extraction from "../egalim/extraction.js";
 import type * as egalim_extractionMutations from "../egalim/extractionMutations.js";
 import type * as egalim_extractionSchema from "../egalim/extractionSchema.js";
+import type * as egalim_mentions from "../egalim/mentions.js";
 import type * as egalim_normalisation from "../egalim/normalisation.js";
 import type * as egalim_parsers_csv from "../egalim/parsers/csv.js";
 import type * as egalim_pilotage from "../egalim/pilotage.js";
@@ -102,6 +103,7 @@ declare const fullApi: ApiFromModules<{
   "egalim/extraction": typeof egalim_extraction;
   "egalim/extractionMutations": typeof egalim_extractionMutations;
   "egalim/extractionSchema": typeof egalim_extractionSchema;
+  "egalim/mentions": typeof egalim_mentions;
   "egalim/normalisation": typeof egalim_normalisation;
   "egalim/parsers/csv": typeof egalim_parsers_csv;
   "egalim/pilotage": typeof egalim_pilotage;

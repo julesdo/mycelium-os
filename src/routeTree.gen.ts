@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppConfirmerRouteImport } from './routes/app/confirmer'
 import { Route as AppFacturesRouteImport } from './routes/app/factures'
@@ -30,6 +31,11 @@ const AppRouteRoute = AppRouteRouteImport.update({
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShowroomRoute = ShowroomRouteImport.update({
+  id: '/showroom',
+  path: '/showroom',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/connexion': typeof ConnexionRoute
+  '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/': typeof AppIndexRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/connexion': typeof ConnexionRoute
+  '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/factures': typeof AppFacturesRoute
   '/app': typeof AppIndexRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/connexion': typeof ConnexionRoute
+  '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/': typeof AppIndexRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/connexion'
+    | '/showroom'
     | '/app/confirmer'
     | '/app/factures'
     | '/app/'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/connexion'
+    | '/showroom'
     | '/app/confirmer'
     | '/app/factures'
     | '/app'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/connexion'
+    | '/showroom'
     | '/app/confirmer'
     | '/app/factures'
     | '/app/'
@@ -113,6 +125,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
   ConnexionRoute: typeof ConnexionRoute
+  ShowroomRoute: typeof ShowroomRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -137,6 +150,13 @@ declare module '@tanstack/react-router' {
       path: '/connexion'
       fullPath: '/connexion'
       preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/showroom': {
+      id: '/showroom'
+      path: '/showroom'
+      fullPath: '/showroom'
+      preLoaderRoute: typeof ShowroomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -190,6 +210,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
   ConnexionRoute: ConnexionRoute,
+  ShowroomRoute: ShowroomRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

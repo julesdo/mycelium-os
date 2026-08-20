@@ -25,7 +25,12 @@
 	--spacing-cladd-2xl: 64px;
 
 	/* TYPOGRAPHIE — remontée d'un cran. Le texte des boutons, figé sur `xs`
-	 * par la bibliothèque, passe ainsi de 12px à 14px. */
+	 * par la bibliothèque, passe ainsi de 12px à 14px.
+	 *
+	 * `taux` est un pas à part : c'est le seul chiffre que le gérant retient de
+	 * l'écran, et il mérite un nom plutôt qu'un utilitaire Tailwind d'à-côté qui
+	 * sortirait discrètement de l'échelle. */
+	--text-cladd-taux: 40px;
 	--text-cladd-md: 18px;
 	--text-cladd-sm: 16px;
 	--text-cladd-xs: 14px;
