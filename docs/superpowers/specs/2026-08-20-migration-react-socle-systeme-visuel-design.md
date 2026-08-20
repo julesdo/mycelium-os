@@ -228,3 +228,46 @@ attendu avant plusieurs mois, et parce que le harnais E2E est de toute façon re
 travail est perdu, et les mêmes classes de pannes se représenteront : chauffe du
 frontend, attente d'hydratation, redirection d'onboarding, résolution de l'URL de test.
 Le chantier 5 part de ce constat plutôt que de le redécouvrir.
+
+---
+
+## Point ouvert : le contraste des libellés de bouton en mode clair (20 août 2026)
+
+Mesuré au navigateur, en convertissant OKLCH vers sRGB à la main (ni le canvas
+ni `getComputedStyle` ne convertissent, et deux mesures fausses de suite valent
+zéro mesure).
+
+**Ce qui est corrigé, et vérifié :** les tons secondaires du mode clair. Cladd
+étant dark-first, `--cladd-fg-softer` donnait 3,23 pour 1 sur fond blanc là où le
+texte courant demande 4,5. Assombri dans `tokens.css`, sous `.light` uniquement.
+Les libellés de seuil et les montants secondaires passent désormais.
+
+**Ce qui reste ouvert, et qui demande un coup d'œil humain :** le libellé
+intérieur des boutons Cladd en mode clair calcule `oklab(0.9 0 0)`, une couleur
+claire, alors que le bouton qui le contient calcule `oklch(0.32 0 0)`, une
+couleur sombre. Une sonde injectée dans le bouton hérite elle aussi de la valeur
+claire, et **aucune règle CSS de la feuille ne correspond à cet élément**. En CSS,
+c'est contradictoire : un enfant ne peut pas hériter d'autre chose que la valeur
+calculée de son parent.
+
+Le mode sombre, lui, est parfaitement cohérent (0,9 partout, correct sur fond
+noir). L'anomalie est propre au mode clair.
+
+Trois lectures possibles, non départagées :
+
+1. Un artefact de mesure propre au navigateur intégré, auquel cas il n'y a rien à
+   corriger et l'affichage réel est bon.
+2. Une vraie illisibilité, auquel cas les libellés des boutons non remplis sont
+   quasi invisibles en clair, et c'est grave.
+3. Un ordre de cascade que je n'ai pas su isoler.
+
+**Ce que j'ai écarté :** poser `accentColor="neutral"` sur le provider. La
+justification était que la classe d'accent tirait une palette sombre ; la mesure
+n'a pas bougé d'un centième, donc l'hypothèse est fausse et la modification a été
+annulée. Je ne garde pas un changement dont j'ai réfuté la raison.
+
+**La question tranche en une seconde à l'œil :** ouvrir `/showroom` en mode
+clair. Si les libellés « 2025 », « 2024 » et les onglets se lisent normalement,
+c'est la lecture 1 et ce point se referme. S'ils sont blancs sur blanc, c'est la
+lecture 2, et le correctif passera par `contentClassName`, que Cladd expose
+précisément pour styler le contenu intérieur d'un bouton.

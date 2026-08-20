@@ -208,7 +208,11 @@ function DemoPilotage() {
 				actions={
 					<div className="flex flex-wrap gap-cladd-3xs">
 						{['2026', '2025', '2024'].map((a) => (
-							<Button key={a} variant="gradient" pressed={a === '2026'}>
+							<Button
+									key={a}
+									variant={a === '2026' ? 'solid-fill' : 'gradient'}
+									color={a === '2026' ? 'brand' : undefined}
+								>
 								{a}
 							</Button>
 						))}

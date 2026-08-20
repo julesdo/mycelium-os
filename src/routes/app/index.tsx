@@ -46,10 +46,10 @@ function Pilotage() {
 							{annees.map((a) => (
 								<Button
 									key={a}
-									variant="gradient"
-									pressed={a === annee}
+									variant={a === annee ? 'solid-fill' : 'gradient'}
+									color={a === annee ? 'brand' : undefined}
 									onClick={() => setChoisie(a)}
-								>
+									>
 									{a}
 								</Button>
 							))}

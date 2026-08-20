@@ -95,3 +95,34 @@
 .cladd-color-brand {
 	--cladd-theme: #1d3fa0;
 }
+
+/* CONTRASTE — les tons secondaires du mode clair, assombris.
+ *
+ * Cladd est conçu dark-first, et ses tons secondaires sont calés pour un fond
+ * noir. Reportés tels quels sur du blanc, ils tombent sous le seuil : mesuré au
+ * navigateur, `fg-softer` donnait 3,23 pour 1 là où le texte courant demande
+ * 4,5. Le symptôme n'est pas spectaculaire — c'est du gris clair, ça a l'air
+ * « design » — mais un gérant de cantine qui n'a pas vingt ans, sur une tablette
+ * en plein jour, ne lit tout simplement pas les libellés de seuil.
+ *
+ * Ces deux lignes ne changent rien au mode sombre, où les valeurs de Cladd
+ * conviennent. */
+:root.light,
+.light {
+	--cladd-fg-softer: oklch(0.56 0 0);
+	--cladd-fg-softest: oklch(0.63 0 0);
+}
+
+/* Le texte porté PAR l'accent, en mode clair.
+ *
+ * Cladd dérive `on-primary` en 0.2 de clarté, c'est-à-dire sombre : cohérent
+ * avec son mode sombre, où la couleur primaire est claire (0.88). Notre accent
+ * clair est un bleu d'encre à 0.42, donc sombre lui aussi — le texte par défaut
+ * y tombe à 2,1 pour 1.
+ *
+ * On inverse : texte quasi blanc sur bleu d'encre. C'est aussi la seule
+ * combinaison qui donne un bouton d'action franc plutôt qu'un aplat pâle. */
+.light [class*='cladd-color-']:not(.cladd-color-neutral),
+.light[class*='cladd-color-']:not(.cladd-color-neutral) {
+	--cladd-on-primary: oklch(0.98 0.01 265);
+}
