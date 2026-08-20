@@ -10,6 +10,7 @@ import {
 	SettingsIcon
 } from 'lucide-react';
 import { cn } from '../ui/cn';
+import { SelecteurEtablissement } from './selecteur-etablissement';
 
 const ENTREES = [
 	{ to: '/app', label: 'Pilotage', Icone: GaugeIcon },
@@ -39,6 +40,8 @@ export function Rail({ deplie, onBasculer }: { deplie: boolean; onBasculer: () =
 					deplie ? 'w-rail-deplie' : 'w-rail'
 				)}
 			>
+				<SelecteurEtablissement deplie={deplie} />
+
 				<Button
 					as={Link}
 					to="/app/factures"
