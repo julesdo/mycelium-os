@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "bun scripts/dev.ts",
 		"dev:frontend": "bun scripts/dev.ts",
+		"dev:cloud": "bun-tasks dev:frontend ::: dev:backend:cloud",
 		"dev:backend:cloud": "convex dev",
 		"dev:test": "VARLOCK_ENV=test bun scripts/dev-test.ts",
 		"generate": "bun scripts/generate-convex.ts",
