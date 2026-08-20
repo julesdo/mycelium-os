@@ -8,7 +8,9 @@ import {
 	TriangleAlertIcon,
 	LoaderCircleIcon,
 	CheckCheckIcon,
-	FileCheckIcon
+	FileCheckIcon,
+	FolderPlusIcon,
+	LockIcon
 } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -49,7 +51,9 @@ function Factures() {
 	const [libelle, setLibelle] = useState(`Factures ${new Date().getFullYear() - 1}`);
 	const [refus, setRefus] = useState<Refus[]>([]);
 	const [envoiEnCours, setEnvoiEnCours] = useState(false);
+	const [erreurEnvoi, setErreurEnvoi] = useState<string | null>(null);
 	const [productionEnCours, setProductionEnCours] = useState(false);
+	const [ouvertureEnCours, setOuvertureEnCours] = useState(false);
 	const champFichiers = useRef<HTMLInputElement>(null);
 
 	const ouvert = lots?.find((l) => l.ouvert) ?? null;
@@ -58,13 +62,30 @@ function Factures() {
 		ouvert ? { batchId: ouvert.batchId } : 'skip'
 	);
 
-	async function ouvrirLot() {
+	/**
+	 * @param depuisLeChamp true quand le nom vient du formulaire d'ouverture.
+	 *
+	 * Le bouton « Ouvrir un nouveau dépôt » vit sur l'écran du lot en cours, où
+	 * le champ de nom n'est pas affiché. Reprendre `libelle` là-bas donnerait à
+	 * deux dépôts le même nom — le champ est pré-rempli, donc jamais vide — et
+	 * l'historique deviendrait illisible. On numérote à la place.
+	 */
+	async function ouvrirLot(depuisLeChamp = false) {
 		const annee = new Date().getFullYear() - 1;
-		await creerLot({
-			label: libelle.trim() || `Factures ${annee}`,
-			periodStart: `${annee}-01-01`,
-			periodEnd: `${annee}-12-31`
-		});
+		const nom =
+			(depuisLeChamp && libelle.trim()) ||
+			(lots && lots.length > 0 ? `Factures ${annee} (${lots.length + 1})` : `Factures ${annee}`);
+		setOuvertureEnCours(true);
+		try {
+			await creerLot({
+				label: nom,
+				periodStart: `${annee}-01-01`,
+				periodEnd: `${annee}-12-31`
+			});
+			setErreurEnvoi(null);
+		} finally {
+			setOuvertureEnCours(false);
+		}
 	}
 
 	async function produire() {
@@ -84,6 +105,7 @@ function Factures() {
 		if (acceptes.length === 0) return;
 
 		setEnvoiEnCours(true);
+		setErreurEnvoi(null);
 		try {
 			for (const fichier of acceptes) {
 				const url = await genererUrl({});
@@ -92,6 +114,11 @@ function Factures() {
 					headers: { 'Content-Type': fichier.type || 'application/octet-stream' },
 					body: fichier
 				});
+				if (!reponse.ok) {
+					throw new Error(
+						`Le transfert de ${fichier.name} a échoué (code ${reponse.status}). Vérifiez votre connexion et réessayez.`
+					);
+				}
 				const { storageId } = (await reponse.json()) as { storageId: string };
 				await enregistrer({
 					batchId: ouvert.batchId,
@@ -100,6 +127,23 @@ function Factures() {
 					mimeType: fichier.type || 'application/octet-stream'
 				});
 			}
+		} catch (e) {
+			// Sans ce `catch`, l'échec était totalement silencieux : le témoin
+			// d'attente s'arrêtait et rien ne se passait. C'est ce qui faisait
+			// dire « le dépôt ne marche pas », alors que le backend refusait
+			// poliment et disait pourquoi.
+			//
+			// Un ConvexError porte son message dans `data` ; une erreur réseau
+			// dans `message`. On montre celui qui existe plutôt qu'un « une
+			// erreur est survenue » qui n'aide personne.
+			const convexe = e as { data?: unknown };
+			const message =
+				typeof convexe.data === 'string'
+					? convexe.data
+					: e instanceof Error
+						? e.message
+						: 'Le dépôt a échoué.';
+			setErreurEnvoi(message);
 		} finally {
 			setEnvoiEnCours(false);
 			if (champFichiers.current) champFichiers.current.value = '';
@@ -110,6 +154,23 @@ function Factures() {
 	const lus = documents.filter((d) => d.extractionStatus === 'DONE');
 	const enEchec = documents.filter((d) => d.extractionStatus === 'FAILED');
 	const enAttente = documents.filter((d) => d.extractionStatus === 'PENDING');
+
+	/**
+	 * Un lot « en cours » n'accepte pas forcément de nouveaux fichiers.
+	 *
+	 * `listerLots` marque `ouvert` quatre statuts — DRAFT, EXTRACTING,
+	 * CLASSIFYING, REVIEW — parce que c'est le lot sur lequel on travaille.
+	 * Mais `enregistrerDocument` n'en accepte que deux : au-delà, ajouter des
+	 * lignes décalerait la liste triée que la classification parcourt par
+	 * tranches, et elle en sauterait ou en rejouerait.
+	 *
+	 * Confondre les deux affichait « Ajouter des factures » sur un lot où
+	 * l'envoi était refusé à coup sûr. Comme aucune erreur n'était montrée, le
+	 * geste ne produisait rien du tout : le défaut le plus décourageant
+	 * possible, puisque rien n'indique quoi faire.
+	 */
+	const accepteDesFichiers =
+		ouvert !== null && (ouvert.status === 'DRAFT' || ouvert.status === 'EXTRACTING');
 
 	return (
 		<Page>
@@ -133,7 +194,12 @@ function Factures() {
 									</span>
 									<Input value={libelle} onChange={setLibelle} name="libelle" />
 								</label>
-								<Button color="brand" variant="solid-fill" onClick={() => void ouvrirLot()}>
+								<Button
+									color="brand"
+									variant="solid-fill"
+									loading={ouvertureEnCours}
+									onClick={() => void ouvrirLot(true)}
+								>
 									Ouvrir le dépôt
 								</Button>
 							</div>
@@ -149,15 +215,26 @@ function Factures() {
 										{pluriel(ouvert.linesTotal)} extraite{pluriel(ouvert.linesTotal)}
 									</p>
 								</div>
-								<Button
-									color="brand"
-									variant="solid-fill"
-									loading={envoiEnCours}
-									onClick={() => champFichiers.current?.click()}
-								>
-									<UploadIcon />
-									Ajouter des factures
-								</Button>
+								{accepteDesFichiers ? (
+									<Button
+										color="brand"
+										variant="solid-fill"
+										loading={envoiEnCours}
+										onClick={() => champFichiers.current?.click()}
+									>
+										<UploadIcon />
+										Ajouter des factures
+									</Button>
+								) : (
+									<Button
+										variant="gradient"
+										loading={ouvertureEnCours}
+										onClick={() => void ouvrirLot()}
+									>
+										<FolderPlusIcon />
+										Ouvrir un nouveau dépôt
+									</Button>
+								)}
 								<input
 									ref={champFichiers}
 									type="file"
@@ -167,6 +244,25 @@ function Factures() {
 									className="sr-only"
 								/>
 							</div>
+
+							{/*
+							  Pourquoi ce dépôt n'accepte plus de fichiers. Le backend le
+							  refuse à partir de la classification, et le taire laissait
+							  l'utilisateur devant un écran qui ne réagit pas.
+							*/}
+							{!accepteDesFichiers ? (
+								<Bandeau icone={<LockIcon size={16} />}>
+									Ce dépôt est passé au traitement : il n&rsquo;accepte plus de nouveaux
+									fichiers, sinon la classification en cours repartirait de travers. Ouvrez
+									un nouveau dépôt pour la suite de vos factures.
+								</Bandeau>
+							) : null}
+
+							{erreurEnvoi ? (
+								<Bandeau ton="alerte" icone={<TriangleAlertIcon size={16} />}>
+									{erreurEnvoi}
+								</Bandeau>
+							) : null}
 
 							{refus.length > 0
 								? refus.map((r) => (
