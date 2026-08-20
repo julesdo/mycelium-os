@@ -1,0 +1,72 @@
+/* Mycelium — le système visuel.
+ *
+ * Cladd est réglé pour un éditeur de bureau piloté à la souris : sa taille par
+ * défaut donne un contrôle de 28px, et seule sa taille `2xl` atteint 48px. Son
+ * texte de bouton est figé à 12px quelle que soit la taille. Or ce produit est
+ * tactile, en tablette, pour un gérant de cantine qui n'a pas vingt ans, avec
+ * un plancher de 48px.
+ *
+ * On décale donc l'échelle entière d'un cran, une seule fois, ici. La
+ * discipline des sept pas et l'interdiction d'en sortir restent entières :
+ * c'est le fichier qu'on relit comme du code, pas une porte de sortie. */
+
+@theme {
+	/* ESPACEMENT — commande les hauteurs de contrôle.
+	 * `lg` vaut 48px et devient la taille par défaut des contrôles qu'on
+	 * touche (posée dans src/app/providers.tsx). Les surfaces qu'on lit sans
+	 * les toucher, lignes de tableau et puces, gardent `sm` ou `md`. */
+	--spacing-cladd-3xs: 16px;
+	--spacing-cladd-2xs: 20px;
+	--spacing-cladd-xs: 24px;
+	--spacing-cladd-sm: 32px;
+	--spacing-cladd-md: 40px;
+	--spacing-cladd-lg: 48px;
+	--spacing-cladd-xl: 56px;
+	--spacing-cladd-2xl: 64px;
+
+	/* TYPOGRAPHIE — remontée d'un cran. Le texte des boutons, figé sur `xs`
+	 * par la bibliothèque, passe ainsi de 12px à 14px. */
+	--text-cladd-md: 18px;
+	--text-cladd-sm: 16px;
+	--text-cladd-xs: 14px;
+	--text-cladd-2xs: 12px;
+	--text-cladd-3xs: 10px;
+	--text-cladd-4xs: 8px;
+
+	/* RAYONS — piège : Cladd calcule chaque pas avec des numérateurs écrits en
+	 * dur rapportés à sa base `md` de 28px. Retuner l'espacement sans réécrire
+	 * ces numérateurs désaccorderait silencieusement les arrondis de
+	 * l'échelle. On les réécrit donc sur la nouvelle base md = 40px. */
+	--cladd-radius: 10px;
+	--radius-cladd-3xs: calc(var(--cladd-radius) * 16 / 40);
+	--radius-cladd-2xs: calc(var(--cladd-radius) * 20 / 40);
+	--radius-cladd-xs: calc(var(--cladd-radius) * 24 / 40);
+	--radius-cladd-sm: calc(var(--cladd-radius) * 32 / 40);
+	--radius-cladd-md: var(--cladd-radius);
+	--radius-cladd-lg: calc(var(--cladd-radius) * 48 / 40);
+	--radius-cladd-xl: calc(var(--cladd-radius) * 56 / 40);
+	--radius-cladd-2xl: calc(var(--cladd-radius) * 64 / 40);
+
+	/* ACCENT — bleu d'encre, posé dans l'emplacement `brand` dont Cladd dérive
+	 * la rampe OKLCH. Clarté et chroma sont réglées séparément pour le clair
+	 * et le sombre, parce que le même bleu ne tient pas sur les deux fonds. */
+	--cladd-light-primary-lightness: 0.42;
+	--cladd-light-primary-chroma: 0.13;
+	--cladd-dark-primary-lightness: 0.88;
+	--cladd-dark-primary-chroma: 0.13;
+
+	/* SEUILS — réservés, jamais décoratifs.
+	 * Ces trois couleurs ne signifient qu'une chose dans ce produit : au-dessus
+	 * du seuil, tout près, en dessous. Aucun élément décoratif n'a le droit de
+	 * les porter, sans quoi le gérant ne peut plus lire d'un coup d'œil si son
+	 * taux passe. C'est aussi pourquoi l'accent de marque n'est pas vert. */
+	--color-seuil-atteint: oklch(0.55 0.15 150);
+	--color-seuil-proche: oklch(0.72 0.16 75);
+	--color-seuil-manque: oklch(0.55 0.19 25);
+}
+
+/* La teinte de l'accent. Cladd en dérive toute la rampe. */
+:root,
+.cladd-color-brand {
+	--cladd-hue: 255;
+}

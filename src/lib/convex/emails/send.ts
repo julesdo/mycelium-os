@@ -9,7 +9,7 @@ import {
 	renderNewTicketAdminNotificationEmail
 } from './templates';
 import { requireEnv } from '../env';
-import type { NotificationMessage } from '../../emails/templates/types';
+import type { NotificationMessage } from './types';
 import { t, getValidLocale, type SupportedLocale } from '../i18n/translations';
 import type { GenericMutationCtx } from 'convex/server';
 import type { DataModel } from '../_generated/dataModel';

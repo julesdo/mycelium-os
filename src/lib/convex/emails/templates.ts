@@ -13,7 +13,7 @@ import type {
 	NewTicketAdminNotificationEmailData,
 	NewUserSignupNotificationEmailData,
 	RenderedEmail
-} from '../../emails/templates/types';
+} from './types';
 import {
 	VERIFICATION_HTML,
 	VERIFICATION_TEXT,

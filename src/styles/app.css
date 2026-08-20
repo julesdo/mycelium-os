@@ -1,0 +1,28 @@
+/* Point d'entrée des styles.
+ *
+ * L'ordre compte : Tailwind pose le moteur, Cladd pose son système de
+ * surfaces et sa palette, puis nos tokens écrasent les siens. Inverser les
+ * deux derniers imports rendrait le retunage tactile silencieusement inopérant. */
+
+@import 'tailwindcss';
+@import '@cladd-ui/react/css';
+@import './tokens.css';
+
+/* Les zones que Tailwind doit scanner. `src/ui` est la seule où des classes
+ * s'écrivent à la main ; les autres ne font que composer des primitives. */
+@source '../ui';
+@source '../app';
+@source '../screens';
+@source '../routes';
+
+html,
+body,
+#root {
+	height: 100%;
+}
+
+body {
+	background: var(--cladd-bg);
+	color: var(--cladd-fg);
+	-webkit-font-smoothing: antialiased;
+}

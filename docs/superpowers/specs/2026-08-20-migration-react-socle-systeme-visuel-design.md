@@ -129,32 +129,31 @@ Aucun composant de Cladd n'est forké. Les défauts produit passent par
 
 ## Le contrat d'écran
 
-C'est l'artefact qui manquait, et c'est lui qui traite les deux griefs que le kit ne
-couvre pas. Sept règles, écrites pour être opposables en relecture.
+Cinq règles, pas une de plus. Chacune est soit vérifiable par une machine, soit imposée
+par le droit. **Les règles de goût déguisées en règles ont été retirées** : elles
+alourdissaient la relecture sans rien trancher.
 
-1. **Une question par écran.** Le pilotage répond « où j'en suis », le dépôt « comment je
-   fournis mes données », la confirmation « que dois-je trancher », la restitution « que
-   puis-je montrer ». Un écran qui répond à deux questions se scinde.
+Les deux premières portent l'axe du produit : le gérant est autonome, le logiciel fait le
+travail et le lui montre.
 
-2. **Tableau par défaut, carte par exception.** Au-delà de trois éléments homogènes,
-   c'est un tableau dense. La carte est réservée à un objet unique et hétérogène. Cette
-   règle interdit à elle seule la pile de cartes du tableau de bord actuel.
+1. **Le logiciel décide, le gérant confirme.** Aucun écran ne demande une saisie que le
+   logiciel peut déduire, aller chercher ou avoir déjà vue. Toute question posée au gérant
+   doit être une question qui engage sa responsabilité, jamais une question de saisie.
+   Un champ vide que le logiciel aurait pu remplir est un défaut.
+
+2. **Tout traitement se voit sans qu'on le demande.** Une lecture en cours, un échec, une
+   progression, une classification qui bascule : chaque état s'affiche de lui-même, à
+   l'endroit où il compte, sans rechargement ni action. Le gérant ne doit jamais avoir à
+   se demander si le logiciel travaille.
 
 3. **Deux volets au-delà de 1024px.** Tout écran de travail se lit liste à gauche, preuve
    à droite. En dessous de cette largeur, la liste seule et la preuve en feuille
    glissante.
 
-4. **Le chiffre occupe la surface, pas le cadre.** Une carte dont le contenu tient en une
-   ligne est interdite.
-
-5. **Pas d'effet sans fonction.** L'ombre, le dégradé et le relief ne disent qu'une
-   chose, la profondeur d'une surface, et c'est le rôle de la primitive `Surface` de
-   Cladd. Jamais de décor.
-
-6. **Le vide montre le chemin.** Un écran sans données affiche l'amorçage, jamais des
+4. **Le vide montre le chemin.** Un écran sans données affiche l'amorçage, jamais des
    cadrans à zéro, qui donnent à un outil de conformité l'air d'être cassé.
 
-7. **Le mot « garantie » est interdit.** On mesure, on fait progresser, on prouve. Règle
+5. **Le mot « garantie » est interdit.** On mesure, on fait progresser, on prouve. Règle
    déjà en vigueur, déjà vérifiée par un test, reconduite telle quelle.
 
 ## La muselière

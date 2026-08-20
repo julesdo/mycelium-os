@@ -16,7 +16,10 @@
  *   const message = t(locale, 'settings.account.avatar.size_error', { size: '2MB' });
  */
 
-import fr from '../../../i18n/fr.json';
+// Les libelles vivent avec le backend qui les consomme (emails transactionnels,
+// libelles de tables dans le journal d'audit). Ils ne dependent d'aucun
+// framework frontend, et ont survecu a la bascule vers React pour cette raison.
+import fr from './fr.json';
 
 /** Supported locales */
 export const SUPPORTED_LOCALES = ['fr'] as const;

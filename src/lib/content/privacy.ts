@@ -1,4 +1,4 @@
-import { LEGAL_CONFIG } from '$lib/config/legal';
+import { LEGAL_CONFIG } from '../config/legal';
 
 export const privacyMarkdown = `# Privacy Policy
 

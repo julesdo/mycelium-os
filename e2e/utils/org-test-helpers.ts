@@ -124,7 +124,11 @@ export async function completeOnboardingForm(
 
 	await page.getByTestId('org-name-input').fill(orgName);
 
-	await page.getByRole('combobox').click();
+	// Par testid et non par rôle ARIA : `getByRole('combobox')` dépend d'un
+	// attribut que bits-ui ne pose qu'après hydratation, ce qui rendait tout le
+	// harnais tributaire du temps de démarrage de Vite. Tous les autres champs
+	// de ce formulaire portent déjà un testid.
+	await page.getByTestId('etablissement-type-select').click();
 	await page.getByRole('option', { name: ETABLISSEMENT_TYPE_LABELS[etablissementType] }).click();
 
 	await page.getByTestId('couverts-jour-input').fill(String(couvertsJour));

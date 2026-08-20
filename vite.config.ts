@@ -7,10 +7,9 @@ import { convexLocal } from 'convex-vite-plugin';
 import { resetRedactionMap } from 'varlock/env';
 import { DEV_FEATURES, type DevFeature } from './src/lib/dev/features';
 import { findAvailablePort, portlessOwnsPort } from './scripts/dev-ports';
-import { sentrySvelteKit } from '@sentry/sveltekit';
-import devtoolsJson from 'vite-plugin-devtools-json';
 import tailwindcss from '@tailwindcss/vite';
-import { sveltekit } from '@sveltejs/kit/vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { loadEnv, type PluginOption } from 'vite';
@@ -319,24 +318,15 @@ export default defineConfig(async ({ mode }) => {
 		process.env.PUBLIC_CONVEX_URL = 'https://prerender-placeholder.convex.cloud';
 	}
 
-	// Sentry source map upload + auto-instrumentation (no-op when DSN is absent)
-	if (loadedEnv.PUBLIC_SENTRY_DSN) {
-		plugins.push(
-			...(await sentrySvelteKit({
-				autoUploadSourceMaps: !!(
-					loadedEnv.SENTRY_AUTH_TOKEN &&
-					loadedEnv.SENTRY_ORG &&
-					loadedEnv.SENTRY_PROJECT
-				)
-			}))
-		);
-	}
 
 	plugins.push(
 		varlockVitePlugin(mode === 'production' ? { ssrInjectMode: 'resolved-env' } : {}),
 		tailwindcss(),
-		sveltekit(),
-		devtoolsJson(),
+		// L ordre compte : tanstackStart genere l arbre de routes, react() compile
+		// le JSX. customViteReactPlugin evite que Start embarque son propre
+		// plugin React en double.
+		tanstackStart({ customViteReactPlugin: true }),
+		react(),
 		// Bundle analyzer
 		...(process.env.ANALYZE === 'true'
 			? [
@@ -366,21 +356,7 @@ export default defineConfig(async ({ mode }) => {
 			passWithNoTests: true,
 			environment: 'jsdom'
 		},
-		optimizeDeps: {
-			include: ['svelte-konva', 'konva']
-		},
 		ssr: {
-			noExternal: [
-				'svelte-konva',
-				'@tolgee/web',
-				// @mmailaender/convex-svelte (>=0.18.0) and @mmailaender/convex-better-auth-svelte
-				// (>=0.7.4) ship a top-level `"svelte"` field, so SvelteKit auto-bundles them.
-				// WASM image codec used by the image-processing worker. Bundling avoids
-				// SSR-time `import 'svelte'`-style hazards if the package adds main-thread
-				// surfaces in the future; the worker chunk still keeps the WASM payload out
-				// of the client entry.
-				'@jsquash/webp'
-			],
 			...(mode === 'production' && {
 				resolve: {
 					conditions: ['production', 'import', 'module', 'default']
