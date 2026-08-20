@@ -1,7 +1,14 @@
-import { useState } from 'react';
-import { Button } from '@cladd-ui/react';
+import { useState, type ReactNode } from 'react';
+import {
+	Button,
+	Segmented,
+	SegmentedButton,
+	ToggleGroup,
+	ToggleButton,
+	SectionTitle
+} from '@cladd-ui/react';
 import { CheckIcon, PencilIcon, FileTextIcon } from 'lucide-react';
-import { cn, euros, pluriel, pourcent, FAMILLES } from '../../ui';
+import { euros, pluriel, pourcent, FAMILLES } from '../../ui';
 import { LABELS, LABELS_ORDONNES, MOTIFS } from '../../ui/egalim';
 import type { LibelleAConfirmer } from './liste';
 
@@ -61,11 +68,6 @@ export function PreuveEtDecision({
 
 	const motif = MOTIFS[libelle.motif];
 
-	const basculerLabel = (l: string) =>
-		setLabels((actuels) =>
-			actuels.includes(l) ? actuels.filter((x) => x !== l) : [...actuels, l]
-		);
-
 	const decision = (): Decision => ({
 		isFood: alimentaire,
 		family: famille,
@@ -97,9 +99,7 @@ export function PreuveEtDecision({
 
 					{motif ? (
 						<div className="rounded-cladd-md border border-cladd-outline bg-cladd-surface p-cladd-3xs">
-							<p className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-								Pourquoi cette question
-							</p>
+							<SectionTitle>Pourquoi cette question</SectionTitle>
 							<p className="mt-1 text-cladd-xs leading-snug text-cladd-fg-soft">
 								{motif.explication}
 							</p>
@@ -109,9 +109,7 @@ export function PreuveEtDecision({
 					{p ? (
 						<div className="flex flex-col gap-cladd-3xs">
 							<div className="flex items-baseline justify-between gap-cladd-3xs">
-								<h3 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-									Ce que nous proposons
-								</h3>
+								<SectionTitle>Ce que nous proposons</SectionTitle>
 								<span className="text-cladd-3xs text-cladd-fg-softer tabular-nums">
 									confiance {pourcent(p.confidence)}
 								</span>
@@ -148,45 +146,65 @@ export function PreuveEtDecision({
 
 					{correction || !p ? (
 						<div className="flex flex-col gap-cladd-xs border-t border-cladd-outline pt-cladd-xs">
-							<Choix
-								titre="Est-ce un achat alimentaire ?"
-								options={[
-									{ cle: 'oui', nom: 'Alimentaire' },
-									{ cle: 'non', nom: 'Non alimentaire' }
-								]}
-								estActif={(c) => (c === 'oui') === alimentaire}
-								onBasculer={(c) => setAlimentaire(c === 'oui')}
-							/>
+							<Groupe titre="Est-ce un achat alimentaire ?">
+									<Segmented>
+										<SegmentedButton
+											active={alimentaire}
+											onClick={() => setAlimentaire(true)}
+										>
+											Alimentaire
+										</SegmentedButton>
+										<SegmentedButton
+											active={!alimentaire}
+											onClick={() => setAlimentaire(false)}
+										>
+											Non alimentaire
+										</SegmentedButton>
+									</Segmented>
+								</Groupe>
 
 							{alimentaire ? (
 								<>
-									<Choix
-										titre="Famille de produits"
-										options={FAMILLES_ORDONNEES.map((f) => ({
-											cle: f,
-											nom: FAMILLES[f] ?? f
-										}))}
-										estActif={(c) => c === famille}
-										onBasculer={setFamille}
-									/>
+									<Groupe titre="Famille de produits">
+											<ToggleGroup
+												value={famille}
+												onValueChange={(v) => {
+													// Un ToggleGroup simple se déselectionne au second clic.
+													// Une famille est obligatoire : on ignore le vide.
+													if (typeof v === 'string') setFamille(v);
+												}}
+												className="flex flex-wrap gap-cladd-3xs"
+											>
+												{FAMILLES_ORDONNEES.map((f) => (
+													<ToggleButton key={f} value={f}>
+														{FAMILLES[f] ?? f}
+													</ToggleButton>
+												))}
+											</ToggleGroup>
+										</Groupe>
 
-									<Choix
-										titre="Mentions qualifiantes portées par la facture"
-										aide="« Local », « circuit court », « de saison » et « fait maison » ne comptent pour rien au barème."
-										options={LABELS_ORDONNES.map((l) => ({
-											cle: l,
-											nom: LABELS[l]?.nom ?? l
-										}))}
-										estActif={(c) => labels.includes(c)}
-										onBasculer={basculerLabel}
-									/>
+									<Groupe
+											titre="Mentions qualifiantes portées par la facture"
+											aide="« Local », « circuit court », « de saison » et « fait maison » ne comptent pour rien au barème."
+										>
+											<ToggleGroup
+												multiple
+												value={labels}
+												onValueChange={(v) => setLabels(Array.isArray(v) ? v : v ? [v] : [])}
+												className="flex flex-wrap gap-cladd-3xs"
+											>
+												{LABELS_ORDONNES.map((l) => (
+													<ToggleButton key={l} value={l}>
+														{LABELS[l]?.nom ?? l}
+													</ToggleButton>
+												))}
+											</ToggleGroup>
+										</Groupe>
 								</>
 							) : null}
 
 							<label className="flex flex-col gap-1">
-								<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-									Votre justification
-								</span>
+								<SectionTitle>Votre justification</SectionTitle>
 								<textarea
 									value={justification}
 									onChange={(e) => setJustification(e.target.value)}
@@ -243,51 +261,32 @@ export function PreuveEtDecision({
 }
 
 /**
- * Un groupe de choix en boutons, jamais en liste déroulante.
+ * Un groupe de champs, avec son titre.
  *
- * Sur tablette, une liste déroulante coûte deux gestes et masque les options
- * pendant qu'on choisit. Huit familles et dix mentions tiennent à l'écran :
- * autant les montrer et n'en demander qu'un seul.
+ * Ne dessine plus les boutons : ceux-ci viennent de `Segmented` et de
+ * `ToggleGroup`, qui portent l'état actif, l'accent et la taille par contexte.
+ * La version précédente les fabriquait à la main, ce que la documentation de
+ * Cladd nomme comme son anti-pattern principal — et elle y perdait l'ajustement
+ * automatique des tailles imbriquées.
+ *
+ * Le titre passe par `SectionTitle`, pour la même raison.
  */
-function Choix({
+function Groupe({
 	titre,
 	aide,
-	options,
-	estActif,
-	onBasculer
+	children
 }: {
 	titre: string;
 	aide?: string;
-	options: readonly { cle: string; nom: string }[];
-	estActif: (cle: string) => boolean;
-	onBasculer: (cle: string) => void;
+	children: ReactNode;
 }) {
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
 			<div>
-				<p className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-					{titre}
-				</p>
+				<SectionTitle>{titre}</SectionTitle>
 				{aide ? <p className="mt-0.5 text-cladd-3xs text-cladd-fg-softer">{aide}</p> : null}
 			</div>
-			<div className="flex flex-wrap gap-cladd-3xs">
-				{options.map((o) => (
-					<button
-						key={o.cle}
-						type="button"
-						onClick={() => onBasculer(o.cle)}
-						aria-pressed={estActif(o.cle)}
-						className={cn(
-							'min-h-cladd-lg rounded-cladd-md border px-cladd-3xs text-cladd-xs font-medium transition-colors',
-							estActif(o.cle)
-								? 'border-cladd-primary bg-cladd-primary text-cladd-on-primary'
-								: 'border-cladd-outline hover:bg-cladd-surface'
-						)}
-					>
-						{o.nom}
-					</button>
-				))}
-			</div>
+			{children}
 		</div>
 	);
 }

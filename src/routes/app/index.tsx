@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
-import { Button } from '@cladd-ui/react';
+import { Button, Toolbar, Segmented, SegmentedButton, SectionTitle } from '@cladd-ui/react';
 import { CameraIcon, CheckCheckIcon, TriangleAlertIcon, LoaderCircleIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import {
@@ -42,18 +42,20 @@ function Pilotage() {
 				sousTitre={`Vos trois taux EGalim sur l'année ${annee}.`}
 				actions={
 					annees && annees.length > 1 ? (
-						<div className="flex flex-wrap gap-cladd-3xs">
-							{annees.map((a) => (
-								<Button
-									key={a}
-									variant={a === annee ? 'solid-fill' : 'gradient'}
-									color={a === annee ? 'brand' : undefined}
-									onClick={() => setChoisie(a)}
-									>
-									{a}
-								</Button>
-							))}
-						</div>
+						// Un sélecteur d'exercice est le cas d'école du `Segmented` : un
+						// choix unique dans un petit ensemble. La version précédente
+						// l'assemblait à partir de `Button`, en portant l'état actif à la
+						// main via `variant` et `color`. `Segmented` le porte par contexte,
+						// et `Toolbar` lui donne sa taille et son logement.
+						<Toolbar>
+							<Segmented>
+								{annees.map((a) => (
+									<SegmentedButton key={a} active={a === annee} onClick={() => setChoisie(a)}>
+										{a}
+									</SegmentedButton>
+								))}
+							</Segmented>
+						</Toolbar>
 					) : null
 				}
 			/>
@@ -166,9 +168,7 @@ function Pilotage() {
 
 								{bord.parFamille.length > 0 ? (
 									<section className="flex flex-col gap-cladd-3xs">
-										<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-											D&rsquo;où viennent vos achats
-										</h2>
+										<SectionTitle>D&rsquo;où viennent vos achats</SectionTitle>
 										<Tableau legende="Répartition des achats par famille de produits">
 											<TableauEntete>
 												<TableauTitre>Famille</TableauTitre>

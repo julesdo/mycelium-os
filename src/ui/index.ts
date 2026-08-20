@@ -16,6 +16,7 @@ export { Page, PageHeader, PageBody } from './page';
 export { TwoPane } from './two-pane';
 export { EmptyState } from './empty-state';
 export { Bandeau } from './bandeau';
+export { ZoneDepot } from './zone-depot';
 export { TauxEGalim } from './taux-egalim';
 export {
 	Tableau,

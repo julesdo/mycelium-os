@@ -6,25 +6,19 @@ import { authClient } from '../lib/client/auth';
 import { useTheme } from './use-theme';
 
 /**
- * Le plancher tactile de 48px, posé une seule fois pour tout le produit.
+ * Aucun défaut de taille n'est imposé ici.
  *
- * Cladd expose `defaults` précisément pour cet usage, ce qui évite de forker
- * un seul de ses composants. Les contrôles qu'on touche partent à `lg`, qui
- * vaut 48px depuis le retunage de l'échelle (src/styles/tokens.css). Les
- * surfaces qu'on lit sans les toucher, lignes de tableau et puces, gardent la
- * densité serrée de Cladd en demandant explicitement `sm` ou `md`.
+ * La version précédente forçait `size="lg"` sur tous les contrôles pour
+ * atteindre le plancher tactile de 48px. La documentation de Cladd l'interdit
+ * en toutes lettres — « Don't default to `lg` everywhere », « When in doubt,
+ * `md` » — et pour une bonne raison : les tailles se répondent entre elles
+ * (un chip s'ajuste à la hauteur du bouton qui le contient), et forcer un cran
+ * partout casse cette arithmétique.
+ *
+ * Le plancher se règle à sa vraie place, dans l'échelle elle-même
+ * (src/styles/tokens.css) : `md` y vaut 48px. Les défauts du kit tombent donc
+ * juste sans qu'on ait à les contredire.
  */
-const DEFAUTS_TACTILES = {
-	Button: { size: 'lg' },
-	Input: { size: 'lg' },
-	Select: { size: 'lg' },
-	NumberField: { size: 'lg' },
-	// Cladd plafonne volontairement ces deux-la : CheckboxSize s'arrete a 'md'
-	// et SwitchSize aussi. On prend leur maximum. La cible tactile de 48px est
-	// alors portee par le label cliquable qui les entoure, pas par la case.
-	Checkbox: { size: 'md' },
-	Switch: { size: 'md' }
-} as const;
 
 export function Providers({ children }: { children: ReactNode }) {
 	const { theme } = useTheme();
@@ -34,7 +28,6 @@ export function Providers({ children }: { children: ReactNode }) {
 			theme={theme}
 			accentColor="brand"
 			overlaysRoot="#root"
-			defaults={DEFAUTS_TACTILES}
 		>
 			<ConvexBetterAuthProvider client={convex} authClient={authClient}>
 				{children}

@@ -5,9 +5,9 @@ import { extendTailwindMerge } from 'tailwind-merge';
  * Fusionne des classes Tailwind en laissant la dernière gagner.
  *
  * `tailwind-merge` doit connaître nos échelles personnalisées, sinon il se
- * trompe de conflit. Le cas qui l'a révélé : `cn('text-cladd-taux', 'text-seuil-manque')`
+ * trompe de conflit. Le cas qui l'a révélé : `cn('text-mycelium-taux', 'text-seuil-manque')`
  * rendait un `40px` en `16px`, parce que `tailwind-merge` prenait
- * `text-cladd-taux` pour une COULEUR (les deux classes commencent par `text-`)
+ * `text-mycelium-taux` pour une COULEUR (les deux classes commencent par `text-`)
  * et ne gardait que la dernière.
  *
  * Le symptôme était silencieux et coûteux : le chiffre le plus important du
@@ -20,7 +20,7 @@ const merge = extendTailwindMerge({
 			'font-size': [
 				{
 					text: [
-						'cladd-taux',
+						'mycelium-taux',
 						'cladd-md',
 						'cladd-sm',
 						'cladd-xs',

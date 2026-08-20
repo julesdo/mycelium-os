@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Input } from '@cladd-ui/react';
+import { Button, Input, SectionTitle, ToggleGroup, ToggleButton } from '@cladd-ui/react';
 import { CheckIcon, LogOutIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
-import { Page, PageHeader, PageBody, cn } from '../../ui';
+import { Page, PageHeader, PageBody } from '../../ui';
 
 export const Route = createFileRoute('/app/parametres')({ component: Parametres });
 
@@ -57,9 +57,7 @@ function Parametres() {
 					) : null}
 
 					<section className="flex flex-col gap-cladd-3xs">
-						<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-							Apparence
-						</h2>
+						<SectionTitle>Apparence</SectionTitle>
 						<p className="text-cladd-xs text-cladd-fg-soft">
 							L&rsquo;affichage clair est le réglage par défaut : il se lit mieux en plein jour,
 							sur une tablette à fort reflet.
@@ -73,9 +71,7 @@ function Parametres() {
 					</section>
 
 					<section className="flex flex-col gap-cladd-3xs border-t border-cladd-outline pt-cladd-xs">
-						<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-							Votre compte
-						</h2>
+						<SectionTitle>Votre compte</SectionTitle>
 						<div>
 							<Button
 								variant="gradient"
@@ -140,9 +136,7 @@ function FormulaireEtablissement({
 
 	return (
 		<section className="flex flex-col gap-cladd-xs">
-			<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-				Votre établissement
-			</h2>
+			<SectionTitle>Votre établissement</SectionTitle>
 
 			<label className="flex flex-col gap-1">
 				<span className="text-cladd-2xs font-medium text-cladd-fg-soft">Nom</span>
@@ -151,24 +145,21 @@ function FormulaireEtablissement({
 
 			<div className="flex flex-col gap-cladd-3xs">
 				<span className="text-cladd-2xs font-medium text-cladd-fg-soft">Type</span>
-				<div className="flex flex-wrap gap-cladd-3xs">
-					{TYPES.map((t) => (
-						<button
-							key={t.cle}
-							type="button"
-							onClick={() => setType(t.cle)}
-							aria-pressed={type === t.cle}
-							className={cn(
-								'min-h-cladd-lg rounded-cladd-md border px-cladd-3xs text-cladd-xs font-medium transition-colors',
-								type === t.cle
-									? 'border-cladd-primary bg-cladd-primary text-cladd-on-primary'
-									: 'border-cladd-outline hover:bg-cladd-surface'
-							)}
-						>
-							{t.nom}
-						</button>
-					))}
-				</div>
+				<ToggleGroup
+						value={type}
+						onValueChange={(v) => {
+							// Un groupe simple se déselectionne au second clic ; un type
+							// d'établissement est obligatoire, donc on ignore le vide.
+							if (typeof v === 'string') setType(v as TypeEtablissement);
+						}}
+						className="flex flex-wrap gap-cladd-3xs"
+					>
+						{TYPES.map((t) => (
+							<ToggleButton key={t.cle} value={t.cle}>
+								{t.nom}
+							</ToggleButton>
+						))}
+					</ToggleGroup>
 			</div>
 
 			<label className="flex flex-col gap-1">

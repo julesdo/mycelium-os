@@ -1,36 +1,37 @@
 /* Mycelium — le système visuel.
  *
- * Cladd est réglé pour un éditeur de bureau piloté à la souris : sa taille par
- * défaut donne un contrôle de 28px, et seule sa taille `2xl` atteint 48px. Son
- * texte de bouton est figé à 12px quelle que soit la taille. Or ce produit est
- * tactile, en tablette, pour un gérant de cantine qui n'a pas vingt ans, avec
- * un plancher de 48px.
- *
- * On décale donc l'échelle entière d'un cran, une seule fois, ici. La
- * discipline des sept pas et l'interdiction d'en sortir restent entières :
- * c'est le fichier qu'on relit comme du code, pas une porte de sortie. */
+ * Cladd est un kit dense, conçu pour des éditeurs de bureau pilotés à la
+ * souris. Ce produit est tactile, en tablette, pour un gérant de cantine qui
+ * n'a pas vingt ans. Ce fichier est le seul endroit où l'écart entre les deux
+ * se règle, et il se relit comme du code. */
 
 @theme {
 	/* ESPACEMENT — commande les hauteurs de contrôle.
-	 * `lg` vaut 48px et devient la taille par défaut des contrôles qu'on
-	 * touche (posée dans src/app/providers.tsx). Les surfaces qu'on lit sans
-	 * les toucher, lignes de tableau et puces, gardent `sm` ou `md`. */
+	 *
+	 * Cladd place son `md` à 28px et réserve `2xl` (48px) aux « full-bleed
+	 * mobile inputs ». Ce produit est précisément ce cas, mais sur TOUS ses
+	 * contrôles : le plancher tactile est de 48px.
+	 *
+	 * Deux issues : écrire `size="2xl"` partout, ou décaler l'échelle. La
+	 * documentation de Cladd tranche elle-même — « Don't default to `lg`
+	 * everywhere », « When in doubt, `md` ». On décale donc l'échelle pour que
+	 * le défaut `md` tombe sur le plancher tactile, et on suit ensuite ses
+	 * conventions d'usage à la lettre : `md` pour la chrome, `lg` pour les
+	 * champs principaux, `sm` pour les rangées denses.
+	 *
+	 * La rampe imbriquée en découle : Cladd la calcule à -8px, donc un chip
+	 * `md` fait 40px. C'est voulu — un chip est une étiquette, pas une cible. */
 	--spacing-cladd-3xs: 16px;
 	--spacing-cladd-2xs: 20px;
-	--spacing-cladd-xs: 24px;
-	--spacing-cladd-sm: 32px;
-	--spacing-cladd-md: 40px;
-	--spacing-cladd-lg: 48px;
-	--spacing-cladd-xl: 56px;
-	--spacing-cladd-2xl: 64px;
+	--spacing-cladd-xs: 28px;
+	--spacing-cladd-sm: 40px;
+	--spacing-cladd-md: 48px;
+	--spacing-cladd-lg: 56px;
+	--spacing-cladd-xl: 64px;
+	--spacing-cladd-2xl: 72px;
 
-	/* TYPOGRAPHIE — remontée d'un cran. Le texte des boutons, figé sur `xs`
-	 * par la bibliothèque, passe ainsi de 12px à 14px.
-	 *
-	 * `taux` est un pas à part : c'est le seul chiffre que le gérant retient de
-	 * l'écran, et il mérite un nom plutôt qu'un utilitaire Tailwind d'à-côté qui
-	 * sortirait discrètement de l'échelle. */
-	--text-cladd-taux: 40px;
+	/* TYPOGRAPHIE — remontée d'un cran. Le texte des boutons, figé sur `xs` par
+	 * la bibliothèque quelle que soit la taille, passe ainsi de 12px à 14px. */
 	--text-cladd-md: 18px;
 	--text-cladd-sm: 16px;
 	--text-cladd-xs: 14px;
@@ -39,40 +40,45 @@
 	--text-cladd-4xs: 8px;
 
 	/* RAYONS — piège : Cladd calcule chaque pas avec des numérateurs écrits en
-	 * dur rapportés à sa base `md` de 28px. Retuner l'espacement sans réécrire
-	 * ces numérateurs désaccorderait silencieusement les arrondis de
-	 * l'échelle. On les réécrit donc sur la nouvelle base md = 40px. */
-	--cladd-radius: 10px;
-	--radius-cladd-3xs: calc(var(--cladd-radius) * 16 / 40);
-	--radius-cladd-2xs: calc(var(--cladd-radius) * 20 / 40);
-	--radius-cladd-xs: calc(var(--cladd-radius) * 24 / 40);
-	--radius-cladd-sm: calc(var(--cladd-radius) * 32 / 40);
+	 * dur, rapportés à sa base `md`. Décaler l'espacement sans les réécrire
+	 * désaccorderait silencieusement les arrondis de l'échelle. Les trois blocs
+	 * se retunent ensemble, sur la nouvelle base md = 48px. */
+	--cladd-radius: 12px;
+	--radius-cladd-3xs: calc(var(--cladd-radius) * 16 / 48);
+	--radius-cladd-2xs: calc(var(--cladd-radius) * 20 / 48);
+	--radius-cladd-xs: calc(var(--cladd-radius) * 28 / 48);
+	--radius-cladd-sm: calc(var(--cladd-radius) * 40 / 48);
 	--radius-cladd-md: var(--cladd-radius);
-	--radius-cladd-lg: calc(var(--cladd-radius) * 48 / 40);
-	--radius-cladd-xl: calc(var(--cladd-radius) * 56 / 40);
-	--radius-cladd-2xl: calc(var(--cladd-radius) * 64 / 40);
+	--radius-cladd-lg: calc(var(--cladd-radius) * 56 / 48);
+	--radius-cladd-xl: calc(var(--cladd-radius) * 64 / 48);
+	--radius-cladd-2xl: calc(var(--cladd-radius) * 72 / 48);
 
-	/* ACCENT — bleu d'encre, posé dans l'emplacement `brand` dont Cladd dérive
-	 * la rampe OKLCH. Clarté et chroma sont réglées séparément pour le clair
-	 * et le sombre, parce que le même bleu ne tient pas sur les deux fonds. */
+	/* ACCENT — bleu d'encre. Clarté et chroma se règlent séparément pour le
+	 * clair et le sombre : le même bleu ne tient pas sur les deux fonds. */
 	--cladd-light-primary-lightness: 0.42;
 	--cladd-light-primary-chroma: 0.13;
 	--cladd-dark-primary-lightness: 0.88;
 	--cladd-dark-primary-chroma: 0.13;
 
-	/* LE RAIL — 72px replié, 240px déplié.
-	 * Ces deux largeurs ne sont pas sur l'échelle de Cladd, et c'est normal :
-	 * elles ne mesurent pas un contrôle mais une zone de mise en page. Elles
-	 * vivent ici plutôt qu'en dur dans le composant, pour que la géométrie de
-	 * l'application soit décidée en un seul endroit relu comme du code. */
+	/* NOS PROPRES TOKENS.
+	 *
+	 * Hors de l'espace de noms `cladd-*`, que la documentation demande
+	 * explicitement de ne pas étendre : « Don't invent suffixes ». Ce qui suit
+	 * n'existe pas dans le kit et ne prétend pas en faire partie. */
+
+	/* Le taux EGalim : le seul chiffre que le gérant retient de l'écran. */
+	--text-mycelium-taux: 40px;
+
+	/* Le rail de navigation. Ces largeurs ne mesurent pas un contrôle mais une
+	 * zone de mise en page : elles n'ont pas leur place sur l'échelle du kit. */
 	--spacing-rail: 72px;
 	--spacing-rail-deplie: 240px;
 
 	/* SEUILS — réservés, jamais décoratifs.
-	 * Ces trois couleurs ne signifient qu'une chose dans ce produit : au-dessus
-	 * du seuil, tout près, en dessous. Aucun élément décoratif n'a le droit de
-	 * les porter, sans quoi le gérant ne peut plus lire d'un coup d'œil si son
-	 * taux passe. C'est aussi pourquoi l'accent de marque n'est pas vert. */
+	 * Ces trois couleurs ne signifient qu'une chose : au-dessus du seuil, tout
+	 * près, en dessous. Aucun élément décoratif ne les porte, sans quoi le
+	 * gérant ne lit plus d'un coup d'œil si son taux passe. C'est aussi pour ça
+	 * que l'accent de marque est un bleu et jamais un vert. */
 	--color-seuil-atteint: oklch(0.55 0.15 150);
 	--color-seuil-proche: oklch(0.72 0.16 75);
 	--color-seuil-manque: oklch(0.55 0.19 25);
@@ -81,32 +87,26 @@
 /* L'accent de marque.
  *
  * Cladd n'expose pas une teinte mais une couleur complète, `--cladd-theme`,
- * dont il ne retient que la composante de teinte (`h`) : la clarté et la
- * chroma viennent des variables ci-dessus. Autrement dit, seul l'angle de ce
- * bleu compte, pas sa luminosité.
+ * dont il ne retient que la composante de teinte. Seul l'angle de ce bleu
+ * compte, pas sa luminosité.
  *
- * Cladd livre `brand` en #388aff, un azur vif. On le remplace par un bleu
- * d'encre, plus sourd et plus institutionnel, qui convient à un outil
- * réglementaire et se distingue nettement des trois couleurs de seuil.
- *
- * L'accent n'apparaît que sur les éléments portant `cladd-color-brand`, que
- * `CladdProvider accentColor="brand"` pose sur les contrôles interactifs. Les
- * surfaces, elles, restent volontairement achromatiques. */
+ * Le kit livre `brand` en #388aff, un azur vif. On le remplace par un bleu
+ * d'encre, plus sourd, qui convient à un outil réglementaire et se distingue
+ * nettement des trois couleurs de seuil. */
 .cladd-color-brand {
 	--cladd-theme: #1d3fa0;
 }
 
 /* CONTRASTE — les tons secondaires du mode clair, assombris.
  *
- * Cladd est conçu dark-first, et ses tons secondaires sont calés pour un fond
- * noir. Reportés tels quels sur du blanc, ils tombent sous le seuil : mesuré au
- * navigateur, `fg-softer` donnait 3,23 pour 1 là où le texte courant demande
- * 4,5. Le symptôme n'est pas spectaculaire — c'est du gris clair, ça a l'air
- * « design » — mais un gérant de cantine qui n'a pas vingt ans, sur une tablette
- * en plein jour, ne lit tout simplement pas les libellés de seuil.
+ * Cladd est dark-first et ses tons secondaires sont calés pour un fond noir.
+ * Reportés sur du blanc, ils tombent sous le seuil : mesuré au navigateur,
+ * `fg-softer` donnait 3,23 pour 1 là où le texte courant demande 4,5. Le
+ * symptôme n'est pas spectaculaire — c'est du gris clair, ça a l'air
+ * « design » — mais un gérant sur une tablette en plein jour ne lit pas les
+ * libellés de seuil.
  *
- * Ces deux lignes ne changent rien au mode sombre, où les valeurs de Cladd
- * conviennent. */
+ * Le mode sombre n'est pas touché : les valeurs du kit y conviennent. */
 :root.light,
 .light {
 	--cladd-fg-softer: oklch(0.56 0 0);
@@ -116,9 +116,8 @@
 /* Le texte porté PAR l'accent, en mode clair.
  *
  * Cladd dérive `on-primary` en 0.2 de clarté, c'est-à-dire sombre : cohérent
- * avec son mode sombre, où la couleur primaire est claire (0.88). Notre accent
- * clair est un bleu d'encre à 0.42, donc sombre lui aussi — le texte par défaut
- * y tombe à 2,1 pour 1.
+ * avec son mode sombre, où la couleur primaire est claire. Notre accent clair
+ * étant lui-même sombre, le défaut donnait du sombre sur sombre, à 2,1 pour 1.
  *
  * On inverse : texte quasi blanc sur bleu d'encre. C'est aussi la seule
  * combinaison qui donne un bouton d'action franc plutôt qu'un aplat pâle. */

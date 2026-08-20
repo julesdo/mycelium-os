@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { Button } from '@cladd-ui/react';
-import { CheckCheckIcon, TriangleAlertIcon } from 'lucide-react';
+import { Button, Toolbar, Segmented, SegmentedButton, SectionTitle } from '@cladd-ui/react';
+import { CheckCheckIcon, TriangleAlertIcon, UploadIcon } from 'lucide-react';
 import {
 	Page,
 	PageHeader,
@@ -18,7 +18,8 @@ import {
 	EmptyState,
 	euros,
 	pourcent,
-	FAMILLES
+	FAMILLES,
+	ZoneDepot
 } from '../ui';
 import { ListeAConfirmer, type LibelleAConfirmer } from '../screens/confirmer/liste';
 import { Attestations, type Attestation } from '../screens/diagnostic/attestations';
@@ -139,7 +140,7 @@ const ATTESTATIONS: Attestation[] = [
 	}
 ];
 
-const ECRANS = ['pilotage', 'confirmer', 'diagnostic', 'vide', 'coquille'] as const;
+const ECRANS = ['pilotage', 'confirmer', 'diagnostic', 'depot', 'vide', 'coquille'] as const;
 type Ecran = (typeof ECRANS)[number];
 
 function Showroom() {
@@ -161,6 +162,7 @@ function Showroom() {
 				{ecran === 'pilotage' ? <DemoPilotage /> : null}
 				{ecran === 'vide' ? <DemoVide /> : null}
 				{ecran === 'diagnostic' ? <DemoDiagnostic /> : null}
+				{ecran === 'depot' ? <DemoDepot /> : null}
 				{ecran === 'coquille' ? (
 					<Shell>
 						<DemoPilotage />
@@ -206,17 +208,15 @@ function DemoPilotage() {
 				titre="Tableau de bord"
 				sousTitre="Vos trois taux EGalim sur l'année 2026."
 				actions={
-					<div className="flex flex-wrap gap-cladd-3xs">
-						{['2026', '2025', '2024'].map((a) => (
-							<Button
-									key={a}
-									variant={a === '2026' ? 'solid-fill' : 'gradient'}
-									color={a === '2026' ? 'brand' : undefined}
-								>
-								{a}
-							</Button>
-						))}
-					</div>
+					<Toolbar>
+							<Segmented>
+								{['2026', '2025', '2024'].map((a) => (
+									<SegmentedButton key={a} active={a === '2026'}>
+										{a}
+									</SegmentedButton>
+								))}
+							</Segmented>
+						</Toolbar>
 				}
 			/>
 			<PageBody>
@@ -253,9 +253,7 @@ function DemoPilotage() {
 					</Bandeau>
 
 					<section className="flex flex-col gap-cladd-3xs">
-						<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-							D&rsquo;où viennent vos achats
-						</h2>
+						<SectionTitle>D&rsquo;où viennent vos achats</SectionTitle>
 						<Tableau legende="Répartition des achats par famille">
 							<TableauEntete>
 								<TableauTitre>Famille</TableauTitre>
@@ -320,6 +318,28 @@ function DemoDiagnostic() {
 						<p>{MENTION_FIGE('14 mars 2027')}</p>
 					</footer>
 				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
+function DemoDepot() {
+	return (
+		<Page>
+			<PageHeader
+				titre="Vos factures"
+				sousTitre="Douze mois d'achats suffisent à calculer vos trois taux de l'exercice 2026."
+			/>
+			<PageBody>
+				<ZoneDepot accept=".csv,.pdf" onFichiers={() => undefined}>
+					<UploadIcon size={24} className="text-cladd-fg-softer" />
+					<span className="text-cladd-xs font-medium">
+						Glissez vos factures ici, ou cliquez pour les choisir
+					</span>
+					<span className="text-cladd-2xs text-cladd-fg-soft">
+						Un export comptable en CSV va le plus vite. Les PDF et les photos conviennent aussi.
+					</span>
+				</ZoneDepot>
 			</PageBody>
 		</Page>
 	);

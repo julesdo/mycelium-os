@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Chip } from '@cladd-ui/react';
+import { Button, Chip, SectionTitle } from '@cladd-ui/react';
 import { PrinterIcon, TriangleAlertIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -145,9 +145,7 @@ function Diagnostic() {
 					{d.ouBasculer.length > 0 ? (
 						<section className="flex flex-col gap-cladd-3xs">
 							<div>
-								<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-									Où combler l&rsquo;écart
-								</h2>
+								<SectionTitle>Où combler l&rsquo;écart</SectionTitle>
 								<p className="mt-1 text-cladd-xs text-cladd-fg-soft">
 									Les familles où il reste le plus d&rsquo;achats non durables, donc le plus de
 									marge de manœuvre. La colonne de droite dit ce que vous gagneriez en basculant
@@ -178,9 +176,7 @@ function Diagnostic() {
 					) : null}
 
 					<section className="flex flex-col gap-cladd-3xs">
-						<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-							Par famille de produits
-						</h2>
+						<SectionTitle>Par famille de produits</SectionTitle>
 						<Tableau legende="Achats par famille de produits">
 							<TableauEntete>
 								<TableauTitre>Famille</TableauTitre>
@@ -212,9 +208,7 @@ function Diagnostic() {
 					</section>
 
 					<section className="flex flex-col gap-cladd-3xs">
-						<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-							Par fournisseur
-						</h2>
+						<SectionTitle>Par fournisseur</SectionTitle>
 						<Tableau legende="Achats par fournisseur">
 							<TableauEntete>
 								<TableauTitre>Fournisseur</TableauTitre>

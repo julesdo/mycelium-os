@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Chip } from '@cladd-ui/react';
+import { Button, Chip, SectionTitle, Surface } from '@cladd-ui/react';
 import { CopyIcon, CheckIcon, MailIcon } from 'lucide-react';
 import { redigerCourrier } from '../../lib/convex/egalim/courrier';
 import { euros, pluriel } from '../../ui';
@@ -70,9 +70,7 @@ export function Attestations({
 	return (
 		<section className="flex flex-col gap-cladd-3xs">
 			<div>
-				<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-					Points à récupérer sans rien changer à vos achats
-				</h2>
+				<SectionTitle>Points à récupérer sans rien changer à vos achats</SectionTitle>
 				<p className="mt-1 text-cladd-xs text-cladd-fg-soft">
 					{attestations.length} fournisseur{pluriel(attestations.length)} vous a
 					{attestations.length > 1 ? 'ient' : ''} livré des produits présentés comme certifiés,
@@ -84,11 +82,13 @@ export function Attestations({
 				</p>
 			</div>
 
-			<ul className="flex flex-col gap-cladd-3xs">
+			<div className="flex flex-col gap-cladd-3xs">
 				{attestations.map((a) => (
-					<li
+					<Surface
 						key={a.attestationId}
-						className="rounded-cladd-md border border-cladd-outline p-cladd-3xs"
+						outline
+						className="rounded-cladd-md"
+						contentClassName="p-cladd-3xs"
 					>
 						<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
 							<div className="min-w-0">
@@ -162,9 +162,9 @@ export function Attestations({
 								) : null}
 							</div>
 						) : null}
-					</li>
+					</Surface>
 				))}
-			</ul>
+			</div>
 		</section>
 	);
 }

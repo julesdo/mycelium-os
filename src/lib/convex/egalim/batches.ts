@@ -295,3 +295,66 @@ export const listerLots = authedQuery({
 			}));
 	}
 });
+
+/**
+ * Le dépôt courant de l'exercice, créé au besoin.
+ *
+ * EGalim se déclare par année civile : un exercice, une mesure. Le « lot » du
+ * modèle de données EST donc l'exercice, et il n'a aucune raison d'exister dans
+ * la tête du gérant. Demander d'« ouvrir un dépôt » et de le nommer, c'était
+ * faire remonter jusqu'à l'écran une contrainte du moteur de classification.
+ *
+ * Cette mutation rend le geste unique : on dépose des factures, le reste se
+ * décide tout seul.
+ *
+ * Elle ne crée jamais un second lot pour un exercice qui en a déjà un capable
+ * d'accepter des fichiers, et elle refuse explicitement d'en ouvrir un pendant
+ * qu'un autre est en traitement — c'est la contrainte que `creerLot` protège
+ * déjà, et pour la même raison : deux lots qui se chevauchent produiraient deux
+ * mesures partielles du même exercice.
+ */
+export const obtenirOuCreerDepot = authedMutation({
+	args: { annee: v.string() },
+	returns: v.object({
+		batchId: v.id('invoiceBatches'),
+		accepteDesFichiers: v.boolean(),
+		status: vStatutLot
+	}),
+	handler: async (ctx, { annee }) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const lots = await ctx.db
+			.query('invoiceBatches')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect();
+
+		// Un lot qui accepte encore des fichiers : on y verse, quel que soit son
+		// nom. C'est le cas courant.
+		const accueillant = lots.find((l) => l.status === 'DRAFT' || l.status === 'EXTRACTING');
+		if (accueillant) {
+			return { batchId: accueillant._id, accepteDesFichiers: true, status: accueillant.status };
+		}
+
+		// Un lot en traitement bloque l'ouverture du suivant. On le dit avec son
+		// état, pour que l'écran explique où en est la lecture plutôt que de
+		// renvoyer une erreur nue.
+		const enTraitement = lots.find((l) => l.status === 'CLASSIFYING' || l.status === 'REVIEW');
+		if (enTraitement) {
+			return { batchId: enTraitement._id, accepteDesFichiers: false, status: enTraitement.status };
+		}
+
+		const batchId = await ctx.db.insert('invoiceBatches', {
+			organizationId,
+			label: `Exercice ${annee}`,
+			periodStart: `${annee}-01-01`,
+			periodEnd: `${annee}-12-31`,
+			status: 'DRAFT',
+			uploadedBy: ctx.user._id,
+			documentsTotal: 0,
+			linesTotal: 0,
+			labelsPendingReview: 0,
+			createdAt: Date.now()
+		});
+		return { batchId, accepteDesFichiers: true, status: 'DRAFT' as const };
+	}
+});

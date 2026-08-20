@@ -1,9 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
-import { Button, Input } from '@cladd-ui/react';
+import { Button, Input, SectionTitle, ToggleGroup, ToggleButton } from '@cladd-ui/react';
 import { api } from '../lib/convex/_generated/api';
-import { cn } from '../ui';
 
 export const Route = createFileRoute('/bienvenue')({ component: Bienvenue });
 
@@ -76,40 +75,31 @@ function Bienvenue() {
 				</div>
 
 				<label className="flex flex-col gap-1">
-					<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-						Nom de l&rsquo;établissement
-					</span>
+					<SectionTitle>Nom de l&rsquo;établissement</SectionTitle>
 					<Input value={nom} onChange={setNom} name="organisation" required />
 				</label>
 
 				<div className="flex flex-col gap-cladd-3xs">
-					<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-						Type d&rsquo;établissement
-					</span>
-					<div className="flex flex-wrap gap-cladd-3xs">
+					<SectionTitle>Type d&rsquo;établissement</SectionTitle>
+					<ToggleGroup
+						value={type}
+						onValueChange={(v) => {
+							// Un groupe simple se déselectionne au second clic ; un type
+							// d'établissement est obligatoire, donc on ignore le vide.
+							if (typeof v === 'string') setType(v as TypeEtablissement);
+						}}
+						className="flex flex-wrap gap-cladd-3xs"
+					>
 						{TYPES.map((t) => (
-							<button
-								key={t.cle}
-								type="button"
-								onClick={() => setType(t.cle)}
-								aria-pressed={type === t.cle}
-								className={cn(
-									'min-h-cladd-lg rounded-cladd-md border px-cladd-3xs text-cladd-xs font-medium transition-colors',
-									type === t.cle
-										? 'border-cladd-primary bg-cladd-primary text-cladd-on-primary'
-										: 'border-cladd-outline hover:bg-cladd-surface'
-								)}
-							>
+							<ToggleButton key={t.cle} value={t.cle}>
 								{t.nom}
-							</button>
+							</ToggleButton>
 						))}
-					</div>
+					</ToggleGroup>
 				</div>
 
 				<label className="flex flex-col gap-1">
-					<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-						Couverts par jour
-					</span>
+					<SectionTitle>Couverts par jour</SectionTitle>
 					<Input
 						type="number"
 						value={couverts}
@@ -124,9 +114,7 @@ function Bienvenue() {
 				</label>
 
 				<label className="flex flex-col gap-1">
-					<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-						SIRET (facultatif)
-					</span>
+					<SectionTitle>SIRET (facultatif)</SectionTitle>
 					<Input value={siret} onChange={setSiret} name="siret" placeholder="123 456 789 00012" />
 					<span className="text-cladd-3xs text-cladd-fg-softer">
 						Utile en mars, pour la télédéclaration. Vous pourrez l&rsquo;ajouter plus tard.

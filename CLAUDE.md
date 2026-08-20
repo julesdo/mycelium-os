@@ -94,12 +94,28 @@ L'interface precedente a ete jugee « AI slop » sur quatre plans a la fois :
 composition des ecrans, aspect des composants, absence d'identite, parcours.
 Trois barrieres l'empechent de revenir, et elles sont cumulatives.
 
-**1. Le kit.** Cladd fournit les controles (bouton, champ, dialogue, chip). On
-n'en forke aucun. Les defauts produit passent par `CladdProvider defaults`
-(`src/app/providers.tsx`). L'echelle de Cladd est retunee une seule fois pour
-le tactile dans `src/styles/tokens.css` : les trois blocs `@theme` (espacement,
-typographie, rayons) se modifient ENSEMBLE, parce que les numerateurs de rayon
-sont ecrits en dur sur la base `md`.
+**1. Le kit.** Cladd fournit les controles. On n'en forke aucun, et surtout **on
+n'en reinvente aucun** : un `<div>` avec `bg`, `border` et `rounded` est un
+`Surface` ; une rangee de boutons est un `Toolbar` ; un choix unique est un
+`Segmented` ; un choix multiple un `ToggleGroup` ; une liste verticale une
+`List` avec des `ListButton` ; un intitule de section un `SectionTitle`. Les
+comportements contextuels (taille propagee, chip qui s'ajuste a sa rangee,
+profondeur de surface) n'existent QUE si le vrai composant est dans l'arbre.
+
+**Source de verite : le serveur MCP de Cladd** (`https://cladd.io/mcp`).
+`list_components` pour l'inventaire, `get_component` pour les props, et
+`get_foundation` pour `quickstart`, `surfaces`, `colors`, `sizing` et surtout
+`pitfalls`. **Lire `pitfalls` avant d'ecrire du Cladd non trivial.** Ne jamais
+reconstituer l'API en lisant le code compile : c'est comme ca qu'on reinvente.
+
+**L'echelle.** Cladd est dense (son `md` vaut 28px) ; ce produit est tactile
+avec un plancher de 48px. On ne force PAS `size="lg"` partout — la doc
+l'interdit (« Don't default to `lg` everywhere », « When in doubt, `md` »).
+On decale l'echelle dans `src/styles/tokens.css` pour que `md` tombe sur 48px,
+puis on suit les conventions du kit a la lettre. Les trois blocs `@theme`
+(espacement, typographie, rayons) se modifient ENSEMBLE : les numerateurs de
+rayon sont ecrits en dur sur la base `md`. Nos propres tokens vivent hors de
+l'espace de noms `cladd-*`, que la doc interdit d'etendre.
 
 **2. La museliere.** `src/ui/**` est la SEULE zone ou des classes Tailwind
 s'ecrivent. Ailleurs, `bun run lint` refuse les valeurs arbitraires (`-[...]`),

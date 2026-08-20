@@ -69,7 +69,7 @@ export function TauxEGalim({
 			</div>
 
 			<div className="flex items-baseline gap-cladd-3xs">
-				<span className={cn('text-cladd-taux leading-none font-bold tabular-nums tracking-tight', TEXTE[etat])}>
+				<span className={cn('text-mycelium-taux leading-none font-bold tabular-nums tracking-tight', TEXTE[etat])}>
 					{pourcent(mesure)}
 				</span>
 			</div>

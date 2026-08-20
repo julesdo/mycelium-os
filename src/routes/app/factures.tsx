@@ -1,16 +1,14 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Input } from '@cladd-ui/react';
+import { Button } from '@cladd-ui/react';
 import {
 	UploadIcon,
 	CheckIcon,
 	TriangleAlertIcon,
 	LoaderCircleIcon,
 	CheckCheckIcon,
-	FileCheckIcon,
-	FolderPlusIcon,
-	LockIcon
+	FileCheckIcon
 } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -25,89 +23,77 @@ import {
 	TableauLigne,
 	TableauTitre,
 	TableauCellule,
-	pluriel
+	pluriel,
+	ZoneDepot
 } from '../../ui';
 import { trierFichiers, ACCEPT_HTML, type Refus } from '../../screens/factures/formats';
 
 export const Route = createFileRoute('/app/factures')({ component: Factures });
 
-const STATUTS: Record<string, string> = {
-	DRAFT: 'Ouvert',
-	EXTRACTING: 'Lecture en cours',
-	CLASSIFYING: 'Classification en cours',
-	REVIEW: 'À confirmer',
-	READY: 'Prêt',
-	FAILED: 'En échec'
-};
+/** L'exercice qui se déclare : l'année civile écoulée, à déclarer avant le 31 mars. */
+const EXERCICE = String(new Date().getFullYear() - 1);
 
+/**
+ * Le dépôt de factures.
+ *
+ * Un seul geste : déposer. Aucune étape préalable, aucun nom à choisir, aucun
+ * objet à ouvrir ni à fermer.
+ *
+ * La version précédente exposait le « lot » du modèle de données, qui est un
+ * objet du moteur de classification : celui-ci traite un lot par tranches sur
+ * une liste triée de libellés, et cette liste ne doit pas bouger en cours de
+ * route. Contrainte réelle, mais technique — et elle imposait cinq règles au
+ * gérant pour faire une seule chose : donner ses factures. Le lot est
+ * désormais créé, nommé et fermé par le logiciel.
+ */
 function Factures() {
 	const navigate = useNavigate();
 	const lots = useQuery(api.egalim.batches.listerLots, {});
-	const creerLot = useMutation(api.egalim.batches.creerLot);
+	const obtenirDepot = useMutation(api.egalim.batches.obtenirOuCreerDepot);
 	const genererUrl = useMutation(api.egalim.batches.genererUrlDepot);
 	const enregistrer = useMutation(api.egalim.batches.enregistrerDocument);
 	const produireDiagnostic = useMutation(api.egalim.diagnostics.produireDiagnostic);
 
-	const [libelle, setLibelle] = useState(`Factures ${new Date().getFullYear() - 1}`);
 	const [refus, setRefus] = useState<Refus[]>([]);
+	const [erreur, setErreur] = useState<string | null>(null);
 	const [envoiEnCours, setEnvoiEnCours] = useState(false);
-	const [erreurEnvoi, setErreurEnvoi] = useState<string | null>(null);
 	const [productionEnCours, setProductionEnCours] = useState(false);
-	const [ouvertureEnCours, setOuvertureEnCours] = useState(false);
-	const champFichiers = useRef<HTMLInputElement>(null);
+	const [progression, setProgression] = useState<{
+		fait: number;
+		total: number;
+		courant: string;
+	} | null>(null);
 
-	const ouvert = lots?.find((l) => l.ouvert) ?? null;
+	const courant = lots?.find((l) => l.ouvert) ?? null;
 	const suivi = useQuery(
 		api.egalim.batches.suivreLot,
-		ouvert ? { batchId: ouvert.batchId } : 'skip'
+		courant ? { batchId: courant.batchId } : 'skip'
 	);
 
-	/**
-	 * @param depuisLeChamp true quand le nom vient du formulaire d'ouverture.
-	 *
-	 * Le bouton « Ouvrir un nouveau dépôt » vit sur l'écran du lot en cours, où
-	 * le champ de nom n'est pas affiché. Reprendre `libelle` là-bas donnerait à
-	 * deux dépôts le même nom — le champ est pré-rempli, donc jamais vide — et
-	 * l'historique deviendrait illisible. On numérote à la place.
-	 */
-	async function ouvrirLot(depuisLeChamp = false) {
-		const annee = new Date().getFullYear() - 1;
-		const nom =
-			(depuisLeChamp && libelle.trim()) ||
-			(lots && lots.length > 0 ? `Factures ${annee} (${lots.length + 1})` : `Factures ${annee}`);
-		setOuvertureEnCours(true);
-		try {
-			await creerLot({
-				label: nom,
-				periodStart: `${annee}-01-01`,
-				periodEnd: `${annee}-12-31`
-			});
-			setErreurEnvoi(null);
-		} finally {
-			setOuvertureEnCours(false);
-		}
-	}
+	const enLecture = courant?.status === 'EXTRACTING' || courant?.status === 'CLASSIFYING';
+	const aConfirmer = courant?.status === 'REVIEW';
+	const pret = courant?.status === 'READY';
 
-	async function produire() {
-		if (!ouvert) return;
-		setProductionEnCours(true);
-		try {
-			await produireDiagnostic({ batchId: ouvert.batchId });
-		} finally {
-			setProductionEnCours(false);
-		}
-	}
-
-	async function deposer(fichiers: FileList | null) {
-		if (!fichiers || !ouvert) return;
-		const { acceptes, refuses } = trierFichiers([...fichiers]);
+	async function deposer(fichiers: File[]) {
+		const { acceptes, refuses } = trierFichiers(fichiers);
 		setRefus(refuses);
 		if (acceptes.length === 0) return;
 
 		setEnvoiEnCours(true);
-		setErreurEnvoi(null);
+		setErreur(null);
 		try {
-			for (const fichier of acceptes) {
+			const depot = await obtenirDepot({ annee: EXERCICE });
+			if (!depot.accepteDesFichiers) {
+				setErreur(
+					depot.status === 'REVIEW'
+						? "Vos factures précédentes attendent vos confirmations. Videz la file, et vous pourrez en déposer d'autres."
+						: 'Nous lisons encore vos factures précédentes. Vous pourrez en ajouter dans un instant.'
+				);
+				return;
+			}
+
+			for (const [i, fichier] of acceptes.entries()) {
+				setProgression({ fait: i, total: acceptes.length, courant: fichier.name });
 				const url = await genererUrl({});
 				const reponse = await fetch(url, {
 					method: 'POST',
@@ -121,306 +107,206 @@ function Factures() {
 				}
 				const { storageId } = (await reponse.json()) as { storageId: string };
 				await enregistrer({
-					batchId: ouvert.batchId,
+					batchId: depot.batchId,
 					storageId: storageId as Id<'_storage'>,
 					filename: fichier.name,
 					mimeType: fichier.type || 'application/octet-stream'
 				});
 			}
 		} catch (e) {
-			// Sans ce `catch`, l'échec était totalement silencieux : le témoin
-			// d'attente s'arrêtait et rien ne se passait. C'est ce qui faisait
-			// dire « le dépôt ne marche pas », alors que le backend refusait
-			// poliment et disait pourquoi.
-			//
-			// Un ConvexError porte son message dans `data` ; une erreur réseau
-			// dans `message`. On montre celui qui existe plutôt qu'un « une
-			// erreur est survenue » qui n'aide personne.
+			// Un ConvexError porte son message dans `data`, une erreur réseau dans
+			// `message`. On montre celui qui existe : sans ce bloc, un échec était
+			// parfaitement silencieux, et c'est ce qui faisait dire « rien ne
+			// fonctionne » alors que le backend refusait poliment en expliquant.
 			const convexe = e as { data?: unknown };
-			const message =
+			setErreur(
 				typeof convexe.data === 'string'
 					? convexe.data
 					: e instanceof Error
 						? e.message
-						: 'Le dépôt a échoué.';
-			setErreurEnvoi(message);
+						: 'Le dépôt a échoué.'
+			);
 		} finally {
 			setEnvoiEnCours(false);
-			if (champFichiers.current) champFichiers.current.value = '';
+			setProgression(null);
+		}
+	}
+
+	async function produire() {
+		if (!courant) return;
+		setProductionEnCours(true);
+		setErreur(null);
+		try {
+			await produireDiagnostic({ batchId: courant.batchId });
+		} catch (e) {
+			const convexe = e as { data?: unknown };
+			setErreur(
+				typeof convexe.data === 'string' ? convexe.data : "Le diagnostic n'a pas pu être produit."
+			);
+		} finally {
+			setProductionEnCours(false);
 		}
 	}
 
 	const documents = suivi?.documents ?? [];
-	const lus = documents.filter((d) => d.extractionStatus === 'DONE');
-	const enEchec = documents.filter((d) => d.extractionStatus === 'FAILED');
 	const enAttente = documents.filter((d) => d.extractionStatus === 'PENDING');
-
-	/**
-	 * Un lot « en cours » n'accepte pas forcément de nouveaux fichiers.
-	 *
-	 * `listerLots` marque `ouvert` quatre statuts — DRAFT, EXTRACTING,
-	 * CLASSIFYING, REVIEW — parce que c'est le lot sur lequel on travaille.
-	 * Mais `enregistrerDocument` n'en accepte que deux : au-delà, ajouter des
-	 * lignes décalerait la liste triée que la classification parcourt par
-	 * tranches, et elle en sauterait ou en rejouerait.
-	 *
-	 * Confondre les deux affichait « Ajouter des factures » sur un lot où
-	 * l'envoi était refusé à coup sûr. Comme aucune erreur n'était montrée, le
-	 * geste ne produisait rien du tout : le défaut le plus décourageant
-	 * possible, puisque rien n'indique quoi faire.
-	 */
-	const accepteDesFichiers =
-		ouvert !== null && (ouvert.status === 'DRAFT' || ouvert.status === 'EXTRACTING');
 
 	return (
 		<Page>
 			<PageHeader
-				titre="Factures"
-				sousTitre="Déposez vos achats, nous les lisons et les classons."
+				titre="Vos factures"
+				sousTitre={`Douze mois d'achats suffisent à calculer vos trois taux de l'exercice ${EXERCICE}.`}
 			/>
 
 			<PageBody>
 				<div className="flex flex-col gap-cladd-xs">
-					{!ouvert ? (
-						<div className="flex flex-col gap-cladd-3xs">
-							<p className="text-cladd-xs text-cladd-fg-soft">
-								Ouvrez un dépôt, puis versez-y douze mois d&rsquo;achats. Un export comptable
-								en CSV va le plus vite ; à défaut, les PDF et les photos conviennent.
-							</p>
-							<div className="flex flex-wrap items-end gap-cladd-3xs">
-								<label className="flex min-w-64 flex-1 flex-col gap-1">
-									<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-										Nom du dépôt
-									</span>
-									<Input value={libelle} onChange={setLibelle} name="libelle" />
-								</label>
+					<ZoneDepot
+						accept={ACCEPT_HTML}
+						desactive={envoiEnCours || enLecture}
+						onFichiers={deposer}
+					>
+						{envoiEnCours && progression ? (
+							<>
+								<LoaderCircleIcon size={24} className="animate-spin" />
+								<span className="text-cladd-xs font-medium">Envoi de {progression.courant}</span>
+								<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">
+									{progression.fait} sur {progression.total}
+								</span>
+							</>
+						) : enLecture ? (
+							<>
+								<LoaderCircleIcon size={24} className="animate-spin" />
+								<span className="text-cladd-xs font-medium">Nous lisons vos factures.</span>
+								<span className="text-cladd-2xs text-cladd-fg-soft">
+									Vous pourrez en ajouter dans un instant. Cette page se met à jour toute seule.
+								</span>
+							</>
+						) : (
+							<>
+								<UploadIcon size={24} className="text-cladd-fg-softer" />
+								<span className="text-cladd-xs font-medium">
+									Glissez vos factures ici, ou cliquez pour les choisir
+								</span>
+								<span className="text-cladd-2xs text-cladd-fg-soft">
+									Un export comptable en CSV va le plus vite. Les PDF et les photos conviennent
+									aussi.
+								</span>
+							</>
+						)}
+					</ZoneDepot>
+
+					{erreur ? (
+						<Bandeau ton="alerte" icone={<TriangleAlertIcon size={16} />}>
+							{erreur}
+						</Bandeau>
+					) : null}
+
+					{refus.map((r) => (
+						<Bandeau key={r.fichier} ton="alerte" icone={<TriangleAlertIcon size={16} />}>
+							<span className="font-medium">{r.fichier}</span> — {r.raison}
+						</Bandeau>
+					))}
+
+					{enAttente.length > 0 ? (
+						<Bandeau icone={<LoaderCircleIcon size={16} className="animate-spin" />}>
+							{enAttente.length} fichier{pluriel(enAttente.length)} en cours de lecture. Vous
+							pouvez quitter cette page, le travail continue.
+						</Bandeau>
+					) : null}
+
+					{aConfirmer && courant && courant.labelsPendingReview > 0 ? (
+						<Bandeau
+							icone={<CheckCheckIcon size={16} />}
+							action={
+								<Button as={Link} to="/app/confirmer" color="brand" variant="solid-fill">
+									Confirmer
+								</Button>
+							}
+						>
+							{courant.labelsPendingReview} produit{pluriel(courant.labelsPendingReview)} attend
+							{courant.labelsPendingReview > 1 ? 'ent' : ''} votre confirmation. C&rsquo;est la
+							dernière étape avant vos taux.
+						</Bandeau>
+					) : null}
+
+					{suivi?.diagnosticId ? (
+						<Bandeau
+							icone={<FileCheckIcon size={16} />}
+							action={
 								<Button
 									color="brand"
 									variant="solid-fill"
-									loading={ouvertureEnCours}
-									onClick={() => void ouvrirLot(true)}
-								>
-									Ouvrir le dépôt
-								</Button>
-							</div>
-						</div>
-					) : (
-						<>
-							<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
-								<div>
-									<h2 className="text-cladd-sm font-semibold">{ouvert.label}</h2>
-									<p className="text-cladd-2xs text-cladd-fg-softer">
-										{STATUTS[ouvert.status] ?? ouvert.status} ·{' '}
-										<span className="tabular-nums">{ouvert.linesTotal}</span> ligne
-										{pluriel(ouvert.linesTotal)} extraite{pluriel(ouvert.linesTotal)}
-									</p>
-								</div>
-								{accepteDesFichiers ? (
-									<Button
-										color="brand"
-										variant="solid-fill"
-										loading={envoiEnCours}
-										onClick={() => champFichiers.current?.click()}
-									>
-										<UploadIcon />
-										Ajouter des factures
-									</Button>
-								) : (
-									<Button
-										variant="gradient"
-										loading={ouvertureEnCours}
-										onClick={() => void ouvrirLot()}
-									>
-										<FolderPlusIcon />
-										Ouvrir un nouveau dépôt
-									</Button>
-								)}
-								<input
-									ref={champFichiers}
-									type="file"
-									multiple
-									accept={ACCEPT_HTML}
-									onChange={(e) => void deposer(e.target.files)}
-									className="sr-only"
-								/>
-							</div>
-
-							{/*
-							  Pourquoi ce dépôt n'accepte plus de fichiers. Le backend le
-							  refuse à partir de la classification, et le taire laissait
-							  l'utilisateur devant un écran qui ne réagit pas.
-							*/}
-							{!accepteDesFichiers ? (
-								<Bandeau icone={<LockIcon size={16} />}>
-									Ce dépôt est passé au traitement : il n&rsquo;accepte plus de nouveaux
-									fichiers, sinon la classification en cours repartirait de travers. Ouvrez
-									un nouveau dépôt pour la suite de vos factures.
-								</Bandeau>
-							) : null}
-
-							{erreurEnvoi ? (
-								<Bandeau ton="alerte" icone={<TriangleAlertIcon size={16} />}>
-									{erreurEnvoi}
-								</Bandeau>
-							) : null}
-
-							{refus.length > 0
-								? refus.map((r) => (
-										<Bandeau key={r.fichier} ton="alerte" icone={<TriangleAlertIcon size={16} />}>
-											<span className="font-medium">{r.fichier}</span> — {r.raison}
-										</Bandeau>
-									))
-								: null}
-
-							{enAttente.length > 0 ? (
-								<Bandeau icone={<LoaderCircleIcon size={16} className="animate-spin" />}>
-									{enAttente.length} fichier{pluriel(enAttente.length)} en cours de lecture.
-									Cette page se met à jour toute seule, vous pouvez la quitter.
-								</Bandeau>
-							) : null}
-
-							{/*
-						  Le diagnostic ne se produit qu'une fois la classification close
-						  et la file vidée : c'est la garantie que le rapport figé repose
-						  sur des décisions prises, pas sur des hypothèses en attente.
-						*/}
-						{suivi?.diagnosticId ? (
-							<Bandeau
-								icone={<FileCheckIcon size={16} />}
-								action={
-									<Button
-										color="brand"
-										variant="solid-fill"
-										onClick={() =>
-											void navigate({
-												to: '/app/diagnostic/$id',
-												params: { id: suivi.diagnosticId as string }
-											})
-										}
-									>
-										Voir le diagnostic
-									</Button>
-								}
-							>
-								Le diagnostic de ce dépôt est produit et figé à sa date.
-							</Bandeau>
-						) : ouvert.status === 'READY' ? (
-							<Bandeau
-								icone={<FileCheckIcon size={16} />}
-								action={
-									<Button
-										color="brand"
-										variant="solid-fill"
-										loading={productionEnCours}
-										onClick={() => void produire()}
-									>
-										Produire le diagnostic
-									</Button>
-								}
-							>
-								Tout est classé et confirmé. Vous pouvez figer la mesure.
-							</Bandeau>
-						) : null}
-
-						{ouvert.status === 'REVIEW' && ouvert.labelsPendingReview > 0 ? (
-								<Bandeau
-									icone={<CheckCheckIcon size={16} />}
-									action={
-										<Button as={Link} to="/app/confirmer" color="brand" variant="solid-fill">
-											Confirmer
-										</Button>
+									onClick={() =>
+										void navigate({
+											to: '/app/diagnostic/$id',
+											params: { id: suivi.diagnosticId as string }
+										})
 									}
 								>
-									{ouvert.labelsPendingReview} produit{pluriel(ouvert.labelsPendingReview)}{' '}
-									attend{ouvert.labelsPendingReview > 1 ? 'ent' : ''} votre confirmation.
-								</Bandeau>
-							) : null}
+									Voir le diagnostic
+								</Button>
+							}
+						>
+							Votre mesure est figée à sa date.
+						</Bandeau>
+					) : pret ? (
+						<Bandeau
+							icone={<FileCheckIcon size={16} />}
+							action={
+								<Button
+									color="brand"
+									variant="solid-fill"
+									loading={productionEnCours}
+									onClick={() => void produire()}
+								>
+									Produire le diagnostic
+								</Button>
+							}
+						>
+							Tout est classé et confirmé. Vous pouvez figer la mesure.
+						</Bandeau>
+					) : null}
 
-							{documents.length > 0 ? (
-								<Tableau legende="Documents déposés et état de leur lecture">
-									<TableauEntete>
-										<TableauTitre>Fichier</TableauTitre>
-										<TableauTitre>État</TableauTitre>
-										<TableauTitre aDroite>Lignes</TableauTitre>
-									</TableauEntete>
-									<TableauCorps>
-										{documents.map((d) => (
-											<TableauLigne key={d.documentId}>
-												<TableauCellule>
-													<span className="block max-w-xs truncate">{d.filename}</span>
-													{d.extractionError ? (
-														<span className="block max-w-md text-cladd-3xs text-seuil-manque">
-															{d.extractionError}
-														</span>
-													) : null}
-												</TableauCellule>
-												<TableauCellule>
-													{d.extractionStatus === 'DONE' ? (
-														<span className="flex items-center gap-1 text-seuil-atteint">
-															<CheckIcon size={14} /> Lu
-														</span>
-													) : d.extractionStatus === 'FAILED' ? (
-														<span className="flex items-center gap-1 text-seuil-manque">
-															<TriangleAlertIcon size={14} /> Illisible
-														</span>
-													) : (
-														<span className="flex items-center gap-1 text-cladd-fg-soft">
-															<LoaderCircleIcon size={14} className="animate-spin" /> Lecture
-														</span>
-													)}
-												</TableauCellule>
-												<TableauCellule aDroite chiffre>
-													{d.linesCount}
-												</TableauCellule>
-											</TableauLigne>
-										))}
-									</TableauCorps>
-								</Tableau>
-							) : (
-								<p className="text-cladd-xs text-cladd-fg-soft">
-									Aucun fichier pour l&rsquo;instant. Ajoutez vos factures ci-dessus.
-								</p>
-							)}
-
-							<p className="text-cladd-2xs text-cladd-fg-softer tabular-nums">
-								{lus.length} lu{pluriel(lus.length)} · {enAttente.length} en cours ·{' '}
-								{enEchec.length} en échec
-							</p>
-						</>
-					)}
-
-					{lots && lots.length > 0 ? (
-						<section className="flex flex-col gap-cladd-3xs border-t border-cladd-outline pt-cladd-xs">
-							<h2 className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-								Vos dépôts
-							</h2>
-							<Tableau legende="Historique des dépôts de factures">
-								<TableauEntete>
-									<TableauTitre>Dépôt</TableauTitre>
-									<TableauTitre>Période</TableauTitre>
-									<TableauTitre>État</TableauTitre>
-									<TableauTitre aDroite>Fichiers</TableauTitre>
-									<TableauTitre aDroite>Lignes</TableauTitre>
-								</TableauEntete>
-								<TableauCorps>
-									{lots.map((l) => (
-										<TableauLigne key={l.batchId}>
-											<TableauCellule>{l.label}</TableauCellule>
-											<TableauCellule>
-												{l.periodStart} → {l.periodEnd}
-											</TableauCellule>
-											<TableauCellule>{STATUTS[l.status] ?? l.status}</TableauCellule>
-											<TableauCellule aDroite chiffre>
-												{l.documentsTotal}
-											</TableauCellule>
-											<TableauCellule aDroite chiffre>
-												{l.linesTotal}
-											</TableauCellule>
-										</TableauLigne>
-									))}
-								</TableauCorps>
-							</Tableau>
-						</section>
+					{documents.length > 0 ? (
+						<Tableau legende="Factures déposées et état de leur lecture">
+							<TableauEntete>
+								<TableauTitre>Fichier</TableauTitre>
+								<TableauTitre>État</TableauTitre>
+								<TableauTitre aDroite>Lignes</TableauTitre>
+							</TableauEntete>
+							<TableauCorps>
+								{documents.map((d) => (
+									<TableauLigne key={d.documentId}>
+										<TableauCellule>
+											<span className="block max-w-xs truncate">{d.filename}</span>
+											{d.extractionError ? (
+												<span className="block max-w-md text-cladd-3xs text-seuil-manque">
+													{d.extractionError}
+												</span>
+											) : null}
+										</TableauCellule>
+										<TableauCellule>
+											{d.extractionStatus === 'DONE' ? (
+												<span className="flex items-center gap-1 text-seuil-atteint">
+													<CheckIcon size={14} /> Lu
+												</span>
+											) : d.extractionStatus === 'FAILED' ? (
+												<span className="flex items-center gap-1 text-seuil-manque">
+													<TriangleAlertIcon size={14} /> Illisible
+												</span>
+											) : (
+												<span className="flex items-center gap-1 text-cladd-fg-soft">
+													<LoaderCircleIcon size={14} className="animate-spin" /> Lecture
+												</span>
+											)}
+										</TableauCellule>
+										<TableauCellule aDroite chiffre>
+											{d.linesCount}
+										</TableauCellule>
+									</TableauLigne>
+								))}
+							</TableauCorps>
+						</Tableau>
 					) : null}
 				</div>
 			</PageBody>

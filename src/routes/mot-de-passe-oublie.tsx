@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Button, Input } from '@cladd-ui/react';
+import { Button, Input, SectionTitle } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
 
 export const Route = createFileRoute('/mot-de-passe-oublie')({ component: MotDePasseOublie });
@@ -55,9 +55,7 @@ function MotDePasseOublie() {
 				</div>
 
 				<label className="flex flex-col gap-1">
-					<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-						Adresse e-mail
-					</span>
+					<SectionTitle>Adresse e-mail</SectionTitle>
 					<Input type="email" value={email} onChange={setEmail} name="email" required />
 				</label>
 

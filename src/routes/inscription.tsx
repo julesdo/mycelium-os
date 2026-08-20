@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { Button, Input } from '@cladd-ui/react';
+import { Button, Input, SectionTitle } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
 
 export const Route = createFileRoute('/inscription')({ component: Inscription });
@@ -48,23 +48,17 @@ function Inscription() {
 				</div>
 
 				<label className="flex flex-col gap-1">
-					<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-						Votre nom
-					</span>
+					<SectionTitle>Votre nom</SectionTitle>
 					<Input value={nom} onChange={setNom} name="name" required />
 				</label>
 
 				<label className="flex flex-col gap-1">
-					<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-						Adresse e-mail
-					</span>
+					<SectionTitle>Adresse e-mail</SectionTitle>
 					<Input type="email" value={email} onChange={setEmail} name="email" required />
 				</label>
 
 				<label className="flex flex-col gap-1">
-					<span className="text-cladd-3xs font-semibold tracking-wide text-cladd-fg-softer uppercase">
-						Mot de passe
-					</span>
+					<SectionTitle>Mot de passe</SectionTitle>
 					<Input
 						type="password"
 						value={motDePasse}
