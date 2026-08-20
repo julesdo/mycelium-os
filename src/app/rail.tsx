@@ -1,4 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState, CatchBoundary } from '@tanstack/react-router';
 import { Button } from '@cladd-ui/react';
 import {
 	CameraIcon,
@@ -10,6 +10,7 @@ import {
 	SettingsIcon
 } from 'lucide-react';
 import { cn } from '../ui/cn';
+import { LogoMycelium } from '../ui/logo';
 import { SelecteurEtablissement } from './selecteur-etablissement';
 
 const ENTREES = [
@@ -40,7 +41,41 @@ export function Rail({ deplie, onBasculer }: { deplie: boolean; onBasculer: () =
 					deplie ? 'w-rail-deplie' : 'w-rail'
 				)}
 			>
-				<SelecteurEtablissement deplie={deplie} />
+				{/*
+				  La marque, en tête du rail.
+				  `cladd-color-brand` sur le conteneur : c'est cette classe qui fait
+				  résoudre `--cladd-primary` au bleu d'encre. Sans elle, le logo
+				  hériterait du gris des surfaces neutres.
+				*/}
+				<Link
+					to="/app"
+					aria-label="Mycelium, retour au tableau de bord"
+					className={cn(
+						'cladd-color-brand flex min-h-cladd-lg items-center gap-cladd-3xs text-cladd-primary',
+						deplie ? 'px-cladd-3xs' : 'justify-center'
+					)}
+				>
+					<LogoMycelium className="h-5 w-auto shrink-0" />
+					{deplie ? (
+						<span className="text-cladd-sm font-semibold tracking-tight text-cladd-fg">
+							Mycelium
+						</span>
+					) : null}
+				</Link>
+
+				{/*
+				  Le sélecteur est isolé derrière sa propre frontière d'erreur.
+				  Il interroge Convex, et cette requête lève quand la session
+				  manque — au chargement, après une expiration, ou dans la salle
+				  d'exposition qui rend la coquille sans authentification. Sans
+				  cette isolation, un composant FACULTATIF (il ne s'affiche qu'aux
+				  gérants multi-sites) emporte l'application entière et renvoie le
+				  gérant sur un écran d'erreur. En cas d'échec il disparaît, et la
+				  navigation continue de fonctionner.
+				*/}
+				<CatchBoundary getResetKey={() => 'selecteur'} errorComponent={() => null}>
+					<SelecteurEtablissement deplie={deplie} />
+				</CatchBoundary>
 
 				<Button
 					as={Link}

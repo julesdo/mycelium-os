@@ -11,6 +11,7 @@
  */
 
 export { cn } from './cn';
+export { LogoMycelium } from './logo';
 export { Page, PageHeader, PageBody } from './page';
 export { TwoPane } from './two-pane';
 export { EmptyState } from './empty-state';
