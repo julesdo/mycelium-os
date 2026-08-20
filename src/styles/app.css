@@ -15,6 +15,14 @@
 @source '../screens';
 @source '../routes';
 
+/* Cladd écrit son apparence en classes Tailwind à l'intérieur de ses propres
+ * composants compilés, qu'il déclare via un `@source "./"` dans son cladd.css.
+ * On le redéclare ici explicitement : la découverte automatique de Tailwind
+ * v4 ignore `node_modules`, et rien ne garantit que la résolution relative
+ * depuis un paquet installé survive à une montée de version. Redondant
+ * aujourd'hui, mais le coût d'oubli est un produit entier sans couleurs. */
+@source '../../node_modules/@cladd-ui/react';
+
 html,
 body,
 #root {

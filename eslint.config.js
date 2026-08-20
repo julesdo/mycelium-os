@@ -121,8 +121,15 @@ export default defineConfig(
 			'@typescript-eslint/no-unsafe-return': 'off',
 			'@typescript-eslint/require-await': 'off',
 			'@typescript-eslint/prefer-promise-reject-errors': 'off',
-			'@typescript-eslint/await-thenable': 'off'
+			'@typescript-eslint/await-thenable': 'off',
+			// Les handlers Convex et les types generes en font un usage legitime.
+			'@typescript-eslint/no-explicit-any': 'off'
 		}
+	},
+	// La config Vite manipule des types de plugins heterogenes.
+	{
+		files: ['vite.config.ts'],
+		rules: { '@typescript-eslint/no-explicit-any': 'off' }
 	},
 	...convexPlugin.configs.recommended.map((config) => ({
 		...config,

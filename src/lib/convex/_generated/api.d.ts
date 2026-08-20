@@ -51,6 +51,7 @@ import type * as emails_helpers from "../emails/helpers.js";
 import type * as emails_resend from "../emails/resend.js";
 import type * as emails_send from "../emails/send.js";
 import type * as emails_templates from "../emails/templates.js";
+import type * as emails_types from "../emails/types.js";
 import type * as env from "../env.js";
 import type * as exports_cleanup from "../exports/cleanup.js";
 import type * as files_attachmentText from "../files/attachmentText.js";
@@ -122,6 +123,7 @@ declare const fullApi: ApiFromModules<{
   "emails/resend": typeof emails_resend;
   "emails/send": typeof emails_send;
   "emails/templates": typeof emails_templates;
+  "emails/types": typeof emails_types;
   env: typeof env;
   "exports/cleanup": typeof exports_cleanup;
   "files/attachmentText": typeof files_attachmentText;

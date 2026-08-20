@@ -322,10 +322,9 @@ export default defineConfig(async ({ mode }) => {
 	plugins.push(
 		varlockVitePlugin(mode === 'production' ? { ssrInjectMode: 'resolved-env' } : {}),
 		tailwindcss(),
-		// L ordre compte : tanstackStart genere l arbre de routes, react() compile
-		// le JSX. customViteReactPlugin evite que Start embarque son propre
+		// L'ordre compte : tanstackStart genere l'arbre de routes, react() compile le JSX.
 		// plugin React en double.
-		tanstackStart({ customViteReactPlugin: true }),
+		tanstackStart(),
 		react(),
 		// Bundle analyzer
 		...(process.env.ANALYZE === 'true'
@@ -343,6 +342,23 @@ export default defineConfig(async ({ mode }) => {
 
 	return {
 		plugins: plugins as any,
+		// PUBLIC_CONVEX_URL_INLINE
+		// Les deux URL Convex sont inlinees a la compilation.
+		//
+		// L'ancien frontend les lisait via `$env/static/public`, un canal propre a
+		// SvelteKit. Varlock, lui, les depose dans `process.env` au moment ou cette
+		// config s'evalue (voir plus haut : l'orchestration Convex locale les
+		// reecrit avec les ports calcules pour la branche). Sans ce `define`, le
+		// bundle client n'a aucun moyen de les voir, et le rendu serveur echoue au
+		// chargement du module.
+		define: {
+			'import.meta.env.PUBLIC_CONVEX_URL': JSON.stringify(
+				process.env.PUBLIC_CONVEX_URL ?? loadedEnv.PUBLIC_CONVEX_URL ?? ''
+			),
+			'import.meta.env.PUBLIC_CONVEX_SITE_URL': JSON.stringify(
+				process.env.PUBLIC_CONVEX_SITE_URL ?? loadedEnv.PUBLIC_CONVEX_SITE_URL ?? ''
+			)
+		},
 		test: {
 			exclude: [
 				'e2e/**',

@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
+import { usePreference } from './use-preference';
 
 export type Theme = 'light' | 'dark';
 
 const CLE = 'mycelium-theme';
+const THEMES = ['light', 'dark'] as const;
 
 /**
  * Clair par défaut, sombre disponible, préférence persistée.
@@ -13,26 +15,16 @@ const CLE = 'mycelium-theme';
  * clair par défaut est un choix de contexte d'usage, pas de goût.
  */
 export function useTheme() {
-	const [theme, setThemeState] = useState<Theme>('light');
+	const [theme, setTheme] = usePreference<Theme>(CLE, 'light', THEMES);
 
-	// La lecture se fait après le montage : `localStorage` n'existe pas au
-	// rendu serveur, et lire une préférence pendant l'hydratation ferait
-	// diverger le HTML du serveur de celui du client.
-	useEffect(() => {
-		const stocke = localStorage.getItem(CLE);
-		if (stocke === 'light' || stocke === 'dark') setThemeState(stocke);
-	}, []);
-
+	// Cladd sélectionne ses palettes sur les classes `.light` / `.dark` de la
+	// racine du document. Cet effet ne fait que refléter l'état, il n'en crée
+	// aucun : il ne déclenche donc pas de rendu.
 	useEffect(() => {
 		const racine = document.documentElement;
 		racine.classList.toggle('dark', theme === 'dark');
 		racine.classList.toggle('light', theme === 'light');
 	}, [theme]);
-
-	const setTheme = useCallback((t: Theme) => {
-		localStorage.setItem(CLE, t);
-		setThemeState(t);
-	}, []);
 
 	const basculer = useCallback(() => {
 		setTheme(theme === 'dark' ? 'light' : 'dark');

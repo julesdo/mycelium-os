@@ -20,7 +20,7 @@ function Connexion() {
 		setEnCours(false);
 		if (error) {
 			// Message unique et neutre : distinguer « compte inconnu » de « mot de
-			// passe faux » dit à un inconnu si une adresse est cliente chez nous.
+			// passe faux » révélerait à un inconnu si une adresse est cliente.
 			setErreur("L'adresse ou le mot de passe ne correspond pas.");
 			return;
 		}
@@ -39,22 +39,16 @@ function Connexion() {
 
 				<label className="flex flex-col gap-1">
 					<span className="text-cladd-2xs font-medium text-cladd-fg-soft">Adresse e-mail</span>
-					<Input
-						type="email"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						autoComplete="email"
-						required
-					/>
+					<Input type="email" name="email" value={email} onChange={setEmail} required />
 				</label>
 
 				<label className="flex flex-col gap-1">
 					<span className="text-cladd-2xs font-medium text-cladd-fg-soft">Mot de passe</span>
 					<Input
 						type="password"
+						name="password"
 						value={motDePasse}
-						onChange={(e) => setMotDePasse(e.target.value)}
-						autoComplete="current-password"
+						onChange={setMotDePasse}
 						required
 					/>
 				</label>

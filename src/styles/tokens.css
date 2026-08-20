@@ -55,6 +55,14 @@
 	--cladd-dark-primary-lightness: 0.88;
 	--cladd-dark-primary-chroma: 0.13;
 
+	/* LE RAIL — 72px replié, 240px déplié.
+	 * Ces deux largeurs ne sont pas sur l'échelle de Cladd, et c'est normal :
+	 * elles ne mesurent pas un contrôle mais une zone de mise en page. Elles
+	 * vivent ici plutôt qu'en dur dans le composant, pour que la géométrie de
+	 * l'application soit décidée en un seul endroit relu comme du code. */
+	--spacing-rail: 72px;
+	--spacing-rail-deplie: 240px;
+
 	/* SEUILS — réservés, jamais décoratifs.
 	 * Ces trois couleurs ne signifient qu'une chose dans ce produit : au-dessus
 	 * du seuil, tout près, en dessous. Aucun élément décoratif n'a le droit de
@@ -65,8 +73,20 @@
 	--color-seuil-manque: oklch(0.55 0.19 25);
 }
 
-/* La teinte de l'accent. Cladd en dérive toute la rampe. */
-:root,
+/* L'accent de marque.
+ *
+ * Cladd n'expose pas une teinte mais une couleur complète, `--cladd-theme`,
+ * dont il ne retient que la composante de teinte (`h`) : la clarté et la
+ * chroma viennent des variables ci-dessus. Autrement dit, seul l'angle de ce
+ * bleu compte, pas sa luminosité.
+ *
+ * Cladd livre `brand` en #388aff, un azur vif. On le remplace par un bleu
+ * d'encre, plus sourd et plus institutionnel, qui convient à un outil
+ * réglementaire et se distingue nettement des trois couleurs de seuil.
+ *
+ * L'accent n'apparaît que sur les éléments portant `cladd-color-brand`, que
+ * `CladdProvider accentColor="brand"` pose sur les contrôles interactifs. Les
+ * surfaces, elles, restent volontairement achromatiques. */
 .cladd-color-brand {
-	--cladd-hue: 255;
+	--cladd-theme: #1d3fa0;
 }

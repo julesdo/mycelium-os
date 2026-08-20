@@ -18,9 +18,12 @@ const DEFAUTS_TACTILES = {
 	Button: { size: 'lg' },
 	Input: { size: 'lg' },
 	Select: { size: 'lg' },
-	Checkbox: { size: 'lg' },
-	Switch: { size: 'lg' },
-	NumberField: { size: 'lg' }
+	NumberField: { size: 'lg' },
+	// Cladd plafonne volontairement ces deux-la : CheckboxSize s'arrete a 'md'
+	// et SwitchSize aussi. On prend leur maximum. La cible tactile de 48px est
+	// alors portee par le label cliquable qui les entoure, pas par la case.
+	Checkbox: { size: 'md' },
+	Switch: { size: 'md' }
 } as const;
 
 export function Providers({ children }: { children: ReactNode }) {

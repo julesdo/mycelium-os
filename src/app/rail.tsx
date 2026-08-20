@@ -33,7 +33,7 @@ export function Rail({ deplie, onBasculer }: { deplie: boolean; onBasculer: () =
 				aria-label="Navigation principale"
 				className={cn(
 					'hidden shrink-0 flex-col gap-cladd-3xs border-r border-cladd-outline p-cladd-3xs md:flex',
-					deplie ? 'w-60' : 'w-[72px]'
+					deplie ? 'w-rail-deplie' : 'w-rail'
 				)}
 			>
 				<Button

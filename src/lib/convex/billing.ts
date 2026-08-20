@@ -1,5 +1,5 @@
 import { v, ConvexError } from 'convex/values';
-import { internalQuery, mutation } from './_generated/server';
+import { internalQuery } from './_generated/server';
 import { authedMutation, authedQuery } from './functions';
 import type { Doc } from './_generated/dataModel';
 
