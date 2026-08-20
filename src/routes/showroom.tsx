@@ -21,6 +21,12 @@ import {
 	FAMILLES
 } from '../ui';
 import { ListeAConfirmer, type LibelleAConfirmer } from '../screens/confirmer/liste';
+import { Attestations, type Attestation } from '../screens/diagnostic/attestations';
+import {
+	MENTION_RESPONSABILITE,
+	MENTION_FIGE,
+	MENTION_OBLIGATION_DE_MOYENS
+} from '../lib/convex/egalim/mentions';
 import { PreuveEtDecision } from '../screens/confirmer/preuve';
 
 /**
@@ -113,7 +119,26 @@ const FAMILLES_DEMO = [
 	{ family: 'POISSON', totalHT: 10800, durableHT: 6500, bioHT: 0 }
 ];
 
-const ECRANS = ['pilotage', 'confirmer', 'vide'] as const;
+const ATTESTATIONS: Attestation[] = [
+	{
+		attestationId: 'a1',
+		supplierName: 'Grossiste Alpha',
+		amountAtStake: 18400,
+		pointsRecuperables: 5.2,
+		produits: ['CAROTTE RONDELLE BIO', 'LENTILLE VERTE BIO', 'HUILE DE COLZA BIO'],
+		status: 'DRAFT'
+	},
+	{
+		attestationId: 'a2',
+		supplierName: 'Maison Bertin',
+		amountAtStake: 6200,
+		pointsRecuperables: 1.8,
+		produits: ['POULET LABEL ROUGE'],
+		status: 'SENT'
+	}
+];
+
+const ECRANS = ['pilotage', 'confirmer', 'diagnostic', 'vide'] as const;
 type Ecran = (typeof ECRANS)[number];
 
 function Showroom() {
@@ -134,6 +159,7 @@ function Showroom() {
 			<div className="min-h-0 flex-1">
 				{ecran === 'pilotage' ? <DemoPilotage /> : null}
 				{ecran === 'vide' ? <DemoVide /> : null}
+				{ecran === 'diagnostic' ? <DemoDiagnostic /> : null}
 				{ecran === 'confirmer' ? (
 					<Page>
 						<PageHeader titre="À confirmer" sousTitre={`4 produits, ${euros(25781.7)} en jeu.`} />
@@ -249,6 +275,40 @@ function DemoPilotage() {
 							</TableauCorps>
 						</Tableau>
 					</section>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
+function DemoDiagnostic() {
+	return (
+		<Page>
+			<PageHeader
+				titre="Diagnostic EGalim 2026"
+				sousTitre="Restaurant du Parc · mesuré le 14 mars 2027"
+			/>
+			<PageBody>
+				<div className="flex flex-col gap-cladd-xs">
+					<div className="grid gap-cladd-xs sm:grid-cols-2 lg:grid-cols-3">
+						<TauxEGalim titre="Durable et de qualité" mesure={0.39} seuil={0.5} ecartEuros={19800} />
+						<TauxEGalim titre="Biologique" mesure={0.21} seuil={0.2} ecartEuros={0} />
+						<TauxEGalim titre="Viande et poisson" mesure={0.47} seuil={0.6} ecartEuros={7900} />
+					</div>
+
+					<Attestations
+						attestations={ATTESTATIONS}
+						nomEtablissement="Restaurant du Parc"
+						periodeDebut="2026-01-01"
+						periodeFin="2026-12-31"
+						onChangerStatut={() => undefined}
+					/>
+
+					<footer className="flex flex-col gap-1 border-t border-cladd-outline pt-cladd-xs text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						<p>{MENTION_OBLIGATION_DE_MOYENS}</p>
+						<p>{MENTION_RESPONSABILITE}</p>
+						<p>{MENTION_FIGE('14 mars 2027')}</p>
+					</footer>
 				</div>
 			</PageBody>
 		</Page>

@@ -17,6 +17,7 @@ import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppConfirmerRouteImport } from './routes/app/confirmer'
 import { Route as AppFacturesRouteImport } from './routes/app/factures'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AppDiagnosticIdRouteImport } from './routes/app/diagnostic.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppDiagnosticIdRoute = AppDiagnosticIdRouteImport.update({
+  id: '/diagnostic/$id',
+  path: '/diagnostic/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/app/factures': typeof AppFacturesRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/app/factures': typeof AppFacturesRoute
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/app/factures': typeof AppFacturesRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/app/factures'
     | '/app/'
     | '/api/auth/$'
+    | '/app/diagnostic/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/app/factures'
     | '/app'
     | '/api/auth/$'
+    | '/app/diagnostic/$id'
   id:
     | '__root__'
     | '/'
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/app/factures'
     | '/app/'
     | '/api/auth/$'
+    | '/app/diagnostic/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -187,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/diagnostic/$id': {
+      id: '/app/diagnostic/$id'
+      path: '/diagnostic/$id'
+      fullPath: '/app/diagnostic/$id'
+      preLoaderRoute: typeof AppDiagnosticIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -194,12 +213,14 @@ interface AppRouteRouteChildren {
   AppConfirmerRoute: typeof AppConfirmerRoute
   AppFacturesRoute: typeof AppFacturesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppDiagnosticIdRoute: typeof AppDiagnosticIdRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppConfirmerRoute: AppConfirmerRoute,
   AppFacturesRoute: AppFacturesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppDiagnosticIdRoute: AppDiagnosticIdRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
