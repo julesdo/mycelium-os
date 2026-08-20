@@ -1,37 +1,77 @@
-# Business plan — Opérateur de la conformité EGalim en restauration collective
+# Business plan — Le logiciel de conformité EGalim en restauration collective
 
-**Nom de travail : Mycelium (à renommer, la marque « Fleet » ne colle plus)**
-**Révision : 15 août 2026 · Fondateur : Jules · Statut : bootstrap, budget < 1 000 €**
+**Nom : Mycelium**
+**Révision : 20 août 2026 · Fondateur : Jules · Statut : bootstrap, budget < 1 000 €**
 
-> **Révision majeure du 15 août 2026.** La stratégie passe d'un modèle « opérateur du local »
-> lancé d'un bloc à une **échelle de valeur progressive en 6 étages**, où chaque étage se vend
-> seul, finance le suivant et dé-risque celui d'après. On ne démarre plus par les denrées et la
-> logistique : on démarre par **le papier**.
+> **Révision majeure du 20 août 2026.** La stratégie abandonne le modèle « opérateur »
+> (sourcing, coordination, logistique) et devient **un éditeur de logiciel**. Les étages 3, 4
+> et 5 de l'échelle précédente — pilote substitution, abonnement opérateur, orchestration
+> logistique — **n'ont plus de porteur** et sont supprimés du plan. Ce qui reste est ce qui
+> se mesure, se prouve et s'automatise : **le papier**.
+>
+> Le renversement porte sur une phrase. L'ancien plan visait « 20 % logiciel, 80 % humain ».
+> Le nouveau vise l'inverse : **le logiciel fait le travail, le gérant confirme ce qui engage
+> sa responsabilité.**
 
 ---
 
 ## La thèse en 5 lignes
 
-La loi EGalim oblige **toutes** les cantines (publiques depuis 2022, **privées depuis 2024**) à servir ≥50 % de produits durables dont ≥20 % bio, et à le déclarer chaque année. **La grande majorité n'y arrive pas, et surtout : la plupart ne connaissent même pas leur chiffre.** On entre par le **diagnostic** (on calcule leur ratio réel à partir de leurs factures, on chiffre l'écart), puis on **comble l'écart** par du sourcing local, puis seulement on orchestre la logistique. On vend un **résultat mesuré**, pas un SaaS, et pas une promesse.
+La loi EGalim oblige **toutes** les cantines (publiques depuis 2022, **privées depuis 2024**) à
+servir ≥ 50 % de produits durables dont ≥ 20 % bio, et à le déclarer chaque année avant le
+31 mars. **La grande majorité n'y arrive pas, et surtout : la plupart ne connaissent même pas
+leur chiffre**, parce qu'il se calcule en valeur d'achat, ligne à ligne, sur douze mois de
+factures. On vend **un abonnement à un logiciel qui mesure ce chiffre, le suit et le prouve**.
+On ne vend ni denrées, ni temps humain.
 
 ---
 
 ## Le changement de stratégie en une image
 
-**Avant (plan du 27 juillet) :** vendre un abonnement 600 €/mois « conformité garantie + sourcing + livraison » à une cantine qui ne nous connaît pas, dès le mois 4. Un seul gros « oui » à obtenir, qui embarque d'un coup le sourcing, la logistique, la responsabilité sanitaire et la promesse de résultat.
+**Avant (plan du 15 août) :** une échelle de valeur en six étages, où le papier finançait le
+sourcing, qui finançait la logistique. Le revenu principal venait d'un abonnement opérateur à
+650 €/mois, qui consommait une heure de coordination par semaine et par client. **Un fondateur
+seul saturait à 8 ou 10 clients.**
 
-**Maintenant :** une **suite de petits « oui »**, chacun autonome et rentable.
+**Maintenant :** un produit, un abonnement, une porte d'entrée. Le coût de livraison par client
+tend vers zéro, et **il n'y a plus de plafond de délivrance**.
 
-| Étage | Ce qu'on vend | Prix | Risque porté | Fenêtre |
-|---|---|---|---|---|
-| **0** | **Diagnostic EGalim** (leurs factures → leur ratio réel → l'écart chiffré) | 690–1 900 € one-shot | **Nul** (aucune denrée) | Dès sept. 2026 |
-| **1** | **Déclaration assistée** sur « ma cantine » | 390–690 € | Nul | Janv.–mars |
-| **2** | **Abonnement Conformité** (preuve mensuelle + veille + déclaration) | 190–390 €/mois | Nul | Dès nov. 2026 |
-| **3** | **Pilote Substitution** (2 familles, 1 producteur qui livre déjà) | Gratuit / 500 € | Faible | Dès nov. 2026 |
-| **4** | **Abonnement Opérateur** (sourcing multi-producteurs + preuve) | 450–900 €/mois + commission | Moyen | Dès janv. 2027 |
-| **5** | **Orchestration logistique 3PL** | Marge d'orchestration | Élevé, **sous condition** | Si densité (M15+) |
+| | Ce qu'on vend | Prix | Ce qu'on porte comme risque |
+|---|---|---|---|
+| **La porte d'entrée** | **Le premier diagnostic** : 12 mois de factures, les trois taux, l'écart chiffré en euros | 690 / 1 190 / 1 900 € one-shot | Aucun |
+| **Le produit** | **L'abonnement au logiciel** : mesure continue, file de confirmation, certificats, courriers de demande d'attestation, télédéclaration incluse | 190 / 290 / 390 €/mois | Aucun |
 
-Chaque étage a un **déclencheur explicite** et un **critère d'abandon**. On ne monte pas d'un étage tant que le précédent ne tourne pas. Détail : [03](03-modele-offre-pricing.md) et [07](07-objectifs-court-long-terme.md).
+En option, pour un non-abonné pendant la campagne de janvier à mars : **la télédéclaration
+seule, 290 €**. C'est une porte d'entrée saisonnière, pas une ligne de métier.
+
+Détail et économie unitaire : [03](03-modele-offre-pricing.md).
+
+---
+
+## Ce que le changement d'axe déplace vraiment
+
+C'est le point le plus important de cette révision, et il n'est pas comptable.
+
+**Le plafond change de nature.** Dans le modèle opérateur, la contrainte était la
+**livraison** : chaque client coûtait du temps humain récurrent, donc la croissance
+supposait d'embaucher. Dans le modèle logiciel, livrer un client de plus ne coûte presque
+rien. **La contrainte devient l'acquisition** : combien de cantines on atteint et on
+convainc.
+
+Trois conséquences directes :
+
+1. **On n'embauche plus pour livrer, on investit pour distribuer.** L'embauche « ops/sourcing »
+   de l'année 2 disparaît du plan.
+2. **La charge marginale est dégressive.** Un libellé confirmé l'est définitivement, et le
+   consensus entre clients en retire encore : le énième client coûte moins que le premier.
+   C'est une économie que le modèle opérateur n'avait pas.
+3. **Deux classes de risque juridique disparaissent** : plus de mandat de facturation, plus de
+   question d'exploitant du secteur alimentaire, plus de statut de commissionnaire de
+   transport. Avec elles disparaît la provision d'avocat de 800 à 1 500 €.
+
+En échange, on accepte un revenu par client plus faible : 290 €/mois au lieu de 650 € plus
+commission. **On échange de la marge par client contre de la capacité et de l'absence de
+risque.** C'est un arbitrage assumé, chiffré dans le [06](06-previsionnel-financier.md).
 
 ---
 
@@ -39,36 +79,55 @@ Chaque étage a un **déclencheur explicite** et un **critère d'abandon**. On n
 
 | # | Document | Ce qu'il contient |
 |---|---|---|
-| 00 | **README** (ce fichier) | Vue d'ensemble, thèse, échelle de valeur, index |
-| 01 | [Synthèse exécutive](01-synthese-executive.md) | Le pitch complet en 2 pages, version progressive |
+| 00 | **README** (ce fichier) | Vue d'ensemble, thèse, offre, index |
+| 01 | [Synthèse exécutive](01-synthese-executive.md) | Le pitch complet en 2 pages |
 | 02 | [Marché & EGalim documenté](02-marche-egalim-documente.md) | Chiffres officiels sourcés, taille du marché, **concurrence réelle et honnête** |
-| 03 | [Modèle, offre & pricing](03-modele-offre-pricing.md) | Les 6 étages en détail, prix, **quelles familles de produits au pilote**, économie unitaire |
+| 03 | [Modèle, offre & pricing](03-modele-offre-pricing.md) | Les deux offres en détail, prix, économie unitaire |
 | 04 | [Go-to-market & plan commercial](04-go-to-market-closing.md) | **Calendrier saisonnier** (la fenêtre janv.–mars), tunnel, ciblage, objectifs |
-| 05 | [Produit & roadmap tech](05-produit-roadmap-tech.md) | La Moulinette Audit (le seul code de l'année 1), réutilisation Mycelium recalibrée |
-| 06 | [Prévisionnel financier](06-previsionnel-financier.md) | Budget de départ, P&L 3 ans par ligne de revenu, seuil de sortie du job, **cadrage juridique et fiscal** |
-| 07 | [Objectifs, jalons & risques](07-objectifs-court-long-terme.md) | OKR par étage, gates go/no-go, risques et parades |
-| 08 | [Logistique 3PL : montage juridique & scouting](08-logistique-3pl-scouting.md) | **Le piège du statut de commissionnaire de transport**, les 3 montages possibles, le déclencheur, les questions au transporteur |
+| 05 | [Produit & roadmap tech](05-produit-roadmap-tech.md) | La Moulinette Audit, l'automatisation, la boucle de confirmation |
+| 06 | [Prévisionnel financier](06-previsionnel-financier.md) | Budget de départ, P&L 3 ans par ligne de revenu, seuil de sortie du job, cadrage juridique et fiscal |
+| 07 | [Objectifs, jalons & risques](07-objectifs-court-long-terme.md) | OKR, gates go/no-go, risques et parades |
 | 09 | [Script d'appel & de rendez-vous](09-script-appel-cantine.md) | Outil terrain : accroche « diagnostic », qualification, objections, closing |
 | 10 | [Fiche EGalim (1 page)](10-fiche-egalim-1page.md) | Outil terrain : la conformité résumée + le barème de calcul |
 
-Complément opérationnel : [playbook 90 jours](../playbook-90-jours-restauration-collective.md) (15 août → 15 novembre 2026).
-Journal de décision : [le modèle initial abandonné](../business-plan-90-jours.md) (vente directe producteurs, ce qu'on en garde).
+> Le document 08 (logistique 3PL, montage juridique du transport, scouting transporteurs) a été
+> **supprimé** le 20 août 2026 : sans opérateur, il n'y a ni tournée, ni transporteur, ni
+> commissionnaire.
+
+Complément opérationnel : [playbook 90 jours](../playbook-90-jours-restauration-collective.md).
+Journal de décision : [le modèle initial abandonné](../business-plan-90-jours.md).
 
 ---
 
 ## Les principes non négociables
 
 1. **On répond à une obligation légale existante**, pas à une demande imaginée.
-2. **On vend le chiffre avant de vendre la carotte.** Le diagnostic se vend seul, sans denrée, sans camion, sans risque.
-3. **On ne code que ce que le terrain a déjà fait dix fois à la main.** Une seule exception en année 1 : la Moulinette Audit, parce que c'est le produit lui-même.
-4. **80 % humain, 20 % logiciel.** On est opérateur, pas éditeur.
-5. **On ne prend jamais la propriété des denrées.** Ni le transport en notre nom. Ces deux lignes rouges sont ce qui garde le modèle à budget nul et hors du risque sanitaire et réglementaire. Voir [08](08-logistique-3pl-scouting.md).
-6. **Obligation de moyens, jamais de résultat.** On ne « garantit » pas la conformité : on la mesure, on la fait progresser, on la prouve. La déclaration reste signée par la cantine.
-7. **Le privé d'abord** (obligé depuis 2024, décision rapide), le public ensuite (avec des références en poche).
-8. **On monte d'un étage seulement quand le précédent tourne.**
+2. **On vend le chiffre.** La mesure se vend seule, sans denrée, sans camion, sans risque.
+3. **On vend un logiciel qui mesure, pas du temps humain.** L'extraction et la classification
+   sont automatisées ; le gérant confirme ce qui engage sa responsabilité, et rien d'autre.
+4. **Le gérant est autonome.** Aucune tâche du produit ne suppose qu'on décroche le téléphone
+   à sa place. S'il a besoin de nous pour s'en servir, le produit est raté.
+5. **La charge est dégressive.** Un libellé confirmé l'est définitivement ; le consensus entre
+   clients en retire encore. Le travail demandé au gérant décroît à chaque exercice.
+6. **On ne construit que ce que le journal de friction du terrain désigne**, chronométré.
+   Unique exception assumée : la Moulinette Audit, parce que c'est le produit facturé lui-même.
+7. **On ne prend jamais la propriété des denrées, et on n'organise jamais le transport en son
+   nom propre.** Ces deux lignes rouges restent écrites même sans activité de sourcing : elles
+   bornent ce qu'on s'autorise à devenir.
+8. **Obligation de moyens, jamais de résultat.** On ne « garantit » pas la conformité : on la
+   **mesure**, on la **fait progresser**, on la **prouve**. La déclaration reste signée par la
+   cantine. Le mot « garantie » est interdit, et un test automatisé le vérifie dans le produit.
+9. **Le privé d'abord** (obligé depuis 2024, décision rapide), le public ensuite.
 
 ---
 
 ## Avertissement honnête
 
-Le prévisionnel (doc 06) repose sur des hypothèses explicites, à affiner avec les premiers vrais deals. Plusieurs points juridiques et fiscaux (statut d'intermédiaire alimentaire, commissionnaire de transport, franchise de TVA, mandat de facturation) sont signalés « **à confirmer** » : ils doivent l'être avec un expert-comptable et un avocat **avant** le premier contrat concerné, pas après. Ce sont les seuls endroits où une erreur coûte cher.
+Le prévisionnel (doc 06) repose sur des hypothèses explicites, **re-dérivées le 20 août 2026**
+après la suppression des étages opérateur, et à affiner avec les premiers vrais deals.
+
+Le passage au modèle logiciel **retire** du plan les points juridiques les plus lourds
+(exploitant du secteur alimentaire, commissionnaire de transport, mandat de facturation).
+Restent à confirmer avec un expert-comptable, avant le premier encaissement : le statut, la
+franchise de TVA et les seuils. Ce sont désormais des questions de routine, plus des questions
+à 50 000 €.

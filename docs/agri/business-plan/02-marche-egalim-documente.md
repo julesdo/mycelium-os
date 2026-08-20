@@ -152,7 +152,9 @@ Nous ne sommes **ni** le logiciel le plus complet, **ni** le fournisseur le moin
 > → **combler** cet écart par du sourcing local ciblé
 > → **prouver** le résultat tous les mois et le déclarer.
 
-Les éditeurs s'arrêtent à la mesure. Les plateformes de producteurs commencent au sourcing sans jamais mesurer. **Le chaînon manquant, c'est la jonction des deux**, et c'est un travail d'opérateur, pas d'éditeur. C'est aussi ce qui n'est pas copiable par un logiciel : le réseau de producteurs et la relation.
+Les éditeurs de gestion mesurent, mais pour les cantines **déjà équipées** : leur modèle ne rentabilise pas les petites structures privées, qui sont précisément les 79 % qui ne déclarent pas. **Le chaînon manquant, c'est un outil de mesure que les non-équipés peuvent s'offrir et utiliser seuls**, et qui ne s'arrête pas au constat : il chiffre l'écart en euros, classe les familles par coût d'accès et génère les courriers d'attestation qui récupèrent des points sans rien changer aux achats.
+
+> **Révision du 20 août 2026.** L'ancienne version de ce paragraphe concluait que le chaînon manquant était « un travail d'opérateur, pas d'éditeur ». C'est faux depuis le changement d'axe, et il faut en tirer la conséquence : **on entre désormais frontalement sur le terrain des éditeurs**, au lieu de le contourner. Ce qui nous en distingue n'est plus la nature du métier mais le segment (les non-équipés) et le périmètre (combler l'écart, pas seulement le constater). Ce qui nous défendra à terme est le corpus de classification et l'historique de preuve, pas l'antériorité ([doc 03, section 6](03-modele-offre-pricing.md)).
 
 **⚠️ Action à faire avant le premier rendez-vous** : une veille concurrentielle sérieuse d'une demi-journée (tarifs publics, cibles, présence IDF de chaque acteur ci-dessus). Ne jamais entrer en rendez-vous en croyant qu'on est seuls : le gestionnaire, lui, connaît son marché.
 

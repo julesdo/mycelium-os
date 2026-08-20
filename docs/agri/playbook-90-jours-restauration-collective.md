@@ -1,4 +1,4 @@
-# Playbook 90 jours — Opérateur de la conformité EGalim
+# Playbook 90 jours — Le logiciel de conformité EGalim
 
 **Période : 15 août → 15 novembre 2026**
 **Jules — serveur en restauration (Suresnes), ~15-20 h/semaine disponibles en journée, compétences digital/logiciel/vente, plateforme Mycelium déjà construite.**
@@ -16,11 +16,12 @@
 ## L'entreprise en une phrase
 
 > On calcule le vrai taux EGalim des cantines à partir de leurs factures, on chiffre l'écart
-> en euros, on le comble par du sourcing local, et on en produit la preuve chaque mois.
-> 80 % humain (sourcing, coordination, relation), 20 % logiciel (la mesure et la preuve).
+> en euros, on montre les familles où le combler coûte le moins cher, et on en produit la
+> preuve toute l'année. **Le logiciel fait le travail, le gérant confirme ce qui engage sa
+> responsabilité.**
 
-**On n'est pas un SaaS. On est un opérateur qui vend un résultat mesuré :**
-« voilà où vous en êtes vraiment, voilà ce qui manque, et voilà comment on va le chercher. »
+**On est un éditeur de logiciel qui vend une mesure :** « voilà où vous en êtes vraiment,
+voilà ce qui manque, et voilà par où commencer. » On ne vend ni denrées, ni temps humain.
 
 ---
 
@@ -28,7 +29,9 @@
 
 **Une seule chose : le diagnostic EGalim.** 690 € (< 250 couverts) / 1 190 € (250-800) / 1 900 € (> 800).
 
-Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un diagnostic**. Pas avant. C'est tout le changement par rapport au plan de juillet : on ne demande pas à un inconnu de nous confier son approvisionnement, on lui vend d'abord un chiffre qu'il ne connaît pas.
+L'abonnement (190 / 290 / 390 €/mois) se vend **à la restitution du diagnostic**, jamais avant : le client vient de voir son chiffre, c'est le seul moment où l'abonnement se comprend tout seul.
+
+> **Révision du 20 août 2026.** Le pilote de sourcing qui occupait le mois 3 est **supprimé** : il n'y a plus d'opérateur. Le mois 3 sert désormais à prouver que le produit s'utilise seul, ce qui est la question à laquelle tout le modèle économique est suspendu.
 
 ⚠️ **Le mot interdit : « garantie ».** On ne garantit jamais la conformité (elle dépend d'achats qu'on ne maîtrise pas). On **mesure**, on **fait progresser**, on **prouve**. La déclaration reste signée par le client. Voir [doc 06, section 8.3](business-plan/06-previsionnel-financier.md).
 
@@ -36,12 +39,12 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 
 ## Les règles du jeu (anti-dérive)
 
-1. **Une seule brique logicielle sur les 90 jours : la Moulinette Audit.** Parce que c'est le produit vendu, pas de l'outillage. Tout le reste reste en tableur et en mail.
-2. **On ne prend jamais la propriété des denrées.** Le producteur facture et livre en direct.
-3. **On n'organise jamais de transport en notre nom.** Au pilote : uniquement des producteurs qui livrent eux-mêmes.
+1. **On ne construit que ce que le journal de friction désigne**, chronométré. Unique exception : la Moulinette Audit, parce que c'est le produit vendu.
+2. **Toute minute passée pour un client entre au journal de friction, avec sa cause.** C'est ce qui distingue un logiciel d'un service déguisé.
+3. **On ne prend jamais la propriété des denrées, et on n'organise jamais de transport en son nom.** Ces lignes bornent ce qu'on s'autorise à devenir.
 4. **On ne quitte pas le job.** Pas cette année.
 5. **Le privé, en gestion directe, non équipé.** Le public et le concédé viendront avec des références.
-6. **On ne monte pas d'étage tant que le précédent ne tourne pas.**
+6. **On ne passe à la preuve suivante que quand la précédente est faite** ([doc 07, section 1](business-plan/07-objectifs-court-long-terme.md)).
 
 ---
 
@@ -57,8 +60,8 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 
 ### Semaine 2 (22-28 août) — La Moulinette Audit
 
-- [ ] **Construire la V0 (3 à 5 jours).** Extraction des lignes (CSV et PDF texte d'abord, OCR plus tard) → classification par Claude avec le référentiel en cache → agrégation des ratios → rapport. Spécification complète : [doc 05, section 1](business-plan/05-produit-roadmap-tech.md).
-- [ ] **Non négociable : chaque ligne conserve sa justification et son indice de confiance**, et les lignes douteuses partent en revue humaine. Un rapport non auditable est invendable.
+- [x] **Le moteur est construit** (phases 0 à 2, doc 05) : extraction CSV et PDF, normalisation des libellés, classification par Claude avec le référentiel en cache, barème, agrégation, file de confirmation, consensus, plafond de coût. Ce qui reste à faire cette semaine n'est pas du code moteur, c'est **la vérification**.
+- [ ] **Non négociable : chaque ligne conserve sa justification et son indice de confiance**, et les libellés douteux partent en confirmation. Un rapport non auditable est invendable.
 - [ ] **Générer le rapport type anonymisé** (le document qu'on montre en rendez-vous). C'est ton meilleur outil de vente : les gens achètent ce qu'ils voient.
 
 ### Semaine 3 (29 août - 4 septembre) — Tester, et ouvrir la boutique
@@ -69,7 +72,7 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 - [ ] **Souscrire la RC pro**, en vérifiant qu'elle couvre **explicitement le conseil et l'audit**.
 - [ ] **Consultation expert-comptable (~250 €)** : régime de TVA et seuils applicables, micro-BNC ou BIC, calendrier de bascule en société. Les 3 questions sont dans [doc 06, section 8.10](business-plan/06-previsionnel-financier.md).
 - [ ] **Préparer les documents commerciaux** : proposition de diagnostic type (2 pages), contrat de prestation avec la clause d'obligation de moyens et la clause de confidentialité, e-mail de demande de factures.
-- [ ] **Qualifier 1 producteur** (épicerie sèche bio ou légumes de garde bio) **qui livre déjà lui-même**. Questions : volumes disponibles, prix départ ferme, labels effectifs, capacité à tenir une livraison hebdomadaire régulière, ce qu'il touche aujourd'hui sur son meilleur canal. **Cette dernière question est la plus importante : elle détermine si notre commission est tenable pour lui.**
+- [ ] **Préparer la démonstration produit** : un compte de démonstration alimenté par le jeu de factures anonymisé, ouvert en 10 secondes en rendez-vous. Les gens achètent ce qu'ils voient fonctionner, pas ce qu'on leur décrit.
 
 ### Semaine 4 (5-11 septembre) — Remplir l'agenda
 
@@ -78,13 +81,13 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 - [ ] Activer le réseau : contacts restauration, contact producteur. La question à poser systématiquement : *« tu connais qui, qui gère une cantine ou une cuisine collective ? »*
 - [ ] Premiers messages LinkedIn ciblés + une publication sur le barème EGalim (le « local ne compte pas » fait toujours réagir).
 
-**🚪 Gate fin M1 (15 septembre)** : la Moulinette produit un rapport juste (< 5 % d'erreur vérifiée à la main) · 300 prospects dont 60 qualifiés · **15 rendez-vous calés** · 1 producteur qualifié · structure ouverte et assurée.
+**🚪 Gate fin M1 (15 septembre)** : la Moulinette produit un rapport juste (< 5 % d'erreur vérifiée à la main) · 300 prospects dont 60 qualifiés · **15 rendez-vous calés** · la démonstration produit prête · structure ouverte et assurée.
 *Si les rendez-vous ne se calent pas : le problème est l'accroche, pas le marché. On la réécrit et on rappelle.*
 
 ---
 
 ## MOIS 2 (15 septembre → 15 octobre) — VENDRE
-### Objectif : 2 diagnostics vendus et encaissés. Toujours zéro sourcing.
+### Objectif : 2 diagnostics vendus et encaissés.
 
 ### Semaines 5-6 (15-28 septembre) — Les rendez-vous
 
@@ -104,7 +107,7 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 
 - [ ] **Restitution sur site, 1 heure**, dans l'ordre exact du [doc 09, section 7](business-plan/09-script-appel-cantine.md) : le chiffre → d'où ça vient → les points gratuits → la trajectoire vers 50/20 → les trois portes de sortie.
 - [ ] **Les points gratuits avant toute proposition commerciale.** La réciprocité fait le reste.
-- [ ] Proposer les trois suites : rien / abonnement Conformité 290 € / pilote de sourcing 6 semaines.
+- [ ] Proposer les deux suites : rien, ou l'abonnement à 290 €/mois qui inclut la déclaration de mars. Une seule décision à prendre, c'est ce qui la rend prenable.
 - [ ] **Publier le simulateur gratuit en ligne** (2 jours de dev, même moteur en version dégradée). C'est l'aimant à prospects de janvier, il doit être en ligne et testé bien avant.
 
 **🚪 Gate fin M2 (15 octobre)** : **2 diagnostics vendus et encaissés** · 1 restitution faite · au moins 1 client qui demande une suite.
@@ -112,35 +115,31 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 
 ---
 
-## MOIS 3 (15 octobre → 15 novembre) — PROUVER
-### Objectif : le premier pilote de sourcing tourne, chez un client qui a déjà payé un diagnostic.
+## MOIS 3 (15 octobre → 15 novembre) — PROUVER QUE ÇA S'UTILISE SEUL
+### Objectif : un client abonné se sert du produit sans nous. C'est la question à laquelle tout le modèle économique est suspendu.
 
-### Semaines 9-10 (15-28 octobre) — Élargir et cadrer
+### Semaines 9-10 (15-28 octobre) — Élargir et convertir
 
-- [ ] **10 rendez-vous supplémentaires**, avec un vrai rapport client (anonymisé) à montrer. L'argument devient nettement plus fort.
+- [ ] **10 rendez-vous supplémentaires**, avec un vrai rapport client (anonymisé) à montrer.
 - [ ] **Viser 1 à 2 diagnostics de plus.**
-- [ ] **Cadrer le pilote** avec le client le plus chaud :
-  - **Deux familles seulement** : épicerie sèche bio + légumes de garde bio. Rationnel complet : [doc 03, section 5](business-plan/03-modele-offre-pricing.md).
-  - **Un producteur qui livre lui-même.** Aucun transporteur tiers.
-  - Durée : **6 semaines**. Objectif chiffré : **+15 points de ratio, à budget matière constant, zéro rupture**.
-  - Le producteur **facture et livre la cantine en direct**. On coordonne, on mesure, on ne touche jamais la marchandise.
-  - Accord d'une page de chaque côté.
-- [ ] **Vérifier la règle producteur** : son prix net, commission déduite, doit dépasser d'au moins 15 % son meilleur canal actuel. Sinon on renégocie le prix de vente, ou on ne le prend pas.
+- [ ] **Convertir le premier abonnement.** Le bon moment est la restitution, pas une relance trois semaines après.
+- [ ] **Ouvrir l'accès produit au premier abonné** et le regarder s'en servir, en silence. Chaque hésitation est une entrée du journal de friction.
 
-### Semaine 11 (29 octobre - 4 novembre) — Démarrer
+### Semaine 11 (29 octobre - 4 novembre) — Le test d'autonomie
 
-- [ ] **Premier cycle réel** : le chef envoie ses besoins → tu passes commande au producteur → il livre la cuisine → tu contrôles la réception et tu enregistres les lignes.
-- [ ] **Être présent physiquement à la première livraison.** C'est là qu'on apprend tout : les horaires réels de la cuisine, les contenants, le quai, qui réceptionne, ce qui coince.
-- [ ] Ouvrir le suivi du pilote : produit, quantité, prix, label, montant HT, date. **Ce sont les lignes qui alimenteront la preuve.**
+- [ ] **Ne rien faire pour lui pendant une semaine.** Pas de relance, pas de dépôt à sa place, pas de confirmation à sa place.
+- [ ] **Mesurer :** a-t-il déposé des factures ? confirmé des libellés ? consulté son taux ? Si la réponse est non trois fois, ce n'est pas lui le problème, c'est le produit.
+- [ ] **Chronométrer notre propre temps passé pour ce client.** Cible : **≤ 30 min sur le mois**, hors vente.
 
-### Semaines 12-13 (5-15 novembre) — Faire tourner et mesurer
+### Semaines 12-13 (5-15 novembre) — Corriger et mesurer
 
-- [ ] **Cycles hebdomadaires**, à la main, sans exception.
-- [ ] **Journal de friction** tenu chaque semaine : chaque tâche répétitive et le temps qu'elle prend. C'est le seul cahier des charges légitime pour la suite du logiciel.
-- [ ] **Produire la première preuve mensuelle** : les points de ratio gagnés grâce au pilote, chiffrés, remis en main propre.
-- [ ] **Bilan honnête des 90 jours** : diagnostics vendus, taux de transformation à chaque étape, temps réel passé, ce qui a marché, ce qui a coûté du temps pour rien.
+- [ ] **Corriger les trois frictions les plus chères** relevées au journal, dans le produit, pas dans nos habitudes.
+- [ ] **Produire la première preuve mensuelle automatique** : les points de ratio gagnés, chiffrés, sans intervention manuelle. Si elle demande du travail à la main, elle n'est pas finie.
+- [ ] **Bilan honnête des 90 jours** : diagnostics vendus, taux de transformation à chaque étape, **temps réel passé par client**, ce qui a marché, ce qui a coûté du temps pour rien.
 
-**🚪 Gate fin M3 (15 novembre)** : 3 à 4 diagnostics vendus · le pilote tourne sans incident · au moins **1 abonnement Conformité signé ou en négociation** · le journal de friction désigne clairement la prochaine brique logicielle.
+**🚪 Gate fin M3 (15 novembre)** : 3 à 4 diagnostics vendus · **1 abonnement signé** · le client a déposé des factures et confirmé des libellés **de lui-même** · notre temps par client sur le mois ≤ 30 min · le journal de friction désigne clairement la prochaine brique.
+
+*Si le client ne s'en sert pas seul, on ne prospecte pas davantage : on corrige le produit. Vendre un service déguisé rétablit le plafond qu'on vient de supprimer.*
 
 ---
 
@@ -159,13 +158,12 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 
 ## Ce qu'on NE fait PAS pendant ces 90 jours
 
-- ❌ Vendre du sourcing à quelqu'un qui n'a pas payé de diagnostic
-- ❌ Toucher à la logistique, à un transporteur, à un montage de prix livré
-- ❌ Prendre la propriété d'une seule denrée
+- ❌ Faire à la place du client ce que le produit doit faire (déposer, confirmer, relancer)
 - ❌ Prononcer ou écrire le mot « garantie » à propos de la conformité
-- ❌ Construire autre chose que la Moulinette et le simulateur
+- ❌ Construire autre chose que ce que le journal de friction désigne
+- ❌ Vendre du sourcing, du transport, ou quoi que ce soit qui touche une denrée
 - ❌ Démarcher le public ou le concédé
-- ❌ Ajouter une troisième famille de produits au pilote
+- ❌ Ouvrir un deuxième bassin géographique
 - ❌ Quitter le job
 
 ---
@@ -174,10 +172,10 @@ Le pilote de sourcing arrive en novembre, **chez un client qui a déjà payé un
 
 1. **Monter le fichier de prospection** : open data « ma cantine » + SIRENE, 300 lignes, 60 qualifiées. C'est le livrable qui conditionne tout le reste.
 2. **Récupérer un vrai jeu de factures fournisseurs** pour tester la Moulinette. Un restaurateur du réseau est le chemin le plus court.
-3. **Appeler le contact producteur** avec une seule question qui compte : *« aujourd'hui, tu touches combien au kilo sur ton meilleur canal, et tu livres toi-même ou pas ? »*
+3. **Vérifier la Moulinette à la main sur 100 lignes.** C'est la seule preuve qui conditionne tout le reste : tant qu'elle n'est pas faite, il n'y a rien à vendre.
 
 ---
 
-*Le besoin vient de la loi, pas de notre imagination. On vend d'abord le chiffre, ensuite la
-solution. On ne code que ce qu'on a déjà fait dix fois à la main — sauf la Moulinette, qui est
-le produit lui-même. Et on ne monte pas d'étage tant que le précédent ne tourne pas.*
+*Le besoin vient de la loi, pas de notre imagination. On vend le chiffre, et le logiciel le
+produit. Toute minute qu'on passe à la place du client est un défaut du produit, pas un service.
+Et on ne passe à la preuve suivante que quand la précédente est faite.*

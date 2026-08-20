@@ -105,33 +105,29 @@ DIAGNOSTIC VENDU (690–1 900 €)          ← premier « oui », premier euro
 ### Septembre–octobre 2026 — Vendre les premiers diagnostics
 - 40 conversations qualifiées, 15 rendez-vous, **objectif : 2 diagnostics vendus.**
 - Simulateur gratuit en ligne publié (octobre).
-- 1 pilote Substitution cadré et démarré fin octobre.
 - 🚪 **Gate fin octobre : 2 diagnostics vendus et encaissés.** Sinon, c'est le discours ou la cible qu'on corrige, pas le rythme d'appels.
 
 ### Novembre–décembre 2026 — Prouver et convertir
-- Le pilote tourne : 6 semaines, 2 familles, zéro rupture, **+15 points de ratio mesurés**.
 - 1 à 2 diagnostics supplémentaires.
-- **Première conversion en abonnement Conformité.**
+- **Première conversion en abonnement.**
+- Le client se sert du produit **seul** entre deux dépôts de factures : c'est le vrai test de l'année, et il ne se mesure pas en euros.
 - Préparation de la campagne de janvier : séquence d'e-mails, argumentaire déclaration, capacité de production.
-- 🚪 **Gate fin décembre : 1 abonnement récurrent signé + le pilote validé par le chef.**
+- 🚪 **Gate fin décembre : 1 abonnement récurrent signé, et le client a déposé des factures sans qu'on le lui demande.**
 
 ### Janvier–mars 2027 — La fenêtre (le pic de l'année)
 - Campagne « votre déclaration est due le 31 mars » sur tout le fichier, relance de tous les contacts tièdes.
-- **Objectif : 8 diagnostics + 8 déclarations assistées sur le trimestre.**
+- **Objectif : 8 diagnostics + 6 télédéclarations seules sur le trimestre.**
 - Conversion en abonnements au fil de l'eau.
-- Premier client Opérateur payant (issu du pilote).
-- 🚪 **Gate fin mars : 12 diagnostics cumulés, 3 abonnés Conformité, 1 abonné Opérateur.**
+- 🚪 **Gate fin mars : 12 diagnostics cumulés, 4 abonnés.**
 
-### Avril–juin 2027 — Convertir et densifier
+### Avril–juin 2027 — Convertir
 - Conversion des diagnostics de l'hiver en abonnements (c'est le travail principal du trimestre).
-- 2 à 4 producteurs supplémentaires enrôlés, tous livrant eux-mêmes.
 - Premiers contacts avec le public et les réseaux (crèches, EHPAD en groupe) pour la rentrée.
-- 🚪 **Gate fin juin : 5 abonnés Conformité, 2 abonnés Opérateur, MRR ≥ 2 700 €.**
+- 🚪 **Gate fin juin : 7 abonnés, MRR ≥ 2 000 €.**
 
 ### Juillet–août 2027 — Bilan et outillage
-- Bilan annuel honnête, mesure du temps réel par client.
-- Construction de la brique logicielle désignée par le journal de friction (probablement la prise de commande).
-- Décision sur l'étage 5 (logistique) : les 4 conditions sont-elles réunies ?
+- Bilan annuel honnête, et **mesure du temps réel passé par client** : c'est l'indicateur qui dit si le produit rend vraiment autonome. Au-delà de 30 minutes par client et par mois, quelque chose n'est pas automatisé et doit entrer au journal de friction.
+- Construction de la brique logicielle désignée par le journal de friction (probablement l'ingestion directe depuis les grossistes).
 - Préparation de la bascule en SASU.
 
 ---
@@ -143,27 +139,49 @@ DIAGNOSTIC VENDU (690–1 900 €)          ← premier « oui », premier euro
 | Échéance | Objectif |
 |---|---|
 | Fin octobre 2026 | 2 diagnostics vendus |
-| Fin décembre 2026 | Pilote réussi + 1 abonnement Conformité |
-| Fin mars 2027 | 12 diagnostics cumulés · 3 Conformité · 1 Opérateur |
-| Fin juin 2027 | 5 Conformité · 2 Opérateur · MRR ≥ 2 700 € |
-| **Fin août 2027** | **14 diagnostics · 7 Conformité · 3 Opérateur · CA ~38 k€ · MRR ~4 430 €** |
+| Fin décembre 2026 | 1 abonnement signé, et le client dépose ses factures sans qu'on le lui demande |
+| Fin mars 2027 | 12 diagnostics cumulés · 4 abonnés |
+| Fin juin 2027 | 7 abonnés · MRR ≥ 2 000 € |
+| **Fin août 2027** | **14 diagnostics · 10 abonnés · CA ~29 k€ · MRR ~2 900 €** |
 
 ### Long terme (années 2 et 3)
 
 | Échéance | Objectif |
 |---|---|
-| Fin année 2 (août 2028) | **24 Conformité · 14 Opérateur · ~193 k€** · bassin Hauts-de-Seine saturé · 1 embauche · premières références publiques |
-| Fin année 3 (août 2029) | **60 Conformité · 40 Opérateur · ~541 k€** · 2 à 3 bassins · équipe de 4-5 · ouverture du canal concédé (couche conformité en marque blanche pour un Sodexo/Elior/Api) |
-| Vision | Devenir **l'opérateur de référence de la mesure et du comblement de l'écart EGalim** en France, puis étendre aux obligations sœurs (anti-gaspillage, bilan carbone des repas, CSRD des groupes de restauration) |
+| Fin année 2 (août 2028) | **35 diagnostics · 38 abonnés · ~120 k€** · 1 embauche en **acquisition** · premières références publiques |
+| Fin année 3 (août 2029) | **80 diagnostics · 110 abonnés · ~338 k€** · équipe de 3-4 · ouverture du canal concédé (couche conformité en marque blanche pour un Sodexo/Elior/Api) |
+| Vision | Devenir **le logiciel de référence de la mesure EGalim** en France, puis étendre aux obligations sœurs (anti-gaspillage, bilan carbone des repas, CSRD des groupes de restauration) |
+
+> **L'embauche de l'année 2 a changé de nature le 20 août 2026.** L'ancien plan recrutait en
+> ops et sourcing parce que la livraison saturait à 8-10 clients. Le nouveau recrute en
+> acquisition, parce que livrer un client de plus ne coûte presque rien et que le plafond s'est
+> déplacé en amont. Voir [06](06-previsionnel-financier.md), section 3.
 
 ---
 
 ## 7. Stratégie de densité géographique
 
-Le modèle est **local** : un producteur ne livre pas loin, et une tournée n'est rentable qu'à plusieurs points. Donc **on sature un bassin avant d'ouvrir le suivant.**
+**La raison d'être de cette stratégie a changé le 20 août 2026, et il faut le dire.** Dans le
+modèle opérateur, la densité était une **nécessité opérationnelle** : un producteur ne livre pas
+loin et une tournée n'est rentable qu'à plusieurs points. Le logiciel, lui, se livre partout au
+même coût. **Rien n'oblige plus à saturer un bassin.**
 
-Un bassin dense, c'est : les mêmes producteurs mutualisés entre plusieurs cantines, des volumes qui justifient de meilleurs prix, une logistique qui devient possible (étage 5), et un bouche-à-oreille qui joue à plein entre gestionnaires qui se connaissent.
+Ce qui reste, et qui suffit à garder la même géographie de départ :
 
-**Ordre d'ouverture :** Hauts-de-Seine → Yvelines Est / Paris Ouest → Val-d'Oise Sud + Essonne Nord → puis réplication du playbook sur un bassin hors IDF (Lyon ou Nantes, à décider sur données).
+- **Le bouche-à-oreille entre gérants qui se connaissent.** Les gestionnaires de restauration
+  collective d'un même bassin se croisent, et une référence locale vaut dix appels à froid.
+- **Le coût des déplacements de vente.** Tant que la vente se fait en rendez-vous, la proximité
+  est du temps gagné. Elle cesse de compter le jour où la démonstration se fait à distance.
+- **La crédibilité de la référence.** « Trois cantines de La Défense l'utilisent » convainc mieux
+  qu'un logo lointain.
 
-**Indicateur de saturation d'un bassin** : ≥ 15 clients récurrents et ≥ 8 producteurs actifs. C'est à ce moment-là qu'on ouvre le suivant, pas avant.
+**Ordre d'ouverture :** Hauts-de-Seine → Yvelines Est / Paris Ouest → Val-d'Oise Sud + Essonne
+Nord → puis réplication hors Île-de-France (Lyon ou Nantes, à décider sur données).
+
+**Indicateur de saturation d'un bassin** : ≥ 15 clients récurrents. Le critère « ≥ 8 producteurs
+actifs » est supprimé, faute de producteurs.
+
+> **Conséquence à surveiller :** la densité étant devenue un confort et non une contrainte, la
+> tentation sera d'ouvrir partout à la fois. C'est un piège d'acquisition, pas de livraison : on
+> disperse le bouche-à-oreille sans rien gagner. On ouvre le bassin suivant sur un signal de
+> demande entrante, pas sur une envie.

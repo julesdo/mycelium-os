@@ -54,7 +54,7 @@ Si ce n'est pas la bonne personne : *« qui s'occupe des achats alimentaires et 
    → Si **concédé** : le décideur est au siège du prestataire. Tu notes, tu remercies, tu passes. On veut du **direct**.
 
 3. **« Vous avez un logiciel de gestion qui vous sort les ratios ? »**
-   → S'il a Easilys ou équivalent, il a déjà son chiffre. Il reste vendable sur le **sourcing** (étage 4), mais pas sur le diagnostic. Tu le mets dans une autre pile.
+   → S'il a Easilys ou équivalent, il a déjà son chiffre : il n'est pas notre cible. Tu le mets dans une autre pile et tu passes au suivant. Ne pas s'acharner sur un équipé est ce qui laisse du temps pour les 79 % qui ne le sont pas.
 
 4. **« Vous travaillez avec combien de fournisseurs, et lesquels ? »**
    → Renseigne la faisabilité du diagnostic (le nombre de sources de factures) et la structure de ses achats.
@@ -94,7 +94,7 @@ Puis l'offre :
 | **« Pas le temps. »** | « Vous n'avez rien à faire. Vous me transférez les factures, ou vous me donnez l'accès au portail de votre grossiste. Vingt minutes en tout, de votre côté. » |
 | **« Il n'y a pas de sanction, EGalim. »** | « Pas beaucoup aujourd'hui, c'est vrai. Mais la déclaration du 31 mars, elle, est obligatoire et datée, et vos données sont publiques. Vos convives et votre direction peuvent aller les voir. C'est plus ça, le sujet, que l'amende. » |
 | **« Envoyez-moi un mail. »** | « Je vous envoie ça ce soir. Mais 20 minutes en vrai valent mieux qu'un PDF, parce que je vous montre un exemple de rapport et vous voyez tout de suite si ça vous parle. Jeudi 15 h ou vendredi 16 h ? » |
-| **« On a déjà un logiciel qui calcule ça. »** | « Alors vous avez le chiffre, et c'est très bien. Ce que le logiciel ne fait pas, c'est vous dire **où trouver** les 25 points qui manquent, ni aller les chercher. C'est là que j'interviens. On en parle ? » *(→ le bascule vers l'étage 4)* |
+| **« On a déjà un logiciel qui calcule ça. »** | « Alors vous avez le chiffre, et c'est très bien. Deux questions : est-ce qu'il vous dit **combien d'euros** il vous manque et dans **quelles familles** les trouver au moins cher ? Et est-ce qu'il vous génère les courriers d'attestation pour récupérer les points que vous avez déjà sans pouvoir les prouver ? Si oui, je ne vous suis pas utile. » *(→ souvent la réponse est non aux deux)* |
 
 ---
 

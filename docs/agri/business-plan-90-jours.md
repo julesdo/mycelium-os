@@ -1,5 +1,7 @@
 # Journal de décision — Le modèle initial abandonné (vente directe producteurs)
 
+> **Note du 20 août 2026.** Ce document est un **journal de décision archivé**. Il compare le modèle de vente directe aux producteurs (abandonné en juillet 2026) au modèle en six étages qui lui a succédé. Ce dernier a lui-même été abandonné le 20 août 2026 au profit du modèle logiciel. Les mentions d'« abonnement Opérateur », d'« étage 4 » et d'« étage 5 » qu'on lit ci-dessous sont donc **doublement historiques** : elles décrivent un plan qui n'a plus cours. Le plan en vigueur est dans [business-plan/00-README.md](business-plan/00-README.md).
+
 **Écrit le 22 juillet 2026 · Abandonné comme axe principal le 27 juillet 2026 · Révisé le 15 août 2026**
 
 > **Statut : SUPERSÉDÉ.** Ce document décrivait le premier modèle envisagé : devenir apporteur
