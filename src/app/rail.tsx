@@ -5,6 +5,7 @@ import {
 	GaugeIcon,
 	CheckCheckIcon,
 	FileTextIcon,
+	FileCheck2Icon,
 	PanelLeftIcon,
 	SettingsIcon
 } from 'lucide-react';
@@ -13,7 +14,8 @@ import { cn } from '../ui/cn';
 const ENTREES = [
 	{ to: '/app', label: 'Pilotage', Icone: GaugeIcon },
 	{ to: '/app/confirmer', label: 'À confirmer', Icone: CheckCheckIcon },
-	{ to: '/app/factures', label: 'Factures', Icone: FileTextIcon }
+	{ to: '/app/factures', label: 'Factures', Icone: FileTextIcon },
+	{ to: '/app/diagnostics', label: 'Diagnostics', Icone: FileCheck2Icon }
 ] as const;
 
 /**

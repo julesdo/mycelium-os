@@ -22,6 +22,7 @@ import {
 } from '../ui';
 import { ListeAConfirmer, type LibelleAConfirmer } from '../screens/confirmer/liste';
 import { Attestations, type Attestation } from '../screens/diagnostic/attestations';
+import { Shell } from '../app/shell';
 import {
 	MENTION_RESPONSABILITE,
 	MENTION_FIGE,
@@ -138,7 +139,7 @@ const ATTESTATIONS: Attestation[] = [
 	}
 ];
 
-const ECRANS = ['pilotage', 'confirmer', 'diagnostic', 'vide'] as const;
+const ECRANS = ['pilotage', 'confirmer', 'diagnostic', 'vide', 'coquille'] as const;
 type Ecran = (typeof ECRANS)[number];
 
 function Showroom() {
@@ -160,6 +161,11 @@ function Showroom() {
 				{ecran === 'pilotage' ? <DemoPilotage /> : null}
 				{ecran === 'vide' ? <DemoVide /> : null}
 				{ecran === 'diagnostic' ? <DemoDiagnostic /> : null}
+				{ecran === 'coquille' ? (
+					<Shell>
+						<DemoPilotage />
+					</Shell>
+				) : null}
 				{ecran === 'confirmer' ? (
 					<Page>
 						<PageHeader titre="À confirmer" sousTitre={`4 produits, ${euros(25781.7)} en jeu.`} />

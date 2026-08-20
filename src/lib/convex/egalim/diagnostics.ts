@@ -464,3 +464,46 @@ export const marquerRemis = authedMutation({
 		return null;
 	}
 });
+
+/**
+ * Les diagnostics produits, du plus récent au plus ancien.
+ *
+ * Un diagnostic est une preuve datée : celui de mars doit rester retrouvable en
+ * juin, et celui de l'an dernier en cas de contrôle. Sans cette liste, un
+ * rapport figé n'était accessible que par l'écran du dépôt qui l'a produit,
+ * c'est-à-dire en pratique par personne.
+ *
+ * Borné à 100 : au rythme d'un diagnostic par exercice, cent couvre un siècle.
+ * La borne existe pour que la requête ne puisse pas dégénérer, pas parce qu'on
+ * s'attend à l'atteindre.
+ */
+export const listerDiagnostics = authedQuery({
+	args: {},
+	returns: v.array(
+		v.object({
+			diagnosticId: v.id('diagnostics'),
+			periodStart: v.string(),
+			periodEnd: v.string(),
+			computedAt: v.number(),
+			status: v.union(v.literal('DRAFT'), v.literal('DELIVERED')),
+			ratios: vRatios
+		})
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const lignes = await ctx.db
+			.query('diagnostics')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.order('desc')
+			.take(100);
+
+		return lignes.map((d) => ({
+			diagnosticId: d._id,
+			periodStart: d.periodStart,
+			periodEnd: d.periodEnd,
+			computedAt: d.computedAt,
+			status: d.status,
+			ratios: d.ratios
+		}));
+	}
+});

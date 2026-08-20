@@ -17,6 +17,7 @@ import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppConfirmerRouteImport } from './routes/app/confirmer'
+import { Route as AppDiagnosticsRouteImport } from './routes/app/diagnostics'
 import { Route as AppFacturesRouteImport } from './routes/app/factures'
 import { Route as AppParametresRouteImport } from './routes/app/parametres'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -62,6 +63,11 @@ const AppConfirmerRoute = AppConfirmerRouteImport.update({
   path: '/confirmer',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDiagnosticsRoute = AppDiagnosticsRouteImport.update({
+  id: '/diagnostics',
+  path: '/diagnostics',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppFacturesRoute = AppFacturesRouteImport.update({
   id: '/factures',
   path: '/factures',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/inscription': typeof InscriptionRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
   '/app/': typeof AppIndexRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/inscription': typeof InscriptionRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
   '/app': typeof AppIndexRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/inscription': typeof InscriptionRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
   '/app/': typeof AppIndexRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/inscription'
     | '/showroom'
     | '/app/confirmer'
+    | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
     | '/app/'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/inscription'
     | '/showroom'
     | '/app/confirmer'
+    | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
     | '/app'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/inscription'
     | '/showroom'
     | '/app/confirmer'
+    | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
     | '/app/'
@@ -237,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConfirmerRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/diagnostics': {
+      id: '/app/diagnostics'
+      path: '/diagnostics'
+      fullPath: '/app/diagnostics'
+      preLoaderRoute: typeof AppDiagnosticsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/factures': {
       id: '/app/factures'
       path: '/factures'
@@ -270,6 +289,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteRouteChildren {
   AppConfirmerRoute: typeof AppConfirmerRoute
+  AppDiagnosticsRoute: typeof AppDiagnosticsRoute
   AppFacturesRoute: typeof AppFacturesRoute
   AppParametresRoute: typeof AppParametresRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -278,6 +298,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppConfirmerRoute: AppConfirmerRoute,
+  AppDiagnosticsRoute: AppDiagnosticsRoute,
   AppFacturesRoute: AppFacturesRoute,
   AppParametresRoute: AppParametresRoute,
   AppIndexRoute: AppIndexRoute,
