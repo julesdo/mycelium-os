@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/app/route'
+import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppConfirmerRouteImport } from './routes/app/confirmer'
 import { Route as AppFacturesRouteImport } from './routes/app/factures'
+import { Route as AppParametresRouteImport } from './routes/app/parametres'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppDiagnosticIdRouteImport } from './routes/app/diagnostic.$id'
 
@@ -29,9 +32,19 @@ const AppRouteRoute = AppRouteRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BienvenueRoute = BienvenueRouteImport.update({
+  id: '/bienvenue',
+  path: '/bienvenue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscriptionRoute = InscriptionRouteImport.update({
+  id: '/inscription',
+  path: '/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShowroomRoute = ShowroomRouteImport.update({
@@ -54,6 +67,11 @@ const AppFacturesRoute = AppFacturesRouteImport.update({
   path: '/factures',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppParametresRoute = AppParametresRouteImport.update({
+  id: '/parametres',
+  path: '/parametres',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -68,20 +86,26 @@ const AppDiagnosticIdRoute = AppDiagnosticIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/inscription': typeof InscriptionRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/factures': typeof AppFacturesRoute
+  '/app/parametres': typeof AppParametresRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/inscription': typeof InscriptionRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/factures': typeof AppFacturesRoute
+  '/app/parametres': typeof AppParametresRoute
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
@@ -90,10 +114,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/inscription': typeof InscriptionRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/factures': typeof AppFacturesRoute
+  '/app/parametres': typeof AppParametresRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
@@ -103,20 +130,26 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/bienvenue'
     | '/connexion'
+    | '/inscription'
     | '/showroom'
     | '/app/confirmer'
     | '/app/factures'
+    | '/app/parametres'
     | '/app/'
     | '/api/auth/$'
     | '/app/diagnostic/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/bienvenue'
     | '/connexion'
+    | '/inscription'
     | '/showroom'
     | '/app/confirmer'
     | '/app/factures'
+    | '/app/parametres'
     | '/app'
     | '/api/auth/$'
     | '/app/diagnostic/$id'
@@ -124,10 +157,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/bienvenue'
     | '/connexion'
+    | '/inscription'
     | '/showroom'
     | '/app/confirmer'
     | '/app/factures'
+    | '/app/parametres'
     | '/app/'
     | '/api/auth/$'
     | '/app/diagnostic/$id'
@@ -136,7 +172,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
+  BienvenueRoute: typeof BienvenueRoute
   ConnexionRoute: typeof ConnexionRoute
+  InscriptionRoute: typeof InscriptionRoute
   ShowroomRoute: typeof ShowroomRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -157,11 +195,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bienvenue': {
+      id: '/bienvenue'
+      path: '/bienvenue'
+      fullPath: '/bienvenue'
+      preLoaderRoute: typeof BienvenueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/connexion': {
       id: '/connexion'
       path: '/connexion'
       fullPath: '/connexion'
       preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscription': {
+      id: '/inscription'
+      path: '/inscription'
+      fullPath: '/inscription'
+      preLoaderRoute: typeof InscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/showroom': {
@@ -192,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFacturesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/parametres': {
+      id: '/app/parametres'
+      path: '/parametres'
+      fullPath: '/app/parametres'
+      preLoaderRoute: typeof AppParametresRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -212,6 +271,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteRouteChildren {
   AppConfirmerRoute: typeof AppConfirmerRoute
   AppFacturesRoute: typeof AppFacturesRoute
+  AppParametresRoute: typeof AppParametresRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDiagnosticIdRoute: typeof AppDiagnosticIdRoute
 }
@@ -219,6 +279,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppConfirmerRoute: AppConfirmerRoute,
   AppFacturesRoute: AppFacturesRoute,
+  AppParametresRoute: AppParametresRoute,
   AppIndexRoute: AppIndexRoute,
   AppDiagnosticIdRoute: AppDiagnosticIdRoute,
 }
@@ -230,7 +291,9 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
+  BienvenueRoute: BienvenueRoute,
   ConnexionRoute: ConnexionRoute,
+  InscriptionRoute: InscriptionRoute,
   ShowroomRoute: ShowroomRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

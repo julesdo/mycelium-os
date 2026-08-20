@@ -1,6 +1,7 @@
-import { Outlet, createFileRoute, Link } from '@tanstack/react-router';
-import { Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
+import { Outlet, createFileRoute, Link, Navigate } from '@tanstack/react-router';
+import { Authenticated, Unauthenticated, AuthLoading, useQuery } from 'convex/react';
 import { Button } from '@cladd-ui/react';
+import { api } from '../../lib/convex/_generated/api';
 import { Shell } from '../../app/shell';
 
 /**
@@ -19,9 +20,7 @@ function LayoutApp() {
 	return (
 		<>
 			<AuthLoading>
-				<div className="flex h-dvh items-center justify-center">
-					<p className="text-cladd-xs text-cladd-fg-soft">Ouverture de votre espace…</p>
-				</div>
+				<Attente message="Ouverture de votre espace…" />
 			</AuthLoading>
 
 			<Unauthenticated>
@@ -37,10 +36,34 @@ function LayoutApp() {
 			</Unauthenticated>
 
 			<Authenticated>
-				<Shell>
-					<Outlet />
-				</Shell>
+				<AvecEtablissement />
 			</Authenticated>
 		</>
+	);
+}
+
+/**
+ * Un compte sans établissement ne peut rien faire du produit : toutes les
+ * requêtes du domaine sont cloisonnées par organisation. On l'envoie donc
+ * créer le sien, plutôt que de lui montrer une suite d'écrans en erreur.
+ */
+function AvecEtablissement() {
+	const org = useQuery(api.organizations.getMyOrg, {});
+
+	if (org === undefined) return <Attente message="Chargement de votre établissement…" />;
+	if (org === null) return <Navigate to="/bienvenue" replace />;
+
+	return (
+		<Shell>
+			<Outlet />
+		</Shell>
+	);
+}
+
+function Attente({ message }: { message: string }) {
+	return (
+		<div className="flex h-dvh items-center justify-center">
+			<p className="text-cladd-xs text-cladd-fg-soft">{message}</p>
+		</div>
 	);
 }

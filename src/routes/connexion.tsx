@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { Button, Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
 
@@ -62,6 +62,13 @@ function Connexion() {
 				<Button type="submit" color="brand" variant="solid-fill" loading={enCours}>
 					Se connecter
 				</Button>
+
+				<p className="text-cladd-2xs text-cladd-fg-softer">
+					Vous n&rsquo;avez pas encore de compte ?{' '}
+					<Link to="/inscription" className="font-medium underline underline-offset-2">
+						En créer un
+					</Link>
+				</p>
 			</form>
 		</div>
 	);

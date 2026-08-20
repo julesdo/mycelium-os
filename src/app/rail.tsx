@@ -5,7 +5,8 @@ import {
 	GaugeIcon,
 	CheckCheckIcon,
 	FileTextIcon,
-	PanelLeftIcon
+	PanelLeftIcon,
+	SettingsIcon
 } from 'lucide-react';
 import { cn } from '../ui/cn';
 
@@ -65,16 +66,29 @@ export function Rail({ deplie, onBasculer }: { deplie: boolean; onBasculer: () =
 					))}
 				</div>
 
-				<Button
-					onClick={onBasculer}
-					variant="gradient"
-					square={!deplie}
-					className="mt-auto"
-					aria-label={deplie ? 'Replier la navigation' : 'Déplier la navigation'}
-				>
-					<PanelLeftIcon />
-					{deplie ? 'Replier' : null}
-				</Button>
+				<div className="mt-auto flex flex-col gap-cladd-3xs">
+					<Button
+						as={Link}
+						to="/app/parametres"
+						variant="gradient"
+						pressed={actif('/app/parametres')}
+						square={!deplie}
+						aria-label="Réglages"
+					>
+						<SettingsIcon />
+						{deplie ? 'Réglages' : null}
+					</Button>
+
+					<Button
+						onClick={onBasculer}
+						variant="gradient"
+						square={!deplie}
+						aria-label={deplie ? 'Replier la navigation' : 'Déplier la navigation'}
+					>
+						<PanelLeftIcon />
+						{deplie ? 'Replier' : null}
+					</Button>
+				</div>
 			</nav>
 
 			<nav
