@@ -138,8 +138,25 @@ export const tableauDeBord = authedQuery({
 			toBio20: v.number(),
 			toMeatFish60: v.number()
 		}),
-		/** Part du MONTANT alimentaire reposant sur une classification non confirmée. */
+		/**
+		 * DEUX NOTIONS DIFFÉRENTES, et les confondre produisait un écran absurde.
+		 *
+		 * `aConfirmer` est le TRAVAIL QUI ATTEND le gérant : les lignes que le
+		 * moteur a explicitement mises en file, parce qu'il doutait ou parce que
+		 * c'est de la viande ou du poisson. Elles ont un écran dédié.
+		 *
+		 * `nonConfirme` est tout ce que le gérant N'A JAMAIS RELU : la file, plus
+		 * tout ce qui a été classé automatiquement sans jamais lui être soumis.
+		 * C'est la part qu'il assume sans l'avoir regardée — une information
+		 * d'auditabilité, pas une tâche.
+		 *
+		 * Le tableau de bord affichait le POURCENTAGE de la seconde à côté du
+		 * COMPTE de la première : « 0 produit à confirmer — 27 % de vos achats,
+		 * soit 0 € ». Trois nombres justes, une phrase fausse.
+		 */
 		partNonConfirmee: v.number(),
+		libellesNonConfirmes: v.number(),
+		montantNonConfirme: v.number(),
 		libellesAConfirmer: v.number(),
 		montantAConfirmer: v.number(),
 		parFamille: v.array(
@@ -196,6 +213,15 @@ export const tableauDeBord = authedQuery({
 		const libellesAConfirmer = new Set(enAttente.map((l) => l.normalizedLabel)).size;
 		const montantAConfirmer = enAttente.reduce((s, l) => s + Math.abs(l.amountHT), 0);
 
+		// Le même périmètre que `partNonConfirmee` — alimentaire seulement, file
+		// ET classement automatique — pour que le pourcentage, le compte et le
+		// montant affichés côte à côte parlent bien de la même chose.
+		const jamaisRelues = classees.filter(
+			(l) => l.isFood && (l.reviewStatus === 'AUTO' || l.reviewStatus === 'PENDING_REVIEW')
+		);
+		const libellesNonConfirmes = new Set(jamaisRelues.map((l) => l.normalizedLabel)).size;
+		const montantNonConfirme = jamaisRelues.reduce((s, l) => s + Math.abs(l.amountHT), 0);
+
 		const parFamille = FAMILLES.map((family) => {
 			const duGroupe = classees.filter((l) => l.isFood && l.family === family);
 			return {
@@ -229,6 +255,8 @@ export const tableauDeBord = authedQuery({
 					reviewStatus: l.reviewStatus
 				}))
 			),
+			libellesNonConfirmes,
+			montantNonConfirme,
 			libellesAConfirmer,
 			montantAConfirmer,
 			parFamille,

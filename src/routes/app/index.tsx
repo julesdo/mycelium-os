@@ -5,6 +5,7 @@ import { Button, Toolbar, Segmented, SegmentedButton, SectionTitle, Surface } fr
 import {
 	CameraIcon,
 	CheckCheckIcon,
+	SparklesIcon,
 	TriangleAlertIcon,
 	LoaderCircleIcon,
 	ArrowRightIcon
@@ -116,8 +117,16 @@ function Pilotage() {
 								{/* LA PROCHAINE CHOSE À FAIRE, avant les chiffres.
 								    Un tableau de bord qui n'affiche qu'un état laisse le
 								    gérant chercher quoi faire ; celui-ci le dit, une fois,
-								    en haut, et ne l'affiche pas quand il n'y a rien. */}
-								{bord.partNonConfirmee > 0 ? (
+								    en haut, et ne l'affiche pas quand il n'y a rien.
+
+								    DEUX CARTES, JAMAIS LES DEUX À LA FOIS. La première est
+								    une TÂCHE : des produits attendent une décision. La
+								    seconde est une INFORMATION : ce que le logiciel a
+								    tranché seul et que le gérant n'a jamais relu.
+								    Les confondre donnait « 0 produit à confirmer — 27 % de
+								    vos achats, soit 0 € » : trois nombres justes, une phrase
+								    fausse, et un bouton vers une file vide. */}
+								{bord.libellesAConfirmer > 0 ? (
 									<Surface
 										outline
 										color="brand"
@@ -139,19 +148,52 @@ function Pilotage() {
 												</p>
 												<p className="text-cladd-2xs opacity-85">
 													<span className="tabular-nums">
-														{pourcent(bord.partNonConfirmee)}
-													</span>{' '}
-													de vos achats reposent encore sur une classification que vous
-													n&rsquo;avez pas relue, soit{' '}
-													<span className="tabular-nums">
 														{euros(bord.montantAConfirmer)}
-													</span>
-													.
+													</span>{' '}
+													d&rsquo;achats en jeu. C&rsquo;est la dernière étape avant que vos
+													taux soient entièrement à vous.
 												</p>
 											</div>
 										</div>
 										<Button as={Link} to="/app/confirmer" variant="solid" color="neutral">
 											Confirmer
+											<ArrowRightIcon />
+										</Button>
+									</Surface>
+								) : bord.partNonConfirmee > 0 ? (
+									<Surface
+										outline
+										className="rounded-cladd-2xl shadow-carte"
+										contentClassName="flex flex-wrap items-center justify-between gap-cladd-2xs p-cladd-2xs"
+									>
+										<div className="flex items-center gap-cladd-2xs">
+											<span
+												aria-hidden
+												className="flex size-vignette-sm shrink-0 items-center justify-center rounded-cladd-sm bg-cladd-primary/10 text-cladd-primary"
+											>
+												<SparklesIcon size={24} />
+											</span>
+											<div className="min-w-0">
+												<p className="text-cladd-sm font-semibold">
+													Rien ne vous attend.
+												</p>
+												<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+													<span className="tabular-nums">
+														{pourcent(bord.partNonConfirmee)}
+													</span>{' '}
+													de vos achats — {bord.libellesNonConfirmes} produit
+													{pluriel(bord.libellesNonConfirmes)},{' '}
+													<span className="tabular-nums">
+														{euros(bord.montantNonConfirme)}
+													</span>{' '}
+													— ont été classés sans vous être soumis, parce que le doute
+													était nul. Vous pouvez les revoir quand vous voulez : la
+													déclaration porte votre signature, pas la nôtre.
+												</p>
+											</div>
+										</div>
+										<Button as={Link} to="/app/produits">
+											Revoir mes produits
 											<ArrowRightIcon />
 										</Button>
 									</Surface>
