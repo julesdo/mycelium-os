@@ -130,7 +130,7 @@ function Produits() {
 				actions={
 					annees && annees.length > 1 ? (
 						<Toolbar>
-							<Segmented>
+							<Segmented activeColor="neutral" activeVariant="solid">
 								{annees.map((a) => (
 									<SegmentedButton key={a} active={a === annee} onClick={() => setChoisie(a)}>
 										{a}

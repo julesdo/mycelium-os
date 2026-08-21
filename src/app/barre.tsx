@@ -180,7 +180,13 @@ export function Barre() {
 					className="mx-auto hidden rounded-full md:block"
 					contentClassName="p-1"
 				>
-					<Segmented>
+					{/* `activeColor="neutral"` : mesuré au navigateur, la surface d'accent
+						    du mode clair rend un bleu pâle à 0,93 de clarté — posé sur un
+						    creux à 0,934, le segment actif était invisible. En neutre, il
+						    remonte au blanc de la rampe inversée et se lit comme un contrôle
+						    soulevé. L'accent reste dans le texte et les aplats pleins, jamais
+						    dans les surfaces. */}
+					<Segmented activeColor="neutral" activeVariant="solid">
 						{ENTREES.map(({ to, label, Icone }) => {
 							const ici = actif(to);
 							return (

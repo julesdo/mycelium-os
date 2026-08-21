@@ -168,7 +168,7 @@ export function FeuilleCorrection({
 				<div className="flex flex-col gap-cladd-2xs">
 					<div className="flex flex-col gap-cladd-3xs">
 						<SectionTitle>Est-ce un achat alimentaire ?</SectionTitle>
-						<Segmented>
+						<Segmented activeColor="neutral" activeVariant="solid">
 							<SegmentedButton active={alimentaire} onClick={() => setAlimentaire(true)}>
 								Alimentaire
 							</SegmentedButton>

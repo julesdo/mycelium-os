@@ -96,7 +96,7 @@ function Parametres() {
 						{/* Deux états exclusifs : c'est un `Segmented`, pas un bouton qui
 						    annonce la bascule. « Passer en sombre » oblige à déduire l'état
 						    courant depuis l'action proposée, ce qui se lit à l'envers. */}
-						<Segmented className="self-start">
+						<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
 							<SegmentedButton active={theme === 'light'} onClick={() => setTheme('light')}>
 								<SunIcon />
 								Clair

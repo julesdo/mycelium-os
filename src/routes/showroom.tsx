@@ -314,7 +314,7 @@ function Showroom() {
 		<div className="flex h-dvh flex-col">
 			<div className="shrink-0 border-b border-cladd-bg-outline p-cladd-3xs">
 				<Toolbar>
-					<Segmented>
+					<Segmented activeColor="neutral" activeVariant="solid">
 						{ECRANS.map((e) => (
 							<SegmentedButton key={e} active={ecran === e} onClick={() => setEcran(e)}>
 								{e}
@@ -351,7 +351,7 @@ function DemoTaux() {
 				sousTitre="Exercice 2026, à déclarer avant le 31 mars."
 				actions={
 					<Toolbar>
-						<Segmented>
+						<Segmented activeColor="neutral" activeVariant="solid">
 							{['2026', '2025', '2024'].map((a) => (
 								<SegmentedButton key={a} active={a === '2026'}>
 									{a}

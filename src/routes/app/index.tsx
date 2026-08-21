@@ -49,7 +49,7 @@ function Pilotage() {
 						// main via `variant` et `color`. `Segmented` le porte par contexte,
 						// et `Toolbar` lui donne sa taille et son logement.
 						<Toolbar>
-							<Segmented>
+							<Segmented activeColor="neutral" activeVariant="solid">
 								{annees.map((a) => (
 									<SegmentedButton key={a} active={a === annee} onClick={() => setChoisie(a)}>
 										{a}
