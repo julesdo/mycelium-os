@@ -14,16 +14,17 @@ import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
 
 /**
- * Le sélecteur d'établissement.
+ * L'établissement courant, et le moyen d'en changer.
  *
- * Il ne s'affiche que si le gérant en administre plusieurs. Sur un compte
- * mono-site — le cas de la grande majorité — un sélecteur à une seule entrée
- * n'est pas un choix, c'est du bruit qui occupe la place de la navigation.
+ * Il est TOUJOURS visible, y compris sur un compte mono-site. La version
+ * précédente le masquait dans ce cas, au motif qu'un choix à une entrée n'est
+ * pas un choix — c'est vrai du menu, faux de l'affichage. Toutes les données de
+ * l'écran sont cloisonnées par établissement, et un gérant qui reprend sa
+ * tablette après une réunion doit lire sur QUELLE cantine il travaille sans
+ * avoir à cliquer. C'est aussi ce qui donne à la barre son ancrage à droite :
+ * une identité, à la place où tout le monde la cherche.
  *
- * Quand il s'affiche, en revanche, il est **toujours visible** : toutes les
- * données de l'écran sont cloisonnées par établissement, et confondre deux
- * cantines fait déclarer un chiffre pour l'autre. Un gérant doit pouvoir lire
- * en permanence, sans cliquer, sur laquelle il travaille.
+ * Le menu, lui, ne s'ouvre que s'il y a effectivement plusieurs établissements.
  *
  * Monté sur `Popover` + `List`, pas sur un `<ul>` positionné en absolu.
  * L'ancien assemblage à la main perdait tout ce qu'un menu doit avoir et qu'on
@@ -37,7 +38,7 @@ export function SelecteurEtablissement() {
 	const courante = useQuery(api.organizations.getMyOrg, {});
 	const basculer = useMutation(api.organizations.switchOrganization);
 
-	if (!orgs || orgs.length < 2 || !courante) return null;
+	if (!courante) return null;
 
 	const initiales = (nom: string) =>
 		nom
@@ -47,16 +48,40 @@ export function SelecteurEtablissement() {
 			.join('')
 			.toUpperCase();
 
+	const plusieurs = (orgs?.length ?? 0) > 1;
+
+	// La pastille d'initiales, dans la même géométrie que la marque à l'autre
+	// bout de la barre : deux cercles pleins qui tiennent les extrémités.
+	const pastille = (
+		<span
+			aria-hidden
+			className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cladd-surface-cut text-cladd-3xs font-bold"
+		>
+			{initiales(courante.name ?? '')}
+		</span>
+	);
+
+	if (!plusieurs) {
+		return (
+			<div className="flex items-center gap-cladd-3xs pr-1 pl-1">
+				{pastille}
+				<span className="hidden max-w-40 truncate text-cladd-2xs font-semibold xl:block">
+					{courante.name}
+				</span>
+			</div>
+		);
+	}
+
 	return (
 		<PopoverRoot>
 			<PopoverTrigger>
 				<Button
 					rounded
 					aria-label={`Établissement : ${courante.name}. Changer d'établissement`}
-					className="max-w-48"
+					className="max-w-48 min-w-cladd-md"
 				>
-					<span className="text-cladd-2xs font-bold">{initiales(courante.name ?? '')}</span>
-					<span className="hidden min-w-0 truncate lg:inline">{courante.name}</span>
+					{pastille}
+					<span className="hidden min-w-0 truncate xl:inline">{courante.name}</span>
 					<ChevronDownIcon />
 				</Button>
 			</PopoverTrigger>
@@ -64,7 +89,7 @@ export function SelecteurEtablissement() {
 			<Popover className="w-72" offset={8} position="bottom-end">
 				<List>
 					<ListTitle>Vos établissements</ListTitle>
-					{orgs.map((o) => (
+					{(orgs ?? []).map((o) => (
 						<PopoverClose key={o._id}>
 							<ListButton
 								size="md"

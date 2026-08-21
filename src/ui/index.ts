@@ -17,6 +17,7 @@ export { TwoPane } from './two-pane';
 export { EmptyState } from './empty-state';
 export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
+export { SectionEcran } from './section';
 export { ZoneDepot } from './zone-depot';
 export { TauxEGalim, TauxCompact } from './taux-egalim';
 export { Illustration, type TailleVignette } from './illustration';

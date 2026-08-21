@@ -22,8 +22,10 @@ import { Route as AppConfirmerRouteImport } from './routes/app/confirmer'
 import { Route as AppDiagnosticsRouteImport } from './routes/app/diagnostics'
 import { Route as AppFacturesRouteImport } from './routes/app/factures'
 import { Route as AppParametresRouteImport } from './routes/app/parametres'
+import { Route as AppProduitsRouteImport } from './routes/app/produits'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppDiagnosticIdRouteImport } from './routes/app/diagnostic.$id'
+import { Route as AppFactureIdRouteImport } from './routes/app/facture.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -90,6 +92,11 @@ const AppParametresRoute = AppParametresRouteImport.update({
   path: '/parametres',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppProduitsRoute = AppProduitsRouteImport.update({
+  id: '/produits',
+  path: '/produits',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -98,6 +105,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 const AppDiagnosticIdRoute = AppDiagnosticIdRouteImport.update({
   id: '/diagnostic/$id',
   path: '/diagnostic/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppFactureIdRoute = AppFactureIdRouteImport.update({
+  id: '/facture/$id',
+  path: '/facture/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
 
@@ -114,9 +126,11 @@ export interface FileRoutesByFullPath {
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/produits': typeof AppProduitsRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
+  '/app/facture/$id': typeof AppFactureIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -130,9 +144,11 @@ export interface FileRoutesByTo {
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/produits': typeof AppProduitsRoute
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
+  '/app/facture/$id': typeof AppFactureIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -148,9 +164,11 @@ export interface FileRoutesById {
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/produits': typeof AppProduitsRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
+  '/app/facture/$id': typeof AppFactureIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,9 +185,11 @@ export interface FileRouteTypes {
     | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
+    | '/app/produits'
     | '/app/'
     | '/api/auth/$'
     | '/app/diagnostic/$id'
+    | '/app/facture/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -183,9 +203,11 @@ export interface FileRouteTypes {
     | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
+    | '/app/produits'
     | '/app'
     | '/api/auth/$'
     | '/app/diagnostic/$id'
+    | '/app/facture/$id'
   id:
     | '__root__'
     | '/'
@@ -200,9 +222,11 @@ export interface FileRouteTypes {
     | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
+    | '/app/produits'
     | '/app/'
     | '/api/auth/$'
     | '/app/diagnostic/$id'
+    | '/app/facture/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -310,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppParametresRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/produits': {
+      id: '/app/produits'
+      path: '/produits'
+      fullPath: '/app/produits'
+      preLoaderRoute: typeof AppProduitsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -324,6 +355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiagnosticIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/facture/$id': {
+      id: '/app/facture/$id'
+      path: '/facture/$id'
+      fullPath: '/app/facture/$id'
+      preLoaderRoute: typeof AppFactureIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -332,8 +370,10 @@ interface AppRouteRouteChildren {
   AppDiagnosticsRoute: typeof AppDiagnosticsRoute
   AppFacturesRoute: typeof AppFacturesRoute
   AppParametresRoute: typeof AppParametresRoute
+  AppProduitsRoute: typeof AppProduitsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDiagnosticIdRoute: typeof AppDiagnosticIdRoute
+  AppFactureIdRoute: typeof AppFactureIdRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -341,8 +381,10 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDiagnosticsRoute: AppDiagnosticsRoute,
   AppFacturesRoute: AppFacturesRoute,
   AppParametresRoute: AppParametresRoute,
+  AppProduitsRoute: AppProduitsRoute,
   AppIndexRoute: AppIndexRoute,
   AppDiagnosticIdRoute: AppDiagnosticIdRoute,
+  AppFactureIdRoute: AppFactureIdRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

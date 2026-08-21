@@ -1,7 +1,15 @@
-import type { ReactNode } from 'react';
-import { Link, useRouterState, CatchBoundary } from '@tanstack/react-router';
+import { useState, type ReactNode } from 'react';
+import { Link, useRouterState, useNavigate, CatchBoundary } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
-import { Surface, Toolbar, ToolbarButton, Button, Chip } from '@cladd-ui/react';
+import {
+	Surface,
+	SurfaceCut,
+	Segmented,
+	SegmentedButton,
+	SearchField,
+	Button,
+	Chip
+} from '@cladd-ui/react';
 import {
 	CameraIcon,
 	GaugeIcon,
@@ -21,26 +29,30 @@ import { SelecteurEtablissement } from './selecteur-etablissement';
  * POURQUOI EN HAUT, ET PLUS SUR LE CÔTÉ. Le rail vertical coûtait de la
  * largeur en permanence, sur un produit dont l'écran principal est une grille
  * de cartes : chaque pixel pris à gauche est une colonne de moins à 1024 px, et
- * la tablette en paysage est le format de référence. Une barre haute coûte de
- * la hauteur une fois, rend toute la largeur au contenu, et se replie
- * naturellement en barre basse sur téléphone.
+ * la tablette en paysage est le format de référence.
  *
- * ELLE FLOTTE. Elle n'est pas collée aux bords derrière un filet : c'est une
- * surface arrondie posée sur le fond chaud, avec une ombre basse. La
- * différence n'est pas décorative — un bandeau bordé lit « chrome
- * d'application de gestion », une surface posée lit « objet ». C'est la même
- * grammaire que les cartes du contenu, et c'est ce qui fait tenir l'ensemble.
+ * SA COMPOSITION, ET POURQUOI ELLE TIENT. Une première version posait les
+ * quatre onglets à plat, étiquetés, dans une capsule blanche flottante. Deux
+ * défauts qui se cumulent : quatre libellés côte à côte occupent la moitié de
+ * la barre sans qu'aucun ne ressorte, et une capsule posée sur le fond donne un
+ * bandeau qui flotte au-dessus du contenu au lieu de le coiffer.
  *
- * LA PASTILLE. « À confirmer » porte le nombre de produits en attente, sur
- * tous les écrans. C'est la seule chose que le gérant doit faire lui-même : ne
- * pas l'afficher en permanence, c'est lui demander d'aller vérifier s'il a du
- * travail — exactement ce qu'un logiciel est censé lui éviter.
+ * Ici : la barre est un BANDEAU, sur le fond de page, refermé par un filet.
+ * Elle ne dispute rien au contenu. Les onglets vivent dans un groupe CREUSÉ —
+ * `SurfaceCut`, la surface enfoncée du kit — et un seul porte son étiquette :
+ * celui où l'on est. Les autres sont des icônes. On lit donc « je suis ici »
+ * d'un coup d'œil, au lieu de comparer quatre mots.
+ *
+ * `Segmented` fait exactement ça et le fait mieux qu'un assemblage à la main :
+ * l'onglet actif remonte de deux niveaux de surface, ce qui le pose en relief
+ * dans le creux, et il devient non cliquable — appuyer sur la page où l'on est
+ * déjà ne recharge rien.
  */
 
 const ENTREES = [
 	{ to: '/app', label: 'Mes taux', Icone: GaugeIcon },
 	{ to: '/app/confirmer', label: 'À confirmer', Icone: CheckCheckIcon },
-	{ to: '/app/factures', label: 'Factures', Icone: FileTextIcon },
+	{ to: '/app/produits', label: 'Produits', Icone: FileTextIcon },
 	{ to: '/app/diagnostics', label: 'Diagnostics', Icone: FileCheck2Icon }
 ] as const;
 
@@ -58,9 +70,6 @@ function useActif() {
  * authentification. Sans isolation, un ornement facultatif emporte la
  * NAVIGATION ENTIÈRE et renvoie le gérant sur un écran d'erreur, alors qu'il
  * lui suffisait de ne pas voir une pastille.
- *
- * La règle, ici, est absolue : rien de facultatif ne s'affiche dans la barre
- * sans passer par cette frontière.
  */
 function Facultatif({ children }: { children: ReactNode }) {
 	return (
@@ -104,20 +113,47 @@ function PastilleRonde() {
 	);
 }
 
+/**
+ * La recherche de produit.
+ *
+ * Elle n'est pas un ornement de barre : c'est la seule porte d'entrée vers
+ * « je veux revoir ce que vous avez décidé sur les carottes ». Sans elle, un
+ * produit mal classé n'est plus atteignable une fois sorti de la file de
+ * confirmation — et il pèse pourtant sur le taux toute l'année.
+ */
+function Recherche() {
+	const navigate = useNavigate();
+	const [terme, setTerme] = useState('');
+
+	return (
+		<SearchField
+			value={terme}
+			onChange={setTerme}
+			placeholder="Rechercher un produit"
+			className="hidden w-64 lg:block"
+			onKeyDown={(e) => {
+				if (e.key !== 'Enter') return;
+				void navigate({ to: '/app/produits', search: { q: terme } });
+			}}
+		/>
+	);
+}
+
 export function Barre() {
 	const actif = useActif();
 
 	return (
-		<header className="shrink-0 p-cladd-3xs pb-0">
-			<Surface
-				outline
-				className="rounded-full shadow-carte"
-				contentClassName="flex items-center gap-cladd-3xs p-2"
-			>
+		<header className="shrink-0 border-b border-cladd-bg-outline">
+			{/* Le rembourrage vertical est délibérément plus serré que l'horizontal :
+			    le groupe de navigation porte déjà son propre logement de 8px, et le
+			    cumuler avec 16px de bandeau donnait une barre de 89px. Sur une
+			    tablette en paysage, chaque dizaine de pixels pris en haut est une
+			    rangée de cartes en moins. */}
+			<div className="flex items-center gap-cladd-2xs px-cladd-3xs py-2">
 				<Link
 					to="/app"
 					aria-label="Mycelium, retour à vos taux"
-					className="flex shrink-0 items-center gap-cladd-3xs pl-1"
+					className="flex shrink-0 items-center gap-cladd-3xs"
 				>
 					{/*
 					  La marque en pastille pleine plutôt qu'en glyphe posé sur le fond.
@@ -125,66 +161,57 @@ export function Barre() {
 					  d'encre ; sans cette classe, le logo hériterait du gris des
 					  surfaces neutres et la barre n'aurait aucune signature.
 					*/}
-					<span className="cladd-color-brand flex size-11 items-center justify-center rounded-full bg-cladd-primary text-cladd-on-primary">
+					<span className="cladd-color-brand flex size-cladd-md items-center justify-center rounded-full bg-cladd-primary text-cladd-on-primary">
 						<LogoMycelium className="h-4 w-auto" />
 					</span>
-					<span className="hidden text-cladd-sm font-semibold tracking-tight lg:block">
-						Mycelium
-					</span>
+					<span className="hidden text-cladd-sm font-bold tracking-tight xl:block">Mycelium</span>
 				</Link>
 
 				{/*
-				  La navigation centrale, dans un `Toolbar` transparent : le groupe
-				  n'a pas besoin de son propre logement, il est déjà DANS la barre.
-				  L'entrée active est la seule à porter une surface — c'est elle, et
-				  elle seule, qui doit se lire comme un contrôle réel.
+				  Le groupe creusé. `SurfaceCut` est la surface ENFONCÉE du kit : elle
+				  dit « un logement », et l'onglet actif s'y pose en relief. Un
+				  `Surface` ordinaire dirait l'inverse — un bloc posé sur la barre,
+				  dans lequel plus rien ne peut ressortir.
 				*/}
-				<Toolbar
-					variant="transparent"
-					outline={false}
-					className="mx-auto hidden md:block"
-					contentClassName="gap-1"
+				<SurfaceCut
+					as="nav"
+					aria-label="Navigation principale"
+					outline
+					className="mx-auto hidden rounded-full md:block"
+					contentClassName="p-1"
 				>
-					{ENTREES.map(({ to, label, Icone }) => {
-						const ici = actif(to);
-						return (
-							<ToolbarButton
-								key={to}
-								as={Link}
-								to={to}
-								rounded
-								variant={ici ? 'gradient' : 'transparent'}
-								outline={ici}
-								color={ici ? 'brand' : undefined}
-								aria-current={ici ? 'page' : undefined}
-								// En dessous de 1024px le libellé disparaît et le bouton se
-								// referme sur son icône : mesuré à 36px de large, sous le
-								// plancher tactile de 48. La hauteur, elle, restait bonne —
-								// c'est le genre de manque qu'on ne voit jamais sans mesurer,
-								// et qui fait rater une cible sur deux au doigt.
-								className="min-w-cladd-md"
-							>
-								<Icone />
-								<span className="hidden lg:inline">{label}</span>
-								{to === '/app/confirmer' ? (
-									<Facultatif>
-										<PastilleChip />
-									</Facultatif>
-								) : null}
-							</ToolbarButton>
-						);
-					})}
-				</Toolbar>
+					<Segmented>
+						{ENTREES.map(({ to, label, Icone }) => {
+							const ici = actif(to);
+							return (
+								<SegmentedButton
+									key={to}
+									as={Link}
+									to={to}
+									active={ici}
+									aria-label={label}
+									aria-current={ici ? 'page' : undefined}
+									// Seul l'onglet où l'on est porte son étiquette. Les autres
+									// se referment sur leur icône, et `min-w` les tient au
+									// plancher tactile de 48px — sans quoi ils tombaient à 36.
+									className="min-w-cladd-md"
+								>
+									<Icone />
+									{ici ? <span className="hidden lg:inline">{label}</span> : null}
+									{to === '/app/confirmer' ? (
+										<Facultatif>
+											<PastilleChip />
+										</Facultatif>
+									) : null}
+								</SegmentedButton>
+							);
+						})}
+					</Segmented>
+				</SurfaceCut>
 
 				<div className="ml-auto flex shrink-0 items-center gap-cladd-3xs">
-					<Facultatif>
-						<SelecteurEtablissement />
-					</Facultatif>
+					<Recherche />
 
-					{/* Même piège que la navigation : sous 640px le libellé disparaît et
-					    le bouton se referme sous le plancher tactile. `min-w` le tient
-					    à 48px, et `rounded` en fait alors un cercle franc plutôt qu'un
-					    rectangle presque carré. */}
 					<Button
 						as={Link}
 						to="/app/factures"
@@ -192,10 +219,15 @@ export function Barre() {
 						variant="solid-fill"
 						rounded
 						className="min-w-cladd-md"
+						aria-label="Déposer des factures"
 					>
 						<CameraIcon />
 						<span className="hidden sm:inline">Déposer</span>
 					</Button>
+
+					<Facultatif>
+						<SelecteurEtablissement />
+					</Facultatif>
 
 					<Button
 						as={Link}
@@ -209,7 +241,7 @@ export function Barre() {
 						<SettingsIcon />
 					</Button>
 				</div>
-			</Surface>
+			</div>
 		</header>
 	);
 }
@@ -217,9 +249,9 @@ export function Barre() {
 /**
  * La barre basse du téléphone.
  *
- * Elle flotte elle aussi, au-dessus du contenu et au-dessus de la zone de
- * geste système : une barre collée au bord bas se fait manger par le trait
- * d'accueil d'iOS, et le dernier onglet devient inatteignable.
+ * Elle flotte, au-dessus du contenu et au-dessus de la zone de geste système :
+ * une barre collée au bord bas se fait manger par le trait d'accueil d'iOS, et
+ * le dernier onglet devient inatteignable.
  *
  * Les libellés sont écrits sous les icônes plutôt que supprimés. « Diagnostics »
  * et « À confirmer » ne se devinent pas depuis un pictogramme, et un gérant qui

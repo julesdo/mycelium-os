@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
 	Popup,
 	PopupContent,
@@ -73,7 +73,9 @@ export function FeuilleCorrection({
 	nomDocument,
 	enCours,
 	onEnregistrer,
-	onFermer
+	onFermer,
+	detail,
+	intitule = 'Classer ce produit'
 }: {
 	produit: ProduitACorriger;
 	urlDocument: string | null;
@@ -81,6 +83,15 @@ export function FeuilleCorrection({
 	enCours: boolean;
 	onEnregistrer: (d: Decision) => void;
 	onFermer: () => void;
+	/**
+	 * Le détail des lignes qui portent ce produit, quand on l'ouvre depuis le
+	 * catalogue plutôt que depuis la file. Ce n'est pas le même besoin : dans la
+	 * file, le gérant tranche vite sur une proposition fraîche ; dans le
+	 * catalogue, il revient sur une décision déjà prise et veut d'abord voir ce
+	 * qu'il a réellement acheté.
+	 */
+	detail?: ReactNode;
+	intitule?: string;
 }) {
 	const p = produit.proposition;
 	const [alimentaire, setAlimentaire] = useState(p?.isFood ?? true);
@@ -106,9 +117,7 @@ export function FeuilleCorrection({
 				if (!ouvert) onFermer();
 			}}
 			contentClassName="max-w-200"
-			headerLeft={
-				<span className="px-2 pb-1 text-cladd-sm font-semibold">Classer ce produit</span>
-			}
+			headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">{intitule}</span>}
 		>
 			<PopupContent>
 				<div className="flex items-start gap-cladd-2xs">
@@ -152,6 +161,8 @@ export function FeuilleCorrection({
 					</Button>
 				) : null}
 			</PopupContent>
+
+			{detail ? <PopupContent>{detail}</PopupContent> : null}
 
 			<PopupContent>
 				<div className="flex flex-col gap-cladd-2xs">

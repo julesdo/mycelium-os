@@ -1,11 +1,27 @@
 import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Surface, Spinner } from '@cladd-ui/react';
-import { UploadCloudIcon, CheckCheckIcon, FileCheckIcon } from 'lucide-react';
+import { Button, Surface, Spinner, Chip } from '@cladd-ui/react';
+import {
+	UploadCloudIcon,
+	CheckCheckIcon,
+	FileCheckIcon,
+	ChevronRightIcon,
+	TriangleAlertIcon
+} from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { Page, PageHeader, PageBody, Bandeau, ZoneDepot, FilTravail, pluriel } from '../../ui';
+import {
+	Page,
+	PageHeader,
+	PageBody,
+	Bandeau,
+	ZoneDepot,
+	FilTravail,
+	SectionEcran,
+	euros,
+	pluriel
+} from '../../ui';
 import { trierFichiers, ACCEPT_HTML, type Refus } from '../../screens/factures/formats';
 
 export const Route = createFileRoute('/app/factures')({ component: Factures });
@@ -222,6 +238,8 @@ function Factures() {
 						</Surface>
 					) : null}
 
+					<Facturier annee={EXERCICE} />
+
 					{suivi?.diagnosticId ? (
 						<Bandeau
 							icone={<FileCheckIcon size={16} />}
@@ -263,5 +281,88 @@ function Factures() {
 				</div>
 			</PageBody>
 		</Page>
+	);
+}
+
+const DATE = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' });
+
+/**
+ * Les factures de l'exercice, et l'entrée vers leur détail.
+ *
+ * Elles n'étaient visibles que pendant leur traitement, dans le fil, puis
+ * disparaissaient. Un gérant qui voulait vérifier « est-ce que la facture de
+ * mars est bien passée ? » n'avait aucune liste à consulter — et la question
+ * se pose à chaque fois qu'un taux surprend.
+ *
+ * Une facture illisible reste dans la liste, marquée comme telle. La faire
+ * disparaître donnerait un facturier propre et un taux faux : c'est exactement
+ * l'échange que ce produit ne doit jamais faire.
+ */
+function Facturier({ annee }: { annee: string }) {
+	const factures = useQuery(api.egalim.produits.listerFactures, { annee });
+	if (!factures || factures.length === 0) return null;
+
+	return (
+		<SectionEcran
+			titre="Vos factures"
+			legende={`${factures.length} fichier${pluriel(factures.length)} sur l'exercice ${annee}.`}
+		>
+			<div className="flex flex-col gap-cladd-3xs">
+				{factures.map((f) => (
+					<Link
+						key={f.documentId}
+						to="/app/facture/$id"
+						params={{ id: f.documentId }}
+						className="block"
+					>
+						<Surface
+							outline
+							hoverable
+							clickable
+							className="rounded-cladd-lg"
+							contentClassName="flex flex-wrap items-center gap-cladd-3xs p-cladd-3xs"
+						>
+							<div className="min-w-0 flex-1">
+								<span className="block truncate text-cladd-xs font-medium">
+									{f.invoiceNumber ? `Facture ${f.invoiceNumber}` : f.filename}
+								</span>
+								<span className="text-cladd-3xs text-cladd-fg-softer">
+									{[
+										f.supplierName,
+										f.invoiceDate
+											? DATE.format(new Date(`${f.invoiceDate}T00:00:00`))
+											: null,
+										f.invoiceNumber ? f.filename : null
+									]
+										.filter(Boolean)
+										.join(' · ') || 'En cours de lecture'}
+								</span>
+							</div>
+
+							<div className="flex shrink-0 items-center gap-cladd-3xs">
+								{f.extractionStatus === 'FAILED' ? (
+									<Chip size="sm" color="orange">
+										<TriangleAlertIcon size={12} />
+										Illisible
+									</Chip>
+								) : f.extractionStatus === 'PENDING' ? (
+									<Chip size="sm" color="neutral">
+										Lecture en cours
+									</Chip>
+								) : (
+									<span className="text-cladd-3xs text-cladd-fg-softer tabular-nums">
+										{f.linesCount} ligne{pluriel(f.linesCount)}
+									</span>
+								)}
+								<span className="w-24 text-right text-cladd-xs font-semibold tabular-nums">
+									{f.totalHT !== null ? euros(f.totalHT) : '—'}
+								</span>
+								<ChevronRightIcon size={16} className="text-cladd-fg-softest" />
+							</div>
+						</Surface>
+					</Link>
+				))}
+			</div>
+		</SectionEcran>
 	);
 }
