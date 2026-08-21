@@ -1,9 +1,10 @@
 /* Mycelium — le système visuel.
  *
- * Cladd est un kit dense, conçu pour des éditeurs de bureau pilotés à la
- * souris. Ce produit est tactile, en tablette, pour un gérant de cantine qui
- * n'a pas vingt ans. Ce fichier est le seul endroit où l'écart entre les deux
- * se règle, et il se relit comme du code. */
+ * Cladd est un kit dense, sombre par défaut, conçu pour des éditeurs de bureau
+ * pilotés à la souris. Ce produit est tactile, en tablette, clair, et son
+ * utilisateur est un responsable de cuisine qui traverse l'écran en quelques
+ * secondes entre deux services. Ce fichier est le seul endroit où l'écart
+ * entre les deux se règle, et il se relit comme du code. */
 
 @theme {
 	/* ESPACEMENT — commande les hauteurs de contrôle.
@@ -39,11 +40,24 @@
 	--text-cladd-3xs: 10px;
 	--text-cladd-4xs: 8px;
 
+	/* La famille. Plus Jakarta Sans est une géométrique à hauteur d'x généreuse :
+	 * elle tient les petits corps sur une tablette tenue à bout de bras, là où
+	 * une grotesque classique se referme. Elle est empaquetée avec l'application
+	 * — aucune requête vers un tiers, donc aucune dépendance réseau au premier
+	 * rendu, et rien qui parte chez un tiers depuis l'écran d'un client. */
+	--font-sans:
+		'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
+		'Segoe UI', Roboto, sans-serif;
+
 	/* RAYONS — piège : Cladd calcule chaque pas avec des numérateurs écrits en
 	 * dur, rapportés à sa base `md`. Décaler l'espacement sans les réécrire
 	 * désaccorderait silencieusement les arrondis de l'échelle. Les trois blocs
-	 * se retunent ensemble, sur la nouvelle base md = 48px. */
-	--cladd-radius: 12px;
+	 * se retunent ensemble, sur la nouvelle base md = 48px.
+	 *
+	 * La base passe de 12 à 16px : sur des contrôles de 48px de haut, 12px
+	 * lisait « formulaire administratif ». 16px lit « application tactile »,
+	 * et porte les cartes à 24px (`2xl`), ce qui est la respiration voulue. */
+	--cladd-radius: 16px;
 	--radius-cladd-3xs: calc(var(--cladd-radius) * 16 / 48);
 	--radius-cladd-2xs: calc(var(--cladd-radius) * 20 / 48);
 	--radius-cladd-xs: calc(var(--cladd-radius) * 28 / 48);
@@ -66,13 +80,41 @@
 	 * explicitement de ne pas étendre : « Don't invent suffixes ». Ce qui suit
 	 * n'existe pas dans le kit et ne prétend pas en faire partie. */
 
-	/* Le taux EGalim : le seul chiffre que le gérant retient de l'écran. */
-	--text-mycelium-taux: 40px;
+	/* Les deux corps de chiffre. Le taux EGalim est le seul nombre que le gérant
+	 * retient de l'écran ; le second sert aux montants qui l'accompagnent. */
+	--text-mycelium-taux: 56px;
+	--text-mycelium-chiffre: 32px;
+	/* Le titre d'écran. `--text-cladd-md` (18px) est un corps de contrôle, pas
+	 * un titre : sous une barre de navigation qui porte déjà le nom de la
+	 * section, un H1 de 18px ne se distingue plus de la légende qui le suit. */
+	--text-mycelium-titre: 24px;
 
 	/* Le rail de navigation. Ces largeurs ne mesurent pas un contrôle mais une
 	 * zone de mise en page : elles n'ont pas leur place sur l'échelle du kit. */
-	--spacing-rail: 72px;
-	--spacing-rail-deplie: 240px;
+	--spacing-rail: 88px;
+	--spacing-rail-deplie: 248px;
+
+	/* La vignette d'illustration : le carré teinté qui porte l'emoji du produit.
+	 * Trois tailles, et trois seulement — une rangée dense, une carte, un
+	 * en-tête de détail. */
+	--spacing-vignette-sm: 48px;
+	--spacing-vignette-md: 72px;
+	--spacing-vignette-lg: 112px;
+	/* Le corps de l'illustration, indissociable de la taille du lit : un emoji
+	 * porte beaucoup de blanc interne, et c'est ce rapport d'environ 55 % qui
+	 * fait la différence entre une vignette et un emoji posé dans du texte. */
+	--text-vignette-sm: 26px;
+	--text-vignette-md: 40px;
+	--text-vignette-lg: 60px;
+
+	/* ÉLÉVATION — Cladd dessine ses contours en ombres internes, ce qui suffit à
+	 * séparer deux surfaces adjacentes mais ne décolle jamais une carte de son
+	 * fond. Sur un écran clair et aéré, c'est cette ombre portée, très basse et
+	 * très diffuse, qui fait la différence entre « tableau » et « objet ». */
+	--shadow-carte:
+		0 1px 2px oklch(0.3 0.02 265 / 0.04), 0 12px 32px -16px oklch(0.3 0.02 265 / 0.16);
+	--shadow-carte-levee:
+		0 2px 4px oklch(0.3 0.02 265 / 0.05), 0 20px 48px -20px oklch(0.3 0.02 265 / 0.24);
 
 	/* SEUILS — réservés, jamais décoratifs.
 	 * Ces trois couleurs ne signifient qu'une chose : au-dessus du seuil, tout
@@ -82,7 +124,72 @@
 	--color-seuil-atteint: oklch(0.55 0.15 150);
 	--color-seuil-proche: oklch(0.72 0.16 75);
 	--color-seuil-manque: oklch(0.55 0.19 25);
+	/* Les mêmes, en lavis, pour le fond d'une jauge ou d'une pastille. */
+	--color-seuil-atteint-fond: oklch(0.94 0.05 150);
+	--color-seuil-proche-fond: oklch(0.95 0.055 75);
+	--color-seuil-manque-fond: oklch(0.95 0.04 25);
+
+	/* TEINTES DE FAMILLE — le lit pastel qui porte l'illustration d'un produit.
+	 *
+	 * Amendement assumé à la règle des couleurs réservées, et sa limite exacte :
+	 * ces lavis ne portent JAMAIS un verdict de conformité, seulement une
+	 * famille de produit, et uniquement derrière une illustration. Un verdict
+	 * porte toujours un mot — « Bio », « Durable », « Hors barème » — de sorte
+	 * que la couleur n'est jamais seule à le dire. Ils sont deux fois plus
+	 * clairs et trois fois moins saturés que les couleurs de seuil : sur
+	 * l'écran, on ne les confond pas. */
+	--color-famille-viande: oklch(0.93 0.042 22);
+	--color-famille-poisson: oklch(0.93 0.04 232);
+	--color-famille-fruits-legumes: oklch(0.93 0.048 152);
+	--color-famille-laitiers: oklch(0.951 0.038 92);
+	--color-famille-epicerie-seche: oklch(0.94 0.038 66);
+	--color-famille-epicerie-appertisee: oklch(0.93 0.036 302);
+	--color-famille-boissons: oklch(0.94 0.042 42);
+	--color-famille-autre: oklch(0.94 0.006 35);
+
+	/* L'apparition d'une décision dans le fil de traitement.
+	 *
+	 * Ce n'est pas un ornement : c'est le mouvement qui fait la différence entre
+	 * « une liste s'affiche » et « quelque chose est en train de travailler ».
+	 * Le décalage vertical vient du haut parce que c'est par là que les entrées
+	 * arrivent — l'œil suit la direction du flux au lieu de rechercher ce qui a
+	 * changé. Court : au-delà d'un tiers de seconde, ça retarde la lecture. */
+	--animate-apparition: apparition 0.35s ease-out;
+	@keyframes apparition {
+		from {
+			opacity: 0;
+			transform: translateY(-8px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	/* La respiration d'un traitement en cours, sur la pastille d'état. */
+	--animate-pouls: pouls 1.8s ease-in-out infinite;
+	@keyframes pouls {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.35;
+		}
+	}
 }
+
+/* « Tactile » : un pointeur grossier, c'est-à-dire un doigt.
+ *
+ * Cladd expose `useDevice()`, mais sa documentation dit elle-même de ne s'en
+ * servir que pour des décisions de rendu, et il renvoie `{}` en rendu serveur —
+ * ce qui, sur une application rendue côté serveur, produit une divergence
+ * d'hydratation à la première peinture. Une requête média n'a pas ce défaut :
+ * elle est évaluée par le navigateur, jamais par nous.
+ *
+ * Sert à une chose : n'afficher le bouton « photographier » que là où il y a
+ * un appareil photo derrière. */
+@custom-variant tactile (@media (pointer: coarse));
 
 /* L'accent de marque.
  *
@@ -97,20 +204,54 @@
 	--cladd-theme: #1d3fa0;
 }
 
-/* CONTRASTE — les tons secondaires du mode clair, assombris.
+/* LE MODE CLAIR — refondu.
  *
- * Cladd est dark-first et ses tons secondaires sont calés pour un fond noir.
- * Reportés sur du blanc, ils tombent sous le seuil : mesuré au navigateur,
- * `fg-softer` donnait 3,23 pour 1 là où le texte courant demande 4,5. Le
- * symptôme n'est pas spectaculaire — c'est du gris clair, ça a l'air
- * « design » — mais un gérant sur une tablette en plein jour ne lit pas les
- * libellés de seuil.
+ * Cladd est sombre par défaut et son mode clair n'en est que la transposition :
+ * page blanche, surfaces qui s'ENFONCENT vers le gris à mesure qu'elles
+ * s'empilent. Sur un écran de travail, ça donne des cartes grises sur du blanc,
+ * c'est-à-dire l'inverse de la hiérarchie qu'on veut lire — et c'est une bonne
+ * part de ce qui faisait « tableur ».
  *
- * Le mode sombre n'est pas touché : les valeurs du kit y conviennent. */
+ * On inverse le sens de la rampe : la page est le point le plus SOMBRE, et
+ * chaque surface remonte vers le blanc. Une carte flotte alors sur un fond
+ * chaud au lieu de s'y creuser. La page porte une pointe de chroma chaude que
+ * les surfaces n'ont pas : la séparation se lit en TEINTE autant qu'en clarté,
+ * ce qui permet de garder les deux presque aussi lumineuses — donc l'écran
+ * reste aéré — sans que les cartes se confondent avec le fond. */
 :root.light,
-.light {
-	--cladd-fg-softer: oklch(0.56 0 0);
-	--cladd-fg-softest: oklch(0.63 0 0);
+.light,
+.light .cladd-color-neutral,
+.light.cladd-color-neutral {
+	--cladd-bg: oklch(0.957 0.009 44);
+	--cladd-surface: oklch(0.988 0.004 44);
+	--cladd-surface-mix-color: var(--cladd-surface-white);
+	--cladd-surface-mix-amount: 5%;
+
+	/* Le creux garde la teinte du fond : un champ est une découpe DANS la page,
+	 * pas une pièce rapportée grise. */
+	--cladd-surface-cut: oklch(0.934 0.011 44);
+
+	/* Les contours, tièdes et discrets. Cladd les pose en gris neutre à 0.89 ;
+	 * ce gris, posé sur un fond chaud, tire au vert par contraste simultané. */
+	--cladd-bg-outline: oklch(0.898 0.008 44);
+	--cladd-outline: oklch(0.906 0.008 44);
+
+	/* LE TEXTE — encre bleu-noir plutôt que gris.
+	 *
+	 * Cladd pose `fg` à 0.32 de gris neutre. Un gris pur sur un fond chaud
+	 * paraît délavé, et 0.32 reste un gris, pas un noir : les titres n'ont
+	 * aucune autorité. On descend à 0.26 avec une pointe de bleu, la même
+	 * teinte que l'accent — le texte et la marque parlent alors la même langue.
+	 *
+	 * Les tons secondaires sont assombris par rapport au kit : mesuré au
+	 * navigateur, `fg-softer` donnait 3,23 pour 1 là où le texte courant demande
+	 * 4,5. Le symptôme n'est pas spectaculaire — c'est du gris clair, ça a l'air
+	 * « design » — mais un gérant sur une tablette en plein jour ne lit pas les
+	 * libellés de seuil. */
+	--cladd-fg: oklch(0.26 0.026 265);
+	--cladd-fg-soft: oklch(0.48 0.016 265);
+	--cladd-fg-softer: oklch(0.575 0.012 265);
+	--cladd-fg-softest: oklch(0.66 0.01 265);
 }
 
 /* Le texte porté PAR l'accent, en mode clair.
@@ -124,4 +265,30 @@
 .light [class*='cladd-color-']:not(.cladd-color-neutral),
 .light[class*='cladd-color-']:not(.cladd-color-neutral) {
 	--cladd-on-primary: oklch(0.98 0.01 265);
+}
+
+/* Les chiffres, toujours alignés en colonne.
+ *
+ * Un taux qui passe de 49 % à 50 % ne doit pas décaler ce qui l'entoure, et
+ * deux montants l'un sous l'autre se comparent à la virgule. C'est une
+ * propriété de la police, pas une décision d'écran : elle se pose une fois. */
+body {
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: 'tnum' 1;
+}
+
+/* Le mouvement, et son interrupteur.
+ *
+ * L'écran de traitement montre l'IA travailler : sans animation, il ne reste
+ * qu'un texte qui change. Mais un gérant qui a désactivé les animations de son
+ * système les a désactivées partout, et une barre qui pulse en continu est
+ * exactement ce qui déclenche un malaise vestibulaire. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+	}
 }

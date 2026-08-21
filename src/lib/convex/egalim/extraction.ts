@@ -257,6 +257,7 @@ async function traiterCsv(
 	document: DocumentPourExtraction,
 	buffer: Buffer
 ): Promise<void> {
+	await etape(ctx, document._id, 'Lecture du tableau');
 	const resultat = parseCsv(decoderTexte(buffer));
 
 	if (resultat.erreur) {
@@ -371,6 +372,28 @@ async function enregistrerDocumentExtrait(
 	});
 }
 
+/**
+ * Publie une étape à l'écran, sans jamais faire échouer l'extraction.
+ *
+ * L'affichage est secondaire par construction : si cette écriture échoue, la
+ * lecture du document continue. L'inverse — une facture perdue parce qu'un
+ * libellé d'étape n'a pas pu s'écrire — serait absurde.
+ */
+async function etape(
+	ctx: ActionCtx,
+	documentId: Id<'invoiceDocuments'>,
+	texte: string
+): Promise<void> {
+	try {
+		await ctx.runMutation(internal.egalim.extractionMutations.noterEtape, {
+			documentId,
+			etape: texte
+		});
+	} catch {
+		/* l'affichage n'interrompt rien */
+	}
+}
+
 /** PDF / image / photo / texte brut : Claude, avec vérification et jusqu'à 2 relances. */
 async function traiterAvecClaude(
 	ctx: ActionCtx,
@@ -391,6 +414,7 @@ async function traiterAvecClaude(
 		return;
 	}
 
+	await etape(ctx, document._id, 'Préparation du fichier');
 	const contenu = await construireContenu(nature, document, buffer);
 
 	let messageRelance: string | undefined;
@@ -409,6 +433,14 @@ async function traiterAvecClaude(
 			});
 			return;
 		}
+
+		await etape(
+			ctx,
+			document._id,
+			tentative === 0
+				? "Lecture de la facture par l'IA"
+				: `Relecture des lignes douteuses (passe ${tentative + 1})`
+		);
 
 		let resultat: { doc: DocumentExtrait; usage: UsageExtraction };
 		try {
@@ -441,6 +473,7 @@ async function traiterAvecClaude(
 			capEur: CAP_EUR
 		});
 
+		await etape(ctx, document._id, `Vérification des totaux — ${resultat.doc.lignes.length} lignes lues`);
 		const verif = verifierExtraction(resultat.doc);
 		if (verif.ok) {
 			await enregistrerDocumentExtrait(ctx, document, {

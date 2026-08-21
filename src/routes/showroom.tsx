@@ -1,27 +1,35 @@
 import { useState } from 'react';
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { Button, Toolbar, Segmented, SegmentedButton, SectionTitle } from '@cladd-ui/react';
-import { CheckCheckIcon, TriangleAlertIcon, UploadIcon } from 'lucide-react';
+import {
+	Button,
+	Toolbar,
+	Segmented,
+	SegmentedButton,
+	SectionTitle,
+	Surface
+} from '@cladd-ui/react';
+import { CheckCheckIcon, TriangleAlertIcon, UploadCloudIcon, ArrowRightIcon } from 'lucide-react';
 import {
 	Page,
 	PageHeader,
 	PageBody,
 	TauxEGalim,
 	Bandeau,
-	Tableau,
-	TableauEntete,
-	TableauCorps,
-	TableauLigne,
-	TableauTitre,
-	TableauCellule,
-	TwoPane,
 	EmptyState,
+	CarteProduit,
+	FilTravail,
+	Repartition,
+	Illustration,
+	ZoneDepot,
 	euros,
 	pourcent,
 	FAMILLES,
-	ZoneDepot
+	type Famille,
+	type Decision,
+	type DocumentEnCours,
+	type LigneFamille
 } from '../ui';
-import { ListeAConfirmer, type LibelleAConfirmer } from '../screens/confirmer/liste';
+import { FeuilleCorrection, type ProduitACorriger } from '../screens/confirmer/correction';
 import { Attestations, type Attestation } from '../screens/diagnostic/attestations';
 import { Shell } from '../app/shell';
 import {
@@ -29,19 +37,23 @@ import {
 	MENTION_FIGE,
 	MENTION_OBLIGATION_DE_MOYENS
 } from '../lib/convex/egalim/mentions';
-import { PreuveEtDecision } from '../screens/confirmer/preuve';
 
 /**
  * La salle d'exposition.
  *
  * Elle rend chaque écran avec des données de démonstration, sans backend et
  * sans authentification, pour qu'on puisse **les regarder** aux quatre largeurs
- * de référence avant de les déclarer finis.
+ * de référence — 375, 768, 1024, 1280 — avant de les déclarer finis.
  *
  * Ce n'est pas un confort : le motif principal des dérives visuelles du produit
  * précédent est qu'on ne regardait jamais le résultat. Un kit contraint les
  * contrôles, un lint contraint les classes, mais seul un coup d'œil attrape une
- * hiérarchie ratée ou un tableau qui déborde.
+ * hiérarchie ratée ou une carte qui déborde.
+ *
+ * Les données ne sont pas décoratives non plus : elles sont choisies pour
+ * exposer les cas qui cassent — un avoir négatif, un libellé abîmé par l'OCR,
+ * un produit que le classificateur n'a pas su trancher, un fichier illisible,
+ * une famille à zéro. Un jeu de démonstration où tout va bien ne prouve rien.
  *
  * La route n'existe qu'en développement : en production, elle renvoie 404.
  */
@@ -52,7 +64,7 @@ export const Route = createFileRoute('/showroom')({
 	component: Showroom
 });
 
-const LIBELLES: LibelleAConfirmer[] = [
+const PRODUITS: ProduitACorriger[] = [
 	{
 		normalizedLabel: 'FILET DE CABILLAUD MSC SURGELE',
 		rawLabelExemple: 'FILET CABILLAUD MSC SURG 5KG',
@@ -66,8 +78,7 @@ const LIBELLES: LibelleAConfirmer[] = [
 			justification:
 				'La mention MSC atteste une pêche durable, qui compte au titre du durable sans compter au bio.',
 			confidence: 0.91
-		},
-		documentId: null
+		}
 	},
 	{
 		normalizedLabel: 'ENTRECOTE VBF',
@@ -82,17 +93,22 @@ const LIBELLES: LibelleAConfirmer[] = [
 			justification:
 				'« Viande bovine française » est une origine, pas une mention qualifiante au barème EGalim.',
 			confidence: 0.88
-		},
-		documentId: null
+		}
 	},
 	{
-		normalizedLabel: 'REMISE PROMO ETE',
-		rawLabelExemple: 'REMISE PROMO ETE -10%',
-		occurrences: 3,
-		montantCumuleHT: -1240.8,
-		motif: 'REGULARISATION',
-		proposition: null,
-		documentId: null
+		normalizedLabel: 'CUISSE DE POULET LABEL ROUGE',
+		rawLabelExemple: 'CUISSES POULET LABEL ROUGE 10KG',
+		occurrences: 22,
+		montantCumuleHT: 6310.2,
+		motif: 'VIANDE_POISSON',
+		proposition: {
+			isFood: true,
+			family: 'VIANDE',
+			qualifyingLabels: ['LABEL_ROUGE'],
+			justification:
+				'Label Rouge est une mention qualifiante : elle compte au durable, et sur le seuil de 60 % de la viande.',
+			confidence: 0.94
+		}
 	},
 	{
 		normalizedLabel: 'CAROTTE RONDELLE BIO',
@@ -106,19 +122,158 @@ const LIBELLES: LibelleAConfirmer[] = [
 			qualifyingLabels: ['AB'],
 			justification: 'La mention BIO figure au libellé ; le certificat fournisseur reste à obtenir.',
 			confidence: 0.74
-		},
-		documentId: null
+		}
+	},
+	{
+		normalizedLabel: 'EMMENTAL RAPE',
+		rawLabelExemple: 'EMMENTAL RAPE 1KG',
+		occurrences: 41,
+		montantCumuleHT: 2870,
+		motif: 'CONFIANCE_BASSE',
+		proposition: {
+			isFood: true,
+			family: 'LAITIERS',
+			qualifyingLabels: [],
+			justification:
+				'Aucune mention qualifiante au libellé. L’emmental générique ne relève d’aucune AOP.',
+			confidence: 0.69
+		}
+	},
+	{
+		normalizedLabel: 'REMISE PROMO ETE',
+		rawLabelExemple: 'REMISE PROMO ETE -10%',
+		occurrences: 3,
+		montantCumuleHT: -1240.8,
+		motif: 'REGULARISATION',
+		proposition: null
+	},
+	{
+		normalizedLabel: 'PREPARATION TRAITEUR REF 88213',
+		rawLabelExemple: 'PREP. TRAITEUR REF 88213 CAT A',
+		occurrences: 7,
+		montantCumuleHT: 1180.6,
+		motif: 'NON_CLASSE',
+		proposition: null
+	},
+	{
+		normalizedLabel: 'LOCATION BACS INOX',
+		rawLabelExemple: 'LOCATION BACS INOX GN1/1',
+		occurrences: 12,
+		montantCumuleHT: 640,
+		motif: 'CONFIANCE_BASSE',
+		proposition: {
+			isFood: true,
+			family: 'AUTRE',
+			qualifyingLabels: [],
+			justification: 'Libellé ambigu : matériel loué plutôt que denrée, mais le doute subsiste.',
+			confidence: 0.51
+		}
 	}
 ];
 
-const FAMILLES_DEMO = [
+const FAMILLES_DEMO: LigneFamille[] = [
 	{ family: 'VIANDE', totalHT: 50400, durableHT: 7100, bioHT: 900 },
-	{ family: 'EPICERIE_APPERTISEE', totalHT: 27000, durableHT: 2400, bioHT: 2400 },
 	{ family: 'FRUITS_LEGUMES', totalHT: 28800, durableHT: 12600, bioHT: 11800 },
+	{ family: 'EPICERIE_APPERTISEE', totalHT: 27000, durableHT: 2400, bioHT: 2400 },
 	{ family: 'LAITIERS', totalHT: 25200, durableHT: 6200, bioHT: 4100 },
 	{ family: 'EPICERIE_SECHE', totalHT: 19800, durableHT: 14900, bioHT: 14900 },
 	{ family: 'BOISSONS', totalHT: 18000, durableHT: 0, bioHT: 0 },
 	{ family: 'POISSON', totalHT: 10800, durableHT: 6500, bioHT: 0 }
+];
+
+const DOCUMENTS: DocumentEnCours[] = [
+	{
+		documentId: 'd1',
+		filename: 'export-comptable-2026.csv',
+		extractionStatus: 'DONE',
+		linesCount: 1842
+	},
+	{
+		documentId: 'd2',
+		filename: 'facture-maison-bertin-mars.pdf',
+		extractionStatus: 'DONE',
+		linesCount: 47
+	},
+	{
+		documentId: 'd3',
+		filename: 'IMG_4471.jpeg',
+		extractionStatus: 'PENDING',
+		extractionEtape: 'Lecture de la facture par l’IA',
+		linesCount: 0
+	},
+	{
+		documentId: 'd4',
+		filename: 'facture-avril-scan.pdf',
+		extractionStatus: 'PENDING',
+		extractionEtape: 'Vérification des totaux — 63 lignes lues',
+		linesCount: 0
+	},
+	{
+		documentId: 'd5',
+		filename: 'photo-floue.jpg',
+		extractionStatus: 'FAILED',
+		extractionError: 'Image trop floue pour être lue.',
+		linesCount: 0
+	}
+];
+
+const DECISIONS: Decision[] = [
+	{
+		label: 'CAROTTE RONDELLE BIO 2.5KG',
+		family: 'FRUITS_LEGUMES',
+		qualifyingLabels: ['AB'],
+		isFood: true,
+		source: 'IA'
+	},
+	{
+		label: 'EMMENTAL RAPE 1KG',
+		family: 'LAITIERS',
+		qualifyingLabels: [],
+		isFood: true,
+		source: 'CACHE'
+	},
+	{
+		label: 'FILET CABILLAUD MSC SURG 5KG',
+		family: 'POISSON',
+		qualifyingLabels: ['PECHE_DURABLE'],
+		isFood: true,
+		source: 'IA'
+	},
+	{
+		label: 'SACS POUBELLE 100L X50',
+		family: 'AUTRE',
+		qualifyingLabels: [],
+		isFood: false,
+		source: 'CACHE'
+	},
+	{
+		label: 'POMMES DE TERRE AGATA 25KG',
+		family: 'FRUITS_LEGUMES',
+		qualifyingLabels: [],
+		isFood: true,
+		source: 'CACHE'
+	},
+	{
+		label: 'HUILE OLIVE VIERGE EXTRA 5L',
+		family: 'EPICERIE_SECHE',
+		qualifyingLabels: ['AOP_AOC_IGP_STG'],
+		isFood: true,
+		source: 'IA'
+	},
+	{
+		label: 'YAOURT NATURE BIO X48',
+		family: 'LAITIERS',
+		qualifyingLabels: ['AB'],
+		isFood: true,
+		source: 'IA'
+	},
+	{
+		label: 'FRAIS DE PORT',
+		family: 'AUTRE',
+		qualifyingLabels: [],
+		isFood: false,
+		source: 'CACHE'
+	}
 ];
 
 const ATTESTATIONS: Attestation[] = [
@@ -140,95 +295,111 @@ const ATTESTATIONS: Attestation[] = [
 	}
 ];
 
-const ECRANS = ['pilotage', 'confirmer', 'diagnostic', 'depot', 'vide', 'coquille'] as const;
+const ECRANS = [
+	'taux',
+	'confirmer',
+	'traitement',
+	'depot',
+	'diagnostic',
+	'vide',
+	'lexique',
+	'coquille'
+] as const;
 type Ecran = (typeof ECRANS)[number];
 
 function Showroom() {
-	const [ecran, setEcran] = useState<Ecran>('pilotage');
-	const [selection, setSelection] = useState<string | null>(LIBELLES[0]!.normalizedLabel);
-	const courant = LIBELLES.find((l) => l.normalizedLabel === selection) ?? LIBELLES[0]!;
+	const [ecran, setEcran] = useState<Ecran>('confirmer');
 
 	return (
 		<div className="flex h-dvh flex-col">
-			<div className="flex shrink-0 flex-wrap gap-cladd-3xs border-b border-cladd-outline p-cladd-3xs">
-				{ECRANS.map((e) => (
-					<Button key={e} size="sm" variant="gradient" pressed={ecran === e} onClick={() => setEcran(e)}>
-						{e}
-					</Button>
-				))}
+			<div className="shrink-0 border-b border-cladd-bg-outline p-cladd-3xs">
+				<Toolbar>
+					<Segmented>
+						{ECRANS.map((e) => (
+							<SegmentedButton key={e} active={ecran === e} onClick={() => setEcran(e)}>
+								{e}
+							</SegmentedButton>
+						))}
+					</Segmented>
+				</Toolbar>
 			</div>
 
 			<div className="min-h-0 flex-1">
-				{ecran === 'pilotage' ? <DemoPilotage /> : null}
-				{ecran === 'vide' ? <DemoVide /> : null}
-				{ecran === 'diagnostic' ? <DemoDiagnostic /> : null}
+				{ecran === 'taux' ? <DemoTaux /> : null}
+				{ecran === 'confirmer' ? <DemoConfirmer /> : null}
+				{ecran === 'traitement' ? <DemoTraitement /> : null}
 				{ecran === 'depot' ? <DemoDepot /> : null}
+				{ecran === 'diagnostic' ? <DemoDiagnostic /> : null}
+				{ecran === 'vide' ? <DemoVide /> : null}
+				{ecran === 'lexique' ? <DemoLexique /> : null}
 				{ecran === 'coquille' ? (
 					<Shell>
-						<DemoPilotage />
+						<DemoTaux />
 					</Shell>
-				) : null}
-				{ecran === 'confirmer' ? (
-					<Page>
-						<PageHeader titre="À confirmer" sousTitre={`4 produits, ${euros(25781.7)} en jeu.`} />
-						<div className="min-h-0 flex-1">
-							<TwoPane
-								liste={
-									<ListeAConfirmer
-										libelles={LIBELLES}
-										selection={courant.normalizedLabel}
-										onSelectionner={setSelection}
-									/>
-								}
-								preuve={
-									<PreuveEtDecision
-										key={courant.normalizedLabel}
-										libelle={courant}
-										urlDocument="#"
-										nomDocument="export-comptable-2026-03.csv"
-										enCours={false}
-										onConfirmer={() => undefined}
-										onCorriger={() => undefined}
-									/>
-								}
-							/>
-						</div>
-					</Page>
 				) : null}
 			</div>
 		</div>
 	);
 }
 
-function DemoPilotage() {
+function DemoTaux() {
 	const total = FAMILLES_DEMO.reduce((s, f) => s + f.totalHT, 0);
 	return (
 		<Page>
 			<PageHeader
-				titre="Tableau de bord"
-				sousTitre="Vos trois taux EGalim sur l'année 2026."
+				titre="Vos taux EGalim"
+				sousTitre="Exercice 2026, à déclarer avant le 31 mars."
 				actions={
 					<Toolbar>
-							<Segmented>
-								{['2026', '2025', '2024'].map((a) => (
-									<SegmentedButton key={a} active={a === '2026'}>
-										{a}
-									</SegmentedButton>
-								))}
-							</Segmented>
-						</Toolbar>
+						<Segmented>
+							{['2026', '2025', '2024'].map((a) => (
+								<SegmentedButton key={a} active={a === '2026'}>
+									{a}
+								</SegmentedButton>
+							))}
+						</Segmented>
+					</Toolbar>
 				}
 			/>
 			<PageBody>
-				<div className="flex flex-col gap-cladd-xs">
+				<div className="flex flex-col gap-cladd-2xs">
 					<Bandeau ton="alerte" icone={<TriangleAlertIcon size={16} />}>
 						2 fichiers n&rsquo;ont pas pu être lus, tous exercices confondus.
 					</Bandeau>
 
-					<div className="grid gap-cladd-xs sm:grid-cols-2 lg:grid-cols-3">
+					<Surface
+						outline
+						color="brand"
+						variant="solid-fill"
+						className="rounded-cladd-2xl shadow-carte-levee"
+						contentClassName="flex flex-wrap items-center justify-between gap-cladd-2xs p-cladd-2xs"
+					>
+						<div className="flex items-center gap-cladd-2xs">
+							<span
+								aria-hidden
+								className="flex size-vignette-sm shrink-0 items-center justify-center rounded-cladd-sm bg-cladd-on-primary/15"
+							>
+								<CheckCheckIcon size={24} />
+							</span>
+							<div className="min-w-0">
+								<p className="text-cladd-sm font-semibold">8 produits à confirmer</p>
+								<p className="text-cladd-2xs opacity-85">
+									<span className="tabular-nums">{pourcent(0.14)}</span> de vos achats reposent
+									encore sur une classification que vous n&rsquo;avez pas relue, soit{' '}
+									<span className="tabular-nums">{euros(34301)}</span>.
+								</p>
+							</div>
+						</div>
+						<Button variant="solid" color="neutral">
+							Confirmer
+							<ArrowRightIcon />
+						</Button>
+					</Surface>
+
+					<div className="grid gap-cladd-2xs lg:grid-cols-3">
 						<TauxEGalim titre="Durable et de qualité" mesure={0.39} seuil={0.5} ecartEuros={19800} />
 						<TauxEGalim titre="Biologique" mesure={0.21} seuil={0.2} ecartEuros={0} />
-						<TauxEGalim titre="Viande et poisson" mesure={0.47} seuil={0.6} ecartEuros={7900} />
+						<TauxEGalim titre="Viande et poisson" mesure={0.56} seuil={0.6} ecartEuros={2400} />
 					</div>
 
 					<p className="text-cladd-2xs text-cladd-fg-softer">
@@ -237,52 +408,120 @@ function DemoPilotage() {
 						2026.
 					</p>
 
-					<Bandeau
-						icone={<CheckCheckIcon size={16} />}
-						action={
-							<Button color="brand" variant="solid-fill">
-								Confirmer
-							</Button>
-						}
-					>
-						<span className="font-semibold tabular-nums">{pourcent(0.14)}</span> de vos achats
-						reposent sur une classification non confirmée.{' '}
-						<span className="text-cladd-fg-soft">
-							4 produits à confirmer, <span className="tabular-nums">{euros(25781)}</span> en jeu.
-						</span>
-					</Bandeau>
-
 					<section className="flex flex-col gap-cladd-3xs">
 						<SectionTitle>D&rsquo;où viennent vos achats</SectionTitle>
-						<Tableau legende="Répartition des achats par famille">
-							<TableauEntete>
-								<TableauTitre>Famille</TableauTitre>
-								<TableauTitre aDroite>Achats HT</TableauTitre>
-								<TableauTitre aDroite>Dont durable</TableauTitre>
-								<TableauTitre aDroite>Dont bio</TableauTitre>
-								<TableauTitre aDroite>Part durable</TableauTitre>
-							</TableauEntete>
-							<TableauCorps>
-								{FAMILLES_DEMO.map((f) => (
-									<TableauLigne key={f.family}>
-										<TableauCellule>{FAMILLES[f.family]}</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{euros(f.totalHT)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{euros(f.durableHT)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{euros(f.bioHT)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{pourcent(f.durableHT / f.totalHT)}
-										</TableauCellule>
-									</TableauLigne>
-								))}
-							</TableauCorps>
-						</Tableau>
+						<Repartition lignes={FAMILLES_DEMO} />
 					</section>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
+function DemoConfirmer() {
+	const [aCorriger, setACorriger] = useState<string | null>(null);
+	const produit = PRODUITS.find((p) => p.normalizedLabel === aCorriger) ?? null;
+	const total = PRODUITS.reduce((s, p) => s + Math.abs(p.montantCumuleHT), 0);
+
+	return (
+		<Page>
+			<PageHeader
+				titre="À confirmer"
+				sousTitre={`${PRODUITS.length} produits, ${euros(total)} en jeu. Les plus lourds d'abord.`}
+			/>
+			<PageBody>
+				<div className="grid gap-cladd-2xs md:grid-cols-2 2xl:grid-cols-3">
+					{PRODUITS.map((p) => (
+						<CarteProduit
+							key={p.normalizedLabel}
+							libelle={p.rawLabelExemple}
+							occurrences={p.occurrences}
+							montant={p.montantCumuleHT}
+							motif={p.motif}
+							proposition={
+								p.proposition
+									? {
+											famille: p.proposition.family,
+											mentions: p.proposition.qualifyingLabels,
+											estAlimentaire: p.proposition.isFood,
+											justification: p.proposition.justification,
+											confiance: p.proposition.confidence
+										}
+									: null
+							}
+							onConfirmer={() => undefined}
+							onCorriger={() => setACorriger(p.normalizedLabel)}
+						/>
+					))}
+				</div>
+			</PageBody>
+
+			{produit ? (
+				<FeuilleCorrection
+					key={produit.normalizedLabel}
+					produit={produit}
+					urlDocument="#"
+					nomDocument="export-comptable-2026.csv"
+					enCours={false}
+					onEnregistrer={() => setACorriger(null)}
+					onFermer={() => setACorriger(null)}
+				/>
+			) : null}
+		</Page>
+	);
+}
+
+function DemoTraitement() {
+	return (
+		<Page>
+			<PageHeader
+				titre="Vos factures"
+				sousTitre="Douze mois d'achats suffisent à calculer vos trois taux de l'exercice 2026."
+			/>
+			<PageBody>
+				<div className="mx-auto flex max-w-4xl flex-col gap-cladd-2xs">
+					<FilTravail
+						documents={DOCUMENTS}
+						classification={{
+							total: 412,
+							faits: 168,
+							echoues: 3,
+							termine: false,
+							recents: DECISIONS
+						}}
+					/>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
+function DemoDepot() {
+	return (
+		<Page>
+			<PageHeader
+				titre="Vos factures"
+				sousTitre="Douze mois d'achats suffisent à calculer vos trois taux de l'exercice 2026."
+			/>
+			<PageBody>
+				<div className="mx-auto flex max-w-4xl flex-col gap-cladd-2xs">
+					<ZoneDepot accept=".csv,.pdf" onFichiers={() => undefined}>
+						<span
+							aria-hidden
+							className="flex size-vignette-md items-center justify-center rounded-cladd-lg bg-cladd-primary/10 text-cladd-primary"
+						>
+							<UploadCloudIcon size={34} />
+						</span>
+						<div className="flex flex-col gap-1">
+							<span className="text-cladd-sm font-semibold">
+								Déposez vos factures, on s&rsquo;occupe du reste
+							</span>
+							<span className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+								Un export comptable en CSV va le plus vite. Les PDF et les photos conviennent
+								aussi&nbsp;— même prises de travers.
+							</span>
+						</div>
+					</ZoneDepot>
 				</div>
 			</PageBody>
 		</Page>
@@ -294,11 +533,11 @@ function DemoDiagnostic() {
 		<Page>
 			<PageHeader
 				titre="Diagnostic EGalim 2026"
-				sousTitre="Restaurant du Parc · mesuré le 14 mars 2027"
+				sousTitre="Votre cantine · mesuré le 14 mars 2027"
 			/>
 			<PageBody>
-				<div className="flex flex-col gap-cladd-xs">
-					<div className="grid gap-cladd-xs sm:grid-cols-2 lg:grid-cols-3">
+				<div className="flex flex-col gap-cladd-2xs">
+					<div className="grid gap-cladd-2xs lg:grid-cols-3">
 						<TauxEGalim titre="Durable et de qualité" mesure={0.39} seuil={0.5} ecartEuros={19800} />
 						<TauxEGalim titre="Biologique" mesure={0.21} seuil={0.2} ecartEuros={0} />
 						<TauxEGalim titre="Viande et poisson" mesure={0.47} seuil={0.6} ecartEuros={7900} />
@@ -306,7 +545,7 @@ function DemoDiagnostic() {
 
 					<Attestations
 						attestations={ATTESTATIONS}
-						nomEtablissement="Restaurant du Parc"
+						nomEtablissement="Votre cantine"
 						periodeDebut="2026-01-01"
 						periodeFin="2026-12-31"
 						onChangerStatut={() => undefined}
@@ -323,47 +562,85 @@ function DemoDiagnostic() {
 	);
 }
 
-function DemoDepot() {
+function DemoVide() {
 	return (
 		<Page>
-			<PageHeader
-				titre="Vos factures"
-				sousTitre="Douze mois d'achats suffisent à calculer vos trois taux de l'exercice 2026."
-			/>
+			<PageHeader titre="Vos taux EGalim" sousTitre="Exercice 2026, à déclarer avant le 31 mars." />
 			<PageBody>
-				<ZoneDepot accept=".csv,.pdf" onFichiers={() => undefined}>
-					<UploadIcon size={24} className="text-cladd-fg-softer" />
-					<span className="text-cladd-xs font-medium">
-						Glissez vos factures ici, ou cliquez pour les choisir
-					</span>
-					<span className="text-cladd-2xs text-cladd-fg-soft">
-						Un export comptable en CSV va le plus vite. Les PDF et les photos conviennent aussi.
-					</span>
-				</ZoneDepot>
+				<EmptyState
+					illustration="🧾"
+					titre="Commençons par vos factures."
+					explication="Douze mois d'achats suffisent à calculer vos trois taux. Vous n'avez rien d'autre à préparer, et rien à saisir."
+					etapes={[
+						'Déposez vos factures, ou photographiez-les. Un export comptable en CSV va le plus vite ; les PDF et les photos conviennent aussi.',
+						'Nous lisons chaque ligne et la classons contre le barème EGalim, en vous montrant le travail au fur et à mesure.',
+						"Vous confirmez la viande, le poisson et ce dont nous doutons. Vos taux s'affichent."
+					]}
+					action={
+						<Button color="brand" variant="solid-fill" size="lg">
+							Déposer mes factures
+						</Button>
+					}
+				/>
 			</PageBody>
 		</Page>
 	);
 }
 
-function DemoVide() {
+/**
+ * Le lexique d'illustration, mis à l'épreuve.
+ *
+ * On y lit d'un coup si un libellé de facture tombe sur la bonne image, y
+ * compris les cas tordus qu'on ne pense pas à tester : l'OCR qui écrit
+ * « CAR0TTE » avec un zéro, l'avoir, les frais de port, le produit que le
+ * classificateur n'a pas su nommer.
+ */
+function DemoLexique() {
+	const exemples: ReadonlyArray<[string, Famille]> = [
+		['POMMES DE TERRE AGATA 25KG', 'FRUITS_LEGUMES'],
+		['CAR0TTE RONDELLE 4/4 BIO 2.5KG', 'FRUITS_LEGUMES'],
+		['ENTRECOTE V.B.F. 220G X20', 'VIANDE'],
+		['CUISSES POULET LABEL ROUGE 10KG', 'VIANDE'],
+		['FILET CABILLAUD MSC SURG 5KG', 'POISSON'],
+		['CREVETTES DECORTIQUEES 1KG', 'POISSON'],
+		['EMMENTAL RAPE 1KG', 'LAITIERS'],
+		['YAOURT NATURE BIO X48', 'LAITIERS'],
+		['LAIT DEMI-ECREME 6X1L', 'LAITIERS'],
+		['BAGUETTE TRADITION X20', 'EPICERIE_SECHE'],
+		['COQUILLETTES 5KG', 'EPICERIE_SECHE'],
+		['HUILE OLIVE VIERGE EXTRA 5L', 'EPICERIE_SECHE'],
+		['TOMATES CONCASSEES 4/4', 'EPICERIE_APPERTISEE'],
+		['JUS ORANGE 100% 1L X6', 'BOISSONS'],
+		['SACS POUBELLE 100L X50', 'AUTRE'],
+		['GANTS VINYLE T8', 'AUTRE'],
+		['FRAIS DE PORT', 'AUTRE'],
+		['AVOIR SUR FACTURE 2026-118', 'AUTRE'],
+		['PREP. TRAITEUR REF 88213 CAT A', 'AUTRE']
+	];
+
 	return (
 		<Page>
-			<PageHeader titre="Tableau de bord" sousTitre="Vos trois taux EGalim sur l'année civile." />
+			<PageHeader
+				titre="Lexique d'illustration"
+				sousTitre="Un libellé de facture, une image. Le lexique ne classe rien : se tromper ici est laid, jamais faux au sens du barème."
+			/>
 			<PageBody>
-				<EmptyState
-					titre="Commençons par vos factures."
-					explication="Douze mois d'achats suffisent à calculer vos trois taux. Vous n'avez rien d'autre à préparer."
-					etapes={[
-						"Déposez vos factures. Un export comptable en CSV va le plus vite ; à défaut, les PDF et les photos conviennent.",
-						'Nous lisons et classons chaque ligne contre le barème EGalim.',
-						"Vous confirmez la viande, le poisson et ce dont nous doutons. Vos taux s'affichent."
-					]}
-					action={
-						<Button color="brand" variant="solid-fill">
-							Déposer mes factures
-						</Button>
-					}
-				/>
+				<div className="grid gap-cladd-3xs sm:grid-cols-2 lg:grid-cols-3">
+					{exemples.map(([libelle, famille]) => (
+						<Surface
+							key={libelle}
+							outline
+							className="rounded-cladd-lg"
+							contentClassName="flex items-center gap-cladd-3xs p-cladd-3xs"
+						>
+							<Illustration libelle={libelle} famille={famille} taille="sm" />
+							<div className="min-w-0">
+								<p className="truncate text-cladd-2xs font-medium">{libelle}</p>
+								<p className="text-cladd-3xs text-cladd-fg-softer">{FAMILLES[famille]}</p>
+							</div>
+						</Surface>
+					))}
+				</div>
 			</PageBody>
 		</Page>
 	);

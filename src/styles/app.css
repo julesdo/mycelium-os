@@ -4,6 +4,7 @@
  * surfaces et sa palette, puis nos tokens écrasent les siens. Inverser les
  * deux derniers imports rendrait le retunage tactile silencieusement inopérant. */
 
+@import '@fontsource-variable/plus-jakarta-sans';
 @import 'tailwindcss';
 @import '@cladd-ui/react/css';
 @import './tokens.css';

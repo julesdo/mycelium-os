@@ -26,8 +26,23 @@ export const pourcent = (fraction: number): string => POURCENT.format(fraction);
 /** Le pluriel français, pour ne pas écrire « 1 produits ». */
 export const pluriel = (n: number): string => (Math.abs(n) > 1 ? 's' : '');
 
+/**
+ * Les huit familles du barème. Le type est écrit ici, une fois, plutôt que
+ * réimporté du backend : c'est un vocabulaire d'écran, et l'interface doit
+ * pouvoir se rendre — dans le showroom notamment — sans que Convex existe.
+ */
+export type Famille =
+	| 'VIANDE'
+	| 'POISSON'
+	| 'FRUITS_LEGUMES'
+	| 'LAITIERS'
+	| 'EPICERIE_SECHE'
+	| 'EPICERIE_APPERTISEE'
+	| 'BOISSONS'
+	| 'AUTRE';
+
 /** Les familles de produits, telles qu'un gérant les nomme. */
-export const FAMILLES: Record<string, string> = {
+export const FAMILLES: Record<Famille, string> = {
 	VIANDE: 'Viande',
 	POISSON: 'Poisson',
 	FRUITS_LEGUMES: 'Fruits et légumes',

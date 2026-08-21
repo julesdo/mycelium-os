@@ -21,6 +21,11 @@ const merge = extendTailwindMerge({
 				{
 					text: [
 						'mycelium-taux',
+						'mycelium-chiffre',
+						'mycelium-titre',
+						'vignette-sm',
+						'vignette-md',
+						'vignette-lg',
 						'cladd-md',
 						'cladd-sm',
 						'cladd-xs',

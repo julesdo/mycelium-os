@@ -269,6 +269,30 @@ export const ouvrirEnregistrement = internalMutation({
 	}
 });
 
+/**
+ * Publie l'étape en cours sur un document, en français, pour l'écran.
+ *
+ * Un fichier restait en `PENDING` pendant une à deux minutes sans que rien ne
+ * bouge à l'écran. Le gérant en concluait, raisonnablement, que ça ne marchait
+ * pas — et c'est le moment précis où il referme l'onglet, ce qui n'annule rien
+ * mais lui fait croire le contraire.
+ *
+ * Le texte est destiné à l'affichage et à lui seul : aucune décision, ici ni
+ * ailleurs, ne le lit. C'est `extractionStatus` qui pilote la machine.
+ */
+export const noterEtape = internalMutation({
+	args: { documentId: v.id('invoiceDocuments'), etape: v.string() },
+	returns: v.null(),
+	handler: async (ctx, { documentId, etape }) => {
+		const document = await ctx.db.get(documentId);
+		// Un document déjà clos ne se remet pas à travailler : sans cette garde,
+		// une étape en retard d'une tranche rallumerait un fichier terminé.
+		if (!document || document.extractionStatus !== 'PENDING') return null;
+		await ctx.db.patch(documentId, { extractionEtape: etape });
+		return null;
+	}
+});
+
 /** Clôt le document une fois toutes ses tranches insérées. */
 export const cloturerDocument = internalMutation({
 	args: {
@@ -288,6 +312,9 @@ export const cloturerDocument = internalMutation({
 		await ctx.db.patch(args.documentId, {
 			extractionStatus: 'DONE',
 			extractionError: args.avertissement,
+			// L'étape n'a plus de sens sur un document terminé, et la laisser
+			// afficherait « analyse en cours » à côté d'une coche verte.
+			extractionEtape: undefined,
 			supplierId: args.supplierId ?? undefined,
 			totalHT: args.totalHT ?? undefined,
 			basesParTaux: args.basesParTaux,
@@ -345,7 +372,8 @@ export const marquerEchec = internalMutation({
 		if (!document) return null;
 		await ctx.db.patch(documentId, {
 			extractionStatus: 'FAILED',
-			extractionError: erreur
+			extractionError: erreur,
+			extractionEtape: undefined
 		});
 		return null;
 	}

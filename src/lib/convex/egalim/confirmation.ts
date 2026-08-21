@@ -126,6 +126,43 @@ export const listerAConfirmer = authedQuery({
 	}
 });
 
+/**
+ * Combien de produits attendent, et pour quel montant.
+ *
+ * Requête séparée de `listerAConfirmer` alors qu'elle lit exactement les mêmes
+ * lignes, et c'est délibéré : la pastille de la barre de navigation est
+ * affichée sur TOUS les écrans, alors que la file complète — ses propositions,
+ * ses justifications, ses identifiants de document — n'est utile que sur un
+ * seul. Faire porter la pastille par la grosse requête abonnerait chaque écran
+ * du produit à un objet vingt fois plus lourd que le nombre qu'il affiche.
+ */
+export const compterAConfirmer = authedQuery({
+	args: {},
+	returns: v.object({ produits: v.number(), montant: v.number() }),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const enAttente = await ctx.db
+			.query('invoiceLines')
+			.withIndex('by_org_and_review', (q) =>
+				q.eq('organizationId', organizationId).eq('reviewStatus', 'PENDING_REVIEW')
+			)
+			.collect();
+
+		// En LIBELLÉS distincts, comme la file elle-même : c'est l'unité de
+		// travail du gérant. Annoncer « 2 840 » lignes puis lui en présenter 62
+		// serait deux mensonges pour le prix d'un.
+		const distincts = new Set<string>();
+		let montant = 0;
+		for (const ligne of enAttente) {
+			distincts.add(ligne.normalizedLabel);
+			montant += Math.abs(ligne.amountHT);
+		}
+
+		return { produits: distincts.size, montant };
+	}
+});
+
 /** La preuve : le fichier source et ses lignes, pour le volet de droite. */
 export const obtenirPreuve = authedQuery({
 	args: { documentId: v.id('invoiceDocuments') },

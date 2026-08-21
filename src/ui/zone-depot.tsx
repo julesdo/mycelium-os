@@ -1,16 +1,24 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { SurfaceCut } from '@cladd-ui/react';
+import { SurfaceCut, Button } from '@cladd-ui/react';
+import { FolderOpenIcon, CameraIcon } from 'lucide-react';
 import { cn } from './cn';
 
 /**
- * La zone de dépôt de fichiers.
+ * La zone de dépôt de factures.
  *
- * Trois façons d'y verser des factures, parce qu'un gérant n'a pas le même
+ * Quatre façons d'y verser des factures, parce qu'un gérant n'a pas le même
  * geste selon d'où il vient :
  *
- * - **glisser-déposer**, quand il arrive de son explorateur ou de sa messagerie ;
- * - **clic**, qui ouvre le sélecteur, pour ceux qui ne glissent pas ;
- * - **collage** (Ctrl+V), qui capte une capture d'écran ou un fichier copié.
+ * - **photographier**, sur la tablette qu'il a en main, la facture papier que
+ *   le livreur vient de lui laisser. C'est le geste le plus fréquent sur le
+ *   terrain, et c'est celui que la version précédente ne proposait pas ;
+ * - **parcourir**, pour un export comptable rangé dans un dossier ;
+ * - **glisser-déposer**, quand il arrive de sa messagerie, sur un ordinateur ;
+ * - **coller** (Ctrl+V), qui capte une capture d'écran ou un fichier copié.
+ *
+ * Le bouton photo n'apparaît que derrière un pointeur grossier — un doigt. Sur
+ * un ordinateur, l'attribut `capture` est ignoré par le navigateur et le bouton
+ * ouvrirait un sélecteur de fichiers en promettant un appareil photo.
  *
  * Bâtie sur `SurfaceCut`, la surface *creusée* du kit, et non sur un `<div>`
  * bordé à la main. Le creux dit exactement ce qu'on attend ici : un réceptacle,
@@ -32,6 +40,7 @@ export function ZoneDepot({
 	children: ReactNode;
 }) {
 	const champ = useRef<HTMLInputElement>(null);
+	const appareilPhoto = useRef<HTMLInputElement>(null);
 	const [survols, setSurvols] = useState(0);
 	const survole = survols > 0 && !desactive;
 
@@ -43,6 +52,13 @@ export function ZoneDepot({
 		},
 		[onFichiers, desactive]
 	);
+
+	// Remis à zéro pour que redéposer le MÊME fichier redéclenche l'événement.
+	// Sans ça, un fichier corrigé et redéposé sous le même nom ne repart jamais.
+	const vider = (e: React.ChangeEvent<HTMLInputElement>) => {
+		recevoir(e.target.files);
+		e.target.value = '';
+	};
 
 	return (
 		<SurfaceCut
@@ -63,20 +79,30 @@ export function ZoneDepot({
 			}}
 			onPaste={(e: React.ClipboardEvent) => recevoir(e.clipboardData.files)}
 			className={cn(
-				'rounded-cladd-md transition-colors',
+				'rounded-cladd-2xl transition-colors',
 				desactive && 'opacity-60',
 				survole && 'cladd-color-brand'
 			)}
-			contentClassName="flex flex-col items-center justify-center gap-cladd-3xs p-cladd-xl text-center"
+			contentClassName="flex flex-col items-center justify-center gap-cladd-2xs p-cladd-xl text-center"
 		>
-			<button
-				type="button"
-				disabled={desactive}
-				onClick={() => champ.current?.click()}
-				className="flex flex-col items-center gap-cladd-3xs disabled:cursor-not-allowed"
-			>
-				{children}
-			</button>
+			{children}
+
+			<div className="flex flex-wrap items-center justify-center gap-cladd-3xs">
+				<Button
+					color="brand"
+					variant="solid-fill"
+					disabled={desactive}
+					onClick={() => appareilPhoto.current?.click()}
+					className="hidden tactile:flex"
+				>
+					<CameraIcon />
+					Photographier une facture
+				</Button>
+				<Button disabled={desactive} onClick={() => champ.current?.click()}>
+					<FolderOpenIcon />
+					Choisir des fichiers
+				</Button>
+			</div>
 
 			<input
 				ref={champ}
@@ -84,13 +110,20 @@ export function ZoneDepot({
 				multiple
 				accept={accept}
 				disabled={desactive}
-				onChange={(e) => {
-					recevoir(e.target.files);
-					// Remis à zéro pour que redéposer le MÊME fichier redéclenche
-					// l'événement. Sans ça, un fichier corrigé et redéposé sous le même
-					// nom ne repart jamais.
-					e.target.value = '';
-				}}
+				onChange={vider}
+				className="sr-only"
+			/>
+			{/* `capture="environment"` : l'appareil arrière, celui qui vise le
+			    papier posé sur le plan de travail. Sans cette valeur, iOS ouvre la
+			    caméra frontale, et le gérant se photographie lui-même. */}
+			<input
+				ref={appareilPhoto}
+				type="file"
+				multiple
+				accept="image/*"
+				capture="environment"
+				disabled={desactive}
+				onChange={vider}
 				className="sr-only"
 			/>
 		</SurfaceCut>

@@ -1,5 +1,6 @@
 import { v, ConvexError } from 'convex/values';
-import { internalMutation, internalQuery } from '../_generated/server';
+import { internalMutation, internalQuery, type MutationCtx } from '../_generated/server';
+import type { Doc, Id } from '../_generated/dataModel';
 import { internal } from '../_generated/api';
 import { authedMutation } from '../functions';
 import { REFERENTIEL_VERSION } from '../../egalim/referentiel';
@@ -47,6 +48,39 @@ const vContexte = v.object({
  * d'un même produit) reste écrit d'un bloc.
  */
 const LIGNES_PAR_ECRITURE = 2000;
+
+/**
+ * Combien de décisions récentes on garde pour l'affichage du traitement.
+ *
+ * Douze remplissent la colonne de gauche d'une tablette en paysage sans la
+ * déborder. La liste est purement décorative : la trace opposable de chaque
+ * classification est sur `invoiceLines`, avec sa justification et sa version de
+ * barème. Perdre celle-ci ne perd rien.
+ */
+const RECENTS_MAX = 12;
+
+/** Une entrée du fil, exactement telle que le schéma la stocke. */
+type Decision = NonNullable<Doc<'classificationJobs'>['recents']>[number];
+
+/**
+ * Publie une décision dans le fil visible du traitement.
+ *
+ * Volontairement tolérante : un job disparu ou une écriture concurrente
+ * n'interrompent RIEN. Faire échouer une classification correcte parce que son
+ * affichage n'a pas pu s'écrire serait le pire échange possible.
+ */
+async function publierDecision(
+	ctx: MutationCtx,
+	jobId: Id<'classificationJobs'> | undefined,
+	decision: Decision
+): Promise<void> {
+	if (!jobId) return;
+	const job = await ctx.db.get(jobId);
+	if (!job) return;
+	await ctx.db.patch(jobId, {
+		recents: [decision, ...(job.recents ?? [])].slice(0, RECENTS_MAX)
+	});
+}
 
 /** Une confiance hors bornes est ramenée dans [0, 1] plutôt que de faire échouer le lot. */
 function borner(confidence: number): number {
@@ -164,10 +198,12 @@ export const demarrerClassification = internalMutation({
 export const appliquerClassification = internalMutation({
 	args: {
 		batchId: v.id('invoiceBatches'),
-		classification: vClassification
+		classification: vClassification,
+		/** Le fil visible du traitement. Absent, on classe sans rien afficher. */
+		jobId: v.optional(v.id('classificationJobs'))
 	},
 	returns: v.number(),
-	handler: async (ctx, { batchId, classification }) => {
+	handler: async (ctx, { batchId, classification, jobId }) => {
 		const existant = await ctx.db
 			.query('productLabels')
 			.withIndex('by_normalized_label', (q) =>
@@ -251,6 +287,17 @@ export const appliquerClassification = internalMutation({
 			});
 		}
 
+		// Après l'écriture, jamais avant : le fil montre ce qui EST classé, pas
+		// ce qu'on s'apprête à classer. Un fil en avance sur la base afficherait
+		// des décisions qu'une transaction annulée aurait effacées.
+		await publierDecision(ctx, jobId, {
+			label: classification.normalizedLabel,
+			family: verdict.family,
+			qualifyingLabels: [...verdict.qualifyingLabels],
+			isFood: verdict.isFood,
+			source: 'IA'
+		});
+
 		return lignes.length;
 	}
 });
@@ -268,7 +315,9 @@ export const appliquerClassification = internalMutation({
 export const appliquerLibellesEnCache = internalMutation({
 	args: {
 		batchId: v.id('invoiceBatches'),
-		libelles: v.array(v.string())
+		libelles: v.array(v.string()),
+		/** Le fil visible du traitement. Absent, on applique sans rien afficher. */
+		jobId: v.optional(v.id('classificationJobs'))
 	},
 	returns: v.object({
 		restants: v.array(v.string()),
@@ -276,7 +325,7 @@ export const appliquerLibellesEnCache = internalMutation({
 		/** Libellés non traités faute de budget d'écriture : l'appelant rappelle. */
 		aReprendre: v.array(v.string())
 	}),
-	handler: async (ctx, { batchId, libelles }) => {
+	handler: async (ctx, { batchId, libelles, jobId }) => {
 		const restants: string[] = [];
 		let appliques = 0;
 		let ecrites = 0;
@@ -343,6 +392,18 @@ export const appliquerLibellesEnCache = internalMutation({
 			}
 
 			await ctx.db.patch(cache._id, { occurrences: cache.occurrences + lignes.length });
+
+			// « CACHE » : ce libellé était déjà tranché. C'est la seule ligne du
+			// fil qui raconte au gérant pourquoi son deuxième dépôt ira plus vite
+			// que le premier.
+			await publierDecision(ctx, jobId, {
+				label: libelle,
+				family: verdict.family,
+				qualifyingLabels: [...verdict.qualifyingLabels],
+				isFood: verdict.isFood,
+				source: 'CACHE'
+			});
+
 			ecrites += lignes.length;
 			appliques += 1;
 		}

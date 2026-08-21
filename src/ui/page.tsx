@@ -25,10 +25,10 @@ export function PageHeader({
 	actions?: ReactNode;
 }) {
 	return (
-		<header className="flex shrink-0 flex-wrap items-end justify-between gap-cladd-xs px-cladd-xs pt-cladd-xs pb-cladd-3xs">
+		<header className="flex shrink-0 flex-wrap items-end justify-between gap-cladd-2xs px-cladd-3xs pt-cladd-2xs pb-cladd-3xs">
 			<div className="min-w-0">
-				<h1 className="text-cladd-md font-semibold tracking-tight">{titre}</h1>
-				{sousTitre ? <p className="mt-0.5 text-cladd-xs text-cladd-fg-soft">{sousTitre}</p> : null}
+				<h1 className="text-mycelium-titre leading-tight font-bold tracking-tight">{titre}</h1>
+				{sousTitre ? <p className="mt-1 text-cladd-xs text-cladd-fg-soft">{sousTitre}</p> : null}
 			</div>
 			{actions ? <div className="flex shrink-0 items-center gap-cladd-3xs">{actions}</div> : null}
 		</header>
@@ -36,5 +36,5 @@ export function PageHeader({
 }
 
 export function PageBody({ children }: { children: ReactNode }) {
-	return <div className="min-h-0 flex-1 overflow-y-auto px-cladd-xs pb-cladd-xs">{children}</div>;
+	return <div className="min-h-0 flex-1 overflow-y-auto px-cladd-3xs pb-cladd-xs">{children}</div>;
 }

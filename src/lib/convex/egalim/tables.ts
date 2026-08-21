@@ -69,6 +69,16 @@ export const egalimTables = {
 		),
 		extractionStatus: v.union(v.literal('PENDING'), v.literal('DONE'), v.literal('FAILED')),
 		extractionError: v.optional(v.string()),
+		/**
+		 * Où en est la lecture de CE fichier, en clair.
+		 *
+		 * `PENDING` tout seul produisait un sablier de deux minutes sans rien
+		 * derrière : le gérant ne savait pas s'il se passait quelque chose, et
+		 * c'est exactement le moment où il ferme l'onglet. L'étape est un texte
+		 * destiné à l'écran, pas un état de machine — la machine, c'est
+		 * `extractionStatus`, et lui seul commande quoi que ce soit.
+		 */
+		extractionEtape: v.optional(v.string()),
 		supplierId: v.optional(v.id('suppliers')),
 		invoiceDate: v.optional(v.string()),
 		invoiceNumber: v.optional(v.string()),
@@ -276,6 +286,35 @@ export const egalimTables = {
 		costEur: v.number(),
 		startedAt: v.number(),
 		finishedAt: v.optional(v.number()),
-		error: v.optional(v.string())
+		error: v.optional(v.string()),
+		/**
+		 * Les douze dernières décisions du classificateur, dans l'ordre où elles
+		 * sont tombées. C'est ce qui fait qu'on VOIT l'IA travailler au lieu de
+		 * regarder une barre avancer.
+		 *
+		 * Douze, pas plus : la liste ne sert qu'à défiler à l'écran pendant le
+		 * traitement, et un document Convex a une taille bornée. La trace
+		 * durable et opposable de chaque classification vit sur `invoiceLines`,
+		 * avec sa justification et sa version de classificateur — celle-ci est
+		 * un affichage, et on peut la perdre sans rien perdre.
+		 */
+		recents: v.optional(
+			v.array(
+				v.object({
+					label: v.string(),
+					family: vFamille,
+					qualifyingLabels: v.array(vLabel),
+					isFood: v.boolean(),
+					/**
+					 * `CACHE` : le libellé était déjà tranché, on n'a rien payé et
+					 * rien redemandé. `IA` : il a fallu l'analyser. La distinction
+					 * n'a aucun effet technique — elle est là parce qu'elle rend
+					 * visible, pendant le traitement, la promesse centrale du
+					 * produit : la charge décroît à mesure que le parc grandit.
+					 */
+					source: v.union(v.literal('CACHE'), v.literal('IA'))
+				})
+			)
+		)
 	}).index('by_batch', ['batchId'])
 };

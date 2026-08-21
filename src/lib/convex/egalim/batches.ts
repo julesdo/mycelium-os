@@ -2,6 +2,7 @@ import { v, ConvexError } from 'convex/values';
 import { authedQuery, authedMutation } from '../functions';
 import { internal } from '../_generated/api';
 import { getUserOrg } from '../lib/auth';
+import { vFamille, vLabel } from './tables';
 
 /**
  * Le dépôt de factures côté cantine : créer un lot, y verser des fichiers,
@@ -206,11 +207,38 @@ export const suivreLot = authedQuery({
 						v.literal('FAILED')
 					),
 					extractionError: v.optional(v.string()),
+					/** L'étape en cours, en clair. Vide dès que le fichier est lu. */
+					extractionEtape: v.optional(v.string()),
 					linesCount: v.number()
 				})
 			),
 			linesTotal: v.number(),
 			labelsPendingReview: v.number(),
+			/**
+			 * Le travail du classificateur, tel qu'il se donne à voir.
+			 *
+			 * `null` tant qu'aucun libellé n'est parti en classification. Ce bloc
+			 * n'existe que pour l'écran de traitement : rien d'autre ne le lit,
+			 * et le perdre ne perd aucune donnée opposable.
+			 */
+			classification: v.union(
+				v.object({
+					total: v.number(),
+					faits: v.number(),
+					echoues: v.number(),
+					termine: v.boolean(),
+					recents: v.array(
+						v.object({
+							label: v.string(),
+							family: vFamille,
+							qualifyingLabels: v.array(vLabel),
+							isFood: v.boolean(),
+							source: v.union(v.literal('CACHE'), v.literal('IA'))
+						})
+					)
+				}),
+				v.null()
+			),
 			diagnosticId: v.union(v.id('diagnostics'), v.null())
 		}),
 		v.null()
@@ -230,6 +258,11 @@ export const suivreLot = authedQuery({
 			.withIndex('by_batch', (q) => q.eq('batchId', batchId))
 			.first();
 
+		const job = await ctx.db
+			.query('classificationJobs')
+			.withIndex('by_batch', (q) => q.eq('batchId', batchId))
+			.first();
+
 		return {
 			label: batch.label,
 			periodStart: batch.periodStart,
@@ -241,6 +274,7 @@ export const suivreLot = authedQuery({
 				sourceType: d.sourceType,
 				extractionStatus: d.extractionStatus,
 				extractionError: d.extractionError,
+				extractionEtape: d.extractionEtape,
 				linesCount: d.linesCount
 			})),
 			// `linesTotal` n'est arrêté qu'à la clôture de la classification :
@@ -250,6 +284,15 @@ export const suivreLot = authedQuery({
 					? batch.linesTotal
 					: documents.reduce((s, d) => s + d.linesCount, 0),
 			labelsPendingReview: batch.labelsPendingReview,
+			classification: job
+				? {
+						total: job.labelsTotal,
+						faits: job.labelsDone,
+						echoues: job.labelsFailed,
+						termine: job.status !== 'RUNNING',
+						recents: job.recents ?? []
+					}
+				: null,
 			diagnosticId: diagnostic?._id ?? null
 		};
 	}

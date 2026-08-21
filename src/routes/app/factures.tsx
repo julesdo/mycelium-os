@@ -1,31 +1,11 @@
 import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button } from '@cladd-ui/react';
-import {
-	UploadIcon,
-	CheckIcon,
-	TriangleAlertIcon,
-	LoaderCircleIcon,
-	CheckCheckIcon,
-	FileCheckIcon
-} from 'lucide-react';
+import { Button, Surface, Spinner } from '@cladd-ui/react';
+import { UploadCloudIcon, CheckCheckIcon, FileCheckIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import {
-	Page,
-	PageHeader,
-	PageBody,
-	Bandeau,
-	Tableau,
-	TableauEntete,
-	TableauCorps,
-	TableauLigne,
-	TableauTitre,
-	TableauCellule,
-	pluriel,
-	ZoneDepot
-} from '../../ui';
+import { Page, PageHeader, PageBody, Bandeau, ZoneDepot, FilTravail, pluriel } from '../../ui';
 import { trierFichiers, ACCEPT_HTML, type Refus } from '../../screens/factures/formats';
 
 export const Route = createFileRoute('/app/factures')({ component: Factures });
@@ -36,15 +16,24 @@ const EXERCICE = String(new Date().getFullYear() - 1);
 /**
  * Le dépôt de factures.
  *
- * Un seul geste : déposer. Aucune étape préalable, aucun nom à choisir, aucun
- * objet à ouvrir ni à fermer.
+ * UN SEUL GESTE : donner ses factures. Aucune étape préalable, aucun nom à
+ * choisir, aucun objet à ouvrir ni à fermer. La version précédente exposait le
+ * « lot » du modèle de données — un objet du moteur de classification, qui
+ * traite par tranches une liste triée de libellés et ne supporte pas qu'elle
+ * bouge en cours de route. Contrainte réelle, mais technique, et elle imposait
+ * cinq règles au gérant pour faire une seule chose. Le lot est désormais créé,
+ * nommé et fermé par le logiciel.
  *
- * La version précédente exposait le « lot » du modèle de données, qui est un
- * objet du moteur de classification : celui-ci traite un lot par tranches sur
- * une liste triée de libellés, et cette liste ne doit pas bouger en cours de
- * route. Contrainte réelle, mais technique — et elle imposait cinq règles au
- * gérant pour faire une seule chose : donner ses factures. Le lot est
- * désormais créé, nommé et fermé par le logiciel.
+ * CE QUE CET ÉCRAN MONTRE ENSUITE est la moitié de sa raison d'être. Déposer
+ * douze mois de factures déclenche plusieurs minutes de traitement. Une roue
+ * qui tourne pendant ce temps ne dit pas « ça travaille », elle dit « c'est
+ * peut-être planté ». On montre donc le travail lui-même : chaque fichier et
+ * son étape, l'avancement du classement, et les dernières décisions prises,
+ * produit par produit, avec leur illustration et leur verdict.
+ *
+ * Ce dernier point n'est pas décoratif. Le gérant va confirmer ces mêmes
+ * décisions trois minutes plus tard ; les voir tomber pendant qu'il attend lui
+ * apprend ce que le logiciel sait faire, et à quel point il devra le relire.
  */
 function Factures() {
 	const navigate = useNavigate();
@@ -70,7 +59,6 @@ function Factures() {
 		courant ? { batchId: courant.batchId } : 'skip'
 	);
 
-	const enLecture = courant?.status === 'EXTRACTING' || courant?.status === 'CLASSIFYING';
 	const aConfirmer = courant?.status === 'REVIEW';
 	const pret = courant?.status === 'READY';
 
@@ -149,7 +137,6 @@ function Factures() {
 	}
 
 	const documents = suivi?.documents ?? [];
-	const enAttente = documents.filter((d) => d.extractionStatus === 'PENDING');
 
 	return (
 		<Page>
@@ -159,74 +146,80 @@ function Factures() {
 			/>
 
 			<PageBody>
-				<div className="flex flex-col gap-cladd-xs">
-					<ZoneDepot
-						accept={ACCEPT_HTML}
-						desactive={envoiEnCours || enLecture}
-						onFichiers={deposer}
-					>
+				<div className="mx-auto flex max-w-4xl flex-col gap-cladd-2xs">
+					<ZoneDepot accept={ACCEPT_HTML} desactive={envoiEnCours} onFichiers={deposer}>
 						{envoiEnCours && progression ? (
 							<>
-								<LoaderCircleIcon size={24} className="animate-spin" />
-								<span className="text-cladd-xs font-medium">Envoi de {progression.courant}</span>
-								<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">
-									{progression.fait} sur {progression.total}
-								</span>
-							</>
-						) : enLecture ? (
-							<>
-								<LoaderCircleIcon size={24} className="animate-spin" />
-								<span className="text-cladd-xs font-medium">Nous lisons vos factures.</span>
-								<span className="text-cladd-2xs text-cladd-fg-soft">
-									Vous pourrez en ajouter dans un instant. Cette page se met à jour toute seule.
-								</span>
+								<Spinner size="lg" color="brand" />
+								<div className="flex flex-col gap-1">
+									<span className="text-cladd-sm font-semibold">
+										Envoi de {progression.courant}
+									</span>
+									<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">
+										{progression.fait} sur {progression.total}
+									</span>
+								</div>
 							</>
 						) : (
 							<>
-								<UploadIcon size={24} className="text-cladd-fg-softer" />
-								<span className="text-cladd-xs font-medium">
-									Glissez vos factures ici, ou cliquez pour les choisir
+								<span
+									aria-hidden
+									className="flex size-vignette-md items-center justify-center rounded-cladd-lg bg-cladd-primary/10 text-cladd-primary"
+								>
+									<UploadCloudIcon size={34} />
 								</span>
-								<span className="text-cladd-2xs text-cladd-fg-soft">
-									Un export comptable en CSV va le plus vite. Les PDF et les photos conviennent
-									aussi.
-								</span>
+								<div className="flex flex-col gap-1">
+									<span className="text-cladd-sm font-semibold">
+										Déposez vos factures, on s&rsquo;occupe du reste
+									</span>
+									<span className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+										Un export comptable en CSV va le plus vite. Les PDF et les photos
+										conviennent aussi&nbsp;— même prises de travers.
+									</span>
+								</div>
 							</>
 						)}
 					</ZoneDepot>
 
-					{erreur ? (
-						<Bandeau ton="alerte" icone={<TriangleAlertIcon size={16} />}>
-							{erreur}
-						</Bandeau>
-					) : null}
+					{erreur ? <Bandeau ton="alerte">{erreur}</Bandeau> : null}
 
 					{refus.map((r) => (
-						<Bandeau key={r.fichier} ton="alerte" icone={<TriangleAlertIcon size={16} />}>
+						<Bandeau key={r.fichier} ton="alerte">
 							<span className="font-medium">{r.fichier}</span> — {r.raison}
 						</Bandeau>
 					))}
 
-					{enAttente.length > 0 ? (
-						<Bandeau icone={<LoaderCircleIcon size={16} className="animate-spin" />}>
-							{enAttente.length} fichier{pluriel(enAttente.length)} en cours de lecture. Vous
-							pouvez quitter cette page, le travail continue.
-						</Bandeau>
+					{/* Le travail en cours, montré sans qu'on le demande et sans qu'il
+					    faille recharger : la requête Convex est réactive, la page se
+					    repeint d'elle-même à chaque décision. */}
+					{documents.length > 0 ? (
+						<FilTravail documents={documents} classification={suivi?.classification ?? null} />
 					) : null}
 
 					{aConfirmer && courant && courant.labelsPendingReview > 0 ? (
-						<Bandeau
-							icone={<CheckCheckIcon size={16} />}
-							action={
-								<Button as={Link} to="/app/confirmer" color="brand" variant="solid-fill">
-									Confirmer
-								</Button>
-							}
+						<Surface
+							outline
+							color="brand"
+							variant="solid-fill"
+							className="rounded-cladd-2xl shadow-carte-levee"
+							contentClassName="flex flex-wrap items-center justify-between gap-cladd-2xs p-cladd-2xs"
 						>
-							{courant.labelsPendingReview} produit{pluriel(courant.labelsPendingReview)} attend
-							{courant.labelsPendingReview > 1 ? 'ent' : ''} votre confirmation. C&rsquo;est la
-							dernière étape avant vos taux.
-						</Bandeau>
+							<div className="flex items-center gap-cladd-3xs">
+								<CheckCheckIcon size={22} />
+								<div>
+									<p className="text-cladd-sm font-semibold">
+										{courant.labelsPendingReview} produit{pluriel(courant.labelsPendingReview)}{' '}
+										attend{courant.labelsPendingReview > 1 ? 'ent' : ''} votre confirmation
+									</p>
+									<p className="text-cladd-2xs opacity-80">
+										C&rsquo;est la dernière étape avant vos taux.
+									</p>
+								</div>
+							</div>
+							<Button as={Link} to="/app/confirmer" variant="solid" color="neutral">
+								Confirmer maintenant
+							</Button>
+						</Surface>
 					) : null}
 
 					{suivi?.diagnosticId ? (
@@ -257,6 +250,7 @@ function Factures() {
 									color="brand"
 									variant="solid-fill"
 									loading={productionEnCours}
+									readOnly={productionEnCours}
 									onClick={() => void produire()}
 								>
 									Produire le diagnostic
@@ -265,48 +259,6 @@ function Factures() {
 						>
 							Tout est classé et confirmé. Vous pouvez figer la mesure.
 						</Bandeau>
-					) : null}
-
-					{documents.length > 0 ? (
-						<Tableau legende="Factures déposées et état de leur lecture">
-							<TableauEntete>
-								<TableauTitre>Fichier</TableauTitre>
-								<TableauTitre>État</TableauTitre>
-								<TableauTitre aDroite>Lignes</TableauTitre>
-							</TableauEntete>
-							<TableauCorps>
-								{documents.map((d) => (
-									<TableauLigne key={d.documentId}>
-										<TableauCellule>
-											<span className="block max-w-xs truncate">{d.filename}</span>
-											{d.extractionError ? (
-												<span className="block max-w-md text-cladd-3xs text-seuil-manque">
-													{d.extractionError}
-												</span>
-											) : null}
-										</TableauCellule>
-										<TableauCellule>
-											{d.extractionStatus === 'DONE' ? (
-												<span className="flex items-center gap-1 text-seuil-atteint">
-													<CheckIcon size={14} /> Lu
-												</span>
-											) : d.extractionStatus === 'FAILED' ? (
-												<span className="flex items-center gap-1 text-seuil-manque">
-													<TriangleAlertIcon size={14} /> Illisible
-												</span>
-											) : (
-												<span className="flex items-center gap-1 text-cladd-fg-soft">
-													<LoaderCircleIcon size={14} className="animate-spin" /> Lecture
-												</span>
-											)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{d.linesCount}
-										</TableauCellule>
-									</TableauLigne>
-								))}
-							</TableauCorps>
-						</Tableau>
 					) : null}
 				</div>
 			</PageBody>

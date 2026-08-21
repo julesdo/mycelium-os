@@ -31,6 +31,7 @@ const TAILLE_LOT = 50;
 async function appliquerCacheEnEntier(
 	ctx: ActionCtx,
 	batchId: Id<'invoiceBatches'>,
+	jobId: Id<'classificationJobs'>,
 	libelles: readonly string[]
 ): Promise<{ restants: string[]; appliques: number }> {
 	const restants: string[] = [];
@@ -40,7 +41,7 @@ async function appliquerCacheEnEntier(
 	while (aFaire.length > 0) {
 		const r = await ctx.runMutation(
 			internal.egalim.classificationMutations.appliquerLibellesEnCache,
-			{ batchId, libelles: aFaire }
+			{ batchId, jobId, libelles: aFaire }
 		);
 		restants.push(...r.restants);
 		appliques += r.appliques;
@@ -82,7 +83,7 @@ async function traiterTranche(
 	libelles: readonly string[],
 	budgetEpuise: boolean
 ): Promise<{ classes: number; echoues: number }> {
-	const { restants, appliques } = await appliquerCacheEnEntier(ctx, batchId, libelles);
+	const { restants, appliques } = await appliquerCacheEnEntier(ctx, batchId, jobId, libelles);
 
 	if (restants.length === 0) {
 		return { classes: appliques, echoues: 0 };
@@ -134,6 +135,7 @@ async function traiterTranche(
 	for (const classification of appariees) {
 		await ctx.runMutation(internal.egalim.classificationMutations.appliquerClassification, {
 			batchId,
+			jobId,
 			classification: {
 				normalizedLabel: classification.normalizedLabel,
 				isFood: classification.isFood,

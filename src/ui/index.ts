@@ -18,6 +18,12 @@ export { EmptyState } from './empty-state';
 export { Bandeau } from './bandeau';
 export { ZoneDepot } from './zone-depot';
 export { TauxEGalim } from './taux-egalim';
+export { Illustration, type TailleVignette } from './illustration';
+export { illustrer, jetons, EMOJI_FAMILLE } from './lexique';
+export { Verdict, estBio } from './verdict';
+export { CarteProduit, type Proposition } from './carte-produit';
+export { Repartition, type LigneFamille } from './repartition';
+export { FilTravail, type Decision, type DocumentEnCours } from './fil-travail';
 export {
 	Tableau,
 	TableauEntete,
@@ -26,4 +32,4 @@ export {
 	TableauTitre,
 	TableauCellule
 } from './tableau';
-export { euros, pourcent, pluriel, FAMILLES } from './format';
+export { euros, pourcent, pluriel, FAMILLES, type Famille } from './format';
