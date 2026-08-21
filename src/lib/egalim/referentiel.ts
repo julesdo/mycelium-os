@@ -83,3 +83,46 @@ export function estBio(labels: readonly Label[]): boolean {
 export function estDurable(labels: readonly Label[]): boolean {
 	return labels.some((l) => LABELS_QUALIFIANTS[l].durable);
 }
+
+/**
+ * L'ordre sous lequel un produit portant PLUSIEURS mentions est déclaré.
+ *
+ * La télédéclaration détaillée demande une ventilation par catégorie. Un
+ * poulet Label Rouge ET bio ne doit y figurer qu'une fois : le compter dans les
+ * deux colonnes ferait un total supérieur aux achats réels, et une déclaration
+ * qui ne s'additionne pas est une déclaration qu'on fait refaire.
+ *
+ * CE CHOIX NE CHANGE AUCUN DES TROIS TAUX. Les seuils portent sur « bio » et
+ * sur « durable », qui se calculent par produit et non par catégorie : un
+ * produit bio est bio, quelles que soient ses autres mentions. L'ordre ci-
+ * dessous ne décide donc que d'une chose — dans quelle ligne du DÉTAIL un
+ * produit multi-labels apparaît.
+ *
+ * Le bio vient en tête parce que c'est la seule catégorie qui porte son propre
+ * seuil : l'y voir figurer est ce que le déclarant vérifie en premier. Le reste
+ * suit la notoriété de la mention, ce qui rend le détail lisible sans le rendre
+ * plus juste.
+ */
+export const ORDRE_DECLARATION: readonly Label[] = [
+	'AB',
+	'CONVERSION',
+	'LABEL_ROUGE',
+	'AOP_AOC_IGP_STG',
+	'HVE3',
+	'PECHE_DURABLE',
+	'FERMIER',
+	'COMMERCE_EQUITABLE',
+	'RUP',
+	'CYCLE_DE_VIE'
+];
+
+/**
+ * La catégorie sous laquelle déclarer un produit, ou `null` s'il ne qualifie
+ * rien. Une seule, toujours — voir `ORDRE_DECLARATION`.
+ */
+export function categorieDeclaration(labels: readonly Label[]): Label | null {
+	for (const candidat of ORDRE_DECLARATION) {
+		if (labels.includes(candidat)) return candidat;
+	}
+	return null;
+}

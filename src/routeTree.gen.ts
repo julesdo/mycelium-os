@@ -19,6 +19,7 @@ import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-p
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppConfirmerRouteImport } from './routes/app/confirmer'
+import { Route as AppDeclarationRouteImport } from './routes/app/declaration'
 import { Route as AppDiagnosticsRouteImport } from './routes/app/diagnostics'
 import { Route as AppFacturesRouteImport } from './routes/app/factures'
 import { Route as AppParametresRouteImport } from './routes/app/parametres'
@@ -77,6 +78,11 @@ const AppConfirmerRoute = AppConfirmerRouteImport.update({
   path: '/confirmer',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDeclarationRoute = AppDeclarationRouteImport.update({
+  id: '/declaration',
+  path: '/declaration',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppDiagnosticsRoute = AppDiagnosticsRouteImport.update({
   id: '/diagnostics',
   path: '/diagnostics',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/declaration': typeof AppDeclarationRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/declaration': typeof AppDeclarationRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/showroom': typeof ShowroomRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/declaration': typeof AppDeclarationRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
   '/app/parametres': typeof AppParametresRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/showroom'
     | '/app/confirmer'
+    | '/app/declaration'
     | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/showroom'
     | '/app/confirmer'
+    | '/app/declaration'
     | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/showroom'
     | '/app/confirmer'
+    | '/app/declaration'
     | '/app/diagnostics'
     | '/app/factures'
     | '/app/parametres'
@@ -313,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConfirmerRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/declaration': {
+      id: '/app/declaration'
+      path: '/declaration'
+      fullPath: '/app/declaration'
+      preLoaderRoute: typeof AppDeclarationRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/diagnostics': {
       id: '/app/diagnostics'
       path: '/diagnostics'
@@ -367,6 +386,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteRouteChildren {
   AppConfirmerRoute: typeof AppConfirmerRoute
+  AppDeclarationRoute: typeof AppDeclarationRoute
   AppDiagnosticsRoute: typeof AppDiagnosticsRoute
   AppFacturesRoute: typeof AppFacturesRoute
   AppParametresRoute: typeof AppParametresRoute
@@ -378,6 +398,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppConfirmerRoute: AppConfirmerRoute,
+  AppDeclarationRoute: AppDeclarationRoute,
   AppDiagnosticsRoute: AppDiagnosticsRoute,
   AppFacturesRoute: AppFacturesRoute,
   AppParametresRoute: AppParametresRoute,

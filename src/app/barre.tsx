@@ -53,7 +53,7 @@ const ENTREES = [
 	{ to: '/app', label: 'Mes taux', Icone: GaugeIcon },
 	{ to: '/app/confirmer', label: 'À confirmer', Icone: CheckCheckIcon },
 	{ to: '/app/produits', label: 'Produits', Icone: FileTextIcon },
-	{ to: '/app/diagnostics', label: 'Diagnostics', Icone: FileCheck2Icon }
+	{ to: '/app/declaration', label: 'Déclaration', Icone: FileCheck2Icon }
 ] as const;
 
 function useActif() {
