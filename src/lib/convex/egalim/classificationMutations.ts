@@ -175,7 +175,25 @@ export const demarrerClassification = internalMutation({
 	returns: v.null(),
 	handler: async (ctx, { batchId, jobId, labelsTotal }) => {
 		await ctx.db.patch(batchId, { status: 'CLASSIFYING' });
-		await ctx.db.patch(jobId, { labelsTotal, labelsDone: 0, labelsFailed: 0 });
+
+		const job = await ctx.db.get(jobId);
+
+		// Le job d'un lot ROUVERT porte encore la marque de son passage précédent.
+		// `produireSiPret` se garde en vérifiant `finishedAt` — « la classification
+		// est-elle allée à son terme ? » — et un `finishedAt` hérité de la passe
+		// d'avant répond « oui » au milieu de la nouvelle. Le diagnostic se
+		// figerait alors sur un lot à moitié classé : un livrable faux, avec
+		// l'autorité d'un vrai.
+		//
+		// `CAPPED` n'est pas rouvert : le budget consommé l'a été, et repasser en
+		// RUNNING autoriserait un appel payant de plus avant que la première
+		// comptabilisation ne rebascule le job.
+		const reprise =
+			job !== null && job.status === 'DONE'
+				? { status: 'RUNNING' as const, finishedAt: undefined, error: undefined }
+				: {};
+
+		await ctx.db.patch(jobId, { labelsTotal, labelsDone: 0, labelsFailed: 0, ...reprise });
 		return null;
 	}
 });

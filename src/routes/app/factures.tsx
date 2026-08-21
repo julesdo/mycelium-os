@@ -61,6 +61,8 @@ function Factures() {
 
 	const [refus, setRefus] = useState<Refus[]>([]);
 	const [erreur, setErreur] = useState<string | null>(null);
+	/** Pourquoi le dépôt refuse, quand il refuse. Porte une issue, pas un constat. */
+	const [blocage, setBlocage] = useState<'REVIEW' | 'CLASSIFYING' | null>(null);
 	const [envoiEnCours, setEnvoiEnCours] = useState(false);
 	const [productionEnCours, setProductionEnCours] = useState(false);
 	const [progression, setProgression] = useState<{
@@ -69,7 +71,11 @@ function Factures() {
 		courant: string;
 	} | null>(null);
 
-	const courant = lots?.find((l) => l.ouvert) ?? null;
+	// Le DERNIER lot, et non « celui qui est ouvert ». `ouvert` exclut `READY`,
+	// si bien qu'un exercice entièrement confirmé ne remontait plus rien : ni le
+	// fil de travail, ni le diagnostic produit, ni le bouton pour le produire.
+	// L'écran devenait vide au moment précis où il avait le plus à dire.
+	const courant = lots?.[0] ?? null;
 	const suivi = useQuery(
 		api.egalim.batches.suivreLot,
 		courant ? { batchId: courant.batchId } : 'skip'
@@ -88,13 +94,10 @@ function Factures() {
 		try {
 			const depot = await obtenirDepot({ annee: EXERCICE });
 			if (!depot.accepteDesFichiers) {
-				setErreur(
-					depot.status === 'REVIEW'
-						? "Vos factures précédentes attendent vos confirmations. Videz la file, et vous pourrez en déposer d'autres."
-						: 'Nous lisons encore vos factures précédentes. Vous pourrez en ajouter dans un instant.'
-				);
+				setBlocage(depot.status === 'REVIEW' ? 'REVIEW' : 'CLASSIFYING');
 				return;
 			}
+			setBlocage(null);
 
 			for (const [i, fichier] of acceptes.entries()) {
 				setProgression({ fait: i, total: acceptes.length, courant: fichier.name });
@@ -198,6 +201,29 @@ function Factures() {
 					</ZoneDepot>
 
 					{erreur ? <Bandeau ton="alerte">{erreur}</Bandeau> : null}
+
+					{blocage === 'REVIEW' ? (
+						<Bandeau
+							ton="alerte"
+							icone={<CheckCheckIcon size={16} />}
+							action={
+								<Button as={Link} to="/app/confirmer" color="brand" variant="solid-fill">
+									Confirmer maintenant
+								</Button>
+							}
+						>
+							Des produits attendent encore votre confirmation. Tranchez-les d&rsquo;abord :
+							ajouter des factures pendant que vous arbitrez ferait bouger le périmètre sous vos
+							décisions.
+						</Bandeau>
+					) : null}
+
+					{blocage === 'CLASSIFYING' ? (
+						<Bandeau icone={<Spinner size="sm" />}>
+							Nous classons encore vos factures précédentes. Vous pourrez en ajouter dès que
+							c&rsquo;est fini — cette page se met à jour toute seule.
+						</Bandeau>
+					) : null}
 
 					{refus.map((r) => (
 						<Bandeau key={r.fichier} ton="alerte">

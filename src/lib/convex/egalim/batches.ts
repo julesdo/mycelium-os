@@ -3,6 +3,7 @@ import { authedQuery, authedMutation } from '../functions';
 import { internal } from '../_generated/api';
 import { getUserOrg } from '../lib/auth';
 import { vFamille, vLabel } from './tables';
+import { recompterLot } from './lot';
 
 /**
  * Le dépôt de factures côté cantine : créer un lot, y verser des fichiers,
@@ -51,50 +52,6 @@ function sourceTypeProvisoire(filename: string, mimeType: string) {
 	if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp'].includes(ext)) return 'IMAGE' as const;
 	return 'TEXTE' as const;
 }
-
-/**
- * Crée un lot pour une période. Un seul lot ouvert à la fois par
- * organisation : deux lots ouverts en parallèle sur des périodes qui se
- * chevauchent produiraient deux diagnostics contradictoires sur les mêmes
- * achats.
- */
-export const creerLot = authedMutation({
-	args: {
-		label: v.string(),
-		periodStart: v.string(),
-		periodEnd: v.string()
-	},
-	returns: v.id('invoiceBatches'),
-	handler: async (ctx, { label, periodStart, periodEnd }) => {
-		const { organizationId } = await getUserOrg(ctx);
-
-		const lots = await ctx.db
-			.query('invoiceBatches')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.collect();
-		const ouvert = lots.find((l) =>
-			(STATUTS_OUVERTS as readonly string[]).includes(l.status)
-		);
-		if (ouvert) {
-			throw new ConvexError(
-				`Un dépôt est déjà en cours (« ${ouvert.label} »). Terminez-le avant d'en ouvrir un autre.`
-			);
-		}
-
-		return await ctx.db.insert('invoiceBatches', {
-			organizationId,
-			label,
-			periodStart,
-			periodEnd,
-			status: 'DRAFT',
-			uploadedBy: ctx.user._id,
-			documentsTotal: 0,
-			linesTotal: 0,
-			labelsPendingReview: 0,
-			createdAt: Date.now()
-		});
-	}
-});
 
 export const genererUrlDepot = authedMutation({
 	args: {},
@@ -412,6 +369,18 @@ export const obtenirOuCreerDepot = authedMutation({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 
+		// D'abord, soigner l'état mémorisé. Un lot dont la file a été vidée avant
+		// que le recomptage n'existe porte encore `REVIEW` : sans cette passe, il
+		// bloquerait tout dépôt indéfiniment, en annonçant des confirmations qui
+		// n'attendent plus personne. Ça ne coûte qu'une lecture d'index par lot en
+		// arbitrage, et une organisation en compte une poignée.
+		for (const lot of lots) {
+			if (lot.status === 'REVIEW' || lot.status === 'READY') {
+				const etat = await recompterLot(ctx, lot._id);
+				if (etat) lot.status = etat.status;
+			}
+		}
+
 		// Un lot qui accepte encore des fichiers : on y verse, quel que soit son
 		// nom. C'est le cas courant.
 		const accueillant = lots.find((l) => l.status === 'DRAFT' || l.status === 'EXTRACTING');
@@ -419,12 +388,43 @@ export const obtenirOuCreerDepot = authedMutation({
 			return { batchId: accueillant._id, accepteDesFichiers: true, status: accueillant.status };
 		}
 
-		// Un lot en traitement bloque l'ouverture du suivant. On le dit avec son
-		// état, pour que l'écran explique où en est la lecture plutôt que de
-		// renvoyer une erreur nue.
-		const enTraitement = lots.find((l) => l.status === 'CLASSIFYING' || l.status === 'REVIEW');
+		// Un traitement en cours bloque, et c'est la seule situation qui le doit.
+		// L'extraction et la classification parcourent une liste triée de libellés
+		// distincts par tranches, repérées par un simple décalage : y ajouter des
+		// lignes en cours de route lui en ferait sauter, ou rejouer.
+		const enTraitement = lots.find((l) => l.status === 'CLASSIFYING');
 		if (enTraitement) {
-			return { batchId: enTraitement._id, accepteDesFichiers: false, status: enTraitement.status };
+			return { batchId: enTraitement._id, accepteDesFichiers: false, status: 'CLASSIFYING' as const };
+		}
+
+		// Une file d'arbitrage non vide bloque aussi, mais pour une raison de
+		// mesure et non de moteur : ajouter des factures pendant que le gérant
+		// tranche lui ferait relire des produits sur un périmètre qui bouge.
+		const enArbitrage = lots.find((l) => l.status === 'REVIEW');
+		if (enArbitrage) {
+			return { batchId: enArbitrage._id, accepteDesFichiers: false, status: 'REVIEW' as const };
+		}
+
+		// LE DÉPÔT DE L'EXERCICE SE ROUVRE, il ne se dédouble pas.
+		//
+		// Un gérant qui reçoit ses factures de décembre en janvier doit pouvoir
+		// les ajouter à l'exercice qu'il a déjà traité. Créer un SECOND lot pour
+		// la même année serait un piège : `produireDiagnostic` mesure un lot, et
+		// le gérant obtiendrait un diagnostic ne portant que sur les dernières
+		// factures — un livrable faux, présenté avec la même autorité qu'une vraie
+		// mesure.
+		//
+		// Rouvrir est sûr précisément ici : la classification est terminée, il n'y
+		// a aucun parcours en cours à corrompre. Elle repartira de zéro sur la
+		// liste élargie, où les libellés déjà tranchés sortent du cache sans coûter
+		// un appel — et ceux que le gérant a confirmés y sont marqués `HUMAN`,
+		// donc réappliqués tels quels.
+		const delExercice = lots.find(
+			(l) => l.periodStart === `${annee}-01-01` && l.status === 'READY'
+		);
+		if (delExercice) {
+			await ctx.db.patch(delExercice._id, { status: 'DRAFT' });
+			return { batchId: delExercice._id, accepteDesFichiers: true, status: 'DRAFT' as const };
 		}
 
 		const batchId = await ctx.db.insert('invoiceBatches', {
