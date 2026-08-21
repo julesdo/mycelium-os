@@ -468,10 +468,18 @@ export function computeBuildEnv(
 /**
  * Build SvelteKit with computed environment
  */
-export function buildSvelteKit(buildEnv: Record<string, string | undefined>): void {
-	console.log('Building SvelteKit...');
+/**
+ * Construit l'application.
+ *
+ * Elle s'appelait `buildSvelteKit` et disait « Building SvelteKit… » dans les
+ * journaux de déploiement, six mois après le passage en React. Un nom faux dans
+ * un journal de build coûte cher : c'est la première chose qu'on lit quand un
+ * déploiement casse, et elle envoie chercher au mauvais endroit.
+ */
+export function construireApplication(buildEnv: Record<string, string | undefined>): void {
+	console.log("Construction de l'application (Vite)...");
 	if (!runCommand('bun', ['run', 'build'], buildEnv)) {
-		console.error(`${colors.red}SvelteKit build failed${colors.reset}`);
+		console.error(`${colors.red}La construction a échoué${colors.reset}`);
 		process.exit(1);
 	}
 }

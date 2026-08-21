@@ -1,7 +1,10 @@
 {
+	"$schema": "https://openapi.vercel.sh/vercel.json",
 	"buildCommand": "bunx varlock run -- bun scripts/deploy.ts",
-	"framework": "sveltekit",
+	"outputDirectory": "dist/client",
+	"framework": null,
 	"regions": ["fra1"],
+	"rewrites": [{ "source": "/(.*)", "destination": "/api" }],
 	"headers": [
 		{
 			"source": "/(.*)",
