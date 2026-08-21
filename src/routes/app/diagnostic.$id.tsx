@@ -30,6 +30,10 @@ import {
 } from '../../ui';
 import { Attestations, type Attestation } from '../../screens/diagnostic/attestations';
 import { Declaration, chiffresDepuisBilan } from '../../screens/diagnostic/declaration';
+import { FeuilleSignature } from '../../screens/diagnostic/signer';
+import { MENTION_PORTEE_SIGNATURE } from '../../lib/convex/egalim/mentions';
+import { BlocSignature } from '../../screens/diagnostic/bloc-signature';
+import { empreinteBilan } from '../../ui';
 import { telechargerDiagnostic } from '../../screens/diagnostic/telecharger';
 
 export const Route = createFileRoute('/app/diagnostic/$id')({ component: Diagnostic });
@@ -44,6 +48,20 @@ function Diagnostic() {
 	const changerStatut = useMutation(api.egalim.attestations.changerStatut);
 	const marquerRemis = useMutation(api.egalim.diagnostics.marquerRemis);
 	const [enPreparation, setEnPreparation] = useState(false);
+
+	const signer = useMutation(api.egalim.signature.signerBilan);
+	const revoquer = useMutation(api.egalim.signature.revoquerSignature);
+	const signature = useQuery(api.egalim.signature.obtenirSignature, {
+		diagnosticId: id as Id<'diagnostics'>
+	});
+
+	const [feuilleOuverte, setFeuilleOuverte] = useState(false);
+	const [signatureEnCours, setSignatureEnCours] = useState(false);
+	const [erreurSignature, setErreurSignature] = useState<string | null>(null);
+	// L'empreinte est calculée au rendu, jamais mémorisée : elle dépend
+	// entièrement du bilan affiché, et un état de plus pourrait se désynchroniser
+	// de lui — précisément ce que l'empreinte est censée détecter.
+	const [empreinte, setEmpreinte] = useState<string | null>(null);
 
 	if (d === undefined) {
 		return (
@@ -70,6 +88,76 @@ function Diagnostic() {
 	}
 
 	const dateMesure = DATE.format(new Date(d.computedAt));
+
+	/**
+	 * Les champs qui entrent dans l'empreinte. Extraits ici, une fois, pour que
+	 * la signature et le PDF portent exactement la même chose : deux listes de
+	 * champs recopiées à deux endroits divergent au premier ajout de colonne, et
+	 * l'empreinte se mettrait à ne plus concorder sans que rien n'ait changé.
+	 */
+	const pourEmpreinte = {
+		organizationName: d.organizationName,
+		siret: d.siret,
+		periodStart: d.periodStart,
+		periodEnd: d.periodEnd,
+		computedAt: d.computedAt,
+		classifierVersion: d.classifierVersion,
+		ratios: d.ratios,
+		byFamily: d.byFamily,
+		bySupplier: d.bySupplier
+	};
+
+	async function ouvrirSignature() {
+		setErreurSignature(null);
+		// Calculée au moment d'ouvrir, jamais gardée en état pendant le rendu :
+		// une empreinte mémorisée pourrait survivre au bilan qui l'a produite,
+		// et c'est exactement ce qu'elle est censée détecter.
+		setEmpreinte(await empreinteBilan(pourEmpreinte));
+		setFeuilleOuverte(true);
+	}
+
+	async function apposer(v: { nom: string; fonction: string; trace: string | null }) {
+		if (!empreinte) return;
+		setSignatureEnCours(true);
+		setErreurSignature(null);
+		try {
+			await signer({
+				diagnosticId: id as Id<'diagnostics'>,
+				empreinte,
+				nomSignataire: v.nom,
+				fonction: v.fonction,
+				trace: v.trace ?? undefined
+			});
+			setFeuilleOuverte(false);
+		} catch (e) {
+			const convexe = e as { data?: unknown };
+			setErreurSignature(
+				typeof convexe.data === 'string'
+					? convexe.data
+					: e instanceof Error
+						? e.message
+						: "La signature n'a pas pu être enregistrée."
+			);
+		} finally {
+			setSignatureEnCours(false);
+		}
+	}
+
+	async function retirer(motif: string) {
+		if (!signature) return;
+		setSignatureEnCours(true);
+		setErreurSignature(null);
+		try {
+			await revoquer({ signatureId: signature.signature.signatureId, motif });
+		} catch (e) {
+			const convexe = e as { data?: unknown };
+			setErreurSignature(
+				typeof convexe.data === 'string' ? convexe.data : 'Le retrait a échoué.'
+			);
+		} finally {
+			setSignatureEnCours(false);
+		}
+	}
 
 	return (
 		<Page>
@@ -102,7 +190,21 @@ function Diagnostic() {
 							readOnly={enPreparation}
 							onClick={() => {
 								setEnPreparation(true);
-								void telechargerDiagnostic({
+								void (async () => {
+									const emp = await empreinteBilan(pourEmpreinte);
+									await telechargerDiagnostic({
+										empreinte: emp,
+										signature: signature
+											? {
+													nom: signature.signature.nomSignataire,
+													fonction: signature.signature.fonction,
+													email: signature.signature.email,
+													signeLe: signature.signature.signeLe,
+													mention: signature.signature.mention,
+													portee: MENTION_PORTEE_SIGNATURE,
+													trace: signature.signature.trace
+												}
+											: null,
 									organizationName: d.organizationName,
 									siret: d.siret,
 									periodStart: d.periodStart,
@@ -122,8 +224,9 @@ function Diagnostic() {
 										MENTION_OBLIGATION_DE_MOYENS,
 										MENTION_RESPONSABILITE,
 										MENTION_FIGE(dateMesure)
-									]
-								}).finally(() => setEnPreparation(false));
+										]
+									});
+								})().finally(() => setEnPreparation(false));
 							}}
 						>
 							<DownloadIcon />
@@ -172,6 +275,15 @@ function Diagnostic() {
 							seuils: d.seuils,
 							byFamily: d.byFamily
 						})}
+					/>
+
+					<BlocSignature
+						signature={signature?.signature ?? null}
+						empreinteConcorde={signature?.empreinteConcorde ?? true}
+						enCours={signatureEnCours}
+						erreur={erreurSignature}
+						onOuvrirSignature={() => void ouvrirSignature()}
+						onRevoquer={(motif) => void retirer(motif)}
 					/>
 
 					{d.montantNonMesureHT > 0 ? (
@@ -274,6 +386,17 @@ function Diagnostic() {
 					</footer>
 				</div>
 			</PageBody>
+
+			{feuilleOuverte && empreinte ? (
+				<FeuilleSignature
+					empreinte={empreinte}
+					nomParDefaut={d.organizationName}
+					enCours={signatureEnCours}
+					erreur={erreurSignature}
+					onSigner={(v) => void apposer(v)}
+					onFermer={() => setFeuilleOuverte(false)}
+				/>
+			) : null}
 		</Page>
 	);
 }

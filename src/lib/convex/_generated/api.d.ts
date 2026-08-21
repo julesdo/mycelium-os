@@ -42,6 +42,7 @@ import type * as egalim_produits from "../egalim/produits.js";
 import type * as egalim_prompt from "../egalim/prompt.js";
 import type * as egalim_promptExtraction from "../egalim/promptExtraction.js";
 import type * as egalim_reprise from "../egalim/reprise.js";
+import type * as egalim_signature from "../egalim/signature.js";
 import type * as egalim_tables from "../egalim/tables.js";
 import type * as egalim_verdict from "../egalim/verdict.js";
 import type * as egalim_verification from "../egalim/verification.js";
@@ -120,6 +121,7 @@ declare const fullApi: ApiFromModules<{
   "egalim/prompt": typeof egalim_prompt;
   "egalim/promptExtraction": typeof egalim_promptExtraction;
   "egalim/reprise": typeof egalim_reprise;
+  "egalim/signature": typeof egalim_signature;
   "egalim/tables": typeof egalim_tables;
   "egalim/verdict": typeof egalim_verdict;
   "egalim/verification": typeof egalim_verification;

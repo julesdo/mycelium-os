@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FAMILLES, type Famille } from '../../ui/format';
 import { COULEURS_IMPRESSION as C } from '../../ui/couleurs-impression';
+import { empreinteLisible } from '../../lib/egalim/empreinte';
 
 /**
  * Le diagnostic EGalim, en document imprimable.
@@ -66,6 +67,19 @@ export interface DiagnosticImprimable {
 	}>;
 	/** Les mentions légales, telles que `mentions.ts` les rédige. Jamais réécrites ici. */
 	mentions: readonly string[];
+	/** L'empreinte de la mesure. Imprimée signée ou non : c'est elle qui identifie le bilan. */
+	empreinte: string;
+	/** La signature apposée, quand il y en a une. */
+	signature: {
+		nom: string;
+		fonction: string;
+		email: string;
+		signeLe: number;
+		mention: string;
+		portee: string;
+		/** Le tracé manuscrit en PNG (data URL). */
+		trace: string | null;
+	} | null;
 }
 
 const EUROS = new Intl.NumberFormat('fr-FR', {
@@ -409,6 +423,86 @@ export function construireDiagnostic(d: DiagnosticImprimable): jsPDF {
 			]),
 			{ 0: UTILE - 250, 1: 100, 2: 70, 3: 80 }
 		);
+	}
+
+	// ── La signature ──────────────────────────────────────────────────────
+	// Elle vient AVANT les mentions légales et après les tableaux : c'est le
+	// dernier acte du document, et c'est ce qu'un lecteur cherche en premier
+	// quand on lui tend un rapport en lui demandant s'il est validé.
+	if (d.signature) {
+		const sig = d.signature;
+		const dateSignature = DATE_LONGUE.format(new Date(sig.signeLe));
+		const mention = doc.splitTextToSize(ascii(sig.mention), UTILE - 24) as string[];
+		const portee = doc.splitTextToSize(ascii(sig.portee), UTILE - 24) as string[];
+		const hauteur = 118 + mention.length * 10 + portee.length * 9;
+
+		place(hauteur + 12);
+		doc.setDrawColor(C.filet);
+		doc.setLineWidth(0.5);
+		doc.roundedRect(MARGE, y, UTILE, hauteur, 4, 4, 'S');
+
+		let cy = y + 20;
+		doc.setFont('helvetica', 'bold');
+		doc.setFontSize(11);
+		doc.setTextColor(C.texte);
+		doc.text('Bilan signe', MARGE + 12, cy);
+
+		cy += 16;
+		doc.setFont('helvetica', 'normal');
+		doc.setFontSize(9);
+		doc.text(ascii(`${sig.nom} — ${sig.fonction}`), MARGE + 12, cy);
+		cy += 12;
+		doc.setFontSize(8);
+		doc.setTextColor(C.doux);
+		doc.text(ascii(`${sig.email} · le ${dateSignature}`), MARGE + 12, cy);
+
+		// Le tracé, à droite du bloc. S'il manque, la signature reste valable :
+		// ce n'est pas lui qui prouve, c'est la piste d'audit.
+		if (sig.trace) {
+			try {
+				doc.addImage(sig.trace, 'PNG', PAGE_L - MARGE - 150, y + 12, 138, 52);
+			} catch {
+				// Un tracé illisible ne doit jamais empêcher le bilan de sortir.
+			}
+		}
+
+		cy += 16;
+		doc.setFontSize(8.5);
+		doc.setTextColor(C.texte);
+		doc.text(mention, MARGE + 12, cy);
+		cy += mention.length * 10 + 8;
+
+		doc.setFontSize(7);
+		doc.setTextColor(C.tresDoux);
+		doc.text('EMPREINTE DE LA MESURE SIGNEE', MARGE + 12, cy);
+		cy += 10;
+		doc.setFontSize(7.5);
+		doc.setTextColor(C.doux);
+		doc.text(empreinteLisible(d.empreinte), MARGE + 12, cy, { maxWidth: UTILE - 24 });
+		cy += 14;
+
+		doc.setFontSize(7);
+		doc.text(portee, MARGE + 12, cy);
+
+		y += hauteur + 18;
+	} else {
+		// NON SIGNÉ, et on le dit. Un bilan qui ne porte aucune mention de
+		// signature laisse croire qu'il n'en avait pas besoin ; celui-ci dit ce
+		// qui lui manque, ce qui est aussi une information pour son lecteur.
+		place(46);
+		doc.setDrawColor(C.filet);
+		doc.setLineWidth(0.5);
+		doc.roundedRect(MARGE, y, UTILE, 38, 4, 4, 'S');
+		doc.setFont('helvetica', 'normal');
+		doc.setFontSize(8.5);
+		doc.setTextColor(C.doux);
+		doc.text('Ce bilan n a pas ete signe.'.replace('n a', "n'a"), MARGE + 12, y + 16);
+		doc.setFontSize(7);
+		doc.setTextColor(C.tresDoux);
+		doc.text(`Empreinte de la mesure : ${empreinteLisible(d.empreinte)}`, MARGE + 12, y + 28, {
+			maxWidth: UTILE - 24
+		});
+		y += 56;
 	}
 
 	// ── Les mentions obligatoires ─────────────────────────────────────────

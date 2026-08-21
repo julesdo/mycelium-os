@@ -19,6 +19,8 @@ export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
 export { SectionEcran } from './section';
 export { ChampCopiable } from './champ-copiable';
+export { PaveSignature } from './pave-signature';
+export { empreinteBilan, empreinteLisible, formeCanonique } from '../lib/egalim/empreinte';
 export { ZoneDepot } from './zone-depot';
 export { TauxEGalim, TauxCompact } from './taux-egalim';
 export { Illustration, type TailleVignette } from './illustration';

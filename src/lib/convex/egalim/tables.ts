@@ -291,6 +291,57 @@ export const egalimTables = {
 		.index('by_org', ['organizationId'])
 		.index('by_batch', ['batchId']),
 
+	/**
+	 * La signature d'un bilan par le gérant.
+	 *
+	 * CE QU'ELLE EST, ET CE QU'ELLE N'EST PAS. Une signature électronique SIMPLE
+	 * au sens d'eIDAS, adossée à une piste d'audit. Elle n'est pas qualifiée :
+	 * une signature qualifiée suppose un prestataire de services de confiance
+	 * agréé qui vérifie l'identité du signataire, ce qu'aucune brique libre ne
+	 * peut remplacer — la contrainte est juridique, pas technique.
+	 *
+	 * SA FORCE PROBANTE VIENT DE CE QU'ON ENREGISTRE. Le compte authentifié qui
+	 * a signé, l'heure du SERVEUR, l'empreinte de la mesure, et le texte exact
+	 * accepté avec sa version. Ces quatre éléments réunis rendent la signature
+	 * défendable ; il en manque un et elle redevient une case cochée.
+	 *
+	 * UNE SIGNATURE NE SE MODIFIE JAMAIS. Elle s'ajoute, et elle se révoque en
+	 * ajoutant une révocation — jamais en réécrivant la ligne. Un journal qui se
+	 * réécrit ne prouve rien, y compris quand il dit vrai.
+	 */
+	bilanSignatures: defineTable({
+		organizationId: v.id('organizations'),
+		diagnosticId: v.id('diagnostics'),
+		/** Le compte authentifié qui a signé. L'identité vient de lui, jamais du formulaire. */
+		userId: v.string(),
+		email: v.string(),
+		/** Le nom et la fonction tels que le signataire les a écrits, pour la page de preuve. */
+		nomSignataire: v.string(),
+		fonction: v.string(),
+		/** L'heure du SERVEUR. Une heure fournie par le client ne prouve rien. */
+		signeLe: v.number(),
+		/** SHA-256 de la forme canonique de la mesure. Voir `egalim/empreinte.ts`. */
+		empreinte: v.string(),
+		/** Le texte accepté, et sa version. On n'affiche jamais autre chose. */
+		mention: v.string(),
+		mentionVersion: v.string(),
+		/**
+		 * Le tracé manuscrit, en PNG. Facultatif : il ne prouve rien à lui seul —
+		 * un dessin se recopie — mais c'est ce que le lecteur d'un PDF reconnaît
+		 * comme une signature, et c'est ce qui fait qu'il lit le reste.
+		 */
+		trace: v.optional(v.string()),
+		/**
+		 * Une signature retirée reste en base, marquée. La supprimer effacerait la
+		 * trace qu'elle a existé, ce qui est précisément ce qu'un journal ne doit
+		 * pas permettre.
+		 */
+		revoqueeLe: v.optional(v.number()),
+		motifRevocation: v.optional(v.string())
+	})
+		.index('by_diagnostic', ['diagnosticId'])
+		.index('by_org', ['organizationId']),
+
 	// Les courriers de demande de justificatif — le point du livrable qui
 	// rembourse souvent la prestation à lui seul
 	attestationRequests: defineTable({

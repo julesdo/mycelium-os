@@ -4,7 +4,9 @@ import { construireDiagnostic, nomFichier, type DiagnosticImprimable } from '../
 import {
 	MENTION_RESPONSABILITE,
 	MENTION_FIGE,
-	MENTION_OBLIGATION_DE_MOYENS
+	MENTION_OBLIGATION_DE_MOYENS,
+	MENTION_SIGNATURE,
+	MENTION_PORTEE_SIGNATURE
 } from '../../../lib/convex/egalim/mentions';
 
 /**
@@ -48,7 +50,23 @@ const DIAGNOSTIC: DiagnosticImprimable = {
 	attestations: [
 		{ supplierName: 'Maison Bertin', amountAtStake: 6200, pointsRecuperables: 1.8, status: 'SENT' }
 	],
-	mentions: [MENTION_OBLIGATION_DE_MOYENS, MENTION_RESPONSABILITE, MENTION_FIGE(dateMesure)]
+	mentions: [MENTION_OBLIGATION_DE_MOYENS, MENTION_RESPONSABILITE, MENTION_FIGE(dateMesure)],
+	empreinte: 'a3f1c9d2e4b78056a3f1c9d2e4b78056a3f1c9d2e4b78056a3f1c9d2e4b78056',
+	signature: null
+};
+
+/** Le même bilan, signé. */
+const SIGNE: DiagnosticImprimable = {
+	...DIAGNOSTIC,
+	signature: {
+		nom: 'Claire Vasseur',
+		fonction: 'Responsable de restauration',
+		email: 'claire.vasseur@example.fr',
+		signeLe: Date.parse('2027-03-14T11:30:00Z'),
+		mention: MENTION_SIGNATURE,
+		portee: MENTION_PORTEE_SIGNATURE,
+		trace: null
+	}
 };
 
 /**
@@ -204,4 +222,36 @@ describe('nomFichier', () => {
 			'diagnostic-egalim-2026-etablissement.pdf'
 		);
 	});
+});
+
+describe('le PDF dit s’il est signé, et par qui', () => {
+	it('non signé, il le dit — au lieu de laisser croire que ce n’était pas nécessaire', async () => {
+		const texte = await texteDu(DIAGNOSTIC);
+		expect(texte).toContain("Ce bilan n'a pas ete signe");
+		// L'empreinte y figure quand même : c'est elle qui identifie la mesure,
+		// signée ou non.
+		expect(texte).toContain('A3F1');
+	}, 30_000);
+
+	it('signé, il porte le signataire, sa fonction, son compte et la date', async () => {
+		const texte = await texteDu(SIGNE);
+		expect(texte).toContain('Claire Vasseur');
+		expect(texte).toContain('Responsable de restauration');
+		expect(texte).toContain('claire.vasseur@example.fr');
+		expect(texte).toContain('14 mars 2027');
+	}, 30_000);
+
+	it('signé, il porte ce qui a été signé ET ce que la signature vaut', async () => {
+		const texte = await texteDu(SIGNE);
+		expect(texte).toContain(normaliser(MENTION_SIGNATURE));
+		// La mention de portée est la plus importante du lot : elle dit que la
+		// signature n'est pas qualifiée. La perdre transformerait le document en
+		// promesse que personne ne peut tenir.
+		expect(texte).toContain(normaliser(MENTION_PORTEE_SIGNATURE));
+	}, 30_000);
+
+	it('signé, il porte l’empreinte de ce qui a été signé', async () => {
+		const texte = await texteDu(SIGNE);
+		expect(texte).toContain('A3F1 C9D2');
+	}, 30_000);
 });
