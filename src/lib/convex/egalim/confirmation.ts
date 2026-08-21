@@ -1,5 +1,6 @@
 import { v, ConvexError } from 'convex/values';
 import { authedQuery, authedMutation } from '../functions';
+import { internal } from '../_generated/api';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { getUserOrg } from '../lib/auth';
@@ -190,6 +191,59 @@ export const obtenirPreuve = authedQuery({
 	}
 });
 
+/**
+ * Recompte ce qui reste à arbitrer dans un lot, et en tire son statut.
+ *
+ * LE BUG QUE CETTE FONCTION CORRIGE, et il valait le produit entier.
+ * `labelsPendingReview` était écrit UNE fois, à la clôture de la
+ * classification, et plus jamais. Confirmer un produit mettait bien ses lignes
+ * à jour, mais laissait le compteur du lot à sa valeur d'origine. Deux
+ * conséquences, dont la seconde tuait la chaîne :
+ *
+ *   1. l'écran annonçait « 3 produits attendent votre confirmation » alors que
+ *      la file était vide, indéfiniment ;
+ *   2. le lot restait en `REVIEW`, et `produireDiagnostic` refuse de figer une
+ *      mesure tant qu'il reste un arbitrage. Un gérant qui avait TOUT confirmé
+ *      ne pouvait donc jamais produire son diagnostic — c'est-à-dire jamais
+ *      obtenir la seule chose qu'il achète.
+ *
+ * Le compteur est désormais dérivé des lignes, jamais mémorisé de travers : on
+ * relit l'index, on compte les libellés distincts, et le statut suit. Un lot
+ * déjà `READY` ou `FAILED` n'est pas retouché — seul un lot en cours d'arbitrage
+ * change d'état ici.
+ */
+async function recompterLot(ctx: MutationCtx, batchId: Id<'invoiceBatches'>): Promise<void> {
+	const batch = await ctx.db.get(batchId);
+	if (!batch) return;
+	if (batch.status !== 'REVIEW' && batch.status !== 'READY') return;
+
+	const enAttente = await ctx.db
+		.query('invoiceLines')
+		.withIndex('by_batch_and_review', (q) =>
+			q.eq('batchId', batchId).eq('reviewStatus', 'PENDING_REVIEW')
+		)
+		.collect();
+
+	// En libellés distincts, comme au moment de la clôture : c'est l'unité de
+	// travail du gérant, et la même que celle qu'affiche la file.
+	const restants = new Set(enAttente.map((l) => l.normalizedLabel)).size;
+	const statut = restants > 0 ? ('REVIEW' as const) : ('READY' as const);
+
+	if (batch.labelsPendingReview !== restants || batch.status !== statut) {
+		await ctx.db.patch(batchId, { labelsPendingReview: restants, status: statut });
+	}
+
+	// Le dernier arbitrage vient de tomber : la mesure peut se figer, et le
+	// gérant n'a rien de plus à faire pour l'obtenir. `produireSiPret` existait
+	// depuis le début, avec un commentaire disant qu'elle devait être appelée
+	// « après chaque arbitrage » — elle ne l'était nulle part. Elle se garde
+	// elle-même contre le double appel et contre une classification encore en
+	// cours ; on peut donc la planifier sans condition.
+	if (statut === 'READY') {
+		await ctx.scheduler.runAfter(0, internal.egalim.diagnostics.produireSiPret, { batchId });
+	}
+}
+
 interface Decision {
 	normalizedLabel: string;
 	isFood: boolean;
@@ -235,6 +289,13 @@ async function decider(
 		(l) => l.reviewStatus === 'CONFIRMED' || l.reviewStatus === 'CORRECTED'
 	);
 
+	// Les lots touchés, relevés AVANT d'écrire : une fois les lignes patchées,
+	// elles ne sont plus en attente et on ne saurait plus quels lots relire.
+	const lotsTouches = new Set<Id<'invoiceBatches'>>();
+	for (const ligne of lignes) {
+		if (ligne.reviewStatus === 'PENDING_REVIEW') lotsTouches.add(ligne.batchId);
+	}
+
 	for (const ligne of lignes) {
 		await ctx.db.patch(ligne._id, {
 			isFood: verdict.isFood,
@@ -248,6 +309,10 @@ async function decider(
 			reviewStatus: statutLigne,
 			classifierVersion: REFERENTIEL_VERSION
 		});
+	}
+
+	for (const batchId of lotsTouches) {
+		await recompterLot(ctx, batchId);
 	}
 
 	const cache = await ctx.db

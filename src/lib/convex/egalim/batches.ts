@@ -263,6 +263,19 @@ export const suivreLot = authedQuery({
 			.withIndex('by_batch', (q) => q.eq('batchId', batchId))
 			.first();
 
+		// Compté, jamais relu d'un champ. Le compteur mémorisé du lot est
+		// désormais tenu à jour à chaque arbitrage, mais les lots créés avant ce
+		// correctif portent encore une valeur figée — et un écran qui annonce
+		// « 3 produits attendent » devant une file vide détruit la confiance plus
+		// sûrement qu'une page en erreur.
+		const enAttente = await ctx.db
+			.query('invoiceLines')
+			.withIndex('by_batch_and_review', (q) =>
+				q.eq('batchId', batchId).eq('reviewStatus', 'PENDING_REVIEW')
+			)
+			.collect();
+		const restants = new Set(enAttente.map((l) => l.normalizedLabel)).size;
+
 		return {
 			label: batch.label,
 			periodStart: batch.periodStart,
@@ -283,7 +296,7 @@ export const suivreLot = authedQuery({
 				batch.linesTotal > 0
 					? batch.linesTotal
 					: documents.reduce((s, d) => s + d.linesCount, 0),
-			labelsPendingReview: batch.labelsPendingReview,
+			labelsPendingReview: restants,
 			classification: job
 				? {
 						total: job.labelsTotal,
@@ -322,20 +335,48 @@ export const listerLots = authedQuery({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 
-		return lots
-			.sort((a, b) => b.createdAt - a.createdAt)
-			.map((l) => ({
+		const tries = lots.sort((a, b) => b.createdAt - a.createdAt);
+
+		// Le reste à arbitrer se recompte lot par lot, plutôt que de se relire
+		// dans le champ mémorisé. Une organisation a un lot par exercice, soit une
+		// poignée : le coût est une lecture d'index par lot, et le bénéfice est
+		// qu'un lot d'avant le correctif du compteur ne reste pas bloqué en
+		// « REVIEW » avec une file vide, incapable de produire son diagnostic.
+		const resultats = [];
+		for (const l of tries) {
+			const enAttente = await ctx.db
+				.query('invoiceLines')
+				.withIndex('by_batch_and_review', (q) =>
+					q.eq('batchId', l._id).eq('reviewStatus', 'PENDING_REVIEW')
+				)
+				.collect();
+			const restants = new Set(enAttente.map((x) => x.normalizedLabel)).size;
+
+			// Le statut suit le compte, mais UNIQUEMENT sur les deux états où
+			// l'arbitrage a un sens. Un lot en extraction ou en classification
+			// n'a pas encore de file : y lire « prêt » parce qu'elle est vide
+			// annoncerait un diagnostic disponible au milieu du traitement.
+			const status =
+				l.status === 'REVIEW' || l.status === 'READY'
+					? restants > 0
+						? ('REVIEW' as const)
+						: ('READY' as const)
+					: l.status;
+
+			resultats.push({
 				batchId: l._id,
 				label: l.label,
 				periodStart: l.periodStart,
 				periodEnd: l.periodEnd,
-				status: l.status,
+				status,
 				documentsTotal: l.documentsTotal,
 				linesTotal: l.linesTotal,
-				labelsPendingReview: l.labelsPendingReview,
+				labelsPendingReview: restants,
 				createdAt: l.createdAt,
-				ouvert: (STATUTS_OUVERTS as readonly string[]).includes(l.status)
-			}));
+				ouvert: (STATUTS_OUVERTS as readonly string[]).includes(status)
+			});
+		}
+		return resultats;
 	}
 });
 

@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Input, SectionTitle, ToggleGroup, ToggleButton } from '@cladd-ui/react';
+import {
+	Button,
+	Input,
+	Surface,
+	SectionTitle,
+	Segmented,
+	SegmentedButton,
+	ToggleGroup,
+	ToggleButton
+} from '@cladd-ui/react';
 import { CheckIcon, LogOutIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
-import { Page, PageHeader, PageBody } from '../../ui';
+import { Page, PageHeader, PageBody, Champ } from '../../ui';
 
 export const Route = createFileRoute('/app/parametres')({ component: Parametres });
 
@@ -21,11 +30,34 @@ const TYPES = [
 
 type TypeEtablissement = (typeof TYPES)[number]['cle'];
 
+/**
+ * Une section de réglages, dans sa carte.
+ *
+ * Les sections étaient séparées par des filets et de grands vides. Sur un écran
+ * qui en compte trois, ça se lit comme une page qui n'a pas fini de charger :
+ * une carte par sujet dit d'un coup d'œil combien il y en a, et où l'un
+ * s'arrête.
+ */
+function Reglage({ titre, children }: { titre: string; children: ReactNode }) {
+	return (
+		<section className="flex flex-col gap-cladd-3xs">
+			<SectionTitle>{titre}</SectionTitle>
+			<Surface
+				outline
+				className="rounded-cladd-2xl shadow-carte"
+				contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
+			>
+				{children}
+			</Surface>
+		</section>
+	);
+}
+
 function Parametres() {
 	const navigate = useNavigate();
 	const org = useQuery(api.organizations.getMyOrg, {});
 	const mettreAJour = useMutation(api.organizations.updateOrganization);
-	const { theme, basculer } = useTheme();
+	const { theme, setTheme } = useTheme();
 
 	if (org === undefined) {
 		return (
@@ -42,7 +74,7 @@ function Parametres() {
 		<Page>
 			<PageHeader titre="Réglages" sousTitre="Votre établissement et votre compte." />
 			<PageBody>
-				<div className="flex max-w-lg flex-col gap-cladd-xl">
+				<div className="flex max-w-160 flex-col gap-cladd-2xs">
 					{org ? (
 						<FormulaireEtablissement
 							key={org._id}
@@ -56,34 +88,37 @@ function Parametres() {
 						/>
 					) : null}
 
-					<section className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Apparence</SectionTitle>
-						<p className="text-cladd-xs text-cladd-fg-soft">
+					<Reglage titre="Apparence">
+						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 							L&rsquo;affichage clair est le réglage par défaut : il se lit mieux en plein jour,
 							sur une tablette à fort reflet.
 						</p>
-						<div>
-							<Button variant="gradient" onClick={basculer}>
-								{theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-								{theme === 'dark' ? 'Passer en clair' : 'Passer en sombre'}
-							</Button>
-						</div>
-					</section>
+						{/* Deux états exclusifs : c'est un `Segmented`, pas un bouton qui
+						    annonce la bascule. « Passer en sombre » oblige à déduire l'état
+						    courant depuis l'action proposée, ce qui se lit à l'envers. */}
+						<Segmented className="self-start">
+							<SegmentedButton active={theme === 'light'} onClick={() => setTheme('light')}>
+								<SunIcon />
+								Clair
+							</SegmentedButton>
+							<SegmentedButton active={theme === 'dark'} onClick={() => setTheme('dark')}>
+								<MoonIcon />
+								Sombre
+							</SegmentedButton>
+						</Segmented>
+					</Reglage>
 
-					<section className="flex flex-col gap-cladd-3xs border-t border-cladd-outline pt-cladd-xs">
-						<SectionTitle>Votre compte</SectionTitle>
-						<div>
-							<Button
-								variant="gradient"
-								onClick={() => {
-									void authClient.signOut().then(() => navigate({ to: '/connexion' }));
-								}}
-							>
-								<LogOutIcon />
-								Se déconnecter
-							</Button>
-						</div>
-					</section>
+					<Reglage titre="Votre compte">
+						<Button
+							className="self-start"
+							onClick={() => {
+								void authClient.signOut().then(() => navigate({ to: '/connexion' }));
+							}}
+						>
+							<LogOutIcon />
+							Se déconnecter
+						</Button>
+					</Reglage>
 				</div>
 			</PageBody>
 		</Page>
@@ -135,57 +170,54 @@ function FormulaireEtablissement({
 	}
 
 	return (
-		<section className="flex flex-col gap-cladd-xs">
-			<SectionTitle>Votre établissement</SectionTitle>
-
-			<label className="flex flex-col gap-1">
-				<span className="text-cladd-2xs font-medium text-cladd-fg-soft">Nom</span>
+		<Reglage titre="Votre établissement">
+			<Champ etiquette="Nom">
 				<Input value={nom} onChange={setNom} name="organisation" />
-			</label>
+			</Champ>
 
 			<div className="flex flex-col gap-cladd-3xs">
-				<span className="text-cladd-2xs font-medium text-cladd-fg-soft">Type</span>
+				<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Type</span>
 				<ToggleGroup
-						value={type}
-						onValueChange={(v) => {
-							// Un groupe simple se déselectionne au second clic ; un type
-							// d'établissement est obligatoire, donc on ignore le vide.
-							if (typeof v === 'string') setType(v as TypeEtablissement);
-						}}
-						className="flex flex-wrap gap-cladd-3xs"
-					>
-						{TYPES.map((t) => (
-							<ToggleButton key={t.cle} value={t.cle}>
-								{t.nom}
-							</ToggleButton>
-						))}
-					</ToggleGroup>
-			</div>
-
-			<label className="flex flex-col gap-1">
-				<span className="text-cladd-2xs font-medium text-cladd-fg-soft">Couverts par jour</span>
-				<Input type="number" value={couverts} onChange={setCouverts} name="couverts" />
-			</label>
-
-			<label className="flex flex-col gap-1">
-				<span className="text-cladd-2xs font-medium text-cladd-fg-soft">SIRET</span>
-				<Input value={siret} onChange={setSiret} name="siret" />
-				<span className="text-cladd-3xs text-cladd-fg-softer">
-					Nécessaire à la télédéclaration de mars, pas au calcul de vos taux.
-				</span>
-			</label>
-
-			<div>
-				<Button
-					color="brand"
-					variant="solid-fill"
-					loading={enCours}
-					onClick={() => void enregistrer()}
+					value={type}
+					onValueChange={(v) => {
+						// Un groupe simple se déselectionne au second clic ; un type
+						// d'établissement est obligatoire, donc on ignore le vide.
+						if (typeof v === 'string') setType(v as TypeEtablissement);
+					}}
+					className="flex flex-wrap gap-cladd-3xs"
 				>
-					{enregistre ? <CheckIcon /> : null}
-					{enregistre ? 'Enregistré' : 'Enregistrer'}
-				</Button>
+					{TYPES.map((t) => (
+						<ToggleButton key={t.cle} value={t.cle}>
+							{t.nom}
+						</ToggleButton>
+					))}
+				</ToggleGroup>
 			</div>
-		</section>
+
+			<div className="grid gap-cladd-2xs sm:grid-cols-2">
+				<Champ etiquette="Couverts par jour">
+					<Input type="number" value={couverts} onChange={setCouverts} name="couverts" />
+				</Champ>
+
+				<Champ
+					etiquette="SIRET"
+					aide="Nécessaire à la télédéclaration de mars, pas au calcul de vos taux."
+				>
+					<Input value={siret} onChange={setSiret} name="siret" />
+				</Champ>
+			</div>
+
+			<Button
+				className="self-start"
+				color="brand"
+				variant="solid-fill"
+				loading={enCours}
+				readOnly={enCours}
+				onClick={() => void enregistrer()}
+			>
+				{enregistre ? <CheckIcon /> : null}
+				{enregistre ? 'Enregistré' : 'Enregistrer'}
+			</Button>
+		</Reglage>
 	);
 }

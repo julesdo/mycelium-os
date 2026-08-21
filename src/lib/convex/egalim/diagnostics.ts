@@ -68,9 +68,23 @@ async function produire(
 		throw new ConvexError('Lot introuvable');
 	}
 	const organizationId = batch.organizationId;
-	if (batch.labelsPendingReview > 0) {
+
+	// Le reste à arbitrer se COMPTE, il ne se relit pas dans un champ.
+	// `labelsPendingReview` a longtemps été écrit une seule fois puis jamais
+	// décrémenté : des lots entièrement confirmés restaient bloqués ici, et le
+	// gérant ne pouvait plus produire la mesure qu'il avait fini de préparer.
+	// Le champ est maintenant tenu à jour, mais ce garde-là ne lui fait plus
+	// confiance — c'est le dernier verrou avant un livrable figé.
+	const enAttente = await ctx.db
+		.query('invoiceLines')
+		.withIndex('by_batch_and_review', (q) =>
+			q.eq('batchId', batchId).eq('reviewStatus', 'PENDING_REVIEW')
+		)
+		.collect();
+	const restants = new Set(enAttente.map((l) => l.normalizedLabel)).size;
+	if (restants > 0) {
 		throw new ConvexError(
-			`${batch.labelsPendingReview} libellé(s) attendent encore un arbitrage. Le diagnostic serait incomplet.`
+			`${restants} produit${restants > 1 ? 's attendent' : ' attend'} encore votre confirmation. Le diagnostic serait incomplet.`
 		);
 	}
 
@@ -194,7 +208,15 @@ export const produireSiPret = internalMutation({
 	returns: v.union(v.id('diagnostics'), v.null()),
 	handler: async (ctx, { batchId }) => {
 		const batch = await ctx.db.get(batchId);
-		if (!batch || batch.labelsPendingReview > 0) return null;
+		if (!batch) return null;
+
+		const enAttente = await ctx.db
+			.query('invoiceLines')
+			.withIndex('by_batch_and_review', (q) =>
+				q.eq('batchId', batchId).eq('reviewStatus', 'PENDING_REVIEW')
+			)
+			.first();
+		if (enAttente) return null;
 
 		// La classification doit être ALLÉE À SON TERME, pas seulement avoir
 		// vidé la file d'arbitrage à un instant donné. `labelsPendingReview` à
