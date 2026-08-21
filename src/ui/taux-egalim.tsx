@@ -49,6 +49,34 @@ const RAIL: Record<Etat, string> = {
 	manque: 'bg-seuil-manque-fond'
 };
 
+/**
+ * Le même taux, en petit, quand il y en a trois à comparer sur une rangée.
+ *
+ * Il garde la seule chose qui ne se négocie pas : la couleur du chiffre, qui
+ * dit si le seuil est franchi. Il perd la barre, le repère et l'écart en
+ * euros — dans une liste d'exercices, ce qui compte est la trajectoire, pas le
+ * détail d'une année qu'on ouvrira si elle surprend.
+ */
+export function TauxCompact({
+	titre,
+	mesure,
+	seuil
+}: {
+	titre: string;
+	mesure: number;
+	seuil: number;
+}) {
+	const etat = etatDe(mesure, seuil);
+	return (
+		<div className="flex min-w-0 flex-col gap-0.5">
+			<span className="truncate text-cladd-3xs text-cladd-fg-softer">{titre}</span>
+			<span className={cn('text-cladd-md leading-none font-bold tabular-nums', TEXTE[etat])}>
+				{pourcent(mesure)}
+			</span>
+		</div>
+	);
+}
+
 export function TauxEGalim({
 	titre,
 	mesure,

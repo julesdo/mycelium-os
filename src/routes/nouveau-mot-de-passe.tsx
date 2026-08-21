@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { Button, Input, SectionTitle } from '@cladd-ui/react';
+import { Button, Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
+import { CadreAuth, Champ, MessageErreur } from '../ui';
 
 const LONGUEUR_MINIMALE = 12;
 
@@ -40,62 +41,51 @@ function NouveauMotDePasse() {
 
 	if (!token) {
 		return (
-			<div className="flex min-h-dvh items-center justify-center p-cladd-xs">
-				<div className="flex w-full max-w-sm flex-col gap-cladd-2xs">
-					<h1 className="text-cladd-md font-semibold tracking-tight">Ce lien est incomplet.</h1>
-					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						Il a peut-être été coupé par votre messagerie. Demandez-en un nouveau, il arrivera
-						en quelques secondes.
-					</p>
-					<Button as={Link} to="/mot-de-passe-oublie" color="brand" variant="solid-fill">
-						Demander un nouveau lien
-					</Button>
-				</div>
-			</div>
+			<CadreAuth
+				titre="Ce lien est incomplet."
+				explication="Il a peut-être été coupé par votre messagerie. Demandez-en un nouveau, il arrivera en quelques secondes."
+			>
+				<Button as={Link} to="/mot-de-passe-oublie" color="brand" variant="solid-fill" size="lg">
+					Demander un nouveau lien
+				</Button>
+			</CadreAuth>
 		);
 	}
 
 	return (
-		<div className="flex min-h-dvh items-center justify-center p-cladd-xs">
-			<form onSubmit={soumettre} className="flex w-full max-w-sm flex-col gap-cladd-2xs">
-				<div>
-					<h1 className="text-cladd-md font-semibold tracking-tight">Nouveau mot de passe</h1>
-					<p className="mt-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						Choisissez-en un, et vous retrouverez vos taux et vos factures.
-					</p>
-				</div>
-
-				<label className="flex flex-col gap-1">
-					<SectionTitle>Mot de passe</SectionTitle>
+		<CadreAuth
+			titre="Nouveau mot de passe"
+			explication="Choisissez-en un, et vous retrouverez vos taux et vos factures."
+		>
+			<form onSubmit={soumettre} className="flex flex-col gap-cladd-2xs">
+				<Champ
+					etiquette="Mot de passe"
+					aide={`${LONGUEUR_MINIMALE} caractères au minimum. Une phrase dont vous vous souvenez vaut mieux qu’un mot compliqué.`}
+				>
 					<Input
 						type="password"
 						value={motDePasse}
 						onChange={setMotDePasse}
 						name="new-password"
+						valid={!tropCourt}
+						errorMessage={`${LONGUEUR_MINIMALE} caractères au minimum`}
 						required
 					/>
-					<span
-						className={
-							tropCourt
-								? 'text-cladd-3xs text-seuil-manque'
-								: 'text-cladd-3xs text-cladd-fg-softer'
-						}
-					>
-						{LONGUEUR_MINIMALE} caractères au minimum. Une phrase dont vous vous souvenez vaut
-						mieux qu&rsquo;un mot compliqué.
-					</span>
-				</label>
+				</Champ>
 
-				{erreur ? (
-					<p role="alert" className="text-cladd-2xs text-seuil-manque">
-						{erreur}
-					</p>
-				) : null}
+				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<Button type="submit" color="brand" variant="solid-fill" loading={enCours}>
+				<Button
+					type="submit"
+					color="brand"
+					variant="solid-fill"
+					size="lg"
+					loading={enCours}
+					readOnly={enCours}
+				>
 					Enregistrer et me connecter
 				</Button>
 			</form>
-		</div>
+		</CadreAuth>
 	);
 }

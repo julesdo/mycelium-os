@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
 import { Button, Input, SectionTitle, ToggleGroup, ToggleButton } from '@cladd-ui/react';
 import { api } from '../lib/convex/_generated/api';
+import { CadreAuth, Champ, MessageErreur } from '../ui';
 
 export const Route = createFileRoute('/bienvenue')({ component: Bienvenue });
 
@@ -64,20 +65,15 @@ function Bienvenue() {
 	}
 
 	return (
-		<div className="flex min-h-dvh items-center justify-center p-cladd-xs">
-			<form onSubmit={soumettre} className="flex w-full max-w-lg flex-col gap-cladd-xs">
-				<div>
-					<h1 className="text-cladd-md font-semibold tracking-tight">Votre établissement</h1>
-					<p className="mt-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						Quatre informations, et vous pourrez déposer vos premières factures. Le reste, nous
-						le lirons dedans.
-					</p>
-				</div>
-
-				<label className="flex flex-col gap-1">
-					<SectionTitle>Nom de l&rsquo;établissement</SectionTitle>
+		<CadreAuth
+			large
+			titre="Votre établissement"
+			explication="Quatre informations, et vous pourrez déposer vos premières factures. Le reste, nous le lirons dedans."
+		>
+			<form onSubmit={soumettre} className="flex flex-col gap-cladd-2xs">
+				<Champ etiquette="Nom de l’établissement">
 					<Input value={nom} onChange={setNom} name="organisation" required />
-				</label>
+				</Champ>
 
 				<div className="flex flex-col gap-cladd-3xs">
 					<SectionTitle>Type d&rsquo;établissement</SectionTitle>
@@ -98,8 +94,10 @@ function Bienvenue() {
 					</ToggleGroup>
 				</div>
 
-				<label className="flex flex-col gap-1">
-					<SectionTitle>Couverts par jour</SectionTitle>
+				<Champ
+					etiquette="Couverts par jour"
+					aide="Une estimation suffit. Elle sert à situer votre établissement, pas à calculer vos taux."
+				>
 					<Input
 						type="number"
 						value={couverts}
@@ -107,30 +105,28 @@ function Bienvenue() {
 						name="couverts"
 						placeholder="300"
 					/>
-					<span className="text-cladd-3xs text-cladd-fg-softer">
-						Une estimation suffit. Elle sert à situer votre établissement, pas à calculer vos
-						taux.
-					</span>
-				</label>
+				</Champ>
 
-				<label className="flex flex-col gap-1">
-					<SectionTitle>SIRET (facultatif)</SectionTitle>
+				<Champ
+					etiquette="SIRET (facultatif)"
+					aide="Utile en mars, pour la télédéclaration. Vous pourrez l’ajouter plus tard."
+				>
 					<Input value={siret} onChange={setSiret} name="siret" placeholder="123 456 789 00012" />
-					<span className="text-cladd-3xs text-cladd-fg-softer">
-						Utile en mars, pour la télédéclaration. Vous pourrez l&rsquo;ajouter plus tard.
-					</span>
-				</label>
+				</Champ>
 
-				{erreur ? (
-					<p role="alert" className="text-cladd-2xs text-seuil-manque">
-						{erreur}
-					</p>
-				) : null}
+				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<Button type="submit" color="brand" variant="solid-fill" loading={enCours}>
+				<Button
+					type="submit"
+					color="brand"
+					variant="solid-fill"
+					size="lg"
+					loading={enCours}
+					readOnly={enCours}
+				>
 					Créer mon établissement
 				</Button>
 			</form>
-		</div>
+		</CadreAuth>
 	);
 }

@@ -15,6 +15,8 @@ import {
 	PageBody,
 	TauxEGalim,
 	Bandeau,
+	Repartition,
+	OuAgir,
 	Tableau,
 	TableauEntete,
 	TableauCorps,
@@ -23,7 +25,7 @@ import {
 	TableauCellule,
 	euros,
 	pourcent,
-	FAMILLES
+	type Famille
 } from '../../ui';
 import { Attestations, type Attestation } from '../../screens/diagnostic/attestations';
 
@@ -148,63 +150,31 @@ function Diagnostic() {
 								<SectionTitle>Où combler l&rsquo;écart</SectionTitle>
 								<p className="mt-1 text-cladd-xs text-cladd-fg-soft">
 									Les familles où il reste le plus d&rsquo;achats non durables, donc le plus de
-									marge de manœuvre. La colonne de droite dit ce que vous gagneriez en basculant
-									la famille entière.
+									marge de manœuvre. Le chiffre de droite est un majorant : ce que vous
+									gagneriez en basculant la famille ENTIÈRE, ce qui n&rsquo;arrive jamais. Il
+									sert à classer les familles entre elles, pas à promettre un résultat.
 								</p>
 							</div>
-							<Tableau legende="Familles où combler l'écart, par montant basculable">
-								<TableauEntete>
-									<TableauTitre>Famille</TableauTitre>
-									<TableauTitre aDroite>Achats non durables</TableauTitre>
-									<TableauTitre aDroite>Points si tout bascule</TableauTitre>
-								</TableauEntete>
-								<TableauCorps>
-									{d.ouBasculer.map((o) => (
-										<TableauLigne key={o.family}>
-											<TableauCellule>{FAMILLES[o.family] ?? o.family}</TableauCellule>
-											<TableauCellule aDroite chiffre>
-												{euros(o.montantNonDurableHT)}
-											</TableauCellule>
-											<TableauCellule aDroite chiffre>
-												+{Math.round(o.pointsSiTotalementBascule)}
-											</TableauCellule>
-										</TableauLigne>
-									))}
-								</TableauCorps>
-							</Tableau>
+							<OuAgir
+								pistes={d.ouBasculer.map((o) => ({
+									family: o.family as Famille,
+									montantNonDurableHT: o.montantNonDurableHT,
+									pointsSiTotalementBascule: o.pointsSiTotalementBascule
+								}))}
+							/>
 						</section>
 					) : null}
 
 					<section className="flex flex-col gap-cladd-3xs">
 						<SectionTitle>Par famille de produits</SectionTitle>
-						<Tableau legende="Achats par famille de produits">
-							<TableauEntete>
-								<TableauTitre>Famille</TableauTitre>
-								<TableauTitre aDroite>Achats HT</TableauTitre>
-								<TableauTitre aDroite>Dont durable</TableauTitre>
-								<TableauTitre aDroite>Dont bio</TableauTitre>
-								<TableauTitre aDroite>Part durable</TableauTitre>
-							</TableauEntete>
-							<TableauCorps>
-								{d.byFamily.map((f) => (
-									<TableauLigne key={f.family}>
-										<TableauCellule>{FAMILLES[f.family] ?? f.family}</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{euros(f.totalHT)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{euros(f.durableHT)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{euros(f.bioHT)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{f.totalHT > 0 ? pourcent(f.durableHT / f.totalHT) : '—'}
-										</TableauCellule>
-									</TableauLigne>
-								))}
-							</TableauCorps>
-						</Tableau>
+						<Repartition
+							lignes={d.byFamily.map((f) => ({
+								family: f.family as Famille,
+								totalHT: f.totalHT,
+								durableHT: f.durableHT,
+								bioHT: f.bioHT
+							}))}
+						/>
 					</section>
 
 					<section className="flex flex-col gap-cladd-3xs">

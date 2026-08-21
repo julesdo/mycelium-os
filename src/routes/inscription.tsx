@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { Button, Input, SectionTitle } from '@cladd-ui/react';
+import { Button, Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
+import { CadreAuth, Champ, MessageErreur } from '../ui';
 
 export const Route = createFileRoute('/inscription')({ component: Inscription });
 
@@ -38,64 +39,60 @@ function Inscription() {
 	}
 
 	return (
-		<div className="flex min-h-dvh items-center justify-center p-cladd-xs">
-			<form onSubmit={soumettre} className="flex w-full max-w-sm flex-col gap-cladd-2xs">
-				<div>
-					<h1 className="text-cladd-md font-semibold tracking-tight">Créer un compte</h1>
-					<p className="mt-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						Puis douze mois de factures, et vous connaîtrez vos trois taux EGalim.
-					</p>
-				</div>
-
-				<label className="flex flex-col gap-1">
-					<SectionTitle>Votre nom</SectionTitle>
+		<CadreAuth
+			titre="Créer un compte"
+			explication="Puis douze mois de factures, et vous connaîtrez vos trois taux EGalim."
+			pied={
+				<span>
+					Vous avez déjà un compte ?{' '}
+					<Link to="/connexion" className="font-medium underline underline-offset-2">
+						Se connecter
+					</Link>
+				</span>
+			}
+		>
+			<form onSubmit={soumettre} className="flex flex-col gap-cladd-2xs">
+				<Champ etiquette="Votre nom">
 					<Input value={nom} onChange={setNom} name="name" required />
-				</label>
+				</Champ>
 
-				<label className="flex flex-col gap-1">
-					<SectionTitle>Adresse e-mail</SectionTitle>
+				<Champ etiquette="Adresse e-mail">
 					<Input type="email" value={email} onChange={setEmail} name="email" required />
-				</label>
+				</Champ>
 
-				<label className="flex flex-col gap-1">
-					<SectionTitle>Mot de passe</SectionTitle>
+				{/*
+				  Une longueur, pas un jeu de caractères imposé. Exiger une majuscule
+				  et un chiffre produit « Cantine2024! » chez tout le monde ; exiger
+				  douze caractères produit une vraie phrase.
+				*/}
+				<Champ
+					etiquette="Mot de passe"
+					aide={`${LONGUEUR_MINIMALE} caractères au minimum. Une phrase dont vous vous souvenez vaut mieux qu’un mot compliqué.`}
+				>
 					<Input
 						type="password"
 						value={motDePasse}
 						onChange={setMotDePasse}
 						name="new-password"
+						valid={!tropCourt}
+						errorMessage={`${LONGUEUR_MINIMALE} caractères au minimum`}
 						required
 					/>
-					{/*
-					  Une longueur, pas un jeu de caractères imposé. Exiger une
-					  majuscule et un chiffre produit « Cantine2024! » chez tout le
-					  monde ; exiger douze caractères produit une vraie phrase.
-					*/}
-					<span
-						className={tropCourt ? 'text-cladd-3xs text-seuil-manque' : 'text-cladd-3xs text-cladd-fg-softer'}
-					>
-						{LONGUEUR_MINIMALE} caractères au minimum. Une phrase dont vous vous souvenez vaut
-						mieux qu&rsquo;un mot compliqué.
-					</span>
-				</label>
+				</Champ>
 
-				{erreur ? (
-					<p role="alert" className="text-cladd-2xs text-seuil-manque">
-						{erreur}
-					</p>
-				) : null}
+				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<Button type="submit" color="brand" variant="solid-fill" loading={enCours}>
+				<Button
+					type="submit"
+					color="brand"
+					variant="solid-fill"
+					size="lg"
+					loading={enCours}
+					readOnly={enCours}
+				>
 					Créer mon compte
 				</Button>
-
-				<p className="text-cladd-2xs text-cladd-fg-softer">
-					Vous avez déjà un compte ?{' '}
-					<Link to="/connexion" className="font-medium underline underline-offset-2">
-						Se connecter
-					</Link>
-				</p>
 			</form>
-		</div>
+		</CadreAuth>
 	);
 }
