@@ -7,7 +7,8 @@ import {
 	CheckCheckIcon,
 	FileCheckIcon,
 	ChevronRightIcon,
-	TriangleAlertIcon
+	TriangleAlertIcon,
+	CopyIcon
 } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -23,6 +24,7 @@ import {
 	pluriel
 } from '../../ui';
 import { trierFichiers, ACCEPT_HTML, type Refus } from '../../screens/factures/formats';
+import { empreinte } from '../../screens/factures/empreinte';
 
 export const Route = createFileRoute('/app/factures')({ component: Factures });
 
@@ -63,6 +65,8 @@ function Factures() {
 	const [erreur, setErreur] = useState<string | null>(null);
 	/** Pourquoi le dépôt refuse, quand il refuse. Porte une issue, pas un constat. */
 	const [blocage, setBlocage] = useState<'REVIEW' | 'CLASSIFYING' | null>(null);
+	/** Les fichiers écartés parce qu'ils étaient déjà là, à l'octet près. */
+	const [dejaLa, setDejaLa] = useState<{ fichier: string; jumeau: string }[]>([]);
 	const [envoiEnCours, setEnvoiEnCours] = useState(false);
 	const [productionEnCours, setProductionEnCours] = useState(false);
 	const [progression, setProgression] = useState<{
@@ -89,8 +93,15 @@ function Factures() {
 		setRefus(refuses);
 		if (acceptes.length === 0) return;
 
+		// Les empreintes AVANT le premier envoi : elles se calculent en mémoire,
+		// sans réseau, et c'est ce qui permet de refuser un fichier déjà connu
+		// sans avoir eu à le téléverser une seconde fois.
+		const empreintes = await Promise.all(acceptes.map(empreinte));
+
 		setEnvoiEnCours(true);
 		setErreur(null);
+		setDejaLa([]);
+		const ignores: { fichier: string; jumeau: string }[] = [];
 		try {
 			const depot = await obtenirDepot({ annee: EXERCICE });
 			if (!depot.accepteDesFichiers) {
@@ -113,13 +124,24 @@ function Factures() {
 					);
 				}
 				const { storageId } = (await reponse.json()) as { storageId: string };
-				await enregistrer({
+				const issue = await enregistrer({
 					batchId: depot.batchId,
 					storageId: storageId as Id<'_storage'>,
 					filename: fichier.name,
-					mimeType: fichier.type || 'application/octet-stream'
+					mimeType: fichier.type || 'application/octet-stream',
+					contentHash: empreintes[i]
 				});
+
+				// Le fichier était déjà là, à l'octet près : rien n'a été créé, et
+				// aucun appel au modèle n'a été dépensé. On le dit, sans en faire
+				// une erreur — redéposer un dossier entier est un geste normal,
+				// et c'est même celui qu'on préfère à l'oubli.
+				if (issue.documentId === null && issue.doublonDe) {
+					ignores.push({ fichier: fichier.name, jumeau: issue.doublonDe });
+				}
 			}
+
+			setDejaLa(ignores);
 		} catch (e) {
 			// Un ConvexError porte son message dans `data`, une erreur réseau dans
 			// `message`. On montre celui qui existe : sans ce bloc, un échec était
@@ -215,6 +237,15 @@ function Factures() {
 							Des produits attendent encore votre confirmation. Tranchez-les d&rsquo;abord :
 							ajouter des factures pendant que vous arbitrez ferait bouger le périmètre sous vos
 							décisions.
+						</Bandeau>
+					) : null}
+
+					{dejaLa.length > 0 ? (
+						<Bandeau icone={<CopyIcon size={16} />}>
+							{dejaLa.length} fichier{pluriel(dejaLa.length)} déjà déposé
+							{pluriel(dejaLa.length)}, ignoré{pluriel(dejaLa.length)} :{' '}
+							{dejaLa.map((d) => d.fichier).join(', ')}. Vos taux sont inchangés — une facture
+							comptée deux fois les fausserait sans que rien ne le montre.
 						</Bandeau>
 					) : null}
 
@@ -366,7 +397,12 @@ function Facturier({ annee }: { annee: string }) {
 							</div>
 
 							<div className="flex shrink-0 items-center gap-cladd-3xs">
-								{f.extractionStatus === 'FAILED' ? (
+								{f.estDoublon ? (
+									<Chip size="sm" color="neutral">
+										<CopyIcon size={12} />
+										Doublon
+									</Chip>
+								) : f.extractionStatus === 'FAILED' ? (
 									<Chip size="sm" color="orange">
 										<TriangleAlertIcon size={12} />
 										Illisible

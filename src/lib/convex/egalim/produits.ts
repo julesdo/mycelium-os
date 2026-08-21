@@ -1,6 +1,8 @@
-import { v } from 'convex/values';
-import { authedQuery } from '../functions';
+import { v, ConvexError } from 'convex/values';
+import { authedQuery, authedMutation } from '../functions';
+import { internal } from '../_generated/api';
 import { getUserOrg } from '../lib/auth';
+import { recompterLot } from './lot';
 import { vFamille, vLabel } from './tables';
 
 /**
@@ -288,6 +290,9 @@ export const obtenirFacture = authedQuery({
 			totalHT: v.union(v.number(), v.null()),
 			extractionStatus: v.union(v.literal('PENDING'), v.literal('DONE'), v.literal('FAILED')),
 			extractionError: v.union(v.string(), v.null()),
+			/** Le fichier dont celui-ci répète la facture, et son nom. */
+			doublonDe: v.union(v.id('invoiceDocuments'), v.null()),
+			doublonDeNom: v.union(v.string(), v.null()),
 			lignes: v.array(
 				v.object({
 					ligneId: v.id('invoiceLines'),
@@ -324,6 +329,7 @@ export const obtenirFacture = authedQuery({
 			.collect();
 
 		const supplier = doc.supplierId ? await ctx.db.get(doc.supplierId) : null;
+		const jumeau = doc.doublonDe ? await ctx.db.get(doc.doublonDe) : null;
 
 		return {
 			filename: doc.filename,
@@ -335,6 +341,8 @@ export const obtenirFacture = authedQuery({
 			totalHT: doc.totalHT ?? null,
 			extractionStatus: doc.extractionStatus,
 			extractionError: doc.extractionError ?? null,
+			doublonDe: doc.doublonDe ?? null,
+			doublonDeNom: jumeau?.filename ?? null,
 			lignes: lignes
 				.filter((l) => l.documentId === documentId)
 				.map((l) => ({
@@ -367,7 +375,9 @@ export const listerFactures = authedQuery({
 			totalHT: v.union(v.number(), v.null()),
 			linesCount: v.number(),
 			extractionStatus: v.union(v.literal('PENDING'), v.literal('DONE'), v.literal('FAILED')),
-			extractionError: v.union(v.string(), v.null())
+			extractionError: v.union(v.string(), v.null()),
+			/** Vrai quand ce fichier répète une facture déjà lue. Il ne compte pas. */
+			estDoublon: v.boolean()
 		})
 	),
 	handler: async (ctx, { annee }) => {
@@ -401,7 +411,8 @@ export const listerFactures = authedQuery({
 				totalHT: d.totalHT ?? null,
 				linesCount: d.linesCount,
 				extractionStatus: d.extractionStatus,
-				extractionError: d.extractionError ?? null
+				extractionError: d.extractionError ?? null,
+				estDoublon: d.doublonDe !== undefined
 			});
 		}
 
@@ -409,3 +420,105 @@ export const listerFactures = authedQuery({
 	}
 });
 
+
+/**
+ * Rétablit une facture marquée à tort comme doublon.
+ *
+ * La détection se trompe dans un sens connu et étroit : deux factures du même
+ * fournisseur, le même jour, pour le même montant, sans numéro lisible. Le
+ * gérant est le seul à pouvoir trancher, et il faut donc qu'il puisse.
+ *
+ * Rétablir relance une LECTURE COMPLÈTE du fichier — ses lignes n'ont jamais
+ * été insérées, il n'y a rien à ressusciter. C'est un appel au modèle de plus,
+ * et l'écran le dit avant de le déclencher. Le drapeau `doublonIgnore` empêche
+ * la détection de reprendre la même décision au tour suivant.
+ */
+export const retablirFacture = authedMutation({
+	args: { documentId: v.id('invoiceDocuments') },
+	returns: v.null(),
+	handler: async (ctx, { documentId }) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const doc = await ctx.db.get(documentId);
+		if (!doc || doc.organizationId !== organizationId) {
+			throw new ConvexError('Cette facture est introuvable.');
+		}
+		if (doc.doublonDe === undefined) return null;
+
+		await ctx.db.patch(documentId, {
+			doublonDe: undefined,
+			doublonIgnore: true,
+			extractionStatus: 'PENDING',
+			extractionError: undefined,
+			linesCount: 0
+		});
+		await ctx.scheduler.runAfter(0, internal.egalim.extraction.traiterDocument, { documentId });
+		return null;
+	}
+});
+
+/**
+ * Plafond de suppressions par transaction, largement sous la limite de Convex.
+ * Un export comptable annuel porte facilement plus de 8 000 lignes : les
+ * supprimer d'un bloc ferait échouer la transaction entière et laisserait le
+ * document dans un état à moitié vidé — le pire résultat possible, puisqu'il
+ * compterait encore, en partie, sans que rien ne le dise.
+ */
+const LIGNES_PAR_SUPPRESSION = 2000;
+
+/**
+ * Supprime une facture et tout ce qu'elle a produit.
+ *
+ * POURQUOI C'EST INDISPENSABLE, et pas un confort. La détection de doublon
+ * couvre le cas fréquent ; elle ne couvre pas la facture d'un autre
+ * établissement déposée par erreur, ni le devis pris pour une facture, ni le
+ * fichier de test. Sans cette porte de sortie, une erreur de dépôt fausse les
+ * trois taux pour l'année entière, et le gérant n'a aucun recours.
+ *
+ * Rend le nombre de lignes restant à supprimer : l'appelant rappelle jusqu'à
+ * zéro. Le document n'est retiré qu'au dernier passage, de sorte qu'une
+ * interruption laisse une facture incomplète et VISIBLE plutôt qu'un document
+ * disparu dont les lignes comptent encore.
+ */
+export const supprimerFacture = authedMutation({
+	args: { documentId: v.id('invoiceDocuments') },
+	returns: v.object({ reste: v.number() }),
+	handler: async (ctx, { documentId }) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const doc = await ctx.db.get(documentId);
+		if (!doc || doc.organizationId !== organizationId) {
+			throw new ConvexError('Cette facture est introuvable.');
+		}
+
+		const lignes = await ctx.db
+			.query('invoiceLines')
+			.withIndex('by_document', (q) => q.eq('documentId', documentId))
+			.take(LIGNES_PAR_SUPPRESSION + 1);
+
+		const aSupprimer = lignes.slice(0, LIGNES_PAR_SUPPRESSION);
+		for (const ligne of aSupprimer) {
+			await ctx.db.delete(ligne._id);
+		}
+
+		if (lignes.length > LIGNES_PAR_SUPPRESSION) {
+			return { reste: lignes.length - LIGNES_PAR_SUPPRESSION };
+		}
+
+		const batch = await ctx.db.get(doc.batchId);
+		if (batch) {
+			await ctx.db.patch(doc.batchId, {
+				documentsTotal: Math.max(0, batch.documentsTotal - 1),
+				linesTotal: Math.max(0, batch.linesTotal - doc.linesCount)
+			});
+		}
+
+		await ctx.storage.delete(doc.storageId);
+		await ctx.db.delete(documentId);
+
+		// Les lignes supprimées peuvent avoir vidé la file d'arbitrage : le lot
+		// doit s'en apercevoir, sans quoi il resterait en REVIEW avec une file
+		// vide — exactement le défaut qui a bloqué la production du diagnostic.
+		await recompterLot(ctx, doc.batchId);
+
+		return { reste: 0 };
+	}
+});

@@ -1,7 +1,15 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { useState } from 'react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useQuery, useMutation } from 'convex/react';
 import { Button, Surface, Chip } from '@cladd-ui/react';
-import { FileTextIcon, ArrowLeftIcon, TriangleAlertIcon } from 'lucide-react';
+import {
+	FileTextIcon,
+	ArrowLeftIcon,
+	TriangleAlertIcon,
+	CopyIcon,
+	RotateCcwIcon,
+	Trash2Icon
+} from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import {
@@ -36,9 +44,44 @@ const DATE = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' });
  */
 function Facture() {
 	const { id } = Route.useParams();
+	const navigate = useNavigate();
 	const facture = useQuery(api.egalim.produits.obtenirFacture, {
 		documentId: id as Id<'invoiceDocuments'>
 	});
+	const retablir = useMutation(api.egalim.produits.retablirFacture);
+	const supprimer = useMutation(api.egalim.produits.supprimerFacture);
+	const [enCours, setEnCours] = useState<'retablir' | 'supprimer' | null>(null);
+	const [erreur, setErreur] = useState<string | null>(null);
+
+	async function agir(quoi: 'retablir' | 'supprimer') {
+		setEnCours(quoi);
+		setErreur(null);
+		try {
+			if (quoi === 'retablir') {
+				await retablir({ documentId: id as Id<'invoiceDocuments'> });
+			} else {
+				// La suppression rend la main quand son budget d'écriture est
+				// épuisé : un export annuel dépasse largement ce qu'une seule
+				// transaction Convex peut effacer. On rappelle jusqu'à zéro.
+				let reste = 1;
+				while (reste > 0) {
+					({ reste } = await supprimer({ documentId: id as Id<'invoiceDocuments'> }));
+				}
+				await navigate({ to: '/app/factures' });
+			}
+		} catch (e) {
+			const convexe = e as { data?: unknown };
+			setErreur(
+				typeof convexe.data === 'string'
+					? convexe.data
+					: e instanceof Error
+						? e.message
+						: "L'opération a échoué."
+			);
+		} finally {
+			setEnCours(null);
+		}
+	}
 
 	if (facture === undefined) {
 		return (
@@ -90,6 +133,15 @@ function Facture() {
 						<Button as={Link} to="/app/factures" square rounded aria-label="Revenir aux factures">
 							<ArrowLeftIcon />
 						</Button>
+						<Button
+							color="red"
+							loading={enCours === 'supprimer'}
+							readOnly={enCours !== null}
+							onClick={() => void agir('supprimer')}
+						>
+							<Trash2Icon />
+							Supprimer
+						</Button>
 						{facture.url ? (
 							<Button
 								as="a"
@@ -109,6 +161,34 @@ function Facture() {
 
 			<PageBody>
 				<div className="flex flex-col gap-cladd-2xs">
+					{erreur ? <Bandeau ton="alerte">{erreur}</Bandeau> : null}
+
+					{/* LE DOUBLON, expliqué et réversible.
+					    Il garde sa place dans le facturier : le faire disparaître
+					    donnerait un facturier propre et priverait le gérant du seul
+					    moyen de s'apercevoir qu'on s'est trompé. */}
+					{facture.doublonDe ? (
+						<Bandeau
+							icone={<CopyIcon size={16} />}
+							action={
+								<Button
+									loading={enCours === 'retablir'}
+									readOnly={enCours !== null}
+									onClick={() => void agir('retablir')}
+								>
+									<RotateCcwIcon />
+									Ce n&rsquo;est pas un doublon
+								</Button>
+							}
+						>
+							Cette facture répète{' '}
+							<span className="font-medium">{facture.doublonDeNom ?? 'un fichier déjà lu'}</span>{' '}
+							: même fournisseur, même facture. Elle ne compte donc dans aucun taux, et c&rsquo;est
+							voulu — comptée deux fois, elle les fausserait tous les trois sans que rien ne le
+							montre. Si nous nous sommes trompés, rétablissez-la : elle sera relue.
+						</Bandeau>
+					) : null}
+
 					{facture.extractionStatus === 'FAILED' ? (
 						<Bandeau ton="alerte" icone={<TriangleAlertIcon size={16} />}>
 							{facture.extractionError ??
@@ -185,7 +265,9 @@ function Facture() {
 
 					{facture.lignes.length === 0 ? (
 						<p className="text-cladd-xs text-cladd-fg-soft">
-							Aucune ligne n&rsquo;a été extraite de ce fichier.
+							{facture.doublonDe
+								? 'Un doublon n’a volontairement aucune ligne. C’est ainsi qu’aucun calcul n’a à penser à l’exclure : il n’y a rien à exclure.'
+								: 'Aucune ligne n’a été extraite de ce fichier.'}
 						</p>
 					) : (
 						<p className="text-cladd-2xs text-cladd-fg-softer">

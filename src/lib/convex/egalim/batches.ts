@@ -89,10 +89,23 @@ export const enregistrerDocument = authedMutation({
 		batchId: v.id('invoiceBatches'),
 		storageId: v.id('_storage'),
 		filename: v.string(),
-		mimeType: v.string()
+		mimeType: v.string(),
+		/**
+		 * L'empreinte SHA-256 du fichier, calculée par le navigateur.
+		 *
+		 * Facultative : un navigateur hors contexte sécurisé ne sait pas la
+		 * produire. Son absence ne bloque rien — elle fait retomber la détection
+		 * de doublon sur le niveau suivant, après extraction.
+		 */
+		contentHash: v.optional(v.string())
 	},
-	returns: v.id('invoiceDocuments'),
-	handler: async (ctx, { batchId, storageId, filename, mimeType }) => {
+	returns: v.object({
+		/** `null` quand le fichier était déjà là : rien n'a été créé. */
+		documentId: v.union(v.id('invoiceDocuments'), v.null()),
+		/** Le nom du fichier déjà déposé dont celui-ci était la copie. */
+		doublonDe: v.union(v.string(), v.null())
+	}),
+	handler: async (ctx, { batchId, storageId, filename, mimeType, contentHash }) => {
 		const { organizationId } = await getUserOrg(ctx);
 
 		const batch = await ctx.db.get(batchId);
@@ -122,12 +135,31 @@ export const enregistrerDocument = authedMutation({
 			);
 		}
 
+		// LE MÊME FICHIER, DEUX FOIS. C'est le cas le plus fréquent — on redépose
+		// un dossier entier « pour être sûr » — et le seul qui se tranche avec une
+		// certitude absolue. On le refuse AVANT de dépenser un appel au modèle, et
+		// on retire l'octet qui vient d'arriver dans le stockage plutôt que d'y
+		// laisser une copie orpheline.
+		if (contentHash) {
+			const jumeau = await ctx.db
+				.query('invoiceDocuments')
+				.withIndex('by_org_and_hash', (q) =>
+					q.eq('organizationId', organizationId).eq('contentHash', contentHash)
+				)
+				.first();
+			if (jumeau) {
+				await ctx.storage.delete(storageId);
+				return { documentId: null, doublonDe: jumeau.filename };
+			}
+		}
+
 		const documentId = await ctx.db.insert('invoiceDocuments', {
 			organizationId,
 			batchId,
 			storageId,
 			filename,
 			mimeType,
+			contentHash,
 			sourceType: sourceTypeProvisoire(filename, mimeType),
 			extractionStatus: 'PENDING',
 			linesCount: 0
@@ -140,7 +172,7 @@ export const enregistrerDocument = authedMutation({
 
 		await ctx.scheduler.runAfter(0, internal.egalim.extraction.traiterDocument, { documentId });
 
-		return documentId;
+		return { documentId, doublonDe: null };
 	}
 });
 

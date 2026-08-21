@@ -1,8 +1,8 @@
 import { v } from 'convex/values';
-import { internalMutation, internalQuery } from '../_generated/server';
-import { internal } from '../_generated/api';
-import type { MutationCtx } from '../_generated/server';
+import { internalMutation, internalQuery, type MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
+import { chercherDoublon } from './doublons';
+import { internal } from '../_generated/api';
 import { normaliserLibelle, normaliserFournisseur } from './normalisation';
 
 /**
@@ -245,12 +245,16 @@ export const ouvrirEnregistrement = internalMutation({
 		documentId: v.id('invoiceDocuments'),
 		organizationId: v.id('organizations'),
 		invoiceDate: v.union(v.string(), v.null()),
+		invoiceNumber: v.optional(v.union(v.string(), v.null())),
+		totalHT: v.optional(v.union(v.number(), v.null())),
 		supplierName: v.optional(v.union(v.string(), v.null()))
 	},
 	returns: v.union(
 		v.object({
 			invoiceDate: v.string(),
-			supplierId: v.union(v.id('suppliers'), v.null())
+			supplierId: v.union(v.id('suppliers'), v.null()),
+			/** Renseigné quand ce document répète une facture déjà lue. */
+			doublonDe: v.union(v.id('invoiceDocuments'), v.null())
 		}),
 		v.null()
 	),
@@ -262,10 +266,139 @@ export const ouvrirEnregistrement = internalMutation({
 			args.organizationId,
 			args.supplierName ?? null
 		);
-		return {
-			invoiceDate: args.invoiceDate ?? document.invoiceDate ?? '',
-			supplierId: supplierId ?? null
-		};
+		const invoiceDate = args.invoiceDate ?? document.invoiceDate ?? '';
+		const invoiceNumber = args.invoiceNumber ?? document.invoiceNumber ?? null;
+		const totalHT = args.totalHT ?? document.totalHT ?? null;
+
+		// LA MÊME FACTURE SOUS DEUX FICHIERS. Photographiée en mars, puis reçue en
+		// PDF par le comptable en avril : deux fichiers aux octets différents, une
+		// seule facture. L'empreinte du fichier ne peut rien voir ; le numéro,
+		// lui, est le même.
+		//
+		// Le moment est le bon : le modèle vient de rendre le numéro, le
+		// fournisseur et le total, et AUCUNE ligne n'a encore été insérée. Un
+		// doublon détecté ici n'aura jamais de ligne — c'est ce qui garantit
+		// qu'aucun calcul, ni aujourd'hui ni dans deux ans, n'aura à penser à
+		// l'exclure.
+		// Le gérant a déjà tranché : cette facture n'est pas un doublon. On ne le
+		// lui redemande pas à chaque relecture.
+		const doublonDe = document.doublonIgnore
+			? null
+			: await chercherDoublonEnBase(ctx, {
+					documentId: args.documentId,
+					organizationId: args.organizationId,
+					supplierId: supplierId ?? null,
+					invoiceNumber,
+					invoiceDate: invoiceDate || null,
+					totalHT
+				});
+
+		return { invoiceDate, supplierId: supplierId ?? null, doublonDe };
+	}
+});
+
+/**
+ * Cherche en base la facture dont celle-ci serait le doublon.
+ *
+ * Deux lectures d'index, jamais un balayage : sur un dépôt de deux cents
+ * factures, relire tout le facturier à chaque extraction ferait quarante mille
+ * lectures pour une question qui en demande deux.
+ *
+ * Un document DÉJÀ marqué doublon n'est jamais candidat : sans cette exclusion,
+ * une facture déposée trois fois pointerait la deuxième, qui pointe la
+ * première — une chaîne, là où le gérant veut une réponse.
+ */
+async function chercherDoublonEnBase(
+	ctx: MutationCtx,
+	candidate: {
+		documentId: Id<'invoiceDocuments'>;
+		organizationId: Id<'organizations'>;
+		supplierId: Id<'suppliers'> | null;
+		invoiceNumber: string | null;
+		invoiceDate: string | null;
+		totalHT: number | null;
+	}
+): Promise<Id<'invoiceDocuments'> | null> {
+	if (candidate.supplierId === null) return null;
+
+	const memeFournisseur = await ctx.db
+		.query('invoiceDocuments')
+		.withIndex('by_org_and_facture', (q) =>
+			q.eq('organizationId', candidate.organizationId).eq('supplierId', candidate.supplierId!)
+		)
+		.collect();
+
+	const memeJour =
+		candidate.invoiceDate === null
+			? []
+			: await ctx.db
+					.query('invoiceDocuments')
+					.withIndex('by_org_and_date_facture', (q) =>
+						q
+							.eq('organizationId', candidate.organizationId)
+							.eq('invoiceDate', candidate.invoiceDate!)
+					)
+					.collect();
+
+	const parId = new Map<string, (typeof memeFournisseur)[number]>();
+	for (const d of [...memeFournisseur, ...memeJour]) {
+		if (d._id === candidate.documentId) continue;
+		if (d.doublonDe !== undefined) continue;
+		parId.set(d._id, d);
+	}
+
+	const verdict = chercherDoublon(
+		{
+			documentId: candidate.documentId,
+			supplierId: candidate.supplierId,
+			invoiceNumber: candidate.invoiceNumber,
+			invoiceDate: candidate.invoiceDate,
+			totalHT: candidate.totalHT
+		},
+		[...parId.values()].map((d) => ({
+			documentId: d._id,
+			supplierId: d.supplierId ?? null,
+			invoiceNumber: d.invoiceNumber ?? null,
+			invoiceDate: d.invoiceDate ?? null,
+			totalHT: d.totalHT ?? null
+		}))
+	);
+
+	return verdict ? (verdict.documentId as Id<'invoiceDocuments'>) : null;
+}
+
+/**
+ * Clôt un document comme doublon : marqué, daté, sans aucune ligne.
+ *
+ * Il reste dans le facturier avec sa marque. Le faire disparaître donnerait un
+ * facturier propre et un taux juste, mais priverait le gérant du seul moyen de
+ * s'apercevoir qu'on s'est trompé — et de rétablir.
+ */
+export const marquerDoublon = internalMutation({
+	args: {
+		documentId: v.id('invoiceDocuments'),
+		doublonDe: v.id('invoiceDocuments'),
+		supplierId: v.union(v.id('suppliers'), v.null()),
+		invoiceDate: v.union(v.string(), v.null()),
+		invoiceNumber: v.union(v.string(), v.null()),
+		totalHT: v.union(v.number(), v.null())
+	},
+	returns: v.null(),
+	handler: async (ctx, args) => {
+		const document = await ctx.db.get(args.documentId);
+		if (!document) return null;
+		await ctx.db.patch(args.documentId, {
+			extractionStatus: 'DONE',
+			extractionEtape: undefined,
+			extractionError: undefined,
+			doublonDe: args.doublonDe,
+			supplierId: args.supplierId ?? undefined,
+			invoiceDate: args.invoiceDate ?? document.invoiceDate,
+			invoiceNumber: args.invoiceNumber ?? document.invoiceNumber,
+			totalHT: args.totalHT ?? document.totalHT,
+			linesCount: 0
+		});
+		return null;
 	}
 });
 

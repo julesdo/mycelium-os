@@ -79,6 +79,47 @@ export const egalimTables = {
 		 * `extractionStatus`, et lui seul commande quoi que ce soit.
 		 */
 		extractionEtape: v.optional(v.string()),
+		/**
+		 * L'empreinte SHA-256 du fichier, calculée par le navigateur avant l'envoi.
+		 *
+		 * Elle ne sert qu'à une chose : refuser le MÊME fichier deux fois. C'est le
+		 * cas le plus fréquent — on redépose un dossier entier « pour être sûr » —
+		 * et le seul qui se détecte avec une certitude absolue, sans lire le
+		 * contenu ni dépenser un appel au modèle.
+		 *
+		 * Facultative : un navigateur sans contexte sécurisé ne peut pas la
+		 * calculer. Son absence ne bloque rien, elle fait seulement retomber la
+		 * détection sur le niveau suivant, celui du numéro de facture.
+		 */
+		contentHash: v.optional(v.string()),
+		/**
+		 * Le document dont celui-ci est un doublon.
+		 *
+		 * POURQUOI C'EST LE DÉFAUT LE PLUS GRAVE DU PRODUIT quand il n'est pas
+		 * traité : une facture comptée deux fois gonfle le dénominateur des trois
+		 * taux. Le chiffre reste crédible — il ne devient ni négatif, ni aberrant,
+		 * ni supérieur à 100 % — il devient simplement FAUX, et personne ne peut
+		 * s'en apercevoir en le regardant.
+		 *
+		 * Un doublon garde sa ligne dans le facturier, avec sa marque : le faire
+		 * disparaître donnerait un facturier propre et un taux faux, ce qui est
+		 * exactement l'échange que ce produit ne doit jamais faire. En revanche il
+		 * n'a AUCUNE ligne de facture — c'est ce qui garantit qu'aucun calcul, ni
+		 * aujourd'hui ni demain, n'aura à penser à l'exclure.
+		 */
+		doublonDe: v.optional(v.id('invoiceDocuments')),
+		/**
+		 * Le gérant a dit que ce n'était PAS un doublon.
+		 *
+		 * La détection se trompe dans un sens connu : deux factures du même
+		 * fournisseur, le même jour, pour le même montant, sans numéro lisible.
+		 * C'est rare et c'est réel. Sans ce drapeau, rétablir la facture la ferait
+		 * re-détecter à la relecture, et le gérant tournerait en rond.
+		 *
+		 * Il n'y a pas de symétrique — « ceci EST un doublon » se règle en
+		 * supprimant le fichier, ce qui est plus clair et plus définitif.
+		 */
+		doublonIgnore: v.optional(v.boolean()),
 		supplierId: v.optional(v.id('suppliers')),
 		invoiceDate: v.optional(v.string()),
 		invoiceNumber: v.optional(v.string()),
@@ -89,7 +130,13 @@ export const egalimTables = {
 	})
 		.index('by_batch', ['batchId'])
 		.index('by_org', ['organizationId'])
-		.index('by_batch_and_status', ['batchId', 'extractionStatus']),
+		.index('by_batch_and_status', ['batchId', 'extractionStatus'])
+		// Les trois index de la détection de doublon. Sans eux, chaque extraction
+		// relirait tous les documents de l'organisation : sur un dépôt de deux
+		// cents factures, deux cents fois deux cents lectures.
+		.index('by_org_and_hash', ['organizationId', 'contentHash'])
+		.index('by_org_and_facture', ['organizationId', 'supplierId', 'invoiceNumber'])
+		.index('by_org_and_date_facture', ['organizationId', 'invoiceDate']),
 
 	// LA table centrale — ~3 000 lignes par cantine et par an
 	invoiceLines: defineTable({
@@ -126,6 +173,7 @@ export const egalimTables = {
 		classifierVersion: v.optional(v.string())
 	})
 		.index('by_batch', ['batchId'])
+		.index('by_document', ['documentId'])
 		.index('by_org_and_date', ['organizationId', 'invoiceDate'])
 		.index('by_batch_and_review', ['batchId', 'reviewStatus'])
 		// Borné au lot, jamais global : appliquer une classification ne doit

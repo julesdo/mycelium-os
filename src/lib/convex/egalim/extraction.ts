@@ -344,10 +344,29 @@ async function enregistrerDocumentExtrait(
 			documentId: document._id,
 			organizationId: document.organizationId,
 			invoiceDate: donnees.invoiceDate,
+			invoiceNumber: donnees.invoiceNumber,
+			totalHT: donnees.totalHT,
 			supplierName: donnees.supplierName
 		}
 	);
 	if (!ouverture) return;
+
+	// CETTE FACTURE A DÉJÀ ÉTÉ LUE. On s'arrête ici, avant la première ligne :
+	// un doublon n'a AUCUNE ligne en base, et c'est ce qui garantit qu'aucun
+	// calcul — aujourd'hui, ni dans deux ans quand on ajoutera un rapport — n'a
+	// à penser à l'exclure. Une exclusion qu'il faut se rappeler d'écrire est
+	// une exclusion qu'on oubliera quelque part.
+	if (ouverture.doublonDe) {
+		await ctx.runMutation(internal.egalim.extractionMutations.marquerDoublon, {
+			documentId: document._id,
+			doublonDe: ouverture.doublonDe,
+			supplierId: ouverture.supplierId,
+			invoiceDate: donnees.invoiceDate,
+			invoiceNumber: donnees.invoiceNumber,
+			totalHT: donnees.totalHT
+		});
+		return;
+	}
 
 	for (let debut = 0; debut < donnees.lignes.length; debut += LIGNES_PAR_TRANCHE) {
 		await ctx.runMutation(internal.egalim.extractionMutations.enregistrerLignes, {
