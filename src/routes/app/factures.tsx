@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { Button, Surface, Spinner, Chip } from '@cladd-ui/react';
 import {
 	UploadCloudIcon,
 	CheckCheckIcon,
-	FileCheckIcon,
 	ChevronRightIcon,
 	TriangleAlertIcon,
 	CopyIcon
@@ -54,12 +53,10 @@ const EXERCICE = String(new Date().getFullYear() - 1);
  * apprend ce que le logiciel sait faire, et à quel point il devra le relire.
  */
 function Factures() {
-	const navigate = useNavigate();
 	const lots = useQuery(api.egalim.batches.listerLots, {});
 	const obtenirDepot = useMutation(api.egalim.batches.obtenirOuCreerDepot);
 	const genererUrl = useMutation(api.egalim.batches.genererUrlDepot);
 	const enregistrer = useMutation(api.egalim.batches.enregistrerDocument);
-	const produireDiagnostic = useMutation(api.egalim.diagnostics.produireDiagnostic);
 
 	const [refus, setRefus] = useState<Refus[]>([]);
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -68,7 +65,6 @@ function Factures() {
 	/** Les fichiers écartés parce qu'ils étaient déjà là, à l'octet près. */
 	const [dejaLa, setDejaLa] = useState<{ fichier: string; jumeau: string }[]>([]);
 	const [envoiEnCours, setEnvoiEnCours] = useState(false);
-	const [productionEnCours, setProductionEnCours] = useState(false);
 	const [progression, setProgression] = useState<{
 		fait: number;
 		total: number;
@@ -86,7 +82,6 @@ function Factures() {
 	);
 
 	const aConfirmer = courant?.status === 'REVIEW';
-	const pret = courant?.status === 'READY';
 
 	async function deposer(fichiers: File[]) {
 		const { acceptes, refuses } = trierFichiers(fichiers);
@@ -158,22 +153,6 @@ function Factures() {
 		} finally {
 			setEnvoiEnCours(false);
 			setProgression(null);
-		}
-	}
-
-	async function produire() {
-		if (!courant) return;
-		setProductionEnCours(true);
-		setErreur(null);
-		try {
-			await produireDiagnostic({ batchId: courant.batchId });
-		} catch (e) {
-			const convexe = e as { data?: unknown };
-			setErreur(
-				typeof convexe.data === 'string' ? convexe.data : "Le diagnostic n'a pas pu être produit."
-			);
-		} finally {
-			setProductionEnCours(false);
 		}
 	}
 
@@ -297,44 +276,6 @@ function Factures() {
 
 					<Facturier annee={EXERCICE} />
 
-					{suivi?.diagnosticId ? (
-						<Bandeau
-							icone={<FileCheckIcon size={16} />}
-							action={
-								<Button
-									color="brand"
-									variant="solid-fill"
-									onClick={() =>
-										void navigate({
-											to: '/app/diagnostic/$id',
-											params: { id: suivi.diagnosticId as string }
-										})
-									}
-								>
-									Voir le diagnostic
-								</Button>
-							}
-						>
-							Votre mesure est figée à sa date.
-						</Bandeau>
-					) : pret ? (
-						<Bandeau
-							icone={<FileCheckIcon size={16} />}
-							action={
-								<Button
-									color="brand"
-									variant="solid-fill"
-									loading={productionEnCours}
-									readOnly={productionEnCours}
-									onClick={() => void produire()}
-								>
-									Produire le diagnostic
-								</Button>
-							}
-						>
-							Tout est classé et confirmé. Vous pouvez figer la mesure.
-						</Bandeau>
-					) : null}
 				</div>
 			</PageBody>
 		</Page>

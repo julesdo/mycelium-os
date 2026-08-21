@@ -307,6 +307,8 @@ export const obtenirDiagnostic = authedQuery({
 			computedAt: v.number(),
 			classifierVersion: v.string(),
 			organizationName: v.string(),
+			/** Le premier champ qu'un contrôleur vérifie : de quel établissement parle ce document. */
+			siret: v.union(v.string(), v.null()),
 			status: v.union(v.literal('DRAFT'), v.literal('DELIVERED')),
 			ratios: vRatios,
 			seuils: v.object({
@@ -416,6 +418,7 @@ export const obtenirDiagnostic = authedQuery({
 			computedAt: d.computedAt,
 			classifierVersion: d.classifierVersion,
 			organizationName: org.name,
+			siret: org.siret ?? null,
 			status: d.status,
 			ratios: d.ratios,
 			seuils: SEUILS,
@@ -527,5 +530,100 @@ export const listerDiagnostics = authedQuery({
 			status: d.status,
 			ratios: d.ratios
 		}));
+	}
+});
+
+/**
+ * Peut-on produire un diagnostic, et sinon pourquoi.
+ *
+ * POURQUOI CETTE REQUÊTE EXISTE. Le bouton « produire » vivait au bas de
+ * l'écran des factures, sous une bannière qui n'apparaissait que si un lot
+ * était dans le bon état. Un gérant qui venait chercher son rapport ne le
+ * trouvait donc pas là où il le cherchait, et quand il ne s'affichait pas,
+ * rien ne lui disait ce qui manquait.
+ *
+ * La question « puis-je éditer mon bilan ? » a une réponse et une seule, et
+ * elle appartient à l'écran des diagnostics. Elle vient donc avec son motif :
+ * un bouton grisé sans explication est pire qu'un bouton absent.
+ */
+export const etatProduction = authedQuery({
+	args: {},
+	returns: v.object({
+		/** L'exercice concerné, celui du dépôt le plus récent. */
+		annee: v.union(v.string(), v.null()),
+		batchId: v.union(v.id('invoiceBatches'), v.null()),
+		motif: v.union(
+			v.literal('PRET'),
+			v.literal('DEJA_PRODUIT'),
+			v.literal('A_CONFIRMER'),
+			v.literal('EN_TRAITEMENT'),
+			v.literal('AUCUNE_FACTURE')
+		),
+		/** Combien de produits attendent encore, quand c'est ce qui bloque. */
+		produitsAConfirmer: v.number(),
+		/** Le diagnostic déjà produit pour ce dépôt, s'il existe. */
+		diagnosticExistant: v.union(v.id('diagnostics'), v.null())
+	}),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const lots = await ctx.db
+			.query('invoiceBatches')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect();
+
+		const dernier = lots.sort((a, b) => b.createdAt - a.createdAt)[0];
+		if (!dernier) {
+			return {
+				annee: null,
+				batchId: null,
+				motif: 'AUCUNE_FACTURE' as const,
+				produitsAConfirmer: 0,
+				diagnosticExistant: null
+			};
+		}
+
+		const annee = dernier.periodStart.slice(0, 4);
+
+		const existant = await ctx.db
+			.query('diagnostics')
+			.withIndex('by_batch', (q) => q.eq('batchId', dernier._id))
+			.first();
+
+		// Recompté, jamais relu d'un champ : c'est la règle du domaine, et c'est
+		// ce compteur mémorisé de travers qui a bloqué la production pendant des
+		// semaines sans que rien ne le dise (voir `lot.ts`).
+		const enAttente = await ctx.db
+			.query('invoiceLines')
+			.withIndex('by_batch_and_review', (q) =>
+				q.eq('batchId', dernier._id).eq('reviewStatus', 'PENDING_REVIEW')
+			)
+			.collect();
+		const produitsAConfirmer = new Set(enAttente.map((l) => l.normalizedLabel)).size;
+
+		const lignes = await ctx.db
+			.query('invoiceLines')
+			.withIndex('by_batch', (q) => q.eq('batchId', dernier._id))
+			.first();
+
+		const motif = !lignes
+			? ('AUCUNE_FACTURE' as const)
+			: dernier.status === 'DRAFT' ||
+				  dernier.status === 'EXTRACTING' ||
+				  dernier.status === 'CLASSIFYING'
+				? ('EN_TRAITEMENT' as const)
+				: produitsAConfirmer > 0
+					? ('A_CONFIRMER' as const)
+					: existant
+						? ('DEJA_PRODUIT' as const)
+						: ('PRET' as const);
+
+		return {
+			annee,
+			batchId: dernier._id,
+			motif,
+			produitsAConfirmer,
+			diagnosticExistant: existant?._id ?? null
+		};
 	}
 });

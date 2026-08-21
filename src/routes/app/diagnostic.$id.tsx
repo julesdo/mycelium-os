@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { Button, Chip, SectionTitle } from '@cladd-ui/react';
-import { PrinterIcon, TriangleAlertIcon } from 'lucide-react';
+import { DownloadIcon, TriangleAlertIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import {
@@ -28,6 +29,8 @@ import {
 	type Famille
 } from '../../ui';
 import { Attestations, type Attestation } from '../../screens/diagnostic/attestations';
+import { Declaration, chiffresDepuisBilan } from '../../screens/diagnostic/declaration';
+import { telechargerDiagnostic } from '../../screens/diagnostic/telecharger';
 
 export const Route = createFileRoute('/app/diagnostic/$id')({ component: Diagnostic });
 
@@ -40,6 +43,7 @@ function Diagnostic() {
 	});
 	const changerStatut = useMutation(api.egalim.attestations.changerStatut);
 	const marquerRemis = useMutation(api.egalim.diagnostics.marquerRemis);
+	const [enPreparation, setEnPreparation] = useState(false);
 
 	if (d === undefined) {
 		return (
@@ -71,7 +75,7 @@ function Diagnostic() {
 		<Page>
 			<PageHeader
 				titre={`Diagnostic EGalim ${d.periodStart.slice(0, 4)}`}
-				sousTitre={`${d.organizationName} · mesuré le ${dateMesure}`}
+				sousTitre={`${d.organizationName} · édité le ${dateMesure}, et inchangé depuis`}
 				actions={
 					<div className="flex items-center gap-cladd-3xs">
 						<Chip size="sm">{d.status === 'DELIVERED' ? 'Remis' : 'Brouillon'}</Chip>
@@ -86,17 +90,52 @@ function Diagnostic() {
 								Marquer remis
 							</Button>
 						) : null}
-						<Button variant="gradient" onClick={() => window.print()}>
-							<PrinterIcon />
-							Imprimer
+						{/* Un vrai document, pas une capture d'écran.
+						    `window.print()` imprimait l'APPLICATION — barre de navigation,
+						    boutons, plus l'en-tête que le navigateur ajoute de lui-même,
+						    « localhost:20173 » et la date du jour en haut de chaque page.
+						    Or ce fichier est ce qu'un gérant transmet à son directeur et
+						    présente en cas de contrôle. */}
+						<Button
+							variant="gradient"
+							loading={enPreparation}
+							readOnly={enPreparation}
+							onClick={() => {
+								setEnPreparation(true);
+								void telechargerDiagnostic({
+									organizationName: d.organizationName,
+									siret: d.siret,
+									periodStart: d.periodStart,
+									periodEnd: d.periodEnd,
+									computedAt: d.computedAt,
+									classifierVersion: d.classifierVersion,
+									statut: d.status,
+									ratios: d.ratios,
+									seuils: d.seuils,
+									gapEuros: d.gapEuros,
+									montantNonMesureHT: d.montantNonMesureHT,
+									byFamily: d.byFamily,
+									bySupplier: d.bySupplier,
+									ouBasculer: d.ouBasculer,
+									attestations: d.attestations,
+									mentions: [
+										MENTION_OBLIGATION_DE_MOYENS,
+										MENTION_RESPONSABILITE,
+										MENTION_FIGE(dateMesure)
+									]
+								}).finally(() => setEnPreparation(false));
+							}}
+						>
+							<DownloadIcon />
+							Télécharger le PDF
 						</Button>
 					</div>
 				}
 			/>
 
 			<PageBody>
-				<div className="flex flex-col gap-cladd-xs">
-					<div className="grid gap-cladd-xs sm:grid-cols-2 lg:grid-cols-3">
+				<div className="flex flex-col gap-cladd-2xs">
+					<div className="grid gap-cladd-2xs lg:grid-cols-3">
 						<TauxEGalim
 							titre="Durable et de qualité"
 							mesure={d.ratios.durable}
@@ -122,6 +161,18 @@ function Diagnostic() {
 						<span className="tabular-nums">{euros(d.ratios.totalFoodHT)}</span> d&rsquo;achats
 						alimentaires, du {d.periodStart} au {d.periodEnd}.
 					</p>
+
+					<Declaration
+						c={chiffresDepuisBilan({
+							periodStart: d.periodStart,
+							organizationName: d.organizationName,
+							siret: d.siret,
+							dateMesure,
+							ratios: d.ratios,
+							seuils: d.seuils,
+							byFamily: d.byFamily
+						})}
+					/>
 
 					{d.montantNonMesureHT > 0 ? (
 						<Bandeau ton="alerte" icone={<TriangleAlertIcon size={16} />}>

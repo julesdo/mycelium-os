@@ -56,7 +56,6 @@
 		"jspdf-autotable": "^5.0.8",
 		"lucide-react": "^1.33.0",
 		"papaparse": "^5.5.3",
-		"pdfmake": "^0.3.10",
 		"posthog-js": "^1.290.0",
 		"react": "^19",
 		"react-day-picker": "^10.0.1",

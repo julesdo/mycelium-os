@@ -27,7 +27,6 @@ import type * as egalim_confirmation from "../egalim/confirmation.js";
 import type * as egalim_consensus from "../egalim/consensus.js";
 import type * as egalim_courrier from "../egalim/courrier.js";
 import type * as egalim_cout from "../egalim/cout.js";
-import type * as egalim_declaration from "../egalim/declaration.js";
 import type * as egalim_diagnostics from "../egalim/diagnostics.js";
 import type * as egalim_doublons from "../egalim/doublons.js";
 import type * as egalim_extracteurClaude from "../egalim/extracteurClaude.js";
@@ -106,7 +105,6 @@ declare const fullApi: ApiFromModules<{
   "egalim/consensus": typeof egalim_consensus;
   "egalim/courrier": typeof egalim_courrier;
   "egalim/cout": typeof egalim_cout;
-  "egalim/declaration": typeof egalim_declaration;
   "egalim/diagnostics": typeof egalim_diagnostics;
   "egalim/doublons": typeof egalim_doublons;
   "egalim/extracteurClaude": typeof egalim_extracteurClaude;
