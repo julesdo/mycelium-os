@@ -16,6 +16,7 @@
 import { detectPlatform } from './deploy/platform';
 import {
 	computeBuildEnv,
+	verifierBundleConvex,
 	construireApplication,
 	deployConvex,
 	setupPreviewEnv,
@@ -29,6 +30,15 @@ async function main(): Promise<void> {
 
 	console.log(`Platform: ${platform.platform}`);
 	console.log(`Environment: ${platform.environment}`);
+
+	// 0. Le dossier Convex partira-t-il en entier, et se regroupera-t-il ?
+	//
+	// EN PREMIER, parce que c'est le contrôle le moins cher et celui qui a coûté
+	// le plus. Un module gitignoré ou un import irrésoluble fait échouer
+	// `convex deploy` après plusieurs minutes, avec un message qu'il faut aller
+	// chercher dans un journal distant. Ici, la réponse tombe en quelques
+	// secondes et elle nomme le fichier.
+	verifierBundleConvex();
 
 	// 1. Pre-deploy validation (production only; preview validated after deploy)
 	if (!platform.isPreview) {

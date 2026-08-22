@@ -483,3 +483,17 @@ export function construireApplication(buildEnv: Record<string, string | undefine
 		process.exit(1);
 	}
 }
+
+/**
+ * Vérifie que le dossier Convex partira en entier et se regroupera.
+ *
+ * Délègue au script dédié, qui porte l'explication complète. Il vit à part
+ * parce qu'on veut pouvoir le lancer seul, en une seconde, sans dérouler tout
+ * un déploiement — c'est ce qui fait qu'on le lance vraiment.
+ */
+export function verifierBundleConvex(): void {
+	if (!runCommand('bun', ['scripts/verifier-bundle-convex.ts'])) {
+		console.error(`${colors.red}Le dossier Convex ne se déploiera pas en l'état${colors.reset}`);
+		process.exit(1);
+	}
+}
