@@ -131,6 +131,19 @@ export default defineConfig(
 		files: ['vite.config.ts'],
 		rules: { '@typescript-eslint/no-explicit-any': 'off' }
 	},
+	// Les modeles d'e-mail sont du HTML entier, dans des chaines.
+	//
+	// Ils portent des espaces insecables — 1438, comptees — parce qu'un e-mail
+	// s'en sert pour empecher une coupure de ligne la ou aucune feuille de style
+	// ne peut intervenir. La regle a raison partout ailleurs, ou une espace
+	// invisible dans du code est une coquille ; ici elle serait une regression.
+	//
+	// Elle est desactivee sur ces fichiers SEULEMENT, jamais globalement : c'est
+	// elle qui a rattrape une espace fine ecrite a la main dans le module PDF.
+	{
+		files: ['src/lib/convex/emails/modeles/**/*.ts'],
+		rules: { 'no-irregular-whitespace': 'off' }
+	},
 	...convexPlugin.configs.recommended.map((config) => ({
 		...config,
 		files: ['**/src/lib/convex/**/*.ts']

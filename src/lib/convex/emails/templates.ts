@@ -1,8 +1,11 @@
 /**
  * Email Template Rendering Utilities
  *
- * Renders pre-built email templates with dynamic data using simple {{var}} interpolation.
- * Templates are generated at build-time from Svelte components.
+ * Rend les modeles d'e-mail avec interpolation simple {{var}}.
+ *
+ * Les modeles vivent dans `./modeles`. Ils ONT ETE generes depuis des composants
+ * Svelte, par un script qui n'existe plus : ce sont desormais des SOURCES, et
+ * ils se modifient a la main comme n'importe quel fichier.
  */
 
 import type {
@@ -27,7 +30,7 @@ import {
 	NEWTICKETADMINNOTIFICATION_TEXT,
 	NEWUSERSIGNUPNOTIFICATION_HTML,
 	NEWUSERSIGNUPNOTIFICATION_TEXT
-} from './_generated/index.js';
+} from './modeles';
 import { requireEnv } from '../env';
 import { t, DEFAULT_LOCALE } from '../i18n/translations';
 
