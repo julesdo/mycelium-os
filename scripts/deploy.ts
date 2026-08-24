@@ -17,6 +17,7 @@ import { detectPlatform } from './deploy/platform';
 import {
 	computeBuildEnv,
 	verifierBundleConvex,
+	verifierEntreeVercel,
 	construireApplication,
 	deployConvex,
 	setupPreviewEnv,
@@ -59,6 +60,12 @@ async function main(): Promise<void> {
 
 	// 5. Construire l'application
 	construireApplication(buildEnv);
+
+	// 6. Le serveur qui vient d'être construit répond-il vraiment quand la
+	//    plateforme l'appelle à SA manière ? La construction ne dit rien de la
+	//    convention d'appel, et une fonction qui échoue à chaque requête se
+	//    déploie sans un mot.
+	verifierEntreeVercel();
 
 	console.log(`${colors.green}Deployment complete!${colors.reset}`);
 }

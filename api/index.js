@@ -1,18 +1,36 @@
 /**
  * Le point d'entrée Vercel.
  *
- * TanStack Start 1.168 ne connaît pas Vercel, et n'a pas à le connaître : sa
- * construction rend un gestionnaire `fetch` standard — une requête Web entre,
- * une réponse Web sort. C'est exactement la signature qu'attend une fonction
- * Node sur Vercel, et c'est aussi celle de Cloudflare, de Deno et de Bun. Ce
- * fichier ne fait donc que le rebrancher, sans rien adapter.
+ * TanStack Start rend un gestionnaire `fetch` standard : une requête Web entre,
+ * une réponse Web sort. Ce fichier ne fait que l'exposer sous le nom que Vercel
+ * cherche.
  *
- * POURQUOI CE FICHIER EXISTE PLUTÔT QU'UNE DÉTECTION DE FRAMEWORK. Le
- * `vercel.json` déclarait « framework: sveltekit », héritage de la version
- * précédente : Vercel cherchait une sortie SvelteKit qui n'existe plus, sur un
- * projet qui n'est plus en Svelte. Plutôt que de faire deviner la plateforme,
- * on lui dit où est le serveur — c'est une ligne, et elle ne se périme pas au
- * prochain changement d'outillage.
+ * POURQUOI UN EXPORT NOMMÉ `fetch`, ET SURTOUT PAS UN `export default`.
+ * Ce fichier a d'abord exporté `export default function handler(request)`, et
+ * chaque requête est morte en `TypeError: Invalid URL, input: '/'`. La raison
+ * est dans le code de la plateforme, `@vercel/node/dist/bundling-handler.js` :
+ *
+ *     const isWebHandler =
+ *       HTTP_METHODS.some(m => typeof listener[m] === 'function') ||
+ *       typeof listener.fetch === 'function';
+ *
+ * Une fonction nue n'a pas de `.fetch`. Vercel la range donc en gestionnaire
+ * Node et l'appelle en `(req, res)`, où `req` est un `IncomingMessage` dont
+ * `.url` vaut le chemin seul — `/`. Le serveur, lui, attend une `Request` Web
+ * et fait `new URL(request.url)` : un chemin relatif n'est pas une URL.
+ *
+ * Dès qu'un `fetch` est exposé, la plateforme prend l'autre branche et
+ * construit elle-même la requête, à partir du chemin ET de l'hôte :
+ *
+ *     const url = new URL(req.url || '/', `${proto}://${host}`);
+ *
+ * C'est l'URL absolue qui manquait. Elle relit ensuite la `Response` retournée
+ * vers la réponse Node, en-tête par en-tête et par morceaux, ce qui préserve
+ * les `Set-Cookie` multiples et le flux de rendu.
+ *
+ * Pas d'`export default` ici, même pas en plus : la plateforme déballe `.default`
+ * jusqu'à cinq fois avant de chercher `.fetch`, et on ne veut pas dépendre de ce
+ * qu'un objet exporté par le regroupeur porte ou non comme propriété `default`.
  *
  * L'import est RELATIF et pointe dans `dist/`, produit par la commande de
  * construction avant que Vercel n'assemble les fonctions. L'ordre est garanti
@@ -20,6 +38,4 @@
  */
 import serveur from '../dist/server/server.js';
 
-export default function handler(request) {
-	return serveur.fetch(request);
-}
+export const fetch = (request) => serveur.fetch(request);

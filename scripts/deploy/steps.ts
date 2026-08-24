@@ -504,6 +504,28 @@ export function construireApplication(buildEnv: Record<string, string | undefine
 }
 
 /**
+ * Vérifie que la plateforme appellera le point d'entrée comme le serveur
+ * l'attend.
+ *
+ * Se lance APRÈS la construction, parce que le contrôle traverse le serveur qui
+ * vient d'en sortir. C'est le seul moment où la question a une réponse, et
+ * c'est encore avant que Vercel n'expédie la fonction.
+ *
+ * Silencieux là où il n'y a pas de point d'entrée à vérifier : la question ne
+ * se pose que pour une plateforme qui inspecte un module pour décider comment
+ * l'appeler.
+ */
+export function verifierEntreeVercel(): void {
+	if (!fs.existsSync('api/index.js')) return;
+	if (!runCommand('bun', ['scripts/verifier-entree-vercel.ts'])) {
+		console.error(
+			`${colors.red}Le point d'entrée ne répondra pas en production${colors.reset}`
+		);
+		process.exit(1);
+	}
+}
+
+/**
  * Vérifie que le dossier Convex partira en entier et se regroupera.
  *
  * Délègue au script dédié, qui porte l'explication complète. Il vit à part
