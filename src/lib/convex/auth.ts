@@ -108,7 +108,17 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>): BetterAuthOptions
 		emailAndPassword: {
 			enabled: true,
 			minPasswordLength: 10,
-			requireEmailVerification: true,
+			// L'INSCRIPTION OUVRE UNE SESSION. Elle exigeait la vérification de
+			// l'adresse, et le compte se créait donc sans personne d'authentifié
+			// derrière : l'écran suivant demandait le nom de l'établissement, puis
+			// se faisait renvoyer `Unauthenticated` à la soumission. Un formulaire
+			// qu'on remplit avant d'apprendre qu'il ne partira pas.
+			//
+			// L'e-mail de vérification part quand même (`sendOnSignUp` plus bas), et
+			// son échec ne bloque plus rien : Better Auth l'exécute en tâche de
+			// fond. Un gérant sur tablette entre dans le produit sans en sortir pour
+			// aller chercher un lien.
+			requireEmailVerification: false,
 			// Password reset email
 			sendResetPassword: async ({ user, url }: SendResetPasswordArgs) => {
 				const mutationCtx = requireRunMutationCtx(ctx);

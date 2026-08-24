@@ -97,25 +97,40 @@ try {
 	process.exit(1);
 }
 
-// Parse "NAME=value" lines
-const existingVars = new Set(
-	output
-		.split('\n')
-		.map((line) => line.match(/^(\w+)=/)?.[1])
-		.filter(Boolean)
-);
+// Parse "NAME=value" lines.
+//
+// LA VALEUR COMPTE, PAS SEULEMENT LE NOM. Ce contrôle ne regardait que le nom :
+// `EMAIL_ASSET_URL=` passait pour posée. Le déploiement annonçait donc « All
+// required Convex environment variables are set », et l'inscription cassait en
+// production sur `[env] Missing EMAIL_ASSET_URL`, parce que le code, lui, teste
+// la valeur. Deux définitions de « posée » qui divergent, et la mauvaise gagne
+// au moment de rassurer.
+const valeurs = new Map<string, string>();
+for (const ligne of output.split('\n')) {
+	const separateur = ligne.indexOf('=');
+	if (separateur <= 0) continue;
+	const nom = ligne.slice(0, separateur);
+	if (!/^\w+$/.test(nom)) continue;
+	valeurs.set(nom, ligne.slice(separateur + 1).trim());
+}
 
-const missingVars = REQUIRED_VAR_NAMES.filter((name) => !existingVars.has(name));
+const missingVars = REQUIRED_VAR_NAMES.filter((name) => !valeurs.get(name));
 
 if (missingVars.length > 0) {
+	const vides = missingVars.filter((name) => valeurs.has(name));
 	console.error('');
 	console.error('============================================================');
 	console.error('MISSING REQUIRED CONVEX ENVIRONMENT VARIABLES');
 	console.error('============================================================');
 	console.error('');
-	console.error('The following variables are not set in your Convex environment:');
+	console.error('The following variables have no usable value:');
 	for (const name of missingVars) {
-		console.error(`  - ${name}`);
+		console.error(`  - ${name}${valeurs.has(name) ? '  (posée, mais vide)' : ''}`);
+	}
+	if (vides.length > 0) {
+		console.error('');
+		console.error('Une variable vide est traitée comme absente par le code : `requireEnv`');
+		console.error('teste la valeur, pas le nom. Le dashboard la montrera pourtant présente.');
 	}
 	console.error('');
 	console.error('Set them via CLI:');
