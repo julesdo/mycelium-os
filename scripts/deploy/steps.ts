@@ -420,7 +420,13 @@ export function writeE2eConfig(
 }
 
 /**
- * Compute build environment and build SvelteKit
+ * Compose l'environnement passé à la construction du client.
+ *
+ * Ce que le client emporte en dur, il l'emporte définitivement : l'URL Convex
+ * est figée dans le paquet au moment du build. S'y tromper ne casse pas la
+ * construction, ça produit une application qui se charge et ne parle à
+ * personne — le pire des deux mondes, parce que le déploiement se déclare
+ * réussi. D'où l'échec franc en fin de fonction.
  */
 export function computeBuildEnv(
 	platform: PlatformContext,
@@ -456,18 +462,31 @@ export function computeBuildEnv(
 		);
 	}
 
-	// For preview deployments, set SITE_URL for SvelteKit build
+	// Sans URL Convex, le client construit est une coquille : il s'affiche, et
+	// aucune donnée n'arrive jamais. On refuse de construire ça.
+	//
+	// La déduction ci-dessus n'est pas la seule source : `buildEnv` part de
+	// `process.env`, donc une variable posée à la main sur la plateforme fait
+	// tout aussi bien l'affaire. C'est pour ça que le contrôle porte sur la
+	// valeur finale et pas sur l'échec de la déduction.
+	if (!buildEnv.PUBLIC_CONVEX_URL) {
+		console.error(
+			`${colors.red}PUBLIC_CONVEX_URL introuvable : ni déduite du déploiement Convex, ni posée sur la plateforme.${colors.reset}`
+		);
+		console.error("Le client se construirait sans backend. Construction interrompue.");
+		process.exit(1);
+	}
+
+	// SITE_URL n'est connue qu'à la création d'une prévisualisation : c'est
+	// l'URL que la plateforme vient d'attribuer.
 	if (platform.isPreview && platform.siteUrl) {
 		buildEnv.SITE_URL = platform.siteUrl;
-		console.log(`SITE_URL (for SvelteKit build): ${buildEnv.SITE_URL}`);
+		console.log(`SITE_URL (prévisualisation) : ${buildEnv.SITE_URL}`);
 	}
 
 	return buildEnv;
 }
 
-/**
- * Build SvelteKit with computed environment
- */
 /**
  * Construit l'application.
  *
