@@ -946,7 +946,7 @@
 				"setup_button": "Devenir personne de contact",
 				"setup_confirm": "Configurer",
 				"setup_title_label": "Votre titre",
-				"setup_title_placeholder": "ex. Fondateur de Mycelium",
+				"setup_title_placeholder": "ex. Fondateur de Letikette",
 				"step_down": "Se retirer",
 				"step_down_confirm": "Se retirer en tant que personne de contact ? Les emails de bienvenue ne seront plus envoyés.",
 				"stepped_down": "Vous n'êtes plus la personne de contact",
@@ -1262,7 +1262,7 @@
 		"toggle_theme": "Changer le thème",
 		"view": "Voir",
 		"cookie_consent": "Consentement aux cookies",
-		"logo": "Mycelium"
+		"logo": "Letikette"
 	},
 	"auth": {
 		"back_to_home": "Retour à l'accueil",
@@ -1545,7 +1545,7 @@
 		"description": "Donne vie à ton SaaS en quelques minutes, pas en mois. Template open-source bourré de tech qui te fait shipper direct.",
 		"section_label": "Accueil",
 		"tagline": "Focus sur ton produit.\nLancement plus rapide.",
-		"title": "Modèle Mycelium"
+		"title": "Modèle Letikette"
 	},
 	"impersonation": {
 		"banner_text": "Vous visualisez en tant qu'un autre utilisateur",
@@ -1808,7 +1808,7 @@
 				"price": "Sur devis"
 			}
 		},
-		"title": "Tarifs Mycelium"
+		"title": "Tarifs Letikette"
 	},
 	"search": {
 		"command": {
@@ -2048,7 +2048,7 @@
 			"secondary": "En savoir plus"
 		},
 		"meta": {
-			"title": "Mycelium — Diagnostic EGalim pour la restauration collective",
+			"title": "Letikette — Diagnostic EGalim pour la restauration collective",
 			"description": "Calculez votre taux EGalim réel à partir de vos factures fournisseurs et chiffrez l'écart en euros vers la conformité (50 % de produits durables dont 20 % de bio)."
 		},
 		"proof": {

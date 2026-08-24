@@ -58,7 +58,7 @@ export function OuAgir({ pistes }: { pistes: readonly PisteAction[] }) {
 					</div>
 
 					<div className="flex shrink-0 flex-col items-end">
-						<span className="text-mycelium-chiffre leading-none font-bold text-cladd-primary tabular-nums">
+						<span className="text-letikette-chiffre leading-none font-bold text-cladd-primary tabular-nums">
 							+{Math.round(p.pointsSiTotalementBascule)}
 						</span>
 						<span className="text-cladd-3xs text-cladd-fg-softest">points au max</span>

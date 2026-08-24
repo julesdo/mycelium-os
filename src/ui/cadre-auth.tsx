@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Surface } from '@cladd-ui/react';
 import { cn } from './cn';
-import { LogoMycelium } from './logo';
+import { LogoLetikette } from './logo';
 
 /**
  * Le cadre des écrans d'entrée — connexion, inscription, mot de passe.
@@ -43,9 +43,9 @@ export function CadreAuth({
 		<div className="flex min-h-dvh flex-col items-center justify-center gap-cladd-2xs p-cladd-3xs">
 			<div className="flex items-center gap-cladd-3xs">
 				<span className="cladd-color-brand flex size-11 items-center justify-center rounded-full bg-cladd-primary text-cladd-on-primary">
-					<LogoMycelium className="h-4 w-auto" />
+					<LogoLetikette className="h-4 w-auto" />
 				</span>
-				<span className="text-cladd-md font-semibold tracking-tight">Mycelium</span>
+				<span className="text-cladd-md font-semibold tracking-tight">Letikette</span>
 			</div>
 
 			<Surface
@@ -54,7 +54,7 @@ export function CadreAuth({
 				contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
 			>
 				<div className="flex flex-col gap-1">
-					<h1 className="text-mycelium-titre leading-tight font-bold tracking-tight">{titre}</h1>
+					<h1 className="text-letikette-titre leading-tight font-bold tracking-tight">{titre}</h1>
 					{explication ? (
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">{explication}</p>
 					) : null}

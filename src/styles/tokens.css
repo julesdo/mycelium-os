@@ -1,4 +1,4 @@
-/* Mycelium — le système visuel.
+/* Letikette — le système visuel.
  *
  * Cladd est un kit dense, sombre par défaut, conçu pour des éditeurs de bureau
  * pilotés à la souris. Ce produit est tactile, en tablette, clair, et son
@@ -82,12 +82,12 @@
 
 	/* Les deux corps de chiffre. Le taux EGalim est le seul nombre que le gérant
 	 * retient de l'écran ; le second sert aux montants qui l'accompagnent. */
-	--text-mycelium-taux: 56px;
-	--text-mycelium-chiffre: 32px;
+	--text-letikette-taux: 56px;
+	--text-letikette-chiffre: 32px;
 	/* Le titre d'écran. `--text-cladd-md` (18px) est un corps de contrôle, pas
 	 * un titre : sous une barre de navigation qui porte déjà le nom de la
 	 * section, un H1 de 18px ne se distingue plus de la légende qui le suit. */
-	--text-mycelium-titre: 24px;
+	--text-letikette-titre: 24px;
 
 	/* Le rail de navigation. Ces largeurs ne mesurent pas un contrôle mais une
 	 * zone de mise en page : elles n'ont pas leur place sur l'échelle du kit. */

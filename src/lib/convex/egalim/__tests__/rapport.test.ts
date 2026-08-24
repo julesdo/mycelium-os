@@ -8,7 +8,7 @@ import {
 } from '../mentions';
 
 /**
- * La ligne rouge juridique du modèle : Mycelium ne garantit jamais la
+ * La ligne rouge juridique du modèle : Letikette ne garantit jamais la
  * conformité, il la MESURE, la fait progresser et la prouve. La déclaration
  * reste signée par la cantine.
  *

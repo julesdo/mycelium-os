@@ -15,7 +15,7 @@
  * Qui porte la responsabilité de la déclaration.
  *
  * Le ratio EGalim se calcule sur la TOTALITÉ des achats de la cantine, y
- * compris ceux que Mycelium n'a jamais vus. Laisser croire que Mycelium
+ * compris ceux que Letikette n'a jamais vus. Laisser croire que Letikette
  * déclare créerait une obligation de résultat sur un résultat dont il ne
  * détient aucun levier.
  */
@@ -35,9 +35,9 @@ export const MENTION_FIGE = (dateISO: string): string =>
 	`Ce diagnostic est figé à sa date d’établissement, le ${dateISO}. ` +
 	'Toute mesure ultérieure produit un nouveau diagnostic, daté à son tour.';
 
-/** Ce que Mycelium fait, dit sans jamais promettre un résultat. */
+/** Ce que Letikette fait, dit sans jamais promettre un résultat. */
 export const MENTION_OBLIGATION_DE_MOYENS =
-	'Mycelium mesure votre taux de produits durables et biologiques, le documente ' +
+	'Letikette mesure votre taux de produits durables et biologiques, le documente ' +
 	'et le fait progresser, selon une obligation de moyens.';
 
 /**

@@ -59,7 +59,7 @@ export function ChampCopiable({
 				<p
 					className={cn(
 						'leading-none font-bold tabular-nums',
-						majeur ? 'text-mycelium-chiffre' : 'text-cladd-md'
+						majeur ? 'text-letikette-chiffre' : 'text-cladd-md'
 					)}
 				>
 					{affichage}

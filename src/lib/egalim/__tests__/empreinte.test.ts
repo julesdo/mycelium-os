@@ -110,7 +110,7 @@ describe('la forme canonique', () => {
 		// Sans lui, changer la façon de sérialiser invaliderait silencieusement
 		// toutes les signatures existantes. Avec lui, on peut faire coexister
 		// deux formes et savoir laquelle a servi.
-		expect(formeCanonique(BILAN)).toContain('mycelium.bilan.v1');
+		expect(formeCanonique(BILAN)).toContain('letikette.bilan.v1');
 	});
 
 	it('fixe les décimales plutôt que de laisser flotter', () => {

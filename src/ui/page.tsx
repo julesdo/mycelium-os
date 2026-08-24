@@ -27,7 +27,7 @@ export function PageHeader({
 	return (
 		<header className="flex shrink-0 flex-wrap items-end justify-between gap-cladd-2xs px-cladd-3xs pt-cladd-2xs pb-cladd-3xs">
 			<div className="min-w-0">
-				<h1 className="text-mycelium-titre leading-tight font-bold tracking-tight">{titre}</h1>
+				<h1 className="text-letikette-titre leading-tight font-bold tracking-tight">{titre}</h1>
 				{sousTitre ? <p className="mt-1 text-cladd-xs text-cladd-fg-soft">{sousTitre}</p> : null}
 			</div>
 			{actions ? <div className="flex shrink-0 items-center gap-cladd-3xs">{actions}</div> : null}

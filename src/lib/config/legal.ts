@@ -1,7 +1,7 @@
 export const LEGAL_CONFIG = {
-	brandName: 'Mycelium',
+	brandName: 'Letikette',
 	companyName: 'Jules-Camille Doré',
-	operatorName: 'Mycelium',
+	operatorName: 'Letikette',
 	legalForm: 'Entrepreneur Individuel',
 	tradeName: 'Thumbbb Agency',
 	address: '77 Rue de Campeyraut, 33000 Bordeaux, France',

@@ -67,7 +67,7 @@ export function formeCanonique(b: BilanAEmpreindre): string {
 	// personne s'en aperçoive. Un tableau a l'ordre qu'on lui donne, et cet
 	// ordre est écrit ici, une fois.
 	return JSON.stringify([
-		'mycelium.bilan.v1',
+		'letikette.bilan.v1',
 		b.organizationName,
 		b.siret ?? '',
 		b.periodStart,

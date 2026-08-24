@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="static/logo.svg" alt="Mycelium" width="72" />
+<img src="static/logo.svg" alt="Letikette" width="72" />
 
-# Mycelium
+# Letikette
 
 **The EGalim compliance operator for collective catering.**
 
-Mycelium computes a canteen's real EGalim ratio from its supplier invoices, prices the gap in euros,
+Letikette computes a canteen's real EGalim ratio from its supplier invoices, prices the gap in euros,
 and produces the proof every month.
 
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
@@ -27,7 +27,7 @@ measured in purchase value, and to declare it annually on *ma cantine* before 31
 Roughly 85% of declaring canteens fall short, and most don't even know their own number, because it
 has to be computed line by line, across twelve months of invoices, in purchase value.
 
-**Mycelium sells a measured result, not a SaaS.** The business is 80% human process, 20% software:
+**Letikette sells a measured result, not a SaaS.** The business is 80% human process, 20% software:
 a diagnostic that prices the gap, a monthly declaration, and — once the client has bought in — a
 substitution pilot on the highest-friction lines.
 
@@ -46,11 +46,11 @@ and the pivot spec at
 
 ## Two Red Lines
 
-1. **Mycelium never takes ownership of goods.** Producers invoice and deliver directly.
-2. **Mycelium never organizes transport in its own name** (that requires a regulated freight-forwarder
+1. **Letikette never takes ownership of goods.** Producers invoice and deliver directly.
+2. **Letikette never organizes transport in its own name** (that requires a regulated freight-forwarder
    status).
 
-And one forbidden word: **"guarantee."** Mycelium never guarantees compliance — it measures it,
+And one forbidden word: **"guarantee."** Letikette never guarantees compliance — it measures it,
 improves it, and proves it. The declaration itself is always signed by the canteen.
 
 ---
@@ -60,7 +60,7 @@ improves it, and proves it. The declaration itself is always signed by the cante
 | Space | URL | Audience |
 |-------|-----|----------|
 | **Canteen app** | `/app/*` | The client organization (`ORG_ADMIN`, `ORG_MEMBER`) |
-| **Ops** | `/ops/*` | Mycelium's internal team — multi-client view (`SUPER_ADMIN`, `OPERATOR` staff roles) |
+| **Ops** | `/ops/*` | Letikette's internal team — multi-client view (`SUPER_ADMIN`, `OPERATOR` staff roles) |
 
 Plus public routes: `/` (marketing), `/onboarding/organization`, `/join/[token]` (member invite),
 `/staff-join/[token]` (internal staff invite).
@@ -101,7 +101,7 @@ is phase 1 work and does not exist yet in this codebase.
 ## Repository Structure
 
 ```
-mycelium-chat/
+letikette-chat/
 ├── src/
 │   ├── lib/
 │   │   ├── components/
@@ -123,7 +123,7 @@ mycelium-chat/
 │       └── [[lang]]/
 │           ├── (marketing)/     # Public landing page, about, terms, privacy
 │           ├── app/             # Canteen client interface (/app/*)
-│           ├── ops/             # Mycelium internal ops (/ops/*)
+│           ├── ops/             # Letikette internal ops (/ops/*)
 │           ├── onboarding/      # Organization setup
 │           ├── join/[token]/    # Member invite acceptance
 │           └── staff-join/[token]/  # Internal staff invite acceptance
@@ -151,7 +151,7 @@ Every database query is scoped by `organizationId`. No query crosses tenant boun
 | Layer | Mechanism |
 |---|---|
 | **Canteen auth** | Better Auth (JWT session tokens, inside the Convex component) |
-| **Internal staff auth** | Better Auth JWT with `role = 'admin'` + `myceliumStaff.staffRole` lookup |
+| **Internal staff auth** | Better Auth JWT with `role = 'admin'` + `letiketteStaff.staffRole` lookup |
 | **Role hierarchy** | `ORG_ADMIN` → `ORG_MEMBER` |
 | **Staff role hierarchy** | `SUPER_ADMIN` → `OPERATOR` |
 
@@ -219,10 +219,10 @@ bun run dev
 
 Application available at `http://localhost:5173`.
 
-### 5. Provision a Mycelium staff account
+### 5. Provision a Letikette staff account
 
 To access the Ops space, set `role = 'admin'` on your user in the Convex dashboard, then add a row to
-`myceliumStaff` with your `userId` and `staffRole = 'SUPER_ADMIN'`. Navigate to `/ops`.
+`letiketteStaff` with your `userId` and `staffRole = 'SUPER_ADMIN'`. Navigate to `/ops`.
 
 ---
 
@@ -237,7 +237,7 @@ export const myQuery = authedQuery({ ... });
 // Internal ops staff (operator or super admin)
 export const myQuery = conciergeQuery({ ... });
 
-// Mycelium super admin only
+// Letikette super admin only
 export const myQuery = superAdminQuery({ ... });
 ```
 
@@ -315,6 +315,6 @@ prohibited. See [LICENSE](LICENSE) for full terms.
 
 <div align="center">
 
-Built by Mycelium · [legal@mycelium.io](mailto:legal@mycelium.io)
+Built by Letikette · [legal@letikette.io](mailto:legal@letikette.io)
 
 </div>

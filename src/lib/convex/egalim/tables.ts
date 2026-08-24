@@ -48,7 +48,7 @@ export const egalimTables = {
 	})
 		.index('by_org', ['organizationId'])
 		// Toutes organisations confondues : c'est la file de travail de
-		// l'opérateur Mycelium, qui est transverse par nature. Sans cet index,
+		// l'opérateur Letikette, qui est transverse par nature. Sans cet index,
 		// la lister imposait un scan complet de la table à chaque ouverture.
 		.index('by_status', ['status']),
 

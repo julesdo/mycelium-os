@@ -1,5 +1,5 @@
 /**
- * Les primitives Mycelium.
+ * Les primitives Letikette.
  *
  * C'est la SEULE zone du produit où des classes Tailwind s'écrivent. Une règle
  * ESLint interdit les valeurs arbitraires, les couleurs littérales et les
@@ -11,7 +11,7 @@
  */
 
 export { cn } from './cn';
-export { LogoMycelium } from './logo';
+export { LogoLetikette } from './logo';
 export { Page, PageHeader, PageBody } from './page';
 export { TwoPane } from './two-pane';
 export { EmptyState } from './empty-state';

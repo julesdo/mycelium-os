@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import { cn } from '../ui/cn';
-import { LogoMycelium } from '../ui/logo';
+import { LogoLetikette } from '../ui/logo';
 import { SelecteurEtablissement } from './selecteur-etablissement';
 
 /**
@@ -152,7 +152,7 @@ export function Barre() {
 			<div className="flex items-center gap-cladd-2xs px-cladd-3xs py-2">
 				<Link
 					to="/app"
-					aria-label="Mycelium, retour à vos taux"
+					aria-label="Letikette, retour à vos taux"
 					className="flex shrink-0 items-center gap-cladd-3xs"
 				>
 					{/*
@@ -162,9 +162,9 @@ export function Barre() {
 					  surfaces neutres et la barre n'aurait aucune signature.
 					*/}
 					<span className="cladd-color-brand flex size-cladd-md items-center justify-center rounded-full bg-cladd-primary text-cladd-on-primary">
-						<LogoMycelium className="h-4 w-auto" />
+						<LogoLetikette className="h-4 w-auto" />
 					</span>
-					<span className="hidden text-cladd-sm font-bold tracking-tight xl:block">Mycelium</span>
+					<span className="hidden text-cladd-sm font-bold tracking-tight xl:block">Letikette</span>
 				</Link>
 
 				{/*

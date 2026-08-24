@@ -1,8 +1,8 @@
-# Mycelium — Contexte projet
+# Letikette — Contexte projet
 
 ## Vision produit
 
-Mycelium est le **logiciel de conformité EGalim en restauration collective**. La loi impose à
+Letikette est le **logiciel de conformité EGalim en restauration collective**. La loi impose à
 toutes les cantines, publiques depuis 2022 et **privées depuis 2024**, de servir ≥ 50 % de produits
 durables dont ≥ 20 % de bio (et ≥ 60 % de durable sur la viande et le poisson), et de le déclarer
 chaque année avant le 31 mars sur « ma cantine ».

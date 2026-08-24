@@ -1,15 +1,15 @@
 {
-  "name": "Mycelium Fleet OS",
-  "short_name": "Mycelium",
-  "description": "Fleet Operating System — reservations, compliance & AI copilot for your company vehicles.",
-  "start_url": "/",
+  "name": "Letikette — conformité EGalim",
+  "short_name": "Letikette",
+  "description": "Mesurez vos trois taux EGalim à partir de vos factures, ligne à ligne, et prouvez-les.",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "theme_color": "#e8df00",
-  "background_color": "#09090b",
-  "lang": "en",
-  "categories": ["business", "productivity"],
+  "orientation": "any",
+  "theme_color": "#1d3fa0",
+  "background_color": "#f0e7e3",
+  "lang": "fr",
+  "categories": ["business", "productivity", "food"],
   "icons": [
     {
       "src": "/favicon.png",
@@ -17,46 +17,27 @@
       "type": "image/png"
     },
     {
-      "src": "/logo.png",
-      "sizes": "any",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.svg",
+      "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any"
     }
   ],
   "shortcuts": [
     {
-      "name": "New reservation",
-      "short_name": "Reserve",
-      "url": "/app/reservations/new",
-      "icons": [{ "src": "/favicon.png", "sizes": "48x48" }]
+      "name": "Déposer des factures",
+      "short_name": "Déposer",
+      "url": "/app/factures"
     },
     {
-      "name": "Fleet dashboard",
-      "short_name": "Dashboard",
-      "url": "/admin/dashboard",
-      "icons": [{ "src": "/favicon.png", "sizes": "48x48" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/mockup-admin.png",
-      "sizes": "1280x800",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Fleet dashboard"
+      "name": "Confirmer des produits",
+      "short_name": "Confirmer",
+      "url": "/app/confirmer"
     },
     {
-      "src": "/screenshots/mockup-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Mobile concierge"
+      "name": "Mes bilans",
+      "short_name": "Bilans",
+      "url": "/app/diagnostics"
     }
   ]
 }

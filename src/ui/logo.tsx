@@ -1,33 +1,37 @@
 /**
- * La marque Mycelium.
+ * La marque.
  *
- * Trois traits obliques qui se rejoignent : un réseau qui se ramifie, comme le
- * mycélium dont le produit tire son nom.
+ * ATTENTION, CE DESSIN EST HÉRITÉ ET NE VEUT PLUS RIEN DIRE. Trois traits
+ * obliques qui se rejoignent : c'était un réseau qui se ramifie, un mycélium,
+ * quand le produit portait ce nom. Sous le nom Letikette, qui parle d'étiquettes
+ * et de ce qu'on lit dessus, le dessin n'illustre plus rien du tout.
  *
- * Reprise de `static/logo.svg`, qui obtenait le même dessin par un détour :
- * trois chemins servaient de masque à un rectangle noir, le tout dans un
- * `clipPath` sans effet visible. Les couleurs déclarées dans ce masque
- * (`#0092B8`, le cyan de l'ancienne marque) ne s'affichaient jamais — seule leur
- * opacité comptait. Le dessin sortait donc en noir, quoi qu'on écrive dedans.
+ * Il est gardé tel quel volontairement, plutôt que remplacé à la va-vite par un
+ * pictogramme d'étiquette : une marque se décide, elle ne se déduit pas d'un
+ * jeu de mots. Ce commentaire existe pour qu'on ne défende pas plus tard un
+ * symbole dont personne ne saurait dire ce qu'il représente.
  *
- * Ici les trois chemins sont dessinés directement, en `currentColor` : la
- * couleur se décide à l'endroit où le logo est posé, suit le thème clair ou
- * sombre, et ne peut pas se désaccorder de l'accent. C'est aussi la seule forme
- * compatible avec la règle qui interdit les couleurs littérales hors des tokens.
+ * Ce qui reste vrai techniquement : les trois chemins sont dessinés en
+ * `currentColor`, donc la couleur se décide à l'endroit où le logo est posé,
+ * suit le thème clair ou sombre, et ne peut pas se désaccorder de l'accent.
+ * C'est aussi la seule forme compatible avec la règle qui interdit les couleurs
+ * littérales hors des tokens. L'ancien `static/logo.svg` obtenait le même dessin
+ * par un détour, trois chemins servant de masque à un rectangle noir, avec un
+ * cyan (`#0092B8`) déclaré mais jamais affiché.
  *
  * Le `viewBox` est resserré sur les bornes réelles du dessin (x 16, y 28,
- * 47 × 25), déclarées par le masque d'origine. Le fichier d'origine réservait
- * un carré de 80 × 80 dont le dessin n'occupait qu'une bande centrale : à la
- * taille du rail, il aurait paru minuscule et flottant.
+ * 47 × 25). Le fichier d'origine réservait un carré de 80 × 80 dont le dessin
+ * n'occupait qu'une bande centrale : à la taille du rail, il aurait paru
+ * minuscule et flottant.
  */
-export function LogoMycelium({ className }: { className?: string }) {
+export function LogoLetikette({ className }: { className?: string }) {
 	return (
 		<svg
 			viewBox="16 28 47 25"
 			fill="currentColor"
 			xmlns="http://www.w3.org/2000/svg"
 			role="img"
-			aria-label="Mycelium"
+			aria-label="Letikette"
 			className={className}
 		>
 			<path d="M35.3725 30.541C33.6234 28.0769 30.2538 27.5307 27.8464 29.3209C25.4389 31.1112 24.9052 34.56 26.6544 37.0241L36.1539 50.4068C37.903 52.8709 41.2726 53.4171 43.68 51.6268C46.0875 49.8366 46.6211 46.3877 44.872 43.9236L35.3725 30.541Z" />

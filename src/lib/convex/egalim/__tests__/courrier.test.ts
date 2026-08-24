@@ -59,11 +59,11 @@ describe('le courrier de demande d’attestation', () => {
 		expect(texte).toMatch(/et 28 autres références/);
 	});
 
-	it('nomme l’établissement demandeur, jamais Mycelium', () => {
+	it('nomme l’établissement demandeur, jamais Letikette', () => {
 		// La demande vient de la cantine, qui est le client du fournisseur. Un
 		// courrier signé par un tiers inconnu n'obtient rien.
 		const texte = redigerCourrier(BASE);
 		expect(texte).toContain('Restaurant du Parc');
-		expect(texte).not.toMatch(/Mycelium/i);
+		expect(texte).not.toMatch(/Letikette/i);
 	});
 });

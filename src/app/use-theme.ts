@@ -3,14 +3,14 @@ import { usePreference } from './use-preference';
 
 export type Theme = 'light' | 'dark';
 
-const CLE = 'mycelium-theme';
+const CLE = 'letikette-theme';
 const THEMES = ['light', 'dark'] as const;
 
 /**
  * Clair par défaut, sombre disponible, préférence persistée.
  *
  * Cladd est conçu dark-first, et c'est de là que vient son allure. Mais
- * l'utilisateur de Mycelium est un gérant de cantine, sur tablette, en bureau
+ * l'utilisateur de Letikette est un gérant de cantine, sur tablette, en bureau
  * ou en cuisine, souvent en plein jour et devant un écran à fort reflet. Le
  * clair par défaut est un choix de contexte d'usage, pas de goût.
  */

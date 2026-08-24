@@ -115,7 +115,7 @@ export function TauxEGalim({
 
 			<span
 				className={cn(
-					'text-mycelium-taux leading-none font-bold tracking-tight tabular-nums',
+					'text-letikette-taux leading-none font-bold tracking-tight tabular-nums',
 					TEXTE[etat]
 				)}
 			>

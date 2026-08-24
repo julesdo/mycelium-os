@@ -294,7 +294,7 @@ function Total({ titre, valeur }: { titre: string; valeur: string }) {
 			contentClassName="flex flex-col gap-1 p-cladd-2xs"
 		>
 			<span className="text-cladd-2xs text-cladd-fg-softer">{titre}</span>
-			<span className="text-mycelium-chiffre leading-none font-bold tabular-nums">{valeur}</span>
+			<span className="text-letikette-chiffre leading-none font-bold tabular-nums">{valeur}</span>
 		</Surface>
 	);
 }

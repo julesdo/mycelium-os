@@ -161,7 +161,7 @@ export function construireDiagnostic(d: DiagnosticImprimable): jsPDF {
 
 	doc.setProperties({
 		title: `Diagnostic EGalim ${annee} - ${d.organizationName}`,
-		author: 'Mycelium',
+		author: 'Letikette',
 		subject: `Mesure des taux EGalim de l'exercice ${annee}`
 	});
 

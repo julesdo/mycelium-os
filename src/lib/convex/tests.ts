@@ -71,7 +71,7 @@ export const verifyTestUserEmail = mutation({
 	}
 });
 
-/** Promeut un compte de test au rôle staff Mycelium et vérifie son adresse. */
+/** Promeut un compte de test au rôle staff Letikette et vérifie son adresse. */
 export const createTestAdminUser = mutation({
 	args: { email: v.string(), secret: v.string() },
 	returns: v.object({ success: v.boolean(), error: v.optional(v.string()) }),

@@ -60,7 +60,7 @@ export function buildNotificationContent(
 		case 'HUMAN_ASSIST_REPLY':
 			return {
 				title: 'Nouvelle réponse',
-				message: `Vous avez reçu une réponse de votre interlocuteur Mycelium.`
+				message: `Vous avez reçu une réponse de votre interlocuteur Letikette.`
 			};
 	}
 }

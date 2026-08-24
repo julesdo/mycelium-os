@@ -86,7 +86,7 @@ export function CarteProduit({
 				</div>
 
 				<div className="flex shrink-0 flex-col items-end gap-1">
-					<span className="text-mycelium-chiffre leading-none font-bold tracking-tight tabular-nums">
+					<span className="text-letikette-chiffre leading-none font-bold tracking-tight tabular-nums">
 						{euros(montant)}
 					</span>
 					<span className="text-cladd-3xs text-cladd-fg-softest">en jeu</span>

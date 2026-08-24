@@ -23,7 +23,7 @@ function prevenir() {
 function souscrire(f: () => void) {
 	abonnes.add(f);
 	// `storage` ne se déclenche que dans les AUTRES onglets. On veut aussi que
-	// deux onglets ouverts sur Mycelium restent d'accord sur le thème.
+	// deux onglets ouverts sur Letikette restent d'accord sur le thème.
 	window.addEventListener('storage', f);
 	return () => {
 		abonnes.delete(f);
