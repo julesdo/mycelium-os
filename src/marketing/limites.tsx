@@ -1,4 +1,5 @@
 import { Surface } from '@cladd-ui/react';
+import { SectionMarketing } from './section';
 
 /**
  * Ce qu'on ne fait pas.
@@ -8,6 +9,11 @@ import { Surface } from '@cladd-ui/react';
  * tableau de bord qui affichait un chiffre sans savoir d'où il venait. Une
  * limite énoncée franchement vaut trois arguments, et celles-ci sont vérifiables
  * en une minute.
+ *
+ * ELLE EST SUR LA SURFACE ENFONCÉE, avec un filet. C'est la seule section qui se
+ * met volontairement en retrait : elle vient juste après le bleu d'encre de la
+ * preuve, et elle doit se lire comme une mise au point, pas comme un argument de
+ * vente de plus. Le creux dit « on baisse la voix ».
  *
  * Les deux premières ne sont pas des choix commerciaux, ce sont les DEUX LIGNES
  * ROUGES juridiques du projet : ne jamais prendre la propriété des denrées, ne
@@ -40,11 +46,11 @@ const LIMITES = [
 
 export function Limites() {
 	return (
-		<section className="flex flex-col gap-cladd-2xs px-cladd-2xs py-cladd-md">
-			<h2 className="text-letikette-titre leading-tight font-bold tracking-tight md:text-letikette-chiffre">
+		<SectionMarketing fond="creuse">
+			<h2 className="text-letikette-titre leading-tight font-extrabold tracking-tight md:text-letikette-chiffre">
 				Ce que Letikette ne fait pas
 			</h2>
-			<p className="max-w-2xl text-cladd-sm leading-relaxed text-cladd-fg-soft">
+			<p className="max-w-2xl text-cladd-md leading-relaxed font-normal text-cladd-fg-soft">
 				Trois choses que vous découvririez de toute façon. Autant les lire maintenant.
 			</p>
 
@@ -53,14 +59,16 @@ export function Limites() {
 					<Surface
 						key={l.titre}
 						outline
-						className="rounded-cladd-2xl transition-shadow hover:shadow-carte"
+						className="rounded-cladd-2xl border border-cladd-bg-outline"
 						contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 					>
-						<span className="text-cladd-sm leading-snug font-semibold">{l.titre}</span>
-						<span className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{l.texte}</span>
+						<span className="text-cladd-md leading-snug font-bold">{l.titre}</span>
+						<span className="text-cladd-sm leading-relaxed font-normal text-cladd-fg-soft">
+							{l.texte}
+						</span>
 					</Surface>
 				))}
 			</div>
-		</section>
+		</SectionMarketing>
 	);
 }

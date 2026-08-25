@@ -1,6 +1,29 @@
 # Spec — L'arbitrage équilibre et coût
 
-> Statut : validé le 25 août 2026, en attente de relecture.
+> ## ⚠️ SPEC ABANDONNÉE, LE 25 AOÛT 2026, LE JOUR MÊME DE SON ÉCRITURE
+>
+> **Ne pas implémenter.** Conservée pour sa recherche de marché, qui reste bonne et sourcée,
+> et pour garder trace du raisonnement.
+>
+> Ce qui a été décidé à la place : **le produit actuel est le bon**. Letikette reste le logiciel
+> de conformité EGalim, il résout une douleur légale aiguë, et le calcul ligne à ligne fait
+> gagner des heures. Il n'a pas besoin d'être élargi.
+>
+> Pourquoi cette spec a été écartée : elle transformait un outil fini en projet d'infrastructure,
+> avec un démarrage plus lent, un service à part de temps humain, et une promesse plus difficile
+> à énoncer. L'objection qui l'avait motivée — « pourquoi un abonnement pour une obligation
+> annuelle ? » — se traite par le discours et non par un virage produit : on ne vend pas un
+> document annuel, on vend un suivi continu, l'étalement de la file de confirmation, et une veille
+> sur les prix d'achat. C'est désormais une section de la page d'accueil (`src/marketing/
+> abonnement.tsx`).
+>
+> Ce qui mérite d'être repêché un jour, indépendamment du reste : les chiffres du § 1.2, la
+> correction du taux réel de conformité (29,5 % et non 15 %), et le constat sur la facture
+> électronique du 1er septembre 2026.
+>
+> ---
+>
+> Statut d'origine : validé le 25 août 2026, en attente de relecture.
 > Remplace l'orientation « logiciel de conformité EGalim » comme promesse centrale.
 > EGalim n'est pas abandonné : il devient une section du rapport au lieu d'en être l'objet.
 

@@ -1,5 +1,6 @@
 import { Surface } from '@cladd-ui/react';
 import { Illustration } from '../ui';
+import { SectionMarketing } from './section';
 
 /**
  * L'auditabilité, expliquée par un exemple plutôt que par un argument.
@@ -9,9 +10,19 @@ import { Illustration } from '../ui';
  * différence entre un outil qu'on regarde et un outil qu'on peut opposer, et
  * c'est la seule chose qui compte le jour où quelqu'un pose la question.
  *
- * On montre donc l'anatomie d'une ligne, avec un vrai libellé abîmé par l'OCR
- * — « CAR0TTE », avec un zéro à la place du O. Un exemple propre laisserait
- * croire qu'on ne traite que des factures propres, ce qui n'arrive jamais.
+ * ELLE EST LA SEULE SECTION SUR FOND D'ENCRE, et c'est réservé. Le bleu de la
+ * marque, pleine largeur, texte inversé, ne sert pas à séduire mais à faire
+ * autorité : c'est le bouclier juridique du produit, il doit peser plus lourd
+ * que le reste de la page. Une section qui parle de preuve et se fond dans le
+ * décor se lit comme un argument de plus.
+ *
+ * LA CARTE RESTE CLAIRE À L'INTÉRIEUR. C'est le contraste qui fait la
+ * démonstration : le document de preuve est un objet, posé sur le fond sombre,
+ * exactement comme il le sera sur le bureau d'un contrôleur.
+ *
+ * On montre l'anatomie d'une ligne avec un vrai libellé abîmé par l'OCR,
+ * « CAR0TTE », avec un zéro à la place du O. Un exemple propre laisserait croire
+ * qu'on ne traite que des factures propres, ce qui n'arrive jamais.
  */
 
 const ANATOMIE = [
@@ -39,25 +50,28 @@ const ANATOMIE = [
 
 export function Preuve() {
 	return (
-		<section className="flex flex-col gap-cladd-2xs px-cladd-2xs py-cladd-md">
-			<h2 className="text-letikette-titre leading-tight font-bold tracking-tight md:text-letikette-chiffre">
+		<SectionMarketing fond="encre">
+			<h2 className="text-letikette-titre leading-tight font-extrabold tracking-tight md:text-letikette-chiffre">
 				Chaque ligne garde sa preuve
 			</h2>
-			<p className="max-w-2xl text-cladd-sm leading-relaxed text-cladd-fg-soft">
+			{/* Sur fond d'encre, le texte doux ne peut pas venir de `cladd-fg-soft`,
+			    qui est une encre foncée : il se lirait noir sur bleu. On atténue la
+			    couleur inversée elle-même. */}
+			<p className="max-w-2xl text-cladd-md leading-relaxed font-normal text-cladd-on-primary/80">
 				Un contrôle ne vous demandera pas votre taux. Il vous demandera d&rsquo;où il sort. Voici ce
 				qu&rsquo;une seule ligne de facture conserve, pendant toute la durée légale.
 			</p>
 
 			<Surface
 				outline
-				className="rounded-cladd-2xl shadow-carte"
+				className="rounded-cladd-2xl text-cladd-fg shadow-carte-levee"
 				contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
 			>
 				<div className="flex items-center gap-cladd-3xs">
 					<Illustration libelle="CAROTTE RONDELLE BIO" famille="FRUITS_LEGUMES" taille="lg" />
 					<div className="flex min-w-0 flex-col">
-						<span className="truncate text-cladd-sm font-semibold">Carotte rondelle bio</span>
-						<span className="text-cladd-2xs text-cladd-fg-softer">
+						<span className="truncate text-cladd-md font-bold">Carotte rondelle bio</span>
+						<span className="text-cladd-sm text-cladd-fg-softer">
 							52 lignes de facture · 3 120 € sur l&rsquo;exercice
 						</span>
 					</div>
@@ -69,10 +83,10 @@ export function Preuve() {
 							key={a.cle}
 							className="flex flex-col gap-1 rounded-cladd-xs p-cladd-3xs transition-colors hover:bg-cladd-surface-cut sm:grid sm:grid-cols-3 sm:items-baseline sm:gap-cladd-3xs"
 						>
-							<dt className="text-cladd-2xs font-semibold text-cladd-fg-softer">{a.cle}</dt>
+							<dt className="text-cladd-sm font-bold text-cladd-fg-softer">{a.cle}</dt>
 							<dd className="sm:col-span-2 sm:flex sm:flex-col sm:gap-1">
-								<span className="text-cladd-sm leading-relaxed">{a.valeur}</span>
-								<span className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+								<span className="text-cladd-md leading-relaxed font-normal">{a.valeur}</span>
+								<span className="text-cladd-sm leading-relaxed font-normal text-cladd-fg-softer">
 									{a.note}
 								</span>
 							</dd>
@@ -81,12 +95,12 @@ export function Preuve() {
 				</dl>
 			</Surface>
 
-			<p className="max-w-3xl text-cladd-xs leading-relaxed text-cladd-fg-soft">
+			<p className="max-w-3xl text-cladd-sm leading-relaxed font-normal text-cladd-on-primary/75">
 				Un bilan livré est figé à sa date. Si vous déposez d&rsquo;autres factures ensuite, elles
 				produisent un nouveau bilan, daté à son tour. L&rsquo;ancien reste consultable tel
 				qu&rsquo;il était, ce qui est la seule façon de tenir une trace utilisable deux ans plus
 				tard.
 			</p>
-		</section>
+		</SectionMarketing>
 	);
 }

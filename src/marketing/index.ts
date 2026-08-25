@@ -9,10 +9,12 @@
  * Les démonstrations utilisent les composants du produit, jamais des
  * reproductions. Voir l'en-tête de `etapes.tsx` pour ce que ça implique.
  */
+export { SectionMarketing, type FondSection } from './section';
 export { Hero } from './hero';
 export { LaLoi } from './la-loi';
 export { Etapes } from './etapes';
 export { Preuve } from './preuve';
 export { Limites } from './limites';
+export { Abonnement } from './abonnement';
 export { Appel } from './appel';
 export { Pied } from './pied';

@@ -17,7 +17,8 @@ import { LEGAL_CONFIG, getLegalEmailAddress } from '../lib/config/legal';
  */
 export function Pied() {
 	return (
-		<footer className="flex flex-col gap-cladd-2xs border-t border-cladd-bg-outline px-cladd-2xs py-cladd-md">
+		<footer className="w-full border-t border-cladd-bg-outline bg-cladd-bg">
+			<div className="mx-auto flex w-full max-w-7xl flex-col gap-cladd-2xs px-cladd-2xs py-cladd-md">
 			<div className="flex flex-wrap items-center gap-cladd-3xs">
 				<LogoLetikette className="size-cladd-sm shrink-0" />
 				<MotLetikette />
@@ -43,16 +44,17 @@ export function Pied() {
 				</div>
 			</div>
 
-			<p className="max-w-3xl text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+			<p className="max-w-3xl text-cladd-xs leading-relaxed font-normal text-cladd-fg-softer">
 				{LEGAL_CONFIG.companyName}, {LEGAL_CONFIG.legalForm}. SIRET {LEGAL_CONFIG.siret}. TVA{' '}
 				{LEGAL_CONFIG.vatNumber}. {LEGAL_CONFIG.address}.
 			</p>
 
-			<p className="max-w-3xl text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+			<p className="max-w-3xl text-cladd-xs leading-relaxed font-normal text-cladd-fg-softer">
 				Letikette mesure votre taux de produits durables et biologiques, le documente et le fait
 				progresser, selon une obligation de moyens. La télédéclaration sur « ma cantine » reste
 				établie et signée par votre établissement.
 			</p>
+			</div>
 		</footer>
 	);
 }

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Hero, LaLoi, Etapes, Preuve, Limites, Appel, Pied } from '../marketing';
+import { Hero, LaLoi, Etapes, Preuve, Limites, Abonnement, Appel, Pied } from '../marketing';
 
 /**
  * La racine sert la page d'accueil publique.
@@ -36,14 +36,29 @@ export const Route = createFileRoute('/')({
 	component: Accueil
 });
 
+/**
+ * L'ordre des sections est le rythme des fonds, et il se lit d'un coup :
+ *
+ *   beige · beige · CLAIR · ENCRE · creux · beige · beige
+ *
+ * Chaque changement de fond annonce un changement de sujet. Le clair porte les
+ * démonstrations, qui ont besoin du contraste maximal. L'encre porte la preuve,
+ * la seule section qui doit faire autorité. Le creux porte les limites, la seule
+ * qui baisse la voix. Le beige respire entre les deux.
+ *
+ * Le conteneur ne borne plus rien : chaque section porte son fond sur toute la
+ * largeur et borne sa lecture elle-même. Sans ça, aucun aplat ne peut aller de
+ * bord à bord.
+ */
 function Accueil() {
 	return (
-		<main className="mx-auto flex w-full max-w-7xl flex-col">
+		<main className="flex w-full flex-col">
 			<Hero />
 			<LaLoi />
 			<Etapes />
 			<Preuve />
 			<Limites />
+			<Abonnement />
 			<Appel />
 			<Pied />
 		</main>

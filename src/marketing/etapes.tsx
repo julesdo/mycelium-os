@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Surface, Button } from '@cladd-ui/react';
 import { FileTextIcon, CameraIcon, TableIcon, RotateCcwIcon } from 'lucide-react';
 import {
+	cn,
 	CarteProduit,
 	FilTravail,
 	Repartition,
@@ -11,6 +12,7 @@ import {
 	type LigneFamille
 } from '../ui';
 import { useVisible, useCompteur } from './mouvement';
+import { SectionMarketing } from './section';
 
 /**
  * Les quatre étapes, démontrées avec les composants du produit.
@@ -112,12 +114,12 @@ const A_CONFIRMER: ProduitDemo[] = [
 
 export function Etapes() {
 	return (
-		<section id="comment" className="flex flex-col gap-cladd-md px-cladd-2xs py-cladd-md">
+		<SectionMarketing id="comment" fond="claire" className="gap-cladd-2xl">
 			<div className="flex flex-col gap-cladd-3xs">
-				<h2 className="text-letikette-titre leading-tight font-bold tracking-tight md:text-letikette-chiffre">
+				<h2 className="text-letikette-titre leading-tight font-extrabold tracking-tight md:text-letikette-chiffre">
 					Quatre étapes, dont une seule vous demande du temps
 				</h2>
-				<p className="max-w-2xl text-cladd-sm leading-relaxed text-cladd-fg-soft">
+				<p className="max-w-2xl text-cladd-md leading-relaxed font-normal text-cladd-fg-soft">
 					Les écrans ci-dessous sont ceux du logiciel, pas des images. Vous pouvez confirmer un
 					produit pour voir ce que ça fait.
 				</p>
@@ -132,6 +134,7 @@ export function Etapes() {
 			</Etape>
 
 			<Etape
+				inverse
 				numero="2"
 				titre="Le logiciel lit, vous regardez"
 				texte="Chaque facture est découpée en lignes, chaque ligne garde le libellé du fournisseur avec ses abréviations et ses fautes de scan. Le travail se voit pendant qu'il se fait, sans recharger la page."
@@ -148,53 +151,66 @@ export function Etapes() {
 			</Etape>
 
 			<Etape
+				inverse
 				numero="4"
 				titre="Votre bilan est prêt"
 				texte="Les trois taux, la répartition par famille d'achat, les fournisseurs chez qui il reste des attestations à demander. En PDF, daté, avec une signature électronique et l'empreinte du document."
 			>
 				<Bilan />
 			</Etape>
-		</section>
+		</SectionMarketing>
 	);
 }
 
 /**
- * Une étape : le texte à gauche, la démonstration à droite.
+ * Une étape, en Z.
+ *
+ * LES ÉTAPES ALTERNENT LEUR SENS DE LECTURE, une sur deux. La version
+ * précédente les empilait toutes dans le même sens, texte à gauche et écran à
+ * droite, ce qui produisait deux colonnes parallèles sur toute la hauteur de la
+ * section, un couloir vide au milieu, et aucune raison pour l'œil de descendre.
+ * En alternant, le regard traverse la page à chaque palier : c'est ce
+ * balancement qui fait avancer, et il ne coûte qu'un `order` au-delà de `lg`.
  *
  * Le passage à deux colonnes se fait à `lg`, pas à `md` : ces démonstrations
  * sont des écrans denses, et les serrer dans une demi-largeur de tablette les
  * casse. En dessous, tout s'empile, texte puis écran, ce qui est aussi l'ordre
- * de lecture naturel.
+ * de lecture naturel — et l'alternance disparaît d'elle-même, parce qu'un Z n'a
+ * aucun sens sur une seule colonne.
  */
 function Etape({
 	numero,
 	titre,
 	texte,
+	inverse = false,
 	children
 }: {
 	numero: string;
 	titre: string;
 	texte: string;
+	/** L'écran passe à gauche et le texte à droite, au-delà de `lg`. */
+	inverse?: boolean;
 	children: ReactNode;
 }) {
 	const { cible, visible } = useVisible<HTMLDivElement>();
 	return (
 		<div
 			ref={cible}
-			className={
-				visible
-					? 'grid animate-apparition items-start gap-cladd-2xs lg:grid-cols-2 lg:gap-cladd-md'
-					: 'grid items-start gap-cladd-2xs opacity-0 lg:grid-cols-2 lg:gap-cladd-md'
-			}
+			className={cn(
+				'grid items-center gap-cladd-2xs lg:grid-cols-2 lg:gap-cladd-2xl',
+				visible ? 'animate-apparition' : 'opacity-0'
+			)}
 		>
-			<div className="flex flex-col gap-cladd-3xs lg:pt-cladd-2xs">
-				<span className="flex size-cladd-sm items-center justify-center rounded-full bg-cladd-primary text-cladd-2xs font-bold text-cladd-on-primary tabular-nums">
+			<div className={cn('flex flex-col gap-cladd-3xs', inverse && 'lg:order-2')}>
+				<span className="cladd-color-brand flex size-cladd-sm items-center justify-center rounded-full bg-cladd-primary text-cladd-sm font-extrabold text-cladd-on-primary tabular-nums">
 					{numero}
 				</span>
-				<h3 className="text-letikette-titre leading-tight font-bold tracking-tight">{titre}</h3>
-				<p className="max-w-prose text-cladd-sm leading-relaxed text-cladd-fg-soft">{texte}</p>
+				<h3 className="text-letikette-titre leading-tight font-extrabold tracking-tight">{titre}</h3>
+				<p className="max-w-prose text-cladd-md leading-relaxed font-normal text-cladd-fg-soft">
+					{texte}
+				</p>
 			</div>
-			<div className="min-w-0">{children}</div>
+			<div className={cn('min-w-0', inverse && 'lg:order-1')}>{children}</div>
 		</div>
 	);
 }
