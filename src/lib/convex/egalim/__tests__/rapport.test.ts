@@ -22,7 +22,14 @@ import {
  * exactement le moment où elle aurait dû mordre.
  */
 
-const RACINES = ['src/routes', 'src/screens', 'src/ui', 'src/app', 'src/lib/convex/egalim'];
+const RACINES = [
+	'src/routes',
+	'src/screens',
+	'src/ui',
+	'src/app',
+	'src/marketing',
+	'src/lib/convex/egalim'
+];
 const EXTENSIONS = /\.(ts|tsx)$/;
 const IGNORES = /(__tests__|routeTree\.gen|\.test\.)/;
 

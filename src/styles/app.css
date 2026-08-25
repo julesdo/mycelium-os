@@ -19,6 +19,7 @@
 @source '../app';
 @source '../screens';
 @source '../routes';
+@source '../marketing';
 
 /* Cladd écrit son apparence en classes Tailwind à l'intérieur de ses propres
  * composants compilés, qu'il déclare via un `@source "./"` dans son cladd.css.

@@ -13,13 +13,13 @@ export const LEGAL_CONFIG = {
 	naf: '62.01Z',
 	effectiveDate: 'June 29, 2026',
 	email: {
-		user: 'julescamilledore',
-		domain: 'gmail',
+		user: 'bonjour',
+		domain: 'letikette',
 		tld: 'com'
 	},
 	dpo: {
-		user: 'julescamilledore',
-		domain: 'gmail',
+		user: 'bonjour',
+		domain: 'letikette',
 		tld: 'com'
 	}
 } as const;
