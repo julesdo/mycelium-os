@@ -12,7 +12,16 @@ export const Route = createRootRoute({
 			},
 			{ title: 'Letikette' }
 		],
-		links: [{ rel: 'stylesheet', href: appCss }]
+		// L'icône d'onglet n'était déclarée nulle part : le navigateur allait
+		// chercher `/favicon.ico`, qui n'existe pas, et l'onglet restait vierge.
+		// Le SVG passe en premier pour les navigateurs qui le comprennent, le PNG
+		// reste en repli.
+		links: [
+			{ rel: 'stylesheet', href: appCss },
+			{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+			{ rel: 'icon', href: '/favicon.png', sizes: '48x48', type: 'image/png' },
+			{ rel: 'manifest', href: '/manifest.webmanifest' }
+		]
 	}),
 	component: Document
 });

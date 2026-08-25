@@ -23,6 +23,7 @@ const merge = extendTailwindMerge({
 						'letikette-taux',
 						'letikette-chiffre',
 						'letikette-titre',
+						'letikette-marque',
 						'vignette-sm',
 						'vignette-md',
 						'vignette-lg',

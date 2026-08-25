@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import { cn } from '../ui/cn';
-import { LogoLetikette } from '../ui/logo';
+import { LogoLetikette, MotLetikette } from '../ui/logo';
 import { SelecteurEtablissement } from './selecteur-etablissement';
 
 /**
@@ -156,15 +156,13 @@ export function Barre() {
 					className="flex shrink-0 items-center gap-cladd-3xs"
 				>
 					{/*
-					  La marque en pastille pleine plutôt qu'en glyphe posé sur le fond.
-					  `cladd-color-brand` fait résoudre `--cladd-primary` au bleu
-					  d'encre ; sans cette classe, le logo hériterait du gris des
-					  surfaces neutres et la barre n'aurait aucune signature.
+					  L'assiette porte ses couleurs, donc elle n'a plus besoin de la
+					  pastille bleue qui l'entourait, ni de `cladd-color-brand` pour
+					  faire résoudre l'accent. Elle occupe exactement la place que
+					  prenait cette pastille : le poids visuel de la barre ne bouge pas.
 					*/}
-					<span className="cladd-color-brand flex size-cladd-md items-center justify-center rounded-full bg-cladd-primary text-cladd-on-primary">
-						<LogoLetikette className="h-4 w-auto" />
-					</span>
-					<span className="hidden text-cladd-sm font-bold tracking-tight xl:block">Letikette</span>
+					<LogoLetikette className="size-cladd-md shrink-0" />
+					<MotLetikette className="hidden xl:block" />
 				</Link>
 
 				{/*

@@ -49,6 +49,28 @@
 		'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
 		'Segoe UI', Roboto, sans-serif;
 
+	/* L'ÉCRITURE DE LA MARQUE, ET RIEN D'AUTRE. Caveat Brush sert au seul
+	 * logotype, en capitales : on n'écrit pas une étiquette de cuisine en
+	 * cursive, on l'écrit au marqueur en capitales, et c'est exactement ce que
+	 * le nom raconte. La brosse n'existe qu'en 400 — voir `MotLetikette`, qui
+	 * explique pourquoi aucune classe de graisse ne doit lui être appliquée.
+	 *
+	 * Elle n'a le droit d'apparaître nulle part ailleurs. Une manuscrite dans
+	 * un libellé de champ, un intitulé de colonne ou un montant, et l'écran
+	 * cesse d'être lisible à bout de bras — c'est-à-dire la seule chose que ce
+	 * produit doit savoir faire. Un seul composant la porte, `MotLetikette`.
+	 *
+	 * Empaquetée avec l'application comme la sans : aucune requête vers un
+	 * tiers, donc rien de l'écran d'un client qui parte ailleurs. */
+	--font-manuscrit: 'Caveat Brush', ui-rounded, cursive;
+
+	/* Le logotype a UNE taille, comme tout logotype. Elle ne se règle pas par
+	 * écran : c'est une marque, pas un titre. 24px parce qu'une manuscrite rend
+	 * plus petit qu'une grotesque au même corps — la hauteur de capitale de
+	 * Caveat est courte, et à 18px, le corps des contrôles, le mot passait
+	 * derrière l'assiette au lieu de la porter. */
+	--text-letikette-marque: 24px;
+
 	/* RAYONS — piège : Cladd calcule chaque pas avec des numérateurs écrits en
 	 * dur, rapportés à sa base `md`. Décaler l'espacement sans les réécrire
 	 * désaccorderait silencieusement les arrondis de l'échelle. Les trois blocs

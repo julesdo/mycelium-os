@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Surface } from '@cladd-ui/react';
 import { cn } from './cn';
-import { LogoLetikette } from './logo';
+import { LogoLetikette, MotLetikette } from './logo';
 
 /**
  * Le cadre des écrans d'entrée — connexion, inscription, mot de passe.
@@ -42,10 +42,13 @@ export function CadreAuth({
 	return (
 		<div className="flex min-h-dvh flex-col items-center justify-center gap-cladd-2xs p-cladd-3xs">
 			<div className="flex items-center gap-cladd-3xs">
-				<span className="cladd-color-brand flex size-11 items-center justify-center rounded-full bg-cladd-primary text-cladd-on-primary">
-					<LogoLetikette className="h-4 w-auto" />
-				</span>
-				<span className="text-cladd-md font-semibold tracking-tight">Letikette</span>
+				{/*
+				  Plus de pastille bleue autour de la marque : l'assiette EST la
+				  pastille. Un disque bleu dans un disque bleu ne montrerait que le
+				  creux, et le marli disparaîtrait dans son propre fond.
+				*/}
+				<LogoLetikette className="size-11 shrink-0" />
+				<MotLetikette />
 			</div>
 
 			<Surface

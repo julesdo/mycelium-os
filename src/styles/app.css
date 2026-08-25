@@ -5,6 +5,10 @@
  * deux derniers imports rendrait le retunage tactile silencieusement inopérant. */
 
 @import '@fontsource-variable/plus-jakarta-sans';
+/* Caveat Brush ne sert qu'au logotype. On n'importe QUE le latin en 400,
+ * c'est-à-dire le seul fichier qui contienne un glyphe de « LETIKETTE » : 67 ko
+ * au lieu des trois sous-ensembles du paquet complet. */
+@import '@fontsource/caveat-brush/latin-400.css';
 @import 'tailwindcss';
 @import '@cladd-ui/react/css';
 @import './tokens.css';
