@@ -1,3 +1,24 @@
+/**
+ * L'identité légale affichée partout : pied de page public, mentions des
+ * rapports, en-tête des courriers aux fournisseurs. Source unique, pour que ces
+ * trois endroits ne puissent pas diverger.
+ *
+ * ⚠️ ADRESSE À CHANGER, ET ELLE N'A PAS ÉTÉ CHANGÉE ICI, VOLONTAIREMENT.
+ *
+ * Le déménagement vers Suresnes est décidé, mais l'adresse complète n'était pas
+ * disponible au moment de l'écrire, et une adresse légale ne s'invente pas.
+ *
+ * Surtout : le registre officiel interrogé le 26 août 2026
+ * (`recherche-entreprises.api.gouv.fr`, SIREN 879853026, données à jour au
+ * 6 décembre 2025) donne toujours **77 rue de Campeyraut, 33000 Bordeaux**
+ * comme siège. Tant que le transfert n'est pas déclaré au greffe, le siège
+ * social EST Bordeaux, et afficher Suresnes mettrait le site en contradiction
+ * avec le registre — exactement l'inverse du but recherché.
+ *
+ * Donc, dans cet ordre : déclarer le transfert, attendre la mise à jour du
+ * registre, puis remplacer la seule ligne `address` ci-dessous. Rien d'autre
+ * n'est à toucher, les trois emplacements la lisent d'ici.
+ */
 export const LEGAL_CONFIG = {
 	brandName: 'Letikette',
 	companyName: 'Jules-Camille Doré',
