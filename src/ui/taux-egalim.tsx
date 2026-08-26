@@ -1,6 +1,7 @@
 import { Surface } from '@cladd-ui/react';
 import { cn } from './cn';
 import { euros, pourcent } from './format';
+import { etatDeSeuil, type EtatSeuil } from '../lib/egalim/referentiel';
 
 /**
  * Le taux EGalim, l'élément le plus important du produit.
@@ -24,12 +25,11 @@ import { euros, pourcent } from './format';
  * lire d'un mètre, tablette posée sur un plan de travail.
  */
 
-type Etat = 'atteint' | 'proche' | 'manque';
-
-function etatDe(mesure: number, seuil: number): Etat {
-	if (mesure >= seuil) return 'atteint';
-	return seuil - mesure <= 0.05 ? 'proche' : 'manque';
-}
+// La règle qui décide de l'état vit dans le référentiel, avec le barème. Elle
+// n'a rien de visuel : elle affirme quelque chose sur la conformité d'un
+// établissement, et l'écran, le PDF et l'e-mail doivent en dire autant.
+type Etat = EtatSeuil;
+const etatDe = etatDeSeuil;
 
 const REMPLISSAGE: Record<Etat, string> = {
 	atteint: 'bg-seuil-atteint',

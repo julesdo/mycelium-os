@@ -84,6 +84,29 @@ export function estDurable(labels: readonly Label[]): boolean {
 	return labels.some((l) => LABELS_QUALIFIANTS[l].durable);
 }
 
+/** Les trois états d'un taux face à son seuil légal. */
+export type EtatSeuil = 'atteint' | 'proche' | 'manque';
+
+/**
+ * Où se situe un taux par rapport à son seuil.
+ *
+ * CETTE RÈGLE VIVAIT DANS UN COMPOSANT D'INTERFACE, `TauxEGalim`, alors qu'elle
+ * n'a rien de visuel : elle décide de ce qu'on affirme sur la conformité d'un
+ * établissement. Trois endroits en ont besoin — l'écran, le PDF du bilan, et
+ * l'e-mail qui annonce ce bilan — et trois copies auraient fini par diverger,
+ * chacune racontant une conformité différente du même chiffre.
+ *
+ * LE PALIER DE « PROCHE » EST À CINQ POINTS, et c'est un choix, pas une donnée
+ * légale : la loi ne connaît que le franchi et le non franchi. Cinq points, sur
+ * un budget de cantine, c'est l'ordre de grandeur de ce qu'un gérant peut
+ * rattraper en déplaçant quelques achats. Au-delà, lui dire qu'il y est presque
+ * serait une politesse trompeuse.
+ */
+export function etatDeSeuil(mesure: number, seuil: number): EtatSeuil {
+	if (mesure >= seuil) return 'atteint';
+	return seuil - mesure <= 0.05 ? 'proche' : 'manque';
+}
+
 /**
  * L'ordre sous lequel un produit portant PLUSIEURS mentions est déclaré.
  *

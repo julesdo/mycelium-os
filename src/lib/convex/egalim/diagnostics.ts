@@ -1,10 +1,11 @@
 import { v, ConvexError } from 'convex/values';
 import { authedQuery, authedMutation } from '../functions';
 import { internalMutation } from '../_generated/server';
+import { internal } from '../_generated/api';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { getUserOrg } from '../lib/auth';
-import { REFERENTIEL_VERSION, SEUILS } from '../../egalim/referentiel';
+import { REFERENTIEL_VERSION, SEUILS, etatDeSeuil } from '../../egalim/referentiel';
 import { FAMILLES, type Famille } from '../../egalim/types';
 import { calculerRatios, type LignePourAgregation } from './agregation';
 import { vFamille, vLabel } from './tables';
@@ -191,7 +192,57 @@ async function produire(
 	await creerDemandesAttestation(ctx, organizationId, batchId, diagnosticId);
 	await ctx.db.patch(batchId, { status: 'READY' });
 
+	// L'ANNONCE PART EN DIFFÉRÉ, ET C'EST DÉLIBÉRÉ. Un envoi direct ferait
+	// dépendre la production du diagnostic de la messagerie : il suffirait
+	// qu'`AUTH_EMAIL` soit vide — ce qui est arrivé en production — pour que
+	// `requireEnv` lève et annule la transaction entière. Le gérant perdrait son
+	// bilan à cause d'un e-mail. Programmée, la panne reste dans l'e-mail.
+	await ctx.scheduler.runAfter(0, internal.emails.envoiProduit.envoyerBilanPret, {
+		organizationId,
+		diagnosticId,
+		annee: new Date(batch.periodEnd).getUTCFullYear(),
+		lignesLues: classees.length,
+		taux: [
+			{
+				libelle: 'Produits durables',
+				valeur: enPourcent(ratios.durable),
+				etat: etatDeSeuil(ratios.durable, SEUILS.durable),
+				precision: `seuil légal : ${enPourcent(SEUILS.durable)}`
+			},
+			{
+				libelle: 'dont bio',
+				valeur: enPourcent(ratios.bio),
+				etat: etatDeSeuil(ratios.bio, SEUILS.bio),
+				precision: `seuil légal : ${enPourcent(SEUILS.bio)}`
+			},
+			{
+				libelle: 'Viande et poisson',
+				valeur: enPourcent(ratios.meatFishDurable),
+				etat: etatDeSeuil(ratios.meatFishDurable, SEUILS.viandePoissonDurable),
+				precision: `seuil légal : ${enPourcent(SEUILS.viandePoissonDurable)}`
+			}
+		]
+	});
+
 	return diagnosticId;
+}
+
+/**
+ * Un taux, écrit pour un courriel.
+ *
+ * L'espace insécable est DÉCLARÉE par son point de code, jamais tapée. Le lint
+ * refuse les espaces irrégulières dans le code, et il a raison : une insécable
+ * invisible au milieu d'une expression est une coquille que personne ne voit à
+ * la relecture. Ici elle est voulue, donc elle s'écrit en toutes lettres.
+ *
+ * Insécable ordinaire, et pas l'espace fine qu'`Intl` insère : les clients de
+ * messagerie la rendent de façon imprévisible, et cette même finesse a déjà
+ * cassé des assertions de test sur le PDF.
+ */
+const INSECABLE = String.fromCharCode(0x00a0);
+
+function enPourcent(part: number): string {
+	return `${Math.round(part * 100)}${INSECABLE}%`;
 }
 
 /**

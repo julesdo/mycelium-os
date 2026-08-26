@@ -5,6 +5,14 @@
 // la ou TypeScript les remappe silencieusement vers .ts. Le deploiement echouait
 // donc sur un import que le typage declarait valide.
 
+// Les e-mails produit, ecrits a la main, en francais, sur une coquille
+// commune. Ils ne suivent pas la forme des six modeles historiques, qui sont
+// des artefacts generes depuis Svelte : voir l'en-tete de `disposition.ts`.
+export * from './disposition';
+export * from './bilanPret';
+export * from './produitsAConfirmer';
+export * from './rappelDeclaration';
+
 export * from './verification';
 export * from './verificationCode';
 export * from './passwordReset';

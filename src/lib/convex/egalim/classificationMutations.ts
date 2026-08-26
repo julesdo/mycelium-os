@@ -7,6 +7,7 @@ import { REFERENTIEL_VERSION } from '../../egalim/referentiel';
 import { deriverVerdict, type ClassificationBrute } from './verdict';
 import { doitEtreDemande } from './consensus';
 import { vFamille, vLabel } from './tables';
+import { formaterEuros } from '../emails/modeles/disposition';
 
 /**
  * Les écritures en base de la classification (`classification.ts`). Séparées
@@ -571,6 +572,33 @@ export const finaliserClassification = internalMutation({
 			finishedAt: Date.now(),
 			error: erreur
 		});
+
+		// C'EST ICI QUE SE JOUE L'ABONNEMENT. Sans cet e-mail, le gérant dépose ses
+		// factures, referme l'onglet, et personne ne vient jamais vider la file :
+		// le lot reste en REVIEW, aucun bilan ne sort, et le mois suivant il n'a
+		// aucune raison de revenir. La promesse d'un suivi mensuel tient à ce
+		// message et à rien d'autre.
+		//
+		// Programmé, jamais envoyé dans la foulée : une messagerie en panne ne doit
+		// pas annuler la classification d'un lot de mille huit cents lignes.
+		if (libellesEnRevue.size > 0) {
+			const lot = await ctx.db.get(batchId);
+			if (lot) {
+				const enAttente = lignes.filter((l) => libellesEnRevue.has(l.normalizedLabel));
+				const viandePoisson = new Set(
+					enAttente
+						.filter((l) => l.family === 'VIANDE' || l.family === 'POISSON')
+						.map((l) => l.normalizedLabel)
+				).size;
+
+				await ctx.scheduler.runAfter(0, internal.emails.envoiProduit.envoyerProduitsAConfirmer, {
+					organizationId: lot.organizationId,
+					nombre: libellesEnRevue.size,
+					montantEnJeu: formaterEuros(enAttente.reduce((somme, l) => somme + l.amountHT, 0)),
+					viandePoisson
+				});
+			}
+		}
 		return null;
 	}
 });
