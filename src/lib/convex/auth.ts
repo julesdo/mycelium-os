@@ -107,7 +107,12 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>): BetterAuthOptions
 		},
 		emailAndPassword: {
 			enabled: true,
-			minPasswordLength: 10,
+			// DOUZE, ET PAS DIX. L'écran d'inscription refuse déjà en deçà de douze,
+		// mais le serveur en acceptait dix : un contournement du contrôle client
+		// suffisait à créer un compte plus faible que ce que l'interface promet.
+		// L'écart s'est vu en rédigeant l'annexe de sécurité de l'accord de
+		// sous-traitance, où il fallait écrire un chiffre vrai.
+		minPasswordLength: 12,
 			// L'INSCRIPTION OUVRE UNE SESSION. Elle exigeait la vérification de
 			// l'adresse, et le compte se créait donc sans personne d'authentifié
 			// derrière : l'écran suivant demandait le nom de l'établissement, puis
