@@ -71,7 +71,7 @@ export default defineSchema({
 		paddleSubscriptionId: v.optional(v.string()),
 		paddleCustomerId: v.optional(v.string()),
 		paddlePlanTier: v.optional(
-			v.union(v.literal('diagnostic'), v.literal('conformite'), v.literal('operateur'))
+			v.union(v.literal('diagnostic'), v.literal('conformite'))
 		),
 		paddleStatus: v.optional(
 			v.union(

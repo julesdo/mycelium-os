@@ -5,59 +5,111 @@ import type { Doc } from './_generated/dataModel';
 
 // ── Plan feature matrix — échelle de valeur EGalim ─────────────────────────────
 
+/**
+ * CE QUE CHAQUE ÉTAGE OUVRE.
+ *
+ * DEUX ÉTAGES PAYANTS, ET PAS TROIS. L'étage `operateur` a été retiré : il
+ * ouvrait une fonctionnalité de `sourcing` qui n'a jamais été construite, et
+ * `CLAUDE.md` acte qu'il n'a plus de porteur commercial depuis la suppression du
+ * modèle opérateur. Il en allait de même pour `veilleReglementaire`, qui
+ * n'existe nulle part dans le produit. Les laisser, c'était s'exposer à les voir
+ * apparaître un jour sur une grille tarifaire, c'est-à-dire à vendre du vide.
+ *
+ * Les deux étages restants correspondent exactement aux deux offres du business
+ * plan, document 03 :
+ *
+ *   `diagnostic`  le premier bilan. On dépose, on mesure, on obtient un bilan.
+ *   `conformite`  l'abonnement. En plus : le fichier de télédéclaration et le
+ *                 suivi mensuel, c'est-à-dire les e-mails qui ramènent le gérant
+ *                 tous les mois au lieu d'une fois en mars.
+ *
+ * LA TAILLE DE LA CANTINE N'EST PAS UN ÉTAGE, c'est un AXE DE PRIX. Un
+ * établissement de mille couverts reçoit exactement le même produit qu'un
+ * établissement de deux cents ; il le paie plus cher parce que la valeur diffère,
+ * pas la prestation. Voir `PALIER_TAILLE` plus bas.
+ */
 export const PLAN_FEATURES = {
 	none: {
 		depotFactures: false,
 		diagnostic: false,
 		declaration: false,
-		suiviMensuel: false,
-		veilleReglementaire: false,
-		sourcing: false
+		suiviMensuel: false
 	},
 	diagnostic: {
 		depotFactures: true,
 		diagnostic: true,
 		declaration: false,
-		suiviMensuel: false,
-		veilleReglementaire: false,
-		sourcing: false
+		suiviMensuel: false
 	},
 	conformite: {
 		depotFactures: true,
 		diagnostic: true,
 		declaration: true,
-		suiviMensuel: true,
-		veilleReglementaire: true,
-		sourcing: false
-	},
-	operateur: {
-		depotFactures: true,
-		diagnostic: true,
-		declaration: true,
-		suiviMensuel: true,
-		veilleReglementaire: true,
-		sourcing: true
+		suiviMensuel: true
 	},
 	dev: {
 		depotFactures: true,
 		diagnostic: true,
 		declaration: true,
-		suiviMensuel: true,
-		veilleReglementaire: true,
-		sourcing: true
+		suiviMensuel: true
 	}
 } as const;
 
-export type PlanFeature = keyof (typeof PLAN_FEATURES)['operateur'];
-export type PlanTier = 'none' | 'diagnostic' | 'conformite' | 'operateur' | 'dev';
+export type PlanFeature = keyof (typeof PLAN_FEATURES)['conformite'];
+export type PlanTier = 'none' | 'diagnostic' | 'conformite' | 'dev';
 
 // Nombre d'utilisateurs autorisés par étage (une cantine = 1 à 3 personnes)
 export const PLAN_SEATS: Record<PlanTier, number> = {
 	none: 0,
 	diagnostic: 2,
 	conformite: 3,
-	operateur: 5,
 	dev: 9999
+};
+
+/**
+ * Le palier de taille, qui décide du PRIX et jamais des fonctionnalités.
+ *
+ * Les bornes viennent du document 03 du business plan : moins de 250 couverts
+ * par jour, de 250 à 800, au-delà de 800. Elles sont écrites ici plutôt que dans
+ * une page de tarifs, parce que c'est le serveur qui doit choisir le bon
+ * identifiant de prix Paddle, et qu'un palier calculé côté client se falsifie.
+ */
+export const PALIERS = ['S', 'M', 'L'] as const;
+export type PalierTaille = (typeof PALIERS)[number];
+
+export function palierDeTaille(couvertsJour: number | undefined): PalierTaille {
+	// Sans information, on retient le palier le plus bas : facturer trop cher un
+	// établissement qui n'a pas rempli son profil serait le pire des défauts.
+	if (!couvertsJour || couvertsJour <= 0) return 'S';
+	if (couvertsJour < 250) return 'S';
+	if (couvertsJour <= 800) return 'M';
+	return 'L';
+}
+
+/**
+ * La grille tarifaire, en euros hors taxes.
+ *
+ * ELLE VIT DANS LE CODE et non sur une page d'administration, pour la même
+ * raison que le barème EGalim : elle passe en revue, elle est versionnée, et
+ * elle ne peut pas diverger entre ce que l'écran affiche et ce que le serveur
+ * facture. Source : document 03 du business plan.
+ *
+ * Ce sont des montants d'AFFICHAGE. Le montant réellement prélevé est celui du
+ * prix Paddle correspondant : c'est Paddle qui facture, en qualité de vendeur de
+ * registre. Un écart entre les deux serait un défaut à corriger chez Paddle, pas
+ * ici.
+ */
+export const TARIFS: Record<PalierTaille, { bilan: number; abonnementMensuel: number }> = {
+	S: { bilan: 690, abonnementMensuel: 190 },
+	M: { bilan: 1190, abonnementMensuel: 290 },
+	L: { bilan: 1900, abonnementMensuel: 390 }
+};
+
+/** Ce que chaque palier recouvre, pour l'afficher sans faire deviner. */
+export const BORNES_PALIER: Record<PalierTaille, string> = {
+	S: 'moins de 250 couverts par jour',
+	M: 'de 250 à 800 couverts par jour',
+	L: 'plus de 800 couverts par jour'
 };
 
 // ── Core resolver ─────────────────────────────────────────────────────────────
@@ -142,6 +194,47 @@ export const getBillingStatus = authedQuery({
 	}
 });
 
+/**
+ * Tout ce dont l'écran d'abonnement a besoin, en une lecture.
+ *
+ * LE PALIER EST CALCULÉ ICI, jamais côté client. Il décide du prix : le laisser
+ * au navigateur, c'est laisser à l'utilisateur le soin de choisir son tarif.
+ *
+ * `paddleConfigure` dit à l'écran s'il peut proposer un paiement. Tant que le
+ * compte marchand n'est pas ouvert — il attend les conditions générales — il
+ * vaut `false`, et l'écran montre l'offre sans promettre un bouton qui ne
+ * fonctionnerait pas.
+ */
+export const etatAbonnement = authedQuery({
+	args: {},
+	handler: async (ctx) => {
+		const profile = await ctx.db
+			.query('userProfiles')
+			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+			.unique();
+		if (!profile?.currentOrganizationId) return null;
+
+		const org = await ctx.db.get(profile.currentOrganizationId);
+		if (!org) return null;
+
+		const { tier, isDev, seatsAllowed } = resolveEffectivePlan(org);
+		const palier = palierDeTaille(org.couvertsJour);
+
+		return {
+			tier,
+			isDev,
+			palier,
+			bornesPalier: BORNES_PALIER[palier],
+			couvertsJour: org.couvertsJour ?? null,
+			tarifs: TARIFS[palier],
+			seatsAllowed,
+			paddleStatus: org.paddleStatus ?? null,
+			paddleCurrentPeriodEnd: org.paddleCurrentPeriodEnd ?? null,
+			paddleConfigure: Boolean(process.env.PADDLE_API_KEY)
+		};
+	}
+});
+
 // Internal version for use by other Convex functions
 export const _getOrgBillingStatus = internalQuery({
 	args: { organizationId: v.id('organizations') },
@@ -205,7 +298,7 @@ export const activateDevPlan = authedMutation({
 // ── Backend guard helper (use in other Convex mutations/queries) ──────────────
 
 // Call this at the top of any gated mutation to enforce plan access.
-// Usage: await assertFeatureAccess(ctx, orgId, 'sourcing')
+// Usage: await assertFeatureAccess(ctx, orgId, 'declaration')
 export async function assertFeatureAccess(
 	ctx: { db: { get: (id: any) => Promise<any>; query: any } },
 	organizationId: string,

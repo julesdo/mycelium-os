@@ -30,6 +30,7 @@ import {
 	type LigneFamille
 } from '../ui';
 import { FeuilleCorrection, type ProduitACorriger } from '../screens/confirmer/correction';
+import { Offre, OuvertureEnCours } from '../screens/abonnement/offre';
 import { Attestations, type Attestation } from '../screens/diagnostic/attestations';
 import { Shell } from '../app/shell';
 import {
@@ -303,6 +304,7 @@ const ECRANS = [
 	'diagnostic',
 	'vide',
 	'lexique',
+	'abonnement',
 	'coquille'
 ] as const;
 type Ecran = (typeof ECRANS)[number];
@@ -332,6 +334,7 @@ function Showroom() {
 				{ecran === 'diagnostic' ? <DemoDiagnostic /> : null}
 				{ecran === 'vide' ? <DemoVide /> : null}
 				{ecran === 'lexique' ? <DemoLexique /> : null}
+				{ecran === 'abonnement' ? <DemoAbonnement /> : null}
 				{ecran === 'coquille' ? (
 					<Shell>
 						<DemoTaux />
@@ -640,6 +643,61 @@ function DemoLexique() {
 							</div>
 						</Surface>
 					))}
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
+/**
+ * Les cartes d'offre, aux trois paliers.
+ *
+ * L'écran d'abonnement lui-même est derrière l'authentification, et le regarder
+ * supposerait de se connecter. Ce sont ses cartes qui portent la décision
+ * commerciale, et ce sont elles qu'il faut voir : aux trois paliers d'un coup,
+ * pour vérifier qu'un prix à quatre chiffres ne casse pas la mise en page.
+ */
+function DemoAbonnement() {
+	return (
+		<Page>
+			<PageHeader
+				titre="Abonnement"
+				sousTitre="Les trois paliers, côte à côte. En production, un seul est affiché."
+			/>
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					{(
+						[
+							{ palier: 'S', bornes: 'moins de 250 couverts par jour', bilan: 690, mois: 190 },
+							{ palier: 'M', bornes: 'de 250 à 800 couverts par jour', bilan: 1190, mois: 290 },
+							{ palier: 'L', bornes: 'plus de 800 couverts par jour', bilan: 1900, mois: 390 }
+						] as const
+					).map((p) => (
+						<div key={p.palier} className="flex flex-col gap-cladd-3xs">
+							<SectionTitle>
+								Palier {p.palier} — {p.bornes}
+							</SectionTitle>
+							<div className="grid gap-cladd-2xs md:grid-cols-2">
+								<Offre
+									titre="Le premier bilan"
+									prix={euros(p.bilan)}
+									cadence="une fois"
+									description="Douze mois de factures lus en une fois. Vous saurez où vous en êtes, et ce qu’il manque, en euros."
+									colonne="bilan"
+								/>
+								<Offre
+									titre="L’abonnement"
+									prix={euros(p.mois)}
+									cadence="par mois"
+									description="Votre chiffre reste à jour toute l’année, et votre déclaration de mars est prête avant mars."
+									colonne="abonnement"
+									recommande
+								/>
+							</div>
+						</div>
+					))}
+
+					<OuvertureEnCours />
 				</div>
 			</PageBody>
 		</Page>

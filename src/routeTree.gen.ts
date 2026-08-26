@@ -18,6 +18,7 @@ import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oubl
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppAbonnementRouteImport } from './routes/app/abonnement'
 import { Route as AppConfirmerRouteImport } from './routes/app/confirmer'
 import { Route as AppDiagnosticsRouteImport } from './routes/app/diagnostics'
 import { Route as AppFacturesRouteImport } from './routes/app/factures'
@@ -72,6 +73,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppAbonnementRoute = AppAbonnementRouteImport.update({
+  id: '/abonnement',
+  path: '/abonnement',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppConfirmerRoute = AppConfirmerRouteImport.update({
   id: '/confirmer',
   path: '/confirmer',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/showroom': typeof ShowroomRoute
+  '/app/abonnement': typeof AppAbonnementRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/showroom': typeof ShowroomRoute
+  '/app/abonnement': typeof AppAbonnementRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/showroom': typeof ShowroomRoute
+  '/app/abonnement': typeof AppAbonnementRoute
   '/app/confirmer': typeof AppConfirmerRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/factures': typeof AppFacturesRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
     | '/showroom'
+    | '/app/abonnement'
     | '/app/confirmer'
     | '/app/diagnostics'
     | '/app/factures'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
     | '/showroom'
+    | '/app/abonnement'
     | '/app/confirmer'
     | '/app/diagnostics'
     | '/app/factures'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
     | '/showroom'
+    | '/app/abonnement'
     | '/app/confirmer'
     | '/app/diagnostics'
     | '/app/factures'
@@ -306,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/abonnement': {
+      id: '/app/abonnement'
+      path: '/abonnement'
+      fullPath: '/app/abonnement'
+      preLoaderRoute: typeof AppAbonnementRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/confirmer': {
       id: '/app/confirmer'
       path: '/confirmer'
@@ -366,6 +385,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteRouteChildren {
+  AppAbonnementRoute: typeof AppAbonnementRoute
   AppConfirmerRoute: typeof AppConfirmerRoute
   AppDiagnosticsRoute: typeof AppDiagnosticsRoute
   AppFacturesRoute: typeof AppFacturesRoute
@@ -377,6 +397,7 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAbonnementRoute: AppAbonnementRoute,
   AppConfirmerRoute: AppConfirmerRoute,
   AppDiagnosticsRoute: AppDiagnosticsRoute,
   AppFacturesRoute: AppFacturesRoute,

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import {
 	Button,
@@ -11,7 +11,7 @@ import {
 	ToggleGroup,
 	ToggleButton
 } from '@cladd-ui/react';
-import { CheckIcon, LogOutIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { CheckIcon, CreditCardIcon, LogOutIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
@@ -106,6 +106,24 @@ function Parametres() {
 								Sombre
 							</SegmentedButton>
 						</Segmented>
+					</Reglage>
+
+					{/*
+					  L'abonnement entre PAR ICI et non par un cinquième onglet. La barre
+					  de navigation porte déjà quatre entrées, une recherche, un dépôt et
+					  un sélecteur d'établissement ; chaque dizaine de pixels qu'elle prend
+					  en hauteur est une rangée de cartes en moins sur une tablette en
+					  paysage. Un réglage se range avec les réglages.
+					*/}
+					<Reglage titre="Votre abonnement">
+						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+							Votre offre et son tarif dépendent du nombre de couverts que vous servez chaque
+							jour. Le produit est le même à tous les paliers.
+						</p>
+						<Button as={Link} to="/app/abonnement" className="self-start">
+							<CreditCardIcon />
+							Voir mon abonnement
+						</Button>
 					</Reglage>
 
 					<Reglage titre="Votre compte">

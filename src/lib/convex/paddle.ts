@@ -4,20 +4,46 @@ import { internal } from './_generated/api';
 import { authComponent } from './auth';
 import type { Id } from './_generated/dataModel';
 
-// Plan tier → seats mapping (matches CLAUDE.md pricing — échelle EGalim)
-const PLAN_SEATS: Record<string, number> = {
-	diagnostic: 2,
-	conformite: 3,
-	operateur: 5
-};
+// Les sièges par étage viennent de `billing.ts`, source unique : deux tables
+// parallèles finissaient par diverger, et c'est le genre d'écart qu'on ne
+// remarque qu'au moment où un client ne peut plus inviter son directeur.
+import { PLAN_SEATS, PALIERS, type PalierTaille } from './billing';
 
-// Price ID → plan tier (configured via env PADDLE_PRICE_<TIER>)
-// Resolved at call time so env vars can differ per deployment
-function resolvePlanTier(priceId: string): 'diagnostic' | 'conformite' | 'operateur' | null {
-	const env = process.env;
-	if (priceId === env.PADDLE_PRICE_DIAGNOSTIC) return 'diagnostic';
-	if (priceId === env.PADDLE_PRICE_CONFORMITE) return 'conformite';
-	if (priceId === env.PADDLE_PRICE_OPERATEUR) return 'operateur';
+/**
+ * Un identifiant de prix Paddle par ÉTAGE et par PALIER DE TAILLE.
+ *
+ * SIX PRIX, PAS DEUX. Le business plan vend le même produit à trois prix selon
+ * la taille de la cantine : 690, 1 190 ou 1 900 € pour le premier bilan, 190,
+ * 290 ou 390 € par mois pour l'abonnement. Chez Paddle, cela se modélise par
+ * deux produits et trois prix chacun.
+ *
+ * La version précédente ne connaissait qu'un prix par étage, plus un troisième
+ * étage `operateur` supprimé depuis : un abonnement souscrit par une grosse
+ * cantine se serait résolu en `null` et n'aurait activé aucun plan, sans que
+ * rien ne le signale.
+ */
+function nomVariablePrix(etage: 'DIAGNOSTIC' | 'CONFORMITE', palier: PalierTaille): string {
+	return `PADDLE_PRICE_${etage}_${palier}`;
+}
+
+export function identifiantPrix(
+	etage: 'DIAGNOSTIC' | 'CONFORMITE',
+	palier: PalierTaille
+): string | undefined {
+	return process.env[nomVariablePrix(etage, palier)];
+}
+
+/**
+ * Retrouve l'étage à partir de l'identifiant de prix reçu du webhook.
+ *
+ * Balaye les six combinaisons plutôt que de comparer trois variables : ajouter
+ * un palier ne demandera pas de revenir ici.
+ */
+function resolvePlanTier(priceId: string): 'diagnostic' | 'conformite' | null {
+	for (const palier of PALIERS) {
+		if (priceId === identifiantPrix('DIAGNOSTIC', palier)) return 'diagnostic';
+		if (priceId === identifiantPrix('CONFORMITE', palier)) return 'conformite';
+	}
 	return null;
 }
 
