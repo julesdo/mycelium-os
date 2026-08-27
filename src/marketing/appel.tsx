@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Button, Surface } from '@cladd-ui/react';
+import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
 import { SectionMarketing } from './section';
 
@@ -15,27 +15,20 @@ import { SectionMarketing } from './section';
  * qui expire. La cible est un professionnel qui reconnaît ces ficelles à dix
  * mètres, et les reconnaître suffit à faire fermer l'onglet.
  *
- * LE BLOC PORTE LE BLEU DE LA MARQUE, la section reste sur le beige. C'est
- * délibérément différent de la section de preuve, qui est un aplat pleine
- * largeur. Deux aplats identiques à quelques écrans d'intervalle se
- * neutraliseraient ; ici le bleu revient comme un objet posé, ce qui referme la
- * page sans répéter l'effet.
+ * ELLE EST SUR L'ENCRE, PLEINE LARGEUR, ET PLUS DANS UN BLOC POSÉ. La version
+ * précédente peignait un rectangle bleu arrondi au milieu du beige : un bouton
+ * géant, c'est-à-dire l'objet le plus reconnaissable d'un gabarit de logiciel.
+ * En pleine largeur, la page se ferme comme elle s'est ouverte — par un aplat
+ * qui va d'un bord à l'autre — et l'encre revient là où elle a du sens : sur ce
+ * qui engage.
  *
- * LE FOND SE POSE PAR `color` ET `variant`, JAMAIS À LA MAIN. La première
- * version écrivait `cladd-color-brand bg-cladd-primary text-cladd-on-primary`
- * sur le `className` du `Surface`, et le bloc sortait en texte blanc sur fond
- * clair, illisible.
+ * DEUX SECTIONS D'ENCRE, ET AUCUNE RÉPÉTITION D'EFFET. Celle de la preuve porte
+ * un document blanc en son centre ; celle-ci n'en porte aucun. L'une montre, et
+ * l'autre demande.
  *
- * La raison est dans l'anatomie du composant : `Surface` peint son fond sur une
- * COUCHE ABSOLUE distincte, derrière le contenu. Un `bg-*` posé sur la racine
- * est donc recouvert par cette couche, qui rendait son remplissage neutre par
- * défaut. L'inversion du texte, elle, s'appliquait bien, puisqu'elle vient d'une
- * simple classe héritée. Fond clair, texte blanc.
- *
- * `variant="solid-fill"` fait les trois choses d'un coup, et correctement : il
- * peint l'accent SUR LA BONNE COUCHE, il inverse le texte, et il bascule le
- * liséré d'`outline` sur un jeton lisible par-dessus un aplat. La doc du kit
- * range précisément ce cas dans ses pièges, sous « Surface misuse ».
+ * LE BOUTON EST BLANC SUR L'ENCRE, en angles droits. Sur un aplat sombre, un
+ * `solid-fill` de marque se noierait dans son propre bleu ; le contraste maximal
+ * disponible est le papier lui-même, qui est aussi le fond du reste de la page.
  *
  * L'ARGUMENT DE FOND N'EST PAS LA PEUR, C'EST LE DÉLAI DE LECTURE. Douze mois
  * de factures se lisent en une fois ; commencer en février laisse le temps de
@@ -43,48 +36,34 @@ import { SectionMarketing } from './section';
  */
 export function Appel() {
 	return (
-		<SectionMarketing fond="page">
-			<Surface
-				color="brand"
-				variant="solid-fill"
-				outline
-				className="rounded-cladd-2xl shadow-carte-levee"
-				contentClassName="flex flex-col items-start gap-cladd-2xs p-cladd-md"
-			>
-				<span className="text-cladd-sm font-bold tracking-wide uppercase opacity-75">
-					Campagne « ma cantine »
+		<SectionMarketing fond="encre" filet={false} className="gap-cladd-2xs">
+			<span className="text-cladd-2xs font-semibold tracking-widest text-plume-inversee-douce uppercase">
+				Campagne « ma cantine »
+			</span>
+			<h2 className="max-w-4xl font-serif text-titre-section-etroite leading-tight font-medium tracking-tight md:text-affiche">
+				La déclaration ferme le 31 mars. Le calcul, lui, prend douze mois de factures.
+			</h2>
+			<p className="max-w-2xl text-chapeau leading-relaxed font-normal text-plume-inversee-douce">
+				Elles se lisent en une fois, quel que soit le mois où vous commencez. La différence
+				n&rsquo;est pas là : commencer tôt laisse le temps de déplacer quelques achats et de
+				demander les attestations qui manquent. Commencer fin mars ne laisse que le temps de
+				constater.
+			</p>
+			<div className="flex flex-col items-start gap-cladd-3xs pt-cladd-3xs sm:flex-row sm:items-center">
+				<Button
+					as={Link}
+					to="/inscription"
+					variant="solid"
+					size="lg"
+					className="rounded-none px-cladd-2xs"
+				>
+					Générer mon bilan EGalim
+					<ArrowRightIcon />
+				</Button>
+				<span className="text-cladd-sm font-normal text-plume-inversee-douce">
+					Aucune carte bancaire. Vous voyez vos taux avant de décider quoi que ce soit.
 				</span>
-				<h2 className="max-w-3xl text-letikette-titre leading-tight font-extrabold tracking-tight md:text-letikette-chiffre">
-					La déclaration ferme le 31 mars. Le calcul, lui, prend douze mois de factures.
-				</h2>
-				<p className="max-w-2xl text-cladd-md leading-relaxed font-normal opacity-80">
-					Elles se lisent en une fois, quel que soit le mois où vous commencez. La différence
-					n&rsquo;est pas là : commencer tôt laisse le temps de déplacer quelques achats et de
-					demander les attestations qui manquent. Commencer fin mars ne laisse que le temps de
-					constater.
-				</p>
-				<div className="flex flex-col gap-cladd-3xs sm:flex-row sm:items-center">
-					{/* Le bouton est une surface SOULEVÉE, pas un aplat d'accent. Sur un
-					    bloc déjà rempli de bleu, un `solid-fill` de marque se noierait dans
-					    son propre fond, et un `solid-fill` neutre sortirait noir. Un `solid`
-					    remonte la rampe des surfaces, qui va vers le blanc en mode clair :
-					    le bouton se pose en clair sur le bleu, ce qui est le contraste
-					    maximal disponible. */}
-					<Button
-						as={Link}
-						to="/inscription"
-						variant="solid"
-						size="lg"
-						className="px-cladd-2xs shadow-carte"
-					>
-						Générer mon bilan EGalim
-						<ArrowRightIcon />
-					</Button>
-					<span className="text-cladd-sm font-normal opacity-75">
-						Aucune carte bancaire. Vous voyez vos taux avant de décider quoi que ce soit.
-					</span>
-				</div>
-			</Surface>
+			</div>
 		</SectionMarketing>
 	);
 }

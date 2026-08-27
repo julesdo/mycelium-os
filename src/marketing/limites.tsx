@@ -1,5 +1,4 @@
-import { Surface } from '@cladd-ui/react';
-import { SectionMarketing } from './section';
+import { SectionMarketing, TitreSection } from './section';
 
 /**
  * Ce qu'on ne fait pas.
@@ -10,10 +9,11 @@ import { SectionMarketing } from './section';
  * limite énoncée franchement vaut trois arguments, et celles-ci sont vérifiables
  * en une minute.
  *
- * ELLE EST SUR LA SURFACE ENFONCÉE, avec un filet. C'est la seule section qui se
- * met volontairement en retrait : elle vient juste après le bleu d'encre de la
- * preuve, et elle doit se lire comme une mise au point, pas comme un argument de
- * vente de plus. Le creux dit « on baisse la voix ».
+ * ELLES SONT NUMÉROTÉES COMME DES CLAUSES, sous un filet chacune. C'était trois
+ * cartes ; or une limite n'est pas une fonctionnalité, et lui donner la même
+ * forme qu'à une fonctionnalité brouille exactement ce qu'elle vient dire. La
+ * numérotation et le filet la rangent dans le registre du contrat, qui est le
+ * bon.
  *
  * Les deux premières ne sont pas des choix commerciaux, ce sont les DEUX LIGNES
  * ROUGES juridiques du projet : ne jamais prendre la propriété des denrées, ne
@@ -46,29 +46,29 @@ const LIMITES = [
 
 export function Limites() {
 	return (
-		<SectionMarketing fond="creuse">
-			<h2 className="text-letikette-titre leading-tight font-extrabold tracking-tight md:text-letikette-chiffre">
-				Ce que Letikette ne fait pas
-			</h2>
-			<p className="max-w-2xl text-cladd-md leading-relaxed font-normal text-cladd-fg-soft">
-				Trois choses que vous découvririez de toute façon. Autant les lire maintenant.
-			</p>
+		<SectionMarketing fond="papier">
+			<TitreSection
+				sur="Périmètre"
+				titre="Ce que Letikette ne fait pas"
+				chapeau="Trois choses que vous découvririez de toute façon. Autant les lire maintenant."
+			/>
 
-			<div className="grid gap-cladd-2xs md:grid-cols-3">
-				{LIMITES.map((l) => (
-					<Surface
+			<ol className="grid gap-cladd-xs md:grid-cols-3 md:gap-cladd-2xs">
+				{LIMITES.map((l, i) => (
+					<li
 						key={l.titre}
-						outline
-						className="rounded-cladd-2xl border border-cladd-bg-outline"
-						contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+						className="flex flex-col gap-cladd-3xs border-t border-plume pt-cladd-3xs"
 					>
-						<span className="text-cladd-md leading-snug font-bold">{l.titre}</span>
-						<span className="text-cladd-sm leading-relaxed font-normal text-cladd-fg-soft">
+						<span className="font-serif text-cladd-md font-medium text-plume-claire tabular-nums">
+							{String(i + 1).padStart(2, '0')}
+						</span>
+						<span className="font-serif text-intertitre leading-snug font-medium">{l.titre}</span>
+						<span className="text-cladd-md leading-relaxed font-normal text-plume-douce">
 							{l.texte}
 						</span>
-					</Surface>
+					</li>
 				))}
-			</div>
+			</ol>
 		</SectionMarketing>
 	);
 }

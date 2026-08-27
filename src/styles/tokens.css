@@ -169,6 +169,75 @@
 	--color-famille-boissons: oklch(0.94 0.042 42);
 	--color-famille-autre: oklch(0.94 0.006 35);
 
+	/* ── LA PAGE PUBLIQUE : PAPIER, ENCRE, FILET ─────────────────────────────
+	 *
+	 * POURQUOI LA PAGE D'ACCUEIL A SON PROPRE SYSTÈME, ET N'EMPRUNTE PAS CELUI
+	 * DE L'APPLICATION.
+	 *
+	 * Cladd est un kit d'application : surfaces empilées, coins arrondis, ombres
+	 * douces, densité d'éditeur. Employé sur une page commerciale, il produit
+	 * exactement ce qu'on lui reproche ici — une grille de cartes flottantes
+	 * beiges qu'on a vue sur mille pages de logiciel, et qui ne dit rien de ce
+	 * que ce produit-là est. Sa propre documentation le dit : « Don't treat
+	 * cladd like a marketing kit ».
+	 *
+	 * Ce que la page doit dire, c'est : rigueur juridique, papier, contrat,
+	 * gastronomie. D'où ce vocabulaire-là et pas un autre : du blanc de papier,
+	 * un gris très froid pour séparer, une encre de nuit pour ce qui fait
+	 * autorité, et des FILETS — pas des ombres. Un filet se lit comme une règle,
+	 * une ombre comme un objet qui flotte.
+	 *
+	 * CES COULEURS SONT ABSOLUES, elles ne suivent PAS le thème clair/sombre.
+	 * C'est un choix : une page qui parle de documents opposables se lit sur du
+	 * papier, pas sur un fond noir. Chaque section peint donc son fond ET sa
+	 * couleur de texte, sans jamais hériter de `--cladd-bg`.
+	 *
+	 * Elles restent hors de l'espace de noms `cladd-*`, que la documentation du
+	 * kit interdit d'étendre. */
+
+	/* La serif des titres, et elle ne sert QU'AUX TITRES. Newsreader est une
+	 * serif de presse : des empattements francs, une lecture de journal plutôt
+	 * que de livre ancien. Elle est variable — une seule requête couvre toutes
+	 * les graisses — et empaquetée avec l'application, comme les deux autres.
+	 *
+	 * Elle n'entre jamais dans l'application elle-même. Un écran de travail se
+	 * lit à bout de bras entre deux services ; une serif y perd en lisibilité ce
+	 * qu'elle gagne en caractère. */
+	--font-serif: 'Newsreader Variable', 'Newsreader', ui-serif, Georgia, 'Times New Roman', serif;
+
+	--color-papier: oklch(1 0 0);
+	--color-papier-froid: oklch(0.982 0.004 250);
+	--color-encre-nuit: oklch(0.235 0.022 258);
+	--color-trait: oklch(0.902 0.007 255);
+	--color-trait-encre: oklch(0.38 0.022 258);
+	--color-plume: oklch(0.235 0.022 258);
+	--color-plume-douce: oklch(0.468 0.018 258);
+	--color-plume-claire: oklch(0.62 0.015 258);
+	--color-plume-inversee: oklch(0.972 0.005 250);
+	--color-plume-inversee-douce: oklch(0.8 0.014 255);
+
+	/* La trame de la section d'autorité vit dans `app.css`, en classe ordinaire,
+	 * et non ici en jeton. Voir `.encre-tramee` là-bas pour les deux raisons —
+	 * elles ont l'une et l'autre coûté un aller-retour au navigateur. */
+
+	/* L'ÉCHELLE D'AFFICHE. Elle ne recoupe pas celle de l'application, qui est
+	 * bornée par la densité d'un écran de travail. Deux valeurs par niveau : le
+	 * téléphone, puis le grand écran à partir de `md`. */
+	--text-affiche: 60px;
+	--text-affiche-etroite: 34px;
+	--text-titre-section: 40px;
+	--text-titre-section-etroite: 26px;
+	--text-intertitre: 22px;
+	--text-chapeau: 20px;
+	/* Le chiffre d'un seuil légal, en serif : c'est le seul nombre de la page
+	 * que le visiteur doit retenir jusqu'en bas. */
+	--text-seuil-legal: 72px;
+	--text-seuil-legal-etroite: 48px;
+
+	/* Le filet qui souligne une section, et le seul rayon toléré : deux pixels
+	 * sur une photographie, pour qu'elle ne coupe pas comme une lame. */
+	--radius-net: 2px;
+
 	/* L'apparition d'une décision dans le fil de traitement.
 	 *
 	 * Ce n'est pas un ornement : c'est le mouvement qui fait la différence entre

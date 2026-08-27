@@ -1,5 +1,4 @@
-import { Surface } from '@cladd-ui/react';
-import { SectionMarketing } from './section';
+import { SectionMarketing, TitreSection } from './section';
 
 /**
  * Pourquoi un abonnement, pour une obligation annuelle.
@@ -15,10 +14,12 @@ import { SectionMarketing } from './section';
  * qui parle au quotidien. La veille sur les prix en dernier, parce qu'elle
  * ouvre la suite sans rien promettre aujourd'hui.
  *
- * L'ANALOGIE COMPTABLE FERME LA SECTION. C'est la seule qui fasse comprendre
- * l'abonnement en une phrase à quelqu'un qui n'a jamais acheté de logiciel :
- * le bilan fiscal sort une fois par an, et personne ne conteste de payer son
- * cabinet tous les mois pour autant.
+ * L'ANALOGIE COMPTABLE FERME LA SECTION, EN EXERGUE. C'est la seule qui fasse
+ * comprendre l'abonnement en une phrase à quelqu'un qui n'a jamais acheté de
+ * logiciel : le bilan fiscal sort une fois par an, et personne ne conteste de
+ * payer son cabinet tous les mois pour autant. Elle était dans une carte de
+ * plus, au même niveau que les trois arguments ; elle les conclut, donc elle
+ * doit changer de registre — un filet épais, une serif, la voix qui se pose.
  */
 
 const RAISONS = [
@@ -41,45 +42,34 @@ const RAISONS = [
 
 export function Abonnement() {
 	return (
-		<SectionMarketing fond="page">
-			<h2 className="text-letikette-titre leading-tight font-extrabold tracking-tight md:text-letikette-chiffre">
-				La déclaration est annuelle. Le suivi ne l’est pas.
-			</h2>
-			<p className="max-w-2xl text-cladd-md leading-relaxed font-normal text-cladd-fg-soft">
-				C’est la question que tout le monde pose, et elle est légitime. Voici les trois raisons de
-				déposer vos factures tous les mois plutôt qu’une fois par an.
-			</p>
+		<SectionMarketing fond="froid">
+			<TitreSection
+				sur="L’objection"
+				titre="La déclaration est annuelle. Le suivi ne l’est pas."
+				chapeau="C’est la question que tout le monde pose, et elle est légitime. Voici les trois raisons de déposer vos factures tous les mois plutôt qu’une fois par an."
+			/>
 
-			<div className="grid gap-cladd-2xs md:grid-cols-3">
+			<div className="grid divide-y divide-trait border-y border-trait md:grid-cols-3 md:divide-x md:divide-y-0">
 				{RAISONS.map((r) => (
-					<Surface
-						key={r.titre}
-						outline
-						className="rounded-cladd-2xl shadow-carte transition-shadow hover:shadow-carte-levee"
-						contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-					>
-						<span className="text-cladd-md leading-snug font-bold">{r.titre}</span>
-						<span className="text-cladd-sm leading-relaxed font-normal text-cladd-fg-soft">
+					<div key={r.titre} className="flex flex-col gap-cladd-3xs py-cladd-xs md:px-cladd-2xs">
+						<span className="font-serif text-intertitre leading-snug font-medium">{r.titre}</span>
+						<span className="text-cladd-md leading-relaxed font-normal text-plume-douce">
 							{r.texte}
 						</span>
-					</Surface>
+					</div>
 				))}
 			</div>
 
-			<Surface
-				outline
-				className="rounded-cladd-2xl"
-				contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-			>
-				<span className="max-w-3xl text-cladd-md leading-relaxed font-normal">
-					C’est exactement votre cabinet comptable. Votre bilan fiscal n’est édité qu’une fois par
-					an, et vous payez pourtant tous les mois pour que vos factures soient saisies et
-					classées, et pour savoir où vous en êtes.
-				</span>
-				<span className="text-cladd-sm font-bold text-cladd-fg-softer">
+			<blockquote className="max-w-4xl border-l-4 border-plume pl-cladd-2xs">
+				<p className="font-serif text-titre-section-etroite leading-tight font-medium">
+					C’est exactement votre cabinet comptable.
+				</p>
+				<p className="pt-cladd-3xs text-cladd-md leading-relaxed font-normal text-plume-douce">
+					Votre bilan fiscal n’est édité qu’une fois par an, et vous payez pourtant tous les mois
+					pour que vos factures soient saisies et classées, et pour savoir où vous en êtes.
 					Letikette, c’est la même chose pour votre assiette.
-				</span>
-			</Surface>
+				</p>
+			</blockquote>
 		</SectionMarketing>
 	);
 }

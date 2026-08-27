@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Surface, Button } from '@cladd-ui/react';
-import { FileTextIcon, CameraIcon, TableIcon, RotateCcwIcon } from 'lucide-react';
+import { Button } from '@cladd-ui/react';
+import { RotateCcwIcon } from 'lucide-react';
 import {
 	cn,
 	CarteProduit,
@@ -12,7 +12,7 @@ import {
 	type LigneFamille
 } from '../ui';
 import { useVisible, useCompteur } from './mouvement';
-import { SectionMarketing } from './section';
+import { SectionMarketing, TitreSection, Cadre } from './section';
 
 /**
  * Les quatre étapes, démontrées avec les composants du produit.
@@ -24,14 +24,38 @@ import { SectionMarketing } from './section';
  * divergeraient au premier changement, et la page mentirait sans que personne
  * s'en aperçoive.
  *
- * Une seule exception, assumée : le dépôt. `ZoneDepot` est un vrai contrôle qui
- * attend des fichiers ; le poser ici donnerait une zone qui accepte un dépôt et
- * n'en fait rien. On montre donc ce qu'elle accepte, sans faire semblant de
- * l'accepter.
+ * LA GRILLE EST ASYMÉTRIQUE, CINQ CONTRE SEPT. Elle était en deux moitiés
+ * égales, ce qui produit deux colonnes parallèles sur toute la hauteur, un
+ * couloir vide au milieu, et aucune raison pour l'œil de descendre. Le texte
+ * n'a pas besoin d'autant de place qu'un écran ; lui en donner autant est une
+ * décision de gabarit, pas une décision de lecture.
  *
- * L'ORDRE DES ÉTAPES EST L'ORDRE DU TRAVAIL, pas l'ordre de nos écrans. Le
- * gérant dépose, attend, tranche, édite. C'est la seule séquence qu'il aura en
- * tête, et la page doit l'épouser pour qu'il se reconnaisse dedans.
+ * LE SENS DE LECTURE ALTERNE, une étape sur deux. C'est le balancement qui fait
+ * avancer, et il ne coûte qu'un `order` au-delà de `lg`.
+ *
+ * LES CADRES SONT RÉSERVÉS AUX ÉCRANS. Le texte vit à même le papier ; ce qui
+ * est encadré, c'est ce qui est MONTRÉ — une capture de l'interface, une
+ * photographie. C'est la règle qui empêche la page de redevenir une grille de
+ * cartes, et elle se vérifie d'un coup d'œil : s'il y a une bordure, il y a une
+ * preuve derrière.
+ *
+ * PLUS D'APPARITION AU DÉFILEMENT, et pour deux raisons cumulées.
+ *
+ * La première est un défaut réel : le rendu serveur ne connaît pas
+ * `IntersectionObserver`, il posait donc `animate-apparition` là où le
+ * navigateur posait `opacity-0` à l'hydratation. React signalait la divergence à
+ * chaque chargement de la page d'accueil, et une section entière restait
+ * momentanément transparente selon qui gagnait la course.
+ *
+ * La seconde est de fond : un bloc qui se dévoile en fondu quand on descend est
+ * la signature exacte du gabarit qu'on quitte. Une page qui doit dire « rigueur
+ * juridique » n'a pas à faire de l'effet en défilant ; ses sections sont là,
+ * comme les articles d'un contrat le sont.
+ *
+ * `useVisible` reste employé, mais pour ce à quoi il sert vraiment : DÉCLENCHER
+ * une démonstration — la montée des jauges, la progression de lecture — jamais
+ * pour décider si un texte est visible. Dans ce rôle il ne change aucune classe,
+ * donc il ne peut plus produire de divergence.
  */
 
 const DOCUMENTS: DocumentEnCours[] = [
@@ -106,71 +130,105 @@ const A_CONFIRMER: ProduitDemo[] = [
 			estAlimentaire: true,
 			famille: 'FRUITS_LEGUMES',
 			mentions: ['AB'],
-			justification: 'La mention BIO figure au libellé ; le certificat fournisseur reste à obtenir.',
+			justification:
+				'La mention BIO figure au libellé ; le certificat fournisseur reste à obtenir.',
 			confiance: 0.74
 		}
 	}
 ];
 
+/** Ce que le dépôt accepte. Une liste, pas trois cartes : c'est un inventaire. */
+const FORMATS = [
+	{ titre: 'PDF de fournisseur', detail: 'Y compris scanné de travers.' },
+	{ titre: 'Photo prise au téléphone', detail: 'Une facture posée sur le plan de travail.' },
+	{ titre: 'Export comptable', detail: 'CSV ou Excel, des milliers de lignes.' }
+] as const;
+
 export function Etapes() {
 	return (
-		<SectionMarketing id="comment" fond="claire" className="gap-cladd-2xl">
-			<div className="flex flex-col gap-cladd-3xs">
-				<h2 className="text-letikette-titre leading-tight font-extrabold tracking-tight md:text-letikette-chiffre">
-					Quatre étapes, dont une seule vous demande du temps
-				</h2>
-				<p className="max-w-2xl text-cladd-md leading-relaxed font-normal text-cladd-fg-soft">
-					Les écrans ci-dessous sont ceux du logiciel, pas des images. Vous pouvez confirmer un
-					produit pour voir ce que ça fait.
-				</p>
-			</div>
+		<SectionMarketing id="comment" fond="froid" className="gap-cladd-2xl">
+			<TitreSection
+				sur="Le parcours, de bout en bout"
+				titre="Quatre étapes, dont une seule vous demande du temps"
+				chapeau="Les écrans ci-dessous sont ceux du logiciel, pas des images. Vous pouvez confirmer un produit pour voir ce que ça fait."
+			/>
 
 			<Etape
-				numero="1"
+				numero="01"
 				titre="Vous déposez ce que vous avez"
 				texte="Un PDF de fournisseur, une photo prise au téléphone dans le bureau, un export de votre comptabilité. On lit ce que vous avez sous la main, pas ce qu'il faudrait avoir."
+				apres={
+					<dl className="divide-y divide-trait border-y border-trait">
+						{FORMATS.map((f) => (
+							<div
+								key={f.titre}
+								className="flex flex-wrap items-baseline justify-between gap-cladd-3xs py-cladd-3xs"
+							>
+								<dt className="text-cladd-md font-semibold">{f.titre}</dt>
+								<dd className="text-cladd-sm text-plume-claire">{f.detail}</dd>
+							</div>
+						))}
+					</dl>
+				}
 			>
-				<Formats />
+				{/*
+				  Une photographie, et non une démonstration : cette étape-là n'a pas
+				  d'écran à montrer. `ZoneDepot` est un vrai contrôle qui attend des
+				  fichiers ; le poser ici donnerait une zone qui accepte un dépôt et
+				  n'en fait rien.
+				*/}
+				<div className="relative aspect-video overflow-hidden rounded-net border border-trait lg:aspect-square">
+					<img
+						src="/photos/cuisine.jpg"
+						alt="Chef de cuisine au piano dans une cuisine professionnelle"
+						loading="lazy"
+						className="absolute inset-0 size-full object-cover"
+					/>
+				</div>
 			</Etape>
 
 			<Etape
 				inverse
-				numero="2"
+				numero="02"
 				titre="Le logiciel lit, vous regardez"
 				texte="Chaque facture est découpée en lignes, chaque ligne garde le libellé du fournisseur avec ses abréviations et ses fautes de scan. Le travail se voit pendant qu'il se fait, sans recharger la page."
 			>
-				<Lecture />
+				<Cadre contentClassName="p-cladd-2xs">
+					<Lecture />
+				</Cadre>
 			</Etape>
 
 			<Etape
-				numero="3"
+				numero="03"
 				titre="Vous tranchez ce qui vous engage"
 				texte="Le logiciel propose un classement et l'explique en une phrase. Vous confirmez ou vous corrigez. La viande et le poisson passent toujours devant vous, quel que soit le niveau de certitude, parce que c'est là que se joue le troisième seuil."
 			>
-				<Confirmation />
+				<Cadre contentClassName="p-cladd-2xs">
+					<Confirmation />
+				</Cadre>
 			</Etape>
 
 			<Etape
 				inverse
-				numero="4"
+				numero="04"
 				titre="Votre bilan est prêt"
 				texte="Les trois taux, la répartition par famille d'achat, les fournisseurs chez qui il reste des attestations à demander. En PDF, daté, avec une signature électronique et l'empreinte du document."
 			>
-				<Bilan />
+				<Cadre contentClassName="p-cladd-2xs">
+					<Bilan />
+				</Cadre>
 			</Etape>
 		</SectionMarketing>
 	);
 }
 
 /**
- * Une étape, en Z.
+ * Une étape : cinq colonnes de texte, sept de démonstration, en Z.
  *
- * LES ÉTAPES ALTERNENT LEUR SENS DE LECTURE, une sur deux. La version
- * précédente les empilait toutes dans le même sens, texte à gauche et écran à
- * droite, ce qui produisait deux colonnes parallèles sur toute la hauteur de la
- * section, un couloir vide au milieu, et aucune raison pour l'œil de descendre.
- * En alternant, le regard traverse la page à chaque palier : c'est ce
- * balancement qui fait avancer, et il ne coûte qu'un `order` au-delà de `lg`.
+ * LE NUMÉRO EST UNE MENTION, PAS UNE PASTILLE. C'était un disque bleu de
+ * quarante pixels — le vocabulaire d'un guide de démarrage. Un chiffre en serif,
+ * gris, aligné sur le filet, se lit comme la numérotation d'un article : c'est
+ * le même registre que le reste de la page.
  *
  * Le passage à deux colonnes se fait à `lg`, pas à `md` : ces démonstrations
  * sont des écrans denses, et les serrer dans une demi-largeur de tablette les
@@ -182,67 +240,37 @@ function Etape({
 	numero,
 	titre,
 	texte,
+	apres,
 	inverse = false,
 	children
 }: {
 	numero: string;
 	titre: string;
 	texte: string;
+	/** Ce qui suit le paragraphe, dans la colonne de texte. */
+	apres?: ReactNode;
 	/** L'écran passe à gauche et le texte à droite, au-delà de `lg`. */
 	inverse?: boolean;
 	children: ReactNode;
 }) {
-	const { cible, visible } = useVisible<HTMLDivElement>();
 	return (
-		<div
-			ref={cible}
-			className={cn(
-				'grid items-center gap-cladd-2xs lg:grid-cols-2 lg:gap-cladd-2xl',
-				visible ? 'animate-apparition' : 'opacity-0'
-			)}
-		>
-			<div className={cn('flex flex-col gap-cladd-3xs', inverse && 'lg:order-2')}>
-				<span className="cladd-color-brand flex size-cladd-sm items-center justify-center rounded-full bg-cladd-primary text-cladd-sm font-extrabold text-cladd-on-primary tabular-nums">
-					{numero}
-				</span>
-				<h3 className="text-letikette-titre leading-tight font-extrabold tracking-tight">{titre}</h3>
-				<p className="max-w-prose text-cladd-md leading-relaxed font-normal text-cladd-fg-soft">
-					{texte}
-				</p>
-			</div>
-			<div className={cn('min-w-0', inverse && 'lg:order-1')}>{children}</div>
-		</div>
-	);
-}
-
-/** Ce que le dépôt accepte, sans faire semblant de l'accepter. */
-function Formats() {
-	const entrees = [
-		{ Icone: FileTextIcon, titre: 'PDF de fournisseur', detail: 'Y compris scanné de travers.' },
-		{ Icone: CameraIcon, titre: 'Photo prise au téléphone', detail: 'Une facture posée sur le plan.' },
-		{ Icone: TableIcon, titre: 'Export comptable', detail: 'CSV ou Excel, des milliers de lignes.' }
-	];
-	return (
-		<Surface
-			outline
-			className="rounded-cladd-2xl shadow-carte"
-			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-		>
-			{entrees.map(({ Icone, titre, detail }) => (
-				<div
-					key={titre}
-					className="flex items-center gap-cladd-3xs rounded-cladd-xs p-cladd-3xs transition-colors hover:bg-cladd-surface-cut"
-				>
-					<span className="flex size-cladd-sm shrink-0 items-center justify-center rounded-full bg-cladd-primary/12 text-cladd-primary">
-						<Icone size={18} />
+		<div className="grid items-start gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
+			<div className={cn('flex flex-col gap-cladd-2xs lg:col-span-5', inverse && 'lg:order-2')}>
+				<div className="flex flex-col gap-cladd-3xs">
+					<span className="border-b border-trait pb-cladd-3xs font-serif text-intertitre font-medium text-plume-claire tabular-nums">
+						{numero}
 					</span>
-					<span className="flex min-w-0 flex-col">
-						<span className="truncate text-cladd-sm font-semibold">{titre}</span>
-						<span className="truncate text-cladd-2xs text-cladd-fg-softer">{detail}</span>
-					</span>
+					<h3 className="font-serif text-titre-section-etroite leading-tight font-medium tracking-tight">
+						{titre}
+					</h3>
+					<p className="max-w-prose text-cladd-md leading-relaxed font-normal text-plume-douce">
+						{texte}
+					</p>
 				</div>
-			))}
-		</Surface>
+				{apres}
+			</div>
+			<div className={cn('min-w-0 lg:col-span-7', inverse && 'lg:order-1')}>{children}</div>
+		</div>
 	);
 }
 
@@ -290,19 +318,17 @@ function Confirmation() {
 
 	if (restants.length === 0) {
 		return (
-			<Surface outline className="rounded-cladd-2xl shadow-carte" contentClassName="p-cladd-2xs">
-				<EmptyState
-					illustration="🍽️"
-					titre="La file est vide."
-					explication="Chez vous, un libellé confirmé l'est pour de bon. Il ne reviendra pas l'an prochain, et le consensus entre cantines en retire encore."
-					action={
-						<Button variant="solid" onClick={() => setFaits(0)}>
-							<RotateCcwIcon />
-							Rejouer
-						</Button>
-					}
-				/>
-			</Surface>
+			<EmptyState
+				illustration="🍽️"
+				titre="La file est vide."
+				explication="Chez vous, un libellé confirmé l'est pour de bon. Il ne reviendra pas l'an prochain, et le consensus entre cantines en retire encore."
+				action={
+					<Button variant="solid" className="rounded-none" onClick={() => setFaits(0)}>
+						<RotateCcwIcon />
+						Rejouer
+					</Button>
+				}
+			/>
 		);
 	}
 
@@ -320,7 +346,7 @@ function Confirmation() {
 				onConfirmer={() => setFaits((n) => n + 1)}
 				onCorriger={() => setFaits((n) => n + 1)}
 			/>
-			<span className="text-cladd-2xs text-cladd-fg-softer">
+			<span className="text-cladd-2xs text-plume-claire">
 				{restants.length} produit{restants.length > 1 ? 's' : ''} dans la file de démonstration.
 			</span>
 		</div>
@@ -329,10 +355,5 @@ function Confirmation() {
 
 /** La répartition par famille, telle qu'elle apparaît dans le bilan. */
 function Bilan() {
-	const { cible, visible } = useVisible<HTMLDivElement>();
-	return (
-		<div ref={cible} className={visible ? 'animate-apparition' : 'opacity-0'}>
-			<Repartition lignes={FAMILLES_DEMO} />
-		</div>
-	);
+	return <Repartition lignes={FAMILLES_DEMO} />;
 }

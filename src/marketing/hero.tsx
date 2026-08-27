@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { Button, Surface } from '@cladd-ui/react';
+import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
 import { LogoLetikette, MotLetikette, TauxEGalim } from '../ui';
 import { useVisible, useCompteur } from './mouvement';
+import { Cadre } from './section';
 
 /**
  * L'entrée.
@@ -11,12 +12,24 @@ import { useVisible, useCompteur } from './mouvement';
  * qu'il a une obligation qu'il connaît mal, que son chiffre existe déjà dans
  * ses factures, et qu'il peut le voir aujourd'hui.
  *
- * TOUT EST CENTRÉ, ET C'EST UN CHOIX DE CONVERSION. La première version alignait
- * l'accroche à gauche, ce qui est le bon réglage pour un écran de travail où
- * l'œil balaie des listes. Une page d'accueil n'a qu'une chose à faire lire, et
- * l'axe central est le seul endroit où l'œil se pose sans qu'on le guide. La
- * promesse, la précision et le bouton sont donc sur le même axe, et rien d'autre
- * ne le partage.
+ * ELLE EST DÉSAXÉE, ET C'EST LE CŒUR DE LA REFONTE. La version précédente
+ * centrait tout — sur-titre, accroche, paragraphe, bouton — sur un axe unique.
+ * C'est le réglage par défaut de toutes les pages de logiciel, et c'est
+ * précisément ce qui les rend interchangeables : un axe central ne raconte rien,
+ * il se contente d'être équilibré.
+ *
+ * Ici le texte tient sept colonnes sur douze, aligné à gauche comme un article,
+ * et la photographie occupe les cinq autres EN DÉBORDANT jusqu'au bord de la
+ * fenêtre. Le déséquilibre est le message : d'un côté la règle écrite, de
+ * l'autre la matière — des produits frais, pas une illustration de tableau de
+ * bord.
+ *
+ * LA PHOTO EST HÉBERGÉE PAR NOUS. Elle vient de Pexels, sous licence libre, et
+ * elle est servie depuis notre propre domaine plutôt que depuis le leur. Un
+ * appel vers un tiers depuis la page publique ferait de ce tiers un destinataire
+ * de l'adresse IP de chaque visiteur — c'est-à-dire une ligne à ajouter au
+ * tableau des sous-traitants de la politique de confidentialité, pour une
+ * photographie. Voir `public/photos/CREDITS.md`.
  *
  * Ce qu'elle ne fait pas : promettre. Le mot proscrit dans tout le produit est
  * pris au sérieux jusque dans les tournures : on ne promet pas non plus un
@@ -55,66 +68,91 @@ export function Hero() {
 	const { cible, visible } = useVisible<HTMLDivElement>('-8%');
 
 	return (
-		<section className="w-full bg-cladd-bg">
-			<div className="mx-auto flex w-full max-w-7xl flex-col gap-cladd-md px-cladd-2xs pt-cladd-2xs pb-cladd-md md:pb-cladd-2xl">
-				<header className="flex items-center gap-cladd-3xs">
-					<LogoLetikette className="size-11 shrink-0" />
-					<MotLetikette />
-					<span className="ml-auto flex items-center gap-cladd-3xs">
-						<Button as={Link} to="/connexion" variant="solid">
-							Se connecter
-						</Button>
-					</span>
-				</header>
+		<header className="w-full bg-papier text-plume">
+			<div className="mx-auto flex w-full max-w-7xl items-center gap-cladd-3xs border-b border-trait px-cladd-2xs py-cladd-3xs">
+				<LogoLetikette className="size-11 shrink-0" />
+				<MotLetikette />
+				<span className="ml-auto flex items-center gap-cladd-3xs">
+					<Button as={Link} to="/connexion" variant="transparent" className="rounded-none">
+						Se connecter
+					</Button>
+				</span>
+			</div>
 
-				<div className="flex flex-col items-center gap-cladd-2xs text-center">
-					<span className="text-cladd-2xs font-bold tracking-wide text-cladd-fg-softer uppercase">
+			{/*
+			  SEPT COLONNES CONTRE CINQ, et la photographie va jusqu'au bord.
+			  Le déséquilibre se règle ici et nulle part ailleurs : au-dessous de
+			  `lg`, tout retombe en une colonne et la photo passe en bandeau, parce
+			  qu'un déséquilibre sur 375 px n'est plus qu'une colonne étroite.
+			*/}
+			<div className="grid border-b border-trait lg:grid-cols-12">
+				<div className="flex flex-col justify-center gap-cladd-2xs px-cladd-2xs py-cladd-2xl lg:col-span-7 lg:pr-cladd-2xl lg:pl-cladd-xl">
+					<span className="text-cladd-2xs font-semibold tracking-widest text-plume-claire uppercase">
 						Restauration collective · déclaration avant le 31 mars
 					</span>
 
-					<h1 className="max-w-4xl text-letikette-chiffre leading-tight font-extrabold tracking-tight md:text-letikette-taux">
+					<h1 className="max-w-3xl font-serif text-affiche-etroite leading-none font-medium tracking-tight md:text-affiche">
 						Vos trois taux EGalim sont déjà dans vos factures.
 					</h1>
 
-					<p className="max-w-2xl text-cladd-md leading-relaxed font-normal text-cladd-fg-soft">
+					<p className="max-w-xl text-chapeau leading-relaxed font-normal text-plume-douce">
 						Ils s&rsquo;en sortent ligne par ligne, sur douze mois, en valeur d&rsquo;achat hors
 						taxes. Letikette fait ce calcul et vous montre, pour chaque produit, pourquoi il compte
 						ou pourquoi il ne compte pas.
 					</p>
 
-					<div className="flex flex-col items-center gap-cladd-3xs sm:flex-row">
-						{/* Le bouton est délibérément plus massif que ceux de l'application.
-						    Dans un écran de travail, un contrôle qui domine est une nuisance ;
-						    sur une page d'accueil, c'est la seule chose qui doit être évidente. */}
+					<div className="flex flex-col items-start gap-cladd-3xs pt-cladd-3xs sm:flex-row sm:items-center">
 						<Button
 							as={Link}
 							to="/inscription"
 							color="brand"
 							variant="solid-fill"
 							size="lg"
-							className="px-cladd-2xs shadow-carte"
+							className="rounded-none px-cladd-2xs"
 						>
 							Calculer mes trois taux
 							<ArrowRightIcon />
 						</Button>
 						<a
 							href="#comment"
-							className="px-cladd-3xs py-cladd-3xs text-cladd-sm font-medium text-cladd-fg-soft underline underline-offset-4 hover:text-cladd-fg"
+							className="px-cladd-3xs py-cladd-3xs text-cladd-sm font-medium text-plume-douce underline underline-offset-4 hover:text-plume"
 						>
 							Voir ce que ça donne
 						</a>
 					</div>
 				</div>
 
+				{/*
+				  La photographie n'est pas décorative : elle ancre un logiciel de
+				  conformité dans la matière qu'il mesure. `object-cover` sur toute la
+				  hauteur de la colonne, sans cadre — le cadre servirait à dire « ceci
+				  est une capture », et ce n'en est pas une.
+
+				  `aspect-*` en dessous de `lg` : sans hauteur imposée, une image en
+				  `h-full` dans une grille à une colonne s'effondre à zéro.
+				*/}
+				<div className="relative aspect-video border-t border-trait lg:col-span-5 lg:aspect-auto lg:border-t-0 lg:border-l">
+					<img
+						src="/photos/produits-frais.jpg"
+						alt="Cagette de fruits et légumes frais posés sur un plan de travail en marbre"
+						loading="eager"
+						className="absolute inset-0 size-full object-cover"
+					/>
+				</div>
+			</div>
+
+			{/*
+			  LA DÉMONSTRATION EST SOUS L'ACCROCHE, PAS À CÔTÉ. Elle a besoin de
+			  toute la largeur : trois jauges serrées dans cinq colonnes deviennent
+			  trois barres illisibles, et c'est le seul endroit de la page où le
+			  visiteur voit vraiment l'écran qu'il achète.
+			*/}
+			<div className="mx-auto w-full max-w-7xl px-cladd-2xs py-cladd-2xl">
 				<div ref={cible}>
-					<Surface
-						outline
-						className="rounded-cladd-2xl shadow-carte"
-						contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
-					>
-						<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-							<span className="text-cladd-sm font-bold">Exercice 2026</span>
-							<span className="text-cladd-2xs text-cladd-fg-softer">
+					<Cadre contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs">
+						<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait pb-cladd-3xs">
+							<span className="font-serif text-intertitre font-medium">Exercice 2026</span>
+							<span className="text-cladd-2xs tracking-wide text-plume-claire uppercase">
 								1 842 lignes lues · 7 fournisseurs · 180 000 € d&rsquo;achats
 							</span>
 						</div>
@@ -123,10 +161,10 @@ export function Hero() {
 								<Jauge key={t.titre} {...t} actif={visible} />
 							))}
 						</div>
-					</Surface>
+					</Cadre>
 				</div>
 			</div>
-		</section>
+		</header>
 	);
 }
 

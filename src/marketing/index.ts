@@ -7,9 +7,11 @@
  * n'ose plus toucher au titre de peur de casser le pied de page.
  *
  * Les démonstrations utilisent les composants du produit, jamais des
- * reproductions. Voir l'en-tête de `etapes.tsx` pour ce que ça implique.
+ * reproductions. Voir l'en-tête de `etapes.tsx` pour ce que ça implique, et
+ * celui de `section.tsx` pour le système visuel — papier, encre, filet — qui
+ * n'est PAS celui de l'application.
  */
-export { SectionMarketing, type FondSection } from './section';
+export { SectionMarketing, TitreSection, Cadre, type FondSection } from './section';
 export { Hero } from './hero';
 export { LaLoi } from './la-loi';
 export { Etapes } from './etapes';

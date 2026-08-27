@@ -9,6 +9,12 @@
  * c'est-à-dire le seul fichier qui contienne un glyphe de « LETIKETTE » : 67 ko
  * au lieu des trois sous-ensembles du paquet complet. */
 @import '@fontsource/caveat-brush/latin-400.css';
+/* La serif des titres de la page publique. L'axe de graisse seul — pas l'axe
+ * optique, pas l'italique : trois fichiers de moins pour un rendu identique à
+ * nos corps. Les sous-ensembles portent leur `unicode-range`, donc un lecteur
+ * français ne télécharge que le latin. Elle n'apparaît nulle part dans
+ * l'application ; voir `--font-serif` dans `tokens.css`. */
+@import '@fontsource-variable/newsreader/wght.css';
 @import 'tailwindcss';
 @import '@cladd-ui/react/css';
 @import './tokens.css';
@@ -39,4 +45,40 @@ body {
 	background: var(--cladd-bg);
 	color: var(--cladd-fg);
 	-webkit-font-smoothing: antialiased;
+}
+
+/* Le fond de la section d'autorité de la page publique : l'encre, et son grain.
+ *
+ * Un aplat bleu nuit de mille pixels de haut est un trou dans une page de
+ * papier. Ces hachures à 135°, posées à trois pour cent d'opacité, lui donnent
+ * la texture d'un papier de sécurité — celui d'un titre, d'un acte, d'un
+ * diplôme — sans qu'on les remarque consciemment.
+ *
+ * POURQUOI UNE CLASSE ORDINAIRE, ET PAS UN JETON NI UNE `@utility`. Deux
+ * tentatives, deux échecs mesurés au navigateur :
+ *
+ * 1. `--background-image-*` n'est pas un espace de noms de Tailwind v4. Le
+ *    jeton ne génère aucune classe, et l'utilitaire retombe silencieusement sur
+ *    `background-image: none` — aucune erreur, aucun avertissement, une section
+ *    d'encre devenue transparente avec du texte blanc dessus.
+ * 2. `@utility encre-tramee` déclarée dans `tokens.css`, importée ici, n'a rien
+ *    produit non plus : la règle n'apparaissait dans aucune feuille de style de
+ *    la page, redémarrage du serveur compris.
+ *
+ * Et il faut de toute façon poser DEUX propriétés — une couleur de fond et une
+ * image. Les écrire en deux classes ne marcherait pas davantage :
+ * `tailwind-merge`, qui nettoie nos `className`, range `bg-encre-nuit` et la
+ * trame dans la même famille `bg-*` et ne garde que la dernière.
+ *
+ * Le nom ne commence pas par `bg-`, précisément pour qu'aucun fusionneur ne la
+ * prenne pour un fond et ne la supprime. */
+.encre-tramee {
+	background-color: var(--color-encre-nuit);
+	background-image: repeating-linear-gradient(
+		135deg,
+		oklch(1 0 0 / 0.03) 0px,
+		oklch(1 0 0 / 0.03) 1px,
+		transparent 1px,
+		transparent 10px
+	);
 }
