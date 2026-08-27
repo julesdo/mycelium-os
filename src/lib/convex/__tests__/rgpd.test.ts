@@ -183,7 +183,15 @@ describe("la purge d'un établissement", () => {
 		await t.run(async (ctx) => {
 			const referentiel = await ctx.db.query('productLabels').collect();
 			expect(referentiel).toHaveLength(1);
-			expect(referentiel[0].normalizedLabel).toBe('TOMATE GRAPPE BIO');
+			// DÉSTRUCTURATION, ET NI `[0]` NI `.at(0)`. Le typecheck qu'exécute
+			// `convex deploy` n'est pas celui de `bun run check:convex` : il active
+			// `noUncheckedIndexedAccess`, qui refuse `referentiel[0].x`, ET il vise
+			// une bibliothèque antérieure à ES2022, où `Array.prototype.at`
+			// n'existe pas. Les deux se sont découvertes l'une après l'autre, sur
+			// un déploiement de production échoué. La forme ci-dessous passe les
+			// deux.
+			const [premier] = referentiel;
+			expect(premier?.normalizedLabel).toBe('TOMATE GRAPPE BIO');
 		});
 	});
 

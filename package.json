@@ -13,7 +13,7 @@
 		"postinstall": "varlock typegen && varlock typegen --path .env-convex.schema",
 		"build": "vite build",
 		"preview": "vite preview",
-		"check": "tsc --noEmit",
+		"check": "tsc --noEmit && tsc -p src/lib/convex/tsconfig.json --noEmit",
 		"check:convex": "tsc -p src/lib/convex/tsconfig.json --noEmit",
 		"format": "prettier --write .",
 		"lint": "eslint . --cache --concurrency auto && oxlint",
