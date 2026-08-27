@@ -133,8 +133,8 @@ export function Hero() {
 				*/}
 				<div className="relative aspect-video border-t border-trait lg:col-span-5 lg:aspect-auto lg:border-t-0 lg:border-l">
 					<img
-						src="/photos/produits-frais.jpg"
-						alt="Cagette de fruits et légumes frais posés sur un plan de travail en marbre"
+						src="/photos/cuisine-preparation.jpg"
+						alt="Cuisinier émincant des poireaux sur une planche, en cuisine professionnelle"
 						loading="eager"
 						className="absolute inset-0 size-full object-cover"
 					/>
@@ -146,8 +146,16 @@ export function Hero() {
 			  toute la largeur : trois jauges serrées dans cinq colonnes deviennent
 			  trois barres illisibles, et c'est le seul endroit de la page où le
 			  visiteur voit vraiment l'écran qu'il achète.
+
+			  ELLE RESPIRE PLUS EN HAUT QU'EN BAS, et ce n'est pas un caprice. Avec
+			  le même retrait des deux côtés, le bloc se retrouvait pris en étau
+			  entre l'accroche et la section suivante : il se lisait comme un
+			  appendice du héros au lieu de la démonstration qu'il est. Le retrait
+			  supérieur est donc porté à `respiration` (112 px), soit une fois et
+			  demie l'écart normal, ce qui le détache franchement de ce qui précède
+			  sans creuser un trou au milieu de la page.
 			*/}
-			<div className="mx-auto w-full max-w-7xl px-cladd-2xs py-cladd-2xl">
+			<div className="mx-auto w-full max-w-7xl px-cladd-2xs pt-respiration pb-cladd-2xl">
 				<div ref={cible}>
 					<Cadre contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs">
 						<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait pb-cladd-3xs">

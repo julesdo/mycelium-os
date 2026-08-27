@@ -40,7 +40,17 @@ export function Appel() {
 			<span className="text-cladd-2xs font-semibold tracking-widest text-plume-inversee-douce uppercase">
 				Campagne « ma cantine »
 			</span>
-			<h2 className="max-w-4xl font-serif text-titre-section-etroite leading-tight font-medium tracking-tight md:text-affiche">
+			{/*
+			  PLUS GROS ET PLUS GRAS QUE SUR LE PAPIER, et c'est de l'optique, pas du
+			  goût. Un texte clair sur fond sombre paraît plus fin qu'il ne l'est :
+			  la lumière déborde sur les contours et ronge les déliés. Une serif,
+			  dont l'intérêt est justement le contraste entre pleins et déliés, en
+			  souffre plus qu'une grotesque — sur un écran médiocre, les
+			  empattements disparaissent et le titre se met à baver.
+			  D'où +14 px au mobile et une graisse à 600 : c'est le réglage qui rend
+			  à ce titre, en clair sur l'encre, le poids qu'il a en noir sur blanc.
+			*/}
+			<h2 className="max-w-4xl font-serif text-titre-section leading-tight font-semibold tracking-tight md:text-affiche">
 				La déclaration ferme le 31 mars. Le calcul, lui, prend douze mois de factures.
 			</h2>
 			<p className="max-w-2xl text-chapeau leading-relaxed font-normal text-plume-inversee-douce">

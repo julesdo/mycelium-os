@@ -238,6 +238,16 @@
 	 * sur une photographie, pour qu'elle ne coupe pas comme une lame. */
 	--radius-net: 2px;
 
+	/* LE GRAND SOUFFLE. Une fois et demie le plus grand écart du kit (72 px), pour
+	 * les deux ou trois endroits d'une page commerciale où un bloc doit se
+	 * DÉTACHER de ce qui le précède plutôt que de simplement s'en espacer.
+	 *
+	 * Il n'existe pas sur l'échelle de Cladd, et c'est normal : cette échelle est
+	 * calibrée pour la densité d'un écran de travail, où 112 px de vide serait un
+	 * trou. Sur une page qu'on parcourt debout, c'est la respiration qui dit « ce
+	 * qui suit est autre chose ». */
+	--spacing-respiration: 112px;
+
 	/* L'apparition d'une décision dans le fil de traitement.
 	 *
 	 * Ce n'est pas un ornement : c'est le mouvement qui fait la différence entre

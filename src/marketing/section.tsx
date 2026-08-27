@@ -116,7 +116,16 @@ export function TitreSection({
 					{sur}
 				</span>
 			) : null}
-			<h2 className="max-w-4xl font-serif text-titre-section-etroite leading-tight font-medium tracking-tight md:text-titre-section">
+			{/* Sur l'encre, la serif monte d'une graisse. Un texte clair sur fond
+			    sombre paraît plus fin qu'il ne l'est — la lumière déborde sur les
+			    contours et ronge les déliés, ce dont une serif souffre plus qu'une
+			    grotesque. 600 sur l'encre rend le poids que 500 donne sur le papier. */}
+			<h2
+				className={cn(
+					'max-w-4xl font-serif text-titre-section-etroite leading-tight tracking-tight md:text-titre-section',
+					inverse ? 'font-semibold' : 'font-medium'
+				)}
+			>
 				{titre}
 			</h2>
 			{chapeau ? (

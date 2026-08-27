@@ -20,6 +20,14 @@ import { SectionMarketing, TitreSection } from './section';
  * d'autre. Les peindre en vert dirait « c'est atteint », ce qui est l'inverse du
  * propos.
  *
+ * IL N'Y A PLUS DE PHOTOGRAPHIE ICI, ET C'EST UN RETRAIT VOLONTAIRE. Un panier
+ * de légumes occupait cinq colonnes à droite du titre. Il ne démontrait rien —
+ * la règle de la page est qu'un cadre n'entoure que ce qui est MONTRÉ, une
+ * capture ou une preuve — et il désalignait la grille : son bord droit ne
+ * tombait sur aucune des colonnes de seuils en dessous. Une section qui doit
+ * asséner trois nombres n'a rien à gagner à les faire précéder d'une image
+ * d'ambiance. Le titre prend toute la largeur, les trois seuils suivent.
+ *
  * LA DERNIÈRE LIGNE EST LA PLUS UTILE DE LA PAGE. « Local », « circuit court »,
  * « de saison » et « fait maison » ne comptent pas au barème. C'est la surprise
  * de presque tous les gérants, ça se vérifie en trente secondes, et ça établit
@@ -49,28 +57,11 @@ const SEUILS = [
 export function LaLoi() {
 	return (
 		<SectionMarketing fond="papier">
-			<div className="grid gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
-				<div className="lg:col-span-7">
-					<TitreSection
-						sur="Loi EGalim · code rural, art. L230-5-1"
-						titre="Ce que la loi demande"
-						chapeau="En valeur d’achat hors taxes, sur l’année civile, et à déclarer chaque année sur « ma cantine ». Le public y est soumis depuis 2022, le privé depuis 2024."
-					/>
-				</div>
-
-				{/*
-				  La photographie tient les cinq colonnes restantes. Elle ne démontre
-				  rien — c'est le sujet de la loi, posé à côté de son texte.
-				*/}
-				<div className="relative aspect-video overflow-hidden rounded-net border border-trait lg:col-span-5">
-					<img
-						src="/photos/cagette.jpg"
-						alt="Panier de légumes de saison posé sur une table en bois"
-						loading="lazy"
-						className="absolute inset-0 size-full object-cover"
-					/>
-				</div>
-			</div>
+			<TitreSection
+				sur="Loi EGalim · code rural, art. L230-5-1"
+				titre="Ce que la loi demande"
+				chapeau="En valeur d’achat hors taxes, sur l’année civile, et à déclarer chaque année sur « ma cantine ». Le public y est soumis depuis 2022, le privé depuis 2024."
+			/>
 
 			{/*
 			  Trois colonnes, séparées par des filets et non par du vide. `divide-x`
