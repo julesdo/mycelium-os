@@ -30,8 +30,10 @@ import {
 	type LigneFamille
 } from '../ui';
 import { FeuilleCorrection, type ProduitACorriger } from '../screens/confirmer/correction';
-import { Offre, OuvertureEnCours } from '../screens/abonnement/offre';
+import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
 import { Attestations, type Attestation } from '../screens/diagnostic/attestations';
+import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/equipe/equipe';
+import { Donnees } from '../screens/donnees/donnees';
 import { Shell } from '../app/shell';
 import {
 	MENTION_RESPONSABILITE,
@@ -121,7 +123,8 @@ const PRODUITS: ProduitACorriger[] = [
 			isFood: true,
 			family: 'FRUITS_LEGUMES',
 			qualifyingLabels: ['AB'],
-			justification: 'La mention BIO figure au libellé ; le certificat fournisseur reste à obtenir.',
+			justification:
+				'La mention BIO figure au libellé ; le certificat fournisseur reste à obtenir.',
 			confidence: 0.74
 		}
 	},
@@ -296,6 +299,9 @@ const ATTESTATIONS: Attestation[] = [
 	}
 ];
 
+/** Figée au chargement du module : un `Date.now()` dans un rendu n'est pas idempotent. */
+const FIN_ESSAI_DEMO = Date.now() + 18 * 24 * 60 * 60 * 1000;
+
 const ECRANS = [
 	'taux',
 	'confirmer',
@@ -305,6 +311,8 @@ const ECRANS = [
 	'vide',
 	'lexique',
 	'abonnement',
+	'equipe',
+	'donnees',
 	'coquille'
 ] as const;
 type Ecran = (typeof ECRANS)[number];
@@ -335,6 +343,8 @@ function Showroom() {
 				{ecran === 'vide' ? <DemoVide /> : null}
 				{ecran === 'lexique' ? <DemoLexique /> : null}
 				{ecran === 'abonnement' ? <DemoAbonnement /> : null}
+				{ecran === 'equipe' ? <DemoEquipe /> : null}
+				{ecran === 'donnees' ? <DemoDonnees /> : null}
 				{ecran === 'coquille' ? (
 					<Shell>
 						<DemoTaux />
@@ -400,7 +410,12 @@ function DemoTaux() {
 					</Surface>
 
 					<div className="grid gap-cladd-2xs lg:grid-cols-3">
-						<TauxEGalim titre="Durable et de qualité" mesure={0.39} seuil={0.5} ecartEuros={19800} />
+						<TauxEGalim
+							titre="Durable et de qualité"
+							mesure={0.39}
+							seuil={0.5}
+							ecartEuros={19800}
+						/>
 						<TauxEGalim titre="Biologique" mesure={0.21} seuil={0.2} ecartEuros={0} />
 						<TauxEGalim titre="Viande et poisson" mesure={0.56} seuil={0.6} ecartEuros={2400} />
 					</div>
@@ -541,7 +556,12 @@ function DemoDiagnostic() {
 			<PageBody>
 				<div className="flex flex-col gap-cladd-2xs">
 					<div className="grid gap-cladd-2xs lg:grid-cols-3">
-						<TauxEGalim titre="Durable et de qualité" mesure={0.39} seuil={0.5} ecartEuros={19800} />
+						<TauxEGalim
+							titre="Durable et de qualité"
+							mesure={0.39}
+							seuil={0.5}
+							ecartEuros={19800}
+						/>
 						<TauxEGalim titre="Biologique" mesure={0.21} seuil={0.2} ecartEuros={0} />
 						<TauxEGalim titre="Viande et poisson" mesure={0.47} seuil={0.6} ecartEuros={7900} />
 					</div>
@@ -697,8 +717,130 @@ function DemoAbonnement() {
 						</div>
 					))}
 
+					<EssaiEnCours finLe={FIN_ESSAI_DEMO} />
 					<OuvertureEnCours />
 				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
+/**
+ * L'écran d'équipe, aux deux rôles.
+ *
+ * Le jeu de démonstration expose ce qui casse : un compte sans nom, une adresse
+ * jamais vérifiée, une invitation qui expire demain, et un établissement dont
+ * les places sont presque toutes prises. Un écran où trois collègues bien
+ * nommés se rangent en colonne ne prouve rien.
+ */
+const MEMBRES: MembreEquipe[] = [
+	{
+		id: 'm1',
+		nom: 'Claire Béranger',
+		email: 'c.beranger@clinique-des-ormes.fr',
+		role: 'ORG_ADMIN',
+		arriveLe: Date.parse('2026-02-11'),
+		adresseVerifiee: true,
+		estMoi: true
+	},
+	{
+		id: 'm2',
+		nom: 'Yannis K.',
+		email: 'yannis.k@clinique-des-ormes.fr',
+		role: 'ORG_MEMBER',
+		arriveLe: Date.parse('2026-03-02'),
+		adresseVerifiee: true,
+		estMoi: false
+	},
+	{
+		id: 'm3',
+		nom: null,
+		email: 'direction@clinique-des-ormes.fr',
+		role: 'ORG_MEMBER',
+		arriveLe: Date.parse('2026-08-19'),
+		adresseVerifiee: false,
+		estMoi: false
+	}
+];
+
+const INVITATIONS: InvitationEnAttente[] = [
+	{
+		id: 'i1',
+		email: 'nouveau.second@clinique-des-ormes.fr',
+		role: 'ORG_MEMBER',
+		lien: 'https://www.letikette.com/rejoindre/4f1c-demo',
+		expireLe: Date.now() + 26 * 60 * 60 * 1000
+	}
+];
+
+function DemoEquipe() {
+	const [admin, setAdmin] = useState(true);
+	const rien = async () => {};
+
+	return (
+		<Page>
+			<PageHeader
+				titre="Équipe"
+				sousTitre="Qui accède aux factures et aux taux de cet établissement."
+				actions={
+					<Segmented activeColor="neutral" activeVariant="solid">
+						<SegmentedButton active={admin} onClick={() => setAdmin(true)}>
+							Vu par un admin
+						</SegmentedButton>
+						<SegmentedButton active={!admin} onClick={() => setAdmin(false)}>
+							Vu par un membre
+						</SegmentedButton>
+					</Segmented>
+				}
+			/>
+			<PageBody>
+				<Equipe
+					membres={MEMBRES}
+					invitations={admin ? INVITATIONS : []}
+					estAdmin={admin}
+					siegesUtilises={MEMBRES.length}
+					siegesAutorises={5}
+					onInviter={rien}
+					onChangerRole={rien}
+					onRetirer={rien}
+					onAnnulerInvitation={rien}
+					onVerifierAdresse={rien}
+				/>
+			</PageBody>
+		</Page>
+	);
+}
+
+function DemoDonnees() {
+	return (
+		<Page>
+			<PageHeader
+				titre="Vos données"
+				sousTitre="Ce que nous détenons, ce que vous pouvez en emporter, ce que vous pouvez en effacer."
+			/>
+			<PageBody>
+				<Donnees
+					apercu={{
+						nomEtablissement: 'Clinique des Ormes',
+						estAdmin: true,
+						creeLe: Date.parse('2026-02-11'),
+						depots: 3,
+						documents: 47,
+						lignes: 1842,
+						bilans: 2,
+						fournisseurs: 7,
+						membres: 3
+					}}
+					emailDuCompte="c.beranger@clinique-des-ormes.fr"
+					onExporter={async () => ({
+						url: '#',
+						octets: 2_410_000,
+						lignes: 1842,
+						nomFichier: 'letikette-export-2026-08-27.json'
+					})}
+					onSupprimerEtablissement={async () => {}}
+					onSupprimerCompte={async () => {}}
+				/>
 			</PageBody>
 		</Page>
 	);

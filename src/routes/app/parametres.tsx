@@ -11,7 +11,15 @@ import {
 	ToggleGroup,
 	ToggleButton
 } from '@cladd-ui/react';
-import { CheckIcon, CreditCardIcon, LogOutIcon, MoonIcon, SunIcon } from 'lucide-react';
+import {
+	CheckIcon,
+	CreditCardIcon,
+	DatabaseIcon,
+	LogOutIcon,
+	MoonIcon,
+	SunIcon,
+	UsersIcon
+} from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
@@ -90,8 +98,8 @@ function Parametres() {
 
 					<Reglage titre="Apparence">
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							L&rsquo;affichage clair est le réglage par défaut : il se lit mieux en plein jour,
-							sur une tablette à fort reflet.
+							L&rsquo;affichage clair est le réglage par défaut : il se lit mieux en plein jour, sur
+							une tablette à fort reflet.
 						</p>
 						{/* Deux états exclusifs : c'est un `Segmented`, pas un bouton qui
 						    annonce la bascule. « Passer en sombre » oblige à déduire l'état
@@ -117,12 +125,40 @@ function Parametres() {
 					*/}
 					<Reglage titre="Votre abonnement">
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Votre offre et son tarif dépendent du nombre de couverts que vous servez chaque
-							jour. Le produit est le même à tous les paliers.
+							Votre offre et son tarif dépendent du nombre de couverts que vous servez chaque jour.
+							Le produit est le même à tous les paliers.
 						</p>
 						<Button as={Link} to="/app/abonnement" className="self-start">
 							<CreditCardIcon />
 							Voir mon abonnement
+						</Button>
+					</Reglage>
+
+					<Reglage titre="Votre équipe">
+						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+							Celui qui dépose les factures et celui qui signe la déclaration sont rarement la même
+							personne. Invitez vos collègues : ils verront les mêmes taux, au même moment.
+						</p>
+						<Button as={Link} to="/app/equipe" className="self-start">
+							<UsersIcon />
+							Gérer l&rsquo;équipe
+						</Button>
+					</Reglage>
+
+					{/*
+					  « Vos données » entre par ici, comme l'abonnement. C'est un écran
+					  qu'on ouvre deux fois par an — pour un export, ou pour partir — et
+					  lui donner un onglet coûterait une rangée de cartes sur la tablette,
+					  sur tous les écrans de travail.
+					*/}
+					<Reglage titre="Vos données">
+						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+							Ce que nous détenons pour vous, en clair. Vous pouvez l&rsquo;emporter dans un fichier
+							lisible par machine, ou tout effacer définitivement.
+						</p>
+						<Button as={Link} to="/app/donnees" className="self-start">
+							<DatabaseIcon />
+							Voir mes données
 						</Button>
 					</Reglage>
 

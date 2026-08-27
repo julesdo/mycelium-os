@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react';
 import { Surface, Chip } from '@cladd-ui/react';
 import { api } from '../../lib/convex/_generated/api';
 import { Page, PageHeader, PageBody, SectionEcran, euros } from '../../ui';
-import { Offre, OuvertureEnCours } from '../../screens/abonnement/offre';
+import { Offre, OuvertureEnCours, EssaiEnCours } from '../../screens/abonnement/offre';
 
 export const Route = createFileRoute('/app/abonnement')({ component: Abonnement });
 
@@ -66,6 +66,8 @@ function Abonnement() {
 			<PageBody>
 				<div className="flex max-w-200 flex-col gap-cladd-2xs">
 					<EtatCourant etat={etat} abonne={abonne} />
+
+					{etat.essaiFiniLe && !abonne ? <EssaiEnCours finLe={etat.essaiFiniLe} /> : null}
 
 					<SectionEcran titre="Votre palier">
 						<div className="flex flex-wrap items-center gap-cladd-3xs">

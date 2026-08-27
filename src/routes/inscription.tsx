@@ -4,12 +4,26 @@ import { Button, Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
 import { CadreAuth, Champ, MessageErreur } from '../ui';
 
-export const Route = createFileRoute('/inscription')({ component: Inscription });
+/**
+ * `invitation` porte le jeton d'une invitation en cours.
+ *
+ * SANS LUI, UN INVITÉ PERD SON INVITATION EN CRÉANT SON COMPTE, et le pire suit :
+ * l'écran suivant lui demande de créer un établissement, alors qu'il vient
+ * précisément d'être invité dans celui de quelqu'un d'autre. On repasse donc par
+ * l'écran d'acceptation, et jamais par `/bienvenue`.
+ */
+export const Route = createFileRoute('/inscription')({
+	validateSearch: (search: Record<string, unknown>): { invitation?: string } => ({
+		invitation: typeof search.invitation === 'string' ? search.invitation : undefined
+	}),
+	component: Inscription
+});
 
 const LONGUEUR_MINIMALE = 12;
 
 function Inscription() {
 	const navigate = useNavigate();
+	const { invitation } = Route.useSearch();
 	const [nom, setNom] = useState('');
 	const [email, setEmail] = useState('');
 	const [motDePasse, setMotDePasse] = useState('');
@@ -33,6 +47,10 @@ function Inscription() {
 			setErreur(
 				"Ce compte n'a pas pu être créé. L'adresse est peut-être déjà utilisée : essayez de vous connecter."
 			);
+			return;
+		}
+		if (invitation) {
+			await navigate({ to: '/rejoindre/$token', params: { token: invitation } });
 			return;
 		}
 		await navigate({ to: '/bienvenue' });

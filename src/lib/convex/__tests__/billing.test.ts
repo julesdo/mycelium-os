@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
 	PLAN_FEATURES,
 	PLAN_SEATS,
 	PALIERS,
+	DUREE_ESSAI_JOURS,
 	planHasFeature,
-	palierDeTaille
+	palierDeTaille,
+	finDeLEssai,
+	resolveEffectivePlan
 } from '../billing';
 
 describe('les étages', () => {
@@ -50,12 +53,7 @@ describe('les étages', () => {
 			'diagnostic',
 			'suiviMensuel'
 		]);
-		expect(Object.keys(PLAN_FEATURES).sort()).toEqual([
-			'conformite',
-			'dev',
-			'diagnostic',
-			'none'
-		]);
+		expect(Object.keys(PLAN_FEATURES).sort()).toEqual(['conformite', 'dev', 'diagnostic', 'none']);
 	});
 });
 
@@ -88,5 +86,49 @@ describe('le palier de taille', () => {
 
 	it('ne connaît que trois paliers', () => {
 		expect([...PALIERS]).toEqual(['S', 'M', 'L']);
+	});
+});
+
+describe("l'essai", () => {
+	// CES TESTS SIMULENT LE JOUR OÙ PADDLE OUVRE, et c'est tout leur intérêt.
+	// Sans clé, `resolveEffectivePlan` renvoie `dev` et tout est ouvert à tout le
+	// monde : rien de ce qui suit ne serait exercé. La clé posée, la même fonction
+	// bascule TOUS les établissements existants sur `none` — plus d'invitation,
+	// plus de dépôt — et l'essai est la seule chose qui rende cette bascule
+	// survivable. On la pose donc ici, plutôt que d'attendre de le découvrir en
+	// production.
+	beforeEach(() => vi.stubEnv('PADDLE_API_KEY', 'pdl_test'));
+	afterEach(() => vi.unstubAllEnvs());
+
+	const org = (freeTrialEndsAt?: number) =>
+		({
+			_id: 'org_1',
+			_creationTime: 0,
+			name: 'Clinique des Ormes',
+			createdAt: 0,
+			freeTrialEndsAt
+		}) as unknown as Parameters<typeof resolveEffectivePlan>[0];
+
+	it('dure trente jours', () => {
+		const depuis = Date.parse('2026-03-01T00:00:00Z');
+		expect(finDeLEssai(depuis)).toBe(depuis + 30 * 24 * 60 * 60 * 1000);
+		expect(DUREE_ESSAI_JOURS).toBe(30);
+	});
+
+	it("ouvre l'abonnement complet tant qu'il court", () => {
+		// L'essai donne le PLUS HAUT étage, pas le plus bas : un essai qui cache la
+		// moitié du produit ne fait pas essayer le produit.
+		const { tier, seatsAllowed } = resolveEffectivePlan(org(Date.now() + 60_000));
+		expect(tier).toBe('conformite');
+		expect(seatsAllowed).toBe(PLAN_SEATS.conformite);
+		expect(planHasFeature(tier, 'declaration')).toBe(true);
+	});
+
+	it('ne rouvre rien une fois expiré', () => {
+		expect(resolveEffectivePlan(org(Date.now() - 60_000)).tier).toBe('none');
+	});
+
+	it("laisse sur 'none' un établissement qui n'a jamais eu d'essai", () => {
+		expect(resolveEffectivePlan(org(undefined)).tier).toBe('none');
 	});
 });

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Surface, Button, Chip } from '@cladd-ui/react';
 import { CheckIcon, MinusIcon } from 'lucide-react';
@@ -109,6 +110,52 @@ export function Offre({
 					);
 				})}
 			</ul>
+		</Surface>
+	);
+}
+
+/**
+ * L'essai en cours, avec ses jours restants.
+ *
+ * IL SE DIT, IL NE SE DEVINE PAS. Un essai silencieux se termine par une
+ * surprise : un matin, le dépôt refuse un fichier et le gérant croit à une
+ * panne. Le compte à rebours est donc à l'écran, avec sa date de fin en clair —
+ * « trente jours » ne se convertit pas en une date de tête.
+ */
+export function EssaiEnCours({ finLe }: { finLe: number }) {
+	// L'heure est LUE UNE FOIS, au montage, et pas à chaque rendu. Un `Date.now()`
+	// dans le corps d'un composant rend celui-ci non idempotent : deux rendus du
+	// même état peuvent donner deux nombres de jours différents, et React refuse
+	// cette hypothèse. `useState` avec une fonction d'initialisation fige la
+	// lecture pour la durée de vie du composant, ce qui est exactement la
+	// sémantique voulue.
+	const [maintenant] = useState(() => Date.now());
+	const jours = Math.max(0, Math.ceil((finLe - maintenant) / (24 * 60 * 60 * 1000)));
+	const date = new Date(finLe).toLocaleDateString('fr-FR', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric'
+	});
+
+	return (
+		<Surface
+			outline
+			className="rounded-cladd-2xl"
+			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+		>
+			<span className="flex flex-wrap items-center gap-cladd-3xs">
+				<Chip color="brand" size="md">
+					Essai en cours
+				</Chip>
+				<span className="text-cladd-sm font-bold">
+					Il vous reste {jours} jour{jours > 1 ? 's' : ''}.
+				</span>
+			</span>
+			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+				Jusqu&rsquo;au {date}, tout le produit vous est ouvert, sans carte bancaire : le dépôt de
+				factures, les trois taux, le bilan, la file de confirmation et le fichier de
+				télédéclaration.
+			</span>
 		</Surface>
 	);
 }

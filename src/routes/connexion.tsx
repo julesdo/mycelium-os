@@ -4,10 +4,25 @@ import { Button, Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
 import { CadreAuth, Champ, MessageErreur } from '../ui';
 
-export const Route = createFileRoute('/connexion')({ component: Connexion });
+/**
+ * `invitation` porte le jeton d'une invitation en cours.
+ *
+ * SANS LUI, UNE INVITATION SE PERD À LA CONNEXION. L'invité clique le lien reçu
+ * par courriel, découvre qu'il a déjà un compte, se connecte — et atterrit sur
+ * son espace habituel, l'invitation oubliée, sans aucun moyen de la retrouver
+ * puisque le jeton n'était que dans l'URL précédente. On le transporte donc, et
+ * on revient sur l'écran d'acceptation une fois la session ouverte.
+ */
+export const Route = createFileRoute('/connexion')({
+	validateSearch: (search: Record<string, unknown>): { invitation?: string } => ({
+		invitation: typeof search.invitation === 'string' ? search.invitation : undefined
+	}),
+	component: Connexion
+});
 
 function Connexion() {
 	const navigate = useNavigate();
+	const { invitation } = Route.useSearch();
 	const [email, setEmail] = useState('');
 	const [motDePasse, setMotDePasse] = useState('');
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -23,6 +38,10 @@ function Connexion() {
 			// Message unique et neutre : distinguer « compte inconnu » de « mot de
 			// passe faux » révélerait à un inconnu si une adresse est cliente.
 			setErreur("L'adresse ou le mot de passe ne correspond pas.");
+			return;
+		}
+		if (invitation) {
+			await navigate({ to: '/rejoindre/$token', params: { token: invitation } });
 			return;
 		}
 		await navigate({ to: '/app' });

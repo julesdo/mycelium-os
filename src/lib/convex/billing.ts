@@ -151,7 +151,42 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
 		};
 	}
 
+	// L'ESSAI. Voir `DUREE_ESSAI_JOURS` pour la règle et ce qu'elle évite.
+	if (org.freeTrialEndsAt && org.freeTrialEndsAt > Date.now()) {
+		return { tier: 'conformite', isDev: false, seatsAllowed: PLAN_SEATS.conformite };
+	}
+
 	return { tier: 'none', isDev: false, seatsAllowed: PLAN_SEATS.none };
+}
+
+/**
+ * L'ESSAI, ET POURQUOI IL EXISTE AVANT MÊME QUE LE PAIEMENT SOIT OUVERT.
+ *
+ * Aujourd'hui, aucune clé Paddle n'est posée : `resolveEffectivePlan` renvoie
+ * `dev` et tout est ouvert à tout le monde. Le jour où la clé arrive, la même
+ * fonction bascule chaque établissement existant sur `none` — plus d'invitation,
+ * plus de dépôt, plus rien — sans qu'aucun code ne change. Ce n'est pas une
+ * hypothèse : c'est le comportement écrit au-dessus.
+ *
+ * L'essai est ce qui rend cette bascule survivable. Il est ouvert à la CRÉATION
+ * de l'établissement, pas à la première tentative d'usage : un gérant qui
+ * découvre qu'il doit payer AVANT d'avoir vu son premier taux ne reviendra pas,
+ * et le produit n'a rien à montrer tant que rien n'a été déposé.
+ *
+ * TRENTE JOURS, parce que la boucle métier complète — réunir douze mois de
+ * factures, les déposer, vider la file de confirmation, lire le bilan — se
+ * mesure en semaines, pas en jours. Quatorze jours obligeraient à décider
+ * pendant qu'on cherche encore les factures de mars.
+ *
+ * UNE FOIS PAR COMPTE, jamais par établissement : sans ça, il suffit de créer un
+ * nouvel établissement pour recommencer l'essai. Le drapeau vit sur
+ * `userProfiles.hasUsedFreeTrial`, qui existe au schéma depuis le début à cette
+ * fin exacte.
+ */
+export const DUREE_ESSAI_JOURS = 30;
+
+export function finDeLEssai(depuis: number = Date.now()): number {
+	return depuis + DUREE_ESSAI_JOURS * 24 * 60 * 60 * 1000;
 }
 
 export function planHasFeature(tier: PlanTier, feature: PlanFeature): boolean {
@@ -230,7 +265,11 @@ export const etatAbonnement = authedQuery({
 			seatsAllowed,
 			paddleStatus: org.paddleStatus ?? null,
 			paddleCurrentPeriodEnd: org.paddleCurrentPeriodEnd ?? null,
-			paddleConfigure: Boolean(process.env.PADDLE_API_KEY)
+			paddleConfigure: Boolean(process.env.PADDLE_API_KEY),
+			// L'essai n'est renvoyé que s'il court ENCORE. Un essai terminé
+			// n'apprend rien au gérant et ferait afficher « il reste -12 jours ».
+			essaiFiniLe:
+				org.freeTrialEndsAt && org.freeTrialEndsAt > Date.now() ? org.freeTrialEndsAt : null
 		};
 	}
 });

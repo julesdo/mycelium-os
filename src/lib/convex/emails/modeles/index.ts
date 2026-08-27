@@ -19,3 +19,4 @@ export * from './passwordReset';
 export * from './adminReplyNotification';
 export * from './newTicketAdminNotification';
 export * from './newUserSignupNotification';
+export * from './invitation';

@@ -54,6 +54,7 @@ import type * as emails_modeles_adminReplyNotification from "../emails/modeles/a
 import type * as emails_modeles_bilanPret from "../emails/modeles/bilanPret.js";
 import type * as emails_modeles_disposition from "../emails/modeles/disposition.js";
 import type * as emails_modeles_index from "../emails/modeles/index.js";
+import type * as emails_modeles_invitation from "../emails/modeles/invitation.js";
 import type * as emails_modeles_newTicketAdminNotification from "../emails/modeles/newTicketAdminNotification.js";
 import type * as emails_modeles_newUserSignupNotification from "../emails/modeles/newUserSignupNotification.js";
 import type * as emails_modeles_passwordReset from "../emails/modeles/passwordReset.js";
@@ -80,6 +81,7 @@ import type * as notifications from "../notifications.js";
 import type * as organizations from "../organizations.js";
 import type * as paddle from "../paddle.js";
 import type * as previewDev from "../previewDev.js";
+import type * as rgpd from "../rgpd.js";
 import type * as storage from "../storage.js";
 import type * as tests from "../tests.js";
 import type * as users from "../users.js";
@@ -139,6 +141,7 @@ declare const fullApi: ApiFromModules<{
   "emails/modeles/bilanPret": typeof emails_modeles_bilanPret;
   "emails/modeles/disposition": typeof emails_modeles_disposition;
   "emails/modeles/index": typeof emails_modeles_index;
+  "emails/modeles/invitation": typeof emails_modeles_invitation;
   "emails/modeles/newTicketAdminNotification": typeof emails_modeles_newTicketAdminNotification;
   "emails/modeles/newUserSignupNotification": typeof emails_modeles_newUserSignupNotification;
   "emails/modeles/passwordReset": typeof emails_modeles_passwordReset;
@@ -165,6 +168,7 @@ declare const fullApi: ApiFromModules<{
   organizations: typeof organizations;
   paddle: typeof paddle;
   previewDev: typeof previewDev;
+  rgpd: typeof rgpd;
   storage: typeof storage;
   tests: typeof tests;
   users: typeof users;
