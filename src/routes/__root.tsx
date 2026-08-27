@@ -12,14 +12,23 @@ export const Route = createRootRoute({
 			},
 			{ title: 'Letikette' }
 		],
-		// L'icône d'onglet n'était déclarée nulle part : le navigateur allait
-		// chercher `/favicon.ico`, qui n'existe pas, et l'onglet restait vierge.
-		// Le SVG passe en premier pour les navigateurs qui le comprennent, le PNG
-		// reste en repli.
+		// L'ICÔNE D'ONGLET ÉTAIT DÉCLARÉE ET N'EXISTAIT PAS. Ces liens pointaient
+		// depuis des semaines vers trois fichiers absents de `public/` : les trois
+		// répondaient 404 en production et l'onglet restait vierge. Une déclaration
+		// sans fichier est pire que pas de déclaration — elle fait croire que
+		// c'est réglé.
+		//
+		// Les quatre existent maintenant, et ils se régénèrent depuis un seul
+		// dessin : `bun scripts/generer-icones.ts`.
+		//
+		// L'ORDRE COMPTE. Le SVG passe en premier pour les navigateurs qui le
+		// comprennent — une icône vectorielle reste nette sur un écran à forte
+		// densité, là où un PNG de 48 px bave. Le PNG suit en repli.
 		links: [
 			{ rel: 'stylesheet', href: appCss },
 			{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
 			{ rel: 'icon', href: '/favicon.png', sizes: '48x48', type: 'image/png' },
+			{ rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
 			{ rel: 'manifest', href: '/manifest.webmanifest' }
 		]
 	}),

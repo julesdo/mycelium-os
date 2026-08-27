@@ -1,0 +1,52 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Letikette">
+  <!--
+    L'ICÔNE D'ONGLET, ET POURQUOI CE N'EST PAS LA MARQUE RÉDUITE.
+
+    Un favicon n'est pas un logo mis à l'échelle, c'est un dessin qui doit
+    survivre à seize pixels. Deux différences avec `LogoLetikette` :
+
+    1. VUE DE DESSUS, pas de trois quarts. La perspective de la marque laisse de
+       l'air en haut et en bas ; dans un onglet, chaque pixel de la boîte compte
+       et l'assiette doit la remplir.
+    2. DOUBLE FILET plutôt qu'un bandeau et un liseré fin. Le trait de 1,5 de la
+       marque disparaît sous vingt pixels ; deux traits bleus francs tiennent
+       jusqu'à 32, se fondent en un seul anneau en dessous, et ne cassent
+       jamais. C'est le double filet de la vaisselle d'hôtel — le motif le plus
+       reconnaissable qui reste lisible aussi petit.
+
+    Ce qui NE change pas : le corps est en porcelaine et le bleu n'est qu'un
+    liseré. C'est ce rapport-là, et non le dessin, qui empêchait la version
+    précédente de ressembler à autre chose qu'à un œil.
+
+    Fond transparent : l'onglet est clair ou sombre selon le thème du système, et
+    une assiette blanche à filet bleu se détache sur les deux. Les icônes
+    d'application, elles, sont posées sur l'encre — voir `manifest.webmanifest`.
+  -->
+  <defs>
+    <linearGradient id="porcelaine" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#c8c0b4" />
+    </linearGradient>
+    <linearGradient id="paroi" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#aca394" />
+      <stop offset="0.55" stop-color="#ebe6de" />
+      <stop offset="1" stop-color="#ffffff" />
+    </linearGradient>
+    <radialGradient id="fond" cx="0.42" cy="0.62" r="0.82">
+      <stop offset="0" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#eee9e2" />
+    </radialGradient>
+  </defs>
+
+  <circle cx="50" cy="50" r="50" fill="url(#porcelaine)" />
+  <circle cx="50" cy="50" r="46.5" fill="none" stroke="#1d3fa0" stroke-width="7" />
+  <circle cx="50" cy="50" r="38" fill="none" stroke="#1d3fa0" stroke-width="3" opacity="0.9" />
+  <circle cx="50" cy="50" r="34.5" fill="url(#paroi)" />
+  <!--
+    Le fond du creux, clair et net. Sans lui, le dégradé de paroi remplissait tout
+    le centre et l'assiette sortait terreuse à 512 px, là où l'icône d'application
+    est vue en grand. Il disparaît de lui-même sous 24 px, où il se confond avec
+    la paroi — ce qui est exactement le comportement voulu.
+  -->
+  <circle cx="50" cy="49.4" r="25" fill="url(#fond)" />
+</svg>
