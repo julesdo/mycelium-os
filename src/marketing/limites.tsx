@@ -9,11 +9,15 @@ import { SectionMarketing, TitreSection } from './section';
  * limite énoncée franchement vaut trois arguments, et celles-ci sont vérifiables
  * en une minute.
  *
- * ELLES SONT NUMÉROTÉES COMME DES CLAUSES, sous un filet chacune. C'était trois
- * cartes ; or une limite n'est pas une fonctionnalité, et lui donner la même
- * forme qu'à une fonctionnalité brouille exactement ce qu'elle vient dire. La
- * numérotation et le filet la rangent dans le registre du contrat, qui est le
- * bon.
+ * ELLES SONT EMPILÉES SOUS UN FILET, sans numéros. C'étaient trois cartes, puis
+ * trois colonnes numérotées 01/02/03 — et la numérotation était de l'ornement
+ * déguisé en structure : ces trois limites ne forment aucune séquence, il n'y a
+ * pas de « première » puis de « deuxième ». Un chiffre qui ne compte rien
+ * n'apporte que l'air d'un gabarit.
+ *
+ * Ce qui reste, le filet et l'empilement pleine largeur, dit vrai : ce sont des
+ * clauses, elles se lisent l'une après l'autre, et deux d'entre elles sont
+ * littéralement des lignes rouges juridiques.
  *
  * Les deux premières ne sont pas des choix commerciaux, ce sont les DEUX LIGNES
  * ROUGES juridiques du projet : ne jamais prendre la propriété des denrées, ne
@@ -48,27 +52,38 @@ export function Limites() {
 	return (
 		<SectionMarketing fond="papier">
 			<TitreSection
-				sur="Périmètre"
 				titre="Ce que Letikette ne fait pas"
 				chapeau="Trois choses que vous découvririez de toute façon. Autant les lire maintenant."
 			/>
 
-			<ol className="grid gap-cladd-xs md:grid-cols-3 md:gap-cladd-2xs">
-				{LIMITES.map((l, i) => (
-					<li
+			{/*
+			  TROIS CLAUSES EMPILÉES, ET NON TROIS COLONNES.
+
+			  C'était une grille de trois, la même que celle des seuils légaux et
+			  celle des raisons de l'abonnement : trois grilles de trois sur une seule
+			  page, à quelques écrans d'intervalle. Au troisième passage l'œil ne lit
+			  plus, il reconnaît une forme et saute.
+
+			  Empilées et pleine largeur, avec le titre à gauche et le texte à droite,
+			  elles se lisent comme les clauses d'un contrat — ce qu'elles sont
+			  littéralement : deux lignes rouges juridiques et une limite de
+			  responsabilité. La forme dit enfin la même chose que le fond.
+			*/}
+			<div className="flex flex-col">
+				{LIMITES.map((l) => (
+					<div
 						key={l.titre}
-						className="flex flex-col gap-cladd-3xs border-t border-plume pt-cladd-3xs"
+						className="grid gap-cladd-3xs border-t border-plume py-cladd-xs md:grid-cols-12 md:gap-cladd-2xs"
 					>
-						<span className="font-serif text-cladd-md font-medium text-plume-claire tabular-nums">
-							{String(i + 1).padStart(2, '0')}
-						</span>
-						<span className="font-serif text-intertitre leading-snug font-medium">{l.titre}</span>
-						<span className="text-cladd-md leading-relaxed font-normal text-plume-douce">
+						<h3 className="font-serif text-intertitre leading-snug font-medium md:col-span-5">
+							{l.titre}
+						</h3>
+						<p className="text-cladd-md leading-relaxed font-normal text-plume-douce md:col-span-7">
 							{l.texte}
-						</span>
-					</li>
+						</p>
+					</div>
 				))}
-			</ol>
+			</div>
 		</SectionMarketing>
 	);
 }

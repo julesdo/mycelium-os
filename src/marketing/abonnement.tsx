@@ -44,7 +44,6 @@ export function Abonnement() {
 	return (
 		<SectionMarketing fond="froid">
 			<TitreSection
-				sur="L’objection"
 				titre="La déclaration est annuelle. Le suivi ne l’est pas."
 				chapeau="C’est la question que tout le monde pose, et elle est légitime. Voici les trois raisons de déposer vos factures tous les mois plutôt qu’une fois par an."
 			/>

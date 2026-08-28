@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router';
 import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
 import { LogoLetikette, MotLetikette, TauxEGalim } from '../ui';
-import { useVisible, useCompteur } from './mouvement';
 import { Cadre } from './section';
 
 /**
@@ -38,25 +37,37 @@ import { Cadre } from './section';
  *
  * LA DÉMONSTRATION EST LE VRAI COMPOSANT. `TauxEGalim` est la jauge de
  * l'application, pas une reproduction : elle déduit son état de seuil de la
- * mesure qu'on lui passe. En animant la mesure plutôt que la barre, elle
- * traverse ses couleurs comme elle le fait chez un client, et le visiteur voit
- * exactement l'écran qu'il aura.
+ * mesure qu'on lui passe, et le visiteur voit exactement l'écran qu'il aura.
+ *
+ * ⚠️ LES CHIFFRES NE COMPTENT PLUS DE ZÉRO À LEUR VALEUR, ET C'EST UNE
+ * CORRECTION, PAS UN APPAUVRISSEMENT. Deux raisons, la première étant un défaut
+ * réel.
+ *
+ * 1. LE HTML SERVI CONTENAIT DE FAUX CHIFFRES. L'animation partant de zéro, le
+ *    rendu serveur figeait « 0 % » et « il manque 90 000 € » dans la page. Un
+ *    robot d'indexation, un aperçu de lien, un lecteur sans script : tous
+ *    voyaient trois taux à zéro et trois montants faux. Sur une page dont
+ *    l'argument entier est l'exactitude de la mesure, c'est le pire endroit
+ *    possible pour publier un nombre qui n'est pas vrai.
+ *
+ * 2. LE COMPTEUR QUI MONTE AU DÉFILEMENT est le poncif le plus reconnaissable de
+ *    la page commerciale de logiciel. On le voit sur tous les gabarits, il ne
+ *    démontre rien, et sa seule justification ici — voir la jauge traverser ses
+ *    couleurs de seuil — ne tient pas : elle est à sa couleur finale pendant
+ *    tout le reste de la visite, et le visiteur qui fait défiler vite ne voit
+ *    rien du tout.
+ *
+ * L'animation reste là où elle démontre quelque chose : la progression de
+ * lecture des factures, dans `etapes.tsx`, qui EST le processus qu'on vend.
  *
  * Les chiffres sont ceux d'une cantine qui n'est pas conforme, et c'est
  * délibéré : montrer trois jauges vertes vendrait le produit sur un mensonge et
  * ne dirait rien de ce qu'il sert à faire.
- */
-
-/**
- * Chaque jauge porte SA base de calcul, pas un écart figé.
  *
- * L'écart en euros et la barre décrivent la même chose. S'ils s'animaient
- * séparément ils se contrediraient à mi-course : une barre à 12 % annoncerait
- * l'écart d'une barre à 39 %. L'écart est donc DÉDUIT de la mesure courante,
- * ce qui est aussi la façon dont il se calcule dans l'application.
- *
- * Les bases sont celles du jeu de démonstration du showroom : 180 000 € d'achats
- * sur l'exercice, dont 61 200 € de viande et de poisson.
+ * Chaque jauge porte SA base de calcul : l'écart en euros se déduit de la mesure
+ * et du seuil, exactement comme il se calcule dans l'application. Les bases sont
+ * celles du jeu de démonstration du showroom : 180 000 € d'achats sur
+ * l'exercice, dont 61 200 € de viande et de poisson.
  */
 const DEMO = [
 	{ titre: 'Produits durables', mesure: 0.39, seuil: 0.5, base: 180_000 },
@@ -65,8 +76,6 @@ const DEMO = [
 ] as const;
 
 export function Hero() {
-	const { cible, visible } = useVisible<HTMLDivElement>('-8%');
-
 	return (
 		<header className="w-full bg-papier text-plume">
 			<div className="mx-auto flex w-full max-w-7xl items-center gap-cladd-3xs border-b border-trait px-cladd-2xs py-cladd-3xs">
@@ -156,40 +165,26 @@ export function Hero() {
 			  sans creuser un trou au milieu de la page.
 			*/}
 			<div className="mx-auto w-full max-w-7xl px-cladd-2xs pt-respiration pb-cladd-2xl">
-				<div ref={cible}>
-					<Cadre contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs">
-						<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait pb-cladd-3xs">
-							<span className="font-serif text-intertitre font-medium">Exercice 2026</span>
-							<span className="text-cladd-2xs tracking-wide text-plume-claire uppercase">
-								1 842 lignes lues · 7 fournisseurs · 180 000 € d&rsquo;achats
-							</span>
-						</div>
-						<div className="grid gap-cladd-2xs md:grid-cols-3">
-							{DEMO.map((t) => (
-								<Jauge key={t.titre} {...t} actif={visible} />
-							))}
-						</div>
-					</Cadre>
-				</div>
+				<Cadre contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs">
+					<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait pb-cladd-3xs">
+						<span className="font-serif text-intertitre font-medium">Exercice 2026</span>
+						<span className="text-cladd-2xs tracking-wide text-plume-claire uppercase">
+							1 842 lignes lues · 7 fournisseurs · 180 000 € d&rsquo;achats
+						</span>
+					</div>
+					<div className="grid gap-cladd-2xs md:grid-cols-3">
+						{DEMO.map((t) => (
+							<TauxEGalim
+								key={t.titre}
+								titre={t.titre}
+								mesure={t.mesure}
+								seuil={t.seuil}
+								ecartEuros={Math.max(0, Math.round((t.seuil - t.mesure) * t.base))}
+							/>
+						))}
+					</div>
+				</Cadre>
 			</div>
 		</header>
 	);
-}
-
-function Jauge({
-	titre,
-	mesure,
-	seuil,
-	base,
-	actif
-}: {
-	titre: string;
-	mesure: number;
-	seuil: number;
-	base: number;
-	actif: boolean;
-}) {
-	const anime = useCompteur(mesure, actif);
-	const ecart = Math.max(0, Math.round((seuil - anime) * base));
-	return <TauxEGalim titre={titre} mesure={anime} seuil={seuil} ecartEuros={ecart} />;
 }

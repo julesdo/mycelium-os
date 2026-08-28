@@ -1,4 +1,3 @@
-import { Illustration } from '../ui';
 import { SectionMarketing, TitreSection } from './section';
 
 /**
@@ -65,16 +64,20 @@ export function Preuve() {
 			/>
 
 			<div className="rounded-net border border-trait bg-papier text-plume">
-				<div className="flex items-center gap-cladd-3xs border-b border-trait p-cladd-2xs">
-					<Illustration libelle="CAROTTE RONDELLE BIO" famille="FRUITS_LEGUMES" taille="lg" />
-					<div className="flex min-w-0 flex-col">
-						<span className="truncate font-serif text-intertitre font-medium">
-							Carotte rondelle bio
-						</span>
-						<span className="text-cladd-sm text-plume-claire">
-							52 lignes de facture · 3 120 € sur l&rsquo;exercice
-						</span>
-					</div>
+				{/*
+				  PAS D'ILLUSTRATION ICI, ET C'EST UN RETRAIT RÉFLÉCHI. Une vignette
+				  emoji ouvrait cette carte. Elle a sa place dans l'application, où elle
+				  aide un gérant à repérer une famille d'un coup d'œil entre deux
+				  services — mais en tête de la pièce qu'on présente comme opposable à
+				  un contrôleur, un dessin de carotte détruit exactement ce que la
+				  section vient établir. C'est le seul endroit de la page où le ton doit
+				  être celui d'un document, pas d'une interface.
+				*/}
+				<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait p-cladd-2xs">
+					<span className="font-serif text-intertitre font-medium">Carotte rondelle bio</span>
+					<span className="text-cladd-sm text-plume-claire tabular-nums">
+						52 lignes de facture · 3 120 € sur l&rsquo;exercice
+					</span>
 				</div>
 
 				<dl className="divide-y divide-trait">

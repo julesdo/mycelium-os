@@ -148,7 +148,6 @@ export function Etapes() {
 	return (
 		<SectionMarketing id="comment" fond="froid" className="gap-cladd-2xl">
 			<TitreSection
-				sur="Le parcours, de bout en bout"
 				titre="Quatre étapes, dont une seule vous demande du temps"
 				chapeau="Les écrans ci-dessous sont ceux du logiciel, pas des images. Vous pouvez confirmer un produit pour voir ce que ça fait."
 			/>
