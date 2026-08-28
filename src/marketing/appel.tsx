@@ -54,10 +54,9 @@ export function Appel() {
 				La déclaration ferme le 31 mars. Le calcul, lui, prend douze mois de factures.
 			</h2>
 			<p className="max-w-2xl text-chapeau leading-relaxed font-normal text-plume-inversee-douce">
-				Elles se lisent en une fois, quel que soit le mois où vous commencez. La différence
-				n&rsquo;est pas là : commencer tôt laisse le temps de déplacer quelques achats et de
-				demander les attestations qui manquent. Commencer fin mars ne laisse que le temps de
-				constater.
+				Où que vous en soyez, elles se lisent en une fois. Ce qui change, c&rsquo;est ce qu&rsquo;il
+				vous reste ensuite : en février, le temps de déplacer quelques achats et de réclamer les
+				attestations qui manquent. Fin mars, le temps de constater.
 			</p>
 			<div className="flex flex-col items-start gap-cladd-3xs pt-cladd-3xs sm:flex-row sm:items-center">
 				<Button

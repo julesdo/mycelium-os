@@ -26,17 +26,17 @@ const RAISONS = [
 	{
 		titre: 'Un GPS, pas un constat après l’accident.',
 		texte:
-			'Si vous découvrez en mars que vous êtes à 12 % de bio au lieu de 20, l’année est close et rien ne peut plus la rattraper. En voyant le retard en octobre, il vous reste deux mois de commandes pour le corriger.'
+			'Découvrir en mars que vous êtes à 12 % de bio au lieu de 20, c’est trop tard : l’année est close. Le voir en octobre, c’est deux mois de commandes pour rattraper.'
 	},
 	{
 		titre: 'Cinq minutes par mois plutôt qu’une soirée en mars.',
 		texte:
-			'Douze mois de factures d’un seul coup, c’est une file de confirmation gigantesque à relire d’une traite. Mois par mois, vous validez à chaud, pendant que vous vous souvenez encore des livraisons. En mars, le bilan est déjà prêt.'
+			'Douze mois de factures d’un coup, c’est une soirée entière à relire des libellés. Mois par mois, vous validez à chaud, pendant que vous vous souvenez des livraisons. En mars, le bilan est déjà fait.'
 	},
 	{
 		titre: 'Vos prix d’achat sous l’œil, toute l’année.',
 		texte:
-			'En déposant vos factures au fil de l’eau, vous voyez qu’un fournisseur a monté la volaille de 10 % entre janvier et juin. Une fois par an, ce genre de dérive passe inaperçu et se paie douze mois.'
+			'Au fil de l’eau, vous voyez qu’un fournisseur a monté la volaille de 10 % entre janvier et juin. Une fois par an, cette dérive passe inaperçue et se paie douze mois.'
 	}
 ] as const;
 
@@ -45,7 +45,7 @@ export function Abonnement() {
 		<SectionMarketing fond="froid">
 			<TitreSection
 				titre="La déclaration est annuelle. Le suivi ne l’est pas."
-				chapeau="C’est la question que tout le monde pose, et elle est légitime. Voici les trois raisons de déposer vos factures tous les mois plutôt qu’une fois par an."
+				chapeau="Pourquoi payer tous les mois pour une obligation annuelle ? Trois raisons."
 			/>
 
 			<div className="grid divide-y divide-trait border-y border-trait md:grid-cols-3 md:divide-x md:divide-y-0">
@@ -64,9 +64,9 @@ export function Abonnement() {
 					C’est exactement votre cabinet comptable.
 				</p>
 				<p className="pt-cladd-3xs text-cladd-md leading-relaxed font-normal text-plume-douce">
-					Votre bilan fiscal n’est édité qu’une fois par an, et vous payez pourtant tous les mois
-					pour que vos factures soient saisies et classées, et pour savoir où vous en êtes.
-					Letikette, c’est la même chose pour votre assiette.
+					Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les mois
+					pour saisir, classer, et vous dire où vous en êtes. Letikette fait la même chose pour
+					votre assiette.
 				</p>
 			</blockquote>
 		</SectionMarketing>

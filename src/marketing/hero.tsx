@@ -105,9 +105,9 @@ export function Hero() {
 					</h1>
 
 					<p className="max-w-xl text-chapeau leading-relaxed font-normal text-plume-douce">
-						Ils s&rsquo;en sortent ligne par ligne, sur douze mois, en valeur d&rsquo;achat hors
-						taxes. Letikette fait ce calcul et vous montre, pour chaque produit, pourquoi il compte
-						ou pourquoi il ne compte pas.
+						Encore faut-il les en extraire : ligne par ligne, sur douze mois, en euros d&rsquo;achat
+						hors taxes. C&rsquo;est notre travail. Pour chaque produit, vous saurez s&rsquo;il
+						compte, et pourquoi.
 					</p>
 
 					<div className="flex flex-col items-start gap-cladd-3xs pt-cladd-3xs sm:flex-row sm:items-center">

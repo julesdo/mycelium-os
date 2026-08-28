@@ -57,10 +57,16 @@ const SEUILS = [
 export function LaLoi() {
 	return (
 		<SectionMarketing fond="papier">
+			{/*
+			  LE CHAPEAU MÈNE PAR CE QUI SURPREND. Il commençait par la méthode de
+			  calcul et finissait sur « le privé depuis 2024 ». Or c'est cette
+			  dernière ligne qui fait sursauter la cible : beaucoup de cantines
+			  privées ignorent encore qu'elles sont concernées. On la met devant.
+			*/}
 			<TitreSection
 				sur="Loi EGalim · code rural, art. L230-5-1"
-				titre="Ce que la loi demande"
-				chapeau="En valeur d’achat hors taxes, sur l’année civile, et à déclarer chaque année sur « ma cantine ». Le public y est soumis depuis 2022, le privé depuis 2024."
+				titre="Ce que la loi vous demande"
+				chapeau="Depuis 2024, les cantines privées y sont soumises comme les publiques. Le calcul se fait en euros d’achat hors taxes, sur l’année civile, et se déclare sur « ma cantine »."
 			/>
 
 			{/*
@@ -90,10 +96,8 @@ export function LaLoi() {
 					« Local », « circuit court », « de saison » et « fait maison » ne comptent pas.
 				</p>
 				<p className="pt-cladd-3xs text-cladd-md leading-relaxed font-normal text-plume-douce">
-					C&rsquo;est la première surprise de presque tout le monde. Ces mentions sont sincères et
-					elles ne figurent pas au barème : une carotte du maraîcher d&rsquo;à côté, sans label,
-					pèse zéro dans votre taux. C&rsquo;est aussi pour ça que beaucoup de cantines qui achètent
-					bien déclarent mal.
+					La carotte du maraîcher d&rsquo;à côté, sans label, pèse zéro dans votre taux. C&rsquo;est
+					pour ça que des cantines qui achètent bien déclarent mal.
 				</p>
 			</blockquote>
 		</SectionMarketing>

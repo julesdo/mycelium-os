@@ -34,17 +34,17 @@ const LIMITES = [
 	{
 		titre: 'On ne déclare pas à votre place.',
 		texte:
-			'Le dossier est prêt, les chiffres sont là, les justificatifs aussi. La télédéclaration sur « ma cantine » reste faite et signée par vous. C’est votre responsabilité, elle ne se délègue pas à un logiciel.'
+			'Le dossier est prêt, chiffres et justificatifs compris. La saisie sur « ma cantine » reste la vôtre : c’est une responsabilité qui ne se délègue pas à un logiciel.'
 	},
 	{
 		titre: 'On ne vend aucune denrée et on n’organise aucune livraison.',
 		texte:
-			'Votre fournisseur reste votre fournisseur : il vous facture en direct et il vous livre en direct. Letikette ne s’interpose ni dans la commande, ni dans le camion, ni dans le règlement.'
+			'Votre fournisseur vous facture et vous livre en direct, comme aujourd’hui. Nous ne nous interposons ni dans la commande, ni dans le camion, ni dans le règlement.'
 	},
 	{
 		titre: 'On ne promet pas un résultat.',
 		texte:
-			'Votre taux dépend de ce que vous achetez, et cela n’appartient qu’à vous. Ce que fait le logiciel est plus modeste et plus utile : il mesure, il documente, et il montre où quelques euros déplacés rapportent le plus de points.'
+			'Votre taux dépend de ce que vous achetez, et cela n’appartient qu’à vous. Nous faisons plus modeste : mesurer, documenter, et vous montrer où quelques euros déplacés rapportent le plus de points.'
 	}
 ] as const;
 
