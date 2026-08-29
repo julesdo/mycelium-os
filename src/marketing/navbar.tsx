@@ -1,7 +1,8 @@
+import { useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
-import { LogoLetikette, MotLetikette } from '../ui';
+import { cn, LogoLetikette, MotLetikette } from '../ui';
 
 /**
  * La barre de la page publique.
@@ -14,10 +15,33 @@ import { LogoLetikette, MotLetikette } from '../ui';
  * une page de deux mille pixels, c'est la moitié des visiteurs qui arrivent en
  * bas sans jamais avoir eu de bouton sous les yeux.
  *
- * ELLE COLLE, ET ELLE EST TRANSLUCIDE. Le lavis du héros continue de se voir
- * dessous, ce qui évite le bandeau opaque qui coupe la page en deux. Le flou
- * d'arrière-plan n'est pas un effet : sans lui, les dessins du fond passent
- * derrière le texte de la barre et le rendent illisible dès qu'on défile.
+ * ⚠️ ELLE EST POSÉE SUR LE HÉROS, PAS AU-DESSUS DE LUI. Elle a d'abord été un
+ * bandeau collant, opaque, en flux : elle POUSSAIT le héros vers le bas et
+ * portait son propre fond crème. Résultat, une bande claire barrait le haut du
+ * lavis et le premier écran commençait sous un couvercle.
+ *
+ * En `fixed`, elle sort du flux et flotte sur le dégradé : on voit l'azur PASSER
+ * DERRIÈRE le logo et les boutons, et le héros commence vraiment en haut de la
+ * fenêtre. Le prix à payer est un retrait supérieur sur le héros, qu'aucune mise
+ * en page ne calcule à sa place — d'où `--spacing-barre-publique`, écrit une
+ * fois et lu aux deux endroits.
+ *
+ * LE FOND N'ARRIVE QU'AU DÉFILEMENT. En haut de page, il n'y a qu'un filet sous
+ * la barre ; dès que la page bouge, le crème et son flou montent en un tiers de
+ * seconde. C'est la seule façon d'avoir les deux : un premier écran ininterrompu,
+ * et une barre lisible quand elle passe sur du texte, des photographies ou
+ * l'aplat d'encre.
+ *
+ * POURQUOI `useSyncExternalStore` ET PAS UN `useState` DANS UN EFFET. La
+ * position de défilement est un état qui vit HORS de React, et la convention du
+ * projet interdit d'appeler `setState` depuis un effet. Ce crochet est fait
+ * exactement pour ça : il s'abonne, il lit, et son troisième argument donne
+ * l'instantané du rendu SERVEUR — faux par construction, puisqu'il n'y a pas de
+ * fenêtre. On lui répond « pas défilé », qui est vrai au premier rendu et évite
+ * la divergence d'hydratation qu'un `window.scrollY` provoquerait.
+ *
+ * L'instantané rend un BOOLÉEN et jamais la position elle-même : React compare
+ * par identité et redemanderait un rendu à chaque pixel parcouru.
  *
  * LE LIEN DE SECTION N'EST PAS UN LIEN DE ROUTEUR. `<a href="#la-loi">` vise
  * une ancre de la MÊME page ; passer par `Link` demanderait au routeur de
@@ -34,12 +58,39 @@ const SECTIONS = [
 	{ ancre: '#la-loi', label: 'La loi' },
 	{ ancre: '#comment', label: 'Le logiciel' },
 	{ ancre: '#preuve', label: 'La preuve' },
-	{ ancre: '#abonnement', label: 'L’abonnement' }
+	{ ancre: '#tarifs', label: 'Le prix' }
 ] as const;
 
+/** Huit pixels : assez pour ignorer le rebond élastique d'un trackpad. */
+const DECLENCHEMENT = 8;
+
+function sAbonner(prevenir: () => void) {
+	window.addEventListener('scroll', prevenir, { passive: true });
+	return () => window.removeEventListener('scroll', prevenir);
+}
+
+function useDefile(): boolean {
+	return useSyncExternalStore(
+		sAbonner,
+		() => window.scrollY > DECLENCHEMENT,
+		() => false
+	);
+}
+
 export function Navbar() {
+	const defile = useDefile();
+
 	return (
-		<div className="sticky top-0 z-50 w-full border-b border-trait bg-papier/80 backdrop-blur-md">
+		<div
+			className={cn(
+				'fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ease-out',
+				// Le filet est là dès le premier pixel, et il est le seul. Sur le lavis
+				// comme sur le crème, une plume à dix pour cent donne le trait le plus
+				// fin qui se voit encore — `border-trait`, réglé pour le sable, s'y
+				// efface complètement.
+				defile ? 'border-trait bg-papier/85 backdrop-blur-md' : 'border-plume/10 bg-transparent'
+			)}
+		>
 			<div className="relative mx-auto flex w-full max-w-7xl items-center gap-cladd-2xs px-cladd-2xs py-cladd-3xs">
 				<Link
 					to="/"
@@ -64,7 +115,7 @@ export function Navbar() {
 						<a
 							key={ancre}
 							href={ancre}
-							className="rounded-full px-cladd-3xs py-2 text-cladd-xs font-medium text-plume-douce transition-colors hover:bg-papier-chaud hover:text-plume"
+							className="rounded-full px-cladd-3xs py-2 text-cladd-xs font-medium text-plume-douce transition-colors hover:bg-plume/5 hover:text-plume"
 						>
 							{label}
 						</a>

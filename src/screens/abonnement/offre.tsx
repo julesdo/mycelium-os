@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Surface, Button, Chip } from '@cladd-ui/react';
 import { CheckIcon, MinusIcon } from 'lucide-react';
+import { CE_QUI_EST_INCLUS, type ColonneOffre } from '../../lib/config/tarifs';
 
 /**
  * Les cartes d'offre, isolées de la route.
@@ -17,25 +18,14 @@ import { CheckIcon, MinusIcon } from 'lucide-react';
  * employé pour les écrans de diagnostic et de correction.
  */
 
-export type ColonneOffre = 'bilan' | 'abonnement';
-
 /**
- * Ce que chaque offre contient.
- *
- * La liste est ÉCRITE UNE FOIS et les deux colonnes la traversent : deux listes
- * parallèles auraient fini par annoncer une fonctionnalité d'un côté et pas de
- * l'autre. Elle doit rester alignée sur `PLAN_FEATURES` dans `billing.ts`, qui
- * décide de ce qui est réellement ouvert.
+ * La liste et la grille viennent de `src/lib/config/tarifs.ts`, et sont
+ * réexportées pour la salle d'exposition qui les importe d'ici. Elles y ont
+ * déménagé le jour où la page d'accueil a eu besoin des mêmes montants : trois
+ * copies d'une grille de prix, ce sont trois occasions d'annoncer publiquement
+ * un montant que le serveur ne facture pas.
  */
-export const CE_QUI_EST_INCLUS = [
-	{ libelle: 'Dépôt de factures, sans limite', bilan: true, abonnement: true },
-	{ libelle: 'Lecture et classification ligne à ligne', bilan: true, abonnement: true },
-	{ libelle: 'Les trois taux EGalim, justifiés', bilan: true, abonnement: true },
-	{ libelle: 'Bilan PDF daté et signé', bilan: true, abonnement: true },
-	{ libelle: 'Courriers de demande d’attestation', bilan: true, abonnement: true },
-	{ libelle: 'Fichier de report pour « ma cantine »', bilan: false, abonnement: true },
-	{ libelle: 'Suivi mensuel et rappels', bilan: false, abonnement: true }
-] as const;
+export { CE_QUI_EST_INCLUS, type ColonneOffre } from '../../lib/config/tarifs';
 
 export function Offre({
 	titre,

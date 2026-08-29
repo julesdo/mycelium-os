@@ -20,5 +20,6 @@ export { Bandeau } from './bandeau';
 export { Preuve } from './preuve';
 export { Limites } from './limites';
 export { Abonnement } from './abonnement';
+export { Tarifs } from './tarifs';
 export { Appel } from './appel';
 export { Pied } from './pied';

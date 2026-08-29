@@ -63,7 +63,7 @@ export function Preuve() {
 				chapeau="Un contrôle ne vous demandera pas votre taux. Il vous demandera d’où il sort."
 			/>
 
-			<div className="overflow-hidden rounded-panneau border border-trait bg-papier text-plume shadow-pose-haute">
+			<div className="overflow-hidden rounded-panneau bg-papier text-plume">
 				{/*
 				  PAS D'ILLUSTRATION ICI, ET C'EST UN RETRAIT RÉFLÉCHI. Une vignette
 				  emoji ouvrait cette carte. Elle a sa place dans l'application, où elle

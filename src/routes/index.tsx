@@ -8,6 +8,7 @@ import {
 	Preuve,
 	Limites,
 	Abonnement,
+	Tarifs,
 	Appel,
 	Pied
 } from '../marketing';
@@ -110,6 +111,7 @@ function Accueil() {
 			<Preuve />
 			<Limites />
 			<Abonnement />
+			<Tarifs />
 			<Appel />
 			<Pied />
 		</main>

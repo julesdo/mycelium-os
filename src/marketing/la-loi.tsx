@@ -1,4 +1,4 @@
-import { SectionMarketing, TitreSection, Panneau, Exergue } from './section';
+import { SectionMarketing, TitreSection, Exergue } from './section';
 
 /**
  * La règle, avant l'outil.
@@ -13,21 +13,26 @@ import { SectionMarketing, TitreSection, Panneau, Exergue } from './section';
  * au premier défilement. C'est aussi la seule autre section à le porter — au
  * troisième, un dégradé n'est plus une transition, c'est un motif.
  *
- * ⚠️ LES TROIS NOMBRES SONT REVENUS DANS UNE SURFACE, ET C'EST UN DEMI-TOUR
- * ASSUMÉ. Ils ont d'abord été des cartes à ombre portée : le vocabulaire d'un
- * tableau de bord, trois indicateurs qu'on regarde, alors que ce sont des SEUILS
- * LÉGAUX. On les a donc sortis de toute boîte, posés à même le papier entre deux
- * règles noires, comme les colonnes d'un texte réglementaire.
+ * ⚠️ LES TROIS NOMBRES N'ONT NI BOÎTE, NI FILET, NI FOND. Ils ont tout essayé,
+ * et les deux premières tentatives étaient fausses pour la même raison, de deux
+ * côtés opposés.
  *
- * Cette version-là était juste dans son raisonnement et fausse à l'œil : deux
- * traits d'encre pleine en travers de la page, c'est le trait le plus dur de
- * tout le site, et il tombait juste sous un héros fait d'un lavis et d'un objet
- * posé. La section entière lisait « formulaire ».
+ * Trois CARTES à ombre portée, d'abord : c'est le vocabulaire d'un tableau de
+ * bord — trois indicateurs qu'on compare — alors que ce sont des seuils légaux,
+ * qui s'additionnent au lieu de se comparer.
  *
- * Un seul panneau, pas trois cartes : c'est la nuance qui compte. Trois cartes
- * font trois indicateurs qu'on compare ; UN panneau à trois colonnes fait un
- * article à trois alinéas — le même geste que les règles noires, dans le
- * vocabulaire du reste de la page.
+ * Puis à même le papier, entre deux RÈGLES D'ENCRE PLEINE, comme les colonnes
+ * d'un texte réglementaire. Juste dans le raisonnement, faux à l'œil : deux
+ * traits noirs en travers de la page, sous un héros fait d'un lavis et d'un
+ * objet posé. La section lisait « formulaire ».
+ *
+ * Puis un PANNEAU unique à trois colonnes, qui n'était que la première erreur
+ * en plus discret : une surface reste une surface.
+ *
+ * Ce qui reste est ce qu'il aurait fallu faire d'emblée : rien. Trois colonnes,
+ * du vide entre elles, et un corps de cent-trente-deux pixels. À cette taille,
+ * un chiffre n'a besoin d'aucun contenant pour qu'on le voie — et c'est le vide
+ * autour de lui qui dit son importance, pas une bordure.
  *
  * LES CHIFFRES SONT EN BLEU DE MARQUE, JAMAIS EN VERT. Le vert, l'ambre et le
  * rouge du produit veulent dire « au-dessus du seuil, tout près, en dessous »,
@@ -80,9 +85,9 @@ export function LaLoi() {
 			  appartienne pas. C'est la loi, elle est opposable, elle a le droit de
 			  crier. Rien d'autre n'a le droit d'approcher ce corps.
 			*/}
-			<Panneau as="dl" colonnes={3} divise className="cladd-color-brand overflow-hidden">
+			<dl className="cladd-color-brand grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
 				{SEUILS.map((s) => (
-					<div key={s.titre} className="flex flex-col gap-cladd-3xs p-cladd-2xs md:p-cladd-xs">
+					<div key={s.titre} className="flex flex-col gap-cladd-3xs">
 						<dt className="font-serif text-seuil-affiche leading-none font-medium text-cladd-primary tabular-nums">
 							{s.valeur}
 						</dt>
@@ -94,7 +99,7 @@ export function LaLoi() {
 						</dd>
 					</div>
 				))}
-			</Panneau>
+			</dl>
 
 			<Exergue
 				phrase="« Local », « circuit court », « de saison » et « fait maison » ne comptent pas."

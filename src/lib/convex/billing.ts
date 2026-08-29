@@ -2,6 +2,14 @@ import { v, ConvexError } from 'convex/values';
 import { internalQuery } from './_generated/server';
 import { authedMutation, authedQuery } from './functions';
 import type { Doc } from './_generated/dataModel';
+import {
+	BORNES_PALIER,
+	DUREE_ESSAI_JOURS,
+	PALIERS,
+	TARIFS,
+	palierDeTaille,
+	type PalierTaille
+} from '../config/tarifs';
 
 // ── Plan feature matrix — échelle de valeur EGalim ─────────────────────────────
 
@@ -67,50 +75,18 @@ export const PLAN_SEATS: Record<PlanTier, number> = {
 };
 
 /**
- * Le palier de taille, qui décide du PRIX et jamais des fonctionnalités.
+ * LA GRILLE TARIFAIRE A DÉMÉNAGÉ dans `src/lib/config/tarifs.ts`, et elle est
+ * réexportée ici pour que rien de ce qui l'importait déjà n'ait à changer.
  *
- * Les bornes viennent du document 03 du business plan : moins de 250 couverts
- * par jour, de 250 à 800, au-delà de 800. Elles sont écrites ici plutôt que dans
- * une page de tarifs, parce que c'est le serveur qui doit choisir le bon
- * identifiant de prix Paddle, et qu'un palier calculé côté client se falsifie.
+ * Elle a trois lecteurs : ce module, qui choisit l'identifiant de prix Paddle ;
+ * la salle d'exposition ; et la section de tarifs de la page d'accueil. Deux des
+ * trois la recopiaient à la main. Un module pur, sans import Convex ni React, se
+ * lit des deux côtés du réseau — c'est le même montage que
+ * `src/lib/egalim/referentiel.ts`, et pour la même raison : ce qui engage
+ * commercialement ne doit exister qu'à un seul endroit.
  */
-export const PALIERS = ['S', 'M', 'L'] as const;
-export type PalierTaille = (typeof PALIERS)[number];
-
-export function palierDeTaille(couvertsJour: number | undefined): PalierTaille {
-	// Sans information, on retient le palier le plus bas : facturer trop cher un
-	// établissement qui n'a pas rempli son profil serait le pire des défauts.
-	if (!couvertsJour || couvertsJour <= 0) return 'S';
-	if (couvertsJour < 250) return 'S';
-	if (couvertsJour <= 800) return 'M';
-	return 'L';
-}
-
-/**
- * La grille tarifaire, en euros hors taxes.
- *
- * ELLE VIT DANS LE CODE et non sur une page d'administration, pour la même
- * raison que le barème EGalim : elle passe en revue, elle est versionnée, et
- * elle ne peut pas diverger entre ce que l'écran affiche et ce que le serveur
- * facture. Source : document 03 du business plan.
- *
- * Ce sont des montants d'AFFICHAGE. Le montant réellement prélevé est celui du
- * prix Paddle correspondant : c'est Paddle qui facture, en qualité de vendeur de
- * registre. Un écart entre les deux serait un défaut à corriger chez Paddle, pas
- * ici.
- */
-export const TARIFS: Record<PalierTaille, { bilan: number; abonnementMensuel: number }> = {
-	S: { bilan: 690, abonnementMensuel: 190 },
-	M: { bilan: 1190, abonnementMensuel: 290 },
-	L: { bilan: 1900, abonnementMensuel: 390 }
-};
-
-/** Ce que chaque palier recouvre, pour l'afficher sans faire deviner. */
-export const BORNES_PALIER: Record<PalierTaille, string> = {
-	S: 'moins de 250 couverts par jour',
-	M: 'de 250 à 800 couverts par jour',
-	L: 'plus de 800 couverts par jour'
-};
+export { PALIERS, palierDeTaille, TARIFS, BORNES_PALIER, DUREE_ESSAI_JOURS };
+export type { PalierTaille };
 
 // ── Core resolver ─────────────────────────────────────────────────────────────
 
@@ -173,18 +149,14 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
  * découvre qu'il doit payer AVANT d'avoir vu son premier taux ne reviendra pas,
  * et le produit n'a rien à montrer tant que rien n'a été déposé.
  *
- * TRENTE JOURS, parce que la boucle métier complète — réunir douze mois de
- * factures, les déposer, vider la file de confirmation, lire le bilan — se
- * mesure en semaines, pas en jours. Quatorze jours obligeraient à décider
- * pendant qu'on cherche encore les factures de mars.
+ * TRENTE JOURS : la valeur et sa justification vivent avec la grille tarifaire,
+ * dans `src/lib/config/tarifs.ts`, parce que la page d'accueil l'annonce.
  *
  * UNE FOIS PAR COMPTE, jamais par établissement : sans ça, il suffit de créer un
  * nouvel établissement pour recommencer l'essai. Le drapeau vit sur
  * `userProfiles.hasUsedFreeTrial`, qui existe au schéma depuis le début à cette
  * fin exacte.
  */
-export const DUREE_ESSAI_JOURS = 30;
-
 export function finDeLEssai(depuis: number = Date.now()): number {
 	return depuis + DUREE_ESSAI_JOURS * 24 * 60 * 60 * 1000;
 }

@@ -12,22 +12,24 @@ import { cn } from '../ui';
  *
  * Le vocabulaire s'aligne donc sur le haut de page. Ce qui change :
  *
- *   LE PANNEAU REMPLACE LE FILET partout où un contenu forme un bloc. Les
- *   grilles séparées par des règles d'un pixel deviennent des surfaces posées,
- *   avec un rayon et une ombre. Voir `Panneau`.
+ *   LES RÈGLES NOIRES DISPARAISSENT. `border-plume` — l'encre pleine — servait
+ *   à encadrer les seuils légaux et les clauses. C'est le trait le plus dur de
+ *   la page, et c'est lui qui donnait l'aspect « document administratif ». Un
+ *   filet clair suffit à séparer ; le reste se fait au VIDE.
  *
  *   LE LAVIS D'AZUR devient un fond de section à part entière, et plus
  *   seulement celui du héros. Il sépare deux sections claires bien mieux qu'un
  *   sable dont l'écart au crème se compte en points de clarté.
  *
- *   LES RÈGLES NOIRES DISPARAISSENT. `border-plume` — l'encre pleine — servait
- *   à encadrer les seuils légaux et les clauses. C'est le trait le plus dur de
- *   la page, et c'est lui qui donnait l'aspect « document administratif ».
+ *   ⚠️ ET SURTOUT : LA SURFACE POSÉE RESTE L'EXCEPTION. Une première tentative
+ *   a remplacé chaque règle noire par une carte — bordure, rayon, ombre — et
+ *   s'est fait renvoyer d'un mot juste : « ce n'est pas du tout naturel ». Une
+ *   carte dit « ceci se détache » ; quand tout se détache, plus rien ne se
+ *   détache. La liste fermée de ce qui a le droit d'en être une est dans
+ *   l'en-tête d'`Inventaire`, et elle tient en trois entrées.
  *
  * CE QUI NE CHANGE PAS. Le filet qui FERME une section : c'est encore lui qui
- * dit qu'un sujet s'arrête. Et la règle qui empêche la page de redevenir une
- * grille de cartes : un panneau porte un CONTENU STRUCTURÉ — une liste de
- * seuils, un document, un écran. Un paragraphe reste à même le fond.
+ * dit qu'un sujet s'arrête.
  *
  * LES QUATRE FONDS, et l'écart entre eux se voit de loin :
  *
@@ -71,6 +73,12 @@ export function SectionMarketing({
 			className={cn(
 				'w-full',
 				FONDS[fond],
+				// LA BARRE EST EN `fixed`, DONC ELLE MASQUE LES ANCRES. Un saut vers
+				// `#la-loi` amène le haut de la section au haut de la FENÊTRE, c'est-à-dire
+				// sous la barre : le sur-titre et la première ligne du titre disparaissent.
+				// `scroll-margin-top` est la seule propriété qui corrige ça, et elle ne se
+				// pose que là où il y a une ancre à viser.
+				id && 'scroll-mt-barre-publique',
 				filet && (fond === 'encre' ? 'border-b border-trait-encre' : 'border-b border-trait')
 			)}
 		>
@@ -182,57 +190,48 @@ export function TitreSection({
 }
 
 /**
- * Le panneau : une surface posée, qui porte un contenu structuré.
+ * L'inventaire : une suite d'entrées, séparées par un filet clair.
  *
- * IL REMPLACE LES GRILLES SÉPARÉES PAR DES FILETS. Trois seuils légaux, une
- * liste de formats acceptés, trois clauses : à chaque fois, la version
- * précédente écrivait `border-y divide-x` et laissait le contenu à même le
- * papier. Sur une page qui commence par un objet posé sur un lavis, ces règles
- * d'un pixel se lisaient comme un tableau imprimé — c'est-à-dire vieilles.
+ * ⚠️ CE N'EST PLUS UN PANNEAU, ET C'EST LA CORRECTION LA PLUS IMPORTANTE DE LA
+ * PAGE. Il y a eu ici un composant `Panneau` — surface crème, bordure, rayon,
+ * ombre — appliqué aux seuils légaux, aux formats acceptés, aux clauses et aux
+ * raisons de l'abonnement. Verdict du terrain, et il est juste : « des effets de
+ * cartes partout, ce n'est pas du tout naturel ».
  *
- * CE QU'IL N'AUTORISE PAS. Un paragraphe seul n'entre pas dans un panneau. La
- * règle qui a sauvé la page d'une grille de cartes tient toujours : le texte
- * courant vit sur le fond, et ce qui est POSÉ est ce qui a une structure — une
- * liste, un document, un écran. Sans ça, on remet des cartes partout et on
- * retrouve exactement ce qu'on vient d'enlever.
+ * L'erreur de raisonnement est identifiable. Les règles d'encre pleine qu'il
+ * remplaçait étaient bien un défaut ; j'en ai conclu qu'il fallait mettre une
+ * SURFACE, alors qu'il fallait seulement adoucir le TRAIT. Une carte n'est pas
+ * la version moderne d'une règle noire : c'est un objet, et un objet dit « ceci
+ * se détache du reste ». Quand tout se détache, plus rien ne se détache, et la
+ * page redevient une grille de vignettes — exactement ce qu'on passe six mois
+ * à fuir.
  *
- * `divise` pose les séparateurs internes en une fois : verticaux au-delà de
- * `md`, horizontaux en dessous, jamais les deux, et jamais de trait qui pend
- * sur un bord — `divide-*` ne dessine qu'ENTRE les enfants.
+ * CE QUI A LE DROIT D'ÊTRE UNE SURFACE, SUR TOUTE LA PAGE, et la liste est
+ * fermée :
+ *
+ *   la tablette du héros, qui EST le produit ;
+ *   les trois écrans de démonstration et la photographie, dans `Cadre` ;
+ *   le document de la section « preuve », parce qu'il est blanc sur l'encre et
+ *     qu'il doit se lire comme une pièce qu'on sort d'un dossier.
+ *
+ * Tout le reste — texte, listes, chiffres, y compris les trois seuils de la
+ * loi — vit À MÊME LE FOND. Ce qui sépare est un filet clair, ou du vide.
  */
-export function Panneau({
+export function Inventaire({
 	as: Balise = 'div',
-	divise = false,
-	colonnes,
 	className,
 	children
 }: {
 	/** La balise portée, quand le contenu a une sémantique — `dl` pour une liste
-	 *  de définitions, `ul` pour un inventaire. La surface ne doit pas coûter le
-	 *  balisage : un lecteur d'écran ne voit pas les colonnes, il voit la nature
-	 *  de la liste. */
+	 *  de définitions. Un lecteur d'écran ne voit pas les filets, il voit la
+	 *  nature de la liste. */
 	as?: 'div' | 'dl' | 'ul';
-	/** Sépare les enfants directs par un filet clair. */
-	divise?: boolean;
-	/** Le nombre de colonnes au-delà de `md`. En dessous, tout s'empile. */
-	colonnes?: 2 | 3;
 	className?: string;
 	children: ReactNode;
 }) {
-	return (
-		<Balise
-			className={cn(
-				'rounded-panneau border border-trait bg-papier shadow-pose',
-				colonnes === 2 && 'grid md:grid-cols-2',
-				colonnes === 3 && 'grid md:grid-cols-3',
-				divise &&
-					(colonnes ? 'divide-y divide-trait md:divide-x md:divide-y-0' : 'divide-y divide-trait'),
-				className
-			)}
-		>
-			{children}
-		</Balise>
-	);
+	// `divide-*` ne dessine qu'ENTRE les enfants : jamais de trait qui pend au
+	// premier ni au dernier, donc jamais de boîte implicite.
+	return <Balise className={cn('divide-y divide-trait', className)}>{children}</Balise>;
 }
 
 /**
@@ -243,40 +242,57 @@ export function Panneau({
  * retournent une conviction ; les mettre au même niveau typographique que le
  * reste, c'est parier qu'elles seront lues, ce qui est perdu d'avance.
  *
- * CE QU'IL ÉTAIT, ET POURQUOI ÇA NE VA PLUS. Un filet noir de quatre pixels à
- * gauche, du texte à même le papier. C'est la citation de bloc du web de 2010,
- * et surtout : sur une page dont le haut est un objet posé, c'est le seul
- * élément qui n'a ni surface, ni profondeur, ni couleur.
+ * ⚠️ IL N'EST PAS DANS UNE CARTE. Il en a porté une — surface, bordure, ombre —
+ * et c'était une faute du même ordre que les autres : ce qui fait qu'une phrase
+ * ressort n'est pas le contenant, c'est le CORPS et le VIDE autour. Une citation
+ * de cinquante-six pixels n'a besoin d'aucune boîte pour qu'on la voie.
  *
- * Le filet reste — c'est ce qui dit « citation » — mais il devient une BARRE
- * ARRONDIE EN ACCENT, sur un panneau posé. La couleur est celle de la marque,
- * la seule autorisée hors des jauges : ni verte, ni ambre, ni rouge, qui ne
- * veulent dire qu'une chose dans tout le produit.
+ * Ce qui reste est le strict nécessaire : une barre arrondie en accent, qui dit
+ * « citation » en un trait. Elle a remplacé un filet noir de quatre pixels, la
+ * citation de bloc du web de 2010. La couleur est celle de la marque, la seule
+ * autorisée hors des jauges : ni verte, ni ambre, ni rouge, qui ne veulent dire
+ * qu'une chose dans tout le produit.
  */
 export function Exergue({
 	phrase,
 	appui,
+	inverse = false,
 	className
 }: {
 	phrase: ReactNode;
 	/** La ligne qui explique, sous la phrase. */
 	appui?: ReactNode;
+	/** Sur fond d'encre. */
+	inverse?: boolean;
 	className?: string;
 }) {
 	return (
-		<blockquote
-			className={cn(
-				'cladd-color-brand flex max-w-4xl gap-cladd-2xs rounded-panneau border border-trait bg-papier p-cladd-2xs shadow-pose md:p-cladd-xs',
-				className
-			)}
-		>
-			<span aria-hidden className="w-1.5 shrink-0 rounded-full bg-cladd-primary" />
+		<blockquote className={cn('cladd-color-brand flex max-w-4xl gap-cladd-2xs', className)}>
+			<span
+				aria-hidden
+				className={cn(
+					'w-1 shrink-0 rounded-full',
+					inverse ? 'bg-plume-inversee/40' : 'bg-cladd-primary'
+				)}
+			/>
 			<div className="flex flex-col gap-cladd-3xs">
-				<p className="font-serif text-titre-section leading-tight font-medium text-plume">
+				<p
+					className={cn(
+						'font-serif text-titre-section leading-tight font-medium',
+						inverse ? 'text-plume-inversee' : 'text-plume'
+					)}
+				>
 					{phrase}
 				</p>
 				{appui ? (
-					<p className="text-cladd-md leading-relaxed font-normal text-plume-douce">{appui}</p>
+					<p
+						className={cn(
+							'text-cladd-md leading-relaxed font-normal',
+							inverse ? 'text-plume-inversee-douce' : 'text-plume-douce'
+						)}
+					>
+						{appui}
+					</p>
 				) : null}
 			</div>
 		</blockquote>
@@ -286,9 +302,10 @@ export function Exergue({
 /**
  * Le cadre d'une preuve : une capture d'écran, une photographie, un document.
  *
- * C'EST LE SEUL ENDROIT DE LA PAGE OÙ UNE BORDURE ENTOURE UNE IMAGE. Le texte,
- * lui, vit à même le fond ; les contenus structurés vont dans un `Panneau`. Le
- * cadre, c'est pour ce qui est MONTRÉ.
+ * C'EST LA SEULE SURFACE POSÉE DE LA PAGE, avec la tablette du héros et le
+ * document de la section « preuve ». Le texte, les listes et les chiffres vivent
+ * à même le fond ; le cadre, c'est pour ce qui est MONTRÉ. Voir l'en-tête
+ * d'`Inventaire` pour ce que cette règle a coûté à apprendre.
  *
  * ⚠️ IL S'EST ADOUCI. Deux pixels de rayon et pas d'ombre, c'était une vignette
  * collée sur une feuille. Le rayon de panneau, un fond crème et une ombre basse

@@ -31,6 +31,7 @@ import {
 } from '../ui';
 import { FeuilleCorrection, type ProduitACorriger } from '../screens/confirmer/correction';
 import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
+import { PALIERS, BORNES_PALIER, TARIFS } from '../lib/config/tarifs';
 import { Attestations, type Attestation } from '../screens/diagnostic/attestations';
 import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/equipe/equipe';
 import { Donnees } from '../screens/donnees/donnees';
@@ -686,13 +687,12 @@ function DemoAbonnement() {
 			/>
 			<PageBody>
 				<div className="flex flex-col gap-cladd-md">
-					{(
-						[
-							{ palier: 'S', bornes: 'moins de 250 couverts par jour', bilan: 690, mois: 190 },
-							{ palier: 'M', bornes: 'de 250 à 800 couverts par jour', bilan: 1190, mois: 290 },
-							{ palier: 'L', bornes: 'plus de 800 couverts par jour', bilan: 1900, mois: 390 }
-						] as const
-					).map((p) => (
+					{PALIERS.map((palier) => ({
+						palier,
+						bornes: BORNES_PALIER[palier],
+						bilan: TARIFS[palier].bilan,
+						mois: TARIFS[palier].abonnementMensuel
+					})).map((p) => (
 						<div key={p.palier} className="flex flex-col gap-cladd-3xs">
 							<SectionTitle>
 								Palier {p.palier} — {p.bornes}

@@ -1,4 +1,4 @@
-import { SectionMarketing, TitreSection, Panneau, Exergue } from './section';
+import { SectionMarketing, TitreSection, Exergue } from './section';
 
 /**
  * Pourquoi un abonnement, pour une obligation annuelle.
@@ -49,21 +49,23 @@ export function Abonnement() {
 			/>
 
 			{/*
-			  UN PANNEAU À TROIS COLONNES, ET NON TROIS CARTES SÉPARÉES. Trois
-			  surfaces distinctes se compareraient, comme trois formules d'un tarif ;
-			  ce sont trois RAISONS, qui s'additionnent. Une seule surface, divisée,
-			  dit l'addition. C'est aussi ce qui évite la troisième grille de trois
-			  cartes de la page.
+			  ⚠️ NI TROIS CARTES, NI UN PANNEAU : TROIS COLONNES SUR LE FOND. Trois
+			  surfaces distinctes se compareraient, comme trois formules d'un tarif,
+			  alors que ce sont trois RAISONS qui s'additionnent. Un panneau unique
+			  disait bien l'addition, et posait une carte de plus sur une page qui en
+			  avait déjà trop. Le vide entre les colonnes dit exactement la même
+			  chose, et ne coûte rien.
 
 			  LE NUMÉRO EST UNE PASTILLE D'ACCENT. La version précédente n'en avait
 			  aucun : trois blocs de texte de même poids, que l'œil ne pouvait pas
 			  ordonner alors qu'ils SONT ordonnés — du plus fort au plus faible pour
 			  la cible. Un chiffre en tête rend cet ordre lisible sans une phrase de
-			  plus.
+			  plus. C'est la seule pastille tolérée ici, parce qu'elle porte une
+			  information — le rang — et pas un effet.
 			*/}
-			<Panneau colonnes={3} divise className="cladd-color-brand overflow-hidden">
+			<div className="cladd-color-brand grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
 				{RAISONS.map((r, i) => (
-					<div key={r.titre} className="flex flex-col gap-cladd-3xs p-cladd-2xs md:p-cladd-xs">
+					<div key={r.titre} className="flex flex-col gap-cladd-3xs">
 						<span className="flex size-8 items-center justify-center rounded-full bg-cladd-primary/10 text-cladd-2xs font-bold text-cladd-primary tabular-nums">
 							{i + 1}
 						</span>
@@ -73,7 +75,7 @@ export function Abonnement() {
 						</span>
 					</div>
 				))}
-			</Panneau>
+			</div>
 
 			<Exergue
 				phrase="C’est exactement votre cabinet comptable."

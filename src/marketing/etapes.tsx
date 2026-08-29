@@ -12,7 +12,7 @@ import {
 	type LigneFamille
 } from '../ui';
 import { useVisible, useCompteur } from './mouvement';
-import { SectionMarketing, TitreSection, Cadre, Panneau } from './section';
+import { SectionMarketing, TitreSection, Cadre, Inventaire } from './section';
 
 /**
  * Les quatre étapes, démontrées avec les composants du produit.
@@ -157,17 +157,17 @@ export function Etapes() {
 				titre="Vous déposez ce que vous avez"
 				texte="Aucun format à respecter. On lit ce que vous avez sous la main."
 				apres={
-					<Panneau as="dl" divise>
+					<Inventaire as="dl">
 						{FORMATS.map((f) => (
 							<div
 								key={f.titre}
-								className="flex flex-wrap items-baseline justify-between gap-cladd-3xs p-cladd-2xs"
+								className="flex flex-wrap items-baseline justify-between gap-cladd-3xs py-cladd-3xs"
 							>
 								<dt className="text-cladd-md font-semibold">{f.titre}</dt>
 								<dd className="text-cladd-sm text-plume-claire">{f.detail}</dd>
 							</div>
 						))}
-					</Panneau>
+					</Inventaire>
 				}
 			>
 				{/*

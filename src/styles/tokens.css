@@ -337,6 +337,22 @@
 	--shadow-pose-haute:
 		0 2px 6px oklch(0.35 0.03 82 / 0.06), 0 34px 70px -28px oklch(0.35 0.03 82 / 0.34);
 
+	/* LA HAUTEUR DE LA BARRE PUBLIQUE, et pourquoi elle doit être écrite.
+	 *
+	 * La barre est en `fixed` : elle flotte sur le dégradé du héros au lieu de le
+	 * pousser vers le bas, ce qui est le seul moyen de voir l'azur passer derrière
+	 * elle. Mais un élément hors du flux ne réserve aucune place, et rien dans la
+	 * mise en page ne peut deviner sa hauteur : le héros doit se retirer d'autant,
+	 * à la main.
+	 *
+	 * Deux endroits lisent donc la même valeur. La coder deux fois serait la
+	 * garantie qu'un changement de taille de bouton fasse un jour passer le
+	 * sur-titre sous le logo — un défaut qui ne se voit qu'en haut de page, à une
+	 * seule largeur, c'est-à-dire jamais.
+	 *
+	 * 80 px = 48 de contrôle (le plancher tactile) + deux fois 16 de bandeau. */
+	--spacing-barre-publique: 80px;
+
 	/* LE GRAND SOUFFLE. Une fois et demie le plus grand écart du kit (72 px), pour
 	 * les deux ou trois endroits d'une page commerciale où un bloc doit se
 	 * DÉTACHER de ce qui le précède plutôt que de simplement s'en espacer.

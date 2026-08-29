@@ -47,7 +47,12 @@ import { FondDessine } from './fond-dessine';
  */
 export function Hero() {
 	return (
-		<header className="relative isolate w-full overflow-hidden border-b border-trait bg-linear-to-b from-azur-lavis via-azur-clair to-papier text-plume">
+		// LE RETRAIT SUPÉRIEUR EST CELUI DE LA BARRE, et il est porté par
+		// l'en-tête plutôt que par son contenu : le dégradé remplit le
+		// rembourrage, donc l'azur commence bien au tout premier pixel de la
+		// fenêtre et passe DERRIÈRE la barre, qui est en `fixed` et ne réserve
+		// aucune place. Voir `--spacing-barre-publique`.
+		<header className="relative isolate w-full overflow-hidden border-b border-trait bg-linear-to-b from-azur-lavis via-azur-clair to-papier pt-barre-publique text-plume">
 			<FondDessine />
 
 			{/* `isolate` sur l'en-tête, et le calque de dessins à `-z-10` : c'est le
