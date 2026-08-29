@@ -1,4 +1,4 @@
-import { SectionMarketing, TitreSection } from './section';
+import { SectionMarketing, TitreSection, Panneau, Exergue } from './section';
 
 /**
  * Pourquoi un abonnement, pour une obligation annuelle.
@@ -42,32 +42,43 @@ const RAISONS = [
 
 export function Abonnement() {
 	return (
-		<SectionMarketing fond="froid">
+		<SectionMarketing id="abonnement" fond="froid">
 			<TitreSection
 				titre="La déclaration est annuelle. Le suivi ne l’est pas."
 				chapeau="Pourquoi payer tous les mois pour une obligation annuelle ? Trois raisons."
 			/>
 
-			<div className="grid divide-y divide-trait border-y border-trait md:grid-cols-3 md:divide-x md:divide-y-0">
-				{RAISONS.map((r) => (
-					<div key={r.titre} className="flex flex-col gap-cladd-3xs py-cladd-xs md:px-cladd-2xs">
+			{/*
+			  UN PANNEAU À TROIS COLONNES, ET NON TROIS CARTES SÉPARÉES. Trois
+			  surfaces distinctes se compareraient, comme trois formules d'un tarif ;
+			  ce sont trois RAISONS, qui s'additionnent. Une seule surface, divisée,
+			  dit l'addition. C'est aussi ce qui évite la troisième grille de trois
+			  cartes de la page.
+
+			  LE NUMÉRO EST UNE PASTILLE D'ACCENT. La version précédente n'en avait
+			  aucun : trois blocs de texte de même poids, que l'œil ne pouvait pas
+			  ordonner alors qu'ils SONT ordonnés — du plus fort au plus faible pour
+			  la cible. Un chiffre en tête rend cet ordre lisible sans une phrase de
+			  plus.
+			*/}
+			<Panneau colonnes={3} divise className="cladd-color-brand overflow-hidden">
+				{RAISONS.map((r, i) => (
+					<div key={r.titre} className="flex flex-col gap-cladd-3xs p-cladd-2xs md:p-cladd-xs">
+						<span className="flex size-8 items-center justify-center rounded-full bg-cladd-primary/10 text-cladd-2xs font-bold text-cladd-primary tabular-nums">
+							{i + 1}
+						</span>
 						<span className="font-serif text-intertitre leading-snug font-medium">{r.titre}</span>
 						<span className="text-cladd-md leading-relaxed font-normal text-plume-douce">
 							{r.texte}
 						</span>
 					</div>
 				))}
-			</div>
+			</Panneau>
 
-			<blockquote className="max-w-4xl border-l-4 border-plume pl-cladd-2xs">
-				<p className="font-serif text-titre-section leading-tight font-medium">
-					C’est exactement votre cabinet comptable.
-				</p>
-				<p className="pt-cladd-3xs text-cladd-md leading-relaxed font-normal text-plume-douce">
-					Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les mois.
-					Letikette fait la même chose pour votre assiette.
-				</p>
-			</blockquote>
+			<Exergue
+				phrase="C’est exactement votre cabinet comptable."
+				appui="Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les mois. Letikette fait la même chose pour votre assiette."
+			/>
 		</SectionMarketing>
 	);
 }

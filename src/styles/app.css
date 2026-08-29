@@ -82,3 +82,42 @@ body {
 		transparent 10px
 	);
 }
+
+/* L'ÉCRAN DE LA TABLETTE, ET SA MISE À L'ÉCHELLE.
+ *
+ * Le problème. L'aperçu montré dans le cadre est l'application elle-même, avec
+ * ses vrais composants : elle est dessinée pour 1180px de large, le format de
+ * référence du produit. Sur un téléphone de 375px, ce même écran doit tenir
+ * dans 340px — et il ne doit surtout pas SE REDISPOSER pour y arriver, sans
+ * quoi on montrerait une mise en page de téléphone dans un cadre de tablette,
+ * c'est-à-dire un mensonge sur ce à quoi ressemble le produit.
+ *
+ * La solution est donc une RÉDUCTION optique, pas une adaptation : la toile
+ * garde ses 1180 × 824, et on la met à l'échelle de la largeur disponible.
+ *
+ * POURQUOI `tan(atan2(...))` ET PAS UNE DIVISION. `scale()` attend un nombre
+ * sans unité, et on n'a que deux longueurs : la largeur du conteneur en `cqw`,
+ * et les 1180px de la toile. La division de deux longueurs dans un `calc()`
+ * est récente et inégalement répandue. `atan2()` de deux longueurs rend un
+ * ANGLE, dont la tangente est un nombre : c'est le contournement documenté, et
+ * les fonctions trigonométriques CSS sont là depuis Chrome 111, Safari 15.4 et
+ * Firefox 108. Vérifié au navigateur, pas supposé.
+ *
+ * `container-type: inline-size` est ce qui donne son sens à `cqw` : la mesure
+ * est celle du CADRE, jamais celle de la fenêtre. Le cadre peut donc vivre dans
+ * n'importe quelle colonne sans qu'aucune largeur soit écrite deux fois.
+ *
+ * Le rapport de l'écran vaut celui de la toile : c'est lui qui réserve la
+ * hauteur, qu'une transformation ne change jamais — un élément transformé
+ * occupe toujours sa place d'origine dans le flux. */
+.tablette-ecran {
+	container-type: inline-size;
+	aspect-ratio: 1180 / 824;
+}
+
+.tablette-toile {
+	width: 1180px;
+	height: 824px;
+	transform-origin: top left;
+	transform: scale(tan(atan2(100cqw, 1180px)));
+}

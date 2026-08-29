@@ -12,6 +12,7 @@
  * n'est PAS celui de l'application.
  */
 export { SectionMarketing, TitreSection, Cadre, type FondSection } from './section';
+export { Navbar } from './navbar';
 export { Hero } from './hero';
 export { LaLoi } from './la-loi';
 export { Etapes } from './etapes';

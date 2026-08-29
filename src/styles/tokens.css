@@ -226,6 +226,40 @@
 	--color-papier: oklch(0.995 0.004 85);
 	--color-papier-chaud: oklch(0.972 0.012 82);
 	--color-encre-nuit: oklch(0.235 0.022 258);
+
+	/* LE LAVIS D'AZUR — le dégradé du héros, et lui seul.
+	 *
+	 * Le reste de la page est un imprimé : des aplats francs, séparés par des
+	 * filets. Un dégradé y serait un ornement. En haut de page, il fait autre
+	 * chose — il donne une PROFONDEUR au premier écran, ce qui est exactement ce
+	 * qui manquait quand l'accroche était posée sur du blanc.
+	 *
+	 * Il descend du lavis vers le papier, sans rupture visible : la tablette se
+	 * détache sur le bleu, et la première section du texte commence sur le crème
+	 * habituel. Aucun autre bloc de la page n'a le droit d'en porter un.
+	 *
+	 * Bleu, bien sûr, et pas vert : c'est la teinte de l'accent de marque, la
+	 * seule qui puisse s'étaler sans voler leur sens aux trois couleurs de seuil.
+	 * Chroma volontairement bas — au-delà, l'azur devient un fond de logiciel de
+	 * gestion des années 2000, et les jauges vertes et rouges qui se posent
+	 * dessus commencent à vibrer. */
+	--color-azur-lavis: oklch(0.895 0.052 251);
+	--color-azur-clair: oklch(0.955 0.026 251);
+
+	/* LA COQUE DE LA TABLETTE. Deux tons : le corps, et l'arête que la lumière
+	 * accroche. Un cadre d'un seul aplat lit « rectangle noir » ; c'est ce
+	 * liseré d'un pixel, plus clair, qui le fait lire « objet ». */
+	--color-coque: oklch(0.245 0.016 258);
+	--color-coque-arete: oklch(0.42 0.018 258);
+
+	/* L'objet posé. Trois couches, et il en faut trois :
+	 *   l'arête de lumière sur la tranche haute, qui fait l'aluminium ;
+	 *   l'ombre de contact, courte et serrée, qui POSE la tablette ;
+	 *   l'ombre longue et diffuse, qui la DÉCOLLE du fond.
+	 * Retirer la deuxième la fait flotter, retirer la troisième l'aplatit. */
+	--shadow-tablette:
+		inset 0 1px 0 0 var(--color-coque-arete), 0 2px 8px oklch(0.2 0.015 258 / 0.2),
+		0 48px 90px -40px oklch(0.2 0.015 258 / 0.55);
 	--color-trait: oklch(0.9 0.012 82);
 	--color-trait-encre: oklch(0.38 0.022 258);
 	--color-plume: oklch(0.235 0.022 258);
@@ -274,28 +308,28 @@
 	 * fluide, jusqu’à cent-trente-deux pixels. Aucun autre élément de la page
 	 * n'a le droit de les approcher. */
 	--text-seuil-affiche: clamp(56px, 9vw, 132px);
-	/* Le chiffre d'un seuil légal, en serif : c'est le seul nombre de la page
-	 * que le visiteur doit retenir jusqu'en bas. */
-	--text-seuil-legal: 72px;
-	--text-seuil-legal-etroite: 48px;
 
-	/* Le filet qui souligne une section, et le seul rayon toléré : deux pixels
-	 * sur une photographie, pour qu'elle ne coupe pas comme une lame. */
-	/* ⚠️ LES ANGLES SE RADOUCISSENT, ET LES OMBRES REVIENNENT.
+	/* LE RAYON DE TOUT CE QUI EST POSÉ SUR LA PAGE, et il n'y en a plus qu'un.
 	 *
-	 * Le brutalisme à angles droits était une consigne, et il a produit une page
-	 * qui a l'air d'un formulaire d'administration. Verdict : « moche, ça ne donne
-	 * pas envie ». Sur un produit de cuisine, la dureté ne rassure pas, elle
-	 * refroidit.
+	 * ⚠️ IL REMPLACE `--radius-net`, DISPARU APRÈS DEUX CORRECTIONS. Ce dernier
+	 * valait deux pixels du temps où la page était un imprimé brutaliste, où une
+	 * photographie ne devait pas couper comme une lame. Il est monté à quatorze
+	 * quand les objets montrés se sont adoucis. Il n'a plus aucun porteur depuis
+	 * que le panneau est devenu la surface de référence : capture, photographie,
+	 * liste de seuils, document opposable, tout porte celui-ci. Un jeton sans
+	 * porteur n'est pas neutre — il finit par être repris pour autre chose, et
+	 * l'échelle se remet à diverger en silence.
 	 *
-	 * `net` passe de deux à quatorze pixels sur ce qui est MONTRÉ — les captures
-	 * de l'interface, les photographies — et l'ombre douce revient dessous. C'est
-	 * ce qui fait qu'un écran de logiciel se lit comme un objet qu'on a envie de
-	 * toucher, au lieu d'une vignette collée sur une feuille.
+	 * VINGT-QUATRE, ET PAS QUATORZE. Le rayon doit croître avec la surface pour
+	 * produire la même impression de douceur : quatorze pixels se voient sur une
+	 * vignette de la taille d'une carte postale, et disparaissent sur un panneau
+	 * de mille pixels de large, qui redevient un rectangle. C'est une constante
+	 * optique, pas une préférence.
 	 *
-	 * Le filet, lui, reste : c'est encore lui qui sépare les sections. On adoucit
-	 * les objets, on ne remet pas de cartes partout. */
-	--radius-net: 14px;
+	 * C'est aussi ce qui aligne la page publique sur l'application, dont les
+	 * cartes sont à `--radius-cladd-2xl`, soit vingt-quatre également. Les deux
+	 * systèmes restent distincts, mais ils cessent de se contredire. */
+	--radius-panneau: 24px;
 
 	/* L'ombre des objets montrés. Très basse, très diffuse : elle décolle sans
 	 * jamais faire flotter, et elle ne vire pas au halo sur le fond sable. */

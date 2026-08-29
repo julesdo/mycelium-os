@@ -5,10 +5,21 @@ Deux images, issues de **Pexels**, sous [licence Pexels](https://www.pexels.com/
 
 | Fichier | Source | Sujet |
 |---|---|---|
-| `cuisine-preparation.jpg` | [pexels.com/photo/29062078](https://www.pexels.com/photo/29062078/) | Cuisinier émincant des poireaux, cuisine professionnelle |
 | `cuisine.jpg` | [pexels.com/photo/4253133](https://www.pexels.com/photo/4253133/) | Chef de cuisine au piano, cuisine professionnelle |
+| `service.jpg` | [pexels.com/photo/5638732](https://www.pexels.com/photo/5638732/) | Bacs gastronormes en ligne de self |
+
+Les **dessins au trait** du fond du héros ne sont pas ici : ils ont leur propre
+fiche, `public/CREDITS.md`, parce que leur licence exige une attribution.
 
 ## Ce qui a été écarté, et pourquoi
+
+Le héros a porté une photographie, puis n'en porte plus aucune. Un cuisinier
+émincant des poireaux (`cuisine-preparation.jpg`, pexels 29062078) occupait cinq
+colonnes à droite de l'accroche. Elle disait « alimentaire » et pas « logiciel »,
+et surtout elle prenait la place du produit — qui se retrouvait renvoyé sous la
+ligne de flottaison. Le premier écran montre désormais l'application dans une
+tablette ; le fond est un lavis semé de dessins au trait. Le fichier est
+supprimé : 189 ko servis pour rien est un défaut, pas une réserve.
 
 Le héros portait un à-plat de raisins, mangue et asperges sur du marbre
 (`pexels-photo-3987405`). Techniquement irréprochable, et faux : c'est le

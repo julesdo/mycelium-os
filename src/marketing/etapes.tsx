@@ -12,7 +12,7 @@ import {
 	type LigneFamille
 } from '../ui';
 import { useVisible, useCompteur } from './mouvement';
-import { SectionMarketing, TitreSection, Cadre } from './section';
+import { SectionMarketing, TitreSection, Cadre, Panneau } from './section';
 
 /**
  * Les quatre étapes, démontrées avec les composants du produit.
@@ -157,17 +157,17 @@ export function Etapes() {
 				titre="Vous déposez ce que vous avez"
 				texte="Aucun format à respecter. On lit ce que vous avez sous la main."
 				apres={
-					<dl className="divide-y divide-trait border-y border-trait">
+					<Panneau as="dl" divise>
 						{FORMATS.map((f) => (
 							<div
 								key={f.titre}
-								className="flex flex-wrap items-baseline justify-between gap-cladd-3xs py-cladd-3xs"
+								className="flex flex-wrap items-baseline justify-between gap-cladd-3xs p-cladd-2xs"
 							>
 								<dt className="text-cladd-md font-semibold">{f.titre}</dt>
 								<dd className="text-cladd-sm text-plume-claire">{f.detail}</dd>
 							</div>
 						))}
-					</dl>
+					</Panneau>
 				}
 			>
 				{/*
@@ -176,7 +176,7 @@ export function Etapes() {
 				  fichiers ; le poser ici donnerait une zone qui accepte un dépôt et
 				  n'en fait rien.
 				*/}
-				<div className="relative aspect-video overflow-hidden rounded-net border border-trait shadow-pose lg:aspect-square">
+				<div className="relative aspect-video overflow-hidden rounded-panneau border border-trait shadow-pose lg:aspect-square">
 					<img
 						src="/photos/cuisine.jpg"
 						alt="Chef de cuisine au piano dans une cuisine professionnelle"
@@ -256,8 +256,25 @@ function Etape({
 		<div className="grid items-start gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
 			<div className={cn('flex flex-col gap-cladd-2xs lg:col-span-5', inverse && 'lg:order-2')}>
 				<div className="flex flex-col gap-cladd-3xs">
-					<span className="border-b border-trait pb-cladd-3xs font-serif text-intertitre font-medium text-plume-claire tabular-nums">
-						{numero}
+					{/*
+					  ⚠️ LE NUMÉRO EST REDEVENU UNE PASTILLE, APRÈS AVOIR ÉTÉ UN FILET.
+					  Il a été un disque bleu de quarante pixels — le vocabulaire d'un
+					  guide de démarrage — puis un chiffre gris sur une règle d'un pixel,
+					  qui se lisait comme la numérotation d'un article de loi.
+
+					  Le second réglage était juste tant que la page entière était un
+					  imprimé. Elle ne l'est plus : le sur-titre de section est une
+					  pastille, les seuils légaux sont dans un panneau posé, et ce
+					  chiffre gris sous son trait était le dernier vestige. La pastille
+					  reprend exactement la forme du sur-titre — même rayon, même lit
+					  d'accent à huit pour cent — de sorte que la page n'a plus qu'UNE
+					  façon d'étiqueter un bloc.
+
+					  Elle reste petite et sans cercle épais : ce n'est pas un jalon
+					  qu'on suit du doigt, c'est un repère de lecture.
+					*/}
+					<span className="cladd-color-brand w-fit rounded-full bg-cladd-primary/8 px-cladd-3xs py-1 text-cladd-2xs font-bold tracking-widest text-cladd-primary tabular-nums">
+						Étape {numero}
 					</span>
 					<h3 className="font-serif text-titre-section leading-tight font-medium tracking-tight">
 						{titre}
@@ -322,7 +339,7 @@ function Confirmation() {
 				titre="La file est vide."
 				explication="Chez vous, un produit confirmé l'est pour de bon. Il ne reviendra pas l'an prochain."
 				action={
-					<Button variant="solid" className="rounded-none" onClick={() => setFaits(0)}>
+					<Button variant="solid" rounded onClick={() => setFaits(0)}>
 						<RotateCcwIcon />
 						Rejouer
 					</Button>

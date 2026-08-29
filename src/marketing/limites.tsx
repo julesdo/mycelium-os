@@ -1,4 +1,5 @@
-import { SectionMarketing, TitreSection } from './section';
+import { MinusIcon } from 'lucide-react';
+import { SectionMarketing, TitreSection, Panneau } from './section';
 
 /**
  * Ce qu'on ne fait pas.
@@ -9,13 +10,13 @@ import { SectionMarketing, TitreSection } from './section';
  * limite énoncée franchement vaut trois arguments, et celles-ci sont vérifiables
  * en une minute.
  *
- * ELLES SONT EMPILÉES SOUS UN FILET, sans numéros. C'étaient trois cartes, puis
+ * ELLES SONT EMPILÉES DANS UN SEUL PANNEAU, sans numéros. C'étaient trois cartes, puis
  * trois colonnes numérotées 01/02/03 — et la numérotation était de l'ornement
  * déguisé en structure : ces trois limites ne forment aucune séquence, il n'y a
  * pas de « première » puis de « deuxième ». Un chiffre qui ne compte rien
  * n'apporte que l'air d'un gabarit.
  *
- * Ce qui reste, le filet et l'empilement pleine largeur, dit vrai : ce sont des
+ * Ce qui reste, l'empilement pleine largeur, dit vrai : ce sont des
  * clauses, elles se lisent l'une après l'autre, et deux d'entre elles sont
  * littéralement des lignes rouges juridiques.
  *
@@ -52,25 +53,30 @@ export function Limites() {
 			<TitreSection titre="Ce que Letikette ne fait pas" chapeau="Autant les lire maintenant." />
 
 			{/*
-			  TROIS CLAUSES EMPILÉES, ET NON TROIS COLONNES.
+			  ⚠️ LES RÈGLES NOIRES ONT DISPARU. Chaque clause était ouverte par un
+			  filet d'encre pleine sur toute la largeur : trois traits noirs empilés,
+			  le vocabulaire le plus dur du site, à deux sections d'un héros fait
+			  d'un lavis et d'un objet posé.
 
-			  C'était une grille de trois, la même que celle des seuils légaux et
-			  celle des raisons de l'abonnement : trois grilles de trois sur une seule
-			  page, à quelques écrans d'intervalle. Au troisième passage l'œil ne lit
-			  plus, il reconnaît une forme et saute.
+			  Un seul panneau divisé garde exactement la lecture voulue — des
+			  clauses qui s'enchaînent, titre à gauche, portée à droite — sans le
+			  trait qui faisait « conditions générales imprimées ». Et il garde la
+			  correction d'origine : EMPILÉES, jamais en trois colonnes, puisque la
+			  page portait déjà deux grilles de trois à quelques écrans d'ici.
 
-			  Empilées et pleine largeur, avec le titre à gauche et le texte à droite,
-			  elles se lisent comme les clauses d'un contrat — ce qu'elles sont
-			  littéralement : deux lignes rouges juridiques et une limite de
-			  responsabilité. La forme dit enfin la même chose que le fond.
+			  L'ICÔNE DIT « CE N'EST PAS AU PROGRAMME » sans le répéter en mots. Une
+			  croix serait un échec, une interdiction un panneau routier ; le trait
+			  barré est ce qui reste, et il est en plume claire — pas en rouge, qui
+			  ne veut dire qu'une chose dans ce produit.
 			*/}
-			<div className="flex flex-col">
+			<Panneau divise>
 				{LIMITES.map((l) => (
 					<div
 						key={l.titre}
-						className="grid gap-cladd-3xs border-t border-plume py-cladd-xs md:grid-cols-12 md:gap-cladd-2xs"
+						className="grid items-start gap-cladd-3xs p-cladd-2xs md:grid-cols-12 md:gap-cladd-2xs md:p-cladd-xs"
 					>
-						<h3 className="font-serif text-intertitre leading-snug font-medium md:col-span-5">
+						<h3 className="flex items-start gap-cladd-3xs font-serif text-intertitre leading-snug font-medium md:col-span-5">
+							<MinusIcon aria-hidden className="mt-2 size-4 shrink-0 text-plume-claire" />
 							{l.titre}
 						</h3>
 						<p className="text-cladd-md leading-relaxed font-normal text-plume-douce md:col-span-7">
@@ -78,7 +84,7 @@ export function Limites() {
 						</p>
 					</div>
 				))}
-			</div>
+			</Panneau>
 		</SectionMarketing>
 	);
 }

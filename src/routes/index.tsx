@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import {
+	Navbar,
 	Hero,
 	LaLoi,
 	Etapes,
@@ -101,6 +102,7 @@ export const Route = createFileRoute('/')({
 function Accueil() {
 	return (
 		<main className="flex w-full flex-col">
+			<Navbar />
 			<Hero />
 			<LaLoi />
 			<Etapes />

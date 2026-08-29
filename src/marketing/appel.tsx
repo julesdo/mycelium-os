@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
 import { SectionMarketing } from './section';
+import { FondDessine } from './fond-dessine';
 
 /**
  * La date, puis le bouton.
@@ -36,8 +37,9 @@ import { SectionMarketing } from './section';
  */
 export function Appel() {
 	return (
-		<SectionMarketing fond="encre" filet={false} className="gap-cladd-2xs">
-			<span className="text-cladd-2xs font-semibold tracking-widest text-plume-inversee-douce uppercase">
+		<SectionMarketing fond="encre" filet={false} className="relative isolate gap-cladd-2xs">
+			<FondDessine inverse />
+			<span className="w-fit rounded-full bg-plume-inversee/12 px-cladd-3xs py-1 text-cladd-2xs font-semibold tracking-widest text-plume-inversee-douce uppercase">
 				Campagne « ma cantine »
 			</span>
 			{/*
@@ -62,7 +64,8 @@ export function Appel() {
 					to="/inscription"
 					variant="solid"
 					size="lg"
-					className="rounded-none px-cladd-2xs"
+					rounded
+					className="px-cladd-2xs"
 				>
 					Générer mon bilan EGalim
 					<ArrowRightIcon />

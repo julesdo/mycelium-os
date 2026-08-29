@@ -4,29 +4,38 @@ import { cn } from '../ui';
 /**
  * Une section de la page d'accueil, avec son fond pleine largeur.
  *
- * CE QUI A CHANGÉ, ET POURQUOI. La version précédente empruntait les surfaces
- * de l'application : un beige chaud, une surface haute, une surface creuse. Sur
- * une page commerciale, ces trois fonds se ressemblent trop pour découper quoi
- * que ce soit, et le tout se lisait comme un gabarit de logiciel — des cartes
- * arrondies qui flottent sur du beige, vues mille fois.
+ * ⚠️ CE QUI A CHANGÉ EN DERNIER, ET POURQUOI. La page tenait sur un vocabulaire
+ * d'imprimé : des filets d'un pixel, des angles droits, du texte à même le
+ * papier. Cohérent, défendable, et daté — le héros refait, le contraste entre
+ * les deux moitiés de la page devenait le vrai défaut : en haut un objet posé
+ * sur un lavis, en dessous un formulaire.
  *
- * Il ne reste que TROIS fonds, et l'écart entre eux se voit de loin :
+ * Le vocabulaire s'aligne donc sur le haut de page. Ce qui change :
+ *
+ *   LE PANNEAU REMPLACE LE FILET partout où un contenu forme un bloc. Les
+ *   grilles séparées par des règles d'un pixel deviennent des surfaces posées,
+ *   avec un rayon et une ombre. Voir `Panneau`.
+ *
+ *   LE LAVIS D'AZUR devient un fond de section à part entière, et plus
+ *   seulement celui du héros. Il sépare deux sections claires bien mieux qu'un
+ *   sable dont l'écart au crème se compte en points de clarté.
+ *
+ *   LES RÈGLES NOIRES DISPARAISSENT. `border-plume` — l'encre pleine — servait
+ *   à encadrer les seuils légaux et les clauses. C'est le trait le plus dur de
+ *   la page, et c'est lui qui donnait l'aspect « document administratif ».
+ *
+ * CE QUI NE CHANGE PAS. Le filet qui FERME une section : c'est encore lui qui
+ * dit qu'un sujet s'arrête. Et la règle qui empêche la page de redevenir une
+ * grille de cartes : un panneau porte un CONTENU STRUCTURÉ — une liste de
+ * seuils, un document, un écran. Un paragraphe reste à même le fond.
+ *
+ * LES QUATRE FONDS, et l'écart entre eux se voit de loin :
  *
  *   `papier`  une crème très pâle. Le fond par défaut, celui du texte courant.
- *   `chaud`   un sable, à peine plus soutenu. Il ne décore pas : il SÉPARE.
+ *   `azur`    le lavis bleu du héros, qui s'éteint vers le crème.
+ *   `chaud`   un sable, à peine plus soutenu.
  *   `encre`   le bleu de nuit, texte inversé, avec sa trame. Réservé à ce qui
  *             doit faire autorité, jamais à ce qui doit séduire.
- *
- * ⚠️ LES DEUX FONDS CLAIRS SE SONT RÉCHAUFFÉS. Ils étaient blanc pur et gris
- * bleuté : corrects, et froids. Sur un produit dont le sujet est ce qu'on sert à
- * manger, la froideur est un contresens. Voir `tokens.css` pour la raison
- * complète, et pour pourquoi la chaleur ne vient pas d'un lavis vert.
- *
- * LE FILET SÉPARE LES SECTIONS, L'OMBRE POSE LES OBJETS. Une section se ferme
- * par une règle d'un pixel, ce qui la range dans le registre du document. Mais
- * ce qui est MONTRÉ à l'intérieur — un écran du logiciel, une photographie —
- * porte une ombre douce et des angles adoucis : un objet qu'on a envie de
- * toucher, pas une vignette collée sur une feuille.
  *
  * LES COULEURS SONT ABSOLUES, elles ne suivent pas le thème de l'application.
  * Chaque section peint son fond ET sa couleur de texte : voir l'en-tête du bloc
@@ -35,6 +44,7 @@ import { cn } from '../ui';
 
 const FONDS = {
 	papier: 'bg-papier text-plume',
+	azur: 'bg-linear-to-b from-azur-clair via-papier to-papier text-plume',
 	froid: 'bg-papier-chaud text-plume',
 	encre: 'encre-tramee text-plume-inversee'
 } as const;
@@ -172,18 +182,119 @@ export function TitreSection({
 }
 
 /**
+ * Le panneau : une surface posée, qui porte un contenu structuré.
+ *
+ * IL REMPLACE LES GRILLES SÉPARÉES PAR DES FILETS. Trois seuils légaux, une
+ * liste de formats acceptés, trois clauses : à chaque fois, la version
+ * précédente écrivait `border-y divide-x` et laissait le contenu à même le
+ * papier. Sur une page qui commence par un objet posé sur un lavis, ces règles
+ * d'un pixel se lisaient comme un tableau imprimé — c'est-à-dire vieilles.
+ *
+ * CE QU'IL N'AUTORISE PAS. Un paragraphe seul n'entre pas dans un panneau. La
+ * règle qui a sauvé la page d'une grille de cartes tient toujours : le texte
+ * courant vit sur le fond, et ce qui est POSÉ est ce qui a une structure — une
+ * liste, un document, un écran. Sans ça, on remet des cartes partout et on
+ * retrouve exactement ce qu'on vient d'enlever.
+ *
+ * `divise` pose les séparateurs internes en une fois : verticaux au-delà de
+ * `md`, horizontaux en dessous, jamais les deux, et jamais de trait qui pend
+ * sur un bord — `divide-*` ne dessine qu'ENTRE les enfants.
+ */
+export function Panneau({
+	as: Balise = 'div',
+	divise = false,
+	colonnes,
+	className,
+	children
+}: {
+	/** La balise portée, quand le contenu a une sémantique — `dl` pour une liste
+	 *  de définitions, `ul` pour un inventaire. La surface ne doit pas coûter le
+	 *  balisage : un lecteur d'écran ne voit pas les colonnes, il voit la nature
+	 *  de la liste. */
+	as?: 'div' | 'dl' | 'ul';
+	/** Sépare les enfants directs par un filet clair. */
+	divise?: boolean;
+	/** Le nombre de colonnes au-delà de `md`. En dessous, tout s'empile. */
+	colonnes?: 2 | 3;
+	className?: string;
+	children: ReactNode;
+}) {
+	return (
+		<Balise
+			className={cn(
+				'rounded-panneau border border-trait bg-papier shadow-pose',
+				colonnes === 2 && 'grid md:grid-cols-2',
+				colonnes === 3 && 'grid md:grid-cols-3',
+				divise &&
+					(colonnes ? 'divide-y divide-trait md:divide-x md:divide-y-0' : 'divide-y divide-trait'),
+				className
+			)}
+		>
+			{children}
+		</Balise>
+	);
+}
+
+/**
+ * L'exergue : la phrase qui doit rester quand tout le reste est oublié.
+ *
+ * IL Y EN A DEUX SUR LA PAGE, et pas une de plus. « Local ne compte pas », et
+ * « c'est exactement votre cabinet comptable ». Ce sont les deux phrases qui
+ * retournent une conviction ; les mettre au même niveau typographique que le
+ * reste, c'est parier qu'elles seront lues, ce qui est perdu d'avance.
+ *
+ * CE QU'IL ÉTAIT, ET POURQUOI ÇA NE VA PLUS. Un filet noir de quatre pixels à
+ * gauche, du texte à même le papier. C'est la citation de bloc du web de 2010,
+ * et surtout : sur une page dont le haut est un objet posé, c'est le seul
+ * élément qui n'a ni surface, ni profondeur, ni couleur.
+ *
+ * Le filet reste — c'est ce qui dit « citation » — mais il devient une BARRE
+ * ARRONDIE EN ACCENT, sur un panneau posé. La couleur est celle de la marque,
+ * la seule autorisée hors des jauges : ni verte, ni ambre, ni rouge, qui ne
+ * veulent dire qu'une chose dans tout le produit.
+ */
+export function Exergue({
+	phrase,
+	appui,
+	className
+}: {
+	phrase: ReactNode;
+	/** La ligne qui explique, sous la phrase. */
+	appui?: ReactNode;
+	className?: string;
+}) {
+	return (
+		<blockquote
+			className={cn(
+				'cladd-color-brand flex max-w-4xl gap-cladd-2xs rounded-panneau border border-trait bg-papier p-cladd-2xs shadow-pose md:p-cladd-xs',
+				className
+			)}
+		>
+			<span aria-hidden className="w-1.5 shrink-0 rounded-full bg-cladd-primary" />
+			<div className="flex flex-col gap-cladd-3xs">
+				<p className="font-serif text-titre-section leading-tight font-medium text-plume">
+					{phrase}
+				</p>
+				{appui ? (
+					<p className="text-cladd-md leading-relaxed font-normal text-plume-douce">{appui}</p>
+				) : null}
+			</div>
+		</blockquote>
+	);
+}
+
+/**
  * Le cadre d'une preuve : une capture d'écran, une photographie, un document.
  *
- * C'EST LE SEUL ENDROIT DE LA PAGE OÙ UNE BORDURE ENTOURE QUELQUE CHOSE. Le
- * texte, lui, vit à même le fond — sortir chaque paragraphe de sa boîte est le
- * geste qui distingue une page éditoriale d'une grille de cartes. La bordure
- * n'encadre donc que ce qui est montré : un écran du logiciel, une photo.
+ * C'EST LE SEUL ENDROIT DE LA PAGE OÙ UNE BORDURE ENTOURE UNE IMAGE. Le texte,
+ * lui, vit à même le fond ; les contenus structurés vont dans un `Panneau`. Le
+ * cadre, c'est pour ce qui est MONTRÉ.
  *
  * ⚠️ IL S'EST ADOUCI. Deux pixels de rayon et pas d'ombre, c'était une vignette
- * collée sur une feuille. Quatorze pixels, un fond crème et une ombre basse en
- * font un OBJET posé : c'est ce qui donne envie d'ouvrir le logiciel plutôt que
- * de lire la page. `haut` réserve l'ombre la plus marquée à la démonstration du
- * héros, qui est la seule à devoir attirer l'œil avant le texte.
+ * collée sur une feuille. Le rayon de panneau, un fond crème et une ombre basse
+ * en font un OBJET posé : c'est ce qui donne envie d'ouvrir le logiciel plutôt
+ * que de lire la page. `haut` réserve l'ombre la plus marquée à ce qui doit
+ * attirer l'œil avant le texte.
  */
 export function Cadre({
 	haut = false,
@@ -191,7 +302,7 @@ export function Cadre({
 	contentClassName,
 	children
 }: {
-	/** L'ombre la plus marquée. Une seule par page, sinon plus rien ne se détache. */
+	/** L'ombre la plus marquée. Une seule par section, sinon plus rien ne se détache. */
 	haut?: boolean;
 	className?: string;
 	contentClassName?: string;
@@ -200,7 +311,7 @@ export function Cadre({
 	return (
 		<div
 			className={cn(
-				'overflow-hidden rounded-net border border-trait bg-papier',
+				'overflow-hidden rounded-panneau border border-trait bg-papier',
 				haut ? 'shadow-pose-haute' : 'shadow-pose',
 				className
 			)}

@@ -12,6 +12,8 @@
 
 export { cn } from './cn';
 export { LogoLetikette, MotLetikette } from './logo';
+export { Dessin, type NomDessin } from './dessins';
+export { Tablette } from './tablette';
 export { Page, PageHeader, PageBody } from './page';
 export { TwoPane } from './two-pane';
 export { EmptyState } from './empty-state';

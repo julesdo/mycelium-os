@@ -1,4 +1,4 @@
-import { SectionMarketing, TitreSection } from './section';
+import { SectionMarketing, TitreSection, Panneau, Exergue } from './section';
 
 /**
  * La règle, avant l'outil.
@@ -8,32 +8,37 @@ import { SectionMarketing, TitreSection } from './section';
  * et le barème n'est écrit nulle part de façon lisible. Un visiteur qui découvre
  * l'obligation ici comprend d'un coup pourquoi il lui manque un chiffre.
  *
- * LES TROIS NOMBRES NE SONT PLUS DANS DES CARTES. Ils étaient posés sur trois
- * surfaces arrondies avec une ombre portée, c'est-à-dire dans le vocabulaire
- * exact d'un tableau de bord — trois indicateurs qu'on regarde. Ce sont des
- * SEUILS LÉGAUX : ils appartiennent au registre de l'article de loi, pas à celui
- * de la métrique. Ils vivent donc à même le papier, séparés par des filets
- * verticaux, comme les colonnes d'un texte réglementaire.
+ * ELLE PROLONGE LE LAVIS DU HÉROS. C'est la première section après la tablette,
+ * et le dégradé d'azur y descend jusqu'au crème : la page ne casse pas en deux
+ * au premier défilement. C'est aussi la seule autre section à le porter — au
+ * troisième, un dégradé n'est plus une transition, c'est un motif.
  *
- * ILS SONT EN SERIF ET EN ENCRE, JAMAIS EN VERT. Le vert, l'ambre et le rouge du
- * produit veulent dire « au-dessus du seuil, tout près, en dessous », et rien
- * d'autre. Les peindre en vert dirait « c'est atteint », ce qui est l'inverse du
- * propos.
+ * ⚠️ LES TROIS NOMBRES SONT REVENUS DANS UNE SURFACE, ET C'EST UN DEMI-TOUR
+ * ASSUMÉ. Ils ont d'abord été des cartes à ombre portée : le vocabulaire d'un
+ * tableau de bord, trois indicateurs qu'on regarde, alors que ce sont des SEUILS
+ * LÉGAUX. On les a donc sortis de toute boîte, posés à même le papier entre deux
+ * règles noires, comme les colonnes d'un texte réglementaire.
  *
- * IL N'Y A PLUS DE PHOTOGRAPHIE ICI, ET C'EST UN RETRAIT VOLONTAIRE. Un panier
- * de légumes occupait cinq colonnes à droite du titre. Il ne démontrait rien —
- * la règle de la page est qu'un cadre n'entoure que ce qui est MONTRÉ, une
- * capture ou une preuve — et il désalignait la grille : son bord droit ne
- * tombait sur aucune des colonnes de seuils en dessous. Une section qui doit
- * asséner trois nombres n'a rien à gagner à les faire précéder d'une image
- * d'ambiance. Le titre prend toute la largeur, les trois seuils suivent.
+ * Cette version-là était juste dans son raisonnement et fausse à l'œil : deux
+ * traits d'encre pleine en travers de la page, c'est le trait le plus dur de
+ * tout le site, et il tombait juste sous un héros fait d'un lavis et d'un objet
+ * posé. La section entière lisait « formulaire ».
+ *
+ * Un seul panneau, pas trois cartes : c'est la nuance qui compte. Trois cartes
+ * font trois indicateurs qu'on compare ; UN panneau à trois colonnes fait un
+ * article à trois alinéas — le même geste que les règles noires, dans le
+ * vocabulaire du reste de la page.
+ *
+ * LES CHIFFRES SONT EN BLEU DE MARQUE, JAMAIS EN VERT. Le vert, l'ambre et le
+ * rouge du produit veulent dire « au-dessus du seuil, tout près, en dessous »,
+ * et rien d'autre : les peindre en vert dirait « c'est atteint », l'inverse du
+ * propos. Le bleu est la seule couleur qui reste, et c'est justement celle qui
+ * relie la ligne d'accroche du héros à ces trois nombres.
  *
  * LA DERNIÈRE LIGNE EST LA PLUS UTILE DE LA PAGE. « Local », « circuit court »,
  * « de saison » et « fait maison » ne comptent pas au barème. C'est la surprise
  * de presque tous les gérants, ça se vérifie en trente secondes, et ça établit
- * qu'on connaît le sujet mieux que celui qui vend un tableau de bord. Elle est
- * traitée en exergue — un filet épais à gauche, comme une citation d'imprimé —
- * plutôt qu'en encadré, pour qu'on ne puisse pas la sauter.
+ * qu'on connaît le sujet mieux que celui qui vend un tableau de bord.
  */
 
 const SEUILS = [
@@ -56,7 +61,7 @@ const SEUILS = [
 
 export function LaLoi() {
 	return (
-		<SectionMarketing fond="papier">
+		<SectionMarketing id="la-loi" fond="azur">
 			{/*
 			  LE CHAPEAU MÈNE PAR CE QUI SURPREND. Il commençait par la méthode de
 			  calcul et finissait sur « le privé depuis 2024 ». Or c'est cette
@@ -70,28 +75,15 @@ export function LaLoi() {
 			/>
 
 			{/*
-			  LES TROIS SEUILS SORTENT DE LA COLONNE, ET C'EST LE GESTE PRINCIPAL DE
-			  LA PAGE.
-
-			  Ils tenaient dans le même conteneur borné que tout le reste, à
-			  quarante-huit pixels. La page entière se lisait alors à un seul
-			  volume : dix-sept à quarante pixels, une seule largeur, un seul blanc,
-			  du haut jusqu'en bas. C'est ce qui la faisait ressembler à un document
-			  administratif plutôt qu'à un objet auquel on croit.
-
-			  Ici ils vont d'un bord à l'autre de la fenêtre, en corps fluide, et ce
-			  sont eux qu'on retient de la page. Le contenu le justifie : c'est la
-			  seule chose de cette page qui ne nous appartienne pas. C'est la loi,
-			  elle est opposable, et elle a le droit de crier.
-
-			  `divide-x` ne dessine qu'ENTRE les éléments, donc jamais de trait qui
-			  pend au bord. En dessous de `md`, la règle passe à l'horizontale :
-			  trois colonnes de seuils sur 375 px ne se lisent pas.
+			  LES TROIS SEUILS RESTENT LE PLUS GROS CORPS DE LA PAGE, et c'est le
+			  contenu qui le justifie : c'est la seule chose ici qui ne nous
+			  appartienne pas. C'est la loi, elle est opposable, elle a le droit de
+			  crier. Rien d'autre n'a le droit d'approcher ce corps.
 			*/}
-			<dl className="-mx-cladd-2xs grid divide-y divide-trait border-y border-plume md:grid-cols-3 md:divide-x md:divide-y-0">
+			<Panneau as="dl" colonnes={3} divise className="cladd-color-brand overflow-hidden">
 				{SEUILS.map((s) => (
-					<div key={s.titre} className="flex flex-col gap-cladd-3xs px-cladd-2xs py-cladd-xs">
-						<dt className="font-serif text-seuil-affiche leading-none font-medium tabular-nums">
+					<div key={s.titre} className="flex flex-col gap-cladd-3xs p-cladd-2xs md:p-cladd-xs">
+						<dt className="font-serif text-seuil-affiche leading-none font-medium text-cladd-primary tabular-nums">
 							{s.valeur}
 						</dt>
 						<dd className="flex flex-col gap-1">
@@ -102,16 +94,12 @@ export function LaLoi() {
 						</dd>
 					</div>
 				))}
-			</dl>
+			</Panneau>
 
-			<blockquote className="max-w-4xl border-l-4 border-plume pl-cladd-2xs">
-				<p className="font-serif text-titre-section leading-tight font-medium">
-					« Local », « circuit court », « de saison » et « fait maison » ne comptent pas.
-				</p>
-				<p className="pt-cladd-3xs text-cladd-md leading-relaxed font-normal text-plume-douce">
-					La carotte du maraîcher d&rsquo;à côté, sans label, pèse zéro dans votre taux.
-				</p>
-			</blockquote>
+			<Exergue
+				phrase="« Local », « circuit court », « de saison » et « fait maison » ne comptent pas."
+				appui="La carotte du maraîcher d’à côté, sans label, pèse zéro dans votre taux."
+			/>
 		</SectionMarketing>
 	);
 }

@@ -55,7 +55,7 @@ const ANATOMIE = [
 
 export function Preuve() {
 	return (
-		<SectionMarketing fond="encre">
+		<SectionMarketing id="preuve" fond="encre">
 			<TitreSection
 				inverse
 				sur="Auditabilité"
@@ -63,7 +63,7 @@ export function Preuve() {
 				chapeau="Un contrôle ne vous demandera pas votre taux. Il vous demandera d’où il sort."
 			/>
 
-			<div className="rounded-net border border-trait bg-papier text-plume">
+			<div className="overflow-hidden rounded-panneau border border-trait bg-papier text-plume shadow-pose-haute">
 				{/*
 				  PAS D'ILLUSTRATION ICI, ET C'EST UN RETRAIT RÉFLÉCHI. Une vignette
 				  emoji ouvrait cette carte. Elle a sa place dans l'application, où elle
@@ -73,7 +73,7 @@ export function Preuve() {
 				  section vient établir. C'est le seul endroit de la page où le ton doit
 				  être celui d'un document, pas d'une interface.
 				*/}
-				<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait p-cladd-2xs">
+				<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait bg-papier-chaud p-cladd-2xs md:p-cladd-xs">
 					<span className="font-serif text-intertitre font-medium">Carotte rondelle bio</span>
 					<span className="text-cladd-sm text-plume-claire tabular-nums">
 						52 lignes de facture · 3 120 € sur l&rsquo;exercice
@@ -84,7 +84,7 @@ export function Preuve() {
 					{ANATOMIE.map((a) => (
 						<div
 							key={a.cle}
-							className="flex flex-col gap-1 p-cladd-2xs sm:grid sm:grid-cols-3 sm:items-baseline sm:gap-cladd-2xs"
+							className="flex flex-col gap-1 p-cladd-2xs sm:grid sm:grid-cols-3 sm:items-baseline sm:gap-cladd-2xs md:px-cladd-xs"
 						>
 							<dt className="text-cladd-2xs font-semibold tracking-widest text-plume-claire uppercase">
 								{a.cle}
