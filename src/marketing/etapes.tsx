@@ -176,7 +176,7 @@ export function Etapes() {
 				  fichiers ; le poser ici donnerait une zone qui accepte un dépôt et
 				  n'en fait rien.
 				*/}
-				<div className="relative aspect-video overflow-hidden rounded-net border border-trait lg:aspect-square">
+				<div className="relative aspect-video overflow-hidden rounded-net border border-trait shadow-pose lg:aspect-square">
 					<img
 						src="/photos/cuisine.jpg"
 						alt="Chef de cuisine au piano dans une cuisine professionnelle"

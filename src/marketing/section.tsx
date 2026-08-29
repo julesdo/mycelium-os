@@ -12,16 +12,21 @@ import { cn } from '../ui';
  *
  * Il ne reste que TROIS fonds, et l'écart entre eux se voit de loin :
  *
- *   `papier`  le blanc. Le fond par défaut, celui du texte courant.
- *   `froid`   un gris très pâle et très froid. Il ne décore pas : il SÉPARE,
- *             et c'est sa seule fonction.
+ *   `papier`  une crème très pâle. Le fond par défaut, celui du texte courant.
+ *   `chaud`   un sable, à peine plus soutenu. Il ne décore pas : il SÉPARE.
  *   `encre`   le bleu de nuit, texte inversé, avec sa trame. Réservé à ce qui
  *             doit faire autorité, jamais à ce qui doit séduire.
  *
- * LE FILET REMPLACE L'OMBRE. Chaque section se ferme par une règle d'un pixel
- * plutôt que de flotter au-dessus de la suivante. Une ombre dit « objet posé »,
- * un filet dit « article, clause, paragraphe » — et c'est exactement le registre
- * qu'un logiciel de conformité doit tenir.
+ * ⚠️ LES DEUX FONDS CLAIRS SE SONT RÉCHAUFFÉS. Ils étaient blanc pur et gris
+ * bleuté : corrects, et froids. Sur un produit dont le sujet est ce qu'on sert à
+ * manger, la froideur est un contresens. Voir `tokens.css` pour la raison
+ * complète, et pour pourquoi la chaleur ne vient pas d'un lavis vert.
+ *
+ * LE FILET SÉPARE LES SECTIONS, L'OMBRE POSE LES OBJETS. Une section se ferme
+ * par une règle d'un pixel, ce qui la range dans le registre du document. Mais
+ * ce qui est MONTRÉ à l'intérieur — un écran du logiciel, une photographie —
+ * porte une ombre douce et des angles adoucis : un objet qu'on a envie de
+ * toucher, pas une vignette collée sur une feuille.
  *
  * LES COULEURS SONT ABSOLUES, elles ne suivent pas le thème de l'application.
  * Chaque section peint son fond ET sa couleur de texte : voir l'en-tête du bloc
@@ -30,7 +35,7 @@ import { cn } from '../ui';
 
 const FONDS = {
 	papier: 'bg-papier text-plume',
-	froid: 'bg-papier-froid text-plume',
+	froid: 'bg-papier-chaud text-plume',
 	encre: 'encre-tramee text-plume-inversee'
 } as const;
 
@@ -118,11 +123,23 @@ export function TitreSection({
 }) {
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
+			{/*
+			  LE SUR-TITRE EST UNE PASTILLE, repris de la référence retenue. Posé nu
+			  en capitales espacées, il se confondait avec le texte courant et
+			  n'apportait rien ; dans un lit teinté, il redevient ce qu'il est — une
+			  étiquette de section, qu'on lit avant le titre ou qu'on saute.
+
+			  Elle est BLEUE et jamais verte : le vert de la référence est réservé
+			  aux trois états de seuil, et les vraies jauges du produit sont sur
+			  cette page. Voir `tokens.css`.
+			*/}
 			{sur ? (
 				<span
 					className={cn(
-						'text-cladd-2xs font-semibold tracking-widest uppercase',
-						inverse ? 'text-plume-inversee-douce' : 'text-plume-claire'
+						'cladd-color-brand w-fit rounded-full px-cladd-3xs py-1 text-cladd-2xs font-semibold tracking-widest uppercase',
+						inverse
+							? 'bg-plume-inversee/12 text-plume-inversee-douce'
+							: 'bg-cladd-primary/8 text-cladd-primary'
 					)}
 				>
 					{sur}
@@ -162,20 +179,32 @@ export function TitreSection({
  * geste qui distingue une page éditoriale d'une grille de cartes. La bordure
  * n'encadre donc que ce qui est montré : un écran du logiciel, une photo.
  *
- * `overflow-hidden` avec un rayon de deux pixels : assez pour qu'une photo ne
- * coupe pas comme une lame, trop peu pour redevenir une carte.
+ * ⚠️ IL S'EST ADOUCI. Deux pixels de rayon et pas d'ombre, c'était une vignette
+ * collée sur une feuille. Quatorze pixels, un fond crème et une ombre basse en
+ * font un OBJET posé : c'est ce qui donne envie d'ouvrir le logiciel plutôt que
+ * de lire la page. `haut` réserve l'ombre la plus marquée à la démonstration du
+ * héros, qui est la seule à devoir attirer l'œil avant le texte.
  */
 export function Cadre({
+	haut = false,
 	className,
 	contentClassName,
 	children
 }: {
+	/** L'ombre la plus marquée. Une seule par page, sinon plus rien ne se détache. */
+	haut?: boolean;
 	className?: string;
 	contentClassName?: string;
 	children: ReactNode;
 }) {
 	return (
-		<div className={cn('overflow-hidden rounded-net border border-trait bg-papier', className)}>
+		<div
+			className={cn(
+				'overflow-hidden rounded-net border border-trait bg-papier',
+				haut ? 'shadow-pose-haute' : 'shadow-pose',
+				className
+			)}
+		>
 			<div className={contentClassName}>{children}</div>
 		</div>
 	);

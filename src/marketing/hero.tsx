@@ -163,7 +163,7 @@ export function Hero() {
 			  sans creuser un trou au milieu de la page.
 			*/}
 			<div className="mx-auto w-full max-w-7xl px-cladd-2xs pt-respiration pb-cladd-2xl">
-				<Cadre contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs">
+				<Cadre haut contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs md:p-cladd-xs">
 					<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait pb-cladd-3xs">
 						<span className="font-serif text-intertitre font-medium">Exercice 2026</span>
 						<span className="text-cladd-2xs tracking-wide text-plume-claire uppercase">

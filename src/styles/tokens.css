@@ -205,10 +205,28 @@
 	 * qu'elle gagne en caractère. */
 	--font-serif: 'Newsreader Variable', 'Newsreader', ui-serif, Georgia, 'Times New Roman', serif;
 
-	--color-papier: oklch(1 0 0);
-	--color-papier-froid: oklch(0.982 0.004 250);
+	/* ⚠️ LE FOND SE RÉCHAUFFE, ET LE GRIS FROID DISPARAÎT.
+	 *
+	 * Le blanc pur et le gris bleuté donnaient une page correcte et FROIDE. Sur un
+	 * produit dont le sujet est ce qu'on sert à manger, c'est un contresens : la
+	 * référence retenue est chaude, appétissante, et c'est précisément ce qui lui
+	 * donne envie d'être utilisée.
+	 *
+	 * `papier` garde une pointe de crème plutôt que le blanc d'écran, et
+	 * `papier-chaud` remplace l'ancien gris froid par un sable très pâle. Les deux
+	 * restent assez clairs pour que le texte d'encre y tienne son contraste.
+	 *
+	 * POURQUOI PAS LE VERT DE LA RÉFÉRENCE. C'est la seule chose que je ne copie
+	 * pas, et la raison est écrite dans `CLAUDE.md` : le vert, l'ambre et le rouge
+	 * ne signifient QUE « au-dessus du seuil, tout près, en dessous ». Or les
+	 * vraies jauges du produit sont sur cette page. Un fond vert décoratif, et un
+	 * taux vert ne veut plus rien dire. La chaleur vient donc du sable et,
+	 * surtout, des photographies : les couleurs d'une cuisine sont dans les
+	 * aliments, pas dans un lavis. */
+	--color-papier: oklch(0.995 0.004 85);
+	--color-papier-chaud: oklch(0.972 0.012 82);
 	--color-encre-nuit: oklch(0.235 0.022 258);
-	--color-trait: oklch(0.902 0.007 255);
+	--color-trait: oklch(0.9 0.012 82);
 	--color-trait-encre: oklch(0.38 0.022 258);
 	--color-plume: oklch(0.235 0.022 258);
 	--color-plume-douce: oklch(0.468 0.018 258);
@@ -263,7 +281,27 @@
 
 	/* Le filet qui souligne une section, et le seul rayon toléré : deux pixels
 	 * sur une photographie, pour qu'elle ne coupe pas comme une lame. */
-	--radius-net: 2px;
+	/* ⚠️ LES ANGLES SE RADOUCISSENT, ET LES OMBRES REVIENNENT.
+	 *
+	 * Le brutalisme à angles droits était une consigne, et il a produit une page
+	 * qui a l'air d'un formulaire d'administration. Verdict : « moche, ça ne donne
+	 * pas envie ». Sur un produit de cuisine, la dureté ne rassure pas, elle
+	 * refroidit.
+	 *
+	 * `net` passe de deux à quatorze pixels sur ce qui est MONTRÉ — les captures
+	 * de l'interface, les photographies — et l'ombre douce revient dessous. C'est
+	 * ce qui fait qu'un écran de logiciel se lit comme un objet qu'on a envie de
+	 * toucher, au lieu d'une vignette collée sur une feuille.
+	 *
+	 * Le filet, lui, reste : c'est encore lui qui sépare les sections. On adoucit
+	 * les objets, on ne remet pas de cartes partout. */
+	--radius-net: 14px;
+
+	/* L'ombre des objets montrés. Très basse, très diffuse : elle décolle sans
+	 * jamais faire flotter, et elle ne vire pas au halo sur le fond sable. */
+	--shadow-pose: 0 1px 2px oklch(0.35 0.03 82 / 0.05), 0 18px 40px -22px oklch(0.35 0.03 82 / 0.28);
+	--shadow-pose-haute:
+		0 2px 6px oklch(0.35 0.03 82 / 0.06), 0 34px 70px -28px oklch(0.35 0.03 82 / 0.34);
 
 	/* LE GRAND SOUFFLE. Une fois et demie le plus grand écart du kit (72 px), pour
 	 * les deux ou trois endroits d'une page commerciale où un bloc doit se
