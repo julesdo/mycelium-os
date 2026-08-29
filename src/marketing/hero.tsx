@@ -100,14 +100,12 @@ export function Hero() {
 						Restauration collective · déclaration avant le 31 mars
 					</span>
 
-					<h1 className="max-w-3xl font-serif text-affiche-etroite leading-none font-medium tracking-tight md:text-affiche">
+					<h1 className="max-w-3xl font-serif text-affiche leading-none font-medium tracking-tight">
 						Vos trois taux EGalim sont déjà dans vos factures.
 					</h1>
 
-					<p className="max-w-xl text-chapeau leading-relaxed font-normal text-plume-douce">
-						Encore faut-il les en extraire : ligne par ligne, sur douze mois, en euros d&rsquo;achat
-						hors taxes. C&rsquo;est notre travail. Pour chaque produit, vous saurez s&rsquo;il
-						compte, et pourquoi.
+					<p className="max-w-lg text-chapeau leading-relaxed font-normal text-plume-douce">
+						Nous les en sortons, ligne par ligne, sur douze mois.
 					</p>
 
 					<div className="flex flex-col items-start gap-cladd-3xs pt-cladd-3xs sm:flex-row sm:items-center">

@@ -59,12 +59,24 @@ export function SectionMarketing({
 				filet && (fond === 'encre' ? 'border-b border-trait-encre' : 'border-b border-trait')
 			)}
 		>
-			{/* Le rembourrage vertical double au-delà de la tablette. Soixante-douze
-			    pixels en haut et en bas d'une section font une respiration sur un
-			    écran large et un trou sur un téléphone. */}
+			{/*
+			  ⚠️ LE VIDE A ÉTÉ DOUBLÉ, ET C'EST LA MOITIÉ DE LA CORRECTION.
+			  L'autre moitié est l'échelle de corps, dans `tokens.css`.
+
+			  Chaque section respirait soixante-douze pixels en haut et en bas, et
+			  ses blocs internes vingt-huit. À ce régime, huit sections se touchent :
+			  la page devient un mur de texte où rien n'a de place pour exister
+			  séparément. C'est exactement le reproche qui lui a été fait.
+
+			  Cent-douze pixels au-dessus de la tablette, et quarante entre les blocs
+			  d'une même section. Le vide n'est pas de la place perdue : c'est lui
+			  qui dit qu'un bloc est fini et qu'un autre commence, et c'est lui qui
+			  fait la différence entre un document et une page où l'on a envie
+			  d'entrer.
+			*/}
 			<div
 				className={cn(
-					'mx-auto flex w-full max-w-7xl flex-col gap-cladd-xs px-cladd-2xs py-cladd-2xl md:py-cladd-2xl',
+					'mx-auto flex w-full max-w-7xl flex-col gap-cladd-sm px-cladd-2xs py-cladd-2xl md:py-respiration',
 					className
 				)}
 			>
@@ -122,7 +134,7 @@ export function TitreSection({
 			    grotesque. 600 sur l'encre rend le poids que 500 donne sur le papier. */}
 			<h2
 				className={cn(
-					'max-w-4xl font-serif text-titre-section-etroite leading-tight tracking-tight md:text-titre-section',
+					'max-w-4xl font-serif text-titre-section leading-tight tracking-tight',
 					inverse ? 'font-semibold' : 'font-medium'
 				)}
 			>

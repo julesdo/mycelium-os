@@ -15,6 +15,7 @@ export { SectionMarketing, TitreSection, Cadre, type FondSection } from './secti
 export { Hero } from './hero';
 export { LaLoi } from './la-loi';
 export { Etapes } from './etapes';
+export { Bandeau } from './bandeau';
 export { Preuve } from './preuve';
 export { Limites } from './limites';
 export { Abonnement } from './abonnement';

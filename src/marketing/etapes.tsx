@@ -149,13 +149,13 @@ export function Etapes() {
 		<SectionMarketing id="comment" fond="froid" className="gap-cladd-2xl">
 			<TitreSection
 				titre="Quatre étapes, dont une seule vous demande du temps"
-				chapeau="Les écrans ci-dessous sont ceux du logiciel, pas des maquettes. Confirmez un produit pour voir."
+				chapeau="Les écrans ci-dessous sont ceux du logiciel. Confirmez un produit pour voir."
 			/>
 
 			<Etape
 				numero="01"
 				titre="Vous déposez ce que vous avez"
-				texte="Aucun format à respecter, aucun fichier à préparer. On lit ce que vous avez sous la main, pas ce qu'il faudrait avoir."
+				texte="Aucun format à respecter. On lit ce que vous avez sous la main."
 				apres={
 					<dl className="divide-y divide-trait border-y border-trait">
 						{FORMATS.map((f) => (
@@ -190,7 +190,7 @@ export function Etapes() {
 				inverse
 				numero="02"
 				titre="Le logiciel lit, vous regardez"
-				texte="Vous ne saisissez rien. Chaque ligne est lue avec le libellé du fournisseur, abréviations et fautes de scan comprises. Et vous voyez le travail avancer, sans recharger la page."
+				texte="Vous ne saisissez rien, et vous voyez le travail avancer."
 			>
 				<Cadre contentClassName="p-cladd-2xs">
 					<Lecture />
@@ -200,7 +200,7 @@ export function Etapes() {
 			<Etape
 				numero="03"
 				titre="Vous tranchez ce qui vous engage"
-				texte="Chaque classement vous est proposé, expliqué en une phrase. Vous confirmez, ou vous corrigez. La viande et le poisson passent toujours devant vous : c'est là que se joue le troisième seuil, et c'est vous qui signez."
+				texte="Chaque classement est expliqué en une phrase. Vous confirmez, ou vous corrigez. La viande et le poisson passent toujours devant vous."
 			>
 				<Cadre contentClassName="p-cladd-2xs">
 					<Confirmation />
@@ -211,7 +211,7 @@ export function Etapes() {
 				inverse
 				numero="04"
 				titre="Votre bilan est prêt"
-				texte="Vos trois taux, la répartition par famille, et la liste des fournisseurs à relancer pour une attestation. En PDF daté et signé, prêt à sortir devant un contrôle."
+				texte="En PDF daté et signé, prêt à sortir devant un contrôle."
 			>
 				<Cadre contentClassName="p-cladd-2xs">
 					<Bilan />
@@ -259,7 +259,7 @@ function Etape({
 					<span className="border-b border-trait pb-cladd-3xs font-serif text-intertitre font-medium text-plume-claire tabular-nums">
 						{numero}
 					</span>
-					<h3 className="font-serif text-titre-section-etroite leading-tight font-medium tracking-tight">
+					<h3 className="font-serif text-titre-section leading-tight font-medium tracking-tight">
 						{titre}
 					</h3>
 					<p className="max-w-prose text-cladd-md leading-relaxed font-normal text-plume-douce">

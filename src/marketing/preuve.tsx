@@ -60,7 +60,7 @@ export function Preuve() {
 				inverse
 				sur="Auditabilité"
 				titre="Chaque ligne garde sa preuve"
-				chapeau="Un contrôle ne vous demandera pas votre taux. Il vous demandera d’où il sort. Voici ce que chaque ligne de facture conserve, pendant toute la durée légale."
+				chapeau="Un contrôle ne vous demandera pas votre taux. Il vous demandera d’où il sort."
 			/>
 
 			<div className="rounded-net border border-trait bg-papier text-plume">
@@ -101,9 +101,7 @@ export function Preuve() {
 			</div>
 
 			<p className="max-w-3xl text-cladd-md leading-relaxed font-normal text-plume-inversee-douce">
-				Un bilan livré ne bouge plus. Déposez d&rsquo;autres factures, vous obtenez un nouveau bilan
-				daté ; l&rsquo;ancien reste consultable tel quel. C&rsquo;est ce qui le rend opposable deux
-				ans plus tard.
+				Un bilan livré ne bouge plus. C&rsquo;est ce qui le rend opposable deux ans plus tard.
 			</p>
 		</SectionMarketing>
 	);

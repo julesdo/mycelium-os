@@ -50,13 +50,11 @@ export function Appel() {
 			  D'où +14 px au mobile et une graisse à 600 : c'est le réglage qui rend
 			  à ce titre, en clair sur l'encre, le poids qu'il a en noir sur blanc.
 			*/}
-			<h2 className="max-w-4xl font-serif text-titre-section leading-tight font-semibold tracking-tight md:text-affiche">
+			<h2 className="max-w-4xl font-serif text-titre-section leading-tight font-semibold tracking-tight">
 				La déclaration ferme le 31 mars. Le calcul, lui, prend douze mois de factures.
 			</h2>
 			<p className="max-w-2xl text-chapeau leading-relaxed font-normal text-plume-inversee-douce">
-				Où que vous en soyez, elles se lisent en une fois. Ce qui change, c&rsquo;est ce qu&rsquo;il
-				vous reste ensuite : en février, le temps de déplacer quelques achats et de réclamer les
-				attestations qui manquent. Fin mars, le temps de constater.
+				En février, il vous reste le temps de corriger. Fin mars, celui de constater.
 			</p>
 			<div className="flex flex-col items-start gap-cladd-3xs pt-cladd-3xs sm:flex-row sm:items-center">
 				<Button

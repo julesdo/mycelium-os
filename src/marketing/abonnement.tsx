@@ -26,17 +26,17 @@ const RAISONS = [
 	{
 		titre: 'Un GPS, pas un constat après l’accident.',
 		texte:
-			'Découvrir en mars que vous êtes à 12 % de bio au lieu de 20, c’est trop tard : l’année est close. Le voir en octobre, c’est deux mois de commandes pour rattraper.'
+			'Le découvrir en mars, l’année est close. Le voir en octobre, c’est deux mois de commandes pour rattraper.'
 	},
 	{
 		titre: 'Cinq minutes par mois plutôt qu’une soirée en mars.',
 		texte:
-			'Douze mois de factures d’un coup, c’est une soirée entière à relire des libellés. Mois par mois, vous validez à chaud, pendant que vous vous souvenez des livraisons. En mars, le bilan est déjà fait.'
+			'Vous validez à chaud, pendant que vous vous souvenez des livraisons. En mars, le bilan est déjà fait.'
 	},
 	{
 		titre: 'Vos prix d’achat sous l’œil, toute l’année.',
 		texte:
-			'Au fil de l’eau, vous voyez qu’un fournisseur a monté la volaille de 10 % entre janvier et juin. Une fois par an, cette dérive passe inaperçue et se paie douze mois.'
+			'Un fournisseur monte la volaille de 10 % entre janvier et juin. Une fois par an, ça passe inaperçu et ça se paie douze mois.'
 	}
 ] as const;
 
@@ -60,13 +60,12 @@ export function Abonnement() {
 			</div>
 
 			<blockquote className="max-w-4xl border-l-4 border-plume pl-cladd-2xs">
-				<p className="font-serif text-titre-section-etroite leading-tight font-medium">
+				<p className="font-serif text-titre-section leading-tight font-medium">
 					C’est exactement votre cabinet comptable.
 				</p>
 				<p className="pt-cladd-3xs text-cladd-md leading-relaxed font-normal text-plume-douce">
-					Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les mois
-					pour saisir, classer, et vous dire où vous en êtes. Letikette fait la même chose pour
-					votre assiette.
+					Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les mois.
+					Letikette fait la même chose pour votre assiette.
 				</p>
 			</blockquote>
 		</SectionMarketing>

@@ -40,17 +40,17 @@ const SEUILS = [
 	{
 		valeur: '50 %',
 		titre: 'de produits durables',
-		detail: 'Bio, Label Rouge, AOP, IGP, HVE 3, pêche durable, commerce équitable.'
+		detail: 'Bio, Label Rouge, AOP, IGP, HVE 3, pêche durable.'
 	},
 	{
 		valeur: '20 %',
 		titre: 'dont du bio',
-		detail: 'Les produits en conversion comptent aussi, dans les deux taux à la fois.'
+		detail: 'La conversion compte aussi.'
 	},
 	{
 		valeur: '60 %',
 		titre: 'sur la viande et le poisson',
-		detail: 'Un seuil à part, calculé sur ces deux familles seulement.'
+		detail: 'Sur ces deux familles seulement.'
 	}
 ] as const;
 
@@ -66,19 +66,32 @@ export function LaLoi() {
 			<TitreSection
 				sur="Loi EGalim · code rural, art. L230-5-1"
 				titre="Ce que la loi vous demande"
-				chapeau="Depuis 2024, les cantines privées y sont soumises comme les publiques. Le calcul se fait en euros d’achat hors taxes, sur l’année civile, et se déclare sur « ma cantine »."
+				chapeau="Depuis 2024, les cantines privées y sont soumises comme les publiques."
 			/>
 
 			{/*
-			  Trois colonnes, séparées par des filets et non par du vide. `divide-x`
-			  ne dessine qu'entre les éléments, donc jamais de trait qui pend au bord.
-			  En dessous de `md` la règle passe à l'horizontale : trois colonnes de
-			  seuils sur 375 px ne se lisent pas.
+			  LES TROIS SEUILS SORTENT DE LA COLONNE, ET C'EST LE GESTE PRINCIPAL DE
+			  LA PAGE.
+
+			  Ils tenaient dans le même conteneur borné que tout le reste, à
+			  quarante-huit pixels. La page entière se lisait alors à un seul
+			  volume : dix-sept à quarante pixels, une seule largeur, un seul blanc,
+			  du haut jusqu'en bas. C'est ce qui la faisait ressembler à un document
+			  administratif plutôt qu'à un objet auquel on croit.
+
+			  Ici ils vont d'un bord à l'autre de la fenêtre, en corps fluide, et ce
+			  sont eux qu'on retient de la page. Le contenu le justifie : c'est la
+			  seule chose de cette page qui ne nous appartienne pas. C'est la loi,
+			  elle est opposable, et elle a le droit de crier.
+
+			  `divide-x` ne dessine qu'ENTRE les éléments, donc jamais de trait qui
+			  pend au bord. En dessous de `md`, la règle passe à l'horizontale :
+			  trois colonnes de seuils sur 375 px ne se lisent pas.
 			*/}
-			<dl className="grid divide-y divide-trait border-y border-trait md:grid-cols-3 md:divide-x md:divide-y-0">
+			<dl className="-mx-cladd-2xs grid divide-y divide-trait border-y border-plume md:grid-cols-3 md:divide-x md:divide-y-0">
 				{SEUILS.map((s) => (
-					<div key={s.titre} className="flex flex-col gap-cladd-3xs py-cladd-xs md:px-cladd-2xs">
-						<dt className="font-serif text-seuil-legal-etroite leading-none font-medium tabular-nums md:text-seuil-legal">
+					<div key={s.titre} className="flex flex-col gap-cladd-3xs px-cladd-2xs py-cladd-xs">
+						<dt className="font-serif text-seuil-affiche leading-none font-medium tabular-nums">
 							{s.valeur}
 						</dt>
 						<dd className="flex flex-col gap-1">
@@ -92,12 +105,11 @@ export function LaLoi() {
 			</dl>
 
 			<blockquote className="max-w-4xl border-l-4 border-plume pl-cladd-2xs">
-				<p className="font-serif text-titre-section-etroite leading-tight font-medium">
+				<p className="font-serif text-titre-section leading-tight font-medium">
 					« Local », « circuit court », « de saison » et « fait maison » ne comptent pas.
 				</p>
 				<p className="pt-cladd-3xs text-cladd-md leading-relaxed font-normal text-plume-douce">
-					La carotte du maraîcher d&rsquo;à côté, sans label, pèse zéro dans votre taux. C&rsquo;est
-					pour ça que des cantines qui achètent bien déclarent mal.
+					La carotte du maraîcher d&rsquo;à côté, sans label, pèse zéro dans votre taux.
 				</p>
 			</blockquote>
 		</SectionMarketing>

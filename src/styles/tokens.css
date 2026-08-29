@@ -223,12 +223,39 @@
 	/* L'ÉCHELLE D'AFFICHE. Elle ne recoupe pas celle de l'application, qui est
 	 * bornée par la densité d'un écran de travail. Deux valeurs par niveau : le
 	 * téléphone, puis le grand écran à partir de `md`. */
-	--text-affiche: 60px;
-	--text-affiche-etroite: 34px;
-	--text-titre-section: 40px;
-	--text-titre-section-etroite: 26px;
-	--text-intertitre: 22px;
-	--text-chapeau: 20px;
+	/* ⚠️ L'ÉCHELLE A ÉTÉ OUVERTE EN GRAND, ET C'EST LA CORRECTION PRINCIPALE.
+	 *
+	 * Verdict du terrain, et il était juste : « moche et hyper dense, il y a du
+	 * texte partout ». La cause n'était pas le nombre de sections, c'était
+	 * l'ABSENCE D'ÉCART. Titres à 60, sous-titres à 40, intertitres à 22, corps à
+	 * 20, légendes à 18 : sept crans qui se touchent presque, donc rien qui
+	 * domine et rien qui se taise. L'œil ne peut pas trier, il lit tout, et tout
+	 * paraît également important — c'est-à-dire un mur.
+	 *
+	 * Les pages qui respirent ne mettent pas moins de texte partout : elles
+	 * mettent BEAUCOUP moins de texte, BEAUCOUP plus gros, avec un vide franc
+	 * entre les blocs. L'accroche monte donc à cent-quatre px et les corps
+	 * descendent. L'écart entre le plus grand et le plus petit passe de 3,5 à 6.
+	 *
+	 * Les valeurs sont fluides : sur un téléphone, cent-quatre px déborderaient. */
+	--text-affiche: clamp(38px, 7.5vw, 104px);
+	--text-titre-section: clamp(30px, 4.4vw, 56px);
+	--text-intertitre: clamp(19px, 1.5vw, 22px);
+	--text-chapeau: clamp(18px, 1.5vw, 21px);
+
+	/* LE CORPS D'AFFICHE DU SEUIL LÉGAL.
+	 *
+	 * POURQUOI IL EST DÉMESURÉ, ET POURQUOI C'EST LUI. Comparée aux pages qui
+	 * tiennent — Adyen, les studios éditoriaux — cette page-ci n'avait qu'un seul
+	 * volume : tout y était entre 17 et 40 pixels, dans la même colonne, sur le
+	 * même blanc, du haut jusqu'en bas. Une page sans écart d'échelle se lit
+	 * comme un document administratif, pas comme un objet auquel on croit.
+	 *
+	 * Le seul contenu qui mérite de crier est celui qui ne nous appartient pas :
+	 * les trois seuils de la loi. Ils passent donc pleine largeur, en corps
+	 * fluide, jusqu’à cent-trente-deux pixels. Aucun autre élément de la page
+	 * n'a le droit de les approcher. */
+	--text-seuil-affiche: clamp(56px, 9vw, 132px);
 	/* Le chiffre d'un seuil légal, en serif : c'est le seul nombre de la page
 	 * que le visiteur doit retenir jusqu'en bas. */
 	--text-seuil-legal: 72px;

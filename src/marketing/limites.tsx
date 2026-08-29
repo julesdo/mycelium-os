@@ -33,28 +33,23 @@ import { SectionMarketing, TitreSection } from './section';
 const LIMITES = [
 	{
 		titre: 'On ne déclare pas à votre place.',
-		texte:
-			'Le dossier est prêt, chiffres et justificatifs compris. La saisie sur « ma cantine » reste la vôtre : c’est une responsabilité qui ne se délègue pas à un logiciel.'
+		texte: 'Le dossier est prêt. La saisie sur « ma cantine » reste la vôtre.'
 	},
 	{
 		titre: 'On ne vend aucune denrée et on n’organise aucune livraison.',
-		texte:
-			'Votre fournisseur vous facture et vous livre en direct, comme aujourd’hui. Nous ne nous interposons ni dans la commande, ni dans le camion, ni dans le règlement.'
+		texte: 'Nous ne nous interposons ni dans la commande, ni dans le camion, ni dans le règlement.'
 	},
 	{
 		titre: 'On ne promet pas un résultat.',
 		texte:
-			'Votre taux dépend de ce que vous achetez, et cela n’appartient qu’à vous. Nous faisons plus modeste : mesurer, documenter, et vous montrer où quelques euros déplacés rapportent le plus de points.'
+			'Votre taux dépend de vos achats. Nous mesurons, nous documentons, et nous montrons où quelques euros déplacés rapportent le plus.'
 	}
 ] as const;
 
 export function Limites() {
 	return (
 		<SectionMarketing fond="papier">
-			<TitreSection
-				titre="Ce que Letikette ne fait pas"
-				chapeau="Trois choses que vous découvririez de toute façon. Autant les lire maintenant."
-			/>
+			<TitreSection titre="Ce que Letikette ne fait pas" chapeau="Autant les lire maintenant." />
 
 			{/*
 			  TROIS CLAUSES EMPILÉES, ET NON TROIS COLONNES.

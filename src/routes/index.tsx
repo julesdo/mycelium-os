@@ -1,5 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Hero, LaLoi, Etapes, Preuve, Limites, Abonnement, Appel, Pied } from '../marketing';
+import {
+	Hero,
+	LaLoi,
+	Etapes,
+	Bandeau,
+	Preuve,
+	Limites,
+	Abonnement,
+	Appel,
+	Pied
+} from '../marketing';
 import { SITE_CANONIQUE } from '../lib/config/legal';
 
 /**
@@ -94,6 +104,7 @@ function Accueil() {
 			<Hero />
 			<LaLoi />
 			<Etapes />
+			<Bandeau />
 			<Preuve />
 			<Limites />
 			<Abonnement />
