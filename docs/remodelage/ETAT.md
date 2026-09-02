@@ -1,4 +1,7 @@
-# ÉTAT DU REMODELAGE — au 2 septembre 2026
+# ÉTAT DU REMODELAGE — au 3 septembre 2026
+
+**Mise à jour du 3 septembre** : les trois points bloquants du 2 septembre sont levés.
+Voir « Ce qui a changé le 3 septembre » en fin de document pour le détail.
 
 Point d'arrivée de la session autonome. Ce document dit ce qui est fait, ce qui est **bloqué et sur
 quoi**, et les décisions prises seul qui demandent une ratification.
@@ -170,3 +173,92 @@ Ni l'un ni l'autre ne relève du remodelage. Ils sont notés ici pour ne pas se 
    production ?**, dont dépend le rangement des fonctions Convex d'EGalim.
 5. L'interface, en dernier. Le brief a raison : un produit qui affiche joliment des dossiers
    contestables ne vaut rien.
+
+
+---
+
+## Ce qui a changé le 3 septembre 2026
+
+Jules a levé les trois points en suspens. Voici ce qui a été fait, et ce que ça a révélé.
+
+### 1. Les valeurs juridiques — relevées, et deux entrées du brief corrigées
+
+Elles ne sont pas écrites de mémoire : relevées sur Légifrance et sources publiques concordantes,
+chacune citant son article, dans `verticales/recouvrement/pays/france/`.
+
+**Deux entrées du brief ne sont PAS des constantes**, et c'est la trouvaille de la journée.
+
+| Le brief demandait | Ce que dit le texte |
+|---|---|
+| « le taux d'intérêt de retard par défaut » | Taux BCE de refinancement **+ 10 points**, réancré **deux fois par an** (L441-10 II). Une facture impayée depuis dix-huit mois traverse trois taux. |
+| « le délai de prescription commerciale » | **Cinq ans** en régime général (L110-4), **mais** le texte réserve les prescriptions spéciales plus courtes et en énumère lui-même trois à un an. S'y ajoutent le transport (L133-6, un an) et la fourniture à un consommateur (L218-2 code conso, deux ans). |
+
+Tu avais raison de dire « par secteur ».
+
+**Face à un secteur indéterminé, le module retient le délai LE PLUS COURT**, pas le régime général.
+Le sens de l'erreur n'est pas symétrique : annoncer cinq ans à qui en a un fait perdre la créance
+en silence ; annoncer un an à qui en a cinq fait seulement agir trop tôt.
+
+**Le contrôle croisé** : les douze taux d'intérêt légal sont recoupés contre les planchers publiés
+indépendamment (3 × 3,71 = 11,13 ; 3 × 2,76 = 8,28 ; 3 × 2,62 = 7,86 ; 3 × 2,75 = 8,25). Une faute
+de frappe casse la concordance. Un semestre absent de la série **lève en le nommant**, jamais
+n'extrapole.
+
+**Le booléen `verified` en confondait deux**, et il est maintenant dédoublé :
+
+- `verifie` — la valeur est sourcée. Un logiciel sait le faire, et ça suffit à **calculer** :
+  un chiffre affiché se corrige.
+- `valideParAvocat` — un juriste a contrôlé la valeur **et son applicabilité**. C'est ce qu'exige
+  `exigerPourActe()`, parce qu'un chiffre écrit dans une requête qui part au greffe ne se corrige
+  pas.
+
+Aucune protection n'est perdue : elle est déplacée là où elle mord. **Tous les paramètres sont
+encore `valideParAvocat: false`** — c'est la seule case qui attend encore quelqu'un.
+
+### 2. Les chemins d'entrée — les deux, sans le connecteur
+
+**Import d'export comptable**, le bon chemin. Le FEC porte le plus : factures, règlements **et**
+identité du débiteur par son compte auxiliaire, déjà rapprochés par la comptabilité.
+
+Le piège y est le même que le doublon EGalim : une vente équilibrée s'écrit sur **trois** lignes —
+débit client, crédit produit, crédit TVA — et additionner les trois doublerait le montant réclamé
+en restant plausible. Seul le compte 411 porte ce que le client doit.
+
+**Dépôt de fichiers**, en repli, avec son propre schéma et son propre prompt. Le TTC y est **lu**
+sur la facture, jamais recomposé depuis les bases de TVA.
+
+Les deux convergent sur une seule mutation Convex, testée par dix cas.
+
+### 3. Les fonctions EGalim — la permission utilisée, le déplacement écarté
+
+Le déplacement vers `convex/socle/` a été examiné puis **écarté**, parce qu'il n'apporte rien :
+chaque verticale écrit dans ses propres tables (`invoiceLines` contre `facturesVente`), donc
+leurs mutations ne peuvent pas être partagées. Ce qui est réellement commun est **déjà** dans
+`src/lib/socle/`.
+
+En revanche, la permission de **modifier** EGalim a servi, et pour la bonne raison :
+**l'abstraction que `ARCHITECTURE.md` disait attendre du second exemple est arrivée.** L'audit
+avait signalé que le schéma d'extraction disait `supplierName` et le prompt « facture
+fournisseur » — une fuite du domaine dans le socle, sans moyen de la corriger utilement tant
+qu'une seule verticale existait.
+
+Le recouvrement tranche : sur une facture de vente, l'émetteur est le créancier lui-même, et le
+CLIENT n'a aucun champ dans le schéma d'achat. Le socle garde donc la machinerie et la part
+commune du schéma (la ligne, le pied de facture) ; l'en-tête descend dans chaque verticale.
+
+Le verrou d'empreinte a fait son travail : **le prompt EGalim a survécu au déplacement à l'octet
+près.**
+
+### Où en sont les critères d'acceptation
+
+Six sur sept étaient tenus le 2 septembre. Le septième — la traçabilité d'un montant jusqu'à sa
+pièce — reste **partiel** : la structure est là, rien ne l'affiche encore. C'est l'interface.
+
+### Ce qui reste
+
+1. **Un avocat doit valider les valeurs.** Tout est sourcé, rien n'est validé : `exigerPourActe()`
+   refuse encore de produire quoi que ce soit.
+2. **Les mentions obligatoires de la requête** en injonction de payer restent introuvables. La
+   procédure évalue, elle ne produit pas l'acte.
+3. **Le décret L.126** n'est toujours pas publié.
+4. **Les fonctions Convex de lecture** (listes, écrans) et l'**interface**.
