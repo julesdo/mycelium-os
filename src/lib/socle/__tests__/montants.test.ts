@@ -37,6 +37,17 @@ describe('lecture et écriture des montants', () => {
 		expect(versEuros(depuisEuros('1234.56'))).toBe('1 234,56');
 	});
 
+	it('lit les espaces insécables que sèment les exports PDF et tableur', () => {
+		// Insécable U+00A0 et insécable étroite U+202F : invisibles à l'œil, et
+		// une fois sur deux ce sont eux qui séparent les milliers sur un export.
+		// Écrits en échappements : un insécable littéral dans une source est
+		// invisible à la relecture, et le linter le refuse a juste titre.
+		const insecable = '1\u00A0234,56';
+		const insecableEtroite = '1\u202F234,56';
+		expect(versEuros(depuisEuros(insecable))).toBe('1 234,56');
+		expect(versEuros(depuisEuros(insecableEtroite))).toBe('1 234,56');
+	});
+
 	it('lit un montant négatif — un avoir est une ligne comme une autre', () => {
 		expect(versEuros(depuisEuros('-400,00'))).toBe('-400,00');
 	});

@@ -32,11 +32,18 @@ function marquer(centimes: bigint): Montant {
 export const ZERO: Montant = marquer(0n);
 
 /**
- * Les espaces qui séparent les milliers sur une facture : espace ordinaire,
- * insécable, insécable étroite. Les exports PDF et tableur les sèment sans
- * prévenir, et deux montants identiques à l'œil doivent se lire pareil.
+ * Les espaces qui séparent les milliers sur une facture. Les exports PDF et
+ * tableur les sèment sans prévenir, et deux montants identiques à l'œil
+ * doivent se lire pareil.
+ *
+ * `\s` SUFFIT, ET C'EST VÉRIFIÉ PLUTÔT QUE SUPPOSÉ. En JavaScript, la classe
+ * couvre toute la catégorie Unicode Zs — donc l'insécable U+00A0 et
+ * l'insécable étroite U+202F, qui sont les deux qu'on rencontre réellement.
+ * Les énumérer en plus était redondant, et les écrire en littéral dans la
+ * source les rendait invisibles à la relecture. Un test les vérifie
+ * nommément, pour que la garantie ne dépende pas de la mémoire du lecteur.
  */
-const ESPACES = /[\s  ]/g;
+const ESPACES = /\s/g;
 
 /**
  * Un montant écrit, à la française ou à l'anglaise.
