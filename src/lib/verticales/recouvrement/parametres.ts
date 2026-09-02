@@ -134,6 +134,21 @@ export const PARAMETRES = {
 			"n'est pas renseigné."
 	} satisfies ParametreLegal<bigint>,
 
+	mentionsObligatoiresInjonction: {
+		cle: 'mentionsObligatoiresInjonction',
+		valeur: null,
+		unite: 'sans',
+		source: 'Non fourni — ni par le brief, ni par ailleurs',
+		verifieLe: LE,
+		verifie: false,
+		note:
+			"Les mentions que doit porter une requête en injonction de payer. Ce sont des règles " +
+			"juridiques : la règle 0.1 interdit de les deviner, et une requête aux mentions " +
+			'inventées est PIRE que pas de requête du tout — elle se fait rejeter, et le délai ' +
+			"continue de courir pendant qu'on la refait. Tant que cette entrée est vide, la " +
+			"procédure peut évaluer une créance mais pas produire l'acte.",
+		} satisfies ParametreLegal<readonly string[]>,
+
 	// ── Ce que le brief confirme comme vérifié ──────────────────────────────
 
 	indemniteForfaitaire: {
