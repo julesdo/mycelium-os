@@ -104,8 +104,24 @@ export const recouvrementTables = {
 
 	debiteurs: defineTable({
 		organizationId: v.id('organizations'),
+		/**
+		 * Le nom LISIBLE, tel qu'il s'affiche. La première graphie rencontrée.
+		 *
+		 * Distinct de la forme normalisée, et c'est le test qui l'a imposé : la
+		 * forme de rapprochement est en capitales sans accents, ce qui est bon
+		 * pour comparer et laid pour lire. Un écran qui crie « FOURNITURES
+		 * DURAND » a l'air d'un export brut, pas d'un produit.
+		 */
 		denomination: v.string(),
-		/** Les écritures brutes rencontrées, pour rapprocher deux graphies. */
+		/**
+		 * La forme de rapprochement, produite par `normaliserFournisseur`. C'est
+		 * ELLE qui est indexée : « Fournitures Durand », « FOURNITURES DURAND
+		 * SARL » et « Fournitures Durand S.A.R.L. » sont la même maison, et les
+		 * traiter comme trois débiteurs éclaterait la créance en trois dossiers
+		 * dont aucun n'atteindrait le seuil.
+		 */
+		denominationNormalisee: v.string(),
+		/** Toutes les graphies rencontrées, pour expliquer un rapprochement. */
 		denominationsBrutes: v.array(v.string()),
 		siren: v.optional(v.string()),
 		formeJuridique: v.optional(v.string()),
@@ -127,7 +143,7 @@ export const recouvrementTables = {
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_siren', ['organizationId', 'siren'])
-		.index('by_org_and_denomination', ['organizationId', 'denomination']),
+		.index('by_org_and_denomination', ['organizationId', 'denominationNormalisee']),
 
 	/**
 	 * Une facture de VENTE — l'inverse d'`invoiceLines` côté EGalim, qui parle
@@ -140,7 +156,13 @@ export const recouvrementTables = {
 		montantHT: v.int64(),
 		montantTTC: v.int64(),
 		dateEmission: v.string(), // AAAA-MM-JJ
-		dateEcheance: v.string(),
+		/**
+		 * FACULTATIVE, parce que toutes les sources n'en portent pas. Un FEC,
+		 * notamment, n'a pas de colonne d'échéance : elle vit dans les conditions
+		 * de règlement, hors du fichier. La rendre obligatoire aurait force a en
+		 * inventer une a l'import.
+		 */
+		dateEcheance: v.optional(v.string()),
 		/**
 		 * LE POINT DE DÉPART DES INTÉRÊTS, ET IL N'EST PAS TOUJOURS L'ÉCHÉANCE.
 		 *
@@ -150,7 +172,17 @@ export const recouvrementTables = {
 		 * plusieurs jours d'intérêts, dans un sens ou dans l'autre, sans que
 		 * rien ne le signale.
 		 */
-		dateExigibilite: v.string(),
+		dateExigibilite: v.optional(v.string()),
+		/**
+		 * L'exigibilité a été DÉDUITE de l'échéance, faute de mieux.
+		 *
+		 * Elle n'est pas toujours l'échéance — elle dépend des conditions
+		 * contractuelles. Le logiciel décide, le gérant confirme : on déduit pour
+		 * ne pas laisser un champ vide qu'on aurait pu remplir, et on marque la
+		 * déduction pour que le gérant sache exactement ce qu'il confirme. Sans
+		 * ce drapeau, une date deduite et une date verifiee se ressembleraient.
+		 */
+		exigibiliteDeduite: v.optional(v.boolean()),
 		conditionsPaiement: v.optional(v.string()),
 		/**
 		 * Le taux stipulé aux conditions contractuelles. Absent, le décompte
