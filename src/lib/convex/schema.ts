@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { vEmailEvent } from '@convex-dev/resend';
 import { egalimTables } from './egalim/tables';
+import { recouvrementTables } from './recouvrement/tables';
 
 export default defineSchema({
 	// Note: Better Auth component manages its own tables (users, sessions, accounts, verifications)
@@ -160,5 +161,10 @@ export default defineSchema({
 
 	// ── Domaine EGalim (Moulinette Audit) ───────────────────────────────────────
 	// Voir src/lib/convex/egalim/tables.ts
-	...egalimTables
+	...egalimTables,
+
+	// ── Domaine recouvrement de créances B2B ────────────────────────────────────
+	// Voir src/lib/convex/recouvrement/tables.ts. Aucune table partagée avec
+	// EGalim : les deux verticales cohabitent sans se connaître.
+	...recouvrementTables
 });
