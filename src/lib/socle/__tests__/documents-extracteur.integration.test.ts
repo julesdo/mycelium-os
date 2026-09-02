@@ -17,6 +17,8 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { extraireAvecClaude } from '../documents/extracteur';
+import { documentExtraitSchema } from '../../verticales/egalim/schemaFacture';
+import { construirePromptExtraction } from '../../verticales/egalim/promptExtraction';
 import { verifierExtraction } from '../documents/verification';
 
 const RUN = process.env.EGALIM_LIVE_API === '1';
@@ -29,7 +31,11 @@ describeIfLive('extraireAvecClaude (intégration réelle)', () => {
 		async () => {
 			const texte = readFileSync('src/lib/fixtures/factures/grossiste-ocr-01.txt', 'utf8');
 
-			const { doc, usage } = await extraireAvecClaude({ contenu: { type: 'texte', texte } });
+			const { doc, usage } = await extraireAvecClaude({
+				contenu: { type: 'texte', texte },
+				schema: documentExtraitSchema,
+				prompt: construirePromptExtraction()
+			});
 
 			expect(doc.lignes).toHaveLength(8);
 

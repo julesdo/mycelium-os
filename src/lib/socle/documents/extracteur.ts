@@ -2,18 +2,35 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { documentExtraitSchema, type DocumentExtrait } from './schema';
-import { construirePromptExtraction } from './prompt';
+import type { ZodType } from 'zod';
 import { avecReprise } from '../modele/reprise';
 import { ErreurAppelClaude } from '../modele/cout';
 
 /**
- * L'extracteur Claude universel : PDF, image, photo, texte brut OCR — tout ce
- * que le parseur CSV déterministe (`parsers/csv.ts`) ne peut pas lire. Un
- * parseur par forme ne survit pas à la diversité des fournisseurs ; celui-ci
- * ne décrit aucune disposition (voir `promptExtraction.ts`) et rend une
- * sortie typée que `documentExtraitSchema` valide avant de faire confiance à
- * quoi que ce soit.
+ * L'extracteur universel : PDF, image, photo, texte brut OCR — tout ce que le
+ * parseur CSV déterministe (`csv.ts`) ne peut pas lire. Un parseur par forme
+ * ne survit pas à la diversité des émetteurs ; celui-ci ne décrit aucune
+ * disposition et rend une sortie que le schéma valide avant qu'on fasse
+ * confiance à quoi que ce soit.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * LE SCHÉMA ET LE PROMPT SONT INJECTÉS — L'ABSTRACTION EST VENUE DU SECOND CAS
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Ils étaient codés en dur ici tant qu'une seule verticale existait, et
+ * décrivaient une facture d'ACHAT : `supplierName`, « facture fournisseur de
+ * restauration collective ». L'audit l'avait relevé comme une fuite du domaine
+ * dans le socle, sans qu'il y ait alors de quoi la corriger utilement.
+ *
+ * Le recouvrement a fourni le second exemple, et il tranche : sur une facture
+ * de VENTE, l'émetteur est le créancier lui-même, et le débiteur — la seule
+ * partie qui nous intéresse — ne figure dans aucun champ du schéma d'achat.
+ * Les deux formes diffèrent réellement.
+ *
+ * Ce qui reste ici est la MACHINERIE, et elle est identique dans les deux cas :
+ * découpage du contenu, blocs image, point de coupure de cache, relance ciblée,
+ * validation, et transport de l'usage facturé jusque dans les erreurs. Chaque
+ * verticale apporte ce qu'elle veut lire.
  */
 
 const MODELE_EXTRACTION = 'claude-opus-5';
@@ -47,11 +64,11 @@ export interface UsageExtraction {
  * appel au lieu de le lire (voir `promptExtraction.ts` pour le déterminisme
  * du texte lui-même).
  */
-function construireSysteme(): Anthropic.TextBlockParam[] {
+function construireSysteme(prompt: string): Anthropic.TextBlockParam[] {
 	return [
 		{
 			type: 'text',
-			text: construirePromptExtraction(),
+			text: prompt,
 			cache_control: { type: 'ephemeral' }
 		}
 	];
@@ -104,21 +121,31 @@ function construireBlocsContenu(
 }
 
 /**
- * Extrait les lignes d'une facture via Claude. `messageRelance` porte l'écart
- * constaté par `verifierExtraction` au tour précédent, pour une relance
+ * Extrait un document via Claude, selon le schéma que la verticale fournit.
+ *
+ * `messageRelance` porte l'écart constaté au tour précédent, pour une relance
  * ciblée plutôt qu'une répétition aveugle de la même requête.
+ *
+ * Le prompt doit être DÉTERMINISTE — même texte, octet pour octet, d'un appel à
+ * l'autre. Il part avec `cache_control: ephemeral`, et le cache ne sert que
+ * sur un préfixe identique : une variation multiplie le coût par document sans
+ * qu'aucun test ne tombe.
  */
-export async function extraireAvecClaude(args: {
+export async function extraireAvecClaude<T>(args: {
 	contenu: ContenuDocument;
+	/** Ce que la verticale veut lire. Valide la réponse avant tout usage. */
+	schema: ZodType<T>;
+	/** Le prompt système de la verticale. Déterministe, obligatoirement. */
+	prompt: string;
 	messageRelance?: string;
-}): Promise<{ doc: DocumentExtrait; usage: UsageExtraction }> {
+}): Promise<{ doc: T; usage: UsageExtraction }> {
 	const client = new Anthropic({ maxRetries: 0 });
 
 	const response = await avecReprise(() =>
 		client.messages.create({
 			model: MODELE_EXTRACTION,
 			max_tokens: MAX_TOKENS,
-			system: construireSysteme(),
+			system: construireSysteme(args.prompt),
 			// effort bas : lire un tableau n'est pas un raisonnement profond.
 			// Le thinking reste actif par défaut — ne pas le désactiver, sous
 			// peine de laisser Opus 5 fuir des balises <thinking> dans la sortie.
@@ -126,7 +153,7 @@ export async function extraireAvecClaude(args: {
 			// renvoient tous une 400 sur Opus 5.
 			output_config: {
 				effort: 'low',
-				format: zodOutputFormat(documentExtraitSchema)
+				format: zodOutputFormat(args.schema)
 			},
 			messages: [
 				{
@@ -168,9 +195,9 @@ export async function extraireAvecClaude(args: {
 
 	// Une réponse non conforme au schéma est une erreur, pas une donnée à
 	// rattraper : documentExtraitSchema.parse() lève si ce n'est pas conforme.
-	let doc: DocumentExtrait;
+	let doc: T;
 	try {
-		doc = documentExtraitSchema.parse(jsonBrut);
+		doc = args.schema.parse(jsonBrut);
 	} catch {
 		// L'appel a bien été facturé : son usage doit remonter au plafond.
 		throw new ErreurAppelClaude(

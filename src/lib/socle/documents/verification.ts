@@ -1,4 +1,4 @@
-import type { DocumentExtrait } from './schema';
+import type { DocumentExtraitBase } from './schema';
 
 const TOLERANCE_EUR = 0.01;
 
@@ -66,7 +66,7 @@ function construireMessageRelance(ecarts: Ecart[]): string {
  * Une extraction qui ne retombe pas dessus n'est pas fiable — trois niveaux
  * de contrôle, du plus fort au plus faible.
  */
-export function verifierExtraction(doc: DocumentExtrait): ResultatVerification {
+export function verifierExtraction(doc: DocumentExtraitBase): ResultatVerification {
 	if (doc.illisible) {
 		const ecart: Ecart = {
 			nature: 'ILLISIBLE',

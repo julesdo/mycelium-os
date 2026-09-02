@@ -1,14 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { verifierExtraction } from '../documents/verification';
-import type { DocumentExtrait } from '../documents/schema';
+import type { DocumentExtraitBase } from '../documents/schema';
 
 const doc = (
 	lignes: Array<{ amountHT: number; vatRate: number | null }>,
-	totaux: DocumentExtrait['totaux']
-): DocumentExtrait => ({
-	supplierName: null,
-	invoiceNumber: null,
-	invoiceDate: null,
+	totaux: DocumentExtraitBase['totaux']
+): DocumentExtraitBase => ({
 	lignes: lignes.map((l, i) => ({
 		rawLabel: `P${i}`,
 		quantity: null,

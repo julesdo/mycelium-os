@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
-import { construirePromptExtraction } from '../../../socle/documents/prompt';
+import { construirePromptExtraction } from '../promptExtraction';
 import { construirePromptSysteme } from '../prompt';
 
 /**

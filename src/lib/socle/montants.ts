@@ -62,9 +62,37 @@ const MONTANT_ECRIT = /^(-?)(\d+)(?:[.,](\d{1,2}))?$/;
  * ferait disparaître une créance en silence, et personne ne peut s'apercevoir
  * d'une ligne absente en relisant un décompte.
  */
+/** Les symboles monétaires qu'un export colle au montant. */
+const SYMBOLES = /[€$£]/g;
+
+/**
+ * Ramène les deux conventions de séparateur de milliers à une écriture unique.
+ *
+ * Un export comptable français écrit `1.234,56`, un export anglophone
+ * `1,234.56`, et les deux se rencontrent dans le même dossier client. Quand
+ * LES DEUX séparateurs sont présents, le plus à droite est le décimal : il n'y
+ * a rien à deviner, la règle est mécanique.
+ *
+ * QUAND UN SEUL EST PRÉSENT, ON NE TRANCHE PAS. `12,345` vaut 12 345 en
+ * anglais et 12,345 € en français — un facteur mille. `depuisEuros` le refuse
+ * plus bas, parce qu'un montant qu'on ne sait pas lire doit être refusé et non
+ * deviné. C'est la même discipline que partout ailleurs ici : l'échec est
+ * bruyant, jamais silencieux.
+ */
+function unifierSeparateurs(texte: string): string {
+	const derniereVirgule = texte.lastIndexOf(',');
+	const dernierPoint = texte.lastIndexOf('.');
+
+	if (derniereVirgule === -1 || dernierPoint === -1) return texte;
+
+	return derniereVirgule > dernierPoint
+		? texte.replace(/\./g, '') // milliers en points, décimale en virgule
+		: texte.replace(/,/g, ''); // milliers en virgules, décimale en point
+}
+
 export function depuisEuros(texte: string | number): Montant {
 	const brut = typeof texte === 'number' ? texte.toString() : texte;
-	const nettoye = brut.replace(ESPACES, '');
+	const nettoye = unifierSeparateurs(brut.replace(SYMBOLES, '').replace(ESPACES, ''));
 
 	const trouve = MONTANT_ECRIT.exec(nettoye);
 	if (trouve === null) {

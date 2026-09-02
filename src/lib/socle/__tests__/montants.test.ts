@@ -48,6 +48,29 @@ describe('lecture et écriture des montants', () => {
 		expect(versEuros(depuisEuros(insecableEtroite))).toBe('1 234,56');
 	});
 
+	it('lit les deux conventions de séparateur de milliers', () => {
+		// Un export comptable français écrit 1.234,56 ; un export anglophone
+		// écrit 1,234.56. Les deux se rencontrent dans le même dossier client.
+		// Quand LES DEUX séparateurs sont présents, le plus à droite est le
+		// décimal : il n'y a aucune ambiguïté à lever.
+		expect(versEuros(depuisEuros('1.234,56'))).toBe('1 234,56');
+		expect(versEuros(depuisEuros('1,234.56'))).toBe('1 234,56');
+		expect(versEuros(depuisEuros('1.234.567,89'))).toBe('1 234 567,89');
+		expect(versEuros(depuisEuros('-1.234,56'))).toBe('-1 234,56');
+	});
+
+	it('refuse toujours un séparateur unique suivi de trois chiffres', () => {
+		// « 12,345 » n'est levable par aucune règle : 12 345 en anglais,
+		// 12,345 € en français — soit un facteur mille. Un montant qu'on ne
+		// sait pas lire doit être refusé, jamais deviné.
+		expect(() => depuisEuros('12,345')).toThrow();
+		expect(() => depuisEuros('12.345')).toThrow();
+	});
+
+	it('retire les symboles monétaires collés au montant', () => {
+		expect(versEuros(depuisEuros('1 234,56 €'))).toBe('1 234,56');
+	});
+
 	it('lit un montant négatif — un avoir est une ligne comme une autre', () => {
 		expect(versEuros(depuisEuros('-400,00'))).toBe('-400,00');
 	});

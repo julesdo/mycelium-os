@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { construirePromptExtraction } from '../documents/prompt';
+import { construirePromptExtraction } from '../promptExtraction';
 
 describe('construirePromptExtraction', () => {
 	it('est déterministe : deux appels produisent le même texte, octet pour octet', () => {

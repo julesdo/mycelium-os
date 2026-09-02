@@ -9,7 +9,8 @@ import type { Id } from '../_generated/dataModel';
 import { decoderTexte, detecterColonnes, parseCsv, type LigneBrute } from '../../socle/documents/csv';
 import { extraireAvecClaude, type ContenuDocument, type UsageExtraction } from '../../socle/documents/extracteur';
 import { verifierExtraction } from '../../socle/documents/verification';
-import type { DocumentExtrait } from '../../socle/documents/schema';
+import { documentExtraitSchema, type DocumentExtrait } from '../../verticales/egalim/schemaFacture';
+import { construirePromptExtraction } from '../../verticales/egalim/promptExtraction';
 import { CAP_EUR, estimerCout, usageDeLErreur, ErreurAppelClaude } from '../../socle/modele/cout';
 
 /**
@@ -156,7 +157,12 @@ async function extraireDocumentAvecClaude(
 	messageRelance: string | undefined
 ): Promise<{ doc: DocumentExtrait; usage: UsageExtraction }> {
 	if (contenu.type !== 'images' || contenu.images.length <= SEUIL_DECOUPAGE_PAGES) {
-		return extraireAvecClaude({ contenu, messageRelance });
+		return extraireAvecClaude({
+			contenu,
+			schema: documentExtraitSchema,
+			prompt: construirePromptExtraction(),
+			messageRelance
+		});
 	}
 
 	const lignes: DocumentExtrait['lignes'] = [];
@@ -175,6 +181,8 @@ async function extraireDocumentAvecClaude(
 		let usage: UsageExtraction;
 		try {
 			({ doc, usage } = await extraireAvecClaude({
+				schema: documentExtraitSchema,
+				prompt: construirePromptExtraction(),
 				contenu: { type: 'images', images: morceau },
 				messageRelance
 			}));
