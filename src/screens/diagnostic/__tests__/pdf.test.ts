@@ -7,7 +7,7 @@ import {
 	MENTION_OBLIGATION_DE_MOYENS,
 	MENTION_SIGNATURE,
 	MENTION_PORTEE_SIGNATURE
-} from '../../../lib/convex/egalim/mentions';
+} from '../../../lib/verticales/egalim/mentions';
 
 /**
  * Ce que ces tests protègent : le seul artefact du produit qui sorte de

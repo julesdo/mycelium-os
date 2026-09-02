@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Popup, PopupContent, Button, Input, Checkbox, SectionTitle } from '@cladd-ui/react';
 import { PenLineIcon, ShieldCheckIcon } from 'lucide-react';
 import { PaveSignature, Champ, MessageErreur, empreinteLisible } from '../../ui';
-import { MENTION_SIGNATURE, MENTION_PORTEE_SIGNATURE } from '../../lib/convex/egalim/mentions';
+import { MENTION_SIGNATURE, MENTION_PORTEE_SIGNATURE } from '../../lib/verticales/egalim/mentions';
 
 /**
  * La feuille de signature.

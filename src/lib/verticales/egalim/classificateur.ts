@@ -2,10 +2,10 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { lotClasseSchema, type ClassificationClaude } from './classificationSchema';
+import { lotClasseSchema, type ClassificationClaude } from './schema';
 import { construirePromptSysteme } from './prompt';
-import { avecReprise } from './reprise';
-import { ErreurAppelClaude } from './cout';
+import { avecReprise } from '../../socle/modele/reprise';
+import { ErreurAppelClaude } from '../../socle/modele/cout';
 
 /**
  * L'appel de classification : un lot de libellés distincts, un appel. Le

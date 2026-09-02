@@ -54,8 +54,7 @@ src/lib/
       reprise.ts                ← politique de reprise sur appel modèle
       cout.ts                   ← barème, plafond, transport d'usage
     montants.ts                 ← arithmétique décimale exacte        (Phase 3)
-    verticale.ts                ← LE contrat qu'une verticale remplit
-    registre.ts                 ← résolution d'une verticale par clé
+    __tests__/frontiere.test.ts ← interdit au socle d'importer une verticale
 
   verticales/
     egalim/                     ← la verticale existante, inchangée en substance
@@ -98,37 +97,64 @@ C'est la pièce centrale, et c'est la seule vraie décision de conception de cet
 
 ### Ce que le socle sait faire, et où il s'arrête
 
-Le socle mène un document jusqu'à des **libellés distincts, normalisés, dédoublonnés**, puis
-demande à un modèle de les **qualifier**. À partir de là, il ne sait plus rien : ce qu'est une
-qualification valide, ce qu'elle implique en droit, et si elle doit passer devant un humain sont
-trois questions de verticale.
+Le socle mène un document jusqu'à des **libellés distincts, normalisés, dédoublonnés**. À partir de
+là, il ne sait plus rien : ce qu'est une qualification valide, ce qu'elle implique en droit, et si
+elle doit passer devant un humain sont trois questions de verticale.
 
-D'où le contrat, dans `socle/verticale.ts` :
+### L'interface est un jeu de fonctions pures, pas un objet à implémenter
 
-```ts
-export interface Verticale<Brute, Verdict> {
-  /** La clé qui la désigne dans le registre, et qui voyage dans les arguments Convex. */
-  readonly cle: string;
+C'est un arbitrage, et il mérite d'être défendu parce qu'il va contre le réflexe habituel.
 
-  /** Enregistrée sur CHAQUE classification produite. Une mesure sait quelle règle l'a produite. */
-  readonly version: string;
+La forme attendue serait une interface `Verticale` que chaque domaine implémente, plus un registre
+qui la résout par clé. Je ne l'ai **pas** écrite, pour une raison de fond : **elle serait taillée
+sur EGalim, et le recouvrement n'a pas cette forme.**
 
-  /** Le schéma de ce que le modèle doit rendre pour un libellé. Des constats, jamais des conclusions. */
-  readonly schema: StandardSchemaV1<Brute>;
+EGalim classe des **libellés distincts** contre un référentiel, avec un cache mutualisé entre
+clients et un consensus. Le recouvrement ne fait rien de tel : il qualifie une **créance** — une
+agrégation de factures, de pièces et de dates — contre des conditions légales. Il n'y a pas de
+libellé à mutualiser, pas de cache inter-clients, pas de consensus. Forcer les deux dans une même
+signature `qualifier(entrée) → verdict` produirait une abstraction que les deux côtés
+contourneraient dès la première difficulté réelle.
 
-  /** Le prompt qui décrit au modèle ce qu'il doit RELEVER. */
-  construirePrompt(): string;
+Le brief lui-même prévient contre ce geste, en Phase 4 : « ce sont des choix à calibrer sur données
+réelles, pas à figer maintenant ».
 
-  /** Le passage des constats du modèle aux conclusions du droit. Du code versionné, jamais un modèle. */
-  deriverVerdict(brute: Brute, source: 'AUTO' | 'HUMAN'): Verdict;
+**Ce que le socle expose donc, ce sont des fonctions pures, importables librement :**
 
-  /** Pourquoi ce libellé attend un arbitrage humain, ou `null` s'il n'en attend pas. */
-  motifRevue(ligne: LignePartielle): string | null;
+| Module | Ce qu'il offre | Qui s'en sert |
+|---|---|---|
+| `socle/documents/*` | `parseCsv`, `extraireAvecClaude`, `verifierExtraction`, les schémas | Les deux verticales, tel quel |
+| `socle/normalisation.ts` | `normaliserLibelle`, `normaliserFournisseur` | Les deux |
+| `socle/doublons.ts` | `chercherDoublon`, 3 niveaux | Les deux |
+| `socle/appariement.ts` | `rapprocher` par clé, jamais par position | Les deux |
+| `socle/modele/*` | `avecReprise`, `estimerCout`, `CAP_EUR`, `ErreurAppelClaude` | Les deux |
+| `socle/montants.ts` | arithmétique décimale exacte *(Phase 3)* | Recouvrement surtout |
 
-  /** Faut-il redemander ce libellé à cette organisation, malgré le cache global ? */
-  doitEtreDemande(cache: EntreeCache | null, brute: Brute): boolean;
-}
-```
+Une verticale « se branche » en important ce dont elle a besoin, et en gardant chez elle son
+référentiel, ses règles et ses formats de sortie. C'est plus faible qu'un contrat — et c'est
+honnête tant qu'une seule verticale existe.
+
+**L'abstraction viendra du second exemple, pas du premier.** Quand le recouvrement sera écrit
+(Phases 2 à 6), ce qui se répétera réellement entre les deux se verra, et pourra être extrait. Une
+interface écrite aujourd'hui serait une supposition ; extraite demain, ce sera un constat.
+
+### Ce qui tient la frontière en l'absence de contrat
+
+Une convention ne survit pas à une semaine de travail. La règle est donc **exécutable**, dans
+`socle/__tests__/frontiere.test.ts` :
+
+> Aucun fichier de `src/lib/socle/` n'importe `verticales/` ni `convex/`.
+
+Le premier interdit *est* la définition du socle. Le second le garde testable sans harnais de
+plateforme — c'est ce qui fait tourner ses tests en 3 secondes, et ce qui le rendrait réutilisable
+si le backend changeait.
+
+Le test a été vérifié dans les deux sens : il passe sur le code déplacé, et il tombe en nommant le
+fichier et la ligne fautive dès qu'on glisse un `import { SEUILS } from
+'../verticales/egalim/referentiel'` dans le socle.
+
+C'est le critère d'acceptation n° 7 du brief — « un nouveau pays ou une nouvelle procédure s'ajoute
+sans toucher au socle » — rendu vérifiable par la machine plutôt que par la discipline.
 
 ### Les deux invariants que ce contrat protège
 
@@ -146,22 +172,18 @@ compte : un opérateur qui voit `VIANDE_POISSON` à 0,97 confirme d'un coup d'œ
 `CONFIANCE_BASSE` à 0,4 doit réfléchir. Sans le motif, les deux se ressemblent et il ralentit sur
 les deux.
 
-### Pourquoi un registre, et pas une injection
+### La contrainte à connaître le jour où le contrat s'écrira
 
-Une `action` Convex ne peut pas recevoir un objet avec des méthodes en argument : ses arguments
-sont validés et sérialisés. La verticale est donc désignée par une **clé** (`'egalim'`), qui voyage
-dans les arguments, et résolue à la portée module :
+Quand l'abstraction viendra, elle ne pourra pas prendre la forme d'une injection de dépendance
+classique : **une `action` Convex ne peut pas recevoir un objet porteur de méthodes en argument**,
+puisque ses arguments sont validés et sérialisés.
 
-```ts
-// socle/registre.ts
-const VERTICALES = { egalim: verticaleEgalim } as const;
-export type CleVerticale = keyof typeof VERTICALES;
-export function resoudre(cle: CleVerticale) { return VERTICALES[cle]; }
-```
+La verticale devra donc être désignée par une **clé** (`'egalim'`, `'recouvrement'`) qui voyage
+dans les arguments, et résolue à la portée module. C'est la plateforme qui dicte cette forme, pas
+une préférence — autant le savoir avant de concevoir le contrat.
 
-C'est la contrainte de la plateforme qui dicte cette forme, pas une préférence. Elle a un effet
-secondaire heureux : la clé étant stockée sur le lot, on sait toujours quelle verticale a produit
-une mesure, des années après.
+Effet secondaire heureux, dont il faudra profiter : la clé stockée sur le lot fait qu'on sait
+toujours quelle verticale a produit une mesure, des années après.
 
 ### Ce que le socle N'expose PAS, délibérément
 
@@ -211,14 +233,32 @@ domaine s'était glissée.
 Plus un fichier neuf, `verticales/egalim/index.ts`, qui assemble ces pièces en un objet
 `Verticale` conforme au contrat.
 
-### 3.3 Restent dans `src/lib/convex/` — les fonctions, jamais la logique
+### 3.3 Les fonctions Convex ne bougent pas — et c'est une décision, pas un oubli
 
-`extraction.ts`, `classification.ts`, `extractionMutations.ts`, `classificationMutations.ts`,
-`batches.ts`, `lot.ts`, `confirmation.ts` passent sous `convex/socle/` ; `diagnostics.ts`,
-`produits.ts`, `attestations.ts`, `signature.ts`, `rappels.ts`, `pilotage.ts`, `tables.ts` sous
-`convex/egalim/`.
+L'arborescence du § 1 montrait `convex/socle/` et `convex/egalim/`. **Ce découpage est reporté**,
+et les fichiers qui exportent des `query` / `mutation` / `action` restent où ils sont.
 
-Les tests suivent leurs modules.
+La raison est que **le chemin d'un fichier Convex EST son adresse d'API**. Déplacer
+`convex/egalim/classification.ts` vers `convex/socle/` transforme
+`internal.egalim.classification.classifierLot` en `internal.socle.classification.classifierLot`,
+et ce nom n'est pas seulement lu par le compilateur :
+
+- il est **écrit dans les tâches planifiées déjà en file** (`ctx.scheduler.runAfter`), qui
+  référencent la fonction par son chemin. Une classification en cours au moment du déploiement
+  cherche une fonction qui n'existe plus ;
+- il est écrit dans `crons.ts` (`internal.egalim.rappels.rappelerLaCampagne`) ;
+- il survit dans `_generated/api.d.ts`, régénéré au déploiement.
+
+Tant que l'inconnue n° 3 de l'audit — *y a-t-il des données et des traitements en production ?* —
+n'est pas tranchée par Jules, ce déplacement est un risque pris pour du confort de rangement.
+
+**Ce report ne coûte rien à l'objectif.** Ce qui rend une seconde verticale possible, c'est que la
+*logique* soit pure et réutilisable, pas que les *fonctions* soient dans un joli dossier. La
+verticale recouvrement écrira ses propres fonctions Convex, dans son propre dossier, en important
+le même socle. Le rangement des fonctions EGalim pourra suivre plus tard, sous forme de migration
+assumée.
+
+Les tests, eux, suivent leurs modules.
 
 ---
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Surface, Button, Input } from '@cladd-ui/react';
 import { PenLineIcon, ShieldCheckIcon, TriangleAlertIcon, XIcon } from 'lucide-react';
 import { SectionEcran, MessageErreur, empreinteLisible } from '../../ui';
-import { MENTION_PORTEE_SIGNATURE } from '../../lib/convex/egalim/mentions';
+import { MENTION_PORTEE_SIGNATURE } from '../../lib/verticales/egalim/mentions';
 
 const DATE_HEURE = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
 

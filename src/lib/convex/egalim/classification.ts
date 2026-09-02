@@ -5,10 +5,10 @@ import { internalAction } from '../_generated/server';
 import { internal } from '../_generated/api';
 import type { ActionCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
-import { classifierAvecClaude, type UsageClassification } from './classificateurClaude';
-import type { ClassificationClaude } from './classificationSchema';
-import { rapprocher } from './appariement';
-import { CAP_EUR, estimerCout, usageDeLErreur } from './cout';
+import { classifierAvecClaude, type UsageClassification } from '../../verticales/egalim/classificateur';
+import type { ClassificationClaude } from '../../verticales/egalim/schema';
+import { rapprocher } from '../../socle/appariement';
+import { CAP_EUR, estimerCout, usageDeLErreur } from '../../socle/modele/cout';
 
 /**
  * L'orchestration de la classification — le cœur du produit.

@@ -1,9 +1,9 @@
 import { v } from 'convex/values';
 import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
-import { SEUILS } from '../../egalim/referentiel';
-import { FAMILLES, type Famille } from '../../egalim/types';
-import { calculerRatios, partNonConfirmee, type LignePourAgregation } from './agregation';
+import { SEUILS } from '../../verticales/egalim/referentiel';
+import { FAMILLES, type Famille } from '../../verticales/egalim/types';
+import { calculerRatios, partNonConfirmee, type LignePourAgregation } from '../../verticales/egalim/agregation';
 import { vFamille } from './tables';
 
 /**

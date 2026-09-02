@@ -5,7 +5,7 @@ import {
 	MENTION_RESPONSABILITE,
 	MENTION_FIGE,
 	MENTION_OBLIGATION_DE_MOYENS
-} from '../mentions';
+} from '../../../verticales/egalim/mentions';
 
 /**
  * La ligne rouge juridique du modèle : Letikette ne garantit jamais la

@@ -9,10 +9,10 @@
 // bien LU depuis le cache. Sans cache, le coût par diagnostic sort du budget
 // sans qu'aucun signal ne le dise.
 import { describe, it, expect } from 'vitest';
-import { classifierAvecClaude } from '../classificateurClaude';
-import { normaliserLibelle } from '../normalisation';
+import { classifierAvecClaude } from '../classificateur';
+import { normaliserLibelle } from '../../../socle/normalisation';
 import { deriverVerdict } from '../verdict';
-import { rapprocher } from '../appariement';
+import { rapprocher } from '../../../socle/appariement';
 
 const RUN = process.env.EGALIM_LIVE_API === '1';
 const describeIfLive = RUN ? describe : describe.skip;

@@ -1,4 +1,4 @@
-import type { DocumentExtrait } from './extractionSchema';
+import type { DocumentExtrait } from './schema';
 
 const TOLERANCE_EUR = 0.01;
 

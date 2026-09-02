@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { verifierExtraction } from '../verification';
-import type { DocumentExtrait } from '../extractionSchema';
+import { verifierExtraction } from '../documents/verification';
+import type { DocumentExtrait } from '../documents/schema';
 
 const doc = (
 	lignes: Array<{ amountHT: number; vatRate: number | null }>,

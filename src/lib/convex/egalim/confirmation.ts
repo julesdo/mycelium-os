@@ -4,9 +4,9 @@ import { internal } from '../_generated/api';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { getUserOrg } from '../lib/auth';
-import { REFERENTIEL_VERSION } from '../../egalim/referentiel';
-import type { Famille, Label } from '../../egalim/types';
-import { deriverVerdict, motifRevue } from './verdict';
+import { REFERENTIEL_VERSION } from '../../verticales/egalim/referentiel';
+import type { Famille, Label } from '../../verticales/egalim/types';
+import { deriverVerdict, motifRevue } from '../../verticales/egalim/verdict';
 import { vFamille, vLabel } from './tables';
 import { recompterLot } from './lot';
 

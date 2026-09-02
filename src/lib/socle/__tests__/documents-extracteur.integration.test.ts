@@ -16,8 +16,8 @@
 // suite de tests.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { extraireAvecClaude } from '../extracteurClaude';
-import { verifierExtraction } from '../verification';
+import { extraireAvecClaude } from '../documents/extracteur';
+import { verifierExtraction } from '../documents/verification';
 
 const RUN = process.env.EGALIM_LIVE_API === '1';
 const describeIfLive = RUN ? describe : describe.skip;

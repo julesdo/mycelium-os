@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { construirePromptSysteme } from '../prompt';
-import { FAUX_AMIS, MENTIONS_NON_QUALIFIANTES, LABELS_QUALIFIANTS } from '../../../egalim/referentiel';
-import { FAMILLES } from '../../../egalim/types';
+import { FAUX_AMIS, MENTIONS_NON_QUALIFIANTES, LABELS_QUALIFIANTS } from '../referentiel';
+import { FAMILLES } from '../types';
 
 describe('construirePromptSysteme', () => {
 	it('produit exactement le même texte à chaque appel', () => {

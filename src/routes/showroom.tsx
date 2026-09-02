@@ -40,7 +40,7 @@ import {
 	MENTION_RESPONSABILITE,
 	MENTION_FIGE,
 	MENTION_OBLIGATION_DE_MOYENS
-} from '../lib/convex/egalim/mentions';
+} from '../lib/verticales/egalim/mentions';
 
 /**
  * La salle d'exposition.

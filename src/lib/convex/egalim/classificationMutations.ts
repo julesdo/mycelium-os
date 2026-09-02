@@ -3,9 +3,9 @@ import { internalMutation, internalQuery, type MutationCtx } from '../_generated
 import type { Doc, Id } from '../_generated/dataModel';
 import { internal } from '../_generated/api';
 import { authedMutation } from '../functions';
-import { REFERENTIEL_VERSION } from '../../egalim/referentiel';
-import { deriverVerdict, type ClassificationBrute } from './verdict';
-import { doitEtreDemande } from './consensus';
+import { REFERENTIEL_VERSION } from '../../verticales/egalim/referentiel';
+import { deriverVerdict, type ClassificationBrute } from '../../verticales/egalim/verdict';
+import { doitEtreDemande } from '../../verticales/egalim/consensus';
 import { vFamille, vLabel } from './tables';
 import { formaterEuros } from '../emails/modeles/disposition';
 

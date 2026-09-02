@@ -1,8 +1,8 @@
 import { v, ConvexError } from 'convex/values';
 import { authedQuery, authedMutation } from '../functions';
 import { getUserOrg } from '../lib/auth';
-import { empreinteBilan, type BilanAEmpreindre } from '../../egalim/empreinte';
-import { MENTION_SIGNATURE, VERSION_MENTION_SIGNATURE } from './mentions';
+import { empreinteBilan, type BilanAEmpreindre } from '../../verticales/egalim/empreinte';
+import { MENTION_SIGNATURE, VERSION_MENTION_SIGNATURE } from '../../verticales/egalim/mentions';
 
 /**
  * La signature d'un bilan.

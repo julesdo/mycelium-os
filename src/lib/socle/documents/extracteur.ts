@@ -2,10 +2,10 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { documentExtraitSchema, type DocumentExtrait } from './extractionSchema';
-import { construirePromptExtraction } from './promptExtraction';
-import { avecReprise } from './reprise';
-import { ErreurAppelClaude } from './cout';
+import { documentExtraitSchema, type DocumentExtrait } from './schema';
+import { construirePromptExtraction } from './prompt';
+import { avecReprise } from '../modele/reprise';
+import { ErreurAppelClaude } from '../modele/cout';
 
 /**
  * L'extracteur Claude universel : PDF, image, photo, texte brut OCR — tout ce

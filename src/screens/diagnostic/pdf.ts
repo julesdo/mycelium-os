@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FAMILLES, type Famille } from '../../ui/format';
 import { COULEURS_IMPRESSION as C } from '../../ui/couleurs-impression';
-import { empreinteLisible } from '../../lib/egalim/empreinte';
+import { empreinteLisible } from '../../lib/verticales/egalim/empreinte';
 
 /**
  * Le diagnostic EGalim, en document imprimable.

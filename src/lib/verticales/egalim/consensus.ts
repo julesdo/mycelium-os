@@ -1,4 +1,4 @@
-import { FAMILLES_VIANDE_POISSON, type Famille } from '../../egalim/types';
+import { FAMILLES_VIANDE_POISSON, type Famille } from './types';
 import { SEUIL_CONFIANCE } from './verdict';
 
 /**

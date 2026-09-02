@@ -1,7 +1,7 @@
 import { Surface } from '@cladd-ui/react';
 import { cn } from './cn';
 import { euros, pourcent } from './format';
-import { etatDeSeuil, type EtatSeuil } from '../lib/egalim/referentiel';
+import { etatDeSeuil, type EtatSeuil } from '../lib/verticales/egalim/referentiel';
 
 /**
  * Le taux EGalim, l'élément le plus important du produit.

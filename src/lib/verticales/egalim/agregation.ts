@@ -1,5 +1,5 @@
-import { SEUILS } from '../../egalim/referentiel';
-import { FAMILLES_VIANDE_POISSON, type Famille } from '../../egalim/types';
+import { SEUILS } from './referentiel';
+import { FAMILLES_VIANDE_POISSON, type Famille } from './types';
 
 /**
  * Une ligne PRÊTE à agréger : tous les champs de classification sont renseignés.

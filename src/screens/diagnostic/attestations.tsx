@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Chip, SectionTitle, Surface } from '@cladd-ui/react';
 import { CopyIcon, CheckIcon, MailIcon } from 'lucide-react';
-import { redigerCourrier } from '../../lib/convex/egalim/courrier';
+import { redigerCourrier } from '../../lib/verticales/egalim/courrier';
 import { euros, pluriel } from '../../ui';
 
 export interface Attestation {

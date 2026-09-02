@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { detecterColonnes, parseCsv, decoderTexte } from '../parsers/csv';
+import { detecterColonnes, parseCsv, decoderTexte } from '../documents/csv';
 
 describe('decoderTexte', () => {
 	it('décode de l’UTF-8', () => {

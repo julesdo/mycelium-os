@@ -1,11 +1,11 @@
-import { estBio, estDurable } from '../../egalim/referentiel';
+import { estBio, estDurable } from './referentiel';
 import {
 	FAMILLES_VIANDE_POISSON,
 	type Famille,
 	type Label,
 	type ProofStatus,
 	type ReviewStatus
-} from '../../egalim/types';
+} from './types';
 
 /**
  * Le passage de ce que le modèle a RELEVÉ à ce que la loi en CONCLUT.

@@ -3,8 +3,8 @@ import {
 	MENTIONS_NON_QUALIFIANTES,
 	FAUX_AMIS,
 	REFERENTIEL_VERSION
-} from '../../egalim/referentiel';
-import { FAMILLES } from '../../egalim/types';
+} from './referentiel';
+import { FAMILLES } from './types';
 
 /**
  * Prompt système de classification. DOIT être déterministe — aucune date,

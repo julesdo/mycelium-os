@@ -49,7 +49,7 @@ Unique exception assumée : la **Moulinette Audit**, parce que c'est le produit 
 - Auth : Better Auth (install Convex locale)
 - UI : Tailwind CSS v4 + Cladd (`@cladd-ui/react`, version epinglee a l'exact)
 - IA : Claude API via actions Convex
-- Facturation : Paddle · Emails : Resend · Déploiement : Cloudflare Workers
+- Facturation : Paddle · Emails : Resend · Déploiement : Vercel
 - Package manager : bun · Tests : Vitest (unit) + verification visuelle au navigateur
 
 ## Architecture
@@ -63,9 +63,28 @@ Unique exception assumée : la **Moulinette Audit**, parce que c'est le produit 
 - Rôles : `ORG_ADMIN`, `ORG_MEMBER`. Aucun rôle staff.
 - **Tablette d'abord**, paysage privilégié, sans casser le téléphone. Cibles tactiles 48 px.
 
+### Socle et verticales — la frontière est un test, pas une convention
+
+Depuis le remodelage (voir `/docs/remodelage/`), le code se lit en trois zones :
+
+- **`src/lib/socle/`** — le moteur. Ingestion multi-format, extraction ligne à ligne,
+  normalisation de libellés, dédoublonnage, rapprochement, reprise et coût des appels modèle.
+  **Il ne sait pas quelle loi il sert.**
+- **`src/lib/verticales/<domaine>/`** — le référentiel, les règles de qualification, les calculs
+  du domaine et ses formats de sortie. `egalim/` existe ; `recouvrement/` se construit.
+- **`src/lib/convex/`** — les `query` / `mutation` / `action`, et rien d'autre. La logique
+  pure vit hors de ce dossier, ce qui la rend testable sans harnais de plateforme.
+
+**Règle exécutable** : `src/lib/socle/__tests__/frontiere.test.ts` échoue si un fichier du socle
+importe `verticales/` ou `convex/`. L'inverse est libre et voulu.
+
+Deux verrous d'empreinte protègent les prompts système : ils partent avec `cache_control`
+`ephemeral`, et le cache Claude ne sert que sur un préfixe identique à l'octet. Un reformatage
+innocent multiplie le coût par diagnostic sans qu'aucun autre test ne tombe.
+
 ## Le référentiel EGalim
 
-`src/lib/egalim/referentiel.ts` (à construire en phase 1) est **du code, jamais des données**. Il
+`src/lib/verticales/egalim/referentiel.ts` est **du code, jamais des données**. Il
 est versionné (`REFERENTIEL_VERSION`), passe en revue de code, et chaque classification enregistre
 la version qui l'a produite. Le barème doit être revérifié **avant** toute production de rapport
 client.

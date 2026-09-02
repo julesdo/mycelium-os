@@ -1,9 +1,9 @@
 import { v } from 'convex/values';
 import { internalMutation, internalQuery, type MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
-import { chercherDoublon } from './doublons';
+import { chercherDoublon } from '../../socle/doublons';
 import { internal } from '../_generated/api';
-import { normaliserLibelle, normaliserFournisseur } from './normalisation';
+import { normaliserLibelle, normaliserFournisseur } from '../../socle/normalisation';
 
 /**
  * Les écritures en base de l'orchestration d'extraction (`extraction.ts`).

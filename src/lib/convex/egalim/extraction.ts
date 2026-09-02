@@ -6,11 +6,11 @@ import { internalAction } from '../_generated/server';
 import { internal } from '../_generated/api';
 import type { ActionCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
-import { decoderTexte, detecterColonnes, parseCsv, type LigneBrute } from './parsers/csv';
-import { extraireAvecClaude, type ContenuDocument, type UsageExtraction } from './extracteurClaude';
-import { verifierExtraction } from './verification';
-import type { DocumentExtrait } from './extractionSchema';
-import { CAP_EUR, estimerCout, usageDeLErreur, ErreurAppelClaude } from './cout';
+import { decoderTexte, detecterColonnes, parseCsv, type LigneBrute } from '../../socle/documents/csv';
+import { extraireAvecClaude, type ContenuDocument, type UsageExtraction } from '../../socle/documents/extracteur';
+import { verifierExtraction } from '../../socle/documents/verification';
+import type { DocumentExtrait } from '../../socle/documents/schema';
+import { CAP_EUR, estimerCout, usageDeLErreur, ErreurAppelClaude } from '../../socle/modele/cout';
 
 /**
  * L'orchestration d'extraction — un document, un chemin déterministe (CSV)

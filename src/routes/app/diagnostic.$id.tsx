@@ -9,7 +9,7 @@ import {
 	MENTION_RESPONSABILITE,
 	MENTION_FIGE,
 	MENTION_OBLIGATION_DE_MOYENS
-} from '../../lib/convex/egalim/mentions';
+} from '../../lib/verticales/egalim/mentions';
 import {
 	Page,
 	PageHeader,
@@ -31,7 +31,7 @@ import {
 import { Attestations, type Attestation } from '../../screens/diagnostic/attestations';
 import { Declaration, chiffresDepuisBilan } from '../../screens/diagnostic/declaration';
 import { FeuilleSignature } from '../../screens/diagnostic/signer';
-import { MENTION_PORTEE_SIGNATURE } from '../../lib/convex/egalim/mentions';
+import { MENTION_PORTEE_SIGNATURE } from '../../lib/verticales/egalim/mentions';
 import { BlocSignature } from '../../screens/diagnostic/bloc-signature';
 import { empreinteBilan } from '../../ui';
 import { telechargerDiagnostic } from '../../screens/diagnostic/telecharger';

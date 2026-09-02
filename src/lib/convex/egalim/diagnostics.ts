@@ -5,9 +5,9 @@ import { internal } from '../_generated/api';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { getUserOrg } from '../lib/auth';
-import { REFERENTIEL_VERSION, SEUILS, etatDeSeuil } from '../../egalim/referentiel';
-import { FAMILLES, type Famille } from '../../egalim/types';
-import { calculerRatios, type LignePourAgregation } from './agregation';
+import { REFERENTIEL_VERSION, SEUILS, etatDeSeuil } from '../../verticales/egalim/referentiel';
+import { FAMILLES, type Famille } from '../../verticales/egalim/types';
+import { calculerRatios, type LignePourAgregation } from '../../verticales/egalim/agregation';
 import { vFamille, vLabel } from './tables';
 
 /**

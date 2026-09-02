@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FAMILLES, LABELS } from '../../egalim/types';
+import { FAMILLES, LABELS } from './types';
 
 /**
  * Le contrat de sortie de la classification. Il ne demande NI `isBio` NI
