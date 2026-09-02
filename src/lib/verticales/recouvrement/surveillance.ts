@@ -1,6 +1,5 @@
 import { ZERO, additionner, versEuros, type Montant } from '../../socle/montants';
 import { joursEntre } from './decompte';
-import { PARAMETRES, estUtilisable } from './parametres';
 import { SEUIL_QUALIFICATION } from './scoring';
 import type { SanteDebiteur } from './scoring';
 
@@ -55,6 +54,13 @@ export interface Evenement {
  * rien éteindre — prévenir un mois à l'avance la noierait dans le bruit.
  */
 export const PREAVIS = {
+	/**
+	 * Le plus long des trois, et de loin. Une prescription eteint la creance
+	 * SANS QUE PERSONNE N'AIT RIEN FAIT, et la seule facon de l'arreter est
+	 * d'engager une procedure entiere — qualifier, reunir les pieces, mandater
+	 * un commissaire de justice. Trente jours ne suffiraient pas a la lancer.
+	 */
+	PRESCRIPTION: 90,
 	CADUCITE: 30,
 	INFORMATIVE: 15
 } as const;
@@ -72,6 +78,16 @@ export interface FactureSurveillee {
 	readonly montantExigible: Montant;
 	readonly dateEcheance: string;
 	readonly statutPaiement: 'IMPAYEE' | 'PARTIELLEMENT_PAYEE' | 'SOLDEE' | 'LITIGIEUSE';
+	/**
+	 * La date a laquelle la creance sera prescrite, calculee EN AMONT par le
+	 * module du pays — `pays/france/prescription.ts` pour la France.
+	 *
+	 * Elle arrive toute faite plutot que d'etre calculee ici, et c'est
+	 * deliberé : la surveillance resterait sinon prisonniere du droit francais,
+	 * alors qu'elle n'a aucune raison de connaitre un pays. Absente, la facture
+	 * remonte en angle mort au lieu d'etre silencieusement tenue pour sure.
+	 */
+	readonly datePrescription?: string;
 }
 
 export interface CreanceSurveillee {
@@ -128,6 +144,37 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			urgence: 'NORMALE',
 			explication: `La facture ${facture.reference} est échue depuis le ${facture.dateEcheance} et reste due.`,
 			action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.'
+		});
+	}
+
+	// ── Prescriptions qui approchent ─────────────────────────────────────────
+	//
+	// La seule échéance qui éteint une créance SANS QUE PERSONNE N'AIT RIEN
+	// FAIT. Une facture déjà prescrite remonte quand même : le pire moment pour
+	// se taire est celui où l'argent vient d'être perdu, parce que c'est aussi
+	// celui où l'on continuerait à dépenser dessus.
+	for (const facture of etat.factures) {
+		if (facture.datePrescription === undefined) continue;
+		const restantDu =
+			facture.statutPaiement === 'IMPAYEE' || facture.statutPaiement === 'PARTIELLEMENT_PAYEE';
+		if (!restantDu) continue;
+
+		const restant = joursEntre(aujourdHui, facture.datePrescription);
+		const eteinte = facture.datePrescription <= aujourdHui;
+		if (!eteinte && restant > PREAVIS.PRESCRIPTION) continue;
+
+		evenements.push({
+			type: 'PRESCRIPTION_PROCHE',
+			reference: facture.reference,
+			montant: facture.montantExigible,
+			urgence: 'CRITIQUE',
+			explication: eteinte
+				? `La facture ${facture.reference} est PRESCRITE depuis le ${facture.datePrescription}.`
+				: `La facture ${facture.reference} sera prescrite le ${facture.datePrescription}, dans ${restant} jour(s).`,
+			action: eteinte
+				? 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
+				: `Engager une procédure avant le ${facture.datePrescription} — passée cette date, ` +
+					`${versEuros(facture.montantExigible)} € sont perdus sans recours.`
 		});
 	}
 
@@ -209,24 +256,33 @@ export interface ResultatAvecAnglesMorts {
 }
 
 /**
- * Ce que la surveillance ne peut pas voir, faute de paramètre validé.
+ * Ce que la surveillance NE VOIT PAS, dit explicitement.
  *
  * LE DIRE EST PLUS IMPORTANT QUE DE LE COMBLER. Un utilisateur qui croit sa
- * prescription surveillée ne la surveille pas lui-même. C'est la seule échéance
- * qui éteint définitivement une créance sans que personne n'ait rien fait, et
- * une alerte fabriquée sur un délai deviné serait pire que pas d'alerte du
- * tout : elle rassurerait à tort.
+ * prescription surveillee ne la surveille pas lui-meme. C'est la seule echeance
+ * qui eteint definitivement une creance sans que personne n'ait rien fait.
+ *
+ * Une facture sans `datePrescription` est une facture dont le secteur n'a pas
+ * ete determine en amont : le module du pays n'a donc pas pu calculer sa date.
+ * La passer sous silence reviendrait a la declarer sure.
  */
-function anglesMorts(): string[] {
-	const manques: string[] = [];
-	if (!estUtilisable(PARAMETRES.delaiPrescriptionCommerciale)) {
-		manques.push(
-			"La prescription n'est PAS surveillée : le délai de prescription commerciale n'est pas " +
-				'renseigné ni validé. Aucune alerte ne sera émise à son approche, et il faut donc la ' +
-				'suivre par ailleurs.'
-		);
-	}
-	return manques;
+function anglesMorts(etat: EtatSurveille): string[] {
+	const sansDate = etat.factures
+		.filter(
+			(facture) =>
+				facture.datePrescription === undefined &&
+				(facture.statutPaiement === 'IMPAYEE' ||
+					facture.statutPaiement === 'PARTIELLEMENT_PAYEE')
+		)
+		.map((facture) => facture.reference);
+
+	if (sansDate.length === 0) return [];
+
+	return [
+		`Prescription non surveillee sur ${sansDate.length} facture(s) : ${sansDate.join(', ')}. ` +
+			"Leur secteur n'est pas determine, donc la date de prescription n'a pas pu etre calculee. " +
+			'Preciser le secteur leve cet angle mort.'
+	];
 }
 
 export function detecterEvenements(
@@ -258,7 +314,7 @@ export function detecterEvenements(
 	});
 
 	if (options.avecAnglesMorts === true) {
-		return Object.assign(evenements, { anglesMorts: anglesMorts() });
+		return Object.assign(evenements, { anglesMorts: anglesMorts(etat) });
 	}
 	return evenements;
 }

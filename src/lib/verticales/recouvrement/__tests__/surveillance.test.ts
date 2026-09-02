@@ -264,19 +264,39 @@ describe('créances mûres et débiteurs qui se dégradent', () => {
 	});
 });
 
-describe('prescription — ce qu’on ne peut pas encore surveiller', () => {
-	it('ne fabrique aucune alerte de prescription faute de délai validé', () => {
-		// `delaiPrescriptionCommerciale` est `null` et non vérifié. Inventer un
-		// délai produirait des alertes fausses sur la seule échéance qui éteint
-		// définitivement une créance.
+describe('prescription — la seule échéance qui éteint une créance toute seule', () => {
+	it('alerte quand la prescription approche, avec le montant en jeu', () => {
 		const evenements = detecterEvenements(
 			etat({
 				factures: [
 					{
 						reference: 'F-ancienne',
 						montantExigible: depuisEuros('9000,00'),
-						dateEcheance: '2019-01-01',
-						statutPaiement: 'IMPAYEE'
+						dateEcheance: '2021-10-01',
+						statutPaiement: 'IMPAYEE',
+						datePrescription: '2026-10-01'
+					}
+				]
+			}),
+			AUJOURDHUI
+		);
+
+		const prescription = evenements.find((e) => e.type === 'PRESCRIPTION_PROCHE');
+		expect(prescription).toBeDefined();
+		expect(prescription!.urgence).toBe('CRITIQUE');
+		expect(versEuros(prescription!.montant!)).toBe('9 000,00');
+	});
+
+	it('n’alerte pas sur une prescription encore lointaine', () => {
+		const evenements = detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-001',
+						montantExigible: depuisEuros('9000,00'),
+						dateEcheance: '2026-08-01',
+						statutPaiement: 'IMPAYEE',
+						datePrescription: '2030-01-01'
 					}
 				]
 			}),
@@ -285,9 +305,49 @@ describe('prescription — ce qu’on ne peut pas encore surveiller', () => {
 		expect(evenements.map((e) => e.type)).not.toContain('PRESCRIPTION_PROCHE');
 	});
 
-	it('déclare explicitement que la prescription n’est pas surveillée', () => {
-		const { anglesMorts } = detecterEvenements(etat(), AUJOURDHUI, { avecAnglesMorts: true });
-		expect(anglesMorts.join(' ')).toMatch(/prescription/i);
+	it('prévient plus tôt d’une prescription que d’une caducité de procédure', () => {
+		// Une prescription eteint la creance sans que personne n'ait rien fait,
+		// et la faire cesser demande d'engager une procedure entiere.
+		expect(PREAVIS.PRESCRIPTION).toBeGreaterThan(PREAVIS.CADUCITE);
+	});
+
+	it('signale une facture dont la prescription n’est pas calculable', () => {
+		// Sans secteur, la date n'a pas pu etre calculee en amont. Le silence
+		// laisserait croire que la creance est surveillee.
+		const { anglesMorts } = detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-sans-secteur',
+						montantExigible: depuisEuros('9000,00'),
+						dateEcheance: '2026-08-01',
+						statutPaiement: 'IMPAYEE'
+					}
+				]
+			}),
+			AUJOURDHUI,
+			{ avecAnglesMorts: true }
+		);
+		expect(anglesMorts.join(' ')).toMatch(/F-sans-secteur/);
+	});
+
+	it('ne déclare aucun angle mort quand tout est daté', () => {
+		const { anglesMorts } = detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-001',
+						montantExigible: depuisEuros('9000,00'),
+						dateEcheance: '2026-08-01',
+						statutPaiement: 'IMPAYEE',
+						datePrescription: '2031-08-01'
+					}
+				]
+			}),
+			AUJOURDHUI,
+			{ avecAnglesMorts: true }
+		);
+		expect(anglesMorts).toEqual([]);
 	});
 });
 

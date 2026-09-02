@@ -84,14 +84,14 @@ describe('contrôle de complétude', () => {
 		const controle = controlerDecompte({
 			decompte,
 			facturesConnues: [{ reference: 'F-001', montantExigible: depuisEuros('10000,00') }],
-			parametresRequis: ['tauxInteretLegalDefaut', 'delaiPrescriptionCommerciale']
+			parametresRequis: ['tarifCommissaireJusticeL126', 'mentionsObligatoiresInjonction']
 		});
 
 		expect(controle.complet).toBe(false);
 		const manquants = controle.abandons.filter((a) => a.nature === 'PARAMETRE_MANQUANT');
 		expect(manquants.map((a) => a.reference)).toEqual([
-			'tauxInteretLegalDefaut',
-			'delaiPrescriptionCommerciale'
+			'tarifCommissaireJusticeL126',
+			'mentionsObligatoiresInjonction'
 		]);
 		// Un paramètre absent ne se chiffre pas : on ne sait pas ce qu'il coûte.
 		expect(manquants.every((a) => a.montantEnJeu === null)).toBe(true);
