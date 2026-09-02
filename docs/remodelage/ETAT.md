@@ -13,12 +13,12 @@ quoi**, et les décisions prises seul qui demandent une ratification.
 
 ## En un coup d'œil
 
-| | Avant | Après |
-|---|---|---|
-| Tests unitaires | 438 | **577** |
-| Erreurs de lint | 0 | 0 (42 avertissements, tous préexistants) |
-| `bun run check` | vert | vert |
-| Tables Convex | 16 | 25 (9 ajoutées, **0 modifiée**) |
+| | Avant | 2 sept. | 3 sept. |
+|---|---|---|---|
+| Tests unitaires | 438 | 577 | **665** |
+| Erreurs de lint | 0 | 0 | 0 (43 avertissements) |
+| `bun run check` | vert | vert | vert |
+| Tables Convex | 16 | 25 | 25 (9 ajoutées, **0 EGalim modifiée**) |
 
 **Aucune régression sur EGalim.** Aucun test n'a été réécrit pour accommoder un déplacement, aucune
 table existante n'a été touchée, aucune migration n'est nécessaire.
@@ -36,11 +36,10 @@ table existante n'a été touchée, aucune migration n'est nécessaire.
 | 4 | Moteur de qualification | ✅ version simple | `recouvrement/scoring.ts` |
 | 5 | Procédures modulaires | ✅ 3 modules | `recouvrement/procedures.ts` |
 | 6 | Surveillance | ✅ | `recouvrement/surveillance.ts` |
-| — | Fonctions Convex du recouvrement | ⛔ **non commencé** | voir § « Ce qui bloque » |
+| — | Valeurs juridiques françaises | ✅ 3 sept. | `recouvrement/pays/france/` |
+| — | Import (export comptable + dépôt) | ✅ 3 sept. | `recouvrement/import/`, `convex/recouvrement/import.ts` |
+| — | Fonctions Convex de lecture | ⛔ non commencé | — |
 | 9 | Interface | ⛔ non commencé (dernier, par construction) | — |
-
-Répartition des 577 tests : socle 90 · verticale EGalim 111 · verticale recouvrement 97 · schéma
-Convex 22 · le reste (auth, e-mails, RGPD, facturation) inchangé.
 
 ---
 
@@ -61,11 +60,13 @@ propriété disparaît** — pas par une relecture.
 
 ---
 
-## ⛔ Ce qui bloque, et ce que ça empêche exactement
+## ~~Ce qui bloquait au 2 septembre~~ — levé le 3 septembre
 
-### 1. Deux valeurs juridiques manquantes rendent tout décompte réel impossible
+> **Cette section est conservée pour la trace du raisonnement.** Les deux points sont résolus :
+> voir « Ce qui a changé le 3 septembre » en fin de document. Ce qui reste est plus étroit — il
+> faut un avocat, pas du code.
 
-C'est le blocage principal, et il ne se contourne pas.
+### 1. ~~Deux valeurs juridiques manquantes~~ — relevées le 3 septembre
 
 | Paramètre | Sans lui |
 |---|---|
@@ -79,9 +80,9 @@ Le code ne devine aucune de ces valeurs et **échoue bruyamment** plutôt que de
 La surveillance va plus loin : elle **déclare à l'utilisateur** que la prescription n'est pas
 surveillée, parce qu'un utilisateur qui croit son délai surveillé ne le surveille pas lui-même.
 
-### 2. Une question produit qu'il ne fallait pas trancher seul
+### 2. ~~Une question produit qu'il ne fallait pas trancher seul~~ — tranchée le 3 septembre
 
-> **Par où entrent les factures de vente ?**
+> **Par où entrent les factures de vente ?** → Les deux premiers chemins, sans le connecteur.
 
 Le socle sait lire des factures d'**achat** déposées en PDF ou en CSV — c'est le pipeline EGalim.
 Les factures de **vente** d'un créancier ne suivent pas ce chemin : elles existent déjà dans son
@@ -103,13 +104,13 @@ pas écrites. Les tables, elles, tiennent dans les trois cas.
 
 Chacune est documentée dans le code, à l'endroit où elle s'applique.
 
-### 1. Les fonctions Convex d'EGalim n'ont pas été déplacées
+### 1. Les fonctions Convex d'EGalim n'ont pas été déplacées — **confirmé le 3 septembre**
 
-`ARCHITECTURE.md` prévoyait `convex/socle/` et `convex/egalim/`. **Reporté.** Le chemin d'un fichier
-Convex est son adresse d'API : le déplacer casse les tâches planifiées déjà en file, qui référencent
-la fonction par son chemin, ainsi que les crons. Tant qu'on ignore s'il y a de la production, c'est
-un risque pris pour du rangement. La logique pure, elle, a bien bougé — et c'est elle qui rend une
-seconde verticale possible.
+`ARCHITECTURE.md` prévoyait `convex/socle/` et `convex/egalim/`. D'abord reporté par prudence
+(le chemin d'un fichier Convex est son adresse d'API), puis **écarté sur le fond** une fois la
+prudence levée : chaque verticale écrit dans ses propres tables, donc leurs mutations ne peuvent
+pas être partagées. Ce qui est réellement commun est déjà dans `src/lib/socle/`, et déplacer les
+fonctions ajouterait de l'indirection sans rien mutualiser.
 
 ### 2. Aucune interface `Verticale` n'a été écrite
 
