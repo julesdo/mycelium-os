@@ -30,13 +30,16 @@ function indexes(table: unknown): Array<{ indexDescriptor: string; fields: strin
 const TABLES = Object.entries(recouvrementTables);
 
 describe('schéma du recouvrement', () => {
-	it('déclare les sept tables du modèle de domaine', () => {
+	it('déclare les tables du modèle de domaine, et elles seules', () => {
+		// La liste est écrite en dur DÉLIBÉRÉMENT : ajouter une table doit être
+		// un geste conscient, pas un effet de bord qu'aucun test ne remarque.
 		expect(TABLES.map(([nom]) => nom).sort()).toEqual([
 			'creances',
 			'debiteurs',
 			'decomptes',
 			'dossiers',
 			'facturesVente',
+			'importsRecouvrement',
 			'pieces',
 			'piecesFactures',
 			'profilsCreancier',

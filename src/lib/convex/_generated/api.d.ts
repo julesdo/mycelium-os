@@ -63,6 +63,8 @@ import type * as notifications from "../notifications.js";
 import type * as organizations from "../organizations.js";
 import type * as paddle from "../paddle.js";
 import type * as previewDev from "../previewDev.js";
+import type * as recouvrement_depot from "../recouvrement/depot.js";
+import type * as recouvrement_depotMutations from "../recouvrement/depotMutations.js";
 import type * as recouvrement_import from "../recouvrement/import.js";
 import type * as recouvrement_tables from "../recouvrement/tables.js";
 import type * as rgpd from "../rgpd.js";
@@ -134,6 +136,8 @@ declare const fullApi: ApiFromModules<{
   organizations: typeof organizations;
   paddle: typeof paddle;
   previewDev: typeof previewDev;
+  "recouvrement/depot": typeof recouvrement_depot;
+  "recouvrement/depotMutations": typeof recouvrement_depotMutations;
   "recouvrement/import": typeof recouvrement_import;
   "recouvrement/tables": typeof recouvrement_tables;
   rgpd: typeof rgpd;

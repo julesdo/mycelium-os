@@ -79,6 +79,61 @@ export const vTaux = v.object({
 
 export const recouvrementTables = {
 	/**
+	 * Un fichier déposé, et où en est sa lecture.
+	 *
+	 * ELLE EXISTE POUR QUE LE TRAITEMENT SE VOIE. La règle d'écran n° 2 du projet
+	 * est explicite : « tout traitement se voit sans qu'on le demande ». Sans
+	 * cette table, un import de deux cents factures serait un sablier muet — et
+	 * c'est exactement le moment où quelqu'un ferme l'onglet.
+	 *
+	 * `bilan` porte le compte-rendu, y compris ce qui n'a PAS pu être lu. Un
+	 * import qui affiche « 198 factures créées » sans dire que deux lignes ont
+	 * été écartées ment par omission.
+	 */
+	importsRecouvrement: defineTable({
+		organizationId: v.id('organizations'),
+		storageId: v.id('_storage'),
+		filename: v.string(),
+		mimeType: v.string(),
+		/**
+		 * Le chemin d'entrée. `EXPORT_COMPTABLE` est déterministe et gratuit ;
+		 * `FACTURE_DEPOSEE` passe par le modèle et coûte un appel.
+		 */
+		mode: v.union(v.literal('EXPORT_COMPTABLE'), v.literal('FACTURE_DEPOSEE')),
+		statut: v.union(
+			v.literal('EN_ATTENTE'),
+			v.literal('LECTURE'),
+			v.literal('TERMINE'),
+			v.literal('ECHOUE')
+		),
+		/** Un texte destiné à l'écran, pas un état de machine. La machine, c'est `statut`. */
+		etape: v.optional(v.string()),
+		erreur: v.optional(v.string()),
+		bilan: v.optional(
+			v.object({
+				format: v.string(),
+				debiteursCrees: v.number(),
+				facturesCreees: v.number(),
+				facturesDejaConnues: v.number(),
+				reglementsCrees: v.number(),
+				reglementsOrphelins: v.number(),
+				horsPerimetre: v.number(),
+				/**
+				 * Les lignes qu'on n'a pas su lire, avec leur raison. Bornées à
+				 * cinquante : au-delà, le fichier est à revoir dans son ensemble, et
+				 * un document Convex a une taille limitée.
+				 */
+				ignorees: v.array(v.object({ texte: v.string(), raison: v.string() })),
+				ignoreesTotal: v.number()
+			})
+		),
+		deposeLe: v.number(),
+		termineLe: v.optional(v.number())
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_statut', ['organizationId', 'statut']),
+
+	/**
 	 * Le créancier : l'organisation, sous l'angle du recouvrement.
 	 *
 	 * Table séparée d'`organizations` DÉLIBÉRÉMENT. `organizations` porte le
