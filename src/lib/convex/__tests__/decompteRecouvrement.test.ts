@@ -19,6 +19,13 @@ import { depuisCentimes, versEuros } from '../../socle/montants';
  * jour où on l'a réclamé.
  */
 
+/**
+ * Le premier test paie le chargement du graphe de modules Convex, ce qui
+ * dépasse le délai par défaut de 5 s. Posé test par test plutôt que
+ * globalement : un test lent ailleurs doit rester un signal.
+ */
+const DELAI_CONVEX = 30_000;
+
 const modules = Object.fromEntries(
 	Object.entries(import.meta.glob('../**/*.ts')).map(([chemin, charger]) => [
 		'.' + chemin.slice(2),
@@ -105,7 +112,7 @@ describe('décompte au taux légal français', () => {
 			expect(versEuros(depuisCentimes(decompte.indemniteForfaitaire))).toBe('40,00');
 			expect(versEuros(depuisCentimes(decompte.total))).toBe('10 453,68');
 		});
-	});
+	}, DELAI_CONVEX);
 
 	it('détaille les périodes, et leur somme fait le total', async () => {
 		const t = convexTest(schema, modules);
@@ -131,7 +138,7 @@ describe('décompte au taux légal français', () => {
 			const somme = ligne.segments.reduce((total, s) => total + s.interets, 0n);
 			expect(somme).toBe(ligne.interets);
 		});
-	});
+	}, DELAI_CONVEX);
 
 	it('réduit la base d’intérêts à compter d’un règlement', async () => {
 		const t = convexTest(schema, modules);
@@ -152,7 +159,7 @@ describe('décompte au taux légal français', () => {
 			// tombent le 1er juillet, donc deux ruptures confondues en une.
 			expect(decompte.lignes[0]!.segments).toHaveLength(2);
 		});
-	});
+	}, DELAI_CONVEX);
 });
 
 describe('ce qui est figé l’est définitivement', () => {
@@ -179,7 +186,7 @@ describe('ce qui est figé l’est définitivement', () => {
 			expect(premier).not.toBe(second);
 			expect(await ctx.db.query('decomptes').collect()).toHaveLength(2);
 		});
-	});
+	}, DELAI_CONVEX);
 
 	it('garde la convention employée, sans laquelle le chiffre n’est pas défendable', async () => {
 		const t = convexTest(schema, modules);
@@ -196,7 +203,7 @@ describe('ce qui est figé l’est définitivement', () => {
 			expect(decompte.convention).toBe('ACT_ACT');
 			expect(decompte.arreteAu).toBe('2026-09-01');
 		});
-	});
+	}, DELAI_CONVEX);
 });
 
 describe('les refus', () => {
@@ -222,7 +229,7 @@ describe('les refus', () => {
 				convention: 'ACT_365'
 			})
 		).rejects.toThrow(/exigibilit/i);
-	});
+	}, DELAI_CONVEX);
 
 	it('refuse un arrêté sur un semestre dont le taux n’est pas publié', async () => {
 		// La série s'arrête au second semestre 2026 : au-delà, on ne devine pas.
@@ -236,7 +243,7 @@ describe('les refus', () => {
 				convention: 'ACT_365'
 			})
 		).rejects.toThrow(/2027-S1|Taux BCE/i);
-	});
+	}, DELAI_CONVEX);
 
 	it('refuse une créance sans facture', async () => {
 		const t = convexTest(schema, modules);
@@ -259,5 +266,5 @@ describe('les refus', () => {
 				convention: 'ACT_365'
 			})
 		).rejects.toThrow(/facture/i);
-	});
+	}, DELAI_CONVEX);
 });

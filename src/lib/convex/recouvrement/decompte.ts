@@ -1,7 +1,10 @@
 import { v, ConvexError } from 'convex/values';
 import { internalMutation } from '../_generated/server';
+import { authedMutation, authedQuery } from '../functions';
+import { internal } from '../_generated/api';
+import { getUserOrg } from '../lib/auth';
 import type { MutationCtx } from '../_generated/server';
-import type { Doc } from '../_generated/dataModel';
+import type { Doc, Id } from '../_generated/dataModel';
 import { depuisCentimes, enCentimes, fraction } from '../../socle/montants';
 import {
 	decompterCreance,
@@ -10,7 +13,7 @@ import {
 	type Reglement
 } from '../../verticales/recouvrement/decompte';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
-import { vConventionJours } from './tables';
+import { vConventionJours, vTaux } from './tables';
 
 /**
  * La production d'un décompte, et son gel.
@@ -161,5 +164,99 @@ export const figerDecompte = internalMutation({
 			})),
 			produitLe: Date.now()
 		});
+	}
+});
+
+/**
+ * L'entrée authentifiée.
+ *
+ * Le TYPE DE RETOUR est annoté à la main : ce handler appelle
+ * `internal.recouvrement.decompte.figerDecompte`, une fonction de son propre
+ * module, ce qui crée un cycle d'inférence. Sans l'annotation, TypeScript
+ * retombe sur `any` et cet `any` remonte dans le type d'`api` tout entier —
+ * tous les écrans du produit perdent leur inférence d'un coup. Voir `CLAUDE.md`.
+ */
+export const produire = authedMutation({
+	args: { creanceId: v.id('creances'), convention: vConventionJours },
+	returns: v.id('decomptes'),
+	handler: async (ctx, { creanceId, convention }): Promise<Id<'decomptes'>> => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null || creance.organizationId !== organizationId) {
+			throw new ConvexError('Créance introuvable');
+		}
+
+		return await ctx.runMutation(internal.recouvrement.decompte.figerDecompte, {
+			creanceId,
+			// La date d'arrêté est CELLE DU JOUR, et elle est écrite dans le
+			// décompte. Laisser l'utilisateur la choisir ouvrirait la porte à un
+			// décompte arrêté à une date qui l'arrange.
+			arreteAu: new Date().toISOString().slice(0, 10),
+			convention
+		});
+	}
+});
+
+/**
+ * Le dernier décompte arrêté, celui que l'écran montre.
+ *
+ * Les précédents ne sont pas supprimés : ils prouvent ce qui était réclamé aux
+ * dates où on l'a réclamé. Ils ne sont simplement pas ce qu'on regarde d'abord.
+ */
+export const dernierDecompte = authedQuery({
+	args: { creanceId: v.id('creances') },
+	returns: v.union(
+		v.null(),
+		v.object({
+			arreteAu: v.string(),
+			convention: vConventionJours,
+			principalRestantDu: v.int64(),
+			interets: v.int64(),
+			indemniteForfaitaire: v.int64(),
+			total: v.int64(),
+			lignes: v.array(
+				v.object({
+					reference: v.string(),
+					principalRestantDu: v.int64(),
+					interets: v.int64(),
+					indemniteForfaitaire: v.int64(),
+					total: v.int64(),
+					segments: v.array(
+						v.object({
+							debut: v.string(),
+							fin: v.string(),
+							jours: v.number(),
+							principal: v.int64(),
+							taux: vTaux,
+							baseAnnuelle: v.number(),
+							interets: v.int64()
+						})
+					)
+				})
+			)
+		})
+	),
+	handler: async (ctx, { creanceId }) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const decomptes = await ctx.db
+			.query('decomptes')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+			.order('desc')
+			.take(1);
+
+		const dernier = decomptes[0];
+		if (dernier === undefined || dernier.organizationId !== organizationId) return null;
+
+		return {
+			arreteAu: dernier.arreteAu,
+			convention: dernier.convention,
+			principalRestantDu: dernier.principalRestantDu,
+			interets: dernier.interets,
+			indemniteForfaitaire: dernier.indemniteForfaitaire,
+			total: dernier.total,
+			lignes: dernier.lignes
+		};
 	}
 });

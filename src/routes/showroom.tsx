@@ -27,7 +27,11 @@ import {
 	type Famille,
 	type Decision,
 	type DocumentEnCours,
-	type LigneFamille
+	type LigneFamille,
+	FluxEvenements,
+	Decompte,
+	type EvenementAffiche,
+	type DecompteAffiche
 } from '../ui';
 import { FeuilleCorrection, type ProduitACorriger } from '../screens/confirmer/correction';
 import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
@@ -303,6 +307,124 @@ const ATTESTATIONS: Attestation[] = [
 /** Figée au chargement du module : un `Date.now()` dans un rendu n'est pas idempotent. */
 const FIN_ESSAI_DEMO = Date.now() + 18 * 24 * 60 * 60 * 1000;
 
+/**
+ * Le flux de surveillance, avec les cas qui cassent.
+ *
+ * Une prescription DÉJÀ dépassée, une caducité à quelques jours, un montant à
+ * cinq chiffres à côté d'un montant à trois — c'est l'alignement des chiffres
+ * et la hiérarchie des urgences qu'on vient regarder ici, pas le bonheur.
+ */
+const EVENEMENTS_DEMO: EvenementAffiche[] = [
+	{
+		type: 'PRESCRIPTION_PROCHE',
+		reference: 'FA-2021-0087',
+		montant: 924_000n,
+		urgence: 'CRITIQUE',
+		explication: 'La facture FA-2021-0087 est PRESCRITE depuis le 2026-08-14.',
+		action: 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
+	},
+	{
+		type: 'ECHEANCE_PROCEDURE',
+		reference: 'Ateliers Martin — injonction',
+		montant: 1_845_000n,
+		urgence: 'CRITIQUE',
+		explication: "Signification de l'ordonnance : il reste 9 jour(s) avant le 2026-09-12.",
+		action:
+			'Faire signifier sans délai — passée cette date, le droit est perdu et 18 450,00 € cessent d’être couverts par cette procédure.'
+	},
+	{
+		type: 'CREANCE_MURE',
+		reference: 'Fournitures Durand',
+		montant: 3_120_050n,
+		urgence: 'HAUTE',
+		explication:
+			'La créance atteint le seuil de qualification (0,90 pour un seuil de 0.75).',
+		action: 'Examiner les procédures envisageables pour cette créance.'
+	},
+	{
+		type: 'FACTURE_ECHUE',
+		reference: 'FA-2026-0311',
+		montant: 24_990n,
+		urgence: 'NORMALE',
+		explication: 'La facture FA-2026-0311 est échue depuis le 2026-08-01 et reste due.',
+		action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.'
+	}
+];
+
+function DemoFlux() {
+	return (
+		<Page>
+			<PageHeader titre="À traiter" sousTitre="4 points d’attention" />
+			<PageBody>
+				<FluxEvenements
+					evenements={EVENEMENTS_DEMO}
+					montantIdentifie={5_913_040n}
+					hypotheses={[
+						"Le secteur de Ateliers Martin n'est pas déterminé : la prescription est calculée sur le délai le plus court (1 an). Préciser le secteur lèvera cette hypothèse."
+					]}
+					anglesMorts={[]}
+				/>
+			</PageBody>
+		</Page>
+	);
+}
+
+/**
+ * Le décompte, avec ce qu'il doit prouver.
+ *
+ * Trois périodes dont une à taux différent, un principal qui baisse en cours de
+ * route après un règlement, et un tableau à sept colonnes qui doit tenir à
+ * 375 px sans faire déborder la page — il défile pour lui seul.
+ */
+const DECOMPTE_DEMO: DecompteAffiche = {
+	arreteAu: '2026-09-03',
+	convention: 'ACT_365',
+	principalRestantDu: 600_000n,
+	interets: 41_368n,
+	indemniteForfaitaire: 4_000n,
+	total: 645_368n,
+	lignes: [
+		{
+			reference: 'FA-2026-118',
+			principalRestantDu: 600_000n,
+			interets: 41_368n,
+			indemniteForfaitaire: 4_000n,
+			total: 645_368n,
+			segments: [
+				{
+					debut: '2026-05-01',
+					fin: '2026-07-01',
+					jours: 61,
+					principal: 1_000_000n,
+					taux: { numerateur: 1215n, denominateur: 10_000n },
+					baseAnnuelle: 365,
+					interets: 20_305n
+				},
+				{
+					debut: '2026-07-01',
+					fin: '2026-09-03',
+					jours: 64,
+					principal: 600_000n,
+					taux: { numerateur: 1240n, denominateur: 10_000n },
+					baseAnnuelle: 365,
+					interets: 21_063n
+				}
+			]
+		}
+	]
+};
+
+function DemoDecompte() {
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="1 facture · 6 000,00 € restant dû" />
+			<PageBody>
+				<Decompte decompte={DECOMPTE_DEMO} />
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'taux',
 	'confirmer',
@@ -314,6 +436,8 @@ const ECRANS = [
 	'abonnement',
 	'equipe',
 	'donnees',
+	'flux',
+	'decompte',
 	'coquille'
 ] as const;
 type Ecran = (typeof ECRANS)[number];
@@ -323,7 +447,10 @@ function Showroom() {
 
 	return (
 		<div className="flex h-dvh flex-col">
-			<div className="shrink-0 border-b border-cladd-bg-outline p-cladd-3xs">
+			{/* La barre défile POUR ELLE SEULE : douze onglets ne tiennent pas à
+			    768 px, et c'est la salle d'exposition qui doit s'adapter, jamais la
+			    page qui déborde — c'est précisément le défaut qu'on vient y traquer. */}
+			<div className="shrink-0 overflow-x-auto border-b border-cladd-bg-outline p-cladd-3xs">
 				<Toolbar>
 					<Segmented activeColor="neutral" activeVariant="solid">
 						{ECRANS.map((e) => (
@@ -346,6 +473,8 @@ function Showroom() {
 				{ecran === 'abonnement' ? <DemoAbonnement /> : null}
 				{ecran === 'equipe' ? <DemoEquipe /> : null}
 				{ecran === 'donnees' ? <DemoDonnees /> : null}
+				{ecran === 'flux' ? <DemoFlux /> : null}
+				{ecran === 'decompte' ? <DemoDecompte /> : null}
 				{ecran === 'coquille' ? (
 					<Shell>
 						<DemoTaux />

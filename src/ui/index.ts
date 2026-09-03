@@ -40,4 +40,25 @@ export {
 	TableauTitre,
 	TableauCellule
 } from './tableau';
-export { euros, pourcent, pluriel, FAMILLES, type Famille } from './format';
+export {
+	euros,
+	eurosCentimes,
+	dateCourte,
+	pourcent,
+	pluriel,
+	FAMILLES,
+	type Famille
+} from './format';
+
+// ── Recouvrement ────────────────────────────────────────────────────────────
+export {
+	Decompte,
+	type DecompteAffiche,
+	type LigneDecompteAffichee,
+	type SegmentAffiche
+} from './decompte';
+export {
+	FluxEvenements,
+	type EvenementAffiche,
+	type UrgenceEvenement
+} from './flux-evenements';

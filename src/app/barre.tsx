@@ -16,7 +16,10 @@ import {
 	CheckCheckIcon,
 	FileTextIcon,
 	FileCheck2Icon,
-	SettingsIcon
+	SettingsIcon,
+	InboxIcon,
+	UsersIcon,
+	UploadIcon
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import { cn } from '../ui/cn';
@@ -49,7 +52,26 @@ import { SelecteurEtablissement } from './selecteur-etablissement';
  * déjà ne recharge rien.
  */
 
+/**
+ * Les entrées, recouvrement d'abord.
+ *
+ * ⚠️ CETTE BARRE MÉLANGE DEUX VERTICALES, ET C'EST UN PROVISOIRE ASSUMÉ.
+ *
+ * « À traiter / Débiteurs / Importer » relèvent du recouvrement ; « Mes taux /
+ * À confirmer / Produits / Bilans » d'EGalim. Un même gérant n'utilise
+ * normalement qu'un des deux, et une barre qui les met à plat lui demande de
+ * trier sept icônes dont quatre ne le concernent pas.
+ *
+ * La structure juste est un sélecteur de verticale — comme le sélecteur
+ * d'établissement à droite — qui ne montre que les onglets du domaine ouvert.
+ * C'est une décision de produit, pas de code : elle attend Jules.
+ *
+ * En attendant, l'ordre porte la direction : le recouvrement est en tête.
+ */
 const ENTREES = [
+	{ to: '/app/recouvrement', label: 'À traiter', Icone: InboxIcon },
+	{ to: '/app/debiteurs', label: 'Débiteurs', Icone: UsersIcon },
+	{ to: '/app/import-factures', label: 'Importer', Icone: UploadIcon },
 	{ to: '/app', label: 'Mes taux', Icone: GaugeIcon },
 	{ to: '/app/confirmer', label: 'À confirmer', Icone: CheckCheckIcon },
 	{ to: '/app/produits', label: 'Produits', Icone: FileTextIcon },

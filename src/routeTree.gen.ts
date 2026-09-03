@@ -20,14 +20,18 @@ import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppAbonnementRouteImport } from './routes/app/abonnement'
 import { Route as AppConfirmerRouteImport } from './routes/app/confirmer'
+import { Route as AppDebiteursRouteImport } from './routes/app/debiteurs'
 import { Route as AppDiagnosticsRouteImport } from './routes/app/diagnostics'
 import { Route as AppDonneesRouteImport } from './routes/app/donnees'
 import { Route as AppEquipeRouteImport } from './routes/app/equipe'
 import { Route as AppFacturesRouteImport } from './routes/app/factures'
+import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
 import { Route as AppParametresRouteImport } from './routes/app/parametres'
 import { Route as AppProduitsRouteImport } from './routes/app/produits'
+import { Route as AppRecouvrementRouteImport } from './routes/app/recouvrement'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
 import { Route as AppDiagnosticIdRouteImport } from './routes/app/diagnostic.$id'
 import { Route as AppFactureIdRouteImport } from './routes/app/facture.$id'
 
@@ -86,6 +90,11 @@ const AppConfirmerRoute = AppConfirmerRouteImport.update({
   path: '/confirmer',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDebiteursRoute = AppDebiteursRouteImport.update({
+  id: '/debiteurs',
+  path: '/debiteurs',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppDiagnosticsRoute = AppDiagnosticsRouteImport.update({
   id: '/diagnostics',
   path: '/diagnostics',
@@ -106,6 +115,11 @@ const AppFacturesRoute = AppFacturesRouteImport.update({
   path: '/factures',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppImportFacturesRoute = AppImportFacturesRouteImport.update({
+  id: '/import-factures',
+  path: '/import-factures',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppParametresRoute = AppParametresRouteImport.update({
   id: '/parametres',
   path: '/parametres',
@@ -114,6 +128,11 @@ const AppParametresRoute = AppParametresRouteImport.update({
 const AppProduitsRoute = AppProduitsRouteImport.update({
   id: '/produits',
   path: '/produits',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppRecouvrementRoute = AppRecouvrementRouteImport.update({
+  id: '/recouvrement',
+  path: '/recouvrement',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const RejoindreTokenRoute = RejoindreTokenRouteImport.update({
@@ -125,6 +144,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppCreanceIdRoute = AppCreanceIdRouteImport.update({
+  id: '/creance/$id',
+  path: '/creance/$id',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppDiagnosticIdRoute = AppDiagnosticIdRouteImport.update({
   id: '/diagnostic/$id',
@@ -148,15 +172,19 @@ export interface FileRoutesByFullPath {
   '/showroom': typeof ShowroomRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/debiteurs': typeof AppDebiteursRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/donnees': typeof AppDonneesRoute
   '/app/equipe': typeof AppEquipeRoute
   '/app/factures': typeof AppFacturesRoute
+  '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
   '/app/produits': typeof AppProduitsRoute
+  '/app/recouvrement': typeof AppRecouvrementRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
   '/app/facture/$id': typeof AppFactureIdRoute
 }
@@ -170,15 +198,19 @@ export interface FileRoutesByTo {
   '/showroom': typeof ShowroomRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/debiteurs': typeof AppDebiteursRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/donnees': typeof AppDonneesRoute
   '/app/equipe': typeof AppEquipeRoute
   '/app/factures': typeof AppFacturesRoute
+  '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
   '/app/produits': typeof AppProduitsRoute
+  '/app/recouvrement': typeof AppRecouvrementRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
   '/app/facture/$id': typeof AppFactureIdRoute
 }
@@ -194,15 +226,19 @@ export interface FileRoutesById {
   '/showroom': typeof ShowroomRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/confirmer': typeof AppConfirmerRoute
+  '/app/debiteurs': typeof AppDebiteursRoute
   '/app/diagnostics': typeof AppDiagnosticsRoute
   '/app/donnees': typeof AppDonneesRoute
   '/app/equipe': typeof AppEquipeRoute
   '/app/factures': typeof AppFacturesRoute
+  '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
   '/app/produits': typeof AppProduitsRoute
+  '/app/recouvrement': typeof AppRecouvrementRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/diagnostic/$id': typeof AppDiagnosticIdRoute
   '/app/facture/$id': typeof AppFactureIdRoute
 }
@@ -219,15 +255,19 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/app/abonnement'
     | '/app/confirmer'
+    | '/app/debiteurs'
     | '/app/diagnostics'
     | '/app/donnees'
     | '/app/equipe'
     | '/app/factures'
+    | '/app/import-factures'
     | '/app/parametres'
     | '/app/produits'
+    | '/app/recouvrement'
     | '/rejoindre/$token'
     | '/app/'
     | '/api/auth/$'
+    | '/app/creance/$id'
     | '/app/diagnostic/$id'
     | '/app/facture/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -241,15 +281,19 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/app/abonnement'
     | '/app/confirmer'
+    | '/app/debiteurs'
     | '/app/diagnostics'
     | '/app/donnees'
     | '/app/equipe'
     | '/app/factures'
+    | '/app/import-factures'
     | '/app/parametres'
     | '/app/produits'
+    | '/app/recouvrement'
     | '/rejoindre/$token'
     | '/app'
     | '/api/auth/$'
+    | '/app/creance/$id'
     | '/app/diagnostic/$id'
     | '/app/facture/$id'
   id:
@@ -264,15 +308,19 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/app/abonnement'
     | '/app/confirmer'
+    | '/app/debiteurs'
     | '/app/diagnostics'
     | '/app/donnees'
     | '/app/equipe'
     | '/app/factures'
+    | '/app/import-factures'
     | '/app/parametres'
     | '/app/produits'
+    | '/app/recouvrement'
     | '/rejoindre/$token'
     | '/app/'
     | '/api/auth/$'
+    | '/app/creance/$id'
     | '/app/diagnostic/$id'
     | '/app/facture/$id'
   fileRoutesById: FileRoutesById
@@ -369,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConfirmerRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/debiteurs': {
+      id: '/app/debiteurs'
+      path: '/debiteurs'
+      fullPath: '/app/debiteurs'
+      preLoaderRoute: typeof AppDebiteursRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/diagnostics': {
       id: '/app/diagnostics'
       path: '/diagnostics'
@@ -397,6 +452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFacturesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/import-factures': {
+      id: '/app/import-factures'
+      path: '/import-factures'
+      fullPath: '/app/import-factures'
+      preLoaderRoute: typeof AppImportFacturesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/parametres': {
       id: '/app/parametres'
       path: '/parametres'
@@ -409,6 +471,13 @@ declare module '@tanstack/react-router' {
       path: '/produits'
       fullPath: '/app/produits'
       preLoaderRoute: typeof AppProduitsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/recouvrement': {
+      id: '/app/recouvrement'
+      path: '/recouvrement'
+      fullPath: '/app/recouvrement'
+      preLoaderRoute: typeof AppRecouvrementRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/rejoindre/$token': {
@@ -424,6 +493,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/creance/$id': {
+      id: '/app/creance/$id'
+      path: '/creance/$id'
+      fullPath: '/app/creance/$id'
+      preLoaderRoute: typeof AppCreanceIdRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/app/diagnostic/$id': {
       id: '/app/diagnostic/$id'
@@ -445,13 +521,17 @@ declare module '@tanstack/react-router' {
 interface AppRouteRouteChildren {
   AppAbonnementRoute: typeof AppAbonnementRoute
   AppConfirmerRoute: typeof AppConfirmerRoute
+  AppDebiteursRoute: typeof AppDebiteursRoute
   AppDiagnosticsRoute: typeof AppDiagnosticsRoute
   AppDonneesRoute: typeof AppDonneesRoute
   AppEquipeRoute: typeof AppEquipeRoute
   AppFacturesRoute: typeof AppFacturesRoute
+  AppImportFacturesRoute: typeof AppImportFacturesRoute
   AppParametresRoute: typeof AppParametresRoute
   AppProduitsRoute: typeof AppProduitsRoute
+  AppRecouvrementRoute: typeof AppRecouvrementRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppCreanceIdRoute: typeof AppCreanceIdRoute
   AppDiagnosticIdRoute: typeof AppDiagnosticIdRoute
   AppFactureIdRoute: typeof AppFactureIdRoute
 }
@@ -459,13 +539,17 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAbonnementRoute: AppAbonnementRoute,
   AppConfirmerRoute: AppConfirmerRoute,
+  AppDebiteursRoute: AppDebiteursRoute,
   AppDiagnosticsRoute: AppDiagnosticsRoute,
   AppDonneesRoute: AppDonneesRoute,
   AppEquipeRoute: AppEquipeRoute,
   AppFacturesRoute: AppFacturesRoute,
+  AppImportFacturesRoute: AppImportFacturesRoute,
   AppParametresRoute: AppParametresRoute,
   AppProduitsRoute: AppProduitsRoute,
+  AppRecouvrementRoute: AppRecouvrementRoute,
   AppIndexRoute: AppIndexRoute,
+  AppCreanceIdRoute: AppCreanceIdRoute,
   AppDiagnosticIdRoute: AppDiagnosticIdRoute,
   AppFactureIdRoute: AppFactureIdRoute,
 }
