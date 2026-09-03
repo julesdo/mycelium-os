@@ -2,45 +2,65 @@
 
 ## Vision produit
 
-Letikette est le **logiciel de conformité EGalim en restauration collective**. La loi impose à
-toutes les cantines, publiques depuis 2022 et **privées depuis 2024**, de servir ≥ 50 % de produits
-durables dont ≥ 20 % de bio (et ≥ 60 % de durable sur la viande et le poisson), et de le déclarer
-chaque année avant le 31 mars sur « ma cantine ».
+Letikette est le **logiciel de recouvrement de créances B2B**. Une facture impayée ne fait aucun
+bruit le jour où elle devient irrécouvrable — et c'est le seul jour où il aurait fallu agir.
 
-~85 % des cantines déclarantes n'y arrivent pas, et **la plupart ne connaissent même pas leur
-chiffre**, parce qu'il se calcule en valeur d'achat, ligne à ligne, sur douze mois de factures.
+Trois choses sont dues de plein droit et presque jamais réclamées, faute de savoir les calculer :
+les **intérêts de retard** au taux BCE majoré de dix points (L441-10 II du code de commerce),
+l'**indemnité forfaitaire de 40 €** par facture (D441-5), et le respect du **délai de
+prescription**, qui varie par secteur (L110-4 : cinq ans en général, un an sur le transport, deux
+sur ce qu'on fournit à un consommateur).
 
-**On vend un logiciel qui mesure, pas du temps humain.** L'extraction et la classification sont
-automatisées ; le gérant confirme ce qui engage sa responsabilité. La charge est dégressive : un
-libellé confirmé l'est définitivement, et le consensus entre clients en retire encore.
-
-**Cible :** restauration collective privée en gestion directe, non équipée, Île-de-France Ouest.
+**On vend un logiciel qui mesure, pas du temps humain.** L'import et le rapprochement sont
+automatisés ; le dirigeant ne tranche que ce qu'aucune facture ne dit.
 
 ## Ce qu'on vend
 
-Un abonnement au logiciel de conformité : dépôt de factures, mesure des trois taux EGalim, file de
-confirmation, certificats et courriers de demande d'attestation.
+Un abonnement : import de factures (export comptable ou dépôt de fichiers), surveillance des
+échéances et de la prescription, qualification des créances, et décompte arrêté au centime,
+explicable période par période.
 
-Les étages « opérateur » du modèle précédent (pilote substitution, abonnement opérateur,
-orchestration logistique) n'ont plus de porteur : il n'y a plus d'opérateur.
+## ⚠️ Les trois lignes rouges
 
-## ⚠️ Les deux lignes rouges
+1. **On ne relance jamais le débiteur au nom du client.** Le recouvrement pour compte de tiers est
+   une activité encadrée.
+2. **On ne manipule jamais de fonds.** Aucun encaissement, aucun séquestre, aucune commission sur
+   ce qui rentre.
+3. **On ne recommande jamais une procédure.** Ce serait du conseil juridique. Le produit énonce des
+   CONSTATS — « cette créance remplit les conditions X, Y, Z » — jamais « vous devriez engager
+   telle procédure ».
 
-1. **On ne prend jamais la propriété des denrées.** Le producteur facture et livre en direct.
-2. **On n'organise jamais le transport en notre nom propre.** (statut de commissionnaire de
-   transport, réglementé)
-
-Et un mot interdit : **« garantie »**. On ne garantit jamais la conformité. On la **mesure**, on la
-**fait progresser**, on la **prouve**. La déclaration reste signée par la cantine.
+Et un mot interdit : **« garantie »**. On ne garantit aucun recouvrement. On **mesure**, on
+**documente**, on **alerte**. La décision d'agir reste celle du client.
 
 ## Principe anti-dérive
 
 **On ne construit que ce que le journal de friction du terrain désigne**, chronométré. Chaque
-fonctionnalité doit répondre à deux questions : quelle tâche manuelle répétée elle supprime, et
-ce qu'elle change pour le gérant qui paie l'abonnement. Sans réponse chiffrée aux deux, on ne la
+fonctionnalité doit répondre à deux questions : quelle tâche manuelle répétée elle supprime, et ce
+qu'elle change pour le dirigeant qui paie l'abonnement. Sans réponse chiffrée aux deux, on ne la
 construit pas.
 
-Unique exception assumée : la **Moulinette Audit**, parce que c'est le produit facturé lui-même.
+## ⚠️ Aucune valeur juridique n'est écrite en dur
+
+C'est la règle la plus stricte du projet, héritée du brief de remodelage.
+
+Toute valeur juridique — taux, délai, montant, mention — vit dans
+`src/lib/verticales/recouvrement/parametres.ts`, ou dans un module de pays qu'il référence
+(`pays/france/`). Chaque entrée porte sa **valeur**, sa **source**, sa **date de relevé** et
+**deux booléens** :
+
+- `verifie` — la valeur a été relevée sur une source publique citable. Suffit à **calculer** : un
+  chiffre affiché se corrige. `exiger()` l'exige.
+- `valideParAvocat` — un juriste a contrôlé la valeur ET son applicabilité. Suffit à **produire un
+  acte** : un chiffre écrit dans une requête qui part au greffe ne se corrige pas.
+  `exigerPourActe()` l'exige.
+
+**Ne jamais deviner un article de loi, même de mémoire.** Un numéro inventé recopié dans un
+courrier au débiteur est plus dangereux qu'une source absente, parce qu'il a l'air vérifiable.
+Relever sur Légifrance, citer, et recouper — les douze taux d'intérêt légal sont vérifiés contre
+les planchers publiés indépendamment, ce qui attrape une faute de frappe.
+
+Un semestre absent de la série de taux fait **lever en le nommant**, jamais extrapoler.
 
 ## Stack technique
 
@@ -54,12 +74,11 @@ Unique exception assumée : la **Moulinette Audit**, parce que c'est le produit 
 
 ## Architecture
 
-- **Multi-tenant strict par `organizationId`** — une cantine = une organisation.
-  Unique exception délibérée : `productLabels`, table globale de classification de
-  libellés, qui ne contiendra jamais de montant, de quantité, de fournisseur ni de lien vers une
-  organisation.
-- Interface **en français uniquement** (EGalim est une loi française).
-- **Un seul espace : `/app/*`**, celui de la cantine. Il n'y a pas d'espace opérateur.
+- **Multi-tenant strict par `organizationId`**, SANS AUCUNE EXCEPTION. Rien n'est mutualisé entre
+  clients : un débiteur, un montant et une échéance sont des données client, toujours. La purge
+  RGPD est donc totale, sans exception à justifier.
+- Interface **en français uniquement** (le droit applicable est français).
+- **Un seul espace : `/app/*`**. Une seule verticale, donc pas de sélecteur de domaine.
 - Rôles : `ORG_ADMIN`, `ORG_MEMBER`. Aucun rôle staff.
 - **Tablette d'abord**, paysage privilégié, sans casser le téléphone. Cibles tactiles 48 px.
 
@@ -71,41 +90,40 @@ Depuis le remodelage (voir `/docs/remodelage/`), le code se lit en trois zones :
   normalisation de libellés, dédoublonnage, rapprochement, reprise et coût des appels modèle.
   **Il ne sait pas quelle loi il sert.**
 - **`src/lib/verticales/<domaine>/`** — le référentiel, les règles de qualification, les calculs
-  du domaine et ses formats de sortie. `egalim/` existe ; `recouvrement/` se construit.
+  du domaine et ses formats de sortie. Seul `recouvrement/` existe ; `egalim/` a été retiré le
+  3 septembre 2026. La frontière est maintenue quand même : elle a coûté peu et elle rend une
+  seconde verticale possible sans rien défaire.
 - **`src/lib/convex/`** — les `query` / `mutation` / `action`, et rien d'autre. La logique
   pure vit hors de ce dossier, ce qui la rend testable sans harnais de plateforme.
 
 **Règle exécutable** : `src/lib/socle/__tests__/frontiere.test.ts` échoue si un fichier du socle
 importe `verticales/` ou `convex/`. L'inverse est libre et voulu.
 
-Deux verrous d'empreinte protègent les prompts système : ils partent avec `cache_control`
+Un verrou d'empreinte protège le prompt système d'extraction : il part avec `cache_control`
 `ephemeral`, et le cache Claude ne sert que sur un préfixe identique à l'octet. Un reformatage
-innocent multiplie le coût par diagnostic sans qu'aucun autre test ne tombe.
-
-## Le référentiel EGalim
-
-`src/lib/verticales/egalim/referentiel.ts` est **du code, jamais des données**. Il
-est versionné (`REFERENTIEL_VERSION`), passe en revue de code, et chaque classification enregistre
-la version qui l'a produite. Le barème doit être revérifié **avant** toute production de rapport
-client.
-
-Rappel du barème : bio et conversion comptent dans les deux ratios ; Label Rouge, AOP/AOC/IGP/STG,
-HVE 3, fermier, pêche durable, commerce équitable, RUP et coût du cycle de vie comptent en durable
-seul ; **« local », « circuit court », « de saison », « fait maison » ne comptent pas**.
+innocent multiplie le coût par document sans qu'aucun autre test ne tombe.
 
 ## Auditabilité — non négociable
 
-- Chaque ligne de facture conserve son libellé source, sa classification, **sa justification** et un
-  indice de confiance. Aucune classification sans phrase justificative.
-- Les lignes sous le seuil de confiance, et **systématiquement** celles classées viande ou poisson,
-  partent en file de confirmation, devant le gérant.
-- **Un diagnostic livré est figé, définitivement.** Une nouvelle mesure produit un nouveau
-  diagnostic daté.
-- `productLabels` est **globale et anonyme**. Elle ne contient qu'un libellé et son verdict : jamais
-  de montant, de quantité, de fournisseur, d'organisation **ni d'utilisateur**. Le compteur de
-  confirmations est un entier nu ; la question « cette organisation a-t-elle déjà confirmé ? » se
-  répond côté client, sur ses propres lignes.
-- **Viande et poisson passent toujours devant un humain**, quel que soit le consensus atteint.
+- **Tout montant réclamé est décomposable.** Un décompte porte ses SEGMENTS : quel principal, quel
+  taux, sur combien de jours, sur quelle base annuelle. Un total qu'on ne peut pas décomposer est
+  un chiffre qu'on demande de croire ; décomposé, il se refait à la main — ce que fera le débiteur
+  qui le conteste.
+- **Un décompte arrêté est figé, définitivement.** Rejouer produit un NOUVEAU décompte daté. La
+  question n'est pas « combien réclame-t-on aujourd'hui » mais « qu'a-t-on réclamé le jour où on
+  l'a réclamé ».
+- **Les montants sont des entiers de centimes**, en `bigint` côté logique (`socle/montants.ts`) et
+  en `v.int64()` côté Convex. Jamais un flottant, du parseur jusqu'à l'écran. La seule division
+  arrondie de toute la chaîne est explicite, une par segment.
+- **Le doute ne profite jamais au produit.** Un critère indéterminé compte comme absent, jamais
+  comme acquis. L'absence de contestation CONNUE n'est pas une absence de contestation.
+- **Un acte ne se produit pas sur un décompte incomplet.** `controle.ts` compare la créance à
+  toutes les factures connues du débiteur et CHIFFRE ce qui serait abandonné. C'est le seul endroit
+  du produit où un refus vaut mieux qu'un résultat : le titre exécutoire ne porte que sur les
+  sommes qu'il chiffre, et ce qui n'y figure pas est perdu.
+- **Ce que le logiciel ne voit pas s'affiche aussi.** La surveillance déclare ses hypothèses (un
+  secteur indéterminé fait retenir le délai de prescription le plus court) et ses angles morts. Un
+  utilisateur qui croit sa prescription surveillée ne la surveille pas lui-même.
 
 ## Le systeme visuel, et ce qui l'empeche de deriver
 
@@ -195,11 +213,13 @@ calls ne sont **pas** exécutés. L'agent `general-purpose` intégré, lui, exé
 
 ## Liens utiles
 
-- Business plan : `/docs/agri/business-plan/00-README.md`
-- Playbook 90 jours : `/docs/agri/playbook-90-jours-restauration-collective.md`
-- Fiche EGalim (barème) : `/docs/agri/business-plan/10-fiche-egalim-1page.md`
-- Spec du pivot full-logiciel : `/docs/superpowers/specs/2026-08-19-pivot-full-logiciel-ux-tablette-design.md`
+- **Le remodelage vers le recouvrement** : `/docs/remodelage/` — le brief, l'audit du code
+  d'origine, l'architecture socle/verticales, et l'état d'avancement.
 - Gabarits extraits de Fleet : `/docs/superpowers/references/`
+
+Les documents `/docs/agri/` décrivent le modèle EGalim, retiré du produit le 3 septembre 2026.
+Ils restent au dépôt comme archive : ils portent le raisonnement qui a mené au pivot, pas la
+direction actuelle.
 
 Ce projet utilise [Convex](https://convex.dev). Lire
 `src/lib/convex/_generated/ai/guidelines.md` avant tout travail sur le backend.

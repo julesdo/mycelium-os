@@ -151,19 +151,18 @@ export function Etapes() {
 				}
 			>
 				{/*
-				  Une photographie, et non une démonstration : cette étape-là n'a pas
-				  d'écran à montrer. `ZoneDepot` est un vrai contrôle qui attend des
-				  fichiers ; le poser ici donnerait une zone qui accepte un dépôt et
-				  n'en fait rien.
+				  LE BILAN D'IMPORT, ET NON LA ZONE DE DÉPÔT. `ZoneDepot` est un vrai
+				  contrôle qui attend des fichiers ; le poser ici donnerait une zone
+				  qui accepte un dépôt et n'en fait rien.
+
+				  Ce qu'on montre à la place est plus intéressant : ce que le logiciel
+				  RÉPOND. Y compris les deux lignes qu'il n'a pas su lire — un import
+				  qui annonce « 312 factures » sans les mentionner ment par omission,
+				  et l'omission porte sur l'argent qu'on ne réclamera pas.
 				*/}
-				<div className="relative aspect-video overflow-hidden rounded-panneau border border-trait shadow-pose lg:aspect-square">
-					<img
-						src="/photos/cuisine.jpg"
-						alt="Un poste de travail avec des documents comptables"
-						loading="lazy"
-						className="absolute inset-0 size-full object-cover"
-					/>
-				</div>
+				<Cadre contentClassName="p-cladd-2xs">
+					<BilanImport />
+				</Cadre>
 			</Etape>
 
 			<Etape
@@ -203,6 +202,40 @@ export function Etapes() {
 				</Cadre>
 			</Etape>
 		</SectionMarketing>
+	);
+}
+
+/**
+ * Le compte-rendu d'un import, tel que l'écran le rend.
+ *
+ * IL DIT AUSSI CE QUI N'A PAS MARCHÉ, et c'est le point. Trois catégories
+ * distinctes : ce qui est entré, ce qui a été écarté À BON DROIT — les
+ * contreparties de produit et de TVA d'une écriture de vente — et ce qui n'a
+ * PAS PU être lu, avec sa raison.
+ */
+function BilanImport() {
+	return (
+		<div className="flex flex-col gap-cladd-3xs">
+			<Surface contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
+				<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
+					<span className="text-cladd-sm font-semibold">export-comptable-2026.txt</span>
+					<Chip size="md" color="green">
+						Lu
+					</Chip>
+				</div>
+				<p className="text-cladd-xs text-plume-claire">
+					312 factures enregistrées, 118 règlements, 47 débiteurs créés.
+				</p>
+				<p className="text-cladd-xs text-plume-claire">
+					624 écritures hors périmètre (produits, TVA, trésorerie) — écartées à bon droit.
+				</p>
+				<p className="text-cladd-xs font-semibold">2 lignes n’ont pas pu être lues :</p>
+				<p className="text-cladd-xs text-plume-claire">· Montant illisible en débit ou en crédit.</p>
+				<p className="text-cladd-xs text-plume-claire">
+					· Écriture sur compte client sans référence de pièce.
+				</p>
+			</Surface>
+		</div>
 	);
 }
 

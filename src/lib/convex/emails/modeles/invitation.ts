@@ -23,7 +23,7 @@ function bloc(d: InvitationData): BlocEmail {
 		titre: `Rejoindre ${d.nomEtablissement}`,
 		intro: `Vous êtes invité à rejoindre l'espace Letikette de ${d.nomEtablissement}, en tant que ${d.roleLibelle.toLowerCase()}.`,
 		corps: [
-			"Letikette mesure les trois taux EGalim d'un établissement de restauration collective à partir de ses factures : la part de produits durables, la part de bio, et la part de durable sur la viande et le poisson.",
+			"Letikette mesure les créances impayées d'une entreprise de restauration collective à partir de ses factures : la part de produits durables, la part de bio, et la part de durable sur la viande et le poisson.",
 			"En rejoignant cet espace, vous pourrez déposer des factures, suivre l'avancement de la lecture et confirmer les classements qui vous seront proposés."
 		],
 		bouton: { libelle: 'Rejoindre l’établissement', url: d.url },

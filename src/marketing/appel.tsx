@@ -2,15 +2,14 @@ import { Link } from '@tanstack/react-router';
 import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
 import { SectionMarketing } from './section';
-import { FondDessine } from './fond-dessine';
 
 /**
  * La date, puis le bouton.
  *
- * POURQUOI LA DATE AVANT LE BOUTON. Une échéance déplace plus qu'un argument,
- * à condition d'être vraie et vérifiable. Le 31 mars n'est pas une urgence
- * fabriquée : c'est la fermeture de la campagne « ma cantine », et le gérant
- * peut le vérifier en trente secondes.
+ * POURQUOI L'ÉCHÉANCE AVANT LE BOUTON. Elle déplace plus qu'un argument, à
+ * condition d'être vraie et vérifiable. La prescription n'est pas une urgence
+ * fabriquée : elle éteint la créance toute seule, sans que personne n'ait rien
+ * fait, et le dirigeant peut le vérifier en trente secondes.
  *
  * Ce qu'on n'écrit pas : « plus que X jours », un compte à rebours, une offre
  * qui expire. La cible est un professionnel qui reconnaît ces ficelles à dix
@@ -38,9 +37,8 @@ import { FondDessine } from './fond-dessine';
 export function Appel() {
 	return (
 		<SectionMarketing fond="encre" filet={false} className="relative isolate gap-cladd-2xs">
-			<FondDessine inverse />
 			<span className="w-fit rounded-full bg-plume-inversee/12 px-cladd-3xs py-1 text-cladd-2xs font-semibold tracking-widest text-plume-inversee-douce uppercase">
-				Campagne « ma cantine »
+				Le temps joue contre vous
 			</span>
 			{/*
 			  PLUS GROS ET PLUS GRAS QUE SUR LE PAPIER, et c'est de l'optique, pas du
@@ -53,10 +51,10 @@ export function Appel() {
 			  à ce titre, en clair sur l'encre, le poids qu'il a en noir sur blanc.
 			*/}
 			<h2 className="max-w-4xl font-serif text-titre-section leading-tight font-semibold tracking-tight">
-				La déclaration ferme le 31 mars. Le calcul, lui, prend douze mois de factures.
+				Une créance ne prévient pas qu’elle expire. Elle expire.
 			</h2>
 			<p className="max-w-2xl text-chapeau leading-relaxed font-normal text-plume-inversee-douce">
-				En février, il vous reste le temps de corriger. Fin mars, celui de constater.
+				Le mois d’avant, vous pouvez encore agir. Le lendemain, il ne reste qu’à constater.
 			</p>
 			<div className="flex flex-col items-start gap-cladd-3xs pt-cladd-3xs sm:flex-row sm:items-center">
 				<Button
@@ -67,7 +65,7 @@ export function Appel() {
 					rounded
 					className="px-cladd-2xs"
 				>
-					Générer mon bilan EGalim
+					Voir mes créances
 					<ArrowRightIcon />
 				</Button>
 				<span className="text-cladd-sm font-normal text-plume-inversee-douce">

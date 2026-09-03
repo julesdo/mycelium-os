@@ -33,17 +33,19 @@ import { SectionMarketing, TitreSection, Inventaire } from './section';
 
 const LIMITES = [
 	{
-		titre: 'On ne déclare pas à votre place.',
-		texte: 'Le dossier est prêt. La saisie sur « ma cantine » reste la vôtre.'
-	},
-	{
-		titre: 'On ne vend aucune denrée et on n’organise aucune livraison.',
-		texte: 'Nous ne nous interposons ni dans la commande, ni dans le camion, ni dans le règlement.'
-	},
-	{
-		titre: 'On ne promet pas un résultat.',
+		titre: 'On ne relance jamais votre client à votre place.',
 		texte:
-			'Votre taux dépend de vos achats. Nous mesurons, nous documentons, et nous montrons où quelques euros déplacés rapportent le plus.'
+			'Le recouvrement pour compte de tiers est une activité encadrée. Nous préparons le dossier ; c’est vous, ou le professionnel que vous mandatez, qui agissez.'
+	},
+	{
+		titre: 'On ne touche jamais à vos fonds.',
+		texte:
+			'Aucun encaissement, aucun compte séquestre, aucune commission sur ce qui rentre. Votre client vous paie directement, comme avant.'
+	},
+	{
+		titre: 'On ne vous dit pas quelle procédure engager.',
+		texte:
+			'Ce serait du conseil juridique, et nous ne sommes pas avocats. Le logiciel énonce des constats — « cette créance remplit telles conditions » — et vous laisse décider.'
 	}
 ] as const;
 

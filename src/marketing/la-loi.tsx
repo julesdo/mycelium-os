@@ -46,21 +46,28 @@ import { SectionMarketing, TitreSection, Exergue } from './section';
  * qu'on connaît le sujet mieux que celui qui vend un tableau de bord.
  */
 
+/**
+ * LES TROIS CHIFFRES QUE PERSONNE NE RÉCLAME.
+ *
+ * Ce ne sont pas des arguments de vente : ce sont des droits qui existent et
+ * qu'on laisse tomber. Le taux et l'indemnité sont dus DE PLEIN DROIT, sans
+ * qu'il faille les demander ni les négocier. Le délai, lui, court tout seul.
+ */
 const SEUILS = [
 	{
-		valeur: '50 %',
-		titre: 'de produits durables',
-		detail: 'Bio, Label Rouge, AOP, IGP, HVE 3, pêche durable.'
+		valeur: '12,40 %',
+		titre: 'd’intérêts de retard',
+		detail: 'Taux BCE majoré de dix points, dus sans mise en demeure. Réancré chaque semestre.'
 	},
 	{
-		valeur: '20 %',
-		titre: 'dont du bio',
-		detail: 'La conversion compte aussi.'
+		valeur: '40 €',
+		titre: 'par facture en retard',
+		detail: 'Indemnité forfaitaire de recouvrement, due de plein droit dès le premier jour.'
 	},
 	{
-		valeur: '60 %',
-		titre: 'sur la viande et le poisson',
-		detail: 'Sur ces deux familles seulement.'
+		valeur: '5 ans',
+		titre: 'et souvent bien moins',
+		detail: 'Un an sur le transport, deux sur ce qu’on fournit à un consommateur.'
 	}
 ] as const;
 
@@ -68,19 +75,18 @@ export function LaLoi() {
 	return (
 		<SectionMarketing id="la-loi" fond="azur">
 			{/*
-			  LE CHAPEAU MÈNE PAR CE QUI SURPREND. Il commençait par la méthode de
-			  calcul et finissait sur « le privé depuis 2024 ». Or c'est cette
-			  dernière ligne qui fait sursauter la cible : beaucoup de cantines
-			  privées ignorent encore qu'elles sont concernées. On la met devant.
+			  LE CHAPEAU MÈNE PAR CE QUI SURPREND. Ce n'est pas que la loi existe,
+			  c'est que ces sommes sont dues SANS RIEN DEMANDER — et que presque
+			  personne ne les réclame, faute de savoir les calculer.
 			*/}
 			<TitreSection
-				sur="Loi EGalim · code rural, art. L230-5-1"
-				titre="Ce que la loi vous demande"
-				chapeau="Depuis 2024, les cantines privées y sont soumises comme les publiques."
+				sur="Code de commerce · art. L441-10 et L110-4"
+				titre="Ce que la loi vous doit"
+				chapeau="Ces sommes vous sont dues de plein droit. Ce délai, lui, court sans que personne ne vous prévienne."
 			/>
 
 			{/*
-			  LES TROIS SEUILS RESTENT LE PLUS GROS CORPS DE LA PAGE, et c'est le
+			  LES TROIS CHIFFRES RESTENT LE PLUS GROS CORPS DE LA PAGE, et c'est le
 			  contenu qui le justifie : c'est la seule chose ici qui ne nous
 			  appartienne pas. C'est la loi, elle est opposable, elle a le droit de
 			  crier. Rien d'autre n'a le droit d'approcher ce corps.

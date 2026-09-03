@@ -13,12 +13,11 @@ const notificationTypeValidator = v.union(
 );
 
 export type NotificationType =
-	| 'FACTURES_RECUES'
-	| 'DIAGNOSTIC_PRET'
-	| 'LIGNES_A_ARBITRER'
-	| 'RATIO_EN_DERIVE'
-	| 'DECLARATION_A_FAIRE'
-	| 'ATTESTATION_MANQUANTE'
+	| 'IMPORT_TERMINE'
+	| 'CREANCE_MURE'
+	| 'ECHEANCE_PROCHE'
+	| 'PRESCRIPTION_PROCHE'
+	| 'DEBITEUR_DEGRADE'
 	| 'HUMAN_ASSIST_REPLY';
 
 export function buildNotificationContent(
@@ -26,35 +25,30 @@ export function buildNotificationContent(
 	data: Record<string, string | number>
 ): { title: string; message: string } {
 	switch (type) {
-		case 'FACTURES_RECUES':
+		case 'IMPORT_TERMINE':
 			return {
-				title: 'Factures reçues',
-				message: `${data.count} document(s) déposé(s), traitement en cours.`
+				title: 'Import terminé',
+				message: `${data.count} facture(s) enregistrée(s).`
 			};
-		case 'DIAGNOSTIC_PRET':
+		case 'CREANCE_MURE':
 			return {
-				title: 'Votre diagnostic EGalim est prêt',
-				message: `Ratio durable mesuré : ${data.ratioDurable} %.`
+				title: 'Une créance est mûre',
+				message: `${data.debiteur} — ${data.montant} restant dû.`
 			};
-		case 'LIGNES_A_ARBITRER':
+		case 'ECHEANCE_PROCHE':
 			return {
-				title: 'Lignes à arbitrer',
-				message: `${data.count} libellé(s) attendent un arbitrage humain.`
+				title: 'Échéance de procédure',
+				message: `${data.libelle} : il reste ${data.jours} jour(s).`
 			};
-		case 'RATIO_EN_DERIVE':
+		case 'PRESCRIPTION_PROCHE':
 			return {
-				title: 'Ratio en dérive',
-				message: `Le ratio ${data.seuil} est passé sous le seuil légal ce mois-ci.`
+				title: 'Prescription proche',
+				message: `${data.reference} sera prescrite le ${data.date}. Passée cette date, la créance est éteinte.`
 			};
-		case 'DECLARATION_A_FAIRE':
+		case 'DEBITEUR_DEGRADE':
 			return {
-				title: 'Télédéclaration à faire',
-				message: `La campagne « ma cantine » ferme le 31 mars. Votre dossier est prêt.`
-			};
-		case 'ATTESTATION_MANQUANTE':
-			return {
-				title: 'Attestation manquante',
-				message: `${data.count} ligne(s) qualifiante(s) sans justificatif fournisseur.`
+				title: 'Un débiteur se dégrade',
+				message: `La situation de ${data.debiteur} a changé. Revoir l'encours avant d'engager des frais.`
 			};
 		case 'HUMAN_ASSIST_REPLY':
 			return {

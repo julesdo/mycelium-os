@@ -55,9 +55,10 @@ export function Pied() {
 				</p>
 
 				<p className="max-w-3xl text-cladd-sm leading-relaxed font-normal text-plume-inversee-douce">
-					Letikette mesure votre taux de produits durables et biologiques, le documente et le fait
-					progresser, selon une obligation de moyens. La télédéclaration sur « ma cantine » reste
-					établie et signée par votre établissement.
+					Letikette mesure vos créances, les documente et surveille leurs échéances, selon une
+					obligation de moyens. Il n’exerce aucune activité de recouvrement pour compte de tiers,
+					ne manipule aucun fonds et ne délivre aucun conseil juridique. Toute décision d’engager
+					une procédure reste la vôtre.
 				</p>
 			</div>
 		</footer>

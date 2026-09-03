@@ -32,24 +32,24 @@ import { SectionMarketing, TitreSection } from './section';
 
 const ANATOMIE = [
 	{
-		cle: 'Le libellé du fournisseur',
-		valeur: 'CAR0TTE RONDELLE 4/4 BIO 2.5KG',
-		note: 'Conservé tel quel, avec le zéro que le scan a pris pour un O.'
+		cle: 'La période',
+		valeur: 'Du 1er juillet au 3 septembre 2026 — 64 jours',
+		note: 'Découpée au jour où le taux change, et au jour où un règlement est tombé.'
 	},
 	{
-		cle: 'Le classement retenu',
-		valeur: 'Fruits et légumes · Bio (AB)',
-		note: 'Compte au bio, et donc aussi au durable.'
+		cle: 'Le principal retenu',
+		valeur: '6 000,00 €',
+		note: 'Ce qui restait dû ce jour-là : 10 000 € moins un acompte de 4 000 €.'
 	},
 	{
-		cle: 'La justification',
-		valeur: 'La mention BIO figure au libellé ; le certificat fournisseur reste à obtenir.',
-		note: 'Aucune ligne n’est classée sans une phrase qui dit pourquoi.'
+		cle: 'Le taux appliqué',
+		valeur: '12,40 % l’an, base 365',
+		note: 'Le taux BCE du second semestre 2026, majoré de dix points. Pas celui d’aujourd’hui.'
 	},
 	{
-		cle: 'L’indice de confiance',
-		valeur: '74 %',
-		note: 'Sous le seuil, donc envoyée en confirmation devant vous.'
+		cle: 'Les intérêts de la période',
+		valeur: '210,63 €',
+		note: '6 000 × 12,40 % × 64 / 365. Un débiteur peut le refaire à la main.'
 	}
 ] as const;
 
@@ -59,8 +59,8 @@ export function Preuve() {
 			<TitreSection
 				inverse
 				sur="Auditabilité"
-				titre="Chaque ligne garde sa preuve"
-				chapeau="Un contrôle ne vous demandera pas votre taux. Il vous demandera d’où il sort."
+				titre="Chaque euro montre d’où il vient"
+				chapeau="Un débiteur ne contestera pas votre total. Il refera le calcul."
 			/>
 
 			<div className="overflow-hidden rounded-panneau bg-papier text-plume">
@@ -74,9 +74,9 @@ export function Preuve() {
 				  être celui d'un document, pas d'une interface.
 				*/}
 				<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait bg-papier-chaud p-cladd-2xs md:p-cladd-xs">
-					<span className="font-serif text-intertitre font-medium">Carotte rondelle bio</span>
+					<span className="font-serif text-intertitre font-medium">FA-2026-118</span>
 					<span className="text-cladd-sm text-plume-claire tabular-nums">
-						52 lignes de facture · 3 120 € sur l&rsquo;exercice
+						Fournitures Durand · exigible le 1er mai 2026
 					</span>
 				</div>
 
@@ -101,7 +101,7 @@ export function Preuve() {
 			</div>
 
 			<p className="max-w-3xl text-cladd-md leading-relaxed font-normal text-plume-inversee-douce">
-				Un bilan livré ne bouge plus. C&rsquo;est ce qui le rend opposable deux ans plus tard.
+				Un décompte arrêté ne bouge plus. C&rsquo;est ce qui prouve ce que vous réclamiez le jour où vous l&rsquo;avez réclamé.
 			</p>
 		</SectionMarketing>
 	);

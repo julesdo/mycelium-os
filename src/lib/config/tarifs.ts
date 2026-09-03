@@ -74,9 +74,9 @@ export const BORNES_PALIER: Record<PalierTaille, string> = {
 
 /** La même borne, en trois mots, pour un sélecteur qui doit tenir sur 375 px. */
 export const BORNES_COURTES: Record<PalierTaille, string> = {
-	S: '< 250 couverts',
+	S: '< 250 factures',
 	M: '250 à 800',
-	L: '> 800 couverts'
+	L: '> 800 factures'
 };
 
 export type ColonneOffre = 'bilan' | 'abonnement';
@@ -95,13 +95,13 @@ export type ColonneOffre = 'bilan' | 'abonnement';
  * aussi pour les tournures qui reviendraient au même par un détour.
  */
 export const CE_QUI_EST_INCLUS = [
-	{ libelle: 'Dépôt de factures, sans limite', bilan: true, abonnement: true },
-	{ libelle: 'Lecture et classification ligne à ligne', bilan: true, abonnement: true },
-	{ libelle: 'Les trois taux EGalim, justifiés', bilan: true, abonnement: true },
-	{ libelle: 'Bilan PDF daté et signé', bilan: true, abonnement: true },
-	{ libelle: 'Courriers de demande d’attestation', bilan: true, abonnement: true },
-	{ libelle: 'Fichier de report pour « ma cantine »', bilan: false, abonnement: true },
-	{ libelle: 'Suivi mensuel et rappels', bilan: false, abonnement: true }
+	{ libelle: 'Import de factures, sans limite', bilan: true, abonnement: true },
+	{ libelle: 'Export comptable ou dépôt de PDF', bilan: true, abonnement: true },
+	{ libelle: 'Décompte au centime, période par période', bilan: true, abonnement: true },
+	{ libelle: 'Intérêts au taux légal et indemnité forfaitaire', bilan: true, abonnement: true },
+	{ libelle: 'Surveillance des échéances et de la prescription', bilan: false, abonnement: true },
+	{ libelle: 'Qualification des créances et procédures envisageables', bilan: false, abonnement: true },
+	{ libelle: 'Alertes et suivi mensuel', bilan: false, abonnement: true }
 ] as const;
 
 /**

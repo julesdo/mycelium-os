@@ -59,7 +59,7 @@ function Inscription() {
 	return (
 		<CadreAuth
 			titre="Créer un compte"
-			explication="Puis douze mois de factures, et vous connaîtrez vos trois taux EGalim."
+			explication="Puis vos factures, et vous saurez ce qui est encore récupérable."
 			pied={
 				<span>
 					Vous avez déjà un compte ?{' '}

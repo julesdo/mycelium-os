@@ -79,19 +79,19 @@ type Offre = {
 
 const OFFRES: Offre[] = [
 	{
-		titre: 'Le premier bilan',
+		titre: 'La première mesure',
 		colonne: 'bilan',
 		cadence: 'une fois',
 		argument:
-			'Douze mois de factures lus en une fois. Vous saurez où vous en êtes, et ce qu’il manque, en euros.',
-		appel: 'Commencer par le bilan'
+			'Vos impayés lus en une fois. Vous saurez ce qui est encore récupérable, et ce qui va s’éteindre, en euros.',
+		appel: 'Commencer par la mesure'
 	},
 	{
 		titre: 'L’abonnement',
 		colonne: 'abonnement',
 		cadence: 'par mois',
 		argument:
-			'Votre chiffre reste à jour toute l’année, et votre déclaration de mars est prête avant mars.',
+			'Vos échéances surveillées toute l’année : ce qui arrive à terme, ce qui devient mûr, ce qui approche de la prescription.',
 		appel: 'Prendre l’abonnement',
 		avant: true
 	}
@@ -109,7 +109,7 @@ export function Tarifs() {
 			<TitreSection
 				sur="Tarifs"
 				titre="Ce que ça coûte"
-				chapeau="Le prix suit le nombre de couverts que vous servez chaque jour. Le produit, lui, est le même pour tout le monde."
+				chapeau="Le prix suit le nombre de factures que vous émettez chaque année. Le produit, lui, est le même pour tout le monde."
 			/>
 
 			{/*
@@ -122,7 +122,7 @@ export function Tarifs() {
 			*/}
 			<div className="flex flex-col gap-cladd-3xs">
 				<span className="text-cladd-sm font-semibold text-plume-douce">
-					Combien de couverts servez-vous par jour ?
+					Combien de factures émettez-vous par an ?
 				</span>
 				<SurfaceCut outline className="w-fit rounded-full" contentClassName="p-1">
 					<Segmented activeColor="brand" activeVariant="solid-fill">
@@ -241,11 +241,11 @@ export function Tarifs() {
 			  et un gérant qui ne reconnaît pas le nom appelle sa banque.
 			*/}
 			<p className="max-w-3xl text-cladd-md leading-relaxed text-plume-douce">
-				{DUREE_ESSAI_JOURS} jours d&rsquo;essai, sans carte bancaire : vous voyez vos trois taux
-				avant de décider quoi que ce soit. Les montants sont hors taxes, sans engagement de durée,
-				et la facturation est assurée par Paddle. Votre palier —{' '}
+				{DUREE_ESSAI_JOURS} jours d&rsquo;essai, sans carte bancaire : vous voyez vos créances et
+				leurs échéances avant de décider quoi que ce soit. Les montants sont hors taxes, sans
+				engagement de durée, et la facturation est assurée par Paddle. Votre palier —{' '}
 				<span className="font-semibold text-plume">{BORNES_PALIER[palier]}</span> — se confirme dans
-				vos réglages, à partir des couverts que vous déclarez.
+				vos réglages, à partir du volume que vous déclarez.
 			</p>
 		</SectionMarketing>
 	);

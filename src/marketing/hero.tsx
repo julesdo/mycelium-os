@@ -3,14 +3,14 @@ import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
 import { Tablette } from '../ui';
 import { ApercuApplication } from './apercu';
-import { FondDessine } from './fond-dessine';
 
 /**
  * L'entrée.
  *
- * CE QU'ELLE DOIT FAIRE EN SEPT SECONDES : dire à un chef de cuisine collective
- * qu'il a une obligation qu'il connaît mal, que son chiffre existe déjà dans
- * ses factures, et lui montrer à quoi ressemble le logiciel qui l'en sort.
+ * CE QU'ELLE DOIT FAIRE EN SEPT SECONDES : dire à un dirigeant qu'une partie de
+ * ses impayés est en train de devenir irrécouvrable sans que personne ne le
+ * signale, que l'information est déjà dans sa comptabilité, et lui montrer à
+ * quoi ressemble le logiciel qui l'en sort.
  *
  * ⚠️ ELLE EST CENTRÉE, APRÈS AVOIR ÉTÉ DÉSAXÉE, ET C'EST UN AVEU. La version
  * précédente tenait sept colonnes de texte contre cinq de photographie, au nom
@@ -53,7 +53,6 @@ export function Hero() {
 		// fenêtre et passe DERRIÈRE la barre, qui est en `fixed` et ne réserve
 		// aucune place. Voir `--spacing-barre-publique`.
 		<header className="relative isolate w-full overflow-hidden border-b border-trait bg-linear-to-b from-azur-lavis via-azur-clair to-papier pt-barre-publique text-plume">
-			<FondDessine />
 
 			{/* `isolate` sur l'en-tête, et le calque de dessins à `-z-10` : c'est le
 			    seul montage qui glisse une couche ENTRE le dégradé de l'en-tête et son
@@ -63,26 +62,27 @@ export function Hero() {
 			    dessins qui passeraient devant le titre. */}
 			<div className="relative mx-auto flex w-full max-w-7xl flex-col items-center gap-cladd-2xs px-cladd-2xs pt-cladd-2xl text-center md:pt-respiration">
 				<span className="cladd-color-brand w-fit rounded-full bg-cladd-primary/10 px-cladd-3xs py-1 text-cladd-2xs font-semibold tracking-widest text-cladd-primary uppercase">
-					Restauration collective · déclaration avant le 31 mars
+					Recouvrement B2B · une créance se prescrit sans prévenir
 				</span>
 
 				{/*
 				  LA SECONDE LIGNE EST EN ACCENT, et c'est la seule couleur de toute la
-				  page hors des jauges. Elle tombe sur « dans vos factures » parce que
-				  c'est là qu'est la surprise : tout le monde sait qu'il y a une loi,
-				  presque personne ne sait que son chiffre est déjà écrit quelque part.
+				  page. Elle tombe sur « s'éteignent sans bruit » parce que c'est là
+				  qu'est la surprise : tout le monde sait qu'il a des impayés, presque
+				  personne ne sait lequel va devenir irrécouvrable ce trimestre.
 
 				  `text-balance` répartit les mots entre les lignes au lieu de laisser
 				  la dernière porter un mot seul. Sur un titre de cent pixels, une
 				  ligne orpheline se voit à trois mètres.
 				*/}
 				<h1 className="max-w-5xl font-serif text-affiche leading-none font-medium tracking-tight text-balance">
-					Vos trois taux EGalim sont déjà{' '}
-					<span className="cladd-color-brand text-cladd-primary">dans vos factures.</span>
+					Vos impayés{' '}
+					<span className="cladd-color-brand text-cladd-primary">s’éteignent sans bruit.</span>
 				</h1>
 
 				<p className="max-w-xl text-chapeau leading-relaxed font-normal text-balance text-plume-douce">
-					Nous les en sortons, ligne par ligne, sur douze mois.
+					Le logiciel lit vos factures, surveille les échéances, et vous dit quelle créance
+					devient irrécouvrable — avant qu’elle le soit.
 				</p>
 
 				<div className="flex flex-col items-center gap-cladd-3xs pt-cladd-3xs sm:flex-row">
@@ -95,7 +95,7 @@ export function Hero() {
 						rounded
 						className="px-cladd-2xs"
 					>
-						Calculer mes trois taux
+						Voir mes créances
 						<ArrowRightIcon />
 					</Button>
 					<a
@@ -120,7 +120,7 @@ export function Hero() {
 			<div className="relative mx-auto w-full max-w-7xl px-cladd-2xs pt-cladd-2xl pb-cladd-sm md:pt-cladd-2xl">
 				<Tablette
 					className="max-w-6xl"
-					description="Letikette sur tablette : l’écran des taux EGalim de l’exercice 2025 — 39 % de produits durables pour un seuil de 50, 21 % de bio pour 20, 42 % sur la viande et le poisson pour 60 — et la répartition des achats par famille."
+					description="Letikette sur tablette : l’écran « À traiter » — une facture déjà prescrite à 9 240 €, une signification d’ordonnance à neuf jours pour 18 450 €, une créance mûre à 31 200,50 €, et une facture échue à 249,90 €. Total repéré : 59 140,40 €."
 				>
 					<ApercuApplication />
 				</Tablette>

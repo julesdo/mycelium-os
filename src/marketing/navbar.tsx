@@ -133,7 +133,7 @@ export function Navbar() {
 						Se connecter
 					</Button>
 					<Button as={Link} to="/inscription" color="brand" variant="solid-fill" rounded>
-						Calculer mes taux
+						Voir mes créances
 						<ArrowRightIcon />
 					</Button>
 				</div>

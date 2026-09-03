@@ -44,8 +44,8 @@ export function Abonnement() {
 	return (
 		<SectionMarketing id="abonnement" fond="froid">
 			<TitreSection
-				titre="La déclaration est annuelle. Le suivi ne l’est pas."
-				chapeau="Pourquoi payer tous les mois pour une obligation annuelle ? Trois raisons."
+				titre="Une procédure est ponctuelle. Le risque, lui, court tous les jours."
+				chapeau="Pourquoi payer tous les mois pour des impayés qu’on traite deux fois par an ? Trois raisons."
 			/>
 
 			{/*

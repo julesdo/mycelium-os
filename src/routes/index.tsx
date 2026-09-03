@@ -44,9 +44,9 @@ import { SITE_CANONIQUE } from '../lib/config/legal';
  * vignette carrée de cent-vingt pixels, où il ne reste rien de lisible.
  */
 const APERCU = `${SITE_CANONIQUE}/partage.png`;
-const TITRE = 'Letikette — vos trois taux EGalim, mesurés dans vos factures';
+const TITRE = 'Letikette — vos impayés, avant qu’ils ne s’éteignent';
 const RESUME =
-	'Letikette lit vos factures ligne par ligne et calcule vos trois taux EGalim en valeur d’achat. Chaque classement est justifié, la viande et le poisson passent devant vous.';
+	'Letikette lit vos factures, surveille vos échéances et chiffre vos créances au centime. Chaque euro réclamé montre d’où il vient : quel principal, quel taux, sur combien de jours.';
 
 export const Route = createFileRoute('/')({
 	head: () => ({
@@ -58,11 +58,11 @@ export const Route = createFileRoute('/')({
 			{ property: 'og:site_name', content: 'Letikette' },
 			{ property: 'og:locale', content: 'fr_FR' },
 			{ property: 'og:url', content: SITE_CANONIQUE },
-			{ property: 'og:title', content: 'Letikette — conformité EGalim en restauration collective' },
+			{ property: 'og:title', content: 'Letikette — le recouvrement de créances B2B, mesuré' },
 			{
 				property: 'og:description',
 				content:
-					'Vos trois taux EGalim sont déjà dans vos factures. Letikette les en sort, ligne par ligne, avec la justification de chaque classement.'
+					'Vos impayés s’éteignent sans bruit. Letikette surveille vos échéances, repère les créances mûres et chiffre chaque décompte au centime.'
 			},
 			{ property: 'og:image', content: APERCU },
 			{ property: 'og:image:width', content: '1200' },
@@ -70,13 +70,13 @@ export const Route = createFileRoute('/')({
 			{
 				property: 'og:image:alt',
 				content:
-					'Letikette — vos trois taux EGalim sont déjà dans vos factures. Les trois seuils : 50 % de produits durables, 20 % de bio, 60 % sur la viande et le poisson.'
+					'Letikette — vos impayés, avant qu’ils ne s’éteignent. Intérêts de retard au taux légal, indemnité forfaitaire de 40 € par facture, prescription surveillée par secteur.'
 			},
 
 			{ name: 'twitter:card', content: 'summary_large_image' },
 			{
 				name: 'twitter:title',
-				content: 'Letikette — conformité EGalim en restauration collective'
+				content: 'Letikette — le recouvrement de créances B2B, mesuré'
 			},
 			{ name: 'twitter:description', content: RESUME },
 			{ name: 'twitter:image', content: APERCU }
