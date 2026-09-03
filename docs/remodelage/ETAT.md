@@ -263,3 +263,68 @@ pièce — reste **partiel** : la structure est là, rien ne l'affiche encore. C
    procédure évalue, elle ne produit pas l'acte.
 3. **Le décret L.126** n'est toujours pas publié.
 4. **Les fonctions Convex de lecture** (listes, écrans) et l'**interface**.
+
+---
+
+## Les phases manquantes, terminées
+
+Toutes les phases numérotées du brief sont livrées, interface comprise.
+
+### Ce qui a été ajouté
+
+| Couche | Contenu |
+|---|---|
+| Fonctions Convex | `depot` (import de fichiers, suivi visible), `creances`, `decompte`, `surveillance`, `lecture` |
+| Écrans | `/app/recouvrement` (flux), `/app/debiteurs` (deux volets), `/app/creance/$id` (qualification + décompte), `/app/import-factures` |
+| Composants | `FluxEvenements`, `Decompte` — plus deux entrées au showroom |
+
+**714 tests**, 0 erreur de lint, `check` et `check:bundle` verts.
+
+### Le septième critère d'acceptation est désormais tenu
+
+> « Tout montant affiché est traçable jusqu'à sa pièce source. »
+
+Le décompte affiche ses **périodes**, dépliables : pour chaque segment, le
+principal, le taux, le nombre de jours, la base annuelle et les intérêts. Un total
+qu'on ne peut pas décomposer est un chiffre qu'on demande de croire.
+
+**Les sept critères du brief sont tenus.**
+
+### Trois défauts trouvés en regardant, pas en testant
+
+La règle « quatre largeurs avant de déclarer fini » a payé trois fois :
+
+1. **`Surface` rend un conteneur interne.** Mes classes de mise en page tombaient
+   sur l'enveloppe. Seize occurrences corrigées vers `contentClassName`.
+2. **`gap-cladd-4xs` n'existe pas.** L'échelle s'arrête à `3xs`. Treize classes
+   sans effet, exactement ce que les *pitfalls* de Cladd interdisent.
+3. **La barre du showroom débordait à 768 px** depuis que j'y avais ajouté deux
+   onglets.
+
+Aucun n'était visible au typecheck ni aux tests.
+
+### Un piège Convex qui mérite d'être connu
+
+Une fonction appelant `internal.<son propre module>` crée un cycle d'inférence :
+TypeScript retombe sur `any`, et cet `any` remonte dans le type d'`api` **tout
+entier** — tous les écrans perdent leur inférence d'un coup. Dix-huit erreurs
+sont apparues dans des routes EGalim qui n'avaient pas bougé. Le remède (une
+annotation explicite du type de retour) est consigné dans `CLAUDE.md`.
+
+### ⚠️ Une décision de produit reste ouverte
+
+**La barre de navigation mélange les deux verticales** : quatre onglets EGalim,
+trois de recouvrement. Un même gérant n'utilise normalement qu'un des deux, et
+une barre à plat lui demande de trier sept icônes dont quatre ne le concernent
+pas. La structure juste est un **sélecteur de verticale**, comme le sélecteur
+d'établissement. C'est une décision de produit ; le provisoire est écrit comme
+tel dans `src/app/barre.tsx`.
+
+### Ce qui reste, et qui n'est pas du code
+
+1. **Un avocat doit valider les valeurs relevées.** `valideParAvocat` vaut `false`
+   partout, et `exigerPourActe()` refuse en conséquence de produire un acte.
+2. **Les mentions obligatoires** de la requête en injonction de payer restent
+   introuvables.
+3. **Le décret L.126** n'est pas publié.
+4. Le connecteur vers un logiciel de facturation, écarté comme « un plus ».
