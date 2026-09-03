@@ -171,6 +171,23 @@ d'encre et jamais un vert.
 - Pas de `console.log` en production
 - Commits : `git commit --no-verify` (les hooks pre-commit dépassent 2 minutes)
 
+### Le piège Convex qui casse TOUS les écrans d'un coup
+
+Une fonction Convex qui appelle `internal.<son propre module>.<autre fonction>` crée un cycle
+d'inférence : le type de `internal` contient celui du handler, qui dépend de `internal`.
+TypeScript renonce et retombe sur `any` — et cet `any` remonte dans le type de `api` **tout
+entier**, faisant perdre l'inférence à tous les écrans, y compris ceux d'une autre verticale.
+
+Le symptôme est trompeur : des dizaines de `TS7006 implicitly has an 'any' type` apparaissent
+dans des fichiers qui n'ont pas été touchés. Chercher la cause dans le dernier module Convex
+écrit, pas dans les fichiers qui se plaignent.
+
+**Le remède** : annoter explicitement le type de retour du handler.
+
+```ts
+handler: async (ctx, args): Promise<Id<'creances'>> => { … }
+```
+
 ## Règles pour les subagents
 
 Les agents custom dans `.claude/agents/*.md` tournent en mode « text generation only » : leurs tool

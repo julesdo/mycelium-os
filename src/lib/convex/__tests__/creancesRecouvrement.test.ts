@@ -23,6 +23,13 @@ import type { Id } from '../_generated/dataModel';
  *    ne doit pas suffire à l'inclure dans sa propre créance.
  */
 
+/**
+ * Le premier test paie le chargement du graphe de modules Convex, ce qui
+ * dépasse le délai par défaut de 5 s. Posé test par test plutôt que
+ * globalement : un test lent ailleurs doit rester un signal.
+ */
+const DELAI_CONVEX = 30_000;
+
 const modules = Object.fromEntries(
 	Object.entries(import.meta.glob('../**/*.ts')).map(([chemin, charger]) => [
 		'.' + chemin.slice(2),
@@ -117,7 +124,7 @@ describe('constitution d’une créance', () => {
 				expect((await ctx.db.get(factureId))!.creanceId).toBe(creanceId);
 			}
 		});
-	});
+	}, DELAI_CONVEX);
 
 	it('déduit ce qui est déductible et laisse le reste indéterminé', async () => {
 		const t = convexTest(schema, modules);
@@ -138,7 +145,7 @@ describe('constitution d’une créance', () => {
 			// absence de contestation.
 			expect(creance.certaine).toBe('unknown');
 		});
-	});
+	}, DELAI_CONVEX);
 
 	it('sait qu’une facture non échue n’est pas exigible, au lieu de l’ignorer', async () => {
 		const t = convexTest(schema, modules);
@@ -153,7 +160,7 @@ describe('constitution d’une créance', () => {
 		await t.run(async (ctx) => {
 			expect((await ctx.db.get(creanceId))!.exigible).toBe('ko');
 		});
-	});
+	}, DELAI_CONVEX);
 
 	it('porte un score, borné entre 0 et 1', async () => {
 		const t = convexTest(schema, modules);
@@ -170,7 +177,7 @@ describe('constitution d’une créance', () => {
 			expect(score).toBeGreaterThanOrEqual(0);
 			expect(score).toBeLessThanOrEqual(1);
 		});
-	});
+	}, DELAI_CONVEX);
 });
 
 describe('les invariants qui protègent l’acte', () => {
@@ -207,7 +214,7 @@ describe('les invariants qui protègent l’acte', () => {
 				aujourdHui: AUJOURDHUI
 			})
 		).rejects.toThrow(/débiteur/i);
-	});
+	}, DELAI_CONVEX);
 
 	it('refuse une facture déjà rattachée à une autre créance', async () => {
 		const t = convexTest(schema, modules);
@@ -226,7 +233,7 @@ describe('les invariants qui protègent l’acte', () => {
 				aujourdHui: AUJOURDHUI
 			})
 		).rejects.toThrow(/déjà/i);
-	});
+	}, DELAI_CONVEX);
 
 	it('refuse une facture d’une autre organisation', async () => {
 		const t = convexTest(schema, modules);
@@ -240,7 +247,7 @@ describe('les invariants qui protègent l’acte', () => {
 				aujourdHui: AUJOURDHUI
 			})
 		).rejects.toThrow(ConvexError);
-	});
+	}, DELAI_CONVEX);
 
 	it('refuse une créance sans aucune facture', async () => {
 		const t = convexTest(schema, modules);
@@ -253,7 +260,7 @@ describe('les invariants qui protègent l’acte', () => {
 				aujourdHui: AUJOURDHUI
 			})
 		).rejects.toThrow();
-	});
+	}, DELAI_CONVEX);
 });
 
 describe('le questionnaire — ce qui reste à trancher', () => {
@@ -283,7 +290,7 @@ describe('le questionnaire — ce qui reste à trancher', () => {
 			expect(creance.statut).toBe('QUALIFIEE');
 			expect(creance.qualifieeLe).toBeTypeOf('number');
 		});
-	});
+	}, DELAI_CONVEX);
 
 	it('ne qualifie pas une créance dont une condition reste indéterminée', async () => {
 		const t = convexTest(schema, modules);
@@ -304,5 +311,5 @@ describe('le questionnaire — ce qui reste à trancher', () => {
 		await t.run(async (ctx) => {
 			expect((await ctx.db.get(creanceId))!.statut).toBe('BROUILLON');
 		});
-	});
+	}, DELAI_CONVEX);
 });

@@ -193,6 +193,31 @@ export const recouvrementTables = {
 			v.literal('RADIEE')
 		),
 		santeConstateeLe: v.optional(v.number()),
+		/**
+		 * Le secteur de la relation commerciale, dont dépend le DÉLAI DE
+		 * PRESCRIPTION.
+		 *
+		 * Il n'est pas décoratif : cinq ans en régime général, mais un an pour le
+		 * transport de marchandises et deux ans pour ce qu'on fournit à un
+		 * consommateur. Annoncer cinq ans à un transporteur lui ferait perdre sa
+		 * créance quatre ans avant qu'il s'en aperçoive.
+		 *
+		 * `INDETERMINE` par défaut, et c'est un état utile, pas un trou : le
+		 * module de prescription retient alors le délai LE PLUS COURT et le
+		 * déclare comme une hypothèse. Se tromper dans ce sens fait agir trop
+		 * tôt, ce qui ne coûte rien.
+		 */
+		secteur: v.optional(
+			v.union(
+				v.literal('GENERAL'),
+				v.literal('TRANSPORT_MARCHANDISES'),
+				v.literal('CONSOMMATEUR'),
+				v.literal('NOURRITURE_MARINS'),
+				v.literal('FOURNITURE_NAVIRE'),
+				v.literal('OUVRAGE_ACCEPTE'),
+				v.literal('INDETERMINE')
+			)
+		),
 		adresse: v.optional(v.string()),
 		creeLe: v.number()
 	})

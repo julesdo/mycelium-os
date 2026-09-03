@@ -1,5 +1,8 @@
 import { v, ConvexError } from 'convex/values';
 import { internalMutation } from '../_generated/server';
+import { authedMutation } from '../functions';
+import { internal } from '../_generated/api';
+import { getUserOrg } from '../lib/auth';
 import type { MutationCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import { additionner, depuisCentimes, soustraire, ZERO } from '../../socle/montants';
@@ -293,6 +296,67 @@ export const repondreQuestionnaire = internalMutation({
 			qualifieeLe: complete ? Date.now() : creance.qualifieeLe
 		});
 
+		return null;
+	}
+});
+
+/**
+ * Les entrées authentifiées.
+ *
+ * Elles sont MINCES, délibérément : elles résolvent l'organisation, fournissent
+ * la date du jour, et délèguent. Toute la logique reste dans les mutations
+ * internes, qui sont celles que les tests exercent — monter le composant Better
+ * Auth pour tester coûterait plus cher que ça ne rapporterait, comme le note
+ * déjà `rgpd.test.ts`.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * LE TYPE DE RETOUR EST ANNOTÉ À LA MAIN, ET CE N'EST PAS DÉCORATIF
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Ces handlers appellent `internal.recouvrement.creances.*` — c'est-à-dire une
+ * fonction de LEUR PROPRE MODULE. Le type de `internal` inclut donc le type de
+ * ces handlers, qui dépend de `internal` : TypeScript boucle, renonce, et
+ * retombe sur `any`.
+ *
+ * Le coût de cet `any` n'est pas local. Il remonte dans le type de `api` tout
+ * entier, et TOUS les écrans perdent leur inférence d'un coup — y compris ceux
+ * d'EGalim, qui n'ont rien à voir. C'est exactement ce qui est arrivé en
+ * écrivant ces deux fonctions : dix-huit erreurs apparues dans des routes qui
+ * n'avaient pas bougé.
+ *
+ * L'annotation explicite casse le cycle. Ne pas la retirer.
+ */
+export const creer = authedMutation({
+	args: { factureIds: v.array(v.id('facturesVente')) },
+	returns: v.id('creances'),
+	handler: async (ctx, { factureIds }): Promise<Id<'creances'>> => {
+		const { organizationId } = await getUserOrg(ctx);
+		return await ctx.runMutation(internal.recouvrement.creances.creerCreance, {
+			organizationId,
+			factureIds,
+			aujourdHui: new Date().toISOString().slice(0, 10)
+		});
+	}
+});
+
+export const repondre = authedMutation({
+	args: { creanceId: v.id('creances'), reponses: vReponses },
+	returns: v.null(),
+	handler: async (ctx, { creanceId, reponses }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		// Le cloisonnement AVANT la délégation : la mutation interne fait
+		// confiance à son appelant, c'est donc ici que la barrière se pose.
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null || creance.organizationId !== organizationId) {
+			throw new ConvexError('Créance introuvable');
+		}
+
+		await ctx.runMutation(internal.recouvrement.creances.repondreQuestionnaire, {
+			creanceId,
+			reponses,
+			aujourdHui: new Date().toISOString().slice(0, 10)
+		});
 		return null;
 	}
 });
