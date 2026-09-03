@@ -41,7 +41,6 @@ import type * as i18n_translations from "../i18n/translations.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as localDev from "../localDev.js";
-import type * as maintenance from "../maintenance.js";
 import type * as notifications from "../notifications.js";
 import type * as organizations from "../organizations.js";
 import type * as paddle from "../paddle.js";
@@ -101,7 +100,6 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/crypto": typeof lib_crypto;
   localDev: typeof localDev;
-  maintenance: typeof maintenance;
   notifications: typeof notifications;
   organizations: typeof organizations;
   paddle: typeof paddle;

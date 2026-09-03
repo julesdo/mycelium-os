@@ -387,7 +387,7 @@ Le mot « garantie » reste interdit.
 
 ### Chiffres
 
-**536 tests**, 0 erreur de lint, `check`, `check:bundle` et `build` verts. La baisse depuis 714 est
+**534 tests**, 0 erreur de lint, `check`, `check:bundle` et `build` verts. La baisse depuis 714 est
 la suppression d'EGalim : aucun test survivant n'a été affaibli pour passer.
 
 ### Ce qui reste, et qui n'est toujours pas du code
@@ -540,3 +540,20 @@ Après correction, le balayage ne rend plus que sept lignes, toutes fausses posi
 cherchant les mots qu'on se rappelle avoir écrits ne trouve que ceux-là. Il faut balayer le code
 rendu sur un lexique large et trier les faux positifs — l'inverse laisse passer exactement ce qu'on
 a oublié.
+
+### La dette du déploiement est retirée le jour même
+
+Le contournement décrit plus haut — deux champs déclarés facultatifs, une mutation de purge, une
+tâche planifiée — **n'existe plus.** Sa condition d'extinction est remplie, et elle a été vérifiée
+sur les données plutôt que sur un compteur :
+
+- **Production** : `couvertsJour` et `etablissementType` sont absents de la forme inférée de
+  `organizations`, c'est-à-dire de TOUS les documents de la table. Les tables de recouvrement y
+  sont déclarées.
+- **Développement** : mêmes constats, purge observée en direct.
+
+La tâche planifiée s'était déclenchée dès le déploiement réussi, et avait nettoyé la ligne avant
+même qu'on la lui demande. Les deux champs, `maintenance.ts`, la tâche et son test sont supprimés ;
+`schema.ts` revient à un `organizations` qui ne décrit que le produit actuel.
+
+**534 tests** — deux de moins, ceux du code retiré. Aucun test survivant n'a été affaibli.
