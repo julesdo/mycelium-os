@@ -328,3 +328,72 @@ tel dans `src/app/barre.tsx`.
    introuvables.
 3. **Le décret L.126** n'est pas publié.
 4. Le connecteur vers un logiciel de facturation, écarté comme « un plus ».
+
+---
+
+## 3 septembre 2026, second temps — EGalim est retiré
+
+Décision de Jules : **on stoppe complètement EGalim.** Le remodelage cesse d'être une cohabitation
+de verticales ; il devient un changement de produit.
+
+### Ce qui a disparu
+
+Soixante-dix fichiers : la verticale, ses fonctions Convex, ses sept écrans, ses composants
+d'interface, ses trois e-mails, ses neuf tables. Le schéma ne garde que les tables transverses et
+celles du recouvrement.
+
+**La question du sélecteur de verticale — laissée ouverte la veille — s'est réglée toute seule.**
+Il n'y a plus qu'un domaine, donc plus rien à sélectionner. La barre passe de sept onglets à trois,
+et `/app` est désormais le flux de surveillance.
+
+### Ce qui a demandé un vrai travail, pas une suppression
+
+**La purge RGPD.** Elle visait les tables EGalim ; elle vise les onze du recouvrement, dans l'ordre
+des dépendances, le fichier de stockage avant la ligne qui le référence. Son test est réécrit,
+décor complet compris. Elle perd son exception : le produit épargnait `productLabels`, table
+globale qui n'appartenait à personne — le recouvrement n'a pas d'équivalent, donc la purge est
+totale, et un test le fige.
+
+**La tarification.** Elle se mesurait en couverts par jour. Elle se mesure en factures émises par
+an, avec les **mêmes seuils** et les **mêmes montants** : la transposition est mécanique et attend
+une décision commerciale.
+
+**La page d'accueil**, réécrite de bout en bout — héros, loi, quatre étapes, preuve, limites,
+tarifs, appel, pied, métadonnées de partage. L'aperçu et les démonstrations restent les **vrais**
+composants (`FluxEvenements`, `Decompte`), jamais des maquettes.
+
+### Trois défauts que seul le regard a attrapés
+
+Le fond du héros portait des **carottes et des poissons** — quatorze dessins OpenMoji choisis pour
+un produit alimentaire. L'étape 01 montrait une cuisine professionnelle, la bande de coupure une
+ligne de self.
+
+**Rien ne les remplace, et c'est assumé.** Il n'existe pas d'imagerie du recouvrement qui ne soit
+pas un cliché ; une page sans illustration vaut mieux qu'une page qui en porte une fausse. Le héros
+tient par son lavis, la bande par sa typographie, et l'étape 01 montre le **bilan d'un import** —
+y compris les deux lignes qu'il n'a pas su lire. `CREDITS.md` dit maintenant que rien n'est
+emprunté, et pourquoi.
+
+⚠️ **Si un jeu d'images propre au sujet est produit ou licencié, il revient dans
+`marketing/bandeau.tsx` et dans le fond du héros.**
+
+### Les trois lignes rouges ont changé avec le métier
+
+1. On ne relance **jamais** le débiteur au nom du client (activité encadrée).
+2. On ne manipule **jamais** de fonds.
+3. On ne recommande **jamais** une procédure (ce serait du conseil juridique).
+
+Le mot « garantie » reste interdit.
+
+### Chiffres
+
+**519 tests**, 0 erreur de lint, `check`, `check:bundle` et `build` verts. La baisse depuis 714 est
+la suppression d'EGalim : aucun test survivant n'a été affaibli pour passer.
+
+### Ce qui reste, et qui n'est toujours pas du code
+
+1. **Un avocat doit valider les valeurs relevées** — `valideParAvocat` vaut `false` partout.
+2. **Les mentions obligatoires** de la requête en injonction de payer restent introuvables.
+3. **Le décret L.126** n'est pas publié.
+4. **Les prix et les bornes de palier** ont été transposés, pas recalculés.
+5. **L'imagerie** de la page d'accueil.
