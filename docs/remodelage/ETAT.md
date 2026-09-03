@@ -387,7 +387,7 @@ Le mot « garantie » reste interdit.
 
 ### Chiffres
 
-**519 tests**, 0 erreur de lint, `check`, `check:bundle` et `build` verts. La baisse depuis 714 est
+**521 tests**, 0 erreur de lint, `check`, `check:bundle` et `build` verts. La baisse depuis 714 est
 la suppression d'EGalim : aucun test survivant n'a été affaibli pour passer.
 
 ### Ce qui reste, et qui n'est toujours pas du code
@@ -397,3 +397,47 @@ la suppression d'EGalim : aucun test survivant n'a été affaibli pour passer.
 3. **Le décret L.126** n'est pas publié.
 4. **Les prix et les bornes de palier** ont été transposés, pas recalculés.
 5. **L'imagerie** de la page d'accueil.
+
+---
+
+## Le déploiement de production, et ce qui le bloquait (3 septembre 2026)
+
+Le premier envoi en production a échoué, et pas dans le code : dans les **données**.
+
+`convex deploy` ne valide pas seulement ce qu'on lui pousse, il valide les documents **déjà en
+base** contre le nouveau schéma, et refuse le déploiement entier si un seul ne correspond pas.
+
+```
+Document ... in table "organizations" does not match the schema:
+Object contains extra field `couvertsJour` that is not in the validator.
+```
+
+Une ligne de démonstration écrite du temps de la cantine — « Chez Fernand », 1 250 couverts par
+jour — a suffi à bloquer le remodelage entier.
+
+**Ce qui ne bloquait pas, et c'est la bonne nouvelle :** les neuf tables EGalim retirées du schéma
+gardent leurs documents sans gêner personne. Convex tolère une table absente du schéma ; il ne
+tolère pas un champ absent du validateur.
+
+**Le cycle est nécessairement en deux temps**, et ce n'est pas un raccourci : le nettoyage est du
+code, et ce code ne peut tourner que sur un déploiement qui a réussi. Donc :
+
+1. `schema.ts` déclare `couvertsJour` et `etablissementType` facultatifs, dans un bloc qui dit
+   pourquoi et à quelle condition les retirer ;
+2. `maintenance.purgerHeritageEgalim` les efface — la clé, pas seulement la valeur, et le test le
+   vérifie avec `in` parce que la distinction décide si le déploiement suivant passe ;
+3. une tâche planifiée l'appelle chaque jour, et elle se déclenche dès le déploiement.
+
+Vérifié de bout en bout sur le déploiement de développement, qui portait la même ligne : poussée
+acceptée, tâche déclenchée, champs disparus du document.
+
+⚠️ **À retirer — schéma, mutation, tâche et test — dès que la mutation rapporte 0 sur deux
+passages consécutifs.** C'est la seule dette de ce remodelage, et elle porte sa propre condition
+d'extinction.
+
+### La leçon, opposable au prochain changement de schéma
+
+**Un schéma ne se relit pas contre le code, il se relit contre la base.** Retirer un champ d'un
+validateur est un changement de données déguisé en changement de code : il passe `check`, `lint`,
+les 521 tests et `build`, et casse au déploiement. Avant de retirer un champ, lire la forme
+**inférée** des documents en production — le tableau de bord Convex la donne, table par table.

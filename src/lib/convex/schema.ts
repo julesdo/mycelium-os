@@ -81,7 +81,25 @@ export default defineSchema({
 		freeTrialEndsAt: v.optional(v.number()),
 		devPlan: v.optional(v.boolean()),
 		simulatedTier: v.optional(v.string()),
-		createdAt: v.number()
+		createdAt: v.number(),
+
+		/**
+		 * HÉRITAGE EGALIM — À RETIRER, ET LA CONDITION EST VÉRIFIABLE.
+		 *
+		 * Ces deux champs ne décrivent plus rien du produit : ils mesuraient une
+		 * cantine. Ils restent déclarés parce que Convex valide les documents DÉJÀ
+		 * EN BASE contre le schéma qu'on lui pousse, et que la production porte
+		 * encore des lignes de démonstration qui les portent. Les retirer d'un coup
+		 * rendrait tout déploiement impossible — c'est exactement ce qui est arrivé.
+		 *
+		 * `maintenance.purgerHeritageEgalim` les efface, et une tâche planifiée
+		 * l'appelle chaque jour. On peut supprimer ces deux lignes ET la tâche dès
+		 * que la mutation rapporte 0 sur deux passages consécutifs.
+		 *
+		 * Rien n'écrit ces champs. Aucun code ne les lit.
+		 */
+		couvertsJour: v.optional(v.number()),
+		etablissementType: v.optional(v.string())
 	})
 		.index('by_name', ['name'])
 		.index('by_paddle_subscription', ['paddleSubscriptionId'])
