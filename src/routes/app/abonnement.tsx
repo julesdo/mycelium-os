@@ -78,8 +78,8 @@ function Abonnement() {
 						</div>
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
 							{etat.facturesParAn
-								? `Déterminé à partir des ${etat.facturesParAn} couverts par jour déclarés dans vos réglages.`
-								: 'Votre nombre de couverts par jour n’est pas renseigné : le palier le plus bas est retenu par défaut.'}{' '}
+								? `Déterminé à partir des ${etat.facturesParAn} factures par an déclarées dans vos réglages.`
+								: 'Votre volume de factures n’est pas renseigné : le palier le plus bas est retenu par défaut.'}{' '}
 							Le produit est le même à tous les paliers ; seul le prix change.{' '}
 							<Link to="/app/parametres" className="underline underline-offset-2">
 								Modifier

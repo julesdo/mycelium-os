@@ -79,7 +79,7 @@ export function Abonnement() {
 
 			<Exergue
 				phrase="C’est exactement votre cabinet comptable."
-				appui="Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les mois. Letikette fait la même chose pour votre assiette."
+				appui="Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les mois. Letikette fait la même chose pour vos impayés."
 			/>
 		</SectionMarketing>
 	);

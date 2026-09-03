@@ -387,7 +387,7 @@ Le mot « garantie » reste interdit.
 
 ### Chiffres
 
-**521 tests**, 0 erreur de lint, `check`, `check:bundle` et `build` verts. La baisse depuis 714 est
+**536 tests**, 0 erreur de lint, `check`, `check:bundle` et `build` verts. La baisse depuis 714 est
 la suppression d'EGalim : aucun test survivant n'a été affaibli pour passer.
 
 ### Ce qui reste, et qui n'est toujours pas du code
@@ -441,3 +441,75 @@ d'extinction.
 validateur est un changement de données déguisé en changement de code : il passe `check`, `lint`,
 les 521 tests et `build`, et casse au déploiement. Avant de retirer un champ, lire la forme
 **inférée** des documents en production — le tableau de bord Convex la donne, table par table.
+
+---
+
+## Les restes d'EGalim que la relecture n'avait pas vus (3 septembre 2026)
+
+Le premier passage avait réécrit les textes ; il en restait quatre, dont deux servis en
+production.
+
+**1. La page d'accueil parlait encore de carottes.** L'exergue de la section « Ce que la loi vous
+doit » disait mot pour mot : « "Local", "circuit court", "de saison" et "fait maison" ne comptent
+pas », suivi de « la carotte du maraîcher d'à côté ». C'était en ligne sur un site de recouvrement.
+Le balayage de vérification du déploiement cherchait « EGalim », « cantine », « bio », « durable » —
+pas « carotte ». Remplacé par le fait le plus surprenant du domaine : **une facture de transport se
+prescrit en un an, pas en cinq** (L133-6, sourcé dans le module France).
+
+**2. Les trois chiffres de la loi étaient recopiés à la main.** « 12,40 % », « 40 € », « 5 ans »
+étaient écrits en dur dans le composant, à côté d'une citation « art. L441-10 et L110-4 » elle
+aussi manuelle. Le taux se réancre DEUX FOIS PAR AN : la page annonçait un chiffre que le produit
+aurait cessé de calculer, à l'endroit exact qu'on lit avant d'acheter. Les trois viennent
+maintenant du registre et du module France, et la référence d'article est extraite de la source du
+paramètre. Si le taux du semestre n'est pas publié, la page affiche la RÈGLE — « BCE + 10 pts » —
+plutôt que de tomber.
+
+**3. L'écran d'entrée demandait un type d'établissement et des couverts par jour… puis les
+jetait.** Ni l'un ni l'autre n'était envoyé à `createOrganization`. Remplacés par le volume de
+factures par an, qui part vraiment et détermine le palier d'abonnement.
+
+**4. L'écran d'abonnement mentait sur son propre chiffre.** Il interpolait `facturesParAn` sous le
+libellé « couverts par jour déclarés ».
+
+### Deux garde-fous écrits, parce que deux règles n'existaient qu'en prose
+
+`CLAUDE.md` affirmait depuis le premier jour qu'« un test balaie toute l'interface » à la recherche
+du mot « garantie ». **Ce test n'existait pas.** Une règle qu'aucun code ne tient est pire que pas
+de règle : on cesse de la vérifier à la relecture.
+
+- `src/lib/__tests__/mots-interdits.test.ts` — balaie écrans, page publique et courriels.
+- `src/lib/verticales/recouvrement/__tests__/valeurs-juridiques.test.ts` — interdit toute référence
+  d'article hors du registre et des modules `pays/`. C'est ce test qui aurait attrapé le point 2.
+
+Les deux retirent les commentaires avant de chercher (`source-lisible.ts`) : un test qui ne peut pas
+se documenter finit contourné. Les deux portent une **contre-épreuve** — une chaîne délibérément
+fautive qu'ils doivent signaler — parce que « aucune occurrence » et « le détecteur ne détecte
+rien » sont autrement indiscernables. Et les deux disent ce qu'ils NE voient pas : un délai écrit
+`5` sans citation leur échappe.
+
+### Un défaut de mise en page qui durait depuis le début
+
+Mesuré au navigateur : « 12,40 % » demandait 418 pixels dans une colonne de 395 et retombait en
+deux lignes sous un `leading-none`, **à toutes les largeurs à trois colonnes**. Six pour cent de
+trop, invisibles à la lecture du code. `--text-seuil-affiche` passe de `clamp(56px, 9vw, 132px)` à
+`clamp(52px, 8.2vw, 124px)`, borne calculée sur 1024 px — la plus étroite des largeurs à trois
+colonnes, donc celle qui décide. Vérifié à 375, 768, 1024 et 1280 : une ligne partout, aucun
+débordement.
+
+### Ce qui n'a PAS pu être vérifié à l'œil, et pourquoi
+
+**`/bienvenue` est hors du showroom.** L'écran est derrière `<Authenticated>`, et le showroom ne
+rend que des composants de `src/screens/`. Sa réécriture est couverte par les types et par la
+relecture, pas par le regard — contrairement à la règle d'écran n° 3. Le porter dans
+`src/screens/bienvenue/` le rendrait vérifiable ; ce n'est pas fait.
+
+⚠️ **`bun run dev` ne démarre pas sur cette machine** : il lance un backend Convex local qui
+échoue sur `spawn unzip ENOENT`. Sans backend, tout écran authentifié reste bloqué sur « Ouverture
+de votre espace… ». **`bun run dev:cloud` fonctionne** — il vise le déploiement de développement
+distant et n'a pas besoin du backend local.
+
+### Ce qui reste EGalim et demande un arbitrage, pas une correction
+
+**Le logo est une assiette de porcelaine.** `src/ui/logo.tsx` dessine un cercle de faïence avec son
+trait de bord ; les commentaires du code parlent d'« assiette ». C'est la marque, pas un texte : ça
+se décide, ça ne se corrige pas au passage.

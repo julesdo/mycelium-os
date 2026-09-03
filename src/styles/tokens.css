@@ -305,9 +305,23 @@
 	 *
 	 * Le seul contenu qui mérite de crier est celui qui ne nous appartient pas :
 	 * les trois seuils de la loi. Ils passent donc pleine largeur, en corps
-	 * fluide, jusqu’à cent-trente-deux pixels. Aucun autre élément de la page
-	 * n'a le droit de les approcher. */
-	--text-seuil-affiche: clamp(56px, 9vw, 132px);
+	 * fluide, jusqu’à cent-vingt-quatre pixels. Aucun autre élément de la page
+	 * n'a le droit de les approcher.
+	 *
+	 * ⚠️ LA BORNE EST MESURÉE, PAS CHOISIE. Elle valait 9vw et 132px, et le
+	 * premier des trois chiffres — « 12,40 % », le plus long — DÉBORDAIT sa
+	 * colonne à toutes les largeurs à trois colonnes : il lui fallait 418 pixels
+	 * dans une colonne de 395, et il retombait en deux lignes sous un
+	 * `leading-none`. Six pour cent de trop, invisibles à la lecture du code, et
+	 * visibles sur chaque écran.
+	 *
+	 * Le rapport tient en une ligne : « 12,40 % » demande 3,63 fois son propre
+	 * corps, et la colonne ne fait que 0,303 fois la largeur de fenêtre à 1024 px
+	 * — la plus étroite des largeurs à trois colonnes, donc celle qui décide. Le
+	 * corps ne peut pas dépasser 0,303 / 3,63 = 0,083 de la fenêtre ; 8,2vw laisse
+	 * la marge qui absorbe une variation de fonte. Avant de monter cette valeur,
+	 * remesurer à 1024 px — le plus long des trois chiffres décide. */
+	--text-seuil-affiche: clamp(52px, 8.2vw, 124px);
 
 	/* LE RAYON DE TOUT CE QUI EST POSÉ SUR LA PAGE, et il n'y en a plus qu'un.
 	 *

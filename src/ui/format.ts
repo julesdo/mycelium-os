@@ -57,3 +57,39 @@ export function dateCourte(iso: string): string {
 	if (annee === undefined || mois === undefined || jour === undefined) return iso;
 	return DATE_COURTE.format(new Date(Date.UTC(annee, mois - 1, jour)));
 }
+
+/**
+ * Un taux, rendu lisible. LA DIVISION N'A LIEU QU'ICI.
+ *
+ * Les taux du décompte sont des fractions exactes — le taux BCE majoré de dix
+ * points ne tombe pas juste en décimal. Tout le produit les transporte sous
+ * cette forme, du paramètre juridique jusqu'à l'écran, précisément pour que
+ * l'arrondi n'entre jamais dans un chiffre qu'on réclame.
+ *
+ * Cette fonction ne rend qu'une chaîne : on ne peut pas recalculer avec son
+ * résultat, et c'est voulu.
+ */
+export function tauxLisible(taux: { numerateur: bigint; denominateur: bigint }): string {
+	const pourMille = (taux.numerateur * 10_000n) / taux.denominateur;
+	const entier = pourMille / 100n;
+	const decimales = (pourMille % 100n).toString().padStart(2, '0');
+	return `${entier},${decimales} %`;
+}
+
+/**
+ * Un montant en centimes, sans ses centimes QUAND ILS SONT NULS.
+ *
+ * POUR L'AFFICHAGE SEULEMENT, et jamais sur un décompte. `eurosCentimes` garde
+ * toujours ses deux décimales parce que le centime affiché est celui qu'on
+ * réclame, et que le débiteur le refera à la main. Mais un montant légal rond,
+ * posé en corps de soixante-dix pixels sur la page d'accueil, n'a pas de
+ * centimes à montrer : « 40,00 € » y déborde sa colonne pour ne rien ajouter.
+ *
+ * LA RÈGLE EST STRICTE. On ne raccourcit QUE si les centimes valent zéro :
+ * 40,50 € reste 40,50 €. Il n'y a pas d'arrondi ici, seulement l'omission d'un
+ * zéro qui ne dit rien.
+ */
+export function eurosCentimesCourts(centimes: bigint): string {
+	const long = eurosCentimes(centimes);
+	return centimes % 100n === 0n ? long.replace(',00', '') : long;
+}

@@ -8,7 +8,7 @@ import {
 	CollapsibleIndicator
 } from '@cladd-ui/react';
 import { ChevronDownIcon } from 'lucide-react';
-import { eurosCentimes, dateCourte } from './format';
+import { eurosCentimes, dateCourte, tauxLisible } from './format';
 import {
 	Tableau,
 	TableauEntete,
@@ -78,14 +78,6 @@ const CONVENTION_LISIBLE: Record<DecompteAffiche['convention'], string> = {
 	ACT_365: 'base fixe de 365 jours',
 	ACT_ACT: 'base réelle de l’année (365 ou 366 jours)'
 };
-
-/** Une fraction exacte, rendue lisible. La division n'a lieu qu'ici. */
-function tauxLisible(taux: SegmentAffiche['taux']): string {
-	const pourMille = (taux.numerateur * 10_000n) / taux.denominateur;
-	const entier = pourMille / 100n;
-	const decimales = (pourMille % 100n).toString().padStart(2, '0');
-	return `${entier},${decimales} %`;
-}
 
 function Poste({ libelle, montant }: { libelle: string; montant: bigint }) {
 	return (
@@ -172,9 +164,7 @@ export function Decompte({ decompte }: { decompte: DecompteAffiche }) {
 										ligne.segments.length > 1 ? 's' : ''
 									}`}
 									<CollapsibleIndicator className="text-cladd-fg-soft">
-										{({ open }) => (
-											<ChevronDownIcon className={open ? 'rotate-180' : undefined} />
-										)}
+										{({ open }) => <ChevronDownIcon className={open ? 'rotate-180' : undefined} />}
 									</CollapsibleIndicator>
 								</Button>
 							</CollapsibleTrigger>
@@ -189,8 +179,7 @@ export function Decompte({ decompte }: { decompte: DecompteAffiche }) {
 						</CollapsibleRoot>
 					) : (
 						<p className="text-cladd-xs text-cladd-fg-soft">
-							Aucune période d’intérêts : la facture n’était pas encore exigible à la date
-							d’arrêté.
+							Aucune période d’intérêts : la facture n’était pas encore exigible à la date d’arrêté.
 						</p>
 					)}
 				</Surface>
