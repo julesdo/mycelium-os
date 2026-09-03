@@ -38,39 +38,39 @@ import {
  */
 export const PLAN_FEATURES = {
 	none: {
-		depotFactures: false,
-		diagnostic: false,
-		declaration: false,
-		suiviMensuel: false
+		importFactures: false,
+		surveillance: false,
+		procedures: false,
+		decompte: false
 	},
-	diagnostic: {
-		depotFactures: true,
-		diagnostic: true,
-		declaration: false,
-		suiviMensuel: false
+	suivi: {
+		importFactures: true,
+		surveillance: true,
+		procedures: false,
+		decompte: true
 	},
-	conformite: {
-		depotFactures: true,
-		diagnostic: true,
-		declaration: true,
-		suiviMensuel: true
+	procedures: {
+		importFactures: true,
+		surveillance: true,
+		procedures: true,
+		decompte: true
 	},
 	dev: {
-		depotFactures: true,
-		diagnostic: true,
-		declaration: true,
-		suiviMensuel: true
+		importFactures: true,
+		surveillance: true,
+		procedures: true,
+		decompte: true
 	}
 } as const;
 
-export type PlanFeature = keyof (typeof PLAN_FEATURES)['conformite'];
-export type PlanTier = 'none' | 'diagnostic' | 'conformite' | 'dev';
+export type PlanFeature = keyof (typeof PLAN_FEATURES)['procedures'];
+export type PlanTier = 'none' | 'suivi' | 'procedures' | 'dev';
 
-// Nombre d'utilisateurs autorisés par étage (une cantine = 1 à 3 personnes)
+// Nombre d'utilisateurs autorisés par étage
 export const PLAN_SEATS: Record<PlanTier, number> = {
 	none: 0,
-	diagnostic: 2,
-	conformite: 3,
+	suivi: 2,
+	procedures: 3,
 	dev: 9999
 };
 
@@ -119,17 +119,17 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
 
 	// Active Paddle subscription
 	if (org.paddleStatus === 'active' || org.paddleStatus === 'trialing') {
-		const tier = (org.paddlePlanTier ?? 'conformite') as PlanTier;
+		const tier = (org.paddlePlanTier ?? 'procedures') as PlanTier;
 		return {
 			tier,
 			isDev: false,
-			seatsAllowed: org.seatsIncluded ?? PLAN_SEATS[tier] ?? PLAN_SEATS.diagnostic
+			seatsAllowed: org.seatsIncluded ?? PLAN_SEATS[tier] ?? PLAN_SEATS.suivi
 		};
 	}
 
 	// L'ESSAI. Voir `DUREE_ESSAI_JOURS` pour la règle et ce qu'elle évite.
 	if (org.freeTrialEndsAt && org.freeTrialEndsAt > Date.now()) {
-		return { tier: 'conformite', isDev: false, seatsAllowed: PLAN_SEATS.conformite };
+		return { tier: 'procedures', isDev: false, seatsAllowed: PLAN_SEATS.procedures };
 	}
 
 	return { tier: 'none', isDev: false, seatsAllowed: PLAN_SEATS.none };
@@ -225,14 +225,14 @@ export const etatAbonnement = authedQuery({
 		if (!org) return null;
 
 		const { tier, isDev, seatsAllowed } = resolveEffectivePlan(org);
-		const palier = palierDeTaille(org.couvertsJour);
+		const palier = palierDeTaille(org.facturesParAn);
 
 		return {
 			tier,
 			isDev,
 			palier,
 			bornesPalier: BORNES_PALIER[palier],
-			couvertsJour: org.couvertsJour ?? null,
+			facturesParAn: org.facturesParAn ?? null,
 			tarifs: TARIFS[palier],
 			seatsAllowed,
 			paddleStatus: org.paddleStatus ?? null,

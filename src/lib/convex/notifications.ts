@@ -4,12 +4,11 @@ import { authedQuery, authedMutation } from './functions';
 
 // ─── Notification type shared validator ───────────────────────────────────────
 const notificationTypeValidator = v.union(
-	v.literal('FACTURES_RECUES'),
-	v.literal('DIAGNOSTIC_PRET'),
-	v.literal('LIGNES_A_ARBITRER'),
-	v.literal('RATIO_EN_DERIVE'),
-	v.literal('DECLARATION_A_FAIRE'),
-	v.literal('ATTESTATION_MANQUANTE'),
+	v.literal('IMPORT_TERMINE'),
+	v.literal('CREANCE_MURE'),
+	v.literal('ECHEANCE_PROCHE'),
+	v.literal('PRESCRIPTION_PROCHE'),
+	v.literal('DEBITEUR_DEGRADE'),
 	v.literal('HUMAN_ASSIST_REPLY')
 );
 

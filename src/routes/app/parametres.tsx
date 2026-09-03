@@ -7,9 +7,7 @@ import {
 	Surface,
 	SectionTitle,
 	Segmented,
-	SegmentedButton,
-	ToggleGroup,
-	ToggleButton
+	SegmentedButton
 } from '@cladd-ui/react';
 import {
 	CheckIcon,
@@ -26,17 +24,6 @@ import { useTheme } from '../../app/use-theme';
 import { Page, PageHeader, PageBody, Champ } from '../../ui';
 
 export const Route = createFileRoute('/app/parametres')({ component: Parametres });
-
-const TYPES = [
-	{ cle: 'RIE', nom: 'Restaurant inter-entreprises' },
-	{ cle: 'CLINIQUE', nom: 'Clinique ou établissement de santé' },
-	{ cle: 'EHPAD', nom: 'EHPAD' },
-	{ cle: 'CRECHE', nom: 'Crèche' },
-	{ cle: 'ECOLE_PRIVEE', nom: 'École privée' },
-	{ cle: 'AUTRE', nom: 'Autre' }
-] as const;
-
-type TypeEtablissement = (typeof TYPES)[number]['cle'];
 
 /**
  * Une section de réglages, dans sa carte.
@@ -88,8 +75,7 @@ function Parametres() {
 							key={org._id}
 							initial={{
 								nom: org.name ?? '',
-								type: (org.etablissementType as TypeEtablissement | undefined) ?? 'AUTRE',
-								couverts: org.couvertsJour ? String(org.couvertsJour) : '',
+								factures: org.facturesParAn ? String(org.facturesParAn) : '',
 								siret: org.siret ?? ''
 							}}
 							onEnregistrer={mettreAJour}
@@ -125,7 +111,7 @@ function Parametres() {
 					*/}
 					<Reglage titre="Votre abonnement">
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Votre offre et son tarif dépendent du nombre de couverts que vous servez chaque jour.
+							Votre offre et son tarif dépendent du nombre de factures que vous émettez chaque année.
 							Le produit est le même à tous les paliers.
 						</p>
 						<Button as={Link} to="/app/abonnement" className="self-start">
@@ -190,17 +176,15 @@ function FormulaireEtablissement({
 	initial,
 	onEnregistrer
 }: {
-	initial: { nom: string; type: TypeEtablissement; couverts: string; siret: string };
+	initial: { nom: string; factures: string; siret: string };
 	onEnregistrer: (args: {
 		name: string;
-		etablissementType?: TypeEtablissement;
-		couvertsJour?: number;
+		facturesParAn?: number;
 		siret?: string;
 	}) => Promise<unknown>;
 }) {
 	const [nom, setNom] = useState(initial.nom);
-	const [type, setType] = useState<TypeEtablissement>(initial.type);
-	const [couverts, setCouverts] = useState(initial.couverts);
+	const [factures, setFactures] = useState(initial.factures);
 	const [siret, setSiret] = useState(initial.siret);
 	const [enCours, setEnCours] = useState(false);
 	const [enregistre, setEnregistre] = useState(false);
@@ -209,11 +193,11 @@ function FormulaireEtablissement({
 		if (!nom.trim()) return;
 		setEnCours(true);
 		try {
-			const nb = Number.parseInt(couverts, 10);
+			const nb = Number.parseInt(factures, 10);
 			await onEnregistrer({
 				name: nom.trim(),
-				etablissementType: type,
-				...(Number.isFinite(nb) && nb > 0 ? { couvertsJour: nb } : {}),
+
+				...(Number.isFinite(nb) && nb > 0 ? { facturesParAn: nb } : {}),
 				...(siret.trim() ? { siret: siret.replace(/\s/g, '') } : {})
 			});
 			setEnregistre(true);
@@ -229,33 +213,17 @@ function FormulaireEtablissement({
 				<Input value={nom} onChange={setNom} name="organisation" />
 			</Champ>
 
-			<div className="flex flex-col gap-cladd-3xs">
-				<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Type</span>
-				<ToggleGroup
-					value={type}
-					onValueChange={(v) => {
-						// Un groupe simple se déselectionne au second clic ; un type
-						// d'établissement est obligatoire, donc on ignore le vide.
-						if (typeof v === 'string') setType(v as TypeEtablissement);
-					}}
-					className="flex flex-wrap gap-cladd-3xs"
-				>
-					{TYPES.map((t) => (
-						<ToggleButton key={t.cle} value={t.cle}>
-							{t.nom}
-						</ToggleButton>
-					))}
-				</ToggleGroup>
-			</div>
-
 			<div className="grid gap-cladd-2xs sm:grid-cols-2">
-				<Champ etiquette="Couverts par jour">
-					<Input type="number" value={couverts} onChange={setCouverts} name="couverts" />
+				<Champ
+					etiquette="Factures émises par an"
+					aide="Sert à dimensionner votre abonnement, jamais à limiter le produit."
+				>
+					<Input type="number" value={factures} onChange={setFactures} name="factures" />
 				</Champ>
 
 				<Champ
-					etiquette="SIRET"
-					aide="Nécessaire à la télédéclaration de mars, pas au calcul de vos taux."
+					etiquette="SIREN"
+					aide="Il identifie votre entreprise sur les actes. Sans lui, aucune procédure ne peut être engagée."
 				>
 					<Input value={siret} onChange={setSiret} name="siret" />
 				</Champ>

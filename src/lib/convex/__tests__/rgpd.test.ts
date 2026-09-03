@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { convexTest } from 'convex-test';
 import schema from '../schema';
 import { internal } from '../_generated/api';
+import type { Id } from '../_generated/dataModel';
 import { requireOrgAdmin, requireOrgMember } from '../lib/auth';
 
 /**
@@ -33,115 +34,137 @@ const modules = Object.fromEntries(
 	])
 );
 
-/** Un établissement peuplé : trois lignes, un document, un dépôt, un bilan, un fournisseur. */
+/**
+ * Un établissement peuplé : un import, un débiteur, deux factures, un
+ * règlement, une pièce et sa liaison, une créance, un décompte, un dossier.
+ *
+ * TOUTES LES TABLES CLOISONNÉES Y SONT REPRÉSENTÉES, et c'est le point : une
+ * purge partielle est le pire des résultats, parce qu'elle rend le manquement
+ * INVISIBLE — l'établissement a disparu de l'interface, donc tout a l'air fait,
+ * pendant que les factures restent en base.
+ */
 async function poserEtablissement(t: ReturnType<typeof convexTest>) {
 	return await t.run(async (ctx) => {
 		const organizationId = await ctx.db.insert('organizations', {
-			name: 'Clinique des Ormes',
+			name: 'Thumbbb Agency',
 			createdAt: Date.now()
 		});
 
-		const batchId = await ctx.db.insert('invoiceBatches', {
+		await ctx.db.insert('profilsCreancier', {
 			organizationId,
-			label: 'Exercice 2026',
-			periodStart: '2026-01-01',
-			periodEnd: '2026-12-31',
-			status: 'READY',
-			uploadedBy: 'user_admin',
-			documentsTotal: 1,
-			linesTotal: 3,
-			labelsPendingReview: 0,
-			createdAt: Date.now()
+			denomination: 'Thumbbb Agency',
+			estCommercant: 'ok',
+			majLe: Date.now()
 		});
 
 		const storageId = await ctx.storage.store(new Blob([String.fromCharCode(65)]));
-		const documentId = await ctx.db.insert('invoiceDocuments', {
+		await ctx.db.insert('importsRecouvrement', {
 			organizationId,
-			batchId,
 			storageId,
-			filename: 'facture-001.pdf',
-			mimeType: 'application/pdf',
-			sourceType: 'PDF_TEXT',
-			extractionStatus: 'DONE',
-			linesCount: 3
+			filename: 'export-2026.txt',
+			mimeType: 'text/plain',
+			mode: 'EXPORT_COMPTABLE',
+			statut: 'TERMINE',
+			deposeLe: Date.now()
 		});
 
-		for (const libelle of ['TOMATE GRAPPE BIO', 'FILET CABILLAUD MSC', 'HUILE TOURNESOL']) {
-			await ctx.db.insert('invoiceLines', {
+		const debiteurId = await ctx.db.insert('debiteurs', {
+			organizationId,
+			denomination: 'Fournitures Durand',
+			denominationNormalisee: 'FOURNITURES DURAND',
+			denominationsBrutes: ['Fournitures Durand'],
+			estCommercant: 'ok',
+			santeFinanciere: 'SAINE',
+			creeLe: Date.now()
+		});
+
+		const creanceId = await ctx.db.insert('creances', {
+			organizationId,
+			debiteurId,
+			statut: 'QUALIFIEE',
+			certaine: 'ok',
+			liquide: 'ok',
+			exigible: 'ok',
+			entreCommercants: 'ok',
+			creeLe: Date.now()
+		});
+
+		let premiereFacture: Id<'facturesVente'> | null = null;
+		for (const reference of ['FA-2026-001', 'FA-2026-002']) {
+			const factureId = await ctx.db.insert('facturesVente', {
 				organizationId,
-				batchId,
-				documentId,
-				rawLabel: libelle,
-				normalizedLabel: libelle,
-				amountHT: 100,
-				invoiceDate: '2026-03-01',
-				reviewStatus: 'AUTO'
+				debiteurId,
+				creanceId,
+				reference,
+				montantHT: 0n,
+				montantTTC: 1_000_000n,
+				dateEmission: '2026-03-01',
+				dateEcheance: '2026-04-01',
+				dateExigibilite: '2026-04-01',
+				exigibiliteDeduite: true,
+				statutPaiement: 'IMPAYEE',
+				creeLe: Date.now()
 			});
+			premiereFacture ??= factureId;
 		}
 
-		await ctx.db.insert('suppliers', {
+		await ctx.db.insert('reglements', {
 			organizationId,
-			name: 'Metro',
-			rawNames: ['METRO CASH'],
-			type: 'GROSSISTE',
-			attestationStatus: 'NONE'
+			factureId: premiereFacture!,
+			date: '2026-06-01',
+			montant: 400_000n,
+			nature: 'PAIEMENT',
+			creeLe: Date.now()
 		});
 
-		await ctx.db.insert('classificationJobs', {
+		const pieceStorageId = await ctx.storage.store(new Blob([String.fromCharCode(66)]));
+		const pieceId = await ctx.db.insert('pieces', {
 			organizationId,
-			batchId,
-			status: 'DONE',
-			labelsTotal: 3,
-			labelsDone: 3,
-			labelsFailed: 0,
-			tokensIn: 10,
-			tokensOut: 10,
-			cacheReadTokens: 0,
-			costEur: 0.01,
-			startedAt: Date.now()
+			type: 'BON_DE_LIVRAISON',
+			storageId: pieceStorageId,
+			filename: 'bl-001.pdf',
+			debiteurId,
+			ajouteeLe: Date.now()
+		});
+		await ctx.db.insert('piecesFactures', {
+			organizationId,
+			pieceId,
+			factureId: premiereFacture!
 		});
 
-		await ctx.db.insert('diagnostics', {
+		await ctx.db.insert('decomptes', {
 			organizationId,
-			batchId,
-			periodStart: '2026-01-01',
-			periodEnd: '2026-12-31',
-			computedAt: Date.now(),
-			classifierVersion: 'test',
-			ratios: { durable: 0.39, bio: 0.21, meatFishDurable: 0.42, totalFoodHT: 300, totalHT: 300 },
-			byFamily: [],
-			bySupplier: [],
-			gapEuros: { toDurable50: 33, toBio20: 0, toMeatFish60: 11 },
-			status: 'DELIVERED'
+			creanceId,
+			arreteAu: '2026-09-03',
+			convention: 'ACT_365',
+			principalRestantDu: 1_600_000n,
+			interets: 41_368n,
+			indemniteForfaitaire: 8_000n,
+			total: 1_649_368n,
+			lignes: [],
+			produitLe: Date.now()
+		});
+
+		await ctx.db.insert('dossiers', {
+			organizationId,
+			creanceId,
+			procedureCle: 'injonction-de-payer',
+			etat: 'PREPARATION',
+			echeances: [],
+			creeLe: Date.now()
 		});
 
 		await ctx.db.insert('notifications', {
 			organizationId,
 			userId: 'user_admin',
-			type: 'DIAGNOSTIC_PRET',
-			title: 'Votre bilan est prêt',
-			message: 'Exercice 2026',
+			type: 'CREANCE_MURE',
+			title: 'Une créance est mûre',
+			message: 'Fournitures Durand',
 			isRead: false,
 			createdAt: Date.now()
 		});
 
-		// Le référentiel global : il ne porte le nom d'aucune organisation et ne
-		// doit JAMAIS partir avec elle.
-		await ctx.db.insert('productLabels', {
-			normalizedLabel: 'TOMATE GRAPPE BIO',
-			isFood: true,
-			family: 'FRUITS_LEGUMES',
-			qualifyingLabels: ['AB'],
-			justification: 'La mention AB atteste la certification biologique.',
-			confidence: 0.98,
-			source: 'HUMAN',
-			confirmationsCount: 4,
-			contested: false,
-			classifierVersion: 'test',
-			occurrences: 12
-		});
-
-		return { organizationId, batchId };
+		return { organizationId, debiteurId };
 	});
 }
 
@@ -155,12 +178,16 @@ describe("la purge d'un établissement", () => {
 		await t.run(async (ctx) => {
 			expect(await ctx.db.get(organizationId)).toBeNull();
 			for (const table of [
-				'invoiceLines',
-				'invoiceDocuments',
-				'invoiceBatches',
-				'suppliers',
-				'diagnostics',
-				'classificationJobs',
+				'reglements',
+				'facturesVente',
+				'piecesFactures',
+				'pieces',
+				'importsRecouvrement',
+				'decomptes',
+				'dossiers',
+				'creances',
+				'debiteurs',
+				'profilsCreancier',
 				'notifications'
 			] as const) {
 				const restant = await ctx.db.query(table).collect();
@@ -169,29 +196,20 @@ describe("la purge d'un établissement", () => {
 		});
 	});
 
-	it('laisse intact le référentiel global de libellés', async () => {
-		// C'est la garantie que le schéma promet et que la politique de
-		// confidentialité répète : `productLabels` ne contient ni montant, ni
-		// fournisseur, ni organisation, ni utilisateur. Elle n'appartient à
-		// personne, et l'effacer sous couvert d'effacer de la donnée client
-		// ferait repayer à tous les autres une classification déjà tranchée.
+	it('n’épargne aucune table : rien n’est mutualisé entre clients', async () => {
+		// Le produit a un temps porté un référentiel global de libellés,
+		// expressément exclu de la purge parce qu'il n'appartenait à personne. Le
+		// recouvrement n'a pas d'équivalent : un débiteur, un montant et une
+		// échéance sont des données client, toujours. La purge est donc totale,
+		// et ce test le fige.
 		const t = convexTest(schema, modules);
 		const { organizationId } = await poserEtablissement(t);
 
 		await t.mutation(internal.rgpd.purgerEtablissement, { organizationId, passe: 0 });
 
 		await t.run(async (ctx) => {
-			const referentiel = await ctx.db.query('productLabels').collect();
-			expect(referentiel).toHaveLength(1);
-			// DÉSTRUCTURATION, ET NI `[0]` NI `.at(0)`. Le typecheck qu'exécute
-			// `convex deploy` n'est pas celui de `bun run check:convex` : il active
-			// `noUncheckedIndexedAccess`, qui refuse `referentiel[0].x`, ET il vise
-			// une bibliothèque antérieure à ES2022, où `Array.prototype.at`
-			// n'existe pas. Les deux se sont découvertes l'une après l'autre, sur
-			// un déploiement de production échoué. La forme ci-dessous passe les
-			// deux.
-			const [premier] = referentiel;
-			expect(premier?.normalizedLabel).toBe('TOMATE GRAPPE BIO');
+			expect(await ctx.db.query('debiteurs').collect()).toHaveLength(0);
+			expect(await ctx.db.query('facturesVente').collect()).toHaveLength(0);
 		});
 	});
 
@@ -207,11 +225,11 @@ describe("la purge d'un établissement", () => {
 
 		await t.run(async (ctx) => {
 			expect(await ctx.db.get(b.organizationId)).not.toBeNull();
-			const lignes = await ctx.db
-				.query('invoiceLines')
-				.withIndex('by_org_and_date', (q) => q.eq('organizationId', b.organizationId))
+			const factures = await ctx.db
+				.query('facturesVente')
+				.withIndex('by_org', (q) => q.eq('organizationId', b.organizationId))
 				.collect();
-			expect(lignes).toHaveLength(3);
+			expect(factures).toHaveLength(2);
 		});
 	});
 

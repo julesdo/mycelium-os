@@ -1,27 +1,16 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useRouterState, useNavigate, CatchBoundary } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+
 import {
 	Surface,
 	SurfaceCut,
 	Segmented,
 	SegmentedButton,
 	SearchField,
-	Button,
-	Chip
+	Button
 } from '@cladd-ui/react';
-import {
-	CameraIcon,
-	GaugeIcon,
-	CheckCheckIcon,
-	FileTextIcon,
-	FileCheck2Icon,
-	SettingsIcon,
-	InboxIcon,
-	UsersIcon,
-	UploadIcon
-} from 'lucide-react';
-import { api } from '../lib/convex/_generated/api';
+import { CameraIcon, SettingsIcon, InboxIcon, UsersIcon, UploadIcon } from 'lucide-react';
+
 import { cn } from '../ui/cn';
 import { LogoLetikette, MotLetikette } from '../ui/logo';
 import { SelecteurEtablissement } from './selecteur-etablissement';
@@ -53,29 +42,18 @@ import { SelecteurEtablissement } from './selecteur-etablissement';
  */
 
 /**
- * Les entrées, recouvrement d'abord.
+ * Les entrées de la barre.
  *
- * ⚠️ CETTE BARRE MÉLANGE DEUX VERTICALES, ET C'EST UN PROVISOIRE ASSUMÉ.
- *
- * « À traiter / Débiteurs / Importer » relèvent du recouvrement ; « Mes taux /
- * À confirmer / Produits / Bilans » d'EGalim. Un même gérant n'utilise
- * normalement qu'un des deux, et une barre qui les met à plat lui demande de
- * trier sept icônes dont quatre ne le concernent pas.
- *
- * La structure juste est un sélecteur de verticale — comme le sélecteur
- * d'établissement à droite — qui ne montre que les onglets du domaine ouvert.
- * C'est une décision de produit, pas de code : elle attend Jules.
- *
- * En attendant, l'ordre porte la direction : le recouvrement est en tête.
+ * TROIS, ET UNE SEULE VERTICALE. La barre a brièvement porté sept onglets —
+ * quatre d'EGalim, trois du recouvrement — et demandait au gérant de trier des
+ * icônes dont la moitié ne le concernait pas. La question d’un sélecteur de
+ * verticale s'est réglée toute seule en supprimant EGalim : il n'y a plus
+ * qu'un domaine.
  */
 const ENTREES = [
-	{ to: '/app/recouvrement', label: 'À traiter', Icone: InboxIcon },
+	{ to: '/app', label: 'À traiter', Icone: InboxIcon },
 	{ to: '/app/debiteurs', label: 'Débiteurs', Icone: UsersIcon },
-	{ to: '/app/import-factures', label: 'Importer', Icone: UploadIcon },
-	{ to: '/app', label: 'Mes taux', Icone: GaugeIcon },
-	{ to: '/app/confirmer', label: 'À confirmer', Icone: CheckCheckIcon },
-	{ to: '/app/produits', label: 'Produits', Icone: FileTextIcon },
-	{ to: '/app/diagnostics', label: 'Bilans', Icone: FileCheck2Icon }
+	{ to: '/app/import-factures', label: 'Importer', Icone: UploadIcon }
 ] as const;
 
 function useActif() {
@@ -102,60 +80,25 @@ function Facultatif({ children }: { children: ReactNode }) {
 }
 
 /**
- * Le nombre de produits qui attendent le gérant.
+ * La recherche de débiteur.
  *
- * La requête est délibérément la plus légère du produit : elle est abonnée
- * depuis tous les écrans, et elle rend deux nombres, jamais la file.
- */
-function useEnAttente(): number {
-	const attente = useQuery(api.egalim.confirmation.compterAConfirmer, {});
-	return attente?.produits ?? 0;
-}
-
-function PastilleChip() {
-	const enAttente = useEnAttente();
-	if (enAttente === 0) return null;
-	// `size="sm"` : la rampe imbriquée de Cladd retire 8px, un chip `sm` dans un
-	// bouton `md` tombe donc à la bonne proportion sans qu'on écrive une seule
-	// hauteur.
-	return (
-		<Chip size="sm" color="brand">
-			{enAttente}
-		</Chip>
-	);
-}
-
-function PastilleRonde() {
-	const enAttente = useEnAttente();
-	if (enAttente === 0) return null;
-	return (
-		<span className="absolute top-0.5 right-1/4 flex min-w-4 items-center justify-center rounded-full bg-cladd-primary px-1 text-cladd-4xs font-bold text-cladd-on-primary tabular-nums">
-			{enAttente}
-		</span>
-	);
-}
-
-/**
- * La recherche de produit.
- *
- * Elle n'est pas un ornement de barre : c'est la seule porte d'entrée vers
- * « je veux revoir ce que vous avez décidé sur les carottes ». Sans elle, un
- * produit mal classé n'est plus atteignable une fois sorti de la file de
- * confirmation — et il pèse pourtant sur le taux toute l'année.
+ * Elle n'est pas un ornement de barre : c'est la porte d'entrée vers « je
+ * veux revoir où en est Fournitures Durand ». Sans elle, un débiteur sorti
+ * du flux n'est plus atteignable qu'en parcourant une liste.
  */
 function Recherche() {
 	const navigate = useNavigate();
-	const [terme, setTerme] = useState('');
+	const [terme, setTerme] = useState(String());
 
 	return (
 		<SearchField
 			value={terme}
 			onChange={setTerme}
-			placeholder="Rechercher un produit"
+			placeholder="Rechercher un débiteur"
 			className="hidden w-64 lg:block"
 			onKeyDown={(e) => {
 				if (e.key !== 'Enter') return;
-				void navigate({ to: '/app/produits', search: { q: terme } });
+				void navigate({ to: '/app/debiteurs' });
 			}}
 		/>
 	);
@@ -224,11 +167,6 @@ export function Barre() {
 								>
 									<Icone />
 									{ici ? <span className="hidden lg:inline">{label}</span> : null}
-									{to === '/app/confirmer' ? (
-										<Facultatif>
-											<PastilleChip />
-										</Facultatif>
-									) : null}
 								</SegmentedButton>
 							);
 						})}
@@ -313,11 +251,6 @@ export function BarreBasse() {
 						>
 							<Icone size={20} />
 							<span className="text-cladd-4xs leading-none font-medium">{label}</span>
-							{to === '/app/confirmer' ? (
-								<Facultatif>
-									<PastilleRonde />
-								</Facultatif>
-							) : null}
 						</Link>
 					);
 				})}

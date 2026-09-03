@@ -1,7 +1,6 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { vEmailEvent } from '@convex-dev/resend';
-import { egalimTables } from './egalim/tables';
 import { recouvrementTables } from './recouvrement/tables';
 
 export default defineSchema({
@@ -48,19 +47,15 @@ export default defineSchema({
 	organizations: defineTable({
 		name: v.string(),
 		siret: v.optional(v.string()),
-		// Profil cantine
-		etablissementType: v.optional(
-			v.union(
-				v.literal('RIE'),
-				v.literal('CLINIQUE'),
-				v.literal('EHPAD'),
-				v.literal('CRECHE'),
-				v.literal('ECOLE_PRIVEE'),
-				v.literal('AUTRE')
-			)
-		),
-		couvertsJour: v.optional(v.number()),
-		gestionDirecte: v.optional(v.boolean()),
+		/**
+		 * Le volume de factures émises par an — ce qui dimensionne l'abonnement.
+		 *
+		 * Il remplace le nombre de couverts par jour, qui mesurait une cantine.
+		 * Facultatif : sans lui, le palier le plus bas s'applique, parce que
+		 * facturer trop cher une entreprise qui n'a pas rempli son profil serait
+		 * le pire des défauts.
+		 */
+		facturesParAn: v.optional(v.number()),
 		logoUrl: v.optional(v.string()),
 		logoStorageId: v.optional(v.id('_storage')),
 		// Localisation — figée FR pour la phase POC
@@ -71,9 +66,7 @@ export default defineSchema({
 		// Paddle billing — étages commerciaux EGalim
 		paddleSubscriptionId: v.optional(v.string()),
 		paddleCustomerId: v.optional(v.string()),
-		paddlePlanTier: v.optional(
-			v.union(v.literal('diagnostic'), v.literal('conformite'))
-		),
+		paddlePlanTier: v.optional(v.union(v.literal('suivi'), v.literal('procedures'))),
 		paddleStatus: v.optional(
 			v.union(
 				v.literal('active'),
@@ -134,12 +127,11 @@ export default defineSchema({
 		organizationId: v.id('organizations'),
 		userId: v.string(), // destinataire (Better Auth string ID)
 		type: v.union(
-			v.literal('FACTURES_RECUES'),
-			v.literal('DIAGNOSTIC_PRET'),
-			v.literal('LIGNES_A_ARBITRER'),
-			v.literal('RATIO_EN_DERIVE'),
-			v.literal('DECLARATION_A_FAIRE'),
-			v.literal('ATTESTATION_MANQUANTE'),
+			v.literal('IMPORT_TERMINE'),
+			v.literal('CREANCE_MURE'),
+			v.literal('ECHEANCE_PROCHE'),
+			v.literal('PRESCRIPTION_PROCHE'),
+			v.literal('DEBITEUR_DEGRADE'),
 			v.literal('HUMAN_ASSIST_REPLY')
 		),
 		title: v.string(),
@@ -159,12 +151,7 @@ export default defineSchema({
 	// - agent:streamingDeltas - Real-time streaming chunks
 	// - agent:embeddings - Vector embeddings for semantic search
 
-	// ── Domaine EGalim (Moulinette Audit) ───────────────────────────────────────
-	// Voir src/lib/convex/egalim/tables.ts
-	...egalimTables,
-
 	// ── Domaine recouvrement de créances B2B ────────────────────────────────────
-	// Voir src/lib/convex/recouvrement/tables.ts. Aucune table partagée avec
-	// EGalim : les deux verticales cohabitent sans se connaître.
+	// Voir src/lib/convex/recouvrement/tables.ts.
 	...recouvrementTables
 });

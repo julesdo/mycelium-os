@@ -11,18 +11,20 @@ import {
 } from '../billing';
 
 describe('les étages', () => {
-	it('donne le bilan aux deux étages payants', () => {
-		expect(planHasFeature('diagnostic', 'diagnostic')).toBe(true);
-		expect(planHasFeature('conformite', 'diagnostic')).toBe(true);
+	it('donne la surveillance aux deux étages payants', () => {
+		expect(planHasFeature('suivi', 'surveillance')).toBe(true);
+		expect(planHasFeature('procedures', 'surveillance')).toBe(true);
 	});
 
-	it("réserve la télédéclaration et le suivi mensuel à l'abonnement", () => {
-		// C'est la seule différence entre les deux offres du business plan, et
-		// c'est elle qui justifie de payer tous les mois plutôt qu'une fois.
-		expect(planHasFeature('diagnostic', 'declaration')).toBe(false);
-		expect(planHasFeature('diagnostic', 'suiviMensuel')).toBe(false);
-		expect(planHasFeature('conformite', 'declaration')).toBe(true);
-		expect(planHasFeature('conformite', 'suiviMensuel')).toBe(true);
+	it("réserve les procédures à l'étage supérieur", () => {
+		// C'est la SEULE différence entre les deux offres, et c'est elle qui
+		// justifie de payer tous les mois. Chiffrer une créance est ouvert dès le
+		// premier étage : sans décompte, la surveillance ne dit que « il se passe
+		// quelque chose » sans jamais dire combien.
+		expect(planHasFeature('suivi', 'procedures')).toBe(false);
+		expect(planHasFeature('suivi', 'decompte')).toBe(true);
+		expect(planHasFeature('procedures', 'procedures')).toBe(true);
+		expect(planHasFeature('procedures', 'decompte')).toBe(true);
 	});
 
 	it("n'ouvre rien sans abonnement", () => {
@@ -38,29 +40,28 @@ describe('les étages', () => {
 	});
 
 	it('définit un quota de sièges pour chaque étage payant', () => {
-		expect(PLAN_SEATS.diagnostic).toBeGreaterThan(0);
-		expect(PLAN_SEATS.conformite).toBeGreaterThan(PLAN_SEATS.diagnostic);
+		expect(PLAN_SEATS.suivi).toBeGreaterThan(0);
+		expect(PLAN_SEATS.procedures).toBeGreaterThan(PLAN_SEATS.suivi);
 	});
 
 	it("n'expose que des fonctionnalités qui existent vraiment", () => {
-		// Ce test est le garde contre la rechute. `sourcing` et
-		// `veilleReglementaire` figuraient ici sans avoir jamais été construits, et
-		// l'étage `operateur` n'a plus de porteur commercial. Une grille tarifaire
-		// bâtie dessus aurait vendu du vide.
-		expect(Object.keys(PLAN_FEATURES.conformite).sort()).toEqual([
-			'declaration',
-			'depotFactures',
-			'diagnostic',
-			'suiviMensuel'
+		// Ce test est le garde contre la rechute : des fonctionnalités ont déjà
+		// figuré dans cette grille sans avoir jamais été construites. Une grille
+		// tarifaire bâtie dessus vendrait du vide.
+		expect(Object.keys(PLAN_FEATURES.procedures).sort()).toEqual([
+			'decompte',
+			'importFactures',
+			'procedures',
+			'surveillance'
 		]);
-		expect(Object.keys(PLAN_FEATURES).sort()).toEqual(['conformite', 'dev', 'diagnostic', 'none']);
+		expect(Object.keys(PLAN_FEATURES).sort()).toEqual(['dev', 'none', 'procedures', 'suivi']);
 	});
 });
 
 describe('le palier de taille', () => {
 	// Les bornes viennent du document 03 du business plan. Elles décident du
 	// PRIX, jamais des fonctionnalités.
-	it('range sous 250 couverts en S', () => {
+	it('range sous 250 factures par an en S', () => {
 		expect(palierDeTaille(80)).toBe('S');
 		expect(palierDeTaille(249)).toBe('S');
 	});
@@ -119,9 +120,9 @@ describe("l'essai", () => {
 		// L'essai donne le PLUS HAUT étage, pas le plus bas : un essai qui cache la
 		// moitié du produit ne fait pas essayer le produit.
 		const { tier, seatsAllowed } = resolveEffectivePlan(org(Date.now() + 60_000));
-		expect(tier).toBe('conformite');
-		expect(seatsAllowed).toBe(PLAN_SEATS.conformite);
-		expect(planHasFeature(tier, 'declaration')).toBe(true);
+		expect(tier).toBe('procedures');
+		expect(seatsAllowed).toBe(PLAN_SEATS.procedures);
+		expect(planHasFeature(tier, 'procedures')).toBe(true);
 	});
 
 	it('ne rouvre rien une fois expiré', () => {

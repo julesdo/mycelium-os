@@ -143,13 +143,12 @@ export const deleteTestUser = mutation({
 });
 
 /**
- * Purge les artefacts EGalim laissés par une exécution : lots, documents,
- * lignes, diagnostics et demandes d'attestation des organisations de test.
+ * Purge les artefacts laissés par une exécution : imports, factures,
+ * règlements, créances, décomptes et dossiers des organisations de test.
  *
- * `productLabels` est délibérément ÉPARGNÉE. C'est le cache global de
- * classification, sans lien vers aucune organisation : ce qu'une exécution y
- * dépose est du référentiel produit, pas de la donnée de test, et le vider
- * ferait repayer les mêmes classifications à chaque passage.
+ * RIEN N'EST ÉPARGNÉ, contrairement à la version EGalim de cette fonction qui
+ * préservait un cache global de libellés. Le recouvrement n'a pas d'équivalent :
+ * tout y est de la donnée client.
  */
 export const cleanupTestData = mutation({
 	args: { secret: v.string() },
@@ -162,51 +161,28 @@ export const cleanupTestData = mutation({
 
 		let supprimes = 0;
 		for (const org of orgsDeTest) {
-			const lots = await ctx.db
-				.query('invoiceBatches')
-				.withIndex('by_org', (q) => q.eq('organizationId', org._id))
-				.collect();
-
-			for (const lot of lots) {
-				for (const table of ['invoiceLines', 'invoiceDocuments'] as const) {
-					const docs = await ctx.db
-						.query(table)
-						.withIndex('by_batch', (q) => q.eq('batchId', lot._id))
-						.collect();
-					for (const d of docs) {
-						await ctx.db.delete(d._id);
-						supprimes++;
-					}
-				}
-
-				const diagnostics = await ctx.db
-					.query('diagnostics')
-					.withIndex('by_batch', (q) => q.eq('batchId', lot._id))
+			// L'ordre suit les dépendances : ce qui référence part avant ce qui
+			// est référencé, pour ne jamais laisser d'orphelin derrière soi.
+			for (const table of [
+				'reglements',
+				'piecesFactures',
+				'facturesVente',
+				'pieces',
+				'decomptes',
+				'dossiers',
+				'creances',
+				'debiteurs',
+				'profilsCreancier',
+				'importsRecouvrement'
+			] as const) {
+				const docs = await ctx.db
+					.query(table)
+					.withIndex('by_org', (q) => q.eq('organizationId', org._id))
 					.collect();
-				for (const d of diagnostics) {
-					const demandes = await ctx.db
-						.query('attestationRequests')
-						.withIndex('by_diagnostic', (q) => q.eq('diagnosticId', d._id))
-						.collect();
-					for (const demande of demandes) {
-						await ctx.db.delete(demande._id);
-						supprimes++;
-					}
-					await ctx.db.delete(d._id);
+				for (const doc of docs) {
+					await ctx.db.delete(doc._id);
 					supprimes++;
 				}
-
-				const jobs = await ctx.db
-					.query('classificationJobs')
-					.withIndex('by_batch', (q) => q.eq('batchId', lot._id))
-					.collect();
-				for (const j of jobs) {
-					await ctx.db.delete(j._id);
-					supprimes++;
-				}
-
-				await ctx.db.delete(lot._id);
-				supprimes++;
 			}
 		}
 

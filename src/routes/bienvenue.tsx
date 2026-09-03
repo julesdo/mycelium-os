@@ -88,11 +88,8 @@ function Bienvenue() {
 		setErreur(null);
 		setEnCours(true);
 		try {
-			const nb = Number.parseInt(couverts, 10);
 			await creer({
 				name: nom.trim(),
-				etablissementType: type,
-				...(Number.isFinite(nb) && nb > 0 ? { couvertsJour: nb } : {}),
 				...(siret.trim() ? { siret: siret.replace(/\s/g, '') } : {})
 			});
 			await navigate({ to: '/app' });

@@ -16,8 +16,8 @@ import { messageDErreur } from '../equipe/equipe';
  *
  * L'INVENTAIRE VIENT AVANT LES BOUTONS, et ce n'est pas de la décoration. « Vous
  * allez supprimer toutes vos données » ne dit rien : le gérant ne sait pas ce
- * qu'il perd, donc soit il n'ose pas, soit il ose sans savoir. « 1 842 lignes,
- * 47 factures, 2 bilans » se comprend en une seconde.
+ * qu'il perd, donc soit il n'ose pas, soit il ose sans savoir. « 312 factures,
+ * 47 débiteurs, 2 décomptes » se comprend en une seconde.
  *
  * LA CONFIRMATION EST UNE SAISIE, PAS UNE CASE. Le nom de l'établissement pour
  * le supprimer, l'adresse du compte pour le fermer. C'est le seul garde-fou qui
@@ -30,10 +30,9 @@ export type ApercuDonnees = {
 	estAdmin: boolean;
 	creeLe: number;
 	depots: number;
-	documents: number;
-	lignes: number;
-	bilans: number;
-	fournisseurs: number;
+	factures: number;
+	decomptes: number;
+	debiteurs: number;
 	membres: number;
 };
 
@@ -63,9 +62,9 @@ export function Donnees({
 	return (
 		<div className="flex max-w-180 flex-col gap-cladd-2xs">
 			<Inventaire apercu={apercu} />
-			{/* L'export n'est offert qu'à l'administrateur : douze mois de factures,
-			    ce sont des prix négociés et une liste de fournisseurs, c'est-à-dire
-			    le secret des affaires du client. Le serveur le refuse aussi. */}
+			{/* L'export n'est offert qu'à l'administrateur : c'est le carnet de
+			    clients de l'entreprise, ses encours et ses impayés, c'est-à-dire son
+			    secret des affaires. Le serveur le refuse aussi. */}
 			{apercu.estAdmin ? <Export onExporter={onExporter} /> : null}
 			{apercu.estAdmin ? (
 				<SupprimerEtablissement apercu={apercu} onSupprimer={onSupprimerEtablissement} />
@@ -77,11 +76,10 @@ export function Donnees({
 
 function Inventaire({ apercu }: { apercu: ApercuDonnees }) {
 	const lignes: readonly { quoi: string; combien: string }[] = [
-		{ quoi: 'Dépôts de factures', combien: NOMBRE.format(apercu.depots) },
-		{ quoi: 'Fichiers déposés', combien: NOMBRE.format(apercu.documents) },
-		{ quoi: 'Lignes de facture lues', combien: NOMBRE.format(apercu.lignes) },
-		{ quoi: 'Bilans produits', combien: NOMBRE.format(apercu.bilans) },
-		{ quoi: 'Fournisseurs identifiés', combien: NOMBRE.format(apercu.fournisseurs) },
+		{ quoi: 'Fichiers importés', combien: NOMBRE.format(apercu.depots) },
+		{ quoi: 'Factures enregistrées', combien: NOMBRE.format(apercu.factures) },
+		{ quoi: 'Débiteurs identifiés', combien: NOMBRE.format(apercu.debiteurs) },
+		{ quoi: 'Décomptes arrêtés', combien: NOMBRE.format(apercu.decomptes) },
 		{ quoi: 'Personnes ayant accès', combien: NOMBRE.format(apercu.membres) }
 	];
 
@@ -196,14 +194,15 @@ function SupprimerEtablissement({
 	return (
 		<SectionEcran titre="Supprimer l’établissement">
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Ses {NOMBRE.format(apercu.lignes)} lignes de facture, ses {NOMBRE.format(apercu.documents)}{' '}
-				fichiers, ses {NOMBRE.format(apercu.bilans)} bilans et ses signatures sont effacés
-				définitivement. Il n’y a pas de corbeille : le règlement demande l’effacement, pas la mise
-				de côté. Les {apercu.membres} personnes qui y accèdent en perdent l’accès immédiatement.
+				Ses {NOMBRE.format(apercu.factures)} factures, ses {NOMBRE.format(apercu.debiteurs)}{' '}
+				débiteurs, ses {NOMBRE.format(apercu.decomptes)} décomptes et les pièces qui les
+				soutiennent sont effacés définitivement. Il n’y a pas de corbeille : le règlement demande
+				l’effacement, pas la mise de côté. Les {apercu.membres} personnes qui y accèdent en
+				perdent l’accès immédiatement.
 			</p>
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Si vous avez besoin de ces chiffres plus tard — un contrôle porte sur trois exercices —
-				préparez votre export avant.
+				Si vous avez besoin de ces chiffres plus tard — une créance se prescrit en plusieurs
+				années — préparez votre export avant.
 			</p>
 
 			{erreur ? (
@@ -221,7 +220,7 @@ function SupprimerEtablissement({
 				</DialogTrigger>
 				<Dialog
 					title={`Supprimer ${apercu.nomEtablissement} ?`}
-					text={`Cette action est définitive. ${NOMBRE.format(apercu.lignes)} lignes de facture et ${NOMBRE.format(apercu.bilans)} bilan(s) seront effacés. Saisissez le nom exact de l’établissement pour confirmer.`}
+					text={`Cette action est définitive. ${NOMBRE.format(apercu.factures)} facture(s) et ${NOMBRE.format(apercu.decomptes)} décompte(s) seront effacés. Saisissez le nom exact de l’établissement pour confirmer.`}
 					requireConfirmText={apercu.nomEtablissement}
 					cancelButtonText="Annuler"
 					confirmButtonText="Supprimer définitivement"

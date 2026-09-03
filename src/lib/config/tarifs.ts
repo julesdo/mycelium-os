@@ -29,19 +29,25 @@
 /**
  * Le palier de taille, qui décide du PRIX et jamais des fonctionnalités.
  *
- * Un établissement de mille couverts reçoit exactement le même produit qu'un
- * établissement de deux cents ; il le paie plus cher parce que la valeur diffère,
- * pas la prestation.
+ * Une entreprise qui émet trois mille factures par an reçoit exactement le même
+ * produit qu'une qui en émet trois cents ; elle le paie plus cher parce que la
+ * valeur diffère, pas la prestation.
+ *
+ * ⚠️ LES BORNES ONT ÉTÉ TRANSPOSÉES, PAS RECALCULÉES. Elles reprenaient le
+ * nombre de factures par an d'une cantine ; elles portent maintenant un
+ * volume de factures annuel, avec les mêmes seuils numériques. Les montants,
+ * eux, n'ont pas bougé d'un euro. Les uns comme les autres relèvent d'une
+ * décision commerciale et attendent Jules.
  */
 export const PALIERS = ['S', 'M', 'L'] as const;
 export type PalierTaille = (typeof PALIERS)[number];
 
-export function palierDeTaille(couvertsJour: number | undefined): PalierTaille {
-	// Sans information, on retient le palier le plus bas : facturer trop cher un
-	// établissement qui n'a pas rempli son profil serait le pire des défauts.
-	if (!couvertsJour || couvertsJour <= 0) return 'S';
-	if (couvertsJour < 250) return 'S';
-	if (couvertsJour <= 800) return 'M';
+export function palierDeTaille(facturesParAn: number | undefined): PalierTaille {
+	// Sans information, on retient le palier le plus bas : facturer trop cher une
+	// entreprise qui n'a pas rempli son profil serait le pire des défauts.
+	if (!facturesParAn || facturesParAn <= 0) return 'S';
+	if (facturesParAn < 250) return 'S';
+	if (facturesParAn <= 800) return 'M';
 	return 'L';
 }
 
@@ -61,9 +67,9 @@ export const TARIFS: Record<PalierTaille, { bilan: number; abonnementMensuel: nu
 
 /** Ce que chaque palier recouvre, pour l'afficher sans faire deviner. */
 export const BORNES_PALIER: Record<PalierTaille, string> = {
-	S: 'moins de 250 couverts par jour',
-	M: 'de 250 à 800 couverts par jour',
-	L: 'plus de 800 couverts par jour'
+	S: 'moins de 250 factures par an',
+	M: 'de 250 à 800 factures par an',
+	L: 'plus de 800 factures par an'
 };
 
 /** La même borne, en trois mots, pour un sélecteur qui doit tenir sur 375 px. */

@@ -77,8 +77,8 @@ function Abonnement() {
 							<span className="text-cladd-sm text-cladd-fg-soft">{etat.bornesPalier}</span>
 						</div>
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
-							{etat.couvertsJour
-								? `Déterminé à partir des ${etat.couvertsJour} couverts par jour déclarés dans vos réglages.`
+							{etat.facturesParAn
+								? `Déterminé à partir des ${etat.facturesParAn} couverts par jour déclarés dans vos réglages.`
 								: 'Votre nombre de couverts par jour n’est pas renseigné : le palier le plus bas est retenu par défaut.'}{' '}
 							Le produit est le même à tous les paliers ; seul le prix change.{' '}
 							<Link to="/app/parametres" className="underline underline-offset-2">
@@ -94,7 +94,7 @@ function Abonnement() {
 							cadence="une fois"
 							description="Douze mois de factures lus en une fois. Vous saurez où vous en êtes, et ce qu’il manque, en euros."
 							colonne="bilan"
-							actif={etat.tier === 'diagnostic'}
+							actif={etat.tier === 'suivi'}
 						/>
 						<Offre
 							titre="L’abonnement"
@@ -102,7 +102,7 @@ function Abonnement() {
 							cadence="par mois"
 							description="Votre chiffre reste à jour toute l’année, et votre déclaration de mars est prête avant mars."
 							colonne="abonnement"
-							actif={etat.tier === 'conformite'}
+							actif={etat.tier === 'procedures'}
 							recommande
 						/>
 					</div>

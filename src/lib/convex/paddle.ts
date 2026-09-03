@@ -39,10 +39,10 @@ export function identifiantPrix(
  * Balaye les six combinaisons plutôt que de comparer trois variables : ajouter
  * un palier ne demandera pas de revenir ici.
  */
-function resolvePlanTier(priceId: string): 'diagnostic' | 'conformite' | null {
+function resolvePlanTier(priceId: string): 'suivi' | 'procedures' | null {
 	for (const palier of PALIERS) {
-		if (priceId === identifiantPrix('DIAGNOSTIC', palier)) return 'diagnostic';
-		if (priceId === identifiantPrix('CONFORMITE', palier)) return 'conformite';
+		if (priceId === identifiantPrix('DIAGNOSTIC', palier)) return 'suivi';
+		if (priceId === identifiantPrix('CONFORMITE', palier)) return 'procedures';
 	}
 	return null;
 }

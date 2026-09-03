@@ -30,13 +30,12 @@ import { requireAdminDeLOrgCourante, requireOrgMember } from './lib/auth';
  *    demande l'effacement, pas la mise de côté. Un « supprimé » qui reste
  *    lisible en base est un manquement, et il se découvre au pire moment.
  *
- * 3. `productLabels` N'EST JAMAIS TOUCHÉE. C'est la table globale de
- *    classification de libellés, et le schéma garantit qu'elle ne contient ni
- *    montant, ni quantité, ni fournisseur, ni organisation, ni utilisateur :
- *    « TOMATE GRAPPE BIO CAT.1 » n'appartient à personne. La retirer
- *    reviendrait à détruire du référentiel produit sous couvert d'effacer de la
- *    donnée client, et à faire repayer à tous les autres clients une
- *    classification déjà tranchée.
+ * 3. RIEN N'EST MUTUALISÉ, DONC RIEN N'EST ÉPARGNÉ. Le produit a un temps
+ *    porté une table globale de classification de libellés, expressément
+ *    exclue de la purge parce qu'elle n'appartenait à personne. Le recouvrement
+ *    n'a pas d'équivalent : un débiteur, un montant, une échéance sont des
+ *    données client, toujours. La purge est donc totale, sans exception à
+ *    justifier.
  */
 
 // ── Ce que l'écran affiche avant d'agir ──────────────────────────────────────
@@ -59,10 +58,9 @@ export const apercuDeMesDonnees = authedQuery({
 			estAdmin: v.boolean(),
 			creeLe: v.number(),
 			depots: v.number(),
-			documents: v.number(),
-			lignes: v.number(),
-			bilans: v.number(),
-			fournisseurs: v.number(),
+			factures: v.number(),
+			decomptes: v.number(),
+			debiteurs: v.number(),
 			membres: v.number()
 		})
 	),
@@ -79,15 +77,19 @@ export const apercuDeMesDonnees = authedQuery({
 		if (!org) return null;
 
 		const depots = await ctx.db
-			.query('invoiceBatches')
+			.query('importsRecouvrement')
 			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
 			.collect();
-		const bilans = await ctx.db
-			.query('diagnostics')
+		const decomptes = await ctx.db
+			.query('decomptes')
 			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
 			.collect();
-		const fournisseurs = await ctx.db
-			.query('suppliers')
+		const debiteurs = await ctx.db
+			.query('debiteurs')
+			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+			.collect();
+		const factures = await ctx.db
+			.query('facturesVente')
 			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
 			.collect();
 		const membres = await ctx.db
@@ -100,10 +102,9 @@ export const apercuDeMesDonnees = authedQuery({
 			estAdmin: membership.role === 'ORG_ADMIN',
 			creeLe: org.createdAt,
 			depots: depots.length,
-			documents: depots.reduce((n, b) => n + b.documentsTotal, 0),
-			lignes: depots.reduce((n, b) => n + b.linesTotal, 0),
-			bilans: bilans.length,
-			fournisseurs: fournisseurs.length,
+			factures: factures.length,
+			decomptes: decomptes.length,
+			debiteurs: debiteurs.length,
 			membres: membres.length
 		};
 	}
@@ -150,24 +151,24 @@ const vPage = v.object({
 
 const PAR_PAGE = 400;
 
-export const _pageDeLignes = internalQuery({
+export const _pageDeFactures = internalQuery({
 	args: { organizationId: v.id('organizations'), curseur: v.union(v.string(), v.null()) },
 	returns: vPage,
 	handler: async (ctx, { organizationId, curseur }) => {
 		const page = await ctx.db
-			.query('invoiceLines')
-			.withIndex('by_org_and_date', (q) => q.eq('organizationId', organizationId))
+			.query('facturesVente')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.paginate({ cursor: curseur, numItems: PAR_PAGE });
 		return { elements: page.page, curseur: page.continueCursor, fini: page.isDone };
 	}
 });
 
-export const _pageDeDocuments = internalQuery({
+export const _pageDeReglements = internalQuery({
 	args: { organizationId: v.id('organizations'), curseur: v.union(v.string(), v.null()) },
 	returns: vPage,
 	handler: async (ctx, { organizationId, curseur }) => {
 		const page = await ctx.db
-			.query('invoiceDocuments')
+			.query('reglements')
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.paginate({ cursor: curseur, numItems: PAR_PAGE });
 		return { elements: page.page, curseur: page.continueCursor, fini: page.isDone };
@@ -175,10 +176,10 @@ export const _pageDeDocuments = internalQuery({
 });
 
 /**
- * Tout ce qui tient en une lecture : l'établissement, ses dépôts, ses bilans,
- * ses fournisseurs, ses signatures, ses membres. Ces tables se comptent en
- * dizaines de lignes, jamais en milliers — seules les lignes de facture et les
- * documents demandent une pagination.
+ * Tout ce qui tient en une lecture : l'établissement, ses dépôts, ses créances,
+ * ses décomptes, ses dossiers, ses débiteurs, ses membres. Ces tables se
+ * comptent en dizaines de lignes — seules les factures et les règlements
+ * demandent une pagination.
  */
 export const _entetesExport = internalQuery({
 	args: { organizationId: v.id('organizations') },
@@ -186,26 +187,30 @@ export const _entetesExport = internalQuery({
 	handler: async (ctx, { organizationId }) => {
 		const org = await ctx.db.get(organizationId);
 
-		const [depots, bilans, fournisseurs, signatures, demandes, membres, invitations] =
+		const [depots, creances, decomptes, dossiers, debiteurs, pieces, membres, invitations] =
 			await Promise.all([
 				ctx.db
-					.query('invoiceBatches')
+					.query('importsRecouvrement')
 					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 					.collect(),
 				ctx.db
-					.query('diagnostics')
+					.query('creances')
 					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 					.collect(),
 				ctx.db
-					.query('suppliers')
+					.query('decomptes')
 					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 					.collect(),
 				ctx.db
-					.query('bilanSignatures')
+					.query('dossiers')
 					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 					.collect(),
 				ctx.db
-					.query('attestationRequests')
+					.query('debiteurs')
+					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+					.collect(),
+				ctx.db
+					.query('pieces')
 					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 					.collect(),
 				ctx.db
@@ -218,7 +223,7 @@ export const _entetesExport = internalQuery({
 					.collect()
 			]);
 
-		return { org, depots, bilans, fournisseurs, signatures, demandes, membres, invitations };
+		return { org, depots, creances, decomptes, dossiers, debiteurs, pieces, membres, invitations };
 	}
 });
 
@@ -227,10 +232,11 @@ type Contexte = { organizationId: Id<'organizations'>; nomEtablissement: string 
 type Entetes = {
 	org: unknown;
 	depots: unknown[];
-	bilans: unknown[];
-	fournisseurs: unknown[];
-	signatures: unknown[];
-	demandes: unknown[];
+	creances: unknown[];
+	decomptes: unknown[];
+	dossiers: unknown[];
+	debiteurs: unknown[];
+	pieces: unknown[];
 	membres: unknown[];
 	invitations: unknown[];
 };
@@ -264,26 +270,26 @@ export const exporterMesDonnees = action({
 
 		const entetes: Entetes = await ctx.runQuery(internal.rgpd._entetesExport, { organizationId });
 
-		const lignes: unknown[] = [];
+		const factures: unknown[] = [];
 		let curseur: string | null = null;
 		for (;;) {
 			const page: { elements: unknown[]; curseur: string; fini: boolean } = await ctx.runQuery(
-				internal.rgpd._pageDeLignes,
+				internal.rgpd._pageDeFactures,
 				{ organizationId, curseur }
 			);
-			lignes.push(...page.elements);
+			factures.push(...page.elements);
 			if (page.fini) break;
 			curseur = page.curseur;
 		}
 
-		const documents: unknown[] = [];
+		const reglements: unknown[] = [];
 		curseur = null;
 		for (;;) {
 			const page: { elements: unknown[]; curseur: string; fini: boolean } = await ctx.runQuery(
-				internal.rgpd._pageDeDocuments,
+				internal.rgpd._pageDeReglements,
 				{ organizationId, curseur }
 			);
-			documents.push(...page.elements);
+			reglements.push(...page.elements);
 			if (page.fini) break;
 			curseur = page.curseur;
 		}
@@ -294,18 +300,19 @@ export const exporterMesDonnees = action({
 				exportLe: new Date().toISOString(),
 				etablissement: nomEtablissement,
 				format: 'JSON, une clé par table',
-				note: "Cet export contient l'intégralité des données détenues pour cet établissement, à l'exception du référentiel global de classification de libellés, qui ne contient ni montant, ni fournisseur, ni identité, et n'appartient à aucun client."
+				note: "Cet export contient l'INTÉGRALITÉ des données détenues pour cet établissement. Aucune table n'en est exclue : rien n'est mutualisé entre clients."
 			},
 			etablissement: entetes.org,
 			membres: entetes.membres,
 			invitations: entetes.invitations,
 			depots: entetes.depots,
-			documents,
-			lignesDeFacture: lignes,
-			fournisseurs: entetes.fournisseurs,
-			bilans: entetes.bilans,
-			signatures: entetes.signatures,
-			demandesAttestation: entetes.demandes
+			debiteurs: entetes.debiteurs,
+			factures,
+			reglements,
+			pieces: entetes.pieces,
+			creances: entetes.creances,
+			decomptes: entetes.decomptes,
+			dossiers: entetes.dossiers
 		};
 
 		const json = JSON.stringify(contenu, null, 2);
@@ -321,7 +328,7 @@ export const exporterMesDonnees = action({
 		return {
 			url,
 			octets: blob.size,
-			lignes: lignes.length,
+			lignes: factures.length + reglements.length,
 			nomFichier: `letikette-export-${new Date().toISOString().slice(0, 10)}.json`
 		};
 	}
@@ -414,54 +421,66 @@ export const purgerEtablissement = internalMutation({
 			});
 		};
 
-		// 1. Les lignes de facture — de très loin le plus gros volume.
+		// 1. Les règlements — le plus gros volume : plusieurs par facture.
 		if (encore()) {
-			const lignes = await ctx.db
-				.query('invoiceLines')
-				.withIndex('by_org_and_date', (q) => q.eq('organizationId', organizationId))
+			const reglements = await ctx.db
+				.query('reglements')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 				.take(budget);
-			for (const l of lignes) await ctx.db.delete(l._id);
-			budget -= lignes.length;
+			for (const r of reglements) await ctx.db.delete(r._id);
+			budget -= reglements.length;
 		}
 
-		// 2. Les journaux de classification. Ils n'ont d'index que par dépôt : on
-		//    les prend dépôt par dépôt, avant que les dépôts ne disparaissent.
+		// 2. Les factures de vente.
+		if (encore()) {
+			const factures = await ctx.db
+				.query('facturesVente')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.take(budget);
+			for (const f of factures) await ctx.db.delete(f._id);
+			budget -= factures.length;
+		}
+
+		// 3. Les pièces, leur contenu dans le stockage, et leurs liaisons.
+		//    Le fichier part AVANT la ligne qui le référence : l'inverse laisserait
+		//    un objet orphelin dans le stockage, que plus rien ne désigne et que
+		//    personne ne saurait retrouver pour l'effacer.
+		if (encore()) {
+			budget = await viderParIndexOrg(ctx, 'piecesFactures', organizationId, budget);
+		}
+		if (encore()) {
+			const pieces = await ctx.db
+				.query('pieces')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.take(budget);
+			for (const piece of pieces) {
+				await effacerDuStockage(ctx, piece.storageId);
+				await ctx.db.delete(piece._id);
+			}
+			budget -= pieces.length;
+		}
+
+		// 4. Les fichiers déposés, et leur contenu dans le stockage.
 		if (encore()) {
 			const depots = await ctx.db
-				.query('invoiceBatches')
-				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-				.take(20);
-			for (const d of depots) {
-				if (!encore()) break;
-				const jobs = await ctx.db
-					.query('classificationJobs')
-					.withIndex('by_batch', (q) => q.eq('batchId', d._id))
-					.take(budget);
-				for (const j of jobs) await ctx.db.delete(j._id);
-				budget -= jobs.length;
-			}
-		}
-
-		// 3. Les fichiers déposés, et leur contenu dans le stockage.
-		if (encore()) {
-			const docs = await ctx.db
-				.query('invoiceDocuments')
+				.query('importsRecouvrement')
 				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 				.take(budget);
-			for (const d of docs) {
-				await effacerDuStockage(ctx, d.storageId);
-				await ctx.db.delete(d._id);
+			for (const depot of depots) {
+				await effacerDuStockage(ctx, depot.storageId);
+				await ctx.db.delete(depot._id);
 			}
-			budget -= docs.length;
+			budget -= depots.length;
 		}
 
-		// 4. Le reste, table par table.
-		budget = await viderParIndexOrg(ctx, 'attestationRequests', organizationId, budget);
-		budget = await viderParIndexOrg(ctx, 'bilanSignatures', organizationId, budget);
-		budget = await viderParIndexOrg(ctx, 'diagnostics', organizationId, budget);
-		budget = await viderParIndexOrg(ctx, 'suppliers', organizationId, budget);
+		// 5. Le reste, table par table. L'ordre suit les dépendances : ce qui est
+		//    référencé part après ce qui le référence.
+		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'dossiers', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'creances', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'debiteurs', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'profilsCreancier', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'notifications', organizationId, budget);
-		budget = await viderParIndexOrg(ctx, 'invoiceBatches', organizationId, budget);
 
 		if (budget <= 0) {
 			await replanifier();
@@ -626,12 +645,13 @@ type CtxEcriture = MutationCtx;
 async function viderParIndexOrg(
 	ctx: CtxEcriture,
 	table:
-		| 'attestationRequests'
-		| 'bilanSignatures'
-		| 'diagnostics'
-		| 'suppliers'
-		| 'notifications'
-		| 'invoiceBatches',
+		| 'piecesFactures'
+		| 'decomptes'
+		| 'dossiers'
+		| 'creances'
+		| 'debiteurs'
+		| 'profilsCreancier'
+		| 'notifications',
 	organizationId: Id<'organizations'>,
 	budget: number
 ): Promise<number> {

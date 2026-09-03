@@ -55,18 +55,7 @@ export const createOrganization = authedMutation({
 	args: {
 		name: v.string(),
 		siret: v.optional(v.string()),
-		etablissementType: v.optional(
-			v.union(
-				v.literal('RIE'),
-				v.literal('CLINIQUE'),
-				v.literal('EHPAD'),
-				v.literal('CRECHE'),
-				v.literal('ECOLE_PRIVEE'),
-				v.literal('AUTRE')
-			)
-		),
-		couvertsJour: v.optional(v.number()),
-		gestionDirecte: v.optional(v.boolean())
+		facturesParAn: v.optional(v.number())
 	},
 	handler: async (ctx, args) => {
 		if (!args.name.trim()) throw new ConvexError('Le nom est obligatoire');
@@ -85,9 +74,7 @@ export const createOrganization = authedMutation({
 		const orgId = await ctx.db.insert('organizations', {
 			name: args.name.trim(),
 			siret: args.siret,
-			etablissementType: args.etablissementType,
-			couvertsJour: args.couvertsJour,
-			gestionDirecte: args.gestionDirecte,
+			facturesParAn: args.facturesParAn,
 			country: 'FR',
 			currency: 'EUR',
 			timezone: 'Europe/Paris',
@@ -185,18 +172,7 @@ export const updateOrganization = authedMutation({
 	args: {
 		name: v.string(),
 		siret: v.optional(v.string()),
-		etablissementType: v.optional(
-			v.union(
-				v.literal('RIE'),
-				v.literal('CLINIQUE'),
-				v.literal('EHPAD'),
-				v.literal('CRECHE'),
-				v.literal('ECOLE_PRIVEE'),
-				v.literal('AUTRE')
-			)
-		),
-		couvertsJour: v.optional(v.number()),
-		gestionDirecte: v.optional(v.boolean())
+		facturesParAn: v.optional(v.number())
 	},
 	handler: async (ctx, args) => {
 		if (!args.name.trim()) throw new ConvexError('Le nom est obligatoire');
@@ -206,9 +182,7 @@ export const updateOrganization = authedMutation({
 		await ctx.db.patch(orgId, {
 			name: args.name.trim(),
 			siret: args.siret,
-			etablissementType: args.etablissementType,
-			couvertsJour: args.couvertsJour,
-			gestionDirecte: args.gestionDirecte
+			facturesParAn: args.facturesParAn,
 		});
 	}
 });

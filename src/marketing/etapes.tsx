@@ -1,17 +1,14 @@
 import { useState, type ReactNode } from 'react';
-import { Button } from '@cladd-ui/react';
+import { Button, Chip, Surface } from '@cladd-ui/react';
 import { RotateCcwIcon } from 'lucide-react';
 import {
 	cn,
-	CarteProduit,
-	FilTravail,
-	Repartition,
+	FluxEvenements,
+	Decompte,
 	EmptyState,
-	type Proposition,
-	type DocumentEnCours,
-	type LigneFamille
+	type EvenementAffiche,
+	type DecompteAffiche
 } from '../ui';
-import { useVisible, useCompteur } from './mouvement';
 import { SectionMarketing, TitreSection, Cadre, Inventaire } from './section';
 
 /**
@@ -28,134 +25,117 @@ import { SectionMarketing, TitreSection, Cadre, Inventaire } from './section';
  * égales, ce qui produit deux colonnes parallèles sur toute la hauteur, un
  * couloir vide au milieu, et aucune raison pour l'œil de descendre. Le texte
  * n'a pas besoin d'autant de place qu'un écran ; lui en donner autant est une
- * décision de gabarit, pas une décision de lecture.
- *
- * LE SENS DE LECTURE ALTERNE, une étape sur deux. C'est le balancement qui fait
- * avancer, et il ne coûte qu'un `order` au-delà de `lg`.
- *
- * LES CADRES SONT RÉSERVÉS AUX ÉCRANS. Le texte vit à même le papier ; ce qui
- * est encadré, c'est ce qui est MONTRÉ — une capture de l'interface, une
- * photographie. C'est la règle qui empêche la page de redevenir une grille de
- * cartes, et elle se vérifie d'un coup d'œil : s'il y a une bordure, il y a une
- * preuve derrière.
- *
- * PLUS D'APPARITION AU DÉFILEMENT, et pour deux raisons cumulées.
- *
- * La première est un défaut réel : le rendu serveur ne connaît pas
- * `IntersectionObserver`, il posait donc `animate-apparition` là où le
- * navigateur posait `opacity-0` à l'hydratation. React signalait la divergence à
- * chaque chargement de la page d'accueil, et une section entière restait
- * momentanément transparente selon qui gagnait la course.
- *
- * La seconde est de fond : un bloc qui se dévoile en fondu quand on descend est
- * la signature exacte du gabarit qu'on quitte. Une page qui doit dire « rigueur
- * juridique » n'a pas à faire de l'effet en défilant ; ses sections sont là,
- * comme les articles d'un contrat le sont.
- *
- * `useVisible` reste employé, mais pour ce à quoi il sert vraiment : DÉCLENCHER
- * une démonstration — la montée des jauges, la progression de lecture — jamais
- * pour décider si un texte est visible. Dans ce rôle il ne change aucune classe,
- * donc il ne peut plus produire de divergence.
+ * façon de le diluer.
  */
 
-const DOCUMENTS: DocumentEnCours[] = [
+/** Ce que l'import accepte. Une liste, pas trois cartes : c'est un inventaire. */
+const FORMATS = [
 	{
-		documentId: 'd1',
-		filename: 'export-comptable-2026.csv',
-		extractionStatus: 'DONE',
-		linesCount: 1842
+		titre: 'Export comptable',
+		detail: 'Un FEC, ou un CSV. Le plus complet, et rien n’est relu par une machine.'
 	},
-	{
-		documentId: 'd2',
-		filename: 'facture-maison-bertin-mars.pdf',
-		extractionStatus: 'DONE',
-		linesCount: 47
-	},
-	{ documentId: 'd3', filename: 'IMG_4471.jpeg', extractionStatus: 'PENDING', linesCount: 0 }
-];
+	{ titre: 'Facture en PDF', detail: 'Quand l’export n’est pas sous la main.' },
+	{ titre: 'Photo prise au téléphone', detail: 'Une facture retrouvée dans un dossier.' }
+] as const;
 
-const FAMILLES_DEMO: LigneFamille[] = [
-	{ family: 'VIANDE', totalHT: 50400, durableHT: 7100, bioHT: 900 },
-	{ family: 'FRUITS_LEGUMES', totalHT: 28800, durableHT: 12600, bioHT: 11800 },
-	{ family: 'EPICERIE_APPERTISEE', totalHT: 27000, durableHT: 2400, bioHT: 2400 },
-	{ family: 'LAITIERS', totalHT: 25200, durableHT: 6200, bioHT: 4100 },
-	{ family: 'EPICERIE_SECHE', totalHT: 19800, durableHT: 14900, bioHT: 14900 },
-	{ family: 'BOISSONS', totalHT: 18000, durableHT: 0, bioHT: 0 },
-	{ family: 'POISSON', totalHT: 10800, durableHT: 6500, bioHT: 0 }
-];
-
-type ProduitDemo = {
-	libelle: string;
-	occurrences: number;
-	montant: number;
-	motif: string;
-	proposition: Proposition | null;
-};
-
-const A_CONFIRMER: ProduitDemo[] = [
+/**
+ * LES CHIFFRES SE TIENNENT ENTRE EUX : 9 240,00 + 18 450,00 + 31 200,50 +
+ * 249,90 = 59 140,40 €. Sur une page dont l'argument est l'exactitude d'un
+ * décompte, un jeu dont les totaux ne tombent pas juste est une faute.
+ */
+const EVENEMENTS: EvenementAffiche[] = [
 	{
-		libelle: 'FILET CABILLAUD MSC SURG 5KG',
-		occurrences: 34,
-		montant: 12480.5,
-		motif: 'VIANDE_POISSON',
-		proposition: {
-			estAlimentaire: true,
-			famille: 'POISSON',
-			mentions: ['PECHE_DURABLE'],
-			justification:
-				'La mention MSC atteste une pêche durable, qui compte au titre du durable sans compter au bio.',
-			confiance: 0.91
-		}
+		type: 'PRESCRIPTION_PROCHE',
+		reference: 'FA-2021-0087',
+		montant: 924_000n,
+		urgence: 'CRITIQUE',
+		explication: 'La facture FA-2021-0087 est PRESCRITE depuis le 14 août 2026.',
+		action: 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
 	},
 	{
-		libelle: 'ENTRECOTE V.B.F. 220G X20',
-		occurrences: 18,
-		montant: 8940,
-		motif: 'VIANDE_POISSON',
-		proposition: {
-			estAlimentaire: true,
-			famille: 'VIANDE',
-			mentions: [],
-			justification:
-				'« Viande bovine française » est une origine, pas une mention qualifiante au barème EGalim.',
-			confiance: 0.88
-		}
+		type: 'ECHEANCE_PROCEDURE',
+		reference: 'Ateliers Martin',
+		montant: 1_845_000n,
+		urgence: 'CRITIQUE',
+		explication: 'Signification de l’ordonnance : il reste 9 jours avant le 12 septembre.',
+		action: 'Faire signifier sans délai — passée cette date, le droit est perdu.'
 	},
 	{
-		libelle: 'CAR0TTE RONDELLE 4/4 BIO 2.5KG',
-		occurrences: 52,
-		montant: 3120.4,
-		motif: 'CONFIANCE_BASSE',
-		proposition: {
-			estAlimentaire: true,
-			famille: 'FRUITS_LEGUMES',
-			mentions: ['AB'],
-			justification:
-				'La mention BIO figure au libellé ; le certificat fournisseur reste à obtenir.',
-			confiance: 0.74
-		}
+		type: 'CREANCE_MURE',
+		reference: 'Fournitures Durand',
+		montant: 3_120_050n,
+		urgence: 'HAUTE',
+		explication: 'La créance atteint le seuil de qualification : quatre factures, toutes échues.',
+		action: 'Examiner les procédures envisageables pour cette créance.'
+	},
+	{
+		type: 'FACTURE_ECHUE',
+		reference: 'FA-2026-0311',
+		montant: 24_990n,
+		urgence: 'NORMALE',
+		explication: 'La facture FA-2026-0311 est échue depuis le 1er août et reste due.',
+		action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.'
 	}
 ];
 
-/** Ce que le dépôt accepte. Une liste, pas trois cartes : c'est un inventaire. */
-const FORMATS = [
-	{ titre: 'PDF de fournisseur', detail: 'Y compris scanné de travers.' },
-	{ titre: 'Photo prise au téléphone', detail: 'Une facture posée sur le plan de travail.' },
-	{ titre: 'Export comptable', detail: 'CSV ou Excel, des milliers de lignes.' }
-] as const;
+/**
+ * Le décompte de démonstration, calculé au taux légal réel.
+ *
+ * 10 000 € exigibles au 1er mai, arrêtés au 3 septembre, un règlement de
+ * 4 000 € au 1er juillet. Les deux périodes portent le taux BCE majoré de dix
+ * points de chaque semestre — 12,15 % puis 12,40 % — et leurs intérêts font
+ * exactement le total affiché : 20 305 + 21 063 = 41 368 centimes.
+ */
+const DECOMPTE: DecompteAffiche = {
+	arreteAu: '2026-09-03',
+	convention: 'ACT_365',
+	principalRestantDu: 600_000n,
+	interets: 41_368n,
+	indemniteForfaitaire: 4_000n,
+	total: 645_368n,
+	lignes: [
+		{
+			reference: 'FA-2026-118',
+			principalRestantDu: 600_000n,
+			interets: 41_368n,
+			indemniteForfaitaire: 4_000n,
+			total: 645_368n,
+			segments: [
+				{
+					debut: '2026-05-01',
+					fin: '2026-07-01',
+					jours: 61,
+					principal: 1_000_000n,
+					taux: { numerateur: 1215n, denominateur: 10_000n },
+					baseAnnuelle: 365,
+					interets: 20_305n
+				},
+				{
+					debut: '2026-07-01',
+					fin: '2026-09-03',
+					jours: 64,
+					principal: 600_000n,
+					taux: { numerateur: 1240n, denominateur: 10_000n },
+					baseAnnuelle: 365,
+					interets: 21_063n
+				}
+			]
+		}
+	]
+};
 
 export function Etapes() {
 	return (
 		<SectionMarketing id="comment" fond="froid" className="gap-cladd-2xl">
 			<TitreSection
 				titre="Quatre étapes, dont une seule vous demande du temps"
-				chapeau="Les écrans ci-dessous sont ceux du logiciel. Confirmez un produit pour voir."
+				chapeau="Les écrans ci-dessous sont ceux du logiciel. Répondez à la question pour voir."
 			/>
 
 			<Etape
 				numero="01"
-				titre="Vous déposez ce que vous avez"
-				texte="Aucun format à respecter. On lit ce que vous avez sous la main."
+				titre="Vous importez ce que vous avez"
+				texte="Vos factures existent déjà, structurées, dans votre comptabilité. On les lit là où elles sont plutôt que de vous les faire re-scanner."
 				apres={
 					<Inventaire as="dl">
 						{FORMATS.map((f) => (
@@ -179,7 +159,7 @@ export function Etapes() {
 				<div className="relative aspect-video overflow-hidden rounded-panneau border border-trait shadow-pose lg:aspect-square">
 					<img
 						src="/photos/cuisine.jpg"
-						alt="Chef de cuisine au piano dans une cuisine professionnelle"
+						alt="Un poste de travail avec des documents comptables"
 						loading="lazy"
 						className="absolute inset-0 size-full object-cover"
 					/>
@@ -189,32 +169,37 @@ export function Etapes() {
 			<Etape
 				inverse
 				numero="02"
-				titre="Le logiciel lit, vous regardez"
-				texte="Vous ne saisissez rien, et vous voyez le travail avancer."
+				titre="Le logiciel repère ce qui bouge"
+				texte="Ce qui arrive à échéance, ce qui devient mûr, ce qui approche de la prescription. Chaque ligne porte son montant : vous savez quoi traiter en premier."
 			>
 				<Cadre contentClassName="p-cladd-2xs">
-					<Lecture />
+					<FluxEvenements
+						evenements={EVENEMENTS}
+						montantIdentifie={5_914_040n}
+						hypotheses={[]}
+						anglesMorts={[]}
+					/>
 				</Cadre>
 			</Etape>
 
 			<Etape
 				numero="03"
 				titre="Vous tranchez ce qui vous engage"
-				texte="Chaque classement est expliqué en une phrase. Vous confirmez, ou vous corrigez. La viande et le poisson passent toujours devant vous."
+				texte="Le logiciel déduit tout ce qu'il peut lire : le montant, l'échéance, la qualité des parties. Il ne vous demande que ce qu'aucune facture ne dit."
 			>
 				<Cadre contentClassName="p-cladd-2xs">
-					<Confirmation />
+					<Question />
 				</Cadre>
 			</Etape>
 
 			<Etape
 				inverse
 				numero="04"
-				titre="Votre bilan est prêt"
-				texte="En PDF daté et signé, prêt à sortir devant un contrôle."
+				titre="Votre décompte se refait à la main"
+				texte="Chaque euro réclamé montre d'où il vient : quel principal, quel taux, sur combien de jours. C'est ce que fera le débiteur qui le conteste."
 			>
 				<Cadre contentClassName="p-cladd-2xs">
-					<Bilan />
+					<Decompte decompte={DECOMPTE} />
 				</Cadre>
 			</Etape>
 		</SectionMarketing>
@@ -223,11 +208,6 @@ export function Etapes() {
 
 /**
  * Une étape : cinq colonnes de texte, sept de démonstration, en Z.
- *
- * LE NUMÉRO EST UNE MENTION, PAS UNE PASTILLE. C'était un disque bleu de
- * quarante pixels — le vocabulaire d'un guide de démarrage. Un chiffre en serif,
- * gris, aligné sur le filet, se lit comme la numérotation d'un article : c'est
- * le même registre que le reste de la page.
  *
  * Le passage à deux colonnes se fait à `lg`, pas à `md` : ces démonstrations
  * sont des écrans denses, et les serrer dans une demi-largeur de tablette les
@@ -256,23 +236,6 @@ function Etape({
 		<div className="grid items-start gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
 			<div className={cn('flex flex-col gap-cladd-2xs lg:col-span-5', inverse && 'lg:order-2')}>
 				<div className="flex flex-col gap-cladd-3xs">
-					{/*
-					  ⚠️ LE NUMÉRO EST REDEVENU UNE PASTILLE, APRÈS AVOIR ÉTÉ UN FILET.
-					  Il a été un disque bleu de quarante pixels — le vocabulaire d'un
-					  guide de démarrage — puis un chiffre gris sur une règle d'un pixel,
-					  qui se lisait comme la numérotation d'un article de loi.
-
-					  Le second réglage était juste tant que la page entière était un
-					  imprimé. Elle ne l'est plus : le sur-titre de section est une
-					  pastille, les seuils légaux sont dans un panneau posé, et ce
-					  chiffre gris sous son trait était le dernier vestige. La pastille
-					  reprend exactement la forme du sur-titre — même rayon, même lit
-					  d'accent à huit pour cent — de sorte que la page n'a plus qu'UNE
-					  façon d'étiqueter un bloc.
-
-					  Elle reste petite et sans cercle épais : ce n'est pas un jalon
-					  qu'on suit du doigt, c'est un repère de lecture.
-					*/}
 					<span className="cladd-color-brand w-fit rounded-full bg-cladd-primary/8 px-cladd-3xs py-1 text-cladd-2xs font-bold tracking-widest text-cladd-primary tabular-nums">
 						Étape {numero}
 					</span>
@@ -291,55 +254,28 @@ function Etape({
 }
 
 /**
- * La lecture en cours, avec le vrai fil de travail.
+ * La seule question que le logiciel pose, réellement jouable.
  *
- * La progression monte de zéro jusqu'à 1 842 lignes quand la section entre à
- * l'écran. `FilTravail` en déduit tout le reste — la barre, le décompte, le
- * passage de « en cours » à « terminé ». On n'anime pas une barre, on anime le
- * nombre de lignes faites, et le composant réagit comme chez un client.
+ * C'EST L'ARGUMENT DE LA SECTION, PAS UNE ILLUSTRATION. Trois des quatre
+ * conditions légales se déduisent des données : le montant est chiffré, la
+ * date d'échéance est passée, la qualité de commerçant est au dossier. La
+ * quatrième — la créance est-elle contestée — ne se lit dans aucune facture,
+ * parce que l'absence de contestation CONNUE n'est pas une absence de
+ * contestation.
+ *
+ * Le visiteur fait donc, une fois, le seul geste que le produit lui demande.
  */
-function Lecture() {
-	const { cible, visible } = useVisible<HTMLDivElement>();
-	const faits = Math.round(useCompteur(1842, visible, 2200));
-	return (
-		<div ref={cible}>
-			<FilTravail
-				documents={DOCUMENTS}
-				classification={{
-					total: 1842,
-					faits,
-					echoues: 0,
-					termine: faits >= 1842,
-					recents: []
-				}}
-			/>
-		</div>
-	);
-}
+function Question() {
+	const [reponse, setReponse] = useState<'ok' | 'ko' | null>(null);
 
-/**
- * La file de confirmation, réellement jouable.
- *
- * Confirmer retire la carte et fait monter la suivante. C'est le seul endroit
- * de la page où le visiteur agit, et c'est délibéré : le geste qu'on lui vend
- * est celui-là, autant qu'il l'ait fait une fois avant de créer un compte.
- *
- * La correction ouvre normalement une feuille de correction. Ici elle confirme
- * aussi : ouvrir un formulaire d'arbitrage sur une page d'accueil promettrait
- * un écran qu'on ne peut pas livrer sans compte.
- */
-function Confirmation() {
-	const [faits, setFaits] = useState(0);
-	const restants = A_CONFIRMER.slice(faits);
-
-	if (restants.length === 0) {
+	if (reponse === 'ko') {
 		return (
 			<EmptyState
-				illustration="🍽️"
-				titre="La file est vide."
-				explication="Chez vous, un produit confirmé l'est pour de bon. Il ne reviendra pas l'an prochain."
+				illustration="🛑"
+				titre="La procédure simplifiée se referme."
+				explication="Une contestation, même infondée, y met fin. Mieux vaut le savoir avant d’avoir payé un commissaire de justice qu’après."
 				action={
-					<Button variant="solid" rounded onClick={() => setFaits(0)}>
+					<Button variant="solid" rounded onClick={() => setReponse(null)}>
 						<RotateCcwIcon />
 						Rejouer
 					</Button>
@@ -348,28 +284,57 @@ function Confirmation() {
 		);
 	}
 
-	const produit = restants[0];
-	if (!produit) return null;
-	return (
-		<div className="flex flex-col gap-cladd-3xs">
-			<CarteProduit
-				key={produit.libelle}
-				libelle={produit.libelle}
-				occurrences={produit.occurrences}
-				montant={produit.montant}
-				motif={produit.motif}
-				proposition={produit.proposition}
-				onConfirmer={() => setFaits((n) => n + 1)}
-				onCorriger={() => setFaits((n) => n + 1)}
+	if (reponse === 'ok') {
+		return (
+			<EmptyState
+				illustration="✅"
+				titre="La créance est qualifiée."
+				explication="Les quatre conditions sont tranchées. Le décompte peut être arrêté, et les procédures envisageables s’affichent."
+				action={
+					<Button variant="solid" rounded onClick={() => setReponse(null)}>
+						<RotateCcwIcon />
+						Rejouer
+					</Button>
+				}
 			/>
-			<span className="text-cladd-2xs text-plume-claire">
-				{restants.length} produit{restants.length > 1 ? 's' : ''} dans la file de démonstration.
-			</span>
+		);
+	}
+
+	return (
+		<div className="flex flex-col gap-cladd-2xs">
+			<Surface contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
+				<div className="flex flex-wrap items-center gap-1.5">
+					<Chip size="md" color="green">
+						Montant chiffré
+					</Chip>
+					<Chip size="md" color="green">
+						Échéance passée
+					</Chip>
+					<Chip size="md" color="green">
+						Entre commerçants
+					</Chip>
+				</div>
+				<p className="text-cladd-xs text-plume-claire">
+					Déduits de vos factures. Le logiciel ne vous les redemande pas.
+				</p>
+			</Surface>
+
+			<Surface contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
+				<p className="text-cladd-md font-semibold">
+					Cette créance a-t-elle déjà fait l’objet d’une réclamation&nbsp;?
+				</p>
+				<p className="text-cladd-xs text-plume-claire">
+					Fournitures Durand · 4 factures · 31 200,50 €
+				</p>
+				<div className="flex flex-wrap gap-cladd-3xs">
+					<Button size="lg" color="brand" variant="solid-fill" onClick={() => setReponse('ok')}>
+						Non, aucune
+					</Button>
+					<Button size="lg" variant="transparent" onClick={() => setReponse('ko')}>
+						Oui, le client a contesté
+					</Button>
+				</div>
+			</Surface>
 		</div>
 	);
-}
-
-/** La répartition par famille, telle qu'elle apparaît dans le bilan. */
-function Bilan() {
-	return <Repartition lignes={FAMILLES_DEMO} />;
 }

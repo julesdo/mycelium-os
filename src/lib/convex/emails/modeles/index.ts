@@ -9,9 +9,6 @@
 // commune. Ils ne suivent pas la forme des six modeles historiques, qui sont
 // des artefacts generes depuis Svelte : voir l'en-tete de `disposition.ts`.
 export * from './disposition';
-export * from './bilanPret';
-export * from './produitsAConfirmer';
-export * from './rappelDeclaration';
 
 export * from './verification';
 export * from './verificationCode';
