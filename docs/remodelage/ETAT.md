@@ -513,3 +513,30 @@ distant et n'a pas besoin du backend local.
 **Le logo est une assiette de porcelaine.** `src/ui/logo.tsx` dessine un cercle de faïence avec son
 trait de bord ; les commentaires du code parlent d'« assiette ». C'est la marque, pas un texte : ça
 se décide, ça ne se corrige pas au passage.
+
+### Le balayage à la main était trop étroit — les courriels parlaient encore de bio
+
+Les deux passages précédents cherchaient « EGalim », « cantine », « bio », « durable » dans la page
+servie. Un balayage **systématique** du code rendu — commentaires retirés, sur un lexique large — a
+trouvé ce que l'œil avait laissé, et c'était le pire endroit :
+
+**Le pied de page de TOUS les courriels** disait « Letikette mesure votre taux de produits durables
+et biologiques […] La télédéclaration sur "ma cantine" reste établie et signée par votre
+établissement ». Il énonce maintenant le métier et les trois lignes rouges : la mesure, la
+surveillance, le décompte — et les relances, procédures et encaissements « conduits par votre
+entreprise ou par le professionnel qu'elle mandate ».
+
+**Le courriel d'invitation** portait une phrase à moitié réécrite, donc fausse des deux côtés :
+« Letikette mesure les créances impayées d'une entreprise de restauration collective […] : la part
+de produits durables, la part de bio ». C'est le premier texte que lit un nouvel utilisateur.
+
+**L'écran de connexion** promettait « vos taux, vos factures et vos diagnostics ». **Le bandeau
+d'essai** listait « les trois taux […] et le fichier de télédéclaration ».
+
+Après correction, le balayage ne rend plus que sept lignes, toutes fausses positives du lexique :
+« messageRIE », « REPASser en membre », et « couverts » au sens de couvrir.
+
+⚠️ **La leçon, et elle vaut pour le prochain changement de nom** : vérifier une réécriture en
+cherchant les mots qu'on se rappelle avoir écrits ne trouve que ceux-là. Il faut balayer le code
+rendu sur un lexique large et trier les faux positifs — l'inverse laisse passer exactement ce qu'on
+a oublié.

@@ -50,7 +50,7 @@ function Connexion() {
 	return (
 		<CadreAuth
 			titre="Connexion"
-			explication="Retrouvez vos taux, vos factures et vos diagnostics."
+			explication="Retrouvez vos créances, vos décomptes et vos échéances."
 			pied={
 				<>
 					<Link to="/mot-de-passe-oublie" className="font-medium underline underline-offset-2">

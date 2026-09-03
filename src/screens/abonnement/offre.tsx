@@ -143,8 +143,8 @@ export function EssaiEnCours({ finLe }: { finLe: number }) {
 			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 				Jusqu&rsquo;au {date}, tout le produit vous est ouvert, sans carte bancaire : le dépôt de
-				factures, les trois taux, le bilan, la file de confirmation et le fichier de
-				télédéclaration.
+				factures, le décompte au centime, la surveillance des échéances et les procédures
+				envisageables.
 			</span>
 		</Surface>
 	);

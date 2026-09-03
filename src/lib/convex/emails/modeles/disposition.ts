@@ -167,7 +167,7 @@ export function coquilleHtml(bloc: BlocEmail): string {
 ${chiffres}${corps}${bouton}${note}
 </td></tr>
 <tr><td style="padding:18px 4px 0;font-family:${PILE_POLICES};font-size:12px;line-height:1.6;color:${TRES_DOUX}">
-Letikette mesure votre taux de produits durables et biologiques, le documente et le fait progresser, selon une obligation de moyens. La t&eacute;l&eacute;d&eacute;claration sur &laquo;&nbsp;ma cantine&nbsp;&raquo; reste &eacute;tablie et sign&eacute;e par votre &eacute;tablissement.
+Letikette mesure vos cr&eacute;ances impay&eacute;es &agrave; partir de vos factures, en surveille les &eacute;ch&eacute;ances et en produit le d&eacute;compte. Les relances, les proc&eacute;dures et les encaissements restent conduits par votre entreprise ou par le professionnel qu&rsquo;elle mandate.
 </td></tr>
 </tbody></table>
 </td></tr></tbody></table>
@@ -201,7 +201,7 @@ export function coquilleTexte(bloc: BlocEmail): string {
 	}
 	morceaux.push(
 		'',
-		'Letikette mesure votre taux de produits durables et biologiques, le documente et le fait progresser, selon une obligation de moyens. La teledeclaration sur ma cantine reste etablie et signee par votre etablissement.'
+		"Letikette mesure vos creances impayees a partir de vos factures, en surveille les echeances et en produit le decompte. Les relances, les procedures et les encaissements restent conduits par votre entreprise ou par le professionnel qu'elle mandate."
 	);
 
 	return morceaux.join('\n');
