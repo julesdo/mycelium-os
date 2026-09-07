@@ -197,6 +197,7 @@ sans casser quelque chose qui marche.
 | `B-PRODUIT-TECH.md` | Architecture cible, les cinq modules, ce qui existe déjà. |
 | `C-MARKETING.md` | Positionnement, segments, messages, canaux, cycle de vente. |
 | `D-JURIDIQUE.md` | Le bouclier, les obstacles réglementaires, le chemin vers l'agrément. |
+| `E-REFERENTIEL-DESIGN.md` | Ce que font réellement Revolut, Ramp, Mercury et Qonto — mesuré dans leur DOM — et les règles Cladd non négociables. |
 
 ### Les documents qui sortent
 
