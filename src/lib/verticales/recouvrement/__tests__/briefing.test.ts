@@ -176,23 +176,30 @@ describe('decider', () => {
  */
 describe('composerBriefing', () => {
 	it('met en avant l’événement le plus urgent, puis le plus cher', () => {
+		// Trois explications distinctes, comme dans la réalité : trois dossiers
+		// différents ne racontent pas la même chose. (Si on laissait le texte par
+		// défaut du fixture, identique sur les trois, on retomberait sur le cas
+		// « tous racontent la même chose » testé séparément plus bas.)
 		const evenements = [
 			evenement({
 				reference: 'FA-1',
 				urgence: 'NORMALE',
 				montant: depuisCentimes(900_000n),
+				explication: 'FA-1 est une broutille tranquille.',
 				action: 'Leurre : le plus cher, mais pas critique.'
 			}),
 			evenement({
 				reference: 'FA-2',
 				urgence: 'CRITIQUE',
 				montant: depuisCentimes(100_000n),
+				explication: 'FA-2 est critique mais modeste.',
 				action: 'Leurre : critique, mais le moins cher des critiques.'
 			}),
 			evenement({
 				reference: 'FA-3',
 				urgence: 'CRITIQUE',
 				montant: depuisCentimes(500_000n),
+				explication: 'FA-3 est critique et cher.',
 				action: 'Faire signifier sans délai.'
 			})
 		];
@@ -294,5 +301,55 @@ describe('composerBriefing', () => {
 		];
 		const briefing = composerBriefing(evenements, depuisCentimes(200_000n));
 		expect(briefing.action).toBe('Action FA-2.');
+	});
+
+	it('saute au premier événement dont le texte diffère, pas au deuxième par position', () => {
+		// Cas réel trouvé en relecture : `ECHEANCE_PROCEDURE` compose son
+		// explication à partir du libellé de l'étape et de la date limite,
+		// jamais de la référence du dossier. Deux dossiers distincts qui
+		// démarrent la même procédure standard le même jour (même libellé, même
+		// échéance calculée) produisent alors une explication identique au
+		// caractère près, bien qu'ils soient deux événements différents. Prendre
+		// « le deuxième par position » referait fuiter `intro` dans `lignes`.
+		const explicationPartagee =
+			"Signification de l'assignation : la date limite du 2026-09-10 est DÉPASSÉE.";
+		const evenements = [
+			evenement({
+				reference: 'D-001',
+				urgence: 'CRITIQUE',
+				explication: explicationPartagee,
+				action: 'Faire signifier le dossier D-001.'
+			}),
+			evenement({
+				reference: 'D-002',
+				urgence: 'HAUTE',
+				explication: explicationPartagee,
+				action: 'Faire signifier le dossier D-002.'
+			}),
+			evenement({
+				reference: 'D-003',
+				urgence: 'NORMALE',
+				explication: 'Une facture distincte est échue.',
+				action: 'Rattacher cette facture.'
+			})
+		];
+
+		const briefing = composerBriefing(evenements, depuisCentimes(1_000n));
+
+		expect(briefing.lignes).not.toContain(briefing.intro);
+		expect(briefing.lignes).toContain('Une facture distincte est échue.');
+	});
+
+	it('replie sur deux lignes quand tous les événements racontent la même chose', () => {
+		const explicationPartagee = 'Deux dossiers, la même étape, la même échéance.';
+		const evenements = [
+			evenement({ reference: 'D-001', urgence: 'CRITIQUE', explication: explicationPartagee }),
+			evenement({ reference: 'D-002', urgence: 'HAUTE', explication: explicationPartagee })
+		];
+
+		const briefing = composerBriefing(evenements, depuisCentimes(1_000n));
+
+		expect(briefing.lignes).toHaveLength(2);
+		expect(briefing.lignes).not.toContain(briefing.intro);
 	});
 });

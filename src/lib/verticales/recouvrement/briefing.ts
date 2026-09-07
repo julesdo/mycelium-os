@@ -157,6 +157,19 @@ const LIGNE_DECOMPOSABILITE = 'Le détail de chaque montant est décomposable da
  * l'ordre de son entrée — le tri redondant en pratique est donc gardé, avec
  * le même comparateur que la surveillance (`comparerEvenements`), pour qu'il
  * n'existe qu'un seul ordre au monde.
+ *
+ * LA DEUXIÈME LIGNE SE CHOISIT SUR LE TEXTE, JAMAIS SUR LA POSITION. C'est le
+ * TEXTE qui part dans le courriel, pas l'index dans le tableau trié : prendre
+ * `tries[1]` sans regarder son contenu suppose que le deuxième événement dit
+ * forcément autre chose que le premier, et rien ne le garantit. Deux
+ * événements de références différentes peuvent produire une explication
+ * identique au caractère près — `ECHEANCE_PROCEDURE`, par exemple, compose la
+ * sienne à partir du libellé de l'étape et de la date limite, jamais de la
+ * référence du dossier. Deux dossiers distincts démarrant la même procédure
+ * standard le même jour (même libellé, même échéance calculée) produisent
+ * alors deux événements différents mais un texte identique. On cherche donc
+ * le premier événement, dans l'ordre trié, dont l'explication DIFFÈRE de
+ * celle du premier — pas simplement celui en deuxième position.
  */
 export function composerBriefing(
 	evenements: readonly Evenement[],
@@ -174,7 +187,10 @@ export function composerBriefing(
 
 	const tries = [...evenements].sort(comparerEvenements);
 	const premier = tries[0]!;
-	const deuxieme = tries[1];
+	// Le premier qui a quelque chose de NEUF à dire — pas le deuxième par
+	// position. Voir le commentaire de la fonction : deux événements distincts
+	// peuvent partager la même explication au caractère près.
+	const suivantDistinct = tries.find((evenement) => evenement.explication !== premier.explication);
 	const critiques = evenements.filter((evenement) => evenement.urgence === 'CRITIQUE').length;
 
 	const ligneDeCompte =
@@ -183,13 +199,14 @@ export function composerBriefing(
 			: `${evenements.length} point${evenements.length > 1 ? 's' : ''} d’attention, aucun critique.`;
 
 	// Le premier événement est déjà dans `intro` : le répéter ici serait la
-	// même phrase deux fois d'affilée dans le même courriel. Le deuxième, lui,
-	// apporte une information neuve — ce qui vient juste après le plus urgent.
-	// S'il n'y en a pas, la ligne ne se remplit pas artificiellement.
+	// même phrase deux fois d'affilée dans le même courriel. Le suivant
+	// distinct, lui, apporte une information neuve. S'il n'y en a pas — tous
+	// les événements racontent la même chose — la ligne ne se remplit pas
+	// artificiellement.
 	const lignes =
-		deuxieme === undefined
+		suivantDistinct === undefined
 			? [ligneDeCompte, LIGNE_DECOMPOSABILITE]
-			: [ligneDeCompte, deuxieme.explication, LIGNE_DECOMPOSABILITE];
+			: [ligneDeCompte, suivantDistinct.explication, LIGNE_DECOMPOSABILITE];
 
 	return {
 		titre: critiques > 0 ? 'Une échéance réclame votre attention' : 'Votre point du matin',
