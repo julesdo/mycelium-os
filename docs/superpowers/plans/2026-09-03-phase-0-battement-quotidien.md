@@ -1663,3 +1663,63 @@ visible. Dans l'ordre recommandé :
 | **6. La médiation** | Relances en trois niveaux, questionnaire de qualification de litige | Le premier plan qui écrit un texte destiné au débiteur — à cadrer avec le juriste. |
 | **7. La solidité documentaire et la machine à états** | Pyramide de preuves, délais post-procédure | Prépare le brief exécutoire. |
 | **8. Le brief exécutoire, verrouillé** | Dossier chronologique, routage tribunal et commissaire de justice | Construit et testé, ouvert par `valideParAvocat`. |
+
+---
+
+## Task 4bis : La purge RGPD couvre `battements`
+
+> **Cette tâche répare un trou du plan, pas une erreur d'exécution.** Le relecteur de la tâche 4 a
+> constaté que le mot « rgpd » n'apparaissait dans aucune des neuf tâches d'origine. Ajouter une
+> table sans l'ajouter à la purge laisse ses lignes survivre, orphelines, à la suppression de
+> l'établissement — et le produit viole alors sa propre règle, écrite en tête de `rgpd.ts` : « rien
+> n'est mutualisé, donc rien n'est épargné. La purge est totale, sans exception à justifier. »
+>
+> **Leçon pour les plans suivants : toute tâche qui ajoute une table cloisonnée doit, dans la même
+> tâche, l'ajouter à la purge et à l'export.** Sinon la dette est invisible jusqu'à la première
+> demande d'effacement.
+
+**Files:**
+- Modify: `src/lib/convex/rgpd.ts`
+- Modify: `src/lib/convex/recouvrement/tables.ts` (un commentaire)
+- Test: `src/lib/convex/__tests__/rgpd.test.ts`
+
+- [ ] **Step 1 : Étendre le test de purge existant**
+
+`rgpd.test.ts` monte déjà un établissement peuplé et vérifie table par table qu'il est vidé. Ajouter
+un relevé de battement à ce peuplement, et l'assertion correspondante — la purge partielle est le
+pire résultat, parce qu'elle rend le manquement invisible.
+
+- [ ] **Step 2 : Lancer le test et vérifier qu'il échoue**
+
+```bash
+bunx vitest run src/lib/convex/__tests__/rgpd.test.ts
+```
+
+Attendu : FAIL — les battements survivent à la purge.
+
+- [ ] **Step 3 : Élargir le type de `viderParIndexOrg`**
+
+`src/lib/convex/rgpd.ts`, la signature accepte une union fermée de noms de tables. **Ajouter
+`'battements'` à cette union ne suffit pas** — il faut aussi l'appeler.
+
+- [ ] **Step 4 : Appeler la purge dans `purgerEtablissement`**
+
+`battements` porte déjà l'index `by_org` qu'exige ce helper générique. L'ordre importe peu ici : la
+table ne référence aucun fichier de stockage et rien ne la référence.
+
+- [ ] **Step 5 : Couvrir l'export de portabilité**
+
+`_entetesExport` et le type `Entetes` doivent inclure `battements`. Le droit d'accès porte sur tout,
+pas sur ce qui est commode.
+
+- [ ] **Step 6 : Corriger un commentaire qui promet trop**
+
+`tables.ts` dit que la clé (organisation, jour) est « unique **par construction** ». Convex n'a pas
+de contrainte d'unicité en base : l'index rend la lecture-avant-écriture efficace, mais la garantie
+vit dans le code appelant. Écrire ce qui est vrai.
+
+- [ ] **Step 7 : Vérifier et committer**
+
+```bash
+bunx vitest run src/lib/convex/__tests__/rgpd.test.ts && bun run check
+```
