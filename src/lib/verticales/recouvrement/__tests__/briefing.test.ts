@@ -248,4 +248,51 @@ describe('composerBriefing', () => {
 		const briefing = composerBriefing(evenements, depuisCentimes(1n));
 		expect(briefing.action).toBe('Celui-ci est chiffré.');
 	});
+
+	it('l’intro ne répète aucune ligne du corps', () => {
+		// `intro` porte déjà l'explication du premier événement. Si une ligne du
+		// corps disait la même chose, le courriel répéterait la même phrase deux
+		// fois d'affilée — exactement le bruit que « pas un digest » évite.
+		const evenements = [
+			evenement({ reference: 'FA-1', urgence: 'CRITIQUE', explication: 'Le plus urgent.' }),
+			evenement({ reference: 'FA-2', urgence: 'HAUTE', explication: 'Le deuxième, différent.' })
+		];
+		const briefing = composerBriefing(evenements, depuisCentimes(1_000n));
+		expect(briefing.lignes).not.toContain(briefing.intro);
+	});
+
+	it('un seul événement donne deux lignes : le compte, puis la décomposabilité', () => {
+		// Avec un seul événement, une ligne « explication du deuxième » n'a pas de
+		// deuxième à montrer. Elle disparaît au lieu de se remplir de force.
+		const briefing = composerBriefing([evenement()], depuisCentimes(1_000n));
+		expect(briefing.lignes).toHaveLength(2);
+	});
+
+	it('le cas vide donne exactement une ligne, et dit qu’il n’y a rien', () => {
+		const briefing = composerBriefing([], depuisCentimes(0n));
+		expect(briefing.lignes).toEqual(['Aucun point d’attention.']);
+	});
+
+	it('départage deux événements de même urgence et même montant par la référence', () => {
+		// Sans départage, deux événements à égalité parfaite ressortiraient dans
+		// l'ordre d'arrivée du tableau — un ordre que l'appelant ne maîtrise pas.
+		// FA-2 vient APRÈS FA-9 dans le tableau mais doit gagner : « 2 » précède
+		// « 9 » dans l'ordre de la référence, pas dans l'ordre d'arrivée.
+		const evenements = [
+			evenement({
+				reference: 'FA-9',
+				urgence: 'HAUTE',
+				montant: depuisCentimes(100_000n),
+				action: 'Action FA-9.'
+			}),
+			evenement({
+				reference: 'FA-2',
+				urgence: 'HAUTE',
+				montant: depuisCentimes(100_000n),
+				action: 'Action FA-2.'
+			})
+		];
+		const briefing = composerBriefing(evenements, depuisCentimes(200_000n));
+		expect(briefing.action).toBe('Action FA-2.');
+	});
 });

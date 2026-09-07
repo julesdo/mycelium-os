@@ -127,6 +127,30 @@ export interface EtatSurveille {
 
 const RANG_URGENCE: Record<Urgence, number> = { CRITIQUE: 0, HAUTE: 1, NORMALE: 2 };
 
+/**
+ * Compare deux événements : le plus urgent d'abord, puis le plus gros
+ * montant, puis la référence.
+ *
+ * LE DÉPARTAGE PAR RÉFÉRENCE N'EST PAS DÉCORATIF. Sans lui, deux événements de
+ * même urgence et même montant ressortent dans l'ordre d'arrivée — un ordre
+ * que rien ne documente et qui dépend de la façon dont l'appelant a construit
+ * son tableau. Un briefing composé sur ce tri changerait alors de titre,
+ * d'intro et d'action au hasard d'une exécution à l'autre pour une situation
+ * pourtant identique.
+ *
+ * SEUL COMPARATEUR AU MONDE : c'est en le dupliquant qu'on a un jour perdu ce
+ * départage. `detecterEvenements` et `composerBriefing` s'en servent tous les
+ * deux ; aucun des deux n'a sa propre copie.
+ */
+export function comparerEvenements(a: Evenement, b: Evenement): number {
+	const parUrgence = RANG_URGENCE[a.urgence] - RANG_URGENCE[b.urgence];
+	if (parUrgence !== 0) return parUrgence;
+	const montantA = a.montant ?? ZERO;
+	const montantB = b.montant ?? ZERO;
+	if (montantA === montantB) return a.reference.localeCompare(b.reference);
+	return montantB > montantA ? 1 : -1;
+}
+
 function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 	const evenements: Evenement[] = [];
 
@@ -271,8 +295,7 @@ function anglesMorts(etat: EtatSurveille): string[] {
 		.filter(
 			(facture) =>
 				facture.datePrescription === undefined &&
-				(facture.statutPaiement === 'IMPAYEE' ||
-					facture.statutPaiement === 'PARTIELLEMENT_PAYEE')
+				(facture.statutPaiement === 'IMPAYEE' || facture.statutPaiement === 'PARTIELLEMENT_PAYEE')
 		)
 		.map((facture) => facture.reference);
 
@@ -304,14 +327,8 @@ export function detecterEvenements(
 
 	// Le plus urgent d'abord ; à urgence égale, le plus gros montant. Un tri par
 	// date seule ferait remonter une broutille avant une caducité à 8 000 €.
-	evenements.sort((a, b) => {
-		const parUrgence = RANG_URGENCE[a.urgence] - RANG_URGENCE[b.urgence];
-		if (parUrgence !== 0) return parUrgence;
-		const montantA = a.montant ?? ZERO;
-		const montantB = b.montant ?? ZERO;
-		if (montantA === montantB) return a.reference.localeCompare(b.reference);
-		return montantB > montantA ? 1 : -1;
-	});
+	// Voir `comparerEvenements` pour le départage par référence.
+	evenements.sort(comparerEvenements);
 
 	if (options.avecAnglesMorts === true) {
 		return Object.assign(evenements, { anglesMorts: anglesMorts(etat) });
