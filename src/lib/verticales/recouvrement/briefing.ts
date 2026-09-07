@@ -104,6 +104,11 @@ export function decider(
 		};
 	}
 
+	// `joursEntre` plafonne à zéro un écart négatif — pensé là-bas pour que les
+	// intérêts ne courent pas à l'envers, mais le même plancher nous sert ici
+	// aussi : un `precedent.le` postérieur à `aujourdHui` (horloge remise à
+	// l'heure, relevé rejoué) rend 0, donc SE_TAIRE, jamais une fausse alerte de
+	// sept jours.
 	if (joursEntre(precedent.le, aujourdHui) >= JOURS_AVANT_RASSURANCE) {
 		return { decision: 'PARLER', raison: 'sept jours sans nouvelle' };
 	}

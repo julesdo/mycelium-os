@@ -136,4 +136,32 @@ describe('decider', () => {
 		);
 		expect(JOURS_AVANT_RASSURANCE).toBe(7);
 	});
+
+	it('affiche le critique, pas le nouveau, quand les deux se présentent ensemble', () => {
+		// C'EST CE TEST QUI VERROUILLE L'ORDRE. Si quelqu'un permutait demain les
+		// blocs `if` critique et nouveauté dans `decider`, les autres tests
+		// resteraient verts — chacun n'active qu'une seule raison à la fois — et
+		// la raison affichée deviendrait la plus faible sans qu'aucun test ne le
+		// remarque.
+		const critiqueConnu = evenement({ reference: 'FA-1', urgence: 'CRITIQUE' });
+		const nouveauNormal = evenement({ reference: 'FA-2' });
+		const verdict = decider([critiqueConnu, nouveauNormal], HIER, '2026-09-03');
+		expect(verdict.raison).toContain('critique');
+		expect(verdict.raison).not.toContain('nouveau');
+	});
+
+	it('accorde « points critiques » au pluriel', () => {
+		const evenements = [
+			evenement({ reference: 'FA-1', urgence: 'CRITIQUE' }),
+			evenement({ reference: 'FA-2', urgence: 'CRITIQUE' })
+		];
+		const verdict = decider(evenements, HIER, '2026-09-03');
+		expect(verdict.raison).toBe('2 points critiques');
+	});
+
+	it('accorde « nouveaux points » au pluriel', () => {
+		const evenements = [evenement({ reference: 'FA-2' }), evenement({ reference: 'FA-3' })];
+		const verdict = decider(evenements, HIER, '2026-09-03');
+		expect(verdict.raison).toBe('2 nouveaux points');
+	});
 });
