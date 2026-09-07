@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	cleEvenement,
 	clesNouvelles,
+	composerBriefing,
 	decider,
 	JOURS_AVANT_RASSURANCE,
 	type Precedent
@@ -163,5 +164,88 @@ describe('decider', () => {
 		const evenements = [evenement({ reference: 'FA-2' }), evenement({ reference: 'FA-3' })];
 		const verdict = decider(evenements, HIER, '2026-09-03');
 		expect(verdict.raison).toBe('2 nouveaux points');
+	});
+});
+
+/**
+ * LA COMPOSITION — trois lignes et UNE action.
+ *
+ * Pas un digest : un ordre de priorité. Un briefing qui liste douze points ne
+ * dit pas quoi faire, il transfère la charge de trier. Le produit trie, et
+ * n'affiche qu'une action — celle du point le plus urgent, le plus cher.
+ */
+describe('composerBriefing', () => {
+	it('met en avant l’événement le plus urgent, puis le plus cher', () => {
+		const evenements = [
+			evenement({
+				reference: 'FA-1',
+				urgence: 'NORMALE',
+				montant: depuisCentimes(900_000n),
+				action: 'Leurre : le plus cher, mais pas critique.'
+			}),
+			evenement({
+				reference: 'FA-2',
+				urgence: 'CRITIQUE',
+				montant: depuisCentimes(100_000n),
+				action: 'Leurre : critique, mais le moins cher des critiques.'
+			}),
+			evenement({
+				reference: 'FA-3',
+				urgence: 'CRITIQUE',
+				montant: depuisCentimes(500_000n),
+				action: 'Faire signifier sans délai.'
+			})
+		];
+
+		const briefing = composerBriefing(evenements, depuisCentimes(1_500_000n));
+
+		// L'URGENCE PRIME SUR LE MONTANT : un gros dossier tranquille ne passe
+		// jamais devant un petit qui meurt. À urgence égale, le plus cher gagne.
+		expect(briefing.action).toBe('Faire signifier sans délai.');
+		expect(briefing.lignes).toHaveLength(3);
+	});
+
+	it('compte les points critiques dans la première ligne', () => {
+		const evenements = [
+			evenement({ reference: 'FA-1', urgence: 'CRITIQUE' }),
+			evenement({ reference: 'FA-2', urgence: 'CRITIQUE' }),
+			evenement({ reference: 'FA-3', urgence: 'HAUTE' })
+		];
+		const briefing = composerBriefing(evenements, depuisCentimes(1_000n));
+		expect(briefing.lignes[0]).toContain('2');
+		expect(briefing.lignes[0]).toContain('critique');
+	});
+
+	it('dit que tout va bien quand il n’y a rien, et ne propose aucune action', () => {
+		// C'est le briefing de rassurance du septième jour. Il doit se lire comme
+		// une bonne nouvelle, pas comme un message vide.
+		const briefing = composerBriefing([], depuisCentimes(0n));
+		expect(briefing.action).toBeNull();
+		expect(briefing.titre).toContain('Rien');
+	});
+
+	it('porte le montant identifié tel quel, sans le recalculer', () => {
+		// Le montant vient du moteur de décompte. Le briefing le TRANSPORTE ; il
+		// ne refait aucun calcul, sans quoi deux chiffres pourraient diverger.
+		const montant = depuisCentimes(5_914_040n);
+		const briefing = composerBriefing([evenement()], montant);
+		expect(briefing.montantIdentifie).toBe(montant);
+	});
+
+	it('gère un montant absent sans le confondre avec zéro au tri', () => {
+		// `montant` vaut `null` quand il est RÉELLEMENT inconnu, pas quand il est
+		// nul. Au tri, un montant inconnu ne doit pas faire passer un événement
+		// devant un autre du même niveau d'urgence qui, lui, est chiffré.
+		const evenements = [
+			evenement({ reference: 'FA-1', urgence: 'HAUTE', montant: null, action: 'Leurre.' }),
+			evenement({
+				reference: 'FA-2',
+				urgence: 'HAUTE',
+				montant: depuisCentimes(1n),
+				action: 'Celui-ci est chiffré.'
+			})
+		];
+		const briefing = composerBriefing(evenements, depuisCentimes(1n));
+		expect(briefing.action).toBe('Celui-ci est chiffré.');
 	});
 });

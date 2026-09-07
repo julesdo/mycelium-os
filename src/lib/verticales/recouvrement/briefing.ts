@@ -1,5 +1,6 @@
+import { ZERO, type Montant } from '../../socle/montants';
 import { joursEntre } from './decompte';
-import type { Evenement } from './surveillance';
+import type { Evenement, Urgence } from './surveillance';
 
 /**
  * LE BRIEFING DU MATIN — la règle, séparée de la plomberie.
@@ -114,4 +115,81 @@ export function decider(
 	}
 
 	return { decision: 'SE_TAIRE', raison: 'rien de nouveau, rien de critique' };
+}
+
+/** Du plus urgent au moins urgent. Sert à trier, jamais à afficher. */
+const RANG_URGENCE: Record<Urgence, number> = { CRITIQUE: 0, HAUTE: 1, NORMALE: 2 };
+
+export interface Briefing {
+	readonly titre: string;
+	readonly intro: string;
+	/** Trois lignes au plus. Ce qui a bougé, ce qui meurt, ce qui reste dû. */
+	readonly lignes: readonly string[];
+	/** L'action du jour, ou `null` quand il n'y a rien à faire. */
+	readonly action: string | null;
+	readonly montantIdentifie: Montant;
+}
+
+/**
+ * Le briefing du matin : trois lignes et UNE action.
+ *
+ * ⚠️ CE N'EST PAS UN DIGEST. Un message qui liste douze points ne dit pas quoi
+ * faire : il transfère la charge de trier à celui qui le lit. Le produit trie,
+ * et ne propose qu'une action — celle de l'événement le plus urgent, et à
+ * urgence égale, du plus cher.
+ *
+ * LE MONTANT EST TRANSPORTÉ, JAMAIS RECALCULÉ. Il vient du moteur de décompte.
+ * Le refaire ici ouvrirait la porte à deux chiffres qui divergent, et c'est
+ * exactement ce que tout ce produit évite.
+ *
+ * PAS DE DATE EN PARAMÈTRE, ET CE N'EST PAS UN OUBLI. La composition ne
+ * dépend pas du jour : toute la dépendance au temps est déjà consommée en
+ * amont, dans le calcul du flux (qui arrête les décomptes au jour dit) et
+ * dans `decider` (qui compte les jours de silence). Ici, on ne fait que
+ * projeter un état déjà calculé.
+ */
+export function composerBriefing(
+	evenements: readonly Evenement[],
+	montantIdentifie: Montant
+): Briefing {
+	if (evenements.length === 0) {
+		return {
+			titre: 'Rien ne meurt cette semaine',
+			intro: 'Aucune échéance ne réclame votre attention. Vos délais sont surveillés.',
+			lignes: ['Aucun point d’attention.'],
+			action: null,
+			montantIdentifie
+		};
+	}
+
+	const tries = [...evenements].sort((a, b) => {
+		const parUrgence = RANG_URGENCE[a.urgence] - RANG_URGENCE[b.urgence];
+		if (parUrgence !== 0) return parUrgence;
+		// À urgence égale, le plus cher d'abord. Un `bigint` ne se soustrait pas
+		// en `number` : on compare, on ne calcule pas.
+		const montantA = a.montant ?? ZERO;
+		const montantB = b.montant ?? ZERO;
+		if (montantB > montantA) return 1;
+		if (montantB < montantA) return -1;
+		return 0;
+	});
+
+	const premier = tries[0]!;
+	const critiques = evenements.filter((evenement) => evenement.urgence === 'CRITIQUE').length;
+
+	const lignes = [
+		critiques > 0
+			? `${critiques} point${critiques > 1 ? 's' : ''} critique${critiques > 1 ? 's' : ''} sur ${evenements.length} au total.`
+			: `${evenements.length} point${evenements.length > 1 ? 's' : ''} d’attention, aucun critique.`,
+		premier.explication,
+		'Le détail de chaque montant est décomposable dans le produit.'
+	];
+
+	return {
+		titre: critiques > 0 ? 'Une échéance réclame votre attention' : 'Votre point du matin',
+		intro: premier.explication,
+		lignes,
+		action: premier.action,
+		montantIdentifie
+	};
 }
