@@ -477,8 +477,10 @@ export const recouvrementTables = {
 	 * DEUX RAISONS D'EXISTER, ET LA SECONDE COMPTE AUTANT.
 	 *
 	 * 1. L'IDEMPOTENCE. Un briefing envoyé deux fois détruit plus de confiance
-	 *    qu'un briefing manquant. La clé (organisation, jour) est unique par
-	 *    construction : on refuse de rejouer.
+	 *    qu'un briefing manquant. La clé (organisation, jour) doit rester unique,
+	 *    mais Convex n'a pas de contrainte d'unicité en base : l'index
+	 *    `by_org_and_jour` permet seulement de VÉRIFIER avant d'écrire — c'est au
+	 *    code appelant de lire avant d'insérer, jamais à la base de refuser.
 	 *
 	 * 2. LA VISIBILITÉ DE L'ÉCHEC. Un battement qui plante en silence laisse le
 	 *    client croire qu'il est surveillé alors qu'il ne l'est plus — le pire
