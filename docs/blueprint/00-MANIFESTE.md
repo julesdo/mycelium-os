@@ -197,3 +197,18 @@ sans casser quelque chose qui marche.
 | `B-PRODUIT-TECH.md` | Architecture cible, les cinq modules, ce qui existe déjà. |
 | `C-MARKETING.md` | Positionnement, segments, messages, canaux, cycle de vente. |
 | `D-JURIDIQUE.md` | Le bouclier, les obstacles réglementaires, le chemin vers l'agrément. |
+
+### Les documents qui sortent
+
+Dérivés des précédents, mais écrits pour être lus par quelqu'un d'extérieur, en dix minutes, sans
+rien connaître du projet. `pitch/` :
+
+| Document | Pour qui, et ce qu'il cherche |
+|---|---|
+| `pitch/JURISTE.md` | Un avocat, qui cherche à **borner un risque**. Décrit la mission comme un livrable chiffrable : contrôler cinq valeurs déjà sourcées, en fournir six manquantes, répondre à quatre questions fermées. |
+| `pitch/ASSOCIE.md` | Un futur associé, qui cherche à savoir **où il entre**. Dit ce qui marche, ce qui n'existe pas, et que la traction est nulle. |
+| `pitch/INVESTISSEUR.md` | Un investisseur, qui cherche à savoir **ce qu'il souscrit**. Montre l'arithmétique de la trajectoire au lieu de l'affirmer, et désigne le point de preuve. |
+
+⚠️ **Ces trois documents sortent de l'entreprise.** Toute correction du blueprint qui touche un
+chiffre, une limite ou une source doit y être répercutée — sinon on communique une version qu'on ne
+tient plus.
