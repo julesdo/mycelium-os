@@ -431,7 +431,7 @@ describe('composerBriefing', () => {
 			evenement({ reference: 'FA-3', urgence: 'CRITIQUE', montant: depuisCentimes(500_000n) })
 		];
 
-		const briefing = composerBriefing(evenements, depuisCentimes(1_500_000n), '2026-09-03');
+		const briefing = composerBriefing(evenements, depuisCentimes(1_500_000n));
 
 		// FA-3 : critique ET le plus cher des critiques.
 		expect(briefing.action).toBe(evenement({ reference: 'FA-3' }).action);
@@ -444,7 +444,7 @@ describe('composerBriefing', () => {
 			evenement({ reference: 'FA-2', urgence: 'CRITIQUE' }),
 			evenement({ reference: 'FA-3', urgence: 'HAUTE' })
 		];
-		const briefing = composerBriefing(evenements, depuisCentimes(1_000n), '2026-09-03');
+		const briefing = composerBriefing(evenements, depuisCentimes(1_000n));
 		expect(briefing.lignes[0]).toContain('2');
 		expect(briefing.lignes[0]).toContain('critique');
 	});
@@ -452,7 +452,7 @@ describe('composerBriefing', () => {
 	it('dit que tout va bien quand il n’y a rien, et ne propose aucune action', () => {
 		// C'est le briefing de rassurance du septième jour. Il doit se lire comme
 		// une bonne nouvelle, pas comme un message vide.
-		const briefing = composerBriefing([], depuisCentimes(0n), '2026-09-03');
+		const briefing = composerBriefing([], depuisCentimes(0n));
 		expect(briefing.action).toBeNull();
 		expect(briefing.titre).toContain('Rien');
 	});
@@ -461,7 +461,7 @@ describe('composerBriefing', () => {
 		// Le montant vient du moteur de décompte. Le briefing le TRANSPORTE ; il
 		// ne refait aucun calcul, sans quoi deux chiffres pourraient diverger.
 		const montant = depuisCentimes(5_914_040n);
-		const briefing = composerBriefing([evenement()], montant, '2026-09-03');
+		const briefing = composerBriefing([evenement()], montant);
 		expect(briefing.montantIdentifie).toBe(montant);
 	});
 });
@@ -509,11 +509,16 @@ export interface Briefing {
  * LE MONTANT EST TRANSPORTÉ, JAMAIS RECALCULÉ. Il vient du moteur de décompte.
  * Le refaire ici ouvrirait la porte à deux chiffres qui divergent, et c'est
  * exactement ce que tout ce produit évite.
+ *
+ * LA COMPOSITION NE DÉPEND PAS DE LA DATE. Toute la dépendance au temps est déjà
+ * consommée en amont : par le calcul du flux, qui arrête les décomptes au jour
+ * dit, et par `decider`, qui compte les jours de silence. Cette fonction n'est
+ * qu'une projection d'un état déjà calculé — c'est une propriété du découpage,
+ * pas un hasard.
  */
 export function composerBriefing(
 	evenements: readonly Evenement[],
-	montantIdentifie: Montant,
-	aujourdHui: string
+	montantIdentifie: Montant
 ): Briefing {
 	if (evenements.length === 0) {
 		return {
@@ -1026,7 +1031,7 @@ export const executerPourOrganisation = internalMutation({
 			// L'envoi arrive en Task 7. Composer dès maintenant garde la règle
 			// exercée par les tests, et rend l'ajout de l'envoi trivial.
 			if (verdict.decision === 'PARLER') {
-				composerBriefing(evenements, depuisCentimes(flux.montantIdentifie), jour);
+				composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
 			}
 
 			return null;
@@ -1159,11 +1164,7 @@ Puis remplacer le bloc `if (verdict.decision === 'PARLER') { composerBriefing(..
 
 ```ts
 			if (verdict.decision === 'PARLER') {
-				const briefing = composerBriefing(
-					evenements,
-					depuisCentimes(flux.montantIdentifie),
-					jour
-				);
+				const briefing = composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
 				await envoyer(ctx, organizationId, briefing);
 			}
 ```
