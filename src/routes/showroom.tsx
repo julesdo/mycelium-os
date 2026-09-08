@@ -101,7 +101,12 @@ function DemoFlux() {
 			<PageBody>
 				<FluxEvenements
 					evenements={EVENEMENTS_DEMO}
-					montantIdentifie={5_914_040n}
+					// Uniquement les deux factures distinctes ci-dessus (PRESCRIPTION_PROCHE
+					// FA-2021-0087 à 9 240,00 € + FACTURE_ECHUE FA-2026-0311 à 249,90 €) : la
+					// créance mûre et l'échéance de procédure sont des vues agrégées de la
+					// même monnaie, pas de l'argent en plus. Voir `montantIdentifie` dans
+					// `verticales/recouvrement/surveillance.ts`.
+					montantIdentifie={948_990n}
 					hypotheses={[
 						"Le secteur de Ateliers Martin n'est pas déterminé : la prescription est calculée sur le délai le plus court (1 an). Préciser le secteur lèvera cette hypothèse."
 					]}

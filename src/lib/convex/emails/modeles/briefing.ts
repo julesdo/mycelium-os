@@ -34,17 +34,29 @@ function bloc(d: BriefingData): BlocEmail {
 				etat: 'atteint',
 				// ⚠️ NE JAMAIS ÉCRIRE « intérêts inclus » NI RIEN D'ÉQUIVALENT ICI.
 				// `montantLisible` vient de `flux.montantIdentifie`, qui ADDITIONNE
-				// le `montant` de chaque événement du jour : le TTC des factures
-				// échues ou proches de prescription (`montantExigible =
-				// depuisCentimes(facture.montantTTC)`, sans un centime d'intérêt),
-				// le total d'une créance qualifiée, le montant en jeu d'une échéance
-				// de procédure, l'encours d'un débiteur dégradé. C'est une somme
-				// HÉTÉROGÈNE de ce qui est en jeu sur les points ci-dessous — pas un
-				// décompte : aucun intérêt de retard ni indemnité forfaitaire n'y
-				// entre. Sur un produit dont l'argument entier est l'exactitude, un
-				// chiffre juste sous une étiquette fausse est pire qu'un chiffre
+				// UNIQUEMENT le `montant` des événements FACTURE_ECHUE et
+				// PRESCRIPTION_PROCHE, dédupliqués par facture — le TTC de chaque
+				// facture (`montantExigible = depuisCentimes(facture.montantTTC)`,
+				// sans un centime d'intérêt), jamais deux fois la même.
+				//
+				// LES AUTRES ÉVÉNEMENTS DU JOUR N'Y ENTRENT PAS, ET C'EST VOULU. Le
+				// total d'une créance qualifiée, le montant en jeu d'une échéance de
+				// procédure, l'encours d'un débiteur dégradé sont des VUES AGRÉGÉES
+				// de la MÊME monnaie que les factures qui les composent : les
+				// additionner à leurs propres composants serait un double compte —
+				// une facture échue, proche de sa prescription, portée par une
+				// créance mûre chez un débiteur qui se dégrade produirait quatre
+				// événements sur une seule somme. `montantIdentifie` (voir
+				// `verticales/recouvrement/surveillance.ts`) l'évite en ne retenant
+				// que la facture, l'unité atomique de ce qui est dû.
+				//
+				// C'est donc le principal TTC des factures identifiées ci-dessous,
+				// et RIEN D'AUTRE : aucun intérêt de retard ni indemnité forfaitaire
+				// n'y entre. Sur un produit dont l'argument entier est l'exactitude,
+				// un chiffre juste sous une étiquette fausse est pire qu'un chiffre
 				// absent.
-				precision: 'somme des montants en jeu sur les points ci-dessous'
+				precision:
+					'principal TTC de vos factures identifiées ci-dessous, hors intérêts et indemnité forfaitaire'
 			}
 		],
 		corps: d.lignes,

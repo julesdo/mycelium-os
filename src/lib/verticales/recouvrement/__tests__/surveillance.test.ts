@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { depuisEuros, versEuros } from '../../../socle/montants';
+import { additionner, depuisEuros, versEuros, ZERO, type Montant } from '../../../socle/montants';
 import { detecterEvenements, montantIdentifie, PREAVIS } from '../surveillance';
 import type { EtatSurveille } from '../surveillance';
 
@@ -428,5 +428,83 @@ describe('ordre et cumul', () => {
 			AUJOURDHUI
 		);
 		expect(evenements.every((e) => e.action.length > 0)).toBe(true);
+	});
+});
+
+describe('montantIdentifie ne compte pas la même somme plusieurs fois', () => {
+	it('une facture échue ET proche de prescription ne compte qu’une fois', () => {
+		// La même facture produit ICI DEUX événements — FACTURE_ECHUE et
+		// PRESCRIPTION_PROCHE — parce que les deux boucles de `detecter()`
+		// parcourent les mêmes factures. Additionner les deux montants compterait
+		// deux fois le même argent : la facture reste UNE dette de 10 000 €, pas
+		// deux.
+		const evenements = detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-001',
+						montantExigible: depuisEuros('10000,00'),
+						dateEcheance: '2026-01-01',
+						statutPaiement: 'IMPAYEE',
+						datePrescription: '2026-09-10'
+					}
+				]
+			}),
+			AUJOURDHUI
+		);
+
+		expect(evenements.map((e) => e.type).sort()).toEqual(['FACTURE_ECHUE', 'PRESCRIPTION_PROCHE']);
+		expect(versEuros(montantIdentifie(evenements))).toBe('10 000,00');
+	});
+
+	it('la même facture reprise dans une créance et un encours dégradé ne compte qu’une fois', () => {
+		// Le cas complet du défaut signalé : une facture de 10 000 € qui est À LA
+		// FOIS échue, proche de prescription, portée par une créance mûre et
+		// comprise dans l'encours d'un débiteur qui se dégrade. Les cinq boucles
+		// de `detecter()` produisent alors QUATRE événements sur LA MÊME somme.
+		// Sommer les quatre montants ferait passer 10 000 € identifiés à 40 000 €
+		// affichés — le défaut démontré dans le brief.
+		const evenements = detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-001',
+						montantExigible: depuisEuros('10000,00'),
+						dateEcheance: '2026-01-01',
+						statutPaiement: 'IMPAYEE',
+						datePrescription: '2026-09-10'
+					}
+				],
+				creances: [
+					{ reference: 'C-001', total: depuisEuros('10000,00'), score: 0.9, statut: 'QUALIFIEE' }
+				],
+				debiteurs: [
+					{
+						reference: 'Débiteur X',
+						encoursTotal: depuisEuros('10000,00'),
+						santePrecedente: 'SAINE',
+						santeActuelle: 'PROCEDURE_COLLECTIVE'
+					}
+				]
+			}),
+			AUJOURDHUI
+		);
+
+		// Les quatre événements existent bien : la détection elle-même n'est pas
+		// en cause, seul le cumul l'est.
+		expect(evenements).toHaveLength(4);
+
+		// La somme des quatre montants serait 40 000,00 € — la preuve du défaut,
+		// reproduite ici exactement comme l'ancien `montantIdentifie` la calculait
+		// (additionner le montant de chaque événement, sans distinction de type).
+		const montantsBruts = evenements
+			.map((e) => e.montant)
+			.filter((montant): montant is Montant => montant !== null);
+		const sommeDesQuatre = montantsBruts.length > 0 ? additionner(...montantsBruts) : ZERO;
+		expect(versEuros(sommeDesQuatre)).toBe('40 000,00');
+
+		// Ce que `montantIdentifie` doit répondre : la facture est l'unité
+		// atomique de ce qui est dû, et elle vaut 10 000 €, pas 40 000 €.
+		expect(versEuros(montantIdentifie(evenements))).toBe('10 000,00');
 	});
 });

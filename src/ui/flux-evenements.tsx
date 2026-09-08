@@ -32,6 +32,22 @@ import { eurosCentimes } from './format';
  * Un gérant qui croit sa prescription surveillée ne la surveille pas lui-même,
  * et c'est la seule échéance qui éteint une créance sans que personne n'ait
  * rien fait.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * LE COMPTEUR NE SOMME QUE LES FACTURES, JAMAIS LEURS AGRÉGATS
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * `montantIdentifie` (calculé dans `verticales/recouvrement/surveillance.ts`)
+ * ne retient que les événements FACTURE_ECHUE et PRESCRIPTION_PROCHE,
+ * dédupliqués par facture — jamais le total d'une créance, le montant en jeu
+ * d'un dossier ni l'encours d'un débiteur, qui sont des VUES AGRÉGÉES de la
+ * MÊME monnaie que les factures affichées juste en dessous. L'étiquette le dit
+ * : « factures », pas « factures et dossiers ». Et c'est un principal TTC —
+ * NI intérêts de retard NI indemnité forfaitaire n'y entrent, et la précision
+ * en dessous du chiffre le dit aussi, pour la même raison qu'au § courriel de
+ * `emails/modeles/briefing.ts` : un chiffre juste sous une étiquette fausse
+ * est pire qu'un chiffre absent, sur un produit dont l'argument entier est
+ * l'exactitude.
  */
 
 export type UrgenceEvenement = 'CRITIQUE' | 'HAUTE' | 'NORMALE';
@@ -98,11 +114,19 @@ export function FluxEvenements({
 	return (
 		<div className="flex flex-col gap-cladd-xs">
 			{/* Le compteur cumulé : ce que le produit a permis d'identifier. C'est
-			    la seule réponse qui décide du renouvellement de l'abonnement. */}
-			<SurfaceCut contentClassName="flex flex-wrap items-baseline justify-between gap-cladd-3xs p-cladd-2xs">
-				<span className="text-cladd-sm text-cladd-fg-soft">
-					Repéré sur vos factures et vos dossiers
-				</span>
+			    la seule réponse qui décide du renouvellement de l'abonnement.
+			    Voir la note de tête de fichier : uniquement des factures
+			    distinctes, en principal TTC — jamais un agrégat, jamais un
+			    intérêt ni l'indemnité forfaitaire. */}
+			<SurfaceCut contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-2xs">
+				<div className="flex flex-col gap-0.5">
+					<span className="text-cladd-sm text-cladd-fg-soft">
+						Factures identifiées, principal TTC
+					</span>
+					<span className="text-cladd-2xs text-cladd-fg-softer">
+						Hors intérêts de retard et indemnité forfaitaire
+					</span>
+				</div>
 				<span className="text-letikette-titre font-bold tabular-nums">
 					{eurosCentimes(montantIdentifie)}
 				</span>
@@ -110,10 +134,7 @@ export function FluxEvenements({
 
 			<div className="flex flex-col gap-cladd-3xs">
 				{evenements.map((evenement) => (
-					<LigneEvenement
-						key={`${evenement.type}-${evenement.reference}`}
-						evenement={evenement}
-					/>
+					<LigneEvenement key={`${evenement.type}-${evenement.reference}`} evenement={evenement} />
 				))}
 			</div>
 

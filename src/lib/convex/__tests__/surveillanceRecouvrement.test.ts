@@ -145,7 +145,7 @@ describe('assemblage de l’état surveillé', () => {
 		expect(flux.hypotheses).toEqual([]);
 	}, DELAI_CONVEX);
 
-	it('cumule ce que le produit a permis d’identifier', async () => {
+	it('cumule ce que le produit a permis d’identifier, sans compter deux fois la même facture', async () => {
 		const t = convexTest(schema, modules);
 		const organizationId = await poser(t, { secteur: 'GENERAL' });
 
@@ -154,10 +154,13 @@ describe('assemblage de l’état surveillé', () => {
 			aujourdHui: AUJOURDHUI
 		});
 
-		// Une facture échue + une prescription proche, sur la même facture de
-		// 9 000 € : le cumul les compte toutes les deux, parce que ce sont deux
-		// raisons distinctes d'agir.
-		expect(flux.montantIdentifie).toBe(1_800_000n);
+		// Une facture échue + une prescription proche, sur la MÊME facture de
+		// 9 000 € : ce sont deux raisons distinctes d'agir, donc deux lignes dans
+		// `evenements`, mais une seule dette. `montantIdentifie` déduplique par
+		// facture — sommer les deux ferait passer 9 000 € identifiés à
+		// 18 000 € affichés.
+		expect(flux.evenements.filter((e) => e.montant !== null)).toHaveLength(2);
+		expect(flux.montantIdentifie).toBe(900_000n);
 	}, DELAI_CONVEX);
 
 	it('cloisonne : une organisation ne voit pas les factures de l’autre', async () => {
