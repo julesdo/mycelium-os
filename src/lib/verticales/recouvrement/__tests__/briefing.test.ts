@@ -234,7 +234,12 @@ describe('composerBriefing', () => {
 	it('porte le montant identifié tel quel, sans le recalculer', () => {
 		// Le montant vient du moteur de décompte. Le briefing le TRANSPORTE ; il
 		// ne refait aucun calcul, sans quoi deux chiffres pourraient diverger.
-		const montant = depuisCentimes(5_914_040n);
+		//
+		// La valeur est délibérément quelconque : elle ne doit ressembler à aucun
+		// total du produit. Celle qui figurait ici était l'ancien cumul de
+		// démonstration, calculé sur un double compte — un exemple qui a l'air
+		// signifiant finit par être recopié ailleurs comme s'il l'était.
+		const montant = depuisCentimes(1_234_567n);
 		const briefing = composerBriefing([evenement()], montant);
 		expect(briefing.montantIdentifie).toBe(montant);
 	});
