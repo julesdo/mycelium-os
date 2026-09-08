@@ -53,7 +53,6 @@ export function Hero() {
 		// fenêtre et passe DERRIÈRE la barre, qui est en `fixed` et ne réserve
 		// aucune place. Voir `--spacing-barre-publique`.
 		<header className="relative isolate w-full overflow-hidden border-b border-trait bg-linear-to-b from-azur-lavis via-azur-clair to-papier pt-barre-publique text-plume">
-
 			{/* `isolate` sur l'en-tête, et le calque de dessins à `-z-10` : c'est le
 			    seul montage qui glisse une couche ENTRE le dégradé de l'en-tête et son
 			    contenu. Sans contexte d'empilement, un z-index négatif passerait
@@ -81,8 +80,8 @@ export function Hero() {
 				</h1>
 
 				<p className="max-w-xl text-chapeau leading-relaxed font-normal text-balance text-plume-douce">
-					Le logiciel lit vos factures, surveille les échéances, et vous dit quelle créance
-					devient irrécouvrable — avant qu’elle le soit.
+					Le logiciel lit vos factures, surveille les échéances, et vous dit quelle créance devient
+					irrécouvrable — avant qu’elle le soit.
 				</p>
 
 				<div className="flex flex-col items-center gap-cladd-3xs pt-cladd-3xs sm:flex-row">
@@ -120,7 +119,7 @@ export function Hero() {
 			<div className="relative mx-auto w-full max-w-7xl px-cladd-2xs pt-cladd-2xl pb-cladd-sm md:pt-cladd-2xl">
 				<Tablette
 					className="max-w-6xl"
-					description="Letikette sur tablette : l’écran « À traiter » — une facture déjà prescrite à 9 240 €, une signification d’ordonnance à neuf jours pour 18 450 €, une créance mûre à 31 200,50 €, et une facture échue à 249,90 €. Total repéré : 59 140,40 €."
+					description="Letikette sur tablette : l’écran « À traiter » — une facture déjà prescrite à 9 240 €, une signification d’ordonnance à neuf jours pour 18 450 €, une créance mûre à 31 200,50 €, et une facture échue à 249,90 €. Factures identifiées : 9 489,90 €."
 				>
 					<ApercuApplication />
 				</Tablette>

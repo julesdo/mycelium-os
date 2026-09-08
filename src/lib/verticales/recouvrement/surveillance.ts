@@ -341,10 +341,48 @@ export function detecterEvenements(
  *
  * C'est le compteur cumulé du brief. Il répond à la seule question qui décide
  * du renouvellement : « qu'est-ce que ça m'a rapporté ? »
+ *
+ * ⚠️ NE SOMME QUE LES FACTURES, JAMAIS LEURS AGRÉGATS. `detecter()` émet cinq
+ * types d'événements, mais deux seulement portent une somme réellement
+ * distincte : FACTURE_ECHUE et PRESCRIPTION_PROCHE, tous deux au montant d'UNE
+ * facture. CREANCE_MURE (le total d'une créance), ECHEANCE_PROCEDURE (le
+ * montant en jeu d'un dossier) et DEBITEUR_DEGRADE (l'encours d'un débiteur)
+ * ne sont PAS de l'argent supplémentaire : ce sont des VUES AGRÉGÉES de la
+ * MÊME monnaie que celle déjà portée par les factures qui les composent — une
+ * créance additionne des factures, un dossier porte une créance, un encours
+ * additionne toutes les factures d'un débiteur. Additionner un agrégat à ses
+ * propres composants est un double compte PAR CONSTRUCTION, pas un cas limite :
+ * une facture de 10 000 € échue ET proche de prescription ET portée par une
+ * créance mûre ET comprise dans l'encours d'un débiteur dégradé produit QUATRE
+ * événements sur LA MÊME somme, et les additionner ferait passer 10 000 €
+ * identifiés à 40 000 € affichés.
+ *
+ * La facture est l'unité atomique de ce qui est dû : rien de plus petit n'a de
+ * sens à additionner, et rien n'est perdu à s'y limiter — une créance mûre ou
+ * un dossier en procédure reposent sur des factures échues, qui produisent
+ * déjà leur propre événement.
+ *
+ * DÉDUPLIQUÉ PAR RÉFÉRENCE. Une même facture échue ET proche de sa
+ * prescription produit un FACTURE_ECHUE et un PRESCRIPTION_PROCHE — deux
+ * événements légitimes, dont le gérant doit voir les deux lignes — mais une
+ * seule dette : ne garder que la première référence rencontrée après le tri
+ * par urgence évite de la compter deux fois.
+ *
+ * NE PAS « SIMPLIFIER » EN RÉINTRODUISANT LES AUTRES TYPES : c'est exactement
+ * ce qui a produit le double compte que cette fonction corrige.
  */
 export function montantIdentifie(evenements: readonly Evenement[]): Montant {
-	const montants = evenements
-		.map((evenement) => evenement.montant)
-		.filter((montant): montant is Montant => montant !== null);
+	const referencesVues = new Set<string>();
+	const montants: Montant[] = [];
+
+	for (const evenement of evenements) {
+		if (evenement.type !== 'FACTURE_ECHUE' && evenement.type !== 'PRESCRIPTION_PROCHE') continue;
+		if (evenement.montant === null) continue;
+		if (referencesVues.has(evenement.reference)) continue;
+
+		referencesVues.add(evenement.reference);
+		montants.push(evenement.montant);
+	}
+
 	return montants.length > 0 ? additionner(...montants) : ZERO;
 }

@@ -1,11 +1,5 @@
 import { Button, Chip, SurfaceCut, SearchField } from '@cladd-ui/react';
-import {
-	ChevronsUpDownIcon,
-	InboxIcon,
-	SettingsIcon,
-	UploadIcon,
-	UsersIcon
-} from 'lucide-react';
+import { ChevronsUpDownIcon, InboxIcon, SettingsIcon, UploadIcon, UsersIcon } from 'lucide-react';
 import { LogoLetikette, MotLetikette, FluxEvenements, type EvenementAffiche } from '../ui';
 
 /**
@@ -41,10 +35,20 @@ import { LogoLetikette, MotLetikette, FluxEvenements, type EvenementAffiche } fr
  * LES CHIFFRES SE TIENNENT ENTRE EUX, ET C'EST VÉRIFIABLE.
  *
  * Sur une page dont l'argument entier est l'exactitude d'un décompte, un jeu de
- * démonstration dont les totaux ne tombent pas juste est une faute. Ceux-ci se
- * recoupent, au centime :
+ * démonstration dont les totaux ne tombent pas juste est une faute. Chaque
+ * ligne affiche son propre montant, mais `TOTAL_IDENTIFIE` — le compteur
+ * cumulé — ne somme QUE les deux factures distinctes de la liste :
  *
- *   9 240,00 + 18 450,00 + 31 200,50 + 249,90 = 59 140,40 €
+ *   PRESCRIPTION_PROCHE FA-2021-0087 (9 240,00 €)
+ *   + FACTURE_ECHUE FA-2026-0311 (249,90 €)
+ *   = 9 489,90 €
+ *
+ * JAMAIS LA CRÉANCE MÛRE (31 200,50 €) NI L'ÉCHÉANCE DE PROCÉDURE
+ * (18 450,00 €) : ce sont des vues agrégées de la même monnaie que les
+ * factures qui les composent — une créance additionne des factures, un
+ * dossier porte une créance. Les additionner à leurs propres composants serait
+ * le double compte que `montantIdentifie` corrige (voir
+ * `verticales/recouvrement/surveillance.ts`).
  *
  * LE CAS LE PLUS DUR EST MONTRÉ EN PREMIER, et il est mauvais : une facture
  * DÉJÀ prescrite, c'est-à-dire de l'argent définitivement perdu. Un écran où
@@ -87,7 +91,7 @@ const EVENEMENTS: EvenementAffiche[] = [
 	}
 ];
 
-const TOTAL_IDENTIFIE = 5_914_040n;
+const TOTAL_IDENTIFIE = 948_990n;
 
 const ONGLETS = [
 	{ label: 'À traiter', Icone: InboxIcon, actif: true },
@@ -140,9 +144,7 @@ export function ApercuApplication() {
 
 			<div className="flex min-h-0 flex-1 flex-col gap-cladd-2xs p-cladd-2xs">
 				<div className="flex flex-col gap-1">
-					<h2 className="text-letikette-titre leading-tight font-bold tracking-tight">
-						À traiter
-					</h2>
+					<h2 className="text-letikette-titre leading-tight font-bold tracking-tight">À traiter</h2>
 					<p className="text-cladd-xs text-cladd-fg-soft">
 						4 points d’attention · 312 factures suivies, 47 débiteurs
 					</p>

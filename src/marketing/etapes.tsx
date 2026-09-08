@@ -39,9 +39,14 @@ const FORMATS = [
 ] as const;
 
 /**
- * LES CHIFFRES SE TIENNENT ENTRE EUX : 9 240,00 + 18 450,00 + 31 200,50 +
- * 249,90 = 59 140,40 €. Sur une page dont l'argument est l'exactitude d'un
- * décompte, un jeu dont les totaux ne tombent pas juste est une faute.
+ * LES CHIFFRES SE TIENNENT ENTRE EUX. Chaque ligne affiche son propre montant
+ * (9 240,00 / 18 450,00 / 31 200,50 / 249,90 €), mais le compteur cumulé ne
+ * somme QUE les deux factures distinctes — PRESCRIPTION_PROCHE FA-2021-0087 et
+ * FACTURE_ECHUE FA-2026-0311, soit 9 240,00 + 249,90 = 9 489,90 € — jamais la
+ * créance mûre ni l'échéance de procédure, qui sont des vues agrégées de la
+ * même monnaie. Voir `montantIdentifie` dans `verticales/recouvrement/surveillance.ts`.
+ * Sur une page dont l'argument est l'exactitude d'un décompte, un jeu dont les
+ * totaux ne tombent pas juste est une faute.
  */
 const EVENEMENTS: EvenementAffiche[] = [
 	{
@@ -174,7 +179,7 @@ export function Etapes() {
 				<Cadre contentClassName="p-cladd-2xs">
 					<FluxEvenements
 						evenements={EVENEMENTS}
-						montantIdentifie={5_914_040n}
+						montantIdentifie={948_990n}
 						hypotheses={[]}
 						anglesMorts={[]}
 					/>
@@ -230,7 +235,9 @@ function BilanImport() {
 					624 écritures hors périmètre (produits, TVA, trésorerie) — écartées à bon droit.
 				</p>
 				<p className="text-cladd-xs font-semibold">2 lignes n’ont pas pu être lues :</p>
-				<p className="text-cladd-xs text-plume-claire">· Montant illisible en débit ou en crédit.</p>
+				<p className="text-cladd-xs text-plume-claire">
+					· Montant illisible en débit ou en crédit.
+				</p>
 				<p className="text-cladd-xs text-plume-claire">
 					· Écriture sur compte client sans référence de pièce.
 				</p>
