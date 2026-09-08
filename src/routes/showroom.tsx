@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { Toolbar, Segmented, SegmentedButton, SectionTitle } from '@cladd-ui/react';
-import { FileSpreadsheetIcon } from 'lucide-react';
+import { AlertTriangleIcon, FileSpreadsheetIcon } from 'lucide-react';
 import {
 	Page,
 	PageHeader,
 	PageBody,
 	EmptyState,
+	Bandeau,
 	ZoneDepot,
 	FluxEvenements,
 	Decompte,
@@ -385,6 +386,37 @@ function DemoDonnees() {
 	);
 }
 
+/**
+ * LES DEUX BANDEAUX QUI DISENT QUE LA SURVEILLANCE NE TOURNE PAS.
+ *
+ * Ils vivent sur l'écran d'accueil, derrière l'authentification, et ne
+ * s'affichent QUE lorsque quelque chose ne va pas — donc quasiment jamais en
+ * usage normal. Sans cette entrée de showroom, personne ne les regarderait
+ * avant le jour où ils apparaissent chez un client.
+ *
+ * ILS SONT MONTRÉS ENSEMBLE ALORS QU'ILS S'EXCLUENT À L'ÉCRAN. Ce qu'on vient
+ * vérifier ici est typographique : deux phrases longues dans un bandeau étroit,
+ * à 375 px, sans que rien ne déborde.
+ */
+function DemoSurveillanceMuette() {
+	return (
+		<Page>
+			<PageHeader titre="À traiter" sousTitre="4 points d’attention" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-3xs">
+					<Bandeau ton="alerte" icone={<AlertTriangleIcon size={18} />}>
+						La surveillance a échoué le 28 août 2026. Vos délais ne sont pas suivis depuis.
+					</Bandeau>
+					<Bandeau ton="alerte" icone={<AlertTriangleIcon size={18} />}>
+						La surveillance n’a pas encore tourné sur cet établissement. Vos délais ne sont pas
+						encore suivis.
+					</Bandeau>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'flux',
 	'decompte',
@@ -393,6 +425,7 @@ const ECRANS = [
 	'abonnement',
 	'equipe',
 	'donnees',
+	'muette',
 	'coquille'
 ] as const;
 type Ecran = (typeof ECRANS)[number];
@@ -424,6 +457,7 @@ function Showroom() {
 				{ecran === 'abonnement' ? <DemoAbonnement /> : null}
 				{ecran === 'equipe' ? <DemoEquipe /> : null}
 				{ecran === 'donnees' ? <DemoDonnees /> : null}
+				{ecran === 'muette' ? <DemoSurveillanceMuette /> : null}
 				{ecran === 'coquille' ? (
 					<Shell>
 						<DemoFlux />

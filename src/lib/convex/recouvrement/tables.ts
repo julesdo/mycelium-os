@@ -469,5 +469,42 @@ export const recouvrementTables = {
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_creance', ['creanceId'])
-		.index('by_org_and_etat', ['organizationId', 'etat'])
+		.index('by_org_and_etat', ['organizationId', 'etat']),
+
+	/**
+	 * Le relevé d'un battement quotidien, par organisation et par jour.
+	 *
+	 * DEUX RAISONS D'EXISTER, ET LA SECONDE COMPTE AUTANT.
+	 *
+	 * 1. L'IDEMPOTENCE. Un briefing envoyé deux fois détruit plus de confiance
+	 *    qu'un briefing manquant. La clé (organisation, jour) doit rester unique,
+	 *    mais Convex n'a pas de contrainte d'unicité en base : l'index
+	 *    `by_org_and_jour` permet seulement de VÉRIFIER avant d'écrire — c'est au
+	 *    code appelant de lire avant d'insérer, jamais à la base de refuser.
+	 *
+	 * 2. LA VISIBILITÉ DE L'ÉCHEC. Un battement qui plante en silence laisse le
+	 *    client croire qu'il est surveillé alors qu'il ne l'est plus — le pire
+	 *    état possible du produit. `statut` et `erreur` sont lus par l'interface
+	 *    du client, pas seulement par un journal.
+	 *
+	 * `cles` porte l'empreinte des événements du jour, pour que le lendemain
+	 * puisse dire ce qui est nouveau.
+	 */
+	battements: defineTable({
+		organizationId: v.id('organizations'),
+		/** `AAAA-MM-JJ`, en UTC comme toutes les dates du produit. */
+		jour: v.string(),
+		statut: v.union(v.literal('PARLE'), v.literal('TU'), v.literal('ECHEC')),
+		/** Pourquoi on a parlé, ou pourquoi on s'est tu. Affiché tel quel. */
+		raison: v.string(),
+		/** Les clés d'événement de ce jour, pour la comparaison du lendemain. */
+		cles: v.array(v.string()),
+		/** Le montant identifié au moment du battement, en centimes. */
+		montantIdentifie: v.int64(),
+		/** Renseigné uniquement quand `statut` vaut `ECHEC`. */
+		erreur: v.optional(v.string()),
+		termineLe: v.number()
+	})
+		.index('by_org_and_jour', ['organizationId', 'jour'])
+		.index('by_org', ['organizationId'])
 };

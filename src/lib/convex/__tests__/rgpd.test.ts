@@ -164,6 +164,16 @@ async function poserEtablissement(t: ReturnType<typeof convexTest>) {
 			createdAt: Date.now()
 		});
 
+		await ctx.db.insert('battements', {
+			organizationId,
+			jour: '2026-09-03',
+			statut: 'PARLE',
+			raison: 'premier briefing',
+			cles: ['FACTURE_ECHUE:FA-1'],
+			montantIdentifie: 100_000n,
+			termineLe: Date.now()
+		});
+
 		return { organizationId, debiteurId };
 	});
 }
@@ -188,7 +198,8 @@ describe("la purge d'un établissement", () => {
 				'creances',
 				'debiteurs',
 				'profilsCreancier',
-				'notifications'
+				'notifications',
+				'battements'
 			] as const) {
 				const restant = await ctx.db.query(table).collect();
 				expect(restant, `${table} devrait être vide`).toHaveLength(0);

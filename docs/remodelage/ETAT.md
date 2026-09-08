@@ -557,3 +557,95 @@ même qu'on la lui demande. Les deux champs, `maintenance.ts`, la tâche et son 
 `schema.ts` revient à un `organizations` qui ne décrit que le produit actuel.
 
 **534 tests** — deux de moins, ceux du code retiré. Aucun test survivant n'a été affaibli.
+
+---
+
+## Le battement quotidien — le produit ne dort plus (3 septembre 2026)
+
+Jusqu'ici le moteur calculait juste et refusait de mentir, mais **il ne faisait rien tout seul** : la
+surveillance se calculait quand on ouvrait l'écran. Il n'avait ni yeux, ni bras, ni pouls.
+
+Le pouls existe. Un cron quotidien à six heures UTC planifie **un travail par organisation**,
+recalcule l'état des créances, décide s'il y a quelque chose à dire, envoie un briefing du matin —
+ou se tait.
+
+### Les quatre règles que le code tient, et qui sont des décisions produit
+
+**Le silence est un résultat, pas une panne.** On parle sur un point critique, une nouveauté, ou
+sept jours de silence. Sinon on se tait. Un outil qui crie tous les matins se fait filtrer en trois
+semaines ; la rareté de l'alarme est ce qui la fait obéir.
+
+**Un briefing envoyé deux fois détruit plus de confiance qu'un briefing manquant.** La clé
+(organisation, jour) refuse le rejeu — vérifiée avant chaque écriture, l'index ne garantissant rien
+par lui-même.
+
+**Un échec silencieux est le pire état du produit.** Un gérant qui se croit surveillé alors que le
+battement plante depuis six jours ne surveille pas lui-même, et perdra une créance en croyant être
+couvert. L'échec s'affiche donc dans SON interface, pas dans un journal.
+
+**Le briefing part vers le client, jamais vers le débiteur.** Les destinataires se lisent dans
+`organizationMembers` et nulle part ailleurs.
+
+### Ce que les revues ont trouvé, et qui valait le détour
+
+Neuf tâches, chacune relue deux fois. Les revues n'ont pas produit du style, elles ont produit des
+défauts.
+
+**Le tri d'événements existait déjà.** `composerBriefing` en avait recopié un, et la copie avait
+perdu le départage par référence. Deux factures de même montant et même urgence auraient fait
+changer la tête du briefing au hasard de l'ordre d'arrivée. Il n'existe désormais qu'un
+`comparerEvenements`, dans `surveillance.ts`.
+
+**Une phrase pouvait se répéter dans le courriel.** La garde était posée sur la POSITION — prendre
+le deuxième événement. Or c'est du TEXTE qui part : deux dossiers au même libellé d'étape et à la
+même date limite produisent une explication identique au caractère près. La déduplication porte
+maintenant sur le texte, et le relecteur l'a prouvé en construisant le cas.
+
+**L'ordre envoi/insert n'était pas anodin.** `resend.sendEmail` écrit dans la même transaction. Avec
+l'insert du succès en premier, un échec d'envoi laissait DEUX relevés pour le même jour — et le
+`.unique()` du contrôle de non-rejeu cassait alors ce jour définitivement. On envoie avant
+d'enregistrer : un échec laisse un seul relevé, ou aucun.
+
+**Une lecture non bornée menait à un échec quotidien garanti.** `precedentDe` lisait tout
+l'historique — 1 095 documents par nuit à trois ans, 3 650 à dix. L'index descendant borne la
+lecture au nombre de nuits en échec consécutives, plus une.
+
+### Deux trous venaient du plan, pas de l'exécution
+
+**La purge RGPD.** Le mot « rgpd » n'apparaissait dans aucune des neuf tâches. La table `battements`
+aurait survécu, orpheline, à la suppression d'un établissement — le produit violant sa propre règle,
+écrite en tête de `rgpd.ts` : « rien n'est mutualisé, donc rien n'est épargné ». **Toute tâche qui
+ajoute une table cloisonnée doit l'ajouter à la purge et à l'export DANS LA MÊME TÂCHE.**
+
+**La liste des tables écrite en dur.** `tables.test.ts` refusait `battements` depuis la tâche 4, et
+personne ne l'a vu parce qu'on ne lançait que les tests ciblés. Le test faisait exactement son
+travail. **On lance la suite complète après chaque tâche.**
+
+### Un courriel affirmait quelque chose de faux
+
+Le gabarit annonçait le montant avec la précision « intérêts de retard courus inclus ». En remontant
+la chaîne : `montantExigible` vaut `depuisCentimes(facture.montantTTC)` — **le principal, et rien
+d'autre**. Ni intérêts, ni indemnité forfaitaire.
+
+Sur un produit dont l'argument entier est l'exactitude, un chiffre juste sous une étiquette fausse
+est pire qu'un chiffre absent. La précision dit maintenant « somme des montants en jeu sur les points
+ci-dessous ».
+
+⚠️ **Et ce chiffre a un défaut plus profond, non corrigé** : il additionne des grandeurs qui se
+recouvrent. Une facture, la créance qui la contient et l'encours de son débiteur peuvent être comptés
+trois fois. C'est le chiffre le plus visible du produit — il s'affiche en gros sur l'écran d'accueil
+et part désormais par courriel. **À traiter avant tout usage commercial.**
+
+### Chiffres
+
+**588 tests**, 0 erreur de lint, `check`, `check:bundle`, `check:vercel` et `build` verts. Le cron
+`battementQuotidien` est poussé sur le déploiement de développement.
+
+### Ce qui reste ouvert
+
+1. **Le montant identifié compte plusieurs fois la même somme** (ci-dessus).
+2. **Les dates ne sont pas validées à l'import.** Une `dateEcheance` mal formée traverse la
+   validation Convex et casse le calcul de prescription — une seule ligne abîmée met en échec la
+   surveillance de toute l'organisation. Le battement l'attrape et l'affiche, mais la cause reste.
+3. **Trois tables échappent à la purge RGPD** : `emailEvents` (peut contenir une adresse dans son
+   payload), `adminAuditLogs` (reliquat du modèle de rôle staff), `passkey` (inerte aujourd'hui).

@@ -177,9 +177,9 @@ export const _pageDeReglements = internalQuery({
 
 /**
  * Tout ce qui tient en une lecture : l'établissement, ses dépôts, ses créances,
- * ses décomptes, ses dossiers, ses débiteurs, ses membres. Ces tables se
- * comptent en dizaines de lignes — seules les factures et les règlements
- * demandent une pagination.
+ * ses décomptes, ses dossiers, ses débiteurs, ses membres, ses battements. Ces
+ * tables se comptent en dizaines de lignes — seules les factures et les
+ * règlements demandent une pagination.
  */
 export const _entetesExport = internalQuery({
 	args: { organizationId: v.id('organizations') },
@@ -187,43 +187,67 @@ export const _entetesExport = internalQuery({
 	handler: async (ctx, { organizationId }) => {
 		const org = await ctx.db.get(organizationId);
 
-		const [depots, creances, decomptes, dossiers, debiteurs, pieces, membres, invitations] =
-			await Promise.all([
-				ctx.db
-					.query('importsRecouvrement')
-					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-					.collect(),
-				ctx.db
-					.query('creances')
-					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-					.collect(),
-				ctx.db
-					.query('decomptes')
-					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-					.collect(),
-				ctx.db
-					.query('dossiers')
-					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-					.collect(),
-				ctx.db
-					.query('debiteurs')
-					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-					.collect(),
-				ctx.db
-					.query('pieces')
-					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-					.collect(),
-				ctx.db
-					.query('organizationMembers')
-					.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
-					.collect(),
-				ctx.db
-					.query('organizationInvitations')
-					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-					.collect()
-			]);
+		const [
+			depots,
+			creances,
+			decomptes,
+			dossiers,
+			debiteurs,
+			pieces,
+			membres,
+			invitations,
+			battements
+		] = await Promise.all([
+			ctx.db
+				.query('importsRecouvrement')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('creances')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('decomptes')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('dossiers')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('debiteurs')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('pieces')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('organizationMembers')
+				.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('organizationInvitations')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('battements')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect()
+		]);
 
-		return { org, depots, creances, decomptes, dossiers, debiteurs, pieces, membres, invitations };
+		return {
+			org,
+			depots,
+			creances,
+			decomptes,
+			dossiers,
+			debiteurs,
+			pieces,
+			membres,
+			invitations,
+			battements
+		};
 	}
 });
 
@@ -239,6 +263,7 @@ type Entetes = {
 	pieces: unknown[];
 	membres: unknown[];
 	invitations: unknown[];
+	battements: unknown[];
 };
 
 /**
@@ -312,7 +337,8 @@ export const exporterMesDonnees = action({
 			pieces: entetes.pieces,
 			creances: entetes.creances,
 			decomptes: entetes.decomptes,
-			dossiers: entetes.dossiers
+			dossiers: entetes.dossiers,
+			battements: entetes.battements
 		};
 
 		const json = JSON.stringify(contenu, null, 2);
@@ -481,6 +507,10 @@ export const purgerEtablissement = internalMutation({
 		budget = await viderParIndexOrg(ctx, 'debiteurs', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'profilsCreancier', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'notifications', organizationId, budget);
+		// battements ne référence rien et rien ne la référence : sa place dans
+		// l'ordre est libre, elle est mise ici pour rester avec le reste des
+		// tables purgées par le même helper générique.
+		budget = await viderParIndexOrg(ctx, 'battements', organizationId, budget);
 
 		if (budget <= 0) {
 			await replanifier();
@@ -651,7 +681,8 @@ async function viderParIndexOrg(
 		| 'creances'
 		| 'debiteurs'
 		| 'profilsCreancier'
-		| 'notifications',
+		| 'notifications'
+		| 'battements',
 	organizationId: Id<'organizations'>,
 	budget: number
 ): Promise<number> {
