@@ -33,7 +33,14 @@ describe('schéma du recouvrement', () => {
 	it('déclare les tables du modèle de domaine, et elles seules', () => {
 		// La liste est écrite en dur DÉLIBÉRÉMENT : ajouter une table doit être
 		// un geste conscient, pas un effet de bord qu'aucun test ne remarque.
+		//
+		// `battements` est arrivée le 3 septembre 2026 avec le battement
+		// quotidien, et ce test a fait exactement ce pour quoi il existe : il a
+		// refusé l'ajout tant que personne ne l'avait déclaré ici. Il a aussi
+		// rappelé, au passage, qu'une table nouvelle doit être branchée à la
+		// purge RGPD — ce que le plan avait oublié.
 		expect(TABLES.map(([nom]) => nom).sort()).toEqual([
+			'battements',
 			'creances',
 			'debiteurs',
 			'decomptes',
