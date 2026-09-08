@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { convexTest } from 'convex-test';
 import schema from '../schema';
 import { internal } from '../_generated/api';
@@ -378,6 +378,76 @@ describe('executerPourOrganisation', () => {
 
 			const releves = await t.run(async (ctx) => ctx.db.query('battements').collect());
 			expect(releves).toHaveLength(1);
+		},
+		DELAI_CONVEX
+	);
+});
+
+describe('planifierBattements', () => {
+	it(
+		'planifie un travail par organisation',
+		async () => {
+			// UN TRAVAIL PAR ORGANISATION, ET PAS UN BALAYAGE UNIQUE. Une seule
+			// fonction qui parcourrait toutes les organisations ne tiendrait pas à
+			// l'échelle, et surtout : une organisation qui échoue emporterait
+			// toutes les suivantes.
+			//
+			// ⚠️ `finishAllScheduledFunctions` EXIGE DE VRAIES FAUX-TIMERS. Sa
+			// propre déclaration de type dit passer « habituellement
+			// `vi.runAllTimers` », utilisé « en combinaison avec
+			// `vi.useFakeTimers()` ». Le mécanisme le confirme : `runAfter`
+			// planifie via un VRAI `setTimeout`, et la boucle interne appelle
+			// `advanceTimers()` PUIS vérifie aussitôt si une fonction planifiée
+			// tourne — sans jamais rendre la main à la boucle d'événements entre
+			// les deux. Un `() => {}` (vrais timers, rien à avancer) revient donc
+			// immédiatement, avant même que le `setTimeout(0)` du planificateur
+			// n'ait eu l'occasion de s'exécuter : zéro relevé, pas trois. Vérifié
+			// en le faisant échouer ainsi avant ce correctif.
+			vi.useFakeTimers();
+			try {
+				const t = convexTest(schema, modules);
+				await organisation(t);
+				await organisation(t);
+				await organisation(t);
+
+				await t.mutation(internal.recouvrement.battement.planifierBattements, {});
+				await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+				const releves = await t.run(async (ctx) => ctx.db.query('battements').collect());
+				expect(releves).toHaveLength(3);
+			} finally {
+				vi.useRealTimers();
+			}
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'donne le MÊME jour à toutes les organisations',
+		async () => {
+			// La date est calculée une seule fois, dans le planificateur. Si chaque
+			// travail lisait l'horloge, deux organisations traitées de part et
+			// d'autre de minuit UTC recevraient des jours différents pour le même
+			// battement — et le lendemain, l'une croirait avoir sauté une nuit.
+			//
+			// ⚠️ Mêmes faux-timers que le test précédent, et pour la même raison :
+			// voir son commentaire pour le détail du mécanisme.
+			vi.useFakeTimers();
+			try {
+				const t = convexTest(schema, modules);
+				await organisation(t);
+				await organisation(t);
+
+				await t.mutation(internal.recouvrement.battement.planifierBattements, {});
+				await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+				const jours = await t.run(async (ctx) =>
+					(await ctx.db.query('battements').collect()).map((releve) => releve.jour)
+				);
+				expect(new Set(jours).size).toBe(1);
+			} finally {
+				vi.useRealTimers();
+			}
 		},
 		DELAI_CONVEX
 	);

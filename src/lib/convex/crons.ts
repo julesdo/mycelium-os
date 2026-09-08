@@ -9,4 +9,14 @@ crons.interval('deleteUnusedFiles', { hours: 1 }, internal.files.vacuum.deleteUn
 // Clean up expired uploads/download grants/files from files-control
 crons.interval('cleanupExpiredFiles', { hours: 1 }, internal.files.cleanup.cleanupExpiredFiles, {});
 
+// LE BATTEMENT QUOTIDIEN. Six heures UTC : le briefing doit être arrivé avant
+// que le gérant n'ouvre sa boîte, et assez tard pour que les registres publics
+// de la veille soient à jour.
+crons.daily(
+	'battementQuotidien',
+	{ hourUTC: 6, minuteUTC: 0 },
+	internal.recouvrement.battement.planifierBattements,
+	{}
+);
+
 export default crons;

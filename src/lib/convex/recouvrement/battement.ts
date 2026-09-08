@@ -221,3 +221,40 @@ export const executerPourOrganisation = internalMutation({
 		}
 	}
 });
+
+/**
+ * Planifie un battement par organisation.
+ *
+ * ⚠️ UN TRAVAIL PAR ORGANISATION, ET PAS UN BALAYAGE UNIQUE. Une seule fonction
+ * qui parcourrait toutes les organisations ne tiendrait pas à l'échelle, et
+ * surtout : une organisation qui échoue emporterait toutes les suivantes. Le
+ * planificateur isole chaque exécution et la rend reprenable.
+ *
+ * LA DATE EST CALCULÉE ICI, UNE FOIS. Si chaque travail lisait l'horloge, deux
+ * organisations traitées de part et d'autre de minuit UTC recevraient des jours
+ * différents pour le même battement — et le lendemain, l'une croirait avoir
+ * sauté une nuit.
+ */
+export const planifierBattements = internalMutation({
+	args: {},
+	returns: v.null(),
+	handler: async (ctx): Promise<null> => {
+		const jour = new Date().toISOString().slice(0, 10);
+
+		// ⚠️ LECTURE NON BORNÉE, ASSUMÉE POUR L'INSTANT. Il n'y a qu'une poignée
+		// d'organisations aujourd'hui. Le jour où leur nombre approche la limite
+		// de documents lus par transaction, il faudra paginer cette requête —
+		// nommer la limite ici, c'est en faire une dette surveillée plutôt qu'une
+		// bombe à retardement silencieuse.
+		const organisations = await ctx.db.query('organizations').collect();
+
+		for (const organisation of organisations) {
+			await ctx.scheduler.runAfter(0, internal.recouvrement.battement.executerPourOrganisation, {
+				organizationId: organisation._id,
+				jour
+			});
+		}
+
+		return null;
+	}
+});
