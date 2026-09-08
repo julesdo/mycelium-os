@@ -4,7 +4,7 @@ import type { MutationCtx } from '../_generated/server';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { depuisCentimes } from '../../socle/montants';
-import { cleEvenement, decider, composerBriefing } from '../../verticales/recouvrement/briefing';
+import { cleEvenement, decider } from '../../verticales/recouvrement/briefing';
 import type { Precedent } from '../../verticales/recouvrement/briefing';
 import type { Evenement } from '../../verticales/recouvrement/surveillance';
 
@@ -31,23 +31,32 @@ import type { Evenement } from '../../verticales/recouvrement/surveillance';
  *
  * Les relevés en ÉCHEC sont écartés : ils ne portent aucune clé, et s'y comparer
  * ferait paraître tous les événements nouveaux le lendemain d'une panne.
+ *
+ * ⚠️ LECTURE BORNÉE, DÉLIBÉRÉMENT. `by_org_and_jour` trie déjà par jour : en
+ * parcourant en ordre décroissant à partir de `jour` (exclu), le premier relevé
+ * qui n'est PAS en ÉCHEC est le précédent cherché, et on arrête là. Un
+ * `.collect()` sur `by_org` lirait TOUT l'historique de l'organisation à chaque
+ * nuit — ~1095 documents à trois ans, ~3650 à dix, un coût qui croît en O(T²)
+ * sur la durée de vie du produit et qui finit par heurter la limite de
+ * documents lus par transaction ; ce jour-là, le battement de ce client échoue
+ * tous les soirs jusqu'à intervention manuelle. Ici, le coût est borné au
+ * nombre de nuits en ÉCHEC consécutives juste avant `jour`, plus une — presque
+ * toujours une seule lecture. NE PAS « SIMPLIFIER » EN REVENANT AU `.collect()`.
  */
 async function precedentDe(
 	ctx: MutationCtx,
 	organizationId: Id<'organizations'>,
 	jour: string
 ): Promise<Precedent | null> {
-	const releves = await ctx.db
+	const iterateur = ctx.db
 		.query('battements')
-		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-		.collect();
+		.withIndex('by_org_and_jour', (q) => q.eq('organizationId', organizationId).lt('jour', jour))
+		.order('desc');
 
-	const anterieurs = releves
-		.filter((releve) => releve.jour < jour && releve.statut !== 'ECHEC')
-		.sort((a, b) => (a.jour < b.jour ? 1 : -1));
-
-	const dernier = anterieurs[0];
-	return dernier ? { le: dernier.jour, cles: dernier.cles } : null;
+	for await (const releve of iterateur) {
+		if (releve.statut !== 'ECHEC') return { le: releve.jour, cles: releve.cles };
+	}
+	return null;
 }
 
 export const executerPourOrganisation = internalMutation({
@@ -93,17 +102,19 @@ export const executerPourOrganisation = internalMutation({
 				termineLe: Date.now()
 			});
 
-			// L'envoi arrive à la tâche suivante. Composer dès maintenant garde la
-			// règle exercée par les tests, et rend l'ajout de l'envoi trivial.
-			if (verdict.decision === 'PARLER') {
-				composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
-			}
-
 			return null;
 		} catch (erreur) {
 			// 2. L'échec laisse une trace. Un battement qui plante en silence
 			//    laisse le client croire qu'il est surveillé alors qu'il ne l'est
 			//    plus — le pire état possible du produit.
+			//
+			// ⚠️ SI CET INSERT ÉCHOUE À SON TOUR, ON NE LE RATTRAPE PAS. Un `try`
+			// imbriqué ici cacherait une erreur d'écriture derrière un succès
+			// apparent — pire que de la laisser sortir. En la laissant sortir,
+			// Convex abandonne toute la transaction et AUCUN relevé n'est écrit
+			// pour ce jour ; c'est un état dégradé assumé, pas rattrapé, pour
+			// rester visible (journal, alerte de plateforme) plutôt que d'être
+			// étouffé ici.
 			await ctx.db.insert('battements', {
 				organizationId,
 				jour,
