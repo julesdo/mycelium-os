@@ -383,6 +383,68 @@ describe('executerPourOrganisation', () => {
 	);
 });
 
+describe('dernierBattement', () => {
+	it(
+		'rend le dernier relevé de l’organisation',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await organisation(t);
+
+			await t.mutation(internal.recouvrement.battement.executerPourOrganisation, {
+				organizationId,
+				jour: '2026-09-02'
+			});
+			await t.mutation(internal.recouvrement.battement.executerPourOrganisation, {
+				organizationId,
+				jour: '2026-09-03'
+			});
+
+			const dernier = await t.query(internal.recouvrement.battement.dernierBattementInterne, {
+				organizationId
+			});
+			expect(dernier?.jour).toBe('2026-09-03');
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'rend null quand aucun battement n’a jamais tourné',
+		async () => {
+			// C'est l'état qu'il faut AFFICHER au client : « la surveillance n'a pas
+			// encore tourné ». Le taire lui ferait croire qu'elle tourne.
+			const t = convexTest(schema, modules);
+			const organizationId = await organisation(t);
+
+			const dernier = await t.query(internal.recouvrement.battement.dernierBattementInterne, {
+				organizationId
+			});
+			expect(dernier).toBeNull();
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne rend jamais le relevé d’une autre organisation',
+		async () => {
+			// Le cloisonnement est strict, sans exception.
+			const t = convexTest(schema, modules);
+			const premiere = await organisation(t);
+			const seconde = await organisation(t);
+
+			await t.mutation(internal.recouvrement.battement.executerPourOrganisation, {
+				organizationId: premiere,
+				jour: '2026-09-03'
+			});
+
+			const dernier = await t.query(internal.recouvrement.battement.dernierBattementInterne, {
+				organizationId: seconde
+			});
+			expect(dernier).toBeNull();
+		},
+		DELAI_CONVEX
+	);
+});
+
 describe('planifierBattements', () => {
 	it(
 		'planifie un travail par organisation',

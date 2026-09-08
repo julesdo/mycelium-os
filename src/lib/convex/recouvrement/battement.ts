@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
-import { internalMutation } from '../_generated/server';
-import type { MutationCtx } from '../_generated/server';
+import { internalMutation, internalQuery } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { internal, components } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { depuisCentimes, versEuros } from '../../socle/montants';
@@ -10,6 +10,8 @@ import type { Evenement } from '../../verticales/recouvrement/surveillance';
 import { resend, assertResendApiKey } from '../emails/resend';
 import { briefingHtml, briefingTexte } from '../emails/modeles/briefing';
 import { requireEnv } from '../env';
+import { authedQuery } from '../functions';
+import { getUserOrg } from '../lib/auth';
 
 /**
  * LE BATTEMENT QUOTIDIEN — la plomberie, et rien d'autre.
@@ -256,5 +258,60 @@ export const planifierBattements = internalMutation({
 		}
 
 		return null;
+	}
+});
+
+const vBattement = v.union(
+	v.null(),
+	v.object({
+		jour: v.string(),
+		statut: v.union(v.literal('PARLE'), v.literal('TU'), v.literal('ECHEC')),
+		raison: v.string(),
+		erreur: v.optional(v.string()),
+		termineLe: v.number()
+	})
+);
+
+/** Le dernier relevé d'une organisation. Pour les tests et les écrans. */
+async function dernier(ctx: QueryCtx, organizationId: Id<'organizations'>) {
+	// Lecture BORNÉE : l'index descendant rend le plus récent en une lecture.
+	// Un `.collect()` lirait tout l'historique — un relevé par jour et par
+	// organisation, soit des milliers de documents à quelques années.
+	const recent = await ctx.db
+		.query('battements')
+		.withIndex('by_org_and_jour', (q) => q.eq('organizationId', organizationId))
+		.order('desc')
+		.first();
+
+	if (recent === null) return null;
+	return {
+		jour: recent.jour,
+		statut: recent.statut,
+		raison: recent.raison,
+		erreur: recent.erreur,
+		termineLe: recent.termineLe
+	};
+}
+
+export const dernierBattementInterne = internalQuery({
+	args: { organizationId: v.id('organizations') },
+	returns: vBattement,
+	handler: async (ctx, { organizationId }) => dernier(ctx, organizationId)
+});
+
+/**
+ * Le dernier battement de l'organisation courante.
+ *
+ * ⚠️ C'EST LA FONCTION QUI EMPÊCHE LE PIRE ÉTAT DU PRODUIT. Un client qui se
+ * croit surveillé alors que le battement plante depuis six jours ne surveille
+ * pas lui-même, et il perdra une créance en croyant être couvert. L'échec — et
+ * l'absence totale de battement — doivent être VISIBLES, pas journalisés.
+ */
+export const dernierBattement = authedQuery({
+	args: {},
+	returns: vBattement,
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+		return dernier(ctx, organizationId);
 	}
 });
