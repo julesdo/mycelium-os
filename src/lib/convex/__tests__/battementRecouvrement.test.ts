@@ -33,6 +33,24 @@ async function organisation(t: ReturnType<typeof convexTest>) {
 }
 
 /**
+ * Une organisation avec AU MOINS UN MEMBRE — condition nécessaire pour que
+ * `envoyer` dépasse son retour anticipé (« aucun membre, cas normal ») et
+ * atteigne les préconditions d'envoi.
+ */
+async function organisationAvecMembre(t: ReturnType<typeof convexTest>) {
+	const organizationId = await organisation(t);
+	await t.run(async (ctx) => {
+		await ctx.db.insert('organizationMembers', {
+			organizationId,
+			userId: 'user_test_1',
+			role: 'ORG_ADMIN',
+			joinedAt: Date.now()
+		});
+	});
+	return organizationId;
+}
+
+/**
  * Une organisation portant une facture ILLISIBLE — pas au sens Convex (le
  * schéma ne contraint `dateEcheance` qu'à être une chaîne), mais au sens du
  * calcul de prescription : `pays/france/prescription.ts` → `ajouterMois` →
@@ -270,6 +288,60 @@ describe('executerPourOrganisation', () => {
 			);
 			expect(releve?.statut).toBe('PARLE');
 			expect(releve?.erreur).toBeUndefined();
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'un échec d’ENVOI ne laisse jamais deux relevés pour le même jour',
+		async () => {
+			// ⚠️ CE QUE CE TEST PROTÈGE : `envoyer` était appelé APRÈS l'insert du
+			// relevé PARLE. Si l'envoi échouait, le `catch` de la mutation en
+			// insérait un SECOND, ÉCHEC, pour le même couple organisation/jour — et
+			// la table n'a aucune contrainte d'unicité en base pour l'empêcher. Au
+			// battement suivant, le `.unique()` du contrôle de non-rejeu (et celui
+			// de `precedentDe`) jette alors hors de tout `try`/`catch` : le
+			// battement de cette organisation est cassé pour ce jour-là,
+			// définitivement, sans intervention manuelle. Le correctif déplace
+			// l'envoi AVANT l'insert : si l'un des deux échoue, un seul relevé
+			// existe, jamais deux.
+			//
+			// ⚠️ COMMENT L'ÉCHEC EST DÉCLENCHÉ, ET POURQUOI CE N'EST PAS LE
+			// MÉCANISME DÉCRIT DANS LA CONSIGNE. La consigne attendait que
+			// `assertResendApiKey()` jette faute de `RESEND_API_KEY` en
+			// environnement de test. Vérifié directement (probe jetable, journal
+			// dans le rapport de tâche) : ce n'est PAS le cas ici, parce que
+			// `.env.test` définit `AUTH_E2E_TEST_SECRET`, chargé automatiquement
+			// par varlock pour CHAQUE run vitest (`process.env.AUTH_E2E_TEST_SECRET`
+			// est déjà présent avant que ce test ne s'exécute) — et
+			// `assertResendApiKey()` retourne tôt dès que cette variable existe.
+			// La garde suivante dans `envoyer`, en revanche,
+			// `requireEnv('AUTH_EMAIL', …)`, jette bel et bien : `AUTH_EMAIL` n'a
+			// de valeur ni dans `.env.test` ni dans `.env.local`, et ne porte
+			// aucun repli d'analyse (contrairement à `SITE_URL`). C'est donc elle,
+			// et non `assertResendApiKey`, qui fait échouer l'envoi ici — un échec
+			// tout aussi réel et non moqué (une vraie variable d'environnement
+			// manquante, pas un mock), simplement porté par une garde voisine dans
+			// la même fonction, avant tout appel à `resend.sendEmail`.
+			const t = convexTest(schema, modules);
+			const organizationId = await organisationAvecMembre(t);
+
+			await t.mutation(internal.recouvrement.battement.executerPourOrganisation, {
+				organizationId,
+				jour: '2026-09-03'
+			});
+
+			const releves = await t.run(async (ctx) =>
+				ctx.db
+					.query('battements')
+					.withIndex('by_org_and_jour', (q) =>
+						q.eq('organizationId', organizationId).eq('jour', '2026-09-03')
+					)
+					.collect()
+			);
+
+			expect(releves).toHaveLength(1);
+			expect(releves[0]!.statut).toBe('ECHEC');
 		},
 		DELAI_CONVEX
 	);

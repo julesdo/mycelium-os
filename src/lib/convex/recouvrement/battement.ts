@@ -154,6 +154,36 @@ export const executerPourOrganisation = internalMutation({
 			const precedent = await precedentDe(ctx, organizationId, jour);
 			const verdict = decider(evenements, precedent, jour);
 
+			// ⚠️ L'ENVOI VIENT AVANT L'INSERT DE SUCCÈS, ET CET ORDRE N'EST PAS
+			// ARBITRAIRE. `resend.sendEmail` écrit dans les tables du composant
+			// Resend DANS LA MÊME TRANSACTION que cette mutation. Composer et
+			// envoyer le briefing ne dépendent que de `evenements` et
+			// `flux.montantIdentifie`, tous deux déjà disponibles ici — rien
+			// n'oblige à attendre l'insert pour le faire.
+			//
+			// Si on envoyait APRÈS l'insert (l'ordre précédent), un envoi en échec
+			// (clé Resend absente, variable d'environnement manquante, panne du
+			// composant) laissait le relevé PARLE déjà écrit, et le `catch` plus
+			// bas en insérait un SECOND pour le même couple organisation/jour. La
+			// table n'a aucune contrainte d'unicité en base : au prochain appel
+			// pour ce jour, le `.unique()` du contrôle de non-rejeu (plus haut)
+			// ET celui de `precedentDe` jettent tous les deux, hors de tout
+			// `try`/`catch` — le battement de cette organisation est cassé pour ce
+			// jour, définitivement, sans intervention manuelle.
+			//
+			// Avec l'envoi AVANT l'insert, les deux cas d'échec restent sûrs :
+			// - l'envoi jette → le `catch` ci-dessous écrit un SEUL relevé ÉCHEC,
+			//   cohérent, sans doublon ;
+			// - l'insert jette APRÈS un envoi réussi → Convex abandonne toute la
+			//   transaction, donc le courriel déjà « envoyé » dans cette même
+			//   transaction ne part pas non plus, et le cron rejouera proprement
+			//   au prochain passage.
+			// Dans les deux cas : un seul relevé, ou aucun. Jamais deux.
+			if (verdict.decision === 'PARLER') {
+				const briefing = composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
+				await envoyer(ctx, organizationId, briefing);
+			}
+
 			await ctx.db.insert('battements', {
 				organizationId,
 				jour,
@@ -163,20 +193,6 @@ export const executerPourOrganisation = internalMutation({
 				montantIdentifie: flux.montantIdentifie,
 				termineLe: Date.now()
 			});
-
-			// ⚠️ RISQUE CONNU, ASSUMÉ : L'ENVOI VIENT APRÈS L'INSERT DE SUCCÈS. Si
-			// `envoyer` jette (clé Resend absente, variable d'environnement
-			// manquante, échec du composant Resend), le relevé PARLE ci-dessus est
-			// déjà écrit, et le `catch` plus bas en insère un SECOND pour le même
-			// couple organisation/jour. Deux relevés le même jour cassent le
-			// `.unique()` de `deja` ET de `precedentDe` : le battement de cette
-			// organisation ne pourrait plus jamais s'exécuter pour ce jour-là sans
-			// intervention manuelle. L'appel reste ici parce que c'est son seul
-			// usage réel, mais ce risque doit être visible pour qui relira ce code.
-			if (verdict.decision === 'PARLER') {
-				const briefing = composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
-				await envoyer(ctx, organizationId, briefing);
-			}
 
 			return null;
 		} catch (erreur) {
