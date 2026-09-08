@@ -247,6 +247,34 @@ describe('executerPourOrganisation', () => {
 	);
 
 	it(
+		'ne tente aucun envoi quand l’organisation n’a aucun membre',
+		async () => {
+			// Une organisation sans membre est un cas NORMAL, pas une erreur : elle
+			// vient d'être créée. Le battement doit s'exécuter et s'enregistrer
+			// quand même, au lieu de se marquer en échec pour une situation saine.
+			const t = convexTest(schema, modules);
+			const organizationId = await organisation(t);
+
+			await t.mutation(internal.recouvrement.battement.executerPourOrganisation, {
+				organizationId,
+				jour: '2026-09-03'
+			});
+
+			const releve = await t.run(async (ctx) =>
+				ctx.db
+					.query('battements')
+					.withIndex('by_org_and_jour', (q) =>
+						q.eq('organizationId', organizationId).eq('jour', '2026-09-03')
+					)
+					.unique()
+			);
+			expect(releve?.statut).toBe('PARLE');
+			expect(releve?.erreur).toBeUndefined();
+		},
+		DELAI_CONVEX
+	);
+
+	it(
 		'deux battements concurrents sur le même jour ne laissent qu’un relevé',
 		async () => {
 			// ⚠️ CE QUE CE TEST PROUVE : que lancer deux `executerPourOrganisation`

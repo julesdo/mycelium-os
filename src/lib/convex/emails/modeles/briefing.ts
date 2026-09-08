@@ -32,7 +32,19 @@ function bloc(d: BriefingData): BlocEmail {
 				libelle: 'Identifié à ce jour',
 				valeur: d.montantLisible,
 				etat: 'atteint',
-				precision: 'intérêts de retard courus inclus'
+				// ⚠️ NE JAMAIS ÉCRIRE « intérêts inclus » NI RIEN D'ÉQUIVALENT ICI.
+				// `montantLisible` vient de `flux.montantIdentifie`, qui ADDITIONNE
+				// le `montant` de chaque événement du jour : le TTC des factures
+				// échues ou proches de prescription (`montantExigible =
+				// depuisCentimes(facture.montantTTC)`, sans un centime d'intérêt),
+				// le total d'une créance qualifiée, le montant en jeu d'une échéance
+				// de procédure, l'encours d'un débiteur dégradé. C'est une somme
+				// HÉTÉROGÈNE de ce qui est en jeu sur les points ci-dessous — pas un
+				// décompte : aucun intérêt de retard ni indemnité forfaitaire n'y
+				// entre. Sur un produit dont l'argument entier est l'exactitude, un
+				// chiffre juste sous une étiquette fausse est pire qu'un chiffre
+				// absent.
+				precision: 'somme des montants en jeu sur les points ci-dessous'
 			}
 		],
 		corps: d.lignes,

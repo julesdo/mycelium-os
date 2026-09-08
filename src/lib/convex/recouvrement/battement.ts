@@ -1,12 +1,15 @@
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
 import type { MutationCtx } from '../_generated/server';
-import { internal } from '../_generated/api';
+import { internal, components } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
-import { depuisCentimes } from '../../socle/montants';
-import { cleEvenement, decider } from '../../verticales/recouvrement/briefing';
-import type { Precedent } from '../../verticales/recouvrement/briefing';
+import { depuisCentimes, versEuros } from '../../socle/montants';
+import { cleEvenement, decider, composerBriefing } from '../../verticales/recouvrement/briefing';
+import type { Precedent, Briefing } from '../../verticales/recouvrement/briefing';
 import type { Evenement } from '../../verticales/recouvrement/surveillance';
+import { resend, assertResendApiKey } from '../emails/resend';
+import { briefingHtml, briefingTexte } from '../emails/modeles/briefing';
+import { requireEnv } from '../env';
 
 /**
  * LE BATTEMENT QUOTIDIEN — la plomberie, et rien d'autre.
@@ -59,6 +62,65 @@ async function precedentDe(
 	return null;
 }
 
+/**
+ * Envoie le briefing aux membres de l'organisation.
+ *
+ * ⚠️ AUCUN MEMBRE N'EST UN CAS NORMAL, pas une erreur : une organisation vient
+ * d'être créée. Le battement doit s'exécuter et s'enregistrer quand même,
+ * sinon il se marquerait en échec pour une situation parfaitement saine.
+ *
+ * ⚠️ LE BRIEFING PART VERS LE CLIENT, JAMAIS VERS LE DÉBITEUR. Les
+ * destinataires sont lus dans `organizationMembers`, et nulle part ailleurs.
+ */
+async function envoyer(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	briefing: Briefing
+): Promise<void> {
+	const organisation = await ctx.db.get(organizationId);
+	if (organisation === null) return;
+
+	const membres = await ctx.db
+		.query('organizationMembers')
+		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+		.collect();
+	if (membres.length === 0) return;
+
+	// Après le retour anticipé ci-dessus : on ne vérifie une clé qu'au moment où
+	// on va effectivement s'en servir.
+	assertResendApiKey();
+	const expediteur = requireEnv('AUTH_EMAIL', { feature: 'briefing quotidien' });
+	const url = requireEnv('SITE_URL', { feature: 'briefing quotidien' }) + '/app';
+
+	for (const membre of membres) {
+		const utilisateur = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+			model: 'user',
+			where: [{ field: '_id', operator: 'eq', value: membre.userId }]
+		})) as { email?: string } | null;
+
+		const email = utilisateur?.email;
+		if (!email) continue;
+
+		const donnees = {
+			nomEntreprise: organisation.name,
+			titre: briefing.titre,
+			intro: briefing.intro,
+			lignes: briefing.lignes,
+			action: briefing.action,
+			montantLisible: versEuros(briefing.montantIdentifie),
+			url
+		};
+
+		await resend.sendEmail(ctx, {
+			from: expediteur,
+			to: email,
+			subject: briefing.titre,
+			html: briefingHtml(donnees),
+			text: briefingTexte(donnees)
+		});
+	}
+}
+
 export const executerPourOrganisation = internalMutation({
 	args: {
 		organizationId: v.id('organizations'),
@@ -101,6 +163,20 @@ export const executerPourOrganisation = internalMutation({
 				montantIdentifie: flux.montantIdentifie,
 				termineLe: Date.now()
 			});
+
+			// ⚠️ RISQUE CONNU, ASSUMÉ : L'ENVOI VIENT APRÈS L'INSERT DE SUCCÈS. Si
+			// `envoyer` jette (clé Resend absente, variable d'environnement
+			// manquante, échec du composant Resend), le relevé PARLE ci-dessus est
+			// déjà écrit, et le `catch` plus bas en insère un SECOND pour le même
+			// couple organisation/jour. Deux relevés le même jour cassent le
+			// `.unique()` de `deja` ET de `precedentDe` : le battement de cette
+			// organisation ne pourrait plus jamais s'exécuter pour ce jour-là sans
+			// intervention manuelle. L'appel reste ici parce que c'est son seul
+			// usage réel, mais ce risque doit être visible pour qui relira ce code.
+			if (verdict.decision === 'PARLER') {
+				const briefing = composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
+				await envoyer(ctx, organizationId, briefing);
+			}
 
 			return null;
 		} catch (erreur) {
