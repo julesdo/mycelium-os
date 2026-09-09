@@ -27,6 +27,7 @@ import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/off
 import { PALIERS, BORNES_PALIER, TARIFS } from '../lib/config/tarifs';
 import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/equipe/equipe';
 import { Donnees } from '../screens/donnees/donnees';
+import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
 
 /**
@@ -151,6 +152,41 @@ const REVELATION_DEMO: RevelationAffichee = {
 		}
 	]
 };
+
+/**
+ * LE CRÉANCIER — trois champs qui ne sont pas du confort.
+ *
+ * Sans eux, la pièce porte « Identité du créancier non renseignée », et surtout
+ * `entreCommercants` vaut TOUJOURS « indéterminé » : l'éligibilité à l'injonction
+ * de payer ne pouvait jamais être acquise, et rien ne permettait d'en sortir.
+ *
+ * Les deux états montrés sont ceux qui comptent : la fiche vierge — celle qu'un
+ * nouveau client voit — et la fiche remplie.
+ */
+function DemoCreancier() {
+	return (
+		<Page>
+			<PageHeader titre="Réglages" sousTitre="Ce qui s’imprime en tête d’un décompte" />
+			<PageBody>
+				<div className="flex max-w-160 flex-col gap-cladd-md">
+					<FormulaireCreancier
+						initial={{ denomination: '', siren: '', adresse: '', estCommercant: 'unknown' }}
+						onEnregistrer={async () => {}}
+					/>
+					<FormulaireCreancier
+						initial={{
+							denomination: 'Thumbbb Agency',
+							siren: '502592959',
+							adresse: '12 rue des Ateliers, 75011 Paris',
+							estCommercant: 'ok'
+						}}
+						onEnregistrer={async () => {}}
+					/>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 /**
  * L'IDENTITÉ D'UN DÉBITEUR — les deux champs que le gérant seul peut remplir,
@@ -622,6 +658,7 @@ function DemoSurveillanceMuette() {
 }
 
 const ECRANS = [
+	'creancier',
 	'identite',
 	'revelation',
 	'bilan',
@@ -638,7 +675,7 @@ const ECRANS = [
 type Ecran = (typeof ECRANS)[number];
 
 function Showroom() {
-	const [ecran, setEcran] = useState<Ecran>('identite');
+	const [ecran, setEcran] = useState<Ecran>('creancier');
 
 	return (
 		<div className="flex h-dvh flex-col">
@@ -657,6 +694,7 @@ function Showroom() {
 			</div>
 
 			<div className="min-h-0 flex-1">
+				{ecran === 'creancier' ? <DemoCreancier /> : null}
 				{ecran === 'identite' ? <DemoIdentite /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}

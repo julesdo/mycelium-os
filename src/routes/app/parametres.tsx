@@ -1,14 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import {
-	Button,
-	Input,
-	Surface,
-	SectionTitle,
-	Segmented,
-	SegmentedButton
-} from '@cladd-ui/react';
+import { Button, Input, Surface, SectionTitle, Segmented, SegmentedButton } from '@cladd-ui/react';
 import {
 	CheckIcon,
 	CreditCardIcon,
@@ -22,6 +15,7 @@ import { api } from '../../lib/convex/_generated/api';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
 import { Page, PageHeader, PageBody, Champ } from '../../ui';
+import { FormulaireCreancier } from '../../screens/parametres/creancier';
 
 export const Route = createFileRoute('/app/parametres')({ component: Parametres });
 
@@ -52,6 +46,8 @@ function Parametres() {
 	const navigate = useNavigate();
 	const org = useQuery(api.organizations.getMyOrg, {});
 	const mettreAJour = useMutation(api.organizations.updateOrganization);
+	const profil = useQuery(api.recouvrement.profil.monProfil, {});
+	const enregistrerProfil = useMutation(api.recouvrement.profil.enregistrer);
 	const { theme, setTheme } = useTheme();
 
 	if (org === undefined) {
@@ -82,6 +78,19 @@ function Parametres() {
 						/>
 					) : null}
 
+					{profil === undefined ? null : (
+						<FormulaireCreancier
+							key={profil?.denomination ?? 'vide'}
+							initial={{
+								denomination: profil?.denomination ?? org?.name ?? '',
+								siren: profil?.siren ?? '',
+								adresse: profil?.adresse ?? '',
+								estCommercant: profil?.estCommercant ?? 'unknown'
+							}}
+							onEnregistrer={enregistrerProfil}
+						/>
+					)}
+
 					<Reglage titre="Apparence">
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 							L&rsquo;affichage clair est le réglage par défaut : il se lit mieux en plein jour, sur
@@ -111,8 +120,8 @@ function Parametres() {
 					*/}
 					<Reglage titre="Votre abonnement">
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Votre offre et son tarif dépendent du nombre de factures que vous émettez chaque année.
-							Le produit est le même à tous les paliers.
+							Votre offre et son tarif dépendent du nombre de factures que vous émettez chaque
+							année. Le produit est le même à tous les paliers.
 						</p>
 						<Button as={Link} to="/app/abonnement" className="self-start">
 							<CreditCardIcon />
