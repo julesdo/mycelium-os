@@ -158,3 +158,32 @@ rend un constat, ou dit pourquoi elle n'a pas su le lire.
 - **Aucun cache BODACC mutualisé** (voir ci-dessus).
 - **Aucune suspension de relance**, faute de relances. Plan 6.
 - **Aucun rapprochement par raison sociale**, jamais, à aucune condition.
+
+---
+
+## État au 9 septembre 2026, après exécution
+
+**Tâches 1, 2, 3 et 4 : faites.** La saisie du SIREN et du secteur, la lecture pure d'une annonce, le
+delta quotidien avec son cron, et le constat à l'écran.
+
+**Tâche 5 : faite en partie.** L'absence d'identifiant se dit sur la fiche débiteur, à l'endroit où
+l'on peut y remédier. Ce qui manque : la même mention dans le FLUX, pour qu'un gérant qui n'ouvre
+jamais la fiche d'un débiteur sache quand même qu'il n'est pas surveillé.
+
+### Ce qui reste, et ce qui bloque
+
+1. **La clé API Sirene.** Toujours pas obtenue — c'est une démarche. Elle ne bloque QUE le rattrapage
+   automatique du SIREN des débiteurs déjà en base ; la saisie manuelle et l'extraction à l'import
+   fonctionnent sans elle.
+2. **Le coupe-circuit ne coupe rien**, parce qu'il n'y a aucune relance à suspendre. Il se réduit
+   aujourd'hui à un constat visible, ce qui est exactement ce que le MVP demande. Le brancher sur les
+   relances est le plan 6.
+3. **Le radar n'a rien à rapprocher tant qu'aucun débiteur ne porte de SIREN.** C'est mécanique, et
+   c'est dit à l'écran plutôt que caché.
+
+### Une décision prise en cours de route, et pourquoi
+
+Le plan prévoyait de mesurer le volume avant de choisir entre delta et balayage. La mesure est faite :
+**3,3 millions d'annonces `collective` au total**, quelques milliers par jour. Le delta s'impose, et
+la borne dure de cent pages (dix mille annonces) protège d'une réponse inattendue de l'API — un filtre
+ignoré, par exemple — sans jamais gêner un jour normal.
