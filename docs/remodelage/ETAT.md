@@ -739,3 +739,80 @@ développement. Écrans relus aux quatre largeurs, mesures DOM à l'appui : aucu
 3. **La question du juriste sur la révélation** : jusqu'où l'indemnité et les intérêts restent
    réclamables sur une facture dont le principal a déjà été payé. La révélation se limite aux impayés
    en attendant — le périmètre le plus étroit, donc le seul défendable.
+
+---
+
+## 9 septembre 2026, suite — les registres externes, et le prérequis qu'ils cachaient
+
+### Ce que la lecture du plan 3 a révélé avant d'écrire une ligne
+
+Le radar BODACC s'interroge **par SIREN**. La colonne existait en base depuis le premier jour, elle
+était lue à l'écran — et **rien ne l'écrivait jamais**. Construire le radar d'abord aurait produit un
+écran qui tourne dans le vide, et le défaut ne se serait vu qu'en production, sur les données d'un
+client.
+
+Et un rapprochement par raison sociale est hors de question : sur un flux national de plusieurs
+millions d'annonces, il finit par annoncer à un gérant que son client solvable est en liquidation.
+C'est la faute symétrique de la relance d'un client qui a déjà payé, et elle coûte plus cher — elle
+fait cesser des livraisons.
+
+### Le SIREN, de bout en bout
+
+- `pays/france/siren.ts` — neuf chiffres, clé de Luhn, vérifiée contre **trois SIREN réels** relevés
+  au BODACC. Un test permute les 81 altérations d'un chiffre et vérifie que la clé les attrape toutes.
+- Relevé à l'extraction (schéma + prompt, avec la consigne explicite de ne jamais prendre celui de
+  l'émetteur), et persisté à l'import.
+- **Saisi par le gérant**, la seule voie qui ne dépend d'aucune clé API. Avec l'effacement, parce
+  qu'un numéro faux mais bien formé désigne une AUTRE entreprise — et un « aucune procédure » sur le
+  mauvais SIREN se lit comme un feu vert.
+
+Deux décisions écrites dans le code : le rapprochement ne change **pas** de clé (basculer sur le SIREN
+fusionnerait ou scinderait des débiteurs selon la couverture du champ), et un SIREN déjà connu ne se
+fait **pas** écraser.
+
+### Le secteur, enfin saisissable
+
+La surveillance déclarait « préciser le secteur lèvera cette hypothèse » depuis des mois, la liste des
+débiteurs affichait une puce « Secteur à préciser » — et **aucune mutation ne permettait de le
+préciser**. Une consigne impossible à suivre est pire qu'aucune consigne. La durée de prescription
+s'affiche sous chaque option, lue dans le registre juridique et jamais recopiée dans un libellé.
+
+### Le radar de solvabilité
+
+Quatre heures UTC, **avant** le battement de six heures : le briefing doit porter ce que la nuit a
+trouvé. Il lit la veille, pas le jour même — le BODACC publie au fil de la journée.
+
+**Il cite la taxonomie du registre, il ne lit pas le droit.** Toutes les annonces « Procédures
+collectives » ne disent pas qu'une entreprise est insolvable : un jugement d'interdiction de gérer vise
+une PERSONNE. On retient le champ que le BODACC remplit lui-même, `jugement.famille` ; pour tout le
+reste le constat s'affiche VERBATIM sans que l'état ne bouge. Et **on ne classe que dans un sens** :
+aucune annonce ne ramène un débiteur à `SAINE`.
+
+`debiteurs.by_siren` est le **seul index du produit qui ne commence pas par `organizationId`**, parce
+que le delta est national et que deux clients peuvent suivre le même débiteur. Un test balaie les
+fichiers Convex et échoue si un fichier qui le nomme expose une fonction authentifiée.
+
+**L'exception au multi-tenant que le blueprint annonçait n'a pas été prise.** Le delta est récupéré une
+fois, appliqué, jeté. Aucune table hors organisation, aucune ligne à ajouter à la purge.
+
+### Réparé au passage
+
+`DEBITEUR_DEGRADE` était déclaré et testé depuis le premier jour, et l'assemblage rendait la liste
+vide **en dur** : un type d'événement que rien ne pouvait déclencher. Le radar historise
+`santePrecedente`, et la dégradation remonte enfin — avec l'encours en jeu, sans jamais entrer dans le
+montant identifié.
+
+### Chiffres
+
+**745 tests**, 0 erreur de lint, `check` et `build` verts. Schéma validé sur le déploiement de
+développement, production déployée et verte.
+
+### Ce qui reste ouvert
+
+1. **La clé API Sirene**, toujours pas obtenue. Elle ne bloque QUE le rattrapage automatique du SIREN
+   des débiteurs déjà en base ; la saisie manuelle et l'extraction fonctionnent sans elle.
+2. **Le greffon `admin()` de Better Auth** est toujours monté (voir la section du 9 septembre
+   ci-dessus). À retirer en présence de quelqu'un.
+3. **`valideParAvocat` vaut `false` sur les quinze entrées du registre.** Rien qui produise un acte ne
+   peut sortir, quoi qu'on code.
+4. **Le coupe-circuit ne coupe rien**, faute de relances à suspendre. C'est le plan 6.

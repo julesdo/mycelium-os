@@ -166,9 +166,10 @@ rend un constat, ou dit pourquoi elle n'a pas su le lire.
 **Tâches 1, 2, 3 et 4 : faites.** La saisie du SIREN et du secteur, la lecture pure d'une annonce, le
 delta quotidien avec son cron, et le constat à l'écran.
 
-**Tâche 5 : faite en partie.** L'absence d'identifiant se dit sur la fiche débiteur, à l'endroit où
-l'on peut y remédier. Ce qui manque : la même mention dans le FLUX, pour qu'un gérant qui n'ouvre
-jamais la fiche d'un débiteur sache quand même qu'il n'est pas surveillé.
+**Tâche 5 : faite.** L’absence d’identifiant se dit sur la fiche débiteur, à l’endroit où
+l'on peut y remédier, ET dans le FLUX, pour qu'un gérant qui n'ouvre jamais la fiche d'un débiteur
+sache quand même qu'il n'est pas surveillé. On ne nomme que ceux qui portent un encours : un débiteur
+soldé n'est pas un risque, et l'annoncer noierait ceux qui en sont un.
 
 ### Ce qui reste, et ce qui bloque
 
