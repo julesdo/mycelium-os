@@ -123,10 +123,10 @@ produit qui coûte de l'argent réel.
   l'erreur qui ferait grimper le compteur de 40 € toutes les vingt-quatre heures et détruirait la
   crédibilité du chiffre au premier contrôle.
 
-- [ ] **Step 2 : Lancer, vérifier l'échec, écrire `monteeEntre`, revérifier**
+- [ ] **Step 2 : Lancer, vérifier l'échec, écrire `interetsCourusEntre`, revérifier**
 
 ```ts
-export function monteeEntre(
+export function interetsCourusEntre(
 	factures: readonly FacturePourRevelation[],
 	hier: string,
 	aujourdHui: string,
@@ -134,8 +134,15 @@ export function monteeEntre(
 ): Montant
 ```
 
-Implémentation : `reveler(…, aujourdHui).interets − reveler(…, hier).interets`. **Les intérêts
-seuls.** Le test de l'indemnité fait tomber toute autre version.
+Implémentation : la différence des `interets` entre les deux arrêtés, sur les seules factures DÉJÀ en
+retard à la date de départ. **Les intérêts seuls.** Le test de l'indemnité fait tomber toute autre
+version.
+
+> **Le nom a changé en cours de route, et c'est le nom qui porte la garantie de lecture.** « Montée »
+> se lirait comme la variation du TOTAL, laquelle inclut le principal d'une facture qui vient
+> d'échoir : le compteur bondirait de plusieurs milliers d'euros en laissant croire à des intérêts.
+> Une facture qui échoit dans l'intervalle est un ÉVÉNEMENT — elle remonte dans le flux — pas une
+> accumulation nocturne.
 
 ## Task 3 : Le compteur de zéro perte
 
