@@ -15,6 +15,7 @@ import {
 	CompteurVivant,
 	BilanPertes,
 	IdentiteDebiteur,
+	ConstatRegistre,
 	type OptionSecteur,
 	type RevelationAffichee,
 	type BilanPertesAffiche,
@@ -201,6 +202,19 @@ function DemoIdentite() {
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Le constat du registre — cité, jamais interprété</SectionTitle>
+						<ConstatRegistre
+							constat={{
+								dateParution: '2026-09-09',
+								nature: "Jugement d'ouverture de liquidation judiciaire",
+								dateJugement: '2026-08-31',
+								tribunal: "Greffe du Tribunal de Commerce d'Evry",
+								url: 'https://www.bodacc.fr/pages/annonces-commerciales-detail/?q.id=id:A202601721671'
+							}}
+							sante="PROCEDURE_COLLECTIVE"
 						/>
 					</div>
 					<div className="flex flex-col gap-cladd-3xs">

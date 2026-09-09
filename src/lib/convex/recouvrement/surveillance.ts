@@ -3,7 +3,7 @@ import { internalQuery } from '../_generated/server';
 import type { QueryCtx } from '../_generated/server';
 import { authedQuery } from '../functions';
 import type { Id } from '../_generated/dataModel';
-import { additionner, depuisCentimes, enCentimes, ZERO } from '../../socle/montants';
+import { additionner, depuisCentimes, enCentimes, ZERO, type Montant } from '../../socle/montants';
 import {
 	detecterEvenements,
 	montantIdentifie,
@@ -164,10 +164,42 @@ async function assembler(
 		}))
 	}));
 
-	// La dégradation d'un débiteur se constate entre deux relevés. Tant qu'on
-	// n'historise pas la santé, on ne peut pas la détecter — et il vaut mieux
-	// ne rien annoncer que d'inventer une dégradation.
-	const debiteursSurveilles: DebiteurSurveille[] = [];
+	// LA DÉGRADATION D'UN DÉBITEUR SE CONSTATE ENTRE DEUX RELEVÉS, et le produit
+	// n'en historisait qu'un : cette liste était vide EN DUR, avec le commentaire
+	// « tant qu'on n'historise pas la santé, on ne peut pas la détecter ». Un type
+	// d'événement déclaré, testé, et que rien ne pouvait déclencher.
+	//
+	// Le radar BODACC écrit désormais `santePrecedente`. Sans ce raccordement, il
+	// remplirait un champ que personne ne relit — le défaut symétrique.
+	//
+	// ⚠️ L'ENCOURS EST PORTÉ, MAIS IL N'ENTRE PAS DANS LE MONTANT IDENTIFIÉ.
+	// C'est une VUE AGRÉGÉE des factures déjà comptées ; `montantIdentifie` ne
+	// retient que FACTURE_ECHUE et PRESCRIPTION_PROCHE, dédupliquées par
+	// référence. C'est la leçon du double compte, et elle tient ici aussi.
+	const restantDuParDebiteur = new Map<string, Montant>();
+	for (const facture of facturesBrutes) {
+		if (facture.statutPaiement === 'SOLDEE') continue;
+		const deja = restantDuParDebiteur.get(facture.debiteurId) ?? ZERO;
+		restantDuParDebiteur.set(
+			facture.debiteurId,
+			additionner(deja, depuisCentimes(facture.montantTTC))
+		);
+	}
+
+	const debiteursSurveilles: DebiteurSurveille[] = [...debiteurs.values()]
+		.filter(
+			(debiteur) =>
+				debiteur.santePrecedente !== undefined &&
+				debiteur.santePrecedente !== debiteur.santeFinanciere
+		)
+		.map((debiteur) => ({
+			// La DÉNOMINATION, pas l'identifiant : cet événement s'affiche, et un
+			// identifiant Convex ne dit rien à un gérant.
+			reference: debiteur.denomination,
+			encoursTotal: restantDuParDebiteur.get(debiteur._id) ?? ZERO,
+			santePrecedente: debiteur.santePrecedente!,
+			santeActuelle: debiteur.santeFinanciere
+		}));
 
 	return {
 		etat: { factures, creances, dossiers, debiteurs: debiteursSurveilles },

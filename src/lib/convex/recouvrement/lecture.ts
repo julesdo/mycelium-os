@@ -45,6 +45,22 @@ const vDebiteur = v.object({
 	 *  dit s'il faut agir ; celui-ci dit sur quoi.
 	 */
 	secteur: v.optional(vSecteurCreance),
+	/**
+	 * Le dernier constat du registre public, CITE VERBATIM.
+	 *
+	 * Le gerant lit le registre, pas notre interpretation : la nature n'est jamais
+	 * reformulee, et le lien mene a l'annonce elle-meme.
+	 */
+	constatRegistre: v.optional(
+		v.object({
+			identifiantAnnonce: v.string(),
+			dateParution: v.string(),
+			nature: v.string(),
+			dateJugement: v.optional(v.string()),
+			tribunal: v.optional(v.string()),
+			url: v.string()
+		})
+	),
 	/** Ce qui reste dû, toutes factures non soldées confondues. */
 	encours: v.int64(),
 	facturesEchues: v.number(),
@@ -125,6 +141,7 @@ export const listerDebiteurs = authedQuery({
 					santeFinanciere: debiteur.santeFinanciere,
 					secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',
 					secteur: debiteur.secteur,
+					constatRegistre: debiteur.constatRegistre,
 					encours: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
 					facturesEchues: nonSoldees.filter(
 						(f) => f.dateEcheance !== undefined && f.dateEcheance < aujourdHui
