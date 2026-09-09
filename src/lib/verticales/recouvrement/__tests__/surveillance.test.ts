@@ -669,3 +669,60 @@ describe('échéance de procédure à la date inexploitable', () => {
 		expect(anglesMorts.join(' ')).not.toMatch(/D-001/);
 	});
 });
+
+/**
+ * UN DÉBITEUR SANS IDENTIFIANT N'EST PAS SURVEILLÉ AUX REGISTRES PUBLICS.
+ *
+ * Le radar BODACC rapproche par SIREN, et jamais par raison sociale. Un débiteur
+ * qui n'en porte pas est donc invisible au registre : une procédure collective
+ * ouverte à son encontre passerait inaperçue.
+ *
+ * ⚠️ ET C'EST LE FLUX QUI DOIT LE DIRE, PAS SEULEMENT LA FICHE. La fiche le dit
+ * déjà, à l'endroit où on peut y remédier — mais un gérant qui n'ouvre jamais la
+ * fiche d'un client qui « va bien » ne le saura pas. C'est exactement la même
+ * règle que pour la prescription : un utilisateur qui croit son débiteur
+ * surveillé ne le surveille pas lui-même.
+ *
+ * ON NE NOMME QUE CEUX QUI PORTENT UN ENCOURS. Un débiteur soldé n'est pas un
+ * risque, et l'annoncer noierait ceux qui en sont un.
+ */
+describe('débiteurs invisibles au registre', () => {
+	it('nomme un débiteur sans identifiant qui doit encore de l’argent', () => {
+		const { anglesMorts } = detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-001',
+						montantExigible: depuisEuros('9000,00'),
+						dateEcheance: '2026-08-01',
+						statutPaiement: 'IMPAYEE',
+						datePrescription: '2031-08-01'
+					}
+				],
+				debiteursSansIdentifiant: ['Fournitures Durand']
+			}),
+			AUJOURDHUI,
+			{ avecAnglesMorts: true }
+		);
+
+		const dit = anglesMorts.join(' ');
+		expect(dit).toMatch(/Fournitures Durand/);
+		expect(dit).toMatch(/registre|SIREN/i);
+	});
+
+	it('dit le geste qui lève l’angle mort', () => {
+		const { anglesMorts } = detecterEvenements(
+			etat({ debiteursSansIdentifiant: ['Fournitures Durand'] }),
+			AUJOURDHUI,
+			{ avecAnglesMorts: true }
+		);
+		expect(anglesMorts.join(' ')).toMatch(/saisir|renseigner/i);
+	});
+
+	it('ne dit rien quand tous les débiteurs sont identifiés', () => {
+		const { anglesMorts } = detecterEvenements(etat({ debiteursSansIdentifiant: [] }), AUJOURDHUI, {
+			avecAnglesMorts: true
+		});
+		expect(anglesMorts.join(' ')).not.toMatch(/registre/i);
+	});
+});

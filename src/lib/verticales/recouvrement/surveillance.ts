@@ -146,6 +146,18 @@ export interface EtatSurveille {
 	readonly creances: readonly CreanceSurveillee[];
 	readonly dossiers: readonly DossierSurveille[];
 	readonly debiteurs: readonly DebiteurSurveille[];
+	/**
+	 * Les débiteurs qui portent un encours ET aucun identifiant public.
+	 *
+	 * Le radar des registres rapproche par identifiant, et jamais par raison
+	 * sociale : sans lui, un débiteur est INVISIBLE au registre — une procédure
+	 * collective ouverte à son encontre passerait inaperçue.
+	 *
+	 * ⚠️ CE MODULE NE SAIT PAS DE QUEL IDENTIFIANT IL S'AGIT, et c'est voulu : un
+	 * SIREN est français, cette surveillance n'a aucune raison de connaître un
+	 * pays. Elle reçoit des noms, elle les nomme.
+	 */
+	readonly debiteursSansIdentifiant?: readonly string[];
 }
 
 const RANG_URGENCE: Record<Urgence, number> = { CRITIQUE: 0, HAUTE: 1, NORMALE: 2 };
@@ -379,13 +391,29 @@ function anglesMorts(etat: EtatSurveille): string[] {
 			.map((echeance) => `${dossier.reference} — ${echeance.libelle}`)
 	);
 
-	if (echeancesPerdues.length === 0) return surLesFactures;
+	// LES DÉBITEURS INVISIBLES AU REGISTRE. Le radar rapproche par identifiant, et
+	// jamais par raison sociale : sans identifiant, une procédure collective
+	// ouverte contre ce débiteur passerait inaperçue. La fiche le dit déjà, à
+	// l'endroit où l'on peut y remédier — mais un gérant qui n'ouvre jamais la
+	// fiche d'un client qui « va bien » ne le saurait pas.
+	const sansIdentifiant = etat.debiteursSansIdentifiant ?? [];
 
 	return [
 		...surLesFactures,
-		`Échéance(s) de procédure non surveillée(s) : ${echeancesPerdues.join(' ; ')}. ` +
-			'Leur date limite est renseignée mais n’existe pas au calendrier, donc aucun compte ' +
-			'à rebours ne peut être tenu. La corriger lève cet angle mort.'
+		...(echeancesPerdues.length === 0
+			? []
+			: [
+					`Échéance(s) de procédure non surveillée(s) : ${echeancesPerdues.join(' ; ')}. ` +
+						'Leur date limite est renseignée mais n’existe pas au calendrier, donc aucun compte ' +
+						'à rebours ne peut être tenu. La corriger lève cet angle mort.'
+				]),
+		...(sansIdentifiant.length === 0
+			? []
+			: [
+					`Non suivi(s) aux registres publics : ${sansIdentifiant.join(', ')}. ` +
+						'Sans identifiant d’entreprise, une procédure collective ouverte à leur encontre ' +
+						'passerait inaperçue. Saisir leur numéro sur leur fiche lève cet angle mort.'
+				])
 	];
 }
 

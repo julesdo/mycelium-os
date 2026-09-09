@@ -201,8 +201,25 @@ async function assembler(
 			santeActuelle: debiteur.santeFinanciere
 		}));
 
+	// Un debiteur SANS identifiant public n'est pas suivi au registre : le radar
+	// rapproche par SIREN, jamais par raison sociale. On ne nomme que ceux qui
+	// portent un encours — un debiteur solde n'est pas un risque, et l'annoncer
+	// noierait ceux qui en sont un.
+	const debiteursSansIdentifiant = [...debiteurs.values()]
+		.filter(
+			(debiteur) =>
+				debiteur.siren === undefined && (restantDuParDebiteur.get(debiteur._id) ?? ZERO) > ZERO
+		)
+		.map((debiteur) => debiteur.denomination);
+
 	return {
-		etat: { factures, creances, dossiers, debiteurs: debiteursSurveilles },
+		etat: {
+			factures,
+			creances,
+			dossiers,
+			debiteurs: debiteursSurveilles,
+			debiteursSansIdentifiant
+		},
 		hypotheses: [...hypotheses]
 	};
 }

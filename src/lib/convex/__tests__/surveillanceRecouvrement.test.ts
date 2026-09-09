@@ -459,3 +459,71 @@ describe('dégradation d’un débiteur', () => {
 		DELAI_CONVEX
 	);
 });
+
+/**
+ * L'ANGLE MORT DU REGISTRE, DIT DANS LE FLUX.
+ *
+ * La fiche débiteur le dit déjà, à l'endroit où l'on peut y remédier. Mais un
+ * gérant qui n'ouvre jamais la fiche d'un client qui « va bien » ne le saurait
+ * pas — et c'est précisément celui-là qui tombe sans prévenir.
+ */
+describe('débiteurs non suivis au registre', () => {
+	it(
+		'nomme un débiteur sans SIREN qui porte encore un encours',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await poser(t, { secteur: 'GENERAL' });
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			expect(flux.anglesMorts.join(' ')).toMatch(/Fournitures Durand/);
+			expect(flux.anglesMorts.join(' ')).toMatch(/registres publics/i);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'se tait dès que le numéro est renseigné',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await poser(t, { secteur: 'GENERAL' });
+			await t.run(async (ctx) => {
+				const debiteur = (await ctx.db.query('debiteurs').collect())[0]!;
+				await ctx.db.patch(debiteur._id, { siren: '853479236' });
+			});
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			expect(flux.anglesMorts.join(' ')).not.toMatch(/registres publics/i);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne nomme pas un débiteur qui ne doit plus rien',
+		async () => {
+			// Un débiteur soldé n'est pas un risque, et l'annoncer noierait ceux qui
+			// en sont un.
+			const t = convexTest(schema, modules);
+			const organizationId = await poser(t, { secteur: 'GENERAL' });
+			await t.run(async (ctx) => {
+				const facture = (await ctx.db.query('facturesVente').collect())[0]!;
+				await ctx.db.patch(facture._id, { statutPaiement: 'SOLDEE' });
+			});
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			expect(flux.anglesMorts.join(' ')).not.toMatch(/registres publics/i);
+		},
+		DELAI_CONVEX
+	);
+});
