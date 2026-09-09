@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { versEuros } from '../../../../socle/montants';
-import {
-	documentVenteSchema,
-	construirePromptVente,
-	versFactureImportee
-} from '../factureVente';
+import { documentVenteSchema, construirePromptVente, versFactureImportee } from '../factureVente';
 
 /**
  * Le dépôt de fichiers pour des factures de VENTE.
@@ -147,5 +143,45 @@ describe('conversion en facture importée', () => {
 		expect(resultat.ok).toBe(false);
 		if (resultat.ok) return;
 		expect(resultat.raison).toMatch(/montant/i);
+	});
+});
+
+/**
+ * UNE DATE QUI PASSE LE FORMAT N'EST PAS UNE DATE.
+ *
+ * Le modèle rend `AAAA-MM-JJ` parce qu'on le lui demande, mais il lit un
+ * document : un « 30/02/2026 » imprimé par erreur, ou un OCR qui transforme un
+ * 0 en 3, produisent une chaîne bien formée et impossible. Elle traversait la
+ * conversion, puis la validation Convex (c'est une chaîne), et faisait exploser
+ * le calcul de prescription — pour TOUTE l'organisation, pas seulement pour
+ * cette facture.
+ */
+describe('dates impossibles', () => {
+	it('refuse une date d’émission bien formée mais qui n’existe pas', () => {
+		const resultat = versFactureImportee(
+			documentVenteSchema.parse(doc({ invoiceDate: '2026-02-30' }))
+		);
+		expect(resultat.ok).toBe(false);
+		if (resultat.ok) return;
+		expect(resultat.raison).toMatch(/2026-02-30/);
+	});
+
+	it('refuse une date d’émission au mois impossible', () => {
+		const resultat = versFactureImportee(
+			documentVenteSchema.parse(doc({ invoiceDate: '2026-13-01' }))
+		);
+		expect(resultat.ok).toBe(false);
+		if (resultat.ok) return;
+		expect(resultat.raison).toMatch(/2026-13-01/);
+	});
+
+	it('écarte une échéance impossible comme une échéance absente, sans refuser la facture', () => {
+		// Le même traitement qu'une échéance non imprimée, et pour la même
+		// raison : la facture existe, seul son point de départ manque. La refuser
+		// entièrement ferait perdre une créance pour une faute de frappe.
+		const resultat = versFactureImportee(documentVenteSchema.parse(doc({ dueDate: '2026-02-30' })));
+		expect(resultat.ok).toBe(true);
+		if (!resultat.ok) return;
+		expect(resultat.facture.dateEcheance).toBeUndefined();
 	});
 });

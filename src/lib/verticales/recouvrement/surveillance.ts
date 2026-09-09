@@ -1,5 +1,6 @@
 import { ZERO, additionner, versEuros, type Montant } from '../../socle/montants';
 import { joursEntre } from './decompte';
+import { estDateReelle } from './calendrier';
 import { SEUIL_QUALIFICATION } from './scoring';
 import type { SanteDebiteur } from './scoring';
 
@@ -73,6 +74,9 @@ const ECHELLE_SANTE: Record<SanteDebiteur, number> = {
 	RADIEE: 3
 };
 
+/** Les deux seules raisons pour lesquelles une prescription n'est pas calculable. */
+export type MotifPrescriptionInconnue = 'AUCUNE_DATE_DE_DEPART' | 'DATE_DE_DEPART_INEXPLOITABLE';
+
 export interface FactureSurveillee {
 	readonly reference: string;
 	readonly montantExigible: Montant;
@@ -88,6 +92,25 @@ export interface FactureSurveillee {
 	 * remonte en angle mort au lieu d'etre silencieusement tenue pour sure.
 	 */
 	readonly datePrescription?: string;
+	/**
+	 * Pourquoi `datePrescription` manque — il n'y a que deux raisons, et elles
+	 * appellent deux gestes différents.
+	 *
+	 * ⚠️ CE N'EST PAS LE SECTEUR. Un secteur indéterminé ne produit PAS d'absence
+	 * de date : il produit une date calculée sur le délai le plus court, hypothèse
+	 * déclarée à l'appui. Le message d'angle mort a longtemps accusé le secteur,
+	 * et il envoyait le gérant sur le mauvais écran.
+	 *
+	 *   · `AUCUNE_DATE_DE_DEPART` — ni exigibilité ni échéance. Le geste est de
+	 *     saisir l'échéance.
+	 *   · `DATE_DE_DEPART_INEXPLOITABLE` — une date est là, mais elle n'existe pas
+	 *     au calendrier (un « 2026-02-30 » venu d'un OCR ou d'un export tiers). Le
+	 *     geste est de la corriger.
+	 *
+	 * Absent, on retient le premier : c'est le constat qui n'affirme rien sur une
+	 * donnée qu'on n'a pas relevée.
+	 */
+	readonly motifPrescriptionInconnue?: MotifPrescriptionInconnue;
 }
 
 export interface CreanceSurveillee {
@@ -223,6 +246,13 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 		for (const echeance of dossier.echeances) {
 			if (echeance.traitee === true) continue;
 
+			// UNE DATE QUI N'EXISTE PAS NE PRODUIT AUCUN ÉVÉNEMENT, ET NE TUE PAS
+			// LA BOUCLE. `joursEntre` lève dessus, et cette exception emportait la
+			// détection ENTIÈRE — les factures échues comprises, qui n'y sont pour
+			// rien. Annoncer « dans NaN jours » serait pire encore : le gérant
+			// agirait sur un chiffre faux. On se tait ici, et `anglesMorts` le dit.
+			if (!estDateReelle(echeance.dateLimite)) continue;
+
 			const critique = echeance.gravite === 'CADUCITE';
 			const restant = joursEntre(aujourdHui, echeance.dateLimite);
 			const depassee = echeance.dateLimite < aujourdHui;
@@ -286,25 +316,76 @@ export interface ResultatAvecAnglesMorts {
  * prescription surveillee ne la surveille pas lui-meme. C'est la seule echeance
  * qui eteint definitivement une creance sans que personne n'ait rien fait.
  *
- * Une facture sans `datePrescription` est une facture dont le secteur n'a pas
- * ete determine en amont : le module du pays n'a donc pas pu calculer sa date.
- * La passer sous silence reviendrait a la declarer sure.
+ * ⚠️ CE MESSAGE A LONGTEMPS ACCUSÉ LE SECTEUR, ET C'ÉTAIT FAUX. Un secteur
+ * indéterminé ne fait pas disparaître la date : `regimePrescription` retient
+ * alors le délai le plus court et le déclare en hypothèse. La date manque pour
+ * l'une des deux raisons de `MotifPrescriptionInconnue`, et chacune appelle un
+ * geste différent — saisir une échéance n'est pas corriger une date fausse.
+ *
+ * UN MESSAGE PAR MOTIF, jamais une phrase qui les fond. Deux gestes différents
+ * dans une même ligne, c'est une ligne dont on ne fait rien.
  */
-function anglesMorts(etat: EtatSurveille): string[] {
-	const sansDate = etat.factures
-		.filter(
-			(facture) =>
-				facture.datePrescription === undefined &&
-				(facture.statutPaiement === 'IMPAYEE' || facture.statutPaiement === 'PARTIELLEMENT_PAYEE')
-		)
-		.map((facture) => facture.reference);
+const CONSIGNE_ANGLE_MORT: Record<MotifPrescriptionInconnue, string> = {
+	AUCUNE_DATE_DE_DEPART:
+		'Aucune date d’exigibilité ni d’échéance n’est connue sur ces factures, donc aucun point ' +
+		'de départ ne peut être retenu. Saisir l’échéance lève cet angle mort.',
+	DATE_DE_DEPART_INEXPLOITABLE:
+		'Leur date de départ est renseignée mais n’existe pas au calendrier — un « 30 février » ' +
+		'venu d’un OCR ou d’un export tiers. La corriger lève cet angle mort.'
+};
 
-	if (sansDate.length === 0) return [];
+function anglesMorts(etat: EtatSurveille): string[] {
+	const parMotif = new Map<MotifPrescriptionInconnue, string[]>();
+
+	for (const facture of etat.factures) {
+		if (facture.datePrescription !== undefined) continue;
+		if (facture.statutPaiement !== 'IMPAYEE' && facture.statutPaiement !== 'PARTIELLEMENT_PAYEE') {
+			continue;
+		}
+		// Sans motif renseigné, on retient celui qui n'affirme rien sur une donnée
+		// qu'on n'a pas relevée. Annoncer une date fausse là où il n'y a peut-être
+		// aucune date enverrait corriger ce qui n'existe pas.
+		const motif = facture.motifPrescriptionInconnue ?? 'AUCUNE_DATE_DE_DEPART';
+		const deja = parMotif.get(motif);
+		if (deja === undefined) parMotif.set(motif, [facture.reference]);
+		else deja.push(facture.reference);
+	}
+
+	// L'ordre est celui de la déclaration du type, pas celui de rencontre : deux
+	// exécutions sur le même état doivent rendre le même texte, sinon le briefing
+	// quotidien paraîtrait changer alors que rien n'a bougé.
+	const ORDRE: MotifPrescriptionInconnue[] = [
+		'AUCUNE_DATE_DE_DEPART',
+		'DATE_DE_DEPART_INEXPLOITABLE'
+	];
+
+	const surLesFactures = ORDRE.flatMap((motif) => {
+		const references = parMotif.get(motif);
+		if (references === undefined) return [];
+		return [
+			`Prescription non surveillée sur ${references.length} facture(s) : ` +
+				`${references.join(', ')}. ${CONSIGNE_ANGLE_MORT[motif]}`
+		];
+	});
+
+	// LES ÉCHÉANCES DE PROCÉDURE, ET SURTOUT LES CADUCITÉS. Une date qu'on ne
+	// sait pas lire est une échéance qu'on ne surveille pas ; la taire ferait
+	// croire au gérant qu'elle l'est. C'est le délai dont la perte est
+	// irréversible : il se nomme, avec son dossier et son libellé, pour être
+	// retrouvable à la main.
+	const echeancesPerdues = etat.dossiers.flatMap((dossier) =>
+		dossier.echeances
+			.filter((echeance) => echeance.traitee !== true && !estDateReelle(echeance.dateLimite))
+			.map((echeance) => `${dossier.reference} — ${echeance.libelle}`)
+	);
+
+	if (echeancesPerdues.length === 0) return surLesFactures;
 
 	return [
-		`Prescription non surveillee sur ${sansDate.length} facture(s) : ${sansDate.join(', ')}. ` +
-			"Leur secteur n'est pas determine, donc la date de prescription n'a pas pu etre calculee. " +
-			'Preciser le secteur leve cet angle mort.'
+		...surLesFactures,
+		`Échéance(s) de procédure non surveillée(s) : ${echeancesPerdues.join(' ; ')}. ` +
+			'Leur date limite est renseignée mais n’existe pas au calendrier, donc aucun compte ' +
+			'à rebours ne peut être tenu. La corriger lève cet angle mort.'
 	];
 }
 

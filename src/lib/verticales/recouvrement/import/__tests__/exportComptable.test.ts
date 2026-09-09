@@ -75,7 +75,8 @@ describe('détection de format', () => {
 	});
 
 	it('reconnaît un CSV générique de factures', () => {
-		const csv = 'Reference;Client;Montant TTC;Date emission;Date echeance\nF-1;Durand;100,00;2026-01-01;2026-02-01';
+		const csv =
+			'Reference;Client;Montant TTC;Date emission;Date echeance\nF-1;Durand;100,00;2026-01-01;2026-02-01';
 		expect(detecterFormat(csv)).toBe('CSV_GENERIQUE');
 	});
 
@@ -127,8 +128,22 @@ describe('import d’un FEC', () => {
 		const resultat = importerExportComptable(
 			fec(
 				ligneFec({}),
-				ligneFec({ CompteNum: '706000', CompteLib: 'Prestations', CompAuxNum: '', CompAuxLib: '', Debit: '0,00', Credit: '10000,00' }),
-				ligneFec({ CompteNum: '445710', CompteLib: 'TVA collectée', CompAuxNum: '', CompAuxLib: '', Debit: '0,00', Credit: '2000,00' })
+				ligneFec({
+					CompteNum: '706000',
+					CompteLib: 'Prestations',
+					CompAuxNum: '',
+					CompAuxLib: '',
+					Debit: '0,00',
+					Credit: '10000,00'
+				}),
+				ligneFec({
+					CompteNum: '445710',
+					CompteLib: 'TVA collectée',
+					CompAuxNum: '',
+					CompAuxLib: '',
+					Debit: '0,00',
+					Credit: '2000,00'
+				})
 			)
 		);
 
@@ -210,5 +225,61 @@ describe('import d’un CSV générique', () => {
 describe('refus', () => {
 	it('refuse un fichier de format inconnu plutôt que d’en tirer du vide', () => {
 		expect(() => importerExportComptable('rien de tabulaire ici')).toThrowError(/format/i);
+	});
+});
+
+/**
+ * LE FEC EST UN FICHIER PRODUIT PAR UNE MACHINE, ET IL PORTE QUAND MÊME DES
+ * DATES IMPOSSIBLES : une saisie manuelle mal contrôlée, un export d'un
+ * logiciel tiers, une reprise d'historique. `AAAAMMJJ` découpé en tranches
+ * donne `2026-02-30` sans qu'aucun format ne s'en plaigne.
+ *
+ * Une ligne datée d'un jour qui n'existe pas est ÉCARTÉE avec sa raison, comme
+ * une ligne au montant illisible. Le fichier entier continue : c'est la règle
+ * de tout cet import, et elle vaut ici aussi.
+ */
+describe('dates impossibles', () => {
+	it('écarte une ligne dont les deux dates sont impossibles', () => {
+		const resultat = importerExportComptable(
+			fec(ligneFec({ PieceDate: '20260230', EcritureDate: '20260230' }))
+		);
+
+		expect(resultat.factures).toHaveLength(0);
+		expect(resultat.ignorees).toHaveLength(1);
+		expect(resultat.ignorees[0]!.raison).toMatch(/date/i);
+	});
+
+	it('retombe sur la date d’écriture quand la date de pièce n’existe pas', () => {
+		// La chaîne de repli existait déjà pour une date ILLISIBLE ; elle doit
+		// couvrir la date IMPOSSIBLE de la même façon, sinon on jette une ligne
+		// parfaitement exploitable.
+		const resultat = importerExportComptable(
+			fec(ligneFec({ PieceDate: '20260230', EcritureDate: '20260415' }))
+		);
+
+		expect(resultat.factures).toHaveLength(1);
+		expect(resultat.factures[0]!.dateEmission).toBe('2026-04-15');
+	});
+
+	it('écarte une ligne de CSV dont la date d’émission n’existe pas', () => {
+		const csv = [
+			'Reference;Client;Montant TTC;Date emission',
+			'FA-2026-0042;Fournitures Durand;12000,00;2026-02-30'
+		].join('\n');
+
+		const resultat = importerExportComptable(csv);
+		expect(resultat.factures).toHaveLength(0);
+		expect(resultat.ignorees).toHaveLength(1);
+	});
+
+	it('écarte une échéance impossible sans écarter la facture', () => {
+		const csv = [
+			'Reference;Client;Montant TTC;Date emission;Date echeance',
+			'FA-2026-0042;Fournitures Durand;12000,00;2026-04-15;2026-02-30'
+		].join('\n');
+
+		const resultat = importerExportComptable(csv);
+		expect(resultat.factures).toHaveLength(1);
+		expect(resultat.factures[0]!.dateEcheance).toBeUndefined();
 	});
 });

@@ -508,3 +508,164 @@ describe('montantIdentifie ne compte pas la même somme plusieurs fois', () => {
 		expect(versEuros(montantIdentifie(evenements))).toBe('10 000,00');
 	});
 });
+
+/**
+ * POURQUOI LA PRESCRIPTION N'EST PAS SURVEILLÉE — ET POURQUOI IL FAUT LE DIRE
+ * JUSTE.
+ *
+ * Le message d'angle mort accusait le secteur : « leur secteur n'est pas
+ * déterminé, donc la date n'a pas pu être calculée ». C'était FAUX, et depuis
+ * le premier jour : un secteur indéterminé ne produit pas d'absence de date, il
+ * produit une date calculée sur le délai LE PLUS COURT — c'est exactement ce
+ * que `regimePrescription` fait, hypothèse à l'appui. La date manque pour une
+ * autre raison, et il n'y en a que deux.
+ *
+ * L'ENJEU N'EST PAS COSMÉTIQUE : les deux motifs appellent deux gestes
+ * différents. Saisir une échéance absente n'est pas corriger une date fausse, et
+ * un gérant envoyé vers le mauvais écran ne lève pas son angle mort.
+ */
+describe('angles morts — le motif, pas seulement le fait', () => {
+	function sansPrescription(motif?: 'AUCUNE_DATE_DE_DEPART' | 'DATE_DE_DEPART_INEXPLOITABLE') {
+		return detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-042',
+						montantExigible: depuisEuros('9000,00'),
+						dateEcheance: '2026-08-01',
+						statutPaiement: 'IMPAYEE',
+						motifPrescriptionInconnue: motif
+					}
+				]
+			}),
+			AUJOURDHUI,
+			{ avecAnglesMorts: true }
+		).anglesMorts.join(' ');
+	}
+
+	it('n’accuse plus le secteur, qui n’y est pour rien', () => {
+		expect(sansPrescription()).not.toMatch(/secteur/i);
+	});
+
+	it('dit qu’il manque une date de départ, et quoi faire', () => {
+		const message = sansPrescription('AUCUNE_DATE_DE_DEPART');
+		expect(message).toMatch(/F-042/);
+		expect(message).toMatch(/échéance/i);
+	});
+
+	it('dit qu’une date est inexploitable, et que c’est une autre correction', () => {
+		const message = sansPrescription('DATE_DE_DEPART_INEXPLOITABLE');
+		expect(message).toMatch(/F-042/);
+		expect(message).toMatch(/corriger|inexploitable|n’existe pas/i);
+	});
+
+	it('sépare les deux motifs plutôt que de les fondre en une phrase', () => {
+		const { anglesMorts } = detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-sans-date',
+						montantExigible: depuisEuros('9000,00'),
+						dateEcheance: '2026-08-01',
+						statutPaiement: 'IMPAYEE',
+						motifPrescriptionInconnue: 'AUCUNE_DATE_DE_DEPART'
+					},
+					{
+						reference: 'F-date-fausse',
+						montantExigible: depuisEuros('4000,00'),
+						dateEcheance: '2026-08-01',
+						statutPaiement: 'IMPAYEE',
+						motifPrescriptionInconnue: 'DATE_DE_DEPART_INEXPLOITABLE'
+					}
+				]
+			}),
+			AUJOURDHUI,
+			{ avecAnglesMorts: true }
+		);
+
+		expect(anglesMorts).toHaveLength(2);
+		const sansDate = anglesMorts.find((m) => m.includes('F-sans-date'));
+		expect(sansDate).toBeDefined();
+		expect(sansDate).not.toMatch(/F-date-fausse/);
+	});
+
+	it('en l’absence de motif, retient celui qui n’accuse personne à tort', () => {
+		// Les jeux de démonstration et les appelants antérieurs ne renseignent pas
+		// le motif. Le défaut doit être le constat le plus faible — pas une
+		// affirmation sur une donnée qu'on n'a pas.
+		expect(sansPrescription()).toMatch(/F-042/);
+	});
+});
+
+/**
+ * LA MÊME RÈGLE POUR LES ÉCHÉANCES DE PROCÉDURE.
+ *
+ * `dateLimite` est une chaîne en base comme le reste. Une seule échéance dont
+ * la date n'existe pas faisait lever `joursEntre` au milieu de la boucle, donc
+ * mourir la détection ENTIÈRE — les factures échues comprises, alors qu'elles
+ * n'y sont pour rien.
+ *
+ * ⚠️ ET C'EST LA CADUCITÉ QUI EST EN JEU. Le délai dont la perte est
+ * irréversible ne peut pas être celui qu'on laisse disparaître en silence : il
+ * remonte en angle mort NOMMÉ, avec sa gravité.
+ */
+describe('échéance de procédure à la date inexploitable', () => {
+	function avecEcheance(dateLimite: string) {
+		return detecterEvenements(
+			etat({
+				factures: [
+					{
+						reference: 'F-001',
+						montantExigible: depuisEuros('9000,00'),
+						dateEcheance: '2026-08-01',
+						statutPaiement: 'IMPAYEE',
+						datePrescription: '2031-08-01'
+					}
+				],
+				dossiers: [
+					{
+						reference: 'D-001',
+						montantEnJeu: depuisEuros('9000,00'),
+						echeances: [
+							{
+								cle: 'signification',
+								libelle: 'Signifier l’ordonnance',
+								dateLimite,
+								gravite: 'CADUCITE'
+							}
+						]
+					}
+				]
+			}),
+			AUJOURDHUI,
+			{ avecAnglesMorts: true }
+		);
+	}
+
+	it('ne fait pas mourir la détection des factures', () => {
+		const { anglesMorts, ...rien } = avecEcheance('2026-02-30');
+		void rien;
+		const echue = avecEcheance('2026-02-30').find((e) => e.reference === 'F-001');
+		expect(echue).toBeDefined();
+		expect(anglesMorts.length).toBeGreaterThan(0);
+	});
+
+	it('nomme l’échéance perdue de vue, avec son dossier', () => {
+		const { anglesMorts } = avecEcheance('2026-02-30');
+		const dit = anglesMorts.join(' ');
+		expect(dit).toMatch(/D-001/);
+		expect(dit).toMatch(/Signifier l’ordonnance/);
+	});
+
+	it('n’émet aucun événement pour une échéance qu’il ne sait pas dater', () => {
+		// Émettre « dans NaN jours » serait pire que se taire : le gérant agirait
+		// sur un chiffre faux. On ne dit rien, et on dit qu'on ne dit rien.
+		const evenements = avecEcheance('2026-02-30');
+		expect(evenements.filter((e) => e.type === 'ECHEANCE_PROCEDURE')).toEqual([]);
+	});
+
+	it('laisse passer une échéance datée normalement', () => {
+		const { anglesMorts } = avecEcheance('2026-09-10');
+		expect(anglesMorts.join(' ')).not.toMatch(/D-001/);
+	});
+});

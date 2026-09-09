@@ -7,7 +7,10 @@ import { qualifier } from '../../verticales/recouvrement/scoring';
 import { PROCEDURES, proceduresEnvisageables } from '../../verticales/recouvrement/procedures';
 import { conditionsADemander } from '../../verticales/recouvrement/deduction';
 import { LIBELLE_CONDITION, type ClePiece } from '../../verticales/recouvrement/qualification';
-import { regimePrescription, dateDePrescription } from '../../verticales/recouvrement/pays/france/prescription';
+import {
+	regimePrescription,
+	prescriptionDe
+} from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
 import { vEtatCritere } from './tables';
 
@@ -152,7 +155,6 @@ export const listerFacturesDuDebiteur = authedQuery({
 			factures
 				.filter((facture) => facture.organizationId === organizationId)
 				.map(async (facture) => {
-					const depart = facture.dateExigibilite ?? facture.dateEcheance;
 					return {
 						_id: facture._id,
 						reference: facture.reference,
@@ -163,8 +165,15 @@ export const listerFacturesDuDebiteur = authedQuery({
 						dateExigibilite: facture.dateExigibilite,
 						exigibiliteDeduite: facture.exigibiliteDeduite ?? false,
 						statutPaiement: facture.statutPaiement,
-						datePrescription:
-							depart === undefined ? undefined : dateDePrescription(depart, secteur),
+						// UNE DATE QUI N’EXISTE PAS TRAVERSE LA VALIDATION CONVEX — c’est une
+						// chaîne. Elle faisait lever le calcul de prescription, et cette lecture
+						// boucle sur TOUTES les factures : une seule ligne abîmée éteignait
+						// l’écran entier. On ne retient ici que la date ; le motif de son
+						// absence est dit par la surveillance, qui a la place pour le porter.
+						datePrescription: prescriptionDe(
+							[facture.dateExigibilite, facture.dateEcheance],
+							secteur
+						).datePrescription,
 						dansUneCreance: facture.creanceId !== undefined
 					};
 				})
@@ -229,9 +238,7 @@ export const creanceComplete = authedQuery({
 			entreCommercants: vEtatCritere
 		}),
 		questions: v.array(v.object({ condition: v.string(), libelle: v.string() })),
-		risques: v.array(
-			v.object({ type: v.string(), description: v.string(), gravite: v.string() })
-		),
+		risques: v.array(v.object({ type: v.string(), description: v.string(), gravite: v.string() })),
 		piecesManquantes: v.array(v.string()),
 		procedures: v.array(
 			v.object({
@@ -291,7 +298,6 @@ export const creanceComplete = authedQuery({
 			principalRestantDu: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
 			factures: await Promise.all(
 				factures.map(async (facture) => {
-					const depart = facture.dateExigibilite ?? facture.dateEcheance;
 					return {
 						_id: facture._id,
 						reference: facture.reference,
@@ -302,8 +308,15 @@ export const creanceComplete = authedQuery({
 						dateExigibilite: facture.dateExigibilite,
 						exigibiliteDeduite: facture.exigibiliteDeduite ?? false,
 						statutPaiement: facture.statutPaiement,
-						datePrescription:
-							depart === undefined ? undefined : dateDePrescription(depart, secteur),
+						// UNE DATE QUI N’EXISTE PAS TRAVERSE LA VALIDATION CONVEX — c’est une
+						// chaîne. Elle faisait lever le calcul de prescription, et cette lecture
+						// boucle sur TOUTES les factures : une seule ligne abîmée éteignait
+						// l’écran entier. On ne retient ici que la date ; le motif de son
+						// absence est dit par la surveillance, qui a la place pour le porter.
+						datePrescription: prescriptionDe(
+							[facture.dateExigibilite, facture.dateEcheance],
+							secteur
+						).datePrescription,
 						dansUneCreance: true
 					};
 				})

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { estDateReelle } from '../calendrier';
 import { champsCommunsDocument } from '../../../socle/documents/schema';
 import { depuisEuros, type Montant } from '../../../socle/montants';
 import type { FactureImportee } from './exportComptable';
@@ -105,9 +106,7 @@ DISCIPLINE DE SORTIE
   true et explique pourquoi. N'invente jamais de contenu.`;
 }
 
-export type Conversion =
-	| { ok: true; facture: FactureImportee }
-	| { ok: false; raison: string };
+export type Conversion = { ok: true; facture: FactureImportee } | { ok: false; raison: string };
 
 /** Le montant lu, ou `null` s'il n'est pas un montant en euros exploitable. */
 function montantOuNull(valeur: number | null): Montant | null {
@@ -168,13 +167,25 @@ export function versFactureImportee(doc: DocumentVente): Conversion {
 		};
 	}
 
+	// LE FORMAT NE SUFFIT PAS : `2026-02-30` le respecte et n'existe pas. Le
+	// modèle rend la date qu'il LIT, et un document mal imprimé ou un OCR qui
+	// confond 0 et 3 en produisent. Une date impossible traverse la validation
+	// Convex — c'est une chaîne — puis fait exploser le calcul de prescription,
+	// pour TOUTE l'organisation et pas seulement pour cette facture.
 	const dateEmission = doc.invoiceDate?.trim() ?? '';
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(dateEmission)) {
-		return { ok: false, raison: 'Date d’émission absente ou mal formée.' };
+	if (!estDateReelle(dateEmission)) {
+		return {
+			ok: false,
+			raison: `Date d’émission absente, mal formée, ou inexistante au calendrier : ${JSON.stringify(dateEmission)}.`
+		};
 	}
 
+	// Une échéance impossible est traitée comme une échéance non imprimée : la
+	// facture existe, seul son point de départ manque. La refuser entièrement
+	// ferait perdre une créance pour une faute de frappe, et la surveillance
+	// annonce déjà en angle mort les factures sans date de prescription.
 	const echeance = doc.dueDate?.trim() ?? '';
-	const dateEcheance = /^\d{4}-\d{2}-\d{2}$/.test(echeance) ? echeance : undefined;
+	const dateEcheance = estDateReelle(echeance) ? echeance : undefined;
 
 	return {
 		ok: true,

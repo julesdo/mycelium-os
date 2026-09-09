@@ -51,26 +51,41 @@ async function organisationAvecMembre(t: ReturnType<typeof convexTest>) {
 }
 
 /**
- * Une organisation portant une facture ILLISIBLE — pas au sens Convex (le
- * schéma ne contraint `dateEcheance` qu'à être une chaîne), mais au sens du
- * calcul de prescription : `pays/france/prescription.ts` → `ajouterMois` →
- * `decomposer` exige le format `AAAA-MM-JJ` et JETTE sinon.
+ * Une organisation dont le battement ÉCHOUE, et pour une raison qui restera
+ * vraie.
  *
- * C'est le moyen honnête trouvé pour faire échouer `fluxInterne` : une facture
- * qui référence un débiteur INEXISTANT, elle, NE JETTE PAS — `assembler` la
- * cherche dans une `Map` construite en mémoire, qui rend simplement
- * `undefined` et retombe sur le secteur `INDETERMINE` sans lever la moindre
- * exception. Une date illisible, en revanche, traverse la validation Convex
- * (c'est une chaîne) puis fait exploser `ajouterMois` au moment de calculer la
- * date de prescription — un vrai échec du code, pas un mock qui le simulerait.
+ * ⚠️ CETTE FIXTURE A DÉJÀ CHANGÉ UNE FOIS, ET LA LEÇON EST DANS SON HISTOIRE.
+ * Elle posait auparavant une facture à la `dateEcheance` illisible, parce que
+ * cette date faisait lever le calcul de prescription. C'était un échec réel,
+ * mais un échec ACCIDENTEL : le jour où la surveillance a appris à contenir une
+ * facture abîmée — à la déclarer angle mort au lieu d'emporter tout
+ * l'établissement — le battement a cessé d'échouer, et deux tests sont tombés
+ * en annonçant une régression qui n'existait pas.
+ *
+ * L'échec retenu ici est un échec de CONFIGURATION : `envoyer` réclame
+ * `AUTH_EMAIL`, que l'environnement de test ne pose pas. C'est un mode de panne
+ * de production authentique — une variable perdue à un déploiement — et c'est
+ * exactement ce que le relevé `ECHEC` existe pour rendre visible sur l'écran du
+ * gérant. Aucun durcissement futur du calcul ne le fera disparaître.
+ *
+ * TROIS CONDITIONS pour l'atteindre, et elles sont toutes nécessaires : un
+ * membre (sinon `envoyer` sort par son retour anticipé), une facture ÉCHUE
+ * (sinon le verdict est `SE_TAIRE` et rien ne part), et une date réelle sur
+ * cette facture (sinon elle devient un angle mort et n'émet aucun événement).
  */
-async function organisationAvecFactureIllisible(
+async function organisationDontLEnvoiEchoue(
 	t: ReturnType<typeof convexTest>
-): Promise<{ organizationId: Id<'organizations'>; factureId: Id<'facturesVente'> }> {
+): Promise<{ organizationId: Id<'organizations'>; membreId: Id<'organizationMembers'> }> {
 	return t.run(async (ctx) => {
 		const organizationId = await ctx.db.insert('organizations', {
 			name: 'Ateliers Martin',
 			createdAt: Date.now()
+		});
+		const membreId = await ctx.db.insert('organizationMembers', {
+			organizationId,
+			userId: 'user_test_1',
+			role: 'ORG_ADMIN',
+			joinedAt: Date.now()
 		});
 		const debiteurId = await ctx.db.insert('debiteurs', {
 			organizationId,
@@ -81,18 +96,18 @@ async function organisationAvecFactureIllisible(
 			santeFinanciere: 'SAINE',
 			creeLe: Date.now()
 		});
-		const factureId = await ctx.db.insert('facturesVente', {
+		await ctx.db.insert('facturesVente', {
 			organizationId,
 			debiteurId,
-			reference: 'FA-ILLISIBLE',
+			reference: 'FA-2026-0042',
 			montantHT: 0n,
 			montantTTC: 100_00n,
 			dateEmission: '2026-01-01',
-			dateEcheance: 'pas-une-date',
+			dateEcheance: '2026-02-01',
 			statutPaiement: 'IMPAYEE',
 			creeLe: Date.now()
 		});
-		return { organizationId, factureId };
+		return { organizationId, membreId };
 	});
 }
 
@@ -193,7 +208,7 @@ describe('executerPourOrganisation', () => {
 		'un échec laisse une trace, avec le message d’erreur',
 		async () => {
 			const t = convexTest(schema, modules);
-			const { organizationId } = await organisationAvecFactureIllisible(t);
+			const { organizationId } = await organisationDontLEnvoiEchoue(t);
 
 			await t.mutation(internal.recouvrement.battement.executerPourOrganisation, {
 				organizationId,
@@ -209,7 +224,7 @@ describe('executerPourOrganisation', () => {
 					.unique()
 			);
 			expect(releve?.statut).toBe('ECHEC');
-			expect(releve?.erreur).toContain('AAAA-MM-JJ');
+			expect(releve?.erreur).toContain('AUTH_EMAIL');
 		},
 		DELAI_CONVEX
 	);
@@ -220,20 +235,20 @@ describe('executerPourOrganisation', () => {
 			// `precedentDe` écarte les relevés en ÉCHEC — c'est écrit dans son
 			// commentaire, mais rien ne l'exerçait avant ce test.
 			const t = convexTest(schema, modules);
-			const { organizationId, factureId } = await organisationAvecFactureIllisible(t);
+			const { organizationId, membreId } = await organisationDontLEnvoiEchoue(t);
 
-			// Nuit 1 : échoue à cause de la facture illisible.
+			// Nuit 1 : echoue, faute de AUTH_EMAIL.
 			await t.mutation(internal.recouvrement.battement.executerPourOrganisation, {
 				organizationId,
 				jour: '2026-09-03'
 			});
 
-			// On répare avant la nuit suivante. `SOLDEE` écarte la facture de
-			// l'assemblage AVANT qu'il ne lise sa date d'échéance (voir
-			// `assembler` dans `surveillance.ts`), donc le battement du 04 ne peut
-			// plus planter sur elle, et son flux d'événements est vide.
+			// On répare avant la nuit suivante — en retirant le membre, ce qui fait
+			// sortir `envoyer` par son retour anticipé (« aucun membre, cas
+			// normal ») AVANT qu'il ne réclame `AUTH_EMAIL`. Le battement du 04
+			// atteint donc son insert et s'enregistre.
 			await t.run(async (ctx) => {
-				await ctx.db.patch(factureId, { statutPaiement: 'SOLDEE' });
+				await ctx.db.delete(membreId);
 			});
 
 			await t.mutation(internal.recouvrement.battement.executerPourOrganisation, {
@@ -250,14 +265,14 @@ describe('executerPourOrganisation', () => {
 					.unique()
 			);
 
-			// Le flux du 04 est vide. Si `precedentDe` traitait à tort le relevé
-			// ÉCHEC du 03 comme un précédent valable (`cles: []`), `decider`
-			// comparerait un flux vide à des clés vides, ne trouverait rien de
-			// nouveau ni de critique, et se tairait (`SE_TAIRE`). En l'écartant
-			// correctement, `precedentDe` ne trouve AUCUN précédent : c'est comme
-			// si c'était le premier relevé exploitable de l'organisation, donc
-			// `decider` PARLE avec la raison « premier briefing » — quel que soit
-			// le contenu du flux.
+			// LA RAISON EST L'ASSERTION, PAS LE STATUT. Le flux du 04 porte une
+			// facture échue, donc le battement parlerait dans les deux cas — c'est
+			// le MOTIF qui départage. Si `precedentDe` retenait à tort le relevé
+			// ÉCHEC du 03 comme précédent valable, il porterait `cles: []` : la clé
+			// de la facture échue paraîtrait nouvelle, et `decider` parlerait pour
+			// « nouveauté ». En l'écartant correctement, il ne trouve AUCUN
+			// précédent — c'est comme si c'était le premier relevé exploitable de
+			// l'organisation, et la raison est « premier briefing ».
 			expect(releveDuLendemain?.statut).toBe('PARLE');
 			expect(releveDuLendemain?.raison).toBe('premier briefing');
 		},
