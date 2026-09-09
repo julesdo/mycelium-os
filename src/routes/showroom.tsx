@@ -11,6 +11,11 @@ import {
 	ZoneDepot,
 	FluxEvenements,
 	Decompte,
+	ChocRevelation,
+	CompteurVivant,
+	BilanPertes,
+	type RevelationAffichee,
+	type BilanPertesAffiche,
 	euros,
 	type EvenementAffiche,
 	type DecompteAffiche
@@ -93,6 +98,115 @@ const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.'
 	}
 ];
+
+/**
+ * LE CHOC DU PREMIER IMPORT, avec les cas qui cassent.
+ *
+ * Les chiffres ne sont pas décoratifs. Ils sont choisis pour exposer ce qui
+ * casse une mise en page : un supplément à cinq chiffres posé en corps de
+ * cinquante-six pixels, une décomposition à trois montants sur une même ligne
+ * qui doit tenir à 375 px, et une facture NON CHIFFRÉE — le cas qu'on serait
+ * tenté de ne jamais dessiner, et qui est précisément celui qui prouve que le
+ * total affiché n'est pas silencieusement amputé.
+ */
+const REVELATION_DEMO: RevelationAffichee = {
+	nombreFactures: 3,
+	principal: 4_248_000n,
+	interets: 731_240n,
+	indemnites: 12_000n,
+	supplement: 743_240n,
+	total: 4_991_240n,
+	interetsCourusDepuisHier: 1_164n,
+	lignes: [
+		{
+			reference: 'FA-2021-0087',
+			principalRestantDu: 924_000n,
+			interets: 412_880n,
+			indemniteForfaitaire: 4_000n,
+			supplement: 416_880n
+		},
+		{
+			reference: 'FA-2023-0142',
+			principalRestantDu: 3_299_100n,
+			interets: 316_290n,
+			indemniteForfaitaire: 4_000n,
+			supplement: 320_290n
+		},
+		{
+			reference: 'FA-2026-0311',
+			principalRestantDu: 24_900n,
+			interets: 2_070n,
+			indemniteForfaitaire: 4_000n,
+			supplement: 6_070n
+		}
+	],
+	nonChiffrees: [
+		{
+			reference: 'FA-2024-0009',
+			raison:
+				'Aucun taux légal relevé pour le semestre du 2024-07-01. Le décompte s’arrête plutôt que d’extrapoler le dernier taux connu.'
+		}
+	]
+};
+
+function DemoRevelation() {
+	return (
+		<Page>
+			<PageHeader
+				titre="Ce que vos factures portent"
+				sousTitre="Relevé au 9 septembre 2026, sur vos trois dernières années"
+			/>
+			<PageBody>
+				<ChocRevelation revelation={REVELATION_DEMO} />
+			</PageBody>
+		</Page>
+	);
+}
+
+/**
+ * Le bilan des pertes, dans ses DEUX états — et le second est le seul qui
+ * compte vraiment.
+ *
+ * Un compteur qui ne sait afficher que zéro se lit comme une décoration en
+ * trois jours. Celui-ci montre ce qui s'est éteint avant l'arrivée, ce qui
+ * s'est éteint depuis — un échec du produit, affiché quand même — et il REFUSE
+ * de compter quand la surveillance a été interrompue.
+ */
+const BILAN_DEMO: BilanPertesAffiche = {
+	eteintesAvant: 3_412_000n,
+	nombreEteintesAvant: 4,
+	eteintesDepuis: 0n,
+	nombreEteintesDepuis: 0,
+	nonSurveillees: ['FA-2022-0451'],
+	joursSousSurveillance: 251
+};
+
+function DemoBilan() {
+	return (
+		<Page>
+			<PageHeader titre="Ce qui s’est éteint" sousTitre="Avant vous, et depuis" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Le compteur, quand la surveillance a tourné</SectionTitle>
+						<BilanPertes bilan={BILAN_DEMO} />
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Le même, après un battement en échec</SectionTitle>
+						<BilanPertes bilan={{ ...BILAN_DEMO, surveillanceInterrompueLe: '2026-05-14' }} />
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Le compteur vivant</SectionTitle>
+						<CompteurVivant
+							total={REVELATION_DEMO.total}
+							interetsCourusDepuisHier={REVELATION_DEMO.interetsCourusDepuisHier}
+						/>
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 function DemoFlux() {
 	return (
@@ -423,6 +537,8 @@ function DemoSurveillanceMuette() {
 }
 
 const ECRANS = [
+	'revelation',
+	'bilan',
 	'flux',
 	'decompte',
 	'depot',
@@ -436,7 +552,7 @@ const ECRANS = [
 type Ecran = (typeof ECRANS)[number];
 
 function Showroom() {
-	const [ecran, setEcran] = useState<Ecran>('flux');
+	const [ecran, setEcran] = useState<Ecran>('revelation');
 
 	return (
 		<div className="flex h-dvh flex-col">
@@ -455,6 +571,8 @@ function Showroom() {
 			</div>
 
 			<div className="min-h-0 flex-1">
+				{ecran === 'revelation' ? <DemoRevelation /> : null}
+				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}
 				{ecran === 'decompte' ? <DemoDecompte /> : null}
 				{ecran === 'depot' ? <DemoDepot /> : null}

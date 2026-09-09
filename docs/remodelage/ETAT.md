@@ -649,3 +649,93 @@ et part désormais par courriel. **À traiter avant tout usage commercial.**
    surveillance de toute l'organisation. Le battement l'attrape et l'affiche, mais la cause reste.
 3. **Trois tables échappent à la purge RGPD** : `emailEvents` (peut contenir une adresse dans son
    payload), `adminAuditLogs` (reliquat du modèle de rôle staff), `passkey` (inerte aujourd'hui).
+
+---
+
+## 9 septembre 2026 — les trois points ouverts sont fermés, et le produit d'appel existe
+
+### Les dates, durcies de bout en bout
+
+`^\d{4}-\d{2}-\d{2}$` acceptait `2026-13-45` et `2026-02-30`. C'était la seule vérification faite sur
+une date, à cinq endroits, et les conséquences allaient du silence à la panne générale.
+
+- `ajouterMois('2026-13-01', 1)` rendait `2027-02-01` — le mois 13 reporté sur l'année suivante par
+  l'arithmétique en mois absolus. Aucune erreur, une date fausse.
+- `ajouterMois('2026-02-30', 0)` rendait `2026-02-28` — deux jours de prescription rabotés, sans un mot.
+- `instant()` dans `decompte.ts` s'appuyait sur `Number.isNaN(Date.parse(…))`, **qui ne mord pas sur le
+  moteur de bun** : `2026-02-30` y roule sur le 2 mars. C'est le seul endroit du produit où une date
+  fausse se transforme en EUROS — deux jours d'intérêts en moins sur une somme réclamée.
+- Et la panne : une date impossible traversait la validation Convex (c'est une chaîne) puis faisait
+  lever le calcul de prescription. `assembler` boucle sur TOUTES les factures : **une seule ligne
+  abîmée éteignait la surveillance entière.**
+
+`estDateReelle` vit désormais dans `calendrier.ts`, une seule fois, avec la règle bissextile que
+`decompte.ts` dupliquait. Les trois portes d'entrée la posent. `prescriptionDe` ne lève plus jamais et
+choisit le meilleur point de départ exploitable. Une facture inexploitable devient un **angle mort
+nommé**, et les autres continuent d'être surveillées.
+
+Au passage, une erreur plus ancienne : le message d'angle mort accusait le secteur — « leur secteur
+n'est pas déterminé, donc la date n'a pas pu être calculée ». C'était faux depuis le premier jour. Un
+secteur indéterminé ne fait pas disparaître la date, il fait retenir le délai le plus court en le
+déclarant. Il y a deux motifs, et ils appellent deux gestes différents.
+
+### Quatre portes dormantes, fermées
+
+Aucune n'était exploitée. Toutes étaient des capacités sans contrepartie sur un produit qui détient
+les impayés de ses clients.
+
+1. **Le cloisonnement multi-tenant reposait sur une convention.** `organisationCourante` relisait
+   `userProfiles.currentOrganizationId` et le rendait tel quel — ce champ décidait à lui seul quelles
+   factures un compte peut lire. `switchOrganization` vérifiait l'appartenance, mais
+   `platformSwitchOrganization`, gardée par le rôle `admin` hérité de Fleet, la contournait EXPRÈS.
+   L'appartenance se vérifie désormais **au point de lecture**, et un test balaie tous les fichiers
+   Convex pour qu'aucun ne relise le champ à la main — même dispositif que `frontiere.test.ts`.
+2. **La surface d'administration de Fleet était encore publique** : bannir, révoquer, changer un rôle,
+   usurper une identité. Aucun écran ne les appelait ; `adminAuditLogs` était **vide en production**,
+   vérifiée avant retrait. `admin/` part en entier, avec la table et les gardes.
+3. **`passkey` survivait à son compte.** `oublierIdentite` retirait `session` et `account` seulement.
+   Restaient une clé publique, un identifiant de justificatif et le nom de l'appareil. Le test ne
+   vérifie pas la liste mais l'INVARIANT : tout modèle Better Auth portant un `userId` doit y figurer.
+   Les vérifications en cours, qui portent l'ADRESSE, partent aussi.
+4. **`emailEvents` gardait tout, pour personne.** La charge utile complète de chaque webhook Resend —
+   destinataire, copies, objet, en-têtes — indéfiniment, dans une table que rien ne relisait. On
+   n'écrit plus que l'envoi, le type et le moment ; un cron quotidien supprime au-delà de 90 jours.
+
+**Et une fuite de revenu, trouvée en chemin.** `activateDevPlan` accordait le plan complet et 9 999
+sièges, sans aucun garde : une simple mutation authentifiée, exposée en production.
+
+### Le choc du premier import (plan 2)
+
+`verticales/recouvrement/revelation.ts` — la règle pure, sans une ligne de calcul réécrite.
+
+- **`reveler`** — le principal d'un côté, le SUPPLÉMENT de l'autre : intérêts de retard et indemnité
+  de 40 € par facture, dus de plein droit et jamais calculés. L'indemnité se compte PAR FACTURE.
+- **`interetsCourusEntre`** — le compteur vivant. Nommé ainsi délibérément : une « montée » se lirait
+  comme la variation du total, qui inclut le principal d'une facture venant d'échoir.
+- **`bilanDesPertes`** — ce qui s'est éteint avant nous, et sous surveillance. Le second chiffre est
+  l'aveu d'un échec du produit et s'affiche quand même.
+
+La couche Convex croise le bilan avec l'état du battement : **si le battement a échoué un seul jour de
+la période, le compteur refuse d'affirmer quoi que ce soit.** Une phrase fausse à cet endroit est pire
+que pas de compteur, parce qu'elle rassure exactement quand il ne faut pas.
+
+L'écran vit sur sa propre route, « Ce qui est dû ». Le plan le posait en tête du flux ; le flux porte
+déjà un total, et deux totaux côte à côte se lisent comme une contradiction.
+
+### Chiffres
+
+**686 tests**, 0 erreur de lint, `check` et `build` verts. Schéma validé sur le déploiement de
+développement. Écrans relus aux quatre largeurs, mesures DOM à l'appui : aucun débordement.
+
+### Ce qui reste ouvert
+
+1. **Le greffon `admin()` de Better Auth est toujours monté.** Ses points d'entrée HTTP restent servis
+   pour un compte portant `role: 'admin'`, et l'usurpation contourne alors la vérification
+   d'appartenance — la session DEVIENT l'utilisateur cible. Plus aucun chemin du produit ne peut
+   accorder ce rôle, mais un compte déjà seedé en production le garderait. Le retrait touche au schéma
+   du composant Better Auth, dont la régénération est fragile : **à faire en présence de quelqu'un.**
+2. **`valideParAvocat` vaut `false` sur les quinze entrées du registre.** Rien qui produise un acte ne
+   peut sortir, quoi qu'on code. C'est une signature humaine, et le plus long piquet du plan.
+3. **La question du juriste sur la révélation** : jusqu'où l'indemnité et les intérêts restent
+   réclamables sur une facture dont le principal a déjà été payé. La révélation se limite aux impayés
+   en attendant — le périmètre le plus étroit, donc le seul défendable.

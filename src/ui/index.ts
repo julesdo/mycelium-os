@@ -38,8 +38,12 @@ export {
 	type LigneDecompteAffichee,
 	type SegmentAffiche
 } from './decompte';
+export { FluxEvenements, type EvenementAffiche, type UrgenceEvenement } from './flux-evenements';
 export {
-	FluxEvenements,
-	type EvenementAffiche,
-	type UrgenceEvenement
-} from './flux-evenements';
+	ChocRevelation,
+	CompteurVivant,
+	BilanPertes,
+	type RevelationAffichee,
+	type LigneRevelationAffichee,
+	type BilanPertesAffiche
+} from './revelation';

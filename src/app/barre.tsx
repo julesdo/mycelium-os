@@ -9,7 +9,14 @@ import {
 	SearchField,
 	Button
 } from '@cladd-ui/react';
-import { CameraIcon, SettingsIcon, InboxIcon, UsersIcon, UploadIcon } from 'lucide-react';
+import {
+	CameraIcon,
+	SettingsIcon,
+	InboxIcon,
+	UsersIcon,
+	UploadIcon,
+	CalculatorIcon
+} from 'lucide-react';
 
 import { cn } from '../ui/cn';
 import { LogoLetikette, MotLetikette } from '../ui/logo';
@@ -50,8 +57,14 @@ import { SelecteurEtablissement } from './selecteur-etablissement';
  * verticale s'est réglée toute seule en supprimant EGalim : il n'y a plus
  * qu'un domaine.
  */
+// QUATRE DEPUIS LE 9 SEPTEMBRE 2026. « Ce qui est dû » porte le seul chiffre
+// que le gérant n'a nulle part ailleurs : ce que ses factures en retard valent
+// intérêts et indemnités comprises. Il est séparé de « À traiter » parce que les
+// deux écrans portent chacun un total, et que deux totaux côte à côte se lisent
+// comme une contradiction sur un produit dont l'argument est l'exactitude.
 const ENTREES = [
 	{ to: '/app', label: 'À traiter', Icone: InboxIcon },
+	{ to: '/app/revelation', label: 'Ce qui est dû', Icone: CalculatorIcon },
 	{ to: '/app/debiteurs', label: 'Débiteurs', Icone: UsersIcon },
 	{ to: '/app/import-factures', label: 'Importer', Icone: UploadIcon }
 ] as const;
@@ -230,7 +243,7 @@ export function BarreBasse() {
 		   cale dessous et le dernier onglet ne se touche plus. */
 		<nav
 			aria-label="Navigation principale"
-			className="fixed inset-x-0 bottom-0 z-40 mb-safe p-cladd-3xs md:hidden"
+			className="mb-safe fixed inset-x-0 bottom-0 z-40 p-cladd-3xs md:hidden"
 		>
 			<Surface
 				outline

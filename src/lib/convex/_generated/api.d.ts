@@ -50,6 +50,7 @@ import type * as recouvrement_depot from "../recouvrement/depot.js";
 import type * as recouvrement_depotMutations from "../recouvrement/depotMutations.js";
 import type * as recouvrement_import from "../recouvrement/import.js";
 import type * as recouvrement_lecture from "../recouvrement/lecture.js";
+import type * as recouvrement_revelation from "../recouvrement/revelation.js";
 import type * as recouvrement_surveillance from "../recouvrement/surveillance.js";
 import type * as recouvrement_tables from "../recouvrement/tables.js";
 import type * as rgpd from "../rgpd.js";
@@ -108,6 +109,7 @@ declare const fullApi: ApiFromModules<{
   "recouvrement/depotMutations": typeof recouvrement_depotMutations;
   "recouvrement/import": typeof recouvrement_import;
   "recouvrement/lecture": typeof recouvrement_lecture;
+  "recouvrement/revelation": typeof recouvrement_revelation;
   "recouvrement/surveillance": typeof recouvrement_surveillance;
   "recouvrement/tables": typeof recouvrement_tables;
   rgpd: typeof rgpd;
