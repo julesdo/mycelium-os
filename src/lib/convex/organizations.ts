@@ -7,7 +7,12 @@ import { invitationHtml, invitationTexte } from './emails/modeles';
 import { assertSeatAvailable, resolveEffectivePlan, finDeLEssai } from './billing';
 import { requireEnv } from './env';
 import { shouldSkipTestEmail } from './emails/helpers';
-import { requireOrgMember, requireAdminDeLOrgCourante } from './lib/auth';
+import {
+	requireOrgMember,
+	requireAdminDeLOrgCourante,
+	organisationCouranteOuNull,
+	recalerProfil
+} from './lib/auth';
 
 /**
  * L'établissement, ses membres et ses invitations.
@@ -23,26 +28,17 @@ import { requireOrgMember, requireAdminDeLOrgCourante } from './lib/auth';
 export const getMyOrg = authedQuery({
 	args: {},
 	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-
-		if (!profile?.currentOrganizationId) return null;
-		return ctx.db.get(profile.currentOrganizationId);
+		const orgId = await organisationCouranteOuNull(ctx, ctx.user._id);
+		if (orgId === null) return null;
+		return ctx.db.get(orgId);
 	}
 });
 
 export const getMyOrgMembership = authedQuery({
 	args: {},
 	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-
-		if (!profile?.currentOrganizationId) return null;
-		const orgId = profile.currentOrganizationId;
+		const orgId = await organisationCouranteOuNull(ctx, ctx.user._id);
+		if (orgId === null) return null;
 
 		return ctx.db
 			.query('organizationMembers')
@@ -258,12 +254,8 @@ type AdapterResult = { page: unknown[]; isDone: boolean; continueCursor: string 
 export const listOrganizationMembers = authedQuery({
 	args: {},
 	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) return [];
-		const orgId = profile.currentOrganizationId;
+		const orgId = await organisationCouranteOuNull(ctx, ctx.user._id);
+		if (orgId === null) return [];
 
 		await requireOrgMember(ctx, orgId, ctx.user._id);
 
@@ -499,12 +491,8 @@ export const updateMemberRole = authedMutation({
 export const listOrgInvitations = authedQuery({
 	args: {},
 	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) return [];
-		const orgId = profile.currentOrganizationId;
+		const orgId = await organisationCouranteOuNull(ctx, ctx.user._id);
+		if (orgId === null) return [];
 
 		const membership = await ctx.db
 			.query('organizationMembers')
@@ -776,18 +764,6 @@ export const removeOrganizationMember = authedMutation({
 		// Le compte retiré ne doit plus rouvrir cet établissement à la reconnexion.
 		// Sans ce recalage, il retrouve un espace dont toutes les requêtes lui
 		// répondent « accès refusé », ce qui se lit comme une panne.
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', member.userId))
-			.unique();
-		if (profile?.currentOrganizationId === orgId) {
-			const autre = await ctx.db
-				.query('organizationMembers')
-				.withIndex('by_user', (q) => q.eq('userId', member.userId))
-				.first();
-			await ctx.db.patch(profile._id, {
-				currentOrganizationId: autre?.organizationId ?? undefined
-			});
-		}
+		await recalerProfil(ctx, member.userId, orgId);
 	}
 });

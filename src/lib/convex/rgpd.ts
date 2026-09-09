@@ -4,7 +4,12 @@ import type { MutationCtx } from './_generated/server';
 import { authedQuery, authedMutation } from './functions';
 import { api, components, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
-import { requireAdminDeLOrgCourante, requireOrgMember } from './lib/auth';
+import {
+	requireAdminDeLOrgCourante,
+	requireOrgMember,
+	organisationCouranteOuNull,
+	recalerProfil
+} from './lib/auth';
 
 /**
  * LES DEUX DROITS QUE LA POLITIQUE DE CONFIDENTIALITÉ PROMET, ET QU'AUCUN CODE
@@ -65,12 +70,8 @@ export const apercuDeMesDonnees = authedQuery({
 		})
 	),
 	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) return null;
-		const orgId = profile.currentOrganizationId;
+		const orgId = await organisationCouranteOuNull(ctx, ctx.user._id);
+		if (orgId === null) return null;
 
 		const membership = await requireOrgMember(ctx, orgId, ctx.user._id);
 		const org = await ctx.db.get(orgId);
@@ -748,28 +749,4 @@ async function effacerDuStockage(ctx: CtxEcriture, storageId: Id<'_storage'>): P
 	} catch {
 		// déjà supprimé
 	}
-}
-
-/**
- * Un compte qui perd son établissement courant doit en retrouver un autre, ou
- * aucun — jamais celui qui vient de disparaître.
- */
-async function recalerProfil(
-	ctx: CtxEcriture,
-	userId: string,
-	quitte: Id<'organizations'>
-): Promise<void> {
-	const profile = await ctx.db
-		.query('userProfiles')
-		.withIndex('by_userId', (q) => q.eq('userId', userId))
-		.unique();
-	if (!profile || profile.currentOrganizationId !== quitte) return;
-
-	const autre = await ctx.db
-		.query('organizationMembers')
-		.withIndex('by_user', (q) => q.eq('userId', userId))
-		.first();
-	await ctx.db.patch(profile._id, {
-		currentOrganizationId: autre?.organizationId ?? undefined
-	});
 }

@@ -486,3 +486,46 @@ describe('aucune surface d’administration', () => {
 		expect(Object.keys(schema.tables)).not.toContain('adminAuditLogs');
 	});
 });
+
+/**
+ * PERSONNE NE LIT `currentOrganizationId` DIRECTEMENT.
+ *
+ * Vérifier l'appartenance dans `organisationCourante` ne sert à rien si la
+ * moitié du produit lit le champ sans passer par elle. C'était le cas : huit
+ * endroits — l'aperçu de l'établissement, la liste des membres, les quatre
+ * fonctions de facturation — relisaient le profil à la main. Deux d'entre eux
+ * ÉCRIVAIENT sur l'organisation ainsi trouvée.
+ *
+ * ⚠️ CE TEST EST LA BARRIÈRE, PAS LE COMMENTAIRE. Une convention tenue à N
+ * endroits se perd au premier ajout ; une règle exécutable, non. C'est le même
+ * dispositif que `socle/__tests__/frontiere.test.ts` : elle échoue si quelqu'un
+ * la contourne, même de bonne foi.
+ */
+describe('une seule façon de savoir de quel établissement on parle', () => {
+	it('aucune fonction Convex ne relit le profil à la main', async () => {
+		const fichiers = import.meta.glob('../**/*.ts', { query: '?raw', import: 'default' });
+		const fautifs: string[] = [];
+
+		for (const [chemin, charger] of Object.entries(fichiers)) {
+			// `lib/auth.ts` EST l'implémentation ; `rgpd.ts` recale un profil dont
+			// l'appartenance vient précisément de disparaître, et `organizations.ts`
+			// la pose au moment où elle est créée. Les tests décrivent le contournement
+			// pour le prouver refusé.
+			if (/lib\/auth\.ts$/.test(chemin)) continue;
+			if (/_generated\//.test(chemin)) continue;
+			if (/__tests__\//.test(chemin)) continue;
+
+			const source = (await charger()) as string;
+			for (const ligne of source.split('\n')) {
+				// L'écriture est licite — c'est la LECTURE qui doit passer par la
+				// vérification. On ne retient donc que les usages en position de
+				// valeur, pas les affectations d'un objet littéral.
+				if (/(\?\.|\.)currentOrganizationId(?!\s*:)/.test(ligne)) {
+					fautifs.push(`${chemin} :: ${ligne.trim()}`);
+				}
+			}
+		}
+
+		expect(fautifs).toEqual([]);
+	});
+});
