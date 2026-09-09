@@ -472,6 +472,36 @@ export const recouvrementTables = {
 				)
 			})
 		),
+		/**
+		 * QUI RÉCLAMAIT À QUI, AU JOUR DE L'ARRÊTÉ.
+		 *
+		 * Un décompte arrêté est une PIÈCE : il part chez un expert-comptable, un
+		 * avocat, un assureur. La question qu'il répond n'est pas « combien
+		 * réclame-t-on aujourd'hui » mais « qu'a-t-on réclamé le jour où on l'a
+		 * réclamé » — et cette question porte aussi sur les identités. Sans elles,
+		 * une pièce regénérée six mois plus tard porterait le nom que le débiteur a
+		 * AUJOURD'HUI, après un changement de dénomination ou une fusion, et ne
+		 * dirait plus ce qu'elle disait le jour de son émission.
+		 *
+		 * ⚠️ FACULTATIFS, ET C'EST LE PIÈGE CONVEX. Le schéma valide la BASE, pas
+		 * seulement le code : les décomptes déjà produits n'en portent pas, et les
+		 * rendre obligatoires ferait échouer le déploiement sur des documents
+		 * existants. Le rendu de la pièce doit savoir s'en passer.
+		 */
+		creancier: v.optional(
+			v.object({
+				denomination: v.string(),
+				siren: v.optional(v.string()),
+				adresse: v.optional(v.string())
+			})
+		),
+		debiteur: v.optional(
+			v.object({
+				denomination: v.string(),
+				siren: v.optional(v.string()),
+				adresse: v.optional(v.string())
+			})
+		),
 		produitLe: v.number()
 	})
 		.index('by_creance', ['creanceId'])

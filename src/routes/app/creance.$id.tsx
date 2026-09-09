@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { Button, Chip, Surface, SurfaceCut } from '@cladd-ui/react';
-import { AlertTriangleIcon } from 'lucide-react';
+import { AlertTriangleIcon, FileDownIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
+import { depuisCentimes } from '../../lib/socle/montants';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import {
 	Page,
@@ -57,6 +58,62 @@ function Creance() {
 	async function tranche(condition: string, valeur: 'ok' | 'ko') {
 		setErreur(null);
 		await repondre({ creanceId, reponses: { [condition]: valeur } });
+	}
+
+	/**
+	 * LA PIÈCE, TÉLÉCHARGÉE.
+	 *
+	 * ⚠️ LE MODULE PDF EST IMPORTÉ À LA DEMANDE. `jspdf` et son greffon de
+	 * tableaux pèsent plusieurs centaines de kilo-octets ; les charger avec
+	 * l'écran ferait payer ce poids à chaque ouverture, pour un bouton qu'on
+	 * presse une fois par créance.
+	 *
+	 * ⚠️ ET LE CONTENU NE SE COMPOSE PAS ICI. `composerPiece` est pure et testée ;
+	 * cet écran ne fait que lui passer le décompte figé et donner un nom au
+	 * fichier. Écrire une seule phrase du document ici créerait un second endroit
+	 * où le produit parle de droit.
+	 */
+	async function telecharger() {
+		if (dernier === undefined || dernier === null) return;
+
+		const [{ composerPiece }, { rendrePieceEnPdf, nomFichierPiece }] = await Promise.all([
+			import('../../lib/verticales/recouvrement/piece'),
+			import('../../ui/piece-decompte')
+		]);
+
+		const piece = composerPiece({
+			arreteAu: dernier.arreteAu,
+			convention: dernier.convention,
+			principalRestantDu: depuisCentimes(dernier.principalRestantDu),
+			interets: depuisCentimes(dernier.interets),
+			indemniteForfaitaire: depuisCentimes(dernier.indemniteForfaitaire),
+			total: depuisCentimes(dernier.total),
+			creancier: dernier.creancier,
+			debiteur: dernier.debiteur,
+			lignes: dernier.lignes.map((ligne) => ({
+				reference: ligne.reference,
+				principalRestantDu: depuisCentimes(ligne.principalRestantDu),
+				interets: depuisCentimes(ligne.interets),
+				indemniteForfaitaire: depuisCentimes(ligne.indemniteForfaitaire),
+				total: depuisCentimes(ligne.total),
+				segments: ligne.segments.map((segment) => ({
+					debut: segment.debut,
+					fin: segment.fin,
+					jours: segment.jours,
+					principal: depuisCentimes(segment.principal),
+					taux: segment.taux,
+					baseAnnuelle: segment.baseAnnuelle,
+					interets: depuisCentimes(segment.interets)
+				}))
+			})),
+			abandons: dernier.abandons.map((abandon) => ({
+				reference: abandon.reference,
+				montantEnJeu: abandon.montantEnJeu === null ? null : depuisCentimes(abandon.montantEnJeu),
+				explication: abandon.explication
+			}))
+		});
+
+		rendrePieceEnPdf(piece).save(nomFichierPiece(piece));
 	}
 
 	async function produireDecompte() {
@@ -116,7 +173,9 @@ function Creance() {
 							<div className="flex flex-col gap-cladd-3xs">
 								{creance.questions.map((question) => (
 									<Surface
-										key={question.condition} contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
+										key={question.condition}
+										contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+									>
 										<p className="text-cladd-sm">{question.libelle}</p>
 										<div className="flex flex-wrap gap-cladd-3xs">
 											<Button
@@ -154,8 +213,7 @@ function Creance() {
 											<p className="text-cladd-sm">{risque.description}</p>
 											{risque.gravite === 'BLOQUANTE' ? (
 												<p className="text-cladd-xs text-cladd-fg-soft">
-													Une contestation, même infondée, met fin à la procédure
-													simplifiée.
+													Une contestation, même infondée, met fin à la procédure simplifiée.
 												</p>
 											) : null}
 										</div>
@@ -209,15 +267,15 @@ function Creance() {
 									Aucun décompte n’a encore été arrêté pour cette créance.
 								</p>
 								<p className="text-cladd-xs text-cladd-fg-soft">
-									Un décompte est figé à sa date : il prouve ce qui était réclamé le jour où
-									on l’a réclamé, et ne bouge plus ensuite.
+									Un décompte est figé à sa date : il prouve ce qui était réclamé le jour où on l’a
+									réclamé, et ne bouge plus ensuite.
 								</p>
 							</Surface>
 						)}
 
 						{erreur ? <p className="mt-cladd-3xs text-cladd-xs text-cladd-fg">{erreur}</p> : null}
 
-						<div className="mt-cladd-3xs">
+						<div className="mt-cladd-3xs flex flex-wrap gap-cladd-3xs">
 							<Button
 								size="lg"
 								color="brand"
@@ -227,6 +285,17 @@ function Creance() {
 							>
 								{enCours ? 'Calcul en cours…' : 'Arrêter un décompte à aujourd’hui'}
 							</Button>
+
+							{/* LA PIÈCE. C'est le troisième critère de fin de MVP : un décompte
+							    qui part chez un expert-comptable, un avocat ou un assureur SANS
+							    être retouché. Tant qu'il faut le retoucher, ce n'est pas une
+							    pièce — et le client n'a aucune raison de rester. */}
+							{dernier ? (
+								<Button size="lg" variant="transparent" onClick={() => void telecharger()}>
+									<FileDownIcon />
+									Télécharger la pièce
+								</Button>
+							) : null}
 						</div>
 					</SectionEcran>
 

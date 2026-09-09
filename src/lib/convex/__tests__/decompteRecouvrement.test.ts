@@ -35,7 +35,11 @@ const modules = Object.fromEntries(
 
 async function poserCreance(
 	t: ReturnType<typeof convexTest>,
-	options: { montantTTC?: bigint; dateExigibilite?: string; reglement?: { date: string; montant: bigint } } = {}
+	options: {
+		montantTTC?: bigint;
+		dateExigibilite?: string;
+		reglement?: { date: string; montant: bigint };
+	} = {}
 ): Promise<{ organizationId: Id<'organizations'>; creanceId: Id<'creances'> }> {
 	return await t.run(async (ctx) => {
 		const organizationId = await ctx.db.insert('organizations', {
@@ -92,179 +96,461 @@ async function poserCreance(
 }
 
 describe('décompte au taux légal français', () => {
-	it('calcule les intérêts sur deux semestres, au centime', async () => {
-		// 10 000,00 € exigibles au 2026-05-01, arrêtés au 2026-09-01.
-		//   61 j à 12,15 % (S1) → 20 305 c · 62 j à 12,40 % (S2) → 21 063 c
-		//   intérêts 413,68 € · indemnité 40,00 € · total 10 453,68 €
-		const t = convexTest(schema, modules);
-		const { creanceId } = await poserCreance(t);
+	it(
+		'calcule les intérêts sur deux semestres, au centime',
+		async () => {
+			// 10 000,00 € exigibles au 2026-05-01, arrêtés au 2026-09-01.
+			//   61 j à 12,15 % (S1) → 20 305 c · 62 j à 12,40 % (S2) → 21 063 c
+			//   intérêts 413,68 € · indemnité 40,00 € · total 10 453,68 €
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
 
-		const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
-			creanceId,
-			arreteAu: '2026-09-01',
-			convention: 'ACT_365'
-		});
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
 
-		await t.run(async (ctx) => {
-			const decompte = (await ctx.db.get(decompteId))!;
-			expect(versEuros(depuisCentimes(decompte.principalRestantDu))).toBe('10 000,00');
-			expect(versEuros(depuisCentimes(decompte.interets))).toBe('413,68');
-			expect(versEuros(depuisCentimes(decompte.indemniteForfaitaire))).toBe('40,00');
-			expect(versEuros(depuisCentimes(decompte.total))).toBe('10 453,68');
-		});
-	}, DELAI_CONVEX);
+			await t.run(async (ctx) => {
+				const decompte = (await ctx.db.get(decompteId))!;
+				expect(versEuros(depuisCentimes(decompte.principalRestantDu))).toBe('10 000,00');
+				expect(versEuros(depuisCentimes(decompte.interets))).toBe('413,68');
+				expect(versEuros(depuisCentimes(decompte.indemniteForfaitaire))).toBe('40,00');
+				expect(versEuros(depuisCentimes(decompte.total))).toBe('10 453,68');
+			});
+		},
+		DELAI_CONVEX
+	);
 
-	it('détaille les périodes, et leur somme fait le total', async () => {
-		const t = convexTest(schema, modules);
-		const { creanceId } = await poserCreance(t);
+	it(
+		'détaille les périodes, et leur somme fait le total',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
 
-		const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
-			creanceId,
-			arreteAu: '2026-09-01',
-			convention: 'ACT_365'
-		});
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
 
-		await t.run(async (ctx) => {
-			const decompte = (await ctx.db.get(decompteId))!;
-			const ligne = decompte.lignes[0]!;
+			await t.run(async (ctx) => {
+				const decompte = (await ctx.db.get(decompteId))!;
+				const ligne = decompte.lignes[0]!;
 
-			// Deux segments : le changement de taux au 1er juillet coupe la période.
-			expect(ligne.segments).toHaveLength(2);
-			expect(ligne.segments[0]!.debut).toBe('2026-05-01');
-			expect(ligne.segments[1]!.debut).toBe('2026-07-01');
-			expect(ligne.segments[0]!.taux.numerateur).toBe(1215n);
-			expect(ligne.segments[1]!.taux.numerateur).toBe(1240n);
+				// Deux segments : le changement de taux au 1er juillet coupe la période.
+				expect(ligne.segments).toHaveLength(2);
+				expect(ligne.segments[0]!.debut).toBe('2026-05-01');
+				expect(ligne.segments[1]!.debut).toBe('2026-07-01');
+				expect(ligne.segments[0]!.taux.numerateur).toBe(1215n);
+				expect(ligne.segments[1]!.taux.numerateur).toBe(1240n);
 
-			const somme = ligne.segments.reduce((total, s) => total + s.interets, 0n);
-			expect(somme).toBe(ligne.interets);
-		});
-	}, DELAI_CONVEX);
+				const somme = ligne.segments.reduce((total, s) => total + s.interets, 0n);
+				expect(somme).toBe(ligne.interets);
+			});
+		},
+		DELAI_CONVEX
+	);
 
-	it('réduit la base d’intérêts à compter d’un règlement', async () => {
-		const t = convexTest(schema, modules);
-		const { creanceId } = await poserCreance(t, {
-			reglement: { date: '2026-07-01', montant: 400_000n }
-		});
+	it(
+		'réduit la base d’intérêts à compter d’un règlement',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t, {
+				reglement: { date: '2026-07-01', montant: 400_000n }
+			});
 
-		const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
-			creanceId,
-			arreteAu: '2026-09-01',
-			convention: 'ACT_365'
-		});
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
 
-		await t.run(async (ctx) => {
-			const decompte = (await ctx.db.get(decompteId))!;
-			expect(versEuros(depuisCentimes(decompte.principalRestantDu))).toBe('6 000,00');
-			// Trois segments : exigibilité, changement de taux ET règlement
-			// tombent le 1er juillet, donc deux ruptures confondues en une.
-			expect(decompte.lignes[0]!.segments).toHaveLength(2);
-		});
-	}, DELAI_CONVEX);
+			await t.run(async (ctx) => {
+				const decompte = (await ctx.db.get(decompteId))!;
+				expect(versEuros(depuisCentimes(decompte.principalRestantDu))).toBe('6 000,00');
+				// Trois segments : exigibilité, changement de taux ET règlement
+				// tombent le 1er juillet, donc deux ruptures confondues en une.
+				expect(decompte.lignes[0]!.segments).toHaveLength(2);
+			});
+		},
+		DELAI_CONVEX
+	);
 });
 
 describe('ce qui est figé l’est définitivement', () => {
-	it('rejoué à la même date, rend exactement le même total', async () => {
-		const t = convexTest(schema, modules);
-		const { creanceId } = await poserCreance(t);
+	it(
+		'rejoué à la même date, rend exactement le même total',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
 
-		const premier = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
-			creanceId,
-			arreteAu: '2026-09-01',
-			convention: 'ACT_365'
-		});
-		const second = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
-			creanceId,
-			arreteAu: '2026-09-01',
-			convention: 'ACT_365'
-		});
+			const premier = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
+			const second = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
 
-		await t.run(async (ctx) => {
-			const a = (await ctx.db.get(premier))!;
-			const b = (await ctx.db.get(second))!;
-			expect(a.total).toBe(b.total);
-			// Deux documents distincts : le second n'écrase pas le premier.
-			expect(premier).not.toBe(second);
-			expect(await ctx.db.query('decomptes').collect()).toHaveLength(2);
-		});
-	}, DELAI_CONVEX);
+			await t.run(async (ctx) => {
+				const a = (await ctx.db.get(premier))!;
+				const b = (await ctx.db.get(second))!;
+				expect(a.total).toBe(b.total);
+				// Deux documents distincts : le second n'écrase pas le premier.
+				expect(premier).not.toBe(second);
+				expect(await ctx.db.query('decomptes').collect()).toHaveLength(2);
+			});
+		},
+		DELAI_CONVEX
+	);
 
-	it('garde la convention employée, sans laquelle le chiffre n’est pas défendable', async () => {
-		const t = convexTest(schema, modules);
-		const { creanceId } = await poserCreance(t);
+	it(
+		'garde la convention employée, sans laquelle le chiffre n’est pas défendable',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
 
-		const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
-			creanceId,
-			arreteAu: '2026-09-01',
-			convention: 'ACT_ACT'
-		});
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_ACT'
+			});
 
-		await t.run(async (ctx) => {
-			const decompte = (await ctx.db.get(decompteId))!;
-			expect(decompte.convention).toBe('ACT_ACT');
-			expect(decompte.arreteAu).toBe('2026-09-01');
-		});
-	}, DELAI_CONVEX);
+			await t.run(async (ctx) => {
+				const decompte = (await ctx.db.get(decompteId))!;
+				expect(decompte.convention).toBe('ACT_ACT');
+				expect(decompte.arreteAu).toBe('2026-09-01');
+			});
+		},
+		DELAI_CONVEX
+	);
 });
 
 describe('les refus', () => {
-	it('refuse une facture sans date d’exigibilité, plutôt que d’en inventer une', async () => {
-		const t = convexTest(schema, modules);
-		const { organizationId, creanceId } = await poserCreance(t);
+	it(
+		'refuse une facture sans date d’exigibilité, plutôt que d’en inventer une',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await poserCreance(t);
 
-		await t.run(async (ctx) => {
-			const facture = (
-				await ctx.db
-					.query('facturesVente')
-					.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-					.collect()
-			)[0]!;
-			await ctx.db.patch(facture._id, { dateExigibilite: undefined });
-			expect(organizationId).toBeTruthy();
-		});
+			await t.run(async (ctx) => {
+				const facture = (
+					await ctx.db
+						.query('facturesVente')
+						.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+						.collect()
+				)[0]!;
+				await ctx.db.patch(facture._id, { dateExigibilite: undefined });
+				expect(organizationId).toBeTruthy();
+			});
 
-		await expect(
-			t.mutation(internal.recouvrement.decompte.figerDecompte, {
+			await expect(
+				t.mutation(internal.recouvrement.decompte.figerDecompte, {
+					creanceId,
+					arreteAu: '2026-09-01',
+					convention: 'ACT_365'
+				})
+			).rejects.toThrow(/exigibilit/i);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'refuse un arrêté sur un semestre dont le taux n’est pas publié',
+		async () => {
+			// La série s'arrête au second semestre 2026 : au-delà, on ne devine pas.
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
+
+			await expect(
+				t.mutation(internal.recouvrement.decompte.figerDecompte, {
+					creanceId,
+					arreteAu: '2028-01-01',
+					convention: 'ACT_365'
+				})
+			).rejects.toThrow(/2027-S1|Taux BCE/i);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'refuse une créance sans facture',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
+
+			await t.run(async (ctx) => {
+				const facture = (
+					await ctx.db
+						.query('facturesVente')
+						.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+						.collect()
+				)[0]!;
+				await ctx.db.delete(facture._id);
+			});
+
+			await expect(
+				t.mutation(internal.recouvrement.decompte.figerDecompte, {
+					creanceId,
+					arreteAu: '2026-09-01',
+					convention: 'ACT_365'
+				})
+			).rejects.toThrow(/facture/i);
+		},
+		DELAI_CONVEX
+	);
+});
+
+/**
+ * LES IDENTITÉS SONT FIGÉES AVEC LE DÉCOMPTE.
+ *
+ * Un décompte arrêté est une PIÈCE : il part chez un expert-comptable, un
+ * avocat, un assureur. La question qu'il répond n'est pas « combien réclame-t-on
+ * aujourd'hui » mais « qu'a-t-on réclamé le jour où on l'a réclamé » — et cette
+ * question porte aussi sur QUI réclamait à QUI.
+ *
+ * ⚠️ SANS CE GEL, LA PIÈCE N'EST PAS OPPOSABLE, C'EST UNE VUE. Regénérée six mois
+ * plus tard, elle porterait le nom que le débiteur a AUJOURD'HUI — un changement
+ * de dénomination sociale, une fusion — et ne dirait plus ce qu'elle disait le
+ * jour de son émission. Un tiers qui compare deux exemplaires du même décompte
+ * doit lire la même chose.
+ *
+ * ⚠️ ET LES CHAMPS SONT FACULTATIFS. Convex valide la BASE, pas seulement le
+ * code : les décomptes déjà produits n'en portent pas, et les rendre obligatoires
+ * ferait échouer le déploiement sur des documents existants. Le rendu doit savoir
+ * s'en passer.
+ */
+describe('les identités, figées avec le décompte', () => {
+	it(
+		'garde le nom du débiteur tel qu’il était au jour de l’arrêté',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
+
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
 				creanceId,
 				arreteAu: '2026-09-01',
 				convention: 'ACT_365'
-			})
-		).rejects.toThrow(/exigibilit/i);
-	}, DELAI_CONVEX);
+			});
 
-	it('refuse un arrêté sur un semestre dont le taux n’est pas publié', async () => {
-		// La série s'arrête au second semestre 2026 : au-delà, on ne devine pas.
-		const t = convexTest(schema, modules);
-		const { creanceId } = await poserCreance(t);
+			// Le débiteur change de dénomination APRÈS l'arrêté.
+			await t.run(async (ctx) => {
+				const debiteur = (await ctx.db.query('debiteurs').collect())[0]!;
+				await ctx.db.patch(debiteur._id, { denomination: 'Durand Distribution SAS' });
+			});
 
-		await expect(
-			t.mutation(internal.recouvrement.decompte.figerDecompte, {
-				creanceId,
-				arreteAu: '2028-01-01',
-				convention: 'ACT_365'
-			})
-		).rejects.toThrow(/2027-S1|Taux BCE/i);
-	}, DELAI_CONVEX);
+			await t.run(async (ctx) => {
+				const decompte = (await ctx.db.get(decompteId))!;
+				expect(decompte.debiteur?.denomination).toBe('Fournitures Durand');
+			});
+		},
+		DELAI_CONVEX
+	);
 
-	it('refuse une créance sans facture', async () => {
-		const t = convexTest(schema, modules);
-		const { creanceId } = await poserCreance(t);
+	it(
+		'porte le SIREN du débiteur quand il est connu',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
+			await t.run(async (ctx) => {
+				const debiteur = (await ctx.db.query('debiteurs').collect())[0]!;
+				await ctx.db.patch(debiteur._id, { siren: '853479236' });
+			});
 
-		await t.run(async (ctx) => {
-			const facture = (
-				await ctx.db
-					.query('facturesVente')
-					.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-					.collect()
-			)[0]!;
-			await ctx.db.delete(facture._id);
-		});
-
-		await expect(
-			t.mutation(internal.recouvrement.decompte.figerDecompte, {
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
 				creanceId,
 				arreteAu: '2026-09-01',
 				convention: 'ACT_365'
-			})
-		).rejects.toThrow(/facture/i);
-	}, DELAI_CONVEX);
+			});
+
+			await t.run(async (ctx) => {
+				expect((await ctx.db.get(decompteId))!.debiteur?.siren).toBe('853479236');
+			});
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'porte le créancier quand son profil existe',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await poserCreance(t);
+			await t.run(async (ctx) => {
+				await ctx.db.insert('profilsCreancier', {
+					organizationId,
+					denomination: 'Thumbbb Agency',
+					siren: '502592959',
+					estCommercant: 'ok',
+					adresse: '12 rue des Ateliers, 75011 Paris',
+					majLe: Date.now()
+				});
+			});
+
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
+
+			await t.run(async (ctx) => {
+				const decompte = (await ctx.db.get(decompteId))!;
+				expect(decompte.creancier?.denomination).toBe('Thumbbb Agency');
+				expect(decompte.creancier?.siren).toBe('502592959');
+				expect(decompte.creancier?.adresse).toMatch(/75011/);
+			});
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'produit quand même le décompte sans profil créancier',
+		async () => {
+			// Le profil est facultatif, et un décompte reste un décompte : refuser de
+			// le produire pour un en-tête manquant transformerait une gêne d'affichage
+			// en blocage de calcul.
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
+
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
+
+			await t.run(async (ctx) => {
+				const decompte = (await ctx.db.get(decompteId))!;
+				expect(decompte.creancier).toBeUndefined();
+				expect(decompte.total > 0n).toBe(true);
+			});
+		},
+		DELAI_CONVEX
+	);
+});
+
+/**
+ * CE QUE LE DÉCOMPTE NE COUVRE PAS, RENDU AVEC LUI.
+ *
+ * `controlerDecompte` chiffre depuis longtemps ce qui serait abandonné — et
+ * **aucune requête ne l'appelait**. Un module écrit, testé, et injoignable :
+ * la même famille de défaut que `DEBITEUR_DEGRADE`.
+ *
+ * ⚠️ C'EST LA DIFFÉRENCE ENTRE UNE PIÈCE ET UN EXTRAIT. Un tiers qui reçoit le
+ * décompte doit voir ce qui n'y figure PAS : une facture du même débiteur laissée
+ * de côté ne pourra plus être réclamée au titre de cette procédure.
+ */
+describe('les abandons, rendus avec le décompte', () => {
+	it(
+		'nomme une facture du débiteur qui n’est pas dans la créance',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await poserCreance(t);
+
+			// Une SECONDE facture du même débiteur, hors créance.
+			await t.run(async (ctx) => {
+				const debiteur = (await ctx.db.query('debiteurs').collect())[0]!;
+				await ctx.db.insert('facturesVente', {
+					organizationId,
+					debiteurId: debiteur._id,
+					reference: 'FA-2024-088',
+					montantHT: 0n,
+					montantTTC: 320_000n,
+					dateEmission: '2024-01-01',
+					dateEcheance: '2024-02-01',
+					dateExigibilite: '2024-02-01',
+					statutPaiement: 'IMPAYEE',
+					creeLe: Date.now()
+				});
+			});
+
+			await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
+
+			const vu = await t.query(internal.recouvrement.decompte.dernierDecompteInterne, {
+				organizationId,
+				creanceId
+			});
+
+			expect(vu?.abandons.map((a) => a.reference)).toContain('FA-2024-088');
+			expect(vu?.abandons.find((a) => a.reference === 'FA-2024-088')?.montantEnJeu).toBe(320_000n);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne nomme rien quand la créance couvre tout ce qu’on connaît',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await poserCreance(t);
+
+			await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
+
+			const vu = await t.query(internal.recouvrement.decompte.dernierDecompteInterne, {
+				organizationId,
+				creanceId
+			});
+
+			expect(vu?.abandons).toEqual([]);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne regarde que les factures du MÊME débiteur',
+		async () => {
+			// Une facture d'un autre débiteur n'a rien à faire dans ce décompte :
+			// l'annoncer comme « abandonnée » serait un faux positif, et la pièce
+			// perdrait sa crédibilité au premier lecteur attentif.
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await poserCreance(t);
+
+			await t.run(async (ctx) => {
+				const autre = await ctx.db.insert('debiteurs', {
+					organizationId,
+					denomination: 'Autre Client',
+					denominationNormalisee: 'AUTRE CLIENT',
+					denominationsBrutes: ['Autre Client'],
+					estCommercant: 'ok',
+					santeFinanciere: 'INCONNUE',
+					creeLe: Date.now()
+				});
+				await ctx.db.insert('facturesVente', {
+					organizationId,
+					debiteurId: autre,
+					reference: 'FA-AUTRE-001',
+					montantHT: 0n,
+					montantTTC: 500_000n,
+					dateEmission: '2024-01-01',
+					dateEcheance: '2024-02-01',
+					dateExigibilite: '2024-02-01',
+					statutPaiement: 'IMPAYEE',
+					creeLe: Date.now()
+				});
+			});
+
+			await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
+
+			const vu = await t.query(internal.recouvrement.decompte.dernierDecompteInterne, {
+				organizationId,
+				creanceId
+			});
+
+			expect(vu?.abandons.map((a) => a.reference)).not.toContain('FA-AUTRE-001');
+		},
+		DELAI_CONVEX
+	);
 });
