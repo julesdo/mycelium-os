@@ -45,6 +45,7 @@ import type * as paddle from "../paddle.js";
 import type * as previewDev from "../previewDev.js";
 import type * as recouvrement_battement from "../recouvrement/battement.js";
 import type * as recouvrement_creances from "../recouvrement/creances.js";
+import type * as recouvrement_debiteurs from "../recouvrement/debiteurs.js";
 import type * as recouvrement_decompte from "../recouvrement/decompte.js";
 import type * as recouvrement_depot from "../recouvrement/depot.js";
 import type * as recouvrement_depotMutations from "../recouvrement/depotMutations.js";
@@ -104,6 +105,7 @@ declare const fullApi: ApiFromModules<{
   previewDev: typeof previewDev;
   "recouvrement/battement": typeof recouvrement_battement;
   "recouvrement/creances": typeof recouvrement_creances;
+  "recouvrement/debiteurs": typeof recouvrement_debiteurs;
   "recouvrement/decompte": typeof recouvrement_decompte;
   "recouvrement/depot": typeof recouvrement_depot;
   "recouvrement/depotMutations": typeof recouvrement_depotMutations;

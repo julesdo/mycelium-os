@@ -15,6 +15,7 @@ function doc(surcharge: Record<string, unknown> = {}) {
 	return {
 		clientName: 'Fournitures Durand',
 		invoiceNumber: 'FA-2026-0042',
+		clientSiret: null,
 		invoiceDate: '2026-04-15',
 		dueDate: '2026-05-15',
 		totalTTC: 12000,
@@ -183,5 +184,66 @@ describe('dates impossibles', () => {
 		expect(resultat.ok).toBe(true);
 		if (!resultat.ok) return;
 		expect(resultat.facture.dateEcheance).toBeUndefined();
+	});
+});
+
+/**
+ * LE SIREN DU CLIENT — la charnière vers les registres publics.
+ *
+ * Il est IMPRIMÉ sur beaucoup de factures françaises, à côté du bloc « Facturé
+ * à ». Le relever coûte un champ de plus dans le schéma d'extraction, et c'est
+ * la seule chose qui rendra un jour le radar BODACC fiable : sans identifiant,
+ * un rapprochement se ferait par raison sociale, et finirait par annoncer à un
+ * gérant que son client solvable est en liquidation.
+ *
+ * ⚠️ ON NE GARDE QUE CE QUI PASSE LA CLÉ DE CONTRÔLE. Un numéro mal lu par un
+ * OCR — un 8 pour un 3 — donne un SIREN bien formé et faux, qui pointerait vers
+ * une AUTRE entreprise. Mieux vaut aucun identifiant qu'un identifiant qui
+ * désigne quelqu'un d'autre.
+ */
+describe('le SIREN du client', () => {
+	it('relève un SIREN imprimé', () => {
+		const resultat = versFactureImportee(
+			documentVenteSchema.parse(doc({ clientSiret: '853 479 236' }))
+		);
+		expect(resultat.ok).toBe(true);
+		if (!resultat.ok) return;
+		expect(resultat.facture.debiteurSiren).toBe('853479236');
+	});
+
+	it('tire le SIREN d’un SIRET imprimé', () => {
+		const resultat = versFactureImportee(
+			documentVenteSchema.parse(doc({ clientSiret: '853 479 236 00017' }))
+		);
+		expect(resultat.ok).toBe(true);
+		if (!resultat.ok) return;
+		expect(resultat.facture.debiteurSiren).toBe('853479236');
+	});
+
+	it('laisse le champ vide quand rien n’est imprimé', () => {
+		const resultat = versFactureImportee(documentVenteSchema.parse(doc({ clientSiret: null })));
+		expect(resultat.ok).toBe(true);
+		if (!resultat.ok) return;
+		expect(resultat.facture.debiteurSiren).toBeUndefined();
+	});
+
+	it('écarte un numéro dont la clé ne tombe pas, sans refuser la facture', () => {
+		// La facture reste parfaitement exploitable : c'est l'identifiant qui
+		// manque, pas la créance. Et un identifiant faux serait pire que rien.
+		const resultat = versFactureImportee(
+			documentVenteSchema.parse(doc({ clientSiret: '853 479 237' }))
+		);
+		expect(resultat.ok).toBe(true);
+		if (!resultat.ok) return;
+		expect(resultat.facture.debiteurSiren).toBeUndefined();
+	});
+
+	it('demande le numéro au modèle, et lui interdit de le déduire', () => {
+		// Le mot « SIRET » figurait DÉJÀ dans le prompt — pour dire au modèle de ne
+		// pas confondre l'en-tête de l'émetteur avec le bloc du client. Chercher le
+		// mot ne prouvait donc rien. On cherche l'INSTRUCTION.
+		const p = construirePromptVente();
+		expect(p).toMatch(/identifiant du client/i);
+		expect(p).toMatch(/ne le (calcule|déduis|devine)/i);
 	});
 });

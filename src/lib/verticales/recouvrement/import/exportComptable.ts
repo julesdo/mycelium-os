@@ -60,6 +60,13 @@ export interface FactureImportee {
 	readonly montantTTC: Montant;
 	readonly dateEmission: string;
 	readonly dateEcheance?: string;
+	/**
+	 * Le SIREN du débiteur, quand la source en porte un ET qu'il passe sa clé de
+	 * contrôle. C'est la charnière vers les registres publics : sans lui, un
+	 * rapprochement au BODACC se ferait par raison sociale, et finirait par
+	 * annoncer à un gérant que son client solvable est en liquidation.
+	 */
+	readonly debiteurSiren?: string;
 }
 
 export interface ReglementImporte {

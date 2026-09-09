@@ -243,3 +243,98 @@ describe('cloisonnement entre organisations', () => {
 		});
 	});
 });
+
+/**
+ * LE SIREN DU DÉBITEUR, PERSISTÉ À L'IMPORT.
+ *
+ * La colonne existait en base depuis le premier jour, elle était lue à l'écran,
+ * et **rien ne l'écrivait jamais**. C'est le blocage qui commande tout le module
+ * des registres externes : le radar BODACC et la normalisation Sirene
+ * s'interrogent par SIREN.
+ *
+ * ⚠️ LE RAPPROCHEMENT NE CHANGE PAS DE CLÉ. On continue de retrouver un débiteur
+ * par son nom normalisé, et on ENRICHIT sa fiche du SIREN quand une facture en
+ * apporte un. Basculer le rapprochement sur le SIREN fusionnerait ou scinderait
+ * des débiteurs existants selon la couverture du champ — c'est une décision à
+ * prendre sur des données réelles, pas un effet de bord de cette tâche.
+ *
+ * ⚠️ ET UN SIREN DÉJÀ CONNU NE SE FAIT PAS ÉCRASER. Deux factures portant deux
+ * numéros différents pour la même raison sociale ne sont pas une correction :
+ * c'est un signal — deux entités, ou un OCR fautif. Le dernier arrivé n'a aucune
+ * raison d'avoir raison.
+ */
+describe('le SIREN du débiteur', () => {
+	it('est enregistré quand une facture en apporte un', async () => {
+		const t = convexTest(schema, modules);
+		const organizationId = await poserOrganisation(t);
+
+		await t.mutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId,
+			factures: [{ ...FACTURE_DURAND, debiteurSiren: '853479236' }],
+			reglements: []
+		});
+
+		const debiteur = await t.run(async (ctx) => ctx.db.query('debiteurs').first());
+		expect(debiteur?.siren).toBe('853479236');
+	});
+
+	it('laisse la fiche sans numéro quand aucune facture n’en porte', async () => {
+		const t = convexTest(schema, modules);
+		const organizationId = await poserOrganisation(t);
+
+		await t.mutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId,
+			factures: [FACTURE_DURAND],
+			reglements: []
+		});
+
+		const debiteur = await t.run(async (ctx) => ctx.db.query('debiteurs').first());
+		expect(debiteur?.siren).toBeUndefined();
+	});
+
+	it('enrichit un débiteur déjà créé sans numéro', async () => {
+		const t = convexTest(schema, modules);
+		const organizationId = await poserOrganisation(t);
+
+		await t.mutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId,
+			factures: [FACTURE_DURAND],
+			reglements: []
+		});
+		await t.mutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId,
+			factures: [
+				{
+					...FACTURE_DURAND,
+					reference: 'FA-2026-0043',
+					debiteur: 'Fournitures Durand SARL',
+					debiteurSiren: '853479236'
+				}
+			],
+			reglements: []
+		});
+
+		const debiteurs = await t.run(async (ctx) => ctx.db.query('debiteurs').collect());
+		expect(debiteurs).toHaveLength(1);
+		expect(debiteurs[0]!.siren).toBe('853479236');
+	});
+
+	it('n’écrase pas un numéro déjà connu par un autre', async () => {
+		const t = convexTest(schema, modules);
+		const organizationId = await poserOrganisation(t);
+
+		await t.mutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId,
+			factures: [{ ...FACTURE_DURAND, debiteurSiren: '853479236' }],
+			reglements: []
+		});
+		await t.mutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId,
+			factures: [{ ...FACTURE_DURAND, reference: 'FA-2026-0044', debiteurSiren: '502592959' }],
+			reglements: []
+		});
+
+		const debiteur = await t.run(async (ctx) => ctx.db.query('debiteurs').first());
+		expect(debiteur?.siren).toBe('853479236');
+	});
+});

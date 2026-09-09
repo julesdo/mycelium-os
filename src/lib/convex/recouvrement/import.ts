@@ -42,6 +42,14 @@ const vFactureImportee = v.object({
 	reference: v.string(),
 	debiteur: v.string(),
 	debiteurCompte: v.optional(v.string()),
+	/**
+	 * Le SIREN du débiteur, quand la source en porte un ET qu'il passe sa clé de
+	 * contrôle — l'import l'a déjà vérifié en amont. C'est la charnière vers les
+	 * registres publics : sans lui, un rapprochement au BODACC se ferait par
+	 * raison sociale, et finirait par annoncer à un gérant que son client
+	 * solvable est en liquidation.
+	 */
+	debiteurSiren: v.optional(v.string()),
 	montantTTC: v.int64(),
 	dateEmission: v.string(),
 	dateEcheance: v.optional(v.string())
@@ -66,7 +74,8 @@ const vReglementImporte = v.object({
 async function trouverOuCreerDebiteur(
 	ctx: MutationCtx,
 	organizationId: Id<'organizations'>,
-	denomination: string
+	denomination: string,
+	siren: string | undefined
 ): Promise<{ id: Id<'debiteurs'>; cree: boolean }> {
 	const normalise = normaliserFournisseur(denomination);
 
@@ -80,9 +89,20 @@ async function trouverOuCreerDebiteur(
 	if (existant !== null) {
 		// On conserve chaque graphie rencontrée : c'est ce qui permettra plus
 		// tard d'expliquer POURQUOI deux lignes ont été rapprochées.
-		if (!existant.denominationsBrutes.includes(denomination)) {
+		const graphieNouvelle = !existant.denominationsBrutes.includes(denomination);
+		// ⚠️ ON ENRICHIT, ON N'ÉCRASE PAS. Deux factures portant deux SIREN
+		// différents pour la même raison sociale ne sont pas une correction :
+		// c'est un signal — deux entités distinctes, ou un chiffre mal lu. Le
+		// dernier arrivé n'a aucune raison d'avoir raison, et écraser ferait
+		// interroger les registres publics sur une AUTRE entreprise.
+		const sirenNouveau = siren !== undefined && existant.siren === undefined;
+
+		if (graphieNouvelle || sirenNouveau) {
 			await ctx.db.patch(existant._id, {
-				denominationsBrutes: [...existant.denominationsBrutes, denomination]
+				...(graphieNouvelle
+					? { denominationsBrutes: [...existant.denominationsBrutes, denomination] }
+					: {}),
+				...(sirenNouveau ? { siren } : {})
 			});
 		}
 		return { id: existant._id, cree: false };
@@ -95,6 +115,7 @@ async function trouverOuCreerDebiteur(
 		denomination,
 		denominationNormalisee: normalise,
 		denominationsBrutes: [denomination],
+		siren,
 		estCommercant: 'unknown',
 		santeFinanciere: 'INCONNUE',
 		creeLe: Date.now()
@@ -103,10 +124,7 @@ async function trouverOuCreerDebiteur(
 }
 
 /** Le statut d'une facture au vu de ce qui a été réglé. */
-function statutDe(
-	montantTTC: bigint,
-	regle: bigint
-): 'IMPAYEE' | 'PARTIELLEMENT_PAYEE' | 'SOLDEE' {
+function statutDe(montantTTC: bigint, regle: bigint): 'IMPAYEE' | 'PARTIELLEMENT_PAYEE' | 'SOLDEE' {
 	if (regle <= 0n) return 'IMPAYEE';
 	return regle >= montantTTC ? 'SOLDEE' : 'PARTIELLEMENT_PAYEE';
 }
@@ -155,7 +173,12 @@ export const enregistrerImport = internalMutation({
 				continue;
 			}
 
-			const debiteur = await trouverOuCreerDebiteur(ctx, organizationId, facture.debiteur);
+			const debiteur = await trouverOuCreerDebiteur(
+				ctx,
+				organizationId,
+				facture.debiteur,
+				facture.debiteurSiren
+			);
 			if (debiteur.cree) debiteursCrees++;
 
 			const id = await ctx.db.insert('facturesVente', {

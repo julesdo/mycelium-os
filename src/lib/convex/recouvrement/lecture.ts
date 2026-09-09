@@ -12,7 +12,7 @@ import {
 	prescriptionDe
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
-import { vEtatCritere } from './tables';
+import { vEtatCritere, vSecteurCreance } from './tables';
 
 /**
  * Les lectures du recouvrement — ce que les écrans consomment.
@@ -40,6 +40,11 @@ const vDebiteur = v.object({
 		v.literal('RADIEE')
 	),
 	secteurDetermine: v.boolean(),
+	/**
+	 * Le secteur retenu, pour que l'ecran puisse le PROPOSER a la correction.
+	 *  dit s'il faut agir ; celui-ci dit sur quoi.
+	 */
+	secteur: v.optional(vSecteurCreance),
 	/** Ce qui reste dû, toutes factures non soldées confondues. */
 	encours: v.int64(),
 	facturesEchues: v.number(),
@@ -119,6 +124,7 @@ export const listerDebiteurs = authedQuery({
 					estCommercant: debiteur.estCommercant,
 					santeFinanciere: debiteur.santeFinanciere,
 					secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',
+					secteur: debiteur.secteur,
 					encours: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
 					facturesEchues: nonSoldees.filter(
 						(f) => f.dateEcheance !== undefined && f.dateEcheance < aujourdHui

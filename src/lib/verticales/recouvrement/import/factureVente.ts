@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { estDateReelle } from '../calendrier';
+import { normaliserSiren, sirenDepuisSiret } from '../pays/france/siren';
 import { champsCommunsDocument } from '../../../socle/documents/schema';
 import { depuisEuros, type Montant } from '../../../socle/montants';
 import type { FactureImportee } from './exportComptable';
@@ -35,6 +36,12 @@ export const documentVenteSchema = z.object({
 			'Le nom du CLIENT destinataire de la facture — celui qui doit payer. Ce n’est PAS l’émetteur.'
 		),
 	invoiceNumber: z.string().nullable(),
+	clientSiret: z
+		.string()
+		.nullable()
+		.describe(
+			'Le SIREN (9 chiffres) ou SIRET (14 chiffres) DU CLIENT, s’il est imprimé. Jamais celui de l’émetteur. null si aucun n’est imprimé — ne jamais le déduire.'
+		),
 	invoiceDate: z.string().nullable().describe('Date d’émission, au format AAAA-MM-JJ.'),
 	dueDate: z
 		.string()
@@ -77,6 +84,11 @@ QUI EST QUI — C'EST LE POINT LE PLUS IMPORTANT
 
 CE QUE TU RELÈVES
 - Le nom du client, le numéro de facture, la date d'émission.
+- L'IDENTIFIANT DU CLIENT — son SIREN à neuf chiffres ou son SIRET à quatorze —
+  s'il est imprimé, souvent dans le bloc « Facturé à » ou juste sous le nom du
+  destinataire. Ne le CALCULE jamais et ne le devine jamais : si aucun numéro
+  n'est imprimé pour le CLIENT, rends null. Celui de l'émetteur, en en-tête ou
+  en pied de page, ne compte pas — c'est le piège le plus fréquent ici.
 - La DATE D'ÉCHÉANCE de paiement, si elle est imprimée. Elle peut être écrite en
   toutes lettres (« paiement à trente jours fin de mois », « à réception »).
   Ne la CALCULE jamais : si aucune date explicite n'est imprimée, rends null.
@@ -189,6 +201,33 @@ export function versFactureImportee(doc: DocumentVente): Conversion {
 
 	return {
 		ok: true,
-		facture: { reference, debiteur, montantTTC, dateEmission, dateEcheance }
+		facture: {
+			reference,
+			debiteur,
+			montantTTC,
+			dateEmission,
+			dateEcheance,
+			debiteurSiren: sirenLu(doc.clientSiret)
+		}
 	};
+}
+
+/**
+ * Le SIREN du client, lu sur la facture — ou rien.
+ *
+ * ⚠️ ON NE GARDE QUE CE QUI PASSE LA CLÉ DE CONTRÔLE, ET LA FACTURE PASSE QUAND
+ * MÊME. Un chiffre mal lu par un OCR — un 8 pour un 3 — donne un numéro bien
+ * formé qui désigne une AUTRE entreprise. Interroger un registre public avec lui
+ * rapporterait l'état d'un tiers, et un « aucune procédure » sur le mauvais
+ * SIREN se lirait comme un feu vert. Mieux vaut aucun identifiant qu'un
+ * identifiant qui désigne quelqu'un d'autre.
+ *
+ * Ce qui manque ici est l'identifiant, jamais la créance : la facture reste
+ * parfaitement exploitable sans lui.
+ */
+function sirenLu(brut: string | null): string | undefined {
+	if (brut === null) return undefined;
+	const nettoye = brut.trim();
+	if (nettoye === '') return undefined;
+	return sirenDepuisSiret(nettoye) ?? normaliserSiren(nettoye) ?? undefined;
 }
