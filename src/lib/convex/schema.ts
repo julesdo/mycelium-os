@@ -6,42 +6,34 @@ import { recouvrementTables } from './recouvrement/tables';
 export default defineSchema({
 	// Note: Better Auth component manages its own tables (users, sessions, accounts, verifications)
 
-	// Email event tracking - stores webhook events from Resend
+	/**
+	 * Le journal des envois — voir `emails/events.ts` pour ce qu'on y met, et
+	 * surtout ce qu'on n'y met plus.
+	 *
+	 * ⚠️ `data` EST FACULTATIF, PAS SUPPRIMÉ, ET C'EST DÉLIBÉRÉ. Convex valide la
+	 * BASE et pas seulement le code : retirer le champ du validateur ferait
+	 * échouer le déploiement sur les documents qui le portent encore. Il part
+	 * quand `purgerJournalEnvois` les aura tous nettoyés, et pas avant.
+	 */
 	emailEvents: defineTable({
-		emailId: v.string(), // Resend email ID
+		emailId: v.string(), // identifiant Resend de l'envoi
 		eventType: v.string(), // 'email.delivered', 'email.bounced', etc.
-		timestamp: v.number(), // When the event occurred
-		data: vEmailEvent // Full event payload from Resend
+		timestamp: v.number(), // quand l'événement s'est produit
+		data: v.optional(vEmailEvent)
 	})
 		.index('by_email_id', ['emailId'])
 		.index('by_event_type', ['eventType'])
 		.index('by_timestamp', ['timestamp']),
 
-	// Admin audit logs - tracks admin actions for accountability
-	adminAuditLogs: defineTable({
-		adminUserId: v.string(), // Admin who performed the action
-		action: v.union(
-			v.literal('impersonate'),
-			v.literal('stop_impersonation'),
-			v.literal('ban_user'),
-			v.literal('unban_user'),
-			v.literal('revoke_sessions'),
-			v.literal('set_role')
-		),
-		targetUserId: v.string(), // User affected by the action
-		// Typed metadata per action type (not v.any() for type safety)
-		metadata: v.optional(
-			v.union(
-				v.object({ reason: v.string() }), // ban_user, unban_user
-				v.object({ newRole: v.string(), previousRole: v.string() }), // set_role
-				v.object({}) // impersonate, stop_impersonation, revoke_sessions
-			)
-		),
-		timestamp: v.number()
-	})
-		.index('by_admin', ['adminUserId'])
-		.index('by_target', ['targetUserId'])
-		.index('by_timestamp', ['timestamp']),
+	// `adminAuditLogs` a été retirée le 9 septembre 2026, avec toute la surface
+	// d'administration héritée de Fleet — bannir, révoquer, changer un rôle,
+	// usurper une identité. `CLAUDE.md` écrit depuis le remodelage qu'il n'y a
+	// aucun rôle staff ; le code, lui, portait encore les fonctions publiques qui
+	// en dépendaient.
+	//
+	// La table était VIDE en production, vérifiée avant retrait : personne ne
+	// s'en est jamais servi. Convex tolère une table orpheline en base, donc rien
+	// à migrer — mais plus rien ne peut y écrire.
 
 	// Organizations — une entreprise cliente = une organisation
 	organizations: defineTable({

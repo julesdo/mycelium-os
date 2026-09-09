@@ -17,12 +17,28 @@ export async function getUserOrg(ctx: Ctx) {
 }
 
 /**
- * L'établissement sur lequel ce compte travaille.
+ * L'établissement sur lequel ce compte travaille — **vérifié, pas cru**.
  *
  * Un compte peut appartenir à plusieurs établissements — un groupe de cliniques,
  * un gestionnaire multi-sites — et `userProfiles.currentOrganizationId` dit
  * lequel est ouvert. Toutes les fonctions du domaine passent par ici, pour qu'il
  * n'existe qu'une seule façon de répondre à « de quelle organisation parle-t-on ».
+ *
+ * ⚠️ ET C'EST EXACTEMENT POUR ÇA QUE L'APPARTENANCE SE REVÉRIFIE ICI. Ce champ
+ * décidait à lui seul quelles factures un compte peut lire, et la barrière
+ * multi-tenant reposait donc sur la correction de chaque écrivain du champ, pas
+ * sur une vérification au point d'usage. `switchOrganization` appelait bien
+ * `requireOrgMember` — mais `platformSwitchOrganization`, réservée au rôle
+ * `admin` hérité de Fleet, le contournait EXPRÈS : elle posait n'importe quelle
+ * organisation dans le profil, et toutes les lectures suivaient. Cette fonction
+ * a été retirée ; la vérification reste, parce qu'une convention tenue à N
+ * endroits n'est pas une barrière.
+ *
+ * Elle couvre aussi le compte RETIRÉ de l'établissement depuis : `recalerProfil`
+ * ne passe que sur les chemins qui pensent à l'appeler.
+ *
+ * Le coût est d'UNE lecture d'index, sur `by_org_and_user`. C'est le prix de
+ * l'invariant le plus lourd du produit.
  */
 export async function organisationCourante(ctx: Ctx, userId: string): Promise<Id<'organizations'>> {
 	const profile = await ctx.db
@@ -32,6 +48,8 @@ export async function organisationCourante(ctx: Ctx, userId: string): Promise<Id
 
 	const orgId = profile?.currentOrganizationId;
 	if (!orgId) throw new ConvexError('Aucun établissement actif');
+
+	await requireOrgMember(ctx, orgId, userId);
 	return orgId;
 }
 

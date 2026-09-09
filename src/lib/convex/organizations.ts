@@ -1,6 +1,6 @@
 import { v, ConvexError } from 'convex/values';
 import { action, internalAction, query } from './_generated/server';
-import { authedQuery, authedMutation, adminMutation } from './functions';
+import { authedQuery, authedMutation } from './functions';
 import { components, internal } from './_generated/api';
 import { resend, assertResendApiKey } from './emails/resend';
 import { invitationHtml, invitationTexte } from './emails/modeles';
@@ -146,28 +146,6 @@ export const switchOrganization = authedMutation({
 	}
 });
 
-export const platformSwitchOrganization = adminMutation({
-	args: { organizationId: v.id('organizations') },
-	handler: async (ctx, { organizationId }) => {
-		const org = await ctx.db.get(organizationId);
-		if (!org) throw new ConvexError('Organisation introuvable');
-
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-
-		if (profile) {
-			await ctx.db.patch(profile._id, { currentOrganizationId: organizationId });
-		} else {
-			await ctx.db.insert('userProfiles', {
-				userId: ctx.user._id,
-				currentOrganizationId: organizationId
-			});
-		}
-	}
-});
-
 export const updateOrganization = authedMutation({
 	args: {
 		name: v.string(),
@@ -182,7 +160,7 @@ export const updateOrganization = authedMutation({
 		await ctx.db.patch(orgId, {
 			name: args.name.trim(),
 			siret: args.siret,
-			facturesParAn: args.facturesParAn,
+			facturesParAn: args.facturesParAn
 		});
 	}
 });

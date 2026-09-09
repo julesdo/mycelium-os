@@ -594,7 +594,7 @@ export const supprimerMonCompte = authedMutation({
 		}
 
 		await ctx.scheduler.runAfter(0, internal.rgpd.purgerNotifications, { userId, passe: 0 });
-		await ctx.scheduler.runAfter(0, internal.rgpd.oublierIdentite, { userId });
+		await ctx.scheduler.runAfter(0, internal.rgpd.oublierIdentite, { userId, email: attendu });
 		return null;
 	}
 });
@@ -622,6 +622,27 @@ export const purgerNotifications = internalMutation({
 });
 
 /**
+ * Les modèles Better Auth qui rattachent une ligne à UN utilisateur, et que
+ * l'effacement du compte doit donc vider. **L'ordre compte.**
+ *
+ * LES SESSIONS D'ABORD. Tant qu'une session vit, le compte répond encore, et une
+ * fenêtre ouverte ailleurs continuerait de travailler sur une identité en cours
+ * d'effacement.
+ *
+ * ⚠️ `passkey` A MANQUÉ À CETTE LISTE, ET CE N'EST PAS UNE DONNÉE ORDINAIRE QUI
+ * A SURVÉCU. Chaque ligne y porte une clé publique, un identifiant de
+ * justificatif, le nom que l'utilisateur a donné à son appareil, et son
+ * `userId` : un justificatif d'authentification survivait à son compte. Le
+ * greffon a été ajouté longtemps après cette fonction, et rien n'obligeait à la
+ * relire.
+ *
+ * C'est pour ça que `rgpd.test.ts` ne teste PAS cette liste, mais l'INVARIANT :
+ * tout modèle de `betterAuth/schema.ts` portant un champ `userId` doit y
+ * figurer. Le prochain greffon fera tomber le test avant la mise en production.
+ */
+export const MODELES_BETTER_AUTH_PAR_UTILISATEUR = ['session', 'account', 'passkey'] as const;
+
+/**
  * L'identité, retirée de Better Auth.
  *
  * POURQUOI UNE ACTION PLANIFIÉE, ET PAS LA MÊME MUTATION. Better Auth vit dans
@@ -635,15 +656,34 @@ export const purgerNotifications = internalMutation({
  * une identité en cours d'effacement.
  */
 export const oublierIdentite = internalAction({
-	args: { userId: v.string() },
+	args: { userId: v.string(), email: v.optional(v.string()) },
 	returns: v.null(),
-	handler: async (ctx, { userId }) => {
-		for (const model of ['session', 'account'] as const) {
+	handler: async (ctx, { userId, email }) => {
+		for (const model of MODELES_BETTER_AUTH_PAR_UTILISATEUR) {
 			for (;;) {
 				const res = (await ctx.runMutation(components.betterAuth.adapter.deleteMany, {
 					input: {
 						model,
 						where: [{ field: 'userId', operator: 'eq' as const, value: userId }]
+					},
+					paginationOpts: { cursor: null, numItems: 200 }
+				})) as { count: number };
+				if (!res || res.count === 0) break;
+			}
+		}
+
+		// LES VÉRIFICATIONS EN COURS NE PORTENT PAS DE `userId`, ELLES PORTENT
+		// L'ADRESSE. Une demande de vérification d'e-mail ou de réinitialisation de
+		// mot de passe laisse une ligne dont l'`identifier` EST l'adresse du
+		// titulaire. Elle expire, mais rien ne la supprime tant que personne ne la
+		// relit : une adresse dont on a demandé l'effacement resterait lisible en
+		// base, sans lien avec un compte qui n'existe plus.
+		if (email !== undefined && email !== '') {
+			for (;;) {
+				const res = (await ctx.runMutation(components.betterAuth.adapter.deleteMany, {
+					input: {
+						model: 'verification',
+						where: [{ field: 'identifier', operator: 'eq' as const, value: email }]
 					},
 					paginationOpts: { cursor: null, numItems: 200 }
 				})) as { count: number };
