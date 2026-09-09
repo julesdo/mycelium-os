@@ -24,6 +24,7 @@ import { Route as AppDonneesRouteImport } from './routes/app/donnees'
 import { Route as AppEquipeRouteImport } from './routes/app/equipe'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
 import { Route as AppParametresRouteImport } from './routes/app/parametres'
+import { Route as AppRevelationRouteImport } from './routes/app/revelation'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
@@ -103,6 +104,11 @@ const AppParametresRoute = AppParametresRouteImport.update({
   path: '/parametres',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppRevelationRoute = AppRevelationRouteImport.update({
+  id: '/revelation',
+  path: '/revelation',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const RejoindreTokenRoute = RejoindreTokenRouteImport.update({
   id: '/rejoindre/$token',
   path: '/rejoindre/$token',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/app/equipe': typeof AppEquipeRoute
   '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/revelation': typeof AppRevelationRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/app/equipe': typeof AppEquipeRoute
   '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/revelation': typeof AppRevelationRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/app/equipe': typeof AppEquipeRoute
   '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/revelation': typeof AppRevelationRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/app/equipe'
     | '/app/import-factures'
     | '/app/parametres'
+    | '/app/revelation'
     | '/rejoindre/$token'
     | '/app/'
     | '/api/auth/$'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/app/equipe'
     | '/app/import-factures'
     | '/app/parametres'
+    | '/app/revelation'
     | '/rejoindre/$token'
     | '/app'
     | '/api/auth/$'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/app/equipe'
     | '/app/import-factures'
     | '/app/parametres'
+    | '/app/revelation'
     | '/rejoindre/$token'
     | '/app/'
     | '/api/auth/$'
@@ -361,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppParametresRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/revelation': {
+      id: '/app/revelation'
+      path: '/revelation'
+      fullPath: '/app/revelation'
+      preLoaderRoute: typeof AppRevelationRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/rejoindre/$token': {
       id: '/rejoindre/$token'
       path: '/rejoindre/$token'
@@ -392,6 +411,7 @@ interface AppRouteRouteChildren {
   AppEquipeRoute: typeof AppEquipeRoute
   AppImportFacturesRoute: typeof AppImportFacturesRoute
   AppParametresRoute: typeof AppParametresRoute
+  AppRevelationRoute: typeof AppRevelationRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCreanceIdRoute: typeof AppCreanceIdRoute
 }
@@ -403,6 +423,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppEquipeRoute: AppEquipeRoute,
   AppImportFacturesRoute: AppImportFacturesRoute,
   AppParametresRoute: AppParametresRoute,
+  AppRevelationRoute: AppRevelationRoute,
   AppIndexRoute: AppIndexRoute,
   AppCreanceIdRoute: AppCreanceIdRoute,
 }
