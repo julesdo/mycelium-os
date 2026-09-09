@@ -47,3 +47,4 @@ export {
 	type LigneRevelationAffichee,
 	type BilanPertesAffiche
 } from './revelation';
+export { IdentiteDebiteur, type OptionSecteur } from './identite-debiteur';

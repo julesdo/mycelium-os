@@ -46,6 +46,23 @@ import { v } from 'convex/values';
 /** Un critère de qualification : établi, expressément absent, ou indéterminé. */
 export const vEtatCritere = v.union(v.literal('ok'), v.literal('ko'), v.literal('unknown'));
 
+/**
+ * Le secteur de la relation commerciale, dont dépend le DÉLAI DE PRESCRIPTION.
+ *
+ * Déclaré ici plutôt qu'en ligne dans la table : la mutation de saisie doit
+ * valider exactement le même jeu de valeurs, et deux listes finiraient par
+ * diverger — l'une accepterait un secteur que l'autre refuse.
+ */
+export const vSecteurCreance = v.union(
+	v.literal('GENERAL'),
+	v.literal('TRANSPORT_MARCHANDISES'),
+	v.literal('CONSOMMATEUR'),
+	v.literal('NOURRITURE_MARINS'),
+	v.literal('FOURNITURE_NAVIRE'),
+	v.literal('OUVRAGE_ACCEPTE'),
+	v.literal('INDETERMINE')
+);
+
 export const vTypePiece = v.union(
 	v.literal('FACTURE'),
 	v.literal('BON_DE_COMMANDE'),
@@ -207,17 +224,7 @@ export const recouvrementTables = {
 		 * déclare comme une hypothèse. Se tromper dans ce sens fait agir trop
 		 * tôt, ce qui ne coûte rien.
 		 */
-		secteur: v.optional(
-			v.union(
-				v.literal('GENERAL'),
-				v.literal('TRANSPORT_MARCHANDISES'),
-				v.literal('CONSOMMATEUR'),
-				v.literal('NOURRITURE_MARINS'),
-				v.literal('FOURNITURE_NAVIRE'),
-				v.literal('OUVRAGE_ACCEPTE'),
-				v.literal('INDETERMINE')
-			)
-		),
+		secteur: v.optional(vSecteurCreance),
 		adresse: v.optional(v.string()),
 		creeLe: v.number()
 	})

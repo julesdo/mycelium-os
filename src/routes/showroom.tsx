@@ -14,6 +14,8 @@ import {
 	ChocRevelation,
 	CompteurVivant,
 	BilanPertes,
+	IdentiteDebiteur,
+	type OptionSecteur,
 	type RevelationAffichee,
 	type BilanPertesAffiche,
 	euros,
@@ -148,6 +150,75 @@ const REVELATION_DEMO: RevelationAffichee = {
 		}
 	]
 };
+
+/**
+ * L'IDENTITÉ D'UN DÉBITEUR — les deux champs que le gérant seul peut remplir,
+ * et leurs TROIS états.
+ *
+ * Le troisième est celui qu'on serait tenté de ne jamais dessiner : le refus.
+ * La clé de contrôle attrape toute faute de frappe d'un seul chiffre, donc ce
+ * message va s'afficher souvent — et il doit tenir dans la colonne, à 375 px,
+ * sans pousser le reste du volet.
+ */
+const SECTEURS_DEMO: OptionSecteur[] = [
+	{
+		cle: 'INDETERMINE',
+		libelle: 'À préciser',
+		consequence: 'Le délai le plus court est retenu par prudence : 1 an'
+	},
+	{ cle: 'GENERAL', libelle: 'Régime général', consequence: 'Prescription : 5 ans' },
+	{
+		cle: 'TRANSPORT_MARCHANDISES',
+		libelle: 'Transport de marchandises',
+		consequence: 'Prescription : 1 an'
+	},
+	{ cle: 'CONSOMMATEUR', libelle: 'Vente à un consommateur', consequence: 'Prescription : 2 ans' }
+];
+
+function DemoIdentite() {
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="Ce que le gérant seul peut dire" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Sans identifiant — l’angle mort est dit</SectionTitle>
+						<IdentiteDebiteur
+							siren={undefined}
+							secteur={undefined}
+							optionsSecteur={SECTEURS_DEMO}
+							erreurSiren={null}
+							onEnregistrerSiren={() => {}}
+							onChoisirSecteur={() => {}}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Renseigné</SectionTitle>
+						<IdentiteDebiteur
+							siren="853479236"
+							secteur="TRANSPORT_MARCHANDISES"
+							optionsSecteur={SECTEURS_DEMO}
+							erreurSiren={null}
+							onEnregistrerSiren={() => {}}
+							onChoisirSecteur={() => {}}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Refusé — le message NOMME le numéro reçu</SectionTitle>
+						<IdentiteDebiteur
+							siren={undefined}
+							secteur={undefined}
+							optionsSecteur={SECTEURS_DEMO}
+							erreurSiren="« 853479237 » n’est pas un SIREN : sa clé de contrôle ne tombe pas."
+							onEnregistrerSiren={() => {}}
+							onChoisirSecteur={() => {}}
+						/>
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 function DemoRevelation() {
 	return (
@@ -537,6 +608,7 @@ function DemoSurveillanceMuette() {
 }
 
 const ECRANS = [
+	'identite',
 	'revelation',
 	'bilan',
 	'flux',
@@ -552,7 +624,7 @@ const ECRANS = [
 type Ecran = (typeof ECRANS)[number];
 
 function Showroom() {
-	const [ecran, setEcran] = useState<Ecran>('revelation');
+	const [ecran, setEcran] = useState<Ecran>('identite');
 
 	return (
 		<div className="flex h-dvh flex-col">
@@ -571,6 +643,7 @@ function Showroom() {
 			</div>
 
 			<div className="min-h-0 flex-1">
+				{ecran === 'identite' ? <DemoIdentite /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}

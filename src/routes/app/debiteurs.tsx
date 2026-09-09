@@ -13,9 +13,60 @@ import {
 	EmptyState,
 	eurosCentimes,
 	dateCourte,
-	pluriel
+	pluriel,
+	IdentiteDebiteur,
+	type OptionSecteur
 } from '../../ui';
+import {
+	REGIMES_PRESCRIPTION,
+	secteurLePlusCourt
+} from '../../lib/verticales/recouvrement/pays/france/prescription';
 
+/**
+ * Les secteurs proposés, et ce que chacun change.
+ *
+ * ⚠️ LA DURÉE VIENT DU REGISTRE, JAMAIS D'UNE CONSTANTE ÉCRITE ICI. C'est la
+ * règle la plus stricte du projet : toute valeur juridique vit dans le
+ * référentiel, avec sa source. Recopier « 5 ans » dans un libellé d'écran
+ * créerait une seconde vérité qui ne serait pas corrigée le jour où la première
+ * change.
+ *
+ * Le libellé, lui, est du texte d'interface : il nomme la relation commerciale
+ * telle qu'un gérant la reconnaît, pas telle que le code de commerce l'écrit.
+ */
+const LIBELLE_SECTEUR: Record<string, string> = {
+	GENERAL: 'Régime général',
+	TRANSPORT_MARCHANDISES: 'Transport de marchandises',
+	CONSOMMATEUR: 'Vente à un consommateur',
+	NOURRITURE_MARINS: 'Nourriture des marins',
+	FOURNITURE_NAVIRE: 'Fourniture de navire',
+	OUVRAGE_ACCEPTE: 'Ouvrage accepté'
+};
+
+function optionsSecteur(): OptionSecteur[] {
+	const connus = Object.keys(REGIMES_PRESCRIPTION).map((cle) => {
+		const regime = REGIMES_PRESCRIPTION[cle as keyof typeof REGIMES_PRESCRIPTION];
+		return {
+			cle,
+			libelle: LIBELLE_SECTEUR[cle] ?? cle,
+			consequence: `Prescription : ${regime.dureeAnnees} an${pluriel(regime.dureeAnnees)}`
+		};
+	});
+
+	// `INDETERMINE` est proposé en PREMIER et reste choisissable : c'est l'état
+	// honnête d'un débiteur qu'on ne sait pas classer, et le forcer à choisir
+	// produirait un secteur inventé — donc un délai de prescription faux, dans le
+	// sens qui fait perdre la créance.
+	const court = secteurLePlusCourt();
+	return [
+		{
+			cle: 'INDETERMINE',
+			libelle: 'À préciser',
+			consequence: `Le délai le plus court est retenu par prudence : ${court} an${pluriel(court)}`
+		},
+		...connus
+	];
+}
 export const Route = createFileRoute('/app/debiteurs')({ component: Debiteurs });
 
 /**
@@ -41,7 +92,33 @@ function Debiteurs() {
 		api.recouvrement.lecture.listerFacturesDuDebiteur,
 		choisi === null ? 'skip' : { debiteurId: choisi }
 	);
+	const debiteurChoisi = debiteurs?.find((d) => d._id === choisi);
+	const SECTEURS = optionsSecteur();
+
 	const creerCreance = useMutation(api.recouvrement.creances.creer);
+	const renseignerSiren = useMutation(api.recouvrement.debiteurs.renseignerSiren);
+	const renseignerSecteur = useMutation(api.recouvrement.debiteurs.renseignerSecteur);
+
+	/**
+	 * Le refus du SIREN, séparé de `erreur`.
+	 *
+	 * ⚠️ IL S'AFFICHE SOUS LE CHAMP, PAS DANS L'ALERTE D'ÉCRAN. La clé de
+	 * contrôle attrape toute faute de frappe d'un seul chiffre : le gérant doit
+	 * voir ce qu'il a tapé à côté de ce qu'il a tapé, pas à l'autre bout de la
+	 * page. Le message vient du serveur tel quel — c'est lui qui NOMME le numéro
+	 * reçu.
+	 */
+	const [erreurSiren, setErreurSiren] = useState<string | null>(null);
+
+	async function enregistrerSiren(saisi: string) {
+		if (choisi === null) return;
+		setErreurSiren(null);
+		try {
+			await renseignerSiren({ debiteurId: choisi, siren: saisi });
+		} catch (e) {
+			setErreurSiren(e instanceof Error ? e.message : 'Numéro refusé.');
+		}
+	}
 
 	function basculer(id: string) {
 		setSelection((precedente) => {
@@ -143,8 +220,7 @@ function Debiteurs() {
 									{debiteur.facturesEchues} échue{pluriel(debiteur.facturesEchues)}
 								</Chip>
 							) : null}
-							{debiteur.santeFinanciere !== 'SAINE' &&
-							debiteur.santeFinanciere !== 'INCONNUE' ? (
+							{debiteur.santeFinanciere !== 'SAINE' && debiteur.santeFinanciere !== 'INCONNUE' ? (
 								<Chip size="md" color="red">
 									{debiteur.santeFinanciere === 'RADIEE' ? 'Radié' : 'Procédure collective'}
 								</Chip>
@@ -173,6 +249,26 @@ function Debiteurs() {
 			</div>
 		) : (
 			<div className="flex flex-col gap-cladd-2xs p-cladd-2xs">
+				{/* CE QUE LE GÉRANT SEUL PEUT DIRE, EN TÊTE DE LA PREUVE.
+				    L'écran affichait « Secteur à préciser » sur la liste depuis des
+				    mois — et il n'existait AUCUN moyen de le préciser. Une consigne
+				    impossible à suivre est pire qu'aucune consigne : le gérant
+				    cherche, ne trouve pas, et cesse de croire les autres. */}
+				<IdentiteDebiteur
+					key={choisi}
+					siren={debiteurChoisi?.siren}
+					secteur={debiteurChoisi?.secteur}
+					optionsSecteur={SECTEURS}
+					erreurSiren={erreurSiren}
+					onEnregistrerSiren={(saisi) => void enregistrerSiren(saisi)}
+					onChoisirSecteur={(cle) => {
+						void renseignerSecteur({
+							debiteurId: choisi,
+							secteur: cle as 'GENERAL'
+						});
+					}}
+				/>
+
 				{factures.map((facture) => (
 					<Surface key={facture._id} contentClassName="flex flex-col gap-1.5 p-cladd-2xs">
 						<div className="flex items-start gap-cladd-3xs">
@@ -202,8 +298,8 @@ function Debiteurs() {
 
 								{facture.exigibiliteDeduite ? (
 									<p className="text-cladd-2xs text-cladd-fg-softer">
-										Exigibilité déduite de l’échéance — à confirmer si vos conditions
-										contractuelles disent autre chose.
+										Exigibilité déduite de l’échéance — à confirmer si vos conditions contractuelles
+										disent autre chose.
 									</p>
 								) : null}
 
