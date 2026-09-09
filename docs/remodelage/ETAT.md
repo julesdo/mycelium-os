@@ -816,3 +816,64 @@ développement, production déployée et verte.
 3. **`valideParAvocat` vaut `false` sur les quinze entrées du registre.** Rien qui produise un acte ne
    peut sortir, quoi qu'on code.
 4. **Le coupe-circuit ne coupe rien**, faute de relances à suspendre. C'est le plan 6.
+
+---
+
+## 9 septembre 2026, fin de journée — le décompte devient une pièce
+
+### Le troisième critère de fin de MVP, celui qui était bloqué par du code
+
+`01-FRONTIERE-MVP.md` en pose trois. Le premier est atteignable dès aujourd'hui avec le dépôt de
+fichiers ; le deuxième demande un client réel qui reçoive sept briefings d'affilée. **Le troisième —
+« un décompte sort du produit et part chez un tiers sans être retouché » — était le seul que du code
+pouvait débloquer**, et le blueprint le dit « le plus dur et le plus important : celui qui prouve que
+le décompte est une pièce, et pas un écran ».
+
+La pièce porte :
+
+- **les deux identités, FIGÉES avec le chiffre.** Sans ce gel, une pièce rééditée six mois plus tard
+  porterait le nom que le débiteur a *aujourd'hui* — après un changement de dénomination ou une
+  fusion — et ne dirait plus ce qu'elle disait le jour de son émission. Elle ne serait pas opposable ;
+- **les périodes d'intérêts**, avec taux, jours et base annuelle. C'est par elles que le destinataire
+  refait le calcul, et c'est exactement ce que fera le débiteur qui conteste ;
+- **les fondements tirés du registre.** Aucun numéro d'article n'est écrit dans le gabarit, et un test
+  relève les articles cités dans la pièce pour les confronter à `PARAMETRES` ;
+- **ce que le décompte NE COUVRE PAS**, chiffré — et dit même quand la réponse est « rien », le
+  silence se lisant comme « on n'a pas regardé » ;
+- **l'avertissement** : ce n'est pas une mise en demeure et ça ne fait courir aucun délai. Un avocat
+  qui le prendrait pour un acte calculerait la suite de la procédure sur une date fausse.
+
+La règle est pure et testée sans harnais PDF ; jsPDF ne fait que poser des lignes.
+
+### Deux modules écrits, testés, et injoignables
+
+C'est devenu un motif de la semaine, et il mérite d'être nommé.
+
+1. **`controlerDecompte`** chiffrait les abandons depuis longtemps — aucune requête ne l'appelait.
+2. **`profilsCreancier`** était lue par la production de décompte ET par la qualification de créance —
+   rien ne l'écrivait. Et celui-là ne coûtait pas qu'un en-tête : `creancierCommercant` valait
+   **toujours** `unknown`, donc `entreCommercants` aussi, donc **l'éligibilité à l'injonction de payer
+   ne pouvait jamais être acquise**. Le produit annonçait une condition non remplie que rien ne
+   permettait de remplir.
+
+Avec `DEBITEUR_DEGRADE` et le SIREN du débiteur, cela fait **quatre** en une semaine. La leçon est
+qu'un champ déclaré et lu n'est pas un champ alimenté, et que rien dans le typage ne le dit.
+
+### Ce que seule la relecture du PDF a révélé
+
+Le PDF a été rendu puis son texte **ré-extrait avec `unpdf`**, pas seulement testé unitairement. Deux
+défauts qu'aucune assertion n'aurait attrapés :
+
+- le titre disait « arrêté au 2026-09-01 » — un export de machine sur un document destiné à un avocat ;
+- le nom du fichier tirait sa date du **titre**, par expression régulière. Tirer une donnée d'une
+  chaîne d'affichage marche jusqu'au jour où l'on retouche l'affichage. Ce jour était le même.
+
+### Chiffres
+
+**782 tests**, 0 erreur de lint, `check` et `build` verts, schéma validé sur le déploiement de
+développement, production déployée.
+
+### Ce qui reste sur ce critère, et qu'aucun test ne dira
+
+**Un expert-comptable lit-il cette pièce sans poser de question ?** Il faut la faire lire à un vrai.
+C'est le genre de vérification qu'aucun agent ne remplace.
