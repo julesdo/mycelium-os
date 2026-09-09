@@ -48,3 +48,4 @@ export {
 	type BilanPertesAffiche
 } from './revelation';
 export { IdentiteDebiteur, type OptionSecteur } from './identite-debiteur';
+export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';

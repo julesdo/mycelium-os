@@ -9,6 +9,20 @@ crons.interval('deleteUnusedFiles', { hours: 1 }, internal.files.vacuum.deleteUn
 // Clean up expired uploads/download grants/files from files-control
 crons.interval('cleanupExpiredFiles', { hours: 1 }, internal.files.cleanup.cleanupExpiredFiles, {});
 
+// LE RADAR DE SOLVABILITÉ. Quatre heures UTC, et AVANT le battement : le briefing
+// du matin doit porter ce que le radar a trouvé la nuit. S’il partait d’abord, une
+// procédure collective découverte à six heures n’atteindrait le gérant que le
+// lendemain — vingt-quatre heures pendant lesquelles il peut engager des frais.
+//
+// Il lit la VEILLE, pas le jour même : le BODACC publie au fil de la journée, et
+// interroger le jour courant à quatre heures rendrait une page vide.
+crons.daily(
+	'radarSolvabilite',
+	{ hourUTC: 4, minuteUTC: 0 },
+	internal.recouvrement.radar.radarQuotidien,
+	{}
+);
+
 // LE BATTEMENT QUOTIDIEN. Six heures UTC : le briefing doit être arrivé avant
 // que le gérant n'ouvre sa boîte, et assez tard pour que les registres publics
 // de la veille soient à jour.

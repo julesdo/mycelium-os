@@ -349,3 +349,113 @@ describe('résistance à une facture abîmée', () => {
 		DELAI_CONVEX
 	);
 });
+
+/**
+ * LA DÉGRADATION D'UN DÉBITEUR, ENFIN DÉTECTABLE.
+ *
+ * `DEBITEUR_DEGRADE` est déclaré depuis le premier jour, testé sur des données
+ * en mémoire — et `assembler` rendait `debiteursSurveilles: []` en dur, avec ce
+ * commentaire : « tant qu'on n'historise pas la santé, on ne peut pas la
+ * détecter ». Un type d'événement que rien ne pouvait déclencher.
+ *
+ * Le radar BODACC historise désormais l'état précédent. Sans ce raccordement, il
+ * écrirait un champ que personne ne relit — le défaut symétrique.
+ */
+describe('dégradation d’un débiteur', () => {
+	async function poserDebiteurDegrade(
+		t: ReturnType<typeof convexTest>,
+		sante: 'PROCEDURE_COLLECTIVE' | 'RADIEE',
+		precedente: 'SAINE' | 'INCONNUE'
+	): Promise<Id<'organizations'>> {
+		const organizationId = await poser(t, { secteur: 'GENERAL' });
+		await t.run(async (ctx) => {
+			const debiteur = (await ctx.db.query('debiteurs').collect())[0]!;
+			await ctx.db.patch(debiteur._id, {
+				santeFinanciere: sante,
+				santePrecedente: precedente,
+				constatRegistre: {
+					identifiantAnnonce: 'A202601721671',
+					dateParution: '2026-09-09',
+					nature: "Jugement d'ouverture de liquidation judiciaire",
+					dateJugement: '2026-08-31',
+					tribunal: "Greffe du Tribunal de Commerce d'Evry",
+					url: 'https://www.bodacc.fr/x'
+				}
+			});
+		});
+		return organizationId;
+	}
+
+	it(
+		'remonte un débiteur passé de sain à procédure collective',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await poserDebiteurDegrade(t, 'PROCEDURE_COLLECTIVE', 'SAINE');
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			const degrade = flux.evenements.find((e) => e.type === 'DEBITEUR_DEGRADE');
+			expect(degrade).toBeDefined();
+			expect(degrade!.reference).toBe('Fournitures Durand');
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'porte l’encours du débiteur, pas zéro',
+		async () => {
+			// Un gérant arbitre sur des montants. Un événement « votre client est en
+			// liquidation » sans le montant en jeu est une notification, pas une
+			// décision.
+			const t = convexTest(schema, modules);
+			const organizationId = await poserDebiteurDegrade(t, 'PROCEDURE_COLLECTIVE', 'SAINE');
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			const degrade = flux.evenements.find((e) => e.type === 'DEBITEUR_DEGRADE')!;
+			expect(degrade.montant).toBe(900_000n);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne remonte rien quand l’état n’a pas bougé',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await poser(t, { secteur: 'GENERAL' });
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			expect(flux.evenements.filter((e) => e.type === 'DEBITEUR_DEGRADE')).toEqual([]);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne compte PAS l’encours d’un débiteur dégradé dans le montant identifié',
+		async () => {
+			// ⚠️ LA LEÇON DU DOUBLE COMPTE, QU'ON NE REFAIT PAS. L'encours d'un
+			// débiteur est une VUE AGRÉGÉE des factures déjà comptées ; l'additionner
+			// ferait passer 9 000 € identifiés à 18 000 € affichés.
+			const t = convexTest(schema, modules);
+			const organizationId = await poserDebiteurDegrade(t, 'PROCEDURE_COLLECTIVE', 'SAINE');
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			expect(flux.montantIdentifie).toBe(900_000n);
+		},
+		DELAI_CONVEX
+	);
+});

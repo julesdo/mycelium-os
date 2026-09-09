@@ -211,6 +211,33 @@ export const recouvrementTables = {
 		),
 		santeConstateeLe: v.optional(v.number()),
 		/**
+		 * L'état CONNU AVANT le dernier relevé.
+		 *
+		 * Sans lui, une dégradation ne se constate pas : `DEBITEUR_DEGRADE` compare
+		 * DEUX états, et le produit n'en historisait qu'un. C'est ce qui rendait
+		 * `debiteursSurveilles` toujours vide dans l'assemblage de la surveillance
+		 * — un type d'événement déclaré, testé, et que rien ne pouvait déclencher.
+		 */
+		santePrecedente: v.optional(
+			v.union(
+				v.literal('INCONNUE'),
+				v.literal('SAINE'),
+				v.literal('PROCEDURE_COLLECTIVE'),
+				v.literal('RADIEE')
+			)
+		),
+		/** Le dernier constat du registre public, cité VERBATIM. */
+		constatRegistre: v.optional(
+			v.object({
+				identifiantAnnonce: v.string(),
+				dateParution: v.string(),
+				nature: v.string(),
+				dateJugement: v.optional(v.string()),
+				tribunal: v.optional(v.string()),
+				url: v.string()
+			})
+		),
+		/**
 		 * Le secteur de la relation commerciale, dont dépend le DÉLAI DE
 		 * PRESCRIPTION.
 		 *
@@ -230,7 +257,20 @@ export const recouvrementTables = {
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_siren', ['organizationId', 'siren'])
-		.index('by_org_and_denomination', ['organizationId', 'denominationNormalisee']),
+		.index('by_org_and_denomination', ['organizationId', 'denominationNormalisee'])
+		/**
+		 * ⚠️ LE SEUL INDEX DU PRODUIT QUI TRAVERSE LES ORGANISATIONS, et il existe
+		 * pour UNE raison : le radar BODACC reçoit un delta national et doit
+		 * retrouver, en une passe, tous les débiteurs portant un SIREN donné. Les
+		 * interroger organisation par organisation multiplierait les lectures par le
+		 * nombre de clients pour chaque annonce du jour.
+		 *
+		 * IL EST RÉSERVÉ AUX FONCTIONS INTERNES. Une requête authentifiée qui s'en
+		 * servirait rendrait les débiteurs d’autres clients — c’est exactement la
+		 * brèche que la barrière multi-tenant existe pour fermer. Un test balaie le
+		 * code et échoue si une fonction publique le nomme.
+		 */
+		.index('by_siren', ['siren']),
 
 	/**
 	 * Une facture de VENTE — l'inverse d'`invoiceLines` côté EGalim, qui parle

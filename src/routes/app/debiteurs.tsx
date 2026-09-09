@@ -15,6 +15,7 @@ import {
 	dateCourte,
 	pluriel,
 	IdentiteDebiteur,
+	ConstatRegistre,
 	type OptionSecteur
 } from '../../ui';
 import {
@@ -268,6 +269,13 @@ function Debiteurs() {
 						});
 					}}
 				/>
+
+				{debiteurChoisi?.constatRegistre === undefined ? null : (
+					<ConstatRegistre
+						constat={debiteurChoisi.constatRegistre}
+						sante={debiteurChoisi.santeFinanciere}
+					/>
+				)}
 
 				{factures.map((facture) => (
 					<Surface key={facture._id} contentClassName="flex flex-col gap-1.5 p-cladd-2xs">
