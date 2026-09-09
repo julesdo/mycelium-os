@@ -56,7 +56,7 @@ argument de `reveler`, pas une condition enfouie.
 | `src/lib/convex/recouvrement/revelation.ts` *(créer)* | L'assemblage : lire, composer, servir. Aucune règle. |
 | `src/lib/convex/__tests__/revelationRecouvrement.test.ts` *(créer)* | Les tests de l'assemblage. |
 | `src/ui/revelation.tsx` *(créer)* | Les trois blocs d'écran. |
-| `src/routes/app/index.tsx` *(modifier)* | Le compteur vivant en tête du flux. |
+| `src/routes/app/revelation.tsx` *(créé)* | L’écran « Ce qui est dû » — les trois blocs réunis. Le compteur vivant N’EST PAS allé en tête du flux : celui-ci porte déjà un total, et deux totaux sur un même écran se lisent comme une contradiction. |
 | `src/routes/showroom.tsx` *(modifier)* | Les trois blocs, sans backend. |
 
 ---
@@ -67,7 +67,7 @@ argument de `reveler`, pas une condition enfouie.
 - Create: `src/lib/verticales/recouvrement/revelation.ts`
 - Create: `src/lib/verticales/recouvrement/__tests__/revelation.test.ts`
 
-- [ ] **Step 1 : Écrire les tests qui échouent**
+- [x] **Step 1 : Écrire les tests qui échouent**
 
 Couvrir, dans cet ordre :
 
@@ -80,7 +80,7 @@ Couvrir, dans cet ordre :
 - Le total est la somme exacte des lignes : `principal + interets + indemnites === total`.
 - Aucune ligne ne porte le mot « garantie » ni de verbe de recommandation.
 
-- [ ] **Step 2 : Lancer les tests et vérifier qu'ils échouent**
+- [x] **Step 2 : Lancer les tests et vérifier qu'ils échouent**
 
 ```bash
 bunx vitest run src/lib/verticales/recouvrement/__tests__/revelation.test.ts
@@ -88,7 +88,7 @@ bunx vitest run src/lib/verticales/recouvrement/__tests__/revelation.test.ts
 
 Attendu : `FAIL`, `reveler` introuvable.
 
-- [ ] **Step 3 : Écrire `reveler`**
+- [x] **Step 3 : Écrire `reveler`**
 
 Signature :
 
@@ -107,7 +107,7 @@ export function reveler(
 et l'unique division arrondie. Le refaire ici créerait une seconde vérité sur le seul chiffre du
 produit qui coûte de l'argent réel.
 
-- [ ] **Step 4 : Vérifier que les tests passent, puis lancer la suite entière**
+- [x] **Step 4 : Vérifier que les tests passent, puis lancer la suite entière**
 
 ## Task 2 : Le compteur vivant — il a monté cette nuit
 
@@ -115,7 +115,7 @@ produit qui coûte de l'argent réel.
 - Modify: `src/lib/verticales/recouvrement/revelation.ts`
 - Modify: `src/lib/verticales/recouvrement/__tests__/revelation.test.ts`
 
-- [ ] **Step 1 : Écrire les tests qui échouent**
+- [x] **Step 1 : Écrire les tests qui échouent**
 
 - La montée entre deux dates est strictement positive sur une facture qui porte des intérêts.
 - Elle est NULLE sur une facture soldée, et nulle si les deux dates sont égales.
@@ -123,7 +123,7 @@ produit qui coûte de l'argent réel.
   l'erreur qui ferait grimper le compteur de 40 € toutes les vingt-quatre heures et détruirait la
   crédibilité du chiffre au premier contrôle.
 
-- [ ] **Step 2 : Lancer, vérifier l'échec, écrire `interetsCourusEntre`, revérifier**
+- [x] **Step 2 : Lancer, vérifier l'échec, écrire `interetsCourusEntre`, revérifier**
 
 ```ts
 export function interetsCourusEntre(
@@ -150,7 +150,7 @@ version.
 - Modify: `src/lib/verticales/recouvrement/revelation.ts`
 - Modify: `src/lib/verticales/recouvrement/__tests__/revelation.test.ts`
 
-- [ ] **Step 1 : Écrire les tests qui échouent**
+- [x] **Step 1 : Écrire les tests qui échouent**
 
 - Une facture dont la prescription est atteinte AVANT l'arrivée du client compte dans `eteintesAvant`.
 - Une facture prescrite APRÈS compte dans `eteintesDepuis` — et c'est le chiffre qui doit rester à
@@ -159,7 +159,7 @@ version.
   mort. Le doute ne profite jamais au produit.
 - Le nombre de jours sous surveillance se compte depuis l'arrivée, jamais depuis la première facture.
 
-- [ ] **Step 2 : Lancer, vérifier l'échec, écrire `bilanDesPertes`, revérifier**
+- [x] **Step 2 : Lancer, vérifier l'échec, écrire `bilanDesPertes`, revérifier**
 
 ## Task 4 : L'assemblage Convex
 
@@ -167,7 +167,7 @@ version.
 - Create: `src/lib/convex/recouvrement/revelation.ts`
 - Create: `src/lib/convex/__tests__/revelationRecouvrement.test.ts`
 
-- [ ] **Step 1 : Écrire les tests qui échouent**
+- [x] **Step 1 : Écrire les tests qui échouent**
 
 - La révélation ne porte QUE les factures de l'organisation demandée. Deux établissements peuplés,
   et le second ne voit rien du premier.
@@ -175,7 +175,7 @@ version.
 - **Le bilan des pertes refuse d'affirmer si le battement a échoué.** Poser un relevé `ECHEC` dans la
   période et vérifier que la réponse porte `surveillanceInterrompueLe`.
 
-- [ ] **Step 2 : Lancer, vérifier l'échec, écrire les requêtes, revérifier**
+- [x] **Step 2 : Lancer, vérifier l'échec, écrire les requêtes, revérifier**
 
 ```ts
 export const revelation = authedQuery({ args: { arreteAu: v.string() }, … });
@@ -194,12 +194,12 @@ la purge RGPD et l'export se modifient DANS LA MÊME TÂCHE.
 - Create: `src/ui/revelation.tsx`
 - Modify: `src/routes/app/index.tsx`, `src/routes/showroom.tsx`
 
-- [ ] **Step 1 : Consulter le MCP Cladd AVANT d'écrire**
+- [x] **Step 1 : Consulter le MCP Cladd AVANT d'écrire**
 
 `get_foundation('pitfalls')`, puis `get_component` pour chaque composant employé. Ne jamais
 reconstituer l'API en lisant le code compilé.
 
-- [ ] **Step 2 : Écrire les trois blocs**
+- [x] **Step 2 : Écrire les trois blocs**
 
 - **La révélation** — le `supplement` en très gros, le principal en second, la décomposition par
   facture dessous, et `nonChiffrees` en clair. Jamais de cadran à zéro : sans facture échue, l'écran
@@ -208,22 +208,22 @@ reconstituer l'API en lisant le code compilé.
 - **Le bilan des pertes** — les deux nombres, et le refus d'affirmer quand la surveillance a été
   interrompue.
 
-- [ ] **Step 3 : Vérification visuelle**
+- [x] **Step 3 : Vérification visuelle**
 
 Ouvrir `/showroom` dans le navigateur intégré aux quatre largeurs (375, 768, 1024, 1280). Pas de
 Chrome réel, pas de capture Playwright. Compléter par des mesures du DOM.
 
-- [ ] **Step 4 : Suite entière, `bun run check`, `bun run lint`, `bun run build`**
+- [x] **Step 4 : Suite entière, `bun run check`, `bun run lint`, `bun run build`**
 
 ---
 
 ## Vérification finale du plan
 
-- [ ] `bunx vitest run` — tout vert
-- [ ] `bun run check` et `bun run lint`
-- [ ] `bun run build`
-- [ ] `bunx convex dev --once` — le schéma passe sur des données réelles
-- [ ] Les quatre largeurs relues à l'écran
+- [x] `bunx vitest run` — 686 tests, tout vert
+- [x] `bun run check` et `bun run lint` — 0 erreur
+- [x] `bun run build`
+- [x] `bunx convex dev --once` — le schéma passe sur des données réelles
+- [x] Les quatre largeurs relues à l’écran, mesures DOM à l’appui : aucun débordement
 
 ## Ce que ce plan ne fait PAS
 
