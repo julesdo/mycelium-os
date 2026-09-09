@@ -133,3 +133,33 @@ describe("l'essai", () => {
 		expect(resolveEffectivePlan(org(undefined)).tier).toBe('none');
 	});
 });
+
+/**
+ * LES DEUX PORTES DE DÉVELOPPEMENT, ET CELLE QUI ÉTAIT RESTÉE OUVERTE.
+ *
+ * `setSimulatedTier` refuse de tourner dès qu'une clé Paddle est posée — donc
+ * en production. `activateDevPlan`, qui accorde le plan complet et NEUF MILLE
+ * NEUF CENT QUATRE-VINGT-DIX-NEUF sièges, n'avait aucun garde équivalent : une
+ * simple mutation authentifiée. N'importe quel compte pouvait se donner
+ * l'abonnement le plus cher du produit, gratuitement et sans laisser de trace.
+ *
+ * ⚠️ CE N'EST PAS UNE FUITE DE DONNÉES, C'EST UNE FUITE DE REVENU — et c'est le
+ * genre de défaut qu'on ne découvre qu'en lisant le chiffre d'affaires.
+ *
+ * Les deux portent désormais le MÊME garde, et il est déclaré une fois.
+ */
+describe('les portes de développement', () => {
+	it('refusent de s’ouvrir dès qu’une clé Paddle est posée', async () => {
+		const { estEnvironnementDeDeveloppement } = await import('../billing');
+		const avant = process.env.PADDLE_API_KEY;
+		try {
+			process.env.PADDLE_API_KEY = 'pdl_live_quelquechose';
+			expect(estEnvironnementDeDeveloppement()).toBe(false);
+			delete process.env.PADDLE_API_KEY;
+			expect(estEnvironnementDeDeveloppement()).toBe(true);
+		} finally {
+			if (avant === undefined) delete process.env.PADDLE_API_KEY;
+			else process.env.PADDLE_API_KEY = avant;
+		}
+	});
+});

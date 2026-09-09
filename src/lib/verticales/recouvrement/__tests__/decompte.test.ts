@@ -70,9 +70,7 @@ describe('décompte d’une facture', () => {
 		//   total    = 6 000,00 + 798,36 + 40,00 = 6 838,36 €
 		const d = decompterFacture(
 			facture({
-				reglements: [
-					{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'PAIEMENT' }
-				]
+				reglements: [{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'PAIEMENT' }]
 			}),
 			'2026-01-01',
 			'ACT_365'
@@ -180,9 +178,7 @@ describe('traçabilité — chaque euro doit pouvoir être expliqué', () => {
 	it('expose un segment par période homogène, avec son taux et ses jours', () => {
 		const d = decompterFacture(
 			facture({
-				reglements: [
-					{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'PAIEMENT' }
-				],
+				reglements: [{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'PAIEMENT' }],
 				taux: [
 					{ debut: '2025-01-01', taux: DIX_POUR_CENT },
 					{ debut: '2025-10-01', taux: VINGT_POUR_CENT }
@@ -259,5 +255,34 @@ describe('décompte d’une créance — plusieurs factures', () => {
 				'ACT_365'
 			)
 		).toThrowError(/taux/i);
+	});
+});
+
+/**
+ * UNE DATE IMPOSSIBLE NE DOIT JAMAIS DEVENIR UNE AUTRE DATE.
+ *
+ * `instant()` se contentait du format `AAAA-MM-JJ` puis d'un garde-fou sur
+ * `Number.isNaN(Date.parse(...))`. Ce garde-fou ne mord pas sur le moteur de
+ * bun : `Date.parse('2026-02-30T00:00:00Z')` ne rend PAS `NaN`, il roule sur le
+ * 2 mars. Une échéance saisie au 30 février produisait donc silencieusement
+ * deux jours d'intérêts en moins sur une somme réclamée.
+ *
+ * ⚠️ C'est le seul endroit du produit où une date fausse se transforme en
+ * EUROS. Elle doit lever, pas se corriger.
+ */
+describe('dates impossibles', () => {
+	it('refuse une date qui n’existe pas au lieu de rouler sur le mois suivant', () => {
+		expect(() => joursEntre('2026-02-30', '2026-03-10')).toThrow(/2026-02-30/);
+		expect(() => joursEntre('2026-01-01', '2026-02-30')).toThrow(/2026-02-30/);
+	});
+
+	it('refuse un mois hors bornes', () => {
+		expect(() => joursEntre('2026-13-01', '2026-12-31')).toThrow(/2026-13-01/);
+	});
+
+	it('compte toujours juste sur les dates réelles', () => {
+		expect(joursEntre('2026-02-28', '2026-03-01')).toBe(1);
+		expect(joursEntre('2024-02-28', '2024-03-01')).toBe(2);
+		expect(joursEntre('2026-03-01', '2026-02-28')).toBe(0);
 	});
 });

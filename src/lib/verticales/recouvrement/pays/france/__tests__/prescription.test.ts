@@ -5,7 +5,8 @@ import {
 	dateDePrescription,
 	joursAvantPrescription,
 	estPrescrite,
-	secteurLePlusCourt
+	secteurLePlusCourt,
+	prescriptionDe
 } from '../prescription';
 
 /**
@@ -111,5 +112,63 @@ describe('compte à rebours', () => {
 		// transport.
 		expect(estPrescrite('2025-01-01', 'GENERAL', '2026-09-03')).toBe(false);
 		expect(estPrescrite('2025-01-01', 'TRANSPORT_MARCHANDISES', '2026-09-03')).toBe(true);
+	});
+});
+
+/**
+ * LE POINT DE DÉPART PEUT MANQUER, OU ÊTRE FAUX — CE N'EST PAS LA MÊME CHOSE.
+ *
+ * `dateDePrescription` LÈVE sur une date qui n'existe pas, et c'est bien : un
+ * calcul sur une date fausse serait pire. Mais ses appelants bouclent sur
+ * TOUTES les factures d'un établissement, et une exception y éteint la
+ * surveillance entière — le pire état du produit.
+ *
+ * `prescriptionDe` est la porte par laquelle ils passent : elle choisit la
+ * meilleure date exploitable parmi les candidates, et quand il n'y en a aucune,
+ * elle NOMME la raison au lieu de lever.
+ */
+describe('prescriptionDe — choisir, ou dire pourquoi on ne peut pas', () => {
+	it('retient le premier candidat exploitable', () => {
+		expect(prescriptionDe(['2021-11-01', '2021-10-01'], 'GENERAL')).toEqual({
+			datePrescription: '2026-11-01'
+		});
+	});
+
+	it('saute un candidat inexploitable pour le suivant, qui est bon', () => {
+		// L'exigibilité prime sur l'échéance ; abîmée, elle ne doit pas emporter
+		// l'échéance avec elle. Retomber vaut mieux que déclarer un angle mort.
+		expect(prescriptionDe(['2026-02-30', '2021-11-01'], 'GENERAL')).toEqual({
+			datePrescription: '2026-11-01'
+		});
+	});
+
+	it('saute un candidat absent', () => {
+		expect(prescriptionDe([undefined, '2021-11-01'], 'GENERAL')).toEqual({
+			datePrescription: '2026-11-01'
+		});
+	});
+
+	it('dit « aucune date » quand il n’y avait rien à lire', () => {
+		expect(prescriptionDe([undefined, undefined], 'GENERAL')).toEqual({
+			motifPrescriptionInconnue: 'AUCUNE_DATE_DE_DEPART'
+		});
+		expect(prescriptionDe([], 'GENERAL')).toEqual({
+			motifPrescriptionInconnue: 'AUCUNE_DATE_DE_DEPART'
+		});
+	});
+
+	it('dit « date inexploitable » quand une date était là mais n’existe pas', () => {
+		// La distinction porte le geste : saisir une échéance absente n'est pas
+		// corriger un « 30 février ».
+		expect(prescriptionDe(['2026-02-30'], 'GENERAL')).toEqual({
+			motifPrescriptionInconnue: 'DATE_DE_DEPART_INEXPLOITABLE'
+		});
+		expect(prescriptionDe(['pas-une-date', undefined], 'GENERAL')).toEqual({
+			motifPrescriptionInconnue: 'DATE_DE_DEPART_INEXPLOITABLE'
+		});
+	});
+
+	it('ne lève jamais, quel que soit le secteur', () => {
+		expect(() => prescriptionDe(['2026-13-45'], 'INDETERMINE')).not.toThrow();
 	});
 });

@@ -1,4 +1,5 @@
 import { ZERO, additionner, depuisEuros, type Montant } from '../../../socle/montants';
+import { estDateReelle } from '../calendrier';
 
 /**
  * L'import d'un export comptable — le chemin d'entrée des factures de VENTE.
@@ -118,7 +119,8 @@ export function detecterFormat(contenu: string): FormatExport | null {
 
 	if (COLONNES_FEC.every((colonne) => colonnes.has(normaliser(colonne)))) return 'FEC';
 
-	const aReference = colonnes.has('REFERENCE') || colonnes.has('NUMERO') || colonnes.has('N FACTURE');
+	const aReference =
+		colonnes.has('REFERENCE') || colonnes.has('NUMERO') || colonnes.has('N FACTURE');
 	const aMontant = [...colonnes].some((c) => c.startsWith('MONTANT') || c.startsWith('TOTAL'));
 	return aReference && aMontant ? 'CSV_GENERIQUE' : null;
 }
@@ -126,11 +128,14 @@ export function detecterFormat(contenu: string): FormatExport | null {
 /** `AAAAMMJJ` du FEC vers `AAAA-MM-JJ`. Les autres écritures passent telles quelles. */
 function normaliserDate(brut: string): string | null {
 	const nettoye = brut.trim();
-	if (/^\d{8}$/.test(nettoye)) {
-		return `${nettoye.slice(0, 4)}-${nettoye.slice(4, 6)}-${nettoye.slice(6, 8)}`;
-	}
-	if (/^\d{4}-\d{2}-\d{2}$/.test(nettoye)) return nettoye;
-	return null;
+	const iso = /^\d{8}$/.test(nettoye)
+		? `${nettoye.slice(0, 4)}-${nettoye.slice(4, 6)}-${nettoye.slice(6, 8)}`
+		: nettoye;
+	// LE FORMAT NE SUFFIT PAS. `20260230` se découpe proprement en `2026-02-30`,
+	// qui n'existe pas. Laissée passer, cette date traverse Convex (c'est une
+	// chaîne) et fait exploser le calcul de prescription — pour TOUTE
+	// l'organisation, pas seulement pour cette ligne.
+	return estDateReelle(iso) ? iso : null;
 }
 
 /** Un montant, ou `null` s'il n'est pas lisible. Ne lève pas : l'appelant décide. */
@@ -205,7 +210,10 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 		const date =
 			normaliserDate(champs[iPieceDate] ?? '') ?? normaliserDate(champs[iEcritureDate] ?? '');
 		if (date === null) {
-			ignorees.push({ texte: ligne, raison: 'Date de pièce et date d’écriture illisibles.' });
+			ignorees.push({
+				texte: ligne,
+				raison: 'Date de pièce et date d’écriture illisibles, ou absentes du calendrier.'
+			});
 			continue;
 		}
 

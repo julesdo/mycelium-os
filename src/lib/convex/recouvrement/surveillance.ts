@@ -13,7 +13,7 @@ import {
 	type FactureSurveillee
 } from '../../verticales/recouvrement/surveillance';
 import {
-	dateDePrescription,
+	prescriptionDe,
 	regimePrescription,
 	type SecteurCreance
 } from '../../verticales/recouvrement/pays/france/prescription';
@@ -118,14 +118,20 @@ async function assembler(
 		// strict, mais elle en est la meilleure approximation disponible : c'est
 		// le jour où le créancier a pu agir. Le régime le documente pour que le
 		// gérant sache quelle date lui serait demandée s'il veut l'affiner.
-		const depart = facture.dateExigibilite ?? facture.dateEcheance;
-
+		//
+		// ⚠️ `prescriptionDe` NE LÈVE JAMAIS, et c'est ce qui tient cet écran
+		// debout. `dateEcheance` est une chaîne côté Convex : un « 2026-02-30 »
+		// traverse la validation du schéma sans un mot, puis faisait lever le
+		// calcul. Cette boucle parcourt TOUTES les factures de l'établissement —
+		// une seule ligne abîmée éteignait la surveillance entière, et le gérant
+		// se croyait couvert pendant que le battement échouait chaque matin.
+		// Désormais elle devient un angle mort NOMMÉ, et les autres continuent.
 		factures.push({
 			reference: facture.reference,
 			montantExigible: depuisCentimes(facture.montantTTC),
 			dateEcheance: facture.dateEcheance ?? facture.dateEmission,
 			statutPaiement: facture.statutPaiement,
-			datePrescription: depart === undefined ? undefined : dateDePrescription(depart, secteur)
+			...prescriptionDe([facture.dateExigibilite, facture.dateEcheance], secteur)
 		});
 	}
 

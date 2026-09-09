@@ -3,6 +3,7 @@ import type { GenericQueryCtx, GenericMutationCtx } from 'convex/server';
 import type { DataModel, Doc, Id } from '../_generated/dataModel';
 import { authComponent } from '../auth';
 
+type MutationCtx = GenericMutationCtx<DataModel>;
 type Ctx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
 
 export async function getUserOrg(ctx: Ctx) {
@@ -17,12 +18,28 @@ export async function getUserOrg(ctx: Ctx) {
 }
 
 /**
- * L'établissement sur lequel ce compte travaille.
+ * L'établissement sur lequel ce compte travaille — **vérifié, pas cru**.
  *
  * Un compte peut appartenir à plusieurs établissements — un groupe de cliniques,
  * un gestionnaire multi-sites — et `userProfiles.currentOrganizationId` dit
  * lequel est ouvert. Toutes les fonctions du domaine passent par ici, pour qu'il
  * n'existe qu'une seule façon de répondre à « de quelle organisation parle-t-on ».
+ *
+ * ⚠️ ET C'EST EXACTEMENT POUR ÇA QUE L'APPARTENANCE SE REVÉRIFIE ICI. Ce champ
+ * décidait à lui seul quelles factures un compte peut lire, et la barrière
+ * multi-tenant reposait donc sur la correction de chaque écrivain du champ, pas
+ * sur une vérification au point d'usage. `switchOrganization` appelait bien
+ * `requireOrgMember` — mais `platformSwitchOrganization`, réservée au rôle
+ * `admin` hérité de Fleet, le contournait EXPRÈS : elle posait n'importe quelle
+ * organisation dans le profil, et toutes les lectures suivaient. Cette fonction
+ * a été retirée ; la vérification reste, parce qu'une convention tenue à N
+ * endroits n'est pas une barrière.
+ *
+ * Elle couvre aussi le compte RETIRÉ de l'établissement depuis : `recalerProfil`
+ * ne passe que sur les chemins qui pensent à l'appeler.
+ *
+ * Le coût est d'UNE lecture d'index, sur `by_org_and_user`. C'est le prix de
+ * l'invariant le plus lourd du produit.
  */
 export async function organisationCourante(ctx: Ctx, userId: string): Promise<Id<'organizations'>> {
 	const profile = await ctx.db
@@ -32,6 +49,8 @@ export async function organisationCourante(ctx: Ctx, userId: string): Promise<Id
 
 	const orgId = profile?.currentOrganizationId;
 	if (!orgId) throw new ConvexError('Aucun établissement actif');
+
+	await requireOrgMember(ctx, orgId, userId);
 	return orgId;
 }
 
@@ -101,4 +120,64 @@ export async function requireAdminDeLOrgCourante(
 	const organizationId = await organisationCourante(ctx, userId);
 	await requireOrgAdmin(ctx, organizationId, userId);
 	return organizationId;
+}
+
+/**
+ * Le même établissement, mais `null` plutôt qu'une exception.
+ *
+ * Pour les écrans qui doivent afficher quelque chose de sensé à un compte qui
+ * n'a pas encore d'établissement — l'accueil après inscription, l'écran
+ * d'équipe. La VÉRIFICATION D'APPARTENANCE EST LA MÊME : ce qui change est la
+ * façon d'en rendre compte, pas la barrière.
+ */
+export async function organisationCouranteOuNull(
+	ctx: Ctx,
+	userId: string
+): Promise<Id<'organizations'> | null> {
+	const profile = await ctx.db
+		.query('userProfiles')
+		.withIndex('by_userId', (q) => q.eq('userId', userId))
+		.unique();
+
+	const orgId = profile?.currentOrganizationId;
+	if (!orgId) return null;
+
+	const appartenance = await ctx.db
+		.query('organizationMembers')
+		.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', userId))
+		.unique();
+	return appartenance === null ? null : orgId;
+}
+
+/**
+ * Un compte qui perd son établissement courant doit en retrouver un autre, ou
+ * aucun — jamais celui qui vient de disparaître.
+ *
+ * ⚠️ C'EST LE SEUL ENDROIT DU PRODUIT QUI LIT `currentOrganizationId` SANS
+ * VÉRIFIER L'APPARTENANCE, et il le fait pour la RETIRER. Vérifier ici serait
+ * absurde : l'appartenance vient précisément d'être supprimée. Le test
+ * « une seule façon de savoir de quel établissement on parle » exempte donc ce
+ * fichier, et lui seul.
+ *
+ * Sans ce recalage, le compte retrouve un espace dont toutes les requêtes lui
+ * répondent « accès refusé », ce qui se lit comme une panne.
+ */
+export async function recalerProfil(
+	ctx: MutationCtx,
+	userId: string,
+	quitte: Id<'organizations'>
+): Promise<void> {
+	const profile = await ctx.db
+		.query('userProfiles')
+		.withIndex('by_userId', (q) => q.eq('userId', userId))
+		.unique();
+	if (!profile || profile.currentOrganizationId !== quitte) return;
+
+	const autre = await ctx.db
+		.query('organizationMembers')
+		.withIndex('by_user', (q) => q.eq('userId', userId))
+		.first();
+	await ctx.db.patch(profile._id, {
+		currentOrganizationId: autre?.organizationId ?? undefined
+	});
 }

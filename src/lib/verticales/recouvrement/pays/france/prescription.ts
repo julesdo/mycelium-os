@@ -1,4 +1,5 @@
-import { ajouterMois } from '../../calendrier';
+import { ajouterMois, estDateReelle } from '../../calendrier';
+import type { MotifPrescriptionInconnue } from '../../surveillance';
 import { joursEntre } from '../../decompte';
 
 /**
@@ -176,4 +177,56 @@ export function estPrescrite(
 	aujourdHui: string
 ): boolean {
 	return aujourdHui >= dateDePrescription(pointDeDepart, secteur);
+}
+
+/**
+ * Ce qu'on sait de la prescription d'une facture — la date, ou la raison de son
+ * absence.
+ */
+export interface PrescriptionCalculee {
+	readonly datePrescription?: string;
+	readonly motifPrescriptionInconnue?: MotifPrescriptionInconnue;
+}
+
+/**
+ * La date de prescription depuis le MEILLEUR point de départ disponible, ou le
+ * motif nommé de son absence. **Ne lève jamais.**
+ *
+ * ⚠️ POURQUOI CETTE PORTE EXISTE. `dateDePrescription` lève sur une date qui
+ * n'existe pas, et c'est juste : calculer sur un « 30 février » serait pire que
+ * refuser. Mais ses appelants bouclent sur TOUTES les factures d'un
+ * établissement, et une exception y éteint la surveillance ENTIÈRE — le gérant
+ * ne voit plus rien, le battement s'enregistre en échec chaque matin, et il se
+ * croit surveillé pendant que rien ne l'est.
+ *
+ * `dateEcheance` est une CHAÎNE côté Convex : `2026-02-30` traverse la
+ * validation du schéma sans un mot, et l'import n'est pas le seul chemin
+ * d'entrée en base. Le calcul doit donc résister, pas seulement la saisie.
+ *
+ * LES CANDIDATS SONT ORDONNÉS, DU MEILLEUR AU MOINS BON — exigibilité, puis
+ * échéance. Un candidat abîmé ne doit pas emporter le suivant : retomber sur
+ * l'échéance vaut mieux que déclarer un angle mort sur une facture qu'on sait
+ * encore dater.
+ */
+export function prescriptionDe(
+	candidats: readonly (string | undefined)[],
+	secteur: SecteurCreance
+): PrescriptionCalculee {
+	let unCandidatEtaitLa = false;
+
+	for (const candidat of candidats) {
+		if (candidat === undefined) continue;
+		unCandidatEtaitLa = true;
+		if (!estDateReelle(candidat)) continue;
+		return { datePrescription: dateDePrescription(candidat, secteur) };
+	}
+
+	// La distinction porte le geste : saisir une échéance absente n'est pas
+	// corriger une date fausse, et un gérant envoyé au mauvais écran ne lève pas
+	// son angle mort.
+	return {
+		motifPrescriptionInconnue: unCandidatEtaitLa
+			? 'DATE_DE_DEPART_INEXPLOITABLE'
+			: 'AUCUNE_DATE_DE_DEPART'
+	};
 }

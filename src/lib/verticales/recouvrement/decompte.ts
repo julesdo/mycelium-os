@@ -9,6 +9,7 @@ import {
 	type Montant
 } from '../../socle/montants';
 import { PARAMETRES, exiger } from './parametres';
+import { estBissextile, estDateReelle } from './calendrier';
 
 /**
  * Le décompte d'une créance — le calcul dont une erreur coûte de l'argent réel.
@@ -115,17 +116,23 @@ export interface DecompteCreance {
 }
 
 const JOUR_MS = 86_400_000;
-const DATE_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * L'instant UTC d'une date, ou une exception.
+ *
+ * ⚠️ LE GARDE-FOU `Number.isNaN(Date.parse(...))` NE MORD PAS. Sur le moteur de
+ * bun, `Date.parse('2026-02-30T00:00:00Z')` ne rend pas `NaN` : il roule sur le
+ * 2 mars. Une échéance saisie au 30 février produisait donc deux jours
+ * d'intérêts en moins sur une somme réclamée, en silence. C'est le seul endroit
+ * du produit où une date fausse se transforme en euros : elle doit lever.
+ */
 function instant(date: string): number {
-	if (!DATE_ISO.test(date)) {
-		throw new Error(`Date attendue au format AAAA-MM-JJ, reçue : ${JSON.stringify(date)}`);
+	if (!estDateReelle(date)) {
+		throw new Error(
+			`Date attendue au format AAAA-MM-JJ et devant exister au calendrier, reçue : ${JSON.stringify(date)}`
+		);
 	}
-	const valeur = Date.parse(`${date}T00:00:00Z`);
-	if (Number.isNaN(valeur)) {
-		throw new Error(`Date impossible : ${date}`);
-	}
-	return valeur;
+	return Date.parse(`${date}T00:00:00Z`);
 }
 
 /**
@@ -139,10 +146,9 @@ export function joursEntre(debut: string, fin: string): number {
 	return ecart > 0 ? ecart : 0;
 }
 
-function estBissextile(annee: number): boolean {
-	return (annee % 4 === 0 && annee % 100 !== 0) || annee % 400 === 0;
-}
-
+// La règle bissextile vit dans `calendrier.ts`, et une seule fois. L'écrire ici
+// aussi en ferait deux vérités : celle qui borne les quantièmes et celle qui
+// donne la base annuelle d'un calcul d'intérêts. Elles doivent être la même.
 function joursDansAnnee(annee: number): number {
 	return estBissextile(annee) ? 366 : 365;
 }
@@ -232,8 +238,7 @@ export function decompterFacture(
 
 			const principal = principalAu(facture, debut);
 			const taux = tauxALaDate(facture, debut);
-			const baseAnnuelle =
-				convention === 'ACT_365' ? 365 : joursDansAnnee(annee(debut));
+			const baseAnnuelle = convention === 'ACT_365' ? 365 : joursDansAnnee(annee(debut));
 
 			// Une seule division par segment, sur une chaîne restée entière :
 			// principal × numérateur × jours / (dénominateur × base).

@@ -10,6 +10,7 @@ import {
 	palierDeTaille,
 	type PalierTaille
 } from '../config/tarifs';
+import { organisationCouranteOuNull, requireAdminDeLOrgCourante } from './lib/auth';
 
 // ── Plan feature matrix — échelle de valeur EGalim ─────────────────────────────
 
@@ -172,13 +173,10 @@ export function planHasFeature(tier: PlanTier, feature: PlanFeature): boolean {
 export const getBillingStatus = authedQuery({
 	args: {},
 	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) return null;
+		const orgId = await organisationCouranteOuNull(ctx, ctx.user._id);
+		if (orgId === null) return null;
 
-		const org = await ctx.db.get(profile.currentOrganizationId);
+		const org = await ctx.db.get(orgId);
 		if (!org) return null;
 
 		const { tier, isDev, seatsAllowed } = resolveEffectivePlan(org);
@@ -215,13 +213,10 @@ export const getBillingStatus = authedQuery({
 export const etatAbonnement = authedQuery({
 	args: {},
 	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) return null;
+		const orgId = await organisationCouranteOuNull(ctx, ctx.user._id);
+		if (orgId === null) return null;
 
-		const org = await ctx.db.get(profile.currentOrganizationId);
+		const org = await ctx.db.get(orgId);
 		if (!org) return null;
 
 		const { tier, isDev, seatsAllowed } = resolveEffectivePlan(org);
@@ -266,38 +261,52 @@ export const _getOrgBillingStatus = internalQuery({
 
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
-// Set a simulated plan tier in dev mode (no PADDLE_API_KEY) for testing feature gating.
-// Pass undefined/null to reset back to full 'dev' access.
+/**
+ * Est-on dans un environnement sans facturation réelle ?
+ *
+ * ⚠️ DÉCLARÉ UNE FOIS, PARCE QUE L'AUTRE PORTE L'AVAIT OUBLIÉ. `setSimulatedTier`
+ * portait ce garde à la main ; `activateDevPlan`, qui accorde le plan complet et
+ * 9 999 sièges, n'en avait AUCUN — une simple mutation authentifiée suffisait à
+ * s'offrir l'abonnement le plus cher du produit. Ce n'est pas une fuite de
+ * données, c'est une fuite de revenu, et on ne la découvre qu'en lisant le
+ * chiffre d'affaires.
+ *
+ * La clé Paddle est le bon signal : elle n'existe que là où l'on facture pour de
+ * vrai.
+ */
+export function estEnvironnementDeDeveloppement(): boolean {
+	return !process.env.PADDLE_API_KEY;
+}
+
+/** Le refus commun aux deux portes, pour qu'il ne se réécrive pas à moitié. */
+function exigerEnvironnementDeDeveloppement(nom: string): void {
+	if (!estEnvironnementDeDeveloppement()) {
+		throw new ConvexError(`${nom} n’est disponible qu’en développement, sans clé Paddle.`);
+	}
+}
+
 export const setSimulatedTier = authedMutation({
 	args: { tier: v.optional(v.string()) },
 	handler: async (ctx, { tier }) => {
-		if (process.env.PADDLE_API_KEY) {
-			throw new ConvexError("setSimulatedTier n'est disponible qu'en mode dev (sans clé Paddle).");
-		}
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+		exigerEnvironnementDeDeveloppement('setSimulatedTier');
+		// Changer d'étage, c'est changer de facture : réservé à l'administrateur,
+		// comme tout ce qui touche à l'abonnement.
+		const organizationId = await requireAdminDeLOrgCourante(ctx, ctx.user._id);
 
-		await ctx.db.patch(profile.currentOrganizationId, {
+		await ctx.db.patch(organizationId, {
 			simulatedTier: tier ?? undefined
 		});
 		return { ok: true };
 	}
 });
 
-// Activate dev plan (full access, no limits)
 export const activateDevPlan = authedMutation({
 	args: {},
 	handler: async (ctx) => {
-		const profile = await ctx.db
-			.query('userProfiles')
-			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
-			.unique();
-		if (!profile?.currentOrganizationId) throw new ConvexError('Aucune organisation active');
+		exigerEnvironnementDeDeveloppement('activateDevPlan');
+		const organizationId = await requireAdminDeLOrgCourante(ctx, ctx.user._id);
 
-		await ctx.db.patch(profile.currentOrganizationId, {
+		await ctx.db.patch(organizationId, {
 			devPlan: true,
 			seatsIncluded: 9999
 		});

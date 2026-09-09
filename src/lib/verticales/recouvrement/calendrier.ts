@@ -11,15 +11,68 @@
  * L'ÉCHÉANCE QUE CE MODULE PROTÈGE EST LA PLUS DANGEREUSE DU PRODUIT : trois
  * mois pour signifier une ordonnance d'injonction de payer, sous peine de
  * caducité. Un jour d'écart et l'ordonnance est perdue.
+ *
+ * ⚠️ UNE DATE QUI PASSE LE FORMAT N'EST PAS UNE DATE. `^\d{4}-\d{2}-\d{2}$`
+ * accepte `2026-13-45` et `2026-02-30`. Ce module s'en est longtemps contenté,
+ * et les trois conséquences étaient toutes muettes ou obscures : le mois 13
+ * était reporté sur l'année suivante par l'arithmétique en mois absolus, le
+ * quantième impossible était raboté sur la borne du mois, et l'addition de
+ * jours partait en `RangeError` — ou, sur le moteur de bun, roulait
+ * silencieusement sur le mois suivant. Sur une prescription, un décalage muet
+ * est pire qu'une exception : une exception se voit.
  */
 
 const DATE_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-function decomposer(date: string): { annee: number; mois: number; jour: number } {
+/**
+ * La règle grégorienne complète, et la SEULE du produit.
+ *
+ * Elle borne les quantièmes ici, et donne la base annuelle d’un calcul
+ * d’intérêts dans `decompte.ts`. Deux copies en feraient deux vérités, dont
+ * une seule serait corrigée le jour où l’une des deux se révèle fausse.
+ */
+export function estBissextile(annee: number): boolean {
+	return (annee % 4 === 0 && annee % 100 !== 0) || annee % 400 === 0;
+}
+
+/** Le dernier jour d'un mois donné. `mois` va de 1 à 12. */
+export function dernierJourDuMois(annee: number, mois: number): number {
+	const longueurs = [31, estBissextile(annee) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	return longueurs[mois - 1]!;
+}
+
+/**
+ * Cette chaîne désigne-t-elle un jour qui a réellement existé ?
+ *
+ * Le format ET l'existence, dans cet ordre. C'est le prédicat que tout point
+ * d'entrée du produit doit appliquer avant de laisser une date atteindre un
+ * calcul : l'import comptable, le dépôt de factures, et ce module lui-même.
+ * Il ne lève pas — l'appelant qui traite un lot décide s'il refuse la ligne ou
+ * le fichier entier.
+ */
+export function estDateReelle(date: string): boolean {
 	const trouve = DATE_ISO.exec(date);
-	if (trouve === null) {
-		throw new Error(`Date attendue au format AAAA-MM-JJ, reçue : ${JSON.stringify(date)}`);
+	if (trouve === null) return false;
+
+	const annee = Number(trouve[1]);
+	const mois = Number(trouve[2]);
+	const jour = Number(trouve[3]);
+
+	// L'an 0 n'est pas une date, c'est une saisie vide qui a pris la forme d'une
+	// date. L'accepter en ferait un point de départ de prescription plausible.
+	if (annee < 1) return false;
+	if (mois < 1 || mois > 12) return false;
+	if (jour < 1 || jour > dernierJourDuMois(annee, mois)) return false;
+	return true;
+}
+
+function decomposer(date: string): { annee: number; mois: number; jour: number } {
+	if (!estDateReelle(date)) {
+		throw new Error(
+			`Date attendue au format AAAA-MM-JJ et devant exister au calendrier, reçue : ${JSON.stringify(date)}`
+		);
 	}
+	const trouve = DATE_ISO.exec(date)!;
 	return {
 		annee: Number(trouve[1]),
 		mois: Number(trouve[2]),
@@ -29,16 +82,6 @@ function decomposer(date: string): { annee: number; mois: number; jour: number }
 
 function deuxChiffres(valeur: number): string {
 	return valeur.toString().padStart(2, '0');
-}
-
-function estBissextile(annee: number): boolean {
-	return (annee % 4 === 0 && annee % 100 !== 0) || annee % 400 === 0;
-}
-
-/** Le dernier jour d'un mois donné. `mois` va de 1 à 12. */
-export function dernierJourDuMois(annee: number, mois: number): number {
-	const longueurs = [31, estBissextile(annee) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-	return longueurs[mois - 1]!;
 }
 
 /**
@@ -66,7 +109,7 @@ export function ajouterMois(date: string, mois: number): string {
 
 /** Ajoute des jours calendaires. */
 export function ajouterJours(date: string, jours: number): string {
-	decomposer(date); // valide le format avant tout calcul
+	decomposer(date); // valide le format ET l'existence avant tout calcul
 	const instant = Date.parse(`${date}T00:00:00Z`) + jours * 86_400_000;
 	return new Date(instant).toISOString().slice(0, 10);
 }
