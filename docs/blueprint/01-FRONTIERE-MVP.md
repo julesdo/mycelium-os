@@ -17,10 +17,10 @@ Un chiffre affiché à l'écran se corrige au prochain rendu. Un chiffre écrit 
 au greffe, jamais. C'est exactement la distinction que le code encode déjà, sans qu'on l'ait fait
 exprès :
 
-| Barrière | Ce qu'elle exige | Ce qu'elle autorise |
-|---|---|---|
-| `exiger()` | La valeur est **sourcée** sur une source publique citable | Mesurer, surveiller, alerter, chiffrer, rédiger un brouillon que le client envoie |
-| `exigerPourActe()` | Un **avocat** a validé la valeur ET son applicabilité | Produire une pièce qui part au greffe ou chez un commissaire de justice |
+| Barrière           | Ce qu'elle exige                                          | Ce qu'elle autorise                                                               |
+| ------------------ | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `exiger()`         | La valeur est **sourcée** sur une source publique citable | Mesurer, surveiller, alerter, chiffrer, rédiger un brouillon que le client envoie |
+| `exigerPourActe()` | Un **avocat** a validé la valeur ET son applicabilité     | Produire une pièce qui part au greffe ou chez un commissaire de justice           |
 
 **Conséquence directe :** le MVP est tout ce qui vit sous `exiger()`. Aujourd'hui, `valideParAvocat`
 vaut `false` sur les quinze entrées du registre — donc rien de ce qui produit un acte ne peut sortir,
@@ -31,12 +31,12 @@ du plan.
 
 ### Module 1 — Ingestion et normalisation
 
-| | Fonction | État |
-|---|---|---|
+|     | Fonction                                                                                                                         | État                                |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
 | 1.1 | **Ingestion automatique** : adresse e-mail dédiée par organisation, connecteur ouvert self-service, dépôt de fichiers en secours | dépôt existe, le reste à construire |
-| 1.2 | **Extracteur IA des preuves** : bons de livraison, bons de commande, CGV, annotations manuscrites | socle générique existe, à étendre |
-| 1.3 | **Normalisation SIRET** sur l'API Sirene, avec gestion de l'historique des statuts | à construire |
-| 1.4 | **Solveur de lettrage dégradé** : retrouver quelles factures composent un virement groupé | à construire |
+| 1.2 | **Extracteur IA des preuves** : bons de livraison, bons de commande, CGV, annotations manuscrites                                | **existe** (11/09/2026)             |
+| 1.3 | **Normalisation SIRET** sur l'API Sirene, avec gestion de l'historique des statuts                                               | à construire                        |
+| 1.4 | **Solveur de lettrage dégradé** : retrouver quelles factures composent un virement groupé                                        | à construire                        |
 
 **Pourquoi l'e-mail dédié plutôt que Pennylane d'abord.** Pennylane et Dext exigent une validation de
 partenariat dont le délai ne nous appartient pas. Miser le premier euro dessus, c'est mettre le
@@ -46,32 +46,32 @@ Les connecteurs arrivent en parallèle, sans bloquer la vente.
 
 ### Module 2 — Le cerveau préventif
 
-| | Fonction | État |
-|---|---|---|
+|     | Fonction                                                                                                      | État                                      |
+| --- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | 2.1 | **Compteur de prescription qui se réveille seul** : recalcul quotidien, notification sans qu'on ouvre l'écran | le calcul existe, **le battement manque** |
-| 2.2 | **Radar de solvabilité** : interrogation BODACC quotidienne, coupe-circuit sur procédure collective | à construire |
-| 2.3 | **Scoring comportemental** : rupture d'habitude de paiement plutôt que seuil absolu | à construire |
+| 2.2 | **Radar de solvabilité** : interrogation BODACC quotidienne, coupe-circuit sur procédure collective           | à construire                              |
+| 2.3 | **Scoring comportemental** : rupture d'habitude de paiement plutôt que seuil absolu                           | à construire                              |
 
 **Le battement est le cœur du MVP.** Aujourd'hui la surveillance se calcule quand on ouvre l'écran.
 Un radar qui ne se réveille pas n'est pas un radar, c'est un rapport.
 
 ### Module 3 — Le cerveau de médiation
 
-| | Fonction | État |
-|---|---|---|
-| 3.1 | **Relances asymétriques** en trois niveaux, du rappel administratif à la mise en demeure chiffrée | à construire |
-| 3.2 | **Questionnaire de qualification de litige** : recueillir le fait, pas conseiller | à construire |
+|     | Fonction                                                                                          | État                    |
+| --- | ------------------------------------------------------------------------------------------------- | ----------------------- |
+| 3.1 | **Relances asymétriques** en trois niveaux, du rappel administratif à la mise en demeure chiffrée | à construire            |
+| 3.2 | **Questionnaire de qualification de litige** : recueillir le fait, pas conseiller                 | **existe** (11/09/2026) |
 
 Les relances sont des **brouillons dans la boîte du client**. Ligne rouge 1.
 
 ### Module 4 — Le cerveau légal
 
-| | Fonction | État |
-|---|---|---|
-| 4.1 | **Moteur de calcul exact** : centimes entiers, segments à chaque rupture de taux, prorata temporis | **existe** |
-| 4.2 | **Évaluateur de solidité documentaire** : facture seule = fragile, + bon de commande + preuve de livraison = blindé | partiel |
-| 4.3 | **Vérificateur d'éligibilité procédurale** : chaque procédure est un module avec ses conditions | **existe** |
-| 4.5 | **Machine à états post-procédure** : surveiller les délais qui courent après une décision | à construire |
+|     | Fonction                                                                                                            | État                    |
+| --- | ------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| 4.1 | **Moteur de calcul exact** : centimes entiers, segments à chaque rupture de taux, prorata temporis                  | **existe**              |
+| 4.2 | **Évaluateur de solidité documentaire** : facture seule = fragile, + bon de commande + preuve de livraison = blindé | partiel                 |
+| 4.3 | **Vérificateur d'éligibilité procédurale** : chaque procédure est un module avec ses conditions                     | **existe**              |
+| 4.5 | **Machine à états post-procédure** : surveiller les délais qui courent après une décision                           | **existe** (11/09/2026) |
 
 ### Les cinq mécaniques d'accroche
 

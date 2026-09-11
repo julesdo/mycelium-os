@@ -7,12 +7,12 @@
 
 ## Ce qui a changé entre le 3 et le 11 septembre
 
-| | 3 sept. | 11 sept. |
-|---|---|---|
-| Tests unitaires | 665 | **835** |
-| Erreurs de lint | 0 | 0 |
-| `bun run check` | vert | vert |
-| Surfaces opaques dans l'interface | — | **0**, et une barrière l'exige |
+|                                   | 3 sept. | 11 sept.                       |
+| --------------------------------- | ------- | ------------------------------ |
+| Tests unitaires                   | 665     | **835**                        |
+| Erreurs de lint                   | 0       | 0                              |
+| `bun run check`                   | vert    | vert                           |
+| Surfaces opaques dans l'interface | —       | **0**, et une barrière l'exige |
 
 ### Le système visuel, refait sur la référence Revolut
 
@@ -66,19 +66,19 @@ l'écran, pas en test : la même facture sortait deux fois.
 
 ## Ce qui reste, et ce qui bloque
 
-| Module | État | Bloqué sur |
-|---|---|---|
-| 1.1 Ingestion par e-mail dédié | à construire | **Jules** — choix du fournisseur et DNS |
-| 1.2 Extracteur IA des preuves | socle existant, à étendre | — |
-| 1.3 Normalisation SIRET (Sirene) | à construire | **la clé d'API**, une démarche |
-| 1.4 Lettrage dégradé | ✅ | — |
-| 2.1 Battement quotidien | ✅ | — |
-| 2.2 Radar BODACC | ✅ | — |
-| 2.3 Scoring comportemental | ✅ | — |
-| 3.1 Relances asymétriques | à construire | **le juriste** |
-| 3.2 Questionnaire de litige | à construire | — |
-| 4.2 Solidité documentaire | partiel | — |
-| 4.5 Machine à états post-procédure | à construire | — |
+| Module                             | État                      | Bloqué sur                              |
+| ---------------------------------- | ------------------------- | --------------------------------------- |
+| 1.1 Ingestion par e-mail dédié     | à construire              | **Jules** — choix du fournisseur et DNS |
+| 1.2 Extracteur IA des preuves      | socle existant, à étendre | —                                       |
+| 1.3 Normalisation SIRET (Sirene)   | à construire              | **la clé d'API**, une démarche          |
+| 1.4 Lettrage dégradé               | ✅                        | —                                       |
+| 2.1 Battement quotidien            | ✅                        | —                                       |
+| 2.2 Radar BODACC                   | ✅                        | —                                       |
+| 2.3 Scoring comportemental         | ✅                        | —                                       |
+| 3.1 Relances asymétriques          | à construire              | **le juriste**                          |
+| 3.2 Questionnaire de litige        | à construire              | —                                       |
+| 4.2 Solidité documentaire          | partiel                   | —                                       |
+| 4.5 Machine à états post-procédure | à construire              | —                                       |
 
 **Et le plus long piquet n'a pas bougé** : `valideParAvocat` vaut toujours `false` sur les quinze
 entrées du registre. Rien de ce qui produit un acte ne peut sortir, quoi qu'on code. Ce n'est pas
@@ -109,12 +109,12 @@ quoi**, et les décisions prises seul qui demandent une ratification.
 
 ## En un coup d'œil
 
-| | Avant | 2 sept. | 3 sept. |
-|---|---|---|---|
-| Tests unitaires | 438 | 577 | **665** |
-| Erreurs de lint | 0 | 0 | 0 (43 avertissements) |
-| `bun run check` | vert | vert | vert |
-| Tables Convex | 16 | 25 | 25 (9 ajoutées, **0 EGalim modifiée**) |
+|                 | Avant | 2 sept. | 3 sept.                                |
+| --------------- | ----- | ------- | -------------------------------------- |
+| Tests unitaires | 438   | 577     | **665**                                |
+| Erreurs de lint | 0     | 0       | 0 (43 avertissements)                  |
+| `bun run check` | vert  | vert    | vert                                   |
+| Tables Convex   | 16    | 25      | 25 (9 ajoutées, **0 EGalim modifiée**) |
 
 **Aucune régression sur EGalim.** Aucun test n'a été réécrit pour accommoder un déplacement, aucune
 table existante n'a été touchée, aucune migration n'est nécessaire.
@@ -123,19 +123,19 @@ table existante n'a été touchée, aucune migration n'est nécessaire.
 
 ## Ce qui est livré, phase par phase
 
-| Phase | Objet | État | Où |
-|---|---|---|---|
-| 0 | Audit du code existant | ✅ | [AUDIT.md](AUDIT.md) |
-| 1 | Séparation socle / verticale | ✅ | `src/lib/socle/`, `src/lib/verticales/` |
-| 2 | Modèle de domaine | ✅ tables | `src/lib/convex/recouvrement/tables.ts` |
-| 3 | Calcul financier | ✅ | `socle/montants.ts`, `recouvrement/decompte.ts` |
-| 4 | Moteur de qualification | ✅ version simple | `recouvrement/scoring.ts` |
-| 5 | Procédures modulaires | ✅ 3 modules | `recouvrement/procedures.ts` |
-| 6 | Surveillance | ✅ | `recouvrement/surveillance.ts` |
-| — | Valeurs juridiques françaises | ✅ 3 sept. | `recouvrement/pays/france/` |
-| — | Import (export comptable + dépôt) | ✅ 3 sept. | `recouvrement/import/`, `convex/recouvrement/import.ts` |
-| — | Fonctions Convex de lecture | ⛔ non commencé | — |
-| 9 | Interface | ⛔ non commencé (dernier, par construction) | — |
+| Phase | Objet                             | État                                        | Où                                                      |
+| ----- | --------------------------------- | ------------------------------------------- | ------------------------------------------------------- |
+| 0     | Audit du code existant            | ✅                                          | [AUDIT.md](AUDIT.md)                                    |
+| 1     | Séparation socle / verticale      | ✅                                          | `src/lib/socle/`, `src/lib/verticales/`                 |
+| 2     | Modèle de domaine                 | ✅ tables                                   | `src/lib/convex/recouvrement/tables.ts`                 |
+| 3     | Calcul financier                  | ✅                                          | `socle/montants.ts`, `recouvrement/decompte.ts`         |
+| 4     | Moteur de qualification           | ✅ version simple                           | `recouvrement/scoring.ts`                               |
+| 5     | Procédures modulaires             | ✅ 3 modules                                | `recouvrement/procedures.ts`                            |
+| 6     | Surveillance                      | ✅                                          | `recouvrement/surveillance.ts`                          |
+| —     | Valeurs juridiques françaises     | ✅ 3 sept.                                  | `recouvrement/pays/france/`                             |
+| —     | Import (export comptable + dépôt) | ✅ 3 sept.                                  | `recouvrement/import/`, `convex/recouvrement/import.ts` |
+| —     | Fonctions Convex de lecture       | ⛔ non commencé                             | —                                                       |
+| 9     | Interface                         | ⛔ non commencé (dernier, par construction) | —                                                       |
 
 ---
 
@@ -144,15 +144,15 @@ table existante n'a été touchée, aucune migration n'est nécessaire.
 Le § 10 du brief liste sept critères. Six sont tenus et **vérifiés par un test qui échoue si la
 propriété disparaît** — pas par une relecture.
 
-| Critère | État | Ce qui le prouve |
-|---|---|---|
-| La verticale EGalim fonctionne toujours | ✅ | 111 tests EGalim, aucun réécrit ; 438 → 577 sans perte |
-| Aucune valeur juridique en dur hors du fichier de paramètres | ✅ | `parametres.test.ts` — structure, source et date sur chaque entrée |
-| Aucun paramètre `verified: false` utilisable sans erreur explicite | ✅ | `exiger()` lève ; 4 tests dédiés |
-| Le même dossier rejoué donne le même résultat au centime | ✅ | `decompte.test.ts` — aucune lecture d'horloge, date d'arrêté en argument |
-| Une créance incomplète bloque la génération de l'acte | ✅ | `controle.test.ts` — 8 tests, message qui chiffre l'abandon |
-| Une procédure s'ajoute sans toucher au socle | ✅ | `frontiere.test.ts` — le socle ne peut importer ni `verticales/` ni `convex/` |
-| Tout montant affiché est traçable jusqu'à sa pièce source | 🟡 **partiel** | Les `segments` portent la traçabilité et le contrôle la rend obligatoire ; **rien ne l'affiche encore** |
+| Critère                                                            | État           | Ce qui le prouve                                                                                        |
+| ------------------------------------------------------------------ | -------------- | ------------------------------------------------------------------------------------------------------- |
+| La verticale EGalim fonctionne toujours                            | ✅             | 111 tests EGalim, aucun réécrit ; 438 → 577 sans perte                                                  |
+| Aucune valeur juridique en dur hors du fichier de paramètres       | ✅             | `parametres.test.ts` — structure, source et date sur chaque entrée                                      |
+| Aucun paramètre `verified: false` utilisable sans erreur explicite | ✅             | `exiger()` lève ; 4 tests dédiés                                                                        |
+| Le même dossier rejoué donne le même résultat au centime           | ✅             | `decompte.test.ts` — aucune lecture d'horloge, date d'arrêté en argument                                |
+| Une créance incomplète bloque la génération de l'acte              | ✅             | `controle.test.ts` — 8 tests, message qui chiffre l'abandon                                             |
+| Une procédure s'ajoute sans toucher au socle                       | ✅             | `frontiere.test.ts` — le socle ne peut importer ni `verticales/` ni `convex/`                           |
+| Tout montant affiché est traçable jusqu'à sa pièce source          | 🟡 **partiel** | Les `segments` portent la traçabilité et le contrôle la rend obligatoire ; **rien ne l'affiche encore** |
 
 ---
 
@@ -164,13 +164,13 @@ propriété disparaît** — pas par une relecture.
 
 ### 1. ~~Deux valeurs juridiques manquantes~~ — relevées le 3 septembre
 
-| Paramètre | Sans lui |
-|---|---|
-| `tauxInteretLegalDefaut` | **Aucun décompte** n'est calculable sur une facture dont les CGV ne stipulent pas de taux — c'est-à-dire la majorité |
-| `delaiPrescriptionCommerciale` | La prescription **n'est pas surveillée**. C'est la seule échéance qui éteint une créance sans que personne n'ait rien fait |
-| `mentionsObligatoiresInjonction` | La requête en injonction de payer **ne peut pas être écrite** (l'évaluation, elle, fonctionne) |
-| `tarifCommissaireJusticeL126` | Le module L.126 se déclare indisponible — attendu, le décret n'est pas publié |
-| `tauxInteretMinimalLegal` | Impossible de refuser un taux contractuel inférieur au plancher légal |
+| Paramètre                        | Sans lui                                                                                                                   |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `tauxInteretLegalDefaut`         | **Aucun décompte** n'est calculable sur une facture dont les CGV ne stipulent pas de taux — c'est-à-dire la majorité       |
+| `delaiPrescriptionCommerciale`   | La prescription **n'est pas surveillée**. C'est la seule échéance qui éteint une créance sans que personne n'ait rien fait |
+| `mentionsObligatoiresInjonction` | La requête en injonction de payer **ne peut pas être écrite** (l'évaluation, elle, fonctionne)                             |
+| `tarifCommissaireJusticeL126`    | Le module L.126 se déclare indisponible — attendu, le décret n'est pas publié                                              |
+| `tauxInteretMinimalLegal`        | Impossible de refuser un taux contractuel inférieur au plancher légal                                                      |
 
 Le code ne devine aucune de ces valeurs et **échoue bruyamment** plutôt que de retomber sur zéro.
 La surveillance va plus loin : elle **déclare à l'utilisateur** que la prescription n'est pas
@@ -271,7 +271,6 @@ Ni l'un ni l'autre ne relève du remodelage. Ils sont notés ici pour ne pas se 
 5. L'interface, en dernier. Le brief a raison : un produit qui affiche joliment des dossiers
    contestables ne vaut rien.
 
-
 ---
 
 ## Ce qui a changé le 3 septembre 2026
@@ -285,10 +284,10 @@ chacune citant son article, dans `verticales/recouvrement/pays/france/`.
 
 **Deux entrées du brief ne sont PAS des constantes**, et c'est la trouvaille de la journée.
 
-| Le brief demandait | Ce que dit le texte |
-|---|---|
-| « le taux d'intérêt de retard par défaut » | Taux BCE de refinancement **+ 10 points**, réancré **deux fois par an** (L441-10 II). Une facture impayée depuis dix-huit mois traverse trois taux. |
-| « le délai de prescription commerciale » | **Cinq ans** en régime général (L110-4), **mais** le texte réserve les prescriptions spéciales plus courtes et en énumère lui-même trois à un an. S'y ajoutent le transport (L133-6, un an) et la fourniture à un consommateur (L218-2 code conso, deux ans). |
+| Le brief demandait                         | Ce que dit le texte                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| « le taux d'intérêt de retard par défaut » | Taux BCE de refinancement **+ 10 points**, réancré **deux fois par an** (L441-10 II). Une facture impayée depuis dix-huit mois traverse trois taux.                                                                                                           |
+| « le délai de prescription commerciale »   | **Cinq ans** en régime général (L110-4), **mais** le texte réserve les prescriptions spéciales plus courtes et en énumère lui-même trois à un an. S'y ajoutent le transport (L133-6, un an) et la fourniture à un consommateur (L218-2 code conso, deux ans). |
 
 Tu avais raison de dire « par secteur ».
 
@@ -368,11 +367,11 @@ Toutes les phases numérotées du brief sont livrées, interface comprise.
 
 ### Ce qui a été ajouté
 
-| Couche | Contenu |
-|---|---|
-| Fonctions Convex | `depot` (import de fichiers, suivi visible), `creances`, `decompte`, `surveillance`, `lecture` |
-| Écrans | `/app/recouvrement` (flux), `/app/debiteurs` (deux volets), `/app/creance/$id` (qualification + décompte), `/app/import-factures` |
-| Composants | `FluxEvenements`, `Decompte` — plus deux entrées au showroom |
+| Couche           | Contenu                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Fonctions Convex | `depot` (import de fichiers, suivi visible), `creances`, `decompte`, `surveillance`, `lecture`                                    |
+| Écrans           | `/app/recouvrement` (flux), `/app/debiteurs` (deux volets), `/app/creance/$id` (qualification + décompte), `/app/import-factures` |
+| Composants       | `FluxEvenements`, `Decompte` — plus deux entrées au showroom                                                                      |
 
 **714 tests**, 0 erreur de lint, `check` et `check:bundle` verts.
 
@@ -393,7 +392,7 @@ La règle « quatre largeurs avant de déclarer fini » a payé trois fois :
 1. **`Surface` rend un conteneur interne.** Mes classes de mise en page tombaient
    sur l'enveloppe. Seize occurrences corrigées vers `contentClassName`.
 2. **`gap-cladd-4xs` n'existe pas.** L'échelle s'arrête à `3xs`. Treize classes
-   sans effet, exactement ce que les *pitfalls* de Cladd interdisent.
+   sans effet, exactement ce que les _pitfalls_ de Cladd interdisent.
 3. **La barre du showroom débordait à 768 px** depuis que j'y avais ajouté deux
    onglets.
 
@@ -928,7 +927,7 @@ le décompte est une pièce, et pas un écran ».
 La pièce porte :
 
 - **les deux identités, FIGÉES avec le chiffre.** Sans ce gel, une pièce rééditée six mois plus tard
-  porterait le nom que le débiteur a *aujourd'hui* — après un changement de dénomination ou une
+  porterait le nom que le débiteur a _aujourd'hui_ — après un changement de dénomination ou une
   fusion — et ne dirait plus ce qu'elle disait le jour de son émission. Elle ne serait pas opposable ;
 - **les périodes d'intérêts**, avec taux, jours et base annuelle. C'est par elles que le destinataire
   refait le calcul, et c'est exactement ce que fera le débiteur qui conteste ;
@@ -973,3 +972,89 @@ développement, production déployée.
 
 **Un expert-comptable lit-il cette pièce sans poser de question ?** Il faut la faire lire à un vrai.
 C'est le genre de vérification qu'aucun agent ne remplace.
+
+---
+
+## 11 septembre 2026 — trois modules du blueprint, et dix défauts d'une même famille
+
+### Ce qui a été construit
+
+**3.2 — Questionnaire de qualification de litige.** L'écran de créance demandait
+littéralement « Pouvez-vous confirmer le caractère certain de cette créance ? ».
+C'est une notion de droit, posée à quelqu'un dont ce n'est pas le métier, et
+dont la réponse ouvre des procédures sans débat où la moindre contestation met
+fin à tout en laissant les frais engagés. On recueille désormais six **faits** —
+le client a-t-il écrit pour contester, refusé la livraison, réclamé un avoir,
+opposé des pénalités, une instance est-elle en cours, a-t-il reconnu la dette.
+Le critère `certaine` s'en déduit.
+
+**4.5 — Machine à états post-procédure.** Le produit savait dire qu'un dossier
+était parti, et plus rien après. `statut: 'ENGAGEE'` ne disait ni quelle
+procédure ni depuis quand. L'état se **rejoue** depuis un journal d'événements,
+et chaque événement porte **deux dates** : celle du fait, qui fait courir les
+délais, et celle de la saisie. Les confondre offrirait des jours sur une
+caducité.
+
+**1.2 — Extracteur de preuves.** Sept natures de pièce reconnues, prompt
+déterministe à l'octet, PDF lu nativement par le socle. Une pièce entre
+`INDETERMINE` et y reste si la lecture n'aboutit pas — le compilateur le tient,
+`ClePiece` ne contient pas cette valeur.
+
+### Le défaut qui revient : « déclaré, lu, jamais alimenté »
+
+**Dix occurrences**, dont cinq trouvées ce jour. Aucune visible au compilateur :
+le champ est optionnel, le calcul a son repli, tout fonctionne.
+
+| Ce qui était mort               | Ce que ça coûtait                                                                                                       |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `facturesVente.tauxContractuel` | les deux moteurs le lisaient : le produit **sous-réclamait**                                                            |
+| `signauxContestation`           | « le risque produit numéro un », câblé à `[]` par ses deux appelants                                                    |
+| table `pieces`                  | conditions légales 12/20, seuil à 15, points manquants tous documentaires : **aucune créance ne pouvait être éligible** |
+| mode `FACTURE_DEPOSEE`          | l'écran promettait « relue par le modèle », le fichier partait au parseur CSV                                           |
+| table `dossiers`                | la caducité d'une ordonnance n'apparaissait **ni** dans le flux **ni** dans le briefing                                 |
+
+`dossiers` a été **retirée** : elle modélisait la même chose que la machine à
+états du 4.5, en mort. Deux représentations auraient fini par diverger.
+
+### Les trois barrières posées
+
+1. `declare-jamais-alimente.test.ts` — deux balayages (champs optionnels lus et
+   jamais écrits ; valeurs d'union déclarées et citées nulle part), listes
+   d'exceptions **vides**.
+2. `purge-complete.test.ts` — toute table portant un `organizationId` doit
+   apparaître dans `rgpd.ts`. Elle a mordu sur `evenementsProcedure` avant
+   l'oubli.
+3. `lignes-rouges.test.ts` — le balayage que `CLAUDE.md` annonçait et qui
+   n'existait pas.
+
+### Ce que seule l'injection d'une violation a révélé
+
+Les trois barrières ont été vérifiées **en les faisant échouer**, et deux
+défauts de la dernière ne se voyaient pas autrement :
+
+- le nettoyage des commentaires ouvrait un faux bloc sur `accept="image/*"` et
+  avalait dix lignes ;
+- la liste des formes interdites laissait passer « recouvrement **garanti** »,
+  l'adjectif — la promesse dans sa formulation la plus commerciale.
+
+**Un balayage qui sous-déclare est pire qu'aucun balayage : il rassure.**
+
+Et une ligne rouge était franchie en production : le flux disait « Engager une
+procédure avant le … » et « Faire signifier sans délai ». La conséquence
+juridique n'a pas été supprimée, elle a changé de place — `explication` la porte
+au présent de constat, `action` ne porte plus qu'un geste logiciel.
+
+### Chiffres
+
+**946 tests**, 0 erreur de lint, `check` et `build` verts, schéma poussé et
+accepté par le déploiement de développement, 21 écrans du showroom vérifiés aux
+quatre largeurs de référence : 0 bloc opaque, 0 débordement horizontal, 0 cible
+tactile sous 44 px.
+
+### Ce qui reste, et qu'aucun agent ne débloque
+
+- l'ingestion e-mail (1.1) : fournisseur et DNS ;
+- la clé API Sirene (1.3) ;
+- les relances (3.1) : un juriste doit valider les trois niveaux ;
+- `valideParAvocat` vaut toujours `false` sur les quinze entrées du registre —
+  **rien ne peut produire un acte tant qu'une signature humaine manque.**
