@@ -73,6 +73,24 @@ const FIN_ESSAI_DEMO = Date.now() + 12 * 24 * 60 * 60 * 1000;
  */
 const EVENEMENTS_DEMO: EvenementAffiche[] = [
 	{
+		/**
+		 * ⚠️ EN URGENCE NORMALE, ET IL EST EN TÊTE DE FIXTURE EXPRÈS.
+		 *
+		 * C'est le signal que le seuil absolu rate : 85 jours de retard chez un
+		 * client qui règle toujours à 12. Il doit se lire comme une INFORMATION
+		 * au milieu d'alertes critiques — s'il criait aussi fort qu'une
+		 * prescription, il diluerait le seul signal du produit qui annonce une
+		 * perte sèche.
+		 */
+		type: 'HABITUDE_ROMPUE',
+		reference: 'FA-2026-0311',
+		montant: 420_000n,
+		urgence: 'NORMALE',
+		explication:
+			'Ce débiteur règle habituellement à 12 jours de son échéance, sur 23 règlements observés. Cette facture en est à 85, soit 73 de plus que son habitude.',
+		action: 'Ouvrir la fiche de Fournitures Durand : son historique de règlements y est.'
+	},
+	{
 		type: 'PRESCRIPTION_PROCHE',
 		reference: 'FA-2021-0087',
 		montant: 924_000n,

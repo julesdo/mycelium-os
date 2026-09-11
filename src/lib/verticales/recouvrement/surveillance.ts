@@ -223,12 +223,33 @@ export function comparerEvenements(a: Evenement, b: Evenement): number {
 function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 	const evenements: Evenement[] = [];
 
+	/**
+	 * ⚠️ LES FACTURES DONT LA RUPTURE REMPLACERA L'ÉCHÉANCE.
+	 *
+	 * Défaut vu à l'écran, pas en test : la même facture sortait DEUX fois
+	 * dans le flux — une rangée « échue depuis le 10 juin », une rangée « sort
+	 * de son habitude ». Deux lignes pour une facture, avec deux textes
+	 * différents, et le lecteur cherche laquelle est la vraie.
+	 *
+	 * La rupture est strictement PLUS informative : son constat porte déjà le
+	 * retard en jours, et il dit en plus que ce retard est anormal POUR CE
+	 * client. Elle prend donc la place de l'échéance au lieu de s'y ajouter.
+	 *
+	 * Rien n'est dégradé au passage : les deux événements sont en urgence
+	 * NORMALE. Et le montant ne disparaît pas du compteur — `montantIdentifie`
+	 * admet désormais ce type, voir la note là-bas.
+	 */
+	const referencesEnRupture = new Set((etat.ruptures ?? []).map((r) => r.reference));
+
 	// ── Factures arrivées à échéance et non soldées ──────────────────────────
 	for (const facture of etat.factures) {
 		const echue = facture.dateEcheance <= aujourdHui;
 		const restantDu =
 			facture.statutPaiement === 'IMPAYEE' || facture.statutPaiement === 'PARTIELLEMENT_PAYEE';
 		if (!echue || !restantDu) continue;
+		// Voir `referencesEnRupture` : la rupture dit tout ce que dirait cette
+		// ligne, et davantage. Deux rangées pour une facture sont une de trop.
+		if (referencesEnRupture.has(facture.reference)) continue;
 
 		evenements.push({
 			type: 'FACTURE_ECHUE',
@@ -361,7 +382,13 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			urgence: 'NORMALE',
 			// Le constat du domaine, mot pour mot. Voir `RuptureSurveillee`.
 			explication: rupture.constat,
-			action: `Ouvrir la fiche de ${rupture.debiteur} : son historique de règlements y est.`
+			// ⚠️ ELLE PORTE LES DEUX INTENTIONS, parce qu'elle REMPLACE l'événement
+			// d'échéance : sans la seconde phrase, le geste que cette ligne suggérait
+			// — rattacher la facture, ou enregistrer son règlement — disparaîtrait
+			// avec elle.
+			action:
+				`Ouvrir la fiche de ${rupture.debiteur} : son historique de règlements y est. ` +
+				'Ou rattacher cette facture à une créance, ou enregistrer son règlement.'
 		});
 	}
 
@@ -541,7 +568,22 @@ export function montantIdentifie(evenements: readonly Evenement[]): Montant {
 	const montants: Montant[] = [];
 
 	for (const evenement of evenements) {
-		if (evenement.type !== 'FACTURE_ECHUE' && evenement.type !== 'PRESCRIPTION_PROCHE') continue;
+		// ⚠️ `HABITUDE_ROMPUE` Y EST ADMIS, ET C'EST LA CONTREPARTIE OBLIGATOIRE
+		// DU REMPLACEMENT. Une rupture prend la place de l'événement d'échéance de
+		// sa facture ; sans cette ligne, le montant de cette facture DISPARAÎTRAIT
+		// du total identifié — un chiffre qui baisse parce qu'on a ajouté une
+		// détection, c'est-à-dire le pire symptôme possible sur ce produit.
+		//
+		// La déduplication par référence, juste en dessous, garantit qu'aucune
+		// facture n'est comptée deux fois — y compris si les deux types
+		// remontaient un jour ensemble.
+		if (
+			evenement.type !== 'FACTURE_ECHUE' &&
+			evenement.type !== 'PRESCRIPTION_PROCHE' &&
+			evenement.type !== 'HABITUDE_ROMPUE'
+		) {
+			continue;
+		}
 		if (evenement.montant === null) continue;
 		if (referencesVues.has(evenement.reference)) continue;
 

@@ -776,13 +776,58 @@ describe('les habitudes de paiement rompues', () => {
 		expect(evenements[0]!.urgence).toBe('NORMALE');
 	});
 
-	it('ne compte pas dans le montant identifié', () => {
-		// ⚠️ LE COMPTEUR NE SOMME QUE DES FACTURES DISTINCTES, et une facture en
-		// rupture est DÉJÀ comptée par son événement d'échéance. L'ajouter la
-		// compterait deux fois — le défaut exact que ce compteur a déjà connu.
-		const evenements = detecterEvenements(etat({ ruptures: [RUPTURE] }), AUJOURDHUI);
+	/** La même facture, vue par la détection d'échéance. */
+	const FACTURE_ECHUE_MEME = {
+		reference: 'FA-0311',
+		montantExigible: depuisEuros('4200,00'),
+		dateEcheance: '2026-06-10',
+		statutPaiement: 'IMPAYEE' as const
+	};
 
-		expect(montantIdentifie(evenements)).toBe(ZERO);
+	it('REMPLACE l’événement d’échéance de la même facture', () => {
+		// ⚠️ DÉFAUT VU À L'ÉCRAN, PAS EN TEST. La même facture sortait DEUX fois
+		// dans le flux — une ligne « échue depuis le 10 juin », une ligne « sort
+		// de son habitude ». Deux rangées pour une facture, avec deux textes
+		// différents : le lecteur cherche laquelle est la vraie.
+		//
+		// La rupture est strictement PLUS informative : son constat porte déjà le
+		// retard en jours. Elle prend donc la place de l'échéance au lieu de s'y
+		// ajouter. Les deux sont en urgence NORMALE, donc rien n'est dégradé.
+		const evenements = detecterEvenements(
+			etat({ factures: [FACTURE_ECHUE_MEME], ruptures: [RUPTURE] }),
+			AUJOURDHUI
+		);
+
+		const surCetteFacture = evenements.filter((e) => e.reference === 'FA-0311');
+		expect(surCetteFacture).toHaveLength(1);
+		expect(surCetteFacture[0]!.type).toBe('HABITUDE_ROMPUE');
+	});
+
+	it('laisse intacte l’échéance d’une AUTRE facture', () => {
+		const autre = { ...FACTURE_ECHUE_MEME, reference: 'FA-0999' };
+		const evenements = detecterEvenements(
+			etat({ factures: [autre], ruptures: [RUPTURE] }),
+			AUJOURDHUI
+		);
+
+		expect(evenements.filter((e) => e.type === 'FACTURE_ECHUE')).toHaveLength(1);
+	});
+
+	it('compte dans le montant identifié, À LA PLACE de l’échéance remplacée', () => {
+		// ⚠️ LA CONTREPARTIE DU REMPLACEMENT, et elle n'est pas optionnelle. Le
+		// compteur ne retenait que FACTURE_ECHUE et PRESCRIPTION_PROCHE :
+		// supprimer l'échéance sans admettre la rupture ferait DISPARAÎTRE le
+		// montant de la facture du total identifié — un chiffre qui baisse parce
+		// qu'on a ajouté une détection.
+		//
+		// La déduplication par référence, déjà en place, garantit qu'elle n'est
+		// jamais comptée deux fois.
+		const evenements = detecterEvenements(
+			etat({ factures: [FACTURE_ECHUE_MEME], ruptures: [RUPTURE] }),
+			AUJOURDHUI
+		);
+
+		expect(versEuros(montantIdentifie(evenements))).toBe('4 200,00');
 	});
 
 	it('ne dit rien quand aucune rupture n’est fournie', () => {
