@@ -59,8 +59,20 @@ export function Fond({ className }: { className?: string }) {
 			  global plus un rendu à chaque mouvement, sur un écran qu'on utilise
 			  huit heures par jour.
 
-			  `brightness` à 0,26 : au-delà, les lignes passent devant le montant au
-			  lieu de rester derrière. Mesuré à l'écran sur le chiffre le plus long.
+			  ⚠️ `brightness` EST PASSÉ DE 0,26 À 0,21, ET C'EST UNE MESURE.
+
+			  La crête du shader — le pixel le plus clair qu'il puisse peindre, soit
+			  les trois couleurs additionnées et multipliées par `brightness` —
+			  valait rgb(75, 101, 166). Le texte le plus pâle du produit
+			  (`--cladd-fg-softest`) posé dessus à travers une carte de verre
+			  tombait à 1,45:1 : illisible, et la raison pour laquelle l'application
+			  paraissait « floue » là où les lignes passaient.
+
+			  À 0,21 la crête tombe à rgb(60, 81, 134). C'est la moitié de la
+			  correction ; l'autre moitié est l'opacité des cartes, dans `app.css`.
+			  Agir sur les deux permet de garder du verre au lieu de le rendre
+			  presque opaque : à opacité de carte égale, baisser la crête gagne
+			  autant de contraste qu'ajouter dix points d'alpha.
 			*/}
 			<LineWaves
 				className="size-full"
@@ -71,7 +83,7 @@ export function Fond({ className }: { className?: string }) {
 				rotation={-45}
 				edgeFadeWidth={0}
 				colorCycleSpeed={0.55}
-				brightness={0.26}
+				brightness={0.21}
 				color1="#5a7fd4"
 				color2="#7b6ad8"
 				color3="#4a9ad4"

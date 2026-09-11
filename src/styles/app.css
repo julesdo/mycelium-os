@@ -147,8 +147,48 @@ select:not(:disabled),
  * l'arête que la lumière accroche sur un bord biseauté. Retiré, l'effet
  * s'effondre — vérifié à l'écran, pas supposé. Même famille de raisonnement
  * que l'arête de la coque de tablette, plus haut dans les jetons. */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE VERRE EST SOMBRE, PAS CLAIR — ET C'EST UNE CORRECTION DE LISIBILITÉ.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Toutes ces surfaces étaient un VOILE BLANC à 6–8 % d'opacité. Sur un fond
+ * sombre ça produit un joli verre — tant que rien de clair ne passe derrière.
+ * Le shader en fait passer : sa crête valait rgb(75, 101, 166).
+ *
+ * Ce que ça donnait, mesuré et pas supposé, pour du texte posé sur une carte
+ * traversée par une ligne du shader :
+ *
+ *     --cladd-fg          4,77:1   (limite)
+ *     --cladd-fg-soft     2,84:1   (sous AA, sous même le plancher de 3:1)
+ *     --cladd-fg-softer   1,87:1   (illisible)
+ *     --cladd-fg-softest  1,45:1   (invisible)
+ *
+ * Trois des quatre niveaux de texte du produit étaient illisibles dès qu'une
+ * ligne passait dessous. Par INTERMITTENCE, puisque les lignes bougent — donc
+ * invisible sur une capture d'écran, et pénible à l'usage.
+ *
+ * Le verre est donc devenu SOMBRE et bien plus opaque : une teinte proche du
+ * fond, à 0,66–0,72 au lieu de 0,06–0,08 de blanc. Sur la même crête, désormais
+ * abaissée à rgb(60, 81, 134) par `fond.tsx` :
+ *
+ *     --cladd-fg          15,2:1
+ *     --cladd-fg-soft      9,0:1
+ *     --cladd-fg-softer    5,9:1
+ *     --cladd-fg-softest   4,6:1   (au-dessus d'AA)
+ *
+ * ⚠️ CE N'EST PAS DEVENU OPAQUE POUR AUTANT, et c'est la contrainte. Le flou
+ * et la saturation restent : les formes qui passent derrière se lisent encore,
+ * étalées. Au-delà d'environ 0,80 le verre cesse d'en être un — on gagne du
+ * contraste et on perd la profondeur qui distingue cette interface.
+ *
+ * ⚠️ ET LE SURVOL ÉCLAIRCIT TOUJOURS. La règle ne change pas parce que le repos
+ * a changé : elle se tient maintenant entre deux teintes sombres, la claire au
+ * survol. Un survol qui assombrirait ferait disparaître le bouton dans la
+ * carte — c'est exactement le défaut corrigé ici, à l'envers.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
 .verre {
-	background-color: oklch(1 0 0 / 0.08);
+	background-color: oklch(0.18 0.012 276 / 0.7);
 	backdrop-filter: blur(20px) saturate(1.6);
 	-webkit-backdrop-filter: blur(20px) saturate(1.6);
 	box-shadow:
@@ -173,7 +213,7 @@ select:not(:disabled),
  * une barre translucide sur fond sombre se confond avec le fond dès qu'aucune
  * carte ne passe derrière. */
 .verre-dense {
-	background-color: oklch(0.22 0.01 276 / 0.4);
+	background-color: oklch(0.19 0.012 276 / 0.62);
 	backdrop-filter: blur(40px) saturate(2);
 	-webkit-backdrop-filter: blur(40px) saturate(2);
 	box-shadow:
@@ -186,7 +226,7 @@ select:not(:disabled),
  * navigation ne doit PAS s'éclaircir au survol de la barre entière, seuls ses
  * boutons le doivent. */
 .verre-actif:hover {
-	background-color: oklch(1 0 0 / 0.14);
+	background-color: oklch(0.27 0.014 276 / 0.72);
 }
 
 /* LE VERRE D'UN BOUTON — son survol et son enfoncement.
@@ -237,7 +277,7 @@ select:not(:disabled),
 }
 
 .verre-bouton:hover {
-	background-color: oklch(1 0 0 / 0.13);
+	background-color: oklch(0.27 0.014 276 / 0.72);
 	/* L'arête se renforce en même temps que le fond s'éclaircit : c'est ce qui
 	 * fait lire « le verre prend la lumière » plutôt que « le fond a changé ». */
 	box-shadow:
@@ -300,7 +340,7 @@ select:not(:disabled),
  * sera un champ redevenu opaque — visible au premier écran, donc rattrapable.
  * C'est le compromis assumé. */
 .cladd-input .bg-cladd-surface-cut {
-	background-color: oklch(1 0 0 / 0.07);
+	background-color: oklch(0.25 0.012 276 / 0.66);
 	backdrop-filter: blur(20px) saturate(1.6);
 	-webkit-backdrop-filter: blur(20px) saturate(1.6);
 	box-shadow:
@@ -314,7 +354,7 @@ select:not(:disabled),
  * interne, pas sur la racine qui porte la couche de fond. */
 .cladd-input:hover .bg-cladd-surface-cut,
 .cladd-input:focus-within .bg-cladd-surface-cut {
-	background-color: oklch(1 0 0 / 0.12);
+	background-color: oklch(0.32 0.014 276 / 0.7);
 }
 
 /* LES CREUX, EUX AUSSI SUR LE SYSTÈME DE VERRE.
@@ -338,7 +378,7 @@ select:not(:disabled),
  * (0,2,0) et c'est le dernier écrit qui gagne — donc tous les champs
  * redeviendraient sombres, en silence, selon l'ordre du fichier. */
 .cladd-surface-cut:not(.cladd-input) > .bg-cladd-surface-cut {
-	background-color: oklch(0 0 0 / 0.24);
+	background-color: oklch(0.1 0.01 276 / 0.55);
 	backdrop-filter: blur(16px) saturate(1.4);
 	-webkit-backdrop-filter: blur(16px) saturate(1.4);
 	box-shadow:
@@ -400,8 +440,12 @@ select:not(:disabled),
 /* L'alternative. Du verre, un cran plus dense que les cartes : posée juste sous
  * la pilule blanche, elle doit se lire comme un bouton et non comme une carte
  * cliquable. */
+/* ⚠️ LA SEULE SURFACE QUI RESTE UN VOILE CLAIR, et c'est délibéré. Une
+ * pilule secondaire est un BOUTON posé sur le fond, pas un panneau qui porte du
+ * texte : l'assombrir la ferait disparaître dans le fond au lieu de la rendre
+ * lisible. Elle gagne donc de l'opacité — 0,10 → 0,14 — sans changer de sens. */
 .pilule-secondaire {
-	background-color: oklch(1 0 0 / 0.1);
+	background-color: oklch(1 0 0 / 0.14);
 	backdrop-filter: blur(20px) saturate(1.6);
 	-webkit-backdrop-filter: blur(20px) saturate(1.6);
 	box-shadow:
@@ -413,7 +457,7 @@ select:not(:disabled),
 }
 
 .pilule-secondaire:hover {
-	background-color: oklch(1 0 0 / 0.16);
+	background-color: oklch(1 0 0 / 0.22);
 }
 
 .pilule-secondaire:active {
@@ -717,7 +761,6 @@ select:not(:disabled),
 		radial-gradient(90% 60% at 18% 38%, oklch(0.62 0.07 250 / 0.09) 0%, transparent 70%);
 }
 
-
 /* LE GRAIN. Du bruit, à deux pour cent, en surimpression.
  *
  * ⚠️ C'EST LA COUCHE QU'ON EST TENTÉ DE SAUTER, ET C'EST CELLE QUI FAIT LA
@@ -766,7 +809,7 @@ select:not(:disabled),
  * Une carte rendue à l'intérieur de la couche de fond ne floute rien du tout,
  * en silence. */
 .verre-carte {
-	background-color: oklch(1 0 0 / 0.06);
+	background-color: oklch(0.18 0.012 276 / 0.72);
 	backdrop-filter: blur(24px) saturate(1.7);
 	-webkit-backdrop-filter: blur(24px) saturate(1.7);
 	box-shadow:
@@ -778,7 +821,7 @@ select:not(:disabled),
  * couche : deux translucidités superposées donnent un gris qui ne réfracte
  * plus rien. */
 .verre-carte-actif:hover {
-	background-color: oklch(1 0 0 / 0.1);
+	background-color: oklch(0.26 0.014 276 / 0.74);
 }
 
 /* L'ÉCRAN DE LA TABLETTE, ET SA MISE À L'ÉCHELLE.
