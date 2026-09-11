@@ -527,3 +527,125 @@ describe('débiteurs non suivis au registre', () => {
 		DELAI_CONVEX
 	);
 });
+
+describe('les échéances d’une procédure engagée', () => {
+	/**
+	 * ⚠️ DIXIÈME OCCURRENCE DE « DÉCLARÉ, LU, JAMAIS ALIMENTÉ », ET CELLE-CI
+	 * ÉTEIGNAIT LE RADAR SUR LA PARTIE LA PLUS DANGEREUSE DU PRODUIT.
+	 *
+	 * La surveillance sait produire des événements `ECHEANCE_PROCEDURE` depuis
+	 * une liste de dossiers. Elle la lisait dans la table `dossiers` — « une
+	 * créance, plus une procédure choisie, plus son avancement » — que rien
+	 * n'écrivait. Aucune mutation, aucun import, aucun écran.
+	 *
+	 * Conséquence : la caducité d'une ordonnance à trois mois ne pouvait PAS
+	 * apparaître dans le flux, ni dans le briefing quotidien. « Un radar qui ne
+	 * se réveille pas n'est pas un radar, c'est un rapport » — et celui-ci ne
+	 * pouvait pas se réveiller sur l'échéance qui fait perdre un titre.
+	 *
+	 * La surveillance lit désormais les créances réellement engagées et leur
+	 * journal d'événements, c'est-à-dire la machine à états du module 4.5.
+	 */
+	async function poserCreanceEngagee(
+		t: ReturnType<typeof convexTest>,
+		options: { ordonnanceLe?: string } = {}
+	) {
+		const organizationId = await poser(t);
+		const { creanceId } = await t.run(async (ctx) => {
+			const debiteur = (await ctx.db.query('debiteurs').collect()).find(
+				(d) => d.organizationId === organizationId
+			)!;
+			const creanceId = await ctx.db.insert('creances', {
+				organizationId,
+				debiteurId: debiteur._id,
+				statut: 'QUALIFIEE',
+				certaine: 'ok',
+				liquide: 'ok',
+				exigible: 'ok',
+				entreCommercants: 'ok',
+				creeLe: Date.now()
+			});
+			return { creanceId };
+		});
+
+		await t.mutation(internal.recouvrement.apresProcedure.engagerProcedureInterne, {
+			creanceId,
+			procedure: 'injonction-de-payer',
+			engageeLe: '2026-01-05'
+		});
+
+		if (options.ordonnanceLe !== undefined) {
+			await t.mutation(internal.recouvrement.apresProcedure.consignerInterne, {
+				creanceId,
+				cle: 'ordonnance-rendue',
+				survenuLe: options.ordonnanceLe
+			});
+		}
+
+		return { organizationId, creanceId };
+	}
+
+	it(
+		'fait apparaître la caducité d’une ordonnance dans le flux',
+		async () => {
+			const t = convexTest(schema, modules);
+			// Ordonnance rendue le 20 juin : la signification tombe le 20 septembre,
+			// soit 17 jours après le jour de référence — sous le préavis de 30 jours
+			// que la surveillance applique à une échéance de CADUCITÉ.
+			const { organizationId } = await poserCreanceEngagee(t, { ordonnanceLe: '2026-06-20' });
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			const echeance = flux.evenements.find((e) => e.type === 'ECHEANCE_PROCEDURE');
+			expect(echeance).toBeDefined();
+			expect(echeance!.explication).toMatch(/signification/i);
+			// La caducité est la seule urgence CRITIQUE des échéances de procédure.
+			expect(echeance!.urgence).toBe('CRITIQUE');
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne signale rien sur une créance qui n’a rien engagé',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await poser(t);
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			expect(flux.evenements.find((e) => e.type === 'ECHEANCE_PROCEDURE')).toBeUndefined();
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne signale plus rien une fois l’échéance dépassée par l’acte',
+		async () => {
+			// L'ordonnance signifiée fait sortir de l'état qui portait la caducité :
+			// continuer à l'annoncer userait la confiance dans toutes les autres.
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await poserCreanceEngagee(t, {
+				ordonnanceLe: '2026-06-20'
+			});
+			await t.mutation(internal.recouvrement.apresProcedure.consignerInterne, {
+				creanceId,
+				cle: 'ordonnance-signifiee',
+				survenuLe: '2026-08-25'
+			});
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			expect(flux.evenements.find((e) => e.type === 'ECHEANCE_PROCEDURE')).toBeUndefined();
+		},
+		DELAI_CONVEX
+	);
+});

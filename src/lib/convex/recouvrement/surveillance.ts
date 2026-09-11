@@ -7,6 +7,7 @@ import { additionner, depuisCentimes, enCentimes, ZERO, type Montant } from '../
 import { habitudeDePaiement, lireRupture } from '../../verticales/recouvrement/comportement';
 import type { PaiementObserve } from '../../verticales/recouvrement/comportement';
 import { ecartJours, estDateReelle } from '../../verticales/recouvrement/calendrier';
+import { suivreProcedure } from '../../verticales/recouvrement/apres-procedure';
 import {
 	detecterEvenements,
 	montantIdentifie,
@@ -259,34 +260,83 @@ async function assembler(
 		});
 	}
 
-	const creances = (
-		await ctx.db
-			.query('creances')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.collect()
-	).map((creance) => ({
+	const creancesBrutes = await ctx.db
+		.query('creances')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.collect();
+
+	const creances = creancesBrutes.map((creance) => ({
 		reference: creance._id as string,
 		total: ZERO,
 		score: creance.score ?? 0,
 		statut: creance.statut
 	}));
 
-	const dossiers: DossierSurveille[] = (
-		await ctx.db
-			.query('dossiers')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.collect()
-	).map((dossier) => ({
-		reference: dossier._id as string,
-		montantEnJeu: ZERO,
-		echeances: dossier.echeances.map((echeance) => ({
-			cle: echeance.cle,
-			libelle: echeance.libelle,
-			dateLimite: echeance.dateLimite,
-			gravite: echeance.gravite,
-			traitee: echeance.traiteeLe !== undefined
-		}))
-	}));
+	/**
+	 * ⚠️ LES ÉCHÉANCES DE PROCÉDURE VIENNENT DE LA MACHINE À ÉTATS, PLUS DE LA
+	 * TABLE `dossiers` — ET C'EST UNE CORRECTION, PAS UN REFACTORING.
+	 *
+	 * Cette liste se lisait dans `dossiers` : « une créance, plus une procédure
+	 * choisie, plus son avancement ». Rien n'écrivait cette table. Aucune
+	 * mutation, aucun import, aucun écran. Dixième occurrence du défaut
+	 * « déclaré, lu, jamais alimenté » dans ce dépôt.
+	 *
+	 * Le coût était le pire de tous : la surveillance SAIT produire des
+	 * événements `ECHEANCE_PROCEDURE`, et elle n'en produisait jamais. La
+	 * caducité d'une ordonnance à trois mois — l'échéance qui fait perdre un
+	 * titre exécutoire — ne pouvait apparaître ni dans le flux, ni dans le
+	 * briefing quotidien. « Un radar qui ne se réveille pas n'est pas un radar,
+	 * c'est un rapport. »
+	 *
+	 * ⚠️ ET LES ÉCHÉANCES SE REJOUENT, ELLES NE SE STOCKENT PAS. `dossiers` les
+	 * figeait à l'engagement, pour une raison qui se défend — une échéance est
+	 * une promesse faite à une date. Mais la machine les DÉRIVE de l'état
+	 * courant, et c'est plus juste : une ordonnance signifiée ne fait plus
+	 * courir sa caducité. Des échéances figées auraient continué de l'annoncer,
+	 * et une alerte qui persiste après l'acte use la confiance dans toutes les
+	 * autres.
+	 */
+	const dossiers: DossierSurveille[] = [];
+	for (const creance of creancesBrutes) {
+		if (creance.procedureEngagee === undefined || creance.engageeLe === undefined) continue;
+
+		const lignes = await ctx.db
+			.query('evenementsProcedure')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+			.collect();
+
+		// Triées par date du FAIT, comme partout ailleurs : rejouer dans l'ordre
+		// de saisie laisserait la machine à l'état d'entrée sans rien dire.
+		const journal = lignes
+			.filter((e) => e.organizationId === organizationId)
+			.sort((a, b) => (a.survenuLe < b.survenuLe ? -1 : a.survenuLe > b.survenuLe ? 1 : 0))
+			.map((e) => ({ cle: e.cle, survenuLe: e.survenuLe }));
+
+		let suivi;
+		try {
+			suivi = suivreProcedure(creance.procedureEngagee, journal, creance.engageeLe);
+		} catch {
+			// Une procédure sans machine ne peut pas arriver ici — `engagerProcedure`
+			// la refuse — mais une donnée ancienne le pourrait. On la passe plutôt
+			// que d'éteindre le flux entier d'un établissement.
+			continue;
+		}
+
+		if (suivi.echeances.length === 0) continue;
+		dossiers.push({
+			reference: creance._id as string,
+			montantEnJeu: ZERO,
+			echeances: suivi.echeances.map((echeance) => ({
+				cle: echeance.cle,
+				libelle: echeance.libelle,
+				dateLimite: echeance.dateLimite,
+				gravite: echeance.gravite,
+				// Dérivées de l'état : une échéance qui ne court plus a DISPARU de la
+				// liste. Il n'y a donc rien à marquer comme traité.
+				traitee: false
+			}))
+		});
+	}
 
 	// LA DÉGRADATION D'UN DÉBITEUR SE CONSTATE ENTRE DEUX RELEVÉS, et le produit
 	// n'en historisait qu'un : cette liste était vide EN DUR, avec le commentaire

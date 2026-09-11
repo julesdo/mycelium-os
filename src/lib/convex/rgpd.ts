@@ -178,7 +178,7 @@ export const _pageDeReglements = internalQuery({
 
 /**
  * Tout ce qui tient en une lecture : l'établissement, ses dépôts, ses créances,
- * ses décomptes, ses dossiers, ses débiteurs, ses membres, ses battements. Ces
+ * ses décomptes, ses débiteurs, ses membres, ses battements. Ces
  * tables se comptent en dizaines de lignes — seules les factures et les
  * règlements demandent une pagination.
  */
@@ -192,7 +192,6 @@ export const _entetesExport = internalQuery({
 			depots,
 			creances,
 			decomptes,
-			dossiers,
 			debiteurs,
 			pieces,
 			membres,
@@ -209,10 +208,6 @@ export const _entetesExport = internalQuery({
 				.collect(),
 			ctx.db
 				.query('decomptes')
-				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-				.collect(),
-			ctx.db
-				.query('dossiers')
 				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 				.collect(),
 			ctx.db
@@ -242,7 +237,6 @@ export const _entetesExport = internalQuery({
 			depots,
 			creances,
 			decomptes,
-			dossiers,
 			debiteurs,
 			pieces,
 			membres,
@@ -259,7 +253,6 @@ type Entetes = {
 	depots: unknown[];
 	creances: unknown[];
 	decomptes: unknown[];
-	dossiers: unknown[];
 	debiteurs: unknown[];
 	pieces: unknown[];
 	membres: unknown[];
@@ -338,7 +331,6 @@ export const exporterMesDonnees = action({
 			pieces: entetes.pieces,
 			creances: entetes.creances,
 			decomptes: entetes.decomptes,
-			dossiers: entetes.dossiers,
 			battements: entetes.battements
 		};
 
@@ -506,7 +498,6 @@ export const purgerEtablissement = internalMutation({
 		//    Le journal de procédure part AVANT les créances qu'il référence.
 		budget = await viderParIndexOrg(ctx, 'evenementsProcedure', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
-		budget = await viderParIndexOrg(ctx, 'dossiers', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'creances', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'debiteurs', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'profilsCreancier', organizationId, budget);
@@ -722,7 +713,6 @@ async function viderParIndexOrg(
 		| 'piecesFactures'
 		| 'evenementsProcedure'
 		| 'decomptes'
-		| 'dossiers'
 		| 'creances'
 		| 'debiteurs'
 		| 'profilsCreancier'

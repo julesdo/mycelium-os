@@ -650,46 +650,6 @@ export const recouvrementTables = {
 		.index('by_creance', ['creanceId'])
 		.index('by_org', ['organizationId']),
 
-	/** Une créance, plus une procédure choisie, plus son avancement. */
-	dossiers: defineTable({
-		organizationId: v.id('organizations'),
-		creanceId: v.id('creances'),
-		decompteId: v.optional(v.id('decomptes')),
-		/** La clé du module de procédure. Voir `verticales/recouvrement/procedures.ts`. */
-		procedureCle: v.string(),
-		etat: v.union(
-			v.literal('PREPARATION'),
-			v.literal('ENGAGEE'),
-			v.literal('SIGNIFIEE'),
-			v.literal('CONTESTEE'),
-			v.literal('ABOUTIE'),
-			v.literal('CADUQUE'),
-			v.literal('ABANDONNEE')
-		),
-		engageeLe: v.optional(v.string()), // AAAA-MM-JJ
-		/**
-		 * Les échéances calculées à l'engagement, figées.
-		 *
-		 * Recalculées à chaque lecture, elles suivraient une évolution du
-		 * paramètre légal et changeraient rétroactivement la date de caducité
-		 * d'un dossier déjà engagé. Une échéance est une promesse faite à une
-		 * date : elle se conserve.
-		 */
-		echeances: v.array(
-			v.object({
-				cle: v.string(),
-				libelle: v.string(),
-				dateLimite: v.string(),
-				gravite: v.union(v.literal('CADUCITE'), v.literal('INFORMATIVE')),
-				consequence: v.string(),
-				traiteeLe: v.optional(v.number())
-			})
-		),
-		creeLe: v.number()
-	})
-		.index('by_org', ['organizationId'])
-		.index('by_creance', ['creanceId'])
-		.index('by_org_and_etat', ['organizationId', 'etat']),
 
 	/**
 	 * Le relevé d'un battement quotidien, par organisation et par jour.

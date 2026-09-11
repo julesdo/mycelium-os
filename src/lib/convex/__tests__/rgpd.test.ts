@@ -147,13 +147,17 @@ async function poserEtablissement(t: ReturnType<typeof convexTest>) {
 			produitLe: Date.now()
 		});
 
-		await ctx.db.insert('dossiers', {
+		// La procédure engagée vit sur la créance depuis le module 4.5, et son
+		// journal dans `evenementsProcedure`. La table `dossiers` portait la même
+		// chose et n'a jamais été écrite : elle a été retirée plutôt que laissée
+		// comme seconde vérité possible.
+		await ctx.db.insert('evenementsProcedure', {
 			organizationId,
 			creanceId,
-			procedureCle: 'injonction-de-payer',
-			etat: 'PREPARATION',
-			echeances: [],
-			creeLe: Date.now()
+			procedure: 'injonction-de-payer',
+			cle: 'ordonnance-rendue',
+			survenuLe: '2026-01-10',
+			consigneLe: Date.now()
 		});
 
 		await ctx.db.insert('notifications', {
@@ -196,7 +200,7 @@ describe("la purge d'un établissement", () => {
 				'pieces',
 				'importsRecouvrement',
 				'decomptes',
-				'dossiers',
+				'evenementsProcedure',
 				'creances',
 				'debiteurs',
 				'profilsCreancier',

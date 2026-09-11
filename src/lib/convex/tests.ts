@@ -144,7 +144,7 @@ export const deleteTestUser = mutation({
 
 /**
  * Purge les artefacts laissés par une exécution : imports, factures,
- * règlements, créances, décomptes et dossiers des organisations de test.
+ * règlements, créances et décomptes des organisations de test.
  *
  * RIEN N'EST ÉPARGNÉ, contrairement à la version EGalim de cette fonction qui
  * préservait un cache global de libellés. Le recouvrement n'a pas d'équivalent :
@@ -169,7 +169,6 @@ export const cleanupTestData = mutation({
 				'facturesVente',
 				'pieces',
 				'decomptes',
-				'dossiers',
 				'creances',
 				'debiteurs',
 				'profilsCreancier',

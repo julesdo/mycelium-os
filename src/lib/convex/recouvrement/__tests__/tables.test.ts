@@ -46,7 +46,6 @@ describe('schéma du recouvrement', () => {
 			'creances',
 			'debiteurs',
 			'decomptes',
-			'dossiers',
 			'evenementsProcedure',
 			'facturesVente',
 			'importsRecouvrement',
