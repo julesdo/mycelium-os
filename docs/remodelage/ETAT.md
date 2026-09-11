@@ -1,7 +1,103 @@
-# ÉTAT DU REMODELAGE — au 3 septembre 2026
+# ÉTAT DU REMODELAGE — au 11 septembre 2026
 
-**Mise à jour du 3 septembre** : les trois points bloquants du 2 septembre sont levés.
-Voir « Ce qui a changé le 3 septembre » en fin de document pour le détail.
+> **Mise à jour du 11 septembre.** Le document qui suit portait l'état au 3 septembre et le
+> reste ci-dessous, pour la trace du raisonnement. Ce qui a changé depuis est ici.
+
+---
+
+## Ce qui a changé entre le 3 et le 11 septembre
+
+| | 3 sept. | 11 sept. |
+|---|---|---|
+| Tests unitaires | 665 | **835** |
+| Erreurs de lint | 0 | 0 |
+| `bun run check` | vert | vert |
+| Surfaces opaques dans l'interface | — | **0**, et une barrière l'exige |
+
+### Le système visuel, refait sur la référence Revolut
+
+Le verdict du terrain était sans appel : « l'app ne vaut rien et est invendable ». La cause n'était
+pas les composants — elle était **derrière** eux. Un fond plat, sur lequel aucune translucidité ne
+peut rien réfracter.
+
+- **Le fond** est un shader WebGL plein écran (`ui/line-waves.tsx`, porté de React Bits en
+  TypeScript), fixe, derrière tous les écrans. Deux adaptations que l'original n'a pas : la boucle
+  s'arrête sous `prefers-reduced-motion` et quand l'onglet est caché.
+- **Le verre, partout** : cartes, barres, champs, creux. Les champs et les creux basculent par UNE
+  règle chacun, en ciblant la couche de fond interne du kit — trente appels à ne pas oublier,
+  c'est ce que ce projet a déjà payé plusieurs fois.
+- **La pilule blanche** remplace l'aplat d'accent sur 22 boutons. Sur un fond traversé par un
+  shader bleu, un bouton bleu se fond dans son propre décor.
+- **L'accessibilité a été calculée, pas choisie.** Éclaircir un fond sombre BAISSE le contraste du
+  texte clair. `--cladd-fg-softest` tenait 4,58:1 — huit centièmes au-dessus du seuil AA. Il passe
+  à 0,635 et tient 4,75:1 sur la zone la plus relevée.
+
+### Les écrans
+
+L'accueil porte désormais **un seul total** au lieu de deux à un onglet l'un de l'autre, et il est
+**le même à zéro qu'à cinquante mille** : le montant s'affiche toujours, la rangée d'actions reste
+complète, et ce qui manque est dit par une carte.
+
+L'import cesse de présenter ses deux chemins **à égalité** : l'export comptable est recommandé
+noir sur blanc, parce que le dépôt de PDF fait passer chaque facture par le modèle.
+
+### La marque
+
+L'assiette de porcelaine a disparu. Elle illustrait EGalim — « l'assiette d'achats », la base du
+taux — pour un produit retiré le 3 septembre. La nouvelle est une **étiquette au coin coupé**
+portant un L, identique du favicon 16 px à l'icône iOS 180 px. Le logo **est** le bouton
+d'accueil ; l'avatar prend sa place en haut à gauche.
+
+### Module 2.3 — le scoring comportemental ✅
+
+Le seul module du MVP encore débloqué et non construit. Il détecte la **rupture d'habitude**
+plutôt qu'un seuil absolu, parce qu'un seuil traite de la même façon deux situations opposées :
+le client qui paie toujours à 65 jours (rien ne se passe, l'alerte est du bruit) et celui qui paie
+toujours à 8 et vient de passer à 35 (sous le seuil, donc muet — alors que c'est le signal le plus
+fort du produit).
+
+Médiane et écart absolu médian, jamais moyenne ni écart-type : un seul litige ancien réglé à
+300 jours écraserait l'habitude réelle. Quatre règlements minimum, sinon le module se tait.
+
+Il remonte dans le flux, et **remplace** l'événement d'échéance de sa facture — défaut vu à
+l'écran, pas en test : la même facture sortait deux fois.
+
+---
+
+## Ce qui reste, et ce qui bloque
+
+| Module | État | Bloqué sur |
+|---|---|---|
+| 1.1 Ingestion par e-mail dédié | à construire | **Jules** — choix du fournisseur et DNS |
+| 1.2 Extracteur IA des preuves | socle existant, à étendre | — |
+| 1.3 Normalisation SIRET (Sirene) | à construire | **la clé d'API**, une démarche |
+| 1.4 Lettrage dégradé | ✅ | — |
+| 2.1 Battement quotidien | ✅ | — |
+| 2.2 Radar BODACC | ✅ | — |
+| 2.3 Scoring comportemental | ✅ | — |
+| 3.1 Relances asymétriques | à construire | **le juriste** |
+| 3.2 Questionnaire de litige | à construire | — |
+| 4.2 Solidité documentaire | partiel | — |
+| 4.5 Machine à états post-procédure | à construire | — |
+
+**Et le plus long piquet n'a pas bougé** : `valideParAvocat` vaut toujours `false` sur les quinze
+entrées du registre. Rien de ce qui produit un acte ne peut sortir, quoi qu'on code. Ce n'est pas
+une lenteur, c'est une signature humaine.
+
+### Les quatre points qui attendent une décision
+
+1. Le plugin `admin()` de Better Auth reste monté : ses points d'entrée HTTP sont servis pour un
+   compte `role: 'admin'`, et l'usurpation contournerait la vérification d'appartenance. Le
+   retrait touche au schéma du composant — à faire avec quelqu'un présent.
+2. La clé de l'API Sirene.
+3. `valideParAvocat` sur les quinze entrées.
+4. Jusqu'où l'indemnité forfaitaire et les intérêts restent réclamables sur une facture dont le
+   principal a déjà été payé. Restreinte aux seuls impayés, la révélation garde sa force ; la
+   réponse change son amplitude.
+
+---
+
+## L'état au 3 septembre — conservé pour la trace
 
 Point d'arrivée de la session autonome. Ce document dit ce qui est fait, ce qui est **bloqué et sur
 quoi**, et les décisions prises seul qui demandent une ratification.
