@@ -1,9 +1,18 @@
 import { useState, type ReactNode } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Input, Surface, SectionTitle, Segmented, SegmentedButton } from '@cladd-ui/react';
+import {
+	Button,
+	Input,
+	ListButton,
+	Surface,
+	SectionTitle,
+	Segmented,
+	SegmentedButton
+} from '@cladd-ui/react';
 import {
 	CheckIcon,
+	ChevronRightIcon,
 	CreditCardIcon,
 	DatabaseIcon,
 	LogOutIcon,
@@ -14,8 +23,36 @@ import {
 import { api } from '../../lib/convex/_generated/api';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
-import { BoutonPrincipal, Page, PageHeader, PageBody, Champ } from '../../ui';
+import { BoutonPrincipal, CarteListe, Page, PageHeader, PageBody, Champ } from '../../ui';
 import { FormulaireCreancier } from '../../screens/parametres/creancier';
+
+/**
+ * LES TROIS ÉCRANS QU'ON ATTEINT PAR LES RÉGLAGES.
+ *
+ * Table plutôt que trois blocs recopiés : c'est ce qui garantit qu'ils
+ * gardent la même forme, et qu'en ajouter un quatrième ne demande pas de se
+ * souvenir de la géométrie des trois autres.
+ */
+const AILLEURS = [
+	{
+		to: '/app/abonnement' as const,
+		titre: 'Votre abonnement',
+		aide: 'Votre offre dépend du nombre de factures que vous émettez chaque année.',
+		Icone: CreditCardIcon
+	},
+	{
+		to: '/app/equipe' as const,
+		titre: 'Votre équipe',
+		aide: 'Celui qui dépose les factures et celui qui décide sont rarement la même personne.',
+		Icone: UsersIcon
+	},
+	{
+		to: '/app/donnees' as const,
+		titre: 'Vos données',
+		aide: 'Ce que nous détenons, en clair. À emporter, ou à effacer définitivement.',
+		Icone: DatabaseIcon
+	}
+];
 
 export const Route = createFileRoute('/app/parametres')({ component: Parametres });
 
@@ -66,7 +103,7 @@ function Parametres() {
 		<Page>
 			<PageHeader titre="Réglages" sousTitre="Votre établissement et votre compte." />
 			<PageBody>
-				<div className="flex max-w-160 flex-col gap-cladd-2xs">
+				<div className="mx-auto flex w-full max-w-160 flex-col gap-cladd-2xs">
 					{org ? (
 						<FormulaireEtablissement
 							key={org._id}
@@ -93,70 +130,69 @@ function Parametres() {
 					)}
 
 					<Reglage titre="Apparence">
+						{/*
+						  ⚠️ CE TEXTE DISAIT L'INVERSE DE LA VÉRITÉ. Il affirmait que
+						  « l'affichage clair est le réglage par défaut », alors que le
+						  défaut est passé au sombre. Personne ne l'avait vu parce qu'un
+						  texte d'interface ne casse aucun test — c'est la même famille de
+						  défaut que le logo qui illustrait une verticale supprimée.
+						*/}
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							L&rsquo;affichage clair est le réglage par défaut : il se lit mieux en plein jour, sur
-							une tablette à fort reflet.
+							Le sombre est le réglage par défaut : on passe des heures sur cet écran, assis, devant
+							un écran de bureau. Le clair reste servi et entretenu, pour qui travaille près
+							d&rsquo;une fenêtre ou imprime ses décomptes.
 						</p>
 						{/* Deux états exclusifs : c'est un `Segmented`, pas un bouton qui
 						    annonce la bascule. « Passer en sombre » oblige à déduire l'état
 						    courant depuis l'action proposée, ce qui se lit à l'envers. */}
 						<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
-							<SegmentedButton active={theme === 'light'} onClick={() => setTheme('light')}>
-								<SunIcon />
-								Clair
-							</SegmentedButton>
 							<SegmentedButton active={theme === 'dark'} onClick={() => setTheme('dark')}>
 								<MoonIcon />
 								Sombre
+							</SegmentedButton>
+							<SegmentedButton active={theme === 'light'} onClick={() => setTheme('light')}>
+								<SunIcon />
+								Clair
 							</SegmentedButton>
 						</Segmented>
 					</Reglage>
 
 					{/*
-					  L'abonnement entre PAR ICI et non par un cinquième onglet. La barre
-					  de navigation porte déjà quatre entrées, une recherche, un dépôt et
-					  un sélecteur d'établissement ; chaque dizaine de pixels qu'elle prend
-					  en hauteur est une rangée de cartes en moins sur une tablette en
-					  paysage. Un réglage se range avec les réglages.
-					*/}
-					<Reglage titre="Votre abonnement">
-						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Votre offre et son tarif dépendent du nombre de factures que vous émettez chaque
-							année. Le produit est le même à tous les paliers.
-						</p>
-						<Button as={Link} to="/app/abonnement" className="self-start">
-							<CreditCardIcon />
-							Voir mon abonnement
-						</Button>
-					</Reglage>
+					  ═════════════════════════════════════════════════════════════════
+					  LES TROIS AILLEURS, EN TROIS RANGÉES — ET PLUS EN TROIS CARTES
+					  ═════════════════════════════════════════════════════════════════
 
-					<Reglage titre="Votre équipe">
-						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Celui qui dépose les factures et celui qui signe la déclaration sont rarement la même
-							personne. Invitez vos collègues : ils verront les mêmes taux, au même moment.
-						</p>
-						<Button as={Link} to="/app/equipe" className="self-start">
-							<UsersIcon />
-							Gérer l&rsquo;équipe
-						</Button>
-					</Reglage>
+					  L'abonnement, l'équipe et les données entrent par ici plutôt que par
+					  trois onglets de plus : ce sont des écrans qu'on ouvre deux fois par
+					  an, et chaque dizaine de pixels que la barre prend en hauteur est une
+					  rangée de cartes en moins sur une tablette en paysage.
 
-					{/*
-					  « Vos données » entre par ici, comme l'abonnement. C'est un écran
-					  qu'on ouvre deux fois par an — pour un export, ou pour partir — et
-					  lui donner un onglet coûterait une rangée de cartes sur la tablette,
-					  sur tous les écrans de travail.
+					  ⚠️ MAIS CHACUN AVAIT SA CARTE, SON TITRE, SON PARAGRAPHE ET SON
+					  BOUTON. Trois blocs de cent-soixante pixels pour ce qui est, en
+					  vérité, trois LIENS. Mesuré sur un téléphone, ça repoussait la
+					  déconnexion à un écran et demi de défilement.
+
+					  Une carte, trois rangées. L'explication descend en sous-titre : elle
+					  reste lisible, elle cesse d'être un paragraphe. C'est le motif de
+					  tous les écrans de réglages relevés.
 					*/}
-					<Reglage titre="Vos données">
-						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Ce que nous détenons pour vous, en clair. Vous pouvez l&rsquo;emporter dans un fichier
-							lisible par machine, ou tout effacer définitivement.
-						</p>
-						<Button as={Link} to="/app/donnees" className="self-start">
-							<DatabaseIcon />
-							Voir mes données
-						</Button>
-					</Reglage>
+					<section className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Aller plus loin</SectionTitle>
+						<CarteListe>
+							{AILLEURS.map(({ to, titre, aide, Icone }) => (
+								<ListButton
+									key={to}
+									as={Link}
+									to={to}
+									icon={<Icone />}
+									footer={aide}
+									after={<ChevronRightIcon size={16} className="shrink-0 text-cladd-fg-softest" />}
+								>
+									{titre}
+								</ListButton>
+							))}
+						</CarteListe>
+					</section>
 
 					<Reglage titre="Votre compte">
 						<Button
