@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Checkbox, Chip, ListButton, Surface } from '@cladd-ui/react';
+import { Chip, ListButton } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -15,18 +15,12 @@ import {
 	EmptyState,
 	eurosCentimes,
 	aujourdHuiISO,
-	dateCourte,
 	pluriel,
 	Avatar,
 	CarteListe,
-	HabitudePaiement,
-	IdentiteDebiteur,
-	ConstatRegistre,
-	Lettrage,
-	Pieces,
-	SectionEcran,
 	type OptionSecteur
 } from '../../ui';
+import { DetailDebiteur } from '../../screens/debiteur-detail';
 import {
 	REGIMES_PRESCRIPTION,
 	secteurLePlusCourt
@@ -488,182 +482,52 @@ function Debiteurs() {
 		</div>
 	);
 
-	const preuve =
-		choisi === null || factures === undefined ? (
-			<div className="p-cladd-2xs">
-				<p className="text-cladd-xs text-cladd-fg-soft">
-					Choisissez un débiteur pour voir ce qu’il doit, facture par facture.
-				</p>
-			</div>
-		) : (
-			<div className="flex flex-col gap-cladd-2xs p-cladd-2xs">
-				{/* CE QUE LE GÉRANT SEUL PEUT DIRE, EN TÊTE DE LA PREUVE.
-				    L'écran affichait « Secteur à préciser » sur la liste depuis des
-				    mois — et il n'existait AUCUN moyen de le préciser. Une consigne
-				    impossible à suivre est pire qu'aucune consigne : le gérant
-				    cherche, ne trouve pas, et cesse de croire les autres. */}
-				<IdentiteDebiteur
-					/*
-					  ⚠️ LA CLÉ PORTE LES VALEURS, PAS SEULEMENT LE DÉBITEUR.
-
-					  Les deux champs saisissables s'initialisent sur ce que dit le
-					  serveur. Or au premier rendu les requêtes n'ont pas répondu :
-					  `debiteurChoisi` et `factures` valent `undefined`, donc les
-					  champs partiraient VIDES et y resteraient — React ne ré-initialise
-					  pas un `useState` sur un changement de prop.
-
-					  Un champ qui repart vide fait ressaisir, donc écraser. Sur le taux
-					  c'est pire qu'un désagrément : le `blur` écrit sur TOUTES les
-					  factures non soldées du débiteur.
-
-					  On remet donc à zéro avec une clé plutôt qu'avec un effet — c'est
-					  la règle du projet, et ici elle a une conséquence mesurable.
-					*/
-					key={`${choisi}:${debiteurChoisi?.siren ?? ''}:${tauxStipule ?? ''}`}
-					siren={debiteurChoisi?.siren}
-					secteur={debiteurChoisi?.secteur}
-					optionsSecteur={SECTEURS}
-					erreurSiren={erreurSiren}
-					onEnregistrerSiren={(saisi) => void enregistrerSiren(saisi)}
-					onChoisirSecteur={(cle) => {
-						void renseignerSecteur({
-							debiteurId: choisi,
-							secteur: cle as 'GENERAL'
-						});
-					}}
-					tauxContractuel={tauxStipule}
-					constatTaux={constatTaux}
-					onEnregistrerTaux={(p) => void enregistrerTaux(p)}
-				/>
-
-				{/*
-				  LES PIÈCES, JUSTE APRÈS L'IDENTITÉ.
-
-				  ⚠️ ELLES ÉTAIENT LUES PAR LES DEUX MOTEURS ET ÉCRITES NULLE PART.
-				  Les conditions légales valent 12 points sur 20, le seuil de
-				  qualification 15, et les points manquants sont tous documentaires :
-				  aucune créance ne pouvait être éligible, quoi que fasse le
-				  créancier. L'écran de créance listait « ce qui renforcerait ce
-				  dossier » sans qu'il existe un endroit où le renforcer.
-
-				  Elles vivent ICI et pas sur la créance : des CGV ou un contrat-cadre
-				  valent pour toutes les factures d'un client, et les redéposer par
-				  dossier garantirait qu'on ne les dépose jamais.
-				*/}
-				<SectionEcran
-					titre="Les pièces du dossier"
-					legende={pieces === undefined ? undefined : `${pieces.length} document(s)`}
-				>
-					<Pieces
-						pieces={pieces ?? []}
-						optionsType={TYPES_PIECE}
-						enCours={depotEnCours}
-						onDeposer={(fichiers) => void deposerPieces(fichiers)}
-						onClasser={(pieceId, type) => {
-							void classerPiece({
-								pieceId: pieceId as Id<'pieces'>,
-								type: type as 'BON_DE_LIVRAISON'
-							});
-						}}
-						onRetirer={(pieceId) => void retirerPiece({ pieceId: pieceId as Id<'pieces'> })}
-					/>
-				</SectionEcran>
-
-				{/*
-				  L'HABITUDE, ENTRE L'IDENTITÉ ET LE LETTRAGE. L'ordre n'est pas
-				  neutre : on lit qui est ce client, puis comment il paie, puis on
-				  rapproche un virement. C'est la chronologie du geste réel.
-				*/}
-				{comportement === undefined ? null : (
-					<HabitudePaiement habitude={comportement.habitude} ruptures={comportement.ruptures} />
-				)}
-
-				<Lettrage
-					proposition={proposition ?? null}
-					enCours={montantCherche !== null && proposition === undefined}
-					erreur={erreurLettrage}
-					onChercher={chercherLettrage}
-					onAppliquer={(references, total) => void soldeLesFactures(references, total)}
-				/>
-
-				{debiteurChoisi?.constatRegistre === undefined ? null : (
-					<ConstatRegistre
-						constat={debiteurChoisi.constatRegistre}
-						sante={debiteurChoisi.santeFinanciere}
-					/>
-				)}
-
-				{factures.map((facture) => (
-					<Surface
-						key={facture._id}
-						// En verre comme toutes les cartes du produit. Elles restent des
-						// cartes SÉPARÉES et non des rangées d'un conteneur, à l'inverse
-						// de la liste de gauche : chacune porte une case à cocher et
-						// entre dans une sélection, donc chacune est un objet qu'on
-						// manipule, pas une ligne qu'on parcourt.
-						variant="transparent"
-						outline={false}
-						className="verre-carte rounded-cladd-xl"
-						contentClassName="flex flex-col gap-1.5 p-cladd-2xs"
-					>
-						<div className="flex items-start gap-cladd-3xs">
-							{/* Une facture déjà rattachée à une créance ne peut pas l'être une
-							    seconde fois : la réclamer deux fois exposerait les deux
-							    procédures. La case est donc désactivée, pas cachée. */}
-							<Checkbox
-								checked={selection.has(facture._id)}
-								onChange={() => basculer(facture._id)}
-								disabled={facture.dansUneCreance || facture.statutPaiement === 'SOLDEE'}
-								aria-label={`Inclure ${facture.reference}`}
-							/>
-							<div className="flex min-w-0 flex-1 flex-col gap-1.5">
-								<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-									<span className="text-cladd-sm font-semibold">{facture.reference}</span>
-									<span className="text-cladd-sm font-semibold tabular-nums">
-										{eurosCentimes(facture.resteDu)}
-									</span>
-								</div>
-
-								<p className="text-cladd-xs text-cladd-fg-soft">
-									Émise le {dateCourte(facture.dateEmission)}
-									{facture.dateEcheance
-										? `, échéance le ${dateCourte(facture.dateEcheance)}`
-										: ', sans échéance connue'}
-								</p>
-
-								{facture.exigibiliteDeduite ? (
-									<p className="text-cladd-2xs text-cladd-fg-softer">
-										Exigibilité déduite de l’échéance — à confirmer si vos conditions contractuelles
-										disent autre chose.
-									</p>
-								) : null}
-
-								<div className="flex flex-wrap items-center gap-1.5">
-									{facture.dansUneCreance ? (
-										<Chip size="md" color="neutral">
-											Déjà dans une créance
-										</Chip>
-									) : null}
-									{facture.datePrescription ? (
-										<Chip size="md" color="neutral">
-											Prescription le {dateCourte(facture.datePrescription)}
-										</Chip>
-									) : null}
-								</div>
-							</div>
-						</div>
-					</Surface>
-				))}
-
-				{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
-
-				{selection.size > 0 ? (
-					<BoutonPrincipal onClick={constituer}>
-						Constituer une créance de {selection.size} facture{pluriel(selection.size)}
-					</BoutonPrincipal>
-				) : null}
-			</div>
-		);
+	/**
+	 * LE VOLET DE PREUVE.
+	 *
+	 * Tout le dessin vit dans `screens/debiteur-detail.tsx`, qui ne sait pas
+	 * interroger Convex — c’est ce qui permet de l’OUVRIR aux quatre largeurs
+	 * depuis la salle d’exposition, sans backend ni authentification. Ses
+	 * composants y étaient tous vérifiés un par un ; leur assemblage, jamais.
+	 */
+	const preuve = (
+		<DetailDebiteur
+			debiteur={choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi}
+			factures={choisi === null || factures === undefined ? null : factures}
+			optionsSecteur={SECTEURS}
+			erreurSiren={erreurSiren}
+			tauxStipule={tauxStipule}
+			constatTaux={constatTaux}
+			pieces={pieces ?? []}
+			optionsTypePiece={TYPES_PIECE}
+			depotEnCours={depotEnCours}
+			habitude={comportement?.habitude ?? null}
+			ruptures={comportement?.ruptures ?? []}
+			propositionLettrage={proposition ?? null}
+			lettrageEnCours={montantCherche !== null && proposition === undefined}
+			erreurLettrage={erreurLettrage}
+			selection={selection}
+			erreur={erreur}
+			onEnregistrerSiren={(saisi) => void enregistrerSiren(saisi)}
+			onChoisirSecteur={(cle) => {
+				if (choisi === null) return;
+				void renseignerSecteur({ debiteurId: choisi, secteur: cle as 'GENERAL' });
+			}}
+			onEnregistrerTaux={(p) => void enregistrerTaux(p)}
+			onDeposerPieces={(fichiers) => void deposerPieces(fichiers)}
+			onClasserPiece={(pieceId, type) => {
+				void classerPiece({
+					pieceId: pieceId as Id<'pieces'>,
+					type: type as 'BON_DE_LIVRAISON'
+				});
+			}}
+			onRetirerPiece={(pieceId) => void retirerPiece({ pieceId: pieceId as Id<'pieces'> })}
+			onChercherLettrage={chercherLettrage}
+			onAppliquerLettrage={(references, total) => void soldeLesFactures(references, total)}
+			onBasculerFacture={basculer}
+			onConstituer={() => void constituer()}
+		/>
+	);
 
 	return (
 		<Page>

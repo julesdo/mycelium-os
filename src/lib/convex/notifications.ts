@@ -1,6 +1,7 @@
 import { internalMutation, internalQuery } from './_generated/server';
 import { v } from 'convex/values';
 import { authedQuery, authedMutation } from './functions';
+import { pluriel } from '../socle/francais';
 
 // ─── Notification type shared validator ───────────────────────────────────────
 const notificationTypeValidator = v.union(
@@ -24,11 +25,16 @@ export function buildNotificationContent(
 	type: NotificationType,
 	data: Record<string, string | number>
 ): { title: string; message: string } {
+	// ⚠️ `data` EST UN SAC DE `string | number`. Le pluriel a besoin d'un
+	// nombre ; le lire sans supposer évite un `NaN` dans un message qui part en
+	// notification — et un pluriel faux se voit tout de suite.
+	const nombre = (valeur: string | number | undefined): number => Number(valeur ?? 0);
+
 	switch (type) {
 		case 'IMPORT_TERMINE':
 			return {
 				title: 'Import terminé',
-				message: `${data.count} facture(s) enregistrée(s).`
+				message: `${data.count} facture${pluriel(nombre(data.count))} enregistrée${pluriel(nombre(data.count))}.`
 			};
 		case 'CREANCE_MURE':
 			return {
@@ -38,7 +44,7 @@ export function buildNotificationContent(
 		case 'ECHEANCE_PROCHE':
 			return {
 				title: 'Échéance de procédure',
-				message: `${data.libelle} : il reste ${data.jours} jour(s).`
+				message: `${data.libelle} : il reste ${data.jours} jour${pluriel(nombre(data.jours))}.`
 			};
 		case 'PRESCRIPTION_PROCHE':
 			return {

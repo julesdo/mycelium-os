@@ -41,6 +41,7 @@ import { EcranAccueil, type AccueilAffiche } from '../screens/accueil';
 import { ETAGES_DE_PREUVE, pyramideDePreuves } from '../lib/verticales/recouvrement/solidite';
 import { questionsRestantes } from '../lib/verticales/recouvrement/litige';
 import { EcranCreance } from '../screens/creance';
+import { DetailDebiteur } from '../screens/debiteur-detail';
 import { NIVEAUX_RELANCE, composerRelance } from '../lib/verticales/recouvrement/relance';
 import { depuisCentimes } from '../lib/socle/montants';
 
@@ -364,6 +365,86 @@ const TYPES_PIECE_DEMO = [
 	},
 	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' }
 ];
+
+const HABITUDE_DEMO = {
+	connue: true as const,
+	delaiMedianJours: 12,
+	echantillon: 23,
+	dispersionJours: 2
+};
+
+function DemoDebiteurDetail() {
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="Ce qu’il doit, facture par facture" />
+			<PageBody>
+				<DetailDebiteur
+					debiteur={{
+						siren: '853479236',
+						secteur: 'TRANSPORT_MARCHANDISES',
+						santeFinanciere: 'SAINE'
+					}}
+					optionsSecteur={SECTEURS_DEMO}
+					erreurSiren={null}
+					tauxStipule="15,00"
+					constatTaux="Le taux de 15,00 % est au-dessus du plancher de 10,26 % constaté au 2026-03-15."
+					optionsTypePiece={TYPES_PIECE_DEMO}
+					depotEnCours={false}
+					pieces={[
+						{
+							_id: '1',
+							type: 'BON_DE_LIVRAISON',
+							statut: 'LUE',
+							filename: 'BL-2024-118.pdf',
+							reference: 'BL-2024-118',
+							dateDocument: '2026-02-14',
+							constat: 'Ce document est un bon de livraison, n° BL-2024-118, du 2026-02-14.'
+						}
+					]}
+					habitude={HABITUDE_DEMO}
+					ruptures={[]}
+					propositionLettrage={null}
+					lettrageEnCours={false}
+					erreurLettrage={null}
+					selection={new Set(['f1'])}
+					erreur={null}
+					factures={[
+						{
+							_id: 'f1',
+							reference: 'FA-2026-004',
+							montantTTC: 1_200_000n,
+							resteDu: 1_200_000n,
+							dateEcheance: '2026-05-15',
+							exigibiliteDeduite: true,
+							datePrescription: '2027-05-15',
+							dansUneCreance: false
+						},
+						{
+							_id: 'f2',
+							reference: 'FA-2026-011',
+							montantTTC: 420_000n,
+							resteDu: 420_000n,
+							dateEcheance: '2026-06-30',
+							exigibiliteDeduite: false,
+							datePrescription: '2027-06-30',
+							dansUneCreance: true
+						}
+					]}
+					onEnregistrerSiren={() => {}}
+					onChoisirSecteur={() => {}}
+					onEnregistrerTaux={() => {}}
+					onDeposerPieces={() => {}}
+					onClasserPiece={() => {}}
+					onRetirerPiece={() => {}}
+					onChercherLettrage={() => {}}
+					onAppliquerLettrage={() => {}}
+					onBasculerFacture={() => {}}
+					onConstituer={() => {}}
+				/>
+			</PageBody>
+		</Page>
+	);
+}
 
 function DemoCreance() {
 	// Les textes viennent des modules de domaine, jamais recopiés : une
@@ -1584,6 +1665,7 @@ const ECRANS = [
 	'solidite',
 	'relances',
 	'creance',
+	'debiteur',
 	'revelation',
 	'bilan',
 	'flux',
@@ -1631,6 +1713,7 @@ function Showroom() {
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'relances' ? <DemoRelances /> : null}
 				{ecran === 'creance' ? <DemoCreance /> : null}
+				{ecran === 'debiteur' ? <DemoDebiteurDetail /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}

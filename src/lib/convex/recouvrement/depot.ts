@@ -15,6 +15,7 @@ import {
 	resultatDepuisDocument
 } from '../../verticales/recouvrement/import/factureVente';
 import { extraireAvecClaude, type ContenuDocument } from '../../socle/documents/extracteur';
+import { pluriel } from '../../socle/francais';
 
 /** Ce que Claude sait lire directement, sans conversion préalable. */
 const TYPES_IMAGE = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -190,7 +191,7 @@ export const traiterImport = internalAction({
 		await ctx.runMutation(internal.recouvrement.depotMutations.marquerEtape, {
 			importId,
 			statut: 'LECTURE',
-			etape: `${resultat.factures.length} facture(s) lue(s), enregistrement…`
+			etape: `${resultat.factures.length} facture${pluriel(resultat.factures.length)} lue${pluriel(resultat.factures.length)}, enregistrement…`
 		});
 
 		const enregistrement = await ctx.runMutation(internal.recouvrement.import.enregistrerImport, {
@@ -214,7 +215,7 @@ export const traiterImport = internalAction({
 			importId,
 			// L'étape finale RESTE affichée : un écran qui se vide à la fin laisse
 			// croire qu'il ne s'est rien passé.
-			etape: `${enregistrement.facturesCreees} facture(s) enregistrée(s).`,
+			etape: `${enregistrement.facturesCreees} facture${pluriel(enregistrement.facturesCreees)} enregistrée${pluriel(enregistrement.facturesCreees)}.`,
 			bilan: bilanDe(resultat, enregistrement)
 		});
 

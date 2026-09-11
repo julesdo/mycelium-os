@@ -98,7 +98,9 @@ function resume(bilan: BilanDepotAffiche): string {
 	if (bilan.debiteursCrees > 0) {
 		parts.push(`${bilan.debiteursCrees} débiteur${pluriel(bilan.debiteursCrees)}`);
 	}
-	if (bilan.facturesDejaConnues > 0) parts.push(`${bilan.facturesDejaConnues} déjà connue(s)`);
+	if (bilan.facturesDejaConnues > 0) {
+		parts.push(`${bilan.facturesDejaConnues} déjà connue${pluriel(bilan.facturesDejaConnues)}`);
+	}
 	if (parts.length === 0) parts.push('rien de nouveau');
 	return parts.join(' · ');
 }
@@ -136,9 +138,7 @@ export function BilanImport({ depot, className }: { depot: DepotAffiche; classNa
 
 			{/* L'étape reste affichée après coup : un écran qui se vide à la fin
 			    laisse croire qu'il ne s'est rien passé. */}
-			{depot.etape ? (
-				<p className="text-cladd-2xs text-cladd-fg-soft">{depot.etape}</p>
-			) : null}
+			{depot.etape ? <p className="text-cladd-2xs text-cladd-fg-soft">{depot.etape}</p> : null}
 
 			{depot.erreur ? <p className="text-cladd-2xs text-cladd-fg">{depot.erreur}</p> : null}
 

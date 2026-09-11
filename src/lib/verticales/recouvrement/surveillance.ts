@@ -3,6 +3,7 @@ import { joursEntre } from './decompte';
 import { estDateReelle } from './calendrier';
 import { SEUIL_QUALIFICATION } from './scoring';
 import type { SanteDebiteur } from './scoring';
+import { pluriel } from '../../socle/francais';
 
 /**
  * La surveillance — ce qui donne une raison d'ouvrir le produit chaque semaine,
@@ -284,7 +285,7 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			urgence: 'CRITIQUE',
 			explication: eteinte
 				? `La facture ${facture.reference} est PRESCRITE depuis le ${facture.datePrescription}.`
-				: `La facture ${facture.reference} sera prescrite le ${facture.datePrescription}, dans ${restant} jour(s).`,
+				: `La facture ${facture.reference} sera prescrite le ${facture.datePrescription}, dans ${restant} jour${pluriel(restant)}.`,
 			// ⚠️ LIGNE ROUGE 3 : « On ne recommande jamais une procédure. Ce serait
 			// du conseil juridique. » Cette action disait littéralement « Engager une
 			// procédure avant le … », et le test qui gardait la règle ne regardait
@@ -351,7 +352,7 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				urgence: critique ? 'CRITIQUE' : 'HAUTE',
 				explication: depassee
 					? `${echeance.libelle} : la date limite du ${echeance.dateLimite} est DÉPASSÉE.`
-					: `${echeance.libelle} : il reste ${restant} jour(s) avant le ${echeance.dateLimite}.`,
+					: `${echeance.libelle} : il reste ${restant} jour${pluriel(restant)} avant le ${echeance.dateLimite}.`,
 				// ⚠️ MÊME LIGNE ROUGE. « Faire signifier sans délai » est un impératif
 				// sur un acte de procédure. La perte est dite dans `explication` ; ici
 				// on ouvre un écran, ce qui est le seul geste que ce logiciel puisse

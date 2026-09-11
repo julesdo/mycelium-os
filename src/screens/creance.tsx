@@ -12,6 +12,7 @@ import {
 	Solidite,
 	SuiviProcedure,
 	eurosCentimes,
+	pluriel,
 	pourcent,
 	type NiveauAffiche,
 	type QuestionLitige,
@@ -118,7 +119,7 @@ export function EcranCreance({
 		<Page>
 			<PageHeader
 				titre={creance.debiteur}
-				sousTitre={`${creance.factures.length} facture(s) · ${eurosCentimes(
+				sousTitre={`${creance.factures.length} facture${pluriel(creance.factures.length)} · ${eurosCentimes(
 					creance.principalRestantDu
 				)} restant dû`}
 			/>
