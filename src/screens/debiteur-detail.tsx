@@ -15,7 +15,9 @@ import {
 	type OptionSecteur,
 	type PieceAffichee,
 	type PropositionLettrage,
-	type RuptureAffichee
+	type RuptureAffichee,
+	type EtatRecherche,
+	type EtablissementPropose
 } from '../ui';
 
 /**
@@ -105,6 +107,8 @@ export interface CreanceDuDebiteur {
 
 export interface DebiteurAffiche {
 	readonly siren?: string;
+	/** Ce que le registre dit de sa forme, relevé en même temps que le SIREN. */
+	readonly formeJuridique?: string;
 	readonly secteur?: string;
 	readonly santeFinanciere: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
 	readonly constatRegistre?: ConstatRegistreAffiche;
@@ -112,7 +116,11 @@ export interface DebiteurAffiche {
 
 export function DetailDebiteur({
 	debiteurId,
+	denomination,
 	debiteur,
+	etatRecherche,
+	onChercherAuRegistre,
+	onRetenirEtablissement,
 	factures,
 	creances,
 	optionsSecteur,
@@ -137,6 +145,12 @@ export function DetailDebiteur({
 }: {
 	/** L'identifiant, pour construire les liens vers les pages de détail. */
 	debiteurId: string;
+	/** Le nom du débiteur, tel qu'il est venu de la facture. */
+	denomination: string;
+	/** Où en est la recherche au registre public. */
+	etatRecherche: EtatRecherche;
+	onChercherAuRegistre: () => void;
+	onRetenirEtablissement: (etablissement: EtablissementPropose) => void;
 	/** `null` quand aucun débiteur n'est choisi, ou que ses factures chargent. */
 	debiteur: DebiteurAffiche | null;
 	factures: readonly FactureAffichee[] | null;
@@ -197,7 +211,12 @@ export function DetailDebiteur({
 			    suivre est pire qu'aucune consigne : le gérant cherche, ne trouve pas,
 			    et cesse de croire les autres. */}
 			<IdentiteDebiteur
+				denomination={denomination}
 				siren={debiteur.siren}
+				formeJuridique={debiteur.formeJuridique}
+				etatRecherche={etatRecherche}
+				onChercherAuRegistre={onChercherAuRegistre}
+				onRetenirEtablissement={onRetenirEtablissement}
 				secteur={debiteur.secteur}
 				optionsSecteur={optionsSecteur}
 				erreurSiren={erreurSiren}

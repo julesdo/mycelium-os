@@ -66,6 +66,12 @@ export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
 export { ListeAnalyses, LigneAnalyse, EnteteDetail } from './navigation';
 export { rangeeDuDebiteur } from './identite-debiteur';
 export {
+	RechercheRegistre,
+	sirenLisible,
+	type EtatRecherche,
+	type EtablissementPropose
+} from './recherche-registre';
+export {
 	Veilleur,
 	travauxDuVeilleur,
 	type TacheVeilleur,

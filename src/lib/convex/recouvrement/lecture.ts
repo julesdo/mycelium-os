@@ -41,6 +41,8 @@ const vDebiteur = v.object({
 	_id: v.id('debiteurs'),
 	denomination: v.string(),
 	siren: v.optional(v.string()),
+	/** Relevée au registre en même temps que le SIREN. Jamais inventée. */
+	formeJuridique: v.optional(v.string()),
 	estCommercant: vEtatCritere,
 	santeFinanciere: v.union(
 		v.literal('INCONNUE'),
@@ -154,6 +156,7 @@ export const listerDebiteurs = authedQuery({
 					_id: debiteur._id,
 					denomination: debiteur.denomination,
 					siren: debiteur.siren,
+					formeJuridique: debiteur.formeJuridique,
 					estCommercant: debiteur.estCommercant,
 					santeFinanciere: debiteur.santeFinanciere,
 					secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',

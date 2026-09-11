@@ -1,28 +1,45 @@
 import { useState } from 'react';
 import { Chip, Input, Select, Surface } from '@cladd-ui/react';
-import { AlertTriangleIcon } from 'lucide-react';
+import {
+	RechercheRegistre,
+	type EtatRecherche,
+	type EtablissementPropose
+} from './recherche-registre';
+
 import { dateCourte } from './format';
 
 /**
  * CE QUE LE GÉRANT SEUL PEUT DIRE DE SON DÉBITEUR.
  *
  * « Le logiciel décide, le gérant confirme » (règle d'écran n° 1) : aucun écran
- * ne demande une saisie que le logiciel peut déduire. Ces trois champs sont
- * l'exception, et chacun pour une raison différente : aucun ne se lit sur une
+ * ne demande une saisie que le logiciel peut déduire.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE FICHIER A LONGTEMPS DIT L'INVERSE, ET S'EST TROMPÉ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Il portait trois champs, et les justifiait ainsi : « aucun ne se lit sur une
  * facture. Ils vivent dans un registre public, dans une nomenclature, ou dans
- * des conditions générales — trois endroits où le logiciel ne va pas.
+ * des conditions générales — TROIS ENDROITS OÙ LE LOGICIEL NE VA PAS. »
  *
- * ─────────────────────────────────────────────────────────────────────────
- * LE SIREN — la charnière vers les registres publics
- * ─────────────────────────────────────────────────────────────────────────
+ * Le logiciel va dans le registre public. Chaque nuit, à quatre heures : c'est
+ * le radar de solvabilité. Le BODACC est ouvert, sans clé, et se cherche PAR
+ * NOM — chaque annonce porte la dénomination, le SIREN, la forme juridique et
+ * l'adresse du siège.
  *
- * Le radar BODACC et la normalisation Sirene s'interrogent par identifiant, et
- * jamais par raison sociale : sur un flux national, une correspondance de nom
- * finit par annoncer à un gérant que son client solvable est en liquidation.
+ * Cette phrase a donc laissé un champ de saisie VIDE, pendant des semaines, sur
+ * l'écran le plus fréquenté du produit, pour la donnée qui commande la
+ * surveillance de solvabilité ET l'éligibilité à toute procédure. Le raisonnement
+ * n'avait envisagé qu'une source — l'API Sirene, dont la clé n'est pas obtenue —
+ * et avait conclu de son absence qu'aucune n'existait.
  *
- * ⚠️ LE REFUS S'AFFICHE SOUS LE CHAMP, PAS DANS UNE ALERTE. La clé de contrôle
- * attrape toute faute de frappe d'un seul chiffre — c'est précisément le
- * moment où le gérant doit voir ce qu'il a tapé, à côté de ce qu'il a tapé.
+ * Le SIREN se cherche maintenant. Voir `ui/recherche-registre.tsx`, et la raison
+ * pour laquelle il PROPOSE au lieu de choisir : « BOULANGERIE MARTIN » rend six
+ * sociétés dans six villes, et un SIREN faux mais bien formé désigne une autre
+ * entreprise — le radar l'interrogerait, et son « aucune procédure » se lirait
+ * comme un feu vert.
+ *
+ * Les deux champs qui restent sont d'une autre nature, et ils restent :
  *
  * ─────────────────────────────────────────────────────────────────────────
  * LE SECTEUR — la légende dit le délai, parce que c'est ce qui décide
@@ -62,7 +79,12 @@ export interface OptionSecteur {
 }
 
 export function IdentiteDebiteur({
+	denomination,
 	siren,
+	formeJuridique,
+	etatRecherche,
+	onChercherAuRegistre,
+	onRetenirEtablissement,
 	secteur,
 	optionsSecteur,
 	erreurSiren,
@@ -72,7 +94,15 @@ export function IdentiteDebiteur({
 	constatTaux,
 	onEnregistrerTaux
 }: {
+	/** Le nom du débiteur, tel qu'il est venu de la facture. */
+	denomination: string;
 	siren: string | undefined;
+	/** Ce que le registre dit de sa forme, une fois le SIREN retenu. */
+	formeJuridique: string | undefined;
+	etatRecherche: EtatRecherche;
+	onChercherAuRegistre: () => void;
+	/** Retenir un établissement proposé : son numéro ET sa forme juridique. */
+	onRetenirEtablissement: (etablissement: EtablissementPropose) => void;
 	secteur: string | undefined;
 	optionsSecteur: readonly OptionSecteur[];
 	/** Le refus venu du serveur, tel quel — c'est lui qui nomme le numéro reçu. */
@@ -86,40 +116,37 @@ export function IdentiteDebiteur({
 	/** `null` retire la stipulation et fait retomber sur le taux légal. */
 	onEnregistrerTaux: (pourcentage: string | null) => void;
 }) {
-	const [saisi, setSaisi] = useState(siren ?? '');
 	const [taux, setTaux] = useState(tauxContractuel ?? '');
 
 	return (
 		<div className="flex flex-col gap-cladd-2xs">
-			<div className="flex flex-col gap-1">
-				<Input
-					size="lg"
-					value={saisi}
-					onChange={setSaisi}
-					onBlur={() => onEnregistrerSiren(saisi)}
-					placeholder="SIREN ou SIRET"
-					inputMode="numeric"
-					valid={erreurSiren === null}
-					errorMessage={erreurSiren ?? undefined}
-					infoMessage="Neuf chiffres, ou quatorze pour un SIRET. Un seul chiffre changé désignerait une autre entreprise."
-					clearButton
-					onClear={() => {
-						setSaisi('');
-						onEnregistrerSiren('');
-					}}
-				/>
-				{/* CE QUE L'ABSENCE DE NUMÉRO COÛTE, dit à l'endroit où on peut y
-				    remédier. Un gérant qui croit son débiteur surveillé au registre ne
-				    le surveille pas lui-même — c'est la même règle que pour la
-				    prescription, et elle vaut ici mot pour mot. */}
-				{siren === undefined ? (
-					<p className="flex items-start gap-1.5 text-cladd-2xs text-cladd-fg-soft">
-						<AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-						Sans identifiant, ce débiteur n’est pas suivi aux registres publics : une procédure
-						collective ouverte à son encontre passerait inaperçue.
-					</p>
-				) : null}
-			</div>
+			{/*
+			  ⚠️ LE CHAMP « SIREN OU SIRET » A DISPARU D'ICI, et c'est la correction
+			  la plus importante de cet écran.
+
+			  Il était vide, et il demandait au gérant d'aller chercher neuf chiffres
+			  ailleurs pour les recopier — sur l'écran où il passe le plus de temps,
+			  et pour la donnée qui commande la surveillance de solvabilité ET
+			  l'éligibilité à toute procédure.
+
+			  Le commentaire en tête de ce fichier justifiait le champ ainsi : ces
+			  données « vivent dans un registre public […] où le logiciel ne va pas ».
+			  C'était faux. Le logiciel y va chaque nuit à quatre heures — c'est le
+			  radar de solvabilité — et le BODACC se cherche PAR NOM.
+
+			  Voir `ui/recherche-registre.tsx`, qui porte le raisonnement complet et
+			  la raison pour laquelle il propose au lieu de choisir.
+			*/}
+			<RechercheRegistre
+				denomination={denomination}
+				siren={siren}
+				formeJuridique={formeJuridique}
+				etat={etatRecherche}
+				erreurSaisie={erreurSiren}
+				onChercher={onChercherAuRegistre}
+				onRetenir={onRetenirEtablissement}
+				onSaisir={onEnregistrerSiren}
+			/>
 
 			<Select
 				className="w-full"

@@ -1,5 +1,5 @@
 import { v, ConvexError } from 'convex/values';
-import { action, internalAction, query } from './_generated/server';
+import { internalAction, query } from './_generated/server';
 import { authedQuery, authedMutation } from './functions';
 import { components, internal } from './_generated/api';
 import { resend, assertResendApiKey } from './emails/resend';
@@ -204,29 +204,26 @@ export const deleteOrgLogo = authedMutation({
 	}
 });
 
-export const lookupSiren = action({
-	args: { siren: v.string() },
-	handler: async (_ctx, { siren }) => {
-		const apiKey = process.env.PAPPERS_API_KEY;
-		if (!apiKey) throw new ConvexError('PAPPERS_API_KEY non configuré');
-
-		const res = await fetch(
-			`https://api.pappers.fr/v2/entreprise?siren=${siren}&api_token=${apiKey}`
-		);
-
-		if (!res.ok) throw new ConvexError('SIREN non trouvé dans la base Pappers');
-
-		const data = (await res.json()) as {
-			nom_entreprise?: string;
-			libelle_code_naf?: string;
-		};
-
-		return {
-			name: data.nom_entreprise ?? null,
-			naf: data.libelle_code_naf ?? null
-		};
-	}
-});
+/**
+ * IL N'Y A PLUS DE `lookupSiren`, ET SON RETRAIT EST UNE CORRECTION.
+ *
+ * Elle appelait Pappers — une API PAYANTE — pour traduire un SIREN en nom. Elle
+ * était héritée de Fleet, et quatre choses la condamnaient ensemble :
+ *
+ *   · aucun appelant, nulle part dans le produit ;
+ *   · `PAPPERS_API_KEY` n'est posée dans aucun environnement, donc elle levait
+ *     à coup sûr ;
+ *   · elle allait dans le MAUVAIS SENS. Le produit connaît le nom de ses
+ *     débiteurs — il vient des factures — et cherche leur SIREN ;
+ *   · et c'était une `action` NON AUTHENTIFIÉE acceptant un SIREN quelconque.
+ *     Le jour où la clé aurait été posée, elle serait devenue un relais ouvert
+ *     vers un service facturé à l'appel.
+ *
+ * Ce qu'elle prétendait faire est fait, dans le bon sens et sans clé, par
+ * `recouvrement/debiteurs.chercherAuRegistre` : le BODACC est ouvert, il se
+ * cherche PAR NOM, et l'action part d'un identifiant de débiteur dont le
+ * serveur vérifie l'appartenance avant de lire quoi que ce soit.
+ */
 
 type BAUser = {
 	_id?: string;

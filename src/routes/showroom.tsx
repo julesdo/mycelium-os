@@ -382,6 +382,10 @@ function DemoDebiteurDetail() {
 			<PageBody>
 				<DetailDebiteur
 					debiteurId="demo"
+					denomination="Fournitures Durand"
+					etatRecherche={{ phase: 'REPOS' }}
+					onChercherAuRegistre={() => {}}
+							onRetenirEtablissement={() => {}}
 					debiteur={{
 						siren: '853479236',
 						secteur: 'TRANSPORT_MARCHANDISES',
@@ -982,9 +986,20 @@ function DemoIdentite() {
 			<PageBody>
 				<div className="flex flex-col gap-cladd-md">
 					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Sans identifiant — l’angle mort est dit</SectionTitle>
+						{/*
+						  ⚠️ L'ÉTAT DE DÉPART N'EST PLUS UN CHAMP VIDE. C'est toute la
+						  correction : l'écran dit ce que l'absence de SIREN coûte, et
+						  propose d'aller le chercher au registre — sur lequel le radar de
+						  solvabilité tape déjà toutes les nuits.
+						*/}
+						<SectionTitle>Pas encore identifié — le logiciel propose d’aller chercher</SectionTitle>
 						<IdentiteDebiteur
+							denomination="Boulangerie Martin"
 							siren={undefined}
+							formeJuridique={undefined}
+							etatRecherche={{ phase: 'REPOS' }}
+							onChercherAuRegistre={() => {}}
+							onRetenirEtablissement={() => {}}
 							secteur={undefined}
 							optionsSecteur={SECTEURS_DEMO}
 							erreurSiren={null}
@@ -996,9 +1011,66 @@ function DemoIdentite() {
 						/>
 					</div>
 					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Renseigné</SectionTitle>
+						{/*
+						  ⚠️ SIX SOCIÉTÉS POUR UN NOM, ET C'EST LE CAS RÉEL. La recherche
+						  « BOULANGERIE MARTIN » rend exactement ça au BODACC. C'est
+						  pourquoi le produit PROPOSE au lieu de choisir : retenir la
+						  première poserait un SIREN qui désigne une autre entreprise, et
+						  le radar rendrait ensuite un « aucune procédure » rassurant sur
+						  le mauvais numéro.
+
+						  La ville est là pour ça, et elle seule suffit presque toujours :
+						  un gérant sait où est son client.
+						*/}
+						<SectionTitle>Le registre propose — c’est le gérant qui reconnaît</SectionTitle>
 						<IdentiteDebiteur
+							denomination="Boulangerie Martin"
+							siren={undefined}
+							formeJuridique={undefined}
+							etatRecherche={{
+								phase: 'TROUVE',
+								candidats: [
+									{
+										siren: '421931452',
+										denomination: 'BOULANGERIE MARTIN',
+										ville: 'Fécamp',
+										adresse: '6 Place Nicolas Sellé 76400 Fécamp'
+									},
+									{
+										siren: '805188000',
+										denomination: 'BOULANGERIE SAINT MARTIN',
+										ville: 'Vesoul',
+										adresse: '14 Rue Claude Monnet 70000 Vesoul'
+									},
+									{
+										siren: '803938745',
+										denomination: 'BOULANGERIE VICTOR MARTIN',
+										ville: 'Remire-Montjoly',
+										adresse: '18 chemin Germain 97354 Remire-Montjoly'
+									}
+								]
+							}}
+							onChercherAuRegistre={() => {}}
+							onRetenirEtablissement={() => {}}
+							secteur={undefined}
+							optionsSecteur={SECTEURS_DEMO}
+							erreurSiren={null}
+							onEnregistrerSiren={() => {}}
+							onChoisirSecteur={() => {}}
+							tauxContractuel={undefined}
+							constatTaux={null}
+							onEnregistrerTaux={() => {}}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Identifié — plus aucun champ à remplir</SectionTitle>
+						<IdentiteDebiteur
+							denomination="Fournitures Durand"
 							siren="853479236"
+							formeJuridique="Société par actions simplifiée"
+							etatRecherche={{ phase: 'REPOS' }}
+							onChercherAuRegistre={() => {}}
+							onRetenirEtablissement={() => {}}
 							secteur="TRANSPORT_MARCHANDISES"
 							optionsSecteur={SECTEURS_DEMO}
 							erreurSiren={null}
@@ -1006,6 +1078,31 @@ function DemoIdentite() {
 							onChoisirSecteur={() => {}}
 							tauxContractuel="15,00"
 							constatTaux="Le taux de 15,00 % est au-dessus du plancher de 10,26 % constaté au 2026-03-15."
+							onEnregistrerTaux={() => {}}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						{/*
+						  ⚠️ « RIEN TROUVÉ » EST UN ÉTAT À PART ENTIÈRE, et son texte dit
+						  que c'est un silence DU REGISTRE, pas une réponse sur le client.
+						  Le BODACC ne publie que ce qui a fait l'objet d'une annonce de
+						  greffe : laisser croire à un verdict serait un repli silencieux.
+						*/}
+						<SectionTitle>Le registre ne dit rien — et le dit comme tel</SectionTitle>
+						<IdentiteDebiteur
+							denomination="Ateliers Vasseur"
+							siren={undefined}
+							formeJuridique={undefined}
+							etatRecherche={{ phase: 'AUCUN' }}
+							onChercherAuRegistre={() => {}}
+							onRetenirEtablissement={() => {}}
+							secteur={undefined}
+							optionsSecteur={SECTEURS_DEMO}
+							erreurSiren={null}
+							onEnregistrerSiren={() => {}}
+							onChoisirSecteur={() => {}}
+							tauxContractuel={undefined}
+							constatTaux={null}
 							onEnregistrerTaux={() => {}}
 						/>
 					</div>
@@ -1025,7 +1122,12 @@ function DemoIdentite() {
 					<div className="flex flex-col gap-cladd-3xs">
 						<SectionTitle>Refusé — le message NOMME le numéro reçu</SectionTitle>
 						<IdentiteDebiteur
+							denomination="Fournitures Durand"
 							siren={undefined}
+							formeJuridique={undefined}
+							etatRecherche={{ phase: 'AUCUN' }}
+							onChercherAuRegistre={() => {}}
+							onRetenirEtablissement={() => {}}
 							secteur={undefined}
 							optionsSecteur={SECTEURS_DEMO}
 							erreurSiren="« 853479237 » n’est pas un SIREN : sa clé de contrôle ne tombe pas."

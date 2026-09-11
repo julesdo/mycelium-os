@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { Chip, ListButton } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
@@ -18,7 +18,9 @@ import {
 	pluriel,
 	Avatar,
 	CarteListe,
-	type OptionSecteur
+	type OptionSecteur,
+	type EtatRecherche,
+	type EtablissementPropose
 } from '../../ui';
 import { DetailDebiteur } from '../../screens/debiteur-detail';
 import {
@@ -170,6 +172,7 @@ function Debiteurs() {
 
 	const creerCreance = useMutation(api.recouvrement.creances.creer);
 	const renseignerSiren = useMutation(api.recouvrement.debiteurs.renseignerSiren);
+	const chercherAuRegistre = useAction(api.recouvrement.debiteurs.chercherAuRegistre);
 	const renseignerSecteur = useMutation(api.recouvrement.debiteurs.renseignerSecteur);
 
 	/**
@@ -229,6 +232,9 @@ function Debiteurs() {
 	 * reçu.
 	 */
 	const [erreurSiren, setErreurSiren] = useState<string | null>(null);
+	// L'etat de la recherche au registre. Il se remet a REPOS quand on change de
+	// debiteur : les candidats d'un client n'ont rien a faire sur un autre.
+	const [recherche, setRecherche] = useState<EtatRecherche>({ phase: 'REPOS' });
 
 	/**
 	 * LE LETTRAGE D'UN VIREMENT GROUPÉ.
@@ -304,8 +310,74 @@ function Debiteurs() {
 		setErreurSiren(null);
 		try {
 			await renseignerSiren({ debiteurId: choisi, siren: saisi });
+			// Le SIREN retenu clôt la recherche : garder les candidats à l'écran
+			// après le choix laisserait croire qu'il reste à faire.
+			setRecherche({ phase: 'REPOS' });
 		} catch (e) {
 			setErreurSiren(e instanceof Error ? e.message : 'Numéro refusé.');
+		}
+	}
+
+	/**
+	 * RETENIR UN ÉTABLISSEMENT PROPOSÉ.
+	 *
+	 * ⚠️ LA FORME JURIDIQUE PART AVEC LE NUMÉRO. `debiteurs.formeJuridique` était
+	 * déclaré au schéma, lu à l'écran, et ÉCRIT NULLE PART — onzième cas de cette
+	 * famille relevé dans ce dépôt. Le seul instant où le produit la connaît est
+	 * celui-ci : elle vient du registre, en même temps que le SIREN qu'on retient.
+	 *
+	 * Une saisie manuelle ne la porte pas, et on ne l'invente pas : elle reste
+	 * alors absente, ce qui est la vérité.
+	 */
+	async function retenirEtablissement(etablissement: EtablissementPropose) {
+		if (choisi === null) return;
+		setErreurSiren(null);
+		try {
+			await renseignerSiren({
+				debiteurId: choisi,
+				siren: etablissement.siren,
+				...(etablissement.formeJuridique === undefined
+					? {}
+					: { formeJuridique: etablissement.formeJuridique })
+			});
+			setRecherche({ phase: 'REPOS' });
+		} catch (e) {
+			setErreurSiren(e instanceof Error ? e.message : 'Numéro refusé.');
+		}
+	}
+
+	/**
+	 * CHERCHER LE DÉBITEUR AU REGISTRE PUBLIC.
+	 *
+	 * ⚠️ LE NOM N'EST PAS ENVOYÉ D'ICI. L'action prend l'identifiant du débiteur
+	 * et va lire la dénomination côté serveur, après avoir vérifié qu'il
+	 * appartient bien à cet établissement. Une action qui accepterait une chaîne
+	 * libre serait un relais ouvert vers une API tierce, utilisable par tout
+	 * porteur de session pour autre chose que ses propres clients.
+	 *
+	 * ⚠️ ET « RIEN TROUVÉ » N'EST PAS « ÇA A ÉCHOUÉ ». Les deux mènent à des
+	 * gestes opposés — saisir le numéro à la main, ou réessayer — donc l'écran
+	 * les distingue. `ConvexError` porte son message dans `.data`, pas dans
+	 * `.message`.
+	 */
+	async function chercherAuRegistreDuDebiteur() {
+		if (choisi === null) return;
+		setErreurSiren(null);
+		setRecherche({ phase: 'EN_COURS' });
+		try {
+			const { candidats } = await chercherAuRegistre({ debiteurId: choisi });
+			setRecherche(
+				candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats }
+			);
+		} catch (e) {
+			const convexe = e as { data?: unknown };
+			setRecherche({
+				phase: 'ECHEC',
+				message:
+					typeof convexe.data === 'string'
+						? convexe.data
+						: 'Le registre n’a pas répondu. Réessayez dans un instant.'
+			});
 		}
 	}
 
@@ -463,6 +535,10 @@ function Debiteurs() {
 	const preuve = (
 		<DetailDebiteur
 			debiteurId={choisi ?? ''}
+			denomination={debiteurChoisi?.denomination ?? ''}
+			etatRecherche={recherche}
+			onChercherAuRegistre={() => void chercherAuRegistreDuDebiteur()}
+			onRetenirEtablissement={(etablissement) => void retenirEtablissement(etablissement)}
 			debiteur={choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi}
 			factures={choisi === null || factures === undefined ? null : factures}
 			// Les seules du débiteur ouvert. Le filtre est ici plutôt qu'en base
