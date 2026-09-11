@@ -2,15 +2,19 @@ import { v } from 'convex/values';
 import { internalQuery } from '../_generated/server';
 import type { QueryCtx } from '../_generated/server';
 import { authedQuery } from '../functions';
-import type { Id } from '../_generated/dataModel';
+import type { Doc, Id } from '../_generated/dataModel';
 import { additionner, depuisCentimes, enCentimes, ZERO, type Montant } from '../../socle/montants';
+import { habitudeDePaiement, lireRupture } from '../../verticales/recouvrement/comportement';
+import type { PaiementObserve } from '../../verticales/recouvrement/comportement';
+import { ecartJours, estDateReelle } from '../../verticales/recouvrement/calendrier';
 import {
 	detecterEvenements,
 	montantIdentifie,
 	type DebiteurSurveille,
 	type DossierSurveille,
 	type EtatSurveille,
-	type FactureSurveillee
+	type FactureSurveillee,
+	type RuptureSurveillee
 } from '../../verticales/recouvrement/surveillance';
 import {
 	prescriptionDe,
@@ -53,7 +57,21 @@ const vEvenement = v.object({
 		v.literal('CREANCE_MURE'),
 		v.literal('ECHEANCE_PROCEDURE'),
 		v.literal('DEBITEUR_DEGRADE'),
-		v.literal('PRESCRIPTION_PROCHE')
+		v.literal('PRESCRIPTION_PROCHE'),
+		/**
+		 * ⚠️ IL N'EST PAS AJOUTÉ AU VALIDATEUR DE `notifications.ts`, ET C'EST
+		 * DÉLIBÉRÉ.
+		 *
+		 * Une rupture d'habitude est en urgence NORMALE : elle n'éteint rien, et
+		 * rien n'est perdu si on la lit demain. Les notifications interrompent —
+		 * elles sont réservées à ce qui fait perdre un droit sans qu'on ait rien
+		 * fait, c'est-à-dire à la prescription et aux échéances de procédure.
+		 *
+		 * Envoyer une notification pour chaque rupture ferait exactement ce que ce
+		 * module existe pour éviter : du bruit qu'on apprend à ignorer, jusqu'au
+		 * jour où il portait le signal qui comptait.
+		 */
+		v.literal('HABITUDE_ROMPUE')
 	),
 	reference: v.string(),
 	montant: v.union(v.int64(), v.null()),
@@ -72,6 +90,111 @@ const vFlux = v.object({
 });
 
 /**
+ * LES HABITUDES ROMPUES DE TOUT L'ÉTABLISSEMENT.
+ *
+ * ⚠️ UNE HABITUDE EST PROPRE À UN DÉBITEUR, donc le calcul se fait client par
+ * client. La tentation serait d'établir une habitude moyenne sur
+ * l'établissement : elle ne décrirait personne, et masquerait exactement ce
+ * que le module existe pour voir — que CE client-là, lui, a changé.
+ *
+ * ⚠️ ET LES RÈGLEMENTS SE CHARGENT EN UNE SEULE REQUÊTE, par l'index
+ * `by_org`. Les charger facture par facture ferait une requête par facture :
+ * sur un établissement à deux mille factures, la surveillance quotidienne
+ * deviendrait le poste de coût principal du produit.
+ */
+async function rupturesDHabitude(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	facturesBrutes: readonly Doc<'facturesVente'>[],
+	debiteurs: ReadonlyMap<Id<'debiteurs'>, Doc<'debiteurs'>>,
+	aujourdHui: string
+): Promise<RuptureSurveillee[]> {
+	const reglements = await ctx.db
+		.query('reglements')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.collect();
+
+	// ⚠️ LE DERNIER RÈGLEMENT, ET PAS LE PREMIER. Une facture réglée en trois
+	// fois n'est acquittée qu'au troisième versement : retenir le premier ferait
+	// passer un paiement étalé sur quatre mois pour un paiement à l'heure, et le
+	// client qui échelonne — précisément celui qu'on veut voir — deviendrait
+	// invisible.
+	const acquitteLe = new Map<Id<'facturesVente'>, string>();
+	for (const reglement of reglements) {
+		if (!estDateReelle(reglement.date)) continue;
+		const connu = acquitteLe.get(reglement.factureId);
+		if (connu === undefined || reglement.date > connu) {
+			acquitteLe.set(reglement.factureId, reglement.date);
+		}
+	}
+
+	const historiqueParDebiteur = new Map<Id<'debiteurs'>, PaiementObserve[]>();
+	const impayeesParDebiteur = new Map<
+		Id<'debiteurs'>,
+		{ reference: string; montantTTC: bigint; exigibilite: string }[]
+	>();
+
+	for (const facture of facturesBrutes) {
+		// La date d'exigibilité est FACULTATIVE au schéma — un FEC n'en porte
+		// pas. Une facture sans point de départ ne dit rien sur une habitude.
+		const exigibilite = facture.dateExigibilite;
+		if (exigibilite === undefined || !estDateReelle(exigibilite)) continue;
+
+		if (facture.statutPaiement === 'SOLDEE') {
+			const paye = acquitteLe.get(facture._id);
+			if (paye === undefined) continue;
+			const liste = historiqueParDebiteur.get(facture.debiteurId) ?? [];
+			liste.push({
+				reference: facture.reference,
+				dateExigibilite: exigibilite,
+				datePaiement: paye
+			});
+			historiqueParDebiteur.set(facture.debiteurId, liste);
+			continue;
+		}
+
+		const liste = impayeesParDebiteur.get(facture.debiteurId) ?? [];
+		liste.push({
+			reference: facture.reference,
+			montantTTC: facture.montantTTC,
+			exigibilite
+		});
+		impayeesParDebiteur.set(facture.debiteurId, liste);
+	}
+
+	const ruptures: RuptureSurveillee[] = [];
+
+	for (const [debiteurId, impayees] of impayeesParDebiteur) {
+		const habitude = habitudeDePaiement(historiqueParDebiteur.get(debiteurId) ?? []);
+		// Sans habitude établie, on ne dit rien : le doute ne profite jamais au
+		// produit, et une rupture annoncée sur trois observations serait du bruit.
+		if (!habitude.connue) continue;
+
+		const denomination = debiteurs.get(debiteurId)?.denomination;
+		if (denomination === undefined) continue;
+
+		for (const facture of impayees) {
+			const retard = ecartJours(facture.exigibilite, aujourdHui);
+			if (retard <= 0) continue;
+
+			const lecture = lireRupture(habitude, retard);
+			if (lecture.etat !== 'RUPTURE') continue;
+
+			ruptures.push({
+				reference: facture.reference,
+				debiteur: denomination,
+				montantExigible: depuisCentimes(facture.montantTTC),
+				habituelJours: lecture.habituelJours,
+				ecartJours: lecture.ecartJours,
+				constat: lecture.constat
+			});
+		}
+	}
+
+	return ruptures;
+}
+
+/**
  * Rassemble ce que la surveillance doit examiner.
  *
  * Les factures soldées sont écartées ici plutôt que dans le détecteur : elles
@@ -80,7 +203,8 @@ const vFlux = v.object({
  */
 async function assembler(
 	ctx: QueryCtx,
-	organizationId: Id<'organizations'>
+	organizationId: Id<'organizations'>,
+	aujourdHui: string
 ): Promise<{ etat: EtatSurveille; hypotheses: string[] }> {
 	const facturesBrutes = await ctx.db
 		.query('facturesVente')
@@ -212,13 +336,22 @@ async function assembler(
 		)
 		.map((debiteur) => debiteur.denomination);
 
+	const ruptures = await rupturesDHabitude(
+		ctx,
+		organizationId,
+		facturesBrutes,
+		debiteurs,
+		aujourdHui
+	);
+
 	return {
 		etat: {
 			factures,
 			creances,
 			dossiers,
 			debiteurs: debiteursSurveilles,
-			debiteursSansIdentifiant
+			debiteursSansIdentifiant,
+			ruptures
 		},
 		hypotheses: [...hypotheses]
 	};
@@ -229,7 +362,7 @@ export const fluxInterne = internalQuery({
 	args: { organizationId: v.id('organizations'), aujourdHui: v.string() },
 	returns: vFlux,
 	handler: async (ctx, { organizationId, aujourdHui }) => {
-		const { etat, hypotheses } = await assembler(ctx, organizationId);
+		const { etat, hypotheses } = await assembler(ctx, organizationId, aujourdHui);
 		const resultat = detecterEvenements(etat, aujourdHui, { avecAnglesMorts: true });
 
 		return {
@@ -259,7 +392,7 @@ export const flux = authedQuery({
 		// serveur, en UTC, qui est aussi celle des dates ISO stockées.
 		const jour = aujourdHui ?? new Date().toISOString().slice(0, 10);
 
-		const { etat, hypotheses } = await assembler(ctx, organizationId);
+		const { etat, hypotheses } = await assembler(ctx, organizationId, jour);
 		const resultat = detecterEvenements(etat, jour, { avecAnglesMorts: true });
 
 		return {

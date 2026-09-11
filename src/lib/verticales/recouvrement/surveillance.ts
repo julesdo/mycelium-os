@@ -29,7 +29,8 @@ export type TypeEvenement =
 	| 'CREANCE_MURE'
 	| 'ECHEANCE_PROCEDURE'
 	| 'DEBITEUR_DEGRADE'
-	| 'PRESCRIPTION_PROCHE';
+	| 'PRESCRIPTION_PROCHE'
+	| 'HABITUDE_ROMPUE';
 
 export type Urgence = 'CRITIQUE' | 'HAUTE' | 'NORMALE';
 
@@ -141,6 +142,23 @@ export interface DebiteurSurveille {
 	readonly santeActuelle: SanteDebiteur;
 }
 
+/**
+ * Une facture qui sort de l'habitude de paiement de son débiteur.
+ *
+ * Le `constat` est rendu par `comportement.ts` et repris MOT POUR MOT : la
+ * surveillance ne le récrit pas. Troisième ligne rouge du produit — on ne
+ * recommande jamais une démarche, et la seule façon de le garantir est que le
+ * texte ne passe par aucune plume intermediaire.
+ */
+export interface RuptureSurveillee {
+	readonly reference: string;
+	readonly debiteur: string;
+	readonly montantExigible: Montant;
+	readonly habituelJours: number;
+	readonly ecartJours: number;
+	readonly constat: string;
+}
+
 export interface EtatSurveille {
 	readonly factures: readonly FactureSurveillee[];
 	readonly creances: readonly CreanceSurveillee[];
@@ -158,6 +176,22 @@ export interface EtatSurveille {
 	 * pays. Elle reçoit des noms, elle les nomme.
 	 */
 	readonly debiteursSansIdentifiant?: readonly string[];
+
+	/**
+	 * Les factures dont le retard SORT de l'habitude de leur debiteur.
+	 *
+	 * ⚠️ FACULTATIF, parce que le calcul demande un historique de règlements
+	 * que tous les appelants n'ont pas. Un appelant qui ne le fournit pas
+	 * n'obtient simplement aucun événement de ce type — il n'obtient pas un
+	 * flux faux.
+	 *
+	 * ⚠️ CE MODULE NE CALCULE PAS L'HABITUDE. Elle vit dans `comportement.ts`,
+	 * avec sa médiane, sa dispersion et son plancher. La surveillance reçoit
+	 * des CONSTATS déjà rédigés et se contente de les faire remonter — c'est ce
+	 * qui garantit qu'elle ne peut pas les reformuler, donc qu'aucun verbe
+	 * d'action ne s'y glisse.
+	 */
+	readonly ruptures?: readonly RuptureSurveillee[];
 }
 
 const RANG_URGENCE: Record<Urgence, number> = { CRITIQUE: 0, HAUTE: 1, NORMALE: 2 };
@@ -306,6 +340,28 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				`La situation de ${debiteur.reference} est passée de ${debiteur.santePrecedente} ` +
 				`à ${debiteur.santeActuelle}.`,
 			action: `Revoir l'encours de ${debiteur.reference} avant d'engager de nouveaux frais.`
+		});
+	}
+
+	// ── LES HABITUDES ROMPUES ───────────────────────────────────────────────
+	//
+	// ⚠️ POURQUOI CE SIGNAL DOIT REMONTER ICI ET NE PAS RESTER DANS LA FICHE.
+	// Une rupture ne se voit qu'en ouvrant le débiteur — c'est-à-dire si on le
+	// soupçonne déjà. Or c'est précisément le signal qu'on ne PEUT pas
+	// soupçonner : il vit sous tous les seuils de retard, sur un client réputé
+	// bon payeur. Un radar qu'il faut penser à consulter n'est pas un radar.
+	for (const rupture of etat.ruptures ?? []) {
+		evenements.push({
+			type: 'HABITUDE_ROMPUE',
+			reference: rupture.reference,
+			montant: rupture.montantExigible,
+			// ⚠️ NORMALE, ET C'EST DÉLIBÉRÉ. Une rupture n'éteint rien. La monter
+			// en CRITIQUE la mettrait au rang d'une prescription qui court, et
+			// diluerait le seul signal du produit qui annonce une perte sèche.
+			urgence: 'NORMALE',
+			// Le constat du domaine, mot pour mot. Voir `RuptureSurveillee`.
+			explication: rupture.constat,
+			action: `Ouvrir la fiche de ${rupture.debiteur} : son historique de règlements y est.`
 		});
 	}
 

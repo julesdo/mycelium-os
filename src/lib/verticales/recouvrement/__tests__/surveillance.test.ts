@@ -726,3 +726,67 @@ describe('débiteurs invisibles au registre', () => {
 		expect(anglesMorts.join(' ')).not.toMatch(/registre/i);
 	});
 });
+
+describe('les habitudes de paiement rompues', () => {
+	/**
+	 * ⚠️ POURQUOI CE SIGNAL ENTRE DANS LE FLUX ET NE RESTE PAS DANS LA FICHE.
+	 *
+	 * Une rupture d'habitude ne se voit que si on ouvre la fiche du débiteur —
+	 * c'est-à-dire si on le soupçonne déjà. Or c'est précisément le signal qu'on
+	 * ne peut PAS soupçonner : il vit sous tous les seuils de retard, sur un
+	 * client réputé bon payeur, et le gérant n'a aucune raison d'aller le
+	 * chercher.
+	 *
+	 * Un radar qu'il faut penser à consulter n'est pas un radar.
+	 */
+	const RUPTURE = {
+		reference: 'FA-0311',
+		debiteur: 'Fournitures Durand',
+		montantExigible: depuisEuros('4200,00'),
+		habituelJours: 12,
+		ecartJours: 73,
+		constat:
+			'Ce débiteur règle habituellement à 12 jours de son échéance, sur 23 règlements observés. Cette facture en est à 85, soit 73 de plus que son habitude.'
+	};
+
+	it('remonte une rupture dans le flux, avec son montant', () => {
+		const evenements = detecterEvenements(etat({ ruptures: [RUPTURE] }), AUJOURDHUI);
+
+		expect(evenements).toHaveLength(1);
+		expect(evenements[0]!.type).toBe('HABITUDE_ROMPUE');
+		expect(versEuros(evenements[0]!.montant!)).toBe('4 200,00');
+	});
+
+	it('reprend le CONSTAT du domaine mot pour mot', () => {
+		// ⚠️ LIGNE ROUGE 3. La surveillance ne reformule pas : si elle récrivait
+		// la phrase, elle pourrait y glisser un verbe d'action, et c'est
+		// exactement ce que le module de comportement refuse de faire.
+		const evenements = detecterEvenements(etat({ ruptures: [RUPTURE] }), AUJOURDHUI);
+
+		expect(evenements[0]!.explication).toBe(RUPTURE.constat);
+		expect(evenements[0]!.action).not.toMatch(/relanc|mise en demeure|injonction|poursuiv/i);
+	});
+
+	it('reste en urgence NORMALE, et c’est délibéré', () => {
+		// ⚠️ UNE RUPTURE N'ÉTEINT RIEN. La monter en CRITIQUE la mettrait au même
+		// rang qu'une prescription qui court — et diluerait le seul signal du
+		// produit qui annonce une perte sèche et irréversible.
+		const evenements = detecterEvenements(etat({ ruptures: [RUPTURE] }), AUJOURDHUI);
+
+		expect(evenements[0]!.urgence).toBe('NORMALE');
+	});
+
+	it('ne compte pas dans le montant identifié', () => {
+		// ⚠️ LE COMPTEUR NE SOMME QUE DES FACTURES DISTINCTES, et une facture en
+		// rupture est DÉJÀ comptée par son événement d'échéance. L'ajouter la
+		// compterait deux fois — le défaut exact que ce compteur a déjà connu.
+		const evenements = detecterEvenements(etat({ ruptures: [RUPTURE] }), AUJOURDHUI);
+
+		expect(montantIdentifie(evenements)).toBe(ZERO);
+	});
+
+	it('ne dit rien quand aucune rupture n’est fournie', () => {
+		expect(detecterEvenements(etat(), AUJOURDHUI)).toEqual([]);
+		expect(detecterEvenements(etat({ ruptures: [] }), AUJOURDHUI)).toEqual([]);
+	});
+});
