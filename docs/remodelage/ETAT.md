@@ -995,6 +995,12 @@ et chaque événement porte **deux dates** : celle du fait, qui fait courir les
 délais, et celle de la saisie. Les confondre offrirait des jours sur une
 caducité.
 
+**4.2 — Pyramide de preuves.** L’écran affichait les pièces manquantes en
+pastilles nues : deux étiquettes de même apparence dont l’une vaut trois points
+sur vingt et l’autre un seul. Chaque étage porte désormais le FAIT qu’il
+établit et ce qu’il pèse. Le constat est un **compte** — « trois des quatre
+pièces attendues sont absentes » — jamais un verdict.
+
 **1.2 — Extracteur de preuves.** Sept natures de pièce reconnues, prompt
 déterministe à l'octet, PDF lu nativement par le socle. Une pièce entre
 `INDETERMINE` et y reste si la lecture n'aboutit pas — le compilateur le tient,
@@ -1046,8 +1052,8 @@ au présent de constat, `action` ne porte plus qu'un geste logiciel.
 
 ### Chiffres
 
-**946 tests**, 0 erreur de lint, `check` et `build` verts, schéma poussé et
-accepté par le déploiement de développement, 21 écrans du showroom vérifiés aux
+**959 tests**, 0 erreur de lint, `check` et `build` verts, schéma poussé et
+accepté par le déploiement de développement, 22 écrans du showroom vérifiés aux
 quatre largeurs de référence : 0 bloc opaque, 0 débordement horizontal, 0 cible
 tactile sous 44 px.
 

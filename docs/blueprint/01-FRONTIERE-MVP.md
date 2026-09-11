@@ -69,7 +69,7 @@ Les relances sont des **brouillons dans la boîte du client**. Ligne rouge 1.
 |     | Fonction                                                                                                            | État                    |
 | --- | ------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | 4.1 | **Moteur de calcul exact** : centimes entiers, segments à chaque rupture de taux, prorata temporis                  | **existe**              |
-| 4.2 | **Évaluateur de solidité documentaire** : facture seule = fragile, + bon de commande + preuve de livraison = blindé | partiel                 |
+| 4.2 | **Évaluateur de solidité documentaire** : facture seule = fragile, + bon de commande + preuve de livraison = blindé | **existe** (11/09/2026) |
 | 4.3 | **Vérificateur d'éligibilité procédurale** : chaque procédure est un module avec ses conditions                     | **existe**              |
 | 4.5 | **Machine à états post-procédure** : surveiller les délais qui courent après une décision                           | **existe** (11/09/2026) |
 
