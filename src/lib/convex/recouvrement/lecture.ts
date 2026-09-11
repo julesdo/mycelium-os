@@ -1,4 +1,5 @@
 import { v, ConvexError } from 'convex/values';
+import { pourcentageDepuisTaux } from '../../verticales/recouvrement/taux-contractuel';
 import { authedQuery } from '../functions';
 import type { QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
@@ -83,7 +84,15 @@ const vFacture = v.object({
 		v.literal('LITIGIEUSE')
 	),
 	datePrescription: v.optional(v.string()),
-	dansUneCreance: v.boolean()
+	dansUneCreance: v.boolean(),
+	/**
+	 * ⚠️ RENDU EN POURCENTAGE SAISISSABLE, pas en fraction. L'écran doit
+	 * pouvoir RELIRE ce qu'il a écrit : sans ça, le champ repartirait vide à
+	 * chaque ouverture et le créancier ressaisirait un taux déjà posé.
+	 *
+	 * Absent = aucune stipulation, et le calcul retombe sur la série légale.
+	 */
+	tauxContractuelPourcent: v.optional(v.string())
 });
 
 /** Ce qui reste dû sur une facture. */
@@ -182,6 +191,10 @@ export const listerFacturesDuDebiteur = authedQuery({
 						_id: facture._id,
 						reference: facture.reference,
 						montantTTC: facture.montantTTC,
+						tauxContractuelPourcent:
+							facture.tauxContractuel === undefined
+								? undefined
+								: pourcentageDepuisTaux(facture.tauxContractuel),
 						resteDu: enCentimes(await resteDu(ctx, facture)),
 						dateEmission: facture.dateEmission,
 						dateEcheance: facture.dateEcheance,

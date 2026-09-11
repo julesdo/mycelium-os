@@ -20,6 +20,7 @@ import {
 	Avatar,
 	CarteListe,
 	HabitudePaiement,
+	TauxContractuel,
 	IdentiteDebiteur,
 	ConstatRegistre,
 	Lettrage,
@@ -124,6 +125,17 @@ function Debiteurs() {
 	const renseignerSecteur = useMutation(api.recouvrement.debiteurs.renseignerSecteur);
 
 	/**
+	 * LE TAUX CONTRACTUEL, ET LE CONSTAT QUE LE SERVEUR REND.
+	 *
+	 * ⚠️ LE CONSTAT EST GARDÉ EN ÉTAT plutôt qu'affiché en passant. Il dit si
+	 * le taux saisi passe sous le plancher légal — une information que le
+	 * créancier doit pouvoir relire, pas voir clignoter. Il se remet à zéro
+	 * quand on change de débiteur, par la `key` posée sur le composant.
+	 */
+	const poserTaux = useMutation(api.recouvrement.tauxContractuel.renseigner);
+	const [constatTaux, setConstatTaux] = useState<string | null>(null);
+
+	/**
 	 * Le refus du SIREN, séparé de `erreur`.
 	 *
 	 * ⚠️ IL S'AFFICHE SOUS LE CHAMP, PAS DANS L'ALERTE D'ÉCRAN. La clé de
@@ -181,6 +193,22 @@ function Debiteurs() {
 			setMontantCherche(null);
 		} catch (e) {
 			setErreurLettrage(e instanceof Error ? e.message : 'Rapprochement refusé.');
+		}
+	}
+
+	async function enregistrerTaux(pourcentage: string | null) {
+		if (choisi === null) return;
+		try {
+			const resultat = await poserTaux({
+				debiteurId: choisi,
+				pourcentage,
+				aLaDate: aujourdHuiISO()
+			});
+			setConstatTaux(resultat.constat);
+		} catch (e) {
+			// Le refus vient du serveur et NOMME ce qu'il a reçu — « 12,455 porte
+			// plus de deux décimales ». Le reformuler perdrait le seul détail utile.
+			setConstatTaux(e instanceof Error ? e.message : 'Taux refusé.');
 		}
 	}
 
@@ -364,6 +392,24 @@ function Debiteurs() {
 							secteur: cle as 'GENERAL'
 						});
 					}}
+				/>
+
+				{/*
+				  LE TAUX STIPULÉ, AVEC L'IDENTITÉ — parce que c'est un fait de la
+				  RELATION, pas d'une facture : il vient des conditions générales.
+				  La `key` le remet à zéro quand on change de débiteur, sans effet
+				  de synchronisation.
+				*/}
+				<TauxContractuel
+					key={`taux-${choisi}`}
+					// La valeur vient de la BASE, jamais d'un `undefined` figé : un champ
+					// affiché qui ne relit pas ce qu'il a écrit est le défaut qu'on corrige.
+					valeur={
+						factures?.find((fa) => fa.tauxContractuelPourcent !== undefined)
+							?.tauxContractuelPourcent
+					}
+					constat={constatTaux}
+					onEnregistrer={(p) => void enregistrerTaux(p)}
 				/>
 
 				{/*

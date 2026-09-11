@@ -58,6 +58,7 @@ import type * as recouvrement_radar from "../recouvrement/radar.js";
 import type * as recouvrement_revelation from "../recouvrement/revelation.js";
 import type * as recouvrement_surveillance from "../recouvrement/surveillance.js";
 import type * as recouvrement_tables from "../recouvrement/tables.js";
+import type * as recouvrement_tauxContractuel from "../recouvrement/tauxContractuel.js";
 import type * as rgpd from "../rgpd.js";
 import type * as storage from "../storage.js";
 import type * as tests from "../tests.js";
@@ -122,6 +123,7 @@ declare const fullApi: ApiFromModules<{
   "recouvrement/revelation": typeof recouvrement_revelation;
   "recouvrement/surveillance": typeof recouvrement_surveillance;
   "recouvrement/tables": typeof recouvrement_tables;
+  "recouvrement/tauxContractuel": typeof recouvrement_tauxContractuel;
   rgpd: typeof rgpd;
   storage: typeof storage;
   tests: typeof tests;
