@@ -18,10 +18,10 @@
  *                           selon l'humeur du système. On lui donne donc un
  *                           fond d'encre, opaque et décidé.
  *   icone-192, icone-512    Android, via le manifeste. Déclarées « maskable »,
- *                           donc l'assiette est réduite à 72 % et centrée : le
+ *                           donc la marque est réduite à 72 % et centrée : le
  *                           système rogne jusqu'à 20 % du bord pour la mettre à
  *                           la forme du lanceur, et une marque à fond perdu s'y
- *                           fait amputer son liseré.
+ *                           fait amputer son coin coupé.
  *
  * Le rendu passe par resvg, qui était déjà une dépendance de développement.
  */
@@ -35,17 +35,17 @@ const PUBLIC = join(RACINE, 'public');
 /** L'encre de la marque. La même valeur que `--color-encre-nuit`. */
 const ENCRE = '#252b38';
 
-const assiette = readFileSync(join(PUBLIC, 'favicon.svg'), 'utf8');
+const marque = readFileSync(join(PUBLIC, 'favicon.svg'), 'utf8');
 
 /**
- * Pose l'assiette sur un fond plein, réduite à `part` de la largeur.
+ * Pose la marque sur un fond plein, réduite à `part` de la largeur.
  *
  * On enveloppe le SVG source plutôt que de le réécrire : le dessin reste
  * défini à un seul endroit, et ce fichier ne connaît que la mise en boîte.
  */
 function surFond(part: number, fond: string): string {
 	const marge = ((1 - part) / 2) * 100;
-	const interieur = assiette
+	const interieur = marque
 		.replace(/<\?xml[^>]*\?>/, '')
 		.replace(/<svg[^>]*>/, '')
 		.replace(/<\/svg>\s*$/, '');
@@ -61,7 +61,7 @@ function rendre(svg: string, largeur: number, fichier: string): void {
 	console.log(`${fichier.padEnd(22)} ${largeur}px  ${Math.round(png.length / 1024)} ko`);
 }
 
-rendre(assiette, 48, 'favicon.png');
+rendre(marque, 48, 'favicon.png');
 rendre(surFond(0.78, ENCRE), 180, 'apple-touch-icon.png');
 rendre(surFond(0.72, ENCRE), 192, 'icone-192.png');
 rendre(surFond(0.72, ENCRE), 512, 'icone-512.png');

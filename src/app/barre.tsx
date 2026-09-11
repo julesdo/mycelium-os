@@ -1,10 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useRouterState, useNavigate, CatchBoundary } from '@tanstack/react-router';
+import { useQuery } from 'convex/react';
 
-import { SettingsIcon, HomeIcon, UsersIcon, UploadIcon, SearchIcon } from 'lucide-react';
+import { HomeIcon, UsersIcon, UploadIcon, SearchIcon } from 'lucide-react';
 
 import { cn } from '../ui/cn';
-import { LogoLetikette, MotLetikette } from '../ui/logo';
+import { LogoLetikette } from '../ui/logo';
+import { Avatar } from '../ui/avatar';
+import { api } from '../lib/convex/_generated/api';
 import { SelecteurEtablissement } from './selecteur-etablissement';
 
 /**
@@ -124,107 +127,177 @@ function Recherche() {
 }
 
 /**
- * LA BARRE HAUTE.
+ * L'AVATAR DE LA BARRE — qui est connecté.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ ELLE SUIT MAINTENANT LA COMPOSITION DE LA RÉFÉRENCE, ET PAS UNE AUTRE
- * ═══════════════════════════════════════════════════════════════════════════
+ * Il remplace le logotype à gauche. Voir `ui/avatar.tsx` pour le raisonnement :
+ * un logo dans une application où l'on est déjà connecté ne dit rien, et il
+ * occupe le seul emplacement que toutes les références réservent à l'identité
+ * de celui qui regarde.
  *
- * Sur téléphone : une pastille à gauche, une PILULE DE RECHERCHE qui prend
- * toute la place restante, deux boutons ronds à droite. Rien d'autre. Ce n'est
- * pas un choix d'apparence : sur un produit dont l'usage courant est « je veux
- * revoir où en est ce client-là », la recherche est l'action la plus fréquente
- * de l'écran. Elle mérite la largeur, et les onglets n'en ont pas besoin — ils
- * sont en bas.
+ * ⚠️ IL MÈNE AUX RÉGLAGES, ET L'ENGRENAGE A DONC DISPARU. Deux cibles pour la
+ * même destination, à deux cents pixels l'une de l'autre, c'est un choix de
+ * plus à faire pour rien — et c'est ce qui gonflait cette barre à huit cibles.
  *
- * Sur grand écran, la capsule d'onglets réapparaît au centre : il y a la place,
- * et un pointeur n'a pas de barre basse.
- *
- * ⚠️ TOUT EST EN VERRE, ET RIEN N'EST OPAQUE. Le drapé passe derrière la barre
- * entière — elle n'a ni fond, ni filet de fermeture. Un bandeau opaque
- * couperait le fond net à soixante-quatre pixels du bord et rendrait visible
- * la jointure que toute cette architecture existe pour supprimer.
+ * Il est enveloppé dans `Facultatif` : la requête d'identité lève quand la
+ * session manque — au chargement, après une expiration, ou dans la salle
+ * d'exposition qui rend la coquille sans authentification. Sans isolation, un
+ * avatar emporte la navigation entière.
  */
-export function Barre() {
+function AvatarConnecte() {
+	const moi = useQuery(api.users.viewer, {});
 	const actif = useActif();
 
 	return (
+		<Link
+			to="/app/parametres"
+			aria-label="Votre compte et vos réglages"
+			aria-current={actif('/app/parametres') ? 'page' : undefined}
+		>
+			{/*
+			  `moi?.name` peut être vide sur un compte créé par invitation, qui n'a
+			  parfois qu'une adresse. `initiales` retombe alors sur l'adresse, puis
+			  sur un point d'interrogation — jamais sur un disque vide, qu'on prend
+			  pour un défaut de chargement.
+			*/}
+			<Avatar nom={moi?.name ?? moi?.email} />
+		</Link>
+	);
+}
+
+/**
+ * LA BARRE HAUTE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * TROIS CIBLES, LÀ OÙ IL Y EN AVAIT HUIT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'avatar à gauche, la recherche au milieu, l'établissement à droite. C'est la
+ * composition de la référence, et chaque retrait a sa raison :
+ *
+ *   · le LOGOTYPE est parti dans la barre de navigation, où il sert enfin à
+ *     quelque chose — il EST le bouton d'accueil ;
+ *   · l'ENGRENAGE est parti parce que l'avatar mène aux mêmes réglages ;
+ *   · le bouton « Déposer » était mort — il pointait vers une route jamais
+ *     déclarée.
+ *
+ * Sur téléphone, la recherche prend toute la largeur restante : sur un produit
+ * dont l'usage courant est « où en est ce client-là », c'est l'action la plus
+ * fréquente de l'écran, et parcourir une liste au pouce coûte bien plus qu'au
+ * clavier.
+ *
+ * ⚠️ TOUT EST EN VERRE, ET RIEN N'EST OPAQUE. Le fond passe derrière la barre
+ * entière — elle n'a ni fond ni filet de fermeture. Un bandeau opaque couperait
+ * le drapé net à soixante-quatre pixels du bord et rendrait visible la jointure
+ * que toute cette architecture existe pour supprimer.
+ */
+export function Barre() {
+	return (
 		<header className="relative z-30 shrink-0">
 			<div className="flex items-center gap-cladd-3xs px-cladd-3xs py-2">
-				<Link
-					to="/app"
-					aria-label="Letikette, retour à l’accueil"
-					className="flex shrink-0 items-center gap-cladd-3xs"
-				>
-					<LogoLetikette className="size-cladd-md shrink-0" />
-					<MotLetikette className="hidden xl:block" />
-				</Link>
-
-				{/*
-				  LA CAPSULE D'ONGLETS — grand écran seulement.
-
-				  ⚠️ TOUS LES ONGLETS PORTENT LEUR ÉTIQUETTE, maintenant qu'il n'y en a
-				  que trois. La version précédente n'étiquetait que l'onglet actif pour
-				  faire tenir quatre entrées — ce qui obligeait à deviner les trois
-				  autres au pictogramme. Trois mots tiennent ; on les écrit.
-				*/}
-				<nav
-					aria-label="Navigation principale"
-					className="verre mx-auto hidden items-center gap-1 rounded-full p-1 md:flex"
-				>
-					{ENTREES.map(({ to, label, Icone }) => {
-						const ici = actif(to);
-						return (
-							<Link
-								key={to}
-								to={to}
-								aria-current={ici ? 'page' : undefined}
-								className={cn(
-									'flex h-cladd-sm items-center gap-2 rounded-full px-cladd-3xs text-cladd-xs font-medium transition-colors',
-									ici
-										? // L'onglet actif est un verre PLUS CLAIR, pas un aplat
-											// blanc ni une teinte d'accent. Un aplat blanc sur un
-											// drapé fait un trou opaque ; une couleur entre en
-											// concurrence avec le fond. Le verre éclairci reste du
-											// verre : on voit toujours le tissu au travers.
-											'verre text-cladd-fg'
-										: 'text-cladd-fg-soft hover:text-cladd-fg'
-								)}
-							>
-								<Icone size={18} />
-								{label}
-							</Link>
-						);
-					})}
-				</nav>
+				<Facultatif>
+					<AvatarConnecte />
+				</Facultatif>
 
 				<Recherche />
+
+				{/*
+				  LA CAPSULE D'ONGLETS — grand écran seulement. Sur téléphone, la
+				  navigation est en bas, là où le pouce l'atteint.
+				*/}
+				<CapsuleOnglets />
 
 				<div className="flex shrink-0 items-center gap-cladd-3xs">
 					<Facultatif>
 						<SelecteurEtablissement />
 					</Facultatif>
-
-					{/*
-					  Bouton rond de verre, et pas un contrôle du kit. Le kit peint une
-					  surface opaque sous son contenu : posée sur le drapé, elle fait une
-					  pastille grise là où la référence laisse voir le fond. On garde la
-					  géométrie — 48 px, le plancher tactile — et on remplace le fond.
-					*/}
-					<Link
-						to="/app/parametres"
-						aria-label="Réglages"
-						aria-current={actif('/app/parametres') ? 'page' : undefined}
-						className={cn(
-							'verre verre-actif flex size-cladd-md shrink-0 items-center justify-center rounded-full transition-colors',
-							actif('/app/parametres') ? 'text-cladd-fg' : 'text-cladd-fg-soft'
-						)}
-					>
-						<SettingsIcon size={20} />
-					</Link>
 				</div>
 			</div>
 		</header>
+	);
+}
+
+/**
+ * Les onglets, en capsule de verre, sur grand écran.
+ *
+ * ⚠️ TOUS PORTENT LEUR ÉTIQUETTE, maintenant qu'il n'y en a que trois. La
+ * version précédente n'étiquetait que l'onglet actif pour faire tenir quatre
+ * entrées — ce qui obligeait à deviner les trois autres au pictogramme.
+ */
+function CapsuleOnglets() {
+	const actif = useActif();
+
+	return (
+		<nav
+			aria-label="Navigation principale"
+			className="verre hidden items-center gap-1 rounded-full p-1 md:flex"
+		>
+			{ENTREES.map(({ to, label, Icone }) => {
+				const ici = actif(to);
+				return (
+					<Link
+						key={to}
+						to={to}
+						aria-current={ici ? 'page' : undefined}
+						className={cn(
+							'flex h-cladd-sm items-center gap-2 rounded-full px-cladd-3xs text-cladd-xs font-medium transition',
+							ici
+								? // L'onglet actif est un verre PLUS CLAIR, pas un aplat blanc
+									// ni une teinte d'accent. Un aplat blanc sur le fond fait un
+									// trou opaque ; une couleur entre en concurrence avec lui.
+									'verre text-cladd-fg'
+								: 'text-cladd-fg-soft hover:text-cladd-fg'
+						)}
+					>
+						<IconeOnglet to={to} Icone={Icone} actif={ici} />
+						{label}
+					</Link>
+				);
+			})}
+		</nav>
+	);
+}
+
+/**
+ * L'ICÔNE D'UN ONGLET — et pour l'accueil, C'EST LA MARQUE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE BOUTON D'ACCUEIL EST LE LOGO
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * C'est le motif de toutes les applications financières relevées : Revolut pose
+ * son R à la première place de sa barre basse, Revolut Business aussi. La
+ * marque cesse d'être un ornement posé dans un coin et devient le geste le plus
+ * fréquent de l'application — on la touche pour revenir au chiffre.
+ *
+ * ⚠️ ET ELLE PORTE UN FAISCEAU, mais PAS celui du bouton d'action. Deux
+ * faisceaux identiques sur un écran n'en font aucun : celui de l'action appelle
+ * — vif, rapide, avec un halo — celui de la marque respire, deux fois et demie
+ * plus lent et sans lueur portée. Voir `.faisceau-lent` dans `app.css`.
+ *
+ * Le faisceau ne tourne que sur l'onglet ACTIF. Une marque qui scintille en
+ * permanence sur tous les écrans redevient un ornement, et le scintillement ne
+ * dit plus rien le jour où il compte.
+ */
+function IconeOnglet({
+	to,
+	Icone,
+	actif,
+	taille = 18
+}: {
+	to: string;
+	Icone: typeof HomeIcon;
+	actif: boolean;
+	/** La barre basse vise un peu plus gros que la capsule de bureau. */
+	taille?: number;
+}) {
+	if (to !== '/app') return <Icone size={taille} />;
+	return (
+		<span
+			className={cn('inline-flex rounded-cladd-3xs', actif && 'faisceau-lent')}
+			style={{ width: taille, height: taille }}
+		>
+			<LogoLetikette className="size-full" />
+		</span>
 	);
 }
 
@@ -335,7 +408,8 @@ export function BarreBasse() {
 								ici ? 'text-cladd-fg' : 'text-cladd-fg-softer'
 							)}
 						>
-							<Icone size={20} />
+							{/* La marque EST le bouton d'accueil — voir `IconeOnglet`. */}
+							<IconeOnglet to={to} Icone={Icone} actif={ici} taille={22} />
 							<span className="text-cladd-3xs leading-none font-medium">{label}</span>
 						</Link>
 					);

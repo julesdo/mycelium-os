@@ -549,6 +549,62 @@ select:not(:disabled),
 	pointer-events: none;
 }
 
+/* LE FAISCEAU DE LA MARQUE — plus lent, plus sourd.
+ *
+ * ⚠️ IL EXISTE PARCE QUE DEUX FAISCEAUX IDENTIQUES SUR UN ÉCRAN N'EN FONT
+ * AUCUN. La règle du faisceau ordinaire est stricte : un seul porteur, celui
+ * de l'action qu'on veut faire faire. Or la marque en porte un aussi, en
+ * permanence, sur tous les écrans — y compris celui où le bouton « Importer »
+ * brille déjà.
+ *
+ * Les deux ne disent pas la même chose, donc ils ne doivent pas se ressembler.
+ * Celui du bouton APPELLE : rapide, vif, une tête de faisceau nette. Celui de
+ * la marque RESPIRE : deux fois et demie plus lent, moitié moins opaque, sans
+ * pointe blanche. À l'usage on ne le remarque pas consciemment — on remarque
+ * que la marque est vivante.
+ *
+ * C'est aussi pour ça qu'il n'a pas de lueur portée : le halo est ce qui tire
+ * l'œil, et c'est précisément ce qu'on réserve à l'action. */
+.faisceau-lent {
+	position: relative;
+	isolation: isolate;
+}
+
+.faisceau-lent::before {
+	content: '';
+	position: absolute;
+	inset: -2px;
+	border-radius: inherit;
+	padding: 1.5px;
+	background: conic-gradient(
+		from var(--faisceau-angle),
+		transparent 0%,
+		oklch(0.78 0.12 258 / 0.25) 8%,
+		oklch(0.88 0.09 250 / 0.55) 15%,
+		transparent 30%,
+		transparent 100%
+	);
+	-webkit-mask:
+		linear-gradient(#000 0 0) content-box,
+		linear-gradient(#000 0 0);
+	mask:
+		linear-gradient(#000 0 0) content-box,
+		linear-gradient(#000 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	animation: faisceau-tourne 6.5s linear infinite;
+	pointer-events: none;
+}
+
+/* Même raisonnement que pour le faisceau d'action : figé au premier pas, un
+ * dégradé conique laisse un anneau à moitié éteint, qui lit « cassé » et non
+ * « immobile ». On le remplace par un anneau continu. */
+@media (prefers-reduced-motion: reduce) {
+	.faisceau-lent::before {
+		background: oklch(0.8 0.1 254 / 0.4);
+	}
+}
+
 @keyframes faisceau-tourne {
 	to {
 		--faisceau-angle: 360deg;
