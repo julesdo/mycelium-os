@@ -30,6 +30,7 @@ export { Bandeau } from './bandeau';
 export { SectionEcran } from './section';
 export { ChampCopiable } from './champ-copiable';
 export { ZoneDepot } from './zone-depot';
+export { BilanImport, type DepotAffiche, type BilanDepotAffiche } from './bilan-import';
 export {
 	Tableau,
 	TableauEntete,

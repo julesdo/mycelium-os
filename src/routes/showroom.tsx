@@ -9,6 +9,8 @@ import {
 	EmptyState,
 	Bandeau,
 	ZoneDepot,
+	BilanImport,
+	type DepotAffiche,
 	FluxEvenements,
 	Decompte,
 	ChocRevelation,
@@ -798,9 +800,91 @@ function DemoAccueilVierge() {
 	);
 }
 
+/**
+ * LES QUATRE ÉTATS D'UN DÉPÔT, CÔTE À CÔTE.
+ *
+ * C'est la seule façon de vérifier que la règle tient : « un import qui annonce
+ * 198 factures sans mentionner les deux lignes écartées ment par omission ».
+ * Les nombres doivent être lisibles sans geste sur les quatre, et seules les
+ * RAISONS ligne à ligne ont le droit de se replier.
+ */
+const DEPOTS_DEMO: DepotAffiche[] = [
+	{
+		id: 'd1',
+		filename: 'FEC-2026-exercice.txt',
+		statut: 'TERMINE',
+		etape: 'Lecture terminée.',
+		// Le cas qui compte : un import largement réussi, MAIS deux lignes
+		// perdues. Elles doivent crever les yeux au milieu du succès.
+		bilan: {
+			facturesCreees: 198,
+			reglementsCrees: 142,
+			debiteursCrees: 37,
+			facturesDejaConnues: 12,
+			horsPerimetre: 486,
+			reglementsOrphelins: 3,
+			ignoreesTotal: 2,
+			ignorees: [
+				{ texte: 'l1', raison: 'Ligne 4128 : montant illisible (« 1 2З0,00 » — un З cyrillique).' },
+				{ texte: 'l2', raison: 'Ligne 4310 : aucune date d’échéance, et aucun délai au contrat.' }
+			]
+		},
+		deposeLe: Date.parse('2026-09-09T08:12:00Z')
+	},
+	{
+		id: 'd2',
+		filename: 'export-ventes-aout.csv',
+		statut: 'TERMINE',
+		etape: 'Lecture terminée.',
+		// Un import parfait : aucun dépliant ne doit s'ouvrir, et le
+		// hors-périmètre reste en gris — ce n'est pas une anomalie.
+		bilan: {
+			facturesCreees: 41,
+			reglementsCrees: 0,
+			debiteursCrees: 4,
+			facturesDejaConnues: 0,
+			horsPerimetre: 96,
+			reglementsOrphelins: 0,
+			ignoreesTotal: 0,
+			ignorees: []
+		},
+		deposeLe: Date.parse('2026-09-08T16:40:00Z')
+	},
+	{
+		id: 'd3',
+		filename: 'FA-2026-0412.pdf',
+		statut: 'EN_COURS',
+		etape: 'Extraction des lignes par le modèle…',
+		deposeLe: Date.parse('2026-09-09T09:02:00Z')
+	},
+	{
+		id: 'd4',
+		filename: 'scan-caisse.jpg',
+		statut: 'ECHOUE',
+		erreur: 'Le fichier n’est pas une facture de vente : aucun montant ni référence trouvés.',
+		deposeLe: Date.parse('2026-09-07T11:20:00Z')
+	}
+];
+
+function DemoBilanImport() {
+	return (
+		<Page>
+			<PageHeader titre="Vos dépôts" sousTitre="Les quatre états d’un import" />
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
+					{DEPOTS_DEMO.map((depot) => (
+						<BilanImport key={depot.id} depot={depot} />
+					))}
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'accueil',
 	'accueil-vierge',
+	'bilan-import',
 	'lettrage',
 	'creancier',
 	'identite',
@@ -840,6 +924,7 @@ function Showroom() {
 			<div className="min-h-0 flex-1">
 				{ecran === 'accueil' ? <DemoAccueil /> : null}
 				{ecran === 'accueil-vierge' ? <DemoAccueilVierge /> : null}
+				{ecran === 'bilan-import' ? <DemoBilanImport /> : null}
 				{ecran === 'lettrage' ? <DemoLettrage /> : null}
 				{ecran === 'creancier' ? <DemoCreancier /> : null}
 				{ecran === 'identite' ? <DemoIdentite /> : null}

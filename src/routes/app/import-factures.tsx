@@ -1,36 +1,80 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Chip, Surface, Segmented, SegmentedButton } from '@cladd-ui/react';
-import { FileSpreadsheetIcon, LoaderCircleIcon, CheckIcon, XIcon } from 'lucide-react';
+import { ListButton } from '@cladd-ui/react';
+import { ChevronRightIcon, FileSpreadsheetIcon, FileTextIcon, UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { Page, PageHeader, PageBody, ZoneDepot, SectionEcran, dateCourte } from '../../ui';
+import { Page, PageHeader, PageBody, ZoneDepot, CarteListe, Bandeau, BilanImport } from '../../ui';
 
 export const Route = createFileRoute('/app/import-factures')({ component: ImportFactures });
 
 /**
- * L'import de factures de vente.
+ * L'IMPORT DE FACTURES DE VENTE.
  *
- * DEUX CHEMINS, ET L'ORDRE N'EST PAS NEUTRE. L'export comptable est proposé en
- * premier parce que c'est le bon : les factures de vente existent déjà chez le
- * créancier, structurées. Le dépôt de PDF est un REPLI, pas une alternative
- * équivalente — le présenter à égalité inviterait à faire re-scanner des
- * données qu'on possède déjà propres.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LES DEUX CHEMINS NE SONT PAS ÉGAUX, ET L'ÉCRAN DOIT LE DIRE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * C'est la correction de fond de cet écran, et elle n'est pas cosmétique.
+ *
+ * La version précédente posait les deux modes dans un GROUPE SEGMENTÉ. Un
+ * groupe segmenté est la forme qu'on emploie pour des options équivalentes —
+ * « mensuel / annuel », « liste / grille ». Il affirme visuellement que les
+ * deux branches se valent.
+ *
+ * Or elles ne se valent pas, et le fichier le disait déjà en toutes lettres :
+ * l'export comptable porte les factures, les règlements et les clients d'un
+ * seul coup, structurés, sans qu'aucune machine ne relise quoi que ce soit. Le
+ * dépôt de PDF fait passer chaque facture par le modèle — un appel facturé, et
+ * une marge d'erreur que l'export n'a pas.
+ *
+ * Présenter le repli à égalité invite à faire re-scanner des données qu'on
+ * possède déjà propres. C'est un coût pour nous et un risque d'erreur pour le
+ * client, sur un produit dont l'argument entier est l'exactitude.
+ *
+ * Deux LIGNES, donc, avec la recommandation ÉCRITE sur la première. C'est le
+ * motif que les références emploient quand deux chemins mènent au même endroit
+ * par des moyens inégaux.
  *
  * LE TRAITEMENT SE VOIT (règle d'écran n° 2). Chaque dépôt affiche son étape en
- * clair, et son bilan à la fin — y compris ce qui n'a pas pu être lu. Un import
- * qui annonce « 198 factures » sans mentionner les deux lignes écartées ment
- * par omission, et l'omission porte sur l'argent qu'on ne réclamera pas.
+ * clair et son bilan à la fin — y compris ce qui n'a pas pu être lu. Voir
+ * `ui/bilan-import.tsx`, qui porte le compromis entre cette exigence et le mur
+ * de texte qu'elle produisait.
  */
+type Mode = 'EXPORT_COMPTABLE' | 'FACTURE_DEPOSEE';
+
+const CHEMINS = [
+	{
+		mode: 'EXPORT_COMPTABLE' as const,
+		titre: 'Export comptable',
+		aide: 'Un FEC ou un CSV. Il porte vos factures, vos règlements et vos clients d’un coup.',
+		recommande: true,
+		Icone: FileSpreadsheetIcon,
+		accept: '.csv,.txt,.tsv,text/csv,text/plain',
+		formats: 'CSV, TSV ou FEC'
+	},
+	{
+		mode: 'FACTURE_DEPOSEE' as const,
+		titre: 'Factures en PDF',
+		aide: 'Le repli quand l’export n’est pas disponible. Chaque facture est relue par le modèle.',
+		recommande: false,
+		Icone: FileTextIcon,
+		accept: '.pdf,image/*',
+		formats: 'PDF ou photo'
+	}
+];
+
 function ImportFactures() {
-	const [mode, setMode] = useState<'EXPORT_COMPTABLE' | 'FACTURE_DEPOSEE'>('EXPORT_COMPTABLE');
+	const [mode, setMode] = useState<Mode>('EXPORT_COMPTABLE');
 	const [envoiEnCours, setEnvoiEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
 
 	const imports = useQuery(api.recouvrement.depotMutations.listerImports, {});
 	const genererUrl = useMutation(api.recouvrement.depotMutations.genererUrlDepot);
 	const enregistrer = useMutation(api.recouvrement.depotMutations.enregistrerFichier);
+
+	const chemin = CHEMINS.find((c) => c.mode === mode) ?? CHEMINS[0]!;
 
 	async function deposer(fichiers: File[]) {
 		setEnvoiEnCours(true);
@@ -67,141 +111,75 @@ function ImportFactures() {
 				sousTitre="Vos factures de vente, et les règlements déjà reçus"
 			/>
 			<PageBody>
-				<div className="flex flex-col gap-cladd-xs">
-					<Segmented size="md" aria-label="Nature du fichier">
-						<SegmentedButton
-							active={mode === 'EXPORT_COMPTABLE'}
-							onClick={() => setMode('EXPORT_COMPTABLE')}
-						>
-							Export comptable
-						</SegmentedButton>
-						<SegmentedButton
-							active={mode === 'FACTURE_DEPOSEE'}
-							onClick={() => setMode('FACTURE_DEPOSEE')}
-						>
-							Factures en PDF
-						</SegmentedButton>
-					</Segmented>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-2xs">
+					{/*
+					  LES DEUX CHEMINS. `ListButton` porte nativement les quatre fentes
+					  du motif — icône, titre, sous-titre, fin de ligne — et son état
+					  `selected` remonte la rangée de deux niveaux de surface, donc le
+					  choix courant se lit sans qu'aucune couleur soit nécessaire.
+					*/}
+					<CarteListe titre="Par où vos factures arrivent">
+						{CHEMINS.map(({ mode: m, titre, aide, recommande, Icone }) => (
+							<ListButton
+								key={m}
+								icon={<Icone />}
+								selected={mode === m}
+								onClick={() => setMode(m)}
+								footer={aide}
+								after={
+									// La recommandation est ÉCRITE, pas suggérée par l'ordre.
+									// Un ordre se lit comme un hasard ; un mot engage.
+									recommande ? (
+										<span className="shrink-0 text-cladd-3xs font-semibold text-cladd-primary">
+											Recommandé
+										</span>
+									) : (
+										<ChevronRightIcon size={16} className="shrink-0 text-cladd-fg-softest" />
+									)
+								}
+							>
+								{titre}
+							</ListButton>
+						))}
+					</CarteListe>
 
-					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						{mode === 'EXPORT_COMPTABLE'
-							? 'Un FEC ou un export CSV de votre logiciel comptable. C’est le chemin le plus complet : il porte vos factures, vos règlements et vos clients d’un seul coup, et rien n’est relu par une machine.'
-							: 'Le repli, quand l’export n’est pas disponible. Chaque facture est lue par le modèle, ce qui coûte un appel et laisse une marge d’erreur que l’export n’a pas.'}
-					</p>
-
-					<ZoneDepot
-						accept={
-							mode === 'EXPORT_COMPTABLE'
-								? '.csv,.txt,.tsv,text/csv,text/plain'
-								: '.pdf,image/*'
-						}
-						onFichiers={deposer}
-						desactive={envoiEnCours}
-					>
+					<ZoneDepot accept={chemin.accept} onFichiers={deposer} desactive={envoiEnCours}>
 						<div className="flex flex-col items-center gap-cladd-3xs text-center">
-							<FileSpreadsheetIcon className="size-8 text-cladd-fg-softer" aria-hidden />
+							<span className="verre flex size-cladd-lg items-center justify-center rounded-full">
+								<UploadIcon size={22} aria-hidden />
+							</span>
 							<p className="text-cladd-sm font-semibold">
 								{envoiEnCours ? 'Envoi en cours…' : 'Déposez vos fichiers ici'}
 							</p>
+							{/* Les formats acceptés sont ÉCRITS. Sans eux, on découvre qu'un
+							    fichier est refusé après l'avoir choisi — et on ne sait pas
+							    lequel prendre à la place. */}
+							<p className="text-cladd-2xs text-cladd-fg-softer">{chemin.formats}</p>
 						</div>
 					</ZoneDepot>
 
-					{erreur ? (
-						<Surface contentClassName="p-cladd-2xs">
-							<p className="text-cladd-xs text-cladd-fg">{erreur}</p>
-						</Surface>
-					) : null}
+					{erreur ? <Bandeau ton="alerte">{erreur}</Bandeau> : null}
 
 					{imports && imports.length > 0 ? (
-						<SectionEcran titre="Vos dépôts">
-							<div className="flex flex-col gap-cladd-3xs">
-								{imports.map((depot) => (
-									<Surface key={depot._id} contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
-										<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
-											<span className="min-w-0 truncate text-cladd-sm font-semibold">
-												{depot.filename}
-											</span>
-											<Chip
-												size="md"
-												color={
-													depot.statut === 'TERMINE'
-														? 'green'
-														: depot.statut === 'ECHOUE'
-															? 'red'
-															: 'neutral'
-												}
-											>
-												{depot.statut === 'TERMINE' ? (
-													<CheckIcon />
-												) : depot.statut === 'ECHOUE' ? (
-													<XIcon />
-												) : (
-													<LoaderCircleIcon className="animate-spin" />
-												)}
-												{depot.statut === 'TERMINE'
-													? 'Lu'
-													: depot.statut === 'ECHOUE'
-														? 'Échec'
-														: 'En cours'}
-											</Chip>
-										</div>
-
-										{/* L'étape est un texte destiné à l'écran, pas un état de
-										    machine — et elle reste affichée après coup : un écran qui
-										    se vide à la fin laisse croire qu'il ne s'est rien passé. */}
-										{depot.etape ? (
-											<p className="text-cladd-xs text-cladd-fg-soft">{depot.etape}</p>
-										) : null}
-
-										{depot.erreur ? (
-											<p className="text-cladd-xs text-cladd-fg">{depot.erreur}</p>
-										) : null}
-
-										{depot.bilan ? (
-											<div className="flex flex-col gap-1.5 text-cladd-xs text-cladd-fg-soft">
-												<p>
-													{depot.bilan.facturesCreees} facture(s) enregistrée(s),{' '}
-													{depot.bilan.reglementsCrees} règlement(s),{' '}
-													{depot.bilan.debiteursCrees} débiteur(s) créé(s).
-												</p>
-												{depot.bilan.facturesDejaConnues > 0 ? (
-													<p>
-														{depot.bilan.facturesDejaConnues} facture(s) déjà connue(s),
-														non recréée(s).
-													</p>
-												) : null}
-												{depot.bilan.horsPerimetre > 0 ? (
-													<p>
-														{depot.bilan.horsPerimetre} écriture(s) hors périmètre
-														(produits, TVA, trésorerie) — écartées à bon droit.
-													</p>
-												) : null}
-												{depot.bilan.reglementsOrphelins > 0 ? (
-													<p>
-														{depot.bilan.reglementsOrphelins} règlement(s) sans facture
-														connue : l’import est peut-être partiel.
-													</p>
-												) : null}
-												{depot.bilan.ignoreesTotal > 0 ? (
-													<>
-														<p className="font-semibold text-cladd-fg">
-															{depot.bilan.ignoreesTotal} ligne(s) n’ont pas pu être lues :
-														</p>
-														{depot.bilan.ignorees.map((ligne) => (
-															<p key={ligne.texte}>· {ligne.raison}</p>
-														))}
-													</>
-												) : null}
-											</div>
-										) : null}
-
-										<p className="text-cladd-2xs text-cladd-fg-softer">
-											Déposé le {dateCourte(new Date(depot.deposeLe).toISOString().slice(0, 10))}
-										</p>
-									</Surface>
-								))}
-							</div>
-						</SectionEcran>
+						<div className="flex flex-col gap-cladd-3xs">
+							<h2 className="px-cladd-3xs text-cladd-2xs font-medium tracking-wide text-cladd-fg-softer uppercase">
+								Vos dépôts
+							</h2>
+							{imports.map((depot) => (
+								<BilanImport
+									key={depot._id}
+									depot={{
+										id: depot._id,
+										filename: depot.filename,
+										statut: depot.statut,
+										etape: depot.etape,
+										erreur: depot.erreur,
+										bilan: depot.bilan,
+										deposeLe: depot.deposeLe
+									}}
+								/>
+							))}
+						</div>
 					) : null}
 				</div>
 			</PageBody>
