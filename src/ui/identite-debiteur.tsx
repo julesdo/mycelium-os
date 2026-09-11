@@ -7,8 +7,10 @@ import { dateCourte } from './format';
  * CE QUE LE GÉRANT SEUL PEUT DIRE DE SON DÉBITEUR.
  *
  * « Le logiciel décide, le gérant confirme » (règle d'écran n° 1) : aucun écran
- * ne demande une saisie que le logiciel peut déduire. Ces deux champs sont
- * l'exception, et chacun l'est pour une raison différente.
+ * ne demande une saisie que le logiciel peut déduire. Ces trois champs sont
+ * l'exception, et chacun pour une raison différente : aucun ne se lit sur une
+ * facture. Ils vivent dans un registre public, dans une nomenclature, ou dans
+ * des conditions générales — trois endroits où le logiciel ne va pas.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * LE SIREN — la charnière vers les registres publics
@@ -30,6 +32,26 @@ import { dateCourte } from './format';
  * nomenclature : il le choisit parce que ça change son délai de prescription de
  * cinq ans à un an. La durée est donc SOUS chaque option, pas cachée dans une
  * aide — et elle vient du registre juridique, jamais d'une constante écrite ici.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * LE TAUX STIPULÉ — le champ qui était lu par les moteurs et jamais rempli
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * `facturesVente.tauxContractuel` était lu par le décompte ET la révélation,
+ * et écrit nulle part. Tout créancier dont les conditions générales stipulent
+ * un taux retombait silencieusement sur le taux légal : le produit
+ * SOUS-RÉCLAMAIT, l'inverse exact de sa raison d'être.
+ *
+ * ⚠️ IL VIT ICI ET PAS DANS SA PROPRE CARTE. Il a d'abord eu la sienne — un
+ * en-tête, une icône, un champ. C'est le motif « trois cartes pour trois
+ * liens » déjà corrigé ailleurs : deux cartes voisines portant chacune un
+ * seul champ font deux objets là où il n'y a qu'un sujet. Ces trois faits
+ * sont de même nature — ce que le gérant seul peut dire de ce client — donc
+ * ils tiennent ensemble.
+ *
+ * ⚠️ ET LE CONSTAT VIENT DU SERVEUR, MOT POUR MOT. Un taux sous le plancher
+ * légal est ENREGISTRÉ tel quel : relever d'office un taux jugé trop bas
+ * serait écrire une conséquence juridique que personne n'a validée.
  */
 
 export interface OptionSecteur {
@@ -45,7 +67,10 @@ export function IdentiteDebiteur({
 	optionsSecteur,
 	erreurSiren,
 	onEnregistrerSiren,
-	onChoisirSecteur
+	onChoisirSecteur,
+	tauxContractuel,
+	constatTaux,
+	onEnregistrerTaux
 }: {
 	siren: string | undefined;
 	secteur: string | undefined;
@@ -54,8 +79,15 @@ export function IdentiteDebiteur({
 	erreurSiren: string | null;
 	onEnregistrerSiren: (saisi: string) => void;
 	onChoisirSecteur: (cle: string) => void;
+	/** Le taux stipulé en vigueur, en pourcentage saisissable. */
+	tauxContractuel: string | undefined;
+	/** Ce que le serveur a répondu au dernier enregistrement. Affiché tel quel. */
+	constatTaux: string | null;
+	/** `null` retire la stipulation et fait retomber sur le taux légal. */
+	onEnregistrerTaux: (pourcentage: string | null) => void;
 }) {
 	const [saisi, setSaisi] = useState(siren ?? '');
+	const [taux, setTaux] = useState(tauxContractuel ?? '');
 
 	return (
 		<div className="flex flex-col gap-cladd-2xs">
@@ -106,6 +138,28 @@ export function IdentiteDebiteur({
 				{optionsSecteur.find((o) => o.cle === (secteur ?? 'INDETERMINE'))?.libelle ??
 					'Secteur à préciser'}
 			</Select>
+
+			<div className="flex flex-col gap-1">
+				<Input
+					size="lg"
+					value={taux}
+					onChange={setTaux}
+					// Sur `blur` et pas à la frappe : ce taux touche TOUTES les factures
+					// non soldées du débiteur. Enregistrer à chaque caractère écrirait
+					// « 1 », puis « 12 », puis « 12,4 » avant d'arriver au bon.
+					onBlur={() => onEnregistrerTaux(taux.trim() === '' ? null : taux.trim())}
+					placeholder="Taux de retard stipulé"
+					inputMode="decimal"
+					suffix={<span className="mr-2 text-cladd-fg-softer">%</span>}
+					infoMessage="Celui de vos conditions générales. Vide = taux légal, BCE majoré de dix points."
+				/>
+				{/* Le constat du serveur, tel quel : il dit si le taux passe sous le
+				    plancher légal et combien vaut ce plancher, pour que le créancier
+				    refasse le calcul plutôt que de nous croire. L'écran ne le récrit pas. */}
+				{constatTaux ? (
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{constatTaux}</p>
+				) : null}
+			</div>
 		</div>
 	);
 }

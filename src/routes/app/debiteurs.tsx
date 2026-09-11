@@ -20,7 +20,6 @@ import {
 	Avatar,
 	CarteListe,
 	HabitudePaiement,
-	TauxContractuel,
 	IdentiteDebiteur,
 	ConstatRegistre,
 	Lettrage,
@@ -129,11 +128,36 @@ function Debiteurs() {
 	 *
 	 * ⚠️ LE CONSTAT EST GARDÉ EN ÉTAT plutôt qu'affiché en passant. Il dit si
 	 * le taux saisi passe sous le plancher légal — une information que le
-	 * créancier doit pouvoir relire, pas voir clignoter. Il se remet à zéro
-	 * quand on change de débiteur, par la `key` posée sur le composant.
+	 * créancier doit pouvoir relire, pas voir clignoter.
+	 *
+	 * ⚠️ ET IL PORTE LE DÉBITEUR AUQUEL IL SE RAPPORTE. La `key` du composant
+	 * ne le remet pas à zéro : cet état-ci vit dans l'ÉCRAN, pas dans la carte.
+	 * Sans l'identifiant, « le taux déclaré est inférieur au plancher » resterait
+	 * affiché sous le débiteur suivant, qui n'a rien déclaré du tout. On dérive
+	 * au rendu plutôt que de remettre à zéro dans un effet.
 	 */
 	const poserTaux = useMutation(api.recouvrement.tauxContractuel.renseigner);
-	const [constatTaux, setConstatTaux] = useState<string | null>(null);
+	const [constatPose, setConstatPose] = useState<{
+		readonly debiteurId: Id<'debiteurs'>;
+		readonly texte: string;
+	} | null>(null);
+	const constatTaux = constatPose?.debiteurId === choisi ? constatPose.texte : null;
+
+	/**
+	 * LE TAUX STIPULÉ EN VIGUEUR, RELU DEPUIS LES FACTURES.
+	 *
+	 * Il se pose par relation mais vit sur la facture — toutes les non soldées
+	 * du débiteur le portent, identique. La première qui en a un le dit donc
+	 * pour l'ensemble.
+	 *
+	 * ⚠️ SANS CETTE RELECTURE, LE CHAMP REPARTIRAIT VIDE À CHAQUE OUVERTURE, et
+	 * le créancier croirait son taux perdu — donc le ressaisirait, donc
+	 * écraserait ce qui était juste. C'est la moitié de la correction : écrire
+	 * un champ sans le relire recrée le défaut dans la couche du dessus.
+	 */
+	const tauxStipule = factures?.find(
+		(f) => f.tauxContractuelPourcent !== undefined
+	)?.tauxContractuelPourcent;
 
 	/**
 	 * Le refus du SIREN, séparé de `erreur`.
@@ -204,11 +228,14 @@ function Debiteurs() {
 				pourcentage,
 				aLaDate: aujourdHuiISO()
 			});
-			setConstatTaux(resultat.constat);
+			setConstatPose({ debiteurId: choisi, texte: resultat.constat });
 		} catch (e) {
 			// Le refus vient du serveur et NOMME ce qu'il a reçu — « 12,455 porte
 			// plus de deux décimales ». Le reformuler perdrait le seul détail utile.
-			setConstatTaux(e instanceof Error ? e.message : 'Taux refusé.');
+			setConstatPose({
+				debiteurId: choisi,
+				texte: e instanceof Error ? e.message : 'Taux refusé.'
+			});
 		}
 	}
 
@@ -380,7 +407,23 @@ function Debiteurs() {
 				    impossible à suivre est pire qu'aucune consigne : le gérant
 				    cherche, ne trouve pas, et cesse de croire les autres. */}
 				<IdentiteDebiteur
-					key={choisi}
+					/*
+					  ⚠️ LA CLÉ PORTE LES VALEURS, PAS SEULEMENT LE DÉBITEUR.
+
+					  Les deux champs saisissables s'initialisent sur ce que dit le
+					  serveur. Or au premier rendu les requêtes n'ont pas répondu :
+					  `debiteurChoisi` et `factures` valent `undefined`, donc les
+					  champs partiraient VIDES et y resteraient — React ne ré-initialise
+					  pas un `useState` sur un changement de prop.
+
+					  Un champ qui repart vide fait ressaisir, donc écraser. Sur le taux
+					  c'est pire qu'un désagrément : le `blur` écrit sur TOUTES les
+					  factures non soldées du débiteur.
+
+					  On remet donc à zéro avec une clé plutôt qu'avec un effet — c'est
+					  la règle du projet, et ici elle a une conséquence mesurable.
+					*/
+					key={`${choisi}:${debiteurChoisi?.siren ?? ''}:${tauxStipule ?? ''}`}
 					siren={debiteurChoisi?.siren}
 					secteur={debiteurChoisi?.secteur}
 					optionsSecteur={SECTEURS}
@@ -392,24 +435,9 @@ function Debiteurs() {
 							secteur: cle as 'GENERAL'
 						});
 					}}
-				/>
-
-				{/*
-				  LE TAUX STIPULÉ, AVEC L'IDENTITÉ — parce que c'est un fait de la
-				  RELATION, pas d'une facture : il vient des conditions générales.
-				  La `key` le remet à zéro quand on change de débiteur, sans effet
-				  de synchronisation.
-				*/}
-				<TauxContractuel
-					key={`taux-${choisi}`}
-					// La valeur vient de la BASE, jamais d'un `undefined` figé : un champ
-					// affiché qui ne relit pas ce qu'il a écrit est le défaut qu'on corrige.
-					valeur={
-						factures?.find((fa) => fa.tauxContractuelPourcent !== undefined)
-							?.tauxContractuelPourcent
-					}
-					constat={constatTaux}
-					onEnregistrer={(p) => void enregistrerTaux(p)}
+					tauxContractuel={tauxStipule}
+					constatTaux={constatTaux}
+					onEnregistrerTaux={(p) => void enregistrerTaux(p)}
 				/>
 
 				{/*

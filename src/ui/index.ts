@@ -58,7 +58,6 @@ export {
 	type BilanPertesAffiche
 } from './revelation';
 export { IdentiteDebiteur, type OptionSecteur } from './identite-debiteur';
-export { TauxContractuel } from './taux-contractuel';
 export { HabitudePaiement, type HabitudeAffichee, type RuptureAffichee } from './habitude';
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
 export { Lettrage, type PropositionLettrage, type CombinaisonAffichee } from './lettrage';

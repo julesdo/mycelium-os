@@ -333,6 +333,9 @@ function DemoIdentite() {
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
+							tauxContractuel={undefined}
+							constatTaux={null}
+							onEnregistrerTaux={() => {}}
 						/>
 					</div>
 					<div className="flex flex-col gap-cladd-3xs">
@@ -344,6 +347,9 @@ function DemoIdentite() {
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
+							tauxContractuel="15,00"
+							constatTaux="Le taux de 15,00 % est au-dessus du plancher de 10,26 % constaté au 2026-03-15."
+							onEnregistrerTaux={() => {}}
 						/>
 					</div>
 					<div className="flex flex-col gap-cladd-3xs">
@@ -368,6 +374,9 @@ function DemoIdentite() {
 							erreurSiren="« 853479237 » n’est pas un SIREN : sa clé de contrôle ne tombe pas."
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
+							tauxContractuel="1,00"
+							constatTaux="Le taux déclaré, 1,00 %, est inférieur au plancher de 10,26 % constaté au 2026-03-15 — trois fois le taux d’intérêt légal des « autres cas ». Le taux est enregistré tel que vous l’avez déclaré."
+							onEnregistrerTaux={() => {}}
 						/>
 					</div>
 				</div>
