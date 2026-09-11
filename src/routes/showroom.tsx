@@ -19,6 +19,7 @@ import {
 	IdentiteDebiteur,
 	QuestionnaireLitige,
 	SuiviProcedure,
+	Pieces,
 	ConstatRegistre,
 	Lettrage,
 	type OptionSecteur,
@@ -339,6 +340,96 @@ const QUESTIONS_LITIGE_DEMO = [
 		portee: 'Un avoir réclamé et non émis est un désaccord ouvert sur le montant.'
 	}
 ];
+
+const TYPES_PIECE_DEMO = [
+	{ cle: 'INDETERMINE', libelle: 'À classer', apport: 'Ne compte dans aucun critère' },
+	{
+		cle: 'BON_DE_COMMANDE',
+		libelle: 'Bon de commande',
+		apport: 'Établit que le client a commandé'
+	},
+	{
+		cle: 'BON_DE_LIVRAISON',
+		libelle: 'Bon de livraison',
+		apport: 'Établit que la prestation a été reçue'
+	},
+	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' }
+];
+
+function DemoPieces() {
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="Les pièces du dossier" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Lues, à classer, et en cours</SectionTitle>
+						<Pieces
+							optionsType={TYPES_PIECE_DEMO}
+							onDeposer={() => {}}
+							onClasser={() => {}}
+							onRetirer={() => {}}
+							pieces={[
+								{
+									_id: '1',
+									type: 'BON_DE_LIVRAISON',
+									statut: 'LUE',
+									filename: 'BL-2024-118.pdf',
+									reference: 'BL-2024-118',
+									dateDocument: '2026-02-14',
+									constat:
+										'Ce document est un bon de livraison, n° BL-2024-118, du 2026-02-14. Il cite FA-2026-004.'
+								},
+								{
+									_id: '2',
+									type: 'BON_DE_LIVRAISON',
+									statut: 'LUE',
+									filename: 'BL-2024-121.pdf',
+									reference: 'BL-2024-121',
+									dateDocument: '2026-02-21',
+									reserves: 'Deux colis manquants, signalés à la livraison.',
+									constat: 'Ce document est un bon de livraison, n° BL-2024-121, du 2026-02-21.'
+								},
+								{
+									_id: '3',
+									type: 'INDETERMINE',
+									statut: 'A_CLASSER',
+									filename: 'scan_20260214.jpg',
+									constat:
+										'Ce document n’a pas pu être lu : sa nature n’est pas identifiée, et il ne compte dans aucun critère de solidité.'
+								},
+								{
+									_id: '4',
+									type: 'INDETERMINE',
+									statut: 'EN_LECTURE',
+									filename: 'CGV-2026.pdf'
+								},
+								{
+									_id: '5',
+									type: 'CGV',
+									statut: 'CLASSEE_MAIN',
+									filename: 'conditions-generales.pdf',
+									constat: 'Un taux de retard de 12,00 % y est stipulé.'
+								}
+							]}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Aucune pièce — la zone montre le chemin</SectionTitle>
+						<Pieces
+							optionsType={TYPES_PIECE_DEMO}
+							pieces={[]}
+							onDeposer={() => {}}
+							onClasser={() => {}}
+							onRetirer={() => {}}
+						/>
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 function DemoSuivi() {
 	// La date du jour est figée : une démonstration dont les « dans N jours »
@@ -1212,6 +1303,7 @@ const ECRANS = [
 	'identite',
 	'litige',
 	'suivi',
+	'pieces',
 	'revelation',
 	'bilan',
 	'flux',
@@ -1255,6 +1347,7 @@ function Showroom() {
 				{ecran === 'identite' ? <DemoIdentite /> : null}
 				{ecran === 'litige' ? <DemoLitige /> : null}
 				{ecran === 'suivi' ? <DemoSuivi /> : null}
+				{ecran === 'pieces' ? <DemoPieces /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}

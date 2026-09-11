@@ -84,7 +84,17 @@ export const vSecteurCreance = v.union(
 	v.literal('INDETERMINE')
 );
 
+/**
+ * La nature d'une pièce justificative.
+ *
+ * ⚠️ `INDETERMINE` EST UN ÉTAT LÉGITIME, pas un défaut de saisie. Une pièce
+ * déposée dont la lecture n'a rien pu conclure existe, se voit, et ne compte
+ * dans AUCUN critère de solidité — `fournie()` ne la reconnaît nulle part.
+ * C'est exactement ce qu'on veut : classer au hasard ferait franchir le seuil
+ * de qualification sur un document que personne n'a lu.
+ */
 export const vTypePiece = v.union(
+	v.literal('INDETERMINE'),
 	v.literal('FACTURE'),
 	v.literal('BON_DE_COMMANDE'),
 	v.literal('DEVIS_SIGNE'),
@@ -388,11 +398,56 @@ export const recouvrementTables = {
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_date', ['organizationId', 'date']),
 
+	/**
+	 * LES PIÈCES QUI PORTENT LE DOSSIER — module 1.2.
+	 *
+	 * ⚠️ CETTE TABLE ÉTAIT LUE PAR LES DEUX MOTEURS ET ÉCRITE NULLE PART.
+	 * Huitième occurrence du défaut « déclaré, lu, jamais alimenté », et la
+	 * plus coûteuse : les conditions légales valent 12 points sur 20, le seuil
+	 * de qualification est à 15, et les points manquants sont TOUS
+	 * documentaires. Aucune créance ne pouvait donc être éligible, quoi que
+	 * fasse le créancier.
+	 */
 	pieces: defineTable({
 		organizationId: v.id('organizations'),
 		type: vTypePiece,
 		storageId: v.id('_storage'),
 		filename: v.string(),
+		/**
+		 * Où en est sa lecture.
+		 *
+		 * `CLASSEE_MAIN` se distingue de `LUE` délibérément : en relisant le
+		 * dossier, savoir si le classement vient du modèle ou du gérant change
+		 * le crédit qu'on lui accorde.
+		 *
+		 * Optionnel : Convex valide la base entière, pas seulement le code qui
+		 * arrive, et les pièces antérieures à ce champ n'en ont pas.
+		 */
+		statut: v.optional(
+			v.union(
+				v.literal('EN_LECTURE'),
+				v.literal('LUE'),
+				v.literal('A_CLASSER'),
+				v.literal('CLASSEE_MAIN'),
+				v.literal('ECHEC')
+			)
+		),
+		mimeType: v.optional(v.string()),
+		/** Le numéro imprimé sur le document, tel quel. */
+		reference: v.optional(v.string()),
+		/** La date du document, AAAA-MM-JJ. Distincte de `ajouteeLe`. */
+		dateDocument: v.optional(v.string()),
+		/**
+		 * Le texte EXACT d'une réserve portée sur le document.
+		 *
+		 * ⚠️ Une réserve est un fait de litige — le questionnaire de
+		 * qualification demande précisément « une réserve portée sur un bon de
+		 * livraison ». La lire et la jeter laisserait le gérant répondre « non »
+		 * de bonne foi sur un document qu'on a lu à sa place.
+		 */
+		reserves: v.optional(v.string()),
+		/** Ce que la lecture a conclu, affiché tel quel. Jamais reformulé. */
+		constat: v.optional(v.string()),
 		/**
 		 * Une pièce de portée DÉBITEUR — des CGV, un contrat-cadre — soutient
 		 * toutes ses factures sans qu'il faille créer une liaison par facture.

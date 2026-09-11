@@ -76,6 +76,21 @@ async function resteDu(ctx: MutationCtx, facture: Doc<'facturesVente'>) {
 }
 
 /**
+ * Une pièce COMPTE-T-ELLE dans les critères de solidité ?
+ *
+ * ⚠️ `INDETERMINE` N'EST PAS UNE PIÈCE, c'est un document déposé dont la
+ * lecture n'a rien conclu. Le laisser entrer ferait franchir un seuil de
+ * qualification sur un fichier que personne n'a lu — et c'est ce seuil qui
+ * décide si des frais s'engagent.
+ *
+ * Le compilateur tient cette règle : `ClePiece` ne contient pas
+ * `INDETERMINE`, donc l'oublier est une erreur de build, pas un défaut muet.
+ */
+function compteCommePreuve(type: string): type is ClePiece {
+	return type !== 'INDETERMINE';
+}
+
+/**
  * Les pièces qui soutiennent cette créance.
  *
  * Deux portées se cumulent : celles rattachées à une facture précise (bon de
@@ -98,7 +113,7 @@ async function piecesDeLaCreance(
 
 		for (const liaison of liaisons) {
 			const piece = await ctx.db.get(liaison.pieceId);
-			if (piece !== null) trouvees.add(piece.type);
+			if (piece !== null && compteCommePreuve(piece.type)) trouvees.add(piece.type);
 		}
 	}
 
@@ -106,7 +121,9 @@ async function piecesDeLaCreance(
 		.query('pieces')
 		.withIndex('by_debiteur', (q) => q.eq('debiteurId', debiteurId))
 		.collect();
-	for (const piece of auDebiteur) trouvees.add(piece.type);
+	for (const piece of auDebiteur) {
+		if (compteCommePreuve(piece.type)) trouvees.add(piece.type);
+	}
 
 	return [...trouvees];
 }

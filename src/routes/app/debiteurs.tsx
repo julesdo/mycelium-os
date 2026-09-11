@@ -23,12 +23,50 @@ import {
 	IdentiteDebiteur,
 	ConstatRegistre,
 	Lettrage,
+	Pieces,
+	SectionEcran,
 	type OptionSecteur
 } from '../../ui';
 import {
 	REGIMES_PRESCRIPTION,
 	secteurLePlusCourt
 } from '../../lib/verticales/recouvrement/pays/france/prescription';
+
+/**
+ * Les natures de pièce, et ce que chacune ÉTABLIT.
+ *
+ * ⚠️ L'APPORT SOUS CHAQUE OPTION, PAS LE NOM SEUL. Un gérant ne classe pas un
+ * document pour le plaisir de la nomenclature : il le classe parce que ça
+ * change la solidité de son dossier. « Bon de livraison » ne dit rien ;
+ * « prouve que la marchandise a été remise » dit pourquoi ça compte.
+ *
+ * `INDETERMINE` y figure délibérément : c'est un état légitime — un document
+ * déposé dont la lecture n'a rien conclu — et le masquer empêcherait de revenir
+ * en arrière après un classement erroné.
+ */
+const TYPES_PIECE = [
+	{ cle: 'INDETERMINE', libelle: 'À classer', apport: 'Ne compte dans aucun critère' },
+	{
+		cle: 'BON_DE_COMMANDE',
+		libelle: 'Bon de commande',
+		apport: 'Établit que le client a commandé'
+	},
+	{ cle: 'DEVIS_SIGNE', libelle: 'Devis signé', apport: 'Établit que le client a commandé' },
+	{
+		cle: 'BON_DE_LIVRAISON',
+		libelle: 'Bon de livraison',
+		apport: 'Établit que la prestation a été reçue'
+	},
+	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' },
+	{ cle: 'CONTRAT', libelle: 'Contrat', apport: 'Établit les conditions de paiement' },
+	{
+		cle: 'MISE_EN_DEMEURE',
+		libelle: 'Mise en demeure',
+		apport: 'Établit l’interpellation préalable'
+	},
+	{ cle: 'ECHANGES', libelle: 'Échanges', apport: 'Documente la relation, sans critère propre' },
+	{ cle: 'FACTURE', libelle: 'Facture', apport: 'La facture elle-même' }
+] as const;
 
 /**
  * Les secteurs proposés, et ce que chacun change.
@@ -137,6 +175,64 @@ function Debiteurs() {
 	 * au rendu plutôt que de remettre à zéro dans un effet.
 	 */
 	const poserTaux = useMutation(api.recouvrement.tauxContractuel.renseigner);
+	/**
+	 * LES PIÈCES DU DÉBITEUR — module 1.2.
+	 *
+	 * `skip` tant qu'aucun débiteur n'est choisi : sans ça, Convex relirait la
+	 * liste sur un identifiant nul à chaque rendu du volet gauche.
+	 */
+	const pieces = useQuery(
+		api.recouvrement.pieces.listerPiecesDuDebiteur,
+		choisi === null ? 'skip' : { debiteurId: choisi }
+	);
+	const genererUrlPiece = useMutation(api.recouvrement.pieces.genererUrlPiece);
+	const deposerPiece = useMutation(api.recouvrement.pieces.deposerPiece);
+	const classerPiece = useMutation(api.recouvrement.pieces.classerPiece);
+	const retirerPiece = useMutation(api.recouvrement.pieces.retirerPiece);
+	const [depotEnCours, setDepotEnCours] = useState(false);
+
+	/**
+	 * Déposer une ou plusieurs pièces.
+	 *
+	 * ⚠️ LE DÉPÔT N'IMPOSE AUCUN TYPE. La pièce entre « à classer », la lecture
+	 * part en tâche de fond, et le gérant ne corrige que si elle s'est trompée.
+	 * Demander la nature d'un PDF qui porte « BON DE LIVRAISON » en en-tête est
+	 * exactement le champ vide que la première règle d'écran interdit.
+	 *
+	 * ⚠️ ET ELLES SONT RATTACHÉES AU DÉBITEUR, PAS À UNE FACTURE. Des CGV ou un
+	 * contrat-cadre valent pour toutes ses factures ; créer une liaison par
+	 * facture pour un seul PDF en produirait des milliers.
+	 */
+	async function deposerPieces(fichiers: File[]) {
+		if (choisi === null) return;
+		setErreur(null);
+		setDepotEnCours(true);
+		try {
+			for (const fichier of fichiers) {
+				const url = await genererUrlPiece();
+				const reponse = await fetch(url, {
+					method: 'POST',
+					headers: { 'Content-Type': fichier.type },
+					body: fichier
+				});
+				if (!reponse.ok) throw new Error(`L’envoi de « ${fichier.name} » a échoué.`);
+				const { storageId } = (await reponse.json()) as { storageId: Id<'_storage'> };
+
+				await deposerPiece({
+					storageId,
+					filename: fichier.name,
+					mimeType: fichier.type,
+					debiteurId: choisi,
+					factureIds: []
+				});
+			}
+		} catch (e) {
+			setErreur(e instanceof Error ? e.message : 'Dépôt refusé.');
+		} finally {
+			setDepotEnCours(false);
+		}
+	}
+
 	const [constatPose, setConstatPose] = useState<{
 		readonly debiteurId: Id<'debiteurs'>;
 		readonly texte: string;
@@ -439,6 +535,39 @@ function Debiteurs() {
 					constatTaux={constatTaux}
 					onEnregistrerTaux={(p) => void enregistrerTaux(p)}
 				/>
+
+				{/*
+				  LES PIÈCES, JUSTE APRÈS L'IDENTITÉ.
+
+				  ⚠️ ELLES ÉTAIENT LUES PAR LES DEUX MOTEURS ET ÉCRITES NULLE PART.
+				  Les conditions légales valent 12 points sur 20, le seuil de
+				  qualification 15, et les points manquants sont tous documentaires :
+				  aucune créance ne pouvait être éligible, quoi que fasse le
+				  créancier. L'écran de créance listait « ce qui renforcerait ce
+				  dossier » sans qu'il existe un endroit où le renforcer.
+
+				  Elles vivent ICI et pas sur la créance : des CGV ou un contrat-cadre
+				  valent pour toutes les factures d'un client, et les redéposer par
+				  dossier garantirait qu'on ne les dépose jamais.
+				*/}
+				<SectionEcran
+					titre="Les pièces du dossier"
+					legende={pieces === undefined ? undefined : `${pieces.length} document(s)`}
+				>
+					<Pieces
+						pieces={pieces ?? []}
+						optionsType={TYPES_PIECE}
+						enCours={depotEnCours}
+						onDeposer={(fichiers) => void deposerPieces(fichiers)}
+						onClasser={(pieceId, type) => {
+							void classerPiece({
+								pieceId: pieceId as Id<'pieces'>,
+								type: type as 'BON_DE_LIVRAISON'
+							});
+						}}
+						onRetirer={(pieceId) => void retirerPiece({ pieceId: pieceId as Id<'pieces'> })}
+					/>
+				</SectionEcran>
 
 				{/*
 				  L'HABITUDE, ENTRE L'IDENTITÉ ET LE LETTRAGE. L'ordre n'est pas

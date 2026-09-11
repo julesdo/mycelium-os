@@ -49,7 +49,25 @@ export interface ContenuImages {
 	images: Array<{ mediaType: string; base64: string }>;
 }
 
-export type ContenuDocument = ContenuTexte | ContenuImages;
+/**
+ * Un PDF, envoyé tel quel.
+ *
+ * ⚠️ IL NE SE CONVERTIT PAS EN IMAGES. Claude lit nativement un PDF, page par
+ * page, en conservant sa couche texte quand elle existe — ce qu'un rendu en
+ * JPEG détruirait. Rastériser d'abord ferait relire par OCR un texte déjà
+ * présent, donc perdre de la précision sur des références et des montants qui
+ * entrent dans un dossier opposable.
+ *
+ * Ajouté pour les pièces justificatives (module 1.2) : un bon de livraison est
+ * un PDF neuf fois sur dix, et l'extracteur ne savait lire qu'un texte déjà
+ * décodé ou des photos.
+ */
+export interface ContenuPdf {
+	type: 'pdf';
+	base64: string;
+}
+
+export type ContenuDocument = ContenuTexte | ContenuImages | ContenuPdf;
 
 export interface UsageExtraction {
 	tokensIn: number;
@@ -104,6 +122,11 @@ function construireBlocsContenu(
 
 	if (contenu.type === 'texte') {
 		blocs.push({ type: 'text', text: contenu.texte });
+	} else if (contenu.type === 'pdf') {
+		blocs.push({
+			type: 'document',
+			source: { type: 'base64', media_type: 'application/pdf', data: contenu.base64 }
+		});
 	} else {
 		for (const image of contenu.images) {
 			blocs.push({
