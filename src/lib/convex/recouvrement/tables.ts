@@ -462,12 +462,55 @@ export const recouvrementTables = {
 		entreCommercants: vEtatCritere,
 		/** 0 à 1. Une créance sous le seuil ne part pas en procédure. */
 		score: v.optional(v.number()),
+		/**
+		 * La procédure engagée, et la date de son engagement.
+		 *
+		 * ⚠️ `statut: 'ENGAGEE'` NE DISAIT PAS LAQUELLE. Le statut existait, et
+		 * rien n'enregistrait ni quelle voie avait été prise ni quand — donc
+		 * aucun délai post-décision ne pouvait courir. Ces deux champs sont
+		 * l'entrée de la machine à états.
+		 */
+		procedureEngagee: v.optional(v.string()),
+		engageeLe: v.optional(v.string()),
 		qualifieeLe: v.optional(v.number()),
 		creeLe: v.number()
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_debiteur', ['debiteurId'])
 		.index('by_org_and_statut', ['organizationId', 'statut']),
+
+	/**
+	 * LE JOURNAL D'UNE PROCÉDURE ENGAGÉE — module 4.5.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ ON ENREGISTRE DES ÉVÉNEMENTS, PAS UN ÉTAT
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * L'état courant se REJOUE depuis ces lignes. Le stocker à côté ferait deux
+	 * vérités, et leur divergence serait muette : rien ne casse quand un état
+	 * ment, il se contente d'être faux — sur un dossier où l'échéance manquée
+	 * coûte le titre exécutoire.
+	 *
+	 * ⚠️ DEUX DATES, ET ELLES NE DISENT PAS LA MÊME CHOSE. `survenuLe` est la
+	 * date du FAIT — celle qui fait courir les délais. `consigneLe` est celle
+	 * de la saisie. Un gérant qui enregistre le 20 mars une ordonnance signifiée
+	 * le 3 doit voir ses trois mois partir du 3 ; les confondre en offrirait
+	 * dix-sept de plus, sur l'échéance la plus dangereuse du produit.
+	 */
+	evenementsProcedure: defineTable({
+		organizationId: v.id('organizations'),
+		creanceId: v.id('creances'),
+		/** La clé de la procédure — sa machine à états vit dans le domaine. */
+		procedure: v.string(),
+		/** La clé de la transition, telle que la machine la nomme. */
+		cle: v.string(),
+		/** La date du FAIT. AAAA-MM-JJ. C'est elle qui fait courir les délais. */
+		survenuLe: v.string(),
+		/** Quand on l'a enregistré. Jamais utilisée dans un calcul de délai. */
+		consigneLe: v.number()
+	})
+		.index('by_creance', ['creanceId'])
+		.index('by_org', ['organizationId']),
 
 	/**
 	 * Un décompte FIGÉ. Il ne se recalcule jamais.

@@ -61,4 +61,5 @@ export { IdentiteDebiteur, type OptionSecteur } from './identite-debiteur';
 export { HabitudePaiement, type HabitudeAffichee, type RuptureAffichee } from './habitude';
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
 export { QuestionnaireLitige, type QuestionLitige, type ReponseFait } from './questionnaire-litige';
+export { SuiviProcedure, type SuiviAffiche, type EcheanceAffichee } from './suivi-procedure';
 export { Lettrage, type PropositionLettrage, type CombinaisonAffichee } from './lettrage';

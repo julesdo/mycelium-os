@@ -1,6 +1,5 @@
 import type { Montant } from '../../socle/montants';
-import { ajouterJours, ajouterMois } from './calendrier';
-import { PARAMETRES, estUtilisable, exiger, type ParametreLegalBase } from './parametres';
+import { PARAMETRES, estUtilisable, type ParametreLegalBase } from './parametres';
 import {
 	CONDITIONS_LEGALES,
 	LIBELLE_CONDITION,
@@ -72,7 +71,23 @@ export interface Procedure {
 	/** Ce qui empêche de produire l'acte. Vide = rien n'empêche. */
 	blocagesProductionActe(): readonly string[];
 	evaluerEligibilite(creance: CreanceQualifiee): Evaluation;
-	echeances(engageeLe: string): readonly Echeance[];
+	/**
+	 * La machine à états qui décrit ce qui se passe APRÈS l'engagement.
+	 *
+	 * ⚠️ CE MODULE NE CALCULE PLUS AUCUN DÉLAI LUI-MÊME. Il portait une méthode
+	 * `echeances(engageeLe)` qui recalculait les mêmes bornes que la machine, à
+	 * partir d'une seule date — et cette date était ambiguë : les trois mois de
+	 * signification courent depuis l'ORDONNANCE, pas depuis l'engagement.
+	 *
+	 * Elle n'était appelée par aucun écran, seulement par ses propres tests :
+	 * septième occurrence dans ce dépôt d'un code écrit, testé, et jamais
+	 * consommé. Deux calculs du même délai légal finissent par diverger, et le
+	 * plus dangereux des deux est celui que personne ne regarde.
+	 *
+	 * `null` quand la procédure n'a pas d'après modélisé — la relance amiable
+	 * n'a ni décision ni délai qui en découle.
+	 */
+	readonly machine: string | null;
 }
 
 function parametre(cle: string): ParametreLegalBase | undefined {
@@ -154,21 +169,7 @@ const injonctionDePayer: Procedure = {
 	peutEvaluer: () => true,
 	blocagesProductionActe: () => blocages(injonctionDePayer.parametresRequis),
 	evaluerEligibilite: evaluerConditionsLegales,
-	echeances(engageeLe) {
-		const mois = exiger(PARAMETRES.delaiSignificationInjonction);
-		return [
-			{
-				cle: 'signification',
-				libelle: "Signification de l'ordonnance",
-				dateLimite: ajouterMois(engageeLe, mois),
-				gravite: 'CADUCITE',
-				consequence:
-					`Passé ce délai de ${mois} mois, l'ordonnance est caduque. La créance n'est pas ` +
-					`éteinte, mais la procédure est à reprendre depuis le début, et le temps écoulé ` +
-					'rapproche la prescription.'
-			}
-		];
-	}
+	machine: 'injonction-de-payer'
 };
 
 const l126: Procedure = {
@@ -196,35 +197,7 @@ const l126: Procedure = {
 	peutEvaluer: () => blocages(l126.parametresRequis).length === 0,
 	blocagesProductionActe: () => blocages(l126.parametresRequis),
 	evaluerEligibilite: evaluerConditionsLegales,
-	echeances(engageeLe) {
-		const moisContestation = exiger(PARAMETRES.delaiContestationL126);
-		const joursProcesVerbal = exiger(PARAMETRES.delaiProcesVerbalNonContestation);
-
-		// Les deux délais S'AJOUTENT : le procès-verbal se dresse huit jours
-		// après l'EXPIRATION du mois, pas huit jours après la signification.
-		const finContestation = ajouterMois(engageeLe, moisContestation);
-
-		return [
-			{
-				cle: 'fin-contestation',
-				libelle: 'Expiration du délai de contestation',
-				dateLimite: finContestation,
-				gravite: 'INFORMATIVE',
-				consequence:
-					"Jusqu'à cette date, le débiteur peut contester et mettre fin à la procédure simplifiée."
-			},
-			{
-				cle: 'proces-verbal-possible',
-				libelle: 'Procès-verbal de non-contestation possible',
-				dateLimite: ajouterJours(finContestation, joursProcesVerbal),
-				gravite: 'INFORMATIVE',
-				consequence:
-					`À partir de cette date, et pas avant, le procès-verbal peut être dressé. ` +
-					`Les ${joursProcesVerbal} jours s'ajoutent au délai de contestation, ils ne s'y ` +
-					'superposent pas.'
-			}
-		];
-	}
+	machine: 'l126-creances-commerciales'
 };
 
 const relanceAmiable: Procedure = {
@@ -250,7 +223,9 @@ const relanceAmiable: Procedure = {
 		const analyse = evaluerConditionsLegales(creance);
 		return { ...analyse, eligible: true };
 	},
-	echeances: () => []
+	// Aucune décision, donc aucun délai qui en découle. `null` le DIT, là où un
+	// tableau vide se lirait « rien ne court » sur une procédure qui en aurait.
+	machine: null
 };
 
 export const PROCEDURES = {

@@ -14,6 +14,8 @@ import {
 	SectionEcran,
 	Decompte,
 	QuestionnaireLitige,
+	SuiviProcedure,
+	aujourdHuiISO,
 	eurosCentimes,
 	pourcent,
 	type ReponseFait
@@ -53,6 +55,15 @@ function Creance() {
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
 	const repondre = useMutation(api.recouvrement.creances.repondre);
 	const declarerFait = useMutation(api.recouvrement.creances.declarerFait);
+
+	/**
+	 * LE SUIVI DE LA PROCÉDURE ENGAGÉE — module 4.5.
+	 *
+	 * Elle rend `null` sur une créance qui n'a rien engagé, ce qui est le cas
+	 * courant : lever y ferait une erreur permanente sur un état normal.
+	 */
+	const suivi = useQuery(api.recouvrement.apresProcedure.suiviDeLaCreance, { creanceId });
+	const consignerEvenement = useMutation(api.recouvrement.apresProcedure.consignerEvenement);
 	const figer = useMutation(api.recouvrement.decompte.produire);
 	const dernier = useQuery(api.recouvrement.decompte.dernierDecompte, { creanceId });
 
@@ -62,6 +73,25 @@ function Creance() {
 	async function tranche(condition: string, valeur: 'ok' | 'ko') {
 		setErreur(null);
 		await repondre({ creanceId, reponses: { [condition]: valeur } });
+	}
+
+	/**
+	 * Consigner ce qui s'est passé dans la procédure, À SA DATE.
+	 *
+	 * ⚠️ `survenuLe` VIENT DU CHAMP, jamais de l'horloge. C'est la distinction
+	 * que porte tout le module : les délais courent depuis le FAIT, pas depuis
+	 * la saisie. Les confondre offrirait des jours sur une caducité.
+	 */
+	async function consigner(cle: string, survenuLe: string) {
+		setErreur(null);
+		setEnCours(true);
+		try {
+			await consignerEvenement({ creanceId, cle, survenuLe });
+		} catch (e) {
+			setErreur(e instanceof Error ? e.message : 'Enregistrement refusé.');
+		} finally {
+			setEnCours(false);
+		}
 	}
 
 	/**
@@ -293,6 +323,25 @@ function Creance() {
 									</Chip>
 								))}
 							</Surface>
+						</SectionEcran>
+					) : null}
+
+					{/*
+					  CE QUI COURT MAINTENANT, AVANT CE QU'ON POURRAIT FAIRE.
+
+					  Une procédure déjà engagée fait courir des délais dont un À PEINE
+					  DE CADUCITÉ. Les mettre sous la liste des voies envisageables
+					  reviendrait à faire lire « ce qu'on pourrait engager » avant « ce
+					  qui va s'éteindre si personne ne bouge ».
+					*/}
+					{suivi ? (
+						<SectionEcran titre="Ce qui court depuis l’engagement" legende={suivi.libelle}>
+							<SuiviProcedure
+								suivi={suivi}
+								aujourdHui={aujourdHuiISO()}
+								enCours={enCours}
+								onConsigner={(cle, survenuLe) => void consigner(cle, survenuLe)}
+							/>
 						</SectionEcran>
 					) : null}
 

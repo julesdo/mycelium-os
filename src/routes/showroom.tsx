@@ -18,6 +18,7 @@ import {
 	HabitudePaiement,
 	IdentiteDebiteur,
 	QuestionnaireLitige,
+	SuiviProcedure,
 	ConstatRegistre,
 	Lettrage,
 	type OptionSecteur,
@@ -338,6 +339,145 @@ const QUESTIONS_LITIGE_DEMO = [
 		portee: 'Un avoir réclamé et non émis est un désaccord ouvert sur le montant.'
 	}
 ];
+
+function DemoSuivi() {
+	// La date du jour est figée : une démonstration dont les « dans N jours »
+	// bougent chaque matin ne se compare plus d'une capture à l'autre.
+	const AUJOURDHUI = '2026-03-02';
+
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="Ce qui court depuis l’engagement" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>La caducité qui approche</SectionTitle>
+						<SuiviProcedure
+							aujourdHui={AUJOURDHUI}
+							onConsigner={() => {}}
+							suivi={{
+								libelle: 'Ordonnance rendue',
+								constat: 'L’ordonnance existe et n’est pas encore signifiée au débiteur.',
+								depuisLe: '2026-01-10',
+								echeances: [
+									{
+										cle: 'signification',
+										libelle: 'Signification de l’ordonnance',
+										dateLimite: '2026-04-10',
+										gravite: 'CADUCITE',
+										consequence:
+											'Passé ce délai de 3 mois, l’ordonnance est caduque. La créance n’est pas éteinte, mais la procédure est à reprendre depuis le début, et le temps écoulé rapproche la prescription.'
+									}
+								],
+								anglesMorts: [],
+								suites: [
+									{
+										cle: 'ordonnance-signifiee',
+										libelle: 'L’ordonnance a été signifiée au débiteur'
+									}
+								],
+								terminal: false,
+								journal: [
+									{
+										cle: 'ordonnance-rendue',
+										libelle: 'Le juge a rendu son ordonnance',
+										survenuLe: '2026-01-10'
+									}
+								]
+							}}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Ce qui court sans qu’on sache combien de temps</SectionTitle>
+						<SuiviProcedure
+							aujourdHui={AUJOURDHUI}
+							onConsigner={() => {}}
+							suivi={{
+								libelle: 'Ordonnance signifiée',
+								constat:
+									'Le débiteur a reçu l’ordonnance. Un délai d’opposition court à compter de cette signification.',
+								depuisLe: '2026-02-10',
+								echeances: [],
+								anglesMorts: [
+									'Un délai d’opposition court depuis la signification. Sa durée n’est pas relevée dans le référentiel juridique de ce logiciel : cette échéance-là n’est PAS surveillée, et reste à vérifier auprès de l’acte signifié, qui la porte.'
+								],
+								suites: [
+									{ cle: 'opposition-formee', libelle: 'Le débiteur a formé opposition' },
+									{
+										cle: 'absence-opposition-constatee',
+										libelle: 'L’absence d’opposition a été constatée'
+									}
+								],
+								terminal: false,
+								journal: [
+									{
+										cle: 'ordonnance-rendue',
+										libelle: 'Le juge a rendu son ordonnance',
+										survenuLe: '2026-01-10'
+									},
+									{
+										cle: 'ordonnance-signifiee',
+										libelle: 'L’ordonnance a été signifiée au débiteur',
+										survenuLe: '2026-02-10'
+									}
+								]
+							}}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Une échéance dépassée le DIT</SectionTitle>
+						<SuiviProcedure
+							aujourdHui={AUJOURDHUI}
+							onConsigner={() => {}}
+							suivi={{
+								libelle: 'Commandement signifié',
+								constat:
+									'Le commandement a été signifié. Le débiteur peut contester, et une contestation met fin à la procédure simplifiée, même infondée.',
+								depuisLe: '2026-01-15',
+								echeances: [
+									{
+										cle: 'fin-contestation',
+										libelle: 'Expiration du délai de contestation',
+										dateLimite: '2026-02-15',
+										gravite: 'INFORMATIVE',
+										consequence:
+											'Jusqu’à cette date, le débiteur peut contester et mettre fin à la procédure simplifiée.'
+									},
+									{
+										cle: 'proces-verbal-possible',
+										libelle: 'Procès-verbal de non-contestation possible',
+										dateLimite: '2026-02-23',
+										gravite: 'INFORMATIVE',
+										consequence:
+											'À partir de cette date, et pas avant, le procès-verbal peut être dressé. Les 8 jours s’ajoutent au délai de contestation, ils ne s’y superposent pas.'
+									}
+								],
+								anglesMorts: [],
+								suites: [
+									{ cle: 'contestation-recue', libelle: 'Le débiteur a contesté' },
+									{
+										cle: 'proces-verbal-dresse',
+										libelle: 'Le procès-verbal de non-contestation a été dressé'
+									}
+								],
+								terminal: false,
+								journal: [
+									{
+										cle: 'commandement-signifie',
+										libelle: 'Le commandement a été signifié au débiteur',
+										survenuLe: '2026-01-15'
+									}
+								]
+							}}
+						/>
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 function DemoLitige() {
 	return (
@@ -1071,6 +1211,7 @@ const ECRANS = [
 	'creancier',
 	'identite',
 	'litige',
+	'suivi',
 	'revelation',
 	'bilan',
 	'flux',
@@ -1113,6 +1254,7 @@ function Showroom() {
 				{ecran === 'creancier' ? <DemoCreancier /> : null}
 				{ecran === 'identite' ? <DemoIdentite /> : null}
 				{ecran === 'litige' ? <DemoLitige /> : null}
+				{ecran === 'suivi' ? <DemoSuivi /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}

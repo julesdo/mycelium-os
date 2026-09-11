@@ -73,13 +73,16 @@ describe('injonction de payer', () => {
 		expect(texte).not.toMatch(/vous devriez|nous (vous )?recommandons|il faut engager|conseillons/);
 	});
 
-	it('surveille la signification à trois mois, sous peine de caducité', () => {
-		const echeances = procedure.echeances('2026-09-02');
-		const signification = echeances.find((e) => e.cle === 'signification');
-
-		expect(signification).toBeDefined();
-		expect(signification!.dateLimite).toBe('2026-12-02');
-		expect(signification!.gravite).toBe('CADUCITE');
+	it('renvoie à sa machine à états pour ce qui court après', () => {
+		// ⚠️ CE MODULE NE CALCULE PLUS DE DÉLAI. Il en calculait, depuis une date
+		// unique — et cette date était ambiguë : les trois mois de signification
+		// courent depuis l'ORDONNANCE, pas depuis l'engagement. Deux calculs du
+		// même délai légal finissent par diverger, et personne ne regardait
+		// celui-ci : il n'était appelé que par ce test.
+		//
+		// La vérification des bornes vit désormais dans `apres-procedure.test.ts`,
+		// où chaque délai est rattaché à l'état qui le fait courir.
+		expect(procedure.machine).toBe('injonction-de-payer');
 	});
 
 	it('peut évaluer, mais refuse de produire l’acte sans ses mentions obligatoires', () => {
@@ -105,16 +108,11 @@ describe('L.126 — créances commerciales', () => {
 		expect(procedure.plafondMontant).toBeNull();
 	});
 
-	it('surveille le délai de contestation puis celui du procès-verbal, qui s’ajoutent', () => {
-		// Un mois de contestation à compter de la signification, puis huit jours
-		// APRÈS son expiration — les deux délais s'ajoutent, ils ne se
-		// recouvrent pas.
-		const echeances = procedure.echeances('2026-09-02');
-		const contestation = echeances.find((e) => e.cle === 'fin-contestation');
-		const proces = echeances.find((e) => e.cle === 'proces-verbal-possible');
-
-		expect(contestation!.dateLimite).toBe('2026-10-02');
-		expect(proces!.dateLimite).toBe('2026-10-10');
+	it('renvoie à sa machine à états pour ce qui court après', () => {
+		// Le mois de contestation et les huit jours du procès-verbal sont
+		// vérifiés dans `apres-procedure.test.ts`, depuis la SIGNIFICATION qui
+		// les fait réellement courir.
+		expect(procedure.machine).toBe('l126-creances-commerciales');
 	});
 });
 

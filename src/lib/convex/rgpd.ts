@@ -502,6 +502,9 @@ export const purgerEtablissement = internalMutation({
 
 		// 5. Le reste, table par table. L'ordre suit les dépendances : ce qui est
 		//    référencé part après ce qui le référence.
+		//
+		//    Le journal de procédure part AVANT les créances qu'il référence.
+		budget = await viderParIndexOrg(ctx, 'evenementsProcedure', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'dossiers', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'creances', organizationId, budget);
@@ -717,6 +720,7 @@ async function viderParIndexOrg(
 	ctx: CtxEcriture,
 	table:
 		| 'piecesFactures'
+		| 'evenementsProcedure'
 		| 'decomptes'
 		| 'dossiers'
 		| 'creances'

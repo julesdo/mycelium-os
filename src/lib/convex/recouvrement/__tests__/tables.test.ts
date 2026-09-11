@@ -38,13 +38,16 @@ describe('schéma du recouvrement', () => {
 		// quotidien, et ce test a fait exactement ce pour quoi il existe : il a
 		// refusé l'ajout tant que personne ne l'avait déclaré ici. Il a aussi
 		// rappelé, au passage, qu'une table nouvelle doit être branchée à la
-		// purge RGPD — ce que le plan avait oublié.
+		// purge RGPD — ce que le plan avait oublié. Cet oubli-là est désormais
+		// tenu par une barrière qui BALAIE le schéma, `purge-complete.test.ts` :
+		// cette liste-ci dit ce qui existe, celle-là dit que tout est purgé.
 		expect(TABLES.map(([nom]) => nom).sort()).toEqual([
 			'battements',
 			'creances',
 			'debiteurs',
 			'decomptes',
 			'dossiers',
+			'evenementsProcedure',
 			'facturesVente',
 			'importsRecouvrement',
 			'pieces',
