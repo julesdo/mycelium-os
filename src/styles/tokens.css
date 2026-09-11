@@ -1,10 +1,16 @@
 /* Letikette — le système visuel.
  *
- * Cladd est un kit dense, sombre par défaut, conçu pour des éditeurs de bureau
- * pilotés à la souris. Ce produit est tactile, en tablette, clair, et son
- * utilisateur est un responsable de cuisine qui traverse l'écran en quelques
- * secondes entre deux services. Ce fichier est le seul endroit où l'écart
- * entre les deux se règle, et il se relit comme du code. */
+ * ⚠️ CET EN-TÊTE DÉCRIVAIT UN PRODUIT QUI N'EXISTE PLUS. Il parlait d'un écran
+ * « clair », « en tablette », dont « l'utilisateur est un responsable de cuisine
+ * qui traverse l'écran en quelques secondes entre deux services ». C'était vrai
+ * d'EGalim, retiré le 3 septembre 2026. Letikette est un logiciel de
+ * recouvrement de créances B2B, sombre par défaut, qu'un dirigeant ou un
+ * comptable garde ouvert des heures sur un écran de bureau.
+ *
+ * Ce qui reste vrai de l'original : Cladd est un kit DENSE, calibré pour des
+ * éditeurs pilotés à la souris, et ce produit garde un plancher tactile de
+ * 48 px — il se travaille aussi sur tablette. Ce fichier est le seul endroit où
+ * l'écart entre les deux se règle, et il se relit comme du code. */
 
 @theme {
 	/* ESPACEMENT — commande les hauteurs de contrôle.
@@ -68,7 +74,7 @@
 	 * écran : c'est une marque, pas un titre. 24px parce qu'une manuscrite rend
 	 * plus petit qu'une grotesque au même corps — la hauteur de capitale de
 	 * Caveat est courte, et à 18px, le corps des contrôles, le mot passait
-	 * derrière l'assiette au lieu de la porter. */
+	 * derrière la marque au lieu de la porter. */
 	--text-letikette-marque: 24px;
 
 	/* RAYONS — piège : Cladd calcule chaque pas avec des numérateurs écrits en
@@ -111,10 +117,11 @@
 	 * section, un H1 de 18px ne se distingue plus de la légende qui le suit. */
 	--text-letikette-titre: 24px;
 
-	/* Le rail de navigation. Ces largeurs ne mesurent pas un contrôle mais une
-	 * zone de mise en page : elles n'ont pas leur place sur l'échelle du kit. */
-	--spacing-rail: 88px;
-	--spacing-rail-deplie: 248px;
+	/* ⚠️ `--spacing-rail` ET `--spacing-rail-deplie` ONT ÉTÉ SUPPRIMÉS. Ils
+	 * mesuraient un rail de navigation VERTICAL, remplacé par une barre
+	 * horizontale il y a plusieurs mois — et ils n'avaient plus aucun porteur
+	 * depuis. Voir la règle posée quelques lignes plus bas : un jeton sans
+	 * porteur finit par être repris pour autre chose. */
 
 	/* La vignette d'illustration : le carré teinté qui porte l'emoji du produit.
 	 * Trois tailles, et trois seulement — une rangée dense, une carte, un
@@ -129,14 +136,24 @@
 	--text-vignette-md: 40px;
 	--text-vignette-lg: 60px;
 
-	/* ÉLÉVATION — Cladd dessine ses contours en ombres internes, ce qui suffit à
-	 * séparer deux surfaces adjacentes mais ne décolle jamais une carte de son
-	 * fond. Sur un écran clair et aéré, c'est cette ombre portée, très basse et
-	 * très diffuse, qui fait la différence entre « tableau » et « objet ». */
+	/* ÉLÉVATION — et il n'en reste qu'une, pour un seul porteur.
+	 *
+	 * Sur un écran CLAIR, une carte blanche posée sur un fond presque blanc ne
+	 * se détache que par son ombre portée : c'est elle qui fait la différence
+	 * entre « tableau » et « objet ». Sur le fond sombre du produit, la même
+	 * ombre fait une auréole noire, et la séparation se fait par le verre.
+	 *
+	 * ⚠️ `--shadow-carte-levee` A DONC ÉTÉ SUPPRIMÉ : plus aucun porteur depuis
+	 * le passage au verre. Ce fichier pose lui-même la règle, plus bas — « un
+	 * jeton sans porteur n'est pas neutre, il finit par être repris pour autre
+	 * chose, et l'échelle se remet à diverger en silence ».
+	 *
+	 * Celui qui reste n'en a plus qu'UN : `marketing/apercu.tsx`, qui rend
+	 * l'application dans une tablette sur la page commerciale, restée claire.
+	 * C'est le seul endroit du produit encore posé sur du papier, et une ombre
+	 * portée y garde son sens. Le jour où cette page change, ce jeton part. */
 	--shadow-carte:
 		0 1px 2px oklch(0.3 0.02 265 / 0.04), 0 12px 32px -16px oklch(0.3 0.02 265 / 0.16);
-	--shadow-carte-levee:
-		0 2px 4px oklch(0.3 0.02 265 / 0.05), 0 20px 48px -20px oklch(0.3 0.02 265 / 0.24);
 
 	/* SEUILS — réservés, jamais décoratifs.
 	 * Ces trois couleurs ne signifient qu'une chose : au-dessus du seuil, tout
@@ -151,23 +168,20 @@
 	--color-seuil-proche-fond: oklch(0.95 0.055 75);
 	--color-seuil-manque-fond: oklch(0.95 0.04 25);
 
-	/* TEINTES DE FAMILLE — le lit pastel qui porte l'illustration d'un produit.
+	/* ⚠️ LES HUIT TEINTES DE FAMILLE ONT ÉTÉ SUPPRIMÉES — viande, poisson,
+	 * fruits et légumes, laitiers, épicerie sèche, épicerie appertisée,
+	 * boissons, autre.
 	 *
-	 * Amendement assumé à la règle des couleurs réservées, et sa limite exacte :
-	 * ces lavis ne portent JAMAIS un verdict de conformité, seulement une
-	 * famille de produit, et uniquement derrière une illustration. Un verdict
-	 * porte toujours un mot — « Bio », « Durable », « Hors barème » — de sorte
-	 * que la couleur n'est jamais seule à le dire. Ils sont deux fois plus
-	 * clairs et trois fois moins saturés que les couleurs de seuil : sur
-	 * l'écran, on ne les confond pas. */
-	--color-famille-viande: oklch(0.93 0.042 22);
-	--color-famille-poisson: oklch(0.93 0.04 232);
-	--color-famille-fruits-legumes: oklch(0.93 0.048 152);
-	--color-famille-laitiers: oklch(0.951 0.038 92);
-	--color-famille-epicerie-seche: oklch(0.94 0.038 66);
-	--color-famille-epicerie-appertisee: oklch(0.93 0.036 302);
-	--color-famille-boissons: oklch(0.94 0.042 42);
-	--color-famille-autre: oklch(0.94 0.006 35);
+	 * C'étaient les lavis pastel qui portaient l'illustration d'un produit
+	 * alimentaire, et le commentaire qui les accompagnait posait soigneusement
+	 * leur limite : « ces lavis ne portent JAMAIS un verdict de conformité,
+	 * seulement une famille de produit ». Un raisonnement juste, pour un
+	 * produit retiré le 3 septembre 2026.
+	 *
+	 * Elles n'avaient plus aucun porteur. Huit couleurs pastel qui traînent
+	 * dans un fichier de jetons sont exactement ce que la règle du dessous
+	 * décrit : on finit par en reprendre une « parce qu'elle existe », et
+	 * l'échelle se remet à diverger. */
 
 	/* ── LA PAGE PUBLIQUE : PAPIER, ENCRE, FILET ─────────────────────────────
 	 *

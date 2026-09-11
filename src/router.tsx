@@ -24,7 +24,7 @@ export function getRouter() {
 		 * L'écran d'erreur.
 		 *
 		 * Le message technique par défaut de TanStack (« Something went wrong! »
-		 * suivi d'une trace Convex) est la pire chose qu'un gérant de cantine
+		 * suivi d'une trace Convex) est la pire chose qu'un dirigeant
 		 * puisse lire : il est en anglais, il ne dit pas quoi faire, et il donne
 		 * l'impression que sa mesure est perdue. Elle ne l'est jamais : les
 		 * données sont dans Convex, l'écran seul a échoué.
