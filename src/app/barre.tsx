@@ -239,7 +239,13 @@ function CapsuleOnglets() {
 						to={to}
 						aria-current={ici ? 'page' : undefined}
 						className={cn(
-							'flex h-cladd-sm items-center gap-2 rounded-full px-cladd-3xs text-cladd-xs font-medium transition',
+							// ⚠️ `h-cladd-md` — 48 px, pas `sm` qui en fait 40. La capsule
+							// n'apparaît qu'au-dessus de 768 px, et il a été facile d'y voir
+							// une commande de souris : 40 px suffisent à un curseur. Mais la
+							// cible PREMIÈRE de ce produit est une TABLETTE EN PAYSAGE, qui
+							// est large ET tactile. C'est donc un doigt qui vise ces onglets,
+							// et le plancher du projet est de 48. Mesuré au navigateur.
+							'flex h-cladd-md items-center gap-2 rounded-full px-cladd-3xs text-cladd-xs font-medium transition',
 							ici
 								? // L'onglet actif est un verre PLUS CLAIR, pas un aplat blanc
 									// ni une teinte d'accent. Un aplat blanc sur le fond fait un

@@ -21,6 +21,7 @@ import {
 	SuiviProcedure,
 	Pieces,
 	Solidite,
+	EnteteDetail,
 	Relances,
 	ConstatRegistre,
 	Lettrage,
@@ -446,44 +447,54 @@ function DemoDebiteurDetail() {
 	);
 }
 
-function DemoCreance() {
-	// Les textes viennent des modules de domaine, jamais recopiés : une
-	// démonstration qui invente ses phrases montre un produit qui n'existe pas.
-	const elementsRelance = {
-		creancier: 'Thumbbb Agency',
-		debiteur: 'Fournitures Durand',
-		factures: [
-			{
-				reference: 'FA-2026-004',
-				montantTTC: depuisCentimes(1_200_000n),
-				dateEcheance: '2026-05-15'
-			}
-		],
-		principalRestantDu: depuisCentimes(1_200_000n),
-		santeDebiteur: 'SAINE' as const,
-		aujourdHui: '2026-09-03',
-		decompte: {
-			arreteAu: '2026-09-03',
-			interets: depuisCentimes(64_000n),
-			indemniteForfaitaire: depuisCentimes(4_000n),
-			total: depuisCentimes(1_268_000n)
-		}
-	};
+function DemoDetail() {
+	const pyramide = pyramideDePreuves(['FACTURE', 'BON_DE_COMMANDE']);
 
+	return (
+		<Page>
+			{/* L'en-tête d'une page poussée : le retour porte le nom de l'écran d'où
+			    l'on vient, et il est posé AVANT le titre — un titre long le
+			    pousserait hors de l'écran s'ils partageaient la ligne. */}
+			<EnteteDetail
+				retourVers="/app/debiteurs"
+				retourLibelle="Fournitures Durand"
+				titre="Ce que les pièces établissent"
+				sousTitre={`${pyramide.etablies} sur ${pyramide.attendues}`}
+			/>
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
+					<Solidite
+						solidite={{
+							constat: pyramide.constat,
+							etablies: pyramide.etablies,
+							attendues: pyramide.attendues,
+							prochaine: pyramide.prochaine?.cle ?? null,
+							etages: pyramide.etages.map((e) => ({
+								cle: e.cle,
+								fait: e.fait,
+								etat: e.etat,
+								presente: e.presente,
+								poids: e.poids
+							}))
+						}}
+					/>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
+function DemoCreance() {
+	// Le résumé seul : chaque analyse vit désormais sur sa propre page, et la
+	// salle d'exposition ne peut pas les pousser — elle n'a pas de routeur de
+	// créance. Les pages de détail sont montrées par leurs composants, plus haut.
 	const pyramide = pyramideDePreuves(['FACTURE', 'BON_DE_COMMANDE']);
 
 	return (
 		<EcranCreance
-			aujourdHui="2026-09-03"
-			enCours={false}
-			erreur={null}
-			suivi={null}
-			dernier={null}
-			onTrancher={() => {}}
-			onDeclarer={() => {}}
-			onConsigner={() => {}}
-			onProduireDecompte={() => {}}
-			onTelecharger={null}
+			identifiant="demo"
+			etatProcedure={null}
+			totalDecompte={null}
 			creance={{
 				debiteur: 'Fournitures Durand',
 				score: 0.65,
@@ -491,62 +502,23 @@ function DemoCreance() {
 				principalRestantDu: 1_200_000n,
 				factures: [{ _id: 'f1' }, { _id: 'f2' }],
 				questions: [
-					{
-						condition: 'entreCommercants',
-						libelle:
-							'Pouvez-vous confirmer la qualité de commerçant des deux parties de cette créance ?'
-					}
+					{ condition: 'entreCommercants', libelle: 'Les deux parties sont-elles commerçantes ?' }
 				],
 				litige: {
 					litigieux: false,
-					constats: ['Le caractère certain reste indéterminé : 3 faits ne sont pas renseignés.'],
-					questions: questionsRestantes({ CONTESTATION_ECRITE: 'NON', REFUS_RECEPTION: 'NON' }).map(
-						(q) => ({ cle: q.cle, question: q.question, portee: q.portee })
-					)
+					constats: [],
+					questions: questionsRestantes({ CONTESTATION_ECRITE: 'NON' }).map((q) => ({ cle: q.cle }))
 				},
-				risques: [
-					{
-						type: 'RETARDS_REPETES',
-						description: '4 retards de paiement ont été observés sur ce débiteur.',
-						gravite: 'MOYENNE'
-					}
+				risques: [{ type: 'RETARDS_REPETES', gravite: 'MOYENNE' }],
+				solidite: { etablies: pyramide.etablies, attendues: pyramide.attendues },
+				relances: [
+					{ niveau: 1, disponible: true },
+					{ niveau: 2, disponible: false },
+					{ niveau: 3, disponible: false }
 				],
-				solidite: {
-					constat: pyramide.constat,
-					etablies: pyramide.etablies,
-					attendues: pyramide.attendues,
-					prochaine: pyramide.prochaine?.cle ?? null,
-					etages: pyramide.etages.map((e) => ({
-						cle: e.cle,
-						fait: e.fait,
-						etat: e.etat,
-						presente: e.presente,
-						poids: e.poids
-					}))
-				},
-				relances: NIVEAUX_RELANCE.map((description) => {
-					const relance = composerRelance(description.niveau, elementsRelance);
-					return {
-						niveau: description.niveau,
-						nom: description.nom,
-						intention: description.intention,
-						disponible: relance.disponible,
-						objet: relance.disponible ? relance.objet : undefined,
-						corps: relance.disponible ? relance.corps : undefined,
-						constat: relance.disponible ? undefined : relance.constat,
-						blocages: relance.disponible ? undefined : [...relance.blocages]
-					};
-				}),
 				procedures: [
-					{ cle: 'relance-amiable', nom: 'Relance amiable', disponible: true, blocages: [] },
-					{
-						cle: 'injonction-de-payer',
-						nom: 'Injonction de payer',
-						disponible: false,
-						blocages: [
-							'« mentionsObligatoiresInjonction » : les mentions que doit porter une requête en injonction de payer.'
-						]
-					}
+					{ cle: 'relance-amiable', disponible: true },
+					{ cle: 'injonction-de-payer', disponible: false }
 				],
 				regimePrescriptionNote:
 					'Régime général : cinq ans à compter de l’exigibilité. Secteur déterminé.'
@@ -1665,6 +1637,7 @@ const ECRANS = [
 	'solidite',
 	'relances',
 	'creance',
+	'detail',
 	'debiteur',
 	'revelation',
 	'bilan',
@@ -1713,6 +1686,7 @@ function Showroom() {
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'relances' ? <DemoRelances /> : null}
 				{ecran === 'creance' ? <DemoCreance /> : null}
+				{ecran === 'detail' ? <DemoDetail /> : null}
 				{ecran === 'debiteur' ? <DemoDebiteurDetail /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}

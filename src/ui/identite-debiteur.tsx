@@ -225,11 +225,17 @@ export function ConstatRegistre({
 				{constat.tribunal ?? null}
 			</p>
 
+			{/* ⚠️ `min-h-11` ET `w-fit` — 44 px de haut, la largeur du texte.
+			    Le lien faisait 21 px de haut sur toute la largeur de la carte : trop
+			    plat pour un doigt, et une cible qui traverse l'écran attrape les
+			    appuis destinés à ce qui l'entoure. C'est le seul lien du produit qui
+			    sorte vers un site tiers, et le seul endroit où le gérant peut LIRE
+			    le registre plutôt que notre citation — il mérite d'être atteignable. */}
 			<a
 				href={constat.url}
 				target="_blank"
 				rel="noreferrer"
-				className="text-cladd-xs text-cladd-primary underline underline-offset-2"
+				className="inline-flex min-h-11 w-fit items-center text-cladd-xs text-cladd-primary underline underline-offset-2"
 			>
 				Lire l’annonce au BODACC
 			</a>
