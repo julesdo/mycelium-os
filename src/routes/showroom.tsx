@@ -14,7 +14,6 @@ import {
 	FluxEvenements,
 	Decompte,
 	ChocRevelation,
-	CompteurVivant,
 	BilanPertes,
 	IdentiteDebiteur,
 	ConstatRegistre,
@@ -398,13 +397,6 @@ function DemoBilan() {
 					<div className="flex flex-col gap-cladd-3xs">
 						<SectionTitle>Le même, après un battement en échec</SectionTitle>
 						<BilanPertes bilan={{ ...BILAN_DEMO, surveillanceInterrompueLe: '2026-05-14' }} />
-					</div>
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Le compteur vivant</SectionTitle>
-						<CompteurVivant
-							total={REVELATION_DEMO.total}
-							interetsCourusDepuisHier={REVELATION_DEMO.interetsCourusDepuisHier}
-						/>
 					</div>
 				</div>
 			</PageBody>

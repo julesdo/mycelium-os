@@ -58,7 +58,6 @@ export {
 export { FluxEvenements, type EvenementAffiche, type UrgenceEvenement } from './flux-evenements';
 export {
 	ChocRevelation,
-	CompteurVivant,
 	BilanPertes,
 	type RevelationAffichee,
 	type LigneRevelationAffichee,

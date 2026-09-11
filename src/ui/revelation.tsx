@@ -1,9 +1,15 @@
 import { Surface, SurfaceCut } from '@cladd-ui/react';
-import { AlertTriangleIcon, TrendingUpIcon } from 'lucide-react';
+import { AlertTriangleIcon } from 'lucide-react';
 import { dateCourte, eurosCentimes } from './format';
 
 /**
- * LE CHOC DU PREMIER IMPORT, ET LES DEUX COMPTEURS QUI LE PROLONGENT.
+ * LE CHOC DU PREMIER IMPORT, ET LE BILAN DE CE QUI S'EST ÉTEINT.
+ *
+ * ⚠️ UN TROISIÈME COMPOSANT VIVAIT ICI — `CompteurVivant` — et il a été retiré.
+ * Il affichait le TOTAL réclamable, que le hero de l'accueil porte désormais en
+ * corps de soixante-douze pixels, à un geste d'ici. Or `ChocRevelation`, juste
+ * au-dessous, énumère déjà ce total ET ses trois parts. Le même chiffre trois
+ * fois sur un écran ne le rend pas plus vrai : il fait chercher lequel compte.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * CE QUE LE GROS CHIFFRE DIT, ET CE QU'IL NE DIT PAS
@@ -80,7 +86,12 @@ function NonChiffrees({
 	if (lignes.length === 0) return null;
 
 	return (
-		<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+		<Surface
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
+			contentClassName="flex gap-cladd-3xs p-cladd-2xs"
+		>
 			<AlertTriangleIcon className="mt-1 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
 			<div className="flex min-w-0 flex-col gap-1.5">
 				<p className="text-cladd-xs font-semibold">
@@ -168,44 +179,6 @@ export function ChocRevelation({ revelation }: { revelation: RevelationAffichee 
 }
 
 /**
- * Le compteur vivant — « il a monté cette nuit ».
- *
- * ⚠️ L'ÉTIQUETTE DIT « INTÉRÊTS COURUS », PAS « MONTÉE ». Le chiffre mesure ce
- * qui s'est accumulé sur de l'argent DÉJÀ réclamable, et rien d'autre : une
- * facture qui échoit dans la nuit est un événement du flux, pas une
- * accumulation, et l'indemnité forfaitaire est due UNE fois, pas chaque nuit.
- * Une étiquette plus large qu'elle ne le doit ferait un chiffre faux sans qu'une
- * seule ligne de calcul change.
- */
-export function CompteurVivant({
-	total,
-	interetsCourusDepuisHier
-}: {
-	total: bigint;
-	interetsCourusDepuisHier: bigint;
-}) {
-	return (
-		<SurfaceCut contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-2xs">
-			<div className="flex flex-col gap-0.5">
-				<span className="text-cladd-sm text-cladd-fg-soft">Ce qu’on vous doit aujourd’hui</span>
-				<span className="text-cladd-2xs text-cladd-fg-softer">
-					Principal, intérêts courus et indemnités forfaitaires
-				</span>
-			</div>
-			<div className="flex flex-col items-end gap-0.5">
-				<span className="text-letikette-titre font-bold tabular-nums">{eurosCentimes(total)}</span>
-				{interetsCourusDepuisHier > 0n ? (
-					<span className="flex items-center gap-1 text-cladd-2xs text-cladd-fg-soft tabular-nums">
-						<TrendingUpIcon className="size-3.5" aria-hidden />
-						{eurosCentimes(interetsCourusDepuisHier)} d’intérêts courus depuis hier
-					</span>
-				) : null}
-			</div>
-		</SurfaceCut>
-	);
-}
-
-/**
  * Le bilan des pertes — et le seul écran du produit qui s'interdit de parler.
  *
  * ⚠️ « 0 € PERDU DEPUIS N JOURS » EST UNE AFFIRMATION SUR NOTRE TRAVAIL, pas
@@ -222,7 +195,12 @@ export function CompteurVivant({
 export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 	if (bilan.surveillanceInterrompueLe !== undefined) {
 		return (
-			<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+			<Surface
+				variant="transparent"
+				outline={false}
+				className="verre-carte rounded-cladd-xl"
+				contentClassName="flex gap-cladd-3xs p-cladd-2xs"
+			>
 				<AlertTriangleIcon className="mt-1 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
 				<div className="flex min-w-0 flex-col gap-1.5">
 					<p className="text-cladd-xs font-semibold">Ce compteur ne peut rien affirmer</p>
@@ -239,7 +217,12 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
 			<div className="flex flex-col gap-cladd-3xs sm:flex-row">
-				<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs">
+				<Surface
+					variant="transparent"
+					outline={false}
+					className="verre-carte rounded-cladd-xl"
+					contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs"
+				>
 					<span className="text-cladd-sm text-cladd-fg-soft">
 						Éteint avant votre arrivée, en silence
 					</span>
@@ -252,7 +235,12 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 					</span>
 				</Surface>
 
-				<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs">
+				<Surface
+					variant="transparent"
+					outline={false}
+					className="verre-carte rounded-cladd-xl"
+					contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs"
+				>
 					<span className="text-cladd-sm text-cladd-fg-soft">Éteint depuis, sous surveillance</span>
 					<span className="text-letikette-chiffre font-bold tabular-nums">
 						{eurosCentimes(bilan.eteintesDepuis)}
@@ -264,7 +252,12 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 			</div>
 
 			{bilan.nonSurveillees.length > 0 ? (
-				<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+				<Surface
+					variant="transparent"
+					outline={false}
+					className="verre-carte rounded-cladd-xl"
+					contentClassName="flex gap-cladd-3xs p-cladd-2xs"
+				>
 					<AlertTriangleIcon className="mt-1 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
 					<div className="flex min-w-0 flex-col gap-1.5">
 						<p className="text-cladd-xs font-semibold">

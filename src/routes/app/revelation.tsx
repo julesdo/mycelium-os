@@ -2,7 +2,8 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
-import { BoutonPrincipal,
+import {
+	BoutonPrincipal,
 	Page,
 	PageHeader,
 	PageBody,
@@ -10,7 +11,6 @@ import { BoutonPrincipal,
 	SectionEcran,
 	aujourdHuiISO,
 	ChocRevelation,
-	CompteurVivant,
 	BilanPertes
 } from '../../ui';
 
@@ -78,25 +78,29 @@ function Revelation() {
 							'Le chiffre apparaît dès le premier dépôt, décomposé facture par facture.'
 						]}
 						action={
-							<BoutonPrincipal
-								as={Link}
-								to="/app/import-factures"
-							>
+							<BoutonPrincipal as={Link} to="/app/import-factures">
 								<UploadIcon />
 								Importer mes factures
 							</BoutonPrincipal>
 						}
 					/>
 				) : (
-					<div className="flex flex-col gap-cladd-md">
-						<ChocRevelation revelation={revelation} />
+					<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
+						{/*
+						  ⚠️ LE COMPTEUR VIVANT A ÉTÉ RETIRÉ D'ICI, ET C'ÉTAIT UNE
+						  REDONDANCE À TROIS ÉTAGES.
 
-						<SectionEcran titre="Ce qu’on vous doit aujourd’hui">
-							<CompteurVivant
-								total={revelation.total}
-								interetsCourusDepuisHier={revelation.interetsCourusDepuisHier}
-							/>
-						</SectionEcran>
+						  Il affichait le TOTAL — que le hero de l'accueil porte
+						  désormais en corps de soixante-douze pixels, à un geste d'ici.
+						  Et `ChocRevelation`, juste au-dessus, énumère déjà les trois
+						  parts de ce total : intérêts, indemnité, principal.
+
+						  Le même chiffre trois fois sur un écran ne le rend pas plus
+						  vrai ; il fait chercher lequel des trois compte. Cet écran-ci a
+						  son propre argument — le SUPPLÉMENT, ce qui n'était jamais
+						  réclamé — et c'est le seul qui a le droit d'y être en grand.
+						*/}
+						<ChocRevelation revelation={revelation} />
 
 						{bilan === undefined ? null : (
 							<SectionEcran titre="Ce qui s’est éteint">
