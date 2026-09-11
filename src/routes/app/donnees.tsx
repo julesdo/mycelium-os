@@ -1,7 +1,6 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { createFileRoute } from '@tanstack/react-router';
+import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
-import { authClient } from '../../lib/client/auth';
 import { Page, PageHeader, PageBody } from '../../ui';
 import { Donnees } from '../../screens/donnees/donnees';
 
@@ -15,21 +14,19 @@ export const Route = createFileRoute('/app/donnees')({ component: EcranDonnees }
  * aucun code. Voir l'en-tête de `src/lib/convex/rgpd.ts` pour les trois
  * décisions qui structurent le backend correspondant.
  *
- * APRÈS UNE SUPPRESSION DE COMPTE, ON DÉCONNECTE. La session reste
- * cryptographiquement valide quelques instants après que l'identité a disparu :
- * sans déconnexion explicite, l'utilisateur se retrouve dans une application qui
- * lui répond « accès refusé » partout, ce qui se lit comme une panne plutôt que
- * comme le résultat qu'il a demandé.
+ * ⚠️ LES TROIS GESTES VIVENT SUR LEURS PROPRES PAGES, sous `/app/donnees/…`.
+ * Cet écran ne porte plus que l'INVENTAIRE — la réponse à la question qu'on
+ * vient poser, « qu'est-ce que vous détenez sur moi ? » — et trois rangées.
+ *
+ * Deux d'entre eux sont DESTRUCTEURS. On les croisait en faisant défiler, entre
+ * un inventaire et un autre bouton rouge : un geste irréversible ne doit pas
+ * être atteignable par accident, et 3,2 écrans de défilement en faisaient
+ * exactement ça.
  */
 function EcranDonnees() {
-	const navigate = useNavigate();
 	const apercu = useQuery(api.rgpd.apercuDeMesDonnees, {});
-	const compte = useQuery(api.auth.getCurrentUser, {});
-	const exporter = useAction(api.rgpd.exporterMesDonnees);
-	const supprimerEtablissement = useMutation(api.rgpd.supprimerEtablissement);
-	const supprimerCompte = useMutation(api.rgpd.supprimerMonCompte);
 
-	if (apercu === undefined || compte === undefined) {
+	if (apercu === undefined) {
 		return (
 			<Page>
 				<PageHeader titre="Vos données" />
@@ -60,20 +57,7 @@ function EcranDonnees() {
 				sousTitre="Ce que nous détenons, ce que vous pouvez en emporter, ce que vous pouvez en effacer."
 			/>
 			<PageBody>
-				<Donnees
-					apercu={apercu}
-					emailDuCompte={compte?.email ?? ''}
-					onExporter={() => exporter({})}
-					onSupprimerEtablissement={async (confirmation) => {
-						await supprimerEtablissement({ confirmation });
-						await navigate({ to: '/bienvenue' });
-					}}
-					onSupprimerCompte={async (confirmation) => {
-						await supprimerCompte({ confirmation });
-						await authClient.signOut();
-						await navigate({ to: '/' });
-					}}
-				/>
+				<Donnees apercu={apercu} />
 			</PageBody>
 		</Page>
 	);

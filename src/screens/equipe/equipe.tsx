@@ -24,7 +24,7 @@ import {
 	UserMinusIcon,
 	UserPlusIcon
 } from 'lucide-react';
-import { BoutonPrincipal, SectionEcran, pluriel } from '../../ui';
+import { BoutonPrincipal, LigneAnalyse, ListeAnalyses, SectionEcran, pluriel } from '../../ui';
 
 /**
  * L'écran d'équipe, sans backend.
@@ -123,7 +123,6 @@ export function Equipe({
 	estAdmin,
 	siegesUtilises,
 	siegesAutorises,
-	onInviter,
 	onChangerRole,
 	onRetirer,
 	onAnnulerInvitation,
@@ -134,7 +133,6 @@ export function Equipe({
 	estAdmin: boolean;
 	siegesUtilises: number;
 	siegesAutorises: number;
-	onInviter: (email: string, role: RoleEquipe) => Promise<void>;
 	onChangerRole: (membreId: string, role: RoleEquipe) => Promise<void>;
 	onRetirer: (membreId: string) => Promise<void>;
 	onAnnulerInvitation: (invitationId: string) => Promise<void>;
@@ -148,7 +146,12 @@ export function Equipe({
 				titre="Les personnes de l’établissement"
 				legende={`${siegesUtilises} sur ${siegesAutorises} place${pluriel(siegesAutorises)}`}
 			>
-				<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="p-0">
+				<Surface
+					variant="transparent"
+					outline={false}
+					className="verre-carte rounded-cladd-xl"
+					contentClassName="p-0"
+				>
 					<List>
 						{membres.map((m, i) => (
 							<div key={m.id}>
@@ -171,7 +174,12 @@ export function Equipe({
 					titre="Invitations en attente"
 					legende={`${invitations.length} envoyée${pluriel(invitations.length)}, pas encore acceptée${pluriel(invitations.length)}`}
 				>
-					<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="p-0">
+					<Surface
+						variant="transparent"
+						outline={false}
+						className="verre-carte rounded-cladd-xl"
+						contentClassName="p-0"
+					>
 						<List>
 							{invitations.map((inv, i) => (
 								<div key={inv.id}>
@@ -184,16 +192,33 @@ export function Equipe({
 				</SectionEcran>
 			) : null}
 
-			{estAdmin ? (
-				<FormulaireInvitation onInviter={onInviter} complet={complet} places={siegesAutorises} />
-			) : (
-				<SectionEcran titre="Inviter un collègue">
-					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						Seul un administrateur de l’établissement peut inviter quelqu’un. Demandez-le à l’une
-						des personnes marquées « Administrateur » ci-dessus.
-					</p>
-				</SectionEcran>
-			)}
+			{/*
+			  ⚠️ INVITER EST DEVENU UNE PAGE, ET C'EST UN FORMULAIRE QUI LE DEMANDE.
+
+			  Il tenait en bas de l'écran : une adresse, un choix de rôle avec son
+			  explication, un bouton. Sur un téléphone, il arrivait après deux listes
+			  — donc après un défilement — et le clavier qui s'ouvre repoussait le
+			  bouton hors de vue.
+
+			  Une rangée dit ce qu'il reste de places ; la page a l'écran pour elle.
+			*/}
+			<ListeAnalyses>
+				<LigneAnalyse
+					vers="/app/equipe/inviter"
+					icone={<UserPlusIcon />}
+					titre="Inviter un collègue"
+					precision={
+						estAdmin
+							? 'Un lien valable sept jours, il choisit son mot de passe'
+							: 'Réservé aux administrateurs'
+					}
+					valeur={
+						complet
+							? 'Complet'
+							: `${siegesAutorises - siegesUtilises - invitations.length} place${pluriel(siegesAutorises - siegesUtilises - invitations.length)}`
+					}
+				/>
+			</ListeAnalyses>
 		</div>
 	);
 }
@@ -342,7 +367,14 @@ function LigneInvitation({
 	);
 }
 
-function FormulaireInvitation({
+/**
+ * LE FORMULAIRE D'INVITATION.
+ *
+ * ⚠️ IL NE PORTE PLUS SA PROPRE SECTION. Il vit sur `/app/equipe/inviter`, dont
+ * l'en-tête porte déjà le titre et la légende : les répéter ferait lire deux
+ * fois la même phrase avant d'arriver au champ.
+ */
+export function FormulaireInvitation({
 	onInviter,
 	complet,
 	places
@@ -377,65 +409,58 @@ function FormulaireInvitation({
 
 	if (complet) {
 		return (
-			<SectionEcran titre="Inviter un collègue">
-				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-					Les {places} places de votre offre sont prises, invitations en attente comprises. Annulez
-					une invitation, retirez quelqu’un, ou passez à l’offre supérieure pour en ajouter.
-				</p>
-			</SectionEcran>
+			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+				Les {places} places de votre offre sont prises, invitations en attente comprises. Annulez
+				une invitation, retirez quelqu’un, ou passez à l’offre supérieure pour en ajouter.
+			</p>
 		);
 	}
 
 	return (
-		<SectionEcran
-			titre="Inviter un collègue"
-			legende="Il recevra un lien valable sept jours, et créera son mot de passe lui-même."
-		>
-			<div className="flex flex-col gap-cladd-2xs">
-				<div className="flex flex-col gap-cladd-3xs">
-					<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Adresse e-mail</span>
-					<Input
-						value={email}
-						onChange={setEmail}
-						name="invitation"
-						type="email"
-						placeholder="prenom.nom@etablissement.fr"
-						size="lg"
-					/>
-				</div>
-
-				<div className="flex flex-col gap-cladd-3xs">
-					<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Son rôle</span>
-					<Segmented className="self-start" activeColor="brand" activeVariant="solid">
-						<SegmentedButton active={role === 'ORG_MEMBER'} onClick={() => setRole('ORG_MEMBER')}>
-							Membre
-						</SegmentedButton>
-						<SegmentedButton active={role === 'ORG_ADMIN'} onClick={() => setRole('ORG_ADMIN')}>
-							Administrateur
-						</SegmentedButton>
-					</Segmented>
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-						{CE_QUE_FAIT_LE_ROLE[role]}
-					</p>
-				</div>
-
-				{erreur ? (
-					<p className="text-cladd-xs leading-relaxed text-cladd-fg" role="alert">
-						{erreur}
-					</p>
-				) : null}
-
-				<BoutonPrincipal
-					className="self-start"
-					loading={enCours}
-					readOnly={!valide || enCours}
-					onClick={() => void envoyer()}
-				>
-					{envoye ? <CheckIcon /> : <UserPlusIcon />}
-					{envoye ? 'Invitation envoyée' : 'Envoyer l’invitation'}
-				</BoutonPrincipal>
+		<div className="flex flex-col gap-cladd-2xs">
+			<div className="flex flex-col gap-cladd-3xs">
+				<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Adresse e-mail</span>
+				<Input
+					value={email}
+					onChange={setEmail}
+					name="invitation"
+					type="email"
+					placeholder="prenom.nom@etablissement.fr"
+					size="lg"
+				/>
 			</div>
-		</SectionEcran>
+
+			<div className="flex flex-col gap-cladd-3xs">
+				<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Son rôle</span>
+				<Segmented className="self-start" activeColor="brand" activeVariant="solid">
+					<SegmentedButton active={role === 'ORG_MEMBER'} onClick={() => setRole('ORG_MEMBER')}>
+						Membre
+					</SegmentedButton>
+					<SegmentedButton active={role === 'ORG_ADMIN'} onClick={() => setRole('ORG_ADMIN')}>
+						Administrateur
+					</SegmentedButton>
+				</Segmented>
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+					{CE_QUE_FAIT_LE_ROLE[role]}
+				</p>
+			</div>
+
+			{erreur ? (
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg" role="alert">
+					{erreur}
+				</p>
+			) : null}
+
+			<BoutonPrincipal
+				className="self-start"
+				loading={enCours}
+				readOnly={!valide || enCours}
+				onClick={() => void envoyer()}
+			>
+				{envoye ? <CheckIcon /> : <UserPlusIcon />}
+				{envoye ? 'Invitation envoyée' : 'Envoyer l’invitation'}
+			</BoutonPrincipal>
+		</div>
 	);
 }
 

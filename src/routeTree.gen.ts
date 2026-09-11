@@ -28,6 +28,10 @@ import { Route as AppRevelationRouteImport } from './routes/app/revelation'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
+import { Route as AppDonneesExportRouteImport } from './routes/app/donnees_.export'
+import { Route as AppDonneesSupprimerCompteRouteImport } from './routes/app/donnees_.supprimer-compte'
+import { Route as AppDonneesSupprimerEtablissementRouteImport } from './routes/app/donnees_.supprimer-etablissement'
+import { Route as AppEquipeInviterRouteImport } from './routes/app/equipe_.inviter'
 import { Route as AppCreanceIdDecompteRouteImport } from './routes/app/creance_.$id.decompte'
 import { Route as AppCreanceIdLitigeRouteImport } from './routes/app/creance_.$id.litige'
 import { Route as AppCreanceIdProcedureRouteImport } from './routes/app/creance_.$id.procedure'
@@ -132,6 +136,28 @@ const AppCreanceIdRoute = AppCreanceIdRouteImport.update({
   path: '/creance/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDonneesExportRoute = AppDonneesExportRouteImport.update({
+  id: '/donnees_/export',
+  path: '/donnees/export',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDonneesSupprimerCompteRoute =
+  AppDonneesSupprimerCompteRouteImport.update({
+    id: '/donnees_/supprimer-compte',
+    path: '/donnees/supprimer-compte',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
+const AppDonneesSupprimerEtablissementRoute =
+  AppDonneesSupprimerEtablissementRouteImport.update({
+    id: '/donnees_/supprimer-etablissement',
+    path: '/donnees/supprimer-etablissement',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
+const AppEquipeInviterRoute = AppEquipeInviterRouteImport.update({
+  id: '/equipe_/inviter',
+  path: '/equipe/inviter',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppCreanceIdDecompteRoute = AppCreanceIdDecompteRouteImport.update({
   id: '/creance_/$id/decompte',
   path: '/creance/$id/decompte',
@@ -193,6 +219,10 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
+  '/app/donnees/export': typeof AppDonneesExportRoute
+  '/app/donnees/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
+  '/app/donnees/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
+  '/app/equipe/inviter': typeof AppEquipeInviterRoute
   '/app/creance/$id/decompte': typeof AppCreanceIdDecompteRoute
   '/app/creance/$id/litige': typeof AppCreanceIdLitigeRoute
   '/app/creance/$id/procedure': typeof AppCreanceIdProcedureRoute
@@ -221,6 +251,10 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
+  '/app/donnees/export': typeof AppDonneesExportRoute
+  '/app/donnees/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
+  '/app/donnees/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
+  '/app/equipe/inviter': typeof AppEquipeInviterRoute
   '/app/creance/$id/decompte': typeof AppCreanceIdDecompteRoute
   '/app/creance/$id/litige': typeof AppCreanceIdLitigeRoute
   '/app/creance/$id/procedure': typeof AppCreanceIdProcedureRoute
@@ -251,6 +285,10 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
+  '/app/donnees_/export': typeof AppDonneesExportRoute
+  '/app/donnees_/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
+  '/app/donnees_/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
+  '/app/equipe_/inviter': typeof AppEquipeInviterRoute
   '/app/creance_/$id/decompte': typeof AppCreanceIdDecompteRoute
   '/app/creance_/$id/litige': typeof AppCreanceIdLitigeRoute
   '/app/creance_/$id/procedure': typeof AppCreanceIdProcedureRoute
@@ -282,6 +320,10 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/auth/$'
     | '/app/creance/$id'
+    | '/app/donnees/export'
+    | '/app/donnees/supprimer-compte'
+    | '/app/donnees/supprimer-etablissement'
+    | '/app/equipe/inviter'
     | '/app/creance/$id/decompte'
     | '/app/creance/$id/litige'
     | '/app/creance/$id/procedure'
@@ -310,6 +352,10 @@ export interface FileRouteTypes {
     | '/app'
     | '/api/auth/$'
     | '/app/creance/$id'
+    | '/app/donnees/export'
+    | '/app/donnees/supprimer-compte'
+    | '/app/donnees/supprimer-etablissement'
+    | '/app/equipe/inviter'
     | '/app/creance/$id/decompte'
     | '/app/creance/$id/litige'
     | '/app/creance/$id/procedure'
@@ -339,6 +385,10 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/auth/$'
     | '/app/creance/$id'
+    | '/app/donnees_/export'
+    | '/app/donnees_/supprimer-compte'
+    | '/app/donnees_/supprimer-etablissement'
+    | '/app/equipe_/inviter'
     | '/app/creance_/$id/decompte'
     | '/app/creance_/$id/litige'
     | '/app/creance_/$id/procedure'
@@ -497,6 +547,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCreanceIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/donnees_/export': {
+      id: '/app/donnees_/export'
+      path: '/donnees/export'
+      fullPath: '/app/donnees/export'
+      preLoaderRoute: typeof AppDonneesExportRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/donnees_/supprimer-compte': {
+      id: '/app/donnees_/supprimer-compte'
+      path: '/donnees/supprimer-compte'
+      fullPath: '/app/donnees/supprimer-compte'
+      preLoaderRoute: typeof AppDonneesSupprimerCompteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/donnees_/supprimer-etablissement': {
+      id: '/app/donnees_/supprimer-etablissement'
+      path: '/donnees/supprimer-etablissement'
+      fullPath: '/app/donnees/supprimer-etablissement'
+      preLoaderRoute: typeof AppDonneesSupprimerEtablissementRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/equipe_/inviter': {
+      id: '/app/equipe_/inviter'
+      path: '/equipe/inviter'
+      fullPath: '/app/equipe/inviter'
+      preLoaderRoute: typeof AppEquipeInviterRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/creance_/$id/decompte': {
       id: '/app/creance_/$id/decompte'
       path: '/creance/$id/decompte'
@@ -566,6 +644,10 @@ interface AppRouteRouteChildren {
   AppRevelationRoute: typeof AppRevelationRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCreanceIdRoute: typeof AppCreanceIdRoute
+  AppDonneesExportRoute: typeof AppDonneesExportRoute
+  AppDonneesSupprimerCompteRoute: typeof AppDonneesSupprimerCompteRoute
+  AppDonneesSupprimerEtablissementRoute: typeof AppDonneesSupprimerEtablissementRoute
+  AppEquipeInviterRoute: typeof AppEquipeInviterRoute
   AppCreanceIdDecompteRoute: typeof AppCreanceIdDecompteRoute
   AppCreanceIdLitigeRoute: typeof AppCreanceIdLitigeRoute
   AppCreanceIdProcedureRoute: typeof AppCreanceIdProcedureRoute
@@ -586,6 +668,10 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppRevelationRoute: AppRevelationRoute,
   AppIndexRoute: AppIndexRoute,
   AppCreanceIdRoute: AppCreanceIdRoute,
+  AppDonneesExportRoute: AppDonneesExportRoute,
+  AppDonneesSupprimerCompteRoute: AppDonneesSupprimerCompteRoute,
+  AppDonneesSupprimerEtablissementRoute: AppDonneesSupprimerEtablissementRoute,
+  AppEquipeInviterRoute: AppEquipeInviterRoute,
   AppCreanceIdDecompteRoute: AppCreanceIdDecompteRoute,
   AppCreanceIdLitigeRoute: AppCreanceIdLitigeRoute,
   AppCreanceIdProcedureRoute: AppCreanceIdProcedureRoute,

@@ -33,7 +33,6 @@ function EcranEquipe() {
 	const monRole = useQuery(api.organizations.getMyOrgMembership, {});
 	const facturation = useQuery(api.billing.getBillingStatus, {});
 
-	const inviter = useMutation(api.organizations.inviteOrganizationMember);
 	const changerRole = useMutation(api.organizations.updateMemberRole);
 	const retirer = useMutation(api.organizations.removeOrganizationMember);
 	const annuler = useMutation(api.organizations.cancelInvitation);
@@ -57,9 +56,6 @@ function EcranEquipe() {
 						estAdmin={monRole?.role === 'ORG_ADMIN'}
 						siegesUtilises={membres.length}
 						siegesAutorises={facturation?.seatsAllowed ?? membres.length}
-						onInviter={async (email, role) => {
-							await inviter({ email, role });
-						}}
 						onChangerRole={async (membreId, role) => {
 							await changerRole({ memberId: membreId as Id<'organizationMembers'>, role });
 						}}

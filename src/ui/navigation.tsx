@@ -67,8 +67,15 @@ export function LigneAnalyse({
 	vers: LinkProps['to'];
 	parametres?: LinkProps['params'];
 	titre: string;
-	/** Un chiffre ou trois mots. JAMAIS une phrase — elle irait à la page. */
-	valeur: string;
+	/**
+	 * Un chiffre ou trois mots. JAMAIS une phrase — elle irait à la page.
+	 *
+	 * ⚠️ FACULTATIVE, ET C'EST UNE MESURE. Une rangée destructrice n'a pas de
+	 * « valeur » à montrer : y mettre l'adresse du compte l'a fait passer de 68
+	 * à 128 px, parce qu'une adresse longue revient à la ligne. Le chevron seul
+	 * suffit à dire qu'on peut entrer.
+	 */
+	valeur?: string;
 	/** Une précision courte sous l'intitulé, quand elle change la lecture. */
 	precision?: string;
 	icone?: ReactNode;
@@ -101,14 +108,16 @@ export function LigneAnalyse({
 			footer={precision}
 			after={
 				<span className="flex shrink-0 items-center gap-1.5">
-					<span
-						className={cn(
-							'text-cladd-xs tabular-nums',
-							attention ? 'text-cladd-fg' : 'text-cladd-fg-softer'
-						)}
-					>
-						{valeur}
-					</span>
+					{valeur === undefined ? null : (
+						<span
+							className={cn(
+								'text-cladd-xs tabular-nums',
+								attention ? 'text-cladd-fg' : 'text-cladd-fg-softer'
+							)}
+						>
+							{valeur}
+						</span>
+					)}
 					<ChevronRightIcon className="size-4 shrink-0 text-cladd-fg-softest" aria-hidden />
 				</span>
 			}

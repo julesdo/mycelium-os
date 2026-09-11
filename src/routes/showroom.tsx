@@ -1314,7 +1314,6 @@ function DemoEquipe() {
 					estAdmin={admin}
 					siegesUtilises={MEMBRES.length}
 					siegesAutorises={5}
-					onInviter={rien}
 					onChangerRole={rien}
 					onRetirer={rien}
 					onAnnulerInvitation={rien}
@@ -1344,15 +1343,6 @@ function DemoDonnees() {
 						debiteurs: 47,
 						membres: 3
 					}}
-					emailDuCompte="c.beranger@thumbbb.fr"
-					onExporter={async () => ({
-						url: '#',
-						octets: 2_410_000,
-						lignes: 1842,
-						nomFichier: 'letikette-export-2026-09-03.json'
-					})}
-					onSupprimerEtablissement={async () => {}}
-					onSupprimerCompte={async () => {}}
 				/>
 			</PageBody>
 		</Page>
