@@ -337,4 +337,56 @@ describe('le SIREN du débiteur', () => {
 		const debiteur = await t.run(async (ctx) => ctx.db.query('debiteurs').first());
 		expect(debiteur?.siren).toBe('853479236');
 	});
+/**
+	 * CHAQUE MONTANT REMONTE A SA PIECE.
+	 *
+	 * ⚠️ LE CHAMP EXISTAIT, AVEC SA RAISON D'ETRE ECRITE A COTE — « le document
+	 * source, pour que chaque montant remonte a sa piece » — et RIEN ne
+	 * l'ecrivait, rien ne le lisait. Douzieme cas de cette famille dans le depot.
+	 *
+	 * Ce n'est pas un confort. L'auditabilite est non negociable ici : « tout
+	 * montant reclame est decomposable », et « un total qu'on ne peut pas
+	 * decomposer est un chiffre qu'on demande de croire ». Un debiteur qui
+	 * conteste une ligne fait exactement ce chemin — de la somme vers la piece.
+	 * Sans ce lien, la chaine s'arretait a la ligne du tableur.
+	 */
+	it('rattache chaque facture au fichier dont elle est issue', async () => {
+		const t = convexTest(schema, modules);
+		const organizationId = await poserOrganisation(t);
+
+		const documentId = await t.run(async (ctx) =>
+			ctx.storage.store(new Blob(['reference;montant'], { type: 'text/csv' }))
+		);
+
+		await t.mutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId,
+			factures: [FACTURE_DURAND],
+			reglements: [],
+			documentId
+		});
+
+		await t.run(async (ctx) => {
+			const facture = (await ctx.db.query('facturesVente').collect())[0]!;
+			expect(facture.documentId).toBe(documentId);
+		});
+	});
+
+	it('reste possible sans document source, sans rien inventer', async () => {
+		// Une facture peut entrer autrement qu'en deposant un fichier — une
+		// saisie, une reprise. Exiger le document rendrait ces chemins
+		// impossibles ; fabriquer un identifiant serait pire.
+		const t = convexTest(schema, modules);
+		const organizationId = await poserOrganisation(t);
+
+		await t.mutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId,
+			factures: [FACTURE_DURAND],
+			reglements: []
+		});
+
+		await t.run(async (ctx) => {
+			const facture = (await ctx.db.query('facturesVente').collect())[0]!;
+			expect(facture.documentId).toBeUndefined();
+		});
+	});
 });

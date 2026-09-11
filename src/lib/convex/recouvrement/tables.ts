@@ -341,7 +341,19 @@ export const recouvrementTables = {
 		 * ce drapeau, une date deduite et une date verifiee se ressembleraient.
 		 */
 		exigibiliteDeduite: v.optional(v.boolean()),
-		conditionsPaiement: v.optional(v.string()),
+		/*
+		 * IL N A PLUS DE conditionsPaiement ICI, ET C EST VOULU.
+		 *
+		 * Le champ etait declare, et RIEN ne l ecrivait ni ne le lisait — nulle
+		 * part, depuis toujours. Comme aucune ecriture n a jamais eu lieu, aucun
+		 * document en base ne le porte : le retirer ne perd rien.
+		 *
+		 * Le garder, si. Un champ declare qui n attend personne se lit comme une
+		 * fonctionnalite qui existe, et c est exactement la confusion qui a produit
+		 * douze defauts dans ce depot — dont trois fonctionnalites entieres que le
+		 * schema disait construites. La regle qui remplace celle-la : on reintroduit
+		 * ce champ le jour ou quelque chose l ecrit, dans le meme commit.
+		 */
 		/**
 		 * Le taux stipulé aux conditions contractuelles. Absent, le décompte
 		 * doit retomber sur le taux légal — qui n'est pas encore renseigné, et

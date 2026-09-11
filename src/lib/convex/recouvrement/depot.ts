@@ -196,6 +196,8 @@ export const traiterImport = internalAction({
 
 		const enregistrement = await ctx.runMutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId: suivi.organizationId,
+			// Le fichier depose, porte jusqu'a chaque facture qu'il a produite.
+			documentId: suivi.storageId as Id<'_storage'>,
 			factures: resultat.factures.map((facture) => ({
 				reference: facture.reference,
 				debiteur: facture.debiteur,

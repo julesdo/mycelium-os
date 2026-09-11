@@ -147,7 +147,15 @@ export const enregistrerImport = internalMutation({
 	args: {
 		organizationId: v.id('organizations'),
 		factures: v.array(vFactureImportee),
-		reglements: v.array(vReglementImporte)
+		reglements: v.array(vReglementImporte),
+		/**
+		 * LE FICHIER DONT CES FACTURES SONT ISSUES.
+		 *
+		 * ⚠️ FACULTATIF, ET IL DOIT LE RESTER. Une facture peut entrer autrement
+		 * qu'en deposant un fichier — une saisie, une reprise — et l'exiger
+		 * fermerait ces chemins. Fabriquer un identifiant serait pire encore.
+		 */
+		documentId: v.optional(v.id('_storage'))
 	},
 	returns: v.object({
 		debiteursCrees: v.number(),
@@ -156,7 +164,7 @@ export const enregistrerImport = internalMutation({
 		reglementsCrees: v.number(),
 		reglementsOrphelins: v.number()
 	}),
-	handler: async (ctx, { organizationId, factures, reglements }) => {
+	handler: async (ctx, { organizationId, factures, reglements, documentId }) => {
 		let debiteursCrees = 0;
 		let facturesCreees = 0;
 		let facturesDejaConnues = 0;
@@ -196,6 +204,12 @@ export const enregistrerImport = internalMutation({
 				dateExigibilite: facture.dateEcheance,
 				exigibiliteDeduite: facture.dateEcheance !== undefined,
 				statutPaiement: 'IMPAYEE',
+				// CHAQUE MONTANT REMONTE A SA PIECE. Le champ existait, avec cette
+				// phrase ecrite a cote de lui au schema, et rien ne l'ecrivait : la
+				// chaine d'auditabilite s'arretait a la ligne du tableur. Un debiteur
+				// qui conteste fait pourtant exactement ce chemin-la, de la somme vers
+				// la piece.
+				...(documentId === undefined ? {} : { documentId }),
 				creeLe: Date.now()
 			});
 
