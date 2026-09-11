@@ -15,6 +15,7 @@ export { LogoLetikette, MotLetikette } from './logo';
 export { Tablette } from './tablette';
 export { Page, PageHeader, PageBody, PageHero } from './page';
 export { Fond } from './fond';
+export { Avatar, initiales } from './avatar';
 export { aujourdHuiISO } from './horloge';
 export { ChiffreHero } from './chiffre';
 export { RangeeActions, type ActionRonde } from './actions';
@@ -39,14 +40,7 @@ export {
 	TableauTitre,
 	TableauCellule
 } from './tableau';
-export {
-	euros,
-	eurosCentimes,
-	partsEurosCentimes,
-	dateCourte,
-	pourcent,
-	pluriel
-} from './format';
+export { euros, eurosCentimes, partsEurosCentimes, dateCourte, pourcent, pluriel } from './format';
 
 // ── Recouvrement ────────────────────────────────────────────────────────────
 export {

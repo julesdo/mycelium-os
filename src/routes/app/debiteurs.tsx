@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Checkbox, Chip, Surface } from '@cladd-ui/react';
+import { Checkbox, Chip, ListButton, Surface } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
-import { BoutonPrincipal,
+import {
+	BoutonPrincipal,
 	Page,
 	PageHeader,
 	PageBody,
@@ -15,6 +16,8 @@ import { BoutonPrincipal,
 	eurosCentimes,
 	dateCourte,
 	pluriel,
+	Avatar,
+	CarteListe,
 	IdentiteDebiteur,
 	ConstatRegistre,
 	Lettrage,
@@ -228,10 +231,7 @@ function Debiteurs() {
 							'Sélectionnez les factures d’un même débiteur pour en faire une créance.'
 						]}
 						action={
-							<BoutonPrincipal
-								as={Link}
-								to="/app/import-factures"
-							>
+							<BoutonPrincipal as={Link} to="/app/import-factures">
 								<UploadIcon />
 								Importer mes factures
 							</BoutonPrincipal>
@@ -242,51 +242,80 @@ function Debiteurs() {
 		);
 	}
 
+	/**
+	 * LA LISTE DES DÉBITEURS.
+	 *
+	 * ⚠️ UNE SEULE CARTE, DES LIGNES DEDANS — et pas une carte par débiteur.
+	 *
+	 * La version précédente posait un `Surface` autonome par client. Sur trente
+	 * débiteurs, ça fait trente objets qui flottent séparément : l'œil compte des
+	 * cartes au lieu de lire des noms, et chaque bord arrondi coûte quatre pixels
+	 * de vide en haut et en bas, soit plus de deux cents pixels de défilement
+	 * gagnés pour rien.
+	 *
+	 * Toutes les références font l'inverse : un conteneur, des rangées. La liste
+	 * se lit alors comme une liste, et les cartes retrouvent leur sens — elles ne
+	 * servent qu'à séparer des BLOCS de nature différente.
+	 *
+	 * ⚠️ ET CHAQUE LIGNE PORTE UN AVATAR. Deux raisons, dont une seule est
+	 * esthétique : il donne à l'œil un point d'accroche fixe à gauche pour
+	 * balayer verticalement, et surtout il rend deux raisons sociales proches —
+	 * « Ateliers Martin » et « Ateliers Martin Fils » — distinguables à la
+	 * couleur avant d'être lues. Sur un produit où se tromper de débiteur envoie
+	 * un décompte au mauvais tiers, ça compte.
+	 */
 	const liste = (
 		<div className="flex flex-col gap-cladd-3xs p-cladd-3xs">
-			{debiteurs.map((debiteur) => (
-				<button
-					key={debiteur._id}
-					type="button"
-					onClick={() => {
-						setChoisi(debiteur._id);
-						setSelection(new Set());
-					}}
-					className="text-left"
-				>
-					<Surface contentClassName="flex flex-col gap-1.5 p-cladd-2xs">
-						<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-							<span className="min-w-0 truncate text-cladd-sm font-semibold">
-								{debiteur.denomination}
+			<CarteListe titre={`${debiteurs.length} débiteur${pluriel(debiteurs.length)}`}>
+				{debiteurs.map((debiteur) => (
+					<ListButton
+						key={debiteur._id}
+						selected={choisi === debiteur._id}
+						onClick={() => {
+							setChoisi(debiteur._id);
+							setSelection(new Set());
+						}}
+						icon={<Avatar nom={debiteur.denomination} />}
+						footer={
+							// Les puces en pied de ligne plutôt qu'en rangée séparée : elles
+							// qualifient le débiteur, elles ne sont pas une information de
+							// même niveau que son nom.
+							<span className="flex flex-wrap items-center gap-1.5">
+								{debiteur.facturesEchues > 0 ? (
+									<Chip size="sm" color="orange">
+										{debiteur.facturesEchues} échue{pluriel(debiteur.facturesEchues)}
+									</Chip>
+								) : null}
+								{debiteur.santeFinanciere !== 'SAINE' && debiteur.santeFinanciere !== 'INCONNUE' ? (
+									<Chip size="sm" color="red">
+										{debiteur.santeFinanciere === 'RADIEE' ? 'Radié' : 'Procédure collective'}
+									</Chip>
+								) : null}
+								{/* Un secteur indéterminé fait retenir le délai de prescription
+								    le plus court. Le dire ici évite que le gérant découvre
+								    l'hypothèse au moment où une créance est annoncée prescrite. */}
+								{!debiteur.secteurDetermine ? (
+									<Chip size="sm" color="neutral">
+										Secteur à préciser
+									</Chip>
+								) : null}
 							</span>
-							<span className="text-letikette-chiffre font-bold tabular-nums">
+						}
+						after={
+							// L'encours reste la colonne qui commande la lecture — un gérant
+							// arbitre entre douze mille euros et trois cents, pas entre deux
+							// raisons sociales. Mais il descend du corps d'affiche au corps
+							// courant : dans une rangée, un chiffre de trente-deux pixels
+							// écrase le nom qu'il qualifie.
+							<span className="shrink-0 text-cladd-sm font-bold tabular-nums">
 								{eurosCentimes(debiteur.encours)}
 							</span>
-						</div>
-
-						<div className="flex flex-wrap items-center gap-1.5">
-							{debiteur.facturesEchues > 0 ? (
-								<Chip size="md" color="orange">
-									{debiteur.facturesEchues} échue{pluriel(debiteur.facturesEchues)}
-								</Chip>
-							) : null}
-							{debiteur.santeFinanciere !== 'SAINE' && debiteur.santeFinanciere !== 'INCONNUE' ? (
-								<Chip size="md" color="red">
-									{debiteur.santeFinanciere === 'RADIEE' ? 'Radié' : 'Procédure collective'}
-								</Chip>
-							) : null}
-							{/* Un secteur indéterminé fait retenir le délai de prescription le
-							    plus court. Le dire ici évite que le gérant découvre l'hypothèse
-							    au moment où une créance est annoncée prescrite. */}
-							{!debiteur.secteurDetermine ? (
-								<Chip size="md" color="neutral">
-									Secteur à préciser
-								</Chip>
-							) : null}
-						</div>
-					</Surface>
-				</button>
-			))}
+						}
+					>
+						{debiteur.denomination}
+					</ListButton>
+				))}
+			</CarteListe>
 		</div>
 	);
 
@@ -335,7 +364,18 @@ function Debiteurs() {
 				)}
 
 				{factures.map((facture) => (
-					<Surface key={facture._id} contentClassName="flex flex-col gap-1.5 p-cladd-2xs">
+					<Surface
+						key={facture._id}
+						// En verre comme toutes les cartes du produit. Elles restent des
+						// cartes SÉPARÉES et non des rangées d'un conteneur, à l'inverse
+						// de la liste de gauche : chacune porte une case à cocher et
+						// entre dans une sélection, donc chacune est un objet qu'on
+						// manipule, pas une ligne qu'on parcourt.
+						variant="transparent"
+						outline={false}
+						className="verre-carte rounded-cladd-xl"
+						contentClassName="flex flex-col gap-1.5 p-cladd-2xs"
+					>
 						<div className="flex items-start gap-cladd-3xs">
 							{/* Une facture déjà rattachée à une créance ne peut pas l'être une
 							    seconde fois : la réclamer deux fois exposerait les deux
