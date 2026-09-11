@@ -3,7 +3,7 @@ import { estDateReelle } from '../calendrier';
 import { normaliserSiren, sirenDepuisSiret } from '../pays/france/siren';
 import { champsCommunsDocument } from '../../../socle/documents/schema';
 import { depuisEuros, type Montant } from '../../../socle/montants';
-import type { FactureImportee } from './exportComptable';
+import type { FactureImportee, ResultatImport } from './exportComptable';
 
 /**
  * Le dépôt de fichiers, pour des factures de VENTE.
@@ -230,4 +230,57 @@ function sirenLu(brut: string | null): string | undefined {
 	const nettoye = brut.trim();
 	if (nettoye === '') return undefined;
 	return sirenDepuisSiret(nettoye) ?? normaliserSiren(nettoye) ?? undefined;
+}
+
+/**
+ * Un document extrait devient un RÉSULTAT D'IMPORT.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE RACCORD QUI MANQUAIT, ET CE QU'IL COÛTAIT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `documentVenteSchema`, `construirePromptVente` et `versFactureImportee`
+ * existaient, testés, sans un seul appelant en production. L'écran d'import
+ * proposait pourtant « Factures en PDF — chaque facture est relue par le
+ * modèle », le mode `FACTURE_DEPOSEE` s'enregistrait en base et remontait dans
+ * les requêtes — et le traitement décodait le PDF en texte pour le passer au
+ * parseur d'export comptable, qui répondait « Export non reconnu ».
+ *
+ * Neuvième occurrence du défaut « déclaré, lu, jamais alimenté » dans ce dépôt,
+ * et la plus visible de toutes : c'est une promesse faite à l'écran que le
+ * produit ne pouvait pas tenir.
+ *
+ * ⚠️ ELLE REND LA MÊME FORME QUE L'EXPORT COMPTABLE, délibérément. Tout ce qui
+ * suit — l'enregistrement, le dédoublonnage, le bilan, l'affichage des lignes
+ * illisibles — est déjà écrit et déjà testé. Un second chemin d'enregistrement
+ * aurait fini par diverger sur le dédoublonnage, c'est-à-dire par créer des
+ * doublons de créances contre le même débiteur.
+ */
+export function resultatDepuisDocument(doc: DocumentVente, nomFichier: string): ResultatImport {
+	const conversion = versFactureImportee(doc);
+
+	if (!conversion.ok) {
+		// ⚠️ LE FICHIER EST NOMMÉ, PAS PERDU. « 0 facture créée » sans dire quel
+		// document ni pourquoi est un échec muet — et l'omission porte exactement
+		// sur l'argent qu'on ne réclamera pas.
+		return {
+			format: 'FACTURE_DEPOSEE',
+			factures: [],
+			reglements: [],
+			ignorees: [{ texte: nomFichier, raison: conversion.raison }],
+			horsPerimetre: 0
+		};
+	}
+
+	return {
+		format: 'FACTURE_DEPOSEE',
+		factures: [conversion.facture],
+		// Une facture déposée ne porte pas les encaissements. En inventer
+		// solderait des créances que personne n'a payées.
+		reglements: [],
+		ignorees: [],
+		// La notion vient du FEC, où des lignes de TVA et de trésorerie se mêlent
+		// aux ventes. Un document unique n'a rien à écarter.
+		horsPerimetre: 0
+	};
 }

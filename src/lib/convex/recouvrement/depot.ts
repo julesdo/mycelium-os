@@ -9,6 +9,15 @@ import {
 	importerExportComptable,
 	type ResultatImport
 } from '../../verticales/recouvrement/import/exportComptable';
+import {
+	construirePromptVente,
+	documentVenteSchema,
+	resultatDepuisDocument
+} from '../../verticales/recouvrement/import/factureVente';
+import { extraireAvecClaude, type ContenuDocument } from '../../socle/documents/extracteur';
+
+/** Ce que Claude sait lire directement, sans conversion préalable. */
+const TYPES_IMAGE = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 /**
  * Le traitement d'un fichier déposé — l'endroit où le fichier devient des
@@ -50,13 +59,16 @@ import {
  */
 const IGNOREES_MONTREES = 50;
 
-function bilanDe(resultat: ResultatImport, enregistrement: {
-	debiteursCrees: number;
-	facturesCreees: number;
-	facturesDejaConnues: number;
-	reglementsCrees: number;
-	reglementsOrphelins: number;
-}) {
+function bilanDe(
+	resultat: ResultatImport,
+	enregistrement: {
+		debiteursCrees: number;
+		facturesCreees: number;
+		facturesDejaConnues: number;
+		reglementsCrees: number;
+		reglementsOrphelins: number;
+	}
+) {
 	return {
 		format: resultat.format,
 		debiteursCrees: enregistrement.debiteursCrees,
@@ -73,6 +85,40 @@ function bilanDe(resultat: ResultatImport, enregistrement: {
 		})),
 		ignoreesTotal: resultat.ignorees.length
 	};
+}
+
+/**
+ * Une facture déposée, relue par le modèle.
+ *
+ * ⚠️ ELLE REND LA MÊME FORME QUE L'EXPORT COMPTABLE. Tout ce qui suit —
+ * enregistrement, dédoublonnage, bilan, lignes illisibles — est déjà écrit et
+ * déjà testé. Un second chemin d'enregistrement aurait fini par diverger sur le
+ * dédoublonnage, c'est-à-dire par créer deux créances contre le même débiteur
+ * pour la même facture.
+ *
+ * ⚠️ ET LE PDF PART TEL QUEL. Le rastériser détruirait sa couche texte et ferait
+ * relire par OCR des références et des montants déjà présents — sur un document
+ * dont le total entre dans un décompte opposable.
+ */
+async function lireFactureDeposee(
+	octets: Buffer,
+	mimeType: string,
+	nomFichier: string
+): Promise<ResultatImport> {
+	const contenu: ContenuDocument =
+		mimeType === 'application/pdf'
+			? { type: 'pdf', base64: octets.toString('base64') }
+			: TYPES_IMAGE.includes(mimeType)
+				? { type: 'images', images: [{ mediaType: mimeType, base64: octets.toString('base64') }] }
+				: { type: 'texte', texte: decoderTexte(octets) };
+
+	const { doc } = await extraireAvecClaude({
+		contenu,
+		schema: documentVenteSchema,
+		prompt: construirePromptVente()
+	});
+
+	return resultatDepuisDocument(doc, nomFichier);
 }
 
 export const traiterImport = internalAction({
@@ -95,13 +141,13 @@ export const traiterImport = internalAction({
 			etape: 'Lecture du fichier…'
 		});
 
-		let contenu: string;
+		let octets: Buffer;
 		try {
 			const blob = await ctx.storage.get(suivi.storageId as Id<'_storage'>);
 			if (blob === null) {
 				throw new Error('Le fichier déposé est introuvable dans le stockage.');
 			}
-			contenu = decoderTexte(Buffer.from(await blob.arrayBuffer()));
+			octets = Buffer.from(await blob.arrayBuffer());
 		} catch (erreur) {
 			await ctx.runMutation(internal.recouvrement.depotMutations.marquerEchec, {
 				importId,
@@ -110,13 +156,33 @@ export const traiterImport = internalAction({
 			return null;
 		}
 
+		/**
+		 * ⚠️ LE MODE EST ENFIN LU, ET C'EST LA CORRECTION DE CE COMMIT.
+		 *
+		 * `FACTURE_DEPOSEE` était enregistré en base, rendu par les requêtes, et
+		 * proposé à l'écran sous « Factures en PDF — chaque facture est relue par
+		 * le modèle ». Cette action l'ignorait : elle décodait le PDF en texte et
+		 * le passait au parseur d'export comptable, qui répondait « Export non
+		 * reconnu ».
+		 *
+		 * Neuvième occurrence du défaut « déclaré, lu, jamais alimenté » dans ce
+		 * dépôt, et la plus visible : une promesse faite à l'écran.
+		 */
 		let resultat: ResultatImport;
 		try {
-			resultat = importerExportComptable(contenu);
+			resultat =
+				suivi.mode === 'FACTURE_DEPOSEE'
+					? await lireFactureDeposee(octets, suivi.mimeType, suivi.filename)
+					: importerExportComptable(decoderTexte(octets));
 		} catch (erreur) {
 			await ctx.runMutation(internal.recouvrement.depotMutations.marquerEchec, {
 				importId,
-				erreur: erreur instanceof Error ? erreur.message : 'Export non reconnu.'
+				erreur:
+					erreur instanceof Error
+						? erreur.message
+						: suivi.mode === 'FACTURE_DEPOSEE'
+							? 'Document non exploitable.'
+							: 'Export non reconnu.'
 			});
 			return null;
 		}
@@ -127,25 +193,22 @@ export const traiterImport = internalAction({
 			etape: `${resultat.factures.length} facture(s) lue(s), enregistrement…`
 		});
 
-		const enregistrement = await ctx.runMutation(
-			internal.recouvrement.import.enregistrerImport,
-			{
-				organizationId: suivi.organizationId,
-				factures: resultat.factures.map((facture) => ({
-					reference: facture.reference,
-					debiteur: facture.debiteur,
-					debiteurCompte: facture.debiteurCompte,
-					montantTTC: facture.montantTTC,
-					dateEmission: facture.dateEmission,
-					dateEcheance: facture.dateEcheance
-				})),
-				reglements: resultat.reglements.map((reglement) => ({
-					reference: reglement.reference,
-					date: reglement.date,
-					montant: reglement.montant
-				}))
-			}
-		);
+		const enregistrement = await ctx.runMutation(internal.recouvrement.import.enregistrerImport, {
+			organizationId: suivi.organizationId,
+			factures: resultat.factures.map((facture) => ({
+				reference: facture.reference,
+				debiteur: facture.debiteur,
+				debiteurCompte: facture.debiteurCompte,
+				montantTTC: facture.montantTTC,
+				dateEmission: facture.dateEmission,
+				dateEcheance: facture.dateEcheance
+			})),
+			reglements: resultat.reglements.map((reglement) => ({
+				reference: reglement.reference,
+				date: reglement.date,
+				montant: reglement.montant
+			}))
+		});
 
 		await ctx.runMutation(internal.recouvrement.depotMutations.marquerBilan, {
 			importId,

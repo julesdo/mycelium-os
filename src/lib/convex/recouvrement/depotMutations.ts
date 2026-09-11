@@ -88,6 +88,9 @@ export const obtenirImport = internalQuery({
 			organizationId: v.id('organizations'),
 			storageId: v.id('_storage'),
 			mode: vMode,
+			/** Le type MIME et le nom : la lecture d’une facture déposée en dépend. */
+			mimeType: v.string(),
+			filename: v.string(),
 			statut: vStatut
 		})
 	),
@@ -98,6 +101,8 @@ export const obtenirImport = internalQuery({
 			organizationId: suivi.organizationId,
 			storageId: suivi.storageId,
 			mode: suivi.mode,
+			mimeType: suivi.mimeType,
+			filename: suivi.filename,
 			statut: suivi.statut
 		};
 	}

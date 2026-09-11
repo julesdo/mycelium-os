@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { versEuros } from '../../../../socle/montants';
-import { documentVenteSchema, construirePromptVente, versFactureImportee } from '../factureVente';
+import {
+	documentVenteSchema,
+	construirePromptVente,
+	versFactureImportee,
+	resultatDepuisDocument
+} from '../factureVente';
 
 /**
  * Le dépôt de fichiers pour des factures de VENTE.
@@ -245,5 +250,59 @@ describe('le SIREN du client', () => {
 		const p = construirePromptVente();
 		expect(p).toMatch(/identifiant du client/i);
 		expect(p).toMatch(/ne le (calcule|déduis|devine)/i);
+	});
+});
+
+describe('une facture déposée devient un résultat d’import', () => {
+	/**
+	 * ⚠️ NEUVIÈME OCCURRENCE DE « DÉCLARÉ, LU, JAMAIS ALIMENTÉ », ET LA PLUS
+	 * VISIBLE : c'est une promesse faite à l'écran.
+	 *
+	 * `import-factures.tsx` propose « Factures en PDF — chaque facture est relue
+	 * par le modèle », le mode `FACTURE_DEPOSEE` est enregistré en base et rendu
+	 * par les requêtes… et `traiterImport` ne s'en sert jamais. Il décodait le
+	 * PDF en texte et le passait au parseur d'export comptable, qui répondait
+	 * « Export non reconnu ».
+	 *
+	 * `documentVenteSchema`, `construirePromptVente` et `versFactureImportee`
+	 * existaient, testés, sans un seul appelant en production.
+	 *
+	 * Cette fonction est le raccord : un document extrait devient un
+	 * `ResultatImport`, la forme que tout le reste de la chaîne sait déjà
+	 * enregistrer et mettre en bilan.
+	 */
+	it('rend une facture quand le document est exploitable', () => {
+		const resultat = resultatDepuisDocument(doc(), 'facture-du-14.pdf');
+
+		expect(resultat.format).toBe('FACTURE_DEPOSEE');
+		expect(resultat.factures).toHaveLength(1);
+		expect(resultat.ignorees).toEqual([]);
+	});
+
+	it('NOMME le fichier quand il n’est pas exploitable, au lieu de le perdre', () => {
+		// ⚠️ « Ce qui n'a pas pu être lu » est la moitié du bilan. Un import qui
+		// affiche « 0 facture créée » sans dire quel fichier ni pourquoi est un
+		// échec muet — et l'omission porte sur l'argent qu'on ne réclamera pas.
+		const resultat = resultatDepuisDocument(
+			doc({ invoiceNumber: null }),
+			'scan_illisible.pdf'
+		);
+
+		expect(resultat.factures).toEqual([]);
+		expect(resultat.ignorees).toHaveLength(1);
+		expect(resultat.ignorees[0]!.texte).toBe('scan_illisible.pdf');
+		expect(resultat.ignorees[0]!.raison).toMatch(/numéro/i);
+	});
+
+	it('ne rend jamais de règlement', () => {
+		// Une facture déposée ne porte pas les encaissements : les inventer
+		// solderait des créances que personne n'a payées.
+		expect(resultatDepuisDocument(doc(), 'f.pdf').reglements).toEqual([]);
+	});
+
+	it('ne compte rien hors périmètre', () => {
+		// La notion vient du FEC, où des lignes de TVA et de trésorerie se mêlent
+		// aux ventes. Un document unique n'a rien à écarter.
+		expect(resultatDepuisDocument(doc(), 'f.pdf').horsPerimetre).toBe(0);
 	});
 });

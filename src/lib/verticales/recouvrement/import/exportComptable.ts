@@ -50,7 +50,16 @@ const PREFIXE_COMPTE_CLIENT = '411';
 /** Les colonnes qui identifient un FEC de façon non ambiguë. */
 const COLONNES_FEC = ['CompteNum', 'PieceRef', 'Debit', 'Credit', 'EcritureDate'] as const;
 
-export type FormatExport = 'FEC' | 'CSV_GENERIQUE';
+/**
+ * D'ou viennent les factures.
+ *
+ * `FACTURE_DEPOSEE` n'est pas un format de fichier mais un CHEMIN : un document
+ * unique relu par le modele, par opposition a un export comptable qui en porte
+ * des centaines. Le bilan le distingue, parce que « 1 facture creee » ne se lit
+ * pas de la meme facon selon qu'on a depose un PDF ou un FEC de deux cents
+ * lignes.
+ */
+export type FormatExport = 'FEC' | 'CSV_GENERIQUE' | 'FACTURE_DEPOSEE';
 
 export interface FactureImportee {
 	readonly reference: string;
