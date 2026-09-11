@@ -20,6 +20,7 @@ import {
 	QuestionnaireLitige,
 	SuiviProcedure,
 	Pieces,
+	Solidite,
 	ConstatRegistre,
 	Lettrage,
 	type OptionSecteur,
@@ -36,6 +37,7 @@ import { Donnees } from '../screens/donnees/donnees';
 import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
 import { EcranAccueil, type AccueilAffiche } from '../screens/accueil';
+import { ETAGES_DE_PREUVE } from '../lib/verticales/recouvrement/solidite';
 
 /**
  * La salle d'exposition.
@@ -357,6 +359,86 @@ const TYPES_PIECE_DEMO = [
 	},
 	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' }
 ];
+
+function DemoSolidite() {
+	// ⚠️ LES PHRASES ACCORDÉES VIENNENT DU DOMAINE. Les recomposer ici ferait
+	// une démonstration qui montre une faute que le produit n’a plus — et
+	// c’est exactement ce qui s’est passé : la première version composait
+	// « Les conditions de paiement applicables EST DOCUMENTÉ ».
+	const etage = (cle: string, presente: boolean, poids: number) => {
+		const source = ETAGES_DE_PREUVE.find((e) => e.cle === cle)!;
+		return {
+			cle,
+			fait: source.fait,
+			presente,
+			poids,
+			etat: presente ? source.etabli : `Aucune pièce ne documente ${source.fait}.`
+		};
+	};
+
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="Ce que les pièces établissent" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Une facture seule</SectionTitle>
+						<Solidite
+							solidite={{
+								constat: 'Quatre des quatre pièces attendues sont absentes.',
+								etablies: 0,
+								attendues: 4,
+								prochaine: 'commande',
+								etages: [
+									etage('commande', false, 3),
+									etage('livraison', false, 3),
+									etage('conditionsContractuelles', false, 1),
+									etage('miseEnDemeure', false, 1)
+								]
+							}}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>À mi-chemin — ce qui pèse le plus est nommé</SectionTitle>
+						<Solidite
+							solidite={{
+								constat: 'Deux des quatre pièces attendues sont absentes.',
+								etablies: 2,
+								attendues: 4,
+								prochaine: 'livraison',
+								etages: [
+									etage('commande', true, 3),
+									etage('livraison', false, 3),
+									etage('conditionsContractuelles', true, 1),
+									etage('miseEnDemeure', false, 1)
+								]
+							}}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Tout est réuni</SectionTitle>
+						<Solidite
+							solidite={{
+								constat: 'Les quatre pièces attendues sont réunies.',
+								etablies: 4,
+								attendues: 4,
+								prochaine: null,
+								etages: [
+									etage('commande', true, 3),
+									etage('livraison', true, 3),
+									etage('conditionsContractuelles', true, 1),
+									etage('miseEnDemeure', true, 1)
+								]
+							}}
+						/>
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 function DemoPieces() {
 	return (
@@ -1306,6 +1388,7 @@ const ECRANS = [
 	'litige',
 	'suivi',
 	'pieces',
+	'solidite',
 	'revelation',
 	'bilan',
 	'flux',
@@ -1350,6 +1433,7 @@ function Showroom() {
 				{ecran === 'litige' ? <DemoLitige /> : null}
 				{ecran === 'suivi' ? <DemoSuivi /> : null}
 				{ecran === 'pieces' ? <DemoPieces /> : null}
+				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}

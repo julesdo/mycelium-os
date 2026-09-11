@@ -14,6 +14,7 @@ import {
 	SectionEcran,
 	Decompte,
 	QuestionnaireLitige,
+	Solidite,
 	SuiviProcedure,
 	aujourdHuiISO,
 	eurosCentimes,
@@ -309,22 +310,22 @@ function Creance() {
 						</SectionEcran>
 					) : null}
 
-					{creance.piecesManquantes.length > 0 ? (
-						<SectionEcran titre="Ce qui renforcerait ce dossier">
-							<Surface
-								variant="transparent"
-								outline={false}
-								className="verre-carte rounded-cladd-xl"
-								contentClassName="flex flex-wrap gap-1.5 p-cladd-2xs"
-							>
-								{creance.piecesManquantes.map((piece) => (
-									<Chip key={piece} size="md" color="neutral">
-										{piece.replaceAll('_', ' ').toLowerCase()}
-									</Chip>
-								))}
-							</Surface>
-						</SectionEcran>
-					) : null}
+					{/*
+					  LA PYRAMIDE DE PREUVES — module 4.2.
+
+					  ⚠️ ELLE REMPLACE UNE RANGÉE DE PASTILLES NUES. « bon de commande »
+					  et « mise en demeure » s'y ressemblaient, alors que l'une vaut
+					  trois points sur vingt et l'autre un seul — et aucune ne disait ce
+					  qu'elle établit.
+
+					  Le titre a changé aussi : « ce qui renforcerait ce dossier » ne
+					  montrait que les manques, ce qui se lit comme une réprimande et
+					  masque le chemin parcouru. Les quatre étages sont rendus, établis
+					  ou non.
+					*/}
+					<SectionEcran titre="Ce que les pièces établissent">
+						<Solidite solidite={creance.solidite} />
+					</SectionEcran>
 
 					{/*
 					  CE QUI COURT MAINTENANT, AVANT CE QU'ON POURRAIT FAIRE.

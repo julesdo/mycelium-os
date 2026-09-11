@@ -7,6 +7,7 @@ import { additionner, depuisCentimes, enCentimes, soustraire, ZERO } from '../..
 import { qualifier } from '../../verticales/recouvrement/scoring';
 import { PROCEDURES, proceduresEnvisageables } from '../../verticales/recouvrement/procedures';
 import { conditionsADemander } from '../../verticales/recouvrement/deduction';
+import { pyramideDePreuves } from '../../verticales/recouvrement/solidite';
 import {
 	lireLitige,
 	questionsRestantes,
@@ -310,6 +311,33 @@ export const creanceComplete = authedQuery({
 		}),
 		risques: v.array(v.object({ type: v.string(), description: v.string(), gravite: v.string() })),
 		piecesManquantes: v.array(v.string()),
+		/**
+		 * LA PYRAMIDE DE PREUVES — module 4.2.
+		 *
+		 * Elle remplace les pastilles nues de « ce qui renforcerait ce dossier » :
+		 * deux étiquettes de même apparence dont l'une vaut trois points sur vingt
+		 * et l'autre un seul, et aucune ne disait ce qu'elle établit.
+		 *
+		 * ⚠️ SON CONSTAT EST UN COMPTE, jamais un verdict. « Trois des quatre
+		 * pièces attendues sont absentes » se vérifie ; « ce dossier est trop
+		 * faible » est une appréciation juridique.
+		 */
+		solidite: v.object({
+			constat: v.string(),
+			etablies: v.number(),
+			attendues: v.number(),
+			etages: v.array(
+				v.object({
+					cle: v.string(),
+					fait: v.string(),
+					etat: v.string(),
+					presente: v.boolean(),
+					poids: v.number(),
+					pieces: v.array(v.string())
+				})
+			),
+			prochaine: v.union(v.string(), v.null())
+		}),
 		procedures: v.array(
 			v.object({
 				cle: v.string(),
@@ -357,13 +385,18 @@ export const creanceComplete = authedQuery({
 		for (const fait of creance.faitsLitige ?? []) reponses[fait.cle] = fait.reponse;
 		const litige = lireLitige(reponses);
 
+		// Lues UNE fois : le score et la pyramide doivent voir exactement le même
+		// jeu de pièces, sinon l'écran montrerait une pyramide qui ne correspond
+		// pas au chiffre affiché juste au-dessus.
+		const piecesFournies = await piecesDeLaCreance(
+			ctx,
+			creance.debiteurId,
+			factures.map((f) => f._id)
+		);
+
 		const qualification = qualifier({
 			...conditions,
-			piecesFournies: await piecesDeLaCreance(
-				ctx,
-				creance.debiteurId,
-				factures.map((f) => f._id)
-			),
+			piecesFournies,
 			// Les faits déclarés par le gérant, seconde moitié de la correction du
 			// champ « déclaré, lu, jamais alimenté » : l'écran lisait `[]` en dur,
 			// et n'affichait donc jamais le risque de contestation qu'il sait rendre.
@@ -371,6 +404,8 @@ export const creanceComplete = authedQuery({
 			santeDebiteur: debiteur?.santeFinanciere ?? 'INCONNUE',
 			retardsAnterieurs: 0
 		});
+
+		const pyramide = pyramideDePreuves(piecesFournies);
 
 		const envisageables = proceduresEnvisageables({ ...conditions, piecesFournies: [] });
 		const clesEnvisageables = new Set(envisageables.map((p) => p.cle));
@@ -439,6 +474,20 @@ export const creanceComplete = authedQuery({
 				gravite: risque.gravite
 			})),
 			piecesManquantes: [...qualification.piecesManquantes],
+			solidite: {
+				constat: pyramide.constat,
+				etablies: pyramide.etablies,
+				attendues: pyramide.attendues,
+				etages: pyramide.etages.map((etage) => ({
+					cle: etage.cle,
+					fait: etage.fait,
+					etat: etage.etat,
+					presente: etage.presente,
+					poids: etage.poids,
+					pieces: [...etage.pieces]
+				})),
+				prochaine: pyramide.prochaine?.cle ?? null
+			},
 			// Toutes les procédures sont listées, y compris indisponibles : un
 			// écran qui masquerait L.126 laisserait croire qu'elle n'existe pas,
 			// alors qu'elle attend seulement son décret.

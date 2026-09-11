@@ -63,4 +63,5 @@ export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteu
 export { QuestionnaireLitige, type QuestionLitige, type ReponseFait } from './questionnaire-litige';
 export { SuiviProcedure, type SuiviAffiche, type EcheanceAffichee } from './suivi-procedure';
 export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
+export { Solidite, type SoliditeAffichee, type EtageAffiche } from './solidite';
 export { Lettrage, type PropositionLettrage, type CombinaisonAffichee } from './lettrage';
