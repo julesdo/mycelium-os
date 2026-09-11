@@ -107,6 +107,35 @@ export function ajouterMois(date: string, mois: number): string {
 	return `${anneeCible.toString().padStart(4, '0')}-${deuxChiffres(moisCible)}-${deuxChiffres(jourCible)}`;
 }
 
+/**
+ * L'écart en jours de `debut` à `fin`, SIGNÉ.
+ *
+ * ⚠️ IL NE FAUT PAS LE CONFONDRE AVEC `joursEntre` DE `decompte.ts`, qui
+ * PLAFONNE À ZÉRO un écart négatif. Ce plafonnement y est juste et documenté :
+ * un arrêté antérieur à l'exigibilité ne produit pas d'intérêts en sens
+ * inverse, il n'en produit aucun.
+ *
+ * Mais il est faux partout où le signe porte une information. Mesurer
+ * l'habitude de paiement d'un client en est le cas type : une facture réglée
+ * AVANT son échéance a un délai négatif, et l'écraser à zéro ferait passer un
+ * bon payeur pour un payeur à l'heure — donc masquerait sa rupture le jour où
+ * il commence à payer en retard.
+ *
+ * Les deux vivent séparément parce qu'ils répondent à deux questions, pas
+ * parce que personne n'a remarqué la duplication. L'arithmétique, elle, est
+ * ici : `joursEntre` n'a que le plafond en plus.
+ */
+export function ecartJours(debut: string, fin: string): number {
+	if (!estDateReelle(debut) || !estDateReelle(fin)) {
+		throw new Error(
+			`Deux dates existantes au format AAAA-MM-JJ sont attendues, reçues : ${JSON.stringify(debut)} et ${JSON.stringify(fin)}`
+		);
+	}
+	return Math.round(
+		(Date.parse(`${fin}T00:00:00Z`) - Date.parse(`${debut}T00:00:00Z`)) / 86_400_000
+	);
+}
+
 /** Ajoute des jours calendaires. */
 export function ajouterJours(date: string, jours: number): string {
 	decomposer(date); // valide le format ET l'existence avant tout calcul

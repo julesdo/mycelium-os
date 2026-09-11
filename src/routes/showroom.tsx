@@ -15,6 +15,7 @@ import {
 	Decompte,
 	ChocRevelation,
 	BilanPertes,
+	HabitudePaiement,
 	IdentiteDebiteur,
 	ConstatRegistre,
 	Lettrage,
@@ -873,10 +874,99 @@ function DemoBilanImport() {
 	);
 }
 
+/**
+ * LES TROIS ÉTATS DE L'HABITUDE, CÔTE À CÔTE.
+ *
+ * C'est la seule façon de vérifier la propriété qui compte : « aucune rupture »
+ * et « aucune mesure » ne doivent pas se ressembler. Le troisième cas — un
+ * débiteur trop récent pour qu'on sache quoi que ce soit — est celui qu'on
+ * oublie de dessiner, et c'est celui qui laisse croire qu'un client est sage.
+ */
+function DemoHabitude() {
+	return (
+		<Page>
+			<PageHeader titre="Son habitude de paiement" sousTitre="Les trois états du module" />
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-2xs">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Une habitude rompue</SectionTitle>
+						<HabitudePaiement
+							habitude={{
+								connue: true,
+								delaiMedianJours: 12,
+								echantillon: 23,
+								dispersionJours: 2
+							}}
+							ruptures={[
+								{
+									reference: 'FA-2026-0311',
+									habituelJours: 12,
+									ecartJours: 73,
+									constat:
+										'Ce débiteur règle habituellement à 12 jours de son échéance, sur 23 règlements observés. Cette facture en est à 85, soit 73 de plus que son habitude.'
+								},
+								{
+									reference: 'FA-2026-0348',
+									habituelJours: 12,
+									ecartJours: 31,
+									constat:
+										'Ce débiteur règle habituellement à 12 jours de son échéance, sur 23 règlements observés. Cette facture en est à 43, soit 31 de plus que son habitude.'
+								}
+							]}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Un payeur lent, mais fidèle à lui-même</SectionTitle>
+						{/* ⚠️ LE CAS QUE LE SEUIL ABSOLU RATERAIT DANS L'AUTRE SENS : 65
+						    jours de retard, et rien à signaler — c'est son rythme depuis
+						    toujours. Un seuil crierait, et le bruit s'apprend. */}
+						<HabitudePaiement
+							habitude={{
+								connue: true,
+								delaiMedianJours: 65,
+								echantillon: 18,
+								dispersionJours: 3
+							}}
+							ruptures={[]}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Pas encore assez d’historique</SectionTitle>
+						<HabitudePaiement
+							habitude={{
+								connue: false,
+								raison:
+									'2 règlements datés connus : il en faut au moins 4 pour parler d’une habitude.'
+							}}
+							ruptures={[]}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Un client qui paie en avance</SectionTitle>
+						<HabitudePaiement
+							habitude={{
+								connue: true,
+								delaiMedianJours: -9,
+								echantillon: 31,
+								dispersionJours: 1
+							}}
+							ruptures={[]}
+						/>
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'accueil',
 	'accueil-vierge',
 	'bilan-import',
+	'habitude',
 	'lettrage',
 	'creancier',
 	'identite',
@@ -917,6 +1007,7 @@ function Showroom() {
 				{ecran === 'accueil' ? <DemoAccueil /> : null}
 				{ecran === 'accueil-vierge' ? <DemoAccueilVierge /> : null}
 				{ecran === 'bilan-import' ? <DemoBilanImport /> : null}
+				{ecran === 'habitude' ? <DemoHabitude /> : null}
 				{ecran === 'lettrage' ? <DemoLettrage /> : null}
 				{ecran === 'creancier' ? <DemoCreancier /> : null}
 				{ecran === 'identite' ? <DemoIdentite /> : null}

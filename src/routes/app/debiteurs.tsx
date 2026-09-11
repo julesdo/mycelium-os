@@ -14,10 +14,12 @@ import {
 	TwoPane,
 	EmptyState,
 	eurosCentimes,
+	aujourdHuiISO,
 	dateCourte,
 	pluriel,
 	Avatar,
 	CarteListe,
+	HabitudePaiement,
 	IdentiteDebiteur,
 	ConstatRegistre,
 	Lettrage,
@@ -98,6 +100,22 @@ function Debiteurs() {
 		api.recouvrement.lecture.listerFacturesDuDebiteur,
 		choisi === null ? 'skip' : { debiteurId: choisi }
 	);
+	/**
+	 * L'HABITUDE DE PAIEMENT DU DÉBITEUR CHOISI.
+	 *
+	 * ⚠️ `skip` TANT QU'AUCUN DÉBITEUR N'EST CHOISI. Sans ça, Convex
+	 * recalculerait une habitude sur un identifiant nul à chaque rendu de la
+	 * liste — et l'écran paierait une requête pour un volet vide.
+	 *
+	 * La date du jour vient de la SEULE horloge de l'interface, partagée avec
+	 * l'accueil et le détail : deux lectures différentes feraient diverger un
+	 * retard autour de minuit. Voir `ui/horloge.ts`.
+	 */
+	const comportement = useQuery(
+		api.recouvrement.comportement.lire,
+		choisi === null ? 'skip' : { debiteurId: choisi, aujourdHui: aujourdHuiISO() }
+	);
+
 	const debiteurChoisi = debiteurs?.find((d) => d._id === choisi);
 	const SECTEURS = optionsSecteur();
 
@@ -347,6 +365,15 @@ function Debiteurs() {
 						});
 					}}
 				/>
+
+				{/*
+				  L'HABITUDE, ENTRE L'IDENTITÉ ET LE LETTRAGE. L'ordre n'est pas
+				  neutre : on lit qui est ce client, puis comment il paie, puis on
+				  rapproche un virement. C'est la chronologie du geste réel.
+				*/}
+				{comportement === undefined ? null : (
+					<HabitudePaiement habitude={comportement.habitude} ruptures={comportement.ruptures} />
+				)}
 
 				<Lettrage
 					proposition={proposition ?? null}
