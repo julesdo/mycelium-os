@@ -38,7 +38,9 @@ import { Donnees } from '../screens/donnees/donnees';
 import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
 import { EcranAccueil, type AccueilAffiche } from '../screens/accueil';
-import { ETAGES_DE_PREUVE } from '../lib/verticales/recouvrement/solidite';
+import { ETAGES_DE_PREUVE, pyramideDePreuves } from '../lib/verticales/recouvrement/solidite';
+import { questionsRestantes } from '../lib/verticales/recouvrement/litige';
+import { EcranCreance } from '../screens/creance';
 import { NIVEAUX_RELANCE, composerRelance } from '../lib/verticales/recouvrement/relance';
 import { depuisCentimes } from '../lib/socle/montants';
 
@@ -362,6 +364,115 @@ const TYPES_PIECE_DEMO = [
 	},
 	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' }
 ];
+
+function DemoCreance() {
+	// Les textes viennent des modules de domaine, jamais recopiés : une
+	// démonstration qui invente ses phrases montre un produit qui n'existe pas.
+	const elementsRelance = {
+		creancier: 'Thumbbb Agency',
+		debiteur: 'Fournitures Durand',
+		factures: [
+			{
+				reference: 'FA-2026-004',
+				montantTTC: depuisCentimes(1_200_000n),
+				dateEcheance: '2026-05-15'
+			}
+		],
+		principalRestantDu: depuisCentimes(1_200_000n),
+		santeDebiteur: 'SAINE' as const,
+		aujourdHui: '2026-09-03',
+		decompte: {
+			arreteAu: '2026-09-03',
+			interets: depuisCentimes(64_000n),
+			indemniteForfaitaire: depuisCentimes(4_000n),
+			total: depuisCentimes(1_268_000n)
+		}
+	};
+
+	const pyramide = pyramideDePreuves(['FACTURE', 'BON_DE_COMMANDE']);
+
+	return (
+		<EcranCreance
+			aujourdHui="2026-09-03"
+			enCours={false}
+			erreur={null}
+			suivi={null}
+			dernier={null}
+			onTrancher={() => {}}
+			onDeclarer={() => {}}
+			onConsigner={() => {}}
+			onProduireDecompte={() => {}}
+			onTelecharger={null}
+			creance={{
+				debiteur: 'Fournitures Durand',
+				score: 0.65,
+				eligible: false,
+				principalRestantDu: 1_200_000n,
+				factures: [{ _id: 'f1' }, { _id: 'f2' }],
+				questions: [
+					{
+						condition: 'entreCommercants',
+						libelle:
+							'Pouvez-vous confirmer la qualité de commerçant des deux parties de cette créance ?'
+					}
+				],
+				litige: {
+					litigieux: false,
+					constats: ['Le caractère certain reste indéterminé : 3 faits ne sont pas renseignés.'],
+					questions: questionsRestantes({ CONTESTATION_ECRITE: 'NON', REFUS_RECEPTION: 'NON' }).map(
+						(q) => ({ cle: q.cle, question: q.question, portee: q.portee })
+					)
+				},
+				risques: [
+					{
+						type: 'RETARDS_REPETES',
+						description: '4 retards de paiement ont été observés sur ce débiteur.',
+						gravite: 'MOYENNE'
+					}
+				],
+				solidite: {
+					constat: pyramide.constat,
+					etablies: pyramide.etablies,
+					attendues: pyramide.attendues,
+					prochaine: pyramide.prochaine?.cle ?? null,
+					etages: pyramide.etages.map((e) => ({
+						cle: e.cle,
+						fait: e.fait,
+						etat: e.etat,
+						presente: e.presente,
+						poids: e.poids
+					}))
+				},
+				relances: NIVEAUX_RELANCE.map((description) => {
+					const relance = composerRelance(description.niveau, elementsRelance);
+					return {
+						niveau: description.niveau,
+						nom: description.nom,
+						intention: description.intention,
+						disponible: relance.disponible,
+						objet: relance.disponible ? relance.objet : undefined,
+						corps: relance.disponible ? relance.corps : undefined,
+						constat: relance.disponible ? undefined : relance.constat,
+						blocages: relance.disponible ? undefined : [...relance.blocages]
+					};
+				}),
+				procedures: [
+					{ cle: 'relance-amiable', nom: 'Relance amiable', disponible: true, blocages: [] },
+					{
+						cle: 'injonction-de-payer',
+						nom: 'Injonction de payer',
+						disponible: false,
+						blocages: [
+							'« mentionsObligatoiresInjonction » : les mentions que doit porter une requête en injonction de payer.'
+						]
+					}
+				],
+				regimePrescriptionNote:
+					'Régime général : cinq ans à compter de l’exigibilité. Secteur déterminé.'
+			}}
+		/>
+	);
+}
 
 function DemoRelances() {
 	// Les textes viennent du DOMAINE, pas d'une fixture recopiée : une
@@ -1472,6 +1583,7 @@ const ECRANS = [
 	'pieces',
 	'solidite',
 	'relances',
+	'creance',
 	'revelation',
 	'bilan',
 	'flux',
@@ -1518,6 +1630,7 @@ function Showroom() {
 				{ecran === 'pieces' ? <DemoPieces /> : null}
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'relances' ? <DemoRelances /> : null}
+				{ecran === 'creance' ? <DemoCreance /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}

@@ -50,8 +50,16 @@ export interface NiveauAffiche {
 }
 
 export function Relances({ niveaux }: { niveaux: readonly NiveauAffiche[] }) {
-	const premierDisponible = niveaux.find((n) => n.disponible)?.niveau ?? null;
-	const [ouvert, setOuvert] = useState<number | null>(premierDisponible);
+	// ⚠️ RIEN N'EST OUVERT AU DÉPART, ET C'EST UNE MESURE, PAS UN GOÛT.
+	//
+	// La première version dépliait le niveau disponible pour rendre service. Au
+	// navigateur, à 375 px, cette seule section faisait 1 608 px — près de trois
+	// écrans — et poussait la page de créance à 7,3 écrans de défilement. Les
+	// deux sections qui suivent, les procédures et le décompte, devenaient
+	// inatteignables sans y croire.
+	//
+	// Un brouillon se lit quand on a décidé de l'envoyer, pas en passant.
+	const [ouvert, setOuvert] = useState<number | null>(null);
 
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
@@ -92,7 +100,16 @@ export function Relances({ niveaux }: { niveaux: readonly NiveauAffiche[] }) {
 						) : null}
 					</div>
 
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">{niveau.intention}</p>
+					{/* ⚠️ L'INTENTION NE S'AFFICHE QUE SUR UN NIVEAU DISPONIBLE. Elle
+					    sert à CHOISIR entre les niveaux ; sur un niveau verrouillé le
+					    choix est sans objet, et elle répète le constat qui suit. Trois
+					    paragraphes pour dire la même chose, c'était le tiers de la
+					    hauteur de cette section. */}
+					{niveau.disponible ? (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+							{niveau.intention}
+						</p>
+					) : null}
 
 					{/* Le motif du blocage, NOMMÉ. « Indisponible » sans raison laisse
 					    croire à une limite du produit, alors qu'il s'agit d'une valeur

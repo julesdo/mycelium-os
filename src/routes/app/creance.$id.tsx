@@ -1,27 +1,11 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Chip, Surface, SurfaceCut } from '@cladd-ui/react';
-import { AlertTriangleIcon, FileDownIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import { depuisCentimes } from '../../lib/socle/montants';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import {
-	BoutonPrincipal,
-	Page,
-	PageHeader,
-	PageBody,
-	SectionEcran,
-	Decompte,
-	QuestionnaireLitige,
-	Relances,
-	Solidite,
-	SuiviProcedure,
-	aujourdHuiISO,
-	eurosCentimes,
-	pourcent,
-	type ReponseFait
-} from '../../ui';
+import { Page, PageHeader, PageBody, Decompte, aujourdHuiISO, type ReponseFait } from '../../ui';
+import { EcranCreance } from '../../screens/creance';
 
 export const Route = createFileRoute('/app/creance/$id')({ component: Creance });
 
@@ -203,238 +187,23 @@ function Creance() {
 	}
 
 	return (
-		<Page>
-			<PageHeader
-				titre={creance.debiteur}
-				sousTitre={`${creance.factures.length} facture(s) · ${eurosCentimes(
-					creance.principalRestantDu
-				)} restant dû`}
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
-					<SurfaceCut contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-2xs">
-						<div className="flex items-baseline gap-cladd-3xs">
-							<span className="text-letikette-titre font-bold tabular-nums">
-								{pourcent(creance.score)}
-							</span>
-							<span className="text-cladd-xs text-cladd-fg-soft">de solidité</span>
-						</div>
-						<Chip size="md" color={creance.eligible ? 'green' : 'neutral'}>
-							{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
-						</Chip>
-					</SurfaceCut>
-
-					{/*
-					  LE QUESTIONNAIRE DE LITIGE D'ABORD — module 3.2.
-
-					  Il vient avant les autres questions parce qu'il porte le seul
-					  critère qui peut FERMER le dossier. Demander la qualité de
-					  commerçant du débiteur à quelqu'un dont le client conteste la
-					  facture par écrit, c'est faire répondre à des questions qui ne
-					  changeront rien.
-					*/}
-					{creance.litige.questions.length > 0 || creance.litige.constats.length > 0 ? (
-						<SectionEcran
-							titre="Ce que vous seul pouvez dire"
-							legende={
-								creance.litige.questions.length > 0
-									? 'Des faits, pas une appréciation juridique.'
-									: undefined
-							}
-						>
-							<QuestionnaireLitige
-								questions={creance.litige.questions}
-								constats={creance.litige.constats}
-								litigieux={creance.litige.litigieux}
-								enCours={enCours}
-								onRepondre={(cle, reponse) => void declarer(cle, reponse)}
-							/>
-						</SectionEcran>
-					) : null}
-
-					{creance.questions.length > 0 ? (
-						<SectionEcran titre="Ce que le logiciel ne peut pas déduire">
-							<div className="flex flex-col gap-cladd-3xs">
-								{creance.questions.map((question) => (
-									<Surface
-										variant="transparent"
-										outline={false}
-										className="verre-carte rounded-cladd-xl"
-										key={question.condition}
-										contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-									>
-										<p className="text-cladd-sm">{question.libelle}</p>
-										<div className="flex flex-wrap gap-cladd-3xs">
-											<BoutonPrincipal onClick={() => tranche(question.condition, 'ok')}>
-												Oui
-											</BoutonPrincipal>
-											<Button
-												size="md"
-												variant="transparent"
-												onClick={() => tranche(question.condition, 'ko')}
-											>
-												Non
-											</Button>
-										</div>
-									</Surface>
-								))}
-							</div>
-						</SectionEcran>
-					) : null}
-
-					{creance.risques.length > 0 ? (
-						<SectionEcran titre="Ce qui affaiblit ce dossier">
-							<div className="flex flex-col gap-cladd-3xs">
-								{creance.risques.map((risque) => (
-									<Surface
-										key={risque.type}
-										variant="transparent"
-										outline={false}
-										className="verre-carte rounded-cladd-xl"
-										contentClassName="flex gap-cladd-3xs p-cladd-2xs"
-									>
-										<AlertTriangleIcon
-											className="mt-1 size-4 shrink-0 text-cladd-fg-soft"
-											aria-hidden
-										/>
-										<div className="flex min-w-0 flex-col gap-1.5">
-											<p className="text-cladd-sm">{risque.description}</p>
-											{risque.gravite === 'BLOQUANTE' ? (
-												<p className="text-cladd-xs text-cladd-fg-soft">
-													Une contestation, même infondée, met fin à la procédure simplifiée.
-												</p>
-											) : null}
-										</div>
-									</Surface>
-								))}
-							</div>
-						</SectionEcran>
-					) : null}
-
-					{/*
-					  LA PYRAMIDE DE PREUVES — module 4.2.
-
-					  ⚠️ ELLE REMPLACE UNE RANGÉE DE PASTILLES NUES. « bon de commande »
-					  et « mise en demeure » s'y ressemblaient, alors que l'une vaut
-					  trois points sur vingt et l'autre un seul — et aucune ne disait ce
-					  qu'elle établit.
-
-					  Le titre a changé aussi : « ce qui renforcerait ce dossier » ne
-					  montrait que les manques, ce qui se lit comme une réprimande et
-					  masque le chemin parcouru. Les quatre étages sont rendus, établis
-					  ou non.
-					*/}
-					<SectionEcran titre="Ce que les pièces établissent">
-						<Solidite solidite={creance.solidite} />
-					</SectionEcran>
-
-					{/*
-					  CE QUI COURT MAINTENANT, AVANT CE QU'ON POURRAIT FAIRE.
-
-					  Une procédure déjà engagée fait courir des délais dont un À PEINE
-					  DE CADUCITÉ. Les mettre sous la liste des voies envisageables
-					  reviendrait à faire lire « ce qu'on pourrait engager » avant « ce
-					  qui va s'éteindre si personne ne bouge ».
-					*/}
-					{suivi ? (
-						<SectionEcran titre="Ce qui court depuis l’engagement" legende={suivi.libelle}>
-							<SuiviProcedure
-								suivi={suivi}
-								aujourdHui={aujourdHuiISO()}
-								enCours={enCours}
-								onConsigner={(cle, survenuLe) => void consigner(cle, survenuLe)}
-							/>
-						</SectionEcran>
-					) : null}
-
-					{/*
-					  LES RELANCES AVANT LES PROCÉDURES.
-
-					  ⚠️ L'ORDRE EST LA LIGNE ROUGE 1 RENDUE VISIBLE. Le recouvrement
-					  amiable passe avant le judiciaire, et ces textes partent de la
-					  messagerie du créancier, sous sa signature — ce logiciel n'envoie
-					  rien. Mettre les procédures au-dessus laisserait croire que
-					  l'escalade est le chemin normal.
-					*/}
-					<SectionEcran
-						titre="Ce que vous pouvez lui écrire"
-						legende="Des brouillons, à envoyer depuis votre messagerie."
-					>
-						<Relances niveaux={creance.relances} />
-					</SectionEcran>
-
-					<SectionEcran titre="Procédures">
-						<div className="flex flex-col gap-cladd-3xs">
-							{creance.procedures.map((procedure) => (
-								<Surface
-									key={procedure.cle}
-									variant="transparent"
-									outline={false}
-									className="verre-carte rounded-cladd-xl"
-									contentClassName="flex flex-col gap-1.5 p-cladd-2xs"
-								>
-									<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
-										<span className="text-cladd-sm font-semibold">{procedure.nom}</span>
-										<Chip size="md" color={procedure.disponible ? 'green' : 'neutral'}>
-											{procedure.disponible ? 'Envisageable' : 'Indisponible'}
-										</Chip>
-									</div>
-									{/* Les blocages sont NOMMÉS. « Indisponible » sans motif
-									    laisserait croire à une limite du produit, alors qu'il
-									    s'agit d'une valeur juridique qui manque. */}
-									{procedure.blocages.map((blocage) => (
-										<p key={blocage} className="text-cladd-xs text-cladd-fg-soft">
-											{blocage}
-										</p>
-									))}
-								</Surface>
-							))}
-						</div>
-					</SectionEcran>
-
-					<SectionEcran titre="Décompte">
-						{dernier ? (
-							<Decompte decompte={dernier} />
-						) : (
-							<Surface
-								variant="transparent"
-								outline={false}
-								className="verre-carte rounded-cladd-xl"
-								contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-							>
-								<p className="text-cladd-sm text-cladd-fg-soft">
-									Aucun décompte n’a encore été arrêté pour cette créance.
-								</p>
-								<p className="text-cladd-xs text-cladd-fg-soft">
-									Un décompte est figé à sa date : il prouve ce qui était réclamé le jour où on l’a
-									réclamé, et ne bouge plus ensuite.
-								</p>
-							</Surface>
-						)}
-
-						{erreur ? <p className="mt-cladd-3xs text-cladd-xs text-cladd-fg">{erreur}</p> : null}
-
-						<div className="mt-cladd-3xs flex flex-wrap gap-cladd-3xs">
-							<BoutonPrincipal onClick={produireDecompte} disabled={enCours}>
-								{enCours ? 'Calcul en cours…' : 'Arrêter un décompte à aujourd’hui'}
-							</BoutonPrincipal>
-
-							{/* LA PIÈCE. C'est le troisième critère de fin de MVP : un décompte
-							    qui part chez un expert-comptable, un avocat ou un assureur SANS
-							    être retouché. Tant qu'il faut le retoucher, ce n'est pas une
-							    pièce — et le client n'a aucune raison de rester. */}
-							{dernier ? (
-								<Button size="lg" variant="transparent" onClick={() => void telecharger()}>
-									<FileDownIcon />
-									Télécharger la pièce
-								</Button>
-							) : null}
-						</div>
-					</SectionEcran>
-
-					<p className="text-cladd-xs text-cladd-fg-soft">{creance.regimePrescriptionNote}</p>
-				</div>
-			</PageBody>
-		</Page>
+		<EcranCreance
+			creance={creance}
+			suivi={suivi ?? null}
+			aujourdHui={aujourdHuiISO()}
+			enCours={enCours}
+			erreur={erreur}
+			onTrancher={(condition, valeur) => void tranche(condition, valeur)}
+			onDeclarer={(cle, reponse) => void declarer(cle, reponse)}
+			onConsigner={(cle, survenuLe) => void consigner(cle, survenuLe)}
+			onProduireDecompte={() => void produireDecompte()}
+			// ⚠️ `null` PLUTÔT QU’UN BOUTON INERTE. Sans décompte figé, il n’y a
+			// rien à télécharger ; un bouton présent et sans effet est pire qu’un
+			// bouton absent — il se presse, et rien ne se passe.
+			onTelecharger={dernier ? () => void telecharger() : null}
+			// Le décompte est composé ICI : la route seule connaît la forme que
+			// Convex renvoie, et l’écran ne sait pas interroger Convex.
+			dernier={dernier ? <Decompte decompte={dernier} /> : null}
+		/>
 	);
 }
