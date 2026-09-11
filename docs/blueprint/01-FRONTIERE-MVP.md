@@ -36,7 +36,7 @@ du plan.
 | 1.1 | **Ingestion automatique** : adresse e-mail dédiée par organisation, connecteur ouvert self-service, dépôt de fichiers en secours | dépôt existe, le reste à construire |
 | 1.2 | **Extracteur IA des preuves** : bons de livraison, bons de commande, CGV, annotations manuscrites                                | **existe** (11/09/2026)             |
 | 1.3 | **Normalisation SIRET** sur l'API Sirene, avec gestion de l'historique des statuts                                               | à construire                        |
-| 1.4 | **Solveur de lettrage dégradé** : retrouver quelles factures composent un virement groupé                                        | à construire                        |
+| 1.4 | **Solveur de lettrage dégradé** : retrouver quelles factures composent un virement groupé                                        | **existe** (03/09/2026)             |
 
 **Pourquoi l'e-mail dédié plutôt que Pennylane d'abord.** Pennylane et Dext exigent une validation de
 partenariat dont le délai ne nous appartient pas. Miser le premier euro dessus, c'est mettre le
@@ -46,11 +46,11 @@ Les connecteurs arrivent en parallèle, sans bloquer la vente.
 
 ### Module 2 — Le cerveau préventif
 
-|     | Fonction                                                                                                      | État                                      |
-| --- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 2.1 | **Compteur de prescription qui se réveille seul** : recalcul quotidien, notification sans qu'on ouvre l'écran | le calcul existe, **le battement manque** |
-| 2.2 | **Radar de solvabilité** : interrogation BODACC quotidienne, coupe-circuit sur procédure collective           | à construire                              |
-| 2.3 | **Scoring comportemental** : rupture d'habitude de paiement plutôt que seuil absolu                           | à construire                              |
+|     | Fonction                                                                                                      | État                    |
+| --- | ------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| 2.1 | **Compteur de prescription qui se réveille seul** : recalcul quotidien, notification sans qu'on ouvre l'écran | **existe** (03/09/2026) |
+| 2.2 | **Radar de solvabilité** : interrogation BODACC quotidienne, coupe-circuit sur procédure collective           | **existe** (09/09/2026) |
+| 2.3 | **Scoring comportemental** : rupture d'habitude de paiement plutôt que seuil absolu                           | **existe** (10/09/2026) |
 
 **Le battement est le cœur du MVP.** Aujourd'hui la surveillance se calcule quand on ouvre l'écran.
 Un radar qui ne se réveille pas n'est pas un radar, c'est un rapport.
@@ -173,3 +173,28 @@ Pas « toutes les cases sont cochées ». Trois critères observables :
 
 Le troisième est le plus dur et le plus important : c'est celui qui prouve que le décompte est une
 pièce, et pas un écran.
+
+---
+
+## Où en est réellement le MVP — 11 septembre 2026
+
+**Onze fonctions sur treize existent.** Les deux qui manquent ne se codent pas :
+
+|     | Ce qui bloque                                                | Qui le débloque |
+| --- | ------------------------------------------------------------ | --------------- |
+| 1.1 | Le fournisseur d'ingestion e-mail et les enregistrements DNS | Jules           |
+| 1.3 | La clé de l'API Sirene (INSEE)                               | Jules           |
+| 3.1 | La validation des trois niveaux de relance                   | un juriste      |
+
+**Et le plus long piquet n'a pas bougé.** `valideParAvocat` vaut toujours
+`false` sur les quinze entrées du registre juridique : **rien ne peut produire
+un acte** tant qu'une signature humaine manque, quel que soit l'état du code.
+Ce n'est pas une lenteur d'ingénierie, et aucun agent ne la remplace.
+
+⚠️ **« Existe » veut dire consommé, pas écrit.** Chaque ligne ci-dessus a été
+vérifiée sur trois points : un module de domaine, une fonction Convex, et un
+consommateur réel — un écran ou une tâche planifiée. Un module sans
+consommateur ne compte pas comme livré : c'est exactement le défaut
+« déclaré, lu, jamais alimenté » qui s'est produit **dix fois** dans ce dépôt,
+et dont deux occurrences étaient des fonctionnalités entières que la table
+disait pourtant construites.
