@@ -145,8 +145,9 @@ function Export({ onExporter }: { onExporter: () => Promise<FichierExport> }) {
 
 			{fichier ? (
 				<Surface
-					outline
-					className="rounded-cladd-2xl"
+					variant="transparent"
+					outline={false}
+					className="verre-carte rounded-cladd-xl"
 					contentClassName="flex flex-wrap items-center gap-cladd-2xs p-cladd-2xs"
 				>
 					<span className="flex min-w-0 flex-1 flex-col">

@@ -129,8 +129,9 @@ function EtatCourant({
 	if (etat.isDev) {
 		return (
 			<Surface
-				outline
-				className="rounded-cladd-2xl"
+				variant="transparent"
+				outline={false}
+				className="verre-carte rounded-cladd-xl"
 				contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 			>
 				<span className="text-cladd-sm font-bold">Accès de développement</span>
@@ -145,8 +146,9 @@ function EtatCourant({
 	if (abonne) {
 		return (
 			<Surface
-				outline
-				className="rounded-cladd-2xl"
+				variant="transparent"
+				outline={false}
+				className="verre-carte rounded-cladd-xl"
 				contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 			>
 				<span className="text-cladd-sm font-bold">Votre abonnement est actif.</span>
