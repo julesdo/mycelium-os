@@ -288,6 +288,28 @@ export const creanceComplete = authedQuery({
 			v.literal('CLOSE')
 		),
 		debiteur: v.string(),
+		/**
+		 * L'IDENTIFIANT DU DÉBITEUR, pour que la créance puisse l'atteindre.
+		 *
+		 * ⚠️ IL MANQUAIT. Cette requête ne rendait que la dénomination — laquelle
+		 * sert de TITRE à l'écran de la créance. Le nom du débiteur était donc
+		 * affiché en gros, et le débiteur lui-même injoignable depuis la créance.
+		 */
+		debiteurId: v.id('debiteurs'),
+		/**
+		 * LA SANTÉ RELEVÉE AU REGISTRE, celle que le radar écrit chaque nuit.
+		 *
+		 * ⚠️ ELLE ÉTAIT DÉJÀ LUE ICI, ET JETÉE. Le handler la passe à `qualifier()`
+		 * pour calculer le score, puis ne la rend pas : un débiteur en procédure
+		 * collective faisait donc baisser la note de solidité sans que l'écran
+		 * dise pourquoi elle a baissé.
+		 */
+		santeDebiteur: v.union(
+			v.literal('INCONNUE'),
+			v.literal('SAINE'),
+			v.literal('PROCEDURE_COLLECTIVE'),
+			v.literal('RADIEE')
+		),
 		score: v.number(),
 		eligible: v.boolean(),
 		principalRestantDu: v.int64(),
@@ -460,6 +482,11 @@ export const creanceComplete = authedQuery({
 		return {
 			statut: creance.statut,
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
+			debiteurId: creance.debiteurId,
+			// La MÊME valeur que celle passée à `qualifier()` seize lignes plus
+			// haut, et c'est le point : l'écran montre désormais ce qui a fait le
+			// score au lieu de laisser le chiffre inexpliqué.
+			santeDebiteur: debiteur?.santeFinanciere ?? 'INCONNUE',
 			score: qualification.score,
 			eligible: qualification.eligible,
 			principalRestantDu: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
@@ -594,6 +621,15 @@ export const listerCreances = authedQuery({
 		v.object({
 			_id: v.id('creances'),
 			debiteur: v.string(),
+			/**
+			 * ⚠️ IL MANQUAIT, ET SON ABSENCE RENDAIT CETTE REQUÊTE INUTILISABLE LÀ OÙ
+			 * ELLE SERT. Sans lui, impossible de montrer à un débiteur SES créances :
+			 * on ne pouvait que lister toutes celles de l'établissement.
+			 *
+			 * C'est une des raisons pour lesquelles `listerCreances` — complète et
+			 * testée — n'était appelée par personne.
+			 */
+			debiteurId: v.id('debiteurs'),
 			statut: v.string(),
 			score: v.number(),
 			principalRestantDu: v.int64(),
@@ -620,6 +656,7 @@ export const listerCreances = authedQuery({
 				return {
 					_id: creance._id,
 					debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
+					debiteurId: creance.debiteurId,
 					statut: creance.statut,
 					score: creance.score ?? 0,
 					principalRestantDu: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),

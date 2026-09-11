@@ -1,5 +1,6 @@
 import { Chip, SurfaceCut } from '@cladd-ui/react';
 import {
+	Building2Icon,
 	AlertTriangleIcon,
 	FileTextIcon,
 	GavelIcon,
@@ -15,7 +16,8 @@ import {
 	PageBody,
 	eurosCentimes,
 	pluriel,
-	pourcent
+	pourcent,
+	rangeeDuDebiteur
 } from '../ui';
 
 /**
@@ -55,6 +57,17 @@ import {
 
 export interface CreanceAffichee {
 	readonly debiteur: string;
+	/** Pour atteindre le débiteur, dont cet écran n'affichait que le nom. */
+	readonly debiteurId: string;
+	/**
+	 * Ce que le radar a relevé au registre sur ce débiteur.
+	 *
+	 * ⚠️ ELLE FAIT DÉJÀ BAISSER LE SCORE, ET NE SE VOYAIT PAS. `creanceComplete`
+	 * passe cette santé à `qualifier()` puis, jusqu'ici, ne la rendait pas : le
+	 * chiffre de solidité affiché en haut de cet écran bougeait donc pour une
+	 * raison que l'écran ne nommait nulle part.
+	 */
+	readonly santeDebiteur: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
 	readonly score: number;
 	readonly eligible: boolean;
 	readonly principalRestantDu: bigint;
@@ -114,6 +127,38 @@ export function EcranCreance({
 							{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
 						</Chip>
 					</SurfaceCut>
+
+					{/*
+					  ⚠️ LE DÉBITEUR, EN PREMIER, ET DANS SA PROPRE LISTE.
+
+					  Il n'est pas une analyse de la créance : c'est l'autre partie. Le
+					  mettre dans la liste des six analyses le rangerait au milieu de
+					  « ce qui affaiblit le dossier » et « ce que les pièces
+					  établissent », alors qu'il est d'une autre nature — et qu'il est
+					  la seule rangée de l'écran qui SORTE de la créance.
+
+					  C'est le traitement de la référence, qui pose la contrepartie en
+					  haut du détail d'une opération, sous le montant, et non parmi ses
+					  attributs.
+
+					  ⚠️ ET C'EST ICI QUE LE VERDICT DU RADAR ARRIVE ENFIN À L'ŒIL. Il
+					  tourne chaque nuit à quatre heures, écrit sa santé sur le DÉBITEUR,
+					  et cet écran-ci porte l'argent : les deux ne se rencontraient nulle
+					  part. Une procédure collective change pourtant tout ce que cette
+					  créance vaut.
+					*/}
+					<ListeAnalyses>
+						<LigneAnalyse
+							vers="/app/debiteurs"
+							// Le volet d'un débiteur n'a pas de route à lui : il se choisit
+							// par la recherche d'URL sur l'écran de la liste. Voir la prop
+							// `recherche` de `LigneAnalyse`.
+							recherche={{ d: creance.debiteurId }}
+							icone={<Building2Icon />}
+							titre={creance.debiteur}
+							{...rangeeDuDebiteur({ sante: creance.santeDebiteur })}
+						/>
+					</ListeAnalyses>
 
 					<ListeAnalyses>
 						<LigneAnalyse

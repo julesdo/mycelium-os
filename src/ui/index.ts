@@ -64,6 +64,7 @@ export { QuestionnaireLitige, type QuestionLitige, type ReponseFait } from './qu
 export { SuiviProcedure, type SuiviAffiche, type EcheanceAffichee } from './suivi-procedure';
 export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
 export { ListeAnalyses, LigneAnalyse, EnteteDetail } from './navigation';
+export { rangeeDuDebiteur } from './identite-debiteur';
 export {
 	Veilleur,
 	travauxDuVeilleur,

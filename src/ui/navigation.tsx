@@ -49,6 +49,7 @@ export function ListeAnalyses({ children }: { children: ReactNode }) {
 
 export function LigneAnalyse({
 	vers,
+	recherche,
 	parametres,
 	titre,
 	valeur,
@@ -66,6 +67,16 @@ export function LigneAnalyse({
 	 */
 	vers: LinkProps['to'];
 	parametres?: LinkProps['params'];
+	/**
+	 * La recherche d'URL, quand la destination en dépend.
+	 *
+	 * ⚠️ ELLE EST NÉCESSAIRE, ET PAS THÉORIQUE. Le volet d'un débiteur n'a pas
+	 * de route à lui : il vit sur `/app/debiteurs` et se choisit par `?d=<id>`.
+	 * Sans cette prop, aucune rangée du produit ne pouvait donc atteindre un
+	 * débiteur — ce qui est exactement pourquoi l'écran d'une créance affichait
+	 * le nom de son débiteur sans pouvoir y mener.
+	 */
+	recherche?: LinkProps['search'];
 	titre: string;
 	/**
 	 * Un chiffre ou trois mots. JAMAIS une phrase — elle irait à la page.
@@ -104,6 +115,9 @@ export function LigneAnalyse({
 			  déplace d'un cran.
 			*/
 			params={parametres as never}
+			// Même raisonnement que `params` : le `as` polymorphe efface le générique
+			// du routeur, et la prop de CE composant reste, elle, typée par lui.
+			search={recherche as never}
 			icon={icone}
 			footer={precision}
 			after={

@@ -387,6 +387,26 @@ function DemoDebiteurDetail() {
 						secteur: 'TRANSPORT_MARCHANDISES',
 						santeFinanciere: 'SAINE'
 					}}
+					/**
+					 * ⚠️ DEUX CRÉANCES, DONT UN BROUILLON. C'est l'arête qui manquait au
+					 * produit : avant elle, l'écran d'une créance ne s'atteignait que
+					 * par la redirection qui suit sa constitution, et n'était donc
+					 * visible que dans les secondes suivant sa création.
+					 */
+					creances={[
+						{
+							_id: 'demo-creance',
+							statut: 'QUALIFIEE',
+							principalRestantDu: 1_200_000n,
+							nombreFactures: 2
+						},
+						{
+							_id: 'demo-creance-2',
+							statut: 'BROUILLON',
+							principalRestantDu: 318_040n,
+							nombreFactures: 1
+						}
+					]}
 					optionsSecteur={SECTEURS_DEMO}
 					erreurSiren={null}
 					tauxStipule="15,00"
@@ -494,6 +514,17 @@ function DemoCreance() {
 			totalDecompte={null}
 			creance={{
 				debiteur: 'Fournitures Durand',
+				debiteurId: 'demo-debiteur',
+				/**
+				 * ⚠️ UNE PROCÉDURE COLLECTIVE DANS LA DÉMONSTRATION, délibérément.
+				 *
+				 * C'est le cas qui rend la rangée du débiteur indispensable : le radar
+				 * l'a relevée au registre pendant la nuit, elle a fait baisser le score
+				 * affiché juste au-dessus, et jusqu'ici l'écran n'en disait rien. La
+				 * salle d'exposition doit montrer l'état où le défaut se voyait, pas
+				 * celui où il ne se voyait pas.
+				 */
+				santeDebiteur: 'PROCEDURE_COLLECTIVE',
 				score: 0.65,
 				eligible: false,
 				principalRestantDu: 1_200_000n,

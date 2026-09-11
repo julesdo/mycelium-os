@@ -110,6 +110,20 @@ export const Route = createFileRoute('/app/debiteurs')({
 function Debiteurs() {
 	const navigate = useNavigate();
 	const debiteurs = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
+	/**
+	 * LES CRÉANCES DÉJÀ CONSTITUÉES.
+	 *
+	 * ⚠️ `listerCreances` EXISTAIT, COMPLÈTE ET TESTÉE, ET N'ÉTAIT APPELÉE PAR
+	 * PERSONNE. C'est le troisième cas de la même famille relevé cette
+	 * semaine — une chose construite, correcte, et injoignable.
+	 *
+	 * Sa conséquence était la plus lourde du produit : l'écran d'une créance ne
+	 * s'atteignait que par la redirection qui suit `constituer()`, quelques
+	 * lignes plus bas. Une fois qu'on en sortait, aucun lien n'y ramenait —
+	 * l'écran le plus riche du logiciel n'était visible que dans les secondes
+	 * suivant sa création.
+	 */
+	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
 	const { d } = Route.useSearch();
 	const choisi = (d ?? null) as Id<'debiteurs'> | null;
 
@@ -451,6 +465,10 @@ function Debiteurs() {
 			debiteurId={choisi ?? ''}
 			debiteur={choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi}
 			factures={choisi === null || factures === undefined ? null : factures}
+			// Les seules du débiteur ouvert. Le filtre est ici plutôt qu'en base
+			// parce que la liste entière tient déjà en mémoire pour l'écran, et
+			// qu'une requête par débiteur la rechargerait à chaque sélection.
+			creances={(creances ?? []).filter((creance) => creance.debiteurId === choisi)}
 			optionsSecteur={SECTEURS}
 			erreurSiren={erreurSiren}
 			tauxStipule={tauxStipule}

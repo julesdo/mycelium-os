@@ -189,6 +189,71 @@ export interface ConstatRegistreAffiche {
  * insolvable — une interdiction de gérer vise une personne. C'est précisément
  * pour ça qu'on montre le texte du registre au lieu d'un verdict.
  */
+/**
+ * CE QUE LA RANGÉE « DÉBITEUR » DIT, SUR L'ÉCRAN D'UNE CRÉANCE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI CETTE RANGÉE EXISTE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'écran d'une créance affichait le nom du débiteur comme TITRE, et n'offrait
+ * aucun moyen de l'atteindre — `creanceComplete` ne rendait même pas son
+ * identifiant. Le graphe d'objets du produit était fait d'étoiles séparées :
+ * une créance descendait vers ses six analyses, un débiteur vers ses pièces, et
+ * les deux ne se touchaient nulle part.
+ *
+ * Ce n'est pas seulement de la navigation. Le radar de solvabilité tourne
+ * chaque nuit et écrit son verdict SUR LE DÉBITEUR ; la créance porte l'argent.
+ * Le handler de `creanceComplete` lisait déjà cette santé — il la passe à
+ * `qualifier()` — puis la jetait : un débiteur en procédure collective faisait
+ * baisser la note sans que l'écran dise pourquoi.
+ *
+ * ⚠️ QUATRE ÉTATS, QUATRE MOTS DIFFÉRENTS. La table l'impose : « ne rien savoir
+ * n'est pas la même chose que savoir que tout va bien, et c'est la confusion
+ * qui ferait engager des frais sur un débiteur déjà radié ». `INCONNUE` dit
+ * donc « non vérifiée » et `SAINE` dit « rien au registre » — jamais le même
+ * mot, sans quoi la distinction tenue en base se perd au dernier mètre.
+ *
+ * ⚠️ UN CONSTAT, JAMAIS UNE CONDUITE À TENIR. « Procédure collective au
+ * registre », pas « déclarez votre créance au mandataire ». C'est la troisième
+ * ligne rouge du projet, et un test la balaie.
+ */
+export function rangeeDuDebiteur({
+	sante
+}: {
+	sante: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
+}): { valeur: string; precision?: string; attention: boolean } {
+	switch (sante) {
+		case 'PROCEDURE_COLLECTIVE':
+			return {
+				valeur: 'Procédure collective',
+				precision: 'Relevée au registre public',
+				// ⚠️ UN POINT, PAS UNE COULEUR. Le vert, l'ambre et le rouge sont
+				// réservés à `--color-seuil-*` et ne disent qu'une chose dans ce
+				// produit : au-dessus du seuil, tout près, en dessous. Une santé de
+				// débiteur n'est pas un seuil.
+				attention: true
+			};
+		case 'RADIEE':
+			return {
+				valeur: 'Radiée du registre',
+				precision: 'Relevée au registre public',
+				attention: true
+			};
+		case 'SAINE':
+			return { valeur: 'Rien au registre', precision: 'Au dernier relevé', attention: false };
+		case 'INCONNUE':
+			return {
+				valeur: 'Non vérifiée',
+				// Un angle mort se dit : « ce que le logiciel ne voit pas s'affiche
+				// aussi ». Sans SIREN, le radar ne peut pas interroger le registre, et
+				// un gérant qui croit son débiteur surveillé ne le surveille pas.
+				precision: 'Le registre n’a pas pu être interrogé',
+				attention: false
+			};
+	}
+}
+
 export function ConstatRegistre({
 	constat,
 	sante

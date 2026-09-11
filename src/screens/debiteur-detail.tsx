@@ -1,5 +1,5 @@
-import { Checkbox, Chip, Surface } from '@cladd-ui/react';
-import { FileTextIcon, HistoryIcon } from 'lucide-react';
+import { Checkbox, Chip, ListTitle, Surface } from '@cladd-ui/react';
+import { FileTextIcon, HistoryIcon, ScaleIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
 	ConstatRegistre,
@@ -95,6 +95,14 @@ export interface FactureAffichee {
 	readonly dansUneCreance: boolean;
 }
 
+/** Une créance de ce débiteur, telle que la rangée l'affiche. */
+export interface CreanceDuDebiteur {
+	readonly _id: string;
+	readonly statut: string;
+	readonly principalRestantDu: bigint;
+	readonly nombreFactures: number;
+}
+
 export interface DebiteurAffiche {
 	readonly siren?: string;
 	readonly secteur?: string;
@@ -106,6 +114,7 @@ export function DetailDebiteur({
 	debiteurId,
 	debiteur,
 	factures,
+	creances,
 	optionsSecteur,
 	erreurSiren,
 	tauxStipule,
@@ -131,6 +140,13 @@ export function DetailDebiteur({
 	/** `null` quand aucun débiteur n'est choisi, ou que ses factures chargent. */
 	debiteur: DebiteurAffiche | null;
 	factures: readonly FactureAffichee[] | null;
+	/**
+	 * Les créances déjà constituées pour ce débiteur.
+	 *
+	 * ⚠️ C'EST LA SEULE PORTE VERS L'ÉCRAN DE CRÉANCE, une fois passée la
+	 * redirection qui suit sa constitution. Voir la note devant la liste.
+	 */
+	creances: readonly CreanceDuDebiteur[];
 	optionsSecteur: readonly OptionSecteur[];
 	erreurSiren: string | null;
 	tauxStipule: string | undefined;
@@ -204,6 +220,65 @@ export function DetailDebiteur({
 			  Une rangée dit le compte, la page dit le détail. Même geste que sur
 			  l’écran de créance, et pour la même raison.
 			*/}
+			{/*
+			  SES CRÉANCES — l'arête qui manquait, et la plus coûteuse du produit.
+
+			  ═══════════════════════════════════════════════════════════════════
+			  ⚠️ UNE CRÉANCE NE SE REVOYAIT PAS
+			  ═══════════════════════════════════════════════════════════════════
+
+			  L'écran d'une créance porte le score de solidité, six pages d'analyse
+			  et le décompte : c'est le plus riche du produit. On n'y entrait que
+			  d'UNE façon — la redirection qui suit `constituer()`, sur cet écran-ci.
+			  Une fois qu'on en était sorti, plus aucun lien n'y menait : ni la
+			  liste des débiteurs, ni ce volet, ni l'accueil, ni le détail. Elle
+			  n'était visible que dans les secondes qui suivaient sa création.
+
+			  Les six pages d'analyse pointaient bien vers elle, mais en RETOUR — ce
+			  qui ne l'atteint pas : il faut déjà y être pour les voir. Les sept
+			  écrans formaient un îlot fermé, cohérent en dedans, relié à rien en
+			  dehors.
+
+			  ⚠️ ET LA REQUÊTE EXISTAIT DÉJÀ. `listerCreances` est complète et
+			  testée, et n'était appelée par personne — il lui manquait seulement de
+			  rendre `debiteurId`, sans quoi on ne pouvait pas montrer à un débiteur
+			  LES SIENNES.
+
+			  La valeur de la rangée est le montant : c'est ce qu'on vient chercher.
+			  Le compte de factures va en précision, et le score reste sur l'écran
+			  de la créance — une rangée porte un chiffre, pas deux.
+			*/}
+			{creances.length === 0 ? null : (
+				<ListeAnalyses>
+					{/*
+					  ⚠️ LE MOT « CRÉANCE » EST DANS LE TITRE DU GROUPE, PAS SUR CHAQUE
+					  RANGÉE — et c'est une mesure. « Créance · 2 factures » disputait sa
+					  largeur au montant et repassait à la ligne à 375 px, sur les deux
+					  rangées. Répété à l'identique en tête de chacune, il ne distinguait
+					  d'ailleurs rien : ce qui sépare deux créances d'un même débiteur,
+					  c'est leur montant et ce qu'elles couvrent.
+
+					  `ListTitle` est la réponse du kit pour nommer un groupe de rangées,
+					  et il nomme ici une fois ce qui était écrit deux fois.
+					*/}
+					<ListTitle>Ses créances</ListTitle>
+					{creances.map((creance) => (
+						<LigneAnalyse
+							key={creance._id}
+							vers="/app/creance/$id"
+							parametres={{ id: creance._id }}
+							icone={<ScaleIcon />}
+							titre={`${creance.nombreFactures} facture${pluriel(creance.nombreFactures)}`}
+							// Un brouillon n'est pas encore qualifié : le dire évite d'ouvrir
+							// une créance en croyant qu'elle est prête, et de lire un score
+							// qui ne porte encore sur rien.
+							precision={creance.statut === 'BROUILLON' ? 'Brouillon' : undefined}
+							valeur={eurosCentimes(creance.principalRestantDu)}
+						/>
+					))}
+				</ListeAnalyses>
+			)}
+
 			<ListeAnalyses>
 				<LigneAnalyse
 					vers="/app/debiteurs/$id/pieces"
