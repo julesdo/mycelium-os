@@ -21,6 +21,7 @@ import {
 	SuiviProcedure,
 	Pieces,
 	Solidite,
+	Relances,
 	ConstatRegistre,
 	Lettrage,
 	type OptionSecteur,
@@ -38,6 +39,8 @@ import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
 import { EcranAccueil, type AccueilAffiche } from '../screens/accueil';
 import { ETAGES_DE_PREUVE } from '../lib/verticales/recouvrement/solidite';
+import { NIVEAUX_RELANCE, composerRelance } from '../lib/verticales/recouvrement/relance';
+import { depuisCentimes } from '../lib/socle/montants';
 
 /**
  * La salle d'exposition.
@@ -359,6 +362,85 @@ const TYPES_PIECE_DEMO = [
 	},
 	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' }
 ];
+
+function DemoRelances() {
+	// Les textes viennent du DOMAINE, pas d'une fixture recopiée : une
+	// démonstration qui invente ses propres phrases montre un produit qui
+	// n'existe pas, et c'est ce qui s'est passé sur la pyramide de preuves.
+	const elements = {
+		creancier: 'Thumbbb Agency',
+		debiteur: 'Fournitures Durand',
+		factures: [
+			{
+				reference: 'FA-2026-004',
+				montantTTC: depuisCentimes(1_200_000n),
+				dateEcheance: '2026-05-15'
+			}
+		],
+		principalRestantDu: depuisCentimes(1_200_000n),
+		santeDebiteur: 'SAINE' as const,
+		aujourdHui: '2026-09-03',
+		decompte: {
+			arreteAu: '2026-09-03',
+			interets: depuisCentimes(64_000n),
+			indemniteForfaitaire: depuisCentimes(4_000n),
+			total: depuisCentimes(1_268_000n)
+		}
+	};
+
+	const niveaux = NIVEAUX_RELANCE.map((description) => {
+		const relance = composerRelance(description.niveau, elements);
+		return {
+			niveau: description.niveau,
+			nom: description.nom,
+			intention: description.intention,
+			disponible: relance.disponible,
+			objet: relance.disponible ? relance.objet : undefined,
+			corps: relance.disponible ? relance.corps : undefined,
+			constat: relance.disponible ? undefined : relance.constat,
+			blocages: relance.disponible ? undefined : [...relance.blocages]
+		};
+	});
+
+	const suspendues = NIVEAUX_RELANCE.map((description) => {
+		const relance = composerRelance(description.niveau, {
+			...elements,
+			santeDebiteur: 'PROCEDURE_COLLECTIVE' as const,
+			constatRegistre: {
+				nature: 'Jugement d’ouverture de liquidation judiciaire',
+				dateJugement: '2026-03-14'
+			}
+		});
+		return {
+			niveau: description.niveau,
+			nom: description.nom,
+			intention: description.intention,
+			disponible: relance.disponible,
+			objet: relance.disponible ? relance.objet : undefined,
+			corps: relance.disponible ? relance.corps : undefined,
+			constat: relance.disponible ? undefined : relance.constat,
+			blocages: relance.disponible ? undefined : [...relance.blocages]
+		};
+	});
+
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="Ce que vous pouvez lui écrire" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Trois niveaux, dont un verrouillé</SectionTitle>
+						<Relances niveaux={niveaux} />
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Le coupe-circuit — tout est suspendu</SectionTitle>
+						<Relances niveaux={suspendues} />
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 function DemoSolidite() {
 	// ⚠️ LES PHRASES ACCORDÉES VIENNENT DU DOMAINE. Les recomposer ici ferait
@@ -1389,6 +1471,7 @@ const ECRANS = [
 	'suivi',
 	'pieces',
 	'solidite',
+	'relances',
 	'revelation',
 	'bilan',
 	'flux',
@@ -1434,6 +1517,7 @@ function Showroom() {
 				{ecran === 'suivi' ? <DemoSuivi /> : null}
 				{ecran === 'pieces' ? <DemoPieces /> : null}
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
+				{ecran === 'relances' ? <DemoRelances /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}

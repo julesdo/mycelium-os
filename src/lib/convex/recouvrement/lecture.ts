@@ -8,6 +8,7 @@ import { qualifier } from '../../verticales/recouvrement/scoring';
 import { PROCEDURES, proceduresEnvisageables } from '../../verticales/recouvrement/procedures';
 import { conditionsADemander } from '../../verticales/recouvrement/deduction';
 import { pyramideDePreuves } from '../../verticales/recouvrement/solidite';
+import { NIVEAUX_RELANCE, composerRelance } from '../../verticales/recouvrement/relance';
 import {
 	lireLitige,
 	questionsRestantes,
@@ -346,7 +347,27 @@ export const creanceComplete = authedQuery({
 				blocages: v.array(v.string())
 			})
 		),
-		regimePrescriptionNote: v.string()
+		regimePrescriptionNote: v.string(),
+		/**
+		 * LES RELANCES — module 3.1.
+		 *
+		 * ⚠️ CE SONT DES BROUILLONS. Le recouvrement amiable pour le compte
+		 * d'autrui est une activité encadrée : ce produit compose un texte que le
+		 * créancier enverra LUI-MÊME, depuis sa propre messagerie. Rien n'est
+		 * expédié d'ici, et aucun brouillon ne nomme le logiciel.
+		 */
+		relances: v.array(
+			v.object({
+				niveau: v.number(),
+				nom: v.string(),
+				intention: v.string(),
+				disponible: v.boolean(),
+				objet: v.optional(v.string()),
+				corps: v.optional(v.string()),
+				constat: v.optional(v.string()),
+				blocages: v.optional(v.array(v.string()))
+			})
+		)
 	}),
 	handler: async (ctx, { creanceId }) => {
 		const { organizationId } = await getUserOrg(ctx);
@@ -358,6 +379,32 @@ export const creanceComplete = authedQuery({
 
 		const debiteur = await ctx.db.get(creance.debiteurId);
 		const secteur = debiteur?.secteur ?? 'INDETERMINE';
+
+		// Le profil du créancier signe les brouillons de relance : ils partent de
+		// SA messagerie, sous SA signature. Sans dénomination, le texte dirait
+		// « Votre entreprise » — visible, donc corrigé, plutôt que muet.
+		const profil = await ctx.db
+			.query('profilsCreancier')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+
+		/**
+		 * LE DERNIER DÉCOMPTE ARRÊTÉ.
+		 *
+		 * ⚠️ LE NIVEAU 2 DE RELANCE REPREND SES CHIFFRES, IL N'EN RECALCULE
+		 * AUCUN. Le seul montant opposable est celui d'un décompte figé et daté ;
+		 * en recomposer un pour un e-mail ferait une seconde vérité, dans un
+		 * texte qui part chez le débiteur.
+		 */
+		const decomptes = await ctx.db
+			.query('decomptes')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+			.collect();
+		const dernierDecompte =
+			decomptes
+				.filter((d) => d.organizationId === organizationId)
+				.sort((a, b) => (a.arreteAu < b.arreteAu ? 1 : a.arreteAu > b.arreteAu ? -1 : 0))[0] ??
+			null;
 
 		const factures = await ctx.db
 			.query('facturesVente')
@@ -497,6 +544,44 @@ export const creanceComplete = authedQuery({
 				disponible: clesEnvisageables.has(procedure.cle) && procedure.peutEvaluer(),
 				blocages: [...procedure.blocagesProductionActe()]
 			})),
+			// ⚠️ LE COUPE-CIRCUIT EST DANS LE DOMAINE, pas ici : un débiteur en
+			// procédure collective ne se relance pas, et le module le constate à
+			// tous les niveaux depuis la santé et le constat du registre.
+			relances: NIVEAUX_RELANCE.map((description) => {
+				const relance = composerRelance(description.niveau, {
+					creancier: profil?.denomination ?? 'Votre entreprise',
+					debiteur: debiteur?.denomination ?? 'Ce client',
+					factures: factures.map((f) => ({
+						reference: f.reference,
+						montantTTC: depuisCentimes(f.montantTTC),
+						dateEcheance: f.dateEcheance
+					})),
+					principalRestantDu: restes.length > 0 ? additionner(...restes) : ZERO,
+					decompte:
+						dernierDecompte === null
+							? undefined
+							: {
+									arreteAu: dernierDecompte.arreteAu,
+									interets: depuisCentimes(dernierDecompte.interets),
+									indemniteForfaitaire: depuisCentimes(dernierDecompte.indemniteForfaitaire),
+									total: depuisCentimes(dernierDecompte.total)
+								},
+					santeDebiteur: debiteur?.santeFinanciere ?? 'INCONNUE',
+					constatRegistre: debiteur?.constatRegistre,
+					aujourdHui: new Date().toISOString().slice(0, 10)
+				});
+
+				return {
+					niveau: description.niveau,
+					nom: description.nom,
+					intention: description.intention,
+					disponible: relance.disponible,
+					objet: relance.disponible ? relance.objet : undefined,
+					corps: relance.disponible ? relance.corps : undefined,
+					constat: relance.disponible ? undefined : relance.constat,
+					blocages: relance.disponible ? undefined : [...relance.blocages]
+				};
+			}),
 			regimePrescriptionNote: regimePrescription(secteur).note
 		};
 	}

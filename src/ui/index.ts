@@ -64,4 +64,5 @@ export { QuestionnaireLitige, type QuestionLitige, type ReponseFait } from './qu
 export { SuiviProcedure, type SuiviAffiche, type EcheanceAffichee } from './suivi-procedure';
 export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
 export { Solidite, type SoliditeAffichee, type EtageAffiche } from './solidite';
+export { Relances, type NiveauAffiche } from './relances';
 export { Lettrage, type PropositionLettrage, type CombinaisonAffichee } from './lettrage';

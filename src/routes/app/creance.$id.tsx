@@ -14,6 +14,7 @@ import {
 	SectionEcran,
 	Decompte,
 	QuestionnaireLitige,
+	Relances,
 	Solidite,
 	SuiviProcedure,
 	aujourdHuiISO,
@@ -345,6 +346,22 @@ function Creance() {
 							/>
 						</SectionEcran>
 					) : null}
+
+					{/*
+					  LES RELANCES AVANT LES PROCÉDURES.
+
+					  ⚠️ L'ORDRE EST LA LIGNE ROUGE 1 RENDUE VISIBLE. Le recouvrement
+					  amiable passe avant le judiciaire, et ces textes partent de la
+					  messagerie du créancier, sous sa signature — ce logiciel n'envoie
+					  rien. Mettre les procédures au-dessus laisserait croire que
+					  l'escalade est le chemin normal.
+					*/}
+					<SectionEcran
+						titre="Ce que vous pouvez lui écrire"
+						legende="Des brouillons, à envoyer depuis votre messagerie."
+					>
+						<Relances niveaux={creance.relances} />
+					</SectionEcran>
 
 					<SectionEcran titre="Procédures">
 						<div className="flex flex-col gap-cladd-3xs">
