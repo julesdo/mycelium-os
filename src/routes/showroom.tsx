@@ -84,11 +84,20 @@ const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		 */
 		type: 'HABITUDE_ROMPUE',
 		reference: 'FA-2026-0311',
-		montant: 420_000n,
+		// ⚠️ LE MÊME MONTANT QUE L'ÉCHÉANCE QU'ELLE REMPLACE. La fixture portait
+		// deux montants différents pour cette référence — 4 200 € ici, 249,90 € sur
+		// la ligne d'échéance — ce qui ne peut pas arriver en production et rendait
+		// la salle d'exposition menteuse sur le seul point qui compte : l'exactitude.
+		montant: 24_990n,
 		urgence: 'NORMALE',
+		// Échue le 1er août, relevé au 2 septembre : trente-deux jours. Le constat
+		// doit coller aux dates des autres fixtures, sans quoi on illustre un état
+		// que le calcul ne produirait jamais.
 		explication:
-			'Ce débiteur règle habituellement à 12 jours de son échéance, sur 23 règlements observés. Cette facture en est à 85, soit 73 de plus que son habitude.',
-		action: 'Ouvrir la fiche de Fournitures Durand : son historique de règlements y est.'
+			'Ce débiteur règle habituellement à 5 jours de son échéance, sur 23 règlements observés. Cette facture en est à 32, soit 27 de plus que son habitude.',
+		action:
+			'Ouvrir la fiche de Fournitures Durand : son historique de règlements y est. ' +
+			'Ou rattacher cette facture à une créance, ou enregistrer son règlement.'
 	},
 	{
 		type: 'PRESCRIPTION_PROCHE',
@@ -114,15 +123,11 @@ const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		urgence: 'HAUTE',
 		explication: 'La créance atteint le seuil de qualification (0,90 pour un seuil de 0.75).',
 		action: 'Examiner les procédures envisageables pour cette créance.'
-	},
-	{
-		type: 'FACTURE_ECHUE',
-		reference: 'FA-2026-0311',
-		montant: 24_990n,
-		urgence: 'NORMALE',
-		explication: 'La facture FA-2026-0311 est échue depuis le 2026-08-01 et reste due.',
-		action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.'
 	}
+	// ⚠️ L'ÉVÉNEMENT `FACTURE_ECHUE` DE FA-2026-0311 A ÉTÉ RETIRÉ D'ICI. Le
+	// détecteur ne l'émet plus dès qu'une rupture couvre la même facture — la
+	// rupture dit tout ce qu'il disait, et davantage. Le garder illustrerait un
+	// état que le produit ne peut plus produire.
 ];
 
 /**
@@ -431,7 +436,7 @@ function DemoFlux() {
 				<FluxEvenements
 					evenements={EVENEMENTS_DEMO}
 					// Uniquement les deux factures distinctes ci-dessus (PRESCRIPTION_PROCHE
-					// FA-2021-0087 à 9 240,00 € + FACTURE_ECHUE FA-2026-0311 à 249,90 €) : la
+					// FA-2021-0087 à 9 240,00 € + HABITUDE_ROMPUE FA-2026-0311 à 249,90 €) : la
 					// créance mûre et l'échéance de procédure sont des vues agrégées de la
 					// même monnaie, pas de l'argent en plus. Voir `montantIdentifie` dans
 					// `verticales/recouvrement/surveillance.ts`.
