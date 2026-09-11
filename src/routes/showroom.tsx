@@ -116,8 +116,10 @@ const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		montant: 1_845_000n,
 		urgence: 'CRITIQUE',
 		explication: "Signification de l'ordonnance : il reste 9 jour(s) avant le 2026-09-12.",
-		action:
-			'Faire signifier sans délai — passée cette date, le droit est perdu et 18 450,00 € cessent d’être couverts par cette procédure.'
+		// La démonstration porte la MÊME formulation que le produit : une capture
+		// qui montrerait « faire signifier sans délai » ferait recopier une consigne
+		// de procédure que la ligne rouge 3 interdit.
+		action: 'Ouvrir ce dossier : la date limite et son journal y sont.'
 	},
 	{
 		type: 'CREANCE_MURE',
