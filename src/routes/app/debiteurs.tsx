@@ -27,42 +27,6 @@ import {
 } from '../../lib/verticales/recouvrement/pays/france/prescription';
 
 /**
- * Les natures de pièce, et ce que chacune ÉTABLIT.
- *
- * ⚠️ L'APPORT SOUS CHAQUE OPTION, PAS LE NOM SEUL. Un gérant ne classe pas un
- * document pour le plaisir de la nomenclature : il le classe parce que ça
- * change la solidité de son dossier. « Bon de livraison » ne dit rien ;
- * « prouve que la marchandise a été remise » dit pourquoi ça compte.
- *
- * `INDETERMINE` y figure délibérément : c'est un état légitime — un document
- * déposé dont la lecture n'a rien conclu — et le masquer empêcherait de revenir
- * en arrière après un classement erroné.
- */
-const TYPES_PIECE = [
-	{ cle: 'INDETERMINE', libelle: 'À classer', apport: 'Ne compte dans aucun critère' },
-	{
-		cle: 'BON_DE_COMMANDE',
-		libelle: 'Bon de commande',
-		apport: 'Établit que le client a commandé'
-	},
-	{ cle: 'DEVIS_SIGNE', libelle: 'Devis signé', apport: 'Établit que le client a commandé' },
-	{
-		cle: 'BON_DE_LIVRAISON',
-		libelle: 'Bon de livraison',
-		apport: 'Établit que la prestation a été reçue'
-	},
-	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' },
-	{ cle: 'CONTRAT', libelle: 'Contrat', apport: 'Établit les conditions de paiement' },
-	{
-		cle: 'MISE_EN_DEMEURE',
-		libelle: 'Mise en demeure',
-		apport: 'Établit l’interpellation préalable'
-	},
-	{ cle: 'ECHANGES', libelle: 'Échanges', apport: 'Documente la relation, sans critère propre' },
-	{ cle: 'FACTURE', libelle: 'Facture', apport: 'La facture elle-même' }
-] as const;
-
-/**
  * Les secteurs proposés, et ce que chacun change.
  *
  * ⚠️ LA DURÉE VIENT DU REGISTRE, JAMAIS D'UNE CONSTANTE ÉCRITE ICI. C'est la
@@ -107,7 +71,29 @@ function optionsSecteur(): OptionSecteur[] {
 		...connus
 	];
 }
-export const Route = createFileRoute('/app/debiteurs')({ component: Debiteurs });
+/**
+ * ⚠️ LE DÉBITEUR CHOISI VIT DANS L'URL, PLUS DANS UN ÉTAT LOCAL.
+ *
+ * Il était dans un `useState`, et trois choses en découlaient, toutes
+ * mauvaises sur un téléphone :
+ *
+ *   · le bouton RETOUR du navigateur quittait l'écran au lieu de refermer la
+ *     feuille — le geste le plus instinctif d'une application mobile ;
+ *   · un lien partagé ou un rechargement retombait sur la liste vide ;
+ *   · et surtout, aucune page de détail ne pouvait REVENIR à ce débiteur,
+ *     puisque rien dans l'adresse ne disait lequel était ouvert.
+ *
+ * En paramètre de recherche plutôt qu'en segment de chemin : la liste et la
+ * preuve sont le MÊME écran au-dessus de 1024 px, et un segment de chemin
+ * aurait suggéré deux pages là où il y en a une.
+ */
+export const Route = createFileRoute('/app/debiteurs')({
+	component: Debiteurs,
+	validateSearch: (recherche: Record<string, unknown>): { d?: string } => {
+		const d = recherche.d;
+		return typeof d === 'string' && d.length > 0 ? { d } : {};
+	}
+});
 
 /**
  * Les débiteurs, et leurs factures.
@@ -124,7 +110,24 @@ export const Route = createFileRoute('/app/debiteurs')({ component: Debiteurs })
 function Debiteurs() {
 	const navigate = useNavigate();
 	const debiteurs = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
-	const [choisi, setChoisi] = useState<Id<'debiteurs'> | null>(null);
+	const { d } = Route.useSearch();
+	const choisi = (d ?? null) as Id<'debiteurs'> | null;
+
+	/**
+	 * Choisir un débiteur, c'est NAVIGUER.
+	 *
+	 * `replace` sur la fermeture et pas sur l'ouverture : ouvrir une fiche
+	 * ajoute une étape à l'historique — c'est elle que le bouton retour doit
+	 * défaire — tandis que la refermer soi-même ne doit pas en ajouter une
+	 * seconde, sans quoi il faudrait appuyer deux fois pour sortir.
+	 */
+	const setChoisi = (id: Id<'debiteurs'> | null) => {
+		void navigate({
+			to: '/app/debiteurs',
+			search: id === null ? {} : { d: id },
+			replace: id === null
+		});
+	};
 	const [selection, setSelection] = useState<Set<string>>(new Set());
 	const [erreur, setErreur] = useState<string | null>(null);
 
@@ -179,53 +182,6 @@ function Debiteurs() {
 		api.recouvrement.pieces.listerPiecesDuDebiteur,
 		choisi === null ? 'skip' : { debiteurId: choisi }
 	);
-	const genererUrlPiece = useMutation(api.recouvrement.pieces.genererUrlPiece);
-	const deposerPiece = useMutation(api.recouvrement.pieces.deposerPiece);
-	const classerPiece = useMutation(api.recouvrement.pieces.classerPiece);
-	const retirerPiece = useMutation(api.recouvrement.pieces.retirerPiece);
-	const [depotEnCours, setDepotEnCours] = useState(false);
-
-	/**
-	 * Déposer une ou plusieurs pièces.
-	 *
-	 * ⚠️ LE DÉPÔT N'IMPOSE AUCUN TYPE. La pièce entre « à classer », la lecture
-	 * part en tâche de fond, et le gérant ne corrige que si elle s'est trompée.
-	 * Demander la nature d'un PDF qui porte « BON DE LIVRAISON » en en-tête est
-	 * exactement le champ vide que la première règle d'écran interdit.
-	 *
-	 * ⚠️ ET ELLES SONT RATTACHÉES AU DÉBITEUR, PAS À UNE FACTURE. Des CGV ou un
-	 * contrat-cadre valent pour toutes ses factures ; créer une liaison par
-	 * facture pour un seul PDF en produirait des milliers.
-	 */
-	async function deposerPieces(fichiers: File[]) {
-		if (choisi === null) return;
-		setErreur(null);
-		setDepotEnCours(true);
-		try {
-			for (const fichier of fichiers) {
-				const url = await genererUrlPiece();
-				const reponse = await fetch(url, {
-					method: 'POST',
-					headers: { 'Content-Type': fichier.type },
-					body: fichier
-				});
-				if (!reponse.ok) throw new Error(`L’envoi de « ${fichier.name} » a échoué.`);
-				const { storageId } = (await reponse.json()) as { storageId: Id<'_storage'> };
-
-				await deposerPiece({
-					storageId,
-					filename: fichier.name,
-					mimeType: fichier.type,
-					debiteurId: choisi,
-					factureIds: []
-				});
-			}
-		} catch (e) {
-			setErreur(e instanceof Error ? e.message : 'Dépôt refusé.');
-		} finally {
-			setDepotEnCours(false);
-		}
-	}
 
 	const [constatPose, setConstatPose] = useState<{
 		readonly debiteurId: Id<'debiteurs'>;
@@ -492,6 +448,7 @@ function Debiteurs() {
 	 */
 	const preuve = (
 		<DetailDebiteur
+			debiteurId={choisi ?? ''}
 			debiteur={choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi}
 			factures={choisi === null || factures === undefined ? null : factures}
 			optionsSecteur={SECTEURS}
@@ -499,8 +456,6 @@ function Debiteurs() {
 			tauxStipule={tauxStipule}
 			constatTaux={constatTaux}
 			pieces={pieces ?? []}
-			optionsTypePiece={TYPES_PIECE}
-			depotEnCours={depotEnCours}
 			habitude={comportement?.habitude ?? null}
 			ruptures={comportement?.ruptures ?? []}
 			propositionLettrage={proposition ?? null}
@@ -514,14 +469,6 @@ function Debiteurs() {
 				void renseignerSecteur({ debiteurId: choisi, secteur: cle as 'GENERAL' });
 			}}
 			onEnregistrerTaux={(p) => void enregistrerTaux(p)}
-			onDeposerPieces={(fichiers) => void deposerPieces(fichiers)}
-			onClasserPiece={(pieceId, type) => {
-				void classerPiece({
-					pieceId: pieceId as Id<'pieces'>,
-					type: type as 'BON_DE_LIVRAISON'
-				});
-			}}
-			onRetirerPiece={(pieceId) => void retirerPiece({ pieceId: pieceId as Id<'pieces'> })}
 			onChercherLettrage={chercherLettrage}
 			onAppliquerLettrage={(references, total) => void soldeLesFactures(references, total)}
 			onBasculerFacture={basculer}

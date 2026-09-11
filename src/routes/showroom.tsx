@@ -380,6 +380,7 @@ function DemoDebiteurDetail() {
 			<PageHeader titre="Fournitures Durand" sousTitre="Ce qu’il doit, facture par facture" />
 			<PageBody>
 				<DetailDebiteur
+					debiteurId="demo"
 					debiteur={{
 						siren: '853479236',
 						secteur: 'TRANSPORT_MARCHANDISES',
@@ -389,8 +390,6 @@ function DemoDebiteurDetail() {
 					erreurSiren={null}
 					tauxStipule="15,00"
 					constatTaux="Le taux de 15,00 % est au-dessus du plancher de 10,26 % constaté au 2026-03-15."
-					optionsTypePiece={TYPES_PIECE_DEMO}
-					depotEnCours={false}
 					pieces={[
 						{
 							_id: '1',
@@ -434,9 +433,6 @@ function DemoDebiteurDetail() {
 					onEnregistrerSiren={() => {}}
 					onChoisirSecteur={() => {}}
 					onEnregistrerTaux={() => {}}
-					onDeposerPieces={() => {}}
-					onClasserPiece={() => {}}
-					onRetirerPiece={() => {}}
 					onChercherLettrage={() => {}}
 					onAppliquerLettrage={() => {}}
 					onBasculerFacture={() => {}}

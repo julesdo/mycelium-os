@@ -34,6 +34,8 @@ import { Route as AppCreanceIdProcedureRouteImport } from './routes/app/creance_
 import { Route as AppCreanceIdRelancesRouteImport } from './routes/app/creance_.$id.relances'
 import { Route as AppCreanceIdRisquesRouteImport } from './routes/app/creance_.$id.risques'
 import { Route as AppCreanceIdSoliditeRouteImport } from './routes/app/creance_.$id.solidite'
+import { Route as AppDebiteursIdHabitudeRouteImport } from './routes/app/debiteurs_.$id.habitude'
+import { Route as AppDebiteursIdPiecesRouteImport } from './routes/app/debiteurs_.$id.pieces'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -160,6 +162,16 @@ const AppCreanceIdSoliditeRoute = AppCreanceIdSoliditeRouteImport.update({
   path: '/creance/$id/solidite',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDebiteursIdHabitudeRoute = AppDebiteursIdHabitudeRouteImport.update({
+  id: '/debiteurs_/$id/habitude',
+  path: '/debiteurs/$id/habitude',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDebiteursIdPiecesRoute = AppDebiteursIdPiecesRouteImport.update({
+  id: '/debiteurs_/$id/pieces',
+  path: '/debiteurs/$id/pieces',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -187,6 +199,8 @@ export interface FileRoutesByFullPath {
   '/app/creance/$id/relances': typeof AppCreanceIdRelancesRoute
   '/app/creance/$id/risques': typeof AppCreanceIdRisquesRoute
   '/app/creance/$id/solidite': typeof AppCreanceIdSoliditeRoute
+  '/app/debiteurs/$id/habitude': typeof AppDebiteursIdHabitudeRoute
+  '/app/debiteurs/$id/pieces': typeof AppDebiteursIdPiecesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +227,8 @@ export interface FileRoutesByTo {
   '/app/creance/$id/relances': typeof AppCreanceIdRelancesRoute
   '/app/creance/$id/risques': typeof AppCreanceIdRisquesRoute
   '/app/creance/$id/solidite': typeof AppCreanceIdSoliditeRoute
+  '/app/debiteurs/$id/habitude': typeof AppDebiteursIdHabitudeRoute
+  '/app/debiteurs/$id/pieces': typeof AppDebiteursIdPiecesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -241,6 +257,8 @@ export interface FileRoutesById {
   '/app/creance_/$id/relances': typeof AppCreanceIdRelancesRoute
   '/app/creance_/$id/risques': typeof AppCreanceIdRisquesRoute
   '/app/creance_/$id/solidite': typeof AppCreanceIdSoliditeRoute
+  '/app/debiteurs_/$id/habitude': typeof AppDebiteursIdHabitudeRoute
+  '/app/debiteurs_/$id/pieces': typeof AppDebiteursIdPiecesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -270,6 +288,8 @@ export interface FileRouteTypes {
     | '/app/creance/$id/relances'
     | '/app/creance/$id/risques'
     | '/app/creance/$id/solidite'
+    | '/app/debiteurs/$id/habitude'
+    | '/app/debiteurs/$id/pieces'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -296,6 +316,8 @@ export interface FileRouteTypes {
     | '/app/creance/$id/relances'
     | '/app/creance/$id/risques'
     | '/app/creance/$id/solidite'
+    | '/app/debiteurs/$id/habitude'
+    | '/app/debiteurs/$id/pieces'
   id:
     | '__root__'
     | '/'
@@ -323,6 +345,8 @@ export interface FileRouteTypes {
     | '/app/creance_/$id/relances'
     | '/app/creance_/$id/risques'
     | '/app/creance_/$id/solidite'
+    | '/app/debiteurs_/$id/habitude'
+    | '/app/debiteurs_/$id/pieces'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -515,6 +539,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCreanceIdSoliditeRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/debiteurs_/$id/habitude': {
+      id: '/app/debiteurs_/$id/habitude'
+      path: '/debiteurs/$id/habitude'
+      fullPath: '/app/debiteurs/$id/habitude'
+      preLoaderRoute: typeof AppDebiteursIdHabitudeRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/debiteurs_/$id/pieces': {
+      id: '/app/debiteurs_/$id/pieces'
+      path: '/debiteurs/$id/pieces'
+      fullPath: '/app/debiteurs/$id/pieces'
+      preLoaderRoute: typeof AppDebiteursIdPiecesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -534,6 +572,8 @@ interface AppRouteRouteChildren {
   AppCreanceIdRelancesRoute: typeof AppCreanceIdRelancesRoute
   AppCreanceIdRisquesRoute: typeof AppCreanceIdRisquesRoute
   AppCreanceIdSoliditeRoute: typeof AppCreanceIdSoliditeRoute
+  AppDebiteursIdHabitudeRoute: typeof AppDebiteursIdHabitudeRoute
+  AppDebiteursIdPiecesRoute: typeof AppDebiteursIdPiecesRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -552,6 +592,8 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppCreanceIdRelancesRoute: AppCreanceIdRelancesRoute,
   AppCreanceIdRisquesRoute: AppCreanceIdRisquesRoute,
   AppCreanceIdSoliditeRoute: AppCreanceIdSoliditeRoute,
+  AppDebiteursIdHabitudeRoute: AppDebiteursIdHabitudeRoute,
+  AppDebiteursIdPiecesRoute: AppDebiteursIdPiecesRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

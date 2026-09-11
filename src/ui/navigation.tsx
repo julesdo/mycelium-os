@@ -141,12 +141,22 @@ export function LigneAnalyse({
 export function EnteteDetail({
 	retourVers,
 	retourParametres,
+	retourRecherche,
 	retourLibelle,
 	titre,
 	sousTitre
 }: {
 	retourVers: LinkProps['to'];
 	retourParametres?: LinkProps['params'];
+	/**
+	 * Les paramètres de recherche du retour.
+	 *
+	 * ⚠️ SANS EUX, LE RETOUR PERD LA SÉLECTION. L'écran des débiteurs porte le
+	 * débiteur ouvert dans son adresse (`?d=…`) : revenir sans le rendre
+	 * rouvrirait la liste vide, et le gérant aurait à rechercher son client
+	 * après chaque aller-retour.
+	 */
+	retourRecherche?: LinkProps['search'];
 	retourLibelle: string;
 	titre: string;
 	sousTitre?: string;
@@ -156,6 +166,7 @@ export function EnteteDetail({
 			<Link
 				to={retourVers}
 				params={retourParametres}
+				search={retourRecherche}
 				// ⚠️ `min-h-11` — 44 px. Sans lui le retour se dimensionne sur sa ligne
 				// de texte et tombe à 33 px : c'est la commande la plus utilisée de
 				// toute page poussée, et la plus petite cible de l'écran. Mesuré au

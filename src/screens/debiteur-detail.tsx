@@ -1,19 +1,18 @@
 import { Checkbox, Chip, Surface } from '@cladd-ui/react';
+import { FileTextIcon, HistoryIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
 	ConstatRegistre,
-	HabitudePaiement,
 	IdentiteDebiteur,
 	Lettrage,
-	Pieces,
-	SectionEcran,
+	LigneAnalyse,
+	ListeAnalyses,
 	dateCourte,
 	eurosCentimes,
 	pluriel,
 	type ConstatRegistreAffiche,
 	type HabitudeAffichee,
 	type OptionSecteur,
-	type OptionTypePiece,
 	type PieceAffichee,
 	type PropositionLettrage,
 	type RuptureAffichee
@@ -49,6 +48,42 @@ import {
  * parce qu'on y revient une fois qu'on sait quoi en faire.
  */
 
+/**
+ * Les natures de pièce, et ce que chacune ÉTABLIT.
+ *
+ * ⚠️ L'APPORT SOUS CHAQUE OPTION, PAS LE NOM SEUL. Un gérant ne classe pas un
+ * document pour le plaisir de la nomenclature : il le classe parce que ça
+ * change la solidité de son dossier. « Bon de livraison » ne dit rien ;
+ * « prouve que la marchandise a été remise » dit pourquoi ça compte.
+ *
+ * `INDETERMINE` y figure délibérément : c'est un état légitime — un document
+ * déposé dont la lecture n'a rien conclu — et le masquer empêcherait de revenir
+ * en arrière après un classement erroné.
+ */
+export const TYPES_PIECE = [
+	{ cle: 'INDETERMINE', libelle: 'À classer', apport: 'Ne compte dans aucun critère' },
+	{
+		cle: 'BON_DE_COMMANDE',
+		libelle: 'Bon de commande',
+		apport: 'Établit que le client a commandé'
+	},
+	{ cle: 'DEVIS_SIGNE', libelle: 'Devis signé', apport: 'Établit que le client a commandé' },
+	{
+		cle: 'BON_DE_LIVRAISON',
+		libelle: 'Bon de livraison',
+		apport: 'Établit que la prestation a été reçue'
+	},
+	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' },
+	{ cle: 'CONTRAT', libelle: 'Contrat', apport: 'Établit les conditions de paiement' },
+	{
+		cle: 'MISE_EN_DEMEURE',
+		libelle: 'Mise en demeure',
+		apport: 'Établit l’interpellation préalable'
+	},
+	{ cle: 'ECHANGES', libelle: 'Échanges', apport: 'Documente la relation, sans critère propre' },
+	{ cle: 'FACTURE', libelle: 'Facture', apport: 'La facture elle-même' }
+] as const;
+
 export interface FactureAffichee {
 	readonly _id: string;
 	readonly reference: string;
@@ -68,6 +103,7 @@ export interface DebiteurAffiche {
 }
 
 export function DetailDebiteur({
+	debiteurId,
 	debiteur,
 	factures,
 	optionsSecteur,
@@ -75,8 +111,6 @@ export function DetailDebiteur({
 	tauxStipule,
 	constatTaux,
 	pieces,
-	optionsTypePiece,
-	depotEnCours,
 	habitude,
 	ruptures,
 	propositionLettrage,
@@ -87,14 +121,13 @@ export function DetailDebiteur({
 	onEnregistrerSiren,
 	onChoisirSecteur,
 	onEnregistrerTaux,
-	onDeposerPieces,
-	onClasserPiece,
-	onRetirerPiece,
 	onChercherLettrage,
 	onAppliquerLettrage,
 	onBasculerFacture,
 	onConstituer
 }: {
+	/** L'identifiant, pour construire les liens vers les pages de détail. */
+	debiteurId: string;
 	/** `null` quand aucun débiteur n'est choisi, ou que ses factures chargent. */
 	debiteur: DebiteurAffiche | null;
 	factures: readonly FactureAffichee[] | null;
@@ -102,9 +135,13 @@ export function DetailDebiteur({
 	erreurSiren: string | null;
 	tauxStipule: string | undefined;
 	constatTaux: string | null;
+	/**
+	 * ⚠️ LE VOLET NE PORTE PLUS QUE LE COMPTE. Le dépôt, le classement et le
+	 * retrait vivent sur `/app/debiteurs/$id/pieces` : ce sont des gestes, et
+	 * un geste a besoin de place. Les garder ici obligeait à passer les cinq
+	 * props correspondantes à travers un écran qui ne s'en sert plus.
+	 */
 	pieces: readonly PieceAffichee[];
-	optionsTypePiece: readonly OptionTypePiece[];
-	depotEnCours: boolean;
 	habitude: HabitudeAffichee | null;
 	ruptures: readonly RuptureAffichee[];
 	propositionLettrage: PropositionLettrage | null;
@@ -115,14 +152,17 @@ export function DetailDebiteur({
 	onEnregistrerSiren: (saisi: string) => void;
 	onChoisirSecteur: (cle: string) => void;
 	onEnregistrerTaux: (pourcentage: string | null) => void;
-	onDeposerPieces: (fichiers: File[]) => void;
-	onClasserPiece: (pieceId: string, type: string) => void;
-	onRetirerPiece: (pieceId: string) => void;
 	onChercherLettrage: (montant: string, date: string) => void;
 	onAppliquerLettrage: (references: readonly string[], total: bigint) => void;
 	onBasculerFacture: (factureId: string) => void;
 	onConstituer: () => void;
 }) {
+	// Une pièce « à classer » est une pièce déposée dont la lecture n'a rien
+	// conclu. Elle existe, elle se voit, et elle ne compte dans aucun critère.
+	const aClasser = pieces.filter(
+		(piece) => piece.statut === 'A_CLASSER' || piece.statut === 'ECHEC'
+	).length;
+
 	if (debiteur === null || factures === null) {
 		return (
 			<div className="p-cladd-2xs">
@@ -152,30 +192,50 @@ export function DetailDebiteur({
 				onEnregistrerTaux={onEnregistrerTaux}
 			/>
 
-			{/* LES PIÈCES, JUSTE APRÈS L'IDENTITÉ. Elles valent pour toutes les
-			    factures du client — des CGV ou un contrat-cadre ne se redéposent pas
-			    par dossier. */}
-			{/* ⚠️ `pluriel` PLUTÔT QUE « document(s) ». Le produit écrit du français,
-			    pas une notation de formulaire administratif — et « 1 document(s) »
-			    se lit sur chaque dossier qui n’en porte qu’un, c’est-à-dire souvent. */}
-			<SectionEcran
-				titre="Les pièces du dossier"
-				legende={`${pieces.length} document${pluriel(pieces.length)}`}
-			>
-				<Pieces
-					pieces={pieces}
-					optionsType={optionsTypePiece}
-					enCours={depotEnCours}
-					onDeposer={onDeposerPieces}
-					onClasser={onClasserPiece}
-					onRetirer={onRetirerPiece}
-				/>
-			</SectionEcran>
+			{/*
+			  LES PIÈCES ET L’HABITUDE DEVIENNENT DES RANGÉES.
 
-			{/* L'HABITUDE, ENTRE L'IDENTITÉ ET LE LETTRAGE. L'ordre n'est pas neutre :
-			    on lit qui est ce client, puis comment il paie, puis on rapproche un
-			    virement. C'est la chronologie du geste réel. */}
-			{habitude === null ? null : <HabitudePaiement habitude={habitude} ruptures={ruptures} />}
+			  ⚠️ ELLES OCCUPAIENT LE VOLET À ELLES DEUX. Les pièces disent, par
+			  document, leur nature, leur numéro, leur date, le constat de leur lecture
+			  et la réserve qu’elles portent : cinq lignes chacune, sur un dossier qui
+			  en compte dix. Le reste du volet — les factures, c’est-à-dire ce qu’on
+			  vient y chercher — passait sous l’horizon.
+
+			  Une rangée dit le compte, la page dit le détail. Même geste que sur
+			  l’écran de créance, et pour la même raison.
+			*/}
+			<ListeAnalyses>
+				<LigneAnalyse
+					vers="/app/debiteurs/$id/pieces"
+					parametres={{ id: debiteurId }}
+					icone={<FileTextIcon />}
+					titre="Les pièces du dossier"
+					precision={aClasser > 0 ? `${aClasser} à classer` : undefined}
+					valeur={
+						pieces.length === 0 ? 'Aucune' : `${pieces.length} document${pluriel(pieces.length)}`
+					}
+					// ⚠️ Une pièce que la lecture n’a pas su classer ne compte dans AUCUN
+					// critère de solidité : tant que personne ne la classe, elle est là
+					// sans rien porter, et rien ne le dirait.
+					attention={aClasser > 0}
+				/>
+
+				{habitude === null ? null : (
+					<LigneAnalyse
+						vers="/app/debiteurs/$id/habitude"
+						parametres={{ id: debiteurId }}
+						icone={<HistoryIcon />}
+						titre="Comment il paie d’habitude"
+						precision={
+							ruptures.length > 0
+								? `${ruptures.length} rupture${pluriel(ruptures.length)}`
+								: undefined
+						}
+						valeur={habitude.connue ? `${habitude.delaiMedianJours} j` : 'Pas d’historique'}
+						attention={ruptures.length > 0}
+					/>
+				)}
+			</ListeAnalyses>
 
 			<Lettrage
 				proposition={propositionLettrage}
