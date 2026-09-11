@@ -1064,3 +1064,40 @@ tactile sous 44 px.
 - les relances (3.1) : un juriste doit valider les trois niveaux ;
 - `valideParAvocat` vaut toujours `false` sur les quinze entrées du registre —
   **rien ne peut produire un acte tant qu'une signature humaine manque.**
+
+---
+
+## 11 septembre 2026, suite — 4.2 et 3.1
+
+**4.2 — Pyramide de preuves.** Chaque étage porte le FAIT qu'il établit et ce
+qu'il pèse. Le constat est un **compte** — « trois des quatre pièces attendues
+sont absentes » — jamais un verdict : « trop faible » serait une appréciation
+des chances de succès, c'est-à-dire du conseil juridique.
+
+**3.1 — Relances, niveaux 1 et 2.** Des **brouillons** que le créancier envoie
+lui-même, depuis sa messagerie, sous sa signature. Aucun bouton « envoyer », un
+bouton « copier », et la mention en tête de l'écran.
+
+- Le niveau 1 suppose l'oubli : ni intérêts, ni indemnité, ni suite. **Chaque
+  niveau garde une marche au-dessus de lui** — un premier rappel qui menace
+  déjà n'a plus rien à annoncer.
+- Le niveau 2 **reprend** les chiffres d'un décompte figé et refuse de composer
+  s'il n'y en a pas. Un second calcul serait une seconde vérité, dans un texte
+  qui part chez le débiteur.
+- Le niveau 3 est **verrouillé et le dit** : les mentions obligatoires d'une
+  mise en demeure ne sont pas au référentiel. Montré plutôt que masqué, comme
+  la procédure L.126.
+- Le **coupe-circuit** passe avant le niveau : un débiteur en procédure
+  collective ne se relance à aucun niveau, et la nature vient du registre mot
+  pour mot.
+
+### Deux défauts trouvés à l'écran, invisibles en test
+
+- L'état établi de la pyramide se composait depuis le fait, et sortait faux
+  trois fois sur quatre : « Les conditions de paiement applicables **EST
+  DOCUMENTÉ** ». L'accord d'un participe ne se dérive pas d'une chaîne.
+- Les brouillons étaient coupés à 80 colonnes — convention du courrier en texte
+  brut. Collés dans une messagerie moderne, ils produisent des lignes hachées
+  que le créancier rejoint à la main, exactement ce qu'on prétendait épargner.
+
+**978 tests.** 23 écrans vérifiés aux largeurs de référence.

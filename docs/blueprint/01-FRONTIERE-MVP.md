@@ -57,10 +57,10 @@ Un radar qui ne se réveille pas n'est pas un radar, c'est un rapport.
 
 ### Module 3 — Le cerveau de médiation
 
-|     | Fonction                                                                                          | État                    |
-| --- | ------------------------------------------------------------------------------------------------- | ----------------------- |
-| 3.1 | **Relances asymétriques** en trois niveaux, du rappel administratif à la mise en demeure chiffrée | à construire            |
-| 3.2 | **Questionnaire de qualification de litige** : recueillir le fait, pas conseiller                 | **existe** (11/09/2026) |
+|     | Fonction                                                                                          | État                                                     |
+| --- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| 3.1 | **Relances asymétriques** en trois niveaux, du rappel administratif à la mise en demeure chiffrée | **niveaux 1 et 2** (11/09/2026) ; le 3 attend le juriste |
+| 3.2 | **Questionnaire de qualification de litige** : recueillir le fait, pas conseiller                 | **existe** (11/09/2026)                                  |
 
 Les relances sont des **brouillons dans la boîte du client**. Ligne rouge 1.
 
@@ -178,13 +178,13 @@ pièce, et pas un écran.
 
 ## Où en est réellement le MVP — 11 septembre 2026
 
-**Onze fonctions sur treize existent.** Les deux qui manquent ne se codent pas :
+**Douze fonctions sur treize existent**, dont une partiellement. Ce qui manque ne se code pas :
 
-|     | Ce qui bloque                                                | Qui le débloque |
-| --- | ------------------------------------------------------------ | --------------- |
-| 1.1 | Le fournisseur d'ingestion e-mail et les enregistrements DNS | Jules           |
-| 1.3 | La clé de l'API Sirene (INSEE)                               | Jules           |
-| 3.1 | La validation des trois niveaux de relance                   | un juriste      |
+|     | Ce qui bloque                                                   | Qui le débloque |
+| --- | --------------------------------------------------------------- | --------------- |
+| 1.1 | Le fournisseur d'ingestion e-mail et les enregistrements DNS    | Jules           |
+| 1.3 | La clé de l'API Sirene (INSEE)                                  | Jules           |
+| 3.1 | Les mentions obligatoires de la mise en demeure — niveau 3 seul | un juriste      |
 
 **Et le plus long piquet n'a pas bougé.** `valideParAvocat` vaut toujours
 `false` sur les quinze entrées du registre juridique : **rien ne peut produire
