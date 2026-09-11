@@ -35,8 +35,22 @@ du plan.
 | --- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
 | 1.1 | **Ingestion automatique** : adresse e-mail dédiée par organisation, connecteur ouvert self-service, dépôt de fichiers en secours | dépôt existe, le reste à construire |
 | 1.2 | **Extracteur IA des preuves** : bons de livraison, bons de commande, CGV, annotations manuscrites                                | **existe** (11/09/2026)             |
-| 1.3 | **Normalisation SIRET** sur l'API Sirene, avec gestion de l'historique des statuts                                               | à construire                        |
+| 1.3 | **Identification au registre** : retrouver le SIREN d'un débiteur à partir de son nom                                           | **existe** (11/09/2026), par le BODACC |
 | 1.4 | **Solveur de lettrage dégradé** : retrouver quelles factures composent un virement groupé                                        | **existe** (03/09/2026)             |
+
+**1.3 n'attendait pas la clé Sirene, et c'est une erreur de raisonnement qu'il faut garder
+écrite.** Cette ligne a porté « à construire · bloqué par la clé INSEE » pendant des semaines, et le
+code disait la même chose : « le rattraper par l'API Sirene demande une clé qui n'est pas obtenue ;
+le gérant, lui, connaît ses clients. **C'est la seule voie qui ne dépend de personne.** »
+
+Elle ne l'était pas. Le BODACC est branché depuis le radar de solvabilité (2.2), il est ouvert, sans
+clé, et **il se cherche par nom** : chaque annonce porte la dénomination, le SIREN, la forme
+juridique et l'adresse du siège. Une seule source avait été envisagée, et de son indisponibilité on
+avait conclu qu'aucune n'existait — pendant que la bonne tournait déjà toutes les nuits dans le même
+produit.
+
+Ce que la clé Sirene apporterait en plus reste réel et reste dehors : **l'historique des statuts**
+— actif, cessé, et depuis quand. Le BODACC donne l'identité, pas la chronologie de l'établissement.
 
 **Pourquoi l'e-mail dédié plutôt que Pennylane d'abord.** Pennylane et Dext exigent une validation de
 partenariat dont le délai ne nous appartient pas. Miser le premier euro dessus, c'est mettre le
@@ -178,13 +192,16 @@ pièce, et pas un écran.
 
 ## Où en est réellement le MVP — 11 septembre 2026
 
-**Douze fonctions sur treize existent**, dont une partiellement. Ce qui manque ne se code pas :
+**Treize fonctions sur treize existent**, dont deux partiellement. Ce qui manque ne se code pas :
 
 |     | Ce qui bloque                                                   | Qui le débloque |
 | --- | --------------------------------------------------------------- | --------------- |
 | 1.1 | Le fournisseur d'ingestion e-mail et les enregistrements DNS    | Jules           |
-| 1.3 | La clé de l'API Sirene (INSEE)                                  | Jules           |
 | 3.1 | Les mentions obligatoires de la mise en demeure — niveau 3 seul | un juriste      |
+
+**1.3 a quitté ce tableau le 11 septembre 2026.** Elle y figurait comme bloquée par la clé INSEE ;
+elle ne l'était pas. Voir le module 1 — la source qui la débloque tournait déjà toutes les nuits dans
+le produit. Ce qui reste dehors, c'est l'historique des statuts, et lui attend bien la clé.
 
 **Et le plus long piquet n'a pas bougé.** `valideParAvocat` vaut toujours
 `false` sur les quinze entrées du registre juridique : **rien ne peut produire
@@ -195,6 +212,21 @@ Ce n'est pas une lenteur d'ingénierie, et aucun agent ne la remplace.
 vérifiée sur trois points : un module de domaine, une fonction Convex, et un
 consommateur réel — un écran ou une tâche planifiée. Un module sans
 consommateur ne compte pas comme livré : c'est exactement le défaut
-« déclaré, lu, jamais alimenté » qui s'est produit **dix fois** dans ce dépôt,
+« déclaré, lu, jamais alimenté » qui s'est produit **douze fois** dans ce dépôt,
 et dont deux occurrences étaient des fonctionnalités entières que la table
 disait pourtant construites.
+
+⚠️ **Et cette vérification ne se fait plus à la main.** Les deux dernières
+occurrences — `debiteurs.formeJuridique`, `facturesVente.documentId` — ont été
+trouvées en travaillant sur autre chose, ce qui veut dire qu'on ne les cherchait
+pas. `convex/__tests__/champs-alimentes.test.ts` balaie désormais le schéma
+entier et échoue sur tout champ que rien n'alimente ou que personne ne lit ;
+chaque exception y porte sa raison, et un second test refuse celles qui ont
+survécu à leur champ.
+
+Deux autres défauts de la même famille, trouvés le même jour, ne portent pas sur
+un champ mais sur une **arête** — d'où deux barrières de plus, dans `ui/__tests__` :
+`listerCreances` était complète, testée, et appelée par personne ; et l'écran
+d'une créance n'avait qu'une seule entrée, la redirection qui suit sa création.
+Une fonction sans appelant et un écran sans lien entrant sont le même défaut que
+ce paragraphe décrit, vus depuis le graphe plutôt que depuis la table.
