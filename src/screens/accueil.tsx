@@ -18,12 +18,14 @@ import {
 	Faisceau,
 	FluxEvenements,
 	Bandeau,
+	Veilleur,
 	dateCourte,
 	eurosCentimes,
 	pluriel,
 	type ActionRonde,
 	type PartsDues,
-	type EvenementAffiche
+	type EvenementAffiche,
+	type TacheVeilleur
 } from '../ui';
 
 /**
@@ -92,6 +94,21 @@ export interface AccueilAffiche {
 	readonly hypotheses: readonly string[];
 	readonly anglesMorts: readonly string[];
 	readonly surveillance: EtatSurveillance;
+	/**
+	 * CE QUE LA MACHINE A FAIT CETTE NUIT, et ce qu'elle fait en ce moment.
+	 *
+	 * ⚠️ IL MANQUAIT TOUT SIMPLEMENT. Le produit fait tourner un battement
+	 * quotidien, un radar de solvabilité et une lecture de pièces par le modèle ;
+	 * la table `battements` garde de chaque nuit une RAISON que le schéma
+	 * lui-même annote « affiché tel quel ». Elle arrivait jusqu'ici et se perdait
+	 * sur la ligne qui repliait `PARLE` et `TU` sur « NORMAL », lequel ne rend
+	 * rien.
+	 *
+	 * Le seul moment où cet écran admettait qu'une machine travaille pour le
+	 * gérant était donc le jour de la panne. Voir `ui/veilleur.tsx`, qui porte le
+	 * raisonnement complet et la réponse à l'objection du « bandeau vert ».
+	 */
+	readonly travaux: readonly TacheVeilleur[];
 }
 
 /**
@@ -195,6 +212,22 @@ export function EcranAccueil({ vue }: { vue: AccueilAffiche }) {
 
 				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-2xs">
 					<AvisSurveillance surveillance={vue.surveillance} />
+
+					{/*
+					  LE VEILLEUR, JUSTE SOUS LES GESTES — c'est la place que la
+					  référence donne à ses « Automations » : sous le solde et sa rangée
+					  d'actions, AVANT les blocs de détail. Plus bas, il tomberait sous
+					  la ligne de flottaison du téléphone, et le travail de fond
+					  resterait ce qu'il était : invisible.
+
+					  ⚠️ IL NE FAIT PAS DOUBLON AVEC LE BANDEAU CI-DESSUS, et les deux
+					  restent. Le bandeau dit ce que la panne signifie POUR LE GÉRANT
+					  — « vos délais ne sont pas suivis depuis » — et c'est la seule
+					  phrase de l'écran qui empêche le pire état du produit. La rangée
+					  du veilleur dit ce que LA MACHINE a fait, avec sa date et un lien
+					  pour entrer. Deux registres, jamais la même phrase deux fois.
+					*/}
+					<Veilleur travaux={vue.travaux} />
 
 					{/*
 					  LE SEUL GRAPHIQUE DE L'ÉCRAN, et il répond à la question qui vient

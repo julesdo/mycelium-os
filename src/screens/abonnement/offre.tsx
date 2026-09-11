@@ -176,7 +176,7 @@ export function OuvertureEnCours() {
 				reviendrons vers vous avant toute facturation.
 			</span>
 			<span className="flex flex-wrap gap-cladd-3xs pt-cladd-3xs">
-				<BoutonPrincipal as={Link} to="/app/factures">
+				<BoutonPrincipal as={Link} to="/app/import-factures">
 					Déposer mes factures
 				</BoutonPrincipal>
 			</span>

@@ -673,6 +673,63 @@ select:not(:disabled),
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * LE POULS — le travail qui tourne EN CE MOMENT.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Un seul point, sur les seules lignes du veilleur dont l'état changera pendant
+ * qu'on les regarde : un dépôt en cours de lecture. Il ne marque jamais un
+ * travail terminé.
+ *
+ * ⚠️ C'EST LA CONTREPARTIE EXACTE DE L'OBJECTION AU BANDEAU VERT. Une animation
+ * permanente devient du décor en trois jours et ne dit plus rien le jour où
+ * elle compte. Celle-ci n'existe QUE pendant qu'une machine travaille — elle
+ * apparaît, elle dure le temps du traitement, elle disparaît. C'est sa rareté
+ * qui la rend lisible.
+ *
+ * ⚠️ AUCUNE COULEUR DE SEUIL. Le vert, l'ambre et le rouge sont réservés à
+ * `--color-seuil-*`. Le pouls prend le bleu d'encre de la marque, qui est
+ * précisément l'accent choisi pour ne JAMAIS entrer en concurrence avec un
+ * verdict.
+ *
+ * Le halo est un `::after` qui se dilate et s'éteint : c'est ce qui donne la
+ * lecture « ça émet » plutôt que « ça clignote ». Un simple `opacity` qui va et
+ * vient se lit comme une alerte, ce que ce point n'est pas. */
+.pouls {
+	background-color: oklch(0.72 0.13 254);
+}
+
+.pouls::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: 9999px;
+	background-color: oklch(0.72 0.13 254);
+	animation: pouls-emet 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes pouls-emet {
+	0% {
+		transform: scale(1);
+		opacity: 0.7;
+	}
+	70%,
+	100% {
+		transform: scale(2.6);
+		opacity: 0;
+	}
+}
+
+/* Figée, l'onde resterait dilatée et à demi transparente autour du point : une
+ * auréole immobile, qu'on lit comme un défaut de rendu. On la retire donc
+ * entièrement — le point plein suffit à marquer la ligne, et le texte de
+ * l'étape dit déjà que la lecture est en cours. */
+@media (prefers-reduced-motion: reduce) {
+	.pouls::after {
+		display: none;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * LE FOND.
  * ═══════════════════════════════════════════════════════════════════════════
  *

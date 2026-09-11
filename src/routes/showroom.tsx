@@ -30,7 +30,8 @@ import {
 	type BilanPertesAffiche,
 	euros,
 	type EvenementAffiche,
-	type DecompteAffiche
+	type DecompteAffiche,
+	travauxDuVeilleur
 } from '../ui';
 import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
 import { PALIERS, BORNES_PALIER, TARIFS } from '../lib/config/tarifs';
@@ -1409,7 +1410,29 @@ const ACCUEIL_DEMO: AccueilAffiche = {
 		"Le secteur de Ateliers Martin n'est pas déterminé : la prescription est calculée sur le délai le plus court (1 an). Préciser le secteur lèvera cette hypothèse."
 	],
 	anglesMorts: [],
-	surveillance: { etat: 'NORMAL' }
+	surveillance: { etat: 'NORMAL' },
+	/**
+	 * ⚠️ DEUX RANGÉES, ET ELLES NE SE RESSEMBLENT PAS. La démonstration doit
+	 * montrer le veilleur dans ses deux régimes à la fois : un dépôt qui TOURNE
+	 * EN CE MOMENT — la seule ligne animée de toute l'application — et un relevé
+	 * de la nuit qui porte la phrase exacte de la machine.
+	 *
+	 * C'est la seule façon de vérifier au regard que le pouls se distingue sans
+	 * emprunter une couleur de seuil, et que « rien de nouveau, rien de
+	 * critique » se lit comme un travail fait plutôt que comme un écran vide.
+	 */
+	travaux: travauxDuVeilleur({
+		battement: {
+			jour: '2026-09-11',
+			statut: 'TU',
+			raison: 'rien de nouveau, rien de critique',
+			termineLe: Date.UTC(2026, 8, 11, 6, 12)
+		},
+		depotsEnCours: [
+			{ id: 'demo-depot', filename: 'export-comptable-aout.csv', etape: 'lecture de 412 lignes' }
+		],
+		aujourdHui: '2026-09-11'
+	})
 };
 
 function DemoAccueil() {
@@ -1429,7 +1452,19 @@ const ACCUEIL_VIERGE: AccueilAffiche = {
 	evenements: [],
 	hypotheses: [],
 	anglesMorts: [],
-	surveillance: { etat: 'NORMAL' }
+	surveillance: { etat: 'NORMAL' },
+	/**
+	 * ⚠️ LE PREMIER JOUR, LE VEILLEUR PARLE QUAND MÊME — et il dit la vérité,
+	 * qui est qu'il n'a pas encore tourné. C'est l'application de la règle « le
+	 * vide montre le chemin » au travail de fond : un bloc absent apprendrait au
+	 * gérant que son absence est normale, et le jour où il manque parce que la
+	 * machine est tombée, plus rien ne le distinguerait d'un jour calme.
+	 */
+	travaux: travauxDuVeilleur({
+		battement: null,
+		depotsEnCours: [],
+		aujourdHui: '2026-09-11'
+	})
 };
 
 function DemoAccueilVierge() {
