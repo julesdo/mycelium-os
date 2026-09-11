@@ -66,3 +66,4 @@ docs/lp-inspi/
 
 # local convex dev deployment
 .convex
+.tanstack/

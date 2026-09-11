@@ -2,8 +2,17 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { Surface, Chip } from '@cladd-ui/react';
 import { api } from '../../lib/convex/_generated/api';
-import { Page, PageHeader, PageBody, SectionEcran, euros } from '../../ui';
-import { Offre, OuvertureEnCours, EssaiEnCours } from '../../screens/abonnement/offre';
+import {
+	LigneAnalyse,
+	ListeAnalyses,
+	Page,
+	PageHeader,
+	PageBody,
+	SectionEcran,
+	euros
+} from '../../ui';
+import { OuvertureEnCours, EssaiEnCours } from '../../screens/abonnement/offre';
+import { FileSearchIcon, RefreshCwIcon } from 'lucide-react';
 
 export const Route = createFileRoute('/app/abonnement')({ component: Abonnement });
 
@@ -87,25 +96,35 @@ function Abonnement() {
 						</p>
 					</SectionEcran>
 
-					<div className="grid gap-cladd-2xs md:grid-cols-2">
-						<Offre
+					{/*
+					  ⚠️ DEUX RANGÉES, PLUS DEUX CARTES DÉPLIÉES.
+
+					  Chaque offre portait son prix, sa description ET sa liste complète
+					  de ce qui est inclus. Empilées sur un téléphone — la grille ne passe
+					  à deux colonnes qu'au-dessus de 768 px — elles faisaient l'essentiel
+					  des 6,76 écrans de défilement de cet écran, mesurés.
+
+					  Or on ne compare pas deux offres en faisant défiler : on les voit
+					  côte à côte, ou on entre dans celle qui intéresse. Le prix est sur
+					  la rangée, parce que c'est le seul chiffre qui décide ; le reste est
+					  à un geste.
+					*/}
+					<ListeAnalyses>
+						<LigneAnalyse
+							vers="/app/abonnement/premier-bilan"
+							icone={<FileSearchIcon />}
 							titre="Le premier bilan"
-							prix={euros(etat.tarifs.bilan)}
-							cadence="une fois"
-							description="Douze mois de factures lus en une fois. Vous saurez où vous en êtes, et ce qu’il manque, en euros."
-							colonne="bilan"
-							actif={etat.tier === 'suivi'}
+							precision="Douze mois de factures lus en une fois"
+							valeur={`${euros(etat.tarifs.bilan)} une fois`}
 						/>
-						<Offre
+						<LigneAnalyse
+							vers="/app/abonnement/suivi"
+							icone={<RefreshCwIcon />}
 							titre="L’abonnement"
-							prix={euros(etat.tarifs.abonnementMensuel)}
-							cadence="par mois"
-							description="Votre chiffre reste à jour toute l’année, et votre déclaration de mars est prête avant mars."
-							colonne="abonnement"
-							actif={etat.tier === 'procedures'}
-							recommande
+							precision="Votre chiffre reste à jour toute l’année"
+							valeur={`${euros(etat.tarifs.abonnementMensuel)} par mois`}
 						/>
-					</div>
+					</ListeAnalyses>
 
 					{etat.paddleConfigure ? null : <OuvertureEnCours />}
 

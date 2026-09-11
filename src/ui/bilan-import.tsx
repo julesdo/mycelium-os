@@ -50,8 +50,16 @@ export interface DepotAffiche {
 	readonly etape?: string;
 	readonly erreur?: string;
 	readonly bilan?: BilanDepotAffiche;
-	/** Horodatage en millisecondes. */
-	readonly deposeLe: number;
+	/**
+	 * Horodatage en millisecondes.
+	 *
+	 * ⚠️ FACULTATIF DEPUIS QUE LE BILAN A SA PAGE. La requête de suivi d'un
+	 * dépôt ne le rend pas — la date est déjà sur la rangée d'où l'on vient, et
+	 * la redemander au serveur pour la réafficher serait une requête pour une
+	 * redite. Le fabriquer avec `Date.now()` aurait affiché la date du JOUR sur
+	 * un dépôt de l'an dernier, ce que personne n'aurait relevé.
+	 */
+	readonly deposeLe?: number;
 }
 
 /** L'état du dépôt, en une puce. */
@@ -189,9 +197,11 @@ export function BilanImport({ depot, className }: { depot: DepotAffiche; classNa
 				</p>
 			) : null}
 
-			<p className="text-cladd-3xs text-cladd-fg-softest">
-				Déposé le {dateCourte(new Date(depot.deposeLe).toISOString().slice(0, 10))}
-			</p>
+			{depot.deposeLe === undefined ? null : (
+				<p className="text-cladd-3xs text-cladd-fg-softest">
+					Déposé le {dateCourte(new Date(depot.deposeLe).toISOString().slice(0, 10))}
+				</p>
+			)}
 		</Surface>
 	);
 }

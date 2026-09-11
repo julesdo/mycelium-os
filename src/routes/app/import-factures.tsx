@@ -5,7 +5,18 @@ import { ListButton } from '@cladd-ui/react';
 import { ChevronRightIcon, FileSpreadsheetIcon, FileTextIcon, UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { Page, PageHeader, PageBody, ZoneDepot, CarteListe, Bandeau, BilanImport } from '../../ui';
+import {
+	Page,
+	PageHeader,
+	PageBody,
+	ZoneDepot,
+	CarteListe,
+	Bandeau,
+	LigneAnalyse,
+	ListeAnalyses,
+	dateCourte,
+	pluriel
+} from '../../ui';
 
 export const Route = createFileRoute('/app/import-factures')({ component: ImportFactures });
 
@@ -160,26 +171,53 @@ function ImportFactures() {
 
 					{erreur ? <Bandeau ton="alerte">{erreur}</Bandeau> : null}
 
+					{/*
+					  ═════════════════════════════════════════════════════════════════
+					  ⚠️ UN DÉPÔT EST UNE RANGÉE, SON BILAN EST UNE PAGE
+					  ═════════════════════════════════════════════════════════════════
+
+					  Le bilan d'UN SEUL dépôt mesure 1,87 écran de défilement à 375 px :
+					  ce qui est entré, ce qui a été écarté à bon droit, et ce qui n'a PAS
+					  pu être lu, ligne par ligne avec sa raison. Cet écran les empilait
+					  tous — et un gérant qui importe chaque mois en accumule douze par an.
+
+					  La rangée dit ce qui est entré et où en est la lecture ; la page dit
+					  ce qui manque.
+					*/}
 					{imports && imports.length > 0 ? (
-						<div className="flex flex-col gap-cladd-3xs">
+						<section className="flex flex-col gap-cladd-3xs">
 							<h2 className="px-cladd-3xs text-cladd-2xs font-medium tracking-wide text-cladd-fg-softer uppercase">
 								Vos dépôts
 							</h2>
-							{imports.map((depot) => (
-								<BilanImport
-									key={depot._id}
-									depot={{
-										id: depot._id,
-										filename: depot.filename,
-										statut: depot.statut,
-										etape: depot.etape,
-										erreur: depot.erreur,
-										bilan: depot.bilan,
-										deposeLe: depot.deposeLe
-									}}
-								/>
-							))}
-						</div>
+							<ListeAnalyses>
+								{imports.map((depot) => (
+									<LigneAnalyse
+										key={depot._id}
+										vers="/app/import-factures/$id"
+										parametres={{ id: depot._id }}
+										icone={<FileTextIcon />}
+										titre={depot.filename}
+										precision={
+											depot.statut === 'ECHOUE'
+												? (depot.erreur ?? 'Lecture en échec')
+												: (depot.etape ??
+													dateCourte(new Date(depot.deposeLe).toISOString().slice(0, 10)))
+										}
+										valeur={
+											depot.bilan
+												? `${depot.bilan.facturesCreees} facture${pluriel(depot.bilan.facturesCreees)}`
+												: depot.statut === 'ECHOUE'
+													? 'Échec'
+													: 'Lecture…'
+										}
+										// ⚠️ CE QUI N'A PAS PU ÊTRE LU, SIGNALÉ SUR LA RANGÉE. C'est
+										// de l'argent potentiellement perdu, et personne n'entrerait
+										// dans un bilan qui annonce « 198 factures créées ».
+										attention={depot.statut === 'ECHOUE' || (depot.bilan?.ignoreesTotal ?? 0) > 0}
+									/>
+								))}
+							</ListeAnalyses>
+						</section>
 					) : null}
 				</div>
 			</PageBody>

@@ -1,9 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import {
 	Button,
-	Input,
 	ListButton,
 	Surface,
 	SectionTitle,
@@ -11,20 +10,20 @@ import {
 	SegmentedButton
 } from '@cladd-ui/react';
 import {
-	CheckIcon,
 	ChevronRightIcon,
 	CreditCardIcon,
 	DatabaseIcon,
 	LogOutIcon,
 	MoonIcon,
 	SunIcon,
-	UsersIcon
+	UsersIcon,
+	Building2Icon,
+	ReceiptTextIcon
 } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
-import { BoutonPrincipal, CarteListe, Page, PageHeader, PageBody, Champ } from '../../ui';
-import { FormulaireCreancier } from '../../screens/parametres/creancier';
+import { CarteListe, LigneAnalyse, ListeAnalyses, Page, PageHeader, PageBody } from '../../ui';
 
 /**
  * LES TROIS ÉCRANS QU'ON ATTEINT PAR LES RÉGLAGES.
@@ -83,9 +82,7 @@ function Reglage({ titre, children }: { titre: string; children: ReactNode }) {
 function Parametres() {
 	const navigate = useNavigate();
 	const org = useQuery(api.organizations.getMyOrg, {});
-	const mettreAJour = useMutation(api.organizations.updateOrganization);
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
-	const enregistrerProfil = useMutation(api.recouvrement.profil.enregistrer);
 	const { theme, setTheme } = useTheme();
 
 	if (org === undefined) {
@@ -104,30 +101,54 @@ function Parametres() {
 			<PageHeader titre="Réglages" sousTitre="Votre établissement et votre compte." />
 			<PageBody>
 				<div className="mx-auto flex w-full max-w-160 flex-col gap-cladd-2xs">
-					{org ? (
-						<FormulaireEtablissement
-							key={org._id}
-							initial={{
-								nom: org.name ?? '',
-								factures: org.facturesParAn ? String(org.facturesParAn) : '',
-								siret: org.siret ?? ''
-							}}
-							onEnregistrer={mettreAJour}
-						/>
-					) : null}
+					{/*
+					  ═════════════════════════════════════════════════════════════════
+					  ⚠️ LES DEUX FORMULAIRES SONT PARTIS SUR LEURS PAGES
+					  ═════════════════════════════════════════════════════════════════
 
-					{profil === undefined ? null : (
-						<FormulaireCreancier
-							key={profil?.denomination ?? 'vide'}
-							initial={{
-								denomination: profil?.denomination ?? org?.name ?? '',
-								siren: profil?.siren ?? '',
-								adresse: profil?.adresse ?? '',
-								estCommercant: profil?.estCommercant ?? 'unknown'
-							}}
-							onEnregistrer={enregistrerProfil}
-						/>
-					)}
+					  Ils vivaient dépliés ici, en même temps, et faisaient l'essentiel de
+					  la hauteur de l'écran : celui du créancier mesure à lui seul 2,99
+					  écrans de défilement à 375 px.
+
+					  On n'ouvre pas les réglages pour remplir un formulaire, on les ouvre
+					  pour ATTEINDRE quelque chose. La liste dit ce qui est réglé — et
+					  surtout ce qui NE L'EST PAS —, la page règle.
+
+					  ⚠️ LA VALEUR DE CHAQUE RANGÉE EST L'ÉTAT DU RÉGLAGE, pas son nom.
+					  « SIREN manquant » sur la rangée du créancier se voit sans entrer,
+					  et c'est précisément le champ qui bloque toute procédure.
+					*/}
+					<section className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Votre établissement</SectionTitle>
+						<ListeAnalyses>
+							<LigneAnalyse
+								vers="/app/parametres/etablissement"
+								icone={<Building2Icon />}
+								titre="Identité et volume"
+								precision="Nom, SIREN, factures par an"
+								valeur={org?.name ?? 'À renseigner'}
+								attention={!org?.siret}
+							/>
+							<LigneAnalyse
+								vers="/app/parametres/creancier"
+								icone={<ReceiptTextIcon />}
+								titre="Votre entreprise sur un décompte"
+								precision="Ce qui sera cité sur les pièces"
+								valeur={
+									profil === undefined
+										? '—'
+										: !profil?.siren
+											? 'SIREN manquant'
+											: profil.estCommercant === 'unknown'
+												? 'À compléter'
+												: 'Renseigné'
+								}
+								attention={
+									profil !== undefined && (!profil?.siren || profil.estCommercant === 'unknown')
+								}
+							/>
+						</ListeAnalyses>
+					</section>
 
 					<Reglage titre="Apparence">
 						{/*
@@ -208,82 +229,5 @@ function Parametres() {
 				</div>
 			</PageBody>
 		</Page>
-	);
-}
-
-/**
- * Le formulaire de l'établissement.
- *
- * Isolé dans son propre composant et monté avec une `key` sur l'identifiant de
- * l'organisation : c'est ce qui garantit que ses champs se réinitialisent si le
- * gérant change d'établissement, sans effet de synchronisation.
- */
-function FormulaireEtablissement({
-	initial,
-	onEnregistrer
-}: {
-	initial: { nom: string; factures: string; siret: string };
-	onEnregistrer: (args: {
-		name: string;
-		facturesParAn?: number;
-		siret?: string;
-	}) => Promise<unknown>;
-}) {
-	const [nom, setNom] = useState(initial.nom);
-	const [factures, setFactures] = useState(initial.factures);
-	const [siret, setSiret] = useState(initial.siret);
-	const [enCours, setEnCours] = useState(false);
-	const [enregistre, setEnregistre] = useState(false);
-
-	async function enregistrer() {
-		if (!nom.trim()) return;
-		setEnCours(true);
-		try {
-			const nb = Number.parseInt(factures, 10);
-			await onEnregistrer({
-				name: nom.trim(),
-
-				...(Number.isFinite(nb) && nb > 0 ? { facturesParAn: nb } : {}),
-				...(siret.trim() ? { siret: siret.replace(/\s/g, '') } : {})
-			});
-			setEnregistre(true);
-			window.setTimeout(() => setEnregistre(false), 2000);
-		} finally {
-			setEnCours(false);
-		}
-	}
-
-	return (
-		<Reglage titre="Votre établissement">
-			<Champ etiquette="Nom">
-				<Input value={nom} onChange={setNom} name="organisation" />
-			</Champ>
-
-			<div className="grid gap-cladd-2xs sm:grid-cols-2">
-				<Champ
-					etiquette="Factures émises par an"
-					aide="Sert à dimensionner votre abonnement, jamais à limiter le produit."
-				>
-					<Input type="number" value={factures} onChange={setFactures} name="factures" />
-				</Champ>
-
-				<Champ
-					etiquette="SIREN"
-					aide="Il identifie votre entreprise sur les actes. Sans lui, aucune procédure ne peut être engagée."
-				>
-					<Input value={siret} onChange={setSiret} name="siret" />
-				</Champ>
-			</div>
-
-			<BoutonPrincipal
-				className="self-start"
-				loading={enCours}
-				readOnly={enCours}
-				onClick={() => void enregistrer()}
-			>
-				{enregistre ? <CheckIcon /> : null}
-				{enregistre ? 'Enregistré' : 'Enregistrer'}
-			</BoutonPrincipal>
-		</Reglage>
 	);
 }
