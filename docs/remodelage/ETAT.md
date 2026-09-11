@@ -1101,3 +1101,49 @@ bouton « copier », et la mention en tête de l'écran.
   que le créancier rejoint à la main, exactement ce qu'on prétendait épargner.
 
 **978 tests.** 23 écrans vérifiés aux largeurs de référence.
+
+---
+
+## 11 septembre 2026, fin — les écrans qu'on ne pouvait pas ouvrir
+
+**Vérifier les briques ne vérifie pas le mur.** Les deux écrans les plus
+importants du produit — la créance et le volet de preuve d'un débiteur —
+tenaient dans leur route, mêlés aux requêtes Convex, donc **impossibles à
+ouvrir** sans backend ni authentification. Leurs composants étaient tous à la
+salle d'exposition ; leur assemblage, jamais.
+
+La règle du projet est pourtant explicite : « chaque écran s'ouvre dans le
+navigateur intégré aux quatre largeurs de référence AVANT d'être déclaré fini ».
+
+Les deux vivent désormais dans `src/screens/`, comme `accueil.tsx` : le fichier
+d'écran DESSINE et ne sait pas interroger Convex, la route LIT et traduit.
+
+### Ce que la première ouverture a montré
+
+| Ce qu'on a vu                                                | Ce que ça valait                                                       |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| **7,3 écrans** de défilement sur la créance à 375 px         | les procédures et le décompte devenaient inatteignables                |
+| une seule section à **1 608 px**                             | le composant de relances dépliait un brouillon « pour rendre service » |
+| trois paragraphes pour dire la même chose                    | intention + constat + blocage sur un niveau verrouillé                 |
+| « Les conditions de paiement applicables **est documenté** » | l'accord d'un participe ne se dérive pas d'une chaîne                  |
+| un bouton de retrait à **36 px**                             | il se dimensionnait sur son icône, sous le plancher tactile de 48      |
+| `flex-1` sur trois réponses en colonne                       | les boutons s'écrasaient à **29 px**                                   |
+
+Aucun de ces six défauts n'est visible au compilateur, au lint, ni à un test
+unitaire. Après correction : **6,1 écrans** sur la créance, **3,7** sur le volet
+débiteur, et **25 écrans × 4 largeurs** sans un seul bloc opaque, débordement
+horizontal ni cible sous 44 px.
+
+### Et une notation de formulaire administratif
+
+« 1 facture(s) enregistrée(s) », « il reste 3 jour(s) », « 2 déjà connue(s) » —
+dans six textes que le gérant lit vraiment, dont deux qui partent en
+notification et deux dans le briefing quotidien. `socle/francais.ts` porte
+désormais la règle pour les textes composés hors interface ; `ui/format.ts` la
+gardait déjà pour l'interface.
+
+### Ce qui reste à ouvrir
+
+Le volet **liste** de `debiteurs.tsx` et les écrans de réglages tiennent encore
+dans leurs routes. Ils sont plus simples et moins chargés, mais la règle vaut
+pour eux aussi.
