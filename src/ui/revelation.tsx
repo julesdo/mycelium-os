@@ -80,7 +80,7 @@ function NonChiffrees({
 	if (lignes.length === 0) return null;
 
 	return (
-		<Surface contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+		<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex gap-cladd-3xs p-cladd-2xs">
 			<AlertTriangleIcon className="mt-1 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
 			<div className="flex min-w-0 flex-col gap-1.5">
 				<p className="text-cladd-xs font-semibold">
@@ -143,6 +143,9 @@ export function ChocRevelation({ revelation }: { revelation: RevelationAffichee 
 			<div className="flex flex-col gap-cladd-3xs">
 				{revelation.lignes.map((ligne) => (
 					<Surface
+						variant="transparent"
+						outline={false}
+						className="verre-carte rounded-cladd-xl"
 						key={ligne.reference}
 						contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs sm:flex-row sm:items-center sm:justify-between"
 					>
@@ -219,7 +222,7 @@ export function CompteurVivant({
 export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 	if (bilan.surveillanceInterrompueLe !== undefined) {
 		return (
-			<Surface contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+			<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex gap-cladd-3xs p-cladd-2xs">
 				<AlertTriangleIcon className="mt-1 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
 				<div className="flex min-w-0 flex-col gap-1.5">
 					<p className="text-cladd-xs font-semibold">Ce compteur ne peut rien affirmer</p>
@@ -236,7 +239,7 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
 			<div className="flex flex-col gap-cladd-3xs sm:flex-row">
-				<Surface contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs">
+				<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs">
 					<span className="text-cladd-sm text-cladd-fg-soft">
 						Éteint avant votre arrivée, en silence
 					</span>
@@ -249,7 +252,7 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 					</span>
 				</Surface>
 
-				<Surface contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs">
+				<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs">
 					<span className="text-cladd-sm text-cladd-fg-soft">Éteint depuis, sous surveillance</span>
 					<span className="text-letikette-chiffre font-bold tabular-nums">
 						{eurosCentimes(bilan.eteintesDepuis)}
@@ -261,7 +264,7 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 			</div>
 
 			{bilan.nonSurveillees.length > 0 ? (
-				<Surface contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+				<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex gap-cladd-3xs p-cladd-2xs">
 					<AlertTriangleIcon className="mt-1 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
 					<div className="flex min-w-0 flex-col gap-1.5">
 						<p className="text-cladd-xs font-semibold">

@@ -527,5 +527,17 @@ describe('une seule façon de savoir de quel établissement on parle', () => {
 		}
 
 		expect(fautifs).toEqual([]);
-	});
+		},
+		// ⚠️ DÉLAI EXPLICITE, ET IL N'EST PAS COSMÉTIQUE. Cette barrière lit le
+		// SOURCE de chaque fichier Convex via Vite, un par un. Le défaut de
+		// vitest est de cinq secondes ; le balayage les dépassait dès que le
+		// dossier a grossi — cinq modules ajoutés cette semaine ont suffi.
+		//
+		// Le symptôme est trompeur : le test échoue en EXPIRANT, pas en trouvant
+		// une infraction. Quelqu'un qui le voit rouge conclut qu'une règle est
+		// violée, cherche l'infraction, n'en trouve aucune — et finit par le
+		// désactiver. Une garde qu'on désactive ne garde plus rien, ce qui est
+		// exactement ce que ce dispositif existe pour empêcher.
+		30_000
+	);
 });

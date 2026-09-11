@@ -50,8 +50,12 @@ export function ChampCopiable({
 
 	return (
 		<Surface
-			outline
-			className={cn('rounded-cladd-2xl', majeur && 'shadow-carte')}
+			variant="transparent"
+			// L'anneau d'accent marque le champ majeur, et il se voit AU REPOS —
+			// contrairement a une classe de survol, qui ne dirait rien tant qu'on
+			// ne passe pas dessus.
+			outline={majeur}
+			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex items-center gap-cladd-2xs p-cladd-2xs"
 		>
 			<div className="min-w-0 flex-1">

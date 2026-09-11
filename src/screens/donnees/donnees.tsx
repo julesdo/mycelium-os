@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Dialog, DialogRoot, DialogTrigger, Surface } from '@cladd-ui/react';
 import { DownloadIcon, TrashIcon, UserXIcon } from 'lucide-react';
-import { SectionEcran } from '../../ui';
+import { BoutonPrincipal, SectionEcran } from '../../ui';
 import { messageDErreur } from '../equipe/equipe';
 
 /**
@@ -156,16 +156,14 @@ function Export({ onExporter }: { onExporter: () => Promise<FichierExport> }) {
 							une heure
 						</span>
 					</span>
-					<Button
+					<BoutonPrincipal
 						as="a"
 						href={fichier.url}
 						download={fichier.nomFichier}
-						color="brand"
-						variant="solid-fill"
 					>
 						<DownloadIcon />
 						Télécharger
-					</Button>
+					</BoutonPrincipal>
 				</Surface>
 			) : (
 				<Button

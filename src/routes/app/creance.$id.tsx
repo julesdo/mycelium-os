@@ -6,7 +6,7 @@ import { AlertTriangleIcon, FileDownIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import { depuisCentimes } from '../../lib/socle/montants';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import {
+import { BoutonPrincipal,
 	Page,
 	PageHeader,
 	PageBody,
@@ -178,14 +178,11 @@ function Creance() {
 									>
 										<p className="text-cladd-sm">{question.libelle}</p>
 										<div className="flex flex-wrap gap-cladd-3xs">
-											<Button
-												size="md"
-												color="brand"
-												variant="solid-fill"
+											<BoutonPrincipal
 												onClick={() => tranche(question.condition, 'ok')}
 											>
 												Oui
-											</Button>
+											</BoutonPrincipal>
 											<Button
 												size="md"
 												variant="transparent"
@@ -276,15 +273,12 @@ function Creance() {
 						{erreur ? <p className="mt-cladd-3xs text-cladd-xs text-cladd-fg">{erreur}</p> : null}
 
 						<div className="mt-cladd-3xs flex flex-wrap gap-cladd-3xs">
-							<Button
-								size="lg"
-								color="brand"
-								variant="solid-fill"
+							<BoutonPrincipal
 								onClick={produireDecompte}
 								disabled={enCours}
 							>
 								{enCours ? 'Calcul en cours…' : 'Arrêter un décompte à aujourd’hui'}
-							</Button>
+							</BoutonPrincipal>
 
 							{/* LA PIÈCE. C'est le troisième critère de fin de MVP : un décompte
 							    qui part chez un expert-comptable, un avocat ou un assureur SANS

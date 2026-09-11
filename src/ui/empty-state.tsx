@@ -49,8 +49,9 @@ export function EmptyState({
 
 			{etapes ? (
 				<Surface
-					outline
-					className="w-full rounded-cladd-2xl shadow-carte"
+					variant="transparent"
+					outline={false}
+					className="verre-carte w-full rounded-cladd-xl"
 					contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
 				>
 					{etapes.map((etape, i) => (

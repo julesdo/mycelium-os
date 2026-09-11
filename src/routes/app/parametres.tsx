@@ -14,7 +14,7 @@ import {
 import { api } from '../../lib/convex/_generated/api';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
-import { Page, PageHeader, PageBody, Champ } from '../../ui';
+import { BoutonPrincipal, Page, PageHeader, PageBody, Champ } from '../../ui';
 import { FormulaireCreancier } from '../../screens/parametres/creancier';
 
 export const Route = createFileRoute('/app/parametres')({ component: Parametres });
@@ -32,8 +32,9 @@ function Reglage({ titre, children }: { titre: string; children: ReactNode }) {
 		<section className="flex flex-col gap-cladd-3xs">
 			<SectionTitle>{titre}</SectionTitle>
 			<Surface
-				outline
-				className="rounded-cladd-2xl shadow-carte"
+				variant="transparent"
+				outline={false}
+				className="verre-carte rounded-cladd-xl"
 				contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
 			>
 				{children}
@@ -238,17 +239,15 @@ function FormulaireEtablissement({
 				</Champ>
 			</div>
 
-			<Button
+			<BoutonPrincipal
 				className="self-start"
-				color="brand"
-				variant="solid-fill"
 				loading={enCours}
 				readOnly={enCours}
 				onClick={() => void enregistrer()}
 			>
 				{enregistre ? <CheckIcon /> : null}
 				{enregistre ? 'Enregistré' : 'Enregistrer'}
-			</Button>
+			</BoutonPrincipal>
 		</Reglage>
 	);
 }

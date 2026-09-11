@@ -47,6 +47,43 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE CURSEUR DE MAIN, PARTOUT OÙ L'ON PEUT CLIQUER.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ CE N'EST PAS LE NAVIGATEUR QUI LE FAIT. Un `<button>` natif rend
+ * `cursor: default`, pas `pointer` — seuls les liens portant un `href` ont le
+ * pointeur par défaut. La remise à zéro de Tailwind ne le corrige pas non plus,
+ * et Cladd ne le pose que sur ses propres contrôles rendus en `<a>`.
+ *
+ * Résultat : tout ce que le produit assemble à la main — les boutons ronds de
+ * l'accueil, les onglets de la barre basse, les lignes cliquables d'une carte —
+ * n'avait pas le pointeur. Le défaut est de ceux qu'on ne voit jamais en
+ * développement, parce qu'on sait déjà où sont les cibles.
+ *
+ * On le pose donc ici, une fois, plutôt que dans chaque composant : une règle
+ * qu'on doit se rappeler d'écrire à N endroits se perd au premier ajout.
+ *
+ * ⚠️ `label` N'Y EST PAS, ET C'EST VOULU. La pilule de recherche est un
+ * `<label>` qui enveloppe son `<input>` : lui donner le pointeur ferait croire
+ * qu'on clique sur un bouton alors qu'on entre dans un champ de saisie. Seuls
+ * les `label[for]`, qui commandent un contrôle situé ailleurs, le méritent —
+ * et il n'y en a pas dans le produit aujourd'hui.
+ *
+ * Un contrôle désactivé garde le curseur par défaut : le kit lui coupe déjà les
+ * événements de pointeur, donc une main au-dessus promettrait une action qui ne
+ * se produira pas. */
+button:not(:disabled):not([aria-disabled='true']),
+a[href],
+summary,
+select:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+[role='tab']:not([aria-disabled='true']),
+[role='menuitem']:not([aria-disabled='true']),
+[role='option']:not([aria-disabled='true']) {
+	cursor: pointer;
+}
+
 /* Le fond de la section d'autorité de la page publique : l'encre, et son grain.
  *
  * Un aplat bleu nuit de mille pixels de haut est un trou dans une page de
@@ -81,6 +118,611 @@ body {
 		transparent 1px,
 		transparent 10px
 	);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE VERRE.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le bouton rond translucide de l'écran d'accueil, la barre basse du
+ * téléphone, la capsule de navigation. Trois porteurs, un seul effet.
+ *
+ * POURQUOI UNE CLASSE ORDINAIRE, comme `.encre-tramee` juste au-dessus, et
+ * pour EXACTEMENT les deux mêmes raisons déjà mesurées au navigateur :
+ *
+ * 1. L'effet demande quatre propriétés qui n'ont de sens qu'ensemble — un
+ *    fond translucide, un flou d'arrière-plan, un liseré de lumière en haut,
+ *    un anneau. Les écrire en quatre classes utilitaires ne marche pas :
+ *    `tailwind-merge`, qui nettoie tous nos `className`, range `bg-white/10`
+ *    et `backdrop-blur-xl` dans des familles qu'il déduplique, et il ne reste
+ *    qu'un fond gris sans flou.
+ * 2. `@utility` déclarée dans `tokens.css` n'a produit aucune règle dans la
+ *    feuille servie — le même échec silencieux que la trame d'encre.
+ *
+ * Et le nom ne commence pas par `bg-`, délibérément, pour qu'aucun fusionneur
+ * ne le prenne pour un fond et ne le supprime.
+ *
+ * ⚠️ LE LISERÉ DU HAUT N'EST PAS DÉCORATIF. C'est lui, et lui seul, qui fait
+ * lire « verre » plutôt que « rectangle gris translucide » : il simule
+ * l'arête que la lumière accroche sur un bord biseauté. Retiré, l'effet
+ * s'effondre — vérifié à l'écran, pas supposé. Même famille de raisonnement
+ * que l'arête de la coque de tablette, plus haut dans les jetons. */
+.verre {
+	background-color: oklch(1 0 0 / 0.08);
+	backdrop-filter: blur(20px) saturate(1.6);
+	-webkit-backdrop-filter: blur(20px) saturate(1.6);
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.14),
+		inset 0 0 0 1px oklch(1 0 0 / 0.06);
+}
+
+/* La bulle de verre de la barre basse.
+ *
+ * ⚠️ ELLE ÉTAIT PRESQUE OPAQUE (0,72), ce qui n'est pas du verre mais un
+ * bandeau teinté. Combinée au rembourrage posé au mauvais endroit — hors du
+ * conteneur qui défile, voir `PageBody` — plus rien ne passait derrière et il
+ * ne restait qu'une bande noire morte en bas d'écran.
+ *
+ * 0,40 laisse voir ce qui glisse dessous. Ce qui rend les libellés lisibles
+ * n'est donc plus l'opacité du fond mais LE FLOU (40 px) et la SATURATION
+ * poussée à 2 : les couleurs qui passent derrière sont étalées jusqu'à ne plus
+ * former de forme, tout en gardant leur teinte. C'est le dosage de la
+ * référence, et c'est ce qui produit l'effet plutôt que de le simuler.
+ *
+ * L'ombre portée est ce qui la fait FLOTTER au lieu d'être posée : sans elle,
+ * une barre translucide sur fond sombre se confond avec le fond dès qu'aucune
+ * carte ne passe derrière. */
+.verre-dense {
+	background-color: oklch(0.22 0.01 276 / 0.4);
+	backdrop-filter: blur(40px) saturate(2);
+	-webkit-backdrop-filter: blur(40px) saturate(2);
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.16),
+		inset 0 0 0 1px oklch(1 0 0 / 0.08),
+		0 8px 32px -8px oklch(0 0 0 / 0.5);
+}
+
+/* Le verre au survol. Séparé plutôt que porté par `.verre` : la capsule de
+ * navigation ne doit PAS s'éclaircir au survol de la barre entière, seuls ses
+ * boutons le doivent. */
+.verre-actif:hover {
+	background-color: oklch(1 0 0 / 0.14);
+}
+
+/* LE VERRE D'UN BOUTON — son survol et son enfoncement.
+ *
+ * ⚠️ IL EXISTE PARCE QUE LA SURCOUCHE DE SURVOL DU KIT PASSAIT AU NOIR. Cladd
+ * peint son état de survol dans une couche absolue POSÉE SUR le contenu de la
+ * surface ; en thème sombre, cette couche est un voile foncé. Sur un aplat
+ * d'accent, elle assombrit proprement. Sur du verre, elle recouvre la
+ * translucidité et le bouton devient un rectangle noir — c'est-à-dire qu'elle
+ * détruit exactement ce pour quoi on a mis du verre.
+ *
+ * On coupe donc `hoverable` côté composant, et on pilote les deux états ici.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * LE SURVOL ÉCLAIRCIT — ET C'EST UNE CORRECTION
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Deux versions fausses avant celle-ci, et elles se trompaient dans deux
+ * directions opposées :
+ *
+ * 1. La surcouche du kit (`hoverable`) peignait un voile FONCÉ par-dessus le
+ *    contenu. Sur du verre elle recouvre la translucidité : le bouton devenait
+ *    un rectangle noir.
+ * 2. La correction a d'abord posé un voile sombre à 42 %. Mesuré, il ramenait
+ *    le bouton à une luminance de 0,0034 quand le fond de page vaut 0,0037 —
+ *    autrement dit le bouton DISPARAISSAIT dans le fond. Vu à l'écran, ça se
+ *    lit encore « passe au noir ».
+ *
+ * Le verre au repos est du blanc à 8 % : le survol en met simplement PLUS.
+ * C'est déjà la convention de `.verre-actif`, qui sert aux boutons ronds et à
+ * la navigation, et un produit ne peut pas avoir deux sens de survol selon le
+ * composant — on apprend l'un, on se trompe sur l'autre.
+ *
+ * Les valeurs sont mesurées au navigateur, pas choisies : fond nu → 0,0037 ;
+ * blanc 8 % (repos) → 0,0141 ; blanc 13 % (survol) → 0,0247. L'écart est franc
+ * sans être un flash, et l'anneau du faisceau reste lisible par-dessus.
+ *
+ * ⚠️ LES DEUX DURÉES SONT DIFFÉRENTES, ET C'EST DÉLIBÉRÉ. La couleur prend
+ * 220 ms — assez lent pour se lire comme un fondu et non comme un basculement.
+ * L'enfoncement prend 120 ms, parce qu'un retour tactile doit arriver AVANT
+ * que le doigt se relève : au-delà d'environ 150 ms, on a déjà relâché quand
+ * l'animation commence, et le bouton paraît répondre en retard. */
+.verre-bouton {
+	transition:
+		background-color 220ms ease-out,
+		box-shadow 220ms ease-out,
+		transform 120ms ease-out;
+}
+
+.verre-bouton:hover {
+	background-color: oklch(1 0 0 / 0.13);
+	/* L'arête se renforce en même temps que le fond s'éclaircit : c'est ce qui
+	 * fait lire « le verre prend la lumière » plutôt que « le fond a changé ». */
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.22),
+		inset 0 0 0 1px oklch(1 0 0 / 0.1);
+}
+
+/* L'enfoncement. Un pour cent et demi, pas davantage : sur un bouton pleine
+ * largeur, un `scale(0.95)` fait bouger trois cents pixels de bord et se lit
+ * comme un défaut de mise en page, là où sur une petite cible il se lit comme
+ * un appui. La cible est grande, donc l'effet doit être petit. */
+.verre-bouton:active {
+	transform: scale(0.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.verre-bouton:active {
+		transform: none;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LES CHAMPS DE SAISIE, EN VERRE — TOUS, D'UN SEUL ENDROIT.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ POURQUOI ON ATTAQUE UNE COUCHE INTERNE DU KIT, CE QU'ON ÉVITE PARTOUT
+ * AILLEURS.
+ *
+ * `Input`, `SearchField` et leurs variantes s'appuient tous sur `SurfaceCut`,
+ * la surface CREUSÉE du kit. Celle-ci peint son fond dans une couche dédiée —
+ * un `<div class="absolute inset-0 bg-cladd-surface-cut">` — posée sous le
+ * contenu. Relevé au navigateur, pas supposé.
+ *
+ * Conséquence : aucune classe passée en `className` ne peut produire du verre.
+ * Elle atterrit sur la RACINE, qui est transparente, et la couche opaque est
+ * peinte par-dessus. On obtient un rectangle plein, exactement ce qu'on veut
+ * éviter — et sans le moindre message d'erreur.
+ *
+ * Les trois autres issues sont pires :
+ *   · rendre `--cladd-surface-cut` translucide — le creux disparaîtrait AUSSI
+ *     dans les endroits où il est juste, et un jeton ne peut pas porter de
+ *     `backdrop-filter`, donc on aurait un fond translucide SANS flou : une
+ *     vitre sale, pas du verre ;
+ *   · réécrire un champ à la main dans `src/ui` — on perdrait l'anneau de
+ *     focus, la validation, le bouton d'effacement, les fentes préfixe et
+ *     suffixe, et il faudrait le refaire pour chaque variante du kit ;
+ *   · poser la classe champ par champ — trente appels à ne pas oublier, ce que
+ *     ce projet a déjà payé plusieurs fois.
+ *
+ * On cible donc la couche de fond, une fois, et TOUS les champs de
+ * l'application basculent ensemble. La spécificité (0,2,0) l'emporte sur
+ * l'utilitaire Tailwind (0,1,0) sans avoir besoin de `!important`.
+ *
+ * ⚠️ LE SÉLECTEUR EST BORNÉ À `.cladd-input`, délibérément. Les autres
+ * `SurfaceCut` du produit — un groupe segmenté, un compteur creusé — doivent
+ * rester des CREUX : c'est leur sens. Seuls les champs de saisie deviennent du
+ * verre, parce qu'eux seuls sont posés sur le fond et doivent le laisser voir.
+ *
+ * Si une montée de version du kit change cette structure interne, le symptôme
+ * sera un champ redevenu opaque — visible au premier écran, donc rattrapable.
+ * C'est le compromis assumé. */
+.cladd-input .bg-cladd-surface-cut {
+	background-color: oklch(1 0 0 / 0.07);
+	backdrop-filter: blur(20px) saturate(1.6);
+	-webkit-backdrop-filter: blur(20px) saturate(1.6);
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.12),
+		inset 0 0 0 1px oklch(1 0 0 / 0.07);
+	transition: background-color 200ms ease-out;
+}
+
+/* Le champ survolé et le champ actif s'éclaircissent, comme tout le verre du
+ * produit. `:focus-within` et pas `:focus` : le focus est sur le `<input>`
+ * interne, pas sur la racine qui porte la couche de fond. */
+.cladd-input:hover .bg-cladd-surface-cut,
+.cladd-input:focus-within .bg-cladd-surface-cut {
+	background-color: oklch(1 0 0 / 0.12);
+}
+
+/* LES CREUX, EUX AUSSI SUR LE SYSTÈME DE VERRE.
+ *
+ * `SurfaceCut` est la surface ENFONCÉE du kit : un compteur creusé, un groupe
+ * segmenté, une zone de dépôt. Elle peint son fond dans la même couche interne
+ * que les champs — un `<div class="absolute inset-0 bg-cladd-surface-cut">` —
+ * et restait donc le dernier aplat opaque du produit. Relevé écran par écran
+ * dans la salle d'exposition : neuf des quatorze en portaient encore un.
+ *
+ * ⚠️ UN CREUX N'EST PAS DU VERRE CLAIR, C'EST DU VERRE SOMBRE. Les cartes
+ * ajoutent du blanc pour se détacher du fond ; un creux doit faire l'inverse et
+ * s'enfoncer dedans. On pose donc du NOIR translucide, avec le liseré de
+ * lumière en BAS et non en haut — c'est l'inversion d'éclairage qui fait lire
+ * « creusé » plutôt que « posé », exactement comme le liseré du haut fait lire
+ * « verre » sur les cartes.
+ *
+ * ⚠️ `:not(.cladd-input)` EST INDISPENSABLE. Les champs de saisie sont aussi
+ * des `SurfaceCut`, et ils ont déjà leur propre règle, plus haut, qui les rend
+ * CLAIRS. Sans cette exclusion les deux sélecteurs ont la même spécificité
+ * (0,2,0) et c'est le dernier écrit qui gagne — donc tous les champs
+ * redeviendraient sombres, en silence, selon l'ordre du fichier. */
+.cladd-surface-cut:not(.cladd-input) > .bg-cladd-surface-cut {
+	background-color: oklch(0 0 0 / 0.24);
+	backdrop-filter: blur(16px) saturate(1.4);
+	-webkit-backdrop-filter: blur(16px) saturate(1.4);
+	box-shadow:
+		inset 0 -1px 0 0 oklch(1 0 0 / 0.07),
+		inset 0 0 0 1px oklch(0 0 0 / 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LES DEUX PILULES D'ACTION.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ LA PRINCIPALE EST BLANCHE, PAS BLEUE — ET C'ÉTAIT LE MANQUE CENTRAL DU
+ * SYSTÈME.
+ *
+ * L'application posait ses actions principales en aplat d'accent
+ * (`color="brand" variant="solid-fill"`), c'est-à-dire un rectangle bleu. Sur
+ * un fond sombre traversé par un shader bleu-violet, ce bleu-là ne ressort
+ * pas : il se fond dans son propre décor, et l'action la plus importante de
+ * l'écran devient la moins visible.
+ *
+ * La référence ne fait jamais ça. Sa couleur de marque sert aux LIENS et aux
+ * accents de texte ; son action principale est une pilule BLANCHE à texte noir,
+ * pleine largeur. Sur un écran sombre, le blanc est la seule valeur qui ne peut
+ * entrer en concurrence avec rien — et c'est aussi la seule qui reste lisible
+ * quelle que soit la couleur qui passe derrière.
+ *
+ * ⚠️ ELLE NE PORTE DONC JAMAIS DE COULEUR SÉMANTIQUE. Une pilule principale
+ * rouge pour supprimer, verte pour valider : interdit. Le vert, l'ambre et le
+ * rouge ne disent qu'une chose dans ce produit — au-dessus du seuil, tout près,
+ * en dessous — et une action destructrice se signale par son LIBELLÉ et une
+ * confirmation, jamais en empruntant la couleur d'un verdict juridique.
+ *
+ * Les deux pilules s'utilisent par paire et dans cet ordre : la blanche porte
+ * ce qu'on veut faire faire, la sombre l'alternative. Deux blanches sur un
+ * écran, et il n'y a plus d'action principale. */
+.pilule-principale {
+	background-color: var(--cladd-fg);
+	color: var(--cladd-bg);
+	transition:
+		background-color 200ms ease-out,
+		transform 120ms ease-out,
+		box-shadow 200ms ease-out;
+}
+
+/* ⚠️ LE SURVOL ASSOMBRIT ICI, À L'INVERSE DU VERRE — et ce n'est pas une
+ * incohérence. Le verre s'éclaircit parce qu'il est translucide : lui ajouter
+ * de la lumière est le seul geste disponible. La pilule blanche est déjà à la
+ * valeur maximale ; l'éclaircir ne produirait rien du tout. Dans les deux cas
+ * la règle réelle est la même : le survol AUGMENTE le contraste avec le fond. */
+.pilule-principale:hover {
+	background-color: oklch(0.9 0.004 258);
+	box-shadow: 0 4px 20px -6px oklch(1 0 0 / 0.25);
+}
+
+.pilule-principale:active {
+	transform: scale(0.985);
+}
+
+/* L'alternative. Du verre, un cran plus dense que les cartes : posée juste sous
+ * la pilule blanche, elle doit se lire comme un bouton et non comme une carte
+ * cliquable. */
+.pilule-secondaire {
+	background-color: oklch(1 0 0 / 0.1);
+	backdrop-filter: blur(20px) saturate(1.6);
+	-webkit-backdrop-filter: blur(20px) saturate(1.6);
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.16),
+		inset 0 0 0 1px oklch(1 0 0 / 0.07);
+	transition:
+		background-color 200ms ease-out,
+		transform 120ms ease-out;
+}
+
+.pilule-secondaire:hover {
+	background-color: oklch(1 0 0 / 0.16);
+}
+
+.pilule-secondaire:active {
+	transform: scale(0.985);
+}
+
+/* ⚠️ L'ÉTAT DÉSACTIVÉ EST GRIS, JAMAIS BLANC ESTOMPÉ. Le kit dime à 40 %
+ * d'opacité, ce qui sur une pilule blanche donne un gris translucide qu'on
+ * prend pour un bouton actif mal contrasté. La référence pose un gris PLEIN :
+ * on voit tout de suite que ce n'est pas encore cliquable, ce qui est
+ * exactement l'information utile sur un formulaire incomplet. */
+.pilule-principale:disabled,
+.pilule-principale[aria-disabled='true'] {
+	background-color: oklch(0.42 0.012 258);
+	color: oklch(0.68 0.01 258);
+	box-shadow: none;
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pilule-principale:active,
+	.pilule-secondaire:active {
+		transform: none;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE FAISCEAU — la lumière qui court sur le bord d'un bouton.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Réservé à UNE action par écran : celle qu'on veut faire faire. Sur l'accueil
+ * d'un établissement qui n'a encore rien importé, c'est « Importer » — sans
+ * factures, le produit ne peut littéralement rien mesurer, et tout le reste de
+ * l'écran attend ce geste-là.
+ *
+ * ⚠️ IL PERD TOUT SON SENS S'IL Y EN A DEUX. Un faisceau attire l'œil parce
+ * qu'il est le seul élément animé de l'écran ; deux boutons qui brillent ne
+ * hiérarchisent plus rien et donnent une page de casino. La règle est donc :
+ * un seul porteur visible à la fois, et jamais sur une action destructrice ni
+ * sur une action juridique — on n'attire pas vers un acte irréversible.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * COMMENT ÇA MARCHE, PARCE QUE CE N'EST PAS ÉVIDENT À RELIRE
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Un dégradé conique ne peut pas être posé « sur la bordure » : CSS ne sait
+ * peindre une image que sur une surface pleine. On peint donc un rectangle
+ * plein, et on en DÉCOUPE le centre au masque, ce qui ne laisse qu'un anneau.
+ *
+ *   · `padding: 1.5px` définit l'épaisseur de l'anneau ;
+ *   · les deux masques couvrent l'un la boîte de contenu, l'autre la boîte
+ *     entière ; `mask-composite: exclude` retranche le premier du second, donc
+ *     il ne reste que le pourtour.
+ *
+ * ⚠️ `@property` EST OBLIGATOIRE, ET SON ABSENCE EST UN ÉCHEC SILENCIEUX. Une
+ * propriété personnalisée non déclarée est une CHAÎNE pour le navigateur : il
+ * ne sait pas l'interpoler, l'animation saute de 0 à 360 degrés d'un coup et
+ * l'anneau reste immobile. Aucune erreur, aucun avertissement — juste un effet
+ * qui ne se produit pas.
+ */
+@property --faisceau-angle {
+	syntax: '<angle>';
+	initial-value: 0deg;
+	inherits: false;
+}
+
+.faisceau {
+	position: relative;
+	/* `isolation` crée un contexte d'empilement local : sans lui, l'anneau
+	   passerait sous les surfaces voisines de la carte selon leur ordre de
+	   rendu, et l'effet disparaîtrait sur certains écrans seulement. */
+	isolation: isolate;
+}
+
+.faisceau::before {
+	content: '';
+	position: absolute;
+	/* ⚠️ NÉGATIF, ET C'EST TOUT LE RÉGLAGE. À `inset: 0`, l'anneau occupe les
+	 * deux pixels intérieurs du cadre — c'est-à-dire exactement sous le bouton,
+	 * qui remplit son parent et le recouvre au pixel près. Résultat : la règle
+	 * s'applique, l'animation tourne, et on ne voit strictement rien.
+	 *
+	 * C'est le piège classique de ce motif : rien n'échoue, il n'y a ni erreur
+	 * ni avertissement, et on cherche la cause dans le dégradé ou dans
+	 * `@property` alors qu'elle est dans l'ordre de peinture.
+	 *
+	 * En débordant de deux pixels, l'anneau vit HORS de la boîte du bouton :
+	 * plus rien ne peut passer devant. */
+	inset: -2px;
+	border-radius: inherit;
+	padding: 1.5px;
+	background: conic-gradient(
+		from var(--faisceau-angle),
+		transparent 0%,
+		oklch(0.72 0.16 258 / 0.35) 6%,
+		oklch(0.92 0.11 250) 12%,
+		oklch(0.78 0.15 300 / 0.6) 18%,
+		transparent 28%,
+		transparent 100%
+	);
+	-webkit-mask:
+		linear-gradient(#000 0 0) content-box,
+		linear-gradient(#000 0 0);
+	mask:
+		linear-gradient(#000 0 0) content-box,
+		linear-gradient(#000 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	animation: faisceau-tourne 2.6s linear infinite;
+	pointer-events: none;
+}
+
+/* La lueur. Elle double le faisceau d'un halo très diffus DERRIÈRE le bouton :
+ * c'est elle qui fait qu'on remarque l'action du coin de l'œil, là où l'anneau
+ * seul ne se voit qu'en regardant le bouton. Elle tourne à la même vitesse,
+ * décalée d'un demi-tour, pour que le halo suive la tête du faisceau. */
+.faisceau::after {
+	content: '';
+	position: absolute;
+	inset: -6px;
+	z-index: -1;
+	border-radius: inherit;
+	background: conic-gradient(
+		from var(--faisceau-angle),
+		transparent 0%,
+		oklch(0.7 0.15 258 / 0.5) 12%,
+		transparent 30%,
+		transparent 100%
+	);
+	filter: blur(10px);
+	opacity: 0.75;
+	animation: faisceau-tourne 2.6s linear infinite;
+	pointer-events: none;
+}
+
+@keyframes faisceau-tourne {
+	to {
+		--faisceau-angle: 360deg;
+	}
+}
+
+/* ⚠️ SOUS `prefers-reduced-motion`, LA RÈGLE GLOBALE FIGE L'ANIMATION À SON
+ * PREMIER PAS — ce qui laisserait un anneau à moitié éteint, avec une tête de
+ * faisceau arrêtée au hasard sur un bord. Ce n'est pas « pas d'animation »,
+ * c'est « un bouton qui a l'air cassé ».
+ *
+ * On remplace donc le dégradé conique par un anneau CONTINU, de la couleur du
+ * faisceau. Le bouton reste distingué de tous les autres — ce qui est sa seule
+ * fonction — sans que rien ne bouge. */
+@media (prefers-reduced-motion: reduce) {
+	.faisceau::before {
+		background: oklch(0.82 0.13 254 / 0.75);
+	}
+	.faisceau::after {
+		background: oklch(0.7 0.15 258 / 0.35);
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE FOND.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ C'EST LA PIÈCE QUI MANQUAIT, ET SON ABSENCE RENDAIT TOUT LE RESTE FAUX.
+ *
+ * Première version : un dégradé plat, trois taches violettes vives, éteint
+ * avant la première carte. Comparé à la référence côte à côte, l'écart ne
+ * venait pas des composants mais de CE QU'IL Y A DERRIÈRE EUX.
+ *
+ * Un verre n'a d'effet que s'il a quelque chose à réfracter. Posé sur un aplat
+ * uniforme, il est indiscernable d'un aplat légèrement plus clair — et toutes
+ * les translucidités de l'interface retombent alors en aplats. Le fond doit
+ * donc être PRÉSENT PARTOUT et VARIÉ, pas seulement en haut d'écran.
+ *
+ * ⚠️ IL EST MAINTENANT RENDU EN WEBGL, et il ne reste ici qu'une seule couche.
+ * Le motif — des lignes ondulantes déformées par deux champs de bruit — vit
+ * dans `ui/line-waves.tsx`, un shader porté de React Bits. Deux tentatives en
+ * CSS pur l'ont précédé (des taches floues, puis un drapé en bandes
+ * diagonales) : les deux donnaient un dégradé convenable et aucune MATIÈRE,
+ * c'est-à-dire précisément ce qu'il fallait au verre.
+ *
+ * Le grain, lui, reste en CSS : il se pose PAR-DESSUS le canevas, et un shader
+ * ne peut pas produire un bruit qui reste net indépendamment de la densité de
+ * l'écran.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE RELÈVEMENT — ce qui empêche les coins de tomber au noir.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le voile qui garantit le contraste (voir `ui/fond.tsx`) assombrit le haut et
+ * le bas de l'écran jusqu'à la couleur de page. Résultat mesuré : ces deux
+ * zones tombaient à une clarté OKLCH de 0,154 — un quasi-noir, sur lequel le
+ * verre des barres n'a plus rien à réfracter et où l'écran paraît éteint.
+ *
+ * Ce lavis les relève. Il est posé PAR-DESSUS le voile, en dernier, ce qui est
+ * la seule position où sa luminance finale est prévisible.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * ⚠️ ÉCLAIRCIR UN FOND SOMBRE BAISSE LE CONTRASTE DU TEXTE CLAIR
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * C'est le contre-sens à ne pas commettre ici, et il n'est pas intuitif : sur
+ * un thème sombre, « plus lumineux » veut dire « moins lisible ». Le réglage
+ * a donc été calculé au navigateur, pas choisi à l'œil.
+ *
+ * Les mesures, sur la palette du produit :
+ *
+ *   · fond nu ........................ clarté 0,154
+ *   · lavis à 0,18 d'opacité ......... clarté 0,240   ← retenu
+ *   · lavis à 0,22 d'opacité ......... clarté 0,266   (au-delà du plafond)
+ *
+ * Et le plafond de clarté du fond, ton de texte par ton de texte, pour tenir
+ * les 4,5:1 exigés par WCAG AA sur du texte courant :
+ *
+ *   · `--cladd-fg` ......... 0,555      · `--cladd-fg-softer` .... 0,330
+ *   · `--cladd-fg-soft` .... 0,435      · `--cladd-fg-softest` ... 0,165 (!)
+ *
+ * C'est `--cladd-fg-softest` qui décide de tout : il tenait 4,58:1 sur le fond
+ * nu, soit huit centièmes au-dessus du seuil. N'importe quel relèvement le
+ * faisait passer dessous. Il a donc été remonté de 0,58 à 0,635 — voir
+ * `tokens.css`, où le calcul est reporté. Le couple des deux réglages tient
+ * 4,6:1 sur la zone la plus relevée, et davantage partout ailleurs.
+ *
+ * ⚠️ NE PAS MONTER CETTE OPACITÉ SANS REFAIRE LE CALCUL. Le lavis et le ton de
+ * texte le plus faible sont liés : bouger l'un seul casse l'accessibilité en
+ * silence, sur le texte le moins important — donc là où personne ne regarde. */
+.fond-releve {
+	background-image:
+		radial-gradient(
+			130% 55% at 50% 0%,
+			oklch(0.6 0.06 258 / 0.18) 0%,
+			oklch(0.6 0.06 258 / 0.08) 45%,
+			transparent 72%
+		),
+		radial-gradient(
+			130% 45% at 50% 100%,
+			oklch(0.6 0.06 258 / 0.16) 0%,
+			oklch(0.6 0.06 258 / 0.07) 48%,
+			transparent 75%
+		),
+		/* Un troisième lavis, décentré, très large : il casse la symétrie
+		   parfaite des deux premiers. Deux dégradés strictement centrés se lisent
+		   comme un vignettage de logiciel ; un troisième hors axe fait lire une
+		   source de lumière. */
+		radial-gradient(90% 60% at 18% 38%, oklch(0.62 0.07 250 / 0.09) 0%, transparent 70%);
+}
+
+
+/* LE GRAIN. Du bruit, à deux pour cent, en surimpression.
+ *
+ * ⚠️ C'EST LA COUCHE QU'ON EST TENTÉ DE SAUTER, ET C'EST CELLE QUI FAIT LA
+ * DIFFÉRENCE. Un dégradé CSS est mathématiquement lisse ; aucune surface réelle
+ * ne l'est. C'est ce grain qui fait qu'on lit « matière photographiée » plutôt
+ * que « rectangle calculé », et c'est aussi lui qui masque les bandes de
+ * quantification (« banding ») qu'un grand dégradé sombre produit sur une dalle
+ * 8 bits — un défaut bien visible sur un fond de mille pixels de haut.
+ *
+ * Le bruit est généré par le navigateur (`feTurbulence`), en URI de données :
+ * aucune requête réseau, aucun fichier à versionner, et il reste net à
+ * n'importe quelle densité d'écran.
+ *
+ * `overlay` plutôt qu'une simple opacité : le grain éclaircit les zones claires
+ * et assombrit les sombres, ce que fait un vrai grain argentique. En opacité
+ * simple il voilerait uniformément l'image d'un gris. */
+.fond-grain {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+	opacity: 0.16;
+	mix-blend-mode: overlay;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE VERRE DES CARTES.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ UNE CARTE DE CE PRODUIT N'EST PLUS UN APLAT. Elle l'était — la surface
+ * opaque du kit, six points de clarté au-dessus du fond — et c'est ce qui
+ * faisait que l'écran ne ressemblait pas à sa référence malgré des composants
+ * corrects. Chez elle, on voit le drapé à travers la carte de parrainage comme
+ * à travers la ligne d'opération.
+ *
+ * Le dosage est ce qui compte, et il n'est pas libre :
+ *
+ *   · 6 % de blanc — assez pour détacher la carte du fond, pas assez pour la
+ *     rendre laiteuse. À 12 % on retrouve un aplat gris.
+ *   · 24 px de flou — assez pour que le drapé derrière devienne une COULEUR et
+ *     non une forme reconnaissable, ce qui laisserait le texte illisible.
+ *   · La saturation poussée à 1,7 compense le lavage que produit tout flou :
+ *     sans elle, ce qui passe derrière vire au gris et le verre a l'air sale.
+ *   · Le liseré de lumière en haut, à 10 %, est l'arête du verre. Retiré,
+ *     l'effet s'effondre — c'est la même pièce que sur `.verre`.
+ *
+ * ⚠️ ET IL FAUT QUE LA CARTE SOIT AU-DESSUS DU FOND DANS L'EMPILEMENT, jamais
+ * dedans : `backdrop-filter` échantillonne ce qui est peint DERRIÈRE l'élément.
+ * Une carte rendue à l'intérieur de la couche de fond ne floute rien du tout,
+ * en silence. */
+.verre-carte {
+	background-color: oklch(1 0 0 / 0.06);
+	backdrop-filter: blur(24px) saturate(1.7);
+	-webkit-backdrop-filter: blur(24px) saturate(1.7);
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.1),
+		inset 0 0 0 1px oklch(1 0 0 / 0.055);
+}
+
+/* La même, cliquable. Le survol éclaircit le verre plutôt que d'ajouter une
+ * couche : deux translucidités superposées donnent un gris qui ne réfracte
+ * plus rien. */
+.verre-carte-actif:hover {
+	background-color: oklch(1 0 0 / 0.1);
 }
 
 /* L'ÉCRAN DE LA TABLETTE, ET SA MISE À L'ÉCHELLE.

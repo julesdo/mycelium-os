@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { Button, Input } from '@cladd-ui/react';
+import { Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
-import { CadreAuth, Champ, MessageErreur } from '../ui';
+import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
 
 /**
  * `invitation` porte le jeton d'une invitation en cours.
@@ -100,16 +100,13 @@ function Inscription() {
 
 				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<Button
+				<BoutonPrincipal
 					type="submit"
-					color="brand"
-					variant="solid-fill"
-					size="lg"
 					loading={enCours}
 					readOnly={enCours}
 				>
 					Créer mon compte
-				</Button>
+				</BoutonPrincipal>
 			</form>
 		</CadreAuth>
 	);

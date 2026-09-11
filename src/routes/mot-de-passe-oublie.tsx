@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button, Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
-import { CadreAuth, Champ } from '../ui';
+import { BoutonPrincipal, CadreAuth, Champ } from '../ui';
 
 export const Route = createFileRoute('/mot-de-passe-oublie')({ component: MotDePasseOublie });
 
@@ -55,16 +55,13 @@ function MotDePasseOublie() {
 					<Input type="email" value={email} onChange={setEmail} name="email" required />
 				</Champ>
 
-				<Button
+				<BoutonPrincipal
 					type="submit"
-					color="brand"
-					variant="solid-fill"
-					size="lg"
 					loading={enCours}
 					readOnly={enCours}
 				>
 					Envoyer le lien
-				</Button>
+				</BoutonPrincipal>
 			</form>
 		</CadreAuth>
 	);

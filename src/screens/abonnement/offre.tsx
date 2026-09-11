@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { BoutonPrincipal } from '../../ui';
 import { Link } from '@tanstack/react-router';
-import { Surface, Button, Chip } from '@cladd-ui/react';
+import { Surface, Chip } from '@cladd-ui/react';
 import { CheckIcon, MinusIcon } from 'lucide-react';
 import { CE_QUI_EST_INCLUS, type ColonneOffre } from '../../lib/config/tarifs';
 
@@ -46,8 +47,9 @@ export function Offre({
 }) {
 	return (
 		<Surface
-			outline
-			className="rounded-cladd-2xl shadow-carte"
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
 			<span className="flex flex-wrap items-center gap-cladd-3xs">
@@ -129,8 +131,9 @@ export function EssaiEnCours({ finLe }: { finLe: number }) {
 
 	return (
 		<Surface
-			outline
-			className="rounded-cladd-2xl"
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
 			<span className="flex flex-wrap items-center gap-cladd-3xs">
@@ -161,8 +164,9 @@ export function EssaiEnCours({ finLe }: { finLe: number }) {
 export function OuvertureEnCours() {
 	return (
 		<Surface
-			outline
-			className="rounded-cladd-2xl"
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
 			<span className="text-cladd-sm font-bold">Le paiement en ligne ouvre bientôt.</span>
@@ -172,9 +176,9 @@ export function OuvertureEnCours() {
 				reviendrons vers vous avant toute facturation.
 			</span>
 			<span className="flex flex-wrap gap-cladd-3xs pt-cladd-3xs">
-				<Button as={Link} to="/app/factures" color="brand" variant="solid-fill">
+				<BoutonPrincipal as={Link} to="/app/factures">
 					Déposer mes factures
-				</Button>
+				</BoutonPrincipal>
 			</span>
 		</Surface>
 	);

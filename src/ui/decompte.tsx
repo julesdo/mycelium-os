@@ -144,7 +144,13 @@ export function Decompte({ decompte }: { decompte: DecompteAffiche }) {
 			</SurfaceCut>
 
 			{decompte.lignes.map((ligne) => (
-				<Surface key={ligne.reference} contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
+				<Surface
+					key={ligne.reference}
+					variant="transparent"
+					outline={false}
+					className="verre-carte rounded-cladd-xl"
+					contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+				>
 					<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
 						<span className="text-cladd-sm font-semibold">{ligne.reference}</span>
 						<span className="text-cladd-sm font-semibold tabular-nums">

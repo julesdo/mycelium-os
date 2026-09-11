@@ -35,9 +35,10 @@ export function Bandeau({
 }) {
 	return (
 		<Surface
-			outline
+			variant="transparent"
+			outline={false}
 			color={ton === 'alerte' ? 'orange' : undefined}
-			className="rounded-cladd-md"
+			className="verre-carte rounded-cladd-md"
 			contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs px-cladd-3xs py-cladd-3xs"
 		>
 			<div className="flex min-w-0 items-center gap-cladd-3xs">

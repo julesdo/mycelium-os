@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Checkbox, Chip, Surface } from '@cladd-ui/react';
+import { Checkbox, Chip, Surface } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import {
+import { depuisEuros, enCentimes } from '../../lib/socle/montants';
+import { BoutonPrincipal,
 	Page,
 	PageHeader,
 	PageBody,
@@ -16,6 +17,7 @@ import {
 	pluriel,
 	IdentiteDebiteur,
 	ConstatRegistre,
+	Lettrage,
 	type OptionSecteur
 } from '../../ui';
 import {
@@ -111,6 +113,56 @@ function Debiteurs() {
 	 */
 	const [erreurSiren, setErreurSiren] = useState<string | null>(null);
 
+	/**
+	 * LE LETTRAGE D'UN VIREMENT GROUPÉ.
+	 *
+	 * La recherche ne part PAS à chaque frappe : le montant se confirme, et c'est
+	 * `montantCherche` qui déclenche la requête. Chercher pendant qu'on tape ferait
+	 * défiler des propositions qui changent sous les doigts, et donnerait envie de
+	 * cliquer sur la première venue — exactement ce que ce module refuse.
+	 */
+	const [montantCherche, setMontantCherche] = useState<bigint | null>(null);
+	const [dateReglement, setDateReglement] = useState('');
+	const [erreurLettrage, setErreurLettrage] = useState<string | null>(null);
+	const proposition = useQuery(
+		api.recouvrement.lettrage.proposer,
+		choisi === null || montantCherche === null
+			? 'skip'
+			: { debiteurId: choisi, montant: montantCherche }
+	);
+	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
+
+	function chercherLettrage(saisi: string, date: string) {
+		setErreurLettrage(null);
+		setMontantCherche(null);
+		try {
+			// `depuisEuros` refuse trois décimales, NaN et la notation exponentielle.
+			// Un montant mal lu ici deviendrait un règlement faux en base.
+			setMontantCherche(enCentimes(depuisEuros(saisi.trim().replace(/\s/g, ''))));
+			setDateReglement(date.trim());
+		} catch {
+			setErreurLettrage(
+				`« ${saisi} » n’est pas un montant en euros. Deux décimales au plus, sans arrondi.`
+			);
+		}
+	}
+
+	async function soldeLesFactures(references: readonly string[], total: bigint) {
+		if (choisi === null) return;
+		setErreurLettrage(null);
+		try {
+			await appliquerLettrage({
+				debiteurId: choisi,
+				references: [...references],
+				montant: total,
+				date: dateReglement
+			});
+			setMontantCherche(null);
+		} catch (e) {
+			setErreurLettrage(e instanceof Error ? e.message : 'Rapprochement refusé.');
+		}
+	}
+
 	async function enregistrerSiren(saisi: string) {
 		if (choisi === null) return;
 		setErreurSiren(null);
@@ -176,16 +228,13 @@ function Debiteurs() {
 							'Sélectionnez les factures d’un même débiteur pour en faire une créance.'
 						]}
 						action={
-							<Button
+							<BoutonPrincipal
 								as={Link}
 								to="/app/import-factures"
-								size="lg"
-								color="brand"
-								variant="solid-fill"
 							>
 								<UploadIcon />
 								Importer mes factures
-							</Button>
+							</BoutonPrincipal>
 						}
 					/>
 				</PageBody>
@@ -270,6 +319,14 @@ function Debiteurs() {
 					}}
 				/>
 
+				<Lettrage
+					proposition={proposition ?? null}
+					enCours={montantCherche !== null && proposition === undefined}
+					erreur={erreurLettrage}
+					onChercher={chercherLettrage}
+					onAppliquer={(references, total) => void soldeLesFactures(references, total)}
+				/>
+
 				{debiteurChoisi?.constatRegistre === undefined ? null : (
 					<ConstatRegistre
 						constat={debiteurChoisi.constatRegistre}
@@ -331,9 +388,9 @@ function Debiteurs() {
 				{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
 
 				{selection.size > 0 ? (
-					<Button size="lg" color="brand" variant="solid-fill" onClick={constituer}>
+					<BoutonPrincipal onClick={constituer}>
 						Constituer une créance de {selection.size} facture{pluriel(selection.size)}
-					</Button>
+					</BoutonPrincipal>
 				) : null}
 			</div>
 		);

@@ -16,6 +16,7 @@ import {
 	BilanPertes,
 	IdentiteDebiteur,
 	ConstatRegistre,
+	Lettrage,
 	type OptionSecteur,
 	type RevelationAffichee,
 	type BilanPertesAffiche,
@@ -29,6 +30,7 @@ import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/
 import { Donnees } from '../screens/donnees/donnees';
 import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
+import { EcranAccueil, type AccueilAffiche } from '../screens/accueil';
 
 /**
  * La salle d'exposition.
@@ -152,6 +154,85 @@ const REVELATION_DEMO: RevelationAffichee = {
 		}
 	]
 };
+
+/**
+ * LE LETTRAGE, DANS SES QUATRE ÉTATS.
+ *
+ * Le second est celui qui porte la règle : deux lectures possibles, aucune
+ * présélectionnée, et un avertissement qui dit POURQUOI on ne tranche pas.
+ * C'est aussi le plus dense — il doit tenir à 375 px sans que les puces de
+ * référence débordent.
+ */
+function DemoLettrage() {
+	const rien = () => {};
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="Un virement groupé à ventiler" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Une seule lecture</SectionTitle>
+						<Lettrage
+							proposition={{
+								issue: 'UNIQUE',
+								combinaisons: [
+									{ references: ['FA-2026-0088', 'FA-2026-0091', 'FA-2026-0103'], total: 482_000n }
+								],
+								tronque: false
+							}}
+							enCours={false}
+							erreur={null}
+							onChercher={rien}
+							onAppliquer={rien}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Deux lectures — le logiciel ne tranche pas</SectionTitle>
+						<Lettrage
+							proposition={{
+								issue: 'AMBIGU',
+								combinaisons: [
+									{ references: ['FA-2026-0088', 'FA-2026-0091'], total: 300_000n },
+									{ references: ['FA-2026-0104'], total: 300_000n }
+								],
+								tronque: false
+							}}
+							enCours={false}
+							erreur={null}
+							onChercher={rien}
+							onAppliquer={rien}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Aucune combinaison</SectionTitle>
+						<Lettrage
+							proposition={{ issue: 'AUCUNE', combinaisons: [], tronque: false }}
+							enCours={false}
+							erreur={null}
+							onChercher={rien}
+							onAppliquer={rien}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Trop de factures pour chercher</SectionTitle>
+						<Lettrage
+							proposition={{
+								issue: 'TROP_DE_CANDIDATES',
+								combinaisons: [],
+								tronque: false,
+								candidates: 47
+							}}
+							enCours={false}
+							erreur={null}
+							onChercher={rien}
+							onAppliquer={rien}
+						/>
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 /**
  * LE CRÉANCIER — trois champs qui ne sont pas du confort.
@@ -657,7 +738,70 @@ function DemoSurveillanceMuette() {
 	);
 }
 
+/**
+ * L'ACCUEIL, DANS SES DEUX ÉTATS, ET C'EST TOUTE LA RAISON DE CES DEUX ENTRÉES.
+ *
+ * Le défaut qu'on corrige était qu'il en avait DEUX FORMES : un écran garni, et
+ * une page d'accueil vide qui ne lui ressemblait pas. Les regarder côte à côte
+ * dans la salle d'exposition est le seul moyen de vérifier qu'ils sont bien le
+ * même écran — même hero, même rangée d'actions, même géométrie — et que seule
+ * la carte du bas change.
+ */
+const ACCUEIL_DEMO: AccueilAffiche = {
+	// 48 320,55 € : un montant à cinq chiffres avec des centimes non nuls, parce
+	// que c'est le pire cas typographique du hero — l'espace de groupement, la
+	// virgule et les deux petits chiffres doivent tenir sur une ligne à 375 px.
+	total: 4_832_055n,
+	nombreFactures: 7,
+	interetsCourusDepuisHier: 274n,
+	// ⚠️ LES TROIS PARTS SOMMENT EXACTEMENT AU TOTAL. Une donnée de
+	// démonstration qui ne boucle pas est pire qu'absente : elle laisse passer
+	// une barre dont les segments ne correspondent pas au chiffre du hero, et
+	// c'est précisément le défaut que ce composant existe pour empêcher.
+	//   4 500 015 + 304 040 + 28 000 = 4 832 055
+	// L'indemnité vaut 7 × 40 € — une par facture en retard, ce qui la relie au
+	// `nombreFactures` juste au-dessus.
+	parts: { principal: 4_500_015n, interets: 304_040n, indemnites: 28_000n },
+	evenements: EVENEMENTS_DEMO,
+	hypotheses: [
+		"Le secteur de Ateliers Martin n'est pas déterminé : la prescription est calculée sur le délai le plus court (1 an). Préciser le secteur lèvera cette hypothèse."
+	],
+	anglesMorts: [],
+	surveillance: { etat: 'NORMAL' }
+};
+
+function DemoAccueil() {
+	return (
+		<Shell>
+			<EcranAccueil vue={ACCUEIL_DEMO} />
+		</Shell>
+	);
+}
+
+/** Le premier jour : tout est à zéro, et RIEN ne disparaît pour autant. */
+const ACCUEIL_VIERGE: AccueilAffiche = {
+	total: 0n,
+	nombreFactures: 0,
+	interetsCourusDepuisHier: 0n,
+	parts: { principal: 0n, interets: 0n, indemnites: 0n },
+	evenements: [],
+	hypotheses: [],
+	anglesMorts: [],
+	surveillance: { etat: 'NORMAL' }
+};
+
+function DemoAccueilVierge() {
+	return (
+		<Shell>
+			<EcranAccueil vue={ACCUEIL_VIERGE} />
+		</Shell>
+	);
+}
+
 const ECRANS = [
+	'accueil',
+	'accueil-vierge',
+	'lettrage',
 	'creancier',
 	'identite',
 	'revelation',
@@ -675,7 +819,7 @@ const ECRANS = [
 type Ecran = (typeof ECRANS)[number];
 
 function Showroom() {
-	const [ecran, setEcran] = useState<Ecran>('creancier');
+	const [ecran, setEcran] = useState<Ecran>('accueil');
 
 	return (
 		<div className="flex h-dvh flex-col">
@@ -694,6 +838,9 @@ function Showroom() {
 			</div>
 
 			<div className="min-h-0 flex-1">
+				{ecran === 'accueil' ? <DemoAccueil /> : null}
+				{ecran === 'accueil-vierge' ? <DemoAccueilVierge /> : null}
+				{ecran === 'lettrage' ? <DemoLettrage /> : null}
 				{ecran === 'creancier' ? <DemoCreancier /> : null}
 				{ecran === 'identite' ? <DemoIdentite /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}

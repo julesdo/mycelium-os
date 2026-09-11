@@ -1,6 +1,6 @@
 import { Outlet, createFileRoute, Link, Navigate } from '@tanstack/react-router';
+import { BoutonPrincipal } from '../../ui';
 import { Authenticated, Unauthenticated, AuthLoading, useQuery } from 'convex/react';
-import { Button } from '@cladd-ui/react';
 import { api } from '../../lib/convex/_generated/api';
 import { Shell } from '../../app/shell';
 
@@ -29,9 +29,9 @@ function LayoutApp() {
 					<p className="max-w-sm text-cladd-xs text-cladd-fg-soft">
 						Reconnectez-vous pour retrouver vos taux et vos factures. Rien n&rsquo;est perdu.
 					</p>
-					<Button as={Link} to="/connexion" color="brand" variant="solid-fill">
+					<BoutonPrincipal as={Link} to="/connexion">
 						Se connecter
-					</Button>
+					</BoutonPrincipal>
 				</div>
 			</Unauthenticated>
 

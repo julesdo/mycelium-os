@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
-import { Button } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
-import {
+import { BoutonPrincipal,
 	Page,
 	PageHeader,
 	PageBody,
 	EmptyState,
 	SectionEcran,
+	aujourdHuiISO,
 	ChocRevelation,
 	CompteurVivant,
 	BilanPertes
@@ -34,17 +34,10 @@ export const Route = createFileRoute('/app/revelation')({ component: Revelation 
  * LE MÊME ÉCRAN COÛTENT PLUS QU'ILS N'APPORTENT. Un seul récit par écran : le
  * flux dit ce qui a bougé, celui-ci dit ce que ça pèse, intérêts compris.
  *
- * ─────────────────────────────────────────────────────────────────────────
- * LA DATE DU JOUR EST LUE ICI, ET NULLE PART AILLEURS
- * ─────────────────────────────────────────────────────────────────────────
- *
- * Tout le calcul en aval prend `arreteAu` en argument, ce qui le rend rejouable
- * et testable à n'importe quelle date. La seule lecture d'horloge du chemin est
- * ce composant.
+ * La date du jour est lue par `aujourdHuiISO`, seule lecture d'horloge de
+ * l'interface — voir `ui/horloge.ts`, qui explique pourquoi elle est commune à
+ * cet écran et à l'accueil.
  */
-function aujourdHuiISO(): string {
-	return new Date().toISOString().slice(0, 10);
-}
 
 function Revelation() {
 	const arreteAu = aujourdHuiISO();
@@ -85,16 +78,13 @@ function Revelation() {
 							'Le chiffre apparaît dès le premier dépôt, décomposé facture par facture.'
 						]}
 						action={
-							<Button
+							<BoutonPrincipal
 								as={Link}
 								to="/app/import-factures"
-								size="lg"
-								color="brand"
-								variant="solid-fill"
 							>
 								<UploadIcon />
 								Importer mes factures
-							</Button>
+							</BoutonPrincipal>
 						}
 					/>
 				) : (

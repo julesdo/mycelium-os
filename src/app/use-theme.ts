@@ -7,15 +7,20 @@ const CLE = 'letikette-theme';
 const THEMES = ['light', 'dark'] as const;
 
 /**
- * Clair par défaut, sombre disponible, préférence persistée.
+ * Sombre par défaut, clair disponible, préférence persistée.
  *
- * Cladd est conçu dark-first, et c'est de là que vient son allure. Mais
- * l'utilisateur de Letikette est un gérant de cantine, sur tablette, en bureau
- * ou en cuisine, souvent en plein jour et devant un écran à fort reflet. Le
- * clair par défaut est un choix de contexte d'usage, pas de goût.
+ * ⚠️ LE DÉFAUT A CHANGÉ, ET LA RAISON N'EST PAS ESTHÉTIQUE. Le clair se
+ * justifiait par un utilisateur qui n'existe plus : un responsable de cuisine,
+ * sur tablette, en plein jour devant un écran à reflets. Depuis le pivot vers
+ * le recouvrement, celui qui ouvre Letikette est un dirigeant ou un comptable,
+ * assis, sur un écran de bureau, et il y passe des heures d'affilée.
+ *
+ * Le clair reste servi et entretenu — un comptable qui imprime ou qui travaille
+ * près d'une fenêtre le voudra — et la préférence est persistée. Ce qui change,
+ * c'est ce qu'on montre à quelqu'un qui n'a rien demandé.
  */
 export function useTheme() {
-	const [theme, setTheme] = usePreference<Theme>(CLE, 'light', THEMES);
+	const [theme, setTheme] = usePreference<Theme>(CLE, 'dark', THEMES);
 
 	// Cladd sélectionne ses palettes sur les classes `.light` / `.dark` de la
 	// racine du document. Cet effet ne fait que refléter l'état, il n'en crée

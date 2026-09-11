@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { Button, Input } from '@cladd-ui/react';
+import { Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
-import { CadreAuth, Champ, MessageErreur } from '../ui';
+import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
 
 const LONGUEUR_MINIMALE = 12;
 
@@ -45,9 +45,9 @@ function NouveauMotDePasse() {
 				titre="Ce lien est incomplet."
 				explication="Il a peut-être été coupé par votre messagerie. Demandez-en un nouveau, il arrivera en quelques secondes."
 			>
-				<Button as={Link} to="/mot-de-passe-oublie" color="brand" variant="solid-fill" size="lg">
+				<BoutonPrincipal as={Link} to="/mot-de-passe-oublie">
 					Demander un nouveau lien
-				</Button>
+				</BoutonPrincipal>
 			</CadreAuth>
 		);
 	}
@@ -75,16 +75,13 @@ function NouveauMotDePasse() {
 
 				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<Button
+				<BoutonPrincipal
 					type="submit"
-					color="brand"
-					variant="solid-fill"
-					size="lg"
 					loading={enCours}
 					readOnly={enCours}
 				>
 					Enregistrer et me connecter
-				</Button>
+				</BoutonPrincipal>
 			</form>
 		</CadreAuth>
 	);

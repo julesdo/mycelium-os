@@ -24,7 +24,7 @@ import {
 	UserMinusIcon,
 	UserPlusIcon
 } from 'lucide-react';
-import { SectionEcran, pluriel } from '../../ui';
+import { BoutonPrincipal, SectionEcran, pluriel } from '../../ui';
 
 /**
  * L'écran d'équipe, sans backend.
@@ -148,7 +148,7 @@ export function Equipe({
 				titre="Les personnes de l’établissement"
 				legende={`${siegesUtilises} sur ${siegesAutorises} place${pluriel(siegesAutorises)}`}
 			>
-				<Surface outline className="rounded-cladd-2xl" contentClassName="p-0">
+				<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="p-0">
 					<List>
 						{membres.map((m, i) => (
 							<div key={m.id}>
@@ -171,7 +171,7 @@ export function Equipe({
 					titre="Invitations en attente"
 					legende={`${invitations.length} envoyée${pluriel(invitations.length)}, pas encore acceptée${pluriel(invitations.length)}`}
 				>
-					<Surface outline className="rounded-cladd-2xl" contentClassName="p-0">
+					<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="p-0">
 						<List>
 							{invitations.map((inv, i) => (
 								<div key={inv.id}>
@@ -425,17 +425,15 @@ function FormulaireInvitation({
 					</p>
 				) : null}
 
-				<Button
+				<BoutonPrincipal
 					className="self-start"
-					color="brand"
-					variant="solid-fill"
 					loading={enCours}
 					readOnly={!valide || enCours}
 					onClick={() => void envoyer()}
 				>
 					{envoye ? <CheckIcon /> : <UserPlusIcon />}
 					{envoye ? 'Invitation envoyée' : 'Envoyer l’invitation'}
-				</Button>
+				</BoutonPrincipal>
 			</div>
 		</SectionEcran>
 	);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Button, Input, Segmented, SegmentedButton } from '@cladd-ui/react';
+import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
-import { SectionEcran, Champ } from '../../ui';
+import { BoutonPrincipal, SectionEcran, Champ } from '../../ui';
 
 /** Les trois états d'un critère de qualification. Jamais présumé favorablement. */
 export type EtatCritere = 'ok' | 'ko' | 'unknown';
@@ -112,17 +112,14 @@ export function FormulaireCreancier({
 				</Segmented>
 			</Champ>
 
-			<Button
-				size="lg"
-				color="brand"
-				variant="solid-fill"
+			<BoutonPrincipal
 				className="self-start"
 				onClick={() => void enregistrer()}
 				disabled={enCours || !denomination.trim()}
 			>
 				{enregistre ? <CheckIcon /> : null}
 				{enregistre ? 'Enregistré' : enCours ? 'Enregistrement…' : 'Enregistrer'}
-			</Button>
+			</BoutonPrincipal>
 		</SectionEcran>
 	);
 }

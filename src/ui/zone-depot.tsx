@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { BoutonPrincipal } from './bouton';
 import { SurfaceCut, Button } from '@cladd-ui/react';
 import { FolderOpenIcon, CameraIcon } from 'lucide-react';
 import { cn } from './cn';
@@ -88,16 +89,14 @@ export function ZoneDepot({
 			{children}
 
 			<div className="flex flex-wrap items-center justify-center gap-cladd-3xs">
-				<Button
-					color="brand"
-					variant="solid-fill"
+				<BoutonPrincipal
 					disabled={desactive}
 					onClick={() => appareilPhoto.current?.click()}
 					className="hidden tactile:flex"
 				>
 					<CameraIcon />
 					Photographier une facture
-				</Button>
+				</BoutonPrincipal>
 				<Button disabled={desactive} onClick={() => champ.current?.click()}>
 					<FolderOpenIcon />
 					Choisir des fichiers

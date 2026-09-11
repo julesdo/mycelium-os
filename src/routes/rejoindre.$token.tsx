@@ -4,7 +4,7 @@ import { Authenticated, Unauthenticated, AuthLoading, useQuery, useMutation } fr
 import { Button, Chip } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
-import { CadreAuth, MessageErreur } from '../ui';
+import { BoutonPrincipal, CadreAuth, MessageErreur } from '../ui';
 
 export const Route = createFileRoute('/rejoindre/$token')({ component: Rejoindre });
 
@@ -59,9 +59,9 @@ function Rejoindre() {
 				titre="Cette invitation a déjà été utilisée."
 				explication={`Si vous faites déjà partie de ${invitation.orgName}, connectez-vous simplement.`}
 			>
-				<Button as={Link} to="/connexion" color="brand" variant="solid-fill" className="w-full">
+				<BoutonPrincipal as={Link} to="/connexion" className="w-full">
 					Se connecter
-				</Button>
+				</BoutonPrincipal>
 			</CadreAuth>
 		);
 	}
@@ -119,15 +119,13 @@ function PasEncoreDeCompte({ token }: { token: string }) {
 				Créez votre mot de passe pour accéder à l’espace. Si vous avez déjà un compte Letikette,
 				connectez-vous : l’invitation vous attendra.
 			</p>
-			<Button
-				color="brand"
-				variant="solid-fill"
+			<BoutonPrincipal
 				className="w-full"
 				onClick={() => void navigate({ to: '/inscription', search: { invitation: token } })}
 			>
 				Créer mon compte
 				<ArrowRightIcon />
-			</Button>
+			</BoutonPrincipal>
 			<Button
 				className="w-full"
 				onClick={() => void navigate({ to: '/connexion', search: { invitation: token } })}
@@ -174,16 +172,14 @@ function Accepter({
 				{role}
 			</Chip>
 			{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
-			<Button
-				color="brand"
-				variant="solid-fill"
+			<BoutonPrincipal
 				className="w-full"
 				loading={enCours}
 				readOnly={enCours}
 				onClick={() => void rejoindre()}
 			>
 				Rejoindre {nomEtablissement}
-			</Button>
+			</BoutonPrincipal>
 		</div>
 	);
 }

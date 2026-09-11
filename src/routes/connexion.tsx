@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { Button, Input } from '@cladd-ui/react';
+import { Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
-import { CadreAuth, Champ, MessageErreur } from '../ui';
+import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
 
 /**
  * `invitation` porte le jeton d'une invitation en cours.
@@ -53,12 +53,15 @@ function Connexion() {
 			explication="Retrouvez vos créances, vos décomptes et vos échéances."
 			pied={
 				<>
-					<Link to="/mot-de-passe-oublie" className="font-medium underline underline-offset-2">
+					{/* Des liens d'ACCENT, plus des soulignés. Sur fond sombre, un texte
+					    souligné gris lit « note de bas de page » ; c'est le bleu de
+					    marque qui dit « ceci est cliquable », comme dans la référence. */}
+					<Link to="/mot-de-passe-oublie" className="font-medium text-cladd-primary">
 						Mot de passe oublié ?
 					</Link>
 					<span>
 						Pas encore de compte ?{' '}
-						<Link to="/inscription" className="font-medium underline underline-offset-2">
+						<Link to="/inscription" className="font-medium text-cladd-primary">
 							En créer un
 						</Link>
 					</span>
@@ -82,16 +85,19 @@ function Connexion() {
 
 				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<Button
-					type="submit"
-					color="brand"
-					variant="solid-fill"
-					size="lg"
-					loading={enCours}
-					readOnly={enCours}
-				>
+				{/*
+				  LA PILULE BLANCHE, pleine largeur. Elle remplace l'aplat d'accent :
+				  sur le fond sombre traversé par le shader, un bouton bleu se fond
+				  dans son propre décor et l'action principale devient la moins
+				  visible de l'écran. Voir `ui/bouton.tsx`.
+
+				  `readOnly` plutôt que `disabled` pendant l'envoi : le bouton garde
+				  son apparence active — il n'y a rien d'invalide à signaler — mais
+				  cesse de répondre, ce qui empêche la double soumission.
+				*/}
+				<BoutonPrincipal type="submit" pleineLargeur loading={enCours} readOnly={enCours}>
 					Se connecter
-				</Button>
+				</BoutonPrincipal>
 			</form>
 		</CadreAuth>
 	);

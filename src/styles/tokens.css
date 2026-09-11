@@ -522,3 +522,260 @@ body {
 		transition-duration: 0.001ms !important;
 	}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE SOMBRE, ET IL EST MAINTENANT LE DÉFAUT.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Ce qui a changé, et pourquoi. Le clair par défaut se justifiait par un
+ * utilisateur qui n'existe plus : un responsable de cuisine, sur tablette, en
+ * plein jour devant un écran à reflets. Le produit a pivoté vers le
+ * recouvrement de créances ; celui qui l'ouvre est un dirigeant ou un
+ * comptable, assis, sur un écran de bureau, et il y passe des heures. Le
+ * sombre n'est plus un goût, c'est le contexte.
+ *
+ * La référence est explicite et assumée : Revolut. Elle est retenue pour une
+ * raison précise et pas pour son allure — c'est l'interface grand public qui a
+ * résolu le problème exact de cet écran-ci, RENDRE UN SEUL CHIFFRE
+ * INCONTESTABLE. Un solde, énorme, centré, posé sur un dégradé qui ne porte
+ * aucune information ; et tout le reste — l'historique, les actions, les
+ * réglages — rangé en dessous, dans des cartes qui ne disputent rien à ce
+ * chiffre. C'est très exactement ce que « ce qui vous est dû » demande.
+ *
+ * ⚠️ CE QU'ON NE COPIE PAS, ET C'EST LA SEULE CHOSE. Revolut peint ses
+ * variations en vert et en rouge. Ici, le vert, l'ambre et le rouge ne veulent
+ * dire qu'une chose — au-dessus du seuil, tout près, en dessous — et aucun
+ * élément décoratif ne les porte. La règle tient toujours ; voir plus haut. */
+:root.dark,
+.dark,
+.dark .cladd-color-neutral,
+.dark.cladd-color-neutral {
+	/* Le fond n'est pas un noir pur. Le noir absolu fait vibrer le texte blanc
+	 * sur les dalles OLED et écrase la rampe de surfaces : il ne reste plus
+	 * aucune marche sous la première carte. Un charbon très bleuté garde la
+	 * profondeur ET la teinte de l'encre de marque. */
+	--cladd-bg: oklch(0.155 0.018 258);
+
+	/* La carte. Un seul ton pour toutes, et c'est délibéré : Revolut ne dessine
+	 * pas de contour et ne pose pas d'ombre — la séparation d'avec le fond se
+	 * fait UNIQUEMENT par la clarté. Cinq points d'écart suffisent sur un fond
+	 * sombre, là où il en faudrait quinze sur un fond clair. */
+	--cladd-surface: oklch(0.225 0.02 258);
+	--cladd-surface-mix-color: var(--cladd-surface-white);
+	--cladd-surface-mix-amount: 5%;
+
+	/* Le creux : un champ est une découpe DANS la carte, donc plus sombre
+	 * qu'elle et non plus clair. */
+	--cladd-surface-cut: oklch(0.185 0.018 258);
+
+	/* ⚠️ LES CONTOURS SONT PRESQUE INVISIBLES, ET C'EST LE RÉGLAGE QUI DÉCIDE
+	 * DE TOUT. Cladd pose un anneau franc autour de chaque surface ; posé sur
+	 * cette palette, il redonne exactement l'écran quadrillé qu'on corrige. On
+	 * ne peut pas pour autant retirer `outline` partout — des dizaines
+	 * d'appels le passent, et la prop porte aussi l'anneau d'accent au focus.
+	 * On l'atténue donc à la source : le contour existe encore pour l'œil qui
+	 * le cherche, et disparaît pour celui qui lit. */
+	--cladd-bg-outline: oklch(0.26 0.018 258);
+	--cladd-outline: oklch(0.285 0.018 258);
+
+	/* LE TEXTE. Quatre crans nettement séparés — c'est ce qui permet à une
+	 * carte de porter un titre, une valeur et deux légendes sans qu'aucune
+	 * bordure soit nécessaire pour les distinguer. Le gris de Revolut
+	 * (#8E8E93) tombe sur `fg-softer` ; il sert aux libellés de ses lignes
+	 * clé/valeur, et c'est le ton le plus employé de toute son interface. */
+	--cladd-fg: oklch(0.985 0.004 258);
+	--cladd-fg-soft: oklch(0.82 0.012 258);
+	--cladd-fg-softer: oklch(0.7 0.014 258);
+	/* ⚠️ REMONTÉ DE 0,58 À 0,635, ET C'EST UNE CORRECTION D'ACCESSIBILITÉ.
+	 *
+	 * Mesuré au navigateur : à 0,58 sur le fond nu, ce ton rendait 4,58:1 —
+	 * huit centièmes au-dessus du seuil WCAG AA de 4,5:1 pour du texte courant.
+	 * Une marge pareille n'en est pas une : elle se perd au premier réglage de
+	 * fond, et le symptôme apparaît sur le texte le MOINS important, c'est-à-dire
+	 * là où personne ne le cherche.
+	 *
+	 * Le lavis de relèvement (voir `.fond-releve` dans `app.css`) porte les zones
+	 * les plus sombres de 0,154 à 0,240 de clarté. Le plafond de fond pour ce ton
+	 * était de 0,165 : sans compensation, l'écran entier passait sous le seuil.
+	 *
+	 * À 0,635, le couple tient 4,6:1 sur la zone la plus relevée, et davantage
+	 * partout ailleurs. Les trois autres tons avaient de la marge et ne bougent
+	 * pas : `fg` 15,3:1, `fg-soft` 9,1:1, `fg-softer` 6,0:1 sur ce même fond.
+	 *
+	 * ⚠️ CE JETON ET L'OPACITÉ DU LAVIS SONT LIÉS. Bouger l'un sans refaire le
+	 * calcul de l'autre casse le contraste en silence. */
+	--cladd-fg-softest: oklch(0.635 0.014 258);
+}
+
+/* L'accent, en sombre. Cladd le veut clair sur fond sombre — il sert au texte
+ * de lien et à l'anneau de focus, jamais à un aplat. On monte le chroma pour
+ * retrouver le bleu franc de la référence sans quitter la teinte de l'encre de
+ * marque : c'est le même bleu que la page publique, ouvert d'un cran. */
+.dark {
+	--cladd-dark-primary-lightness: 0.74;
+	--cladd-dark-primary-chroma: 0.16;
+}
+
+@theme {
+	/* ── L'AURORE ────────────────────────────────────────────────────────────
+	 *
+	 * Le dégradé du haut d'écran. Trois teintes qui se recouvrent, du bleu
+	 * d'encre au violet, et rien d'autre : c'est un FOND, il ne porte aucune
+	 * information, et il n'a pas le droit d'en porter un jour.
+	 *
+	 * ⚠️ POURQUOI IL N'EST NI VERT NI ROUGE, ET POURQUOI ÇA COMPTE ICI PLUS
+	 * QU'AILLEURS. Ce dégradé occupe le tiers haut de l'écran d'accueil, juste
+	 * derrière le montant dû. Si sa palette empiétait sur les trois couleurs de
+	 * seuil, un gérant ne saurait plus, en un coup d'œil, si le rouge qu'il
+	 * voit est un ornement ou une créance qui s'éteint. Le bleu et le violet
+	 * sont les deux seules familles que le produit n'utilise pour rien d'autre.
+	 *
+	 * Les valeurs sont vives — bien plus que l'accent — parce qu'elles seront
+	 * étalées sur huit cents pixels et fondues dans le fond : une teinte sourde
+	 * à cette échelle ne donne pas un dégradé, elle donne une tache grise. */
+	--color-aurore-encre: oklch(0.46 0.085 258);
+	--color-aurore-violet: oklch(0.42 0.075 288);
+	--color-aurore-azur: oklch(0.52 0.065 236);
+
+	/* La hauteur du lavis. Il doit être éteint AVANT la première carte, sans
+	 * quoi la carte flotte sur du bleu et le fond redevient une information.
+	 * 44 % de la hauteur visible place la fin du fondu juste sous la rangée
+	 * d'actions, à toutes les tailles d'écran testées.
+	 *
+	 * Elle sert de hauteur MINIMALE au bloc hero, pas de hauteur au dégradé :
+	 * l'aurore remplit son bloc (`inset-0`), donc son fondu se termine toujours
+	 * exactement au bas du hero, quelle que soit la hauteur réelle du contenu.
+	 * Un dégradé à hauteur fixe posé sur un bloc plus court se coupe net. */
+	--spacing-aurore: 44dvh;
+
+	/* LA HAUTEUR DE LA BARRE DE L'APPLICATION, et pourquoi elle doit être écrite.
+	 *
+	 * La barre haute FLOTTE au-dessus du contenu, elle ne le pousse pas vers le
+	 * bas. C'est la seule façon de faire monter l'aurore jusqu'au bord haut de
+	 * l'écran : une barre dans le flux couperait le dégradé net à sa hauteur, et
+	 * le hero cesserait de lire « fond d'écran » pour lire « bandeau coloré ».
+	 *
+	 * Mais un élément hors du flux ne réserve aucune place, et rien dans la mise
+	 * en page ne peut deviner sa hauteur. Deux endroits lisent donc la même
+	 * valeur : le hero, qui décale son CONTENU d'autant tout en laissant son
+	 * dégradé passer dessous, et l'en-tête d'écran ordinaire, qui se décale en
+	 * entier. La coder deux fois serait la garantie qu'un changement de taille
+	 * de bouton fasse un jour passer un titre sous le logo.
+	 *
+	 * Même raisonnement, et même jeton en miroir, que `--spacing-barre-publique`
+	 * sur la page commerciale.
+	 *
+	 * 64 px = 48 de contrôle (le plancher tactile) + deux fois 8 de bandeau. */
+	--spacing-barre-app: 64px;
+
+	/* LA COURBE DU SEGMENT QUI GLISSE, dans la barre basse.
+	 *
+	 * Elle DÉPASSE légèrement avant de revenir (le troisième paramètre vaut 1,3
+	 * et non 1). Ce n'est pas un ornement : un glissement en `ease-out` pur
+	 * s'arrête net et se lit comme un saut rapide, alors qu'un léger dépassement
+	 * se lit comme un objet qui a une masse. C'est la différence entre « la
+	 * sélection a changé » et « j'ai déplacé la sélection » — et sur une barre
+	 * qu'on touche cinquante fois par jour, c'est ce qui fait qu'une interface
+	 * paraît répondre.
+	 *
+	 * Le dépassement reste petit : au-delà, le segment rebondit et le geste
+	 * paraît mou. */
+	--ease-glisse: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+	/* ── LES TROIS PARTS DE CE QUI EST DÛ ────────────────────────────────────
+	 *
+	 * Le principal, les intérêts de retard, l'indemnité forfaitaire. Elles
+	 * servent à UNE chose et une seule : montrer de quoi le total est fait.
+	 *
+	 * ⚠️ ELLES SONT TOUTES LES TROIS DANS LA FAMILLE BLEUE, ET CE N'EST PAS UN
+	 * MANQUE D'IMAGINATION. Le vert, l'ambre et le rouge ne veulent dire qu'une
+	 * chose dans ce produit — au-dessus du seuil, tout près, en dessous. Un
+	 * graphique décoratif qui les emprunterait ferait perdre à un gérant la
+	 * lecture instantanée de ses verdicts, qui est la seule chose que ce produit
+	 * doit savoir faire. La contrainte est donc réelle, et elle se résout en
+	 * jouant sur la CLARTÉ plutôt que sur la teinte : trois bleus nettement
+	 * séparés se distinguent aussi bien que trois couleurs, y compris pour un
+	 * daltonien — ce qui n'est pas vrai d'un vert et d'un rouge.
+	 *
+	 * L'ordre de clarté suit l'ordre de grandeur : le principal est le plus gros
+	 * segment et le plus sourd, l'indemnité le plus petit et le plus clair. Le
+	 * petit segment reste ainsi visible quand il ne fait que trois pour cent de
+	 * la barre. */
+	--color-part-principal: oklch(0.55 0.12 258);
+	--color-part-interets: oklch(0.7 0.14 285);
+	--color-part-indemnites: oklch(0.84 0.1 232);
+
+	/* ── LE CHIFFRE ──────────────────────────────────────────────────────────
+	 *
+	 * LE MONTANT DÛ EST LE SEUL ÉLÉMENT DE L'ÉCRAN QUI A LE DROIT DE CRIER.
+	 * C'est la donnée que le dirigeant est venu chercher, et la seule qu'il
+	 * retiendra. Tout le reste de l'échelle typographique existe pour ne pas
+	 * l'approcher.
+	 *
+	 * Les centimes suivent à 54 % du corps des unités — le rapport relevé sur
+	 * la référence. Ce n'est pas un ornement : c'est ce qui permet de porter un
+	 * montant au centime, exigence non négociable du produit, sans que la
+	 * virgule casse la lecture du chiffre qui compte.
+	 *
+	 * Fluide, parce qu'un corps fixe de 72 px déborde un téléphone de 375. */
+	--text-letikette-hero: clamp(40px, 11.5vw, 72px);
+	--text-letikette-hero-centimes: clamp(22px, 6.2vw, 39px);
+
+	/* ── LE MOUVEMENT DE FOND ────────────────────────────────────────────────
+	 *
+	 * L'aurore dérive. Très lentement — quarante secondes le cycle — et de peu.
+	 * Ce n'est pas un ornement gratuit : un dégradé parfaitement immobile lit
+	 * « image de fond », un dégradé qui respire lit « écran vivant », et c'est
+	 * la différence entre un tableau de bord et un logiciel qui travaille.
+	 *
+	 * Il n'y a AUCUNE information dans ce mouvement, ce qui est exactement la
+	 * raison pour laquelle on peut se permettre de le couper net sous
+	 * `prefers-reduced-motion` — voir la règle plus haut, qui s'applique. */
+	--animate-derive: derive 42s ease-in-out infinite alternate;
+	@keyframes derive {
+		from {
+			transform: translate3d(-4%, -2%, 0) scale(1);
+		}
+		to {
+			transform: translate3d(4%, 3%, 0) scale(1.12);
+		}
+	}
+
+	--animate-derive-lente: derive-lente 58s ease-in-out infinite alternate;
+	@keyframes derive-lente {
+		from {
+			transform: translate3d(3%, 2%, 0) scale(1.08);
+		}
+		to {
+			transform: translate3d(-5%, -3%, 0) scale(1);
+		}
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LES TROIS COULEURS DE SEUIL, EN SOMBRE.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ ELLES N'ÉTAIENT DÉFINIES QUE POUR LE FOND CLAIR, et c'est un défaut que
+ * le passage au sombre par défaut aurait rendu invisible et grave à la fois :
+ * `--color-seuil-atteint` à 0,55 de clarté sur un fond à 0,145 tombe à un
+ * contraste de 3,1 pour 1, et les lavis — pensés pour être posés SUR du blanc —
+ * deviennent des aplats presque blancs qui écrasent le texte qu'ils portent.
+ *
+ * Le symptôme n'aurait pas crevé les yeux : ça reste du vert, du rouge et de
+ * l'ambre, ça a l'air de fonctionner. Mais ces trois couleurs sont les seules
+ * du produit qui portent un VERDICT, et un verdict qu'on lit mal est pire
+ * qu'un verdict absent.
+ *
+ * On les remonte donc en clarté et on inverse les lavis : sur fond sombre, une
+ * pastille de seuil est une teinte SOMBRE et saturée, pas un lavis pâle. */
+:root.dark,
+.dark {
+	--color-seuil-atteint: oklch(0.76 0.17 152);
+	--color-seuil-proche: oklch(0.83 0.16 82);
+	--color-seuil-manque: oklch(0.72 0.19 24);
+
+	--color-seuil-atteint-fond: oklch(0.29 0.075 152);
+	--color-seuil-proche-fond: oklch(0.31 0.07 82);
+	--color-seuil-manque-fond: oklch(0.3 0.085 24);
+}

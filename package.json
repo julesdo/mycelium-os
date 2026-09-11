@@ -59,6 +59,7 @@
 		"jspdf": "^4.2.1",
 		"jspdf-autotable": "^5.0.8",
 		"lucide-react": "^1.33.0",
+		"ogl": "^1.0.11",
 		"papaparse": "^5.5.3",
 		"posthog-js": "^1.290.0",
 		"react": "^19",

@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useMutation, Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
-import { Button, Input } from '@cladd-ui/react';
+import { Input } from '@cladd-ui/react';
 import { api } from '../lib/convex/_generated/api';
-import { CadreAuth, Champ, MessageErreur } from '../ui';
+import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
 
 export const Route = createFileRoute('/bienvenue')({ component: PageBienvenue });
 
@@ -34,9 +34,9 @@ function PageBienvenue() {
 					<p className="max-w-sm text-cladd-xs text-cladd-fg-soft">
 						Votre entreprise se crée depuis votre compte. Une fois connecté, vous reviendrez ici.
 					</p>
-					<Button as={Link} to="/connexion" color="brand" variant="solid-fill">
+					<BoutonPrincipal as={Link} to="/connexion">
 						Se connecter
-					</Button>
+					</BoutonPrincipal>
 				</div>
 			</Unauthenticated>
 
@@ -135,16 +135,13 @@ function Bienvenue() {
 
 				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<Button
+				<BoutonPrincipal
 					type="submit"
-					color="brand"
-					variant="solid-fill"
-					size="lg"
 					loading={enCours}
 					readOnly={enCours}
 				>
 					Créer mon entreprise
-				</Button>
+				</BoutonPrincipal>
 			</form>
 		</CadreAuth>
 	);

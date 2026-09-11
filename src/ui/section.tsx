@@ -32,8 +32,15 @@ export function SectionEcran({
 	return (
 		<Surface
 			as="section"
-			outline
-			className="rounded-cladd-2xl shadow-carte"
+			// ⚠️ PLUS DE FOND OPAQUE NI D'OMBRE PORTÉE. Les deux venaient du système
+			// clair, où une carte blanche sur un fond presque blanc ne se détache que
+			// par son ombre. Sur le drapé sombre, cette même ombre fait une auréole
+			// noire autour de la carte, et le fond opaque empêche le verre de rien
+			// réfracter — c'est-à-dire les deux défauts qui faisaient que l'écran ne
+			// ressemblait pas à sa référence. Voir `carte-liste.tsx`.
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
 		>
 			<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">

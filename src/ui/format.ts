@@ -49,6 +49,42 @@ export function eurosCentimes(centimes: bigint): string {
 	return `${negatif ? '−' : ''}${groupes},${cents}\u00A0€`;
 }
 
+/**
+ * Le même montant, mais DÉCOUPÉ, pour qu'un écran puisse porter ses centimes
+ * dans un corps plus petit que ses unités.
+ *
+ * POURQUOI CETTE FONCTION EXISTE. Le produit a une exigence non négociable —
+ * tout montant réclamé s'affiche au centime — et un écran d'accueil qui pose
+ * ce montant en soixante-douze pixels. Les deux se contredisent : « 48 320,00 »
+ * en corps plein déborde un téléphone, et le rendre plus petit pour qu'il tienne
+ * ferait perdre au seul chiffre qui compte l'autorité qu'il doit avoir.
+ *
+ * La référence résout ça en posant les centimes à environ la moitié du corps
+ * des unités. On lit le montant d'un coup d'œil, et le centime reste écrit noir
+ * sur blanc pour qui le cherche. RIEN N'EST ARRONDI NI OMIS : c'est un découpage
+ * d'affichage, pas une simplification du chiffre.
+ *
+ * Le découpage se fait ICI, et pas dans l'écran, pour la raison qui ouvre ce
+ * fichier : un montant formaté à deux endroits est un montant qu'on finit par
+ * afficher de deux façons.
+ */
+export function partsEurosCentimes(centimes: bigint): {
+	signe: string;
+	entiers: string;
+	centimes: string;
+} {
+	const negatif = centimes < 0n;
+	const absolu = negatif ? -centimes : centimes;
+
+	const entiers = (absolu / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+	return {
+		signe: negatif ? '−' : '',
+		entiers,
+		centimes: (absolu % 100n).toString().padStart(2, '0')
+	};
+}
+
 /** Une date ISO `AAAA-MM-JJ` telle qu'un gérant la lit. */
 const DATE_COURTE = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' });
 

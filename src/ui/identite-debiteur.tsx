@@ -146,8 +146,10 @@ export function ConstatRegistre({
 
 	return (
 		<Surface
+			variant="transparent"
+			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-1.5 p-cladd-2xs"
-			outline
+			outline={false}
 			color={bascule ? 'red' : undefined}
 		>
 			<div className="flex flex-wrap items-center gap-1.5">

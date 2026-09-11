@@ -13,7 +13,16 @@
 export { cn } from './cn';
 export { LogoLetikette, MotLetikette } from './logo';
 export { Tablette } from './tablette';
-export { Page, PageHeader, PageBody } from './page';
+export { Page, PageHeader, PageBody, PageHero } from './page';
+export { Fond } from './fond';
+export { aujourdHuiISO } from './horloge';
+export { ChiffreHero } from './chiffre';
+export { RangeeActions, type ActionRonde } from './actions';
+export { CarteListe, LigneValeur } from './carte-liste';
+export { CarteDemarrage } from './carte-demarrage';
+export { Faisceau } from './faisceau';
+export { BoutonPrincipal, BoutonSecondaire } from './bouton';
+export { CompositionDue, type PartsDues } from './composition';
 export { TwoPane } from './two-pane';
 export { EmptyState } from './empty-state';
 export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
@@ -29,7 +38,14 @@ export {
 	TableauTitre,
 	TableauCellule
 } from './tableau';
-export { euros, eurosCentimes, dateCourte, pourcent, pluriel } from './format';
+export {
+	euros,
+	eurosCentimes,
+	partsEurosCentimes,
+	dateCourte,
+	pourcent,
+	pluriel
+} from './format';
 
 // ── Recouvrement ────────────────────────────────────────────────────────────
 export {
@@ -49,3 +65,4 @@ export {
 } from './revelation';
 export { IdentiteDebiteur, type OptionSecteur } from './identite-debiteur';
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
+export { Lettrage, type PropositionLettrage, type CombinaisonAffichee } from './lettrage';

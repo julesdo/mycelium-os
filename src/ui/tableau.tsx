@@ -22,8 +22,9 @@ import { cn } from './cn';
 export function Tableau({ children, legende }: { children: ReactNode; legende?: string }) {
 	return (
 		<Surface
-			outline
-			className="rounded-cladd-2xl shadow-carte"
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
 			contentClassName="w-full overflow-x-auto p-cladd-2xs"
 		>
 			<table className="w-full border-collapse text-cladd-xs">
