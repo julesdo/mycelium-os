@@ -6,7 +6,8 @@ import { AlertTriangleIcon, FileDownIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import { depuisCentimes } from '../../lib/socle/montants';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { BoutonPrincipal,
+import {
+	BoutonPrincipal,
 	Page,
 	PageHeader,
 	PageBody,
@@ -155,7 +156,7 @@ function Creance() {
 				)} restant dû`}
 			/>
 			<PageBody>
-				<div className="flex flex-col gap-cladd-xs">
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
 					<SurfaceCut contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-2xs">
 						<div className="flex items-baseline gap-cladd-3xs">
 							<span className="text-letikette-titre font-bold tabular-nums">
@@ -173,14 +174,15 @@ function Creance() {
 							<div className="flex flex-col gap-cladd-3xs">
 								{creance.questions.map((question) => (
 									<Surface
+										variant="transparent"
+										outline={false}
+										className="verre-carte rounded-cladd-xl"
 										key={question.condition}
 										contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 									>
 										<p className="text-cladd-sm">{question.libelle}</p>
 										<div className="flex flex-wrap gap-cladd-3xs">
-											<BoutonPrincipal
-												onClick={() => tranche(question.condition, 'ok')}
-											>
+											<BoutonPrincipal onClick={() => tranche(question.condition, 'ok')}>
 												Oui
 											</BoutonPrincipal>
 											<Button
@@ -201,7 +203,13 @@ function Creance() {
 						<SectionEcran titre="Ce qui affaiblit ce dossier">
 							<div className="flex flex-col gap-cladd-3xs">
 								{creance.risques.map((risque) => (
-									<Surface key={risque.type} contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+									<Surface
+										key={risque.type}
+										variant="transparent"
+										outline={false}
+										className="verre-carte rounded-cladd-xl"
+										contentClassName="flex gap-cladd-3xs p-cladd-2xs"
+									>
 										<AlertTriangleIcon
 											className="mt-1 size-4 shrink-0 text-cladd-fg-soft"
 											aria-hidden
@@ -222,7 +230,12 @@ function Creance() {
 
 					{creance.piecesManquantes.length > 0 ? (
 						<SectionEcran titre="Ce qui renforcerait ce dossier">
-							<Surface contentClassName="flex flex-wrap gap-1.5 p-cladd-2xs">
+							<Surface
+								variant="transparent"
+								outline={false}
+								className="verre-carte rounded-cladd-xl"
+								contentClassName="flex flex-wrap gap-1.5 p-cladd-2xs"
+							>
 								{creance.piecesManquantes.map((piece) => (
 									<Chip key={piece} size="md" color="neutral">
 										{piece.replaceAll('_', ' ').toLowerCase()}
@@ -235,7 +248,13 @@ function Creance() {
 					<SectionEcran titre="Procédures">
 						<div className="flex flex-col gap-cladd-3xs">
 							{creance.procedures.map((procedure) => (
-								<Surface key={procedure.cle} contentClassName="flex flex-col gap-1.5 p-cladd-2xs">
+								<Surface
+									key={procedure.cle}
+									variant="transparent"
+									outline={false}
+									className="verre-carte rounded-cladd-xl"
+									contentClassName="flex flex-col gap-1.5 p-cladd-2xs"
+								>
 									<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
 										<span className="text-cladd-sm font-semibold">{procedure.nom}</span>
 										<Chip size="md" color={procedure.disponible ? 'green' : 'neutral'}>
@@ -259,7 +278,12 @@ function Creance() {
 						{dernier ? (
 							<Decompte decompte={dernier} />
 						) : (
-							<Surface contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
+							<Surface
+								variant="transparent"
+								outline={false}
+								className="verre-carte rounded-cladd-xl"
+								contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+							>
 								<p className="text-cladd-sm text-cladd-fg-soft">
 									Aucun décompte n’a encore été arrêté pour cette créance.
 								</p>
@@ -273,10 +297,7 @@ function Creance() {
 						{erreur ? <p className="mt-cladd-3xs text-cladd-xs text-cladd-fg">{erreur}</p> : null}
 
 						<div className="mt-cladd-3xs flex flex-wrap gap-cladd-3xs">
-							<BoutonPrincipal
-								onClick={produireDecompte}
-								disabled={enCours}
-							>
+							<BoutonPrincipal onClick={produireDecompte} disabled={enCours}>
 								{enCours ? 'Calcul en cours…' : 'Arrêter un décompte à aujourd’hui'}
 							</BoutonPrincipal>
 
