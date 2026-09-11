@@ -285,10 +285,25 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			explication: eteinte
 				? `La facture ${facture.reference} est PRESCRITE depuis le ${facture.datePrescription}.`
 				: `La facture ${facture.reference} sera prescrite le ${facture.datePrescription}, dans ${restant} jour(s).`,
+			// ⚠️ LIGNE ROUGE 3 : « On ne recommande jamais une procédure. Ce serait
+			// du conseil juridique. » Cette action disait littéralement « Engager une
+			// procédure avant le … », et le test qui gardait la règle ne regardait
+			// qu'un seul événement, dans un seul cas, avec quatre mots interdits.
+			//
+			// LA CONSÉQUENCE JURIDIQUE N'EST PAS SUPPRIMÉE, elle CHANGE DE PLACE :
+			// `explication` la porte, au présent de constat — « sera prescrite le X,
+			// dans N jours ». Ce qui reste ici est un geste LOGICIEL, et il en faut
+			// un : le briefing quotidien s'appuie sur ce champ, et un événement sans
+			// prise se referme.
+			// ⚠️ LA BRANCHE « ÉTEINTE » GARDE SON AVERTISSEMENT, et ce n'est pas une
+			// exception à la règle : « ne plus engager de frais » ne recommande
+			// aucune procédure — elle recommande de n'en engager AUCUNE. C'est le
+			// seul sens dans lequel ce produit peut parler sans conseiller, et c'est
+			// aussi l'avertissement qui protège le plus d'argent.
 			action: eteinte
 				? 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
-				: `Engager une procédure avant le ${facture.datePrescription} — passée cette date, ` +
-					`${versEuros(facture.montantExigible)} € sont perdus sans recours.`
+				: `Ouvrir la facture ${facture.reference} : ${versEuros(facture.montantExigible)} € y ` +
+					`sont décomptés, avec les pièces qui les soutiennent.`
 		});
 	}
 
@@ -337,10 +352,11 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				explication: depassee
 					? `${echeance.libelle} : la date limite du ${echeance.dateLimite} est DÉPASSÉE.`
 					: `${echeance.libelle} : il reste ${restant} jour(s) avant le ${echeance.dateLimite}.`,
-				action: critique
-					? `Faire signifier sans délai — passée cette date, le droit est perdu et ` +
-						`${versEuros(dossier.montantEnJeu)} € cessent d'être couverts par cette procédure.`
-					: `Vérifier l'avancement du dossier ${dossier.reference}.`
+				// ⚠️ MÊME LIGNE ROUGE. « Faire signifier sans délai » est un impératif
+				// sur un acte de procédure. La perte est dite dans `explication` ; ici
+				// on ouvre un écran, ce qui est le seul geste que ce logiciel puisse
+				// honnêtement demander.
+				action: `Ouvrir ce dossier : la date limite et son journal y sont.`
 			});
 		}
 	}

@@ -835,3 +835,101 @@ describe('les habitudes de paiement rompues', () => {
 		expect(detecterEvenements(etat({ ruptures: [] }), AUJOURDHUI)).toEqual([]);
 	});
 });
+
+describe('la ligne rouge 3, sur TOUS les événements', () => {
+	/**
+	 * ⚠️ « ON NE RECOMMANDE JAMAIS UNE PROCÉDURE. Ce serait du conseil
+	 * juridique. Le produit énonce des CONSTATS. »
+	 *
+	 * Un test existait, et il ne regardait qu'UN événement dans UN cas, avec
+	 * quatre mots interdits. Deux actions du produit passaient donc à travers,
+	 * en production, sur les deux événements les plus visibles du flux :
+	 *
+	 *   · « Engager une procédure avant le … » — la recommandation de procédure
+	 *     dans sa forme la plus littérale ;
+	 *   · « Faire signifier sans délai … » — un impératif sur un acte de
+	 *     procédure.
+	 *
+	 * Une invariante tenue à N endroits se perd au premier ajout. Celle-ci se
+	 * tient maintenant sur TOUS les événements, avec un lexique large.
+	 *
+	 * ⚠️ LE CHAMP `action` RESTE UTILE : il porte un geste LOGICIEL — ouvrir une
+	 * fiche, rattacher une facture, enregistrer un règlement. La conséquence
+	 * juridique, elle, vit dans `explication`, au présent de constat. Vider
+	 * `action` aurait été l'autre façon de se tromper : le briefing quotidien
+	 * s'en sert, et un événement sans prise se referme.
+	 */
+	function tousLesEvenements() {
+		return [
+			...detecterEvenements(
+				etat({
+					factures: [
+						{
+							reference: 'F-proche',
+							montantExigible: depuisEuros('9000,00'),
+							dateEcheance: '2021-10-01',
+							statutPaiement: 'IMPAYEE',
+							datePrescription: '2026-10-01'
+						},
+						{
+							reference: 'F-eteinte',
+							montantExigible: depuisEuros('3000,00'),
+							dateEcheance: '2019-01-01',
+							statutPaiement: 'IMPAYEE',
+							datePrescription: '2020-01-01'
+						}
+					]
+				}),
+				AUJOURDHUI
+			),
+			...detecterEvenements(
+				etat({
+					dossiers: [
+						{
+							reference: 'D-1',
+							montantEnJeu: depuisEuros(9000),
+							echeances: [
+								{
+									cle: 'signification',
+									libelle: 'Signification de l’ordonnance',
+									dateLimite: '2026-09-20',
+									gravite: 'CADUCITE',
+									traitee: false
+								}
+							]
+						}
+					]
+				}),
+				AUJOURDHUI
+			)
+		];
+	}
+
+	it('n’ordonne jamais un acte de procédure', () => {
+		// Le lexique est LARGE, délibérément : chercher les mots dont on se
+		// souvient ne trouve que ceux-là.
+		const interdits =
+			/engager une procédure|engagez|faire signifier|signifiez|assign|poursuiv|mettre en demeure|mise en demeure|injonction de payer|saisir le tribunal|saisissez|relanc/i;
+
+		for (const evenement of tousLesEvenements()) {
+			expect(evenement.action, `action de ${evenement.type}`).not.toMatch(interdits);
+		}
+	});
+
+	it('porte quand même un geste, sur chaque événement', () => {
+		// L'autre façon de se tromper : vider le champ. Un événement sans prise
+		// se referme, et le briefing quotidien s'appuie dessus.
+		for (const evenement of tousLesEvenements()) {
+			expect(evenement.action.length).toBeGreaterThan(10);
+		}
+	});
+
+	it('garde la conséquence juridique dans l’explication, au présent', () => {
+		// Le constat n'est pas supprimé : il change de place. « Passée cette
+		// date, la créance est éteinte » est un fait ; « engagez avant » est une
+		// consigne.
+		const evenements = tousLesEvenements();
+		const prescription = evenements.find((e) => e.type === 'PRESCRIPTION_PROCHE');
+		expect(prescription!.explication).toMatch(/prescrite le/i);
+	});
+});
