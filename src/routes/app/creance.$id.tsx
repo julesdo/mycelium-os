@@ -13,8 +13,10 @@ import {
 	PageBody,
 	SectionEcran,
 	Decompte,
+	QuestionnaireLitige,
 	eurosCentimes,
-	pourcent
+	pourcent,
+	type ReponseFait
 } from '../../ui';
 
 export const Route = createFileRoute('/app/creance/$id')({ component: Creance });
@@ -50,6 +52,7 @@ function Creance() {
 
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
 	const repondre = useMutation(api.recouvrement.creances.repondre);
+	const declarerFait = useMutation(api.recouvrement.creances.declarerFait);
 	const figer = useMutation(api.recouvrement.decompte.produire);
 	const dernier = useQuery(api.recouvrement.decompte.dernierDecompte, { creanceId });
 
@@ -59,6 +62,26 @@ function Creance() {
 	async function tranche(condition: string, valeur: 'ok' | 'ko') {
 		setErreur(null);
 		await repondre({ creanceId, reponses: { [condition]: valeur } });
+	}
+
+	/**
+	 * Déclarer un fait de litige.
+	 *
+	 * ⚠️ RIEN N'EST DÉRIVÉ EN LOCAL DE LA RÉPONSE. La question suivante et les
+	 * constats reviennent par la requête, qui les recalcule depuis la base. Les
+	 * deviner ici ferait un second endroit où le produit décide ce qu'une
+	 * déclaration établit — et les deux finiraient par diverger.
+	 */
+	async function declarer(cle: string, reponse: ReponseFait) {
+		setErreur(null);
+		setEnCours(true);
+		try {
+			await declarerFait({ creanceId, cle: cle as 'CONTESTATION_ECRITE', reponse });
+		} catch (e) {
+			setErreur(e instanceof Error ? e.message : 'Déclaration refusée.');
+		} finally {
+			setEnCours(false);
+		}
 	}
 
 	/**
@@ -168,6 +191,34 @@ function Creance() {
 							{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
 						</Chip>
 					</SurfaceCut>
+
+					{/*
+					  LE QUESTIONNAIRE DE LITIGE D'ABORD — module 3.2.
+
+					  Il vient avant les autres questions parce qu'il porte le seul
+					  critère qui peut FERMER le dossier. Demander la qualité de
+					  commerçant du débiteur à quelqu'un dont le client conteste la
+					  facture par écrit, c'est faire répondre à des questions qui ne
+					  changeront rien.
+					*/}
+					{creance.litige.questions.length > 0 || creance.litige.constats.length > 0 ? (
+						<SectionEcran
+							titre="Ce que vous seul pouvez dire"
+							legende={
+								creance.litige.questions.length > 0
+									? 'Des faits, pas une appréciation juridique.'
+									: undefined
+							}
+						>
+							<QuestionnaireLitige
+								questions={creance.litige.questions}
+								constats={creance.litige.constats}
+								litigieux={creance.litige.litigieux}
+								enCours={enCours}
+								onRepondre={(cle, reponse) => void declarer(cle, reponse)}
+							/>
+						</SectionEcran>
+					) : null}
 
 					{creance.questions.length > 0 ? (
 						<SectionEcran titre="Ce que le logiciel ne peut pas déduire">

@@ -47,6 +47,27 @@ import { v } from 'convex/values';
 export const vEtatCritere = v.union(v.literal('ok'), v.literal('ko'), v.literal('unknown'));
 
 /**
+ * Un fait recueilli par le questionnaire de qualification de litige.
+ *
+ * ⚠️ LES CLÉS SONT UNE UNION FERMÉE, PAS UNE CHAÎNE. Un fait mal orthographié
+ * une seule fois entrerait en base et ne serait jamais relu — donc jamais
+ * compté dans le critère `certaine`, qui décide si une procédure s'ouvre.
+ * Ajouter un fait plus tard est additif et sans danger ; en retirer un casserait
+ * le déploiement, ce qui est exactement la protection recherchée.
+ */
+export const vCleFaitLitige = v.union(
+	v.literal('CONTESTATION_ECRITE'),
+	v.literal('REFUS_RECEPTION'),
+	v.literal('AVOIR_RECLAME'),
+	v.literal('PENALITES_OPPOSEES'),
+	v.literal('INSTANCE_EN_COURS'),
+	v.literal('RECONNAISSANCE_ECRITE')
+);
+
+/** « Je ne sais pas » est une réponse, distincte d'une question non posée. */
+export const vReponseFait = v.union(v.literal('OUI'), v.literal('NON'), v.literal('INCONNU'));
+
+/**
  * Le secteur de la relation commerciale, dont dépend le DÉLAI DE PRESCRIPTION.
  *
  * Déclaré ici plutôt qu'en ligne dans la table : la mutation de saisie doit
@@ -412,6 +433,30 @@ export const recouvrementTables = {
 		),
 		/** Les quatre conditions légales, chacune dans son état à trois valeurs. */
 		certaine: vEtatCritere,
+		/**
+		 * LES FAITS DÉCLARÉS PAR LE GÉRANT, module 3.2.
+		 *
+		 * ⚠️ ILS SONT LA SOURCE DE `certaine`, qui n'en est que la lecture. Le
+		 * critère se recalcule depuis ce tableau à chaque déclaration : personne
+		 * ne l'écrit à la main, et l'écran ne le demande plus directement.
+		 *
+		 * ⚠️ CHAQUE RÉPONSE PORTE SA DATE. Ces déclarations décident si une
+		 * procédure s'ouvre ; savoir QUAND le gérant a dit que son client ne
+		 * contestait pas fait partie de ce qu'un dossier doit pouvoir montrer.
+		 * Un tableau plutôt qu'un objet, pour cette raison précise.
+		 *
+		 * Optionnel : les créances créées avant ce module n'en ont pas, et
+		 * Convex valide la base entière, pas seulement le code qui arrive.
+		 */
+		faitsLitige: v.optional(
+			v.array(
+				v.object({
+					cle: vCleFaitLitige,
+					reponse: vReponseFait,
+					declareLe: v.number()
+				})
+			)
+		),
 		liquide: vEtatCritere,
 		exigible: vEtatCritere,
 		entreCommercants: vEtatCritere,

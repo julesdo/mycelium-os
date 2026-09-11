@@ -7,9 +7,16 @@ import type { MutationCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import { additionner, depuisCentimes, soustraire, ZERO } from '../../socle/montants';
 import { deduireConditions } from '../../verticales/recouvrement/deduction';
-import { qualifier, type SignalContestation } from '../../verticales/recouvrement/scoring';
+import { qualifier } from '../../verticales/recouvrement/scoring';
+import {
+	lireLitige,
+	questionsRestantes,
+	signauxDepuisFaits,
+	type CleFait,
+	type Reponses
+} from '../../verticales/recouvrement/litige';
 import type { ClePiece, EtatCritere } from '../../verticales/recouvrement/qualification';
-import { vEtatCritere } from './tables';
+import { vCleFaitLitige, vEtatCritere, vReponseFait } from './tables';
 
 /**
  * La constitution et la qualification d'une créance.
@@ -38,8 +45,20 @@ import { vEtatCritere } from './tables';
  * refusée. C'est la même discipline que le décompte.
  */
 
+/**
+ * Les conditions que le gérant peut encore trancher à la main.
+ *
+ * ⚠️ `certaine` N'Y EST PLUS, ET C'EST LE MODULE 3.2. Elle s'y trouvait, et
+ * l'écran demandait littéralement « Pouvez-vous confirmer le caractère certain
+ * de cette créance ? » — une notion de droit, posée à quelqu'un dont ce n'est
+ * pas le métier, dont la réponse ouvre des procédures sans débat où la moindre
+ * contestation met fin à tout en laissant les frais engagés.
+ *
+ * Elle se DÉDUIT maintenant des faits déclarés, via `declarerFaitLitige`. La
+ * retirer d'ici est la barrière : tant qu'elle y était, un second chemin
+ * pouvait la poser sans qu'aucun fait ne la soutienne.
+ */
 const vReponses = v.object({
-	certaine: v.optional(vEtatCritere),
 	liquide: v.optional(vEtatCritere),
 	exigible: v.optional(vEtatCritere),
 	entreCommercants: v.optional(vEtatCritere)
@@ -142,12 +161,15 @@ async function recalculerScore(
 			creance.debiteurId,
 			factures.map((f) => f._id)
 		),
-		// Aucun signal de contestation n'est encore collecté : les détecter
-		// demande de lire les échanges, ce qui n'est pas construit. Les
-		// supposer absents serait présumer favorablement — mais ici l'absence
-		// est REELLE au regard de ce qu'on sait, et le questionnaire reste la
-		// voie pour qu'un gérant en déclare un.
-		signauxContestation: [] as SignalContestation[],
+		// ⚠️ CE TABLEAU ÉTAIT ÉCRIT `[]` EN DUR, ET C'EST LE SIXIÈME CHAMP DE CE
+		// DÉPÔT « déclaré, lu, jamais alimenté ». `qualifier()` en tire des
+		// risques BLOQUANTS et son propre commentaire les appelle « le risque
+		// produit numéro un » : il ne pouvait pas se déclencher une seule fois.
+		//
+		// Il vient maintenant du questionnaire de qualification de litige. Les
+		// cinq autres signaux du moteur — ceux qui se lisent dans les documents —
+		// attendent toujours l'extracteur, et ceux-là sont réellement absents.
+		signauxContestation: signauxDepuisFaits(reponsesDeLaCreance(creance)),
 		santeDebiteur: debiteur?.santeFinanciere ?? 'INCONNUE',
 		retardsAnterieurs: await retardsObserves(
 			ctx,
@@ -158,6 +180,18 @@ async function recalculerScore(
 	});
 
 	return qualification.score;
+}
+
+/**
+ * Les faits déclarés, relus dans la forme que le domaine attend.
+ *
+ * Le tableau stocké porte une date par réponse — ce que le domaine n'a pas à
+ * connaître. Il n'a besoin que de « quel fait, quelle réponse ».
+ */
+function reponsesDeLaCreance(creance: Doc<'creances'>): Reponses {
+	const reponses: Reponses = {};
+	for (const fait of creance.faitsLitige ?? []) reponses[fait.cle] = fait.reponse;
+	return reponses;
 }
 
 /** Les quatre conditions sont-elles toutes tranchées ? */
@@ -278,7 +312,7 @@ export const repondreQuestionnaire = internalMutation({
 		if (creance === null) throw new ConvexError('Créance introuvable');
 
 		const conditions = {
-			certaine: reponses.certaine ?? creance.certaine,
+			certaine: creance.certaine,
 			liquide: reponses.liquide ?? creance.liquide,
 			exigible: reponses.exigible ?? creance.exigible,
 			entreCommercants: reponses.entreCommercants ?? creance.entreCommercants
@@ -297,6 +331,85 @@ export const repondreQuestionnaire = internalMutation({
 		});
 
 		return null;
+	}
+});
+
+/**
+ * LE QUESTIONNAIRE DE QUALIFICATION DE LITIGE — module 3.2.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * UN FAIT ENTRE, UN CRITÈRE SORT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le gérant déclare ce qu'il est SEUL à savoir — son client lui a-t-il écrit
+ * pour contester, a-t-il refusé la livraison, réclamé un avoir. Le logiciel en
+ * tire le critère `certaine`, qui n'est plus jamais saisi directement.
+ *
+ * ⚠️ ET `certaine` SE RECALCULE ENTIÈREMENT À CHAQUE DÉCLARATION, depuis le
+ * tableau complet. Pas d'accumulation : un gérant qui corrige « oui » en
+ * « non » doit voir le critère se rouvrir, sinon le produit garderait une
+ * contestation qu'il vient de retirer.
+ */
+export const declarerFaitLitige = internalMutation({
+	args: {
+		creanceId: v.id('creances'),
+		cle: vCleFaitLitige,
+		reponse: vReponseFait,
+		aujourdHui: v.string()
+	},
+	returns: v.object({
+		certaine: vEtatCritere,
+		litigieux: v.boolean(),
+		constats: v.array(v.string()),
+		questionsRestantes: v.array(
+			v.object({ cle: vCleFaitLitige, question: v.string(), portee: v.string() })
+		)
+	}),
+	handler: async (ctx, { creanceId, cle, reponse, aujourdHui }) => {
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null) throw new ConvexError('Créance introuvable');
+
+		// Une réponse REMPLACE la précédente. Deux lignes sur le même fait
+		// laisseraient deux vérités en base, et la lecture prendrait celle qui
+		// traîne — donc peut-être celle que le gérant vient de corriger.
+		const faits = [
+			...(creance.faitsLitige ?? []).filter((f) => f.cle !== cle),
+			{ cle, reponse, declareLe: Date.now() }
+		];
+		await ctx.db.patch(creanceId, { faitsLitige: faits });
+
+		const reponses: Reponses = {};
+		for (const fait of faits) reponses[fait.cle] = fait.reponse;
+		const lecture = lireLitige(reponses);
+
+		const conditions = {
+			certaine: lecture.certaine,
+			liquide: creance.liquide,
+			exigible: creance.exigible,
+			entreCommercants: creance.entreCommercants
+		};
+		await ctx.db.patch(creanceId, { certaine: lecture.certaine });
+
+		// Le score se relit sur la créance à jour : `recalculerScore` y reprend
+		// les faits déclarés pour ses signaux de contestation.
+		const misAJour = (await ctx.db.get(creanceId))!;
+		const complete = toutesTranchees(conditions);
+		await ctx.db.patch(creanceId, {
+			score: await recalculerScore(ctx, misAJour, aujourdHui),
+			statut: complete && creance.statut === 'BROUILLON' ? 'QUALIFIEE' : creance.statut,
+			qualifieeLe: complete ? (creance.qualifieeLe ?? Date.now()) : creance.qualifieeLe
+		});
+
+		return {
+			certaine: lecture.certaine,
+			litigieux: lecture.litigieux,
+			constats: [...lecture.constats],
+			questionsRestantes: questionsRestantes(reponses).map((q) => ({
+				cle: q.cle,
+				question: q.question,
+				portee: q.portee
+			}))
+		};
 	}
 });
 
@@ -358,5 +471,49 @@ export const repondre = authedMutation({
 			aujourdHui: new Date().toISOString().slice(0, 10)
 		});
 		return null;
+	}
+});
+
+/**
+ * Déclarer un fait de litige.
+ *
+ * Le type de retour est annoté à la main pour la même raison que ses voisines :
+ * ce handler appelle `internal.recouvrement.creances.*`, c'est-à-dire son
+ * propre module, et sans annotation le cycle d'inférence ferait retomber `api`
+ * tout entier sur `any`.
+ */
+export const declarerFait = authedMutation({
+	args: { creanceId: v.id('creances'), cle: vCleFaitLitige, reponse: vReponseFait },
+	returns: v.object({
+		certaine: vEtatCritere,
+		litigieux: v.boolean(),
+		constats: v.array(v.string()),
+		questionsRestantes: v.array(
+			v.object({ cle: vCleFaitLitige, question: v.string(), portee: v.string() })
+		)
+	}),
+	handler: async (
+		ctx,
+		{ creanceId, cle, reponse }
+	): Promise<{
+		certaine: EtatCritere;
+		litigieux: boolean;
+		constats: string[];
+		questionsRestantes: { cle: CleFait; question: string; portee: string }[];
+	}> => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		// Le cloisonnement AVANT la délégation, comme pour `repondre`.
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null || creance.organizationId !== organizationId) {
+			throw new ConvexError('Créance introuvable');
+		}
+
+		return await ctx.runMutation(internal.recouvrement.creances.declarerFaitLitige, {
+			creanceId,
+			cle,
+			reponse,
+			aujourdHui: new Date().toISOString().slice(0, 10)
+		});
 	}
 });

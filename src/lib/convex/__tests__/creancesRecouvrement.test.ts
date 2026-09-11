@@ -276,11 +276,24 @@ describe('le questionnaire — ce qui reste à trancher', () => {
 
 		const avant = await t.run(async (ctx) => (await ctx.db.get(creanceId))!.score!);
 
-		await t.mutation(internal.recouvrement.creances.repondreQuestionnaire, {
-			creanceId,
-			reponses: { certaine: 'ok' },
-			aujourdHui: AUJOURDHUI
-		});
+		// ⚠️ `certaine` NE SE RÉPOND PLUS À LA MAIN. Depuis le module 3.2 elle se
+		// déduit des faits déclarés : écarter les cinq faits de litige est le seul
+		// chemin qui l'établit. C'est la substance de la correction — on ne demande
+		// plus au gérant une qualification juridique.
+		for (const cle of [
+			'CONTESTATION_ECRITE',
+			'REFUS_RECEPTION',
+			'AVOIR_RECLAME',
+			'PENALITES_OPPOSEES',
+			'INSTANCE_EN_COURS'
+		] as const) {
+			await t.mutation(internal.recouvrement.creances.declarerFaitLitige, {
+				creanceId,
+				cle,
+				reponse: 'NON',
+				aujourdHui: AUJOURDHUI
+			});
+		}
 
 		await t.run(async (ctx) => {
 			const creance = (await ctx.db.get(creanceId))!;
@@ -302,11 +315,24 @@ describe('le questionnaire — ce qui reste à trancher', () => {
 			aujourdHui: AUJOURDHUI
 		});
 
-		await t.mutation(internal.recouvrement.creances.repondreQuestionnaire, {
-			creanceId,
-			reponses: { certaine: 'ok' },
-			aujourdHui: AUJOURDHUI
-		});
+		// ⚠️ `certaine` NE SE RÉPOND PLUS À LA MAIN. Depuis le module 3.2 elle se
+		// déduit des faits déclarés : écarter les cinq faits de litige est le seul
+		// chemin qui l'établit. C'est la substance de la correction — on ne demande
+		// plus au gérant une qualification juridique.
+		for (const cle of [
+			'CONTESTATION_ECRITE',
+			'REFUS_RECEPTION',
+			'AVOIR_RECLAME',
+			'PENALITES_OPPOSEES',
+			'INSTANCE_EN_COURS'
+		] as const) {
+			await t.mutation(internal.recouvrement.creances.declarerFaitLitige, {
+				creanceId,
+				cle,
+				reponse: 'NON',
+				aujourdHui: AUJOURDHUI
+			});
+		}
 
 		await t.run(async (ctx) => {
 			expect((await ctx.db.get(creanceId))!.statut).toBe('BROUILLON');

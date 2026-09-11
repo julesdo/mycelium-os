@@ -5,6 +5,7 @@ import {
 	type ConditionLegale,
 	type EtatCritere
 } from './qualification';
+import { DESCRIPTIONS_FAITS_LITIGE, type FaitDeLitige } from './litige';
 
 /**
  * Le moteur de qualification — dire si une créance est mûre, et pourquoi.
@@ -43,13 +44,34 @@ import {
  * écarté pour dossier mince appellent deux actions opposées.
  */
 
-/** Les signaux qui annoncent une contestation. Le risque produit numéro un. */
+/**
+ * Les signaux qui annoncent une contestation. Le risque produit numéro un.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * DEUX FAMILLES, ET LEUR PROVENANCE SE LIT DANS LEUR NOM
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Les cinq premiers viendront de l'EXTRACTEUR : ils se lisent dans les
+ * documents et les échanges rattachés au dossier. Aucun ne peut se produire
+ * aujourd'hui — le module 1.2 ne les émet pas encore.
+ *
+ * Les suivants viennent d'une DÉCLARATION du gérant, via le questionnaire de
+ * qualification de litige (`litige.ts`). Ils sont, à ce jour, les seuls à
+ * exister réellement : `signauxContestation` était lu par ce module et câblé
+ * à `[]` par ses deux appelants, si bien que le risque numéro un ne s'est
+ * jamais déclenché.
+ *
+ * Un même dossier peut porter les deux, et c'est voulu : « le débiteur a
+ * contesté par écrit, et je le vois aussi dans les échanges » n'est pas une
+ * redite, c'est une concordance.
+ */
 export type SignalContestation =
 	| 'RECLAMATION_ANTERIEURE'
 	| 'LITIGE_DANS_ECHANGES'
 	| 'AVOIR_PARTIEL_ACCORDE'
 	| 'ECART_COMMANDE_FACTURE'
-	| 'RECEPTION_NON_DOCUMENTEE';
+	| 'RECEPTION_NON_DOCUMENTEE'
+	| FaitDeLitige;
 
 export type TypeRisque =
 	| SignalContestation
@@ -143,7 +165,11 @@ const DESCRIPTIONS_CONTESTATION: Record<SignalContestation, string> = {
 	LITIGE_DANS_ECHANGES: 'Un litige est mentionné dans les échanges rattachés à ce dossier.',
 	AVOIR_PARTIEL_ACCORDE: 'Un avoir partiel a été accordé sur cette facturation.',
 	ECART_COMMANDE_FACTURE: 'Un écart existe entre ce qui a été commandé et ce qui a été facturé.',
-	RECEPTION_NON_DOCUMENTEE: "La réception de la prestation n'est documentée par aucune pièce."
+	RECEPTION_NON_DOCUMENTEE: "La réception de la prestation n'est documentée par aucune pièce.",
+	// Les déclarations du gérant portent leur formulation d'origine : elle vit
+	// dans `litige.ts`, avec la question qui l'a produite. La recopier ici
+	// ferait diverger ce que l'écran demande de ce que le risque affiche.
+	...DESCRIPTIONS_FAITS_LITIGE
 };
 
 /** Une pièce parmi plusieurs suffit à établir un même fait. */

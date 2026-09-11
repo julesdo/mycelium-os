@@ -17,6 +17,7 @@ import {
 	BilanPertes,
 	HabitudePaiement,
 	IdentiteDebiteur,
+	QuestionnaireLitige,
 	ConstatRegistre,
 	Lettrage,
 	type OptionSecteur,
@@ -317,6 +318,73 @@ const SECTEURS_DEMO: OptionSecteur[] = [
 	},
 	{ cle: 'CONSOMMATEUR', libelle: 'Vente à un consommateur', consequence: 'Prescription : 2 ans' }
 ];
+
+const QUESTIONS_LITIGE_DEMO = [
+	{
+		cle: 'CONTESTATION_ECRITE',
+		question:
+			'Ce client vous a-t-il écrit pour contester cette facture — courrier, e-mail, ou réserve portée sur un bon de livraison ?',
+		portee:
+			'Une contestation écrite fait sortir le dossier des procédures listées ici, qui se déroulent toutes sans débat.'
+	},
+	{
+		cle: 'REFUS_RECEPTION',
+		question: 'A-t-il refusé tout ou partie de la marchandise ou de la prestation ?',
+		portee: 'Un refus porte sur ce qui est dû, pas sur le paiement : il touche le montant lui-même.'
+	},
+	{
+		cle: 'AVOIR_RECLAME',
+		question: 'Vous a-t-il réclamé un avoir que vous n’avez pas émis ?',
+		portee: 'Un avoir réclamé et non émis est un désaccord ouvert sur le montant.'
+	}
+];
+
+function DemoLitige() {
+	return (
+		<Page>
+			<PageHeader titre="Fournitures Durand" sousTitre="Ce que vous seul pouvez dire" />
+			<PageBody>
+				<div className="flex flex-col gap-cladd-md">
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>La question en cours, et ce qu’il en reste</SectionTitle>
+						<QuestionnaireLitige
+							questions={QUESTIONS_LITIGE_DEMO}
+							constats={[
+								'Le caractère certain reste indéterminé : 3 faits ne sont pas renseignés.'
+							]}
+							litigieux={false}
+							onRepondre={() => {}}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Litige établi — le questionnaire s’arrête</SectionTitle>
+						<QuestionnaireLitige
+							questions={[]}
+							litigieux
+							constats={[
+								'Ce client a contesté la facture par écrit.',
+								'Le caractère certain n’est donc pas retenu. Le logiciel ne mesure pas si cette contestation est sérieuse — c’est une appréciation juridique, et il s’en abstient.',
+								'Les procédures que ce logiciel évalue se déroulent toutes sans débat contradictoire : une contestation y met fin, même infondée, et les frais engagés restent dus. Ce dossier sort de ce que le logiciel sait mesurer.'
+							]}
+							onRepondre={() => {}}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Les cinq faits écartés</SectionTitle>
+						<QuestionnaireLitige
+							questions={[]}
+							litigieux={false}
+							constats={[
+								'Aucune contestation connue : les cinq faits ont été expressément écartés. Le caractère certain est retenu sur cette déclaration.'
+							]}
+							onRepondre={() => {}}
+						/>
+					</div>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
 
 function DemoIdentite() {
 	return (
@@ -1002,6 +1070,7 @@ const ECRANS = [
 	'lettrage',
 	'creancier',
 	'identite',
+	'litige',
 	'revelation',
 	'bilan',
 	'flux',
@@ -1043,6 +1112,7 @@ function Showroom() {
 				{ecran === 'lettrage' ? <DemoLettrage /> : null}
 				{ecran === 'creancier' ? <DemoCreancier /> : null}
 				{ecran === 'identite' ? <DemoIdentite /> : null}
+				{ecran === 'litige' ? <DemoLitige /> : null}
 				{ecran === 'revelation' ? <DemoRevelation /> : null}
 				{ecran === 'bilan' ? <DemoBilan /> : null}
 				{ecran === 'flux' ? <DemoFlux /> : null}

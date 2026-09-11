@@ -7,6 +7,12 @@ import { additionner, depuisCentimes, enCentimes, soustraire, ZERO } from '../..
 import { qualifier } from '../../verticales/recouvrement/scoring';
 import { PROCEDURES, proceduresEnvisageables } from '../../verticales/recouvrement/procedures';
 import { conditionsADemander } from '../../verticales/recouvrement/deduction';
+import {
+	lireLitige,
+	questionsRestantes,
+	signauxDepuisFaits,
+	type Reponses
+} from '../../verticales/recouvrement/litige';
 import { LIBELLE_CONDITION, type ClePiece } from '../../verticales/recouvrement/qualification';
 import {
 	regimePrescription,
@@ -274,6 +280,17 @@ export const creanceComplete = authedQuery({
 			entreCommercants: vEtatCritere
 		}),
 		questions: v.array(v.object({ condition: v.string(), libelle: v.string() })),
+		/**
+		 * LE QUESTIONNAIRE DE QUALIFICATION DE LITIGE — module 3.2.
+		 *
+		 * Il remplace la question « Pouvez-vous confirmer le caractère certain de
+		 * cette créance ? », que personne ne pouvait répondre sans être juriste.
+		 */
+		litige: v.object({
+			litigieux: v.boolean(),
+			constats: v.array(v.string()),
+			questions: v.array(v.object({ cle: v.string(), question: v.string(), portee: v.string() }))
+		}),
 		risques: v.array(v.object({ type: v.string(), description: v.string(), gravite: v.string() })),
 		piecesManquantes: v.array(v.string()),
 		procedures: v.array(
@@ -311,6 +328,18 @@ export const creanceComplete = authedQuery({
 			entreCommercants: creance.entreCommercants
 		};
 
+		/**
+		 * LES FAITS DÉCLARÉS, RELUS — module 3.2.
+		 *
+		 * ⚠️ SANS CETTE RELECTURE L'ÉCRAN REPOSERAIT LES QUESTIONS DÉJÀ
+		 * RÉPONDUES à chaque ouverture. C'est la même faute que le taux
+		 * contractuel : écrire un champ sans le relire recrée le défaut dans la
+		 * couche du dessus, et ici elle ferait redéclarer cinq faits.
+		 */
+		const reponses: Reponses = {};
+		for (const fait of creance.faitsLitige ?? []) reponses[fait.cle] = fait.reponse;
+		const litige = lireLitige(reponses);
+
 		const qualification = qualifier({
 			...conditions,
 			piecesFournies: await piecesDeLaCreance(
@@ -318,7 +347,10 @@ export const creanceComplete = authedQuery({
 				creance.debiteurId,
 				factures.map((f) => f._id)
 			),
-			signauxContestation: [],
+			// Les faits déclarés par le gérant, seconde moitié de la correction du
+			// champ « déclaré, lu, jamais alimenté » : l'écran lisait `[]` en dur,
+			// et n'affichait donc jamais le risque de contestation qu'il sait rendre.
+			signauxContestation: signauxDepuisFaits(reponses),
 			santeDebiteur: debiteur?.santeFinanciere ?? 'INCONNUE',
 			retardsAnterieurs: 0
 		});
@@ -359,12 +391,31 @@ export const creanceComplete = authedQuery({
 			),
 			conditions,
 			// Une question par condition non tranchée, et pour elles seules.
-			questions: conditionsADemander(conditions).map((condition) => ({
-				condition,
-				libelle: `Pouvez-vous confirmer ${
-					LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
-				} de cette créance ?`
-			})),
+			//
+			// ⚠️ `certaine` EN EST EXCLUE. Elle ne se tranche plus par une question
+			// générique — « pouvez-vous confirmer le caractère certain » est une
+			// qualification juridique — mais par les faits du questionnaire de
+			// litige, rendus juste en dessous.
+			questions: conditionsADemander(conditions)
+				.filter((condition) => condition !== 'certaine')
+				.map((condition) => ({
+					condition,
+					libelle: `Pouvez-vous confirmer ${
+						LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
+					} de cette créance ?`
+				})),
+			litige: {
+				litigieux: litige.litigieux,
+				// Les constats du domaine, MOT POUR MOT. Ils portent l'aveu que le
+				// logiciel ne mesure pas le sérieux d'une contestation ; les
+				// reformuler ici ferait un second endroit où le produit dit le droit.
+				constats: [...litige.constats],
+				questions: questionsRestantes(reponses).map((q) => ({
+					cle: q.cle,
+					question: q.question,
+					portee: q.portee
+				}))
+			},
 			risques: qualification.risques.map((risque) => ({
 				type: risque.type,
 				description: risque.description,
