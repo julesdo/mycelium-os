@@ -6,6 +6,7 @@ import type { Doc, Id } from '../_generated/dataModel';
 import { additionner, depuisCentimes, enCentimes, soustraire, ZERO } from '../../socle/montants';
 import { qualifier } from '../../verticales/recouvrement/scoring';
 import { PROCEDURES, proceduresEnvisageables } from '../../verticales/recouvrement/procedures';
+import { MACHINES, etapesDeLaVoie } from '../../verticales/recouvrement/apres-procedure';
 import { conditionsADemander } from '../../verticales/recouvrement/deduction';
 import { pyramideDePreuves } from '../../verticales/recouvrement/solidite';
 import { NIVEAUX_RELANCE, composerRelance } from '../../verticales/recouvrement/relance';
@@ -371,7 +372,23 @@ export const creanceComplete = authedQuery({
 				disponible: v.boolean(),
 				/** Cette voie a-t-elle un « apres » que le logiciel sait surveiller. */
 				suivie: v.boolean(),
-				blocages: v.array(v.string())
+				blocages: v.array(v.string()),
+				/**
+				 * LE DEROULE DE LA VOIE, AVANT QU'ELLE SOIT ENGAGEE.
+				 *
+				 * Il vient de la machine a etats, qui le portait deja en entier —
+				 * libelle et constat par etape. L'ecran n'en montrait rien : une
+				 * pastille et des blocages. « On n'a pas la sensation que l'on puisse
+				 * voir les etapes de la procedure » est le reproche d'origine du
+				 * terrain, et il portait sur du code deja ecrit.
+				 *
+				 * Vide quand la voie n'a pas d'apres modelise — la relance amiable.
+				 */
+				etapes: v.array(
+					v.object({ etat: v.string(), libelle: v.string(), constat: v.string() })
+				),
+				/** Ce qui fait echouer cette voie. Des faits, jamais un conseil. */
+				conditionsEchec: v.array(v.string())
 			})
 		),
 		regimePrescriptionNote: v.string(),
@@ -579,7 +596,24 @@ export const creanceComplete = authedQuery({
 				// proposer d'en declarer l'engagement : ce serait offrir un geste dont
 				// le serveur ne veut pas.
 				suivie: procedure.machine !== null,
-				blocages: [...procedure.blocagesProductionActe()]
+				blocages: [...procedure.blocagesProductionActe()],
+				// ⚠️ LE GARDE EST UNE ABSENCE DE MACHINE, PAS UN `try` AUTOUR DE
+				// L'APPEL. `etapesDeLaVoie` LÈVE sur une procédure sans après
+				// modélisé — la relance amiable — et c'est voulu : une voie vide se
+				// lirait « cette procédure n'a pas d'étapes » là où la vérité est
+				// « ce logiciel ne les connaît pas ». On interroge donc le lien que
+				// le domaine déclare (`machine`), le même qui commande `suivie` :
+				// deux tests différents finiraient par diverger, et l'écran
+				// offrirait un déroulé là où le serveur refuse l'engagement.
+				etapes:
+					procedure.machine === null || MACHINES[procedure.machine] === undefined
+						? []
+						: etapesDeLaVoie(procedure.machine).map((e) => ({
+								etat: e.etat,
+								libelle: e.libelle,
+								constat: e.constat
+							})),
+				conditionsEchec: [...procedure.conditionsEchec]
 			})),
 			// ⚠️ LE COUPE-CIRCUIT EST DANS LE DOMAINE, pas ici : un débiteur en
 			// procédure collective ne se relance pas, et le module le constate à

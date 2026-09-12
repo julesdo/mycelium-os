@@ -47,16 +47,87 @@ export function ListeAnalyses({ children }: { children: ReactNode }) {
 	);
 }
 
+/**
+ * CE QUI FAIT UNE RANGEE, INDEPENDAMMENT DE SON GESTE.
+ *
+ * Deux rangées existent : celle qui POUSSE vers une page (`LigneAnalyse`) et
+ * celle qui APPELLE une fonction (`LigneBouton`). Elles ne diffèrent que par
+ * là — l'apparence, elle, doit rester la même au pixel près, sinon la liste se
+ * met à mélanger deux rythmes selon la destination de chaque rangée.
+ *
+ * C'est pour ça que l'apparence est montée UNE fois, ici, et pas recopiée : une
+ * copie diverge au premier ajustement, et la divergence ne casse aucun test.
+ */
+interface ContenuRangee {
+	titre: string;
+	/**
+	 * Un chiffre ou trois mots. JAMAIS une phrase — elle irait a la page.
+	 *
+	 * ⚠️ FACULTATIVE, ET C'EST UNE MESURE. Une rangée destructrice n'a pas de
+	 * « valeur » à montrer : y mettre l'adresse du compte l'a fait passer de 68
+	 * à 128 px, parce qu'une adresse longue revient à la ligne. Le chevron seul
+	 * suffit à dire qu'on peut entrer.
+	 */
+	valeur?: string;
+	/** Une précision courte sous l'intitulé, quand elle change la lecture. */
+	precision?: string;
+	icone?: ReactNode;
+	/**
+	 * Marque la rangée qui demande quelque chose.
+	 *
+	 * ⚠️ AUCUNE COULEUR DE SEUIL. Le vert, l'ambre et le rouge ne disent qu'une
+	 * chose dans ce produit — au-dessus du seuil, tout près, en dessous. Une
+	 * rangée qui attend une réponse n'est pas un verdict : elle se marque par un
+	 * point, pas par une couleur.
+	 */
+	attention?: boolean;
+}
+
+/** Les fentes du kit, remplies à l'identique pour les deux rangées. */
+function apparenceRangee({ valeur, precision, icone, attention = false }: ContenuRangee) {
+	return {
+		icon: icone,
+		footer: precision,
+		after: (
+			<span className="flex shrink-0 items-center gap-1.5">
+				{valeur === undefined ? null : (
+					<span
+						className={cn(
+							'text-cladd-xs tabular-nums',
+							attention ? 'text-cladd-fg' : 'text-cladd-fg-softer'
+						)}
+					>
+						{valeur}
+					</span>
+				)}
+				<ChevronRightIcon className="size-4 shrink-0 text-cladd-fg-softest" aria-hidden />
+			</span>
+		),
+		className: 'verre-bouton',
+		hoverable: false
+	};
+}
+
+function intituleRangee({ titre, attention = false }: ContenuRangee) {
+	return (
+		<span className="flex items-center gap-1.5">
+			{attention ? (
+				<span
+					className="size-1.5 shrink-0 rounded-full bg-cladd-fg"
+					aria-label="demande une réponse"
+				/>
+			) : null}
+			{titre}
+		</span>
+	);
+}
+
 export function LigneAnalyse({
 	vers,
 	recherche,
 	parametres,
-	titre,
-	valeur,
-	precision,
-	icone,
-	attention = false
-}: {
+	...contenu
+}: ContenuRangee & {
 	/**
 	 * La route de la page de détail.
 	 *
@@ -77,28 +148,6 @@ export function LigneAnalyse({
 	 * le nom de son débiteur sans pouvoir y mener.
 	 */
 	recherche?: LinkProps['search'];
-	titre: string;
-	/**
-	 * Un chiffre ou trois mots. JAMAIS une phrase — elle irait à la page.
-	 *
-	 * ⚠️ FACULTATIVE, ET C'EST UNE MESURE. Une rangée destructrice n'a pas de
-	 * « valeur » à montrer : y mettre l'adresse du compte l'a fait passer de 68
-	 * à 128 px, parce qu'une adresse longue revient à la ligne. Le chevron seul
-	 * suffit à dire qu'on peut entrer.
-	 */
-	valeur?: string;
-	/** Une précision courte sous l'intitulé, quand elle change la lecture. */
-	precision?: string;
-	icone?: ReactNode;
-	/**
-	 * Marque la rangée qui demande quelque chose.
-	 *
-	 * ⚠️ AUCUNE COULEUR DE SEUIL. Le vert, l'ambre et le rouge ne disent qu'une
-	 * chose dans ce produit — au-dessus du seuil, tout près, en dessous. Une
-	 * rangée qui attend une réponse n'est pas un verdict : elle se marque par un
-	 * point, pas par une couleur.
-	 */
-	attention?: boolean;
 }) {
 	return (
 		<ListButton
@@ -118,35 +167,40 @@ export function LigneAnalyse({
 			// Même raisonnement que `params` : le `as` polymorphe efface le générique
 			// du routeur, et la prop de CE composant reste, elle, typée par lui.
 			search={recherche as never}
-			icon={icone}
-			footer={precision}
-			after={
-				<span className="flex shrink-0 items-center gap-1.5">
-					{valeur === undefined ? null : (
-						<span
-							className={cn(
-								'text-cladd-xs tabular-nums',
-								attention ? 'text-cladd-fg' : 'text-cladd-fg-softer'
-							)}
-						>
-							{valeur}
-						</span>
-					)}
-					<ChevronRightIcon className="size-4 shrink-0 text-cladd-fg-softest" aria-hidden />
-				</span>
-			}
-			className="verre-bouton"
-			hoverable={false}
+			{...apparenceRangee(contenu)}
 		>
-			<span className="flex items-center gap-1.5">
-				{attention ? (
-					<span
-						className="size-1.5 shrink-0 rounded-full bg-cladd-fg"
-						aria-label="demande une réponse"
-					/>
-				) : null}
-				{titre}
-			</span>
+			{intituleRangee(contenu)}
+		</ListButton>
+	);
+}
+
+/**
+ * LA MEME RANGEE, MAIS QUI APPELLE AU LIEU DE POUSSER.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI ELLE EXISTE A COTE DE `LigneAnalyse`
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Tout ce qui se lit d'un doigt ne vit pas derrière une URL. Le déroulé d'une
+ * voie de procédure s'ouvre en feuille, par-dessus l'écran, et se referme :
+ * lui donner une route ferait une adresse pour un panneau, et un retour de
+ * navigateur qui referme la moitié de l'écran.
+ *
+ * ⚠️ ET ELLE EST BATIE SUR LE MEME `ListButton` DU KIT. Un `<div>` cliquable
+ * aurait la même allure et perdrait tout le reste : l'anneau de focus au
+ * clavier, la cible tactile, le rôle de bouton pour un lecteur d'écran. Ce
+ * sont exactement les trois choses qu'on ne remarque qu'en leur absence.
+ */
+export function LigneBouton({
+	onClick,
+	...contenu
+}: ContenuRangee & {
+	/** Ce que la rangée déclenche. C'est tout ce qui la distingue de l'autre. */
+	onClick: () => void;
+}) {
+	return (
+		<ListButton onClick={onClick} {...apparenceRangee(contenu)}>
+			{intituleRangee(contenu)}
 		</ListButton>
 	);
 }

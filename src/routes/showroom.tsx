@@ -21,6 +21,10 @@ import {
 	SuiviProcedure,
 	RailProcedure,
 	type EtapeAffichee,
+	FeuilleVoie,
+	type VoieAffichee,
+	ListeAnalyses,
+	LigneBouton,
 	Pieces,
 	Solidite,
 	EnteteDetail,
@@ -50,6 +54,8 @@ import { EcranCreance } from '../screens/creance';
 import { EcranProcedures, type DossierAffiche } from '../screens/procedures';
 import { DetailDebiteur } from '../screens/debiteur-detail';
 import { NIVEAUX_RELANCE, composerRelance } from '../lib/verticales/recouvrement/relance';
+import { etapesDeLaVoie } from '../lib/verticales/recouvrement/apres-procedure';
+import { PROCEDURES } from '../lib/verticales/recouvrement/procedures';
 import { depuisCentimes } from '../lib/socle/montants';
 
 /**
@@ -2075,6 +2081,71 @@ function DemoRail() {
 	);
 }
 
+/**
+ * LA VOIE DE DEMONSTRATION VIENT DU DOMAINE, PAS D'UNE COPIE.
+ *
+ * ⚠️ RECOPIER LES QUATRE LIBELLES ICI FERAIT DEUX FORMULATIONS DU MEME FAIT, et
+ * la salle d'exposition montrerait alors une procédure qui n'est plus celle du
+ * produit. `apres-procedure.ts` le dit déjà de son côté : le libellé vit avec la
+ * transition qui le produit. Une salle qui ment sur ce qu'on vient y regarder
+ * est pire qu'une salle vide.
+ *
+ * L'injonction de payer, et pas L.126 : c'est la voie complète — quatre étapes
+ * sur la ligne, trois façons d'échouer — donc celle qui met la feuille à
+ * l'épreuve sur les quatre largeurs de référence.
+ */
+const VOIE_DEMO: VoieAffichee = {
+	cle: 'injonction-de-payer',
+	nom: PROCEDURES['injonction-de-payer'].nom,
+	disponible: true,
+	blocages: [],
+	etapes: etapesDeLaVoie('injonction-de-payer').map((etape) => ({
+		etat: etape.etat,
+		libelle: etape.libelle,
+		constat: etape.constat
+	})),
+	conditionsEchec: PROCEDURES['injonction-de-payer'].conditionsEchec
+};
+
+function DemoVoie() {
+	// Une `Popup` est contrôlée : sans état d'ouverture, elle ne s'affiche pas.
+	// La salle l'ouvre d'emblée — c'est ce qu'on vient regarder — et la rangée
+	// la rouvre, ce qui expose du même coup les deux moitiés du geste.
+	const [ouverte, setOuverte] = useState(true);
+
+	return (
+		<Page>
+			<PageHeader titre="Ateliers Martin" sousTitre="Ce qu’une voie implique, avant de s’y engager" />
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
+					<SectionTitle>Les voies envisageables</SectionTitle>
+					<ListeAnalyses>
+						<LigneBouton
+							titre={VOIE_DEMO.nom}
+							valeur="Envisageable"
+							precision={`${VOIE_DEMO.etapes.length} étapes · ${VOIE_DEMO.conditionsEchec.length} façons d’échouer`}
+							onClick={() => setOuverte(true)}
+						/>
+					</ListeAnalyses>
+
+					<p className="px-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softest">
+						Les étapes sont numérotées parce qu’elles se suivent, pas parce qu’il faudrait les
+						faire. Aucun classement entre les voies, aucune mise en avant : la feuille montre un
+						déroulé et ce qui le fait échouer, et s’arrête là.
+					</p>
+
+					<FeuilleVoie
+						voie={VOIE_DEMO}
+						ouverte={ouverte}
+						onFermer={() => setOuverte(false)}
+						onDeclarer={() => setOuverte(false)}
+					/>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'veilleur',
 	'accueil',
@@ -2089,6 +2160,7 @@ const ECRANS = [
 	'litige',
 	'suivi',
 	'rail',
+	'voie',
 	'pieces',
 	'solidite',
 	'relances',
@@ -2142,6 +2214,7 @@ function Showroom() {
 				{ecran === 'litige' ? <DemoLitige /> : null}
 				{ecran === 'suivi' ? <DemoSuivi /> : null}
 				{ecran === 'rail' ? <DemoRail /> : null}
+				{ecran === 'voie' ? <DemoVoie /> : null}
 				{ecran === 'pieces' ? <DemoPieces /> : null}
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'relances' ? <DemoRelances /> : null}
