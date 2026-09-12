@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
-import { Page, PageBody, aujourdHuiISO, travauxDuVeilleur } from '../../ui';
+import { Page, PageBody, aujourdHuiISO, travauxDuVeilleur, ceQuiManque } from '../../ui';
 import { EcranAccueil, type EtatSurveillance } from '../../screens/accueil';
 
 export const Route = createFileRoute('/app/')({ component: Accueil });
@@ -40,6 +40,18 @@ function Accueil() {
 	 * dépôts simultanément en machine, la sixième rangée n'apprend plus rien.
 	 */
 	const depots = useQuery(api.recouvrement.depotMutations.listerImports, { limite: 5 });
+	/**
+	 * CE QUI BLOQUE ENCORE, ET QUE LE PRODUIT SAVAIT DÉJÀ.
+	 *
+	 * ⚠️ LE PROFIL CRÉANCIER EST LE VERROU LE PLUS COÛTEUX DU PRODUIT, et le plus
+	 * silencieux. `creances.ts` passe `creancierCommercant: profil?.estCommercant
+	 * ?? 'unknown'` : sans profil, `entreCommercants` reste indéterminé et
+	 * l'éligibilité à l'injonction de payer n'est JAMAIS acquise. L'écran de
+	 * créance affichait donc une condition non remplie, sans jamais dire que
+	 * c'était l'identité du gérant qui manquait.
+	 */
+	const profil = useQuery(api.recouvrement.profil.monProfil, {});
+	const debiteurs = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
 
 	if (flux === undefined || revelation === undefined) {
 		return (
@@ -110,7 +122,24 @@ function Accueil() {
 				hypotheses: flux.hypotheses,
 				anglesMorts: flux.anglesMorts,
 				surveillance,
-				travaux
+				travaux,
+				/**
+				 * ⚠️ `undefined` NE COMPTE PAS COMME « MANQUANT ». Tant que les
+				 * requêtes chargent, on ne sait pas si le profil existe : afficher
+				 * « votre identité de créancier manque » le temps d'un aller-retour
+				 * ferait clignoter un reproche à chaque ouverture, et on apprend à
+				 * ignorer ce qui clignote. On attend de savoir.
+				 */
+				verrous:
+					profil === undefined || debiteurs === undefined
+						? []
+						: ceQuiManque({
+								// Le SIREN est ce qui compte : c'est lui qui porte
+								// `estCommercant`, donc la condition « entre commerçants ».
+								profilCreancierComplet: profil !== null && profil.siren !== undefined,
+								nombreFactures: revelation.nombreFactures,
+								debiteursSansSiren: debiteurs.filter((d) => d.siren === undefined).length
+							})
 			}}
 		/>
 	);

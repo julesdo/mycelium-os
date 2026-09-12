@@ -19,13 +19,15 @@ import {
 	FluxEvenements,
 	Bandeau,
 	Veilleur,
+	CeQuiManque,
 	dateCourte,
 	eurosCentimes,
 	pluriel,
 	type ActionRonde,
 	type PartsDues,
 	type EvenementAffiche,
-	type TacheVeilleur
+	type TacheVeilleur,
+	type Verrou
 } from '../ui';
 
 /**
@@ -109,6 +111,18 @@ export interface AccueilAffiche {
 	 * raisonnement complet et la réponse à l'objection du « bandeau vert ».
 	 */
 	readonly travaux: readonly TacheVeilleur[];
+	/**
+	 * LES VERROUS QUI RESTENT.
+	 *
+	 * ⚠️ LE PRODUIT LES CONNAISSAIT TOUS LES TROIS, ET N'EN DISAIT AUCUN. Sans
+	 * profil créancier, `creancierCommercant` vaut `unknown`, donc
+	 * `entreCommercants` aussi, donc l'éligibilité à l'injonction de payer ne
+	 * peut JAMAIS être acquise — et l'écran de créance affichait cette condition
+	 * non remplie sans jamais dire que c'était l'identité du gérant qui manquait.
+	 *
+	 * Voir `ui/ce-qui-manque.tsx`, qui porte le raisonnement.
+	 */
+	readonly verrous: readonly Verrou[];
 }
 
 /**
@@ -228,6 +242,22 @@ export function EcranAccueil({ vue }: { vue: AccueilAffiche }) {
 					  pour entrer. Deux registres, jamais la même phrase deux fois.
 					*/}
 					<Veilleur travaux={vue.travaux} />
+
+					{/*
+					  LES VERROUS, SOUS LE VEILLEUR — et jamais en même temps que la carte
+					  de démarrage.
+
+					  ⚠️ LES DEUX DIRAIENT « IMPORTEZ VOS FACTURES ». La carte de démarrage
+					  le dit mieux dans l'état vide : elle est seule à l'écran et porte le
+					  seul faisceau de l'application. Répéter la même consigne deux fois
+					  sur le même écran est le plus sûr moyen de n'en faire lire aucune.
+
+					  Dès qu'une facture existe, la carte disparaît et les verrous restants
+					  — l'identité du créancier, les débiteurs sans SIREN — prennent le
+					  relais. Ce sont ceux qu'on ne découvrait jusqu'ici qu'en se cognant
+					  dedans.
+					*/}
+					{debute ? null : <CeQuiManque verrous={vue.verrous} />}
 
 					{/*
 					  LE SEUL GRAPHIQUE DE L'ÉCRAN, et il répond à la question qui vient

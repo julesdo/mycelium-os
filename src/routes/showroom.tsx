@@ -31,7 +31,8 @@ import {
 	euros,
 	type EvenementAffiche,
 	type DecompteAffiche,
-	travauxDuVeilleur
+	travauxDuVeilleur,
+	ceQuiManque
 } from '../ui';
 import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
 import { PALIERS, BORNES_PALIER, TARIFS } from '../lib/config/tarifs';
@@ -1565,6 +1566,20 @@ const ACCUEIL_DEMO: AccueilAffiche = {
 			{ id: 'demo-depot', filename: 'export-comptable-aout.csv', etape: 'lecture de 412 lignes' }
 		],
 		aujourdHui: '2026-09-11'
+	}),
+	/**
+	 * DEUX VERROUS SUR TROIS, et le plus coûteux en tête.
+	 *
+	 * ⚠️ CELUI DU PROFIL CRÉANCIER EST LE PLUS SILENCIEUX DU PRODUIT : sans lui,
+	 * la condition « entre commerçants » reste indéterminée et l'éligibilité à
+	 * l'injonction de payer n'est JAMAIS acquise. L'écran de créance affichait
+	 * cette condition non remplie sans jamais dire d'où venait le blocage — et
+	 * la salle d'exposition doit montrer l'état où le défaut se voyait.
+	 */
+	verrous: ceQuiManque({
+		profilCreancierComplet: false,
+		nombreFactures: 7,
+		debiteursSansSiren: 4
 	})
 };
 
@@ -1597,7 +1612,15 @@ const ACCUEIL_VIERGE: AccueilAffiche = {
 		battement: null,
 		depotsEnCours: [],
 		aujourdHui: '2026-09-11'
-	})
+	}),
+	/**
+	 * ⚠️ VIDE, ET C'EST JUSTE. Au premier jour, la carte de démarrage porte déjà
+	 * « importez vos factures », seule à l'écran et avec le seul faisceau de
+	 * l'application. Répéter la même consigne dans une seconde carte est le plus
+	 * sûr moyen de n'en faire lire aucune — l'écran ne montre donc les verrous
+	 * qu'une fois la première facture entrée.
+	 */
+	verrous: []
 };
 
 function DemoAccueilVierge() {
