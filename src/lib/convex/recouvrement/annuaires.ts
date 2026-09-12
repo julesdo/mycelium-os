@@ -1,5 +1,6 @@
 import { v, ConvexError } from 'convex/values';
-import { action } from '../_generated/server';
+import { action, internalMutation } from '../_generated/server';
+import type { Doc } from '../_generated/dataModel';
 import { api } from '../_generated/api';
 import { authedQuery } from '../functions';
 
@@ -263,5 +264,351 @@ export const chercherUnCommissaireDeJustice = action({
 			source: SOURCE,
 			releveeLe: new Date().toISOString().slice(0, 10)
 		};
+	}
+});
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * L'ANNUAIRE NATIONAL DES AVOCATS — INGÉRÉ, PAS INTERROGÉ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le Conseil national des barreaux publie l'annuaire national des avocats sur
+ * data.gouv.fr, sous Licence Ouverte 2.0, en CSV à séparateur point-virgule. Il
+ * le publie parce que le Conseil d'État l'y a enjoint : la réutilisation ne se
+ * discute pas, et c'est ce qui distingue cette source de l'annuaire des
+ * commissaires de justice, qu'on n'aspire pas.
+ *
+ * ⚠️ IL N'Y A PAS D'API. Quarante-trois fichiers en téléchargement direct, et
+ * rien d'autre. On INGÈRE donc — table `annuaireAvocats`, script
+ * `importer-annuaire-avocats.ts` — là où les études se cherchent en direct au
+ * registre des entreprises. Les deux moitiés de ce fichier ne se ressemblent
+ * pas parce que les deux sources ne se ressemblent pas.
+ */
+
+/**
+ * CE QUE LA LISTE EST, ÉCRIT POUR ÊTRE LU PAR LE GÉRANT.
+ *
+ * Cette phrase part avec la fiche quand un avocat est retenu au carnet :
+ * `ajouterIntervenant` la REFUSE sans elle, avec sa date de relevé.
+ *
+ * ⚠️ « NON DÉCLARÉE » N'EST PAS « INEXISTANTE ». Le fichier ne porte de
+ * spécialité que pour une petite minorité des fiches — relevé au 17 juillet
+ * 2026 : environ mille fiches sur les treize mille premières. Un écran qui
+ * filtrerait sans le dire ferait conclure qu'un barreau ne compte aucun avocat
+ * compétent en la matière, alors qu'il dit seulement que personne ne l'a
+ * déclaré.
+ */
+const SOURCE_AVOCATS =
+	'Annuaire national des avocats (Conseil national des barreaux), publié sur data.gouv.fr sous ' +
+	'Licence Ouverte 2.0. C’est une photographie mensuelle : une fiche peut décrire une situation ' +
+	'périmée — un avocat qui a changé de barreau, déménagé, ou cessé d’exercer depuis le relevé. ' +
+	'Les spécialités sont celles que l’avocat a DÉCLARÉES au fichier : leur absence ne dit pas ' +
+	'qu’il n’en a aucune, elle dit qu’aucune n’est inscrite.';
+
+/**
+ * Le nombre de fiches qu'on accepte de lire pour un barreau.
+ *
+ * BORNE DURE. Le fichier compte environ soixante-dix mille avocats, dont près
+ * de la moitié au seul barreau de Paris : une lecture non bornée dépasserait la
+ * limite de documents d'une requête Convex et ferait échouer l'écran entier —
+ * pas seulement la recherche.
+ *
+ * ⚠️ ET CE QU'ELLE COUPE SE DIT. Le retour porte `lectureTronquee` : quand elle
+ * vaut vrai, `total` n'est plus un total mais un PLANCHER, et l'écran l'écrit.
+ * C'est la leçon du registre des entreprises, où afficher vingt-cinq études sur
+ * cent quatorze sans un mot aurait menti par le silence.
+ */
+const FICHES_LUES_MAX = 4000;
+
+/** Ce qu'on rend à l'écran. Au-delà, une liste ne se lit plus : elle se filtre. */
+const FICHES_AFFICHEES_MAX = 200;
+
+/**
+ * La borne du parcours par sauts qui rend la liste des barreaux.
+ *
+ * ⚠️ ELLE NE COUPE PAS LA FRANCE EN DEUX, et c'est la différence avec celle
+ * du dessus. La France compte cent soixante et quelques barreaux ; quatre cents
+ * laisse toute la marge voulue. Elle existe pour qu'une ingestion abîmée — un
+ * séparateur mal lu, et chaque fiche porte alors un barreau différent — ne
+ * fasse pas boucler la requête sur la table entière.
+ */
+const BARREAUX_MAX = 400;
+
+/** Un avocat, tel que l'écran le lit. */
+export interface AvocatTrouve {
+	readonly nom: string;
+	readonly prenom: string;
+	readonly raisonSociale?: string;
+	readonly siren?: string;
+	readonly adresse?: string;
+	readonly codePostal?: string;
+	readonly ville?: string;
+	/** ⚠️ Mutable, pour la même raison que `etudes` plus haut : Convex l'exige. */
+	readonly specialites: string[];
+}
+
+export interface ResultatAvocats {
+	readonly barreau: string;
+	/** La spécialité sur laquelle on a filtré, telle quelle. `null` = aucune. */
+	readonly specialite: string | null;
+	readonly avocats: AvocatTrouve[];
+	/**
+	 * Combien de fiches CORRESPONDENT au filtre, pas combien sont affichées.
+	 *
+	 * ⚠️ UN PLANCHER QUAND `lectureTronquee` VAUT VRAI, pas un total. Les deux
+	 * champs se lisent ensemble ou pas du tout.
+	 */
+	readonly total: number;
+	readonly lectureTronquee: boolean;
+	/**
+	 * Les spécialités réellement déclarées dans ce barreau, par ordre
+	 * alphabétique.
+	 *
+	 * ⚠️ ELLES VIENNENT DU FICHIER, PAS DE NOUS. Une nomenclature écrite à la
+	 * main ici vieillirait sans que rien ne l'indique, et proposerait des
+	 * filtres qui ne rendent jamais personne.
+	 */
+	readonly specialitesDeclarees: string[];
+	readonly source: string;
+	/** Le jour du relevé, ou `null` quand aucune livraison n'a été ingérée. */
+	readonly releveeLe: string | null;
+}
+
+export interface ListeBarreaux {
+	readonly barreaux: string[];
+	/** Faux si le parcours a buté sur sa borne : la liste est alors partielle. */
+	readonly complete: boolean;
+	readonly releveeLe: string | null;
+}
+
+const vAvocat = v.object({
+	nom: v.string(),
+	prenom: v.string(),
+	raisonSociale: v.optional(v.string()),
+	siren: v.optional(v.string()),
+	adresse: v.optional(v.string()),
+	codePostal: v.optional(v.string()),
+	ville: v.optional(v.string()),
+	specialites: v.array(v.string())
+});
+
+/**
+ * LES BARREAUX DISPONIBLES, PAR SAUTS D'INDEX.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ UNE LECTURE BORNÉE ET DÉDOUBLONNÉE AURAIT MENTI
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lire les deux mille premières fiches et dédoublonner leur barreau ne rend pas
+ * les barreaux : ça rend ceux du DÉBUT de l'index, c'est-à-dire le début de
+ * l'alphabet. Un gérant de Toulon aurait cherché son barreau dans une liste qui
+ * s'arrête à Bordeaux, et conclu qu'il n'y est pas.
+ *
+ * `by_barreau` est ordonné : on lit la première fiche, puis la première dont le
+ * barreau est STRICTEMENT SUPÉRIEUR au précédent, et ainsi de suite. Un
+ * document lu par barreau — cent soixante et quelques — donc moins cher qu'une
+ * lecture bornée, et EXHAUSTIF, ce qu'elle n'est pas.
+ */
+export const barreauxDuRepertoire = authedQuery({
+	args: {},
+	returns: v.object({
+		barreaux: v.array(v.string()),
+		complete: v.boolean(),
+		releveeLe: v.union(v.string(), v.null())
+	}),
+	handler: async (ctx): Promise<ListeBarreaux> => {
+		const barreaux: string[] = [];
+		let releveeLe: string | null = null;
+		let dernier: string | null = null;
+		let epuise = false;
+
+		for (let saut = 0; saut < BARREAUX_MAX; saut++) {
+			// ⚠️ RECOPIÉ DANS UNE CONSTANTE ANNOTÉE, et les deux moitiés comptent.
+			// La constante, parce que la narration d'un `let` capturé par une
+			// fermeture ne survit pas. L'annotation, parce que sans elle `dernier`
+			// se déduit de `fiche`, qui se déduit de `borne`, qui se déduit de
+			// `dernier` : TypeScript renonce et retombe sur `any` (TS7022).
+			const borne: string | null = dernier;
+			const fiche: Doc<'annuaireAvocats'> | null = await (
+				borne === null
+					? ctx.db.query('annuaireAvocats').withIndex('by_barreau')
+					: ctx.db.query('annuaireAvocats').withIndex('by_barreau', (q) => q.gt('barreau', borne))
+			).first();
+
+			if (fiche === null) {
+				epuise = true;
+				break;
+			}
+
+			// La date du relevé est celle de la LIVRAISON : une livraison remplace,
+			// elle ne s'ajoute pas, donc toutes les fiches portent la même.
+			releveeLe ??= fiche.releveeLe;
+			barreaux.push(fiche.barreau);
+			dernier = fiche.barreau;
+		}
+
+		return { barreaux, complete: epuise, releveeLe };
+	}
+});
+
+/**
+ * Les avocats d'un barreau, filtrés sur leurs spécialités déclarées.
+ *
+ * ⚠️ ON FILTRE, ON NE CLASSE PAS. Ordre alphabétique, et les deux filtres ne
+ * portent que sur des champs présents dans le fichier du CNB : le barreau, et
+ * les trois champs de spécialité. Aucun critère de notre invention, aucune mise
+ * en avant.
+ */
+export const chercherUnAvocat = authedQuery({
+	args: { barreau: v.string(), specialite: v.optional(v.string()) },
+	returns: v.object({
+		barreau: v.string(),
+		specialite: v.union(v.string(), v.null()),
+		avocats: v.array(vAvocat),
+		total: v.number(),
+		lectureTronquee: v.boolean(),
+		specialitesDeclarees: v.array(v.string()),
+		source: v.string(),
+		releveeLe: v.union(v.string(), v.null())
+	}),
+	handler: async (ctx, { barreau, specialite }): Promise<ResultatAvocats> => {
+		const recherche = barreau.trim();
+		if (recherche === '') {
+			// Nommer la cause ici évite de rendre une liste vide, qui se lirait
+			// « aucun avocat » là où il n'y a qu'un champ non rempli.
+			throw new ConvexError(
+				'Aucun barreau n’a été donné. La recherche porte sur un barreau à la fois.'
+			);
+		}
+
+		// Une fiche de plus que la borne : c'est ce qui permet de DISTINGUER
+		// « le barreau en compte exactement quatre mille » de « la lecture s'est
+		// arrêtée là ». Sans elle, les deux se ressemblent.
+		const lues = await ctx.db
+			.query('annuaireAvocats')
+			.withIndex('by_barreau_and_nom', (q) => q.eq('barreau', recherche))
+			.take(FICHES_LUES_MAX + 1);
+
+		const lectureTronquee = lues.length > FICHES_LUES_MAX;
+		const fiches = lectureTronquee ? lues.slice(0, FICHES_LUES_MAX) : lues;
+
+		const specialitesDeclarees = [...new Set(fiches.flatMap((f) => f.specialites))].sort((a, b) =>
+			a.localeCompare(b, 'fr')
+		);
+
+		const cherchee = specialite?.trim() ?? '';
+		const retenues =
+			cherchee === '' ? fiches : fiches.filter((f) => f.specialites.includes(cherchee));
+
+		/*
+		  ⚠️ RETRIÉ EN COLLATION FRANÇAISE, alors que l'index rend déjà par nom.
+		  L'index ordonne des octets : « ÉTIENNE » y tombe après « ZOLA », et la
+		  liste se lirait comme si les noms accentués avaient été rejetés à la fin.
+		*/
+		const avocats = retenues
+			.sort((a, b) => a.nom.localeCompare(b.nom, 'fr') || a.prenom.localeCompare(b.prenom, 'fr'))
+			.slice(0, FICHES_AFFICHEES_MAX)
+			.map((l) => ({
+				nom: l.nom,
+				prenom: l.prenom,
+				raisonSociale: l.raisonSociale,
+				siren: l.siren,
+				adresse: l.adresse,
+				codePostal: l.codePostal,
+				ville: l.ville,
+				specialites: l.specialites
+			}));
+
+		/*
+		  ⚠️ LA DATE SE RELIT SUR LA TABLE QUAND LE BARREAU EST VIDE. « Ce barreau
+		  est absent du relevé du 17 juillet » et « aucun relevé n'a été ingéré »
+		  mènent à deux gestes opposés — chercher un autre barreau, ou importer le
+		  fichier — et les confondre ferait chercher longtemps.
+		*/
+		const premiere = fiches[0] ?? (await ctx.db.query('annuaireAvocats').first());
+
+		return {
+			barreau: recherche,
+			specialite: cherchee === '' ? null : cherchee,
+			avocats,
+			total: retenues.length,
+			lectureTronquee,
+			specialitesDeclarees,
+			source: SOURCE_AVOCATS,
+			releveeLe: premiere?.releveeLe ?? null
+		};
+	}
+});
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * L'INGESTION — ⚠️ UNE LIVRAISON REMPLACE, ELLE NE S'AJOUTE PAS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le fichier est une photographie COMPLÈTE de l'annuaire à une date. L'empiler
+ * sur la précédente ferait apparaître deux fois l'avocat qui a déménagé — une
+ * fois à chaque adresse — et une fois de trop celui qui a quitté le barreau,
+ * sans que rien ne distingue la fiche vivante de la fiche morte.
+ *
+ * D'où deux mutations plutôt qu'une : on VIDE, puis on INSÈRE. Elles travaillent
+ * par lots parce qu'une transaction Convex est bornée, et que soixante-dix mille
+ * fiches ne tiennent pas dans une seule.
+ */
+
+const vFicheAImporter = v.object({
+	barreau: v.string(),
+	nom: v.string(),
+	prenom: v.string(),
+	raisonSociale: v.optional(v.string()),
+	siren: v.optional(v.string()),
+	adresse: v.optional(v.string()),
+	codePostal: v.optional(v.string()),
+	ville: v.optional(v.string()),
+	specialites: v.array(v.string())
+});
+
+/**
+ * Efface un lot de l'ancienne livraison, et dit combien il en a effacé.
+ *
+ * Le zéro est la condition d'arrêt du script : c'est ce qui lui permet de vider
+ * une table dont il ne connaît pas la taille sans jamais la compter.
+ */
+export const viderUnLot = internalMutation({
+	args: { combien: v.number() },
+	returns: v.number(),
+	handler: async (ctx, { combien }): Promise<number> => {
+		const lot = await ctx.db.query('annuaireAvocats').take(combien);
+		for (const fiche of lot) await ctx.db.delete(fiche._id);
+		return lot.length;
+	}
+});
+
+/**
+ * Insère un lot de la nouvelle livraison, toutes les fiches datées du MÊME jour.
+ *
+ * ⚠️ `releveeLe` VIENT DU LOT, JAMAIS DE L'HORLOGE. Le fichier peut avoir deux
+ * mois quand on l'ingère ; dater l'INGESTION ferait annoncer à l'écran une
+ * fraîcheur qui n'existe pas, ce qui est exactement le défaut que ce répertoire
+ * doit éviter — pas une donnée absente, une donnée fausse qu'on croit vraie.
+ */
+export const insererUnLot = internalMutation({
+	args: { releveeLe: v.string(), fiches: v.array(vFicheAImporter) },
+	returns: v.number(),
+	handler: async (ctx, { releveeLe: releveDeLaLivraison, fiches }): Promise<number> => {
+		for (const fiche of fiches) {
+			await ctx.db.insert('annuaireAvocats', {
+				barreau: fiche.barreau,
+				nom: fiche.nom,
+				prenom: fiche.prenom,
+				raisonSociale: fiche.raisonSociale,
+				siren: fiche.siren,
+				adresse: fiche.adresse,
+				codePostal: fiche.codePostal,
+				ville: fiche.ville,
+				specialites: fiche.specialites,
+				releveeLe: releveDeLaLivraison
+			});
+		}
+		return fiches.length;
 	}
 });

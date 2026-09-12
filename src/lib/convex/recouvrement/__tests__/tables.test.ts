@@ -29,6 +29,32 @@ function indexes(table: unknown): Array<{ indexDescriptor: string; fields: strin
 
 const TABLES = Object.entries(recouvrementTables);
 
+/**
+ * LES TABLES QUI NE PORTENT AUCUNE DONNÉE CLIENT, avec leur raison.
+ *
+ * ⚠️ UNE ENTRÉE ICI RETIRE UNE TABLE DU CLOISONNEMENT, c'est-à-dire de la règle
+ * la plus stricte de l'architecture. On n'en ajoute pas pour faire passer un
+ * test : on en ajoute quand la table ne contient RIEN qui appartienne à un
+ * client, et la raison est lue à la revue.
+ *
+ * Le critère n'est pas « public » mais « à personne ». Un débiteur, un montant,
+ * une échéance sont à un client, toujours — même si on pouvait les retrouver
+ * ailleurs. Un fichier que l'État publie sous Licence Ouverte n'est à personne,
+ * au même titre que les taux du référentiel juridique.
+ */
+const REFERENTIELS: Readonly<Record<string, string>> = {
+	annuaireAvocats:
+		'L’annuaire national des avocats, publié par le Conseil national des barreaux sous ' +
+		'Licence Ouverte. Rien n’y appartient à un client : c’est un fichier d’État recopié tel ' +
+		'quel. La conséquence est que `purge-complete.test.ts` ne le réclame pas dans `rgpd.ts` — ' +
+		'il ne balaie que les tables qui déclarent `organizationId` — et que l’effacement d’un ' +
+		'établissement reste TOTAL sur ce qui est à lui. Ce qu’un gérant retient de cet annuaire, ' +
+		'lui, est recopié dans `intervenants`, qui est cloisonnée et purgée.'
+};
+
+/** Tout le reste, c'est-à-dire ce qui doit être cloisonné sans exception. */
+const CLOISONNEES = TABLES.filter(([nom]) => !(nom in REFERENTIELS));
+
 describe('schéma du recouvrement', () => {
 	it('déclare les tables du modèle de domaine, et elles seules', () => {
 		// La liste est écrite en dur DÉLIBÉRÉMENT : ajouter une table doit être
@@ -41,7 +67,14 @@ describe('schéma du recouvrement', () => {
 		// purge RGPD — ce que le plan avait oublié. Cet oubli-là est désormais
 		// tenu par une barrière qui BALAIE le schéma, `purge-complete.test.ts` :
 		// cette liste-ci dit ce qui existe, celle-là dit que tout est purgé.
+		//
+		// ⚠️ `intervenants` A ÉTÉ AJOUTÉE AU SCHÉMA SANS PASSER PAR ICI, et ce
+		// fichier a donc été ROUGE entre les deux. La barrière a bien mordu ;
+		// personne ne l'a lue, parce qu'elle vit hors des deux dossiers de tests
+		// qu'on relance d'habitude. C'est le mode de panne d'un test juste : il
+		// n'échoue pour personne.
 		expect(TABLES.map(([nom]) => nom).sort()).toEqual([
+			'annuaireAvocats',
 			'battements',
 			'creances',
 			'debiteurs',
@@ -49,6 +82,7 @@ describe('schéma du recouvrement', () => {
 			'evenementsProcedure',
 			'facturesVente',
 			'importsRecouvrement',
+			'intervenants',
 			'pieces',
 			'piecesFactures',
 			'profilsCreancier',
@@ -56,15 +90,33 @@ describe('schéma du recouvrement', () => {
 		]);
 	});
 
-	it.each(TABLES)('« %s » porte organizationId — multi-tenant strict', (_nom, table) => {
+	it('n’excuse aucun référentiel qui n’existe plus', () => {
+		// Une exception qui survit à la table qu'elle excusait devient un
+		// commentaire faux dans un test vert : le jour où une table reprend ce
+		// nom, elle échapperait au cloisonnement sans que personne l'ait décidé.
+		const perimes = Object.keys(REFERENTIELS).filter((nom) => !(nom in recouvrementTables));
+		expect(perimes, `Référentiels déclarés sans table : ${perimes.join(', ')}`).toEqual([]);
+	});
+
+	it.each(CLOISONNEES)('« %s » porte organizationId — multi-tenant strict', (_nom, table) => {
 		expect(champs(table)).toContain('organizationId');
 	});
 
-	it.each(TABLES)('« %s » est indexable par organisation', (_nom, table) => {
+	it.each(CLOISONNEES)('« %s » est indexable par organisation', (_nom, table) => {
 		const parOrg = indexes(table).filter((index) => index.fields[0] === 'organizationId');
 		// `piecesFactures` et `reglements` sont d'abord interrogées par leur
 		// parent, mais gardent un index par organisation pour la purge RGPD.
 		expect(parOrg.length).toBeGreaterThanOrEqual(1);
+	});
+
+	it.each(Object.keys(REFERENTIELS))('« %s » est un référentiel, et n’est PAS cloisonné', (nom) => {
+		// ⚠️ L'EXCEPTION SE VÉRIFIE DANS LES DEUX SENS. Sans cette assertion, le
+		// jour où quelqu'un ajoute `organizationId` à un référentiel — parce que
+		// « toutes les autres tables en ont un » — la ligne d'exception le ferait
+		// SORTIR du balayage de cloisonnement au lieu de l'y faire entrer, et la
+		// table cesserait d'être purgée sans qu'un seul test tombe.
+		const table = recouvrementTables[nom as keyof typeof recouvrementTables];
+		expect(champs(table)).not.toContain('organizationId');
 	});
 
 	it('ne stocke aucun montant en flottant', () => {

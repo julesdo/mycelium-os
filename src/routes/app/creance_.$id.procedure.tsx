@@ -13,11 +13,14 @@ import {
 	ListeAnalyses,
 	Page,
 	PageBody,
+	RechercheAvocat,
 	RechercheCommissaire,
 	SectionEcran,
 	SuiviProcedure,
 	aujourdHuiISO,
 	dateCourte,
+	type AvocatAffiche,
+	type EtatRechercheAvocat,
 	type EtatRechercheCommissaire,
 	type EtudeAffichee,
 	type FicheASaisir,
@@ -110,6 +113,7 @@ function FeuilleDeclaration({
 	onAjouter,
 	onOublier,
 	onChercherUnCommissaire,
+	onChercherUnAvocat,
 	onDeclarer
 }: {
 	voie: VoieAffichee;
@@ -119,6 +123,7 @@ function FeuilleDeclaration({
 	onAjouter: (fiche: FicheASaisir) => void;
 	onOublier: (intervenantId: Id<'intervenants'>) => void;
 	onChercherUnCommissaire: () => void;
+	onChercherUnAvocat: () => void;
 	onDeclarer: (engageeLe: string, choix: ChoixDeclare) => void;
 }) {
 	/*
@@ -227,6 +232,7 @@ function FeuilleDeclaration({
 				onAjouter={onAjouter}
 				onOublier={onOublier}
 				onChercherUnCommissaire={onChercherUnCommissaire}
+				onChercherUnAvocat={onChercherUnAvocat}
 			/>
 		</>
 	);
@@ -260,6 +266,50 @@ function PageProcedure() {
 	/** La recherche d'un commissaire, en feuille par-dessus le carnet. */
 	const [rechercheOuverte, setRechercheOuverte] = useState(false);
 	const [etatRecherche, setEtatRecherche] = useState<EtatRechercheCommissaire>({ phase: 'REPOS' });
+	/**
+	 * La recherche d'un avocat, sa sœur.
+	 *
+	 * ⚠️ TROIS ÉTATS PLUTÔT QU'UN, et aucun n'est une machine à phases. Là où la
+	 * recherche d'études appelle une `action` — donc impérative, donc dotée d'un
+	 * état de progression — celle-ci lit une table par une `query` réactive : le
+	 * barreau et la spécialité SONT la requête, et tout le reste se dérive du
+	 * rendu. Rien à synchroniser, donc aucun effet.
+	 */
+	const [rechercheAvocatOuverte, setRechercheAvocatOuverte] = useState(false);
+	const [barreauChoisi, setBarreauChoisi] = useState('');
+	const [specialiteChoisie, setSpecialiteChoisie] = useState('');
+
+	/*
+	  ⚠️ LES DEUX REQUÊTES SONT SAUTÉES TANT QUE LA FEUILLE EST FERMÉE. Le
+	  parcours des barreaux lit un document par barreau, et la recherche jusqu'à
+	  quatre mille fiches : les faire tourner au chargement de l'écran de
+	  procédure ferait payer un répertoire que personne n'a demandé.
+	*/
+	const repertoire = useQuery(
+		api.recouvrement.annuaires.barreauxDuRepertoire,
+		rechercheAvocatOuverte ? {} : 'skip'
+	);
+	const avocats = useQuery(
+		api.recouvrement.annuaires.chercherUnAvocat,
+		rechercheAvocatOuverte && barreauChoisi !== ''
+			? {
+					barreau: barreauChoisi,
+					specialite: specialiteChoisie === '' ? undefined : specialiteChoisie
+				}
+			: 'skip'
+	);
+
+	/*
+	  ⚠️ « PAS ENCORE CHOISI » ET « JE LIS » SONT DEUX ÉTATS, pas un. Les
+	  confondre ferait attendre un résultat que personne n'a demandé — et, à
+	  l'inverse, ferait lire un écran de repos pendant une lecture réelle.
+	*/
+	const etatAvocats: EtatRechercheAvocat =
+		barreauChoisi === ''
+			? { phase: 'AUCUN_BARREAU' }
+			: avocats === undefined
+				? { phase: 'EN_COURS' }
+				: { phase: 'TROUVE', resultat: avocats };
 
 	// Tout se DÉRIVE du rendu : aucune de ces valeurs n'est un état, donc aucune
 	// ne peut être en retard d'un rendu sur la requête qui la porte.
@@ -433,6 +483,53 @@ function PageProcedure() {
 		}
 	}
 
+	/**
+	 * RETENIR UN AVOCAT AU CARNET.
+	 *
+	 * ⚠️ SANS DATE DE RELEVÉ, ON NE RETIENT PAS — et on le dit. `releveeLe` vaut
+	 * `null` quand aucune livraison n'a été ingérée ; dater du jour pour faire
+	 * passer la mutation ferait entrer au carnet une fiche qui se présenterait
+	 * comme relevée aujourd'hui, ce qu'elle n'est pas. Le doute ne profite jamais
+	 * au produit : on refuse, et le refus se lit.
+	 *
+	 * ⚠️ LE RESSORT EST LE BARREAU, TEL QUE LE FICHIER L'ÉCRIT. Le recomposer
+	 * depuis la ville ferait afficher « NANTES » pour un avocat inscrit au
+	 * barreau de Nantes mais installé à Saint-Herblain — et c'est le barreau,
+	 * pas la commune, qui dit devant quelle juridiction il plaide.
+	 */
+	async function retenirUnAvocat(avocat: AvocatAffiche) {
+		if (etatAvocats.phase !== 'TROUVE') return;
+		const { resultat } = etatAvocats;
+
+		setErreur(null);
+		if (resultat.releveeLe === null) {
+			setErreur(
+				'Ce répertoire ne porte pas de date de relevé : la fiche ne peut pas être retenue au ' +
+					'carnet, faute de pouvoir dire de quand elle date.'
+			);
+			return;
+		}
+
+		setEnCours(true);
+		try {
+			await ajouterIntervenant({
+				nom: `${avocat.nom} ${avocat.prenom}`.trim(),
+				role: 'AVOCAT',
+				ressort: resultat.barreau,
+				adresse: avocat.adresse,
+				siren: avocat.siren,
+				origine: 'RETENU_DEPUIS_UN_REPERTOIRE',
+				sourceRepertoire: resultat.source,
+				sourceReleveeLe: resultat.releveeLe
+			});
+			setRechercheAvocatOuverte(false);
+		} catch (e) {
+			setErreur(messageDuRefus(e));
+		} finally {
+			setEnCours(false);
+		}
+	}
+
 	/** Une fiche saisie par erreur doit pouvoir partir. */
 	async function oublier(intervenantId: Id<'intervenants'>) {
 		setErreur(null);
@@ -540,6 +637,7 @@ function PageProcedure() {
 					onAjouter={(fiche) => void ajouter(fiche)}
 					onOublier={(intervenantId) => void oublier(intervenantId)}
 					onChercherUnCommissaire={() => setRechercheOuverte(true)}
+					onChercherUnAvocat={() => setRechercheAvocatOuverte(true)}
 					onDeclarer={(engageeLe, choix) => void declarer(voieDeclaree.cle, engageeLe, choix)}
 				/>
 			)}
@@ -553,6 +651,7 @@ function PageProcedure() {
 				onAjouter={(fiche) => void ajouter(fiche)}
 				onOublier={(intervenantId) => void oublier(intervenantId)}
 				onChercherUnCommissaire={() => setRechercheOuverte(true)}
+				onChercherUnAvocat={() => setRechercheAvocatOuverte(true)}
 			/>
 
 			{/*
@@ -573,6 +672,34 @@ function PageProcedure() {
 				onFermer={() => setRechercheOuverte(false)}
 				onChercher={(departement) => void chercher(departement)}
 				onRetenir={(etude) => void retenir(etude)}
+			/>
+
+			{/*
+			  LA RECHERCHE D'AVOCAT, SŒUR DE LA PRÉCÉDENTE DANS L'ARBRE.
+
+			  ⚠️ AUCUN BARREAU PROPOSÉ, pour la raison qui vaut déjà pour le
+			  département : aucune fiche débiteur ne porte d'adresse, et proposer le
+			  barreau du créancier ferait chercher au mauvais endroit un gérant qui
+			  ne relirait pas le champ.
+
+			  ⚠️ ET CHANGER DE BARREAU EFFACE LA SPÉCIALITÉ. Garder « Droit du
+			  travail » en passant de Nantes à Rennes ferait rendre zéro fiche sur un
+			  filtre que personne n'a reposé — le gérant lirait « aucun avocat » là
+			  où il n'y a qu'un filtre resté en place.
+			*/}
+			<RechercheAvocat
+				ouverte={rechercheAvocatOuverte}
+				repertoire={repertoire ?? null}
+				barreau={barreauChoisi}
+				specialite={specialiteChoisie}
+				etat={etatAvocats}
+				onFermer={() => setRechercheAvocatOuverte(false)}
+				onChoisirBarreau={(choisi) => {
+					setBarreauChoisi(choisi);
+					setSpecialiteChoisie('');
+				}}
+				onChoisirSpecialite={setSpecialiteChoisie}
+				onRetenir={(avocat) => void retenirUnAvocat(avocat)}
 			/>
 		</Page>
 	);

@@ -27,6 +27,9 @@ import {
 	type FicheIntervenant,
 	RechercheCommissaire,
 	type ResultatAnnuaireAffiche,
+	RechercheAvocat,
+	type ResultatAvocatsAffiche,
+	type RepertoireAffiche,
 	ListeAnalyses,
 	LigneBouton,
 	Pieces,
@@ -2301,6 +2304,167 @@ function DemoCommissaire() {
 	);
 }
 
+/**
+ * LE RÉPERTOIRE DE LA SALLE — DE VRAIS BARREAUX, EN NOMBRE RÉDUIT.
+ *
+ * Relevés le 12 septembre 2026 dans la livraison du 17 juillet 2026 de
+ * l'annuaire national des avocats. La livraison réelle en porte plus de cent
+ * cinquante ; vingt suffisent à mettre la liste déroulante et sa recherche à
+ * l'épreuve, et les noms sont écrits comme le fichier les écrit — en capitales,
+ * sans accent, et parfois sous le nom du DÉPARTEMENT plutôt que de la ville
+ * (« CHARENTE », « VAL DE MARNE »). Les redresser ferait afficher à la salle
+ * des libellés que la source ne porte pas.
+ */
+const BARREAUX_DEMO: RepertoireAffiche = {
+	barreaux: [
+		'AGEN',
+		'ALBERTVILLE',
+		'ALES',
+		'ARDENNES',
+		'ARRAS',
+		'AUXERRE',
+		'BEAUVAIS',
+		'BESANCON',
+		'BLOIS',
+		'BORDEAUX',
+		'BOURGES',
+		'BRIEY',
+		'CARPENTRAS',
+		'CHALON-SUR-SAONE',
+		'CHARENTE',
+		'COLMAR',
+		'HAUTE-MARNE',
+		'LOT',
+		'MEUSE',
+		'VAL DE MARNE'
+	],
+	complete: true,
+	releveeLe: '2026-07-17'
+};
+
+/**
+ * TROIS AVOCATS DE DÉMONSTRATION — ET CE SONT DE VRAIS.
+ *
+ * Relevés le 12 septembre 2026 dans la livraison du 17 juillet 2026, au barreau
+ * de Bordeaux, qui en compte 2 214. Des fiches inventées auraient caché ce que
+ * le vrai fichier a de particulier, et chacune des trois est ici pour une
+ * raison :
+ *
+ *   · ANDREAU n'a PAS de SIREN — le fichier laisse la colonne vide sur nombre
+ *     de fiches. La rangée retombe alors sur la raison sociale, au lieu
+ *     d'afficher un tiret qui se lirait comme une valeur ;
+ *   · BALTAZAR porte une seconde ligne d'adresse (« 2ème étage »), recollée à
+ *     la première par l'import ;
+ *   · BERTRAND déclare deux spécialités, dont la plus longue du référentiel du
+ *     CNB — c'est sur 375 px qu'elle casse la rangée, pas sur 1280.
+ *
+ * ⚠️ LA LISTE EST VOLONTAIREMENT TRONQUÉE : trois fiches affichées, 2 214 qui
+ * correspondent. C'est l'état qu'on vient vérifier à l'œil — celui où la liste
+ * doit DIRE qu'elle est incomplète, faute de quoi elle ment par le silence.
+ *
+ * ⚠️ ET `specialitesDeclarees` NE PORTE QUE CELLES DU TRIO, pour la même
+ * raison : la salle montre une tranche, et la liste de filtres d'une tranche
+ * est celle de cette tranche.
+ */
+const AVOCATS_DEMO: ResultatAvocatsAffiche = {
+	barreau: 'BORDEAUX',
+	specialite: null,
+	total: 2214,
+	lectureTronquee: false,
+	specialitesDeclarees: [
+		'Droit de la sécurité sociale et de la protection sociale',
+		'Droit des sociétés',
+		'Droit du travail',
+		'Droit fiscal et droit douanier',
+		'Droit public'
+	],
+	avocats: [
+		{
+			nom: 'ANDREAU',
+			prenom: 'Pierre',
+			raisonSociale: 'FIDUCIAIRE SAINT JOSEPH',
+			adresse: '9 Cours de Gourgues',
+			codePostal: '33000',
+			ville: 'BORDEAUX',
+			specialites: ['Droit des sociétés', 'Droit fiscal et droit douanier']
+		},
+		{
+			nom: 'BALTAZAR',
+			prenom: 'Marie-Christine',
+			raisonSociale: 'BALTAZAR MARIE-CHRISTINE',
+			siren: '502005747',
+			adresse: '12 rue Elisée Reclus, 2ème étage',
+			codePostal: '33000',
+			ville: 'BORDEAUX',
+			specialites: ['Droit public']
+		},
+		{
+			nom: 'BERTRAND',
+			prenom: 'Stéphanie',
+			raisonSociale: 'STEPHANIE BERTRAND AVOCAT',
+			siren: '832397772',
+			adresse: '4 rue de la Maison Daurade',
+			codePostal: '33000',
+			ville: 'BORDEAUX',
+			specialites: ['Droit de la sécurité sociale et de la protection sociale', 'Droit du travail']
+		}
+	],
+	source:
+		'Annuaire national des avocats (Conseil national des barreaux), publié sur data.gouv.fr sous ' +
+		'Licence Ouverte 2.0. C’est une photographie mensuelle : une fiche peut décrire une situation ' +
+		'périmée — un avocat qui a changé de barreau, déménagé, ou cessé d’exercer depuis le relevé. ' +
+		'Les spécialités sont celles que l’avocat a DÉCLARÉES au fichier : leur absence ne dit pas ' +
+		'qu’il n’en a aucune, elle dit qu’aucune n’est inscrite.',
+	releveeLe: '2026-07-17'
+};
+
+function DemoAvocat() {
+	// Comme `DemoCommissaire` : une `Popup` est contrôlée, donc la salle l'ouvre
+	// d'emblée — c'est ce qu'on vient regarder.
+	const [ouverte, setOuverte] = useState(true);
+	// Les deux filtres sont contrôlés : la salle les laisse bouger pour qu'on
+	// voie les deux listes déroulantes et leur recherche, mais la réponse, elle,
+	// est figée. Un écran de démonstration qui recalculerait donnerait à croire
+	// qu'il interroge quelque chose.
+	const [barreau, setBarreau] = useState('BORDEAUX');
+	const [specialite, setSpecialite] = useState('');
+
+	return (
+		<Page>
+			<PageHeader
+				titre="Chercher un avocat"
+				sousTitre="Un fichier ingéré, sa date, et ce qu’il ne déclare pas"
+			/>
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
+					<ListeAnalyses>
+						<LigneBouton
+							titre="Chercher un avocat"
+							valeur={barreau === '' ? 'Aucun barreau' : barreau}
+							onClick={() => setOuverte(true)}
+						/>
+					</ListeAnalyses>
+
+					<RechercheAvocat
+						ouverte={ouverte}
+						repertoire={BARREAUX_DEMO}
+						barreau={barreau}
+						specialite={specialite}
+						etat={{ phase: 'TROUVE', resultat: AVOCATS_DEMO }}
+						onFermer={() => setOuverte(false)}
+						onChoisirBarreau={(choisi) => {
+							setBarreau(choisi);
+							setSpecialite('');
+						}}
+						onChoisirSpecialite={setSpecialite}
+						onRetenir={() => setOuverte(false)}
+					/>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'veilleur',
 	'accueil',
@@ -2318,6 +2482,7 @@ const ECRANS = [
 	'voie',
 	'intervenant',
 	'commissaire',
+	'avocat',
 	'pieces',
 	'solidite',
 	'relances',
@@ -2374,6 +2539,7 @@ function Showroom() {
 				{ecran === 'voie' ? <DemoVoie /> : null}
 				{ecran === 'intervenant' ? <DemoIntervenant /> : null}
 				{ecran === 'commissaire' ? <DemoCommissaire /> : null}
+				{ecran === 'avocat' ? <DemoAvocat /> : null}
 				{ecran === 'pieces' ? <DemoPieces /> : null}
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'relances' ? <DemoRelances /> : null}

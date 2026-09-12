@@ -631,6 +631,36 @@ export const recouvrementTables = {
 		.index('by_org_and_role', ['organizationId', 'role']),
 
 	/**
+	 * L'ANNUAIRE NATIONAL DES AVOCATS — un RÉFÉRENTIEL, pas une donnée client.
+	 *
+	 * ⚠️ PAS D'`organizationId`, ET C'EST VOULU. Le cloisonnement strict du
+	 * projet porte sur ce qui appartient à un client : un débiteur, un montant,
+	 * une échéance. Un fichier public sous Licence Ouverte n'appartient à
+	 * personne, au même titre que les taux du référentiel juridique. La
+	 * conséquence est que `purge-complete.test.ts` ne la réclame pas dans
+	 * `rgpd.ts`, et que l'effacement d'un établissement reste total sur ce qui
+	 * est à lui.
+	 *
+	 * `releveeLe` n'est pas décoratif : le fichier est une photographie
+	 * mensuelle, et une fiche de deux ans peut décrire une situation périmée.
+	 */
+	annuaireAvocats: defineTable({
+		barreau: v.string(),
+		nom: v.string(),
+		prenom: v.string(),
+		raisonSociale: v.optional(v.string()),
+		siren: v.optional(v.string()),
+		adresse: v.optional(v.string()),
+		codePostal: v.optional(v.string()),
+		ville: v.optional(v.string()),
+		specialites: v.array(v.string()),
+		/** La date de relevé du fichier source, au format ISO. */
+		releveeLe: v.string()
+	})
+		.index('by_barreau', ['barreau'])
+		.index('by_barreau_and_nom', ['barreau', 'nom']),
+
+	/**
 	 * Un décompte FIGÉ. Il ne se recalcule jamais.
 	 *
 	 * Même règle que les `diagnostics` d'EGalim, et pour une raison plus forte

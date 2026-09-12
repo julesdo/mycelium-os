@@ -156,7 +156,8 @@ export function ChoixIntervenant<I extends string>({
 	onChoisir,
 	onAjouter,
 	onOublier,
-	onChercherUnCommissaire
+	onChercherUnCommissaire,
+	onChercherUnAvocat
 }: {
 	/** Les fiches du gérant, dans l'ordre où `monCarnet` les rend. */
 	carnet: readonly FicheIntervenant<I>[];
@@ -196,6 +197,14 @@ export function ChoixIntervenant<I extends string>({
 	 * n'apparaît pas — plutôt qu'un bouton mort.
 	 */
 	onChercherUnCommissaire?: () => void;
+	/**
+	 * Ouvrir la recherche d'un avocat, en feuille par-dessus celle-ci.
+	 *
+	 * ⚠️ FACULTATIF POUR LA MÊME RAISON QUE SA SŒUR : un écran qui ne peut pas
+	 * lire le répertoire ne doit pas afficher une rangée qui ne mènerait nulle
+	 * part. Absent, le geste n'apparaît pas — plutôt qu'un bouton mort.
+	 */
+	onChercherUnAvocat?: () => void;
 }) {
 	const [nom, setNom] = useState('');
 	const [role, setRole] = useState<RoleIntervenant>('AUTRE');
@@ -259,17 +268,38 @@ export function ChoixIntervenant<I extends string>({
 				  convention collective est introuvable, et un avocat ne s'y cherche pas
 				  du tout. On remplace une porte par une meilleure, on n'en condamne pas.
 				*/}
-				{onChercherUnCommissaire === undefined ? null : (
+				{onChercherUnCommissaire === undefined && onChercherUnAvocat === undefined ? null : (
 					<List className="mt-cladd-3xs">
-						<ListButton
-							icon={<SearchIcon size={18} />}
-							footer="Les études d’un département, sans quitter l’application"
-							className="verre-bouton"
-							hoverable={false}
-							onClick={onChercherUnCommissaire}
-						>
-							<span className="truncate">Chercher un commissaire de justice</span>
-						</ListButton>
+						{onChercherUnCommissaire === undefined ? null : (
+							<ListButton
+								icon={<SearchIcon size={18} />}
+								footer="Les études d’un département, sans quitter l’application"
+								className="verre-bouton"
+								hoverable={false}
+								onClick={onChercherUnCommissaire}
+							>
+								<span className="truncate">Chercher un commissaire de justice</span>
+							</ListButton>
+						)}
+						{/*
+						  ⚠️ LA SECONDE RANGÉE NE DIT PAS LA MÊME CHOSE QUE LA PREMIÈRE, et
+						  c'est voulu : les deux professions ne se cherchent pas dans la même
+						  source. Les études viennent d'un registre interrogé en direct, les
+						  avocats d'un fichier ingéré, daté du jour de sa publication. Écrire
+						  deux fois le même sous-titre ferait croire à deux portes vers un
+						  même annuaire officiel, qui n'existe pas.
+						*/}
+						{onChercherUnAvocat === undefined ? null : (
+							<ListButton
+								icon={<SearchIcon size={18} />}
+								footer="Les avocats d’un barreau, par spécialité déclarée"
+								className="verre-bouton"
+								hoverable={false}
+								onClick={onChercherUnAvocat}
+							>
+								<span className="truncate">Chercher un avocat</span>
+							</ListButton>
+						)}
 					</List>
 				)}
 

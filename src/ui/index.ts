@@ -88,6 +88,13 @@ export {
 	type ResultatAnnuaireAffiche
 } from './recherche-commissaire';
 export {
+	RechercheAvocat,
+	type EtatRechercheAvocat,
+	type AvocatAffiche,
+	type ResultatAvocatsAffiche,
+	type RepertoireAffiche
+} from './recherche-avocat';
+export {
 	Veilleur,
 	travauxDuVeilleur,
 	type TacheVeilleur,
