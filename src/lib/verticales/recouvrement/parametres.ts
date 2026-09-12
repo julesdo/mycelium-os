@@ -237,6 +237,24 @@ export const PARAMETRES = {
 			'mentions inventées est PIRE que pas de requête : elle se fait rejeter, et le délai ' +
 			"continue de courir pendant qu'on la refait. Tant que cette entrée est vide, la " +
 			"procédure peut évaluer une créance mais pas produire l'acte."
+	} satisfies ParametreLegal<readonly string[]>,
+
+	professionCompetenteParActe: {
+		cle: 'professionCompetenteParActe',
+		nature: 'CONSTANTE',
+		valeur: null,
+		unite: 'sans',
+		source: 'Non fourni — ni par le brief, ni relevé',
+		verifieLe: LE,
+		verifie: false,
+		valideParAvocat: false,
+		note:
+			'Quelle profession est compétente pour quel acte : déposer une requête, signifier une ' +
+			'ordonnance, dresser un procès-verbal. Tant que cette entrée est vide, l’écran « qui ' +
+			'fait l’acte » propose les professions à égalité, sans présélection, et dit pourquoi. ' +
+			'Présélectionner sur une correspondance devinée enverrait un gérant chez un ' +
+			'professionnel qui ne peut pas faire l’acte, et lui ferait perdre le temps que la ' +
+			'caducité compte.'
 	} satisfies ParametreLegal<readonly string[]>
 } as const;
 

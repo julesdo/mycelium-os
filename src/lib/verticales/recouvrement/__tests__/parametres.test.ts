@@ -134,3 +134,16 @@ describe('inspection', () => {
 		expect(manquants).toContain('mentionsObligatoiresInjonction');
 	});
 });
+
+describe('la profession compétente par acte', () => {
+	it('existe, et se déclare non relevée', () => {
+		const entree = PARAMETRES.professionCompetenteParActe;
+		expect(entree.valeur).toBeNull();
+		expect(entree.verifie).toBe(false);
+		expect(entree.valideParAvocat).toBe(false);
+	});
+
+	it('n’est pas utilisable, donc aucun écran ne peut présélectionner', () => {
+		expect(estUtilisable(PARAMETRES.professionCompetenteParActe)).toBe(false);
+	});
+});
