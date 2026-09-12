@@ -580,6 +580,47 @@ export const recouvrementTables = {
 		.index('by_org', ['organizationId']),
 
 	/**
+	 * LE CARNET D'INTERVENANTS — à qui le gérant confie un acte.
+	 *
+	 * ⚠️ C'EST SON CARNET, PAS UN ANNUAIRE QUE LE PRODUIT PROPOSE. Le
+	 * recouvrement pour compte de tiers est encadré, et recommander une
+	 * procédure est la troisième ligne rouge du projet. Ce que le logiciel fait
+	 * ici est plus modeste et parfaitement licite : il retient qui travaille
+	 * avec ce gérant.
+	 *
+	 * `origine` porte la traçabilité. Une fiche retenue depuis un répertoire
+	 * public garde la SOURCE et la DATE du relevé : le fichier du CNB est une
+	 * photographie à un instant T, et une fiche de deux ans peut décrire une
+	 * situation périmée. Sans ces deux champs, rien ne distinguerait une saisie
+	 * du gérant d'une donnée officielle.
+	 */
+	intervenants: defineTable({
+		organizationId: v.id('organizations'),
+		nom: v.string(),
+		role: v.union(
+			v.literal('AVOCAT'),
+			v.literal('COMMISSAIRE_DE_JUSTICE'),
+			v.literal('AUTRE')
+		),
+		/** Le barreau, le ressort, ou la ville. Libre : ce n'est pas du droit. */
+		ressort: v.optional(v.string()),
+		telephone: v.optional(v.string()),
+		courriel: v.optional(v.string()),
+		adresse: v.optional(v.string()),
+		siren: v.optional(v.string()),
+		origine: v.union(
+			v.literal('SAISI_A_LA_MAIN'),
+			v.literal('RETENU_DEPUIS_UN_REPERTOIRE')
+		),
+		/** Le répertoire d'où vient la fiche, et quand il a été relevé. */
+		sourceRepertoire: v.optional(v.string()),
+		sourceReleveeLe: v.optional(v.string()),
+		creeLe: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_role', ['organizationId', 'role']),
+
+	/**
 	 * Un décompte FIGÉ. Il ne se recalcule jamais.
 	 *
 	 * Même règle que les `diagnostics` d'EGalim, et pour une raison plus forte

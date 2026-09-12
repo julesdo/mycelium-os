@@ -496,6 +496,10 @@ export const purgerEtablissement = internalMutation({
 		//    référencé part après ce qui le référence.
 		//
 		//    Le journal de procédure part AVANT les créances qu'il référence.
+		// `intervenants` ne référence aucune autre table du domaine : sa place dans
+		// l'ordre est libre. Elle part en premier pour rester groupée avec le reste
+		// de ce que porte une procédure.
+		budget = await viderParIndexOrg(ctx, 'intervenants', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'evenementsProcedure', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'creances', organizationId, budget);
@@ -717,7 +721,8 @@ async function viderParIndexOrg(
 		| 'debiteurs'
 		| 'profilsCreancier'
 		| 'notifications'
-		| 'battements',
+		| 'battements'
+		| 'intervenants',
 	organizationId: Id<'organizations'>,
 	budget: number
 ): Promise<number> {
