@@ -210,3 +210,49 @@ describe('le journal des événements', () => {
 		DELAI_CONVEX
 	);
 });
+
+describe('les dossiers engagés', () => {
+	it(
+		'ne liste que les créances engagées, avec le débiteur et le libellé de l’état',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await poserCreance(t);
+			const debiteurId = await t.run(async (ctx) => (await ctx.db.get(creanceId))!.debiteurId);
+
+			// Une créance du MÊME établissement, jamais engagée : elle ne doit
+			// jamais apparaître dans la liste des dossiers.
+			await t.run(async (ctx) =>
+				ctx.db.insert('creances', {
+					organizationId,
+					debiteurId,
+					statut: 'QUALIFIEE',
+					certaine: 'ok',
+					liquide: 'ok',
+					exigible: 'ok',
+					entreCommercants: 'ok',
+					creeLe: Date.now()
+				})
+			);
+
+			await t.mutation(internal.recouvrement.apresProcedure.engagerProcedureInterne, {
+				creanceId,
+				procedure: 'injonction-de-payer',
+				engageeLe: '2026-06-04'
+			});
+
+			const dossiers = await t.query(internal.recouvrement.apresProcedure.dossiersInterne, {
+				organizationId
+			});
+
+			expect(dossiers).toHaveLength(1);
+			const dossier = dossiers[0]!;
+			expect(dossier.creanceId).toBe(creanceId);
+			expect(dossier.debiteur).toBe('Fournitures Durand');
+			expect(dossier.procedure).toBe('injonction-de-payer');
+			expect(dossier.engageeLe).toBe('2026-06-04');
+			expect(dossier.libelle).toBe('Requête déposée');
+			expect(dossier.journal).toEqual([]);
+		},
+		DELAI_CONVEX
+	);
+});

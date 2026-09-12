@@ -1,4 +1,4 @@
-import { v, ConvexError } from 'convex/values';
+import { v, ConvexError, type Infer } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
@@ -249,5 +249,117 @@ export const suiviDeLaCreance = authedQuery({
 		const creance = await mienne(ctx, creanceId, organizationId);
 		if (creance.procedureEngagee === undefined) return null;
 		return await lireSuivi(ctx, creance);
+	}
+});
+
+const vDossier = v.object({
+	creanceId: v.id('creances'),
+	debiteur: v.string(),
+	procedure: v.string(),
+	engageeLe: v.string(),
+	etat: v.string(),
+	libelle: v.string(),
+	terminal: v.boolean(),
+	/** L'échéance la plus proche, celle qui commande. `null` s'il n'y en a pas. */
+	prochaineEcheance: v.union(vEcheance, v.null()),
+	intervenant: v.union(v.string(), v.null()),
+	anglesMorts: v.array(v.string()),
+	/**
+	 * ⚠️ LE JOURNAL VOYAGE AVEC LE DOSSIER, et ce n'est pas du confort. Le rail
+	 * se calcule par `parcoursDeLaVoie(procedure, journal, engageeLe)` : sans le
+	 * journal, il rend toujours l'état d'entrée. L'écran afficherait « requête
+	 * déposée » sur un dossier dont l'ordonnance est rendue depuis deux mois,
+	 * aucun test ne tomberait, et le rail mentirait exactement là où ce produit
+	 * ne peut pas se le permettre.
+	 */
+	journal: v.array(v.object({ cle: v.string(), survenuLe: v.string() }))
+});
+
+/**
+ * Les dossiers engagés, le plus pressé en tête.
+ *
+ * ⚠️ L'ORDRE EST CELUI DU DANGER, PAS CELUI DE LA SAISIE. Une caducité passe
+ * devant une échéance informative, et une échéance proche devant une lointaine.
+ * Un dossier sans échéance ferme la marche : il n'y a rien à y perdre
+ * aujourd'hui.
+ */
+async function listerDossiers(ctx: QueryCtx, organizationId: Id<'organizations'>) {
+	const creances = await ctx.db
+		.query('creances')
+		.withIndex('by_org_and_statut', (q) =>
+			q.eq('organizationId', organizationId).eq('statut', 'ENGAGEE')
+		)
+		.collect();
+
+	const dossiers: Infer<typeof vDossier>[] = [];
+	for (const creance of creances) {
+		if (creance.procedureEngagee === undefined || creance.engageeLe === undefined) continue;
+
+		const suivi = await lireSuivi(ctx, creance);
+		const debiteur = await ctx.db.get(creance.debiteurId);
+		const intervenant =
+			creance.intervenantId === undefined ? null : await ctx.db.get(creance.intervenantId);
+
+		dossiers.push({
+			creanceId: creance._id,
+			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
+			procedure: creance.procedureEngagee,
+			engageeLe: creance.engageeLe,
+			etat: suivi.etat,
+			libelle: suivi.libelle,
+			terminal: suivi.terminal,
+			prochaineEcheance: suivi.echeances[0] ?? null,
+			intervenant: intervenant?.nom ?? null,
+			anglesMorts: suivi.anglesMorts,
+			journal: suivi.journal.map((e) => ({ cle: e.cle, survenuLe: e.survenuLe }))
+		});
+	}
+
+	return dossiers.sort((a, b) => {
+		const rang = (d: (typeof dossiers)[number]) =>
+			d.prochaineEcheance === null ? 2 : d.prochaineEcheance.gravite === 'CADUCITE' ? 0 : 1;
+		if (rang(a) !== rang(b)) return rang(a) - rang(b);
+		if (a.prochaineEcheance === null || b.prochaineEcheance === null) return 0;
+		return a.prochaineEcheance.dateLimite < b.prochaineEcheance.dateLimite ? -1 : 1;
+	});
+}
+
+export const dossiersInterne = internalQuery({
+	args: { organizationId: v.id('organizations') },
+	returns: v.array(vDossier),
+	handler: async (ctx, { organizationId }): Promise<Awaited<ReturnType<typeof listerDossiers>>> =>
+		listerDossiers(ctx, organizationId)
+});
+
+export const dossiersEngages = authedQuery({
+	args: {},
+	returns: v.array(vDossier),
+	handler: async (ctx): Promise<Awaited<ReturnType<typeof listerDossiers>>> => {
+		const { organizationId } = await getUserOrg(ctx);
+		return await listerDossiers(ctx, organizationId);
+	}
+});
+
+export const rattacherIntervenant = authedMutation({
+	args: {
+		creanceId: v.id('creances'),
+		intervenantId: v.union(v.id('intervenants'), v.null())
+	},
+	returns: v.null(),
+	handler: async (ctx, { creanceId, intervenantId }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		await mienne(ctx, creanceId, organizationId);
+
+		if (intervenantId !== null) {
+			const fiche = await ctx.db.get(intervenantId);
+			if (fiche === null || fiche.organizationId !== organizationId) {
+				throw new ConvexError('Intervenant introuvable');
+			}
+		}
+
+		await ctx.db.patch(creanceId, {
+			intervenantId: intervenantId ?? undefined
+		});
+		return null;
 	}
 });

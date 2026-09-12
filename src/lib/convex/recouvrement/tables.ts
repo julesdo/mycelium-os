@@ -539,6 +539,16 @@ export const recouvrementTables = {
 		 */
 		procedureEngagee: v.optional(v.string()),
 		engageeLe: v.optional(v.string()),
+		/**
+		 * Qui a fait l'acte d'engagement.
+		 *
+		 * ⚠️ FACULTATIF, ET C'EST UNE DÉCISION. « Je le dirai plus tard » ne doit
+		 * rien bloquer : le gérant déclare souvent l'engagement le jour même et
+		 * ne sait pas encore par qui l'acte suivant passera. Rendre le champ
+		 * obligatoire ferait retarder la déclaration elle-même, donc décaler
+		 * l'origine de délais dont un à peine de caducité.
+		 */
+		intervenantId: v.optional(v.id('intervenants')),
 		qualifieeLe: v.optional(v.number()),
 		creeLe: v.number()
 	})
