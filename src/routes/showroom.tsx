@@ -111,7 +111,12 @@ const EVENEMENTS_DEMO: EvenementAffiche[] = [
 			'Ce débiteur règle habituellement à 5 jours de son échéance, sur 23 règlements observés. Cette facture en est à 32, soit 27 de plus que son habitude.',
 		action:
 			'Ouvrir la fiche de Fournitures Durand : son historique de règlements y est. ' +
-			'Ou rattacher cette facture à une créance, ou enregistrer son règlement.'
+			'Ou rattacher cette facture à une créance, ou enregistrer son règlement.',
+		// ⚠️ CHAQUE RANGÉE DU FLUX S'OUVRE MAINTENANT, et la démonstration doit le
+		// montrer : c'est la correction qui compte sur cet écran. « Ouvrir la fiche
+		// de Fournitures Durand » était écrit depuis toujours, et rien ne
+		// permettait de le faire.
+		cible: { genre: 'DEBITEUR', id: 'demo-debiteur' }
 	},
 	{
 		type: 'PRESCRIPTION_PROCHE',
@@ -119,7 +124,10 @@ const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		montant: 924_000n,
 		urgence: 'CRITIQUE',
 		explication: 'La facture FA-2021-0087 est PRESCRITE depuis le 2026-08-14.',
-		action: 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
+		action: 'Ne plus engager de frais sur cette facture : la créance est éteinte.',
+		// Même une créance éteinte s'ouvre : c'est là qu'on va CONSTATER la perte,
+		// et le seul endroit où « ne plus engager de frais » devient vérifiable.
+		cible: { genre: 'DEBITEUR', id: 'demo-debiteur' }
 	},
 	{
 		type: 'ECHEANCE_PROCEDURE',
@@ -130,7 +138,8 @@ const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		// La démonstration porte la MÊME formulation que le produit : une capture
 		// qui montrerait « faire signifier sans délai » ferait recopier une consigne
 		// de procédure que la ligne rouge 3 interdit.
-		action: 'Ouvrir ce dossier : la date limite et son journal y sont.'
+		action: 'Ouvrir ce dossier : la date limite et son journal y sont.',
+		cible: { genre: 'CREANCE', id: 'demo-creance' }
 	},
 	{
 		type: 'CREANCE_MURE',
@@ -138,7 +147,8 @@ const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		montant: 3_120_050n,
 		urgence: 'HAUTE',
 		explication: 'La créance atteint le seuil de qualification (0,90 pour un seuil de 0.75).',
-		action: 'Examiner les procédures envisageables pour cette créance.'
+		action: 'Examiner les procédures envisageables pour cette créance.',
+		cible: { genre: 'CREANCE', id: 'demo-creance' }
 	}
 	// ⚠️ L'ÉVÉNEMENT `FACTURE_ECHUE` DE FA-2026-0311 A ÉTÉ RETIRÉ D'ICI. Le
 	// détecteur ne l'émet plus dès qu'une rupture couvre la même facture — la

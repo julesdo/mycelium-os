@@ -61,6 +61,11 @@ export interface EvenementAffiche {
 	readonly urgence: UrgenceEvenement;
 	readonly explication: string;
 	readonly action: string;
+	/**
+	 * Ou mene cet evenement. Absent, la rangee ne mene nulle part -- ce qui est
+	 * la verite : fabriquer une destination ouvrirait le mauvais dossier.
+	 */
+	readonly cible?: { readonly genre: 'DEBITEUR' | 'CREANCE'; readonly id: string };
 }
 
 const LIBELLE_URGENCE: Record<UrgenceEvenement, string> = {
@@ -82,14 +87,54 @@ function LigneEvenement({
 	evenement: EvenementAffiche;
 	compact?: boolean;
 }) {
+	/**
+	 * ⚠️ LA RANGÉE S'OUVRE, MAINTENANT — ET C'EST LA CORRECTION QUI COMPTE ICI.
+	 *
+	 * Le flux est ce qui a bougé depuis hier, donc la raison d'ouvrir ce
+	 * logiciel le matin. Rien n'y était cliquable : on lisait « la facture
+	 * FA-2026-0311 sera prescrite le 14 octobre », puis on allait chercher
+	 * soi-même le débiteur dans la liste. Le produit désignait un objet précis
+	 * et laissait le gérant le retrouver à la main — chaque matin, sur l'écran
+	 * le plus lu.
+	 *
+	 * Le genre vient du domaine, la DESTINATION est décidée ici : `verticales/`
+	 * connaît le droit, jamais les routes.
+	 *
+	 * ⚠️ SANS CIBLE, LA RANGÉE RESTE UNE `Surface` INERTE. Une carte qui a l'air
+	 * cliquable et ne fait rien est pire qu'une carte qui n'en a pas l'air.
+	 */
+	const cible = evenement.cible;
+
+	/**
+	 * ⚠️ UNE ASSERTION, ET LA MÊME QUE DANS `navigation.tsx`. `Surface` est
+	 * polymorphe : en passant par son `as`, le générique du routeur est effacé et
+	 * `params` / `search` retombent sur des signatures larges. Les destinations
+	 * écrites ici restent tenues par `destinations-existent.test.ts`, qui balaie
+	 * tout littéral du produit contre l'arbre des routes généré — c'est
+	 * précisément le trou que ce test existe pour boucher.
+	 */
+	const proprietesLien =
+		cible === undefined
+			? {}
+			: ({
+					as: Link,
+					// Une facture n'a pas d'écran : c'est le volet de son débiteur qui
+					// la porte. Voir `CibleEvenement`, qui n'a donc que deux genres.
+					to: cible.genre === 'CREANCE' ? '/app/creance/$id' : '/app/debiteurs',
+					...(cible.genre === 'CREANCE'
+						? { params: { id: cible.id } }
+						: { search: { d: cible.id } })
+				} as never);
+
 	return (
 		<Surface
+			{...proprietesLien}
 			// En verre comme toutes les cartes du produit — voir `carte-liste.tsx`
 			// pour la raison : la surface opaque du kit empêche le fond de passer
 			// au travers, et c'est ce qui distinguait cet écran de sa référence.
 			variant="transparent"
 			outline={false}
-			className="verre-carte rounded-cladd-xl"
+			className={cn('verre-carte rounded-cladd-xl', cible !== undefined && 'verre-carte-actif')}
 			contentClassName="flex items-center gap-cladd-3xs p-cladd-2xs"
 		>
 			<div className="flex min-w-0 flex-1 flex-col gap-1">

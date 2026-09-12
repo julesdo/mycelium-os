@@ -35,6 +35,25 @@ export type TypeEvenement =
 
 export type Urgence = 'CRITIQUE' | 'HAUTE' | 'NORMALE';
 
+/**
+ * L'OBJET QUE L'ÉVÉNEMENT DÉSIGNE, pour qu'on puisse l'ouvrir.
+ *
+ * ⚠️ UN IDENTIFIANT, JAMAIS UNE ROUTE. Ce module est dans `verticales/` : il
+ * connaît le droit, jamais l'interface. Écrire `/app/debiteurs` ici ferait
+ * traverser la frontière dans le mauvais sens, et `frontiere.test.ts` a raison
+ * de l'interdire. L'écran traduit le genre en destination ; le domaine dit
+ * seulement DE QUOI il parle.
+ *
+ * ⚠️ ET IL N'Y A PAS DE GENRE « FACTURE ». Une facture n'a pas d'écran à elle :
+ * c'est le volet de son débiteur qui la porte, ligne à ligne. Un événement de
+ * facture vise donc son débiteur — ce qui est aussi le bon geste, puisque c'est
+ * là qu'on rattache, qu'on lettre et qu'on constitue.
+ */
+export interface CibleEvenement {
+	readonly genre: 'DEBITEUR' | 'CREANCE';
+	readonly id: string;
+}
+
 export interface Evenement {
 	readonly type: TypeEvenement;
 	/** Ce que l'événement désigne : une facture, une créance, un débiteur. */
@@ -45,6 +64,21 @@ export interface Evenement {
 	readonly explication: string;
 	/** L'action au bout. Jamais vide. */
 	readonly action: string;
+	/**
+	 * Où mène cet événement.
+	 *
+	 * ⚠️ FACULTATIF, ET C'EST DÉLIBÉRÉ. L'appelant peut ne pas connaître
+	 * l'identifiant — un test du domaine, par exemple, qui ne branche aucune
+	 * base. Un événement sans cible reste valable : il s'affiche, il ne mène
+	 * nulle part. L'exiger forcerait tout appelant à fabriquer un identifiant,
+	 * et on sait ce que valent les identifiants fabriqués.
+	 *
+	 * ⚠️ LE DÉFAUT QU'IL CORRIGE : le flux est ce qui a bougé depuis hier, donc
+	 * la raison d'ouvrir ce logiciel le matin — et RIEN n'y était cliquable. Le
+	 * produit nommait une facture précise et laissait l'utilisateur la retrouver
+	 * à la main dans la liste.
+	 */
+	readonly cible?: CibleEvenement;
 }
 
 /**
@@ -81,6 +115,14 @@ export type MotifPrescriptionInconnue = 'AUCUNE_DATE_DE_DEPART' | 'DATE_DE_DEPAR
 
 export interface FactureSurveillee {
 	readonly reference: string;
+	/**
+	 * Le débiteur de cette facture, pour que l'événement mène quelque part.
+	 *
+	 * ⚠️ LE DÉBITEUR, ET PAS LA FACTURE. Une facture n'a pas d'écran à elle :
+	 * c'est le volet de son débiteur qui la porte, ligne à ligne — et c'est là
+	 * qu'on la rattache, qu'on la lettre et qu'on constitue une créance.
+	 */
+	readonly debiteurId?: string;
 	readonly montantExigible: Montant;
 	readonly dateEcheance: string;
 	readonly statutPaiement: 'IMPAYEE' | 'PARTIELLEMENT_PAYEE' | 'SOLDEE' | 'LITIGIEUSE';
@@ -117,6 +159,8 @@ export interface FactureSurveillee {
 
 export interface CreanceSurveillee {
 	readonly reference: string;
+	/** L'identifiant de la créance, pour que l'événement mène à son écran. */
+	readonly id?: string;
 	readonly total: Montant;
 	readonly score: number;
 	readonly statut: 'BROUILLON' | 'QUALIFIEE' | 'ENGAGEE' | 'CLOSE';
@@ -132,12 +176,16 @@ export interface EcheanceSurveillee {
 
 export interface DossierSurveille {
 	readonly reference: string;
+	/** La créance du dossier, pour que l'échéance mène à son écran. */
+	readonly creanceId?: string;
 	readonly montantEnJeu: Montant;
 	readonly echeances: readonly EcheanceSurveillee[];
 }
 
 export interface DebiteurSurveille {
 	readonly reference: string;
+	/** L'identifiant du débiteur, pour que la dégradation mène à son volet. */
+	readonly id?: string;
 	readonly encoursTotal: Montant;
 	readonly santePrecedente: SanteDebiteur;
 	readonly santeActuelle: SanteDebiteur;
@@ -154,6 +202,8 @@ export interface DebiteurSurveille {
 export interface RuptureSurveillee {
 	readonly reference: string;
 	readonly debiteur: string;
+	/** Le débiteur dont l'habitude est rompue. */
+	readonly debiteurId?: string;
 	readonly montantExigible: Montant;
 	readonly habituelJours: number;
 	readonly ecartJours: number;
@@ -258,7 +308,11 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			montant: facture.montantExigible,
 			urgence: 'NORMALE',
 			explication: `La facture ${facture.reference} est échue depuis le ${facture.dateEcheance} et reste due.`,
-			action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.'
+			action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.',
+			// La cible est le DEBITEUR : une facture n'a pas d'ecran a elle.
+			...(facture.debiteurId === undefined
+				? {}
+				: { cible: { genre: 'DEBITEUR' as const, id: facture.debiteurId } })
 		});
 	}
 
@@ -304,7 +358,14 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			action: eteinte
 				? 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
 				: `Ouvrir la facture ${facture.reference} : ${versEuros(facture.montantExigible)} € y ` +
-					`sont décomptés, avec les pièces qui les soutiennent.`
+					`sont décomptés, avec les pièces qui les soutiennent.`,
+			// ⚠️ LA CIBLE VAUT AUSSI POUR LA BRANCHE ÉTEINTE. On pourrait croire
+			// qu'une créance perdue n'a plus d'écran à ouvrir — c'est l'inverse :
+			// c'est là qu'on va constater la perte, et c'est le seul endroit où
+			// « ne plus engager de frais » devient vérifiable.
+			...(facture.debiteurId === undefined
+				? {}
+				: { cible: { genre: 'DEBITEUR' as const, id: facture.debiteurId } })
 		});
 	}
 
@@ -320,7 +381,10 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			explication:
 				`La créance ${creance.reference} atteint le seuil de qualification ` +
 				`(${creance.score.toFixed(2)} pour un seuil de ${SEUIL_QUALIFICATION}).`,
-			action: 'Examiner les procédures envisageables pour cette créance.'
+			action: 'Examiner les procédures envisageables pour cette créance.',
+			...(creance.id === undefined
+				? {}
+				: { cible: { genre: 'CREANCE' as const, id: creance.id } })
 		});
 	}
 
@@ -357,7 +421,12 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				// sur un acte de procédure. La perte est dite dans `explication` ; ici
 				// on ouvre un écran, ce qui est le seul geste que ce logiciel puisse
 				// honnêtement demander.
-				action: `Ouvrir ce dossier : la date limite et son journal y sont.`
+				action: `Ouvrir ce dossier : la date limite et son journal y sont.`,
+				// « Ouvrir ce dossier » etait une consigne sans porte : rien n'etait
+				// cliquable dans le flux. La cible la rend vraie.
+				...(dossier.creanceId === undefined
+					? {}
+					: { cible: { genre: 'CREANCE' as const, id: dossier.creanceId } })
 			});
 		}
 	}
@@ -377,7 +446,10 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			explication:
 				`La situation de ${debiteur.reference} est passée de ${debiteur.santePrecedente} ` +
 				`à ${debiteur.santeActuelle}.`,
-			action: `Revoir l'encours de ${debiteur.reference} avant d'engager de nouveaux frais.`
+			action: `Revoir l'encours de ${debiteur.reference} avant d'engager de nouveaux frais.`,
+			...(debiteur.id === undefined
+				? {}
+				: { cible: { genre: 'DEBITEUR' as const, id: debiteur.id } })
 		});
 	}
 
@@ -405,7 +477,11 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			// avec elle.
 			action:
 				`Ouvrir la fiche de ${rupture.debiteur} : son historique de règlements y est. ` +
-				'Ou rattacher cette facture à une créance, ou enregistrer son règlement.'
+				'Ou rattacher cette facture à une créance, ou enregistrer son règlement.',
+			// « Ouvrir la fiche de X » — et desormais on peut, d'un doigt.
+			...(rupture.debiteurId === undefined
+				? {}
+				: { cible: { genre: 'DEBITEUR' as const, id: rupture.debiteurId } })
 		});
 	}
 

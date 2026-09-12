@@ -75,6 +75,20 @@ const vEvenement = v.object({
 		v.literal('HABITUDE_ROMPUE')
 	),
 	reference: v.string(),
+	/**
+	 * L'OBJET QUE L'ÉVÉNEMENT DÉSIGNE, pour que la rangée s'ouvre.
+	 *
+	 * ⚠️ FACULTATIF, PARCE QUE LE DOMAINE LE REND FACULTATIF. Une donnée ancienne
+	 * peut ne pas porter d'identifiant exploitable ; la rangée s'affiche alors
+	 * sans mener nulle part, ce qui est la vérité. Fabriquer une destination
+	 * serait pire : elle ouvrirait le mauvais dossier.
+	 */
+	cible: v.optional(
+		v.object({
+			genre: v.union(v.literal('DEBITEUR'), v.literal('CREANCE')),
+			id: v.string()
+		})
+	),
 	montant: v.union(v.int64(), v.null()),
 	urgence: vUrgence,
 	explication: v.string(),
@@ -184,6 +198,9 @@ async function rupturesDHabitude(
 			ruptures.push({
 				reference: facture.reference,
 				debiteur: denomination,
+				// « Ouvrir la fiche de X » : l'action l'écrivait déjà, et rien ne
+				// permettait de le faire. C'est ce qui la rend vraie.
+				debiteurId: debiteurId as string,
 				montantExigible: depuisCentimes(facture.montantTTC),
 				habituelJours: lecture.habituelJours,
 				ecartJours: lecture.ecartJours,
@@ -253,6 +270,9 @@ async function assembler(
 		// Désormais elle devient un angle mort NOMMÉ, et les autres continuent.
 		factures.push({
 			reference: facture.reference,
+			// Ce qui rend la rangee cliquable dans le flux. Le DEBITEUR, parce
+			// qu'une facture n'a pas d'ecran a elle : c'est son volet qui la porte.
+			debiteurId: facture.debiteurId as string,
 			montantExigible: depuisCentimes(facture.montantTTC),
 			dateEcheance: facture.dateEcheance ?? facture.dateEmission,
 			statutPaiement: facture.statutPaiement,
@@ -267,6 +287,7 @@ async function assembler(
 
 	const creances = creancesBrutes.map((creance) => ({
 		reference: creance._id as string,
+		id: creance._id as string,
 		total: ZERO,
 		score: creance.score ?? 0,
 		statut: creance.statut
@@ -325,6 +346,7 @@ async function assembler(
 		if (suivi.echeances.length === 0) continue;
 		dossiers.push({
 			reference: creance._id as string,
+			creanceId: creance._id as string,
 			montantEnJeu: ZERO,
 			echeances: suivi.echeances.map((echeance) => ({
 				cle: echeance.cle,
@@ -370,6 +392,7 @@ async function assembler(
 			// La DÉNOMINATION, pas l'identifiant : cet événement s'affiche, et un
 			// identifiant Convex ne dit rien à un gérant.
 			reference: debiteur.denomination,
+			id: debiteur._id as string,
 			encoursTotal: restantDuParDebiteur.get(debiteur._id) ?? ZERO,
 			santePrecedente: debiteur.santePrecedente!,
 			santeActuelle: debiteur.santeFinanciere
