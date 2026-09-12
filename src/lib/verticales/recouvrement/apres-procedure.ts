@@ -505,3 +505,66 @@ export function etapesDeLaVoie(cleProcedure: string): readonly EtapeVoie[] {
 		};
 	});
 }
+
+export type StatutEtape = 'FRANCHIE' | 'COURANTE' | 'A_VENIR' | 'HORS_ATTEINTE';
+
+export interface EtapeParcourue extends EtapeVoie {
+	readonly statut: StatutEtape;
+	/** La date à laquelle cette étape a été atteinte, ou `null`. */
+	readonly atteinteLe: string | null;
+	/** La branche réellement prise depuis cette étape, si elle l'a été. */
+	readonly brancheSuivie: { readonly etat: string; readonly survenuLe: string } | null;
+}
+
+/**
+ * La voie, marquée de ce qui a été parcouru.
+ *
+ * ⚠️ `HORS_ATTEINTE` N'EST PAS `A_VENIR`. Quand le dossier est sorti par une
+ * branche — une opposition, une contestation — les étapes suivantes de la ligne
+ * ne viendront plus. Les afficher « à venir » ferait lire un dossier qui avance
+ * là où il a quitté la voie.
+ */
+export function parcoursDeLaVoie(
+	cleProcedure: string,
+	evenements: readonly EvenementSurvenu[],
+	engageeLe: string
+): readonly EtapeParcourue[] {
+	const machine = MACHINES[cleProcedure]!;
+	const voie = etapesDeLaVoie(cleProcedure);
+
+	// Rejoué comme dans `suivreProcedure` : même règle, un événement hors
+	// séquence est ignoré et non refusé.
+	const atteintes = new Map<string, string>([[machine.entree, engageeLe]]);
+	let courant = machine.entree;
+	for (const evenement of evenements) {
+		const etat = machine.etats[courant];
+		if (etat === undefined || etat.terminal) break;
+		const transition = etat.transitions.find((t) => t.cle === evenement.cle);
+		if (transition === undefined) continue;
+		courant = transition.vers;
+		atteintes.set(courant, evenement.survenuLe);
+	}
+
+	const surLaLigne = new Set(machine.ligne);
+	const sortiParUneBranche = !surLaLigne.has(courant);
+	const rangCourant = machine.ligne.indexOf(courant);
+
+	return voie.map((etape, rang) => {
+		const atteinteLe = atteintes.get(etape.etat) ?? null;
+		const brancheSuivie = etape.branches
+			.filter((b) => atteintes.has(b.etat))
+			.map((b) => ({ etat: b.etat, survenuLe: atteintes.get(b.etat)! }))[0] ?? null;
+
+		const statut: StatutEtape = sortiParUneBranche
+			? atteinteLe === null
+				? 'HORS_ATTEINTE'
+				: 'FRANCHIE'
+			: rang < rangCourant
+				? 'FRANCHIE'
+				: rang === rangCourant
+					? 'COURANTE'
+					: 'A_VENIR';
+
+		return { ...etape, statut, atteinteLe, brancheSuivie };
+	});
+}
