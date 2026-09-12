@@ -82,6 +82,21 @@ export interface EtatProcedure {
 export interface MachineProcedure {
 	readonly entree: string;
 	readonly etats: Readonly<Record<string, EtatProcedure>>;
+	/**
+	 * LA LIGNE PRINCIPALE, DÉCLARÉE ET NON DEVINÉE.
+	 *
+	 * Un rail a besoin de savoir quels états sont sur la voie et lesquels sont
+	 * des branches. Aucun parcours automatique ne peut le dire : dans
+	 * l'injonction, `OPPOSITION` et `TITRE_EXECUTOIRE` sont tous deux terminaux
+	 * et à la même profondeur depuis l'entrée. Un « plus long chemin » choisirait
+	 * l'un pour l'autre selon l'ordre de déclaration des transitions, et le rail
+	 * annoncerait l'opposition comme l'issue normale de la procédure.
+	 *
+	 * ⚠️ CE N'EST PAS UNE DÉCORATION D'ÉCRAN. `ligne-voie.test.ts` échoue si un
+	 * état atteignable n'est ni sur la ligne ni rattaché à une de ses étapes :
+	 * une issue oubliée disparaîtrait du rail sans que rien ne casse.
+	 */
+	readonly ligne: readonly string[];
 }
 
 const AUCUNE_ECHEANCE: readonly Echeance[] = [];
@@ -108,6 +123,7 @@ function terminal(libelle: string, constat: string): EtatProcedure {
  */
 const injonctionDePayer: MachineProcedure = {
 	entree: 'REQUETE_DEPOSEE',
+	ligne: ['REQUETE_DEPOSEE', 'ORDONNANCE_RENDUE', 'ORDONNANCE_SIGNIFIEE', 'TITRE_EXECUTOIRE'],
 	etats: {
 		REQUETE_DEPOSEE: {
 			libelle: 'Requête déposée',
@@ -231,6 +247,7 @@ const injonctionDePayer: MachineProcedure = {
  */
 const l126: MachineProcedure = {
 	entree: 'ENGAGEE',
+	ligne: ['ENGAGEE', 'COMMANDEMENT_SIGNIFIE', 'TITRE_EXECUTOIRE'],
 	etats: {
 		// ⚠️ ON ENTRE EN ENGAGEANT, PAS EN SIGNIFIANT. Faire du commandement
 		// signifié l'état d'entrée priverait cet état de sa DATE : les délais y
@@ -441,4 +458,50 @@ export function suivreProcedure(
 		suites: etat.transitions,
 		terminal: etat.terminal
 	};
+}
+
+/** Une étape de la voie, avec les issues qui s'en détachent. */
+export interface EtapeVoie {
+	readonly etat: string;
+	readonly libelle: string;
+	readonly constat: string;
+	readonly terminal: boolean;
+	/** Les états atteignables depuis celui-ci qui ne sont PAS sur la ligne. */
+	readonly branches: readonly { readonly etat: string; readonly libelle: string; readonly constat: string }[];
+}
+
+/**
+ * La voie entière, telle qu'elle se dessine AVANT d'être parcourue.
+ *
+ * ⚠️ ELLE LÈVE SUR UNE PROCÉDURE SANS MACHINE, comme `suivreProcedure`. Une
+ * voie vide se lirait « cette procédure n'a pas d'étapes », alors que la vérité
+ * est « ce logiciel ne les connaît pas ».
+ */
+export function etapesDeLaVoie(cleProcedure: string): readonly EtapeVoie[] {
+	const machine = MACHINES[cleProcedure];
+	if (machine === undefined) {
+		throw new Error(
+			`Aucune machine à états pour « ${cleProcedure} ». Cette procédure n’a pas d’après ` +
+				'modélisé dans ce logiciel.'
+		);
+	}
+
+	const surLaLigne = new Set(machine.ligne);
+
+	return machine.ligne.map((nom) => {
+		const etat = machine.etats[nom]!;
+		return {
+			etat: nom,
+			libelle: etat.libelle,
+			constat: etat.constat,
+			terminal: etat.terminal,
+			branches: etat.transitions
+				.filter((t) => !surLaLigne.has(t.vers))
+				.map((t) => ({
+					etat: t.vers,
+					libelle: machine.etats[t.vers]!.libelle,
+					constat: machine.etats[t.vers]!.constat
+				}))
+		};
+	});
 }
