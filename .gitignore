@@ -67,3 +67,6 @@ docs/lp-inspi/
 # local convex dev deployment
 .convex
 .tanstack/
+
+# Compagnon visuel de brainstorming (superpowers)
+.superpowers/
