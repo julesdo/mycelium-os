@@ -233,7 +233,6 @@ function PageProcedure() {
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
 	const suivi = useQuery(api.recouvrement.apresProcedure.suiviDeLaCreance, { creanceId });
 	const carnet = useQuery(api.recouvrement.intervenants.monCarnet, {});
-	const dossiers = useQuery(api.recouvrement.apresProcedure.dossiersEngages, {});
 
 	const consignerEvenement = useMutation(api.recouvrement.apresProcedure.consignerEvenement);
 	const engagerProcedure = useMutation(api.recouvrement.apresProcedure.engagerProcedure);
@@ -260,18 +259,26 @@ function PageProcedure() {
 	/**
 	 * QUI FAIT L'ACTE, RELU DEPUIS LE DOSSIER.
 	 *
-	 * ⚠️ LE RATTACHEMENT SE FAIT PAR IDENTIFIANT, LA RELECTURE PAR NOM — et
-	 * c'est ce que l'API expose aujourd'hui : `dossiersEngages` rend le NOM de
-	 * l'intervenant, pas son identifiant. Deux fiches homonymes feraient donc
-	 * porter l'anneau à la première des deux. L'écriture, elle, reste exacte :
-	 * `rattacherIntervenant` reçoit l'identifiant choisi, jamais un nom.
+	 * ⚠️ PAR IDENTIFIANT, ET C'EST UNE CORRECTION. Cette relecture se faisait par
+	 * NOM, faute d'identifiant exposé : la feuille posait son anneau sur la
+	 * première fiche dont le nom correspondait. Deux études homonymes, ou deux
+	 * associés du même cabinet, et l'anneau désignait la mauvaise.
+	 *
+	 * L'écriture, elle, a toujours été exacte — `rattacherIntervenant` reçoit un
+	 * identifiant. C'était donc un mensonge d'AFFICHAGE seulement, et c'est ce
+	 * qui le rendait indétectable : rien ne cassait, aucun test ne tombait, et le
+	 * gérant lisait un rattachement qui n'était pas celui qu'il avait fait.
+	 * `creanceComplete` rend maintenant `intervenantId`.
 	 *
 	 * ⚠️ ET « AUCUN INTERVENANT » SE LIT « MOI-MÊME ». Sur un dossier engagé,
 	 * c'est l'état réel de la fiche — aucune personne rattachée — pas une
 	 * présélection : rien n'est deviné, on relit ce qui est écrit.
 	 */
-	const nomIntervenant = dossiers?.find((d) => d.creanceId === creanceId)?.intervenant ?? null;
-	const intervenantChoisi = fiches.find((fiche) => fiche.nom === nomIntervenant)?._id ?? null;
+	const intervenantChoisi = creance?.intervenantId ?? null;
+
+	// Le NOM se dérive de l'identifiant, jamais l'inverse. Une fiche retirée du
+	// carnet depuis le rattachement ne laisse donc pas un nom orphelin à l'écran.
+	const nomIntervenant = fiches.find((fiche) => fiche._id === intervenantChoisi)?.nom ?? null;
 
 	/**
 	 * ⚠️ `survenuLe` VIENT DU CHAMP, jamais de l'horloge. Les délais courent

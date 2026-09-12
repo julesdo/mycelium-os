@@ -293,6 +293,21 @@ export const creanceComplete = authedQuery({
 		),
 		debiteur: v.string(),
 		/**
+		 * QUI FAIT L'ACTE, PAR SON IDENTIFIANT — et pas par son nom.
+		 *
+		 * ⚠️ IL MANQUAIT, ET L'ÉCRAN S'EN PASSAIT EN DEVINANT. Aucune requête ne
+		 * rendait `creances.intervenantId` : la feuille « qui fait l'acte » posait
+		 * donc son anneau de sélection sur la première fiche dont le NOM
+		 * correspondait. Deux études homonymes, ou deux associés du même cabinet,
+		 * et l'anneau désigne la mauvaise.
+		 *
+		 * L'écriture, elle, a toujours été exacte — `rattacherIntervenant` reçoit
+		 * un identifiant. C'est donc un mensonge d'affichage seulement, ce qui est
+		 * précisément ce qui le rend indétectable : rien ne casse, et le gérant
+		 * lit un rattachement qui n'est pas celui qu'il a fait.
+		 */
+		intervenantId: v.union(v.id('intervenants'), v.null()),
+		/**
 		 * L'IDENTIFIANT DU DÉBITEUR, pour que la créance puisse l'atteindre.
 		 *
 		 * ⚠️ IL MANQUAIT. Cette requête ne rendait que la dénomination — laquelle
@@ -504,6 +519,7 @@ export const creanceComplete = authedQuery({
 		return {
 			statut: creance.statut,
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
+			intervenantId: creance.intervenantId ?? null,
 			debiteurId: creance.debiteurId,
 			// La MÊME valeur que celle passée à `qualifier()` seize lignes plus
 			// haut, et c'est le point : l'écran montre désormais ce qui a fait le
