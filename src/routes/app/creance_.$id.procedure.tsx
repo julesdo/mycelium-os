@@ -1,17 +1,25 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Chip, Surface } from '@cladd-ui/react';
+import { Input, Popup, PopupContent, SectionTitle } from '@cladd-ui/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import {
+	BoutonPrincipal,
+	ChoixIntervenant,
 	EnteteDetail,
+	FeuilleVoie,
+	LigneBouton,
+	ListeAnalyses,
 	Page,
 	PageBody,
 	SectionEcran,
 	SuiviProcedure,
-	BoutonPrincipal,
-	aujourdHuiISO
+	aujourdHuiISO,
+	dateCourte,
+	type FicheASaisir,
+	type FicheIntervenant,
+	type VoieAffichee
 } from '../../ui';
 
 export const Route = createFileRoute('/app/creance_/$id/procedure')({ component: PageProcedure });
@@ -29,10 +37,41 @@ export const Route = createFileRoute('/app/creance_/$id/procedure')({ component:
  * reviendrait à faire lire « ce qu'on pourrait engager » avant « ce qui va
  * s'éteindre si personne ne bouge ».
  *
+ * Elle ne passe plus seulement APRÈS : dès qu'une voie est engagée, la liste
+ * cède toute la place. C'est la même règle, poussée d'un cran — et elle retire
+ * du même coup le geste qui permettait d'en déclarer une seconde par-dessus la
+ * première, ce qui écrasait la date de la première sans rien dire.
+ *
  * ⚠️ ET LES PROCÉDURES INDISPONIBLES SONT MONTRÉES, avec leur motif. Un écran
  * qui masquerait L.126 laisserait croire qu'elle n'existe pas ; le motif dit
  * que ce n'est pas une limite du produit mais une valeur juridique qui manque.
+ * Les rangées les listent toutes, et la feuille de chaque voie porte le motif.
  */
+
+/**
+ * CE QUE LE GÉRANT A DIT DE L'INTERVENANT, AU MOMENT DE DÉCLARER.
+ *
+ * `null` — il n'a rien dit, et « je le dirai plus tard » ne bloque rien.
+ * `{ id: null }` — il a dit « moi-même ».
+ * `{ id: … }` — il a nommé une fiche de son carnet.
+ *
+ * ⚠️ TROIS ÉTATS, PAS DEUX. Confondre « rien dit » avec « moi-même » ferait
+ * porter à un silence la valeur d'une réponse — et ferait apparaître un anneau
+ * sur une carte que personne n'a choisie, c'est-à-dire une présélection.
+ */
+type ChoixDeclare = { readonly id: Id<'intervenants'> | null } | null;
+
+/**
+ * ⚠️ `ConvexError` PORTE SON MESSAGE DANS `.data`, PAS DANS `.message`. Le
+ * refus qui compte ici — « cette voie n'a pas d'après modélisé » — serait
+ * remplacé par un « Enregistrement refusé » générique sans cette lecture.
+ */
+function messageDuRefus(e: unknown): string {
+	const convexe = e as { data?: unknown };
+	if (typeof convexe.data === 'string') return convexe.data;
+	return e instanceof Error ? e.message : 'Enregistrement refusé.';
+}
+
 /**
  * « JE L'AI ENGAGÉE LE … » — le seul geste de procédure que ce logiciel offre.
  *
@@ -53,40 +92,137 @@ export const Route = createFileRoute('/app/creance_/$id/procedure')({ component:
  * courent depuis le FAIT. Une requête déposée lundi et saisie vendredi
  * offrirait quatre jours sur une caducité, en silence — et une caducité fait
  * perdre l'ordonnance définitivement.
+ *
+ * ⚠️ ET C'EST LE GESTE QUI MANQUAIT À TOUT LE MODULE 4.5. `engagerProcedure`
+ * existait, complète et testée, et n'était appelée par personne : aucune
+ * créance ne pouvait donc passer à `ENGAGEE`, `suiviDeLaCreance` rendait
+ * toujours `null`, la machine à états ne démarrait jamais, et les échéances de
+ * caducité n'arrivaient jamais au flux.
  */
-function DeclarerEngagement({
-	nom,
+function FeuilleDeclaration({
+	voie,
+	carnet,
 	enCours,
+	onFermer,
+	onAjouter,
+	onOublier,
 	onDeclarer
 }: {
-	nom: string;
+	voie: VoieAffichee;
+	carnet: readonly FicheIntervenant<Id<'intervenants'>>[];
 	enCours: boolean;
-	onDeclarer: (engageeLe: string) => void;
+	onFermer: () => void;
+	onAjouter: (fiche: FicheASaisir) => void;
+	onOublier: (intervenantId: Id<'intervenants'>) => void;
+	onDeclarer: (engageeLe: string, choix: ChoixDeclare) => void;
 }) {
+	/*
+	  ⚠️ TROIS ÉTATS DE FEUILLE, ZÉRO `setState` DANS UN EFFET. Rien ici n'est
+	  synchronisé depuis une prop : la date part d'un appel unique à l'horloge,
+	  le choix part à « rien dit », et le carnet part fermé. La remise à zéro
+	  entre deux voies se fait par la `key` de ce composant, côté appelant — un
+	  effet qui recopierait une prop dans un état produirait un rendu de plus et,
+	  le jour où la prop change pour une autre raison, effacerait une saisie.
+	*/
 	const [quand, setQuand] = useState(aujourdHuiISO());
+	const [choix, setChoix] = useState<ChoixDeclare>(null);
+	const [carnetOuvert, setCarnetOuvert] = useState(false);
+
+	const nomChoisi =
+		choix === null
+			? 'Je le dirai plus tard'
+			: choix.id === null
+				? 'Moi-même'
+				: (carnet.find((fiche) => fiche._id === choix.id)?.nom ?? 'Fiche retirée');
 
 	return (
-		<div className="flex flex-col gap-1.5 border-t border-cladd-outline pt-cladd-3xs">
-			<span className="text-cladd-2xs text-cladd-fg-softer">
-				Vous avez engagé cette voie ? Dites-le : le logiciel suivra les délais qui en découlent.
-			</span>
-			<div className="flex flex-wrap items-center gap-cladd-3xs">
-				<input
-					type="date"
-					value={quand}
-					onChange={(e) => setQuand(e.target.value)}
-					aria-label={`Date d’engagement de ${nom}`}
-					className="verre h-cladd-md rounded-full px-cladd-3xs text-cladd-xs text-cladd-fg focus:outline-none"
-				/>
-				<BoutonPrincipal
-					loading={enCours}
-					readOnly={enCours || quand === ''}
-					onClick={() => onDeclarer(quand)}
-				>
-					Je l’ai engagée
-				</BoutonPrincipal>
-			</div>
-		</div>
+		<>
+			<Popup
+				open
+				onOpenChange={(ouvert) => {
+					if (!ouvert) onFermer();
+				}}
+				headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">Je l’ai engagée</span>}
+				contentClassName="max-w-lg"
+			>
+				<PopupContent>
+					<SectionTitle>Quel jour</SectionTitle>
+					{/*
+					  ⚠️ LA DATE VIENT DU CHAMP, JAMAIS DE L'HORLOGE. Les délais courent
+					  depuis le FAIT. Une requête déposée lundi et saisie vendredi
+					  offrirait quatre jours sur une caducité, en silence, et une
+					  caducité fait perdre l'ordonnance définitivement.
+					*/}
+					<div className="mt-cladd-3xs flex flex-col gap-cladd-3xs">
+						<Input
+							size="lg"
+							type="date"
+							value={quand}
+							onChange={setQuand}
+							infoMessage="La date du FAIT, pas celle de la saisie."
+						/>
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+							{quand === ''
+								? 'Sans date, aucun délai ne peut être compté.'
+								: `Les délais de ${voie.nom} courront depuis le ${dateCourte(quand)}.`}
+						</p>
+					</div>
+				</PopupContent>
+
+				<PopupContent>
+					<SectionTitle>Qui a fait l’acte</SectionTitle>
+					<div className="mt-cladd-3xs flex flex-col gap-cladd-3xs">
+						<ListeAnalyses>
+							<LigneBouton
+								titre="Qui fait l’acte"
+								valeur={nomChoisi}
+								onClick={() => setCarnetOuvert(true)}
+							/>
+						</ListeAnalyses>
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softest">
+							Cette réponse peut attendre : elle ne change aucun délai, et se dit plus tard sur cet
+							écran.
+						</p>
+					</div>
+				</PopupContent>
+
+				<PopupContent>
+					{/*
+					  ⚠️ `BoutonPrincipal`, PAS UN `Button color="brand"`. Mesuré au
+					  navigateur : `color="brand"` sur le variant par défaut rend un fond
+					  transparent avec du texte bleu, c'est-à-dire quelque chose qui se lit
+					  comme un lien. L'action qui met des délais à courir ne peut pas être
+					  le seul élément de la feuille qu'on ne voit pas.
+					*/}
+					<BoutonPrincipal
+						pleineLargeur
+						loading={enCours}
+						readOnly={enCours || quand === ''}
+						onClick={() => onDeclarer(quand, choix)}
+					>
+						Je l’ai engagée
+					</BoutonPrincipal>
+				</PopupContent>
+			</Popup>
+
+			{/*
+			  Une feuille par-dessus la feuille : Cladd les empile comme iOS, et
+			  chacune garde son propre piège à focus. Elles sont SŒURS dans l'arbre,
+			  jamais imbriquées — c'est la forme que la documentation du kit montre.
+			*/}
+			<ChoixIntervenant
+				carnet={carnet}
+				choisi={choix === null ? undefined : choix.id}
+				ouverte={carnetOuvert}
+				onFermer={() => setCarnetOuvert(false)}
+				onChoisir={(intervenantId) => {
+					setChoix({ id: intervenantId });
+					setCarnetOuvert(false);
+				}}
+				onAjouter={onAjouter}
+				onOublier={onOublier}
+			/>
+		</>
 	);
 }
 
@@ -96,11 +232,46 @@ function PageProcedure() {
 
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
 	const suivi = useQuery(api.recouvrement.apresProcedure.suiviDeLaCreance, { creanceId });
+	const carnet = useQuery(api.recouvrement.intervenants.monCarnet, {});
+	const dossiers = useQuery(api.recouvrement.apresProcedure.dossiersEngages, {});
+
 	const consignerEvenement = useMutation(api.recouvrement.apresProcedure.consignerEvenement);
 	const engagerProcedure = useMutation(api.recouvrement.apresProcedure.engagerProcedure);
+	const rattacherIntervenant = useMutation(api.recouvrement.apresProcedure.rattacherIntervenant);
+	const ajouterIntervenant = useMutation(api.recouvrement.intervenants.ajouterIntervenant);
+	const oublierIntervenant = useMutation(api.recouvrement.intervenants.oublierIntervenant);
 
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
+	/** La voie dont le déroulé est ouvert, par sa clé. */
+	const [voieOuverte, setVoieOuverte] = useState<string | null>(null);
+	/** La voie dont on déclare l'engagement — la seconde feuille. */
+	const [declaree, setDeclaree] = useState<string | null>(null);
+	/** Le carnet, sur un dossier déjà engagé. */
+	const [carnetOuvert, setCarnetOuvert] = useState(false);
+
+	// Tout se DÉRIVE du rendu : aucune de ces valeurs n'est un état, donc aucune
+	// ne peut être en retard d'un rendu sur la requête qui la porte.
+	const procedures = creance?.procedures ?? [];
+	const voie = procedures.find((p) => p.cle === voieOuverte) ?? null;
+	const voieDeclaree = procedures.find((p) => p.cle === declaree) ?? null;
+	const fiches = carnet ?? [];
+
+	/**
+	 * QUI FAIT L'ACTE, RELU DEPUIS LE DOSSIER.
+	 *
+	 * ⚠️ LE RATTACHEMENT SE FAIT PAR IDENTIFIANT, LA RELECTURE PAR NOM — et
+	 * c'est ce que l'API expose aujourd'hui : `dossiersEngages` rend le NOM de
+	 * l'intervenant, pas son identifiant. Deux fiches homonymes feraient donc
+	 * porter l'anneau à la première des deux. L'écriture, elle, reste exacte :
+	 * `rattacherIntervenant` reçoit l'identifiant choisi, jamais un nom.
+	 *
+	 * ⚠️ ET « AUCUN INTERVENANT » SE LIT « MOI-MÊME ». Sur un dossier engagé,
+	 * c'est l'état réel de la fiche — aucune personne rattachée — pas une
+	 * présélection : rien n'est deviné, on relit ce qui est écrit.
+	 */
+	const nomIntervenant = dossiers?.find((d) => d.creanceId === creanceId)?.intervenant ?? null;
+	const intervenantChoisi = fiches.find((fiche) => fiche.nom === nomIntervenant)?._id ?? null;
 
 	/**
 	 * ⚠️ `survenuLe` VIENT DU CHAMP, jamais de l'horloge. Les délais courent
@@ -113,7 +284,7 @@ function PageProcedure() {
 		try {
 			await consignerEvenement({ creanceId, cle, survenuLe });
 		} catch (e) {
-			setErreur(e instanceof Error ? e.message : 'Enregistrement refusé.');
+			setErreur(messageDuRefus(e));
 		} finally {
 			setEnCours(false);
 		}
@@ -126,24 +297,73 @@ function PageProcedure() {
 	 * gérant dit ce qu'il a fait ; le produit se met à compter les délais qui en
 	 * découlent, et c'est tout ce qu'il fait.
 	 *
-	 * ⚠️ `ConvexError` PORTE SON MESSAGE DANS `.data`, PAS DANS `.message`. Le
-	 * refus qui compte ici — « cette voie n'a pas d'après modélisé » — serait
-	 * remplacé par un « Enregistrement refusé » générique sans cette lecture.
+	 * ⚠️ L'INTERVENANT NE SE RATTACHE QUE S'IL A ÉTÉ DIT. Un silence n'est pas
+	 * un « moi-même » : appeler `rattacherIntervenant` sur « rien dit »
+	 * écrirait une réponse que personne n'a donnée.
+	 *
+	 * ⚠️ ET SI LE RATTACHEMENT ÉCHOUE, L'ENGAGEMENT RESTE. Il est déjà écrit, et
+	 * il porte les délais : le défaire pour une fiche introuvable ferait perdre
+	 * la date de l'acte. Le refus s'affiche, la feuille reste ouverte.
 	 */
-	async function declarer(procedure: string, engageeLe: string) {
+	async function declarer(procedure: string, engageeLe: string, choix: ChoixDeclare) {
 		setErreur(null);
 		setEnCours(true);
 		try {
 			await engagerProcedure({ creanceId, procedure, engageeLe });
+			if (choix !== null) await rattacherIntervenant({ creanceId, intervenantId: choix.id });
+			setDeclaree(null);
+			setVoieOuverte(null);
 		} catch (e) {
-			const convexe = e as { data?: unknown };
-			setErreur(
-				typeof convexe.data === 'string'
-					? convexe.data
-					: e instanceof Error
-						? e.message
-						: 'Enregistrement refusé.'
-			);
+			setErreur(messageDuRefus(e));
+		} finally {
+			setEnCours(false);
+		}
+	}
+
+	async function rattacher(intervenantId: Id<'intervenants'> | null) {
+		setErreur(null);
+		setEnCours(true);
+		try {
+			await rattacherIntervenant({ creanceId, intervenantId });
+			setCarnetOuvert(false);
+		} catch (e) {
+			setErreur(messageDuRefus(e));
+		} finally {
+			setEnCours(false);
+		}
+	}
+
+	/**
+	 * ⚠️ `origine` EST ÉCRITE ICI, PAS SAISIE. Une fiche tapée à la main est
+	 * `SAISI_A_LA_MAIN` par construction. Une fiche venue d'un répertoire public
+	 * porterait EN PLUS sa source et sa date de relevé — la mutation refuse sans
+	 * elles — et ce formulaire ne peut donc pas en fabriquer une.
+	 */
+	async function ajouter(fiche: FicheASaisir) {
+		setErreur(null);
+		setEnCours(true);
+		try {
+			await ajouterIntervenant({
+				nom: fiche.nom,
+				role: fiche.role,
+				ressort: fiche.ressort,
+				origine: 'SAISI_A_LA_MAIN'
+			});
+		} catch (e) {
+			setErreur(messageDuRefus(e));
+		} finally {
+			setEnCours(false);
+		}
+	}
+
+	/** Une fiche saisie par erreur doit pouvoir partir. */
+	async function oublier(intervenantId: Id<'intervenants'>) {
+		setErreur(null);
+		setEnCours(true);
+		try {
+			await oublierIntervenant({ intervenantId });
+		} catch (e) {
+			setErreur(messageDuRefus(e));
 		} finally {
 			setEnCours(false);
 		}
@@ -168,76 +388,93 @@ function PageProcedure() {
 								enCours={enCours}
 								onConsigner={(cle, survenuLe) => void consigner(cle, survenuLe)}
 							/>
+
+							{/* ⚠️ LA QUESTION SE POSE APRÈS COUP AUSSI. Un gérant qui a déclaré
+							    sans le dire doit pouvoir nommer son intervenant plus tard :
+							    sans cette rangée, « je le dirai plus tard » serait un mensonge. */}
+							<ListeAnalyses>
+								<LigneBouton
+									titre="Qui fait l’acte"
+									valeur={nomIntervenant ?? 'Moi-même'}
+									onClick={() => setCarnetOuvert(true)}
+								/>
+							</ListeAnalyses>
 						</SectionEcran>
 					) : null}
 
 					{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
 
-					{creance === undefined ? (
+					{creance === undefined || suivi === undefined ? (
 						<p className="sr-only">Chargement…</p>
-					) : (
+					) : suivi === null ? (
 						<SectionEcran titre="Les voies envisageables">
-							<div className="flex flex-col gap-cladd-3xs">
-								{creance.procedures.map((procedure) => (
-									<Surface
+							{/*
+							  ⚠️ UNE RANGÉE PAR VOIE, ET LE DÉROULÉ EN FEUILLE. L'écran empilait
+							  une carte de prose par voie : le lecteur devait lire trois
+							  paragraphes pour apprendre qu'une voie est indisponible. La rangée
+							  dit le verdict ; la feuille porte les étapes, les motifs de blocage
+							  et ce qui fait échouer la voie.
+							*/}
+							<ListeAnalyses>
+								{procedures.map((procedure) => (
+									<LigneBouton
 										key={procedure.cle}
-										variant="transparent"
-										outline={false}
-										className="verre-carte rounded-cladd-xl"
-										contentClassName="flex flex-col gap-1.5 p-cladd-2xs"
-									>
-										<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
-											<span className="text-cladd-sm font-semibold">{procedure.nom}</span>
-											<Chip size="md" color={procedure.disponible ? 'green' : 'neutral'}>
-												{procedure.disponible ? 'Envisageable' : 'Indisponible'}
-											</Chip>
-										</div>
-										{procedure.blocages.map((blocage) => (
-											<p key={blocage} className="text-cladd-2xs text-cladd-fg-soft">
-												{blocage}
-											</p>
-										))}
-
-										{/*
-										  ═════════════════════════════════════════════════════
-										  ⚠️ LE LOGICIEL N'ENGAGE RIEN. IL ENREGISTRE.
-										  ═════════════════════════════════════════════════════
-
-										  C'est la troisième ligne rouge du projet, et la
-										  formulation en dépend entièrement. Le bouton ne dit
-										  pas « engager cette procédure » — ce serait le
-										  logiciel qui agit, et ce serait recommander une voie.
-										  Il dit « JE L'AI ENGAGÉE LE … » : le gérant déclare
-										  ce qu'il a fait, et le logiciel se met à compter.
-
-										  ⚠️ ET C'EST LE GESTE QUI MANQUAIT À TOUT LE MODULE
-										  4.5. `engagerProcedure` existait, complète et testée,
-										  et n'était appelée par personne : aucune créance ne
-										  pouvait donc passer à `ENGAGEE`, `suiviDeLaCreance`
-										  rendait toujours `null`, la machine à états ne
-										  démarrait jamais, et les échéances de caducité
-										  n'arrivaient jamais au flux. Un sous-système entier
-										  rendu inatteignable par l'absence d'un seul appel.
-
-										  ⚠️ LA DATE VIENT DU CHAMP, JAMAIS DE L'HORLOGE. Les
-										  délais courent depuis le FAIT. Une requête déposée
-										  lundi et saisie vendredi offrirait quatre jours sur
-										  une caducité, en silence.
-										*/}
-										{procedure.suivie && suivi === null ? (
-											<DeclarerEngagement
-												nom={procedure.nom}
-												enCours={enCours}
-												onDeclarer={(le) => void declarer(procedure.cle, le)}
-											/>
-										) : null}
-									</Surface>
+										titre={procedure.nom}
+										precision={
+											procedure.etapes.length === 0
+												? 'aucun délai n’en découle'
+												: `${procedure.etapes.length} étapes · ${procedure.conditionsEchec.length} façons d’échouer`
+										}
+										valeur={procedure.disponible ? 'Envisageable' : 'Indisponible'}
+										onClick={() => setVoieOuverte(procedure.cle)}
+									/>
 								))}
-							</div>
+							</ListeAnalyses>
+
+							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softest">
+								Énumérées, jamais classées. Aucune n’est mise en avant.
+							</p>
 						</SectionEcran>
-					)}
+					) : null}
 				</div>
 			</PageBody>
+
+			<FeuilleVoie
+				voie={voie}
+				ouverte={voie !== null}
+				onFermer={() => setVoieOuverte(null)}
+				onDeclarer={() => setDeclaree(voie?.cle ?? null)}
+			/>
+
+			{/*
+			  ⚠️ LA FEUILLE DE DÉCLARATION SE REMONTE À CHAQUE VOIE, par sa `key` :
+			  c'est ce qui remet la date à aujourd'hui et le choix à « rien dit »
+			  sans le moindre effet. Ouvrir une voie, refermer, en ouvrir une autre
+			  et retrouver la date de la première serait une erreur silencieuse sur
+			  la seule donnée que ce geste enregistre.
+			*/}
+			{voieDeclaree === null ? null : (
+				<FeuilleDeclaration
+					key={voieDeclaree.cle}
+					voie={voieDeclaree}
+					carnet={fiches}
+					enCours={enCours}
+					onFermer={() => setDeclaree(null)}
+					onAjouter={(fiche) => void ajouter(fiche)}
+					onOublier={(intervenantId) => void oublier(intervenantId)}
+					onDeclarer={(engageeLe, choix) => void declarer(voieDeclaree.cle, engageeLe, choix)}
+				/>
+			)}
+
+			<ChoixIntervenant
+				carnet={fiches}
+				choisi={intervenantChoisi}
+				ouverte={carnetOuvert}
+				onFermer={() => setCarnetOuvert(false)}
+				onChoisir={(intervenantId) => void rattacher(intervenantId)}
+				onAjouter={(fiche) => void ajouter(fiche)}
+				onOublier={(intervenantId) => void oublier(intervenantId)}
+			/>
 		</Page>
 	);
 }

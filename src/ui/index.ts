@@ -66,6 +66,12 @@ export { RailProcedure, type EtapeAffichee, type StatutEtapeAffiche } from './ra
 export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
 export { ListeAnalyses, LigneAnalyse, LigneBouton, EnteteDetail } from './navigation';
 export { FeuilleVoie, type VoieAffichee } from './feuille-voie';
+export {
+	ChoixIntervenant,
+	type FicheIntervenant,
+	type FicheASaisir,
+	type RoleIntervenant
+} from './choix-intervenant';
 export { rangeeDuDebiteur } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
 export { VeilleurAvatar, type EtatVeilleur } from './veilleur-avatar';

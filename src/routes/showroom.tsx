@@ -23,6 +23,8 @@ import {
 	type EtapeAffichee,
 	FeuilleVoie,
 	type VoieAffichee,
+	ChoixIntervenant,
+	type FicheIntervenant,
 	ListeAnalyses,
 	LigneBouton,
 	Pieces,
@@ -2146,6 +2148,64 @@ function DemoVoie() {
 	);
 }
 
+/**
+ * LE CARNET DE LA SALLE — deux fiches, deux rôles, et « Moi-même » choisi.
+ *
+ * ⚠️ DEUX RÔLES DIFFÉRENTS EXPRÈS. C'est ce qui met le sous-titre à l'épreuve :
+ * « Commissaire de justice · Bobigny » est la chaîne la plus longue que cette
+ * carte ait à porter, et c'est sur 375 px qu'elle se casse, pas sur 1280.
+ */
+const CARNET_DEMO: readonly FicheIntervenant[] = [
+	{ _id: 'fiche-avocat', nom: 'Cabinet Perrin', role: 'AVOCAT', ressort: 'Paris' },
+	{
+		_id: 'fiche-commissaire',
+		nom: 'Étude Lemoine',
+		role: 'COMMISSAIRE_DE_JUSTICE',
+		ressort: 'Bobigny'
+	}
+];
+
+function DemoIntervenant() {
+	// Comme `DemoVoie` : une `Popup` est contrôlée, donc la salle l'ouvre
+	// d'emblée — c'est ce qu'on vient regarder.
+	const [ouverte, setOuverte] = useState(true);
+	// `null` = « Moi-même », le premier rang. Voir `choix-intervenant.tsx` : ce
+	// n'est pas une présélection du logiciel mais l'état réel d'un dossier sans
+	// intervenant rattaché.
+	const [choisi, setChoisi] = useState<string | null>(null);
+
+	return (
+		<Page>
+			<PageHeader
+				titre="Ateliers Martin"
+				sousTitre="Qui fait l’acte, et pourquoi rien n’est trié"
+			/>
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
+					<SectionTitle>Le carnet</SectionTitle>
+					<ListeAnalyses>
+						<LigneBouton
+							titre="Qui fait l’acte"
+							valeur={CARNET_DEMO.find((f) => f._id === choisi)?.nom ?? 'Moi-même'}
+							onClick={() => setOuverte(true)}
+						/>
+					</ListeAnalyses>
+
+					<ChoixIntervenant
+						carnet={CARNET_DEMO}
+						choisi={choisi}
+						ouverte={ouverte}
+						onFermer={() => setOuverte(false)}
+						onChoisir={setChoisi}
+						onAjouter={() => setOuverte(false)}
+						onOublier={() => setOuverte(false)}
+					/>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'veilleur',
 	'accueil',
@@ -2161,6 +2221,7 @@ const ECRANS = [
 	'suivi',
 	'rail',
 	'voie',
+	'intervenant',
 	'pieces',
 	'solidite',
 	'relances',
@@ -2215,6 +2276,7 @@ function Showroom() {
 				{ecran === 'suivi' ? <DemoSuivi /> : null}
 				{ecran === 'rail' ? <DemoRail /> : null}
 				{ecran === 'voie' ? <DemoVoie /> : null}
+				{ecran === 'intervenant' ? <DemoIntervenant /> : null}
 				{ecran === 'pieces' ? <DemoPieces /> : null}
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'relances' ? <DemoRelances /> : null}
