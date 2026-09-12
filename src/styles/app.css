@@ -673,6 +673,99 @@ select:not(:disabled),
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * LE VEILLEUR — sa présence, sur tous les écrans.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Trois états, trois comportements. Voir `ui/veilleur-avatar.tsx` pour le
+ * raisonnement ; ici, seulement le mouvement.
+ *
+ * ⚠️ AU REPOS, L'IRIS RESPIRE À PEINE — six secondes par cycle, et une
+ * amplitude de huit pour cent. C'est délibérément sous le seuil où l'on
+ * remarque un mouvement sans le chercher : ce qui s'agite en permanence devient
+ * du décor en trois jours, et ne dit plus rien le jour où ça compte. On veut
+ * qu'on le sente vivant en le regardant, pas qu'on le voie bouger du coin de
+ * l'œil toute la journée.
+ *
+ * ⚠️ ET LE BALAYAGE NE TOURNE QUE PENDANT LE TRAVAIL. C'est la contrepartie
+ * exacte : il est franc, rapide (2,4 s), et il s'arrête. Sa RARETÉ est ce qui
+ * le rend lisible — même raisonnement que le pouls du journal, juste en
+ * dessous. */
+.veilleur-avatar {
+	color: oklch(0.72 0.13 254);
+}
+
+.veilleur-orbite {
+	opacity: 0.3;
+}
+
+/* LE BALAYAGE EST CACHÉ PAR DÉFAUT. Un secteur figé sur un cadran immobile se
+ * lit comme un graphique en panne, pas comme une veille. */
+.veilleur-balayage {
+	opacity: 0;
+	transform-origin: 16px 16px;
+}
+
+.veilleur-avatar[data-etat='TRAVAILLE'] .veilleur-balayage {
+	opacity: 1;
+	animation: veilleur-tourne 2.4s linear infinite;
+}
+
+.veilleur-avatar[data-etat='TRAVAILLE'] .veilleur-orbite {
+	opacity: 0.55;
+}
+
+/* L'IRIS RESPIRE — sauf quand la surveillance est rompue. */
+.veilleur-avatar[data-etat='VEILLE'] .veilleur-iris {
+	animation: veilleur-respire 6s ease-in-out infinite;
+	transform-origin: 16px 16px;
+}
+
+/* ⚠️ ROMPU : L'IRIS SE CONTRACTE ET NE BOUGE PLUS. Un veilleur en panne ne doit
+ * pas avoir l'air de veiller — c'est le seul mensonge que cette pastille
+ * pourrait dire, et ce serait le plus coûteux du produit. L'orbite pâlit avec
+ * lui : l'ensemble se lit comme éteint, sans emprunter une couleur de seuil. */
+.veilleur-avatar[data-etat='ROMPU'] .veilleur-iris {
+	r: 2.5;
+	opacity: 0.45;
+}
+
+.veilleur-avatar[data-etat='ROMPU'] .veilleur-orbite {
+	opacity: 0.15;
+	stroke-dasharray: 2 3;
+}
+
+@keyframes veilleur-respire {
+	0%,
+	100% {
+		transform: scale(1);
+		opacity: 0.85;
+	}
+	50% {
+		transform: scale(1.08);
+		opacity: 1;
+	}
+}
+
+@keyframes veilleur-tourne {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Figé, le secteur resterait planté à un angle arbitraire — ce qui se lit comme
+ * une panne, exactement l'inverse de ce qu'il annonce. On le retire, et
+ * l'orbite pleine suffit à dire que quelque chose est en place. L'iris, lui,
+ * garde sa taille : elle porte l'état, pas le mouvement. */
+@media (prefers-reduced-motion: reduce) {
+	.veilleur-avatar[data-etat='TRAVAILLE'] .veilleur-balayage {
+		display: none;
+	}
+	.veilleur-avatar[data-etat='VEILLE'] .veilleur-iris {
+		animation: none;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * LE POULS — le travail qui tourne EN CE MOMENT.
  * ═══════════════════════════════════════════════════════════════════════════
  *

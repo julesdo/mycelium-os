@@ -66,6 +66,7 @@ export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
 export { ListeAnalyses, LigneAnalyse, EnteteDetail } from './navigation';
 export { rangeeDuDebiteur } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
+export { VeilleurAvatar, type EtatVeilleur } from './veilleur-avatar';
 export {
 	RechercheRegistre,
 	sirenLisible,

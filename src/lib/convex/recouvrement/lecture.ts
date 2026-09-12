@@ -369,6 +369,8 @@ export const creanceComplete = authedQuery({
 				cle: v.string(),
 				nom: v.string(),
 				disponible: v.boolean(),
+				/** Cette voie a-t-elle un « apres » que le logiciel sait surveiller. */
+				suivie: v.boolean(),
 				blocages: v.array(v.string())
 			})
 		),
@@ -572,6 +574,11 @@ export const creanceComplete = authedQuery({
 				cle: procedure.cle,
 				nom: procedure.nom,
 				disponible: clesEnvisageables.has(procedure.cle) && procedure.peutEvaluer(),
+				// Une procedure SANS machine n'a pas d'apres a surveiller — la relance
+				// amiable. `engagerProcedure` la refuse, et l'ecran ne doit donc pas
+				// proposer d'en declarer l'engagement : ce serait offrir un geste dont
+				// le serveur ne veut pas.
+				suivie: procedure.machine !== null,
 				blocages: [...procedure.blocagesProductionActe()]
 			})),
 			// ⚠️ LE COUPE-CIRCUIT EST DANS LE DOMAINE, pas ici : un débiteur en

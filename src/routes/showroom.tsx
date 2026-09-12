@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { Toolbar, Segmented, SegmentedButton, SectionTitle } from '@cladd-ui/react';
+import { Toolbar, Segmented, SegmentedButton, SectionTitle, Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon, FileSpreadsheetIcon } from 'lucide-react';
 import {
 	Page,
@@ -32,7 +32,8 @@ import {
 	type EvenementAffiche,
 	type DecompteAffiche,
 	travauxDuVeilleur,
-	ceQuiManque
+	ceQuiManque,
+	VeilleurAvatar
 } from '../ui';
 import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
 import { PALIERS, BORNES_PALIER, TARIFS } from '../lib/config/tarifs';
@@ -1810,7 +1811,72 @@ function DemoHabitude() {
 	);
 }
 
+/**
+ * LE VEILLEUR EN PERSONNE, dans ses trois etats.
+ *
+ * ⚠️ IL N'APPARAIT PAS DANS LA COQUILLE DE CETTE SALLE, et c'est correct :
+ * dans la barre il interroge Convex, la requete leve sans session, et le
+ * `Facultatif` qui l'entoure rend `null` plutot que d'emporter la navigation.
+ * C'est exactement ce qu'on veut en production — mais ca le rend invisible
+ * ici, d'ou cette page.
+ *
+ * Les trois etats cote a cote sont le seul moyen de verifier AU REGARD ce que
+ * les mots promettent : que la veille se sente sans s'agiter, que le balayage
+ * soit franc, et surtout qu'un veilleur ROMPU n'ait pas l'air de veiller.
+ */
+function DemoVeilleurAvatar() {
+	const etats = [
+		{
+			etat: 'VEILLE' as const,
+			titre: 'Il veille',
+			note: 'L’iris respire — six secondes par cycle, huit pour cent d’amplitude. Delibérément sous le seuil où l’on remarque un mouvement sans le chercher : ce qui s’agite en permanence devient du décor en trois jours.'
+		},
+		{
+			etat: 'TRAVAILLE' as const,
+			titre: 'Il travaille en ce moment',
+			note: 'Le balayage tourne, franc et rapide. C’est le seul moment où l’avatar est vraiment animé, et il ne dure que le temps du traitement. Sa rareté est ce qui le rend lisible.'
+		},
+		{
+			etat: 'ROMPU' as const,
+			titre: 'La surveillance est interrompue',
+			note: 'L’iris se contracte, l’orbite se pointille, plus rien ne tourne. Un veilleur en panne ne doit pas avoir l’air de veiller : c’est le seul mensonge que cette pastille pourrait dire, et le plus coûteux du produit.'
+		}
+	];
+
+	return (
+		<Page>
+			<PageHeader titre="Le veilleur" sousTitre="Sa présence, sur tous les écrans" />
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
+					{etats.map(({ etat, titre, note }) => (
+						<Surface
+							key={etat}
+							variant="transparent"
+							outline={false}
+							className="verre-carte rounded-cladd-xl"
+							contentClassName="flex items-start gap-cladd-2xs p-cladd-2xs"
+						>
+							<VeilleurAvatar etat={etat} taille={40} />
+							<div className="flex min-w-0 flex-col gap-1">
+								<span className="text-cladd-sm font-semibold">{titre}</span>
+								<span className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">{note}</span>
+							</div>
+						</Surface>
+					))}
+
+					<p className="px-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softest">
+						Aucune couleur de seuil : le vert, l’ambre et le rouge restent réservés à
+						<code> --color-seuil-*</code>. L’avatar prend le bleu d’encre de la marque, comme le
+						pouls du journal — c’est la même machine, elle a la même couleur.
+					</p>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
+	'veilleur',
 	'accueil',
 	'accueil-vierge',
 	'bilan-import',
@@ -1863,6 +1929,7 @@ function Showroom() {
 				{ecran === 'accueil' ? <DemoAccueil /> : null}
 				{ecran === 'accueil-vierge' ? <DemoAccueilVierge /> : null}
 				{ecran === 'bilan-import' ? <DemoBilanImport /> : null}
+				{ecran === 'veilleur' ? <DemoVeilleurAvatar /> : null}
 				{ecran === 'habitude' ? <DemoHabitude /> : null}
 				{ecran === 'lettrage' ? <DemoLettrage /> : null}
 				{ecran === 'creancier' ? <DemoCreancier /> : null}

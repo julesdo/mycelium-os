@@ -7,6 +7,7 @@ import { HomeIcon, UsersIcon, UploadIcon, SearchIcon } from 'lucide-react';
 import { cn } from '../ui/cn';
 import { LogoLetikette } from '../ui/logo';
 import { Avatar } from '../ui/avatar';
+import { VeilleurAvatar, type EtatVeilleur } from '../ui/veilleur-avatar';
 import { api } from '../lib/convex/_generated/api';
 import { SelecteurEtablissement } from './selecteur-etablissement';
 
@@ -190,12 +191,71 @@ function AvatarConnecte() {
  * le drapé net à soixante-quatre pixels du bord et rendrait visible la jointure
  * que toute cette architecture existe pour supprimer.
  */
+/**
+ * LE VEILLEUR, DANS LA BARRE — donc sur tous les écrans.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI IL EST ICI ET PAS SEULEMENT SUR L'ACCUEIL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le journal du veilleur, posé sur l'accueil, dit ce que la machine a FAIT. Il
+ * ne dit pas qu'elle est LÀ — sur l'écran des débiteurs, dans une créance, à
+ * trois heures du matin. Un travail de fond qui ne se manifeste que sur un
+ * écran n'est pas un travail de fond : c'est un rapport qu'on va consulter.
+ *
+ * ⚠️ ET IL EST UN LIEN VERS SON JOURNAL. Une pastille qui bouge et qu'on ne
+ * peut pas interroger est une décoration ; celle-ci mène à ce qu'elle affirme.
+ *
+ * ⚠️ LES DEUX REQUÊTES SONT LES MÊMES QUE CELLES DE L'ACCUEIL, donc Convex les
+ * sert depuis son cache : la barre ne paie pas un aller-retour de plus sur
+ * l'écran qui les demande déjà.
+ *
+ * Enveloppé dans `Facultatif` comme tout ce qui interroge Convex depuis la
+ * barre : sans session — au chargement, après une expiration, ou dans la salle
+ * d'exposition — la requête lève, et un ornement ne doit jamais emporter la
+ * navigation entière.
+ */
+function VeilleurPresent() {
+	const battement = useQuery(api.recouvrement.battement.dernierBattement, {});
+	const depots = useQuery(api.recouvrement.depotMutations.listerImports, { limite: 5 });
+
+	const travaille = (depots ?? []).some(
+		(depot) => depot.statut === 'EN_ATTENTE' || depot.statut === 'LECTURE'
+	);
+
+	/**
+	 * ⚠️ `undefined` NE VAUT PAS « ROMPU ». Tant que la réponse n'est pas là, on
+	 * ne sait pas : afficher un veilleur éteint le temps d'un aller-retour ferait
+	 * clignoter une panne à chaque ouverture, et on apprendrait à l'ignorer —
+	 * exactement sur le signal qui ne doit jamais être ignoré.
+	 */
+	const etat: EtatVeilleur = travaille
+		? 'TRAVAILLE'
+		: battement?.statut === 'ECHEC'
+			? 'ROMPU'
+			: 'VEILLE';
+
+	return (
+		<Link
+			to="/app"
+			aria-label="Le veilleur, et ce qu'il a fait"
+			className="verre-bouton flex size-cladd-md shrink-0 items-center justify-center rounded-full"
+		>
+			<VeilleurAvatar etat={etat} />
+		</Link>
+	);
+}
+
 export function Barre() {
 	return (
 		<header className="relative z-30 shrink-0">
 			<div className="flex items-center gap-cladd-3xs px-cladd-3xs py-2">
 				<Facultatif>
 					<AvatarConnecte />
+				</Facultatif>
+
+				<Facultatif>
+					<VeilleurPresent />
 				</Facultatif>
 
 				<Recherche />
