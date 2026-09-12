@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { Input, Popup, PopupContent, SectionTitle } from '@cladd-ui/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -13,10 +13,13 @@ import {
 	ListeAnalyses,
 	Page,
 	PageBody,
+	RechercheCommissaire,
 	SectionEcran,
 	SuiviProcedure,
 	aujourdHuiISO,
 	dateCourte,
+	type EtatRechercheCommissaire,
+	type EtudeAffichee,
 	type FicheASaisir,
 	type FicheIntervenant,
 	type VoieAffichee
@@ -106,6 +109,7 @@ function FeuilleDeclaration({
 	onFermer,
 	onAjouter,
 	onOublier,
+	onChercherUnCommissaire,
 	onDeclarer
 }: {
 	voie: VoieAffichee;
@@ -114,6 +118,7 @@ function FeuilleDeclaration({
 	onFermer: () => void;
 	onAjouter: (fiche: FicheASaisir) => void;
 	onOublier: (intervenantId: Id<'intervenants'>) => void;
+	onChercherUnCommissaire: () => void;
 	onDeclarer: (engageeLe: string, choix: ChoixDeclare) => void;
 }) {
 	/*
@@ -221,6 +226,7 @@ function FeuilleDeclaration({
 				}}
 				onAjouter={onAjouter}
 				onOublier={onOublier}
+				onChercherUnCommissaire={onChercherUnCommissaire}
 			/>
 		</>
 	);
@@ -239,6 +245,9 @@ function PageProcedure() {
 	const rattacherIntervenant = useMutation(api.recouvrement.apresProcedure.rattacherIntervenant);
 	const ajouterIntervenant = useMutation(api.recouvrement.intervenants.ajouterIntervenant);
 	const oublierIntervenant = useMutation(api.recouvrement.intervenants.oublierIntervenant);
+	const chercherUnCommissaire = useAction(
+		api.recouvrement.annuaires.chercherUnCommissaireDeJustice
+	);
 
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -248,6 +257,9 @@ function PageProcedure() {
 	const [declaree, setDeclaree] = useState<string | null>(null);
 	/** Le carnet, sur un dossier déjà engagé. */
 	const [carnetOuvert, setCarnetOuvert] = useState(false);
+	/** La recherche d'un commissaire, en feuille par-dessus le carnet. */
+	const [rechercheOuverte, setRechercheOuverte] = useState(false);
+	const [etatRecherche, setEtatRecherche] = useState<EtatRechercheCommissaire>({ phase: 'REPOS' });
 
 	// Tout se DÉRIVE du rendu : aucune de ces valeurs n'est un état, donc aucune
 	// ne peut être en retard d'un rendu sur la requête qui la porte.
@@ -363,6 +375,64 @@ function PageProcedure() {
 		}
 	}
 
+	/**
+	 * CHERCHER UNE ÉTUDE AU REGISTRE PUBLIC.
+	 *
+	 * ⚠️ UN ÉCHEC NE DEVIENT JAMAIS UNE LISTE VIDE. Le refus du serveur s'écrit
+	 * dans l'état de la feuille, mot pour mot : « aucune étude dans ce
+	 * département » et « le registre n'a pas répondu » mènent à deux gestes
+	 * opposés, et les confondre ferait chercher ailleurs un gérant dont la seule
+	 * erreur était d'avoir cliqué une minute trop tôt.
+	 */
+	async function chercher(departement: string) {
+		setEtatRecherche({ phase: 'EN_COURS' });
+		try {
+			const resultat = await chercherUnCommissaire({ departement });
+			setEtatRecherche({ phase: 'TROUVE', resultat });
+		} catch (e) {
+			setEtatRecherche({ phase: 'ECHEC', message: messageDuRefus(e) });
+		}
+	}
+
+	/**
+	 * RETENIR UNE ÉTUDE AU CARNET.
+	 *
+	 * ⚠️ LA SOURCE ET SA DATE PARTENT AVEC LA FICHE, et la mutation la REFUSE
+	 * sans elles. Une fiche venue d'un répertoire public sans sa provenance
+	 * devient indiscernable d'une donnée officielle et fraîche — or celle-ci
+	 * n'est ni l'un ni l'autre : le registre des entreprises ne connaît ni les
+	 * radiations disciplinaires, ni les études qui n'ont pas déclaré leur
+	 * convention collective.
+	 *
+	 * ⚠️ ELLES SE LISENT DANS L'ÉTAT DE LA RECHERCHE, PAS DANS UNE CONSTANTE.
+	 * Un couple source/date figé dans le code vieillirait sans que rien ne
+	 * l'indique ; celui-ci est celui du relevé qui a produit CETTE liste.
+	 */
+	async function retenir(etude: EtudeAffichee) {
+		if (etatRecherche.phase !== 'TROUVE') return;
+		const { resultat } = etatRecherche;
+
+		setErreur(null);
+		setEnCours(true);
+		try {
+			await ajouterIntervenant({
+				nom: etude.nom,
+				role: 'COMMISSAIRE_DE_JUSTICE',
+				ressort: `${etude.commune} ${etude.codePostal}`.trim(),
+				adresse: etude.adresse,
+				siren: etude.siren,
+				origine: 'RETENU_DEPUIS_UN_REPERTOIRE',
+				sourceRepertoire: resultat.source,
+				sourceReleveeLe: resultat.releveeLe
+			});
+			setRechercheOuverte(false);
+		} catch (e) {
+			setErreur(messageDuRefus(e));
+		} finally {
+			setEnCours(false);
+		}
+	}
+
 	/** Une fiche saisie par erreur doit pouvoir partir. */
 	async function oublier(intervenantId: Id<'intervenants'>) {
 		setErreur(null);
@@ -469,6 +539,7 @@ function PageProcedure() {
 					onFermer={() => setDeclaree(null)}
 					onAjouter={(fiche) => void ajouter(fiche)}
 					onOublier={(intervenantId) => void oublier(intervenantId)}
+					onChercherUnCommissaire={() => setRechercheOuverte(true)}
 					onDeclarer={(engageeLe, choix) => void declarer(voieDeclaree.cle, engageeLe, choix)}
 				/>
 			)}
@@ -481,6 +552,27 @@ function PageProcedure() {
 				onChoisir={(intervenantId) => void rattacher(intervenantId)}
 				onAjouter={(fiche) => void ajouter(fiche)}
 				onOublier={(intervenantId) => void oublier(intervenantId)}
+				onChercherUnCommissaire={() => setRechercheOuverte(true)}
+			/>
+
+			{/*
+			  LA TROISIÈME FEUILLE DE LA PILE. Cladd les empile comme iOS : celle du
+			  dessous recule et garde son piège à focus, et Échap ferme toujours celle
+			  du dessus. Elles sont SŒURS dans l'arbre, jamais imbriquées.
+
+			  ⚠️ AUCUN DÉPARTEMENT PROPOSÉ, et c'est un constat, pas un oubli. Aucune
+			  fiche débiteur ne porte d'adresse aujourd'hui : `creanceComplete` n'en
+			  rend pas, et la table n'en écrit pas. Proposer celui du créancier, ou
+			  celui d'un autre dossier, ferait chercher au mauvais endroit un gérant
+			  qui ne relirait pas le champ — et il en conclurait que sa région ne
+			  compte aucune étude. On ne devine pas un département.
+			*/}
+			<RechercheCommissaire
+				ouverte={rechercheOuverte}
+				etat={etatRecherche}
+				onFermer={() => setRechercheOuverte(false)}
+				onChercher={(departement) => void chercher(departement)}
+				onRetenir={(etude) => void retenir(etude)}
 			/>
 		</Page>
 	);

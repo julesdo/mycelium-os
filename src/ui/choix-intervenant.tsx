@@ -1,6 +1,16 @@
 import { useState } from 'react';
-import { Button, Input, Popup, PopupContent, SectionTitle, Select, Surface } from '@cladd-ui/react';
-import { Trash2Icon } from 'lucide-react';
+import {
+	Button,
+	Input,
+	List,
+	ListButton,
+	Popup,
+	PopupContent,
+	SectionTitle,
+	Select,
+	Surface
+} from '@cladd-ui/react';
+import { SearchIcon, Trash2Icon } from 'lucide-react';
 import { cn } from './cn';
 import { BoutonPrincipal } from './bouton';
 
@@ -145,7 +155,8 @@ export function ChoixIntervenant<I extends string>({
 	onFermer,
 	onChoisir,
 	onAjouter,
-	onOublier
+	onOublier,
+	onChercherUnCommissaire
 }: {
 	/** Les fiches du gérant, dans l'ordre où `monCarnet` les rend. */
 	carnet: readonly FicheIntervenant<I>[];
@@ -175,6 +186,16 @@ export function ChoixIntervenant<I extends string>({
 	 */
 	onAjouter: (fiche: FicheASaisir) => void;
 	onOublier: (intervenantId: I) => void;
+	/**
+	 * Ouvrir la recherche d'un commissaire de justice, en feuille par-dessus
+	 * celle-ci.
+	 *
+	 * ⚠️ FACULTATIF, ET C'EST UN CONSTAT PLUTÔT QU'UNE COMMODITÉ. La recherche
+	 * demande une action Convex ; un écran qui ne peut pas l'appeler ne doit pas
+	 * afficher une rangée qui ne mènerait nulle part. Absent, le geste
+	 * n'apparaît pas — plutôt qu'un bouton mort.
+	 */
+	onChercherUnCommissaire?: () => void;
 }) {
 	const [nom, setNom] = useState('');
 	const [role, setRole] = useState<RoleIntervenant>('AUTRE');
@@ -225,6 +246,33 @@ export function ChoixIntervenant<I extends string>({
 
 			<PopupContent>
 				<SectionTitle>Ajouter une fiche</SectionTitle>
+
+				{/*
+				  ⚠️ LA RECHERCHE AVANT LA SAISIE, et c'est la règle d'écran n° 1 prise
+				  dans le bon sens : « aucun écran ne demande une saisie que le logiciel
+				  peut déduire ». Un nom d'étude, son adresse et son SIREN se trouvent
+				  dans une source publique ; les faire recopier à la main était un champ
+				  vide que le logiciel aurait pu remplir.
+
+				  ⚠️ ET LA SAISIE MANUELLE RESTE, DESSOUS. Aucune source publique n'est
+				  le tableau d'une profession : une étude qui n'a pas déclaré sa
+				  convention collective est introuvable, et un avocat ne s'y cherche pas
+				  du tout. On remplace une porte par une meilleure, on n'en condamne pas.
+				*/}
+				{onChercherUnCommissaire === undefined ? null : (
+					<List className="mt-cladd-3xs">
+						<ListButton
+							icon={<SearchIcon size={18} />}
+							footer="Les études d’un département, sans quitter l’application"
+							className="verre-bouton"
+							hoverable={false}
+							onClick={onChercherUnCommissaire}
+						>
+							<span className="truncate">Chercher un commissaire de justice</span>
+						</ListButton>
+					</List>
+				)}
+
 				<div className="mt-cladd-3xs flex flex-col gap-cladd-3xs">
 					<Input
 						size="lg"

@@ -25,6 +25,8 @@ import {
 	type VoieAffichee,
 	ChoixIntervenant,
 	type FicheIntervenant,
+	RechercheCommissaire,
+	type ResultatAnnuaireAffiche,
 	ListeAnalyses,
 	LigneBouton,
 	Pieces,
@@ -2117,7 +2119,10 @@ function DemoVoie() {
 
 	return (
 		<Page>
-			<PageHeader titre="Ateliers Martin" sousTitre="Ce qu’une voie implique, avant de s’y engager" />
+			<PageHeader
+				titre="Ateliers Martin"
+				sousTitre="Ce qu’une voie implique, avant de s’y engager"
+			/>
 			<PageBody>
 				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
 					<SectionTitle>Les voies envisageables</SectionTitle>
@@ -2206,6 +2211,96 @@ function DemoIntervenant() {
 	);
 }
 
+/**
+ * TROIS ÉTUDES DE DÉMONSTRATION — ET CE SONT DE VRAIES.
+ *
+ * Relevées le 12 septembre 2026 en interrogeant l'API Recherche d'entreprises
+ * sur le département 44, qui en rend vingt-deux. Des données inventées auraient
+ * caché ce que la vraie réponse a de particulier : des dénominations en
+ * capitales, parfois doublées d'un sigle, et une adresse de siège qui n'est pas
+ * toujours dans le département cherché.
+ */
+const ETUDES_DEMO: ResultatAnnuaireAffiche = {
+	departement: '44',
+	total: 22,
+	etudes: [
+		{
+			siren: '921924908',
+			// ⚠️ L'APOSTROPHE EST DROITE, ET LE NOM EST DOUBLÉ. C'est le registre qui
+			// écrit ainsi ; le redresser en apostrophe courbe ou retirer les
+			// parenthèses reviendrait à faire répéter à la salle d'exposition une
+			// dénomination que la source ne porte pas — exactement ce que l'écran
+			// s'interdit de faire avec les vraies réponses.
+			nom: "COMMISSAIRES DE L'OUEST (COMMISSAIRES DE L'OUEST) (CDOUEST)",
+			commune: 'NANTES',
+			codePostal: '44100',
+			adresse: '14 BOULEVARD WINSTON CHURCHILL 44100 NANTES'
+		},
+		{
+			siren: '883711400',
+			nom: 'MOCAER, CLAVIERE, VIOTTI',
+			commune: 'NORT-SUR-ERDRE',
+			codePostal: '44390',
+			adresse: "5 RUE D'ANJOU 44390 NORT-SUR-ERDRE"
+		},
+		{
+			siren: '911195980',
+			nom: 'SOLUTIONS HUISSIER',
+			commune: 'SAINT-NAZAIRE',
+			codePostal: '44600',
+			adresse: '5 RUE DES TROENES 44600 SAINT-NAZAIRE'
+		}
+	],
+	source:
+		'Registre des entreprises (API Recherche d’entreprises, DINUM), filtré sur la convention ' +
+		'collective 3250 et l’activité 69.10Z. Ce n’est pas le tableau de la profession : une étude ' +
+		'qui n’a pas déclaré sa convention collective n’y figure pas, et une radiation disciplinaire ' +
+		'n’y figure pas non plus. Le filtre de département porte sur les établissements, pas sur le ' +
+		'siège : une étude dont le siège est ailleurs peut remonter.',
+	releveeLe: '2026-09-12'
+};
+
+function DemoCommissaire() {
+	// Comme `DemoIntervenant` : une `Popup` est contrôlée, donc la salle l'ouvre
+	// d'emblée — c'est ce qu'on vient regarder.
+	const [ouverte, setOuverte] = useState(true);
+
+	return (
+		<Page>
+			<PageHeader
+				titre="Chercher un commissaire"
+				sousTitre="Le registre public, et ce qu’il ne dit pas"
+			/>
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
+					<ListeAnalyses>
+						<LigneBouton
+							titre="Chercher un commissaire de justice"
+							valeur="Département 44"
+							onClick={() => setOuverte(true)}
+						/>
+					</ListeAnalyses>
+
+					{/*
+					  ⚠️ TRONQUÉE VOLONTAIREMENT : trois études affichées, vingt-deux
+					  déclarées. C'est l'état qu'on vient vérifier à l'œil — celui où la
+					  liste doit DIRE qu'elle est incomplète, faute de quoi elle ment par
+					  le silence.
+					*/}
+					<RechercheCommissaire
+						ouverte={ouverte}
+						departementParDefaut="44"
+						etat={{ phase: 'TROUVE', resultat: ETUDES_DEMO }}
+						onFermer={() => setOuverte(false)}
+						onChercher={() => undefined}
+						onRetenir={() => setOuverte(false)}
+					/>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'veilleur',
 	'accueil',
@@ -2222,6 +2317,7 @@ const ECRANS = [
 	'rail',
 	'voie',
 	'intervenant',
+	'commissaire',
 	'pieces',
 	'solidite',
 	'relances',
@@ -2277,6 +2373,7 @@ function Showroom() {
 				{ecran === 'rail' ? <DemoRail /> : null}
 				{ecran === 'voie' ? <DemoVoie /> : null}
 				{ecran === 'intervenant' ? <DemoIntervenant /> : null}
+				{ecran === 'commissaire' ? <DemoCommissaire /> : null}
 				{ecran === 'pieces' ? <DemoPieces /> : null}
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'relances' ? <DemoRelances /> : null}

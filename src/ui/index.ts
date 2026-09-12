@@ -82,6 +82,12 @@ export {
 	type EtablissementPropose
 } from './recherche-registre';
 export {
+	RechercheCommissaire,
+	type EtatRechercheCommissaire,
+	type EtudeAffichee,
+	type ResultatAnnuaireAffiche
+} from './recherche-commissaire';
+export {
 	Veilleur,
 	travauxDuVeilleur,
 	type TacheVeilleur,
