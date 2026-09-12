@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useRouterState, useNavigate, CatchBoundary } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 
-import { HomeIcon, UsersIcon, UploadIcon, SearchIcon } from 'lucide-react';
+import { HomeIcon, UsersIcon, GavelIcon, UploadIcon, SearchIcon } from 'lucide-react';
 
 import { cn } from '../ui/cn';
 import { LogoLetikette } from '../ui/logo';
@@ -37,10 +37,10 @@ import { SelecteurEtablissement } from './selecteur-etablissement';
  * destination inexistante fait maintenant échouer la compilation.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * CE QU'ELLE PORTE MAINTENANT : TROIS ONGLETS
+ * CE QU'ELLE PORTE MAINTENANT : QUATRE ONGLETS
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Accueil, Débiteurs, Importer. Et rien d'autre.
+ * Accueil, Débiteurs, Procédures, Importer. Et rien d'autre.
  *
  * « Ce qui est dû » a disparu de la barre non pas parce qu'il compte moins,
  * mais parce qu'il compte PLUS : son total est devenu le hero de l'accueil, et
@@ -52,9 +52,17 @@ import { SelecteurEtablissement } from './selecteur-etablissement';
  * d'actions rondes de l'accueil, sous le montant. Une barre de navigation
  * n'est pas une barre d'outils : elle dit où l'on est, pas ce qu'on peut faire.
  */
+/**
+ * ⚠️ QUATRE ONGLETS, ET LE QUATRIÈME A SA RAISON. L'argument qui a ramené cette
+ * barre de huit cibles à trois visait huit choix de même poids, dont aucun ne
+ * disait quoi faire. Un dossier engagé n'est pas un huitième choix : c'est le
+ * seul endroit du produit où un droit s'éteint à date fixe, et il n'était
+ * atteignable qu'au bout de cinq gestes.
+ */
 const ENTREES = [
 	{ to: '/app', label: 'Accueil', Icone: HomeIcon },
 	{ to: '/app/debiteurs', label: 'Débiteurs', Icone: UsersIcon },
+	{ to: '/app/procedures', label: 'Procédures', Icone: GavelIcon },
 	{ to: '/app/import-factures', label: 'Importer', Icone: UploadIcon }
 ] as const;
 
@@ -218,6 +226,7 @@ function AvatarConnecte() {
 function VeilleurPresent() {
 	const battement = useQuery(api.recouvrement.battement.dernierBattement, {});
 	const depots = useQuery(api.recouvrement.depotMutations.listerImports, { limite: 5 });
+	const nonLues = useQuery(api.notifications.getUnreadCount, {});
 
 	const travaille = (depots ?? []).some(
 		(depot) => depot.statut === 'EN_ATTENTE' || depot.statut === 'LECTURE'
@@ -239,9 +248,20 @@ function VeilleurPresent() {
 		<Link
 			to="/app"
 			aria-label="Le veilleur, et ce qu'il a fait"
-			className="verre-bouton flex size-cladd-md shrink-0 items-center justify-center rounded-full"
+			className="verre-bouton relative flex size-cladd-md shrink-0 items-center justify-center rounded-full"
 		>
 			<VeilleurAvatar etat={etat} />
+			{/*
+			  ⚠️ LE COMPTE NE S'AFFICHE QU'AU-DESSUS DE ZERO, et il est RARE par
+			  construction : seul ce qui fait perdre un droit sans qu'on ait rien
+			  fait en produit un. Une pastille permanente a « 0 » serait du decor,
+			  et le chiffre ne dirait plus rien le jour ou il compte.
+			*/}
+			{nonLues !== undefined && nonLues > 0 ? (
+				<span className="compte-veilleur absolute -top-0.5 -right-0.5">
+					{nonLues > 9 ? '9+' : nonLues}
+				</span>
+			) : null}
 		</Link>
 	);
 }
@@ -279,9 +299,9 @@ export function Barre() {
 /**
  * Les onglets, en capsule de verre, sur grand écran.
  *
- * ⚠️ TOUS PORTENT LEUR ÉTIQUETTE, maintenant qu'il n'y en a que trois. La
- * version précédente n'étiquetait que l'onglet actif pour faire tenir quatre
- * entrées — ce qui obligeait à deviner les trois autres au pictogramme.
+ * ⚠️ TOUS PORTENT LEUR ÉTIQUETTE, et la capsule ne paraît qu'au-dessus de
+ * 768 px, où ils tiennent. La version précédente n'étiquetait que l'onglet
+ * actif — ce qui obligeait à deviner les autres au pictogramme.
  */
 function CapsuleOnglets() {
 	const actif = useActif();
@@ -378,7 +398,7 @@ function IconeOnglet({
  * LE SEGMENT QUI GLISSE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Un seul bloc de verre se DÉPLACE d'un onglet à l'autre, au lieu que trois
+ * Un seul bloc de verre se DÉPLACE d'un onglet à l'autre, au lieu que quatre
  * fonds s'allument et s'éteignent. La différence n'est pas décorative : un
  * fond qui apparaît ailleurs oblige l'œil à retrouver où la sélection est
  * partie, alors qu'un objet qui se déplace est suivi sans effort. C'est la
@@ -387,9 +407,10 @@ function IconeOnglet({
  *
  * ⚠️ SA POSITION EST DÉRIVÉE DU RANG, PAS MESURÉE DANS LE DOM. C'est ce qui
  * permet de respecter la règle du projet — aucun `setState` dans un effet. Les
- * onglets sont en `flex-1`, donc tous de largeur égale : le segment occupe un
- * tiers de la piste et se translate de cent pour cent de sa propre largeur par
- * rang. Aucune mesure, aucun rendu supplémentaire, et rien à resynchroniser au
+ * onglets sont en `flex-1`, donc tous de largeur égale : le segment occupe la
+ * piste divisée par `ENTREES.length` et se translate de cent pour cent de sa
+ * propre largeur par rang. Il suit donc tout seul quand un onglet s'ajoute.
+ * Aucune mesure, aucun rendu supplémentaire, et rien à resynchroniser au
  * redimensionnement.
  *
  * La conséquence à ne pas oublier : la piste doit être EXACTEMENT pavée par
@@ -466,7 +487,7 @@ export function BarreBasse() {
 
 							  `z-10` : au-dessus du segment, qui est absolu. Sans lui, les
 							  libellés passent DERRIÈRE le verre du segment et l'onglet
-							  actif devient le moins lisible des trois.
+							  actif devient le moins lisible de tous.
 							*/
 							className={cn(
 								'relative z-10 flex min-h-cladd-md flex-1 flex-col items-center justify-center gap-1 rounded-full px-1 py-1.5',

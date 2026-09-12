@@ -24,6 +24,7 @@ import { Route as AppDonneesRouteImport } from './routes/app/donnees'
 import { Route as AppEquipeRouteImport } from './routes/app/equipe'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
 import { Route as AppParametresRouteImport } from './routes/app/parametres'
+import { Route as AppProceduresRouteImport } from './routes/app/procedures'
 import { Route as AppRevelationRouteImport } from './routes/app/revelation'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -119,6 +120,11 @@ const AppImportFacturesRoute = AppImportFacturesRouteImport.update({
 const AppParametresRoute = AppParametresRouteImport.update({
   id: '/parametres',
   path: '/parametres',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProceduresRoute = AppProceduresRouteImport.update({
+  id: '/procedures',
+  path: '/procedures',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppRevelationRoute = AppRevelationRouteImport.update({
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/app/equipe': typeof AppEquipeRoute
   '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/app/equipe': typeof AppEquipeRoute
   '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app': typeof AppIndexRoute
@@ -322,6 +330,7 @@ export interface FileRoutesById {
   '/app/equipe': typeof AppEquipeRoute
   '/app/import-factures': typeof AppImportFacturesRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/app/equipe'
     | '/app/import-factures'
     | '/app/parametres'
+    | '/app/procedures'
     | '/app/revelation'
     | '/rejoindre/$token'
     | '/app/'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/app/equipe'
     | '/app/import-factures'
     | '/app/parametres'
+    | '/app/procedures'
     | '/app/revelation'
     | '/rejoindre/$token'
     | '/app'
@@ -437,6 +448,7 @@ export interface FileRouteTypes {
     | '/app/equipe'
     | '/app/import-factures'
     | '/app/parametres'
+    | '/app/procedures'
     | '/app/revelation'
     | '/rejoindre/$token'
     | '/app/'
@@ -579,6 +591,13 @@ declare module '@tanstack/react-router' {
       path: '/parametres'
       fullPath: '/app/parametres'
       preLoaderRoute: typeof AppParametresRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/procedures': {
+      id: '/app/procedures'
+      path: '/procedures'
+      fullPath: '/app/procedures'
+      preLoaderRoute: typeof AppProceduresRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/revelation': {
@@ -738,6 +757,7 @@ interface AppRouteRouteChildren {
   AppEquipeRoute: typeof AppEquipeRoute
   AppImportFacturesRoute: typeof AppImportFacturesRoute
   AppParametresRoute: typeof AppParametresRoute
+  AppProceduresRoute: typeof AppProceduresRoute
   AppRevelationRoute: typeof AppRevelationRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAbonnementPremierBilanRoute: typeof AppAbonnementPremierBilanRoute
@@ -767,6 +787,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppEquipeRoute: AppEquipeRoute,
   AppImportFacturesRoute: AppImportFacturesRoute,
   AppParametresRoute: AppParametresRoute,
+  AppProceduresRoute: AppProceduresRoute,
   AppRevelationRoute: AppRevelationRoute,
   AppIndexRoute: AppIndexRoute,
   AppAbonnementPremierBilanRoute: AppAbonnementPremierBilanRoute,

@@ -20,6 +20,9 @@ import {
 	Bandeau,
 	Veilleur,
 	CeQuiManque,
+	SectionEcran,
+	ListeAnalyses,
+	LigneAnalyse,
 	dateCourte,
 	eurosCentimes,
 	pluriel,
@@ -29,6 +32,7 @@ import {
 	type TacheVeilleur,
 	type Verrou
 } from '../ui';
+import type { DossierAffiche } from './procedures';
 
 /**
  * L'ACCUEIL — un seul chiffre, ses gestes, puis ce qui a bougé.
@@ -123,6 +127,16 @@ export interface AccueilAffiche {
 	 * Voir `ui/ce-qui-manque.tsx`, qui porte le raisonnement.
 	 */
 	readonly verrous: readonly Verrou[];
+	/**
+	 * LES DOSSIERS ENGAGÉS, ET CE QUI Y COURT.
+	 *
+	 * ⚠️ C'EST LE SEUL ENDROIT DU PRODUIT OÙ UN DROIT S'ÉTEINT À DATE FIXE, et
+	 * il n'était atteignable qu'au bout de cinq gestes. Une ordonnance non
+	 * signifiée devient caduque sans que rien ne bouge à l'écran : la mettre sur
+	 * l'accueil est ce qui fait la différence entre un délai surveillé et un
+	 * délai dont on apprend l'existence le jour où il est passé.
+	 */
+	readonly dossiers: readonly DossierAffiche[];
 }
 
 /**
@@ -209,9 +223,7 @@ export function EcranAccueil({ vue }: { vue: AccueilAffiche }) {
 										{vue.interetsCourusDepuisHier > 0n ? (
 											<>
 												<span aria-hidden>·</span>
-												<span>
-													+{eurosCentimes(vue.interetsCourusDepuisHier)} depuis hier
-												</span>
+												<span>+{eurosCentimes(vue.interetsCourusDepuisHier)} depuis hier</span>
 											</>
 										) : null}
 										<ArrowRightIcon className="size-3.5" aria-hidden />
@@ -226,6 +238,43 @@ export function EcranAccueil({ vue }: { vue: AccueilAffiche }) {
 
 				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-2xs">
 					<AvisSurveillance surveillance={vue.surveillance} />
+
+					{/*
+					  CE QUI COURT — les dossiers engagés, et le délai le plus proche de
+					  chacun.
+
+					  ⚠️ LA SECTION N'EXISTE PAS QUAND IL N'Y A RIEN. Une carte « Ce qui
+					  court » vide serait un cadran à zéro, ce que la règle d'écran n° 4
+					  interdit : elle apprendrait au gérant qu'il n'a rien d'engagé, ce
+					  qu'il sait déjà, et lui ferait sauter le bloc des yeux le jour où
+					  il porterait une caducité.
+
+					  ⚠️ ET ELLE PASSE AVANT LE VEILLEUR. Le veilleur dit ce que la
+					  machine a fait cette nuit ; ceci dit ce qui s'éteint. Entre un
+					  compte rendu et une date butoir, c'est la date butoir qui se lit
+					  en premier.
+					*/}
+					{vue.dossiers.length === 0 ? null : (
+						<SectionEcran titre="Ce qui court">
+							<ListeAnalyses>
+								{vue.dossiers.map((dossier) => (
+									<LigneAnalyse
+										key={dossier.creanceId}
+										vers="/app/procedures"
+										recherche={{ p: dossier.creanceId }}
+										titre={dossier.debiteur}
+										precision={dossier.libelle}
+										valeur={
+											dossier.prochaineEcheance === null
+												? undefined
+												: dateCourte(dossier.prochaineEcheance.dateLimite)
+										}
+										attention={dossier.prochaineEcheance?.gravite === 'CADUCITE'}
+									/>
+								))}
+							</ListeAnalyses>
+						</SectionEcran>
+					)}
 
 					{/*
 					  LE VEILLEUR, JUSTE SOUS LES GESTES — c'est la place que la

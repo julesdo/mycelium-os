@@ -1,8 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
+import type { Id } from '../../lib/convex/_generated/dataModel';
 import { Page, PageBody, aujourdHuiISO, travauxDuVeilleur, ceQuiManque } from '../../ui';
 import { EcranAccueil, type EtatSurveillance } from '../../screens/accueil';
+import type { DossierAffiche } from '../../screens/procedures';
+import { parcoursDeLaVoie } from '../../lib/verticales/recouvrement/apres-procedure';
 
 export const Route = createFileRoute('/app/')({ component: Accueil });
 
@@ -50,8 +53,27 @@ function Accueil() {
 	 * créance affichait donc une condition non remplie, sans jamais dire que
 	 * c'était l'identité du gérant qui manquait.
 	 */
+	/**
+	 * CE QUE LE VEILLEUR A TROUVE, et qu'on n'a pas encore lu.
+	 *
+	 * ⚠️ LE SYSTEME ETAIT DOUBLEMENT MORT : `createNotification` sans appelant,
+	 * `listMyNotifications` sans lecteur. Le blueprint le veut au module 2.1 —
+	 * « notification sans qu'on ouvre l'ecran ». Le battement en ecrit
+	 * desormais, et seulement pour ce qui fait perdre un droit sans qu'on ait
+	 * rien fait : voir `aNotifier`.
+	 */
+	const notifications = useQuery(api.notifications.listMyNotifications, {});
+	const marquerLue = useMutation(api.notifications.markAsRead);
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	const debiteurs = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
+	/**
+	 * LES DOSSIERS ENGAGÉS, ET LE DÉLAI LE PLUS PROCHE DE CHACUN.
+	 *
+	 * ⚠️ C'EST LA MÊME REQUÊTE QUE `/app/procedures`, donc Convex la sert depuis
+	 * son cache : l'accueil ne paie pas d'aller-retour supplémentaire pour
+	 * afficher ce qui court.
+	 */
+	const dossiersEngages = useQuery(api.recouvrement.apresProcedure.dossiersEngages, {});
 
 	if (flux === undefined || revelation === undefined) {
 		return (
@@ -102,6 +124,20 @@ function Accueil() {
 		depotsEnCours: (depots ?? [])
 			.filter((depot) => depot.statut === 'EN_ATTENTE' || depot.statut === 'LECTURE')
 			.map((depot) => ({ id: depot._id, filename: depot.filename, etape: depot.etape })),
+		// Les non lues seulement : une notification lue a fait son travail, et la
+		// laisser reclamerait l'attention pour rien.
+		trouvailles: (notifications ?? [])
+			.filter((notification) => !notification.isRead)
+			.map((notification) => ({
+				id: notification._id as string,
+				titre: notification.title,
+				message: notification.message,
+				...(notification.link === undefined ? {} : { lien: notification.link })
+			})),
+		// Ouvrir vaut acquitter. Sans ça, la pastille du veilleur ne s'éteint
+		// jamais et le compte devient du décor — sur le seul signal du produit
+		// qui annonce une perte sèche.
+		onLire: (id) => void marquerLue({ notificationId: id as Id<'notifications'> }),
 		aujourdHui: aujourdHuiISO()
 	});
 
@@ -123,6 +159,35 @@ function Accueil() {
 				anglesMorts: flux.anglesMorts,
 				surveillance,
 				travaux,
+				/**
+				 * ⚠️ `undefined` DONNE UNE SECTION ABSENTE, PAS UNE SECTION VIDE, et
+				 * c'est la bonne lecture ici : « Ce qui court » ne s'affiche qu'avec
+				 * au moins un dossier, donc le temps du chargement l'écran ne montre
+				 * rien plutôt qu'un cadran à zéro qui se remplirait sous les yeux.
+				 */
+				dossiers: (dossiersEngages ?? []).map(
+					(d): DossierAffiche => ({
+						creanceId: d.creanceId,
+						debiteur: d.debiteur,
+						libelle: d.libelle,
+						engageeLe: d.engageeLe,
+						intervenant: d.intervenant,
+						prochaineEcheance: d.prochaineEcheance,
+						anglesMorts: d.anglesMorts,
+						// Le rail vient de la fonction du domaine, rejoué depuis le
+						// journal — comme sur `/app/procedures`. L'accueil ne le dessine
+						// pas, mais il porte le MÊME dossier : deux projections
+						// différentes du même enregistrement finiraient par diverger.
+						etapes: parcoursDeLaVoie(d.procedure, d.journal, d.engageeLe).map((e) => ({
+							etat: e.etat,
+							libelle: e.libelle,
+							statut: e.statut,
+							atteinteLe: e.atteinteLe,
+							branches: e.branches,
+							brancheSuivie: e.brancheSuivie
+						}))
+					})
+				),
 				/**
 				 * ⚠️ `undefined` NE COMPTE PAS COMME « MANQUANT ». Tant que les
 				 * requêtes chargent, on ne sait pas si le profil existe : afficher
