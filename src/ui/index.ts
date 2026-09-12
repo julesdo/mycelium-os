@@ -62,6 +62,7 @@ export { HabitudePaiement, type HabitudeAffichee, type RuptureAffichee } from '.
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
 export { QuestionnaireLitige, type QuestionLitige, type ReponseFait } from './questionnaire-litige';
 export { SuiviProcedure, type SuiviAffiche, type EcheanceAffichee } from './suivi-procedure';
+export { RailProcedure, type EtapeAffichee, type StatutEtapeAffiche } from './rail-procedure';
 export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
 export { ListeAnalyses, LigneAnalyse, EnteteDetail } from './navigation';
 export { rangeeDuDebiteur } from './identite-debiteur';

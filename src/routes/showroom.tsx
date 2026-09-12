@@ -19,6 +19,8 @@ import {
 	IdentiteDebiteur,
 	QuestionnaireLitige,
 	SuiviProcedure,
+	RailProcedure,
+	type EtapeAffichee,
 	Pieces,
 	Solidite,
 	EnteteDetail,
@@ -1576,6 +1578,16 @@ const ACCUEIL_DEMO: AccueilAffiche = {
 		depotsEnCours: [
 			{ id: 'demo-depot', filename: 'export-comptable-aout.csv', etape: 'lecture de 412 lignes' }
 		],
+		// Une trouvaille, et une seule : elles sont rares par construction.
+		// Seul ce qui fait perdre un droit sans qu on ait rien fait en produit une.
+		trouvailles: [
+			{
+				id: 'demo-notif',
+				titre: 'Prescription proche',
+				message: 'La facture FA-2021-0087 sera prescrite le 2026-10-14, dans 32 jours.',
+				lien: '/app/debiteurs?d=demo-debiteur'
+			}
+		],
 		aujourdHui: '2026-09-11'
 	}),
 	/**
@@ -1875,6 +1887,93 @@ function DemoVeilleurAvatar() {
 	);
 }
 
+/**
+ * LA VOIE ENTIÈRE, ET PAS SEULEMENT LÀ OÙ LE DOSSIER EN EST.
+ *
+ * Les données couvrent délibérément les trois statuts et les deux branches : une
+ * étape franchie, l’étape courante, deux étapes à venir, et les deux issues qui
+ * font sortir de la ligne. Un jeu où tout serait franchi ne montrerait ni le
+ * disque vide, ni le trait pointillé d’une branche non prise — c’est-à-dire rien
+ * de ce qu’on vient regarder.
+ */
+const RAIL_DEMO: EtapeAffichee[] = [
+	{
+		etat: 'REQUETE_DEPOSEE',
+		libelle: 'Requête déposée',
+		statut: 'FRANCHIE',
+		atteinteLe: '2026-06-04',
+		branches: [
+			{
+				etat: 'REQUETE_REJETEE',
+				libelle: 'Requête rejetée',
+				constat:
+					'Le juge n’a pas fait droit à la requête, ou pas entièrement. La créance n’est pas ' +
+					'éteinte ; cette voie-ci est fermée.'
+			}
+		],
+		brancheSuivie: null
+	},
+	{
+		etat: 'ORDONNANCE_RENDUE',
+		libelle: 'Ordonnance rendue',
+		statut: 'COURANTE',
+		atteinteLe: '2026-08-28',
+		branches: [],
+		brancheSuivie: null
+	},
+	{
+		etat: 'ORDONNANCE_SIGNIFIEE',
+		libelle: 'Ordonnance signifiée',
+		statut: 'A_VENIR',
+		atteinteLe: null,
+		branches: [
+			{
+				etat: 'OPPOSITION',
+				libelle: 'Opposition formée',
+				constat:
+					'L’affaire bascule en procédure contradictoire. Les procédures que ce logiciel ' +
+					'évalue se déroulent toutes sans débat : ce dossier sort de ce qu’il sait mesurer.'
+			}
+		],
+		brancheSuivie: null
+	},
+	{
+		etat: 'TITRE_EXECUTOIRE',
+		libelle: 'Titre exécutoire',
+		statut: 'A_VENIR',
+		atteinteLe: null,
+		branches: [],
+		brancheSuivie: null
+	}
+];
+
+function DemoRail() {
+	return (
+		<Page>
+			<PageHeader titre="Ateliers Martin" sousTitre="L’injonction de payer, d’un bout à l’autre" />
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
+					<SectionTitle>Les étapes de la voie</SectionTitle>
+					<Surface
+						variant="transparent"
+						outline={false}
+						className="verre-carte rounded-cladd-xl"
+						contentClassName="p-cladd-2xs"
+					>
+						<RailProcedure etapes={RAIL_DEMO} />
+					</Surface>
+
+					<p className="px-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softest">
+						Aucune couleur de seuil sur ce rail : le vert, l’ambre et le rouge restent réservés à
+						<code> --color-seuil-*</code>. Une étape franchie se marque par un disque plein, pas par
+						du vert — elle n’est pas un seuil.
+					</p>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
 	'veilleur',
 	'accueil',
@@ -1886,6 +1985,7 @@ const ECRANS = [
 	'identite',
 	'litige',
 	'suivi',
+	'rail',
 	'pieces',
 	'solidite',
 	'relances',
@@ -1936,6 +2036,7 @@ function Showroom() {
 				{ecran === 'identite' ? <DemoIdentite /> : null}
 				{ecran === 'litige' ? <DemoLitige /> : null}
 				{ecran === 'suivi' ? <DemoSuivi /> : null}
+				{ecran === 'rail' ? <DemoRail /> : null}
 				{ecran === 'pieces' ? <DemoPieces /> : null}
 				{ecran === 'solidite' ? <DemoSolidite /> : null}
 				{ecran === 'relances' ? <DemoRelances /> : null}
