@@ -40,10 +40,19 @@ déroulé d'une voie et la déclaration. Elles satisfont à elles seules les cri
 spec. Les tâches 10 et 11 ajoutent les deux répertoires publics et referment le critère 3. Ne pas
 commencer 10 avant que 9 soit vert.
 
-Deux tâches laissent volontairement `fonctions-appelees.test.ts` au rouge le temps que l'écran
-qui consomme la fonction soit écrit : la tâche 6 (`dossiersEngages`, refermée en 8) et la tâche 8
-(`rattacherIntervenant`, refermée en 9). C'est la barrière qui fait son travail. Ne jamais la
-faire taire en supprimant la fonction.
+**Trois barrières passent volontairement au rouge entre deux tâches.** C'est le prix de tâches
+petites, et c'est la barrière qui fait son travail. Aucune ne se désarme, aucune n'accepte de
+dette « on verra plus tard » : chacune redevient verte d'elle-même à la tâche qui la referme.
+
+| Barrière | Rouge à partir de | Verte à | Pourquoi |
+| --- | --- | --- | --- |
+| `champs-alimentes.test.ts` | tâche 4 | tâche 5 | la table `intervenants` est déclarée avant que la moindre mutation ne l'écrive |
+| `declare-jamais-alimente.test.ts` | tâche 4 | tâche 5 | les cinq valeurs d'union (`AVOCAT`, `COMMISSAIRE_DE_JUSTICE`, `AUTRE`, `SAISI_A_LA_MAIN`, `RETENU_DEPUIS_UN_REPERTOIRE`) ne sont citées nulle part avant les validateurs de la tâche 5 |
+| `fonctions-appelees.test.ts` | tâches 6 et 8 | tâches 8 et 9 | `dossiersEngages` puis `rattacherIntervenant` existent avant l'écran qui les appelle |
+
+⚠️ Ne jamais refermer l'une d'elles en supprimant la fonction, en inscrivant le champ dans une
+liste de tolérance, ni en affaiblissant le balayage. Si une barrière est encore rouge après la
+tâche censée la refermer, c'est que la tâche est incomplète, pas que la barrière a tort.
 
 | Fichier | Responsabilité |
 | --- | --- |
