@@ -1502,7 +1502,7 @@ function Showroom() {
 				{choisi !== null ? (
 					<Shell>
 						{/*
-						  ⚠️ LA CLÉ PORTE LA ROUTE, L'ÉTAT ET LA VARIANTE — PAS LA ROUTE SEULE.
+						  ⚠️ LA CLÉ PORTE LA ROUTE, L'ÉTAT ET LA VARIANTE, PAS LA ROUTE SEULE.
 						  Une feuille ouverte dans « sans données » restait ouverte en passant
 						  à « prêt », qui n'a rien pour la rouvrir. Remonter la démonstration
 						  aux trois changements referme tout net, comme un nouvel écran.

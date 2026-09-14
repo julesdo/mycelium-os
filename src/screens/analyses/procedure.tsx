@@ -90,7 +90,7 @@ function FeuilleDeclaration({
 	  resynchronise depuis une prop par un effet : la date part de la prop
 	  `aujourdHui`, lue une seule fois à l'initialisation, le choix part à « rien
 	  dit », et le carnet part fermé. La remise à zéro entre deux voies se fait
-	  par la `key` de ce composant, côté appelant — un effet qui resynchroniserait
+	  par la `key` de ce composant, côté appelant : un effet qui resynchroniserait
 	  cette prop dans l'état produirait un rendu de plus et, le jour où elle
 	  change pour une autre raison, effacerait une saisie.
 	*/
