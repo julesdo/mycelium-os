@@ -7,14 +7,43 @@ import type { RisqueAffiche } from '../../screens/analyses/risques';
 import { EcranRisques } from '../../screens/analyses/risques';
 import { EcranSolidite } from '../../screens/analyses/solidite';
 import { depuisCentimes } from '../../lib/socle/montants';
-import { ETAGES_DE_PREUVE, pyramideDePreuves } from '../../lib/verticales/recouvrement/solidite';
-import { questionsRestantes } from '../../lib/verticales/recouvrement/litige';
-import { NIVEAUX_RELANCE, composerRelance } from '../../lib/verticales/recouvrement/relance';
-import type { DecompteAffiche, NiveauAffiche, QuestionLitige, SoliditeAffichee } from '../../ui';
+import {
+	ETAGES_DE_PREUVE,
+	pyramideDePreuves,
+	type Pyramide
+} from '../../lib/verticales/recouvrement/solidite';
+import { LIBELLE_CONDITION } from '../../lib/verticales/recouvrement/qualification';
+import {
+	lireLitige,
+	questionsRestantes,
+	type Reponses
+} from '../../lib/verticales/recouvrement/litige';
+import { qualifier } from '../../lib/verticales/recouvrement/scoring';
+import {
+	NIVEAUX_RELANCE,
+	composerRelance,
+	type ElementsRelance
+} from '../../lib/verticales/recouvrement/relance';
+import type { DecompteAffiche, NiveauAffiche, SoliditeAffichee } from '../../ui';
 import { lectureDemo, type EcranDuProduit } from './demo';
 
-/** La pyramide de preuves utilisée par `CREANCE_DEMO`, pour son décompte de solidité. */
+/**
+ * La pyramide de preuves utilisée par `CREANCE_DEMO` et par la démonstration
+ * de l'écran de solidité, pour que les deux s'accordent : la rangée qui
+ * résume et la page qui détaille doivent montrer le même compte.
+ */
 const PYRAMIDE_DEMO = pyramideDePreuves(['FACTURE', 'BON_DE_COMMANDE']);
+
+/**
+ * La question de la condition « entre commerçants », composée exactement
+ * comme `creanceComplete` la compose (`src/lib/convex/recouvrement/lecture.ts`,
+ * autour des lignes 567 à 569). Partagée par le résumé de la créance et par
+ * la démonstration du litige : les deux montrent la même question.
+ */
+const CONDITION_ENTRE_COMMERCANTS_DEMO = {
+	condition: 'entreCommercants',
+	libelle: `Pouvez-vous confirmer ${LIBELLE_CONDITION.entreCommercants} de cette créance ?`
+};
 
 const CREANCE_DEMO: CreanceAffichee = {
 	debiteur: 'Fournitures Durand',
@@ -33,9 +62,7 @@ const CREANCE_DEMO: CreanceAffichee = {
 	eligible: false,
 	principalRestantDu: 1_200_000n,
 	factures: [{ _id: 'f1' }, { _id: 'f2' }],
-	questions: [
-		{ condition: 'entreCommercants', libelle: 'Les deux parties sont-elles commerçantes ?' }
-	],
+	questions: [CONDITION_ENTRE_COMMERCANTS_DEMO],
 	litige: {
 		litigieux: false,
 		constats: [],
@@ -66,16 +93,16 @@ const DECOMPTE_DEMO: DecompteAffiche = {
 	arreteAu: '2026-09-03',
 	convention: 'ACT_365',
 	principalRestantDu: 600_000n,
-	interets: 41_368n,
+	interets: 33_350n,
 	indemniteForfaitaire: 4_000n,
-	total: 645_368n,
+	total: 637_350n,
 	lignes: [
 		{
 			reference: 'FA-2026-118',
 			principalRestantDu: 600_000n,
-			interets: 41_368n,
+			interets: 33_350n,
 			indemniteForfaitaire: 4_000n,
-			total: 645_368n,
+			total: 637_350n,
 			segments: [
 				{
 					debut: '2026-05-01',
@@ -93,38 +120,79 @@ const DECOMPTE_DEMO: DecompteAffiche = {
 					principal: 600_000n,
 					taux: { numerateur: 1240n, denominateur: 10_000n },
 					baseAnnuelle: 365,
-					interets: 21_063n
+					interets: 13_045n
 				}
 			]
 		}
 	]
 };
 
-/** Les trois questions de qualification de litige, telles que le domaine les pose. */
-const QUESTIONS_LITIGE_DEMO: readonly QuestionLitige[] = [
-	{
-		cle: 'CONTESTATION_ECRITE',
-		question:
-			'Ce client vous a-t-il écrit pour contester cette facture — courrier, e-mail, ou réserve portée sur un bon de livraison ?',
-		portee:
-			'Une contestation écrite fait sortir le dossier des procédures listées ici, qui se déroulent toutes sans débat.'
-	},
-	{
-		cle: 'REFUS_RECEPTION',
-		question: 'A-t-il refusé tout ou partie de la marchandise ou de la prestation ?',
-		portee: 'Un refus porte sur ce qui est dû, pas sur le paiement : il touche le montant lui-même.'
-	},
-	{
-		cle: 'AVOIR_RECLAME',
-		question: 'Vous a-t-il réclamé un avoir que vous n’avez pas émis ?',
-		portee: 'Un avoir réclamé et non émis est un désaccord ouvert sur le montant.'
-	}
-];
+/** Ce que la démonstration du décompte partage entre son état prêt et son état vide. */
+const DECOMPTE_BASE_DEMO = {
+	debiteur: 'Fournitures Durand',
+	enCours: false,
+	erreur: null,
+	onArreter: () => undefined,
+	onTelecharger: () => undefined
+};
+
+/**
+ * Les réponses en cours : deux faits écartés, quatre encore ouverts.
+ *
+ * ⚠️ CE QUE `questionsRestantes` DEMANDE NE COÏNCIDE PAS AVEC CE QUE
+ * `lireLitige` COMPTE. `RECONNAISSANCE_ECRITE` se pose comme les cinq autres
+ * questions, mais elle n'entre pas dans `FAITS_DE_LITIGE` (`litige.ts`) : avec
+ * ces deux réponses, quatre questions restent posées alors que le constat ne
+ * compte que trois faits indéterminés. C'est un comportement réel du produit ;
+ * cette démonstration le montre plutôt que de choisir des réponses qui
+ * l'éviteraient.
+ */
+const REPONSES_LITIGE_DEMO: Reponses = { CONTESTATION_ECRITE: 'NON', REFUS_RECEPTION: 'NON' };
+
+/** L'état « sans données » : les six questions répondues, aucune contestation retenue. */
+const REPONSES_LITIGE_TERMINEES_DEMO: Reponses = {
+	CONTESTATION_ECRITE: 'NON',
+	REFUS_RECEPTION: 'NON',
+	AVOIR_RECLAME: 'NON',
+	PENALITES_OPPOSEES: 'NON',
+	INSTANCE_EN_COURS: 'NON',
+	RECONNAISSANCE_ECRITE: 'NON'
+};
+
+/** La variante « litigieux » : une contestation écrite déclarée. */
+const REPONSES_LITIGE_LITIGIEUSES_DEMO: Reponses = { CONTESTATION_ECRITE: 'OUI' };
+
+/**
+ * Les champs qui dépendent des réponses, calculés par `lireLitige` et
+ * `questionsRestantes` (`litige.ts`) : jamais recopiés, pour que la
+ * démonstration reste vraie si le domaine change de formulation.
+ */
+function litigeDepuisReponses(reponses: Reponses) {
+	const lecture = lireLitige(reponses);
+	return {
+		questions: questionsRestantes(reponses).map((q) => ({
+			cle: q.cle,
+			question: q.question,
+			portee: q.portee
+		})),
+		constats: [...lecture.constats],
+		litigieux: lecture.litigieux
+	};
+}
+
+/** Ce que la démonstration du litige partage entre son état prêt, sa variante et son état vide. */
+const LITIGE_BASE_DEMO = {
+	debiteur: 'Fournitures Durand',
+	enCours: false,
+	erreur: null,
+	onDeclarer: () => undefined,
+	onRepondre: () => undefined
+};
 
 // Les textes viennent du DOMAINE, pas d'une fixture recopiée : une
 // démonstration qui invente ses propres phrases montre un produit qui
-// n'existe pas, et c'est ce qui s'est passé sur la pyramide de preuves.
-const ELEMENTS_RELANCE_DEMO = {
+// n'existe pas.
+const ELEMENTS_RELANCE_DEMO: ElementsRelance = {
 	creancier: 'Thumbbb Agency',
 	debiteur: 'Fournitures Durand',
 	factures: [
@@ -135,7 +203,7 @@ const ELEMENTS_RELANCE_DEMO = {
 		}
 	],
 	principalRestantDu: depuisCentimes(1_200_000n),
-	santeDebiteur: 'SAINE' as const,
+	santeDebiteur: 'SAINE',
 	aujourdHui: '2026-09-03',
 	decompte: {
 		arreteAu: '2026-09-03',
@@ -145,63 +213,83 @@ const ELEMENTS_RELANCE_DEMO = {
 	}
 };
 
-/** Trois niveaux, dont la mise en demeure, verrouillée faute de mentions au référentiel. */
-const RELANCES_DEMO: readonly NiveauAffiche[] = NIVEAUX_RELANCE.map((description) => {
-	const relance = composerRelance(description.niveau, ELEMENTS_RELANCE_DEMO);
-	return {
-		niveau: description.niveau,
-		nom: description.nom,
-		intention: description.intention,
-		disponible: relance.disponible,
-		objet: relance.disponible ? relance.objet : undefined,
-		corps: relance.disponible ? relance.corps : undefined,
-		constat: relance.disponible ? undefined : relance.constat,
-		blocages: relance.disponible ? undefined : [...relance.blocages]
-	};
+/** Les trois niveaux composés par `composerRelance` (`relance.ts`) pour un jeu d'éléments donné. */
+function niveauxDepuisElements(elements: ElementsRelance): NiveauAffiche[] {
+	return NIVEAUX_RELANCE.map((description) => {
+		const relance = composerRelance(description.niveau, elements);
+		return {
+			niveau: description.niveau,
+			nom: description.nom,
+			intention: description.intention,
+			disponible: relance.disponible,
+			objet: relance.disponible ? relance.objet : undefined,
+			corps: relance.disponible ? relance.corps : undefined,
+			constat: relance.disponible ? undefined : relance.constat,
+			blocages: relance.disponible ? undefined : [...relance.blocages]
+		};
+	});
+}
+
+const RELANCES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements(ELEMENTS_RELANCE_DEMO);
+
+/** La variante « suspendues » : le coupe-circuit d'une procédure collective. */
+const RELANCES_SUSPENDUES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements({
+	...ELEMENTS_RELANCE_DEMO,
+	santeDebiteur: 'PROCEDURE_COLLECTIVE',
+	constatRegistre: {
+		nature: 'Jugement d’ouverture de liquidation judiciaire',
+		dateJugement: '2026-03-14'
+	}
 });
 
 /**
- * Deux risques réels du domaine : un bloquant — une contestation, qui ferme
- * les procédures sans débat évaluées ici — et un simple constat.
+ * Les risques d'une créance en procédure collective, avec une contestation
+ * écrite déclarée. Calculés par `qualifier()` (`scoring.ts`), jamais
+ * recopiés : `retardsAnterieurs: 0` est la valeur que `creanceComplete`
+ * passe aujourd'hui (`src/lib/convex/recouvrement/lecture.ts`), en
+ * attendant l'historique des règlements.
  */
-const RISQUES_DEMO: readonly RisqueAffiche[] = [
-	{
-		type: 'ECART_COMMANDE_FACTURE',
-		description: 'Un écart existe entre ce qui a été commandé et ce qui a été facturé.',
-		gravite: 'BLOQUANTE'
-	},
-	{
-		type: 'RETARDS_REPETES',
-		description: '4 retards de paiement ont été observés sur ce débiteur.',
-		gravite: 'MOYENNE'
-	}
-];
+const RISQUES_DEMO: readonly RisqueAffiche[] = qualifier({
+	certaine: 'ko',
+	liquide: 'ok',
+	exigible: 'ok',
+	entreCommercants: 'unknown',
+	piecesFournies: ['FACTURE', 'BON_DE_COMMANDE'],
+	signauxContestation: ['CONTESTATION_ECRITE'],
+	santeDebiteur: 'PROCEDURE_COLLECTIVE',
+	retardsAnterieurs: 0
+}).risques;
 
-/** Un étage de la pyramide de preuves, phrasé par le domaine — jamais recomposé ici. */
-function etageSoliditeDemo(cle: string, presente: boolean, poids: number) {
-	const source = ETAGES_DE_PREUVE.find((e) => e.cle === cle)!;
+/**
+ * La même mise en forme que `DemoDetail` utilisait pour la pyramide, gardée
+ * ici comme une fonction : la page ne recalcule rien, elle affiche ce que
+ * `pyramideDePreuves` rend.
+ */
+function soliditeDepuisPyramide(pyramide: Pyramide): SoliditeAffichee {
 	return {
-		cle,
-		fait: source.fait,
-		presente,
-		poids,
-		etat: presente ? source.etabli : `Aucune pièce ne documente ${source.fait}.`
+		constat: pyramide.constat,
+		etablies: pyramide.etablies,
+		attendues: pyramide.attendues,
+		prochaine: pyramide.prochaine?.cle ?? null,
+		etages: pyramide.etages.map((e) => ({
+			cle: e.cle,
+			fait: e.fait,
+			etat: e.etat,
+			presente: e.presente,
+			poids: e.poids
+		}))
 	};
 }
 
-/** À mi-chemin : ce qui pèse le plus dans le score est nommé. */
-const SOLIDITE_DEMO: SoliditeAffichee = {
-	constat: 'Deux des quatre pièces attendues sont absentes.',
-	etablies: 2,
-	attendues: 4,
-	prochaine: 'livraison',
-	etages: [
-		etageSoliditeDemo('commande', true, 3),
-		etageSoliditeDemo('livraison', false, 3),
-		etageSoliditeDemo('conditionsContractuelles', true, 1),
-		etageSoliditeDemo('miseEnDemeure', false, 1)
-	]
-};
+const SOLIDITE_DEMO: SoliditeAffichee = soliditeDepuisPyramide(PYRAMIDE_DEMO);
+
+/** La variante « aucune pièce ». */
+const SOLIDITE_AUCUNE_PIECE_DEMO: SoliditeAffichee = soliditeDepuisPyramide(pyramideDePreuves([]));
+
+/** La variante « toutes les pièces » : un exemplaire de chaque type accepté par un étage. */
+const SOLIDITE_TOUTES_PIECES_DEMO: SoliditeAffichee = soliditeDepuisPyramide(
+	pyramideDePreuves(ETAGES_DE_PREUVE.flatMap((etage) => etage.pieces))
+);
 
 export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 	{
@@ -228,22 +316,8 @@ export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 				identifiant="demo"
 				donnees={lectureDemo(
 					etat,
-					{
-						debiteur: 'Fournitures Durand',
-						dernier: DECOMPTE_DEMO,
-						enCours: false,
-						erreur: null,
-						onArreter: () => undefined,
-						onTelecharger: () => undefined
-					},
-					{
-						debiteur: 'Fournitures Durand',
-						dernier: null,
-						enCours: false,
-						erreur: null,
-						onArreter: () => undefined,
-						onTelecharger: () => undefined
-					}
+					{ ...DECOMPTE_BASE_DEMO, dernier: DECOMPTE_DEMO },
+					{ ...DECOMPTE_BASE_DEMO, dernier: null }
 				)}
 			/>
 		)
@@ -252,37 +326,23 @@ export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 		route: '/app/creance_/$id/litige',
 		libelle: 'litige',
 		vide: true,
-		Demo: ({ etat }) => (
+		variantes: ['litigieux'],
+		Demo: ({ etat, variante }) => (
 			<EcranLitige
 				identifiant="demo"
 				donnees={lectureDemo(
 					etat,
 					{
-						debiteur: 'Fournitures Durand',
-						questions: QUESTIONS_LITIGE_DEMO,
-						constats: ['Le caractère certain reste indéterminé : 3 faits ne sont pas renseignés.'],
-						litigieux: false,
-						conditions: [
-							{
-								condition: 'entreCommercants',
-								libelle: 'Les deux parties sont-elles commerçantes ?'
-							}
-						],
-						enCours: false,
-						erreur: null,
-						onDeclarer: () => undefined,
-						onRepondre: () => undefined
+						...LITIGE_BASE_DEMO,
+						...litigeDepuisReponses(
+							variante === 'litigieux' ? REPONSES_LITIGE_LITIGIEUSES_DEMO : REPONSES_LITIGE_DEMO
+						),
+						conditions: [CONDITION_ENTRE_COMMERCANTS_DEMO]
 					},
 					{
-						debiteur: 'Fournitures Durand',
-						questions: [],
-						constats: [],
-						litigieux: false,
-						conditions: [],
-						enCours: false,
-						erreur: null,
-						onDeclarer: () => undefined,
-						onRepondre: () => undefined
+						...LITIGE_BASE_DEMO,
+						...litigeDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO),
+						conditions: []
 					}
 				)}
 			/>
@@ -292,10 +352,14 @@ export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 		route: '/app/creance_/$id/relances',
 		libelle: 'relances',
 		vide: false,
-		Demo: ({ etat }) => (
+		variantes: ['suspendues'],
+		Demo: ({ etat, variante }) => (
 			<EcranRelances
 				identifiant="demo"
-				donnees={lectureDemo(etat, { debiteur: 'Fournitures Durand', niveaux: RELANCES_DEMO })}
+				donnees={lectureDemo(etat, {
+					debiteur: 'Fournitures Durand',
+					niveaux: variante === 'suspendues' ? RELANCES_SUSPENDUES_DEMO : RELANCES_DEMO
+				})}
 			/>
 		)
 	},
@@ -318,10 +382,19 @@ export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 		route: '/app/creance_/$id/solidite',
 		libelle: 'solidité',
 		vide: false,
-		Demo: ({ etat }) => (
+		variantes: ['aucune pièce', 'toutes les pièces'],
+		Demo: ({ etat, variante }) => (
 			<EcranSolidite
 				identifiant="demo"
-				donnees={lectureDemo(etat, { debiteur: 'Fournitures Durand', solidite: SOLIDITE_DEMO })}
+				donnees={lectureDemo(etat, {
+					debiteur: 'Fournitures Durand',
+					solidite:
+						variante === 'aucune pièce'
+							? SOLIDITE_AUCUNE_PIECE_DEMO
+							: variante === 'toutes les pièces'
+								? SOLIDITE_TOUTES_PIECES_DEMO
+								: SOLIDITE_DEMO
+				})}
 			/>
 		)
 	}

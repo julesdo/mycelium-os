@@ -1,5 +1,11 @@
 import { PageEcran, Relances, type Lecture, type NiveauAffiche } from '../../ui';
 
+/** Ce que l'écran affiche : le débiteur pour l'en-tête, et les niveaux de relance à composer. */
+export interface RelancesDeLaCreance {
+	readonly debiteur: string;
+	readonly niveaux: readonly NiveauAffiche[];
+}
+
 /**
  * CE QUE VOUS POUVEZ LUI ÉCRIRE — les brouillons, sur leur propre page.
  *
@@ -19,11 +25,6 @@ import { PageEcran, Relances, type Lecture, type NiveauAffiche } from '../../ui'
  * partent de la messagerie du créancier, sous sa signature. La déplacer ici
  * ferait deux endroits où le produit dit ce qu'il n'est pas.
  */
-export interface RelancesDeLaCreance {
-	readonly debiteur: string;
-	readonly niveaux: readonly NiveauAffiche[];
-}
-
 export function EcranRelances({
 	identifiant,
 	donnees

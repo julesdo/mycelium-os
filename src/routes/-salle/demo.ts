@@ -19,13 +19,20 @@ export interface EcranDuProduit {
 	/** Vrai si l'écran a une forme vide à regarder. Voir `lectureDemo`. */
 	readonly vide: boolean;
 	/**
+	 * Des formes prêtes supplémentaires, nommées : ce que l'écran montre selon ses
+	 * données (des relances suspendues, un litige tranché, une pyramide complète).
+	 * La salle les offre dans l'état prêt, et chacune doit rendre autre chose que
+	 * la forme principale.
+	 */
+	readonly variantes?: readonly string[];
+	/**
 	 * La démonstration de l'écran, dans un état donné.
 	 *
 	 * Un COMPOSANT, pas une fonction appelée : la salle le rend avec une `key`, et
 	 * passer d'un écran à l'autre le remonte comme un changement de route. La
 	 * coquille, elle, est posée une fois par la salle, comme en production.
 	 */
-	readonly Demo: ComponentType<{ etat: EtatDemo }>;
+	readonly Demo: ComponentType<{ etat: EtatDemo; variante?: string }>;
 }
 
 /**

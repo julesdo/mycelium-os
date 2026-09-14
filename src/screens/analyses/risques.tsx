@@ -2,6 +2,19 @@ import { Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon } from 'lucide-react';
 import { PageEcran, type Lecture } from '../../ui';
 
+/** Un risque de la créance, tel que le score le constate. */
+export interface RisqueAffiche {
+	readonly type: string;
+	readonly description: string;
+	readonly gravite: string;
+}
+
+/** Ce que l'écran affiche : le débiteur pour l'en-tête, et les risques relevés sur le dossier. */
+export interface RisquesDeLaCreance {
+	readonly debiteur: string;
+	readonly risques: readonly RisqueAffiche[];
+}
+
 /**
  * CE QUI AFFAIBLIT CE DOSSIER.
  *
@@ -14,17 +27,6 @@ import { PageEcran, type Lecture } from '../../ui';
  * une procédure simplifiée : le dossier peut être parfait par ailleurs, il ne
  * passera pas. Le noyer parmi les autres reviendrait à le taire.
  */
-export interface RisqueAffiche {
-	readonly type: string;
-	readonly description: string;
-	readonly gravite: string;
-}
-
-export interface RisquesDeLaCreance {
-	readonly debiteur: string;
-	readonly risques: readonly RisqueAffiche[];
-}
-
 export function EcranRisques({
 	identifiant,
 	donnees

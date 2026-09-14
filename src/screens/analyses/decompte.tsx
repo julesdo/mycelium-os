@@ -2,6 +2,17 @@ import { Button, Surface } from '@cladd-ui/react';
 import { FileDownIcon } from 'lucide-react';
 import { BoutonPrincipal, Decompte, PageEcran, type DecompteAffiche, type Lecture } from '../../ui';
 
+/** Ce que l'écran affiche : le débiteur, le dernier décompte arrêté, et les gestionnaires pour en produire un nouveau. */
+export interface DecompteDeLaCreance {
+	readonly debiteur: string;
+	/** Le dernier décompte arrêté, ou `null` s'il n'y en a pas encore. */
+	readonly dernier: DecompteAffiche | null;
+	readonly enCours: boolean;
+	readonly erreur: string | null;
+	readonly onArreter: () => void;
+	readonly onTelecharger: () => void;
+}
+
 /**
  * LE DÉCOMPTE — la pièce qui part chez un tiers.
  *
@@ -18,16 +29,6 @@ import { BoutonPrincipal, Decompte, PageEcran, type DecompteAffiche, type Lectur
  * décompte daté. La question n'est pas « combien réclame-t-on aujourd'hui »
  * mais « qu'a-t-on réclamé le jour où on l'a réclamé ».
  */
-export interface DecompteDeLaCreance {
-	readonly debiteur: string;
-	/** Le dernier décompte arrêté, ou `null` s'il n'y en a pas encore. */
-	readonly dernier: DecompteAffiche | null;
-	readonly enCours: boolean;
-	readonly erreur: string | null;
-	readonly onArreter: () => void;
-	readonly onTelecharger: () => void;
-}
-
 export function EcranDecompte({
 	identifiant,
 	donnees

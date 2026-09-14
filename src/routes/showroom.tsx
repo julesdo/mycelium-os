@@ -1756,6 +1756,7 @@ function Showroom() {
 	const [ecran, setEcran] = useState<Ecran>('veilleur');
 	const [produit, setProduit] = useState<string | null>(ECRANS_DU_PRODUIT[0]?.route ?? null);
 	const [etat, setEtat] = useState<EtatDemo>('pret');
+	const [variante, setVariante] = useState<string | undefined>(undefined);
 
 	const choisi = ECRANS_DU_PRODUIT.find((e) => e.route === produit) ?? null;
 	// Trois états hors du produit : rien à regarder en attente ou en erreur sur
@@ -1787,6 +1788,30 @@ function Showroom() {
 							</SegmentedButton>
 						))}
 					</Segmented>
+					{/* Les formes prêtes nommées d'un écran (une relance suspendue, un
+					    litige tranché…) : jamais visibles en dehors de l'état prêt, et
+					    seulement quand l'écran choisi en déclare. */}
+					{choisi !== null && choisi.variantes !== undefined && choisi.variantes.length > 0 ? (
+						<Segmented activeColor="neutral" activeVariant="solid">
+							<SegmentedButton
+								active={variante === undefined}
+								disabled={etat !== 'pret'}
+								onClick={() => setVariante(undefined)}
+							>
+								principale
+							</SegmentedButton>
+							{choisi.variantes.map((v) => (
+								<SegmentedButton
+									key={v}
+									active={variante === v}
+									disabled={etat !== 'pret'}
+									onClick={() => setVariante(v)}
+								>
+									{v}
+								</SegmentedButton>
+							))}
+						</Segmented>
+					) : null}
 					<Segmented activeColor="neutral" activeVariant="solid">
 						{ECRANS_DU_PRODUIT.map((e) => (
 							<SegmentedButton
@@ -1795,6 +1820,7 @@ function Showroom() {
 								onClick={() => {
 									setProduit(e.route);
 									setEtat('pret');
+									setVariante(undefined);
 								}}
 							>
 								{e.libelle}
@@ -1819,7 +1845,11 @@ function Showroom() {
 			<div className="min-h-0 flex-1">
 				{choisi !== null ? (
 					<Shell>
-						<choisi.Demo key={choisi.route} etat={etat} />
+						<choisi.Demo
+							key={choisi.route}
+							etat={etat}
+							variante={etat === 'pret' ? variante : undefined}
+						/>
 					</Shell>
 				) : (
 					<>

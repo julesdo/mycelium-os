@@ -9,6 +9,25 @@ import {
 	type ReponseFait
 } from '../../ui';
 
+/** Une condition légale que le logiciel n'a pas pu déduire, à confirmer par le gérant. */
+export interface ConditionAConfirmer {
+	readonly condition: string;
+	readonly libelle: string;
+}
+
+/** Ce que l'écran affiche : le débiteur, le questionnaire de litige, et les conditions légales restées indéterminées. */
+export interface LitigeDeLaCreance {
+	readonly debiteur: string;
+	readonly questions: readonly QuestionLitige[];
+	readonly constats: readonly string[];
+	readonly litigieux: boolean;
+	readonly conditions: readonly ConditionAConfirmer[];
+	readonly enCours: boolean;
+	readonly erreur: string | null;
+	readonly onDeclarer: (cle: string, reponse: ReponseFait) => void;
+	readonly onRepondre: (condition: string, reponse: 'ok' | 'ko') => void;
+}
+
 /**
  * CE QUE VOUS SEUL POUVEZ DIRE — le questionnaire, sur sa propre page.
  *
@@ -25,19 +44,6 @@ import {
  * elles relèvent de la même chose — ce que le gérant est seul à savoir — et
  * les séparer faisait deux cartes pour un seul sujet.
  */
-export interface LitigeDeLaCreance {
-	readonly debiteur: string;
-	readonly questions: readonly QuestionLitige[];
-	readonly constats: readonly string[];
-	readonly litigieux: boolean;
-	/** Les conditions légales que le logiciel n'a pas pu déduire. */
-	readonly conditions: readonly { readonly condition: string; readonly libelle: string }[];
-	readonly enCours: boolean;
-	readonly erreur: string | null;
-	readonly onDeclarer: (cle: string, reponse: ReponseFait) => void;
-	readonly onRepondre: (condition: string, reponse: 'ok' | 'ko') => void;
-}
-
 export function EcranLitige({
 	identifiant,
 	donnees

@@ -1,5 +1,11 @@
 import { PageEcran, Solidite, type Lecture, type SoliditeAffichee } from '../../ui';
 
+/** Ce que l'écran affiche : le débiteur pour l'en-tête, et la pyramide de preuves à détailler. */
+export interface SoliditeDeLaCreance {
+	readonly debiteur: string;
+	readonly solidite: SoliditeAffichee;
+}
+
 /**
  * CE QUE LES PIÈCES ÉTABLISSENT — une page, plus une carte.
  *
@@ -21,11 +27,6 @@ import { PageEcran, Solidite, type Lecture, type SoliditeAffichee } from '../../
  * diverger, et c'est le genre d'écart qu'on ne voit qu'en les comparant côte à
  * côte — ce que personne ne fait.
  */
-export interface SoliditeDeLaCreance {
-	readonly debiteur: string;
-	readonly solidite: SoliditeAffichee;
-}
-
 export function EcranSolidite({
 	identifiant,
 	donnees
