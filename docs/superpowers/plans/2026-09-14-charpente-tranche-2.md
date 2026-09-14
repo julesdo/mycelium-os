@@ -606,7 +606,9 @@ La revue a accepté la coquille, et relevé deux décisions d'API que les tâche
 4. **L'erreur ne promet que ce qu'elle sait** : « Rien de ce qui est enregistré n’est touché par cet échec. » `role="alert"` n'enveloppe plus que le titre et la phrase ; sans en-tête, le titre est un `h1`.
 5. **Le squelette réutilise `ListeAnalyses`**, et respire au rythme `animate-pouls`, jeton existant de `tokens.css`.
 6. **Types resserrés** : `RetourEcran.vers` en `NonNullable<LinkProps['to']>`, `VideEcran` égal aux props d'`EmptyState`, `EtatEcran` bâti sur `Lecture<unknown>['etat']`.
-7. **Tests** : `Link` est remplacé par un lien nu dans le test de la coquille, ce qui rend réellement l'en-tête poussé et l'issue par défaut ; dix tests au lieu de sept. `destinations-existent` teste sa lecture sur des lignes écrites dans le test (`destinationsDansLigne`), et ne dépend plus d'un écran du produit.
+7. **Tests** : `Link` est remplacé par un lien nu dans le test de la coquille, ce qui rend réellement l'en-tête poussé et l'issue par défaut. `destinations-existent` teste sa lecture sur des lignes écrites dans le test (`destinationsDansLigne`), et ne dépend plus d'un écran du produit.
+8. **Seconde relecture** : le statut sort de la zone `aria-busy` (portée par le squelette masqué), le squelette prend la largeur de la liste en deux volets, `disposition="volets"` est toléré à côté de `volets`, et les tests vérifient que le vide et l'erreur restent en colonne et que le retour transmet ses paramètres (`?d=`). Douze tests pour la coquille.
+9. **Tâche 10** : la mesure au DOM exclut le statut de la coquille des « attentes cachées ».
 
 ---
 
@@ -3634,7 +3636,7 @@ bun run lint
 bun run build
 ```
 
-Attendu : tout vert ; le nombre de tests dépasse celui de la tâche 0 d'au moins 20 (10 de la coquille, 1 des destinations, 9 des barrières), aucun n'ayant été retiré.
+Attendu : tout vert ; le nombre de tests dépasse celui de la tâche 0 d'au moins 22 (12 de la coquille, 1 des destinations, 9 des barrières), aucun n'ayant été retiré.
 
 - [ ] **Step 2 : le regard, aux quatre largeurs**
 
@@ -3648,11 +3650,16 @@ Démarrer ou rattacher le serveur de développement (`preview_start`, configurat
 ({
 	debordeEnLargeur: document.documentElement.scrollWidth > window.innerWidth,
 	attenteAnnoncee: document.querySelectorAll('[aria-busy="true"]').length,
-	attenteCachee: [...document.querySelectorAll('.sr-only')].filter((n) => /Chargement/.test(n.textContent ?? '')).length
+	// Le statut de la coquille (`role="status"`) est exclu : il accompagne un
+	// squelette visible, il n'est pas une attente cachée.
+	attenteCachee: [...document.querySelectorAll('.sr-only:not([role="status"])')].filter((n) =>
+		/Chargement/.test(n.textContent ?? '')
+	).length,
+	statutAttente: document.querySelectorAll('[role="status"]').length
 })
 ```
 
-Attendu : `debordeEnLargeur` faux partout ; `attenteAnnoncee` à 1 dans l'état Attente et à 0 ailleurs ; `attenteCachee` à 0 partout.
+Attendu : `debordeEnLargeur` faux partout ; `attenteAnnoncee` et `statutAttente` à 1 dans l'état Attente et à 0 ailleurs ; `attenteCachee` à 0 partout.
 
 Tout défaut vu se corrige dans l'écran ou dans la coquille, se vérifie à nouveau, et se committe par chemin avant d'aller plus loin.
 
