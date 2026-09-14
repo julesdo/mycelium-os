@@ -633,6 +633,13 @@ La revue a accepté la coquille, et relevé deux décisions d'API que les tâche
 4. **Le long commentaire qui justifie une page se pose au-dessus de la fonction `Ecran…`**, pas au-dessus de l'interface de ses données, qui reçoit un commentaire d'une ligne.
 5. **Un type d'élément se nomme** plutôt que de s'écrire en ligne dans un tableau (`readonly ConditionAConfirmer[]`) : la règle `array-type` d'oxlint le signale sinon.
 
+### Correctifs de la seconde revue de la tâche 3 (appliqués AVANT la tâche 4), et ce qu'ils changent pour les tâches 4 à 8
+
+1. **Une famille déclare ses entrées d'abord.** En tête de son fichier de salle viennent le nom du débiteur (une seule constante), sa santé, les réponses déclarées, les pièces, les factures et la date du jour figée. Toutes les données de ses écrans en DÉRIVENT, y compris la rangée d'un écran qui résume les autres. La rangée de la créance affichait 65 % là où `qualifier` ne sait rendre que 15, 30, 45, 60 ou 75 %, « 1 prêt » pour un débiteur en liquidation, et « À produire » à côté d'une page de décompte.
+2. **Deux pages d'une même famille ne se contredisent pas.** Quand une page a besoin d'une autre forme pour se montrer utilement (les relances d'un débiteur sain, pour voir leurs brouillons), cette forme dérive des mêmes entrées avec une seule entrée changée, et un commentaire d'une ligne le dit. Une page qui a besoin d'une autre créance entière (la procédure, tâche 4) a sa propre famille, sous un autre nom de débiteur.
+3. **Les variantes se lisent par `formeDemo(variante, principale, formes)`** (`demo.ts`), et l'entrée déclare `variantes: Object.keys(formes)`. Un nom mal écrit lève, au lieu de rendre la forme principale en silence.
+4. **Un bouton de variante ne s'allume que dans l'état prêt** (`active={etat === 'pret' && …}`) : il ne montre jamais un choix que la démonstration ne reçoit pas.
+
 ---
 
 ## Tâche 2 : la salle montre les écrans du produit, en commençant par les trois qui ont déjà un fichier d'écran
