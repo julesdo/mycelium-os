@@ -56,14 +56,14 @@ export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffich
 		return <PageEcran entete={entete} etat={donnees.etat} />;
 	}
 
-	const etat = donnees.valeur;
-	if (etat === null) {
+	const pret = donnees.valeur;
+	if (pret === null) {
 		return (
 			<PageEcran entete={entete} etat={sansEtablissement('Créez-en un pour voir votre offre.')} />
 		);
 	}
 
-	const abonne = etat.paddleStatus === 'active' || etat.paddleStatus === 'trialing';
+	const abonne = pret.paddleStatus === 'active' || pret.paddleStatus === 'trialing';
 
 	return (
 		<PageEcran
@@ -73,20 +73,20 @@ export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffich
 			}}
 		>
 			<div className="flex flex-col gap-cladd-2xs">
-				<EtatCourant etat={etat} abonne={abonne} />
+				<EtatCourant etat={pret} abonne={abonne} />
 
-				{etat.essaiFiniLe && !abonne ? <EssaiEnCours finLe={etat.essaiFiniLe} /> : null}
+				{pret.essaiFiniLe && !abonne ? <EssaiEnCours finLe={pret.essaiFiniLe} /> : null}
 
 				<SectionEcran titre="Votre palier">
 					<div className="flex flex-wrap items-center gap-cladd-3xs">
 						<Chip color="brand" size="md">
-							Palier {etat.palier}
+							Palier {pret.palier}
 						</Chip>
-						<span className="text-cladd-sm text-cladd-fg-soft">{etat.bornesPalier}</span>
+						<span className="text-cladd-sm text-cladd-fg-soft">{pret.bornesPalier}</span>
 					</div>
 					<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
-						{etat.facturesParAn
-							? `Déterminé à partir des ${etat.facturesParAn} factures par an déclarées dans vos réglages.`
+						{pret.facturesParAn
+							? `Déterminé à partir des ${pret.facturesParAn} factures par an déclarées dans vos réglages.`
 							: 'Votre volume de factures n’est pas renseigné : le palier le plus bas est retenu par défaut.'}{' '}
 						Le produit est le même à tous les paliers ; seul le prix change.{' '}
 						{/* `min-h-12` : 48 px de haut, le plancher tactile du projet. Le lien en faisait 18. */}
@@ -118,18 +118,18 @@ export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffich
 						icone={<FileSearchIcon />}
 						titre="Le premier bilan"
 						precision="Douze mois de factures lus en une fois"
-						valeur={`${euros(etat.tarifs.bilan)} une fois`}
+						valeur={`${euros(pret.tarifs.bilan)} une fois`}
 					/>
 					<LigneAnalyse
 						vers="/app/abonnement/suivi"
 						icone={<RefreshCwIcon />}
 						titre="L’abonnement"
-						precision="Votre chiffre reste à jour toute l’année"
-						valeur={`${euros(etat.tarifs.abonnementMensuel)} par mois`}
+						precision="Vos échéances surveillées toute l’année"
+						valeur={`${euros(pret.tarifs.abonnementMensuel)} par mois`}
 					/>
 				</ListeAnalyses>
 
-				{etat.paddleConfigure ? null : <OuvertureEnCours />}
+				{pret.paddleConfigure ? null : <OuvertureEnCours />}
 
 				<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
 					Prix hors taxes. La facturation est opérée par Paddle, qui émet la facture et collecte la

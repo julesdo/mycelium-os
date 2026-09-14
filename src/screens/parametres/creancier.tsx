@@ -127,7 +127,7 @@ export function FormulaireCreancier({
 /** Ce que la page affiche : le formulaire, la clé qui le remonte, et l'enregistrement que la route pilote. */
 export interface CreancierAffiche {
 	readonly initial: ComponentProps<typeof FormulaireCreancier>['initial'];
-	/** Remonte le formulaire quand le serveur change la dénomination. Voir la route. */
+	/** Remonte le formulaire quand l'établissement change, jamais à l'enregistrement du profil. Voir la route. */
 	readonly cle: string;
 	readonly onEnregistrer: ComponentProps<typeof FormulaireCreancier>['onEnregistrer'];
 }
