@@ -2640,6 +2640,11 @@ Les trois routes d'abonnement lisent `const etat = useQuery(api.billing.etatAbon
 
 1. Supprimer `DemoCreancier` et `DemoAbonnement`, leurs clés (`'creancier'`, `'abonnement'`) et leurs lignes de rendu ; retirer les imports devenus inutiles (`Offre`, `OuvertureEnCours`, `EssaiEnCours`, `PALIERS`, `BORNES_PALIER`, `TARIFS`, `FormulaireCreancier`, `FIN_ESSAI_DEMO` s'il ne sert plus).
 2. Créer `src/routes/-salle/reglages.tsx` (tableau `ECRANS_REGLAGES`, à réunir dans `ecrans.tsx`) avec un `ABONNEMENT_DEMO: AbonnementAffiche` : palier `'M'`, `bornesPalier: BORNES_PALIER.M`, `tarifs: TARIFS.M`, `facturesParAn: 420`, `tier: 'aucun'`, `isDev: false`, `seatsAllowed: 3`, `paddleStatus: null`, `paddleConfigure: false`, `essaiFiniLe` à douze jours.
+
+   **Amendements du 14/09, relevés au code. Ils l'emportent sur la ligne ci-dessus, sur le tableau qui suit et sur le code de l'étape 3.**
+   - **Le palier se calcule** comme `etatAbonnement` le fait (`src/lib/convex/billing.ts`, lignes 223 à 231) : `palier: palierDeTaille(facturesParAn)`, puis `bornesPalier: BORNES_PALIER[palier]` et `tarifs: TARIFS[palier]`. Seul `facturesParAn` reste écrit.
+   - **L'établissement de la salle est UN, et ce n'est pas un débiteur.** Le tableau le nomme « Fournitures Durand », qui est le débiteur de la famille créance : la salle montrerait le client du gérant comme sa propre entreprise. L'établissement est le créancier que la famille créance nomme déjà (`CREANCIER_DEMO`, « Thumbbb Agency »). Le déclarer une fois dans `src/routes/-salle/communes.ts` (`ETABLISSEMENT_DEMO` : nom, SIREN, adresse, qualité de commerçant, factures par an), et le faire importer par `creance.tsx` et par la famille des réglages. Le profil du créancier (`DemoCreancier`) en reprend les valeurs.
+   - **La page du créancier attend aussi l'établissement** (règle 3 des correctifs de la revue de la tâche 4). Sa dénomination initiale se replie sur `org?.name` : si le profil arrive avant l'établissement, le formulaire part vide, et sa `key` (la dénomination du profil) ne le remonte pas quand l'établissement arrive. La condition d'attente du `return` de `parametres_.creancier.tsx` est donc `org === undefined || profil === undefined`, et non `profil === undefined` seul.
 3. Ajouter à `ECRANS_REGLAGES` :
 
 | `route` | `libelle` | `vide` | Prêt | Vide |
