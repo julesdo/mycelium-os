@@ -12,12 +12,10 @@ import {
 	BilanImport,
 	type DepotAffiche,
 	FluxEvenements,
-	Decompte,
 	ChocRevelation,
 	BilanPertes,
 	HabitudePaiement,
 	IdentiteDebiteur,
-	QuestionnaireLitige,
 	SuiviProcedure,
 	RailProcedure,
 	FeuilleVoie,
@@ -32,16 +30,12 @@ import {
 	ListeAnalyses,
 	LigneBouton,
 	Pieces,
-	Solidite,
-	EnteteDetail,
-	Relances,
 	ConstatRegistre,
 	Lettrage,
 	type OptionSecteur,
 	type RevelationAffichee,
 	type BilanPertesAffiche,
 	euros,
-	type DecompteAffiche,
 	VeilleurAvatar
 } from '../ui';
 import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
@@ -50,13 +44,10 @@ import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/
 import { Donnees } from '../screens/donnees/donnees';
 import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
-import { ETAGES_DE_PREUVE, pyramideDePreuves } from '../lib/verticales/recouvrement/solidite';
 import { DetailDebiteur } from '../screens/debiteur-detail';
 import { EcranIntrouvable, EcranEnErreur } from '../screens/passage';
-import { NIVEAUX_RELANCE, composerRelance } from '../lib/verticales/recouvrement/relance';
 import { etapesDeLaVoie } from '../lib/verticales/recouvrement/apres-procedure';
 import { PROCEDURES } from '../lib/verticales/recouvrement/procedures';
-import { depuisCentimes } from '../lib/socle/montants';
 import { ECRANS_DU_PRODUIT } from './-salle/ecrans';
 import type { EtatDemo } from './-salle/demo';
 import { EVENEMENTS_DEMO, RAIL_DEMO } from './-salle/communes';
@@ -279,26 +270,6 @@ const SECTEURS_DEMO: OptionSecteur[] = [
 	{ cle: 'CONSOMMATEUR', libelle: 'Vente à un consommateur', consequence: 'Prescription : 2 ans' }
 ];
 
-const QUESTIONS_LITIGE_DEMO = [
-	{
-		cle: 'CONTESTATION_ECRITE',
-		question:
-			'Ce client vous a-t-il écrit pour contester cette facture — courrier, e-mail, ou réserve portée sur un bon de livraison ?',
-		portee:
-			'Une contestation écrite fait sortir le dossier des procédures listées ici, qui se déroulent toutes sans débat.'
-	},
-	{
-		cle: 'REFUS_RECEPTION',
-		question: 'A-t-il refusé tout ou partie de la marchandise ou de la prestation ?',
-		portee: 'Un refus porte sur ce qui est dû, pas sur le paiement : il touche le montant lui-même.'
-	},
-	{
-		cle: 'AVOIR_RECLAME',
-		question: 'Vous a-t-il réclamé un avoir que vous n’avez pas émis ?',
-		portee: 'Un avoir réclamé et non émis est un désaccord ouvert sur le montant.'
-	}
-];
-
 const TYPES_PIECE_DEMO = [
 	{ cle: 'INDETERMINE', libelle: 'À classer', apport: 'Ne compte dans aucun critère' },
 	{
@@ -409,202 +380,6 @@ function DemoDebiteurDetail() {
 					onBasculerFacture={() => {}}
 					onConstituer={() => {}}
 				/>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoDetail() {
-	const pyramide = pyramideDePreuves(['FACTURE', 'BON_DE_COMMANDE']);
-
-	return (
-		<Page>
-			{/* L'en-tête d'une page poussée : le retour porte le nom de l'écran d'où
-			    l'on vient, et il est posé AVANT le titre — un titre long le
-			    pousserait hors de l'écran s'ils partageaient la ligne. */}
-			<EnteteDetail
-				retourVers="/app/debiteurs"
-				retourLibelle="Fournitures Durand"
-				titre="Ce que les pièces établissent"
-				sousTitre={`${pyramide.etablies} sur ${pyramide.attendues}`}
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
-					<Solidite
-						solidite={{
-							constat: pyramide.constat,
-							etablies: pyramide.etablies,
-							attendues: pyramide.attendues,
-							prochaine: pyramide.prochaine?.cle ?? null,
-							etages: pyramide.etages.map((e) => ({
-								cle: e.cle,
-								fait: e.fait,
-								etat: e.etat,
-								presente: e.presente,
-								poids: e.poids
-							}))
-						}}
-					/>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoRelances() {
-	// Les textes viennent du DOMAINE, pas d'une fixture recopiée : une
-	// démonstration qui invente ses propres phrases montre un produit qui
-	// n'existe pas, et c'est ce qui s'est passé sur la pyramide de preuves.
-	const elements = {
-		creancier: 'Thumbbb Agency',
-		debiteur: 'Fournitures Durand',
-		factures: [
-			{
-				reference: 'FA-2026-004',
-				montantTTC: depuisCentimes(1_200_000n),
-				dateEcheance: '2026-05-15'
-			}
-		],
-		principalRestantDu: depuisCentimes(1_200_000n),
-		santeDebiteur: 'SAINE' as const,
-		aujourdHui: '2026-09-03',
-		decompte: {
-			arreteAu: '2026-09-03',
-			interets: depuisCentimes(64_000n),
-			indemniteForfaitaire: depuisCentimes(4_000n),
-			total: depuisCentimes(1_268_000n)
-		}
-	};
-
-	const niveaux = NIVEAUX_RELANCE.map((description) => {
-		const relance = composerRelance(description.niveau, elements);
-		return {
-			niveau: description.niveau,
-			nom: description.nom,
-			intention: description.intention,
-			disponible: relance.disponible,
-			objet: relance.disponible ? relance.objet : undefined,
-			corps: relance.disponible ? relance.corps : undefined,
-			constat: relance.disponible ? undefined : relance.constat,
-			blocages: relance.disponible ? undefined : [...relance.blocages]
-		};
-	});
-
-	const suspendues = NIVEAUX_RELANCE.map((description) => {
-		const relance = composerRelance(description.niveau, {
-			...elements,
-			santeDebiteur: 'PROCEDURE_COLLECTIVE' as const,
-			constatRegistre: {
-				nature: 'Jugement d’ouverture de liquidation judiciaire',
-				dateJugement: '2026-03-14'
-			}
-		});
-		return {
-			niveau: description.niveau,
-			nom: description.nom,
-			intention: description.intention,
-			disponible: relance.disponible,
-			objet: relance.disponible ? relance.objet : undefined,
-			corps: relance.disponible ? relance.corps : undefined,
-			constat: relance.disponible ? undefined : relance.constat,
-			blocages: relance.disponible ? undefined : [...relance.blocages]
-		};
-	});
-
-	return (
-		<Page>
-			<PageHeader titre="Fournitures Durand" sousTitre="Ce que vous pouvez lui écrire" />
-			<PageBody>
-				<div className="flex flex-col gap-cladd-md">
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Trois niveaux, dont un verrouillé</SectionTitle>
-						<Relances niveaux={niveaux} />
-					</div>
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Le coupe-circuit — tout est suspendu</SectionTitle>
-						<Relances niveaux={suspendues} />
-					</div>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoSolidite() {
-	// ⚠️ LES PHRASES ACCORDÉES VIENNENT DU DOMAINE. Les recomposer ici ferait
-	// une démonstration qui montre une faute que le produit n’a plus — et
-	// c’est exactement ce qui s’est passé : la première version composait
-	// « Les conditions de paiement applicables EST DOCUMENTÉ ».
-	const etage = (cle: string, presente: boolean, poids: number) => {
-		const source = ETAGES_DE_PREUVE.find((e) => e.cle === cle)!;
-		return {
-			cle,
-			fait: source.fait,
-			presente,
-			poids,
-			etat: presente ? source.etabli : `Aucune pièce ne documente ${source.fait}.`
-		};
-	};
-
-	return (
-		<Page>
-			<PageHeader titre="Fournitures Durand" sousTitre="Ce que les pièces établissent" />
-			<PageBody>
-				<div className="flex flex-col gap-cladd-md">
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Une facture seule</SectionTitle>
-						<Solidite
-							solidite={{
-								constat: 'Quatre des quatre pièces attendues sont absentes.',
-								etablies: 0,
-								attendues: 4,
-								prochaine: 'commande',
-								etages: [
-									etage('commande', false, 3),
-									etage('livraison', false, 3),
-									etage('conditionsContractuelles', false, 1),
-									etage('miseEnDemeure', false, 1)
-								]
-							}}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>À mi-chemin — ce qui pèse le plus est nommé</SectionTitle>
-						<Solidite
-							solidite={{
-								constat: 'Deux des quatre pièces attendues sont absentes.',
-								etablies: 2,
-								attendues: 4,
-								prochaine: 'livraison',
-								etages: [
-									etage('commande', true, 3),
-									etage('livraison', false, 3),
-									etage('conditionsContractuelles', true, 1),
-									etage('miseEnDemeure', false, 1)
-								]
-							}}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Tout est réuni</SectionTitle>
-						<Solidite
-							solidite={{
-								constat: 'Les quatre pièces attendues sont réunies.',
-								etablies: 4,
-								attendues: 4,
-								prochaine: null,
-								etages: [
-									etage('commande', true, 3),
-									etage('livraison', true, 3),
-									etage('conditionsContractuelles', true, 1),
-									etage('miseEnDemeure', true, 1)
-								]
-							}}
-						/>
-					</div>
-				</div>
 			</PageBody>
 		</Page>
 	);
@@ -816,53 +591,6 @@ function DemoSuivi() {
 									}
 								]
 							}}
-						/>
-					</div>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoLitige() {
-	return (
-		<Page>
-			<PageHeader titre="Fournitures Durand" sousTitre="Ce que vous seul pouvez dire" />
-			<PageBody>
-				<div className="flex flex-col gap-cladd-md">
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>La question en cours, et ce qu’il en reste</SectionTitle>
-						<QuestionnaireLitige
-							questions={QUESTIONS_LITIGE_DEMO}
-							constats={[
-								'Le caractère certain reste indéterminé : 3 faits ne sont pas renseignés.'
-							]}
-							litigieux={false}
-							onRepondre={() => {}}
-						/>
-					</div>
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Litige établi — le questionnaire s’arrête</SectionTitle>
-						<QuestionnaireLitige
-							questions={[]}
-							litigieux
-							constats={[
-								'Ce client a contesté la facture par écrit.',
-								'Le caractère certain n’est donc pas retenu. Le logiciel ne mesure pas si cette contestation est sérieuse — c’est une appréciation juridique, et il s’en abstient.',
-								'Les procédures que ce logiciel évalue se déroulent toutes sans débat contradictoire : une contestation y met fin, même infondée, et les frais engagés restent dus. Ce dossier sort de ce que le logiciel sait mesurer.'
-							]}
-							onRepondre={() => {}}
-						/>
-					</div>
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Les cinq faits écartés</SectionTitle>
-						<QuestionnaireLitige
-							questions={[]}
-							litigieux={false}
-							constats={[
-								'Aucune contestation connue : les cinq faits ont été expressément écartés. Le caractère certain est retenu sur cette déclaration.'
-							]}
-							onRepondre={() => {}}
 						/>
 					</div>
 				</div>
@@ -1106,62 +834,6 @@ function DemoFlux() {
 					]}
 					anglesMorts={[]}
 				/>
-			</PageBody>
-		</Page>
-	);
-}
-
-/**
- * Le décompte, avec ce qu'il doit prouver.
- *
- * Deux périodes à taux différents, un principal qui baisse en cours de route
- * après un règlement, et un tableau à sept colonnes qui doit tenir à 375 px
- * sans faire déborder la page — il défile pour lui seul.
- */
-const DECOMPTE_DEMO: DecompteAffiche = {
-	arreteAu: '2026-09-03',
-	convention: 'ACT_365',
-	principalRestantDu: 600_000n,
-	interets: 41_368n,
-	indemniteForfaitaire: 4_000n,
-	total: 645_368n,
-	lignes: [
-		{
-			reference: 'FA-2026-118',
-			principalRestantDu: 600_000n,
-			interets: 41_368n,
-			indemniteForfaitaire: 4_000n,
-			total: 645_368n,
-			segments: [
-				{
-					debut: '2026-05-01',
-					fin: '2026-07-01',
-					jours: 61,
-					principal: 1_000_000n,
-					taux: { numerateur: 1215n, denominateur: 10_000n },
-					baseAnnuelle: 365,
-					interets: 20_305n
-				},
-				{
-					debut: '2026-07-01',
-					fin: '2026-09-03',
-					jours: 64,
-					principal: 600_000n,
-					taux: { numerateur: 1240n, denominateur: 10_000n },
-					baseAnnuelle: 365,
-					interets: 21_063n
-				}
-			]
-		}
-	]
-};
-
-function DemoDecompte() {
-	return (
-		<Page>
-			<PageHeader titre="Fournitures Durand" sousTitre="1 facture · 6 000,00 € restant dû" />
-			<PageBody>
-				<Decompte decompte={DECOMPTE_DEMO} />
 			</PageBody>
 		</Page>
 	);
@@ -2050,7 +1722,6 @@ const ECRANS = [
 	'lettrage',
 	'creancier',
 	'identite',
-	'litige',
 	'suivi',
 	'rail',
 	'voie',
@@ -2058,14 +1729,10 @@ const ECRANS = [
 	'commissaire',
 	'avocat',
 	'pieces',
-	'solidite',
-	'relances',
-	'detail',
 	'debiteur',
 	'revelation',
 	'bilan',
 	'flux',
-	'decompte',
 	'depot',
 	'vide',
 	'abonnement',
@@ -2162,7 +1829,6 @@ function Showroom() {
 						{ecran === 'lettrage' ? <DemoLettrage /> : null}
 						{ecran === 'creancier' ? <DemoCreancier /> : null}
 						{ecran === 'identite' ? <DemoIdentite /> : null}
-						{ecran === 'litige' ? <DemoLitige /> : null}
 						{ecran === 'suivi' ? <DemoSuivi /> : null}
 						{ecran === 'rail' ? <DemoRail /> : null}
 						{ecran === 'voie' ? <DemoVoie /> : null}
@@ -2170,14 +1836,10 @@ function Showroom() {
 						{ecran === 'commissaire' ? <DemoCommissaire /> : null}
 						{ecran === 'avocat' ? <DemoAvocat /> : null}
 						{ecran === 'pieces' ? <DemoPieces /> : null}
-						{ecran === 'solidite' ? <DemoSolidite /> : null}
-						{ecran === 'relances' ? <DemoRelances /> : null}
-						{ecran === 'detail' ? <DemoDetail /> : null}
 						{ecran === 'debiteur' ? <DemoDebiteurDetail /> : null}
 						{ecran === 'revelation' ? <DemoRevelation /> : null}
 						{ecran === 'bilan' ? <DemoBilan /> : null}
 						{ecran === 'flux' ? <DemoFlux /> : null}
-						{ecran === 'decompte' ? <DemoDecompte /> : null}
 						{ecran === 'depot' ? <DemoDepot /> : null}
 						{ecran === 'vide' ? <DemoVide /> : null}
 						{ecran === 'abonnement' ? <DemoAbonnement /> : null}

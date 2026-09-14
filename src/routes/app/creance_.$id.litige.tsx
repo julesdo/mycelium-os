@@ -1,36 +1,23 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Surface } from '@cladd-ui/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import {
-	BoutonPrincipal,
-	EnteteDetail,
-	Page,
-	PageBody,
-	QuestionnaireLitige,
-	SectionEcran,
-	type ReponseFait
-} from '../../ui';
+import type { ReponseFait } from '../../ui';
+import { EcranLitige } from '../../screens/analyses/litige';
 
-export const Route = createFileRoute('/app/creance_/$id/litige')({ component: PageLitige });
+export const Route = createFileRoute('/app/creance_/$id/litige')({
+	component: PageLitige,
+	errorComponent: LitigeEnErreur
+});
+
+function LitigeEnErreur() {
+	const { id } = Route.useParams();
+	return <EcranLitige identifiant={id} donnees={{ etat: 'erreur' }} />;
+}
 
 /**
- * CE QUE VOUS SEUL POUVEZ DIRE — le questionnaire, sur sa propre page.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ C'EST L'ANALYSE QUI MÉRITAIT LE PLUS UNE PAGE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Elle POSE UNE QUESTION. Une question glissée au milieu de six autres cartes
- * se lit en diagonale et se répond au hasard — et ces réponses-là décident si
- * une procédure s'ouvre. Seule sur un écran, avec la portée sous la question,
- * elle se lit.
- *
- * On y a joint les conditions légales que le logiciel n'a pas pu déduire :
- * elles relèvent de la même chose — ce que le gérant est seul à savoir — et
- * les séparer faisait deux cartes pour un seul sujet.
+ * Branchée sur la base ; le dessin vit dans `screens/analyses/litige.tsx`.
  */
 function PageLitige() {
 	const { id } = Route.useParams();
@@ -56,83 +43,27 @@ function PageLitige() {
 	}
 
 	return (
-		<Page>
-			<EnteteDetail
-				retourVers="/app/creance/$id"
-				retourParametres={{ id }}
-				retourLibelle={creance?.debiteur ?? 'Créance'}
-				titre="Ce que vous seul pouvez dire"
-				sousTitre="Des faits, pas une appréciation juridique."
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
-					{creance === undefined ? (
-						<p className="sr-only">Chargement…</p>
-					) : (
-						<>
-							<QuestionnaireLitige
-								questions={creance.litige.questions}
-								constats={creance.litige.constats}
-								litigieux={creance.litige.litigieux}
-								enCours={enCours}
-								onRepondre={(cle, reponse) => void declarer(cle, reponse)}
-							/>
-
-							{/* Les conditions légales restées indéterminées. Même sujet — ce
-							    que le gérant est seul à savoir — donc même page. */}
-							{creance.questions.length > 0 ? (
-								<SectionEcran titre="Ce que le logiciel ne peut pas déduire">
-									<div className="flex flex-col gap-cladd-3xs">
-										{creance.questions.map((question) => (
-											<Surface
-												key={question.condition}
-												variant="transparent"
-												outline={false}
-												className="verre-carte rounded-cladd-xl"
-												contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-											>
-												<p className="text-cladd-sm leading-snug text-balance">
-													{question.libelle}
-												</p>
-												<div className="flex flex-wrap gap-cladd-3xs">
-													<BoutonPrincipal
-														onClick={() =>
-															void repondre({
-																creanceId,
-																reponses: { [question.condition]: 'ok' }
-															})
-														}
-													>
-														Oui
-													</BoutonPrincipal>
-													<Button
-														size="lg"
-														variant="transparent"
-														outline={false}
-														hoverable={false}
-														rounded
-														className="verre verre-bouton font-medium"
-														onClick={() =>
-															void repondre({
-																creanceId,
-																reponses: { [question.condition]: 'ko' }
-															})
-														}
-													>
-														Non
-													</Button>
-												</div>
-											</Surface>
-										))}
-									</div>
-								</SectionEcran>
-							) : null}
-
-							{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
-						</>
-					)}
-				</div>
-			</PageBody>
-		</Page>
+		<EcranLitige
+			identifiant={id}
+			donnees={
+				creance === undefined
+					? { etat: 'attente' }
+					: {
+							etat: 'pret',
+							valeur: {
+								debiteur: creance.debiteur,
+								questions: creance.litige.questions,
+								constats: creance.litige.constats,
+								litigieux: creance.litige.litigieux,
+								conditions: creance.questions,
+								enCours,
+								erreur,
+								onDeclarer: (cle, reponse) => void declarer(cle, reponse),
+								onRepondre: (condition, reponse) =>
+									void repondre({ creanceId, reponses: { [condition]: reponse } })
+							}
+						}
+			}
+		/>
 	);
 }

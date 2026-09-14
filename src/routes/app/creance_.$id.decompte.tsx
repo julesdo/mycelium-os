@@ -1,30 +1,23 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
-import { Button, Surface } from '@cladd-ui/react';
-import { FileDownIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisCentimes } from '../../lib/socle/montants';
-import { BoutonPrincipal, Decompte, EnteteDetail, Page, PageBody } from '../../ui';
+import { EcranDecompte } from '../../screens/analyses/decompte';
 
-export const Route = createFileRoute('/app/creance_/$id/decompte')({ component: PageDecompte });
+export const Route = createFileRoute('/app/creance_/$id/decompte')({
+	component: PageDecompte,
+	errorComponent: DecompteEnErreur
+});
+
+function DecompteEnErreur() {
+	const { id } = Route.useParams();
+	return <EcranDecompte identifiant={id} donnees={{ etat: 'erreur' }} />;
+}
 
 /**
- * LE DÉCOMPTE — la pièce qui part chez un tiers.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * POURQUOI IL A SA PAGE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * C'est le SEUL écran du produit dont le contenu sort du produit : un
- * expert-comptable, un avocat ou un assureur le lira sans le retoucher. Il
- * porte ses segments période par période, et un tableau se lit à plat, pas
- * dans une carte coincée entre six autres.
- *
- * ⚠️ UN DÉCOMPTE ARRÊTÉ EST FIGÉ, DÉFINITIVEMENT. Rejouer produit un NOUVEAU
- * décompte daté. La question n'est pas « combien réclame-t-on aujourd'hui »
- * mais « qu'a-t-on réclamé le jour où on l'a réclamé ».
+ * Branchée sur la base ; le dessin vit dans `screens/analyses/decompte.tsx`.
  */
 function PageDecompte() {
 	const { id } = Route.useParams();
@@ -116,62 +109,23 @@ function PageDecompte() {
 	}
 
 	return (
-		<Page>
-			<EnteteDetail
-				retourVers="/app/creance/$id"
-				retourParametres={{ id }}
-				retourLibelle={creance?.debiteur ?? 'Créance'}
-				titre="Décompte"
-				sousTitre={dernier ? `Arrêté au ${dernier.arreteAu}` : 'Aucun décompte arrêté'}
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
-					{dernier ? (
-						<Decompte decompte={dernier} />
-					) : (
-						<Surface
-							variant="transparent"
-							outline={false}
-							className="verre-carte rounded-cladd-xl"
-							contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-						>
-							<p className="text-cladd-sm text-cladd-fg-soft">
-								Aucun décompte n’a encore été arrêté pour cette créance.
-							</p>
-							<p className="text-cladd-xs text-cladd-fg-softer">
-								Un décompte est figé à sa date : il prouve ce qui était réclamé le jour où on l’a
-								réclamé, et ne bouge plus ensuite.
-							</p>
-						</Surface>
-					)}
-
-					{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
-
-					<div className="flex flex-wrap gap-cladd-3xs">
-						<BoutonPrincipal onClick={() => void produireDecompte()} disabled={enCours}>
-							{enCours ? 'Calcul en cours…' : 'Arrêter un décompte à aujourd’hui'}
-						</BoutonPrincipal>
-
-						{/* LA PIÈCE. C'est le troisième critère de fin de MVP : un décompte
-						    qui part chez un expert-comptable, un avocat ou un assureur SANS
-						    être retouché. */}
-						{dernier ? (
-							<Button
-								size="lg"
-								variant="transparent"
-								outline={false}
-								hoverable={false}
-								rounded
-								className="verre verre-bouton font-medium"
-								onClick={() => void telecharger()}
-							>
-								<FileDownIcon />
-								Télécharger la pièce
-							</Button>
-						) : null}
-					</div>
-				</div>
-			</PageBody>
-		</Page>
+		<EcranDecompte
+			identifiant={id}
+			donnees={
+				creance === undefined || dernier === undefined
+					? { etat: 'attente' }
+					: {
+							etat: 'pret',
+							valeur: {
+								debiteur: creance.debiteur,
+								dernier,
+								enCours,
+								erreur,
+								onArreter: () => void produireDecompte(),
+								onTelecharger: () => void telecharger()
+							}
+						}
+			}
+		/>
 	);
 }
