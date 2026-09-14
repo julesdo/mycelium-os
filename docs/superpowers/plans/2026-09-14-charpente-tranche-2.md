@@ -640,6 +640,13 @@ La revue a accepté la coquille, et relevé deux décisions d'API que les tâche
 3. **Les variantes se lisent par `formeDemo(variante, principale, formes)`** (`demo.ts`), et l'entrée déclare `variantes: Object.keys(formes)`. Un nom mal écrit lève, au lieu de rendre la forme principale en silence.
 4. **Un bouton de variante ne s'allume que dans l'état prêt** (`active={etat === 'pret' && …}`) : il ne montre jamais un choix que la démonstration ne reçoit pas.
 
+### Correctifs de la revue de la tâche 4 (appliqués AVANT la tâche 5), et ce qu'ils changent pour les tâches 5 à 8
+
+1. **Une famille ne réemploie pas le nom d'un débiteur qu'une autre famille montre autrement.** La procédure montrait « Ateliers Martin » engagé le 15/12/2025. La rangée de l'onglet des procédures, qui mène à cette page, montre le même « Ateliers Martin » engagé le 04/06/2026 avec un autre intervenant : c'est la contradiction entre une rangée et sa page, par-dessus la frontière des familles. Chaque famille nomme ses débiteurs d'un nom qu'aucune autre donnée de la salle n'emploie (le vérifier par une recherche dans `src/routes/-salle` et `src/routes/showroom.tsx`). La seule exception est une famille qui dérive ses données de celle qui porte déjà ce nom.
+2. **La salle remonte la démonstration à chaque changement d'écran, d'état ou de variante** (`key` sur les trois). Une feuille ouverte dans « sans données » restait ouverte par-dessus la forme prête, qui n'a pas de quoi l'ouvrir.
+3. **Une lecture dont dépend un texte visible de l'écran prêt entre dans l'attente.** La procédure attendait la créance et le suivi, pas le carnet, alors que la rangée « Qui fait l'acte » en tire le nom : elle affichait « Moi-même » le temps que le carnet arrive. Pour les tâches 5 à 8, là où le plan écrit `x ?? []` ou `x ?? null` pour une lecture en cours, regarder ce que l'écran affiche avec cette valeur de repli. S'il affirme quelque chose de faux (« 0 pièce », « Moi-même »), le signaler dans le rapport, et ne corriger dans la tâche que si le correctif tient en une condition d'attente.
+4. **Le jour de la démonstration commande aussi les champs.** Un champ de date se remplit depuis la date que la page reçoit (`aujourdHui`), pas depuis l'horloge : la salle, figée, ne change pas chaque matin.
+
 ---
 
 ## Tâche 2 : la salle montre les écrans du produit, en commençant par les trois qui ont déjà un fichier d'écran
@@ -2038,6 +2045,8 @@ function DebiteursEnErreur() {
 ```
 
 Ce sont les props du `<DetailDebiteur … />` des lignes 536 à 570, écrites en objet, sans en changer une seule valeur.
+
+**Une seule exception, par la règle 3 des correctifs de la revue de la tâche 4.** Relevé au code le 14/09/2026 : `pieces: pieces ?? []` fait lire « Aucune » à la rangée « Les pièces du dossier » tant que les pièces se lisent (`src/screens/debiteur-detail.tsx`, ligne 309), une affirmation fausse. La fiche attend déjà les factures (`debiteur === null || factures === null`, ligne 196). Elle attend donc aussi les pièces : `factures: choisi === null || factures === undefined || pieces === undefined ? null : factures`, avec un commentaire d'une ligne qui dit pourquoi. Les autres replis (`habitude ?? null`, `ruptures ?? []`, `creances ?? []`) masquent une rangée au lieu de la fausser : ils restent.
 
 - [ ] **Step 3 : l'habitude**
 
