@@ -614,8 +614,8 @@ La revue a accepté la coquille, et relevé deux décisions d'API que les tâche
 
 1. **La salle vit par famille.** `src/routes/-salle/donnees.tsx` n'existe plus. Les fichiers :
    - `demo.ts` : `EtatDemo`, `EcranDuProduit` et `lectureDemo`. `route` est typée par le routeur (une faute ne compile pas) ; `lectureDemo` LÈVE si on demande le vide d'un écran sans valeur vide.
-   - `communes.ts` : les données partagées avec les démos de composants de `showroom.tsx` (`EVENEMENTS_DEMO`, `RAIL_DEMO`, `DOSSIERS_DEMO`).
-   - `onglets.tsx` : accueil, procédures ; la tâche 8 y ajoute la révélation.
+   - `communes.ts` : les données partagées avec les démos de composants de `showroom.tsx` (`EVENEMENTS_DEMO`, `RAIL_DEMO`). Une donnée qu'une seule famille montre vit dans sa famille.
+   - `onglets.tsx` : accueil, procédures (avec `DOSSIERS_DEMO`, qu'eux seuls montrent) ; la tâche 8 y ajoute la révélation.
    - `creance.tsx` : la créance ; les tâches 3 et 4 y ajoutent les analyses.
    - `debiteurs.tsx` (à créer par la tâche 5), `reglages.tsx` (à créer par la tâche 6, complété par la tâche 7), `import.tsx` (à créer par la tâche 8, pour l'import et le dépôt).
    - `ecrans.tsx` ne fait que réunir les tableaux de familles (`ECRANS_ONGLETS`, `ECRANS_CREANCE`…) dans `ECRANS_DU_PRODUIT`.
@@ -3555,6 +3555,7 @@ describe('aucune attente invisible', () => {
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { ECRANS_DU_PRODUIT } from '../../routes/-salle/ecrans';
 
 /**
  * LA SALLE D'EXPOSITION MONTRE CHAQUE ÉCRAN DU PRODUIT.
@@ -3565,15 +3566,15 @@ import { describe, expect, it } from 'vitest';
  * Prêt, Attente et Erreur à chaque entrée. Ce test tient l'autre moitié : que
  * chaque route ait son entrée.
  *
- * Il lit les fichiers de la salle comme du texte : c'est la liste ÉCRITE qui
- * compte ici. `salle-etats.test.tsx` rend chaque entrée dans chacun de ses
- * états.
+ * ⚠️ IL COMPARE LE REGISTRE IMPORTÉ, PAS LE TEXTE DES FICHIERS. Un tableau de
+ * famille oublié dans `ecrans.tsx`, ou une entrée mise en commentaire, manque
+ * au registre réel, alors qu'un balayage du texte l'aurait encore trouvée : la
+ * barrière passerait au vert sur un écran construit et injoignable.
+ * `salle-etats.test.tsx` rend ensuite chaque entrée dans chacun de ses états.
  */
 
 const RACINE = join(process.cwd(), 'src');
 const ROUTES = join(RACINE, 'routes', 'app');
-/** Les entrées vivent par famille d'écrans : tous les fichiers de la salle sont lus. */
-const SALLE = join(RACINE, 'routes', '-salle');
 
 function ecransDuRouteur(): string[] {
 	return readdirSync(ROUTES)
@@ -3588,13 +3589,7 @@ function ecransDuRouteur(): string[] {
 }
 
 function ecransDeLaSalle(): string[] {
-	return readdirSync(SALLE)
-		.filter((fichier) => /\.tsx?$/.test(fichier))
-		.flatMap((fichier) => [
-			...readFileSync(join(SALLE, fichier), 'utf8').matchAll(/route:\s*'([^']+)'/g)
-		])
-		.map((trouve) => trouve[1])
-		.filter((route): route is string => route !== undefined);
+	return ECRANS_DU_PRODUIT.map((ecran) => ecran.route);
 }
 
 describe('la salle d’exposition', () => {
@@ -3708,12 +3703,16 @@ Dans `src/lib/convex/__tests__/declare-jamais-alimente.test.ts`, remplacer `sour
  * emplois : un champ que seul un écran de démonstration « alimente » est un
  * champ que le produit n'alimente pas.
  */
-function sourcesHorsSchema(): string {
+function fichiersHorsSchema(): string[] {
 	const exclus = [sep + 'tables.ts', sep + 'schema.ts', sep + 'showroom.tsx'];
 	const salle = `${sep}routes${sep}-salle${sep}`;
 	return fichiersSources(RACINE)
 		.filter((f) => !exclus.some((x) => f.endsWith(x)))
-		.filter((f) => !f.includes(salle))
+		.filter((f) => !f.includes(salle));
+}
+
+function sourcesHorsSchema(): string {
+	return fichiersHorsSchema()
 		.map((f) => readFileSync(f, 'utf8'))
 		.join('\n');
 }
@@ -3723,10 +3722,14 @@ Et ajouter, à la fin du `describe` :
 
 ```ts
 	it('ne compte pas la salle d’exposition comme une écriture', () => {
-		// `lectureDemo(` n'existe que dans `src/routes/-salle/` : s'il apparaît dans
-		// le corpus, la salle y est entrée, et ses données inventées alimentent en
-		// silence les deux balayages ci-dessus.
-		expect(sourcesHorsSchema()).not.toContain('lectureDemo(');
+		// ⚠️ ON LIT LA LISTE DES FICHIERS, PAS LEUR CONTENU. Le corpus contient ce
+		// fichier-ci, qui cite forcément ce qu'il cherche : un balayage du contenu
+		// se trouverait lui-même, et accuserait la salle à tort.
+		const fichiers = fichiersHorsSchema();
+		expect(fichiers.some((f) => f.endsWith(`${sep}showroom.tsx`))).toBe(false);
+		expect(fichiers.some((f) => f.includes(`${sep}routes${sep}-salle${sep}`))).toBe(false);
+		// Et le corpus reste le produit : exclure la salle n'a pas vidé la barrière.
+		expect(fichiers.some((f) => f.endsWith(`${sep}recouvrement${sep}import.ts`))).toBe(true);
 	});
 ```
 
@@ -3747,7 +3750,7 @@ export const Essai = () => <Page><p className="sr-only">Chargement…</p></Page>
 
 Relancer la commande du Step 4. Attendu : FAIL sur « aucune route de src/routes/app ne dessine » et sur « aucun écran n’annonce son chargement aux seuls lecteurs d’écran », chacun nommant `routes/app/revelation.tsx`. Retirer la ligne avec l'outil d'édition (pas de `git checkout`), puis relancer : PASS.
 
-Dans `src/routes/-salle/onglets.tsx`, commenter temporairement la ligne `route: '/app/revelation',`. Relancer : FAIL sur « montre chaque écran que le routeur sert », qui nomme `/app/revelation`. Rétablir la ligne, relancer : PASS.
+Dans `src/routes/-salle/ecrans.tsx`, retirer temporairement `...ECRANS_ONGLETS` de `ECRANS_DU_PRODUIT`. Relancer : FAIL sur « montre chaque écran que le routeur sert », qui nomme `/app/`, `/app/procedures` et `/app/revelation`. Rétablir, relancer : PASS.
 
 Dans `src/routes/app/revelation.tsx`, retirer temporairement `errorComponent: RevelationEnErreur,`. Relancer : FAIL sur « chaque écran déclare l’erreur qui garde son en-tête », qui nomme `routes/app/revelation.tsx`. Rétablir, relancer : PASS.
 
