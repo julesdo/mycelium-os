@@ -1804,7 +1804,16 @@ Le carnet n'entre pas dans l'attente : il se chargeait déjà progressivement (`
 }
 ```
 
-Prêt : un dossier engagé qui court vers une caducité (le suivi de `DemoSuivi`). Vide : `suivi: null`, les voies (`VOIE_DEMO` et une seconde, indisponible). Variante « voie terminée » : un suivi dont l'état est terminal (tiré de la machine à états de `apres-procedure.ts`, jamais écrit à la main). Les recherches répondent avec `ETUDES_DEMO` et `AVOCATS_DEMO`, comme leurs démos de composant.
+Chaque donnée se CALCULE comme la requête qui l'alimente (voir « Correctifs de la revue de la tâche 3 »). Relevé au code le 14/09/2026, au commit `8a5f840` :
+
+- **Le suivi** est ce que `lireSuivi` rend (`src/lib/convex/recouvrement/apresProcedure.ts`, lignes 83 à 103) : `suivreProcedure(cle, journal, engageeLe)` recopié champ par champ, et un `journal` dont chaque ligne prend son libellé par `libelleEvenement(cle, e.cle) ?? e.cle`. Une seule fonction de la famille le fait, pour les deux formes qui ont un suivi.
+- **Prêt** : `suivreProcedure('injonction-de-payer', [{ cle: 'ordonnance-rendue', survenuLe: '2026-01-10' }], '2025-12-15')`, avec `aujourdHui: '2026-03-02'`, la date figée de `DemoSuivi` (un « dans N jours » qui bouge chaque matin ne se compare plus d'une capture à l'autre). Au relevé, ce calcul redonne exactement ce que `DemoSuivi` recopiait : « Ordonnance rendue », la signification avant le 10/04/2026, gravité `CADUCITE`.
+- **Variante « voie terminée »** : le même journal, suivi de `ordonnance-signifiee` le 2026-01-20 et de `absence-opposition-constatee` le 2026-02-25. La machine arrive à `TITRE_EXECUTOIRE`, terminal : aucune échéance, aucune suite, un angle mort.
+- **Vide** : `suivi: null`.
+- **Les voies**, dans les trois formes : `Object.values(PROCEDURES)` transformé comme `creanceComplete` le fait (`src/lib/convex/recouvrement/lecture.ts`, lignes 606 à 633). `disponible` vaut `clesEnvisageables.has(cle) && procedure.peutEvaluer()`, où `clesEnvisageables` vient de `proceduresEnvisageables({ ...conditions, piecesFournies: [] })` (ligne 516) et `conditions` des quatre critères de la créance (lignes 475 à 480). **Ces quatre critères sont acquis (`'ok'`)** : c'est l'état d'une créance qu'on a pu engager. Ce ne sont pas ceux de la créance de `creance.tsx`, qui attend la confirmation de la qualité de commerçant : relevé au code, `entreCommercants: 'unknown'` rend l'injonction non envisageable, et plus aucune voie suivie n'offrirait « Je l'ai engagée ». Avec les quatre critères acquis, le domaine rend l'injonction disponible et suivie, avec un blocage (`mentionsObligatoiresInjonction`, qui empêche de produire l'acte sans empêcher d'évaluer), L.126 indisponible (son décret n'est pas publié), et la relance amiable disponible et non suivie. `suivie`, `blocages` et `etapes` se calculent de même. Jamais `disponible: true` ni `blocages: []` écrits à la main : `VOIE_DEMO` écrit aujourd'hui `blocages: []` dans `showroom.tsx` et cache ainsi le blocage réel ; elle suit la même règle en descendant dans `communes.ts`.
+- Les recherches répondent avec `ETUDES_DEMO` et `AVOCATS_DEMO`, comme leurs démos de composant.
+
+**Les numéros de ligne de cette tâche ont glissé** depuis l'écriture du plan. Au commit `8a5f840`, dans la route : le commentaire « LA PROCÉDURE » ligne 34, `ChoixDeclare` 68, `messageDuRefus` 75, `FeuilleDeclaration` 108, `PageProcedure` 241, `declarer` 377, le `return` 546, l'attente `sr-only` 582, `FeuilleVoie` 616, `onChoisirBarreau` 697. Repérer par le contenu, pas par le numéro.
 
 - [ ] **Step 4 : vérifier**
 
@@ -2198,7 +2207,14 @@ La page attend désormais la liste des pièces : elle affichait « 0 document »
 
 - [ ] **Step 5 : la salle**
 
-1. Créer `src/routes/-salle/debiteurs.tsx` (tableau `ECRANS_DEBITEURS`, à réunir dans `ecrans.tsx`) et y déplacer les données de `DemoDebiteurDetail`, `DemoHabitude` (`HABITUDE_DEMO`) et `DemoPieces` (`TYPES_PIECE_DEMO`, les pièces). `SECTEURS_DEMO`, que `DemoIdentite` utilise aussi, va dans `communes.ts`.
+1. Créer `src/routes/-salle/debiteurs.tsx` (tableau `ECRANS_DEBITEURS`, à réunir dans `ecrans.tsx`) et y déplacer les données de `DemoDebiteurDetail`, `DemoHabitude` (`HABITUDE_DEMO`) et `DemoPieces` (les pièces). `SECTEURS_DEMO`, que `DemoIdentite` utilise aussi, va dans `communes.ts`.
+
+   **Ces données se calculent** (voir « Correctifs de la revue de la tâche 3 »). Relevé au code le 14/09/2026, au commit `8a5f840` :
+   - **Les secteurs portent des valeurs juridiques.** `SECTEURS_DEMO` recopie « Prescription : 5 ans », « 1 an », « 2 ans » : une seconde vérité sur `REGIMES_PRESCRIPTION`, que la règle la plus stricte du projet interdit, salle comprise. `LIBELLE_SECTEUR` et `optionsSecteur()` (lignes 31 à 75 de `src/routes/app/debiteurs.tsx`, avec leur commentaire) descendent dans `src/screens/debiteur-detail.tsx`, exportés à côté de `TYPES_PIECE`. La route les importe et garde son appel ; `communes.ts` écrit `export const SECTEURS_DEMO = optionsSecteur();`.
+   - **Les types de pièce** : `TYPES_PIECE_DEMO` disparaît. La salle importe `TYPES_PIECE` de `src/screens/debiteur-detail.tsx`, comme l'écran des pièces.
+   - **L'habitude** : `HABITUDE_DEMO` se calcule par `habitudeDePaiement(PAIEMENTS_DEMO)` (`src/lib/verticales/recouvrement/comportement.ts`), sur au moins `ECHANTILLON_MINIMAL` paiements observés (`{ reference, dateExigibilite, datePaiement }`), choisis pour donner une habitude connue.
+   - **Les ruptures** se calculent par `lireRupture(habitude, retardJours)`, filtrées et transformées comme `lireComportement` le fait (`src/lib/convex/recouvrement/comportement.ts`, lignes 132 à 158 : seules les lectures `RUPTURE`, triées par écart décroissant), depuis un `aujourdHui` figé.
+   - Une donnée qu'aucune fonction du domaine ne produit (un encours, une dénomination) reste écrite ; une donnée que le serveur calcule sans fonction exportée porte un commentaire qui cite la ligne du produit qu'elle reproduit.
 2. Supprimer `DemoDebiteurDetail`, `DemoHabitude`, `DemoPieces`, leurs clés (`'debiteur'`, `'habitude'`, `'pieces'`) et leurs lignes de rendu. `DemoLettrage` et `DemoIdentite` restent : ce sont des démos de composants.
 3. Ajouter à `ECRANS_DEBITEURS` :
 
