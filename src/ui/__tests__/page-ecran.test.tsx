@@ -20,13 +20,27 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 		...original,
 		Link: ({
 			to,
+			params,
+			search,
 			className,
 			children
 		}: {
 			to?: string;
+			params?: unknown;
+			search?: unknown;
 			className?: string;
 			children?: ReactNode;
-		}) => createElement('a', { href: to, className }, children)
+		}) =>
+			createElement(
+				'a',
+				{
+					href: to,
+					className,
+					'data-params': JSON.stringify(params ?? null),
+					'data-search': JSON.stringify(search ?? null)
+				},
+				children
+			)
 	};
 });
 
@@ -46,6 +60,10 @@ describe('la coquille d’écran', () => {
 		expect(html).toContain('aria-hidden="true"');
 		expect(html).not.toContain('contenu prêt');
 		expect(html).not.toContain('<aside');
+
+		// Le statut est À CÔTÉ de la zone occupée, qui est celle du squelette masqué.
+		expect(html.indexOf('role="status"')).toBeLessThan(html.indexOf('aria-busy="true"'));
+		expect(html).toMatch(/aria-busy="true" aria-hidden="true"/);
 	});
 
 	it('rend le contenu dans la colonne de lecture une fois prêt', () => {
@@ -114,8 +132,8 @@ describe('la coquille d’écran', () => {
 		expect(html).toContain('Revenir à l’accueil');
 	});
 
-	it('rend le retour d’une page poussée, avec le nom de ce vers quoi il mène', () => {
-		const html = renderToStaticMarkup(
+	it('rend le retour d’une page poussée, avec son nom et ce qu’il transmet', () => {
+		const creance = renderToStaticMarkup(
 			<PageEcran
 				entete={{
 					genre: 'poussee',
@@ -130,10 +148,24 @@ describe('la coquille d’écran', () => {
 				<p>contenu prêt</p>
 			</PageEcran>
 		);
-		expect(html).toContain('href="/app/creance/$id"');
-		expect(html).toContain('Fournitures Durand');
-		expect(html).toContain('Décompte');
-		expect(html).toContain('contenu prêt');
+		expect(creance).toContain('href="/app/creance/$id"');
+		expect(creance).toContain('data-params="{&quot;id&quot;:&quot;c1&quot;}"');
+		expect(creance).toContain('Fournitures Durand');
+		expect(creance).toContain('Décompte');
+		expect(creance).toContain('contenu prêt');
+
+		// ⚠️ LA SÉLECTION REVIENT AVEC LE RETOUR. Sans `?d=`, revenir d'une page de
+		// débiteur rouvrirait la liste vide.
+		const debiteur = renderToStaticMarkup(
+			<PageEcran
+				entete={{
+					genre: 'poussee',
+					retour: { vers: '/app/debiteurs', recherche: { d: 'd1' }, libelle: 'Débiteurs' },
+					titre: 'Comment il paie d’habitude'
+				}}
+			/>
+		);
+		expect(debiteur).toContain('data-search="{&quot;d&quot;:&quot;d1&quot;}"');
 	});
 
 	it('dégage la barre flottante quand l’écran n’a pas d’en-tête, et donne un titre de page à son erreur', () => {
@@ -162,11 +194,52 @@ describe('la coquille d’écran', () => {
 		expect(html).not.toContain(COLONNE);
 	});
 
-	it('dessine l’attente d’un écran à deux volets en deux volets, pour que la page ne saute pas', () => {
+	it('dessine l’attente d’un écran à deux volets en deux volets, la preuve vide', () => {
 		const html = renderToStaticMarkup(
 			<PageEcran entete={ONGLET} etat="attente" disposition="volets" />
 		);
 		expect(html).toContain('aria-busy="true"');
+		expect(html).toMatch(/<aside[^>]*><\/aside>/);
+	});
+
+	it('dessine aussi en deux volets l’attente d’un écran qui passe déjà ses volets', () => {
+		const html = renderToStaticMarkup(
+			<PageEcran
+				entete={ONGLET}
+				etat="attente"
+				volets={{
+					liste: <p>la liste</p>,
+					preuve: <p>la preuve</p>,
+					preuveOuverte: false,
+					onFermerPreuve: () => undefined
+				}}
+			/>
+		);
+		expect(html).toContain('aria-busy="true"');
 		expect(html).toContain('<aside');
+		expect(html).not.toContain('la liste');
+	});
+
+	it('garde le vide et l’erreur en colonne, même sur un écran à deux volets', () => {
+		const erreur = renderToStaticMarkup(
+			<PageEcran
+				entete={ONGLET}
+				etat="erreur"
+				disposition="volets"
+				issue={<a href="/app/debiteurs">Voir mes débiteurs</a>}
+			/>
+		);
+		expect(erreur).toContain('role="alert"');
+		expect(erreur).not.toContain('<aside');
+
+		const vide = renderToStaticMarkup(
+			<PageEcran
+				entete={ONGLET}
+				etat={{ vide: { titre: 'Rien d’engagé aujourd’hui', explication: 'Rien encore.' } }}
+				disposition="volets"
+			/>
+		);
+		expect(vide).toContain('Rien d’engagé aujourd’hui');
+		expect(vide).not.toContain('<aside');
 	});
 });

@@ -109,11 +109,16 @@ export interface VoletsEcran {
 type CorpsEcran =
 	| {
 			readonly volets: VoletsEcran;
-			readonly disposition?: undefined;
+			/** Redondant avec `volets`, et toléré : un écran peut garder la même disposition dans tous ses états. */
+			readonly disposition?: 'volets';
 			readonly children?: never;
 	  }
 	| {
 			readonly volets?: undefined;
+			/**
+			 * Ne façonne QUE l'attente. Prêt, un écran à deux volets passe `volets` ;
+			 * le vide et l'erreur, eux, se lisent en colonne.
+			 */
 			readonly disposition?: 'colonne' | 'volets';
 			readonly children?: ReactNode;
 	  };
@@ -157,7 +162,7 @@ export function PageEcran({
 				<Volets
 					liste={
 						<PageBody>
-							<Attente sansEntete={sansEntete} />
+							<Attente sansEntete={sansEntete} pleineLargeur />
 						</PageBody>
 					}
 					preuve={null}
@@ -173,7 +178,7 @@ export function PageEcran({
 				{etat === 'pret' ? (
 					<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">{children}</div>
 				) : etat === 'attente' ? (
-					<Attente sansEntete={sansEntete} />
+					<Attente sansEntete={sansEntete} pleineLargeur={false} />
 				) : etat === 'erreur' ? (
 					<Erreur sansEntete={sansEntete} issue={issue} />
 				) : (
@@ -223,28 +228,39 @@ function Volets(props: ComponentProps<typeof TwoPane>) {
 /**
  * L'ATTENTE : LE SQUELETTE DE LA PAGE, ET UNE PHRASE QUI LE DIT.
  *
- * ⚠️ `aria-busy` SEUL NE S'ANNONCE PAS. La zone qui le porte disparaît quand le
- * contenu arrive, sans être jamais passée à `false` : un lecteur d'écran lisait
- * le titre, puis rien, et rien du tout sur l'accueil, qui n'a pas de titre. Le
- * statut « Chargement de l’écran… » est le seul texte de l'attente, et il n'est
- * pas SEUL : le squelette se voit juste dessous. C'est la différence avec les
- * paragraphes `sr-only` d'avant, qui annonçaient une page que personne ne
+ * ⚠️ `aria-busy` SEUL NE DIT RIEN. La zone qui le porte disparaît quand le
+ * contenu arrive, sans jamais être passée à `false` : un lecteur d'écran lisait
+ * le titre, puis rien, et rien du tout sur l'accueil, qui n'a pas de titre.
+ *
+ * Le statut « Chargement de l’écran… » est le seul texte de l'attente, et il
+ * n'est pas SEUL : le squelette se voit juste dessous. C'est la différence avec
+ * les paragraphes `sr-only` d'avant, qui annonçaient une page que personne ne
  * voyait se construire.
  *
+ * ⚠️ IL EST À CÔTÉ DE LA ZONE OCCUPÉE, PAS DEDANS. Une technologie d'assistance
+ * peut retenir ce qui change dans une zone `aria-busy` tant qu'elle l'est. Il se
+ * trouve en lisant la page ; qu'il soit annoncé de lui-même à son apparition
+ * n'est pas garanti, et ne le serait qu'avec une région vivante permanente dans
+ * la coquille de l'application.
+ *
  * ⚠️ LA MÊME CARTE QUE LES LISTES DU PRODUIT. Les rangées de substitution vivent
- * dans `ListeAnalyses`, pour que la page change peu quand le contenu arrive.
- * Elles respirent au rythme `pouls`, celui des traitements en cours.
+ * dans `ListeAnalyses`, pour que la page change peu quand le contenu arrive, et
+ * prennent la largeur de la liste quand l'écran a deux volets. Elles respirent
+ * au rythme `pouls`, celui des traitements en cours.
  */
-function Attente({ sansEntete }: { sansEntete: boolean }) {
+function Attente({ sansEntete, pleineLargeur }: { sansEntete: boolean; pleineLargeur: boolean }) {
 	return (
 		<div
-			aria-busy="true"
-			className={cn('mx-auto flex w-full max-w-2xl flex-col', sansEntete && 'pt-barre-app')}
+			className={cn(
+				'flex w-full flex-col',
+				!pleineLargeur && 'mx-auto max-w-2xl',
+				sansEntete && 'pt-barre-app'
+			)}
 		>
 			<p role="status" className="sr-only">
 				Chargement de l’écran…
 			</p>
-			<div aria-hidden="true">
+			<div aria-busy="true" aria-hidden="true">
 				<ListeAnalyses>
 					{Array.from({ length: RANGEES_D_ATTENTE }, (_, rang) => (
 						<ListItem key={rang}>
