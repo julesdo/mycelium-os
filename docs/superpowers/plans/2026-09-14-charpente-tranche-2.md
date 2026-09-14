@@ -3482,10 +3482,10 @@ import { describe, expect, it } from 'vitest';
  * l'aller-retour, et un corps vide se lit comme une panne. Règle d'écran n° 2 :
  * tout traitement se voit sans qu'on le demande.
  *
- * L'attente se dit par `PageEcran`, qui rend le squelette de la page, pose
- * `aria-busy` sur la zone qui charge, et y place un statut qui le dit. Ce
- * statut-là n'est pas seul : le squelette se voit dessous. C'est pour ça que la
- * coquille, dans `src/ui/`, n'est pas balayée ici.
+ * L'attente se dit par `PageEcran`, qui rend le squelette de la page sous
+ * `aria-busy`, et place à côté un statut qui le dit. Ce statut-là n'est pas
+ * seul : le squelette se voit dessous. C'est pour ça que la coquille, dans
+ * `src/ui/`, n'est pas balayée ici.
  */
 
 const RACINE = join(process.cwd(), 'src');

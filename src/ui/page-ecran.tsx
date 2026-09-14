@@ -98,10 +98,11 @@ export interface VoletsEcran {
 /**
  * LE CORPS D'UN ÉCRAN : UNE COLONNE, OU DEUX VOLETS.
  *
- * ⚠️ UN ÉCRAN À DEUX VOLETS LE DIT DÈS L'ATTENTE. `volets` n'existe qu'une fois
- * les données arrivées. Sans `disposition="volets"`, l'attente se dessinait en
- * colonne de lecture, puis la page sautait en liste pleine largeur et volet de
- * preuve à l'arrivée des données, sur la largeur de référence du produit.
+ * ⚠️ UN ÉCRAN À DEUX VOLETS LE DIT DÈS L'ATTENTE. Un écran ne construit
+ * d'ordinaire ses `volets` qu'une fois les données arrivées. Sans
+ * `disposition="volets"`, l'attente se dessinait en colonne de lecture, puis la
+ * page sautait en liste pleine largeur et volet de preuve à l'arrivée des
+ * données, sur la largeur de référence du produit.
  *
  * ⚠️ `children` ET `volets` S'EXCLUENT, ET LE TYPE LE DIT. Un enfant passé à
  * côté des volets disparaissait sans erreur.

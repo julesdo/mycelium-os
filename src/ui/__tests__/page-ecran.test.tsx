@@ -216,8 +216,9 @@ describe('la coquille d’écran', () => {
 			/>
 		);
 		expect(html).toContain('aria-busy="true"');
-		expect(html).toContain('<aside');
+		expect(html).toMatch(/<aside[^>]*><\/aside>/);
 		expect(html).not.toContain('la liste');
+		expect(html).not.toContain('la preuve');
 	});
 
 	it('garde le vide et l’erreur en colonne, même sur un écran à deux volets', () => {
