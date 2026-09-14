@@ -399,9 +399,7 @@ export const creanceComplete = authedQuery({
 				 *
 				 * Vide quand la voie n'a pas d'apres modelise — la relance amiable.
 				 */
-				etapes: v.array(
-					v.object({ etat: v.string(), libelle: v.string(), constat: v.string() })
-				),
+				etapes: v.array(v.object({ etat: v.string(), libelle: v.string(), constat: v.string() })),
 				/** Ce qui fait echouer cette voie. Des faits, jamais un conseil. */
 				conditionsEchec: v.array(v.string())
 			})
@@ -521,9 +519,10 @@ export const creanceComplete = authedQuery({
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 			intervenantId: creance.intervenantId ?? null,
 			debiteurId: creance.debiteurId,
-			// La MÊME valeur que celle passée à `qualifier()` seize lignes plus
-			// haut, et c'est le point : l'écran montre désormais ce qui a fait le
-			// score au lieu de laisser le chiffre inexpliqué.
+			// La MÊME valeur que celle passée à `qualifier()` plus haut, et c'est le
+			// point : `qualifier()` en tire un risque, jamais le score, et l'écran
+			// montre désormais le fait relevé au registre derrière ce risque au lieu
+			// de le compter sans le nommer.
 			santeDebiteur: debiteur?.santeFinanciere ?? 'INCONNUE',
 			score: qualification.score,
 			eligible: qualification.eligible,
