@@ -5,6 +5,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { aujourdHuiISO, type EtatRecherche, type EtablissementPropose } from '../../ui';
+import { lirePourLeSujet, type PosePourUnSujet } from '../../ui/etat-par-sujet';
 import { secteursProposes } from '../../screens/debiteur-detail';
 import { EcranDebiteurs } from '../../screens/debiteurs';
 
@@ -36,6 +37,14 @@ export const Route = createFileRoute('/app/debiteurs')({
 function DebiteursEnErreur() {
 	return <EcranDebiteurs donnees={{ etat: 'erreur' }} />;
 }
+
+/**
+ * LES ÉTATS DE REPOS DU VOLET : ce qu'un débiteur montre tant que rien n'a été
+ * posé pour lui. Hors du composant, pour qu'un rendu ne recrée pas un ensemble
+ * vide. `ReadonlySet` interdit de le modifier en place, puisqu'il sert à tous.
+ */
+const SELECTION_VIDE: ReadonlySet<string> = new Set();
+const RECHERCHE_AU_REPOS: EtatRecherche = { phase: 'REPOS' };
 
 /**
  * Branchée sur la base ; le dessin vit dans `screens/debiteurs.tsx`.
@@ -75,8 +84,22 @@ function Debiteurs() {
 			replace: id === null
 		});
 	};
-	const [selection, setSelection] = useState<Set<string>>(new Set());
-	const [erreur, setErreur] = useState<string | null>(null);
+	/**
+	 * ⚠️ CE QU'ON POSE POUR LE DÉBITEUR OUVERT PORTE SON IDENTIFIANT.
+	 *
+	 * La sélection, les erreurs, la recherche au registre et le lettrage vivent
+	 * dans la route, qui ne se remonte pas quand `?d=` change : un clic sur un autre
+	 * débiteur ne vidait que la sélection, et le retour du navigateur rien du tout.
+	 * Chacun est donc posé pour un débiteur et se lit par `lirePourLeSujet` : sous
+	 * un autre, il vaut son état de repos. Chaque gestionnaire pose pour le débiteur
+	 * choisi à son départ, même quand sa réponse arrive après un changement.
+	 */
+	const [selectionPosee, setSelectionPosee] = useState<PosePourUnSujet<ReadonlySet<string>> | null>(
+		null
+	);
+	const selection = lirePourLeSujet(selectionPosee, choisi, SELECTION_VIDE);
+	const [erreurPosee, setErreurPosee] = useState<PosePourUnSujet<string | null> | null>(null);
+	const erreur = lirePourLeSujet(erreurPosee, choisi, null);
 
 	const factures = useQuery(
 		api.recouvrement.lecture.listerFacturesDuDebiteur,
@@ -131,11 +154,8 @@ function Debiteurs() {
 		choisi === null ? 'skip' : { debiteurId: choisi }
 	);
 
-	const [constatPose, setConstatPose] = useState<{
-		readonly debiteurId: Id<'debiteurs'>;
-		readonly texte: string;
-	} | null>(null);
-	const constatTaux = constatPose?.debiteurId === choisi ? constatPose.texte : null;
+	const [constatPose, setConstatPose] = useState<PosePourUnSujet<string> | null>(null);
+	const constatTaux = lirePourLeSujet(constatPose, choisi, null);
 
 	/**
 	 * LE TAUX STIPULÉ EN VIGUEUR, RELU DEPUIS LES FACTURES.
@@ -162,10 +182,14 @@ function Debiteurs() {
 	 * page. Le message vient du serveur tel quel — c'est lui qui NOMME le numéro
 	 * reçu.
 	 */
-	const [erreurSiren, setErreurSiren] = useState<string | null>(null);
-	// L'etat de la recherche au registre. Il se remet a REPOS quand on change de
-	// debiteur : les candidats d'un client n'ont rien a faire sur un autre.
-	const [recherche, setRecherche] = useState<EtatRecherche>({ phase: 'REPOS' });
+	const [erreurSirenPosee, setErreurSirenPosee] = useState<PosePourUnSujet<string | null> | null>(
+		null
+	);
+	const erreurSiren = lirePourLeSujet(erreurSirenPosee, choisi, null);
+	// L'état de la recherche au registre, posé pour un débiteur. Sous un autre, il
+	// se lit au REPOS : les candidats d'un client n'ont rien à faire sur un autre.
+	const [recherchePosee, setRecherchePosee] = useState<PosePourUnSujet<EtatRecherche> | null>(null);
+	const recherche = lirePourLeSujet(recherchePosee, choisi, RECHERCHE_AU_REPOS);
 
 	/**
 	 * LE LETTRAGE D'UN VIREMENT GROUPÉ.
@@ -175,9 +199,20 @@ function Debiteurs() {
 	 * défiler des propositions qui changent sous les doigts, et donnerait envie de
 	 * cliquer sur la première venue — exactement ce que ce module refuse.
 	 */
-	const [montantCherche, setMontantCherche] = useState<bigint | null>(null);
-	const [dateReglement, setDateReglement] = useState('');
-	const [erreurLettrage, setErreurLettrage] = useState<string | null>(null);
+	const [montantCherchePose, setMontantCherchePose] = useState<PosePourUnSujet<
+		bigint | null
+	> | null>(null);
+	const montantCherche = lirePourLeSujet(montantCherchePose, choisi, null);
+	const [dateReglementPosee, setDateReglementPosee] = useState<PosePourUnSujet<string> | null>(
+		null
+	);
+	const dateReglement = lirePourLeSujet(dateReglementPosee, choisi, '');
+	const [erreurLettragePosee, setErreurLettragePosee] = useState<PosePourUnSujet<
+		string | null
+	> | null>(null);
+	const erreurLettrage = lirePourLeSujet(erreurLettragePosee, choisi, null);
+	// Un montant posé pour un autre débiteur se lit `null` sous le choisi : la
+	// requête passe en `skip`, et la fiche ne propose pas de solder le virement d'un autre.
 	const proposition = useQuery(
 		api.recouvrement.lettrage.proposer,
 		choisi === null || montantCherche === null
@@ -187,65 +222,80 @@ function Debiteurs() {
 	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
 
 	function chercherLettrage(saisi: string, date: string) {
-		setErreurLettrage(null);
-		setMontantCherche(null);
+		if (choisi === null) return;
+		const debiteurId = choisi;
+		setErreurLettragePosee({ sujet: debiteurId, valeur: null });
+		setMontantCherchePose({ sujet: debiteurId, valeur: null });
 		try {
 			// `depuisEuros` refuse trois décimales, NaN et la notation exponentielle.
 			// Un montant mal lu ici deviendrait un règlement faux en base.
-			setMontantCherche(enCentimes(depuisEuros(saisi.trim().replace(/\s/g, ''))));
-			setDateReglement(date.trim());
+			setMontantCherchePose({
+				sujet: debiteurId,
+				valeur: enCentimes(depuisEuros(saisi.trim().replace(/\s/g, '')))
+			});
+			setDateReglementPosee({ sujet: debiteurId, valeur: date.trim() });
 		} catch {
-			setErreurLettrage(
-				`« ${saisi} » n’est pas un montant en euros. Deux décimales au plus, sans arrondi.`
-			);
+			setErreurLettragePosee({
+				sujet: debiteurId,
+				valeur: `« ${saisi} » n’est pas un montant en euros. Deux décimales au plus, sans arrondi.`
+			});
 		}
 	}
 
 	async function soldeLesFactures(references: readonly string[], total: bigint) {
 		if (choisi === null) return;
-		setErreurLettrage(null);
+		const debiteurId = choisi;
+		setErreurLettragePosee({ sujet: debiteurId, valeur: null });
 		try {
 			await appliquerLettrage({
-				debiteurId: choisi,
+				debiteurId,
 				references: [...references],
 				montant: total,
 				date: dateReglement
 			});
-			setMontantCherche(null);
+			setMontantCherchePose({ sujet: debiteurId, valeur: null });
 		} catch (e) {
-			setErreurLettrage(e instanceof Error ? e.message : 'Rapprochement refusé.');
+			setErreurLettragePosee({
+				sujet: debiteurId,
+				valeur: e instanceof Error ? e.message : 'Rapprochement refusé.'
+			});
 		}
 	}
 
 	async function enregistrerTaux(pourcentage: string | null) {
 		if (choisi === null) return;
+		const debiteurId = choisi;
 		try {
 			const resultat = await poserTaux({
-				debiteurId: choisi,
+				debiteurId,
 				pourcentage,
 				aLaDate: aujourdHuiISO()
 			});
-			setConstatPose({ debiteurId: choisi, texte: resultat.constat });
+			setConstatPose({ sujet: debiteurId, valeur: resultat.constat });
 		} catch (e) {
 			// Le refus vient du serveur et NOMME ce qu'il a reçu — « 12,455 porte
 			// plus de deux décimales ». Le reformuler perdrait le seul détail utile.
 			setConstatPose({
-				debiteurId: choisi,
-				texte: e instanceof Error ? e.message : 'Taux refusé.'
+				sujet: debiteurId,
+				valeur: e instanceof Error ? e.message : 'Taux refusé.'
 			});
 		}
 	}
 
 	async function enregistrerSiren(saisi: string) {
 		if (choisi === null) return;
-		setErreurSiren(null);
+		const debiteurId = choisi;
+		setErreurSirenPosee({ sujet: debiteurId, valeur: null });
 		try {
-			await renseignerSiren({ debiteurId: choisi, siren: saisi });
+			await renseignerSiren({ debiteurId, siren: saisi });
 			// Le SIREN retenu clôt la recherche : garder les candidats à l'écran
 			// après le choix laisserait croire qu'il reste à faire.
-			setRecherche({ phase: 'REPOS' });
+			setRecherchePosee({ sujet: debiteurId, valeur: { phase: 'REPOS' } });
 		} catch (e) {
-			setErreurSiren(e instanceof Error ? e.message : 'Numéro refusé.');
+			setErreurSirenPosee({
+				sujet: debiteurId,
+				valeur: e instanceof Error ? e.message : 'Numéro refusé.'
+			});
 		}
 	}
 
@@ -262,18 +312,22 @@ function Debiteurs() {
 	 */
 	async function retenirEtablissement(etablissement: EtablissementPropose) {
 		if (choisi === null) return;
-		setErreurSiren(null);
+		const debiteurId = choisi;
+		setErreurSirenPosee({ sujet: debiteurId, valeur: null });
 		try {
 			await renseignerSiren({
-				debiteurId: choisi,
+				debiteurId,
 				siren: etablissement.siren,
 				...(etablissement.formeJuridique === undefined
 					? {}
 					: { formeJuridique: etablissement.formeJuridique })
 			});
-			setRecherche({ phase: 'REPOS' });
+			setRecherchePosee({ sujet: debiteurId, valeur: { phase: 'REPOS' } });
 		} catch (e) {
-			setErreurSiren(e instanceof Error ? e.message : 'Numéro refusé.');
+			setErreurSirenPosee({
+				sujet: debiteurId,
+				valeur: e instanceof Error ? e.message : 'Numéro refusé.'
+			});
 		}
 	}
 
@@ -293,49 +347,64 @@ function Debiteurs() {
 	 */
 	async function chercherAuRegistreDuDebiteur() {
 		if (choisi === null) return;
-		setErreurSiren(null);
-		setRecherche({ phase: 'EN_COURS' });
+		const debiteurId = choisi;
+		setErreurSirenPosee({ sujet: debiteurId, valeur: null });
+		setRecherchePosee({ sujet: debiteurId, valeur: { phase: 'EN_COURS' } });
 		try {
-			const { candidats } = await chercherAuRegistre({ debiteurId: choisi });
-			setRecherche(candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats });
+			const { candidats } = await chercherAuRegistre({ debiteurId });
+			setRecherchePosee({
+				sujet: debiteurId,
+				valeur: candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats }
+			});
 		} catch (e) {
 			const convexe = e as { data?: unknown };
-			setRecherche({
-				phase: 'ECHEC',
-				message:
-					typeof convexe.data === 'string'
-						? convexe.data
-						: 'Le registre n’a pas répondu. Réessayez dans un instant.'
+			setRecherchePosee({
+				sujet: debiteurId,
+				valeur: {
+					phase: 'ECHEC',
+					message:
+						typeof convexe.data === 'string'
+							? convexe.data
+							: 'Le registre n’a pas répondu. Réessayez dans un instant.'
+				}
 			});
 		}
 	}
 
 	function basculer(id: string) {
-		setSelection((precedente) => {
-			const suivante = new Set(precedente);
+		if (choisi === null) return;
+		const debiteurId = choisi;
+		// La bascule part de la sélection de CE débiteur, relue sur la dernière pose :
+		// une facture cochée sous un autre débiteur n'entre pas dans celle-ci.
+		setSelectionPosee((precedente) => {
+			const suivante = new Set(lirePourLeSujet(precedente, debiteurId, SELECTION_VIDE));
 			if (suivante.has(id)) suivante.delete(id);
 			else suivante.add(id);
-			return suivante;
+			return { sujet: debiteurId, valeur: suivante };
 		});
 	}
 
 	async function constituer() {
-		setErreur(null);
+		if (choisi === null) return;
+		const debiteurId = choisi;
+		setErreurPosee({ sujet: debiteurId, valeur: null });
 		try {
 			const creanceId = await creerCreance({
 				factureIds: [...selection] as Id<'facturesVente'>[]
 			});
-			setSelection(new Set());
+			setSelectionPosee({ sujet: debiteurId, valeur: SELECTION_VIDE });
 			await navigate({ to: '/app/creance/$id', params: { id: creanceId } });
 		} catch (e) {
 			const convexe = e as { data?: unknown };
-			setErreur(
-				typeof convexe.data === 'string'
-					? convexe.data
-					: e instanceof Error
-						? e.message
-						: 'La créance n’a pas pu être constituée.'
-			);
+			setErreurPosee({
+				sujet: debiteurId,
+				valeur:
+					typeof convexe.data === 'string'
+						? convexe.data
+						: e instanceof Error
+							? e.message
+							: 'La créance n’a pas pu être constituée.'
+			});
 		}
 	}
 
@@ -351,7 +420,7 @@ function Debiteurs() {
 								choisi,
 								onOuvrir: (id) => {
 									setChoisi(id as Id<'debiteurs'>);
-									setSelection(new Set());
+									setSelectionPosee(null);
 								},
 								onFermer: () => setChoisi(null),
 								detail: {
