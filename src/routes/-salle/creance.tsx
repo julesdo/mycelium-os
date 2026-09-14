@@ -28,7 +28,11 @@ import {
 	pyramideDePreuves,
 	type Pyramide
 } from '../../lib/verticales/recouvrement/solidite';
-import { LIBELLE_CONDITION, type ClePiece } from '../../lib/verticales/recouvrement/qualification';
+import {
+	LIBELLE_CONDITION,
+	type ClePiece,
+	type EtatCritere
+} from '../../lib/verticales/recouvrement/qualification';
 import {
 	lireLitige,
 	questionsRestantes,
@@ -56,15 +60,20 @@ import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
  * connaissait pas.
  *
  * Tout ce que la famille montre se calcule donc depuis ces entrées, par les
- * fonctions du domaine que les requêtes du produit appellent. Ne reste écrit que
- * ce qu'aucune fonction ne produit : un nom, un secteur, une santé relevée au
- * registre, des réponses du gérant, des pièces, des factures. Une valeur que le
- * serveur calcule sans fonction exportée porte la ligne du produit qu'elle
- * reproduit.
+ * fonctions du domaine que les requêtes du produit appellent. Ne reste écrit
+ * que ce qu'aucune fonction ne produit : le nom du créancier et celui du
+ * débiteur, un secteur, le jour de la démonstration, une santé relevée au
+ * registre et le constat qui l'accompagne, la qualité de commerçant de
+ * chacune des deux parties, des réponses du gérant, des pièces, des factures.
+ * Une valeur que le serveur calcule sans fonction exportée porte la ligne du
+ * produit qu'elle reproduit.
  */
 
 /** Le débiteur, nommé une seule fois pour toute la famille. */
 const DEBITEUR_DEMO = 'Fournitures Durand';
+
+/** Le créancier, nommé une seule fois pour toute la famille : ce que chaque relance signe. */
+const CREANCIER_DEMO = 'Thumbbb Agency';
 
 /**
  * Le secteur du débiteur, que le gérant choisit sur sa fiche (`renseignerSecteur`,
@@ -89,8 +98,9 @@ const AUJOURD_HUI_DEMO = '2026-09-03';
  * disait rien. La salle d'exposition doit montrer l'état où le défaut se
  * voyait, pas celui où il ne se voyait pas.
  *
- * Le domaine en tire deux effets, et la famille montre les deux : un risque
- * dans la qualification, et la suspension des trois niveaux de relance.
+ * Sur la créance, le domaine en tire deux effets, et la famille montre les
+ * deux : un risque dans la qualification, et la suspension des trois niveaux
+ * de relance.
  */
 const SANTE_DEBITEUR_DEMO: SanteDebiteur = 'PROCEDURE_COLLECTIVE';
 
@@ -99,6 +109,17 @@ const CONSTAT_REGISTRE_DEMO = {
 	nature: 'Jugement d’ouverture de liquidation judiciaire',
 	dateJugement: '2026-03-14'
 };
+
+/**
+ * La qualité de commerçant des deux parties. Aucune des deux n'est connue
+ * dans la famille : la condition « entre commerçants » reste donc à
+ * confirmer, et c'est la question que la rangée compte et que la page du
+ * litige pose (`conditionsDepuisReponses`, plus bas). Le litige vide de la
+ * page les répond `'ok'`, seule entrée qu'il change : la question s'y trouve
+ * refermée.
+ */
+const CREANCIER_COMMERCANT_DEMO: EtatCritere = 'unknown';
+const DEBITEUR_COMMERCANT_DEMO: EtatCritere = 'unknown';
 
 /**
  * Les réponses en cours : deux faits écartés, quatre encore ouverts.
@@ -115,6 +136,16 @@ const REPONSES_LITIGE_DEMO: Reponses = { CONTESTATION_ECRITE: 'NON', REFUS_RECEP
 
 /** La variante « litigieux » : une contestation écrite déclarée. Le litige et les risques la montrent. */
 const REPONSES_LITIGE_LITIGIEUSES_DEMO: Reponses = { CONTESTATION_ECRITE: 'OUI' };
+
+/** L'état « sans données » : les six questions répondues, aucune contestation retenue. */
+const REPONSES_LITIGE_TERMINEES_DEMO: Reponses = {
+	CONTESTATION_ECRITE: 'NON',
+	REFUS_RECEPTION: 'NON',
+	AVOIR_RECLAME: 'NON',
+	PENALITES_OPPOSEES: 'NON',
+	INSTANCE_EN_COURS: 'NON',
+	RECONNAISSANCE_ECRITE: 'NON'
+};
 
 /**
  * Les pièces rattachées à la créance. Une seule liste pour le score et pour la
@@ -175,13 +206,14 @@ const PRINCIPAL_RESTANT_DU_DEMO = additionner(...FACTURES_DEMO.map(resteDu));
  * répondu : `deduireConditions` à la création de la créance (`creerCreance`,
  * `src/lib/convex/recouvrement/creances.ts`, lignes 270 à 289), puis `certaine`
  * récrite depuis `lireLitige` à chaque déclaration (`declarerFaitLitige`,
- * lignes 398 à 408).
- *
- * La qualité de commerçant n'est connue d'aucune des deux parties : la
- * condition « entre commerçants » reste à confirmer, et c'est la question que
- * la rangée compte et que la page du litige pose.
+ * lignes 398 à 408). Les deux qualités de commerçant sont celles de la
+ * famille par défaut ; le litige vide les remplace par `'ok'`.
  */
-function conditionsDepuisReponses(reponses: Reponses): ConditionsDeduites {
+function conditionsDepuisReponses(
+	reponses: Reponses,
+	creancierCommercant: EtatCritere = CREANCIER_COMMERCANT_DEMO,
+	debiteurCommercant: EtatCritere = DEBITEUR_COMMERCANT_DEMO
+): ConditionsDeduites {
 	return {
 		...deduireConditions({
 			montantExigible: PRINCIPAL_RESTANT_DU_DEMO,
@@ -190,8 +222,8 @@ function conditionsDepuisReponses(reponses: Reponses): ConditionsDeduites {
 				(tardive, date) => (date > tardive ? date : tardive)
 			),
 			aujourdHui: AUJOURD_HUI_DEMO,
-			creancierCommercant: 'unknown',
-			debiteurCommercant: 'unknown'
+			creancierCommercant,
+			debiteurCommercant
 		}),
 		certaine: lireLitige(reponses).certaine
 	};
@@ -334,7 +366,7 @@ function niveauxDepuisElements(elements: ElementsRelance): NiveauAffiche[] {
  * n'existe pas.
  */
 const ELEMENTS_RELANCE_DEMO: Omit<ElementsRelance, 'santeDebiteur' | 'constatRegistre'> = {
-	creancier: 'Thumbbb Agency',
+	creancier: CREANCIER_DEMO,
 	debiteur: DEBITEUR_DEMO,
 	factures: FACTURES_DEMO.map((facture) => ({
 		reference: facture.reference,
@@ -384,16 +416,6 @@ const DECOMPTE_BASE_DEMO = {
 	erreur: null,
 	onArreter: () => undefined,
 	onTelecharger: () => undefined
-};
-
-/** L'état « sans données » : les six questions répondues, aucune contestation retenue. */
-const REPONSES_LITIGE_TERMINEES_DEMO: Reponses = {
-	CONTESTATION_ECRITE: 'NON',
-	REFUS_RECEPTION: 'NON',
-	AVOIR_RECLAME: 'NON',
-	PENALITES_OPPOSEES: 'NON',
-	INSTANCE_EN_COURS: 'NON',
-	RECONNAISSANCE_ECRITE: 'NON'
 };
 
 /** Les formes nommées du litige : les réponses de chaque variante. */
@@ -515,7 +537,19 @@ export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 					{
 						...LITIGE_BASE_DEMO,
 						...litigeDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO),
-						conditions: []
+						// Conditions de la famille avec les deux qualités de commerçant à
+						// `'ok'`, seule entrée changée ici : la liste est vide parce que la
+						// condition est alors connue.
+						conditions: conditionsADemander(
+							conditionsDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO, 'ok', 'ok')
+						)
+							.filter((condition) => condition !== 'certaine')
+							.map((condition) => ({
+								condition,
+								libelle: `Pouvez-vous confirmer ${
+									LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
+								} de cette créance ?`
+							}))
 					}
 				)}
 			/>

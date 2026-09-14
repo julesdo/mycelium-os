@@ -17,11 +17,13 @@ import { rangeeDuDebiteur } from '../identite-debiteur';
  * `santeFinanciere`, et le constat du registre cité mot pour mot. La créance
  * porte l'argent. Les deux ne se rencontraient jamais à l'écran.
  *
- * Pire : le handler de `creanceComplete` LIT DÉJÀ cette santé — il la passe à
- * `qualifier()` pour calculer le score — et la jette ensuite. Un débiteur en
- * procédure collective faisait donc baisser la note sans que l'écran dise
- * pourquoi. C'est la même famille de défaut que « déclaré, lu, jamais
- * alimenté » : ici la donnée est lue, elle sert, et elle n'arrive pas à l'œil.
+ * Pire : le handler de `creanceComplete` LIT DÉJÀ cette santé, et la passe à
+ * `qualifier()`, qui en tire un risque de gravité HAUTE (une procédure
+ * collective, ou une radiation) et laisse le score intact, puis la jette
+ * ensuite. Un débiteur en procédure collective n'apparaissait donc nulle part
+ * à l'écran, malgré ce risque déjà calculé. C'est la même famille de défaut
+ * que « déclaré, lu, jamais alimenté » : ici la donnée est lue, elle sert, et
+ * elle n'arrive pas à l'œil.
  *
  * ⚠️ AUCUN VERBE DE RECOMMANDATION, ET AUCUNE COULEUR DE SEUIL. Le produit
  * énonce un constat — « procédure collective au registre » — jamais « déclarez

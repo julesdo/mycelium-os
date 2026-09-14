@@ -231,9 +231,10 @@ export interface ConstatRegistreAffiche {
  *
  * Ce n'est pas seulement de la navigation. Le radar de solvabilité tourne
  * chaque nuit et écrit son verdict SUR LE DÉBITEUR ; la créance porte l'argent.
- * Le handler de `creanceComplete` lisait déjà cette santé — il la passe à
- * `qualifier()` — puis la jetait : un débiteur en procédure collective faisait
- * baisser la note sans que l'écran dise pourquoi.
+ * Le handler de `creanceComplete` lisait déjà cette santé : il la passe à
+ * `qualifier()`, qui en tire un risque de gravité HAUTE (une procédure
+ * collective, ou une radiation) et laisse le score intact, mais il ne la
+ * rendait pas : le risque n'apparaissait nulle part sur l'écran.
  *
  * ⚠️ QUATRE ÉTATS, QUATRE MOTS DIFFÉRENTS. La table l'impose : « ne rien savoir
  * n'est pas la même chose que savoir que tout va bien, et c'est la confusion

@@ -67,6 +67,13 @@ export function formeDemo<T>(
 	formes: Readonly<Record<string, T>>
 ): T {
 	if (variante === undefined) return principale;
+	// `Object.hasOwn` exclut les noms hérités du prototype (`constructor`,
+	// `toString`, `__proto__`) : sans lui, une variante mal orthographiée qui
+	// porte l'un de ces noms rendait la valeur héritée au lieu de lever.
+	if (!Object.hasOwn(formes, variante))
+		throw new Error(`Démonstration incomplète : aucune variante « ${variante} ».`);
+	// `noUncheckedIndexedAccess` type quand même l'accès comme possiblement
+	// absent : `hasOwn` prouve que la clé existe, pas au compilateur.
 	const forme = formes[variante];
 	if (forme === undefined)
 		throw new Error(`Démonstration incomplète : aucune variante « ${variante} ».`);

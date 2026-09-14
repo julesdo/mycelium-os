@@ -318,10 +318,10 @@ export const creanceComplete = authedQuery({
 		/**
 		 * LA SANTÉ RELEVÉE AU REGISTRE, celle que le radar écrit chaque nuit.
 		 *
-		 * ⚠️ ELLE ÉTAIT DÉJÀ LUE ICI, ET JETÉE. Le handler la passe à `qualifier()`
-		 * pour calculer le score, puis ne la rend pas : un débiteur en procédure
-		 * collective faisait donc baisser la note de solidité sans que l'écran
-		 * dise pourquoi elle a baissé.
+		 * ⚠️ ELLE ÉTAIT DÉJÀ LUE ICI, ET JETÉE. Le handler la passe à `qualifier()`,
+		 * qui en tire un risque de gravité HAUTE (une procédure collective, ou une
+		 * radiation) et laisse le score intact : un débiteur en procédure
+		 * collective ajoutait donc un risque que l'écran ne montrait nulle part.
 		 */
 		santeDebiteur: v.union(
 			v.literal('INCONNUE'),
