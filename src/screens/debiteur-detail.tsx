@@ -19,6 +19,10 @@ import {
 	type EtatRecherche,
 	type EtablissementPropose
 } from '../ui';
+import {
+	REGIMES_PRESCRIPTION,
+	secteurLePlusCourt
+} from '../lib/verticales/recouvrement/pays/france/prescription';
 
 /**
  * LE VOLET DE PREUVE D'UN DÉBITEUR — ce qu'il doit, facture par facture.
@@ -85,6 +89,52 @@ export const TYPES_PIECE = [
 	{ cle: 'ECHANGES', libelle: 'Échanges', apport: 'Documente la relation, sans critère propre' },
 	{ cle: 'FACTURE', libelle: 'Facture', apport: 'La facture elle-même' }
 ] as const;
+
+/**
+ * Les secteurs proposés, et ce que chacun change.
+ *
+ * ⚠️ LA DURÉE VIENT DU REGISTRE, JAMAIS D'UNE CONSTANTE ÉCRITE ICI. C'est la
+ * règle la plus stricte du projet : toute valeur juridique vit dans le
+ * référentiel, avec sa source. Recopier « 5 ans » dans un libellé d'écran
+ * créerait une seconde vérité qui ne serait pas corrigée le jour où la première
+ * change.
+ *
+ * Le libellé, lui, est du texte d'interface : il nomme la relation commerciale
+ * telle qu'un gérant la reconnaît, pas telle que le code de commerce l'écrit.
+ */
+export const LIBELLE_SECTEUR: Record<string, string> = {
+	GENERAL: 'Régime général',
+	TRANSPORT_MARCHANDISES: 'Transport de marchandises',
+	CONSOMMATEUR: 'Vente à un consommateur',
+	NOURRITURE_MARINS: 'Nourriture des marins',
+	FOURNITURE_NAVIRE: 'Fourniture de navire',
+	OUVRAGE_ACCEPTE: 'Ouvrage accepté'
+};
+
+export function optionsSecteur(): OptionSecteur[] {
+	const connus = Object.keys(REGIMES_PRESCRIPTION).map((cle) => {
+		const regime = REGIMES_PRESCRIPTION[cle as keyof typeof REGIMES_PRESCRIPTION];
+		return {
+			cle,
+			libelle: LIBELLE_SECTEUR[cle] ?? cle,
+			consequence: `Prescription : ${regime.dureeAnnees} an${pluriel(regime.dureeAnnees)}`
+		};
+	});
+
+	// `INDETERMINE` est proposé en PREMIER et reste choisissable : c'est l'état
+	// honnête d'un débiteur qu'on ne sait pas classer, et le forcer à choisir
+	// produirait un secteur inventé — donc un délai de prescription faux, dans le
+	// sens qui fait perdre la créance.
+	const court = secteurLePlusCourt();
+	return [
+		{
+			cle: 'INDETERMINE',
+			libelle: 'À préciser',
+			consequence: `Le délai le plus court est retenu par prudence : ${court} an${pluriel(court)}`
+		},
+		...connus
+	];
+}
 
 export interface FactureAffichee {
 	readonly _id: string;

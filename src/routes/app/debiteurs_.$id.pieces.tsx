@@ -3,22 +3,20 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { EnteteDetail, Page, PageBody, Pieces } from '../../ui';
-import { TYPES_PIECE } from '../../screens/debiteur-detail';
+import { EcranPieces } from '../../screens/debiteur/pieces';
 
-export const Route = createFileRoute('/app/debiteurs_/$id/pieces')({ component: PagePieces });
+export const Route = createFileRoute('/app/debiteurs_/$id/pieces')({
+	component: PagePieces,
+	errorComponent: PiecesEnErreur
+});
+
+function PiecesEnErreur() {
+	const { id } = Route.useParams();
+	return <EcranPieces identifiant={id} donnees={{ etat: 'erreur' }} />;
+}
 
 /**
- * LES PIÈCES DU DOSSIER — une page, plus une carte coincée entre deux autres.
- *
- * ⚠️ C'EST L'ANALYSE QUI PORTAIT LE PLUS DE TEXTE. Chaque pièce dit sa nature,
- * son numéro, sa date, le constat de sa lecture, et la réserve qu'elle porte
- * éventuellement. Cinq lignes par document, sur un dossier qui en compte dix :
- * la carte devenait un mur, et le reste du volet passait sous l'horizon.
- *
- * Le dépôt et la lecture ne changent pas ; ils ont seulement la place de se
- * voir. Un gérant qui dépose dix pièces regarde ce qu'elles sont devenues —
- * c'est un écran, pas une note en bas d'une fiche.
+ * Branchée sur la base ; le dessin vit dans `screens/debiteur/pieces.tsx`.
  */
 function PagePieces() {
 	const { id } = Route.useParams();
@@ -72,33 +70,34 @@ function PagePieces() {
 		}
 	}
 
+	/*
+	  La page attend la liste des pièces : elle affichait « 0 document » implicite
+	  et une liste vide le temps de l'aller-retour.
+	*/
 	return (
-		<Page>
-			<EnteteDetail
-				retourVers="/app/debiteurs"
-				retourRecherche={{ d: id }}
-				retourLibelle={debiteur?.denomination ?? 'Débiteurs'}
-				titre="Les pièces du dossier"
-				sousTitre={pieces === undefined ? undefined : `${pieces.length} document${pieces.length > 1 ? 's' : ''}`}
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
-					<Pieces
-						pieces={pieces ?? []}
-						optionsType={TYPES_PIECE}
-						enCours={enCours}
-						onDeposer={(fichiers) => void deposerPieces(fichiers)}
-						onClasser={(pieceId, type) => {
-							void classerPiece({
-								pieceId: pieceId as Id<'pieces'>,
-								type: type as 'BON_DE_LIVRAISON'
-							});
-						}}
-						onRetirer={(pieceId) => void retirerPiece({ pieceId: pieceId as Id<'pieces'> })}
-					/>
-					{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
-				</div>
-			</PageBody>
-		</Page>
+		<EcranPieces
+			identifiant={id}
+			donnees={
+				pieces === undefined
+					? { etat: 'attente' }
+					: {
+							etat: 'pret',
+							valeur: {
+								denomination: debiteur?.denomination ?? null,
+								pieces,
+								enCours,
+								erreur,
+								onDeposer: (fichiers) => void deposerPieces(fichiers),
+								onClasser: (pieceId, type) => {
+									void classerPiece({
+										pieceId: pieceId as Id<'pieces'>,
+										type: type as 'BON_DE_LIVRAISON'
+									});
+								},
+								onRetirer: (pieceId) => void retirerPiece({ pieceId: pieceId as Id<'pieces'> })
+							}
+						}
+			}
+		/>
 	);
 }

@@ -14,7 +14,6 @@ import {
 	FluxEvenements,
 	ChocRevelation,
 	BilanPertes,
-	HabitudePaiement,
 	IdentiteDebiteur,
 	RailProcedure,
 	FeuilleVoie,
@@ -23,10 +22,8 @@ import {
 	RechercheAvocat,
 	ListeAnalyses,
 	LigneBouton,
-	Pieces,
 	ConstatRegistre,
 	Lettrage,
-	type OptionSecteur,
 	type RevelationAffichee,
 	type BilanPertesAffiche,
 	euros,
@@ -38,7 +35,6 @@ import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/
 import { Donnees } from '../screens/donnees/donnees';
 import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
-import { DetailDebiteur } from '../screens/debiteur-detail';
 import { EcranIntrouvable, EcranEnErreur } from '../screens/passage';
 import { ECRANS_DU_PRODUIT } from './-salle/ecrans';
 import type { EtatDemo } from './-salle/demo';
@@ -49,6 +45,7 @@ import {
 	ETUDES_DEMO,
 	EVENEMENTS_DEMO,
 	RAIL_DEMO,
+	SECTEURS_DEMO,
 	VOIE_DEMO
 } from './-salle/communes';
 
@@ -255,211 +252,6 @@ function DemoCreancier() {
  * message va s'afficher souvent — et il doit tenir dans la colonne, à 375 px,
  * sans pousser le reste du volet.
  */
-const SECTEURS_DEMO: OptionSecteur[] = [
-	{
-		cle: 'INDETERMINE',
-		libelle: 'À préciser',
-		consequence: 'Le délai le plus court est retenu par prudence : 1 an'
-	},
-	{ cle: 'GENERAL', libelle: 'Régime général', consequence: 'Prescription : 5 ans' },
-	{
-		cle: 'TRANSPORT_MARCHANDISES',
-		libelle: 'Transport de marchandises',
-		consequence: 'Prescription : 1 an'
-	},
-	{ cle: 'CONSOMMATEUR', libelle: 'Vente à un consommateur', consequence: 'Prescription : 2 ans' }
-];
-
-const TYPES_PIECE_DEMO = [
-	{ cle: 'INDETERMINE', libelle: 'À classer', apport: 'Ne compte dans aucun critère' },
-	{
-		cle: 'BON_DE_COMMANDE',
-		libelle: 'Bon de commande',
-		apport: 'Établit que le client a commandé'
-	},
-	{
-		cle: 'BON_DE_LIVRAISON',
-		libelle: 'Bon de livraison',
-		apport: 'Établit que la prestation a été reçue'
-	},
-	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' }
-];
-
-const HABITUDE_DEMO = {
-	connue: true as const,
-	delaiMedianJours: 12,
-	echantillon: 23,
-	dispersionJours: 2
-};
-
-function DemoDebiteurDetail() {
-	return (
-		<Page>
-			<PageHeader titre="Fournitures Durand" sousTitre="Ce qu’il doit, facture par facture" />
-			<PageBody>
-				<DetailDebiteur
-					debiteurId="demo"
-					denomination="Fournitures Durand"
-					etatRecherche={{ phase: 'REPOS' }}
-					onChercherAuRegistre={() => {}}
-					onRetenirEtablissement={() => {}}
-					debiteur={{
-						siren: '853479236',
-						secteur: 'TRANSPORT_MARCHANDISES',
-						santeFinanciere: 'SAINE'
-					}}
-					/**
-					 * ⚠️ DEUX CRÉANCES, DONT UN BROUILLON. C'est l'arête qui manquait au
-					 * produit : avant elle, l'écran d'une créance ne s'atteignait que
-					 * par la redirection qui suit sa constitution, et n'était donc
-					 * visible que dans les secondes suivant sa création.
-					 */
-					creances={[
-						{
-							_id: 'demo-creance',
-							statut: 'QUALIFIEE',
-							principalRestantDu: 1_200_000n,
-							nombreFactures: 2
-						},
-						{
-							_id: 'demo-creance-2',
-							statut: 'BROUILLON',
-							principalRestantDu: 318_040n,
-							nombreFactures: 1
-						}
-					]}
-					optionsSecteur={SECTEURS_DEMO}
-					erreurSiren={null}
-					tauxStipule="15,00"
-					constatTaux="Le taux de 15,00 % est au-dessus du plancher de 10,26 % constaté au 2026-03-15."
-					pieces={[
-						{
-							_id: '1',
-							type: 'BON_DE_LIVRAISON',
-							statut: 'LUE',
-							filename: 'BL-2024-118.pdf',
-							reference: 'BL-2024-118',
-							dateDocument: '2026-02-14',
-							constat: 'Ce document est un bon de livraison, n° BL-2024-118, du 2026-02-14.'
-						}
-					]}
-					habitude={HABITUDE_DEMO}
-					ruptures={[]}
-					propositionLettrage={null}
-					lettrageEnCours={false}
-					erreurLettrage={null}
-					selection={new Set(['f1'])}
-					erreur={null}
-					factures={[
-						{
-							_id: 'f1',
-							reference: 'FA-2026-004',
-							montantTTC: 1_200_000n,
-							resteDu: 1_200_000n,
-							dateEcheance: '2026-05-15',
-							exigibiliteDeduite: true,
-							datePrescription: '2027-05-15',
-							dansUneCreance: false
-						},
-						{
-							_id: 'f2',
-							reference: 'FA-2026-011',
-							montantTTC: 420_000n,
-							resteDu: 420_000n,
-							dateEcheance: '2026-06-30',
-							exigibiliteDeduite: false,
-							datePrescription: '2027-06-30',
-							dansUneCreance: true
-						}
-					]}
-					onEnregistrerSiren={() => {}}
-					onChoisirSecteur={() => {}}
-					onEnregistrerTaux={() => {}}
-					onChercherLettrage={() => {}}
-					onAppliquerLettrage={() => {}}
-					onBasculerFacture={() => {}}
-					onConstituer={() => {}}
-				/>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoPieces() {
-	return (
-		<Page>
-			<PageHeader titre="Fournitures Durand" sousTitre="Les pièces du dossier" />
-			<PageBody>
-				<div className="flex flex-col gap-cladd-md">
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Lues, à classer, et en cours</SectionTitle>
-						<Pieces
-							optionsType={TYPES_PIECE_DEMO}
-							onDeposer={() => {}}
-							onClasser={() => {}}
-							onRetirer={() => {}}
-							pieces={[
-								{
-									_id: '1',
-									type: 'BON_DE_LIVRAISON',
-									statut: 'LUE',
-									filename: 'BL-2024-118.pdf',
-									reference: 'BL-2024-118',
-									dateDocument: '2026-02-14',
-									constat:
-										'Ce document est un bon de livraison, n° BL-2024-118, du 2026-02-14. Il cite FA-2026-004.'
-								},
-								{
-									_id: '2',
-									type: 'BON_DE_LIVRAISON',
-									statut: 'LUE',
-									filename: 'BL-2024-121.pdf',
-									reference: 'BL-2024-121',
-									dateDocument: '2026-02-21',
-									reserves: 'Deux colis manquants, signalés à la livraison.',
-									constat: 'Ce document est un bon de livraison, n° BL-2024-121, du 2026-02-21.'
-								},
-								{
-									_id: '3',
-									type: 'INDETERMINE',
-									statut: 'A_CLASSER',
-									filename: 'scan_20260214.jpg',
-									constat:
-										'Ce document n’a pas pu être lu : sa nature n’est pas identifiée, et il ne compte dans aucun critère de solidité.'
-								},
-								{
-									_id: '4',
-									type: 'INDETERMINE',
-									statut: 'EN_LECTURE',
-									filename: 'CGV-2026.pdf'
-								},
-								{
-									_id: '5',
-									type: 'CGV',
-									statut: 'CLASSEE_MAIN',
-									filename: 'conditions-generales.pdf',
-									constat: 'Un taux de retard de 12,00 % y est stipulé.'
-								}
-							]}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Aucune pièce — la zone montre le chemin</SectionTitle>
-						<Pieces
-							optionsType={TYPES_PIECE_DEMO}
-							pieces={[]}
-							onDeposer={() => {}}
-							onClasser={() => {}}
-							onRetirer={() => {}}
-						/>
-					</div>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
 function DemoIdentite() {
 	return (
 		<Page>
@@ -1021,94 +813,6 @@ function DemoBilanImport() {
 }
 
 /**
- * LES TROIS ÉTATS DE L'HABITUDE, CÔTE À CÔTE.
- *
- * C'est la seule façon de vérifier la propriété qui compte : « aucune rupture »
- * et « aucune mesure » ne doivent pas se ressembler. Le troisième cas — un
- * débiteur trop récent pour qu'on sache quoi que ce soit — est celui qu'on
- * oublie de dessiner, et c'est celui qui laisse croire qu'un client est sage.
- */
-function DemoHabitude() {
-	return (
-		<Page>
-			<PageHeader titre="Son habitude de paiement" sousTitre="Les trois états du module" />
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-2xs">
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Une habitude rompue</SectionTitle>
-						<HabitudePaiement
-							habitude={{
-								connue: true,
-								delaiMedianJours: 12,
-								echantillon: 23,
-								dispersionJours: 2
-							}}
-							ruptures={[
-								{
-									reference: 'FA-2026-0311',
-									habituelJours: 12,
-									ecartJours: 73,
-									constat:
-										'Ce débiteur règle habituellement à 12 jours de son échéance, sur 23 règlements observés. Cette facture en est à 85, soit 73 de plus que son habitude.'
-								},
-								{
-									reference: 'FA-2026-0348',
-									habituelJours: 12,
-									ecartJours: 31,
-									constat:
-										'Ce débiteur règle habituellement à 12 jours de son échéance, sur 23 règlements observés. Cette facture en est à 43, soit 31 de plus que son habitude.'
-								}
-							]}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Un payeur lent, mais fidèle à lui-même</SectionTitle>
-						{/* ⚠️ LE CAS QUE LE SEUIL ABSOLU RATERAIT DANS L'AUTRE SENS : 65
-						    jours de retard, et rien à signaler — c'est son rythme depuis
-						    toujours. Un seuil crierait, et le bruit s'apprend. */}
-						<HabitudePaiement
-							habitude={{
-								connue: true,
-								delaiMedianJours: 65,
-								echantillon: 18,
-								dispersionJours: 3
-							}}
-							ruptures={[]}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Pas encore assez d’historique</SectionTitle>
-						<HabitudePaiement
-							habitude={{
-								connue: false,
-								raison:
-									'2 règlements datés connus : il en faut au moins 4 pour parler d’une habitude.'
-							}}
-							ruptures={[]}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Un client qui paie en avance</SectionTitle>
-						<HabitudePaiement
-							habitude={{
-								connue: true,
-								delaiMedianJours: -9,
-								echantillon: 31,
-								dispersionJours: 1
-							}}
-							ruptures={[]}
-						/>
-					</div>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-/**
  * LE VEILLEUR EN PERSONNE, dans ses trois etats.
  *
  * ⚠️ IL N'APPARAIT PAS DANS LA COQUILLE DE CETTE SALLE, et c'est correct :
@@ -1373,7 +1077,6 @@ function DemoAvocat() {
 const ECRANS = [
 	'veilleur',
 	'bilan-import',
-	'habitude',
 	'lettrage',
 	'creancier',
 	'identite',
@@ -1382,8 +1085,6 @@ const ECRANS = [
 	'intervenant',
 	'commissaire',
 	'avocat',
-	'pieces',
-	'debiteur',
 	'revelation',
 	'bilan',
 	'flux',
@@ -1517,7 +1218,6 @@ function Showroom() {
 					<>
 						{ecran === 'bilan-import' ? <DemoBilanImport /> : null}
 						{ecran === 'veilleur' ? <DemoVeilleurAvatar /> : null}
-						{ecran === 'habitude' ? <DemoHabitude /> : null}
 						{ecran === 'lettrage' ? <DemoLettrage /> : null}
 						{ecran === 'creancier' ? <DemoCreancier /> : null}
 						{ecran === 'identite' ? <DemoIdentite /> : null}
@@ -1526,8 +1226,6 @@ function Showroom() {
 						{ecran === 'intervenant' ? <DemoIntervenant /> : null}
 						{ecran === 'commissaire' ? <DemoCommissaire /> : null}
 						{ecran === 'avocat' ? <DemoAvocat /> : null}
-						{ecran === 'pieces' ? <DemoPieces /> : null}
-						{ecran === 'debiteur' ? <DemoDebiteurDetail /> : null}
 						{ecran === 'revelation' ? <DemoRevelation /> : null}
 						{ecran === 'bilan' ? <DemoBilan /> : null}
 						{ecran === 'flux' ? <DemoFlux /> : null}

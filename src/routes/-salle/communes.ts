@@ -14,6 +14,7 @@ import {
 	proceduresEnvisageables,
 	type Procedure
 } from '../../lib/verticales/recouvrement/procedures';
+import { optionsSecteur } from '../../screens/debiteur-detail';
 
 /**
  * LES FIXTURES COMMUNES DE LA SALLE D'EXPOSITION.
@@ -21,8 +22,18 @@ import {
  * Celles-ci traversent plusieurs familles d'écrans, ou sont montrées telles
  * quelles par une démonstration de composant dans `routes/showroom.tsx`. Les
  * fixtures propres à une seule famille vivent avec elle (`onglets.tsx`,
- * `creance.tsx`, `procedure.tsx`).
+ * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`).
  */
+
+/**
+ * LES SECTEURS, TELS QUE LA FICHE DU DÉBITEUR LES PROPOSE.
+ *
+ * ⚠️ ILS SE CALCULENT, ILS NE SE RECOPIENT PLUS. La salle écrivait à la main
+ * « Prescription : 5 ans », « 1 an », « 2 ans » : une seconde vérité sur les
+ * durées du référentiel, que la règle la plus stricte du projet interdit, salle
+ * comprise. `DemoIdentite` et la famille des débiteurs les montrent toutes deux.
+ */
+export const SECTEURS_DEMO = optionsSecteur();
 
 /**
  * Le flux de surveillance, avec les cas qui cassent.

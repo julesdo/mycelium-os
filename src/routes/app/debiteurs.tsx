@@ -1,78 +1,13 @@
 import { useState } from 'react';
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useAction } from 'convex/react';
-import { Chip, ListButton } from '@cladd-ui/react';
-import { UploadIcon } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
-import {
-	BoutonPrincipal,
-	Page,
-	PageHeader,
-	PageBody,
-	TwoPane,
-	EmptyState,
-	eurosCentimes,
-	aujourdHuiISO,
-	pluriel,
-	Avatar,
-	CarteListe,
-	type OptionSecteur,
-	type EtatRecherche,
-	type EtablissementPropose
-} from '../../ui';
-import { DetailDebiteur } from '../../screens/debiteur-detail';
-import {
-	REGIMES_PRESCRIPTION,
-	secteurLePlusCourt
-} from '../../lib/verticales/recouvrement/pays/france/prescription';
+import { aujourdHuiISO, type EtatRecherche, type EtablissementPropose } from '../../ui';
+import { optionsSecteur } from '../../screens/debiteur-detail';
+import { EcranDebiteurs } from '../../screens/debiteurs';
 
-/**
- * Les secteurs proposés, et ce que chacun change.
- *
- * ⚠️ LA DURÉE VIENT DU REGISTRE, JAMAIS D'UNE CONSTANTE ÉCRITE ICI. C'est la
- * règle la plus stricte du projet : toute valeur juridique vit dans le
- * référentiel, avec sa source. Recopier « 5 ans » dans un libellé d'écran
- * créerait une seconde vérité qui ne serait pas corrigée le jour où la première
- * change.
- *
- * Le libellé, lui, est du texte d'interface : il nomme la relation commerciale
- * telle qu'un gérant la reconnaît, pas telle que le code de commerce l'écrit.
- */
-const LIBELLE_SECTEUR: Record<string, string> = {
-	GENERAL: 'Régime général',
-	TRANSPORT_MARCHANDISES: 'Transport de marchandises',
-	CONSOMMATEUR: 'Vente à un consommateur',
-	NOURRITURE_MARINS: 'Nourriture des marins',
-	FOURNITURE_NAVIRE: 'Fourniture de navire',
-	OUVRAGE_ACCEPTE: 'Ouvrage accepté'
-};
-
-function optionsSecteur(): OptionSecteur[] {
-	const connus = Object.keys(REGIMES_PRESCRIPTION).map((cle) => {
-		const regime = REGIMES_PRESCRIPTION[cle as keyof typeof REGIMES_PRESCRIPTION];
-		return {
-			cle,
-			libelle: LIBELLE_SECTEUR[cle] ?? cle,
-			consequence: `Prescription : ${regime.dureeAnnees} an${pluriel(regime.dureeAnnees)}`
-		};
-	});
-
-	// `INDETERMINE` est proposé en PREMIER et reste choisissable : c'est l'état
-	// honnête d'un débiteur qu'on ne sait pas classer, et le forcer à choisir
-	// produirait un secteur inventé — donc un délai de prescription faux, dans le
-	// sens qui fait perdre la créance.
-	const court = secteurLePlusCourt();
-	return [
-		{
-			cle: 'INDETERMINE',
-			libelle: 'À préciser',
-			consequence: `Le délai le plus court est retenu par prudence : ${court} an${pluriel(court)}`
-		},
-		...connus
-	];
-}
 /**
  * ⚠️ LE DÉBITEUR CHOISI VIT DANS L'URL, PLUS DANS UN ÉTAT LOCAL.
  *
@@ -91,23 +26,19 @@ function optionsSecteur(): OptionSecteur[] {
  */
 export const Route = createFileRoute('/app/debiteurs')({
 	component: Debiteurs,
+	errorComponent: DebiteursEnErreur,
 	validateSearch: (recherche: Record<string, unknown>): { d?: string } => {
 		const d = recherche.d;
 		return typeof d === 'string' && d.length > 0 ? { d } : {};
 	}
 });
 
+function DebiteursEnErreur() {
+	return <EcranDebiteurs donnees={{ etat: 'erreur' }} />;
+}
+
 /**
- * Les débiteurs, et leurs factures.
- *
- * DEUX VOLETS AU-DELÀ DE 1024 px (règle d'écran n° 3), et ils portent
- * exactement ce que la règle prévoit : la LISTE à gauche, la PREUVE à droite.
- * Ici, la preuve d'un débiteur est le détail de ce qu'il doit — facture par
- * facture, avec sa date de prescription.
- *
- * LA PRESCRIPTION EST DANS LE TABLEAU, PAS DANS UNE ALERTE À PART. C'est une
- * propriété de chaque facture, au même titre que son montant : la reléguer
- * ailleurs obligerait à croiser deux écrans pour savoir laquelle va s'éteindre.
+ * Branchée sur la base ; le dessin vit dans `screens/debiteurs.tsx`.
  */
 function Debiteurs() {
 	const navigate = useNavigate();
@@ -366,9 +297,7 @@ function Debiteurs() {
 		setRecherche({ phase: 'EN_COURS' });
 		try {
 			const { candidats } = await chercherAuRegistre({ debiteurId: choisi });
-			setRecherche(
-				candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats }
-			);
+			setRecherche(candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats });
 		} catch (e) {
 			const convexe = e as { data?: unknown };
 			setRecherche({
@@ -410,177 +339,65 @@ function Debiteurs() {
 		}
 	}
 
-	if (debiteurs === undefined) {
-		return (
-			<Page>
-				<PageHeader titre="Vos débiteurs" />
-				<PageBody>
-					<p className="sr-only">Chargement…</p>
-				</PageBody>
-			</Page>
-		);
-	}
-
-	if (debiteurs.length === 0) {
-		return (
-			<Page>
-				<PageHeader titre="Vos débiteurs" />
-				<PageBody>
-					<EmptyState
-						illustration="🧾"
-						titre="Aucun débiteur pour l’instant"
-						explication="Les débiteurs apparaissent tout seuls quand vous importez vos factures : le logiciel les rapproche par leur raison sociale, quelle que soit la graphie."
-						etapes={[
-							'Importez un export comptable ou vos factures de vente.',
-							'Le logiciel crée un débiteur par client et calcule son encours.',
-							'Sélectionnez les factures d’un même débiteur pour en faire une créance.'
-						]}
-						action={
-							<BoutonPrincipal as={Link} to="/app/import-factures">
-								<UploadIcon />
-								Importer mes factures
-							</BoutonPrincipal>
-						}
-					/>
-				</PageBody>
-			</Page>
-		);
-	}
-
-	/**
-	 * LA LISTE DES DÉBITEURS.
-	 *
-	 * ⚠️ UNE SEULE CARTE, DES LIGNES DEDANS — et pas une carte par débiteur.
-	 *
-	 * La version précédente posait un `Surface` autonome par client. Sur trente
-	 * débiteurs, ça fait trente objets qui flottent séparément : l'œil compte des
-	 * cartes au lieu de lire des noms, et chaque bord arrondi coûte quatre pixels
-	 * de vide en haut et en bas, soit plus de deux cents pixels de défilement
-	 * gagnés pour rien.
-	 *
-	 * Toutes les références font l'inverse : un conteneur, des rangées. La liste
-	 * se lit alors comme une liste, et les cartes retrouvent leur sens — elles ne
-	 * servent qu'à séparer des BLOCS de nature différente.
-	 *
-	 * ⚠️ ET CHAQUE LIGNE PORTE UN AVATAR. Deux raisons, dont une seule est
-	 * esthétique : il donne à l'œil un point d'accroche fixe à gauche pour
-	 * balayer verticalement, et surtout il rend deux raisons sociales proches —
-	 * « Ateliers Martin » et « Ateliers Martin Fils » — distinguables à la
-	 * couleur avant d'être lues. Sur un produit où se tromper de débiteur envoie
-	 * un décompte au mauvais tiers, ça compte.
-	 */
-	const liste = (
-		<div className="flex flex-col gap-cladd-3xs p-cladd-3xs">
-			<CarteListe titre={`${debiteurs.length} débiteur${pluriel(debiteurs.length)}`}>
-				{debiteurs.map((debiteur) => (
-					<ListButton
-						key={debiteur._id}
-						selected={choisi === debiteur._id}
-						onClick={() => {
-							setChoisi(debiteur._id);
-							setSelection(new Set());
-						}}
-						icon={<Avatar nom={debiteur.denomination} />}
-						footer={
-							// Les puces en pied de ligne plutôt qu'en rangée séparée : elles
-							// qualifient le débiteur, elles ne sont pas une information de
-							// même niveau que son nom.
-							<span className="flex flex-wrap items-center gap-1.5">
-								{debiteur.facturesEchues > 0 ? (
-									<Chip size="sm" color="orange">
-										{debiteur.facturesEchues} échue{pluriel(debiteur.facturesEchues)}
-									</Chip>
-								) : null}
-								{debiteur.santeFinanciere !== 'SAINE' && debiteur.santeFinanciere !== 'INCONNUE' ? (
-									<Chip size="sm" color="red">
-										{debiteur.santeFinanciere === 'RADIEE' ? 'Radié' : 'Procédure collective'}
-									</Chip>
-								) : null}
-								{/* Un secteur indéterminé fait retenir le délai de prescription
-								    le plus court. Le dire ici évite que le gérant découvre
-								    l'hypothèse au moment où une créance est annoncée prescrite. */}
-								{!debiteur.secteurDetermine ? (
-									<Chip size="sm" color="neutral">
-										Secteur à préciser
-									</Chip>
-								) : null}
-							</span>
-						}
-						after={
-							// L'encours reste la colonne qui commande la lecture — un gérant
-							// arbitre entre douze mille euros et trois cents, pas entre deux
-							// raisons sociales. Mais il descend du corps d'affiche au corps
-							// courant : dans une rangée, un chiffre de trente-deux pixels
-							// écrase le nom qu'il qualifie.
-							<span className="shrink-0 text-cladd-sm font-bold tabular-nums">
-								{eurosCentimes(debiteur.encours)}
-							</span>
-						}
-					>
-						{debiteur.denomination}
-					</ListButton>
-				))}
-			</CarteListe>
-		</div>
-	);
-
-	/**
-	 * LE VOLET DE PREUVE.
-	 *
-	 * Tout le dessin vit dans `screens/debiteur-detail.tsx`, qui ne sait pas
-	 * interroger Convex — c’est ce qui permet de l’OUVRIR aux quatre largeurs
-	 * depuis la salle d’exposition, sans backend ni authentification. Ses
-	 * composants y étaient tous vérifiés un par un ; leur assemblage, jamais.
-	 */
-	const preuve = (
-		<DetailDebiteur
-			debiteurId={choisi ?? ''}
-			denomination={debiteurChoisi?.denomination ?? ''}
-			etatRecherche={recherche}
-			onChercherAuRegistre={() => void chercherAuRegistreDuDebiteur()}
-			onRetenirEtablissement={(etablissement) => void retenirEtablissement(etablissement)}
-			debiteur={choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi}
-			factures={choisi === null || factures === undefined ? null : factures}
-			// Les seules du débiteur ouvert. Le filtre est ici plutôt qu'en base
-			// parce que la liste entière tient déjà en mémoire pour l'écran, et
-			// qu'une requête par débiteur la rechargerait à chaque sélection.
-			creances={(creances ?? []).filter((creance) => creance.debiteurId === choisi)}
-			optionsSecteur={SECTEURS}
-			erreurSiren={erreurSiren}
-			tauxStipule={tauxStipule}
-			constatTaux={constatTaux}
-			pieces={pieces ?? []}
-			habitude={comportement?.habitude ?? null}
-			ruptures={comportement?.ruptures ?? []}
-			propositionLettrage={proposition ?? null}
-			lettrageEnCours={montantCherche !== null && proposition === undefined}
-			erreurLettrage={erreurLettrage}
-			selection={selection}
-			erreur={erreur}
-			onEnregistrerSiren={(saisi) => void enregistrerSiren(saisi)}
-			onChoisirSecteur={(cle) => {
-				if (choisi === null) return;
-				void renseignerSecteur({ debiteurId: choisi, secteur: cle as 'GENERAL' });
-			}}
-			onEnregistrerTaux={(p) => void enregistrerTaux(p)}
-			onChercherLettrage={chercherLettrage}
-			onAppliquerLettrage={(references, total) => void soldeLesFactures(references, total)}
-			onBasculerFacture={basculer}
-			onConstituer={() => void constituer()}
-		/>
-	);
-
 	return (
-		<Page>
-			<PageHeader titre="Vos débiteurs" sousTitre="Le plus gros encours d’abord" />
-			<div className="min-h-0 flex-1">
-				<TwoPane
-					liste={liste}
-					preuve={preuve}
-					preuveOuverte={choisi !== null}
-					onFermerPreuve={() => setChoisi(null)}
-				/>
-			</div>
-		</Page>
+		<EcranDebiteurs
+			donnees={
+				debiteurs === undefined
+					? { etat: 'attente' }
+					: {
+							etat: 'pret',
+							valeur: {
+								debiteurs,
+								choisi,
+								onOuvrir: (id) => {
+									setChoisi(id as Id<'debiteurs'>);
+									setSelection(new Set());
+								},
+								onFermer: () => setChoisi(null),
+								detail: {
+									debiteurId: choisi ?? '',
+									denomination: debiteurChoisi?.denomination ?? '',
+									etatRecherche: recherche,
+									onChercherAuRegistre: () => void chercherAuRegistreDuDebiteur(),
+									onRetenirEtablissement: (etablissement) =>
+										void retenirEtablissement(etablissement),
+									debiteur: choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi,
+									// Les pièces aussi : sans elles, la rangée des pièces dirait « Aucune » le temps de leur lecture.
+									factures:
+										choisi === null || factures === undefined || pieces === undefined
+											? null
+											: factures,
+									// Les seules du débiteur ouvert. Le filtre est ici plutôt qu'en base
+									// parce que la liste entière tient déjà en mémoire pour l'écran, et
+									// qu'une requête par débiteur la rechargerait à chaque sélection.
+									creances: (creances ?? []).filter((creance) => creance.debiteurId === choisi),
+									optionsSecteur: SECTEURS,
+									erreurSiren,
+									tauxStipule,
+									constatTaux,
+									pieces: pieces ?? [],
+									habitude: comportement?.habitude ?? null,
+									ruptures: comportement?.ruptures ?? [],
+									propositionLettrage: proposition ?? null,
+									lettrageEnCours: montantCherche !== null && proposition === undefined,
+									erreurLettrage,
+									selection,
+									erreur,
+									onEnregistrerSiren: (saisi) => void enregistrerSiren(saisi),
+									onChoisirSecteur: (cle) => {
+										if (choisi === null) return;
+										void renseignerSecteur({ debiteurId: choisi, secteur: cle as 'GENERAL' });
+									},
+									onEnregistrerTaux: (p) => void enregistrerTaux(p),
+									onChercherLettrage: chercherLettrage,
+									onAppliquerLettrage: (references, total) =>
+										void soldeLesFactures(references, total),
+									onBasculerFacture: basculer,
+									onConstituer: () => void constituer()
+								}
+							}
+						}
+			}
+		/>
 	);
 }
