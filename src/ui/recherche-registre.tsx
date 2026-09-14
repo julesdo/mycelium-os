@@ -135,13 +135,13 @@ export function RechercheRegistre({
 						Sa solvabilité est surveillée chaque nuit au registre public.
 					</span>
 				</div>
-				{/* ⚠️ `min-h-11` : 44 px. Une commande secondaire reste une cible. */}
+				{/* ⚠️ `min-h-12` : 48 px, le plancher tactile du projet. Une commande secondaire reste une cible. */}
 				<Button
 					size="sm"
 					variant="transparent"
 					outline={false}
 					hoverable={false}
-					className="verre-bouton min-h-11 shrink-0 rounded-full px-3 text-cladd-2xs"
+					className="verre-bouton min-h-12 shrink-0 rounded-full px-3 text-cladd-2xs"
 					onClick={() => setOuvertALaMain(true)}
 				>
 					Changer
@@ -195,8 +195,8 @@ export function RechercheRegistre({
 			{etat.phase === 'AUCUN' ? (
 				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 					Le registre ne publie aucune annonce au nom de « {denomination} ». Il ne contient que les
-					sociétés ayant fait l’objet d’une publication de greffe : c’est un silence du registre, pas
-					une réponse sur votre client.
+					sociétés ayant fait l’objet d’une publication de greffe : c’est un silence du registre,
+					pas une réponse sur votre client.
 				</p>
 			) : null}
 
@@ -265,7 +265,7 @@ export function RechercheRegistre({
 					variant="transparent"
 					outline={false}
 					hoverable={false}
-					className="min-h-11 self-start rounded-full px-3 text-cladd-2xs text-cladd-fg-softer"
+					className="min-h-12 self-start rounded-full px-3 text-cladd-2xs text-cladd-fg-softer"
 					onClick={() => setOuvertALaMain(true)}
 				>
 					Saisir le numéro moi-même

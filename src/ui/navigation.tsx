@@ -244,11 +244,12 @@ export function EnteteDetail({
 				to={retourVers}
 				params={retourParametres}
 				search={retourRecherche}
-				// ⚠️ `min-h-11` — 44 px. Sans lui le retour se dimensionne sur sa ligne
-				// de texte et tombe à 33 px : c'est la commande la plus utilisée de
-				// toute page poussée, et la plus petite cible de l'écran. Mesuré au
-				// navigateur, invisible partout ailleurs.
-				className="verre-bouton -ml-1.5 flex min-h-11 w-fit items-center gap-0.5 rounded-full pr-3 pl-1.5 text-cladd-xs text-cladd-fg-soft"
+				// ⚠️ `min-h-12` : 48 px, le plancher tactile du projet. Sans lui le retour
+				// se dimensionne sur sa ligne de texte et tombe à 33 px : c'est la
+				// commande la plus utilisée de toute page poussée. À 44 px, il restait la
+				// plus petite cible de chacune, sous le plancher. Mesuré au navigateur,
+				// invisible partout ailleurs.
+				className="verre-bouton -ml-1.5 flex min-h-12 w-fit items-center gap-0.5 rounded-full pr-3 pl-1.5 text-cladd-xs text-cladd-fg-soft"
 			>
 				<ChevronLeftIcon className="size-4 shrink-0" aria-hidden />
 				{retourLibelle}
