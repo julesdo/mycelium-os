@@ -8,8 +8,6 @@ import {
 	UsersIcon
 } from 'lucide-react';
 import {
-	Page,
-	PageBody,
 	PageHero,
 	ChiffreHero,
 	RangeeActions,
@@ -26,6 +24,9 @@ import {
 	dateCourte,
 	eurosCentimes,
 	pluriel,
+	BoutonPrincipal,
+	PageEcran,
+	type Lecture,
 	type ActionRonde,
 	type PartsDues,
 	type EvenementAffiche,
@@ -162,7 +163,27 @@ export interface AccueilAffiche {
  */
 const MODE_COMPACT = { limite: 3, versDetail: '/app/revelation' } as const;
 
-export function EcranAccueil({ vue }: { vue: AccueilAffiche }) {
+export function EcranAccueil({ donnees }: { donnees: Lecture<AccueilAffiche> }) {
+	/**
+	 * ⚠️ L'ISSUE N'EST PAS L'ACCUEIL, PUISQU'ON Y EST. Un lien vers `/app` depuis
+	 * `/app` ne mène nulle part : l'accueil en erreur ouvre les débiteurs, le
+	 * premier écran de travail.
+	 */
+	if (donnees.etat !== 'pret') {
+		return (
+			<PageEcran
+				entete={{ genre: 'aucun' }}
+				etat={donnees.etat}
+				issue={
+					<BoutonPrincipal as={Link} to="/app/debiteurs">
+						Voir mes débiteurs
+					</BoutonPrincipal>
+				}
+			/>
+		);
+	}
+
+	const vue = donnees.valeur;
 	const rienASurveiller = vue.evenements.length === 0;
 	const rienDeChiffre = vue.nombreFactures === 0;
 	const debute = rienDeChiffre && rienASurveiller;
@@ -191,8 +212,8 @@ export function EcranAccueil({ vue }: { vue: AccueilAffiche }) {
 	];
 
 	return (
-		<Page>
-			<PageBody>
+		<PageEcran entete={{ genre: 'aucun' }}>
+			<div>
 				<PageHero className="mx-auto w-full max-w-2xl">
 					{/*
 					  LE CHIFFRE EST UN LIEN, et c'est le geste central de l'écran : on
@@ -388,8 +409,8 @@ export function EcranAccueil({ vue }: { vue: AccueilAffiche }) {
 						/>
 					)}
 				</div>
-			</PageBody>
-		</Page>
+			</div>
+		</PageEcran>
 	);
 }
 

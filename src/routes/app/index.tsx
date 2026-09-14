@@ -2,12 +2,19 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { Page, PageBody, aujourdHuiISO, travauxDuVeilleur, ceQuiManque } from '../../ui';
+import { aujourdHuiISO, travauxDuVeilleur, ceQuiManque } from '../../ui';
 import { EcranAccueil, type EtatSurveillance } from '../../screens/accueil';
 import type { DossierAffiche } from '../../screens/procedures';
 import { parcoursDeLaVoie } from '../../lib/verticales/recouvrement/apres-procedure';
 
-export const Route = createFileRoute('/app/')({ component: Accueil });
+export const Route = createFileRoute('/app/')({
+	component: Accueil,
+	errorComponent: AccueilEnErreur
+});
+
+function AccueilEnErreur() {
+	return <EcranAccueil donnees={{ etat: 'erreur' }} />;
+}
 
 /**
  * L'accueil, branché sur la base.
@@ -76,13 +83,7 @@ function Accueil() {
 	const dossiersEngages = useQuery(api.recouvrement.apresProcedure.dossiersEngages, {});
 
 	if (flux === undefined || revelation === undefined) {
-		return (
-			<Page>
-				<PageBody>
-					<p className="sr-only">Chargement…</p>
-				</PageBody>
-			</Page>
-		);
+		return <EcranAccueil donnees={{ etat: 'attente' }} />;
 	}
 
 	/**
@@ -143,68 +144,71 @@ function Accueil() {
 
 	return (
 		<EcranAccueil
-			vue={{
-				total: revelation.total,
-				nombreFactures: revelation.nombreFactures,
-				interetsCourusDepuisHier: revelation.interetsCourusDepuisHier,
-				// Les TROIS parts, jamais `supplement` — qui est deja la somme des deux
-				// dernieres et les compterait deux fois. Voir `ui/composition.tsx`.
-				parts: {
-					principal: revelation.principal,
-					interets: revelation.interets,
-					indemnites: revelation.indemnites
-				},
-				evenements: flux.evenements,
-				hypotheses: flux.hypotheses,
-				anglesMorts: flux.anglesMorts,
-				surveillance,
-				travaux,
-				/**
-				 * ⚠️ `undefined` DONNE UNE SECTION ABSENTE, PAS UNE SECTION VIDE, et
-				 * c'est la bonne lecture ici : « Ce qui court » ne s'affiche qu'avec
-				 * au moins un dossier, donc le temps du chargement l'écran ne montre
-				 * rien plutôt qu'un cadran à zéro qui se remplirait sous les yeux.
-				 */
-				dossiers: (dossiersEngages ?? []).map(
-					(d): DossierAffiche => ({
-						creanceId: d.creanceId,
-						debiteur: d.debiteur,
-						libelle: d.libelle,
-						engageeLe: d.engageeLe,
-						intervenant: d.intervenant,
-						prochaineEcheance: d.prochaineEcheance,
-						anglesMorts: d.anglesMorts,
-						// Le rail vient de la fonction du domaine, rejoué depuis le
-						// journal — comme sur `/app/procedures`. L'accueil ne le dessine
-						// pas, mais il porte le MÊME dossier : deux projections
-						// différentes du même enregistrement finiraient par diverger.
-						etapes: parcoursDeLaVoie(d.procedure, d.journal, d.engageeLe).map((e) => ({
-							etat: e.etat,
-							libelle: e.libelle,
-							statut: e.statut,
-							atteinteLe: e.atteinteLe,
-							branches: e.branches,
-							brancheSuivie: e.brancheSuivie
-						}))
-					})
-				),
-				/**
-				 * ⚠️ `undefined` NE COMPTE PAS COMME « MANQUANT ». Tant que les
-				 * requêtes chargent, on ne sait pas si le profil existe : afficher
-				 * « votre identité de créancier manque » le temps d'un aller-retour
-				 * ferait clignoter un reproche à chaque ouverture, et on apprend à
-				 * ignorer ce qui clignote. On attend de savoir.
-				 */
-				verrous:
-					profil === undefined || debiteurs === undefined
-						? []
-						: ceQuiManque({
-								// Le SIREN est ce qui compte : c'est lui qui porte
-								// `estCommercant`, donc la condition « entre commerçants ».
-								profilCreancierComplet: profil !== null && profil.siren !== undefined,
-								nombreFactures: revelation.nombreFactures,
-								debiteursSansSiren: debiteurs.filter((d) => d.siren === undefined).length
-							})
+			donnees={{
+				etat: 'pret',
+				valeur: {
+					total: revelation.total,
+					nombreFactures: revelation.nombreFactures,
+					interetsCourusDepuisHier: revelation.interetsCourusDepuisHier,
+					// Les TROIS parts, jamais `supplement` — qui est deja la somme des deux
+					// dernieres et les compterait deux fois. Voir `ui/composition.tsx`.
+					parts: {
+						principal: revelation.principal,
+						interets: revelation.interets,
+						indemnites: revelation.indemnites
+					},
+					evenements: flux.evenements,
+					hypotheses: flux.hypotheses,
+					anglesMorts: flux.anglesMorts,
+					surveillance,
+					travaux,
+					/**
+					 * ⚠️ `undefined` DONNE UNE SECTION ABSENTE, PAS UNE SECTION VIDE, et
+					 * c'est la bonne lecture ici : « Ce qui court » ne s'affiche qu'avec
+					 * au moins un dossier, donc le temps du chargement l'écran ne montre
+					 * rien plutôt qu'un cadran à zéro qui se remplirait sous les yeux.
+					 */
+					dossiers: (dossiersEngages ?? []).map(
+						(d): DossierAffiche => ({
+							creanceId: d.creanceId,
+							debiteur: d.debiteur,
+							libelle: d.libelle,
+							engageeLe: d.engageeLe,
+							intervenant: d.intervenant,
+							prochaineEcheance: d.prochaineEcheance,
+							anglesMorts: d.anglesMorts,
+							// Le rail vient de la fonction du domaine, rejoué depuis le
+							// journal — comme sur `/app/procedures`. L'accueil ne le dessine
+							// pas, mais il porte le MÊME dossier : deux projections
+							// différentes du même enregistrement finiraient par diverger.
+							etapes: parcoursDeLaVoie(d.procedure, d.journal, d.engageeLe).map((e) => ({
+								etat: e.etat,
+								libelle: e.libelle,
+								statut: e.statut,
+								atteinteLe: e.atteinteLe,
+								branches: e.branches,
+								brancheSuivie: e.brancheSuivie
+							}))
+						})
+					),
+					/**
+					 * ⚠️ `undefined` NE COMPTE PAS COMME « MANQUANT ». Tant que les
+					 * requêtes chargent, on ne sait pas si le profil existe : afficher
+					 * « votre identité de créancier manque » le temps d'un aller-retour
+					 * ferait clignoter un reproche à chaque ouverture, et on apprend à
+					 * ignorer ce qui clignote. On attend de savoir.
+					 */
+					verrous:
+						profil === undefined || debiteurs === undefined
+							? []
+							: ceQuiManque({
+									// Le SIREN est ce qui compte : c'est lui qui porte
+									// `estCommercant`, donc la condition « entre commerçants ».
+									profilCreancierComplet: profil !== null && profil.siren !== undefined,
+									nombreFactures: revelation.nombreFactures,
+									debiteursSansSiren: debiteurs.filter((d) => d.siren === undefined).length
+								})
+				}
 			}}
 		/>
 	);

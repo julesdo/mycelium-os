@@ -2,10 +2,17 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { Page, PageHeader, PageBody } from '../../ui';
 import { EcranCreance } from '../../screens/creance';
 
-export const Route = createFileRoute('/app/creance/$id')({ component: Creance });
+export const Route = createFileRoute('/app/creance/$id')({
+	component: Creance,
+	errorComponent: CreanceEnErreur
+});
+
+function CreanceEnErreur() {
+	const { id } = Route.useParams();
+	return <EcranCreance identifiant={id} donnees={{ etat: 'erreur' }} />;
+}
 
 /**
  * Une créance, branchée sur la base.
@@ -28,23 +35,26 @@ function Creance() {
 	const suivi = useQuery(api.recouvrement.apresProcedure.suiviDeLaCreance, { creanceId });
 	const dernier = useQuery(api.recouvrement.decompte.dernierDecompte, { creanceId });
 
-	if (creance === undefined) {
-		return (
-			<Page>
-				<PageHeader titre="Créance" />
-				<PageBody>
-					<p className="sr-only">Chargement…</p>
-				</PageBody>
-			</Page>
-		);
-	}
-
+	/**
+	 * ⚠️ ON ATTEND AUSSI LE SUIVI ET LE DERNIER DÉCOMPTE. L'écran s'affichait dès
+	 * la créance lue, et pendant l'aller-retour des deux autres il annonçait
+	 * « Aucune voie » et un décompte « À produire » qui existaient peut-être.
+	 */
 	return (
 		<EcranCreance
-			creance={creance}
 			identifiant={id}
-			etatProcedure={suivi?.libelle ?? null}
-			totalDecompte={dernier?.total ?? null}
+			donnees={
+				creance === undefined || suivi === undefined || dernier === undefined
+					? { etat: 'attente' }
+					: {
+							etat: 'pret',
+							valeur: {
+								creance,
+								etatProcedure: suivi?.libelle ?? null,
+								totalDecompte: dernier?.total ?? null
+							}
+						}
+			}
 		/>
 	);
 }

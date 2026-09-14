@@ -3,16 +3,14 @@ import { Link } from '@tanstack/react-router';
 import { EyeOffIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
-	EmptyState,
 	LigneAnalyse,
 	ListeAnalyses,
-	Page,
-	PageHeader,
 	PageBody,
+	PageEcran,
 	RailProcedure,
-	TwoPane,
 	dateCourte,
-	type EtapeAffichee
+	type EtapeAffichee,
+	type Lecture
 } from '../ui';
 
 export interface DossierAffiche {
@@ -50,87 +48,95 @@ export interface DossierAffiche {
  * alimenté » que ce dépôt traque. La fermeture, elle, reste nécessaire : sous
  * 1024 px la preuve est une feuille, et c'est `TwoPane` qui la referme.
  */
-export function EcranProcedures({
-	dossiers,
-	ouvertId,
-	onFermer
-}: {
-	dossiers: readonly DossierAffiche[];
-	ouvertId: string | null;
-	onFermer: () => void;
-}) {
+export interface ProceduresAffichees {
+	readonly dossiers: readonly DossierAffiche[];
+	/** Le dossier ouvert, lu dans l'adresse (`?p=`). */
+	readonly ouvertId: string | null;
+	readonly onFermer: () => void;
+}
+
+export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffichees> }) {
+	if (donnees.etat !== 'pret') {
+		// `disposition="volets"` : l'attente se dessine déjà en deux volets, et la
+		// page ne saute pas quand les dossiers arrivent. Voir `PageEcran`.
+		return (
+			<PageEcran
+				entete={{ genre: 'onglet', titre: 'Procédures' }}
+				etat={donnees.etat}
+				disposition="volets"
+			/>
+		);
+	}
+
+	const { dossiers, ouvertId, onFermer } = donnees.valeur;
 	const ouvert = dossiers.find((d) => d.creanceId === ouvertId) ?? null;
 
 	if (dossiers.length === 0) {
 		return (
-			<Page>
-				<PageHeader titre="Procédures" />
-				<PageBody>
-					{/*
-					  ⚠️ AUCUNE VOIE N'EST PROPOSÉE ICI. Un écran vide qui suggérerait
-					  « engagez une injonction de payer » recommanderait une procédure,
-					  et c'est la troisième ligne rouge. Il dit ce que le logiciel
-					  COMPTERA, et il rend la main.
-					*/}
-					<EmptyState
-						illustration="⚖️"
-						titre="Rien d’engagé aujourd’hui"
-						explication="Le jour où vous engagerez une voie, c’est ici que seront comptés les délais qui en découlent, et ceux dont l’oubli fait tout reprendre."
-						etapes={[
+			<PageEcran
+				entete={{ genre: 'onglet', titre: 'Procédures' }}
+				etat={{
+					vide: {
+						/*
+						  ⚠️ AUCUNE VOIE N'EST PROPOSÉE ICI. Un écran vide qui suggérerait
+						  « engagez une injonction de payer » recommanderait une procédure,
+						  et c'est la troisième ligne rouge. Il dit ce que le logiciel
+						  COMPTERA, et il rend la main.
+						*/
+						illustration: '⚖️',
+						titre: 'Rien d’engagé aujourd’hui',
+						explication:
+							'Le jour où vous engagerez une voie, c’est ici que seront comptés les délais qui en découlent, et ceux dont l’oubli fait tout reprendre.',
+						etapes: [
 							'Vous déclarez ce que vous avez engagé, et à quelle date.',
 							'Le logiciel compte les délais qui en découlent, et nomme ceux qu’il ne sait pas compter.',
 							'Vous consignez ce qui se passe ; le rail avance tout seul.'
-						]}
-						action={
+						],
+						action: (
 							<BoutonPrincipal as={Link} to="/app/debiteurs">
 								Voir mes débiteurs
 							</BoutonPrincipal>
-						}
-					/>
-				</PageBody>
-			</Page>
+						)
+					}
+				}}
+			/>
 		);
 	}
 
 	return (
-		<Page>
-			<PageHeader
-				titre="Procédures"
-				sousTitre={`${dossiers.length} engagée${dossiers.length > 1 ? 's' : ''}`}
-			/>
-			{/* `min-h-0 flex-1` : `TwoPane` se dimensionne en `h-full`, donc il lui
-			    faut une hauteur à remplir sous l'en-tête. Sans ce cadre, il prend
-			    toute la hauteur de la page EN PLUS du titre, et les deux volets
-			    débordent par le bas. C'est la géométrie de `/app/debiteurs`. */}
-			<div className="min-h-0 flex-1">
-				<TwoPane
-					preuveOuverte={ouvert !== null}
-					onFermerPreuve={onFermer}
-					liste={
-						<PageBody>
-							<ListeAnalyses>
-								{dossiers.map((dossier) => (
-									<LigneAnalyse
-										key={dossier.creanceId}
-										vers="/app/procedures"
-										recherche={{ p: dossier.creanceId }}
-										titre={dossier.debiteur}
-										precision={dossier.libelle}
-										valeur={
-											dossier.prochaineEcheance === null
-												? undefined
-												: dateCourte(dossier.prochaineEcheance.dateLimite)
-										}
-										attention={dossier.prochaineEcheance?.gravite === 'CADUCITE'}
-									/>
-								))}
-							</ListeAnalyses>
-						</PageBody>
-					}
-					preuve={ouvert === null ? null : <VoletDossier dossier={ouvert} />}
-				/>
-			</div>
-		</Page>
+		<PageEcran
+			entete={{
+				genre: 'onglet',
+				titre: 'Procédures',
+				sousTitre: `${dossiers.length} engagée${dossiers.length > 1 ? 's' : ''}`
+			}}
+			volets={{
+				liste: (
+					<PageBody>
+						<ListeAnalyses>
+							{dossiers.map((dossier) => (
+								<LigneAnalyse
+									key={dossier.creanceId}
+									vers="/app/procedures"
+									recherche={{ p: dossier.creanceId }}
+									titre={dossier.debiteur}
+									precision={dossier.libelle}
+									valeur={
+										dossier.prochaineEcheance === null
+											? undefined
+											: dateCourte(dossier.prochaineEcheance.dateLimite)
+									}
+									attention={dossier.prochaineEcheance?.gravite === 'CADUCITE'}
+								/>
+							))}
+						</ListeAnalyses>
+					</PageBody>
+				),
+				preuve: ouvert === null ? null : <VoletDossier dossier={ouvert} />,
+				preuveOuverte: ouvert !== null,
+				onFermerPreuve: onFermer
+			}}
+		/>
 	);
 }
 

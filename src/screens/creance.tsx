@@ -11,13 +11,12 @@ import {
 import {
 	LigneAnalyse,
 	ListeAnalyses,
-	Page,
-	PageHeader,
-	PageBody,
+	PageEcran,
 	eurosCentimes,
 	pluriel,
 	pourcent,
-	rangeeDuDebiteur
+	rangeeDuDebiteur,
+	type Lecture
 } from '../ui';
 
 /**
@@ -85,50 +84,57 @@ export interface CreanceAffichee {
 	readonly regimePrescriptionNote: string;
 }
 
+export interface CreanceOuverte {
+	readonly creance: CreanceAffichee;
+	/** Le libellé de l'état de la procédure engagée, ou `null`. */
+	readonly etatProcedure: string | null;
+	/** Le total du dernier décompte arrêté, ou `null` s'il n'y en a pas. */
+	readonly totalDecompte: bigint | null;
+}
+
 export function EcranCreance({
-	creance,
 	identifiant,
-	etatProcedure,
-	totalDecompte
+	donnees
 }: {
-	creance: CreanceAffichee;
 	/** L'identifiant de la créance, pour construire les liens de détail. */
 	identifiant: string;
-	/** Le libellé de l'état de la procédure engagée, ou `null`. */
-	etatProcedure: string | null;
-	/** Le total du dernier décompte arrêté, ou `null` s'il n'y en a pas. */
-	totalDecompte: bigint | null;
+	donnees: Lecture<CreanceOuverte>;
 }) {
+	if (donnees.etat !== 'pret') {
+		return <PageEcran entete={{ genre: 'onglet', titre: 'Créance' }} etat={donnees.etat} />;
+	}
+
+	const { creance, etatProcedure, totalDecompte } = donnees.valeur;
 	const aDemander = creance.litige.questions.length + creance.questions.length;
 	const relancesPretes = creance.relances.filter((r) => r.disponible).length;
 	const voies = creance.procedures.filter((p) => p.disponible).length;
 
 	return (
-		<Page>
-			<PageHeader
-				titre={creance.debiteur}
-				sousTitre={`${creance.factures.length} facture${pluriel(creance.factures.length)} · ${eurosCentimes(
+		<PageEcran
+			entete={{
+				genre: 'onglet',
+				titre: creance.debiteur,
+				sousTitre: `${creance.factures.length} facture${pluriel(creance.factures.length)} · ${eurosCentimes(
 					creance.principalRestantDu
-				)} restant dû`}
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">
-					{/* LE SCORE, ET CE QU'IL VAUT. Un nombre seul laisse le gérant devant
+				)} restant dû`
+			}}
+		>
+			{/* LE SCORE, ET CE QU'IL VAUT. Un nombre seul laisse le gérant devant
 					    une note qu'il ne sait pas faire monter — les rangées en dessous
 					    sont précisément ce qui la fait bouger. */}
-					<SurfaceCut contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-2xs">
-						<div className="flex items-baseline gap-cladd-3xs">
-							<span className="text-letikette-titre font-bold tabular-nums">
-								{pourcent(creance.score)}
-							</span>
-							<span className="text-cladd-xs text-cladd-fg-soft">de solidité</span>
-						</div>
-						<Chip size="md" color={creance.eligible ? 'green' : 'neutral'}>
-							{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
-						</Chip>
-					</SurfaceCut>
+			<SurfaceCut contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-2xs">
+				<div className="flex items-baseline gap-cladd-3xs">
+					<span className="text-letikette-titre font-bold tabular-nums">
+						{pourcent(creance.score)}
+					</span>
+					<span className="text-cladd-xs text-cladd-fg-soft">de solidité</span>
+				</div>
+				<Chip size="md" color={creance.eligible ? 'green' : 'neutral'}>
+					{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
+				</Chip>
+			</SurfaceCut>
 
-					{/*
+			{/*
 					  ⚠️ LE DÉBITEUR, EN PREMIER, ET DANS SA PROPRE LISTE.
 
 					  Il n'est pas une analyse de la créance : c'est l'autre partie. Le
@@ -147,100 +153,98 @@ export function EcranCreance({
 					  part. Une procédure collective change pourtant tout ce que cette
 					  créance vaut.
 					*/}
-					<ListeAnalyses>
-						<LigneAnalyse
-							vers="/app/debiteurs"
-							// Le volet d'un débiteur n'a pas de route à lui : il se choisit
-							// par la recherche d'URL sur l'écran de la liste. Voir la prop
-							// `recherche` de `LigneAnalyse`.
-							recherche={{ d: creance.debiteurId }}
-							icone={<Building2Icon />}
-							titre={creance.debiteur}
-							{...rangeeDuDebiteur({ sante: creance.santeDebiteur })}
-						/>
-					</ListeAnalyses>
+			<ListeAnalyses>
+				<LigneAnalyse
+					vers="/app/debiteurs"
+					// Le volet d'un débiteur n'a pas de route à lui : il se choisit
+					// par la recherche d'URL sur l'écran de la liste. Voir la prop
+					// `recherche` de `LigneAnalyse`.
+					recherche={{ d: creance.debiteurId }}
+					icone={<Building2Icon />}
+					titre={creance.debiteur}
+					{...rangeeDuDebiteur({ sante: creance.santeDebiteur })}
+				/>
+			</ListeAnalyses>
 
-					<ListeAnalyses>
-						<LigneAnalyse
-							vers="/app/creance/$id/litige"
-							parametres={{ id: identifiant }}
-							icone={<MessageCircleQuestionIcon />}
-							titre="Ce que vous seul pouvez dire"
-							precision={
-								creance.litige.litigieux ? 'Une contestation est connue' : 'Des faits, pas du droit'
-							}
-							valeur={
-								aDemander > 0
-									? `${aDemander} à confirmer`
-									: creance.litige.litigieux
-										? 'Litigieux'
-										: 'Répondu'
-							}
-							// ⚠️ LE POINT MARQUE LA SEULE RANGÉE QUI ATTEND QUELQUE CHOSE.
-							// C'est aussi la seule qui BLOQUE : sans ces réponses, aucune
-							// créance ne franchit le seuil de qualification.
-							attention={aDemander > 0}
-						/>
+			<ListeAnalyses>
+				<LigneAnalyse
+					vers="/app/creance/$id/litige"
+					parametres={{ id: identifiant }}
+					icone={<MessageCircleQuestionIcon />}
+					titre="Ce que vous seul pouvez dire"
+					precision={
+						creance.litige.litigieux ? 'Une contestation est connue' : 'Des faits, pas du droit'
+					}
+					valeur={
+						aDemander > 0
+							? `${aDemander} à confirmer`
+							: creance.litige.litigieux
+								? 'Litigieux'
+								: 'Répondu'
+					}
+					// ⚠️ LE POINT MARQUE LA SEULE RANGÉE QUI ATTEND QUELQUE CHOSE.
+					// C'est aussi la seule qui BLOQUE : sans ces réponses, aucune
+					// créance ne franchit le seuil de qualification.
+					attention={aDemander > 0}
+				/>
 
-						{creance.risques.length > 0 ? (
-							<LigneAnalyse
-								vers="/app/creance/$id/risques"
-								parametres={{ id: identifiant }}
-								icone={<AlertTriangleIcon />}
-								titre="Ce qui affaiblit ce dossier"
-								valeur={`${creance.risques.length} risque${pluriel(creance.risques.length)}`}
-							/>
-						) : null}
+				{creance.risques.length > 0 ? (
+					<LigneAnalyse
+						vers="/app/creance/$id/risques"
+						parametres={{ id: identifiant }}
+						icone={<AlertTriangleIcon />}
+						titre="Ce qui affaiblit ce dossier"
+						valeur={`${creance.risques.length} risque${pluriel(creance.risques.length)}`}
+					/>
+				) : null}
 
-						<LigneAnalyse
-							vers="/app/creance/$id/solidite"
-							parametres={{ id: identifiant }}
-							icone={<FileTextIcon />}
-							titre="Ce que les pièces établissent"
-							valeur={`${creance.solidite.etablies} sur ${creance.solidite.attendues}`}
-						/>
+				<LigneAnalyse
+					vers="/app/creance/$id/solidite"
+					parametres={{ id: identifiant }}
+					icone={<FileTextIcon />}
+					titre="Ce que les pièces établissent"
+					valeur={`${creance.solidite.etablies} sur ${creance.solidite.attendues}`}
+				/>
 
-						<LigneAnalyse
-							vers="/app/creance/$id/relances"
-							parametres={{ id: identifiant }}
-							icone={<MailIcon />}
-							titre="Ce que vous pouvez lui écrire"
-							precision="Des brouillons, envoyés par vous"
-							valeur={
-								relancesPretes > 0 ? `${relancesPretes} prêt${pluriel(relancesPretes)}` : 'Suspendues'
-							}
-						/>
+				<LigneAnalyse
+					vers="/app/creance/$id/relances"
+					parametres={{ id: identifiant }}
+					icone={<MailIcon />}
+					titre="Ce que vous pouvez lui écrire"
+					precision="Des brouillons, envoyés par vous"
+					valeur={
+						relancesPretes > 0 ? `${relancesPretes} prêt${pluriel(relancesPretes)}` : 'Suspendues'
+					}
+				/>
 
-						<LigneAnalyse
-							vers="/app/creance/$id/procedure"
-							parametres={{ id: identifiant }}
-							icone={<GavelIcon />}
-							titre="Procédure"
-							precision={etatProcedure ?? undefined}
-							valeur={
-								etatProcedure !== null
-									? 'Engagée'
-									: voies > 0
-										? `${voies} voie${pluriel(voies)}`
-										: 'Aucune voie'
-							}
-						/>
+				<LigneAnalyse
+					vers="/app/creance/$id/procedure"
+					parametres={{ id: identifiant }}
+					icone={<GavelIcon />}
+					titre="Procédure"
+					precision={etatProcedure ?? undefined}
+					valeur={
+						etatProcedure !== null
+							? 'Engagée'
+							: voies > 0
+								? `${voies} voie${pluriel(voies)}`
+								: 'Aucune voie'
+					}
+				/>
 
-						<LigneAnalyse
-							vers="/app/creance/$id/decompte"
-							parametres={{ id: identifiant }}
-							icone={<ReceiptTextIcon />}
-							titre="Décompte"
-							precision={totalDecompte === null ? 'Aucun décompte arrêté' : undefined}
-							valeur={totalDecompte === null ? 'À produire' : eurosCentimes(totalDecompte)}
-						/>
-					</ListeAnalyses>
+				<LigneAnalyse
+					vers="/app/creance/$id/decompte"
+					parametres={{ id: identifiant }}
+					icone={<ReceiptTextIcon />}
+					titre="Décompte"
+					precision={totalDecompte === null ? 'Aucun décompte arrêté' : undefined}
+					valeur={totalDecompte === null ? 'À produire' : eurosCentimes(totalDecompte)}
+				/>
+			</ListeAnalyses>
 
-					<p className="px-cladd-3xs text-cladd-2xs text-cladd-fg-softer">
-						{creance.regimePrescriptionNote}
-					</p>
-				</div>
-			</PageBody>
-		</Page>
+			<p className="px-cladd-3xs text-cladd-2xs text-cladd-fg-softer">
+				{creance.regimePrescriptionNote}
+			</p>
+		</PageEcran>
 	);
 }
