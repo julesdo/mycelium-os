@@ -29,6 +29,13 @@ export interface PosePourUnSujet<T> {
  * ⚠️ UN GESTE ASYNCHRONE POSE POUR LE SUJET QUI L'A LANCÉ. Il le capture à son
  * départ : une réponse qui arrive après un changement de sujet s'inscrit sur
  * celui qui l'a demandée, et ne s'affiche pas sous le suivant.
+ *
+ * ⚠️ MAIS UN ÉTAT NE GARDE QU'UNE POSE. Une réponse tardive pour A remplace ce
+ * que B a posé depuis dans le même état : elle ne s'affiche pas sous B, mais B
+ * y perd sa valeur. Là où deux gestes sur le même état se chevauchent, comme
+ * une recherche au registre lancée sur deux débiteurs, le geste n'inscrit sa
+ * réponse que si sa propre pose est encore en cours : voir
+ * `chercherAuRegistreDuDebiteur` dans la route des débiteurs.
  */
 export function lirePourLeSujet<T>(
 	pose: PosePourUnSujet<T> | null,

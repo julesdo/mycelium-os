@@ -26,6 +26,7 @@ export {
 export { Fond } from './fond';
 export { Avatar, initiales } from './avatar';
 export { aujourdHuiISO } from './horloge';
+export { lirePourLeSujet, type PosePourUnSujet } from './etat-par-sujet';
 export { ChiffreHero } from './chiffre';
 export { RangeeActions, type ActionRonde } from './actions';
 export { CarteListe, LigneValeur } from './carte-liste';

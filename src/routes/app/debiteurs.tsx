@@ -4,8 +4,13 @@ import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
-import { aujourdHuiISO, type EtatRecherche, type EtablissementPropose } from '../../ui';
-import { lirePourLeSujet, type PosePourUnSujet } from '../../ui/etat-par-sujet';
+import {
+	aujourdHuiISO,
+	lirePourLeSujet,
+	type EtatRecherche,
+	type EtablissementPropose,
+	type PosePourUnSujet
+} from '../../ui';
 import { secteursProposes } from '../../screens/debiteur-detail';
 import { EcranDebiteurs } from '../../screens/debiteurs';
 
@@ -350,23 +355,27 @@ function Debiteurs() {
 		const debiteurId = choisi;
 		setErreurSirenPosee({ sujet: debiteurId, valeur: null });
 		setRecherchePosee({ sujet: debiteurId, valeur: { phase: 'EN_COURS' } });
+		// ⚠️ UNE RÉPONSE NE S'INSCRIT QUE SI CETTE RECHERCHE EST ENCORE EN COURS POUR
+		// CE DÉBITEUR. Sans cette garde, la réponse tardive de A effaçait la recherche
+		// que B venait de lancer, qui perdait son indicateur ou ses candidats, et un
+		// SIREN retenu pendant la recherche voyait ses candidats revenir.
+		const repondre = (valeur: EtatRecherche) =>
+			setRecherchePosee((pose) =>
+				pose?.sujet === debiteurId && pose.valeur.phase === 'EN_COURS'
+					? { sujet: debiteurId, valeur }
+					: pose
+			);
 		try {
 			const { candidats } = await chercherAuRegistre({ debiteurId });
-			setRecherchePosee({
-				sujet: debiteurId,
-				valeur: candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats }
-			});
+			repondre(candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats });
 		} catch (e) {
 			const convexe = e as { data?: unknown };
-			setRecherchePosee({
-				sujet: debiteurId,
-				valeur: {
-					phase: 'ECHEC',
-					message:
-						typeof convexe.data === 'string'
-							? convexe.data
-							: 'Le registre n’a pas répondu. Réessayez dans un instant.'
-				}
+			repondre({
+				phase: 'ECHEC',
+				message:
+					typeof convexe.data === 'string'
+						? convexe.data
+						: 'Le registre n’a pas répondu. Réessayez dans un instant.'
 			});
 		}
 	}
@@ -420,7 +429,16 @@ function Debiteurs() {
 								choisi,
 								onOuvrir: (id) => {
 									setChoisi(id as Id<'debiteurs'>);
+									// Un clic repart de zéro pour ce qui se saisissait : la sélection, le
+									// montant d'un virement et les refus qui s'y rapportent. La fiche
+									// remontée n'affiche plus ces saisies, et « Solder ces factures »
+									// enregistrerait une date que l'écran ne montre plus. Les candidats du
+									// registre et le constat du taux reviennent, eux, avec leur débiteur.
 									setSelectionPosee(null);
+									setMontantCherchePose(null);
+									setErreurLettragePosee(null);
+									setErreurSirenPosee(null);
+									setErreurPosee(null);
 								},
 								onFermer: () => setChoisi(null),
 								detail: {

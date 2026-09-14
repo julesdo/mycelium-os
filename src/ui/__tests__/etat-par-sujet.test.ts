@@ -10,9 +10,10 @@ import { lirePourLeSujet, type PosePourUnSujet } from '../etat-par-sujet';
  * changeait. Après un retour du navigateur, « Constituer une créance » pouvait
  * viser une facture de A sous la fiche de B.
  *
- * Les quatre premiers cas sont les quatre situations d'un volet : rien de posé,
- * le même sujet, un autre sujet, aucun sujet. Le dernier ferme une écriture de
- * la fonction qui passerait les quatre autres.
+ * Les cinq premiers cas sont les situations d'un volet : rien de posé, rien de
+ * posé et aucun sujet (l'écran au montage), le même sujet, un autre sujet,
+ * aucun sujet. Le dernier ferme une écriture de la fonction qui passerait les
+ * cinq autres.
  */
 
 const SELECTION_VIDE: ReadonlySet<string> = new Set();
@@ -25,6 +26,12 @@ const SELECTION_DE_A: PosePourUnSujet<ReadonlySet<string>> = {
 describe('lirePourLeSujet', () => {
 	it('rend l’état de repos quand rien n’a été posé', () => {
 		expect(lirePourLeSujet(null, 'debiteur-a', SELECTION_VIDE)).toBe(SELECTION_VIDE);
+	});
+
+	it('rend l’état de repos au montage, sans pose ni sujet', () => {
+		// L'écran qui s'ouvre sans débiteur choisi : une écriture qui lirait la
+		// valeur de la pose sans l'avoir vérifiée lèverait ici.
+		expect(lirePourLeSujet(null, null, SELECTION_VIDE)).toBe(SELECTION_VIDE);
 	});
 
 	it('rend la valeur posée sous le sujet pour lequel elle a été posée', () => {
