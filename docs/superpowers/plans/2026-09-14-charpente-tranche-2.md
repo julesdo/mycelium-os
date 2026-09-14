@@ -3938,6 +3938,18 @@ curl -s https://www.letikette.com/ | grep -oE '/assets/[^"]+\.(js|css)' | sort -
 
 Attendu : `0`. Si le résultat n'est pas zéro, choisir une autre chaîne propre à cette tranche et absente de la production (par exemple `Créer votre entreprise`), et le noter.
 
+**Amendé le 14/09 après exécution : la commande ci-dessus ne prouve rien, et la méthode qui suit la remplace.**
+
+La commande échoue pour trois raisons :
+- **La page arrive compressée.** Sans `--compressed`, grep n'y voit que du binaire, et le « 0 » vient d'une lecture vide.
+- **Les écrans de l'app lui échappent.** Même décompressée, elle ne lit que les fichiers que la page d'accueil cite. Les écrans de l'app sont découpés en fichiers chargés à la demande, que cette page ne cite pas : l'empreinte serait absente avant ET après la poussée.
+- **La variable `--animate-pouls` n'existe pas en production.** Rien ne s'y compare.
+
+La méthode qui tient :
+1. Lire avec `curl -s --compressed` la page d'accueil, puis chaque fichier `/assets/…` en `.js` ou `.css` qu'elle cite, puis chaque fichier que ces fichiers citent (chemins en `/assets/`, `assets/` et `./`), sur trois niveaux. Le relevé du 14/09 a lu 71 fichiers, soit 1,4 Mo.
+2. Compter un TÉMOIN présent avant et après la tranche : « Importer mes factures », 2 occurrences au relevé. S'il vaut 0, la lecture est fausse, et aucun zéro ne vaut preuve.
+3. Compter deux EMPREINTES propres à la tranche, écrites en chaînes de texte, car une classe peut disparaître au tri de Tailwind : « Lecture de la fiche » et « Chargement de l » (de « Chargement de l’écran… »). Avant la poussée, le relevé du 14/09 donne 0 et 0. Après la poussée, les deux doivent dépasser 0, et le témoin doit rester présent.
+
 - [ ] **Step 4 : fusionner et pousser**
 
 ```bash
