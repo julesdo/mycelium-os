@@ -367,7 +367,31 @@ export default defineConfig(async ({ mode }) => {
 				'.{idea,git,cache,output,temp}/**',
 				'docs/**',
 				'.opencode/**',
-				'references/**'
+				'references/**',
+				/**
+				 * ⚠️ LES WORKTREES NE SONT PAS CE DÉPÔT-CI, ET LES COLLECTER MENT SUR
+				 * DEUX PLANS À LA FOIS.
+				 *
+				 * Un worktree Claude vit sous `.claude/worktrees/<nom>/` et contient
+				 * une COPIE COMPLÈTE du dépôt, figée sur son propre commit. Vitest y
+				 * trouvait donc un second exemplaire de chaque test, exécuté contre du
+				 * code d'une autre branche.
+				 *
+				 * Les deux mensonges :
+				 *
+				 *   · le COMPTE est doublé — « 2 006 tests » en annonçait environ mille
+				 *     réels, et la moitié ne portait sur rien de ce qu'on venait
+				 *     d'écrire ;
+				 *   · la SUITE DEVIENT INSTABLE. Deux fois plus d'instances
+				 *     `convex-test` en parallèle, et des tests parfaitement sains
+					 *     tombent en délai de 30 s, dispersés sur des modules qu'on n'a
+				 *     pas touchés — ce qui envoie chercher une régression qui n'existe
+				 *     pas.
+				 *
+				 * Un worktree abandonné survit à la tâche qui l'a créé. Celui-ci
+				 * traînait depuis plusieurs jours.
+				 */
+				'.claude/**'
 			],
 			passWithNoTests: true,
 			environment: 'jsdom'
