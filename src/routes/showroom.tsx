@@ -1789,12 +1789,14 @@ function Showroom() {
 						))}
 					</Segmented>
 					{/* Les formes prêtes nommées d'un écran (une relance suspendue, un
-					    litige tranché…) : jamais visibles en dehors de l'état prêt, et
+					    litige déclaré…) : jamais visibles en dehors de l'état prêt, et
 					    seulement quand l'écran choisi en déclare. */}
 					{choisi !== null && choisi.variantes !== undefined && choisi.variantes.length > 0 ? (
 						<Segmented activeColor="neutral" activeVariant="solid">
 							<SegmentedButton
-								active={variante === undefined}
+								// Hors de l'état prêt, aucune variante n'est appliquée : un bouton
+								// grisé mais allumé dirait l'inverse.
+								active={etat === 'pret' && variante === undefined}
 								disabled={etat !== 'pret'}
 								onClick={() => setVariante(undefined)}
 							>
@@ -1803,7 +1805,7 @@ function Showroom() {
 							{choisi.variantes.map((v) => (
 								<SegmentedButton
 									key={v}
-									active={variante === v}
+									active={etat === 'pret' && variante === v}
 									disabled={etat !== 'pret'}
 									onClick={() => setVariante(v)}
 								>

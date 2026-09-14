@@ -20,9 +20,9 @@ export interface EcranDuProduit {
 	readonly vide: boolean;
 	/**
 	 * Des formes prêtes supplémentaires, nommées : ce que l'écran montre selon ses
-	 * données (des relances suspendues, un litige tranché, une pyramide complète).
+	 * données (des relances suspendues, un litige déclaré, une pyramide complète).
 	 * La salle les offre dans l'état prêt, et chacune doit rendre autre chose que
-	 * la forme principale.
+	 * la forme principale. Voir `formeDemo`.
 	 */
 	readonly variantes?: readonly string[];
 	/**
@@ -51,4 +51,24 @@ export function lectureDemo<T>(etat: EtatDemo, pret: T, vide?: T): Lecture<T> {
 		);
 	}
 	return { etat: 'pret', valeur: vide };
+}
+
+/**
+ * La forme d'une démonstration pour une variante nommée, ou sa forme principale.
+ *
+ * ⚠️ UNE VARIANTE INCONNUE LÈVE. Retomber sur la forme principale ferait regarder,
+ * sous un nom mal orthographié, l'écran principal : le regard validerait une
+ * variante qu'il n'a jamais vue. Les noms ne s'écrivent donc qu'une fois, en clés
+ * des formes, et l'entrée déclare `variantes: Object.keys(formes)`.
+ */
+export function formeDemo<T>(
+	variante: string | undefined,
+	principale: T,
+	formes: Readonly<Record<string, T>>
+): T {
+	if (variante === undefined) return principale;
+	const forme = formes[variante];
+	if (forme === undefined)
+		throw new Error(`Démonstration incomplète : aucune variante « ${variante} ».`);
+	return forme;
 }
