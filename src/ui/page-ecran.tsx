@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Link, type LinkProps } from '@tanstack/react-router';
-import { List, ListItem, Surface } from '@cladd-ui/react';
+import { ListItem } from '@cladd-ui/react';
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { cn } from './cn';
 import { EmptyState } from './empty-state';
-import { EnteteDetail } from './navigation';
+import { EnteteDetail, ListeAnalyses } from './navigation';
 import { Page, PageBody, PageHeader } from './page';
 import { TwoPane } from './two-pane';
 
@@ -43,7 +43,12 @@ export type Lecture<T> =
 
 /** Le retour d'une page poussée : où il mène, et le nom qu'il porte. */
 export interface RetourEcran {
-	readonly vers: LinkProps['to'];
+	/**
+	 * ⚠️ `NonNullable`, PAS `LinkProps['to']` SEUL. Avec ses génériques par défaut,
+	 * `to` est facultatif chez le routeur : le type laissait passer un retour qui
+	 * ne mène nulle part.
+	 */
+	readonly vers: NonNullable<LinkProps['to']>;
 	readonly parametres?: LinkProps['params'];
 	/** La sélection à rendre au retour, comme `?d=` sur les débiteurs. */
 	readonly recherche?: LinkProps['search'];
@@ -72,16 +77,15 @@ export type EnteteEcran =
 	  }
 	| { readonly genre: 'aucun' };
 
-/** Ce que dit un écran vide. Règle d'écran n° 4 : il montre le chemin. */
-export interface VideEcran {
-	readonly illustration?: string;
-	readonly titre: string;
-	readonly explication: string;
-	readonly etapes?: readonly string[];
-	readonly action?: ReactNode;
-}
+/**
+ * Ce que dit un écran vide. Règle d'écran n° 4 : il montre le chemin.
+ *
+ * Les props d'`EmptyState` elles-mêmes, et pas une copie : une copie dérive au
+ * premier ajout, sans qu'aucun test ne tombe.
+ */
+export type VideEcran = ComponentProps<typeof EmptyState>;
 
-export type EtatEcran = 'pret' | 'attente' | 'erreur' | { readonly vide: VideEcran };
+export type EtatEcran = Lecture<unknown>['etat'] | { readonly vide: VideEcran };
 
 /** La liste à gauche, la preuve à droite. Voir `TwoPane`. */
 export interface VoletsEcran {
@@ -91,6 +95,29 @@ export interface VoletsEcran {
 	readonly onFermerPreuve: () => void;
 }
 
+/**
+ * LE CORPS D'UN ÉCRAN : UNE COLONNE, OU DEUX VOLETS.
+ *
+ * ⚠️ UN ÉCRAN À DEUX VOLETS LE DIT DÈS L'ATTENTE. `volets` n'existe qu'une fois
+ * les données arrivées. Sans `disposition="volets"`, l'attente se dessinait en
+ * colonne de lecture, puis la page sautait en liste pleine largeur et volet de
+ * preuve à l'arrivée des données, sur la largeur de référence du produit.
+ *
+ * ⚠️ `children` ET `volets` S'EXCLUENT, ET LE TYPE LE DIT. Un enfant passé à
+ * côté des volets disparaissait sans erreur.
+ */
+type CorpsEcran =
+	| {
+			readonly volets: VoletsEcran;
+			readonly disposition?: undefined;
+			readonly children?: never;
+	  }
+	| {
+			readonly volets?: undefined;
+			readonly disposition?: 'colonne' | 'volets';
+			readonly children?: ReactNode;
+	  };
+
 /** Assez pour lire « une liste arrive », pas assez pour annoncer combien. */
 const RANGEES_D_ATTENTE = 4;
 
@@ -99,46 +126,62 @@ export function PageEcran({
 	etat = 'pret',
 	issue,
 	volets,
+	disposition,
 	children
 }: {
 	entete: EnteteEcran;
 	etat?: EtatEcran;
-	/** L'issue de l'état d'erreur. Par défaut, l'accueil. */
+	/** L'issue de l'état d'erreur. Absente ou `null` : l'accueil. */
 	issue?: ReactNode;
-	/** Les deux volets, à la place de la colonne. Ignoré tant que l'écran n'est pas prêt. */
-	volets?: VoletsEcran;
-	children?: ReactNode;
-}) {
+} & CorpsEcran) {
 	const sansEntete = entete.genre === 'aucun';
+
+	if (etat === 'pret' && volets !== undefined) {
+		return (
+			<Page>
+				<Entete entete={entete} />
+				<Volets
+					liste={volets.liste}
+					preuve={volets.preuve}
+					preuveOuverte={volets.preuveOuverte}
+					onFermerPreuve={volets.onFermerPreuve}
+				/>
+			</Page>
+		);
+	}
+
+	if (etat === 'attente' && (volets !== undefined || disposition === 'volets')) {
+		return (
+			<Page>
+				<Entete entete={entete} />
+				<Volets
+					liste={
+						<PageBody>
+							<Attente sansEntete={sansEntete} />
+						</PageBody>
+					}
+					preuve={null}
+				/>
+			</Page>
+		);
+	}
 
 	return (
 		<Page>
 			<Entete entete={entete} />
-			{etat === 'pret' && volets !== undefined ? (
-				// `min-h-0 flex-1` : `TwoPane` se dimensionne en `h-full`, il lui faut
-				// une hauteur à remplir sous l'en-tête, sans quoi les deux volets
-				// débordent par le bas.
-				<div className="min-h-0 flex-1">
-					<TwoPane
-						liste={volets.liste}
-						preuve={volets.preuve}
-						preuveOuverte={volets.preuveOuverte}
-						onFermerPreuve={volets.onFermerPreuve}
-					/>
-				</div>
-			) : (
-				<PageBody>
-					{etat === 'pret' ? (
-						<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">{children}</div>
-					) : etat === 'attente' ? (
-						<Attente sansEntete={sansEntete} />
-					) : etat === 'erreur' ? (
-						<Erreur sansEntete={sansEntete} issue={issue} />
-					) : (
-						<EmptyState {...etat.vide} />
-					)}
-				</PageBody>
-			)}
+			<PageBody>
+				{etat === 'pret' ? (
+					<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">{children}</div>
+				) : etat === 'attente' ? (
+					<Attente sansEntete={sansEntete} />
+				) : etat === 'erreur' ? (
+					<Erreur sansEntete={sansEntete} issue={issue} />
+				) : (
+					// Le vide et l'erreur REMPLACENT l'écran de travail : ils se lisent
+					// seuls, en colonne, même sur un écran à deux volets.
+					<EmptyState {...etat.vide} />
+				)}
+			</PageBody>
 		</Page>
 	);
 }
@@ -163,15 +206,34 @@ function Entete({ entete }: { entete: EnteteEcran }) {
 }
 
 /**
- * L'ATTENTE : LE SQUELETTE DE LA VRAIE PAGE.
+ * LES DEUX VOLETS, SOUS L'EN-TÊTE.
  *
- * ⚠️ `aria-busy` SUR LA ZONE QUI CHARGE, JAMAIS UN PARAGRAPHE `sr-only` SEUL.
- * Les rangées de substitution sont masquées aux lecteurs d'écran : elles ne
- * disent rien, et l'en-tête reste lisible au-dessus.
+ * `min-h-0 flex-1` : `TwoPane` se dimensionne en `h-full`, il lui faut une
+ * hauteur à remplir sous l'en-tête, sans quoi les deux volets débordent par le
+ * bas.
+ */
+function Volets(props: ComponentProps<typeof TwoPane>) {
+	return (
+		<div className="min-h-0 flex-1">
+			<TwoPane {...props} />
+		</div>
+	);
+}
+
+/**
+ * L'ATTENTE : LE SQUELETTE DE LA PAGE, ET UNE PHRASE QUI LE DIT.
  *
- * ⚠️ `List` ET `ListItem`, PAS DES `div` STYLÉS. Les rangées d'attente prennent
- * ainsi le rythme vertical exact des vraies rangées : la page ne saute pas
- * quand le contenu arrive.
+ * ⚠️ `aria-busy` SEUL NE S'ANNONCE PAS. La zone qui le porte disparaît quand le
+ * contenu arrive, sans être jamais passée à `false` : un lecteur d'écran lisait
+ * le titre, puis rien, et rien du tout sur l'accueil, qui n'a pas de titre. Le
+ * statut « Chargement de l’écran… » est le seul texte de l'attente, et il n'est
+ * pas SEUL : le squelette se voit juste dessous. C'est la différence avec les
+ * paragraphes `sr-only` d'avant, qui annonçaient une page que personne ne
+ * voyait se construire.
+ *
+ * ⚠️ LA MÊME CARTE QUE LES LISTES DU PRODUIT. Les rangées de substitution vivent
+ * dans `ListeAnalyses`, pour que la page change peu quand le contenu arrive.
+ * Elles respirent au rythme `pouls`, celui des traitements en cours.
  */
 function Attente({ sansEntete }: { sansEntete: boolean }) {
 	return (
@@ -179,23 +241,19 @@ function Attente({ sansEntete }: { sansEntete: boolean }) {
 			aria-busy="true"
 			className={cn('mx-auto flex w-full max-w-2xl flex-col', sansEntete && 'pt-barre-app')}
 		>
+			<p role="status" className="sr-only">
+				Chargement de l’écran…
+			</p>
 			<div aria-hidden="true">
-				<Surface
-					variant="transparent"
-					outline={false}
-					className="verre-carte rounded-cladd-xl"
-					contentClassName="p-0"
-				>
-					<List>
-						{Array.from({ length: RANGEES_D_ATTENTE }, (_, rang) => (
-							<ListItem key={rang}>
-								<span className="size-5 shrink-0 rounded-full bg-cladd-fg/10 motion-safe:animate-pulse" />
-								<span className="h-3 w-2/5 rounded-full bg-cladd-fg/10 motion-safe:animate-pulse" />
-								<span className="ml-auto h-3 w-1/6 rounded-full bg-cladd-fg/10 motion-safe:animate-pulse" />
-							</ListItem>
-						))}
-					</List>
-				</Surface>
+				<ListeAnalyses>
+					{Array.from({ length: RANGEES_D_ATTENTE }, (_, rang) => (
+						<ListItem key={rang}>
+							<span className="size-5 shrink-0 animate-pouls rounded-full bg-cladd-fg/10" />
+							<span className="h-3 w-2/5 animate-pouls rounded-full bg-cladd-fg/10" />
+							<span className="ml-auto h-3 w-1/6 animate-pouls rounded-full bg-cladd-fg/10" />
+						</ListItem>
+					))}
+				</ListeAnalyses>
 			</div>
 		</div>
 	);
@@ -207,20 +265,32 @@ function Attente({ sansEntete }: { sansEntete: boolean }) {
  * ⚠️ RECHARGER N'EST JAMAIS LA SEULE SORTIE. Sur un lien de créance périmé,
  * recharger refait l'erreur à l'identique. L'issue principale mène ailleurs ;
  * le rechargement reste possible, en second, pour la panne passagère.
+ *
+ * ⚠️ ELLE NE PROMET QUE CE QU'ELLE SAIT. Elle affirmait « c’est l’affichage qui
+ * a échoué, pas la mesure » : l'écran n'en sait rien, la requête qui calcule la
+ * mesure a pu échouer elle-même. Ce qui est sûr, c'est qu'un échec d'affichage
+ * n'écrit rien.
+ *
+ * ⚠️ L'ALERTE NE PORTE QUE CE QUI S'EST PASSÉ. Les boutons placés dedans étaient
+ * lus avec elle, comme une phrase de plus.
  */
 function Erreur({ sansEntete, issue }: { sansEntete: boolean; issue: ReactNode }) {
+	// Sans en-tête, sur l'accueil, ce titre est le seul de la page.
+	const Titre = sansEntete ? 'h1' : 'h2';
+
 	return (
 		<div
-			role="alert"
 			className={cn(
 				'mx-auto flex w-full max-w-2xl flex-col items-start gap-cladd-3xs',
 				sansEntete && 'pt-barre-app'
 			)}
 		>
-			<h2 className="text-cladd-md font-semibold">Cet écran n’a pas pu s’afficher.</h2>
-			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Vos créances et vos décomptes sont intacts : c’est l’affichage qui a échoué, pas la mesure.
-			</p>
+			<div role="alert" className="flex flex-col gap-cladd-3xs">
+				<Titre className="text-cladd-md font-semibold">Cet écran n’a pas pu s’afficher.</Titre>
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Rien de ce qui est enregistré n’est touché par cet échec.
+				</p>
+			</div>
 			{issue ?? (
 				<BoutonPrincipal as={Link} to="/app">
 					Revenir à l’accueil

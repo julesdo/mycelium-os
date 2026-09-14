@@ -82,15 +82,21 @@ function normaliser(destination: string): string {
  * `retourVers="/app/creance/$id"`. Ne lire que les attributs aurait retiré les
  * retours du balayage, en silence.
  */
+const DESTINATION = /\b(to|vers|retourVers)(?:=|:\s*)["'](\/[^"']*)["']/g;
+
+/** Les destinations littérales d'une ligne, en attribut comme en clé d'objet. */
+function destinationsDansLigne(texte: string): string[] {
+	return [...texte.matchAll(DESTINATION)]
+		.map((trouve) => trouve[2])
+		.filter((destination): destination is string => destination !== undefined);
+}
+
 function destinationsEcrites(): { fichier: string; ligne: number; destination: string }[] {
 	const trouvees: { fichier: string; ligne: number; destination: string }[] = [];
 	for (const fichier of fichiersDuProduit(RACINE)) {
 		const lignes = readFileSync(fichier, 'utf8').split('\n');
 		lignes.forEach((texte, index) => {
-			for (const [, , destination] of texte.matchAll(
-				/\b(to|vers|retourVers)(?:=|:\s*)["'](\/[^"']*)["']/g
-			)) {
-				if (destination === undefined) continue;
+			for (const destination of destinationsDansLigne(texte)) {
 				trouvees.push({
 					fichier: fichier
 						.slice(RACINE.length + 1)
@@ -119,11 +125,19 @@ describe('les destinations écrites dans le produit', () => {
 		expect(morts, `Destinations qui ne mènent à aucune route :\n${morts.join('\n')}`).toEqual([]);
 	});
 
-	it('lit aussi les destinations écrites en objet', () => {
-		// `ui/ce-qui-manque.tsx` écrit `vers: '/app/parametres/creancier'`. Si la
-		// forme objet cessait d'être lue, ce test tomberait avant que les retours
-		// ne disparaissent du balayage.
-		const lues = destinationsEcrites().map((d) => `${d.fichier} ${d.destination}`);
-		expect(lues).toContain('ui/ce-qui-manque.tsx /app/parametres/creancier');
+	it('lit les destinations en attribut comme en objet, et rien d’autre', () => {
+		// Ce test porte sur la lecture elle-même, sur des lignes écrites ici : il ne
+		// dépend d'aucun écran du produit, qui peut changer ses liens sans que la
+		// barrière cesse de fonctionner.
+		expect(destinationsDansLigne("retour: { vers: '/app/creance/$id', libelle }")).toEqual([
+			'/app/creance/$id'
+		]);
+		expect(destinationsDansLigne('<Link to="/app/debiteurs">')).toEqual(['/app/debiteurs']);
+		expect(destinationsDansLigne('<EnteteDetail retourVers="/app/donnees" />')).toEqual([
+			'/app/donnees'
+		]);
+		expect(destinationsDansLigne("void navigate({ to: '/connexion' })")).toEqual(['/connexion']);
+		expect(destinationsDansLigne("versDetail: '/app/revelation'")).toEqual([]);
+		expect(destinationsDansLigne("lien: '/app/debiteurs?d=1'")).toEqual([]);
 	});
 });
