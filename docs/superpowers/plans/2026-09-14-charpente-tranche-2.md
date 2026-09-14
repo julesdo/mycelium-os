@@ -625,6 +625,14 @@ La revue a accepté la coquille, et relevé deux décisions d'API que les tâche
 4. **Un en-tête s'écrit une fois** : quand il ne dépend pas de la valeur prête, `const entete` avant les retours anticipés, comme `EcranImport` (tâche 8) le fait déjà.
 5. **La créance** porte `identifiant` dans sa valeur (`CreanceOuverte`), pas en prop ; `CreanceEnErreur` n'a plus besoin des paramètres.
 
+### Correctifs de la revue de la tâche 3 (appliqués AVANT la tâche 4), et ce qu'ils changent pour les tâches 4 à 10
+
+1. **Les données de la salle se CALCULENT par les fonctions du domaine**, depuis des entrées communes à la famille, jamais en recopiant une phrase ou un chiffre. La tâche 3 avait livré une question inventée, un litige « sans constat » que le produit ne peut pas produire, deux risques que `creanceComplete` ne rend jamais et un segment de décompte faux de 80,18 € ; le regard avait même tiré un faux défaut de la donnée impossible. Pour les tâches 4 à 8 : une valeur de démonstration vient de la fonction que la requête appelle (`lireLitige`, `questionsRestantes`, `qualifier`, `pyramideDePreuves`, `composerRelance`, et pour la procédure la machine à états de `apres-procedure.ts`) ; à défaut, son commentaire cite la ligne du produit qu'elle reproduit.
+2. **Une entrée peut porter des variantes nommées** : `variantes?: readonly string[]` sur `EcranDuProduit`, et `Demo` reçoit `variante?: string`. La salle les offre dans l'état prêt, dans un troisième groupe de boutons. Elles gardent visibles les formes réelles qu'une ancienne démo montrait côte à côte (relances suspendues, litige litigieux, pyramide à 0 et à 4 sur 4). **La procédure (tâche 4) en porte plusieurs** : voir sa tâche.
+3. **La procédure a son propre fichier de salle**, `src/routes/-salle/procedure.tsx` (tableau `ECRANS_PROCEDURE`, réuni dans `ecrans.tsx`) : `creance.tsx` dépasse déjà 300 lignes.
+4. **Le long commentaire qui justifie une page se pose au-dessus de la fonction `Ecran…`**, pas au-dessus de l'interface de ses données, qui reçoit un commentaire d'une ligne.
+5. **Un type d'élément se nomme** plutôt que de s'écrire en ligne dans un tableau (`readonly ConditionAConfirmer[]`) : la règle `array-type` d'oxlint le signale sinon.
+
 ---
 
 ## Tâche 2 : la salle montre les écrans du produit, en commençant par les trois qui ont déjà un fichier d'écran
@@ -1782,20 +1790,21 @@ Le carnet n'entre pas dans l'attente : il se chargeait déjà progressivement (`
 
 - [ ] **Step 3 : la salle**
 
-1. Déplacer le suivi de `DemoSuivi` dans `src/routes/-salle/creance.tsx`, et `VOIE_DEMO`, `CARNET_DEMO`, `ETUDES_DEMO`, `BARREAUX_DEMO`, `AVOCATS_DEMO` dans `src/routes/-salle/communes.ts` ; `showroom.tsx` importe de `communes.ts` celles que `DemoVoie`, `DemoIntervenant`, `DemoCommissaire` et `DemoAvocat` utilisent encore.
+1. Créer `src/routes/-salle/procedure.tsx` (tableau `ECRANS_PROCEDURE`, à réunir dans `ecrans.tsx`) et y déplacer le suivi de `DemoSuivi`, RECALCULÉ par les fonctions du domaine quand elles existent (voir « Correctifs de la revue de la tâche 3 ») ; `VOIE_DEMO`, `CARNET_DEMO`, `ETUDES_DEMO`, `BARREAUX_DEMO`, `AVOCATS_DEMO` vont dans `src/routes/-salle/communes.ts`, et `showroom.tsx` importe de `communes.ts` celles que `DemoVoie`, `DemoIntervenant`, `DemoCommissaire` et `DemoAvocat` utilisent encore.
 2. Supprimer `DemoSuivi`, sa clé `'suivi'` et sa ligne de rendu.
-3. Ajouter à `src/routes/-salle/creance.tsx` un composant `ProcedureDemo({ etat })` qui tient dans des `useState` les feuilles et les recherches (comme la route), toutes FERMÉES au départ, et l'entrée, dans `ECRANS_CREANCE` :
+3. Ajouter à `src/routes/-salle/procedure.tsx` un composant `ProcedureDemo({ etat, variante })` qui tient dans des `useState` les feuilles et les recherches (comme la route), toutes FERMÉES au départ, et l'entrée, dans `ECRANS_PROCEDURE` :
 
 ```tsx
 {
 	route: '/app/creance_/$id/procedure',
 	libelle: 'procédure',
 	vide: true,
+	variantes: ['voie terminée'],
 	Demo: ProcedureDemo
 }
 ```
 
-Prêt : un dossier engagé (le suivi de `DemoSuivi`). Vide : `suivi: null`, les voies (`VOIE_DEMO` et une seconde, indisponible). Les recherches répondent avec `ETUDES_DEMO` et `AVOCATS_DEMO`, comme leurs démos de composant.
+Prêt : un dossier engagé qui court vers une caducité (le suivi de `DemoSuivi`). Vide : `suivi: null`, les voies (`VOIE_DEMO` et une seconde, indisponible). Variante « voie terminée » : un suivi dont l'état est terminal (tiré de la machine à états de `apres-procedure.ts`, jamais écrit à la main). Les recherches répondent avec `ETUDES_DEMO` et `AVOCATS_DEMO`, comme leurs démos de composant.
 
 - [ ] **Step 4 : vérifier**
 
@@ -3682,6 +3691,18 @@ describe('la salle rend chaque écran dans chacun de ses états', () => {
 			);
 		}
 	);
+
+	it.each(
+		ECRANS_DU_PRODUIT.flatMap((ecran) =>
+			(ecran.variantes ?? []).map((variante) => [ecran.route, variante, ecran] as const)
+		)
+	)('%s, variante « %s » : prête, et autre chose que la forme principale', (_route, variante, ecran) => {
+		const { Demo } = ecran;
+		const html = renderToStaticMarkup(<Demo etat="pret" variante={variante} />);
+		expect(html).not.toContain('aria-busy="true"');
+		expect(html).not.toContain('Cet écran n’a pas pu s’afficher.');
+		expect(html).not.toEqual(renderToStaticMarkup(<Demo etat="pret" />));
+	});
 });
 ```
 
@@ -3792,7 +3813,7 @@ Attendu : tout vert ; le nombre de tests dépasse celui de la tâche 0 d'au moin
 Démarrer ou rattacher le serveur de développement (`preview_start`, configuration `dev:attacher` si un serveur tourne déjà sur 20173, sinon `dev:cloud`), ouvrir `/showroom`.
 
 1. Pour les 27 écrans : l'état Prêt à 375 et à 1280 px.
-2. Pour l'accueil, les débiteurs, la créance, le décompte, la procédure et l'import : les quatre états, aux quatre largeurs (375, 768, 1024, 1280).
+2. Pour l'accueil, les débiteurs, la créance, le décompte, la procédure et l'import : les quatre états, aux quatre largeurs (375, 768, 1024, 1280). Pour chaque écran qui en porte, ses variantes nommées à 375 et 1280 px.
 3. À chaque vue, mesurer au DOM, par `javascript_tool` :
 
 ```js
