@@ -677,6 +677,15 @@ Précisions relevées au code le 14/09 (`src/routes/app/debiteurs.tsx` au commit
 - **`montantCherche` dérivé** alimente les arguments de `useQuery(api.recouvrement.lettrage.proposer, …)` (lignes 181-186). Pour un autre débiteur, la requête passe en `skip`.
 - **Chaque gestionnaire asynchrone capture le débiteur à son départ** : `chercherAuRegistreDuDebiteur`, `enregistrerSiren`, `retenirEtablissement`, `soldeLesFactures`, `enregistrerTaux`, `constituer`. Il pose ses états pour CE débiteur. Une réponse qui arrive après un changement de débiteur s'inscrit alors sur celui qui l'a demandée, sans apparaître sous le suivant : le correctif ferme aussi cette course.
 - **`basculer`** pose la sélection pour le débiteur choisi. **`constituer`** lit la sélection dérivée. **`onOuvrir`** continue de vider la sélection au clic, comme aujourd'hui.
+- **Après la revue de la tâche 5 bis (`e82fb91`)** : `onOuvrir` vide aussi le montant du lettrage et les refus qui s'y rapportent, parce que la fiche remontée n'affiche plus ces saisies. La recherche au registre n'inscrit sa réponse que si sa propre pose est encore en cours. `lirePourLeSujet` est exportée par `src/ui/index.ts`.
+
+### Correctifs de la revue de la tâche 6 (appliqués AVANT la tâche 7), et ce qu'ils changent pour les tâches 7 et 8
+
+1. **La `key` d'un formulaire porte son contenant, jamais un champ qu'il édite.** Le formulaire du créancier se remontait sur sa dénomination. Le premier enregistrement changeait donc la clé et démontait le formulaire : « Enregistré » ne s'affichait jamais, et une saisie en cours se perdait. Il se remonte désormais sur l'établissement. Pour la tâche 7 (l'invitation, les suppressions) : aucune `key` ne dépend d'une valeur que le formulaire lui-même écrit.
+2. **Une page attend toute lecture dont dépend son premier texte visible**, même quand le repli ne ment pas. Les réglages affichaient « — » puis « SIREN manquant » à chaque ouverture ; ils attendent maintenant le profil.
+3. **Une famille de la salle se découpe avant de dépasser trois cents lignes**, par écran ou par groupe d'écrans qui partagent leurs entrées. L'abonnement a quitté `reglages.tsx` pour `abonnement.tsx`. Les tâches 7 et 8 ajoutent leurs entrées au fichier de leur groupe, et en créent un s'il le faut.
+4. **Les variantes montrent aussi l'état par défaut d'un nouveau client** : l'abonnement a gagné « volume non renseigné ». Une branche de reproduction qu'aucune forme n'atteint se supprime.
+5. **La valeur prête d'un écran se nomme `pret`**, jamais `etat`, pour ne pas la confondre avec `donnees.etat` ni avec la prop `etat` de la coquille.
 
 ---
 
