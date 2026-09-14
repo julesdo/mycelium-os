@@ -46,7 +46,10 @@ export function EcranRisques({
 					libelle: pret?.debiteur ?? 'Créance'
 				},
 				titre: 'Ce qui affaiblit ce dossier',
-				sousTitre: pret === null ? undefined : `${pret.risques.length} relevé(s)`
+				sousTitre:
+					pret === null
+						? undefined
+						: `${pret.risques.length} relevé${pret.risques.length > 1 ? 's' : ''}`
 			}}
 			etat={donnees.etat}
 		>

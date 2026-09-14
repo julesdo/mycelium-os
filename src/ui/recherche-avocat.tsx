@@ -235,7 +235,8 @@ export function RechercheAvocat({
 						</p>
 					) : (
 						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softest">
-							{barreaux.length} barreau{pluriel(barreaux.length)} dans cette livraison
+							{/* « barreaux », pas « barreaus » : `pluriel()` n'ajoute qu'un « s ». */}
+							{barreaux.length} {barreaux.length > 1 ? 'barreaux' : 'barreau'} dans cette livraison
 							{repertoire.releveeLe === null
 								? '.'
 								: `, relevée le ${dateCourte(repertoire.releveeLe)}.`}
