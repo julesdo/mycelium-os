@@ -596,6 +596,18 @@ git add src/ui/page-ecran.tsx src/ui/__tests__/page-ecran.test.tsx
 git commit --no-verify -m "feat(coquille): PageEcran porte l'en-tete, la largeur et trois etats visibles" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" -- src/ui/page-ecran.tsx src/ui/__tests__/page-ecran.test.tsx src/ui/index.ts src/ui/__tests__/destinations-existent.test.ts
 ```
 
+### Correctifs de la revue de qualité (appliqués après la tâche 1, AVANT la tâche 2)
+
+La revue a accepté la coquille, et relevé deux décisions d'API que les tâches 2 à 8 auraient recopiées. Les tâches suivantes de ce plan tiennent compte de ce qui suit ; le code ci-dessus est la première version, le code livré est celui du commit de correctifs.
+
+1. **L'attente se dit.** `aria-busy` seul ne s'annonce pas sur une zone qui disparaît. La coquille ajoute, dans la zone qui charge, `<p role="status" className="sr-only">Chargement de l’écran…</p>` : ce n'est pas un `sr-only` SEUL, le squelette se voit dessous. La barrière de la tâche 9 ne balaie que `src/routes` et `src/screens`.
+2. **Un écran à deux volets attend en deux volets.** Nouvelle prop `disposition?: 'colonne' | 'volets'`. Avec `'volets'` (ou `volets` fourni), l'attente se rend dans `TwoPane` : le squelette dans la liste, la preuve vide. Le vide et l'erreur restent en colonne : ils remplacent l'écran de travail. **Les écrans des procédures (tâche 2) et des débiteurs (tâche 5) passent `disposition="volets"` dans leur état non prêt.**
+3. **`children` et `volets` s'excluent**, par le type.
+4. **L'erreur ne promet que ce qu'elle sait** : « Rien de ce qui est enregistré n’est touché par cet échec. » `role="alert"` n'enveloppe plus que le titre et la phrase ; sans en-tête, le titre est un `h1`.
+5. **Le squelette réutilise `ListeAnalyses`**, et respire au rythme `animate-pouls`, jeton existant de `tokens.css`.
+6. **Types resserrés** : `RetourEcran.vers` en `NonNullable<LinkProps['to']>`, `VideEcran` égal aux props d'`EmptyState`, `EtatEcran` bâti sur `Lecture<unknown>['etat']`.
+7. **Tests** : `Link` est remplacé par un lien nu dans le test de la coquille, ce qui rend réellement l'en-tête poussé et l'issue par défaut ; dix tests au lieu de sept. `destinations-existent` teste sa lecture sur des lignes écrites dans le test (`destinationsDansLigne`), et ne dépend plus d'un écran du produit.
+
 ---
 
 ## Tâche 2 : la salle montre les écrans du produit, en commençant par les trois qui ont déjà un fichier d'écran
@@ -671,7 +683,15 @@ export interface ProceduresAffichees {
 
 export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffichees> }) {
 	if (donnees.etat !== 'pret') {
-		return <PageEcran entete={{ genre: 'onglet', titre: 'Procédures' }} etat={donnees.etat} />;
+		// `disposition="volets"` : l'attente se dessine déjà en deux volets, et la
+		// page ne saute pas quand les dossiers arrivent. Voir `PageEcran`.
+		return (
+			<PageEcran
+				entete={{ genre: 'onglet', titre: 'Procédures' }}
+				etat={donnees.etat}
+				disposition="volets"
+			/>
+		);
 	}
 
 	const { dossiers, ouvertId, onFermer } = donnees.valeur;
@@ -1840,7 +1860,14 @@ export interface DebiteursAffiches {
 
 export function EcranDebiteurs({ donnees }: { donnees: Lecture<DebiteursAffiches> }) {
 	if (donnees.etat !== 'pret') {
-		return <PageEcran entete={{ genre: 'onglet', titre: 'Vos débiteurs' }} etat={donnees.etat} />;
+		// `disposition="volets"` : l'attente se dessine déjà en deux volets. Voir `PageEcran`.
+		return (
+			<PageEcran
+				entete={{ genre: 'onglet', titre: 'Vos débiteurs' }}
+				etat={donnees.etat}
+				disposition="volets"
+			/>
+		);
 	}
 
 	const { debiteurs, choisi, onOuvrir, onFermer, detail } = donnees.valeur;
@@ -3453,8 +3480,10 @@ import { describe, expect, it } from 'vitest';
  * l'aller-retour, et un corps vide se lit comme une panne. Règle d'écran n° 2 :
  * tout traitement se voit sans qu'on le demande.
  *
- * L'attente se dit par `PageEcran`, qui rend le squelette de la page et pose
- * `aria-busy` sur la zone qui charge.
+ * L'attente se dit par `PageEcran`, qui rend le squelette de la page, pose
+ * `aria-busy` sur la zone qui charge, et y place un statut qui le dit. Ce
+ * statut-là n'est pas seul : le squelette se voit dessous. C'est pour ça que la
+ * coquille, dans `src/ui/`, n'est pas balayée ici.
  */
 
 const RACINE = join(process.cwd(), 'src');
@@ -3605,7 +3634,7 @@ bun run lint
 bun run build
 ```
 
-Attendu : tout vert ; le nombre de tests dépasse celui de la tâche 0 d'au moins 17 (7 de la coquille, 1 des destinations, 9 des barrières), aucun n'ayant été retiré.
+Attendu : tout vert ; le nombre de tests dépasse celui de la tâche 0 d'au moins 20 (10 de la coquille, 1 des destinations, 9 des barrières), aucun n'ayant été retiré.
 
 - [ ] **Step 2 : le regard, aux quatre largeurs**
 
@@ -3629,10 +3658,10 @@ Tout défaut vu se corrige dans l'écran ou dans la coquille, se vérifie à nou
 
 - [ ] **Step 3 : relever l'empreinte AVANT de pousser**
 
-La classe `motion-safe:animate-pulse` n'existe que dans le squelette de la coquille. Vérifier qu'elle est absente de la production actuelle :
+La classe `animate-pouls` n'est employée que par le squelette de la coquille. La production actuelle définit la variable `--animate-pouls`, jamais la classe : c'est le sélecteur `.animate-pouls` qu'on cherche. Vérifier qu'il est absent de la production actuelle :
 
 ```bash
-curl -s https://www.letikette.com/ | grep -oE '/assets/[^"]+\.(js|css)' | sort -u | while read -r actif; do curl -s "https://www.letikette.com$actif"; done | grep -c "animate-pulse"
+curl -s https://www.letikette.com/ | grep -oE '/assets/[^"]+\.(js|css)' | sort -u | while read -r actif; do curl -s "https://www.letikette.com$actif"; done | grep -c '\.animate-pouls'
 ```
 
 Attendu : `0`. Si le résultat n'est pas zéro, choisir une autre chaîne propre à cette tranche et absente de la production (par exemple `Créer votre entreprise`), et le noter.
