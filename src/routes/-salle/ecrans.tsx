@@ -3,6 +3,7 @@ import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PROCEDURE } from './procedure';
+import { ECRANS_REGLAGES } from './reglages';
 
 /**
  * LES ÉCRANS DU PRODUIT, TELS QU'IL LES AFFICHE.
@@ -24,5 +25,6 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	...ECRANS_ONGLETS,
 	...ECRANS_CREANCE,
 	...ECRANS_PROCEDURE,
-	...ECRANS_DEBITEURS
+	...ECRANS_DEBITEURS,
+	...ECRANS_REGLAGES
 ];

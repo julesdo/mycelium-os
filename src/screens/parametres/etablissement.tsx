@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { Input } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
-import { BoutonPrincipal, Champ } from '../../ui';
+import { BoutonPrincipal, Champ, PageEcran, type Lecture } from '../../ui';
+import { sansEtablissement } from '../sans-etablissement';
 
 /**
  * LE FORMULAIRE DE L'ÉTABLISSEMENT.
@@ -90,5 +91,42 @@ export function FormulaireEtablissement({
 				{enregistre ? 'Enregistré' : 'Enregistrer'}
 			</BoutonPrincipal>
 		</div>
+	);
+}
+
+/** Ce que la page affiche : le nom de l'établissement, son formulaire, la clé qui le remonte, et l'enregistrement que la route pilote. */
+export interface EtablissementAffiche {
+	readonly nom: string | undefined;
+	readonly initial: ComponentProps<typeof FormulaireEtablissement>['initial'];
+	/** L'identifiant de l'établissement : il remonte le formulaire quand on en change. */
+	readonly cle: string;
+	readonly onEnregistrer: ComponentProps<typeof FormulaireEtablissement>['onEnregistrer'];
+}
+
+export function EcranEtablissement({ donnees }: { donnees: Lecture<EtablissementAffiche | null> }) {
+	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
+
+	return (
+		<PageEcran
+			entete={{
+				genre: 'poussee',
+				retour: { vers: '/app/parametres', libelle: 'Réglages' },
+				titre: 'Votre établissement',
+				sousTitre: pret?.nom
+			}}
+			etat={
+				donnees.etat === 'pret' && pret === null
+					? sansEtablissement('Créez-en un pour le régler.')
+					: donnees.etat
+			}
+		>
+			{pret === null ? null : (
+				<FormulaireEtablissement
+					key={pret.cle}
+					initial={pret.initial}
+					onEnregistrer={pret.onEnregistrer}
+				/>
+			)}
+		</PageEcran>
 	);
 }

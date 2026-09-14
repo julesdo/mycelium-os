@@ -26,18 +26,14 @@ import {
 	Lettrage,
 	type RevelationAffichee,
 	type BilanPertesAffiche,
-	euros,
 	VeilleurAvatar
 } from '../ui';
-import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
-import { PALIERS, BORNES_PALIER, TARIFS } from '../lib/config/tarifs';
 import {
 	controlerTauxContractuel,
 	tauxDepuisPourcentage
 } from '../lib/verticales/recouvrement/taux-contractuel';
 import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/equipe/equipe';
 import { Donnees } from '../screens/donnees/donnees';
-import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
 import { EcranIntrouvable, EcranEnErreur } from '../screens/passage';
 import { ECRANS_DU_PRODUIT } from './-salle/ecrans';
@@ -80,8 +76,6 @@ export const Route = createFileRoute('/showroom')({
 	},
 	component: Showroom
 });
-
-const FIN_ESSAI_DEMO = Date.now() + 12 * 24 * 60 * 60 * 1000;
 
 /**
  * LE CHOC DU PREMIER IMPORT, avec les cas qui cassent.
@@ -206,41 +200,6 @@ function DemoLettrage() {
 							onAppliquer={rien}
 						/>
 					</div>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-/**
- * LE CRÉANCIER — trois champs qui ne sont pas du confort.
- *
- * Sans eux, la pièce porte « Identité du créancier non renseignée », et surtout
- * `entreCommercants` vaut TOUJOURS « indéterminé » : l'éligibilité à l'injonction
- * de payer ne pouvait jamais être acquise, et rien ne permettait d'en sortir.
- *
- * Les deux états montrés sont ceux qui comptent : la fiche vierge — celle qu'un
- * nouveau client voit — et la fiche remplie.
- */
-function DemoCreancier() {
-	return (
-		<Page>
-			<PageHeader titre="Réglages" sousTitre="Ce qui s’imprime en tête d’un décompte" />
-			<PageBody>
-				<div className="flex max-w-160 flex-col gap-cladd-md">
-					<FormulaireCreancier
-						initial={{ denomination: '', siren: '', adresse: '', estCommercant: 'unknown' }}
-						onEnregistrer={async () => {}}
-					/>
-					<FormulaireCreancier
-						initial={{
-							denomination: 'Thumbbb Agency',
-							siren: '502592959',
-							adresse: '12 rue des Ateliers, 75011 Paris',
-							estCommercant: 'ok'
-						}}
-						onEnregistrer={async () => {}}
-					/>
 				</div>
 			</PageBody>
 		</Page>
@@ -560,60 +519,6 @@ function DemoVide() {
 						'Précisez le secteur de vos débiteurs : c’est lui qui détermine le délai de prescription.'
 					]}
 				/>
-			</PageBody>
-		</Page>
-	);
-}
-
-/**
- * Les cartes d'offre, aux trois paliers d'un coup.
- *
- * L'écran d'abonnement lui-même est derrière l'authentification. Ce sont ses
- * cartes qui portent la décision commerciale, et il faut vérifier qu'un prix à
- * quatre chiffres ne casse pas la mise en page.
- */
-function DemoAbonnement() {
-	return (
-		<Page>
-			<PageHeader
-				titre="Abonnement"
-				sousTitre="Les trois paliers, côte à côte. En production, un seul est affiché."
-			/>
-			<PageBody>
-				<div className="flex flex-col gap-cladd-md">
-					{PALIERS.map((palier) => ({
-						palier,
-						bornes: BORNES_PALIER[palier],
-						bilan: TARIFS[palier].bilan,
-						mois: TARIFS[palier].abonnementMensuel
-					})).map((p) => (
-						<div key={p.palier} className="flex flex-col gap-cladd-3xs">
-							<SectionTitle>
-								Palier {p.palier} — {p.bornes}
-							</SectionTitle>
-							<div className="grid gap-cladd-2xs md:grid-cols-2">
-								<Offre
-									titre="La première mesure"
-									prix={euros(p.bilan)}
-									cadence="une fois"
-									description="Vos factures impayées lues en une fois. Vous saurez ce qui est encore récupérable, et ce qui va s’éteindre, en euros."
-									colonne="bilan"
-								/>
-								<Offre
-									titre="L’abonnement"
-									prix={euros(p.mois)}
-									cadence="par mois"
-									description="Vos échéances surveillées toute l’année : ce qui arrive à terme, ce qui devient mûr, ce qui approche de la prescription."
-									colonne="abonnement"
-									recommande
-								/>
-							</div>
-						</div>
-					))}
-
-					<EssaiEnCours finLe={FIN_ESSAI_DEMO} />
-					<OuvertureEnCours />
-				</div>
 			</PageBody>
 		</Page>
 	);
@@ -1106,7 +1011,6 @@ const ECRANS = [
 	'veilleur',
 	'bilan-import',
 	'lettrage',
-	'creancier',
 	'identite',
 	'rail',
 	'voie',
@@ -1118,7 +1022,6 @@ const ECRANS = [
 	'flux',
 	'depot',
 	'vide',
-	'abonnement',
 	'equipe',
 	'donnees',
 	'muette',
@@ -1247,7 +1150,6 @@ function Showroom() {
 						{ecran === 'bilan-import' ? <DemoBilanImport /> : null}
 						{ecran === 'veilleur' ? <DemoVeilleurAvatar /> : null}
 						{ecran === 'lettrage' ? <DemoLettrage /> : null}
-						{ecran === 'creancier' ? <DemoCreancier /> : null}
 						{ecran === 'identite' ? <DemoIdentite /> : null}
 						{ecran === 'rail' ? <DemoRail /> : null}
 						{ecran === 'voie' ? <DemoVoie /> : null}
@@ -1259,7 +1161,6 @@ function Showroom() {
 						{ecran === 'flux' ? <DemoFlux /> : null}
 						{ecran === 'depot' ? <DemoDepot /> : null}
 						{ecran === 'vide' ? <DemoVide /> : null}
-						{ecran === 'abonnement' ? <DemoAbonnement /> : null}
 						{ecran === 'equipe' ? <DemoEquipe /> : null}
 						{ecran === 'donnees' ? <DemoDonnees /> : null}
 						{ecran === 'muette' ? <DemoSurveillanceMuette /> : null}

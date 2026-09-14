@@ -46,6 +46,7 @@ import {
 	type ElementsRelance
 } from '../../lib/verticales/recouvrement/relance';
 import type { DecompteAffiche, NiveauAffiche, SoliditeAffichee } from '../../ui';
+import { ETABLISSEMENT_DEMO } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
 
 /**
@@ -61,10 +62,11 @@ import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
  *
  * Tout ce que la famille montre se calcule donc depuis ces entrées, par les
  * fonctions du domaine que les requêtes du produit appellent. Ne reste écrit
- * que ce qu'aucune fonction ne produit : le nom du créancier et celui du
- * débiteur, un secteur, le jour de la démonstration, une santé relevée au
- * registre et le constat qui l'accompagne, la qualité de commerçant de
- * chacune des deux parties, des réponses du gérant, des pièces, des factures.
+ * que ce qu'aucune fonction ne produit : le nom du débiteur, un secteur, le
+ * jour de la démonstration, une santé relevée au registre et le constat qui
+ * l'accompagne, la qualité de commerçant de chacune des deux parties, des
+ * réponses du gérant, des pièces, des factures. Le nom du créancier vient de
+ * l'établissement de la salle, déclaré une seule fois dans `communes.ts`.
  * Une valeur que le serveur calcule sans fonction exportée porte la ligne du
  * produit qu'elle reproduit.
  */
@@ -72,8 +74,8 @@ import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
 /** Le débiteur, nommé une seule fois pour toute la famille. */
 const DEBITEUR_DEMO = 'Fournitures Durand';
 
-/** Le créancier, nommé une seule fois pour toute la famille : ce que chaque relance signe. */
-const CREANCIER_DEMO = 'Thumbbb Agency';
+/** Le créancier : l'établissement de la salle (`ETABLISSEMENT_DEMO`), ce que chaque relance signe. */
+const CREANCIER_DEMO = ETABLISSEMENT_DEMO.nom;
 
 /**
  * Le secteur du débiteur, que le gérant choisit sur sa fiche (`renseignerSecteur`,

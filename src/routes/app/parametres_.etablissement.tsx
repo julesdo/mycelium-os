@@ -1,12 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
-import { EnteteDetail, Page, PageBody } from '../../ui';
-import { FormulaireEtablissement } from '../../screens/parametres/etablissement';
+import { EcranEtablissement } from '../../screens/parametres/etablissement';
 
 export const Route = createFileRoute('/app/parametres_/etablissement')({
-	component: PageEtablissement
+	component: PageEtablissement,
+	errorComponent: EtablissementEnErreur
 });
+
+function EtablissementEnErreur() {
+	return <EcranEtablissement donnees={{ etat: 'erreur' }} />;
+}
 
 /**
  * VOTRE ÉTABLISSEMENT — le formulaire, sur sa propre page.
@@ -24,34 +28,27 @@ function PageEtablissement() {
 	const mettreAJour = useMutation(api.organizations.updateOrganization);
 
 	return (
-		<Page>
-			<EnteteDetail
-				retourVers="/app/parametres"
-				retourLibelle="Réglages"
-				titre="Votre établissement"
-				sousTitre={org?.name ?? undefined}
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-2xs">
-					{org === undefined ? (
-						<p className="text-cladd-xs text-cladd-fg-soft">Chargement…</p>
-					) : org === null ? (
-						<p className="text-cladd-xs text-cladd-fg-soft">
-							Aucun établissement actif. Créez-en un pour le régler.
-						</p>
-					) : (
-						<FormulaireEtablissement
-							key={org._id}
-							initial={{
-								nom: org.name ?? '',
-								factures: org.facturesParAn ? String(org.facturesParAn) : '',
-								siret: org.siret ?? ''
-							}}
-							onEnregistrer={mettreAJour}
-						/>
-					)}
-				</div>
-			</PageBody>
-		</Page>
+		<EcranEtablissement
+			donnees={
+				org === undefined
+					? { etat: 'attente' }
+					: {
+							etat: 'pret',
+							valeur:
+								org === null
+									? null
+									: {
+											nom: org.name ?? undefined,
+											cle: org._id,
+											initial: {
+												nom: org.name ?? '',
+												factures: org.facturesParAn ? String(org.facturesParAn) : '',
+												siret: org.siret ?? ''
+											},
+											onEnregistrer: mettreAJour
+										}
+						}
+			}
+		/>
 	);
 }

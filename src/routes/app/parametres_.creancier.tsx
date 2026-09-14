@@ -1,10 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
-import { EnteteDetail, Page, PageBody } from '../../ui';
-import { FormulaireCreancier } from '../../screens/parametres/creancier';
+import { EcranCreancier } from '../../screens/parametres/creancier';
 
-export const Route = createFileRoute('/app/parametres_/creancier')({ component: PageCreancier });
+export const Route = createFileRoute('/app/parametres_/creancier')({
+	component: PageCreancier,
+	errorComponent: CreancierEnErreur
+});
+
+function CreancierEnErreur() {
+	return <EcranCreancier donnees={{ etat: 'erreur' }} />;
+}
 
 /**
  * VOTRE ENTREPRISE, TELLE QU'ELLE APPARAÎT SUR UN DÉCOMPTE.
@@ -24,32 +30,31 @@ function PageCreancier() {
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	const enregistrer = useMutation(api.recouvrement.profil.enregistrer);
 
+	/*
+	  La page attend aussi l'établissement. Sans profil enregistré, la dénomination
+	  initiale se replie sur son nom : si le profil répondait le premier, le champ
+	  partait vide, et la `key`, qui suit la dénomination du profil, ne remontait
+	  pas le formulaire à l'arrivée de l'établissement.
+	*/
 	return (
-		<Page>
-			<EnteteDetail
-				retourVers="/app/parametres"
-				retourLibelle="Réglages"
-				titre="Votre entreprise sur un décompte"
-				sousTitre="Ce qui sera cité sur les pièces qui partent chez un tiers."
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-2xs">
-					{profil === undefined ? (
-						<p className="text-cladd-xs text-cladd-fg-soft">Chargement…</p>
-					) : (
-						<FormulaireCreancier
-							key={profil?.denomination ?? 'vide'}
-							initial={{
-								denomination: profil?.denomination ?? org?.name ?? '',
-								siren: profil?.siren ?? '',
-								adresse: profil?.adresse ?? '',
-								estCommercant: profil?.estCommercant ?? 'unknown'
-							}}
-							onEnregistrer={enregistrer}
-						/>
-					)}
-				</div>
-			</PageBody>
-		</Page>
+		<EcranCreancier
+			donnees={
+				org === undefined || profil === undefined
+					? { etat: 'attente' }
+					: {
+							etat: 'pret',
+							valeur: {
+								cle: profil?.denomination ?? 'vide',
+								initial: {
+									denomination: profil?.denomination ?? org?.name ?? '',
+									siren: profil?.siren ?? '',
+									adresse: profil?.adresse ?? '',
+									estCommercant: profil?.estCommercant ?? 'unknown'
+								},
+								onEnregistrer: enregistrer
+							}
+						}
+			}
+		/>
 	);
 }

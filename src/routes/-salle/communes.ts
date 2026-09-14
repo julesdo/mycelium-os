@@ -14,6 +14,7 @@ import {
 	proceduresEnvisageables,
 	type Procedure
 } from '../../lib/verticales/recouvrement/procedures';
+import type { EtatCritere } from '../../lib/verticales/recouvrement/qualification';
 import { secteursProposes } from '../../screens/debiteur-detail';
 
 /**
@@ -22,8 +23,38 @@ import { secteursProposes } from '../../screens/debiteur-detail';
  * Celles-ci traversent plusieurs familles d'écrans, ou sont montrées telles
  * quelles par une démonstration de composant dans `routes/showroom.tsx`. Les
  * fixtures propres à une seule famille vivent avec elle (`onglets.tsx`,
- * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`).
+ * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`, `reglages.tsx`).
  */
+
+/** L'entreprise du gérant, telle que ses réglages la déclarent. */
+interface EtablissementDemo {
+	readonly nom: string;
+	readonly siren: string;
+	readonly adresse: string;
+	/** Déclarée sur la page du créancier, jamais devinée. */
+	readonly estCommercant: EtatCritere;
+	readonly facturesParAn: number;
+}
+
+/**
+ * L'ÉTABLISSEMENT DE LA SALLE : L'ENTREPRISE DU GÉRANT, ET IL N'Y EN A QU'UN.
+ *
+ * ⚠️ CE N'EST PAS UN DÉBITEUR, et il ne porte le nom d'aucun. Sous le nom d'un
+ * débiteur, la salle présenterait le client du gérant comme sa propre
+ * entreprise.
+ *
+ * La famille créance le nomme sur les relances qu'elle compose. La famille des
+ * réglages le montre sur ses pages : son identité, le profil de créancier que le
+ * gérant enregistre, son volume de factures et le palier qui en découle. Ce qu'il
+ * déclare ne s'écrit qu'ici.
+ */
+export const ETABLISSEMENT_DEMO: EtablissementDemo = {
+	nom: 'Thumbbb Agency',
+	siren: '502592959',
+	adresse: '12 rue des Ateliers, 75011 Paris',
+	estCommercant: 'ok',
+	facturesParAn: 420
+};
 
 /**
  * LES SECTEURS, TELS QUE LA FICHE DU DÉBITEUR LES PROPOSE.

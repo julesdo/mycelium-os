@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
-import { BoutonPrincipal, SectionEcran, Champ } from '../../ui';
+import { BoutonPrincipal, SectionEcran, Champ, PageEcran, type Lecture } from '../../ui';
 
 /** Les trois états d'un critère de qualification. Jamais présumé favorablement. */
 export type EtatCritere = 'ok' | 'ko' | 'unknown';
@@ -121,5 +121,37 @@ export function FormulaireCreancier({
 				{enregistre ? 'Enregistré' : enCours ? 'Enregistrement…' : 'Enregistrer'}
 			</BoutonPrincipal>
 		</SectionEcran>
+	);
+}
+
+/** Ce que la page affiche : le formulaire, la clé qui le remonte, et l'enregistrement que la route pilote. */
+export interface CreancierAffiche {
+	readonly initial: ComponentProps<typeof FormulaireCreancier>['initial'];
+	/** Remonte le formulaire quand le serveur change la dénomination. Voir la route. */
+	readonly cle: string;
+	readonly onEnregistrer: ComponentProps<typeof FormulaireCreancier>['onEnregistrer'];
+}
+
+export function EcranCreancier({ donnees }: { donnees: Lecture<CreancierAffiche> }) {
+	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
+
+	return (
+		<PageEcran
+			entete={{
+				genre: 'poussee',
+				retour: { vers: '/app/parametres', libelle: 'Réglages' },
+				titre: 'Votre entreprise sur un décompte',
+				sousTitre: 'Ce qui sera cité sur les pièces qui partent chez un tiers.'
+			}}
+			etat={donnees.etat}
+		>
+			{pret === null ? null : (
+				<FormulaireCreancier
+					key={pret.cle}
+					initial={pret.initial}
+					onEnregistrer={pret.onEnregistrer}
+				/>
+			)}
+		</PageEcran>
 	);
 }
