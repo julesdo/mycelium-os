@@ -24,6 +24,45 @@ export function cleEvenement(evenement: Pick<Evenement, 'type' | 'reference'>): 
 	return `${evenement.type}:${evenement.reference}`;
 }
 
+/**
+ * CE QUI MÉRITE D'INTERROMPRE — et c'est très peu de choses.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LA RARETÉ DE L'ALARME EST CE QUI LA FAIT OBÉIR
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `surveillance.ts` pose la règle : « Les notifications interrompent — elles
+ * sont réservées à ce qui fait perdre un droit SANS QU'ON AIT RIEN FAIT,
+ * c'est-à-dire à la prescription et aux échéances de procédure. Envoyer une
+ * notification pour chaque rupture ferait exactement ce que ce module existe
+ * pour éviter : du bruit qu'on apprend à ignorer, jusqu'au jour où il portait
+ * le signal qui comptait. »
+ *
+ * Le blueprint la redouble : « c'est l'inverse du réflexe de croissance, et
+ * c'est une contrainte de conception, pas une préférence. »
+ *
+ * ⚠️ ON DÉRIVE DE L'URGENCE, PAS D'UNE LISTE DE TYPES ÉCRITE ICI. `CRITIQUE`
+ * désigne déjà exactement ces deux cas — une prescription l'est toujours, une
+ * échéance de procédure seulement quand sa gravité est CADUCITÉ. Recopier la
+ * liste des types créerait une seconde vérité qui divergerait de la première
+ * au premier ajout, et dans le sens qui fait crier.
+ *
+ * ⚠️ ET ON NE REDIT PAS CE QU'ON A DIT HIER. Une facture reste « bientôt
+ * prescrite » pendant quatre-vingt-dix jours : notifier chaque matin
+ * apprendrait à écarter la notification en trois jours — et elle serait
+ * écartée le matin où une AUTRE arrive. C'est la même comparaison de clés que
+ * le briefing, avec la même raison.
+ */
+export function aNotifier(
+	evenements: readonly Evenement[],
+	clesDejaDites: readonly string[]
+): readonly Evenement[] {
+	const deja = new Set(clesDejaDites);
+	return evenements.filter(
+		(evenement) => evenement.urgence === 'CRITIQUE' && !deja.has(cleEvenement(evenement))
+	);
+}
+
 /** Les clés présentes aujourd'hui et absentes du dernier relevé. */
 export function clesNouvelles(
 	evenements: readonly Evenement[],

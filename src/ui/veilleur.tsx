@@ -1,6 +1,12 @@
 import { Link, type LinkProps } from '@tanstack/react-router';
 import { List, ListButton, ListItem, ListTitle, Surface } from '@cladd-ui/react';
-import { AlertTriangleIcon, ChevronRightIcon, RadarIcon, ScanLineIcon } from 'lucide-react';
+import {
+	AlertTriangleIcon,
+	ChevronRightIcon,
+	RadarIcon,
+	ScanLineIcon,
+	SearchCheckIcon
+} from 'lucide-react';
 import { cn } from './cn';
 import { dateCourte } from './format';
 
@@ -60,7 +66,29 @@ export type EtatTravail =
 	/** Il a échoué. Ce que l'écran affiche par ailleurs est peut-être un symptôme. */
 	| 'ROMPU'
 	/** Il n'a pas encore tourné sur cet établissement. */
-	| 'PAS_ENCORE';
+	| 'PAS_ENCORE'
+	/** Il a trouvé quelque chose qui vous attend. */
+	| 'TROUVE';
+
+/**
+ * Ce que le veilleur a trouvé et qui n'a pas encore été lu.
+ *
+ * ⚠️ CE SONT LES NOTIFICATIONS, ET ELLES ÉTAIENT DOUBLEMENT MORTES. Rien n'en
+ * écrivait — `createNotification` sans appelant — et rien n'en lisait. Le
+ * blueprint les veut au module 2.1 : « notification sans qu'on ouvre l'écran ».
+ *
+ * ⚠️ ET ELLES SONT RARES PAR CONSTRUCTION. Seul ce qui fait perdre un droit
+ * sans qu'on ait rien fait en produit une — la prescription, la caducité d'une
+ * procédure — et jamais deux fois pour la même chose. Voir `aNotifier` dans
+ * `verticales/recouvrement/briefing.ts`.
+ */
+export interface TrouvailleVeilleur {
+	readonly id: string;
+	readonly titre: string;
+	readonly message: string;
+	/** Absent quand l'événement d'origine ne désignait aucun objet ouvrable. */
+	readonly lien?: string;
+}
 
 export interface TacheVeilleur {
 	readonly cle: string;
@@ -79,6 +107,20 @@ export interface TacheVeilleur {
 	readonly etat: EtatTravail;
 	readonly vers?: LinkProps['to'];
 	readonly parametres?: LinkProps['params'];
+	/** Le volet d'un débiteur vit sur une recherche d'URL, pas sur une route. */
+	readonly recherche?: LinkProps['search'];
+	/**
+	 * Ce qu'il faut faire en OUVRANT la rangée, en plus de naviguer.
+	 *
+	 * ⚠️ SANS LUI, LA PASTILLE NE S'ÉTEINT JAMAIS. Une trouvaille lue reste
+	 * non lue, le compte monte, et il devient du décor en trois jours — sur
+	 * le seul signal du produit qui annonce une perte sèche.
+	 *
+	 * OUVRIR VAUT ACQUITTER : c'est le geste que le gérant fait déjà, et lui
+	 * demander un second clic pour dire « vu » serait lui faire ranger la
+	 * boîte du logiciel.
+	 */
+	readonly onOuvrir?: () => void;
 }
 
 /**
@@ -109,6 +151,40 @@ const HEURE = new Intl.DateTimeFormat('fr-FR', {
  * produit prend déjà sa date en argument, depuis `ui/horloge.ts`, pour la même
  * raison : un calcul rejouable est un calcul vérifiable.
  */
+/**
+ * Le lien d'une trouvaille, remis en pièces que le routeur accepte.
+ *
+ * ⚠️ LA NOTIFICATION PORTE UNE CHAÎNE, PAS UNE ROUTE TYPÉE. Elle est composée
+ * la nuit, côté serveur, à partir de la cible de l'événement — donc hors de
+ * portée du générique du routeur. On la redécoupe ici plutôt que de la passer
+ * telle quelle : `/app/debiteurs?d=X` n'est pas une destination valide pour
+ * TanStack, qui veut le chemin et la recherche séparément.
+ *
+ * Une forme inattendue ne mène nulle part plutôt que d'ouvrir au hasard.
+ *
+ * ⚠️ LE TIRET EST DANS LA CLASSE, ET IL AVAIT MANQUÉ. La classe `\w` ne le
+ * contient pas : la salle d'exposition, dont les identifiants s'écrivent
+ * `demo-debiteur`, rendait une rangée SANS LIEN — en silence, sans erreur.
+ * Les identifiants Convex réels étant alphanumériques, la production n'aurait
+ * rien montré du tout : c'est exactement le genre de défaut qui attend un an
+ * avant de se voir. La salle d'exposition a fait son travail.
+ */
+function lienDeTrouvaille(
+	lien: string
+): Pick<TacheVeilleur, 'vers' | 'parametres' | 'recherche'> | Record<string, never> {
+	const creance = /^\/app\/creance\/([\w-]+)$/.exec(lien);
+	if (creance?.[1] !== undefined) {
+		return { vers: '/app/creance/$id', parametres: { id: creance[1] } };
+	}
+
+	const debiteur = /^\/app\/debiteurs\?d=([\w-]+)$/.exec(lien);
+	if (debiteur?.[1] !== undefined) {
+		return { vers: '/app/debiteurs', recherche: { d: debiteur[1] } };
+	}
+
+	return {};
+}
+
 function quandLisible(jour: string, termineLe: number, aujourdHui: string): string {
 	if (jour === aujourdHui) return `cette nuit, ${HEURE.format(new Date(termineLe))}`;
 	return dateCourte(jour);
@@ -125,6 +201,8 @@ function quandLisible(jour: string, termineLe: number, aujourdHui: string): stri
 export function travauxDuVeilleur({
 	battement,
 	depotsEnCours,
+	trouvailles,
+	onLire,
 	aujourdHui
 }: {
 	/**
@@ -147,9 +225,35 @@ export function travauxDuVeilleur({
 		| null
 		| undefined;
 	readonly depotsEnCours: readonly DepotEnCours[];
+	/** Ce qu'il a trouvé et qu'on n'a pas encore lu. Rare, par construction. */
+	readonly trouvailles?: readonly TrouvailleVeilleur[];
+	/** Appelé quand une trouvaille est ouverte : elle cesse d'être non lue. */
+	readonly onLire?: (id: string) => void;
 	readonly aujourdHui: string;
 }): readonly TacheVeilleur[] {
 	const travaux: TacheVeilleur[] = [];
+
+	/**
+	 * ⚠️ CE QU'IL A TROUVÉ PASSE DEVANT CE QU'IL FAIT — la seule chose de cet
+	 * écran qui passe devant ce qui bouge, et la raison est nette : une lecture
+	 * de dépôt se terminera toute seule dans trente secondes, tandis qu'une
+	 * prescription qui approche ne se termine jamais toute seule. Elle s'éteint,
+	 * et emporte la créance avec elle.
+	 */
+	for (const trouvaille of trouvailles ?? []) {
+		travaux.push({
+			cle: `trouvaille-${trouvaille.id}`,
+			titre: trouvaille.titre,
+			dit: trouvaille.message,
+			quand: null,
+			etat: 'TROUVE',
+			...(onLire === undefined ? {} : { onOuvrir: () => onLire(trouvaille.id) }),
+			// ⚠️ ON NE FABRIQUE AUCUNE DESTINATION. Une notification dont
+			// l'événement d'origine ne désignait rien s'affiche sans mener nulle
+			// part : inventer un lien ouvrirait le mauvais dossier.
+			...(trouvaille.lien === undefined ? {} : lienDeTrouvaille(trouvaille.lien))
+		});
+	}
 
 	for (const depot of depotsEnCours) {
 		travaux.push({
@@ -208,6 +312,8 @@ function Pouls() {
 function IconeTravail({ etat }: { etat: EtatTravail }) {
 	if (etat === 'EN_COURS') return <ScanLineIcon size={18} />;
 	if (etat === 'ROMPU') return <AlertTriangleIcon size={18} />;
+	// Ce qu il a trouve : la loupe du radar, pas une alerte. C est un constat.
+	if (etat === 'TROUVE') return <SearchCheckIcon size={18} />;
 	return <RadarIcon size={18} />;
 }
 
@@ -306,6 +412,8 @@ function LigneTravail({ tache }: { tache: TacheVeilleur }) {
 			// `__tests__/destinations-existent.test.ts`, même écrite en littéral
 			// derrière un `as`.
 			params={tache.parametres as never}
+			search={tache.recherche as never}
+			onClick={tache.onOuvrir}
 			icon={<IconeTravail etat={tache.etat} />}
 			header={tache.quand === null ? undefined : <Quand quand={tache.quand} />}
 			footer={<Dit tache={tache} />}

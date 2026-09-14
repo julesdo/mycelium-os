@@ -72,15 +72,14 @@ const APPELEES_AUTREMENT: Readonly<Record<string, string>> = {
 	// que ça coûte. Elles sortent de cette liste le jour où un écran les
 	// appelle, pas le jour où on les oublie.
 
-	// LE SYSTÈME DE NOTIFICATION, ENTIER. Le blueprint le veut au module 2.1 :
-	// « recalcul quotidien, notification SANS QU'ON OUVRE L'ÉCRAN ». Les
-	// notifications sont écrites en base par le battement ; aucune interface ne
-	// les lit, ne les compte, ni ne les marque lues. Le produit notifie donc
-	// dans le vide. C'est la dette la plus visible de cette liste.
-	listMyNotifications: 'DETTE — aucune interface de notification. Blueprint 2.1.',
-	getUnreadCount: 'DETTE — le compteur existe, aucune pastille ne le porte.',
-	markAsRead: 'DETTE — rien ne permet de marquer une notification lue.',
-	markAllAsRead: 'DETTE — idem, en masse.',
+	// LE SYSTÈME DE NOTIFICATION — module 2.1 du blueprint, « notification sans
+	// qu'on ouvre l'écran ». Il était DOUBLEMENT mort : rien n'en écrivait,
+	// rien n'en lisait. `listMyNotifications`, `getUnreadCount` et `markAsRead`
+	// ont quitté cette liste le 12 septembre 2026 — le battement en écrit
+	// désormais, le veilleur les affiche, la pastille les compte, et les ouvrir
+	// les acquitte.
+	markAllAsRead:
+		'DETTE — aucun geste « tout marquer comme lu ». Ouvrir une trouvaille l’acquitte, et elles sont rares par construction : le geste de masse ne manque pas encore.',
 
 	// LA GESTION D'ABONNEMENT. Un client qui paie ne peut ni voir son
 	// abonnement ni ouvrir le portail Paddle pour changer de carte ou résilier.

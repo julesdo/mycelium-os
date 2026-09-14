@@ -72,6 +72,49 @@ async function poser(
 }
 
 describe('assemblage de l’état surveillé', () => {
+	/**
+	 * LA CIBLE SURVIT AU TRAJET JUSQU'À L'ÉCRAN.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ CE TEST EXISTE PARCE QUE LA SALLE D'EXPOSITION A MENTI
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Les rangées du flux ont été rendues cliquables le 12 septembre 2026 : le
+	 * domaine calcule une `cible`, le validateur la déclare, la rangée en fait
+	 * un lien. Vérifié au navigateur, aux quatre largeurs, avec des liens
+	 * visibles à l'écran.
+	 *
+	 * Et c'était inerte en production. Les DEUX handlers Convex qui composent
+	 * la réponse la reconstruisent champ par champ, et aucun ne recopiait
+	 * `cible`. Un champ facultatif absent reste valide : ni le compilateur ni
+	 * le validateur ne bronchent.
+	 *
+	 * La salle d'exposition ne pouvait pas l'attraper — elle fournit SES
+	 * PROPRES données de démonstration, ce qui est précisément ce qui la rend
+	 * ouvrable sans backend. Elle vérifie le COMPOSANT, jamais le CÂBLAGE.
+	 * C'est la limite de la troisième barrière du projet, et ce test est ce qui
+	 * la complète : il part de la base et regarde ce qui arrive au bout.
+	 */
+	it(
+		'rend une cible ouvrable avec chaque événement de facture',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await poser(t, { secteur: 'GENERAL' });
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			const echue = flux.evenements.find((e) => e.type === 'FACTURE_ECHUE');
+			expect(echue?.cible).toBeDefined();
+			// Le DÉBITEUR, pas la facture : une facture n'a pas d'écran à elle.
+			expect(echue?.cible?.genre).toBe('DEBITEUR');
+			expect(echue?.cible?.id).toEqual(expect.any(String));
+		},
+		DELAI_CONVEX
+	);
+
 	it(
 		'signale une facture échue, avec son montant',
 		async () => {

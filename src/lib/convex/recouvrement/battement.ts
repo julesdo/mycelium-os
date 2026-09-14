@@ -4,7 +4,12 @@ import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { internal, components } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { depuisCentimes, versEuros } from '../../socle/montants';
-import { cleEvenement, decider, composerBriefing } from '../../verticales/recouvrement/briefing';
+import {
+	aNotifier,
+	cleEvenement,
+	decider,
+	composerBriefing
+} from '../../verticales/recouvrement/briefing';
 import type { Precedent, Briefing } from '../../verticales/recouvrement/briefing';
 import type { Evenement } from '../../verticales/recouvrement/surveillance';
 import { resend, assertResendApiKey } from '../emails/resend';
@@ -150,7 +155,11 @@ export const executerPourOrganisation = internalMutation({
 				montant: brut.montant === null ? null : depuisCentimes(brut.montant),
 				urgence: brut.urgence,
 				explication: brut.explication,
-				action: brut.action
+				action: brut.action,
+				// Elle porte le lien de la notification : une alerte qu'on ne peut
+				// pas ouvrir oblige a retrouver l'objet a la main, et c'est ce que
+				// tout le reste du produit vient de cesser de faire.
+				...(brut.cible === undefined ? {} : { cible: brut.cible })
 			}));
 
 			const precedent = await precedentDe(ctx, organizationId, jour);
@@ -184,6 +193,75 @@ export const executerPourOrganisation = internalMutation({
 			if (verdict.decision === 'PARLER') {
 				const briefing = composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
 				await envoyer(ctx, organizationId, briefing);
+			}
+
+			/**
+			 * LES NOTIFICATIONS DANS L'APPLICATION — module 2.1 du blueprint,
+			 * « notification sans qu'on ouvre l'écran ».
+			 *
+			 * ═══════════════════════════════════════════════════════════════════
+			 * ⚠️ LE SYSTÈME ÉTAIT DOUBLEMENT MORT
+			 * ═══════════════════════════════════════════════════════════════════
+			 *
+			 * `createNotification` n'était appelée par personne, et
+			 * `listMyNotifications` non plus : rien n'en écrivait, rien n'en
+			 * lisait. La moitié de ce qui distingue un radar d'un rapport.
+			 *
+			 * ⚠️ ET C'EST LE CÔTÉ ÉCRITURE QUI VIENT EN PREMIER. Poser une cloche
+			 * sur une table vide afficherait « rien de neuf » pour toujours, et on
+			 * en conclurait qu'il ne se passe jamais rien — pire que pas de cloche.
+			 *
+			 * ⚠️ HORS DU VERDICT, DÉLIBÉRÉMENT. Le briefing par courriel décide de
+			 * parler ou de se taire selon SA règle — « sept jours sans nouvelle »
+			 * le fait parler même sans rien de critique. Une notification
+			 * n'obéit qu'à `aNotifier` : ce qui fait perdre un droit sans qu'on ait
+			 * rien fait, et qu'on n'a pas déjà dit hier. Les lier ferait qu'un
+			 * briefing de courtoisie notifierait, et c'est ainsi qu'une alerte
+			 * devient du bruit.
+			 */
+			const notifiables = aNotifier(evenements, precedent?.cles ?? []);
+			if (notifiables.length > 0) {
+				const membres = await ctx.db
+					.query('organizationMembers')
+					.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+					.collect();
+
+				for (const evenement of notifiables) {
+					const contenu = {
+						title:
+							evenement.type === 'PRESCRIPTION_PROCHE'
+								? 'Prescription proche'
+								: 'Échéance de procédure',
+						// ⚠️ L'EXPLICATION DU DOMAINE, MOT POUR MOT. La reformuler ici
+						// créerait une seconde version de la vérité, qui dériverait de
+						// la première — et celle-ci part dans une interruption.
+						message: evenement.explication
+					};
+
+					for (const membre of membres) {
+						await ctx.runMutation(internal.notifications.createNotification, {
+							organizationId,
+							userId: membre.userId,
+							type:
+								evenement.type === 'PRESCRIPTION_PROCHE'
+									? ('PRESCRIPTION_PROCHE' as const)
+									: ('ECHEANCE_PROCHE' as const),
+							title: contenu.title,
+							message: contenu.message,
+							// ⚠️ ABSENT QUAND LA CIBLE L'EST. Fabriquer une destination
+							// ouvrirait le mauvais dossier — pire qu'une notification
+							// qu'on ne peut pas ouvrir.
+							...(evenement.cible === undefined
+								? {}
+								: {
+										link:
+											evenement.cible.genre === 'CREANCE'
+												? `/app/creance/${evenement.cible.id}`
+												: `/app/debiteurs?d=${evenement.cible.id}`
+									})
+						});
+					}
+				}
 			}
 
 			await ctx.db.insert('battements', {

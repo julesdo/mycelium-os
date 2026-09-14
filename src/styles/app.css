@@ -698,6 +698,37 @@ select:not(:disabled),
 	opacity: 0.3;
 }
 
+/* LE COMPTE DE CE QU'IL A TROUVÉ.
+ *
+ * ⚠️ IL NE S'AFFICHE QU'AU-DESSUS DE ZÉRO, et il est RARE par construction :
+ * seul ce qui fait perdre un droit sans qu'on ait rien fait en produit un —
+ * une prescription, une caducité. Une pastille permanente à « 0 » serait du
+ * décor, et le chiffre ne dirait plus rien le jour où il compte.
+ *
+ * ⚠️ EN BLEU D'ENCRE, PAS EN ROUGE. Toutes les applications mettent un point
+ * rouge ici ; le rouge est réservé à `--color-seuil-*` dans ce produit, et une
+ * notification n'est pas un verdict de seuil. Le bleu de la marque suffit à
+ * attirer l'œil sur un fond sombre — et il relie la pastille au veilleur qui
+ * l'a posée, ce que le rouge ne ferait pas. */
+.compte-veilleur {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1rem;
+	height: 1rem;
+	padding: 0 0.25rem;
+	border-radius: 9999px;
+	background-color: oklch(0.72 0.13 254);
+	color: oklch(0.16 0.012 276);
+	font-size: 0.625rem;
+	font-weight: 700;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+	/* Le liseré détache la pastille de l'avatar : sans lui, le chiffre se colle
+	   à l'orbite et les deux se lisent comme une seule forme confuse. */
+	box-shadow: 0 0 0 2px oklch(0.16 0.012 276);
+}
+
 /* LE BALAYAGE EST CACHÉ PAR DÉFAUT. Un secteur figé sur un cadran immobile se
  * lit comme un graphique en panne, pas comme une veille. */
 .veilleur-balayage {

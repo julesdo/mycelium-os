@@ -445,7 +445,17 @@ export const fluxInterne = internalQuery({
 				montant: evenement.montant === null ? null : enCentimes(evenement.montant),
 				urgence: evenement.urgence,
 				explication: evenement.explication,
-				action: evenement.action
+				action: evenement.action,
+				// ⚠️ SANS CETTE LIGNE, LA CIBLE MEURT ICI. Le domaine la calcule, le
+				// validateur la declare, et ces deux handlers reconstruisent l objet
+				// champ par champ : en oublier un le supprime en silence, sans que le
+				// compilateur bronche — un champ facultatif absent reste valide.
+				//
+				// C est exactement le defaut « declare, lu, jamais alimente », et il a
+				// ete commis ICI le 12 septembre 2026 : les rangees du flux etaient
+				// rendues cliquables, verifiees dans la salle d exposition — qui fournit
+				// SES PROPRES donnees — et inertes dans l application reelle.
+				...(evenement.cible === undefined ? {} : { cible: evenement.cible })
 			})),
 			montantIdentifie: enCentimes(montantIdentifie(resultat)),
 			hypotheses,
@@ -475,7 +485,17 @@ export const flux = authedQuery({
 				montant: evenement.montant === null ? null : enCentimes(evenement.montant),
 				urgence: evenement.urgence,
 				explication: evenement.explication,
-				action: evenement.action
+				action: evenement.action,
+				// ⚠️ SANS CETTE LIGNE, LA CIBLE MEURT ICI. Le domaine la calcule, le
+				// validateur la declare, et ces deux handlers reconstruisent l objet
+				// champ par champ : en oublier un le supprime en silence, sans que le
+				// compilateur bronche — un champ facultatif absent reste valide.
+				//
+				// C est exactement le defaut « declare, lu, jamais alimente », et il a
+				// ete commis ICI le 12 septembre 2026 : les rangees du flux etaient
+				// rendues cliquables, verifiees dans la salle d exposition — qui fournit
+				// SES PROPRES donnees — et inertes dans l application reelle.
+				...(evenement.cible === undefined ? {} : { cible: evenement.cible })
 			})),
 			montantIdentifie: enCentimes(montantIdentifie(resultat)),
 			hypotheses,

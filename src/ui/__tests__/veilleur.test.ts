@@ -130,6 +130,44 @@ describe('le veilleur', () => {
 		expect(travaux[0]?.dit).toBe('en attente de lecture');
 	});
 
+	it('met ce que le veilleur a TROUVÉ avant ce qu’il fait', () => {
+		const travaux = travauxDuVeilleur({
+			battement: { jour: '2026-09-11', statut: 'TU', raison: 'rien de nouveau', termineLe: NUIT },
+			depotsEnCours: [{ id: 'i1', filename: 'export.csv', etape: 'lecture' }],
+			trouvailles: [
+				{
+					id: 'n1',
+					titre: 'Prescription proche',
+					message: 'FA-2021-0087 sera prescrite le 2026-10-14.',
+					lien: '/app/debiteurs?d=deb_1'
+				}
+			],
+			aujourdHui: '2026-09-11'
+		});
+
+		// ⚠️ UNE TROUVAILLE PASSE DEVANT UN TRAVAIL EN COURS, et c'est le seul
+		// endroit où quelque chose passe devant ce qui bouge. La raison : une
+		// lecture de dépôt se terminera toute seule dans trente secondes ; une
+		// prescription qui approche ne se termine jamais toute seule — elle
+		// s'éteint, et emporte la créance.
+		expect(travaux[0]?.etat).toBe('TROUVE');
+		expect(travaux[0]?.titre).toBe('Prescription proche');
+		expect(travaux[0]?.vers).toBe('/app/debiteurs');
+	});
+
+	it('ne fabrique aucune destination pour une trouvaille sans lien', () => {
+		const [trouvaille] = travauxDuVeilleur({
+			battement: undefined,
+			depotsEnCours: [],
+			trouvailles: [{ id: 'n1', titre: 'Prescription proche', message: 'Une facture.' }],
+			aujourdHui: '2026-09-11'
+		});
+
+		// Une destination inventée ouvrirait le mauvais dossier. La rangée
+		// s'affiche et ne mène nulle part, ce qui est la vérité.
+		expect(trouvaille?.vers).toBeUndefined();
+	});
+
 	it('distingue le CHARGEMENT du vide, et n’affirme rien pendant', () => {
 		const travaux = travauxDuVeilleur({
 			// `undefined` est ce que rend Convex tant que la réponse n'est pas là.
