@@ -29,8 +29,9 @@ export interface EcranDuProduit {
 	 * La démonstration de l'écran, dans un état donné.
 	 *
 	 * Un COMPOSANT, pas une fonction appelée : la salle le rend avec une `key`, et
-	 * passer d'un écran à l'autre le remonte comme un changement de route. La
-	 * coquille, elle, est posée une fois par la salle, comme en production.
+	 * passer d'un écran, d'un état ou d'une variante à l'autre le remonte comme un
+	 * changement de route. La coquille, elle, est posée une fois par la salle,
+	 * comme en production.
 	 */
 	readonly Demo: ComponentType<{ etat: EtatDemo; variante?: string }>;
 }

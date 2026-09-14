@@ -11,7 +11,6 @@ import {
 	RechercheCommissaire,
 	SectionEcran,
 	SuiviProcedure,
-	aujourdHuiISO,
 	dateCourte,
 	type AvocatAffiche,
 	type EtatRechercheAvocat,
@@ -66,9 +65,9 @@ export type ChoixDeclare = { readonly id: string | null } | null;
  * caducité n'arrivaient jamais au flux.
  */
 function FeuilleDeclaration({
-	voie,
 	carnet,
 	enCours,
+	aujourdHui,
 	onFermer,
 	onAjouter,
 	onOublier,
@@ -76,9 +75,9 @@ function FeuilleDeclaration({
 	onChercherUnAvocat,
 	onDeclarer
 }: {
-	voie: VoieAffichee;
 	carnet: readonly FicheIntervenant[];
 	enCours: boolean;
+	aujourdHui: string;
 	onFermer: () => void;
 	onAjouter: (fiche: FicheASaisir) => void;
 	onOublier: (intervenantId: string) => void;
@@ -87,14 +86,15 @@ function FeuilleDeclaration({
 	onDeclarer: (engageeLe: string, choix: ChoixDeclare) => void;
 }) {
 	/*
-	  ⚠️ TROIS ÉTATS DE FEUILLE, ZÉRO `setState` DANS UN EFFET. Rien ici n'est
-	  synchronisé depuis une prop : la date part d'un appel unique à l'horloge,
-	  le choix part à « rien dit », et le carnet part fermé. La remise à zéro
-	  entre deux voies se fait par la `key` de ce composant, côté appelant — un
-	  effet qui recopierait une prop dans un état produirait un rendu de plus et,
-	  le jour où la prop change pour une autre raison, effacerait une saisie.
+	  ⚠️ TROIS ÉTATS DE FEUILLE, ZÉRO `setState` DANS UN EFFET. Rien ici ne se
+	  resynchronise depuis une prop par un effet : la date part de la prop
+	  `aujourdHui`, lue une seule fois à l'initialisation, le choix part à « rien
+	  dit », et le carnet part fermé. La remise à zéro entre deux voies se fait
+	  par la `key` de ce composant, côté appelant — un effet qui resynchroniserait
+	  cette prop dans l'état produirait un rendu de plus et, le jour où elle
+	  change pour une autre raison, effacerait une saisie.
 	*/
-	const [quand, setQuand] = useState(aujourdHuiISO());
+	const [quand, setQuand] = useState(aujourdHui);
 	const [choix, setChoix] = useState<ChoixDeclare>(null);
 	const [carnetOuvert, setCarnetOuvert] = useState(false);
 
@@ -134,7 +134,7 @@ function FeuilleDeclaration({
 						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
 							{quand === ''
 								? 'Sans date, aucun délai ne peut être compté.'
-								: `Les délais de ${voie.nom} courront depuis le ${dateCourte(quand)}.`}
+								: `Les délais de cette procédure courront depuis le ${dateCourte(quand)}.`}
 						</p>
 					</div>
 				</PopupContent>
@@ -380,9 +380,9 @@ function ContenuProcedure({ pret }: { pret: ProcedureDeLaCreance }) {
 			{voieDeclaree === null ? null : (
 				<FeuilleDeclaration
 					key={voieDeclaree.cle}
-					voie={voieDeclaree}
 					carnet={pret.carnet}
 					enCours={pret.enCours}
+					aujourdHui={pret.aujourdHui}
 					onFermer={pret.onFermerDeclaration}
 					onAjouter={pret.onAjouter}
 					onOublier={pret.onOublier}

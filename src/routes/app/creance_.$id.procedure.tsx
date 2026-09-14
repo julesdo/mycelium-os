@@ -346,11 +346,17 @@ function PageProcedure() {
 		}
 	}
 
+	/*
+	  ⚠️ LE CARNET ENTRE DANS L'ATTENTE, LUI AUSSI. La rangée « Qui fait l'acte »
+	  lit `nomIntervenant`, dérivé du carnet : sans cette condition, elle aurait
+	  affiché « Moi-même » le temps qu'il arrive, sur un dossier qui a peut-être
+	  un intervenant rattaché depuis des mois.
+	*/
 	return (
 		<EcranProcedure
 			identifiant={id}
 			donnees={
-				creance === undefined || suivi === undefined
+				creance === undefined || suivi === undefined || carnet === undefined
 					? { etat: 'attente' }
 					: {
 							etat: 'pret',

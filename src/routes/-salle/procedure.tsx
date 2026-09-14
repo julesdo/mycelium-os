@@ -33,8 +33,14 @@ import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './de
  * que la page de procédure ne montre pas.
  */
 
-/** Le débiteur, nommé une seule fois pour toute la famille : celui de la démonstration de la voie. */
-const DEBITEUR_DEMO = 'Ateliers Martin';
+/**
+ * Le débiteur, nommé une seule fois pour toute la famille : un nom qu'aucune
+ * autre famille de la salle ne montre. Cette page affiche une autre créance
+ * que celles des autres familles (voir plus haut) : reprendre un nom déjà pris
+ * ferait contredire une rangée qui affiche, pour ce même débiteur, une autre
+ * date ou un autre intervenant.
+ */
+const DEBITEUR_DEMO = 'Menuiserie Roussel';
 
 /**
  * Les quatre conditions de la créance, acquises. Avec elles, le domaine rend
@@ -115,9 +121,12 @@ const VOIES_DEMO = Object.values(PROCEDURES).map((procedure) =>
 );
 
 /**
- * ⚠️ LES FEUILLES ET LES RECHERCHES PARTENT TOUTES FERMÉES. La démonstration les
- * tient dans ses états, comme la route, et les ouvre au geste : un rendu serveur
- * de la salle ne doit dépendre d'aucune feuille ouverte.
+ * ⚠️ LES FEUILLES ET LES RECHERCHES PARTENT TOUTES FERMÉES. Pas pour le rendu
+ * serveur : la `Popup` de Cladd ne rend rien côté serveur, ouverte ou non, et un
+ * test de rendu serveur ne peut donc jamais voir de feuille, cassée ou pas. La
+ * vraie raison est la parité avec la route, qui part du même état fermé : c'est
+ * le passage au navigateur, aux quatre largeurs, qui attrape une feuille qui ne
+ * s'ouvrirait pas.
  *
  * Les recherches répondent avec les listes que montrent leurs démonstrations de
  * composant. Les gestes qui écriraient en base n'écrivent rien : quand la route

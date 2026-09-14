@@ -1501,8 +1501,14 @@ function Showroom() {
 			<div className="min-h-0 flex-1">
 				{choisi !== null ? (
 					<Shell>
+						{/*
+						  ⚠️ LA CLÉ PORTE LA ROUTE, L'ÉTAT ET LA VARIANTE — PAS LA ROUTE SEULE.
+						  Une feuille ouverte dans « sans données » restait ouverte en passant
+						  à « prêt », qui n'a rien pour la rouvrir. Remonter la démonstration
+						  aux trois changements referme tout net, comme un nouvel écran.
+						*/}
 						<choisi.Demo
-							key={choisi.route}
+							key={`${choisi.route}|${etat}|${variante ?? ''}`}
 							etat={etat}
 							variante={etat === 'pret' ? variante : undefined}
 						/>
