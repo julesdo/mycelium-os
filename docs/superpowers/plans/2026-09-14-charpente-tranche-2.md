@@ -3733,6 +3733,20 @@ describe('la salle rend chaque écran dans chacun de ses états', () => {
 
 Si une démonstration ne peut pas se rendre côté serveur (une feuille `Popup` ouverte d'emblée, par exemple), ne pas l'exclure du test : la rendre fermée par défaut dans la salle, et le dire dans le rapport.
 
+- [ ] **Step 3 quater : la rangée de la créance s'accorde avec ses pages**
+
+La seconde revue de la tâche 3 a trouvé une rangée qui contredisait les pages vers lesquelles elle mène : 65 % de solidité, « 1 risque » là où la page en montrait deux, « 1 prêt » pour des relances suspendues. La dérivation par le domaine l'a corrigée, mais rien n'échoue si elle se perd : `salle-etats` vérifie les états, pas l'accord.
+
+Dans `src/ui/__tests__/salle-etats.test.tsx`, ajouter un `describe` « la famille créance s’accorde avec elle-même ». Il importe les données de `src/routes/-salle/creance.tsx`, en les exportant sans rien changer d'autre, et vérifie sur les VALEURS, pas sur le HTML, que :
+
+- les pièces établies de la rangée égalent celles de la page de solidité ;
+- les risques de la rangée égalent ceux de la forme principale de la page des risques ;
+- l'état des relances de la rangée égale celui de la variante « suspendues » de la page des relances, qui porte la santé de la famille ;
+- le nombre « à confirmer » de la rangée égale les questions de la page du litige plus ses conditions à confirmer ;
+- le total du décompte de la rangée égale le total de la page du décompte.
+
+Faire mordre : changer temporairement une valeur de la rangée, voir l'échec qui la nomme, puis rétablir.
+
 - [ ] **Step 3 ter : la salle n'alimente aucun champ**
 
 La barrière `declare-jamais-alimente` compte comme ÉCRITURE tout `champ:` d'objet littéral, et comme EMPLOI toute valeur d'union citée, partout dans `src` sauf le schéma. Les données de démonstration de la salle en portent des dizaines, et en porteront davantage à chaque écran : un champ que seule la salle « alimente » passerait pour alimenté, alors que le produit ne l'écrit pas.
