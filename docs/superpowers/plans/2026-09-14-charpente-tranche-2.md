@@ -647,6 +647,30 @@ La revue a accepté la coquille, et relevé deux décisions d'API que les tâche
 3. **Une lecture dont dépend un texte visible de l'écran prêt entre dans l'attente.** La procédure attendait la créance et le suivi, pas le carnet, alors que la rangée « Qui fait l'acte » en tire le nom : elle affichait « Moi-même » le temps que le carnet arrive. Pour les tâches 5 à 8, là où le plan écrit `x ?? []` ou `x ?? null` pour une lecture en cours, regarder ce que l'écran affiche avec cette valeur de repli. S'il affirme quelque chose de faux (« 0 pièce », « Moi-même »), le signaler dans le rapport, et ne corriger dans la tâche que si le correctif tient en une condition d'attente.
 4. **Le jour de la démonstration commande aussi les champs.** Un champ de date se remplit depuis la date que la page reçoit (`aujourdHui`), pas depuis l'horloge : la salle, figée, ne change pas chaque matin.
 
+### Correctifs de la revue de la tâche 5 (appliqués AVANT la tâche 6), et la tâche 5 bis
+
+1. **Une remise à zéro se déclare dans l'écran, pas par accident.** La fiche d'un débiteur ne se vidait entre deux débiteurs que parce qu'elle se démonte le temps que les factures du suivant arrivent. La salle masquait la question avec une `key` qui n'existe pas en production. `DetailDebiteur` reçoit `key={detail.debiteurId}` dans l'écran, et la clé de la salle disparaît. Pour les tâches 6 à 8 : un état tapé dans un volet qui change de sujet se remonte par une `key` posée dans l'écran.
+2. **La salle trie comme la requête.** Les pièces de la salle suivaient l'ordre de dépôt, alors que `listerPiecesDuDebiteur` trie de la plus récente à la plus ancienne. Une dérivation reproduit aussi l'ORDRE que la requête rend.
+3. **Une forme d'attente d'un volet se montre, et ne dit rien de faux.** Pendant la lecture d'un débiteur choisi, la fiche disait « Choisissez un débiteur… ». Elle dit maintenant qu'elle se lit, et la salle en fait une variante nommée (« fiche en lecture »).
+4. **Aucune démonstration ne montre `SAINE`**, que le produit n'écrit jamais : la santé d'un débiteur sans annonce est `INCONNUE`.
+
+**Tâche 5 bis : ce qu'on a posé pour un débiteur ne passe plus au suivant.** Relevé par la revue de la tâche 5 : le défaut est antérieur à la migration, et en production. `src/routes/app/debiteurs.tsx` garde dans des `useState` de la route des états propres au débiteur ouvert, que rien ne remet à zéro quand on en change. Un clic ne vide que `selection`, et le retour du navigateur ne vide rien. Les états en cause :
+- `recherche`, les candidats du registre ;
+- `erreurSiren` ;
+- `montantCherche` et `dateReglement`, du lettrage ;
+- `erreurLettrage` ;
+- `erreur` ;
+- `selection`.
+
+Conséquences :
+- « Retenir » écrit sur B le SIREN trouvé pour A, et le radar surveille la mauvaise entreprise ;
+- la fiche de B peut proposer « Solder ces factures » pour le virement de A ;
+- après un retour, « Constituer une créance » peut viser une facture de A.
+
+Le commentaire des lignes 166-167, qui affirme une remise à zéro au changement de débiteur, est faux.
+
+Correctif : le motif que la route emploie déjà pour `constatPose` (lignes 134-138). Chaque état porte l'identifiant du débiteur pour lequel il a été posé, et se dérive au rendu : la valeur si l'identifiant est celui du débiteur choisi, l'état de repos sinon. Une seule fonction pure fait la dérivation, avec un test. Aucun `useEffect`. Le commentaire faux se corrige. La salle ne peut pas le vérifier (la route lit la base) : la relecture de code tranche, et un essai réel suit si le déploiement de développement est accessible.
+
 ---
 
 ## Tâche 2 : la salle montre les écrans du produit, en commençant par les trois qui ont déjà un fichier d'écran
