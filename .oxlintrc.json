@@ -13,5 +13,13 @@
 		"convex/no-invalid-module-path": "error",
 		"typescript/array-type": ["warn", { "default": "array-simple" }],
 		"typescript/consistent-type-imports": ["warn", { "disallowTypeAnnotations": true }]
-	}
+	},
+	"overrides": [
+		{
+			"files": ["**/*.test.ts", "**/*.test.tsx"],
+			"rules": {
+				"convex/no-invalid-module-path": "off"
+			}
+		}
+	]
 }
