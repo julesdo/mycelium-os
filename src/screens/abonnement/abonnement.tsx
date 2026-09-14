@@ -34,10 +34,10 @@ export interface AbonnementAffiche {
  * étaient écrites depuis des mois et aucun écran ne les appelait : le produit
  * était gratuit et illimité pour qui créait un compte.
  *
- * LE PALIER VIENT DU SERVEUR. Le prix dépend du nombre de couverts par jour, et
- * un palier calculé dans le navigateur se falsifie pour payer le tarif d'en
- * dessous. La requête `etatAbonnement` le renvoie déjà résolu, avec le tarif
- * correspondant.
+ * LE PALIER VIENT DU SERVEUR. Le prix dépend du nombre de factures émises par
+ * an (`palierDeTaille(facturesParAn)`), et un palier calculé dans le navigateur
+ * se falsifie pour payer le tarif d'en dessous. La requête `etatAbonnement` le
+ * renvoie déjà résolu, avec le tarif correspondant.
  *
  * IL NE PROMET PAS UN BOUTON QUI NE MARCHE PAS. Le compte marchand Paddle n'est
  * pas ouvert : il attend les conditions générales, qui attendent un juriste.
@@ -45,8 +45,9 @@ export interface AbonnementAffiche {
  * franchement où en est l'ouverture, au lieu d'afficher un bouton qui échouerait
  * au clic. Un bouton mort coûte plus cher qu'une phrase honnête.
  *
- * Les cartes d'offre vivent dans `src/screens/abonnement/` : elles sont ainsi
- * regardables dans la salle d'exposition, sans session.
+ * L'écran vit ici, hors de sa route, comme les cartes d'offre de `offre.tsx` :
+ * la route ne fait que lui passer `etatAbonnement`, et la salle d'exposition le
+ * rend dans chacun de ses états, sans session.
  */
 export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffiche | null> }) {
 	const entete = { genre: 'onglet', titre: 'Abonnement' } as const;
@@ -88,7 +89,11 @@ export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffich
 							? `Déterminé à partir des ${etat.facturesParAn} factures par an déclarées dans vos réglages.`
 							: 'Votre volume de factures n’est pas renseigné : le palier le plus bas est retenu par défaut.'}{' '}
 						Le produit est le même à tous les paliers ; seul le prix change.{' '}
-						<Link to="/app/parametres" className="underline underline-offset-2">
+						{/* `min-h-12` : 48 px de haut, le plancher tactile du projet. Le lien en faisait 18. */}
+						<Link
+							to="/app/parametres"
+							className="inline-flex min-h-12 items-center underline underline-offset-2"
+						>
 							Modifier
 						</Link>
 					</p>
@@ -153,7 +158,7 @@ function EtatCourant({
 				<span className="text-cladd-sm font-bold">Accès de développement</span>
 				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 					Aucune clé Paddle n&rsquo;est configurée sur ce déploiement : toutes les fonctionnalités
-					sont ouvertes. Cet encart n&rsquo;apparaîtra pas en production.
+					sont ouvertes.
 				</span>
 			</Surface>
 		);

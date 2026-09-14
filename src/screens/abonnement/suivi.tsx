@@ -11,7 +11,7 @@ import { Offre } from './offre';
  * dit lequel des deux chemins tient le chiffre à jour toute l'année.
  */
 export function EcranSuiviOffre({ donnees }: { donnees: Lecture<AbonnementAffiche | null> }) {
-	const etat = donnees.etat === 'pret' ? donnees.valeur : null;
+	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
 
 	return (
 		<PageEcran
@@ -19,22 +19,22 @@ export function EcranSuiviOffre({ donnees }: { donnees: Lecture<AbonnementAffich
 				genre: 'poussee',
 				retour: { vers: '/app/abonnement', libelle: 'Abonnement' },
 				titre: 'L’abonnement',
-				sousTitre: etat ? `Palier ${etat.palier} — ${etat.bornesPalier}` : undefined
+				sousTitre: pret ? `Palier ${pret.palier} — ${pret.bornesPalier}` : undefined
 			}}
 			etat={
-				donnees.etat === 'pret' && etat === null
+				donnees.etat === 'pret' && pret === null
 					? sansEtablissement('Créez-en un pour voir votre offre.')
 					: donnees.etat
 			}
 		>
-			{etat === null ? null : (
+			{pret === null ? null : (
 				<Offre
 					titre="L’abonnement"
-					prix={euros(etat.tarifs.abonnementMensuel)}
+					prix={euros(pret.tarifs.abonnementMensuel)}
 					cadence="par mois"
-					description="Votre chiffre reste à jour toute l’année, et votre déclaration de mars est prête avant mars."
+					description="Vos échéances surveillées toute l’année : ce qui arrive à terme, ce qui devient mûr, ce qui approche de la prescription."
 					colonne="abonnement"
-					actif={etat.tier === 'procedures'}
+					actif={pret.tier === 'procedures'}
 					recommande
 				/>
 			)}

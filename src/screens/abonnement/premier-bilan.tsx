@@ -16,7 +16,7 @@ import { Offre } from './offre';
  * dessous. `etatAbonnement` le renvoie déjà résolu.
  */
 export function EcranPremierBilan({ donnees }: { donnees: Lecture<AbonnementAffiche | null> }) {
-	const etat = donnees.etat === 'pret' ? donnees.valeur : null;
+	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
 
 	return (
 		<PageEcran
@@ -24,22 +24,22 @@ export function EcranPremierBilan({ donnees }: { donnees: Lecture<AbonnementAffi
 				genre: 'poussee',
 				retour: { vers: '/app/abonnement', libelle: 'Abonnement' },
 				titre: 'Le premier bilan',
-				sousTitre: etat ? `Palier ${etat.palier} — ${etat.bornesPalier}` : undefined
+				sousTitre: pret ? `Palier ${pret.palier} — ${pret.bornesPalier}` : undefined
 			}}
 			etat={
-				donnees.etat === 'pret' && etat === null
+				donnees.etat === 'pret' && pret === null
 					? sansEtablissement('Créez-en un pour voir votre offre.')
 					: donnees.etat
 			}
 		>
-			{etat === null ? null : (
+			{pret === null ? null : (
 				<Offre
 					titre="Le premier bilan"
-					prix={euros(etat.tarifs.bilan)}
+					prix={euros(pret.tarifs.bilan)}
 					cadence="une fois"
 					description="Douze mois de factures lus en une fois. Vous saurez où vous en êtes, et ce qu’il manque, en euros."
 					colonne="bilan"
-					actif={etat.tier === 'suivi'}
+					actif={pret.tier === 'suivi'}
 				/>
 			)}
 		</PageEcran>

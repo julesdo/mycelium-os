@@ -23,7 +23,7 @@ import { secteursProposes } from '../../screens/debiteur-detail';
  * Celles-ci traversent plusieurs familles d'écrans, ou sont montrées telles
  * quelles par une démonstration de composant dans `routes/showroom.tsx`. Les
  * fixtures propres à une seule famille vivent avec elle (`onglets.tsx`,
- * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`, `reglages.tsx`).
+ * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`, `reglages.tsx`, `abonnement.tsx`).
  */
 
 /** L'entreprise du gérant, telle que ses réglages la déclarent. */
@@ -44,9 +44,17 @@ interface EtablissementDemo {
  * entreprise.
  *
  * La famille créance le nomme sur les relances qu'elle compose. La famille des
- * réglages le montre sur ses pages : son identité, le profil de créancier que le
- * gérant enregistre, son volume de factures et le palier qui en découle. Ce qu'il
- * déclare ne s'écrit qu'ici.
+ * réglages le montre sur ses pages : son identité, son volume de factures et le
+ * profil de créancier que le gérant enregistre. La famille de l'abonnement en
+ * tire le palier. Aucune famille n'écrit ailleurs son nom, son SIREN, son
+ * adresse ni son volume.
+ *
+ * ⚠️ SA QUALITÉ DE COMMERÇANT NE VAUT QU'UNE FOIS SON PROFIL ENREGISTRÉ. `'ok'`
+ * est ce qu'il déclare en enregistrant son profil de créancier, et seules les
+ * variantes « profil enregistré » de la famille des réglages la lisent. Sans
+ * profil enregistré, elle est indéterminée : la page du créancier se replie sur
+ * `'unknown'`, et la famille créance, qui ne lit aucun profil, écrit la sienne à
+ * `'unknown'` (`CREANCIER_COMMERCANT_DEMO`), que son litige vide répond `'ok'`.
  */
 export const ETABLISSEMENT_DEMO: EtablissementDemo = {
 	nom: 'Thumbbb Agency',

@@ -20,10 +20,16 @@ function CreancierEnErreur() {
  * commerçant, chacun avec ce qu'il change. Déplié au milieu des réglages, il en
  * faisait l'essentiel de la hauteur.
  *
- * ⚠️ ET LA `key` SUR LA DÉNOMINATION RESTE. Le formulaire s'initialise sur ce
- * que dit le serveur ; sans elle, les champs partiraient vides au premier rendu
- * et y resteraient — React ne ré-initialise pas un `useState` sur un changement
- * de prop.
+ * ⚠️ LA `key` SUIT L'ÉTABLISSEMENT, JAMAIS LE PROFIL. Le formulaire se remonte
+ * quand le gérant change d'établissement, pas quand il enregistre. Posée sur la
+ * dénomination, elle changeait au premier enregistrement et à chaque changement
+ * de nom : Convex met à jour la lecture du profil avant de résoudre
+ * l'enregistrement, le formulaire se remontait donc en pleine sauvegarde.
+ * « Enregistré » ne s'affichait jamais, et ce qui avait été tapé pendant
+ * l'enregistrement était perdu.
+ *
+ * Le prix de ce choix : un nom changé depuis une autre session ne rafraîchit pas
+ * un formulaire ouvert. Il s'y lit en rouvrant la page.
  */
 function PageCreancier() {
 	const org = useQuery(api.organizations.getMyOrg, {});
@@ -31,10 +37,10 @@ function PageCreancier() {
 	const enregistrer = useMutation(api.recouvrement.profil.enregistrer);
 
 	/*
-	  La page attend aussi l'établissement. Sans profil enregistré, la dénomination
-	  initiale se replie sur son nom : si le profil répondait le premier, le champ
-	  partait vide, et la `key`, qui suit la dénomination du profil, ne remontait
-	  pas le formulaire à l'arrivée de l'établissement.
+	  La page attend les deux lectures. Le formulaire s'initialise une fois par
+	  montage, sur l'une et l'autre : sans profil enregistré, la dénomination se
+	  replie sur le nom de l'établissement. Et la `key`, qui ne suit que
+	  l'établissement, ne le remonterait pas à l'arrivée d'une lecture en retard.
 	*/
 	return (
 		<EcranCreancier
@@ -44,7 +50,7 @@ function PageCreancier() {
 					: {
 							etat: 'pret',
 							valeur: {
-								cle: profil?.denomination ?? 'vide',
+								cle: org?._id ?? 'aucun',
 								initial: {
 									denomination: profil?.denomination ?? org?.name ?? '',
 									siren: profil?.siren ?? '',

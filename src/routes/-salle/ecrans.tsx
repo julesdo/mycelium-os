@@ -1,4 +1,5 @@
 import type { EcranDuProduit } from './demo';
+import { ECRANS_ABONNEMENT } from './abonnement';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
 import { ECRANS_ONGLETS } from './onglets';
@@ -26,5 +27,6 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	...ECRANS_CREANCE,
 	...ECRANS_PROCEDURE,
 	...ECRANS_DEBITEURS,
-	...ECRANS_REGLAGES
+	...ECRANS_REGLAGES,
+	...ECRANS_ABONNEMENT
 ];

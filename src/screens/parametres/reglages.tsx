@@ -79,11 +79,8 @@ function Reglage({ titre, children }: { titre: string; children: ReactNode }) {
 export interface ReglagesAffiches {
 	/** L'établissement actif, ou `null`. */
 	readonly org: { readonly name?: string; readonly siret?: string } | null;
-	/** `undefined` tant que le profil se lit : la rangée montre alors un tiret, sans reproche. */
-	readonly profil:
-		| { readonly siren?: string; readonly estCommercant?: EtatCritere }
-		| null
-		| undefined;
+	/** Le profil du créancier, ou `null` tant qu'aucun n'est enregistré. La route attend sa lecture. */
+	readonly profil: { readonly siren?: string; readonly estCommercant?: EtatCritere } | null;
 	readonly theme: Theme;
 	readonly onChoisirTheme: (theme: Theme) => void;
 	readonly onSeDeconnecter: () => void;
@@ -135,17 +132,13 @@ export function EcranReglages({ donnees }: { donnees: Lecture<ReglagesAffiches> 
 							titre="Votre entreprise sur un décompte"
 							precision="Ce qui sera cité sur les pièces"
 							valeur={
-								profil === undefined
-									? '—'
-									: !profil?.siren
-										? 'SIREN manquant'
-										: profil.estCommercant === 'unknown'
-											? 'À compléter'
-											: 'Renseigné'
+								!profil?.siren
+									? 'SIREN manquant'
+									: profil.estCommercant === 'unknown'
+										? 'À compléter'
+										: 'Renseigné'
 							}
-							attention={
-								profil !== undefined && (!profil?.siren || profil.estCommercant === 'unknown')
-							}
+							attention={!profil?.siren || profil.estCommercant === 'unknown'}
 						/>
 					</ListeAnalyses>
 				</section>

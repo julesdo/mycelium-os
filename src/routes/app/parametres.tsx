@@ -14,7 +14,15 @@ function ReglagesEnErreur() {
 	return <EcranReglages donnees={{ etat: 'erreur' }} />;
 }
 
-/** Les réglages, branchés sur la base ; le dessin vit dans `screens/parametres/reglages.tsx`. */
+/**
+ * Les réglages, branchés sur la base ; le dessin vit dans `screens/parametres/reglages.tsx`.
+ *
+ * ⚠️ LA PAGE ATTEND AUSSI LE PROFIL. La rangée du créancier en tire sa valeur :
+ * rendue avant lui, elle montrait un tiret puis « SIREN manquant », à chaque
+ * ouverture. L'attendre ne mène à aucune erreur : `monProfil` ne lève que sans
+ * établissement, et la coquille `/app` renvoie vers `/bienvenue` avant d'ouvrir
+ * une page.
+ */
 function Parametres() {
 	const navigate = useNavigate();
 	const org = useQuery(api.organizations.getMyOrg, {});
@@ -24,7 +32,7 @@ function Parametres() {
 	return (
 		<EcranReglages
 			donnees={
-				org === undefined
+				org === undefined || profil === undefined
 					? { etat: 'attente' }
 					: {
 							etat: 'pret',
