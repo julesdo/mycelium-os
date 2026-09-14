@@ -55,7 +55,7 @@ function NouveauMotDePasse() {
 	return (
 		<CadreAuth
 			titre="Nouveau mot de passe"
-			explication="Choisissez-en un, et vous retrouverez vos taux et vos factures."
+			explication="Choisissez-en un, et vous retrouverez vos créances et vos décomptes."
 		>
 			<form onSubmit={soumettre} className="flex flex-col gap-cladd-2xs">
 				<Champ
@@ -75,11 +75,7 @@ function NouveauMotDePasse() {
 
 				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<BoutonPrincipal
-					type="submit"
-					loading={enCours}
-					readOnly={enCours}
-				>
+				<BoutonPrincipal type="submit" loading={enCours} readOnly={enCours}>
 					Enregistrer et me connecter
 				</BoutonPrincipal>
 			</form>

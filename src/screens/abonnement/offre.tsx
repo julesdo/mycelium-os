@@ -172,8 +172,8 @@ export function OuvertureEnCours() {
 			<span className="text-cladd-sm font-bold">Le paiement en ligne ouvre bientôt.</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 				Notre compte marchand est en cours d&rsquo;ouverture. En attendant, le produit vous est
-				ouvert sans limite et sans carte bancaire : déposez vos factures, mesurez vos taux, et nous
-				reviendrons vers vous avant toute facturation.
+				ouvert sans limite et sans carte bancaire : déposez vos factures, voyez ce qui vous est dû,
+				et nous reviendrons vers vous avant toute facturation.
 			</span>
 			<span className="flex flex-wrap gap-cladd-3xs pt-cladd-3xs">
 				<BoutonPrincipal as={Link} to="/app/import-factures">

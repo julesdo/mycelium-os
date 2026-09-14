@@ -27,7 +27,7 @@ function LayoutApp() {
 				<div className="flex h-dvh flex-col items-center justify-center gap-cladd-2xs p-cladd-xs text-center">
 					<h1 className="text-cladd-md font-semibold">Votre session a expiré.</h1>
 					<p className="max-w-sm text-cladd-xs text-cladd-fg-soft">
-						Reconnectez-vous pour retrouver vos taux et vos factures. Rien n&rsquo;est perdu.
+						Reconnectez-vous pour retrouver vos créances et vos décomptes. Rien n&rsquo;est perdu.
 					</p>
 					<BoutonPrincipal as={Link} to="/connexion">
 						Se connecter

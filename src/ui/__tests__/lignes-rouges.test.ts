@@ -50,6 +50,18 @@ const ZONES = [
 	join(RACINE, 'lib', 'convex', 'emails')
 ];
 
+/**
+ * Les fichiers qui parlent à l'utilisateur sans vivre dans une zone.
+ *
+ * ⚠️ UN FICHIER NE SE POSE PAS DANS `ZONES`. `fichiers()` y fait un `readdirSync`,
+ * qui lève sur un fichier ; le `catch` avale l'erreur comme une zone absente, et
+ * le fichier n'est jamais lu. La barrière passerait au vert sans rien vérifier.
+ *
+ * `src/router.tsx` vit à la racine de `src/`, hors de toute zone. Il portait deux
+ * des cinq phrases d'avant le pivot, et ce balayage ne les voyait pas.
+ */
+const FICHIERS_ISOLES = [join(RACINE, 'router.tsx')];
+
 function fichiers(dossier: string, acc: string[] = []): string[] {
 	let entrees;
 	try {
@@ -87,25 +99,26 @@ function fichiers(dossier: string, acc: string[] = []): string[] {
  * regardant passer.
  */
 function sansCommentaires(source: string): string {
-	return source
-		.replace(/(^|[\s{(=])\/\*[\s\S]*?\*\//g, '$1 ')
-		.replace(/^\s*\/\/.*$/gm, ' ');
+	return source.replace(/(^|[\s{(=])\/\*[\s\S]*?\*\//g, '$1 ').replace(/^\s*\/\/.*$/gm, ' ');
+}
+
+/** Tout ce qui est balayé : les fichiers des zones, puis les fichiers isolés. */
+function aBalayer(): string[] {
+	return [...ZONES.flatMap((zone) => fichiers(zone)), ...FICHIERS_ISOLES];
 }
 
 function violations(motif: RegExp): { fichier: string; extrait: string }[] {
 	const trouvees: { fichier: string; extrait: string }[] = [];
 
-	for (const zone of ZONES) {
-		for (const fichier of fichiers(zone)) {
-			const propre = sansCommentaires(readFileSync(fichier, 'utf8'));
-			for (const ligne of propre.split('\n')) {
-				const trouve = motif.exec(ligne);
-				if (trouve !== null) {
-					trouvees.push({
-						fichier: fichier.slice(RACINE.length + 1),
-						extrait: ligne.trim().slice(0, 120)
-					});
-				}
+	for (const fichier of aBalayer()) {
+		const propre = sansCommentaires(readFileSync(fichier, 'utf8'));
+		for (const ligne of propre.split('\n')) {
+			const trouve = motif.exec(ligne);
+			if (trouve !== null) {
+				trouvees.push({
+					fichier: fichier.slice(RACINE.length + 1),
+					extrait: ligne.trim().slice(0, 120)
+				});
 			}
 		}
 	}
@@ -117,7 +130,7 @@ describe('les lignes rouges tiennent sur toute l’interface', () => {
 	it('balaie un nombre plausible de fichiers', () => {
 		// Le garde-fou sur le garde-fou : si les chemins changeaient et que le
 		// balayage ne trouvait plus rien, il passerait au vert sans rien vérifier.
-		const total = ZONES.reduce((somme, zone) => somme + fichiers(zone).length, 0);
+		const total = aBalayer().length;
 		expect(total).toBeGreaterThan(40);
 	});
 
@@ -170,6 +183,29 @@ describe('les lignes rouges tiennent sur toute l’interface', () => {
 		expect(
 			fautes,
 			`Ces phrases laissent croire que le produit écrit au débiteur :\n` +
+				fautes.map((f) => `  ${f.fichier} — ${f.extrait}`).join('\n')
+		).toEqual([]);
+	});
+
+	it('lit bien les fichiers isolés, et pas seulement leur nom', () => {
+		// Le garde-fou sur le garde-fou, pour les fichiers hors zone. Un nom dans une
+		// liste ne prouve pas que le fichier est lu : on y cherche un mot qui s'y
+		// trouve forcément, par la même machinerie que les lignes rouges.
+		const lus = violations(/createRouter/).map((v) => v.fichier);
+		expect(lus).toContain('router.tsx');
+	});
+
+	it('ne parle plus la langue d’avant le pivot', () => {
+		// En recouvrement, le seul taux est celui de la BCE : on ne le « retrouve »
+		// pas et on ne le « mesure » pas. « Vos taux » et « tableau de bord » sont
+		// des restes d'EGalim, retiré du produit le 3 septembre 2026. Ils ont
+		// survécu sur des écrans de passage et sur l'offre d'abonnement, parce qu'un
+		// pivot se balaie avec les mots dont on se souvient.
+		const fautes = violations(/\bvos taux\b|tableau de bord/i);
+
+		expect(
+			fautes,
+			`Le vocabulaire d’avant le pivot apparaît ici :\n` +
 				fautes.map((f) => `  ${f.fichier} — ${f.extrait}`).join('\n')
 		).toEqual([]);
 	});
