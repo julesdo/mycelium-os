@@ -10,8 +10,7 @@ export const Route = createFileRoute('/app/creance/$id')({
 });
 
 function CreanceEnErreur() {
-	const { id } = Route.useParams();
-	return <EcranCreance identifiant={id} donnees={{ etat: 'erreur' }} />;
+	return <EcranCreance donnees={{ etat: 'erreur' }} />;
 }
 
 /**
@@ -42,13 +41,13 @@ function Creance() {
 	 */
 	return (
 		<EcranCreance
-			identifiant={id}
 			donnees={
 				creance === undefined || suivi === undefined || dernier === undefined
 					? { etat: 'attente' }
 					: {
 							etat: 'pret',
 							valeur: {
+								identifiant: id,
 								creance,
 								etatProcedure: suivi?.libelle ?? null,
 								totalDecompte: dernier?.total ?? null

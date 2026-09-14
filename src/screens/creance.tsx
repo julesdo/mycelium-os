@@ -85,6 +85,8 @@ export interface CreanceAffichee {
 }
 
 export interface CreanceOuverte {
+	/** L'identifiant de la créance, pour construire les liens de détail. */
+	readonly identifiant: string;
 	readonly creance: CreanceAffichee;
 	/** Le libellé de l'état de la procédure engagée, ou `null`. */
 	readonly etatProcedure: string | null;
@@ -92,19 +94,12 @@ export interface CreanceOuverte {
 	readonly totalDecompte: bigint | null;
 }
 
-export function EcranCreance({
-	identifiant,
-	donnees
-}: {
-	/** L'identifiant de la créance, pour construire les liens de détail. */
-	identifiant: string;
-	donnees: Lecture<CreanceOuverte>;
-}) {
+export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) {
 	if (donnees.etat !== 'pret') {
 		return <PageEcran entete={{ genre: 'onglet', titre: 'Créance' }} etat={donnees.etat} />;
 	}
 
-	const { creance, etatProcedure, totalDecompte } = donnees.valeur;
+	const { identifiant, creance, etatProcedure, totalDecompte } = donnees.valeur;
 	const aDemander = creance.litige.questions.length + creance.questions.length;
 	const relancesPretes = creance.relances.filter((r) => r.disponible).length;
 	const voies = creance.procedures.filter((p) => p.disponible).length;

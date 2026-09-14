@@ -29,6 +29,14 @@ export interface DossierAffiche {
 	readonly etapes: readonly EtapeAffichee[];
 }
 
+/** Ce que l'écran affiche une fois les dossiers de procédure chargés. */
+export interface ProceduresAffichees {
+	readonly dossiers: readonly DossierAffiche[];
+	/** Le dossier ouvert, lu dans l'adresse (`?p=`). */
+	readonly ouvertId: string | null;
+	readonly onFermer: () => void;
+}
+
 /**
  * L'ONGLET DES PROCÉDURES.
  *
@@ -48,24 +56,13 @@ export interface DossierAffiche {
  * alimenté » que ce dépôt traque. La fermeture, elle, reste nécessaire : sous
  * 1024 px la preuve est une feuille, et c'est `TwoPane` qui la referme.
  */
-export interface ProceduresAffichees {
-	readonly dossiers: readonly DossierAffiche[];
-	/** Le dossier ouvert, lu dans l'adresse (`?p=`). */
-	readonly ouvertId: string | null;
-	readonly onFermer: () => void;
-}
-
 export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffichees> }) {
+	const entete = { genre: 'onglet', titre: 'Procédures' } as const;
+
 	if (donnees.etat !== 'pret') {
 		// `disposition="volets"` : l'attente se dessine déjà en deux volets, et la
 		// page ne saute pas quand les dossiers arrivent. Voir `PageEcran`.
-		return (
-			<PageEcran
-				entete={{ genre: 'onglet', titre: 'Procédures' }}
-				etat={donnees.etat}
-				disposition="volets"
-			/>
-		);
+		return <PageEcran entete={entete} etat={donnees.etat} disposition="volets" />;
 	}
 
 	const { dossiers, ouvertId, onFermer } = donnees.valeur;
@@ -74,7 +71,7 @@ export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffich
 	if (dossiers.length === 0) {
 		return (
 			<PageEcran
-				entete={{ genre: 'onglet', titre: 'Procédures' }}
+				entete={entete}
 				etat={{
 					vide: {
 						/*
@@ -106,8 +103,7 @@ export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffich
 	return (
 		<PageEcran
 			entete={{
-				genre: 'onglet',
-				titre: 'Procédures',
+				...entete,
 				sousTitre: `${dossiers.length} engagée${dossiers.length > 1 ? 's' : ''}`
 			}}
 			volets={{

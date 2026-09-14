@@ -57,8 +57,9 @@ import { NIVEAUX_RELANCE, composerRelance } from '../lib/verticales/recouvrement
 import { etapesDeLaVoie } from '../lib/verticales/recouvrement/apres-procedure';
 import { PROCEDURES } from '../lib/verticales/recouvrement/procedures';
 import { depuisCentimes } from '../lib/socle/montants';
-import { ECRANS_DU_PRODUIT, type EtatDemo } from './-salle/ecrans';
-import { EVENEMENTS_DEMO, RAIL_DEMO } from './-salle/donnees';
+import { ECRANS_DU_PRODUIT } from './-salle/ecrans';
+import type { EtatDemo } from './-salle/demo';
+import { EVENEMENTS_DEMO, RAIL_DEMO } from './-salle/communes';
 
 /**
  * La salle d'exposition.
@@ -2079,9 +2080,9 @@ type Ecran = (typeof ECRANS)[number];
 
 const LIBELLE_ETAT: Record<EtatDemo, string> = {
 	pret: 'prêt',
-	vide: 'vide',
-	attente: 'attente',
-	erreur: 'erreur'
+	vide: 'sans données',
+	attente: 'en attente',
+	erreur: 'en erreur'
 };
 
 function Showroom() {
@@ -2090,12 +2091,13 @@ function Showroom() {
 	const [etat, setEtat] = useState<EtatDemo>('pret');
 
 	const choisi = ECRANS_DU_PRODUIT.find((e) => e.route === produit) ?? null;
+	// Trois états hors du produit : rien à regarder en attente ou en erreur sur
+	// une démonstration de composant, donc les boutons restent visibles mais
+	// `disabled`, plutôt que de faire sauter la rangée d'un écran à l'autre.
 	const etats: readonly EtatDemo[] =
-		choisi === null
-			? []
-			: choisi.vide
-				? ['pret', 'vide', 'attente', 'erreur']
-				: ['pret', 'attente', 'erreur'];
+		choisi !== null && choisi.vide
+			? ['pret', 'vide', 'attente', 'erreur']
+			: ['pret', 'attente', 'erreur'];
 
 	return (
 		<div className="flex h-dvh flex-col">
@@ -2104,15 +2106,18 @@ function Showroom() {
 			    barre basse du téléphone hors de l'écran qu'on vient regarder. */}
 			<div className="shrink-0 overflow-x-auto border-b border-cladd-bg-outline p-cladd-3xs">
 				<Toolbar>
-					{choisi === null ? null : (
-						<Segmented activeColor="brand" activeVariant="solid">
-							{etats.map((e) => (
-								<SegmentedButton key={e} active={etat === e} onClick={() => setEtat(e)}>
-									{LIBELLE_ETAT[e]}
-								</SegmentedButton>
-							))}
-						</Segmented>
-					)}
+					<Segmented activeColor="brand" activeVariant="solid">
+						{etats.map((e) => (
+							<SegmentedButton
+								key={e}
+								active={etat === e}
+								disabled={choisi === null}
+								onClick={() => setEtat(e)}
+							>
+								{LIBELLE_ETAT[e]}
+							</SegmentedButton>
+						))}
+					</Segmented>
 					<Segmented activeColor="neutral" activeVariant="solid">
 						{ECRANS_DU_PRODUIT.map((e) => (
 							<SegmentedButton
@@ -2144,7 +2149,9 @@ function Showroom() {
 
 			<div className="min-h-0 flex-1">
 				{choisi !== null ? (
-					choisi.rendre(etat)
+					<Shell>
+						<choisi.Demo key={choisi.route} etat={etat} />
+					</Shell>
 				) : (
 					<>
 						{ecran === 'bilan-import' ? <DemoBilanImport /> : null}

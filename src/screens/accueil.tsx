@@ -213,6 +213,7 @@ export function EcranAccueil({ donnees }: { donnees: Lecture<AccueilAffiche> }) 
 
 	return (
 		<PageEcran entete={{ genre: 'aucun' }}>
+			{/* Un seul enfant : la colonne de la coquille poserait sinon son espacement entre le hero et la suite. */}
 			<div>
 				<PageHero className="mx-auto w-full max-w-2xl">
 					{/*
