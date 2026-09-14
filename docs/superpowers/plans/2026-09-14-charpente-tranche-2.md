@@ -90,7 +90,7 @@ Un écran reçoit `donnees: Lecture<…>`. **Tout ce dont il n'a besoin qu'une f
 
 Autres fichiers :
 
-- Créés : `src/ui/page-ecran.tsx`, `src/ui/__tests__/page-ecran.test.tsx` (tâche 1) ; `src/routes/-salle/ecrans.tsx`, `src/routes/-salle/donnees.tsx` (tâche 2) ; `src/screens/sans-etablissement.tsx` (tâche 6) ; `src/ui/__tests__/routes-lisent.test.ts`, `src/ui/__tests__/attente-visible.test.ts`, `src/ui/__tests__/salle-complete.test.ts` (tâche 9).
+- Créés : `src/ui/page-ecran.tsx`, `src/ui/__tests__/page-ecran.test.tsx` (tâche 1) ; `src/routes/-salle/demo.ts`, `communes.ts`, `onglets.tsx`, `creance.tsx`, `ecrans.tsx` (tâche 2 et ses correctifs), `debiteurs.tsx` (tâche 5), `reglages.tsx` (tâche 6), `import.tsx` (tâche 8) ; `src/screens/sans-etablissement.tsx` (tâche 6) ; `src/ui/__tests__/routes-lisent.test.ts`, `src/ui/__tests__/attente-visible.test.ts`, `src/ui/__tests__/salle-complete.test.ts`, `src/ui/__tests__/salle-etats.test.tsx` (tâche 9).
 - Modifiés : `src/ui/index.ts` et `src/ui/__tests__/destinations-existent.test.ts` (tâche 1) ; `src/routes/showroom.tsx` (tâches 2 à 8).
 
 Les numéros de ligne cités renvoient aux fichiers tels qu'ils sont au commit `3bc34e2`. Chaque route n'est touchée que par sa tâche : ses numéros restent valables jusque-là. Dans `showroom.tsx`, qui change à chaque tâche, les démos se désignent par leur NOM.
@@ -609,6 +609,21 @@ La revue a accepté la coquille, et relevé deux décisions d'API que les tâche
 7. **Tests** : `Link` est remplacé par un lien nu dans le test de la coquille, ce qui rend réellement l'en-tête poussé et l'issue par défaut. `destinations-existent` teste sa lecture sur des lignes écrites dans le test (`destinationsDansLigne`), et ne dépend plus d'un écran du produit.
 8. **Seconde relecture** : le statut sort de la zone `aria-busy` (portée par le squelette masqué), le squelette prend la largeur de la liste en deux volets, `disposition="volets"` est toléré à côté de `volets`, et les tests vérifient que le vide et l'erreur restent en colonne et que le retour transmet ses paramètres (`?d=`). Douze tests pour la coquille.
 9. **Tâche 10** : la mesure au DOM exclut le statut de la coquille des « attentes cachées ».
+
+### Correctifs de la revue de la tâche 2 (appliqués AVANT la tâche 3), et ce qu'ils changent pour les tâches 3 à 8
+
+1. **La salle vit par famille.** `src/routes/-salle/donnees.tsx` n'existe plus. Les fichiers :
+   - `demo.ts` : `EtatDemo`, `EcranDuProduit` et `lectureDemo`. `route` est typée par le routeur (une faute ne compile pas) ; `lectureDemo` LÈVE si on demande le vide d'un écran sans valeur vide.
+   - `communes.ts` : les données partagées avec les démos de composants de `showroom.tsx` (`EVENEMENTS_DEMO`, `RAIL_DEMO`, `DOSSIERS_DEMO`).
+   - `onglets.tsx` : accueil, procédures ; la tâche 8 y ajoute la révélation.
+   - `creance.tsx` : la créance ; les tâches 3 et 4 y ajoutent les analyses.
+   - `debiteurs.tsx` (à créer par la tâche 5), `reglages.tsx` (à créer par la tâche 6, complété par la tâche 7), `import.tsx` (à créer par la tâche 8, pour l'import et le dépôt).
+   - `ecrans.tsx` ne fait que réunir les tableaux de familles (`ECRANS_ONGLETS`, `ECRANS_CREANCE`…) dans `ECRANS_DU_PRODUIT`.
+   **Partout où une tâche 3 à 8 dit « `src/routes/-salle/donnees.tsx` » ou « ajouter à `ecrans.tsx` », lire : le fichier de SA famille**, et, pour une famille neuve, l'ajout de son tableau dans `ecrans.tsx`.
+2. **Une entrée est un composant** : `Demo: ({ etat }) => <EcranX … />`, ou un composant à état nommé (`Demo: ProceduresDemo`). Plus de `rendre`, plus de `<Shell>` dans les entrées : la salle pose la coquille une fois, et remonte la démo par sa `key` quand on change d'écran. Les tableaux des tâches 3 à 8 qui disent « rendues dans `<Shell>` » se lisent sans cette mention.
+3. **Les libellés des états** sont « prêt », « sans données », « en attente », « en erreur » (distincts des démos de composants `vide` et `erreur`) ; le groupe des états reste affiché, désactivé, quand une démo de composant est choisie.
+4. **Un en-tête s'écrit une fois** : quand il ne dépend pas de la valeur prête, `const entete` avant les retours anticipés, comme `EcranImport` (tâche 8) le fait déjà.
+5. **La créance** porte `identifiant` dans sa valeur (`CreanceOuverte`), pas en prop ; `CreanceEnErreur` n'a plus besoin des paramètres.
 
 ---
 
@@ -1132,7 +1147,7 @@ Les cinq pages poussées sous `/app/creance/$id/…`, sauf la procédure (tâche
 **Files:**
 - Create: `src/screens/analyses/decompte.tsx`, `litige.tsx`, `relances.tsx`, `risques.tsx`, `solidite.tsx`
 - Modify: `src/routes/app/creance_.$id.decompte.tsx`, `creance_.$id.litige.tsx`, `creance_.$id.relances.tsx`, `creance_.$id.risques.tsx`, `creance_.$id.solidite.tsx`
-- Modify: `src/routes/-salle/ecrans.tsx`, `src/routes/-salle/donnees.tsx`, `src/routes/showroom.tsx`
+- Modify: le fichier de la famille dans `src/routes/-salle/` (voir « Correctifs de la revue de la tâche 2 »), `src/routes/-salle/communes.ts` pour les données partagées avec les démos de composants, `src/routes/-salle/ecrans.tsx` si la famille est neuve, `src/routes/showroom.tsx`
 
 **Patron commun des cinq routes.** Chaque route garde son commentaire de tête réduit à une phrase (« Branchée sur la base ; le dessin vit dans `screens/analyses/<nom>.tsx`. »), le long commentaire qui justifie la page descendant en tête de l'écran. Elle déclare :
 
@@ -1495,9 +1510,9 @@ Route `creance_.$id.litige.tsx` : les lignes 35 à 56 restent ; le `return` des 
 
 - [ ] **Step 6 : la salle**
 
-1. Dans `src/routes/-salle/donnees.tsx`, déplacer depuis `showroom.tsx` les données de `DemoLitige`, `DemoRelances`, `DemoSolidite`, `DemoDecompte` et `DemoDetail` (dont `DECOMPTE_DEMO`, `QUESTIONS_LITIGE_DEMO`), sous des noms en `…_DEMO`.
+1. Dans `src/routes/-salle/creance.tsx`, déplacer depuis `showroom.tsx` les données de `DemoLitige`, `DemoRelances`, `DemoSolidite`, `DemoDecompte` et `DemoDetail` (dont `DECOMPTE_DEMO`, `QUESTIONS_LITIGE_DEMO`), sous des noms en `…_DEMO`. Une donnée qu'une démo de composant restante utilise encore va dans `communes.ts`.
 2. Supprimer de `showroom.tsx` `DemoLitige`, `DemoRelances`, `DemoSolidite`, `DemoDecompte`, `DemoDetail`, leurs clés (`'litige'`, `'relances'`, `'solidite'`, `'decompte'`, `'detail'`) et leurs lignes de rendu.
-3. Ajouter à `ECRANS_DU_PRODUIT` cinq entrées, rendues dans `<Shell>` comme les autres, avec `identifiant="demo"` et des gestionnaires vides (`() => undefined`), qui ne servent qu'à la salle :
+3. Ajouter à `ECRANS_CREANCE` (dans `src/routes/-salle/creance.tsx`) cinq entrées `Demo`, avec `identifiant="demo"` et des gestionnaires vides (`() => undefined`), qui ne servent qu'à la salle :
 
 | `route` | `libelle` | `vide` | Prêt | Vide |
 | --- | --- | --- | --- | --- |
@@ -1539,7 +1554,7 @@ La route la plus lourde du produit (706 lignes). Elle reste **entièrement contr
 **Files:**
 - Create: `src/screens/analyses/procedure.tsx`
 - Modify: `src/routes/app/creance_.$id.procedure.tsx`
-- Modify: `src/routes/-salle/ecrans.tsx`, `src/routes/-salle/donnees.tsx`, `src/routes/showroom.tsx`
+- Modify: le fichier de la famille dans `src/routes/-salle/` (voir « Correctifs de la revue de la tâche 2 »), `src/routes/-salle/communes.ts` pour les données partagées avec les démos de composants, `src/routes/-salle/ecrans.tsx` si la famille est neuve, `src/routes/showroom.tsx`
 
 - [ ] **Step 1 : l'écran, et la feuille de déclaration qui descend avec lui**
 
@@ -1767,20 +1782,16 @@ Le carnet n'entre pas dans l'attente : il se chargeait déjà progressivement (`
 
 - [ ] **Step 3 : la salle**
 
-1. Déplacer dans `src/routes/-salle/donnees.tsx` le suivi de `DemoSuivi`, et `VOIE_DEMO`, `CARNET_DEMO`, `ETUDES_DEMO`, `BARREAUX_DEMO`, `AVOCATS_DEMO` ; `showroom.tsx` importe de là celles que `DemoVoie`, `DemoIntervenant`, `DemoCommissaire` et `DemoAvocat` utilisent encore.
+1. Déplacer le suivi de `DemoSuivi` dans `src/routes/-salle/creance.tsx`, et `VOIE_DEMO`, `CARNET_DEMO`, `ETUDES_DEMO`, `BARREAUX_DEMO`, `AVOCATS_DEMO` dans `src/routes/-salle/communes.ts` ; `showroom.tsx` importe de `communes.ts` celles que `DemoVoie`, `DemoIntervenant`, `DemoCommissaire` et `DemoAvocat` utilisent encore.
 2. Supprimer `DemoSuivi`, sa clé `'suivi'` et sa ligne de rendu.
-3. Ajouter à `ecrans.tsx` un composant `ProcedureDemo({ etat })` qui tient dans des `useState` les feuilles et les recherches (comme la route), et l'entrée :
+3. Ajouter à `src/routes/-salle/creance.tsx` un composant `ProcedureDemo({ etat })` qui tient dans des `useState` les feuilles et les recherches (comme la route), toutes FERMÉES au départ, et l'entrée, dans `ECRANS_CREANCE` :
 
 ```tsx
 {
 	route: '/app/creance_/$id/procedure',
 	libelle: 'procédure',
 	vide: true,
-	rendre: (etat) => (
-		<Shell>
-			<ProcedureDemo etat={etat} />
-		</Shell>
-	)
+	Demo: ProcedureDemo
 }
 ```
 
@@ -1814,7 +1825,7 @@ git commit --no-verify -m "feat(analyses): la procedure passe dans la coquille, 
 **Files:**
 - Create: `src/screens/debiteurs.tsx`, `src/screens/debiteur/habitude.tsx`, `src/screens/debiteur/pieces.tsx`
 - Modify: `src/routes/app/debiteurs.tsx`, `debiteurs_.$id.habitude.tsx`, `debiteurs_.$id.pieces.tsx`
-- Modify: `src/routes/-salle/ecrans.tsx`, `src/routes/-salle/donnees.tsx`, `src/routes/showroom.tsx`
+- Modify: le fichier de la famille dans `src/routes/-salle/` (voir « Correctifs de la revue de la tâche 2 »), `src/routes/-salle/communes.ts` pour les données partagées avec les démos de composants, `src/routes/-salle/ecrans.tsx` si la famille est neuve, `src/routes/showroom.tsx`
 
 - [ ] **Step 1 : la liste des débiteurs**
 
@@ -2178,9 +2189,9 @@ La page attend désormais la liste des pièces : elle affichait « 0 document »
 
 - [ ] **Step 5 : la salle**
 
-1. Déplacer dans `donnees.tsx` les données de `DemoDebiteurDetail`, `DemoHabitude` (`HABITUDE_DEMO`) et `DemoPieces` (`TYPES_PIECE_DEMO`, les pièces), et `SECTEURS_DEMO` si `DemoIdentite` ne l'utilise plus seule (sinon l'importer).
+1. Créer `src/routes/-salle/debiteurs.tsx` (tableau `ECRANS_DEBITEURS`, à réunir dans `ecrans.tsx`) et y déplacer les données de `DemoDebiteurDetail`, `DemoHabitude` (`HABITUDE_DEMO`) et `DemoPieces` (`TYPES_PIECE_DEMO`, les pièces). `SECTEURS_DEMO`, que `DemoIdentite` utilise aussi, va dans `communes.ts`.
 2. Supprimer `DemoDebiteurDetail`, `DemoHabitude`, `DemoPieces`, leurs clés (`'debiteur'`, `'habitude'`, `'pieces'`) et leurs lignes de rendu. `DemoLettrage` et `DemoIdentite` restent : ce sont des démos de composants.
-3. Ajouter à `ecrans.tsx` :
+3. Ajouter à `ECRANS_DEBITEURS` :
 
 | `route` | `libelle` | `vide` | Démo |
 | --- | --- | --- | --- |
@@ -2219,7 +2230,7 @@ git commit --no-verify -m "feat(debiteurs): la liste, l'habitude et les pieces p
 - Create: `src/screens/abonnement/abonnement.tsx`, `premier-bilan.tsx`, `suivi.tsx`
 - Modify: `src/screens/parametres/creancier.tsx`, `src/screens/parametres/etablissement.tsx` (ajout d'un écran à chacun)
 - Modify: `src/routes/app/parametres.tsx`, `parametres_.creancier.tsx`, `parametres_.etablissement.tsx`, `abonnement.tsx`, `abonnement_.premier-bilan.tsx`, `abonnement_.suivi.tsx`
-- Modify: `src/routes/-salle/ecrans.tsx`, `src/routes/-salle/donnees.tsx`, `src/routes/showroom.tsx`
+- Modify: le fichier de la famille dans `src/routes/-salle/` (voir « Correctifs de la revue de la tâche 2 »), `src/routes/-salle/communes.ts` pour les données partagées avec les démos de composants, `src/routes/-salle/ecrans.tsx` si la famille est neuve, `src/routes/showroom.tsx`
 
 - [ ] **Step 1 : le vide « aucun établissement »**
 
@@ -2582,8 +2593,8 @@ Les trois routes d'abonnement lisent `const etat = useQuery(api.billing.etatAbon
 - [ ] **Step 5 : la salle**
 
 1. Supprimer `DemoCreancier` et `DemoAbonnement`, leurs clés (`'creancier'`, `'abonnement'`) et leurs lignes de rendu ; retirer les imports devenus inutiles (`Offre`, `OuvertureEnCours`, `EssaiEnCours`, `PALIERS`, `BORNES_PALIER`, `TARIFS`, `FormulaireCreancier`, `FIN_ESSAI_DEMO` s'il ne sert plus).
-2. Ajouter à `donnees.tsx` un `ABONNEMENT_DEMO: AbonnementAffiche` : palier `'M'`, `bornesPalier: BORNES_PALIER.M`, `tarifs: TARIFS.M`, `facturesParAn: 420`, `tier: 'aucun'`, `isDev: false`, `seatsAllowed: 3`, `paddleStatus: null`, `paddleConfigure: false`, `essaiFiniLe` à douze jours.
-3. Ajouter à `ecrans.tsx` :
+2. Créer `src/routes/-salle/reglages.tsx` (tableau `ECRANS_REGLAGES`, à réunir dans `ecrans.tsx`) avec un `ABONNEMENT_DEMO: AbonnementAffiche` : palier `'M'`, `bornesPalier: BORNES_PALIER.M`, `tarifs: TARIFS.M`, `facturesParAn: 420`, `tier: 'aucun'`, `isDev: false`, `seatsAllowed: 3`, `paddleStatus: null`, `paddleConfigure: false`, `essaiFiniLe` à douze jours.
+3. Ajouter à `ECRANS_REGLAGES` :
 
 | `route` | `libelle` | `vide` | Prêt | Vide |
 | --- | --- | --- | --- | --- |
@@ -2625,7 +2636,7 @@ git commit --no-verify -m "feat(reglages): les reglages et l'abonnement passent 
 - Create: `src/screens/equipe/inviter.tsx`, `src/screens/donnees/export.tsx`, `src/screens/donnees/supprimer-compte.tsx`, `src/screens/donnees/supprimer-etablissement.tsx`
 - Modify: `src/screens/equipe/equipe.tsx`, `src/screens/donnees/donnees.tsx` (ajout d'un écran à chacun)
 - Modify: `src/routes/app/equipe.tsx`, `equipe_.inviter.tsx`, `donnees.tsx`, `donnees_.export.tsx`, `donnees_.supprimer-compte.tsx`, `donnees_.supprimer-etablissement.tsx`
-- Modify: `src/routes/-salle/ecrans.tsx`, `src/routes/-salle/donnees.tsx`, `src/routes/showroom.tsx`
+- Modify: le fichier de la famille dans `src/routes/-salle/` (voir « Correctifs de la revue de la tâche 2 »), `src/routes/-salle/communes.ts` pour les données partagées avec les démos de composants, `src/routes/-salle/ecrans.tsx` si la famille est neuve, `src/routes/showroom.tsx`
 
 - [ ] **Step 1 : l'équipe**
 
@@ -3034,9 +3045,9 @@ Route `donnees_.supprimer-etablissement.tsx` : `errorComponent: SupprimerEtablis
 
 - [ ] **Step 7 : la salle**
 
-1. Déplacer `MEMBRES` et `INVITATIONS` dans `donnees.tsx`, avec un `APERCU_DEMO: ApercuDonnees` repris de `DemoDonnees`.
+1. Déplacer `MEMBRES` et `INVITATIONS` dans `src/routes/-salle/reglages.tsx`, avec un `APERCU_DEMO: ApercuDonnees` repris de `DemoDonnees`.
 2. Supprimer `DemoEquipe` et `DemoDonnees`, leurs clés (`'equipe'`, `'donnees'`) et leurs lignes de rendu.
-3. Ajouter à `ecrans.tsx` :
+3. Ajouter à `ECRANS_REGLAGES` :
 
 | `route` | `libelle` | `vide` | Prêt | Vide |
 | --- | --- | --- | --- | --- |
@@ -3077,7 +3088,7 @@ git commit --no-verify -m "feat(donnees): l'equipe et vos donnees passent dans l
 **Files:**
 - Create: `src/screens/import/depots.tsx`, `src/screens/import/depot.tsx`, `src/screens/revelation.tsx`
 - Modify: `src/routes/app/import-factures.tsx`, `import-factures_.$id.tsx`, `revelation.tsx`
-- Modify: `src/routes/-salle/ecrans.tsx`, `src/routes/-salle/donnees.tsx`, `src/routes/showroom.tsx`
+- Modify: le fichier de la famille dans `src/routes/-salle/` (voir « Correctifs de la revue de la tâche 2 »), `src/routes/-salle/communes.ts` pour les données partagées avec les démos de composants, `src/routes/-salle/ecrans.tsx` si la famille est neuve, `src/routes/showroom.tsx`
 
 - [ ] **Step 1 : l'import**
 
@@ -3349,9 +3360,9 @@ function Revelation() {
 
 - [ ] **Step 4 : la salle**
 
-1. Déplacer `REVELATION_DEMO`, `BILAN_DEMO` et `DEPOTS_DEMO` dans `donnees.tsx` ; `showroom.tsx` importe de là ceux que `DemoBilan` et `DemoBilanImport` utilisent encore.
+1. Déplacer `REVELATION_DEMO` dans `src/routes/-salle/onglets.tsx` ; `BILAN_DEMO` et `DEPOTS_DEMO`, que `DemoBilan` et `DemoBilanImport` utilisent encore, dans `communes.ts`. Créer `src/routes/-salle/import.tsx` (tableau `ECRANS_IMPORT`, à réunir dans `ecrans.tsx`).
 2. Supprimer `DemoDepot` et `DemoRevelation`, leurs clés (`'depot'`, `'revelation'`) et leurs lignes de rendu. `DemoBilanImport` (les quatre états d'un dépôt côte à côte) et `DemoBilan` restent : ce sont des démos de composants.
-3. Ajouter à `ecrans.tsx` :
+3. Ajouter la révélation à `ECRANS_ONGLETS`, l'import et le dépôt à `ECRANS_IMPORT` :
 
 | `route` | `libelle` | `vide` | Prêt | Vide |
 | --- | --- | --- | --- | --- |
@@ -3391,6 +3402,8 @@ Les deux barrières de la spec (§ 4.3), et la vérification que la salle montre
 - Create: `src/ui/__tests__/routes-lisent.test.ts`
 - Create: `src/ui/__tests__/attente-visible.test.ts`
 - Create: `src/ui/__tests__/salle-complete.test.ts`
+- Create: `src/ui/__tests__/salle-etats.test.tsx`
+- Modify: `src/lib/convex/__tests__/declare-jamais-alimente.test.ts` (`sourcesHorsSchema`, lignes 75 à 82)
 
 - [ ] **Step 1 : les routes lisent, les écrans dessinent**
 
@@ -3398,7 +3411,7 @@ Les deux barrières de la spec (§ 4.3), et la vérification que la salle montre
 
 ```ts
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -3460,6 +3473,18 @@ describe('les routes lisent, les écrans dessinent', () => {
 			fautes,
 			`Ces routes dessinent au lieu de passer leurs données à un écran de src/screens/ :\n${fautes.join('\n')}`
 		).toEqual([]);
+	});
+
+	it('chaque écran déclare l’erreur qui garde son en-tête', () => {
+		// Décision D4. Sans `errorComponent`, une panne retombe sur l'écran
+		// d'erreur générique du routeur, qui perd l'en-tête et son retour. La
+		// coquille authentifiée (`route.tsx`) n'est pas un écran : elle pose `Shell`.
+		const sansErreur = fichiers(ROUTES)
+			.filter((fichier) => basename(fichier) !== 'route.tsx')
+			.filter((fichier) => !/errorComponent:/.test(readFileSync(fichier, 'utf8')))
+			.map((fichier) => fichier.slice(RACINE.length + 1));
+
+		expect(sansErreur, `Ces écrans n’ont pas d’errorComponent :\n${sansErreur.join('\n')}`).toEqual([]);
 	});
 });
 ```
@@ -3540,14 +3565,15 @@ import { describe, expect, it } from 'vitest';
  * Prêt, Attente et Erreur à chaque entrée. Ce test tient l'autre moitié : que
  * chaque route ait son entrée.
  *
- * Il lit le registre comme du texte plutôt que de l'importer : le registre
- * importe la coquille de l'application, et avec elle le client
- * d'authentification, que rien ici n'a besoin de démarrer.
+ * Il lit les fichiers de la salle comme du texte : c'est la liste ÉCRITE qui
+ * compte ici. `salle-etats.test.tsx` rend chaque entrée dans chacun de ses
+ * états.
  */
 
 const RACINE = join(process.cwd(), 'src');
 const ROUTES = join(RACINE, 'routes', 'app');
-const REGISTRE = join(RACINE, 'routes', '-salle', 'ecrans.tsx');
+/** Les entrées vivent par famille d'écrans : tous les fichiers de la salle sont lus. */
+const SALLE = join(RACINE, 'routes', '-salle');
 
 function ecransDuRouteur(): string[] {
 	return readdirSync(ROUTES)
@@ -3562,7 +3588,11 @@ function ecransDuRouteur(): string[] {
 }
 
 function ecransDeLaSalle(): string[] {
-	return [...readFileSync(REGISTRE, 'utf8').matchAll(/route:\s*'([^']+)'/g)]
+	return readdirSync(SALLE)
+		.filter((fichier) => /\.tsx?$/.test(fichier))
+		.flatMap((fichier) => [
+			...readFileSync(join(SALLE, fichier), 'utf8').matchAll(/route:\s*'([^']+)'/g)
+		])
 		.map((trouve) => trouve[1])
 		.filter((route): route is string => route !== undefined);
 }
@@ -3577,7 +3607,7 @@ describe('la salle d’exposition', () => {
 	it('montre chaque écran que le routeur sert', () => {
 		const salle = new Set(ecransDeLaSalle());
 		const absents = ecransDuRouteur().filter((route) => !salle.has(route));
-		expect(absents, `Écrans absents de src/routes/-salle/ecrans.tsx :\n${absents.join('\n')}`).toEqual([]);
+		expect(absents, `Écrans absents de la salle (src/routes/-salle/) :\n${absents.join('\n')}`).toEqual([]);
 	});
 
 	it('ne montre aucun écran qui n’existe plus', () => {
@@ -3588,10 +3618,124 @@ describe('la salle d’exposition', () => {
 });
 ```
 
+- [ ] **Step 3 bis : la salle rend chaque écran dans chacun de ses états**
+
+`salle-complete` vérifie la liste ; ce test-ci REND chaque entrée. Il attrape une démonstration qui plante, un vide qui montrerait l'écran prêt (`lectureDemo` lève alors), et un écran branché sur le mauvais état.
+
+`src/ui/__tests__/salle-etats.test.tsx` :
+
+```tsx
+import type { ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import type { EtatDemo } from '../../routes/-salle/demo';
+import { ECRANS_DU_PRODUIT } from '../../routes/-salle/ecrans';
+
+/**
+ * CHAQUE ÉCRAN DE LA SALLE S'AFFICHE DANS CHACUN DE SES ÉTATS.
+ *
+ * C'est le premier critère de fin du chantier, exécuté : « chaque écran du
+ * produit s'ouvre dans la salle d'exposition, dans chacun de ses états ».
+ *
+ * ⚠️ `Link` EST REMPLACÉ PAR UN LIEN NU, comme dans `page-ecran.test.tsx` : le
+ * vrai exige un routeur. Les entrées ne posent pas la coquille (la salle le
+ * fait), donc rien d'autre n'est à remplacer.
+ */
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+	const original = await importOriginal<object>();
+	const { createElement } = await import('react');
+	return {
+		...original,
+		Link: ({ to, className, children }: { to?: string; className?: string; children?: ReactNode }) =>
+			createElement('a', { href: to, className }, children)
+	};
+});
+
+const ETATS_AVEC_VIDE: readonly EtatDemo[] = ['pret', 'vide', 'attente', 'erreur'];
+const ETATS_SANS_VIDE: readonly EtatDemo[] = ['pret', 'attente', 'erreur'];
+
+const cas = ECRANS_DU_PRODUIT.flatMap((ecran) =>
+	(ecran.vide ? ETATS_AVEC_VIDE : ETATS_SANS_VIDE).map((etat) => [ecran.route, etat, ecran] as const)
+);
+
+describe('la salle rend chaque écran dans chacun de ses états', () => {
+	it('a de quoi rendre : vingt-sept écrans, trois états au moins', () => {
+		expect(cas.length).toBeGreaterThanOrEqual(27 * 3);
+	});
+
+	it.each(cas)('%s, %s', (_route, etat, ecran) => {
+		const { Demo } = ecran;
+		const html = renderToStaticMarkup(<Demo etat={etat} />);
+
+		if (etat === 'attente') {
+			expect(html).toContain('aria-busy="true"');
+			expect(html).toContain('role="status"');
+		} else {
+			expect(html).not.toContain('aria-busy="true"');
+		}
+
+		if (etat === 'erreur') expect(html).toContain('role="alert"');
+		else expect(html).not.toContain('Cet écran n’a pas pu s’afficher.');
+	});
+
+	it.each(ECRANS_DU_PRODUIT.filter((ecran) => ecran.vide).map((ecran) => [ecran.route, ecran] as const))(
+		'%s : le vide ne montre pas l’écran prêt',
+		(_route, ecran) => {
+			const { Demo } = ecran;
+			expect(renderToStaticMarkup(<Demo etat="vide" />)).not.toEqual(
+				renderToStaticMarkup(<Demo etat="pret" />)
+			);
+		}
+	);
+});
+```
+
+Si une démonstration ne peut pas se rendre côté serveur (une feuille `Popup` ouverte d'emblée, par exemple), ne pas l'exclure du test : la rendre fermée par défaut dans la salle, et le dire dans le rapport.
+
+- [ ] **Step 3 ter : la salle n'alimente aucun champ**
+
+La barrière `declare-jamais-alimente` compte comme ÉCRITURE tout `champ:` d'objet littéral, et comme EMPLOI toute valeur d'union citée, partout dans `src` sauf le schéma. Les données de démonstration de la salle en portent des dizaines, et en porteront davantage à chaque écran : un champ que seule la salle « alimente » passerait pour alimenté, alors que le produit ne l'écrit pas.
+
+Dans `src/lib/convex/__tests__/declare-jamais-alimente.test.ts`, remplacer `sourcesHorsSchema` (lignes 75 à 82, commentaire compris) par :
+
+```ts
+/**
+ * Tout le code SAUF les déclarations de schéma, qui ne sont pas des écritures,
+ * et SAUF la salle d'exposition.
+ *
+ * ⚠️ LA SALLE ÉCRIT DES DONNÉES INVENTÉES. Ses démonstrations portent des objets
+ * littéraux et des valeurs d'union qui passeraient pour des écritures et des
+ * emplois : un champ que seul un écran de démonstration « alimente » est un
+ * champ que le produit n'alimente pas.
+ */
+function sourcesHorsSchema(): string {
+	const exclus = [sep + 'tables.ts', sep + 'schema.ts', sep + 'showroom.tsx'];
+	const salle = `${sep}routes${sep}-salle${sep}`;
+	return fichiersSources(RACINE)
+		.filter((f) => !exclus.some((x) => f.endsWith(x)))
+		.filter((f) => !f.includes(salle))
+		.map((f) => readFileSync(f, 'utf8'))
+		.join('\n');
+}
+```
+
+Et ajouter, à la fin du `describe` :
+
+```ts
+	it('ne compte pas la salle d’exposition comme une écriture', () => {
+		// `lectureDemo(` n'existe que dans `src/routes/-salle/` : s'il apparaît dans
+		// le corpus, la salle y est entrée, et ses données inventées alimentent en
+		// silence les deux balayages ci-dessus.
+		expect(sourcesHorsSchema()).not.toContain('lectureDemo(');
+	});
+```
+
+Vérifier que les deux balayages restent verts sans la salle : la revue de la tâche 2 l'a rejoué au commit `54e5e29`, aucun champ ni aucune valeur n'en dépendait. S'ils tombent maintenant, c'est qu'une donnée de la salle masquait un vrai défaut : le nommer dans le rapport, ne pas le tolérer en silence.
+
 - [ ] **Step 4 : les lancer**
 
-Run: `bunx vitest --run src/ui/__tests__/routes-lisent.test.ts src/ui/__tests__/attente-visible.test.ts src/ui/__tests__/salle-complete.test.ts`
-Expected: PASS, 9 tests.
+Run: `bunx vitest --run src/ui/__tests__/routes-lisent.test.ts src/ui/__tests__/attente-visible.test.ts src/ui/__tests__/salle-complete.test.ts src/ui/__tests__/salle-etats.test.tsx src/lib/convex/__tests__/declare-jamais-alimente.test.ts`
+Expected: PASS : 10 tests de barrières, 4 de la barrière des champs, et pour la salle 1 test plus un cas par écran et par état, plus un cas par écran qui a un vide.
 
 - [ ] **Step 5 : les faire mordre**
 
@@ -3603,21 +3747,23 @@ export const Essai = () => <Page><p className="sr-only">Chargement…</p></Page>
 
 Relancer la commande du Step 4. Attendu : FAIL sur « aucune route de src/routes/app ne dessine » et sur « aucun écran n’annonce son chargement aux seuls lecteurs d’écran », chacun nommant `routes/app/revelation.tsx`. Retirer la ligne avec l'outil d'édition (pas de `git checkout`), puis relancer : PASS.
 
-Dans `src/routes/-salle/ecrans.tsx`, commenter temporairement la ligne `route: '/app/revelation',`. Relancer : FAIL sur « montre chaque écran que le routeur sert », qui nomme `/app/revelation`. Rétablir la ligne, relancer : PASS.
+Dans `src/routes/-salle/onglets.tsx`, commenter temporairement la ligne `route: '/app/revelation',`. Relancer : FAIL sur « montre chaque écran que le routeur sert », qui nomme `/app/revelation`. Rétablir la ligne, relancer : PASS.
+
+Dans `src/routes/app/revelation.tsx`, retirer temporairement `errorComponent: RevelationEnErreur,`. Relancer : FAIL sur « chaque écran déclare l’erreur qui garde son en-tête », qui nomme `routes/app/revelation.tsx`. Rétablir, relancer : PASS.
 
 - [ ] **Step 6 : la suite entière, et committer**
 
 ```bash
-bunx prettier --write src/ui/__tests__/routes-lisent.test.ts src/ui/__tests__/attente-visible.test.ts src/ui/__tests__/salle-complete.test.ts
+bunx prettier --write src/ui/__tests__/routes-lisent.test.ts src/ui/__tests__/attente-visible.test.ts src/ui/__tests__/salle-complete.test.ts src/ui/__tests__/salle-etats.test.tsx src/lib/convex/__tests__/declare-jamais-alimente.test.ts
 bun run test:unit
 bun run check
 bun run lint
 git status --short
-git add src/ui/__tests__/routes-lisent.test.ts src/ui/__tests__/attente-visible.test.ts src/ui/__tests__/salle-complete.test.ts
-git commit --no-verify -m "test(barrieres): les routes lisent, aucune attente n'est invisible, la salle montre chaque ecran" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" -- src/ui/__tests__/routes-lisent.test.ts src/ui/__tests__/attente-visible.test.ts src/ui/__tests__/salle-complete.test.ts
+git add src/ui/__tests__/routes-lisent.test.ts src/ui/__tests__/attente-visible.test.ts src/ui/__tests__/salle-complete.test.ts src/ui/__tests__/salle-etats.test.tsx
+git commit --no-verify -m "test(barrieres): les routes lisent et declarent leur erreur, aucune attente n'est invisible, la salle rend chaque ecran dans chaque etat" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" -- src/ui/__tests__/routes-lisent.test.ts src/ui/__tests__/attente-visible.test.ts src/ui/__tests__/salle-complete.test.ts src/ui/__tests__/salle-etats.test.tsx src/lib/convex/__tests__/declare-jamais-alimente.test.ts
 ```
 
-Attendu : `git status --short` ne montre que les trois tests (les essais du Step 5 sont bien retirés).
+Attendu : `git status --short` ne montre que ces cinq fichiers (les essais du Step 5 sont bien retirés).
 
 ---
 
@@ -3636,7 +3782,7 @@ bun run lint
 bun run build
 ```
 
-Attendu : tout vert ; le nombre de tests dépasse celui de la tâche 0 d'au moins 22 (12 de la coquille, 1 des destinations, 9 des barrières), aucun n'ayant été retiré.
+Attendu : tout vert ; le nombre de tests dépasse celui de la tâche 0 d'au moins 105 (12 de la coquille, 1 des destinations, 10 des barrières, et pour la salle 1 test plus au moins 81 cas d'écran et d'état), aucun n'ayant été retiré.
 
 - [ ] **Step 2 : le regard, aux quatre largeurs**
 
