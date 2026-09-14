@@ -3097,6 +3097,10 @@ Route `donnees_.supprimer-etablissement.tsx` : `errorComponent: SupprimerEtablis
 - [ ] **Step 7 : la salle**
 
 1. Déplacer `MEMBRES` et `INVITATIONS` dans `src/routes/-salle/reglages.tsx`, avec un `APERCU_DEMO: ApercuDonnees` repris de `DemoDonnees`.
+
+   **Amendements du 14/09, relevés au code. Ils l'emportent sur le code des étapes 1 et 2 et sur le tableau qui suit.**
+   - **L'équipe et l'invitation attendent aussi la facturation** (règle 3 des correctifs de la revue de la tâche 4). Les deux routes lisent `api.billing.getBillingStatus`, mais leur attente ne porte que sur les membres, les invitations et le rôle. Tant que la facturation se lit, `siegesAutorises` se replie sur le nombre de membres : l'équipe se dit complète, et l'invitation refuse d'inviter, à tort. `enAttente` (`equipe.tsx`, ligne 41) et `chargement` (`equipe_.inviter.tsx`, ligne 37) portent donc aussi `facturation === undefined`. Le repli sur `null` (aucune facturation) reste tel quel.
+   - **Le compte et l'établissement de la salle sont ceux du gérant, pas du débiteur.** Le tableau donne à « supprimer compte » l'adresse `claire.martin@fournitures-durand.fr`, chez le débiteur de la famille créance. Or l'équipe et les données de la salle sont celles de « Thumbbb Agency ». L'adresse du compte est celle du membre connecté de `MEMBRES`, et `APERCU_DEMO.nomEtablissement` vient de `ETABLISSEMENT_DEMO` (`communes.ts`, tâche 6) : une seule source pour chacun.
 2. Supprimer `DemoEquipe` et `DemoDonnees`, leurs clés (`'equipe'`, `'donnees'`) et leurs lignes de rendu.
 3. Ajouter à `ECRANS_REGLAGES` :
 
