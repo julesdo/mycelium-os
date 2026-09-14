@@ -16,17 +16,11 @@ import {
 	BilanPertes,
 	HabitudePaiement,
 	IdentiteDebiteur,
-	SuiviProcedure,
 	RailProcedure,
 	FeuilleVoie,
-	type VoieAffichee,
 	ChoixIntervenant,
-	type FicheIntervenant,
 	RechercheCommissaire,
-	type ResultatAnnuaireAffiche,
 	RechercheAvocat,
-	type ResultatAvocatsAffiche,
-	type RepertoireAffiche,
 	ListeAnalyses,
 	LigneBouton,
 	Pieces,
@@ -46,11 +40,17 @@ import { FormulaireCreancier } from '../screens/parametres/creancier';
 import { Shell } from '../app/shell';
 import { DetailDebiteur } from '../screens/debiteur-detail';
 import { EcranIntrouvable, EcranEnErreur } from '../screens/passage';
-import { etapesDeLaVoie } from '../lib/verticales/recouvrement/apres-procedure';
-import { PROCEDURES } from '../lib/verticales/recouvrement/procedures';
 import { ECRANS_DU_PRODUIT } from './-salle/ecrans';
 import type { EtatDemo } from './-salle/demo';
-import { EVENEMENTS_DEMO, RAIL_DEMO } from './-salle/communes';
+import {
+	AVOCATS_DEMO,
+	BARREAUX_DEMO,
+	CARNET_DEMO,
+	ETUDES_DEMO,
+	EVENEMENTS_DEMO,
+	RAIL_DEMO,
+	VOIE_DEMO
+} from './-salle/communes';
 
 /**
  * La salle d'exposition.
@@ -452,145 +452,6 @@ function DemoPieces() {
 							onDeposer={() => {}}
 							onClasser={() => {}}
 							onRetirer={() => {}}
-						/>
-					</div>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoSuivi() {
-	// La date du jour est figée : une démonstration dont les « dans N jours »
-	// bougent chaque matin ne se compare plus d'une capture à l'autre.
-	const AUJOURDHUI = '2026-03-02';
-
-	return (
-		<Page>
-			<PageHeader titre="Fournitures Durand" sousTitre="Ce qui court depuis l’engagement" />
-			<PageBody>
-				<div className="flex flex-col gap-cladd-md">
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>La caducité qui approche</SectionTitle>
-						<SuiviProcedure
-							aujourdHui={AUJOURDHUI}
-							onConsigner={() => {}}
-							suivi={{
-								libelle: 'Ordonnance rendue',
-								constat: 'L’ordonnance existe et n’est pas encore signifiée au débiteur.',
-								depuisLe: '2026-01-10',
-								echeances: [
-									{
-										cle: 'signification',
-										libelle: 'Signification de l’ordonnance',
-										dateLimite: '2026-04-10',
-										gravite: 'CADUCITE',
-										consequence:
-											'Passé ce délai de 3 mois, l’ordonnance est caduque. La créance n’est pas éteinte, mais la procédure est à reprendre depuis le début, et le temps écoulé rapproche la prescription.'
-									}
-								],
-								anglesMorts: [],
-								suites: [
-									{
-										cle: 'ordonnance-signifiee',
-										libelle: 'L’ordonnance a été signifiée au débiteur'
-									}
-								],
-								terminal: false,
-								journal: [
-									{
-										cle: 'ordonnance-rendue',
-										libelle: 'Le juge a rendu son ordonnance',
-										survenuLe: '2026-01-10'
-									}
-								]
-							}}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Ce qui court sans qu’on sache combien de temps</SectionTitle>
-						<SuiviProcedure
-							aujourdHui={AUJOURDHUI}
-							onConsigner={() => {}}
-							suivi={{
-								libelle: 'Ordonnance signifiée',
-								constat:
-									'Le débiteur a reçu l’ordonnance. Un délai d’opposition court à compter de cette signification.',
-								depuisLe: '2026-02-10',
-								echeances: [],
-								anglesMorts: [
-									'Un délai d’opposition court depuis la signification. Sa durée n’est pas relevée dans le référentiel juridique de ce logiciel : cette échéance-là n’est PAS surveillée, et reste à vérifier auprès de l’acte signifié, qui la porte.'
-								],
-								suites: [
-									{ cle: 'opposition-formee', libelle: 'Le débiteur a formé opposition' },
-									{
-										cle: 'absence-opposition-constatee',
-										libelle: 'L’absence d’opposition a été constatée'
-									}
-								],
-								terminal: false,
-								journal: [
-									{
-										cle: 'ordonnance-rendue',
-										libelle: 'Le juge a rendu son ordonnance',
-										survenuLe: '2026-01-10'
-									},
-									{
-										cle: 'ordonnance-signifiee',
-										libelle: 'L’ordonnance a été signifiée au débiteur',
-										survenuLe: '2026-02-10'
-									}
-								]
-							}}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-3xs">
-						<SectionTitle>Une échéance dépassée le DIT</SectionTitle>
-						<SuiviProcedure
-							aujourdHui={AUJOURDHUI}
-							onConsigner={() => {}}
-							suivi={{
-								libelle: 'Commandement signifié',
-								constat:
-									'Le commandement a été signifié. Le débiteur peut contester, et une contestation met fin à la procédure simplifiée, même infondée.',
-								depuisLe: '2026-01-15',
-								echeances: [
-									{
-										cle: 'fin-contestation',
-										libelle: 'Expiration du délai de contestation',
-										dateLimite: '2026-02-15',
-										gravite: 'INFORMATIVE',
-										consequence:
-											'Jusqu’à cette date, le débiteur peut contester et mettre fin à la procédure simplifiée.'
-									},
-									{
-										cle: 'proces-verbal-possible',
-										libelle: 'Procès-verbal de non-contestation possible',
-										dateLimite: '2026-02-23',
-										gravite: 'INFORMATIVE',
-										consequence:
-											'À partir de cette date, et pas avant, le procès-verbal peut être dressé. Les 8 jours s’ajoutent au délai de contestation, ils ne s’y superposent pas.'
-									}
-								],
-								anglesMorts: [],
-								suites: [
-									{ cle: 'contestation-recue', libelle: 'Le débiteur a contesté' },
-									{
-										cle: 'proces-verbal-dresse',
-										libelle: 'Le procès-verbal de non-contestation a été dressé'
-									}
-								],
-								terminal: false,
-								journal: [
-									{
-										cle: 'commandement-signifie',
-										libelle: 'Le commandement a été signifié au débiteur',
-										survenuLe: '2026-01-15'
-									}
-								]
-							}}
 						/>
 					</div>
 				</div>
@@ -1338,32 +1199,6 @@ function DemoRail() {
 	);
 }
 
-/**
- * LA VOIE DE DEMONSTRATION VIENT DU DOMAINE, PAS D'UNE COPIE.
- *
- * ⚠️ RECOPIER LES QUATRE LIBELLES ICI FERAIT DEUX FORMULATIONS DU MEME FAIT, et
- * la salle d'exposition montrerait alors une procédure qui n'est plus celle du
- * produit. `apres-procedure.ts` le dit déjà de son côté : le libellé vit avec la
- * transition qui le produit. Une salle qui ment sur ce qu'on vient y regarder
- * est pire qu'une salle vide.
- *
- * L'injonction de payer, et pas L.126 : c'est la voie complète — quatre étapes
- * sur la ligne, trois façons d'échouer — donc celle qui met la feuille à
- * l'épreuve sur les quatre largeurs de référence.
- */
-const VOIE_DEMO: VoieAffichee = {
-	cle: 'injonction-de-payer',
-	nom: PROCEDURES['injonction-de-payer'].nom,
-	disponible: true,
-	blocages: [],
-	etapes: etapesDeLaVoie('injonction-de-payer').map((etape) => ({
-		etat: etape.etat,
-		libelle: etape.libelle,
-		constat: etape.constat
-	})),
-	conditionsEchec: PROCEDURES['injonction-de-payer'].conditionsEchec
-};
-
 function DemoVoie() {
 	// Une `Popup` est contrôlée : sans état d'ouverture, elle ne s'affiche pas.
 	// La salle l'ouvre d'emblée — c'est ce qu'on vient regarder — et la rangée
@@ -1406,23 +1241,6 @@ function DemoVoie() {
 	);
 }
 
-/**
- * LE CARNET DE LA SALLE — deux fiches, deux rôles, et « Moi-même » choisi.
- *
- * ⚠️ DEUX RÔLES DIFFÉRENTS EXPRÈS. C'est ce qui met le sous-titre à l'épreuve :
- * « Commissaire de justice · Bobigny » est la chaîne la plus longue que cette
- * carte ait à porter, et c'est sur 375 px qu'elle se casse, pas sur 1280.
- */
-const CARNET_DEMO: readonly FicheIntervenant[] = [
-	{ _id: 'fiche-avocat', nom: 'Cabinet Perrin', role: 'AVOCAT', ressort: 'Paris' },
-	{
-		_id: 'fiche-commissaire',
-		nom: 'Étude Lemoine',
-		role: 'COMMISSAIRE_DE_JUSTICE',
-		ressort: 'Bobigny'
-	}
-];
-
 function DemoIntervenant() {
 	// Comme `DemoVoie` : une `Popup` est contrôlée, donc la salle l'ouvre
 	// d'emblée — c'est ce qu'on vient regarder.
@@ -1464,55 +1282,6 @@ function DemoIntervenant() {
 	);
 }
 
-/**
- * TROIS ÉTUDES DE DÉMONSTRATION — ET CE SONT DE VRAIES.
- *
- * Relevées le 12 septembre 2026 en interrogeant l'API Recherche d'entreprises
- * sur le département 44, qui en rend vingt-deux. Des données inventées auraient
- * caché ce que la vraie réponse a de particulier : des dénominations en
- * capitales, parfois doublées d'un sigle, et une adresse de siège qui n'est pas
- * toujours dans le département cherché.
- */
-const ETUDES_DEMO: ResultatAnnuaireAffiche = {
-	departement: '44',
-	total: 22,
-	etudes: [
-		{
-			siren: '921924908',
-			// ⚠️ L'APOSTROPHE EST DROITE, ET LE NOM EST DOUBLÉ. C'est le registre qui
-			// écrit ainsi ; le redresser en apostrophe courbe ou retirer les
-			// parenthèses reviendrait à faire répéter à la salle d'exposition une
-			// dénomination que la source ne porte pas — exactement ce que l'écran
-			// s'interdit de faire avec les vraies réponses.
-			nom: "COMMISSAIRES DE L'OUEST (COMMISSAIRES DE L'OUEST) (CDOUEST)",
-			commune: 'NANTES',
-			codePostal: '44100',
-			adresse: '14 BOULEVARD WINSTON CHURCHILL 44100 NANTES'
-		},
-		{
-			siren: '883711400',
-			nom: 'MOCAER, CLAVIERE, VIOTTI',
-			commune: 'NORT-SUR-ERDRE',
-			codePostal: '44390',
-			adresse: "5 RUE D'ANJOU 44390 NORT-SUR-ERDRE"
-		},
-		{
-			siren: '911195980',
-			nom: 'SOLUTIONS HUISSIER',
-			commune: 'SAINT-NAZAIRE',
-			codePostal: '44600',
-			adresse: '5 RUE DES TROENES 44600 SAINT-NAZAIRE'
-		}
-	],
-	source:
-		'Registre des entreprises (API Recherche d’entreprises, DINUM), filtré sur la convention ' +
-		'collective 3250 et l’activité 69.10Z. Ce n’est pas le tableau de la profession : une étude ' +
-		'qui n’a pas déclaré sa convention collective n’y figure pas, et une radiation disciplinaire ' +
-		'n’y figure pas non plus. Le filtre de département porte sur les établissements, pas sur le ' +
-		'siège : une étude dont le siège est ailleurs peut remonter.',
-	releveeLe: '2026-09-12'
-};
-
 function DemoCommissaire() {
 	// Comme `DemoIntervenant` : une `Popup` est contrôlée, donc la salle l'ouvre
 	// d'emblée — c'est ce qu'on vient regarder.
@@ -1553,120 +1322,6 @@ function DemoCommissaire() {
 		</Page>
 	);
 }
-
-/**
- * LE RÉPERTOIRE DE LA SALLE — DE VRAIS BARREAUX, EN NOMBRE RÉDUIT.
- *
- * Relevés le 12 septembre 2026 dans la livraison du 17 juillet 2026 de
- * l'annuaire national des avocats. La livraison réelle en porte plus de cent
- * cinquante ; vingt suffisent à mettre la liste déroulante et sa recherche à
- * l'épreuve, et les noms sont écrits comme le fichier les écrit — en capitales,
- * sans accent, et parfois sous le nom du DÉPARTEMENT plutôt que de la ville
- * (« CHARENTE », « VAL DE MARNE »). Les redresser ferait afficher à la salle
- * des libellés que la source ne porte pas.
- */
-const BARREAUX_DEMO: RepertoireAffiche = {
-	barreaux: [
-		'AGEN',
-		'ALBERTVILLE',
-		'ALES',
-		'ARDENNES',
-		'ARRAS',
-		'AUXERRE',
-		'BEAUVAIS',
-		'BESANCON',
-		'BLOIS',
-		'BORDEAUX',
-		'BOURGES',
-		'BRIEY',
-		'CARPENTRAS',
-		'CHALON-SUR-SAONE',
-		'CHARENTE',
-		'COLMAR',
-		'HAUTE-MARNE',
-		'LOT',
-		'MEUSE',
-		'VAL DE MARNE'
-	],
-	complete: true,
-	releveeLe: '2026-07-17'
-};
-
-/**
- * TROIS AVOCATS DE DÉMONSTRATION — ET CE SONT DE VRAIS.
- *
- * Relevés le 12 septembre 2026 dans la livraison du 17 juillet 2026, au barreau
- * de Bordeaux, qui en compte 2 214. Des fiches inventées auraient caché ce que
- * le vrai fichier a de particulier, et chacune des trois est ici pour une
- * raison :
- *
- *   · ANDREAU n'a PAS de SIREN — le fichier laisse la colonne vide sur nombre
- *     de fiches. La rangée retombe alors sur la raison sociale, au lieu
- *     d'afficher un tiret qui se lirait comme une valeur ;
- *   · BALTAZAR porte une seconde ligne d'adresse (« 2ème étage »), recollée à
- *     la première par l'import ;
- *   · BERTRAND déclare deux spécialités, dont la plus longue du référentiel du
- *     CNB — c'est sur 375 px qu'elle casse la rangée, pas sur 1280.
- *
- * ⚠️ LA LISTE EST VOLONTAIREMENT TRONQUÉE : trois fiches affichées, 2 214 qui
- * correspondent. C'est l'état qu'on vient vérifier à l'œil — celui où la liste
- * doit DIRE qu'elle est incomplète, faute de quoi elle ment par le silence.
- *
- * ⚠️ ET `specialitesDeclarees` NE PORTE QUE CELLES DU TRIO, pour la même
- * raison : la salle montre une tranche, et la liste de filtres d'une tranche
- * est celle de cette tranche.
- */
-const AVOCATS_DEMO: ResultatAvocatsAffiche = {
-	barreau: 'BORDEAUX',
-	specialite: null,
-	total: 2214,
-	lectureTronquee: false,
-	specialitesDeclarees: [
-		'Droit de la sécurité sociale et de la protection sociale',
-		'Droit des sociétés',
-		'Droit du travail',
-		'Droit fiscal et droit douanier',
-		'Droit public'
-	],
-	avocats: [
-		{
-			nom: 'ANDREAU',
-			prenom: 'Pierre',
-			raisonSociale: 'FIDUCIAIRE SAINT JOSEPH',
-			adresse: '9 Cours de Gourgues',
-			codePostal: '33000',
-			ville: 'BORDEAUX',
-			specialites: ['Droit des sociétés', 'Droit fiscal et droit douanier']
-		},
-		{
-			nom: 'BALTAZAR',
-			prenom: 'Marie-Christine',
-			raisonSociale: 'BALTAZAR MARIE-CHRISTINE',
-			siren: '502005747',
-			adresse: '12 rue Elisée Reclus, 2ème étage',
-			codePostal: '33000',
-			ville: 'BORDEAUX',
-			specialites: ['Droit public']
-		},
-		{
-			nom: 'BERTRAND',
-			prenom: 'Stéphanie',
-			raisonSociale: 'STEPHANIE BERTRAND AVOCAT',
-			siren: '832397772',
-			adresse: '4 rue de la Maison Daurade',
-			codePostal: '33000',
-			ville: 'BORDEAUX',
-			specialites: ['Droit de la sécurité sociale et de la protection sociale', 'Droit du travail']
-		}
-	],
-	source:
-		'Annuaire national des avocats (Conseil national des barreaux), publié sur data.gouv.fr sous ' +
-		'Licence Ouverte 2.0. C’est une photographie mensuelle : une fiche peut décrire une situation ' +
-		'périmée — un avocat qui a changé de barreau, déménagé, ou cessé d’exercer depuis le relevé. ' +
-		'Les spécialités sont celles que l’avocat a DÉCLARÉES au fichier : leur absence ne dit pas ' +
-		'qu’il n’en a aucune, elle dit qu’aucune n’est inscrite.',
-	releveeLe: '2026-07-17'
-};
 
 function DemoAvocat() {
 	// Comme `DemoCommissaire` : une `Popup` est contrôlée, donc la salle l'ouvre
@@ -1722,7 +1377,6 @@ const ECRANS = [
 	'lettrage',
 	'creancier',
 	'identite',
-	'suivi',
 	'rail',
 	'voie',
 	'intervenant',
@@ -1861,7 +1515,6 @@ function Showroom() {
 						{ecran === 'lettrage' ? <DemoLettrage /> : null}
 						{ecran === 'creancier' ? <DemoCreancier /> : null}
 						{ecran === 'identite' ? <DemoIdentite /> : null}
-						{ecran === 'suivi' ? <DemoSuivi /> : null}
 						{ecran === 'rail' ? <DemoRail /> : null}
 						{ecran === 'voie' ? <DemoVoie /> : null}
 						{ecran === 'intervenant' ? <DemoIntervenant /> : null}

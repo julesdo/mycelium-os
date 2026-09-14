@@ -1,6 +1,7 @@
 import type { EcranDuProduit } from './demo';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_ONGLETS } from './onglets';
+import { ECRANS_PROCEDURE } from './procedure';
 
 /**
  * LES ÉCRANS DU PRODUIT, TELS QU'IL LES AFFICHE.
@@ -18,4 +19,8 @@ import { ECRANS_ONGLETS } from './onglets';
  * avec les données qu'elles montrent : chaque tâche touche sa famille, et ce
  * fichier-ci ne fait que les réunir.
  */
-export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [...ECRANS_ONGLETS, ...ECRANS_CREANCE];
+export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
+	...ECRANS_ONGLETS,
+	...ECRANS_CREANCE,
+	...ECRANS_PROCEDURE
+];

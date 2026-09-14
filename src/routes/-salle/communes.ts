@@ -1,4 +1,19 @@
-import type { EtapeAffichee, EvenementAffiche } from '../../ui';
+import type {
+	EtapeAffichee,
+	EvenementAffiche,
+	FicheIntervenant,
+	RepertoireAffiche,
+	ResultatAnnuaireAffiche,
+	ResultatAvocatsAffiche,
+	VoieAffichee
+} from '../../ui';
+import { MACHINES, etapesDeLaVoie } from '../../lib/verticales/recouvrement/apres-procedure';
+import type { ConditionsDeduites } from '../../lib/verticales/recouvrement/deduction';
+import {
+	PROCEDURES,
+	proceduresEnvisageables,
+	type Procedure
+} from '../../lib/verticales/recouvrement/procedures';
 
 /**
  * LES FIXTURES COMMUNES DE LA SALLE D'EXPOSITION.
@@ -6,7 +21,7 @@ import type { EtapeAffichee, EvenementAffiche } from '../../ui';
  * Celles-ci traversent plusieurs familles d'écrans, ou sont montrées telles
  * quelles par une démonstration de composant dans `routes/showroom.tsx`. Les
  * fixtures propres à une seule famille vivent avec elle (`onglets.tsx`,
- * `creance.tsx`).
+ * `creance.tsx`, `procedure.tsx`).
  */
 
 /**
@@ -152,3 +167,249 @@ export const RAIL_DEMO: EtapeAffichee[] = [
 		brancheSuivie: null
 	}
 ];
+
+/** Une voie telle que `creanceComplete` la rend : avec `suivie`, que la feuille ne lit pas. */
+export type VoieDeLaCreance = VoieAffichee & { readonly suivie: boolean };
+
+/**
+ * UNE VOIE, TELLE QUE `creanceComplete` LA REND.
+ *
+ * Reprise de `src/lib/convex/recouvrement/lecture.ts`, lignes 514, 515 et 605 à
+ * 632 : envisageable sur les seules conditions et évaluable, suivie si une
+ * machine décrit son après, ses blocages et ses étapes lus dans le domaine. Les
+ * clés envisageables ne dépendent que des conditions : les calculer pour chaque
+ * voie rend ce que la requête rend en les calculant une fois.
+ *
+ * ⚠️ RIEN N'Y EST ÉCRIT À LA MAIN. `VOIE_DEMO` écrivait `disponible: true` et
+ * `blocages: []`, et cachait ainsi le seul blocage réel de l'injonction : ses
+ * mentions obligatoires, que le référentiel ne fournit pas encore.
+ */
+export function voieDeLaCreance(
+	procedure: Procedure,
+	conditions: ConditionsDeduites
+): VoieDeLaCreance {
+	const clesEnvisageables = new Set(
+		proceduresEnvisageables({ ...conditions, piecesFournies: [] }).map(
+			(envisageable) => envisageable.cle
+		)
+	);
+
+	return {
+		cle: procedure.cle,
+		nom: procedure.nom,
+		disponible: clesEnvisageables.has(procedure.cle) && procedure.peutEvaluer(),
+		suivie: procedure.machine !== null,
+		blocages: [...procedure.blocagesProductionActe()],
+		etapes:
+			procedure.machine === null || MACHINES[procedure.machine] === undefined
+				? []
+				: etapesDeLaVoie(procedure.machine).map((etape) => ({
+						etat: etape.etat,
+						libelle: etape.libelle,
+						constat: etape.constat
+					})),
+		conditionsEchec: [...procedure.conditionsEchec]
+	};
+}
+
+/**
+ * LA VOIE DE DEMONSTRATION VIENT DU DOMAINE, PAS D'UNE COPIE.
+ *
+ * ⚠️ RECOPIER LES QUATRE LIBELLES ICI FERAIT DEUX FORMULATIONS DU MEME FAIT, et
+ * la salle d'exposition montrerait alors une procédure qui n'est plus celle du
+ * produit. `apres-procedure.ts` le dit déjà de son côté : le libellé vit avec la
+ * transition qui le produit. Une salle qui ment sur ce qu'on vient y regarder
+ * est pire qu'une salle vide.
+ *
+ * L'injonction de payer, et pas L.126 : c'est la voie complète — quatre étapes
+ * sur la ligne, trois façons d'échouer — donc celle qui met la feuille à
+ * l'épreuve sur les quatre largeurs de référence.
+ */
+export const VOIE_DEMO: VoieAffichee = voieDeLaCreance(PROCEDURES['injonction-de-payer'], {
+	// Les quatre conditions acquises : la rangée de `DemoVoie` dit la voie
+	// « Envisageable », et le domaine ne la rend envisageable qu'ainsi.
+	certaine: 'ok',
+	liquide: 'ok',
+	exigible: 'ok',
+	entreCommercants: 'ok'
+});
+
+/**
+ * LE CARNET DE LA SALLE — deux fiches, deux rôles, et « Moi-même » choisi.
+ *
+ * ⚠️ DEUX RÔLES DIFFÉRENTS EXPRÈS. C'est ce qui met le sous-titre à l'épreuve :
+ * « Commissaire de justice · Bobigny » est la chaîne la plus longue que cette
+ * carte ait à porter, et c'est sur 375 px qu'elle se casse, pas sur 1280.
+ */
+export const CARNET_DEMO: readonly FicheIntervenant[] = [
+	{ _id: 'fiche-avocat', nom: 'Cabinet Perrin', role: 'AVOCAT', ressort: 'Paris' },
+	{
+		_id: 'fiche-commissaire',
+		nom: 'Étude Lemoine',
+		role: 'COMMISSAIRE_DE_JUSTICE',
+		ressort: 'Bobigny'
+	}
+];
+
+/**
+ * TROIS ÉTUDES DE DÉMONSTRATION — ET CE SONT DE VRAIES.
+ *
+ * Relevées le 12 septembre 2026 en interrogeant l'API Recherche d'entreprises
+ * sur le département 44, qui en rend vingt-deux. Des données inventées auraient
+ * caché ce que la vraie réponse a de particulier : des dénominations en
+ * capitales, parfois doublées d'un sigle, et une adresse de siège qui n'est pas
+ * toujours dans le département cherché.
+ */
+export const ETUDES_DEMO: ResultatAnnuaireAffiche = {
+	departement: '44',
+	total: 22,
+	etudes: [
+		{
+			siren: '921924908',
+			// ⚠️ L'APOSTROPHE EST DROITE, ET LE NOM EST DOUBLÉ. C'est le registre qui
+			// écrit ainsi ; le redresser en apostrophe courbe ou retirer les
+			// parenthèses reviendrait à faire répéter à la salle d'exposition une
+			// dénomination que la source ne porte pas — exactement ce que l'écran
+			// s'interdit de faire avec les vraies réponses.
+			nom: "COMMISSAIRES DE L'OUEST (COMMISSAIRES DE L'OUEST) (CDOUEST)",
+			commune: 'NANTES',
+			codePostal: '44100',
+			adresse: '14 BOULEVARD WINSTON CHURCHILL 44100 NANTES'
+		},
+		{
+			siren: '883711400',
+			nom: 'MOCAER, CLAVIERE, VIOTTI',
+			commune: 'NORT-SUR-ERDRE',
+			codePostal: '44390',
+			adresse: "5 RUE D'ANJOU 44390 NORT-SUR-ERDRE"
+		},
+		{
+			siren: '911195980',
+			nom: 'SOLUTIONS HUISSIER',
+			commune: 'SAINT-NAZAIRE',
+			codePostal: '44600',
+			adresse: '5 RUE DES TROENES 44600 SAINT-NAZAIRE'
+		}
+	],
+	source:
+		'Registre des entreprises (API Recherche d’entreprises, DINUM), filtré sur la convention ' +
+		'collective 3250 et l’activité 69.10Z. Ce n’est pas le tableau de la profession : une étude ' +
+		'qui n’a pas déclaré sa convention collective n’y figure pas, et une radiation disciplinaire ' +
+		'n’y figure pas non plus. Le filtre de département porte sur les établissements, pas sur le ' +
+		'siège : une étude dont le siège est ailleurs peut remonter.',
+	releveeLe: '2026-09-12'
+};
+
+/**
+ * LE RÉPERTOIRE DE LA SALLE — DE VRAIS BARREAUX, EN NOMBRE RÉDUIT.
+ *
+ * Relevés le 12 septembre 2026 dans la livraison du 17 juillet 2026 de
+ * l'annuaire national des avocats. La livraison réelle en porte plus de cent
+ * cinquante ; vingt suffisent à mettre la liste déroulante et sa recherche à
+ * l'épreuve, et les noms sont écrits comme le fichier les écrit — en capitales,
+ * sans accent, et parfois sous le nom du DÉPARTEMENT plutôt que de la ville
+ * (« CHARENTE », « VAL DE MARNE »). Les redresser ferait afficher à la salle
+ * des libellés que la source ne porte pas.
+ */
+export const BARREAUX_DEMO: RepertoireAffiche = {
+	barreaux: [
+		'AGEN',
+		'ALBERTVILLE',
+		'ALES',
+		'ARDENNES',
+		'ARRAS',
+		'AUXERRE',
+		'BEAUVAIS',
+		'BESANCON',
+		'BLOIS',
+		'BORDEAUX',
+		'BOURGES',
+		'BRIEY',
+		'CARPENTRAS',
+		'CHALON-SUR-SAONE',
+		'CHARENTE',
+		'COLMAR',
+		'HAUTE-MARNE',
+		'LOT',
+		'MEUSE',
+		'VAL DE MARNE'
+	],
+	complete: true,
+	releveeLe: '2026-07-17'
+};
+
+/**
+ * TROIS AVOCATS DE DÉMONSTRATION — ET CE SONT DE VRAIS.
+ *
+ * Relevés le 12 septembre 2026 dans la livraison du 17 juillet 2026, au barreau
+ * de Bordeaux, qui en compte 2 214. Des fiches inventées auraient caché ce que
+ * le vrai fichier a de particulier, et chacune des trois est ici pour une
+ * raison :
+ *
+ *   · ANDREAU n'a PAS de SIREN — le fichier laisse la colonne vide sur nombre
+ *     de fiches. La rangée retombe alors sur la raison sociale, au lieu
+ *     d'afficher un tiret qui se lirait comme une valeur ;
+ *   · BALTAZAR porte une seconde ligne d'adresse (« 2ème étage »), recollée à
+ *     la première par l'import ;
+ *   · BERTRAND déclare deux spécialités, dont la plus longue du référentiel du
+ *     CNB — c'est sur 375 px qu'elle casse la rangée, pas sur 1280.
+ *
+ * ⚠️ LA LISTE EST VOLONTAIREMENT TRONQUÉE : trois fiches affichées, 2 214 qui
+ * correspondent. C'est l'état qu'on vient vérifier à l'œil — celui où la liste
+ * doit DIRE qu'elle est incomplète, faute de quoi elle ment par le silence.
+ *
+ * ⚠️ ET `specialitesDeclarees` NE PORTE QUE CELLES DU TRIO, pour la même
+ * raison : la salle montre une tranche, et la liste de filtres d'une tranche
+ * est celle de cette tranche.
+ */
+export const AVOCATS_DEMO: ResultatAvocatsAffiche = {
+	barreau: 'BORDEAUX',
+	specialite: null,
+	total: 2214,
+	lectureTronquee: false,
+	specialitesDeclarees: [
+		'Droit de la sécurité sociale et de la protection sociale',
+		'Droit des sociétés',
+		'Droit du travail',
+		'Droit fiscal et droit douanier',
+		'Droit public'
+	],
+	avocats: [
+		{
+			nom: 'ANDREAU',
+			prenom: 'Pierre',
+			raisonSociale: 'FIDUCIAIRE SAINT JOSEPH',
+			adresse: '9 Cours de Gourgues',
+			codePostal: '33000',
+			ville: 'BORDEAUX',
+			specialites: ['Droit des sociétés', 'Droit fiscal et droit douanier']
+		},
+		{
+			nom: 'BALTAZAR',
+			prenom: 'Marie-Christine',
+			raisonSociale: 'BALTAZAR MARIE-CHRISTINE',
+			siren: '502005747',
+			adresse: '12 rue Elisée Reclus, 2ème étage',
+			codePostal: '33000',
+			ville: 'BORDEAUX',
+			specialites: ['Droit public']
+		},
+		{
+			nom: 'BERTRAND',
+			prenom: 'Stéphanie',
+			raisonSociale: 'STEPHANIE BERTRAND AVOCAT',
+			siren: '832397772',
+			adresse: '4 rue de la Maison Daurade',
+			codePostal: '33000',
+			ville: 'BORDEAUX',
+			specialites: ['Droit de la sécurité sociale et de la protection sociale', 'Droit du travail']
+		}
+	],
+	source:
+		'Annuaire national des avocats (Conseil national des barreaux), publié sur data.gouv.fr sous ' +
+		'Licence Ouverte 2.0. C’est une photographie mensuelle : une fiche peut décrire une situation ' +
+		'périmée — un avocat qui a changé de barreau, déménagé, ou cessé d’exercer depuis le relevé. ' +
+		'Les spécialités sont celles que l’avocat a DÉCLARÉES au fichier : leur absence ne dit pas ' +
+		'qu’il n’en a aucune, elle dit qu’aucune n’est inscrite.',
+	releveeLe: '2026-07-17'
+};
