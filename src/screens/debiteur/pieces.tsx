@@ -43,10 +43,13 @@ export function EcranPieces({
 					libelle: pret?.denomination ?? 'Débiteurs'
 				},
 				titre: 'Les pièces du dossier',
+				// « 0 document » serait un cadran à zéro : le vide se dit en toutes lettres (règle d’écran n° 4).
 				sousTitre:
 					pret === null
 						? undefined
-						: `${pret.pieces.length} document${pret.pieces.length > 1 ? 's' : ''}`
+						: pret.pieces.length === 0
+							? 'Aucun document'
+							: `${pret.pieces.length} document${pret.pieces.length > 1 ? 's' : ''}`
 			}}
 			etat={donnees.etat}
 		>

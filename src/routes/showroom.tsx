@@ -31,6 +31,10 @@ import {
 } from '../ui';
 import { Offre, OuvertureEnCours, EssaiEnCours } from '../screens/abonnement/offre';
 import { PALIERS, BORNES_PALIER, TARIFS } from '../lib/config/tarifs';
+import {
+	controlerTauxContractuel,
+	tauxDepuisPourcentage
+} from '../lib/verticales/recouvrement/taux-contractuel';
 import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/equipe/equipe';
 import { Donnees } from '../screens/donnees/donnees';
 import { FormulaireCreancier } from '../screens/parametres/creancier';
@@ -244,6 +248,30 @@ function DemoCreancier() {
 }
 
 /**
+ * Le jour où le gérant a enregistré les taux de `DemoIdentite`, figé : le
+ * plancher légal change à chaque semestre, et un « aujourd'hui » qui bouge
+ * changerait le constat d'une capture à l'autre.
+ */
+const TAUX_ENREGISTRES_LE_DEMO = '2026-03-15';
+
+/** Le taux saisi sur la fiche identifiée, et celui, trop bas, de la fiche refusée. */
+const TAUX_IDENTIFIE_DEMO = '15,00';
+const TAUX_TROP_BAS_DEMO = '1,00';
+
+/**
+ * Le constat que `poserLeTaux` rend pour un débiteur qui a des factures non
+ * soldées (`src/lib/convex/recouvrement/tauxContractuel.ts`, lignes 127 à 130).
+ *
+ * ⚠️ IL SE CALCULE, IL NE SE RECOPIE PAS. Écrit à la main, il citait un plancher
+ * qu'aucun semestre du référentiel ne porte : la salle montrait une valeur
+ * juridique fausse, avec l'aplomb d'un constat du produit.
+ */
+function constatDuTaux(pourcentage: string): string {
+	return controlerTauxContractuel(tauxDepuisPourcentage(pourcentage), TAUX_ENREGISTRES_LE_DEMO)
+		.constat;
+}
+
+/**
  * L'IDENTITÉ D'UN DÉBITEUR — les deux champs que le gérant seul peut remplir,
  * et leurs TROIS états.
  *
@@ -349,8 +377,8 @@ function DemoIdentite() {
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
-							tauxContractuel="15,00"
-							constatTaux="Le taux de 15,00 % est au-dessus du plancher de 10,26 % constaté au 2026-03-15."
+							tauxContractuel={TAUX_IDENTIFIE_DEMO}
+							constatTaux={constatDuTaux(TAUX_IDENTIFIE_DEMO)}
 							onEnregistrerTaux={() => {}}
 						/>
 					</div>
@@ -406,8 +434,8 @@ function DemoIdentite() {
 							erreurSiren="« 853479237 » n’est pas un SIREN : sa clé de contrôle ne tombe pas."
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
-							tauxContractuel="1,00"
-							constatTaux="Le taux déclaré, 1,00 %, est inférieur au plancher de 10,26 % constaté au 2026-03-15 — trois fois le taux d’intérêt légal des « autres cas ». Le taux est enregistré tel que vous l’avez déclaré."
+							tauxContractuel={TAUX_TROP_BAS_DEMO}
+							constatTaux={constatDuTaux(TAUX_TROP_BAS_DEMO)}
 							onEnregistrerTaux={() => {}}
 						/>
 					</div>

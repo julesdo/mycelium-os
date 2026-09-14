@@ -102,7 +102,7 @@ export const TYPES_PIECE = [
  * Le libellé, lui, est du texte d'interface : il nomme la relation commerciale
  * telle qu'un gérant la reconnaît, pas telle que le code de commerce l'écrit.
  */
-export const LIBELLE_SECTEUR: Record<string, string> = {
+const LIBELLE_SECTEUR: Record<string, string> = {
 	GENERAL: 'Régime général',
 	TRANSPORT_MARCHANDISES: 'Transport de marchandises',
 	CONSOMMATEUR: 'Vente à un consommateur',
@@ -111,7 +111,7 @@ export const LIBELLE_SECTEUR: Record<string, string> = {
 	OUVRAGE_ACCEPTE: 'Ouvrage accepté'
 };
 
-export function optionsSecteur(): OptionSecteur[] {
+export function secteursProposes(): OptionSecteur[] {
 	const connus = Object.keys(REGIMES_PRESCRIPTION).map((cle) => {
 		const regime = REGIMES_PRESCRIPTION[cle as keyof typeof REGIMES_PRESCRIPTION];
 		return {
@@ -193,7 +193,7 @@ export function DetailDebiteur({
 	onBasculerFacture,
 	onConstituer
 }: {
-	/** L'identifiant, pour construire les liens vers les pages de détail. */
+	/** L'identifiant, pour construire les liens vers les pages de détail. Vide quand aucun débiteur n'est choisi. */
 	debiteurId: string;
 	/** Le nom du débiteur, tel qu'il est venu de la facture. */
 	denomination: string;
@@ -201,8 +201,9 @@ export function DetailDebiteur({
 	etatRecherche: EtatRecherche;
 	onChercherAuRegistre: () => void;
 	onRetenirEtablissement: (etablissement: EtablissementPropose) => void;
-	/** `null` quand aucun débiteur n'est choisi, ou que ses factures chargent. */
+	/** `null` quand aucun débiteur n'est choisi, ou qu'il ne figure pas dans la liste. */
 	debiteur: DebiteurAffiche | null;
+	/** `null` quand aucun débiteur n'est choisi, ou que ses factures ou ses pièces chargent : le volet attend les deux. */
 	factures: readonly FactureAffichee[] | null;
 	/**
 	 * Les créances déjà constituées pour ce débiteur.
@@ -246,9 +247,17 @@ export function DetailDebiteur({
 	if (debiteur === null || factures === null) {
 		return (
 			<div className="p-cladd-2xs">
-				<p className="text-cladd-xs text-cladd-fg-soft">
-					Choisissez un débiteur pour voir ce qu’il doit, facture par facture.
-				</p>
+				{debiteurId === '' ? (
+					<p className="text-cladd-xs text-cladd-fg-soft">
+						Choisissez un débiteur pour voir ce qu’il doit, facture par facture.
+					</p>
+				) : (
+					// Un débiteur est choisi, et la feuille plein écran le montre à 375 px : lui
+					// dire « choisissez » serait faux. L'attente se lit, elle ne se devine pas.
+					<p role="status" className="text-cladd-xs text-cladd-fg-soft">
+						Lecture de la fiche…
+					</p>
+				)}
 			</div>
 		);
 	}
@@ -400,48 +409,64 @@ export function DetailDebiteur({
 					variant="transparent"
 					outline={false}
 					className="verre-carte rounded-cladd-xl"
-					contentClassName="flex gap-cladd-3xs p-cladd-2xs"
 				>
-					<Checkbox
-						checked={selection.has(facture._id)}
-						onChange={() => onBasculerFacture(facture._id)}
-						disabled={facture.dansUneCreance}
+					{/*
+					  ⚠️ TOUTE LA CARTE EST L'ÉTIQUETTE DE SA CASE. Cocher des factures est le
+					  geste principal de cet écran, et la case seule faisait vingt pixels, moins
+					  de la moitié du plancher tactile de 48 px. La carte ne porte aucun autre
+					  contrôle : un appui n'importe où la coche.
+
+					  `as="span"` sur la case, comme le kit le demande dans une étiquette, et des
+					  `span` dedans : une étiquette ne contient que du texte courant. Le nom
+					  accessible reste sur l'étiquette, là où le kit le posait. Une facture déjà
+					  dans une créance ne se coche toujours pas : sa case est désactivée, et une
+					  étiquette ne coche pas une case désactivée.
+					*/}
+					<label
 						aria-label={`Sélectionner ${facture.reference}`}
-					/>
-					<div className="flex min-w-0 flex-1 flex-col gap-1.5">
-						<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-							<span className="text-cladd-sm font-semibold">{facture.reference}</span>
-							<span className="shrink-0 text-cladd-sm tabular-nums">
-								{eurosCentimes(facture.resteDu)}
+						className="flex gap-cladd-3xs p-cladd-2xs"
+					>
+						<Checkbox
+							as="span"
+							checked={selection.has(facture._id)}
+							onChange={() => onBasculerFacture(facture._id)}
+							disabled={facture.dansUneCreance}
+						/>
+						<span className="flex min-w-0 flex-1 flex-col gap-1.5">
+							<span className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
+								<span className="text-cladd-sm font-semibold">{facture.reference}</span>
+								<span className="shrink-0 text-cladd-sm tabular-nums">
+									{eurosCentimes(facture.resteDu)}
+								</span>
 							</span>
-						</div>
 
-						{facture.dateEcheance ? (
-							<p className="text-cladd-2xs text-cladd-fg-softer">
-								Échue le {dateCourte(facture.dateEcheance)}
-							</p>
-						) : null}
-
-						{facture.exigibiliteDeduite ? (
-							<p className="text-cladd-2xs text-cladd-fg-softest">
-								Exigibilité déduite de l’échéance — à confirmer si vos conditions contractuelles
-								disent autre chose.
-							</p>
-						) : null}
-
-						<div className="flex flex-wrap items-center gap-1.5">
-							{facture.dansUneCreance ? (
-								<Chip size="md" color="neutral">
-									Déjà dans une créance
-								</Chip>
+							{facture.dateEcheance ? (
+								<span className="text-cladd-2xs text-cladd-fg-softer">
+									Échue le {dateCourte(facture.dateEcheance)}
+								</span>
 							) : null}
-							{facture.datePrescription ? (
-								<Chip size="md" color="neutral">
-									Prescription le {dateCourte(facture.datePrescription)}
-								</Chip>
+
+							{facture.exigibiliteDeduite ? (
+								<span className="text-cladd-2xs text-cladd-fg-softest">
+									Exigibilité déduite de l’échéance — à confirmer si vos conditions contractuelles
+									disent autre chose.
+								</span>
 							) : null}
-						</div>
-					</div>
+
+							<span className="flex flex-wrap items-center gap-1.5">
+								{facture.dansUneCreance ? (
+									<Chip size="md" color="neutral">
+										Déjà dans une créance
+									</Chip>
+								) : null}
+								{facture.datePrescription ? (
+									<Chip size="md" color="neutral">
+										Prescription le {dateCourte(facture.datePrescription)}
+									</Chip>
+								) : null}
+							</span>
+						</span>
+					</label>
 				</Surface>
 			))}
 

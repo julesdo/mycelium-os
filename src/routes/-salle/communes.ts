@@ -14,7 +14,7 @@ import {
 	proceduresEnvisageables,
 	type Procedure
 } from '../../lib/verticales/recouvrement/procedures';
-import { optionsSecteur } from '../../screens/debiteur-detail';
+import { secteursProposes } from '../../screens/debiteur-detail';
 
 /**
  * LES FIXTURES COMMUNES DE LA SALLE D'EXPOSITION.
@@ -33,7 +33,7 @@ import { optionsSecteur } from '../../screens/debiteur-detail';
  * durées du référentiel, que la règle la plus stricte du projet interdit, salle
  * comprise. `DemoIdentite` et la famille des débiteurs les montrent toutes deux.
  */
-export const SECTEURS_DEMO = optionsSecteur();
+export const SECTEURS_DEMO = secteursProposes();
 
 /**
  * Le flux de surveillance, avec les cas qui cassent.

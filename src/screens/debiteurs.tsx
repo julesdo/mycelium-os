@@ -171,7 +171,8 @@ export function EcranDebiteurs({ donnees }: { donnees: Lecture<DebiteursAffiches
 			entete={{ ...entete, sousTitre: 'Le plus gros encours d’abord' }}
 			volets={{
 				liste,
-				preuve: <DetailDebiteur {...detail} />,
+				// Une clé par débiteur : sans elle, le taux tapé dans `IdentiteDebiteur`, le montant et la date tapés dans `Lettrage` resteraient sous le débiteur suivant, car la fiche ne repart de zéro qu’en se démontant le temps que ses factures et ses pièces chargent.
+				preuve: <DetailDebiteur key={detail.debiteurId} {...detail} />,
 				preuveOuverte: choisi !== null,
 				onFermerPreuve: onFermer
 			}}

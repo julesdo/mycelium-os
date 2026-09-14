@@ -432,10 +432,10 @@ const LITIGE_BASE_DEMO = {
 	onRepondre: () => undefined
 };
 
-// SAINE, et non la santé de la famille : suspendus, les trois niveaux cacheraient leurs brouillons.
+// INCONNUE, la santé que l'import pose tant que le radar n'a rien relevé, et non celle de la famille : suspendus, les deux premiers niveaux cacheraient leurs brouillons.
 const RELANCES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements({
 	...ELEMENTS_RELANCE_DEMO,
-	santeDebiteur: 'SAINE'
+	santeDebiteur: 'INCONNUE'
 });
 
 /** La variante « suspendues » : les relances dans la santé de la famille. */

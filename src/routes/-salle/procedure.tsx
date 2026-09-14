@@ -18,8 +18,8 @@ import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './de
  * `creance.tsx` attend encore la confirmation de la qualité de commerçant : le
  * domaine n'y rend pas l'injonction envisageable, et la montrer engagée
  * contredirait sa rangée, qui pose encore la question. Celle-ci est une créance
- * qu'on a pu engager : ses quatre conditions sont acquises, et son débiteur est
- * déclaré sain (`SAINE`).
+ * qu'on a pu engager : ses quatre conditions sont acquises, et la santé de son
+ * débiteur est inconnue (`INCONNUE`), comme l'import la pose.
  *
  * Tout ce que la famille montre se calcule depuis ces entrées, par les fonctions
  * que les requêtes du produit appellent : le suivi comme `lireSuivi` le rejoue,

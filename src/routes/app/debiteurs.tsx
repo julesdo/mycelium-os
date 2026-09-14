@@ -5,7 +5,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { aujourdHuiISO, type EtatRecherche, type EtablissementPropose } from '../../ui';
-import { optionsSecteur } from '../../screens/debiteur-detail';
+import { secteursProposes } from '../../screens/debiteur-detail';
 import { EcranDebiteurs } from '../../screens/debiteurs';
 
 /**
@@ -99,7 +99,7 @@ function Debiteurs() {
 	);
 
 	const debiteurChoisi = debiteurs?.find((d) => d._id === choisi);
-	const SECTEURS = optionsSecteur();
+	const SECTEURS = secteursProposes();
 
 	const creerCreance = useMutation(api.recouvrement.creances.creer);
 	const renseignerSiren = useMutation(api.recouvrement.debiteurs.renseignerSiren);
@@ -362,7 +362,7 @@ function Debiteurs() {
 									onRetenirEtablissement: (etablissement) =>
 										void retenirEtablissement(etablissement),
 									debiteur: choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi,
-									// Les pièces aussi : sans elles, la rangée des pièces dirait « Aucune » le temps de leur lecture.
+									// Les pièces aussi : sans elles, la rangée des pièces dirait « Aucune » le temps que la requête réponde.
 									factures:
 										choisi === null || factures === undefined || pieces === undefined
 											? null

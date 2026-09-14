@@ -46,10 +46,11 @@ import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './de
  * requêtes du produit le calculent : les rangées comme `listerDebiteurs`, les
  * factures comme `listerFacturesDuDebiteur`, les créances comme `listerCreances`,
  * l'habitude et les ruptures comme `lireComportement`, les pièces comme la
- * lecture les consigne, et le constat du taux comme `poserLeTaux` le rend. Ne
- * reste écrit que ce qu'aucune fonction ne produit : les noms, les SIREN, les
- * secteurs choisis, l'annonce du registre, les factures et leurs règlements,
- * les créances constituées, le taux saisi, ce que le modèle a lu dans chaque
+ * lecture les consigne et comme `listerPiecesDuDebiteur` les ordonne, et le
+ * constat du taux comme `poserLeTaux` le rend. Ne reste écrit que ce qu'aucune
+ * fonction ne produit : les noms, les SIREN, les secteurs choisis, l'annonce du
+ * registre, les factures et leurs règlements, les créances constituées, le taux
+ * saisi, l'instant de chaque dépôt de pièce, ce que le modèle a lu dans chaque
  * pièce, et le jour de la démonstration.
  *
  * ⚠️ LES RÈGLEMENTS OBSERVÉS NE S'ÉCRIVENT PAS À PART. Ce sont ceux des
@@ -89,6 +90,10 @@ interface DebiteurDemo {
 const PRINCIPAL_DEMO: DebiteurDemo = {
 	_id: 'demo-debiteur-delorme',
 	denomination: 'Imprimerie Delorme',
+	// Ce SIREN et celui du garage (`519473029`) passent la clé de contrôle parce que le produit
+	// l'exige, mais ils sont inventés et peuvent coïncider avec de vraies entreprises, dont l'une
+	// se verrait prêter une liquidation : la salle n'existe qu'en développement, et ne doit jamais
+	// servir à des captures publiées au dehors.
 	siren: '831647250',
 	secteur: 'TRANSPORT_MARCHANDISES'
 };
@@ -116,8 +121,8 @@ const DEBITEURS_DEMO: readonly DebiteurDemo[] = [
 /**
  * Les annonces que le radar a lues au BODACC, dans la forme où l'API les rend :
  * `jugement` arrive en chaîne JSON, et la nature s'écrit comme le registre
- * l'écrit. L'identifiant et l'adresse sont ceux d'une annonce de démonstration :
- * ils ne désignent aucune annonce publiée.
+ * l'écrit. L'identifiant et l'URL sont ceux d'une annonce de démonstration : ils
+ * ne désignent aucune annonce publiée.
  */
 const ANNONCES_BODACC_DEMO: readonly unknown[] = [
 	{
@@ -359,13 +364,16 @@ interface PieceDemo {
 	readonly lecture: DocumentPreuve | null;
 	/** La nature que le gérant a choisie à la main, après la lecture (`classerPiece`). */
 	readonly classeeEn?: string;
+	/** L'instant du dépôt, en millisecondes, comme `enregistrer` l'écrit (`pieces.ts`, ligne 77). */
+	readonly ajouteeLe: number;
 }
 
 /**
  * Les pièces de l'imprimerie, dans l'ordre du dépôt : deux bons de livraison lus,
  * dont un porte une réserve, un scan illisible, des conditions générales que la
  * lecture a prises pour un contrat et que le gérant a reclassées, et un dernier
- * dépôt encore en lecture.
+ * dépôt, du jour de la démonstration, encore en lecture. La requête les rend dans
+ * l'ordre inverse (`piecesDu`).
  */
 const PIECES_DEMO: readonly PieceDemo[] = [
 	{
@@ -378,7 +386,8 @@ const PIECES_DEMO: readonly PieceDemo[] = [
 			reference: 'BL-2026-0142',
 			date: '2026-05-06',
 			referencesLiees: ['FA-2026-0142']
-		}
+		},
+		ajouteeLe: Date.parse('2026-06-09T08:40:00Z')
 	},
 	{
 		_id: 'demo-piece-bl-0177',
@@ -392,26 +401,30 @@ const PIECES_DEMO: readonly PieceDemo[] = [
 			referencesLiees: ['FA-2026-0177'],
 			reservesEmises: true,
 			reserves: 'Deux colis manquants, signalés à la livraison.'
-		}
+		},
+		ajouteeLe: Date.parse('2026-06-10T09:15:00Z')
 	},
 	{
 		_id: 'demo-piece-scan',
 		debiteurId: PRINCIPAL_DEMO._id,
 		filename: 'scan_20260612.jpg',
-		lecture: { ...RIEN_RELEVE_DEMO, illisible: true }
+		lecture: { ...RIEN_RELEVE_DEMO, illisible: true },
+		ajouteeLe: Date.parse('2026-06-12T16:05:00Z')
 	},
 	{
 		_id: 'demo-piece-conditions',
 		debiteurId: PRINCIPAL_DEMO._id,
 		filename: 'conditions-generales.pdf',
 		lecture: { ...RIEN_RELEVE_DEMO, type: 'CONTRAT', date: '2025-09-01' },
-		classeeEn: 'CGV'
+		classeeEn: 'CGV',
+		ajouteeLe: Date.parse('2026-06-15T10:30:00Z')
 	},
 	{
 		_id: 'demo-piece-releve',
 		debiteurId: PRINCIPAL_DEMO._id,
 		filename: 'releve-livraisons-aout.pdf',
-		lecture: null
+		lecture: null,
+		ajouteeLe: Date.parse(`${AUJOURD_HUI_DEMO}T07:55:00Z`)
 	}
 ];
 
@@ -623,17 +636,20 @@ function comportementDu(debiteurId: string) {
 	return { habitude, ruptures };
 }
 
+/** Une pièce telle que la requête la rend : ce que les écrans affichent, et l'instant du dépôt qui l'ordonne. */
+type PieceListee = PieceAffichee & { readonly ajouteeLe: number };
+
 /**
  * Une pièce telle que `listerPiecesDuDebiteur` la rend
  * (`src/lib/convex/recouvrement/pieces.ts`, lignes 272 et suivantes). Déposée,
- * elle entre à classer et en lecture (`enregistrer`, lignes 69 à 78). Lue,
- * `lireLaPiece` passe à `consignerLectureInterne` ce que `lirePreuve` tire du
- * modèle (`src/lib/convex/recouvrement/preuve.ts`, lignes 90 à 100 ;
- * `pieces.ts`, lignes 125 à 132). Classée à la main, seules sa nature et son
- * statut changent (`classer`, lignes 159 à 162).
+ * elle entre à classer et en lecture, datée de son dépôt (`enregistrer`, lignes
+ * 69 à 78). Lue, `lireLaPiece` passe à `consignerLectureInterne` ce que
+ * `lirePreuve` tire du modèle (`src/lib/convex/recouvrement/preuve.ts`, lignes
+ * 90 à 100 ; `pieces.ts`, lignes 125 à 132). Classée à la main, seules sa nature
+ * et son statut changent (`classer`, lignes 159 à 162).
  */
-function pieceEnBase(piece: PieceDemo): PieceAffichee {
-	const deposee = { _id: piece._id, filename: piece.filename };
+function pieceEnBase(piece: PieceDemo): PieceListee {
+	const deposee = { _id: piece._id, filename: piece.filename, ajouteeLe: piece.ajouteeLe };
 	if (piece.lecture === null) return { ...deposee, type: 'INDETERMINE', statut: 'EN_LECTURE' };
 
 	const lue = lirePreuve(piece.lecture);
@@ -652,27 +668,38 @@ function pieceEnBase(piece: PieceDemo): PieceAffichee {
 		: { ...consignee, type: piece.classeeEn, statut: 'CLASSEE_MAIN' };
 }
 
-function piecesDu(debiteurId: string): PieceAffichee[] {
-	return PIECES_DEMO.filter((piece) => piece.debiteurId === debiteurId).map(pieceEnBase);
+/**
+ * Les pièces d'un débiteur, la plus récente d'abord : `listerPiecesDuDebiteur`
+ * les trie ainsi (`pieces.ts`, lignes 333 et 334), et les deux écrans les
+ * montrent dans cet ordre.
+ */
+function piecesDu(debiteurId: string): PieceListee[] {
+	return PIECES_DEMO.filter((piece) => piece.debiteurId === debiteurId)
+		.map(pieceEnBase)
+		.sort((a, b) => b.ajouteeLe - a.ajouteeLe);
 }
 
 /**
- * Le volet de preuve, composé comme la route le compose (`debiteurs.tsx`), sur
- * des lectures toutes arrivées. Le constat du taux est celui que `poserLeTaux`
- * rend pour un débiteur qui a des factures non soldées (`tauxContractuel.ts`,
- * lignes 127 à 130), et la route ne le garde que sous le débiteur auquel il se
- * rapporte.
+ * Le volet de preuve, composé comme la route le compose (`debiteurs.tsx`).
+ * `voletLu` dit si les lectures du volet (factures, pièces, habitude) ont
+ * répondu : faux, elles valent `undefined`, comme `useQuery` les rend avant sa
+ * réponse, et la route en tire un volet en lecture. Le constat du taux est celui
+ * que `poserLeTaux` rend pour un débiteur qui a des factures non soldées
+ * (`tauxContractuel.ts`, lignes 127 à 130), et la route ne le garde que sous le
+ * débiteur auquel il se rapporte.
  */
 function detailDu(
 	choisi: string | null,
 	debiteurs: readonly LigneDemo[],
 	selection: ReadonlySet<string>,
-	onBasculerFacture: (factureId: string) => void
+	onBasculerFacture: (factureId: string) => void,
+	voletLu: boolean
 ): DebiteursAffiches['detail'] {
 	const debiteurChoisi = debiteurs.find((debiteur) => debiteur._id === choisi);
-	const factures = choisi === null ? undefined : facturesDu(choisi);
-	const pieces = choisi === null ? undefined : piecesDu(choisi);
-	const comportement = choisi === null ? undefined : comportementDu(choisi);
+	const lu = voletLu ? choisi : null;
+	const factures = lu === null ? undefined : facturesDu(lu);
+	const pieces = lu === null ? undefined : piecesDu(lu);
+	const comportement = lu === null ? undefined : comportementDu(lu);
 
 	return {
 		debiteurId: choisi ?? '',
@@ -712,6 +739,24 @@ const COCHEES_DEMO: readonly string[] = facturesDu(PRINCIPAL_DEMO._id)
 	.slice(0, 1)
 	.map((facture) => facture._id);
 
+/** Une forme de la liste : si les lectures du volet ouvert ont répondu. */
+interface FormeDebiteursDemo {
+	readonly voletLu: boolean;
+}
+
+/** La forme principale : le volet du débiteur ouvert est lu. */
+const VOLET_LU_DEMO: FormeDebiteursDemo = { voletLu: true };
+
+/**
+ * Les formes nommées de la liste. « fiche en lecture » : le débiteur principal
+ * est ouvert, et les lectures de son volet n'ont pas encore répondu. C'est ce
+ * que la route montre à chaque ouverture d'une fiche, le temps que ses requêtes
+ * répondent.
+ */
+const FORMES_DEBITEURS_DEMO: Readonly<Record<string, FormeDebiteursDemo>> = {
+	'fiche en lecture': { voletLu: false }
+};
+
 /**
  * ⚠️ LE DÉBITEUR PRINCIPAL EST OUVERT D'EMBLÉE, ET UNE FACTURE Y EST COCHÉE.
  * Sous 1024 px la preuve est une feuille plein écran, au-dessus c'est le volet
@@ -722,9 +767,12 @@ const COCHEES_DEMO: readonly string[] = facturesDu(PRINCIPAL_DEMO._id)
  * registre, le rapprochement d'un virement), ne font rien : les démonstrations
  * de l'identité et du lettrage montrent déjà ce qu'elles répondent.
  */
-function DebiteursDemo({ etat }: { etat: EtatDemo }) {
+function DebiteursDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	const [choisi, setChoisi] = useState<string | null>(PRINCIPAL_DEMO._id);
 	const [selection, setSelection] = useState<ReadonlySet<string>>(() => new Set(COCHEES_DEMO));
+
+	// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
+	const { voletLu } = formeDemo(variante, VOLET_LU_DEMO, FORMES_DEBITEURS_DEMO);
 
 	function basculer(factureId: string) {
 		setSelection((precedente) => {
@@ -743,24 +791,22 @@ function DebiteursDemo({ etat }: { etat: EtatDemo }) {
 		onFermer: () => setChoisi(null)
 	};
 
-	/*
-	  ⚠️ UNE CLÉ PAR DÉBITEUR. En production, la fiche se démonte le temps que les
-	  factures du débiteur suivant arrivent, et repart de ses propres valeurs. Ici
-	  tout est déjà lu : sans cette clé, le taux tapé dans la fiche d'un débiteur
-	  resterait dans le champ de la suivante.
-	*/
 	return (
 		<EcranDebiteurs
-			key={choisi ?? ''}
 			donnees={lectureDemo(
 				etat,
 				{
 					...gestes,
 					debiteurs: LIGNES_DEMO,
 					choisi,
-					detail: detailDu(choisi, LIGNES_DEMO, selection, basculer)
+					detail: detailDu(choisi, LIGNES_DEMO, selection, basculer, voletLu)
 				},
-				{ ...gestes, debiteurs: [], choisi: null, detail: detailDu(null, [], selection, basculer) }
+				{
+					...gestes,
+					debiteurs: [],
+					choisi: null,
+					detail: detailDu(null, [], selection, basculer, voletLu)
+				}
 			)}
 		/>
 	);
@@ -809,6 +855,7 @@ export const ECRANS_DEBITEURS: readonly EcranDuProduit[] = [
 		route: '/app/debiteurs',
 		libelle: 'débiteurs',
 		vide: true,
+		variantes: Object.keys(FORMES_DEBITEURS_DEMO),
 		Demo: DebiteursDemo
 	},
 	{
