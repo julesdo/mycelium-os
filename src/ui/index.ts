@@ -14,6 +14,15 @@ export { cn } from './cn';
 export { LogoLetikette, MotLetikette } from './logo';
 export { Tablette } from './tablette';
 export { Page, PageHeader, PageBody, PageHero } from './page';
+export {
+	PageEcran,
+	type Lecture,
+	type EnteteEcran,
+	type EtatEcran,
+	type RetourEcran,
+	type VideEcran,
+	type VoletsEcran
+} from './page-ecran';
 export { Fond } from './fond';
 export { Avatar, initiales } from './avatar';
 export { aujourdHuiISO } from './horloge';

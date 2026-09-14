@@ -74,34 +74,56 @@ function normaliser(destination: string): string {
 	return chemin.length > 1 ? chemin.replace(/\/$/, '') : chemin;
 }
 
+/**
+ * Toutes les destinations littérales, avec leur place.
+ *
+ * ⚠️ LA FORME OBJET COMPTE AUTANT QUE L'ATTRIBUT. Depuis la coquille `PageEcran`,
+ * un retour s'écrit `retour: { vers: '/app/creance/$id', … }` et non plus
+ * `retourVers="/app/creance/$id"`. Ne lire que les attributs aurait retiré les
+ * retours du balayage, en silence.
+ */
+function destinationsEcrites(): { fichier: string; ligne: number; destination: string }[] {
+	const trouvees: { fichier: string; ligne: number; destination: string }[] = [];
+	for (const fichier of fichiersDuProduit(RACINE)) {
+		const lignes = readFileSync(fichier, 'utf8').split('\n');
+		lignes.forEach((texte, index) => {
+			for (const [, , destination] of texte.matchAll(
+				/\b(to|vers|retourVers)(?:=|:\s*)["'](\/[^"']*)["']/g
+			)) {
+				if (destination === undefined) continue;
+				trouvees.push({
+					fichier: fichier
+						.slice(RACINE.length + 1)
+						.split(sep)
+						.join('/'),
+					ligne: index + 1,
+					destination
+				});
+			}
+		});
+	}
+	return trouvees;
+}
+
 describe('les destinations écrites dans le produit', () => {
 	it('mènent toutes à une route déclarée', () => {
 		const declarees = routesDeclarees();
 		expect(declarees.size).toBeGreaterThan(10);
 
-		const morts: string[] = [];
-
-		for (const fichier of fichiersDuProduit(RACINE)) {
-			const source = readFileSync(fichier, 'utf8');
-			const lignes = source.split('\n');
-
-			lignes.forEach((ligne, index) => {
-				// Uniquement les props de destination, et uniquement en littéral :
-				// `to="/x"`, `vers="/x"`, `retourVers="/x"`.
-				for (const [, , destination] of ligne.matchAll(
-					/\b(to|vers|retourVers)=["'](\/[^"']*)["']/g
-				)) {
-					if (destination === undefined) continue;
-					// Les routes d'API ne sont pas servies par le routeur de pages.
-					if (destination.startsWith('/api/')) continue;
-					if (declarees.has(normaliser(destination))) continue;
-					morts.push(
-						`${fichier.slice(RACINE.length + 1).split(sep).join('/')}:${index + 1} → ${destination}`
-					);
-				}
-			});
-		}
+		const morts = destinationsEcrites()
+			// Les routes d'API ne sont pas servies par le routeur de pages.
+			.filter((d) => !d.destination.startsWith('/api/'))
+			.filter((d) => !declarees.has(normaliser(d.destination)))
+			.map((d) => `${d.fichier}:${d.ligne} → ${d.destination}`);
 
 		expect(morts, `Destinations qui ne mènent à aucune route :\n${morts.join('\n')}`).toEqual([]);
+	});
+
+	it('lit aussi les destinations écrites en objet', () => {
+		// `ui/ce-qui-manque.tsx` écrit `vers: '/app/parametres/creancier'`. Si la
+		// forme objet cessait d'être lue, ce test tomberait avant que les retours
+		// ne disparaissent du balayage.
+		const lues = destinationsEcrites().map((d) => `${d.fichier} ${d.destination}`);
+		expect(lues).toContain('ui/ce-qui-manque.tsx /app/parametres/creancier');
 	});
 });
