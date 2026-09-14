@@ -9,10 +9,12 @@ export interface EcranDuProduit {
 	/**
 	 * La route, écrite exactement comme `createFileRoute` la déclare.
 	 *
-	 * ⚠️ TYPÉE PAR LE ROUTEUR : une faute de frappe échoue à `bun run check`, au
-	 * lieu d'attendre la barrière de la salle.
+	 * ⚠️ TYPÉE PAR LE ROUTEUR, ET BORNÉE AUX ÉCRANS DE `/app/`. Une faute de
+	 * frappe, ou l'identifiant d'une page qui n'est pas un écran du produit
+	 * (`/connexion`, `/showroom`, la coquille `/app`), échoue à `bun run check`
+	 * au lieu d'attendre la barrière de la salle.
 	 */
-	readonly route: RouteIds<RegisteredRouter['routeTree']>;
+	readonly route: Extract<RouteIds<RegisteredRouter['routeTree']>, `/app/${string}`>;
 	readonly libelle: string;
 	/** Vrai si l'écran a une forme vide à regarder. Voir `lectureDemo`. */
 	readonly vide: boolean;

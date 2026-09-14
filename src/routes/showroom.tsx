@@ -2110,7 +2110,9 @@ function Showroom() {
 						{etats.map((e) => (
 							<SegmentedButton
 								key={e}
-								active={etat === e}
+								// Sur une démonstration de composant, aucun état n'est « choisi » :
+								// un bouton grisé mais allumé dirait l'inverse.
+								active={choisi !== null && etat === e}
 								disabled={choisi === null}
 								onClick={() => setEtat(e)}
 							>

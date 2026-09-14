@@ -11,8 +11,8 @@ import { ECRANS_ONGLETS } from './onglets';
  * personne ne verrait.
  *
  * Chaque entrée rend ici le VRAI écran, importé de `src/screens/`, dans chacun
- * de ses états. `salle-complete.test.ts` échoue si une route de `src/routes/app/`
- * n'y figure pas.
+ * de ses états. `salle-complete.test.ts` (tâche 9) échoue si une route de
+ * `src/routes/app/` n'y figure pas.
  *
  * Les entrées vivent par famille d'écrans, dans le fichier de leur famille,
  * avec les données qu'elles montrent : chaque tâche touche sa famille, et ce
