@@ -18,6 +18,10 @@ import {
 	type ConditionsDeduites
 } from '../../lib/verticales/recouvrement/deduction';
 import { periodesDeTauxParDefaut } from '../../lib/verticales/recouvrement/pays/france/taux';
+import {
+	regimePrescription,
+	type SecteurCreance
+} from '../../lib/verticales/recouvrement/pays/france/prescription';
 import { PROCEDURES, proceduresEnvisageables } from '../../lib/verticales/recouvrement/procedures';
 import {
 	ETAGES_DE_PREUVE,
@@ -53,13 +57,22 @@ import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
  *
  * Tout ce que la famille montre se calcule donc depuis ces entrées, par les
  * fonctions du domaine que les requêtes du produit appellent. Ne reste écrit que
- * ce qu'aucune fonction ne produit : un nom, une santé relevée au registre, des
- * réponses du gérant, des pièces, des factures. Une valeur que le serveur
- * calcule sans fonction exportée porte la ligne du produit qu'elle reproduit.
+ * ce qu'aucune fonction ne produit : un nom, un secteur, une santé relevée au
+ * registre, des réponses du gérant, des pièces, des factures. Une valeur que le
+ * serveur calcule sans fonction exportée porte la ligne du produit qu'elle
+ * reproduit.
  */
 
 /** Le débiteur, nommé une seule fois pour toute la famille. */
 const DEBITEUR_DEMO = 'Fournitures Durand';
+
+/**
+ * Le secteur du débiteur, que le gérant choisit sur sa fiche (`renseignerSecteur`,
+ * `src/lib/convex/recouvrement/debiteurs.ts`, ligne 174) : aucune fonction ne le
+ * déduit. Le régime général, déterminé : sans secteur, `creanceComplete` retient
+ * `INDETERMINE`, donc le délai le plus court et une note d'hypothèse.
+ */
+const SECTEUR_DEMO: SecteurCreance = 'GENERAL';
 
 /**
  * Le jour de la démonstration, figé : l'arrêté du décompte, la date des relances
@@ -360,7 +373,8 @@ const CREANCE_DEMO: CreanceAffichee = {
 	solidite: { etablies: PYRAMIDE_DEMO.etablies, attendues: PYRAMIDE_DEMO.attendues },
 	relances: RELANCES_SUSPENDUES_DEMO,
 	procedures: PROCEDURES_DEMO,
-	regimePrescriptionNote: 'Régime général : cinq ans à compter de l’exigibilité. Secteur déterminé.'
+	// Calculée comme `creanceComplete` la rend (`lecture.ts`, lignes 440 et 672).
+	regimePrescriptionNote: regimePrescription(SECTEUR_DEMO).note
 };
 
 /** Ce que la démonstration du décompte partage entre son état prêt et son état vide. */

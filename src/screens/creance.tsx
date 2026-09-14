@@ -61,10 +61,13 @@ export interface CreanceAffichee {
 	/**
 	 * Ce que le radar a relevé au registre sur ce débiteur.
 	 *
-	 * ⚠️ ELLE FAIT DÉJÀ BAISSER LE SCORE, ET NE SE VOYAIT PAS. `creanceComplete`
-	 * passe cette santé à `qualifier()` puis, jusqu'ici, ne la rendait pas : le
-	 * chiffre de solidité affiché en haut de cet écran bougeait donc pour une
-	 * raison que l'écran ne nommait nulle part.
+	 * ⚠️ ELLE AJOUTE UN RISQUE SANS TOUCHER AU SCORE, ET NE SE VOYAIT PAS.
+	 * `creanceComplete` passe cette santé à `qualifier()`, qui en tire un risque
+	 * de gravité HAUTE (une procédure collective, ou une radiation) et laisse le
+	 * score intact : celui-ci ne compte que les poids acquis des quatre conditions
+	 * légales et des quatre critères de pièces. Tant que la santé n'était pas
+	 * rendue, l'écran comptait donc un risque dont il ne montrait nulle part le
+	 * fait relevé au registre.
 	 */
 	readonly santeDebiteur: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
 	readonly score: number;
