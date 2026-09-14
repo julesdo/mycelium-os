@@ -671,6 +671,13 @@ Le commentaire des lignes 166-167, qui affirme une remise à zéro au changement
 
 Correctif : le motif que la route emploie déjà pour `constatPose` (lignes 134-138). Chaque état porte l'identifiant du débiteur pour lequel il a été posé, et se dérive au rendu : la valeur si l'identifiant est celui du débiteur choisi, l'état de repos sinon. Une seule fonction pure fait la dérivation, avec un test. Aucun `useEffect`. Le commentaire faux se corrige. La salle ne peut pas le vérifier (la route lit la base) : la relecture de code tranche, et un essai réel suit si le déploiement de développement est accessible.
 
+Précisions relevées au code le 14/09 (`src/routes/app/debiteurs.tsx` au commit `a94c1b0`) :
+- **Les états** : `selection` (ligne 78), `erreur` (79), `erreurSiren` (165), `recherche` (168, sous le commentaire faux des lignes 166-167), `montantCherche` (178), `dateReglement` (179), `erreurLettrage` (180). `constatPose` (134-138) passe par la même fonction, pour qu'il n'existe qu'une écriture du motif.
+- **La fonction** vit dans `src/ui/etat-par-sujet.ts`, avec son test dans `src/ui/__tests__/etat-par-sujet.test.ts`. Elle porte un nom de sujet et non de débiteur, parce que la règle 1 des correctifs de la revue de la tâche 5 vaut pour tout volet qui change de sujet : `lirePourLeSujet(pose, sujet, repos)`.
+- **`montantCherche` dérivé** alimente les arguments de `useQuery(api.recouvrement.lettrage.proposer, …)` (lignes 181-186). Pour un autre débiteur, la requête passe en `skip`.
+- **Chaque gestionnaire asynchrone capture le débiteur à son départ** : `chercherAuRegistreDuDebiteur`, `enregistrerSiren`, `retenirEtablissement`, `soldeLesFactures`, `enregistrerTaux`, `constituer`. Il pose ses états pour CE débiteur. Une réponse qui arrive après un changement de débiteur s'inscrit alors sur celui qui l'a demandée, sans apparaître sous le suivant : le correctif ferme aussi cette course.
+- **`basculer`** pose la sélection pour le débiteur choisi. **`constituer`** lit la sélection dérivée. **`onOuvrir`** continue de vider la sélection au clic, comme aujourd'hui.
+
 ---
 
 ## Tâche 2 : la salle montre les écrans du produit, en commençant par les trois qui ont déjà un fichier d'écran
