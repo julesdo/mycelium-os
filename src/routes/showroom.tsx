@@ -60,6 +60,7 @@ import { questionsRestantes } from '../lib/verticales/recouvrement/litige';
 import { EcranCreance } from '../screens/creance';
 import { EcranProcedures, type DossierAffiche } from '../screens/procedures';
 import { DetailDebiteur } from '../screens/debiteur-detail';
+import { EcranIntrouvable, EcranEnErreur } from '../screens/passage';
 import { NIVEAUX_RELANCE, composerRelance } from '../lib/verticales/recouvrement/relance';
 import { etapesDeLaVoie } from '../lib/verticales/recouvrement/apres-procedure';
 import { PROCEDURES } from '../lib/verticales/recouvrement/procedures';
@@ -2499,6 +2500,8 @@ const ECRANS = [
 	'equipe',
 	'donnees',
 	'muette',
+	'introuvable',
+	'erreur',
 	'coquille'
 ] as const;
 type Ecran = (typeof ECRANS)[number];
@@ -2556,6 +2559,8 @@ function Showroom() {
 				{ecran === 'equipe' ? <DemoEquipe /> : null}
 				{ecran === 'donnees' ? <DemoDonnees /> : null}
 				{ecran === 'muette' ? <DemoSurveillanceMuette /> : null}
+				{ecran === 'introuvable' ? <EcranIntrouvable /> : null}
+				{ecran === 'erreur' ? <EcranEnErreur /> : null}
 				{ecran === 'coquille' ? (
 					<Shell>
 						<DemoFlux />
