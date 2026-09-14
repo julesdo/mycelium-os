@@ -3361,7 +3361,7 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 }
 ```
 
-Le texte des étapes est recopié tel quel, « — » compris (décision D9).
+Le texte des étapes est recopié tel quel, « — » compris (décision D9). La variable `rienARevelrer` recopie une faute de frappe du code d'origine (ligne 61 de la route) : dans l'écran, elle se nomme `rienAReveler`.
 
 Route `revelation.tsx` : garder l'import de `aujourdHuiISO` seul depuis `'../../ui'`, ajouter `errorComponent: RevelationEnErreur`, et :
 
@@ -3386,6 +3386,8 @@ function Revelation() {
 - [ ] **Step 4 : la salle**
 
 1. Déplacer `REVELATION_DEMO` dans `src/routes/-salle/onglets.tsx` ; `BILAN_DEMO` et `DEPOTS_DEMO`, que `DemoBilan` et `DemoBilanImport` utilisent encore, dans `communes.ts`. Créer `src/routes/-salle/import.tsx` (tableau `ECRANS_IMPORT`, à réunir dans `ecrans.tsx`).
+
+   **La révélation et le bilan se calculent** (voir « Correctifs de la revue de la tâche 3 »). Relevé au code le 14/09/2026 : `REVELATION_DEMO` et `BILAN_DEMO` sont écrits à la main. Ils deviennent le résultat de `reveler(factures, arreteAu, 'ACT_365')` et de `bilanDesPertes(factures, depuis, arreteAu)` (`src/lib/verticales/recouvrement/revelation.ts`), sur des factures de démonstration préparées comme `facturesPour` le fait (`src/lib/convex/recouvrement/revelation.ts`, lignes 100 à 155 : `periodesDeTauxParDefaut(depart, arreteAu)`, `prescriptionDe([exigibilite, echeance], secteur)`, les règlements), puis transformés comme `composerRevelation` et `composerBilan` (lignes 177 à 207 et 223 à 256, `interetsCourusDepuisHier` compris). `arreteAu: '2026-09-09'` et `depuis: '2026-01-01'` sont figés. Essai au relevé : trois factures impayées sans règlement donnent une révélation chiffrée sans lever (42 480,00 € de principal, 11 492,65 € d'intérêts, là où `REVELATION_DEMO` écrivait 7 312,40 €), et le bilan compte 251 jours de surveillance. Pour montrer ce que `BILAN_DEMO` montrait (des créances éteintes avant l'arrivée, une facture non surveillée), les factures de démonstration en comportent : c'est le domaine qui dit si elles s'éteignent, pas la salle. `DEPOTS_DEMO` reste écrit : un dépôt est une donnée, pas un calcul.
 2. Supprimer `DemoDepot` et `DemoRevelation`, leurs clés (`'depot'`, `'revelation'`) et leurs lignes de rendu. `DemoBilanImport` (les quatre états d'un dépôt côte à côte) et `DemoBilan` restent : ce sont des démos de composants.
 3. Ajouter la révélation à `ECRANS_ONGLETS`, l'import et le dépôt à `ECRANS_IMPORT` :
 
