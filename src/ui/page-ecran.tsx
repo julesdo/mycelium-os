@@ -138,7 +138,7 @@ const RANGEES_D_ATTENTE = 4;
 type ProprietesEcran = {
 	entete: EnteteEcran;
 	etat?: EtatEcran;
-	/** L'issue de l'état d'erreur. Absente ou `null` : l'accueil. */
+	/** L'issue de l'état d'erreur. Absente ou `null` : l'accueil pour un onglet, la seule pastille de retour pour une page poussée. */
 	issue?: ReactNode;
 } & CorpsEcran;
 
@@ -207,7 +207,7 @@ function CorpsPageEcran({
 				) : etat === 'attente' ? (
 					<Attente sansEntete={sansEntete} pleineLargeur={false} />
 				) : etat === 'erreur' ? (
-					<Erreur sansEntete={sansEntete} issue={issue} />
+					<Erreur sansEntete={sansEntete} poussee={entete.genre === 'poussee'} issue={issue} />
 				) : (
 					// Le vide et l'erreur REMPLACENT l'écran de travail : ils se lisent
 					// seuls, en colonne, même sur un écran à deux volets.
@@ -316,8 +316,20 @@ function Attente({ sansEntete, pleineLargeur }: { sansEntete: boolean; pleineLar
  *
  * ⚠️ L'ALERTE NE PORTE QUE CE QUI S'EST PASSÉ. Les boutons placés dedans étaient
  * lus avec elle, comme une phrase de plus.
+ *
+ * ⚠️ UNE PAGE POUSSÉE A DÉJÀ SA SORTIE. Sa pastille de retour reste au-dessus de
+ * l'erreur ; lui ajouter « Revenir à l'accueil » donnait deux sorties vers deux
+ * destinations. Sans issue nommée, elle ne garde que le rechargement en second.
  */
-function Erreur({ sansEntete, issue }: { sansEntete: boolean; issue: ReactNode }) {
+function Erreur({
+	sansEntete,
+	poussee,
+	issue
+}: {
+	sansEntete: boolean;
+	poussee: boolean;
+	issue: ReactNode;
+}) {
 	// Sans en-tête, sur l'accueil, ce titre est le seul de la page.
 	const Titre = sansEntete ? 'h1' : 'h2';
 
@@ -334,11 +346,12 @@ function Erreur({ sansEntete, issue }: { sansEntete: boolean; issue: ReactNode }
 					Rien de ce qui est enregistré n’est touché par cet échec.
 				</p>
 			</div>
-			{issue ?? (
-				<BoutonPrincipal as={Lien} to="/app">
-					Revenir à l’accueil
-				</BoutonPrincipal>
-			)}
+			{issue ??
+				(poussee ? null : (
+					<BoutonPrincipal as={Lien} to="/app">
+						Revenir à l’accueil
+					</BoutonPrincipal>
+				))}
 			<BoutonSecondaire onClick={() => window.location.reload()}>
 				Recharger la page
 			</BoutonSecondaire>

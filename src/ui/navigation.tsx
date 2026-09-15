@@ -1,14 +1,26 @@
-import type { ReactNode } from 'react';
+import { useSyncExternalStore, type ReactNode } from 'react';
 // ⚠️ LE SEUL `Link` DES ÉCRANS : le repli du retour, qui mène au parent de
 // l'adresse et ne transmet aucune provenance. S'il en transmettait une, la
 // créance rouverte depuis une analyse reviendrait à l'analyse, en boucle. Tout
 // autre lien passe par `Lien`. Voir `eslint.config.js`.
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
-import { Link, type LinkProps } from '@tanstack/react-router';
-import { List, ListButton, Surface } from '@cladd-ui/react';
+/* eslint-disable @typescript-eslint/no-restricted-imports */
+import {
+	Link,
+	useCanGoBack,
+	useRouter,
+	useRouterState,
+	type LinkProps
+} from '@tanstack/react-router';
+/* eslint-enable @typescript-eslint/no-restricted-imports */
+import { Button, List, ListButton, Surface } from '@cladd-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from './cn';
 import { Lien } from './lien';
+
+/** Voir `EnteteDetail` : la valeur est déjà réactive, rien à écouter de plus. */
+function abonnementSansEffet() {
+	return () => undefined;
+}
 
 /**
  * LA RANGÉE QUI POUSSE VERS UNE PAGE — le geste central d'une application
@@ -221,6 +233,22 @@ export function LigneBouton({
  * Il est posé AVANT le titre, pas à côté : un titre long le pousserait hors de
  * l'écran s'ils partageaient la ligne, et c'est le retour qu'on perdrait.
  */
+/**
+ * LA PASTILLE DE RETOUR, IDENTIQUE DANS SES DEUX BRANCHES.
+ *
+ * Le `Button` du kit, en `md`, qui tombe à 48 px par `tokens.css` : le plancher
+ * tactile, sans hauteur écrite à la main. Il tronque son libellé sur une ligne,
+ * donc un titre de provenance long ne décale pas le titre de la page. Seul le
+ * texte change d'une branche à l'autre, jamais la forme.
+ */
+const PASTILLE_RETOUR = {
+	variant: 'transparent',
+	outline: false,
+	hoverable: false,
+	rounded: true,
+	className: 'verre-bouton max-w-full self-start text-cladd-fg-soft'
+} as const;
+
 export function EnteteDetail({
 	retourVers,
 	retourParametres,
@@ -244,22 +272,64 @@ export function EnteteDetail({
 	titre: string;
 	sousTitre?: string;
 }) {
+	const router = useRouter();
+	const peutRevenir = useCanGoBack();
+	/**
+	 * La source est celle de `useCanGoBack` : l'emplacement validé à la fin d'une
+	 * navigation, et non l'historique brut, qui change dès son départ et ferait
+	 * changer le libellé de la page qu'on quitte.
+	 */
+	const titreLu = useRouterState({
+		select: (etat) => etat.location.state.titreDeProvenance ?? null
+	});
+	/**
+	 * ⚠️ RENDU APRÈS LE MONTAGE, JAMAIS AU PREMIER RENDU. Le serveur ne connaît que
+	 * l'adresse : rendre l'état de la navigation au premier rendu ferait diverger
+	 * le serveur et le client après un rechargement. L'instantané serveur est
+	 * nul, donc le serveur ET l'hydratation rendent le repli ; React rend ensuite
+	 * la valeur du client, sans `setState` dans un effet.
+	 *
+	 * L'abonnement est vide : `useRouterState` rend déjà le titre réactif. Ce
+	 * crochet ne sert qu'à séparer l'instantané du serveur de celui du client.
+	 */
+	const titreDeProvenance = useSyncExternalStore(
+		abonnementSansEffet,
+		() => titreLu,
+		() => null
+	);
+
+	/**
+	 * ⚠️ DEUX BRANCHES, JAMAIS MÉLANGÉES. Le libellé tiré de l'historique ne va
+	 * qu'avec le geste qui y retourne, et le nom du parent qu'avec le lien qui y
+	 * mène. « Accueil » posé sur un lien vers les débiteurs mentirait sur le seul
+	 * geste qu'on fait sans regarder.
+	 *
+	 * `useCanGoBack` ne suffit pas seul : l'entrée précédente peut venir d'avant
+	 * l'application (une messagerie, un onglet vide), et elle n'a pas de titre.
+	 */
+	const parHistorique = peutRevenir && titreDeProvenance !== null;
+
 	return (
 		<header className="flex shrink-0 flex-col gap-cladd-3xs px-cladd-3xs pt-barre-app pb-cladd-3xs">
-			<Link
-				to={retourVers}
-				params={retourParametres}
-				search={retourRecherche}
-				// ⚠️ `min-h-12` : 48 px, le plancher tactile du projet. Sans lui le retour
-				// se dimensionne sur sa ligne de texte et tombe à 33 px : c'est la
-				// commande la plus utilisée de toute page poussée. À 44 px, il restait la
-				// plus petite cible de chacune, sous le plancher. Mesuré au navigateur,
-				// invisible partout ailleurs.
-				className="verre-bouton -ml-1.5 flex min-h-12 w-fit items-center gap-0.5 rounded-full pr-3 pl-1.5 text-cladd-xs text-cladd-fg-soft"
-			>
-				<ChevronLeftIcon className="size-4 shrink-0" aria-hidden />
-				{retourLibelle}
-			</Link>
+			{parHistorique ? (
+				<Button {...PASTILLE_RETOUR} onClick={() => router.history.back()}>
+					<ChevronLeftIcon aria-hidden />
+					{titreDeProvenance}
+				</Button>
+			) : (
+				<Button
+					{...PASTILLE_RETOUR}
+					as={Link}
+					to={retourVers}
+					// Même assertion que `LigneAnalyse` : le `as` polymorphe efface le
+					// générique du routeur, les props de CE composant restent typées par lui.
+					params={retourParametres as never}
+					search={retourRecherche as never}
+				>
+					<ChevronLeftIcon aria-hidden />
+					{retourLibelle}
+				</Button>
+			)}
 			<div className="min-w-0">
 				<h1 className="text-letikette-titre leading-tight font-bold tracking-tight text-balance">
 					{titre}

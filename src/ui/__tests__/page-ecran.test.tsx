@@ -40,7 +40,12 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 					'data-search': JSON.stringify(search ?? null)
 				},
 				children
-			)
+			),
+		// Le retour lit aussi l'historique. Sans routeur, il n'y en a pas : le
+		// rendu prend le repli, comme le serveur après un rechargement.
+		useCanGoBack: () => false,
+		useRouter: () => ({}),
+		useRouterState: () => null
 	};
 });
 
