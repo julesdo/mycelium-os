@@ -38,12 +38,13 @@ import { Route as AppEquipeInviterRouteImport } from './routes/app/equipe_.invit
 import { Route as AppImportFacturesIdRouteImport } from './routes/app/import-factures_.$id'
 import { Route as AppParametresCreancierRouteImport } from './routes/app/parametres_.creancier'
 import { Route as AppParametresEtablissementRouteImport } from './routes/app/parametres_.etablissement'
-import { Route as AppCreanceIdDecompteRouteImport } from './routes/app/creance_.$id.decompte'
-import { Route as AppCreanceIdLitigeRouteImport } from './routes/app/creance_.$id.litige'
-import { Route as AppCreanceIdProcedureRouteImport } from './routes/app/creance_.$id.procedure'
-import { Route as AppCreanceIdRelancesRouteImport } from './routes/app/creance_.$id.relances'
-import { Route as AppCreanceIdRisquesRouteImport } from './routes/app/creance_.$id.risques'
-import { Route as AppCreanceIdSoliditeRouteImport } from './routes/app/creance_.$id.solidite'
+import { Route as AppCreanceIdIndexRouteImport } from './routes/app/creance.$id.index'
+import { Route as AppCreanceIdDecompteRouteImport } from './routes/app/creance.$id.decompte'
+import { Route as AppCreanceIdLitigeRouteImport } from './routes/app/creance.$id.litige'
+import { Route as AppCreanceIdProcedureRouteImport } from './routes/app/creance.$id.procedure'
+import { Route as AppCreanceIdRelancesRouteImport } from './routes/app/creance.$id.relances'
+import { Route as AppCreanceIdRisquesRouteImport } from './routes/app/creance.$id.risques'
+import { Route as AppCreanceIdSoliditeRouteImport } from './routes/app/creance.$id.solidite'
 import { Route as AppDebiteursIdHabitudeRouteImport } from './routes/app/debiteurs_.$id.habitude'
 import { Route as AppDebiteursIdPiecesRouteImport } from './routes/app/debiteurs_.$id.pieces'
 
@@ -196,35 +197,40 @@ const AppParametresEtablissementRoute =
     path: '/parametres/etablissement',
     getParentRoute: () => AppRouteRoute,
   } as any)
+const AppCreanceIdIndexRoute = AppCreanceIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCreanceIdRoute,
+} as any)
 const AppCreanceIdDecompteRoute = AppCreanceIdDecompteRouteImport.update({
-  id: '/creance_/$id/decompte',
-  path: '/creance/$id/decompte',
-  getParentRoute: () => AppRouteRoute,
+  id: '/decompte',
+  path: '/decompte',
+  getParentRoute: () => AppCreanceIdRoute,
 } as any)
 const AppCreanceIdLitigeRoute = AppCreanceIdLitigeRouteImport.update({
-  id: '/creance_/$id/litige',
-  path: '/creance/$id/litige',
-  getParentRoute: () => AppRouteRoute,
+  id: '/litige',
+  path: '/litige',
+  getParentRoute: () => AppCreanceIdRoute,
 } as any)
 const AppCreanceIdProcedureRoute = AppCreanceIdProcedureRouteImport.update({
-  id: '/creance_/$id/procedure',
-  path: '/creance/$id/procedure',
-  getParentRoute: () => AppRouteRoute,
+  id: '/procedure',
+  path: '/procedure',
+  getParentRoute: () => AppCreanceIdRoute,
 } as any)
 const AppCreanceIdRelancesRoute = AppCreanceIdRelancesRouteImport.update({
-  id: '/creance_/$id/relances',
-  path: '/creance/$id/relances',
-  getParentRoute: () => AppRouteRoute,
+  id: '/relances',
+  path: '/relances',
+  getParentRoute: () => AppCreanceIdRoute,
 } as any)
 const AppCreanceIdRisquesRoute = AppCreanceIdRisquesRouteImport.update({
-  id: '/creance_/$id/risques',
-  path: '/creance/$id/risques',
-  getParentRoute: () => AppRouteRoute,
+  id: '/risques',
+  path: '/risques',
+  getParentRoute: () => AppCreanceIdRoute,
 } as any)
 const AppCreanceIdSoliditeRoute = AppCreanceIdSoliditeRouteImport.update({
-  id: '/creance_/$id/solidite',
-  path: '/creance/$id/solidite',
-  getParentRoute: () => AppRouteRoute,
+  id: '/solidite',
+  path: '/solidite',
+  getParentRoute: () => AppCreanceIdRoute,
 } as any)
 const AppDebiteursIdHabitudeRoute = AppDebiteursIdHabitudeRouteImport.update({
   id: '/debiteurs_/$id/habitude',
@@ -259,7 +265,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/abonnement/premier-bilan': typeof AppAbonnementPremierBilanRoute
   '/app/abonnement/suivi': typeof AppAbonnementSuiviRoute
-  '/app/creance/$id': typeof AppCreanceIdRoute
+  '/app/creance/$id': typeof AppCreanceIdRouteWithChildren
   '/app/donnees/export': typeof AppDonneesExportRoute
   '/app/donnees/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
   '/app/donnees/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/app/creance/$id/solidite': typeof AppCreanceIdSoliditeRoute
   '/app/debiteurs/$id/habitude': typeof AppDebiteursIdHabitudeRoute
   '/app/debiteurs/$id/pieces': typeof AppDebiteursIdPiecesRoute
+  '/app/creance/$id/': typeof AppCreanceIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -297,7 +304,6 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/abonnement/premier-bilan': typeof AppAbonnementPremierBilanRoute
   '/app/abonnement/suivi': typeof AppAbonnementSuiviRoute
-  '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/donnees/export': typeof AppDonneesExportRoute
   '/app/donnees/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
   '/app/donnees/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
@@ -313,6 +319,7 @@ export interface FileRoutesByTo {
   '/app/creance/$id/solidite': typeof AppCreanceIdSoliditeRoute
   '/app/debiteurs/$id/habitude': typeof AppDebiteursIdHabitudeRoute
   '/app/debiteurs/$id/pieces': typeof AppDebiteursIdPiecesRoute
+  '/app/creance/$id': typeof AppCreanceIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -337,7 +344,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/abonnement_/premier-bilan': typeof AppAbonnementPremierBilanRoute
   '/app/abonnement_/suivi': typeof AppAbonnementSuiviRoute
-  '/app/creance/$id': typeof AppCreanceIdRoute
+  '/app/creance/$id': typeof AppCreanceIdRouteWithChildren
   '/app/donnees_/export': typeof AppDonneesExportRoute
   '/app/donnees_/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
   '/app/donnees_/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
@@ -345,14 +352,15 @@ export interface FileRoutesById {
   '/app/import-factures_/$id': typeof AppImportFacturesIdRoute
   '/app/parametres_/creancier': typeof AppParametresCreancierRoute
   '/app/parametres_/etablissement': typeof AppParametresEtablissementRoute
-  '/app/creance_/$id/decompte': typeof AppCreanceIdDecompteRoute
-  '/app/creance_/$id/litige': typeof AppCreanceIdLitigeRoute
-  '/app/creance_/$id/procedure': typeof AppCreanceIdProcedureRoute
-  '/app/creance_/$id/relances': typeof AppCreanceIdRelancesRoute
-  '/app/creance_/$id/risques': typeof AppCreanceIdRisquesRoute
-  '/app/creance_/$id/solidite': typeof AppCreanceIdSoliditeRoute
+  '/app/creance/$id/decompte': typeof AppCreanceIdDecompteRoute
+  '/app/creance/$id/litige': typeof AppCreanceIdLitigeRoute
+  '/app/creance/$id/procedure': typeof AppCreanceIdProcedureRoute
+  '/app/creance/$id/relances': typeof AppCreanceIdRelancesRoute
+  '/app/creance/$id/risques': typeof AppCreanceIdRisquesRoute
+  '/app/creance/$id/solidite': typeof AppCreanceIdSoliditeRoute
   '/app/debiteurs_/$id/habitude': typeof AppDebiteursIdHabitudeRoute
   '/app/debiteurs_/$id/pieces': typeof AppDebiteursIdPiecesRoute
+  '/app/creance/$id/': typeof AppCreanceIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -394,6 +402,7 @@ export interface FileRouteTypes {
     | '/app/creance/$id/solidite'
     | '/app/debiteurs/$id/habitude'
     | '/app/debiteurs/$id/pieces'
+    | '/app/creance/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -416,7 +425,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/app/abonnement/premier-bilan'
     | '/app/abonnement/suivi'
-    | '/app/creance/$id'
     | '/app/donnees/export'
     | '/app/donnees/supprimer-compte'
     | '/app/donnees/supprimer-etablissement'
@@ -432,6 +440,7 @@ export interface FileRouteTypes {
     | '/app/creance/$id/solidite'
     | '/app/debiteurs/$id/habitude'
     | '/app/debiteurs/$id/pieces'
+    | '/app/creance/$id'
   id:
     | '__root__'
     | '/'
@@ -463,14 +472,15 @@ export interface FileRouteTypes {
     | '/app/import-factures_/$id'
     | '/app/parametres_/creancier'
     | '/app/parametres_/etablissement'
-    | '/app/creance_/$id/decompte'
-    | '/app/creance_/$id/litige'
-    | '/app/creance_/$id/procedure'
-    | '/app/creance_/$id/relances'
-    | '/app/creance_/$id/risques'
-    | '/app/creance_/$id/solidite'
+    | '/app/creance/$id/decompte'
+    | '/app/creance/$id/litige'
+    | '/app/creance/$id/procedure'
+    | '/app/creance/$id/relances'
+    | '/app/creance/$id/risques'
+    | '/app/creance/$id/solidite'
     | '/app/debiteurs_/$id/habitude'
     | '/app/debiteurs_/$id/pieces'
+    | '/app/creance/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -691,47 +701,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppParametresEtablissementRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/app/creance_/$id/decompte': {
-      id: '/app/creance_/$id/decompte'
-      path: '/creance/$id/decompte'
+    '/app/creance/$id/': {
+      id: '/app/creance/$id/'
+      path: '/'
+      fullPath: '/app/creance/$id/'
+      preLoaderRoute: typeof AppCreanceIdIndexRouteImport
+      parentRoute: typeof AppCreanceIdRoute
+    }
+    '/app/creance/$id/decompte': {
+      id: '/app/creance/$id/decompte'
+      path: '/decompte'
       fullPath: '/app/creance/$id/decompte'
       preLoaderRoute: typeof AppCreanceIdDecompteRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppCreanceIdRoute
     }
-    '/app/creance_/$id/litige': {
-      id: '/app/creance_/$id/litige'
-      path: '/creance/$id/litige'
+    '/app/creance/$id/litige': {
+      id: '/app/creance/$id/litige'
+      path: '/litige'
       fullPath: '/app/creance/$id/litige'
       preLoaderRoute: typeof AppCreanceIdLitigeRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppCreanceIdRoute
     }
-    '/app/creance_/$id/procedure': {
-      id: '/app/creance_/$id/procedure'
-      path: '/creance/$id/procedure'
+    '/app/creance/$id/procedure': {
+      id: '/app/creance/$id/procedure'
+      path: '/procedure'
       fullPath: '/app/creance/$id/procedure'
       preLoaderRoute: typeof AppCreanceIdProcedureRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppCreanceIdRoute
     }
-    '/app/creance_/$id/relances': {
-      id: '/app/creance_/$id/relances'
-      path: '/creance/$id/relances'
+    '/app/creance/$id/relances': {
+      id: '/app/creance/$id/relances'
+      path: '/relances'
       fullPath: '/app/creance/$id/relances'
       preLoaderRoute: typeof AppCreanceIdRelancesRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppCreanceIdRoute
     }
-    '/app/creance_/$id/risques': {
-      id: '/app/creance_/$id/risques'
-      path: '/creance/$id/risques'
+    '/app/creance/$id/risques': {
+      id: '/app/creance/$id/risques'
+      path: '/risques'
       fullPath: '/app/creance/$id/risques'
       preLoaderRoute: typeof AppCreanceIdRisquesRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppCreanceIdRoute
     }
-    '/app/creance_/$id/solidite': {
-      id: '/app/creance_/$id/solidite'
-      path: '/creance/$id/solidite'
+    '/app/creance/$id/solidite': {
+      id: '/app/creance/$id/solidite'
+      path: '/solidite'
       fullPath: '/app/creance/$id/solidite'
       preLoaderRoute: typeof AppCreanceIdSoliditeRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppCreanceIdRoute
     }
     '/app/debiteurs_/$id/habitude': {
       id: '/app/debiteurs_/$id/habitude'
@@ -750,6 +767,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppCreanceIdRouteChildren {
+  AppCreanceIdDecompteRoute: typeof AppCreanceIdDecompteRoute
+  AppCreanceIdLitigeRoute: typeof AppCreanceIdLitigeRoute
+  AppCreanceIdProcedureRoute: typeof AppCreanceIdProcedureRoute
+  AppCreanceIdRelancesRoute: typeof AppCreanceIdRelancesRoute
+  AppCreanceIdRisquesRoute: typeof AppCreanceIdRisquesRoute
+  AppCreanceIdSoliditeRoute: typeof AppCreanceIdSoliditeRoute
+  AppCreanceIdIndexRoute: typeof AppCreanceIdIndexRoute
+}
+
+const AppCreanceIdRouteChildren: AppCreanceIdRouteChildren = {
+  AppCreanceIdDecompteRoute: AppCreanceIdDecompteRoute,
+  AppCreanceIdLitigeRoute: AppCreanceIdLitigeRoute,
+  AppCreanceIdProcedureRoute: AppCreanceIdProcedureRoute,
+  AppCreanceIdRelancesRoute: AppCreanceIdRelancesRoute,
+  AppCreanceIdRisquesRoute: AppCreanceIdRisquesRoute,
+  AppCreanceIdSoliditeRoute: AppCreanceIdSoliditeRoute,
+  AppCreanceIdIndexRoute: AppCreanceIdIndexRoute,
+}
+
+const AppCreanceIdRouteWithChildren = AppCreanceIdRoute._addFileChildren(
+  AppCreanceIdRouteChildren,
+)
+
 interface AppRouteRouteChildren {
   AppAbonnementRoute: typeof AppAbonnementRoute
   AppDebiteursRoute: typeof AppDebiteursRoute
@@ -762,7 +803,7 @@ interface AppRouteRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppAbonnementPremierBilanRoute: typeof AppAbonnementPremierBilanRoute
   AppAbonnementSuiviRoute: typeof AppAbonnementSuiviRoute
-  AppCreanceIdRoute: typeof AppCreanceIdRoute
+  AppCreanceIdRoute: typeof AppCreanceIdRouteWithChildren
   AppDonneesExportRoute: typeof AppDonneesExportRoute
   AppDonneesSupprimerCompteRoute: typeof AppDonneesSupprimerCompteRoute
   AppDonneesSupprimerEtablissementRoute: typeof AppDonneesSupprimerEtablissementRoute
@@ -770,12 +811,6 @@ interface AppRouteRouteChildren {
   AppImportFacturesIdRoute: typeof AppImportFacturesIdRoute
   AppParametresCreancierRoute: typeof AppParametresCreancierRoute
   AppParametresEtablissementRoute: typeof AppParametresEtablissementRoute
-  AppCreanceIdDecompteRoute: typeof AppCreanceIdDecompteRoute
-  AppCreanceIdLitigeRoute: typeof AppCreanceIdLitigeRoute
-  AppCreanceIdProcedureRoute: typeof AppCreanceIdProcedureRoute
-  AppCreanceIdRelancesRoute: typeof AppCreanceIdRelancesRoute
-  AppCreanceIdRisquesRoute: typeof AppCreanceIdRisquesRoute
-  AppCreanceIdSoliditeRoute: typeof AppCreanceIdSoliditeRoute
   AppDebiteursIdHabitudeRoute: typeof AppDebiteursIdHabitudeRoute
   AppDebiteursIdPiecesRoute: typeof AppDebiteursIdPiecesRoute
 }
@@ -792,7 +827,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppAbonnementPremierBilanRoute: AppAbonnementPremierBilanRoute,
   AppAbonnementSuiviRoute: AppAbonnementSuiviRoute,
-  AppCreanceIdRoute: AppCreanceIdRoute,
+  AppCreanceIdRoute: AppCreanceIdRouteWithChildren,
   AppDonneesExportRoute: AppDonneesExportRoute,
   AppDonneesSupprimerCompteRoute: AppDonneesSupprimerCompteRoute,
   AppDonneesSupprimerEtablissementRoute: AppDonneesSupprimerEtablissementRoute,
@@ -800,12 +835,6 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppImportFacturesIdRoute: AppImportFacturesIdRoute,
   AppParametresCreancierRoute: AppParametresCreancierRoute,
   AppParametresEtablissementRoute: AppParametresEtablissementRoute,
-  AppCreanceIdDecompteRoute: AppCreanceIdDecompteRoute,
-  AppCreanceIdLitigeRoute: AppCreanceIdLitigeRoute,
-  AppCreanceIdProcedureRoute: AppCreanceIdProcedureRoute,
-  AppCreanceIdRelancesRoute: AppCreanceIdRelancesRoute,
-  AppCreanceIdRisquesRoute: AppCreanceIdRisquesRoute,
-  AppCreanceIdSoliditeRoute: AppCreanceIdSoliditeRoute,
   AppDebiteursIdHabitudeRoute: AppDebiteursIdHabitudeRoute,
   AppDebiteursIdPiecesRoute: AppDebiteursIdPiecesRoute,
 }

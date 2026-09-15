@@ -43,7 +43,8 @@ export function EcranRisques({
 				retour: {
 					vers: '/app/creance/$id',
 					parametres: { id: identifiant },
-					libelle: pret?.debiteur ?? 'Créance'
+					libelle: pret?.debiteur ?? 'Créance',
+					masqueEnVolets: true
 				},
 				titre: 'Ce qui affaiblit ce dossier',
 				sousTitre:

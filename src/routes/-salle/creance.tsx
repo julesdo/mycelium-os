@@ -1,5 +1,6 @@
-import type { CreanceAffichee } from '../../screens/creance';
-import { EcranCreance } from '../../screens/creance';
+import type { ReactNode } from 'react';
+import type { CleAnalyse, CreanceAffichee, CreanceOuverte } from '../../screens/creance';
+import { EcranAnalyseEnAttente, EcranCreance, analyseParDefaut } from '../../screens/creance';
 import { EcranDecompte } from '../../screens/analyses/decompte';
 import { EcranLitige, type ConditionAConfirmer } from '../../screens/analyses/litige';
 import { EcranRelances } from '../../screens/analyses/relances';
@@ -47,7 +48,7 @@ import {
 } from '../../lib/verticales/recouvrement/relance';
 import type { DecompteAffiche, NiveauAffiche, SoliditeAffichee } from '../../ui';
 import { ETABLISSEMENT_DEMO } from './communes';
-import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
+import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
 /**
  * LES ENTRÉES DE LA FAMILLE, DÉCLARÉES AVANT TOUT CE QUI S'EN CALCULE.
@@ -257,7 +258,7 @@ const QUALIFICATION_DEMO = qualificationDepuisReponses(REPONSES_LITIGE_DEMO);
  * Les conditions à confirmer, composées exactement comme `creanceComplete` les
  * compose (`lecture.ts`, lignes 563 à 570) : `certaine` en est exclue, elle se
  * déduit des faits déclarés au litige. La rangée les compte, et la page du
- * litige les reçoit telles quelles (`creance_.$id.litige.tsx`, ligne 58).
+ * litige les reçoit telles quelles (`creance.$id.litige.tsx`).
  */
 const CONDITIONS_A_CONFIRMER_DEMO: readonly ConditionAConfirmer[] = conditionsADemander(
 	CONDITIONS_DEMO
@@ -330,7 +331,7 @@ function factureVersDecompte(facture: FactureDemo, arreteAu: string): FacturePou
 
 /**
  * Le décompte arrêté au jour de la démonstration, par `decompterCreance`, dans
- * la convention que la page demande (`creance_.$id.decompte.tsx`, ligne 93). La
+ * la convention que la page demande (`creance.$id.decompte.tsx`). La
  * page le montre, la rangée en porte le total, et le brouillon de niveau 2 en
  * reprend les chiffres.
  */
@@ -490,6 +491,92 @@ const FORMES_SOLIDITE_DEMO: Readonly<Record<string, SoliditeAffichee>> = {
 	)
 };
 
+/** La créance de la famille, telle que sa route la passe à l'écran une fois lue. */
+const CREANCE_OUVERTE_DEMO: CreanceOuverte = {
+	identifiant: 'demo',
+	creance: CREANCE_DEMO,
+	etatProcedure: null,
+	totalDecompte: DECOMPTE_DEMO.total
+};
+
+/**
+ * UNE ANALYSE, DANS LE VOLET DROIT DE SA CRÉANCE.
+ *
+ * Le maître est prêt, comme en production quand on ouvre une analyse depuis la
+ * liste : l'état choisi dans la salle est celui de l'analyse. À 1024 px et
+ * au-delà les deux volets se voient ; en dessous, l'analyse seule.
+ */
+function AvecLaCreance({
+	analyseOuverte,
+	children
+}: {
+	analyseOuverte: CleAnalyse | null;
+	children: ReactNode;
+}) {
+	return (
+		<EcranCreance
+			donnees={lectureDemo('pret', CREANCE_OUVERTE_DEMO)}
+			detail={children}
+			analyseOuverte={analyseOuverte}
+		/>
+	);
+}
+
+function DecompteDemo({ etat }: { etat: EtatDemo }) {
+	return (
+		<EcranDecompte
+			identifiant="demo"
+			donnees={lectureDemo(
+				etat,
+				{ ...DECOMPTE_BASE_DEMO, dernier: DECOMPTE_DEMO },
+				{ ...DECOMPTE_BASE_DEMO, dernier: null }
+			)}
+		/>
+	);
+}
+
+/** Le volet droit de la créance nue, choisi par la même fonction que l'index de la route. */
+function AnalyseParDefautDemo() {
+	return analyseParDefaut(CREANCE_DEMO) === 'litige' ? (
+		<LitigeDemo etat="pret" />
+	) : (
+		<DecompteDemo etat="pret" />
+	);
+}
+
+function LitigeDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+	return (
+		<EcranLitige
+			identifiant="demo"
+			donnees={lectureDemo(
+				etat,
+				{
+					...LITIGE_BASE_DEMO,
+					...litigeDepuisReponses(formeDemo(variante, REPONSES_LITIGE_DEMO, FORMES_LITIGE_DEMO)),
+					conditions: CONDITIONS_A_CONFIRMER_DEMO
+				},
+				{
+					...LITIGE_BASE_DEMO,
+					...litigeDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO),
+					// Conditions de la famille avec les deux qualités de commerçant à
+					// `'ok'`, seule entrée changée ici : la liste est vide parce que la
+					// condition est alors connue.
+					conditions: conditionsADemander(
+						conditionsDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO, 'ok', 'ok')
+					)
+						.filter((condition) => condition !== 'certaine')
+						.map((condition) => ({
+							condition,
+							libelle: `Pouvez-vous confirmer ${
+								LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
+							} de cette créance ?`
+						}))
+				}
+			)}
+		/>
+	);
+}
+
 export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 	{
 		route: '/app/creance/$id',
@@ -497,113 +584,94 @@ export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 		vide: false,
 		Demo: ({ etat }) => (
 			<EcranCreance
-				donnees={lectureDemo(etat, {
-					identifiant: 'demo',
-					creance: CREANCE_DEMO,
-					etatProcedure: null,
-					totalDecompte: DECOMPTE_DEMO.total
-				})}
+				donnees={lectureDemo(etat, CREANCE_OUVERTE_DEMO)}
+				// Comme la route : une créance en erreur emporte son volet droit, et
+				// pendant qu'elle se lit, l'index montre le squelette d'une analyse.
+				detail={
+					etat === 'erreur' ? null : etat === 'attente' ? (
+						<EcranAnalyseEnAttente identifiant="demo" />
+					) : (
+						<AnalyseParDefautDemo />
+					)
+				}
+				analyseOuverte={null}
 			/>
 		)
 	},
 	{
-		route: '/app/creance_/$id/decompte',
+		route: '/app/creance/$id/decompte',
 		libelle: 'décompte',
 		vide: true,
 		Demo: ({ etat }) => (
-			<EcranDecompte
-				identifiant="demo"
-				donnees={lectureDemo(
-					etat,
-					{ ...DECOMPTE_BASE_DEMO, dernier: DECOMPTE_DEMO },
-					{ ...DECOMPTE_BASE_DEMO, dernier: null }
-				)}
-			/>
+			<AvecLaCreance analyseOuverte="decompte">
+				<DecompteDemo etat={etat} />
+			</AvecLaCreance>
 		)
 	},
 	{
-		route: '/app/creance_/$id/litige',
+		route: '/app/creance/$id/litige',
 		libelle: 'litige',
 		vide: true,
 		variantes: Object.keys(FORMES_LITIGE_DEMO),
 		Demo: ({ etat, variante }) => (
-			<EcranLitige
-				identifiant="demo"
-				donnees={lectureDemo(
-					etat,
-					{
-						...LITIGE_BASE_DEMO,
-						...litigeDepuisReponses(formeDemo(variante, REPONSES_LITIGE_DEMO, FORMES_LITIGE_DEMO)),
-						conditions: CONDITIONS_A_CONFIRMER_DEMO
-					},
-					{
-						...LITIGE_BASE_DEMO,
-						...litigeDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO),
-						// Conditions de la famille avec les deux qualités de commerçant à
-						// `'ok'`, seule entrée changée ici : la liste est vide parce que la
-						// condition est alors connue.
-						conditions: conditionsADemander(
-							conditionsDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO, 'ok', 'ok')
-						)
-							.filter((condition) => condition !== 'certaine')
-							.map((condition) => ({
-								condition,
-								libelle: `Pouvez-vous confirmer ${
-									LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
-								} de cette créance ?`
-							}))
-					}
-				)}
-			/>
+			<AvecLaCreance analyseOuverte="litige">
+				<LitigeDemo etat={etat} variante={variante} />
+			</AvecLaCreance>
 		)
 	},
 	{
-		route: '/app/creance_/$id/relances',
+		route: '/app/creance/$id/relances',
 		libelle: 'relances',
 		vide: false,
 		variantes: Object.keys(FORMES_RELANCES_DEMO),
 		Demo: ({ etat, variante }) => (
-			<EcranRelances
-				identifiant="demo"
-				donnees={lectureDemo(etat, {
-					debiteur: DEBITEUR_DEMO,
-					niveaux: formeDemo(variante, RELANCES_DEMO, FORMES_RELANCES_DEMO)
-				})}
-			/>
+			<AvecLaCreance analyseOuverte="relances">
+				<EcranRelances
+					identifiant="demo"
+					donnees={lectureDemo(etat, {
+						debiteur: DEBITEUR_DEMO,
+						niveaux: formeDemo(variante, RELANCES_DEMO, FORMES_RELANCES_DEMO)
+					})}
+				/>
+			</AvecLaCreance>
 		)
 	},
 	{
-		route: '/app/creance_/$id/risques',
+		route: '/app/creance/$id/risques',
 		libelle: 'risques',
 		vide: true,
 		variantes: Object.keys(FORMES_RISQUES_DEMO),
 		Demo: ({ etat, variante }) => (
-			<EcranRisques
-				identifiant="demo"
-				donnees={lectureDemo(
-					etat,
-					{
-						debiteur: DEBITEUR_DEMO,
-						risques: formeDemo(variante, RISQUES_DEMO, FORMES_RISQUES_DEMO)
-					},
-					{ debiteur: DEBITEUR_DEMO, risques: [] }
-				)}
-			/>
+			<AvecLaCreance analyseOuverte="risques">
+				<EcranRisques
+					identifiant="demo"
+					donnees={lectureDemo(
+						etat,
+						{
+							debiteur: DEBITEUR_DEMO,
+							risques: formeDemo(variante, RISQUES_DEMO, FORMES_RISQUES_DEMO)
+						},
+						{ debiteur: DEBITEUR_DEMO, risques: [] }
+					)}
+				/>
+			</AvecLaCreance>
 		)
 	},
 	{
-		route: '/app/creance_/$id/solidite',
+		route: '/app/creance/$id/solidite',
 		libelle: 'solidité',
 		vide: false,
 		variantes: Object.keys(FORMES_SOLIDITE_DEMO),
 		Demo: ({ etat, variante }) => (
-			<EcranSolidite
-				identifiant="demo"
-				donnees={lectureDemo(etat, {
-					debiteur: DEBITEUR_DEMO,
-					solidite: formeDemo(variante, SOLIDITE_DEMO, FORMES_SOLIDITE_DEMO)
-				})}
-			/>
+			<AvecLaCreance analyseOuverte="solidite">
+				<EcranSolidite
+					identifiant="demo"
+					donnees={lectureDemo(etat, {
+						debiteur: DEBITEUR_DEMO,
+						solidite: formeDemo(variante, SOLIDITE_DEMO, FORMES_SOLIDITE_DEMO)
+					})}
+				/>
+			</AvecLaCreance>
 		)
 	}
 ];

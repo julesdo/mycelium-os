@@ -60,7 +60,8 @@ export function EcranLitige({
 				retour: {
 					vers: '/app/creance/$id',
 					parametres: { id: identifiant },
-					libelle: pret?.debiteur ?? 'Créance'
+					libelle: pret?.debiteur ?? 'Créance',
+					masqueEnVolets: true
 				},
 				titre: 'Ce que vous seul pouvez dire',
 				sousTitre: 'Des faits, pas une appréciation juridique.'

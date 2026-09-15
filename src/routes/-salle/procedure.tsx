@@ -215,7 +215,9 @@ function ProcedureDemo({ etat, variante }: { etat: EtatDemo; variante?: string }
 
 export const ECRANS_PROCEDURE: readonly EcranDuProduit[] = [
 	{
-		route: '/app/creance_/$id/procedure',
+		// Sans le maître de la créance : cette page montre une AUTRE créance que la
+		// famille créance (voir plus haut), et sa liste la contredirait.
+		route: '/app/creance/$id/procedure',
 		libelle: 'procédure',
 		vide: true,
 		variantes: Object.keys(FORMES_JOURNAL_DEMO),

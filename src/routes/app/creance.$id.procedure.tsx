@@ -13,7 +13,7 @@ import {
 } from '../../ui';
 import { EcranProcedure, type ChoixDeclare } from '../../screens/analyses/procedure';
 
-export const Route = createFileRoute('/app/creance_/$id/procedure')({
+export const Route = createFileRoute('/app/creance/$id/procedure')({
 	component: PageProcedure,
 	errorComponent: ProcedureEnErreur
 });
