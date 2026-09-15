@@ -106,6 +106,18 @@ export {
 	type RepertoireAffiche
 } from './recherche-avocat';
 export {
+	PaletteRecherche,
+	bougesDuFlux,
+	PREMIERS_PAR_FAMILLE,
+	type FamilleRecherche,
+	type ResultatRechercheAffiche,
+	type RecentAffiche,
+	type DestinationRecherche,
+	type DebiteurTrouveAffiche,
+	type FactureTrouveeAffichee,
+	type ProcedureTrouveeAffichee
+} from './palette-recherche';
+export {
 	Veilleur,
 	travauxDuVeilleur,
 	type TacheVeilleur,

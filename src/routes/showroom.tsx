@@ -21,7 +21,9 @@ import {
 	LigneBouton,
 	ConstatRegistre,
 	Lettrage,
-	VeilleurAvatar
+	VeilleurAvatar,
+	PaletteRecherche,
+	type FamilleRecherche
 } from '../ui';
 import {
 	controlerTauxContractuel,
@@ -43,6 +45,7 @@ import {
 } from './-salle/communes';
 import { DEPOTS_DEMO } from './-salle/depots';
 import { BILAN_DEMO, BILAN_SURVEILLANCE_INTERROMPUE_DEMO } from './-salle/revelation';
+import { chercherDansLaDemo, RECENTS_DEMO } from './-salle/recherche';
 
 /**
  * La salle d'exposition.
@@ -742,7 +745,61 @@ function DemoAvocat() {
 	);
 }
 
+/**
+ * LA RECHERCHE, DANS SES ÉTATS.
+ *
+ * La palette est la vraie, et ses réponses sont calculées par les fonctions du
+ * serveur sur une base de démonstration (`-salle/recherche.ts`). Elle s'ouvre
+ * sur « Martin », qui fait déborder les débiteurs : « Voir tout » et
+ * « Réduire » sont ce qu'on vient regarder. Effacer le champ montre ce qui a
+ * bougé ; un terme qui ne répond à rien montre la phrase d'absence. La seconde
+ * entrée est l'établissement sans débiteur, où le vide montre l'import.
+ */
+function DemoRecherche({ vide }: { vide: boolean }) {
+	const [ouverte, setOuverte] = useState(true);
+	const [terme, setTerme] = useState(vide ? '' : 'Martin');
+	const [deplie, setDeplie] = useState<FamilleRecherche | null>(null);
+
+	return (
+		<Page>
+			<PageHeader
+				titre="Rechercher"
+				sousTitre={vide ? 'Un établissement sans débiteur' : 'Débiteurs, factures et procédures'}
+			/>
+			<PageBody>
+				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
+					<ListeAnalyses>
+						<LigneBouton
+							titre="Rechercher « Durand, FA-2026-0311… »"
+							onClick={() => setOuverte(true)}
+						/>
+					</ListeAnalyses>
+
+					<PaletteRecherche
+						ouverte={ouverte}
+						terme={terme}
+						onTerme={(valeur) => {
+							setTerme(valeur);
+							setDeplie(null);
+						}}
+						onFermer={() => setOuverte(false)}
+						resultat={chercherDansLaDemo(vide ? '' : terme)}
+						aJour
+						recents={vide ? [] : RECENTS_DEMO}
+						etablissementVide={vide}
+						deplie={deplie}
+						onDeplier={setDeplie}
+						onOuvrir={() => setOuverte(false)}
+					/>
+				</div>
+			</PageBody>
+		</Page>
+	);
+}
+
 const ECRANS = [
+	'recherche',
+	'recherche-vide',
 	'veilleur',
 	'bilan-import',
 	'lettrage',
@@ -878,6 +935,8 @@ function Showroom() {
 					</Shell>
 				) : (
 					<>
+						{ecran === 'recherche' ? <DemoRecherche vide={false} /> : null}
+						{ecran === 'recherche-vide' ? <DemoRecherche vide /> : null}
 						{ecran === 'bilan-import' ? <DemoBilanImport /> : null}
 						{ecran === 'veilleur' ? <DemoVeilleurAvatar /> : null}
 						{ecran === 'lettrage' ? <DemoLettrage /> : null}
