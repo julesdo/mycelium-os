@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Button } from '@cladd-ui/react';
+import { XIcon } from 'lucide-react';
 
 /**
  * Règle 3 du contrat d'écran, matérialisée.
@@ -36,14 +38,20 @@ export function TwoPane({
 
 			{preuveOuverte ? (
 				<div className="fixed inset-0 z-50 flex flex-col bg-cladd-bg lg:hidden">
+					{/* La croix du kit, seule, en haut à gauche : un `<button>` texte écrit à
+					    la main réinventait le contrôle, sans son anneau de focus. `md` vaut
+					    48 px sur l'échelle décalée du produit. */}
 					<div className="shrink-0 px-cladd-3xs pt-cladd-3xs">
-						<button
-							type="button"
+						<Button
+							square
+							rounded
+							variant="transparent"
+							outline={false}
+							aria-label="Fermer"
 							onClick={onFermerPreuve}
-							className="h-cladd-lg px-cladd-xs text-cladd-xs font-semibold"
 						>
-							Fermer
-						</button>
+							<XIcon />
+						</Button>
 					</div>
 					<div className="min-h-0 flex-1 overflow-y-auto">{preuve}</div>
 				</div>

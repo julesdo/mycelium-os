@@ -53,6 +53,13 @@ export interface RetourEcran {
 	/** La sélection à rendre au retour, comme `?d=` sur les débiteurs. */
 	readonly recherche?: LinkProps['search'];
 	readonly libelle: string;
+	/**
+	 * Vrai quand la page s'ouvre dans le volet droit d'un maître qui montre déjà
+	 * sa destination : à partir de 1024 px, le retour mènerait à ce qui est
+	 * affiché juste à gauche. Faux quand la page REMPLACE un détail devenu
+	 * invisible (l'habitude d'un débiteur remplace sa fiche) : le retour reste.
+	 */
+	readonly masqueEnVolets?: boolean;
 }
 
 /**
@@ -205,6 +212,7 @@ function Entete({ entete }: { entete: EnteteEcran }) {
 			retourParametres={entete.retour.parametres}
 			retourRecherche={entete.retour.recherche}
 			retourLibelle={entete.retour.libelle}
+			retourMasqueEnVolets={entete.retour.masqueEnVolets}
 			titre={entete.titre}
 			sousTitre={entete.sousTitre}
 		/>
