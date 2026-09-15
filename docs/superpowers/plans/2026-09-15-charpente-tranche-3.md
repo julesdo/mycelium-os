@@ -54,11 +54,12 @@ Les composants partagés sont des exports nommés du fichier de route.
 4. **Imports.** `git mv import-factures_.$id.tsx import-factures.$id.tsx`. Enfant apparié :
    `MaitreDetail` ; sinon le maître seul, pleine largeur (le volet droit ne montre rien, sans
    laisser 60 % d'écran mort). Rangée du dépôt ouvert sélectionnée.
-5. **Réglages**, en dernier. Mise en page sans chemin `_reglages.tsx`, forme plate :
-   `_reglages.parametres.tsx` (l'établissement par défaut), `_reglages.parametres_.etablissement`,
+5. **Réglages**, en dernier. Mise en page sans chemin, forme plate : `parametres.tsx` devient
+   `_reglages.tsx` (la liste garde son histoire), et `_reglages.parametres.tsx`, neuf, rend
+   l'établissement par défaut. Par `git mv` : `_reglages.parametres_.etablissement`,
    `_reglages.parametres_.creancier`, `_reglages.abonnement`, `_reglages.abonnement_.premier-bilan`,
    `_reglages.abonnement_.suivi`, `_reglages.equipe`, `_reglages.equipe_.inviter`,
-   `_reglages.donnees`, `_reglages.donnees_.export`, tous par `git mv`. `donnees_.supprimer-*`
+   `_reglages.donnees`, `_reglages.donnees_.export`. `donnees_.supprimer-*`
    restent dehors, pleine largeur. La liste vit dans `_reglages.tsx` ; section ouverte par le
    `routeId` de la feuille. `EcranReglages` (motif 8) : groupes « Recouvrement » (établissement,
    créancier) et « Compte » (abonnement, équipe, vos données), Apparence en `ListItem` avec son
@@ -83,3 +84,12 @@ Le registre de la salle (`src/routes/-salle/*.tsx`) suit les nouvelles chaînes 
 `bun run check`, `bun run lint`, `bun run test:unit`. Aucun test neuf. Regard au navigateur à
 1023 et 1024 px (anneau `selected` sous `verre-bouton`, largeur du maître) : à faire par Jules ou
 une session suivante, pas dans cette tranche.
+
+## État (15 septembre 2026)
+
+Les cinq lots sont committés : primitive `553a16b`, créance `f3b9bd1`, débiteur `fd12747`, imports
+`a50661d`, réglages `57fb69f`. Rien n'est poussé. Restent :
+
+- le regard au navigateur ci-dessus, et le h2 du détail en volets après la fusion avec la tranche 4 ;
+- `PageDecompte`, `PageLitige` et `PageEtablissement` sont exportées de leur fichier de route : le
+  plugin prévient qu'elles ne sont plus découpées. Les déplacer hors des routes si le poids compte.
