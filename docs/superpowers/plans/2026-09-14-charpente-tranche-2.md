@@ -10,6 +10,33 @@
 
 Spec : `docs/superpowers/specs/2026-09-14-charpente-navigation-design.md`, § 4. Tranche 1 livrée en production (`3bc34e2`).
 
+## État d'avancement (au 15 septembre 2026)
+
+Branche `chantier/charpente-tranche-2`. Rien n'est poussé : la production est au commit `3bc34e2` (tranche 1).
+
+| Tâche | État |
+| --- | --- |
+| 0 à 6, et 5 bis | Closes : relues, corrigées, regardées au navigateur à 375 et 1280 px. |
+| 7 (l'équipe et vos données) | Committée (`0d563fa`) et conforme selon sa relecture de conformité. Suite, types, lint et regard au navigateur au vert. **Sa relecture de qualité n'a pas eu lieu** (arrêtée) : la faire avant la tâche 8, ou l'assumer. |
+| 8 (l'import, le bilan d'un dépôt, la révélation) | À faire : les trois derniers écrans (24 sur 27 migrés). |
+| 8 bis (la confirmation d'une suppression parle français) | À faire. |
+| 9 (les barrières) | À faire. |
+| 10 (regarder, livrer, vérifier la production) | À faire : relecture finale de la branche, fusion, poussée, vérification du déploiement avec `docs/superpowers/notes/empreinte-prod.sh`. |
+
+Notes de travail à relire avant de reprendre : `docs/superpowers/notes/`. On y trouve les défauts relevés, les conceptions des tranches 3 à 5 et les synthèses de recherche.
+
+En attente de Jules :
+- **trois décisions produit**, détaillées dans `docs/superpowers/notes/DEFAUTS-REGARD.md` : les voies proposées pour un débiteur en procédure collective, l'encart de développement affiché sans clé Paddle, et la page publique d'abonnement encore écrite pour EGalim ;
+- **six tâches de fond proposées** :
+  - `retardsAnterieurs` codé à 0 dans `creanceComplete` ;
+  - extraire les transformations de `creanceComplete` ;
+  - nommer l'intervenant retiré du carnet ;
+  - extraire les lectures des débiteurs ;
+  - extraire le plan d'abonnement effectif ;
+  - inventorier les restes d'EGalim.
+
+Ensuite viennent les tranches 3, 4 et 5, chacune avec son plan écrit sur le code tel qu'il sera alors.
+
 ---
 
 ## Ce que ce plan a vérifié au code avant d'être écrit
