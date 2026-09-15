@@ -5,7 +5,7 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { aujourdHuiISO } from '../../ui';
 import { EcranHabitude } from '../../screens/debiteur/habitude';
 
-export const Route = createFileRoute('/app/debiteurs_/$id/habitude')({
+export const Route = createFileRoute('/app/debiteurs/$id/habitude')({
 	component: PageHabitude,
 	errorComponent: HabitudeEnErreur
 });

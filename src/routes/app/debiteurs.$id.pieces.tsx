@@ -5,7 +5,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranPieces } from '../../screens/debiteur/pieces';
 
-export const Route = createFileRoute('/app/debiteurs_/$id/pieces')({
+export const Route = createFileRoute('/app/debiteurs/$id/pieces')({
 	component: PagePieces,
 	errorComponent: PiecesEnErreur
 });

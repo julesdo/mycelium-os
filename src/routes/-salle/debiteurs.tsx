@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
 	EcranDebiteurs,
 	type DebiteursAffiches,
@@ -793,6 +793,7 @@ function DebiteursDemo({ etat, variante }: { etat: EtatDemo; variante?: string }
 
 	return (
 		<EcranDebiteurs
+			enfant={null}
 			donnees={lectureDemo(
 				etat,
 				{
@@ -850,6 +851,34 @@ const PIECES_BASE_DEMO = {
 	onRetirer: () => undefined
 };
 
+/**
+ * UNE PAGE DU DÉBITEUR, DANS LE VOLET DROIT DE LA LISTE.
+ *
+ * La liste est prête et ce débiteur y est choisi, comme en production quand on
+ * ouvre sa page depuis sa fiche : l'état choisi dans la salle est celui de la
+ * page. À 1024 px et au-delà les deux volets se voient ; en dessous, la page seule.
+ */
+function AvecLesDebiteurs({ debiteurId, children }: { debiteurId: string; children: ReactNode }) {
+	return (
+		<EcranDebiteurs
+			enfant={children}
+			donnees={lectureDemo('pret', {
+				debiteurs: LIGNES_DEMO,
+				choisi: debiteurId,
+				onOuvrir: () => undefined,
+				onFermer: () => undefined,
+				detail: detailDu(
+					debiteurId,
+					LIGNES_DEMO,
+					new Set<string>(),
+					() => undefined,
+					VOLET_LU_DEMO.voletLu
+				)
+			})}
+		/>
+	);
+}
+
 export const ECRANS_DEBITEURS: readonly EcranDuProduit[] = [
 	{
 		route: '/app/debiteurs',
@@ -859,7 +888,7 @@ export const ECRANS_DEBITEURS: readonly EcranDuProduit[] = [
 		Demo: DebiteursDemo
 	},
 	{
-		route: '/app/debiteurs_/$id/habitude',
+		route: '/app/debiteurs/$id/habitude',
 		libelle: 'habitude',
 		vide: false,
 		variantes: Object.keys(FORMES_HABITUDE_DEMO),
@@ -867,23 +896,27 @@ export const ECRANS_DEBITEURS: readonly EcranDuProduit[] = [
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const forme = formeDemo(variante, HABITUDE_DEMO, FORMES_HABITUDE_DEMO);
 			return (
-				<EcranHabitude identifiant={forme.debiteurId} donnees={lectureDemo(etat, forme.valeur)} />
+				<AvecLesDebiteurs debiteurId={forme.debiteurId}>
+					<EcranHabitude identifiant={forme.debiteurId} donnees={lectureDemo(etat, forme.valeur)} />
+				</AvecLesDebiteurs>
 			);
 		}
 	},
 	{
-		route: '/app/debiteurs_/$id/pieces',
+		route: '/app/debiteurs/$id/pieces',
 		libelle: 'pièces',
 		vide: true,
 		Demo: ({ etat }) => (
-			<EcranPieces
-				identifiant={PRINCIPAL_DEMO._id}
-				donnees={lectureDemo(
-					etat,
-					{ ...PIECES_BASE_DEMO, pieces: piecesDu(PRINCIPAL_DEMO._id) },
-					{ ...PIECES_BASE_DEMO, pieces: [] }
-				)}
-			/>
+			<AvecLesDebiteurs debiteurId={PRINCIPAL_DEMO._id}>
+				<EcranPieces
+					identifiant={PRINCIPAL_DEMO._id}
+					donnees={lectureDemo(
+						etat,
+						{ ...PIECES_BASE_DEMO, pieces: piecesDu(PRINCIPAL_DEMO._id) },
+						{ ...PIECES_BASE_DEMO, pieces: [] }
+					)}
+				/>
+			</AvecLesDebiteurs>
 		)
 	}
 ];

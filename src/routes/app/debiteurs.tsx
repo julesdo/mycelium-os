@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import {
+	createFileRoute,
+	Outlet,
+	useChildMatches,
+	useNavigate,
+	useParams
+} from '@tanstack/react-router';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -7,6 +13,7 @@ import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import {
 	aujourdHuiISO,
 	lirePourLeSujet,
+	useDeuxVolets,
 	type EtatRecherche,
 	type EtablissementPropose,
 	type PosePourUnSujet
@@ -40,7 +47,7 @@ export const Route = createFileRoute('/app/debiteurs')({
 });
 
 function DebiteursEnErreur() {
-	return <EcranDebiteurs donnees={{ etat: 'erreur' }} />;
+	return <EcranDebiteurs donnees={{ etat: 'erreur' }} enfant={null} />;
 }
 
 /**
@@ -72,7 +79,24 @@ function Debiteurs() {
 	 */
 	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
 	const { d } = Route.useSearch();
-	const choisi = (d ?? null) as Id<'debiteurs'> | null;
+	/** Vrai quand une page du débiteur (habitude, pièces) est ouverte par segment. */
+	const pageOuverte = useChildMatches({ select: (enfants) => enfants.length > 0 });
+	/** Le débiteur de la page ouverte : son `$id` appartient à la route enfant. */
+	const { id: debiteurDeLaPage } = useParams({ strict: false });
+	const deuxVolets = useDeuxVolets();
+	/**
+	 * LE DÉBITEUR CHOISI : celui de l'adresse, sinon celui de la page ouverte.
+	 *
+	 * ⚠️ PUIS, EN DEUX VOLETS SEULEMENT, LE PREMIER DE LA LISTE. Un volet droit vide
+	 * à 1024 px laissait la moitié de l'écran morte. Ce choix ne s'écrit jamais dans
+	 * l'adresse : sur un téléphone, le gérant atterrirait dans une fiche au lieu de
+	 * la liste. Et sous 1024 px il ne s'applique pas, sans quoi la feuille
+	 * s'ouvrirait d'elle-même par-dessus la liste.
+	 */
+	const choisi = (d ??
+		debiteurDeLaPage ??
+		(deuxVolets ? debiteurs?.[0]?._id : undefined) ??
+		null) as Id<'debiteurs'> | null;
 
 	/**
 	 * Choisir un débiteur, c'est NAVIGUER.
@@ -419,6 +443,7 @@ function Debiteurs() {
 
 	return (
 		<EcranDebiteurs
+			enfant={pageOuverte ? <Outlet /> : null}
 			donnees={
 				debiteurs === undefined
 					? { etat: 'attente' }
