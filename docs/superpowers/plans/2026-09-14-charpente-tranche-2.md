@@ -12,16 +12,18 @@ Spec : `docs/superpowers/specs/2026-09-14-charpente-navigation-design.md`, § 4.
 
 ## État d'avancement (au 15 septembre 2026)
 
-Branche `chantier/charpente-tranche-2`. Rien n'est poussé : la production est au commit `3bc34e2` (tranche 1).
+Branche `chantier/charpente-tranche-2`. Les tâches 0 à 7 sont en production depuis le 15 septembre (`86dd55f`), poussées avant la fin de la tranche à la demande de Jules. Déploiement vérifié.
 
 | Tâche | État |
 | --- | --- |
-| 0 à 6, et 5 bis | Closes : relues, corrigées, regardées au navigateur à 375 et 1280 px. |
-| 7 (l'équipe et vos données) | Committée (`0d563fa`) et conforme selon sa relecture de conformité. Suite, types, lint et regard au navigateur au vert. **Sa relecture de qualité n'a pas eu lieu** (arrêtée) : la faire avant la tâche 8, ou l'assumer. |
-| 8 (l'import, le bilan d'un dépôt, la révélation) | À faire : les trois derniers écrans (24 sur 27 migrés). |
-| 8 bis (la confirmation d'une suppression parle français) | À faire. |
-| 9 (les barrières) | À faire. |
-| 10 (regarder, livrer, vérifier la production) | À faire : relecture finale de la branche, fusion, poussée, vérification du déploiement avec `docs/superpowers/notes/empreinte-prod.sh`. |
+| 0 à 6, et 5 bis | Closes : relues, corrigées, regardées au navigateur à 375 et 1280 px. En production. |
+| 7 (l'équipe et vos données) | Committée (`0d563fa`), conforme selon sa relecture de conformité, en production. |
+| 8 bis (la confirmation d'une suppression parle français) | Committée (`31c5cf5`). Relue : aucun bloquant. |
+| 8 (l'import, le bilan d'un dépôt, la révélation) | Committée (`f507a00`) : les 27 écrans sont dans la coquille. Relue : aucun bloquant. |
+| 9 (les barrières) | **Retirée le 15 septembre à la demande de Jules**, qui refuse le surcroît de tests : la tâche n'écrivait que des tests. |
+| 10 (regarder, livrer, vérifier la production) | Réduite : une vérification (types, suite existante, lint, construction), une relecture, puis la poussée et un contrôle du statut Vercel. Le regard au navigateur des écrans des tâches 8 et 8 bis n'a pas eu lieu : le panneau demande une autorisation par page, et Jules était absent. |
+
+Les tranches 3, 4 et 5 sont lancées le 15 septembre en parallèle, chacune sur sa branche (`chantier/charpente-tranche-3`, `-4`, `-5`), avec un plan court écrit par la tranche elle-même dans `docs/superpowers/plans/2026-09-15-charpente-tranche-<n>.md`.
 
 Notes de travail à relire avant de reprendre : `docs/superpowers/notes/`. On y trouve les défauts relevés, les conceptions des tranches 3 à 5 et les synthèses de recherche.
 
