@@ -301,7 +301,20 @@ export const recouvrementTables = {
 		 * brèche que la barrière multi-tenant existe pour fermer. Un test balaie le
 		 * code et échoue si une fonction publique le nomme.
 		 */
-		.index('by_siren', ['siren']),
+		.index('by_siren', ['siren'])
+		/**
+		 * LA RECHERCHE PAR NOM, sur la forme normalisée : le terme saisi passe par
+		 * `normaliserFournisseur`, la fonction même qui écrit ce champ.
+		 *
+		 * ⚠️ FILTRÉE PAR ÉTABLISSEMENT, ET UN TEST L'EXIGE. Sans ce filtre, la
+		 * recherche rendrait les débiteurs de tous les clients.
+		 * `__tests__/recherche-cloisonnee.test.ts` échoue si un index de recherche
+		 * ne déclare pas `organizationId`.
+		 */
+		.searchIndex('recherche_denomination', {
+			searchField: 'denominationNormalisee',
+			filterFields: ['organizationId']
+		}),
 
 	/**
 	 * Une facture de VENTE — l'inverse d'`invoiceLines` côté EGalim, qui parle
@@ -385,7 +398,17 @@ export const recouvrementTables = {
 		// connaître le débiteur : sans cet index, elle lirait toutes les
 		// factures de l'organisation à chaque passage.
 		.index('by_org_and_echeance', ['organizationId', 'dateEcheance'])
-		.index('by_org_and_statut', ['organizationId', 'statutPaiement']),
+		.index('by_org_and_statut', ['organizationId', 'statutPaiement'])
+		/**
+		 * LA RECHERCHE PAR RÉFÉRENCE PARTIELLE. Une référence tapée en entier se
+		 * résout d'abord par `by_org_and_reference` : Convex découpe
+		 * `FA-2026-0311` en trois jetons combinés en OU. Filtrée par établissement,
+		 * pour la même raison que `recherche_denomination`.
+		 */
+		.searchIndex('recherche_reference', {
+			searchField: 'reference',
+			filterFields: ['organizationId']
+		}),
 
 	/**
 	 * Ce qui éteint tout ou partie d'une facture, à une date.
@@ -607,21 +630,14 @@ export const recouvrementTables = {
 	intervenants: defineTable({
 		organizationId: v.id('organizations'),
 		nom: v.string(),
-		role: v.union(
-			v.literal('AVOCAT'),
-			v.literal('COMMISSAIRE_DE_JUSTICE'),
-			v.literal('AUTRE')
-		),
+		role: v.union(v.literal('AVOCAT'), v.literal('COMMISSAIRE_DE_JUSTICE'), v.literal('AUTRE')),
 		/** Le barreau, le ressort, ou la ville. Libre : ce n'est pas du droit. */
 		ressort: v.optional(v.string()),
 		telephone: v.optional(v.string()),
 		courriel: v.optional(v.string()),
 		adresse: v.optional(v.string()),
 		siren: v.optional(v.string()),
-		origine: v.union(
-			v.literal('SAISI_A_LA_MAIN'),
-			v.literal('RETENU_DEPUIS_UN_REPERTOIRE')
-		),
+		origine: v.union(v.literal('SAISI_A_LA_MAIN'), v.literal('RETENU_DEPUIS_UN_REPERTOIRE')),
 		/** Le répertoire d'où vient la fiche, et quand il a été relevé. */
 		sourceRepertoire: v.optional(v.string()),
 		sourceReleveeLe: v.optional(v.string()),
@@ -742,7 +758,6 @@ export const recouvrementTables = {
 	})
 		.index('by_creance', ['creanceId'])
 		.index('by_org', ['organizationId']),
-
 
 	/**
 	 * Le relevé d'un battement quotidien, par organisation et par jour.

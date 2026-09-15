@@ -58,7 +58,7 @@ const vSuivi = v.object({
 });
 
 /** Le suivi complet d'une créance engagée, rejoué depuis son journal. */
-async function lireSuivi(ctx: QueryCtx | MutationCtx, creance: Doc<'creances'>) {
+export async function lireSuivi(ctx: QueryCtx | MutationCtx, creance: Doc<'creances'>) {
 	if (creance.procedureEngagee === undefined || creance.engageeLe === undefined) {
 		throw new ConvexError('Cette créance n’a engagé aucune procédure.');
 	}
