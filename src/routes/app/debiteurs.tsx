@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, type HistoryState } from '@tanstack/react-router';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -393,7 +393,12 @@ function Debiteurs() {
 		});
 	}
 
-	async function constituer() {
+	/**
+	 * `provenance` : le titre de l'écran d'où part la constitution, que le volet
+	 * lit par `useProvenance()`. La créance ouverte ensuite revient ici par
+	 * l'historique, et le dit.
+	 */
+	async function constituer(provenance: HistoryState) {
 		if (choisi === null) return;
 		const debiteurId = choisi;
 		setErreurPosee({ sujet: debiteurId, valeur: null });
@@ -402,7 +407,7 @@ function Debiteurs() {
 				factureIds: [...selection] as Id<'facturesVente'>[]
 			});
 			setSelectionPosee({ sujet: debiteurId, valeur: SELECTION_VIDE });
-			await navigate({ to: '/app/creance/$id', params: { id: creanceId } });
+			await navigate({ to: '/app/creance/$id', params: { id: creanceId }, state: provenance });
 		} catch (e) {
 			const convexe = e as { data?: unknown };
 			setErreurPosee({
@@ -480,7 +485,7 @@ function Debiteurs() {
 									onAppliquerLettrage: (references, total) =>
 										void soldeLesFactures(references, total),
 									onBasculerFacture: basculer,
-									onConstituer: () => void constituer()
+									onConstituer: (provenance) => void constituer(provenance)
 								}
 							}
 						}

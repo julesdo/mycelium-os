@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Link, type LinkProps } from '@tanstack/react-router';
+import type { LinkProps } from '@tanstack/react-router';
 import { cn } from './cn';
+import { Lien } from './lien';
 
 /**
  * LA RANGÉE D'ACTIONS RONDES.
@@ -99,9 +100,9 @@ function Disque({ action }: { action: ActionRonde }) {
 
 	if (action.to !== undefined) {
 		return (
-			<Link to={action.to} className={habits}>
+			<Lien to={action.to} className={habits}>
 				{contenu}
-			</Link>
+			</Lien>
 		);
 	}
 

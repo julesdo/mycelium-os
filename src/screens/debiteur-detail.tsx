@@ -1,3 +1,4 @@
+import type { HistoryState } from '@tanstack/react-router';
 import { Checkbox, Chip, ListTitle, Surface } from '@cladd-ui/react';
 import { FileTextIcon, HistoryIcon, ScaleIcon } from 'lucide-react';
 import {
@@ -10,6 +11,7 @@ import {
 	dateCourte,
 	eurosCentimes,
 	pluriel,
+	useProvenance,
 	type ConstatRegistreAffiche,
 	type HabitudeAffichee,
 	type OptionSecteur,
@@ -236,8 +238,11 @@ export function DetailDebiteur({
 	onChercherLettrage: (montant: string, date: string) => void;
 	onAppliquerLettrage: (references: readonly string[], total: bigint) => void;
 	onBasculerFacture: (factureId: string) => void;
-	onConstituer: () => void;
+	/** `provenance` : ce que la créance ouverte ensuite relira pour revenir ici. Voir `useProvenance`. */
+	onConstituer: (provenance: HistoryState) => void;
 }) {
+	const provenance = useProvenance();
+
 	// Une pièce « à classer » est une pièce déposée dont la lecture n'a rien
 	// conclu. Elle existe, elle se voit, et elle ne compte dans aucun critère.
 	const aClasser = pieces.filter(
@@ -473,7 +478,7 @@ export function DetailDebiteur({
 			{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
 
 			{selection.size > 0 ? (
-				<BoutonPrincipal onClick={onConstituer}>
+				<BoutonPrincipal onClick={() => onConstituer(provenance)}>
 					Constituer une créance de {selection.size} facture{pluriel(selection.size)}
 				</BoutonPrincipal>
 			) : null}

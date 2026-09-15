@@ -1,8 +1,14 @@
 import type { ReactNode } from 'react';
+// ⚠️ LE SEUL `Link` DES ÉCRANS : le repli du retour, qui mène au parent de
+// l'adresse et ne transmet aucune provenance. S'il en transmettait une, la
+// créance rouverte depuis une analyse reviendrait à l'analyse, en boucle. Tout
+// autre lien passe par `Lien`. Voir `eslint.config.js`.
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { Link, type LinkProps } from '@tanstack/react-router';
 import { List, ListButton, Surface } from '@cladd-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from './cn';
+import { Lien } from './lien';
 
 /**
  * LA RANGÉE QUI POUSSE VERS UNE PAGE — le geste central d'une application
@@ -151,7 +157,7 @@ export function LigneAnalyse({
 }) {
 	return (
 		<ListButton
-			as={Link}
+			as={Lien}
 			to={vers}
 			/*
 			  ⚠️ UNE ASSERTION, ET UNE SEULE, À CET ENDROIT PRÉCIS.

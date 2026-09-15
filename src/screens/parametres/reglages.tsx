@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
 import {
 	Button,
 	ListButton,
@@ -20,7 +19,7 @@ import {
 	ReceiptTextIcon
 } from 'lucide-react';
 import type { Theme } from '../../app/use-theme';
-import { CarteListe, LigneAnalyse, ListeAnalyses, PageEcran, type Lecture } from '../../ui';
+import { CarteListe, Lien, LigneAnalyse, ListeAnalyses, PageEcran, type Lecture } from '../../ui';
 import type { EtatCritere } from './creancier';
 
 /**
@@ -196,7 +195,7 @@ export function EcranReglages({ donnees }: { donnees: Lecture<ReglagesAffiches> 
 						{AILLEURS.map(({ to, titre, aide, Icone }) => (
 							<ListButton
 								key={to}
-								as={Link}
+								as={Lien}
 								to={to}
 								icon={<Icone />}
 								footer={aide}

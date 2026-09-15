@@ -169,10 +169,14 @@ describe('la coquille d’écran', () => {
 	});
 
 	it('dégage la barre flottante quand l’écran n’a pas d’en-tête, et donne un titre de page à son erreur', () => {
-		const attente = renderToStaticMarkup(<PageEcran entete={{ genre: 'aucun' }} etat="attente" />);
+		const attente = renderToStaticMarkup(
+			<PageEcran entete={{ genre: 'aucun', titre: 'Accueil' }} etat="attente" />
+		);
 		expect(attente).toContain('pt-barre-app');
 
-		const erreur = renderToStaticMarkup(<PageEcran entete={{ genre: 'aucun' }} etat="erreur" />);
+		const erreur = renderToStaticMarkup(
+			<PageEcran entete={{ genre: 'aucun', titre: 'Accueil' }} etat="erreur" />
+		);
 		expect(erreur).toContain('pt-barre-app');
 		expect(erreur).toContain('<h1');
 	});

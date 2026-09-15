@@ -1,8 +1,8 @@
-import { Link } from '@tanstack/react-router';
 import { Surface, Chip } from '@cladd-ui/react';
 import { FileSearchIcon, RefreshCwIcon } from 'lucide-react';
 import type { PalierTaille } from '../../lib/config/tarifs';
 import {
+	Lien,
 	LigneAnalyse,
 	ListeAnalyses,
 	PageEcran,
@@ -90,12 +90,12 @@ export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffich
 							: 'Votre volume de factures n’est pas renseigné : le palier le plus bas est retenu par défaut.'}{' '}
 						Le produit est le même à tous les paliers ; seul le prix change.{' '}
 						{/* `min-h-12` : 48 px de haut, le plancher tactile du projet. Le lien en faisait 18. */}
-						<Link
+						<Lien
 							to="/app/parametres"
 							className="inline-flex min-h-12 items-center underline underline-offset-2"
 						>
 							Modifier
-						</Link>
+						</Lien>
 					</p>
 				</SectionEcran>
 

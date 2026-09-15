@@ -35,11 +35,19 @@ const MUSELIERE = [
 			'Couleur littérale interdite hors du fichier de tokens. Utiliser les variables Cladd (cladd-fg, cladd-surface…) ou --color-seuil-* pour les trois états de seuil.'
 	},
 	{
-		selector: "JSXAttribute[name.name='className'] Literal[value=/\\btext-(xs|sm|base|lg|xl|2xl|3xl)\\b/]",
+		selector:
+			"JSXAttribute[name.name='className'] Literal[value=/\\btext-(xs|sm|base|lg|xl|2xl|3xl)\\b/]",
 		message:
-			"Taille de police hors échelle. Utiliser text-cladd-xs / -sm / -md, ou la prop `size` du composant Cladd."
+			'Taille de police hors échelle. Utiliser text-cladd-xs / -sm / -md, ou la prop `size` du composant Cladd.'
 	}
 ];
+
+/** Pas de barrel import sur lucide-react : casse le tree-shaking. */
+const IMPORT_LUCIDE = {
+	name: 'lucide-react',
+	importNames: ['default'],
+	message: 'Importer les icônes nommément : import { CameraIcon } from "lucide-react".'
+};
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
@@ -88,14 +96,32 @@ export default defineConfig(
 	{
 		files: ['src/**/*.{ts,tsx}'],
 		rules: {
+			'@typescript-eslint/no-restricted-imports': ['error', { paths: [IMPORT_LUCIDE] }]
+		}
+	},
+	/**
+	 * LE LIEN DU PRODUIT EMPORTE LE NOM DE L'ÉCRAN QU'ON QUITTE.
+	 *
+	 * Le retour d'une page poussée dit où il mène en relisant ce nom dans l'état
+	 * de la navigation, et seul `Lien` (`src/ui/lien.tsx`) l'y écrit. Un `Link`
+	 * ou un `useNavigate` dans un écran ferait perdre son nom au retour, sans
+	 * qu'aucun test tombe. La règle reprend l'interdit de lucide : une règle
+	 * redéclarée pour un sous-ensemble de fichiers remplace ses options.
+	 */
+	{
+		files: ['src/ui/**/*.{ts,tsx}', 'src/screens/**/*.{ts,tsx}'],
+		ignores: ['src/ui/lien.tsx', '**/__tests__/**'],
+		rules: {
 			'@typescript-eslint/no-restricted-imports': [
 				'error',
 				{
 					paths: [
+						IMPORT_LUCIDE,
 						{
-							name: 'lucide-react',
-							importNames: ['default'],
-							message: 'Importer les icônes nommément : import { CameraIcon } from "lucide-react".'
+							name: '@tanstack/react-router',
+							importNames: ['Link', 'useNavigate'],
+							message:
+								'Utiliser Lien (src/ui/lien.tsx), qui transmet le titre de l’écran quitté au retour de la page suivante. Pour une navigation qui suit une écriture : useProvenance().'
 						}
 					]
 				}

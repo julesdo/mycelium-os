@@ -1,9 +1,10 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Link, type LinkProps } from '@tanstack/react-router';
+import type { LinkProps } from '@tanstack/react-router';
 import { ListItem } from '@cladd-ui/react';
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { cn } from './cn';
 import { EmptyState } from './empty-state';
+import { Lien, TitreEcran } from './lien';
 import { EnteteDetail, ListeAnalyses } from './navigation';
 import { Page, PageBody, PageHeader } from './page';
 import { TwoPane } from './two-pane';
@@ -75,7 +76,14 @@ export type EnteteEcran =
 			readonly titre: string;
 			readonly sousTitre?: string;
 	  }
-	| { readonly genre: 'aucun' };
+	| {
+			readonly genre: 'aucun';
+			/**
+			 * Jamais dessiné : le hero en tient lieu. Publié quand même, pour que la
+			 * page ouverte d'ici dise « Accueil » sur son retour.
+			 */
+			readonly titre: string;
+	  };
 
 /**
  * Ce que dit un écran vide. Règle d'écran n° 4 : il montre le chemin.
@@ -127,19 +135,37 @@ type CorpsEcran =
 /** Assez pour lire « une liste arrive », pas assez pour annoncer combien. */
 const RANGEES_D_ATTENTE = 4;
 
-export function PageEcran({
+type ProprietesEcran = {
+	entete: EnteteEcran;
+	etat?: EtatEcran;
+	/** L'issue de l'état d'erreur. Absente ou `null` : l'accueil. */
+	issue?: ReactNode;
+} & CorpsEcran;
+
+/**
+ * ⚠️ L'ÉCRAN PUBLIE SON TITRE AUTOUR DE TOUT CE QU'IL REND. Les liens de
+ * l'en-tête, de la liste, du volet de preuve et de sa feuille le lisent
+ * (`Lien`), et la page qu'ils ouvrent le relit sur son retour. C'est le titre
+ * de l'écran, jamais l'élément choisi : la créance ouverte depuis le volet d'un
+ * débiteur revient à « Vos débiteurs », le nom que la liste porte après un
+ * rechargement aussi.
+ */
+export function PageEcran(proprietes: ProprietesEcran) {
+	return (
+		<TitreEcran value={proprietes.entete.titre}>
+			<CorpsPageEcran {...proprietes} />
+		</TitreEcran>
+	);
+}
+
+function CorpsPageEcran({
 	entete,
 	etat = 'pret',
 	issue,
 	volets,
 	disposition,
 	children
-}: {
-	entete: EnteteEcran;
-	etat?: EtatEcran;
-	/** L'issue de l'état d'erreur. Absente ou `null` : l'accueil. */
-	issue?: ReactNode;
-} & CorpsEcran) {
+}: ProprietesEcran) {
 	const sansEntete = entete.genre === 'aucun';
 
 	if (etat === 'pret' && volets !== undefined) {
@@ -309,7 +335,7 @@ function Erreur({ sansEntete, issue }: { sansEntete: boolean; issue: ReactNode }
 				</p>
 			</div>
 			{issue ?? (
-				<BoutonPrincipal as={Link} to="/app">
+				<BoutonPrincipal as={Lien} to="/app">
 					Revenir à l’accueil
 				</BoutonPrincipal>
 			)}

@@ -1,10 +1,10 @@
 import type { ComponentProps } from 'react';
-import { Link } from '@tanstack/react-router';
 import { Chip, ListButton } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import {
 	Avatar,
 	BoutonPrincipal,
+	Lien,
 	CarteListe,
 	PageEcran,
 	eurosCentimes,
@@ -73,7 +73,7 @@ export function EcranDebiteurs({ donnees }: { donnees: Lecture<DebiteursAffiches
 							'Sélectionnez les factures d’un même débiteur pour en faire une créance.'
 						],
 						action: (
-							<BoutonPrincipal as={Link} to="/app/import-factures">
+							<BoutonPrincipal as={Lien} to="/app/import-factures">
 								<UploadIcon />
 								Importer mes factures
 							</BoutonPrincipal>

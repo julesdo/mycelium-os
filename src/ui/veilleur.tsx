@@ -1,4 +1,4 @@
-import { Link, type LinkProps } from '@tanstack/react-router';
+import type { LinkProps } from '@tanstack/react-router';
 import { List, ListButton, ListItem, ListTitle, Surface } from '@cladd-ui/react';
 import {
 	AlertTriangleIcon,
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { cn } from './cn';
 import { dateCourte } from './format';
+import { Lien } from './lien';
 
 /**
  * LE VEILLEUR — ce que la machine a fait pendant que personne ne regardait.
@@ -403,7 +404,7 @@ function LigneTravail({ tache }: { tache: TacheVeilleur }) {
 
 	return (
 		<ListButton
-			as={Link}
+			as={Lien}
 			to={tache.vers}
 			// ⚠️ UNE ASSERTION, ET LA MÊME QUE DANS `navigation.tsx`. `ListButton`
 			// est polymorphe : son `as` efface le générique du routeur. Les props de
