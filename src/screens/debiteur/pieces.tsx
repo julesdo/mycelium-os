@@ -1,5 +1,6 @@
 import { PageEcran, Pieces, type Lecture, type PieceAffichee } from '../../ui';
 import { TYPES_PIECE } from '../debiteur-detail';
+import { TITRE_ECRAN } from '../titres';
 
 /** Ce que la page affiche : le nom du débiteur pour son retour, ses pièces, et l'état du dépôt que la route pilote. */
 export interface PiecesDuDebiteur {
@@ -37,19 +38,25 @@ export function EcranPieces({
 		<PageEcran
 			entete={{
 				genre: 'poussee',
+				// Le retour porte le nom de la liste, et la page celui du débiteur : elle s'identifie seule.
 				retour: {
 					vers: '/app/debiteurs',
 					recherche: { d: identifiant },
-					libelle: pret?.denomination ?? 'Débiteurs'
+					libelle: TITRE_ECRAN.debiteurs
 				},
 				titre: 'Les pièces du dossier',
 				// « 0 document » serait un cadran à zéro : le vide se dit en toutes lettres (règle d’écran n° 4).
 				sousTitre:
 					pret === null
 						? undefined
-						: pret.pieces.length === 0
-							? 'Aucun document'
-							: `${pret.pieces.length} document${pret.pieces.length > 1 ? 's' : ''}`
+						: [
+								pret.denomination,
+								pret.pieces.length === 0
+									? 'Aucun document'
+									: `${pret.pieces.length} document${pret.pieces.length > 1 ? 's' : ''}`
+							]
+								.filter((morceau) => morceau !== null)
+								.join(' · ')
 			}}
 			etat={donnees.etat}
 		>

@@ -3,6 +3,7 @@ import { Input } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
 import { BoutonPrincipal, Champ, PageEcran, type Lecture } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
+import { TITRE_ECRAN } from '../titres';
 
 /**
  * LE FORMULAIRE DE L'ÉTABLISSEMENT.
@@ -110,7 +111,7 @@ export function EcranEtablissement({ donnees }: { donnees: Lecture<Etablissement
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/parametres', libelle: 'Réglages' },
+				retour: { vers: '/app/parametres', libelle: TITRE_ECRAN.reglages },
 				titre: 'Votre établissement',
 				sousTitre: pret?.nom
 			}}

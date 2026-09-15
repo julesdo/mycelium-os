@@ -1,6 +1,7 @@
 import { Button } from '@cladd-ui/react';
 import { UserXIcon } from 'lucide-react';
 import { ConfirmationParSaisie, PageEcran, type Lecture } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 
 /** Ce que la page affiche : l'adresse à saisir, le refus du serveur, et la confirmation que la route pilote. */
 export interface SuppressionDuCompte {
@@ -25,7 +26,7 @@ export function EcranSupprimerCompte({ donnees }: { donnees: Lecture<Suppression
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/donnees', libelle: 'Vos données' },
+				retour: { vers: '/app/donnees', libelle: TITRE_ECRAN.donnees },
 				titre: 'Supprimer mon compte',
 				sousTitre: pret !== null && pret.email.length > 0 ? pret.email : undefined
 			}}

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { Theme } from '../../app/use-theme';
 import { CarteListe, Lien, LigneAnalyse, ListeAnalyses, PageEcran, type Lecture } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 import type { EtatCritere } from './creancier';
 
 /**
@@ -86,7 +87,7 @@ export interface ReglagesAffiches {
 }
 
 export function EcranReglages({ donnees }: { donnees: Lecture<ReglagesAffiches> }) {
-	const entete = { genre: 'onglet', titre: 'Réglages' } as const;
+	const entete = { genre: 'onglet', titre: TITRE_ECRAN.reglages } as const;
 
 	if (donnees.etat !== 'pret') {
 		return <PageEcran entete={entete} etat={donnees.etat} />;

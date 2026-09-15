@@ -11,6 +11,7 @@ import {
 	type Lecture
 } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
+import { TITRE_ECRAN } from '../titres';
 import { OuvertureEnCours, EssaiEnCours } from './offre';
 
 /** Ce que l'écran affiche : l'état d'abonnement tel que `etatAbonnement` le rend, palier et tarifs résolus par le serveur. */
@@ -50,7 +51,7 @@ export interface AbonnementAffiche {
  * rend dans chacun de ses états, sans session.
  */
 export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffiche | null> }) {
-	const entete = { genre: 'onglet', titre: 'Abonnement' } as const;
+	const entete = { genre: 'onglet', titre: TITRE_ECRAN.abonnement } as const;
 
 	if (donnees.etat !== 'pret') {
 		return <PageEcran entete={entete} etat={donnees.etat} />;

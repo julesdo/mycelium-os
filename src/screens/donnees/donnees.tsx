@@ -2,6 +2,7 @@ import { List, ListItem } from '@cladd-ui/react';
 import { DownloadIcon, TrashIcon, UserXIcon } from 'lucide-react';
 import { LigneAnalyse, ListeAnalyses, PageEcran, SectionEcran, type Lecture } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
+import { TITRE_ECRAN } from '../titres';
 import type { ApercuDonnees } from './types';
 
 const NOMBRE = new Intl.NumberFormat('fr-FR');
@@ -102,7 +103,7 @@ export function EcranDonnees({ donnees }: { donnees: Lecture<ApercuDonnees | nul
 		<PageEcran
 			entete={{
 				genre: 'onglet',
-				titre: 'Vos données',
+				titre: TITRE_ECRAN.donnees,
 				sousTitre:
 					pret === null
 						? undefined

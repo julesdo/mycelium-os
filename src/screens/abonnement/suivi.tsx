@@ -1,6 +1,7 @@
 import { PageEcran, euros, type Lecture } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
 import type { AbonnementAffiche } from './abonnement';
+import { TITRE_ECRAN } from '../titres';
 import { Offre } from './offre';
 
 /**
@@ -17,7 +18,7 @@ export function EcranSuiviOffre({ donnees }: { donnees: Lecture<AbonnementAffich
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/abonnement', libelle: 'Abonnement' },
+				retour: { vers: '/app/abonnement', libelle: TITRE_ECRAN.abonnement },
 				titre: 'L’abonnement',
 				sousTitre: pret ? `Palier ${pret.palier} — ${pret.bornesPalier}` : undefined
 			}}

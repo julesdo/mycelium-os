@@ -1,4 +1,5 @@
 import { PageEcran, type Lecture } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 import { FormulaireInvitation, type RoleEquipe } from './equipe';
 
 /** Ce que la page affiche : si la personne peut inviter, les places de l'offre, et l'envoi que la route pilote. */
@@ -38,7 +39,7 @@ export function EcranInviter({ donnees }: { donnees: Lecture<InvitationAffichee>
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/equipe', libelle: 'Votre équipe' },
+				retour: { vers: '/app/equipe', libelle: TITRE_ECRAN.equipe },
 				titre: 'Inviter un collègue',
 				sousTitre: 'Il recevra un lien valable sept jours, et créera son mot de passe lui-même.'
 			}}

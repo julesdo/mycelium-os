@@ -5,6 +5,7 @@ import {
 	type Lecture,
 	type RuptureAffichee
 } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 
 /** Ce que la page affiche : le nom du débiteur pour son retour, son habitude, et ses ruptures. */
 export interface HabitudeDuDebiteur {
@@ -40,12 +41,14 @@ export function EcranHabitude({
 		<PageEcran
 			entete={{
 				genre: 'poussee',
+				// Le retour porte le nom de la liste, et la page celui du débiteur : elle s'identifie seule.
 				retour: {
 					vers: '/app/debiteurs',
 					recherche: { d: identifiant },
-					libelle: pret?.denomination ?? 'Débiteurs'
+					libelle: TITRE_ECRAN.debiteurs
 				},
-				titre: 'Comment il paie d’habitude'
+				titre: 'Comment il paie d’habitude',
+				sousTitre: pret?.denomination ?? undefined
 			}}
 			etat={donnees.etat}
 		>

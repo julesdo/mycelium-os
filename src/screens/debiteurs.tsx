@@ -12,6 +12,7 @@ import {
 	type Lecture
 } from '../ui';
 import { DetailDebiteur } from './debiteur-detail';
+import { TITRE_ECRAN } from './titres';
 
 /** Une rangée de la liste : ce que la rangée lit d'un débiteur de `listerDebiteurs`. */
 export interface LigneDebiteur {
@@ -48,7 +49,7 @@ export interface DebiteursAffiches {
  * ailleurs obligerait à croiser deux écrans pour savoir laquelle va s'éteindre.
  */
 export function EcranDebiteurs({ donnees }: { donnees: Lecture<DebiteursAffiches> }) {
-	const entete = { genre: 'onglet', titre: 'Vos débiteurs' } as const;
+	const entete = { genre: 'onglet', titre: TITRE_ECRAN.debiteurs } as const;
 
 	if (donnees.etat !== 'pret') {
 		// `disposition="volets"` : l'attente se dessine déjà en deux volets. Voir `PageEcran`.

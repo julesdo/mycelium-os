@@ -7,6 +7,7 @@ import {
 	type EnteteEcran,
 	type Lecture
 } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 import type { ApercuDonnees } from './types';
 
 const NOMBRE = new Intl.NumberFormat('fr-FR');
@@ -47,7 +48,7 @@ export function EcranSupprimerEtablissement({
 	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
 	const entete: EnteteEcran = {
 		genre: 'poussee',
-		retour: { vers: '/app/donnees', libelle: 'Vos données' },
+		retour: { vers: '/app/donnees', libelle: TITRE_ECRAN.donnees },
 		titre: 'Supprimer l’établissement',
 		sousTitre: pret?.apercu.nomEtablissement
 	};

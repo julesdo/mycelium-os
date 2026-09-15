@@ -1,6 +1,7 @@
 import { Button, Surface } from '@cladd-ui/react';
 import { DownloadIcon } from 'lucide-react';
 import { BoutonPrincipal, PageEcran, type Lecture } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 import { poids, type FichierExport } from './types';
 
 const NOMBRE = new Intl.NumberFormat('fr-FR');
@@ -35,7 +36,7 @@ export function EcranExport({ donnees }: { donnees: Lecture<ExportAffiche> }) {
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/donnees', libelle: 'Vos données' },
+				retour: { vers: '/app/donnees', libelle: TITRE_ECRAN.donnees },
 				titre: 'Emporter vos données',
 				sousTitre: 'Un fichier JSON, lisible par n’importe quel tableur ou logiciel'
 			}}
