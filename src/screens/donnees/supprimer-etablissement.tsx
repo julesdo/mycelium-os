@@ -1,6 +1,12 @@
-import { Button, Dialog, DialogRoot, DialogTrigger } from '@cladd-ui/react';
+import { Button } from '@cladd-ui/react';
 import { TrashIcon } from 'lucide-react';
-import { PageEcran, pluriel, type EnteteEcran, type Lecture } from '../../ui';
+import {
+	ConfirmationParSaisie,
+	PageEcran,
+	pluriel,
+	type EnteteEcran,
+	type Lecture
+} from '../../ui';
 import type { ApercuDonnees } from './types';
 
 const NOMBRE = new Intl.NumberFormat('fr-FR');
@@ -89,23 +95,20 @@ export function EcranSupprimerEtablissement({
 					</p>
 				) : null}
 
-				<DialogRoot>
-					<DialogTrigger>
+				<ConfirmationParSaisie
+					titre={`Supprimer ${apercu.nomEtablissement} ?`}
+					texte={`Cette action est définitive. ${NOMBRE.format(apercu.factures)} facture${pluriel(apercu.factures)} et ${NOMBRE.format(apercu.decomptes)} décompte${pluriel(apercu.decomptes)} seront effacés. Saisissez le nom exact de l’établissement pour confirmer.`}
+					valeurAttendue={apercu.nomEtablissement}
+					invite="Le nom de l’établissement"
+					intituleConfirmation="Supprimer définitivement"
+					onConfirmer={onConfirmer}
+					declencheur={
 						<Button className="self-start" color="red" size="lg">
 							<TrashIcon />
 							Supprimer {apercu.nomEtablissement}
 						</Button>
-					</DialogTrigger>
-					<Dialog
-						title={`Supprimer ${apercu.nomEtablissement} ?`}
-						text={`Cette action est définitive. ${NOMBRE.format(apercu.factures)} facture${pluriel(apercu.factures)} et ${NOMBRE.format(apercu.decomptes)} décompte${pluriel(apercu.decomptes)} seront effacés. Saisissez le nom exact de l’établissement pour confirmer.`}
-						requireConfirmText={apercu.nomEtablissement}
-						cancelButtonText="Annuler"
-						confirmButtonText="Supprimer définitivement"
-						confirmButtonColor="red"
-						onConfirm={onConfirmer}
-					/>
-				</DialogRoot>
+					}
+				/>
 			</div>
 		</PageEcran>
 	);

@@ -40,6 +40,7 @@ export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
 export { SectionEcran } from './section';
 export { ChampCopiable } from './champ-copiable';
+export { ConfirmationParSaisie } from './confirmation-par-saisie';
 export { ZoneDepot } from './zone-depot';
 export { BilanImport, type DepotAffiche, type BilanDepotAffiche } from './bilan-import';
 export {

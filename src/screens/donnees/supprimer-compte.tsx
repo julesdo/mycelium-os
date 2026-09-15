@@ -1,6 +1,6 @@
-import { Button, Dialog, DialogRoot, DialogTrigger } from '@cladd-ui/react';
+import { Button } from '@cladd-ui/react';
 import { UserXIcon } from 'lucide-react';
-import { PageEcran, type Lecture } from '../../ui';
+import { ConfirmationParSaisie, PageEcran, type Lecture } from '../../ui';
 
 /** Ce que la page affiche : l'adresse à saisir, le refus du serveur, et la confirmation que la route pilote. */
 export interface SuppressionDuCompte {
@@ -50,23 +50,20 @@ export function EcranSupprimerCompte({ donnees }: { donnees: Lecture<Suppression
 						</p>
 					) : null}
 
-					<DialogRoot>
-						<DialogTrigger>
+					<ConfirmationParSaisie
+						titre="Supprimer votre compte ?"
+						texte={`Cette action est définitive. Saisissez ${pret.email} pour confirmer.`}
+						valeurAttendue={pret.email}
+						invite="Votre adresse e-mail"
+						intituleConfirmation="Supprimer mon compte"
+						onConfirmer={pret.onConfirmer}
+						declencheur={
 							<Button className="self-start" color="red" variant="transparent" size="lg">
 								<UserXIcon />
 								Supprimer mon compte
 							</Button>
-						</DialogTrigger>
-						<Dialog
-							title="Supprimer votre compte ?"
-							text={`Cette action est définitive. Saisissez ${pret.email} pour confirmer.`}
-							requireConfirmText={pret.email}
-							cancelButtonText="Annuler"
-							confirmButtonText="Supprimer mon compte"
-							confirmButtonColor="red"
-							onConfirm={pret.onConfirmer}
-						/>
-					</DialogRoot>
+						}
+					/>
 				</div>
 			)}
 		</PageEcran>
