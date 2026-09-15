@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import {
 	Button,
 	Chip,
@@ -24,7 +24,15 @@ import {
 	UserMinusIcon,
 	UserPlusIcon
 } from 'lucide-react';
-import { BoutonPrincipal, LigneAnalyse, ListeAnalyses, SectionEcran, pluriel } from '../../ui';
+import {
+	BoutonPrincipal,
+	LigneAnalyse,
+	ListeAnalyses,
+	PageEcran,
+	SectionEcran,
+	pluriel,
+	type Lecture
+} from '../../ui';
 
 /**
  * L'écran d'équipe, sans backend.
@@ -471,4 +479,22 @@ export function messageDErreur(e: unknown): string {
 	}
 	if (e instanceof Error && e.message) return e.message;
 	return 'L’action n’a pas abouti. Réessayez dans un instant.';
+}
+
+export function EcranEquipe({ donnees }: { donnees: Lecture<ComponentProps<typeof Equipe>> }) {
+	return (
+		<PageEcran
+			entete={{
+				genre: 'onglet',
+				titre: 'Équipe',
+				// ⚠️ « ET AUX CRÉANCES », PLUS « ET AUX TAUX ». Le sous-titre parlait
+				// encore la langue d'EGalim, que la salle d'exposition avait déjà
+				// corrigée de son côté.
+				sousTitre: 'Qui accède aux factures et aux créances de cet établissement.'
+			}}
+			etat={donnees.etat}
+		>
+			{donnees.etat === 'pret' ? <Equipe {...donnees.valeur} /> : null}
+		</PageEcran>
+	);
 }

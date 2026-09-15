@@ -1,6 +1,7 @@
 import { List, ListItem } from '@cladd-ui/react';
 import { DownloadIcon, TrashIcon, UserXIcon } from 'lucide-react';
-import { LigneAnalyse, ListeAnalyses, SectionEcran } from '../../ui';
+import { LigneAnalyse, ListeAnalyses, PageEcran, SectionEcran, type Lecture } from '../../ui';
+import { sansEtablissement } from '../sans-etablissement';
 import type { ApercuDonnees } from './types';
 
 const NOMBRE = new Intl.NumberFormat('fr-FR');
@@ -91,5 +92,29 @@ export function Donnees({ apercu }: { apercu: ApercuDonnees }) {
 				/>
 			</ListeAnalyses>
 		</div>
+	);
+}
+
+export function EcranDonnees({ donnees }: { donnees: Lecture<ApercuDonnees | null> }) {
+	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
+
+	return (
+		<PageEcran
+			entete={{
+				genre: 'onglet',
+				titre: 'Vos données',
+				sousTitre:
+					pret === null
+						? undefined
+						: 'Ce que nous détenons, ce que vous pouvez en emporter, ce que vous pouvez en effacer.'
+			}}
+			etat={
+				donnees.etat === 'pret' && pret === null
+					? sansEtablissement('Créez-en un pour voir ce que nous détenons.')
+					: donnees.etat
+			}
+		>
+			{pret === null ? null : <Donnees apercu={pret} />}
+		</PageEcran>
 	);
 }

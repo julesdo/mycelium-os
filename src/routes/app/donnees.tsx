@@ -1,10 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
-import { Page, PageHeader, PageBody } from '../../ui';
-import { Donnees } from '../../screens/donnees/donnees';
+import { EcranDonnees } from '../../screens/donnees/donnees';
 
-export const Route = createFileRoute('/app/donnees')({ component: EcranDonnees });
+export const Route = createFileRoute('/app/donnees')({
+	component: PageDonnees,
+	errorComponent: DonneesEnErreur
+});
+
+function DonneesEnErreur() {
+	return <EcranDonnees donnees={{ etat: 'erreur' }} />;
+}
 
 /**
  * L'écran « Vos données ».
@@ -23,42 +29,12 @@ export const Route = createFileRoute('/app/donnees')({ component: EcranDonnees }
  * être atteignable par accident, et 3,2 écrans de défilement en faisaient
  * exactement ça.
  */
-function EcranDonnees() {
+function PageDonnees() {
 	const apercu = useQuery(api.rgpd.apercuDeMesDonnees, {});
 
-	if (apercu === undefined) {
-		return (
-			<Page>
-				<PageHeader titre="Vos données" />
-				<PageBody>
-					<p className="text-cladd-xs text-cladd-fg-soft">Chargement…</p>
-				</PageBody>
-			</Page>
-		);
-	}
-
-	if (apercu === null) {
-		return (
-			<Page>
-				<PageHeader titre="Vos données" />
-				<PageBody>
-					<p className="text-cladd-xs text-cladd-fg-soft">
-						Aucun établissement actif. Créez-en un pour voir ce que nous détenons.
-					</p>
-				</PageBody>
-			</Page>
-		);
-	}
-
 	return (
-		<Page>
-			<PageHeader
-				titre="Vos données"
-				sousTitre="Ce que nous détenons, ce que vous pouvez en emporter, ce que vous pouvez en effacer."
-			/>
-			<PageBody>
-				<Donnees apercu={apercu} />
-			</PageBody>
-		</Page>
+		<EcranDonnees
+			donnees={apercu === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: apercu }}
+		/>
 	);
 }

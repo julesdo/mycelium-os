@@ -40,8 +40,10 @@ interface FacturationDemo {
  * La fin de l'essai se lit sur l'horloge, et non sur un jour figé :
  * `EssaiEnCours` compte ses jours depuis `Date.now()` (`offre.tsx`, ligne 124).
  * Figée, elle ferait perdre un jour à la démonstration chaque matin.
+ *
+ * La famille de l'équipe en tire ses places, par `planEffectif` (`equipe.tsx`).
  */
-const FACTURATION_DEMO: FacturationDemo = {
+export const FACTURATION_DEMO: FacturationDemo = {
 	facturesParAn: ETABLISSEMENT_DEMO.facturesParAn,
 	clePaddle: false,
 	essaiJusquAu: Date.now() + 12 * 24 * 60 * 60 * 1000
@@ -60,7 +62,7 @@ const FACTURATION_DEMO: FacturationDemo = {
  * ⚠️ SANS CLÉ, `isDev` EST VRAI, et l'écran montre l'encart de développement :
  * `isDev` et `paddleConfigure` lisent la même variable (lignes 104 et 235).
  */
-function planEffectif(facturation: FacturationDemo) {
+export function planEffectif(facturation: FacturationDemo) {
 	if (!facturation.clePaddle) return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
 	if (facturation.essaiJusquAu > Date.now()) {
 		return { tier: 'procedures', isDev: false, seatsAllowed: 3 };

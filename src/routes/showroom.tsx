@@ -32,8 +32,6 @@ import {
 	controlerTauxContractuel,
 	tauxDepuisPourcentage
 } from '../lib/verticales/recouvrement/taux-contractuel';
-import { Equipe, type MembreEquipe, type InvitationEnAttente } from '../screens/equipe/equipe';
-import { Donnees } from '../screens/donnees/donnees';
 import { Shell } from '../app/shell';
 import { EcranIntrouvable, EcranEnErreur } from '../screens/passage';
 import { ECRANS_DU_PRODUIT } from './-salle/ecrans';
@@ -525,115 +523,6 @@ function DemoVide() {
 }
 
 /**
- * L'écran d'équipe, aux deux rôles.
- *
- * Le jeu expose ce qui casse : un compte sans nom, une adresse jamais vérifiée,
- * une invitation qui expire demain. Un écran où trois collègues bien nommés se
- * rangent en colonne ne prouve rien.
- */
-const MEMBRES: MembreEquipe[] = [
-	{
-		id: 'm1',
-		nom: 'Claire Béranger',
-		email: 'c.beranger@thumbbb.fr',
-		role: 'ORG_ADMIN',
-		arriveLe: Date.parse('2026-02-11'),
-		adresseVerifiee: true,
-		estMoi: true
-	},
-	{
-		id: 'm2',
-		nom: 'Yannis K.',
-		email: 'yannis.k@thumbbb.fr',
-		role: 'ORG_MEMBER',
-		arriveLe: Date.parse('2026-03-02'),
-		adresseVerifiee: true,
-		estMoi: false
-	},
-	{
-		id: 'm3',
-		nom: null,
-		email: 'direction@thumbbb.fr',
-		role: 'ORG_MEMBER',
-		arriveLe: Date.parse('2026-08-19'),
-		adresseVerifiee: false,
-		estMoi: false
-	}
-];
-
-const INVITATIONS: InvitationEnAttente[] = [
-	{
-		id: 'i1',
-		email: 'nouveau.second@thumbbb.fr',
-		role: 'ORG_MEMBER',
-		lien: 'https://www.letikette.com/rejoindre/4f1c-demo',
-		expireLe: Date.now() + 26 * 60 * 60 * 1000
-	}
-];
-
-function DemoEquipe() {
-	const [admin, setAdmin] = useState(true);
-	const rien = async () => {};
-
-	return (
-		<Page>
-			<PageHeader
-				titre="Équipe"
-				sousTitre="Qui accède aux factures et aux créances de cet établissement."
-				actions={
-					<Segmented activeColor="neutral" activeVariant="solid">
-						<SegmentedButton active={admin} onClick={() => setAdmin(true)}>
-							Vu par un admin
-						</SegmentedButton>
-						<SegmentedButton active={!admin} onClick={() => setAdmin(false)}>
-							Vu par un membre
-						</SegmentedButton>
-					</Segmented>
-				}
-			/>
-			<PageBody>
-				<Equipe
-					membres={MEMBRES}
-					invitations={admin ? INVITATIONS : []}
-					estAdmin={admin}
-					siegesUtilises={MEMBRES.length}
-					siegesAutorises={5}
-					onChangerRole={rien}
-					onRetirer={rien}
-					onAnnulerInvitation={rien}
-					onVerifierAdresse={rien}
-				/>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoDonnees() {
-	return (
-		<Page>
-			<PageHeader
-				titre="Vos données"
-				sousTitre="Ce que nous détenons, ce que vous pouvez en emporter, ce que vous pouvez en effacer."
-			/>
-			<PageBody>
-				<Donnees
-					apercu={{
-						nomEtablissement: 'Thumbbb Agency',
-						estAdmin: true,
-						creeLe: Date.parse('2026-02-11'),
-						depots: 3,
-						factures: 312,
-						decomptes: 2,
-						debiteurs: 47,
-						membres: 3
-					}}
-				/>
-			</PageBody>
-		</Page>
-	);
-}
-
-/**
  * LES DEUX BANDEAUX QUI DISENT QUE LA SURVEILLANCE NE TOURNE PAS.
  *
  * Ils vivent sur l'écran d'accueil, derrière l'authentification, et ne
@@ -1022,8 +911,6 @@ const ECRANS = [
 	'flux',
 	'depot',
 	'vide',
-	'equipe',
-	'donnees',
 	'muette',
 	'introuvable',
 	'erreur',
@@ -1161,8 +1048,6 @@ function Showroom() {
 						{ecran === 'flux' ? <DemoFlux /> : null}
 						{ecran === 'depot' ? <DemoDepot /> : null}
 						{ecran === 'vide' ? <DemoVide /> : null}
-						{ecran === 'equipe' ? <DemoEquipe /> : null}
-						{ecran === 'donnees' ? <DemoDonnees /> : null}
 						{ecran === 'muette' ? <DemoSurveillanceMuette /> : null}
 						{ecran === 'introuvable' ? <EcranIntrouvable /> : null}
 						{ecran === 'erreur' ? <EcranEnErreur /> : null}

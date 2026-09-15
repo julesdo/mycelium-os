@@ -1,16 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
-import { Page, PageHeader, PageBody } from '../../ui';
 import {
-	Equipe,
+	EcranEquipe,
 	type MembreEquipe,
 	type InvitationEnAttente,
 	type RoleEquipe
 } from '../../screens/equipe/equipe';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 
-export const Route = createFileRoute('/app/equipe')({ component: EcranEquipe });
+export const Route = createFileRoute('/app/equipe')({
+	component: PageEquipe,
+	errorComponent: EquipeEnErreur
+});
+
+function EquipeEnErreur() {
+	return <EcranEquipe donnees={{ etat: 'erreur' }} />;
+}
 
 /**
  * L'écran d'équipe.
@@ -27,7 +33,7 @@ export const Route = createFileRoute('/app/equipe')({ component: EcranEquipe });
  * voit ni les invitations en attente — elles portent l'adresse personnelle d'un
  * tiers — ni aucune action.
  */
-function EcranEquipe() {
+function PageEquipe() {
 	const membres = useQuery(api.organizations.listOrganizationMembers, {});
 	const invitations = useQuery(api.organizations.listOrgInvitations, {});
 	const monRole = useQuery(api.organizations.getMyOrgMembership, {});
@@ -38,42 +44,45 @@ function EcranEquipe() {
 	const annuler = useMutation(api.organizations.cancelInvitation);
 	const verifierAdresse = useMutation(api.organizations.verifyMemberEmail);
 
-	const enAttente = membres === undefined || invitations === undefined || monRole === undefined;
+	// La page attend aussi la facturation : tant qu'elle se lit, les places se
+	// replient sur le nombre de membres, et l'équipe se dit complète à tort.
+	const enAttente =
+		membres === undefined ||
+		invitations === undefined ||
+		monRole === undefined ||
+		facturation === undefined;
 
 	return (
-		<Page>
-			<PageHeader
-				titre="Équipe"
-				sousTitre="Qui accède aux factures et aux taux de cet établissement."
-			/>
-			<PageBody>
-				{enAttente ? (
-					<p className="text-cladd-xs text-cladd-fg-soft">Chargement…</p>
-				) : (
-					<Equipe
-						membres={membres.map(versMembre)}
-						invitations={invitations.map(versInvitation)}
-						estAdmin={monRole?.role === 'ORG_ADMIN'}
-						siegesUtilises={membres.length}
-						siegesAutorises={facturation?.seatsAllowed ?? membres.length}
-						onChangerRole={async (membreId, role) => {
-							await changerRole({ memberId: membreId as Id<'organizationMembers'>, role });
-						}}
-						onRetirer={async (membreId) => {
-							await retirer({ memberId: membreId as Id<'organizationMembers'> });
-						}}
-						onAnnulerInvitation={async (invitationId) => {
-							await annuler({
-								invitationId: invitationId as Id<'organizationInvitations'>
-							});
-						}}
-						onVerifierAdresse={async (membreId) => {
-							await verifierAdresse({ memberId: membreId as Id<'organizationMembers'> });
-						}}
-					/>
-				)}
-			</PageBody>
-		</Page>
+		<EcranEquipe
+			donnees={
+				enAttente
+					? { etat: 'attente' }
+					: {
+							etat: 'pret',
+							valeur: {
+								membres: membres.map(versMembre),
+								invitations: invitations.map(versInvitation),
+								estAdmin: monRole?.role === 'ORG_ADMIN',
+								siegesUtilises: membres.length,
+								siegesAutorises: facturation?.seatsAllowed ?? membres.length,
+								onChangerRole: async (membreId, role) => {
+									await changerRole({ memberId: membreId as Id<'organizationMembers'>, role });
+								},
+								onRetirer: async (membreId) => {
+									await retirer({ memberId: membreId as Id<'organizationMembers'> });
+								},
+								onAnnulerInvitation: async (invitationId) => {
+									await annuler({
+										invitationId: invitationId as Id<'organizationInvitations'>
+									});
+								},
+								onVerifierAdresse: async (membreId) => {
+									await verifierAdresse({ memberId: membreId as Id<'organizationMembers'> });
+								}
+							}
+						}
+			}
+		/>
 	);
 }
 
