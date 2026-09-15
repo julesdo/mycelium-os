@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Theme } from '../../app/use-theme';
 import {
 	EcranCreancier,
@@ -9,7 +9,7 @@ import {
 	EcranEtablissement,
 	type EtablissementAffiche
 } from '../../screens/parametres/etablissement';
-import { EcranReglages } from '../../screens/parametres/reglages';
+import { EcranReglages, type SectionReglages } from '../../screens/parametres/reglages';
 import { ETABLISSEMENT_DEMO } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
@@ -70,7 +70,7 @@ const FORMES_PROFIL_DEMO: Readonly<Record<string, ProfilDemo | null>> = {
 
 /**
  * La page du créancier, composée comme sa route la compose
- * (`src/routes/app/parametres_.creancier.tsx`) : la clé suit l'établissement, et
+ * (`src/routes/app/_reglages.parametres_.creancier.tsx`) : la clé suit l'établissement, et
  * reste la même que le profil soit enregistré ou non.
  */
 function creancierDe(profil: ProfilDemo | null): CreancierAffiche {
@@ -86,7 +86,7 @@ function creancierDe(profil: ProfilDemo | null): CreancierAffiche {
 	};
 }
 
-/** La page de l'établissement, composée comme sa route la compose (`src/routes/app/parametres_.etablissement.tsx`). */
+/** La page de l'établissement, composée comme sa route la compose (`src/routes/app/_reglages.parametres_.etablissement.tsx`). */
 const PAGE_ETABLISSEMENT_DEMO: EtablissementAffiche = {
 	nom: ORGANISATION_DEMO.name,
 	cle: ORGANISATION_DEMO._id,
@@ -102,7 +102,19 @@ const PAGE_ETABLISSEMENT_DEMO: EtablissementAffiche = {
  * Les réglages, avec un thème tenu par la démonstration : le choisir allume
  * l'autre bouton, sans changer le thème de la salle. La déconnexion ne fait rien.
  */
-function ReglagesDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+function ReglagesDemo({
+	etat,
+	variante,
+	section = null,
+	detail
+}: {
+	etat: EtatDemo;
+	variante?: string;
+	/** La section que l'adresse nomme, ou `null` sur `/app/parametres`. */
+	section?: SectionReglages | null;
+	/** Ce que le volet droit montre : la section, comme l'`Outlet` de la mise en page. */
+	detail: ReactNode;
+}) {
 	// Le sombre, défaut du produit (`src/app/use-theme.ts`, ligne 23).
 	const [theme, setTheme] = useState<Theme>('dark');
 
@@ -111,6 +123,8 @@ function ReglagesDemo({ etat, variante }: { etat: EtatDemo; variante?: string })
 
 	return (
 		<EcranReglages
+			detail={detail}
+			sectionOuverte={section}
 			donnees={lectureDemo(etat, {
 				org: ORGANISATION_DEMO,
 				profil,
@@ -122,31 +136,70 @@ function ReglagesDemo({ etat, variante }: { etat: EtatDemo; variante?: string })
 	);
 }
 
+/**
+ * UNE SECTION, DANS LE VOLET DROIT DES RÉGLAGES.
+ *
+ * La liste est prête, comme en production quand on touche une rangée : l'état
+ * choisi dans la salle est celui de la section. À 1024 px et au-delà les deux
+ * volets se voient ; en dessous, la section seule. Les familles abonnement,
+ * équipe et données l'emploient aussi : leurs écrans sont des sections.
+ */
+export function AvecLesReglages({
+	section,
+	variante,
+	children
+}: {
+	section: SectionReglages;
+	/** La forme du profil que la liste montre, quand la section la change aussi. */
+	variante?: string;
+	children: ReactNode;
+}) {
+	return <ReglagesDemo etat="pret" variante={variante} section={section} detail={children} />;
+}
+
 export const ECRANS_REGLAGES: readonly EcranDuProduit[] = [
 	{
-		route: '/app/parametres',
+		route: '/app/_reglages/parametres',
 		libelle: 'réglages',
 		vide: false,
 		variantes: Object.keys(FORMES_PROFIL_DEMO),
-		Demo: ReglagesDemo
+		Demo: ({ etat, variante }) => (
+			<ReglagesDemo
+				etat={etat}
+				variante={variante}
+				// Comme la mise en page : son erreur emporte le volet droit. Sinon il
+				// montre l'établissement, qui lit le même établissement et attend avec elle.
+				detail={
+					etat === 'erreur' ? null : (
+						<EcranEtablissement donnees={lectureDemo(etat, PAGE_ETABLISSEMENT_DEMO, null)} />
+					)
+				}
+			/>
+		)
 	},
 	{
-		route: '/app/parametres_/creancier',
+		route: '/app/_reglages/parametres_/creancier',
 		libelle: 'créancier',
 		vide: false,
 		variantes: Object.keys(FORMES_PROFIL_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const profil = formeDemo(variante, PROFIL_DEMO, FORMES_PROFIL_DEMO);
-			return <EcranCreancier donnees={lectureDemo(etat, creancierDe(profil))} />;
+			return (
+				<AvecLesReglages section="creancier" variante={variante}>
+					<EcranCreancier donnees={lectureDemo(etat, creancierDe(profil))} />
+				</AvecLesReglages>
+			);
 		}
 	},
 	{
-		route: '/app/parametres_/etablissement',
+		route: '/app/_reglages/parametres_/etablissement',
 		libelle: 'établissement',
 		vide: true,
 		Demo: ({ etat }) => (
-			<EcranEtablissement donnees={lectureDemo(etat, PAGE_ETABLISSEMENT_DEMO, null)} />
+			<AvecLesReglages section="etablissement">
+				<EcranEtablissement donnees={lectureDemo(etat, PAGE_ETABLISSEMENT_DEMO, null)} />
+			</AvecLesReglages>
 		)
 	}
 ];

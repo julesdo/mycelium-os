@@ -4,6 +4,7 @@ import { EcranPremierBilan } from '../../screens/abonnement/premier-bilan';
 import { EcranSuiviOffre } from '../../screens/abonnement/suivi';
 import { ETABLISSEMENT_DEMO } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
+import { AvecLesReglages } from './reglages';
 
 /**
  * LES ENTRÉES DE LA FAMILLE, DÉCLARÉES AVANT TOUT CE QUI S'EN CALCULE.
@@ -139,36 +140,48 @@ const FORMES_ABONNEMENT_DEMO: Readonly<Record<string, AbonnementAffiche>> = {
 
 export const ECRANS_ABONNEMENT: readonly EcranDuProduit[] = [
 	{
-		route: '/app/abonnement',
+		route: '/app/_reglages/abonnement',
 		libelle: 'abonnement',
 		vide: true,
 		variantes: Object.keys(FORMES_ABONNEMENT_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const abonnement = formeDemo(variante, ABONNEMENT_DEMO, FORMES_ABONNEMENT_DEMO);
-			return <EcranAbonnement donnees={lectureDemo(etat, abonnement, null)} />;
+			return (
+				<AvecLesReglages section="abonnement">
+					<EcranAbonnement donnees={lectureDemo(etat, abonnement, null)} />
+				</AvecLesReglages>
+			);
 		}
 	},
 	{
-		route: '/app/abonnement_/premier-bilan',
+		route: '/app/_reglages/abonnement_/premier-bilan',
 		libelle: 'premier bilan',
 		vide: true,
 		variantes: Object.keys(FORMES_PALIERS_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const abonnement = formeDemo(variante, ABONNEMENT_DEMO, FORMES_PALIERS_DEMO);
-			return <EcranPremierBilan donnees={lectureDemo(etat, abonnement, null)} />;
+			return (
+				<AvecLesReglages section="abonnement">
+					<EcranPremierBilan donnees={lectureDemo(etat, abonnement, null)} />
+				</AvecLesReglages>
+			);
 		}
 	},
 	{
-		route: '/app/abonnement_/suivi',
+		route: '/app/_reglages/abonnement_/suivi',
 		libelle: 'offre suivi',
 		vide: true,
 		variantes: Object.keys(FORMES_SUIVI_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const abonnement = formeDemo(variante, ABONNEMENT_DEMO, FORMES_SUIVI_DEMO);
-			return <EcranSuiviOffre donnees={lectureDemo(etat, abonnement, null)} />;
+			return (
+				<AvecLesReglages section="abonnement">
+					<EcranSuiviOffre donnees={lectureDemo(etat, abonnement, null)} />
+				</AvecLesReglages>
+			);
 		}
 	}
 ];

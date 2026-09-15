@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranPremierBilan } from '../../screens/abonnement/premier-bilan';
 
-export const Route = createFileRoute('/app/abonnement_/premier-bilan')({
+export const Route = createFileRoute('/app/_reglages/abonnement_/premier-bilan')({
 	component: PageBilan,
 	errorComponent: PremierBilanEnErreur
 });

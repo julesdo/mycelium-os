@@ -3,7 +3,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranCreancier } from '../../screens/parametres/creancier';
 
-export const Route = createFileRoute('/app/parametres_/creancier')({
+export const Route = createFileRoute('/app/_reglages/parametres_/creancier')({
 	component: PageCreancier,
 	errorComponent: CreancierEnErreur
 });

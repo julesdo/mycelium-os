@@ -46,9 +46,11 @@ const RACINE = join(import.meta.dirname, '..', '..');
  */
 const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 	'/': 'La page publique. On y arrive par le domaine.',
-	'/showroom': 'La salle d’exposition, en développement seulement. Aucun lien depuis le produit, et c’est voulu.',
+	'/showroom':
+		'La salle d’exposition, en développement seulement. Aucun lien depuis le produit, et c’est voulu.',
 	'/app': 'La coquille des écrans connectés. C’est une route de mise en page, pas un écran.',
-	'/rejoindre/$token': 'Le lien d’invitation, reçu par courriel. Il ne peut PAS exister dans l’interface : le jeton est l’invitation.',
+	'/rejoindre/$token':
+		'Le lien d’invitation, reçu par courriel. Il ne peut PAS exister dans l’interface : le jeton est l’invitation.',
 	'/nouveau-mot-de-passe': 'Le lien de réinitialisation, reçu par courriel, et porteur d’un jeton.',
 	'/api/auth/$': 'Un point d’entrée serveur, pas un écran.'
 };
@@ -56,11 +58,12 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 /**
  * Les URL que le routeur sert, lues dans l'arbre généré.
  *
- * ⚠️ L'ARBRE DÉCLARE CHAQUE ROUTE DEUX FOIS, sous deux formes. `/app/creance/$id/litige`
- * est l'URL ; `/app/creance_/$id/litige` est son IDENTIFIANT interne, où le `_`
- * final de segment est l'échappement de TanStack — celui qui fait qu'une page
- * de détail ne s'imbrique pas dans la mise en page de son parent. Les deux
- * désignent le même écran, et seule la première est une adresse.
+ * ⚠️ L'ARBRE DÉCLARE CHAQUE ROUTE DEUX FOIS, sous deux formes. `/app/donnees/export`
+ * est l'URL ; `/app/_reglages/donnees_/export` est son IDENTIFIANT interne, où le
+ * `_` final de segment est l'échappement de TanStack (celui qui fait qu'une page
+ * de détail ne s'imbrique pas dans la mise en page de son parent) et où
+ * `_reglages` est une mise en page sans chemin, qui n'ajoute rien à l'adresse.
+ * Les deux désignent le même écran, et seule la première est une adresse.
  *
  * Les confondre faisait déclarer orphelines dix-sept routes parfaitement
  * reliées : aucun auteur n'écrit jamais la forme à `_`, puisqu'elle n'est pas
@@ -71,8 +74,9 @@ function routesDeclarees(): readonly string[] {
 	const chemins = new Set<string>();
 	for (const [, chemin] of genere.matchAll(/^\s+'(\/[^']*)':\s*typeof/gm)) {
 		if (chemin === undefined) continue;
-		// Le `_` d'échappement tombe : `/app/creance_/$id` EST `/app/creance/$id`.
-		const url = chemin.replace(/_(?=\/)/g, '');
+		// Un segment sans chemin tombe : `/app/_reglages/parametres` EST `/app/parametres`.
+		// Puis le `_` d'échappement : `/app/donnees_/export` EST `/app/donnees/export`.
+		const url = chemin.replace(/\/_[^/]+/g, '').replace(/_(?=\/)/g, '');
 		chemins.add(url.length > 1 ? url.replace(/\/$/, '') : url);
 	}
 	return [...chemins];
@@ -150,8 +154,9 @@ describe('le graphe des écrans', () => {
 		// lentement une barrière en décor.
 		const declarees = new Set(routesDeclarees());
 		const perimees = Object.keys(ATTEINTS_AUTREMENT).filter((r) => !declarees.has(r));
-		expect(perimees, `Exceptions qui ne correspondent à aucune route : ${perimees.join(', ')}`).toEqual(
-			[]
-		);
+		expect(
+			perimees,
+			`Exceptions qui ne correspondent à aucune route : ${perimees.join(', ')}`
+		).toEqual([]);
 	});
 });

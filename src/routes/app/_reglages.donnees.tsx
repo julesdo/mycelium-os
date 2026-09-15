@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranDonnees } from '../../screens/donnees/donnees';
 
-export const Route = createFileRoute('/app/donnees')({
+export const Route = createFileRoute('/app/_reglages/donnees')({
 	component: PageDonnees,
 	errorComponent: DonneesEnErreur
 });

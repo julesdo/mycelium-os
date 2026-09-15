@@ -6,7 +6,7 @@ import { messageDErreur } from '../../screens/equipe/equipe';
 import { EcranExport } from '../../screens/donnees/export';
 import type { FichierExport } from '../../screens/donnees/types';
 
-export const Route = createFileRoute('/app/donnees_/export')({
+export const Route = createFileRoute('/app/_reglages/donnees_/export')({
 	component: PageExport,
 	errorComponent: ExportEnErreur
 });
