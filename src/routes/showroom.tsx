@@ -1,18 +1,15 @@
 import { useState } from 'react';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { Toolbar, Segmented, SegmentedButton, SectionTitle, Surface } from '@cladd-ui/react';
-import { AlertTriangleIcon, FileSpreadsheetIcon } from 'lucide-react';
+import { AlertTriangleIcon } from 'lucide-react';
 import {
 	Page,
 	PageHeader,
 	PageBody,
 	EmptyState,
 	Bandeau,
-	ZoneDepot,
 	BilanImport,
-	type DepotAffiche,
 	FluxEvenements,
-	ChocRevelation,
 	BilanPertes,
 	IdentiteDebiteur,
 	RailProcedure,
@@ -24,8 +21,6 @@ import {
 	LigneBouton,
 	ConstatRegistre,
 	Lettrage,
-	type RevelationAffichee,
-	type BilanPertesAffiche,
 	VeilleurAvatar
 } from '../ui';
 import {
@@ -46,6 +41,8 @@ import {
 	SECTEURS_DEMO,
 	VOIE_DEMO
 } from './-salle/communes';
+import { DEPOTS_DEMO } from './-salle/depots';
+import { BILAN_DEMO, BILAN_SURVEILLANCE_INTERROMPUE_DEMO } from './-salle/revelation';
 
 /**
  * La salle d'exposition.
@@ -74,56 +71,6 @@ export const Route = createFileRoute('/showroom')({
 	},
 	component: Showroom
 });
-
-/**
- * LE CHOC DU PREMIER IMPORT, avec les cas qui cassent.
- *
- * Les chiffres ne sont pas décoratifs. Ils sont choisis pour exposer ce qui
- * casse une mise en page : un supplément à cinq chiffres posé en corps de
- * cinquante-six pixels, une décomposition à trois montants sur une même ligne
- * qui doit tenir à 375 px, et une facture NON CHIFFRÉE — le cas qu'on serait
- * tenté de ne jamais dessiner, et qui est précisément celui qui prouve que le
- * total affiché n'est pas silencieusement amputé.
- */
-const REVELATION_DEMO: RevelationAffichee = {
-	nombreFactures: 3,
-	principal: 4_248_000n,
-	interets: 731_240n,
-	indemnites: 12_000n,
-	supplement: 743_240n,
-	total: 4_991_240n,
-	interetsCourusDepuisHier: 1_164n,
-	lignes: [
-		{
-			reference: 'FA-2021-0087',
-			principalRestantDu: 924_000n,
-			interets: 412_880n,
-			indemniteForfaitaire: 4_000n,
-			supplement: 416_880n
-		},
-		{
-			reference: 'FA-2023-0142',
-			principalRestantDu: 3_299_100n,
-			interets: 316_290n,
-			indemniteForfaitaire: 4_000n,
-			supplement: 320_290n
-		},
-		{
-			reference: 'FA-2026-0311',
-			principalRestantDu: 24_900n,
-			interets: 2_070n,
-			indemniteForfaitaire: 4_000n,
-			supplement: 6_070n
-		}
-	],
-	nonChiffrees: [
-		{
-			reference: 'FA-2024-0009',
-			raison:
-				'Aucun taux légal relevé pour le semestre du 2024-07-01. Le décompte s’arrête plutôt que d’extrapoler le dernier taux connu.'
-		}
-	]
-};
 
 /**
  * LE LETTRAGE, DANS SES QUATRE ÉTATS.
@@ -402,20 +349,6 @@ function DemoIdentite() {
 	);
 }
 
-function DemoRevelation() {
-	return (
-		<Page>
-			<PageHeader
-				titre="Ce que vos factures portent"
-				sousTitre="Relevé au 9 septembre 2026, sur vos trois dernières années"
-			/>
-			<PageBody>
-				<ChocRevelation revelation={REVELATION_DEMO} />
-			</PageBody>
-		</Page>
-	);
-}
-
 /**
  * Le bilan des pertes, dans ses DEUX états — et le second est le seul qui
  * compte vraiment.
@@ -424,16 +357,10 @@ function DemoRevelation() {
  * trois jours. Celui-ci montre ce qui s'est éteint avant l'arrivée, ce qui
  * s'est éteint depuis — un échec du produit, affiché quand même — et il REFUSE
  * de compter quand la surveillance a été interrompue.
+ *
+ * C'est le compteur de la page de la révélation, calculé par le domaine dans
+ * `-salle/revelation.ts`.
  */
-const BILAN_DEMO: BilanPertesAffiche = {
-	eteintesAvant: 3_412_000n,
-	nombreEteintesAvant: 4,
-	eteintesDepuis: 0n,
-	nombreEteintesDepuis: 0,
-	nonSurveillees: ['FA-2022-0451'],
-	joursSousSurveillance: 251
-};
-
 function DemoBilan() {
 	return (
 		<Page>
@@ -446,7 +373,7 @@ function DemoBilan() {
 					</div>
 					<div className="flex flex-col gap-cladd-3xs">
 						<SectionTitle>Le même, après un battement en échec</SectionTitle>
-						<BilanPertes bilan={{ ...BILAN_DEMO, surveillanceInterrompueLe: '2026-05-14' }} />
+						<BilanPertes bilan={BILAN_SURVEILLANCE_INTERROMPUE_DEMO} />
 					</div>
 				</div>
 			</PageBody>
@@ -472,25 +399,6 @@ function DemoFlux() {
 					]}
 					anglesMorts={[]}
 				/>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoDepot() {
-	return (
-		<Page>
-			<PageHeader
-				titre="Importer vos factures"
-				sousTitre="Vos factures de vente, et les règlements déjà reçus"
-			/>
-			<PageBody>
-				<ZoneDepot accept=".csv,.txt,.pdf" onFichiers={() => undefined}>
-					<div className="flex flex-col items-center gap-cladd-3xs text-center">
-						<FileSpreadsheetIcon className="size-8 text-cladd-fg-softer" aria-hidden />
-						<p className="text-cladd-sm font-semibold">Déposez vos fichiers ici</p>
-					</div>
-				</ZoneDepot>
 			</PageBody>
 		</Page>
 	);
@@ -554,71 +462,9 @@ function DemoSurveillanceMuette() {
 }
 
 /**
- * LES QUATRE ÉTATS D'UN DÉPÔT, CÔTE À CÔTE.
- *
- * C'est la seule façon de vérifier que la règle tient : « un import qui annonce
- * 198 factures sans mentionner les deux lignes écartées ment par omission ».
- * Les nombres doivent être lisibles sans geste sur les quatre, et seules les
- * RAISONS ligne à ligne ont le droit de se replier.
+ * LES QUATRE ÉTATS D'UN DÉPÔT, CÔTE À CÔTE : ceux de `-salle/depots.ts`, que les
+ * pages de l'import montrent l'un après l'autre.
  */
-const DEPOTS_DEMO: DepotAffiche[] = [
-	{
-		id: 'd1',
-		filename: 'FEC-2026-exercice.txt',
-		statut: 'TERMINE',
-		etape: 'Lecture terminée.',
-		// Le cas qui compte : un import largement réussi, MAIS deux lignes
-		// perdues. Elles doivent crever les yeux au milieu du succès.
-		bilan: {
-			facturesCreees: 198,
-			reglementsCrees: 142,
-			debiteursCrees: 37,
-			facturesDejaConnues: 12,
-			horsPerimetre: 486,
-			reglementsOrphelins: 3,
-			ignoreesTotal: 2,
-			ignorees: [
-				{ texte: 'l1', raison: 'Ligne 4128 : montant illisible (« 1 2З0,00 » — un З cyrillique).' },
-				{ texte: 'l2', raison: 'Ligne 4310 : aucune date d’échéance, et aucun délai au contrat.' }
-			]
-		},
-		deposeLe: Date.parse('2026-09-09T08:12:00Z')
-	},
-	{
-		id: 'd2',
-		filename: 'export-ventes-aout.csv',
-		statut: 'TERMINE',
-		etape: 'Lecture terminée.',
-		// Un import parfait : aucun dépliant ne doit s'ouvrir, et le
-		// hors-périmètre reste en gris — ce n'est pas une anomalie.
-		bilan: {
-			facturesCreees: 41,
-			reglementsCrees: 0,
-			debiteursCrees: 4,
-			facturesDejaConnues: 0,
-			horsPerimetre: 96,
-			reglementsOrphelins: 0,
-			ignoreesTotal: 0,
-			ignorees: []
-		},
-		deposeLe: Date.parse('2026-09-08T16:40:00Z')
-	},
-	{
-		id: 'd3',
-		filename: 'FA-2026-0412.pdf',
-		statut: 'EN_COURS',
-		etape: 'Extraction des lignes par le modèle…',
-		deposeLe: Date.parse('2026-09-09T09:02:00Z')
-	},
-	{
-		id: 'd4',
-		filename: 'scan-caisse.jpg',
-		statut: 'ECHOUE',
-		erreur: 'Le fichier n’est pas une facture de vente : aucun montant ni référence trouvés.',
-		deposeLe: Date.parse('2026-09-07T11:20:00Z')
-	}
-];
-
 function DemoBilanImport() {
 	return (
 		<Page>
@@ -906,10 +752,8 @@ const ECRANS = [
 	'intervenant',
 	'commissaire',
 	'avocat',
-	'revelation',
 	'bilan',
 	'flux',
-	'depot',
 	'vide',
 	'muette',
 	'introuvable',
@@ -1043,10 +887,8 @@ function Showroom() {
 						{ecran === 'intervenant' ? <DemoIntervenant /> : null}
 						{ecran === 'commissaire' ? <DemoCommissaire /> : null}
 						{ecran === 'avocat' ? <DemoAvocat /> : null}
-						{ecran === 'revelation' ? <DemoRevelation /> : null}
 						{ecran === 'bilan' ? <DemoBilan /> : null}
 						{ecran === 'flux' ? <DemoFlux /> : null}
-						{ecran === 'depot' ? <DemoDepot /> : null}
 						{ecran === 'vide' ? <DemoVide /> : null}
 						{ecran === 'muette' ? <DemoSurveillanceMuette /> : null}
 						{ecran === 'introuvable' ? <EcranIntrouvable /> : null}

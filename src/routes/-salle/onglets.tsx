@@ -2,9 +2,17 @@ import { useState } from 'react';
 import type { AccueilAffiche } from '../../screens/accueil';
 import { EcranAccueil } from '../../screens/accueil';
 import { EcranProcedures, type DossierAffiche } from '../../screens/procedures';
+import { EcranRevelation, type RevelationDuJour } from '../../screens/revelation';
 import { ceQuiManque, travauxDuVeilleur } from '../../ui';
 import { EVENEMENTS_DEMO, RAIL_DEMO } from './communes';
-import { lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
+import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
+import {
+	BILAN_DEMO,
+	BILAN_SANS_FACTURE_DEMO,
+	BILAN_SURVEILLANCE_INTERROMPUE_DEMO,
+	REVELATION_DEMO,
+	REVELATION_SANS_FACTURE_DEMO
+} from './revelation';
 
 /**
  * LES DOSSIERS ENGAGÉS — le pire cas d'abord.
@@ -197,6 +205,29 @@ function ProceduresDemo({ etat }: { etat: EtatDemo }) {
 	);
 }
 
+/**
+ * La révélation du jour : les factures de `revelation.ts`, calculées par le
+ * domaine, et le bilan de ce qui s'en est éteint.
+ */
+const REVELATION_DU_JOUR_DEMO: RevelationDuJour = {
+	revelation: REVELATION_DEMO,
+	bilan: BILAN_DEMO
+};
+
+/** « surveillance interrompue » : un battement en échec depuis l'arrivée, seule entrée changée. */
+const FORMES_REVELATION_DEMO: Readonly<Record<string, RevelationDuJour>> = {
+	'surveillance interrompue': {
+		...REVELATION_DU_JOUR_DEMO,
+		bilan: BILAN_SURVEILLANCE_INTERROMPUE_DEMO
+	}
+};
+
+/** Le vide : un établissement qui n'a encore déposé aucune facture. */
+const JOUR_SANS_FACTURE_DEMO: RevelationDuJour = {
+	revelation: REVELATION_SANS_FACTURE_DEMO,
+	bilan: BILAN_SANS_FACTURE_DEMO
+};
+
 export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
 	{
 		route: '/app/',
@@ -209,5 +240,16 @@ export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
 		libelle: 'procédures',
 		vide: true,
 		Demo: ProceduresDemo
+	},
+	{
+		route: '/app/revelation',
+		libelle: 'révélation',
+		vide: true,
+		variantes: Object.keys(FORMES_REVELATION_DEMO),
+		Demo: ({ etat, variante }) => {
+			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
+			const jour = formeDemo(variante, REVELATION_DU_JOUR_DEMO, FORMES_REVELATION_DEMO);
+			return <EcranRevelation donnees={lectureDemo(etat, jour, JOUR_SANS_FACTURE_DEMO)} />;
+		}
 	}
 ];

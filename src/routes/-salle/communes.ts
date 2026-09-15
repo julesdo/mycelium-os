@@ -23,10 +23,14 @@ import { secteursProposes } from '../../screens/debiteur-detail';
  * Celles-ci traversent plusieurs familles d'écrans, ou sont montrées telles
  * quelles par une démonstration de composant dans `routes/showroom.tsx`. Les
  * fixtures propres à une seule famille vivent avec elle (`onglets.tsx`,
- * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`, `reglages.tsx`, `abonnement.tsx`,
- * `equipe.tsx`, `donnees.tsx`). Une famille qui dérive ses données d'une autre les
- * importe de celle-ci : les données tirent de l'équipe leur compte connecté, et
- * l'équipe tire ses places de l'abonnement.
+ * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`, `import.tsx`, `reglages.tsx`,
+ * `abonnement.tsx`, `equipe.tsx`, `donnees.tsx`). Une famille qui dérive ses
+ * données d'une autre les importe de celle-ci : les données tirent de l'équipe
+ * leur compte connecté, et l'équipe tire ses places de l'abonnement.
+ *
+ * ⚠️ CE FICHIER NE GROSSIT PLUS. Il dépasse trois cents lignes : un jeu partagé
+ * de plus prend son propre fichier, comme la révélation et son bilan
+ * (`revelation.ts`) et les dépôts (`depots.ts`).
  */
 
 /** L'entreprise du gérant, telle que ses réglages la déclarent. */
