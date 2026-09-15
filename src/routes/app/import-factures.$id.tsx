@@ -4,7 +4,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranDepot } from '../../screens/import/depot';
 
-export const Route = createFileRoute('/app/import-factures_/$id')({
+export const Route = createFileRoute('/app/import-factures/$id')({
 	component: PageDepot,
 	errorComponent: DepotEnErreur
 });

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ListButton } from '@cladd-ui/react';
 import { ChevronRightIcon, FileSpreadsheetIcon, FileTextIcon, UploadIcon } from 'lucide-react';
 import {
@@ -5,6 +6,7 @@ import {
 	CarteListe,
 	LigneAnalyse,
 	ListeAnalyses,
+	MaitreDetail,
 	PageEcran,
 	ZoneDepot,
 	dateCourte,
@@ -93,19 +95,39 @@ export interface ImportAffiche {
  * `ui/bilan-import.tsx`, qui porte le compromis entre cette exigence et le mur
  * de texte qu'elle produisait.
  */
-export function EcranImport({ donnees }: { donnees: Lecture<ImportAffiche> }) {
+export function EcranImport({
+	donnees,
+	detail,
+	depotOuvert
+}: {
+	donnees: Lecture<ImportAffiche>;
+	/**
+	 * Le bilan du dépôt ouvert (l'`Outlet` de la route), ou `null`.
+	 *
+	 * ⚠️ SANS DÉPÔT OUVERT, PAS DE VOLET DROIT. L'import pleine largeur, plutôt
+	 * qu'un volet vide qui laisserait la moitié de l'écran morte à 1024 px.
+	 */
+	detail: ReactNode;
+	/** L'identifiant du dépôt que l'adresse ouvre, ou `null`. */
+	depotOuvert: string | null;
+}) {
 	const entete: EnteteEcran = {
 		genre: 'onglet',
 		titre: 'Importer vos factures',
 		sousTitre: 'Vos factures de vente, et les règlements déjà reçus'
 	};
 
-	if (donnees.etat !== 'pret') return <PageEcran entete={entete} etat={donnees.etat} />;
+	const avecLeDepot = (page: ReactNode) => (
+		<MaitreDetail maitre={page} detail={detail} detailOuvert={depotOuvert !== null} />
+	);
+
+	if (donnees.etat !== 'pret')
+		return avecLeDepot(<PageEcran entete={entete} etat={donnees.etat} />);
 
 	const { imports, mode, onChoisirMode, envoiEnCours, erreur, onDeposer } = donnees.valeur;
 	const chemin = CHEMINS.find((c) => c.mode === mode) ?? CHEMINS[0]!;
 
-	return (
+	return avecLeDepot(
 		<PageEcran entete={entete}>
 			<div className="flex flex-col gap-cladd-2xs">
 				{/*
@@ -180,6 +202,9 @@ export function EcranImport({ donnees }: { donnees: Lecture<ImportAffiche> }) {
 									key={depot._id}
 									vers="/app/import-factures/$id"
 									parametres={{ id: depot._id }}
+									// Définie seulement quand un bilan est ouvert : l'import pleine
+									// largeur n'est pas un maître, et ses rangées gardent leur chevron.
+									selectionnee={depotOuvert === null ? undefined : depot._id === depotOuvert}
 									icone={<FileTextIcon />}
 									titre={depot.filename}
 									precision={

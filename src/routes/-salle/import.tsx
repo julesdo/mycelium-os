@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { EcranDepot } from '../../screens/import/depot';
 import {
 	EcranImport,
@@ -58,6 +58,9 @@ function ImportDemo({ etat }: { etat: EtatDemo }) {
 
 	return (
 		<EcranImport
+			// Comme la route sur `/app/import-factures` : aucun dépôt ouvert, pas de volet droit.
+			detail={null}
+			depotOuvert={null}
 			donnees={lectureDemo<ImportAffiche>(
 				etat,
 				{ ...commun, imports: LIGNES_DEPOTS_DEMO },
@@ -70,7 +73,7 @@ function ImportDemo({ etat }: { etat: EtatDemo }) {
 
 /**
  * La page d'un dépôt, composée comme sa route la compose
- * (`src/routes/app/import-factures_.$id.tsx`) : sans date de dépôt, que
+ * (`src/routes/app/import-factures.$id.tsx`) : sans date de dépôt, que
  * `suivreImport` ne rend pas.
  */
 function pageDe(depot: DepotDemo): DepotAffiche {
@@ -91,6 +94,29 @@ const FORMES_DEPOT_DEMO: Readonly<Record<string, DepotAffiche>> = {
 	'lecture en échec': pageDe(DEPOT_EN_ECHEC_DEMO)
 };
 
+/**
+ * LE BILAN D'UN DÉPÔT, DANS LE VOLET DROIT DE L'IMPORT.
+ *
+ * L'import est prêt et ce dépôt y est ouvert, comme en production quand on touche
+ * sa rangée : l'état choisi dans la salle est celui du bilan.
+ */
+function AvecLesDepots({ depotId, children }: { depotId: string; children: ReactNode }) {
+	return (
+		<EcranImport
+			detail={children}
+			depotOuvert={depotId}
+			donnees={lectureDemo<ImportAffiche>('pret', {
+				imports: LIGNES_DEPOTS_DEMO,
+				mode: 'EXPORT_COMPTABLE',
+				onChoisirMode: () => undefined,
+				envoiEnCours: false,
+				erreur: null,
+				onDeposer: () => undefined
+			})}
+		/>
+	);
+}
+
 export const ECRANS_IMPORT: readonly EcranDuProduit[] = [
 	{
 		route: '/app/import-factures',
@@ -99,14 +125,18 @@ export const ECRANS_IMPORT: readonly EcranDuProduit[] = [
 		Demo: ImportDemo
 	},
 	{
-		route: '/app/import-factures_/$id',
+		route: '/app/import-factures/$id',
 		libelle: 'dépôt',
 		vide: false,
 		variantes: Object.keys(FORMES_DEPOT_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const depot = formeDemo(variante, pageDe(DEPOT_A_ECARTS_DEMO), FORMES_DEPOT_DEMO);
-			return <EcranDepot donnees={lectureDemo(etat, depot)} />;
+			return (
+				<AvecLesDepots depotId={depot.id}>
+					<EcranDepot donnees={lectureDemo(etat, depot)} />
+				</AvecLesDepots>
+			);
 		}
 	}
 ];

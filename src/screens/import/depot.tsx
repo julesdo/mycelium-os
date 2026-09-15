@@ -28,7 +28,7 @@ export function EcranDepot({ donnees }: { donnees: Lecture<DepotAffiche> }) {
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/import-factures', libelle: 'Importer' },
+				retour: { vers: '/app/import-factures', libelle: 'Importer', masqueEnVolets: true },
 				titre: depot?.filename ?? 'Dépôt',
 				sousTitre: depot?.etape ?? undefined
 			}}
