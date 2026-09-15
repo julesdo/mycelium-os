@@ -3493,6 +3493,33 @@ git commit --no-verify -m "feat(import): l'import, le bilan d'un depot et la rev
 
 ---
 
+## Tâche 8 bis : la confirmation d'une suppression parle français
+
+Relevé au regard de la tâche 7 : les deux suppressions (compte, établissement) confirment par le `Dialog` du kit avec `requireConfirmText`, et le champ de ce dialogue affiche « Type … to confirm », en anglais. L'interface est en français uniquement. Le kit n'offre pas de prop pour ce texte (documentation du `Dialog`, serveur MCP de Cladd), et `CladdProvider` n'a ni langue ni messages. Le défaut est antérieur à la migration, et il est en production.
+
+**Files:**
+- Create: `src/ui/confirmation-par-saisie.tsx`, et son test `src/ui/__tests__/confirmation-par-saisie.test.tsx`
+- Modify: `src/ui/index.ts`, `src/screens/donnees/supprimer-compte.tsx`, `src/screens/donnees/supprimer-etablissement.tsx`
+
+- [ ] **Step 1 : les tests d'abord** (rendu jsdom, clics et saisies réels). Ils couvrent :
+  - le bouton de confirmation, désactivé tant que la saisie est vide, partielle, ou d'une casse différente ;
+  - le même bouton, actif sur la valeur exacte ;
+  - un clic sur ce bouton désactivé, qui n'appelle rien ;
+  - « Annuler », qui ferme sans appeler ;
+  - la confirmation, qui appelle une seule fois.
+
+  Les voir échouer.
+- [ ] **Step 2 : la primitive `ConfirmationParSaisie`**, bâtie sur les emplacements documentés du `Dialog`, sans réinventer de composant :
+  - `children` porte un `Input` du kit, avec une invite française courte qui nomme ce qu'on saisit (« Votre adresse e-mail », « Le nom de l'établissement ») sans répéter la phrase du texte ;
+  - `buttons` porte « Annuler » (dans `DialogClose`) et le bouton de confirmation rouge, désactivé tant que la saisie n'est pas exactement la valeur attendue, qui appelle la confirmation puis ferme.
+
+  Elle reçoit le titre, le texte, la valeur attendue, l'intitulé du bouton, l'invite et le déclencheur. Elle s'exporte par `src/ui/index.ts`.
+- [ ] **Step 3 : les deux écrans l'emploient** à la place de `requireConfirmText`, sans changer un seul texte existant, ni la valeur attendue, ni ce que la confirmation appelle.
+- [ ] **Step 4 : vérifier** (`bun run test:unit`, `bun run check`, `bun run lint`), puis **regarder** : les deux confirmations ouvertes à 375 et 1280 px, jamais validées, le bouton désactivé tant que la saisie n'est pas exacte, aucune invite anglaise.
+- [ ] **Step 5 : committer** par chemin : `fix(donnees): la confirmation d'une suppression parle francais`.
+
+---
+
 ## Tâche 9 : les barrières
 
 Les deux barrières de la spec (§ 4.3), et la vérification que la salle montre bien chaque écran (§ 11, critère 1). Elles s'écrivent après les migrations : écrites avant, elles auraient laissé la suite rouge pendant sept tâches.
