@@ -554,8 +554,31 @@ export const recouvrementTables = {
 		liquide: vEtatCritere,
 		exigible: vEtatCritere,
 		entreCommercants: vEtatCritere,
-		/** 0 à 1. Une créance sous le seuil ne part pas en procédure. */
+		/**
+		 * 0 à 1. La SOLIDITÉ PROBATOIRE du dossier, et rien de plus.
+		 *
+		 * ⚠️ IL NE DÉCIDE PLUS DE RIEN. Il a longtemps commandé la maturité de la
+		 * créance par un seuil ; depuis le 17 septembre 2026 c'est `eligible` qui
+		 * la porte. Il ordonne les critères et les pièces manquantes, et il reste
+		 * lu par les écrans qui expliquent ce qui renforcerait un dossier.
+		 */
 		score: v.optional(v.number()),
+		/**
+		 * LA CRÉANCE EST-ELLE MÛRE : toutes conditions établies, aucun bloquant.
+		 *
+		 * ⚠️ STOCKÉ, ET C'EST UNE DÉCISION. Le recomposer à la lecture demanderait
+		 * de rappeler `qualifier()` — donc les pièces, les faits déclarés, la santé
+		 * du débiteur et les retards observés : quatre lectures de plus par créance,
+		 * dans une boucle qui parcourt chaque nuit tout l'établissement.
+		 *
+		 * Il s'écrit au MÊME endroit que `score`, à chaque recalcul, pour qu'aucune
+		 * des deux valeurs ne puisse vieillir sans l'autre.
+		 *
+		 * Optionnel : les créances écrites avant ce champ n'en portent pas, et
+		 * Convex valide la base entière, pas seulement le code qui arrive. Absent,
+		 * il se lit comme `false` — le doute ne profite jamais au produit.
+		 */
+		eligible: v.optional(v.boolean()),
 		/**
 		 * La procédure engagée, et la date de son engagement.
 		 *

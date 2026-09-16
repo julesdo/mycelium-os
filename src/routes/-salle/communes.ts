@@ -154,8 +154,15 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		reference: 'Fournitures Durand',
 		montant: 3_120_050n,
 		urgence: 'HAUTE',
-		explication: 'La créance atteint le seuil de qualification (0,90 pour un seuil de 0.75).',
-		action: 'Examiner les procédures envisageables pour cette créance.',
+		// LA MÊME FORMULATION QUE LE PRODUIT, ici aussi. L'ancienne citait un score
+		// et un seuil qui ne commandent plus rien, et son action désignait des voies
+		// de droit : une capture de démonstration ferait recopier les deux.
+		explication:
+			'Sur la créance Fournitures Durand, le caractère certain, le caractère liquide, le ' +
+			'caractère exigible et la qualité de commerçant des deux parties sont établis, et ' +
+			'aucun risque bloquant n’est relevé.',
+		action:
+			'Ouvrir cette créance : les conditions établies et les pièces qui les soutiennent y sont.',
 		cible: { genre: 'CREANCE', id: 'demo-creance' }
 	}
 	// ⚠️ L'ÉVÉNEMENT `FACTURE_ECHUE` DE FA-2026-0311 A ÉTÉ RETIRÉ D'ICI. Le

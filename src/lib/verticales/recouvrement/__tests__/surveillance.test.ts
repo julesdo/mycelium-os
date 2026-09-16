@@ -198,14 +198,14 @@ describe('échéances de procédure', () => {
 });
 
 describe('créances mûres et débiteurs qui se dégradent', () => {
-	it('signale une créance qui vient d’atteindre le seuil', () => {
+	it('signale une créance dont les conditions sont établies, sans citer de chiffre', () => {
 		const evenements = detecterEvenements(
 			etat({
 				creances: [
 					{
 						reference: 'C-001',
 						total: depuisEuros('30000,00'),
-						score: 0.9,
+						eligible: true,
 						statut: 'QUALIFIEE'
 					}
 				]
@@ -214,13 +214,23 @@ describe('créances mûres et débiteurs qui se dégradent', () => {
 		);
 		expect(evenements.map((e) => e.type)).toEqual(['CREANCE_MURE']);
 		expect(versEuros(evenements[0]!.montant!)).toBe('30 000,00');
+
+		// L'explication NOMME ce qui est établi, et ne cite aucun chiffre : elle
+		// portait « atteint le seuil de qualification (0.62 pour un seuil de
+		// 0.75) », une note que le gérant ne savait pas faire monter.
+		expect(evenements[0]!.explication).toContain('la qualité de commerçant des deux parties');
+		expect(evenements[0]!.explication).not.toContain('seuil');
+
+		// Et l'action ne désigne aucune voie de droit : ce serait du conseil
+		// juridique, ligne rouge 3.
+		expect(evenements[0]!.action).not.toContain('procédure');
 	});
 
 	it('ne resignale pas une créance déjà engagée', () => {
 		const evenements = detecterEvenements(
 			etat({
 				creances: [
-					{ reference: 'C-001', total: depuisEuros('30000,00'), score: 0.9, statut: 'ENGAGEE' }
+					{ reference: 'C-001', total: depuisEuros('30000,00'), eligible: true, statut: 'ENGAGEE' }
 				]
 			}),
 			AUJOURDHUI
@@ -476,7 +486,12 @@ describe('montantIdentifie ne compte pas la même somme plusieurs fois', () => {
 					}
 				],
 				creances: [
-					{ reference: 'C-001', total: depuisEuros('10000,00'), score: 0.9, statut: 'QUALIFIEE' }
+					{
+						reference: 'C-001',
+						total: depuisEuros('10000,00'),
+						eligible: true,
+						statut: 'QUALIFIEE'
+					}
 				],
 				debiteurs: [
 					{

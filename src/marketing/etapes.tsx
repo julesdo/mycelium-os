@@ -62,16 +62,25 @@ const EVENEMENTS: EvenementAffiche[] = [
 		reference: 'Ateliers Martin',
 		montant: 1_845_000n,
 		urgence: 'CRITIQUE',
-		explication: 'Signification de l’ordonnance : il reste 9 jours avant le 12 septembre.',
-		action: 'Faire signifier sans délai — passée cette date, le droit est perdu.'
+		// ⚠️ LA PERTE SE DIT, L'ACTE NE SE COMMANDE PAS : « Faire signifier sans
+		// délai » est un impératif sur un acte de procédure, que la ligne rouge 3
+		// interdit. Le constat reste, le geste redevient d'ouvrir un écran.
+		explication:
+			'Signification de l’ordonnance : il reste 9 jours avant le 12 septembre. Passée cette ' +
+			'date, le droit est perdu.',
+		action: 'Ouvrir ce dossier : la date limite et son journal y sont.'
 	},
 	{
 		type: 'CREANCE_MURE',
 		reference: 'Fournitures Durand',
 		montant: 3_120_050n,
 		urgence: 'HAUTE',
-		explication: 'La créance atteint le seuil de qualification : quatre factures, toutes échues.',
-		action: 'Examiner les procédures envisageables pour cette créance.'
+		explication:
+			'Sur la créance Fournitures Durand, le caractère certain, le caractère liquide, le ' +
+			'caractère exigible et la qualité de commerçant des deux parties sont établis, et ' +
+			'aucun risque bloquant n’est relevé.',
+		action:
+			'Ouvrir cette créance : les conditions établies et les pièces qui les soutiennent y sont.'
 	},
 	{
 		type: 'FACTURE_ECHUE',

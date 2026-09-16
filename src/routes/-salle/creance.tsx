@@ -398,7 +398,6 @@ const CREANCE_DEMO: CreanceAffichee = {
 	debiteur: DEBITEUR_DEMO,
 	debiteurId: 'demo-debiteur',
 	santeDebiteur: SANTE_DEBITEUR_DEMO,
-	score: QUALIFICATION_DEMO.score,
 	eligible: QUALIFICATION_DEMO.eligible,
 	principalRestantDu: PRINCIPAL_RESTANT_DU_DEMO,
 	factures: FACTURES_DEMO.map((facture) => ({ _id: facture.reference })),

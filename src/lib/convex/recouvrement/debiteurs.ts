@@ -7,6 +7,7 @@ import { api, internal } from '../_generated/api';
 import { getUserOrg } from '../lib/auth';
 import { normaliserSiren, sirenDepuisSiret } from '../../verticales/recouvrement/pays/france/siren';
 import { vSecteurCreance } from './tables';
+import { qualiteCommercantDeLaForme } from '../../verticales/recouvrement/pays/france/commercialite';
 import { lireEtablissements } from '../../verticales/recouvrement/pays/france/etablissements';
 import type { EtablissementTrouve } from '../../verticales/recouvrement/pays/france/etablissements';
 
@@ -93,10 +94,22 @@ export const renseignerSirenInterne = internalMutation({
 		 * produit la CONNAÎT. Une saisie manuelle ne la porte pas, et on ne
 		 * l'invente pas : absente, elle reste absente.
 		 */
-		formeJuridique: v.optional(v.string())
+		formeJuridique: v.optional(v.string()),
+		/**
+		 * La date du jour, en argument.
+		 *
+		 * Elle ne sert pas au numéro : elle part avec le rejeu de la commercialité
+		 * sur les créances ouvertes, dont le score compte les retards observés. La
+		 * même discipline que le décompte — un test qui ne peut pas fixer la date
+		 * ne peut pas vérifier ce qu'elle change.
+		 */
+		aujourdHui: v.string()
 	},
 	returns: v.null(),
-	handler: async (ctx, { organizationId, debiteurId, siren, formeJuridique }): Promise<null> => {
+	handler: async (
+		ctx,
+		{ organizationId, debiteurId, siren, formeJuridique, aujourdHui }
+	): Promise<null> => {
 		const debiteur = await debiteurDe(ctx, organizationId, debiteurId);
 
 		const saisi = siren.trim();
@@ -128,6 +141,43 @@ export const renseignerSirenInterne = internalMutation({
 			// que d'effacer une information juste.
 			...(formeJuridique === undefined ? {} : { formeJuridique })
 		});
+
+		/**
+		 * LA QUALITÉ DE COMMERÇANT SE DÉDUIT DE LA FORME, ET NE SE DEMANDE PLUS.
+		 *
+		 * ⚠️ `estCommercant` N'ÉTAIT ÉCRIT QU'À UN SEUL ENDROIT DE TOUT LE DÉPÔT,
+		 * avec la valeur littérale `'unknown'` (`import.ts`). `creerCreance` le lit
+		 * pour composer la condition « entre commerçants » : elle ne pouvait donc
+		 * JAMAIS valoir `ok` sans que le gérant réponde, sur chaque créance, une
+		 * question dont le registre porte la réponse.
+		 *
+		 * ⚠️ ON N'ÉCRIT QUE CE QUI SE DÉDUIT. `qualiteCommercantDeLaForme` ne lève
+		 * jamais et rend `unknown` sur une forme absente, non reconnue, ou qui ne
+		 * tranche pas (exercice libéral, association, groupement, personne
+		 * physique). Dans ce cas rien n'est patché : le doute ne profite pas au
+		 * produit, et une réponse déjà donnée par le gérant reste intacte.
+		 *
+		 * ⚠️ ET CE QUI SE DÉDUIT NE VAUT PAS DANS UN ACTE. `L210-1` vise le
+		 * caractère commercial d'une SOCIÉTÉ, pas la qualité de COMMERÇANT, et le
+		 * code tient les deux notions séparées (L721-3, 1° et 2°). La clé
+		 * `qualiteCommercantParLaForme` porte `verifie: true` et
+		 * `valideParAvocat: false` : la forme relevée suffit à proposer et à
+		 * remplir un écran, jamais à établir la qualité dans un acte.
+		 */
+		const deduite = qualiteCommercantDeLaForme(formeJuridique ?? debiteur.formeJuridique);
+		if (deduite.etat !== 'unknown') {
+			await ctx.db.patch(debiteur._id, { estCommercant: deduite.etat });
+
+			// Sans ce rejeu, le champ serait alimenté et jamais relu : `creerCreance`
+			// ne lit `estCommercant` qu'à la constitution, et l'identification au
+			// registre arrive presque toujours après l'import des factures.
+			await ctx.runMutation(internal.recouvrement.creances.rejouerCommercialiteInterne, {
+				organizationId,
+				debiteurId: debiteur._id,
+				aujourdHui
+			});
+		}
+
 		return null;
 	}
 });
@@ -165,7 +215,8 @@ export const renseignerSiren = authedMutation({
 			organizationId,
 			debiteurId,
 			siren,
-			...(formeJuridique === undefined ? {} : { formeJuridique })
+			...(formeJuridique === undefined ? {} : { formeJuridique }),
+			aujourdHui: new Date().toISOString().slice(0, 10)
 		});
 		return null;
 	}
@@ -239,10 +290,9 @@ export const chercherAuRegistre = action({
 		// L'annotation de retour n'est pas decorative : une action qui appelle une
 		// requete de son propre module cree un cycle d'inference, TypeScript
 		// retombe sur `any`, et le type de `api` TOUT ENTIER se degrade.
-		const cherche: string = await ctx.runQuery(
-			api.recouvrement.debiteurs.denominationDuDebiteur,
-			{ debiteurId }
-		);
+		const cherche: string = await ctx.runQuery(api.recouvrement.debiteurs.denominationDuDebiteur, {
+			debiteurId
+		});
 
 		// Le guillemet fermerait le litteral ODSQL et laisserait passer une
 		// expression : on le retire plutot que de l'echapper, parce qu'un nom

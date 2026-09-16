@@ -16,7 +16,6 @@ import {
 	PageEcran,
 	eurosCentimes,
 	pluriel,
-	pourcent,
 	rangeeDuDebiteur,
 	useDeuxVolets,
 	type Lecture
@@ -74,7 +73,14 @@ export interface CreanceAffichee {
 	 * fait relevé au registre.
 	 */
 	readonly santeDebiteur: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
-	readonly score: number;
+	/**
+	 * Toutes conditions établies, aucun risque bloquant.
+	 *
+	 * ⚠️ `score` N'EST PLUS DEMANDÉ PAR CET ÉCRAN. Il reste calculé et rendu par
+	 * `creanceComplete` — il ordonne les critères et les pièces manquantes — mais
+	 * plus rien ici ne l'affiche : un pourcentage inventait une nuance que le
+	 * droit n'a pas.
+	 */
 	readonly eligible: boolean;
 	readonly principalRestantDu: bigint;
 	readonly factures: readonly { readonly _id: string }[];
@@ -231,17 +237,24 @@ export function EcranCreance({
 						)} restant dû`
 					}}
 				>
-					{/* LE SCORE, ET CE QU'IL VAUT. Un nombre seul laisse le gérant devant
-					    une note qu'il ne sait pas faire monter — les rangées en dessous
-					    sont précisément ce qui la fait bouger. */}
-					<SurfaceCut contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-2xs">
-						<div className="flex items-baseline gap-cladd-3xs">
-							<span className="text-letikette-titre font-bold tabular-nums">
-								{pourcent(creance.score)}
-							</span>
-							<span className="text-cladd-xs text-cladd-fg-soft">de solidité</span>
-						</div>
-						<Chip size="md" color={creance.eligible ? 'green' : 'neutral'}>
+					{/*
+					  L'ÉTAT DE QUALIFICATION, SANS CHIFFRE ET SANS TEINTE DE SEUIL.
+
+					  ⚠️ UN POURCENTAGE SE LISAIT ICI, « de solidité », et le gérant ne
+					  savait pas le faire monter : le seuil qu'il servait à franchir ne
+					  se franchissait pas sans pièce de fond, et aucune ligne d'écran ne
+					  le disait. Une créance mûre, c'est désormais toutes conditions
+					  établies et aucun bloquant : un état, pas une note.
+
+					  ⚠️ ET LA PUCE ÉTAIT VERTE. Le vert, le rouge et l'ambre ne
+					  signifient qu'une chose dans ce produit — au-dessus du seuil, tout
+					  près, en dessous. Un vert sur « Mûre pour une procédure » faisait
+					  lire un seuil là où on vient précisément d'en retirer un.
+
+					  Ce qui fait bouger cet état est juste en dessous, rangée par rangée.
+					*/}
+					<SurfaceCut contentClassName="flex flex-wrap items-center gap-cladd-3xs p-cladd-2xs">
+						<Chip size="md" color="neutral">
 							{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
 						</Chip>
 					</SurfaceCut>
