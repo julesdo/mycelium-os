@@ -12,7 +12,7 @@ Ce que le navigateur montre et que la migration « à l'identique » ne corrige 
 
 1. ~~Le lien de retour mesure 44 px~~ **CORRIGÉ avant la tâche 4** : `EnteteDetail` passe à `min-h-12`, mesuré à 48 px à 375 et 1280 px (décompte, litige). La même recherche a trouvé trois autres cibles à 44 px dans `src/ui/`, corrigées dans le même commit : le lien « Lire l’annonce au BODACC » (`identite-debiteur.tsx`), « Changer » et « Saisir le numéro moi-même » (`recherche-registre.tsx`). À mesurer au regard de la tâche 5, où la fiche du débiteur les rend.
 2. ~~Le litige « sans données » rend un corps vide~~ **RETIRÉ : fausse observation.** Elle venait d'une donnée de salle impossible (`constats: []`) : `lireLitige` produit toujours au moins un constat (`litige.ts` 240-269), donc le produit ne rend jamais ce corps vide. Leçon : un regard sur une donnée inventée produit un défaut inventé. D'où le correctif de la tâche 3 : les données de la salle se calculent par le domaine.
-3. **Texte du domaine avec « — »** : la question du litige « …contester cette facture — courrier, e-mail, ou réserve… », et le constat d'un litige déclaré « Le logiciel ne mesure pas si cette contestation est sérieuse — c'est une appréciation juridique, et il s'en abstient. » (`src/lib/verticales/recouvrement/litige.ts`, vu dans la variante « litigieux »). Conservés (décision D9). → chantier 3, avec le balayage des tirets longs dans les textes affichés (sous-titres premier bilan et suivi, rangée « Supprimer l’établissement », étapes de la révélation).
+3. ~~**Texte du domaine avec « — »**~~ **CORRIGÉ en `82b898d`** : les deux questions du litige et l'aveu sur une contestation prennent des deux-points (`litige.ts`). Le balayage du reste des textes affichés est fait dans le même commit ; ce qui reste ouvert est listé plus bas, fichier par fichier.
 4. Dans la salle à 375 px, les libellés d'état « sans données », « en attente », « en erreur » passent sur deux lignes. Salle seulement, sans effet produit.
 5. ~~La salle ment sur un texte~~ **CORRIGÉ en `10906e8`** : la condition à confirmer se calcule avec `LIBELLE_CONDITION.entreCommercants`, et la salle affiche « Pouvez-vous confirmer la qualité de commerçant des deux parties de cette créance ? ».
 6. ~~« 2 relevé(s) »~~ **CORRIGÉ pendant la relecture de la tâche 4** : « 1 relevé », « 2 relevés », vérifié au navigateur. Même commit : « 20 barreaux » dans la recherche d'un avocat.
@@ -22,6 +22,7 @@ Regard des variantes après `10906e8`, à 375 et 1280 px : aucun débordement ho
 ## Tâche 5 (les débiteurs), vu à 1280 px dans la salle (`a94c1b0`)
 
 **Corrigés en `3d16935`, vérifiés au navigateur à 1280 px :**
+
 - les cases des factures prennent toute leur carte (176 px) ;
 - « Aucun document » au lieu de « 0 document » ;
 - `SAINE` a disparu des démonstrations ;
@@ -33,11 +34,11 @@ Regard des variantes après `10906e8`, à 375 et 1280 px : aucun débordement ho
 Les points ci-dessous restent ouverts sauf mention contraire.
 
 - Textes à reprendre au chantier 3 :
-  - dates ISO montrées au gérant dans des constats : « plancher de 8,25 % constaté au 2026-09-10 » (`controlerTauxContractuel`), « Ce document est un bon de livraison, n° BL-2026-0142, du 2026-05-06 » (constat de lecture des pièces) ;
-  - « Vide = taux légal, BCE majoré de dix points. » : un signe « = » dans une phrase d'interface ;
-  - le refus d'un taux sous le plancher : « … inférieur au plancher de 7,86 % constaté au 2026-03-15 — trois fois le taux d’intérêt légal des « autres cas ». » (`controlerTauxContractuel`), un « — » et une date ISO dans la même phrase ;
-  - « Daté du 6 mai 2026 — n° BL-2026-0142 » dans la rangée d'une pièce ;
-  - « 0 document » en sous-titre des pièces vides : un cadran à zéro (règle d'écran n° 4), là où « Aucun document » dirait la même chose. Correctif d'une ligne → tâche 10.
+  - ~~dates ISO montrées au gérant dans des constats~~ **CORRIGÉ en `92948e9`** : `dateLisible` rejoint `calendrier.ts`, à côté de `estDateReelle`, et la copie privée de `piece.ts` disparaît. « constaté le 10 septembre 2026 », « du 6 mai 2026 ». La date ISO reste dans la donnée ; une chaîne qui ne désigne pas un jour réel ressort telle quelle, pour qu'un « 30 février » d'OCR se voie tel qu'il a été lu.
+  - « Vide = taux légal, BCE majoré de dix points. » : un signe « = » dans une phrase d'interface. **Toujours ouvert** — le texte vit dans `src/ui/identite-debiteur.tsx:181`, confié à un autre agent au même moment.
+  - ~~le refus d'un taux sous le plancher~~ **CORRIGÉ en `92948e9`** : « … est inférieur au plancher de 7,86 % constaté le 15 mars 2026 : trois fois le taux d’intérêt légal des « autres cas ». » Le « — » devient deux-points, la date passe en français, et « n’a donc PAS été contrôlé » cesse de crier. Aucune réserve retirée.
+  - « Daté du 6 mai 2026 — n° BL-2026-0142 » dans la rangée d'une pièce. **Toujours ouvert** : `src/ui/pieces.tsx`, confié à un autre agent au même moment.
+  - ~~« 0 document » en sous-titre des pièces vides~~ **déjà corrigé** : `src/screens/debiteur/pieces.tsx` dit « Aucun document ».
 - **Les cases de sélection des factures mesurent 20 × 20 px**, en production aujourd'hui : un `Checkbox` du kit, sans libellé visible, posé dans la carte d'une facture (`src/screens/debiteur-detail.tsx`, lignes 405 à 410). Sélectionner des factures pour constituer une créance est LE geste de cet écran, et sa cible est à moins de la moitié du plancher de 48 px. **Correctif relevé dans la documentation du kit** (`get_component('checkbox')`) : le `Checkbox` rend un `<label>` par défaut, et « pair it with text inside the same label to extend the clickable target ». La carte ne contient aucun autre élément interactif (référence, montants, textes, puces), donc toute la carte devient le libellé, et la case passe en `as="span"`. Une facture déjà dans une créance garde sa case `disabled`, et un clic sur son libellé ne fait rien. → tour de correctifs de la tâche 5.
 - Même carte : « Exigibilité déduite de l’échéance — à confirmer si vos conditions contractuelles disent autre chose. » (`debiteur-detail.tsx`, ligne 427). → chantier 3, balayage des tirets longs.
 - **Une pièce reclassée à la main garde le constat de sa lecture** : un contrat reclassé en CGV affiche encore « Ce document est un contrat », parce que `classer` ne touche jamais `constat` (`src/lib/convex/recouvrement/pieces.ts`, lignes 159-162). Relevé par la revue de la tâche 5 ; la salle le montre fidèlement. → chantier 3 (le constat dit ce que la lecture a vu, et la classification du gérant se lit à côté), ou une tâche du domaine.
@@ -52,6 +53,7 @@ Les points ci-dessous restent ouverts sauf mention contraire.
 ## Tâche 6 (réglages et abonnement), relevé par son implémenteur (`363472b`)
 
 **Corrigés en `645391b` et dans le commit qui suit, vérifiés au navigateur à 1280 px :**
+
 - le lien « Modifier » mesure 48 px (et aux quatre largeurs, mesuré par l'implémenteur) ;
 - l'offre de suivi et la rangée de l'abonnement parlent de recouvrement : « Vos échéances surveillées toute l’année » ; plus aucun « déclaration de mars » ni « Votre chiffre reste » à l'écran ;
 - l'encart de développement ne promet plus qu'il disparaîtra en production ;
@@ -83,7 +85,8 @@ Reste ouvert : montrer ou non l'encart de développement sur un déploiement san
 
 - **L'accueil de la salle se contredit sur FA-2021-0087** : son flux la dit « PRESCRITE depuis le 2026-08-14 » (`EVENEMENTS_DEMO`, `communes.ts`), et le veilleur du même écran annonce qu'elle « sera prescrite le 2026-10-14, dans 32 jours » (`ACCUEIL_DEMO.travaux`, `onglets.tsx`). Antérieur à la tâche 8 ; la révélation n'emploie plus cette référence ni FA-2026-0311. → tâche 10 (dériver l'une des deux dates de l'autre), ou chantier 3.
 - **La révélation chiffre une facture que le bilan de la même page dit éteinte.** `reveler` ne retient que le statut et le retard (`entreDansLaRevelation`, `src/lib/verticales/recouvrement/revelation.ts`), jamais la prescription. Dans la salle, désormais calculée : FA-2024-0217, transport échu le 31 mars 2024, prescrit le 31 mars 2025, figure sous « Dus de plein droit… » avec 4 094,35 € d'intérêts, et sous « Éteint avant votre arrivée ». Question de domaine, avec une dimension juridique (ce qui reste réclamable sur une créance prescrite) : à poser à Jules, hors tranche 2.
-- **Le motif d'une facture non chiffrée parle au développeur** : « Facture FA-2020-0930 : aucun taux applicable au 2020-11-30. Le calcul des intérêts est impossible — il doit échouer plutôt que de retenir zéro, faute de quoi la créance abandonnerait définitivement ses intérêts. » (`decompterFacture`, `decompte.ts`, montré tel quel par `NonChiffrees` après « FA-2020-0930 — »). La référence est écrite deux fois, deux « — » s'y suivent, et « il doit échouer » décrit le code. → chantier 3, balayage des textes.
+- ~~**Le motif d'une facture non chiffrée parle au développeur**~~ **CORRIGÉ en `92948e9`, sauf la répétition de la référence.** Le motif se lit désormais « Facture FA-2020-0930 : aucun taux applicable le 30 novembre 2020. Ses intérêts ne peuvent donc pas être calculés, et ils ne sont pas comptés pour zéro : la créance les abandonnerait définitivement. » Le « — » et « il doit échouer » sont partis, la date est en français, et le refus de retenir zéro est intact.
+  - **Reste ouvert : la référence est écrite deux fois.** `NonChiffrees` la pose déjà en gras avant le motif (`src/ui/revelation.tsx:103`), et le motif la reprend. Elle a été GARDÉE dans le message volontairement : `decompter` lève depuis une boucle sur toutes les factures d'une créance, où elle est le seul moyen de savoir laquelle a manqué. La lever proprement demande une erreur typée qui porte référence et motif séparément — un changement de code, pas de forme.
 - **Lu au code, pas montré par la salle** : le bilan compte parmi les pertes une facture dont le débiteur n'a pas de secteur, sur l'hypothèse du délai le plus court (`facturesPour` retient `INDETERMINE`, donc un an). Prudente pour une alerte, cette hypothèse devient un fait sous « Éteint avant votre arrivée, en silence », sans être déclarée. → même question de domaine que le point précédent.
 
 ## Décision produit à demander à Jules (vue par la seconde revue de la tâche 3)
@@ -92,12 +95,14 @@ Reste ouvert : montrer ou non l'encart de développement sur un déploiement san
 
 ## Tâche 4 (la procédure), à regarder
 
-- Vu à 1280 px dans la salle (`38e0f8a`), textes affichés au gérant, tous du domaine ou d'un composant existant, conservés par la migration (décision D9) → chantier 3, balayage des textes :
-  - l'échéance du suivi se lit « 10 avr. 2026 — Passé ce délai de 3 mois, l’ordonnance est caduque… » : un « — » entre la date et la conséquence (`src/ui/suivi-procedure.tsx` ou le texte de `apres-procedure.ts`) ;
-  - le nom d'une voie : « Procédure L.126 — créances commerciales » (`PROCEDURES`, `src/lib/verticales/recouvrement/procedures.ts`) ;
-  - l'angle mort du titre exécutoire écrit « il n’est PAS surveillé » en capitales : l'emphase des commentaires du code passée dans l'interface ;
-  - la recherche d'un commissaire écrit « Deux caractères — 44, 09, 2A — ou trois outre-mer. » (`src/ui/recherche-commissaire.tsx`) ;
-  - le retrait d'un taux contractuel répond « Les intérêts repartent sur le taux légal — BCE majoré de dix points, recalculé à chaque semestre. » (`src/lib/convex/recouvrement/tauxContractuel.ts`, ligne 94), relevé en lisant le code pour la tâche 5.
+- Vu à 1280 px dans la salle (`38e0f8a`), textes affichés au gérant, tous du domaine ou d'un composant existant, conservés par la migration (décision D9) → **balayage fait en `82b898d`** :
+  - ~~l'échéance du suivi se lit « 10 avr. 2026 — Passé ce délai de 3 mois… »~~ **CORRIGÉ** : « 10 avr. 2026 : Passé ce délai… » (`src/ui/suivi-procedure.tsx:248`) ;
+  - ~~le nom d'une voie : « Procédure L.126 — créances commerciales »~~ **CORRIGÉ** : « Procédure L.126, créances commerciales » ;
+  - ~~l'angle mort du titre exécutoire écrit « il n’est PAS surveillé » en capitales~~ **CORRIGÉ** : « il n’est pas surveillé », comme l'angle mort du délai d'opposition juste au-dessus. La phrase dit déjà que la durée n'est pas relevée au référentiel ;
+  - ~~la recherche d'un commissaire écrit « Deux caractères — 44, 09, 2A — ou trois outre-mer. »~~ **CORRIGÉ** : « Deux caractères (44, 09, 2A), ou trois outre-mer. » ;
+  - le retrait d'un taux contractuel répond « Les intérêts repartent sur le taux légal — BCE majoré de dix points, recalculé à chaque semestre. » (`src/lib/convex/recouvrement/tauxContractuel.ts`, ligne 94). **Toujours ouvert** : hors du périmètre de l'agent des textes, qui ne touchait pas à `src/lib/convex/`. Correctif d'un caractère.
+- Même balayage, non relevés jusqu'ici et **corrigés en `82b898d`** : l'angle mort d'une date impossible (« n’existe pas au calendrier : un « 30 février »… », `surveillance.ts`), l'échéance perdue d'un dossier (« DOSSIER : libellé »), la ligne d'une facture écartée du décompte et les deux fondements de la pièce (`piece.ts`), et le titre de section du PDF (`src/ui/piece-decompte.ts`).
+- **Restes de « — » laissés volontairement** : les puces d'une relance (`relance.ts:190` et `249`) — un tiret de liste, pas une ponctuation de phrase ; `plancherLisible: '—'` (`taux-contractuel.ts`), qui marque une absence et non un texte ; les sources du registre (`parametres.ts`), qui ne se touchent pas.
 - ~~« 20 barreaus dans cette livraison »~~ **CORRIGÉ en `a876c54`** : « 20 barreaux », vérifié au navigateur.
 - Regard de la tâche 4 terminé (`38e0f8a`) : à 1280 px, les quatre états, la variante « voie terminée », la feuille d'une voie, « Je l’ai engagée », le carnet, la recherche d'un commissaire (résultats compris) et celle d'un avocat ; à 375 px, la page et chaque feuille empilée à pleine largeur. Aucun débordement, aucune cible sous 48 px.
 
@@ -107,4 +112,14 @@ Reste ouvert : montrer ou non l'encart de développement sur un déploiement san
     - il s'affiche à deux endroits : la feuille d'une voie (`src/ui/feuille-voie.tsx:66-70`), et le niveau 3 des relances (`src/ui/relances.tsx:120-124`, en tout petit sous un `constat` qui le dit déjà en mots de gérant) ;
     - deux tests exigent la clé dans la chaîne (`procedures.test.ts:102`, `relance.test.ts:159`).
   - **Proposition pour le chantier 3** : un motif en mots de gérant à côté de la `note` de chaque paramètre (la note reste pour le code et les tests). La feuille d'une voie montre ce motif, en distinguant « évalue mais ne produit pas l'acte » (disponible avec blocage) de « indisponible ». Les relances cessent d'afficher la ligne brute, redondante avec leur constat. La formulation touche au juridique : la faire relire.
-- **« Les délais de Injonction de payer courront depuis le 14 sept. 2026. »** dans la feuille « Je l’ai engagée » : le nom de la voie est collé derrière « de » sans élision ni minuscule (`FeuilleDeclaration`, texte d'origine de la route). → chantier 3, balayage des textes, ou tâche 10.
+- ~~**« Les délais de Injonction de payer courront depuis le 14 sept. 2026. »**~~ **déjà corrigé** : `FeuilleDeclaration` écrit « Les délais de cette procédure courront depuis le … » (`src/screens/analyses/procedure.tsx:137`).
+
+## Balayage des textes du chantier 3 (`ux/textes`, `92948e9` et `82b898d`)
+
+Ce que l'agent des textes n'a PAS pu reprendre, et pourquoi. Aucun de ces points n'est réglé.
+
+- Trois textes vivent dans des fichiers confiés à d'autres agents au même moment : « Vide = taux légal, BCE majoré de dix points. » (`src/ui/identite-debiteur.tsx:181`), « Daté du 6 mai 2026 — n° BL-2026-0142 » (`src/ui/pieces.tsx:117`), « Exigibilité déduite de l’échéance — à confirmer… » (`src/screens/debiteur-detail.tsx:427`).
+- Hors périmètre : « Les intérêts repartent sur le taux légal — … » (`src/lib/convex/recouvrement/tauxContractuel.ts:94`), et le « — » qui sépare la référence du motif dans `NonChiffrees` (`src/ui/revelation.tsx:103`, voisin des écrans d'import).
+- `src/routes/-salle/onglets.tsx:57` recopie mot pour mot l'angle mort du délai d'opposition, et garde donc son « PAS ». La salle rend toujours ; la démonstration est seulement en retard d'un mot.
+- La ligne de blocage brute de la feuille d'une voie (« « mentionsObligatoiresInjonction » : … PIRE que pas de requête… ») n'est pas un défaut de forme : elle demande un motif en mots de gérant à côté de la `note` du paramètre, et la formulation touche au juridique. Voir la proposition ci-dessus, inchangée.
+- `src/lib/convex/__tests__/battementRecouvrement.test.ts` échoue avant ce travail comme après : il attend `AUTH_EMAIL` dans la trace d'échec, et c'est `RESEND_API_KEY` qui manque en premier. Fixture d'échec accidentel, sans rapport avec les textes.
