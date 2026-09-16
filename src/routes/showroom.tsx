@@ -318,7 +318,7 @@ function DemoIdentite() {
 						  le pré-remplir laisserait croire que le taux est enregistré, et il
 						  suffirait de ne rien faire pour qu'il le devienne.
 						*/}
-						<SectionTitle>Un taux lu dans une pièce — proposé, jamais appliqué</SectionTitle>
+						<SectionTitle>Un taux lu dans une pièce, proposé et jamais appliqué</SectionTitle>
 						<IdentiteDebiteur
 							denomination="Imprimerie Delorme"
 							siren="552100554"
