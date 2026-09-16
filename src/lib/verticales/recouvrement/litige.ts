@@ -312,3 +312,110 @@ export function questionsRestantes(reponses: Reponses): readonly QuestionFait[] 
 		return r === undefined || r === 'INCONNU';
 	}).map((q) => question(q.cle));
 }
+
+/**
+ * UNE RÉPONSE QUE LE LOGICIEL PROPOSE, AU LIEU DE LA DEMANDER.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ELLE SE CONFIRME, ELLE NE S'APPLIQUE JAMAIS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Une proposition n'écrit rien. Elle s'affiche au-dessus des trois boutons,
+ * qui restent les trois seuls chemins d'écriture, et la réponse demeure
+ * indéterminée tant que personne n'a appuyé.
+ *
+ * La raison se chiffre : un « oui » sur `CONTESTATION_ECRITE` produit un risque
+ * BLOQUANT qui éteint l'éligibilité de la créance. Une qualification juridique
+ * ne s'emporte pas par un geste que le gérant n'a pas fait — surtout quand la
+ * proposition est juste, puisque personne ne la relirait alors.
+ *
+ * ⚠️ ET ELLE PORTE SA SOURCE ET SA DATE, LES DEUX. Une réponse suggérée sans
+ * dire d'où elle vient se croit sur parole ; avec sa source mais sans date,
+ * elle ne dit pas si elle décrit la situation d'aujourd'hui ou celle d'il y a
+ * deux ans. C'est la discipline du référentiel, appliquée à une suggestion : la
+ * valeur, la source, la date.
+ */
+export interface PropositionFait {
+	readonly cle: CleFait;
+	/**
+	 * La réponse suggérée.
+	 *
+	 * Jamais `INCONNU` : proposer une abstention n'apprend rien au lecteur et
+	 * lui coûte une ligne à lire.
+	 */
+	readonly reponse: Exclude<Reponse, 'INCONNU'>;
+	/** D'où elle vient, cité — une pièce nommée, ou une déclaration antérieure. */
+	readonly source: string;
+	/**
+	 * Quand, ET DE QUELLE DATE IL S'AGIT.
+	 *
+	 * Une date nue ne dit pas si c'est celle du document, celle de son dépôt ou
+	 * celle de la déclaration — trois choses différentes, dont deux peuvent être
+	 * séparées de plusieurs mois. La phrase le dit.
+	 */
+	readonly date: string;
+}
+
+/** Ce d'où une proposition peut venir. Deux gisements, et rien d'autre. */
+export interface SourcesDeProposition {
+	/**
+	 * Les réserves lues sur les pièces du dossier, LA PLUS RÉCENTE D'ABORD.
+	 *
+	 * L'ordre est celui de l'appelant, parce que lui seul sait dater une pièce
+	 * autrement que par le jour : ce module ne trie pas ce qu'il ne peut pas
+	 * ordonner sans perte.
+	 */
+	readonly reserves: readonly {
+		readonly texte: string;
+		/** Le numéro imprimé sur le document, ou à défaut son nom de fichier. */
+		readonly piece: string;
+		readonly date: string;
+	}[];
+	/**
+	 * Les faits déjà déclarés sur les AUTRES créances du même client, DE LA PLUS
+	 * ANCIENNE À LA PLUS RÉCENTE. La dernière l'emporte, pour la raison qui fait
+	 * déjà `declarerFaitLitige` remplacer une réponse au lieu de l'accumuler : un
+	 * gérant qui a corrigé « oui » en « non » ne doit pas revoir son « oui ».
+	 */
+	readonly declarationsAnterieures: readonly {
+		readonly cle: CleFait;
+		readonly reponse: Reponse;
+		readonly date: string;
+	}[];
+}
+
+/**
+ * Ce que le logiciel peut répondre à la place du gérant, et qu'il propose.
+ *
+ * ⚠️ LA RÉSERVE PASSE APRÈS LES DÉCLARATIONS, DONC ELLE L'EMPORTE SUR
+ * `CONTESTATION_ECRITE`, et c'est délibéré. La question demande littéralement
+ * « courrier, e-mail, ou réserve portée sur un bon de livraison » : une réserve
+ * lue sur une pièce de CE dossier répond à la question posée, tandis qu'une
+ * déclaration antérieure porte sur une autre créance. Entre les deux, on cite
+ * celle qui parle du dossier qu'on regarde.
+ */
+export function proposerFaits(sources: SourcesDeProposition): readonly PropositionFait[] {
+	const propositions = new Map<CleFait, PropositionFait>();
+
+	for (const declaration of sources.declarationsAnterieures) {
+		if (declaration.reponse === 'INCONNU') continue;
+		propositions.set(declaration.cle, {
+			cle: declaration.cle,
+			reponse: declaration.reponse,
+			source: 'Réponse déjà donnée sur une autre créance de ce client.',
+			date: declaration.date
+		});
+	}
+
+	const reserve = sources.reserves[0];
+	if (reserve !== undefined) {
+		propositions.set('CONTESTATION_ECRITE', {
+			cle: 'CONTESTATION_ECRITE',
+			reponse: 'OUI',
+			source: `Une réserve est lue sur la pièce ${reserve.piece} : « ${reserve.texte} »`,
+			date: reserve.date
+		});
+	}
+
+	return [...propositions.values()];
+}

@@ -36,8 +36,10 @@ import {
 } from '../../lib/verticales/recouvrement/qualification';
 import {
 	lireLitige,
+	proposerFaits,
 	questionsRestantes,
 	signauxDepuisFaits,
+	type PropositionFait,
 	type Reponses
 } from '../../lib/verticales/recouvrement/litige';
 import { qualifier, type SanteDebiteur } from '../../lib/verticales/recouvrement/scoring';
@@ -276,14 +278,26 @@ const CONDITIONS_A_CONFIRMER_DEMO: readonly ConditionAConfirmer[] = conditionsAD
  * `questionsRestantes` (`litige.ts`) : jamais recopiés, pour que la
  * démonstration reste vraie si le domaine change de formulation.
  */
-function litigeDepuisReponses(reponses: Reponses) {
+function litigeDepuisReponses(reponses: Reponses, propositions: readonly PropositionFait[] = []) {
 	const lecture = lireLitige(reponses);
 	return {
-		questions: questionsRestantes(reponses).map((q) => ({
-			cle: q.cle,
-			question: q.question,
-			portee: q.portee
-		})),
+		questions: questionsRestantes(reponses).map((q) => {
+			const proposition = propositions.find((p) => p.cle === q.cle);
+			return {
+				cle: q.cle,
+				question: q.question,
+				portee: q.portee,
+				...(proposition === undefined
+					? {}
+					: {
+							proposition: {
+								reponse: proposition.reponse,
+								source: proposition.source,
+								date: proposition.date
+							}
+						})
+			};
+		}),
 		constats: [...lecture.constats],
 		litigieux: lecture.litigieux
 	};
@@ -424,9 +438,50 @@ const DECOMPTE_BASE_DEMO = {
 	onTelecharger: () => undefined
 };
 
-/** Les formes nommées du litige : les réponses de chaque variante. */
-const FORMES_LITIGE_DEMO: Readonly<Record<string, Reponses>> = {
-	litigieux: REPONSES_LITIGE_LITIGIEUSES_DEMO
+/**
+ * Les deux propositions du questionnaire (A4 et A10), composées par le DOMAINE
+ * — `proposerFaits` — depuis une réserve lue sur un bon de livraison et une
+ * réponse déjà donnée sur une autre créance du même client. Les phrases ne sont
+ * pas recopiées ici : une démonstration qui invente les siennes montre un
+ * produit qui n'existe pas.
+ */
+const PROPOSITIONS_LITIGE_DEMO: readonly PropositionFait[] = proposerFaits({
+	reserves: [
+		{
+			texte: 'Palette n° 3 refusée, film déchiré et deux cartons écrasés.',
+			piece: 'BL-2026-118',
+			date: 'document du 12/03/2026'
+		}
+	],
+	declarationsAnterieures: [
+		{ cle: 'REFUS_RECEPTION', reponse: 'OUI', date: 'déclarée le 03/09/2026' }
+	]
+});
+
+/** Ce qu'une forme du litige porte : les réponses en base, et ce que le logiciel propose. */
+interface FormeLitige {
+	readonly reponses: Reponses;
+	readonly propositions: readonly PropositionFait[];
+}
+
+/** La forme principale : les réponses de la famille, sans proposition. */
+const FORME_LITIGE_DEMO: FormeLitige = { reponses: REPONSES_LITIGE_DEMO, propositions: [] };
+
+/** Le litige d'une forme, réponses et propositions ensemble. */
+function litigeDepuisForme(forme: FormeLitige) {
+	return litigeDepuisReponses(forme.reponses, forme.propositions);
+}
+
+/**
+ * Les formes nommées du litige.
+ *
+ * « proposées » part d'un questionnaire NEUF — aucune réponse en base — parce
+ * que c'est la seule situation où les questions que le logiciel sait déjà
+ * remplir sont encore posées.
+ */
+const FORMES_LITIGE_DEMO: Readonly<Record<string, FormeLitige>> = {
+	litigieux: { reponses: REPONSES_LITIGE_LITIGIEUSES_DEMO, propositions: [] },
+	proposees: { reponses: {}, propositions: PROPOSITIONS_LITIGE_DEMO }
 };
 
 /** Ce que la démonstration du litige partage entre son état prêt, sa variante et son état vide. */
@@ -568,7 +623,7 @@ function LitigeDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 				etat,
 				{
 					...LITIGE_BASE_DEMO,
-					...litigeDepuisReponses(formeDemo(variante, REPONSES_LITIGE_DEMO, FORMES_LITIGE_DEMO)),
+					...litigeDepuisForme(formeDemo(variante, FORME_LITIGE_DEMO, FORMES_LITIGE_DEMO)),
 					conditions: CONDITIONS_A_CONFIRMER_DEMO
 				},
 				{
