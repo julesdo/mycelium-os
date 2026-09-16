@@ -357,6 +357,42 @@ courir, la prescription. ⚠️ Le produit **ne pilote pas le conseil et ne reco
 procédure** : il suit une REMISE et attend un RETOUR, et rien n'avance sans une déclaration humaine
 datée. Détail, états et table en § 4.4.
 
+**D13. Sept propositions par jour ouvré et par établissement, trois au plus sur une même rangée.**
+Tranché le 17 septembre 2026, au critère de la rentabilité. Raison : l'erreur est ASYMÉTRIQUE. Un
+plafond trop bas diffère quelques déductions, que le passage suivant rattrape. Un plafond trop haut
+produit des validations à l'aveugle, donc une piste d'audit qui documente faux, et la confiance est
+l'actif le plus cher à reconstruire de tout le produit. Le plafond lui-même coûte un tri et une
+coupe. Les deux garde-fous et les trois instruments de mesure restent ceux du § 10, Q3, et sept
+reste une hypothèse datée, écrite pour être déplacée sur des nombres.
+
+**D14. Aucun plafond commercial de conversation aujourd'hui : un compteur, un avertissement, et un
+plafond de sécurité.** Tranché le 17 septembre 2026, au critère de la rentabilité. Raison : sur un
+abonnement à prix fixe, ce n'est pas la moyenne qui coûte, c'est la QUEUE : l'emballement, la
+boucle, le fichier collé en entier. Le compteur s'écrit sur `src/lib/socle/modele/cout.ts`, qui
+existe déjà, donc le coût d'écriture est faible et le risque couvert est sans borne. Un plafond mou
+prévient à 20 € par mois et par établissement, un plafond de sécurité arrête à 30 € la conversation
+LIBRE seulement, et le préfixe système passe en cache, ce qui ramène la question de 5,5 à 4
+centimes. ⚠️ Quand le plafond de sécurité mord, D0 s'applique sans exception : la file, les calculs,
+les propositions et le décompte continuent, et le compagnon dit quand il revient et ce qui se fait
+sans lui.
+
+**D15. Le champ de saisie libre part AVEC la file, et ses trois filtres partent avant lui, dans le
+même lot.** Tranché le 17 septembre 2026, au critère de la rentabilité, contre la position tenue
+jusqu'ici par cette spec. Raison : la conversation est la partie la plus visible de la demande,
+donc celle qui décide de l'adoption, et la reporter d'un lot coûte la démonstration. Les filtres
+B2, B3 et B4 sont des filtres au point d'usage, écrits une fois et servant partout : un jour de
+travail, pas une semaine. ⚠️ La règle de livraison ne bouge pas et reste opposable : pas de champ
+libre sans muselière verte. Si les filtres ne sont pas verts le jour de la livraison, c'est le
+CHAMP qui attend, pas le lot.
+
+**D16. La palette de recherche reste, et ne se fond pas dans la file.** Tranché le 17 septembre
+2026, au critère de la rentabilité. Raison : la supprimer jetterait une tranche entière livrée
+cette semaine, la fondre coûterait un travail pour un gain nul tant que personne n'a mesuré
+l'usage, et les deux répondent à deux questions différentes : la file dit ce qui compte
+aujourd'hui, la palette trouve une facture précise. Elle cesse d'être mise en avant comme porte
+d'entrée, et la question se retranche quand la file aura trois mois d'usage. Coût aujourd'hui :
+zéro.
+
 **Le budget de réécriture, chiffré, parce qu'il n'était pas posé.** Quatre sites rendent aujourd'hui
 le score ou son seuil, et chacun se réécrit. D11 les tranche tous :
 
@@ -1839,7 +1875,10 @@ expliquer et à préparer, jamais à produire un acte. **Réponse aux deux sous-
    transforme en point de vérification :** il faut le regarder à l'écran avant de le montrer à
    quelqu'un, parce qu'une mention honnête mal placée se lit comme un produit qui doute de lui.
 
-### Q3. Combien de propositions par jour, au maximum ? OUVERTE
+### Q3. TRANCHÉE le 17/09/2026, décision D13 (§ 3.4)
+
+Le défaut proposé ci-dessous devient la décision, pour l'asymétrie des deux erreurs : une file trop
+courte se rattrape au passage suivant, une piste d'audit qui ment ne se rattrape pas.
 
 C'est le risque numéro un de la refonte : quarante propositions par jour produisent quarante
 « Retenir » à l'aveugle et une piste d'audit qui MENT, ce qui est strictement pire que l'état actuel
@@ -1886,26 +1925,28 @@ réellement observé »).
 **Ce qui reste à ratifier :** on préfère une file courte et vraie à une file complète et fausse, et
 on l'assume commercialement.
 
-### Q4. Un plafond mensuel de conversation par établissement ? OUVERTE
+### Q4. TRANCHÉE le 17/09/2026, décision D14 (§ 3.4)
 
 Environ 5,5
 centimes par question, aucun plafond côté conversation aujourd'hui (§ 5.7). 8 à 11 € par mois pour
-un gérant bavard, en coût variable adossé à un prix fixe. Faut-il un plafond dur, un plafond mou
-qui prévient, ou rien pour l'instant ?
+un gérant bavard, en coût variable adossé à un prix fixe. Réponse : pas de plafond commercial, un compteur sur `cout.ts`, un avertissement à 20 € et un
+plafond de sécurité à 30 € qui n'arrête que la conversation libre. Ce n'est pas la moyenne qui
+coûte, c'est la queue.
 
-### Q5. Le champ de saisie libre part-il avec la file ? OUVERTE
+### Q5. TRANCHÉE le 17/09/2026, décision D15 (§ 3.4)
 
 La position tenue
 dans cette spec est non : les propositions d'abord, la conversation quand B2, B3 et B4 sont vertes.
-Une thèse « compagnon en permanence » livrée sans sa muselière met le produit hors la loi. À
-confirmer, parce que c'est ce qui décale la partie la plus visible de la demande.
+Une thèse « compagnon en permanence » livrée sans sa muselière met le produit hors la loi. Réponse : il part AVEC la file, et les trois filtres partent avant lui, dans le même lot. Ils
+coûtent un jour, la conversation décide de l'adoption, et la règle « pas de champ libre sans
+muselière verte » ne bouge pas : si les filtres ne sont pas verts, c'est le champ qui attend.
 
-### Q6. Que devient la palette de recherche du chantier 2 ? OUVERTE
+### Q6. TRANCHÉE le 17/09/2026, décision D16 (§ 3.4)
 
 Elle vient d'être livrée, elle porte 5
 racines `Popup`, et une file avec des puces de portée recouvre une partie de son usage. Elle reste
-utile pour trouver une facture par sa référence. Faut-il la garder telle quelle, ou la fondre dans
-la file ? **Non tranché dans cette spec, à dessein : elle a coûté une tranche entière et elle n'a
+utile pour trouver une facture par sa référence. Réponse : elle reste telle quelle et cesse d'être mise en avant. La fondre
+coûterait un travail pour un gain nul tant que personne n'a mesuré l'usage. **Non tranché dans cette spec, à dessein : elle a coûté une tranche entière et elle n'a
 pas encore été regardée à l'usage.**
 
 ### Q7. TRANCHÉE le 17/09/2026, décision D12 (§ 4.4)
