@@ -23,7 +23,8 @@ import {
 	Lettrage,
 	VeilleurAvatar,
 	PaletteRecherche,
-	type FamilleRecherche
+	type FamilleRecherche,
+	type PropositionTaux
 } from '../ui';
 import {
 	controlerTauxContractuel,
@@ -166,6 +167,19 @@ const TAUX_IDENTIFIE_DEMO = '15,00';
 const TAUX_TROP_BAS_DEMO = '1,00';
 
 /**
+ * Le taux que la lecture d'une pièce a relevé, avec la pièce qui le porte.
+ *
+ * `lirePreuve` ne le rend que depuis des conditions générales ou un contrat, et
+ * il s'arrête sur la pièce : rien ne s'applique aux factures tant que personne
+ * ne l'a retenu.
+ */
+const TAUX_LU_DEMO: PropositionTaux = {
+	pourcentage: '12,50',
+	piece: 'conditions-generales-2026.pdf',
+	reference: 'CG-2026-01'
+};
+
+/**
  * Le constat que `poserLeTaux` rend pour un débiteur qui a des factures non
  * soldées (`src/lib/convex/recouvrement/tauxContractuel.ts`, lignes 127 à 130).
  *
@@ -214,6 +228,7 @@ function DemoIdentite() {
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
 							tauxContractuel={undefined}
+							propositionTaux={null}
 							constatTaux={null}
 							onEnregistrerTaux={() => {}}
 						/>
@@ -266,6 +281,7 @@ function DemoIdentite() {
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
 							tauxContractuel={undefined}
+							propositionTaux={null}
 							constatTaux={null}
 							onEnregistrerTaux={() => {}}
 						/>
@@ -285,7 +301,39 @@ function DemoIdentite() {
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
 							tauxContractuel={TAUX_IDENTIFIE_DEMO}
+							propositionTaux={null}
 							constatTaux={constatDuTaux(TAUX_IDENTIFIE_DEMO)}
+							onEnregistrerTaux={() => {}}
+						/>
+					</div>
+					<div className="flex flex-col gap-cladd-3xs">
+						{/*
+						  ⚠️ LE TAUX LU PROPOSE, IL NE S'APPLIQUE PAS. La mutation qui le
+						  pose réécrit TOUTES les factures non soldées du débiteur, et elle
+						  enregistre même sous le plancher légal, délibérément : appliqué en
+						  silence depuis une ligne lue par un modèle, il ferait baisser ce
+						  qu'on réclame sur tout un client.
+
+						  Le champ de saisie reste donc vide sous la rangée, et c'est voulu :
+						  le pré-remplir laisserait croire que le taux est enregistré, et il
+						  suffirait de ne rien faire pour qu'il le devienne.
+						*/}
+						<SectionTitle>Un taux lu dans une pièce, proposé et jamais appliqué</SectionTitle>
+						<IdentiteDebiteur
+							denomination="Imprimerie Delorme"
+							siren="552100554"
+							formeJuridique="Société à responsabilité limitée"
+							etatRecherche={{ phase: 'REPOS' }}
+							onChercherAuRegistre={() => {}}
+							onRetenirEtablissement={() => {}}
+							secteur="GENERAL"
+							optionsSecteur={SECTEURS_DEMO}
+							erreurSiren={null}
+							onEnregistrerSiren={() => {}}
+							onChoisirSecteur={() => {}}
+							tauxContractuel={undefined}
+							propositionTaux={TAUX_LU_DEMO}
+							constatTaux={null}
 							onEnregistrerTaux={() => {}}
 						/>
 					</div>
@@ -310,6 +358,7 @@ function DemoIdentite() {
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
 							tauxContractuel={undefined}
+							propositionTaux={null}
 							constatTaux={null}
 							onEnregistrerTaux={() => {}}
 						/>
@@ -342,6 +391,7 @@ function DemoIdentite() {
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
 							tauxContractuel={TAUX_TROP_BAS_DEMO}
+							propositionTaux={null}
 							constatTaux={constatDuTaux(TAUX_TROP_BAS_DEMO)}
 							onEnregistrerTaux={() => {}}
 						/>

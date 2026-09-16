@@ -17,6 +17,7 @@ import {
 	type OptionSecteur,
 	type PieceAffichee,
 	type PropositionLettrage,
+	type PropositionTaux,
 	type RuptureAffichee,
 	type EtatRecherche,
 	type EtablissementPropose
@@ -249,6 +250,29 @@ export function DetailDebiteur({
 		(piece) => piece.statut === 'A_CLASSER' || piece.statut === 'ECHEC'
 	).length;
 
+	/**
+	 * LE TAUX DE RETARD RELEVÉ SUR UNE PIÈCE, s'il y en a un.
+	 *
+	 * ⚠️ IL SE DÉRIVE ICI PARCE QUE LES PIÈCES SONT DÉJÀ LÀ. La rangée des
+	 * pièces ne dit que leur compte, et le taux lu se perdait derrière elle :
+	 * c'est sur cet écran-ci qu'il sert, puisque c'est ici qu'on le retient.
+	 *
+	 * La plus récente d'abord — `listerPiecesDuDebiteur` les trie ainsi — donc
+	 * des conditions générales déposées ce matin l'emportent sur celles de l'an
+	 * dernier. Une seule proposition à la fois : en montrer deux reviendrait à
+	 * demander laquelle des deux clauses gouverne la relation, ce qu'aucune
+	 * pièce ne dit.
+	 */
+	const pieceQuiPorteLeTaux = pieces.find((piece) => piece.tauxRetardStipule !== undefined);
+	const propositionTaux: PropositionTaux | null =
+		pieceQuiPorteLeTaux?.tauxRetardStipule === undefined
+			? null
+			: {
+					pourcentage: pieceQuiPorteLeTaux.tauxRetardStipule,
+					piece: pieceQuiPorteLeTaux.filename,
+					reference: pieceQuiPorteLeTaux.reference
+				};
+
 	if (debiteur === null || factures === null) {
 		return (
 			<div className="p-cladd-2xs">
@@ -310,6 +334,7 @@ export function DetailDebiteur({
 				onEnregistrerSiren={onEnregistrerSiren}
 				onChoisirSecteur={onChoisirSecteur}
 				tauxContractuel={tauxStipule}
+				propositionTaux={propositionTaux}
 				constatTaux={constatTaux}
 				onEnregistrerTaux={onEnregistrerTaux}
 			/>

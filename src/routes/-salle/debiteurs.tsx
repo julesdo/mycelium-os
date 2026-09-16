@@ -385,7 +385,10 @@ const PIECES_DEMO: readonly PieceDemo[] = [
 			type: 'BON_DE_LIVRAISON',
 			reference: 'BL-2026-0142',
 			date: '2026-05-06',
-			referencesLiees: ['FA-2026-0142']
+			referencesLiees: ['FA-2026-0142'],
+			// Émargé à la livraison : le constat le dit en toutes lettres, et le
+			// barème ne bouge pas pour autant.
+			receptionSignee: true
 		},
 		ajouteeLe: Date.parse('2026-06-09T08:40:00Z')
 	},
@@ -399,6 +402,9 @@ const PIECES_DEMO: readonly PieceDemo[] = [
 			reference: 'BL-2026-0177',
 			date: '2026-06-08',
 			referencesLiees: ['FA-2026-0177'],
+			// Une mention manuscrite, et personne n'a signé : le constat dit les
+			// deux, parce qu'un bon non émargé compte au score comme un bon signé.
+			receptionSignee: false,
 			reservesEmises: true,
 			reserves: 'Deux colis manquants, signalés à la livraison.'
 		},
@@ -415,7 +421,16 @@ const PIECES_DEMO: readonly PieceDemo[] = [
 		_id: 'demo-piece-conditions',
 		debiteurId: PRINCIPAL_DEMO._id,
 		filename: 'conditions-generales.pdf',
-		lecture: { ...RIEN_RELEVE_DEMO, type: 'CONTRAT', date: '2025-09-01' },
+		// Le taux stipulé est relevé sur ce document parce que `lirePreuve` ne le
+		// rend que depuis des conditions générales ou un contrat. Il reste une
+		// proposition : la fiche du débiteur le montre avec la pièce qui le porte,
+		// et rien ne s'applique aux factures avant un appui.
+		lecture: {
+			...RIEN_RELEVE_DEMO,
+			type: 'CONTRAT',
+			date: '2025-09-01',
+			tauxRetardPourcent: 12.5
+		},
 		classeeEn: 'CGV',
 		ajouteeLe: Date.parse('2026-06-15T10:30:00Z')
 	},
@@ -660,6 +675,7 @@ function pieceEnBase(piece: PieceDemo): PieceListee {
 		reference: lue.reference ?? undefined,
 		dateDocument: lue.date ?? undefined,
 		reserves: lue.reserves ?? undefined,
+		tauxRetardStipule: lue.tauxRetardPourcent ?? undefined,
 		constat: lue.constat
 	};
 

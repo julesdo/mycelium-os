@@ -107,6 +107,14 @@ export const enregistrerInterne = internalMutation({
  * ⚠️ UN TYPE `null` LAISSE `INDETERMINE`. C'est l'aveu que la lecture n'a pas
  * abouti, et il vaut mieux qu'un classement au hasard : une pièce indéterminée
  * ne compte dans aucun critère de solidité, donc ne fait franchir aucun seuil.
+ *
+ * ⚠️ ET LE TAUX LU S'ARRÊTE ICI, SUR LA PIÈCE. Il était extrait par le modèle,
+ * porté par `PreuveLue`, composé dans le constat affiché, et il mourait avant
+ * la base : le créancier dont les conditions générales stipulent un taux
+ * retombait sur le taux légal, c'est-à-dire que le produit SOUS-RÉCLAMAIT. Il
+ * arrive maintenant jusqu'à l'écran, et il n'en bouge pas seul : le taux qui
+ * entre dans un décompte s'écrit par `tauxContractuel.ts`, sur toutes les
+ * factures non soldées du débiteur, et ce chemin-là demande un geste.
  */
 export const consignerLectureInterne = internalMutation({
 	args: {
@@ -115,10 +123,15 @@ export const consignerLectureInterne = internalMutation({
 		reference: v.union(v.string(), v.null()),
 		dateDocument: v.union(v.string(), v.null()),
 		reserves: v.union(v.string(), v.null()),
+		/** Le taux stipulé, en pourcentage saisissable. `null` hors CGV et contrat. */
+		tauxRetardStipule: v.union(v.string(), v.null()),
 		constat: v.string()
 	},
 	returns: v.null(),
-	handler: async (ctx, { pieceId, type, reference, dateDocument, reserves, constat }) => {
+	handler: async (
+		ctx,
+		{ pieceId, type, reference, dateDocument, reserves, tauxRetardStipule, constat }
+	) => {
 		const piece = await ctx.db.get(pieceId);
 		if (piece === null) throw new ConvexError('Pièce introuvable');
 
@@ -128,6 +141,7 @@ export const consignerLectureInterne = internalMutation({
 			reference: reference ?? undefined,
 			dateDocument: dateDocument ?? undefined,
 			reserves: reserves ?? undefined,
+			tauxRetardStipule: tauxRetardStipule ?? undefined,
 			constat
 		});
 		return null;
@@ -280,6 +294,8 @@ export const listerPiecesDuDebiteur = authedQuery({
 			reference: v.optional(v.string()),
 			dateDocument: v.optional(v.string()),
 			reserves: v.optional(v.string()),
+			/** Le taux lu sur cette pièce. Une PROPOSITION : rien ne s'applique sans un geste. */
+			tauxRetardStipule: v.optional(v.string()),
 			constat: v.optional(v.string()),
 			ajouteeLe: v.number()
 		})
@@ -325,6 +341,7 @@ export const listerPiecesDuDebiteur = authedQuery({
 				reference: piece.reference,
 				dateDocument: piece.dateDocument,
 				reserves: piece.reserves,
+				tauxRetardStipule: piece.tauxRetardStipule,
 				constat: piece.constat,
 				ajouteeLe: piece.ajouteeLe
 			});

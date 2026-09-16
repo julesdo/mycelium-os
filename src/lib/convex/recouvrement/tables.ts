@@ -485,6 +485,19 @@ export const recouvrementTables = {
 		 * de bonne foi sur un document qu'on a lu à sa place.
 		 */
 		reserves: v.optional(v.string()),
+		/**
+		 * Le taux de retard stipulé, lu dans des CGV ou un contrat, en
+		 * pourcentage saisissable — « 12,50 ».
+		 *
+		 * ⚠️ IL RESTE UNE PROPOSITION, ET NE S'APPLIQUE À AUCUNE FACTURE. Le
+		 * taux qui entre dans un décompte vit sur `facturesVente.tauxContractuel`
+		 * et ne s'écrit que par `tauxContractuel.ts`, qui réécrit TOUTES les
+		 * factures non soldées du débiteur et enregistre même sous le plancher
+		 * légal. Appliqué en silence depuis une ligne lue par un modèle, il
+		 * ferait baisser ce qu'on réclame sur tout un client. Il se retient d'un
+		 * geste, avec la pièce qui le porte sous les yeux.
+		 */
+		tauxRetardStipule: v.optional(v.string()),
 		/** Ce que la lecture a conclu, affiché tel quel. Jamais reformulé. */
 		constat: v.optional(v.string()),
 		/**

@@ -40,6 +40,13 @@ export interface PieceAffichee {
 	readonly reference?: string;
 	readonly dateDocument?: string;
 	readonly reserves?: string;
+	/**
+	 * Le taux de retard stipulé, lu dans des CGV ou un contrat.
+	 *
+	 * ⚠️ UNE PROPOSITION, PAS UN TAUX EN VIGUEUR. Ce qui entre dans un décompte
+	 * vit sur les factures ; celui-ci attend un geste sur la fiche du débiteur.
+	 */
+	readonly tauxRetardStipule?: string;
 	readonly constat?: string;
 }
 

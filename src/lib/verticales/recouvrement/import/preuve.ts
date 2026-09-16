@@ -66,6 +66,15 @@ export type TypeReconnu = (typeof TYPES_RECONNUS)[number];
 /** Les types dont un taux d'intérêts de retard peut légitimement se lire. */
 const PORTEURS_DE_TAUX: readonly TypeReconnu[] = ['CGV', 'CONTRAT'];
 
+/**
+ * Les types sur lesquels la question de la signature de réception se pose.
+ *
+ * Exactement ceux que le prompt nomme : « sur un bon de livraison ou un bon de
+ * commande ». Un contrat signé l'est par construction, et le dire de nouveau
+ * n'apprendrait rien ; des CGV ne s'émargent pas.
+ */
+const PORTEURS_DE_RECEPTION: readonly TypeReconnu[] = ['BON_DE_LIVRAISON', 'BON_DE_COMMANDE'];
+
 export const documentPreuveSchema = z.object({
 	type: z
 		.enum([...TYPES_RECONNUS, 'INCONNU'])
@@ -120,6 +129,15 @@ export interface PreuveLue {
 	readonly date: string | null;
 	readonly referencesLiees: readonly string[];
 	readonly contrepartie: string | null;
+	/**
+	 * Le document porte-t-il une signature, un tampon, une mention d'acceptation ?
+	 * `null` quand la question ne se pose pas sur ce type de pièce.
+	 *
+	 * ⚠️ IL SE DIT DANS LE CONSTAT, ET IL NE PÈSE SUR AUCUN SCORE. Les critères
+	 * de pièces se comptent par TYPE présent : en faire un critère changerait le
+	 * barème, donc le score de toutes les créances déjà en base, sans que rien
+	 * n'ait été rejoué.
+	 */
 	readonly receptionSignee: boolean | null;
 	/** Le texte exact de la réserve, jamais reformulé. */
 	readonly reserves: string | null;
@@ -200,6 +218,25 @@ export function lirePreuve(brut: DocumentPreuve): PreuveLue {
 	// sur un document qu'on a lu à sa place.
 	if (brut.reservesEmises === true && brut.reserves !== null) {
 		morceaux.push(` Une réserve y est portée : « ${brut.reserves} »`);
+	}
+
+	// ⚠️ LA SIGNATURE DE RÉCEPTION SE DIT, ET SON ABSENCE AUSSI.
+	//
+	// Le modèle répond déjà à la question, sur chaque bon déposé, et la réponse
+	// n'était affichée nulle part : le gérant lisait « ce document est un bon de
+	// livraison » sans savoir si le sien porte l'émargement qui établit que la
+	// marchandise a bien été reçue. C'est ce qu'il vient vérifier.
+	//
+	// Un « non » s'écrit aussi, parce que c'est un angle mort : un bon non
+	// émargé compte dans le score exactement comme un bon signé, et croire son
+	// dossier plus solide qu'il ne l'est se paie une fois les frais engagés.
+	// Le constat le dit, le barème ne bouge pas.
+	if (PORTEURS_DE_RECEPTION.includes(type) && brut.receptionSignee !== null) {
+		morceaux.push(
+			brut.receptionSignee
+				? ' Il porte une signature, un tampon ou une mention d’acceptation.'
+				: ' Il ne porte ni signature, ni tampon, ni mention d’acceptation.'
+		);
 	}
 
 	if (tauxRetardPourcent !== null) {

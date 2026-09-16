@@ -94,6 +94,13 @@ export const lireLaPiece = internalAction({
 				reference: lue.reference,
 				dateDocument: lue.date,
 				reserves: lue.reserves,
+				// ⚠️ LE TAUX LU EST CONSIGNÉ, ET IL NE S'APPLIQUE À RIEN. `lirePreuve`
+				// ne le rend que depuis des CGV ou un contrat, et il entre sur la
+				// PIÈCE : le taux qui pèse sur un décompte vit sur la facture et ne
+				// s'écrit que par `tauxContractuel.ts`, après un geste du gérant. Le
+				// poser d'office ici réécrirait toutes les factures non soldées du
+				// débiteur depuis une ligne lue par un modèle.
+				tauxRetardStipule: lue.tauxRetardPourcent,
 				// ⚠️ LE CONSTAT DU DOMAINE, MOT POUR MOT. Le reformuler ici ferait un
 				// second endroit où le produit dit ce qu'il a lu dans une pièce.
 				constat: lue.constat
