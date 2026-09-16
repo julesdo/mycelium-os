@@ -297,13 +297,22 @@ function TauxLuSurUnePiece({
 					</p>
 					{/* ⚠️ `min-h-12` : 48 px, le plancher tactile du projet. Le geste est
 					    secondaire — l'action principale de cet écran est de constituer une
-					    créance — donc une pilule de verre, pas la pilule blanche. */}
+					    créance — donc une pilule de verre, pas la pilule blanche.
+
+					    ⚠️ ET LA PILULE DE VERRE S'ÉCRIT `verre verre-bouton`, LES DEUX.
+					    `verre-bouton` seul ne peint RIEN au repos : il ne porte qu'une
+					    transition et une règle `:hover`. Relevé au navigateur sur cette
+					    rangée, en clair comme en sombre : fond `rgba(0, 0, 0, 0)`, ombre
+					    `none`, bordure `0px`. Le bouton était du texte gras, et sur une
+					    tablette — le format de référence du produit — il n'y a pas de
+					    survol pour le révéler. C'est `.verre` qui porte le fond et
+					    l'arête au repos, dans les deux thèmes. */}
 					<Button
 						size="sm"
 						variant="transparent"
 						outline={false}
 						hoverable={false}
-						className="verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
+						className="verre verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
 						onClick={onRetenir}
 					>
 						Retenir {proposition.pourcentage} %
