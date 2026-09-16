@@ -123,7 +123,7 @@ const ACCUEIL_DEMO: AccueilAffiche = {
 			{
 				id: 'demo-notif',
 				titre: 'Prescription proche',
-				message: 'La facture FA-2021-0087 sera prescrite le 2026-10-14, dans 32 jours.',
+				message: 'La facture FA-2021-0087 sera prescrite le 14 octobre 2026, dans 32 jours.',
 				lien: '/app/debiteurs?d=demo-debiteur'
 			}
 		],
