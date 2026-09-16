@@ -153,7 +153,7 @@ export function FormulaireEtablissement({
 						variant="transparent"
 						outline={false}
 						hoverable={false}
-						className="verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
+						className="verre verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
 						onClick={() => setFactures(String(mesure.factures))}
 					>
 						Reprendre {mesure.factures.toLocaleString('fr-FR')}

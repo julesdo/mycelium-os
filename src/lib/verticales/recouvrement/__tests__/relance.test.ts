@@ -154,9 +154,16 @@ describe('le niveau 3 — indisponible, et il dit pourquoi', () => {
 		expect(relance.disponible).toBe(false);
 	});
 
-	it('NOMME le paramètre qui manque', () => {
+	it('NOMME ce qui manque, en français et pas en identifiant', () => {
+		// ⚠️ CE TEST CHERCHAIT LA CLÉ DE CODE `mentionsObligatoiresInjonction`, et le
+		// blocage la portait telle quelle à l'écran, guillemets compris. L'intention
+		// n'a pas changé — un refus NOMME ce qui manque — mais elle se vérifie sur ce
+		// que le gérant lit, pas sur ce que le développeur a tapé.
 		const relance = composerRelance(3, BASE);
-		expect(!relance.disponible && relance.blocages.join(' ')).toMatch(/mentionsObligatoires/i);
+		const blocages = !relance.disponible && relance.blocages.join(' ');
+		expect(blocages).toMatch(/mentions obligatoires/i);
+		expect(blocages).toMatch(/mise en demeure/i);
+		expect(blocages).not.toMatch(/mentionsObligatoires/);
 	});
 });
 
@@ -192,9 +199,7 @@ describe('le coupe-circuit', () => {
 	});
 
 	it('suspend aussi sur un débiteur radié', () => {
-		expect(
-			composerRelance(1, { ...BASE, santeDebiteur: 'RADIEE' }).disponible
-		).toBe(false);
+		expect(composerRelance(1, { ...BASE, santeDebiteur: 'RADIEE' }).disponible).toBe(false);
 	});
 });
 

@@ -147,7 +147,7 @@ export function RechercheRegistre({
 					variant="transparent"
 					outline={false}
 					hoverable={false}
-					className="verre-bouton min-h-12 shrink-0 rounded-full px-3 text-cladd-2xs"
+					className="verre verre-bouton min-h-12 shrink-0 rounded-full px-3 text-cladd-2xs"
 					onClick={() => setOuvertALaMain(true)}
 				>
 					Changer

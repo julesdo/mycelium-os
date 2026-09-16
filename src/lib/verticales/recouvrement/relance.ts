@@ -371,8 +371,13 @@ function miseEnDemeure(): Relance {
 			'composée : une mise en demeure irrégulière ne produit pas les effets qu’on lui prête. ' +
 			'Ce verrou se lève par le relevé de ces mentions sur une source publique citable, et ' +
 			'par leur contrôle.',
+		// ⚠️ NI CLÉ DE CODE, NI NOTE DE DÉVELOPPEUR À L'ÉCRAN. Le blocage disait
+		// « « mentionsObligatoiresInjonction » : … » suivi de sept lignes écrites pour
+		// nous. Le gérant a besoin de savoir CE QUI MANQUE, pas comment on l'a nommé.
 		blocages: [
-			p === undefined ? `« ${cle} » : paramètre absent du référentiel.` : `« ${cle} » : ${p.note}`
+			p === undefined
+				? 'Les mentions obligatoires d’une mise en demeure ne sont pas relevées au référentiel juridique de ce logiciel.'
+				: 'Les mentions obligatoires d’une mise en demeure sont relevées, mais leur source n’a pas encore été contrôlée.'
 		],
 		coutDeLAttente: COUT_SANS_MISE_EN_DEMEURE
 	};

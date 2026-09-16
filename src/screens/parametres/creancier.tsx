@@ -313,7 +313,7 @@ export function FormulaireCreancier({
 						variant="transparent"
 						outline={false}
 						hoverable={false}
-						className="verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
+						className="verre verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
 						loading={recherche.phase === 'EN_COURS'}
 						readOnly={recherche.phase === 'EN_COURS'}
 						onClick={() => void chercher()}
@@ -383,7 +383,7 @@ export function FormulaireCreancier({
 								variant="transparent"
 								outline={false}
 								hoverable={false}
-								className="verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
+								className="verre verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
 								onClick={() => setCorrection(true)}
 							>
 								Corriger
