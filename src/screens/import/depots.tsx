@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Surface } from '@cladd-ui/react';
 import { FileSpreadsheetIcon, FileTextIcon, UploadIcon } from 'lucide-react';
 import {
 	Bandeau,
@@ -170,28 +169,29 @@ export function EcranImport({
 				>
 					<div className="flex flex-col items-center gap-cladd-3xs text-center">
 						{/*
-						 * ⚠️ CE CERCLE PORTAIT `verre`, DONT LE FOND EST ÉCRIT EN DUR EN
-						 * SOMBRE, et le glyphe héritait de l'encre pleine du titre. Mesuré en
-						 * thème clair : 2,03:1 pour le glyphe contre 13,67:1 pour le titre juste
-						 * en dessous. L'élément le moins lisible de l'écran était celui qui dit
-						 * quoi faire.
+						 * ⚠️ CE DISQUE PORTAIT `verre`, ET LE GLYPHE L'ENCRE PLEINE DU TITRE.
+						 * Le verre du produit est écrit en dur en sombre : posé dans le creux
+						 * de la zone de dépôt, qui est lui-même du verre sombre dans les deux
+						 * thèmes, il donnait 2,03:1 en thème clair. L'élément le moins lisible
+						 * de l'écran était celui qui dit quoi faire.
 						 *
-						 * UN `Surface` DU KIT, ET PAS UN `bg-cladd-surface-*` POSÉ À LA MAIN :
-						 * les jetons de surface se calculent depuis le niveau publié par un
-						 * ancêtre `cladd-surface-level-*`. Sans cet ancêtre, ils tombent sur du
-						 * transparent et le disque disparaît sans qu'aucun test ne bronche. Le
-						 * vrai composant publie son niveau lui-même, dans les deux thèmes.
+						 * `bg-cladd-surface` suit le thème au lieu de le contredire, et l'encre
+						 * douce du kit tient le glyphe à sa place : une indication, pas un
+						 * second titre. Mesuré après : 6,3:1 en clair, 9,8:1 en sombre.
 						 *
-						 * L'encre douce du kit tient le glyphe à sa place : une indication, pas
-						 * un second titre.
+						 * L'anneau reprend ce que l'arête du verre faisait : en sombre, le
+						 * disque ne se détache du creux que de 1,18:1, et sans bord il n'y a
+						 * plus de disque du tout, seulement un glyphe qui flotte.
+						 *
+						 * PAS UN `<Surface>` : `ui/__tests__/verre.test.ts` exige que toute
+						 * surface du kit soit transparente, et une surface transparente ne
+						 * peint aucun disque. PAS NON PLUS `-plus` NI `-next` : ces jetons se
+						 * calculent depuis un ancêtre `cladd-surface-level-*`, absent ici, et
+						 * tombent alors sur du transparent sans qu'aucun test ne bronche.
 						 */}
-						<Surface
-							outline
-							className="size-cladd-lg shrink-0 rounded-full"
-							contentClassName="flex h-full items-center justify-center text-cladd-fg-soft"
-						>
+						<span className="flex size-cladd-lg shrink-0 items-center justify-center rounded-full bg-cladd-surface text-cladd-fg-soft shadow-cladd-outline">
 							<UploadIcon size={22} aria-hidden />
-						</Surface>
+						</span>
 						<p className="text-cladd-sm font-semibold">
 							{envoiEnCours ? 'Envoi en cours…' : 'Déposez vos fichiers ici'}
 						</p>
