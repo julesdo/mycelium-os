@@ -1,3 +1,4 @@
+import { VALIDITE_INVITATION_EN_TOUTES_LETTRES } from '../../lib/config/invitations';
 import { PageEcran, type Lecture } from '../../ui';
 import { TITRE_ECRAN } from '../titres';
 import { FormulaireInvitation, type RoleEquipe } from './equipe';
@@ -8,7 +9,8 @@ export interface InvitationAffichee {
 	/** Plus aucune place : invitations en attente comprises. */
 	readonly complet: boolean;
 	readonly places: number;
-	readonly onInviter: (email: string, role: RoleEquipe) => Promise<void>;
+	/** Rend le LIEN d'invitation, que la page affiche et fait copier. */
+	readonly onInviter: (email: string, role: RoleEquipe) => Promise<string>;
 }
 
 /**
@@ -41,7 +43,11 @@ export function EcranInviter({ donnees }: { donnees: Lecture<InvitationAffichee>
 				genre: 'poussee',
 				retour: { vers: '/app/equipe', libelle: TITRE_ECRAN.equipe },
 				titre: 'Inviter un collègue',
-				sousTitre: 'Il recevra un lien valable sept jours, et créera son mot de passe lui-même.'
+				// ⚠️ LA DURÉE VIENT DU MÊME ENDROIT QUE LE SERVEUR. Elle était écrite
+				// en toutes lettres ici et calculée deux fois dans `organizations.ts` :
+				// le jour où le serveur passe à trois jours, l'écran continuerait
+				// d'en promettre sept, et rien ne casserait.
+				sousTitre: `Il recevra un lien valable ${VALIDITE_INVITATION_EN_TOUTES_LETTRES}, et créera son mot de passe lui-même.`
 			}}
 			etat={donnees.etat}
 		>
