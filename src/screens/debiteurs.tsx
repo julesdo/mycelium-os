@@ -1,10 +1,10 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
 import { Chip, ListButton } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import {
 	Avatar,
 	BoutonPrincipal,
+	Lien,
 	CarteListe,
 	MaitreDetail,
 	PageEcran,
@@ -13,6 +13,7 @@ import {
 	type Lecture
 } from '../ui';
 import { DetailDebiteur } from './debiteur-detail';
+import { TITRE_ECRAN } from './titres';
 
 /** Une rangée de la liste : ce que la rangée lit d'un débiteur de `listerDebiteurs`. */
 export interface LigneDebiteur {
@@ -61,7 +62,7 @@ export function EcranDebiteurs({
 	 */
 	enfant: ReactNode;
 }) {
-	const entete = { genre: 'onglet', titre: 'Vos débiteurs' } as const;
+	const entete = { genre: 'onglet', titre: TITRE_ECRAN.debiteurs } as const;
 
 	/**
 	 * ⚠️ UNE PAGE OUVERTE PASSE PAR `MaitreDetail`, JAMAIS PAR `TwoPane`. Celui-ci
@@ -101,7 +102,7 @@ export function EcranDebiteurs({
 							'Sélectionnez les factures d’un même débiteur pour en faire une créance.'
 						],
 						action: (
-							<BoutonPrincipal as={Link} to="/app/import-factures">
+							<BoutonPrincipal as={Lien} to="/app/import-factures">
 								<UploadIcon />
 								Importer mes factures
 							</BoutonPrincipal>

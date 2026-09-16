@@ -19,6 +19,7 @@ import {
 	useDeuxVolets,
 	type Lecture
 } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 import type { EtatCritere } from './creancier';
 
 /** Les cinq sections des réglages, chacune une route de la mise en page `_reglages`. */
@@ -75,7 +76,7 @@ export function EcranReglages({
 	 * masquée, et l'anneau désignerait ce que personne ne voit.
 	 */
 	const selectionnee = sectionOuverte ?? (deuxVolets ? 'etablissement' : null);
-	const entete = { genre: 'onglet', titre: 'Réglages' } as const;
+	const entete = { genre: 'onglet', titre: TITRE_ECRAN.reglages } as const;
 
 	if (donnees.etat !== 'pret') {
 		return (
@@ -155,8 +156,8 @@ export function EcranReglages({
 
 					<ListeAnalyses>
 						{/* Deux états exclusifs : c'est un `Segmented`, pas un bouton qui
-						    annonce la bascule. « Passer en sombre » oblige à déduire l'état
-						    courant depuis l'action proposée, ce qui se lit à l'envers. */}
+    annonce la bascule. « Passer en sombre » oblige à déduire l'état
+    courant depuis l'action proposée, ce qui se lit à l'envers. */}
 						<ListItem>
 							<span className="text-cladd-fg-soft">Apparence</span>
 							<Segmented className="ml-auto" activeColor="neutral" activeVariant="solid">
@@ -171,7 +172,7 @@ export function EcranReglages({
 							</Segmented>
 						</ListItem>
 						{/* La rangée du kit, sans chevron : elle ne pousse aucune page. Même
-						    apparence que les rangées de `ListeAnalyses`. */}
+    apparence que les rangées de `ListeAnalyses`. */}
 						<ListButton
 							icon={<LogOutIcon />}
 							className="verre-bouton"

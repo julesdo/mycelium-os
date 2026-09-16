@@ -1,4 +1,5 @@
 import { BilanImport, PageEcran, type DepotAffiche, type Lecture } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 
 /**
  * LE BILAN D'UN DÉPÔT — une page, plus une carte dans une pile.
@@ -28,7 +29,11 @@ export function EcranDepot({ donnees }: { donnees: Lecture<DepotAffiche> }) {
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/import-factures', libelle: 'Importer', masqueEnVolets: true },
+				retour: {
+					vers: '/app/import-factures',
+					libelle: TITRE_ECRAN.imports,
+					masqueEnVolets: true
+				},
 				titre: depot?.filename ?? 'Dépôt',
 				sousTitre: depot?.etape ?? undefined
 			}}

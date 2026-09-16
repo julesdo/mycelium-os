@@ -1,5 +1,4 @@
-import { Link } from '@tanstack/react-router';
-import { BoutonPrincipal, BoutonSecondaire } from '../ui';
+import { BoutonPrincipal, BoutonSecondaire, Lien } from '../ui';
 
 /**
  * LES ÉCRANS DE PASSAGE : la page introuvable et l'écran d'erreur.
@@ -26,7 +25,7 @@ export function EcranIntrouvable() {
 			<p className="text-cladd-xs text-cladd-fg-soft">
 				Le lien est peut-être ancien. Revenez à l&rsquo;accueil pour retrouver vos créances.
 			</p>
-			<BoutonPrincipal as={Link} to="/app">
+			<BoutonPrincipal as={Lien} to="/app">
 				Revenir à l&rsquo;accueil
 			</BoutonPrincipal>
 		</div>
@@ -55,7 +54,7 @@ export function EcranEnErreur() {
 				Vos créances et vos décomptes sont intacts : c&rsquo;est l&rsquo;affichage qui a échoué, pas
 				la mesure.
 			</p>
-			<BoutonPrincipal as={Link} to="/app">
+			<BoutonPrincipal as={Lien} to="/app">
 				Revenir à l&rsquo;accueil
 			</BoutonPrincipal>
 			<BoutonSecondaire onClick={() => window.location.reload()}>

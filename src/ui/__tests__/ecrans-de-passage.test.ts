@@ -42,7 +42,7 @@ describe('les écrans de passage', () => {
 
 	it('offrent chacun un chemin vers l’accueil, en action principale', () => {
 		const ecrans = lire('screens/passage.tsx');
-		const versAccueil = ecrans.match(/<BoutonPrincipal as=\{Link\} to="\/app">/g) ?? [];
+		const versAccueil = ecrans.match(/<BoutonPrincipal as=\{Lien\} to="\/app">/g) ?? [];
 		expect(versAccueil).toHaveLength(2);
 	});
 

@@ -33,6 +33,7 @@ import {
 	pluriel,
 	type Lecture
 } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 
 /**
  * L'écran d'équipe, sans backend.
@@ -486,7 +487,7 @@ export function EcranEquipe({ donnees }: { donnees: Lecture<ComponentProps<typeo
 		<PageEcran
 			entete={{
 				genre: 'onglet',
-				titre: 'Équipe',
+				titre: TITRE_ECRAN.equipe,
 				// ⚠️ « ET AUX CRÉANCES », PLUS « ET AUX TAUX ». Le sous-titre parlait
 				// encore la langue d'EGalim, que la salle d'exposition avait déjà
 				// corrigée de son côté.

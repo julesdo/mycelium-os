@@ -15,6 +15,7 @@ import {
 	type EnteteEcran,
 	type Lecture
 } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 
 /** Les deux chemins par lesquels les factures arrivent. */
 export type ModeDepot = 'EXPORT_COMPTABLE' | 'FACTURE_DEPOSEE';
@@ -113,7 +114,7 @@ export function EcranImport({
 }) {
 	const entete: EnteteEcran = {
 		genre: 'onglet',
-		titre: 'Importer vos factures',
+		titre: TITRE_ECRAN.imports,
 		sousTitre: 'Vos factures de vente, et les règlements déjà reçus'
 	};
 

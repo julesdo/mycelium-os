@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router';
 import { Button } from '@cladd-ui/react';
 import {
 	AlertTriangleIcon,
@@ -25,6 +24,7 @@ import {
 	eurosCentimes,
 	pluriel,
 	BoutonPrincipal,
+	Lien,
 	PageEcran,
 	type Lecture,
 	type ActionRonde,
@@ -163,6 +163,9 @@ export interface AccueilAffiche {
  */
 const MODE_COMPACT = { limite: 3, versDetail: '/app/revelation' } as const;
 
+/** Sans titre dessiné, le hero en tient lieu ; « Accueil » est le nom que portera le retour d'une page ouverte d'ici. */
+const ENTETE_ACCUEIL = { genre: 'aucun', titre: 'Accueil' } as const;
+
 export function EcranAccueil({ donnees }: { donnees: Lecture<AccueilAffiche> }) {
 	/**
 	 * ⚠️ L'ISSUE N'EST PAS L'ACCUEIL, PUISQU'ON Y EST. Un lien vers `/app` depuis
@@ -172,10 +175,10 @@ export function EcranAccueil({ donnees }: { donnees: Lecture<AccueilAffiche> }) 
 	if (donnees.etat !== 'pret') {
 		return (
 			<PageEcran
-				entete={{ genre: 'aucun' }}
+				entete={ENTETE_ACCUEIL}
 				etat={donnees.etat}
 				issue={
-					<BoutonPrincipal as={Link} to="/app/debiteurs">
+					<BoutonPrincipal as={Lien} to="/app/debiteurs">
 						Voir mes débiteurs
 					</BoutonPrincipal>
 				}
@@ -212,7 +215,7 @@ export function EcranAccueil({ donnees }: { donnees: Lecture<AccueilAffiche> }) 
 	];
 
 	return (
-		<PageEcran entete={{ genre: 'aucun' }}>
+		<PageEcran entete={ENTETE_ACCUEIL}>
 			{/* Un seul enfant : la colonne de la coquille poserait sinon son espacement entre le hero et la suite. */}
 			<div>
 				<PageHero className="mx-auto w-full max-w-2xl">
@@ -378,7 +381,7 @@ export function EcranAccueil({ donnees }: { donnees: Lecture<AccueilAffiche> }) 
 									  ramènerait la couleur qu'on vient d'enlever.
 									*/}
 									<Button
-										as={Link}
+										as={Lien}
 										to="/app/import-factures"
 										variant="transparent"
 										outline={false}
@@ -457,8 +460,8 @@ function AvisSurveillance({ surveillance }: { surveillance: EtatSurveillance }) 
 function LienDetail({ actif, children }: { actif: boolean; children: React.ReactNode }) {
 	if (!actif) return <div className="block">{children}</div>;
 	return (
-		<Link to="/app/revelation" className="block">
+		<Lien to="/app/revelation" className="block">
 			{children}
-		</Link>
+		</Lien>
 	);
 }

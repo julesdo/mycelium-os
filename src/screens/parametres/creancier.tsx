@@ -2,6 +2,7 @@ import { useState, type ComponentProps } from 'react';
 import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
 import { BoutonPrincipal, SectionEcran, Champ, PageEcran, type Lecture } from '../../ui';
+import { TITRE_ECRAN } from '../titres';
 
 /** Les trois états d'un critère de qualification. Jamais présumé favorablement. */
 export type EtatCritere = 'ok' | 'ko' | 'unknown';
@@ -139,7 +140,7 @@ export function EcranCreancier({ donnees }: { donnees: Lecture<CreancierAffiche>
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/parametres', libelle: 'Réglages', masqueEnVolets: true },
+				retour: { vers: '/app/parametres', libelle: TITRE_ECRAN.reglages, masqueEnVolets: true },
 				titre: 'Votre entreprise sur un décompte',
 				sousTitre: 'Ce qui sera cité sur les pièces qui partent chez un tiers.'
 			}}

@@ -1,8 +1,9 @@
-import { Link, type LinkProps } from '@tanstack/react-router';
+import type { LinkProps } from '@tanstack/react-router';
 import { Chip, Surface, SurfaceCut } from '@cladd-ui/react';
 import { AlertTriangleIcon, ChevronRightIcon, InfoIcon } from 'lucide-react';
 import { cn } from './cn';
 import { eurosCentimes, pluriel } from './format';
+import { Lien } from './lien';
 
 /**
  * Le flux de surveillance — l'écran qui donne une raison d'ouvrir le produit.
@@ -117,7 +118,7 @@ function LigneEvenement({
 		cible === undefined
 			? {}
 			: ({
-					as: Link,
+					as: Lien,
 					// Une facture n'a pas d'écran : c'est le volet de son débiteur qui
 					// la porte. Voir `CibleEvenement`, qui n'a donc que deux genres.
 					to: cible.genre === 'CREANCE' ? '/app/creance/$id' : '/app/debiteurs',
@@ -163,9 +164,7 @@ function LigneEvenement({
 					{evenement.explication}
 				</p>
 
-				{compact ? null : (
-					<p className="text-cladd-xs text-cladd-fg-softer">{evenement.action}</p>
-				)}
+				{compact ? null : <p className="text-cladd-xs text-cladd-fg-softer">{evenement.action}</p>}
 			</div>
 
 			{evenement.montant === null ? null : (
@@ -270,13 +269,13 @@ export function FluxEvenements({
 				    sans chiffre ne dit pas s'il reste deux lignes ou quatre-vingts,
 				    donc on ne sait pas si ça vaut le geste. */}
 				{restants > 0 && versDetail !== undefined ? (
-					<Link
+					<Lien
 						to={versDetail}
 						className="verre verre-actif flex min-h-cladd-md items-center justify-center gap-1.5 rounded-cladd-xl text-cladd-xs font-medium transition-colors"
 					>
 						Voir {restants} autre{pluriel(restants)}
 						<ChevronRightIcon size={16} aria-hidden />
-					</Link>
+					</Lien>
 				) : null}
 			</div>
 
@@ -303,7 +302,12 @@ export function FluxEvenements({
 			) : (
 				<>
 					{hypotheses.length > 0 ? (
-						<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+						<Surface
+							variant="transparent"
+							outline={false}
+							className="verre-carte rounded-cladd-xl"
+							contentClassName="flex gap-cladd-3xs p-cladd-2xs"
+						>
 							<InfoIcon className="mt-1 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
 							<div className="flex min-w-0 flex-col gap-1.5">
 								<p className="text-cladd-xs font-semibold">Ce que le logiciel a supposé</p>
@@ -317,7 +321,12 @@ export function FluxEvenements({
 					) : null}
 
 					{anglesMorts.length > 0 ? (
-						<Surface variant="transparent" outline={false} className="verre-carte rounded-cladd-xl" contentClassName="flex gap-cladd-3xs p-cladd-2xs">
+						<Surface
+							variant="transparent"
+							outline={false}
+							className="verre-carte rounded-cladd-xl"
+							contentClassName="flex gap-cladd-3xs p-cladd-2xs"
+						>
 							<AlertTriangleIcon className="mt-1 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
 							<div className="flex min-w-0 flex-col gap-1.5">
 								<p className="text-cladd-xs font-semibold">Ce que le logiciel ne surveille pas</p>
@@ -355,7 +364,8 @@ function AvertissementReplie({
 
 	const morceaux: string[] = [];
 	if (hypotheses > 0) morceaux.push(`${hypotheses} hypothèse${pluriel(hypotheses)}`);
-	if (anglesMorts > 0) morceaux.push(`${anglesMorts} angle${pluriel(anglesMorts)} mort${pluriel(anglesMorts)}`);
+	if (anglesMorts > 0)
+		morceaux.push(`${anglesMorts} angle${pluriel(anglesMorts)} mort${pluriel(anglesMorts)}`);
 
 	const contenu = (
 		<>
@@ -374,8 +384,8 @@ function AvertissementReplie({
 
 	if (versDetail === undefined) return <div className={habits}>{contenu}</div>;
 	return (
-		<Link to={versDetail} className={cn(habits, 'verre-carte-actif transition-colors')}>
+		<Lien to={versDetail} className={cn(habits, 'verre-carte-actif transition-colors')}>
 			{contenu}
-		</Link>
+		</Lien>
 	);
 }

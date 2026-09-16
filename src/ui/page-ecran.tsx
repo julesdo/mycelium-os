@@ -1,9 +1,10 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Link, type LinkProps } from '@tanstack/react-router';
+import type { LinkProps } from '@tanstack/react-router';
 import { ListItem } from '@cladd-ui/react';
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { cn } from './cn';
 import { EmptyState } from './empty-state';
+import { Lien, TitreEcran } from './lien';
 import { EnteteDetail, ListeAnalyses } from './navigation';
 import { Page, PageBody, PageHeader } from './page';
 import { TwoPane } from './two-pane';
@@ -82,7 +83,14 @@ export type EnteteEcran =
 			readonly titre: string;
 			readonly sousTitre?: string;
 	  }
-	| { readonly genre: 'aucun' };
+	| {
+			readonly genre: 'aucun';
+			/**
+			 * Jamais dessiné : le hero en tient lieu. Publié quand même, pour que la
+			 * page ouverte d'ici dise « Accueil » sur son retour.
+			 */
+			readonly titre: string;
+	  };
 
 /**
  * Ce que dit un écran vide. Règle d'écran n° 4 : il montre le chemin.
@@ -134,25 +142,43 @@ type CorpsEcran =
 /** Assez pour lire « une liste arrive », pas assez pour annoncer combien. */
 const RANGEES_D_ATTENTE = 4;
 
-export function PageEcran({
+type ProprietesEcran = {
+	entete: EnteteEcran;
+	etat?: EtatEcran;
+	/** L'issue de l'état d'erreur. Absente ou `null` : l'accueil pour un onglet, la seule pastille de retour pour une page poussée. */
+	issue?: ReactNode;
+} & CorpsEcran;
+
+/**
+ * ⚠️ L'ÉCRAN PUBLIE SON TITRE AUTOUR DE TOUT CE QU'IL REND. Les liens de
+ * l'en-tête, de la liste, du volet de preuve et de sa feuille le lisent
+ * (`Lien`), et la page qu'ils ouvrent le relit sur son retour. C'est le titre
+ * de l'écran, jamais l'élément choisi : la créance ouverte depuis le volet d'un
+ * débiteur revient à « Vos débiteurs », le nom que la liste porte après un
+ * rechargement aussi.
+ */
+export function PageEcran(proprietes: ProprietesEcran) {
+	return (
+		<TitreEcran value={proprietes.entete.titre}>
+			<CorpsPageEcran {...proprietes} />
+		</TitreEcran>
+	);
+}
+
+function CorpsPageEcran({
 	entete,
 	etat = 'pret',
 	issue,
 	volets,
 	disposition,
 	children
-}: {
-	entete: EnteteEcran;
-	etat?: EtatEcran;
-	/** L'issue de l'état d'erreur. Absente ou `null` : l'accueil. */
-	issue?: ReactNode;
-} & CorpsEcran) {
+}: ProprietesEcran) {
 	const sansEntete = entete.genre === 'aucun';
 
 	if (etat === 'pret' && volets !== undefined) {
 		return (
 			<Page>
-				<Entete entete={entete} />
+				<Entete entete={entete} donneesPretes />
 				<Volets
 					liste={volets.liste}
 					preuve={volets.preuve}
@@ -166,7 +192,7 @@ export function PageEcran({
 	if (etat === 'attente' && (volets !== undefined || disposition === 'volets')) {
 		return (
 			<Page>
-				<Entete entete={entete} />
+				<Entete entete={entete} donneesPretes={false} />
 				<Volets
 					liste={
 						<PageBody>
@@ -181,14 +207,14 @@ export function PageEcran({
 
 	return (
 		<Page>
-			<Entete entete={entete} />
+			<Entete entete={entete} donneesPretes={etat === 'pret'} />
 			<PageBody>
 				{etat === 'pret' ? (
 					<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">{children}</div>
 				) : etat === 'attente' ? (
 					<Attente sansEntete={sansEntete} pleineLargeur={false} />
 				) : etat === 'erreur' ? (
-					<Erreur sansEntete={sansEntete} issue={issue} />
+					<Erreur sansEntete={sansEntete} poussee={entete.genre === 'poussee'} issue={issue} />
 				) : (
 					// Le vide et l'erreur REMPLACENT l'écran de travail : ils se lisent
 					// seuls, en colonne, même sur un écran à deux volets.
@@ -199,7 +225,7 @@ export function PageEcran({
 	);
 }
 
-function Entete({ entete }: { entete: EnteteEcran }) {
+function Entete({ entete, donneesPretes }: { entete: EnteteEcran; donneesPretes: boolean }) {
 	if (entete.genre === 'aucun') return null;
 	if (entete.genre === 'onglet') {
 		return (
@@ -213,6 +239,7 @@ function Entete({ entete }: { entete: EnteteEcran }) {
 			retourRecherche={entete.retour.recherche}
 			retourLibelle={entete.retour.libelle}
 			retourMasqueEnVolets={entete.retour.masqueEnVolets}
+			donneesPretes={donneesPretes}
 			titre={entete.titre}
 			sousTitre={entete.sousTitre}
 		/>
@@ -298,8 +325,20 @@ function Attente({ sansEntete, pleineLargeur }: { sansEntete: boolean; pleineLar
  *
  * ⚠️ L'ALERTE NE PORTE QUE CE QUI S'EST PASSÉ. Les boutons placés dedans étaient
  * lus avec elle, comme une phrase de plus.
+ *
+ * ⚠️ UNE PAGE POUSSÉE A DÉJÀ SA SORTIE. Sa pastille de retour reste au-dessus de
+ * l'erreur ; lui ajouter « Revenir à l'accueil » donnait deux sorties vers deux
+ * destinations. Sans issue nommée, elle ne garde que le rechargement en second.
  */
-function Erreur({ sansEntete, issue }: { sansEntete: boolean; issue: ReactNode }) {
+function Erreur({
+	sansEntete,
+	poussee,
+	issue
+}: {
+	sansEntete: boolean;
+	poussee: boolean;
+	issue: ReactNode;
+}) {
 	// Sans en-tête, sur l'accueil, ce titre est le seul de la page.
 	const Titre = sansEntete ? 'h1' : 'h2';
 
@@ -316,11 +355,12 @@ function Erreur({ sansEntete, issue }: { sansEntete: boolean; issue: ReactNode }
 					Rien de ce qui est enregistré n’est touché par cet échec.
 				</p>
 			</div>
-			{issue ?? (
-				<BoutonPrincipal as={Link} to="/app">
-					Revenir à l’accueil
-				</BoutonPrincipal>
-			)}
+			{issue ??
+				(poussee ? null : (
+					<BoutonPrincipal as={Lien} to="/app">
+						Revenir à l’accueil
+					</BoutonPrincipal>
+				))}
 			<BoutonSecondaire onClick={() => window.location.reload()}>
 				Recharger la page
 			</BoutonSecondaire>

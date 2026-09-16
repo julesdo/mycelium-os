@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { BoutonPrincipal } from '../../ui';
-import { Link } from '@tanstack/react-router';
+import { BoutonPrincipal, Lien } from '../../ui';
 import { Surface, Chip } from '@cladd-ui/react';
 import { CheckIcon, MinusIcon } from 'lucide-react';
 import { CE_QUI_EST_INCLUS, type ColonneOffre } from '../../lib/config/tarifs';
@@ -176,7 +175,7 @@ export function OuvertureEnCours() {
 				et nous reviendrons vers vous avant toute facturation.
 			</span>
 			<span className="flex flex-wrap gap-cladd-3xs pt-cladd-3xs">
-				<BoutonPrincipal as={Link} to="/app/import-factures">
+				<BoutonPrincipal as={Lien} to="/app/import-factures">
 					Déposer mes factures
 				</BoutonPrincipal>
 			</span>

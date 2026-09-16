@@ -1,8 +1,8 @@
 import { Chip } from '@cladd-ui/react';
-import { Link } from '@tanstack/react-router';
 import { EyeOffIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
+	Lien,
 	LigneAnalyse,
 	ListeAnalyses,
 	PageBody,
@@ -90,7 +90,7 @@ export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffich
 							'Vous consignez ce qui se passe ; le rail avance tout seul.'
 						],
 						action: (
-							<BoutonPrincipal as={Link} to="/app/debiteurs">
+							<BoutonPrincipal as={Lien} to="/app/debiteurs">
 								Voir mes débiteurs
 							</BoutonPrincipal>
 						)

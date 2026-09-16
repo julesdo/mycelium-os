@@ -1,7 +1,8 @@
-import { Link, type LinkProps } from '@tanstack/react-router';
+import type { LinkProps } from '@tanstack/react-router';
 import { List, ListButton, ListTitle, Surface } from '@cladd-ui/react';
 import { CheckIcon, ChevronRightIcon } from 'lucide-react';
 import { pluriel } from './format';
+import { Lien } from './lien';
 
 /**
  * CE QUI VOUS EMPÊCHE D'AGIR — dit AVANT de se cogner dedans.
@@ -170,7 +171,13 @@ function Anneau({ faits, total }: { faits: number; total: number }) {
  * le nombre restant : un anneau qui se remplit pendant que son dénominateur
  * bouge ne se lit pas comme une progression.
  */
-export function CeQuiManque({ verrous, total = 3 }: { verrous: readonly Verrou[]; total?: number }) {
+export function CeQuiManque({
+	verrous,
+	total = 3
+}: {
+	verrous: readonly Verrou[];
+	total?: number;
+}) {
 	if (verrous.length === 0) return null;
 
 	return (
@@ -191,7 +198,7 @@ export function CeQuiManque({ verrous, total = 3 }: { verrous: readonly Verrou[]
 				{verrous.map((verrou) => (
 					<ListButton
 						key={verrou.cle}
-						as={Link}
+						as={Lien}
 						to={verrou.vers}
 						icon={
 							/* Un rond VIDE : l'étape n'est pas franchie. Le rond plein et le

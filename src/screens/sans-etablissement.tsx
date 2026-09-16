@@ -1,5 +1,4 @@
-import { Link } from '@tanstack/react-router';
-import { BoutonPrincipal, type VideEcran } from '../ui';
+import { BoutonPrincipal, Lien, type VideEcran } from '../ui';
 
 /**
  * AUCUN ÉTABLISSEMENT ACTIF.
@@ -18,7 +17,7 @@ export function sansEtablissement(explication: string): { readonly vide: VideEcr
 			titre: 'Aucun établissement actif',
 			explication,
 			action: (
-				<BoutonPrincipal as={Link} to="/bienvenue">
+				<BoutonPrincipal as={Lien} to="/bienvenue">
 					Créer votre entreprise
 				</BoutonPrincipal>
 			)

@@ -21,6 +21,7 @@ import {
 	useDeuxVolets,
 	type Lecture
 } from '../ui';
+import { TITRE_ECRAN } from './titres';
 
 /**
  * L'ÉCRAN DE CRÉANCE — un résumé, et sept portes.
@@ -173,9 +174,19 @@ export function EcranCreance({
 	const detailOuvert = analyseOuverte !== null;
 
 	if (donnees.etat !== 'pret') {
+		// L'identifiant du débiteur n'est pas encore connu : le repli ouvre la liste, sous le même nom.
 		return (
 			<MaitreDetail
-				maitre={<PageEcran entete={{ genre: 'onglet', titre: 'Créance' }} etat={donnees.etat} />}
+				maitre={
+					<PageEcran
+						entete={{
+							genre: 'poussee',
+							retour: { vers: '/app/debiteurs', libelle: TITRE_ECRAN.debiteurs },
+							titre: 'Créance'
+						}}
+						etat={donnees.etat}
+					/>
+				}
 				detail={detail}
 				detailOuvert={detailOuvert}
 			/>
@@ -201,7 +212,19 @@ export function EcranCreance({
 			maitre={
 				<PageEcran
 					entete={{
-						genre: 'onglet',
+						genre: 'poussee',
+						/*
+  ⚠️ UNE PAGE POUSSÉE, ET PLUS UN ONGLET. Une créance s'ouvre depuis
+  l'accueil, les procédures ou le volet de son débiteur, et n'avait aucun
+  retour. Elle revient là d'où l'on vient par l'historique ; ouverte par un
+  lien direct, elle rouvre son débiteur, sous le nom de la liste. Son titre
+  porte le débiteur : la page s'identifie seule.
+*/
+						retour: {
+							vers: '/app/debiteurs',
+							recherche: { d: creance.debiteurId },
+							libelle: TITRE_ECRAN.debiteurs
+						},
 						titre: creance.debiteur,
 						sousTitre: `${creance.factures.length} facture${pluriel(creance.factures.length)} · ${eurosCentimes(
 							creance.principalRestantDu

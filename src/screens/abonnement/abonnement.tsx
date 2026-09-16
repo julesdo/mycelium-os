@@ -1,8 +1,8 @@
-import { Link } from '@tanstack/react-router';
 import { Surface, Chip } from '@cladd-ui/react';
 import { FileSearchIcon, RefreshCwIcon } from 'lucide-react';
 import type { PalierTaille } from '../../lib/config/tarifs';
 import {
+	Lien,
 	LigneAnalyse,
 	ListeAnalyses,
 	PageEcran,
@@ -11,6 +11,7 @@ import {
 	type Lecture
 } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
+import { TITRE_ECRAN } from '../titres';
 import { OuvertureEnCours, EssaiEnCours } from './offre';
 
 /** Ce que l'écran affiche : l'état d'abonnement tel que `etatAbonnement` le rend, palier et tarifs résolus par le serveur. */
@@ -50,7 +51,7 @@ export interface AbonnementAffiche {
  * rend dans chacun de ses états, sans session.
  */
 export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffiche | null> }) {
-	const entete = { genre: 'onglet', titre: 'Abonnement' } as const;
+	const entete = { genre: 'onglet', titre: TITRE_ECRAN.abonnement } as const;
 
 	if (donnees.etat !== 'pret') {
 		return <PageEcran entete={entete} etat={donnees.etat} />;
@@ -90,12 +91,12 @@ export function EcranAbonnement({ donnees }: { donnees: Lecture<AbonnementAffich
 							: 'Votre volume de factures n’est pas renseigné : le palier le plus bas est retenu par défaut.'}{' '}
 						Le produit est le même à tous les paliers ; seul le prix change.{' '}
 						{/* `min-h-12` : 48 px de haut, le plancher tactile du projet. Le lien en faisait 18. */}
-						<Link
+						<Lien
 							to="/app/parametres"
 							className="inline-flex min-h-12 items-center underline underline-offset-2"
 						>
 							Modifier
-						</Link>
+						</Lien>
 					</p>
 				</SectionEcran>
 

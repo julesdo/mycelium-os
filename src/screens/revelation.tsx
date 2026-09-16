@@ -1,8 +1,8 @@
-import { Link } from '@tanstack/react-router';
 import { UploadIcon } from 'lucide-react';
 import {
 	BilanPertes,
 	BoutonPrincipal,
+	Lien,
 	ChocRevelation,
 	PageEcran,
 	SectionEcran,
@@ -63,7 +63,7 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 							'Le chiffre apparaît dès le premier dépôt, décomposé facture par facture.'
 						],
 						action: (
-							<BoutonPrincipal as={Link} to="/app/import-factures">
+							<BoutonPrincipal as={Lien} to="/app/import-factures">
 								<UploadIcon />
 								Importer mes factures
 							</BoutonPrincipal>
