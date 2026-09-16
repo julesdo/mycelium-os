@@ -54,7 +54,7 @@ const DOSSIERS_DEMO: DossierAffiche[] = [
 		prochaineEcheance: null,
 		anglesMorts: [
 			'Un délai d’opposition court depuis la signification. Sa durée n’est pas relevée dans le ' +
-				'référentiel juridique de ce logiciel : cette échéance-là n’est PAS surveillée, et reste ' +
+				'référentiel juridique de ce logiciel : cette échéance-là n’est pas surveillée, et reste ' +
 				'à vérifier auprès de l’acte signifié, qui la porte.'
 		],
 		etapes: RAIL_DEMO.map((etape, rang) =>
