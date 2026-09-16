@@ -9,7 +9,7 @@ import {
 	type Montant
 } from '../../socle/montants';
 import { PARAMETRES, exiger } from './parametres';
-import { estBissextile, estDateReelle } from './calendrier';
+import { dateLisible, estBissextile, estDateReelle } from './calendrier';
 
 /**
  * Le décompte d'une créance — le calcul dont une erreur coûte de l'argent réel.
@@ -201,10 +201,13 @@ function tauxALaDate(facture: FacturePourDecompte, date: string): Fraction {
 		}
 	}
 	if (retenu === null) {
+		// ⚠️ LE MESSAGE EST MONTRÉ AU GÉRANT, et il porte quand même la référence :
+		// `decompter` lève depuis une boucle sur toutes les factures d'une créance,
+		// où elle est le seul moyen de savoir laquelle a manqué.
 		throw new Error(
-			`Facture ${facture.reference} : aucun taux applicable au ${date}. ` +
-				`Le calcul des intérêts est impossible — il doit échouer plutôt que de retenir ` +
-				`zéro, faute de quoi la créance abandonnerait définitivement ses intérêts.`
+			`Facture ${facture.reference} : aucun taux applicable le ${dateLisible(date)}. ` +
+				`Ses intérêts ne peuvent donc pas être calculés, et ils ne sont pas comptés ` +
+				`pour zéro : la créance les abandonnerait définitivement.`
 		);
 	}
 	return retenu.taux;

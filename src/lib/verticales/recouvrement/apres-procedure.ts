@@ -203,7 +203,7 @@ const injonctionDePayer: MachineProcedure = {
 			// afficher une date fausse, que le gérant tiendrait pour surveillée.
 			anglesMorts: [
 				'Un délai d’opposition court depuis la signification. Sa durée n’est pas relevée dans ' +
-					'le référentiel juridique de ce logiciel : cette échéance-là n’est PAS surveillée, et ' +
+					'le référentiel juridique de ce logiciel : cette échéance-là n’est pas surveillée, et ' +
 					'reste à vérifier auprès de l’acte signifié, qui la porte.'
 			],
 			terminal: false
@@ -224,7 +224,7 @@ const injonctionDePayer: MachineProcedure = {
 			// référentiel. Même traitement : on la nomme, on ne la chiffre pas.
 			anglesMorts: [
 				'Un titre exécutoire ne se conserve pas indéfiniment. Le délai qui s’y attache n’est ' +
-					'pas relevé dans le référentiel de ce logiciel : il n’est PAS surveillé.'
+					'pas relevé dans le référentiel de ce logiciel : il n’est pas surveillé.'
 			],
 			terminal: true
 		},
@@ -467,7 +467,11 @@ export interface EtapeVoie {
 	readonly constat: string;
 	readonly terminal: boolean;
 	/** Les états atteignables depuis celui-ci qui ne sont PAS sur la ligne. */
-	readonly branches: readonly { readonly etat: string; readonly libelle: string; readonly constat: string }[];
+	readonly branches: readonly {
+		readonly etat: string;
+		readonly libelle: string;
+		readonly constat: string;
+	}[];
 }
 
 /**
@@ -551,9 +555,10 @@ export function parcoursDeLaVoie(
 
 	return voie.map((etape, rang) => {
 		const atteinteLe = atteintes.get(etape.etat) ?? null;
-		const brancheSuivie = etape.branches
-			.filter((b) => atteintes.has(b.etat))
-			.map((b) => ({ etat: b.etat, survenuLe: atteintes.get(b.etat)! }))[0] ?? null;
+		const brancheSuivie =
+			etape.branches
+				.filter((b) => atteintes.has(b.etat))
+				.map((b) => ({ etat: b.etat, survenuLe: atteintes.get(b.etat)! }))[0] ?? null;
 
 		const statut: StatutEtape = sortiParUneBranche
 			? atteinteLe === null

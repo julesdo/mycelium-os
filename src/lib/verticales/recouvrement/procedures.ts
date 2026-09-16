@@ -133,9 +133,7 @@ function evaluerConditionsLegales(creance: CreanceQualifiee): Evaluation {
 	// Des constats, au présent, sans destinataire ni injonction.
 	const constats: string[] = [];
 	if (remplies.length > 0) {
-		constats.push(
-			`La créance remplit ${remplies.map((c) => LIBELLE_CONDITION[c]).join(', ')}.`
-		);
+		constats.push(`La créance remplit ${remplies.map((c) => LIBELLE_CONDITION[c]).join(', ')}.`);
 	}
 	for (const condition of bloquants) {
 		constats.push(`${LIBELLE_CONDITION[condition]} n'est pas rempli.`);
@@ -174,7 +172,7 @@ const injonctionDePayer: Procedure = {
 
 const l126: Procedure = {
 	cle: 'l126-creances-commerciales',
-	nom: 'Procédure L.126 — créances commerciales',
+	nom: 'Procédure L.126, créances commerciales',
 	parametresRequis: [
 		'tarifCommissaireJusticeL126',
 		'delaiContestationL126',
@@ -186,8 +184,8 @@ const l126: Procedure = {
 	plancherMontant: null,
 	plafondMontant: null,
 	conditionsEchec: [
-		"Le débiteur conteste dans le mois : la procédure simplifiée prend fin, même si la contestation est infondée.",
-		"Le commandement ne peut pas être signifié au débiteur."
+		'Le débiteur conteste dans le mois : la procédure simplifiée prend fin, même si la contestation est infondée.',
+		'Le commandement ne peut pas être signifié au débiteur.'
 	],
 	/**
 	 * Indisponible, et pas seulement pour produire l'acte : tant que le décret

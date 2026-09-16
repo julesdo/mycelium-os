@@ -149,7 +149,7 @@ export function RechercheCommissaire({
 						value={departement}
 						onChange={setDepartement}
 						placeholder="44"
-						infoMessage="Deux caractères — 44, 09, 2A — ou trois outre-mer."
+						infoMessage="Deux caractères (44, 09, 2A), ou trois outre-mer."
 					/>
 					{/*
 					  LE GESTE PRINCIPAL, en pilule blanche. ⚠️ PAS `Button color="brand"` :

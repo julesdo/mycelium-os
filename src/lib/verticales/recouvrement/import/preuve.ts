@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateLisible } from '../calendrier';
 import { pourcentageDepuisTaux, tauxDepuisPourcentage } from '../taux-contractuel';
 import type { ClePiece } from '../qualification';
 
@@ -182,7 +183,11 @@ export function lirePreuve(brut: DocumentPreuve): PreuveLue {
 
 	const morceaux = [`Ce document est ${NOM_DU_TYPE[type]}`];
 	if (brut.reference !== null) morceaux.push(`, n° ${brut.reference}`);
-	if (brut.date !== null) morceaux.push(`, du ${brut.date}`);
+	// ⚠️ LA DATE ISO RESTE DANS LA DONNÉE (`commun.date`), et ne se met en
+	// français QUE dans cette phrase-là. `dateLisible` rend la chaîne telle
+	// quelle si elle ne désigne pas un jour réel : un « 30 février » sorti d'un
+	// OCR doit se voir tel qu'il a été lu.
+	if (brut.date !== null) morceaux.push(`, du ${dateLisible(brut.date)}`);
 	morceaux.push('.');
 
 	if (brut.referencesLiees.length > 0) {
