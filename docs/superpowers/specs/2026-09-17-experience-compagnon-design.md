@@ -31,6 +31,27 @@ posait une affirmation fausse en la présentant comme un fait relevé. Ce qui a 
 7. **Les objets nouvellement persistés sont décrits**, avec leur `organizationId` et leur purge
    (§ 5.8).
 
+### Ce que les cinq réponses de Jules ont tranché, le 17 septembre 2026
+
+Quatre des huit questions ouvertes ont reçu leur réponse le jour même, et un principe est venu par
+dessus, qui prime sur les quatre. Chacun devient une décision numérotée en § 3.4, et la question
+correspondante en § 10 porte désormais la phrase de Jules en une ligne.
+
+| Ce qui est tranché | La décision | La phrase de Jules |
+| --- | --- | --- |
+| Le principe, au-dessus des autres | **D0** (§ 3.4, § 3.5) | « Il ne faut jamais couper l'expérience de l'outil pour l'utilisateur et toujours trouver des solutions plutôt que de bloquer » |
+| Q1, l'axe de la file | **D9** (§ 4.1) | « Il faut isoler par créance et ou par client avoir le choix de la vue quoi » |
+| Q2, le calendrier du compagnon | **D10** (§ 5.9) | « Le compagnon part avant la validation du juriste en s'assurant avec les textes de lois et en veillant à utiliser le système multi juridique déjà en place » |
+| Q8, le sens de « mûre » | **D11** (§ 4.1) | « Une créance mûre c'est ça oui » |
+| Q7, le dossier du conseil | **D12** (§ 4.4) | « Il faut qu'on puisse suivre aussi le dossier qui passe par le conseil » |
+
+⚠️ **D0 est le point le plus délicat de toute cette spec, et il se lit de travers en une seconde.**
+« Ne jamais bloquer » ne veut PAS dire produire un acte sur des valeurs non validées, relancer un
+débiteur, ni recommander une procédure. Ça veut dire qu'un refus se transforme en chemin : ce que le
+logiciel peut faire tout de suite, ce qui manque, ce qui le lève, et ce que coûte l'attente.
+**Un mur muet est un défaut ; un acte irrégulier est une faute.** Les trois refus qui restent, et
+qui resteront, sont écrits noir sur blanc en § 3.5.
+
 ---
 
 ## 0. En une phrase
@@ -225,6 +246,36 @@ compagnon n'a pas de rangée à lui : il a TOUTES les rangées.
 
 ### 3.4 Les décisions, numérotées
 
+**D0. On ne coupe jamais l'expérience : un refus devient un chemin.** Décidé par Jules le
+17 septembre 2026 : « Il ne faut jamais couper l'expérience de l'outil pour l'utilisateur et
+toujours trouver des solutions plutôt que de bloquer. » Cette décision porte le numéro zéro parce
+qu'elle **prime sur toutes les autres** : quand une décision ci-dessous ferait apparaître un mur,
+c'est le mur qui se réécrit, pas D0.
+
+**Ce qu'elle exige, en quatre parties, et elles ne sont pas négociables.** Partout où le produit dit
+non, il dit dans cet ordre :
+
+1. **Ce qu'il peut faire tout de suite.** Jamais vide. Un refus dont la première ligne est vide est
+   un mur, quel que soit ce qui suit.
+2. **Ce qui manque**, nommé, jamais « une erreur est survenue ».
+3. **Ce qui lève le manque**, énoncé au CONSTAT et jamais à l'impératif. Le produit dit « ce verrou
+   se lève par le contrôle d'un juriste sur la valeur et son applicabilité » ; il ne dit pas
+   « faites valider par un avocat », qui est une conduite à tenir. C'est la discipline déjà tenue
+   par `comportement.ts`, qui « ne dit pas relancez », et par le constat de suspension de
+   `relance.ts:160-165`, dont le commentaire écarte explicitement « déclarer la créance, saisir qui
+   que ce soit » comme « une conduite à tenir, donc hors de ce que ce produit écrit ».
+4. **Ce que coûte l'attente**, CHIFFRÉ quand c'est chiffrable, et déclaré non chiffrable sinon.
+   Jamais tu. C'est la règle de `revelation.ts:28-29` appliquée aux refus : « un total
+   silencieusement amputé est pire qu'un total incomplet annoncé ».
+
+**Le précédent au dépôt, qui montre que ce n'est pas une nouveauté théorique.** `Relance` porte déjà
+deux champs quand elle refuse, `constat` ET `blocages` (`relance.ts:121-124`), au lieu d'un message
+d'erreur unique. D0 porte cette forme de deux champs à quatre, et l'applique partout (B14).
+
+**Trois refus restent, et ils ne bougeront pas** : un acte sur des valeurs non validées, une relance
+au nom du client, une recommandation de procédure. § 3.5 les écrit, dit ce que chacun protège, et
+dit ce que le produit propose à la place.
+
 **D1. Une seule route de travail, `/app`.** Raison : la profondeur mesurée ne vient pas des routes
 (le graphe est plat, maximum 3 depuis un onglet) mais de ce qui s'y ajoute, deux volets sans
 adresse et vingt-quatre racines de feuilles. Une file ne peut pas empiler, parce qu'elle n'a nulle
@@ -269,20 +320,140 @@ plus loin** : § 4.4 rend « taux 12,25 % » sur chaque segment d'intérêts, et
 la valeur juridique elle-même. **Un TAUX est un pourcentage légitime ; un SCORE n'en est pas un.** La
 formulation exécutable est celle de B8, et D8 s'y aligne.
 
-**Le budget de réécriture, chiffré, parce qu'il n'était pas posé.** Trois sites rendent aujourd'hui
-un pourcentage de score, et chacun se réécrit :
+**D9. La file s'isole par créance OU par client, et c'est un choix de vue, pas un filtre caché.**
+Tranché par Jules le 17 septembre 2026 : « Il faut isoler par créance et ou par client avoir le
+choix de la vue quoi. » Raison : la file est triée par `surveillance.ts`, c'est-à-dire par une règle
+de domaine, et un gérant pense souvent son portefeuille par client. Deux vues au choix coûtent un
+`Segmented` de deux positions dans la `Toolbar` ; elles n'ajoutent ni écran, ni adresse, ni
+profondeur. Le défaut reste **Par créance**, parce que la prescription est le seul des trois
+arguments de vente qui fasse perdre un droit sans que personne n'ait rien fait, et qu'un défaut par
+client l'enterrerait derrière un client qui doit peu. Détail en § 4.1.
 
+**D10. Le compagnon part AVANT la validation juriste, et une valeur non validée ne bloque pas
+l'outil : elle nomme ce qu'elle interdit.** Tranché par Jules le 17 septembre 2026 : « Oui le
+compagnon part avant la validation du juriste en s'assurant avec les textes de lois et en veillant à
+utiliser le système multi juridique déjà en place (partie France). » Deux conditions, et elles sont
+la décision autant que le « oui » :
+
+1. **Toute référence légale se résout par le registre.** `parametres.ts` et le module de pays qu'il
+   nomme dans `resoluPar`. Une affirmation de droit sans article résolu ne se rend pas (B3).
+2. **Une valeur `verifie` mais non `valideParAvocat` autorise à CALCULER, à EXPLIQUER et à
+   PRÉPARER, jamais à produire un acte.** Elle ne fait pas taire le compagnon : elle lui fait
+   nommer ce qu'elle interdit, dans la forme en quatre parties de D0.
+
+Détail, formulations exactes et règle de second pays en § 5.9.
+
+**D11. Une créance mûre, c'est toutes conditions établies et aucun bloquant. Pas un score au-dessus
+d'un seuil.** Tranché par Jules le 17 septembre 2026, sur la proposition de Q8 : « Une créance mûre
+c'est ça oui. » Raison : le seuil est infranchissable sans pièce de fond (§ 2), aucune ligne d'écran
+ne le dit, et le gérant en conclut que le logiciel ne veut pas de son dossier. Le critère
+déterministe existe déjà, calculé à côté du score (`scoring.ts:294-297`). Détail et budget de
+réécriture en § 4.1.
+
+**D12. Le dossier remis au conseil se SUIT dans le produit.** Tranché par Jules le 17 septembre
+2026 : « Il faut qu'on puisse suivre aussi le dossier qui passe par le conseil bien évidemment ! »
+Raison : un PDF téléchargé sort du produit et emporte avec lui la seule chose qui continue de
+courir, la prescription. ⚠️ Le produit **ne pilote pas le conseil et ne recommande aucune
+procédure** : il suit une REMISE et attend un RETOUR, et rien n'avance sans une déclaration humaine
+datée. Détail, états et table en § 4.4.
+
+**Le budget de réécriture, chiffré, parce qu'il n'était pas posé.** Quatre sites rendent aujourd'hui
+le score ou son seuil, et chacun se réécrit. D11 les tranche tous :
+
+- `surveillance.ts:374` filtre sur `creance.statut !== 'QUALIFIEE' || creance.score <
+  SEUIL_QUALIFICATION`, ce qui n'est pas un libellé mais le verrou lui-même. Il devient
+  `conditionsToutesEtablies && !aUnBloquant`.
 - `surveillance.ts:383` compose l'explication de `CREANCE_MURE` : « atteint le seuil de qualification
-  (0.62 pour un seuil de 0.75) ». La phrase part entière, et avec elle le filtre de la ligne 374
-  (voir § 4.1 et Q8).
-- `surveillance.ts:374` filtre sur `creance.score < SEUIL_QUALIFICATION`, ce qui n'est pas un libellé
-  mais le verrou lui-même.
+  (0.62 pour un seuil de 0.75) ». La phrase part entière.
+- `scoring.ts:300` rend `eligible: conditionsToutesEtablies && !aUnBloquant && score >=
+  SEUIL_QUALIFICATION`. Le troisième terme part, sans quoi le produit porterait deux définitions de
+  « mûre » et leur divergence serait muette.
 - `screens/creance.tsx:240` rend `pourcent(creance.score)`, seul usage de ce rendu dans tout
   l'écran ; l'écran disparaît avec les six analyses (§ 4.2).
+
+⚠️ **Et un cinquième site, que la première écriture n'avait pas relevé : la COULEUR.**
+`screens/creance.tsx:244` rend `<Chip size="md" color={creance.eligible ? 'green' : 'neutral'}>`,
+c'est-à-dire un vert sur un état de qualification. Le vert, le rouge et l'ambre ne signifient qu'une
+chose dans ce produit, au-dessus du seuil, tout près, en dessous. Un vert sur « Mûre pour une
+procédure » fait exactement lire un seuil là où D11 vient d'en retirer un. La teinte part avec
+l'écran, et aucune rangée de la file ne la reprend.
 
 `ui/composition.tsx:118` rend un pourcentage dans un `title`, mais il décrit une composition de
 règlements observée, pas un critère juridique : **il reste**. Le taux stipulé saisi dans
 `ui/identite-debiteur.tsx` reste lui aussi un taux.
+
+### 3.5 Les refus du produit, un par un, et ce que chacun devient
+
+D0 ne s'applique pas en gros. Il s'applique à chaque endroit du dépôt qui dit non aujourd'hui, et
+chacun a été relevé. Trois d'entre eux restent, et c'est écrit plus bas avec ce qu'ils protègent.
+
+#### Les refus qui deviennent des chemins
+
+| Le refus, au code | Ce qu'il fait aujourd'hui | Ce qu'il devient sous D0 |
+| --- | --- | --- |
+| **`exiger()` sur un paramètre non `verifie` ou sans valeur** (`parametres.ts:407-421`) | Lève. Le message nomme la clé et recopie sa `note`. Trois paramètres sur quinze portent `verifie: false` (relevé le 17/09 : 12 `true`, 3 `false`) | Le segment n'est PAS chiffré et il est nommé, à sa place dans le décompte. **Peut faire :** le principal, l'indemnité forfaitaire et les autres segments se chiffrent et s'impriment. **Manque :** la clé et sa note, telles que `exiger()` les écrit déjà. **Levé par :** un relevé daté sur une source publique citable. **Coût de l'attente :** le montant du segment est déclaré non chiffrable, et le total de tête le porte dans sa liste de non chiffrées (`revelation.ts:71`) |
+| **`exiger()` sur une SERIE** (`parametres.ts:402-406`) | Lève en nommant le module à utiliser : « Utiliser pays/france/taux.ts → tauxPenaliteParDefaut(date) plutôt que exiger() » | **Ce refus n'atteint jamais l'écran, et c'est voulu.** C'est une erreur de développement, attrapée par `parametres.test.ts:103`. D0 porte sur ce qu'un gérant voit ; transformer celui-ci en chemin d'interface reviendrait à rendre rattrapable une faute qui doit casser le build |
+| **`controle.ts`, abandon `FACTURE_ECARTEE`** (`controle.ts:76-90`) | Chiffre ce qui serait abandonné, facture par facture. Aucune surface aujourd'hui | Devient le premier étage de `/app/arret/$id` (§ 4.3), avec **deux sorties de même poids** : inclure et refaire, ou arrêter sans elles et l'inscrire au journal. Le chemin est déjà là ; ce qui manquait était l'écran |
+| **`controle.ts`, abandon `INTERETS_INEXPLIQUES`** (`controle.ts:102-118`, `montantEnJeu: null`) | Constate que les segments n'expliquent pas les intérêts annoncés | **Peut faire :** le décompte se rend, segment par segment, et l'écart s'affiche. **Manque :** la période qui justifierait l'écart. **Levé par :** le relevé du taux du semestre absent, ou la correction de la date d'exigibilité. **Coût :** l'écart en euros, qui est chiffrable même quand `montantEnJeu` vaut `null`, parce que c'est la différence entre `ligne.interets` et la somme des segments |
+| **`relance.ts`, niveau 2 sans décompte arrêté** (`relance.ts:226-235`) | `disponible: false`, avec le constat « aucun décompte n'a été produit pour cette créance » | **C'est le meilleur exemple du dépôt d'un refus déjà à moitié chemin**, et il ne lui manque qu'un geste. La rangée porte « Arrêter le décompte » à 48 px, et le niveau 2 devient disponible au retour. Le refus garde sa raison, qui est bonne : « les chiffres d'une relance ne se recalculent pas à la volée » |
+| **Les écrans qui montrent un vide** (règle d'écran 4) | L'état vide de la file reçoit déjà la zone de dépôt et trois rangées fantômes (§ 4.1) | Trois vides que la première écriture ne couvrait pas reçoivent le même traitement : **une portée dont le compte est zéro ne se rend pas du tout** (une puce qui affiche 0 est un cadran à zéro) ; **un client sans rien à traiter n'apparaît pas dans la vue par client**, il est dans le pli compté ; **un volet de preuve sans pièce** nomme ce qui le remplirait et porte le bouton de dépôt |
+| **`revelation.ts`, les factures non chiffrées** (`revelation.ts:71`, `:126`, `:149`) | Remonte chaque facture qu'il n'a pas pu chiffrer, avec sa raison en toutes lettres | Sa règle devient celle du total de tête (§ 4.1), et chaque non chiffrée devient une rangée, parce qu'elle porte un obstacle nommable en une phrase. C'est le modèle que D0 généralise, pas une exception |
+| **`surveillance.ts`, les angles morts** (`surveillance.ts:523`, attachés ligne 617) | Composés, attachés aux événements, jamais rendus en entier | Rendus en pleine largeur dans la portée « Ce que vos factures portent » (§ 4.1). Ce n'est pas un refus, c'est le précédent : **le produit affiche déjà ce qu'il ne voit pas, il ne l'affiche nulle part** |
+
+#### ⚠️ Les trois refus qui restent, et pourquoi
+
+Un refus qui reste **nomme ce qu'il protège et propose autre chose**. Aucun des trois ne se
+contourne, ne se règle, ni ne s'atténue avec le temps ou l'insistance.
+
+**1. Un acte sur des valeurs non validées.** `exigerPourActe()` (`parametres.ts:431-441`) refuse
+tout paramètre dont `valideParAvocat` vaut `false`, ce qui est le cas des quinze (relevé le 17/09 :
+15 `false`, 0 `true`).
+
+- **Ce qu'il protège :** un chiffre affiché se corrige au rafraîchissement suivant ; le même chiffre
+  écrit dans une requête signifiée au débiteur ne se corrige plus, et ce qui ne figure pas au titre
+  est perdu.
+- **Ce qu'on propose à la place :** le décompte sous `exiger()`, décomposé en segments, imprimable
+  et refaisable à la main, et le dossier à remettre au conseil avec la mention en tête qui nomme
+  l'état de chaque valeur (§ 4.4).
+- ⚠️ **L'honnêteté de ce refus : il ne s'exerce nulle part aujourd'hui, parce que le produit
+  n'émet aucun acte.** `exigerPourActe()` n'a aucun site d'appel (§ 3.2). Il n'est pas câblé dans
+  cette tranche, et **c'est écrit ici** pour que personne ne relise `parametres.ts` dans six mois en
+  croyant qu'un verrou est en place. Le jour où un module émet un acte, c'est lui la porte, et il
+  refuse.
+
+**2. Une relance au nom du client.** Ligne rouge 1 : le recouvrement pour compte de tiers est une
+activité encadrée.
+
+- **Ce qu'il protège :** l'activité même. Et, en dessous, le client : un débiteur qui lit le nom
+  d'un tiers dans le courrier y voit un mandat de chaîne (`__tests__/relance.test.ts:82`, `:217`).
+- **Ce qu'on propose à la place :** un brouillon étiqueté « Visible par vous seul, non envoyé »,
+  composé par `relance.ts` sans aucun appel modèle (B10), avec Télécharger le PDF, Copier le texte,
+  Écarter, et le filtre des noms de tiers avant rendu (B11). Aucun composant d'envoi n'existe dans
+  le sous-arbre (B5) : une commande absente ne s'active jamais par accident, une commande grisée si.
+- **Et les deux refus déjà codés s'affichent, ils ne se contournent pas** (B12) : la suspension sur
+  un débiteur en procédure collective ou radié (`relance.ts:144-168`, constat cité mot pour mot du
+  registre) et la mise en demeure indisponible tant que ses mentions obligatoires ne sont pas
+  relevées (`relance.ts:273-300`). ⚠️ **Sur la suspension, ce qu'on propose est étroit, et il faut
+  le dire :** la surveillance continue, le décompte se chiffre, le dossier pour le conseil se
+  produit. Le produit ne dit PAS ce qu'il faudrait faire d'une créance sur une entreprise en
+  liquidation, parce qu'il ne le sait pas et que le dire serait le refus numéro 3. Il déclare cet
+  angle mort au lieu de le taire.
+
+**3. Une recommandation de procédure.** Ligne rouge 3 : ce serait du conseil juridique.
+
+- **Ce qu'il protège :** le gérant, d'abord. Une voie recommandée par un logiciel et engagée de
+  bonne foi ne se rattrape pas.
+- **Ce qu'on propose à la place :** l'énumération des voies SANS ORDRE, produite par du code
+  déterministe, **disponible avant l'arrêt du décompte** (§ 4.2, section 6, depuis
+  `screens/analyses/procedure.tsx:337`), et le dossier que le conseil lit. La frontière est celle
+  que B6 pose déjà : le produit a le droit d'ÉNUMÉRER sans ordre ce que du code écrit ; le
+  compagnon n'a pas le droit d'en PARLER.
+
+**La règle qui sort de ces trois.** Un refus qui reste s'écrit dans la forme en quatre parties de
+D0, exactement comme un refus qui devient un chemin. La différence n'est pas dans la forme : elle
+est que sa troisième partie, « ce qui le lève », nomme une condition que le produit ne franchira pas
+seul, et sa quatrième dit ce que l'attente coûte, y compris quand la réponse est « rien, sur ce
+document ».
 
 ---
 
@@ -294,9 +465,9 @@ règlements observée, pas un critère juridique : **il reste**. Le taux stipul�
 `surveillance.ts`, l'échéance la plus proche d'abord, la prescription en tête. C'est le tri par
 défaut, donc la prescription passe de zéro écran sur vingt-sept à l'écran d'accueil.
 
-#### ⚠️ Le bloquant à réparer AVANT d'écrire une rangée
+#### Le bloquant `CREANCE_MURE`, et sa réparation (D11)
 
-**Toute la classe d'événements `CREANCE_MURE` n'entrera jamais dans la file en l'état.**
+**Toute la classe d'événements `CREANCE_MURE` n'entrait jamais dans la file en l'état.**
 `surveillance.ts:374` la filtre ainsi :
 
 ```ts
@@ -309,14 +480,162 @@ cette spec ne le réparait pas : elle chiffrait le gain d'une classe d'événeme
 pas.** C'est le même défaut, à l'envers, que le lien « Voir N autres » qui mène là où le flux n'est
 pas.
 
-La réparation n'est pas cosmétique et n'est pas tranchée seule : **voir Q8.** Ce qu'on recommande :
-faire porter l'événement sur le critère déterministe que `scoring.ts:300` calcule déjà à côté du
-score, `conditionsToutesEtablies && !aUnBloquant`, et laisser le score hors de l'écran comme D8
-l'exige. Une créance dont les quatre conditions légales sont établies et qui ne porte aucun risque
-bloquant a quelque chose à dire, que sa note soit à 0,62 ou à 0,80.
+**Tranché le 17 septembre 2026 (D11).** Une créance mûre, c'est **toutes conditions établies et
+aucun bloquant**, et rien d'autre. Jules, sur la proposition de Q8 : « Une créance mûre c'est ça
+oui. »
 
-**Tant que Q8 n'est pas tranchée, aucune rangée `CREANCE_MURE` n'est annoncée dans les maquettes ni
-comptée dans un gain.**
+**Ce que le critère est déjà, au code.** `scoring.ts:294-297` le calcule à côté du score, sans que
+rien ne le consomme seul :
+
+```ts
+const conditionsToutesEtablies = CONDITIONS_LEGALES.every(
+    (condition) => elements[condition as ConditionLegale] === 'ok'
+);
+const aUnBloquant = risques.some((risque) => risque.gravite === 'BLOQUANTE');
+```
+
+Les quatre conditions sont nommées en un seul endroit, `qualification.ts:48-55` : `certaine`,
+`liquide`, `exigible`, `entreCommercants`, et leurs libellés de lecture vivent juste en dessous
+(`LIBELLE_CONDITION`, `qualification.ts:58-63`). Chacune vaut `ok`, `ko` ou `unknown`
+(`qualification.ts:17`), et **`unknown` ne compte jamais comme établie** : le doute ne profite pas
+au produit, et c'est déjà la règle du module.
+
+**Les quatre gestes de la réparation**, dans cet ordre :
+
+1. **`surveillance.ts:374`** ne filtre plus sur le score. Il filtre sur `creance.statut !==
+   'QUALIFIEE'`, puis sur `conditionsToutesEtablies && !aUnBloquant`. `SEUIL_QUALIFICATION` cesse
+   d'être importé par ce module.
+2. **`scoring.ts:300`** perd son troisième terme et devient `eligible: conditionsToutesEtablies &&
+   !aUnBloquant`. ⚠️ **Ce geste n'est pas facultatif, et Q8 le sous-estimait.** Option 1 de Q8 ne
+   touchait que `surveillance.ts`, ce qui aurait laissé le produit avec DEUX définitions de
+   « mûre » : celle de la file et celle d'`eligible`, lu par `lecture.ts:528` et rendu tel quel par
+   `screens/creance.tsx:245` sous le libellé « Mûre pour une procédure ». Deux vérités dont la
+   divergence serait muette, ce qui est exactement le défaut que `tables.ts` interdit ailleurs en
+   refusant de stocker un état à côté des événements qui le produisent.
+3. **`surveillance.ts:383`** cesse de citer le score. L'explication devient un constat qui NOMME ce
+   qui est établi, en reprenant `LIBELLE_CONDITION` : « Sur la créance F-2024-114, le caractère
+   certain, le caractère liquide, le caractère exigible et la qualité de commerçant des deux parties
+   sont établis, et aucun risque bloquant n'est relevé. »
+4. **`surveillance.ts:384`** se réécrit dans la même tranche (B6) : son champ `action` porte
+   aujourd'hui « Examiner les procédures envisageables pour cette créance. », c'est-à-dire du texte
+   EN PRODUCTION que la ligne rouge 3 interdit et que le balayage actuel ne voit pas.
+
+**Ce que devient le score.** Il **reste au calcul** et **disparaît de l'écran** (D8). Il reste parce
+qu'il sert encore à deux choses : ordonner `criteres` et `piecesManquantes` dans la sortie de
+`scoring.ts`, et porter l'hypothèse de calibrage que son propre commentaire déclare, « une hypothèse
+de départ, à recalibrer sur le taux de contestation réellement observé, c'est-à-dire quand il y aura
+des données » (`scoring.ts:150-158`). Il disparaît de l'écran parce qu'un pourcentage invente une
+nuance que le droit n'a pas, et parce que la jauge que le gérant regardait ne pouvait pas monter.
+**`SEUIL_QUALIFICATION` reste déclaré, et cesse d'avoir un lecteur.** Le laisser exporté sans lecteur
+serait un orphelin : soit il retrouve un usage de calibrage écrit, soit il part avec le score de
+l'écran, et la tranche tranche à ce moment-là, pas dans cette spec.
+
+**Ce que la réparation ne fait pas.** Elle ne baisse aucun seuil juridique et n'en déplace aucun.
+Elle retire un seuil PRODUIT de la définition d'un état juridique, ce qui n'est pas la même
+opération.
+
+#### Deux vues au choix, et toujours une seule file (D9)
+
+**Ce que Jules a demandé, le 17 septembre 2026 :** « Il faut isoler par créance et ou par client
+avoir le choix de la vue quoi. »
+
+**La forme retenue : un `Segmented` Cladd de deux positions dans la `Toolbar` de `/app`**, à côté du
+sélecteur d'établissement, toujours visible, jamais dans un menu. **Par créance** (défaut) et
+**Par client**. Ce n'est pas une puce de portée de plus, et la distinction est opposable :
+
+- **une portée FILTRE** ce qui est dans la liste (Prescription, À trancher, Décomptes, Engagés) ;
+- **une vue GROUPE** ce que la portée a laissé passer.
+
+Les deux se composent : toute portée se lit dans les deux vues, et le compte de la puce ne change
+pas quand on bascule, puisque ce sont les mêmes rangées. **Aucune adresse n'est ajoutée, aucune
+feuille, aucune profondeur.**
+
+**Vue Par créance, le défaut.** C'est la file décrite dans tout le reste de ce document : une rangée
+par obstacle, triée par `surveillance.ts`, l'échéance la plus proche d'abord, la prescription en
+tête. C'est pour ça qu'elle est appelée ailleurs le tri par échéance : l'ordre est l'échéance, le
+grain est la créance. Le compte de tête reste « Ce qu'on vous doit » et « Dont la prescription tombe
+sous 90 jours » (`PREAVIS.PRESCRIPTION = 90`, `surveillance.ts:93`).
+
+**Vue Par client.** Une rangée par débiteur, qui porte :
+
+- **la dénomination**, telle qu'elle est retenue, ou le libellé brut quand le SIREN n'est pas
+  confirmé (A11), et la rangée le dit ;
+- **l'encours**, somme de ce que ce client doit, déplié sur place en principal, intérêts et
+  indemnités de quarante euros ;
+- **l'échéance la plus proche parmi ses lignes**, nommée avec son fait et sa date, jamais son
+  émotion : « Prescription dans 41 jours, passé le 27/10/2026 cette créance ne se réclame plus » ;
+- **le compte de ses obstacles**, typés : « 3 à trancher, 1 décompte arrêtable ».
+
+Elle s'ouvre EN PLACE sur ses rangées, qui sont exactement celles de la vue Par créance, inchangées,
+avec leur verbe à 48 px. **Rien n'est reformulé pour la vue : un obstacle a une seule phrase dans
+tout le produit.**
+
+**Le compte de tête, dans chaque vue.** Le premier nombre ne bouge pas : « Ce qu'on vous doit » est
+le même argent des deux côtés, et deux totaux différents selon la vue seraient le défaut que
+`revelation.ts` interdit. **C'est le second nombre qui change de grain**, parce que c'est lui qui
+dit « où faut-il regarder » :
+
+- Par créance : « Dont la prescription tombe sous 90 jours », en euros.
+- Par client : « Répartis sur N clients, dont M portent une échéance sous 90 jours. »
+
+**Et la règle d'amputation tient identiquement dans les deux** (§ 4.1, plus bas) : le nombre de tête
+affiche le total qu'il sait chiffrer, et sous lui, toujours visible et jamais replié, la liste nommée
+de ce qu'il n'a pas chiffré et pourquoi. En vue Par client, une facture non chiffrée est nommée sous
+le total de tête ET comptée sur la rangée de son client ; elle n'est jamais absorbée par un encours
+qui ne la compte pas.
+
+**La bascule avec une ligne ouverte.** Le volet de preuve est un ÉTAT adressable, `?ligne=<id>`, pas
+une route. **Il ne se ferme pas** : la preuve porte sur une créance ou une facture, et le groupement
+de la liste ne la concerne pas. Ce qui change est la liste à gauche, et trois cas sont écrits, parce
+que c'est là que les vues mentent d'habitude :
+
+1. **La ligne ouverte a un débiteur.** En passant en vue Par client, sa rangée client est ouverte et
+   défilée à l'écran, la ligne ouverte surlignée dedans, **en teinte neutre** (le vert, le rouge et
+   l'ambre ne disent que le seuil).
+2. **La ligne ouverte n'a pas de débiteur identifié.** Elle tombe dans une rangée nommée « Sans
+   débiteur identifié, N factures », qui existe toujours quand elle a un contenu, et qui porte son
+   geste, la recherche BODACC par nom (A11). ⚠️ **Elle n'est jamais silencieusement omise :** une
+   vue qui fait disparaître une facture dont personne ne sait à qui elle est, est exactement le
+   mur que D0 interdit.
+3. **La portée courante ne contient pas la ligne ouverte** (elle a été traitée, la portée a changé).
+   Le volet reste ouvert et la liste affiche une rangée « La ligne ouverte n'est pas dans cette
+   portée, l'afficher », qui reprend la portée qui la contient. Jamais un volet orphelin sans
+   explication.
+
+**Où le choix se retient.** Dans `usePreference` (`src/app/use-preference.ts`), le mécanisme déjà
+écrit pour le thème : `useSyncExternalStore` sur `localStorage`, pas de `setState` dans un effet, et
+deux onglets ouverts sur Letikette restent d'accord. Clé `letikette.file.vue`, valeurs `CREANCE` et
+`CLIENT`, défaut `CREANCE`. ⚠️ **C'est une préférence d'affichage de NAVIGATEUR, pas une donnée
+client :** elle ne porte aucun `organizationId`, elle ne vit pas en base Convex, et
+`purge-complete.test.ts` ne la réclame donc pas. Corollaire : **le changement d'établissement rejoue
+la file entière et ne remet PAS la vue à zéro.** La vue dit comment ce gérant pense ; l'établissement
+dit ce qu'il lit. Ce sont deux choses.
+
+**Ce que la vue Par client rend possible, et que la vue Par créance ne rend pas.** Trois choses,
+toutes déjà calculées au dépôt, et aucune n'a d'écran qui les agrège aujourd'hui :
+
+1. **Le portefeuille, et ce qu'un décompte abandonnerait.** `controle.ts` compare la créance à
+   **toutes** les factures connues du débiteur et chiffre ce qui serait perdu (`controle.ts:76-90`).
+   C'est un fait PAR CLIENT. En vue Par créance il n'apparaît qu'au pré-vol de l'arrêt, c'est-à-dire
+   au dernier moment ; en vue Par client la rangée le porte dès qu'on la lit : « 5 factures connues,
+   3 au décompte en cours, 1 240,00 € hors décompte. »
+2. **L'encours.** La somme de ce qu'un client doit n'est agrégée nulle part dans le produit actuel :
+   `debiteur-detail.tsx` rend un débiteur à la fois, atteint en deux gestes, et sans adresse. Un
+   gérant qui veut savoir « combien Durand me doit en tout » ne peut pas le lire aujourd'hui.
+3. **L'habitude de paiement, et sa rupture.** `habitudeDePaiement()` et `lireRupture()`
+   (`comportement.ts:154`, `:194`) rendent un constat arithmétique refaisable à la main, « ce client
+   règle habituellement à N jours ; cette facture en est à M », à partir de `ECHANTILLON_MINIMAL = 4`
+   paiements observés (`comportement.ts:102`). Le module existe, il est testé, et il n'est rendu que
+   par `/app/debiteurs/$id/habitude`, une adresse par client. ⚠️ **Et c'est le cas qui prouve la
+   nécessité de la vue :** une rupture d'habitude n'a PAS d'échéance. Elle ne peut donc pas être
+   triée par `surveillance.ts` au milieu des prescriptions, et elle n'a aucune place naturelle dans
+   la vue Par créance. C'est pourtant, dit le module lui-même, « le signal le plus fort qu'un produit
+   de recouvrement puisse donner ». Il se rend sur la rangée du client, et nulle part ailleurs.
+
+⚠️ **Ce que la vue Par client ne fait PAS.** Elle ne classe pas les clients par risque, elle ne pose
+aucun score de débiteur, et elle ne dit pas « ce client va faire défaut » : `comportement.ts` refuse
+déjà explicitement cette prédiction, « invérifiable posée sur une douzaine d'observations ». Elle
+trie par encours décroissant, ce qui est de l'arithmétique, et elle le dit.
 
 #### En tête, deux nombres et pas quatre
 
@@ -340,8 +659,16 @@ phrase.
 
 **Sous les deux nombres, une rangée de puces de PORTÉE**, qui refiltrent la même liste sans jamais
 ouvrir de destination, chacune avec son compte : Aujourd'hui (défaut, nommé), Prescription,
-À trancher, Décomptes, Débiteurs, Engagés, **Ce que vos factures portent**, Tout. La position de
-défilement et le volet de preuve survivent au changement de portée, ce qu'une navigation détruit.
+À trancher, Décomptes, Engagés, **Chez le conseil** (§ 4.4), **Ce que vos factures portent**, Tout.
+La position de défilement et le volet de preuve survivent au changement de portée, ce qu'une
+navigation détruit. **Une portée dont le compte vaut zéro ne se rend pas** : une puce qui affiche 0
+est un cadran à zéro (règle d'écran 4, D0).
+
+⚠️ **La puce « Débiteurs » disparaît de cette liste, et c'est D9 qui l'emporte.** Elle était une
+portée qui faisait en réalité un GROUPEMENT, c'est-à-dire la vue Par client déguisée en filtre. Deux
+mécanismes pour la même chose auraient divergé au premier ajout. Ce qu'elle portait est maintenant
+le `Segmented` de deux positions décrit plus haut, et il s'applique à TOUTES les portées au lieu
+d'être l'une d'elles.
 
 **Une rangée n'est pas le résumé d'un enregistrement, c'est un ÉNONCÉ DE TRAVAIL.** Elle porte le
 débiteur en titre, l'obstacle en une phrase au singulier, le montant à droite, et UN verbe visible
@@ -505,7 +832,10 @@ qu'on le cherchait pour une raison qui ne porte pas ce nom.
      n'écrit pas la phrase.
    - **Un balayage « aucun nom de tiers » s'applique AVANT RENDU** (B11), au point d'usage, et pas
      seulement sur les fichiers.
-   - **Les deux refus déjà codés s'affichent, ils ne se contournent pas.** `composerRelance()`
+   - **Les refus déjà codés s'affichent, ils ne se contournent pas.** ⚠️ **Ils sont TROIS, pas deux**
+     (B12) : le troisième est le niveau 2 sans décompte arrêté (`relance.ts:226-235`), et c'est le
+     seul qui se lève d'un geste, « Arrêter le décompte ». Les deux autres suivent.
+     `composerRelance()`
      appelle `suspension()` AVANT de regarder le niveau : un débiteur en procédure collective ou
      radié ne se relance pas, et le constat est celui du registre, cité mot pour mot : « Les
      relances sont suspendues : le registre public porte "liquidation judiciaire" pour Durand SAS
@@ -565,13 +895,112 @@ décompte segment par segment, les sources et leurs dates, les hypothèses reten
 morts, et l'énumération des voies que ces conditions ouvrent, SANS ORDRE. Pas un modèle de requête,
 pas un courrier au débiteur : le dossier que l'avocat lit.
 
-⚠️ **Son verrou n'est pas tranché dans cette spec, et c'est la frontière calculer / produire un
-acte.** C'est un artefact NEUF, et le premier du produit dont on puisse discuter de quel côté il
-tombe. `exiger()` suffit à calculer, parce qu'un chiffre affiché se corrige ; `exigerPourActe()` est
-exigé quand un chiffre part au greffe et ne se corrige plus. Le décompte, lui, est déjà arbitré :
-`piece.ts:19` pose que le décompte « vit sous `exiger()` », et jamais sous `exigerPourActe()`. **Le
-dossier n'est ni l'un ni l'autre : il n'est pas un acte, mais il est lu par quelqu'un qui en
-produira un.** Voir **Q7**, et la recommandation qui y est écrite.
+**Son verrou, tranché.** C'est la frontière calculer / produire un acte, et c'est un artefact NEUF.
+`exiger()` suffit à calculer, parce qu'un chiffre affiché se corrige ; `exigerPourActe()` est exigé
+quand un chiffre part au greffe et ne se corrige plus. Le décompte, lui, est déjà arbitré :
+`piece.ts:19` pose qu'il « vit sous `exiger()` », et jamais sous `exigerPourActe()`. **Le dossier
+n'est ni l'un ni l'autre : il n'est pas un acte, mais il est lu par quelqu'un qui en produira un.**
+
+**Il vit sous `exiger()`, et il porte en tête la mention qui nomme l'état de chaque valeur** : par
+exemple « douze valeurs relevées sur une source publique citable, trois non relevées, zéro validée
+par un juriste, relevé du 04/01/2026 complété le 16/09/2026 » (compte réel au 17/09 : 12 `verifie:
+true`, 3 `verifie: false`, 15 `valideParAvocat: false`). C'est D0 et D10 ensemble : refuser le
+document à un avocat au motif qu'un avocat ne l'a pas validé serait un mur circulaire, et le lui
+donner sans dire ce qu'il tient serait pire. **Le refus dur se garde pour le jour où le produit
+émettra un acte** (§ 3.5, refus 1) ; ce jour-là, `exigerPourActe()` est la porte.
+
+#### Le suivi du dossier chez le conseil (D12)
+
+**Ce que Jules a demandé, le 17 septembre 2026 :** « Il faut qu'on puisse suivre aussi le dossier
+qui passe par le conseil bien évidemment ! »
+
+**Pourquoi ça ne peut pas être un PDF téléchargé.** Un dossier qui sort du produit emporte avec lui
+la seule chose qui continue de courir. La prescription ne s'arrête pas parce qu'un dossier est parti
+chez un avocat, et un gérant qui a « transmis » croit avoir agi. **C'est le mode de panne le plus
+cher du produit** : celui où l'utilisateur croit sa prescription surveillée alors qu'elle ne l'est
+plus.
+
+⚠️ **La ligne rouge d'abord, parce qu'elle cadre tout le reste.** Le produit **ne pilote pas le
+conseil**. Il ne lui écrit pas, ne lui fixe aucun délai, ne le relance pas, ne note pas son
+efficacité, et ne recommande aucune procédure à personne. Il suit une REMISE faite par le gérant et
+attend un RETOUR déclaré par le gérant. Tout le reste serait du recouvrement pour compte de tiers ou
+du conseil juridique.
+
+**Quatre états, et rien de plus.** Ils décrivent la REMISE, jamais la procédure :
+
+| État | Ce qu'il dit | Ce qui y mène |
+| --- | --- | --- |
+| `PREPARE` | Le dossier est figé et daté, il n'est pas parti | La production du dossier depuis un décompte arrêté |
+| `REMIS` | Le gérant déclare l'avoir remis, à une date | Une déclaration humaine, avec la date du FAIT |
+| `REVENU` | Le conseil a rendu quelque chose, et le gérant l'a consigné | Une déclaration humaine, avec la date du FAIT |
+| `CLOS` | Le gérant met fin au suivi, avec son motif en toutes lettres | Une déclaration humaine. **Sans cet état, un dossier sans retour resterait ouvert pour toujours**, et un suivi dont on ne peut pas sortir est un mur (D0) |
+
+**Ce qui le fait avancer : uniquement une déclaration humaine, jamais le produit.** Aucune
+transition automatique, aucune échéance imposée au conseil, aucun rappel formulé comme « votre
+avocat n'a pas répondu ». ⚠️ **Et chaque transition porte deux dates, pas une**, exactement comme
+`evenementsProcedure` le fait déjà et pour la raison écrite dans son commentaire (`tables.ts`) : la
+date du FAIT fait courir les délais, la date de SAISIE ne sert jamais à un calcul. « Un gérant qui
+enregistre le 20 mars une ordonnance signifiée le 3 doit voir ses trois mois partir du 3 ; les
+confondre en offrirait dix-sept de plus, sur l'échéance la plus dangereuse du produit. »
+
+**À qui : facultatif, et depuis SON carnet.** `intervenantId` est optionnel et se choisit dans
+`intervenants` (§ 4.5), dont la table rappelle elle-même que « c'est son carnet, pas un annuaire que
+le produit propose ». Un dossier peut être remis sans nommer personne, et le produit ne propose
+jamais de nom.
+
+**Ce que le gérant voit dans sa file pendant que le dossier est chez le conseil.** C'est la partie
+qui compte, et elle tient en une règle : **rien ne se replie.**
+
+- **La puce de portée « Chez le conseil »** porte son compte, dans les deux vues (D9).
+- **Les rangées de la créance restent pleines.** `surveillance.ts` ne sait rien d'une remise et
+  continue de produire ses événements, ce qui est la bonne architecture : la remise est un fait du
+  produit, pas un fait du droit. La rangée le dit d'une phrase : « Fournitures Durand, dossier remis
+  à votre conseil le 22/09. La prescription tombe le 27/10/2026, dans 41 jours, et elle ne s'arrête
+  pas parce que le dossier est parti. »
+- ⚠️ **L'angle mort se déclare, il ne se devine pas.** `pays/france/prescription.ts` écrit qu'il
+  « ne gère ni suspension ni interruption », et qu'une mise en demeure, une reconnaissance de dette
+  ou une action en justice les provoquent. Le produit **ne sait donc pas** si le conseil a
+  interrompu quoi que ce soit, et il l'écrit : « Si votre conseil a engagé une action, ce logiciel
+  ne le sait pas tant qu'un fait de procédure n'est pas consigné. » Il ne dit pas d'en consigner un ;
+  il dit ce qu'il ignore, comme partout ailleurs.
+- **Les deux montants, et leur écart, décomposé.** Le dossier porte un décompte FIGÉ ; la file
+  continue de compter au jour le jour. Ils divergent, et le taire serait offrir un chiffre qu'on
+  demande de croire. La rangée porte les deux : « Dossier du 16/09 : 12 480,33 €. Aujourd'hui :
+  12 612,80 €. L'écart est de 132,47 € d'intérêts courus depuis, décomposables en segments. »
+- **Le temps écoulé, en constat arithmétique.** « Dossier remis il y a 34 jours. Aucun fait de
+  procédure consigné depuis. » C'est la discipline de `comportement.ts` : un constat refaisable à
+  la main, aucun verbe d'action, aucune insinuation sur le conseil.
+
+**Ce qui revient, et où ça atterrit.** Trois choses, et chacune a déjà sa destination :
+
+1. **Un fait de procédure**, avec sa date de survenance : dans `evenementsProcedure`, rendu au volet
+   de preuve, section 6, par le champ de `ui/suivi-procedure.tsx:160` qui y migre (§ 4.2). C'est la
+   seule saisie de date que le produit ne peut pas déduire.
+2. **Une contestation reçue hors du logiciel** : dans le journal, volet section 7, qui en est le
+   SEUL point d'entrée. C'est ce qui donne prise à la règle « l'absence de contestation CONNUE n'est
+   pas une absence de contestation ».
+3. **Rien.** Le conseil n'a pas encore répondu. L'état reste `REMIS`, la rangée continue de compter,
+   et **le produit ne relance personne**. La seule chose qui change est le nombre de jours dans le
+   constat.
+
+**La table, son cloisonnement et sa purge.**
+
+| Table | Ce qu'elle porte | Cloisonnement | Purge |
+| --- | --- | --- | --- |
+| `remisesAuConseil` | `creanceId`, `decompteId` (le décompte figé que le dossier emporte), `etat` (`PREPARE` / `REMIS` / `REVENU` / `CLOS`), `intervenantId` optionnel vers le carnet, `remisLe` / `revenuLe` / `closLe` en date du FAIT au format AAAA-MM-JJ, `consigneLe` en horodatage de saisie, `motifCloture` et `attendu` optionnels, en toutes lettres | `organizationId: v.id('organizations')`, index `by_org`, `by_org_and_etat`, `by_creance` | citée dans `rgpd.ts` |
+
+⚠️ **Elle porte des données client, sans exception à justifier :** à qui ce gérant confie ses
+dossiers est sa relation, pas une information du domaine, et l'intervenant vient de son carnet
+privé. `src/lib/convex/__tests__/purge-complete.test.ts` lit la SOURCE de `recouvrement/tables.ts`,
+relève toute table qui déclare `organizationId: v.id('organizations')`, et **échoue si la chaîne
+`'remisesAuConseil'` n'apparaît pas dans `rgpd.ts`** (test, lignes 80-91). C'est la seule barrière
+de cette spec qu'on ne peut pas oublier sans qu'un test rouge le dise le jour même.
+
+**Et une règle de gel, pour la même raison que les décomptes.** Un dossier `REMIS` fige ce qu'il a
+emporté : son `decompteId` ne change jamais, et une proposition corrigée après coup ne réécrit pas
+ce qui est parti chez le conseil. La question n'est pas « que dirait le dossier aujourd'hui » mais
+« qu'a lu le conseil le jour où on le lui a remis ». Produire un dossier à jour crée un NOUVEAU
+dossier daté, avec sa propre remise.
 
 **C'est la seule concession de la refonte à « un seul flux », et on la revendique** plutôt que de
 la masquer. Déplier une pièce citable dans une file produirait une pièce non citable.
@@ -670,6 +1099,12 @@ prouver qu'il travaille.**
 pas pu lire ». Aucun nom, aucun visage, aucun encouragement. Sur un produit dont la sortie finit
 devant un greffe, une personnalité fait entendre une recommandation là où un constat a été écrit.
 
+**Il part AVANT la validation juriste, et c'est une décision de Jules, pas une tolérance** (D10,
+17 septembre 2026). Elle vient avec deux conditions qui sont la décision autant que le « oui » :
+toute référence légale se résout par le registre, et une valeur non validée par un avocat ne bloque
+pas l'outil, elle nomme ce qu'elle interdit. **§ 5.9 écrit exactement ce qu'il dit quand il touche
+cette limite, et la règle qui fait qu'un second pays n'obligera à rien réécrire.**
+
 ### 5.2 Où il vit
 
 Trois endroits, et nulle part ailleurs.
@@ -722,9 +1157,11 @@ cinquième item de navigation, une modale qui coupe, un avatar, un écran à lui
 - **Il NOMME SES ÉCHECS** à leur place chronologique : « Lecture échouée, le montant TTC n'est pas
   identifiable page 2 », daté, avec son geste de reprise. Jamais escamoté, jamais deviné, jamais
   réessayé en silence.
-- **Il REFUSE en le nommant** : quand une valeur juridique n'a pas passé `exiger()`, il ne chiffre
-  pas le segment et dit lequel manque (« 2e semestre 2026 absent de la série, ce segment n'est pas
-  chiffré »). Le refus est un résultat affichable, pas une erreur technique.
+- **Il REFUSE en le nommant, et le refus est un CHEMIN** (D0). Quand une valeur juridique n'a pas
+  passé `exiger()`, il ne chiffre pas le segment et dit lequel manque (« 2e semestre 2026 absent de
+  la série, ce segment n'est pas chiffré »), puis il dit ce qu'il a chiffré quand même, ce qui
+  lèverait le manque et ce que l'attente coûte. Le refus est un résultat affichable en quatre
+  parties, jamais une erreur technique et jamais une phrase seule.
 - **Il prépare des artefacts privés** : un brouillon de courrier étiqueté « Visible par vous seul,
   non envoyé », et le dossier à remettre au conseil, figé et daté. **Le brouillon sort de
   `relance.ts`, sans appel modèle**, et le compagnon en RELAYE les deux refus au lieu de les
@@ -863,8 +1300,9 @@ critère est « mécanique et sans échappatoire ». Les trois tables ci-dessous
 | `propositions` | Un constat posé par le compagnon : sa cible, son champ, la valeur proposée, sa SOURCE (pièce et page, ou entrée de `parametres.ts`), son état (`PROPOSEE` / `RETENUE` / `ECARTEE`), l'auteur et l'horodatage de chaque transition, et le motif d'un écart | `organizationId`, index `by_org` et `by_org_and_etat` | citée dans `rgpd.ts` |
 | `journal` | Une entrée par fait : ce que la machine a fait ou ce que le gérant a dit, l'état AVANT et APRÈS, la source, l'auteur, l'horodatage | `organizationId`, index `by_org` et `by_org_and_cible` | citée dans `rgpd.ts` |
 | `conversations` | Les tours de parole d'un fil, leur portée, les pastilles de source par phrase, et l'usage modèle consommé | `organizationId`, index `by_org` et `by_org_and_cible` | citée dans `rgpd.ts` |
+| `remisesAuConseil` | Le suivi d'un dossier remis : la créance, le décompte figé qu'il emporte, son état, l'intervenant du carnet s'il est nommé, et les dates du FAIT de chaque transition (D12, § 4.4) | `organizationId`, index `by_org`, `by_org_and_etat` et `by_creance` | citée dans `rgpd.ts` |
 
-**Trois règles de persistance, et chacune a une raison opposable :**
+**Quatre règles de persistance, et chacune a une raison opposable :**
 
 1. **Une proposition ÉCARTÉE n'est jamais supprimée**, seulement marquée. § 5.6 pose que « le cycle
    de vie de la proposition EST la piste d'audit » : il faudra pouvoir dire ce qu'on n'a PAS retenu,
@@ -875,14 +1313,129 @@ critère est « mécanique et sans échappatoire ». Les trois tables ci-dessous
 3. **Un décompte arrêté fige les propositions qu'il a consommées.** Il est figé définitivement ;
    rejouer produit un NOUVEAU décompte daté. Une proposition corrigée après coup ne doit pas
    réécrire ce qu'on a réclamé le jour où on l'a réclamé.
+4. **Une remise fige le décompte qu'elle emporte.** Son `decompteId` ne change jamais. La question
+   n'est pas « que dirait le dossier aujourd'hui » mais « qu'a lu le conseil le jour où on le lui a
+   remis » (§ 4.4).
 
-⚠️ **Ces trois tables portent des données client, sans aucune exception à justifier** : ce qu'un
-gérant a répondu sur son débiteur, la question qu'il a tapée, le montant qu'il a confirmé. Rien n'y
-est mutualisé, et l'annuaire national des avocats reste le contre-exemple qui confirme la règle : il
-n'a pas d'`organizationId` parce qu'un fichier public sous Licence Ouverte n'appartient à personne,
-et `purge-complete.test.ts` ne le réclame donc pas.
+⚠️ **Ces quatre tables portent des données client, sans aucune exception à justifier** : ce qu'un
+gérant a répondu sur son débiteur, la question qu'il a tapée, le montant qu'il a confirmé, à qui il
+a confié son dossier. Rien n'y est mutualisé, et l'annuaire national des avocats reste le
+contre-exemple qui confirme la règle : il n'a pas d'`organizationId` parce qu'un fichier public sous
+Licence Ouverte n'appartient à personne, et `purge-complete.test.ts` ne le réclame donc pas.
 
----
+### 5.9 Le compagnon avant le juriste, et le second pays (D10)
+
+**La décision, mot pour mot.** Jules, le 17 septembre 2026 : « Oui le compagnon part avant la
+validation du juriste en s'assurant avec les textes de lois et en veillant à utiliser le système
+multi juridique déjà en place (partie France). » Ce n'est pas un feu vert nu : c'est un feu vert
+assorti de deux conditions, et les conditions sont la décision.
+
+#### Condition 1 : toute référence légale se résout par le registre
+
+**Aucune affirmation de droit ne se rend sans article résolu.** Le registre est
+`src/lib/verticales/recouvrement/parametres.ts`, et le module de pays qu'il nomme lui-même. La règle
+exécutable est B3, déjà écrite et déjà élargie : elle porte sur l'ÉNONCÉ, pas sur le chiffre. Le
+compagnon n'a pas le droit de dire le droit de mémoire, même juste, parce qu'une phrase juste sans
+source ne se vérifie pas et ne se corrige pas le jour où la valeur change.
+
+#### Condition 2 : `verifie` autorise à calculer, `valideParAvocat` seul autorise l'acte
+
+**L'état réel, relevé le 17 septembre 2026 :** 12 paramètres `verifie: true`, 3 `verifie: false`,
+et **15 `valideParAvocat: false`, 0 `true`**. Donc, aujourd'hui, `exiger()` passe sur douze valeurs
+et refuse sur trois ; `exigerPourActe()` refuserait sur les quinze, et il n'est appelé nulle part.
+
+**Une valeur `verifie` mais non `valideParAvocat` autorise trois choses et en interdit une :**
+
+| Autorisé | Interdit |
+| --- | --- |
+| **Calculer.** Un chiffre affiché se corrige au rafraîchissement suivant | **Produire un acte.** Un chiffre écrit dans une requête signifiée ne se corrige plus |
+| **Expliquer.** Segment par segment, avec l'article, la date de relevé et les deux booléens | |
+| **Préparer.** Le brouillon privé, le dossier pour le conseil, le pré-vol de l'arrêt | |
+
+#### Ce que le compagnon DIT quand il rencontre cette limite
+
+Quatre parties, dans cet ordre, et jamais moins de quatre (D0, B14). Exemple complet, sur
+l'indemnité forfaitaire :
+
+> **Ce que je peux faire maintenant.** Je chiffre ce décompte : 12 480,33 €, dont 400,00 €
+> d'indemnités forfaitaires sur 10 factures et 1 240,33 € d'intérêts en 3 segments. Chaque segment
+> porte sa base, son taux, ses jours et sa base annuelle. Il s'imprime, il se refait à la main, et il
+> se remet à votre conseil.
+>
+> **Ce qui manque.** L'indemnité de 40 € vient de l'article D441-5 du code de commerce, relevée sur
+> Légifrance le 04/01/2026. Elle est relevée par le logiciel ; aucun juriste n'a contrôlé qu'elle
+> s'applique à votre cas.
+>
+> **Ce qui le lève.** Le contrôle par un juriste de la valeur ET de son applicabilité au cas
+> d'espèce. C'est le champ `valideParAvocat` du référentiel, et c'est le seul que le logiciel ne peut
+> pas remplir seul.
+>
+> **Ce que coûte l'attente.** Rien sur ce décompte : il ne part à aucun greffe, et ce produit n'émet
+> aucun acte. Sur ce dossier, ce qui court est la prescription : le 27/10/2026, dans 41 jours.
+
+⚠️ **Trois choses que cette formulation évite, et qui sont les trois façons de la rater.**
+
+1. **Elle ne dit pas « faites valider par un avocat ».** Ce serait une conduite à tenir. Elle nomme
+   ce qui lève le verrou au constat, à la troisième personne. C'est la discipline déjà tenue par
+   `relance.ts:160-165`, dont le commentaire écarte « déclarer la créance, saisir qui que ce soit »
+   pour cette raison exacte.
+2. **Elle ne met pas le coût de l'attente à zéro pour rassurer.** Le décompte ne risque rien, la
+   créance si, et ce sont deux phrases différentes. Un « rien ne presse » global serait faux.
+3. **Elle ne se répète pas à chaque tour de parole.** Les quinze paramètres portent le même état ;
+   le dire quinze fois par écran serait du bruit, et le bruit s'apprend. **Le constat se rend une
+   fois par surface, à l'endroit où le chiffre s'affiche**, et le « (i) » de chaque segment ouvre la
+   fiche complète du paramètre (§ 4.2, section 1).
+
+#### Comment le pays est choisi aujourd'hui, et la règle pour le second
+
+⚠️ **Vérifié au code, et il faut le dire franchement : il n'existe aucun sélecteur de pays.** Aucune
+table ne porte de champ `pays`, aucun code pays ne circule, et rien ne choisit à l'exécution. La
+France est choisie **par le chemin d'import**, relevé le 17/09 à **18 fichiers et 27 lignes
+d'import** hors du module de pays et hors tests :
+
+- **10 modules Convex** (`recouvrement/debiteurs.ts:8`, `:10`, `:11`, `decompte.ts:16`,
+  `lecture.ts:23`, `monEtablissement.ts:9`, `profil.ts:6`, `radar.ts:4`, `:5`, `recherche.ts:8`,
+  `revelation.ts:15-17`, `surveillance.ts:24`) ;
+- **2 modules de la verticale** (`taux-contractuel.ts:3`, `import/factureVente.ts:3`) ;
+- **2 écrans** (`screens/debiteur-detail.tsx:27`, `screens/parametres/creancier.tsx:22`) ;
+- **4 fichiers de salle d'exposition** et **1 page marketing** (`marketing/la-loi.tsx:3-4`).
+
+**Ce qui EXISTE, en revanche, et qui est le vrai système multi-juridique**, c'est la frontière que
+`parametres.ts` tient déjà :
+
+- une valeur qui varie par date ou par secteur est déclarée `nature: 'SERIE'`, `valeur: null`, et
+  porte **`resoluPar`**, qui NOMME le module de pays et sa fonction (`parametres.ts:119`, `:136`,
+  `:152`, `:171`) ;
+- **`exiger()` REFUSE une SERIE** et son message dit quoi faire à la place : « Utiliser
+  pays/france/taux.ts → tauxPenaliteParDefaut(date) plutôt que exiger() » (`parametres.ts:402-406`).
+  Un test le vérifie (`__tests__/parametres.test.ts:103`).
+
+Autrement dit : le registre sait déjà qu'une valeur appartient à un pays, et il refuse déjà de la
+rendre lui-même. Ce qui manque n'est pas la frontière, c'est le choix.
+
+**La règle pour que le compagnon n'oblige à rien réécrire le jour d'un second pays**, et elle tient
+en une phrase : **le compagnon ne lit aucune valeur juridique, ne nomme aucun module et n'importe
+aucun pays.**
+
+1. Il reçoit des **faits déjà résolus**, produits par les modules de domaine, sous une forme unique :
+   la clé, la valeur, la source, la date de relevé, `verifie`, `valideParAvocat`, et `resoluPar`
+   quand c'en est un. Il en fait une phrase et une pastille.
+2. Il ne résout jamais une SERIE lui-même. S'il reçoit une entrée non résolue, il ne la rend pas
+   (B3) et le refus nomme la clé.
+3. **Barrière exécutable, B15** : un test échoue si le module qui compose les phrases du compagnon
+   importe quoi que ce soit sous `verticales/recouvrement/pays/`. Modèle :
+   `src/lib/socle/__tests__/frontiere.test.ts`, qui tient déjà la frontière socle / verticales.
+
+**Conséquence, écrite pour dans six mois.** Le jour où un second pays existe, ce sont les dix-huit
+fichiers ci-dessus qui choisissent, et eux seuls. **Le compagnon ne doit pas devenir le
+dix-neuvième**, parce qu'un compagnon qui connaît la France est un compagnon qu'il faudra réécrire
+en entier, phrase par phrase, pour un second pays. Il ne saura jamais qu'il y en a un.
+
+⚠️ **Et ce qui n'est PAS demandé dans cette tranche, pour qu'on ne le lise pas entre les lignes :**
+on ne construit pas le sélecteur de pays, on n'ajoute aucun champ `pays`, et on ne rend aucun des
+dix-huit sites générique. Le principe anti-dérive s'applique : aucune tâche manuelle répétée du
+terrain ne le désigne aujourd'hui. Ce qu'on fait ici est plus modeste et coûte un test : on
+s'assure que le compagnon n'ajoutera pas un dix-neuvième site à défaire.
 
 ## 6. Les automatismes, et leur source
 
@@ -1129,15 +1682,41 @@ autre que le créancier et le débiteur de la créance, **et lève en nommant ce
 Raison : ligne rouge 1 : un débiteur qui lit le nom d'un tiers dans le courrier y voit un mandat de
 chaîne, c'est-à-dire du recouvrement pour compte de tiers.
 
-**B12. Les deux refus de `relance.ts` sont rendus, jamais contournés.** Un test échoue si un chemin
-d'interface produit un brouillon alors que `composerRelance()` a rendu `disponible: false`, que ce
-soit par la suspension (débiteur en procédure collective ou radié) ou par le niveau 3 indisponible.
-Le constat du refus s'affiche à la place du brouillon, avec ce qui lui manque, nommé.
+**B12. Les TROIS refus de `relance.ts` sont rendus, jamais contournés.** Un test échoue si un chemin
+d'interface produit un brouillon alors que `composerRelance()` a rendu `disponible: false`, quelle
+qu'en soit la cause : la suspension sur un débiteur en procédure collective ou radié
+(`relance.ts:144-168`), le niveau 3 indisponible faute de mentions obligatoires relevées
+(`relance.ts:273-300`), et **le niveau 2 sans décompte arrêté** (`relance.ts:226-235`). Le constat du
+refus s'affiche à la place du brouillon, avec ce qui lui manque, nommé.
+
+⚠️ **Le troisième n'était pas relevé dans la première écriture**, qui n'en comptait que deux. C'est
+pourtant celui qui compte le plus pour D0, parce que c'est le seul des trois qui **se lève** : la
+rangée porte « Arrêter le décompte » à 48 px, et le niveau 2 devient disponible au retour. Un refus
+qui a un geste et qu'on rend sans le geste est le pire des deux mondes.
 
 **B13. Toute table neuve portant `organizationId` est citée dans `rgpd.ts`.** Ce n'est pas une
 barrière à écrire : `src/lib/convex/__tests__/purge-complete.test.ts` existe et mord déjà. Elle est
-citée ici parce que les trois tables de § 5.8 tombent dessus, et qu'elle est la seule barrière de
-cette liste qu'on ne peut pas oublier sans qu'un test rouge le dise le jour même.
+citée ici parce que les **quatre** tables de § 5.8 tombent dessus, `remisesAuConseil` comprise, et
+qu'elle est la seule barrière de cette liste qu'on ne peut pas oublier sans qu'un test rouge le dise
+le jour même. Son critère exact : la chaîne `'<nom de table>'`, guillemets compris, doit apparaître
+dans `rgpd.ts` (test, lignes 80-91).
+
+**B14. Aucun refus muet** (D0). Toute fonction qui refuse un résultat DESTINÉ À L'ÉCRAN rend un
+objet de refus à quatre champs : ce qu'on peut faire tout de suite, ce qui manque, ce qui le lève,
+ce que coûte l'attente. Un test échoue si un chemin de rendu affiche un refus dont le premier champ
+est vide, ou qui n'est qu'une chaîne. Raison : un mur muet est un défaut. Le modèle existe au dépôt,
+à mi-chemin : `Relance` porte déjà `constat` ET `blocages` quand elle refuse (`relance.ts:121-124`)
+au lieu d'un message unique. B14 porte cette forme de deux champs à quatre, et l'applique partout.
+
+⚠️ **Ce que B14 ne couvre PAS, et c'est délibéré :** les erreurs de développement. `exiger()` sur une
+SERIE (`parametres.ts:402-406`) n'atteint jamais l'écran, et transformer ce refus-là en chemin
+d'interface rendrait rattrapable une faute qui doit casser le build.
+
+**B15. Le compagnon n'importe aucun module de pays** (D10, § 5.9). Un test échoue si le module qui
+compose les phrases du compagnon importe quoi que ce soit sous `verticales/recouvrement/pays/`.
+Modèle : `src/lib/socle/__tests__/frontiere.test.ts`. Raison : le pays est aujourd'hui choisi par le
+chemin d'import, à dix-huit endroits. Un compagnon qui devient le dix-neuvième est un compagnon à
+réécrire phrase par phrase le jour d'un second pays.
 
 **Les barrières existantes restent vertes :** `destinations-existent`, `aucun-ecran-orphelin`,
 `fonctions-appelees`, `purge-complete`, `champs-alimentes`, `declare-jamais-alimente`,
@@ -1208,8 +1787,11 @@ Ce ne sont pas des finitions : chacune rend faux quelque chose que la spec annon
 
 1. **Extraire `Facultatif` de `barre.tsx:93` vers `src/ui/`** (B1). Sinon l'isolement par source de
    rangées part avec la barre qu'on supprime.
-2. **Trancher Q8 et réparer `surveillance.ts:374`.** Sinon toute la classe `CREANCE_MURE` est
-   annoncée dans les maquettes et ne se produit jamais.
+2. **Réparer `surveillance.ts:374` et `scoring.ts:300` ensemble** (D11, § 4.1). Sinon toute la
+   classe `CREANCE_MURE` est annoncée dans les maquettes et ne se produit jamais. ⚠️ **Les deux
+   lignes partent dans la même tranche** : ne réparer que `surveillance.ts` laisserait deux
+   définitions de « mûre », celle de la file et celle d'`eligible` que `screens/creance.tsx:245`
+   rend sous le libellé « Mûre pour une procédure ».
 3. **Réécrire `surveillance.ts:384` en constat** (B6). Sinon la file naît en portant, dès sa première
    rangée, une phrase que la ligne rouge 3 interdit et que le balayage actuel ne voit pas.
 
@@ -1222,96 +1804,141 @@ mauvais modèle.
 
 ## 10. Les questions qui restent à Jules
 
-**Q1. Par quoi un gérant pense-t-il son portefeuille : par échéance, ou par client ?** La file est
-triée par `surveillance.ts`, c'est-à-dire par une règle de domaine. Si un gérant pense d'abord
-« Durand me doit de l'argent » et non « quelque chose s'éteint le 27/10 », on aura remplacé une
-carte du droit par une autre, plus courte mais tout aussi étrangère. La portée « Débiteurs » existe
-pour ça, mais le DÉFAUT est un choix, et c'est le tien. **C'est la première chose à vérifier au
-navigateur, aux quatre largeurs, avec des données réelles, avant d'écrire une ligne d'écran.**
+**Quatre des huit sont tranchées, le 17 septembre 2026.** Elles restent écrites ici, avec la phrase
+de Jules et le renvoi vers la décision, parce qu'une question effacée est une question qu'on repose
+dans six mois.
 
-**Q2. Livre-t-on le compagnon avant la validation juriste des paramètres ?** ⚠️ **La question a
-changé de forme, parce que sa prémisse était fausse.** La première écriture posait que
-`exigerPourActe()` « refuse partout », donc qu'un compagnon buterait dessus à chaque tour de parole.
-C'est faux : **cette fonction n'est appelée nulle part** (§ 3.2). Aujourd'hui, rien ne refuse, et
-c'est le vrai sujet.
+### Q1. TRANCHÉE le 17/09/2026, décision D9 (§ 4.1)
 
-Les quinze paramètres portent bien `valideParAvocat: false` (relevé le 17/09). Tant qu'aucun appel
-n'est câblé, ce booléen ne protège rien : il documente une intention. La question à trancher est donc
-double, et dans cet ordre :
+> « Il faut isoler par créance et ou par client avoir le choix de la vue quoi. »
 
-1. **Câble-t-on le premier `exigerPourActe()` dans cette tranche ?** Recommandation : oui, sur le
-   dossier à remettre au conseil si Q7 le range du côté acte, et sinon sur rien, mais alors on
-   l'écrit, pour que personne ne relise `parametres.ts` dans six mois en croyant qu'un verrou est en
-   place.
-2. **Fait-on valider les paramètres avant la livraison du compagnon ?** Un compagnon qui prépare un
-   dossier sous un verrou câblé le nommera à haute voix tous les jours : excellent pour l'honnêteté
-   du produit, mauvais pour une démonstration commerciale. **Ce n'est pas un détail de calendrier :
-   c'est ce que le gérant verra en premier.**
+La question était : par quoi un gérant pense-t-il son portefeuille, par échéance ou par client ? La
+réponse est **les deux, au choix explicite du gérant**. Un `Segmented` de deux positions dans la
+`Toolbar`, Par créance en défaut, Par client à un tap, retenu par `usePreference`. Le défaut reste
+l'échéance parce que la prescription est le seul argument de vente qui fasse perdre un droit sans
+que personne n'ait rien fait. **Reste vrai, et reste la première chose à faire :** vérifier les deux
+vues au navigateur, aux quatre largeurs, avec des données réelles, avant d'écrire une ligne d'écran.
 
-**Q3. Combien de propositions par jour, au maximum ?** C'est le risque numéro un de la refonte :
-quarante propositions par jour produisent quarante « Retenir » à l'aveugle et une piste d'audit qui
-MENT, ce qui est strictement pire que l'état actuel où le gérant sait au moins qu'il a coché
-lui-même. Le remède est un plafond, pas une meilleure mise en page. Je ne sais pas le mesurer avant
-d'avoir des utilisateurs. **Proposition à ratifier : on préfère une file courte et vraie à une file
-complète et fausse, et on l'assume commercialement.**
+### Q2. TRANCHÉE le 17/09/2026, décision D10 (§ 5.9)
 
-**Q4. Un plafond mensuel de conversation par établissement, et à quel niveau ?** Environ 5,5
+> « Oui le compagnon part avant la validation du juriste en s'assurant avec les textes de lois et en
+> veillant à utiliser le système multi juridique déjà en place (partie France). »
+
+Le compagnon part maintenant, sous deux conditions qui sont la décision : toute référence légale se
+résout par le registre (B3), et une valeur `verifie` non `valideParAvocat` autorise à calculer, à
+expliquer et à préparer, jamais à produire un acte. **Réponse aux deux sous-questions :**
+
+1. **Le premier `exigerPourActe()` n'est PAS câblé dans cette tranche**, parce que le produit
+   n'émet aucun acte : le décompte est arbitré sous `exiger()` (`piece.ts:19`) et le dossier du
+   conseil aussi (D12, § 4.4). **Et c'est écrit noir sur blanc en § 3.5**, pour que personne ne
+   relise `parametres.ts` dans six mois en croyant qu'un verrou est en place. Le jour où un module
+   émet un acte, c'est lui la porte, et il refuse sur les quinze paramètres.
+2. **Les paramètres ne sont PAS validés avant la livraison du compagnon.** Ce que le gérant verra en
+   premier n'est donc pas un refus, mais un constat en quatre parties à l'endroit où le chiffre
+   s'affiche, une fois par surface (§ 5.9). ⚠️ **La réserve de la question tient toujours et se
+   transforme en point de vérification :** il faut le regarder à l'écran avant de le montrer à
+   quelqu'un, parce qu'une mention honnête mal placée se lit comme un produit qui doute de lui.
+
+### Q3. Combien de propositions par jour, au maximum ? OUVERTE
+
+C'est le risque numéro un de la refonte : quarante propositions par jour produisent quarante
+« Retenir » à l'aveugle et une piste d'audit qui MENT, ce qui est strictement pire que l'état actuel
+où le gérant sait au moins qu'il a coché lui-même. Le remède est un plafond, pas une meilleure mise
+en page.
+
+**Le défaut chiffré que je propose : SEPT propositions par jour ouvré et par établissement**, plus
+une règle de grain, **jamais plus de trois sur une même rangée ouverte**.
+
+**D'où sort le sept.** Du budget de temps mesuré en § 1, pas d'une intuition : cinq minutes par
+session de travail, et une proposition se LIT avant d'être tapée (sa phrase, sa source, sa page).
+Sept propositions lues et décidées tiennent dans cinq minutes au rythme mesuré au parcours A, et
+laissent intactes les deux minutes du coup d'oeil hebdomadaire. Au-delà, le gérant ne décide plus,
+il acquitte.
+
+⚠️ **Deux garde-fous, sans lesquels le plafond devient le défaut qu'il devait empêcher :**
+
+1. **Le plafond ne s'applique JAMAIS à une échéance qui éteint un droit.** Une rangée de
+   prescription ne compte pas dans les sept. Un plafond qui avale la seule chose pour laquelle le
+   produit existe est pire que pas de plafond.
+2. **Ce qui dépasse est COMPTÉ et NOMMÉ, jamais tronqué en silence.** « 7 propositions aujourd'hui,
+   12 autres en attente, les voir. » C'est exactement le défaut de
+   `MODE_COMPACT = { limite: 3, versDetail: '/app/revelation' }` (`accueil.tsx:164`), où les alertes
+   4 à N ne sont atteignables nulle part, et il ne se refait pas.
+
+**Comment on le mesurera, avec trois nombres que `propositions` porte déjà** (§ 5.8) :
+
+1. **Le taux de rétention.** Retenues / (retenues + écartées), par jour de file. S'il monte au-dessus
+   de 95 % **pendant que le nombre de propositions par jour monte**, ce n'est pas de la justesse,
+   c'est du « Retenir » à l'aveugle. Les deux courbes se lisent ensemble ou ne disent rien.
+2. **Le délai entre l'affichage et le tap.** Deux horodatages sur la même ligne. Une médiane sous
+   deux secondes sur une proposition qui porte une source et une page est un tap, pas une lecture.
+3. **Le taux de correction APRÈS coup.** Une proposition retenue puis corrigée, que le journal
+   enregistre avec son état avant et après (§ 5.6). **C'est le seul des trois qui ne soit pas
+   auto-référentiel**, parce que la correction vient du monde réel et pas de l'interface.
+
+**Comment le plafond bouge.** Il DESCEND quand 1 monte et 2 descend ensemble. Il ne monte que si 3
+reste à zéro sur un mois plein, chez plusieurs établissements. ⚠️ **Aucun de ces trois nombres
+n'existe avant les premiers utilisateurs : sept est une HYPOTHÈSE DATÉE**, écrite ici pour être
+déplacée, exactement comme `SEUIL_QUALIFICATION` l'est dans son propre commentaire
+(`scoring.ts:150-158`, « une hypothèse de départ, à recalibrer sur le taux de contestation
+réellement observé »).
+
+**Ce qui reste à ratifier :** on préfère une file courte et vraie à une file complète et fausse, et
+on l'assume commercialement.
+
+### Q4. Un plafond mensuel de conversation par établissement ? OUVERTE
+
+Environ 5,5
 centimes par question, aucun plafond côté conversation aujourd'hui (§ 5.7). 8 à 11 € par mois pour
 un gérant bavard, en coût variable adossé à un prix fixe. Faut-il un plafond dur, un plafond mou
 qui prévient, ou rien pour l'instant ?
 
-**Q5. Le champ de saisie libre part-il dans la même livraison que la file ?** La position tenue
+### Q5. Le champ de saisie libre part-il avec la file ? OUVERTE
+
+La position tenue
 dans cette spec est non : les propositions d'abord, la conversation quand B2, B3 et B4 sont vertes.
 Une thèse « compagnon en permanence » livrée sans sa muselière met le produit hors la loi. À
 confirmer, parce que c'est ce qui décale la partie la plus visible de la demande.
 
-**Q6. Que devient la palette de recherche du chantier 2 ?** Elle vient d'être livrée, elle porte 5
+### Q6. Que devient la palette de recherche du chantier 2 ? OUVERTE
+
+Elle vient d'être livrée, elle porte 5
 racines `Popup`, et une file avec des puces de portée recouvre une partie de son usage. Elle reste
 utile pour trouver une facture par sa référence. Faut-il la garder telle quelle, ou la fondre dans
 la file ? **Non tranché dans cette spec, à dessein : elle a coûté une tranche entière et elle n'a
 pas encore été regardée à l'usage.**
 
-**Q7. Le « Dossier à remettre à votre conseil » vit-il sous `exiger()` ou sous `exigerPourActe()` ?**
-C'est la frontière calculer / produire un acte, et c'est le premier artefact du produit dont la
-réponse ne soit pas déjà écrite : le décompte est arbitré (`exiger()`, `piece.ts:19`), le brouillon
-de courrier n'est pas un acte, et ce dossier est neuf.
+### Q7. TRANCHÉE le 17/09/2026, décision D12 (§ 4.4)
 
-Les deux lectures se défendent, et c'est pour ça que je ne tranche pas seul :
+> « Il faut qu'on puisse suivre aussi le dossier qui passe par le conseil bien évidemment ! »
 
-- **`exiger()`** : le dossier n'est ni une requête, ni une mise en demeure, ni un commandement. Il
-  n'est déposé à aucun greffe et ne produit aucun effet de droit. Un chiffre faux dedans se corrige
-  en refaisant le dossier, comme un chiffre affiché.
-- **`exigerPourActe()`** : il est lu par quelqu'un dont le métier est d'en produire un, et ses
-  chiffres seront recopiés dans une pièce qui, elle, ne se corrige plus. Un avocat qui reprend un
-  taux non validé le reprend de bonne foi.
+La question posée était étroite (sous quel verrou vit le dossier) ; la réponse de Jules a déplacé le
+sujet, et elle a raison de le déplacer. **Le dossier ne finit pas en PDF téléchargé : son état vit
+dans le produit**, en quatre états, avec les dates du FAIT, et la file continue de compter pendant
+qu'il est parti. § 4.4 écrit le cycle de vie, la table `remisesAuConseil` et sa purge.
 
-**Ce que je recommande : `exiger()` pour le calcul, ET une mention en tête du PDF qui nomme
-l'état de chaque valeur**, par exemple « douze valeurs vérifiées sur une source publique, zéro validée par un
-juriste, relevé du 04/01/2026 », de sorte que le conseil sache ce qu'il tient sans qu'on lui refuse
-le document. Le refus dur, lui, se garde pour le jour où le produit émettra un acte, si jamais il en
-émet un. **Mais c'est un arbitrage de risque, pas de conception, et il te revient.**
+**Et le verrou suit de D0 et D10 : `exiger()`, avec la mention en tête qui nomme l'état de chaque
+valeur.** Refuser le document à un avocat au motif qu'un avocat ne l'a pas validé serait un mur
+circulaire, et c'est exactement ce que D0 interdit ; le lui donner sans dire ce qu'il tient serait
+pire. La mention porte les chiffres réels : douze valeurs relevées sur une source publique citable,
+trois non relevées, zéro validée par un juriste. **Le refus dur se garde pour le jour où le produit
+émettra un acte** (§ 3.5, refus 1).
 
-**Q8. Comment répare-t-on `CREANCE_MURE`, dont le seuil est infranchissable ?**
-`surveillance.ts:374` filtre la classe entière sur `creance.score < SEUIL_QUALIFICATION` (0,75,
-`scoring.ts:158`), et § 2 démontre que ce seuil ne se franchit pas sans pièce de fond. **Aucune
-rangée de cette classe n'entrera dans la file tant que ce filtre est en place**, et la file est bâtie
-sur ce module. C'est un bloquant de tranche, pas une finition.
+### Q8. TRANCHÉE le 17/09/2026, décision D11 (§ 4.1)
 
-Trois réparations possibles, et elles n'ont pas le même sens produit :
+> « Une créance mûre c'est ça oui. »
 
-1. **Faire porter l'événement sur le critère déterministe**, `conditionsToutesEtablies &&
-   !aUnBloquant`, que `scoring.ts:300` calcule déjà à côté du score. Une créance dont les quatre
-   conditions légales sont établies et qui ne porte aucun risque bloquant a quelque chose à dire, que
-   sa note soit à 0,62 ou à 0,80. **C'est ce que je recommande** : c'est cohérent avec D8, qui sort le
-   score de l'écran, et ça ne déplace aucun seuil juridique.
-2. **Baisser `SEUIL_QUALIFICATION`.** Rapide, et mauvais : le seuil n'est pas un réglage d'affichage,
-   il commande aussi `eligible` (`scoring.ts:300`), donc le sens de « qualifiée » dans tout le
-   produit.
-3. **Garder le seuil et remplacer la classe par une rangée « il manque une pièce de fond »**, qui est
-   déjà ce que § 9 propose à la place de la jauge. Honnête, mais alors le produit ne dit jamais
-   qu'une créance est prête, seulement ce qui lui manque.
+Réponse à la proposition 1 des trois : **une créance mûre, c'est toutes conditions établies et aucun
+bloquant**, pas un score au-dessus d'un seuil. Le critère déterministe est déjà calculé
+(`scoring.ts:294-297`), il ne déplace aucun seuil juridique, et il est cohérent avec D8 qui sort le
+score de l'écran.
 
-**Non tranché : c'est le sens de « mûre » qui se décide, et c'est une décision produit.**
+⚠️ **Une chose que Q8 sous-estimait, et qui est réparée en § 4.1 :** la proposition 1, telle qu'elle
+était écrite, ne touchait que `surveillance.ts:374`. Elle aurait laissé `eligible` inchangé dans
+`scoring.ts:300`, donc DEUX définitions de « mûre » dans le produit, celle de la file et celle que
+`screens/creance.tsx:245` rend sous le libellé « Mûre pour une procédure ». **Les deux lignes partent
+dans la même tranche**, et `SEUIL_QUALIFICATION` reste déclaré en perdant son dernier lecteur, ce qui
+est une décision de tranche à prendre le jour même (§ 4.1).
 
 ---
 
@@ -1339,4 +1966,25 @@ Trois réparations possibles, et elles n'ont pas le même sens produit :
 12. **Une sortie de modèle qui porte un terme du champ lexical de la procédure, un montant sans
     source ou un énoncé juridique non résolu ne s'affiche pas**, et le refus nomme le terme trouvé.
     Vérifié en faisant ÉCHOUER le filtre, pas en le regardant passer.
-13. **Les trois tables neuves sont citées dans `rgpd.ts`**, et `purge-complete.test.ts` est vert.
+13. **Les quatre tables neuves sont citées dans `rgpd.ts`**, `remisesAuConseil` comprise, et
+    `purge-complete.test.ts` est vert.
+14. **Aucun refus n'est muet** (D0). On ouvre chacun des refus de § 3.5 et on lit quatre parties :
+    ce qu'on peut faire, ce qui manque, ce qui le lève, ce que l'attente coûte. ⚠️ **Vérifié en
+    PROVOQUANT les refus**, pas en relisant le code : un paramètre `verifie: false` sur un segment,
+    un décompte qui écarte une facture connue, un niveau 2 sans décompte arrêté, un débiteur en
+    liquidation au registre.
+15. **Les trois refus qui restent refusent toujours**, et chacun nomme ce qu'il protège : aucun acte
+    sur valeur non validée, aucune relance au nom du client, aucune recommandation de procédure.
+16. **On bascule entre les deux vues avec une ligne ouverte, et le volet ne se ferme pas** (D9). On
+    le fait dans les trois cas de § 4.1, y compris sur une facture sans débiteur identifié, qui
+    apparaît dans sa rangée nommée et jamais nulle part. On recharge la page : la vue est celle
+    qu'on avait choisie.
+17. **Une rupture d'habitude de paiement se lit sans ouvrir un client**, dans la vue Par client, et
+    son constat est arithmétique, sans verbe d'action.
+18. **Une créance dont les quatre conditions sont établies et qui ne porte aucun bloquant entre dans
+    la file** (D11), et aucun pourcentage ni aucune teinte de seuil ne l'accompagne.
+19. **Un dossier remis au conseil se suit sans quitter la file** (D12) : la puce porte son compte,
+    la rangée reste pleine, la prescription continue de s'afficher avec son angle mort déclaré, et
+    l'écart entre le décompte figé et le montant du jour est décomposé.
+20. **Le compagnon n'importe aucun module de pays** (B15), et une valeur non validée par un avocat
+    produit un constat en quatre parties, une fois par surface, jamais un blocage.
