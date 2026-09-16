@@ -90,7 +90,11 @@ const DATE_LONGUE = new Intl.DateTimeFormat('fr-FR', {
 export function dateLisible(date: string): string {
 	if (!estDateReelle(date)) return date;
 	const { annee, mois, jour } = decomposer(date);
-	return DATE_LONGUE.format(new Date(Date.UTC(annee, mois - 1, jour)));
+	const lue = DATE_LONGUE.format(new Date(Date.UTC(annee, mois - 1, jour)));
+	// ⚠️ « 1 MAI » N'EXISTE PAS EN FRANÇAIS. Le premier jour du mois s'écrit en
+	// ordinal, et `Intl` ne le sait pas : il rend « 1 mai 2026 ». Les autres
+	// quantièmes, eux, sont cardinaux (« 2 mai », jamais « 2e mai »).
+	return jour === 1 ? lue.replace(/^1 /, '1er ') : lue;
 }
 
 function decomposer(date: string): { annee: number; mois: number; jour: number } {

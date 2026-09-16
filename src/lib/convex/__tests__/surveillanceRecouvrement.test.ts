@@ -149,7 +149,7 @@ describe('assemblage de l’état surveillé', () => {
 			const prescription = flux.evenements.find((e) => e.type === 'PRESCRIPTION_PROCHE');
 			expect(prescription).toBeDefined();
 			expect(prescription!.urgence).toBe('CRITIQUE');
-			expect(prescription!.explication).toMatch(/1 novembre 2026/);
+			expect(prescription!.explication).toMatch(/1er novembre 2026/);
 		},
 		DELAI_CONVEX
 	);
@@ -167,7 +167,7 @@ describe('assemblage de l’état surveillé', () => {
 			});
 
 			const prescription = flux.evenements.find((e) => e.type === 'PRESCRIPTION_PROCHE');
-			expect(prescription!.explication).toMatch(/est prescrite depuis le 1 novembre 2022/);
+			expect(prescription!.explication).toMatch(/est prescrite depuis le 1er novembre 2022/);
 			expect(prescription!.action).toMatch(/ne plus engager/i);
 		},
 		DELAI_CONVEX
