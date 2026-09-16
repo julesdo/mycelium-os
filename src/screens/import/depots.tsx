@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Surface } from '@cladd-ui/react';
 import { FileSpreadsheetIcon, FileTextIcon, UploadIcon } from 'lucide-react';
 import {
 	Bandeau,
@@ -168,9 +169,29 @@ export function EcranImport({
 					libellePhoto="Photographier une facture"
 				>
 					<div className="flex flex-col items-center gap-cladd-3xs text-center">
-						<span className="verre flex size-cladd-lg items-center justify-center rounded-full">
+						{/*
+						 * ⚠️ CE CERCLE PORTAIT `verre`, DONT LE FOND EST ÉCRIT EN DUR EN
+						 * SOMBRE, et le glyphe héritait de l'encre pleine du titre. Mesuré en
+						 * thème clair : 2,03:1 pour le glyphe contre 13,67:1 pour le titre juste
+						 * en dessous. L'élément le moins lisible de l'écran était celui qui dit
+						 * quoi faire.
+						 *
+						 * UN `Surface` DU KIT, ET PAS UN `bg-cladd-surface-*` POSÉ À LA MAIN :
+						 * les jetons de surface se calculent depuis le niveau publié par un
+						 * ancêtre `cladd-surface-level-*`. Sans cet ancêtre, ils tombent sur du
+						 * transparent et le disque disparaît sans qu'aucun test ne bronche. Le
+						 * vrai composant publie son niveau lui-même, dans les deux thèmes.
+						 *
+						 * L'encre douce du kit tient le glyphe à sa place : une indication, pas
+						 * un second titre.
+						 */}
+						<Surface
+							outline
+							className="size-cladd-lg shrink-0 rounded-full"
+							contentClassName="flex h-full items-center justify-center text-cladd-fg-soft"
+						>
 							<UploadIcon size={22} aria-hidden />
-						</span>
+						</Surface>
 						<p className="text-cladd-sm font-semibold">
 							{envoiEnCours ? 'Envoi en cours…' : 'Déposez vos fichiers ici'}
 						</p>
