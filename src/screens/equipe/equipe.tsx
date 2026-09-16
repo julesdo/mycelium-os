@@ -262,7 +262,16 @@ function LigneMembre({
 
 	return (
 		<ListItem className="flex flex-wrap items-center gap-cladd-3xs">
-			<span className="flex min-w-0 flex-1 flex-col">
+			{/*
+			  ⚠️ `basis-64` N'EST PAS UN ORNEMENT : sans lui, `flex-1` part d'une base
+			  nulle, la rangée ne se replie jamais, et c'est l'IDENTITÉ qui absorbe
+			  tout ce que les puces laissent. Mesuré à 375 px, la colonne du nom
+			  tombait à 42 px, soit « direction@… », pendant que « Adresse non
+			  vérifiée » et « Membre » gardaient leurs 198 px. La seule chose qui dise
+			  DE QUI parle la rangée était la première sacrifiée. Avec une base de
+			  16 rem, ce sont les puces qui passent à la ligne.
+			*/}
+			<span className="flex min-w-0 flex-1 basis-64 flex-col">
 				<span className="truncate text-cladd-sm font-semibold text-cladd-fg">
 					{titreDeLigne(membre)}
 					{membre.estMoi ? <span className="text-cladd-fg-softer"> · vous</span> : null}
@@ -284,7 +293,14 @@ function LigneMembre({
 			{actionsPossibles ? (
 				<PopoverRoot>
 					<PopoverTrigger>
-						<Button variant="transparent" aria-label={`Actions sur ${membre.email ?? membre.id}`}>
+						{/* `square` : sans lui, un bouton sans libellé se réduit à ses
+						    rembourrages et tombe à 36 px de large pour 48 de haut. Le prop
+						    du kit le rend carré sur son jeton de taille, donc 48 × 48. */}
+						<Button
+							square
+							variant="transparent"
+							aria-label={`Actions sur ${membre.email ?? membre.id}`}
+						>
 							<EllipsisIcon />
 						</Button>
 					</PopoverTrigger>
@@ -366,7 +382,9 @@ function LigneInvitation({
 
 	return (
 		<ListItem className="flex flex-wrap items-center gap-cladd-3xs">
-			<span className="flex min-w-0 flex-1 flex-col">
+			{/* Même base que `LigneMembre` : l'adresse invitée passait à 37 px de
+			    large à 375 px, derrière « Copier le lien » et « Annuler ». */}
+			<span className="flex min-w-0 flex-1 basis-64 flex-col">
 				<span className="truncate text-cladd-sm font-semibold text-cladd-fg">
 					{invitation.email}
 				</span>
