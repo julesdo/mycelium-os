@@ -119,10 +119,38 @@ export type Relance =
 	  }
 	| {
 			readonly disponible: false;
+			/**
+			 * CE QUE LE PRODUIT FAIT TOUT DE SUITE, malgré ce refus.
+			 *
+			 * ⚠️ REQUIS, ET C'EST TOUT L'INTÉRÊT DU CHAMP. Un refus dont la
+			 * première ligne est vide est un mur, quel que soit ce qui suit ; en
+			 * faire un champ optionnel aurait laissé chaque nouveau site de refus
+			 * l'oublier sans que rien ne tombe. Le compilateur le réclame.
+			 */
+			readonly peutFaire: string;
 			/** Pourquoi il n'y a pas de brouillon. Un constat, jamais une consigne. */
 			readonly constat: string;
 			readonly blocages: readonly string[];
+			/**
+			 * CE QUE L'ATTENTE COÛTE, chiffré quand c'est chiffrable et DÉCLARÉ
+			 * non chiffrable sinon. Jamais tu : un total silencieusement amputé
+			 * est pire qu'un total incomplet annoncé.
+			 */
+			readonly coutDeLAttente: string;
+			/** Le geste qui lève ce refus, quand il en existe un DANS le produit. */
+			readonly geste?: GesteRelance;
 	  };
+
+/**
+ * Le geste, à l'intérieur du produit, qui lève un refus de relance.
+ *
+ * ⚠️ UNE CLÉ, PAS UNE ADRESSE. Ce module compose du texte et ne connaît aucune
+ * route ; l'interface traduit la clé en destination, et le compilateur vérifie
+ * cette destination-là contre l'arbre des routes. Un seul refus du module se
+ * lève d'un geste, et les autres n'en portent pas — ce qui est une information,
+ * pas un oubli.
+ */
+export type GesteRelance = 'ARRETER_DECOMPTE';
 
 /** Une date ISO en français lisible. Le débiteur lit « 15/05/2026 ». */
 function enFrancais(iso: string): string {
@@ -157,13 +185,25 @@ function suspension(elements: ElementsRelance): Relance | null {
 
 	return {
 		disponible: false,
+		peutFaire:
+			'La surveillance de cette créance continue, son décompte se chiffre au centime et ' +
+			's’imprime, et ses pièces se déposent comme sur n’importe quel dossier.',
 		// La formulation du blueprint, mot pour mot. Ce qui suit — déclarer la
 		// créance, saisir qui que ce soit — est une conduite à tenir, donc hors
 		// de ce que ce produit écrit.
 		constat:
 			`Les relances sont suspendues : le registre public porte « ${nature} » pour ` +
-			`${elements.debiteur}${depuis}.`,
-		blocages: []
+			`${elements.debiteur}${depuis}. Ce constat tient tant que le registre porte cette ` +
+			`mention.`,
+		blocages: [],
+		// ⚠️ L'ANGLE MORT SE DÉCLARE AU LIEU DE SE TAIRE, et c'est la seule
+		// formulation possible ici. Chiffrer ce que l'attente coûte supposerait
+		// de savoir ce que devient une créance sur une entreprise en liquidation
+		// — et le dire serait exactement la ligne rouge 3.
+		coutDeLAttente:
+			'Ce que cette suspension coûte n’est pas chiffrable par ce logiciel, et c’est un ' +
+			'angle mort déclaré : il ne mesure pas ce que devient une créance sur une entreprise ' +
+			'dans cet état, et il ne l’écrit donc pas.'
 	};
 }
 
@@ -226,11 +266,22 @@ function compteArrete(elements: ElementsRelance): Relance {
 	if (elements.decompte === undefined) {
 		return {
 			disponible: false,
+			// C'est le seul refus du module qui se lève d'un geste, et il le dit
+			// avant de dire ce qui manque.
+			peutFaire:
+				'Le rappel du niveau 1 se compose dès maintenant sur les mêmes factures : il ' +
+				'suppose l’oubli et n’annonce aucun chiffre, donc il n’attend aucun décompte.',
 			constat:
 				'Ce niveau reprend les montants d’un décompte arrêté, et aucun décompte n’a été ' +
 				'produit pour cette créance. Les chiffres d’une relance ne se recalculent pas à la ' +
-				'volée : seul un décompte figé et daté est opposable.',
-			blocages: []
+				'volée : seul un décompte figé et daté est opposable. Ce refus se lève par l’arrêt ' +
+				'd’un décompte sur cette créance, qui fige ses chiffres et les date.',
+			blocages: [],
+			coutDeLAttente:
+				`Tant qu’aucun décompte n’est arrêté, les ${versEuros(elements.principalRestantDu)} € ` +
+				`de principal restent réclamés sans intérêts ni indemnité forfaitaire chiffrés dans ` +
+				`un texte daté. Ce que ces intérêts représentent ne se chiffre que dans le décompte.`,
+			geste: 'ARRETER_DECOMPTE'
 		};
 	}
 
@@ -263,6 +314,27 @@ function compteArrete(elements: ElementsRelance): Relance {
 }
 
 /**
+ * Les deux moitiés de D0 partagées par les deux refus du niveau 3.
+ *
+ * Elles sont identiques parce que la situation l'est : dans les deux cas le
+ * texte n'est pas composé, et dans les deux cas les deux premiers niveaux, eux,
+ * le sont. Les recopier ferait deux endroits à corriger.
+ */
+const PEUT_FAIRE_SANS_MISE_EN_DEMEURE =
+	'Le rappel du niveau 1 se compose dès maintenant, et le compte arrêté du niveau 2 dès ' +
+	'qu’un décompte est arrêté. Le décompte lui-même se chiffre au centime et s’imprime.';
+
+/**
+ * ⚠️ NON CHIFFRABLE, ET DÉCLARÉ TEL. Une mise en demeure ne réclame pas une
+ * somme de plus : elle ouvre un délai. Chiffrer ce que ce délai vaut supposerait
+ * de dire quels effets de droit il produit, ce que ce logiciel ne mesure pas.
+ */
+const COUT_SANS_MISE_EN_DEMEURE =
+	'Ce que l’attente coûte ici ne se chiffre pas : une mise en demeure n’ajoute aucune somme ' +
+	'à ce qui est réclamé, elle ouvre un délai. Les montants du dossier, eux, restent chiffrés ' +
+	'et datés par le décompte.';
+
+/**
  * NIVEAU 3 — la mise en demeure, et pourquoi elle n'existe pas.
  *
  * Le même raisonnement que `procedures.ts` pour la requête en injonction :
@@ -281,21 +353,27 @@ function miseEnDemeure(): Relance {
 		// dont personne n'a vérifié la portée.
 		return {
 			disponible: false,
+			peutFaire: PEUT_FAIRE_SANS_MISE_EN_DEMEURE,
 			constat:
 				'Les mentions obligatoires sont désormais disponibles au référentiel : ce niveau ' +
 				'reste à construire, et à faire valider avant tout envoi.',
-			blocages: []
+			blocages: [],
+			coutDeLAttente: COUT_SANS_MISE_EN_DEMEURE
 		};
 	}
 
 	return {
 		disponible: false,
+		peutFaire: PEUT_FAIRE_SANS_MISE_EN_DEMEURE,
 		constat:
 			'Une mise en demeure produit des effets de droit, et ses mentions obligatoires ne sont ' +
 			'pas relevées dans le référentiel juridique de ce logiciel. Elle n’est donc pas ' +
-			'composée : une mise en demeure irrégulière ne produit pas les effets qu’on lui prête.',
+			'composée : une mise en demeure irrégulière ne produit pas les effets qu’on lui prête. ' +
+			'Ce verrou se lève par le relevé de ces mentions sur une source publique citable, et ' +
+			'par leur contrôle.',
 		blocages: [
 			p === undefined ? `« ${cle} » : paramètre absent du référentiel.` : `« ${cle} » : ${p.note}`
-		]
+		],
+		coutDeLAttente: COUT_SANS_MISE_EN_DEMEURE
 	};
 }

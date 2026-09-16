@@ -1,6 +1,6 @@
 import { v, ConvexError } from 'convex/values';
 import { internalMutation } from '../_generated/server';
-import { authedMutation } from '../functions';
+import { authedMutation, authedQuery } from '../functions';
 import { internal } from '../_generated/api';
 import { getUserOrg } from '../lib/auth';
 import type { MutationCtx } from '../_generated/server';
@@ -13,9 +13,12 @@ import {
 import { qualifier } from '../../verticales/recouvrement/scoring';
 import {
 	lireLitige,
+	proposerFaits,
 	questionsRestantes,
 	signauxDepuisFaits,
 	type CleFait,
+	type PropositionFait,
+	type Reponse,
 	type Reponses
 } from '../../verticales/recouvrement/litige';
 import type { ClePiece, EtatCritere } from '../../verticales/recouvrement/qualification';
@@ -91,6 +94,22 @@ async function resteDu(ctx: MutationCtx, facture: Doc<'facturesVente'>) {
  */
 function compteCommePreuve(type: string): type is ClePiece {
 	return type !== 'INDETERMINE';
+}
+
+/**
+ * Un horodatage rendu lisible, pour les refus qui CITENT une créance existante.
+ *
+ * `toLocaleDateString` n'est pas utilisé : le runtime Convex n'offre pas les
+ * données de locale, et il rendrait une date à l'américaine sans lever.
+ */
+function enFrancais(horodatage: number): string {
+	return dateEnFrancais(new Date(horodatage).toISOString().slice(0, 10));
+}
+
+/** Une date AAAA-MM-JJ rendue lisible, sans jamais la réinterpréter. */
+function dateEnFrancais(iso: string): string {
+	const [annee, mois, jour] = iso.split('-');
+	return `${jour}/${mois}/${annee}`;
 }
 
 /**
@@ -242,22 +261,52 @@ export const creerCreance = internalMutation({
 	returns: v.id('creances'),
 	handler: async (ctx, { organizationId, factureIds, aujourdHui }) => {
 		if (factureIds.length === 0) {
-			throw new ConvexError('Une créance sans facture n’a rien à réclamer.');
+			throw new ConvexError(
+				'Aucune créance n’est constituée, et vos factures importées restent toutes ' +
+					'sélectionnables. Ce qui manque est une facture au moins : une créance sans ' +
+					'facture n’a rien à réclamer, donc rien à chiffrer. Ce refus se lève dès qu’une ' +
+					'facture est retenue dans la sélection. L’attente ne coûte rien ici : rien n’a ' +
+					'été écrit, et aucune facture n’a changé d’état.'
+			);
 		}
 
 		const factures: Doc<'facturesVente'>[] = [];
 		for (const factureId of factureIds) {
 			const facture = await ctx.db.get(factureId);
 
-			// Le cloisonnement AVANT tout : même message qu'une facture
-			// inexistante, pour ne pas révéler qu'elle existe ailleurs.
+			// ⚠️ LE CLOISONNEMENT AVANT TOUT, ET LE MESSAGE RESTE IDENTIQUE À CELUI
+			// D'UNE FACTURE INEXISTANTE. Les quatre parties sont dites, mais aucune
+			// ne change selon le cas : un refus plus bavard sur l'un des deux dirait
+			// à qui connaît un identifiant qu'il existe ailleurs.
 			if (facture === null || facture.organizationId !== organizationId) {
-				throw new ConvexError('Facture introuvable');
+				throw new ConvexError(
+					'Facture introuvable. Les autres factures de votre établissement restent ' +
+						'sélectionnables, et aucune créance n’a été constituée. Ce qui manque est une ' +
+						'facture de cet établissement portant cet identifiant. Ce refus se lève par une ' +
+						'sélection reprise depuis la liste de vos factures. L’attente ne coûte rien : ' +
+						'cette sélection n’a rien écrit.'
+				);
 			}
 			if (facture.creanceId !== undefined) {
+				// La créance qui la porte est CITÉE : « déjà rattachée » sans dire à
+				// quoi oblige à parcourir toutes les créances du débiteur pour
+				// retrouver celle qui la réclame déjà.
+				const porteuse = await ctx.db.get(facture.creanceId);
+				const porteur = porteuse === null ? null : await ctx.db.get(porteuse.debiteurId);
+				const citation =
+					porteuse === null
+						? 'à une créance'
+						: `à la créance de ${porteur?.denomination ?? 'ce débiteur'}, constituée le ` +
+							`${enFrancais(porteuse.creeLe)}`;
+
 				throw new ConvexError(
-					`La facture ${facture.reference} appartient déjà à une créance. La réclamer ` +
-						'deux fois exposerait les deux procédures.'
+					`La facture ${facture.reference} est déjà réclamée : son montant figure ${citation}, ` +
+						'et rien n’en est perdu. Ce qui manque est la possibilité de la porter une ' +
+						'seconde fois : la réclamer deux fois exposerait les deux procédures. Ce refus ' +
+						'se lève par une sélection qui ne reprend pas cette facture ; aucun geste du ' +
+						'produit ne détache aujourd’hui une facture de sa créance, et c’est dit ici ' +
+						'plutôt que laissé à chercher. L’attente ne coûte rien sur cette facture, ' +
+						'puisqu’elle est déjà réclamée.'
 				);
 			}
 			factures.push(facture);
@@ -265,9 +314,14 @@ export const creerCreance = internalMutation({
 
 		const debiteurId = factures[0]!.debiteurId;
 		if (factures.some((facture) => facture.debiteurId !== debiteurId)) {
+			const combien = new Set(factures.map((facture) => facture.debiteurId)).size;
 			throw new ConvexError(
-				'Une créance ne peut porter que sur UN débiteur. Constituer une créance par ' +
-					'débiteur, sans quoi l’acte produit serait irrecevable.'
+				`Une créance par débiteur se compose depuis cette même sélection : les ` +
+					`${factures.length} factures sont déjà lues, et chaque groupe repart de la liste ` +
+					`où vous venez de les choisir. Ce qui manque est un débiteur unique — cette ` +
+					`sélection en porte ${combien}. Ce refus se lève par une sélection ramenée à un ` +
+					`seul débiteur, sans quoi l’acte produit serait irrecevable. L’attente ne coûte ` +
+					`rien : aucune créance n’a été constituée et aucune facture n’a changé d’état.`
 			);
 		}
 
@@ -636,5 +690,127 @@ export const declarerFait = authedMutation({
 			reponse,
 			aujourdHui: new Date().toISOString().slice(0, 10)
 		});
+	}
+});
+
+/**
+ * LES RÉPONSES QUE LE LOGICIEL PROPOSE AU QUESTIONNAIRE — A4 et A10.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ELLE NE FAIT QUE LIRE, ET C'EST TOUT L'INTÉRÊT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * « Le logiciel décide, le gérant confirme » : deux des six questions ont
+ * souvent déjà leur réponse en base, et les reposer fait ressaisir ce qu'on a
+ * lu à sa place. Mais un « oui » sur `CONTESTATION_ECRITE` éteint l'éligibilité
+ * de la créance : une réponse écrite d'office serait une qualification
+ * juridique emportée par un geste que personne n'a fait.
+ *
+ * Cette fonction est donc une QUERY, pas une mutation. Le seul chemin
+ * d'écriture reste `declarerFaitLitige`, et il exige un appui.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DEUX GISEMENTS, ET LE CLOISONNEMENT REVÉRIFIÉ SUR CHACUN
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Les réserves lues sur les pièces du dossier — pièces rattachées aux factures
+ * de la créance, et pièces de portée débiteur. Et les faits déclarés sur les
+ * AUTRES créances du même client, avec leur date.
+ *
+ * L'index `by_debiteur` ne porte pas l'organisation : le cloisonnement est
+ * revérifié document par document, comme à `tauxContractuel.ts`. Sans exception.
+ */
+export const propositionsLitige = authedQuery({
+	args: { creanceId: v.id('creances') },
+	returns: v.array(
+		v.object({
+			cle: vCleFaitLitige,
+			reponse: vReponseFait,
+			/** D'où vient la proposition, citée. */
+			source: v.string(),
+			/** Quand, et de quelle date il s'agit. */
+			date: v.string()
+		})
+	),
+	handler: async (ctx, { creanceId }): Promise<PropositionFait[]> => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null || creance.organizationId !== organizationId) {
+			throw new ConvexError('Créance introuvable');
+		}
+
+		// ── LES RÉSERVES LUES SUR LES PIÈCES DU DOSSIER ────────────────────────
+		const factures = await ctx.db
+			.query('facturesVente')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+			.collect();
+
+		const pieceIds = new Set<Id<'pieces'>>();
+		for (const facture of factures) {
+			if (facture.organizationId !== organizationId) continue;
+			const liaisons = await ctx.db
+				.query('piecesFactures')
+				.withIndex('by_facture', (q) => q.eq('factureId', facture._id))
+				.collect();
+			for (const liaison of liaisons) pieceIds.add(liaison.pieceId);
+		}
+
+		const auDebiteur = await ctx.db
+			.query('pieces')
+			.withIndex('by_debiteur', (q) => q.eq('debiteurId', creance.debiteurId))
+			.collect();
+		for (const piece of auDebiteur) pieceIds.add(piece._id);
+
+		const avecReserve: Doc<'pieces'>[] = [];
+		for (const pieceId of pieceIds) {
+			const piece = await ctx.db.get(pieceId);
+			if (piece === null || piece.organizationId !== organizationId) continue;
+			if (piece.reserves === undefined || piece.reserves.trim() === '') continue;
+			avecReserve.push(piece);
+		}
+
+		// La plus récemment déposée d'abord : `proposerFaits` ne retient que la
+		// première, et c'est celle qu'on vient de lire qui décrit le dossier.
+		avecReserve.sort((a, b) => b.ajouteeLe - a.ajouteeLe);
+
+		// ── LES FAITS DÉJÀ DÉCLARÉS SUR LES AUTRES CRÉANCES DE CE CLIENT ───────
+		const creancesDuDebiteur = await ctx.db
+			.query('creances')
+			.withIndex('by_debiteur', (q) => q.eq('debiteurId', creance.debiteurId))
+			.collect();
+
+		const declarations: { cle: CleFait; reponse: Reponse; declareLe: number }[] = [];
+		for (const autre of creancesDuDebiteur) {
+			if (autre._id === creanceId) continue;
+			if (autre.organizationId !== organizationId) continue;
+			for (const fait of autre.faitsLitige ?? []) {
+				declarations.push({ cle: fait.cle, reponse: fait.reponse, declareLe: fait.declareLe });
+			}
+		}
+
+		// De la plus ancienne à la plus récente : la dernière l'emporte.
+		declarations.sort((a, b) => a.declareLe - b.declareLe);
+
+		return [
+			...proposerFaits({
+				reserves: avecReserve.map((piece) => ({
+					texte: piece.reserves!,
+					piece: piece.reference ?? piece.filename,
+					// ⚠️ LA PHRASE DIT DE QUELLE DATE IL S'AGIT. La date du document et
+					// celle de son dépôt peuvent être séparées de plusieurs mois, et un
+					// « 12/03/2026 » nu laisserait croire l'une pour l'autre.
+					date:
+						piece.dateDocument !== undefined
+							? `document du ${dateEnFrancais(piece.dateDocument)}`
+							: `pièce déposée le ${enFrancais(piece.ajouteeLe)}`
+				})),
+				declarationsAnterieures: declarations.map((declaration) => ({
+					cle: declaration.cle,
+					reponse: declaration.reponse,
+					date: `déclarée le ${enFrancais(declaration.declareLe)}`
+				}))
+			})
+		];
 	}
 });

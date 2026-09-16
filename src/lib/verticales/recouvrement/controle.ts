@@ -1,4 +1,4 @@
-import { ZERO, additionner, versEuros, type Montant } from '../../socle/montants';
+import { ZERO, additionner, depuisCentimes, versEuros, type Montant } from '../../socle/montants';
 import { PARAMETRES, estUtilisable, type ParametreLegalBase } from './parametres';
 import type { DecompteCreance } from './decompte';
 
@@ -99,22 +99,46 @@ export function controlerDecompte(args: ArgumentsControle): ControleDecompte {
 	//
 	//    Une facture pas encore exigible passe : zéro segment, zéro intérêt,
 	//    les deux concordent.
+	//
+	//    ⚠️ L'ÉCART SE CHIFFRE, ET IL POSAIT `null`. C'était de l'argent qu'on
+	//    abandonnerait sans jamais le voir : les deux termes de la soustraction
+	//    sont calculés deux lignes plus bas, et l'écran n'affichait qu'un blanc
+	//    à la place du seul chiffre qui dit ce que cet abandon coûte.
+	//
+	//    LA VALEUR ABSOLUE EST LE MONTANT EN JEU, dans les deux sens. Des
+	//    intérêts annoncés PLUS HAUTS que ce que les périodes justifient sont la
+	//    part qui ne peut pas figurer dans l'acte ; des intérêts annoncés PLUS
+	//    BAS sont la part qu'on réclamerait en moins, donc qu'on abandonnerait.
+	//    Les deux se paient, et un écart signé ferait se compenser dans le total
+	//    deux lignes qui n'ont rien à voir l'une avec l'autre.
 	for (const ligne of decompte.lignes) {
 		const expliques = ligne.segments.reduce((somme, segment) => somme + segment.interets, 0n);
 		if (expliques === (ligne.interets as bigint)) continue;
+		const brut = (ligne.interets as bigint) - expliques;
+		const ecart = depuisCentimes(brut < 0n ? -brut : brut);
 		abandons.push({
 			nature: 'INTERETS_INEXPLIQUES',
 			reference: ligne.reference,
-			montantEnJeu: null,
+			montantEnJeu: ecart,
 			explication:
 				`Sur la facture ${ligne.reference}, les intérêts annoncés ` +
 				`(${versEuros(ligne.interets)} €) ne correspondent pas à la somme des périodes ` +
-				`détaillées. Un montant qu'aucune période ne justifie ne peut pas figurer dans un ` +
-				`acte : il serait indéfendable si le débiteur refaisait le calcul.`
+				`détaillées (${versEuros(depuisCentimes(expliques))} €) : l'écart est de ` +
+				`${versEuros(ecart)} €. Un montant qu'aucune période ne justifie ne peut pas ` +
+				`figurer dans un acte : il serait indéfendable si le débiteur refaisait le calcul.`
 		});
 	}
 
 	// 3. Les paramètres juridiques que la procédure exige et qui ne sont pas validés.
+	//
+	//    ⚠️ CET ÉTAGE NE S'EXERCE NULLE PART AUJOURD'HUI, ET C'EST ÉCRIT ICI
+	//    POUR QUE PERSONNE NE RELISE CE FICHIER EN CROYANT UN VERROU EN PLACE.
+	//    Le seul appelant de `controlerDecompte` est
+	//    `convex/recouvrement/decompte.ts`, et il ne lui passe pas
+	//    `parametresRequis` : la boucle tourne sur un tableau vide. Il n'y a du
+	//    reste aucun acte à protéger, puisque `exigerPourActe()` n'a aucun site
+	//    d'appel dans le dépôt. Le jour où un module émet un acte, c'est lui qui
+	//    nomme les clés dont il dépend, et cet étage se met à mordre.
 	for (const cle of parametresRequis) {
 		const parametre = parametreParCle(cle);
 		if (parametre !== undefined && estUtilisable(parametre)) continue;
@@ -150,9 +174,7 @@ export function controlerDecompte(args: ArgumentsControle): ControleDecompte {
 export function exigerDecompteComplet(controle: ControleDecompte): void {
 	if (controle.complet) return;
 
-	const details = controle.abandons
-		.map((abandon) => `  · ${abandon.explication}`)
-		.join('\n');
+	const details = controle.abandons.map((abandon) => `  · ${abandon.explication}`).join('\n');
 
 	throw new Error(
 		`Décompte incomplet : l'acte ne peut pas être produit.\n\n${details}\n\n` +

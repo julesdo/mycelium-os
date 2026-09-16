@@ -72,7 +72,12 @@ export {
 export { IdentiteDebiteur, type OptionSecteur, type PropositionTaux } from './identite-debiteur';
 export { HabitudePaiement, type HabitudeAffichee, type RuptureAffichee } from './habitude';
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
-export { QuestionnaireLitige, type QuestionLitige, type ReponseFait } from './questionnaire-litige';
+export {
+	QuestionnaireLitige,
+	type PropositionReponse,
+	type QuestionLitige,
+	type ReponseFait
+} from './questionnaire-litige';
 export { SuiviProcedure, type SuiviAffiche, type EcheanceAffichee } from './suivi-procedure';
 export { RailProcedure, type EtapeAffichee, type StatutEtapeAffiche } from './rail-procedure';
 export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';

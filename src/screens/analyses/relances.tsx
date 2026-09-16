@@ -49,7 +49,7 @@ export function EcranRelances({
 			}}
 			etat={donnees.etat}
 		>
-			{pret === null ? null : <Relances niveaux={pret.niveaux} />}
+			{pret === null ? null : <Relances niveaux={pret.niveaux} identifiant={identifiant} />}
 		</PageEcran>
 	);
 }
