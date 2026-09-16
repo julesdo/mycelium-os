@@ -59,6 +59,23 @@ function combiner(a: EtatCritere, b: EtatCritere): EtatCritere {
 	return 'ok';
 }
 
+/**
+ * La condition « entre commerçants », à partir de ce qu'on sait des deux parties.
+ *
+ * ⚠️ ELLE EST EXPORTÉE POUR ÊTRE REJOUÉE SEULE. Quand la forme juridique
+ * relevée au registre répond enfin à la question de la qualité de commerçant du
+ * débiteur, il faut reprendre CETTE condition sur les créances ouvertes, et
+ * elle seule : repasser par `deduireConditions` recalculerait aussi `liquide` et
+ * `exigible` sur des données qui n'ont pas bougé, et écraserait au passage ce
+ * que le gérant a pu trancher à la main.
+ */
+export function qualiteEntreCommercants(
+	creancierCommercant: EtatCritere,
+	debiteurCommercant: EtatCritere
+): EtatCritere {
+	return combiner(creancierCommercant, debiteurCommercant);
+}
+
 export function deduireConditions(elements: ElementsDeduction): ConditionsDeduites {
 	// LIQUIDE : le montant est-il déterminé ? Il l'est par construction dès
 	// qu'il reste quelque chose à réclamer. Un solde nul ou négatif — plus
@@ -76,7 +93,10 @@ export function deduireConditions(elements: ElementsDeduction): ConditionsDeduit
 				: 'ko';
 
 	// ENTRE COMMERÇANTS : il faut les deux côtés.
-	const entreCommercants = combiner(elements.creancierCommercant, elements.debiteurCommercant);
+	const entreCommercants = qualiteEntreCommercants(
+		elements.creancierCommercant,
+		elements.debiteurCommercant
+	);
 
 	// CERTAINE : jamais déduit, et c'est le point important de ce module.
 	//

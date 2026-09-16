@@ -36,6 +36,9 @@ const modules = Object.fromEntries(
 
 const DELAI_CONVEX = 30_000;
 
+/** La date est un argument, jamais une lecture d'horloge. */
+const AUJOURDHUI = '2026-09-16';
+
 async function poser(
 	t: ReturnType<typeof convexTest>,
 	nom = 'Ateliers Martin'
@@ -68,7 +71,8 @@ describe('le SIREN saisi par le gérant', () => {
 			await t.mutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
 				organizationId,
 				debiteurId,
-				siren: '853 479 236'
+				siren: '853 479 236',
+				aujourdHui: AUJOURDHUI
 			});
 
 			const debiteur = await t.run(async (ctx) => ctx.db.get(debiteurId));
@@ -89,7 +93,8 @@ describe('le SIREN saisi par le gérant', () => {
 				t.mutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
 					organizationId,
 					debiteurId,
-					siren: '853479237'
+					siren: '853479237',
+					aujourdHui: AUJOURDHUI
 				})
 			).rejects.toThrow(/853479237/);
 		},
@@ -105,7 +110,8 @@ describe('le SIREN saisi par le gérant', () => {
 			await t.mutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
 				organizationId,
 				debiteurId,
-				siren: '853 479 236 00017'
+				siren: '853 479 236 00017',
+				aujourdHui: AUJOURDHUI
 			});
 
 			const debiteur = await t.run(async (ctx) => ctx.db.get(debiteurId));
@@ -127,12 +133,14 @@ describe('le SIREN saisi par le gérant', () => {
 			await t.mutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
 				organizationId,
 				debiteurId,
-				siren: '853479236'
+				siren: '853479236',
+				aujourdHui: AUJOURDHUI
 			});
 			await t.mutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
 				organizationId,
 				debiteurId,
-				siren: ''
+				siren: '',
+				aujourdHui: AUJOURDHUI
 			});
 
 			const debiteur = await t.run(async (ctx) => ctx.db.get(debiteurId));
@@ -152,12 +160,153 @@ describe('le SIREN saisi par le gérant', () => {
 				t.mutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
 					organizationId: mien.organizationId,
 					debiteurId: autre.debiteurId,
-					siren: '853479236'
+					siren: '853479236',
+					aujourdHui: AUJOURDHUI
 				})
 			).rejects.toThrow();
 
 			const intact = await t.run(async (ctx) => ctx.db.get(autre.debiteurId));
 			expect(intact?.siren).toBeUndefined();
+		},
+		DELAI_CONVEX
+	);
+});
+
+/**
+ * LA RÈGLE DE DROIT, ET SA REPRISE PAR LES CRÉANCES.
+ *
+ * Deux moitiés, et aucune barrière du dépôt ne voit la seconde.
+ *
+ * 1. **La règle.** L'article L210-1, alinéa 2, du code de commerce ferme quatre
+ *    familles commerciales par la forme, dont les sociétés par actions. Une SAS
+ *    relevée au registre répond donc à la question, et le gérant n'a plus à y
+ *    répondre — `qualiteCommercantDeLaForme` la porte, sourcée et testée.
+ *
+ * 2. **La reprise.** `estCommercant` n'est lu qu'à la CONSTITUTION d'une
+ *    créance. Une déduction qui arrive après — et elle arrive presque toujours
+ *    après, puisqu'on identifie le débiteur au registre une fois les factures
+ *    importées — n'atteindrait aucune créance existante. Le champ serait
+ *    alimenté et jamais relu : c'est exactement le défaut que le compilateur ne
+ *    voit pas, et c'est pour ça que ce test relie les deux bouts.
+ *
+ * ⚠️ ET CE QUE LA DÉDUCTION N'ÉCRASE PAS COMPTE AUTANT. Une créance dont le
+ * critère est déjà tranché n'est pas touchée : le logiciel remplit ce qui est
+ * vide, il ne corrige pas ce qui est dit.
+ */
+describe('la qualité de commerçant déduite de la forme relevée au registre', () => {
+	async function poserAvecCreances(
+		t: ReturnType<typeof convexTest>,
+		nom = 'Thumbbb Agency'
+	): Promise<{
+		organizationId: Id<'organizations'>;
+		debiteurId: Id<'debiteurs'>;
+		aReprendre: Id<'creances'>;
+		dejaTranchee: Id<'creances'>;
+	}> {
+		return await t.run(async (ctx) => {
+			const organizationId = await ctx.db.insert('organizations', {
+				name: nom,
+				createdAt: Date.now()
+			});
+
+			await ctx.db.insert('profilsCreancier', {
+				organizationId,
+				denomination: nom,
+				estCommercant: 'ok',
+				majLe: Date.now()
+			});
+
+			const debiteurId = await ctx.db.insert('debiteurs', {
+				organizationId,
+				denomination: 'Fournitures Durand',
+				denominationNormalisee: 'FOURNITURES DURAND',
+				denominationsBrutes: ['Fournitures Durand'],
+				// Ce que l'import écrit, et la seule valeur qu'il ait jamais écrite.
+				estCommercant: 'unknown',
+				santeFinanciere: 'SAINE',
+				creeLe: Date.now()
+			});
+
+			const aReprendre = await ctx.db.insert('creances', {
+				organizationId,
+				debiteurId,
+				statut: 'BROUILLON',
+				certaine: 'ok',
+				liquide: 'ok',
+				exigible: 'ok',
+				entreCommercants: 'unknown',
+				creeLe: Date.now()
+			});
+
+			const dejaTranchee = await ctx.db.insert('creances', {
+				organizationId,
+				debiteurId,
+				statut: 'BROUILLON',
+				certaine: 'unknown',
+				liquide: 'ok',
+				exigible: 'ok',
+				// Le gérant a répondu « non » : la déduction ne revient pas dessus.
+				entreCommercants: 'ko',
+				creeLe: Date.now()
+			});
+
+			return { organizationId, debiteurId, aReprendre, dejaTranchee };
+		});
+	}
+
+	it(
+		'répond à la place du gérant sur une SAS, et les créances ouvertes la reprennent',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, debiteurId, aReprendre, dejaTranchee } = await poserAvecCreances(t);
+
+			await t.mutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
+				organizationId,
+				debiteurId,
+				siren: '853479236',
+				formeJuridique: 'Société par Actions Simplifiée',
+				aujourdHui: AUJOURDHUI
+			});
+
+			const debiteur = await t.run(async (ctx) => ctx.db.get(debiteurId));
+			expect(debiteur?.estCommercant).toBe('ok');
+
+			// La créance dont le critère était vide le reprend, et devient
+			// QUALIFIEE : ses quatre conditions sont désormais tranchées, et sans
+			// cette bascule la déduction lèverait la dernière question sans jamais
+			// faire avancer la créance.
+			const reprise = await t.run(async (ctx) => ctx.db.get(aReprendre));
+			expect(reprise?.entreCommercants).toBe('ok');
+			expect(reprise?.statut).toBe('QUALIFIEE');
+
+			// Celle que le gérant avait tranchée reste intacte, et reste BROUILLON :
+			// il lui manque encore `certaine`.
+			const intacte = await t.run(async (ctx) => ctx.db.get(dejaTranchee));
+			expect(intacte?.entreCommercants).toBe('ko');
+			expect(intacte?.statut).toBe('BROUILLON');
+
+			// ── Et la forme qui NE TRANCHE PAS ne touche à rien ─────────────────
+			//
+			// Une association n'est dans aucune des quatre familles de L210-1, et la
+			// commercialité par l'activité est une controverse. Écrire `ko`
+			// fermerait une voie sur un débat ; le doute ne profite jamais au
+			// produit, et rien n'est patché.
+			const autre = await poserAvecCreances(t, 'Le Cercle des Ormes');
+
+			await t.mutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
+				organizationId: autre.organizationId,
+				debiteurId: autre.debiteurId,
+				siren: '853479236',
+				formeJuridique: 'Association déclarée',
+				aujourdHui: AUJOURDHUI
+			});
+
+			const sansConclusion = await t.run(async (ctx) => ctx.db.get(autre.debiteurId));
+			expect(sansConclusion?.estCommercant).toBe('unknown');
+
+			const inchangee = await t.run(async (ctx) => ctx.db.get(autre.aReprendre));
+			expect(inchangee?.entreCommercants).toBe('unknown');
+			expect(inchangee?.statut).toBe('BROUILLON');
 		},
 		DELAI_CONVEX
 	);
