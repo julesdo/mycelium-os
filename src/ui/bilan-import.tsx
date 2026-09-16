@@ -113,7 +113,24 @@ function resume(bilan: BilanDepotAffiche): string {
 	return parts.join(' · ');
 }
 
-export function BilanImport({ depot, className }: { depot: DepotAffiche; className?: string }) {
+export function BilanImport({
+	depot,
+	className,
+	avecNom = true
+}: {
+	depot: DepotAffiche;
+	className?: string;
+	/**
+	 * Le nom du fichier, en tête de la carte.
+	 *
+	 * ⚠️ FAUX QUAND LA CARTE EST SEULE SUR SA PAGE. Le bilan d'un dépôt a sa
+	 * route : le nom du fichier y est déjà le titre de l'écran, et l'écrire une
+	 * seconde fois deux lignes plus bas fait lire deux fois la même chose. Dans
+	 * une PILE — la salle, la page d'accueil du site — le nom est au contraire
+	 * ce qui distingue une carte de la suivante, d'où le défaut à vrai.
+	 */
+	avecNom?: boolean;
+}) {
 	const bilan = depot.bilan;
 
 	/**
@@ -137,10 +154,12 @@ export function BilanImport({ depot, className }: { depot: DepotAffiche; classNa
 			className={cn('verre-carte rounded-cladd-xl', className)}
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
-			<div className="flex items-center justify-between gap-cladd-3xs">
-				<span className="min-w-0 flex-1 truncate text-cladd-xs font-semibold">
-					{depot.filename}
-				</span>
+			<div className={cn('flex items-center gap-cladd-3xs', avecNom && 'justify-between')}>
+				{avecNom ? (
+					<span className="min-w-0 flex-1 truncate text-cladd-xs font-semibold">
+						{depot.filename}
+					</span>
+				) : null}
 				<Etat statut={depot.statut} />
 			</div>
 

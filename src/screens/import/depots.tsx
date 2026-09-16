@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react';
-import { ListButton } from '@cladd-ui/react';
-import { ChevronRightIcon, FileSpreadsheetIcon, FileTextIcon, UploadIcon } from 'lucide-react';
+import { FileSpreadsheetIcon, FileTextIcon, UploadIcon } from 'lucide-react';
 import {
 	Bandeau,
-	CarteListe,
 	LigneAnalyse,
 	ListeAnalyses,
 	MaitreDetail,
@@ -20,32 +18,52 @@ import { TITRE_ECRAN } from '../titres';
 /** Les deux chemins par lesquels les factures arrivent. */
 export type ModeDepot = 'EXPORT_COMPTABLE' | 'FACTURE_DEPOSEE';
 
-/** Les deux chemins, et ce que chacun accepte. */
-const CHEMINS = [
-	{
-		mode: 'EXPORT_COMPTABLE' as const,
-		titre: 'Export comptable',
-		aide: 'Un FEC ou un CSV. Il porte vos factures, vos règlements et vos clients d’un coup.',
-		recommande: true,
-		Icone: FileSpreadsheetIcon,
-		accept: '.csv,.txt,.tsv,text/csv,text/plain',
-		formats: 'CSV, TSV ou FEC'
-	},
-	{
-		mode: 'FACTURE_DEPOSEE' as const,
-		titre: 'Factures en PDF',
-		aide: 'Le repli quand l’export n’est pas disponible. Chaque facture est relue par le modèle.',
-		recommande: false,
-		Icone: FileTextIcon,
-		accept: '.pdf,image/*',
-		formats: 'PDF ou photo'
-	}
-];
+/** Tout ce que la zone accepte, les deux chemins confondus. */
+export const FORMATS_ACCEPTES = '.csv,.tsv,.txt,.pdf,image/*';
+
+/** Les extensions qu'un lecteur de document reconnaît, quand le type MIME manque. */
+const EXTENSIONS_DOCUMENT = /\.(pdf|png|jpe?g|heic|heif|webp|tiff?|gif|bmp)$/;
+
+/**
+ * LE CHEMIN SE DÉDUIT DU FICHIER, IL NE SE CHOISIT PLUS.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'écran demandait d'abord « par où vos factures arrivent », puis le fichier.
+ * Or le fichier répond seul à la question : un `.csv` n'est jamais une facture
+ * en PDF, et un PDF n'est jamais un FEC. Règle d'écran n° 1 — on ne demande pas
+ * une saisie que le logiciel peut déduire.
+ *
+ * ⚠️ ET C'ÉTAIT UN DÉFAUT EN PRODUCTION, pas seulement une question de trop.
+ * Le bouton « Photographier » s'affichait quel que soit le chemin choisi ; avec
+ * le chemin par défaut, la photo partait en `EXPORT_COMPTABLE`, la lecture la
+ * décodait en texte et répondait « Export non reconnu ». Le geste le plus
+ * fréquent sur le terrain échouait sur le chemin proposé par défaut.
+ *
+ * ⚠️ LE DOUTE VA AU CHEMIN QUI NE COÛTE RIEN. Un type MIME absent ou inconnu
+ * retombe sur l'export comptable : la lecture échoue alors franchement, avec un
+ * message lisible, au lieu d'envoyer au modèle un fichier facturé que personne
+ * n'a demandé de relire.
+ */
+export function modeDuFichier(fichier: {
+	readonly type: string;
+	readonly name: string;
+}): ModeDepot {
+	const type = fichier.type.toLowerCase();
+	if (type === 'application/pdf' || type.startsWith('image/')) return 'FACTURE_DEPOSEE';
+	if (type.startsWith('text/')) return 'EXPORT_COMPTABLE';
+	// Un FEC glissé depuis un dossier arrive souvent sans type MIME : le nom tranche.
+	return EXTENSIONS_DOCUMENT.test(fichier.name.toLowerCase())
+		? 'FACTURE_DEPOSEE'
+		: 'EXPORT_COMPTABLE';
+}
 
 /** Un dépôt, tel que sa rangée le résume. */
 export interface LigneDepot {
 	readonly _id: string;
 	readonly filename: string;
+	/** Par où ce dépôt est passé. Voir `precisionDepot` : un appel au modèle se voit. */
+	readonly mode: ModeDepot;
 	readonly statut: string;
 	readonly etape?: string;
 	readonly erreur?: string;
@@ -53,43 +71,56 @@ export interface LigneDepot {
 	readonly deposeLe: number;
 }
 
-/** Ce que l'écran affiche : les dépôts, le chemin choisi, l'envoi en cours, et les gestionnaires que la route pilote. */
+/** Ce que l'écran affiche : les dépôts, l'envoi en cours, et les gestionnaires que la route pilote. */
 export interface ImportAffiche {
 	readonly imports: readonly LigneDepot[];
-	readonly mode: ModeDepot;
-	readonly onChoisirMode: (mode: ModeDepot) => void;
 	readonly envoiEnCours: boolean;
 	readonly erreur: string | null;
 	readonly onDeposer: (fichiers: File[]) => void;
 }
 
 /**
+ * CE QUE LA RANGÉE DIT SOUS LE NOM DU FICHIER.
+ *
+ * ⚠️ UNE RANGÉE TERMINÉE ÉCRIVAIT DEUX FOIS LE MÊME CHIFFRE. La précision
+ * reprenait l'étape — « 198 factures enregistrées. » — et la valeur, à droite,
+ * disait « 198 factures ». Le repli sur la date ne s'affichait jamais, parce
+ * qu'une étape est posée dès l'enregistrement : la date d'un dépôt n'était donc
+ * visible nulle part. Savoir quel dépôt a fait entrer quelle facture, et quand,
+ * est précisément ce qu'on redemande à un import six mois plus tard.
+ *
+ * ⚠️ « RELUE PAR LE MODÈLE » EST ÉCRIT ICI parce qu'on ne le choisit plus avant
+ * l'envoi. Un appel facturé qui ne se décide plus doit au moins se voir. Pendant
+ * la lecture l'étape le dit déjà, mot pour mot : on ne l'écrit pas deux fois.
+ */
+function precisionDepot(depot: LigneDepot): string {
+	const deposeLe = `Déposé le ${dateCourte(new Date(depot.deposeLe).toISOString().slice(0, 10))}`;
+
+	if (depot.statut === 'ECHOUE') return depot.erreur ?? 'Lecture en échec';
+	if (depot.statut !== 'TERMINE') return depot.etape ?? deposeLe;
+
+	return depot.mode === 'FACTURE_DEPOSEE' ? `Relue par le modèle · ${deposeLe}` : deposeLe;
+}
+
+/**
  * L'IMPORT DE FACTURES DE VENTE.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ LES DEUX CHEMINS NE SONT PAS ÉGAUX, ET L'ÉCRAN DOIT LE DIRE
+ * ⚠️ UNE SEULE ZONE, ET AUCUNE QUESTION AVANT LE FICHIER
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * C'est la correction de fond de cet écran, et elle n'est pas cosmétique.
+ * L'écran a porté successivement un groupe segmenté puis deux rangées pour
+ * faire choisir « par où vos factures arrivent ». Les deux formes réglaient la
+ * même fausse question : le fichier déposé y répond seul, et `modeDuFichier`
+ * le déduit. Il ne reste qu'une zone de dépôt.
  *
- * La version précédente posait les deux modes dans un GROUPE SEGMENTÉ. Un
- * groupe segmenté est la forme qu'on emploie pour des options équivalentes —
- * « mensuel / annuel », « liste / grille ». Il affirme visuellement que les
- * deux branches se valent.
- *
- * Or elles ne se valent pas, et le fichier le disait déjà en toutes lettres :
- * l'export comptable porte les factures, les règlements et les clients d'un
- * seul coup, structurés, sans qu'aucune machine ne relise quoi que ce soit. Le
- * dépôt de PDF fait passer chaque facture par le modèle — un appel facturé, et
- * une marge d'erreur que l'export n'a pas.
- *
- * Présenter le repli à égalité invite à faire re-scanner des données qu'on
- * possède déjà propres. C'est un coût pour nous et un risque d'erreur pour le
- * client, sur un produit dont l'argument entier est l'exactitude.
- *
- * Deux LIGNES, donc, avec la recommandation ÉCRITE sur la première. C'est le
- * motif que les références emploient quand deux chemins mènent au même endroit
- * par des moyens inégaux.
+ * LES DEUX CHEMINS NE SE VALENT PAS POUR AUTANT, et l'écran continue de le
+ * dire — mais après le dépôt, là où c'est actionnable. L'export comptable
+ * porte les factures, les règlements et les clients d'un seul coup, structurés,
+ * sans qu'aucune machine ne relise quoi que ce soit ; un PDF passe par le
+ * modèle, ce qui est un appel facturé et une marge d'erreur que l'export n'a
+ * pas. D'où la phrase sous la zone, et « Relue par le modèle » sur la rangée
+ * des dépôts qui y sont passés.
  *
  * LE TRAITEMENT SE VOIT (règle d'écran n° 2). Chaque dépôt affiche son étape en
  * clair et son bilan à la fin — y compris ce qui n'a pas pu être lu. Voir
@@ -125,44 +156,17 @@ export function EcranImport({
 	if (donnees.etat !== 'pret')
 		return avecLeDepot(<PageEcran entete={entete} etat={donnees.etat} />);
 
-	const { imports, mode, onChoisirMode, envoiEnCours, erreur, onDeposer } = donnees.valeur;
-	const chemin = CHEMINS.find((c) => c.mode === mode) ?? CHEMINS[0]!;
+	const { imports, envoiEnCours, erreur, onDeposer } = donnees.valeur;
 
 	return avecLeDepot(
 		<PageEcran entete={entete}>
 			<div className="flex flex-col gap-cladd-2xs">
-				{/*
-				  LES DEUX CHEMINS. `ListButton` porte nativement les quatre fentes
-				  du motif — icône, titre, sous-titre, fin de ligne — et son état
-				  `selected` remonte la rangée de deux niveaux de surface, donc le
-				  choix courant se lit sans qu'aucune couleur soit nécessaire.
-				*/}
-				<CarteListe titre="Par où vos factures arrivent">
-					{CHEMINS.map(({ mode: m, titre, aide, recommande, Icone }) => (
-						<ListButton
-							key={m}
-							icon={<Icone />}
-							selected={mode === m}
-							onClick={() => onChoisirMode(m)}
-							footer={aide}
-							after={
-								// La recommandation est ÉCRITE, pas suggérée par l'ordre.
-								// Un ordre se lit comme un hasard ; un mot engage.
-								recommande ? (
-									<span className="shrink-0 text-cladd-3xs font-semibold text-cladd-primary">
-										Recommandé
-									</span>
-								) : (
-									<ChevronRightIcon size={16} className="shrink-0 text-cladd-fg-softest" />
-								)
-							}
-						>
-							{titre}
-						</ListButton>
-					))}
-				</CarteListe>
-
-				<ZoneDepot accept={chemin.accept} onFichiers={onDeposer} desactive={envoiEnCours}>
+				<ZoneDepot
+					accept={FORMATS_ACCEPTES}
+					onFichiers={onDeposer}
+					desactive={envoiEnCours}
+					libellePhoto="Photographier une facture"
+				>
 					<div className="flex flex-col items-center gap-cladd-3xs text-center">
 						<span className="verre flex size-cladd-lg items-center justify-center rounded-full">
 							<UploadIcon size={22} aria-hidden />
@@ -173,9 +177,15 @@ export function EcranImport({
 						{/* Les formats acceptés sont ÉCRITS. Sans eux, on découvre qu'un
 						    fichier est refusé après l'avoir choisi — et on ne sait pas
 						    lequel prendre à la place. */}
-						<p className="text-cladd-2xs text-cladd-fg-softer">{chemin.formats}</p>
+						<p className="text-cladd-2xs text-cladd-fg-softer">FEC, CSV, PDF ou photo</p>
 					</div>
 				</ZoneDepot>
+
+				{/* Ce qui reste du choix disparu : non plus une question, mais ce qu'on
+				    gagne à sortir l'export plutôt qu'à rassembler des PDF. */}
+				<p className="px-cladd-3xs text-cladd-2xs text-cladd-fg-softer">
+					Un export comptable apporte aussi vos règlements et vos clients.
+				</p>
 
 				{erreur ? <Bandeau ton="alerte">{erreur}</Bandeau> : null}
 
@@ -206,14 +216,13 @@ export function EcranImport({
 									// Définie seulement quand un bilan est ouvert : l'import pleine
 									// largeur n'est pas un maître, et ses rangées gardent leur chevron.
 									selectionnee={depotOuvert === null ? undefined : depot._id === depotOuvert}
-									icone={<FileTextIcon />}
-									titre={depot.filename}
-									precision={
-										depot.statut === 'ECHOUE'
-											? (depot.erreur ?? 'Lecture en échec')
-											: (depot.etape ??
-												dateCourte(new Date(depot.deposeLe).toISOString().slice(0, 10)))
+									// L'icône dit par où le dépôt est passé : une feuille de calcul
+									// pour un export, un document pour ce qui est relu par le modèle.
+									icone={
+										depot.mode === 'FACTURE_DEPOSEE' ? <FileTextIcon /> : <FileSpreadsheetIcon />
 									}
+									titre={depot.filename}
+									precision={precisionDepot(depot)}
 									valeur={
 										depot.bilan
 											? `${depot.bilan.facturesCreees} facture${pluriel(depot.bilan.facturesCreees)}`
