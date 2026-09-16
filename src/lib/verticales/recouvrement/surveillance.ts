@@ -382,9 +382,7 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				`La créance ${creance.reference} atteint le seuil de qualification ` +
 				`(${creance.score.toFixed(2)} pour un seuil de ${SEUIL_QUALIFICATION}).`,
 			action: 'Examiner les procédures envisageables pour cette créance.',
-			...(creance.id === undefined
-				? {}
-				: { cible: { genre: 'CREANCE' as const, id: creance.id } })
+			...(creance.id === undefined ? {} : { cible: { genre: 'CREANCE' as const, id: creance.id } })
 		});
 	}
 
@@ -518,7 +516,7 @@ const CONSIGNE_ANGLE_MORT: Record<MotifPrescriptionInconnue, string> = {
 		'Aucune date d’exigibilité ni d’échéance n’est connue sur ces factures, donc aucun point ' +
 		'de départ ne peut être retenu. Saisir l’échéance lève cet angle mort.',
 	DATE_DE_DEPART_INEXPLOITABLE:
-		'Leur date de départ est renseignée mais n’existe pas au calendrier — un « 30 février » ' +
+		'Leur date de départ est renseignée mais n’existe pas au calendrier : un « 30 février » ' +
 		'venu d’un OCR ou d’un export tiers. La corriger lève cet angle mort.'
 };
 
@@ -564,7 +562,7 @@ function anglesMorts(etat: EtatSurveille): string[] {
 	const echeancesPerdues = etat.dossiers.flatMap((dossier) =>
 		dossier.echeances
 			.filter((echeance) => echeance.traitee !== true && !estDateReelle(echeance.dateLimite))
-			.map((echeance) => `${dossier.reference} — ${echeance.libelle}`)
+			.map((echeance) => `${dossier.reference} : ${echeance.libelle}`)
 	);
 
 	// LES DÉBITEURS INVISIBLES AU REGISTRE. Le radar rapproche par identifiant, et

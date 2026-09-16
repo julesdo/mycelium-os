@@ -245,7 +245,7 @@ function Echeance({ echeance, aujourdHui }: { echeance: EcheanceAffichee; aujour
 				</Chip>
 			</div>
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-				{dateCourte(echeance.dateLimite)} — {echeance.consequence}
+				{dateCourte(echeance.dateLimite)} : {echeance.consequence}
 			</p>
 		</div>
 	);

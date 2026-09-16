@@ -154,7 +154,7 @@ export function rendrePieceEnPdf(piece: Piece): jsPDF {
 
 	for (const facture of piece.factures) {
 		if (facture.periodes.length === 0) continue;
-		paragraphe(doc, curseur, `Détail des intérêts — ${facture.reference}`, {
+		paragraphe(doc, curseur, `Détail des intérêts : ${facture.reference}`, {
 			taille: 9,
 			gras: true
 		});

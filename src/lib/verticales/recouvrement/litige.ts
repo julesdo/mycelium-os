@@ -84,7 +84,7 @@ export const QUESTIONS_LITIGE: readonly QuestionFait[] = [
 	{
 		cle: 'CONTESTATION_ECRITE',
 		question:
-			'Ce client vous a-t-il écrit pour contester cette facture — courrier, e-mail, ou réserve portée sur un bon de livraison ?',
+			'Ce client vous a-t-il écrit pour contester cette facture : courrier, e-mail, ou réserve portée sur un bon de livraison ?',
 		portee:
 			'Une contestation écrite fait sortir le dossier des procédures listées ici, qui se déroulent toutes sans débat.',
 		signeDeLitige: true
@@ -118,7 +118,7 @@ export const QUESTIONS_LITIGE: readonly QuestionFait[] = [
 	{
 		cle: 'RECONNAISSANCE_ECRITE',
 		question:
-			'Vous a-t-il confirmé par écrit qu’il devait cette somme — échéancier, promesse de paiement, accusé de dette ?',
+			'Vous a-t-il confirmé par écrit qu’il devait cette somme : échéancier, promesse de paiement, accusé de dette ?',
 		portee:
 			'Cet écrit est une pièce du dossier. Il ne remplace aucune des réponses précédentes et n’en efface aucune.',
 		signeDeLitige: false
@@ -245,7 +245,7 @@ export function lireLitige(reponses: Reponses): LectureLitige {
 		// une abstention : le produit ne sait pas dire si la contestation tient.
 		constats.push(
 			'Le caractère certain n’est donc pas retenu. Le logiciel ne mesure pas si cette ' +
-				'contestation est sérieuse — c’est une appréciation juridique, et il s’en abstient.'
+				'contestation est sérieuse : c’est une appréciation juridique, et il s’en abstient.'
 		);
 
 		// Le blueprint : « une réponse positive ferme les procédures simplifiées ».
@@ -281,7 +281,7 @@ export function lireLitige(reponses: Reponses): LectureLitige {
 		// donc l'alerte arrive plus tôt. Mais un gérant qui croit sa prescription
 		// repoussée par cet écrit ne la surveille pas lui-même. On le dit.
 		constats.push(
-			'Cet écrit est enregistré comme une pièce du dossier. Il n’entre PAS dans le calcul ' +
+			'Cet écrit est enregistré comme une pièce du dossier. Il n’entre pas dans le calcul ' +
 				'du délai de prescription, qui continue de courir depuis l’échéance de la facture.'
 		);
 	}
