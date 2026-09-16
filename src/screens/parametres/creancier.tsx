@@ -1,11 +1,57 @@
 import { useState, type ComponentProps } from 'react';
-import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
-import { CheckIcon } from 'lucide-react';
-import { BoutonPrincipal, SectionEcran, Champ, PageEcran, type Lecture } from '../../ui';
+import {
+	Button,
+	Input,
+	List,
+	ListButton,
+	ListTitle,
+	Segmented,
+	SegmentedButton,
+	Surface
+} from '@cladd-ui/react';
+import { Building2Icon, CheckIcon, SearchIcon } from 'lucide-react';
+import {
+	BoutonPrincipal,
+	Champ,
+	PageEcran,
+	dateCourte,
+	sirenLisible,
+	type Lecture
+} from '../../ui';
 import { TITRE_ECRAN } from '../titres';
 
 /** Les trois états d'un critère de qualification. Jamais présumé favorablement. */
 export type EtatCritere = 'ok' | 'ko' | 'unknown';
+
+/**
+ * Un établissement tel que le registre public le propose.
+ *
+ * ⚠️ IL PORTE SA DATE DE PARUTION, et ce n'est pas décoratif. L'adresse vient
+ * d'une annonce de greffe qui peut avoir des années ; elle s'imprimerait ensuite
+ * en tête de décomptes FIGÉS. La date se lit avant le doigt, pas après.
+ */
+export interface EtablissementAuRegistre {
+	readonly siren: string;
+	readonly denomination: string;
+	readonly ville?: string;
+	readonly adresse?: string;
+	/** La parution la plus récente qui porte cet établissement (AAAA-MM-JJ). */
+	readonly derniereParution?: string;
+}
+
+/**
+ * L'état de la recherche au registre, du point de vue de l'écran.
+ *
+ * ⚠️ « RIEN TROUVÉ » ET « LE REGISTRE N'A PAS RÉPONDU » SONT DEUX ÉTATS, et pas
+ * un seul. Ils mènent à deux gestes opposés : taper les trois lignes à la main,
+ * ou réessayer dans une minute. Les confondre serait un repli silencieux.
+ */
+type EtatRecherche =
+	| { readonly phase: 'REPOS' }
+	| { readonly phase: 'EN_COURS' }
+	| { readonly phase: 'TROUVE'; readonly candidats: readonly EtablissementAuRegistre[] }
+	| { readonly phase: 'AUCUN' }
+	| { readonly phase: 'ECHEC'; readonly message: string };
 
 /**
  * LE CRÉANCIER — ce qui s'imprime en tête du décompte, et ce qui débloque la
@@ -23,12 +69,31 @@ export type EtatCritere = 'ok' | 'ko' | 'unknown';
  * ⚠️ LA QUALITÉ DE COMMERÇANT SE DÉCLARE, ELLE NE SE DEVINE PAS. Trois états,
  * dont « indéterminé » — et c'est le défaut. Présumer favorablement ouvrirait
  * une procédure qui se ferait rejeter ; le doute ne profite jamais au produit.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ET LES TROIS PREMIERS NE SE TAPENT PLUS D'ABORD
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dénomination, numéro et adresse étaient trois champs vides à remplir de
+ * mémoire, alors que le produit interroge déjà le registre public pour un
+ * DÉBITEUR et en tire les trois. Le gérant recopiait sur son propre
+ * établissement ce que le logiciel savait aller chercher : c'est la règle
+ * d'écran n° 1 prise à l'envers.
+ *
+ * ⚠️ ON PROPOSE, ON N'ÉCRIT PAS. Retenir un candidat REMPLIT les champs ; c'est
+ * « Enregistrer » qui écrit, et c'est le serveur qui vérifie alors la clé de
+ * contrôle du numéro. Rien n'est jamais substitué en silence à ce qui a été tapé.
  */
 export function FormulaireCreancier({
 	initial,
+	nomEtablissement,
+	onChercherAuRegistre,
 	onEnregistrer
 }: {
 	initial: { denomination: string; siren: string; adresse: string; estCommercant: EtatCritere };
+	/** Le nom de l'établissement : c'est sur lui que la recherche porte, et l'écran le dit avant de la lancer. */
+	nomEtablissement: string;
+	onChercherAuRegistre: () => Promise<readonly EtablissementAuRegistre[]>;
 	onEnregistrer: (args: {
 		denomination: string;
 		siren?: string;
@@ -43,6 +108,36 @@ export function FormulaireCreancier({
 	const [enCours, setEnCours] = useState(false);
 	const [enregistre, setEnregistre] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
+	const [recherche, setRecherche] = useState<EtatRecherche>({ phase: 'REPOS' });
+
+	async function chercher() {
+		setRecherche({ phase: 'EN_COURS' });
+		try {
+			const candidats = await onChercherAuRegistre();
+			setRecherche(candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats });
+		} catch (e) {
+			setRecherche({
+				phase: 'ECHEC',
+				message:
+					e instanceof Error && e.message
+						? e.message
+						: 'Le registre n’a pas répondu. Réessayez dans un instant.'
+			});
+		}
+	}
+
+	/**
+	 * ⚠️ RETENIR REMPLIT, ET NE GARDE RIEN DE L'ANNONCE AU-DELÀ DE CES TROIS
+	 * LIGNES. Le gérant relit ce qui est écrit dans les champs, le corrige s'il
+	 * le faut, et c'est son appui sur « Enregistrer » qui vaut confirmation.
+	 */
+	function retenir(candidat: EtablissementAuRegistre) {
+		setDenomination(candidat.denomination);
+		setSiren(candidat.siren);
+		if (candidat.adresse !== undefined) setAdresse(candidat.adresse);
+		setErreur(null);
+		setRecherche({ phase: 'REPOS' });
+	}
 
 	async function enregistrer() {
 		if (!denomination.trim()) return;
@@ -64,13 +159,111 @@ export function FormulaireCreancier({
 		}
 	}
 
+	/*
+	  La proposition s'efface dès qu'un numéro est là : il n'y a plus rien à
+	  proposer, et une carte de recherche au-dessus de trois champs remplis est
+	  du bruit. Dérivé au rendu, jamais posé dans un effet.
+	*/
+	const proposer = siren.trim() === '' || recherche.phase !== 'REPOS';
+
 	return (
-		<SectionEcran titre="Votre entreprise, telle qu’elle apparaît sur un décompte">
+		/*
+		  LA CARTE RESTE, SON TITRE PART. « Votre entreprise, telle qu'elle
+		  apparaît sur un décompte » disait pour la troisième fois ce que le titre
+		  de la page dit déjà : c'est une carte de section sans section à nommer,
+		  donc une `Surface`, pas un `SectionEcran`.
+		*/
+		<Surface
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
+			contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
+		>
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Ces informations s’impriment en tête du décompte que vous transmettez à votre
-				expert-comptable, à votre avocat ou à votre assureur. Elles sont figées avec chaque décompte
-				: un document réédité plus tard dit la même chose qu’au jour de son émission.
+				Ces informations sont figées avec chaque décompte : un document réédité plus tard dit la
+				même chose qu’au jour de son émission.
 			</p>
+
+			{proposer ? (
+				<Surface
+					variant="transparent"
+					outline={false}
+					className="verre-carte rounded-cladd-xl"
+					contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+				>
+					{recherche.phase === 'TROUVE' ? (
+						<>
+							{/*
+							  ⚠️ « LE REGISTRE PROPOSE », PAS « NOUS AVONS TROUVÉ ». Le produit
+							  cite une source publique, il ne certifie pas une identité.
+							*/}
+							<List>
+								<ListTitle>Le registre propose</ListTitle>
+								{recherche.candidats.map((candidat) => (
+									<ListButton
+										key={candidat.siren}
+										icon={<Building2Icon size={18} />}
+										header={sirenLisible(candidat.siren)}
+										footer={sousLigneDuCandidat(candidat)}
+										className="verre-bouton"
+										hoverable={false}
+										onClick={() => retenir(candidat)}
+									>
+										<span className="truncate">{candidat.denomination}</span>
+									</ListButton>
+								))}
+							</List>
+							<p className="px-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softest">
+								Touchez celui qui est votre entreprise : les trois champs se remplissent, et rien
+								n’est écrit tant que vous n’avez pas enregistré. L’adresse est celle de l’annonce, à
+								sa date : relisez-la avant d’enregistrer.
+							</p>
+						</>
+					) : null}
+
+					{recherche.phase === 'AUCUN' ? (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							Le registre ne publie aucune annonce au nom de « {nomEtablissement} ». Il ne contient
+							que les sociétés ayant fait l’objet d’une publication de greffe : c’est un silence du
+							registre, pas une réponse sur votre entreprise. Les trois champs se remplissent alors
+							à la main.
+						</p>
+					) : null}
+
+					{recherche.phase === 'ECHEC' ? (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft" role="alert">
+							{recherche.message}
+						</p>
+					) : null}
+
+					{recherche.phase === 'REPOS' || recherche.phase === 'EN_COURS' ? (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							Le registre public rend la dénomination, le numéro et l’adresse du siège : les trois
+							lignes qui s’impriment en tête d’un décompte.
+						</p>
+					) : null}
+
+					{/*
+					  LE GESTE PRINCIPAL PORTE LE NOM CHERCHÉ : on voit sur quoi la
+					  recherche va porter avant de la lancer, pas après.
+					*/}
+					<Button
+						size="sm"
+						variant="transparent"
+						outline={false}
+						hoverable={false}
+						className="verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
+						loading={recherche.phase === 'EN_COURS'}
+						readOnly={recherche.phase === 'EN_COURS'}
+						onClick={() => void chercher()}
+					>
+						<SearchIcon size={16} />
+						{recherche.phase === 'REPOS' || recherche.phase === 'EN_COURS'
+							? `Chercher « ${nomEtablissement} »`
+							: 'Chercher à nouveau'}
+					</Button>
+				</Surface>
+			) : null}
 
 			<Champ etiquette="Dénomination">
 				<Input size="lg" value={denomination} onChange={setDenomination} />
@@ -93,9 +286,8 @@ export function FormulaireCreancier({
 
 			<Champ etiquette="Vous êtes commerçant">
 				<p className="text-cladd-2xs text-cladd-fg-softer">
-					La qualité de commerçant des DEUX parties conditionne l’éligibilité à certaines
-					procédures. Tant qu’elle n’est pas déclarée, la condition reste indéterminée — et une
-					créance indéterminée n’est jamais présumée éligible.
+					Condition de certaines procédures, pour vous et pour votre client. Sans réponse, elle
+					reste indéterminée et n’est jamais présumée remplie.
 				</p>
 				<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
 					<SegmentedButton active={estCommercant === 'ok'} onClick={() => setEstCommercant('ok')}>
@@ -121,15 +313,35 @@ export function FormulaireCreancier({
 				{enregistre ? <CheckIcon /> : null}
 				{enregistre ? 'Enregistré' : enCours ? 'Enregistrement…' : 'Enregistrer'}
 			</BoutonPrincipal>
-		</SectionEcran>
+		</Surface>
 	);
+}
+
+/**
+ * Le siège et la date de l'annonce, en une ligne.
+ *
+ * ⚠️ L'ADRESSE SEULE QUAND ELLE EXISTE : elle CONTIENT déjà la ville. La ville
+ * ne sert de repli que si le siège est illisible. La date, elle, vient toujours
+ * en dernier : c'est ce qui dit de quand date l'adresse qu'on s'apprête à
+ * imprimer.
+ */
+function sousLigneDuCandidat(candidat: EtablissementAuRegistre): string | undefined {
+	const lieu = candidat.adresse ?? candidat.ville;
+	const parution =
+		candidat.derniereParution === undefined
+			? undefined
+			: `annonce du ${dateCourte(candidat.derniereParution)}`;
+	const morceaux = [lieu, parution].filter((m): m is string => m !== undefined);
+	return morceaux.length === 0 ? undefined : morceaux.join(' · ');
 }
 
 /** Ce que la page affiche : le formulaire, la clé qui le remonte, et l'enregistrement que la route pilote. */
 export interface CreancierAffiche {
 	readonly initial: ComponentProps<typeof FormulaireCreancier>['initial'];
+	readonly nomEtablissement: string;
 	/** Remonte le formulaire quand l'établissement change, jamais à l'enregistrement du profil. Voir la route. */
 	readonly cle: string;
+	readonly onChercherAuRegistre: ComponentProps<typeof FormulaireCreancier>['onChercherAuRegistre'];
 	readonly onEnregistrer: ComponentProps<typeof FormulaireCreancier>['onEnregistrer'];
 }
 
@@ -141,8 +353,7 @@ export function EcranCreancier({ donnees }: { donnees: Lecture<CreancierAffiche>
 			entete={{
 				genre: 'poussee',
 				retour: { vers: '/app/parametres', libelle: TITRE_ECRAN.reglages, masqueEnVolets: true },
-				titre: 'Votre entreprise sur un décompte',
-				sousTitre: 'Ce qui sera cité sur les pièces qui partent chez un tiers.'
+				titre: 'Votre entreprise sur un décompte'
 			}}
 			etat={donnees.etat}
 		>
@@ -150,6 +361,8 @@ export function EcranCreancier({ donnees }: { donnees: Lecture<CreancierAffiche>
 				<FormulaireCreancier
 					key={pret.cle}
 					initial={pret.initial}
+					nomEtablissement={pret.nomEtablissement}
+					onChercherAuRegistre={pret.onChercherAuRegistre}
 					onEnregistrer={pret.onEnregistrer}
 				/>
 			)}

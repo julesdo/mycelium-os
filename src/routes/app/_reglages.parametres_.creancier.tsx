@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranCreancier } from '../../screens/parametres/creancier';
 
@@ -35,6 +35,7 @@ function PageCreancier() {
 	const org = useQuery(api.organizations.getMyOrg, {});
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	const enregistrer = useMutation(api.recouvrement.profil.enregistrer);
+	const chercher = useAction(api.recouvrement.monEtablissement.chercherMonEtablissementAuRegistre);
 
 	/*
 	  La page attend les deux lectures. Le formulaire s'initialise une fois par
@@ -51,12 +52,29 @@ function PageCreancier() {
 							etat: 'pret',
 							valeur: {
 								cle: org?._id ?? 'aucun',
+								nomEtablissement: org?.name ?? '',
 								initial: {
 									denomination: profil?.denomination ?? org?.name ?? '',
-									siren: profil?.siren ?? '',
+									/*
+									  ⚠️ LE `siret` DE L'ÉTABLISSEMENT SERT DE VALEUR DE DÉPART, ET
+									  SEULEMENT ÇA.
+
+									  Le même numéro se saisissait à trois endroits pour n'être lu
+									  qu'ici. Les deux autres champs ont disparu ; ceux qui n'avaient
+									  rempli qu'`organizations.siret` verraient sinon leur verrou
+									  « Votre identité de créancier » resté levé alors qu'ils croient
+									  l'avoir renseigné.
+
+									  ⚠️ IL N'ÉCRASE JAMAIS CE QUI A ÉTÉ SAISI : `profil.siren`
+									  passe d'abord, et rien n'est écrit tant que le gérant n'a pas
+									  enregistré. C'est le serveur qui vérifie alors la clé de
+									  contrôle et n'en retient que les neuf chiffres du SIREN.
+									*/
+									siren: profil?.siren ?? org?.siret ?? '',
 									adresse: profil?.adresse ?? '',
 									estCommercant: profil?.estCommercant ?? 'unknown'
 								},
+								onChercherAuRegistre: async () => (await chercher({})).candidats,
 								onEnregistrer: enregistrer
 							}
 						}

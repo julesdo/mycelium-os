@@ -149,7 +149,10 @@ function invitationDe(forme: FormeEquipe): InvitationAffichee {
 		estAdmin,
 		complet: siegesUtilises + invitations.length >= siegesAutorises,
 		places: siegesAutorises,
-		onInviter: () => Promise.resolve()
+		// La feuille d'après l'envoi montre le lien à copier : sans lui, la salle
+		// ne verrait jamais l'écran qui existe pour une invitation tombée dans les
+		// indésirables.
+		onInviter: () => Promise.resolve('https://www.letikette.com/rejoindre/4f1c-demo')
 	};
 }
 

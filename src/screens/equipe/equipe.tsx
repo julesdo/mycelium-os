@@ -26,6 +26,9 @@ import {
 } from 'lucide-react';
 import {
 	BoutonPrincipal,
+	BoutonSecondaire,
+	Champ,
+	Lien,
 	LigneAnalyse,
 	ListeAnalyses,
 	PageEcran,
@@ -147,14 +150,18 @@ export function Equipe({
 	onAnnulerInvitation: (invitationId: string) => Promise<void>;
 	onVerifierAdresse: (membreId: string) => Promise<void>;
 }) {
-	const complet = siegesUtilises + invitations.length >= siegesAutorises;
+	const placesLibres = Math.max(0, siegesAutorises - siegesUtilises - invitations.length);
+	const complet = placesLibres === 0;
 
 	return (
 		<div className="flex max-w-180 flex-col gap-cladd-2xs">
-			<SectionEcran
-				titre="Les personnes de l’établissement"
-				legende={`${siegesUtilises} sur ${siegesAutorises} place${pluriel(siegesAutorises)}`}
-			>
+			{/*
+			  ⚠️ LES PLACES NE SE COMPTENT PLUS DEUX FOIS. « 3 sur 5 places » vivait
+			  ici, et « 2 places » sur la rangée d'invitation trois blocs plus bas :
+			  deux façons de dire le même reste, dont une seule mène au geste qui
+			  l'utilise. Celle qui reste est sur la rangée.
+			*/}
+			<SectionEcran titre="Les personnes de l’établissement">
 				<Surface
 					variant="transparent"
 					outline={false}
@@ -178,11 +185,10 @@ export function Equipe({
 				</Surface>
 			</SectionEcran>
 
+			{/* La légende disait « 2 envoyées, pas encore acceptées » sous un titre qui
+			    dit déjà « en attente ». La liste dessous porte le compte. */}
 			{invitations.length > 0 ? (
-				<SectionEcran
-					titre="Invitations en attente"
-					legende={`${invitations.length} envoyée${pluriel(invitations.length)}, pas encore acceptée${pluriel(invitations.length)}`}
-				>
+				<SectionEcran titre="Invitations en attente">
 					<Surface
 						variant="transparent"
 						outline={false}
@@ -210,24 +216,28 @@ export function Equipe({
 			  bouton hors de vue.
 
 			  Une rangée dit ce qu'il reste de places ; la page a l'écran pour elle.
+
+			  ⚠️ ET ELLE NE S'AFFICHE PLUS À QUI NE PEUT PAS INVITER. Un membre y
+			  lisait « Réservé aux administrateurs » sous un chevron qui poussait vers
+			  une page dont le seul contenu était le même refus, écrit plus longuement :
+			  une page entière pour dire non. Il sait qui administre — chaque rangée de
+			  la liste au-dessus porte sa puce « Administrateur ». La garde de la page
+			  reste, pour un lien direct, et celle du serveur aussi.
 			*/}
-			<ListeAnalyses>
-				<LigneAnalyse
-					vers="/app/equipe/inviter"
-					icone={<UserPlusIcon />}
-					titre="Inviter un collègue"
-					precision={
-						estAdmin
-							? 'Un lien valable sept jours, il choisit son mot de passe'
-							: 'Réservé aux administrateurs'
-					}
-					valeur={
-						complet
-							? 'Complet'
-							: `${siegesAutorises - siegesUtilises - invitations.length} place${pluriel(siegesAutorises - siegesUtilises - invitations.length)}`
-					}
-				/>
-			</ListeAnalyses>
+			{estAdmin ? (
+				<ListeAnalyses>
+					<LigneAnalyse
+						vers="/app/equipe/inviter"
+						icone={<UserPlusIcon />}
+						titre="Inviter un collègue"
+						valeur={
+							complet
+								? 'Complet'
+								: `${placesLibres} place${pluriel(placesLibres)} libre${pluriel(placesLibres)}`
+						}
+					/>
+				</ListeAnalyses>
+			) : null}
 		</div>
 	);
 }
@@ -388,7 +398,8 @@ export function FormulaireInvitation({
 	complet,
 	places
 }: {
-	onInviter: (email: string, role: RoleEquipe) => Promise<void>;
+	/** Rend le LIEN d'invitation : c'est lui qui sauve une invitation tombée dans les indésirables. */
+	onInviter: (email: string, role: RoleEquipe) => Promise<string>;
 	complet: boolean;
 	places: number;
 }) {
@@ -396,19 +407,20 @@ export function FormulaireInvitation({
 	const [role, setRole] = useState<RoleEquipe>('ORG_MEMBER');
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
-	const [envoye, setEnvoye] = useState(false);
+	/** L'invitation qui vient de partir, ou `null` : c'est elle qui décide de l'écran montré. */
+	const [envoyee, setEnvoyee] = useState<{ email: string; lien: string } | null>(null);
 
 	const valide = email.includes('@') && email.trim().length > 3;
 
 	async function envoyer() {
 		if (!valide || enCours) return;
+		const adresse = email.trim().toLowerCase();
 		setEnCours(true);
 		setErreur(null);
 		try {
-			await onInviter(email.trim().toLowerCase(), role);
+			const lien = await onInviter(adresse, role);
 			setEmail('');
-			setEnvoye(true);
-			window.setTimeout(() => setEnvoye(false), 2500);
+			setEnvoyee({ email: adresse, lien });
 		} catch (e) {
 			setErreur(messageDErreur(e));
 		} finally {
@@ -425,19 +437,48 @@ export function FormulaireInvitation({
 		);
 	}
 
+	if (envoyee !== null) {
+		return <InvitationPartie invitation={envoyee} onRecommencer={() => setEnvoyee(null)} />;
+	}
+
 	return (
-		<div className="flex flex-col gap-cladd-2xs">
-			<div className="flex flex-col gap-cladd-3xs">
-				<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Adresse e-mail</span>
+		/*
+		  ⚠️ UN VRAI `<form>`, ET PAS UN CHAMP SUIVI D'UN BOUTON.
+
+		  Sans lui, la touche « Envoyer » du clavier iOS ne fait rien : il faut
+		  refermer le clavier pour atteindre le bouton, c'est-à-dire exactement le
+		  geste que cette page avait été créée pour supprimer. Et l'intitulé du
+		  champ était un `<span>` posé à côté de l'`Input` : un lecteur d'écran
+		  annonçait un champ sans nom. `Champ` est un `<label>`, il porte donc le
+		  nom du champ qu'il enveloppe.
+		*/
+		<form
+			className="flex flex-col gap-cladd-2xs"
+			onSubmit={(e) => {
+				e.preventDefault();
+				void envoyer();
+			}}
+		>
+			<Champ etiquette="Adresse e-mail">
 				<Input
 					value={email}
 					onChange={setEmail}
 					name="invitation"
 					type="email"
+					inputMode="email"
 					placeholder="prenom.nom@etablissement.fr"
 					size="lg"
+					// ⚠️ PAS D'`autoFocus` : le clavier masquerait l'explication du rôle
+					// à l'ouverture, et c'est elle qu'on vient lire avant de choisir.
+					inputComponentProps={{
+						autoComplete: 'email',
+						autoCapitalize: 'none',
+						autoCorrect: 'off',
+						spellCheck: false,
+						enterKeyHint: 'send'
+					}}
 				/>
-			</div>
+			</Champ>
 
 			<div className="flex flex-col gap-cladd-3xs">
 				<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Son rôle</span>
@@ -460,15 +501,91 @@ export function FormulaireInvitation({
 				</p>
 			) : null}
 
+			{/* `readOnly` et non `disabled` : un bouton désactivé ne reçoit pas le
+			    survol, et la validation reste faite ici — une touche Entrée sur une
+			    adresse incomplète ne part pas. */}
 			<BoutonPrincipal
+				type="submit"
 				className="self-start"
 				loading={enCours}
 				readOnly={!valide || enCours}
-				onClick={() => void envoyer()}
 			>
-				{envoye ? <CheckIcon /> : <UserPlusIcon />}
-				{envoye ? 'Invitation envoyée' : 'Envoyer l’invitation'}
+				<UserPlusIcon />
+				Envoyer l’invitation
 			</BoutonPrincipal>
+		</form>
+	);
+}
+
+/**
+ * CE QU'ON VOIT APRÈS L'ENVOI, ET POURQUOI CE N'EST PAS « ENREGISTRÉ » PENDANT
+ * DEUX SECONDES ET DEMIE.
+ *
+ * Le formulaire se vidait, le bouton confirmait le temps d'un battement de
+ * cils, et le gérant restait devant un champ vide. Or cet écran dit lui-même
+ * qu'un e-mail d'invitation tombe régulièrement dans les indésirables d'une
+ * messagerie d'établissement : le seul recours est le lien copiable, et il
+ * n'était accessible qu'en revenant à l'équipe puis en retrouvant la bonne
+ * rangée.
+ *
+ * ⚠️ LE LIEN PORTE UN JETON. Il s'affiche, il se copie, et il ne se journalise
+ * jamais : quiconque l'obtient entre dans l'établissement.
+ */
+function InvitationPartie({
+	invitation,
+	onRecommencer
+}: {
+	invitation: { email: string; lien: string };
+	onRecommencer: () => void;
+}) {
+	const [copie, setCopie] = useState(false);
+
+	async function copier() {
+		try {
+			await navigator.clipboard.writeText(invitation.lien);
+			setCopie(true);
+			window.setTimeout(() => setCopie(false), 1600);
+		} catch {
+			// Presse-papiers refusé. Le lien reste lisible et sélectionnable
+			// au-dessus : on a gagné moins, on n'a rien perdu.
+		}
+	}
+
+	return (
+		<div className="flex flex-col gap-cladd-2xs">
+			<Surface
+				variant="transparent"
+				outline={false}
+				className="verre-carte rounded-cladd-xl"
+				contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+			>
+				<span className="flex flex-wrap items-center gap-cladd-3xs">
+					<Chip color="brand" size="md">
+						Invitation envoyée
+					</Chip>
+					<span className="text-cladd-sm font-bold break-all">{invitation.email}</span>
+				</span>
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					Un e-mail d’invitation tombe régulièrement dans les indésirables d’une messagerie
+					d’établissement. Le lien ci-dessous se transmet par n’importe quel canal, et vaut la même
+					chose que l’e-mail.
+				</p>
+				<span className="text-cladd-2xs break-all text-cladd-fg-softer">{invitation.lien}</span>
+			</Surface>
+
+			<div className="flex flex-wrap items-center gap-cladd-3xs">
+				<BoutonPrincipal onClick={() => void copier()}>
+					{copie ? <CheckIcon /> : <CopyIcon />}
+					{copie ? 'Lien copié' : 'Copier le lien'}
+				</BoutonPrincipal>
+				<BoutonSecondaire onClick={onRecommencer}>
+					<UserPlusIcon />
+					Inviter quelqu’un d’autre
+				</BoutonSecondaire>
+				<BoutonSecondaire as={Lien} to="/app/equipe">
+					Revenir à l’équipe
+				</BoutonSecondaire>
+			</div>
 		</div>
 	);
 }

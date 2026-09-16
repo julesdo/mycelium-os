@@ -1,5 +1,6 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
 import { Providers } from '../app/providers';
+import { AMORCE_THEME } from '../app/use-theme';
 import appCss from '../styles/app.css?url';
 
 export const Route = createRootRoute({
@@ -39,8 +40,19 @@ function Document() {
 	return (
 		// `lang="fr"` en dur : l'interface est en français uniquement, EGalim est
 		// une loi française. Il n'y a ni préfixe de route, ni couche i18n.
-		<html lang="fr">
+		// `suppressHydrationWarning` : l'amorce ci-dessous pose une classe sur cet
+		// élément AVANT l'hydratation, et React signalerait sinon l'attribut en
+		// trop. C'est le seul endroit du produit où le DOM précède React.
+		<html lang="fr" suppressHydrationWarning>
 			<head>
+				{/*
+				  ⚠️ AVANT `HeadContent`, ET AVANT TOUT AFFICHAGE. Cette ligne résout le
+				  thème — préférence enregistrée, sinon réglage du système — et pose la
+				  classe sur la racine. Sans elle, « Automatique » fait clignoter la page
+				  du sombre au clair à chaque ouverture. Son contenu vit dans
+				  `app/use-theme.ts`, avec la clé et la requête média qu'elle lit.
+				*/}
+				<script dangerouslySetInnerHTML={{ __html: AMORCE_THEME }} />
 				<HeadContent />
 			</head>
 			<body>

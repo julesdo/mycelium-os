@@ -50,9 +50,9 @@ function PageBienvenue() {
 /**
  * La création de l'entreprise.
  *
- * Trois informations, dont deux facultatives. Tout le reste se déduit des
- * factures, et c'est le principe du produit : on ne demande jamais une saisie
- * que le logiciel peut aller chercher lui-même.
+ * UN SEUL CHAMP, ET C'EST LE BUT. Tout le reste se déduit des factures, et
+ * c'est le principe du produit : on ne demande jamais une saisie que le
+ * logiciel peut aller chercher lui-même.
  *
  * CE QUI A ÉTÉ RETIRÉ, ET POURQUOI ÇA COMPTE. Cet écran demandait un type
  * d'établissement — restaurant inter-entreprises, EHPAD, crèche — et un nombre
@@ -60,18 +60,31 @@ function PageBienvenue() {
  * la mutation. Un champ qu'on remplit pour rien est pire qu'un champ absent, il
  * apprend au lecteur que ses réponses ne servent à rien.
  *
- * Le volume de factures, lui, part vraiment, et ne sert qu'à une chose : situer
- * le palier d'abonnement. Le SIRET n'est pas exigé à l'entrée, parce que
- * bloquer l'accès au produit sur un numéro que personne n'a en tête au moment
- * de s'inscrire ferait perdre des clients pour rien.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LES DEUX FACULTATIFS SONT PARTIS AUSSI
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * « Factures émises par an » : à cet instant précis, il n'y a encore AUCUNE
+ * facture — et l'aide disait déjà que le palier le plus bas s'applique sans
+ * lui. Le produit les importe ensuite, et les compte : la page de
+ * l'établissement affiche cette mesure, avec sa fenêtre, et garde une saisie
+ * pour corriger.
+ *
+ * « SIRET » : le même numéro se saisissait TROIS fois, dans deux champs
+ * différents, pour n'être lu qu'une seule — sur `profilsCreancier.siren`, que
+ * le décompte et le verrou de l'accueil lisent. Celui-ci écrivait
+ * `organizations.siret`, qu'aucune règle du domaine ne consulte. Il se saisit
+ * désormais une fois, sur la page du créancier, où le registre public le
+ * propose sur le nom de l'entreprise.
+ *
+ * Le numéro déjà en base n'est pas perdu : la page du créancier s'en sert comme
+ * valeur de départ tant qu'aucun SIREN n'y a été enregistré.
  */
 function Bienvenue() {
 	const navigate = useNavigate();
 	const creer = useMutation(api.organizations.createOrganization);
 
 	const [nom, setNom] = useState('');
-	const [facturesParAn, setFacturesParAn] = useState('');
-	const [siret, setSiret] = useState('');
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
 
@@ -81,17 +94,7 @@ function Bienvenue() {
 		setErreur(null);
 		setEnCours(true);
 		try {
-			// LE VOLUME N'EST ENVOYÉ QUE S'IL EST EXPLOITABLE. Un champ laissé vide,
-			// ou rempli de travers, ne doit pas se transformer en zéro : zéro facture
-			// par an est une déclaration, pas une absence de déclaration — et c'est
-			// elle qui déciderait du palier facturé.
-			const volume = Number.parseInt(facturesParAn, 10);
-
-			await creer({
-				name: nom.trim(),
-				...(Number.isFinite(volume) && volume > 0 ? { facturesParAn: volume } : {}),
-				...(siret.trim() ? { siret: siret.replace(/\s/g, '') } : {})
-			});
+			await creer({ name: nom.trim() });
 			await navigate({ to: '/app' });
 		} catch {
 			setErreur(
@@ -106,40 +109,16 @@ function Bienvenue() {
 		<CadreAuth
 			large
 			titre="Votre entreprise"
-			explication="Trois informations, dont deux facultatives, et vous pourrez déposer vos premières factures. Le reste, nous le lirons dedans."
+			explication="Son nom suffit pour commencer : déposez vos premières factures, et nous lirons le reste dedans."
 		>
 			<form onSubmit={soumettre} className="flex flex-col gap-cladd-2xs">
 				<Champ etiquette="Nom de l’entreprise">
 					<Input value={nom} onChange={setNom} name="organisation" required />
 				</Champ>
 
-				<Champ
-					etiquette="Factures émises par an (facultatif)"
-					aide="Une estimation suffit. Elle détermine votre palier d’abonnement, rien d’autre — sans elle, c’est le palier le plus bas qui s’applique."
-				>
-					<Input
-						type="number"
-						value={facturesParAn}
-						onChange={setFacturesParAn}
-						name="facturesParAn"
-						placeholder="1200"
-					/>
-				</Champ>
-
-				<Champ
-					etiquette="SIRET (facultatif)"
-					aide="Il figurera sur vos décomptes et vos courriers. Vous pourrez l’ajouter plus tard."
-				>
-					<Input value={siret} onChange={setSiret} name="siret" placeholder="123 456 789 00012" />
-				</Champ>
-
 				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
 
-				<BoutonPrincipal
-					type="submit"
-					loading={enCours}
-					readOnly={enCours}
-				>
+				<BoutonPrincipal type="submit" loading={enCours} readOnly={enCours}>
 					Créer mon entreprise
 				</BoutonPrincipal>
 			</form>

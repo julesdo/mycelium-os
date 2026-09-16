@@ -26,6 +26,13 @@ export function EtablissementEnErreur() {
  */
 export function PageEtablissement() {
 	const org = useQuery(api.organizations.getMyOrg, {});
+	/*
+	  ⚠️ LA MESURE NE RETIENT PAS LA PAGE. Le formulaire s'ouvre avec le nom et le
+	  volume déclaré ; la phrase qui dit ce que les imports comptent apparaît
+	  quand le compte arrive. Attendre l'un pour l'autre ferait une page blanche
+	  pour une ligne d'explication.
+	*/
+	const mesure = useQuery(api.recouvrement.monEtablissement.volumeEmis, {});
 	const mettreAJour = useMutation(api.organizations.updateOrganization);
 
 	return (
@@ -43,9 +50,9 @@ export function PageEtablissement() {
 											cle: org._id,
 											initial: {
 												nom: org.name ?? '',
-												factures: org.facturesParAn ? String(org.facturesParAn) : '',
-												siret: org.siret ?? ''
+												factures: org.facturesParAn ? String(org.facturesParAn) : ''
 											},
+											mesure: mesure ?? null,
 											onEnregistrer: mettreAJour
 										}
 						}

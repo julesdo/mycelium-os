@@ -7,6 +7,7 @@ import { invitationHtml, invitationTexte } from './emails/modeles';
 import { assertSeatAvailable, resolveEffectivePlan, finDeLEssai } from './billing';
 import { requireEnv } from './env';
 import { shouldSkipTestEmail } from './emails/helpers';
+import { MS_VALIDITE_INVITATION } from '../config/invitations';
 import {
 	requireOrgMember,
 	requireAdminDeLOrgCourante,
@@ -340,7 +341,7 @@ export const inviteOrganizationMember = authedMutation({
 			role,
 			token,
 			invitedBy: ctx.user._id,
-			expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+			expiresAt: now + MS_VALIDITE_INVITATION,
 			createdAt: now
 		});
 
@@ -416,7 +417,7 @@ export const bulkInviteOrganizationMembers = authedMutation({
 					role: invite.role,
 					token,
 					invitedBy: ctx.user._id,
-					expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+					expiresAt: now + MS_VALIDITE_INVITATION,
 					createdAt: now
 				});
 
