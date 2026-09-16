@@ -28,9 +28,13 @@ export type ClePiece =
 	| 'MISE_EN_DEMEURE';
 
 /**
- * Les quatre conditions légales confirmées par le brief comme vérifiées :
- * « la créance doit être certaine, liquide et exigible, et issue d'une
- * facturation entre commerçants ».
+ * Les quatre conditions légales : la créance doit être certaine, liquide et
+ * exigible, et avoir fait l'objet d'une facturation entre commerçants.
+ *
+ * Elles ne viennent plus du brief mais de leur texte, relevé le 16 septembre
+ * 2026 — voir `PARAMETRES.conditionsCreanceL126`, qui le cite et porte les deux
+ * réserves qui comptent : le texte vise la FACTURATION et non les personnes, et
+ * il n'a encore reçu aucune interprétation.
  */
 export interface CreanceQualifiee {
 	readonly certaine: EtatCritere;
@@ -54,7 +58,7 @@ export type ConditionLegale = (typeof CONDITIONS_LEGALES)[number];
 export const LIBELLE_CONDITION: Record<ConditionLegale, string> = {
 	certaine: 'le caractère certain',
 	liquide: 'le caractère liquide',
-	exigible: "le caractère exigible",
+	exigible: 'le caractère exigible',
 	entreCommercants: 'la qualité de commerçant des deux parties'
 };
 

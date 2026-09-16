@@ -76,6 +76,7 @@ interface ProfilDemo {
 	readonly denomination: string;
 	readonly siren?: string;
 	readonly adresse?: string;
+	readonly formeJuridique?: string;
 	readonly estCommercant: EtatCritere;
 }
 
@@ -95,12 +96,32 @@ const PROFIL_ENREGISTRE_DEMO: ProfilDemo = {
 	denomination: ETABLISSEMENT_DEMO.nom,
 	siren: ETABLISSEMENT_DEMO.siren,
 	adresse: ETABLISSEMENT_DEMO.adresse,
+	formeJuridique: ETABLISSEMENT_DEMO.formeJuridique,
 	estCommercant: ETABLISSEMENT_DEMO.estCommercant
 };
 
-/** La forme nommée des réglages et de la page du créancier : le profil enregistré, seule entrée changée. */
+/**
+ * LE CAS OÙ LA FORME NE DIT RIEN, et c'est celui qu'il faut pouvoir regarder.
+ *
+ * Une entreprise individuelle porte au registre une forme juridique qui ne
+ * distingue plus le commerçant de l'artisan, du libéral et de l'agriculteur
+ * depuis la fusion des catégories de l'INSEE au 1er juillet 2018. La page
+ * continue donc de poser la question, en disant pourquoi elle la pose : c'est la
+ * seule occurrence où « le logiciel décide, le gérant confirme » cède, et elle
+ * doit se voir aux quatre largeurs comme le cas déduit.
+ */
+const PROFIL_SANS_DEDUCTION_DEMO: ProfilDemo = {
+	denomination: ETABLISSEMENT_DEMO.nom,
+	siren: ETABLISSEMENT_DEMO.siren,
+	adresse: ETABLISSEMENT_DEMO.adresse,
+	formeJuridique: 'Entrepreneur individuel',
+	estCommercant: 'unknown'
+};
+
+/** Les formes nommées des réglages et de la page du créancier : le profil enregistré, seule entrée changée. */
 const FORMES_PROFIL_DEMO: Readonly<Record<string, ProfilDemo | null>> = {
-	'profil enregistré': PROFIL_ENREGISTRE_DEMO
+	'profil enregistré': PROFIL_ENREGISTRE_DEMO,
+	'forme qui ne déduit rien': PROFIL_SANS_DEDUCTION_DEMO
 };
 
 /**
@@ -116,6 +137,7 @@ function creancierDe(profil: ProfilDemo | null): CreancierAffiche {
 			denomination: profil?.denomination ?? ORGANISATION_DEMO.name,
 			siren: profil?.siren ?? '',
 			adresse: profil?.adresse ?? '',
+			formeJuridique: profil?.formeJuridique ?? '',
 			estCommercant: profil?.estCommercant ?? 'unknown'
 		},
 		/*
@@ -129,11 +151,20 @@ function creancierDe(profil: ProfilDemo | null): CreancierAffiche {
 	};
 }
 
-/** Ce que le registre public propose sur le nom de l'établissement de la salle. */
+/**
+ * Ce que le registre public propose sur le nom de l'établissement de la salle.
+ *
+ * ⚠️ LE SECOND CANDIDAT NE PORTE PAS DE FORME JURIDIQUE, et c'est délibéré. Le
+ * registre ne publie que ce qu'une annonce de greffe a porté : une annonce sans
+ * forme existe, et le retenir doit faire REVENIR la question au lieu de garder
+ * la déduction du candidat précédent. Deux candidats identiques à ce détail près
+ * montreraient une page qui déduit toujours, ce qui est faux.
+ */
 const CANDIDATS_REGISTRE_DEMO: readonly EtablissementAuRegistre[] = [
 	{
 		siren: ETABLISSEMENT_DEMO.siren,
 		denomination: ETABLISSEMENT_DEMO.nom,
+		formeJuridique: ETABLISSEMENT_DEMO.formeJuridique,
 		adresse: ETABLISSEMENT_DEMO.adresse,
 		derniereParution: '2026-04-18'
 	},

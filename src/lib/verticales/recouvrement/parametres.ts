@@ -44,9 +44,14 @@
  * qui en a un. Elles sont donc déclarées `nature: 'SERIE'` et `resoluPar`
  * nomme le module qui les porte.
  *
- * Sources relevées le 2026-09-03 sur legifrance.gouv.fr et sources publiques
- * concordantes. Relevé PAR LE LOGICIEL — aucun avocat n'a rien validé, et
- * `valideParAvocat` vaut `false` partout.
+ * Sources relevées le 2026-09-03, complétées le 2026-09-16, sur legifrance.gouv.fr,
+ * insee.fr et sources publiques concordantes. Relevé PAR LE LOGICIEL — aucun
+ * avocat n'a rien validé, et `valideParAvocat` vaut `false` partout.
+ *
+ * Le second relevé a comblé les trois entrées qui portaient « article source non
+ * fourni » — elles citent désormais leur texte — et il a ajouté de quoi DÉDUIRE
+ * la qualité de commerçant d'une forme juridique, au lieu de la demander à
+ * quelqu'un dont le registre la connaît déjà.
  */
 
 /** L'unité d'un paramètre. Un délai en mois n'est pas un délai en jours. */
@@ -88,6 +93,13 @@ export function tousLesParametres(): readonly ParametreLegalBase[] {
 
 const LE = '2026-09-03';
 
+/**
+ * Le second relevé. Il comble les trois entrées qui disaient « article source
+ * non fourni », et il apporte ce qui manquait pour DÉDUIRE la qualité de
+ * commerçant d'une forme juridique au lieu de la demander.
+ */
+const LE_16 = '2026-09-16';
+
 const AVOCAT_ATTENDU =
 	'Relevé sur source publique par le logiciel, PAS validé par un avocat : utilisable pour ' +
 	'calculer et surveiller, insuffisant pour produire un acte.';
@@ -106,7 +118,7 @@ export const PARAMETRES = {
 		valideParAvocat: false,
 		resoluPar: 'pays/france/taux.ts → tauxPenaliteParDefaut(date)',
 		note:
-			"À défaut de stipulation contractuelle, le taux est celui appliqué par la BCE à son " +
+			'À défaut de stipulation contractuelle, le taux est celui appliqué par la BCE à son ' +
 			'opération de refinancement la plus récente, MAJORÉ DE 10 POINTS. Il est réancré deux ' +
 			'fois par an — au 1er janvier et au 1er juillet — donc une facture impayée depuis dix-huit ' +
 			`mois traverse trois taux. ${AVOCAT_ATTENDU}`
@@ -134,7 +146,7 @@ export const PARAMETRES = {
 		valeur: null,
 		unite: 'annees',
 		source: 'Article L110-4 du code de commerce, et prescriptions spéciales plus courtes',
-		verifieLe: LE,
+		verifieLe: LE_16,
 		verifie: true,
 		valideParAvocat: false,
 		resoluPar: 'pays/france/prescription.ts → regimePrescription(secteur)',
@@ -145,7 +157,113 @@ export const PARAMETRES = {
 			`consommation, deux ans). Secteur indéterminé : le délai le plus court est retenu. ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<never>,
 
+	qualiteCommercantParLaForme: {
+		cle: 'qualiteCommercantParLaForme',
+		nature: 'SERIE',
+		valeur: null,
+		unite: 'sans',
+		source:
+			'Article L210-1, alinéa 2, du code de commerce ; article 1845, alinéa 2, du code civil ; ' +
+			'article L311-1, dernier alinéa, du code rural et de la pêche maritime',
+		verifieLe: LE_16,
+		verifie: true,
+		valideParAvocat: false,
+		resoluPar: 'pays/france/commercialite.ts → qualiteCommercantDeLaForme(formeJuridique)',
+		note:
+			'Ce que la forme juridique relevée au registre permet de déduire, et ce qu’elle ne permet ' +
+			'pas. ⚠️ LE PAS « SOCIÉTÉ COMMERCIALE PAR LA FORME, DONC COMMERÇANTE » N’EST ÉCRIT DANS ' +
+			'AUCUN TEXTE : L210-1 vise le caractère commercial d’une SOCIÉTÉ, et l’article L721-3 du ' +
+			'code de commerce tient les deux notions séparées en deux chefs de compétence distincts ' +
+			'— les engagements entre commerçants au 1°, les contestations relatives aux sociétés ' +
+			'commerciales au 2°. La forme suffit donc à PROPOSER une réponse et à remplir un écran, ' +
+			`jamais à l’établir dans un acte. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<never>,
+
 	// ── Constantes relevées ─────────────────────────────────────────────────
+
+	formesCommercialesParLaForme: {
+		cle: 'formesCommercialesParLaForme',
+		nature: 'CONSTANTE',
+		valeur: ['SNC', 'SCS', 'SARL', 'SA', 'SAS', 'SCA'],
+		unite: 'sans',
+		source:
+			'Article L210-1, alinéa 2, du code de commerce (en vigueur depuis le 21 septembre 2000)',
+		verifieLe: LE_16,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Sont commerciales à raison de leur forme et quel que soit leur objet, les sociétés en ' +
+			'nom collectif, les sociétés en commandite simple, les sociétés à responsabilité limitée ' +
+			'et les sociétés par actions. » LA LISTE EST CLOSE : quatre familles. « Sociétés par ' +
+			'actions » couvre la SA, la SAS et la société en commandite par actions ; l’EURL et la ' +
+			'SASU sont les formes unipersonnelles des mêmes types, pas des formes de plus. Tout ce ' +
+			`qui n’y figure pas devra être commercial par son objet, ou ne le sera pas. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<readonly string[]>,
+
+	caractereCivilActivitesAgricoles: {
+		cle: 'caractereCivilActivitesAgricoles',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source:
+			'Article L311-1, dernier alinéa, du code rural et de la pêche maritime (en vigueur ' +
+			'depuis le 22 mai 2019)',
+		verifieLe: LE_16,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Les activités agricoles ainsi définies ont un caractère civil. » L’exploitant personne ' +
+			'physique, le GAEC, l’EARL et la SCEA sont donc civils. ⚠️ MAIS LA FORME PRIME, ET ' +
+			'L’ORDRE EST LA RÈGLE : si la forme est l’une des quatre de L210-1, la commercialité par ' +
+			'la forme s’applique d’abord — une exploitation constituée en SARL ou en SAS reste ' +
+			'commerciale par sa forme, quel que soit son objet agricole. Le caractère civil de ' +
+			`l’activité ne joue qu’ensuite. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	formeJuridiqueMuettePourPersonnePhysique: {
+		cle: 'formeJuridiqueMuettePourPersonnePhysique',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source:
+			'Nomenclature des catégories juridiques de l’INSEE, catégorie 1000 « Entrepreneur ' +
+			'individuel » créée au 1er juillet 2018 en remplacement des catégories 1100 à 1900',
+		verifieLe: LE_16,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Les catégories qui distinguaient « Artisan-commerçant », « Commerçant », « Artisan », ' +
+			'« Profession libérale », « Exploitant agricole » et « Agent commercial » ont été gelées ' +
+			'et fondues en une seule. Une entreprise individuelle immatriculée depuis cette date ' +
+			'porte donc au registre une forme juridique qui NE DIT RIEN de sa commercialité : ' +
+			'l’information a été retirée de la nomenclature, pas du droit. C’est un trou structurel, ' +
+			'pas un défaut à corriger — l’écran doit continuer de poser la question à une personne ' +
+			`physique, et dire pourquoi il la pose. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	conditionsCreanceL126: {
+		cle: 'conditionsCreanceL126',
+		nature: 'CONSTANTE',
+		valeur: ['certaine', 'liquide', 'exigible', 'facturationEntreCommercants'],
+		unite: 'sans',
+		source:
+			'Article L126-1 du code des procédures civiles d’exécution, créé par la loi ' +
+			'n° 2026-307 du 23 avril 2026',
+		verifieLe: LE_16,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Les quatre conditions de la procédure simplifiée du commissaire de justice, jusqu’ici ' +
+			'écrites sans article : la créance doit être certaine, liquide et exigible, et avoir ' +
+			'« fait l’objet d’une facturation entre commerçants ». Le chapitre qui accueille ce ' +
+			'texte s’intitule « Procédure de recouvrement des créances commerciales incontestées », ' +
+			'et l’article L125-1 exclut symétriquement les mêmes créances de la procédure des ' +
+			'petites créances. ⚠️ LE TEXTE VISE LA FACTURATION, PAS LES PERSONNES : deux commerçants ' +
+			'peuvent échanger une facture qui ne relève pas de leur commerce, et connaître ' +
+			'parfaitement les deux formes juridiques ne tranche donc pas la condition à elle seule. ' +
+			'Il a moins de cinq mois et n’a encore reçu aucune interprétation. C’est la raison ' +
+			`précise pour laquelle un acte ne se produit pas sur ce critère. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<readonly string[]>,
 
 	indemniteForfaitaire: {
 		cle: 'indemniteForfaitaire',
@@ -169,13 +287,14 @@ export const PARAMETRES = {
 		nature: 'CONSTANTE',
 		valeur: 1,
 		unite: 'mois',
-		source: 'Brief de remodelage du 2026-09-02 — article source non fourni',
-		verifieLe: LE,
+		source: 'Article L126-2 du code des procédures civiles d’exécution',
+		verifieLe: LE_16,
 		verifie: true,
 		valideParAvocat: false,
 		note:
-			'Un mois à compter de la SIGNIFICATION du commandement, pas de son émission. ' +
-			`L’article qui le fonde reste à renseigner. ${AVOCAT_ATTENDU}`
+			'Un mois à compter de la SIGNIFICATION du commandement, pas de son émission. Le ' +
+			'commandement de payer signifié par le commissaire de justice enjoint de payer dans ce ' +
+			`délai, et une contestation du débiteur met fin à la procédure. ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<number>,
 
 	delaiProcesVerbalNonContestation: {
@@ -183,13 +302,15 @@ export const PARAMETRES = {
 		nature: 'CONSTANTE',
 		valeur: 8,
 		unite: 'jours',
-		source: 'Brief de remodelage du 2026-09-02 — article source non fourni',
-		verifieLe: LE,
+		source: 'Article L126-3 du code des procédures civiles d’exécution',
+		verifieLe: LE_16,
 		verifie: true,
 		valideParAvocat: false,
 		note:
 			'Huit jours APRÈS L’EXPIRATION du délai d’un mois : les deux délais s’ajoutent, ils ne se ' +
-			`recouvrent pas. L’article qui le fonde reste à renseigner. ${AVOCAT_ATTENDU}`
+			'recouvrent pas. Le texte le dit ainsi — le procès-verbal de non-contestation se dresse ' +
+			'« au plus tôt huit jours après l’expiration du délai mentionné au premier alinéa de ' +
+			`l’article L. 126-2 ». ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<number>,
 
 	delaiSignificationInjonction: {
@@ -197,14 +318,20 @@ export const PARAMETRES = {
 		nature: 'CONSTANTE',
 		valeur: 3,
 		unite: 'mois',
-		source: 'Brief de remodelage du 2026-09-02 — article source non fourni',
-		verifieLe: LE,
+		source:
+			'Article 1411 du code de procédure civile, modifié par le décret n° 2026-96 du ' +
+			'16 février 2026',
+		verifieLe: LE_16,
 		verifie: true,
 		valideParAvocat: false,
 		note:
-			'Trois mois SOUS PEINE DE CADUCITÉ, pour les ordonnances rendues à compter du 1er ' +
-			'septembre 2026. C’est l’échéance la plus dangereuse du produit : passée, l’ordonnance ' +
-			`est perdue. L’article qui le fonde reste à renseigner. ${AVOCAT_ATTENDU}`
+			'« L’ordonnance portant injonction de payer est non avenue si elle n’a pas été signifiée ' +
+			'dans les trois mois de sa date » — le mot « six » a été remplacé par « trois », pour les ' +
+			'ordonnances rendues à compter du 1er septembre 2026. C’est l’échéance la plus dangereuse ' +
+			'du produit : passée, l’ordonnance est perdue. ⚠️ À NE PAS CONFONDRE AVEC LES SIX MOIS DE ' +
+			'L’ARTICLE L126-4 du code des procédures civiles d’exécution, qui visent la signification ' +
+			'du procès-verbal revêtu de la formule exécutoire : deux procédures, deux délais, deux ' +
+			`articles, et le produit surveille les deux. ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<number>,
 
 	// ── Ce qui manque toujours ──────────────────────────────────────────────

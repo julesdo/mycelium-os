@@ -38,7 +38,9 @@ interface EtablissementDemo {
 	readonly nom: string;
 	readonly siren: string;
 	readonly adresse: string;
-	/** Déclarée sur la page du créancier, jamais devinée. */
+	/** La forme juridique telle que le registre l'écrit : c'est d'elle que la qualité de commerçant se déduit. */
+	readonly formeJuridique: string;
+	/** Déduite de la forme quand la forme la dit, déclarée sinon. Jamais devinée. */
 	readonly estCommercant: EtatCritere;
 	readonly facturesParAn: number;
 }
@@ -57,16 +59,19 @@ interface EtablissementDemo {
  * adresse ni son volume.
  *
  * ⚠️ SA QUALITÉ DE COMMERÇANT NE VAUT QU'UNE FOIS SON PROFIL ENREGISTRÉ. `'ok'`
- * est ce qu'il déclare en enregistrant son profil de créancier, et seules les
- * variantes « profil enregistré » de la famille des réglages la lisent. Sans
- * profil enregistré, elle est indéterminée : la page du créancier se replie sur
- * `'unknown'`, et la famille créance, qui ne lit aucun profil, écrit la sienne à
- * `'unknown'` (`CREANCIER_COMMERCANT_DEMO`), que son litige vide répond `'ok'`.
+ * est ce que la page du créancier DÉDUIT de sa forme juridique, une société par
+ * actions simplifiée, et que le gérant confirme en enregistrant son profil ;
+ * seules les variantes « profil enregistré » de la famille des réglages la
+ * lisent. Sans profil enregistré, elle est indéterminée : la page du créancier
+ * se replie sur `'unknown'`, et la famille créance, qui ne lit aucun profil,
+ * écrit la sienne à `'unknown'` (`CREANCIER_COMMERCANT_DEMO`), que son litige
+ * vide répond `'ok'`.
  */
 export const ETABLISSEMENT_DEMO: EtablissementDemo = {
 	nom: 'Thumbbb Agency',
 	siren: '502592959',
 	adresse: '12 rue des Ateliers, 75011 Paris',
+	formeJuridique: 'Société par Actions Simplifiée',
 	estCommercant: 'ok',
 	facturesParAn: 420
 };

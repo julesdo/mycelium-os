@@ -98,7 +98,10 @@ export const REGIMES_PRESCRIPTION: Record<
 		hypothese: false,
 		note:
 			'Vise TOUTES les actions nées du contrat de transport, pas seulement celles pour ' +
-			'avaries, pertes ou retards — donc aussi l’action en paiement du prix.'
+			'avaries, pertes ou retards — donc aussi l’action en paiement du prix. Deux réserves que ' +
+			'le logiciel ne détecte pas : la fraude et l’infidélité écartent la prescription annale, ' +
+			'et ce régime suppose le transport terrestre intérieur — le routier international, le ' +
+			'maritime et l’aérien relèvent de leurs propres textes, qui n’ont pas été relevés.'
 	},
 	CONSOMMATEUR: {
 		dureeAnnees: 2,
@@ -106,15 +109,19 @@ export const REGIMES_PRESCRIPTION: Record<
 		pointDeDepart: 'Selon le droit commun, la fourniture du bien ou du service.',
 		hypothese: false,
 		note:
-			'Action d’un professionnel pour les biens ou services fournis à un consommateur. ' +
-			'L’article L218-1 interdit d’en modifier la durée, même d’un commun accord.'
+			'Action d’un professionnel pour les biens ou services fournis à un consommateur, au ' +
+			'sens de l’article liminaire du code de la consommation, donc à une PERSONNE PHYSIQUE. ' +
+			'Une personne morale non professionnelle — une association, par exemple — relève du ' +
+			'régime général. L’article L218-1 interdit d’en modifier la durée, même d’un commun accord.'
 	},
 	NOURRITURE_MARINS: {
 		dureeAnnees: 1,
 		source: 'Article L110-4 du code de commerce',
-		pointDeDepart: 'La fourniture.',
+		// Le texte dit « un an après LA LIVRAISON », pas après la fourniture. Le
+		// mot affiché commande la date que le gérant va saisir.
+		pointDeDepart: 'La livraison.',
 		hypothese: false,
-		note: 'Nourriture fournie aux marins par ordre du capitaine.'
+		note: 'Nourriture fournie aux matelots par ordre du capitaine.'
 	},
 	FOURNITURE_NAVIRE: {
 		dureeAnnees: 1,
@@ -128,9 +135,17 @@ export const REGIMES_PRESCRIPTION: Record<
 	OUVRAGE_ACCEPTE: {
 		dureeAnnees: 1,
 		source: 'Article L110-4 du code de commerce',
-		pointDeDepart: 'L’acceptation de l’ouvrage.',
+		/*
+		  ⚠️ LA RÉCEPTION, PAS L'ACCEPTATION. Le texte dit « un an après la
+		  réception des ouvrages ». En droit de la construction, les deux mots ne
+		  sont pas synonymes, et c'est le mot affiché qui commande la date que le
+		  gérant saisit : une échéance se décale de la distance entre les deux.
+		  La clé du régime, elle, traverse le validateur Convex et la base : la
+		  renommer est une décision produit, pas une correction de relevé.
+		*/
+		pointDeDepart: 'La réception des ouvrages.',
 		hypothese: false,
-		note: 'Ouvrages faits, à compter de leur acceptation.'
+		note: 'Ouvrages faits, à compter de leur réception.'
 	}
 };
 

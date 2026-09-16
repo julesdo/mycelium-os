@@ -72,6 +72,13 @@ function PageCreancier() {
 									*/
 									siren: profil?.siren ?? org?.siret ?? '',
 									adresse: profil?.adresse ?? '',
+									/*
+									  ⚠️ LA FORME EST CE QUI PORTE LA DÉDUCTION, et elle est
+									  enregistrée avec le reste : sans elle, la qualité de
+									  commerçant s'afficherait comme une saisie du gérant dès la
+									  réouverture de la page, alors qu'elle a été déduite.
+									*/
+									formeJuridique: profil?.formeJuridique ?? '',
 									estCommercant: profil?.estCommercant ?? 'unknown'
 								},
 								onChercherAuRegistre: async () => (await chercher({})).candidats,
