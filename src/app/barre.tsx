@@ -1,10 +1,19 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useRouterState, useNavigate, CatchBoundary } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
+import { Button } from '@cladd-ui/react';
 
 import { HomeIcon, UsersIcon, GavelIcon, UploadIcon, SearchIcon } from 'lucide-react';
 
 import { cn } from '../ui/cn';
+import {
+	PaletteRecherche,
+	bougesDuFlux,
+	type DestinationRecherche,
+	type FamilleRecherche,
+	type RecentAffiche,
+	type ResultatRechercheAffiche
+} from '../ui/palette-recherche';
 import { LogoLetikette } from '../ui/logo';
 import { Avatar } from '../ui/avatar';
 import { VeilleurAvatar, type EtatVeilleur } from '../ui/veilleur-avatar';
@@ -90,48 +99,158 @@ function Facultatif({ children }: { children: ReactNode }) {
 }
 
 /**
- * LA RECHERCHE DE DÉBITEUR.
+ * LA PALETTE, BRANCHÉE SUR LA BASE.
  *
- * Elle n'est pas un ornement de barre : c'est la porte d'entrée vers « je veux
- * revoir où en est Fournitures Durand ». Sans elle, un débiteur sorti du flux
- * n'est plus atteignable qu'en parcourant une liste.
+ * Le dessin vit dans `ui/palette-recherche.tsx`, qui n'interroge rien ; ce
+ * composant-ci lit et traduit.
  *
- * ⚠️ ELLE ÉTAIT CACHÉE SOUS 1024 px, et c'était le mauvais arbitrage. Sur
- * téléphone, parcourir une liste de débiteurs coûte bien plus qu'au clavier :
- * c'est précisément là que la recherche vaut le plus, et c'est là qu'elle
- * disparaissait. La référence lui donne toute la largeur de sa barre — c'est
- * l'élément le plus large de son écran d'accueil.
+ * ⚠️ LES DEUX REQUÊTES DORMENT TANT QUE LA PALETTE EST FERMÉE (`'skip'`). Le
+ * flux est servi depuis le cache quand l'accueil l'a déjà demandé ; ailleurs,
+ * il ne coûte qu'au moment où l'on cherche.
  *
- * ⚠️ EN VERRE, ET DONC PAS AVEC LE CHAMP DU KIT. `SearchField` s'appuie sur une
- * surface CREUSÉE, opaque : posée sur le drapé, elle fait un rectangle gris là
- * où la référence laisse voir le tissu. On garde la géométrie du kit — 48 px,
- * le plancher tactile — et on remplace le fond par du verre. C'est le seul
- * endroit de la barre où l'on s'écarte d'un contrôle du kit, et c'est pour
- * cette raison-là.
+ * ⚠️ LE DERNIER RÉSULTAT RESTE À L'ÉCRAN. `useQuery` rend `undefined` à chaque
+ * nouveau terme : vider les cartes à ce moment ferait clignoter l'état vide à
+ * chaque lettre. La réponse précédente est gardée au rendu (sans effet), et
+ * `aJour` dit si celle qu'on montre répond au terme courant.
  */
-function Recherche() {
+function PaletteBranchee({ ouverte, onFermer }: { ouverte: boolean; onFermer: () => void }) {
 	const navigate = useNavigate();
 	const [terme, setTerme] = useState(String());
+	const [deplie, setDeplie] = useState<FamilleRecherche | null>(null);
+
+	const flux = useQuery(api.recouvrement.surveillance.flux, ouverte ? {} : 'skip');
+	const bouges = bougesDuFlux(flux?.evenements ?? []);
+	const cherche = terme.trim();
+
+	const reponse = useQuery(
+		api.recouvrement.recherche.recherche,
+		!ouverte
+			? 'skip'
+			: cherche === ''
+				? { terme: '', recents: bouges.map((b) => b.id) }
+				: deplie === null
+					? { terme: cherche }
+					: { terme: cherche, deplier: deplie }
+	);
+	const [derniere, setDerniere] = useState(reponse);
+	if (reponse !== undefined && reponse !== derniere) setDerniere(reponse);
+	const affichee = reponse ?? derniere;
+
+	const resultat: ResultatRechercheAffiche | null =
+		affichee === undefined
+			? null
+			: {
+					debiteurs: {
+						...affichee.debiteurs,
+						premiers: affichee.debiteurs.premiers.map(({ _id, ...debiteur }) => ({
+							id: _id,
+							...debiteur
+						}))
+					},
+					factures: {
+						...affichee.factures,
+						premiers: affichee.factures.premiers.map(({ _id, ...facture }) => ({
+							id: _id,
+							...facture
+						}))
+					},
+					procedures: affichee.procedures
+				};
+
+	// Les noms viennent de la même réponse que le reste : aucune rangée sans nom.
+	const noms = new Map<string, string>(
+		(affichee?.recents ?? []).map((d) => [d._id, d.denomination])
+	);
+	const recents: RecentAffiche[] = bouges.flatMap((bouge) => {
+		const denomination = noms.get(bouge.id);
+		return denomination === undefined ? [] : [{ ...bouge, denomination }];
+	});
+
+	const ouvrir = (destination: DestinationRecherche) => {
+		onFermer();
+		if (destination.genre === 'DEBITEUR') {
+			void navigate({ to: '/app/debiteurs', search: { d: destination.debiteurId } });
+		} else if (destination.genre === 'PROCEDURE') {
+			void navigate({ to: '/app/procedures', search: { p: destination.creanceId } });
+		} else {
+			void navigate({ to: '/app/import-factures' });
+		}
+	};
 
 	return (
-		<label className="verre verre-actif flex h-cladd-md min-w-0 flex-1 cursor-text items-center gap-cladd-3xs rounded-full px-cladd-3xs transition-colors lg:max-w-80">
-			<SearchIcon size={18} className="shrink-0 text-cladd-fg-softer" aria-hidden />
-			<input
-				type="search"
-				value={terme}
-				onChange={(e) => setTerme(e.target.value)}
-				placeholder="Rechercher un débiteur"
-				aria-label="Rechercher un débiteur"
-				// `bg-transparent` et `outline-none` : le verre porte déjà le fond et
-				// l'anneau. Un champ natif qui repeint les siens par-dessus donnerait
-				// un rectangle blanc dans une pilule de verre.
-				className="min-w-0 flex-1 bg-transparent text-cladd-xs text-cladd-fg placeholder:text-cladd-fg-softer focus:outline-none"
-				onKeyDown={(e) => {
-					if (e.key !== 'Enter') return;
-					void navigate({ to: '/app/debiteurs' });
+		<PaletteRecherche
+			ouverte={ouverte}
+			terme={terme}
+			onTerme={(valeur) => {
+				setTerme(valeur);
+				// Un autre terme, d'autres familles : ce qui était déplié ne l'est plus.
+				setDeplie(null);
+			}}
+			onFermer={onFermer}
+			resultat={resultat}
+			aJour={reponse !== undefined}
+			recents={recents}
+			etablissementVide={affichee?.etablissementVide ?? false}
+			deplie={deplie}
+			onDeplier={setDeplie}
+			onOuvrir={ouvrir}
+		/>
+	);
+}
+
+/**
+ * LA RECHERCHE : un déclencheur, pas un champ.
+ *
+ * Elle n'est pas un ornement de barre : c'est la porte d'entrée vers « je veux
+ * revoir où en est Fournitures Durand ». Sur téléphone, parcourir une liste au
+ * pouce coûte bien plus qu'au clavier : elle y garde toute la largeur restante.
+ *
+ * ⚠️ ELLE ÉTAIT UN `<input>`, ET ENTRÉE JETAIT LE TERME. La touche menait à la
+ * liste des débiteurs sans rien filtrer. Un champ dans la barre qui ouvrirait
+ * un second champ dans la palette ferait aussi taper deux fois : les premières
+ * lettres se perdraient pendant l'ouverture. On touche une pilule, et le curseur
+ * est déjà dans le seul champ.
+ *
+ * Le marque-page apprend ce qui est cherchable : un nom, une référence.
+ *
+ * ⚠️ LA PALETTE EST REMONTÉE À CHAQUE OUVERTURE (clé) : elle repart d'un champ
+ * vide. Et elle est isolée comme tout ce qui interroge Convex depuis la barre :
+ * sans session (salle d'exposition, expiration), la requête lève, la palette se
+ * referme, et la navigation reste debout.
+ */
+function Recherche() {
+	const [ouverte, setOuverte] = useState(false);
+	const [ouvertures, setOuvertures] = useState(0);
+
+	return (
+		<>
+			<Button
+				size="md"
+				variant="transparent"
+				outline={false}
+				hoverable={false}
+				rounded
+				aria-haspopup="dialog"
+				className="verre verre-actif min-w-0 flex-1 lg:max-w-80"
+				contentClassName="w-full justify-start gap-cladd-3xs"
+				onClick={() => {
+					setOuvertures((n) => n + 1);
+					setOuverte(true);
 				}}
-			/>
-		</label>
+			>
+				<SearchIcon aria-hidden className="shrink-0 text-cladd-fg-softer" />
+				<span className="truncate text-cladd-xs font-normal text-cladd-fg-softer">
+					Rechercher « Durand, FA-2026-0311… »
+				</span>
+			</Button>
+			<CatchBoundary
+				getResetKey={() => ouvertures}
+				errorComponent={() => null}
+				onCatch={() => setOuverte(false)}
+			>
+				<PaletteBranchee key={ouvertures} ouverte={ouverte} onFermer={() => setOuverte(false)} />
+			</CatchBoundary>
+		</>
 	);
 }
 
