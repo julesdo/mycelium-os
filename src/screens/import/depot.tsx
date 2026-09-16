@@ -34,12 +34,16 @@ export function EcranDepot({ donnees }: { donnees: Lecture<DepotAffiche> }) {
 					libelle: TITRE_ECRAN.imports,
 					masqueEnVolets: true
 				},
-				titre: depot?.filename ?? 'Dépôt',
-				sousTitre: depot?.etape ?? undefined
+				titre: depot?.filename ?? 'Dépôt'
+				// ⚠️ PAS DE SOUS-TITRE. L'étape y était, ET dans la carte deux lignes
+				// plus bas : « 198 factures enregistrées. » se lisait deux fois sur le
+				// même écran. Elle reste écrite UNE fois, dans le bilan — un écran qui
+				// se vide à la fin laisse croire qu'il ne s'est rien passé.
 			}}
 			etat={donnees.etat}
 		>
-			{depot === null ? null : <BilanImport depot={depot} />}
+			{/* `avecNom={false}` : le nom du fichier est déjà le titre de l'écran. */}
+			{depot === null ? null : <BilanImport depot={depot} avecNom={false} />}
 		</PageEcran>
 	);
 }
