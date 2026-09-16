@@ -37,7 +37,26 @@ export function TwoPane({
 			</aside>
 
 			{preuveOuverte ? (
-				<div className="fixed inset-0 z-50 flex flex-col bg-cladd-bg lg:hidden">
+				/*
+				  ⚠️ LA FEUILLE EST UN DIALOGUE, ET ELLE LE DIT. Elle recouvre l'écran
+				  entier sous 1024 px ; sans `role`, un lecteur d'écran continuait
+				  d'annoncer la liste qu'elle cache, et rien ne nommait ce qui venait
+				  de s'ouvrir.
+
+				  ⚠️ SANS `aria-modal`, ET C'EST DÉLIBÉRÉ. Il fait masquer tout le reste
+				  de la page aux technologies d'assistance — ce qui serait un mensonge
+				  tant que le clavier, lui, peut encore tabuler dans la liste dessous.
+				  On annonce ce qu'on tient ; le piège de focus est un chantier à part.
+
+				  Le NOM du sujet, lui, est porté par le contenu de la feuille : c'est
+				  au volet de dire de quel client il parle, pas au composant générique
+				  qui le transporte.
+				*/
+				<div
+					role="dialog"
+					aria-label="Volet de preuve"
+					className="fixed inset-0 z-50 flex flex-col bg-cladd-bg lg:hidden"
+				>
 					{/* La croix du kit, seule, en haut à gauche : un `<button>` texte écrit à
 					    la main réinventait le contrôle, sans son anneau de focus. `md` vaut
 					    48 px sur l'échelle décalée du produit. */}
