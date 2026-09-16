@@ -397,6 +397,10 @@ export const recouvrementTables = {
 		// La surveillance interroge « qu'est-ce qui arrive à échéance ? » sans
 		// connaître le débiteur : sans cet index, elle lirait toutes les
 		// factures de l'organisation à chaque passage.
+		// Le volume émis sur douze mois se compte sans lire toute la table :
+		// c'est la mesure que les réglages affichent à la place d'une saisie
+		// (`recouvrement/monEtablissement.volumeEmis`).
+		.index('by_org_and_emission', ['organizationId', 'dateEmission'])
 		.index('by_org_and_echeance', ['organizationId', 'dateEcheance'])
 		.index('by_org_and_statut', ['organizationId', 'statutPaiement'])
 		/**
