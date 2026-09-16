@@ -19,6 +19,7 @@ import {
 	type Lecture
 } from '../../ui';
 import { TITRE_ECRAN } from '../titres';
+import { qualiteCommercantDeLaForme } from '../../lib/verticales/recouvrement/pays/france/commercialite';
 
 /** Les trois états d'un critère de qualification. Jamais présumé favorablement. */
 export type EtatCritere = 'ok' | 'ko' | 'unknown';
@@ -33,6 +34,14 @@ export type EtatCritere = 'ok' | 'ko' | 'unknown';
 export interface EtablissementAuRegistre {
 	readonly siren: string;
 	readonly denomination: string;
+	/**
+	 * La forme juridique telle que le registre l'écrit, en TEXTE LIBRE.
+	 *
+	 * ⚠️ ELLE ÉTAIT LUE ET JAMAIS REMPLIE. Le champ existait en base et dans la
+	 * réponse du registre ; rien ne l'écrivait, et l'écran posait pendant ce temps
+	 * une question à laquelle elle répond dans la plupart des cas.
+	 */
+	readonly formeJuridique?: string;
 	readonly ville?: string;
 	readonly adresse?: string;
 	/** La parution la plus récente qui porte cet établissement (AAAA-MM-JJ). */
@@ -66,9 +75,22 @@ type EtatRecherche =
  *     à l'injonction de payer ne pouvait JAMAIS être acquise. Le produit
  *     annonçait une condition non remplie que rien ne permettait de remplir.
  *
- * ⚠️ LA QUALITÉ DE COMMERÇANT SE DÉCLARE, ELLE NE SE DEVINE PAS. Trois états,
- * dont « indéterminé » — et c'est le défaut. Présumer favorablement ouvrirait
- * une procédure qui se ferait rejeter ; le doute ne profite jamais au produit.
+ * ⚠️ LA QUALITÉ DE COMMERÇANT SE DÉDUIT DE LA FORME, QUAND LA FORME LA DIT.
+ *
+ * Elle se DEMANDAIT, à un gérant dont le registre publie la forme juridique avec
+ * le SIREN et l'adresse. L'article L210-1 du code de commerce ferme une liste de
+ * quatre familles commerciales par la forme : une société par actions simplifiée
+ * n'a pas à être interrogée sur ce point. La déduction vit dans
+ * `pays/france/commercialite.ts` ; cet écran n'en recopie pas un mot, il affiche
+ * ce qu'elle rend, avec ce sur quoi elle repose.
+ *
+ * ⚠️ ET CE QUI NE SE DÉDUIT PAS RESTE UNE QUESTION. Trois états, dont
+ * « indéterminé » — et c'est le défaut. Une société d'exercice libéral, une
+ * association, un groupement, une personne physique, un libellé que le registre
+ * écrit autrement : tous rendent « indéterminé », et la question se pose alors
+ * exactement comme avant, en disant pourquoi elle se pose. Présumer
+ * favorablement ouvrirait une procédure qui se ferait rejeter ; le doute ne
+ * profite jamais au produit.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ ET LES TROIS PREMIERS NE SE TAPENT PLUS D'ABORD
@@ -90,7 +112,13 @@ export function FormulaireCreancier({
 	onChercherAuRegistre,
 	onEnregistrer
 }: {
-	initial: { denomination: string; siren: string; adresse: string; estCommercant: EtatCritere };
+	initial: {
+		denomination: string;
+		siren: string;
+		adresse: string;
+		formeJuridique: string;
+		estCommercant: EtatCritere;
+	};
 	/** Le nom de l'établissement : c'est sur lui que la recherche porte, et l'écran le dit avant de la lancer. */
 	nomEtablissement: string;
 	onChercherAuRegistre: () => Promise<readonly EtablissementAuRegistre[]>;
@@ -98,17 +126,21 @@ export function FormulaireCreancier({
 		denomination: string;
 		siren?: string;
 		adresse?: string;
+		formeJuridique?: string;
 		estCommercant: EtatCritere;
 	}) => Promise<unknown>;
 }) {
 	const [denomination, setDenomination] = useState(initial.denomination);
 	const [siren, setSiren] = useState(initial.siren);
 	const [adresse, setAdresse] = useState(initial.adresse);
+	const [formeJuridique, setFormeJuridique] = useState(initial.formeJuridique);
 	const [estCommercant, setEstCommercant] = useState<EtatCritere>(initial.estCommercant);
 	const [enCours, setEnCours] = useState(false);
 	const [enregistre, setEnregistre] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
 	const [recherche, setRecherche] = useState<EtatRecherche>({ phase: 'REPOS' });
+	/** Le gérant a demandé à reprendre la main sur ce que le logiciel a déduit. */
+	const [correction, setCorrection] = useState(false);
 
 	async function chercher() {
 		setRecherche({ phase: 'EN_COURS' });
@@ -127,14 +159,29 @@ export function FormulaireCreancier({
 	}
 
 	/**
-	 * ⚠️ RETENIR REMPLIT, ET NE GARDE RIEN DE L'ANNONCE AU-DELÀ DE CES TROIS
-	 * LIGNES. Le gérant relit ce qui est écrit dans les champs, le corrige s'il
-	 * le faut, et c'est son appui sur « Enregistrer » qui vaut confirmation.
+	 * ⚠️ RETENIR REMPLIT, ET NE GARDE RIEN DE L'ANNONCE AU-DELÀ DE CE QUI
+	 * S'IMPRIME OU SE DÉDUIT. Le gérant relit ce qui est écrit dans les champs, le
+	 * corrige s'il le faut, et c'est son appui sur « Enregistrer » qui vaut
+	 * confirmation.
+	 *
+	 * ⚠️ LA FORME SUIT LE CANDIDAT, MÊME QUAND ELLE EST ABSENTE. Une annonce qui
+	 * n'en porte pas doit EFFACER celle du candidat précédent : garder l'ancienne
+	 * ferait lire une déduction fondée sur une autre société.
+	 *
+	 * ⚠️ ET LA DÉDUCTION N'ÉCRASE QUE CE QU'ELLE TRANCHE. Une forme qui ne conclut
+	 * pas laisse intacte la réponse déjà donnée : le logiciel décide là où il
+	 * sait, il n'efface pas ce que le gérant a déclaré là où il ne sait pas.
 	 */
 	function retenir(candidat: EtablissementAuRegistre) {
 		setDenomination(candidat.denomination);
 		setSiren(candidat.siren);
 		if (candidat.adresse !== undefined) setAdresse(candidat.adresse);
+		setFormeJuridique(candidat.formeJuridique ?? '');
+		const deduite = qualiteCommercantDeLaForme(candidat.formeJuridique);
+		if (deduite.etat !== 'unknown') {
+			setEstCommercant(deduite.etat);
+			setCorrection(false);
+		}
 		setErreur(null);
 		setRecherche({ phase: 'REPOS' });
 	}
@@ -148,7 +195,10 @@ export function FormulaireCreancier({
 				denomination: denomination.trim(),
 				estCommercant,
 				...(siren.trim() ? { siren: siren.trim() } : {}),
-				...(adresse.trim() ? { adresse: adresse.trim() } : {})
+				...(adresse.trim() ? { adresse: adresse.trim() } : {}),
+				// La forme part avec le reste : sans elle, la déduction disparaîtrait à
+				// la première réouverture de la page et la question reviendrait.
+				...(formeJuridique.trim() ? { formeJuridique: formeJuridique.trim() } : {})
 			});
 			setEnregistre(true);
 			window.setTimeout(() => setEnregistre(false), 2000);
@@ -165,6 +215,17 @@ export function FormulaireCreancier({
 	  du bruit. Dérivé au rendu, jamais posé dans un effet.
 	*/
 	const proposer = siren.trim() === '' || recherche.phase !== 'REPOS';
+
+	/*
+	  CE QUE LA FORME RELEVÉE PERMET DE DÉDUIRE. Dérivé au rendu, comme le reste :
+	  un état de plus, tenu à jour dans un effet, finirait par dire autre chose que
+	  la forme affichée à côté de lui.
+	*/
+	const deduction = qualiteCommercantDeLaForme(formeJuridique.trim() || undefined);
+	const deduit = deduction.etat !== 'unknown';
+	/* Le gérant a répondu autre chose que ce qui se déduisait : sa réponse gagne, et se voit. */
+	const contredit = deduit && estCommercant !== deduction.etat;
+	const demander = !deduit || correction || contredit;
 
 	return (
 		/*
@@ -286,35 +347,83 @@ export function FormulaireCreancier({
 
 			<Champ etiquette="Vous êtes commerçant">
 				<p className="text-cladd-2xs text-cladd-fg-softer">
-					Condition de certaines procédures, pour vous et pour votre client. Sans réponse, elle
-					reste indéterminée et n’est jamais présumée remplie.
+					Condition de certaines procédures, pour vous et pour votre client.
+					{deduit ? '' : ' Sans réponse, elle reste indéterminée et n’est jamais présumée remplie.'}
 				</p>
+
+				{/*
+				  ⚠️ UNE DÉDUCTION S'AFFICHE COMME UNE DÉDUCTION. Le logiciel dit ce
+				  qu'il a lu, ce qu'il en tire et le texte sur lequel il s'appuie, dans
+				  cet ordre. Une case cochée sans explication se lit comme une saisie du
+				  gérant, et personne ne saurait plus qui a répondu.
+				*/}
+				{deduit ? (
+					<Surface
+						variant="transparent"
+						outline={false}
+						className="verre-carte rounded-cladd-xl"
+						contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+					>
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg">
+							{deduction.etat === 'ok'
+								? 'Déduit de votre forme juridique : vous êtes commerçant.'
+								: 'Déduit de votre forme juridique : vous n’êtes pas commerçant.'}
+						</p>
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							Forme relevée au registre : « {deduction.formeRelevee} ». {deduction.fondement}
+						</p>
+						{contredit ? (
+							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+								Votre réponse remplace cette déduction : c’est elle qui sera enregistrée.
+							</p>
+						) : null}
+						{demander ? null : (
+							<Button
+								size="sm"
+								variant="transparent"
+								outline={false}
+								hoverable={false}
+								className="verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
+								onClick={() => setCorrection(true)}
+							>
+								Corriger
+							</Button>
+						)}
+					</Surface>
+				) : (
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						{deduction.fondement} La question vous est donc posée.
+					</p>
+				)}
+
 				{/* Un segment est une pilule pressable à part entière, pas une moitié
 				    de bascule : « Oui » et « Non » ne remplissent que leurs rembourrages
 				    et tombaient à 43,9 px de large. Le plancher tactile vaut dans les
 				    deux dimensions. */}
-				<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
-					<SegmentedButton
-						className="min-w-cladd-md"
-						active={estCommercant === 'ok'}
-						onClick={() => setEstCommercant('ok')}
-					>
-						Oui
-					</SegmentedButton>
-					<SegmentedButton
-						className="min-w-cladd-md"
-						active={estCommercant === 'ko'}
-						onClick={() => setEstCommercant('ko')}
-					>
-						Non
-					</SegmentedButton>
-					<SegmentedButton
-						active={estCommercant === 'unknown'}
-						onClick={() => setEstCommercant('unknown')}
-					>
-						À déterminer
-					</SegmentedButton>
-				</Segmented>
+				{demander ? (
+					<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
+						<SegmentedButton
+							className="min-w-cladd-md"
+							active={estCommercant === 'ok'}
+							onClick={() => setEstCommercant('ok')}
+						>
+							Oui
+						</SegmentedButton>
+						<SegmentedButton
+							className="min-w-cladd-md"
+							active={estCommercant === 'ko'}
+							onClick={() => setEstCommercant('ko')}
+						>
+							Non
+						</SegmentedButton>
+						<SegmentedButton
+							active={estCommercant === 'unknown'}
+							onClick={() => setEstCommercant('unknown')}
+						>
+							À déterminer
+						</SegmentedButton>
+					</Segmented>
+				) : null}
 			</Champ>
 
 			<BoutonPrincipal
@@ -336,6 +445,11 @@ export function FormulaireCreancier({
  * ne sert de repli que si le siège est illisible. La date, elle, vient toujours
  * en dernier : c'est ce qui dit de quand date l'adresse qu'on s'apprête à
  * imprimer.
+ *
+ * ⚠️ ET LA FORME VIENT EN TÊTE, parce que c'est elle qui fera répondre le
+ * logiciel à la question de la qualité de commerçant. Elle se lit avant le
+ * doigt, comme la date : une déduction qui apparaît après coup ne se vérifie
+ * plus, elle se subit.
  */
 function sousLigneDuCandidat(candidat: EtablissementAuRegistre): string | undefined {
 	const lieu = candidat.adresse ?? candidat.ville;
@@ -343,7 +457,9 @@ function sousLigneDuCandidat(candidat: EtablissementAuRegistre): string | undefi
 		candidat.derniereParution === undefined
 			? undefined
 			: `annonce du ${dateCourte(candidat.derniereParution)}`;
-	const morceaux = [lieu, parution].filter((m): m is string => m !== undefined);
+	const morceaux = [candidat.formeJuridique, lieu, parution].filter(
+		(m): m is string => m !== undefined
+	);
 	return morceaux.length === 0 ? undefined : morceaux.join(' · ');
 }
 
