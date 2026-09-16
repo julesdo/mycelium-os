@@ -96,9 +96,16 @@
 	--radius-cladd-2xl: calc(var(--cladd-radius) * 72 / 48);
 
 	/* ACCENT — bleu d'encre. Clarté et chroma se règlent séparément pour le
-	 * clair et le sombre : le même bleu ne tient pas sur les deux fonds. */
-	--cladd-light-primary-lightness: 0.42;
-	--cladd-light-primary-chroma: 0.13;
+	 * clair et le sombre : le même bleu ne tient pas sur les deux fonds.
+	 *
+	 * ⚠️ LE CLAIR EST PASSÉ DE 0,42 / 0,13 À 0,47 / 0,15, ET LA BORNE HAUTE EST
+	 * MESURÉE. À 0,42 le lien rendait 8,5:1 : parfaitement lisible, et sourd —
+	 * un bleu qu'on prend pour du texte. À 0,47 il rend 6,17:1 sur la page et
+	 * 6,87:1 sur la surface, donc il s'ouvre d'un cran sans quitter la marge.
+	 * Au-delà de 0,55 le lien tombe à 4,9:1 et l'anneau de focus à 4:1 : ne pas
+	 * monter plus haut, la marge disparaît d'un coup. */
+	--cladd-light-primary-lightness: 0.47;
+	--cladd-light-primary-chroma: 0.15;
 	--cladd-dark-primary-lightness: 0.88;
 	--cladd-dark-primary-chroma: 0.13;
 
@@ -160,13 +167,59 @@
 	 * près, en dessous. Aucun élément décoratif ne les porte, sans quoi le
 	 * gérant ne lit plus d'un coup d'œil si son taux passe. C'est aussi pour ça
 	 * que l'accent de marque est un bleu et jamais un vert. */
-	--color-seuil-atteint: oklch(0.55 0.15 150);
-	--color-seuil-proche: oklch(0.72 0.16 75);
-	--color-seuil-manque: oklch(0.55 0.19 25);
-	/* Les mêmes, en lavis, pour le fond d'une jauge ou d'une pastille. */
-	--color-seuil-atteint-fond: oklch(0.94 0.05 150);
+	/* ⚠️ LES TROIS ONT ÉTÉ REDESCENDUES EN CLARTÉ, ET C'EST UNE CORRECTION
+	 * D'ACCESSIBILITÉ, PAS UN CHANGEMENT DE GOÛT.
+	 *
+	 * Mesuré sur la palette claire, avant : l'ambre à 0,72 rendait 2,50:1 sur la
+	 * surface et 2,31:1 sur la page — sous même le plancher de 3:1 des éléments
+	 * NON textuels. Une pastille ambre était donc illisible pour sa propre
+	 * raison, avant que le verre s'en mêle. Le vert à 0,55 rendait 4,38:1, sous
+	 * AA de peu, c'est-à-dire la marge qui n'en est pas une.
+	 *
+	 * Calculé : sur cette page, l'ambre ne tient 4,5:1 qu'à partir d'une clarté
+	 * de 0,552 et 3:1 qu'à partir de 0,651 — 0,72 est hors du domaine, quelle
+	 * que soit la teinte. Aux valeurs ci-dessous, mesuré sur la page claire :
+	 * vert 4,91:1, ambre 4,71:1, rouge 5,54:1 ; sur la surface 5,47 / 5,24 /
+	 * 6,17:1 ; à travers le verre clair 5,23 / 5,02 / 5,91:1.
+	 *
+	 * ⚠️ LE CHROMA DESCEND AVEC LA CLARTÉ (vert 0,15 → 0,13 ; ambre 0,16 →
+	 * 0,12). Remonter la saturation pour « compenser » l'assombrissement
+	 * fabriquerait trois aplats fluorescents sur du blanc : la lisibilité vient
+	 * de la clarté, jamais de la saturation.
+	 *
+	 * ⚠️ LES TROIS SONT À LA MÊME CLARTÉ (0,505 / 0,535 / 0,510), délibérément.
+	 * Un rouge plus clair que le vert fait lire « alarme » là où le produit
+	 * énonce un CONSTAT. Et les angles de teinte ne bougent pas entre les deux
+	 * thèmes : un gérant qui bascule doit reconnaître le même vert, pas
+	 * apprendre deux codes. */
+	--color-seuil-atteint: oklch(0.505 0.13 150);
+	--color-seuil-proche: oklch(0.535 0.12 68);
+	--color-seuil-manque: oklch(0.51 0.17 25);
+	/* Les mêmes, en lavis, pour le fond d'une jauge ou d'une pastille. Ils se
+	 * tiennent à 1,02–1,06:1 de la page : ce sont des LAVIS, ils ne portent donc
+	 * jamais le verdict seuls — l'encre de la même teinte posée dessus tient
+	 * 4,80 / 4,53 / 5,24:1, et c'est elle qui le porte. */
+	--color-seuil-atteint-fond: oklch(0.945 0.04 150);
 	--color-seuil-proche-fond: oklch(0.95 0.055 75);
-	--color-seuil-manque-fond: oklch(0.95 0.04 25);
+	--color-seuil-manque-fond: oklch(0.948 0.035 25);
+
+	/* ── LA COULEUR DE LA VEILLE ─────────────────────────────────────────────
+	 *
+	 * Le bleu du veilleur, de son pouls et de son compte. Il ne dit qu'une
+	 * chose : quelque chose surveille, ou travaille en ce moment.
+	 *
+	 * ⚠️ IL EXISTE PARCE QUE LA MÊME VALEUR ÉTAIT ÉCRITE À SEPT ENDROITS —
+	 * quatre règles de `app.css` et trois littéraux dans des SVG de `src/ui`.
+	 * Sept copies d'un bleu clair calibré pour un fond sombre : en thème clair,
+	 * chacune rendait environ 1,9:1 sur la page, et aucune n'aurait été trouvée
+	 * en cherchant « veilleur ».
+	 *
+	 * Il n'est pas dans l'espace de noms `cladd-*`, que la documentation du kit
+	 * interdit d'étendre, et il n'emprunte aucune couleur de seuil : une veille
+	 * n'est pas un verdict. Sa valeur claire mesure 5,36:1 sur la page et
+	 * 5,97:1 sur la surface ; sa valeur sombre est reprise telle quelle de ce
+	 * qui était écrit avant, donc le sombre ne bouge pas d'un pixel. */
+	--color-veille: oklch(0.5 0.14 254);
 
 	/* ⚠️ LES HUIT TEINTES DE FAMILLE ONT ÉTÉ SUPPRIMÉES — viande, poisson,
 	 * fruits et légumes, laitiers, épicerie sèche, épicerie appertisée,
@@ -448,54 +501,121 @@
 	--cladd-theme: #1d3fa0;
 }
 
-/* LE MODE CLAIR — refondu.
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE MODE CLAIR — écrit le 16 septembre 2026, mesuré écran par écran.
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Cladd est sombre par défaut et son mode clair n'en est que la transposition :
- * page blanche, surfaces qui s'ENFONCENT vers le gris à mesure qu'elles
- * s'empilent. Sur un écran de travail, ça donne des cartes grises sur du blanc,
- * c'est-à-dire l'inverse de la hiérarchie qu'on veut lire — et c'est une bonne
- * part de ce qui faisait « tableur ».
+ * Il existait sur le papier et pas à l'écran. Les jetons ci-dessous étaient
+ * posés, mais les quatre classes de verre de `app.css` portaient des couleurs
+ * sombres sans aucune règle `.light` pour les reprendre : le produit en clair
+ * rendait de l'encre sombre sur du verre sombre, à 1,01:1 sur un nom de
+ * débiteur. La palette vit ici, les surfaces dans `app.css` ; les deux ont été
+ * refaites ensemble, et aucune des deux ne suffit seule.
  *
- * On inverse le sens de la rampe : la page est le point le plus SOMBRE, et
- * chaque surface remonte vers le blanc. Une carte flotte alors sur un fond
- * chaud au lieu de s'y creuser. La page porte une pointe de chroma chaude que
- * les surfaces n'ont pas : la séparation se lit en TEINTE autant qu'en clarté,
- * ce qui permet de garder les deux presque aussi lumineuses — donc l'écran
- * reste aéré — sans que les cartes se confondent avec le fond. */
+ * ⚠️ LA TEINTE PASSE DE 44 (CHAUD) À 258 (BLEU), ET CE N'EST PAS COSMÉTIQUE.
+ * Le 44 venait d'EGalim, un produit alimentaire dont la page devait donner
+ * faim. Sur un outil de recouvrement il fait VIBRER l'ambre du seuil « tout
+ * près », qui devient une nuance du fond au lieu d'un signal. 258 est la teinte
+ * de l'encre de marque et celle du thème sombre : les deux thèmes parlent alors
+ * la même langue, et le vert, l'ambre et le rouge restent les trois seules
+ * familles que rien d'autre n'emploie.
+ *
+ * ⚠️ ET LE SENS DE LA RAMPE REVIENT À CELUI DE CLADD. Le bloc précédent
+ * mélangeait vers le BLANC, comme le sombre. Calculé : depuis une surface à
+ * 0,995, les niveaux 2 à 5 résolvent tous à 1,0 de clarté — 1,00:1 entre chaque
+ * cran, donc quatre niveaux visuellement identiques et un panneau imbriqué qui
+ * disparaît sans qu'aucun test ne tombe. Le mélange vers le blanc ne marche que
+ * parce que le sombre part de 0,225 et a de la place. En clair on mélange vers
+ * le NOIR, à 3 % : 0,995 → 0,965 → 0,936 → 0,908, soit 1,08 à 1,10:1 par cran.
+ * Ce qui fait flotter une carte n'est alors plus la rampe mais le fond TEINTÉ
+ * et l'ombre — la grammaire de Wise, Monzo et N26, et la seule disponible quand
+ * on est déjà au plafond de clarté.
+ *
+ * ⚠️ LA LISTE DE SÉLECTEURS PORTE `.dark .light` ET `:root .light`, ET SANS EUX
+ * LA MOITIÉ DE CE FICHIER NE S'APPLIQUAIT PAS. Cladd déclare sa propre palette
+ * claire sur `:root.light, .dark .light, :root .light, …`, soit une spécificité
+ * de (0,2,0). Pour un élément `.light` IMBRIQUÉ — la tablette de la page
+ * commerciale, `marketing/apercu.tsx`, rendue dans un document qui peut porter
+ * `.dark` — seul `.light` matchait ici, soit (0,1,0) : le kit gagnait, et cette
+ * tablette rendait la palette par défaut de Cladd, pas celle de Letikette. */
 :root.light,
 .light,
+.dark .light,
+:root .light,
 .light .cladd-color-neutral,
 .light.cladd-color-neutral {
-	--cladd-bg: oklch(0.957 0.009 44);
-	--cladd-surface: oklch(0.988 0.004 44);
-	--cladd-surface-mix-color: var(--cladd-surface-white);
-	--cladd-surface-mix-amount: 5%;
+	/* LE FOND — le point le plus SOMBRE de l'écran, pour que la carte presque
+	 * blanche FLOTTE au lieu de se creuser. C'est aussi le fond de référence de
+	 * tout ton d'encre : en clair, un texte se juge sur la page, jamais sur la
+	 * surface, exactement comme le sombre juge le sien sur la crête du lavis.
+	 *
+	 * ⚠️ IL EST LE PLANCHER, ET LE LAVIS DE `app.css` NE PEUT QUE L'ÉCLAIRCIR.
+	 * C'est ce qui rend une mesure possible : si le fond animé pouvait
+	 * assombrir, aucun contraste ne serait garanti et le défaut n'apparaîtrait
+	 * qu'à certaines phases — invisible sur une capture. Voir `.light
+	 * .fond-releve`, qui ne pose que des tons plus clairs que celui-ci. */
+	--cladd-bg: oklch(0.958 0.007 258);
+
+	/* LA CARTE. Presque blanche, et pas blanche pure, pour deux raisons
+	 * mesurées : le blanc pur est le plafond, donc plus rien ne peut monter
+	 * au-dessus pour un panneau en relief ; et sur une tablette en plein jour,
+	 * une carte pleine largeur en blanc pur éblouit là où 0,995 ne s'en
+	 * distingue pas à l'œil. Elle ne tient que 1,08:1 au-dessus de la page —
+	 * sur fond clair il en faudrait quinze points — d'où le filet et l'ombre
+	 * qu'elle porte en plus, dans `app.css`. */
+	--cladd-surface: oklch(0.995 0.001 258);
+	--cladd-surface-mix-color: var(--cladd-surface-black);
+	--cladd-surface-mix-amount: 3%;
 
 	/* Le creux garde la teinte du fond : un champ est une découpe DANS la page,
-	 * pas une pièce rapportée grise. */
-	--cladd-surface-cut: oklch(0.934 0.011 44);
+	 * pas une pièce rapportée grise. 1,16:1 sous la surface, et il reste
+	 * au-dessus de la page pour ne pas percer un trou. */
+	--cladd-surface-cut: oklch(0.945 0.008 258);
 
-	/* Les contours, tièdes et discrets. Cladd les pose en gris neutre à 0.89 ;
-	 * ce gris, posé sur un fond chaud, tire au vert par contraste simultané. */
-	--cladd-bg-outline: oklch(0.898 0.008 44);
-	--cladd-outline: oklch(0.906 0.008 44);
+	/* LE FILET QUI SÉPARE — et il n'a pas de seuil à tenir. WCAG 1.4.11 vise
+	 * « l'information nécessaire à identifier les composants d'interface », pas
+	 * les séparateurs : à 1,28:1 sur la surface, celui-ci est visible pour l'œil
+	 * qui le cherche et invisible pour celui qui lit. Repère : Stripe sert un
+	 * filet à 1,23:1 sur une interface dense qui ne ressemble jamais à un
+	 * tableur. Ce qui identifie un CONTRÔLE est autre chose, et c'est l'anneau
+	 * des champs, écrit dans `app.css`, qui le porte.
+	 *
+	 * Chroma 0,010 et non 0 : un gris neutre posé sur un fond bleuté tire au
+	 * jaune par contraste simultané — ce fichier a déjà pris la leçon à
+	 * l'envers, du temps où le fond était chaud. */
+	--cladd-bg-outline: oklch(0.912 0.01 258);
+	--cladd-outline: oklch(0.912 0.01 258);
 
-	/* LE TEXTE — encre bleu-noir plutôt que gris.
+	/* LE TEXTE — encre bleu-noir plutôt que gris, et QUATRE CRANS ÉCARTÉS.
 	 *
-	 * Cladd pose `fg` à 0.32 de gris neutre. Un gris pur sur un fond chaud
-	 * paraît délavé, et 0.32 reste un gris, pas un noir : les titres n'ont
-	 * aucune autorité. On descend à 0.26 avec une pointe de bleu, la même
-	 * teinte que l'accent — le texte et la marque parlent alors la même langue.
+	 * Cladd pose `fg` à 0,32 de gris neutre. Un gris pur sur un fond teinté
+	 * paraît délavé, et 0,32 reste un gris, pas un noir : les titres n'ont
+	 * aucune autorité. Repère mesuré : Stripe écrit ses titres en bleu-ardoise,
+	 * jamais en gris.
 	 *
-	 * Les tons secondaires sont assombris par rapport au kit : mesuré au
-	 * navigateur, `fg-softer` donnait 3,23 pour 1 là où le texte courant demande
-	 * 4,5. Le symptôme n'est pas spectaculaire — c'est du gris clair, ça a l'air
-	 * « design » — mais un gérant sur une tablette en plein jour ne lit pas les
-	 * libellés de seuil. */
-	--cladd-fg: oklch(0.26 0.026 265);
-	--cladd-fg-soft: oklch(0.48 0.016 265);
-	--cladd-fg-softer: oklch(0.575 0.012 265);
-	--cladd-fg-softest: oklch(0.66 0.01 265);
+	 * ⚠️ DEUX DES QUATRE CRANS ÉCHOUAIENT AA AVANT CE COMMIT, indépendamment du
+	 * verre. Mesuré sur la page claire : `fg-softer` à 0,575 rendait 3,85:1, et
+	 * `fg-softest` à 0,66 rendait 2,74:1 — sous même le plancher de 3:1 des
+	 * éléments non textuels. C'est le texte le MOINS important, donc celui que
+	 * personne ne va vérifier, et c'est mot pour mot la correction que le sombre
+	 * s'est appliquée en remontant son `fg-softest` de 0,58 à 0,635.
+	 *
+	 * Mesuré après, sur la page / la surface / le creux / à travers le verre :
+	 *
+	 *   · `--cladd-fg` .......... 13,9  15,5  13,4  14,8
+	 *   · `--cladd-fg-soft` .....  8,4   9,3   8,0   8,9
+	 *   · `--cladd-fg-softer` ...  5,9   6,6   5,7   6,3
+	 *   · `--cladd-fg-softest` ..  4,9   5,4   4,7   5,1
+	 *
+	 * ⚠️ C'EST LE CREUX QUI DÉCIDE DU DERNIER CRAN, pas la page. Un texte
+	 * d'invite est le seul endroit où trois fonds se superposent — page, carte,
+	 * creux — et le creux est le plus sombre des trois. À 0,545, la valeur qui
+	 * tient tout juste 4,5:1 sur la page, il tombait à 4,23:1 dans un champ.
+	 * D'où 0,515, qui tient 4,75:1 même là. */
+	--cladd-fg: oklch(0.255 0.028 264);
+	--cladd-fg-soft: oklch(0.395 0.024 264);
+	--cladd-fg-softer: oklch(0.475 0.02 264);
+	--cladd-fg-softest: oklch(0.515 0.016 264);
 }
 
 /* Le texte porté PAR l'accent, en mode clair.
@@ -510,6 +630,24 @@
 .light[class*='cladd-color-']:not(.cladd-color-neutral) {
 	--cladd-on-primary: oklch(0.98 0.01 265);
 }
+
+/* ⚠️ LES RÉGIONS D'ACCENT GARDENT LA DÉRIVATION DU KIT, ET C'EST VOULU.
+ *
+ * Cladd redéfinit `--cladd-bg`, `--cladd-surface`, `--cladd-surface-cut`, les
+ * quatre tons de texte et `--cladd-outline` pour tout élément portant une classe
+ * `cladd-color-*` autre que `neutral`, à une spécificité de (0,3,0). On ne les
+ * reprend pas : ces régions sont des pastilles et des boutons d'accent, où la
+ * dérivation OKLCH du kit reste cohérente avec elle-même.
+ *
+ * Ce qu'on corrige est la seule chose qui cassait : le TEXTE posé dessus. Et
+ * c'est la règle ci-dessus, qui existait déjà.
+ *
+ * ⚠️ CE QUI EN DÉCOULE, ET QU'IL FAUT SAVOIR EN MESURANT : une pastille
+ * `color="orange"` ne suit PAS `--color-seuil-proche`. Les deux systèmes
+ * coexistent, et c'est pour ça qu'un relevé au navigateur peut montrer une
+ * couleur qu'on ne trouve dans aucun jeton de ce fichier. Mesuré en clair après
+ * ce commit : ces pastilles rendent 8,4:1 sur le verre clair, donc elles
+ * passent — mais par la dérivation du kit, pas par notre palette. */
 
 /* Les chiffres, toujours alignés en colonne.
  *
@@ -711,13 +849,24 @@ body {
 	 * séparés se distinguent aussi bien que trois couleurs, y compris pour un
 	 * daltonien — ce qui n'est pas vrai d'un vert et d'un rouge.
 	 *
-	 * L'ordre de clarté suit l'ordre de grandeur : le principal est le plus gros
-	 * segment et le plus sourd, l'indemnité le plus petit et le plus clair. Le
-	 * petit segment reste ainsi visible quand il ne fait que trois pour cent de
-	 * la barre. */
-	--color-part-principal: oklch(0.55 0.12 258);
-	--color-part-interets: oklch(0.7 0.14 285);
-	--color-part-indemnites: oklch(0.84 0.1 232);
+	 * L'ordre de clarté suit l'ordre de grandeur : le plus gros segment est le
+	 * plus sourd, le plus petit le plus contrasté. Le petit segment reste ainsi
+	 * visible quand il ne fait que trois pour cent de la barre.
+	 *
+	 * ⚠️ L'ORDRE S'INVERSE ENTRE LES DEUX THÈMES, ET C'EST LA MÊME RÈGLE. « Le
+	 * plus contrasté » veut dire le plus CLAIR sur fond sombre et le plus SOMBRE
+	 * sur fond clair. Les valeurs ci-dessous sont celles du clair ; le bloc
+	 * `.dark`, plus bas, porte les siennes.
+	 *
+	 * Mesuré, sur le verre clair d'une carte : principal 3,52:1, intérêts
+	 * 5,97:1, indemnité 8,97:1 — tous au-dessus des 3:1 qu'exige WCAG 1.4.11
+	 * pour « parts of graphics required to understand the content », ce qu'une
+	 * barre de composition et sa légende sont exactement. Les valeurs sombres
+	 * transposées telles quelles rendaient 1,52:1 sur l'indemnité : un segment
+	 * qui porte une information et qu'on ne voit pas. */
+	--color-part-principal: oklch(0.615 0.115 258);
+	--color-part-interets: oklch(0.5 0.15 288);
+	--color-part-indemnites: oklch(0.38 0.1 232);
 
 	/* ── LE CHIFFRE ──────────────────────────────────────────────────────────
 	 *
@@ -792,4 +941,16 @@ body {
 	--color-seuil-atteint-fond: oklch(0.29 0.075 152);
 	--color-seuil-proche-fond: oklch(0.31 0.07 82);
 	--color-seuil-manque-fond: oklch(0.3 0.085 24);
+
+	/* La veille, en sombre. C'est EXACTEMENT la valeur qui était recopiée aux
+	 * sept endroits avant qu'ils deviennent un jeton : le sombre ne bouge pas. */
+	--color-veille: oklch(0.72 0.13 254);
+
+	/* Les trois parts, en sombre. Ce sont les valeurs qui étaient écrites sans
+	 * portée de thème : elles n'ont pas bougé d'un centième, seul leur ancrage a
+	 * changé. Sur ce fond, « le plus contrasté » veut dire le plus CLAIR, donc
+	 * l'ordre est l'inverse de celui du clair — même règle, autre sol. */
+	--color-part-principal: oklch(0.55 0.12 258);
+	--color-part-interets: oklch(0.7 0.14 285);
+	--color-part-indemnites: oklch(0.84 0.1 232);
 }

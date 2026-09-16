@@ -139,7 +139,7 @@ Ouvert dans la salle d'exposition : les 27 écrans et la palette, à 375, 768, 1
 
 **Ouvert, et qui demande une décision**
 
-1. **Le thème clair n'existe pas.** Les quatre classes `verre-*`, employées à 95 endroits, portent des couleurs sombres écrites en dur, et `app.css` ne contient aucune règle `.light`. Mesuré sur la liste des débiteurs, en clair, à 375 px : nom du débiteur et montant à 1,92:1, titre de section à 1,24:1, puce ambre « 4 échues » à 1,10:1, là où il faut 4,5:1. Tant que la palette claire n'est pas écrite, l'écran des réglages propose un choix qui casse l'interface : soit on écrit la palette, soit on retire « Clair » et « Automatique ».
+1. ~~**Le thème clair n'existe pas.** Les quatre classes `verre-*`, employées à 95 endroits, portent des couleurs sombres écrites en dur, et `app.css` ne contient aucune règle `.light`. Mesuré sur la liste des débiteurs, en clair, à 375 px : nom du débiteur et montant à 1,92:1, titre de section à 1,24:1, puce ambre « 4 échues » à 1,10:1, là où il faut 4,5:1.~~ **ÉCRIT ET MESURÉ** — voir la section « Le thème clair » plus bas. « Automatique » est redevenu le défaut.
 2. ~~**Le marque-page de la recherche est tronqué à 768 px** exactement (133 px disponibles, 261 nécessaires), sur tous les écrans.~~ **Corrigé** par `03cdf71`.
 3. ~~**`surveillance.ts` sort encore des dates ISO** et un « PRESCRITE » en capitales dans des constats lus par le gérant (lignes 310, 341, 342, 417).~~ **Corrigé** par `b5793f6`.
 4. ~~**Le glyphe du cercle de dépôt**, sur l'import, porte la même encre que le titre sur un fond plus sombre : c'est l'élément le moins lisible de l'écran.~~ **Corrigé** par `aceaa47` puis `5ed0ea3`.
@@ -153,6 +153,75 @@ fichiers ici » y mesure 3,07:1 en clair pour 19,27:1 en sombre. Le glyphe n'ét
 que le cas le plus visible. Les trois autres disques du même motif
 (`ui/carte-demarrage.tsx`, `ui/habitude.tsx`, `ui/actions.tsx`) portent encore
 `verre` et la même encre : ils tomberont avec la décision du point 1, pas avant.
+
+## Le thème clair, écrit le 16 septembre 2026
+
+Le point 1 ci-dessus est fermé. La palette claire existe, elle est mesurée écran
+par écran, et « Automatique » est redevenu le défaut de `src/app/use-theme.ts`.
+
+**Ce qui a été écrit, et où**
+
+- `src/styles/app.css` — la jumelle `.light` de chacune des règles de verre. Le
+  verre clair est un presque-blanc à 0,78 d'alpha (repère relevé au navigateur :
+  la barre d'apple.com sert `rgba(245,245,247,0.8)`), le flou et la saturation ne
+  bougent pas, l'arête devient une ombre sous l'objet, et le survol assombrit —
+  même règle qu'en sombre (« le survol augmente le contraste avec le fond »),
+  autre sol. Cinq sélecteurs qu'on ne trouve pas en cherchant « verre » y
+  passent : `.pilule-secondaire` (du blanc à 14 %, strictement invisible sur fond
+  clair), la règle des champs et celle des creux, plus le faisceau.
+- `src/styles/tokens.css` — la palette. La teinte passe de 44 (chaud, hérité
+  d'EGalim) à 258, celle de l'encre de marque : le 44 faisait vibrer l'ambre du
+  seuil « tout près ». La rampe de surfaces retrouve le sens de Cladd — vers le
+  noir, 3 % — parce que mélangée vers le blanc depuis 0,995 elle rendait 1,00:1
+  entre chaque niveau, soit quatre niveaux identiques. Les trois couleurs de
+  seuil et les trois parts sont recalculées ; `--color-veille` remplace sept
+  copies d'un même bleu.
+- `src/ui/fond.tsx` — en clair, ni les ondes ni le voile ne sont rendus. Le
+  shader est additif : sur du papier, il assombrit au lieu de se fondre, et le
+  voile ne couvre que le haut et le bas de l'écran. `.fond-releve` devient un
+  lavis immobile dont chaque ton est PLUS CLAIR que la page, ce qui garde
+  `--cladd-bg` comme plancher mesurable.
+- `src/screens/import/depots.tsx` — le disque de dépôt revient à `verre` : la
+  rustine de `aceaa47`/`5ed0ea3` n'a plus de raison d'être, et elle coûtait
+  l'arête du verre.
+
+**Mesuré au navigateur, sur les huit écrans de la salle, à 375 et 1280 px**
+
+| Écran     | Clair AVANT                               | Clair APRÈS    | Sombre avant → après |
+| --------- | ----------------------------------------- | -------------- | -------------------- |
+| accueil   | 1,02:1 (nom de débiteur)                  | 5,27:1         | 5,53:1 → 5,53:1      |
+| débiteurs | 1,01:1 (initiales) ; 1,10:1 (puce ambre)  | 5,27:1         | 5,53:1 → 5,53:1      |
+| créance   | 1,01:1 (« Oui »/« Non »)                  | 5,93:1         | 7,12:1 → 7,12:1      |
+| décompte  | 1,24:1 (« Principal »)                    | 5,93:1         | 7,12:1 → 7,12:1      |
+| import    | 3,07:1 (titre du dépôt) ; 2,03:1 (glyphe) | 13,9:1 ; 8,9:1 | 19,3:1 ; 9,8:1       |
+| réglages  | 1,24:1 (« Apparence »)                    | 5,93:1         | 7,12:1 → 7,12:1      |
+| équipe    | 1,02:1 (« Claire Béranger »)              | 6,33:1         | 7,06:1 → 7,06:1      |
+| recherche | (palette, non relevée avant)              | 6,29:1         | 7,72:1 → 7,72:1      |
+
+Aucun texte sous 4,5:1 en clair, aux deux largeurs. Le sombre garde ses pires
+valeurs au centième près.
+
+**Ce qui reste, et pourquoi ce n'est pas un défaut**
+
+- Les disques de verre rendent 1,08:1 contre la page (1,04:1 en sombre). Ce sont
+  des conteneurs : leur glyphe tient 5,3 à 8,9:1 et chacun porte un libellé, donc
+  l'exception de WCAG 1.4.11 (« if a control has visible content ») s'applique.
+  Le jour où l'un d'eux perd son libellé, il lui faudra un trait à 3:1.
+- Le « L » du logotype et la coche d'une case Cladd ressortent à 1:1 dans une
+  mesure DOM : leur vrai fond est peint par une couche sœur, que remonter les
+  parents ne voit pas. Faux positifs, présents à l'identique dans les deux
+  thèmes.
+
+**Ce qui n'a PAS été fait, et qu'il faudra regarder**
+
+- La page commerciale (`src/marketing/**`) garde sa palette absolue, par décision
+  écrite. Sa tablette (`marketing/apercu.tsx`) rend l'application avec `.light`
+  imbriqué : la liste de sélecteurs de `tokens.css` gagne désormais `.dark .light`
+  et `:root .light` pour battre Cladd, mais cette page n'a pas été relevée.
+- `src/ui/couleurs-impression.ts` fige douze hexadécimaux sur les ANCIENNES
+  valeurs claires. Le papier est toujours blanc, donc la table reste légitime —
+  mais son vert et son ambre ne sont plus ceux de l'écran, et les commentaires
+  qui citent les jetons d'origine sont désormais faux.
 
 Et `marketing/apercu.tsx` comme `marketing/etapes.tsx` recopient « est PRESCRITE
 depuis le … » en capitales. Hors du périmètre de `b5793f6`, qui s'est tenu au

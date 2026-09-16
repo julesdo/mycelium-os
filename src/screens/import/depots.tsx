@@ -169,27 +169,29 @@ export function EcranImport({
 				>
 					<div className="flex flex-col items-center gap-cladd-3xs text-center">
 						{/*
-						 * ⚠️ CE DISQUE PORTAIT `verre`, ET LE GLYPHE L'ENCRE PLEINE DU TITRE.
-						 * Le verre du produit est écrit en dur en sombre : posé dans le creux
-						 * de la zone de dépôt, qui est lui-même du verre sombre dans les deux
-						 * thèmes, il donnait 2,03:1 en thème clair. L'élément le moins lisible
-						 * de l'écran était celui qui dit quoi faire.
+						 * ⚠️ IL REVIENT AU VERRE, ET C'EST LA RUSTINE QUI PART.
 						 *
-						 * `bg-cladd-surface` suit le thème au lieu de le contredire, et l'encre
-						 * douce du kit tient le glyphe à sa place : une indication, pas un
-						 * second titre. Mesuré après : 6,3:1 en clair, 9,8:1 en sombre.
+						 * Ce disque portait `verre`. Le 16 septembre 2026, le verre du produit
+						 * était écrit en dur en sombre : posé dans le creux de la zone de dépôt,
+						 * lui-même du verre sombre dans les deux thèmes, il rendait 2,03:1 en
+						 * thème clair — l'élément le moins lisible de l'écran était celui qui
+						 * dit quoi faire. Il a donc été sorti du système, en `bg-cladd-surface`
+						 * plus `shadow-cladd-outline`, pour suivre le thème au lieu de le
+						 * contredire.
 						 *
-						 * L'anneau reprend ce que l'arête du verre faisait : en sombre, le
-						 * disque ne se détache du creux que de 1,18:1, et sans bord il n'y a
-						 * plus de disque du tout, seulement un glyphe qui flotte.
+						 * La palette claire existe maintenant : `.light .verre` porte un
+						 * presque-blanc translucide et son arête est une ombre. L'exception ne
+						 * se justifie plus, et elle coûtait l'arête du verre — un disque plat
+						 * au milieu d'un écran qui en compte trois autres du même motif
+						 * (`ui/carte-demarrage.tsx`, `ui/habitude.tsx`, `ui/actions.tsx`).
+						 *
+						 * Le glyphe garde l'encre douce : une indication, pas un second titre.
 						 *
 						 * PAS UN `<Surface>` : `ui/__tests__/verre.test.ts` exige que toute
 						 * surface du kit soit transparente, et une surface transparente ne
-						 * peint aucun disque. PAS NON PLUS `-plus` NI `-next` : ces jetons se
-						 * calculent depuis un ancêtre `cladd-surface-level-*`, absent ici, et
-						 * tombent alors sur du transparent sans qu'aucun test ne bronche.
+						 * peint aucun disque.
 						 */}
-						<span className="flex size-cladd-lg shrink-0 items-center justify-center rounded-full bg-cladd-surface text-cladd-fg-soft shadow-cladd-outline">
+						<span className="verre flex size-cladd-lg shrink-0 items-center justify-center rounded-full text-cladd-fg-soft">
 							<UploadIcon size={22} aria-hidden />
 						</span>
 						<p className="text-cladd-sm font-semibold">

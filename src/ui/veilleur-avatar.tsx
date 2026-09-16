@@ -106,9 +106,15 @@ export function VeilleurAvatar({
 					  dégradé donne une TRAÎNÉE : on voit d'où il vient, donc on lit
 					  un balayage plutôt qu'un objet qui tourne.
 					*/}
+					{/*
+					  `currentColor` et non la valeur : le SVG hérite déjà de
+					  `.veilleur-avatar`, qui porte `--color-veille`. Les deux stops
+					  recopiaient un bleu clair calibré pour le fond sombre, et
+					  restaient donc illisibles sur une page claire.
+					*/}
 					<linearGradient id="veilleur-secteur" x1="0" y1="1" x2="1" y2="0">
-						<stop offset="0%" stopColor="oklch(0.72 0.13 254)" stopOpacity="0" />
-						<stop offset="100%" stopColor="oklch(0.72 0.13 254)" stopOpacity="0.85" />
+						<stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+						<stop offset="100%" stopColor="currentColor" stopOpacity="0.85" />
 					</linearGradient>
 				</defs>
 			</svg>

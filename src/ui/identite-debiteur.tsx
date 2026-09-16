@@ -303,7 +303,7 @@ export function ConstatRegistre({
 				<Chip size="md" color={bascule ? 'red' : 'neutral'}>
 					{bascule ? 'Registre public' : 'Annonce au registre'}
 				</Chip>
-				<span className="text-cladd-2xs text-cladd-fg-softer">
+				<span className="text-cladd-2xs text-cladd-fg-soft">
 					publiée au BODACC le {dateCourte(constat.dateParution)}
 				</span>
 			</div>

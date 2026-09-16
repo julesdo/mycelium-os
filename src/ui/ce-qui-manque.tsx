@@ -150,7 +150,9 @@ function Anneau({ faits, total }: { faits: number; total: number }) {
 					cy="16"
 					r={RAYON}
 					fill="none"
-					stroke="oklch(0.72 0.13 254)"
+					// Le bleu de la veille, par son jeton : écrit en dur, il restait le
+					// bleu clair du thème sombre et rendait 1,9:1 sur une page claire.
+					stroke="var(--color-veille)"
 					strokeWidth="2.5"
 					strokeLinecap="round"
 					strokeDasharray={CIRCONFERENCE}

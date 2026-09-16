@@ -44,35 +44,52 @@ function souscrireAuSysteme(prevenir: () => void) {
 export const AMORCE_THEME = [
 	'(function(){try{',
 	`var c=localStorage.getItem('${CLE}');`,
-	`var t=c==='light'?'light':c==='auto'?(window.matchMedia('${SOMBRE_AU_SYSTEME}').matches?'dark':'light'):'dark';`,
+	// Sans préférence enregistrée, on suit le système : c'est « Automatique »,
+	// redevenu le défaut le 16 septembre 2026 avec la palette claire. Une valeur
+	// inconnue dans le stockage retombe sur le système elle aussi, plutôt que sur
+	// un thème arbitraire.
+	`var t=c==='light'?'light':c==='dark'?'dark':(window.matchMedia('${SOMBRE_AU_SYSTEME}').matches?'dark':'light');`,
 	"var r=document.documentElement;r.classList.toggle('dark',t==='dark');r.classList.toggle('light',t==='light');",
 	'}catch(e){}})();'
 ].join('');
 
 /**
- * Sombre par défaut, clair ou automatique au choix, préférence persistée.
+ * « Automatique » par défaut, clair ou sombre au choix, préférence persistée.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ POURQUOI LE DÉFAUT EST SOMBRE, ET LE RESTE
+ * ⚠️ LE DÉFAUT EST REDEVENU « AUTOMATIQUE », ET CE QUI A CHANGÉ EST MESURABLE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * « Automatique » a été le défaut pendant une journée, le 16 septembre 2026.
- * Le regard au navigateur l'a retiré le jour même : LE THÈME CLAIR N'EXISTE
- * PAS ENCORE. Les quatre classes `verre-*`, employées à 95 endroits, portent
- * des couleurs sombres écrites en dur, et aucune règle `.light` ne les
- * reprend. Mesuré sur la liste des débiteurs, en clair, à 375 px : le nom d'un
- * débiteur et son montant tombent à 1,92:1, un titre de section à 1,24:1, une
- * puce d'alerte à 1,10:1. Le minimum lisible est de 4,5:1.
+ * « Automatique » a été le défaut une journée, le 16 septembre 2026, puis
+ * retiré le jour même par le regard au navigateur : LE THÈME CLAIR N'EXISTAIT
+ * PAS. Les quatre classes `verre-*`, employées à 95 endroits, portaient des
+ * couleurs sombres écrites en dur, et `app.css` ne contenait aucune règle
+ * `.light`. Mesuré alors sur la liste des débiteurs, en clair, à 375 px : le
+ * nom d'un débiteur à 1,92:1, un titre de section à 1,24:1, une puce ambre à
+ * 1,10:1, le glyphe du cercle de dépôt à 2,03:1. Le plancher est de 4,5:1.
  *
- * Suivre le système revenait donc à servir une interface illisible à tout
- * gérant dont l'appareil est en clair, sans qu'il ait rien demandé. Le défaut
- * reste sombre tant que la palette claire n'est pas écrite.
+ * ⚠️ CE QUI A CHANGÉ : LA PALETTE CLAIRE EST ÉCRITE, ET ELLE EST MESURÉE. Le
+ * même jour, `app.css` a reçu la jumelle `.light` de chacune de ses règles de
+ * verre — un presque-blanc à 0,78 d'alpha, une arête qui devient une ombre, un
+ * survol qui assombrit — et `tokens.css` une palette bleue dont les quatre tons
+ * d'encre, les trois couleurs de seuil et les trois parts ont été recalculés
+ * contre la page, qui est le fond le plus sombre qu'un texte puisse rencontrer
+ * en clair. Le fond animé n'est plus rendu du tout en clair : un shader additif
+ * ne peut peindre que sur du noir, et sur du papier il salit.
  *
- * ⚠️ LES PRÉFÉRENCES DÉJÀ ENREGISTRÉES SONT CONSERVÉES. `auto` et `light`
- * restent des valeurs valides : qui a choisi garde son choix.
+ * Relevé après, sur les huit écrans de la salle d'exposition, en clair, à 375
+ * et 1280 px : AUCUN texte sous 4,5:1, le pire à 5,27:1. Le sombre n'a pas
+ * bougé — mêmes pires valeurs qu'avant, 5,53:1 et 7,06:1.
+ *
+ * Suivre le système redevient donc ce qu'il aurait toujours dû être : un gérant
+ * dont l'appareil est en clair voit un écran clair, sans rien demander.
+ *
+ * ⚠️ LES PRÉFÉRENCES DÉJÀ ENREGISTRÉES SONT CONSERVÉES. `dark` et `light`
+ * restent des valeurs valides : qui a choisi garde son choix, y compris celui
+ * qui a choisi le sombre pendant la journée où il était le défaut.
  */
 export function useTheme() {
-	const [theme, setTheme] = usePreference<Theme>(CLE, 'dark', THEMES);
+	const [theme, setTheme] = usePreference<Theme>(CLE, 'auto', THEMES);
 
 	// `useSyncExternalStore` et non un effet : la requête média est un magasin
 	// externe et mutable. La lire dans un effet pour appeler `setState`

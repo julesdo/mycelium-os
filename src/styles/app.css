@@ -690,8 +690,15 @@ select:not(:disabled),
  * exacte : il est franc, rapide (2,4 s), et il s'arrête. Sa RARETÉ est ce qui
  * le rend lisible — même raisonnement que le pouls du journal, juste en
  * dessous. */
+/* ⚠️ LA COULEUR VIENT D'UN JETON, ET ELLE ÉTAIT RECOPIÉE SEPT FOIS. Le même
+ * `oklch(0.72 0.13 254)` était écrit ici, sur `.compte-veilleur`, sur `.pouls`
+ * (deux fois), et dans trois littéraux de SVG à travers `src/ui`. Sept copies
+ * d'un bleu calibré pour un fond sombre : en thème clair, chacune rendait
+ * environ 1,9:1 sur la page, et aucune ne se serait trouvée en cherchant
+ * « veilleur ». `--color-veille` porte maintenant les deux valeurs, une par
+ * thème, et `currentColor` fait le reste dans le SVG. */
 .veilleur-avatar {
-	color: oklch(0.72 0.13 254);
+	color: var(--color-veille);
 }
 
 .veilleur-orbite {
@@ -718,15 +725,20 @@ select:not(:disabled),
 	height: 1rem;
 	padding: 0 0.25rem;
 	border-radius: 9999px;
-	background-color: oklch(0.72 0.13 254);
-	color: oklch(0.16 0.012 276);
+	background-color: var(--color-veille);
+	/* Le chiffre prend la couleur de PAGE, pas un charbon écrit en dur : en
+	 * sombre c'est le même quasi-noir qu'avant (0,155 pour 0,16), en clair c'est
+	 * un presque-blanc sur le bleu devenu sombre — 5,8:1 dans les deux sens. */
+	color: var(--cladd-bg);
 	font-size: 0.625rem;
 	font-weight: 700;
 	line-height: 1;
 	font-variant-numeric: tabular-nums;
 	/* Le liseré détache la pastille de l'avatar : sans lui, le chiffre se colle
-	   à l'orbite et les deux se lisent comme une seule forme confuse. */
-	box-shadow: 0 0 0 2px oklch(0.16 0.012 276);
+	   à l'orbite et les deux se lisent comme une seule forme confuse. Il vaut la
+	   couleur de page, et non un charbon : posé sur une barre claire, un anneau
+	   noir de deux pixels faisait une cerne sale autour de la pastille. */
+	box-shadow: 0 0 0 2px var(--cladd-bg);
 }
 
 /* LE BALAYAGE EST CACHÉ PAR DÉFAUT. Un secteur figé sur un cadran immobile se
@@ -819,7 +831,7 @@ select:not(:disabled),
  * lecture « ça émet » plutôt que « ça clignote ». Un simple `opacity` qui va et
  * vient se lit comme une alerte, ce que ce point n'est pas. */
 .pouls {
-	background-color: oklch(0.72 0.13 254);
+	background-color: var(--color-veille);
 }
 
 .pouls::after {
@@ -827,7 +839,7 @@ select:not(:disabled),
 	position: absolute;
 	inset: 0;
 	border-radius: 9999px;
-	background-color: oklch(0.72 0.13 254);
+	background-color: var(--color-veille);
 	animation: pouls-emet 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
@@ -1042,4 +1054,289 @@ select:not(:disabled),
 	height: 824px;
 	transform-origin: top left;
 	transform: scale(tan(atan2(100cqw, 1180px)));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE THÈME CLAIR — la jumelle de tout ce qui précède.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ CE FICHIER N'AVAIT AUCUNE RÈGLE DE THÈME, ET C'ÉTAIT LE BLOCAGE ENTIER.
+ * Les quatre classes de verre, employées à quatre-vingt-quinze endroits,
+ * portaient des couleurs sombres écrites en dur. En clair, le produit rendait
+ * donc de l'encre sombre sur du verre sombre : 1,01:1 sur un nom de débiteur,
+ * 1,24:1 sur un titre de section, 1,10:1 sur une puce ambre. Le défaut n'était
+ * pas dans la palette — elle existait déjà dans `tokens.css` — il était ici.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * LES QUATRE RÈGLES DE TRANSPOSITION, ET AUCUNE N'EST UNE SYMÉTRIE
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * 1. LE VERRE CLAIR EST UN PRESQUE-BLANC À FORTE OPACITÉ, pas du noir à 8 %.
+ *    Le geste intuitif — retourner le voile — donne une vitre grise et sale, et
+ *    un contraste qui varie de 4,2 à 4,8:1 selon ce qui passe derrière, donc un
+ *    texte illisible PAR INTERMITTENCE, invisible sur une capture. Le
+ *    remplissage est donc `oklch(0.985 0.004 258 / 0.78)`, et le flou comme la
+ *    saturation ne bougent pas : c'est exactement le geste déjà fait en sombre
+ *    (0,66 à 0,72 d'une teinte proche du fond), refait dans l'autre sens.
+ *    Repère relevé au navigateur : la barre globale d'apple.com sert
+ *    `rgba(245,245,247,0.8)` avec `saturate(1.8) blur(20px)`.
+ *
+ *    Sous 0,72 d'alpha, l'encre la plus pâle repasse sous 4,5:1 dès qu'une zone
+ *    plus sombre passe derrière. 0,78 est la bande où le verre devient STABLE.
+ *
+ * 2. L'ARÊTE S'INVERSE. En sombre, la lumière vient du haut par un liseré
+ *    blanc. Sur un remplissage à 0,985 de clarté, ce même liseré rend 1,01:1 :
+ *    il ne fait rien du tout — et comme c'est lui qui fait lire « verre »
+ *    plutôt que « rectangle gris », on croit l'avoir gardé alors qu'on l'a
+ *    perdu. En clair, l'arête est une OMBRE SOUS l'objet, plus un anneau sombre
+ *    très faible. Deux couches d'ombre et pas une : la courte POSE l'objet, la
+ *    longue le DÉCOLLE — le même raisonnement que `--shadow-tablette`, écrit
+ *    mot pour mot dans les jetons.
+ *
+ *    ⚠️ UNE OMBRE NE SATISFAIT JAMAIS UN SEUIL. Mesuré : un noir à 0,04 d'alpha
+ *    composé sur la surface rend 1,04:1, et à 0,14 il rend 1,15:1. Elle ne fait
+ *    que de la profondeur. Donc jamais d'ombre pour rendre un contrôle
+ *    identifiable, et jamais d'alpha remonté « pour qu'on la voie » : ce sont le
+ *    flou et l'étalement qui posent un objet, pas l'opacité.
+ *
+ * 3. LE SURVOL ASSOMBRIT. La règle réelle n'a pas changé — « le survol AUGMENTE
+ *    le contraste avec le fond » — mais sur un fond clair, l'éclaircir fait
+ *    DISPARAÎTRE le contrôle. On reprend la règle, jamais les valeurs.
+ *
+ * 4. LE FOND ANIMÉ NE SE RETEINTE PAS, IL SE REMPLACE. Le shader est additif :
+ *    ses couleurs sont des bleus moyens, et sur du papier il ASSOMBRIT au lieu
+ *    de se fondre. Aucun réglage de verre ne rattrape ça. En clair, `Fond` ne
+ *    rend donc ni les ondes ni le voile, et `.fond-releve` devient un lavis
+ *    IMMOBILE — dont chaque ton est plus CLAIR que la page, ce qui est la seule
+ *    façon de garder `--cladd-bg` comme plancher mesurable.
+ *
+ * ⚠️ CINQ SÉLECTEURS QUI NE SE RESSEMBLENT PAS. On ne trouve pas tout le verre
+ * en cherchant « verre » : il y a aussi `.pilule-secondaire` (du blanc à 14 %,
+ * strictement invisible sur fond clair), la règle des champs et celle des creux,
+ * qui attaquent une couche interne du kit. C'est le défaut « déclaré et lu,
+ * jamais alimenté » à l'envers — un bouton qui existe, qui répond au clic, et
+ * qu'on ne voit pas. */
+
+/* ── LE VERRE ─────────────────────────────────────────────────────────────── */
+
+.light .verre {
+	background-color: oklch(0.985 0.004 258 / 0.78);
+	box-shadow:
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.07),
+		0 1px 2px oklch(0.3 0.02 264 / 0.06),
+		0 10px 32px -12px oklch(0.3 0.02 264 / 0.14);
+}
+
+.light .verre-carte {
+	background-color: oklch(0.985 0.004 258 / 0.78);
+	box-shadow:
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.07),
+		0 1px 2px oklch(0.3 0.02 264 / 0.06),
+		0 10px 32px -12px oklch(0.3 0.02 264 / 0.14);
+}
+
+/* La barre basse. Son ombre portée montait à 0,5 d'alpha de noir : sur du
+ * papier, c'est un halo sale. Elle reste plus large et plus opaque que celle
+ * d'une carte — c'est ce qui la fait FLOTTER — mais au dosage d'un thème clair,
+ * et dirigée vers le HAUT, puisque la barre est posée en bas de l'écran. */
+.light .verre-dense {
+	background-color: oklch(0.985 0.004 258 / 0.82);
+	box-shadow:
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.08),
+		0 -1px 2px oklch(0.3 0.02 264 / 0.05),
+		0 -10px 36px -10px oklch(0.3 0.02 264 / 0.16);
+}
+
+.light .verre-actif:hover,
+.light .verre-bouton:hover {
+	background-color: oklch(0.94 0.008 258 / 0.88);
+}
+
+.light .verre-carte-actif:hover {
+	background-color: oklch(0.945 0.008 258 / 0.9);
+}
+
+/* L'arête se renforce en même temps que le fond s'assombrit — la même lecture
+ * qu'en sombre (« le verre prend la lumière »), obtenue par l'autre bout. */
+.light .verre-bouton:hover {
+	box-shadow:
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.12),
+		0 1px 2px oklch(0.3 0.02 264 / 0.08),
+		0 10px 32px -12px oklch(0.3 0.02 264 / 0.18);
+}
+
+/* ── LES CHAMPS ET LES CREUX ──────────────────────────────────────────────── */
+
+/* ⚠️ LA SPÉCIFICITÉ EST COMPTÉE, PAS ESPÉRÉE. La règle sombre des champs vaut
+ * (0,2,0) et celle-ci (0,3,0) ; celle des creux vaut (0,3,0) et sa jumelle
+ * (0,4,0). Et le `:not(.cladd-input)` est repris À L'IDENTIQUE : sans lui, les
+ * deux sélecteurs clairs auraient la même spécificité et le dernier écrit
+ * gagnerait — tous les champs deviendraient des creux, en silence, selon
+ * l'ordre du fichier.
+ *
+ * ⚠️ L'ANNEAU DU CHAMP EST UNE BORDURE DE CONTRÔLE, PAS UN FILET. WCAG 1.4.11
+ * demande 3:1 pour « l'information visuelle nécessaire à identifier les
+ * composants d'interface ». Calculé : sur ce remplissage, un trait ne tient 3:1
+ * qu'à partir d'une clarté de 0,644 ; celui-ci est à 0,62 et rend 3,12:1. Il est
+ * volontairement bien plus sombre que `--cladd-outline` (1,28:1), qui n'est
+ * qu'un séparateur et n'est soumis à aucun seuil. Deux métiers, deux valeurs. */
+.light .cladd-input .bg-cladd-surface-cut {
+	background-color: oklch(0.945 0.008 258 / 0.82);
+	box-shadow:
+		inset 0 0 0 1px oklch(0.62 0.016 258),
+		inset 0 1px 2px 0 oklch(0.3 0.02 264 / 0.06);
+}
+
+.light .cladd-input:hover .bg-cladd-surface-cut,
+.light .cladd-input:focus-within .bg-cladd-surface-cut {
+	background-color: oklch(0.925 0.01 258 / 0.88);
+}
+
+/* Le creux, en clair. L'inversion d'éclairage se retourne AUSSI : en sombre, le
+ * liseré de lumière passe en BAS pour faire lire « creusé » ; en clair, c'est
+ * une ombre EN HAUT, puisque la lumière vient toujours d'en haut et qu'un creux
+ * porte l'ombre de son propre bord. */
+.light .cladd-surface-cut:not(.cladd-input) > .bg-cladd-surface-cut {
+	background-color: oklch(0.93 0.009 258 / 0.7);
+	box-shadow:
+		inset 0 2px 3px -1px oklch(0.3 0.02 264 / 0.09),
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.06);
+}
+
+/* ── LES DEUX PILULES ─────────────────────────────────────────────────────── */
+
+/* ⚠️ LA PRINCIPALE SE TRANSPOSE TOUTE SEULE, ET C'EST LE PIÈGE : elle est la
+ * seule règle déjà thématique (`background: var(--cladd-fg)`), donc en clair
+ * elle devient une pilule presque noire à texte clair — 13,9:1, exactement le
+ * bouton noir d'une référence en thème clair. On croit donc n'avoir rien à
+ * faire. Mais son SURVOL était figé à `oklch(0.9 0.004 258)`, un gris très
+ * clair : sur une pilule devenue noire, il la faisait pratiquement disparaître.
+ * Et sa lueur était du blanc, invisible sur du papier. */
+.light .pilule-principale:hover {
+	background-color: oklch(0.36 0.022 264);
+	box-shadow: 0 4px 20px -6px oklch(0.3 0.02 264 / 0.32);
+}
+
+/* Le gris PLEIN de l'état désactivé, retourné. Le rapport reste celui de la
+ * règle sombre : on voit tout de suite que ce n'est pas encore cliquable. */
+.light .pilule-principale:disabled,
+.light .pilule-principale[aria-disabled='true'] {
+	background-color: oklch(0.885 0.008 258);
+	color: oklch(0.475 0.014 258);
+}
+
+/* ⚠️ ELLE ÉTAIT DU BLANC PUR À 14 % D'OPACITÉ, donc STRICTEMENT INVISIBLE sur
+ * un fond clair : un bouton présent dans le DOM, haut de 48 px, qui répond au
+ * clic, et qu'on ne voit pas. Elle devient un aplat gris opaque — le « Annuler »
+ * posé sous le bouton noir, chez la référence en thème clair.
+ *
+ * Elle ne tient que 1,08:1 contre la page, ce qui ne suffirait pas à identifier
+ * un contrôle — sauf que la norme écrit elle-même la sortie : un contrôle peut
+ * se passer de frontière visible « if a control has visible content (such as
+ * text or a sufficiently contrasting icon) ». Son libellé rend 12,8:1. Une
+ * pilule secondaire SANS libellé n'existe pas dans ce produit ; le jour où elle
+ * existerait, il lui faudrait un trait à 3:1. */
+.light .pilule-secondaire {
+	background-color: oklch(0.925 0.008 258);
+	box-shadow:
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.1),
+		0 1px 2px oklch(0.3 0.02 264 / 0.05);
+}
+
+.light .pilule-secondaire:hover {
+	background-color: oklch(0.885 0.01 258);
+}
+
+/* ── LE FAISCEAU ──────────────────────────────────────────────────────────── */
+
+/* Les mêmes deux bleus et le même violet, redescendus en clarté : un anneau à
+ * 0,92 de clarté sur du papier ne se voit pas. Les teintes ne bougent pas (258,
+ * 250, 300), donc l'effet reste reconnaissable d'un thème à l'autre. La pointe
+ * vive tient 6,2:1 sur la page — très au-dessus des 3:1 d'un élément non
+ * textuel, ce qu'un anneau d'un pixel et demi a intérêt à avoir : l'antialiasing
+ * en mange la moitié. */
+.light .faisceau::before {
+	background: conic-gradient(
+		from var(--faisceau-angle),
+		transparent 0%,
+		oklch(0.6 0.14 258 / 0.35) 6%,
+		oklch(0.47 0.15 265) 12%,
+		oklch(0.55 0.17 300 / 0.6) 18%,
+		transparent 28%,
+		transparent 100%
+	);
+}
+
+.light .faisceau::after {
+	background: conic-gradient(
+		from var(--faisceau-angle),
+		transparent 0%,
+		oklch(0.55 0.15 258 / 0.4) 12%,
+		transparent 30%,
+		transparent 100%
+	);
+}
+
+.light .faisceau-lent::before {
+	background: conic-gradient(
+		from var(--faisceau-angle),
+		transparent 0%,
+		oklch(0.62 0.12 258 / 0.25) 8%,
+		oklch(0.52 0.13 250 / 0.55) 15%,
+		transparent 30%,
+		transparent 100%
+	);
+}
+
+/* Figé, un dégradé conique laisse un anneau à moitié éteint, qui lit « cassé »
+ * et non « immobile ». Même remplacement qu'en sombre, à la clarté du clair. */
+@media (prefers-reduced-motion: reduce) {
+	.light .faisceau::before {
+		background: oklch(0.5 0.14 254 / 0.8);
+	}
+	.light .faisceau::after {
+		background: oklch(0.55 0.15 258 / 0.3);
+	}
+	.light .faisceau-lent::before {
+		background: oklch(0.55 0.11 254 / 0.45);
+	}
+}
+
+/* ── LE SOL ───────────────────────────────────────────────────────────────── */
+
+/* ⚠️ CHAQUE TON DE CE LAVIS EST PLUS CLAIR QUE LA PAGE, ET C'EST CE QUI REND LE
+ * THÈME MESURABLE. Relevé en luminance relative : la page vaut 0,877, et les six
+ * arrêts ci-dessous valent de 0,944 à 0,970. `--cladd-bg` est donc le point le
+ * plus sombre que le fond puisse peindre, à toutes les positions — ce qui permet
+ * de juger n'importe quel ton d'encre contre une seule valeur, au lieu de la
+ * phase d'une animation. En sombre, le fond fait l'inverse : il ÉCLAIRCIT les
+ * coins, et c'est pour ça que là-bas la référence est la crête du lavis.
+ *
+ * Il est IMMOBILE, contrairement au shader qu'il remplace. Un lavis clair qui
+ * dérive se remarque ; un fond ne doit pas se remarquer. La matière vient du
+ * grain, juste en dessous, et de la réfraction du verre. */
+.light .fond-releve {
+	background-image:
+		radial-gradient(
+			120% 70% at 12% 8%,
+			oklch(0.985 0.03 258 / 0.85) 0%,
+			oklch(0.985 0.022 258 / 0.35) 45%,
+			transparent 72%
+		),
+		radial-gradient(
+			110% 65% at 88% 18%,
+			oklch(0.985 0.026 288 / 0.75) 0%,
+			oklch(0.985 0.018 288 / 0.3) 48%,
+			transparent 75%
+		),
+		radial-gradient(130% 80% at 50% 105%, oklch(0.99 0.022 236 / 0.8) 0%, transparent 70%);
+}
+
+/* Le grain reste, à peine. `overlay` sur une base très claire ne peut
+ * qu'éclaircir vers le blanc ou assombrir de moins d'un pour cent — calculé, la
+ * page passe au pire de 0,958 à 0,950 de clarté localement, ce qui ne déplace
+ * aucun contraste. À 0,16, l'opacité du sombre, le bruit devenait visible sur un
+ * fond clair : c'est du papier, pas de l'argentique. */
+.light .fond-grain {
+	opacity: 0.1;
 }

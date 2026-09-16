@@ -1,5 +1,35 @@
+import { useSyncExternalStore } from 'react';
 import { cn } from './cn';
 import { LineWaves } from './line-waves';
+
+/**
+ * LE THÈME RÉELLEMENT PEINT, LU SUR LA RACINE DU DOCUMENT.
+ *
+ * ⚠️ CE N'EST PAS LA PRÉFÉRENCE DU GÉRANT, ET C'EST VOULU. `use-theme` résout
+ * « automatique », persiste le choix et pose les classes ; ce composant-ci n'a
+ * besoin que du résultat — ce qui est PEINT — et il vit dans `src/ui`, qui
+ * n'importe rien de `src/app`. Lire la classe est donc à la fois la plus petite
+ * dépendance possible et la bonne : si un jour quelque chose d'autre pose
+ * `.light` sur un sous-arbre, le fond de ce sous-arbre suit.
+ *
+ * `useSyncExternalStore` et non un effet : la liste de classes est un magasin
+ * externe et mutable. La lire dans un effet pour appeler `setState`
+ * déclencherait un second rendu en cascade, ce que ce projet s'interdit.
+ *
+ * Au rendu serveur il n'y a pas de racine à lire. On retient le sombre, qui est
+ * aussi ce que l'amorce du `<head>` pose par défaut : l'hydratation ne voit donc
+ * aucun écart, et `useSyncExternalStore` re-rend de lui-même si la racine dit
+ * autre chose.
+ */
+function souscrireAuTheme(prevenir: () => void) {
+	const observateur = new MutationObserver(prevenir);
+	observateur.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+	return () => observateur.disconnect();
+}
+
+function themePeint(): 'light' | 'dark' {
+	return document.documentElement.classList.contains('light') ? 'light' : 'dark';
+}
 
 /**
  * LE FOND — les ondes, sur lesquelles tout le reste est posé.
@@ -29,8 +59,35 @@ import { LineWaves } from './line-waves';
  * verdict doit se lire sur un élément qu'on peut désigner du doigt, pas sur un
  * écran entier de lavis. D'où ces bleus : la seule famille que le produit
  * n'emploie pour rien d'autre.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ EN THÈME CLAIR, LES ONDES NE SONT PAS RENDUES DU TOUT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Et ce n'est pas un réglage de goût : le shader est ADDITIF sur du noir. Ses
+ * trois couleurs sont des bleus moyens (#5a7fd4, #7b6ad8, #4a9ad4) multipliés
+ * par `brightness`, et le canevas sort `vec4(col, length(col))` — donc là où une
+ * ligne passe, le navigateur compose un bleu moyen sur ce qu'il y a derrière.
+ * Sur un fond sombre, ça éclaircit et ça fait de la matière ; sur du papier, ça
+ * ASSOMBRIT. Le voile n'y change rien : il ne couvre que 0–28 % et 62–100 % de
+ * la hauteur, donc toute la bande centrale de l'écran resterait salie.
+ *
+ * Aucun réglage de verre ne rattrape ça, et le symptôme est trompeur : l'écran
+ * a l'air correct en haut et en bas, donc on cherche la faute dans les cartes.
+ *
+ * ⚠️ NI LES ONDES NI LE VOILE, DONC — le voile n'a plus rien à voiler, et son
+ * dégradé vers `--cladd-bg` écraserait le lavis qui le remplace. Ce qui reste en
+ * clair est `.fond-releve`, devenu un lavis IMMOBILE dont chaque ton est plus
+ * clair que la page (voir `app.css`), et le grain.
+ *
+ * Et le contexte WebGL n'est pas seulement caché : il n'est pas créé. Un
+ * `display: none` aurait laissé la boucle de rendu tourner toute la journée sur
+ * un canevas que personne ne regarde.
  */
 export function Fond({ className }: { className?: string }) {
+	const theme = useSyncExternalStore(souscrireAuTheme, themePeint, (): 'light' | 'dark' => 'dark');
+	const sombre = theme === 'dark';
+
 	return (
 		<div
 			aria-hidden
@@ -74,21 +131,23 @@ export function Fond({ className }: { className?: string }) {
 			  presque opaque : à opacité de carte égale, baisser la crête gagne
 			  autant de contraste qu'ajouter dix points d'alpha.
 			*/}
-			<LineWaves
-				className="size-full"
-				speed={0.22}
-				innerLineCount={30}
-				outerLineCount={38}
-				warpIntensity={1.05}
-				rotation={-45}
-				edgeFadeWidth={0}
-				colorCycleSpeed={0.55}
-				brightness={0.21}
-				color1="#5a7fd4"
-				color2="#7b6ad8"
-				color3="#4a9ad4"
-				enableMouseInteraction={false}
-			/>
+			{sombre ? (
+				<LineWaves
+					className="size-full"
+					speed={0.22}
+					innerLineCount={30}
+					outerLineCount={38}
+					warpIntensity={1.05}
+					rotation={-45}
+					edgeFadeWidth={0}
+					colorCycleSpeed={0.55}
+					brightness={0.21}
+					color1="#5a7fd4"
+					color2="#7b6ad8"
+					color3="#4a9ad4"
+					enableMouseInteraction={false}
+				/>
+			) : null}
 
 			{/*
 			  LE VOILE. Il assombrit le haut et le bas, là où vivent les deux barres
@@ -99,8 +158,13 @@ export function Fond({ className }: { className?: string }) {
 			  intermittence, ce qui est le pire cas : le défaut n'apparaît pas sur
 			  une capture d'écran, seulement à l'usage. Le voile garantit un plancher
 			  de contraste quelle que soit la position des lignes.
+
+			  Il tombe avec elles : sans ondes, il n'a plus rien à voiler, et son
+			  dégradé vers la couleur de page écraserait le lavis qui les remplace.
 			*/}
-			<div className="absolute inset-0 bg-[linear-gradient(to_bottom,var(--cladd-bg)_0%,transparent_28%,transparent_62%,var(--cladd-bg)_100%)] opacity-80" />
+			{sombre ? (
+				<div className="absolute inset-0 bg-[linear-gradient(to_bottom,var(--cladd-bg)_0%,transparent_28%,transparent_62%,var(--cladd-bg)_100%)] opacity-80" />
+			) : null}
 
 			{/*
 			  LE RELÈVEMENT. Il vient APRÈS le voile, et cet ordre est le réglage.
