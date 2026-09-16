@@ -289,11 +289,23 @@ export function FormulaireCreancier({
 					Condition de certaines procédures, pour vous et pour votre client. Sans réponse, elle
 					reste indéterminée et n’est jamais présumée remplie.
 				</p>
+				{/* Un segment est une pilule pressable à part entière, pas une moitié
+				    de bascule : « Oui » et « Non » ne remplissent que leurs rembourrages
+				    et tombaient à 43,9 px de large. Le plancher tactile vaut dans les
+				    deux dimensions. */}
 				<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
-					<SegmentedButton active={estCommercant === 'ok'} onClick={() => setEstCommercant('ok')}>
+					<SegmentedButton
+						className="min-w-cladd-md"
+						active={estCommercant === 'ok'}
+						onClick={() => setEstCommercant('ok')}
+					>
 						Oui
 					</SegmentedButton>
-					<SegmentedButton active={estCommercant === 'ko'} onClick={() => setEstCommercant('ko')}>
+					<SegmentedButton
+						className="min-w-cladd-md"
+						active={estCommercant === 'ko'}
+						onClick={() => setEstCommercant('ko')}
+					>
 						Non
 					</SegmentedButton>
 					<SegmentedButton

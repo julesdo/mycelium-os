@@ -92,8 +92,15 @@ export function EcranLitige({
 										contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 									>
 										<p className="text-cladd-sm leading-snug text-balance">{question.libelle}</p>
+										{/* ⚠️ « Oui » ET « NON » SONT DEUX CIBLES ISOLÉES, séparées par
+										    un vide : elles doivent tenir le plancher tactile dans LES DEUX
+										    dimensions. Un libellé de trois lettres ne remplit que ses
+										    rembourrages, soit 43,9 px de large mesurés pour 56 de haut. */}
 										<div className="flex flex-wrap gap-cladd-3xs">
-											<BoutonPrincipal onClick={() => pret.onRepondre(question.condition, 'ok')}>
+											<BoutonPrincipal
+												className="min-w-cladd-md"
+												onClick={() => pret.onRepondre(question.condition, 'ok')}
+											>
 												Oui
 											</BoutonPrincipal>
 											<Button
@@ -102,7 +109,7 @@ export function EcranLitige({
 												outline={false}
 												hoverable={false}
 												rounded
-												className="verre verre-bouton font-medium"
+												className="verre verre-bouton min-w-cladd-md font-medium"
 												onClick={() => pret.onRepondre(question.condition, 'ko')}
 											>
 												Non
