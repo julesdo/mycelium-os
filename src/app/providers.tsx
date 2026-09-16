@@ -21,14 +21,11 @@ import { useTheme } from './use-theme';
  */
 
 export function Providers({ children }: { children: ReactNode }) {
-	const { theme } = useTheme();
+	// LE THÈME RÉSOLU, jamais « auto » : Cladd ne connaît que clair et sombre.
+	const { themeApplique } = useTheme();
 
 	return (
-		<CladdProvider
-			theme={theme}
-			accentColor="brand"
-			overlaysRoot="#root"
-		>
+		<CladdProvider theme={themeApplique} accentColor="brand" overlaysRoot="#root">
 			<ConvexBetterAuthProvider client={convex} authClient={authClient}>
 				{children}
 			</ConvexBetterAuthProvider>

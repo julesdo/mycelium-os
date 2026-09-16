@@ -70,6 +70,17 @@ function Reglages() {
 	const navigate = useNavigate();
 	const org = useQuery(api.organizations.getMyOrg, {});
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
+	/*
+	  ⚠️ CES TROIS-LÀ NE RETIENNENT PAS LA LISTE. Elles nourrissent la VALEUR de
+	  deux rangées — l'offre en cours, la taille de l'équipe — et une liste de
+	  réglages qui attendrait la facturation pour s'afficher mettrait plusieurs
+	  centaines de millisecondes à apparaître pour deux libellés. Tant qu'elles se
+	  lisent, la rangée reste sans valeur : jamais « 0 membre », qui se lit comme
+	  une réponse (règle d'écran n° 4).
+	*/
+	const abonnement = useQuery(api.billing.etatAbonnement, {});
+	const membres = useQuery(api.organizations.listOrganizationMembers, {});
+	const invitations = useQuery(api.organizations.listOrgInvitations, {});
 	const { theme, setTheme } = useTheme();
 	const feuille = useChildMatches({ select: (enfants) => enfants[enfants.length - 1]?.routeId });
 
@@ -85,6 +96,19 @@ function Reglages() {
 							valeur: {
 								org,
 								profil,
+								abonnement:
+									abonnement === undefined || abonnement === null
+										? null
+										: {
+												isDev: abonnement.isDev,
+												palier: abonnement.palier,
+												paddleStatus: abonnement.paddleStatus,
+												essaiFiniLe: abonnement.essaiFiniLe
+											},
+								equipe:
+									membres === undefined || invitations === undefined
+										? null
+										: { membres: membres.length, invitations: invitations.length },
 								theme,
 								onChoisirTheme: setTheme,
 								onSeDeconnecter: () =>
