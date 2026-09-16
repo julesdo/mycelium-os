@@ -97,6 +97,23 @@ export interface OptionSecteur {
 	readonly consequence: string;
 }
 
+/**
+ * Deux écritures du même taux désignent le même taux.
+ *
+ * ⚠️ COMPARER LES CHAÎNES SE TROMPE. « 12,5 » et « 12,50 » sont le même taux, et
+ * le taux lu sur une pièce vient du modèle tandis que celui en vigueur vient
+ * d'une saisie : rien ne garantit la même écriture. Une comparaison de chaînes
+ * afficherait « déjà en vigueur » sur un taux différent, ou proposerait de
+ * retenir un taux déjà posé.
+ */
+function memeTaux(lu: string, enVigueur: string | undefined): boolean {
+	if (enVigueur === undefined) return false;
+	const nombre = (taux: string) => Number(taux.replace(',', '.'));
+	const a = nombre(lu);
+	const b = nombre(enVigueur);
+	return Number.isFinite(a) && Number.isFinite(b) && a === b;
+}
+
 /** Un taux de retard relevé sur une pièce déposée, et la pièce qui le porte. */
 export interface PropositionTaux {
 	/** Le taux lu, en pourcentage saisissable : « 12,50 ». */
@@ -203,7 +220,7 @@ export function IdentiteDebiteur({
 				{propositionTaux === null ? null : (
 					<TauxLuSurUnePiece
 						proposition={propositionTaux}
-						enVigueur={propositionTaux.pourcentage === tauxContractuel}
+						enVigueur={memeTaux(propositionTaux.pourcentage, tauxContractuel)}
 						onRetenir={() => onEnregistrerTaux(propositionTaux.pourcentage)}
 					/>
 				)}

@@ -318,7 +318,7 @@ export const creerCreance = internalMutation({
 			throw new ConvexError(
 				`Une créance par débiteur se compose depuis cette même sélection : les ` +
 					`${factures.length} factures sont déjà lues, et chaque groupe repart de la liste ` +
-					`où vous venez de les choisir. Ce qui manque est un débiteur unique — cette ` +
+					`où vous venez de les choisir. Ce qui manque est un débiteur unique : cette ` +
 					`sélection en porte ${combien}. Ce refus se lève par une sélection ramenée à un ` +
 					`seul débiteur, sans quoi l’acte produit serait irrecevable. L’attente ne coûte ` +
 					`rien : aucune créance n’a été constituée et aucune facture n’a changé d’état.`

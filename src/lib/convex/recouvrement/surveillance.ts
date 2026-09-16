@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { internalQuery } from '../_generated/server';
 import type { QueryCtx } from '../_generated/server';
 import { authedQuery } from '../functions';
+import { resteDu } from './lecture';
 import type { Doc, Id } from '../_generated/dataModel';
 import { additionner, depuisCentimes, enCentimes, ZERO, type Montant } from '../../socle/montants';
 import { habitudeDePaiement, lireRupture } from '../../verticales/recouvrement/comportement';
@@ -293,8 +294,16 @@ async function assembler(
 	 * 300 €, pas entre deux libellés. Une créance mûre annoncée à « 0,00 € » se
 	 * lit comme une créance sans enjeu, c'est-à-dire comme rien.
 	 *
-	 * Les factures sont déjà en main — soldées exclues, comme partout ailleurs
-	 * dans cette fonction.
+	 * Les factures sont déjà en main, soldées exclues, comme partout ailleurs dans
+	 * cette fonction.
+	 *
+	 * ⚠️ ET C'EST `resteDu` QUI COMPTE, PAS LE MONTANT TTC. Une facture payée à
+	 * moitié est « non soldée » : sommer son TTC gonflerait la file d'un argent
+	 * déjà reçu, et un montant faux par excès est pire qu'un montant absent, parce
+	 * qu'il se réclame. On appelle la fonction du produit plutôt que de resoustraire
+	 * les règlements ici : deux définitions de ce qui reste dû finiraient par
+	 * diverger, exactement comme les deux définitions de « mûre » qu'on vient de
+	 * réunir.
 	 */
 	const totalParCreance = new Map<Id<'creances'>, Montant>();
 	for (const facture of facturesBrutes) {
@@ -302,10 +311,7 @@ async function assembler(
 		if (facture.creanceId === undefined) continue;
 		totalParCreance.set(
 			facture.creanceId,
-			additionner(
-				totalParCreance.get(facture.creanceId) ?? ZERO,
-				depuisCentimes(facture.montantTTC)
-			)
+			additionner(totalParCreance.get(facture.creanceId) ?? ZERO, await resteDu(ctx, facture))
 		);
 	}
 
