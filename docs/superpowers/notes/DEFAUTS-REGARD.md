@@ -123,3 +123,37 @@ Ce que l'agent des textes n'a PAS pu reprendre, et pourquoi. Aucun de ces points
 - `src/routes/-salle/onglets.tsx:57` recopie mot pour mot l'angle mort du délai d'opposition, et garde donc son « PAS ». La salle rend toujours ; la démonstration est seulement en retard d'un mot.
 - La ligne de blocage brute de la feuille d'une voie (« « mentionsObligatoiresInjonction » : … PIRE que pas de requête… ») n'est pas un défaut de forme : elle demande un motif en mots de gérant à côté de la `note` du paramètre, et la formulation touche au juridique. Voir la proposition ci-dessus, inchangée.
 - `src/lib/convex/__tests__/battementRecouvrement.test.ts` échoue avant ce travail comme après : il attend `AUTH_EMAIL` dans la trace d'échec, et c'est `RESEND_API_KEY` qui manque en premier. Fixture d'échec accidentel, sans rapport avec les textes.
+
+## Regard du 16 septembre 2026, après les tranches 3, 4 et 5 et l'audit UX
+
+Ouvert dans la salle d'exposition : les 27 écrans et la palette, à 375, 768, 1023, 1024 et 1280 px, en sombre et en clair.
+
+**Corrigé dans la foulée**
+
+- `c0760b7` — Équipe, à 375 px : la colonne d'identité tombait à 42 px (37 px sur une invitation) pendant que les puces gardaient 198 px, parce qu'un `flex-1` part d'une base nulle. Base de 16 rem, puces à la ligne, bouton d'actions de 36 × 48 à 48 × 48 px.
+- `4bf34cf` — « Oui » et « Non » du litige et du créancier mesuraient 43,9 px de large. Plancher à 48.
+- Le thème : « Automatique » avait été fait défaut le matin même, le sombre le redevient (voir ci-dessous).
+- `b5793f6` — Point 3 ci-dessous. Quatre constats de `surveillance.ts` sortaient des dates ISO et un « PRESCRITE » en capitales. `dateLisible` les écrit en français, et la prescription en minuscules : la phrase dit déjà ce qu'elle a de grave. La donnée garde son ISO ; seul le texte affiché change. Deux assertions et trois textes de la salle suivent.
+- `03cdf71` — Point 2 ci-dessous. Sous 1024 px, le marque-page n'affiche plus que « Rechercher », entier ; au-dessus, l'exemple revient, et il tient (261 px de texte dans 320 px de pilule). Vérifié à 375, 768, 1023, 1024 et 1280 px : `scrollWidth` égale `clientWidth` partout.
+- `aceaa47` puis `5ed0ea3` — Point 4 ci-dessous. Le disque portait `verre`, écrit en dur en sombre, dans un creux lui-même en verre sombre : 2,03:1 en thème clair. `bg-cladd-surface` suit le thème, `text-cladd-fg-soft` tient le glyphe au rang d'indication, `shadow-cladd-outline` reprend l'arête du verre. Mesuré après : 6,3:1 en clair, 9,8:1 en sombre. Pas un `<Surface>` : `ui/__tests__/verre.test.ts` les exige transparentes, et une surface transparente ne peint aucun disque (c'est `aceaa47` qui l'a appris, `5ed0ea3` qui le corrige).
+
+**Ouvert, et qui demande une décision**
+
+1. **Le thème clair n'existe pas.** Les quatre classes `verre-*`, employées à 95 endroits, portent des couleurs sombres écrites en dur, et `app.css` ne contient aucune règle `.light`. Mesuré sur la liste des débiteurs, en clair, à 375 px : nom du débiteur et montant à 1,92:1, titre de section à 1,24:1, puce ambre « 4 échues » à 1,10:1, là où il faut 4,5:1. Tant que la palette claire n'est pas écrite, l'écran des réglages propose un choix qui casse l'interface : soit on écrit la palette, soit on retire « Clair » et « Automatique ».
+2. ~~**Le marque-page de la recherche est tronqué à 768 px** exactement (133 px disponibles, 261 nécessaires), sur tous les écrans.~~ **Corrigé** par `03cdf71`.
+3. ~~**`surveillance.ts` sort encore des dates ISO** et un « PRESCRITE » en capitales dans des constats lus par le gérant (lignes 310, 341, 342, 417).~~ **Corrigé** par `b5793f6`.
+4. ~~**Le glyphe du cercle de dépôt**, sur l'import, porte la même encre que le titre sur un fond plus sombre : c'est l'élément le moins lisible de l'écran.~~ **Corrigé** par `aceaa47` puis `5ed0ea3`.
+5. Une ligne secondaire de la palette est tronquée à 375 px : 271 px disponibles pour 280 nécessaires.
+
+**Ce que la correction du point 4 a montré, et qui reste ouvert**
+
+Le point 1 est plus large qu'il n'en avait l'air : le creux de la zone de dépôt
+est lui aussi du verre sombre dans les deux thèmes, et le titre « Déposez vos
+fichiers ici » y mesure 3,07:1 en clair pour 19,27:1 en sombre. Le glyphe n'était
+que le cas le plus visible. Les trois autres disques du même motif
+(`ui/carte-demarrage.tsx`, `ui/habitude.tsx`, `ui/actions.tsx`) portent encore
+`verre` et la même encre : ils tomberont avec la décision du point 1, pas avant.
+
+Et `marketing/apercu.tsx` comme `marketing/etapes.tsx` recopient « est PRESCRITE
+depuis le … » en capitales. Hors du périmètre de `b5793f6`, qui s'est tenu au
+produit et à la salle.
