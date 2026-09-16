@@ -5,9 +5,10 @@ import { FolderOpenIcon, CameraIcon } from 'lucide-react';
 import { cn } from './cn';
 
 /**
- * La zone de dépôt de factures.
+ * La zone de dépôt de fichiers — les factures sur l'import, les pièces sur un
+ * dossier.
  *
- * Quatre façons d'y verser des factures, parce qu'un gérant n'a pas le même
+ * Quatre façons d'y verser un fichier, parce qu'un gérant n'a pas le même
  * geste selon d'où il vient :
  *
  * - **photographier**, sur la tablette qu'il a en main, la facture papier que
@@ -33,11 +34,21 @@ export function ZoneDepot({
 	accept,
 	onFichiers,
 	desactive = false,
+	libellePhoto = 'Photographier un document',
 	children
 }: {
 	accept: string;
 	onFichiers: (fichiers: File[]) => void;
 	desactive?: boolean;
+	/**
+	 * Ce que le bouton photo promet.
+	 *
+	 * ⚠️ IL ÉTAIT ÉCRIT EN DUR, ET LA ZONE SERT DEUX ÉCRANS. Sur les pièces d'un
+	 * dossier on dépose un bon de livraison, une commande ou des CGV : le bouton
+	 * y proposait « Photographier une facture », c'est-à-dire la seule chose
+	 * qu'on n'y dépose pas. Le défaut est donc le libellé neutre.
+	 */
+	libellePhoto?: string;
 	children: ReactNode;
 }) {
 	const champ = useRef<HTMLInputElement>(null);
@@ -95,7 +106,7 @@ export function ZoneDepot({
 					className="hidden tactile:flex"
 				>
 					<CameraIcon />
-					Photographier une facture
+					{libellePhoto}
 				</BoutonPrincipal>
 				<Button disabled={desactive} onClick={() => champ.current?.click()}>
 					<FolderOpenIcon />
