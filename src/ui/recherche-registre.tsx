@@ -126,8 +126,14 @@ export function RechercheRegistre({
 			>
 				<Building2Icon size={18} className="mt-0.5 shrink-0 text-cladd-fg-softer" aria-hidden />
 				<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-					<span className="text-cladd-xs font-medium">{denomination}</span>
-					<span className="text-cladd-2xs text-cladd-fg-softer">
+					{/*
+					  ⚠️ LA DÉNOMINATION N'EST PLUS RÉPÉTÉE ICI. Elle titre maintenant la
+					  fiche, juste au-dessus : l'écrire deux fois à trois centimètres
+					  d'intervalle donnait deux fois le même mot pour un seul client.
+					  Cette carte porte ce que le REGISTRE ajoute — le numéro, la forme
+					  juridique, et le fait que la solvabilité est surveillée.
+					*/}
+					<span className="text-cladd-xs font-medium">
 						SIREN {sirenLisible(siren)}
 						{formeJuridique === undefined ? null : ` · ${formeJuridique}`}
 					</span>

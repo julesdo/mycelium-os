@@ -267,8 +267,31 @@ export function DetailDebiteur({
 		);
 	}
 
+	// La somme des restes dus des factures cochées. ⚠️ EN `bigint`, comme toute la
+	// chaîne : un `Number` sur des centimes perd le dernier chiffre au-delà de
+	// quatre-vingt-dix mille milliards, et surtout il autorise un demi-centime.
+	const restesDusSelectionnes = factures.reduce(
+		(somme, facture) => (selection.has(facture._id) ? somme + facture.resteDu : somme),
+		0n
+	);
+
 	return (
 		<div className="flex flex-col gap-cladd-2xs p-cladd-2xs">
+			{/*
+			  LE NOM DU CLIENT, EN TÊTE, ET SUR AUTANT DE LIGNES QU'IL EN FAUT.
+
+			  ⚠️ IL N'APPARAISSAIT NULLE PART TANT QUE LE DÉBITEUR N'AVAIT PAS DE
+			  SIREN. Sous 1024 px la fiche s'ouvre en feuille PLEIN ÉCRAN, par-dessus
+			  la liste : le gérant cochait donc des factures sans voir de quel client
+			  il s'agissait. C'est l'erreur la plus coûteuse de cet écran — constituer
+			  une créance sur le mauvais débiteur.
+
+			  ⚠️ ET IL NE SE TRONQUE PAS. « Ateliers Martin » et « Ateliers Martin
+			  Fils » ne se distingueraient plus d'une ellipse : le nom passe à la
+			  ligne plutôt que d'être coupé.
+			*/}
+			<h2 className="text-cladd-sm leading-snug font-semibold break-words">{denomination}</h2>
+
 			{/* CE QUE LE GÉRANT SEUL PEUT DIRE, EN TÊTE DE LA PREUVE.
 			    L'écran affichait « Secteur à préciser » sur la liste depuis des mois —
 			    et il n'existait AUCUN moyen de le préciser. Une consigne impossible à
@@ -397,15 +420,26 @@ export function DetailDebiteur({
 						attention={ruptures.length > 0}
 					/>
 				)}
-			</ListeAnalyses>
 
-			<Lettrage
-				proposition={propositionLettrage}
-				enCours={lettrageEnCours}
-				erreur={erreurLettrage}
-				onChercher={onChercherLettrage}
-				onAppliquer={onAppliquerLettrage}
-			/>
+				{/*
+				  LE RAPPROCHEMENT D'UN VIREMENT EST UNE RANGÉE DU MÊME GROUPE.
+
+				  ⚠️ IL ÉTAIT DÉPLIÉ EN PERMANENCE, ENTRE CES RANGÉES ET LES FACTURES :
+				  trois lignes de prose, deux champs et un bouton, pour une opération
+				  occasionnelle. Il poussait les factures — donc la sélection, le geste
+				  principal de cet écran — sous la ligne de flottaison.
+
+				  Il se déplie tout seul dès qu'il a un résultat à montrer ; voir
+				  `ui/lettrage.tsx`.
+				*/}
+				<Lettrage
+					proposition={propositionLettrage}
+					enCours={lettrageEnCours}
+					erreur={erreurLettrage}
+					onChercher={onChercherLettrage}
+					onAppliquer={onAppliquerLettrage}
+				/>
+			</ListeAnalyses>
 
 			{debiteur.constatRegistre === undefined ? null : (
 				<ConstatRegistre constat={debiteur.constatRegistre} sante={debiteur.santeFinanciere} />
@@ -481,10 +515,53 @@ export function DetailDebiteur({
 
 			{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
 
+			{/*
+			  LA BARRE DE SÉLECTION, COLLÉE EN BAS DÈS LA PREMIÈRE CASE COCHÉE.
+
+			  ═══════════════════════════════════════════════════════════════════
+			  ⚠️ LE GESTE PRINCIPAL SE FAISAIT À L'AVEUGLE
+			  ═══════════════════════════════════════════════════════════════════
+
+			  Le bouton vivait après TOUTES les cartes de facture : sur un dossier
+			  de vingt factures, il fallait dérouler l'écran entier pour découvrir
+			  ce qu'on venait de composer. Et la somme cochée ne s'affichait nulle
+			  part — on constituait une créance sans savoir combien elle pesait.
+
+			  Collée en bas du volet comme de la feuille, elle suit la sélection.
+			  Aucune marge basse à ajouter : la barre est le DERNIER élément du
+			  flux, donc en fin de défilement elle reprend sa place et ne recouvre
+			  plus la dernière facture, qui reste cochable.
+
+			  ⚠️ « RESTES DUS », JAMAIS « MONTANT RÉCLAMÉ ». Ce total est la somme
+			  des `resteDu` des factures cochées. Le principal de la créance est
+			  RECALCULÉ par le serveur à sa constitution, et le décompte y ajoute
+			  intérêts et indemnités : donner à ce chiffre le nom de ce qu'on
+			  réclame en ferait une promesse que la page suivante dément.
+			*/}
 			{selection.size > 0 ? (
-				<BoutonPrincipal onClick={() => onConstituer(provenance)}>
-					Constituer une créance de {selection.size} facture{pluriel(selection.size)}
-				</BoutonPrincipal>
+				<Surface
+					variant="transparent"
+					outline={false}
+					className="verre-carte sticky bottom-0 z-10 rounded-cladd-xl"
+					contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-3xs"
+				>
+					<span className="flex min-w-0 flex-col">
+						<span className="text-cladd-2xs text-cladd-fg-softer">
+							{selection.size} facture{pluriel(selection.size)} · restes dus
+						</span>
+						<span className="text-cladd-sm font-semibold tabular-nums">
+							{eurosCentimes(restesDusSelectionnes)}
+						</span>
+					</span>
+					{/* `grow` SOUS 640 px SEULEMENT. À 375 px, « 1 facture · restes dus »
+					    et le bouton manquent la même ligne de sept pixels : le bouton passe
+					    dessous, et il y prend toute la largeur plutôt que d'y rester échoué
+					    à gauche. Au-dessus, la ligne tient, et un bouton étiré sur cinq
+					    cents pixels ne serait plus un bouton. */}
+					<BoutonPrincipal className="grow sm:grow-0" onClick={() => onConstituer(provenance)}>
+						Constituer une créance
+					</BoutonPrincipal>
+				</Surface>
 			) : null}
 		</div>
 	);

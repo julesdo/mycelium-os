@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
 	createFileRoute,
 	Outlet,
@@ -229,6 +229,15 @@ function Debiteurs() {
 	// se lit au REPOS : les candidats d'un client n'ont rien à faire sur un autre.
 	const [recherchePosee, setRecherchePosee] = useState<PosePourUnSujet<EtatRecherche> | null>(null);
 	const recherche = lirePourLeSujet(recherchePosee, choisi, RECHERCHE_AU_REPOS);
+	/**
+	 * LES DÉBITEURS DÉJÀ PRÉSENTÉS AU REGISTRE PENDANT CETTE SESSION.
+	 *
+	 * ⚠️ IL EMPÊCHE UN IMPORT DE CINQUANTE CLIENTS DE DEVENIR CINQUANTE APPELS
+	 * RÉPÉTÉS. L'état de recherche, lui, ne vaut que pour UN débiteur à la fois :
+	 * en revenant sur une fiche déjà vue, il est retombé au repos et la recherche
+	 * repartirait. Ce compte-ci survit aux allers-retours dans la liste.
+	 */
+	const dejaInterroges = useRef<Set<string>>(new Set());
 
 	/**
 	 * LE LETTRAGE D'UN VIREMENT GROUPÉ.
@@ -383,10 +392,17 @@ function Debiteurs() {
 	 * gestes opposés — saisir le numéro à la main, ou réessayer — donc l'écran
 	 * les distingue. `ConvexError` porte son message dans `.data`, pas dans
 	 * `.message`.
+	 *
+	 * ⚠️ ELLE PREND SON DÉBITEUR EN ARGUMENT, ELLE NE LE LIT PAS. À l'ouverture
+	 * d'une fiche, `choisi` vaut encore le débiteur qu'on quitte : la navigation
+	 * n'a pas fini. Lire l'état ici chercherait le mauvais client, et poserait
+	 * ses candidats sur lui.
 	 */
-	async function chercherAuRegistreDuDebiteur() {
-		if (choisi === null) return;
-		const debiteurId = choisi;
+	async function chercherAuRegistrePour(debiteurId: Id<'debiteurs'>) {
+		// Une fiche ouverte deux fois ne redemande pas le registre. Une `ref` et
+		// pas un état : ce compte ne se dessine pas, et le remettre déclencherait
+		// un rendu pour rien.
+		dejaInterroges.current.add(debiteurId);
 		setErreurSirenPosee({ sujet: debiteurId, valeur: null });
 		setRecherchePosee({ sujet: debiteurId, valeur: { phase: 'EN_COURS' } });
 		// ⚠️ UNE RÉPONSE NE S'INSCRIT QUE SI CETTE RECHERCHE EST ENCORE EN COURS POUR
@@ -468,7 +484,8 @@ function Debiteurs() {
 								debiteurs,
 								choisi,
 								onOuvrir: (id) => {
-									setChoisi(id as Id<'debiteurs'>);
+									const ouvert = id as Id<'debiteurs'>;
+									setChoisi(ouvert);
 									// Un clic repart de zéro pour ce qui se saisissait : la sélection, le
 									// montant d'un virement et les refus qui s'y rapportent. La fiche
 									// remontée n'affiche plus ces saisies, et « Solder ces factures »
@@ -479,13 +496,40 @@ function Debiteurs() {
 									setErreurLettragePosee(null);
 									setErreurSirenPosee(null);
 									setErreurPosee(null);
+
+									/*
+									  ⚠️ LE REGISTRE S'INTERROGE TOUT SEUL, PARCE QUE LE NOM EST DÉJÀ LÀ.
+									  Il fallait toucher « Chercher « BOULANGERIE MARTIN » » sur chaque
+									  client sans SIREN, alors que le BODACC se cherche par nom et sans
+									  clé : c'est la première règle d'écran prise à l'envers — « aucun
+									  écran ne demande ce que le logiciel peut déduire ».
+
+									  ⚠️ ET IL PROPOSE, IL NE CHOISIT TOUJOURS RIEN. Même avec un seul
+									  candidat, aucun SIREN ne s'enregistre sans un appui : un SIREN
+									  d'homonyme, bien formé, désigne une AUTRE entreprise, et le radar
+									  rendrait sur elle un « rien au registre » faux et rassurant.
+
+									  Dans le gestionnaire, pas dans un effet : on ne pose pas d'état
+									  au rendu, et la recherche ne part qu'une fois par débiteur.
+									*/
+									const fiche = debiteurs.find((debiteur) => debiteur._id === ouvert);
+									if (
+										fiche !== undefined &&
+										(fiche.siren === undefined || fiche.siren === '') &&
+										!dejaInterroges.current.has(ouvert)
+									) {
+										void chercherAuRegistrePour(ouvert);
+									}
 								},
 								onFermer: () => setChoisi(null),
 								detail: {
 									debiteurId: choisi ?? '',
 									denomination: debiteurChoisi?.denomination ?? '',
 									etatRecherche: recherche,
-									onChercherAuRegistre: () => void chercherAuRegistreDuDebiteur(),
+									onChercherAuRegistre: () => {
+										if (choisi === null) return;
+										void chercherAuRegistrePour(choisi);
+									},
 									onRetenirEtablissement: (etablissement) =>
 										void retenirEtablissement(etablissement),
 									debiteur: choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi,
