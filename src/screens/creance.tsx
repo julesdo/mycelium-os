@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Chip, SurfaceCut } from '@cladd-ui/react';
+import { Chip } from '@cladd-ui/react';
 import {
 	Building2Icon,
 	AlertTriangleIcon,
@@ -252,12 +252,17 @@ export function EcranCreance({
 					  lire un seuil là où on vient précisément d'en retirer un.
 
 					  Ce qui fait bouger cet état est juste en dessous, rangée par rangée.
+
+					  ⚠️ ET LA PUCE N'EST PLUS DANS UN CREUX. Le creux tenait deux choses,
+					  le pourcentage à gauche et la puce à droite ; le pourcentage parti,
+					  il restait une bande pleine largeur dont un tiers portait du texte
+					  — 112 px de puce dans 343 px de bande, relevés à 375 px. Un cadre
+					  vide se lit comme une rangée inachevée, pas comme un état. La puce
+					  se pose donc seule, à la largeur de son texte.
 					*/}
-					<SurfaceCut contentClassName="flex flex-wrap items-center gap-cladd-3xs p-cladd-2xs">
-						<Chip size="md" color="neutral">
-							{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
-						</Chip>
-					</SurfaceCut>
+					<Chip className="self-start" size="md" color="neutral">
+						{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
+					</Chip>
 
 					{/*
 					  ⚠️ LE DÉBITEUR, EN PREMIER, ET DANS SA PROPRE LISTE.
