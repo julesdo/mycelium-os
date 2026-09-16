@@ -71,7 +71,7 @@ const DOSSIERS = [
 		creanceId: 'demo-creance-martin',
 		cle: 'injonction-de-payer',
 		debiteurId: 'demo-martin',
-		prochaineEcheance: '2026-11-28'
+		prochaineEcheance: '2026-09-12'
 	},
 	{
 		creanceId: 'demo-creance-durand',

@@ -130,9 +130,12 @@ export function bougesDuFlux(
 		const cible = evenement.cible;
 		if (cible === undefined || cible.genre !== 'DEBITEUR' || vus.has(cible.id)) continue;
 		vus.add(cible.id);
+		const libelle = MOTIF_EVENEMENT[evenement.type] ?? evenement.type;
 		bouges.push({
 			id: cible.id,
-			motif: `${MOTIF_EVENEMENT[evenement.type] ?? evenement.type} · ${evenement.reference}`
+			// ⚠️ UN DÉBITEUR DÉGRADÉ PORTE SON PROPRE NOM EN RÉFÉRENCE. L’écrire ici
+			// l’afficherait deux fois sur la même rangée, au-dessus et au-dessous.
+			motif: evenement.type === 'DEBITEUR_DEGRADE' ? libelle : `${libelle} · ${evenement.reference}`
 		});
 		if (bouges.length === PREMIERS_PAR_FAMILLE) break;
 	}
@@ -294,6 +297,10 @@ export function PaletteRecherche({
 	const auClavier = (evenement: KeyboardEvent<HTMLInputElement>) => {
 		if (evenement.key !== 'Enter') return;
 		evenement.preventDefault();
+		// ⚠️ TANT QUE LA RÉPONSE N’EST PAS CELLE DU TERME TAPÉ, les rangées visibles
+		// sont celles du terme précédent : Entrée ouvrirait autre chose que ce qu’on
+		// vient d’écrire.
+		if (!aJour) return;
 		const premiere = visibles[0];
 		if (premiere !== undefined) onOuvrir(premiere);
 	};
