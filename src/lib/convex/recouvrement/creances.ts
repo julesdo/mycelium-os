@@ -158,12 +158,21 @@ async function retardsObserves(
 	).length;
 }
 
-/** Recalcule le score d'une créance à partir de son état courant. */
+/**
+ * Recalcule le score d'une créance ET sa maturité, à partir de son état courant.
+ *
+ * ⚠️ LES DEUX ENSEMBLE, ET STOCKÉS ENSEMBLE. « Mûre » n'est plus un score
+ * au-dessus d'un seuil mais « toutes conditions établies et aucun bloquant »
+ * (17 septembre 2026), et ce verdict ne se recompose pas à la lecture :
+ * `qualifier()` a besoin des pièces, des faits déclarés, de la santé du débiteur
+ * et des retards observés, soit quatre lectures de plus par créance sur tout
+ * l'établissement, dans une boucle qui tourne chaque nuit sur toutes.
+ */
 async function recalculerScore(
 	ctx: MutationCtx,
 	creance: Doc<'creances'>,
 	aujourdHui: string
-): Promise<number> {
+): Promise<{ score: number; eligible: boolean }> {
 	const factures = await ctx.db
 		.query('facturesVente')
 		.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
@@ -199,7 +208,7 @@ async function recalculerScore(
 		)
 	});
 
-	return qualification.score;
+	return { score: qualification.score, eligible: qualification.eligible };
 }
 
 /**
@@ -304,9 +313,7 @@ export const creerCreance = internalMutation({
 		}
 
 		const creance = (await ctx.db.get(creanceId))!;
-		await ctx.db.patch(creanceId, {
-			score: await recalculerScore(ctx, creance, aujourdHui)
-		});
+		await ctx.db.patch(creanceId, await recalculerScore(ctx, creance, aujourdHui));
 
 		return creanceId;
 	}
@@ -341,11 +348,11 @@ export const repondreQuestionnaire = internalMutation({
 		await ctx.db.patch(creanceId, conditions);
 
 		const misAJour = (await ctx.db.get(creanceId))!;
-		const score = await recalculerScore(ctx, misAJour, aujourdHui);
+		const qualification = await recalculerScore(ctx, misAJour, aujourdHui);
 
 		const complete = toutesTranchees(conditions);
 		await ctx.db.patch(creanceId, {
-			score,
+			...qualification,
 			statut: complete && creance.statut === 'BROUILLON' ? 'QUALIFIEE' : creance.statut,
 			qualifieeLe: complete ? Date.now() : creance.qualifieeLe
 		});
@@ -438,7 +445,7 @@ export const rejouerCommercialiteInterne = internalMutation({
 			});
 
 			await ctx.db.patch(creance._id, {
-				score: await recalculerScore(ctx, misAJour, aujourdHui),
+				...(await recalculerScore(ctx, misAJour, aujourdHui)),
 				statut: complete && creance.statut === 'BROUILLON' ? 'QUALIFIEE' : creance.statut,
 				qualifieeLe: complete ? (creance.qualifieeLe ?? Date.now()) : creance.qualifieeLe
 			});
@@ -509,7 +516,7 @@ export const declarerFaitLitige = internalMutation({
 		const misAJour = (await ctx.db.get(creanceId))!;
 		const complete = toutesTranchees(conditions);
 		await ctx.db.patch(creanceId, {
-			score: await recalculerScore(ctx, misAJour, aujourdHui),
+			...(await recalculerScore(ctx, misAJour, aujourdHui)),
 			statut: complete && creance.statut === 'BROUILLON' ? 'QUALIFIEE' : creance.statut,
 			qualifieeLe: complete ? (creance.qualifieeLe ?? Date.now()) : creance.qualifieeLe
 		});

@@ -90,7 +90,7 @@ describe('la cible d’un événement', () => {
 						reference: 'C-001',
 						id: 'cre_1',
 						total: depuisEuros('12000,00'),
-						score: 0.9,
+						eligible: true,
 						statut: 'QUALIFIEE'
 					}
 				]

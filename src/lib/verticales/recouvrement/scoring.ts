@@ -148,12 +148,23 @@ export const POIDS = {
 } as const;
 
 /**
- * Le seuil au-dessus duquel une créance est tenue pour mûre.
+ * L'hypothèse de calibrage, qui N'A PLUS AUCUN LECTEUR DE PRODUCTION.
  *
- * 0,75 place la barre juste au-dessus des conditions légales seules (0,60) : il
- * faut les quatre conditions ET au moins un document de fond. C'est une
- * hypothèse de départ, à recalibrer sur le taux de contestation réellement
- * observé — c'est-à-dire quand il y aura des données.
+ * ⚠️ ELLE NE DÉCIDE PLUS DE RIEN, ET LE DIRE ICI EST LA MOITIÉ DE SA RAISON
+ * D'ÊTRE. Le 17 septembre 2026, « mûre » a cessé d'être un score au-dessus d'un
+ * seuil pour devenir « toutes conditions établies et aucun bloquant » : ni
+ * `eligible` ni la surveillance ne lisent plus cette constante.
+ *
+ * Elle reste déclarée et exportée par une décision explicite. 0,75 plaçait la
+ * barre juste au-dessus des conditions légales seules (0,60) : il fallait les
+ * quatre conditions ET au moins un document de fond. C'était une hypothèse de
+ * départ, à recalibrer sur le taux de contestation réellement observé —
+ * c'est-à-dire quand il y aura des données. L'effacer effacerait la seule trace
+ * écrite de POURQUOI un score existe encore, et le score, lui, sert toujours :
+ * il ordonne `criteres` et `piecesManquantes`.
+ *
+ * Le jour où le calibrage se fait, elle retrouve un lecteur. D'ici là, elle est
+ * un orphelin ASSUMÉ et non un oubli, ce qui n'est pas la même chose.
  */
 export const SEUIL_QUALIFICATION = 0.75;
 
@@ -291,13 +302,23 @@ export function qualifier(elements: ElementsCreance): Qualification {
 		.map((preuve) => preuve.accepte[0]!);
 
 	// ── Le verdict ───────────────────────────────────────────────────────────
+	//
+	// ⚠️ UNE CRÉANCE MÛRE, C'EST TOUTES CONDITIONS ÉTABLIES ET AUCUN BLOQUANT.
+	// Pas un score au-dessus d'un seuil. Tranché le 17 septembre 2026.
+	//
+	// Le troisième terme — `score >= SEUIL_QUALIFICATION` — est parti, et son
+	// départ n'est pas cosmétique : il plaçait un seuil PRODUIT au milieu d'un
+	// état JURIDIQUE. Il ne se franchissait pas sans pièce de fond, aucune ligne
+	// d'écran ne le disait, et le gérant en concluait que le logiciel ne voulait
+	// pas de son dossier. `unknown` ne compte toujours jamais comme établie : le
+	// doute ne profite pas au produit, et c'est ce qui reste du verrou.
 	const conditionsToutesEtablies = CONDITIONS_LEGALES.every(
 		(condition) => elements[condition as ConditionLegale] === 'ok'
 	);
 	const aUnBloquant = risques.some((risque) => risque.gravite === 'BLOQUANTE');
 
 	return {
-		eligible: conditionsToutesEtablies && !aUnBloquant && score >= SEUIL_QUALIFICATION,
+		eligible: conditionsToutesEtablies && !aUnBloquant,
 		score,
 		criteres,
 		risques,

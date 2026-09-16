@@ -1,7 +1,7 @@
 import { ZERO, additionner, versEuros, type Montant } from '../../socle/montants';
 import { joursEntre } from './decompte';
 import { dateLisible, estDateReelle } from './calendrier';
-import { SEUIL_QUALIFICATION } from './scoring';
+import { CONDITIONS_LEGALES, LIBELLE_CONDITION } from './qualification';
 import type { SanteDebiteur } from './scoring';
 import { pluriel } from '../../socle/francais';
 
@@ -110,6 +110,16 @@ const ECHELLE_SANTE: Record<SanteDebiteur, number> = {
 	RADIEE: 3
 };
 
+/**
+ * Les quatre conditions légales, énumérées comme on les lit.
+ *
+ * Elles viennent de `CONDITIONS_LEGALES` et de `LIBELLE_CONDITION`, jamais d'une
+ * recopie : une créance mûre est une créance dont ces quatre-là sont établies, et
+ * les nommer ailleurs qu'à leur source ferait diverger le mot de la règle.
+ */
+const LIBELLES_CONDITIONS = CONDITIONS_LEGALES.map((condition) => LIBELLE_CONDITION[condition]);
+const CONDITIONS_ENUMEREES = `${LIBELLES_CONDITIONS.slice(0, -1).join(', ')} et ${LIBELLES_CONDITIONS[LIBELLES_CONDITIONS.length - 1]}`;
+
 /** Les deux seules raisons pour lesquelles une prescription n'est pas calculable. */
 export type MotifPrescriptionInconnue = 'AUCUNE_DATE_DE_DEPART' | 'DATE_DE_DEPART_INEXPLOITABLE';
 
@@ -162,7 +172,17 @@ export interface CreanceSurveillee {
 	/** L'identifiant de la créance, pour que l'événement mène à son écran. */
 	readonly id?: string;
 	readonly total: Montant;
-	readonly score: number;
+	/**
+	 * Toutes conditions établies et aucun risque bloquant.
+	 *
+	 * ⚠️ UN BOOLÉEN, ET PLUS UN SCORE. La file filtrait sur `score <
+	 * SEUIL_QUALIFICATION`, c'est-à-dire sur un seuil produit que § 2 démontre
+	 * infranchissable sans pièce de fond : la classe `CREANCE_MURE` n'entrait
+	 * jamais. Le critère vient désormais de `qualifier()`, calculé une fois et
+	 * stocké à côté du score, et il n'y a plus qu'UNE définition de « mûre » dans
+	 * le produit.
+	 */
+	readonly eligible: boolean;
 	readonly statut: 'BROUILLON' | 'QUALIFIEE' | 'ENGAGEE' | 'CLOSE';
 }
 
@@ -369,19 +389,33 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 		});
 	}
 
-	// ── Créances qui viennent d'atteindre le seuil ───────────────────────────
+	// ── Créances dont les quatre conditions sont établies ────────────────────
 	for (const creance of etat.creances) {
-		if (creance.statut !== 'QUALIFIEE' || creance.score < SEUIL_QUALIFICATION) continue;
+		if (creance.statut !== 'QUALIFIEE') continue;
+		if (!creance.eligible) continue;
 
 		evenements.push({
 			type: 'CREANCE_MURE',
 			reference: creance.reference,
 			montant: creance.total,
 			urgence: 'HAUTE',
+			// UN CONSTAT, ET AUCUN CHIFFRE. La phrase citait « le seuil de
+			// qualification (0.62 pour un seuil de 0.75) », un score que rien à
+			// l'écran n'expliquait et une note que le gérant ne savait pas faire
+			// monter. Elle nomme maintenant ce qui est ÉTABLI — les mêmes quatre
+			// conditions que partout ailleurs, lues dans `LIBELLE_CONDITION`, sans
+			// quoi l'écran et la file diraient la même chose avec deux vocabulaires.
 			explication:
-				`La créance ${creance.reference} atteint le seuil de qualification ` +
-				`(${creance.score.toFixed(2)} pour un seuil de ${SEUIL_QUALIFICATION}).`,
-			action: 'Examiner les procédures envisageables pour cette créance.',
+				`Sur la créance ${creance.reference}, ${CONDITIONS_ENUMEREES} sont établis, et ` +
+				'aucun risque bloquant n’est relevé.',
+			// ⚠️ LIGNE ROUGE 3. Ce champ portait « Examiner les procédures
+			// envisageables pour cette créance. » — un impératif qui désigne des
+			// voies de droit, c'est-à-dire du conseil juridique, en production.
+			//
+			// Ce qui reste est le seul geste que ce logiciel puisse honnêtement
+			// demander : ouvrir un écran et regarder ce qu'il porte. Même traitement
+			// que l'échéance de procédure, quelques lignes plus bas.
+			action: `Ouvrir cette créance : les conditions établies et les pièces qui les soutiennent y sont.`,
 			...(creance.id === undefined ? {} : { cible: { genre: 'CREANCE' as const, id: creance.id } })
 		});
 	}

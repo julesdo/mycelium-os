@@ -285,11 +285,41 @@ async function assembler(
 		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 		.collect();
 
+	/**
+	 * CE QUI RESTE À RÉCLAMER SUR CHAQUE CRÉANCE.
+	 *
+	 * ⚠️ `total` VALAIT `ZERO`, EN DUR, POUR TOUTES. Chaque événement de la file
+	 * porte un montant, et c'est structurel : un gérant arbitre entre 12 000 € et
+	 * 300 €, pas entre deux libellés. Une créance mûre annoncée à « 0,00 € » se
+	 * lit comme une créance sans enjeu, c'est-à-dire comme rien.
+	 *
+	 * Les factures sont déjà en main — soldées exclues, comme partout ailleurs
+	 * dans cette fonction.
+	 */
+	const totalParCreance = new Map<Id<'creances'>, Montant>();
+	for (const facture of facturesBrutes) {
+		if (facture.statutPaiement === 'SOLDEE') continue;
+		if (facture.creanceId === undefined) continue;
+		totalParCreance.set(
+			facture.creanceId,
+			additionner(
+				totalParCreance.get(facture.creanceId) ?? ZERO,
+				depuisCentimes(facture.montantTTC)
+			)
+		);
+	}
+
 	const creances = creancesBrutes.map((creance) => ({
-		reference: creance._id as string,
+		// ⚠️ LA RÉFÉRENCE PORTAIT L'IDENTIFIANT CONVEX DE LA CRÉANCE, qui s'affichait
+		// tel quel dans la file : une suite de trente-deux caractères que personne
+		// ne peut rattacher à un client. Le nom du débiteur est ce que le gérant
+		// reconnaît, et la table est en main juste au-dessus.
+		reference: debiteurs.get(creance.debiteurId)?.denomination ?? 'Débiteur inconnu',
 		id: creance._id as string,
-		total: ZERO,
-		score: creance.score ?? 0,
+		total: totalParCreance.get(creance._id) ?? ZERO,
+		// Absent sur les créances écrites avant ce champ : le doute ne profite
+		// jamais au produit, une maturité qu'on n'a pas calculée n'est pas acquise.
+		eligible: creance.eligible ?? false,
 		statut: creance.statut
 	}));
 

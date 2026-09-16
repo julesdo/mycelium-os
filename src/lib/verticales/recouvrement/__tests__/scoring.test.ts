@@ -33,13 +33,7 @@ describe('score', () => {
 	it('atteint 1 quand tout est établi et toutes les pièces fournies', () => {
 		const q = qualifier(
 			elements({
-				piecesFournies: [
-					'FACTURE',
-					'BON_DE_COMMANDE',
-					'BON_DE_LIVRAISON',
-					'CGV',
-					'MISE_EN_DEMEURE'
-				]
+				piecesFournies: ['FACTURE', 'BON_DE_COMMANDE', 'BON_DE_LIVRAISON', 'CGV', 'MISE_EN_DEMEURE']
 			})
 		);
 		expect(q.score).toBe(1);
@@ -125,7 +119,13 @@ describe('signaux de contestation — le risque produit numéro un', () => {
 	it('écarte l’éligibilité dès qu’un signal est présent, même sur un score élevé', () => {
 		const q = qualifier(
 			elements({
-				piecesFournies: ['FACTURE', 'BON_DE_COMMANDE', 'BON_DE_LIVRAISON', 'CGV', 'MISE_EN_DEMEURE'],
+				piecesFournies: [
+					'FACTURE',
+					'BON_DE_COMMANDE',
+					'BON_DE_LIVRAISON',
+					'CGV',
+					'MISE_EN_DEMEURE'
+				],
 				signauxContestation: ['LITIGE_DANS_ECHANGES']
 			})
 		);
@@ -193,11 +193,30 @@ describe('pièces manquantes', () => {
 	});
 });
 
-describe('seuil', () => {
-	it('n’éligibilise pas sous le seuil, même sans risque ni inconnue', () => {
-		// Une facture seule vaut 0,6. Le seuil est plus haut : la créance part
-		// en relance amiable, pas en procédure.
-		expect(SEUIL_QUALIFICATION).toBeGreaterThan(0.6);
-		expect(qualifier(elements()).eligible).toBe(false);
+describe('la maturité, et ce que le score n’en dit plus', () => {
+	it('tient une facture seule pour mûre, et la dit fragile en preuve', () => {
+		// ⚠️ LA PRÉMISSE DE CE TEST A ÉTÉ RETIRÉE LE 17 SEPTEMBRE 2026. Il vérifiait
+		// qu'une créance sous le seuil n'était PAS éligible, « même sans risque ni
+		// inconnue » — c'est-à-dire qu'un seuil produit fermait un état juridique.
+		// Une créance mûre, c'est toutes conditions établies et aucun bloquant.
+		//
+		// Le score, lui, reste, et il reste bas : une facture seule vaut 0,6, sous
+		// l'hypothèse de calibrage de 0,75. Elle est recevable en droit ET fragile
+		// en preuve, et les deux se disent maintenant séparément au lieu que le
+		// second fasse taire le premier.
+		const q = qualifier(elements());
+
+		expect(q.eligible).toBe(true);
+		expect(q.score).toBeLessThan(SEUIL_QUALIFICATION);
+		expect(q.piecesManquantes).toContain('BON_DE_COMMANDE');
+		expect(q.piecesManquantes).toContain('BON_DE_LIVRAISON');
+
+		// ⚠️ ET CE QUI RESTE DU VERROU RESTE ENTIER : `unknown` ne compte jamais
+		// comme établie, et une contestation éteint la maturité, quel que soit le
+		// score. Le doute ne profite toujours pas au produit.
+		expect(qualifier(elements({ entreCommercants: 'unknown' })).eligible).toBe(false);
+		expect(qualifier(elements({ signauxContestation: ['RECLAMATION_ANTERIEURE'] })).eligible).toBe(
+			false
+		);
 	});
 });
