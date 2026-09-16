@@ -352,8 +352,11 @@ function niveauxDepuisElements(elements: ElementsRelance): NiveauAffiche[] {
 			disponible: relance.disponible,
 			objet: relance.disponible ? relance.objet : undefined,
 			corps: relance.disponible ? relance.corps : undefined,
+			peutFaire: relance.disponible ? undefined : relance.peutFaire,
 			constat: relance.disponible ? undefined : relance.constat,
-			blocages: relance.disponible ? undefined : [...relance.blocages]
+			blocages: relance.disponible ? undefined : [...relance.blocages],
+			coutDeLAttente: relance.disponible ? undefined : relance.coutDeLAttente,
+			geste: relance.disponible ? undefined : relance.geste
 		};
 	});
 }
@@ -441,9 +444,22 @@ const RELANCES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements({
 	santeDebiteur: 'INCONNUE'
 });
 
-/** La variante « suspendues » : les relances dans la santé de la famille. */
+/**
+ * La variante « sans décompte » : le seul refus du module qui se lève d'un
+ * geste, et donc le seul endroit où la rangée « Arrêter le décompte » se voit.
+ * Sans elle, les quatre parties du refus de niveau 2 ne se regardaient nulle
+ * part avant la production.
+ */
+const RELANCES_SANS_DECOMPTE_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements({
+	...ELEMENTS_RELANCE_DEMO,
+	decompte: undefined,
+	santeDebiteur: 'INCONNUE'
+});
+
+/** Les variantes de la page : relances suspendues, et niveau 2 sans décompte arrêté. */
 const FORMES_RELANCES_DEMO: Readonly<Record<string, readonly NiveauAffiche[]>> = {
-	suspendues: RELANCES_SUSPENDUES_DEMO
+	suspendues: RELANCES_SUSPENDUES_DEMO,
+	'sans-decompte': RELANCES_SANS_DECOMPTE_DEMO
 };
 
 /** Les risques de la page : ceux de la qualification de la famille, donc la procédure collective seule. */

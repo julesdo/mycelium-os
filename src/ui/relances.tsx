@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Button, Surface } from '@cladd-ui/react';
 import { CheckIcon, CopyIcon, InfoIcon, LockIcon } from 'lucide-react';
+import { BoutonSecondaire } from './bouton';
+import { Lien } from './lien';
 import { cn } from './cn';
 
 /**
@@ -34,6 +36,18 @@ import { cn } from './cn';
  *
  * C'est la même règle que les procédures indisponibles : « un écran qui
  * masquerait L.126 laisserait croire qu'elle n'existe pas ».
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ET UN REFUS SE DIT EN QUATRE PARTIES, DANS CET ORDRE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Ce que le produit PEUT faire tout de suite, puis ce qui manque, puis ce qui
+ * le lève, puis ce que l'attente coûte. La carte portait les deux du milieu ;
+ * elle porte maintenant les quatre, et le geste quand il en existe un.
+ *
+ * L'ordre est la moitié du travail. Un refus qui commence par ce qui manque
+ * est un mur même quand la sortie est écrite dessous, parce que le lecteur a
+ * déjà décidé que le produit ne savait pas faire.
  */
 
 export interface NiveauAffiche {
@@ -44,12 +58,30 @@ export interface NiveauAffiche {
 	/** Le brouillon, quand il existe. */
 	readonly objet?: string;
 	readonly corps?: string;
-	/** Pourquoi il n'y en a pas. Un constat, jamais une consigne. */
+	/**
+	 * CE QUE LE PRODUIT FAIT TOUT DE SUITE, première des quatre parties d'un
+	 * refus. Elle passe AVANT le constat, et ce n'est pas un détail de mise en
+	 * page : un refus qui commence par ce qui manque est un mur, même quand la
+	 * solution est écrite deux paragraphes plus bas.
+	 */
+	readonly peutFaire?: string;
+	/** Pourquoi il n'y en a pas, et ce qui le lève. Un constat, jamais une consigne. */
 	readonly constat?: string;
 	readonly blocages?: readonly string[];
+	/** Ce que l'attente coûte, en euros quand c'est chiffrable. */
+	readonly coutDeLAttente?: string;
+	/** Le geste qui lève ce refus, quand le produit en porte un. */
+	readonly geste?: string;
 }
 
-export function Relances({ niveaux }: { niveaux: readonly NiveauAffiche[] }) {
+export function Relances({
+	niveaux,
+	identifiant
+}: {
+	niveaux: readonly NiveauAffiche[];
+	/** La créance : le seul geste proposé mène à SON décompte. */
+	identifiant: string;
+}) {
 	// ⚠️ RIEN N'EST OUVERT AU DÉPART, ET C'EST UNE MESURE, PAS UN GOÛT.
 	//
 	// La première version dépliait le niveau disponible pour rendre service. Au
@@ -111,6 +143,15 @@ export function Relances({ niveaux }: { niveaux: readonly NiveauAffiche[] }) {
 						</p>
 					) : null}
 
+					{/* ⚠️ CE QU'ON PEUT FAIRE PASSE EN PREMIER, ET C'EST LA RÈGLE, PAS
+					    UN GOÛT DE MISE EN PAGE. Un refus dont la première ligne dit ce
+					    qui manque est un mur : le lecteur a déjà refermé la carte quand
+					    arrive la sortie. Le niveau de texte le dit aussi — cette ligne
+					    est la seule des quatre en `fg-soft` plein. */}
+					{!niveau.disponible && niveau.peutFaire ? (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg">{niveau.peutFaire}</p>
+					) : null}
+
 					{/* Le motif du blocage, NOMMÉ. « Indisponible » sans raison laisse
 					    croire à une limite du produit, alors qu'il s'agit d'une valeur
 					    juridique qui manque. */}
@@ -122,6 +163,33 @@ export function Relances({ niveaux }: { niveaux: readonly NiveauAffiche[] }) {
 							{blocage}
 						</p>
 					))}
+
+					{/* Ce que l'attente coûte. Chiffré quand le domaine sait le chiffrer,
+					    et déclaré non chiffrable sinon — jamais tu. */}
+					{!niveau.disponible && niveau.coutDeLAttente ? (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+							{niveau.coutDeLAttente}
+						</p>
+					) : null}
+
+					{/* Le seul refus du module qui se lève d'un geste porte ce geste,
+					    ici, à côté de sa raison. Les autres n'en ont pas, et une rangée
+					    vide vaut mieux qu'un bouton qui ne lèverait rien. */}
+					{!niveau.disponible && niveau.geste === 'ARRETER_DECOMPTE' ? (
+						<div className="flex flex-wrap gap-cladd-3xs">
+							<BoutonSecondaire
+								as={Lien}
+								to="/app/creance/$id/decompte"
+								// ⚠️ UNE ASSERTION, ET LA MÊME QUE DANS `veilleur.tsx`. `as`
+								// efface le générique du routeur, donc le typage des paramètres
+								// avec lui ; la DESTINATION reste vérifiée contre l'arbre des
+								// routes, ici et par `__tests__/destinations-existent.test.ts`.
+								params={{ id: identifiant } as never}
+							>
+								Arrêter le décompte
+							</BoutonSecondaire>
+						</div>
+					) : null}
 
 					{niveau.disponible && ouvert === niveau.niveau && niveau.corps ? (
 						<Brouillon objet={niveau.objet ?? ''} corps={niveau.corps} />

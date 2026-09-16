@@ -127,6 +127,39 @@ describe('contrôle de complétude', () => {
 		expect(controle.complet).toBe(false);
 		expect(controle.abandons.map((a) => a.nature)).toContain('INTERETS_INEXPLIQUES');
 	});
+
+	it('CHIFFRE l’écart, au lieu de laisser un blanc à la place du montant', () => {
+		// ⚠️ CET ABANDON POSAIT `montantEnJeu: null`, alors que ses deux termes
+		// sont calculés dans la même boucle. Un abandon sans montant se lit comme
+		// une remarque de forme ; chiffré, il se lit comme ce qu'il est — de
+		// l'argent qui ne figurera pas dans l'acte, donc perdu.
+		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365');
+		const ligne = decompte.lignes[0]!;
+
+		// Sans aucune période, l'écart vaut la totalité des intérêts annoncés.
+		const sansPeriode = controlerDecompte({
+			decompte: { ...decompte, lignes: [{ ...ligne, segments: [] }] },
+			facturesConnues: [{ reference: 'F-001', montantExigible: depuisEuros('10000,00') }]
+		});
+		const inexplique = sansPeriode.abandons.find((a) => a.nature === 'INTERETS_INEXPLIQUES')!;
+		expect(inexplique.montantEnJeu).not.toBeNull();
+		expect(versEuros(inexplique.montantEnJeu!)).toBe(versEuros(ligne.interets));
+		// Et il entre dans le total abandonné, qui n'est plus amputé de cette ligne.
+		expect(versEuros(sansPeriode.montantAbandonne)).toBe(versEuros(ligne.interets));
+
+		// Dans l'autre sens — des intérêts annoncés PLUS BAS que ce que les
+		// périodes justifient — c'est la part qu'on réclamerait en moins. La
+		// valeur absolue est le montant en jeu dans les deux cas.
+		const sousEvalues = controlerDecompte({
+			decompte: {
+				...decompte,
+				lignes: [{ ...ligne, interets: depuisEuros('0,00') }]
+			},
+			facturesConnues: [{ reference: 'F-001', montantExigible: depuisEuros('10000,00') }]
+		});
+		const inverse = sousEvalues.abandons.find((a) => a.nature === 'INTERETS_INEXPLIQUES')!;
+		expect(versEuros(inverse.montantEnJeu!)).toBe(versEuros(ligne.interets));
+	});
 });
 
 describe('exigerDecompteComplet — le refus', () => {

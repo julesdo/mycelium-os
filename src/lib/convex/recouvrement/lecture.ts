@@ -421,8 +421,20 @@ export const creanceComplete = authedQuery({
 				disponible: v.boolean(),
 				objet: v.optional(v.string()),
 				corps: v.optional(v.string()),
+				/**
+				 * LES QUATRE PARTIES D'UN REFUS (D0), quand il n'y a pas de brouillon.
+				 *
+				 * `peutFaire` d'abord — ce que le produit fait tout de suite —, puis
+				 * `constat` et `blocages` qui nomment ce qui manque et ce qui le
+				 * lève, puis `coutDeLAttente`. Optionnels ICI et requis dans le
+				 * domaine : un niveau disponible n'en porte aucun.
+				 */
+				peutFaire: v.optional(v.string()),
 				constat: v.optional(v.string()),
-				blocages: v.optional(v.array(v.string()))
+				blocages: v.optional(v.array(v.string())),
+				coutDeLAttente: v.optional(v.string()),
+				/** Le geste qui lève le refus, quand le produit en porte un. */
+				geste: v.optional(v.string())
 			})
 		)
 	}),
@@ -664,8 +676,11 @@ export const creanceComplete = authedQuery({
 					disponible: relance.disponible,
 					objet: relance.disponible ? relance.objet : undefined,
 					corps: relance.disponible ? relance.corps : undefined,
+					peutFaire: relance.disponible ? undefined : relance.peutFaire,
 					constat: relance.disponible ? undefined : relance.constat,
-					blocages: relance.disponible ? undefined : [...relance.blocages]
+					blocages: relance.disponible ? undefined : [...relance.blocages],
+					coutDeLAttente: relance.disponible ? undefined : relance.coutDeLAttente,
+					geste: relance.disponible ? undefined : relance.geste
 				};
 			}),
 			regimePrescriptionNote: regimePrescription(secteur).note
