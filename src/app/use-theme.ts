@@ -44,30 +44,35 @@ function souscrireAuSysteme(prevenir: () => void) {
 export const AMORCE_THEME = [
 	'(function(){try{',
 	`var c=localStorage.getItem('${CLE}');`,
-	`var t=(c==='light'||c==='dark')?c:(window.matchMedia('${SOMBRE_AU_SYSTEME}').matches?'dark':'light');`,
+	`var t=c==='light'?'light':c==='auto'?(window.matchMedia('${SOMBRE_AU_SYSTEME}').matches?'dark':'light'):'dark';`,
 	"var r=document.documentElement;r.classList.toggle('dark',t==='dark');r.classList.toggle('light',t==='light');",
 	'}catch(e){}})();'
 ].join('');
 
 /**
- * Automatique par défaut, sombre ou clair au choix, préférence persistée.
+ * Sombre par défaut, clair ou automatique au choix, préférence persistée.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ POURQUOI LE DÉFAUT N'EST PLUS « SOMBRE »
+ * ⚠️ POURQUOI LE DÉFAUT EST SOMBRE, ET LE RESTE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Le sombre en dur était justifié sur l'écran des réglages par un paragraphe
- * qui expliquait la décision au lieu d'aider — et qui contredisait le « tablette
- * d'abord » du projet. Un produit ouvert en 2026 sur un appareil qui porte déjà
- * un réglage clair/sombre n'a pas à en imposer un troisième : il le suit, et
- * laisse forcer l'un ou l'autre.
+ * « Automatique » a été le défaut pendant une journée, le 16 septembre 2026.
+ * Le regard au navigateur l'a retiré le jour même : LE THÈME CLAIR N'EXISTE
+ * PAS ENCORE. Les quatre classes `verre-*`, employées à 95 endroits, portent
+ * des couleurs sombres écrites en dur, et aucune règle `.light` ne les
+ * reprend. Mesuré sur la liste des débiteurs, en clair, à 375 px : le nom d'un
+ * débiteur et son montant tombent à 1,92:1, un titre de section à 1,24:1, une
+ * puce d'alerte à 1,10:1. Le minimum lisible est de 4,5:1.
  *
- * ⚠️ LES PRÉFÉRENCES DÉJÀ ENREGISTRÉES SONT CONSERVÉES. `dark` et `light`
- * restent des valeurs valides : qui avait choisi garde son choix, et seul
- * celui qui n'a jamais choisi passe à « Automatique ».
+ * Suivre le système revenait donc à servir une interface illisible à tout
+ * gérant dont l'appareil est en clair, sans qu'il ait rien demandé. Le défaut
+ * reste sombre tant que la palette claire n'est pas écrite.
+ *
+ * ⚠️ LES PRÉFÉRENCES DÉJÀ ENREGISTRÉES SONT CONSERVÉES. `auto` et `light`
+ * restent des valeurs valides : qui a choisi garde son choix.
  */
 export function useTheme() {
-	const [theme, setTheme] = usePreference<Theme>(CLE, 'auto', THEMES);
+	const [theme, setTheme] = usePreference<Theme>(CLE, 'dark', THEMES);
 
 	// `useSyncExternalStore` et non un effet : la requête média est un magasin
 	// externe et mutable. La lire dans un effet pour appeler `setState`

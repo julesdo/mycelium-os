@@ -123,3 +123,20 @@ Ce que l'agent des textes n'a PAS pu reprendre, et pourquoi. Aucun de ces points
 - `src/routes/-salle/onglets.tsx:57` recopie mot pour mot l'angle mort du délai d'opposition, et garde donc son « PAS ». La salle rend toujours ; la démonstration est seulement en retard d'un mot.
 - La ligne de blocage brute de la feuille d'une voie (« « mentionsObligatoiresInjonction » : … PIRE que pas de requête… ») n'est pas un défaut de forme : elle demande un motif en mots de gérant à côté de la `note` du paramètre, et la formulation touche au juridique. Voir la proposition ci-dessus, inchangée.
 - `src/lib/convex/__tests__/battementRecouvrement.test.ts` échoue avant ce travail comme après : il attend `AUTH_EMAIL` dans la trace d'échec, et c'est `RESEND_API_KEY` qui manque en premier. Fixture d'échec accidentel, sans rapport avec les textes.
+
+## Regard du 16 septembre 2026, après les tranches 3, 4 et 5 et l'audit UX
+
+Ouvert dans la salle d'exposition : les 27 écrans et la palette, à 375, 768, 1023, 1024 et 1280 px, en sombre et en clair.
+
+**Corrigé dans la foulée**
+- `c0760b7` — Équipe, à 375 px : la colonne d'identité tombait à 42 px (37 px sur une invitation) pendant que les puces gardaient 198 px, parce qu'un `flex-1` part d'une base nulle. Base de 16 rem, puces à la ligne, bouton d'actions de 36 × 48 à 48 × 48 px.
+- `4bf34cf` — « Oui » et « Non » du litige et du créancier mesuraient 43,9 px de large. Plancher à 48.
+- Le thème : « Automatique » avait été fait défaut le matin même, le sombre le redevient (voir ci-dessous).
+
+**Ouvert, et qui demande une décision**
+
+1. **Le thème clair n'existe pas.** Les quatre classes `verre-*`, employées à 95 endroits, portent des couleurs sombres écrites en dur, et `app.css` ne contient aucune règle `.light`. Mesuré sur la liste des débiteurs, en clair, à 375 px : nom du débiteur et montant à 1,92:1, titre de section à 1,24:1, puce ambre « 4 échues » à 1,10:1, là où il faut 4,5:1. Tant que la palette claire n'est pas écrite, l'écran des réglages propose un choix qui casse l'interface : soit on écrit la palette, soit on retire « Clair » et « Automatique ».
+2. **Le marque-page de la recherche est tronqué à 768 px** exactement (133 px disponibles, 261 nécessaires), sur tous les écrans. Raccourcir le texte est un arbitrage de formulation.
+3. **`surveillance.ts` sort encore des dates ISO** et un « PRESCRITE » en capitales dans des constats lus par le gérant (lignes 310, 341, 342, 417). Le balayage des textes du domaine ne l'a pas couvert ; il touche des tests.
+4. **Le glyphe du cercle de dépôt**, sur l'import, porte la même encre que le titre sur un fond plus sombre : c'est l'élément le moins lisible de l'écran.
+5. Une ligne secondaire de la palette est tronquée à 375 px : 271 px disponibles pour 280 nécessaires.
