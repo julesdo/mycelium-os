@@ -1,5 +1,6 @@
 import { depuisCentimes, versEuros, type Montant } from '../../socle/montants';
 import { PARAMETRES, exiger } from './parametres';
+import { dateLisible } from './calendrier';
 import type { ConventionJours } from './decompte';
 
 /**
@@ -191,30 +192,15 @@ function horsDecompte(abandons: readonly AbandonFige[]): string[] {
 			abandon.montantEnJeu === null
 				? 'montant non chiffrable en l’état'
 				: `${euros(abandon.montantEnJeu)} en jeu`;
-		return `${abandon.reference} — ${pesee}. ${abandon.explication}`;
+		return `${abandon.reference} : ${pesee}. ${abandon.explication}`;
 	});
 }
 
 /**
- * La date telle qu'un lecteur français la lit.
- *
- * ⚠️ SEULEMENT DANS LE TITRE. Les périodes d'intérêts restent en ISO : elles se
- * lisent en colonne, se trient, et un tiers qui refait le calcul y cherche des
- * bornes non ambiguës — pas une jolie phrase.
+ * ⚠️ `dateLisible` SEULEMENT DANS LE TITRE. Les périodes d'intérêts restent en
+ * ISO : elles se lisent en colonne, se trient, et un tiers qui refait le calcul
+ * y cherche des bornes non ambiguës, pas une jolie phrase.
  */
-const DATE_LONGUE = new Intl.DateTimeFormat('fr-FR', {
-	day: 'numeric',
-	month: 'long',
-	year: 'numeric',
-	timeZone: 'UTC'
-});
-
-function dateLisible(iso: string): string {
-	const [annee, mois, jour] = iso.split('-').map(Number);
-	if (annee === undefined || mois === undefined || jour === undefined) return iso;
-	return DATE_LONGUE.format(new Date(Date.UTC(annee, mois - 1, jour)));
-}
-
 export function composerPiece(decompte: DecompteFige): Piece {
 	return {
 		titre: `Décompte de créance arrêté au ${dateLisible(decompte.arreteAu)}`,
@@ -256,14 +242,14 @@ export function composerPiece(decompte: DecompteFige): Piece {
 		// d'article n'est écrit dans ce fichier, et un test le fait respecter en
 		// relevant les articles cités pour les confronter au registre.
 		fondements: [
-			`Intérêts de retard — ${PARAMETRES.tauxInteretLegalDefaut.source}.`,
+			`Intérêts de retard : ${PARAMETRES.tauxInteretLegalDefaut.source}.`,
 			// `depuisCentimes`, et surtout PAS un cast. Le type branché n'est pas une
 			// formalité : c'est lui qui garantit qu'aucun `number` ni aucun bigint
 			// non marqué n'entre dans la chaîne monétaire. Un `as unknown as Montant`
 			// ici rouvrirait la porte que tout le socle ferme.
 			`Indemnité forfaitaire de recouvrement, ${euros(
 				depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire))
-			)} par facture — ${PARAMETRES.indemniteForfaitaire.source}.`
+			)} par facture : ${PARAMETRES.indemniteForfaitaire.source}.`
 		],
 
 		horsDecompte: horsDecompte(decompte.abandons),

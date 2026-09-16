@@ -1,4 +1,5 @@
 import { fraction, type Fraction } from '../../socle/montants';
+import { dateLisible } from './calendrier';
 import { plancherContractuel } from './pays/france/taux';
 
 /**
@@ -146,8 +147,9 @@ export function controlerTauxContractuel(taux: Fraction, aLaDate: string): Contr
 			// l'autre sens — c'est le constat qui porte l'incertitude.
 			sousLePlancher: false,
 			constat:
-				`Le taux de ${enPourcentage(taux)} est enregistré. Le plancher légal applicable au ` +
-				`${aLaDate} n’est pas relevé dans le référentiel : ce taux n’a donc PAS été contrôlé.`
+				`Le taux de ${enPourcentage(taux)} est enregistré. Le plancher légal applicable le ` +
+				`${dateLisible(aLaDate)} n’est pas relevé dans le référentiel : ce taux n’a donc pas ` +
+				`été contrôlé.`
 		};
 	}
 
@@ -168,9 +170,9 @@ export function controlerTauxContractuel(taux: Fraction, aLaDate: string): Contr
 				// ses conditions générales, et la conséquence juridique d'un taux trop
 				// bas n'a été validée par personne. Ligne rouge 3.
 				`Le taux déclaré, ${enPourcentage(taux)}, est inférieur au plancher de ` +
-				`${enPourcentage(plancher)} constaté au ${aLaDate} — trois fois le taux d’intérêt ` +
-				'légal des « autres cas ». Le taux est enregistré tel que vous l’avez déclaré.'
+				`${enPourcentage(plancher)} constaté le ${dateLisible(aLaDate)} : trois fois le taux ` +
+				'd’intérêt légal des « autres cas ». Le taux est enregistré tel que vous l’avez déclaré.'
 			: `Le taux de ${enPourcentage(taux)} est au-dessus du plancher de ` +
-				`${enPourcentage(plancher)} constaté au ${aLaDate}.`
+				`${enPourcentage(plancher)} constaté le ${dateLisible(aLaDate)}.`
 	};
 }

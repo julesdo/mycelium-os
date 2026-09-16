@@ -181,7 +181,7 @@ describe('ce que la lecture en rend', () => {
 				reference: 'BL-2024-118',
 				dateDocument: '2026-02-14',
 				reserves: null,
-				constat: 'Ce document est un bon de livraison, n° BL-2024-118, du 2026-02-14.'
+				constat: 'Ce document est un bon de livraison, n° BL-2024-118, du 14 février 2026.'
 			});
 
 			const piece = await t.run(async (ctx) => (await ctx.db.get(pieceId))!);

@@ -66,6 +66,33 @@ export function estDateReelle(date: string): boolean {
 	return true;
 }
 
+/**
+ * La date telle qu'un gérant la lit, et NULLE PART AILLEURS.
+ *
+ * ⚠️ ELLE NE REMPLACE JAMAIS L'ISO DANS LES DONNÉES. Les bornes d'une période
+ * d'intérêts, les dates stockées et celles qui se trient restent en
+ * `AAAA-MM-JJ` : un tiers qui refait le calcul y cherche des bornes non
+ * ambiguës, pas une jolie phrase. Cette fonction ne sert qu'au dernier mètre,
+ * celui de la phrase montrée.
+ *
+ * ELLE NE LÈVE PAS, et ne corrige rien. Une chaîne qui ne désigne pas un jour
+ * réel ressort telle quelle : un « 30 février » venu d'un OCR doit rester
+ * visible tel qu'il a été lu, et surtout pas être roulé sur le 2 mars par un
+ * `Date` complaisant.
+ */
+const DATE_LONGUE = new Intl.DateTimeFormat('fr-FR', {
+	day: 'numeric',
+	month: 'long',
+	year: 'numeric',
+	timeZone: 'UTC'
+});
+
+export function dateLisible(date: string): string {
+	if (!estDateReelle(date)) return date;
+	const { annee, mois, jour } = decomposer(date);
+	return DATE_LONGUE.format(new Date(Date.UTC(annee, mois - 1, jour)));
+}
+
 function decomposer(date: string): { annee: number; mois: number; jour: number } {
 	if (!estDateReelle(date)) {
 		throw new Error(
