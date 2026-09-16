@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Chip, Input, Select, Surface } from '@cladd-ui/react';
+import { Button, Chip, Input, Select, Surface } from '@cladd-ui/react';
+import { FileTextIcon } from 'lucide-react';
 import {
 	RechercheRegistre,
 	type EtatRecherche,
@@ -69,6 +70,24 @@ import { dateCourte } from './format';
  * ⚠️ ET LE CONSTAT VIENT DU SERVEUR, MOT POUR MOT. Un taux sous le plancher
  * légal est ENREGISTRÉ tel quel : relever d'office un taux jugé trop bas
  * serait écrire une conséquence juridique que personne n'a validée.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * ⚠️ LE TAUX LU SUR UNE PIÈCE SE PROPOSE, IL NE S'APPLIQUE JAMAIS SEUL
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * La lecture d'une pièce relève le taux stipulé dans des conditions générales
+ * ou un contrat. Ce chiffre remontait jusqu'au constat affiché sous la pièce et
+ * mourait là : le champ ci-dessous restait vide, et le créancier retombait sur
+ * le taux légal. Le produit SOUS-RÉCLAMAIT, ce qui est l'inverse exact de sa
+ * raison d'être.
+ *
+ * Il arrive maintenant jusqu'ici, et il y arrive en PROPOSITION. L'écrire
+ * d'office serait le contraire d'un service : la mutation qui le pose réécrit
+ * TOUTES les factures non soldées du débiteur, et elle enregistre même sous le
+ * plancher légal, délibérément. Un taux mal lu par un modèle ferait donc baisser
+ * en silence ce qu'on réclame sur tout un client. La rangée cite la pièce d'où
+ * il vient et attend un doigt, comme le registre propose un SIREN sans le
+ * retenir.
  */
 
 export interface OptionSecteur {
@@ -76,6 +95,16 @@ export interface OptionSecteur {
 	readonly libelle: string;
 	/** Ce que ce secteur change, en clair. Vient du registre. */
 	readonly consequence: string;
+}
+
+/** Un taux de retard relevé sur une pièce déposée, et la pièce qui le porte. */
+export interface PropositionTaux {
+	/** Le taux lu, en pourcentage saisissable : « 12,50 ». */
+	readonly pourcentage: string;
+	/** Le nom du fichier déposé, tel quel. C'est lui qu'on rouvre pour vérifier. */
+	readonly piece: string;
+	/** Le numéro imprimé sur cette pièce, quand elle en porte un. */
+	readonly reference?: string;
 }
 
 export function IdentiteDebiteur({
@@ -91,6 +120,7 @@ export function IdentiteDebiteur({
 	onEnregistrerSiren,
 	onChoisirSecteur,
 	tauxContractuel,
+	propositionTaux,
 	constatTaux,
 	onEnregistrerTaux
 }: {
@@ -111,13 +141,13 @@ export function IdentiteDebiteur({
 	onChoisirSecteur: (cle: string) => void;
 	/** Le taux stipulé en vigueur, en pourcentage saisissable. */
 	tauxContractuel: string | undefined;
+	/** Le taux relevé sur une pièce déposée. `null` quand aucune n'en porte. */
+	propositionTaux: PropositionTaux | null;
 	/** Ce que le serveur a répondu au dernier enregistrement. Affiché tel quel. */
 	constatTaux: string | null;
 	/** `null` retire la stipulation et fait retomber sur le taux légal. */
 	onEnregistrerTaux: (pourcentage: string | null) => void;
 }) {
-	const [taux, setTaux] = useState(tauxContractuel ?? '');
-
 	return (
 		<div className="flex flex-col gap-cladd-2xs">
 			{/*
@@ -166,27 +196,146 @@ export function IdentiteDebiteur({
 					'Secteur à préciser'}
 			</Select>
 
-			<div className="flex flex-col gap-1">
-				<Input
-					size="lg"
-					value={taux}
-					onChange={setTaux}
-					// Sur `blur` et pas à la frappe : ce taux touche TOUTES les factures
-					// non soldées du débiteur. Enregistrer à chaque caractère écrirait
-					// « 1 », puis « 12 », puis « 12,4 » avant d'arriver au bon.
-					onBlur={() => onEnregistrerTaux(taux.trim() === '' ? null : taux.trim())}
-					placeholder="Taux de retard stipulé"
-					inputMode="decimal"
-					suffix={<span className="mr-2 text-cladd-fg-softer">%</span>}
-					infoMessage="Celui de vos conditions générales. Vide = taux légal, BCE majoré de dix points."
+			<div className="flex flex-col gap-cladd-3xs">
+				{/* LE TAUX LU SUR UNE PIÈCE, AU-DESSUS DU CHAMP ET JAMAIS DEDANS. Le
+				    pré-remplir donnerait à croire qu'il est enregistré, et il suffirait
+				    alors de ne rien faire pour qu'il le devienne. */}
+				{propositionTaux === null ? null : (
+					<TauxLuSurUnePiece
+						proposition={propositionTaux}
+						enVigueur={propositionTaux.pourcentage === tauxContractuel}
+						onRetenir={() => onEnregistrerTaux(propositionTaux.pourcentage)}
+					/>
+				)}
+
+				{/*
+				  ⚠️ LA `key` PORTE LE TAUX EN VIGUEUR, et c'est ce qui fait que le
+				  champ suit ce que le serveur a retenu. Sa valeur est un état local,
+				  donc elle ne bougeait plus après le premier rendu : le taux retenu
+				  d'un doigt sur la rangée ci-dessus s'enregistrait sans que le champ
+				  le montre, et le créancier le croyait perdu. Remettre à zéro par une
+				  `key` plutôt que de poser l'état dans un effet, comme la règle React
+				  du projet le demande.
+				*/}
+				<ChampTauxStipule
+					key={tauxContractuel ?? ''}
+					tauxContractuel={tauxContractuel}
+					constatTaux={constatTaux}
+					onEnregistrerTaux={onEnregistrerTaux}
 				/>
-				{/* Le constat du serveur, tel quel : il dit si le taux passe sous le
-				    plancher légal et combien vaut ce plancher, pour que le créancier
-				    refasse le calcul plutôt que de nous croire. L'écran ne le récrit pas. */}
-				{constatTaux ? (
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{constatTaux}</p>
-				) : null}
 			</div>
+		</div>
+	);
+}
+
+/**
+ * LE TAUX RELEVÉ SUR UNE PIÈCE — une proposition qui cite sa source.
+ *
+ * ⚠️ TROIS CHOSES SE DISENT ICI, ET AUCUNE N'EST DÉCORATIVE : le chiffre lu, la
+ * pièce d'où il vient — parce qu'un taux qu'on ne peut pas retrouver ne se
+ * vérifie pas — et ce que le retenir déclenche. La mutation touche TOUTES les
+ * factures non soldées du débiteur : le taire ferait signer un geste plus large
+ * que ce que le bouton laisse croire.
+ */
+function TauxLuSurUnePiece({
+	proposition,
+	enVigueur,
+	onRetenir
+}: {
+	proposition: PropositionTaux;
+	/** Vrai quand ce taux est déjà celui qui s'applique : il n'y a plus rien à retenir. */
+	enVigueur: boolean;
+	onRetenir: () => void;
+}) {
+	return (
+		<Surface
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
+			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+		>
+			<div className="flex items-start gap-cladd-3xs">
+				<FileTextIcon size={18} className="mt-0.5 shrink-0 text-cladd-fg-softer" aria-hidden />
+				<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+					<span className="text-cladd-xs font-medium">
+						Un taux de retard de {proposition.pourcentage} % est stipulé
+					</span>
+					{/* LA PIÈCE ET SON NUMÉRO, POUR QU'ON PUISSE ALLER RELIRE LA CLAUSE. */}
+					<span className="text-cladd-2xs break-words text-cladd-fg-softest">
+						Lu dans « {proposition.piece} »
+						{proposition.reference === undefined ? '' : `, n° ${proposition.reference}`}
+					</span>
+				</div>
+			</div>
+
+			{enVigueur ? (
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					C’est déjà le taux appliqué aux factures non soldées de ce client.
+				</p>
+			) : (
+				<>
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						Rien n’est enregistré tant que vous ne l’avez pas retenu. Il s’appliquera alors à toutes
+						les factures non soldées de ce client, et à aucune de celles qui sont réglées.
+					</p>
+					{/* ⚠️ `min-h-12` : 48 px, le plancher tactile du projet. Le geste est
+					    secondaire — l'action principale de cet écran est de constituer une
+					    créance — donc une pilule de verre, pas la pilule blanche. */}
+					<Button
+						size="sm"
+						variant="transparent"
+						outline={false}
+						hoverable={false}
+						className="verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
+						onClick={onRetenir}
+					>
+						Retenir {proposition.pourcentage} %
+					</Button>
+				</>
+			)}
+		</Surface>
+	);
+}
+
+/**
+ * LE CHAMP DE SAISIE DU TAUX, et le constat que le serveur rend.
+ *
+ * Il vit dans son propre composant pour une seule raison : sa valeur est un
+ * état local, et une `key` posée par le parent est la façon dont ce projet
+ * remet un état à zéro. Voir la note à l'appel.
+ */
+function ChampTauxStipule({
+	tauxContractuel,
+	constatTaux,
+	onEnregistrerTaux
+}: {
+	tauxContractuel: string | undefined;
+	constatTaux: string | null;
+	onEnregistrerTaux: (pourcentage: string | null) => void;
+}) {
+	const [taux, setTaux] = useState(tauxContractuel ?? '');
+
+	return (
+		<div className="flex flex-col gap-1">
+			<Input
+				size="lg"
+				value={taux}
+				onChange={setTaux}
+				// Sur `blur` et pas à la frappe : ce taux touche TOUTES les factures
+				// non soldées du débiteur. Enregistrer à chaque caractère écrirait
+				// « 1 », puis « 12 », puis « 12,4 » avant d'arriver au bon.
+				onBlur={() => onEnregistrerTaux(taux.trim() === '' ? null : taux.trim())}
+				placeholder="Taux de retard stipulé"
+				inputMode="decimal"
+				suffix={<span className="mr-2 text-cladd-fg-softer">%</span>}
+				infoMessage="Celui de vos conditions générales. Vide = taux légal, BCE majoré de dix points."
+			/>
+			{/* Le constat du serveur, tel quel : il dit si le taux passe sous le
+			    plancher légal et combien vaut ce plancher, pour que le créancier
+			    refasse le calcul plutôt que de nous croire. L'écran ne le récrit pas. */}
+			{constatTaux ? (
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{constatTaux}</p>
+			) : null}
 		</div>
 	);
 }

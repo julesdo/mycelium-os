@@ -181,6 +181,7 @@ describe('ce que la lecture en rend', () => {
 				reference: 'BL-2024-118',
 				dateDocument: '2026-02-14',
 				reserves: null,
+				tauxRetardStipule: null,
 				constat: 'Ce document est un bon de livraison, n° BL-2024-118, du 14 février 2026.'
 			});
 
@@ -204,6 +205,7 @@ describe('ce que la lecture en rend', () => {
 				reference: null,
 				dateDocument: null,
 				reserves: null,
+				tauxRetardStipule: null,
 				constat: 'Ce document n’a pas pu être lu.'
 			});
 
@@ -230,6 +232,7 @@ describe('ce que la lecture en rend', () => {
 				reference: 'BL-2024-118',
 				dateDocument: '2026-02-14',
 				reserves: 'Deux colis manquants, signalés à la livraison.',
+				tauxRetardStipule: null,
 				constat: 'Une réserve y est portée.'
 			});
 
@@ -308,6 +311,7 @@ describe('ce que la pièce change au dossier', () => {
 				reference: 'BL-2024-118',
 				dateDocument: '2026-02-14',
 				reserves: null,
+				tauxRetardStipule: null,
 				constat: 'Ce document est un bon de livraison.'
 			});
 

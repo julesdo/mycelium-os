@@ -415,7 +415,16 @@ const PIECES_DEMO: readonly PieceDemo[] = [
 		_id: 'demo-piece-conditions',
 		debiteurId: PRINCIPAL_DEMO._id,
 		filename: 'conditions-generales.pdf',
-		lecture: { ...RIEN_RELEVE_DEMO, type: 'CONTRAT', date: '2025-09-01' },
+		// Le taux stipulé est relevé sur ce document parce que `lirePreuve` ne le
+		// rend que depuis des conditions générales ou un contrat. Il reste une
+		// proposition : la fiche du débiteur le montre avec la pièce qui le porte,
+		// et rien ne s'applique aux factures avant un appui.
+		lecture: {
+			...RIEN_RELEVE_DEMO,
+			type: 'CONTRAT',
+			date: '2025-09-01',
+			tauxRetardPourcent: 12.5
+		},
 		classeeEn: 'CGV',
 		ajouteeLe: Date.parse('2026-06-15T10:30:00Z')
 	},
@@ -660,6 +669,7 @@ function pieceEnBase(piece: PieceDemo): PieceListee {
 		reference: lue.reference ?? undefined,
 		dateDocument: lue.date ?? undefined,
 		reserves: lue.reserves ?? undefined,
+		tauxRetardStipule: lue.tauxRetardPourcent ?? undefined,
 		constat: lue.constat
 	};
 
