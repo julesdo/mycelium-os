@@ -41,7 +41,8 @@ export function EcranRelances({
 				retour: {
 					vers: '/app/creance/$id',
 					parametres: { id: identifiant },
-					libelle: pret?.debiteur ?? 'Créance'
+					libelle: pret?.debiteur ?? 'Créance',
+					masqueEnVolets: true
 				},
 				titre: 'Ce que vous pouvez lui écrire',
 				sousTitre: 'Des brouillons, à envoyer depuis votre messagerie.'

@@ -1,15 +1,6 @@
 import type { ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
+import { ListButton, ListItem, SectionTitle, Segmented, SegmentedButton } from '@cladd-ui/react';
 import {
-	Button,
-	ListButton,
-	Surface,
-	SectionTitle,
-	Segmented,
-	SegmentedButton
-} from '@cladd-ui/react';
-import {
-	ChevronRightIcon,
 	CreditCardIcon,
 	DatabaseIcon,
 	LogOutIcon,
@@ -20,60 +11,18 @@ import {
 	ReceiptTextIcon
 } from 'lucide-react';
 import type { Theme } from '../../app/use-theme';
-import { CarteListe, LigneAnalyse, ListeAnalyses, PageEcran, type Lecture } from '../../ui';
+import {
+	LigneAnalyse,
+	ListeAnalyses,
+	MaitreDetail,
+	PageEcran,
+	useDeuxVolets,
+	type Lecture
+} from '../../ui';
 import type { EtatCritere } from './creancier';
 
-/**
- * LES TROIS ÉCRANS QU'ON ATTEINT PAR LES RÉGLAGES.
- *
- * Table plutôt que trois blocs recopiés : c'est ce qui garantit qu'ils
- * gardent la même forme, et qu'en ajouter un quatrième ne demande pas de se
- * souvenir de la géométrie des trois autres.
- */
-const AILLEURS = [
-	{
-		to: '/app/abonnement' as const,
-		titre: 'Votre abonnement',
-		aide: 'Votre offre dépend du nombre de factures que vous émettez chaque année.',
-		Icone: CreditCardIcon
-	},
-	{
-		to: '/app/equipe' as const,
-		titre: 'Votre équipe',
-		aide: 'Celui qui dépose les factures et celui qui décide sont rarement la même personne.',
-		Icone: UsersIcon
-	},
-	{
-		to: '/app/donnees' as const,
-		titre: 'Vos données',
-		aide: 'Ce que nous détenons, en clair. À emporter, ou à effacer définitivement.',
-		Icone: DatabaseIcon
-	}
-];
-
-/**
- * Une section de réglages, dans sa carte.
- *
- * Les sections étaient séparées par des filets et de grands vides. Sur un écran
- * qui en compte trois, ça se lit comme une page qui n'a pas fini de charger :
- * une carte par sujet dit d'un coup d'œil combien il y en a, et où l'un
- * s'arrête.
- */
-function Reglage({ titre, children }: { titre: string; children: ReactNode }) {
-	return (
-		<section className="flex flex-col gap-cladd-3xs">
-			<SectionTitle>{titre}</SectionTitle>
-			<Surface
-				variant="transparent"
-				outline={false}
-				className="verre-carte rounded-cladd-xl"
-				contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
-			>
-				{children}
-			</Surface>
-		</section>
-	);
-}
+/** Les cinq sections des réglages, chacune une route de la mise en page `_reglages`. */
+export type SectionReglages = 'etablissement' | 'creancier' | 'abonnement' | 'equipe' | 'donnees';
 
 /** Ce que l'écran affiche : l'établissement, le profil du créancier, le thème, et les deux gestes que la route pilote. */
 export interface ReglagesAffiches {
@@ -86,135 +35,154 @@ export interface ReglagesAffiches {
 	readonly onSeDeconnecter: () => void;
 }
 
-export function EcranReglages({ donnees }: { donnees: Lecture<ReglagesAffiches> }) {
+/**
+ * LES RÉGLAGES : LES SECTIONS À GAUCHE, LA SECTION OUVERTE À DROITE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ON N'OUVRE PAS LES RÉGLAGES POUR REMPLIR UN FORMULAIRE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * On les ouvre pour ATTEINDRE quelque chose. La liste dit ce qui est réglé, et
+ * surtout ce qui NE L'EST PAS ; la section règle. Les deux formulaires vivaient
+ * dépliés ici : celui du créancier mesure à lui seul 2,99 écrans de défilement
+ * à 375 px.
+ *
+ * ⚠️ LA VALEUR D'UNE RANGÉE EST L'ÉTAT DU RÉGLAGE, PAS SON NOM. « SIREN
+ * manquant » sur la rangée du créancier se voit sans entrer, et c'est
+ * précisément le champ qui bloque toute procédure.
+ *
+ * ⚠️ APPARENCE ET SE DÉCONNECTER N'OUVRENT RIEN. Deux thèmes ne méritent ni une
+ * route ni une moitié d'écran : ils se choisissent sur la rangée. Et la
+ * déconnexion est un geste, sans valeur ni chevron.
+ */
+export function EcranReglages({
+	donnees,
+	detail,
+	sectionOuverte
+}: {
+	donnees: Lecture<ReglagesAffiches>;
+	/** La section rendue à droite (l'`Outlet` de la mise en page), ou `null` en erreur. */
+	detail: ReactNode;
+	/** La section que l'adresse nomme, ou `null` sur `/app/parametres`. */
+	sectionOuverte: SectionReglages | null;
+}) {
+	// Avant tout retour anticipé : un crochet appelé sous condition change d'ordre d'un rendu à l'autre.
+	const deuxVolets = useDeuxVolets();
+	const detailOuvert = sectionOuverte !== null;
+	/**
+	 * ⚠️ SUR `/app/parametres`, LE VOLET DROIT MONTRE L'ÉTABLISSEMENT, et sa rangée
+	 * ne s'allume qu'en deux volets : sous 1024 px, la section est montée mais
+	 * masquée, et l'anneau désignerait ce que personne ne voit.
+	 */
+	const selectionnee = sectionOuverte ?? (deuxVolets ? 'etablissement' : null);
 	const entete = { genre: 'onglet', titre: 'Réglages' } as const;
 
 	if (donnees.etat !== 'pret') {
-		return <PageEcran entete={entete} etat={donnees.etat} />;
+		return (
+			<MaitreDetail
+				maitre={<PageEcran entete={entete} etat={donnees.etat} />}
+				detail={detail}
+				detailOuvert={detailOuvert}
+			/>
+		);
 	}
 
 	const { org, profil, theme, onChoisirTheme, onSeDeconnecter } = donnees.valeur;
 
 	return (
-		<PageEcran entete={{ ...entete, sousTitre: 'Votre établissement et votre compte.' }}>
-			<div className="flex flex-col gap-cladd-2xs">
-				{/*
-				  ═════════════════════════════════════════════════════════════════
-				  ⚠️ LES DEUX FORMULAIRES SONT PARTIS SUR LEURS PAGES
-				  ═════════════════════════════════════════════════════════════════
+		<MaitreDetail
+			detail={detail}
+			detailOuvert={detailOuvert}
+			maitre={
+				<PageEcran entete={entete}>
+					<section className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Recouvrement</SectionTitle>
+						<ListeAnalyses>
+							<LigneAnalyse
+								vers="/app/parametres/etablissement"
+								icone={<Building2Icon />}
+								titre="Votre établissement"
+								valeur={org?.name ?? 'À renseigner'}
+								attention={!org?.siret}
+								selectionnee={selectionnee === 'etablissement'}
+							/>
+							<LigneAnalyse
+								vers="/app/parametres/creancier"
+								icone={<ReceiptTextIcon />}
+								titre="Votre entreprise sur un décompte"
+								valeur={
+									!profil?.siren
+										? 'SIREN manquant'
+										: profil.estCommercant === 'unknown'
+											? 'À compléter'
+											: 'Renseigné'
+								}
+								attention={!profil?.siren || profil.estCommercant === 'unknown'}
+								selectionnee={selectionnee === 'creancier'}
+							/>
+						</ListeAnalyses>
+					</section>
 
-				  Ils vivaient dépliés ici, en même temps, et faisaient l'essentiel de
-				  la hauteur de l'écran : celui du créancier mesure à lui seul 2,99
-				  écrans de défilement à 375 px.
-
-				  On n'ouvre pas les réglages pour remplir un formulaire, on les ouvre
-				  pour ATTEINDRE quelque chose. La liste dit ce qui est réglé — et
-				  surtout ce qui NE L'EST PAS —, la page règle.
-
-				  ⚠️ LA VALEUR DE CHAQUE RANGÉE EST L'ÉTAT DU RÉGLAGE, pas son nom.
-				  « SIREN manquant » sur la rangée du créancier se voit sans entrer,
-				  et c'est précisément le champ qui bloque toute procédure.
-				*/}
-				<section className="flex flex-col gap-cladd-3xs">
-					<SectionTitle>Votre établissement</SectionTitle>
-					<ListeAnalyses>
-						<LigneAnalyse
-							vers="/app/parametres/etablissement"
-							icone={<Building2Icon />}
-							titre="Identité et volume"
-							precision="Nom, SIREN, factures par an"
-							valeur={org?.name ?? 'À renseigner'}
-							attention={!org?.siret}
-						/>
-						<LigneAnalyse
-							vers="/app/parametres/creancier"
-							icone={<ReceiptTextIcon />}
-							titre="Votre entreprise sur un décompte"
-							precision="Ce qui sera cité sur les pièces"
-							valeur={
-								!profil?.siren
-									? 'SIREN manquant'
-									: profil.estCommercant === 'unknown'
-										? 'À compléter'
-										: 'Renseigné'
-							}
-							attention={!profil?.siren || profil.estCommercant === 'unknown'}
-						/>
-					</ListeAnalyses>
-				</section>
-
-				<Reglage titre="Apparence">
 					{/*
-					  ⚠️ CE TEXTE DISAIT L'INVERSE DE LA VÉRITÉ. Il affirmait que
-					  « l'affichage clair est le réglage par défaut », alors que le
-					  défaut est passé au sombre. Personne ne l'avait vu parce qu'un
-					  texte d'interface ne casse aucun test — c'est la même famille de
-					  défaut que le logo qui illustrait une verticale supprimée.
+					  L'abonnement, l'équipe et les données entrent par ici plutôt que par
+					  trois onglets de plus : ce sont des écrans qu'on ouvre deux fois par
+					  an, et chaque dizaine de pixels que la barre prend en hauteur est une
+					  rangée en moins sur une tablette en paysage.
 					*/}
-					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						Le sombre est le réglage par défaut : on passe des heures sur cet écran, assis, devant
-						un écran de bureau. Le clair reste servi et entretenu, pour qui travaille près
-						d&rsquo;une fenêtre ou imprime ses décomptes.
-					</p>
-					{/* Deux états exclusifs : c'est un `Segmented`, pas un bouton qui
-					    annonce la bascule. « Passer en sombre » oblige à déduire l'état
-					    courant depuis l'action proposée, ce qui se lit à l'envers. */}
-					<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
-						<SegmentedButton active={theme === 'dark'} onClick={() => onChoisirTheme('dark')}>
-							<MoonIcon />
-							Sombre
-						</SegmentedButton>
-						<SegmentedButton active={theme === 'light'} onClick={() => onChoisirTheme('light')}>
-							<SunIcon />
-							Clair
-						</SegmentedButton>
-					</Segmented>
-				</Reglage>
+					<section className="flex flex-col gap-cladd-3xs">
+						<SectionTitle>Compte</SectionTitle>
+						<ListeAnalyses>
+							<LigneAnalyse
+								vers="/app/abonnement"
+								icone={<CreditCardIcon />}
+								titre="Abonnement"
+								selectionnee={selectionnee === 'abonnement'}
+							/>
+							<LigneAnalyse
+								vers="/app/equipe"
+								icone={<UsersIcon />}
+								titre="Équipe"
+								selectionnee={selectionnee === 'equipe'}
+							/>
+							<LigneAnalyse
+								vers="/app/donnees"
+								icone={<DatabaseIcon />}
+								titre="Vos données"
+								selectionnee={selectionnee === 'donnees'}
+							/>
+						</ListeAnalyses>
+					</section>
 
-				{/*
-				  ═════════════════════════════════════════════════════════════════
-				  LES TROIS AILLEURS, EN TROIS RANGÉES — ET PLUS EN TROIS CARTES
-				  ═════════════════════════════════════════════════════════════════
-
-				  L'abonnement, l'équipe et les données entrent par ici plutôt que par
-				  trois onglets de plus : ce sont des écrans qu'on ouvre deux fois par
-				  an, et chaque dizaine de pixels que la barre prend en hauteur est une
-				  rangée de cartes en moins sur une tablette en paysage.
-
-				  ⚠️ MAIS CHACUN AVAIT SA CARTE, SON TITRE, SON PARAGRAPHE ET SON
-				  BOUTON. Trois blocs de cent-soixante pixels pour ce qui est, en
-				  vérité, trois LIENS. Mesuré sur un téléphone, ça repoussait la
-				  déconnexion à un écran et demi de défilement.
-
-				  Une carte, trois rangées. L'explication descend en sous-titre : elle
-				  reste lisible, elle cesse d'être un paragraphe. C'est le motif de
-				  tous les écrans de réglages relevés.
-				*/}
-				<section className="flex flex-col gap-cladd-3xs">
-					<SectionTitle>Aller plus loin</SectionTitle>
-					<CarteListe>
-						{AILLEURS.map(({ to, titre, aide, Icone }) => (
-							<ListButton
-								key={to}
-								as={Link}
-								to={to}
-								icon={<Icone />}
-								footer={aide}
-								after={<ChevronRightIcon size={16} className="shrink-0 text-cladd-fg-softest" />}
-							>
-								{titre}
-							</ListButton>
-						))}
-					</CarteListe>
-				</section>
-
-				<Reglage titre="Votre compte">
-					<Button className="self-start" onClick={onSeDeconnecter}>
-						<LogOutIcon />
-						Se déconnecter
-					</Button>
-				</Reglage>
-			</div>
-		</PageEcran>
+					<ListeAnalyses>
+						{/* Deux états exclusifs : c'est un `Segmented`, pas un bouton qui
+						    annonce la bascule. « Passer en sombre » oblige à déduire l'état
+						    courant depuis l'action proposée, ce qui se lit à l'envers. */}
+						<ListItem>
+							<span className="text-cladd-fg-soft">Apparence</span>
+							<Segmented className="ml-auto" activeColor="neutral" activeVariant="solid">
+								<SegmentedButton active={theme === 'dark'} onClick={() => onChoisirTheme('dark')}>
+									<MoonIcon />
+									Sombre
+								</SegmentedButton>
+								<SegmentedButton active={theme === 'light'} onClick={() => onChoisirTheme('light')}>
+									<SunIcon />
+									Clair
+								</SegmentedButton>
+							</Segmented>
+						</ListItem>
+						{/* La rangée du kit, sans chevron : elle ne pousse aucune page. Même
+						    apparence que les rangées de `ListeAnalyses`. */}
+						<ListButton
+							icon={<LogOutIcon />}
+							className="verre-bouton"
+							hoverable={false}
+							onClick={onSeDeconnecter}
+						>
+							Se déconnecter
+						</ListButton>
+					</ListeAnalyses>
+				</PageEcran>
+			}
+		/>
 	);
 }

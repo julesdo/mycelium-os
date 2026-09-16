@@ -110,7 +110,7 @@ export function EcranEtablissement({ donnees }: { donnees: Lecture<Etablissement
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/parametres', libelle: 'Réglages' },
+				retour: { vers: '/app/parametres', libelle: 'Réglages', masqueEnVolets: true },
 				titre: 'Votre établissement',
 				sousTitre: pret?.nom
 			}}

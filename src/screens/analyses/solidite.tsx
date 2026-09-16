@@ -43,7 +43,8 @@ export function EcranSolidite({
 				retour: {
 					vers: '/app/creance/$id',
 					parametres: { id: identifiant },
-					libelle: pret?.debiteur ?? 'Créance'
+					libelle: pret?.debiteur ?? 'Créance',
+					masqueEnVolets: true
 				},
 				// Pas de sous-titre : la carte porte déjà le compte, en toutes lettres
 				// ET en fraction. Le répéter en en-tête fait lire trois fois la même

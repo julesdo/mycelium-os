@@ -8,6 +8,7 @@ import {
 import { EcranInviter, type InvitationAffichee } from '../../screens/equipe/inviter';
 import { FACTURATION_DEMO, planEffectif } from './abonnement';
 import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
+import { AvecLesReglages } from './reglages';
 
 /**
  * LES ENTRÉES DE LA FAMILLE, DÉCLARÉES AVANT TOUT CE QUI S'EN CALCULE.
@@ -139,7 +140,7 @@ function equipeDe({ membres, facturation }: FormeEquipe): ComponentProps<typeof 
 
 /**
  * La page d'invitation, composée comme sa route la compose
- * (`src/routes/app/equipe_.inviter.tsx`), sur les mêmes lectures que l'équipe.
+ * (`src/routes/app/_reglages.equipe_.inviter.tsx`), sur les mêmes lectures que l'équipe.
  */
 function invitationDe(forme: FormeEquipe): InvitationAffichee {
 	const { invitations, estAdmin, siegesUtilises, siegesAutorises } = equipeDe(forme);
@@ -154,25 +155,33 @@ function invitationDe(forme: FormeEquipe): InvitationAffichee {
 
 export const ECRANS_EQUIPE: readonly EcranDuProduit[] = [
 	{
-		route: '/app/equipe',
+		route: '/app/_reglages/equipe',
 		libelle: 'équipe',
 		vide: false,
 		variantes: Object.keys(FORMES_EQUIPE_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const forme = formeDemo(variante, EQUIPE_DEMO, FORMES_EQUIPE_DEMO);
-			return <EcranEquipe donnees={lectureDemo(etat, equipeDe(forme))} />;
+			return (
+				<AvecLesReglages section="equipe">
+					<EcranEquipe donnees={lectureDemo(etat, equipeDe(forme))} />
+				</AvecLesReglages>
+			);
 		}
 	},
 	{
-		route: '/app/equipe_/inviter',
+		route: '/app/_reglages/equipe_/inviter',
 		libelle: 'inviter',
 		vide: false,
 		variantes: Object.keys(FORMES_EQUIPE_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const forme = formeDemo(variante, EQUIPE_DEMO, FORMES_EQUIPE_DEMO);
-			return <EcranInviter donnees={lectureDemo(etat, invitationDe(forme))} />;
+			return (
+				<AvecLesReglages section="equipe">
+					<EcranInviter donnees={lectureDemo(etat, invitationDe(forme))} />
+				</AvecLesReglages>
+			);
 		}
 	}
 ];

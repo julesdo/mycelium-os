@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranAbonnement } from '../../screens/abonnement/abonnement';
 
-export const Route = createFileRoute('/app/abonnement')({
+export const Route = createFileRoute('/app/_reglages/abonnement')({
 	component: Abonnement,
 	errorComponent: AbonnementEnErreur
 });

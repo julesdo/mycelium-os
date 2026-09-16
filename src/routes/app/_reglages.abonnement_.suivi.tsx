@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranSuiviOffre } from '../../screens/abonnement/suivi';
 
-export const Route = createFileRoute('/app/abonnement_/suivi')({
+export const Route = createFileRoute('/app/_reglages/abonnement_/suivi')({
 	component: PageSuivi,
 	errorComponent: SuiviOffreEnErreur
 });

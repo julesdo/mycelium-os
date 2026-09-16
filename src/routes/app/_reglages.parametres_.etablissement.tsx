@@ -3,12 +3,13 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranEtablissement } from '../../screens/parametres/etablissement';
 
-export const Route = createFileRoute('/app/parametres_/etablissement')({
+export const Route = createFileRoute('/app/_reglages/parametres_/etablissement')({
 	component: PageEtablissement,
 	errorComponent: EtablissementEnErreur
 });
 
-function EtablissementEnErreur() {
+/** Exportée avec `PageEtablissement` : `/app/parametres` rend la même section par défaut. */
+export function EtablissementEnErreur() {
 	return <EcranEtablissement donnees={{ etat: 'erreur' }} />;
 }
 
@@ -23,7 +24,7 @@ function EtablissementEnErreur() {
  * ⚠️ ET LA `key` SUR L'IDENTIFIANT RESTE. C'est elle qui réinitialise les champs
  * quand le gérant change d'établissement, sans effet de synchronisation.
  */
-function PageEtablissement() {
+export function PageEtablissement() {
 	const org = useQuery(api.organizations.getMyOrg, {});
 	const mettreAJour = useMutation(api.organizations.updateOrganization);
 

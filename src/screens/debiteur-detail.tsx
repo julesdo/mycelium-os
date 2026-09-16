@@ -361,6 +361,9 @@ export function DetailDebiteur({
 				<LigneAnalyse
 					vers="/app/debiteurs/$id/pieces"
 					parametres={{ id: debiteurId }}
+					// `true` garde la recherche courante, `?d=` compris : sans elle, la
+					// page ouverte perdait le débiteur choisi dans la liste de gauche.
+					recherche={true}
 					icone={<FileTextIcon />}
 					titre="Les pièces du dossier"
 					precision={aClasser > 0 ? `${aClasser} à classer` : undefined}
@@ -377,6 +380,7 @@ export function DetailDebiteur({
 					<LigneAnalyse
 						vers="/app/debiteurs/$id/habitude"
 						parametres={{ id: debiteurId }}
+						recherche={true}
 						icone={<HistoryIcon />}
 						titre="Comment il paie d’habitude"
 						precision={

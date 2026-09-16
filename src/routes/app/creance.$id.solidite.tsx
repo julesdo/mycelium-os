@@ -2,33 +2,33 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { EcranRelances } from '../../screens/analyses/relances';
+import { EcranSolidite } from '../../screens/analyses/solidite';
 
-export const Route = createFileRoute('/app/creance_/$id/relances')({
-	component: PageRelances,
-	errorComponent: RelancesEnErreur
+export const Route = createFileRoute('/app/creance/$id/solidite')({
+	component: PageSolidite,
+	errorComponent: SoliditeEnErreur
 });
 
-function RelancesEnErreur() {
+function SoliditeEnErreur() {
 	const { id } = Route.useParams();
-	return <EcranRelances identifiant={id} donnees={{ etat: 'erreur' }} />;
+	return <EcranSolidite identifiant={id} donnees={{ etat: 'erreur' }} />;
 }
 
 /**
- * Branchée sur la base ; le dessin vit dans `screens/analyses/relances.tsx`.
+ * Branchée sur la base ; le dessin vit dans `screens/analyses/solidite.tsx`.
  */
-function PageRelances() {
+function PageSolidite() {
 	const { id } = Route.useParams();
 	const creanceId = id as Id<'creances'>;
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
 
 	return (
-		<EcranRelances
+		<EcranSolidite
 			identifiant={id}
 			donnees={
 				creance === undefined
 					? { etat: 'attente' }
-					: { etat: 'pret', valeur: { debiteur: creance.debiteur, niveaux: creance.relances } }
+					: { etat: 'pret', valeur: { debiteur: creance.debiteur, solidite: creance.solidite } }
 			}
 		/>
 	);

@@ -9,7 +9,7 @@ import {
 } from '../../screens/equipe/equipe';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 
-export const Route = createFileRoute('/app/equipe')({
+export const Route = createFileRoute('/app/_reglages/equipe')({
 	component: PageEquipe,
 	errorComponent: EquipeEnErreur
 });

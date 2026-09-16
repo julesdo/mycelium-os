@@ -1,26 +1,30 @@
 import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisCentimes } from '../../lib/socle/montants';
 import { EcranDecompte } from '../../screens/analyses/decompte';
 
-export const Route = createFileRoute('/app/creance_/$id/decompte')({
+export const Route = createFileRoute('/app/creance/$id/decompte')({
 	component: PageDecompte,
 	errorComponent: DecompteEnErreur
 });
 
 function DecompteEnErreur() {
-	const { id } = Route.useParams();
+	const { id } = useParams({ from: '/app/creance/$id' });
 	return <EcranDecompte identifiant={id} donnees={{ etat: 'erreur' }} />;
 }
 
 /**
  * Branchée sur la base ; le dessin vit dans `screens/analyses/decompte.tsx`.
+ *
+ * ⚠️ EXPORTÉE, ET ELLE LIT LES PARAMÈTRES DE LA CRÉANCE, PAS LES SIENS. L'index
+ * de la créance (`creance.$id.index.tsx`) la rend comme analyse par défaut, hors
+ * de son propre appariement : `Route.useParams()` y lèverait « Invariant failed ».
  */
-function PageDecompte() {
-	const { id } = Route.useParams();
+export function PageDecompte() {
+	const { id } = useParams({ from: '/app/creance/$id' });
 	const creanceId = id as Id<'creances'>;
 
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });

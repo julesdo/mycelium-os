@@ -84,7 +84,15 @@ interface ContenuRangee {
 }
 
 /** Les fentes du kit, remplies à l'identique pour les deux rangées. */
-function apparenceRangee({ valeur, precision, icone, attention = false }: ContenuRangee) {
+function apparenceRangee(
+	{ valeur, precision, icone, attention = false }: ContenuRangee,
+	/**
+	 * Vrai quand la rangée sert de maître : à partir de 1024 px, elle ouvre le
+	 * volet voisin au lieu de pousser une page, et son chevron promettrait ce
+	 * qu'elle ne fait pas.
+	 */
+	dansUnMaitre = false
+) {
 	return {
 		icon: icone,
 		footer: precision,
@@ -100,7 +108,10 @@ function apparenceRangee({ valeur, precision, icone, attention = false }: Conten
 						{valeur}
 					</span>
 				)}
-				<ChevronRightIcon className="size-4 shrink-0 text-cladd-fg-softest" aria-hidden />
+				<ChevronRightIcon
+					className={cn('size-4 shrink-0 text-cladd-fg-softest', dansUnMaitre && 'lg:hidden')}
+					aria-hidden
+				/>
 			</span>
 		),
 		className: 'verre-bouton',
@@ -126,8 +137,19 @@ export function LigneAnalyse({
 	vers,
 	recherche,
 	parametres,
+	selectionnee,
 	...contenu
 }: ContenuRangee & {
+	/**
+	 * La rangée dont le détail est ouvert dans le volet voisin : l'anneau
+	 * `selected` du kit.
+	 *
+	 * ⚠️ DÉFINIE, VRAIE OU FAUSSE, ELLE DIT QUE LA LISTE SERT DE MAÎTRE, et le
+	 * chevron disparaît à partir de 1024 px : un chevron et un anneau sur la même
+	 * rangée diraient « ouvre une page » et « est déjà ouverte ». Absente, la
+	 * rangée pousse une page à toutes les largeurs.
+	 */
+	selectionnee?: boolean;
 	/**
 	 * La route de la page de détail.
 	 *
@@ -167,7 +189,8 @@ export function LigneAnalyse({
 			// Même raisonnement que `params` : le `as` polymorphe efface le générique
 			// du routeur, et la prop de CE composant reste, elle, typée par lui.
 			search={recherche as never}
-			{...apparenceRangee(contenu)}
+			selected={selectionnee}
+			{...apparenceRangee(contenu, selectionnee !== undefined)}
 		>
 			{intituleRangee(contenu)}
 		</ListButton>
@@ -220,6 +243,7 @@ export function EnteteDetail({
 	retourParametres,
 	retourRecherche,
 	retourLibelle,
+	retourMasqueEnVolets = false,
 	titre,
 	sousTitre
 }: {
@@ -235,6 +259,8 @@ export function EnteteDetail({
 	 */
 	retourRecherche?: LinkProps['search'];
 	retourLibelle: string;
+	/** Voir `RetourEcran.masqueEnVolets` : le lien passe en `lg:hidden`, rien d'autre. */
+	retourMasqueEnVolets?: boolean;
 	titre: string;
 	sousTitre?: string;
 }) {
@@ -249,7 +275,10 @@ export function EnteteDetail({
 				// commande la plus utilisée de toute page poussée. À 44 px, il restait la
 				// plus petite cible de chacune, sous le plancher. Mesuré au navigateur,
 				// invisible partout ailleurs.
-				className="verre-bouton -ml-1.5 flex min-h-12 w-fit items-center gap-0.5 rounded-full pr-3 pl-1.5 text-cladd-xs text-cladd-fg-soft"
+				className={cn(
+					'verre-bouton -ml-1.5 flex min-h-12 w-fit items-center gap-0.5 rounded-full pr-3 pl-1.5 text-cladd-xs text-cladd-fg-soft',
+					retourMasqueEnVolets && 'lg:hidden'
+				)}
 			>
 				<ChevronLeftIcon className="size-4 shrink-0" aria-hidden />
 				{retourLibelle}

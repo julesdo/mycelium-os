@@ -1,26 +1,29 @@
 import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import type { ReponseFait } from '../../ui';
 import { EcranLitige } from '../../screens/analyses/litige';
 
-export const Route = createFileRoute('/app/creance_/$id/litige')({
+export const Route = createFileRoute('/app/creance/$id/litige')({
 	component: PageLitige,
 	errorComponent: LitigeEnErreur
 });
 
 function LitigeEnErreur() {
-	const { id } = Route.useParams();
+	const { id } = useParams({ from: '/app/creance/$id' });
 	return <EcranLitige identifiant={id} donnees={{ etat: 'erreur' }} />;
 }
 
 /**
  * Branchée sur la base ; le dessin vit dans `screens/analyses/litige.tsx`.
+ *
+ * ⚠️ EXPORTÉE, ET ELLE LIT LES PARAMÈTRES DE LA CRÉANCE, PAS LES SIENS : l'index
+ * de la créance la rend comme analyse par défaut. Voir `PageDecompte`.
  */
-function PageLitige() {
-	const { id } = Route.useParams();
+export function PageLitige() {
+	const { id } = useParams({ from: '/app/creance/$id' });
 	const creanceId = id as Id<'creances'>;
 
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });

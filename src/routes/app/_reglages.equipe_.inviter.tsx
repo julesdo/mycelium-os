@@ -3,7 +3,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranInviter } from '../../screens/equipe/inviter';
 
-export const Route = createFileRoute('/app/equipe_/inviter')({
+export const Route = createFileRoute('/app/_reglages/equipe_/inviter')({
 	component: PageInviter,
 	errorComponent: InviterEnErreur
 });

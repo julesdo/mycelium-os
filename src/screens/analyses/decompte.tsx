@@ -45,7 +45,8 @@ export function EcranDecompte({
 				retour: {
 					vers: '/app/creance/$id',
 					parametres: { id: identifiant },
-					libelle: pret?.debiteur ?? 'Créance'
+					libelle: pret?.debiteur ?? 'Créance',
+					masqueEnVolets: true
 				},
 				titre: 'Décompte',
 				// ⚠️ PAS DE SOUS-TITRE PENDANT L'ATTENTE. Il disait « Aucun décompte

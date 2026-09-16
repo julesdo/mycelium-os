@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Chip, ListButton } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
@@ -6,6 +6,7 @@ import {
 	Avatar,
 	BoutonPrincipal,
 	CarteListe,
+	MaitreDetail,
 	PageEcran,
 	eurosCentimes,
 	pluriel,
@@ -47,18 +48,45 @@ export interface DebiteursAffiches {
  * propriété de chaque facture, au même titre que son montant : la reléguer
  * ailleurs obligerait à croiser deux écrans pour savoir laquelle va s'éteindre.
  */
-export function EcranDebiteurs({ donnees }: { donnees: Lecture<DebiteursAffiches> }) {
+export function EcranDebiteurs({
+	donnees,
+	enfant
+}: {
+	donnees: Lecture<DebiteursAffiches>;
+	/**
+	 * La page du débiteur ouverte par segment (son habitude, ses pièces : l'`Outlet`
+	 * de la route), ou `null`. Elle REMPLACE sa fiche dans le volet droit, avec son
+	 * retour, parce que la fiche qu'elle quitte n'est plus visible. Pas de troisième
+	 * colonne : elle ne tient pas à 1280 px.
+	 */
+	enfant: ReactNode;
+}) {
 	const entete = { genre: 'onglet', titre: 'Vos débiteurs' } as const;
+
+	/**
+	 * ⚠️ UNE PAGE OUVERTE PASSE PAR `MaitreDetail`, JAMAIS PAR `TwoPane`. Celui-ci
+	 * rend sa preuve deux fois (volet et feuille) : l'`Outlet` y serait monté deux
+	 * fois, avec ses requêtes et ses dépôts en cours.
+	 */
+	const avecLaPage = (liste: ReactNode) =>
+		enfant === null ? liste : <MaitreDetail maitre={liste} detail={enfant} detailOuvert />;
 
 	if (donnees.etat !== 'pret') {
 		// `disposition="volets"` : l'attente se dessine déjà en deux volets. Voir `PageEcran`.
-		return <PageEcran entete={entete} etat={donnees.etat} disposition="volets" />;
+		// Avec une page ouverte, c'est `MaitreDetail` qui porte les deux volets.
+		return avecLaPage(
+			<PageEcran
+				entete={entete}
+				etat={donnees.etat}
+				disposition={enfant === null ? 'volets' : 'colonne'}
+			/>
+		);
 	}
 
 	const { debiteurs, choisi, onOuvrir, onFermer, detail } = donnees.valeur;
 
 	if (debiteurs.length === 0) {
-		return (
+		return avecLaPage(
 			<PageEcran
 				entete={entete}
 				etat={{
@@ -106,56 +134,54 @@ export function EcranDebiteurs({ donnees }: { donnees: Lecture<DebiteursAffiches
 	 * couleur avant d'être lues. Sur un produit où se tromper de débiteur envoie
 	 * un décompte au mauvais tiers, ça compte.
 	 */
-	const liste = (
-		<div className="flex flex-col gap-cladd-3xs p-cladd-3xs">
-			<CarteListe titre={`${debiteurs.length} débiteur${pluriel(debiteurs.length)}`}>
-				{debiteurs.map((debiteur) => (
-					<ListButton
-						key={debiteur._id}
-						selected={choisi === debiteur._id}
-						onClick={() => onOuvrir(debiteur._id)}
-						icon={<Avatar nom={debiteur.denomination} />}
-						footer={
-							// Les puces en pied de ligne plutôt qu'en rangée séparée : elles
-							// qualifient le débiteur, elles ne sont pas une information de
-							// même niveau que son nom.
-							<span className="flex flex-wrap items-center gap-1.5">
-								{debiteur.facturesEchues > 0 ? (
-									<Chip size="sm" color="orange">
-										{debiteur.facturesEchues} échue{pluriel(debiteur.facturesEchues)}
-									</Chip>
-								) : null}
-								{debiteur.santeFinanciere !== 'SAINE' && debiteur.santeFinanciere !== 'INCONNUE' ? (
-									<Chip size="sm" color="red">
-										{debiteur.santeFinanciere === 'RADIEE' ? 'Radié' : 'Procédure collective'}
-									</Chip>
-								) : null}
-								{/* Un secteur indéterminé fait retenir le délai de prescription
+	const cartes = (
+		<CarteListe titre={`${debiteurs.length} débiteur${pluriel(debiteurs.length)}`}>
+			{debiteurs.map((debiteur) => (
+				<ListButton
+					key={debiteur._id}
+					selected={choisi === debiteur._id}
+					onClick={() => onOuvrir(debiteur._id)}
+					icon={<Avatar nom={debiteur.denomination} />}
+					footer={
+						// Les puces en pied de ligne plutôt qu'en rangée séparée : elles
+						// qualifient le débiteur, elles ne sont pas une information de
+						// même niveau que son nom.
+						<span className="flex flex-wrap items-center gap-1.5">
+							{debiteur.facturesEchues > 0 ? (
+								<Chip size="sm" color="orange">
+									{debiteur.facturesEchues} échue{pluriel(debiteur.facturesEchues)}
+								</Chip>
+							) : null}
+							{debiteur.santeFinanciere !== 'SAINE' && debiteur.santeFinanciere !== 'INCONNUE' ? (
+								<Chip size="sm" color="red">
+									{debiteur.santeFinanciere === 'RADIEE' ? 'Radié' : 'Procédure collective'}
+								</Chip>
+							) : null}
+							{/* Un secteur indéterminé fait retenir le délai de prescription
 								    le plus court. Le dire ici évite que le gérant découvre
 								    l'hypothèse au moment où une créance est annoncée prescrite. */}
-								{!debiteur.secteurDetermine ? (
-									<Chip size="sm" color="neutral">
-										Secteur à préciser
-									</Chip>
-								) : null}
-							</span>
-						}
-						after={
-							// L'encours reste la colonne qui commande la lecture — un gérant
-							// arbitre entre douze mille euros et trois cents, pas entre deux
-							// raisons sociales. Mais il descend du corps d'affiche au corps
-							// courant : dans une rangée, un chiffre de trente-deux pixels
-							// écrase le nom qu'il qualifie.
-							<span className="shrink-0 text-cladd-sm font-bold tabular-nums">
-								{eurosCentimes(debiteur.encours)}
-							</span>
-						}
-					>
-						{debiteur.denomination}
-					</ListButton>
-				))}
-			</CarteListe>
-		</div>
+							{!debiteur.secteurDetermine ? (
+								<Chip size="sm" color="neutral">
+									Secteur à préciser
+								</Chip>
+							) : null}
+						</span>
+					}
+					after={
+						// L'encours reste la colonne qui commande la lecture — un gérant
+						// arbitre entre douze mille euros et trois cents, pas entre deux
+						// raisons sociales. Mais il descend du corps d'affiche au corps
+						// courant : dans une rangée, un chiffre de trente-deux pixels
+						// écrase le nom qu'il qualifie.
+						<span className="shrink-0 text-cladd-sm font-bold tabular-nums">
+							{eurosCentimes(debiteur.encours)}
+						</span>
+					}
+				>
+					{debiteur.denomination}
+				</ListButton>
+			))}
+		</CarteListe>
 	);
 
 	/**
@@ -166,11 +192,17 @@ export function EcranDebiteurs({ donnees }: { donnees: Lecture<DebiteursAffiches
 	 * depuis la salle d’exposition, sans backend ni authentification. Ses
 	 * composants y étaient tous vérifiés un par un ; leur assemblage, jamais.
 	 */
+	const enteteListe = { ...entete, sousTitre: 'Le plus gros encours d’abord' };
+
+	if (enfant !== null) {
+		return avecLaPage(<PageEcran entete={enteteListe}>{cartes}</PageEcran>);
+	}
+
 	return (
 		<PageEcran
-			entete={{ ...entete, sousTitre: 'Le plus gros encours d’abord' }}
+			entete={enteteListe}
 			volets={{
-				liste,
+				liste: <div className="flex flex-col gap-cladd-3xs p-cladd-3xs">{cartes}</div>,
 				// Une clé par débiteur : sans elle, le taux tapé dans `IdentiteDebiteur`, le montant et la date tapés dans `Lettrage` resteraient sous le débiteur suivant, car la fiche ne repart de zéro qu’en se démontant le temps que ses factures et ses pièces chargent.
 				preuve: <DetailDebiteur key={detail.debiteurId} {...detail} />,
 				preuveOuverte: choisi !== null,

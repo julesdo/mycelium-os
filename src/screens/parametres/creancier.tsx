@@ -139,7 +139,7 @@ export function EcranCreancier({ donnees }: { donnees: Lecture<CreancierAffiche>
 		<PageEcran
 			entete={{
 				genre: 'poussee',
-				retour: { vers: '/app/parametres', libelle: 'Réglages' },
+				retour: { vers: '/app/parametres', libelle: 'Réglages', masqueEnVolets: true },
 				titre: 'Votre entreprise sur un décompte',
 				sousTitre: 'Ce qui sera cité sur les pièces qui partent chez un tiers.'
 			}}

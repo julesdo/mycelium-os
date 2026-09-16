@@ -13,6 +13,7 @@ import type { MembreEquipe } from '../../screens/equipe/equipe';
 import { ETABLISSEMENT_DEMO } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
 import { MEMBRES, MEMBRES_VUS_PAR_UN_MEMBRE, compteConnecte } from './equipe';
+import { AvecLesReglages } from './reglages';
 
 /**
  * LES ENTRÉES DE LA FAMILLE, DÉCLARÉES AVANT TOUT CE QUI S'EN CALCULE.
@@ -130,7 +131,7 @@ interface FormeExport {
 
 /**
  * La page d'export, composée comme sa route la compose
- * (`src/routes/app/donnees_.export.tsx`). L'inventaire n'y est jamais nul : la
+ * (`src/routes/app/_reglages.donnees_.export.tsx`). L'inventaire n'y est jamais nul : la
  * salle a un établissement.
  */
 function exportDe({ apercu, enCours, fichier }: FormeExport): ExportAffiche {
@@ -170,27 +171,37 @@ function suppressionDe(apercu: ApercuDonnees): SuppressionDeLEtablissement {
 
 export const ECRANS_DONNEES: readonly EcranDuProduit[] = [
 	{
-		route: '/app/donnees',
+		route: '/app/_reglages/donnees',
 		libelle: 'données',
 		vide: true,
 		variantes: Object.keys(FORMES_APERCU_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const apercu = formeDemo(variante, APERCU_DEMO, FORMES_APERCU_DEMO);
-			return <EcranDonnees donnees={lectureDemo(etat, apercu, null)} />;
+			return (
+				<AvecLesReglages section="donnees">
+					<EcranDonnees donnees={lectureDemo(etat, apercu, null)} />
+				</AvecLesReglages>
+			);
 		}
 	},
 	{
-		route: '/app/donnees_/export',
+		route: '/app/_reglages/donnees_/export',
 		libelle: 'export',
 		vide: false,
 		variantes: Object.keys(FORMES_EXPORT_DEMO),
 		Demo: ({ etat, variante }) => {
 			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 			const forme = formeDemo(variante, EXPORT_DEMO, FORMES_EXPORT_DEMO);
-			return <EcranExport donnees={lectureDemo(etat, exportDe(forme))} />;
+			return (
+				<AvecLesReglages section="donnees">
+					<EcranExport donnees={lectureDemo(etat, exportDe(forme))} />
+				</AvecLesReglages>
+			);
 		}
 	},
+	// Les deux suppressions restent HORS de la mise en page des réglages, pleine
+	// largeur : une confirmation destructrice se lit seule.
 	{
 		route: '/app/donnees_/supprimer-compte',
 		libelle: 'supprimer compte',

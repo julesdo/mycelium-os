@@ -35,6 +35,7 @@ export { Faisceau } from './faisceau';
 export { BoutonPrincipal, BoutonSecondaire } from './bouton';
 export { CompositionDue, type PartsDues } from './composition';
 export { TwoPane } from './two-pane';
+export { MaitreDetail, useDeuxVolets } from './maitre-detail';
 export { EmptyState } from './empty-state';
 export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
