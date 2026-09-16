@@ -12,7 +12,7 @@ Spec : `docs/superpowers/specs/2026-09-14-charpente-navigation-design.md`, § 4.
 
 ## État d'avancement (au 15 septembre 2026)
 
-Branche `chantier/charpente-tranche-2`. Les tâches 0 à 7 sont en production depuis le 15 septembre (`86dd55f`), poussées avant la fin de la tranche à la demande de Jules. Déploiement vérifié.
+Branche `chantier/charpente-tranche-2`, devenue la branche d'intégration du chantier. **Le chantier 2 est en production depuis le 16 septembre (`8c6380a`)** : les cinq tranches y sont. Chaque tranche a été vérifiée (types, lint, suite, construction), poussée seule, et son déploiement Vercel contrôlé.
 
 | Tâche | État |
 | --- | --- |
@@ -23,7 +23,21 @@ Branche `chantier/charpente-tranche-2`. Les tâches 0 à 7 sont en production de
 | 9 (les barrières) | **Retirée le 15 septembre à la demande de Jules**, qui refuse le surcroît de tests : la tâche n'écrivait que des tests. |
 | 10 (regarder, livrer, vérifier la production) | Réduite : une vérification (types, suite existante, lint, construction), une relecture, puis la poussée et un contrôle du statut Vercel. Le regard au navigateur des écrans des tâches 8 et 8 bis n'a pas eu lieu : le panneau demande une autorisation par page, et Jules était absent. |
 
-Les tranches 3, 4 et 5 sont lancées le 15 septembre en parallèle, chacune sur sa branche (`chantier/charpente-tranche-3`, `-4`, `-5`), avec un plan court écrit par la tranche elle-même dans `docs/superpowers/plans/2026-09-15-charpente-tranche-<n>.md`.
+Les tranches 3, 4 et 5 ont été menées en parallèle, chacune sur sa branche et avec son plan court
+(`docs/superpowers/plans/2026-09-15-charpente-tranche-<n>.md`), puis fusionnées dans l'ordre 5, 3, 4 :
+
+| Tranche | Fusion | Ce que sa relecture a trouvé |
+| --- | --- | --- |
+| 5, la recherche | `5f0a248` | Aucun bloquant. Trois notes corrigées (`b1113b8`) : le nom d'un débiteur écrit deux fois, Entrée qui ouvrait un résultat périmé, une échéance de démonstration contradictoire. |
+| 3, les deux volets | `152872a` | Deux bloquants, même cause, corrigés (`1e3906e`) : `useParams({ strict: false })` rend les paramètres de la route la plus proche, pas ceux de la feuille. Le bilan d'un dépôt ne s'ouvrait pas sous 1024 px, et la liste des débiteurs pouvait allumer un autre débiteur que celui du volet droit. |
+| 4, le retour | `8c6380a` | Un bloquant, corrigé dans la fusion : le titre de provenance, lu dans l'historique du navigateur, survit à la déconnexion et affichait le nom d'un débiteur de l'établissement précédent. La pastille ne le relit plus que sur une page prête. |
+
+La fusion des tranches 3 et 4 a demandé de résoudre treize zones sur huit fichiers : la structure maître-détail
+d'un côté, les libellés à source unique et le retour par l'historique de l'autre.
+
+**Ce qui n'a pas été fait :** le regard au navigateur, aux quatre largeurs, sur les écrans des tranches 3, 4 et 5.
+Le panneau intégré demande une autorisation par page, et Jules était absent. À faire à son retour, en suivant
+les points listés par chaque plan de tranche.
 
 Notes de travail à relire avant de reprendre : `docs/superpowers/notes/`. On y trouve les défauts relevés, les conceptions des tranches 3 à 5 et les synthèses de recherche.
 
