@@ -1,7 +1,14 @@
+import type { ModeDepot } from '../../screens/import/depots';
 import type { DepotAffiche } from '../../ui';
 
-/** Un dépôt de la salle, avec sa date de dépôt, que `listerImports` rend toujours. */
-export type DepotDemo = DepotAffiche & { readonly deposeLe: number };
+/**
+ * Un dépôt de la salle, avec ce que `listerImports` rend toujours en plus du
+ * bilan : sa date de dépôt, et le chemin par lequel il est passé.
+ */
+export type DepotDemo = DepotAffiche & {
+	readonly deposeLe: number;
+	readonly mode: ModeDepot;
+};
 
 /**
  * LES QUATRE ÉTATS D'UN DÉPÔT.
@@ -37,7 +44,8 @@ export const DEPOT_A_ECARTS_DEMO: DepotDemo = {
 			{ texte: 'l2', raison: 'Ligne 4310 : aucune date d’échéance, et aucun délai au contrat.' }
 		]
 	},
-	deposeLe: Date.parse('2026-09-09T08:12:00Z')
+	deposeLe: Date.parse('2026-09-09T08:12:00Z'),
+	mode: 'EXPORT_COMPTABLE'
 };
 
 export const DEPOT_PARFAIT_DEMO: DepotDemo = {
@@ -57,7 +65,8 @@ export const DEPOT_PARFAIT_DEMO: DepotDemo = {
 		ignoreesTotal: 0,
 		ignorees: []
 	},
-	deposeLe: Date.parse('2026-09-08T16:40:00Z')
+	deposeLe: Date.parse('2026-09-08T16:40:00Z'),
+	mode: 'EXPORT_COMPTABLE'
 };
 
 export const DEPOT_EN_COURS_DEMO: DepotDemo = {
@@ -65,7 +74,9 @@ export const DEPOT_EN_COURS_DEMO: DepotDemo = {
 	filename: 'FA-2026-0412.pdf',
 	statut: 'EN_COURS',
 	etape: 'Extraction des lignes par le modèle…',
-	deposeLe: Date.parse('2026-09-09T09:02:00Z')
+	deposeLe: Date.parse('2026-09-09T09:02:00Z'),
+	// Un PDF : c'est le dépôt que la rangée marque « Relue par le modèle ».
+	mode: 'FACTURE_DEPOSEE'
 };
 
 export const DEPOT_EN_ECHEC_DEMO: DepotDemo = {
@@ -73,7 +84,8 @@ export const DEPOT_EN_ECHEC_DEMO: DepotDemo = {
 	filename: 'scan-caisse.jpg',
 	statut: 'ECHOUE',
 	erreur: 'Le fichier n’est pas une facture de vente : aucun montant ni référence trouvés.',
-	deposeLe: Date.parse('2026-09-07T11:20:00Z')
+	deposeLe: Date.parse('2026-09-07T11:20:00Z'),
+	mode: 'FACTURE_DEPOSEE'
 };
 
 export const DEPOTS_DEMO: readonly DepotDemo[] = [

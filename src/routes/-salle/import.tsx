@@ -1,11 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { EcranDepot } from '../../screens/import/depot';
-import {
-	EcranImport,
-	type ImportAffiche,
-	type LigneDepot,
-	type ModeDepot
-} from '../../screens/import/depots';
+import { EcranImport, type ImportAffiche, type LigneDepot } from '../../screens/import/depots';
 import type { DepotAffiche } from '../../ui';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import {
@@ -35,6 +30,7 @@ const LIGNES_DEPOTS_DEMO: readonly LigneDepot[] = [...DEPOTS_DEMO]
 	.map((depot) => ({
 		_id: depot.id,
 		filename: depot.filename,
+		mode: depot.mode,
 		statut: depot.statut,
 		etape: depot.etape,
 		erreur: depot.erreur,
@@ -43,14 +39,12 @@ const LIGNES_DEPOTS_DEMO: readonly LigneDepot[] = [...DEPOTS_DEMO]
 	}));
 
 /**
- * L'import, avec le chemin choisi tenu comme la route le tient : on passe d'un
- * chemin à l'autre, et les formats écrits sous la zone suivent.
+ * L'import : une seule zone de dépôt, plus rien à choisir avant l'envoi. Le
+ * chemin se déduit du fichier (`modeDuFichier`), et la rangée de chaque dépôt
+ * dit après coup par où il est passé.
  */
 function ImportDemo({ etat }: { etat: EtatDemo }) {
-	const [mode, setMode] = useState<ModeDepot>('EXPORT_COMPTABLE');
 	const commun = {
-		mode,
-		onChoisirMode: setMode,
 		envoiEnCours: false,
 		erreur: null,
 		onDeposer: () => undefined
@@ -107,8 +101,6 @@ function AvecLesDepots({ depotId, children }: { depotId: string; children: React
 			depotOuvert={depotId}
 			donnees={lectureDemo<ImportAffiche>('pret', {
 				imports: LIGNES_DEPOTS_DEMO,
-				mode: 'EXPORT_COMPTABLE',
-				onChoisirMode: () => undefined,
 				envoiEnCours: false,
 				erreur: null,
 				onDeposer: () => undefined
