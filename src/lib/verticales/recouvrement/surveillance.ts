@@ -1,6 +1,6 @@
 import { ZERO, additionner, versEuros, type Montant } from '../../socle/montants';
 import { joursEntre } from './decompte';
-import { estDateReelle } from './calendrier';
+import { dateLisible, estDateReelle } from './calendrier';
 import { SEUIL_QUALIFICATION } from './scoring';
 import type { SanteDebiteur } from './scoring';
 import { pluriel } from '../../socle/francais';
@@ -307,7 +307,7 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			reference: facture.reference,
 			montant: facture.montantExigible,
 			urgence: 'NORMALE',
-			explication: `La facture ${facture.reference} est échue depuis le ${facture.dateEcheance} et reste due.`,
+			explication: `La facture ${facture.reference} est échue depuis le ${dateLisible(facture.dateEcheance)} et reste due.`,
 			action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.',
 			// La cible est le DEBITEUR : une facture n'a pas d'ecran a elle.
 			...(facture.debiteurId === undefined
@@ -338,8 +338,8 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			montant: facture.montantExigible,
 			urgence: 'CRITIQUE',
 			explication: eteinte
-				? `La facture ${facture.reference} est PRESCRITE depuis le ${facture.datePrescription}.`
-				: `La facture ${facture.reference} sera prescrite le ${facture.datePrescription}, dans ${restant} jour${pluriel(restant)}.`,
+				? `La facture ${facture.reference} est prescrite depuis le ${dateLisible(facture.datePrescription)}.`
+				: `La facture ${facture.reference} sera prescrite le ${dateLisible(facture.datePrescription)}, dans ${restant} jour${pluriel(restant)}.`,
 			// ⚠️ LIGNE ROUGE 3 : « On ne recommande jamais une procédure. Ce serait
 			// du conseil juridique. » Cette action disait littéralement « Engager une
 			// procédure avant le … », et le test qui gardait la règle ne regardait
@@ -413,8 +413,8 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				montant: dossier.montantEnJeu,
 				urgence: critique ? 'CRITIQUE' : 'HAUTE',
 				explication: depassee
-					? `${echeance.libelle} : la date limite du ${echeance.dateLimite} est DÉPASSÉE.`
-					: `${echeance.libelle} : il reste ${restant} jour${pluriel(restant)} avant le ${echeance.dateLimite}.`,
+					? `${echeance.libelle} : la date limite du ${dateLisible(echeance.dateLimite)} est DÉPASSÉE.`
+					: `${echeance.libelle} : il reste ${restant} jour${pluriel(restant)} avant le ${dateLisible(echeance.dateLimite)}.`,
 				// ⚠️ MÊME LIGNE ROUGE. « Faire signifier sans délai » est un impératif
 				// sur un acte de procédure. La perte est dite dans `explication` ; ici
 				// on ouvre un écran, ce qui est le seul geste que ce logiciel puisse

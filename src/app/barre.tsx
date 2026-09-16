@@ -239,8 +239,16 @@ function Recherche() {
 				}}
 			>
 				<SearchIcon aria-hidden className="shrink-0 text-cladd-fg-softer" />
+				{/*
+				 * ⚠️ LA PHRASE COMPLÈTE DEMANDE 261 px, ET LA PILULE N'EN OFFRE QUE 133
+				 * À 768 px. Elle s'y coupait au milieu de la référence, ce qui apprenait
+				 * le contraire de ce qu'elle est là pour apprendre : « FA-2026-03… » ne
+				 * ressemble plus à un numéro de facture. Sous 1024 px, on garde le seul
+				 * mot qui dise la fonction, entier ; au-dessus, l'exemple revient.
+				 */}
 				<span className="truncate text-cladd-xs font-normal text-cladd-fg-softer">
-					Rechercher « Durand, FA-2026-0311… »
+					<span className="lg:hidden">Rechercher</span>
+					<span className="hidden lg:inline">Rechercher « Durand, FA-2026-0311… »</span>
 				</span>
 			</Button>
 			<CatchBoundary

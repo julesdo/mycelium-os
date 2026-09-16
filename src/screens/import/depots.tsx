@@ -168,7 +168,28 @@ export function EcranImport({
 					libellePhoto="Photographier une facture"
 				>
 					<div className="flex flex-col items-center gap-cladd-3xs text-center">
-						<span className="verre flex size-cladd-lg items-center justify-center rounded-full">
+						{/*
+						 * ⚠️ CE DISQUE PORTAIT `verre`, ET LE GLYPHE L'ENCRE PLEINE DU TITRE.
+						 * Le verre du produit est écrit en dur en sombre : posé dans le creux
+						 * de la zone de dépôt, qui est lui-même du verre sombre dans les deux
+						 * thèmes, il donnait 2,03:1 en thème clair. L'élément le moins lisible
+						 * de l'écran était celui qui dit quoi faire.
+						 *
+						 * `bg-cladd-surface` suit le thème au lieu de le contredire, et l'encre
+						 * douce du kit tient le glyphe à sa place : une indication, pas un
+						 * second titre. Mesuré après : 6,3:1 en clair, 9,8:1 en sombre.
+						 *
+						 * L'anneau reprend ce que l'arête du verre faisait : en sombre, le
+						 * disque ne se détache du creux que de 1,18:1, et sans bord il n'y a
+						 * plus de disque du tout, seulement un glyphe qui flotte.
+						 *
+						 * PAS UN `<Surface>` : `ui/__tests__/verre.test.ts` exige que toute
+						 * surface du kit soit transparente, et une surface transparente ne
+						 * peint aucun disque. PAS NON PLUS `-plus` NI `-next` : ces jetons se
+						 * calculent depuis un ancêtre `cladd-surface-level-*`, absent ici, et
+						 * tombent alors sur du transparent sans qu'aucun test ne bronche.
+						 */}
+						<span className="flex size-cladd-lg shrink-0 items-center justify-center rounded-full bg-cladd-surface text-cladd-fg-soft shadow-cladd-outline">
 							<UploadIcon size={22} aria-hidden />
 						</span>
 						<p className="text-cladd-sm font-semibold">

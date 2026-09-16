@@ -126,7 +126,7 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		reference: 'FA-2021-0087',
 		montant: 924_000n,
 		urgence: 'CRITIQUE',
-		explication: 'La facture FA-2021-0087 est PRESCRITE depuis le 2026-08-14.',
+		explication: 'La facture FA-2021-0087 est prescrite depuis le 14 août 2026.',
 		action: 'Ne plus engager de frais sur cette facture : la créance est éteinte.',
 		// Même une créance éteinte s'ouvre : c'est là qu'on va CONSTATER la perte,
 		// et le seul endroit où « ne plus engager de frais » devient vérifiable.
@@ -137,7 +137,7 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		reference: 'Ateliers Martin — injonction',
 		montant: 1_845_000n,
 		urgence: 'CRITIQUE',
-		explication: "Signification de l'ordonnance : il reste 9 jour(s) avant le 2026-09-12.",
+		explication: "Signification de l'ordonnance : il reste 9 jour(s) avant le 12 septembre 2026.",
 		// La démonstration porte la MÊME formulation que le produit : une capture
 		// qui montrerait « faire signifier sans délai » ferait recopier une consigne
 		// de procédure que la ligne rouge 3 interdit.
