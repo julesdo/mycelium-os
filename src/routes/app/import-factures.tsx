@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute, Outlet, useChildMatches, useParams } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useChildMatches } from '@tanstack/react-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -22,8 +22,17 @@ function ImportFactures() {
 
 	/** Vrai quand l'adresse ouvre le bilan d'un dépôt, rendu à droite par l'`Outlet`. */
 	const bilanOuvert = useChildMatches({ select: (enfants) => enfants.length > 0 });
-	/** Le dépôt de ce bilan : son `$id` appartient à la route enfant. */
-	const { id: depotOuvert } = useParams({ strict: false });
+	/**
+	 * LE DÉPÔT OUVERT, LU SUR LA FEUILLE.
+	 *
+	 * ⚠️ PAS `useParams({ strict: false })`, QUI REND LES PARAMÈTRES DE LA
+	 * CORRESPONDANCE LA PLUS PROCHE, c'est-à-dire ceux de cette route-ci, qui n'en
+	 * a aucun. `depotOuvert` valait donc toujours `null` : sous 1024 px le volet
+	 * droit restait fermé, et toucher une rangée ramenait la liste.
+	 */
+	const depotOuvert = useChildMatches({
+		select: (enfants) => (enfants.at(-1)?.params as { id?: string } | undefined)?.id ?? null
+	});
 
 	const imports = useQuery(api.recouvrement.depotMutations.listerImports, {});
 	const genererUrl = useMutation(api.recouvrement.depotMutations.genererUrlDepot);
@@ -60,7 +69,7 @@ function ImportFactures() {
 	return (
 		<EcranImport
 			detail={bilanOuvert ? <Outlet /> : null}
-			depotOuvert={bilanOuvert ? (depotOuvert ?? null) : null}
+			depotOuvert={depotOuvert}
 			donnees={
 				imports === undefined
 					? { etat: 'attente' }

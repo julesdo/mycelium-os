@@ -1,11 +1,5 @@
 import { useState } from 'react';
-import {
-	createFileRoute,
-	Outlet,
-	useChildMatches,
-	useNavigate,
-	useParams
-} from '@tanstack/react-router';
+import { createFileRoute, Outlet, useChildMatches, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -81,8 +75,18 @@ function Debiteurs() {
 	const { d } = Route.useSearch();
 	/** Vrai quand une page du débiteur (habitude, pièces) est ouverte par segment. */
 	const pageOuverte = useChildMatches({ select: (enfants) => enfants.length > 0 });
-	/** Le débiteur de la page ouverte : son `$id` appartient à la route enfant. */
-	const { id: debiteurDeLaPage } = useParams({ strict: false });
+	/**
+	 * LE DÉBITEUR DE LA PAGE OUVERTE, LU SUR LA FEUILLE.
+	 *
+	 * ⚠️ PAS `useParams({ strict: false })`, QUI REND LES PARAMÈTRES DE LA
+	 * CORRESPONDANCE LA PLUS PROCHE, c'est-à-dire ceux de cette route-ci, qui n'en
+	 * a aucun. La liste allumait alors le premier débiteur du tri pendant que le
+	 * volet droit montrait l'habitude d'un autre, et les lectures partaient sur ce
+	 * mauvais sujet.
+	 */
+	const debiteurDeLaPage = useChildMatches({
+		select: (enfants) => (enfants.at(-1)?.params as { id?: string } | undefined)?.id ?? null
+	});
 	const deuxVolets = useDeuxVolets();
 	/**
 	 * LE DÉBITEUR CHOISI : celui de l'adresse, sinon celui de la page ouverte.
