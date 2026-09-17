@@ -597,9 +597,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 										)
 									}
 								>
-									<p className="px-cladd-3xs text-cladd-2xs text-cladd-fg-softer">
-										{REGLE_GROUPE[cle]}
-									</p>
+									<p className="text-cladd-2xs text-cladd-fg-softer">{REGLE_GROUPE[cle]}</p>
 									{siennes.map((rangee) => (
 										<Rangee key={rangee.id} rangee={rangee} />
 									))}
@@ -686,11 +684,25 @@ function RangeeDuHaut({
 		  hors champ et rien ne le disait — on ne les trouvait qu'en découvrant un
 		  glissement. Une rangée qui passe à la ligne montre tout ce qu'elle porte,
 		  ce qui est la seule façon d'être joignable au doigt.
-		*/
-		<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
-			<div className="flex min-w-0 items-center gap-cladd-3xs">{selecteur}</div>
 
-			<div className="flex shrink-0 items-center gap-cladd-3xs">
+		  ⚠️ ET ELLE PASSE À LA LIGNE PAR GROUPE, JAMAIS PAR CIBLE. Mesuré au
+		  navigateur : à 375 px, l'établissement et les quatre gestes demandent
+		  373 px pour 343 disponibles. Si les cinq cibles pouvaient se séparer, la
+		  coupure tomberait au milieu des gestes et laisserait l'avatar seul sur une
+		  ligne. Chaque groupe étant insécable, la coupure tombe entre les deux : une
+		  ligne qui dit OÙ l'on travaille, une ligne qui porte ce qu'on peut faire.
+
+		  `ml-auto` sur les gestes : ils tiennent le bord droit sur une ligne comme
+		  sur deux. C'est l'idiome relevé (Deel, Notion, GitHub) — l'identité du
+		  contexte à gauche, les gestes à droite, et rien entre les deux.
+		*/
+		<div className="flex flex-wrap items-center gap-2 pt-cladd-3xs">
+			<div className="flex min-w-0 shrink-0 items-center gap-2">{selecteur}</div>
+
+			{/* `gap-2` et non `gap-cladd-3xs` : seize pixels entre quatre boutons ronds
+			    coûtent quarante-huit pixels de rangée, soit une cible entière. Huit
+			    suffisent à les séparer, et c'est ce que fait la référence. */}
+			<div className="ml-auto flex shrink-0 items-center gap-2">
 				{palette}
 				{avecDepot ? (
 					/*
@@ -700,8 +712,16 @@ function RangeeDuHaut({
 					  et un bouton qui n'ouvrirait qu'un sélecteur de fichiers en perdrait
 					  trois.
 					*/
+					/*
+					  ⚠️ `square` : SANS LUI, LA CIBLE FAIT 36 px DE LARGE. `size` fixe la
+					  HAUTEUR d'un bouton Cladd ; sa largeur suit son contenu, et une icône
+					  seule n'en fait pas assez. Le plancher tactile du projet est de 48 px,
+					  et il vaut sur les deux axes. Mesuré au navigateur — et c'est la prop
+					  du kit qui le dit, pas une largeur écrite à la main.
+					*/
 					<Button
 						size="md"
+						square
 						rounded
 						variant={depotOuvert ? 'solid' : 'transparent'}
 						outline={false}

@@ -256,47 +256,64 @@ export function RangeeFile({
 			</Chip>
 		);
 
+	/*
+	  ═══════════════════════════════════════════════════════════════════════════
+	  ⚠️ LE MONTANT VIT SUR LA PREMIÈRE LIGNE, ET PAS DANS UNE COLONNE
+	  ═══════════════════════════════════════════════════════════════════════════
+
+	  Il a été rendu dans une colonne de droite, frère de tout le texte. Mesuré au
+	  navigateur à 375 px : cette colonne prenait 116 px à demeure, et la phrase
+	  d'obstacle tombait à 180 px de large — « Signification de l'ordonnance : la
+	  date limite du 12 septembre 2026 est dépassée » s'étalait sur SIX lignes dans
+	  une carte qui en avait 343 de large.
+
+	  Le montant n'a besoin de la largeur que d'UNE ligne. Il tient donc le bord
+	  droit de la ligne de titre, et tout ce qui se lit en dessous — l'obstacle, la
+	  provenance d'une proposition, l'hypothèse — prend la carte entière. C'est
+	  l'idiome relevé (Asana, Attio, Remote) : une ligne d'en-tête à deux bords,
+	  puis du texte pleine largeur.
+	*/
 	const lecture = (
-		<>
-			<span className="flex min-w-0 flex-1 flex-col gap-1">
-				<span className="flex flex-wrap items-center gap-1.5">
+		<span className="flex min-w-0 flex-1 flex-col gap-1">
+			<span className="flex items-start gap-1.5">
+				<span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
 					{puce}
 					<span className="text-cladd-xs font-semibold">{titre}</span>
 				</span>
 
-				<span className="text-cladd-xs leading-snug text-cladd-fg-soft">{obstacle}</span>
-
-				{proposition === undefined ? null : (
-					<span className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						<FileTextIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-						<span>
-							Proposé : <span className="font-medium">{proposition.valeur}</span>,{' '}
-							{proposition.source}. {dateCourte(proposition.date)}. Rien n’est enregistré tant que
-							vous n’avez pas appuyé.
-						</span>
-					</span>
-				)}
-
-				{hypothese === undefined ? null : (
-					<span className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-						<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-						<span>{hypothese}</span>
-					</span>
-				)}
+				<span className="flex shrink-0 items-center gap-1.5">
+					{montant === null ? null : (
+						<span className="text-cladd-sm font-bold tabular-nums">{eurosCentimes(montant)}</span>
+					)}
+					{/* LE CHEVRON DIT QUE ÇA MÈNE QUELQUE PART, et il n'apparaît que
+					    lorsque c'est vrai. Une rangée qui a l'air ouvrable et ne fait rien
+					    est pire qu'une rangée qui n'en a pas l'air. */}
+					{destination === undefined ? null : (
+						<ChevronRightIcon className="size-4 text-cladd-fg-softest" aria-hidden />
+					)}
+				</span>
 			</span>
 
-			<span className="flex shrink-0 items-center gap-cladd-3xs">
-				{montant === null ? null : (
-					<span className="text-cladd-sm font-bold tabular-nums">{eurosCentimes(montant)}</span>
-				)}
-				{/* LE CHEVRON DIT QUE ÇA MÈNE QUELQUE PART, et il n'apparaît que
-				    lorsque c'est vrai. Une rangée qui a l'air ouvrable et ne fait rien
-				    est pire qu'une rangée qui n'en a pas l'air. */}
-				{destination === undefined ? null : (
-					<ChevronRightIcon className="size-4 text-cladd-fg-softest" aria-hidden />
-				)}
-			</span>
-		</>
+			<span className="text-cladd-xs leading-snug text-cladd-fg-soft">{obstacle}</span>
+
+			{proposition === undefined ? null : (
+				<span className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					<FileTextIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+					<span>
+						Proposé : <span className="font-medium">{proposition.valeur}</span>,{' '}
+						{proposition.source}. {dateCourte(proposition.date)}. Rien n’est enregistré tant que vous
+						n’avez pas appuyé.
+					</span>
+				</span>
+			)}
+
+			{hypothese === undefined ? null : (
+				<span className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+					<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+					<span>{hypothese}</span>
+				</span>
+			)}
+		</span>
 	);
 
 	return (
@@ -307,7 +324,7 @@ export function RangeeFile({
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
 			{destination === undefined ? (
-				<span className="flex items-start gap-cladd-3xs">{lecture}</span>
+				<span className="flex">{lecture}</span>
 			) : (
 				<Lien
 					to={destination.vers}
@@ -315,7 +332,7 @@ export function RangeeFile({
 					// qui le borne déjà à une route existante. Même assertion qu'à
 					// `navigation.tsx`, et pour la même raison.
 					params={destination.parametres as never}
-					className="flex items-start gap-cladd-3xs rounded-cladd-lg text-left transition-colors"
+					className="flex rounded-cladd-lg text-left transition-colors"
 				>
 					{lecture}
 				</Lien>
@@ -469,13 +486,20 @@ export function GroupeDeFile({
 				  tactile, sans hauteur écrite à la main. `transparent` et sans contour :
 				  c'est un intitulé, pas une commande.
 				*/}
+				{/*
+				  ⚠️ AUCUN REMBOURRAGE HORIZONTAL, ET LE REGARD L'A IMPOSÉ. Le bouton
+				  posait le sien : le chevron commençait alors seize pixels à droite du
+				  bord des cartes qu'il ouvre, et l'écran montrait trois bords gauches
+				  différents — l'intitulé, sa règle, et les rangées. Sans rembourrage,
+				  il n'en reste que deux : la colonne du chevron, et tout le reste.
+				*/}
 				<Button
 					className="group w-full"
 					variant="transparent"
 					outline={false}
 					hoverable={false}
 					size="md"
-					contentClassName="w-full items-center justify-start gap-cladd-3xs px-cladd-3xs"
+					contentClassName="w-full items-center justify-start gap-cladd-3xs px-0"
 				>
 					<ChevronRightIcon
 						className="shrink-0 text-cladd-fg-softest transition-transform duration-150 group-data-[open]:rotate-90"

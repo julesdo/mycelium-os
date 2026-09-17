@@ -1,5 +1,5 @@
-import { Chip } from '@cladd-ui/react';
-import { BuildingIcon } from 'lucide-react';
+import { Button } from '@cladd-ui/react';
+import { BuildingIcon, ChevronDownIcon } from 'lucide-react';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
 import { DEPOT_A_ECARTS_DEMO, DEPOT_PARFAIT_DEMO } from './depots';
 import { REVELATION_DEMO, REVELATION_SANS_FACTURE_DEMO } from './revelation';
@@ -349,10 +349,18 @@ const RANGEE_DU_HAUT_DEMO = {
 	// Deux non lues : la pastille rare, et le seul signal du produit qui annonce
 	// une perte sèche. À zéro, on ne verrait pas qu'elle tient dans la rangée.
 	veilleur: <VeilleurDeLaToolbar etat="VEILLE" nonLues={2} />,
+	/*
+	  ⚠️ LA MÊME GÉOMÉTRIE QUE LA PRODUCTION, AU PIXEL. `app/selecteur-etablissement.tsx`
+	  rend un `Button rounded` à `min-w-cladd-md` portant la pastille ET un chevron :
+	  68 px. La salle l'approchait par une `Chip` de 26 px, et on y mesurait donc une
+	  rangée 42 px plus courte que celle du gérant — c'est-à-dire qu'on validait au
+	  regard un passage à la ligne qui ne tombait pas au même endroit.
+	*/
 	selecteur: (
-		<Chip size="md" color="neutral" aria-label="Établissement : Boulangerie Doré">
+		<Button rounded className="min-w-cladd-md shrink-0" aria-label="Établissement : Boulangerie Doré">
 			<BuildingIcon />
-		</Chip>
+			<ChevronDownIcon />
+		</Button>
 	),
 	palette: <DeclencheurRecherche onOuvrir={() => {}} />
 };
