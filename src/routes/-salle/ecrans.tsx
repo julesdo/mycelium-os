@@ -2,6 +2,7 @@ import type { EcranDuProduit } from './demo';
 import { ECRANS_COMPTE } from './compte';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
+import { ECRANS_FILE } from './file';
 import { ECRANS_IMPORT } from './import';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
@@ -30,6 +31,15 @@ import { ECRANS_PROCEDURE } from './procedure';
  * fichier-ci ne fait que les réunir.
  */
 export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
+	/**
+	 * ⚠️ LA FILE EN PREMIER, ET L'ACCUEIL JUSTE APRÈS. Elle le REMPLACE à `/app/`
+	 * (T6, T7), mais la bascule est une tâche séparée et volontairement révocable
+	 * (T15) : les deux cohabitent ici le temps qu'on les regarde côte à côte, ce
+	 * qui est la seule façon de vérifier au regard que la seconde rend ce que la
+	 * première rendait. La file porte donc une `cle`, faute de quoi la salle
+	 * choisirait par la route et ne rendrait jamais que l'accueil.
+	 */
+	...ECRANS_FILE,
 	...ECRANS_ONGLETS,
 	...ECRANS_CREANCE,
 	...ECRANS_PIECE,

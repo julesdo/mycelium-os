@@ -33,7 +33,7 @@ import {
 import { Shell } from '../app/shell';
 import { EcranIntrouvable, EcranEnErreur } from '../screens/passage';
 import { ECRANS_DU_PRODUIT } from './-salle/ecrans';
-import type { EtatDemo } from './-salle/demo';
+import { cleDeLEcran, type EtatDemo } from './-salle/demo';
 import {
 	AVOCATS_DEMO,
 	BARREAUX_DEMO,
@@ -878,11 +878,13 @@ const LIBELLE_ETAT: Record<EtatDemo, string> = {
 
 function Showroom() {
 	const [ecran, setEcran] = useState<Ecran>('veilleur');
-	const [produit, setProduit] = useState<string | null>(ECRANS_DU_PRODUIT[0]?.route ?? null);
+	const [produit, setProduit] = useState<string | null>(
+		ECRANS_DU_PRODUIT[0] === undefined ? null : cleDeLEcran(ECRANS_DU_PRODUIT[0])
+	);
 	const [etat, setEtat] = useState<EtatDemo>('pret');
 	const [variante, setVariante] = useState<string | undefined>(undefined);
 
-	const choisi = ECRANS_DU_PRODUIT.find((e) => e.route === produit) ?? null;
+	const choisi = ECRANS_DU_PRODUIT.find((e) => cleDeLEcran(e) === produit) ?? null;
 	// Trois états hors du produit : rien à regarder en attente ou en erreur sur
 	// une démonstration de composant, donc les boutons restent visibles mais
 	// `disabled`, plutôt que de faire sauter la rangée d'un écran à l'autre.
@@ -941,10 +943,10 @@ function Showroom() {
 					<Segmented activeColor="neutral" activeVariant="solid">
 						{ECRANS_DU_PRODUIT.map((e) => (
 							<SegmentedButton
-								key={e.route}
-								active={produit === e.route}
+								key={cleDeLEcran(e)}
+								active={produit === cleDeLEcran(e)}
 								onClick={() => {
-									setProduit(e.route);
+									setProduit(cleDeLEcran(e));
 									setEtat('pret');
 									setVariante(undefined);
 								}}
@@ -978,7 +980,7 @@ function Showroom() {
 						  aux trois changements referme tout net, comme un nouvel écran.
 						*/}
 						<choisi.Demo
-							key={`${choisi.route}|${etat}|${variante ?? ''}`}
+							key={`${cleDeLEcran(choisi)}|${etat}|${variante ?? ''}`}
 							etat={etat}
 							variante={etat === 'pret' ? variante : undefined}
 						/>
