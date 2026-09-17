@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
+import { CatchBoundary, createFileRoute } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranRevelation } from '../../screens/revelation';
@@ -25,34 +26,7 @@ function Revelation() {
 	const revelation = useQuery(api.recouvrement.revelation.revelation, { arreteAu });
 	const bilan = useQuery(api.recouvrement.revelation.bilan, { aujourdHui: arreteAu });
 
-	/**
-	 * LE CONTRÔLE DE COMPLÉTUDE DE TOUT L'ÉTABLISSEMENT.
-	 *
-	 * ═══════════════════════════════════════════════════════════════════════
-	 * ⚠️ IL N'ENTRE PAS DANS L'ATTENTE COMMUNE, ET C'EST UNE DÉCISION
-	 * ═══════════════════════════════════════════════════════════════════════
-	 *
-	 * Les deux lectures ci-dessus se font sur les factures. Celle-ci relit
-	 * TOUS les décomptes et TOUTES les factures de l'établissement, puis rejoue
-	 * `controlerDecompte` sur le dernier décompte de chaque créance : c'est la
-	 * seule lecture de l'écran dont le coût croît avec l'ancienneté du compte.
-	 * La faire attendre par le chiffre qui justifie l'abonnement reviendrait à
-	 * payer le bloc le plus lourd sur toute la page.
-	 *
-	 * Elle voyage donc avec son propre état, que le bloc rend lui-même : en
-	 * cours, en échec, ou arrêté (règle d'écran n° 2, tout traitement se voit).
-	 *
-	 * ⚠️ `useQuery` NE DIT PAS L'ÉCHEC, IL LÈVE. Une requête en erreur remonte à
-	 * `errorComponent` et emporte l'écran entier ; l'état `erreur` que le bloc
-	 * sait rendre existe pour la salle, qui le montre, et pour le jour où cette
-	 * lecture sera isolée derrière sa propre barrière. Ce qui ne doit jamais
-	 * arriver, c'est qu'un échec se lise comme un zéro — et il ne le peut pas.
-	 */
-	const abandons = useQuery(api.recouvrement.controle.abandonsDeLEtablissement, {});
-	const laisseDeCote: Lecture<AbandonsAffiches> =
-		abandons === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: abandons };
-
-	return (
+	const rendre = (laisseDeCote: Lecture<AbandonsAffiches>): ReactNode => (
 		<EcranRevelation
 			donnees={
 				// Les DEUX lectures entrent dans l'attente : « Ce qui s’est éteint » est
@@ -66,5 +40,51 @@ function Revelation() {
 						{ etat: 'pret', valeur: { revelation, bilan, arreteAu, laisseDeCote } }
 			}
 		/>
+	);
+
+	/*
+	  ⚠️ LE CONTRÔLE DE COMPLÉTUDE EST ISOLÉ, ET C'EST LA RAISON D'ÊTRE DE CETTE
+	  BORNE. Le motif et son argumentaire vivent dans `ui/facultatif.tsx` : une
+	  source qui lève emporte l'écran ENTIER, et cet écran-là porte le chiffre
+	  qui justifie l'abonnement.
+
+	  La source isolée est la plus lourde du produit : `abandonsDeLEtablissement`
+	  relit TOUS les décomptes et TOUTES les factures de l'établissement, puis
+	  deux documents par créance. Sur un gros compte, c'est elle qui touchera en
+	  premier les plafonds de lecture d'une transaction Convex — et sans cette
+	  borne, elle emporterait avec elle un total dû qui, lui, s'est calculé.
+
+	  ⚠️ LA CLÉ DE REPRISE EST CONSTANTE, comme dans `facultatif.tsx` : réessayer
+	  en boucle une requête qui lève ferait clignoter l'écran sans jamais rien
+	  afficher de plus. Le contrôle reste éteint jusqu'au prochain montage, et il
+	  le DIT — le bloc rend un constat d'échec, jamais un zéro.
+	*/
+	return (
+		<CatchBoundary
+			getResetKey={() => 'controle-de-completude'}
+			errorComponent={() => rendre({ etat: 'erreur' })}
+		>
+			<AvecLeControle rendre={rendre} />
+		</CatchBoundary>
+	);
+}
+
+/**
+ * LA LECTURE DU CONTRÔLE, SOUS LA BORNE.
+ *
+ * ⚠️ ELLE EST APPELÉE ICI ET PAS DANS `Revelation`, ET C'EST TOUT L'INTÉRÊT.
+ * `useQuery` ne rend pas un échec, il LÈVE au rendu : une requête appelée
+ * au-dessus de la borne n'est pas protégée par elle. C'est la seule façon de
+ * rendre l'état d'erreur du bloc ATTEIGNABLE — sans quoi il serait un écran
+ * écrit que rien ne peut afficher, le défaut même que ce dépôt traque.
+ */
+function AvecLeControle({
+	rendre
+}: {
+	rendre: (laisseDeCote: Lecture<AbandonsAffiches>) => ReactNode;
+}) {
+	const abandons = useQuery(api.recouvrement.controle.abandonsDeLEtablissement, {});
+	return rendre(
+		abandons === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: abandons }
 	);
 }
