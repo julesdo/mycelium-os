@@ -674,6 +674,19 @@ async function sourceEnToutesLettres(
 	if (proposition.source.nature === 'REFERENTIEL') {
 		return `Référentiel juridique, entrée « ${proposition.source.cleParametre} »`;
 	}
+	/**
+	 * ⚠️ LA TROISIÈME FORME EST ARRIVÉE AVEC LA CONVERSATION (T14), et une
+	 * proposition peut désormais sortir d'un DÉCOMPTE. Le traiter comme une
+	 * pièce écrirait une ligne de journal fausse ; l'omettre en écrirait une
+	 * muette. Il est daté, comme la pièce est nommée : un identifiant seul est
+	 * illisible par celui qui en aura besoin, six mois plus tard, devant une
+	 * contestation.
+	 */
+	if (proposition.source.nature === 'DECOMPTE') {
+		const decompte = await ctx.db.get(proposition.source.decompteId);
+		if (decompte === null) return 'Décompte du dossier, retiré depuis';
+		return `Décompte arrêté au ${decompte.arreteAu}`;
+	}
 	const piece = await ctx.db.get(proposition.source.pieceId);
 	if (piece === null) return 'Pièce du dossier, retirée depuis';
 	return `Pièce du dossier : ${piece.reference ?? piece.filename}`;

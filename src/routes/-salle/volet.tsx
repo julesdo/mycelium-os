@@ -39,14 +39,22 @@ import {
 } from '../../lib/verticales/recouvrement/relance';
 import { pyramideDePreuves } from '../../lib/verticales/recouvrement/solidite';
 import {
+	ARRET_MENSUEL,
+	AVERTISSEMENT_MENSUEL,
+	evaluerPlafond
+} from '../../lib/verticales/recouvrement/compagnon/disponibilite';
+import {
 	PageBody,
 	PageEcran,
 	TYPES_PIECE,
+	eurosCentimes,
+	type ConversationAffichee,
 	type DecompteAffiche,
 	type EtatRechercheCommissaire,
 	type NiveauAffiche,
 	type PieceAffichee,
-	type SoliditeAffichee
+	type SoliditeAffichee,
+	type TourAffiche
 } from '../../ui';
 import {
 	AVOCATS_DEMO,
@@ -421,6 +429,7 @@ type LigneCommune = Omit<
 	| 'suivi'
 	| 'relances'
 	| 'decomptesArretes'
+	| 'conversation'
 	| 'rechercheCommissaireOuverte'
 	| 'etatRechercheCommissaire'
 	| 'onOuvrirRechercheCommissaire'
@@ -505,11 +514,72 @@ function ligneCommune(): LigneCommune {
 	};
 }
 
+/**
+ * CE QUE LE COMPAGNON A RÉPONDU, PHRASE PAR PHRASE.
+ *
+ * ⚠️ TROIS GENRES DE PHRASE DANS UNE SEULE RÉPONSE, ET C'EST LE SUJET. Une
+ * sourcée par le référentiel, une sourcée par un décompte, et une TROISIÈME
+ * sans source — qui s'affiche dégradée et marquée « non sourcé ». C'est la
+ * forme qu'il faut regarder aux quatre largeurs : trois natures de phrase
+ * doivent se distinguer d'un coup d'œil, sans qu'aucune couleur réservée
+ * n'entre dans la colonne.
+ *
+ * ⚠️ ET LE MONTANT DE LA DEUXIÈME EST CELUI QUE LE DOMAINE CALCULE. L'écrire à
+ * la main ferait regarder une pastille sur un total que le produit ne rendrait
+ * jamais — et c'est précisément la pastille qu'on vient regarder.
+ */
+function toursDemo(): readonly TourAffiche[] {
+	return [
+		{
+			id: 'demo-tour-1',
+			role: 'GERANT',
+			phrases: [
+				{
+					texte: `Pourquoi l’indemnité forfaitaire est-elle comptée ${FACTURES_DEMO.length} fois ?`,
+					genreSource: 'AUCUNE',
+					libelleSource: ''
+				}
+			],
+			diteLe: Date.parse(`${AUJOURD_HUI_DEMO}T09:12:00Z`)
+		},
+		{
+			id: 'demo-tour-2',
+			role: 'COMPAGNON',
+			phrases: [
+				{
+					// ⚠️ LE COMPTE VIENT DES FACTURES DE LA DÉMONSTRATION, PAS D'UN MOT
+					// ÉCRIT. Une phrase du compagnon qui dirait « trois » au-dessus d'un
+					// décompte qui en chiffre deux ferait regarder, aux quatre largeurs,
+					// exactement ce que les pastilles existent pour empêcher.
+					texte: `L’indemnité forfaitaire est due par facture en retard, et cette créance en porte ${FACTURES_DEMO.length}.`,
+					genreSource: 'PARAMETRE',
+					libelleSource: 'indemniteForfaitaire',
+					onOuvrirSource: () => undefined
+				},
+				{
+					texte: `Le décompte du jour l’arrête à ${eurosCentimes(MONTANT_DU_JOUR_DEMO.indemniteForfaitaire)}.`,
+					genreSource: 'DECOMPTE',
+					libelleSource: 'décompte du jour',
+					onOuvrirSource: () => undefined
+				},
+				{
+					texte: 'Je n’ai pas pu lire à quelle page du contrat cette clause figure.',
+					genreSource: 'AUCUNE',
+					libelleSource: ''
+				}
+			],
+			diteLe: Date.parse(`${AUJOURD_HUI_DEMO}T09:12:04Z`)
+		}
+	];
+}
+
 /** Les formes nommées du volet. Chacune rend autre chose que la forme principale. */
 const FORMES = {
 	'voie engagée': 'ENGAGEE',
 	'un décompte arrêté': 'ARRETE',
-	'montant non calculé': 'SANS_MONTANT'
+	'montant non calculé': 'SANS_MONTANT',
+	'conversation avertie': 'CONVERSATION_AVERTIE',
+	'conversation arrêtée': 'CONVERSATION_ARRETEE'
 } as const;
 
 type Forme = (typeof FORMES)[keyof typeof FORMES] | 'PRINCIPALE';
@@ -525,16 +595,58 @@ type Forme = (typeof FORMES)[keyof typeof FORMES] | 'PRINCIPALE';
  * est visible d'un coup d'œil.
  */
 function VoletDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
-	const [position, setPosition] = useState<PositionVolet>('PIECE');
+	/**
+	 * ⚠️ LA POSITION SE DÉRIVE AU RENDU, ELLE NE SE POSE PAS DANS UN EFFET. Les
+	 * deux formes de conversation doivent s'ouvrir SUR la conversation — sinon on
+	 * regarde la position Pièce en croyant regarder l'autre. Un `setState` dans un
+	 * effet rendrait d'abord la mauvaise, puis la bonne : React 19 l'interdit, et
+	 * l'écran le montrerait.
+	 */
+	const [positionChoisie, setPosition] = useState<PositionVolet | null>(null);
 	const [rechercheCommissaireOuverte, setRechercheCommissaireOuverte] = useState(false);
 	const [etatRechercheCommissaire, setEtatRechercheCommissaire] =
 		useState<EtatRechercheCommissaire>({ phase: 'REPOS' });
 	const [rechercheAvocatOuverte, setRechercheAvocatOuverte] = useState(false);
 	const [barreau, setBarreau] = useState('');
 	const [specialite, setSpecialite] = useState('');
+	const [question, setQuestion] = useState('');
 
 	// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 	const forme: Forme = formeDemo<Forme>(variante, 'PRINCIPALE', FORMES);
+
+	const surLaConversation = forme === 'CONVERSATION_ARRETEE' || forme === 'CONVERSATION_AVERTIE';
+	const position: PositionVolet =
+		positionChoisie ?? (surLaConversation ? 'CONVERSATION' : 'PIECE');
+
+	/**
+	 * ⚠️ LE REFUS DU PLAFOND VIENT DU DOMAINE, PAS D'UNE CHAÎNE ÉCRITE ICI.
+	 * `evaluerPlafond` compose les quatre parties ; les recopier ferait regarder
+	 * un texte que le produit ne rendrait jamais, sur la seule surface où l'on
+	 * vient vérifier qu'un refus est un chemin et pas un mur.
+	 */
+	const plafondDemo = evaluerPlafond(
+		forme === 'CONVERSATION_ARRETEE' ? ARRET_MENSUEL : AVERTISSEMENT_MENSUEL
+	);
+
+	const conversation: ConversationAffichee = {
+		tours: forme === 'CONVERSATION_ARRETEE' ? [] : toursDemo(),
+		compteur: {
+			niveau:
+				forme === 'CONVERSATION_ARRETEE'
+					? 'ARRETE'
+					: forme === 'CONVERSATION_AVERTIE'
+						? 'AVERTI'
+						: 'OUVERT',
+			mois: AUJOURD_HUI_DEMO.slice(0, 7),
+			avertissement: AVERTISSEMENT_MENSUEL,
+			arret: ARRET_MENSUEL
+		},
+		refus: forme === 'CONVERSATION_ARRETEE' ? plafondDemo.refus : null,
+		enCours: false,
+		question,
+		onQuestion: setQuestion,
+		onDemander: () => setQuestion('')
+	};
 
 	const ligne: LigneOuverte = {
 		...ligneCommune(),
@@ -570,7 +682,8 @@ function VoletDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 			setSpecialite('');
 		},
 		onChoisirSpecialite: (choisie) => setSpecialite(choisie),
-		onRetenirAvocat: () => setRechercheAvocatOuverte(false)
+		onRetenirAvocat: () => setRechercheAvocatOuverte(false),
+		conversation
 	};
 
 	return (

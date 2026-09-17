@@ -190,7 +190,7 @@ async function poserEtablissement(t: Harnais, nom: string): Promise<Id<'organiza
 		});
 
 		// ── Les conversations : les trois portées, et les deux locuteurs ──────
-		await ctx.db.insert('conversations', {
+		await ctx.db.insert('echangesCompagnon', {
 			organizationId,
 			fil: 'fil-1',
 			portee: 'CREANCE',
@@ -201,7 +201,7 @@ async function poserEtablissement(t: Harnais, nom: string): Promise<Id<'organiza
 			mois: '2026-09',
 			diteLe: Date.now()
 		});
-		await ctx.db.insert('conversations', {
+		await ctx.db.insert('echangesCompagnon', {
 			organizationId,
 			fil: 'fil-1',
 			portee: 'CREANCE',
@@ -213,7 +213,7 @@ async function poserEtablissement(t: Harnais, nom: string): Promise<Id<'organiza
 			mois: '2026-09',
 			diteLe: Date.now()
 		});
-		await ctx.db.insert('conversations', {
+		await ctx.db.insert('echangesCompagnon', {
 			organizationId,
 			fil: 'fil-2',
 			portee: 'PORTEFEUILLE',
@@ -224,7 +224,7 @@ async function poserEtablissement(t: Harnais, nom: string): Promise<Id<'organiza
 			mois: '2026-09',
 			diteLe: Date.now()
 		});
-		await ctx.db.insert('conversations', {
+		await ctx.db.insert('echangesCompagnon', {
 			organizationId,
 			fil: 'fil-3',
 			portee: 'DEBITEUR',
@@ -294,7 +294,7 @@ async function compter(
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 		const conversations = await ctx.db
-			.query('conversations')
+			.query('echangesCompagnon')
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 		const remises = await ctx.db

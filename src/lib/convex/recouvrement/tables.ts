@@ -126,14 +126,23 @@ export const vTaux = v.object({
 });
 
 /**
- * D'OÙ SORT UN CONSTAT : une pièce du client, ou une entrée du référentiel.
+ * D'OÙ SORT UN CONSTAT : une pièce du client, un décompte du dossier, ou une
+ * entrée du référentiel.
  *
- * ⚠️ IL N'Y A PAS DE TROISIÈME FORME, ET C'EST UNE RÈGLE, PAS UNE COMMODITÉ.
- * Une phrase sans pastille ne peut porter ni un MONTANT ni un ÉNONCÉ
- * JURIDIQUE, et aucune référence légale ne se dit de mémoire. Une source
- * libre en texte aurait rouvert exactement ce chemin : une affirmation
- * sourcée par une phrase que rien ne résout, donc que rien ne corrige le jour
- * où la valeur change.
+ * ⚠️ AUCUNE FORME LIBRE, ET C'EST UNE RÈGLE, PAS UNE COMMODITÉ. Une phrase
+ * sans pastille ne peut porter ni un MONTANT ni un ÉNONCÉ JURIDIQUE, et aucune
+ * référence légale ne se dit de mémoire. Une source libre en texte aurait
+ * rouvert exactement ce chemin : une affirmation sourcée par une phrase que
+ * rien ne résout, donc que rien ne corrige le jour où la valeur change.
+ *
+ * ⚠️ LA TROISIÈME FORME EST ARRIVÉE AVEC LA CONVERSATION (T14), ET ELLE NE
+ * ROUVRE PAS CE CHEMIN. La première écriture n'en comptait que deux, et la
+ * conséquence était muette : B4 exige qu'un montant soit relié à un décompte OU
+ * à une pièce, et `compagnon/filtres.ts` porte bien les trois genres de
+ * pastille — mais ce validateur n'en savait stocker que deux. Une phrase
+ * chiffrée par un décompte s'affichait sourcée et se persistait sans sa source.
+ * Un `decompteId` est exactement aussi résoluble qu'un `pieceId` : il désigne
+ * une pièce figée et datée du dossier, pas une phrase.
  *
  * `page` est FACULTATIF, et c'est un angle mort DÉCLARÉ : une lecture qui n'a
  * pas su dire à quelle page elle a trouvé sa valeur le dit, plutôt que d'en
@@ -145,6 +154,11 @@ export const vSourceConstat = v.union(
 		pieceId: v.id('pieces'),
 		/** La page où la valeur a été lue, quand la lecture a su le dire. */
 		page: v.optional(v.number())
+	}),
+	v.object({
+		nature: v.literal('DECOMPTE'),
+		/** Le décompte figé et daté dont le chiffre sort. */
+		decompteId: v.id('decomptes')
 	}),
 	v.object({
 		nature: v.literal('REFERENTIEL'),
@@ -1039,8 +1053,28 @@ export const recouvrementTables = {
 	 * un arrêt de la conversation LIBRE seule, par établissement et par mois.
 	 * Le reste du produit — la file, les calculs, les propositions, le décompte
 	 * — ne dépend d'aucun appel modèle et continue quand le compteur mord.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ POURQUOI ELLE NE S'APPELLE PAS `conversations`
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Ne la renommez pas « proprement » : le nom court rouvre un trou qui a
+	 * déjà bloqué tout le monde une fois.
+	 *
+	 * Le déploiement de développement porte encore une table `conversations`
+	 * héritée de Fleet, avec des documents dedans. Convex valide la BASE, pas
+	 * seulement le code : notre `cible`, qui est requis, manquait à ces
+	 * documents-là, et `convex dev --once` échouait en validation de schéma —
+	 * « Object is missing the required field `cible` ». Personne ne pouvait
+	 * plus déployer.
+	 *
+	 * ⚠️ RENOMMER PLUTÔT QUE PURGER, ET LA DIFFÉRENCE EST IRRÉVERSIBLE. Une
+	 * table présente dans le déploiement mais absente du schéma est TOLÉRÉE par
+	 * Convex ; un champ requis manquant ne l'est jamais. Ce renommage rend la
+	 * table de Fleet orpheline, donc tolérée, et ne supprime AUCUNE donnée. La
+	 * purger serait définitif, et ce n'est pas une décision de schéma.
 	 */
-	conversations: defineTable({
+	echangesCompagnon: defineTable({
 		organizationId: v.id('organizations'),
 		/** Le fil auquel ce tour appartient. */
 		fil: v.string(),

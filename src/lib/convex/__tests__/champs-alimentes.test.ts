@@ -106,16 +106,6 @@ const ADMIS: Readonly<Record<string, string>> = {
 		'Pourquoi une proposition a été écartée, en toutes lettres. Pas de pouce bas : on ne note pas un montant, il est juste ou faux. Posé au T5 du lot 2, alimenté par T13.',
 	poseeLe: 'Quand une proposition a été posée. Posé au T5 du lot 2, alimenté par T13.',
 
-	// `conversations` — alimenté par T14, qui écrit la conversation, son prompt
-	// figé et sa plomberie de coût.
-	fil: 'Le fil auquel un tour de parole appartient. Posé au T5 du lot 2, alimenté par T14.',
-	pastilles:
-		'Une source par PHRASE, jamais par réponse : une phrase sans pastille ne peut porter ni un montant ni un énoncé juridique. Posé au T5 du lot 2, alimenté par T14.',
-	usage:
-		'Les jetons consommés par un tour du compagnon, aux noms d’`UsageAppel`. C’est ce qui manque aujourd’hui pour que le plafond de coût existe : `estimerCout` et `CAP_EUR` n’ont aucun site d’appel, et l’usage facturé capté à l’extraction est jeté par ses deux appelants. Posé au T5 du lot 2, alimenté par T14.',
-	mois: 'AAAA-MM, le grain du compteur mensuel de coût. Posé au T5 du lot 2, alimenté par T14.',
-	diteLe: 'Quand un tour de parole a été dit. Posé au T5 du lot 2, alimenté par T14.',
-
 	// `remisesAuConseil` — alimenté par T10, qui produit la pièce arrêtée et
 	// suit le dossier remis.
 	decompteId:

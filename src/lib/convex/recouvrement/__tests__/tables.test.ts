@@ -82,10 +82,10 @@ describe('schéma du recouvrement', () => {
 		expect(TABLES.map(([nom]) => nom).sort()).toEqual([
 			'annuaireAvocats',
 			'battements',
-			'conversations',
 			'creances',
 			'debiteurs',
 			'decomptes',
+			'echangesCompagnon',
 			'evenementsProcedure',
 			'facturesVente',
 			'importsRecouvrement',
