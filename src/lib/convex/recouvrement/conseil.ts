@@ -322,7 +322,14 @@ export const suivreRemise = authedQuery({
 			debiteurId: sien === null ? null : sien._id,
 			debiteur: decompte.debiteur?.denomination ?? sien?.denomination ?? 'Débiteur inconnu',
 			remise:
-				remise === undefined
+				/*
+				  ⚠️ DEUX ABSENCES, PAS UNE. `remise` vaut `null` quand la créance
+				  du décompte n'est plus lisible, et `undefined` quand aucune remise
+				  n'a été consignée sur ce décompte. Le test ne regardait que la
+				  seconde : sur la première, la lecture partait dans `remise._id` et
+				  levait, sur le seul écran du produit qui ne se corrige pas.
+				*/
+				remise === undefined || remise === null
 					? null
 					: {
 							_id: remise._id,

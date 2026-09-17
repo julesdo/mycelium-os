@@ -179,11 +179,24 @@ export function Relances({
 						<div className="flex flex-wrap gap-cladd-3xs">
 							<BoutonSecondaire
 								as={Lien}
-								to="/app/creance/$id/decompte"
-								// ⚠️ UNE ASSERTION, ET LA MÊME QUE DANS `veilleur.tsx`. `as`
-								// efface le générique du routeur, donc le typage des paramètres
-								// avec lui ; la DESTINATION reste vérifiée contre l'arbre des
-								// routes, ici et par `__tests__/destinations-existent.test.ts`.
+								/*
+								  ⚠️ L'ARRÊT, ET PLUS L'ANALYSE QUI Y MÈNE. Ce geste pointait
+								  vers `/app/creance/$id/decompte` : un écran d'analyse d'où il
+								  fallait encore trouver le bouton. Le seul geste irréversible
+								  du produit a son écran plein cadre depuis T9, avec son
+								  contrôle de complétude chiffré — le refus se lève là où il se
+								  lève.
+
+								  ⚠️ L'ASSERTION RESTE, ET LE PLAN SE TROMPAIT EN ANNONÇANT
+								  QU'ELLE PARTIRAIT AVEC LA ROUTE. Elle ne tenait pas à la
+								  destination — qui était déjà déclarée — mais à `as` : passer
+								  `Lien` en élément d'un `Button` efface le générique du
+								  routeur, donc le typage des paramètres avec lui. Changer de
+								  route n'y change rien, et la retirer ne compile pas. La
+								  DESTINATION, elle, reste vérifiée contre l'arbre des routes,
+								  ici et par `__tests__/destinations-existent.test.ts`.
+								*/
+								to="/app/arret/$id"
 								params={{ id: identifiant } as never}
 							>
 								Arrêter le décompte
