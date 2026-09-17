@@ -22,7 +22,6 @@ import {
 	type RoleEquipe
 } from '../../screens/compte/equipe';
 import type { DonneesAffichees, FichierExport } from '../../screens/compte/donnees';
-import type { AbonnementAffiche } from '../../screens/compte/facturation';
 import type { IntervenantsAffiches } from '../../screens/compte/intervenants';
 
 /**

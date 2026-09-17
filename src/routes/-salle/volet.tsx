@@ -663,6 +663,14 @@ export const ECRANS_VOLET: readonly EcranDuProduit[] = [
 		  une dans la salle ferait regarder un écran que le produit n'a pas.
 		*/
 		route: '/app/',
+		/**
+		 * ⚠️ UNE CLÉ, POUR LA MÊME RAISON QUE LA FILE. Trois entrées visent
+		 * maintenant `/app/` — l'accueil, la file qui le remplace, et ce volet qui
+		 * en est un ÉTAT. Sans clé, la salle choisirait par la route et ne rendrait
+		 * jamais que la première. Celle-ci ne part PAS avec la bascule : le volet
+		 * n'aura jamais de route à lui, c'est sa définition.
+		 */
+		cle: 'volet',
 		libelle: 'volet de preuve',
 		vide: false,
 		variantes: Object.keys(FORMES),

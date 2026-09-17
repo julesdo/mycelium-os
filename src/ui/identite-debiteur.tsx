@@ -124,6 +124,49 @@ export interface PropositionTaux {
 	readonly reference?: string;
 }
 
+/**
+ * LE SECTEUR DE LA RELATION, et ce que le choisir change.
+ *
+ * ⚠️ EXTRAIT PARCE QU'IL A DEUX APPELANTS, et que le second est celui qui
+ * compte. La file porte un pli « débiteurs sans identifiant » où le geste est
+ * précisément de lever les deux inconnues d'un même client : son numéro au
+ * registre, et son secteur. Un secteur indéterminé fait retenir le délai de
+ * prescription LE PLUS COURT ; sans ce geste, cette hypothèse devient
+ * incorrigible depuis l'écran qui la déclare.
+ *
+ * Recopier le `Select` là-bas aurait fait deux listes d'options, deux libellés
+ * de conséquence et deux placeholders, dont la divergence serait muette.
+ */
+export function ChoixSecteur({
+	secteur,
+	optionsSecteur,
+	onChoisirSecteur
+}: {
+	secteur: string | undefined;
+	optionsSecteur: readonly OptionSecteur[];
+	onChoisirSecteur: (cle: string) => void;
+}) {
+	return (
+		<Select
+			className="w-full"
+			surface="cut"
+			size="lg"
+			title="Secteur de la relation"
+			options={[...optionsSecteur]}
+			value={secteur ?? 'INDETERMINE'}
+			getOptionValue={(option) => option.cle}
+			onChange={(cle) => onChoisirSecteur(cle as string)}
+			renderOption={({ value }) => value.libelle}
+			renderOptionInfo={({ value }) => value.consequence}
+			keyboardHints={false}
+			placeholder="Secteur à préciser"
+		>
+			{optionsSecteur.find((o) => o.cle === (secteur ?? 'INDETERMINE'))?.libelle ??
+				'Secteur à préciser'}
+		</Select>
+	);
+}
+
 export function IdentiteDebiteur({
 	denomination,
 	siren,
@@ -195,23 +238,11 @@ export function IdentiteDebiteur({
 				onSaisir={onEnregistrerSiren}
 			/>
 
-			<Select
-				className="w-full"
-				surface="cut"
-				size="lg"
-				title="Secteur de la relation"
-				options={[...optionsSecteur]}
-				value={secteur ?? 'INDETERMINE'}
-				getOptionValue={(option) => option.cle}
-				onChange={(cle) => onChoisirSecteur(cle as string)}
-				renderOption={({ value }) => value.libelle}
-				renderOptionInfo={({ value }) => value.consequence}
-				keyboardHints={false}
-				placeholder="Secteur à préciser"
-			>
-				{optionsSecteur.find((o) => o.cle === (secteur ?? 'INDETERMINE'))?.libelle ??
-					'Secteur à préciser'}
-			</Select>
+			<ChoixSecteur
+				secteur={secteur}
+				optionsSecteur={optionsSecteur}
+				onChoisirSecteur={onChoisirSecteur}
+			/>
 
 			<div className="flex flex-col gap-cladd-3xs">
 				{/* LE TAUX LU SUR UNE PIÈCE, AU-DESSUS DU CHAMP ET JAMAIS DEDANS. Le

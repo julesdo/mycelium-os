@@ -163,6 +163,12 @@ Route neuve, six sections dépliées, zéro sous-route, et **treize fichiers de 
 ### T15. La bascule, et elle est petite
 
 `routes/app/index.tsx` rend `screens/file.tsx` ; `src/app/barre.tsx` et `src/screens/accueil.tsx` sont supprimés (décision 3) ; la `Toolbar` réhéberge le sélecteur, la palette (D16) dont l'`ouvrir` (`barre.tsx:169-178`) traduit vers `?ligne=<id>`, l'avatar vers `/app/compte`, le veilleur avec `notifications.listMyNotifications`, `markAsRead` et `getUnreadCount`, plus `users.viewer` et `recherche.recherche`. Une porte nommée et datée en bas de la file porte les cinq liens de la décision 4. ⚠️ **Les deux graphies de notification se traitent des DEUX côtés** : `ui/veilleur.tsx:173-186` accepte l'ancienne et la neuve pendant trente jours, ET `battement.ts:255-261` cesse d'écrire `/app/creance/<id>` et `/app/debiteurs?d=<id>` pour écrire `?ligne=<id>`, sans quoi chaque notification créée APRÈS la bascule naîtrait morte, en silence, `destinations-existent.test.ts:141` excluant nommément la forme `lien:` du balayage. La raison de `/app` dans `ATTEINTS_AUTREMENT` (`aucun-ecran-orphelin.test.ts:51`) se réécrit : ce n'est plus une coquille de mise en page, c'est l'écran de travail, atteint par huit liens.
+
+**⚠️ Trois corrections relevées AU CODE pendant T6 et T7, et qui mordent ici.**
+1. **Toutes les références `barre.tsx:NNN` de ce plan sont décalées de onze lignes** : il a été écrit sur l'état d'avant T1, qui a retiré la définition de `Facultatif` du fichier. Le sélecteur d'établissement est à `:407` et non `:418`, l'avatar à `:277` et non `:288`. Rouvrir avant de citer.
+2. **`listerDebiteurs` est à `lecture.ts:136-176`**, pas `:71-176` : les lignes 71 à 135 sont les validateurs et deux fonctions d'aide.
+3. **Les deux destinations de `ce-qui-manque.tsx` (`:102` et `:114`) N'ONT PAS PU être réécrites en T6, et le travail retombe ICI.** `Verrou.vers` est typé `LinkProps['to']` contre l'arbre des routes : tant que la file n'a pas d'adresse, les repointer échoue à `bun run check`. C'est la bascule qui leur donne leur cible.
+
 **Acceptation.** On ouvre `/app` : une seule file, une `Toolbar`, aucune barre, aucune notification ancienne qui ne s'ouvre plus, et l'ancien arbre ne s'atteint que par une porte nommée qui dit sa date de fermeture.
 
 ### T16. Le ménage, et sa mesure
