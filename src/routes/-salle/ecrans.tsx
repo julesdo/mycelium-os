@@ -7,7 +7,6 @@ import { ECRANS_FILE } from './file';
 import { ECRANS_IMPORT } from './import';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
-import { ECRANS_VOLET } from './volet';
 
 /**
  * LES ÉCRANS DU PRODUIT, TELS QU'IL LES AFFICHE.
@@ -42,7 +41,14 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	 */
 	...ECRANS_FILE,
 	...ECRANS_ONGLETS,
-	...ECRANS_VOLET,
+	/*
+	  ⚠️ `ECRANS_VOLET` A DISPARU AVEC LE VOLET DE PREUVE (écran/aujourdhui).
+	  `?ligne=` ouvrait un troisième panneau à droite d'« Aujourd'hui », avec sa
+	  propre rangée de trois positions et ses sept sections : c'est l'empilement
+	  que le terrain a nommé. Il existait parce qu'aucune vraie page n'existait ;
+	  un client et une créance ont maintenant la leur, et ce sont les entrées
+	  `créance` et `débiteurs` ci-dessous qui les montrent.
+	*/
 	...ECRANS_CREANCE,
 	...ECRANS_PIECE,
 	/*

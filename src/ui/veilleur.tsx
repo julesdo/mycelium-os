@@ -171,29 +171,39 @@ const HEURE = new Intl.DateTimeFormat('fr-FR', {
  * avant de se voir. La salle d'exposition a fait son travail.
  */
 /**
- * ⚠️ DEUX GRAPHIES, ET LES DEUX SE LISENT PENDANT TRENTE JOURS (T15).
+ * ⚠️ TROIS GRAPHIES, ET LES TROIS SE LISENT.
  *
- * La bascule change ce que `battement.ts` ÉCRIT : les notifications posées
- * depuis le 17 septembre 2026 portent `/app?ligne=<id>`, l'adresse du volet de
- * preuve. Celles déjà en base portent `/app/creance/<id>` ou
- * `/app/debiteurs?d=<id>`, et elles ne se réécrivent pas — une notification est
- * un fait daté, pas un état qu'on corrige.
+ * `battement.ts` a écrit `/app/creance/<id>` et `/app/debiteurs?d=<id>`, puis
+ * `/app?ligne=<id>` à partir du 17 septembre 2026. Elles ne se réécrivent pas :
+ * une notification est un fait daté, pas un état qu'on corrige.
  *
- * Ne lire que la graphie neuve ferait mourir toutes les anciennes le jour de la
- * bascule, EN SILENCE : `destinations-existent.test.ts` exclut nommément la
- * forme `lien:` de son balayage, et `lienDeTrouvaille` rend `{}` sans lever
- * quand la forme lui échappe. Aucun test ne le dirait.
+ * Ne lire que la graphie du jour ferait mourir toutes les autres EN SILENCE :
+ * `destinations-existent.test.ts` exclut nommément la forme `lien:` de son
+ * balayage, et `lienDeTrouvaille` rend `{}` sans lever quand la forme lui
+ * échappe. Aucun test ne le dirait.
  *
- * Les deux anciennes formes partent avec la porte de transition, au T16.
+ * ⚠️ ET `?ligne=` NE MÈNE PLUS À UNE PREUVE, PARCE QU'IL N'Y EN A PLUS.
+ * Ce paramètre ouvrait le volet de preuve, qui a disparu avec la refonte
+ * d'« Aujourd'hui » : `/app` ne le valide plus, et le porter ici ne compilerait
+ * même pas. Il mène donc à « Aujourd'hui » tout court.
+ *
+ * ⚠️ C'EST UNE PERTE, ET ELLE EST DITE PLUTÔT QUE MAQUILLÉE. L'identifiant
+ * désigne tantôt une créance, tantôt un client — c'est la surveillance qui le
+ * décide — et le trancher demande de lire les créances de l'établissement, ce
+ * que ce composant ne fait pas et ne doit pas faire. Deviner mènerait une
+ * notification sur la page d'un AUTRE dossier, ce qui est pire que d'ouvrir
+ * l'écran qui porte la rangée : elle y est, nommée, avec son montant.
+ *
+ * Ce qui reste à faire, et qui n'est pas de cet écran : que `battement.ts`
+ * écrive `/app/creance/<id>` ou `/app/debiteurs/<id>`, qu'il est le seul à
+ * pouvoir résoudre. La première graphie ci-dessous l'attend déjà.
  */
 function lienDeTrouvaille(
 	lien: string
 ): Pick<TacheVeilleur, 'vers' | 'parametres' | 'recherche'> | Record<string, never> {
-	// LA GRAPHIE NEUVE. `/app?ligne=<id>` d'abord, parce que c'est la seule que
-	// le produit écrit désormais.
 	const ligne = /^(?:\/app)?\?ligne=([\w-]+)$/.exec(lien);
 	if (ligne?.[1] !== undefined) {
-		return { vers: '/app', recherche: { ligne: ligne[1] } };
+		return { vers: '/app' };
 	}
 
 	const creance = /^\/app\/creance\/([\w-]+)$/.exec(lien);

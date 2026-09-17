@@ -62,25 +62,52 @@ const TETES: readonly {
 	readonly libelle: string;
 	readonly ouSaLectureVit: string;
 }[] = [
+	/**
+	 * ⚠️ DEUX DE CES PHRASES ONT MENTI, ET ELLES SONT CORRIGÉES ICI.
+	 *
+	 * Elles renvoyaient à « la vue Par client » et à « la puce Engagés », deux
+	 * mécanismes d'« Aujourd'hui » que la refonte a supprimés : une vue qui était
+	 * un onglet déguisé, et une puce qui filtrait l'écran entier. Les deux sont
+	 * devenues des DESTINATIONS de la barre du bas, ce qui est exactement ce
+	 * qu'elles auraient dû être.
+	 *
+	 * Une porte de transition qui nomme faussement où la lecture a déménagé est
+	 * pire qu'une porte absente : elle envoie chercher quelque chose qui n'existe
+	 * pas, sur un écran qu'on découvre.
+	 */
 	{
 		to: '/app/debiteurs',
 		libelle: 'Vos débiteurs',
-		ouSaLectureVit: 'La vue Par client, en haut de cette file'
+		ouSaLectureVit: 'L’onglet « Clients », dans la barre du bas'
 	},
 	{
 		to: '/app/procedures',
 		libelle: 'Les dossiers engagés',
-		ouSaLectureVit: 'La puce « Engagés »'
+		ouSaLectureVit: 'L’onglet « Créances », dans la barre du bas'
 	},
 	{
 		to: '/app/import-factures',
 		libelle: 'Vos dépôts de factures',
 		ouSaLectureVit: 'Le bouton « Déposer », et la rangée datée de chaque dépôt'
 	},
+	/**
+	 * ⚠️ CELLE-CI EST UNE DETTE, ET ELLE LE DIT PLUTÔT QUE DE LA MAQUILLER.
+	 *
+	 * « Aujourd'hui » a gardé les hypothèses et les angles morts, qui sont des
+	 * constats d'auditabilité et se rendent à plat en bas de l'écran. Le
+	 * SUPPLÉMENT — le livrable vendu du « Premier bilan » — et le bilan de ce qui
+	 * s'est ÉTEINT n'ont pas d'autre page que celle-ci.
+	 *
+	 * Conséquence à trancher avant le {@link FERMETURE_DE_LA_PORTE} : cette porte
+	 * est la SEULE arête entrante de `/app/revelation`. La refermer sans lui avoir
+	 * donné une entrée ailleurs rendrait l'écran injoignable — le défaut exact que
+	 * `aucun-ecran-orphelin.test.ts` existe pour attraper, et qu'il n'attrapera
+	 * pas tant que cette ligne est là.
+	 */
 	{
 		to: '/app/revelation',
 		libelle: 'Ce que vos factures portent, en détail',
-		ouSaLectureVit: 'La puce « Ce que vos factures portent »'
+		ouSaLectureVit: 'Nulle part ailleurs : le supplément et ce qui s’est éteint ne se lisent qu’ici'
 	}
 ];
 

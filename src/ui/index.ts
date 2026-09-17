@@ -76,10 +76,12 @@ export {
 export { FluxEvenements, type EvenementAffiche, type UrgenceEvenement } from './flux-evenements';
 export {
 	RangeeFile,
+	GroupeDeFile,
 	PliDeLaFile,
 	trierSelonLePli,
 	type UrgenceRangee,
 	type PropositionDeRangee,
+	type DestinationRangee,
 	type FaitsDuPli
 } from './rangee-file';
 export {

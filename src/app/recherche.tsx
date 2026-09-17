@@ -17,14 +17,14 @@ import { api } from '../lib/convex/_generated/api';
  * LA RECHERCHE, ET SA PALETTE (D16).
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ ELLE VIENT DE LA BARRE, QUI MEURT AVEC LA BASCULE (T15)
+ * ⚠️ ELLE VIT DANS L'EN-TÊTE D'« AUJOURD'HUI », ET SON `ouvrir` A CHANGÉ DEUX FOIS
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Le dessin est INCHANGÉ — D16 le dit en toutes lettres : la palette reste
- * telle quelle. Une seule chose change, et c'est la seule qui devait changer :
- * son `ouvrir` ne mène plus à trois adresses différentes, il pose `?ligne=<id>`
- * sur la file. Il n'y a plus qu'un écran de travail ; ouvrir, c'est y ouvrir
- * une preuve.
+ * telle quelle. Ce qui a bougé, c'est où elle mène. Elle a mené à trois
+ * adresses, puis à `?ligne=<id>` sur la file, et elle mène de nouveau à la page
+ * de l'objet : le volet de preuve a disparu, un client et une créance ont
+ * chacun la leur. Voir `ouvrir`, plus bas, qui porte la raison.
  *
  * Elle reste dans `src/app/` parce qu'elle INTERROGE Convex. Le dessin, lui,
  * vit dans `ui/palette-recherche.tsx`, qui n'interroge rien : c'est ce qui
@@ -96,27 +96,44 @@ function PaletteBranchee({ ouverte, onFermer }: { ouverte: boolean; onFermer: ()
 	});
 
 	/**
-	 * OUVRIR, C'EST POSER `?ligne=<id>` — ET RIEN D'AUTRE (D16).
+	 * OUVRIR, C'EST ALLER À LA PAGE DE L'OBJET.
 	 *
-	 * ⚠️ `?ligne=` PORTE L'IDENTIFIANT QUE LA RANGÉE PORTE, tel quel : celui d'une
-	 * créance quand l'objet en est une, celui d'un client sinon. C'est la file qui
-	 * sait résoudre l'un vers l'autre, et elle le sait à UN endroit — construire
-	 * ici une seconde règle de résolution la ferait diverger de celle des rangées,
-	 * et la ligne ouverte ne serait plus celle qu'on a touchée.
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ ELLE POSAIT `?ligne=<id>`, ET CE PARAMÈTRE N'EXISTE PLUS
+	 * ═══════════════════════════════════════════════════════════════════════════
 	 *
-	 * ⚠️ UNE FACTURE N'OUVRE RIEN, ET C'EST EXACT : elle n'a pas d'écran à elle.
-	 * On va à la file, où sa créance et son client portent leurs rangées.
+	 * Il ouvrait le volet de preuve d'« Aujourd'hui », qui a disparu : un client
+	 * et une créance ont maintenant chacun LEUR page. Laissé tel quel, ce geste
+	 * refermait la palette et menait à « Aujourd'hui » sans rien ouvrir — on
+	 * cherchait un client, on le trouvait, on le touchait, et il ne se passait
+	 * rien. Le pire état d'une recherche : elle répond, et le résultat ne mène
+	 * nulle part.
+	 *
+	 * ⚠️ ET IL N'Y A AUCUNE RÉSOLUTION À FAIRE ICI. La palette dit déjà de quel
+	 * GENRE est ce qu'on a touché — `DEBITEUR` ou `PROCEDURE` — et porte
+	 * l'identifiant qui va avec. C'est ce qui manquait à `?ligne=`, qui
+	 * transportait un identifiant nu et laissait la file deviner.
+	 *
+	 * ⚠️ UNE FACTURE MÈNE À SON CLIENT, ET C'EST EXACT : elle n'a pas d'écran à
+	 * elle, et c'est la page de son client qui la porte, ligne à ligne, avec le
+	 * rapprochement qui la solde.
 	 */
 	const ouvrir = (destination: DestinationRecherche) => {
 		onFermer();
-		const ligne =
-			destination.genre === 'PROCEDURE'
-				? destination.creanceId
-				: destination.genre === 'DEBITEUR'
-					? destination.debiteurId
-					: null;
 
-		void navigate({ to: '/app', search: ligne === null ? {} : { ligne } });
+		if (destination.genre === 'PROCEDURE') {
+			void navigate({ to: '/app/creance/$id', params: { id: destination.creanceId } });
+			return;
+		}
+
+		if (destination.genre === 'DEBITEUR') {
+			void navigate({ to: '/app/debiteurs/$id', params: { id: destination.debiteurId } });
+			return;
+		}
+
+		// `IMPORT` : l'établissement est vide, et il n'y a rien à ouvrir. On mène à
+		// « Aujourd'hui », dont l'état vide EST la zone de dépôt, en grand.
+		void navigate({ to: '/app' });
 	};
 
 	return (
