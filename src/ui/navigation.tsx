@@ -181,11 +181,12 @@ export function LigneAnalyse({
 	/**
 	 * La recherche d'URL, quand la destination en dépend.
 	 *
-	 * ⚠️ ELLE EST NÉCESSAIRE, ET PAS THÉORIQUE. Le volet d'un débiteur n'a pas
-	 * de route à lui : il vit sur `/app/debiteurs` et se choisit par `?d=<id>`.
-	 * Sans cette prop, aucune rangée du produit ne pouvait donc atteindre un
-	 * débiteur — ce qui est exactement pourquoi l'écran d'une créance affichait
-	 * le nom de son débiteur sans pouvoir y mener.
+	 * ⚠️ ELLE EST NÉCESSAIRE, ET PAS THÉORIQUE. Une procédure se choisit par
+	 * `?p=<id>` sur `/app/procedures` ; un débiteur s'atteint par `?d=<id>` sur
+	 * `/app/debiteurs`, qui redirige vers sa page. Sans cette prop, aucune rangée
+	 * du produit ne pourrait atteindre ces deux-là — ce qui est exactement
+	 * pourquoi l'écran d'une créance affichait le nom de son débiteur sans
+	 * pouvoir y mener.
 	 */
 	recherche?: LinkProps['search'];
 }) {
