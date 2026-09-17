@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Chip, ListButton, ListItem, SearchField, Toolbar, ToolbarButton } from '@cladd-ui/react';
-import { RotateCcwIcon, TrendingUpIcon, UploadIcon, XIcon } from 'lucide-react';
+import { RotateCcwIcon, UploadIcon, XIcon } from 'lucide-react';
 import {
 	Avatar,
 	BoutonPrincipal,
@@ -619,11 +619,23 @@ export function EcranDebiteurs({
 				/*
 				  ⚠️ ELLES PASSENT À LA LIGNE, ELLES NE DÉFILENT PAS. La `Toolbar` de la
 				  file défile, et c'est juste pour elle : elle porte des OUTILS, dont on
-				  sait qu'ils sont là. Ici ce sont des OFFRES — mesurées au navigateur,
-				  les trois pilules demandent 535 px et la colonne du téléphone en donne
-				  343 : la troisième sortait du champ, et une option qu'on ne voit pas
-				  n'existe pas. Elle coûte une rangée de 48 px sur le seul téléphone ;
-				  dès 768 px, les trois tiennent sur une ligne.
+				  sait qu'ils sont là. Ici ce sont des OFFRES — une option qu'on ne voit
+				  pas n'existe pas, et ce qui sort du champ ne se voit pas.
+
+				  ⚠️ CE QUE LA QUATRIÈME COÛTE, MESURÉ ET ASSUMÉ. Relevées au
+				  navigateur : « Facture échue » 148 px, « Rythme rompu » 151,
+				  « SIREN manquant » 163, « Procédure collective » 192 — 678 px avec
+				  leurs écarts. Elles tiennent sur deux lignes dès 768 px ; au
+				  téléphone, où la colonne donne 343 px, il en faut trois, contre deux
+				  avant l'ajout. Soit 48 px de plus entre le sommaire et la première
+				  rangée, sur le seul téléphone.
+
+				  ⚠️ ET AUCUN ORDRE NE RAMÈNE À DEUX LIGNES, c'est vérifié plutôt que
+				  supposé : « SIREN manquant » et « Procédure collective » font 363 px
+				  à elles deux et ne partagent jamais une ligne de 343. Le prix n'est
+				  donc pas un défaut de rangement, c'est le prix de la quatrième offre
+				  — et il ne se paie que le jour où les quatre cas coexistent chez un
+				  même client, la procédure collective étant rare par construction.
 
 				  ⚠️ `justify-start` : LA `Toolbar` DE CLADD CENTRE SON CONTENU, et une
 				  dernière ligne centrée ne s'alignerait pas sur la première.
@@ -772,17 +784,23 @@ export function EcranDebiteurs({
 						icon={<Avatar nom={debiteur.denomination} />}
 						footer={
 							/*
-							  TROIS PUCES AU PLUS, ET SEULEMENT CE QUI TOUCHE À L'ARGENT.
+							  DEUX PUCES AU PLUS, ET SEULEMENT CE QUI TOUCHE À L'ARGENT.
 
-							  Le retard, le rythme rompu, et l'état au registre. Ce sont les
-							  trois seuls faits qui décident de ce qu'on fait de ce client
-							  aujourd'hui, et ce sont les trois seuls qui ne se devinent pas
-							  depuis son encours.
+							  Le retard, et l'état au registre. Ce sont les deux seuls faits qui
+							  décident de ce qu'on fait de ce client aujourd'hui, et ce sont les
+							  deux seuls qui ne se devinent pas depuis son encours.
 
-							  ⚠️ LES TROIS NE SE CUMULENT PRESQUE JAMAIS. Une rupture suppose
-							  un impayé exigible, donc « n échue » avec elle ; la procédure
-							  collective, elle, est rare. Le cas à trois puces existe et passe
-							  à la ligne — le pied est en `flex-wrap` pour ça.
+							  ⚠️ ET LA RUPTURE D'HABITUDE N'EN EST PAS UNE TROISIÈME, alors que
+							  c'était le réflexe. Essayée ici, mesurée au navigateur à 375 px :
+							  la colonne du nom ne dispose que de 124 px, « 4 échues » en prend
+							  74 avec son écart, et une puce « Rythme rompu » demande 110 px —
+							  elle passait à la ligne et portait la rangée de l'imprimerie à
+							  124 px contre 65 pour les autres. C'est mot pour mot le défaut que
+							  le paragraphe des angles morts, plus haut, a fait sortir d'ici :
+							  le client le plus abîmé produisait la rangée la plus haute.
+
+							  Elle est donc partie dans la colonne de droite, dont la largeur
+							  est fixée par le montant et non par la raison sociale.
 
 							  ⚠️ LES DEUX MANQUES — SIREN, SECTEUR — SONT PARTIS AU SOMMAIRE, et
 							  le raisonnement complet est écrit là-haut, avec la mesure qui l'a
@@ -797,35 +815,6 @@ export function EcranDebiteurs({
 								{debiteur.facturesEchues > 0 ? (
 									<Chip size="sm" color="orange">
 										{debiteur.facturesEchues} échue{pluriel(debiteur.facturesEchues)}
-									</Chip>
-								) : null}
-								{/*
-								  LA RUPTURE EST UNE PUCE, PAS UNE LIGNE DE PLUS.
-
-								  ⚠️ ELLE SUIT « n ÉCHUE », ET L'ORDRE PORTE LE SENS. La
-								  première est un fait de calendrier — une date est passée ;
-								  la seconde dit que ce retard-là ne ressemble pas à ce
-								  client. Lues dans cet ordre, « 2 échues · Rythme rompu »
-								  se comprend sans légende ; l'inverse fait lire une alerte
-								  avant de savoir de quoi elle parle.
-
-								  ⚠️ MÊME ACCENT QUE « ÉCHUE », ET UNE ICÔNE POUR LES
-								  SÉPARER. Un troisième accent sur une rangée qui en porte
-								  déjà deux est ce que la documentation du kit nomme
-								  précisément — « ne pas empiler trois accents ». Le
-								  chevron montant est l'icône que la page du client donne
-								  déjà à une rupture : la même chose porte le même signe.
-
-								  ⚠️ ELLE NE DIT PAS DE COMBIEN, et c'est mesuré : l'écart
-								  et le constat entier vivent sur la page du client, à un
-								  doigt d'ici. Une puce qui porterait « +47 j » ferait
-								  arbitrer sur un nombre sorti de son contexte — 47 jours de
-								  plus que quoi ? — alors que le délai habituel est écrit au
-								  bout de la même rangée.
-								*/}
-								{habitude?.rompu === true ? (
-									<Chip size="sm" color="orange" icon={TrendingUpIcon}>
-										Rythme rompu
 									</Chip>
 								) : null}
 								{debiteur.santeFinanciere !== 'SAINE' && debiteur.santeFinanciere !== 'INCONNUE' ? (
@@ -845,12 +834,43 @@ export function EcranDebiteurs({
 							  rangée, un chiffre de trente-deux pixels écrase le nom.
 
 							  ⚠️ L'HABITUDE VIENT SE LOGER SOUS LUI, PAS DANS LE PIED DE LA
-							  RANGÉE, et la colonne est le seul endroit où elle a du sens :
-							  « 12 450,00 € » au-dessus de « Règle à 12 j » se lit comme une
-							  phrase — ce qu'il doit, à quel rythme il rend. Posée à gauche
-							  parmi les puces, elle aurait disputé la place à celles qui
-							  qualifient le client, dans une colonne qui ne fait que 180 px
-							  au volet gauche d'un maître-détail.
+							  RANGÉE, et c'est une mesure qui l'a décidé, pas un goût. Cette
+							  colonne-ci est large de ce que mesure le montant — 91 px à
+							  375 px, pour « 12 878,50 € » — et cette largeur ne dépend pas
+							  de la raison sociale. La colonne du nom, elle, n'a que 124 px
+							  au téléphone : tout ce qu'on y ajoute passe à la ligne et
+							  allonge la rangée du client le plus abîmé, ce que le
+							  paragraphe des angles morts a déjà fait corriger une fois.
+
+							  Lue de haut en bas, la colonne fait une phrase : ce qu'il
+							  doit, ce qui cloche, à quel rythme il règle d'ordinaire.
+
+							  ⚠️ LES DEUX MENTIONS TIENNENT SOUS 91 PX, ET C'EST LA
+							  CONTRAINTE QUI A CHOISI LES MOTS. Mesurées dans la fonte du
+							  produit : « Rythme rompu » 84 px, « Règle à 12 j » 63 px. Une
+							  formule qui aurait dit les deux d'un coup — « Rompu · 12 j
+							  d'ordinaire », 132 px — élargissait la colonne de droite et
+							  reprenait au nom les pixels qu'on venait de lui rendre.
+
+							  ⚠️ LA RUPTURE NE DIT PAS DE COMBIEN, et c'est délibéré :
+							  l'écart et le constat entier — la phrase du domaine, avec le
+							  nombre de règlements qui l'établit — vivent sur la page du
+							  client, à un doigt d'ici. Un « +47 j » posé seul ferait
+							  arbitrer sur un nombre sorti de son contexte, alors que le
+							  délai habituel est écrit juste en dessous.
+
+							  ⚠️ NI ACCENT, NI PUCE, NI ICÔNE SUR LA RUPTURE. Ce qui la fait
+							  trouver, c'est qu'elle est la seule mention en pleine encre dans
+							  une colonne de mentions grises ; la peindre en rouge la ferait
+							  lire comme un état au registre, qui est le seul fait de cette
+							  rangée à mériter une couleur.
+
+							  Et l'icône a été essayée, mesurée, retirée : le chevron de la
+							  page du client portait la colonne de 91 à 101 px. Dix pixels
+							  repris au nom sur CHAQUE rangée, y compris celles qui n'ont
+							  aucune rupture — pour un glyphe de douze pixels dont la pleine
+							  encre faisait déjà le travail. La colonne revient donc à la
+							  largeur de son montant, qui est ce qui doit la fixer.
 
 							  ⚠️ RIEN QUAND L'HABITUDE N'EST PAS ÉTABLIE. Ni « — », ni
 							  « 0 j », ni « inconnu » : quatre règlements datés sont le
@@ -867,6 +887,9 @@ export function EcranDebiteurs({
 								<span className="text-cladd-sm font-bold tabular-nums">
 									{eurosCentimes(debiteur.encours)}
 								</span>
+								{habitude?.rompu === true ? (
+									<span className="text-cladd-2xs font-semibold">Rythme rompu</span>
+								) : null}
 								{habitude === undefined ? null : (
 									<span
 										className="text-cladd-2xs text-cladd-fg-softer tabular-nums"
