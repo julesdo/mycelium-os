@@ -105,21 +105,23 @@ const TITRE_DU_RANG: Record<RangDuDossier, string> = {
 };
 
 /**
- * Ce que chaque rang CONSTATE, sous son intitulé.
+ * Ce que deux rangs sur quatre CONSTATENT, sous leur intitulé.
  *
- * ⚠️ LES DEUX DERNIERS SONT LES PLUS IMPORTANTS, et ce sont ceux qu'un écran
- * ordinaire tairait. « Plus tard » ne veut pas dire « rien à faire », et
- * « aucune date comptée » ne veut pas dire « aucun délai ne court » : un délai
- * dont le référentiel ignore la durée court quand même, et il est nommé sur le
- * dossier. Un gérant qui croit sa procédure surveillée ne la surveille pas
- * lui-même.
+ * ⚠️ DEUX SEULEMENT, ET CE SONT CEUX QU'ON LIT DE TRAVERS. Une date DÉPASSÉE se lit
+ * comme un échec du logiciel alors qu'il n'a jamais rien su de ce jour-là, et
+ * « aucune date comptée » se lit comme « aucun délai ne court » alors qu'un
+ * délai dont le référentiel ignore la durée court quand même. Les deux autres
+ * sections n'ont rien à expliquer : leur intitulé et les pastilles le disent.
+ *
+ * Une phrase grise sous chaque intitulé serait quatre paragraphes à traverser
+ * avant d'atteindre la première carte — et les deux qui comptent se
+ * perdraient dans les deux qui ne servent à rien.
  */
-const CONSTAT_DU_RANG: Record<RangDuDossier, string> = {
+const CONSTAT_DU_RANG: Record<RangDuDossier, string | null> = {
 	DEPASSEE:
 		'Ce que ces dates éteignaient s’est joué. Ce logiciel n’enregistre que ce que vous y consignez : il ne sait pas ce qui s’est passé ce jour-là.',
-	APPROCHE: `Le préavis est de ${PREAVIS.CADUCITE} jours quand la date éteint un droit, de ${PREAVIS.INFORMATIVE} jours quand elle structure la suite sans rien éteindre.`,
-	PLUS_TARD:
-		'Aucune de ces dates ne tombe dans son préavis. Elles restent comptées, jour après jour.',
+	APPROCHE: null,
+	PLUS_TARD: null,
 	NON_COMPTEE:
 		'Ce logiciel ne compte aucune date sur ces dossiers. Ce n’est pas la même chose qu’aucun délai : ce qui court sans être compté est nommé sur le dossier.'
 };
@@ -155,7 +157,8 @@ export function rangDuDossier(dossier: DossierEngage, aujourdHui: string): RangD
 export interface GroupeDeDossiers {
 	readonly rang: RangDuDossier;
 	readonly titre: string;
-	readonly constat: string;
+	/** `null` quand l'intitulé se suffit. Voir `CONSTAT_DU_RANG`. */
+	readonly constat: string | null;
 	readonly dossiers: readonly DossierEngage[];
 }
 
@@ -225,17 +228,9 @@ function PastilleDuDelai({
 	echeance,
 	aujourdHui
 }: {
-	echeance: EcheanceDuDossier | null;
+	echeance: EcheanceDuDossier;
 	aujourdHui: string;
 }) {
-	if (echeance === null) {
-		return (
-			<Chip size="md" color="neutral">
-				aucune date comptée
-			</Chip>
-		);
-	}
-
 	const jours = joursDici(echeance.dateLimite, aujourdHui);
 	if (jours === null) {
 		return (
@@ -290,8 +285,12 @@ function FriseFine({ etapes, terminal }: { etapes: readonly EtapeAffichee[]; ter
 					/>
 				))}
 			</span>
+			{/* « 1 étape sur 4 », pas « 1 sur 4 » : un rapport sans unité se lit comme
+			    un score, et ce produit n'en pose aucun. */}
 			<span className="shrink-0 text-cladd-2xs text-cladd-fg-softer tabular-nums">
-				{terminal ? 'voie terminée' : `${franchies} sur ${etapes.length}`}
+				{terminal
+					? 'voie terminée'
+					: `${franchies} étape${pluriel(franchies)} sur ${etapes.length}`}
 			</span>
 		</span>
 	);
@@ -352,8 +351,16 @@ export function CarteDossier({
 				aria-current={selectionnee ? true : undefined}
 				className="verre-bouton flex flex-col gap-cladd-3xs rounded-cladd-xl p-cladd-2xs"
 			>
+				{/*
+				  ⚠️ PAS DE PASTILLE QUAND AUCUNE DATE N'EST COMPTÉE. Elle disait
+				  « aucune date comptée » — mot pour mot l'intitulé de la seule section
+				  où ces cartes apparaissent. Une pastille qui répète le titre au-dessus
+				  d'elle occupe la place d'un fait sans en apporter un.
+				*/}
 				<span className="flex flex-wrap items-center gap-cladd-3xs">
-					<PastilleDuDelai echeance={echeance} aujourdHui={aujourdHui} />
+					{echeance === null ? null : (
+						<PastilleDuDelai echeance={echeance} aujourdHui={aujourdHui} />
+					)}
 					<span className="min-w-0 text-cladd-2xs text-cladd-fg-softer">{dossier.libelle}</span>
 				</span>
 
@@ -419,13 +426,23 @@ export function ListeDesDossiers({
 		<div className="flex flex-col gap-cladd-xs">
 			{groupes.map((groupe) => (
 				<section key={groupe.rang} className="flex flex-col gap-cladd-3xs">
+					{/*
+					  ⚠️ LE COMPTE EST UN NOMBRE, PAS UNE PASTILLE, ET C'EST UNE MESURE
+					  PRISE AU NAVIGATEUR. La documentation de Cladd montre un `Chip` dans
+					  la fente de `SectionTitle` — mais l'échelle du produit est décalée :
+					  `md` y vaut 48 px, le plancher tactile. À côté d'un intitulé de
+					  12 px, la pastille faisait une bulle de 48 px qui dominait la
+					  section qu'elle ne fait que compter. Le cran du dessous est interdit
+					  par le kit pour un élément autonome, et ce compte n'est pas
+					  cliquable : un nombre suffit.
+					*/}
 					<SectionTitle>
 						<span>{groupe.titre}</span>
-						<Chip size="md" color="neutral" className="normal-case">
-							{groupe.dossiers.length}
-						</Chip>
+						<span className="text-cladd-fg-softest tabular-nums">{groupe.dossiers.length}</span>
 					</SectionTitle>
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">{groupe.constat}</p>
+					{groupe.constat === null ? null : (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">{groupe.constat}</p>
+					)}
 					{groupe.dossiers.map((dossier) => (
 						<CarteDossier
 							key={dossier.creanceId}
@@ -561,8 +578,8 @@ export function VoletDuDossier({
 					</p>
 					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 						Si le dossier est parti chez un conseil, ce logiciel ne sait pas ce qu’il a engagé. Son
-						suivi — préparé, remis, revenu, clos — ne change d’état que sur votre déclaration, et
-						se tient sur le décompte que vous lui avez remis.
+						suivi — préparé, remis, revenu, clos — ne change d’état que sur votre déclaration, et se
+						tient sur le décompte que vous lui avez remis.
 					</p>
 				</Carte>
 			</section>

@@ -62,7 +62,17 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 	const entete = {
 		genre: 'poussee',
 		titre: 'Ce qui est dû',
-		retour: { vers: '/app', libelle: 'Aujourd’hui' }
+		/*
+		  ⚠️ « VOTRE FILE », LE NOM QUE `/app` SE DONNE — pas « Aujourd'hui », le
+		  nom que la barre du bas lui donne. Ce libellé n'apparaît qu'après un
+		  rechargement, quand l'historique n'a plus de titre de provenance ; le
+		  reste du temps c'est le titre publié par l'écran quitté qui s'affiche,
+		  et il dit « Votre file ». Deux noms pour le même retour selon qu'on a
+		  rechargé ou non, c'est exactement la divergence que `screens/titres.ts`
+		  existe pour empêcher — le nom de `/app` n'y figure pas encore, et sa
+		  place est là.
+		*/
+		retour: { vers: '/app', libelle: 'Votre file' }
 	} as const;
 
 	if (donnees.etat !== 'pret') return <PageEcran entete={entete} etat={donnees.etat} />;

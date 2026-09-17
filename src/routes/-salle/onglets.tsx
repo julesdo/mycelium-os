@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { parcoursDeLaVoie } from '../../lib/verticales/recouvrement/apres-procedure';
+import {
+	parcoursDeLaVoie,
+	suivreProcedure
+} from '../../lib/verticales/recouvrement/apres-procedure';
 import { EcranProcedures, type DossierAffiche } from '../../screens/procedures';
 import { EcranRevelation, type RevelationDuJour } from '../../screens/revelation';
-import { RAIL_DEMO } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import {
 	ARRETE_AU_DEMO,
@@ -19,84 +21,54 @@ import {
  * ⚠️ FIXE, ET PARTAGÉ AVEC LA RÉVÉLATION. Tout l'écran des dossiers est une
  * soustraction de dates : avec le jour réel, la démonstration changerait de rang
  * à chaque semaine qui passe, et les quatre sections ne seraient plus visibles
- * ensemble. Avec deux jours différents d'un écran à l'autre, la salle
- * montrerait deux « aujourd'hui » voisins.
+ * ensemble. Avec deux jours différents d'un écran à l'autre, la salle montrerait
+ * deux « aujourd'hui » voisins.
  */
 const AUJOURD_HUI_DEMO = ARRETE_AU_DEMO;
 
 /**
- * LES DOSSIERS ENGAGÉS — les quatre rangs de l'écran, côte à côte.
+ * UN DOSSIER DE DÉMONSTRATION, COMPOSÉ PAR LE DOMAINE.
  *
- * ⚠️ IL EN FAUT QUATRE, ET PAS DEUX. L'écran range les dossiers par l'échéance
- * qui approche : date dépassée, échéance sous préavis, plus tard, aucune date
- * comptée. Un jeu qui n'en produirait que deux laisserait deux sections
- * invisibles au regard — et ce sont les deux dernières, celles qui disent ce que
- * le logiciel NE surveille PAS, qui sont les plus faciles à casser sans que rien
- * ne tombe.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ RIEN DE JURIDIQUE N'EST ÉCRIT ICI, ET C'EST TOUT L'INTÉRÊT
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Chacun est là pour une raison :
+ * L'état courant, sa date, l'échéance qui commande, sa conséquence et les
+ * angles morts sortent de `suivreProcedure` — la MÊME fonction que
+ * `lireSuivi` appelle côté base. Le rail sort de `parcoursDeLaVoie`, sur le
+ * même journal. La salle ne fournit donc que ce qu'un gérant fournit : la voie
+ * engagée, sa date, et les faits consignés.
  *
- *   · Transports Vidal — une caducité DÉPASSÉE. Ce que la date éteignait s'est
- *     joué, et le logiciel ne sait pas ce qui s'est passé ce jour-là ;
- *   · Comptoir Lefèvre — une échéance INFORMATIVE sous préavis. C'est le seul
- *     dossier qui porte la pastille ambre, et sa voie n'est pas la même : son
- *     rail vient de la machine L.126, calculé par le domaine et non écrit ici ;
- *   · Ateliers Martin — une caducité LOINTAINE. Elle reste rouge parce qu'une
- *     caducité éteint un droit quelle que soit sa date, et elle se lit quand
- *     même en dernier : ce qui expire en premier se lit en premier ;
- *   · Fournitures Durand — AUCUNE date comptée, un angle mort, et un montant
- *     introuvable. Les trois absences que l'écran doit nommer plutôt que
- *     combler.
- *
- * Il vit ici, et pas dans `communes.ts` : seul l'onglet des dossiers le montre.
- * Le rail de l'injonction, lui, reste commun.
+ * La première version écrivait ces textes à la main. Elle avait déjà produit
+ * une incohérence qu'aucun test n'aurait attrapée : un dossier annoncé à
+ * l'entrée de la voie L.126 portait l'échéance de contestation, qui ne court
+ * qu'une fois le commandement signifié. Le rail montrait un état, la carte en
+ * décrivait un autre — et le regard au navigateur validait les deux.
  */
-const DOSSIERS_DEMO: DossierAffiche[] = [
-	{
-		creanceId: 'demo-creance-vidal',
-		debiteur: 'Transports Vidal',
-		libelle: 'Ordonnance rendue',
-		engageeLe: '2026-03-02',
-		terminal: false,
-		intervenant: null,
-		principalRestantDu: 1_284_000n,
-		nombreFactures: 2,
-		prochaineEcheance: {
-			libelle: 'Signification de l’ordonnance',
-			dateLimite: '2026-08-28',
-			gravite: 'CADUCITE',
-			consequence:
-				'Passé ce délai de 3 mois, l’ordonnance est caduque. La créance n’est pas éteinte, ' +
-				'mais la procédure est à reprendre depuis le début, et le temps écoulé rapproche la ' +
-				'prescription.'
-		},
-		anglesMorts: [],
-		etapes: RAIL_DEMO
+function dossierDemo(
+	identite: {
+		readonly creanceId: string;
+		readonly debiteur: string;
+		readonly intervenant: string | null;
+		readonly principalRestantDu: bigint | null;
+		readonly nombreFactures: number | null;
 	},
-	{
-		creanceId: 'demo-creance-lefevre',
-		debiteur: 'Comptoir Lefèvre',
-		libelle: 'Mise en demeure envoyée',
-		engageeLe: '2026-08-20',
-		terminal: false,
-		intervenant: 'SELARL Bonnet, commissaires de justice',
-		principalRestantDu: 318_000n,
-		nombreFactures: 1,
-		prochaineEcheance: {
-			libelle: 'Expiration du délai de contestation',
-			dateLimite: '2026-09-20',
-			gravite: 'INFORMATIVE',
-			consequence:
-				'Jusqu’à cette date, le débiteur peut contester et mettre fin à la procédure simplifiée.'
-		},
-		anglesMorts: [],
-		/*
-		  ⚠️ LE RAIL VIENT DU DOMAINE, il n'est pas recopié. Écrire à la main les
-		  étapes de la L.126 en poserait une seconde version, qui divergerait de la
-		  machine au premier ajustement — et la salle validerait au regard une voie
-		  que le produit ne rend pas.
-		*/
-		etapes: parcoursDeLaVoie('l126-creances-commerciales', [], '2026-08-20').map((etape) => ({
+	voie: {
+		readonly procedure: string;
+		readonly engageeLe: string;
+		readonly journal: readonly { readonly cle: string; readonly survenuLe: string }[];
+	}
+): DossierAffiche {
+	const suivi = suivreProcedure(voie.procedure, voie.journal, voie.engageeLe);
+
+	return {
+		...identite,
+		engageeLe: voie.engageeLe,
+		libelle: suivi.libelle,
+		terminal: suivi.terminal,
+		prochaineEcheance: suivi.echeances[0] ?? null,
+		anglesMorts: [...suivi.anglesMorts],
+		etapes: parcoursDeLaVoie(voie.procedure, voie.journal, voie.engageeLe).map((etape) => ({
 			etat: etape.etat,
 			libelle: etape.libelle,
 			statut: etape.statut,
@@ -104,58 +76,101 @@ const DOSSIERS_DEMO: DossierAffiche[] = [
 			branches: etape.branches,
 			brancheSuivie: etape.brancheSuivie
 		}))
-	},
-	{
-		creanceId: 'demo-creance-martin',
-		debiteur: 'Ateliers Martin',
-		libelle: 'Ordonnance rendue',
-		engageeLe: '2026-06-04',
-		terminal: false,
-		intervenant: 'SCP Reynal & Vasseur, commissaires de justice',
-		principalRestantDu: 3_199_100n,
-		nombreFactures: 4,
-		prochaineEcheance: {
-			libelle: 'Signification de l’ordonnance',
-			dateLimite: '2026-11-28',
-			gravite: 'CADUCITE',
-			consequence:
-				'Passé ce délai de 3 mois, l’ordonnance est caduque. La créance n’est pas éteinte, ' +
-				'mais la procédure est à reprendre depuis le début, et le temps écoulé rapproche la ' +
-				'prescription.'
+	};
+}
+
+/**
+ * LES DOSSIERS ENGAGÉS — les quatre rangs de l'écran, côte à côte.
+ *
+ * ⚠️ IL EN FAUT QUATRE, ET PAS DEUX. L'écran range les dossiers par l'échéance
+ * qui approche : date dépassée, échéance proche, plus tard, aucune date comptée.
+ * Un jeu qui n'en produirait que deux laisserait deux sections invisibles au
+ * regard — et ce sont les deux dernières, celles qui disent ce que le logiciel
+ * NE surveille PAS, qui sont les plus faciles à casser sans que rien ne tombe.
+ *
+ * Chacun est là pour une raison, et sa DATE est choisie pour tomber dans son
+ * rang au jour de la salle (9 septembre 2026) :
+ *
+ *   · Transports Vidal — ordonnance rendue le 28 mai, donc caduque le 28 août :
+ *     une date DÉPASSÉE de douze jours ;
+ *   · Comptoir Lefèvre — commandement L.126 signifié le 20 août, donc délai de
+ *     contestation au 20 septembre : la seule échéance INFORMATIVE du jeu, et
+ *     donc la seule pastille ambre ;
+ *   · Ateliers Martin — ordonnance rendue le 28 août, donc caduque le
+ *     28 novembre. Elle reste ROUGE parce qu'une caducité éteint un droit quelle
+ *     que soit sa date, et elle se lit quand même en dernier : ce qui expire en
+ *     premier se lit en premier ;
+ *   · Fournitures Durand — ordonnance signifiée : la machine ne compte AUCUNE
+ *     date dans cet état et déclare son angle mort. Sa créance est introuvable,
+ *     donc son montant aussi.
+ */
+const DOSSIERS_DEMO: DossierAffiche[] = [
+	dossierDemo(
+		{
+			creanceId: 'demo-creance-vidal',
+			debiteur: 'Transports Vidal',
+			intervenant: null,
+			principalRestantDu: 1_284_000n,
+			nombreFactures: 2
 		},
-		anglesMorts: [],
-		etapes: RAIL_DEMO
-	},
-	{
-		creanceId: 'demo-creance-durand',
-		debiteur: 'Fournitures Durand',
-		libelle: 'Ordonnance signifiée',
-		engageeLe: '2026-01-10',
-		terminal: false,
-		intervenant: null,
-		/*
-		  ⚠️ `null`, ET PAS `0n`. C'est la branche qui protège l'écran du zéro de
-		  confort : une créance introuvable affiche « montant non repris », jamais
-		  « 0,00 € », qui se lirait « rien à perdre sur ce dossier ». Sans ce cas
-		  dans la salle, la branche ne se regarde jamais, et rien ne tomberait le
-		  jour où elle se remettrait à écrire un zéro.
-		*/
-		principalRestantDu: null,
-		nombreFactures: null,
-		prochaineEcheance: null,
-		anglesMorts: [
-			'Un délai d’opposition court depuis la signification. Sa durée n’est pas relevée dans le ' +
-				'référentiel juridique de ce logiciel : cette échéance-là n’est pas surveillée, et reste ' +
-				'à vérifier auprès de l’acte signifié, qui la porte.'
-		],
-		etapes: RAIL_DEMO.map((etape, rang) =>
-			rang === 1
-				? { ...etape, statut: 'FRANCHIE' as const }
-				: rang === 2
-					? { ...etape, statut: 'COURANTE' as const, atteinteLe: '2026-02-10' }
-					: etape
-		)
-	}
+		{
+			procedure: 'injonction-de-payer',
+			engageeLe: '2026-03-02',
+			journal: [{ cle: 'ordonnance-rendue', survenuLe: '2026-05-28' }]
+		}
+	),
+	dossierDemo(
+		{
+			creanceId: 'demo-creance-lefevre',
+			debiteur: 'Comptoir Lefèvre',
+			intervenant: 'SELARL Bonnet, commissaires de justice',
+			principalRestantDu: 318_000n,
+			nombreFactures: 1
+		},
+		{
+			procedure: 'l126-creances-commerciales',
+			engageeLe: '2026-07-15',
+			journal: [{ cle: 'commandement-signifie', survenuLe: '2026-08-20' }]
+		}
+	),
+	dossierDemo(
+		{
+			creanceId: 'demo-creance-martin',
+			debiteur: 'Ateliers Martin',
+			intervenant: 'SCP Reynal & Vasseur, commissaires de justice',
+			principalRestantDu: 3_199_100n,
+			nombreFactures: 4
+		},
+		{
+			procedure: 'injonction-de-payer',
+			engageeLe: '2026-06-04',
+			journal: [{ cle: 'ordonnance-rendue', survenuLe: '2026-08-28' }]
+		}
+	),
+	dossierDemo(
+		{
+			creanceId: 'demo-creance-durand',
+			debiteur: 'Fournitures Durand',
+			intervenant: null,
+			/*
+			  ⚠️ `null`, ET PAS `0n`. C'est la branche qui protège l'écran du zéro de
+			  confort : une créance introuvable affiche « montant non repris », jamais
+			  « 0,00 € », qui se lirait « rien à perdre sur ce dossier ». Sans ce cas
+			  dans la salle, la branche ne se regarde jamais, et rien ne tomberait le
+			  jour où elle se remettrait à écrire un zéro.
+			*/
+			principalRestantDu: null,
+			nombreFactures: null
+		},
+		{
+			procedure: 'injonction-de-payer',
+			engageeLe: '2026-01-10',
+			journal: [
+				{ cle: 'ordonnance-rendue', survenuLe: '2026-01-20' },
+				{ cle: 'ordonnance-signifiee', survenuLe: '2026-02-10' }
+			]
+		}
+	)
 ];
 
 /**
@@ -206,6 +221,13 @@ const FORMES_REVELATION_DEMO: Readonly<Record<string, RevelationDuJour>> = {
 		...REVELATION_DU_JOUR_DEMO,
 		bilan: BILAN_SURVEILLANCE_INTERROMPUE_DEMO
 	},
+	/*
+	  ⚠️ LE BILAN RESTE CELUI DE L'ÉTABLISSEMENT, ET N'EST PAS MIS À ZÉRO AVEC LE
+	  RESTE. Ces factures EXISTENT : ce qui manque, c'est le taux qui permettrait
+	  de chiffrer leurs intérêts. Ce qui s'est éteint, lui, se compte sur des
+	  dates de prescription, qui n'ont pas besoin d'un taux. Remettre le bilan à
+	  zéro aurait fabriqué un second cadran à zéro juste sous celui qu'on retire.
+	*/
 	'rien de chiffrable': {
 		...REVELATION_DU_JOUR_DEMO,
 		revelation: {
@@ -216,8 +238,7 @@ const FORMES_REVELATION_DEMO: Readonly<Record<string, RevelationDuJour>> = {
 					'l’échéance est antérieure à la première période de taux relevée : le décompte refuse ' +
 					'de chiffrer plutôt que d’extrapoler.'
 			}))
-		},
-		bilan: BILAN_SANS_FACTURE_DEMO
+		}
 	}
 };
 

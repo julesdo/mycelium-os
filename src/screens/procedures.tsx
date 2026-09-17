@@ -6,6 +6,7 @@ import {
 	PageEcran,
 	VoletDuDossier,
 	grouperParEcheance,
+	pluriel,
 	rangDuDossier,
 	type DossierEngage,
 	type Lecture
@@ -121,18 +122,26 @@ export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffich
 
 	  ⚠️ IL COMPTE CE QUE LES SECTIONS MONTRENT, par la MÊME fonction. Un second
 	  décompte écrit ici — « les échéances à moins de trente jours » — divergerait
-	  du rang du jour où le préavis change, et l'en-tête annoncerait un nombre que
-	  la liste ne montre pas.
-	*/
-	const pressants = dossiers.filter((dossier) => {
-		const rang = rangDuDossier(dossier, aujourdHui);
-		return rang === 'DEPASSEE' || rang === 'APPROCHE';
-	}).length;
+	  des sections le jour où le préavis change, et l'en-tête annoncerait un
+	  nombre que la liste ne montre pas.
 
-	const sousTitre =
-		pressants === 0
-			? `${dossiers.length} engagé${dossiers.length > 1 ? 's' : ''}`
-			: `${dossiers.length} engagé${dossiers.length > 1 ? 's' : ''} · ${pressants} échéance${pressants > 1 ? 's' : ''} sous préavis ou dépassée${pressants > 1 ? 's' : ''}`;
+	  ⚠️ UN COMPTE À ZÉRO NE S'ÉCRIT PAS. « 0 date dépassée » est un cadran à
+	  zéro : il occupe la place de ce qui compte pour dire qu'il n'y a rien à
+	  dire.
+	*/
+	const compter = (rang: 'DEPASSEE' | 'APPROCHE') =>
+		dossiers.filter((dossier) => rangDuDossier(dossier, aujourdHui) === rang).length;
+	const depassees = compter('DEPASSEE');
+	const proches = compter('APPROCHE');
+
+	const parties = [`${dossiers.length} engagé${pluriel(dossiers.length)}`];
+	if (depassees > 0) {
+		parties.push(`${depassees} date${pluriel(depassees)} dépassée${pluriel(depassees)}`);
+	}
+	if (proches > 0) {
+		parties.push(`${proches} échéance${pluriel(proches)} proche${pluriel(proches)}`);
+	}
+	const sousTitre = parties.join(' · ');
 
 	return (
 		<PageEcran
