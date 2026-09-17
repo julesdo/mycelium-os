@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { CatchBoundary } from '@tanstack/react-router';
+import { AlertTriangleIcon } from 'lucide-react';
+import { Bandeau } from './bandeau';
 
 /**
  * CE QUI, EN ÉCHOUANT, NE DOIT RIEN EMPORTER.
@@ -52,5 +54,58 @@ export function Facultatif({ children }: { children: ReactNode }) {
 		<CatchBoundary getResetKey={() => 'facultatif'} errorComponent={() => null}>
 			{children}
 		</CatchBoundary>
+	);
+}
+
+/**
+ * UNE SOURCE DE RANGÉES DE LA FILE, ET SON NOM QUAND ELLE LÈVE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI CE N'EST PAS `Facultatif`, ALORS QUE C'EST LE MÊME MÉCANISME
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `Facultatif` fait DISPARAÎTRE ce qui lève, sans un mot. C'est le bon
+ * traitement d'un ornement : une pastille absente ne fait croire à personne
+ * qu'il n'y a rien à voir.
+ *
+ * Une source de rangées n'est pas un ornement. La file remplace vingt-sept
+ * adresses : si la surveillance ne répond pas et que ses rangées s'évaporent en
+ * silence, le gérant lit une file plus courte et en conclut qu'il a moins de
+ * travail — sur le seul écran qui dit ce qui va s'éteindre. C'est le pire état
+ * possible du produit, et il ressemble à un bon jour.
+ *
+ * B1 tranche donc en deux temps : une source qui lève laisse TOUTES les autres
+ * rangées à l'écran, et elle est NOMMÉE à sa place. Jamais un écran blanc,
+ * jamais une absence muette.
+ *
+ * ⚠️ UNE SOURCE, UNE BORNE — la règle de `Facultatif` vaut ici mot pour mot :
+ * l'isolement vient du NOMBRE de bornes montées, jamais de la clé. Deux sources
+ * réunies sous un seul `SourceDeRangees` se contaminent, et la première qui lève
+ * emporte la seconde.
+ */
+export function SourceDeRangees({ nom, children }: { nom: string; children: ReactNode }) {
+	return (
+		<CatchBoundary
+			getResetKey={() => 'source-de-rangees'}
+			errorComponent={() => <SourceRompue nom={nom} />}
+		>
+			{children}
+		</CatchBoundary>
+	);
+}
+
+/**
+ * Ce qui s'affiche à la place des rangées d'une source qui n'a pas répondu.
+ *
+ * ⚠️ IL DIT AUSSI QUE LE RESTE TIENT. « La surveillance ne répond pas » seul
+ * laisse croire que l'écran entier est faux ; la seconde phrase dit ce qui est
+ * à jour, ce qui est la moitié utile du constat.
+ */
+function SourceRompue({ nom }: { nom: string }) {
+	return (
+		<Bandeau ton="alerte" icone={<AlertTriangleIcon size={18} />}>
+			{nom} ne s’affiche pas : cette source n’a pas répondu. Les autres rangées de la file sont à
+			jour.
+		</Bandeau>
 	);
 }

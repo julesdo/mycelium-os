@@ -77,8 +77,20 @@ function pluriel(n: number): string {
 	return n > 1 ? 's' : '';
 }
 
-/** Ce que le calcul n'a pas su chiffrer — jamais tu, jamais en petit tout en bas. */
-function NonChiffrees({
+/**
+ * Ce que le calcul n'a pas su chiffrer — jamais tu, jamais en petit tout en bas.
+ *
+ * ⚠️ EXPORTÉ, ET IL N'Y EN A QU'UN DANS TOUT LE PRODUIT. La règle d'amputation
+ * de `verticales/recouvrement/revelation.ts` — « un total silencieusement amputé
+ * est pire qu'un total incomplet annoncé » — vaut pour le total de la révélation
+ * ET pour le nombre de tête de la file, qui est le même. Deux rendus de la même
+ * règle divergeraient à la première retouche, et la divergence serait muette :
+ * un écran continuerait de nommer ce qu'il n'a pas compté, l'autre non.
+ *
+ * ⚠️ ET UN JEU VIDE NE REND RIEN. Zéro facture non chiffrée produit zéro ligne,
+ * jamais une ligne qui dit zéro — règle d'écran n° 4.
+ */
+export function FacturesNonChiffrees({
 	lignes
 }: {
 	lignes: readonly { readonly reference: string; readonly raison: string }[];
@@ -173,7 +185,7 @@ export function ChocRevelation({ revelation }: { revelation: RevelationAffichee 
 				))}
 			</div>
 
-			<NonChiffrees lignes={revelation.nonChiffrees} />
+			<FacturesNonChiffrees lignes={revelation.nonChiffrees} />
 		</div>
 	);
 }

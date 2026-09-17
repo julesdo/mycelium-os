@@ -37,7 +37,7 @@ export { CompositionDue, type PartsDues } from './composition';
 export { TwoPane } from './two-pane';
 export { MaitreDetail, useDeuxVolets } from './maitre-detail';
 export { EmptyState } from './empty-state';
-export { Facultatif } from './facultatif';
+export { Facultatif, SourceDeRangees } from './facultatif';
 export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
 export { SectionEcran } from './section';
@@ -64,8 +64,17 @@ export {
 } from './decompte';
 export { FluxEvenements, type EvenementAffiche, type UrgenceEvenement } from './flux-evenements';
 export {
+	RangeeFile,
+	PliDeLaFile,
+	trierSelonLePli,
+	type UrgenceRangee,
+	type PropositionDeRangee,
+	type FaitsDuPli
+} from './rangee-file';
+export {
 	ChocRevelation,
 	BilanPertes,
+	FacturesNonChiffrees,
 	type RevelationAffichee,
 	type LigneRevelationAffichee,
 	type BilanPertesAffiche
