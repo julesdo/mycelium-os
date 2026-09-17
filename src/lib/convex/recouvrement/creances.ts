@@ -231,6 +231,89 @@ async function recalculerScore(
 }
 
 /**
+ * Rejoue `{ score, eligible }` sur des créances déjà lues.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * POURQUOI CE REJEU EXISTE : `eligible` EST STOCKÉ, ET C'EST LUI QUE LA FILE LIT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `surveillance.ts` ne recompose pas la maturité à la lecture : il lit
+ * `creance.eligible ?? false`. Le champ est donc une PHOTOGRAPHIE, prise au
+ * dernier geste qui a touché la créance, et il s'affiche tel quel tant que
+ * personne n'y retouche — y compris quand ce qui l'a produit a changé ailleurs.
+ *
+ * Trois écritures du produit changent une entrée de `qualifier()` sans passer
+ * par une mutation de créance : le classement d'une pièce, la santé écrite par
+ * le radar, et l'arrivée de factures à l'import. Chacune appelle désormais l'une
+ * des deux portes ci-dessous.
+ *
+ * ⚠️ CE SONT DES FONCTIONS DE MODULE, PAS DES FONCTIONS CONVEX, et c'est ce qui
+ * rend leur import depuis `pieces.ts`, `radar.ts` et `import.ts` sans danger :
+ * elles ne produisent aucune référence `internal.<module>.<fonction>`, donc aucun
+ * cycle d'inférence, donc aucune dégradation du type `api`.
+ *
+ * ⚠️ UNE CRÉANCE `CLOSE` N'EST PAS TOUCHÉE, même règle et même raison que
+ * `rejouerCommercialiteInterne` : son dossier est refermé, et faire bouger un
+ * verdict que plus personne ne regarde n'apporte rien et brouille la relecture.
+ *
+ * ⚠️ LE CLOISONNEMENT EST REVÉRIFIÉ EN PLUS DE L'INDEX. `creances.by_debiteur` et
+ * `piecesFactures.by_piece` ne portent pas `organizationId` : sans ce contrôle,
+ * un identifiant connu suffirait à faire écrire chez un autre établissement.
+ */
+async function rejouerCes(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	creances: readonly Doc<'creances'>[],
+	aujourdHui: string
+): Promise<number> {
+	let rejouees = 0;
+	for (const creance of creances) {
+		if (creance.organizationId !== organizationId) continue;
+		if (creance.statut === 'CLOSE') continue;
+		await ctx.db.patch(creance._id, await recalculerScore(ctx, creance, aujourdHui));
+		rejouees += 1;
+	}
+	return rejouees;
+}
+
+/** Rejoue la qualification de créances désignées par leur identifiant. */
+export async function rejouerQualification(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	creanceIds: Iterable<Id<'creances'>>,
+	aujourdHui: string
+): Promise<number> {
+	const creances: Doc<'creances'>[] = [];
+	for (const creanceId of creanceIds) {
+		const creance = await ctx.db.get(creanceId);
+		if (creance !== null) creances.push(creance);
+	}
+	return rejouerCes(ctx, organizationId, creances, aujourdHui);
+}
+
+/**
+ * Rejoue la qualification de TOUTES les créances d'un débiteur.
+ *
+ * ⚠️ D'UN DÉBITEUR, JAMAIS DU PORTEFEUILLE. C'est la borne du rejeu nocturne :
+ * le radar ne touche qu'aux clients dont le registre a changé cette nuit —
+ * quelques-uns — et un balayage de tout l'établissement coûterait quatre lectures
+ * par créance chaque nuit pour un résultat identique sur toutes celles que rien
+ * n'a fait bouger.
+ */
+export async function rejouerQualificationDuDebiteur(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	debiteurId: Id<'debiteurs'>,
+	aujourdHui: string
+): Promise<number> {
+	const creances = await ctx.db
+		.query('creances')
+		.withIndex('by_debiteur', (q) => q.eq('debiteurId', debiteurId))
+		.collect();
+	return rejouerCes(ctx, organizationId, creances, aujourdHui);
+}
+
+/**
  * Les faits déclarés, relus dans la forme que le domaine attend.
  *
  * Le tableau stocké porte une date par réponse — ce que le domaine n'a pas à

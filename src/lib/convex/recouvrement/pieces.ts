@@ -6,6 +6,7 @@ import { internal } from '../_generated/api';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { vTypePiece } from './tables';
+import { rejouerQualification } from './creances';
 
 /**
  * LES PIÈCES JUSTIFICATIVES — module 1.2.
@@ -38,6 +39,70 @@ import { vTypePiece } from './tables';
 
 /** Ce que la lecture peut conclure. `null` = elle n'a pas su. */
 const vTypeLu = v.union(vTypePiece, v.null());
+
+/**
+ * Les créances que cette pièce soutient — les seules dont la qualification bouge
+ * quand son type change ou qu'elle disparaît.
+ *
+ * Deux portées, exactement celles que `piecesDeLaCreance` cumule côté créance :
+ * les factures auxquelles la pièce est liée, et le débiteur quand elle lui est
+ * rattachée directement (CGV, contrat-cadre). Lire l'une sans l'autre laisserait
+ * la moitié des dossiers d'un client régulier sur une photographie périmée.
+ *
+ * ⚠️ LE CLOISONNEMENT EST REVÉRIFIÉ SUR CHAQUE SAUT. Ni `piecesFactures.by_piece`
+ * ni `creances.by_debiteur` ne portent `organizationId`.
+ */
+async function creancesSoutenuesPar(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	pieceId: Id<'pieces'>,
+	debiteurId: Id<'debiteurs'> | undefined
+): Promise<Set<Id<'creances'>>> {
+	const trouvees = new Set<Id<'creances'>>();
+
+	const liaisons = await ctx.db
+		.query('piecesFactures')
+		.withIndex('by_piece', (q) => q.eq('pieceId', pieceId))
+		.collect();
+	for (const liaison of liaisons) {
+		const facture = await ctx.db.get(liaison.factureId);
+		if (facture === null || facture.organizationId !== organizationId) continue;
+		if (facture.creanceId !== undefined) trouvees.add(facture.creanceId);
+	}
+
+	if (debiteurId !== undefined) {
+		const creances = await ctx.db
+			.query('creances')
+			.withIndex('by_debiteur', (q) => q.eq('debiteurId', debiteurId))
+			.collect();
+		for (const creance of creances) {
+			if (creance.organizationId === organizationId) trouvees.add(creance._id);
+		}
+	}
+
+	return trouvees;
+}
+
+/**
+ * La qualification des créances que cette pièce soutient, rejouée.
+ *
+ * ⚠️ APPELÉE QUAND LE TYPE CHANGE OU QUE LA PIÈCE PART, JAMAIS AU DÉPÔT. Une
+ * pièce entre en `INDETERMINE`, et `compteCommePreuve` (`creances.ts:95`) écarte
+ * ce type-là : au dépôt, rien de ce que `qualifier()` lit n'a bougé, et rejouer
+ * coûterait quatre lectures par créance pour réécrire les mêmes deux champs.
+ * C'est le classement — par le modèle ou à la main — et le retrait qui déplacent
+ * `piecesFournies`.
+ */
+async function rejouerApresPiece(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	pieceId: Id<'pieces'>,
+	debiteurId: Id<'debiteurs'> | undefined,
+	aujourdHui: string
+): Promise<void> {
+	const creanceIds = await creancesSoutenuesPar(ctx, organizationId, pieceId, debiteurId);
+	await rejouerQualification(ctx, organizationId, creanceIds, aujourdHui);
+}
 
 async function enregistrer(
 	ctx: MutationCtx,
@@ -125,12 +190,18 @@ export const consignerLectureInterne = internalMutation({
 		reserves: v.union(v.string(), v.null()),
 		/** Le taux stipulé, en pourcentage saisissable. `null` hors CGV et contrat. */
 		tauxRetardStipule: v.union(v.string(), v.null()),
-		constat: v.string()
+		constat: v.string(),
+		/**
+		 * LA DATE EST UN ARGUMENT, comme partout où une qualification se rejoue.
+		 * Elle sert aux retards observés du débiteur, et un test qui ne peut pas
+		 * la fixer ne peut pas vérifier ce qu'un classement déplace.
+		 */
+		aujourdHui: v.string()
 	},
 	returns: v.null(),
 	handler: async (
 		ctx,
-		{ pieceId, type, reference, dateDocument, reserves, tauxRetardStipule, constat }
+		{ pieceId, type, reference, dateDocument, reserves, tauxRetardStipule, constat, aujourdHui }
 	) => {
 		const piece = await ctx.db.get(pieceId);
 		if (piece === null) throw new ConvexError('Pièce introuvable');
@@ -144,6 +215,11 @@ export const consignerLectureInterne = internalMutation({
 			tauxRetardStipule: tauxRetardStipule ?? undefined,
 			constat
 		});
+
+		// Un type posé fait entrer la pièce dans `piecesFournies` : la photographie
+		// stockée sur chaque créance qu'elle soutient cesserait sinon d'être vraie
+		// jusqu'au prochain geste du gérant sur cette créance.
+		await rejouerApresPiece(ctx, piece.organizationId, pieceId, piece.debiteurId, aujourdHui);
 		return null;
 	}
 });
@@ -161,7 +237,8 @@ async function classer(
 	ctx: MutationCtx,
 	organizationId: Id<'organizations'>,
 	pieceId: Id<'pieces'>,
-	type: string
+	type: string,
+	aujourdHui: string
 ) {
 	const piece = await ctx.db.get(pieceId);
 	if (piece === null || piece.organizationId !== organizationId) {
@@ -174,6 +251,8 @@ async function classer(
 		type: type as 'BON_DE_LIVRAISON',
 		statut: 'CLASSEE_MAIN'
 	});
+
+	await rejouerApresPiece(ctx, organizationId, pieceId, piece.debiteurId, aujourdHui);
 	return null;
 }
 
@@ -181,11 +260,12 @@ export const classerInterne = internalMutation({
 	args: {
 		organizationId: v.id('organizations'),
 		pieceId: v.id('pieces'),
-		type: vTypePiece
+		type: vTypePiece,
+		aujourdHui: v.string()
 	},
 	returns: v.null(),
-	handler: async (ctx, { organizationId, pieceId, type }) =>
-		classer(ctx, organizationId, pieceId, type)
+	handler: async (ctx, { organizationId, pieceId, type, aujourdHui }) =>
+		classer(ctx, organizationId, pieceId, type, aujourdHui)
 });
 
 export const obtenirInterne = internalQuery({
@@ -252,7 +332,9 @@ export const classerPiece = authedMutation({
 	returns: v.null(),
 	handler: async (ctx, { pieceId, type }): Promise<null> => {
 		const { organizationId } = await getUserOrg(ctx);
-		return await classer(ctx, organizationId, pieceId, type);
+		// Le jour se lit ici, à la frontière, comme `creances.creer` et ses
+		// voisines : les couches internes le reçoivent, elles ne le devinent pas.
+		return await classer(ctx, organizationId, pieceId, type, new Date().toISOString().slice(0, 10));
 	}
 });
 
@@ -266,6 +348,12 @@ export const retirerPiece = authedMutation({
 			throw new ConvexError('Pièce introuvable');
 		}
 
+		// ⚠️ LES CRÉANCES CONCERNÉES SE RELÈVENT AVANT LA SUPPRESSION. Après, la
+		// pièce et ses liaisons n'existent plus : on ne saurait plus quelles
+		// créances viennent de perdre une preuve, et leur maturité stockée
+		// resterait celle d'un dossier mieux documenté qu'il ne l'est.
+		const concernees = await creancesSoutenuesPar(ctx, organizationId, pieceId, piece.debiteurId);
+
 		// Les liaisons partent AVANT la pièce, et le fichier AVANT sa ligne :
 		// l'inverse laisserait un objet orphelin dans le stockage, que plus rien
 		// ne désigne et que personne ne saurait retrouver pour l'effacer. Même
@@ -278,6 +366,13 @@ export const retirerPiece = authedMutation({
 
 		await ctx.storage.delete(piece.storageId);
 		await ctx.db.delete(pieceId);
+
+		await rejouerQualification(
+			ctx,
+			organizationId,
+			concernees,
+			new Date().toISOString().slice(0, 10)
+		);
 		return null;
 	}
 });

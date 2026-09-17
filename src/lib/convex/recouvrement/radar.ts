@@ -3,6 +3,7 @@ import { internalAction, internalMutation } from '../_generated/server';
 import { internal } from '../_generated/api';
 import { lireAnnonce } from '../../verticales/recouvrement/pays/france/bodacc';
 import type { ConstatBodacc } from '../../verticales/recouvrement/pays/france/bodacc';
+import { rejouerQualificationDuDebiteur } from './creances';
 
 /**
  * LE RADAR DE SOLVABILITÉ — le delta quotidien du BODACC, appliqué.
@@ -69,10 +70,25 @@ const vConstat = v.object({
  * authentifiée le nomme.
  */
 export const appliquerConstats = internalMutation({
-	args: { constats: v.array(vConstat) },
-	returns: v.object({ debiteursTouches: v.number() }),
-	handler: async (ctx, { constats }): Promise<{ debiteursTouches: number }> => {
+	args: {
+		constats: v.array(vConstat),
+		/**
+		 * Le jour du rejeu de qualification, pas celui de l'annonce.
+		 *
+		 * Les deux diffèrent : le radar lit la VEILLE au BODACC (voir plus bas),
+		 * et les retards observés d'un débiteur se comptent, eux, au jour où on
+		 * les compte. Argument plutôt que lecture d'horloge, comme partout où une
+		 * qualification se rejoue.
+		 */
+		aujourdHui: v.string()
+	},
+	returns: v.object({ debiteursTouches: v.number(), creancesRejouees: v.number() }),
+	handler: async (
+		ctx,
+		{ constats, aujourdHui }
+	): Promise<{ debiteursTouches: number; creancesRejouees: number }> => {
 		let debiteursTouches = 0;
+		let creancesRejouees = 0;
 
 		for (const constat of constats) {
 			const concernes = await ctx.db
@@ -116,10 +132,34 @@ export const appliquerConstats = internalMutation({
 							})
 				});
 				debiteursTouches += 1;
+
+				// ═══════════════════════════════════════════════════════════════════
+				// ⚠️ LE REJEU EST BORNÉ AUX DÉBITEURS DONT LA SANTÉ A CHANGÉ CETTE NUIT
+				// ═══════════════════════════════════════════════════════════════════
+				//
+				// `qualifier()` lit `santeDebiteur`, et la maturité stockée sur chaque
+				// créance a été photographiée AVANT ce constat. Elle ne se corrigerait
+				// qu'au prochain geste du gérant sur cette créance-là.
+				//
+				// La borne est `vise !== null` : une annonce qui ne déplace pas l'état
+				// de santé — et c'est le cas le plus fréquent — ne rejoue rien. Sans
+				// elle, une nuit d'annonces ferait relire quatre documents par créance
+				// sur tout le portefeuille pour réécrire les mêmes deux champs.
+				//
+				// Le cloisonnement passe par le débiteur : c'est LUI qui porte son
+				// établissement, et `creances.by_debiteur` n'en porte pas.
+				if (vise !== null) {
+					creancesRejouees += await rejouerQualificationDuDebiteur(
+						ctx,
+						debiteur.organizationId,
+						debiteur._id,
+						aujourdHui
+					);
+				}
 			}
 		}
 
-		return { debiteursTouches };
+		return { debiteursTouches, creancesRejouees };
 	}
 });
 
@@ -148,11 +188,23 @@ const BASE_BODACC =
  * elle ne doit pas éteindre la surveillance de tout le monde pour une nuit.
  */
 export const lireDeltaDuJour = internalAction({
-	args: { jour: v.string() },
-	returns: v.object({ annoncesLues: v.number(), debiteursTouches: v.number() }),
-	handler: async (ctx, { jour }): Promise<{ annoncesLues: number; debiteursTouches: number }> => {
+	args: {
+		jour: v.string(),
+		/** Le jour du rejeu de qualification. Voir `appliquerConstats`. */
+		aujourdHui: v.string()
+	},
+	returns: v.object({
+		annoncesLues: v.number(),
+		debiteursTouches: v.number(),
+		creancesRejouees: v.number()
+	}),
+	handler: async (
+		ctx,
+		{ jour, aujourdHui }
+	): Promise<{ annoncesLues: number; debiteursTouches: number; creancesRejouees: number }> => {
 		let annoncesLues = 0;
 		let debiteursTouches = 0;
+		let creancesRejouees = 0;
 
 		for (let page = 0; page < PAGES_MAX; page++) {
 			const url =
@@ -179,15 +231,17 @@ export const lireDeltaDuJour = internalAction({
 
 			if (constats.length > 0) {
 				const bilan = await ctx.runMutation(internal.recouvrement.radar.appliquerConstats, {
-					constats
+					constats,
+					aujourdHui
 				});
 				debiteursTouches += bilan.debiteursTouches;
+				creancesRejouees += bilan.creancesRejouees;
 			}
 
 			if (enregistrements.length < PAR_PAGE) break;
 		}
 
-		return { annoncesLues, debiteursTouches };
+		return { annoncesLues, debiteursTouches, creancesRejouees };
 	}
 });
 
@@ -202,8 +256,15 @@ export const radarQuotidien = internalAction({
 	args: {},
 	returns: v.null(),
 	handler: async (ctx): Promise<null> => {
-		const hier = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-		await ctx.runAction(internal.recouvrement.radar.lireDeltaDuJour, { jour: hier });
+		const maintenant = Date.now();
+		const hier = new Date(maintenant - 86_400_000).toISOString().slice(0, 10);
+		await ctx.runAction(internal.recouvrement.radar.lireDeltaDuJour, {
+			jour: hier,
+			// ⚠️ PAS `hier`. Les annonces datent de la veille, les retards observés
+			// se comptent aujourd'hui : confondre les deux décalerait d'un jour ce
+			// que le rejeu lit sur chaque débiteur touché.
+			aujourdHui: new Date(maintenant).toISOString().slice(0, 10)
+		});
 		return null;
 	}
 });

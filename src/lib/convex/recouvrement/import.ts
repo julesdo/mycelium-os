@@ -3,6 +3,7 @@ import { internalMutation } from '../_generated/server';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { normaliserFournisseur } from '../../socle/normalisation';
+import { rejouerQualificationDuDebiteur } from './creances';
 
 /**
  * L'enregistrement d'un import de factures de vente.
@@ -155,7 +156,16 @@ export const enregistrerImport = internalMutation({
 		 * qu'en deposant un fichier — une saisie, une reprise — et l'exiger
 		 * fermerait ces chemins. Fabriquer un identifiant serait pire encore.
 		 */
-		documentId: v.optional(v.id('_storage'))
+		documentId: v.optional(v.id('_storage')),
+		/**
+		 * LE JOUR OÙ L'ON COMPTE LES RETARDS OBSERVÉS.
+		 *
+		 * Les factures de ce lot entrent dans les retards antérieurs du débiteur,
+		 * que `qualifier()` lit. Comme ailleurs dans ce module et dans
+		 * `creances.ts`, la date arrive de l'appelant : un test qui ne peut pas la
+		 * fixer ne peut pas vérifier ce qu'un import déplace.
+		 */
+		aujourdHui: v.string()
 	},
 	returns: v.object({
 		debiteursCrees: v.number(),
@@ -164,20 +174,37 @@ export const enregistrerImport = internalMutation({
 		reglementsCrees: v.number(),
 		reglementsOrphelins: v.number()
 	}),
-	handler: async (ctx, { organizationId, factures, reglements, documentId }) => {
+	handler: async (ctx, { organizationId, factures, reglements, documentId, aujourdHui }) => {
 		let debiteursCrees = 0;
 		let facturesCreees = 0;
 		let facturesDejaConnues = 0;
 
 		/** Les factures touchées par ce lot, pour ne pas les relire ensuite. */
-		const touchees = new Map<string, { id: Id<'facturesVente'>; montantTTC: bigint }>();
+		const touchees = new Map<
+			string,
+			{ id: Id<'facturesVente'>; montantTTC: bigint; debiteurId: Id<'debiteurs'> }
+		>();
+
+		/**
+		 * Les clients dont le lot a bougé quelque chose.
+		 *
+		 * Ce sont les seuls dont la qualification est à rejouer : les retards
+		 * observés sont comptés PAR DÉBITEUR, et un lot ne dit rien de ceux qu'il
+		 * ne nomme pas.
+		 */
+		const debiteursTouches = new Set<Id<'debiteurs'>>();
 
 		for (const facture of factures) {
 			const deja = await factureParReference(ctx, organizationId, facture.reference);
 
 			if (deja !== null) {
 				facturesDejaConnues++;
-				touchees.set(facture.reference, { id: deja._id, montantTTC: deja.montantTTC });
+				touchees.set(facture.reference, {
+					id: deja._id,
+					montantTTC: deja.montantTTC,
+					debiteurId: deja.debiteurId
+				});
+				debiteursTouches.add(deja.debiteurId);
 				continue;
 			}
 
@@ -214,7 +241,12 @@ export const enregistrerImport = internalMutation({
 			});
 
 			facturesCreees++;
-			touchees.set(facture.reference, { id, montantTTC: facture.montantTTC });
+			touchees.set(facture.reference, {
+				id,
+				montantTTC: facture.montantTTC,
+				debiteurId: debiteur.id
+			});
+			debiteursTouches.add(debiteur.id);
 		}
 
 		let reglementsCrees = 0;
@@ -226,8 +258,13 @@ export const enregistrerImport = internalMutation({
 			if (cible === undefined) {
 				const trouvee = await factureParReference(ctx, organizationId, reglement.reference);
 				if (trouvee !== null) {
-					cible = { id: trouvee._id, montantTTC: trouvee.montantTTC };
+					cible = {
+						id: trouvee._id,
+						montantTTC: trouvee.montantTTC,
+						debiteurId: trouvee.debiteurId
+					};
 					touchees.set(reglement.reference, cible);
+					debiteursTouches.add(trouvee.debiteurId);
 				}
 			}
 
@@ -271,6 +308,23 @@ export const enregistrerImport = internalMutation({
 
 			const regle = tous.reduce((somme, r) => somme + r.montant, 0n);
 			await ctx.db.patch(id, { statutPaiement: statutDe(montantTTC, regle) });
+		}
+
+		// ═════════════════════════════════════════════════════════════════════════
+		// ⚠️ LA QUALIFICATION DES CRÉANCES DES CLIENTS TOUCHÉS SE REJOUE ICI
+		// ═════════════════════════════════════════════════════════════════════════
+		//
+		// Une facture qui arrive — ou qui vient d'être soldée par ce lot — déplace
+		// les retards observés du débiteur, que `qualifier()` lit. La photographie
+		// `{ score, eligible }` posée sur ses créances date du dernier geste sur
+		// CHAQUE créance, et rien dans ce chemin-ci ne la touchait : elle restait
+		// affichée telle quelle jusqu'à ce que quelqu'un rouvre le dossier.
+		//
+		// ⚠️ BORNÉ AUX CLIENTS DU LOT, jamais au portefeuille. Un débiteur sans
+		// créance coûte une seule lecture d'index, et un import qui ne nomme
+		// personne ne rejoue rien.
+		for (const debiteurId of debiteursTouches) {
+			await rejouerQualificationDuDebiteur(ctx, organizationId, debiteurId, aujourdHui);
 		}
 
 		return {

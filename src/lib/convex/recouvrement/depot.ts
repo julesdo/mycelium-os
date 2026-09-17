@@ -196,6 +196,9 @@ export const traiterImport = internalAction({
 
 		const enregistrement = await ctx.runMutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId: suivi.organizationId,
+			// Le jour se lit ici, une fois : l'enregistrement rejoue la qualification
+			// des clients que le lot touche, et cette date-là est un argument.
+			aujourdHui: new Date().toISOString().slice(0, 10),
 			// Le fichier depose, porte jusqu'a chaque facture qu'il a produite.
 			documentId: suivi.storageId as Id<'_storage'>,
 			factures: resultat.factures.map((facture) => ({
