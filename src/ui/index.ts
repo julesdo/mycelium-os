@@ -79,7 +79,12 @@ export {
 	type LigneRevelationAffichee,
 	type BilanPertesAffiche
 } from './revelation';
-export { IdentiteDebiteur, type OptionSecteur, type PropositionTaux } from './identite-debiteur';
+export {
+	IdentiteDebiteur,
+	ChoixSecteur,
+	type OptionSecteur,
+	type PropositionTaux
+} from './identite-debiteur';
 export { HabitudePaiement, type HabitudeAffichee, type RuptureAffichee } from './habitude';
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
 export {
