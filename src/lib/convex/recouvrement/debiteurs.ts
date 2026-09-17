@@ -96,6 +96,20 @@ export const renseignerSirenInterne = internalMutation({
 		 */
 		formeJuridique: v.optional(v.string()),
 		/**
+		 * L'ADRESSE DU SIÈGE, QUAND LE SIREN VIENT DU REGISTRE.
+		 *
+		 * ⚠️ MÊME FAMILLE QUE `formeJuridique` : le champ existait à `tables.ts`,
+		 * et RIEN NE L'ÉCRIVAIT. Il ne pouvait donc qu'être vide, pour toujours —
+		 * et la fiche d'un client ne pouvait pas dire où il est.
+		 *
+		 * Elle sert à reconnaître son propre client parmi ses homonymes : c'est la
+		 * seule erreur de ce produit qui fasse constituer une créance contre le
+		 * mauvais tiers. Retenir un établissement proposé par le BODACC est le
+		 * seul moment où le produit la connaît ; une saisie manuelle ne la porte
+		 * pas, et on ne l'invente pas.
+		 */
+		adresse: v.optional(v.string()),
+		/**
 		 * La date du jour, en argument.
 		 *
 		 * Elle ne sert pas au numéro : elle part avec le rejeu de la commercialité
@@ -108,14 +122,19 @@ export const renseignerSirenInterne = internalMutation({
 	returns: v.null(),
 	handler: async (
 		ctx,
-		{ organizationId, debiteurId, siren, formeJuridique, aujourdHui }
+		{ organizationId, debiteurId, siren, formeJuridique, adresse, aujourdHui }
 	): Promise<null> => {
 		const debiteur = await debiteurDe(ctx, organizationId, debiteurId);
 
 		const saisi = siren.trim();
 		if (saisi === '') {
-			// La forme part avec le numéro : elle venait du registre, à ce numéro-là.
-			await ctx.db.patch(debiteur._id, { siren: undefined, formeJuridique: undefined });
+			// La forme et l'adresse partent avec le numéro : elles venaient du
+			// registre, à ce numéro-là. Les garder décrirait une autre entreprise.
+			await ctx.db.patch(debiteur._id, {
+				siren: undefined,
+				formeJuridique: undefined,
+				adresse: undefined
+			});
 			return null;
 		}
 
@@ -137,9 +156,10 @@ export const renseignerSirenInterne = internalMutation({
 
 		await ctx.db.patch(debiteur._id, {
 			siren: retenu,
-			// Absente d'une saisie manuelle : on garde alors celle qu'on avait, plutôt
-			// que d'effacer une information juste.
-			...(formeJuridique === undefined ? {} : { formeJuridique })
+			// Absentes d'une saisie manuelle : on garde alors celles qu'on avait,
+			// plutôt que d'effacer une information juste.
+			...(formeJuridique === undefined ? {} : { formeJuridique }),
+			...(adresse === undefined ? {} : { adresse })
 		});
 
 		/**
@@ -206,16 +226,19 @@ export const renseignerSiren = authedMutation({
 	args: {
 		debiteurId: v.id('debiteurs'),
 		siren: v.string(),
-		formeJuridique: v.optional(v.string())
+		formeJuridique: v.optional(v.string()),
+		/** L'adresse du siège, quand le numéro vient d'un établissement proposé. */
+		adresse: v.optional(v.string())
 	},
 	returns: v.null(),
-	handler: async (ctx, { debiteurId, siren, formeJuridique }): Promise<null> => {
+	handler: async (ctx, { debiteurId, siren, formeJuridique, adresse }): Promise<null> => {
 		const { organizationId } = await getUserOrg(ctx);
 		await ctx.runMutation(internal.recouvrement.debiteurs.renseignerSirenInterne, {
 			organizationId,
 			debiteurId,
 			siren,
 			...(formeJuridique === undefined ? {} : { formeJuridique }),
+			...(adresse === undefined ? {} : { adresse }),
 			aujourdHui: new Date().toISOString().slice(0, 10)
 		});
 		return null;

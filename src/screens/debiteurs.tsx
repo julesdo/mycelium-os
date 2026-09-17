@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Chip, ListButton } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import {
@@ -12,7 +12,6 @@ import {
 	pluriel,
 	type Lecture
 } from '../ui';
-import { DetailDebiteur } from './debiteur-detail';
 import { TITRE_ECRAN } from './titres';
 
 /** Une rangée de la liste : ce que la rangée lit d'un débiteur de `listerDebiteurs`. */
@@ -25,66 +24,53 @@ export interface LigneDebiteur {
 	readonly secteurDetermine: boolean;
 }
 
-/** Ce que l'écran affiche une fois les débiteurs chargés : la liste, le débiteur ouvert, et son volet de preuve. */
+/** Ce que l'écran affiche une fois les débiteurs chargés : la liste, et celui dont la page est ouverte. */
 export interface DebiteursAffiches {
 	readonly debiteurs: readonly LigneDebiteur[];
-	/** Le débiteur ouvert, lu dans l'adresse (`?d=`). */
+	/** Le débiteur dont la page occupe le volet droit, lu sur la route enfant. */
 	readonly choisi: string | null;
-	/** Ouvrir une fiche, c'est naviguer, et vider la sélection de factures. */
-	readonly onOuvrir: (debiteurId: string) => void;
-	readonly onFermer: () => void;
-	/** Le volet de preuve, tel que `DetailDebiteur` le reçoit. */
-	readonly detail: ComponentProps<typeof DetailDebiteur>;
 }
 
 /**
- * Les débiteurs, et leurs factures.
+ * LES DÉBITEURS : UNE LISTE, ET CHAQUE RANGÉE MÈNE À UNE PAGE.
  *
- * DEUX VOLETS AU-DELÀ DE 1024 px (règle d'écran n° 3), et ils portent
- * exactement ce que la règle prévoit : la LISTE à gauche, la PREUVE à droite.
- * Ici, la preuve d'un débiteur est le détail de ce qu'il doit — facture par
- * facture, avec sa date de prescription.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LA PREUVE N'EST PLUS UN VOLET, C'EST UNE ADRESSE
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * LA PRESCRIPTION EST DANS LE TABLEAU, PAS DANS UNE ALERTE À PART. C'est une
- * propriété de chaque facture, au même titre que son montant : la reléguer
- * ailleurs obligerait à croiser deux écrans pour savoir laquelle va s'éteindre.
+ * Le détail d'un débiteur vivait ici, dans le volet droit d'un `TwoPane`,
+ * choisi par `?d=<id>` — et deux morceaux de lui avaient chacun leur sous-page.
+ * Trois endroits pour un seul client, dont un qu'aucun lien ne pouvait
+ * désigner.
+ *
+ * Une rangée POUSSE maintenant vers `/app/debiteurs/$id`, une route enfant
+ * rendue par `MaitreDetail`. La règle d'écran n° 3 tient toujours : au-delà de
+ * 1024 px, la liste à gauche et la page à droite ; en dessous, la liste seule,
+ * puis la page seule. Ce que la règle ne dit pas, et qui change ici : la preuve
+ * a une adresse, donc elle se partage, se recharge et se retrouve.
+ *
+ * ⚠️ ET `MaitreDetail`, JAMAIS `TwoPane`. Celui-ci rend sa preuve deux fois —
+ * volet et feuille — : la route enfant y serait montée deux fois, avec ses
+ * requêtes et ses dépôts en cours.
  */
 export function EcranDebiteurs({
 	donnees,
 	enfant
 }: {
 	donnees: Lecture<DebiteursAffiches>;
-	/**
-	 * La page du débiteur ouverte par segment (son habitude, ses pièces : l'`Outlet`
-	 * de la route), ou `null`. Elle REMPLACE sa fiche dans le volet droit, avec son
-	 * retour, parce que la fiche qu'elle quitte n'est plus visible. Pas de troisième
-	 * colonne : elle ne tient pas à 1280 px.
-	 */
+	/** La page du débiteur ouvert (l'`Outlet` de la route), ou `null`. */
 	enfant: ReactNode;
 }) {
 	const entete = { genre: 'onglet', titre: TITRE_ECRAN.debiteurs } as const;
 
-	/**
-	 * ⚠️ UNE PAGE OUVERTE PASSE PAR `MaitreDetail`, JAMAIS PAR `TwoPane`. Celui-ci
-	 * rend sa preuve deux fois (volet et feuille) : l'`Outlet` y serait monté deux
-	 * fois, avec ses requêtes et ses dépôts en cours.
-	 */
 	const avecLaPage = (liste: ReactNode) =>
 		enfant === null ? liste : <MaitreDetail maitre={liste} detail={enfant} detailOuvert />;
 
 	if (donnees.etat !== 'pret') {
-		// `disposition="volets"` : l'attente se dessine déjà en deux volets. Voir `PageEcran`.
-		// Avec une page ouverte, c'est `MaitreDetail` qui porte les deux volets.
-		return avecLaPage(
-			<PageEcran
-				entete={entete}
-				etat={donnees.etat}
-				disposition={enfant === null ? 'volets' : 'colonne'}
-			/>
-		);
+		return avecLaPage(<PageEcran entete={entete} etat={donnees.etat} />);
 	}
 
-	const { debiteurs, choisi, onOuvrir, onFermer, detail } = donnees.valeur;
+	const { debiteurs, choisi } = donnees.valeur;
 
 	if (debiteurs.length === 0) {
 		return avecLaPage(
@@ -99,7 +85,7 @@ export function EcranDebiteurs({
 						etapes: [
 							'Importez un export comptable ou vos factures de vente.',
 							'Le logiciel crée un débiteur par client et calcule son encours.',
-							'Sélectionnez les factures d’un même débiteur pour en faire une créance.'
+							'Ouvrez un client pour voir tout ce qu’il doit, facture par facture.'
 						],
 						action: (
 							<BoutonPrincipal as={Lien} to="/app/import-factures">
@@ -116,32 +102,37 @@ export function EcranDebiteurs({
 	/**
 	 * LA LISTE DES DÉBITEURS.
 	 *
-	 * ⚠️ UNE SEULE CARTE, DES LIGNES DEDANS — et pas une carte par débiteur.
-	 *
-	 * La version précédente posait un `Surface` autonome par client. Sur trente
-	 * débiteurs, ça fait trente objets qui flottent séparément : l'œil compte des
+	 * ⚠️ UNE SEULE CARTE, DES LIGNES DEDANS — et pas une carte par débiteur. Sur
+	 * trente débiteurs, trente objets qui flottent séparément font compter des
 	 * cartes au lieu de lire des noms, et chaque bord arrondi coûte quatre pixels
-	 * de vide en haut et en bas, soit plus de deux cents pixels de défilement
-	 * gagnés pour rien.
+	 * de vide en haut et en bas.
 	 *
-	 * Toutes les références font l'inverse : un conteneur, des rangées. La liste
-	 * se lit alors comme une liste, et les cartes retrouvent leur sens — elles ne
-	 * servent qu'à séparer des BLOCS de nature différente.
+	 * ⚠️ ET CHAQUE RANGÉE EST UN LIEN, PAS UN `onClick`. Elle mène à une adresse :
+	 * elle s'ouvre donc dans un nouvel onglet, se copie, et se lit par un lecteur
+	 * d'écran comme ce qu'elle est. C'est aussi ce qui donne à la page enfant une
+	 * arête entrante — `aucun-ecran-orphelin.test.ts` ne compte pas les retours.
 	 *
-	 * ⚠️ ET CHAQUE LIGNE PORTE UN AVATAR. Deux raisons, dont une seule est
-	 * esthétique : il donne à l'œil un point d'accroche fixe à gauche pour
-	 * balayer verticalement, et surtout il rend deux raisons sociales proches —
-	 * « Ateliers Martin » et « Ateliers Martin Fils » — distinguables à la
-	 * couleur avant d'être lues. Sur un produit où se tromper de débiteur envoie
-	 * un décompte au mauvais tiers, ça compte.
+	 * ⚠️ CHAQUE LIGNE PORTE UN AVATAR. Il donne à l'œil un point d'accroche fixe
+	 * à gauche, et surtout il rend deux raisons sociales proches — « Ateliers
+	 * Martin » et « Ateliers Martin Fils » — distinguables à la couleur avant
+	 * d'être lues. Sur un produit où se tromper de débiteur envoie un décompte au
+	 * mauvais tiers, ça compte.
 	 */
 	const cartes = (
 		<CarteListe titre={`${debiteurs.length} débiteur${pluriel(debiteurs.length)}`}>
 			{debiteurs.map((debiteur) => (
 				<ListButton
 					key={debiteur._id}
+					as={Lien}
+					to="/app/debiteurs/$id"
+					/*
+					  ⚠️ UNE ASSERTION, ET UNE SEULE, À CET ENDROIT PRÉCIS. `ListButton` est
+					  polymorphe : en passant par son `as`, le générique du routeur est
+					  effacé et `params` retombe sur une signature large. Le `to` ci-dessus
+					  reste, lui, un littéral que `destinations-existent.test.ts` balaie.
+					*/
+					params={{ id: debiteur._id } as never}
 					selected={choisi === debiteur._id}
-					onClick={() => onOuvrir(debiteur._id)}
 					icon={<Avatar nom={debiteur.denomination} />}
 					footer={
 						// Les puces en pied de ligne plutôt qu'en rangée séparée : elles
@@ -171,9 +162,8 @@ export function EcranDebiteurs({
 					after={
 						// L'encours reste la colonne qui commande la lecture — un gérant
 						// arbitre entre douze mille euros et trois cents, pas entre deux
-						// raisons sociales. Mais il descend du corps d'affiche au corps
-						// courant : dans une rangée, un chiffre de trente-deux pixels
-						// écrase le nom qu'il qualifie.
+						// raisons sociales. Mais il reste au corps courant : dans une
+						// rangée, un chiffre de trente-deux pixels écrase le nom.
 						<span className="shrink-0 text-cladd-sm font-bold tabular-nums">
 							{eurosCentimes(debiteur.encours)}
 						</span>
@@ -185,30 +175,9 @@ export function EcranDebiteurs({
 		</CarteListe>
 	);
 
-	/**
-	 * LE VOLET DE PREUVE.
-	 *
-	 * Tout le dessin vit dans `screens/debiteur-detail.tsx`, qui ne sait pas
-	 * interroger Convex — c’est ce qui permet de l’OUVRIR aux quatre largeurs
-	 * depuis la salle d’exposition, sans backend ni authentification. Ses
-	 * composants y étaient tous vérifiés un par un ; leur assemblage, jamais.
-	 */
-	const enteteListe = { ...entete, sousTitre: 'Le plus gros encours d’abord' };
-
-	if (enfant !== null) {
-		return avecLaPage(<PageEcran entete={enteteListe}>{cartes}</PageEcran>);
-	}
-
-	return (
-		<PageEcran
-			entete={enteteListe}
-			volets={{
-				liste: <div className="flex flex-col gap-cladd-3xs p-cladd-3xs">{cartes}</div>,
-				// Une clé par débiteur : sans elle, le taux tapé dans `IdentiteDebiteur`, le montant et la date tapés dans `Lettrage` resteraient sous le débiteur suivant, car la fiche ne repart de zéro qu’en se démontant le temps que ses factures et ses pièces chargent.
-				preuve: <DetailDebiteur key={detail.debiteurId} {...detail} />,
-				preuveOuverte: choisi !== null,
-				onFermerPreuve: onFermer
-			}}
-		/>
+	return avecLaPage(
+		<PageEcran entete={{ ...entete, sousTitre: 'Le plus gros encours d’abord' }}>
+			{cartes}
+		</PageEcran>
 	);
 }

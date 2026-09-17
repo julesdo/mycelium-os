@@ -27,6 +27,7 @@ import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppArretIdRouteImport } from './routes/app/arret.$id'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
+import { Route as AppDebiteursIdRouteImport } from './routes/app/debiteurs.$id'
 import { Route as AppDecompteIdRouteImport } from './routes/app/decompte.$id'
 import { Route as AppImportFacturesIdRouteImport } from './routes/app/import-factures.$id'
 import { Route as AppCreanceIdIndexRouteImport } from './routes/app/creance.$id.index'
@@ -36,8 +37,6 @@ import { Route as AppCreanceIdProcedureRouteImport } from './routes/app/creance.
 import { Route as AppCreanceIdRelancesRouteImport } from './routes/app/creance.$id.relances'
 import { Route as AppCreanceIdRisquesRouteImport } from './routes/app/creance.$id.risques'
 import { Route as AppCreanceIdSoliditeRouteImport } from './routes/app/creance.$id.solidite'
-import { Route as AppDebiteursIdHabitudeRouteImport } from './routes/app/debiteurs.$id.habitude'
-import { Route as AppDebiteursIdPiecesRouteImport } from './routes/app/debiteurs.$id.pieces'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -129,6 +128,11 @@ const AppCreanceIdRoute = AppCreanceIdRouteImport.update({
   path: '/creance/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDebiteursIdRoute = AppDebiteursIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppDebiteursRoute,
+} as any)
 const AppDecompteIdRoute = AppDecompteIdRouteImport.update({
   id: '/decompte/$id',
   path: '/decompte/$id',
@@ -174,16 +178,6 @@ const AppCreanceIdSoliditeRoute = AppCreanceIdSoliditeRouteImport.update({
   path: '/solidite',
   getParentRoute: () => AppCreanceIdRoute,
 } as any)
-const AppDebiteursIdHabitudeRoute = AppDebiteursIdHabitudeRouteImport.update({
-  id: '/$id/habitude',
-  path: '/$id/habitude',
-  getParentRoute: () => AppDebiteursRoute,
-} as any)
-const AppDebiteursIdPiecesRoute = AppDebiteursIdPiecesRouteImport.update({
-  id: '/$id/pieces',
-  path: '/$id/pieces',
-  getParentRoute: () => AppDebiteursRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -204,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
   '/app/creance/$id': typeof AppCreanceIdRouteWithChildren
+  '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/creance/$id/decompte': typeof AppCreanceIdDecompteRoute
@@ -212,8 +207,6 @@ export interface FileRoutesByFullPath {
   '/app/creance/$id/relances': typeof AppCreanceIdRelancesRoute
   '/app/creance/$id/risques': typeof AppCreanceIdRisquesRoute
   '/app/creance/$id/solidite': typeof AppCreanceIdSoliditeRoute
-  '/app/debiteurs/$id/habitude': typeof AppDebiteursIdHabitudeRoute
-  '/app/debiteurs/$id/pieces': typeof AppDebiteursIdPiecesRoute
   '/app/creance/$id/': typeof AppCreanceIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -233,6 +226,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
+  '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/creance/$id/decompte': typeof AppCreanceIdDecompteRoute
@@ -241,8 +235,6 @@ export interface FileRoutesByTo {
   '/app/creance/$id/relances': typeof AppCreanceIdRelancesRoute
   '/app/creance/$id/risques': typeof AppCreanceIdRisquesRoute
   '/app/creance/$id/solidite': typeof AppCreanceIdSoliditeRoute
-  '/app/debiteurs/$id/habitude': typeof AppDebiteursIdHabitudeRoute
-  '/app/debiteurs/$id/pieces': typeof AppDebiteursIdPiecesRoute
   '/app/creance/$id': typeof AppCreanceIdIndexRoute
 }
 export interface FileRoutesById {
@@ -265,6 +257,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
   '/app/creance/$id': typeof AppCreanceIdRouteWithChildren
+  '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/creance/$id/decompte': typeof AppCreanceIdDecompteRoute
@@ -273,8 +266,6 @@ export interface FileRoutesById {
   '/app/creance/$id/relances': typeof AppCreanceIdRelancesRoute
   '/app/creance/$id/risques': typeof AppCreanceIdRisquesRoute
   '/app/creance/$id/solidite': typeof AppCreanceIdSoliditeRoute
-  '/app/debiteurs/$id/habitude': typeof AppDebiteursIdHabitudeRoute
-  '/app/debiteurs/$id/pieces': typeof AppDebiteursIdPiecesRoute
   '/app/creance/$id/': typeof AppCreanceIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -298,6 +289,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/app/arret/$id'
     | '/app/creance/$id'
+    | '/app/debiteurs/$id'
     | '/app/decompte/$id'
     | '/app/import-factures/$id'
     | '/app/creance/$id/decompte'
@@ -306,8 +298,6 @@ export interface FileRouteTypes {
     | '/app/creance/$id/relances'
     | '/app/creance/$id/risques'
     | '/app/creance/$id/solidite'
-    | '/app/debiteurs/$id/habitude'
-    | '/app/debiteurs/$id/pieces'
     | '/app/creance/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -327,6 +317,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/api/auth/$'
     | '/app/arret/$id'
+    | '/app/debiteurs/$id'
     | '/app/decompte/$id'
     | '/app/import-factures/$id'
     | '/app/creance/$id/decompte'
@@ -335,8 +326,6 @@ export interface FileRouteTypes {
     | '/app/creance/$id/relances'
     | '/app/creance/$id/risques'
     | '/app/creance/$id/solidite'
-    | '/app/debiteurs/$id/habitude'
-    | '/app/debiteurs/$id/pieces'
     | '/app/creance/$id'
   id:
     | '__root__'
@@ -358,6 +347,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/app/arret/$id'
     | '/app/creance/$id'
+    | '/app/debiteurs/$id'
     | '/app/decompte/$id'
     | '/app/import-factures/$id'
     | '/app/creance/$id/decompte'
@@ -366,8 +356,6 @@ export interface FileRouteTypes {
     | '/app/creance/$id/relances'
     | '/app/creance/$id/risques'
     | '/app/creance/$id/solidite'
-    | '/app/debiteurs/$id/habitude'
-    | '/app/debiteurs/$id/pieces'
     | '/app/creance/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -512,6 +500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCreanceIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/debiteurs/$id': {
+      id: '/app/debiteurs/$id'
+      path: '/$id'
+      fullPath: '/app/debiteurs/$id'
+      preLoaderRoute: typeof AppDebiteursIdRouteImport
+      parentRoute: typeof AppDebiteursRoute
+    }
     '/app/decompte/$id': {
       id: '/app/decompte/$id'
       path: '/decompte/$id'
@@ -575,31 +570,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCreanceIdSoliditeRouteImport
       parentRoute: typeof AppCreanceIdRoute
     }
-    '/app/debiteurs/$id/habitude': {
-      id: '/app/debiteurs/$id/habitude'
-      path: '/$id/habitude'
-      fullPath: '/app/debiteurs/$id/habitude'
-      preLoaderRoute: typeof AppDebiteursIdHabitudeRouteImport
-      parentRoute: typeof AppDebiteursRoute
-    }
-    '/app/debiteurs/$id/pieces': {
-      id: '/app/debiteurs/$id/pieces'
-      path: '/$id/pieces'
-      fullPath: '/app/debiteurs/$id/pieces'
-      preLoaderRoute: typeof AppDebiteursIdPiecesRouteImport
-      parentRoute: typeof AppDebiteursRoute
-    }
   }
 }
 
 interface AppDebiteursRouteChildren {
-  AppDebiteursIdHabitudeRoute: typeof AppDebiteursIdHabitudeRoute
-  AppDebiteursIdPiecesRoute: typeof AppDebiteursIdPiecesRoute
+  AppDebiteursIdRoute: typeof AppDebiteursIdRoute
 }
 
 const AppDebiteursRouteChildren: AppDebiteursRouteChildren = {
-  AppDebiteursIdHabitudeRoute: AppDebiteursIdHabitudeRoute,
-  AppDebiteursIdPiecesRoute: AppDebiteursIdPiecesRoute,
+  AppDebiteursIdRoute: AppDebiteursIdRoute,
 }
 
 const AppDebiteursRouteWithChildren = AppDebiteursRoute._addFileChildren(

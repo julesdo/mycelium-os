@@ -15,7 +15,7 @@ import {
 	type Procedure
 } from '../../lib/verticales/recouvrement/procedures';
 import type { EtatCritere } from '../../lib/verticales/recouvrement/qualification';
-import { secteursProposes } from '../../screens/debiteur-detail';
+import { secteursProposes } from '../../ui';
 
 /**
  * LES FIXTURES COMMUNES DE LA SALLE D'EXPOSITION.

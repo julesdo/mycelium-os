@@ -1,11 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import {
-	EcranDebiteurs,
-	type DebiteursAffiches,
-	type LigneDebiteur
-} from '../../screens/debiteurs';
-import { EcranHabitude, type HabitudeDuDebiteur } from '../../screens/debiteur/habitude';
-import { EcranPieces } from '../../screens/debiteur/pieces';
+import { EcranDebiteurs, type LigneDebiteur } from '../../screens/debiteurs';
+import { EcranDebiteur, type DebiteurComplet } from '../../screens/debiteur';
 import {
 	additionner,
 	depuisCentimes,
@@ -78,6 +73,12 @@ interface DebiteurDemo {
 	readonly denomination: string;
 	/** Absent : ni l'export ni le gérant ne l'ont donné, et le radar ne peut pas le surveiller. */
 	readonly siren?: string;
+	/**
+	 * L'adresse du siège, relevée au registre en même temps que le SIREN. Absente
+	 * sur un débiteur qu'on n'a pas retenu au BODACC : elle ne se saisit pas, et
+	 * elle ne s'invente pas.
+	 */
+	readonly adresse?: string;
 	/** Le secteur choisi sur la fiche (`renseignerSecteur`). Absent : l'import n'en pose aucun. */
 	readonly secteur?: SecteurCreance;
 }
@@ -95,6 +96,7 @@ const PRINCIPAL_DEMO: DebiteurDemo = {
 	// se verrait prêter une liquidation : la salle n'existe qu'en développement, et ne doit jamais
 	// servir à des captures publiées au dehors.
 	siren: '831647250',
+	adresse: '14 rue des Arts Graphiques 59000 Lille',
 	secteur: 'TRANSPORT_MARCHANDISES'
 };
 
@@ -539,6 +541,7 @@ const LIGNES_DEMO = DEBITEURS_DEMO.map((debiteur) => {
 		_id: debiteur._id,
 		denomination: debiteur.denomination,
 		siren: debiteur.siren,
+		adresse: debiteur.adresse,
 		...santeDuRegistre(debiteur),
 		secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',
 		secteur: debiteur.secteur,
@@ -696,56 +699,71 @@ function piecesDu(debiteurId: string): PieceListee[] {
 }
 
 /**
- * Le volet de preuve, composé comme la route le compose (`debiteurs.tsx`).
- * `voletLu` dit si les lectures du volet (factures, pièces, habitude) ont
- * répondu : faux, elles valent `undefined`, comme `useQuery` les rend avant sa
- * réponse, et la route en tire un volet en lecture. Le constat du taux est celui
- * que `poserLeTaux` rend pour un débiteur qui a des factures non soldées
- * (`tauxContractuel.ts`, lignes 127 à 130), et la route ne le garde que sous le
- * débiteur auquel il se rapporte.
+ * LA PAGE D'UN DÉBITEUR, composée comme sa route la compose
+ * (`routes/app/debiteurs.$id.tsx`).
+ *
+ * Tout y est calculé depuis les entrées de la famille, comme les requêtes du
+ * produit le calculent : la rangée comme `listerDebiteurs`, les factures comme
+ * `listerFacturesDuDebiteur`, les créances comme `listerCreances`, l'habitude et
+ * les ruptures comme `lireComportement`, les pièces comme
+ * `listerPiecesDuDebiteur` les ordonne, et le constat du taux comme
+ * `poserLeTaux` le rend.
+ *
+ * Les gestes qui écriraient en base, et les deux recherches (le registre, le
+ * rapprochement d'un virement), ne font rien : les démonstrations de l'identité
+ * et du lettrage montrent déjà ce qu'elles répondent. Seule la sélection de
+ * factures vit, parce que c'est elle qui fait apparaître la barre collante.
  */
-function detailDu(
-	choisi: string | null,
-	debiteurs: readonly LigneDemo[],
+function pageDu(
+	debiteurId: string,
 	selection: ReadonlySet<string>,
-	onBasculerFacture: (factureId: string) => void,
-	voletLu: boolean
-): DebiteursAffiches['detail'] {
-	const debiteurChoisi = debiteurs.find((debiteur) => debiteur._id === choisi);
-	const lu = voletLu ? choisi : null;
-	const factures = lu === null ? undefined : facturesDu(lu);
-	const pieces = lu === null ? undefined : piecesDu(lu);
-	const comportement = lu === null ? undefined : comportementDu(lu);
+	onBasculerFacture: (factureId: string) => void
+): DebiteurComplet {
+	const ligne = LIGNES_DEMO.find((candidate) => candidate._id === debiteurId);
+	// Une variante qui désigne un débiteur absent lève, plutôt que de rendre une
+	// page vide qu'on validerait au regard sans savoir ce qu'elle montre.
+	if (ligne === undefined) {
+		throw new Error(`Démonstration incomplète : aucun débiteur « ${debiteurId} ».`);
+	}
+
+	const factures = facturesDu(debiteurId);
+	const { habitude, ruptures } = comportementDu(debiteurId);
 
 	return {
-		debiteurId: choisi ?? '',
-		denomination: debiteurChoisi?.denomination ?? '',
-		etatRecherche: { phase: 'REPOS' },
-		onChercherAuRegistre: () => undefined,
-		onRetenirEtablissement: () => undefined,
-		debiteur: choisi === null || debiteurChoisi === undefined ? null : debiteurChoisi,
-		factures: choisi === null || factures === undefined || pieces === undefined ? null : factures,
-		creances: CREANCES_LISTEES_DEMO.filter((creance) => creance.debiteurId === choisi),
+		denomination: ligne.denomination,
+		debiteur: ligne,
+		encours: ligne.encours,
+		aujourdHui: AUJOURD_HUI_DEMO,
+		factures,
+		creances: CREANCES_LISTEES_DEMO.filter((creance) => creance.debiteurId === debiteurId),
+		pieces: piecesDu(debiteurId),
+		habitude,
+		ruptures,
 		optionsSecteur: SECTEURS_DEMO,
+		etatRecherche: { phase: 'REPOS' },
 		erreurSiren: null,
-		tauxStipule: factures?.find((facture) => facture.tauxContractuelPourcent !== undefined)
+		tauxStipule: factures.find((facture) => facture.tauxContractuelPourcent !== undefined)
 			?.tauxContractuelPourcent,
-		constatTaux: TAUX_SAISI_DEMO.debiteurId === choisi ? CONTROLE_TAUX_DEMO.constat : null,
-		pieces: pieces ?? [],
-		habitude: comportement?.habitude ?? null,
-		ruptures: comportement?.ruptures ?? [],
+		constatTaux: TAUX_SAISI_DEMO.debiteurId === debiteurId ? CONTROLE_TAUX_DEMO.constat : null,
 		propositionLettrage: null,
 		lettrageEnCours: false,
 		erreurLettrage: null,
 		selection,
 		erreur: null,
+		depotEnCours: false,
+		erreurDepot: null,
+		onChercherAuRegistre: () => undefined,
+		onRetenirEtablissement: () => undefined,
 		onEnregistrerSiren: () => undefined,
 		onChoisirSecteur: () => undefined,
 		onEnregistrerTaux: () => undefined,
 		onChercherLettrage: () => undefined,
 		onAppliquerLettrage: () => undefined,
 		onBasculerFacture,
-		onConstituer: () => undefined
+		onConstituer: () => undefined,
+		onDeposerPieces: () => undefined,
+		onClasserPiece: () => undefined,
+		onRetirerPiece: () => undefined
 	};
 }
 
@@ -755,40 +773,65 @@ const COCHEES_DEMO: readonly string[] = facturesDu(PRINCIPAL_DEMO._id)
 	.slice(0, 1)
 	.map((facture) => facture._id);
 
-/** Une forme de la liste : si les lectures du volet ouvert ont répondu. */
-interface FormeDebiteursDemo {
-	readonly voletLu: boolean;
+/**
+ * LA LISTE SEULE : aucun débiteur ouvert, donc aucun volet droit.
+ *
+ * ⚠️ ELLE NE PORTE PLUS DE VOLET DE PREUVE. Le détail d'un débiteur a son
+ * adresse — `/app/debiteurs/$id` — et c'est l'entrée suivante qui le montre,
+ * dans le volet droit de cette même liste.
+ */
+function DebiteursDemo({ etat }: { etat: EtatDemo }) {
+	return (
+		<EcranDebiteurs
+			enfant={null}
+			donnees={lectureDemo(
+				etat,
+				{ debiteurs: LIGNES_DEMO, choisi: null },
+				{ debiteurs: [], choisi: null }
+			)}
+		/>
+	);
 }
 
-/** La forme principale : le volet du débiteur ouvert est lu. */
-const VOLET_LU_DEMO: FormeDebiteursDemo = { voletLu: true };
+/**
+ * LA PAGE D'UN DÉBITEUR, DANS LE VOLET DROIT DE LA LISTE.
+ *
+ * La liste est prête et ce débiteur y est allumé, comme en production : c'est
+ * la route enfant qui dit lequel. À 1024 px et au-delà les deux volets se
+ * voient ; en dessous, la page seule, plein écran.
+ */
+function AvecLaListe({ debiteurId, children }: { debiteurId: string; children: ReactNode }) {
+	return (
+		<EcranDebiteurs
+			enfant={children}
+			donnees={lectureDemo('pret', { debiteurs: LIGNES_DEMO, choisi: debiteurId })}
+		/>
+	);
+}
 
 /**
- * Les formes nommées de la liste. « fiche en lecture » : le débiteur principal
- * est ouvert, et les lectures de son volet n'ont pas encore répondu. C'est ce
- * que la route montre à chaque ouverture d'une fiche, le temps que ses requêtes
- * répondent.
+ * Les formes nommées de la page : les deux autres débiteurs de la famille, sans
+ * rien changer à leurs entrées. Le payeur lent n'est pas identifié au registre
+ * et paie tard sans jamais rompre son habitude ; le client récent est en
+ * liquidation judiciaire et son historique est trop court pour établir quoi que
+ * ce soit.
  */
-const FORMES_DEBITEURS_DEMO: Readonly<Record<string, FormeDebiteursDemo>> = {
-	'fiche en lecture': { voletLu: false }
+const FORMES_PAGE_DEMO: Readonly<Record<string, string>> = {
+	'payeur lent': PAYEUR_LENT_DEMO._id,
+	'client récent': NOUVEAU_CLIENT_DEMO._id
 };
 
 /**
- * ⚠️ LE DÉBITEUR PRINCIPAL EST OUVERT D'EMBLÉE, ET UNE FACTURE Y EST COCHÉE.
- * Sous 1024 px la preuve est une feuille plein écran, au-dessus c'est le volet
- * droit, et le bouton qui constitue une créance se voit sans un clic.
- *
- * Ouvrir un autre débiteur, refermer, cocher : ces gestes changent l'écran comme
- * dans la route. Ceux qui écriraient en base, et les deux recherches (le
- * registre, le rapprochement d'un virement), ne font rien : les démonstrations
- * de l'identité et du lettrage montrent déjà ce qu'elles répondent.
+ * ⚠️ UNE FACTURE EST COCHÉE D'EMBLÉE SUR LE DÉBITEUR PRINCIPAL, et c'est pour
+ * que la barre collante — le geste qui transforme une sélection en créance — se
+ * voie sans un clic, aux quatre largeurs.
  */
-function DebiteursDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
-	const [choisi, setChoisi] = useState<string | null>(PRINCIPAL_DEMO._id);
-	const [selection, setSelection] = useState<ReadonlySet<string>>(() => new Set(COCHEES_DEMO));
-
+function PageDebiteurDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
-	const { voletLu } = formeDemo(variante, VOLET_LU_DEMO, FORMES_DEBITEURS_DEMO);
+	const debiteurId = formeDemo(variante, PRINCIPAL_DEMO._id, FORMES_PAGE_DEMO);
+	const [selection, setSelection] = useState<ReadonlySet<string>>(
+		() => new Set(debiteurId === PRINCIPAL_DEMO._id ? COCHEES_DEMO : [])
+	);
 
 	function basculer(factureId: string) {
 		setSelection((precedente) => {
@@ -799,99 +842,13 @@ function DebiteursDemo({ etat, variante }: { etat: EtatDemo; variante?: string }
 		});
 	}
 
-	const gestes = {
-		onOuvrir: (debiteurId: string) => {
-			setChoisi(debiteurId);
-			setSelection(new Set());
-		},
-		onFermer: () => setChoisi(null)
-	};
-
 	return (
-		<EcranDebiteurs
-			enfant={null}
-			donnees={lectureDemo(
-				etat,
-				{
-					...gestes,
-					debiteurs: LIGNES_DEMO,
-					choisi,
-					detail: detailDu(choisi, LIGNES_DEMO, selection, basculer, voletLu)
-				},
-				{
-					...gestes,
-					debiteurs: [],
-					choisi: null,
-					detail: detailDu(null, [], selection, basculer, voletLu)
-				}
-			)}
-		/>
-	);
-}
-
-/** Une page de l'habitude : le débiteur qu'elle montre, et ce que la route lui passe. */
-interface HabitudeMontree {
-	readonly debiteurId: string;
-	readonly valeur: HabitudeDuDebiteur;
-}
-
-/** La page de l'habitude d'un débiteur de la famille, composée comme sa route la compose. */
-function habitudeDe(debiteur: DebiteurDemo): HabitudeMontree {
-	const { habitude, ruptures } = comportementDu(debiteur._id);
-	return {
-		debiteurId: debiteur._id,
-		valeur: { denomination: denominationDe(debiteur._id), habitude, ruptures }
-	};
-}
-
-/** L'habitude du débiteur principal : connue, et rompue par ses deux impayés les plus anciens. */
-const HABITUDE_DEMO = habitudeDe(PRINCIPAL_DEMO);
-
-/**
- * Les formes nommées de la page : les deux autres débiteurs de la famille, sans
- * rien changer à leurs entrées. Le payeur lent montre une habitude sans rupture,
- * le client récent un historique trop court pour en établir une.
- */
-const FORMES_HABITUDE_DEMO: Readonly<Record<string, HabitudeMontree>> = {
-	'aucune rupture': habitudeDe(PAYEUR_LENT_DEMO),
-	'sans historique': habitudeDe(NOUVEAU_CLIENT_DEMO)
-};
-
-/** Ce que la page des pièces reçoit en plus de ses pièces : aucun dépôt en cours, et des gestes qui n'écrivent rien. */
-const PIECES_BASE_DEMO = {
-	denomination: denominationDe(PRINCIPAL_DEMO._id),
-	enCours: false,
-	erreur: null,
-	onDeposer: () => undefined,
-	onClasser: () => undefined,
-	onRetirer: () => undefined
-};
-
-/**
- * UNE PAGE DU DÉBITEUR, DANS LE VOLET DROIT DE LA LISTE.
- *
- * La liste est prête et ce débiteur y est choisi, comme en production quand on
- * ouvre sa page depuis sa fiche : l'état choisi dans la salle est celui de la
- * page. À 1024 px et au-delà les deux volets se voient ; en dessous, la page seule.
- */
-function AvecLesDebiteurs({ debiteurId, children }: { debiteurId: string; children: ReactNode }) {
-	return (
-		<EcranDebiteurs
-			enfant={children}
-			donnees={lectureDemo('pret', {
-				debiteurs: LIGNES_DEMO,
-				choisi: debiteurId,
-				onOuvrir: () => undefined,
-				onFermer: () => undefined,
-				detail: detailDu(
-					debiteurId,
-					LIGNES_DEMO,
-					new Set<string>(),
-					() => undefined,
-					VOLET_LU_DEMO.voletLu
-				)
-			})}
-		/>
+		<AvecLaListe debiteurId={debiteurId}>
+			<EcranDebiteur
+				identifiant={debiteurId}
+				donnees={lectureDemo(etat, pageDu(debiteurId, selection, basculer))}
+			/>
+		</AvecLaListe>
 	);
 }
 
@@ -900,39 +857,13 @@ export const ECRANS_DEBITEURS: readonly EcranDuProduit[] = [
 		route: '/app/debiteurs',
 		libelle: 'débiteurs',
 		vide: true,
-		variantes: Object.keys(FORMES_DEBITEURS_DEMO),
 		Demo: DebiteursDemo
 	},
 	{
-		route: '/app/debiteurs/$id/habitude',
-		libelle: 'habitude',
+		route: '/app/debiteurs/$id',
+		libelle: 'un débiteur',
 		vide: false,
-		variantes: Object.keys(FORMES_HABITUDE_DEMO),
-		Demo: ({ etat, variante }) => {
-			// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
-			const forme = formeDemo(variante, HABITUDE_DEMO, FORMES_HABITUDE_DEMO);
-			return (
-				<AvecLesDebiteurs debiteurId={forme.debiteurId}>
-					<EcranHabitude identifiant={forme.debiteurId} donnees={lectureDemo(etat, forme.valeur)} />
-				</AvecLesDebiteurs>
-			);
-		}
-	},
-	{
-		route: '/app/debiteurs/$id/pieces',
-		libelle: 'pièces',
-		vide: true,
-		Demo: ({ etat }) => (
-			<AvecLesDebiteurs debiteurId={PRINCIPAL_DEMO._id}>
-				<EcranPieces
-					identifiant={PRINCIPAL_DEMO._id}
-					donnees={lectureDemo(
-						etat,
-						{ ...PIECES_BASE_DEMO, pieces: piecesDu(PRINCIPAL_DEMO._id) },
-						{ ...PIECES_BASE_DEMO, pieces: [] }
-					)}
-				/>
-			</AvecLesDebiteurs>
-		)
+		variantes: Object.keys(FORMES_PAGE_DEMO),
+		Demo: PageDebiteurDemo
 	}
 ];

@@ -44,6 +44,15 @@ const vDebiteur = v.object({
 	siren: v.optional(v.string()),
 	/** Relevée au registre en même temps que le SIREN. Jamais inventée. */
 	formeJuridique: v.optional(v.string()),
+	/**
+	 * L'adresse du siège, relevée au registre en même temps que le SIREN.
+	 *
+	 * ⚠️ ELLE ÉTAIT DÉCLARÉE À `tables.ts`, ÉCRITE PAR PERSONNE ET RENDUE PAR
+	 * AUCUNE LECTURE. La page d'un débiteur la porte sous son nom : c'est ce qui
+	 * distingue « Ateliers Martin » d'« Ateliers Martin Fils » avant même de lire
+	 * un numéro.
+	 */
+	adresse: v.optional(v.string()),
 	estCommercant: vEtatCritere,
 	santeFinanciere: v.union(
 		v.literal('INCONNUE'),
@@ -171,6 +180,7 @@ export const listerDebiteurs = authedQuery({
 					denomination: debiteur.denomination,
 					siren: debiteur.siren,
 					formeJuridique: debiteur.formeJuridique,
+					adresse: debiteur.adresse,
 					estCommercant: debiteur.estCommercant,
 					santeFinanciere: debiteur.santeFinanciere,
 					secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',
@@ -811,9 +821,9 @@ const STATUT_A_INTERROGER: Record<StatutCreance, StatutCreance | null> = {
  * main rouvrirait exactement le trou que le `Record` ferme : le statut ajouté
  * aurait sa clé, et personne ne l'aurait ajouté à la liste qui interroge.
  */
-const STATUTS_A_INTERROGER: readonly StatutCreance[] = Object.values(
-	STATUT_A_INTERROGER
-).flatMap((statut: StatutCreance | null) => (statut === null ? [] : [statut]));
+const STATUTS_A_INTERROGER: readonly StatutCreance[] = Object.values(STATUT_A_INTERROGER).flatMap(
+	(statut: StatutCreance | null) => (statut === null ? [] : [statut])
+);
 
 /**
  * LES QUESTIONS DE LITIGE ENCORE OUVERTES, À L'ÉCHELLE DE L'ÉTABLISSEMENT.
