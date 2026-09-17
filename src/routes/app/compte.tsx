@@ -13,6 +13,7 @@ import type {
 	FicheASaisir,
 	Lecture
 } from '../../ui';
+import { aujourdHuiISO } from '../../ui';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
 import {
 	messageDErreur,
@@ -23,6 +24,7 @@ import {
 } from '../../screens/compte/equipe';
 import type { DonneesAffichees, FichierExport } from '../../screens/compte/donnees';
 import type { IntervenantsAffiches } from '../../screens/compte/intervenants';
+import type { MesuresAffichees } from '../../screens/compte/mesures';
 
 /**
  * `/app/compte` — LA SEULE ADRESSE DERRIÈRE L'AVATAR.
@@ -96,6 +98,19 @@ function PageCompte() {
 	const [erreurExport, setErreurExport] = useState<string | null>(null);
 	const [erreurCompte, setErreurCompte] = useState<string | null>(null);
 	const [erreurEtablissement, setErreurEtablissement] = useState<string | null>(null);
+
+	/*
+	  ── Ce que la file propose, et ce qu'on en fait (D13) ─────────────────────
+
+	  ⚠️ LA DATE EST LUE UNE FOIS, AU MONTAGE, ET PAS À CHAQUE RENDU. Un
+	  `aujourdHuiISO()` posé dans l'appel changerait de valeur à minuit sous les
+	  yeux d'un onglet ouvert, et Convex refetcherait une fenêtre différente sans
+	  qu'on l'ait demandé. Une seule lecture d'horloge, figée par `useState`.
+	*/
+	const [aujourdHui] = useState(aujourdHuiISO);
+	const mesuresDuPlafond = useQuery(api.recouvrement.propositions.mesures, {
+		depuis: aujourdHui
+	});
 
 	// ── Le carnet d'intervenants ─────────────────────────────────────────────
 	const carnet = useQuery(api.recouvrement.intervenants.monCarnet, {});
@@ -362,6 +377,11 @@ function PageCompte() {
 					}
 				};
 
+	const mesures: Lecture<MesuresAffichees> =
+		mesuresDuPlafond === undefined
+			? { etat: 'attente' }
+			: { etat: 'pret', valeur: { jours: mesuresDuPlafond } };
+
 	const intervenants: Lecture<IntervenantsAffiches> =
 		carnet === undefined
 			? { etat: 'attente' }
@@ -441,6 +461,7 @@ function PageCompte() {
 		equipe,
 		donnees: vosDonnees,
 		intervenants,
+		mesures,
 		theme,
 		onChoisirTheme: setTheme,
 		onSeDeconnecter: () => void authClient.signOut().then(() => navigate({ to: '/connexion' }))

@@ -11,9 +11,17 @@ import { SectionFacturation, type AbonnementAffiche } from './facturation';
 import { SectionEquipe, type EquipeAffichee } from './equipe';
 import { SectionDonnees, type DonneesAffichees } from './donnees';
 import { SectionIntervenants, type IntervenantsAffiches } from './intervenants';
+import { SectionMesures, type MesuresAffichees } from './mesures';
 
 /**
- * VOTRE COMPTE — six sections dépliées, zéro sous-route.
+ * VOTRE COMPTE — six sections dépliées, une repliée, zéro sous-route.
+ *
+ * ⚠️ LA SEPTIÈME EST REPLIÉE, ET C'EST LA SEULE. « Ce que la file propose »
+ * porte les trois nombres qui déplaceront le plafond de propositions (D13) :
+ * c'est un instrument, pas un réglage. Il vit ici parce qu'il n'a pas d'écran à
+ * lui et n'en mérite pas ; il est replié parce que le gérant n'a rien à y
+ * décider, et déplié il repousserait vers le bas les six sections qui, elles,
+ * se règlent.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ TREIZE ADRESSES DEVIENNENT UNE PAGE
@@ -58,6 +66,14 @@ export interface CompteAffiche {
 	readonly equipe: Lecture<EquipeAffichee>;
 	readonly donnees: Lecture<DonneesAffichees>;
 	readonly intervenants: Lecture<IntervenantsAffiches>;
+	/**
+	 * L'instrument du plafond de propositions (D13).
+	 *
+	 * ⚠️ IL EST DANS `CompteAffiche` ET PAS DANS UN ÉCRAN À LUI, parce qu'un
+	 * écran d'instrumentation est un écran qu'on ouvre pour l'admirer. Il vit
+	 * replié, au bas d'une page de réglages, exactement au poids qu'il vaut.
+	 */
+	readonly mesures: Lecture<MesuresAffichees>;
 	readonly theme: Theme;
 	readonly onChoisirTheme: (theme: Theme) => void;
 	readonly onSeDeconnecter: () => void;
@@ -95,6 +111,10 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 
 			<AvecLaLecture lecture={pret.intervenants} titre="Votre carnet">
 				{(carnet) => <SectionIntervenants {...carnet} />}
+			</AvecLaLecture>
+
+			<AvecLaLecture lecture={pret.mesures} titre="Ce que la file propose">
+				{(mesures) => <SectionMesures {...mesures} />}
 			</AvecLaLecture>
 
 			<SectionAffichageEtSession
