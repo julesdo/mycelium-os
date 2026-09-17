@@ -705,7 +705,21 @@ export const listerCreances = authedQuery({
 			 */
 			debiteurId: v.id('debiteurs'),
 			statut: v.string(),
-			score: v.number(),
+			/**
+			 * MÛRE, ET PLUS UN POURCENTAGE.
+			 *
+			 * ⚠️ `score` PARTAIT D'ICI ET N'AVAIT PLUS DE SENS À L'ÉCRAN. Une créance
+			 * mûre, c'est « toutes conditions établies et aucun bloquant » — pas un
+			 * score au-dessus d'un seuil (17 septembre 2026). Rendre le pourcentage
+			 * faisait lire un seuil là où il n'y en a plus, et sur une liste il ne
+			 * pouvait rien trancher : deux dossiers à 0,60 n'ont pas le même verdict.
+			 *
+			 * ⚠️ `?? false` ET PAS `?? true` : les créances écrites avant le champ
+			 * n'en portent pas, et une maturité qu'on n'a pas calculée n'est pas
+			 * acquise. Le doute ne profite jamais au produit. C'est la même lecture
+			 * que `surveillance.ts`, mot pour mot, pour que les deux ne divergent pas.
+			 */
+			eligible: v.boolean(),
 			principalRestantDu: v.int64(),
 			nombreFactures: v.number()
 		})
@@ -718,7 +732,7 @@ export const listerCreances = authedQuery({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 
-		return await Promise.all(
+		const lignes = await Promise.all(
 			creances.map(async (creance) => {
 				const factures = await ctx.db
 					.query('facturesVente')
@@ -732,11 +746,26 @@ export const listerCreances = authedQuery({
 					debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 					debiteurId: creance.debiteurId,
 					statut: creance.statut,
-					score: creance.score ?? 0,
+					eligible: creance.eligible ?? false,
 					principalRestantDu: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
 					nombreFactures: factures.length
 				};
 			})
 		);
+
+		// ⚠️ LE TRI MANQUAIT, ET LE COMMENTAIRE DE CETTE REQUÊTE L'ANNONÇAIT DEPUIS
+		// LE DÉBUT. L'ordre rendu était celui de l'index, c'est-à-dire celui de
+		// l'insertion : la créance la plus ancienne en tête, sans rapport avec ce
+		// qu'on vient chercher. Les mûres d'abord, et à maturité égale le montant
+		// le plus lourd — un ordre qui ne dépend d'aucune horloge et se refait à la
+		// main sur les deux colonnes affichées.
+		return lignes.sort((a, b) => {
+			if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+			return a.principalRestantDu > b.principalRestantDu
+				? -1
+				: a.principalRestantDu < b.principalRestantDu
+					? 1
+					: 0;
+		});
 	}
 });

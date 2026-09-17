@@ -97,10 +97,26 @@ function periodesDe(
  * `decompterFacture` lèvera dessus, `reveler` la nommera. Le refus reste
  * visible, à un seul endroit.
  */
+/**
+ * De quoi rouvrir une ligne de la révélation sur son dossier.
+ *
+ * ⚠️ LA RÈGLE PURE NE CONNAÎT QUE DES RÉFÉRENCES, et c'est très bien : elle n'a
+ * pas à savoir ce qu'est un identifiant Convex. Mais une ligne qui n'affiche
+ * qu'une référence ne s'ouvre pas — il faut retrouver la facture dans une liste,
+ * à la main, alors que le lien existe une ligne plus haut dans ce fichier. La
+ * correspondance se garde donc ici, au moment où les deux sont en main.
+ */
+interface RepereFacture {
+	readonly _id: Id<'facturesVente'>;
+	readonly debiteurId: Id<'debiteurs'>;
+	readonly debiteur: string;
+}
+
 async function facturesPour(
 	ctx: QueryCtx,
 	organizationId: Id<'organizations'>,
-	arreteAu: string
+	arreteAu: string,
+	reperes?: Map<string, RepereFacture>
 ): Promise<FacturePourRevelation[]> {
 	const brutes = await ctx.db
 		.query('facturesVente')
@@ -120,7 +136,17 @@ async function facturesPour(
 
 	for (const facture of brutes) {
 		const depart = departDe(facture);
-		const secteur: SecteurCreance = debiteurs.get(facture.debiteurId)?.secteur ?? 'INDETERMINE';
+		const debiteur = debiteurs.get(facture.debiteurId);
+		const secteur: SecteurCreance = debiteur?.secteur ?? 'INDETERMINE';
+
+		// ⚠️ LA RÉFÉRENCE EST LA CLÉ, et elle est unique par établissement :
+		// `by_org_and_reference` est l'index sur lequel l'import dédoublonne, et
+		// un créancier ne réutilise pas son propre numéro de facture.
+		reperes?.set(facture.reference, {
+			_id: facture._id,
+			debiteurId: facture.debiteurId,
+			debiteur: debiteur?.denomination ?? 'Débiteur inconnu'
+		});
 
 		let taux: PeriodeDeTaux[] = [];
 		try {
@@ -165,6 +191,19 @@ const vRevelation = v.object({
 	lignes: v.array(
 		v.object({
 			reference: v.string(),
+			/**
+			 * LA FACTURE ELLE-MÊME, pour que la ligne s'ouvre au doigt.
+			 *
+			 * ⚠️ FACULTATIF, parce que la règle pure peut nommer une facture que ce
+			 * fichier n'a pas repérée — une graphie de référence inattendue, une
+			 * donnée ancienne. La ligne s'affiche alors sans mener nulle part, ce
+			 * qui est la vérité ; fabriquer une destination ouvrirait le mauvais
+			 * dossier, et c'est pire qu'une ligne qu'on ne peut pas ouvrir.
+			 */
+			_id: v.optional(v.id('facturesVente')),
+			debiteurId: v.optional(v.id('debiteurs')),
+			/** La dénomination du client, ou `null` quand la facture n'a pas été repérée. */
+			debiteur: v.union(v.string(), v.null()),
 			principalRestantDu: v.int64(),
 			interets: v.int64(),
 			indemniteForfaitaire: v.int64(),
@@ -179,7 +218,8 @@ async function composerRevelation(
 	organizationId: Id<'organizations'>,
 	arreteAu: string
 ) {
-	const factures = await facturesPour(ctx, organizationId, arreteAu);
+	const reperes = new Map<string, RepereFacture>();
+	const factures = await facturesPour(ctx, organizationId, arreteAu, reperes);
 	const revelation = reveler(factures, arreteAu, CONVENTION);
 
 	// LE COMPTEUR VIVANT. La veille se calcule ici plutôt que d'être demandée à
@@ -195,13 +235,19 @@ async function composerRevelation(
 		supplement: enCentimes(revelation.supplement),
 		total: enCentimes(revelation.total),
 		interetsCourusDepuisHier: enCentimes(interetsCourusEntre(factures, hier, arreteAu, CONVENTION)),
-		lignes: revelation.lignes.map((ligne) => ({
-			reference: ligne.reference,
-			principalRestantDu: enCentimes(ligne.principalRestantDu),
-			interets: enCentimes(ligne.interets),
-			indemniteForfaitaire: enCentimes(ligne.indemniteForfaitaire),
-			supplement: enCentimes(ligne.supplement)
-		})),
+		lignes: revelation.lignes.map((ligne) => {
+			const repere = reperes.get(ligne.reference);
+			return {
+				reference: ligne.reference,
+				_id: repere?._id,
+				debiteurId: repere?.debiteurId,
+				debiteur: repere?.debiteur ?? null,
+				principalRestantDu: enCentimes(ligne.principalRestantDu),
+				interets: enCentimes(ligne.interets),
+				indemniteForfaitaire: enCentimes(ligne.indemniteForfaitaire),
+				supplement: enCentimes(ligne.supplement)
+			};
+		}),
 		nonChiffrees: revelation.nonChiffrees.map((n) => ({ ...n }))
 	};
 }

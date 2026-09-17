@@ -446,3 +446,100 @@ export const listerPiecesDuDebiteur = authedQuery({
 		return pieces.sort((a, b) => b.ajouteeLe - a.ajouteeLe);
 	}
 });
+
+/**
+ * TOUTES LES PIÈCES DE L'ÉTABLISSEMENT, la plus récente d'abord.
+ *
+ * ⚠️ `listerPiecesDuDebiteur` EXIGE UN `debiteurId`, et c'est la seule lecture de
+ * pièces du produit. Conséquence : une pièce déposée sans débiteur — le cas du
+ * dépôt en vrac — n'était atteignable par AUCUN écran, et une pièce que la
+ * lecture n'a pas su classer ne se retrouvait qu'en ouvrant le bon client,
+ * c'est-à-dire en sachant déjà lequel. Or une pièce en `A_CLASSER` ne compte dans
+ * aucun critère de solidité : elle est là sans rien porter, et rien ne le disait
+ * à l'échelle de l'établissement.
+ *
+ * ⚠️ LECTURE NON BORNÉE, ASSUMÉE ET NOMMÉE, comme `listerDecomptes` : une pièce
+ * se dépose à la main. Le jour où leur nombre approche la limite de documents lus
+ * par transaction, cette requête se pagine.
+ */
+export const listerPieces = authedQuery({
+	args: {},
+	returns: v.array(
+		v.object({
+			_id: v.id('pieces'),
+			type: vTypePiece,
+			statut: v.optional(v.string()),
+			filename: v.string(),
+			reference: v.optional(v.string()),
+			dateDocument: v.optional(v.string()),
+			reserves: v.optional(v.string()),
+			/** Le taux lu sur cette pièce. Une PROPOSITION : rien ne s'applique sans un geste. */
+			tauxRetardStipule: v.optional(v.string()),
+			constat: v.optional(v.string()),
+			/** Le client auquel la pièce est rattachée, quand elle l'est. */
+			debiteurId: v.optional(v.id('debiteurs')),
+			/**
+			 * Sa dénomination, ou `null` quand la pièce n'est rattachée à personne.
+			 *
+			 * ⚠️ `null` EST UNE INFORMATION, pas un trou à masquer : une pièce sans
+			 * client ne compte dans aucun dossier, et c'est précisément ce qu'il faut
+			 * voir pour la rattacher.
+			 */
+			debiteur: v.union(v.string(), v.null()),
+			/** Combien de factures cette pièce soutient. Zéro se lit aussi. */
+			nombreFactures: v.number(),
+			ajouteeLe: v.number()
+		})
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const pieces = await ctx.db
+			.query('pieces')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect();
+
+		/** Lu une fois par client, pas une fois par pièce. */
+		const denominations = new Map<Id<'debiteurs'>, string | null>();
+
+		const lignes = [];
+		for (const piece of pieces) {
+			const debiteurId = piece.debiteurId;
+			if (debiteurId !== undefined && !denominations.has(debiteurId)) {
+				const debiteur = await ctx.db.get(debiteurId);
+				// Le cloisonnement est revérifié : `pieces.debiteurId` n'est pas un
+				// index cloisonné, et une donnée ancienne pourrait désigner ailleurs.
+				denominations.set(
+					debiteurId,
+					debiteur === null || debiteur.organizationId !== organizationId
+						? null
+						: debiteur.denomination
+				);
+			}
+
+			const liaisons = await ctx.db
+				.query('piecesFactures')
+				.withIndex('by_piece', (q) => q.eq('pieceId', piece._id))
+				.collect();
+
+			lignes.push({
+				_id: piece._id,
+				type: piece.type,
+				statut: piece.statut,
+				filename: piece.filename,
+				reference: piece.reference,
+				dateDocument: piece.dateDocument,
+				reserves: piece.reserves,
+				tauxRetardStipule: piece.tauxRetardStipule,
+				constat: piece.constat,
+				debiteurId,
+				debiteur: debiteurId === undefined ? null : (denominations.get(debiteurId) ?? null),
+				nombreFactures: liaisons.filter((l) => l.organizationId === organizationId).length,
+				ajouteeLe: piece.ajouteeLe
+			});
+		}
+
+		// La plus récente d'abord : c'est celle qu'on vient de déposer.
+		return lignes.sort((a, b) => b.ajouteeLe - a.ajouteeLe);
+	}
+});

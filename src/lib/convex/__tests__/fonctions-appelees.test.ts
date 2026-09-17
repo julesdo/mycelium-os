@@ -81,6 +81,32 @@ const APPELEES_AUTREMENT: Readonly<Record<string, string>> = {
 	markAllAsRead:
 		'DETTE — aucun geste « tout marquer comme lu ». Ouvrir une trouvaille l’acquitte, et elles sont rares par construction : le geste de masse ne manque pas encore.',
 
+	// ─────────────────────────────────────────────────────────────────────────
+	// LES CINQ LECTURES D'ÉTABLISSEMENT, ÉCRITES AVANT LEUR LECTEUR (17/09/2026)
+	// ─────────────────────────────────────────────────────────────────────────
+	//
+	// ⚠️ CE SONT LES SEULES ENTRÉES DE CETTE LISTE QUI PORTENT UNE DATE DE SORTIE,
+	// et c'est ce qui les distingue des dettes au-dessus. Le produit n'a que des
+	// lectures qui partent d'un objet déjà ouvert — une créance, un client, un
+	// décompte — donc aucune ne répond à « qu'est-ce qui va mal chez moi
+	// aujourd'hui ». La file du lot 2 pose cette question, et ces cinq requêtes
+	// sont ce qu'elle lira. Elles partent en production avant elle, seules et
+	// vérifiables (§ « L'ordre de livraison » du plan) : une lecture se déploie et
+	// se regarde sans écran, un écran sans sa lecture ne se regarde pas.
+	//
+	// Si la file glisse, ces cinq lignes ne deviennent pas des dettes tacites :
+	// elles se retirent avec leur requête.
+	listerDecomptes:
+		'ÉCRITE AVANT SON LECTEUR — la portée « Décomptes » de la file (lot 2, T6). Sort de cette liste avec elle.',
+	listerPieces:
+		'ÉCRITE AVANT SON LECTEUR — le volet de preuve, section 5, et le compte des pièces à classer de la file (lot 2, T6 et T8). Sort de cette liste avec eux.',
+	lireParEtablissement:
+		'ÉCRITE AVANT SON LECTEUR — la vue Par client et ses ruptures d’habitude (lot 2, T7). Sort de cette liste avec elle.',
+	duJour:
+		'ÉCRITE AVANT SON LECTEUR — la tête de la file, qui dit ce que vaut la journée sans passer par un courriel (lot 2, T6). Sort de cette liste avec elle.',
+	abandonsDeLEtablissement:
+		'ÉCRITE AVANT SON LECTEUR — ce qui serait abandonné sur tout l’établissement, lu par la file et par l’écran d’arrêt (lot 2, T6 et T9). Sort de cette liste avec eux.',
+
 	// LA GESTION D'ABONNEMENT. Un client qui paie ne peut ni voir son
 	// abonnement ni ouvrir le portail Paddle pour changer de carte ou résilier.
 	// Sur un produit vendu par abonnement, c'est un manque de livrable.
@@ -140,7 +166,10 @@ function fichiers(dossier: string, acc: string[] = []): string[] {
 function fonctionsPubliques(): readonly { nom: string; fichier: string }[] {
 	const trouvees: { nom: string; fichier: string }[] = [];
 	for (const chemin of fichiers(CONVEX)) {
-		const relatif = chemin.slice(CONVEX.length + 1).split(sep).join('/');
+		const relatif = chemin
+			.slice(CONVEX.length + 1)
+			.split(sep)
+			.join('/');
 		if (relatif.startsWith('__tests__/')) continue;
 		const source = readFileSync(chemin, 'utf8');
 		for (const [, nom] of source.matchAll(
@@ -202,6 +231,8 @@ describe('les fonctions Convex publiques', () => {
 	it('n’excuse rien qui n’existe plus', () => {
 		const noms = new Set(fonctionsPubliques().map((f) => f.nom));
 		const perimees = Object.keys(APPELEES_AUTREMENT).filter((n) => !noms.has(n));
-		expect(perimees, `Exceptions sans fonction correspondante : ${perimees.join(', ')}`).toEqual([]);
+		expect(perimees, `Exceptions sans fonction correspondante : ${perimees.join(', ')}`).toEqual(
+			[]
+		);
 	});
 });
