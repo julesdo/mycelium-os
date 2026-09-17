@@ -23,7 +23,6 @@
 		"test:unit": "vitest --run --reporter=dot --passWithNoTests",
 		"test:e2e": "VARLOCK_ENV=test playwright test",
 		"test": "bun run test:unit",
-		"model:eval": "bun scripts/model-eval.ts",
 		"prepare": "husky",
 		"check:bundle": "bun scripts/verifier-bundle-convex.ts",
 		"check:vercel": "bun scripts/verifier-entree-vercel.ts"
