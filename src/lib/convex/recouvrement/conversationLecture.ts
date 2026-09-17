@@ -103,7 +103,7 @@ async function cumulDuMois(
 	mois: string
 ): Promise<number> {
 	const tours = await ctx.db
-		.query('conversations')
+		.query('echangesCompagnon')
 		.withIndex('by_org_and_mois', (q) => q.eq('organizationId', organizationId).eq('mois', mois))
 		.collect();
 
@@ -278,7 +278,7 @@ export const contexteDuDossier = internalQuery({
 				 */
 				echanges: (
 					await ctx.db
-						.query('conversations')
+						.query('echangesCompagnon')
 						.withIndex('by_org_and_fil', (q) =>
 							q.eq('organizationId', organizationId).eq('fil', creanceId)
 						)
@@ -335,7 +335,7 @@ export const consignerEchange = internalMutation({
 		const horodatage = Date.now();
 		const moisDuTour = moisCourant();
 
-		await ctx.db.insert('conversations', {
+		await ctx.db.insert('echangesCompagnon', {
 			organizationId,
 			fil: args.fil,
 			portee: 'CREANCE',
@@ -347,7 +347,7 @@ export const consignerEchange = internalMutation({
 			diteLe: horodatage
 		});
 
-		await ctx.db.insert('conversations', {
+		await ctx.db.insert('echangesCompagnon', {
 			organizationId,
 			fil: args.fil,
 			portee: 'CREANCE',
@@ -371,7 +371,7 @@ export const consignerEchange = internalMutation({
 // ═══════════════════════════════════════════════════════════════════════════
 
 const vTourAffiche = v.object({
-	_id: v.id('conversations'),
+	_id: v.id('echangesCompagnon'),
 	fil: v.string(),
 	role: v.union(v.literal('GERANT'), v.literal('COMPAGNON')),
 	texte: v.string(),
@@ -401,7 +401,7 @@ export const filDuDossier = authedQuery({
 		}
 
 		const tours = await ctx.db
-			.query('conversations')
+			.query('echangesCompagnon')
 			.withIndex('by_org_and_cible', (q) =>
 				q.eq('organizationId', organizationId).eq('cible', creanceId)
 			)

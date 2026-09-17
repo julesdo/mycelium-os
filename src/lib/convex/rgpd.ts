@@ -111,7 +111,7 @@ export const apercuDeMesDonnees = authedQuery({
 			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
 			.collect();
 		const conversations = await ctx.db
-			.query('conversations')
+			.query('echangesCompagnon')
 			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
 			.collect();
 		const propositions = await ctx.db
@@ -230,12 +230,20 @@ export const _pageDeJournal = internalQuery({
 	}
 });
 
+/**
+ * ⚠️ LA TABLE S'APPELLE `echangesCompagnon`, PAS `conversations`, et le nom
+ * court ne revient pas. Le déploiement de développement porte encore une table
+ * `conversations` héritée de Fleet, dont les documents n'ont pas nos champs
+ * requis : Convex valide la BASE et refusait tout déploiement. Renommer rend
+ * celle de Fleet orpheline, donc tolérée, sans supprimer une seule donnée. Le
+ * détail vit sur la table, dans `recouvrement/tables.ts`.
+ */
 export const _pageDeConversations = internalQuery({
 	args: { organizationId: v.id('organizations'), curseur: v.union(v.string(), v.null()) },
 	returns: vPage,
 	handler: async (ctx, { organizationId, curseur }) => {
 		const page = await ctx.db
-			.query('conversations')
+			.query('echangesCompagnon')
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.paginate({ cursor: curseur, numItems: PAR_PAGE });
 		return { elements: page.page, curseur: page.continueCursor, fini: page.isDone };
@@ -568,7 +576,7 @@ export const purgerEtablissement = internalMutation({
 		//    débiteur est sa donnée autant que ce qu'il a retenu.
 		budget = await viderParIndexOrg(ctx, 'remisesAuConseil', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'propositions', organizationId, budget);
-		budget = await viderParIndexOrg(ctx, 'conversations', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'echangesCompagnon', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'journal', organizationId, budget);
 
 		// 2. Les règlements — le plus gros volume : plusieurs par facture.
@@ -858,7 +866,7 @@ async function viderParIndexOrg(
 		| 'intervenants'
 		| 'journal'
 		| 'propositions'
-		| 'conversations'
+		| 'echangesCompagnon'
 		| 'remisesAuConseil',
 	organizationId: Id<'organizations'>,
 	budget: number

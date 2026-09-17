@@ -1018,8 +1018,28 @@ export const recouvrementTables = {
 	 * un arrêt de la conversation LIBRE seule, par établissement et par mois.
 	 * Le reste du produit — la file, les calculs, les propositions, le décompte
 	 * — ne dépend d'aucun appel modèle et continue quand le compteur mord.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ POURQUOI ELLE NE S'APPELLE PAS `conversations`
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Ne la renommez pas « proprement » : le nom court rouvre un trou qui a
+	 * déjà bloqué tout le monde une fois.
+	 *
+	 * Le déploiement de développement porte encore une table `conversations`
+	 * héritée de Fleet, avec des documents dedans. Convex valide la BASE, pas
+	 * seulement le code : notre `cible`, qui est requis, manquait à ces
+	 * documents-là, et `convex dev --once` échouait en validation de schéma —
+	 * « Object is missing the required field `cible` ». Personne ne pouvait
+	 * plus déployer.
+	 *
+	 * ⚠️ RENOMMER PLUTÔT QUE PURGER, ET LA DIFFÉRENCE EST IRRÉVERSIBLE. Une
+	 * table présente dans le déploiement mais absente du schéma est TOLÉRÉE par
+	 * Convex ; un champ requis manquant ne l'est jamais. Ce renommage rend la
+	 * table de Fleet orpheline, donc tolérée, et ne supprime AUCUNE donnée. La
+	 * purger serait définitif, et ce n'est pas une décision de schéma.
 	 */
-	conversations: defineTable({
+	echangesCompagnon: defineTable({
 		organizationId: v.id('organizations'),
 		/** Le fil auquel ce tour appartient. */
 		fil: v.string(),
