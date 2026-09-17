@@ -1299,9 +1299,9 @@ function ListeParClient({
 						/>
 
 						{/* ELLE S'OUVRE EN PLACE SUR SES RANGÉES, qui sont EXACTEMENT
-						    celles de la vue Par créance, inchangées, avec leur verbe.
-						    Rien n'est reformulé pour la vue : un obstacle a une seule
-						    phrase dans tout le produit. */}
+						    celles de la vue Par créance, inchangées, avec les appuis
+						    qu'elles portent. Rien n'est reformulé pour la vue : un
+						    obstacle a une seule phrase dans tout le produit. */}
 						{ouvert ? (
 							<div className="flex flex-col gap-cladd-3xs pl-cladd-2xs">
 								{siennes.map((rangee) => (

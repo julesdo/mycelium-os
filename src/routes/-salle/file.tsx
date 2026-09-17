@@ -165,11 +165,15 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		urgence: 'HAUTE',
 		montant: 1_248_033n,
 		/*
-		  ⚠️ UNE PROPOSITION AVEC SES DEUX APPUIS, ET SOUS UN VERBE (D13). C'est la
-		  rangée la plus chargée de la file — un obstacle, une proposition sourcée,
-		  deux appuis et un verbe — et c'est donc elle qui dit si la carte tient à
-		  375 px. Le champ de motif s'ouvre en place sur « Écarter » : c'est la seule
-		  saisie libre de tout l'écran, et elle se regarde ici.
+		  ⚠️ UNE PROPOSITION SOURCÉE AVEC SES DEUX APPUIS, SUR UN OBSTACLE. C'est la
+		  rangée la plus chargée de la file — une date, un montant, une phrase
+		  d'obstacle, une provenance et deux appuis — et c'est donc elle qui dit si
+		  la carte tient à 375 px. Le champ de motif s'ouvre en place sur
+		  « Écarter » : c'est la seule saisie libre de tout l'écran, et elle se
+		  regarde ici.
+
+		  ⚠️ ET PLUS DE VERBE SOUS ELLE : la production n'en posait aucun, et ne le
+		  pouvait pas. Voir `RangeeObstacle`.
 		*/
 		proposition: {
 			valeur: 'taux stipulé de 12 %',
