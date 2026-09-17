@@ -79,7 +79,14 @@ export function ceQuiManque({
 			cle: 'factures',
 			titre: 'Vos factures',
 			debloque: 'Le logiciel n’a rien à compter',
-			vers: '/app/import-factures'
+			/**
+			 * ⚠️ ELLE MÈNE À LA FILE, ET PLUS À L'ÉCRAN D'IMPORT. Le dépôt vit
+			 * désormais dans la `Toolbar` de la file et dans son état vide : c'est
+			 * elle la porte d'entrée des factures. Repointer était IMPOSSIBLE avant
+			 * la bascule — `Verrou.vers` est typé contre l'arbre des routes, et la
+			 * file n'avait pas d'adresse tant que l'accueil tenait `/app`.
+			 */
+			vers: '/app'
 		});
 	}
 
@@ -115,7 +122,13 @@ export function ceQuiManque({
 			cle: 'debiteurs',
 			titre: `${debiteursSansSiren} débiteur${pluriel(debiteursSansSiren)} sans identifiant`,
 			debloque: 'Leur solvabilité n’est pas surveillée',
-			vers: '/app/debiteurs'
+			/**
+			 * ⚠️ MÊME REPOINTAGE, ET MÊME RAISON. Le pli « Les débiteurs sans
+			 * identifiant » vit dans la vue Par client de la file, avec la recherche
+			 * au registre et le choix de secteur : ce qui était un écran est une
+			 * section de celui-ci. `/app/debiteurs` meurt à T16.
+			 */
+			vers: '/app'
 		});
 	}
 

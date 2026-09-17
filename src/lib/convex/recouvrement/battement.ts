@@ -257,14 +257,25 @@ export const executerPourOrganisation = internalMutation({
 							// ⚠️ ABSENT QUAND LA CIBLE L'EST. Fabriquer une destination
 							// ouvrirait le mauvais dossier — pire qu'une notification
 							// qu'on ne peut pas ouvrir.
+							//
+							// ⚠️ ET LA GRAPHIE A CHANGÉ À LA BASCULE (T15). Le produit
+							// n'a plus qu'un écran de travail : `/app/creance/<id>` et
+							// `/app/debiteurs?d=<id>` sont des adresses que T16 supprime,
+							// et une notification créée aujourd'hui les porterait jusqu'à
+							// devenir morte. `?ligne=<id>` ouvre le volet de preuve sur la
+							// file, et c'est la même chaîne que la rangée elle-même porte :
+							// un genre ne se traduit plus en chemin, c'est la file qui
+							// résout une créance ou un client vers son dossier.
+							//
+							// ⚠️ SI CETTE LIGNE SEULE CHANGEAIT, RIEN NE TOMBERAIT. Le
+							// lecteur est `ui/veilleur.tsx`, qui accepte les DEUX graphies
+							// pendant trente jours pour ne pas tuer les notifications déjà
+							// en base ; et `destinations-existent.test.ts` exclut nommément
+							// la forme `lien:` de son balayage. Les deux côtés se changent
+							// ensemble, ou chaque notification naît morte en silence.
 							...(evenement.cible === undefined
 								? {}
-								: {
-										link:
-											evenement.cible.genre === 'CREANCE'
-												? `/app/creance/${evenement.cible.id}`
-												: `/app/debiteurs?d=${evenement.cible.id}`
-									})
+								: { link: `/app?ligne=${evenement.cible.id}` })
 						});
 					}
 				}

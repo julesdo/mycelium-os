@@ -21,12 +21,10 @@ import type { EtatRecherche } from '../../ui';
 /**
  * LA FILE, DANS LA SALLE — et c'est le SEUL endroit où elle est montée.
  *
- * ⚠️ ELLE NE REMPLACE PAS ENCORE `/app/`. La bascule est une tâche séparée et
- * volontairement révocable (T15) : `routes/app/index.tsx`, `src/app/barre.tsx`
- * et `src/screens/accueil.tsx` ne bougent pas d'ici là. Les deux entrées visent
- * donc la même adresse dans la salle — l'accueil sous sa clé de route, la file
- * sous la clé `file` — et c'est la seule façon de vérifier au regard que la
- * seconde rend ce que la première rendait.
+ * ⚠️ ELLE REMPLACE L'ACCUEIL À `/app/` DEPUIS LA BASCULE (T15).
+ * `routes/app/index.tsx` la rend, `src/app/barre.tsx` et
+ * `src/screens/accueil.tsx` sont supprimés, et la clé de cohabitation qui
+ * distinguait les deux entrées de la salle est partie avec eux.
  *
  * ⚠️ LES DONNÉES CHIFFRÉES VIENNENT DU DOMAINE, PAS D'UNE COPIE. La tête lit
  * `REVELATION_DEMO`, calculé par `verticales/recouvrement/revelation.ts` sur les
@@ -323,6 +321,15 @@ const CANDIDATS_BELLIN: EtatRecherche = {
 const FACTURES_PORTENT_DEMO: CeQueVosFacturesPortent = {
 	revelation: REVELATION_DEMO,
 	bilan: BILAN_DEMO,
+	/*
+	  ⚠️ UNE HYPOTHÈSE, ET ELLE N'EST PAS UN ANGLE MORT. Celle-ci se LÈVE — en
+	  précisant le secteur du client — alors qu'aucun des deux angles morts
+	  ci-dessous ne se lève depuis l'interface. Les regarder l'un sous l'autre est
+	  la seule façon de vérifier que les deux sections ne se ressemblent pas.
+	*/
+	hypotheses: [
+		'Le secteur d’Ateliers Martin n’est pas déterminé : la prescription est calculée sur le délai le plus court. Préciser le secteur lèvera cette hypothèse.'
+	],
 	anglesMorts: [
 		'Un délai d’opposition court depuis la signification de l’ordonnance d’Ateliers Martin. Sa durée n’est pas relevée dans le référentiel juridique de ce logiciel : cette échéance-là n’est pas surveillée, et reste à vérifier auprès de l’acte signifié, qui la porte.',
 		// ⚠️ UN, PARCE QU'IL Y EN A UN. La salle porte un seul débiteur sans
@@ -335,6 +342,7 @@ const FACTURES_PORTENT_DEMO: CeQueVosFacturesPortent = {
 const FACTURES_PORTENT_VIDE: CeQueVosFacturesPortent = {
 	revelation: REVELATION_SANS_FACTURE_DEMO,
 	bilan: BILAN_SANS_FACTURE_DEMO,
+	hypotheses: [],
 	anglesMorts: []
 };
 
@@ -446,12 +454,6 @@ function FORMES_FILE(garnie: FileAffichee): Readonly<Record<string, FileAffichee
 export const ECRANS_FILE: readonly EcranDuProduit[] = [
 	{
 		route: '/app/',
-		/**
-		 * ⚠️ UNE CLÉ, PARCE QUE L'ACCUEIL TIENT ENCORE `/app/`. La bascule est une
-		 * tâche séparée (T15) : les deux écrans visent la même adresse, et sans clé
-		 * la file serait injoignable dans la salle. La clé part avec l'accueil.
-		 */
-		cle: 'file',
 		libelle: 'la file',
 		vide: true,
 		variantes: ['ligne ouverte'],

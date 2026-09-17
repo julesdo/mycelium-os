@@ -25,6 +25,7 @@ import {
 	Lettrage,
 	PageEcran,
 	PliDeLaFile,
+	PorteDeTransition,
 	RangeeFile,
 	RechercheRegistre,
 	SectionEcran,
@@ -180,6 +181,17 @@ interface CommunDeRangee {
 	readonly debiteur: string;
 	/** Les portées qui la laissent passer. `TOUT` est ajouté par l'écran. */
 	readonly portees: readonly ClePortee[];
+	/**
+	 * VRAI QUAND `?ligne=<id>` MÈNE À UNE PREUVE. Absent, il vaut vrai.
+	 *
+	 * ⚠️ LE VOLET EST PAR CRÉANCE, ET TOUTE RANGÉE N'EN PORTE PAS UNE. Une
+	 * dégradation au registre et une rupture d'habitude visent un CLIENT ; si ce
+	 * client n'a encore aucune créance constituée, il n'y a pas de dossier à
+	 * ouvrir. La rangée s'affiche alors sans être tapable — et n'en a pas l'air —
+	 * plutôt que d'ouvrir un volet qui dirait « ce dossier ne s'est pas lu », ce
+	 * qui serait faux : il n'existe pas.
+	 */
+	readonly ouvrable?: boolean;
 	/** Ce qu'elle dit d'elle-même au pli. Voir `FaitsDuPli` : B9 s'y tient. */
 	readonly pli: FaitsDuPli;
 }
@@ -383,6 +395,21 @@ export interface DebiteurSansIdentifiant {
 export interface CeQueVosFacturesPortent {
 	readonly revelation: RevelationAffichee;
 	readonly bilan: BilanPertesAffiche;
+	/**
+	 * CE QUE LE LOGICIEL A SUPPOSÉ, faute de donnée — et c'est UNE AUTRE CHOSE
+	 * qu'un angle mort.
+	 *
+	 * ⚠️ LES DEUX NE SE CONFONDENT PAS, ET LES FONDRE SERAIT UN MENSONGE PAR
+	 * RANGEMENT. Une hypothèse est un calcul FAIT sur une donnée absente — « le
+	 * secteur n'est pas déterminé, donc on retient le délai de prescription le
+	 * plus court » — et elle se LÈVE en renseignant la donnée. Un angle mort est
+	 * un calcul qui n'est PAS fait du tout, et rien à l'écran ne le lèvera.
+	 *
+	 * Elles vivaient sur l'accueil, que la bascule supprime ; sans cette liste,
+	 * la surveillance cesserait de déclarer ses hypothèses le jour de la bascule,
+	 * en silence.
+	 */
+	readonly hypotheses: readonly string[];
 	/** Le texte complet. Une puce sous une facture n'est pas un angle mort déclaré. */
 	readonly anglesMorts: readonly string[];
 }
@@ -421,6 +448,24 @@ export interface FileAffichee {
 	/** Le dépôt de fichiers. Il vit ici : la file est la porte d'entrée des factures. */
 	readonly onFichiers: (fichiers: File[]) => void;
 	readonly accepteFichiers: string;
+	/**
+	 * QUI EST CONNECTÉ, ET LE CHEMIN VERS SON COMPTE.
+	 *
+	 * ⚠️ IL VIENT DE LA BARRE MORTE (T15), ET IL EST LA SEULE ENTRÉE DE
+	 * `/app/compte`. La barre haute portait l'avatar à gauche ; la file n'a plus
+	 * de barre, donc la `Toolbar` le réhéberge. Le laisser tomber rendrait
+	 * l'abonnement, l'équipe, les données et l'identité du créancier
+	 * inatteignables le jour de la bascule.
+	 */
+	readonly avatar?: ReactNode;
+	/**
+	 * LE VEILLEUR ET SA PASTILLE — la machine est là, et elle a trouvé.
+	 *
+	 * ⚠️ CE N'EST PAS LA RANGÉE « LE TRAVAIL DE FOND », qui dit ce qu'il a FAIT.
+	 * Celui-ci dit qu'il TOURNE, et porte le compte des notifications non lues :
+	 * la seule chose du produit qui annonce une perte sèche.
+	 */
+	readonly veilleur?: ReactNode;
 	/** Le sélecteur d'établissement, monté par l'application (T15). Permanent. */
 	readonly selecteur?: ReactNode;
 	/** La palette de recherche (D16), réhébergée dans la `Toolbar` à la bascule. */
@@ -491,6 +536,8 @@ function FilePrete({
 		onFermerLigne,
 		onFichiers,
 		accepteFichiers,
+		avatar,
+		veilleur,
 		selecteur,
 		palette,
 		preuve
@@ -544,6 +591,17 @@ function FilePrete({
 
 	const barre = (
 		<Toolbar className="w-full overflow-x-auto" contentClassName="flex items-center gap-cladd-3xs">
+			{/*
+			  L'IDENTITÉ D'ABORD — qui regarde, et si la machine tourne.
+
+			  ⚠️ LES DEUX VIENNENT DE LA BARRE, QUI MEURT AVEC CET ÉCRAN (T15). La
+			  barre les tenait sur tous les écrans ; il n'y a plus qu'un écran, donc
+			  ils tiennent ici. L'avatar est la SEULE entrée de `/app/compte`.
+			*/}
+			{avatar}
+			{veilleur}
+			{avatar === undefined && veilleur === undefined ? null : <ToolbarSeparator />}
+
 			{/* LE SÉLECTEUR D'ÉTABLISSEMENT, PERMANENT — y compris sur un compte
 			    mono-site. Le cloisonnement est strict par établissement, et un gérant
 			    qui reprend sa tablette après une réunion doit lire sur LEQUEL il
@@ -591,9 +649,20 @@ function FilePrete({
 	 */
 	const debute = tete.nombreFactures === 0 && rangees.length === 0;
 
+	/**
+	 * LA PORTE DE TRANSITION, EN BAS ET DANS LES DEUX ÉTATS.
+	 *
+	 * ⚠️ Y COMPRIS LE PREMIER JOUR. Un gérant qui vient de basculer et qui ne
+	 * trouve pas ce qu'il cherche le cherche d'abord sur un écran vide : c'est
+	 * précisément le moment où l'ancien arbre doit rester ouvert. Elle est
+	 * DERNIÈRE, jamais en tête — la file est ce qu'on vient lire.
+	 */
+	const porte = <PorteDeTransition />;
+
 	const liste = debute ? (
 		<div className="mx-auto flex w-full max-w-3xl flex-col gap-cladd-2xs">
 			<FileVide onFichiers={onFichiers} accepteFichiers={accepteFichiers} />
+			{porte}
 		</div>
 	) : (
 		<div className="mx-auto flex w-full max-w-3xl flex-col gap-cladd-2xs">
@@ -691,24 +760,22 @@ function FilePrete({
 			) : null}
 
 			<PliDeLaFile faits={repliees.map((r) => r.pli)} />
+
+			{porte}
 		</div>
 	);
 
 	/**
-	 * ⚠️ `pt-barre-app` : LE DÉGAGEMENT DE LA BARRE FLOTTANTE, ET IL PART AVEC ELLE.
+	 * ⚠️ PLUS AUCUN `pt-barre-app`, ET C'EST LA BASCULE QUI L'A RETIRÉ (T15).
 	 *
-	 * Un écran sans en-tête (`genre: 'aucun'`) ne reçoit aucun rembourrage haut de
-	 * `PageEcran` : c'est à lui de dégager la barre, comme `PageHero` le fait pour
-	 * l'accueil et l'attente pour son squelette. Sans ce dégagement, la barre
-	 * RECOUVRE la `Toolbar` — le sélecteur d'établissement, la bascule de vue et
-	 * le dépôt deviennent intapables, et rien à l'écran ne le dit.
-	 *
-	 * ⚠️ IL SE RETIRE À LA BASCULE (T15), en même temps que `src/app/barre.tsx` :
-	 * la barre morte, ce rembourrage devient une bande vide en tête du seul écran
-	 * de travail.
+	 * Ce rembourrage dégageait la barre haute flottante, qui recouvrait sinon la
+	 * `Toolbar` et rendait le sélecteur, la bascule de vue et le dépôt intapables.
+	 * `src/app/barre.tsx` est mort avec la bascule : le garder ferait une bande
+	 * vide de soixante-quatre pixels en tête du seul écran de travail, et c'est le
+	 * genre de défaut que seul le regard au navigateur attrape.
 	 */
 	const corps = (
-		<div className="flex flex-col gap-cladd-2xs p-cladd-3xs pt-barre-app">
+		<div className="flex flex-col gap-cladd-2xs p-cladd-3xs">
 			{barre}
 			{liste}
 		</div>
@@ -859,7 +926,7 @@ function ListeParCreance({
 					key={rangee.id}
 					rangee={rangee}
 					ouverte={ligneOuverte === rangee.id}
-					onOuvrir={() => onOuvrirLigne(rangee.id)}
+					{...(rangee.ouvrable === false ? {} : { onOuvrir: () => onOuvrirLigne(rangee.id) })}
 				/>
 			))}
 		</div>
@@ -873,7 +940,8 @@ function Rangee({
 }: {
 	rangee: RangeeDeLaFile;
 	ouverte: boolean;
-	onOuvrir: () => void;
+	/** Absent, la rangée ne s'ouvre pas — et n'en a pas l'air. Voir `ouvrable`. */
+	onOuvrir?: () => void;
 }) {
 	if (rangee.genre === 'LETTRAGE') return <Lettrage {...rangee.lettrage} />;
 
@@ -888,7 +956,7 @@ function Rangee({
 				montant={rangee.montant}
 				{...(rangee.proposition === undefined ? {} : { proposition: rangee.proposition })}
 				ouverte={ouverte}
-				onOuvrir={onOuvrir}
+				{...(onOuvrir === undefined ? {} : { onOuvrir })}
 			>
 				{/* TROIS RÉPONSES DE MÊME POIDS, et aucune n'est présélectionnée : une
 				    pilule blanche sur la réponse proposée ferait de l'appui une
@@ -925,7 +993,7 @@ function Rangee({
 			{...(rangee.hypothese === undefined ? {} : { hypothese: rangee.hypothese })}
 			{...(rangee.proposition === undefined ? {} : { proposition: rangee.proposition })}
 			ouverte={ouverte}
-			onOuvrir={onOuvrir}
+			{...(onOuvrir === undefined ? {} : { onOuvrir })}
 		>
 			{rangee.verbe === undefined ? undefined : (
 				<BoutonPrincipal onClick={rangee.verbe.onPresser}>{rangee.verbe.libelle}</BoutonPrincipal>
@@ -1107,7 +1175,9 @@ function ListeParClient({
 										key={rangee.id}
 										rangee={rangee}
 										ouverte={ligneOuverte === rangee.id}
-										onOuvrir={() => onOuvrirLigne(rangee.id)}
+										{...(rangee.ouvrable === false
+											? {}
+											: { onOuvrir: () => onOuvrirLigne(rangee.id) })}
 									/>
 								))}
 							</div>
@@ -1276,6 +1346,27 @@ function CeQueLesFacturesPortent({ contenu }: { contenu: CeQueVosFacturesPortent
 			<SectionEcran titre="Ce qui s’est éteint">
 				<BilanPertes bilan={contenu.bilan} />
 			</SectionEcran>
+
+			{/*
+			  CE QUE LE LOGICIEL A SUPPOSÉ — à plat, jamais replié.
+
+			  ⚠️ UNE HYPOTHÈSE REPLIÉE EST UNE HYPOTHÈSE QU'ON NE LIT PAS, et le
+			  doute ne profite jamais au produit : un secteur indéterminé fait
+			  retenir le délai de prescription LE PLUS COURT, ce qui change la date
+			  à laquelle une créance s'éteint. Le gérant qui l'ignore croit avoir
+			  plus de temps qu'il n'en a.
+			*/}
+			{contenu.hypotheses.length === 0 ? null : (
+				<SectionEcran titre="Ce que le logiciel a supposé">
+					<div className="flex flex-col gap-cladd-3xs">
+						{contenu.hypotheses.map((hypothese) => (
+							<p key={hypothese} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+								{hypothese}
+							</p>
+						))}
+					</div>
+				</SectionEcran>
+			)}
 
 			{/*
 			  LES ANGLES MORTS, EN TEXTE ET EN PLEINE LARGEUR.

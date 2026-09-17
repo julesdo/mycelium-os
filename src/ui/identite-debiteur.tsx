@@ -8,6 +8,10 @@ import {
 } from './recherche-registre';
 
 import { dateCourte } from './format';
+import {
+	REGIMES_PRESCRIPTION,
+	secteurLePlusCourt
+} from '../lib/verticales/recouvrement/pays/france/prescription';
 
 /**
  * CE QUE LE GÉRANT SEUL PEUT DIRE DE SON DÉBITEUR.
@@ -95,6 +99,59 @@ export interface OptionSecteur {
 	readonly libelle: string;
 	/** Ce que ce secteur change, en clair. Vient du registre. */
 	readonly consequence: string;
+}
+
+/**
+ * Les secteurs proposés, et ce que chacun change.
+ *
+ * ⚠️ ELLE VIVAIT DANS `screens/debiteur-detail.tsx`, C'EST-À-DIRE DANS UN ÉCRAN
+ * QUE T16 SUPPRIME. La file en a besoin pour proposer un secteur à un client non
+ * classé, et un secteur indéterminé fait retenir le délai de prescription LE
+ * PLUS COURT : la laisser là-bas aurait emporté ce choix le jour du ménage, en
+ * silence. Même déplacement, et pour la même raison, que `Facultatif`, qui
+ * vivait dans la barre que la bascule supprime.
+ *
+ * ⚠️ LA DURÉE VIENT DU REGISTRE, JAMAIS D'UNE CONSTANTE ÉCRITE ICI. C'est la
+ * règle la plus stricte du projet : toute valeur juridique vit dans le
+ * référentiel, avec sa source. Recopier « 5 ans » dans un libellé d'écran
+ * créerait une seconde vérité qui ne serait pas corrigée le jour où la première
+ * change.
+ *
+ * Le libellé, lui, est du texte d'interface : il nomme la relation commerciale
+ * telle qu'un gérant la reconnaît, pas telle que le code de commerce l'écrit.
+ */
+const LIBELLE_SECTEUR: Record<string, string> = {
+	GENERAL: 'Régime général',
+	TRANSPORT_MARCHANDISES: 'Transport de marchandises',
+	CONSOMMATEUR: 'Vente à un consommateur',
+	NOURRITURE_MARINS: 'Nourriture des marins',
+	FOURNITURE_NAVIRE: 'Fourniture de navire',
+	OUVRAGE_ACCEPTE: 'Ouvrage accepté'
+};
+
+export function secteursProposes(): OptionSecteur[] {
+	const connus = Object.keys(REGIMES_PRESCRIPTION).map((cle) => {
+		const regime = REGIMES_PRESCRIPTION[cle as keyof typeof REGIMES_PRESCRIPTION];
+		return {
+			cle,
+			libelle: LIBELLE_SECTEUR[cle] ?? cle,
+			consequence: `Prescription : ${regime.dureeAnnees} an${regime.dureeAnnees > 1 ? 's' : ''}`
+		};
+	});
+
+	// `INDETERMINE` est proposé en PREMIER et reste choisissable : c'est l'état
+	// honnête d'un débiteur qu'on ne sait pas classer, et le forcer à choisir
+	// produirait un secteur inventé — donc un délai de prescription faux, dans le
+	// sens qui fait perdre la créance.
+	const court = secteurLePlusCourt();
+	return [
+		{
+			cle: 'INDETERMINE',
+			libelle: 'À préciser',
+			consequence: `Le délai le plus court est retenu par prudence : ${court} an${court > 1 ? 's' : ''}`
+		},
+		...connus
+	];
 }
 
 /**

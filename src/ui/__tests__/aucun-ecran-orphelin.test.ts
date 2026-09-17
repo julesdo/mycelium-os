@@ -48,7 +48,23 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 	'/': 'La page publique. On y arrive par le domaine.',
 	'/showroom':
 		'La salle d’exposition, en développement seulement. Aucun lien depuis le produit, et c’est voulu.',
-	'/app': 'La coquille des écrans connectés. C’est une route de mise en page, pas un écran.',
+	/**
+	 * ⚠️ CE N'EST PLUS UNE COQUILLE DE MISE EN PAGE, C'EST L'ÉCRAN DE TRAVAIL.
+	 *
+	 * Depuis la bascule (T15), `/app` rend la file : le seul écran que le gérant
+	 * voit, et celui qui remplace vingt-sept adresses. La raison inscrite ici
+	 * disait le contraire — « une route de mise en page, pas un écran » — et une
+	 * dispense dont la raison est devenue fausse est exactement ce que ce
+	 * fichier combat : un test qu'on croit vert pour un motif qu'on ne relit pas.
+	 *
+	 * Elle reste dispensée, et pour une meilleure raison : c'est la RACINE de
+	 * l'espace connecté. On y arrive en se connectant, par le lien d'un
+	 * briefing, par une notification, par la palette de recherche et par la
+	 * croix qui referme `/app/compte`. Aucun de ces chemins n'est un littéral
+	 * `to="/app"` posé dans un écran, et il n'y en aura jamais : un écran ne
+	 * porte pas de lien vers lui-même.
+	 */
+	'/app': 'La racine de l’espace connecté, et l’écran de travail lui-même. On n’y lie pas depuis lui.',
 	'/rejoindre/$token':
 		'Le lien d’invitation, reçu par courriel. Il ne peut PAS exister dans l’interface : le jeton est l’invitation.',
 	'/nouveau-mot-de-passe': 'Le lien de réinitialisation, reçu par courriel, et porteur d’un jeton.',
