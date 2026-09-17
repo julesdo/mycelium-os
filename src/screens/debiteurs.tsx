@@ -285,6 +285,83 @@ function habitudeEnClair(habitude: HabitudeDeLaLigne): string {
 }
 
 /**
+ * CE QU'IL DOIT, ET COMMENT IL PAIE — L'UN SOUS L'AUTRE.
+ *
+ * L'encours reste la colonne qui commande la lecture — un gérant arbitre entre
+ * douze mille euros et trois cents, pas entre deux raisons sociales. Mais il
+ * reste au corps courant : dans une rangée, un chiffre de trente-deux pixels
+ * écrase le nom.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ L'HABITUDE SE LOGE ICI, PAS DANS LE PIED DE LA RANGÉE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Et c'est une mesure qui l'a décidé, pas un goût. Cette colonne-ci est large
+ * de ce que mesure le montant — 91 px à 375 px, pour « 12 878,50 € » — et cette
+ * largeur ne dépend pas de la raison sociale. La colonne du NOM, elle, n'a que
+ * 124 px au téléphone : tout ce qu'on y ajoute passe à la ligne et allonge la
+ * rangée du client le plus abîmé, ce que le paragraphe des angles morts de cet
+ * écran a déjà fait corriger une fois.
+ *
+ * Lue de haut en bas, la colonne fait une phrase : ce qu'il doit, ce qui
+ * cloche, à quel rythme il règle d'ordinaire.
+ *
+ * ⚠️ LES DEUX MENTIONS TIENNENT SOUS 91 PX, ET C'EST LA CONTRAINTE QUI A CHOISI
+ * LES MOTS. Mesurées au navigateur, dans la fonte du produit : « Rythme rompu »
+ * 84 px, « Règle à 12 j » 63 px. Une formule qui aurait dit les deux d'un coup
+ * — « Rompu · 12 j d'ordinaire », 132 px — élargissait la colonne de droite et
+ * reprenait au nom les pixels qu'on venait de lui rendre.
+ *
+ * ⚠️ LA RUPTURE NE DIT PAS DE COMBIEN, et c'est délibéré : l'écart et le constat
+ * entier — la phrase du domaine, avec le nombre de règlements qui l'établit —
+ * vivent sur la page du client, à un doigt d'ici. Un « +47 j » posé seul ferait
+ * arbitrer sur un nombre sorti de son contexte, alors que le délai habituel est
+ * écrit juste en dessous.
+ *
+ * ⚠️ NI ACCENT, NI PUCE, NI ICÔNE SUR LA RUPTURE. Ce qui la fait trouver, c'est
+ * qu'elle est la seule mention en pleine encre dans une colonne de mentions
+ * grises ; la peindre en rouge la ferait lire comme un état au registre, qui est
+ * le seul fait de cette rangée à mériter une couleur. L'icône a été essayée,
+ * mesurée, retirée : le chevron de la page du client portait la colonne de 91 à
+ * 101 px — dix pixels repris au nom sur CHAQUE rangée, y compris celles qui
+ * n'ont aucune rupture, pour un glyphe de douze pixels dont la pleine encre
+ * faisait déjà le travail.
+ *
+ * ⚠️ RIEN QUAND L'HABITUDE N'EST PAS ÉTABLIE. Ni « — », ni « 0 j », ni
+ * « inconnu » : quatre règlements datés sont le minimum du domaine, et en
+ * dessous il n'y a pas un chiffre à nuancer, il n'y a rien. Ce que ce silence
+ * coûte est compté au sommaire, en toutes lettres, une fois.
+ *
+ * ⚠️ `fg-softer` ET PAS `fg-softest` — même raison que la mention d'ordre en
+ * tête de carte, mesurée au navigateur : le cran le plus pâle tombe à 4,45 sur
+ * `verre-carte` à ce corps, sous le seuil de 4,5.
+ */
+function ColonneDroite({
+	encours,
+	habitude
+}: {
+	encours: bigint;
+	habitude: HabitudeDeLaLigne | undefined;
+}) {
+	return (
+		<span className="flex shrink-0 flex-col items-end gap-0.5">
+			<span className="text-cladd-sm font-bold tabular-nums">{eurosCentimes(encours)}</span>
+			{habitude?.rompu === true ? (
+				<span className="text-cladd-2xs font-semibold">Rythme rompu</span>
+			) : null}
+			{habitude === undefined ? null : (
+				<span
+					className="text-cladd-2xs text-cladd-fg-softer tabular-nums"
+					title={habitudeEnClair(habitude)}
+				>
+					{delaiCourt(habitude.delaiMedianJours)}
+				</span>
+			)}
+		</span>
+	);
+}
+
+/**
  * LES DÉBITEURS : UNE LISTE, ET CHAQUE RANGÉE MÈNE À UNE PAGE.
  *
  * ═══════════════════════════════════════════════════════════════════════════
@@ -360,8 +437,16 @@ export function EcranDebiteurs({
 		return avecLaPage(<PageEcran entete={entete} etat={donnees.etat} />);
 	}
 
-	const { debiteurs, choisi, habitudes, terme, filtres, onTerme, onBasculerFiltre, onToutAfficher } =
-		donnees.valeur;
+	const {
+		debiteurs,
+		choisi,
+		habitudes,
+		terme,
+		filtres,
+		onTerme,
+		onBasculerFiltre,
+		onToutAfficher
+	} = donnees.valeur;
 
 	if (debiteurs.length === 0) {
 		return avecLaPage(
@@ -457,8 +542,7 @@ export function EcranDebiteurs({
 		habitudes === undefined
 			? 0
 			: debiteurs.filter(
-					(debiteur) =>
-						debiteur.facturesEchues > 0 && habitudes.get(debiteur._id) === undefined
+					(debiteur) => debiteur.facturesEchues > 0 && habitudes.get(debiteur._id) === undefined
 				).length;
 
 	/*
@@ -759,9 +843,7 @@ export function EcranDebiteurs({
 					</span>
 				}
 			>
-				{retenus.map((debiteur) => {
-					const habitude = habitudeDe(debiteur);
-					return (
+				{retenus.map((debiteur) => (
 					<ListButton
 						key={debiteur._id}
 						as={Lien}
@@ -824,87 +906,11 @@ export function EcranDebiteurs({
 								) : null}
 							</span>
 						}
-						after={
-							/*
-							  CE QU'IL DOIT, ET COMMENT IL PAIE — L'UN SOUS L'AUTRE.
-
-							  L'encours reste la colonne qui commande la lecture — un gérant
-							  arbitre entre douze mille euros et trois cents, pas entre deux
-							  raisons sociales. Mais il reste au corps courant : dans une
-							  rangée, un chiffre de trente-deux pixels écrase le nom.
-
-							  ⚠️ L'HABITUDE VIENT SE LOGER SOUS LUI, PAS DANS LE PIED DE LA
-							  RANGÉE, et c'est une mesure qui l'a décidé, pas un goût. Cette
-							  colonne-ci est large de ce que mesure le montant — 91 px à
-							  375 px, pour « 12 878,50 € » — et cette largeur ne dépend pas
-							  de la raison sociale. La colonne du nom, elle, n'a que 124 px
-							  au téléphone : tout ce qu'on y ajoute passe à la ligne et
-							  allonge la rangée du client le plus abîmé, ce que le
-							  paragraphe des angles morts a déjà fait corriger une fois.
-
-							  Lue de haut en bas, la colonne fait une phrase : ce qu'il
-							  doit, ce qui cloche, à quel rythme il règle d'ordinaire.
-
-							  ⚠️ LES DEUX MENTIONS TIENNENT SOUS 91 PX, ET C'EST LA
-							  CONTRAINTE QUI A CHOISI LES MOTS. Mesurées dans la fonte du
-							  produit : « Rythme rompu » 84 px, « Règle à 12 j » 63 px. Une
-							  formule qui aurait dit les deux d'un coup — « Rompu · 12 j
-							  d'ordinaire », 132 px — élargissait la colonne de droite et
-							  reprenait au nom les pixels qu'on venait de lui rendre.
-
-							  ⚠️ LA RUPTURE NE DIT PAS DE COMBIEN, et c'est délibéré :
-							  l'écart et le constat entier — la phrase du domaine, avec le
-							  nombre de règlements qui l'établit — vivent sur la page du
-							  client, à un doigt d'ici. Un « +47 j » posé seul ferait
-							  arbitrer sur un nombre sorti de son contexte, alors que le
-							  délai habituel est écrit juste en dessous.
-
-							  ⚠️ NI ACCENT, NI PUCE, NI ICÔNE SUR LA RUPTURE. Ce qui la fait
-							  trouver, c'est qu'elle est la seule mention en pleine encre dans
-							  une colonne de mentions grises ; la peindre en rouge la ferait
-							  lire comme un état au registre, qui est le seul fait de cette
-							  rangée à mériter une couleur.
-
-							  Et l'icône a été essayée, mesurée, retirée : le chevron de la
-							  page du client portait la colonne de 91 à 101 px. Dix pixels
-							  repris au nom sur CHAQUE rangée, y compris celles qui n'ont
-							  aucune rupture — pour un glyphe de douze pixels dont la pleine
-							  encre faisait déjà le travail. La colonne revient donc à la
-							  largeur de son montant, qui est ce qui doit la fixer.
-
-							  ⚠️ RIEN QUAND L'HABITUDE N'EST PAS ÉTABLIE. Ni « — », ni
-							  « 0 j », ni « inconnu » : quatre règlements datés sont le
-							  minimum du domaine, et en dessous il n'y a pas un chiffre à
-							  nuancer, il n'y a rien. Ce que ce silence coûte est compté au
-							  sommaire, en toutes lettres, une fois.
-
-							  ⚠️ `fg-softer` ET PAS `fg-softest` — même raison que la mention
-							  d'ordre en tête de carte, mesurée au navigateur : le cran le
-							  plus pâle tombe à 4,45 sur `verre-carte` à ce corps, sous le
-							  seuil de 4,5.
-							*/
-							<span className="flex shrink-0 flex-col items-end gap-0.5">
-								<span className="text-cladd-sm font-bold tabular-nums">
-									{eurosCentimes(debiteur.encours)}
-								</span>
-								{habitude?.rompu === true ? (
-									<span className="text-cladd-2xs font-semibold">Rythme rompu</span>
-								) : null}
-								{habitude === undefined ? null : (
-									<span
-										className="text-cladd-2xs text-cladd-fg-softer tabular-nums"
-										title={habitudeEnClair(habitude)}
-									>
-										{delaiCourt(habitude.delaiMedianJours)}
-									</span>
-								)}
-							</span>
-						}
+						after={<ColonneDroite encours={debiteur.encours} habitude={habitudeDe(debiteur)} />}
 					>
 						{debiteur.denomination}
 					</ListButton>
-					);
-				})}
+				))}
 			</CarteListe>
 		);
 
