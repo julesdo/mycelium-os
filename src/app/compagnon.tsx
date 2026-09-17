@@ -126,16 +126,16 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 	const arretee = niveau === 'ARRETE';
 
 	/*
-	  LA LIGNE QUE L'ÉCRAN DIT.
+	  CE QUE L'ÉCRAN DIT DE LA PORTÉE, EN DEUX MOTS SUR LA CAPSULE.
 
-	  ⚠️ ELLE NE PROMET PAS CE QU'ELLE NE TIENT PAS. « Borné à un dossier : ouvrez-
-	  en un » est un constat sur la portée, pas une excuse : le compagnon ne sait
-	  répondre que dossier par dossier, et l'apprendre AVANT de taper vaut mieux
-	  que de l'apprendre par un refus.
+	  ⚠️ `null` NE VEUT PAS DIRE « TOUT », IL VEUT DIRE « AUCUN DOSSIER ». Écrire
+	  « cet établissement » sur le bouton promettrait une conversation à l'échelle
+	  du dépôt, que le produit ne tient pas et ne tiendra pas : le fil est borné au
+	  dossier pour que chaque phrase porte SA source. Ce qu'il lit s'explique alors
+	  en l'ouvrant, AVANT qu'on ait tapé quoi que ce soit — jamais par un refus
+	  après coup.
 	*/
-	const portee = surUnDossier
-		? 'Borné au dossier ouvert : ses factures, ses pièces, ses décomptes.'
-		: 'Borné à un dossier : ouvrez-en un dans la file.';
+	const portee = surUnDossier ? 'ce dossier' : null;
 
 	const etat: EtatCompagnon = arretee
 		? {

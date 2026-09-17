@@ -68,14 +68,22 @@ export function CompagnonFlottant({
 	onOuvrir
 }: {
 	/**
-	 * CE À QUOI LE FIL EST BORNÉ, en une ligne, tel que l'écran le dit.
+	 * CE À QUOI LE FIL EST BORNÉ, EN DEUX OU TROIS MOTS : « ce dossier ».
 	 *
-	 * ⚠️ IL S'AFFICHE, IL NE SE DEVINE PAS. Un compagnon dont on ignore la portée
-	 * se lit comme un assistant qui voit tout le dépôt : on lui poserait une
-	 * question sur un autre dossier que celui qu'il lit, et on prendrait sa
-	 * réponse pour une réponse sur celui-là.
+	 * ⚠️ ELLE S'AFFICHE SUR LA CAPSULE, PAS DANS UNE LÉGENDE FLOTTANTE. La
+	 * première version posait une ligne complète au-dessus du bouton, par-dessus le
+	 * contenu qui défile : mesurée au navigateur, elle recouvrait une rangée du
+	 * total sur 375 px et les deux textes se lisaient l'un sur l'autre. Une portée
+	 * illisible ne borne rien.
+	 *
+	 * ⚠️ ET ELLE S'AFFICHE, ELLE NE SE DEVINE PAS. Un compagnon dont on ignore la
+	 * portée se lit comme un assistant qui voit tout le dépôt : on lui poserait
+	 * une question sur un autre dossier que celui qu'il lit, et on prendrait sa
+	 * réponse pour une réponse sur celui-là. `null` quand aucun dossier n'est
+	 * ouvert — le bouton dit alors « Demander » seul, et ce qu'il lit s'explique
+	 * en l'ouvrant, avant qu'on ait tapé quoi que ce soit.
 	 */
-	readonly portee: string;
+	readonly portee: string | null;
 	readonly etat: EtatCompagnon;
 	readonly onOuvrir: () => void;
 }) {
@@ -99,28 +107,40 @@ export function CompagnonFlottant({
 		  `z-40`, comme la barre : au-dessus du contenu, et SOUS la feuille de
 		  preuve (`z-50`), qui recouvre l'écran entier sous 1024 px.
 
-		  `items-end` : la légende s'aligne sur le bord droit de la capsule, pas sur
-		  son centre — sinon elle déborde vers l'extérieur de l'écran dès qu'elle
-		  est plus large que la capsule.
+		  `items-end` : la phrase d'indisponibilité s'aligne sur le bord droit de la
+		  capsule, pas sur son centre — sinon elle déborde vers l'extérieur de
+		  l'écran dès qu'elle est plus large que la capsule.
 		*/
 		<div className="mb-safe fixed right-cladd-3xs bottom-24 z-40 flex flex-col items-end gap-1.5">
 			{/*
-			  LA LIGNE QUE L'ÉCRAN DIT.
+			  LA PHRASE, ET SEULEMENT QUAND ELLE APPREND QUELQUE CHOSE.
 
-			  ⚠️ `pointer-events-none` : elle est posée au-dessus du contenu qui
-			  défile, et elle n'est pas une cible. Sans ça, elle volerait les
-			  touchers destinés à la carte qui passe dessous.
+			  ⚠️ ELLE NE PARAÎT QUE SUR L'ÉTAT INDISPONIBLE. Une légende permanente
+			  au-dessus du bouton se pose sur le contenu qui défile : mesurée à
+			  375 px, elle recouvrait une rangée du total, et deux textes superposés
+			  ne se lisent ni l'un ni l'autre. La portée, elle, tient sur la capsule,
+			  en deux mots. Ici la phrase gagne sa place : elle doit se lire SANS
+			  qu'on ouvre quoi que ce soit, faute de quoi on tape une question pour
+			  apprendre qu'elle ne partira pas.
 
-			  ⚠️ `aria-hidden` : son texte est déjà porté par l'`aria-label` de la
-			  capsule, en une seule phrase. Lue deux fois, elle ferait entendre la
-			  portée avant de savoir de quel bouton on parle.
+			  ⚠️ `verre-dense` ET NON `verre` : c'est le dosage de la barre du bas,
+			  le seul assez opaque pour qu'un texte de cette taille tienne au-dessus
+			  d'une carte.
+
+			  ⚠️ `pointer-events-none` : elle n'est pas une cible, et sans ça elle
+			  volerait les touchers destinés à la carte qui passe dessous.
+
+			  ⚠️ `aria-hidden` : son texte est déjà l'`aria-label` de la capsule. Lue
+			  deux fois, elle s'entendrait avant qu'on sache de quel bouton on parle.
 			*/}
-			<span
-				aria-hidden
-				className="verre pointer-events-none max-w-56 rounded-full px-2.5 py-1 text-right text-cladd-3xs leading-snug text-cladd-fg-soft"
-			>
-				{indisponible ? etat.phrase : portee}
-			</span>
+			{indisponible ? (
+				<span
+					aria-hidden
+					className="verre-dense pointer-events-none max-w-56 rounded-cladd-2xs px-2.5 py-1 text-right text-cladd-3xs leading-snug text-cladd-fg-soft"
+				>
+					{etat.phrase}
+				</span>
+			) : null}
 
 			<span className="relative inline-flex">
 				{/*
@@ -158,7 +178,11 @@ export function CompagnonFlottant({
 					hoverable={false}
 					className="verre-dense verre-bouton"
 					aria-label={
-						indisponible ? etat.phrase : `Demander au logiciel. ${portee}`
+						indisponible
+							? etat.phrase
+							: portee === null
+								? 'Demander au logiciel. Ce fil est borné à un dossier : ouvrez-en un dans la file.'
+								: `Demander au logiciel, sur ${portee}.`
 					}
 					onClick={onOuvrir}
 				>
@@ -172,6 +196,18 @@ export function CompagnonFlottant({
 					<span className="text-cladd-2xs font-medium">
 						{indisponible ? 'Indisponible' : 'Demander'}
 					</span>
+					{/*
+					  LA PORTÉE, SUR LA CAPSULE ELLE-MÊME.
+
+					  ⚠️ PLUS SOURDE QUE LE VERBE, ET SUR LA MÊME LIGNE. C'est ce que le
+					  fil lit, pas une seconde action : lui donner le même poids ferait
+					  lire deux boutons collés. Absente quand aucun dossier n'est ouvert —
+					  on ne remplit pas la capsule d'un « cet établissement » qui
+					  promettrait une conversation que le produit ne tient pas.
+					*/}
+					{indisponible || portee === null ? null : (
+						<span className="text-cladd-2xs text-cladd-fg-softer">· {portee}</span>
+					)}
 				</Button>
 
 				{/* Le compte de ce qu'il a à dire, à cheval sur le bord de la capsule.

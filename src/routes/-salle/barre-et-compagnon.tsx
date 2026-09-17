@@ -116,14 +116,35 @@ function Scene({
 	);
 }
 
-const ETATS_COMPAGNON: readonly { readonly titre: string; readonly etat: EtatCompagnon }[] = [
-	{ titre: 'Au repos — la lueur respire, six secondes par cycle', etat: { genre: 'REPOS' } },
+const ETATS_COMPAGNON: readonly {
+	readonly titre: string;
+	readonly portee: string | null;
+	readonly etat: EtatCompagnon;
+}[] = [
+	{
+		titre: 'Au repos, sur un dossier — la lueur respire, six secondes par cycle',
+		portee: 'ce dossier',
+		etat: { genre: 'REPOS' }
+	},
+	{
+		/*
+		 * ⚠️ L'ÉTAT SANS DOSSIER SE REGARDE AUSSI, ET C'EST CELUI QU'ON VOIT LE
+		 * PLUS. La capsule n'écrit alors AUCUNE portée : « cet établissement »
+		 * promettrait une conversation à l'échelle du dépôt, que le produit ne
+		 * tient pas. Ce qu'il lit s'explique en l'ouvrant.
+		 */
+		titre: 'Au repos, sans dossier ouvert — aucune portée écrite sur la capsule',
+		portee: null,
+		etat: { genre: 'REPOS' }
+	},
 	{
 		titre: 'Il a quelque chose à dire — la lueur s’anime, le compte se pose',
+		portee: 'ce dossier',
 		etat: { genre: 'A_DIRE', compte: 3 }
 	},
 	{
 		titre: 'Indisponible — la capsule reste, et l’ouvrir montre le refus complet',
+		portee: 'ce dossier',
 		etat: {
 			genre: 'INDISPONIBLE',
 			phrase: 'Conversation libre arrêtée jusqu’au mois prochain.'
@@ -172,14 +193,10 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 			</Scene>
 
 			<SectionTitle>Le compagnon, au-dessus de la barre</SectionTitle>
-			{ETATS_COMPAGNON.map(({ titre, etat: etatCompagnon }) => (
+			{ETATS_COMPAGNON.map(({ titre, portee, etat: etatCompagnon }) => (
 				<Scene key={titre} titre={titre} hauteur="h-60">
 					<BarreDuBas destinations={destinations('aujourdhui', null)} />
-					<CompagnonFlottant
-						portee="Borné au dossier ouvert : ses factures, ses pièces, ses décomptes."
-						etat={etatCompagnon}
-						onOuvrir={() => undefined}
-					/>
+					<CompagnonFlottant portee={portee} etat={etatCompagnon} onOuvrir={() => undefined} />
 				</Scene>
 			))}
 
