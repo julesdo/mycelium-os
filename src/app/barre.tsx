@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Link, useRouterState, useNavigate, CatchBoundary } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { Button } from '@cladd-ui/react';
@@ -14,6 +14,13 @@ import {
 	type RecentAffiche,
 	type ResultatRechercheAffiche
 } from '../ui/palette-recherche';
+/**
+ * ⚠️ IL VIENT DE `src/ui/`, ET PLUS D'ICI. Le motif d'isolement était défini
+ * dans ce fichier, c'est-à-dire dans celui que la file remplace : le supprimer
+ * aurait emporté le seul isolement du produit, en silence. Il vit désormais
+ * chez les primitives, et la barre l'importe jusqu'à sa propre disparition.
+ */
+import { Facultatif } from '../ui/facultatif';
 import { LogoLetikette } from '../ui/logo';
 import { Avatar } from '../ui/avatar';
 import { VeilleurAvatar, type EtatVeilleur } from '../ui/veilleur-avatar';
@@ -78,24 +85,6 @@ const ENTREES = [
 function useActif() {
 	const chemin = useRouterState({ select: (s) => s.location.pathname });
 	return (to: string) => (to === '/app' ? chemin === '/app' : chemin.startsWith(to));
-}
-
-/**
- * Ce qui, en échouant, ne doit RIEN emporter.
- *
- * Tout ce qui interroge Convex depuis la barre — le sélecteur d'établissement —
- * lève quand la session manque : au chargement, après une expiration, ou dans
- * la salle d'exposition qui rend la coquille sans authentification. Sans
- * isolation, un ornement facultatif emporte la NAVIGATION ENTIÈRE et renvoie
- * le gérant sur un écran d'erreur, alors qu'il lui suffisait de ne pas voir
- * une pastille.
- */
-function Facultatif({ children }: { children: ReactNode }) {
-	return (
-		<CatchBoundary getResetKey={() => 'barre'} errorComponent={() => null}>
-			{children}
-		</CatchBoundary>
-	);
 }
 
 /**

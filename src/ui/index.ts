@@ -37,6 +37,7 @@ export { CompositionDue, type PartsDues } from './composition';
 export { TwoPane } from './two-pane';
 export { MaitreDetail, useDeuxVolets } from './maitre-detail';
 export { EmptyState } from './empty-state';
+export { Facultatif } from './facultatif';
 export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
 export { SectionEcran } from './section';
