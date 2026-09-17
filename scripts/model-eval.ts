@@ -9,13 +9,21 @@
  * Not CI. Burns OpenRouter credits. Needs OPENROUTER_API_KEY (env or
  * .env.convex.local).
  *
- *   bun run model:eval                                 # check the model in use (CHAT_MODEL_ID)
+ * ⚠️ `--model` EST REQUIS, ET IL N'Y A PLUS DE DÉFAUT. Ce script lisait
+ * `CHAT_MODEL_ID` (`src/lib/convex/utils/chatModel.ts`), qui se disait « single
+ * source of truth for the chat model used by `aiChat/agent.ts` and
+ * `support/agent.ts` » : ces deux modules n'existent pas, le produit n'appelle
+ * aucun modèle de conversation, et l'identifiant nommé était un modèle
+ * OpenRouter étranger à la pile (Claude par le SDK Anthropic, en action
+ * Convex). Un défaut qui désigne « le modèle en service » quand aucun ne l'est
+ * est la meilleure façon d'en brancher un mauvais : on nomme donc le candidat
+ * qu'on évalue, ou le script ne fait rien.
+ *
  *   bun run model:eval -- --model openai/gpt-5-mini    # check a candidate
  *   bun run model:eval -- --model a --model b          # compare several
  *   bun run model:eval -- --json /tmp/eval.json        # also write raw results
  */
 import { writeFileSync } from 'node:fs';
-import { CHAT_MODEL_ID } from '../src/lib/convex/utils/chatModel.ts';
 import {
 	checkCatalog,
 	checkImage,
@@ -39,7 +47,6 @@ function parseArgs(argv: string[]): { models: string[]; jsonPath: string | null 
 		if (argv[i] === '--model' && argv[i + 1]) models.push(argv[++i]!);
 		else if (argv[i] === '--json' && argv[i + 1]) jsonPath = argv[++i]!;
 	}
-	if (models.length === 0) models.push(CHAT_MODEL_ID);
 	return { models, jsonPath };
 }
 
@@ -73,6 +80,14 @@ async function evalModel(model: string, catalog: CatalogInfo | null): Promise<Mo
 
 async function main() {
 	const { models, jsonPath } = parseArgs(process.argv.slice(2));
+
+	// Aucun défaut : voir l'en-tête. Un script qui évalue « le modèle en
+	// service » alors qu'aucun ne l'est nomme un candidat au hasard.
+	if (models.length === 0) {
+		console.error('Nommez le modèle à évaluer : bun run model:eval -- --model <fournisseur/id>');
+		process.exit(1);
+	}
+
 	process.env.OPENROUTER_API_KEY = loadOpenRouterApiKey();
 
 	console.log('Model capability eval (OpenRouter)');

@@ -71,7 +71,6 @@ import type * as storage from "../storage.js";
 import type * as tests from "../tests.js";
 import type * as users from "../users.js";
 import type * as utils_anonymousUser from "../utils/anonymousUser.js";
-import type * as utils_chatModel from "../utils/chatModel.js";
 
 import type {
   ApiFromModules,
@@ -143,7 +142,6 @@ declare const fullApi: ApiFromModules<{
   tests: typeof tests;
   users: typeof users;
   "utils/anonymousUser": typeof utils_anonymousUser;
-  "utils/chatModel": typeof utils_chatModel;
 }>;
 
 /**

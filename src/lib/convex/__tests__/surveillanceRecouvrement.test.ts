@@ -651,6 +651,60 @@ describe('les échéances d’une procédure engagée', () => {
 		DELAI_CONVEX
 	);
 
+	/**
+	 * ⚠️ LE MONTANT ET LA DATE DE LA CADUCITÉ, SUR LA SEULE RANGÉE DU PRODUIT
+	 * QUI ANNONCE LA PERTE D'UN TITRE EXÉCUTOIRE.
+	 *
+	 * Le dossier partait avec `montantEnJeu: ZERO`, écrit en dur, et une
+	 * `reference` qui portait l'identifiant Convex de la créance. La rangée
+	 * disait donc « 0,00 € » sur trente-deux caractères illisibles, c'est-à-dire
+	 * une échéance sans enjeu sur un dossier sans nom — la ligne qu'on remet à
+	 * demain, le jour où c'est la seule qui ne se rattrape pas.
+	 *
+	 * Et aucun événement ne portait la date de son fait : elle n'existait que
+	 * RÉCITÉE dans l'explication, en français, donc lisible et pas exploitable.
+	 *
+	 * Ce test part de la base et regarde ce qui arrive au bout, parce que c'est
+	 * le seul endroit où le défaut se voit : le domaine est testé sur des
+	 * données en mémoire qu'il reçoit toutes faites, et la salle d'exposition
+	 * fournit SES PROPRES données. L'assemblage n'a que ce test-ci.
+	 */
+	it(
+		'porte le reste dû du dossier et la date de sa limite, sous le nom du client',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await poserCreanceEngagee(t, {
+				ordonnanceLe: '2026-06-20'
+			});
+
+			// La facture rattachée à la créance engagée : c'est ce rattachement qui
+			// donne son montant au dossier, et c'est ce que le produit fait en
+			// constituant une créance.
+			await t.run(async (ctx) => {
+				const facture = (await ctx.db.query('facturesVente').collect()).find(
+					(f) => f.organizationId === organizationId
+				)!;
+				await ctx.db.patch(facture._id, { creanceId });
+			});
+
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: AUJOURDHUI
+			});
+
+			const echeance = flux.evenements.find((e) => e.type === 'ECHEANCE_PROCEDURE');
+			expect(echeance).toBeDefined();
+			// 9 000,00 € : le reste dû de la seule facture du dossier, jamais ZERO.
+			expect(echeance!.montant).toBe(900_000n);
+			// Trois mois après l'ordonnance du 20 juin (`delaiSignificationInjonction`),
+			// la même date que l'explication récite en toutes lettres.
+			expect(echeance!.dateDuFait).toBe('2026-09-20');
+			// Le nom du client, pas l'identifiant Convex de sa créance.
+			expect(echeance!.reference).toBe('Fournitures Durand');
+		},
+		DELAI_CONVEX
+	);
+
 	it(
 		'ne signale rien sur une créance qui n’a rien engagé',
 		async () => {

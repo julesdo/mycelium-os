@@ -362,7 +362,10 @@ describe('prescription — la seule échéance qui éteint une créance toute se
 });
 
 describe('ordre et cumul', () => {
-	it('remonte le plus urgent en premier, puis le plus gros montant', () => {
+	// Les deux factures partagent leur échéance : c'est ce qui laisse le montant
+	// départager. `comparerEvenements` range désormais sur l'urgence, PUIS sur
+	// l'échéance la plus proche, et le montant ne vient qu'après.
+	it('remonte le plus urgent en premier, puis à échéance égale le plus gros montant', () => {
 		const evenements = detecterEvenements(
 			etat({
 				factures: [
@@ -943,8 +946,21 @@ describe('la ligne rouge 3, sur TOUS les événements', () => {
 		// Le constat n'est pas supprimé : il change de place. « Passée cette
 		// date, la créance est éteinte » est un fait ; « engagez avant » est une
 		// consigne.
+		//
+		// ⚠️ ON DÉSIGNE LA FACTURE, PLUS LA PREMIÈRE DE SA CLASSE. Ce test
+		// cherchait « le premier événement de type PRESCRIPTION_PROCHE », ce qui le
+		// rendait dépendant de l'ordre du comparateur sans le dire : depuis que la
+		// file range sur l'échéance la plus proche, c'est la prescription DÉJÀ
+		// ÉTEINTE qui sort la première, et elle porte l'autre phrase. Le test ne
+		// vérifiait donc pas ce qu'il annonçait — il vérifiait une position.
 		const evenements = tousLesEvenements();
-		const prescription = evenements.find((e) => e.type === 'PRESCRIPTION_PROCHE');
-		expect(prescription!.explication).toMatch(/prescrite le/i);
+		const prescriptions = evenements.filter((e) => e.type === 'PRESCRIPTION_PROCHE');
+
+		const proche = prescriptions.find((e) => e.reference === 'F-proche');
+		expect(proche!.explication).toMatch(/sera prescrite le/i);
+
+		// L'autre branche, qui porte l'argent déjà perdu : elle aussi constate.
+		const eteinte = prescriptions.find((e) => e.reference === 'F-eteinte');
+		expect(eteinte!.explication).toMatch(/est prescrite depuis le/i);
 	});
 });
