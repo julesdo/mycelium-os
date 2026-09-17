@@ -382,12 +382,31 @@ export const consignerEchange = internalMutation({
 // CE QUE L'ÉCRAN LIT
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * UN TOUR TEL QUE L'ÉCRAN LE REÇOIT — ET LE CONTENU N'Y PASSE QU'UNE FOIS.
+ *
+ * ⚠️ `texte` ET `phrases` SONT EXCLUSIFS, DÉLIBÉRÉMENT. `texte` est la
+ * concaténation des phrases : les envoyer tous les deux faisait traverser le
+ * réseau deux fois le même contenu, dont une moitié que `compagnon/tour.ts` ne
+ * lit jamais quand les phrases sont là. La requête est réactive et tout le fil
+ * repart à chaque question posée, donc ce doublon se payait à chaque tour.
+ *
+ * ⚠️ ET `pastilles` NE SORT PLUS DU TOUT. Les rangs étaient l'ancien chemin de
+ * relecture ; il a été retiré (voir `compagnon/tour.ts`, au-dessus de
+ * `relireTour`), et plus personne ne les lit à l'écran. Le champ reste ÉCRIT —
+ * il est requis au schéma et une table qui porte des documents ne perd pas un
+ * champ requis sans casser son déploiement — mais il ne se transporte plus.
+ */
 const vTourAffiche = v.object({
 	_id: v.id('echangesCompagnon'),
 	fil: v.string(),
 	role: v.union(v.literal('GERANT'), v.literal('COMPAGNON')),
-	texte: v.string(),
-	pastilles: v.array(v.object({ phrase: v.number(), source: vSourceConstat })),
+	/**
+	 * Le texte recollé, rendu SEULEMENT quand `phrases` ne le porte pas : les
+	 * tours du gérant, les refus, et les tours écrits avant que les phrases le
+	 * soient. Absent quand `phrases` est là.
+	 */
+	texte: v.optional(v.string()),
 	/** Absent sur les tours écrits avant que les phrases le soient, et sur les refus. */
 	phrases: v.optional(v.array(v.object({ texte: v.string(), source: v.optional(vSourceConstat) }))),
 	diteLe: v.number()
@@ -424,15 +443,22 @@ export const filDuDossier = authedQuery({
 		return {
 			tours: tours
 				.sort((a, b) => a.diteLe - b.diteLe)
-				.map((tour) => ({
-					_id: tour._id,
-					fil: tour.fil,
-					role: tour.role,
-					texte: tour.texte,
-					pastilles: tour.pastilles,
-					phrases: tour.phrases,
-					diteLe: tour.diteLe
-				})),
+				.map((tour) => {
+					// ⚠️ LA CONDITION EST CELLE DE `relireTour`, À LA LETTRE. Un tableau
+					// de phrases VIDE s'y lit comme une absence — c'est le cas des tours
+					// du gérant et des refus —, et le texte reste alors le seul contenu
+					// du tour. Écrire ici une condition plus large ferait disparaître le
+					// texte d'un tour que l'écran rendrait vide.
+					const portePhrases = tour.phrases !== undefined && tour.phrases.length > 0;
+					return {
+						_id: tour._id,
+						fil: tour.fil,
+						role: tour.role,
+						texte: portePhrases ? undefined : tour.texte,
+						phrases: portePhrases ? tour.phrases : undefined,
+						diteLe: tour.diteLe
+					};
+				}),
 			compteur
 		};
 	}

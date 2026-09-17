@@ -9,7 +9,6 @@ import {
 	pastillesAPersister,
 	phrasesAPersister,
 	relireTour,
-	type PastillePersistee,
 	type PhrasePersistee,
 	type PhraseRelue
 } from '../tour';
@@ -27,7 +26,8 @@ import {
  * phrases et n'indexait les pastilles que par RANG, ce qui obligeait la
  * relecture à REDÉCOUPER le texte sur la ponctuation pour retrouver ces rangs.
  *
- * Deux cas très ordinaires le mettaient en défaut, et le second est le pire :
+ * Trois formes très ordinaires mettaient ce redécoupage en défaut, et la
+ * dernière est la pire :
  *
  *   · une phrase sans point final se recollait à la suivante — le tour entier
  *     se rendait alors en une phrase sans aucune pastille, ce qui est une
@@ -35,12 +35,17 @@ import {
  *   · une abréviation (« art. D441-5 ») coupait une phrase en deux — et chaque
  *     pastille glissait d'un cran. La source du décompte se posait sur la
  *     phrase du référentiel, et la phrase qui portait le MONTANT se rendait
- *     « non sourcé ». C'est exactement ce que les pastilles existent pour
- *     empêcher, et le garde-fou d'alors annonçait l'empêcher.
+ *     « non sourcé » ;
+ *   · et, avec DEUX phrases seulement, une phrase finale NON SOURCÉE recollée
+ *     à la précédente laissait le compte exact. Le garde-fou ne tombait pas et
+ *     la pastille du décompte recouvrait l'aveu d'ignorance du compagnon : le
+ *     produit présentait comme sourcée la phrase qu'il avait explicitement
+ *     laissée sans source. C'est le contraire exact de ce qu'il vend.
  *
  * Ces tests tiennent les deux bouts : ce que l'écriture enregistre se relit à
- * l'identique, et ce qui arrive SANS ses phrases ne reçoit jamais une pastille
- * qu'on ne peut pas prouver.
+ * l'identique, et ce qui arrive SANS ses phrases ne reçoit AUCUNE pastille —
+ * le redécoupage a été retiré, parce qu'aucun comptage ne peut prouver qu'une
+ * pastille tombe sur la phrase qu'elle source.
  */
 
 const CONTEXTE: ContexteDossier = {
@@ -88,14 +93,17 @@ const REPONSE_DU_MODELE: ReponseCompagnon = {
 	]
 };
 
-/** Ce que la mutation écrit, et ce que la requête relit — sans la base. */
+/**
+ * Ce que la mutation écrit, et ce que la requête relit — sans la base.
+ *
+ * ⚠️ LE TEXTE RECOLLÉ N'EST PAS TRANSMIS QUAND LES PHRASES LE SONT, exactement
+ * comme `filDuDossier` : le contenu ne traverse le réseau qu'une fois. Et les
+ * pastilles ne sont plus transmises du tout — `relireTour` ne les accepte même
+ * plus, ce qui rend le décalage impossible à écrire plutôt qu'improbable.
+ */
 function ecrireEtRelire(reponse: ReponseCompagnon): readonly PhraseRelue[] {
-	const { sortie, phrases } = lireReponse(reponse, ancresDuContexte(CONTEXTE));
-	return relireTour({
-		texte: sortie.texte,
-		pastilles: pastillesAPersister(phrases),
-		phrases: phrasesAPersister(phrases)
-	});
+	const { phrases } = lireReponse(reponse, ancresDuContexte(CONTEXTE));
+	return relireTour({ phrases: phrasesAPersister(phrases) });
 }
 
 describe('un tour du compagnon, écrit puis relu', () => {
@@ -151,51 +159,131 @@ describe('un tour du compagnon, écrit puis relu', () => {
 
 		expect(duMontant?.genreSource).toBe('DECOMPTE');
 	});
+
+	it('écrit encore ses pastilles, que plus personne ne relit', () => {
+		// ⚠️ LE CHAMP EST REQUIS AU SCHÉMA, et une table qui porte déjà des
+		// documents ne perd pas un champ requis sans casser son déploiement. Il
+		// s'écrit donc, au rang de la phrase — et il ne sert plus à la relecture.
+		const { phrases } = lireReponse(REPONSE_DU_MODELE, ancresDuContexte(CONTEXTE));
+
+		expect(pastillesAPersister(phrases)).toEqual([
+			{ phrase: 0, source: { nature: 'REFERENTIEL', cleParametre: 'indemniteForfaitaire' } },
+			{ phrase: 1, source: { nature: 'DECOMPTE', decompteId: 'decompte_1' } }
+		]);
+	});
 });
 
 /**
- * LE REPLI, POUR LES TOURS ÉCRITS AVANT QUE LES PHRASES LE SOIENT.
+ * LES TOURS ÉCRITS AVANT QUE LES PHRASES LE SOIENT.
  *
- * ⚠️ IL RESTE, ET IL RESTE HONNÊTE. Ce qui arrive sans ses phrases se relit par
- * l'ancien chemin : le redécoupage quand il est PROUVABLE, et rien du tout
- * sinon. Une source absente se voit ; une source fausse a l'air d'une source.
+ * ⚠️ ILS SE RENDENT EN UNE PHRASE, SANS PASTILLE, ET C'EST UNE DÉCISION. Le
+ * redécoupage sur la ponctuation a été retiré : la donnée écrite — un texte
+ * recollé et des rangs — ne détermine pas la partition d'origine, donc aucun
+ * comptage ne peut prouver qu'une pastille tombe sur la phrase qu'elle source.
+ * Le raisonnement complet est au-dessus de `relireTour`.
+ *
+ * Les deux formes ci-dessous sont celles que l'ancien garde-fou traitait à
+ * l'envers l'une de l'autre. Elles se rendent maintenant pareil, et aucune des
+ * deux n'affirme quoi que ce soit.
  */
-describe('le repli des tours antérieurs', () => {
-	const ANCIEN = {
-		texte:
-			'L’indemnité forfaitaire est due au titre de l’art. D441-5 du code de commerce. ' +
-			'Le décompte du jour l’arrête à 120,00 €.',
-		pastilles: [
-			{ phrase: 0, source: { nature: 'REFERENTIEL', cleParametre: 'indemniteForfaitaire' } },
-			{ phrase: 1, source: { nature: 'DECOMPTE', decompteId: 'decompte_1' } }
-		] as readonly PastillePersistee[]
-	};
+describe('les tours antérieurs, sans leurs phrases', () => {
+	/**
+	 * ⚠️ LE CAS QUI FAISAIT MENTIR LE PRODUIT. P0 est sourcée par le décompte et
+	 * rendue SANS point final ; P1 est l'aveu d'ignorance, sans aucune source.
+	 * `join(' ')` les recolle, le redécoupage n'en retrouvait qu'un morceau, et
+	 * `rangMax + 1` valait 1 : le compte tombait juste, le garde-fou ne tombait
+	 * pas, et la pastille « décompte du dossier » se posait sur TOUT le texte —
+	 * l'aveu compris. La phrase que le produit avait explicitement laissée sans
+	 * source était présentée au gérant comme sourcée par son décompte.
+	 */
+	const SANS_POINT_FINAL =
+		'Le décompte du jour l’arrête à 120,00 € ' +
+		'Je n’ai pas pu lire à quelle page du contrat cette clause figure.';
 
-	it('abandonne toutes les pastilles plutôt que d’en décaler une', () => {
-		const relues = relireTour(ANCIEN);
+	/**
+	 * ⚠️ ET LE CAS QUE L'ANCIEN GARDE-FOU ABANDONNAIT À TORT. Deux phrases bien
+	 * ponctuées, la seconde sans source : deux morceaux contre `rangMax + 1`
+	 * qui vaut 1, donc toutes les pastilles du tour tombaient. Une phrase finale
+	 * non sourcée est pourtant la forme la plus ordinaire qui soit.
+	 */
+	const AVEC_POINT_FINAL =
+		'Le décompte du jour l’arrête à 120,00 €. ' +
+		'Je n’ai pas pu lire à quelle page du contrat cette clause figure.';
 
-		expect(relues).toHaveLength(1);
-		expect(relues[0]!.genreSource).toBe('AUCUNE');
-		expect(relues[0]!.texte).toBe(ANCIEN.texte);
+	/** ⚠️ L'ABRÉVIATION, qui faisait glisser chaque pastille d'un cran. */
+	const AVEC_ABREVIATION =
+		'L’indemnité forfaitaire est due au titre de l’art. D441-5 du code de commerce. ' +
+		'Le décompte du jour l’arrête à 120,00 €.';
+
+	it.each([
+		['une phrase sans point final', SANS_POINT_FINAL],
+		['une phrase finale non sourcée', AVEC_POINT_FINAL],
+		['une abréviation au milieu', AVEC_ABREVIATION],
+		['une phrase seule', 'Le décompte du jour l’arrête à 120,00 €.']
+	])('rend le tour entier en une phrase sans source — %s', (_forme, texte) => {
+		expect(relireTour({ texte })).toEqual([
+			{ texte, genreSource: 'AUCUNE', libelleSource: '' }
+		]);
 	});
 
-	it('rend encore ses pastilles quand le découpage est prouvable', () => {
-		const relues = relireTour({
-			texte: 'J’ai relevé deux factures. Le décompte du jour l’arrête à 120,00 €.',
-			pastilles: [{ phrase: 1, source: { nature: 'DECOMPTE', decompteId: 'decompte_1' } }]
-		});
-
-		expect(relues.map((phrase) => phrase.genreSource)).toEqual(['AUCUNE', 'DECOMPTE']);
+	it('n’attribue jamais une source à la phrase que le produit a laissée sans source', () => {
+		// Le constat, énoncé comme une invariante plutôt que comme une forme :
+		// aucun tour relu sans ses phrases ne porte de source, quelle qu'elle soit.
+		for (const texte of [SANS_POINT_FINAL, AVEC_POINT_FINAL, AVEC_ABREVIATION]) {
+			const relues = relireTour({ texte });
+			expect(relues.every((phrase) => phrase.genreSource === 'AUCUNE')).toBe(true);
+			expect(relues.map((phrase) => phrase.texte).join('')).toBe(texte);
+		}
 	});
 
 	it('se reprend sur un tableau de phrases vide, qui n’est pas un tour sans phrase', () => {
 		// Un tour du gérant et un refus n'ont jamais été découpés en phrases
 		// sourcées : ils n'en portent aucune, et se rendent sur leur texte.
 		const vide: readonly PhrasePersistee[] = [];
-		const relues = relireTour({ texte: 'Combien reste-t-il dû ?', pastilles: [], phrases: vide });
+		const relues = relireTour({ texte: 'Combien reste-t-il dû ?', phrases: vide });
 
 		expect(relues).toEqual([
 			{ texte: 'Combien reste-t-il dû ?', genreSource: 'AUCUNE', libelleSource: '' }
 		]);
+	});
+});
+
+/**
+ * CE QUE LA REQUÊTE TRANSPORTE, ET CE QU'ELLE NE TRANSPORTE PLUS.
+ *
+ * `filDuDossier` n'envoie `texte` que lorsque `phrases` ne porte pas déjà le
+ * contenu : les deux ensemble faisaient traverser le réseau deux fois le même
+ * texte, à chaque question posée, pour n'en lire qu'une moitié.
+ */
+describe('un tour reçu sans son texte recollé', () => {
+	it('se relit entièrement sur ses phrases', () => {
+		const relues = relireTour({
+			phrases: [
+				{
+					texte: 'Le décompte du jour l’arrête à 120,00 €.',
+					source: { nature: 'DECOMPTE', decompteId: 'decompte_1' }
+				},
+				{ texte: 'Je n’ai pas pu lire à quelle page cette clause figure.' }
+			]
+		});
+
+		expect(relues).toEqual([
+			{
+				texte: 'Le décompte du jour l’arrête à 120,00 €.',
+				genreSource: 'DECOMPTE',
+				libelleSource: 'décompte du dossier'
+			},
+			{
+				texte: 'Je n’ai pas pu lire à quelle page cette clause figure.',
+				genreSource: 'AUCUNE',
+				libelleSource: ''
+			}
+		]);
+	});
+
+	it('ne rend AUCUNE phrase quand il n’a ni texte ni phrases', () => {
+		// Un trou se voit. Rendre une phrase vide le masquerait derrière une
+		// bulle sans contenu, et personne ne saurait que le tour manque.
+		expect(relireTour({})).toEqual([]);
 	});
 });
