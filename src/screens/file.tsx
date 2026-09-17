@@ -589,7 +589,19 @@ function FilePrete({
 			: (rangeeOuverte.portees[0] ?? 'TOUT');
 
 	const barre = (
-		<Toolbar className="w-full overflow-x-auto" contentClassName="flex items-center gap-cladd-3xs">
+		/*
+		  ⚠️ `justify-start` : LA `Toolbar` DE CLADD CENTRE SON CONTENU, et une
+		  rangée centrée qui déborde se coupe DES DEUX CÔTÉS. À 1024 px avec une
+		  preuve ouverte, l'établissement courant commençait à −20 px : il était
+		  rogné à gauche alors que la rangée n'avait pas encore été touchée, et rien
+		  n'indiquait qu'il fallait faire glisser vers la gauche pour le lire.
+		  Aligné au début, le débordement ne part que vers la droite, du côté où le
+		  doigt sait déjà aller. Mesuré au navigateur.
+		*/
+		<Toolbar
+			className="w-full overflow-x-auto"
+			contentClassName="flex items-center justify-start gap-cladd-3xs"
+		>
 			{/* LE SÉLECTEUR D'ÉTABLISSEMENT, PERMANENT — y compris sur un compte
 			    mono-site. Le cloisonnement est strict par établissement, et un gérant
 			    qui reprend sa tablette après une réunion doit lire sur LEQUEL il
@@ -657,8 +669,17 @@ function FilePrete({
 			  nulle part ailleurs — l'établissement courant et la bascule de vue —
 			  reste visible sans un geste.
 			*/}
-			{veilleur}
+			{/*
+			  ⚠️ L'AVATAR AVANT LE VEILLEUR, ET L'ORDRE SE JOUE AU PIXEL. À 1024 px
+			  avec une preuve ouverte, la liste n'occupe que 543 px et la rangée en
+			  demande 594 : quelque chose sera coupé au bord droit. Ce qui est coupé
+			  doit être ce dont la lecture existe AILLEURS — le veilleur redit ce que
+			  la rangée « Le travail de fond » porte en toutes lettres, tandis que
+			  l'avatar est la seule entrée de `/app/compte`, donc de l'abonnement, de
+			  l'équipe et des données. Mesuré au navigateur.
+			*/}
 			{avatar}
+			{veilleur}
 		</Toolbar>
 	);
 

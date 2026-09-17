@@ -594,7 +594,24 @@ type Forme = (typeof FORMES)[keyof typeof FORMES] | 'PRINCIPALE';
  * tient dans un `useState` — c'est la seule différence avec la route, et elle
  * est visible d'un coup d'œil.
  */
-function VoletDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+function VoletDemo({
+	etat,
+	variante,
+	enPreuve = false
+}: {
+	etat: EtatDemo;
+	variante?: string;
+	/**
+	 * Rendu DANS le volet droit de la file, et plus dans sa propre coquille.
+	 *
+	 * ⚠️ C'EST CE QUE LA BASCULE A CRÉÉ (T15) : la file écrit `?ligne=`, monte ce
+	 * volet dans son `preuve`, et `PageEcran` pose les deux volets. Sans cette
+	 * entrée-ci, la composition que le gérant voit — la `Toolbar` et la liste à
+	 * gauche, la preuve à droite — n'existerait nulle part dans la salle, et
+	 * aucune des quatre largeurs ne la montrerait.
+	 */
+	enPreuve?: boolean;
+}) {
 	/**
 	 * ⚠️ LA POSITION SE DÉRIVE AU RENDU, ELLE NE SE POSE PAS DANS UN EFFET. Les
 	 * deux formes de conversation doivent s'ouvrir SUR la conversation — sinon on
@@ -687,8 +704,26 @@ function VoletDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	};
 
 	return (
-		<VoletAvecSections ligne={ligne} etat={etat} position={position} onPosition={setPosition} />
+		<VoletAvecSections
+			ligne={ligne}
+			etat={etat}
+			position={position}
+			onPosition={setPosition}
+			enPreuve={enPreuve}
+		/>
 	);
+}
+
+/**
+ * LE VOLET, TEL QUE LA FILE LE MONTE DANS SON `preuve`.
+ *
+ * ⚠️ IL NE POSE AUCUNE COQUILLE. C'est `PageEcran`, depuis la file, qui décide
+ * des deux volets au-delà de 1024 px et de la feuille en dessous : en poser une
+ * seconde ici ferait regarder un écran dans un écran, et la largeur mesurée ne
+ * serait celle de personne.
+ */
+export function PreuveDeDemo() {
+	return <VoletDemo etat="pret" enPreuve />;
 }
 
 /**
@@ -715,14 +750,31 @@ function VoletAvecSections({
 	ligne,
 	etat,
 	position,
-	onPosition
+	onPosition,
+	enPreuve = false
 }: {
 	ligne: LigneOuverte;
 	etat: EtatDemo;
 	position: PositionVolet;
 	onPosition: (position: PositionVolet) => void;
+	enPreuve?: boolean;
 }) {
 	const [ouvertes, setOuvertes] = useState<readonly SectionVolet[]>(() => sectionsParDefaut(ligne));
+
+	const volet = (
+		<EcranVolet
+			ligneId={ligne.creanceId}
+			donnees={lectureDemo(etat, ligne)}
+			position={position}
+			onPosition={onPosition}
+			sectionsOuvertes={ouvertes}
+			onSectionsOuvertes={setOuvertes}
+			onFermer={() => undefined}
+		/>
+	);
+
+	// Monté par la file : c'est elle qui porte la coquille et les deux volets.
+	if (enPreuve) return volet;
 
 	return (
 		<PageEcran
@@ -749,17 +801,7 @@ function VoletAvecSections({
 						</p>
 					</PageBody>
 				),
-				preuve: (
-					<EcranVolet
-						ligneId={ligne.creanceId}
-						donnees={lectureDemo(etat, ligne)}
-						position={position}
-						onPosition={onPosition}
-						sectionsOuvertes={ouvertes}
-						onSectionsOuvertes={setOuvertes}
-						onFermer={() => undefined}
-					/>
-				),
+				preuve: volet,
 				/*
 				  Ouverte, parce que c'est l'état qu'on vient regarder : sous 1024 px,
 				  `?ligne=` rend la feuille, et c'est elle qui doit tenir à 375.

@@ -23,6 +23,8 @@ import {
 	type RangeeClient,
 	type RangeeDeLaFile
 } from '../../screens/file';
+import { POSITIONS_VOLET, SECTIONS_VOLET, type PositionVolet, type SectionVolet } from '../../screens/volet';
+import { VoletBranche } from '../../app/volet-branche';
 
 /**
  * `/app` — LA FILE, ET C'EST TOUT L'ÉCRAN DE TRAVAIL DU PRODUIT.
@@ -60,14 +62,56 @@ import {
  * rangée qu'on a touchée, et le surlignage désignerait une autre ligne que
  * celle dont on lit la preuve.
  */
+/**
+ * ⚠️ TROIS PARAMÈTRES, ET LES TROIS SE RECHARGENT. Une preuve adressable dont
+ * seule la LIGNE tient dans l'adresse rouvre le dossier sur une autre page que
+ * celle qu'on partageait : la position du `Segmented` et les sections dépliées
+ * en font partie. C'est la correction directe du défaut le plus étrange du
+ * dépôt — l'écran le plus lourd du produit n'avait pas d'adresse du tout.
+ *
+ * `sections` est une liste séparée par des virgules, filtrée contre
+ * `SECTIONS_VOLET` : une clé inconnue tombe, elle ne fait pas lever. Une adresse
+ * partagée depuis une version qui nommait une section disparue doit ouvrir le
+ * dossier, pas une page d'erreur.
+ *
+ * ⚠️ ET UNE LISTE VIDE N'EST PAS UNE LISTE ABSENTE. `?sections=` veut dire « le
+ * gérant a tout replié » ; l'absence du paramètre veut dire « l'adresse ne dit
+ * rien », et c'est alors `sectionsParDefaut` qui tranche. Les confondre ferait
+ * rouvrir le montant sur un volet qu'on venait de refermer en entier.
+ */
 export const Route = createFileRoute('/app/')({
 	component: File,
 	errorComponent: FileEnErreur,
-	validateSearch: (recherche: Record<string, unknown>): { ligne?: string } => {
+	validateSearch: (recherche: Record<string, unknown>): RechercheDeLaFile => {
 		const ligne = recherche.ligne;
-		return typeof ligne === 'string' && ligne.length > 0 ? { ligne } : {};
+		const position = recherche.position;
+		const sections = recherche.sections;
+
+		return {
+			...(typeof ligne === 'string' && ligne.length > 0 ? { ligne } : {}),
+			...(typeof position === 'string' && (POSITIONS_VOLET as readonly string[]).includes(position)
+				? { position: position as PositionVolet }
+				: {}),
+			...(typeof sections === 'string'
+				? {
+						sections: sections
+							.split(',')
+							.filter((cle): cle is SectionVolet =>
+								(SECTIONS_VOLET as readonly string[]).includes(cle)
+							)
+							.join(',')
+					}
+				: {})
+		};
 	}
 });
+
+interface RechercheDeLaFile {
+	readonly ligne?: string;
+	readonly position?: PositionVolet;
+	/** Les sections dépliées, séparées par des virgules. Absent : celles par défaut. */
+	readonly sections?: string;
+}
 
 function FileEnErreur() {
 	return <EcranFile donnees={{ etat: 'erreur' }} />;
@@ -137,7 +181,7 @@ const REGISTRE_AU_REPOS: EtatRecherche = { phase: 'REPOS' };
  */
 function File() {
 	const navigate = useNavigate();
-	const { ligne } = Route.useSearch();
+	const { ligne, position, sections } = Route.useSearch();
 	const aujourdHui = aujourdHuiISO();
 
 	const flux = useQuery(api.recouvrement.surveillance.flux, {});
@@ -571,8 +615,36 @@ function File() {
 
 	// ── L'ADRESSE ────────────────────────────────────────────────────────────
 
+	/**
+	 * OUVRIR UNE LIGNE, C'EST ÉCRIRE L'ADRESSE — et la refermer, l'effacer.
+	 *
+	 * ⚠️ OUVRIR UNE AUTRE LIGNE REPART DE LA POSITION ET DES SECTIONS PAR DÉFAUT.
+	 * Les garder ferait ouvrir le dossier suivant sur « Conversation » parce qu'on
+	 * lisait la conversation du précédent — c'est-à-dire sur une page qui n'a rien
+	 * à voir avec ce qu'on vient de toucher.
+	 */
 	const ouvrirLigne = (id: string) =>
 		void navigate({ to: '/app', search: id === ligne ? {} : { ligne: id } });
+
+	/**
+	 * LA CRÉANCE QUE `?ligne=` DÉSIGNE.
+	 *
+	 * ⚠️ UNE RANGÉE VISE TANTÔT UNE CRÉANCE, TANTÔT UN CLIENT, et c'est la
+	 * SURVEILLANCE qui le décide. La résolution se fait ici, à un seul endroit,
+	 * pour que l'adresse continue de porter l'identifiant de la rangée qu'on a
+	 * touchée : le surlignage et la preuve désignent alors la même chose.
+	 *
+	 * `null` quand l'identifiant ne mène à aucun dossier — une adresse ancienne, un
+	 * client sans créance constituée. La rangée reste surlignée, et le volet ne
+	 * s'ouvre pas : on ne montre pas un dossier qui n'existe pas, et on ne dit pas
+	 * « ce dossier ne s'est pas lu », ce qui serait faux.
+	 */
+	const creanceOuverte =
+		ligne === undefined
+			? null
+			: estUneCreance.has(ligne)
+				? (ligne as Id<'creances'>)
+				: ((creanceDuDebiteur.get(ligne) ?? null) as Id<'creances'> | null);
 
 	const valeur: FileAffichee = {
 		tete: {
@@ -646,7 +718,55 @@ function File() {
 			<Facultatif>
 				<Recherche />
 			</Facultatif>
-		)
+		),
+		/**
+		 * LE VOLET DE PREUVE — deux volets au-delà de 1024 px (règle d'écran n° 3).
+		 *
+		 * ⚠️ ABSENT QUAND AUCUNE LIGNE N'EST OUVERTE, et c'est délibéré. `PageEcran`
+		 * ne pose deux volets que si celui-ci existe : le monter en permanence
+		 * laisserait la moitié droite de l'écran vide sur une file qu'on parcourt,
+		 * c'est-à-dire un cadran à zéro de plus.
+		 *
+		 * ⚠️ ET LE MONTER À LA DEMANDE EST AUSSI CE QUI BORNE LE COÛT : le volet
+		 * porte douze requêtes de dossier, et un composant démonté ne demande rien.
+		 */
+		...(creanceOuverte === null
+			? {}
+			: {
+					preuve: (
+						<Facultatif>
+							<VoletBranche
+								// ⚠️ REMONTÉ À CHAQUE LIGNE. Sans clé, l'état local du volet — les
+								// deux recherches de répertoire, la question en cours — survivrait
+								// au changement de dossier : on lirait des candidats trouvés pour
+								// un autre client, et une question tapée pour un autre dossier.
+								key={creanceOuverte}
+								creanceId={creanceOuverte}
+								position={position ?? 'PIECE'}
+								onPosition={(suivante) =>
+									void navigate({
+										to: '/app',
+										search: (actuelle) => ({ ...actuelle, position: suivante })
+									})
+								}
+								sectionsDansLAdresse={
+									sections === undefined
+										? null
+										: sections === ''
+											? []
+											: (sections.split(',') as SectionVolet[])
+								}
+								onSectionsOuvertes={(ouvertes) =>
+									void navigate({
+										to: '/app',
+										search: (actuelle) => ({ ...actuelle, sections: ouvertes.join(',') })
+									})
+								}
+								onFermer={() => void navigate({ to: '/app', search: {} })}
+							/>
+						</Facultatif>
+					)
+				})
 	};
 
 	return <EcranFile donnees={{ etat: 'pret', valeur }} />;

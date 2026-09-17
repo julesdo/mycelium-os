@@ -16,6 +16,7 @@ import {
 	REVELATION_SANS_FACTURE_DEMO
 } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
+ import { PreuveDeDemo } from './volet';
 import { Chip } from '@cladd-ui/react';
 import { BuildingIcon } from 'lucide-react';
 import {
@@ -495,7 +496,20 @@ function FileDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
  */
 function FORMES_FILE(garnie: FileAffichee): Readonly<Record<string, FileAffichee>> {
 	return {
-		'ligne ouverte': { ...garnie, ligneOuverte: 'r-prescription-durand' }
+		'ligne ouverte': {
+			...garnie,
+			ligneOuverte: 'r-prescription-durand',
+			/*
+			  ⚠️ LA PREUVE EST MONTÉE ICI, ET C'EST TOUTE LA BASCULE (T15). La file
+			  écrit `?ligne=`, la route résout la créance et monte le volet dans son
+			  `preuve` : `PageEcran` pose alors deux volets au-delà de 1024 px et une
+			  feuille en dessous. Sans cette ligne, la composition que le gérant voit
+			  n'existerait nulle part dans la salle, et aucune des quatre largeurs de
+			  référence ne la montrerait — c'est précisément le genre de chose qu'on
+			  ne découvre qu'en production.
+			*/
+			preuve: <PreuveDeDemo />
+		}
 	};
 }
 

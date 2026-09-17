@@ -96,36 +96,23 @@ const APPELEES_AUTREMENT: Readonly<Record<string, string>> = {
 	//
 	// Si la file glisse, ces cinq lignes ne deviennent pas des dettes tacites :
 	// elles se retirent avec leur requête.
-	listerDecomptes:
-		'ÉCRITE AVANT SON LECTEUR — la portée « Décomptes » de la file (lot 2, T6). Sort de cette liste avec elle.',
 	listerPieces:
 		'ÉCRITE AVANT SON LECTEUR — le volet de preuve, section 5, et le compte des pièces à classer de la file (lot 2, T6 et T8). Sort de cette liste avec eux.',
-	lireParEtablissement:
-		'ÉCRITE AVANT SON LECTEUR — la vue Par client et ses ruptures d’habitude (lot 2, T7). Sort de cette liste avec elle.',
 	duJour:
 		'ÉCRITE AVANT SON LECTEUR — la tête de la file, qui dit ce que vaut la journée sans passer par un courriel (lot 2, T6). Sort de cette liste avec elle.',
-	abandonsDeLEtablissement:
-		'ÉCRITE AVANT SON LECTEUR — ce qui serait abandonné sur tout l’établissement, lu par la file et par l’écran d’arrêt (lot 2, T6 et T9). Sort de cette liste avec eux.',
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// LA CONVERSATION, ÉCRITE AVANT SA SURFACE (T14, lot 2)
-	// ─────────────────────────────────────────────────────────────────────────
-	//
-	// ⚠️ DEUX ENTRÉES DATÉES, DU MÊME GENRE QUE LES CINQ LECTURES CI-DESSUS, et
-	// pour la même raison de livraison : la bascule vers la file (T15) ne doit
-	// porter ni schéma, ni champ, ni fonction Convex, pour qu'un `git revert` la
-	// rende en entier. La conversation part donc seule, plusieurs jours avant
-	// l'écran qui la montera.
-	//
-	// Ce que la position « Conversation » du volet rend aujourd'hui est
-	// PRÉSENTATIONNEL : le volet reçoit son fil en propriétés, et la salle
-	// d'exposition le nourrit de données de démonstration, sans backend. C'est
-	// `routes/app/index.tsx` qui branchera ces deux fonctions le jour de la
-	// bascule, et ces deux lignes sortent d'ici ce jour-là.
-	repondre:
-		'ÉCRITE AVANT SA SURFACE — la position « Conversation » du volet de preuve (lot 2, T14). Le volet la reçoit en propriétés ; la bascule (T15) la branche. Sort de cette liste avec elle.',
-	filDuDossier:
-		'ÉCRITE AVANT SON LECTEUR — le fil d’un dossier et le compteur mensuel de coût, lus par la position « Conversation » du volet (lot 2, T14). Sort de cette liste avec la bascule (T15).',
+	// ⚠️ TROIS ENTRÉES DE PLUS ONT QUITTÉ CETTE LISTE À LA BASCULE (T15), et leur
+	// date de sortie était nommée : `listerDecomptes` est lue par la position
+	// « Décompte » du volet, `lireParEtablissement` par la vue Par client de la
+	// file, `abandonsDeLEtablissement` par ce qu'un décompte laisserait dehors,
+	// client par client. Une exception dont la date est passée et qu'on laisse
+	// vide ce fichier de son sens en trois ajouts.
+	// ⚠️ `repondre` ET `filDuDossier` ONT QUITTÉ CETTE LISTE (T15). Elles y
+	// étaient inscrites avec une date de sortie nommée — « la bascule les
+	// branche » — et `src/app/volet-branche.tsx` les appelle désormais depuis la
+	// position « Conversation » du volet de preuve. Une entrée dont la date de
+	// sortie est passée et qu'on laisse devient exactement l'inscription en masse
+	// que le commentaire de tête interdit.
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// LES TROIS GESTES DE LA PROPOSITION, ÉCRITS AVANT LEUR RANGÉE (18/09/2026)
