@@ -83,9 +83,18 @@ export function CompagnonFlottant({
 
 	return (
 		/*
-		  `mb-safe` et `bottom-22` : 88 px au-dessus du bord bas, soit les 76 px de
-		  la barre (48 d'onglet + 12 de rembourrage de pilule + 16 de marge) et
-		  douze de dégagement. Mesuré au navigateur, pas estimé.
+		  `mb-safe` et `bottom-24` : 96 px au-dessus du bord bas.
+
+		  ⚠️ LA VALEUR EST MESURÉE, PAS DÉDUITE. Le calcul de tête donnait 76 px de
+		  barre — 48 d'onglet, 12 de rembourrage de pilule, 16 de marge — et le
+		  navigateur en rend 82 : l'onglet fait 54 px et non 48, parce que son
+		  contenu (icône de 28, écart, libellé) dépasse le plancher tactile. La
+		  capsule était donc calée six pixels au-dessus de la pilule au lieu de
+		  douze. C'est exactement le genre d'écart que seule la mesure attrape, et
+		  qui se serait vu comme deux objets collés.
+
+		  96 px laissent quatorze pixels entre le bas de la capsule (716) et le haut
+		  de la pilule (730), sur une fenêtre de 812.
 
 		  `z-40`, comme la barre : au-dessus du contenu, et SOUS la feuille de
 		  preuve (`z-50`), qui recouvre l'écran entier sous 1024 px.
@@ -94,7 +103,7 @@ export function CompagnonFlottant({
 		  son centre — sinon elle déborde vers l'extérieur de l'écran dès qu'elle
 		  est plus large que la capsule.
 		*/
-		<div className="mb-safe fixed right-cladd-3xs bottom-22 z-40 flex flex-col items-end gap-1.5">
+		<div className="mb-safe fixed right-cladd-3xs bottom-24 z-40 flex flex-col items-end gap-1.5">
 			{/*
 			  LA LIGNE QUE L'ÉCRAN DIT.
 

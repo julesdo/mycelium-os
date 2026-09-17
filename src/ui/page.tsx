@@ -51,10 +51,12 @@ export function PageHeader({
  *
  * ⚠️ 9 REM, ET À TOUTES LES LARGEURS. Deux corrections d'un coup :
  *
- *   · la valeur. La barre mesure 76 px (48 d'onglet, 12 de rembourrage de
- *     pilule, 16 de marge) et la capsule du compagnon flotte au-dessus, jusqu'à
- *     136 px du bord. 7 rem dégageaient la barre seule ; le compagnon coupait
- *     alors le coin bas droit de la dernière carte.
+ *   · la valeur. Mesurée au navigateur sur une fenêtre de 812 px : la barre
+ *     occupe les 82 derniers pixels, et la capsule du compagnon flotte au-dessus
+ *     d'elle jusqu'à 144 px du bord. 7 rem dégageaient la barre seule ; le
+ *     compagnon coupait alors le coin bas droit de la dernière carte. À 9 rem,
+ *     le bas du contenu et le haut de la capsule tombent tous deux à 668 — la
+ *     dernière carte affleure le flottant sans jamais passer dessous.
  *   · la largeur. Le dégagement tombait à `cladd-xs` (28 px) au-delà de 768 px,
  *     parce que la barre basse y cédait la place à une capsule posée dans la
  *     barre HAUTE. Cette barre haute n'existe plus : la capsule est maintenant

@@ -182,6 +182,22 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 					/>
 				</Scene>
 			))}
+
+			{/*
+			  ⚠️ CE QUE CETTE PAGE NE PROUVE PAS, ET IL FAUT LE DIRE. La salle empile sa
+			  propre rangée de boutons AU-DESSUS de la coquille, et la coquille est en
+			  `h-dvh` : elle déborde donc de la fenêtre de la hauteur de cette rangée,
+			  et la vraie barre — qui est `fixed`, donc calée sur la FENÊTRE — se pose
+			  plus haut que le bas de la zone qui défile. Le dégagement se mesure ici en
+			  comparant le bas du contenu au bas du CONTENEUR, jamais à celui de la
+			  fenêtre.
+			*/}
+			<p className="text-cladd-3xs leading-relaxed text-cladd-fg-softest">
+				Ces cadres ne sont pas la vraie barre : ils enferment un exemplaire fixe grâce au
+				`transform` de leur scène. La vraie barre et le vrai bouton flottant sont en bas de cet
+				écran, comme sur tous les autres — c’est là que le dégagement du bas se regarde, et pas
+				dans ces cadres.
+			</p>
 		</PageEcran>
 	);
 }
