@@ -34,6 +34,27 @@ async function poserOrganisation(t: ReturnType<typeof convexTest>): Promise<Id<'
 	);
 }
 
+/**
+ * Le délai du PREMIER test de ce fichier, et de lui seul.
+ *
+ * `convexTest` compile tout le module Convex dans son bac à sable au premier
+ * appel — six secondes ici, quatre millisecondes ensuite. Les autres fichiers de
+ * ce dossier posent déjà la même constante pour la même raison ; celui-ci
+ * passait tout juste sous les cinq secondes par défaut, et l'enregistrement d'un
+ * import charge désormais la qualification en plus.
+ */
+const DELAI_CONVEX = 30_000;
+
+/**
+ * Le jour où l'import est enregistré.
+ *
+ * FIXÉ, comme partout ailleurs : l'enregistrement rejoue la qualification des
+ * clients que le lot touche, et cette qualification compte des retards par
+ * rapport à une date. Une horloge lue dans le handler rendrait ces tests
+ * dépendants du jour où on les passe.
+ */
+const AUJOURD_HUI = '2026-09-17';
+
 const FACTURE_DURAND = {
 	reference: 'FA-2026-0042',
 	debiteur: 'Fournitures Durand',
@@ -44,31 +65,36 @@ const FACTURE_DURAND = {
 };
 
 describe('enregistrement d’un import', () => {
-	it('crée le débiteur et la facture', async () => {
-		const t = convexTest(schema, modules);
-		const organizationId = await poserOrganisation(t);
+	it(
+		'crée le débiteur et la facture',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await poserOrganisation(t);
 
-		const bilan = await t.mutation(internal.recouvrement.import.enregistrerImport, {
-			organizationId,
-			factures: [FACTURE_DURAND],
-			reglements: []
-		});
+			const bilan = await t.mutation(internal.recouvrement.import.enregistrerImport, {
+				organizationId,
+				aujourdHui: AUJOURD_HUI,
+				factures: [FACTURE_DURAND],
+				reglements: []
+			});
 
-		expect(bilan.debiteursCrees).toBe(1);
-		expect(bilan.facturesCreees).toBe(1);
+			expect(bilan.debiteursCrees).toBe(1);
+			expect(bilan.facturesCreees).toBe(1);
 
-		await t.run(async (ctx) => {
-			const factures = await ctx.db.query('facturesVente').collect();
-			expect(factures).toHaveLength(1);
-			expect(factures[0]!.montantTTC).toBe(1_200_000n);
-			expect(factures[0]!.statutPaiement).toBe('IMPAYEE');
+			await t.run(async (ctx) => {
+				const factures = await ctx.db.query('facturesVente').collect();
+				expect(factures).toHaveLength(1);
+				expect(factures[0]!.montantTTC).toBe(1_200_000n);
+				expect(factures[0]!.statutPaiement).toBe('IMPAYEE');
 
-			const debiteurs = await ctx.db.query('debiteurs').collect();
-			expect(debiteurs[0]!.denomination).toBe('Fournitures Durand');
-			// Rien n'est su de sa qualité de commerçant : on ne la présume pas.
-			expect(debiteurs[0]!.estCommercant).toBe('unknown');
-		});
-	});
+				const debiteurs = await ctx.db.query('debiteurs').collect();
+				expect(debiteurs[0]!.denomination).toBe('Fournitures Durand');
+				// Rien n'est su de sa qualité de commerçant : on ne la présume pas.
+				expect(debiteurs[0]!.estCommercant).toBe('unknown');
+			});
+		},
+		DELAI_CONVEX
+	);
 
 	it('déduit l’exigibilité de l’échéance, et le marque', async () => {
 		const t = convexTest(schema, modules);
@@ -76,6 +102,7 @@ describe('enregistrement d’un import', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: []
 		});
@@ -93,6 +120,7 @@ describe('enregistrement d’un import', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [{ ...FACTURE_DURAND, dateEcheance: undefined }],
 			reglements: []
 		});
@@ -108,7 +136,12 @@ describe('enregistrement d’un import', () => {
 		const t = convexTest(schema, modules);
 		const organizationId = await poserOrganisation(t);
 
-		const args = { organizationId, factures: [FACTURE_DURAND], reglements: [] };
+		const args = {
+			organizationId,
+			aujourdHui: AUJOURD_HUI,
+			factures: [FACTURE_DURAND],
+			reglements: []
+		};
 		await t.mutation(internal.recouvrement.import.enregistrerImport, args);
 		const second = await t.mutation(internal.recouvrement.import.enregistrerImport, args);
 
@@ -126,11 +159,13 @@ describe('enregistrement d’un import', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: []
 		});
 		const second = await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [{ ...FACTURE_DURAND, reference: 'FA-2026-0043' }],
 			reglements: []
 		});
@@ -149,6 +184,7 @@ describe('règlements', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: [{ reference: 'FA-2026-0042', date: '2026-06-10', montant: 400_000n }]
 		});
@@ -169,6 +205,7 @@ describe('règlements', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: [{ reference: 'FA-2026-0042', date: '2026-06-10', montant: 1_200_000n }]
 		});
@@ -185,6 +222,7 @@ describe('règlements', () => {
 
 		const bilan = await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: [{ reference: 'FA-INCONNUE', date: '2026-06-10', montant: 100_000n }]
 		});
@@ -201,6 +239,7 @@ describe('règlements', () => {
 
 		const args = {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: [{ reference: 'FA-2026-0042', date: '2026-06-10', montant: 400_000n }]
 		};
@@ -223,11 +262,13 @@ describe('cloisonnement entre organisations', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId: premiere,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: []
 		});
 		const bilan = await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId: seconde,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: []
 		});
@@ -270,6 +311,7 @@ describe('le SIREN du débiteur', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [{ ...FACTURE_DURAND, debiteurSiren: '853479236' }],
 			reglements: []
 		});
@@ -284,6 +326,7 @@ describe('le SIREN du débiteur', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: []
 		});
@@ -298,11 +341,13 @@ describe('le SIREN du débiteur', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: []
 		});
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [
 				{
 					...FACTURE_DURAND,
@@ -325,11 +370,13 @@ describe('le SIREN du débiteur', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [{ ...FACTURE_DURAND, debiteurSiren: '853479236' }],
 			reglements: []
 		});
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [{ ...FACTURE_DURAND, reference: 'FA-2026-0044', debiteurSiren: '502592959' }],
 			reglements: []
 		});
@@ -337,7 +384,7 @@ describe('le SIREN du débiteur', () => {
 		const debiteur = await t.run(async (ctx) => ctx.db.query('debiteurs').first());
 		expect(debiteur?.siren).toBe('853479236');
 	});
-/**
+	/**
 	 * CHAQUE MONTANT REMONTE A SA PIECE.
 	 *
 	 * ⚠️ LE CHAMP EXISTAIT, AVEC SA RAISON D'ETRE ECRITE A COTE — « le document
@@ -360,6 +407,7 @@ describe('le SIREN du débiteur', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: [],
 			documentId
@@ -380,6 +428,7 @@ describe('le SIREN du débiteur', () => {
 
 		await t.mutation(internal.recouvrement.import.enregistrerImport, {
 			organizationId,
+			aujourdHui: AUJOURD_HUI,
 			factures: [FACTURE_DURAND],
 			reglements: []
 		});

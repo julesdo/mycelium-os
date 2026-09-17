@@ -177,6 +177,7 @@ describe('ce que la lecture en rend', () => {
 
 			await t.mutation(internal.recouvrement.pieces.consignerLectureInterne, {
 				pieceId,
+				aujourdHui: AUJOURDHUI,
 				type: 'BON_DE_LIVRAISON',
 				reference: 'BL-2024-118',
 				dateDocument: '2026-02-14',
@@ -201,6 +202,7 @@ describe('ce que la lecture en rend', () => {
 
 			await t.mutation(internal.recouvrement.pieces.consignerLectureInterne, {
 				pieceId,
+				aujourdHui: AUJOURDHUI,
 				type: null,
 				reference: null,
 				dateDocument: null,
@@ -228,6 +230,7 @@ describe('ce que la lecture en rend', () => {
 
 			await t.mutation(internal.recouvrement.pieces.consignerLectureInterne, {
 				pieceId,
+				aujourdHui: AUJOURDHUI,
 				type: 'BON_DE_LIVRAISON',
 				reference: 'BL-2024-118',
 				dateDocument: '2026-02-14',
@@ -250,6 +253,7 @@ describe('ce que la lecture en rend', () => {
 
 			await t.mutation(internal.recouvrement.pieces.classerInterne, {
 				organizationId: decor.organizationId,
+				aujourdHui: AUJOURDHUI,
 				pieceId,
 				type: 'BON_DE_COMMANDE'
 			});
@@ -307,6 +311,7 @@ describe('ce que la pièce change au dossier', () => {
 			});
 			await t.mutation(internal.recouvrement.pieces.consignerLectureInterne, {
 				pieceId,
+				aujourdHui: AUJOURDHUI,
 				type: 'BON_DE_LIVRAISON',
 				reference: 'BL-2024-118',
 				dateDocument: '2026-02-14',

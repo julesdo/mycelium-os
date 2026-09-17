@@ -103,7 +103,10 @@ export const lireLaPiece = internalAction({
 				tauxRetardStipule: lue.tauxRetardPourcent,
 				// ⚠️ LE CONSTAT DU DOMAINE, MOT POUR MOT. Le reformuler ici ferait un
 				// second endroit où le produit dit ce qu'il a lu dans une pièce.
-				constat: lue.constat
+				constat: lue.constat,
+				// Le type posé rejoue la qualification des créances que la pièce
+				// soutient : la date part d'ici, où l'horloge se lit une fois.
+				aujourdHui: new Date().toISOString().slice(0, 10)
 			});
 		} catch (erreur) {
 			await ctx.runMutation(internal.recouvrement.pieces.marquerEchecInterne, {

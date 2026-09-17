@@ -244,6 +244,24 @@ export const produire = authedMutation({
  * comme non couverte — c'est même le cas le plus utile, puisqu'il dit au gérant
  * qu'il faut refaire un décompte avant d'agir.
  */
+/**
+ * Les trois espèces d'abandon, telles que `controle.ts` les nomme.
+ *
+ * ⚠️ DÉCLARÉ ICI ET PAS AU SCHÉMA, parce qu'aucune table ne le porte : un
+ * abandon n'est jamais stocké, il se recalcule à chaque lecture contre les
+ * factures connues du jour. C'est le contrat de sortie de `controlerDecompte`,
+ * et il vit à l'endroit où ce contrat traverse Convex.
+ *
+ * Les trois valeurs sont recopiées de `NatureAbandon` (`controle.ts:28-34`) ;
+ * TypeScript refuse l'affectation le jour où l'une des deux listes bouge sans
+ * l'autre, ce qui est exactement la barrière qu'on veut ici.
+ */
+export const vNatureAbandon = v.union(
+	v.literal('FACTURE_ECARTEE'),
+	v.literal('INTERETS_INEXPLIQUES'),
+	v.literal('PARAMETRE_MANQUANT')
+);
+
 /** L'identite figee, telle que le decompte la porte. Facultative sur les
  * decomptes produits avant le gel. */
 const vIdentiteFigee = v.optional(
@@ -285,6 +303,19 @@ const vDernierDecompte = v.object({
 	),
 	abandons: v.array(
 		v.object({
+			/**
+			 * CE QU'ON ABANDONNE, ET PAS SEULEMENT COMBIEN.
+			 *
+			 * ⚠️ LE CHAMP EXISTAIT AU DOMAINE ET NE TRAVERSAIT PAS CONVEX.
+			 * `controle.ts:35` le porte depuis le premier jour ; ce validateur ne le
+			 * déclarait pas, donc l'écran recevait trois abandons d'espèces
+			 * différentes — une facture écartée, des intérêts qu'aucune période ne
+			 * justifie, un paramètre juridique absent — sous une seule forme, et ne
+			 * pouvait ni les grouper ni les traiter différemment. Or le geste qui
+			 * lève chacun n'a rien à voir avec celui qui lève les autres.
+			 */
+			nature: vNatureAbandon,
+			/** La référence de facture, ou la clé du paramètre. */
 			reference: v.string(),
 			/** `null` quand la perte n'est pas chiffrable — un paramètre absent. */
 			montantEnJeu: v.union(v.int64(), v.null()),
@@ -367,6 +398,7 @@ async function composerDernierDecompte(
 		debiteur: dernier.debiteur,
 		lignes: dernier.lignes,
 		abandons: controle.abandons.map((abandon) => ({
+			nature: abandon.nature,
 			reference: abandon.reference,
 			montantEnJeu: abandon.montantEnJeu === null ? null : enCentimes(abandon.montantEnJeu),
 			explication: abandon.explication
@@ -388,5 +420,97 @@ export const dernierDecompte = authedQuery({
 	handler: async (ctx, { creanceId }) => {
 		const { organizationId } = await getUserOrg(ctx);
 		return composerDernierDecompte(ctx, organizationId, creanceId);
+	}
+});
+
+const vDecompteListe = v.object({
+	_id: v.id('decomptes'),
+	creanceId: v.id('creances'),
+	/** Pour ouvrir le client depuis la rangée, sans relire la créance. */
+	debiteurId: v.union(v.id('debiteurs'), v.null()),
+	/**
+	 * LA DÉNOMINATION FIGÉE QUAND IL Y EN A UNE, celle d'aujourd'hui sinon.
+	 *
+	 * Un décompte est une PIÈCE : il porte le nom que le débiteur avait le jour
+	 * de l'arrêté, et ce nom-là est ce qu'on lit dans une liste de pièces. Les
+	 * décomptes produits avant le gel des identités n'en portent pas ; on retombe
+	 * alors sur la fiche courante, et `denominationFigee` dit lequel des deux on
+	 * regarde — sans quoi une fusion de société ferait lire au gérant un nom
+	 * qu'aucune de ses pièces ne porte.
+	 */
+	debiteur: v.string(),
+	denominationFigee: v.boolean(),
+	arreteAu: v.string(),
+	principalRestantDu: v.int64(),
+	interets: v.int64(),
+	indemniteForfaitaire: v.int64(),
+	total: v.int64(),
+	produitLe: v.number()
+});
+
+/**
+ * TOUS LES DÉCOMPTES DE L'ÉTABLISSEMENT, le plus récent d'abord.
+ *
+ * ⚠️ L'INDEX `decomptes.by_org` EXISTAIT ET N'ÉTAIT LU QUE PAR LA PURGE
+ * (`rgpd.ts:85` et `:210`). Aucune lecture du produit ne partait de
+ * l'établissement : on ne pouvait atteindre un décompte qu'en ouvrant d'abord la
+ * créance qui le porte, donc en sachant déjà qu'il existait. Un gérant qui a
+ * arrêté quatre décomptes le mois dernier n'avait aucun écran pour le constater.
+ *
+ * ⚠️ LECTURE NON BORNÉE, ASSUMÉE ET NOMMÉE. Un décompte s'arrête à la main, et
+ * quelques dizaines par an et par établissement est l'ordre de grandeur. Le jour
+ * où ce compte approche la limite de documents lus par transaction, cette requête
+ * se pagine — nommer la limite ici en fait une dette surveillée plutôt qu'une
+ * panne qui surgira sans prévenir, comme le fait déjà `planifierBattements`.
+ */
+export const listerDecomptes = authedQuery({
+	args: {},
+	returns: v.array(vDecompteListe),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const decomptes = await ctx.db
+			.query('decomptes')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect();
+
+		/** Le débiteur d'une créance, lu une fois par créance et pas une fois par décompte. */
+		const debiteurParCreance = new Map<Id<'creances'>, Doc<'debiteurs'> | null>();
+
+		const lignes = [];
+		for (const decompte of decomptes) {
+			if (!debiteurParCreance.has(decompte.creanceId)) {
+				const creance = await ctx.db.get(decompte.creanceId);
+				// Le cloisonnement est revérifié sur la créance : `decomptes.by_org`
+				// garantit le décompte, pas ce qu'il désigne.
+				const debiteur =
+					creance === null || creance.organizationId !== organizationId
+						? null
+						: await ctx.db.get(creance.debiteurId);
+				debiteurParCreance.set(
+					decompte.creanceId,
+					debiteur !== null && debiteur.organizationId === organizationId ? debiteur : null
+				);
+			}
+			const debiteur = debiteurParCreance.get(decompte.creanceId) ?? null;
+
+			lignes.push({
+				_id: decompte._id,
+				creanceId: decompte.creanceId,
+				debiteurId: debiteur === null ? null : debiteur._id,
+				debiteur: decompte.debiteur?.denomination ?? debiteur?.denomination ?? 'Débiteur inconnu',
+				denominationFigee: decompte.debiteur !== undefined,
+				arreteAu: decompte.arreteAu,
+				principalRestantDu: decompte.principalRestantDu,
+				interets: decompte.interets,
+				indemniteForfaitaire: decompte.indemniteForfaitaire,
+				total: decompte.total,
+				produitLe: decompte.produitLe
+			});
+		}
+
+		// Le plus récemment produit d'abord : c'est celui qu'on vient d'arrêter, et
+		// celui qu'on cherche. L'ordre ne dépend pas de l'ordre d'insertion en base.
+		return lignes.sort((a, b) => b.produitLe - a.produitLe);
 	}
 });

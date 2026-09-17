@@ -6,6 +6,7 @@ import { internal } from '../_generated/api';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { vTypePiece } from './tables';
+import { rejouerQualification } from './creances';
 
 /**
  * LES PIÈCES JUSTIFICATIVES — module 1.2.
@@ -38,6 +39,70 @@ import { vTypePiece } from './tables';
 
 /** Ce que la lecture peut conclure. `null` = elle n'a pas su. */
 const vTypeLu = v.union(vTypePiece, v.null());
+
+/**
+ * Les créances que cette pièce soutient — les seules dont la qualification bouge
+ * quand son type change ou qu'elle disparaît.
+ *
+ * Deux portées, exactement celles que `piecesDeLaCreance` cumule côté créance :
+ * les factures auxquelles la pièce est liée, et le débiteur quand elle lui est
+ * rattachée directement (CGV, contrat-cadre). Lire l'une sans l'autre laisserait
+ * la moitié des dossiers d'un client régulier sur une photographie périmée.
+ *
+ * ⚠️ LE CLOISONNEMENT EST REVÉRIFIÉ SUR CHAQUE SAUT. Ni `piecesFactures.by_piece`
+ * ni `creances.by_debiteur` ne portent `organizationId`.
+ */
+async function creancesSoutenuesPar(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	pieceId: Id<'pieces'>,
+	debiteurId: Id<'debiteurs'> | undefined
+): Promise<Set<Id<'creances'>>> {
+	const trouvees = new Set<Id<'creances'>>();
+
+	const liaisons = await ctx.db
+		.query('piecesFactures')
+		.withIndex('by_piece', (q) => q.eq('pieceId', pieceId))
+		.collect();
+	for (const liaison of liaisons) {
+		const facture = await ctx.db.get(liaison.factureId);
+		if (facture === null || facture.organizationId !== organizationId) continue;
+		if (facture.creanceId !== undefined) trouvees.add(facture.creanceId);
+	}
+
+	if (debiteurId !== undefined) {
+		const creances = await ctx.db
+			.query('creances')
+			.withIndex('by_debiteur', (q) => q.eq('debiteurId', debiteurId))
+			.collect();
+		for (const creance of creances) {
+			if (creance.organizationId === organizationId) trouvees.add(creance._id);
+		}
+	}
+
+	return trouvees;
+}
+
+/**
+ * La qualification des créances que cette pièce soutient, rejouée.
+ *
+ * ⚠️ APPELÉE QUAND LE TYPE CHANGE OU QUE LA PIÈCE PART, JAMAIS AU DÉPÔT. Une
+ * pièce entre en `INDETERMINE`, et `compteCommePreuve` (`creances.ts:95`) écarte
+ * ce type-là : au dépôt, rien de ce que `qualifier()` lit n'a bougé, et rejouer
+ * coûterait quatre lectures par créance pour réécrire les mêmes deux champs.
+ * C'est le classement — par le modèle ou à la main — et le retrait qui déplacent
+ * `piecesFournies`.
+ */
+async function rejouerApresPiece(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	pieceId: Id<'pieces'>,
+	debiteurId: Id<'debiteurs'> | undefined,
+	aujourdHui: string
+): Promise<void> {
+	const creanceIds = await creancesSoutenuesPar(ctx, organizationId, pieceId, debiteurId);
+	await rejouerQualification(ctx, organizationId, creanceIds, aujourdHui);
+}
 
 async function enregistrer(
 	ctx: MutationCtx,
@@ -125,12 +190,18 @@ export const consignerLectureInterne = internalMutation({
 		reserves: v.union(v.string(), v.null()),
 		/** Le taux stipulé, en pourcentage saisissable. `null` hors CGV et contrat. */
 		tauxRetardStipule: v.union(v.string(), v.null()),
-		constat: v.string()
+		constat: v.string(),
+		/**
+		 * LA DATE EST UN ARGUMENT, comme partout où une qualification se rejoue.
+		 * Elle sert aux retards observés du débiteur, et un test qui ne peut pas
+		 * la fixer ne peut pas vérifier ce qu'un classement déplace.
+		 */
+		aujourdHui: v.string()
 	},
 	returns: v.null(),
 	handler: async (
 		ctx,
-		{ pieceId, type, reference, dateDocument, reserves, tauxRetardStipule, constat }
+		{ pieceId, type, reference, dateDocument, reserves, tauxRetardStipule, constat, aujourdHui }
 	) => {
 		const piece = await ctx.db.get(pieceId);
 		if (piece === null) throw new ConvexError('Pièce introuvable');
@@ -144,6 +215,11 @@ export const consignerLectureInterne = internalMutation({
 			tauxRetardStipule: tauxRetardStipule ?? undefined,
 			constat
 		});
+
+		// Un type posé fait entrer la pièce dans `piecesFournies` : la photographie
+		// stockée sur chaque créance qu'elle soutient cesserait sinon d'être vraie
+		// jusqu'au prochain geste du gérant sur cette créance.
+		await rejouerApresPiece(ctx, piece.organizationId, pieceId, piece.debiteurId, aujourdHui);
 		return null;
 	}
 });
@@ -161,7 +237,8 @@ async function classer(
 	ctx: MutationCtx,
 	organizationId: Id<'organizations'>,
 	pieceId: Id<'pieces'>,
-	type: string
+	type: string,
+	aujourdHui: string
 ) {
 	const piece = await ctx.db.get(pieceId);
 	if (piece === null || piece.organizationId !== organizationId) {
@@ -174,6 +251,8 @@ async function classer(
 		type: type as 'BON_DE_LIVRAISON',
 		statut: 'CLASSEE_MAIN'
 	});
+
+	await rejouerApresPiece(ctx, organizationId, pieceId, piece.debiteurId, aujourdHui);
 	return null;
 }
 
@@ -181,11 +260,12 @@ export const classerInterne = internalMutation({
 	args: {
 		organizationId: v.id('organizations'),
 		pieceId: v.id('pieces'),
-		type: vTypePiece
+		type: vTypePiece,
+		aujourdHui: v.string()
 	},
 	returns: v.null(),
-	handler: async (ctx, { organizationId, pieceId, type }) =>
-		classer(ctx, organizationId, pieceId, type)
+	handler: async (ctx, { organizationId, pieceId, type, aujourdHui }) =>
+		classer(ctx, organizationId, pieceId, type, aujourdHui)
 });
 
 export const obtenirInterne = internalQuery({
@@ -252,7 +332,9 @@ export const classerPiece = authedMutation({
 	returns: v.null(),
 	handler: async (ctx, { pieceId, type }): Promise<null> => {
 		const { organizationId } = await getUserOrg(ctx);
-		return await classer(ctx, organizationId, pieceId, type);
+		// Le jour se lit ici, à la frontière, comme `creances.creer` et ses
+		// voisines : les couches internes le reçoivent, elles ne le devinent pas.
+		return await classer(ctx, organizationId, pieceId, type, new Date().toISOString().slice(0, 10));
 	}
 });
 
@@ -266,6 +348,12 @@ export const retirerPiece = authedMutation({
 			throw new ConvexError('Pièce introuvable');
 		}
 
+		// ⚠️ LES CRÉANCES CONCERNÉES SE RELÈVENT AVANT LA SUPPRESSION. Après, la
+		// pièce et ses liaisons n'existent plus : on ne saurait plus quelles
+		// créances viennent de perdre une preuve, et leur maturité stockée
+		// resterait celle d'un dossier mieux documenté qu'il ne l'est.
+		const concernees = await creancesSoutenuesPar(ctx, organizationId, pieceId, piece.debiteurId);
+
 		// Les liaisons partent AVANT la pièce, et le fichier AVANT sa ligne :
 		// l'inverse laisserait un objet orphelin dans le stockage, que plus rien
 		// ne désigne et que personne ne saurait retrouver pour l'effacer. Même
@@ -278,6 +366,13 @@ export const retirerPiece = authedMutation({
 
 		await ctx.storage.delete(piece.storageId);
 		await ctx.db.delete(pieceId);
+
+		await rejouerQualification(
+			ctx,
+			organizationId,
+			concernees,
+			new Date().toISOString().slice(0, 10)
+		);
 		return null;
 	}
 });
@@ -349,5 +444,102 @@ export const listerPiecesDuDebiteur = authedQuery({
 
 		// La plus récente d'abord : c'est celle qu'on vient de déposer.
 		return pieces.sort((a, b) => b.ajouteeLe - a.ajouteeLe);
+	}
+});
+
+/**
+ * TOUTES LES PIÈCES DE L'ÉTABLISSEMENT, la plus récente d'abord.
+ *
+ * ⚠️ `listerPiecesDuDebiteur` EXIGE UN `debiteurId`, et c'est la seule lecture de
+ * pièces du produit. Conséquence : une pièce déposée sans débiteur — le cas du
+ * dépôt en vrac — n'était atteignable par AUCUN écran, et une pièce que la
+ * lecture n'a pas su classer ne se retrouvait qu'en ouvrant le bon client,
+ * c'est-à-dire en sachant déjà lequel. Or une pièce en `A_CLASSER` ne compte dans
+ * aucun critère de solidité : elle est là sans rien porter, et rien ne le disait
+ * à l'échelle de l'établissement.
+ *
+ * ⚠️ LECTURE NON BORNÉE, ASSUMÉE ET NOMMÉE, comme `listerDecomptes` : une pièce
+ * se dépose à la main. Le jour où leur nombre approche la limite de documents lus
+ * par transaction, cette requête se pagine.
+ */
+export const listerPieces = authedQuery({
+	args: {},
+	returns: v.array(
+		v.object({
+			_id: v.id('pieces'),
+			type: vTypePiece,
+			statut: v.optional(v.string()),
+			filename: v.string(),
+			reference: v.optional(v.string()),
+			dateDocument: v.optional(v.string()),
+			reserves: v.optional(v.string()),
+			/** Le taux lu sur cette pièce. Une PROPOSITION : rien ne s'applique sans un geste. */
+			tauxRetardStipule: v.optional(v.string()),
+			constat: v.optional(v.string()),
+			/** Le client auquel la pièce est rattachée, quand elle l'est. */
+			debiteurId: v.optional(v.id('debiteurs')),
+			/**
+			 * Sa dénomination, ou `null` quand la pièce n'est rattachée à personne.
+			 *
+			 * ⚠️ `null` EST UNE INFORMATION, pas un trou à masquer : une pièce sans
+			 * client ne compte dans aucun dossier, et c'est précisément ce qu'il faut
+			 * voir pour la rattacher.
+			 */
+			debiteur: v.union(v.string(), v.null()),
+			/** Combien de factures cette pièce soutient. Zéro se lit aussi. */
+			nombreFactures: v.number(),
+			ajouteeLe: v.number()
+		})
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const pieces = await ctx.db
+			.query('pieces')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect();
+
+		/** Lu une fois par client, pas une fois par pièce. */
+		const denominations = new Map<Id<'debiteurs'>, string | null>();
+
+		const lignes = [];
+		for (const piece of pieces) {
+			const debiteurId = piece.debiteurId;
+			if (debiteurId !== undefined && !denominations.has(debiteurId)) {
+				const debiteur = await ctx.db.get(debiteurId);
+				// Le cloisonnement est revérifié : `pieces.debiteurId` n'est pas un
+				// index cloisonné, et une donnée ancienne pourrait désigner ailleurs.
+				denominations.set(
+					debiteurId,
+					debiteur === null || debiteur.organizationId !== organizationId
+						? null
+						: debiteur.denomination
+				);
+			}
+
+			const liaisons = await ctx.db
+				.query('piecesFactures')
+				.withIndex('by_piece', (q) => q.eq('pieceId', piece._id))
+				.collect();
+
+			lignes.push({
+				_id: piece._id,
+				type: piece.type,
+				statut: piece.statut,
+				filename: piece.filename,
+				reference: piece.reference,
+				dateDocument: piece.dateDocument,
+				reserves: piece.reserves,
+				tauxRetardStipule: piece.tauxRetardStipule,
+				constat: piece.constat,
+				debiteurId,
+				debiteur: debiteurId === undefined ? null : (denominations.get(debiteurId) ?? null),
+				nombreFactures: liaisons.filter((l) => l.organizationId === organizationId).length,
+				ajouteeLe: piece.ajouteeLe
+			});
+		}
+
+		// La plus récente d'abord : c'est celle qu'on vient de déposer.
+		return lignes.sort((a, b) => b.ajouteeLe - a.ajouteeLe);
 	}
 });

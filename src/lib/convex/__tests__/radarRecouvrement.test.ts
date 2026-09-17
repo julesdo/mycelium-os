@@ -35,6 +35,15 @@ const modules = Object.fromEntries(
 
 const DELAI_CONVEX = 30_000;
 
+/**
+ * Le jour du rejeu de qualification, fixé.
+ *
+ * Une santé qui change fait rejouer la qualification des créances du débiteur,
+ * et ce rejeu compte des retards par rapport à une date. Lire l'horloge ici
+ * ferait dépendre le test du jour où on le passe.
+ */
+const AUJOURDHUI = '2026-09-17';
+
 const CONSTAT_LIQUIDATION = {
 	identifiantAnnonce: 'A202601721671',
 	siren: '853479236',
@@ -77,6 +86,7 @@ describe('l’application d’un constat', () => {
 			const { debiteurId } = await poserDebiteur(t, { siren: '853479236' });
 
 			await t.mutation(internal.recouvrement.radar.appliquerConstats, {
+				aujourdHui: AUJOURDHUI,
 				constats: [CONSTAT_LIQUIDATION]
 			});
 
@@ -94,6 +104,7 @@ describe('l’application d’un constat', () => {
 			const { debiteurId } = await poserDebiteur(t, { siren: '853479236' });
 
 			await t.mutation(internal.recouvrement.radar.appliquerConstats, {
+				aujourdHui: AUJOURDHUI,
 				constats: [CONSTAT_LIQUIDATION]
 			});
 
@@ -118,6 +129,7 @@ describe('l’application d’un constat', () => {
 			const second = await poserDebiteur(t, { nom: 'Clinique des Ormes', siren: '853479236' });
 
 			await t.mutation(internal.recouvrement.radar.appliquerConstats, {
+				aujourdHui: AUJOURDHUI,
 				constats: [CONSTAT_LIQUIDATION]
 			});
 
@@ -140,6 +152,7 @@ describe('l’application d’un constat', () => {
 			const { debiteurId } = await poserDebiteur(t, { siren: undefined });
 
 			await t.mutation(internal.recouvrement.radar.appliquerConstats, {
+				aujourdHui: AUJOURDHUI,
 				constats: [CONSTAT_LIQUIDATION]
 			});
 
@@ -159,6 +172,7 @@ describe('l’application d’un constat', () => {
 			const { debiteurId } = await poserDebiteur(t, { siren: '853479236' });
 
 			await t.mutation(internal.recouvrement.radar.appliquerConstats, {
+				aujourdHui: AUJOURDHUI,
 				constats: [
 					{
 						...CONSTAT_LIQUIDATION,
@@ -185,9 +199,11 @@ describe('l’application d’un constat', () => {
 			const { debiteurId } = await poserDebiteur(t, { siren: '853479236' });
 
 			await t.mutation(internal.recouvrement.radar.appliquerConstats, {
+				aujourdHui: AUJOURDHUI,
 				constats: [CONSTAT_LIQUIDATION]
 			});
 			await t.mutation(internal.recouvrement.radar.appliquerConstats, {
+				aujourdHui: AUJOURDHUI,
 				constats: [CONSTAT_LIQUIDATION]
 			});
 
@@ -210,6 +226,7 @@ describe('l’application d’un constat', () => {
 			});
 
 			await t.mutation(internal.recouvrement.radar.appliquerConstats, {
+				aujourdHui: AUJOURDHUI,
 				constats: [
 					{
 						...CONSTAT_LIQUIDATION,
