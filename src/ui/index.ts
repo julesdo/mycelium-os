@@ -42,6 +42,7 @@ export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
 export { SectionEcran } from './section';
 export { SectionsDepliables, SectionDepliable } from './section-depliable';
+export { RefusEnQuatreParties } from './refus';
 export { ChampCopiable } from './champ-copiable';
 export { ConfirmationParSaisie } from './confirmation-par-saisie';
 export { ZoneDepot } from './zone-depot';
