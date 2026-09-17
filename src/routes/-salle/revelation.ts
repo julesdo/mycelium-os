@@ -34,7 +34,18 @@ import { MEMBRES } from './compte';
 const CONVENTION = 'ACT_365' as const;
 
 /** Le jour de la démonstration, figé : l'arrêté de la révélation, et le jour du bilan. */
-const ARRETE_AU_DEMO = '2026-09-09';
+/**
+ * ⚠️ EXPORTÉ, PARCE QUE L'ÉCRAN L'AFFICHE MAINTENANT. « Ce qui est dû » date son
+ * chiffre — un montant de créance sans son jour n'est pas refaisable à la main,
+ * puisque les intérêts courent. La salle doit donc donner à l'écran la date à
+ * laquelle ces nombres-là ont été calculés, et pas une autre : une seconde date
+ * écrite à côté daterait la démonstration d'un jour où rien n'a été compté.
+ *
+ * C'est aussi le jour de la salle pour les dossiers engagés (`onglets.tsx`) :
+ * une seule journée pour toute la démonstration, sans quoi deux écrans voisins
+ * compteraient leurs délais depuis deux jours différents.
+ */
+export const ARRETE_AU_DEMO = '2026-09-09';
 
 /**
  * L'ARRIVÉE DE L'ÉTABLISSEMENT, LUE OÙ LA SALLE LA DONNE DÉJÀ.

@@ -1,11 +1,9 @@
 import { UploadIcon } from 'lucide-react';
 import {
-	BilanPertes,
 	BoutonPrincipal,
+	CeQuiEstDu,
 	Lien,
-	ChocRevelation,
 	PageEcran,
-	SectionEcran,
 	type BilanPertesAffiche,
 	type Lecture,
 	type RevelationAffichee
@@ -15,10 +13,20 @@ import {
 export interface RevelationDuJour {
 	readonly revelation: RevelationAffichee;
 	readonly bilan: BilanPertesAffiche;
+	/**
+	 * LE JOUR OÙ LE CHIFFRE EST ARRÊTÉ.
+	 *
+	 * ⚠️ IL S'AFFICHE, ET IL NE SE DEVINE PAS. Un montant de créance sans son
+	 * jour n'est pas refaisable à la main : les intérêts courent, donc le même
+	 * calcul rend autre chose demain. C'est la route qui le donne, à
+	 * `aujourdHuiISO`, la même date que celle passée à la requête — sans quoi
+	 * l'écran daterait le chiffre d'un autre jour que celui où il a été calculé.
+	 */
+	readonly arreteAu: string;
 }
 
 /**
- * CE QUE VOS FACTURES PORTENT — le choc du premier import.
+ * CE QUI EST DÛ — le chiffre qui justifie l'abonnement.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * POURQUOI C'EST UN ÉCRAN À PART, ET PAS UN BLOC EN TÊTE DU FLUX
@@ -34,17 +42,52 @@ export interface RevelationDuJour {
  * ⚠️ SUR UN PRODUIT DONT L'ARGUMENT ENTIER EST L'EXACTITUDE, DEUX TOTAUX SUR
  * LE MÊME ÉCRAN COÛTENT PLUS QU'ILS N'APPORTENT. Un seul récit par écran : le
  * flux dit ce qui a bougé, celui-ci dit ce que ça pèse, intérêts compris.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * ⚠️ C'EST UNE PAGE POUSSÉE, ET ELLE LE DIT MAINTENANT
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Elle n'est PAS une destination de la barre du bas : on y arrive depuis
+ * l'accueil, par le veilleur qui rend compte de la surveillance des délais
+ * (`ui/veilleur.tsx`). Elle s'annonçait pourtant en `onglet`, donc sans aucun
+ * retour : le seul moyen de revenir était de viser un onglet de la barre, ce
+ * qui n'est pas revenir mais partir ailleurs. Deux niveaux au maximum, et le
+ * second porte son chevron.
+ *
+ * ⚠️ AUCUN POURCENTAGE, AUCUNE PROMESSE. Rien n'affirme qu'une somme rentrera :
+ * le produit MESURE, DOCUMENTE et ALERTE. La décision d'agir et le recouvrement
+ * lui-même restent au client.
  */
 export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour> }) {
-	const entete = { genre: 'onglet', titre: 'Ce que vos factures portent' } as const;
+	const entete = {
+		genre: 'poussee',
+		titre: 'Ce qui est dû',
+		/*
+		  ⚠️ « VOTRE FILE », LE NOM QUE `/app` SE DONNE — pas « Aujourd'hui », le
+		  nom que la barre du bas lui donne. Ce libellé n'apparaît qu'après un
+		  rechargement, quand l'historique n'a plus de titre de provenance ; le
+		  reste du temps c'est le titre publié par l'écran quitté qui s'affiche,
+		  et il dit « Votre file ». Deux noms pour le même retour selon qu'on a
+		  rechargé ou non, c'est exactement la divergence que `screens/titres.ts`
+		  existe pour empêcher — le nom de `/app` n'y figure pas encore, et sa
+		  place est là.
+		*/
+		retour: { vers: '/app', libelle: 'Votre file' }
+	} as const;
 
 	if (donnees.etat !== 'pret') return <PageEcran entete={entete} etat={donnees.etat} />;
 
-	const { revelation, bilan } = donnees.valeur;
+	const { revelation, bilan, arreteAu } = donnees.valeur;
 
 	// LE VIDE MONTRE LE CHEMIN, jamais des cadrans à zéro (règle d'écran n° 4).
 	// Un établissement sans facture en retard ne voit pas « 0,00 € dus » : il
 	// voit par où commencer.
+	//
+	// ⚠️ « RIEN À RÉVÉLER » N'EST PAS « RIEN N'A PU ÊTRE CHIFFRÉ ». Zéro facture
+	// chiffrée AVEC des factures non chiffrées n'est pas un écran vide : c'est un
+	// écran qui doit nommer ce qui l'empêche de compter, et `CeQuiEstDu` s'en
+	// charge. Confondre les deux ferait disparaître ces factures-là de la seule
+	// page qui les mentionne.
 	const rienAReveler = revelation.nombreFactures === 0 && revelation.nonChiffrees.length === 0;
 
 	if (rienAReveler) {
@@ -75,26 +118,8 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 	}
 
 	return (
-		<PageEcran entete={{ ...entete, sousTitre: 'Relevé au jour d’aujourd’hui' }}>
-			{/*
-			  ⚠️ LE COMPTEUR VIVANT A ÉTÉ RETIRÉ D'ICI, ET C'ÉTAIT UNE
-			  REDONDANCE À TROIS ÉTAGES.
-
-			  Il affichait le TOTAL — que le hero de l'accueil porte
-			  désormais en corps de soixante-douze pixels, à un geste d'ici.
-			  Et `ChocRevelation`, juste au-dessus, énumère déjà les trois
-			  parts de ce total : intérêts, indemnité, principal.
-
-			  Le même chiffre trois fois sur un écran ne le rend pas plus
-			  vrai ; il fait chercher lequel des trois compte. Cet écran-ci a
-			  son propre argument — le SUPPLÉMENT, ce qui n'était jamais
-			  réclamé — et c'est le seul qui a le droit d'y être en grand.
-			*/}
-			<ChocRevelation revelation={revelation} />
-
-			<SectionEcran titre="Ce qui s’est éteint">
-				<BilanPertes bilan={bilan} />
-			</SectionEcran>
+		<PageEcran entete={entete}>
+			<CeQuiEstDu revelation={revelation} bilan={bilan} arreteAu={arreteAu} />
 		</PageEcran>
 	);
 }

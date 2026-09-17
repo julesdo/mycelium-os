@@ -198,3 +198,22 @@ export { CompagnonFlottant, type EtatCompagnon } from './compagnon-flottant';
  * la liste des clients ; il ne sait rien d'elle et tiendra pour la prochaine.
  * Voir le fichier : il dit pourquoi ce n'est pas `ChiffreHero`. */
 export { SommaireEncours } from './sommaire-encours';
+/* ── LES DOSSIERS ENGAGÉS ET « CE QUI EST DÛ » (ecran/dossiers) ─────────────
+ *
+ * Les deux écrans refaits sur références : `/app/procedures`, la liste des
+ * dossiers rangée par l'échéance qui approche, et `/app/revelation`, le chiffre
+ * qui justifie l'abonnement. Aucun des deux ne redessine un montant qu'un autre
+ * composant rend déjà — voir l'en-tête de `ce-qui-est-du.tsx`. */
+export {
+	CarteDossier,
+	ListeDesDossiers,
+	VoletDuDossier,
+	grouperParEcheance,
+	joursDici,
+	rangDuDossier,
+	type DossierEngage,
+	type EcheanceDuDossier,
+	type GroupeDeDossiers,
+	type RangDuDossier
+} from './dossier';
+export { CeQuiEstDu } from './ce-qui-est-du';
