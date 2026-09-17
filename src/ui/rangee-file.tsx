@@ -1,60 +1,74 @@
 import { useState, type ReactNode } from 'react';
-import { Chip, Input, Surface } from '@cladd-ui/react';
-import { FileTextIcon, InfoIcon } from 'lucide-react';
+import type { LinkProps } from '@tanstack/react-router';
+import {
+	Button,
+	Chip,
+	CollapsiblePanel,
+	CollapsibleRoot,
+	CollapsibleTrigger,
+	Input,
+	Surface
+} from '@cladd-ui/react';
+import { ChevronRightIcon, FileTextIcon, InfoIcon } from 'lucide-react';
 import { cn } from './cn';
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { dateCourte, eurosCentimes } from './format';
+import { Lien } from './lien';
 
 /**
- * UNE RANGÉE DE LA FILE — un ÉNONCÉ DE TRAVAIL, pas le résumé d'un
+ * UNE RANGÉE D'« AUJOURD'HUI » — un ÉNONCÉ DE TRAVAIL, pas le résumé d'un
  * enregistrement.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * CE QU'ELLE PORTE, ET DANS CET ORDRE
+ * ⚠️ ELLE MÈNE À UNE PAGE, ET PLUS À UN VOLET
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Le débiteur en titre, l'obstacle en UNE phrase au singulier, le montant à
- * droite, et UN verbe visible de 48 px. Une rangée qui ne sait pas nommer son
- * obstacle en une phrase n'entre pas dans la file : elle devient une section du
- * volet de preuve.
+ * Elle a posé `?ligne=<id>` et ouvert un troisième panneau à droite, avec sa
+ * propre rangée d'onglets. Ce panneau existait parce qu'aucune vraie page
+ * n'existait : un client et une créance ont maintenant chacun LA leur —
+ * `/app/debiteurs/$id` et `/app/creance/$id`, une page, un seul défilement.
  *
- * ⚠️ ET LE VERBE NE CONFIRME QU'UNE CHOSE, dont son libellé dit laquelle. Un tap
- * qui emporterait la composition d'une créance, une réponse de litige et par
- * ricochet la qualité de commerçant serait un lot sur une qualification
- * juridique — ce que D6 refuse — et la piste d'audit qu'il produit ne
- * distinguerait plus ce que le gérant a confirmé de ce qu'il a subi.
+ * Taper une rangée y mène donc, et c'est un VRAI lien : il se garde en signet,
+ * s'ouvre dans un autre onglet, et le navigateur en montre la destination avant
+ * qu'on appuie. Un `<button>` qui pousse une adresse n'offre aucun des trois.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ POURQUOI LA CARTE EST UNE `Surface` ET LA ZONE DE LECTURE UN `<button>`
+ * ⚠️ UNE SEULE PUCE, ET C'EST LA DATE QUAND IL Y EN A UNE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Deux contraintes se rencontrent ici, et aucune primitive du kit ne les tient
- * ensemble :
+ * La rangée portait une puce d'urgence — « Critique », « À traiter », « À
+ * suivre » — sur CHAQUE ligne. Les rangées sont désormais groupées PAR urgence,
+ * et le groupe porte l'intitulé : répéter « Critique » sur chacune de ses
+ * rangées écrit le même mot quinze fois dans une colonne.
  *
- *   · la rangée ENTIÈRE s'ouvre au doigt — c'est elle qui pose `?ligne=<id>` et
- *     porte la preuve dans le volet ;
- *   · et elle porte son verbe, VISIBLE, à 48 px, pas caché derrière l'ouverture.
+ * Ce que le groupe ne dit pas, c'est le QUANTIÈME — le jour où la chose se
+ * produit. C'est lui qui passe dans la puce, avec l'accent de l'urgence :
  *
- * `ListButton` est bien la rangée pressable du kit, mais un bouton dans un
- * bouton n'est pas du HTML valide : le verbe ne peut pas y vivre. `Button`, lui,
- * impose sa hauteur par `size`, et la documentation du kit interdit nommément de
- * la surcharger — une rangée de trois lignes s'y écraserait.
+ *   · une date → la date, teintée par l'urgence. « 27 oct. 2026 » en rouge dit
+ *     les deux à la fois, et un quantième se vérifie sur un calendrier là où
+ *     « dans 41 jours » demande de croire un calcul ;
+ *   · pas de date et une urgence CRITIQUE ou HAUTE → le mot d'urgence, parce
+ *     qu'un état sans échéance (une créance mûre, une santé dégradée) n'a que
+ *     lui pour dire ce qu'il pèse ;
+ *   · pas de date et une urgence normale → RIEN. Le groupe « À venir » le dit
+ *     déjà, et une puce qui redit son groupe est du décor.
  *
- * On garde donc `Surface` pour la carte, ce qu'elle est, et la zone de lecture
- * est un `<button>` nu, FRÈRE du verbe. `src/ui/` est la seule zone du produit
- * où des classes s'écrivent, et c'est exactement le cas qu'elle existe pour
- * couvrir.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI LA CARTE EST UNE `Surface` ET LE VERBE VIT DEHORS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * La rangée ENTIÈRE s'ouvre au doigt, et elle porte ses appuis, VISIBLES, à
+ * 48 px. Un bouton dans un lien n'est pas du HTML valide : le lien couvre donc
+ * la zone de LECTURE, et les appuis en sont les FRÈRES, sous elle.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ AUCUNE COULEUR DE SEUIL
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * La rangée ouverte se surligne en teinte NEUTRE. Le vert, le rouge et l'ambre
- * (`--color-seuil-*`) ne disent qu'une chose dans ce produit — au-dessus du
- * seuil, tout près, en dessous — et « c'est cette ligne-là que vous regardez »
- * n'en est pas une. Les puces d'urgence empruntent les accents du kit, qui sont
- * d'autres jetons, et elles ne sont pas décoratives : elles disent qu'un droit
- * va s'éteindre.
+ * Le vert, le rouge et l'ambre de `--color-seuil-*` ne disent qu'une chose dans
+ * ce produit : au-dessus du seuil, tout près, en dessous. Les puces d'urgence
+ * empruntent les accents du kit, qui sont d'autres jetons, et elles ne sont pas
+ * décoratives : elles disent qu'un droit va s'éteindre.
  */
 
 export type UrgenceRangee = 'CRITIQUE' | 'HAUTE' | 'NORMALE';
@@ -76,6 +90,18 @@ const ACCENT_URGENCE: Record<UrgenceRangee, 'red' | 'orange' | 'neutral'> = {
 	HAUTE: 'orange',
 	NORMALE: 'neutral'
 };
+
+/**
+ * OÙ MÈNE UNE RANGÉE — la page d'un client, ou celle d'une créance.
+ *
+ * ⚠️ TYPÉE PAR LE ROUTEUR, jamais en `string`. C'est la même barrière que sur la
+ * barre du bas : une destination qui n'existe pas échoue à `bun run check` au
+ * lieu de mener à une page d'erreur pendant des semaines.
+ */
+export interface DestinationRangee {
+	readonly vers: NonNullable<LinkProps['to']>;
+	readonly parametres?: LinkProps['params'];
+}
 
 /**
  * CE QUE LE LOGICIEL PROPOSE, SOUS L'OBSTACLE, AVEC SA PROVENANCE.
@@ -186,8 +212,7 @@ export function RangeeFile({
 	dateDuFait,
 	hypothese,
 	proposition,
-	ouverte = false,
-	onOuvrir,
+	destination,
 	children
 }: {
 	/** Le débiteur, en titre. C'est lui qu'on cherche des yeux en balayant la file. */
@@ -202,26 +227,41 @@ export function RangeeFile({
 	/** L'hypothèse retenue pour calculer cette rangée. Affichée, jamais repliée. */
 	hypothese?: string;
 	proposition?: PropositionDeRangee;
-	/** La rangée dont la preuve est ouverte dans le volet. Surlignage NEUTRE. */
-	ouverte?: boolean;
-	/** Ouvrir la preuve. Absent, la rangée ne s'ouvre pas — et n'en a pas l'air. */
-	onOuvrir?: () => void;
+	/**
+	 * La page que cette rangée ouvre. Absente, la rangée ne mène nulle part — et
+	 * n'en a pas l'air.
+	 *
+	 * ⚠️ TOUTE RANGÉE N'A PAS DE PAGE. Une dégradation au registre vise un CLIENT ;
+	 * si ce client n'a encore aucune créance constituée, il n'y a pas de dossier à
+	 * ouvrir. La rangée s'affiche alors sans lien plutôt que d'ouvrir une page qui
+	 * dirait « ce dossier ne s'est pas lu », ce qui serait faux : il n'existe pas.
+	 */
+	destination?: DestinationRangee;
 	/** LE VERBE. Un seul, et son libellé nomme ce qu'il confirme. */
 	children?: ReactNode;
 }) {
+	/*
+	  LA PUCE, ET LA RÈGLE QUI DÉCIDE CE QU'ELLE PORTE. Voir l'en-tête : le
+	  groupe dit déjà l'urgence, la puce dit le quantième — et quand il n'y a ni
+	  quantième ni urgence à signaler, elle ne se rend pas du tout.
+	*/
+	const puce =
+		dateDuFait !== undefined ? (
+			<Chip size="md" color={ACCENT_URGENCE[urgence]}>
+				{dateCourte(dateDuFait)}
+			</Chip>
+		) : urgence === 'NORMALE' ? null : (
+			<Chip size="md" color={ACCENT_URGENCE[urgence]}>
+				{LIBELLE_URGENCE[urgence]}
+			</Chip>
+		);
+
 	const lecture = (
 		<>
 			<span className="flex min-w-0 flex-1 flex-col gap-1">
 				<span className="flex flex-wrap items-center gap-1.5">
-					<Chip size="md" color={ACCENT_URGENCE[urgence]}>
-						{LIBELLE_URGENCE[urgence]}
-					</Chip>
+					{puce}
 					<span className="text-cladd-xs font-semibold">{titre}</span>
-					{dateDuFait === undefined ? null : (
-						<span className="text-cladd-2xs text-cladd-fg-softer tabular-nums">
-							{dateCourte(dateDuFait)}
-						</span>
-					)}
 				</span>
 
 				<span className="text-cladd-xs leading-snug text-cladd-fg-soft">{obstacle}</span>
@@ -245,11 +285,17 @@ export function RangeeFile({
 				)}
 			</span>
 
-			{montant === null ? null : (
-				<span className="shrink-0 text-cladd-sm font-bold tabular-nums">
-					{eurosCentimes(montant)}
-				</span>
-			)}
+			<span className="flex shrink-0 items-center gap-cladd-3xs">
+				{montant === null ? null : (
+					<span className="text-cladd-sm font-bold tabular-nums">{eurosCentimes(montant)}</span>
+				)}
+				{/* LE CHEVRON DIT QUE ÇA MÈNE QUELQUE PART, et il n'apparaît que
+				    lorsque c'est vrai. Une rangée qui a l'air ouvrable et ne fait rien
+				    est pire qu'une rangée qui n'en a pas l'air. */}
+				{destination === undefined ? null : (
+					<ChevronRightIcon className="size-4 text-cladd-fg-softest" aria-hidden />
+				)}
+			</span>
 		</>
 	);
 
@@ -257,22 +303,22 @@ export function RangeeFile({
 		<Surface
 			variant="transparent"
 			outline={false}
-			// La rangée ouverte se distingue par la DENSITÉ du verre, jamais par une
-			// teinte : le vert, le rouge et l'ambre ne disent qu'un seuil ici.
-			className={cn('verre-carte rounded-cladd-xl', ouverte && 'verre-dense')}
+			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
-			{onOuvrir === undefined ? (
+			{destination === undefined ? (
 				<span className="flex items-start gap-cladd-3xs">{lecture}</span>
 			) : (
-				<button
-					type="button"
-					onClick={onOuvrir}
-					aria-pressed={ouverte}
+				<Lien
+					to={destination.vers}
+					// Le `to` générique du routeur est effacé par le type de CE composant,
+					// qui le borne déjà à une route existante. Même assertion qu'à
+					// `navigation.tsx`, et pour la même raison.
+					params={destination.parametres as never}
 					className="flex items-start gap-cladd-3xs rounded-cladd-lg text-left transition-colors"
 				>
 					{lecture}
-				</button>
+				</Lien>
 			)}
 
 			{/* LES DEUX APPUIS DE LA PROPOSITION, frères de la zone de lecture eux
@@ -284,8 +330,8 @@ export function RangeeFile({
 			)}
 
 			{/* LE VERBE, FRÈRE DE LA ZONE DE LECTURE et jamais dedans : un bouton
-			    dans un bouton n'est pas du HTML valide, et le verbe doit rester
-			    visible et atteignable au doigt sans ouvrir la preuve. */}
+			    dans un lien n'est pas du HTML valide, et le verbe doit rester
+			    visible et atteignable au doigt sans ouvrir la page. */}
 			{children === undefined ? null : (
 				<div className="flex flex-wrap items-center gap-cladd-3xs">{children}</div>
 			)}
@@ -373,6 +419,86 @@ function GestesDeLaProposition({ proposition }: { proposition: PropositionDeRang
 }
 
 /**
+ * UN GROUPE DE LA FILE — son intitulé, son compte, et son pli.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE N'EST PAS UN ONGLET, ET C'EST TOUTE LA DIFFÉRENCE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'écran portait une rangée de huit puces — « Aujourd'hui · 151 »,
+ * « Prescription · 1 », « À trancher · 4 »… — qui FILTRAIT la liste : ouvrir
+ * l'une fermait les sept autres, et ce qu'on ne regardait pas cessait
+ * d'exister. Le terrain l'a nommé : « ces tabs qui s'empilent de partout ».
+ *
+ * Les groupes, eux, sont tous là, l'un sous l'autre, dans un seul défilement.
+ * On les lit d'un coup d'œil — « En retard · 2, Aujourd'hui · 5, À venir · 9 » —
+ * et on replie ce qui n'est pas pour maintenant. Rien ne disparaît, rien ne
+ * s'exclut, et le compte est toujours sous les yeux.
+ *
+ * ⚠️ IL N'A NI CARTE NI VERRE. Ses rangées EN SONT ; une carte de plus autour
+ * d'elles ferait du verre sur du verre, que la doc du kit refuse et que l'œil
+ * lit comme une profondeur qui n'existe pas. L'intitulé est un simple bouton, et
+ * c'est l'idiome relevé (Attio, Asana, ClickUp).
+ *
+ * ⚠️ ET UN GROUPE VIDE NE SE REND PAS. Un intitulé « En retard · 0 » est un
+ * cadran à zéro (règle d'écran n° 4) : il n'apprend rien, et il apprend surtout
+ * à sauter les intitulés des yeux.
+ */
+export function GroupeDeFile({
+	titre,
+	compte,
+	ton = 'NEUTRE',
+	ouvert,
+	onBasculer,
+	children
+}: {
+	titre: string;
+	/** Le nombre de rangées. Jamais zéro : un groupe vide ne se rend pas. */
+	compte: number;
+	/** `ALERTE` sur ce dont la date est passée. Le seul groupe qui porte un accent. */
+	ton?: 'ALERTE' | 'NEUTRE';
+	ouvert: boolean;
+	onBasculer: () => void;
+	children: ReactNode;
+}) {
+	return (
+		<CollapsibleRoot open={ouvert} onOpenChange={onBasculer}>
+			<CollapsibleTrigger>
+				{/*
+				  `size="md"` vaut 48 px sur l'échelle décalée du produit : le plancher
+				  tactile, sans hauteur écrite à la main. `transparent` et sans contour :
+				  c'est un intitulé, pas une commande.
+				*/}
+				<Button
+					className="group w-full"
+					variant="transparent"
+					outline={false}
+					hoverable={false}
+					size="md"
+					contentClassName="w-full items-center justify-start gap-cladd-3xs px-cladd-3xs"
+				>
+					<ChevronRightIcon
+						className="shrink-0 text-cladd-fg-softest transition-transform duration-150 group-data-[open]:rotate-90"
+						aria-hidden
+					/>
+					<span className="text-cladd-xs font-semibold">{titre}</span>
+					<Chip size="md" color={ton === 'ALERTE' ? 'red' : 'neutral'}>
+						{compte}
+					</Chip>
+				</Button>
+			</CollapsibleTrigger>
+
+			{/* Le rembourrage vit sur un élément IMBRIQUÉ : le panneau anime sa propre
+			    hauteur jusqu'à zéro, et une marge verticale posée sur lui l'empêcherait
+			    de se refermer tout à fait. C'est la doc du kit, mot pour mot. */}
+			<CollapsiblePanel>
+				<div className="flex flex-col gap-cladd-3xs pt-cladd-3xs">{children}</div>
+			</CollapsiblePanel>
+		</CollapsibleRoot>
+	);
+}
+
+/**
  * LE PLI — ce qui n'appelle aucune décision, COMPTÉ ET TYPÉ, à sa place.
  *
  * « 142 factures payées dans les délais, rien à faire. » Jamais un dossier
@@ -401,7 +527,7 @@ export function PliDeLaFile({ faits }: { faits: readonly FaitsDuPli[] }) {
 			aria-label="Ce qui n’appelle aucune décision"
 			variant="transparent"
 			outline={false}
-			className="verre-carte rounded-cladd-xl"
+			className={cn('verre-carte rounded-cladd-xl')}
 			contentClassName="flex flex-col gap-1 p-cladd-2xs"
 		>
 			{[...comptes].map(([plusieurs, { un, compte }]) => (
