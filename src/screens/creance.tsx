@@ -163,6 +163,7 @@ export interface RisqueAffiche {
  */
 export const SECTIONS_CREANCE = [
 	'decompte',
+	'valeurs',
 	'litige',
 	'solidite',
 	'pieces',
@@ -371,6 +372,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 						}
 					>
 						<SectionDecompte creance={pret} />
+						<SectionValeursJuridiques fiches={pret.fiches} />
 						<SectionHypotheses creance={pret} />
 						<SectionAnglesMorts creance={pret} />
 						<SectionLitige creance={pret} />
@@ -535,8 +537,6 @@ function SectionDecompte({ creance }: { creance: CreanceOuverte }) {
 				</>
 			)}
 
-			<FichesDesParametres fiches={creance.fiches} />
-
 			<p className="text-cladd-2xs font-semibold">Ce qui a été arrêté</p>
 			{creance.decomptesArretes.length === 0 ? (
 				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
@@ -587,19 +587,41 @@ function SectionDecompte({ creance }: { creance: CreanceOuverte }) {
 	);
 }
 
-/** Les valeurs juridiques employées, telles qu'un tiers doit pouvoir les contrôler. */
-function FichesDesParametres({ fiches }: { fiches: readonly FicheParametre[] }) {
+/**
+ * SECTION 2 bis — LES VALEURS JURIDIQUES EMPLOYÉES, telles qu'un tiers doit
+ * pouvoir les contrôler : leur source, leur date de relevé, et les deux
+ * booléens qui disent ce qu'on a le droit d'en faire.
+ *
+ * ⚠️ ELLE A SA PROPRE SECTION, ET C'EST UNE MESURE PRISE AU NAVIGATEUR. Le
+ * tableau vivait au bas du décompte : 2 711 px sur les 3 731 px de la section,
+ * relevés à 1280 px, c'est-à-dire que 73 % de la section ouverte par défaut
+ * était un tableau de référentiel, et que la décomposition qu'on venait lire —
+ * le principal, les segments, le total — passait sous la ligne de flottaison.
+ * Repliée, la section dit déjà ce qu'on vient y chercher : combien de valeurs
+ * sont relevées sur une source citable.
+ *
+ * ⚠️ ET « RELEVÉE » N'EST PAS « CONTRÔLÉE ». `verifie` suffit à CALCULER — un
+ * chiffre affiché se corrige. `valideParAvocat` suffit à produire un ACTE — un
+ * chiffre écrit dans une requête qui part au greffe ne se corrige pas. Les deux
+ * colonnes restent distinctes pour cette seule raison.
+ */
+function SectionValeursJuridiques({ fiches }: { fiches: readonly FicheParametre[] }) {
 	if (fiches.length === 0) return null;
 
 	const verifiees = fiches.filter((fiche) => fiche.verifie).length;
 	const controlees = fiches.filter((fiche) => fiche.valideParAvocat).length;
 
 	return (
-		<>
-			<p className="text-cladd-2xs text-cladd-fg-softer">
-				Les valeurs juridiques employées : {verifiees} relevée{pluriel(verifiees)} sur{' '}
-				{fiches.length} sur une source publique citable, {controlees} contrôlée
-				{pluriel(controlees)} par un juriste.
+		<SectionDepliable
+			cle="valeurs"
+			titre="Les valeurs juridiques employées"
+			legende="Leur source, leur date de relevé, et ce qu’on a le droit d’en faire"
+			valeur={`${verifiees} sur ${fiches.length}`}
+		>
+			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+				{verifiees} relevée{pluriel(verifiees)} sur {fiches.length} sur une source publique
+				citable, {controlees} contrôlée{pluriel(controlees)} par un juriste. Une valeur relevée
+				suffit à calculer ; seule une valeur contrôlée suffit à produire un acte.
 			</p>
 			<Tableau legende="Valeurs juridiques, leur source et leur état">
 				<TableauEntete>
@@ -621,7 +643,7 @@ function FichesDesParametres({ fiches }: { fiches: readonly FicheParametre[] }) 
 					))}
 				</TableauCorps>
 			</Tableau>
-		</>
+		</SectionDepliable>
 	);
 }
 
@@ -679,16 +701,27 @@ function SectionAnglesMorts({ creance }: { creance: CreanceOuverte }) {
 	const chiffrables = creance.anglesMorts.filter((angle) => angle.montantEnJeu !== null);
 	const total = chiffrables.reduce((somme, angle) => somme + (angle.montantEnJeu ?? 0n), 0n);
 	const nonChiffrables = creance.anglesMorts.length - chiffrables.length;
+	const pointsNonChiffres = `${nonChiffrables} point${pluriel(nonChiffrables)} non chiffrable${pluriel(nonChiffrables)}`;
 
 	return (
 		<SectionEcran
 			titre="Ce que le logiciel ne voit pas"
+			/*
+			  ⚠️ « 0,00 € HORS SURVEILLANCE » NE S'ÉCRIT JAMAIS, et c'est une
+			  correction relevée au navigateur. Un dossier dont AUCUN angle mort n'est
+			  chiffrable affichait ce zéro suivi du compte des points non chiffrables :
+			  le zéro s'y lit « sans enjeu », alors qu'il veut dire « on n'a pas su
+			  compter ». C'est la faute que `montantEnJeu: null` existe précisément
+			  pour éviter, refaite un cran plus haut, dans la légende.
+			*/
 			legende={
 				creance.anglesMorts.length === 0
 					? 'Aucun angle mort relevé sur ce dossier'
-					: nonChiffrables === 0
-						? `${eurosCentimes(total)} hors surveillance`
-						: `${eurosCentimes(total)} hors surveillance, plus ${nonChiffrables} point${pluriel(nonChiffrables)} non chiffrable${pluriel(nonChiffrables)}`
+					: chiffrables.length === 0
+						? pointsNonChiffres
+						: nonChiffrables === 0
+							? `${eurosCentimes(total)} hors surveillance`
+							: `${eurosCentimes(total)} hors surveillance, plus ${pointsNonChiffres}`
 			}
 		>
 			{creance.anglesMorts.length === 0 ? (
@@ -763,20 +796,35 @@ function SectionLitige({ creance }: { creance: CreanceOuverte }) {
 					{creance.conditions.map((question) => (
 						<div key={question.condition} className="flex flex-col gap-cladd-3xs">
 							<p className="text-cladd-sm leading-snug text-balance">{question.libelle}</p>
-							{/* ⚠️ « Oui » ET « NON » SONT DEUX CIBLES ISOLÉES, séparées par un
-							    vide : elles doivent tenir le plancher tactile dans LES DEUX
-							    dimensions. Un libellé de trois lettres ne remplit que ses
-							    rembourrages, soit 43,9 px de large mesurés pour 56 de haut. */}
+							{/*
+							  ⚠️ « OUI » ET « NON » SONT IDENTIQUES, DÉLIBÉRÉMENT, et c'est une
+							  correction relevée au navigateur. « Oui » était une pilule
+							  PRINCIPALE et « Non » une secondaire : sur une question de FAIT
+							  dont la réponse décide si une procédure s'ouvre, le contraste
+							  poussait vers le oui. Le questionnaire de litige, deux blocs plus
+							  haut, rend déjà ses trois réponses à l'identique pour cette
+							  raison exacte ; deux conventions opposées sur le même écran
+							  faisaient lire une recommandation là où il n'y a qu'une question.
+
+							  Ce qui reste : l'écran n'a plus qu'UNE action principale, « Arrêter
+							  un décompte ». Deux pilules de même poids, et il n'y a plus
+							  d'action principale du tout.
+
+							  ⚠️ ET CE SONT DEUX CIBLES ISOLÉES, séparées par un vide : elles
+							  doivent tenir le plancher tactile dans LES DEUX dimensions. Un
+							  libellé de trois lettres ne remplit que ses rembourrages, soit
+							  43,9 px de large mesurés pour 56 de haut.
+							*/}
 							<div className="flex flex-wrap gap-cladd-3xs">
-								<BoutonPrincipal
-									className="min-w-cladd-md"
+								<BoutonSecondaire
+									className="min-w-cladd-md flex-1"
 									disabled={creance.enCours}
 									onClick={() => creance.onRepondreCondition(question.condition, 'ok')}
 								>
 									Oui
-								</BoutonPrincipal>
+								</BoutonSecondaire>
 								<BoutonSecondaire
-									className="min-w-cladd-md"
+									className="min-w-cladd-md flex-1"
 									disabled={creance.enCours}
 									onClick={() => creance.onRepondreCondition(question.condition, 'ko')}
 								>

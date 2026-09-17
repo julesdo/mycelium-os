@@ -8,6 +8,7 @@ import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel
 import {
 	TYPES_PIECE,
 	aujourdHuiISO,
+	pluriel,
 	type AvocatAffiche,
 	type EtatRechercheAvocat,
 	type EtatRechercheCommissaire,
@@ -398,6 +399,8 @@ function PageCreance() {
 	 * LE PLUS COURT qui est retenu : le gérant qui l'ignore croit avoir plus de
 	 * temps qu'il n'en a.
 	 */
+	const exigibilitesDeduites = creance.factures.filter((facture) => facture.exigibiliteDeduite);
+
 	const hypotheses: CreanceOuverte['hypotheses'] = [
 		{
 			cle: 'regime-prescription',
@@ -405,17 +408,52 @@ function PageCreance() {
 			fait: 'Le secteur d’activité de ce client détermine le délai de prescription.',
 			ceQuiLaLeve:
 				'Préciser le secteur du client, sur sa fiche, fixe le délai réellement applicable.'
-		}
+		},
+		/*
+		  ⚠️ UNE EXIGIBILITÉ DÉDUITE EST UNE HYPOTHÈSE, ET LE CHAMP LE DIT DÉJÀ.
+		  `exigibiliteDeduite` voyage sur chaque facture depuis l'import et n'était
+		  lu nulle part sur cet écran : le jour où les intérêts partent d'une date
+		  que personne n'a écrite sur la facture, c'est ici que ça doit se lire, pas
+		  dans le décompte où le chiffre a déjà l'air acquis.
+		*/
+		...(exigibilitesDeduites.length === 0
+			? []
+			: [
+					{
+						cle: 'exigibilite-deduite',
+						enonce: `La date à partir de laquelle les intérêts courent a été déduite sur ${exigibilitesDeduites.length} facture${pluriel(exigibilitesDeduites.length)} de ce dossier.`,
+						fait: `Aucune date d’exigibilité n’était lisible sur ${exigibilitesDeduites
+							.map((facture) => facture.reference)
+							.join(', ')}.`,
+						ceQuiLaLeve:
+							'Corriger la date d’exigibilité sur la facture fait repartir le calcul de la date réelle.'
+					}
+				])
 	];
 
 	/**
 	 * CE QUE LE LOGICIEL NE VOIT PAS.
 	 *
-	 * ⚠️ IL N'Y EN A QUE DEUX SOURCES, ET AUCUNE N'EST INVENTÉE : les angles morts
-	 * que la machine à états de la procédure DÉCLARE — un délai qu'elle sait
-	 * courir sans savoir jusqu'à quand — et les pièces attendues qui manquent.
-	 * `montantEnJeu` vaut `null` : aucun des deux n'est chiffrable, et écrire un
-	 * zéro ferait lire « sans enjeu ».
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ DEUX SOURCES, ET AUCUNE N'EST `piecesManquantes`
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * Les angles morts que la machine à états de la procédure DÉCLARE — un délai
+	 * qu'elle sait courir sans savoir jusqu'à quand — et les factures dont la
+	 * prescription ne se compte pas.
+	 *
+	 * ⚠️ `piecesManquantes` N'EST PAS UN ANGLE MORT, ET LE RENDRE ICI ÉTAIT UN
+	 * DÉFAUT VU AU NAVIGATEUR. C'est un `ClePiece[]` — des clés d'énumération —
+	 * et la section affichait donc « BON_DE_LIVRAISON (montant non chiffrable) »,
+	 * mot pour mot. Deux fautes en une : un identifiant interne lu par le gérant,
+	 * et un doublon de la section « Ce que les pièces établissent », qui compte
+	 * les mêmes pièces AVEC la phrase qui dit ce que chacune établit.
+	 *
+	 * ⚠️ UNE PRESCRIPTION QUI NE SE COMPTE PAS EST CHIFFRABLE, ELLE. Le reste dû
+	 * de la facture est exactement ce qui n'est pas surveillé, et c'est la seule
+	 * échéance qui éteint définitivement une créance sans que personne n'ait rien
+	 * fait. Un gérant qui croit sa prescription surveillée ne la surveille pas
+	 * lui-même.
 	 */
 	const anglesMorts: CreanceOuverte['anglesMorts'] = [
 		...(suivi?.anglesMorts ?? []).map((constat, rang) => ({
@@ -423,11 +461,13 @@ function PageCreance() {
 			constat,
 			montantEnJeu: null
 		})),
-		...creance.piecesManquantes.map((constat, rang) => ({
-			cle: `piece-${rang}`,
-			constat,
-			montantEnJeu: null
-		}))
+		...creance.factures
+			.filter((facture) => facture.datePrescription === undefined)
+			.map((facture) => ({
+				cle: `prescription-${facture._id}`,
+				constat: `La prescription de ${facture.reference} n’est pas comptée : aucune date de départ exploitable n’a été lue sur cette facture.`,
+				montantEnJeu: facture.resteDu
+			}))
 	];
 
 	const intervenantChoisi = creance.intervenantId;

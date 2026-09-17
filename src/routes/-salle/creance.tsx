@@ -661,18 +661,16 @@ function creanceDemo({
 					'Préciser le secteur du client, sur sa fiche, fixe le délai réellement applicable.'
 			}
 		],
-		// Les deux seules sources d'angle mort : ce que la machine à états déclare,
-		// et les pièces attendues qui manquent. Aucune n'est chiffrable.
-		anglesMorts: [
-			...(journal === null ? [] : suiviDepuisJournal(journal).anglesMorts).map(
-				(constat, rang) => ({ cle: `procedure-${rang}`, constat, montantEnJeu: null })
-			),
-			...qualification.piecesManquantes.map((constat, rang) => ({
-				cle: `piece-${rang}`,
-				constat,
-				montantEnJeu: null
-			}))
-		],
+		/*
+		  Les deux seules sources d'angle mort, comme la route les assemble : ce que
+		  la machine à états DÉCLARE, et les factures dont la prescription ne se
+		  compte pas. Celles de la famille portent toutes une date d'exigibilité
+		  lisible : la seconde liste est donc vide, et la section le dit en toutes
+		  lettres plutôt que d'afficher un zéro.
+		*/
+		anglesMorts: (journal === null ? [] : suiviDepuisJournal(journal).anglesMorts).map(
+			(constat, rang) => ({ cle: `procedure-${rang}`, constat, montantEnJeu: null })
+		),
 
 		litige: litigeDepuisReponses(reponses, propositions),
 		conditions: conditionsADemander(conditions)
