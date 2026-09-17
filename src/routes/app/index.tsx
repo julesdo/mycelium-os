@@ -232,6 +232,31 @@ function delaiDeLecture(id: string): number {
 	const vueLe = PREMIERE_VUE.get(id);
 	return vueLe === undefined ? 0 : Math.max(0, Date.now() - vueLe);
 }
+
+/**
+ * LE REFUS DU SERVEUR, MOT POUR MOT.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ `ConvexError` PORTE SON MESSAGE DANS `.data`, PAS DANS `.message`
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `.message` rend le texte tel que le client Convex l'encadre — son préfixe et
+ * l'identifiant de la requête — et pas la phrase composée par la mutation. Or
+ * c'est cette phrase-là qui porte le seul détail permettant de reprendre :
+ * « les factures choisies font 4 810,00 €, pas 4 820,00 € ». Montrer le cadre du
+ * harnais à sa place remplace un chiffre par un numéro de ticket.
+ *
+ * La même lecture qu'à `volet-branche.tsx`, `arret.$id.tsx`, `decompte.$id.tsx`,
+ * `debiteurs.tsx` et `creance.$id.procedure.tsx`.
+ */
+function messageDuRefus(e: unknown): string {
+	if (typeof e === 'object' && e !== null && 'data' in e) {
+		const data = (e as { data: unknown }).data;
+		if (typeof data === 'string') return data;
+	}
+	return e instanceof Error && e.message !== '' ? e.message : 'Rapprochement refusé.';
+}
+
 function File() {
 	const navigate = useNavigate();
 	const { ligne, position, sections } = Route.useSearch();
@@ -354,9 +379,14 @@ function File() {
 	 * posé au moment de l'appui, qui déclenche la requête : chercher pendant
 	 * qu'on tape ferait défiler des propositions sous les doigts.
 	 */
+	/**
+	 * ⚠️ ET LA DATE DE VALEUR N'EST PAS ICI. Elle l'était, posée au moment de la
+	 * recherche et relue au moment du solde — deux instants séparés par un
+	 * calendrier qui reste modifiable entre les deux. Elle vit maintenant dans le
+	 * calendrier seul et part AVEC le geste de solde : voir `ui/lettrage.tsx`.
+	 */
 	const [debiteurLettrage, setDebiteurLettrage] = useState<Id<'debiteurs'> | null>(null);
 	const [montantCherche, setMontantCherche] = useState<bigint | null>(null);
-	const [dateReglement, setDateReglement] = useState('');
 	const [erreurLettrage, setErreurLettrage] = useState<string | null>(null);
 
 	/**
@@ -447,6 +477,29 @@ function File() {
 	for (const proposition of [...propositionsEnAttente].sort((a, b) => a.poseeLe - b.poseeLe)) {
 		const panier = CHAMPS_DE_LITIGE.has(proposition.champ) ? propositionLitigeDe : propositionDe;
 		if (!panier.has(proposition.cible)) panier.set(proposition.cible, proposition);
+	}
+
+	/**
+	 * LES DOSSIERS DONT LE LOGICIEL A EU QUELQUE CHOSE À DIRE AUJOURD'HUI —
+	 * retenu, écarté, ou encore en attente.
+	 *
+	 * ⚠️ TOUS LES ÉTATS, ET C'EST CE QUI REND L'ÉCART SURVIVABLE. Écarter une
+	 * proposition ne répond PAS à la question : `ecarter` le dit lui-même, « un
+	 * écart efface une proposition de l'écran, jamais une réponse déjà donnée ».
+	 * Si la rangée ne tenait qu'aux propositions EN ATTENTE, écarter la ferait
+	 * disparaître avant que le gérant ait pu répondre — c'est-à-dire qu'un refus
+	 * emporterait la question qu'il ouvre.
+	 *
+	 * Le fait qui donne droit à la rangée est « le logiciel avait une réponse à
+	 * proposer aujourd'hui », et ce fait ne se retire pas quand on la refuse.
+	 * Demain, la proposition n'est plus du jour et la rangée s'en va d'elle-même.
+	 */
+	const champsProposesAujourdHui = new Map<string, Set<string>>();
+	for (const proposition of propositions?.propositions ?? []) {
+		if (!CHAMPS_DE_LITIGE.has(proposition.champ)) continue;
+		const champs = champsProposesAujourdHui.get(proposition.cible) ?? new Set<string>();
+		champs.add(proposition.champ);
+		champsProposesAujourdHui.set(proposition.cible, champs);
 	}
 
 	/**
@@ -674,13 +727,50 @@ function File() {
 	 * n'emporte pas deux qualifications ; les éloigner l'une de l'autre ferait
 	 * payer cette séparation par un balayage de la file entière.
 	 */
+	/**
+	 * LE DOSSIER QU'UNE RANGÉE DU FLUX MET SUR LA TABLE.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ IL SE RÉSOUT COMME `?ligne=`, ET IL NE SE LISAIT QUE SUR DEUX TYPES
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * La question ne s'attachait qu'aux rangées dont l'identifiant EST une
+	 * créance. Or `surveillance.ts` ne pose `genre: 'CREANCE'` que sur deux de
+	 * ses six événements : `CREANCE_MURE` et `ECHEANCE_PROCEDURE`.
+	 * `PRESCRIPTION_PROCHE`, `FACTURE_ECHUE`, `DEBITEUR_DEGRADE` et
+	 * `HABITUDE_ROMPUE` visent un DÉBITEUR — « une facture n'a pas d'écran à
+	 * elle », dit `CibleEvenement` — donc leur identifiant n'était jamais dans
+	 * `estUneCreance`, et la question ne s'attachait presque jamais.
+	 *
+	 * L'établissement qui vient d'importer ses factures, dont une se prescrit
+	 * dans 41 jours, voyait la rangée de prescription et AUCUNE rangée de litige.
+	 * C'est pourtant le moment exact de poser la question : la réponse décide de
+	 * ce qu'on peut faire de ce dossier-là avant que le délai tombe.
+	 *
+	 * ⚠️ SUR `rangee.id`, ET JAMAIS SUR `rangee.debiteurId`. Une rangée qui NOMME
+	 * sa créance ne doit pas retomber sur la première du client : on poserait la
+	 * question d'un autre dossier que celui qu'on lit. La résolution est donc
+	 * exactement celle de `creanceOuverte` — la créance elle-même, sinon celle
+	 * que `?ligne=` ouvrirait pour ce client.
+	 */
+	const dossierDeLaRangee = (rangee: RangeeDeLaFile): string | null =>
+		estUneCreance.has(rangee.id) ? rangee.id : (creanceDuDebiteur.get(rangee.id) ?? null);
+
 	const rangeesAvecLitige: RangeeDeLaFile[] = [];
+	/**
+	 * ⚠️ PAR CRÉANCE, ET PLUS PAR RANGÉE. Deux rangées du même client résolvent
+	 * vers le même dossier : sans cette clé-ci, elles poseraient deux rangées de
+	 * litige de MÊME identifiant — deux lignes qui se surlignent ensemble et se
+	 * battent pour `?ligne=`.
+	 */
 	const litigePose = new Set<string>();
 	for (const rangee of rangeesDuFlux) {
 		rangeesAvecLitige.push(rangee);
-		const question = estUneCreance.has(rangee.id) ? questionParCreance.get(rangee.id) : undefined;
-		if (question === undefined || litigePose.has(rangee.id)) continue;
-		litigePose.add(rangee.id);
+		const creanceId = dossierDeLaRangee(rangee);
+		if (creanceId === null || litigePose.has(creanceId)) continue;
+		const question = questionParCreance.get(creanceId);
+		if (question === undefined) continue;
+		litigePose.add(creanceId);
 		// L'urgence de la question est celle du dossier qu'elle bloque : une
 		// créance qui se prescrit dans 41 jours n'attend pas sa réponse plus
 		// longtemps qu'elle n'attend le reste.
@@ -694,13 +784,13 @@ function File() {
 	  l'échéance aujourd'hui ; c'est le logiciel qui a quelque chose à dire, et
 	  l'urgence est donc celle d'un suivi, pas d'un délai.
 	*/
-	for (const [creanceId, proposition] of propositionLitigeDe) {
+	for (const [creanceId, champs] of champsProposesAujourdHui) {
 		if (litigePose.has(creanceId)) continue;
 		const question = questionParCreance.get(creanceId);
 		// La question a été répondue depuis que la proposition a été posée : la
 		// reposer redemanderait ce qui vient d'être tranché. La proposition reste
 		// en base, datée — c'est la trace de ce qui a été proposé ce jour-là.
-		if (question === undefined || proposition.champ !== question.cle) continue;
+		if (question === undefined || !champs.has(question.cle)) continue;
 		litigePose.add(creanceId);
 		rangeesAvecLitige.push(rangeeDeLitige(question, 'NORMALE'));
 	}
@@ -724,15 +814,38 @@ function File() {
 			encours: debiteur.encours
 		}));
 
-	function chercherLettrage(saisi: string, date: string) {
-		if (debiteurLettrage === null) return;
+	/**
+	 * LE CLIENT DU RAPPROCHEMENT, RELU SUR LA LISTE À CHAQUE RENDU.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ UN CLIENT SOLDÉ QUITTE LA LISTE, ET L'ÉTAT LE DÉSIGNAIT ENCORE
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * `debiteursRapprochables` ne garde que ceux dont une facture est encore
+	 * ouverte. Le client qu'on vient de solder en sort, le libellé du sélecteur
+	 * retombe sur « Choisir le client » — et l'état, lui, le désignait toujours :
+	 * le gérant croyait repartir à zéro et lançait sa recherche suivante sur
+	 * l'ancien client.
+	 *
+	 * ⚠️ DÉRIVÉ AU RENDU, ET PAS SEULEMENT REMIS À ZÉRO APRÈS LE SOLDE. La remise
+	 * à zéro ne couvre que le chemin qu'on a en tête ; la liste, elle, peut aussi
+	 * se vider d'ailleurs — un second onglet, un import qui solde. Ce qui ne peut
+	 * pas se re-casser, c'est que le choix N'EXISTE que tant que la liste le
+	 * porte : ce qu'on lit est alors ce qui partira.
+	 */
+	const debiteurRapprochable =
+		debiteurLettrage !== null && debiteursRapprochables.some((d) => d.id === debiteurLettrage)
+			? debiteurLettrage
+			: null;
+
+	function chercherLettrage(saisi: string) {
+		if (debiteurRapprochable === null) return;
 		setErreurLettrage(null);
 		setMontantCherche(null);
 		try {
 			// `depuisEuros` refuse trois décimales, NaN et la notation exponentielle.
 			// Un montant mal lu ici deviendrait un règlement faux en base.
 			setMontantCherche(enCentimes(depuisEuros(saisi.trim().replace(/\s/g, ''))));
-			setDateReglement(date.trim());
 		} catch {
 			setErreurLettrage(
 				`« ${saisi} » n’est pas un montant en euros. Deux décimales au plus, sans arrondi.`
@@ -740,25 +853,36 @@ function File() {
 		}
 	}
 
-	async function soldeLesFactures(references: readonly string[], total: bigint) {
-		if (debiteurLettrage === null) return;
+	/**
+	 * ⚠️ LA DATE ARRIVE AVEC LE GESTE, elle n'est pas relue dans un état. Elle
+	 * était posée au moment de « Chercher » et relue au moment de « Solder » ;
+	 * entre les deux, le calendrier reste modifiable. La date d'un règlement est
+	 * le point d'arrêt des intérêts : corriger la date puis solder enregistrait un
+	 * MONTANT faux, pendant que l'écran affichait la date corrigée.
+	 */
+	async function soldeLesFactures(references: readonly string[], total: bigint, date: string) {
+		if (debiteurRapprochable === null) return;
 		setErreurLettrage(null);
 		try {
 			await appliquerLettrage({
-				debiteurId: debiteurLettrage,
+				debiteurId: debiteurRapprochable,
 				references: [...references],
 				montant: total,
-				date: dateReglement
+				date
 			});
 			// Soldées : la recherche a fait son travail. La laisser affichée
 			// proposerait de solder une seconde fois des factures qui ne sont plus
 			// candidates, et le serveur refuserait — un bouton qui ne peut plus rien.
+			// Et le CLIENT repart avec elle : il vient de quitter la liste des
+			// rapprochables, et le garder choisi viserait la recherche suivante sur
+			// un client que le sélecteur ne nomme plus.
 			setMontantCherche(null);
+			setDebiteurLettrage(null);
 		} catch (e) {
 			// Le refus vient du serveur et NOMME ce qu'il a compté — « les factures
 			// choisies font 4 810,00 €, pas 4 820,00 € ». Le reformuler perdrait le
 			// seul détail qui permet de reprendre.
-			setErreurLettrage(e instanceof Error ? e.message : 'Rapprochement refusé.');
+			setErreurLettrage(messageDuRefus(e));
 		}
 	}
 
@@ -796,13 +920,23 @@ function File() {
 						portees: ['AUJOURDHUI', 'A_TRANCHER'],
 						ouvrable: false,
 						lettrage: {
-							proposition: propositionLettrage ?? null,
-							enCours: montantCherche !== null && propositionLettrage === undefined,
+							/*
+							  ⚠️ LA PROPOSITION NE SURVIT PAS À SON CLIENT. Tant que le choix
+							  n'est plus dans la liste, il n'y a personne à solder : afficher
+							  des combinaisons trouvées pour lui proposerait de solder les
+							  factures d'un client que le sélecteur ne nomme plus.
+							*/
+							proposition: debiteurRapprochable === null ? null : (propositionLettrage ?? null),
+							enCours:
+								debiteurRapprochable !== null &&
+								montantCherche !== null &&
+								propositionLettrage === undefined,
 							erreur: erreurLettrage,
 							onChercher: chercherLettrage,
-							onAppliquer: (references, total) => void soldeLesFactures(references, total),
+							onAppliquer: (references, total, date) =>
+								void soldeLesFactures(references, total, date),
 							debiteurs: debiteursRapprochables,
-							debiteurChoisi: debiteurLettrage,
+							debiteurChoisi: debiteurRapprochable,
 							onDebiteur: (id) => {
 								// Changer de client JETTE la proposition en cours : elle porte
 								// les factures d'un autre, et solder les mauvaises laisserait

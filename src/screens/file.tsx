@@ -196,14 +196,37 @@ interface CommunDeRangee {
 }
 
 /**
- * UN OBSTACLE, ET SON VERBE.
+ * UN OBSTACLE : ce que la surveillance a relevé, et ce qu'elle en sait.
  *
- * ⚠️ LE VERBE NE CONFIRME QU'UNE CHOSE (D6). « 3 factures, 31 200,50 €, la
- * facture a-t-elle été contestée ? » plus Oui / Non fait emporter par un tap
+ * ⚠️ D6 TIENT ICI : UNE RANGÉE, UNE DÉCISION. « 3 factures, 31 200,50 €, la
+ * facture a-t-elle été contestée ? » plus Oui / Non ferait emporter par un tap
  * unique la COMPOSITION de la créance, la RÉPONSE de litige et par ricochet la
  * qualité de commerçant. C'est un lot sur une qualification juridique, et la
  * piste d'audit qu'il produit ne distingue plus ce que le gérant a confirmé de
  * ce qu'il a subi. La composition et le litige sont donc DEUX rangées.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ NI VERBE NI HYPOTHÈSE : AUCUN DES DEUX N'A DE SOURCE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * La rangée a porté un `verbe` — un bouton nommé — et une `hypothese`. Les deux
+ * étaient rendus, et la salle de démonstration les montrait ; un balayage des
+ * ÉCRITURES ne les trouvait QUE là. La production n'en posait aucun, et ne
+ * pouvait pas :
+ *
+ *   · `Evenement` (`verticales/recouvrement/surveillance.ts`) porte une `action`
+ *     — une PHRASE — et pas un geste. Un verbe aurait été un bouton vers un
+ *     parcours qui n'existe pas, ou un doublon de l'ouverture de la rangée, qui
+ *     est déjà le geste : `?ligne=` ouvre la preuve d'un doigt ;
+ *   · les hypothèses que la surveillance déclare sont celles de
+ *     l'ÉTABLISSEMENT — `flux.hypotheses` — et `FacturesPortent` les affiche
+ *     déjà, en entier. Aucune ne se rapporte à un événement. En fabriquer une
+ *     par rangée serait affirmer par ligne ce que le domaine ne dit que
+ *     globalement.
+ *
+ * On réglait donc au navigateur une rangée que personne ne verrait. Les deux
+ * champs sont partis, leur rendu avec, et la salle avec — plutôt que de laisser
+ * un troisième état : déclaré, rendu, montré en salle, jamais écrit.
  */
 export interface RangeeObstacle extends CommunDeRangee {
 	readonly genre: 'OBSTACLE';
@@ -212,26 +235,29 @@ export interface RangeeObstacle extends CommunDeRangee {
 	readonly urgence: UrgenceRangee;
 	readonly montant: bigint | null;
 	readonly dateDuFait?: string;
-	/** L'hypothèse retenue. Affichée sur la rangée, jamais repliée (B9). */
-	readonly hypothese?: string;
 	readonly proposition?: PropositionDeRangee;
-	/** Le verbe. Son libellé nomme ce qu'il confirme, et rien d'autre. */
-	readonly verbe?: { readonly libelle: string; readonly onPresser: () => void };
 }
 
 /**
- * UNE QUESTION DE LITIGE, ET SA PROPOSITION SOUS ELLE.
+ * UNE QUESTION DE LITIGE, ET SA PROPOSITION À SA PLACE.
  *
  * ⚠️ « JE NE SAIS PAS » EST UNE VRAIE RÉPONSE, au même rang que les deux autres.
  * Elle laisse le critère ouvert, ce qui est l'issue juste : `lireLitige()` traite
  * `INCONNU` comme une abstention, et le doute ne profite jamais au produit. Une
  * proposition non confirmée retombe sur `unknown`, jamais sur `ok`.
+ *
+ * ⚠️ ET LES DEUX NE S'AFFICHENT JAMAIS ENSEMBLE. Une proposition affichée EST la
+ * question du moment : on la retient — ce qui écrit le fait — ou on l'écarte
+ * avec son motif, ce qui rouvre la question et rend les trois réponses. Les
+ * offrir en même temps donnait deux chemins d'écriture pour le même fait, dont
+ * un qui laissait la proposition ouverte à vie. Voir `Rangee`.
  */
 export interface RangeeLitige extends CommunDeRangee {
 	readonly genre: 'LITIGE';
 	readonly question: string;
 	readonly urgence: UrgenceRangee;
 	readonly montant: bigint | null;
+	/** Présente, elle porte les appuis de la rangée — et les trois réponses cèdent. */
 	readonly proposition?: PropositionDeRangee;
 	readonly onRepondre: (reponse: 'OUI' | 'NON' | 'INCONNU') => void;
 	readonly enCours?: boolean;
@@ -1038,27 +1064,60 @@ function Rangee({
 				ouverte={ouverte}
 				{...(onOuvrir === undefined ? {} : { onOuvrir })}
 			>
-				{/* TROIS RÉPONSES DE MÊME POIDS, et aucune n'est présélectionnée : une
-				    pilule blanche sur la réponse proposée ferait de l'appui une
-				    formalité, sur une déclaration qui décide de l'éligibilité. */}
-				<BoutonSecondaire
-					disabled={rangee.enCours === true}
-					onClick={() => rangee.onRepondre('OUI')}
-				>
-					Oui
-				</BoutonSecondaire>
-				<BoutonSecondaire
-					disabled={rangee.enCours === true}
-					onClick={() => rangee.onRepondre('NON')}
-				>
-					Non
-				</BoutonSecondaire>
-				<BoutonSecondaire
-					disabled={rangee.enCours === true}
-					onClick={() => rangee.onRepondre('INCONNU')}
-				>
-					Je ne sais pas
-				</BoutonSecondaire>
+				{/*
+				  ═══════════════════════════════════════════════════════════════════
+				  ⚠️ LES TROIS RÉPONSES NE S'AFFICHENT PAS SOUS UNE PROPOSITION
+				  ═══════════════════════════════════════════════════════════════════
+
+				  Elles s'affichaient EN PLUS de « Retenir » et « Écarter ». Les deux
+				  écrivent le même fait sur la même créance, par deux chemins — et le
+				  chemin des trois boutons ne touchait pas la proposition : le fait
+				  écrit, la question tombait, la rangée disparaissait, et la
+				  proposition restait `PROPOSEE` à vie, ses deux appuis injoignables.
+
+				  Ce n'est pas qu'un résidu en base. Le taux de rétention et la
+				  médiane du délai entre l'affichage et l'appui sont les deux mesures
+				  qui doivent dire si « sept par jour » est le bon nombre : une
+				  proposition tranchée ailleurs et jamais close les fausse toutes les
+				  deux, sans qu'aucun test ne tombe.
+
+				  Tant qu'une proposition est affichée, elle EST la question : la
+				  retenir vaut y répondre — `propositions.retenir` écrit le fait par
+				  `declarerFaitLitige`, le seul chemin d'écriture — et l'écarter la
+				  refuse AVEC SON MOTIF, sans rien poser sur la créance. La question
+				  reste alors ouverte et la rangée revient, avec ses trois réponses.
+
+				  ⚠️ ET C'EST AUSSI D6, QUI EST DÉJÀ LA RAISON D'ÊTRE DE CETTE RANGÉE.
+				  Cinq appuis sur une ligne — retenir, écarter, oui, non, je ne sais
+				  pas — sont deux décisions superposées sur une qualification
+				  juridique. La rangée de litige existe précisément pour n'en porter
+				  qu'une.
+				*/}
+				{rangee.proposition !== undefined ? undefined : (
+					<>
+						{/* TROIS RÉPONSES DE MÊME POIDS, et aucune n'est présélectionnée : une
+						    pilule blanche sur la réponse proposée ferait de l'appui une
+						    formalité, sur une déclaration qui décide de l'éligibilité. */}
+						<BoutonSecondaire
+							disabled={rangee.enCours === true}
+							onClick={() => rangee.onRepondre('OUI')}
+						>
+							Oui
+						</BoutonSecondaire>
+						<BoutonSecondaire
+							disabled={rangee.enCours === true}
+							onClick={() => rangee.onRepondre('NON')}
+						>
+							Non
+						</BoutonSecondaire>
+						<BoutonSecondaire
+							disabled={rangee.enCours === true}
+							onClick={() => rangee.onRepondre('INCONNU')}
+						>
+							Je ne sais pas
+						</BoutonSecondaire>
+					</>
+				)}
 			</RangeeFile>
 		);
 	}
@@ -1070,15 +1129,10 @@ function Rangee({
 			urgence={rangee.urgence}
 			montant={rangee.montant}
 			{...(rangee.dateDuFait === undefined ? {} : { dateDuFait: rangee.dateDuFait })}
-			{...(rangee.hypothese === undefined ? {} : { hypothese: rangee.hypothese })}
 			{...(rangee.proposition === undefined ? {} : { proposition: rangee.proposition })}
 			ouverte={ouverte}
 			{...(onOuvrir === undefined ? {} : { onOuvrir })}
-		>
-			{rangee.verbe === undefined ? undefined : (
-				<BoutonPrincipal onClick={rangee.verbe.onPresser}>{rangee.verbe.libelle}</BoutonPrincipal>
-			)}
-		</RangeeFile>
+		/>
 	);
 }
 
@@ -1245,9 +1299,9 @@ function ListeParClient({
 						/>
 
 						{/* ELLE S'OUVRE EN PLACE SUR SES RANGÉES, qui sont EXACTEMENT
-						    celles de la vue Par créance, inchangées, avec leur verbe.
-						    Rien n'est reformulé pour la vue : un obstacle a une seule
-						    phrase dans tout le produit. */}
+						    celles de la vue Par créance, inchangées, avec les appuis
+						    qu'elles portent. Rien n'est reformulé pour la vue : un
+						    obstacle a une seule phrase dans tout le produit. */}
 						{ouvert ? (
 							<div className="flex flex-col gap-cladd-3xs pl-cladd-2xs">
 								{siennes.map((rangee) => (
