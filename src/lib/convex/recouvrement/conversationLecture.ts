@@ -316,6 +316,17 @@ export const consignerEchange = internalMutation({
 		question: v.string(),
 		reponse: v.string(),
 		pastilles: v.array(v.object({ phrase: v.number(), source: vSourceConstat })),
+		/**
+		 * ⚠️ LES PHRASES, ET C'EST ELLES QUI SE RELISENT. `reponse` reste leur
+		 * concaténation — le fil la réinjecte telle quelle dans le contexte du
+		 * tour suivant — mais les bornes ne se déduisent plus de la ponctuation.
+		 *
+		 * Facultatif : un refus et une question n'ont pas de phrases sourcées, et
+		 * ils n'en reçoivent pas d'inventées.
+		 */
+		phrases: v.optional(
+			v.array(v.object({ texte: v.string(), source: v.optional(vSourceConstat) }))
+		),
 		usage: v.optional(
 			v.object({
 				tokensIn: v.number(),
@@ -355,6 +366,7 @@ export const consignerEchange = internalMutation({
 			role: 'COMPAGNON',
 			texte: args.reponse,
 			pastilles: args.pastilles,
+			phrases: args.phrases,
 			usage: args.usage,
 			mois: moisDuTour,
 			// +1 ms : deux tours écrits dans la même transaction porteraient sinon
@@ -376,6 +388,8 @@ const vTourAffiche = v.object({
 	role: v.union(v.literal('GERANT'), v.literal('COMPAGNON')),
 	texte: v.string(),
 	pastilles: v.array(v.object({ phrase: v.number(), source: vSourceConstat })),
+	/** Absent sur les tours écrits avant que les phrases le soient, et sur les refus. */
+	phrases: v.optional(v.array(v.object({ texte: v.string(), source: v.optional(vSourceConstat) }))),
 	diteLe: v.number()
 });
 
@@ -416,6 +430,7 @@ export const filDuDossier = authedQuery({
 					role: tour.role,
 					texte: tour.texte,
 					pastilles: tour.pastilles,
+					phrases: tour.phrases,
 					diteLe: tour.diteLe
 				})),
 			compteur

@@ -12,9 +12,9 @@ import {
 	type EtudeAffichee,
 	type FicheASaisir,
 	type Lecture,
-	type PhraseAffichee,
 	type TourAffiche
 } from '../ui';
+import { relireTour } from '../lib/verticales/recouvrement/compagnon/tour';
 import {
 	EcranVolet,
 	sectionsParDefaut,
@@ -64,82 +64,6 @@ function messageDuRefus(e: unknown): string {
  * dépendent d'aucun établissement, donc elles ne passent par aucune requête.
  */
 const FICHES_DU_REFERENTIEL = etatDuReferentiel().fiches;
-
-/**
- * LE FIL, REMIS EN PHRASES.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ LES BORNES DE PHRASE NE SONT PAS EN BASE, ET C'EST UN DÉFAUT RELEVÉ ICI
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `compagnon/prompt.ts` assemble la réponse par `phrases.map(p => p.texte).join(' ')`
- * et `echangesCompagnon` n'enregistre que ce texte joint, plus des pastilles
- * indexées PAR RANG DE PHRASE. Le découpage est donc perdu à l'écriture, et il
- * n'est pas reconstituable à coup sûr à la lecture.
- *
- * Ce qu'on fait ici, et ce qu'on refuse de faire :
- *
- *   · on redécoupe sur une fin de phrase, ce qui retrouve le découpage d'origine
- *     dans le cas courant — le modèle rend des phrases ponctuées ;
- *   · si le compte obtenu ne suffit pas à porter toutes les pastilles, ON NE
- *     DÉCALE RIEN : le tour se rend en UNE phrase sans pastille. Une pastille
- *     posée sur la mauvaise phrase désignerait une source qui ne dit pas ce
- *     qu'on lui fait dire, et c'est exactement ce que les pastilles existent
- *     pour empêcher. Mieux vaut une source absente qu'une source fausse.
- *
- * ⚠️ LE VRAI REMÈDE EST EN AMONT : que `consignerEchange` enregistre les phrases
- * plutôt que leur concaténation. Il n'est pas pris ici parce qu'il touche le
- * schéma, et que la bascule n'en porte aucun.
- */
-function phrasesDuTour(
-	texte: string,
-	pastilles: readonly { readonly phrase: number; readonly source: unknown }[]
-): readonly PhraseAffichee[] {
-	const sansPastille: readonly PhraseAffichee[] = [
-		{ texte, genreSource: 'AUCUNE', libelleSource: '' }
-	];
-	if (pastilles.length === 0) return sansPastille;
-
-	const morceaux = texte
-		.split(/(?<=[.!?…])\s+/)
-		.map((phrase) => phrase.trim())
-		.filter((phrase) => phrase !== '');
-
-	const rangMax = Math.max(...pastilles.map((pastille) => pastille.phrase));
-	if (morceaux.length <= rangMax) return sansPastille;
-
-	return morceaux.map((morceau, rang): PhraseAffichee => {
-		const pastille = pastilles.find((p) => p.phrase === rang);
-		if (pastille === undefined) return { texte: morceau, genreSource: 'AUCUNE', libelleSource: '' };
-		return { texte: morceau, ...ancreLisible(pastille.source) };
-	});
-}
-
-/**
- * CE QU'UNE PASTILLE MONTRE, en toutes lettres.
- *
- * ⚠️ UN IDENTIFIANT N'EST PAS UNE SOURCE. Le gérant qui relit six mois plus
- * tard, devant une contestation, a besoin de l'entrée du référentiel ou du
- * décompte daté, pas d'une chaîne de vingt caractères. Les trois natures sont
- * celles de `tables.ts:vSourceConstat`, et il n'y en a pas de quatrième.
- */
-function ancreLisible(source: unknown): Pick<PhraseAffichee, 'genreSource' | 'libelleSource'> {
-	const ancre = source as { nature?: string; cleParametre?: string; page?: number };
-	if (ancre.nature === 'REFERENTIEL') {
-		return { genreSource: 'PARAMETRE', libelleSource: ancre.cleParametre ?? 'référentiel' };
-	}
-	if (ancre.nature === 'DECOMPTE') {
-		return { genreSource: 'DECOMPTE', libelleSource: 'décompte du dossier' };
-	}
-	if (ancre.nature === 'PIECE') {
-		return {
-			genreSource: 'PIECE',
-			libelleSource:
-				ancre.page === undefined ? 'pièce du dossier' : `pièce du dossier, page ${ancre.page}`
-		};
-	}
-	return { genreSource: 'AUCUNE', libelleSource: '' };
-}
 
 export function VoletBranche({
 	creanceId,
@@ -216,9 +140,8 @@ export function VoletBranche({
 
 	// La conversation : la question en cours, et le refus du dernier échange.
 	const [question, setQuestion] = useState('');
-	const [refusDuCompagnon, setRefusDuCompagnon] = useState<LigneOuverte['conversation']['refus']>(
-		null
-	);
+	const [refusDuCompagnon, setRefusDuCompagnon] =
+		useState<LigneOuverte['conversation']['refus']>(null);
 	const [compagnonEnCours, setCompagnonEnCours] = useState(false);
 
 	/*
@@ -578,9 +501,7 @@ export function VoletBranche({
 			})
 		},
 		onRepondre: (cle, reponse) =>
-			void avec(() =>
-				declarerFait({ creanceId, cle: cle as 'CONTESTATION_ECRITE', reponse })
-			),
+			void avec(() => declarerFait({ creanceId, cle: cle as 'CONTESTATION_ECRITE', reponse })),
 
 		hypotheses,
 		anglesMorts,
@@ -604,7 +525,8 @@ export function VoletBranche({
 		  depuis le FAIT, pas depuis la saisie : les confondre offrirait des jours
 		  sur une caducité, en silence.
 		*/
-		onConsigner: (cle, survenuLe) => void avec(() => consignerEvenement({ creanceId, cle, survenuLe })),
+		onConsigner: (cle, survenuLe) =>
+			void avec(() => consignerEvenement({ creanceId, cle, survenuLe })),
 		/*
 		  ⚠️ LE LOGICIEL N'ENGAGE PAS, IL ENREGISTRE — troisième ligne rouge. Et
 		  l'intervenant ne se rattache que s'il a été DIT : un silence n'est pas un
@@ -623,7 +545,10 @@ export function VoletBranche({
 			}),
 		onRattacher: (intervenantId) =>
 			void avec(() =>
-				rattacherIntervenant({ creanceId, intervenantId: intervenantId as Id<'intervenants'> | null })
+				rattacherIntervenant({
+					creanceId,
+					intervenantId: intervenantId as Id<'intervenants'> | null
+				})
 			),
 		/*
 		  ⚠️ `origine` EST ÉCRITE ICI, PAS SAISIE. Une fiche tapée à la main est
@@ -640,9 +565,7 @@ export function VoletBranche({
 				})
 			),
 		onOublierFiche: (intervenantId) =>
-			void avec(() =>
-				oublierIntervenant({ intervenantId: intervenantId as Id<'intervenants'> })
-			),
+			void avec(() => oublierIntervenant({ intervenantId: intervenantId as Id<'intervenants'> })),
 
 		rechercheCommissaireOuverte,
 		etatRechercheCommissaire,
@@ -687,14 +610,24 @@ export function VoletBranche({
 		decomptesArretes: decomptes
 			.filter((decompte) => decompte.creanceId === creanceId)
 			.sort((a, b) => b.produitLe - a.produitLe)
-			.map((decompte) => ({ id: decompte._id, arreteAu: decompte.arreteAu, total: decompte.total })),
+			.map((decompte) => ({
+				id: decompte._id,
+				arreteAu: decompte.arreteAu,
+				total: decompte.total
+			})),
 
 		conversation: {
 			tours: fil.tours.map(
 				(tour): TourAffiche => ({
 					id: tour._id,
 					role: tour.role,
-					phrases: phrasesDuTour(tour.texte, tour.pastilles),
+					/*
+					  ⚠️ LES PHRASES VIENNENT DE LA BASE, elles ne se redéduisent plus du
+					  texte. `compagnon/tour.ts` porte les deux chemins : celui des tours
+					  qui écrivent leurs phrases, et le repli des tours écrits avant, qui
+					  redécoupe et ABANDONNE toute pastille plutôt que d'en décaler une.
+					*/
+					phrases: relireTour(tour),
 					diteLe: tour.diteLe
 				})
 			),

@@ -208,7 +208,15 @@ async function poserEtablissement(t: Harnais, nom: string): Promise<Id<'organiza
 			cible: creanceId,
 			role: 'COMPAGNON',
 			texte: 'Elle est lue sur la facture, page 1.',
+			// ⚠️ LES DEUX FORMES DU MÊME TOUR, ET C'EST DÉLIBÉRÉ. `pastilles` indexe
+			// par RANG et `phrases` porte les bornes : les trois autres lignes de ce
+			// fixture n'ont que la première, parce que les tours écrits avant que
+			// les phrases le soient continuent de se lire. Le schéma doit valider
+			// les deux, et un champ requis de plus les aurait rendus invalides.
 			pastilles: [{ phrase: 0, source: { nature: 'PIECE', pieceId } }],
+			phrases: [
+				{ texte: 'Elle est lue sur la facture, page 1.', source: { nature: 'PIECE', pieceId } }
+			],
 			usage: { tokensIn: 8000, tokensOut: 600, cacheReadTokens: 3000, coutEstime: 0.04 },
 			mois: '2026-09',
 			diteLe: Date.now()
