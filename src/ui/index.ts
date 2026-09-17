@@ -165,7 +165,12 @@ export {
 } from './veilleur';
 export { Solidite, type SoliditeAffichee, type EtageAffiche } from './solidite';
 export { Relances, type NiveauAffiche } from './relances';
-export { Lettrage, type PropositionLettrage, type CombinaisonAffichee } from './lettrage';
+export {
+	Lettrage,
+	type PropositionLettrage,
+	type CombinaisonAffichee,
+	type DebiteurRapprochable
+} from './lettrage';
 export {
 	Conversation,
 	moisLisible,

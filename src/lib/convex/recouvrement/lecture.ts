@@ -22,7 +22,7 @@ import {
 	prescriptionDe
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
-import { vEtatCritere, vSecteurCreance } from './tables';
+import { vCleFaitLitige, vEtatCritere, vSecteurCreance } from './tables';
 
 /**
  * Les lectures du recouvrement — ce que les écrans consomment.
@@ -76,6 +76,19 @@ const vDebiteur = v.object({
 	/** Ce qui reste dû, toutes factures non soldées confondues. */
 	encours: v.int64(),
 	facturesEchues: v.number(),
+	/**
+	 * LES FACTURES ENCORE OUVERTES — échues ou non.
+	 *
+	 * ⚠️ ELLES NE SE DÉDUISENT NI DE `encours` NI DE `facturesEchues`, et c'est
+	 * pour ça qu'elles sont rendues. Une facture couverte au centime par des
+	 * règlements mais restée `IMPAYEE` pèse zéro dans l'encours et compte
+	 * pourtant ici ; une facture non échue n'entre pas dans `facturesEchues` et
+	 * peut parfaitement être soldée par un virement groupé.
+	 *
+	 * C'est ce compte qui dit si un rapprochement a de la matière chez ce
+	 * client, et il ne coûte rien : le filtre était déjà calculé pour l'encours.
+	 */
+	facturesOuvertes: v.number(),
 	facturesTotal: v.number()
 });
 
@@ -167,6 +180,7 @@ export const listerDebiteurs = authedQuery({
 					facturesEchues: nonSoldees.filter(
 						(f) => f.dateEcheance !== undefined && f.dateEcheance < aujourdHui
 					).length,
+					facturesOuvertes: nonSoldees.length,
 					facturesTotal: siennes.length
 				};
 			})
@@ -767,5 +781,115 @@ export const listerCreances = authedQuery({
 					? 1
 					: 0;
 		});
+	}
+});
+
+/**
+ * LES QUESTIONS DE LITIGE ENCORE OUVERTES, À L'ÉCHELLE DE L'ÉTABLISSEMENT.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QUI MANQUAIT, ET CE QUE SON ABSENCE COÛTAIT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `creances.propositionsLitige` travaille PAR CRÉANCE : elle répond à « que
+ * puis-je proposer sur ce dossier-ci », ce qui suppose un dossier déjà ouvert.
+ * La file, elle, est un écran d'ÉTABLISSEMENT : elle demande « qu'est-ce qui
+ * attend une réponse chez moi aujourd'hui ». Aucune lecture ne répondait à
+ * cette question-là, et la conséquence était exactement le défaut que ce dépôt
+ * traque sous le nom « déclaré et lu, jamais alimenté » : `screens/file.tsx`
+ * déclarait un genre de rangée `LITIGE`, savait le rendre, la salle d'exposition
+ * le montrait — et la production n'en produisait aucune.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ UNE SEULE LECTURE D'INDEX, ET AUCUNE JOINTURE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Elle balaie `creances` par `by_org`, et RIEN D'AUTRE : ni les factures, ni
+ * les règlements, ni les pièces, ni le débiteur. Tout ce dont elle a besoin —
+ * `faitsLitige` et `statut` — est porté par la créance elle-même. Le nom du
+ * client et le montant en jeu, la file les a déjà par `listerDebiteurs` et
+ * `listerCreances` : les relire ici doublerait le coût de l'écran pour recopier
+ * ce qu'il tient en main. C'est la discipline de `listerDebiteurs`, qui lit ses
+ * deux index une fois et croise en mémoire.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ON NE REPOSE PAS UNE QUESTION DÉJÀ RÉPONDUE — « JE NE SAIS PAS » COMPRIS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `questionsRestantes()` garde ouverte une question répondue `INCONNU`, et elle
+ * a raison : le critère `certaine` reste indéterminé, et le doute ne profite
+ * jamais au produit — le questionnaire du volet continue donc de la poser.
+ *
+ * Mais une RANGÉE DE FILE qui revient à l'identique le lendemain d'un « je ne
+ * sais pas » redemande au gérant ce qu'il vient de trancher, indéfiniment. On
+ * ne rend donc ici que les questions JAMAIS POSÉES — `reponses[cle]` absent —
+ * ce qui est mot pour mot la règle que `propositions.ts` applique déjà à la
+ * pose : « une créance dont `faitsLitige` porte déjà la clé est passée ».
+ *
+ * ⚠️ ET ÇA NE FAIT RIEN PASSER POUR ACQUIS. Une question retirée de cette liste
+ * n'est pas une question tranchée : `certaine` vaut toujours `unknown`, la
+ * qualification le dit, et le volet la repose. Ce qui se tait ici, c'est la
+ * SOLLICITATION, jamais le critère.
+ *
+ * ⚠️ ELLE NE BORNE PAS ELLE-MÊME CE QUI DEVIENT UNE RANGÉE. Un établissement à
+ * trois cents créances a trois cents questions ouvertes le premier jour, et les
+ * poser toutes le même matin est le rythme d'acquittement que le plafond de D13
+ * existe pour empêcher. C'est l'écran qui tranche « il y a matière », à partir
+ * du flux et des propositions qu'il tient DÉJÀ : le faire ici obligerait à
+ * recalculer la surveillance entière pour trier une liste.
+ */
+export const questionsDeLitige = authedQuery({
+	args: {},
+	returns: v.array(
+		v.object({
+			creanceId: v.id('creances'),
+			/** Pour que la file range la rangée sous son client, en vue Par client. */
+			debiteurId: v.id('debiteurs'),
+			cle: vCleFaitLitige,
+			/** La question du domaine, MOT POUR MOT. La reformuler en ferait une seconde. */
+			question: v.string(),
+			/** Ce que la réponse change, en clair. Le gérant sait ce qu'il engage. */
+			portee: v.string(),
+			/** Combien il en reste d'ouvertes sur ce dossier, celle-ci comprise. */
+			restantes: v.number()
+		})
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const creances = await ctx.db
+			.query('creances')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect();
+
+		const lignes = [];
+		for (const creance of creances) {
+			// Une créance close ne se requalifie pas : poser la question ferait
+			// décider sur un dossier que plus rien n'attend.
+			if (creance.statut === 'CLOSE') continue;
+
+			const reponses: Reponses = {};
+			for (const fait of creance.faitsLitige ?? []) reponses[fait.cle] = fait.reponse;
+
+			// `questionsRestantes` s'arrête d'elle-même dès qu'un fait vaut « oui » :
+			// une contestation connue rend les suivantes sans effet, et les poser
+			// dépenserait la seule ressource rare, l'attention du gérant.
+			const jamaisPosees = questionsRestantes(reponses).filter(
+				(question) => reponses[question.cle] === undefined
+			);
+			const premiere = jamaisPosees[0];
+			if (premiere === undefined) continue;
+
+			lignes.push({
+				creanceId: creance._id,
+				debiteurId: creance.debiteurId,
+				cle: premiere.cle,
+				question: premiere.question,
+				portee: premiere.portee,
+				restantes: jamaisPosees.length
+			});
+		}
+
+		return lignes;
 	}
 });

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { BoutonPrincipal } from './bouton';
 import { LigneBouton } from './navigation';
-import { Button, Chip, Input, Surface } from '@cladd-ui/react';
+import { Button, Chip, Input, Select, Surface } from '@cladd-ui/react';
 import { DatePicker } from '@cladd-ui/react/calendar';
 import { fr } from 'react-day-picker/locale';
 import { AlertTriangleIcon, ArrowLeftRightIcon, SearchIcon } from 'lucide-react';
-import { dateCourte, eurosCentimes } from './format';
+import { dateCourte, eurosCentimes, pluriel } from './format';
 import { aujourdHuiISO } from './horloge';
 
 /**
@@ -59,6 +59,22 @@ export interface PropositionLettrage {
 }
 
 /**
+ * UN CLIENT CHEZ QUI UN VIREMENT PEUT ÊTRE RAPPROCHÉ.
+ *
+ * ⚠️ IL PORTE SON COMPTE DE FACTURES OUVERTES ET SON ENCOURS, et ce n'est pas
+ * de l'ornement : c'est ce qui permet de reconnaître le bon « MARTIN » entre
+ * deux homonymes sans ouvrir leur fiche. Le logiciel décide QUI peut figurer
+ * dans cette liste — un client sans facture ouverte n'y est pas — et le gérant
+ * ne confirme que lequel.
+ */
+export interface DebiteurRapprochable {
+	readonly id: string;
+	readonly denomination: string;
+	readonly facturesOuvertes: number;
+	readonly encours: bigint;
+}
+
+/**
  * LE JOUR CHOISI AU CALENDRIER, ÉCRIT COMME LE RESTE DE LA CHAÎNE : `2026-04-15`.
  *
  * ⚠️ SUR LES PARTIES LOCALES, ET PAS PAR `toISOString()`. Le calendrier rend un
@@ -104,7 +120,10 @@ export function Lettrage({
 	enCours,
 	erreur,
 	onChercher,
-	onAppliquer
+	onAppliquer,
+	debiteurs,
+	debiteurChoisi,
+	onDebiteur
 }: {
 	/** `null` tant qu'aucune recherche n'a été lancée. */
 	proposition: PropositionLettrage | null;
@@ -112,6 +131,27 @@ export function Lettrage({
 	erreur: string | null;
 	onChercher: (montantSaisi: string, date: string) => void;
 	onAppliquer: (references: readonly string[], total: bigint) => void;
+	/**
+	 * LES CLIENTS CHEZ QUI LE RAPPROCHEMENT A DE LA MATIÈRE.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ ABSENTS, LE CLIENT EST CELUI DE L'ÉCRAN — ET C'EST LE CAS DE LA FICHE
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Sur la fiche d'un débiteur, le client est déjà choisi par l'écran qui
+	 * monte ce composant : lui redemander lequel serait la double saisie exacte
+	 * que la règle d'écran n° 1 interdit.
+	 *
+	 * Dans la FILE, il n'y a pas de client courant — c'est un écran
+	 * d'établissement — et le produit n'a AUCUNE source qui dise de qui vient
+	 * un virement : un règlement que l'import ne sait rattacher est compté puis
+	 * jeté. Le gérant a le relevé sous les yeux, lui seul sait. La liste est
+	 * donc la seule saisie honnête de cette rangée, et elle reste une liste
+	 * fermée : le logiciel décide qui peut y figurer.
+	 */
+	debiteurs?: readonly DebiteurRapprochable[];
+	debiteurChoisi?: string | null;
+	onDebiteur?: (id: string) => void;
 }) {
 	const [montant, setMontant] = useState('');
 	/**
@@ -150,6 +190,34 @@ export function Lettrage({
 					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 						Le logiciel cherche quelles factures ce virement solde.
 					</p>
+
+					{/*
+					  ⚠️ LE CLIENT EN PREMIER, ET IL NE SE DEVINE PAS. « Un rapprochement
+					  entre clients est absurde et invisible » : le paiement de l'un
+					  solderait la facture de l'autre, et rien à l'écran ne le dirait.
+					  La liste ne porte que ceux qui ont une facture ouverte — chercher
+					  chez un client à jour n'aurait aucune réponse à rendre.
+					*/}
+					{debiteurs === undefined ? null : (
+						<Select
+							className="w-full"
+							surface="cut"
+							size="lg"
+							title="Client qui a payé"
+							options={[...debiteurs]}
+							value={debiteurChoisi ?? ''}
+							getOptionValue={(option) => option.id}
+							onChange={(id) => onDebiteur?.(id as string)}
+							renderOption={({ value }) => value.denomination}
+							renderOptionInfo={({ value }) =>
+								`${value.facturesOuvertes} facture${pluriel(value.facturesOuvertes)} ouverte${pluriel(value.facturesOuvertes)}, ${eurosCentimes(value.encours)}`
+							}
+							keyboardHints={false}
+							placeholder="Choisir le client"
+						>
+							{debiteurs.find((d) => d.id === debiteurChoisi)?.denomination ?? 'Choisir le client'}
+						</Select>
+					)}
 
 					<div className="flex flex-wrap items-center gap-cladd-3xs">
 						<Input
@@ -192,7 +260,15 @@ export function Lettrage({
 								if (date === undefined) return;
 								onChercher(montant, enISO(date));
 							}}
-							disabled={enCours || montant.trim() === '' || date === undefined}
+							disabled={
+								enCours ||
+								montant.trim() === '' ||
+								date === undefined ||
+								// Aucun client choisi : la recherche n'aurait pas de portefeuille
+								// où chercher. Le bouton le DIT en restant éteint, plutôt que de
+								// lever une erreur sur un geste que l'écran pouvait empêcher.
+								(debiteurs !== undefined && (debiteurChoisi ?? null) === null)
+							}
 						>
 							<SearchIcon />
 							{enCours ? 'Recherche…' : 'Chercher'}

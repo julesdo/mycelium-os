@@ -9,10 +9,13 @@ import {
 	ceQuiManque,
 	secteursProposes,
 	travauxDuVeilleur,
+	type DebiteurRapprochable,
 	type EtablissementPropose,
 	type EtatRecherche,
 	type UrgenceRangee
 } from '../../ui';
+import { depuisEuros, enCentimes } from '../../lib/socle/montants';
+import { QUESTIONS_LITIGE } from '../../lib/verticales/recouvrement/litige';
 import { AvatarConnecte, VeilleurPresent } from '../../app/identite';
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
@@ -165,6 +168,21 @@ const PLI_PAR_TYPE: Record<string, { readonly un: string; readonly plusieurs: st
 const OPTIONS_SECTEUR = secteursProposes();
 
 /**
+ * LES CHAMPS DE PROPOSITION QUI SONT AUSSI UNE RÉPONSE AU QUESTIONNAIRE.
+ *
+ * ⚠️ IL N'Y EN A PAS D'AUTRES, ET C'EST LE COMPILATEUR QUI LE TIENT : la liste
+ * se dérive de `QUESTIONS_LITIGE`, comme celle de `convex/…/propositions.ts`.
+ * Un fait ajouté au questionnaire entre ici sans qu'on y pense.
+ *
+ * ⚠️ ET ELLE SERT À SÉPARER, PAS À RANGER. Une proposition de litige collée sous
+ * une rangée d'obstacle — « Prescription dans 41 jours » suivie de « Proposé :
+ * oui » — fait lire la proposition comme si elle portait sur l'obstacle. La
+ * réponse de litige se confirme dans SA rangée, sous SA question (§ 4.x, D6) :
+ * ces propositions-là quittent donc les rangées d'obstacle.
+ */
+const CHAMPS_DE_LITIGE: ReadonlySet<string> = new Set(QUESTIONS_LITIGE.map((q) => q.cle));
+
+/**
  * L'état de repos de la recherche au registre, posé UNE fois hors du composant :
  * un rendu ne doit pas fabriquer un objet neuf pour dire « rien ne se passe ».
  */
@@ -245,6 +263,19 @@ function File() {
 	const ecarterProposition = useMutation(api.recouvrement.propositions.ecarter);
 
 	/**
+	 * LES QUESTIONS DE LITIGE ENCORE OUVERTES, À L'ÉCHELLE DE L'ÉTABLISSEMENT.
+	 *
+	 * ⚠️ C'EST LA LECTURE QUI MANQUAIT, ET SON ABSENCE LAISSAIT UN GENRE DE
+	 * RANGÉE DÉCLARÉ ET JAMAIS ALIMENTÉ. `creances.propositionsLitige` travaille
+	 * par CRÉANCE : elle suppose un dossier déjà ouvert, et la file n'en ouvre
+	 * aucun — c'est elle qui dit lesquels ouvrir. `lecture.questionsDeLitige` lit
+	 * un seul index (`creances by_org`) et ne joint rien : le nom du client et le
+	 * montant en jeu sont déjà en main plus bas.
+	 */
+	const questionsDeLitige = useQuery(api.recouvrement.lecture.questionsDeLitige, {});
+	const declarerFait = useMutation(api.recouvrement.creances.declarerFait);
+
+	/**
 	 * LE REGISTRE : une ACTION, parce qu'elle appelle le BODACC.
 	 *
 	 * ⚠️ ELLE N'ÉCRIT RIEN. Elle rend des candidats ; c'est `renseignerSiren` qui
@@ -276,6 +307,52 @@ function File() {
 		readonly debiteurId: string;
 		readonly message: string;
 	} | null>(null);
+
+	/**
+	 * LA RÉPONSE EN COURS D'ÉCRITURE, PAR CRÉANCE.
+	 *
+	 * ⚠️ TROIS BOUTONS QUI RESTENT ACTIFS PENDANT L'ALLER-RETOUR LAISSENT
+	 * RÉPONDRE DEUX FOIS. `declarerFaitLitige` REMPLACE la réponse précédente :
+	 * un double appui sur « Oui » puis « Non » écrirait deux déclarations datées
+	 * dans le journal pour un seul geste, et la piste d'audit ne dirait plus ce
+	 * que le gérant a voulu.
+	 */
+	const [litigeEnCours, setLitigeEnCours] = useState<string | null>(null);
+
+	// ── LE RAPPROCHEMENT D'UN VIREMENT ───────────────────────────────────────
+
+	/**
+	 * CE QUE LE GÉRANT A SOUS LES YEUX SUR SON RELEVÉ, ET RIEN D'AUTRE.
+	 *
+	 * ⚠️ AUCUNE DE CES TROIS VALEURS N'A DE SOURCE DANS LE PRODUIT, et c'est
+	 * pourquoi elles se saisissent. Un règlement que l'import ne sait rattacher
+	 * est COMPTÉ puis JETÉ (`import.ts`) : il n'existe aucune table d'où lire
+	 * « un virement de 4 820 € est arrivé le 12/09 de la part de Durand ». La
+	 * proposition automatique de rapprochement n'a donc pas de source ; la
+	 * surface manuelle, elle, reste, et elle est ce qui empêche de relancer un
+	 * client qui a déjà payé.
+	 *
+	 * ⚠️ ET LA RECHERCHE NE PART PAS À CHAQUE FRAPPE. C'est `montantCherche`,
+	 * posé au moment de l'appui, qui déclenche la requête : chercher pendant
+	 * qu'on tape ferait défiler des propositions sous les doigts.
+	 */
+	const [debiteurLettrage, setDebiteurLettrage] = useState<Id<'debiteurs'> | null>(null);
+	const [montantCherche, setMontantCherche] = useState<bigint | null>(null);
+	const [dateReglement, setDateReglement] = useState('');
+	const [erreurLettrage, setErreurLettrage] = useState<string | null>(null);
+
+	/**
+	 * ⚠️ `skip` TANT QUE LES DEUX NE SONT PAS POSÉS. Sans ça, l'écran paierait
+	 * une recherche de combinaisons à chaque rendu de la file, sur un montant
+	 * que personne n'a demandé.
+	 */
+	const propositionLettrage = useQuery(
+		api.recouvrement.lettrage.proposer,
+		debiteurLettrage === null || montantCherche === null
+			? 'skip'
+			: { debiteurId: debiteurLettrage, montant: montantCherche }
+	);
+	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
 
 	const genererUrl = useMutation(api.recouvrement.depotMutations.genererUrlDepot);
 	const enregistrer = useMutation(api.recouvrement.depotMutations.enregistrerFichier);
@@ -352,12 +429,46 @@ function File() {
 	 * rangée ne la redemande plus.
 	 */
 	const propositionDe = new Map<string, (typeof propositionsEnAttente)[number]>();
+	/**
+	 * ⚠️ CELLES QUI RÉPONDENT AU QUESTIONNAIRE VONT DANS L'AUTRE PANIER. Une
+	 * proposition de litige affichée sous une rangée d'obstacle se lit comme si
+	 * elle portait sur l'obstacle : « Prescription dans 41 jours » puis
+	 * « Proposé : oui ». Sa place est sous SA question, dans la rangée de litige
+	 * — la séparation que D6 exige, et que l'écran savait rendre sans la recevoir.
+	 */
+	const propositionLitigeDe = new Map<string, (typeof propositionsEnAttente)[number]>();
 	const propositionsEnAttente = (propositions?.propositions ?? []).filter(
 		(proposition) => proposition.etat === 'PROPOSEE'
 	);
 	for (const proposition of [...propositionsEnAttente].sort((a, b) => a.poseeLe - b.poseeLe)) {
-		if (!propositionDe.has(proposition.cible)) propositionDe.set(proposition.cible, proposition);
+		const panier = CHAMPS_DE_LITIGE.has(proposition.champ) ? propositionLitigeDe : propositionDe;
+		if (!panier.has(proposition.cible)) panier.set(proposition.cible, proposition);
 	}
+
+	/**
+	 * LES DEUX APPUIS D'UNE PROPOSITION, ÉCRITS UNE FOIS.
+	 *
+	 * ⚠️ `lueDepuisMs` EST REQUIS PAR LE SERVEUR, EXPRÈS : c'est la deuxième des
+	 * trois mesures de D13. Recopier ces deux gestes à chaque site d'appel les
+	 * ferait diverger, et c'est le genre d'oubli qui ne se signale jamais — la
+	 * médiane devient fausse sans qu'un test ne tombe.
+	 */
+	const gestesDe = (proposition: (typeof propositionsEnAttente)[number]) => ({
+		valeur: proposition.valeur,
+		source: proposition.sourceLisible,
+		date: proposition.jour,
+		onRetenir: () =>
+			void retenirProposition({
+				propositionId: proposition._id,
+				lueDepuisMs: delaiDeLecture(vuesLe.current, proposition._id)
+			}),
+		onEcarter: (motif: string) =>
+			void ecarterProposition({
+				propositionId: proposition._id,
+				motif,
+				lueDepuisMs: delaiDeLecture(vuesLe.current, proposition._id)
+			})
+	});
 
 	// ── LES RANGÉES DE LA SURVEILLANCE ───────────────────────────────────────
 
@@ -400,26 +511,7 @@ function File() {
 			urgence: evenement.urgence as UrgenceRangee,
 			montant: evenement.montant,
 			...(evenement.dateDuFait === undefined ? {} : { dateDuFait: evenement.dateDuFait }),
-			...(proposition === undefined
-				? {}
-				: {
-						proposition: {
-							valeur: proposition.valeur,
-							source: proposition.sourceLisible,
-							date: proposition.jour,
-							onRetenir: () =>
-								void retenirProposition({
-									propositionId: proposition._id,
-									lueDepuisMs: delaiDeLecture(vuesLe.current, proposition._id)
-								}),
-							onEcarter: (motif: string) =>
-								void ecarterProposition({
-									propositionId: proposition._id,
-									motif,
-									lueDepuisMs: delaiDeLecture(vuesLe.current, proposition._id)
-								})
-						}
-					}),
+			...(proposition === undefined ? {} : { proposition: gestesDe(proposition) }),
 			pli: {
 				libelle: PLI_PAR_TYPE[evenement.type] ?? { un: 'rangée', plusieurs: 'rangées' },
 				rienATrancher: false
@@ -475,7 +567,257 @@ function File() {
 		};
 	});
 
-	const rangees = [...rangeesDuFlux, ...rangeesDeDepot];
+	// ── LES QUESTIONS DE LITIGE, EN RANGÉES ──────────────────────────────────
+
+	/**
+	 * QUAND UNE QUESTION DE LITIGE DEVIENT UNE RANGÉE — et pourquoi pas toujours.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ « UN CHAMP QU'AUCUNE SOURCE NE REMPLIT DEVIENT UNE RANGÉE AU MOMENT OÙ
+	 * IL CHANGE UN CHIFFRE » — la règle est de la spec, et elle tranche ici.
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * `lecture.questionsDeLitige` rend TOUTES les questions ouvertes de
+	 * l'établissement — trois cents le premier jour d'un portefeuille sérieux.
+	 * Les poser toutes le même matin est exactement le rythme d'acquittement que
+	 * le plafond de D13 existe pour empêcher : on apprend à taper au lieu de lire,
+	 * et ce sont des qualifications juridiques qu'on tape.
+	 *
+	 * Deux faits, et deux seulement, font d'une question une rangée :
+	 *
+	 *   1. **Le dossier est déjà sur la table aujourd'hui.** Sa créance porte une
+	 *      rangée dans la file — prescription proche, décompte arrêtable, échéance
+	 *      de procédure. La réponse de litige décide de ce qu'on peut faire de ce
+	 *      dossier-là, aujourd'hui. C'est le cas que § 4.x dessine en deux rangées
+	 *      côte à côte : « Durand, prescription dans 41 jours » puis « Durand : la
+	 *      facture a-t-elle été contestée par écrit ? ».
+	 *   2. **Le logiciel a une réponse à proposer.** Une réserve a été lue sur une
+	 *      pièce, le battement a posé la proposition, et elle attend. « Le logiciel
+	 *      décide, le gérant confirme » : ne pas la montrer ferait ressaisir ce
+	 *      qu'on a lu à sa place.
+	 *
+	 * ⚠️ LES DEUX SE CALCULENT SUR CE QUE L'ÉCRAN TIENT DÉJÀ — le flux et les
+	 * propositions du jour — donc aucune lecture de plus. Trier côté serveur
+	 * obligerait la requête à rejouer la surveillance entière pour connaître le
+	 * premier fait, ce qui coûterait la file entière une seconde fois.
+	 */
+	const questionParCreance = new Map((questionsDeLitige ?? []).map((q) => [q.creanceId as string, q]));
+	const montantDeLaCreance = new Map(
+		(creances ?? []).map((c) => [c._id as string, c.principalRestantDu])
+	);
+
+	/**
+	 * LA CRÉANCE QUE VISE UNE RANGÉE DONT L'IDENTIFIANT N'EST PAS UNE CRÉANCE.
+	 *
+	 * ⚠️ UNE RANGÉE DE LITIGE NE PEUT PAS PORTER L'IDENTIFIANT DE SA CRÉANCE : sa
+	 * créance en porte déjà une, et deux rangées de même clé se surligneraient
+	 * ensemble et se battraient pour `?ligne=`. Elle porte donc un identifiant
+	 * préfixé, DÉRIVÉ de la créance — donc stable d'un rechargement à l'autre,
+	 * ce qui est la condition pour que l'adresse rouvre la même preuve demain.
+	 */
+	const creanceDeLaRangee = new Map<string, string>();
+
+	const rangeeDeLitige = (
+		question: NonNullable<typeof questionsDeLitige>[number],
+		urgence: UrgenceRangee
+	): RangeeDeLaFile => {
+		const creanceId = question.creanceId as string;
+		const id = `litige:${creanceId}`;
+		creanceDeLaRangee.set(id, creanceId);
+
+		const proposition = propositionLitigeDe.get(creanceId);
+
+		return {
+			genre: 'LITIGE' as const,
+			id,
+			debiteurId: question.debiteurId as string,
+			debiteur: nomDuDebiteur.get(question.debiteurId as string) ?? 'Client sans dénomination',
+			portees: ['AUJOURDHUI', 'A_TRANCHER'],
+			ouvrable: true,
+			// La question du domaine, MOT POUR MOT. `litige.ts` la formule pour être
+			// répondue en regardant sa boîte mail ; la reformuler ici en ferait une
+			// seconde version, qui dériverait de la première.
+			question: question.question,
+			urgence,
+			montant: montantDeLaCreance.get(creanceId) ?? null,
+			/*
+			  ⚠️ SEULEMENT SI ELLE PORTE SUR LA QUESTION AFFICHÉE. Une proposition
+			  posée sur un autre fait s'afficherait sous une question à laquelle elle
+			  ne répond pas, et « Retenir » écrirait ailleurs que ce qu'on lit.
+			*/
+			...(proposition === undefined || proposition.champ !== question.cle
+				? {}
+				: { proposition: gestesDe(proposition) }),
+			onRepondre: (reponse: 'OUI' | 'NON' | 'INCONNU') => {
+				setLitigeEnCours(id);
+				void declarerFait({
+					creanceId: question.creanceId,
+					cle: question.cle,
+					reponse
+				}).finally(() => setLitigeEnCours(null));
+			},
+			enCours: litigeEnCours === id,
+			pli: {
+				libelle: { un: 'question de litige', plusieurs: 'questions de litige' },
+				rienATrancher: false
+			}
+		};
+	};
+
+	/**
+	 * ⚠️ LA RANGÉE DE LITIGE SUIT CELLE DE SA CRÉANCE, et ce n'est pas cosmétique.
+	 * D6 sépare la composition de la réponse de litige pour qu'un tap unique
+	 * n'emporte pas deux qualifications ; les éloigner l'une de l'autre ferait
+	 * payer cette séparation par un balayage de la file entière.
+	 */
+	const rangeesAvecLitige: RangeeDeLaFile[] = [];
+	const litigePose = new Set<string>();
+	for (const rangee of rangeesDuFlux) {
+		rangeesAvecLitige.push(rangee);
+		const question = estUneCreance.has(rangee.id) ? questionParCreance.get(rangee.id) : undefined;
+		if (question === undefined || litigePose.has(rangee.id)) continue;
+		litigePose.add(rangee.id);
+		// L'urgence de la question est celle du dossier qu'elle bloque : une
+		// créance qui se prescrit dans 41 jours n'attend pas sa réponse plus
+		// longtemps qu'elle n'attend le reste.
+		rangeesAvecLitige.push(
+			rangeeDeLitige(question, rangee.genre === 'OBSTACLE' ? rangee.urgence : 'NORMALE')
+		);
+	}
+
+	/*
+	  ET CELLES QUE SEULE UNE PROPOSITION APPELLE. Leur créance n'a rien à
+	  l'échéance aujourd'hui ; c'est le logiciel qui a quelque chose à dire, et
+	  l'urgence est donc celle d'un suivi, pas d'un délai.
+	*/
+	for (const [creanceId, proposition] of propositionLitigeDe) {
+		if (litigePose.has(creanceId)) continue;
+		const question = questionParCreance.get(creanceId);
+		// La question a été répondue depuis que la proposition a été posée : la
+		// reposer redemanderait ce qui vient d'être tranché. La proposition reste
+		// en base, datée — c'est la trace de ce qui a été proposé ce jour-là.
+		if (question === undefined || proposition.champ !== question.cle) continue;
+		litigePose.add(creanceId);
+		rangeesAvecLitige.push(rangeeDeLitige(question, 'NORMALE'));
+	}
+
+	// ── LE RAPPROCHEMENT D'UN VIREMENT, UNE RANGÉE POUR L'ÉTABLISSEMENT ──────
+
+	/**
+	 * LES CLIENTS CHEZ QUI UN RAPPROCHEMENT A DE LA MATIÈRE.
+	 *
+	 * ⚠️ « FACTURES OUVERTES », PAS « ENCOURS ». Une facture couverte au centime
+	 * par des règlements mais restée `IMPAYEE` pèse zéro dans l'encours et se
+	 * rapproche quand même ; un client à jour, lui, n'a rien à solder et n'a rien
+	 * à faire dans cette liste.
+	 */
+	const debiteursRapprochables: DebiteurRapprochable[] = (debiteurs ?? [])
+		.filter((debiteur) => debiteur.facturesOuvertes > 0)
+		.map((debiteur) => ({
+			id: debiteur._id as string,
+			denomination: debiteur.denomination,
+			facturesOuvertes: debiteur.facturesOuvertes,
+			encours: debiteur.encours
+		}));
+
+	function chercherLettrage(saisi: string, date: string) {
+		if (debiteurLettrage === null) return;
+		setErreurLettrage(null);
+		setMontantCherche(null);
+		try {
+			// `depuisEuros` refuse trois décimales, NaN et la notation exponentielle.
+			// Un montant mal lu ici deviendrait un règlement faux en base.
+			setMontantCherche(enCentimes(depuisEuros(saisi.trim().replace(/\s/g, ''))));
+			setDateReglement(date.trim());
+		} catch {
+			setErreurLettrage(
+				`« ${saisi} » n’est pas un montant en euros. Deux décimales au plus, sans arrondi.`
+			);
+		}
+	}
+
+	async function soldeLesFactures(references: readonly string[], total: bigint) {
+		if (debiteurLettrage === null) return;
+		setErreurLettrage(null);
+		try {
+			await appliquerLettrage({
+				debiteurId: debiteurLettrage,
+				references: [...references],
+				montant: total,
+				date: dateReglement
+			});
+			// Soldées : la recherche a fait son travail. La laisser affichée
+			// proposerait de solder une seconde fois des factures qui ne sont plus
+			// candidates, et le serveur refuserait — un bouton qui ne peut plus rien.
+			setMontantCherche(null);
+		} catch (e) {
+			// Le refus vient du serveur et NOMME ce qu'il a compté — « les factures
+			// choisies font 4 810,00 €, pas 4 820,00 € ». Le reformuler perdrait le
+			// seul détail qui permet de reprendre.
+			setErreurLettrage(e instanceof Error ? e.message : 'Rapprochement refusé.');
+		}
+	}
+
+	/**
+	 * UNE SEULE RANGÉE POUR TOUT L'ÉTABLISSEMENT, ET ELLE NOMME SON CLIENT.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ POURQUOI PAS UNE RANGÉE PAR CLIENT
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * `ui/lettrage.tsx` se rend replié, en une ligne intitulée « Rapprocher un
+	 * virement ». Quarante clients donneraient quarante lignes identiques, qu'on
+	 * ne peut distinguer qu'en les ouvrant : le contraire d'un énoncé de travail.
+	 * Et surtout, le produit n'a AUCUNE source qui dise de qui vient un virement —
+	 * un règlement que l'import ne sait rattacher est compté puis jeté — donc
+	 * aucune de ces quarante rangées ne saurait dire pourquoi elle est là.
+	 *
+	 * Une rangée, un client à choisir dans une liste que le logiciel a fermée :
+	 * c'est la seule répartition honnête entre ce qu'il sait et ce que le gérant
+	 * est seul à savoir. Elle disparaît quand plus aucune facture n'est ouverte.
+	 *
+	 * ⚠️ `debiteurId: null` COMME LES DÉPÔTS. La rangée vise l'établissement, pas
+	 * un client : la ranger sous celui qu'on vient de choisir la ferait sauter
+	 * d'un client à l'autre en vue Par client, au milieu d'une saisie.
+	 */
+	const rangeesDeLettrage: RangeeDeLaFile[] =
+		debiteursRapprochables.length === 0
+			? []
+			: [
+					{
+						genre: 'LETTRAGE' as const,
+						id: 'lettrage',
+						debiteurId: null,
+						debiteur: 'Rapprocher un virement',
+						portees: ['AUJOURDHUI', 'A_TRANCHER'],
+						ouvrable: false,
+						lettrage: {
+							proposition: propositionLettrage ?? null,
+							enCours: montantCherche !== null && propositionLettrage === undefined,
+							erreur: erreurLettrage,
+							onChercher: chercherLettrage,
+							onAppliquer: (references, total) => void soldeLesFactures(references, total),
+							debiteurs: debiteursRapprochables,
+							debiteurChoisi: debiteurLettrage,
+							onDebiteur: (id) => {
+								// Changer de client JETTE la proposition en cours : elle porte
+								// les factures d'un autre, et solder les mauvaises laisserait
+								// les vraies en impayé.
+								setDebiteurLettrage(id as Id<'debiteurs'>);
+								setMontantCherche(null);
+								setErreurLettrage(null);
+							}
+						},
+						pli: {
+							libelle: { un: 'rapprochement possible', plusieurs: 'rapprochements possibles' },
+							// Elle ne se replie pas : c'est le SEUL endroit du produit où un
+							// virement groupé s'enregistre, et un pli la rendrait injoignable.
+							rienATrancher: false
+						}
+					}
+				];
+
+	const rangees = [...rangeesAvecLitige, ...rangeesDeLettrage, ...rangeesDeDepot];
 
 	// ── LA TÊTE, ET LES DEUX NOMBRES ─────────────────────────────────────────
 
@@ -756,7 +1098,13 @@ function File() {
 			? null
 			: estUneCreance.has(ligne)
 				? (ligne as Id<'creances'>)
-				: ((creanceDuDebiteur.get(ligne) ?? null) as Id<'creances'> | null);
+				: // ⚠️ `creanceDeLaRangee` D'ABORD : une rangée de litige porte un
+					// identifiant préfixé, qui n'est ni une créance ni un débiteur. Sans
+					// cette résolution, la rangée s'ouvrirait sur rien — le défaut exact
+					// que `ouvrable` existe pour éviter, remis à l'autre bout.
+					((creanceDeLaRangee.get(ligne) ??
+						creanceDuDebiteur.get(ligne) ??
+						null) as Id<'creances'> | null);
 
 	const valeur: FileAffichee = {
 		tete: {
