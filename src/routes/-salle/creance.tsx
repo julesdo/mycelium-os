@@ -1,13 +1,16 @@
-import type { ReactNode } from 'react';
-import type { CleAnalyse, CreanceAffichee, CreanceOuverte } from '../../screens/creance';
-import { EcranAnalyseEnAttente, EcranCreance, analyseParDefaut } from '../../screens/creance';
-import { EcranDecompte } from '../../screens/analyses/decompte';
-import { EcranLitige, type ConditionAConfirmer } from '../../screens/analyses/litige';
-import { EcranRelances } from '../../screens/analyses/relances';
-import type { RisqueAffiche } from '../../screens/analyses/risques';
-import { EcranRisques } from '../../screens/analyses/risques';
-import { EcranSolidite } from '../../screens/analyses/solidite';
-import { additionner, depuisCentimes, soustraire } from '../../lib/socle/montants';
+import type {
+	ConditionAConfirmer,
+	CreanceOuverte,
+	RisqueAffiche
+} from '../../screens/creance';
+import { EcranCreance } from '../../screens/creance';
+import { additionner, depuisCentimes, enCentimes, soustraire } from '../../lib/socle/montants';
+import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
+import {
+	libelleEvenement,
+	suivreProcedure,
+	type EvenementSurvenu
+} from '../../lib/verticales/recouvrement/apres-procedure';
 import {
 	decompterCreance,
 	type FacturePourDecompte,
@@ -20,6 +23,7 @@ import {
 } from '../../lib/verticales/recouvrement/deduction';
 import { periodesDeTauxParDefaut } from '../../lib/verticales/recouvrement/pays/france/taux';
 import {
+	prescriptionDe,
 	regimePrescription,
 	type SecteurCreance
 } from '../../lib/verticales/recouvrement/pays/france/prescription';
@@ -48,8 +52,14 @@ import {
 	composerRelance,
 	type ElementsRelance
 } from '../../lib/verticales/recouvrement/relance';
-import type { DecompteAffiche, NiveauAffiche, SoliditeAffichee } from '../../ui';
-import { ETABLISSEMENT_DEMO } from './communes';
+import {
+	TYPES_PIECE,
+	type DecompteAffiche,
+	type NiveauAffiche,
+	type PieceAffichee,
+	type SoliditeAffichee
+} from '../../ui';
+import { BARREAUX_DEMO, CARNET_DEMO, ETABLISSEMENT_DEMO, voieDeLaCreance } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
 /**
@@ -158,7 +168,46 @@ const REPONSES_LITIGE_TERMINEES_DEMO: Reponses = {
  * (`src/lib/convex/recouvrement/lecture.ts`, lignes 494 à 501) : la rangée qui
  * résume et la page qui détaille doivent montrer le même compte.
  */
-const PIECES_DEMO: readonly ClePiece[] = ['FACTURE', 'BON_DE_COMMANDE'];
+const PIECES_RATTACHEES_DEMO: readonly ClePiece[] = ['FACTURE', 'BON_DE_COMMANDE'];
+
+/**
+ * Les pièces telles que la section 6 les montre — le fichier déposé, ce que la
+ * lecture en a tiré, et son classement.
+ *
+ * ⚠️ ÉCRITES, et c'est la seule liste de ce fichier qui le soit : aucune
+ * fonction du domaine ne produit un dépôt. Leurs types correspondent aux clés
+ * de `PIECES_RATTACHEES_DEMO`, sans quoi la section des pièces et la pyramide
+ * de preuves montreraient deux comptes différents sur le même écran. La
+ * troisième est `INDETERMINE` : une lecture qui n'a rien conclu se voit, elle
+ * ne se devine pas.
+ */
+const PIECES_DEMO: readonly PieceAffichee[] = [
+	{
+		_id: 'demo-piece-facture',
+		type: 'FACTURE',
+		statut: 'LUE',
+		filename: 'FA-2026-118.pdf',
+		reference: 'FA-2026-118',
+		dateDocument: '2026-04-01',
+		constat: 'La facture du dossier, lue et rapprochée.'
+	},
+	{
+		_id: 'demo-piece-bc',
+		type: 'BON_DE_COMMANDE',
+		statut: 'LUE',
+		filename: 'BC-2026-118.pdf',
+		reference: 'BC-2026-118',
+		dateDocument: '2026-03-18',
+		constat: 'Commande signée par le client.'
+	},
+	{
+		_id: 'demo-piece-scan',
+		type: 'INDETERMINE',
+		statut: 'A_CLASSER',
+		filename: 'scan_20260612.jpg',
+		constat: 'La lecture n’a rien conclu : ce document attend son classement.'
+	}
+];
 
 /** Un règlement, dans la forme de la table `reglements`. */
 interface ReglementDemo {
@@ -246,7 +295,7 @@ const CONDITIONS_DEMO = conditionsDepuisReponses(REPONSES_LITIGE_DEMO);
 function qualificationDepuisReponses(reponses: Reponses) {
 	return qualifier({
 		...conditionsDepuisReponses(reponses),
-		piecesFournies: PIECES_DEMO,
+		piecesFournies: PIECES_RATTACHEES_DEMO,
 		signauxContestation: signauxDepuisFaits(reponses),
 		santeDebiteur: SANTE_DEBITEUR_DEMO,
 		retardsAnterieurs: 0
@@ -320,7 +369,7 @@ const PROCEDURES_DEMO = Object.values(PROCEDURES).map((procedure) => ({
 }));
 
 /** La pyramide de preuves de la famille : la rangée en montre le compte, la page de solidité le détail. */
-const PYRAMIDE_DEMO = pyramideDePreuves(PIECES_DEMO);
+const PYRAMIDE_DEMO = pyramideDePreuves(PIECES_RATTACHEES_DEMO);
 
 /**
  * Une facture, telle que `figerDecompte` la passe au calcul
@@ -410,29 +459,6 @@ const RELANCES_SUSPENDUES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements
 	constatRegistre: CONSTAT_REGISTRE_DEMO
 });
 
-/** La rangée de la créance, calculée depuis les entrées de la famille : aucun de ses chiffres n'est écrit ici. */
-const CREANCE_DEMO: CreanceAffichee = {
-	debiteur: DEBITEUR_DEMO,
-	debiteurId: 'demo-debiteur',
-	santeDebiteur: SANTE_DEBITEUR_DEMO,
-	eligible: QUALIFICATION_DEMO.eligible,
-	principalRestantDu: PRINCIPAL_RESTANT_DU_DEMO,
-	factures: FACTURES_DEMO.map((facture) => ({ _id: facture.reference })),
-	questions: CONDITIONS_A_CONFIRMER_DEMO,
-	litige: litigeDepuisReponses(REPONSES_LITIGE_DEMO),
-	risques: QUALIFICATION_DEMO.risques,
-	solidite: { etablies: PYRAMIDE_DEMO.etablies, attendues: PYRAMIDE_DEMO.attendues },
-	relances: RELANCES_SUSPENDUES_DEMO,
-	procedures: PROCEDURES_DEMO,
-	// Calculée comme `creanceComplete` la rend (`lecture.ts`, lignes 440 et 672).
-	regimePrescriptionNote: regimePrescription(SECTEUR_DEMO).note
-};
-
-/** Ce que la démonstration du décompte partage entre son état prêt et son état vide. */
-const DECOMPTE_BASE_DEMO = {
-	debiteur: DEBITEUR_DEMO,
-	onTelecharger: () => undefined
-};
 
 /**
  * Les deux propositions du questionnaire (A4 et A10), composées par le DOMAINE
@@ -478,15 +504,6 @@ function litigeDepuisForme(forme: FormeLitige) {
 const FORMES_LITIGE_DEMO: Readonly<Record<string, FormeLitige>> = {
 	litigieux: { reponses: REPONSES_LITIGE_LITIGIEUSES_DEMO, propositions: [] },
 	proposees: { reponses: {}, propositions: PROPOSITIONS_LITIGE_DEMO }
-};
-
-/** Ce que la démonstration du litige partage entre son état prêt, sa variante et son état vide. */
-const LITIGE_BASE_DEMO = {
-	debiteur: DEBITEUR_DEMO,
-	enCours: false,
-	erreur: null,
-	onDeclarer: () => undefined,
-	onRepondre: () => undefined
 };
 
 // INCONNUE, la santé que l'import pose tant que le radar n'a rien relevé, et non celle de la famille : suspendus, les deux premiers niveaux cacheraient leurs brouillons.
@@ -557,188 +574,267 @@ const FORMES_SOLIDITE_DEMO: Readonly<Record<string, SoliditeAffichee>> = {
 		pyramideDePreuves(ETAGES_DE_PREUVE.flatMap((etage) => etage.pieces))
 	)
 };
+/**
+ * LA CRÉANCE DE LA FAMILLE, ASSEMBLÉE EN UNE SEULE FOIS.
+ *
+ * ⚠️ UNE FONCTION, ET PAS SEPT CONSTANTES. La page est une seule page : ses
+ * neuf sections lisent le même dossier, et une variante qui ne changerait
+ * qu'une constante sur sept ferait cohabiter à l'écran un litige répondu avec
+ * un risque de contestation, ou une voie engagée sur des conditions encore
+ * ouvertes. Tout se recalcule ici depuis les MÊMES entrées, par les fonctions
+ * du domaine que les requêtes du produit appellent.
+ */
+function creanceDemo({
+	reponses = REPONSES_LITIGE_DEMO,
+	propositions = [],
+	relances = RELANCES_SUSPENDUES_DEMO,
+	solidite = SOLIDITE_DEMO,
+	pieces = PIECES_DEMO,
+	journal = null,
+	commercants = false
+}: {
+	readonly reponses?: Reponses;
+	readonly propositions?: readonly PropositionFait[];
+	readonly relances?: readonly NiveauAffiche[];
+	readonly solidite?: SoliditeAffichee;
+	readonly pieces?: readonly PieceAffichee[];
+	/** Les faits consignés d'une voie engagée, ou `null` quand aucune ne court. */
+	readonly journal?: readonly EvenementSurvenu[] | null;
+	/** Les deux qualités de commerçant acquises : ce qu'il faut pour engager une voie. */
+	readonly commercants?: boolean;
+} = {}): CreanceOuverte {
+	const qualite: EtatCritere = commercants ? 'ok' : 'unknown';
+	const conditions = conditionsDepuisReponses(reponses, qualite, qualite);
+	const qualification = qualifier({
+		...conditions,
+		piecesFournies: PIECES_RATTACHEES_DEMO,
+		signauxContestation: signauxDepuisFaits(reponses),
+		santeDebiteur: SANTE_DEBITEUR_DEMO,
+		retardsAnterieurs: 0
+	});
 
-/** La créance de la famille, telle que sa route la passe à l'écran une fois lue. */
-const CREANCE_OUVERTE_DEMO: CreanceOuverte = {
-	identifiant: 'demo',
-	creance: CREANCE_DEMO,
-	etatProcedure: null,
-	totalDecompte: DECOMPTE_DEMO.total
-};
+	return {
+		identifiant: 'demo',
+		debiteur: DEBITEUR_DEMO,
+		debiteurId: 'demo-debiteur',
+		santeDebiteur: SANTE_DEBITEUR_DEMO,
+		eligible: qualification.eligible,
+		nombreFactures: FACTURES_DEMO.length,
+		principalRestantDu: enCentimes(PRINCIPAL_RESTANT_DU_DEMO),
+
+		// Les deux dates de l'en-tête, lues sur les factures comme la route les lit.
+		echeanceLaPlusAncienne: FACTURES_DEMO.map((facture) => facture.dateEcheance).reduce(
+			(tot, date) => (date < tot ? date : tot)
+		),
+		// La prescription que le domaine pose sur la facture : la date d'exigibilité
+		// plus le délai du régime retenu. Jamais écrite à la main.
+		prescriptionLaPlusProche:
+			prescriptionDe(
+				[
+					FACTURES_DEMO.map((facture) => facture.dateExigibilite).reduce((tot, date) =>
+						date < tot ? date : tot
+					)
+				],
+				SECTEUR_DEMO
+			).datePrescription ?? null,
+
+		// Le montant du jour : le même calcul que `preparerArret` projette.
+		montantDuJour: DECOMPTE_DEMO,
+		refusDuMontant: null,
+		fiches: etatDuReferentiel().fiches,
+		decomptesArretes: [
+			{ id: 'demo-decompte', arreteAu: DECOMPTE_DEMO.arreteAu, total: DECOMPTE_DEMO.total }
+		],
+		onTelechargerLaPiece: () => undefined,
+
+		/*
+		  ⚠️ L'HYPOTHÈSE VIENT DU DOMAINE, comme dans la route : `regimePrescription`
+		  dit le délai retenu ET pourquoi. Recopier la phrase ici montrerait un
+		  produit qui n'existe pas.
+		*/
+		hypotheses: [
+			{
+				cle: 'regime-prescription',
+				enonce: regimePrescription(SECTEUR_DEMO).note,
+				fait: 'Le secteur d’activité de ce client détermine le délai de prescription.',
+				ceQuiLaLeve:
+					'Préciser le secteur du client, sur sa fiche, fixe le délai réellement applicable.'
+			}
+		],
+		/*
+		  Les deux seules sources d'angle mort, comme la route les assemble : ce que
+		  la machine à états DÉCLARE, et les factures dont la prescription ne se
+		  compte pas. Celles de la famille portent toutes une date d'exigibilité
+		  lisible : la seconde liste est donc vide, et la section le dit en toutes
+		  lettres plutôt que d'afficher un zéro.
+		*/
+		anglesMorts: (journal === null ? [] : suiviDepuisJournal(journal).anglesMorts).map(
+			(constat, rang) => ({ cle: `procedure-${rang}`, constat, montantEnJeu: null })
+		),
+
+		litige: litigeDepuisReponses(reponses, propositions),
+		conditions: conditionsADemander(conditions)
+			// `certaine` en est exclue : elle se déduit des faits déclarés au litige.
+			.filter((condition) => condition !== 'certaine')
+			.map((condition) => ({
+				condition,
+				libelle: `Pouvez-vous confirmer ${
+					LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
+				} de cette créance ?`
+			})),
+		onDeclarerFait: () => undefined,
+		onRepondreCondition: () => undefined,
+
+		solidite,
+		risques: qualification.risques,
+
+		pieces,
+		optionsTypePiece: TYPES_PIECE,
+		onDeposer: () => undefined,
+		onClasser: () => undefined,
+		onRetirer: () => undefined,
+
+		suivi: journal === null ? null : suiviDepuisJournal(journal),
+		voies: Object.values(PROCEDURES).map((procedure) => voieDeLaCreance(procedure, conditions)),
+		carnet: CARNET_DEMO,
+		// Aucun intervenant rattaché : la page relit alors « Moi-même ».
+		intervenantChoisi: null,
+		nomIntervenant: null,
+		onConsigner: () => undefined,
+		onDeclarerVoie: () => undefined,
+		onRattacher: () => undefined,
+		onAjouterFiche: () => undefined,
+		onOublierFiche: () => undefined,
+		rechercheCommissaireOuverte: false,
+		etatRechercheCommissaire: { phase: 'REPOS' },
+		onOuvrirRechercheCommissaire: () => undefined,
+		onFermerRechercheCommissaire: () => undefined,
+		onChercherCommissaire: () => undefined,
+		onRetenirEtude: () => undefined,
+		rechercheAvocatOuverte: false,
+		repertoire: BARREAUX_DEMO,
+		barreau: '',
+		specialite: '',
+		etatRechercheAvocat: { phase: 'AUCUN_BARREAU' },
+		onOuvrirRechercheAvocat: () => undefined,
+		onFermerRechercheAvocat: () => undefined,
+		onChoisirBarreau: () => undefined,
+		onChoisirSpecialite: () => undefined,
+		onRetenirAvocat: () => undefined,
+
+		relances,
+
+		enCours: false,
+		erreur: null,
+		aujourdHui: AUJOURD_HUI_DEMO
+	};
+}
 
 /**
- * UNE ANALYSE, DANS LE VOLET DROIT DE SA CRÉANCE.
- *
- * Le maître est prêt, comme en production quand on ouvre une analyse depuis la
- * liste : l'état choisi dans la salle est celui de l'analyse. À 1024 px et
- * au-delà les deux volets se voient ; en dessous, l'analyse seule.
+ * Le suivi, tel que `lireSuivi` le rend (`apresProcedure.ts`) : le journal trié
+ * par date du FAIT, rejoué par `suivreProcedure`, et chaque fait nommé par
+ * `libelleEvenement`. Une clé inconnue garde sa clé, comme dans le produit.
  */
-function AvecLaCreance({
-	analyseOuverte,
-	children
-}: {
-	analyseOuverte: CleAnalyse | null;
-	children: ReactNode;
-}) {
-	return (
-		<EcranCreance
-			donnees={lectureDemo('pret', CREANCE_OUVERTE_DEMO)}
-			detail={children}
-			analyseOuverte={analyseOuverte}
-		/>
+function suiviDepuisJournal(evenements: readonly EvenementSurvenu[]) {
+	const journal = [...evenements].sort((a, b) =>
+		a.survenuLe < b.survenuLe ? -1 : a.survenuLe > b.survenuLe ? 1 : 0
 	);
+	const suivi = suivreProcedure(VOIE_ENGAGEE_DEMO, journal, ENGAGEE_LE_DEMO);
+
+	return {
+		etat: suivi.etat,
+		libelle: suivi.libelle,
+		constat: suivi.constat,
+		depuisLe: suivi.depuisLe,
+		echeances: suivi.echeances.map((echeance) => ({ ...echeance })),
+		anglesMorts: [...suivi.anglesMorts],
+		suites: suivi.suites.map((suite) => ({ ...suite })),
+		terminal: suivi.terminal,
+		journal: journal.map((evenement) => ({
+			...evenement,
+			libelle: libelleEvenement(VOIE_ENGAGEE_DEMO, evenement.cle) ?? evenement.cle
+		}))
+	};
 }
 
-function DecompteDemo({ etat }: { etat: EtatDemo }) {
-	return (
-		<EcranDecompte
-			identifiant="demo"
-			donnees={lectureDemo(
-				etat,
-				{ ...DECOMPTE_BASE_DEMO, dernier: DECOMPTE_DEMO, dernierId: 'demo-decompte' },
-				{ ...DECOMPTE_BASE_DEMO, dernier: null, dernierId: null }
-			)}
-		/>
-	);
-}
+/** La voie déclarée engagée, et le jour déclaré : l'origine des délais. */
+const VOIE_ENGAGEE_DEMO = 'injonction-de-payer';
+const ENGAGEE_LE_DEMO = '2026-04-15';
 
-/** Le volet droit de la créance nue, choisi par la même fonction que l'index de la route. */
-function AnalyseParDefautDemo() {
-	return analyseParDefaut(CREANCE_DEMO) === 'litige' ? (
-		<LitigeDemo etat="pret" />
-	) : (
-		<DecompteDemo etat="pret" />
-	);
-}
+/**
+ * ⚠️ L'ORDONNANCE RENDUE, PAS ENCORE SIGNIFIÉE. C'est l'état où court la
+ * caducité, l'échéance la plus dangereuse du produit : passée, l'ordonnance est
+ * perdue et tout est à reprendre pendant que la prescription court.
+ */
+const JOURNAL_DEMO: readonly EvenementSurvenu[] = [
+	{ cle: 'ordonnance-rendue', survenuLe: '2026-06-10' }
+];
 
-function LitigeDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
-	return (
-		<EcranLitige
-			identifiant="demo"
-			donnees={lectureDemo(
-				etat,
-				{
-					...LITIGE_BASE_DEMO,
-					...litigeDepuisForme(formeDemo(variante, FORME_LITIGE_DEMO, FORMES_LITIGE_DEMO)),
-					conditions: CONDITIONS_A_CONFIRMER_DEMO
-				},
-				{
-					...LITIGE_BASE_DEMO,
-					...litigeDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO),
-					// Conditions de la famille avec les deux qualités de commerçant à
-					// `'ok'`, seule entrée changée ici : la liste est vide parce que la
-					// condition est alors connue.
-					conditions: conditionsADemander(
-						conditionsDepuisReponses(REPONSES_LITIGE_TERMINEES_DEMO, 'ok', 'ok')
-					)
-						.filter((condition) => condition !== 'certaine')
-						.map((condition) => ({
-							condition,
-							libelle: `Pouvez-vous confirmer ${
-								LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
-							} de cette créance ?`
-						}))
-				}
-			)}
-		/>
-	);
-}
+/** Le même journal, puis la signification et l'absence d'opposition : la voie arrive au titre exécutoire. */
+const JOURNAL_TERMINE_DEMO: readonly EvenementSurvenu[] = [
+	...JOURNAL_DEMO,
+	{ cle: 'ordonnance-signifiee', survenuLe: '2026-06-24' },
+	{ cle: 'absence-opposition-constatee', survenuLe: '2026-08-20' }
+];
+
+/**
+ * LES FORMES NOMMÉES DE LA PAGE.
+ *
+ * Chacune change UNE entrée, et tout le reste se recalcule autour : c'est ce
+ * qui empêche une variante de montrer un écran que le produit ne peut pas
+ * produire.
+ */
+const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
+	litigieux: creanceDemo({ reponses: REPONSES_LITIGE_LITIGIEUSES_DEMO }),
+	proposées: creanceDemo({ reponses: {}, propositions: PROPOSITIONS_LITIGE_DEMO }),
+	'litige répondu': creanceDemo({ reponses: REPONSES_LITIGE_TERMINEES_DEMO, commercants: true }),
+	'relances prêtes': creanceDemo({ relances: RELANCES_DEMO }),
+	'sans décompte arrêté': creanceDemo({ relances: RELANCES_SANS_DECOMPTE_DEMO }),
+	'aucune pièce': creanceDemo({
+		solidite: soliditeDepuisPyramide(pyramideDePreuves([])),
+		pieces: []
+	}),
+	'toutes les pièces': creanceDemo({
+		solidite: soliditeDepuisPyramide(
+			pyramideDePreuves(ETAGES_DE_PREUVE.flatMap((etage) => etage.pieces))
+		)
+	}),
+	/*
+	  ⚠️ LA VOIE ENGAGÉE SUPPOSE LES CONDITIONS ACQUISES, et c'est pour ça que
+	  `commercants` les acquiert. Montrer une injonction engagée sur une créance
+	  qui pose encore la question de la qualité de commerçant ferait voir un écran
+	  que le produit ne peut pas produire.
+	*/
+	'voie engagée': creanceDemo({
+		reponses: REPONSES_LITIGE_TERMINEES_DEMO,
+		commercants: true,
+		journal: JOURNAL_DEMO
+	}),
+	'voie terminée': creanceDemo({
+		reponses: REPONSES_LITIGE_TERMINEES_DEMO,
+		commercants: true,
+		journal: JOURNAL_TERMINE_DEMO
+	})
+};
+
+/** La créance de la famille, telle que sa route la passe à l'écran une fois lue. */
+const CREANCE_OUVERTE_DEMO: CreanceOuverte = creanceDemo();
 
 export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 	{
 		route: '/app/creance/$id',
 		libelle: 'créance',
+		// Une créance sans données n'existe pas : on ne l'ouvre qu'en la
+		// désignant, et ce qu'elle porte vient de ses factures.
 		vide: false,
-		Demo: ({ etat }) => (
+		variantes: Object.keys(FORMES_CREANCE_DEMO),
+		Demo: ({ etat, variante }) => (
 			<EcranCreance
-				donnees={lectureDemo(etat, CREANCE_OUVERTE_DEMO)}
-				// Comme la route : une créance en erreur emporte son volet droit, et
-				// pendant qu'elle se lit, l'index montre le squelette d'une analyse.
-				detail={
-					etat === 'erreur' ? null : etat === 'attente' ? (
-						<EcranAnalyseEnAttente identifiant="demo" />
-					) : (
-						<AnalyseParDefautDemo />
-					)
-				}
-				analyseOuverte={null}
+				donnees={lectureDemo(
+					etat,
+					formeDemo(variante, CREANCE_OUVERTE_DEMO, FORMES_CREANCE_DEMO)
+				)}
 			/>
-		)
-	},
-	{
-		route: '/app/creance/$id/decompte',
-		libelle: 'décompte',
-		vide: true,
-		Demo: ({ etat }) => (
-			<AvecLaCreance analyseOuverte="decompte">
-				<DecompteDemo etat={etat} />
-			</AvecLaCreance>
-		)
-	},
-	{
-		route: '/app/creance/$id/litige',
-		libelle: 'litige',
-		vide: true,
-		variantes: Object.keys(FORMES_LITIGE_DEMO),
-		Demo: ({ etat, variante }) => (
-			<AvecLaCreance analyseOuverte="litige">
-				<LitigeDemo etat={etat} variante={variante} />
-			</AvecLaCreance>
-		)
-	},
-	{
-		route: '/app/creance/$id/relances',
-		libelle: 'relances',
-		vide: false,
-		variantes: Object.keys(FORMES_RELANCES_DEMO),
-		Demo: ({ etat, variante }) => (
-			<AvecLaCreance analyseOuverte="relances">
-				<EcranRelances
-					identifiant="demo"
-					donnees={lectureDemo(etat, {
-						debiteur: DEBITEUR_DEMO,
-						niveaux: formeDemo(variante, RELANCES_DEMO, FORMES_RELANCES_DEMO)
-					})}
-				/>
-			</AvecLaCreance>
-		)
-	},
-	{
-		route: '/app/creance/$id/risques',
-		libelle: 'risques',
-		vide: true,
-		variantes: Object.keys(FORMES_RISQUES_DEMO),
-		Demo: ({ etat, variante }) => (
-			<AvecLaCreance analyseOuverte="risques">
-				<EcranRisques
-					identifiant="demo"
-					donnees={lectureDemo(
-						etat,
-						{
-							debiteur: DEBITEUR_DEMO,
-							risques: formeDemo(variante, RISQUES_DEMO, FORMES_RISQUES_DEMO)
-						},
-						{ debiteur: DEBITEUR_DEMO, risques: [] }
-					)}
-				/>
-			</AvecLaCreance>
-		)
-	},
-	{
-		route: '/app/creance/$id/solidite',
-		libelle: 'solidité',
-		vide: false,
-		variantes: Object.keys(FORMES_SOLIDITE_DEMO),
-		Demo: ({ etat, variante }) => (
-			<AvecLaCreance analyseOuverte="solidite">
-				<EcranSolidite
-					identifiant="demo"
-					donnees={lectureDemo(etat, {
-						debiteur: DEBITEUR_DEMO,
-						solidite: formeDemo(variante, SOLIDITE_DEMO, FORMES_SOLIDITE_DEMO)
-					})}
-				/>
-			</AvecLaCreance>
 		)
 	}
 ];

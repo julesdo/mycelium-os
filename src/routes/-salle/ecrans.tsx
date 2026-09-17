@@ -6,7 +6,6 @@ import { ECRANS_FILE } from './file';
 import { ECRANS_IMPORT } from './import';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
-import { ECRANS_PROCEDURE } from './procedure';
 import { ECRANS_VOLET } from './volet';
 
 /**
@@ -45,7 +44,14 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	...ECRANS_VOLET,
 	...ECRANS_CREANCE,
 	...ECRANS_PIECE,
-	...ECRANS_PROCEDURE,
+	/*
+	  ⚠️ `ECRANS_PROCEDURE` A DISPARU AVEC SA ROUTE. `/app/creance/$id/procedure`
+	  n'existe plus : la procédure est une SECTION de la page de créance, et ses
+	  deux états — la voie engagée, la voie terminée — sont devenus des variantes
+	  de l'entrée `créance`, qui les rend avec le reste du dossier autour. Les
+	  regarder isolément montrait un écran dont on ne voyait ni les conditions ni
+	  le décompte qui les fondent.
+	*/
 	...ECRANS_DEBITEURS,
 	...ECRANS_IMPORT,
 	...ECRANS_COMPTE

@@ -188,7 +188,9 @@ function VoletDossier({ dossier }: { dossier: DossierAffiche }) {
 
 			<ListeAnalyses>
 				<LigneAnalyse
-					vers="/app/creance/$id/procedure"
+					// La créance est une PAGE, en un seul défilement : la procédure y est
+					// une section, et n'a plus d'adresse à lui.
+					vers="/app/creance/$id"
 					parametres={{ id: dossier.creanceId }}
 					titre="Le dossier complet"
 					valeur="Ouvrir"
