@@ -10,9 +10,14 @@
  */
 export const TITRE_ECRAN = {
 	debiteurs: 'Vos débiteurs',
-	abonnement: 'Abonnement',
-	equipe: 'Équipe',
-	reglages: 'Réglages',
-	donnees: 'Vos données',
+	/*
+	  ⚠️ CINQ NOMS SONT PARTIS AVEC LEURS ADRESSES. « Abonnement », « Équipe »,
+	  « Réglages » et « Vos données » nommaient quatre écrans que `/app/compte`
+	  remplace : ce sont maintenant des SECTIONS d'une même page, et le titre
+	  d'une section vit dans la section, pas dans une table de replis. Un nom
+	  laissé ici après la mort de son écran est un commentaire faux dans un
+	  fichier vert.
+	*/
+	compte: 'Votre compte',
 	imports: 'Importer vos factures'
 } as const;

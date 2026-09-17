@@ -74,8 +74,14 @@ export interface FicheASaisir {
 	readonly ressort?: string;
 }
 
-/** « Avocat · Paris », ou « Avocat » quand le ressort n'a pas été noté. */
-function precisionDeLaFiche(fiche: FicheIntervenant<string>): string {
+/**
+ * « Avocat · Paris », ou « Avocat » quand le ressort n'a pas été noté.
+ *
+ * Exportée depuis que le carnet se lit aussi en LISTE, dans `/app/compte` : la
+ * même fiche s'y écrit de la même façon, sans quoi la carte de la feuille et la
+ * rangée de la section finiraient par ne plus dire la même chose.
+ */
+export function precisionDeLaFiche(fiche: FicheIntervenant<string>): string {
 	const role = libelleRole(fiche.role);
 	return fiche.ressort === undefined || fiche.ressort.trim() === ''
 		? role
@@ -206,13 +212,6 @@ export function ChoixIntervenant<I extends string>({
 	 */
 	onChercherUnAvocat?: () => void;
 }) {
-	const [nom, setNom] = useState('');
-	const [role, setRole] = useState<RoleIntervenant>('AUTRE');
-	const [ressort, setRessort] = useState('');
-
-	const nomSaisi = nom.trim();
-	const ressortSaisi = ressort.trim();
-
 	return (
 		<Popup
 			open={ouverte}
@@ -254,101 +253,138 @@ export function ChoixIntervenant<I extends string>({
 			</PopupContent>
 
 			<PopupContent>
-				<SectionTitle>Ajouter une fiche</SectionTitle>
-
-				{/*
-				  ⚠️ LA RECHERCHE AVANT LA SAISIE, et c'est la règle d'écran n° 1 prise
-				  dans le bon sens : « aucun écran ne demande une saisie que le logiciel
-				  peut déduire ». Un nom d'étude, son adresse et son SIREN se trouvent
-				  dans une source publique ; les faire recopier à la main était un champ
-				  vide que le logiciel aurait pu remplir.
-
-				  ⚠️ ET LA SAISIE MANUELLE RESTE, DESSOUS. Aucune source publique n'est
-				  le tableau d'une profession : une étude qui n'a pas déclaré sa
-				  convention collective est introuvable, et un avocat ne s'y cherche pas
-				  du tout. On remplace une porte par une meilleure, on n'en condamne pas.
-				*/}
-				{onChercherUnCommissaire === undefined && onChercherUnAvocat === undefined ? null : (
-					<List className="mt-cladd-3xs">
-						{onChercherUnCommissaire === undefined ? null : (
-							<ListButton
-								icon={<SearchIcon size={18} />}
-								footer="Les études d’un département, sans quitter l’application"
-								className="verre-bouton"
-								hoverable={false}
-								onClick={onChercherUnCommissaire}
-							>
-								<span className="truncate">Chercher un commissaire de justice</span>
-							</ListButton>
-						)}
-						{/*
-						  ⚠️ LA SECONDE RANGÉE NE DIT PAS LA MÊME CHOSE QUE LA PREMIÈRE, et
-						  c'est voulu : les deux professions ne se cherchent pas dans la même
-						  source. Les études viennent d'un registre interrogé en direct, les
-						  avocats d'un fichier ingéré, daté du jour de sa publication. Écrire
-						  deux fois le même sous-titre ferait croire à deux portes vers un
-						  même annuaire officiel, qui n'existe pas.
-						*/}
-						{onChercherUnAvocat === undefined ? null : (
-							<ListButton
-								icon={<SearchIcon size={18} />}
-								footer="Les avocats d’un barreau, par spécialité déclarée"
-								className="verre-bouton"
-								hoverable={false}
-								onClick={onChercherUnAvocat}
-							>
-								<span className="truncate">Chercher un avocat</span>
-							</ListButton>
-						)}
-					</List>
-				)}
-
-				<div className="mt-cladd-3xs flex flex-col gap-cladd-3xs">
-					<Input
-						size="lg"
-						value={nom}
-						onChange={setNom}
-						placeholder="Nom"
-						infoMessage="Le cabinet ou la personne, tel que vous le nommez."
-					/>
-					<Select
-						className="w-full"
-						surface="cut"
-						size="lg"
-						title="Rôle"
-						options={[...ROLES]}
-						value={role}
-						getOptionValue={(option) => option.cle}
-						onChange={(cle) => setRole(cle)}
-						renderOption={({ value }) => value.libelle}
-						keyboardHints={false}
-					>
-						{libelleRole(role)}
-					</Select>
-					<Input
-						size="lg"
-						value={ressort}
-						onChange={setRessort}
-						placeholder="Ressort"
-						infoMessage="Facultatif. Vide veut dire « non noté », jamais « aucun »."
-					/>
-					<BoutonPrincipal
-						readOnly={nomSaisi === ''}
-						onClick={() => {
-							onAjouter({
-								nom: nomSaisi,
-								role,
-								ressort: ressortSaisi === '' ? undefined : ressortSaisi
-							});
-							setNom('');
-							setRessort('');
-							setRole('AUTRE');
-						}}
-					>
-						Ajouter au carnet
-					</BoutonPrincipal>
-				</div>
+				<SaisirUneFiche
+					onAjouter={onAjouter}
+					onChercherUnCommissaire={onChercherUnCommissaire}
+					onChercherUnAvocat={onChercherUnAvocat}
+				/>
 			</PopupContent>
 		</Popup>
+	);
+}
+
+/**
+ * AJOUTER UNE FICHE AU CARNET : les deux recherches, puis la saisie.
+ *
+ * ⚠️ EXTRAITE, ET PAS RECOPIÉE. Le carnet vit à DEUX endroits depuis
+ * `/app/compte` : dans la feuille « Qui fait l'acte », où l'on choisit qui fait
+ * l'acte d'une créance, et dans la section « Votre carnet », où l'on ne choisit
+ * rien. Une seconde copie du formulaire aurait divergé au premier ajustement,
+ * sans qu'aucun test tombe — et c'est exactement le défaut que ce dépôt combat
+ * partout ailleurs.
+ *
+ * ⚠️ LA RECHERCHE AVANT LA SAISIE, et c'est la règle d'écran n° 1 prise dans le
+ * bon sens : « aucun écran ne demande une saisie que le logiciel peut déduire ».
+ * Un nom d'étude, son adresse et son SIREN se trouvent dans une source
+ * publique ; les faire recopier à la main était un champ vide que le logiciel
+ * aurait pu remplir.
+ *
+ * ⚠️ ET LA SAISIE MANUELLE RESTE, DESSOUS. Aucune source publique n'est le
+ * tableau d'une profession : une étude qui n'a pas déclaré sa convention
+ * collective est introuvable, et un avocat ne s'y cherche pas du tout. On
+ * remplace une porte par une meilleure, on n'en condamne pas.
+ */
+export function SaisirUneFiche({
+	onAjouter,
+	onChercherUnCommissaire,
+	onChercherUnAvocat
+}: {
+	onAjouter: (fiche: FicheASaisir) => void;
+	/** Voir `ChoixIntervenant` : absent, le geste n'apparaît pas — plutôt qu'un bouton mort. */
+	onChercherUnCommissaire?: () => void;
+	onChercherUnAvocat?: () => void;
+}) {
+	const [nom, setNom] = useState('');
+	const [role, setRole] = useState<RoleIntervenant>('AUTRE');
+	const [ressort, setRessort] = useState('');
+
+	const nomSaisi = nom.trim();
+	const ressortSaisi = ressort.trim();
+
+	return (
+		<>
+			<SectionTitle>Ajouter une fiche</SectionTitle>
+
+			{onChercherUnCommissaire === undefined && onChercherUnAvocat === undefined ? null : (
+				<List className="mt-cladd-3xs">
+					{onChercherUnCommissaire === undefined ? null : (
+						<ListButton
+							icon={<SearchIcon size={18} />}
+							footer="Les études d’un département, sans quitter l’application"
+							className="verre-bouton"
+							hoverable={false}
+							onClick={onChercherUnCommissaire}
+						>
+							<span className="truncate">Chercher un commissaire de justice</span>
+						</ListButton>
+					)}
+					{/*
+					  ⚠️ LA SECONDE RANGÉE NE DIT PAS LA MÊME CHOSE QUE LA PREMIÈRE, et
+					  c'est voulu : les deux professions ne se cherchent pas dans la même
+					  source. Les études viennent d'un registre interrogé en direct, les
+					  avocats d'un fichier ingéré, daté du jour de sa publication. Écrire
+					  deux fois le même sous-titre ferait croire à deux portes vers un
+					  même annuaire officiel, qui n'existe pas.
+					*/}
+					{onChercherUnAvocat === undefined ? null : (
+						<ListButton
+							icon={<SearchIcon size={18} />}
+							footer="Les avocats d’un barreau, par spécialité déclarée"
+							className="verre-bouton"
+							hoverable={false}
+							onClick={onChercherUnAvocat}
+						>
+							<span className="truncate">Chercher un avocat</span>
+						</ListButton>
+					)}
+				</List>
+			)}
+
+			<div className="mt-cladd-3xs flex flex-col gap-cladd-3xs">
+				<Input
+					size="lg"
+					value={nom}
+					onChange={setNom}
+					placeholder="Nom"
+					infoMessage="Le cabinet ou la personne, tel que vous le nommez."
+				/>
+				<Select
+					className="w-full"
+					surface="cut"
+					size="lg"
+					title="Rôle"
+					options={[...ROLES]}
+					value={role}
+					getOptionValue={(option) => option.cle}
+					onChange={(cle) => setRole(cle)}
+					renderOption={({ value }) => value.libelle}
+					keyboardHints={false}
+				>
+					{libelleRole(role)}
+				</Select>
+				<Input
+					size="lg"
+					value={ressort}
+					onChange={setRessort}
+					placeholder="Ressort"
+					infoMessage="Facultatif. Vide veut dire « non noté », jamais « aucun »."
+				/>
+				<BoutonPrincipal
+					readOnly={nomSaisi === ''}
+					onClick={() => {
+						onAjouter({
+							nom: nomSaisi,
+							role,
+							ressort: ressortSaisi === '' ? undefined : ressortSaisi
+						});
+						setNom('');
+						setRessort('');
+						setRole('AUTRE');
+					}}
+				>
+					Ajouter au carnet
+				</BoutonPrincipal>
+			</div>
+		</>
 	);
 }

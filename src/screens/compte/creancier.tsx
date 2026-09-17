@@ -10,15 +10,7 @@ import {
 	Surface
 } from '@cladd-ui/react';
 import { Building2Icon, CheckIcon, SearchIcon } from 'lucide-react';
-import {
-	BoutonPrincipal,
-	Champ,
-	PageEcran,
-	dateCourte,
-	sirenLisible,
-	type Lecture
-} from '../../ui';
-import { TITRE_ECRAN } from '../titres';
+import { BoutonPrincipal, Champ, dateCourte, sirenLisible } from '../../ui';
 import { qualiteCommercantDeLaForme } from '../../lib/verticales/recouvrement/pays/france/commercialite';
 
 /** Les trois états d'un critère de qualification. Jamais présumé favorablement. */
@@ -229,17 +221,13 @@ export function FormulaireCreancier({
 
 	return (
 		/*
-		  LA CARTE RESTE, SON TITRE PART. « Votre entreprise, telle qu'elle
-		  apparaît sur un décompte » disait pour la troisième fois ce que le titre
-		  de la page dit déjà : c'est une carte de section sans section à nommer,
-		  donc une `Surface`, pas un `SectionEcran`.
+		  PLUS DE CARTE AUTOUR, ET C'EST LA CONSÉQUENCE DU DÉMÉNAGEMENT. Le
+		  formulaire vivait sur sa propre page, dans une `Surface` qui lui faisait
+		  un cadre ; il vit maintenant DANS la section « Votre établissement » de
+		  `/app/compte`, qui est déjà une carte. Deux cartes emboîtées ne creusent
+		  aucune profondeur — le kit le dit — elles empilent deux bordures.
 		*/
-		<Surface
-			variant="transparent"
-			outline={false}
-			className="verre-carte rounded-cladd-xl"
-			contentClassName="flex flex-col gap-cladd-2xs p-cladd-2xs"
-		>
+		<div className="flex flex-col gap-cladd-2xs">
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 				Ces informations sont figées avec chaque décompte : un document réédité plus tard dit la
 				même chose qu’au jour de son émission.
@@ -434,7 +422,7 @@ export function FormulaireCreancier({
 				{enregistre ? <CheckIcon /> : null}
 				{enregistre ? 'Enregistré' : enCours ? 'Enregistrement…' : 'Enregistrer'}
 			</BoutonPrincipal>
-		</Surface>
+		</div>
 	);
 }
 
@@ -463,7 +451,17 @@ function sousLigneDuCandidat(candidat: EtablissementAuRegistre): string | undefi
 	return morceaux.length === 0 ? undefined : morceaux.join(' · ');
 }
 
-/** Ce que la page affiche : le formulaire, la clé qui le remonte, et l'enregistrement que la route pilote. */
+/**
+ * Ce que la section affiche : le formulaire, la clé qui le remonte, et
+ * l'enregistrement que la route pilote.
+ *
+ * ⚠️ LA `key` SUIT L'ÉTABLISSEMENT, JAMAIS LE PROFIL, et ce n'était pas un
+ * détail de la page disparue. Posée sur la dénomination, elle changeait au
+ * premier enregistrement : Convex met à jour la lecture du profil avant de
+ * résoudre l'écriture, le formulaire se remontait donc en pleine sauvegarde,
+ * « Enregistré » ne s'affichait jamais, et ce qui avait été tapé pendant
+ * l'enregistrement était perdu.
+ */
 export interface CreancierAffiche {
 	readonly initial: ComponentProps<typeof FormulaireCreancier>['initial'];
 	readonly nomEtablissement: string;
@@ -471,29 +469,4 @@ export interface CreancierAffiche {
 	readonly cle: string;
 	readonly onChercherAuRegistre: ComponentProps<typeof FormulaireCreancier>['onChercherAuRegistre'];
 	readonly onEnregistrer: ComponentProps<typeof FormulaireCreancier>['onEnregistrer'];
-}
-
-export function EcranCreancier({ donnees }: { donnees: Lecture<CreancierAffiche> }) {
-	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
-
-	return (
-		<PageEcran
-			entete={{
-				genre: 'poussee',
-				retour: { vers: '/app/parametres', libelle: TITRE_ECRAN.reglages, masqueEnVolets: true },
-				titre: 'Votre entreprise sur un décompte'
-			}}
-			etat={donnees.etat}
-		>
-			{pret === null ? null : (
-				<FormulaireCreancier
-					key={pret.cle}
-					initial={pret.initial}
-					nomEtablissement={pret.nomEtablissement}
-					onChercherAuRegistre={pret.onChercherAuRegistre}
-					onEnregistrer={pret.onEnregistrer}
-				/>
-			)}
-		</PageEcran>
-	);
 }

@@ -259,9 +259,15 @@ function Recherche() {
  * occupe le seul emplacement que toutes les références réservent à l'identité
  * de celui qui regarde.
  *
- * ⚠️ IL MÈNE AUX RÉGLAGES, ET L'ENGRENAGE A DONC DISPARU. Deux cibles pour la
+ * ⚠️ IL MÈNE AU COMPTE, ET L'ENGRENAGE A DONC DISPARU. Deux cibles pour la
  * même destination, à deux cents pixels l'une de l'autre, c'est un choix de
  * plus à faire pour rien — et c'est ce qui gonflait cette barre à huit cibles.
+ *
+ * ⚠️ IL POINTAIT SUR `/app/parametres`, LE HUB DES RÉGLAGES, ET C'EST CETTE
+ * LIGNE QUI A FAIT PARTIR `/app/compte` AVANT LA FILE. Elle était la SEULE
+ * entrée du hub, lui-même seule entrée de l'abonnement, de l'équipe et des
+ * données : la repointer sans avoir écrit la page de compte aurait rendu treize
+ * routes inatteignables le même jour.
  *
  * Il est enveloppé dans `Facultatif` : la requête d'identité lève quand la
  * session manque — au chargement, après une expiration, ou dans la salle
@@ -274,9 +280,9 @@ function AvatarConnecte() {
 
 	return (
 		<Link
-			to="/app/parametres"
-			aria-label="Votre compte et vos réglages"
-			aria-current={actif('/app/parametres') ? 'page' : undefined}
+			to="/app/compte"
+			aria-label="Votre compte"
+			aria-current={actif('/app/compte') ? 'page' : undefined}
 		>
 			{/*
 			  `moi?.name` peut être vide sur un compte créé par invitation, qui n'a
