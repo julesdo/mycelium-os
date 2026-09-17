@@ -784,6 +784,37 @@ export const listerCreances = authedQuery({
 	}
 });
 
+type StatutCreance = Doc<'creances'>['statut'];
+
+/**
+ * LES STATUTS DE CRÉANCE QUE LA FILE INTERROGE — leur nom, ou `null`.
+ *
+ * ⚠️ UN `Record` SUR L'UNION ENTIÈRE, ET PAS UN TABLEAU DE TROIS LITTÉRAUX. Un
+ * cinquième statut ajouté à `tables.ts` fait manquer une clé ici, et la
+ * compilation tombe EN LE NOMMANT. Écrit comme un tableau, il aurait disparu en
+ * silence de l'écran d'accueil : les créances qui le portent n'auraient plus
+ * jamais posé leur question, et rien n'aurait dit qu'elles manquaient. C'est la
+ * forme que `prescription.ts` emploie déjà pour la même raison.
+ *
+ * `CLOSE` vaut `null` parce qu'une créance close ne se requalifie pas : poser la
+ * question ferait décider sur un dossier que plus rien n'attend.
+ */
+const STATUT_A_INTERROGER: Record<StatutCreance, StatutCreance | null> = {
+	BROUILLON: 'BROUILLON',
+	QUALIFIEE: 'QUALIFIEE',
+	ENGAGEE: 'ENGAGEE',
+	CLOSE: null
+};
+
+/**
+ * ⚠️ DÉRIVÉE DE LA TABLE, JAMAIS RECOPIÉE À CÔTÉ. Une seconde liste écrite à la
+ * main rouvrirait exactement le trou que le `Record` ferme : le statut ajouté
+ * aurait sa clé, et personne ne l'aurait ajouté à la liste qui interroge.
+ */
+const STATUTS_A_INTERROGER: readonly StatutCreance[] = Object.values(
+	STATUT_A_INTERROGER
+).flatMap((statut: StatutCreance | null) => (statut === null ? [] : [statut]));
+
 /**
  * LES QUESTIONS DE LITIGE ENCORE OUVERTES, À L'ÉCHELLE DE L'ÉTABLISSEMENT.
  *
@@ -801,16 +832,32 @@ export const listerCreances = authedQuery({
  * le montrait — et la production n'en produisait aucune.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ UNE SEULE LECTURE D'INDEX, ET AUCUNE JOINTURE
+ * ⚠️ L'INDEX PORTE LA SÉLECTION, PARCE QUE LES CLOSES NE PARTENT JAMAIS
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Elle balaie `creances` par `by_org`, et RIEN D'AUTRE : ni les factures, ni
- * les règlements, ni les pièces, ni le débiteur. Tout ce dont elle a besoin —
- * `faitsLitige` et `statut` — est porté par la créance elle-même. Le nom du
- * client et le montant en jeu, la file les a déjà par `listerDebiteurs` et
- * `listerCreances` : les relire ici doublerait le coût de l'écran pour recopier
- * ce qu'il tient en main. C'est la discipline de `listerDebiteurs`, qui lit ses
- * deux index une fois et croise en mémoire.
+ * Elle lit `creances` par `by_org_and_statut`, un statut vivant à la fois, et
+ * RIEN D'AUTRE : ni les factures, ni les règlements, ni les pièces, ni le
+ * débiteur. Tout ce dont elle a besoin — `faitsLitige` — est porté par la
+ * créance elle-même. Le nom du client et le montant en jeu, la file les a déjà
+ * par `listerDebiteurs` et `listerCreances` : les relire ici doublerait le coût
+ * de l'écran pour recopier ce qu'il tient en main.
+ *
+ * ⚠️ ELLE PARTAIT DE `by_org` ET ÉCARTAIT `CLOSE` EN MÉMOIRE, UNE LIGNE PLUS
+ * BAS. Une créance close n'est jamais supprimée — c'est l'archive du produit,
+ * « un décompte arrêté est figé ». Leur part croît donc indéfiniment : un
+ * établissement qui recouvre depuis deux ans porte 1 800 closes pour 40
+ * ouvertes, et la requête lisait 1 840 documents pour rendre au plus 40 lignes.
+ * Le SUCCÈS du produit dégradait son écran d'accueil, et passé la borne de
+ * documents d'une requête Convex la file n'aurait plus rien rendu du tout.
+ * C'est l'index que `recherche.ts` et `apresProcedure.ts` utilisent déjà pour
+ * exactement cette sélection.
+ *
+ * ⚠️ CE QUI RESTE À PAYER, ET QUI NE SE FERME PAS ICI. `listerCreances` collecte
+ * les MÊMES documents vivants, pour le même écran, par `by_org`. Les fusionner
+ * demanderait de porter la question ouverte sur la ligne de créance et de
+ * retirer cette requête — donc de toucher `routes/app/index.tsx`, son seul
+ * consommateur. Tant que les deux coexistent, la file paie les créances vivantes
+ * deux fois ; elle ne paie plus l'archive.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ ON NE REPOSE PAS UNE QUESTION DÉJÀ RÉPONDUE — « JE NE SAIS PAS » COMPRIS
@@ -847,27 +894,40 @@ export const questionsDeLitige = authedQuery({
 			debiteurId: v.id('debiteurs'),
 			cle: vCleFaitLitige,
 			/** La question du domaine, MOT POUR MOT. La reformuler en ferait une seconde. */
-			question: v.string(),
-			/** Ce que la réponse change, en clair. Le gérant sait ce qu'il engage. */
-			portee: v.string(),
-			/** Combien il en reste d'ouvertes sur ce dossier, celle-ci comprise. */
-			restantes: v.number()
+			question: v.string()
+			/*
+			  ⚠️ `portee` ET `restantes` SONT PARTIS, ET C'EST LA RÈGLE DU DÉPÔT.
+			  Aucun écran ne les lisait : un balayage des lectures dans `routes/`,
+			  `screens/`, `ui/` et `app/` ne trouve `portee` que sur les rangées du
+			  volet, servies par `creanceComplete` et `creances.questionsLitige`, et
+			  ne trouve `restantes` nulle part — ni ici, ni ailleurs. `portee` est en
+			  outre une constante de `QUESTIONS_LITIGE`, que la file importe déjà : la
+			  transporter par le réseau la faisait payer six fois ~230 caractères de
+			  prose pour une valeur que la clé retrouve. Un champ transporté pour rien
+			  est un champ qu'on croira alimenté un jour.
+
+			  `question` reste, bien qu'elle soit de la même constante : elle est lue
+			  telle quelle par `routes/app/index.tsx`, et la retirer casserait la
+			  rangée que ce lot ne touche pas.
+			*/
 		})
 	),
 	handler: async (ctx) => {
 		const { organizationId } = await getUserOrg(ctx);
 
-		const creances = await ctx.db
-			.query('creances')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.collect();
+		const parStatut = await Promise.all(
+			STATUTS_A_INTERROGER.map((statut) =>
+				ctx.db
+					.query('creances')
+					.withIndex('by_org_and_statut', (q) =>
+						q.eq('organizationId', organizationId).eq('statut', statut)
+					)
+					.collect()
+			)
+		);
 
 		const lignes = [];
-		for (const creance of creances) {
-			// Une créance close ne se requalifie pas : poser la question ferait
-			// décider sur un dossier que plus rien n'attend.
-			if (creance.statut === 'CLOSE') continue;
-
+		for (const creance of parStatut.flat()) {
 			const reponses: Reponses = {};
 			for (const fait of creance.faitsLitige ?? []) reponses[fait.cle] = fait.reponse;
 
@@ -884,9 +944,7 @@ export const questionsDeLitige = authedQuery({
 				creanceId: creance._id,
 				debiteurId: creance.debiteurId,
 				cle: premiere.cle,
-				question: premiere.question,
-				portee: premiere.portee,
-				restantes: jamaisPosees.length
+				question: premiere.question
 			});
 		}
 
