@@ -10,9 +10,9 @@ import { join } from 'node:path';
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * « Le multi-tenant est strict, sans aucune exception. La purge RGPD est donc
- * totale, sans exception à justifier. » L'invariant est tenu à dix-sept
- * endroits — un par table — et une invariante tenue à N endroits se perd au
- * premier ajout : la table nouvelle est écrite, indexée, remplie, et personne
+ * totale, sans exception à justifier. » L'invariant est tenu table par
+ * table — jamais à un seul endroit — et une invariante tenue à N endroits se
+ * perd au premier ajout : la table nouvelle est écrite, indexée, remplie, et personne
  * ne pense à la ligne de purge. Rien ne casse. Les données d'un client effacé
  * restent en base, indéfiniment, et c'est exactement le manquement que la
  * réglementation sanctionne.
@@ -77,12 +77,10 @@ describe('la purge n’oublie aucune table cloisonnée', () => {
 
 		expect(cloisonnees.length).toBeGreaterThan(5);
 
-		const oubliees = cloisonnees
-			.map(({ nom }) => nom)
-			.filter((nom) => !rgpd.includes(`'${nom}'`));
+		const oubliees = cloisonnees.map(({ nom }) => nom).filter((nom) => !rgpd.includes(`'${nom}'`));
 
 		// Le message NOMME les tables : « la purge est incomplète » enverrait
-		// relire dix-sept blocs.
+		// relire tous les blocs du schéma.
 		expect(
 			oubliees,
 			`Ces tables portent des données client et n’apparaissent pas dans rgpd.ts : ` +
