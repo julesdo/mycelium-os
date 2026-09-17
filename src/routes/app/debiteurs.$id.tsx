@@ -121,6 +121,18 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const debiteur = debiteurs?.find((ligne) => ligne._id === debiteurId);
 
 	/**
+	 * CE QUE LE PRODUIT SAIT DU NUMÉRO : `null` tant que la liste n'a pas répondu,
+	 * la chaîne vide quand elle a répondu et qu'il n'y en a pas.
+	 *
+	 * ⚠️ SANS CETTE DISTINCTION, L'EFFET CI-DESSOUS NE PART JAMAIS. Sa dépendance
+	 * était `debiteur?.siren`, qui vaut `undefined` AVANT la réponse de la
+	 * requête ET APRÈS, sur un débiteur sans numéro : la valeur ne changeait pas,
+	 * React ne rejouait pas l'effet, et la recherche automatique ne se
+	 * déclenchait que sur les fiches où elle n'avait rien à faire.
+	 */
+	const numeroConnu = debiteur === undefined ? null : (debiteur.siren ?? '');
+
+	/**
 	 * ⚠️ LE REGISTRE S'INTERROGE TOUT SEUL, PARCE QUE LE NOM EST DÉJÀ LÀ.
 	 *
 	 * Il fallait toucher « Chercher « BOULANGERIE MARTIN » » sur chaque client
@@ -140,15 +152,14 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	 * par l'historique, ou par un rechargement.
 	 */
 	useEffect(() => {
-		if (debiteur === undefined) return;
-		if (debiteur.siren !== undefined && debiteur.siren !== '') return;
+		if (numeroConnu === null || numeroConnu !== '') return;
 		if (DEJA_INTERROGES.has(debiteurId)) return;
 		void chercherAuRegistrePour();
 		// `chercherAuRegistrePour` est recréée à chaque rendu ; la garde par
 		// `DEJA_INTERROGES` est ce qui empêche la répétition, pas la liste de
 		// dépendances.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [debiteur?.siren, debiteurId]);
+	}, [numeroConnu, debiteurId]);
 
 	async function chercherAuRegistrePour() {
 		DEJA_INTERROGES.add(debiteurId);
