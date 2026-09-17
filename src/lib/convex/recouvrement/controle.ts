@@ -100,7 +100,7 @@ export const abandonsDeLEtablissement = authedQuery({
 		// Toutes les factures de l'établissement, groupées par client : c'est la
 		// comparaison avec cette liste qui révèle l'oubli. Une lecture de table,
 		// pas une par créance.
-		const facturesParDebiteur = new Map<Id<'debiteurs'>, Doc<'facturesVente'>[]>();
+		const facturesParDebiteur = new Map<Id<'debiteurs'>, Array<Doc<'facturesVente'>>>();
 		for (const facture of await ctx.db
 			.query('facturesVente')
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))

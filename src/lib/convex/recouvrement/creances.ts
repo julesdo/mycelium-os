@@ -263,7 +263,7 @@ async function recalculerScore(
 async function rejouerCes(
 	ctx: MutationCtx,
 	organizationId: Id<'organizations'>,
-	creances: readonly Doc<'creances'>[],
+	creances: ReadonlyArray<Doc<'creances'>>,
 	aujourdHui: string
 ): Promise<number> {
 	let rejouees = 0;
@@ -283,7 +283,7 @@ export async function rejouerQualification(
 	creanceIds: Iterable<Id<'creances'>>,
 	aujourdHui: string
 ): Promise<number> {
-	const creances: Doc<'creances'>[] = [];
+	const creances: Array<Doc<'creances'>> = [];
 	for (const creanceId of creanceIds) {
 		const creance = await ctx.db.get(creanceId);
 		if (creance !== null) creances.push(creance);

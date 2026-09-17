@@ -45,7 +45,7 @@ import {
  * Une liste vide fait sortir la facture de l'échantillon, plutôt que d'y entrer
  * avec une date inventée.
  */
-function datesReelles(reglements: readonly Doc<'reglements'>[]): string[] {
+function datesReelles(reglements: ReadonlyArray<Doc<'reglements'>>): string[] {
 	return reglements
 		.map((r) => r.date)
 		.filter((d): d is string => typeof d === 'string' && estDateReelle(d))
@@ -97,7 +97,7 @@ const vLecture = v.object({
  * groupées en mémoire, ce qui évite une lecture d'index par facture.
  */
 async function composerComportement(
-	factures: readonly Doc<'facturesVente'>[],
+	factures: ReadonlyArray<Doc<'facturesVente'>>,
 	dates: (factureId: Id<'facturesVente'>) => Promise<string[]>,
 	aujourdHui: string
 ) {
@@ -255,14 +255,14 @@ export const lireParEtablissement = authedQuery({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.collect();
 
-		const parFacture = new Map<Id<'facturesVente'>, Doc<'reglements'>[]>();
+		const parFacture = new Map<Id<'facturesVente'>, Array<Doc<'reglements'>>>();
 		for (const reglement of reglements) {
 			const deja = parFacture.get(reglement.factureId);
 			if (deja === undefined) parFacture.set(reglement.factureId, [reglement]);
 			else deja.push(reglement);
 		}
 
-		const parDebiteur = new Map<Id<'debiteurs'>, Doc<'facturesVente'>[]>();
+		const parDebiteur = new Map<Id<'debiteurs'>, Array<Doc<'facturesVente'>>>();
 		for (const facture of factures) {
 			const deja = parDebiteur.get(facture.debiteurId);
 			if (deja === undefined) parDebiteur.set(facture.debiteurId, [facture]);
