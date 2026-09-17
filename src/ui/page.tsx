@@ -21,17 +21,55 @@ export function PageHeader({
 	sousTitre,
 	actions
 }: {
-	titre: string;
+	titre?: string;
 	sousTitre?: string;
 	actions?: ReactNode;
 }) {
+	/*
+	  ⚠️ SANS TITRE, LA BARRE REMONTE — et c'est tout l'intérêt. `pt-barre-app`
+	  (64px) était le dégagement qui laissait respirer un titre d'écran. Quand il
+	  n'y a plus de titre, ces 64px ne dégagent plus rien : ils repoussent la
+	  rangée d'outils vers le bas de l'écran pour rien.
+	*/
+	const sansTitre = titre === undefined;
 	return (
-		<header className="flex shrink-0 flex-wrap items-end justify-between gap-cladd-2xs px-cladd-3xs pt-barre-app pb-cladd-3xs">
-			<div className="min-w-0">
-				<h1 className="text-letikette-titre leading-tight font-bold tracking-tight">{titre}</h1>
-				{sousTitre ? <p className="mt-1 text-cladd-xs text-cladd-fg-soft">{sousTitre}</p> : null}
-			</div>
-			{actions ? <div className="flex shrink-0 items-center gap-cladd-3xs">{actions}</div> : null}
+		<header
+			className={cn(
+				/*
+				  LE VERRE EST CE QUI REND LE DÉFILEMENT SOUS LA BARRE LISIBLE. Le même
+				  dosage que la barre du bas (`verre-dense`) : ce n'est pas l'opacité qui
+				  rend les libellés lisibles, c'est le flou de 40px et la saturation
+				  poussée à 2, qui étalent ce qui passe derrière jusqu'à ne plus former de
+				  forme. Une barre simplement translucide laisserait lire deux textes l'un
+				  sur l'autre.
+
+				  ⚠️ `sticky` NE TIENT QUE PARCE QUE L'EN-TÊTE EST DANS LE CONTENEUR QUI
+				  DÉFILE. Remonté à côté de `PageBody`, il n'a plus d'ancêtre défilant et
+				  redevient un bloc ordinaire : plus rien ne passe dessous, et le flou n'a
+				  plus rien à flouter. Voir `page-ecran.tsx`.
+				*/
+				'verre-dense sticky top-0 z-30 -mx-cladd-3xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-2xs px-cladd-3xs pb-cladd-3xs',
+				sansTitre ? 'pt-cladd-xs' : 'pt-barre-app'
+			)}
+		>
+			{sansTitre ? null : (
+				<div className="min-w-0">
+					<h1 className="text-letikette-titre leading-tight font-bold tracking-tight">{titre}</h1>
+					{sousTitre ? <p className="mt-1 text-cladd-xs text-cladd-fg-soft">{sousTitre}</p> : null}
+				</div>
+			)}
+			{actions ? (
+				<div
+					className={cn(
+						'flex min-w-0 items-center gap-cladd-3xs',
+						// Seule sur la rangée, la barre prend toute la largeur : c'est elle
+						// qui répartit ses propres groupes, et elle sait le faire.
+						sansTitre ? 'w-full' : 'shrink-0'
+					)}
+				>
+					{actions}
+				</div>
+			) : null}
 		</header>
 	);
 }

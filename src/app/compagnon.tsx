@@ -11,9 +11,14 @@ import {
 import { relireTour } from '../lib/verticales/recouvrement/compagnon/tour';
 import {
 	BoutonPrincipal,
+	BoutonSecondaire,
 	CompagnonFlottant,
 	Conversation,
 	Lien,
+	LigneBouton,
+	ListeAnalyses,
+	eurosCentimes,
+	pluriel,
 	RefusEnQuatreParties,
 	type ConversationAffichee,
 	type EtatCompagnon,
@@ -36,15 +41,18 @@ import {
  * Le serveur dit la même chose, et il ne dit que ça :
  * `conversationLecture.filDuDossier` prend une créance, et `conversation.repondre`
  * écrit ses deux tours avec `portee: 'CREANCE'` et `cible: creanceId`. AUCUNE
- * autre portée n'est servie. La capsule ne peut donc ouvrir un fil que là où une
- * créance est ouverte, c'est-à-dire sur `/app/creance/$id`.
+ * autre portée n'est servie.
  *
- * Depuis le bouton :
+ * ⚠️ MAIS IL VIT PARTOUT, ET CE N'EST PAS UNE CONTRADICTION. Une borne côté
+ * serveur dit de quoi on parle ; elle ne dit pas d'où l'on parle. Depuis le
+ * bouton :
  *
  *   · sur la page d'une créance → LE FIL DE CETTE CRÉANCE, en feuille ;
- *   · partout ailleurs → aucun dossier, et le compagnon le DIT, avec le chemin
- *     qui mène à un dossier réel, plutôt que de proposer une conversation qu'il
- *     refuserait.
+ *   · partout ailleurs → ON DEMANDE LE DOSSIER, une fois, et le fil s'ouvre.
+ *
+ * La version d'avant ouvrait là un panneau qui expliquait pourquoi il ne pouvait
+ * rien faire depuis cet écran. C'était exact et inutile : le geste manquant — dire
+ * de quel dossier on parle — tient en une rangée, et il mène au même endroit.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ L'IDENTIFIANT SE LIT SUR LES PARAMÈTRES DE LA ROUTE, PAS SUR L'ADRESSE
@@ -83,7 +91,7 @@ const ROUTE_CREANCE = '/app/creance/$id';
  */
 
 /** Ce que le bouton a ouvert : rien, le fil du dossier, le refus, ou sa portée. */
-type PanneauCompagnon = 'AUCUN' | 'FIL' | 'REFUS' | 'PORTEE';
+type PanneauCompagnon = 'AUCUN' | 'FIL' | 'REFUS' | 'PORTEE' | 'CHOIX';
 
 export function CompagnonBranche() {
 	return (
@@ -149,13 +157,29 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 	  panneau simplement masqué rouvrirait tout seul en revenant sur le même
 	  dossier, ce qui se lit comme un fantôme.
 	*/
+	/*
+	  LE DOSSIER CHOISI DEPUIS UN AUTRE ÉCRAN.
+
+	  ⚠️ LE COMPAGNON VIT PARTOUT, MAIS SA CONVERSATION RESTE BORNÉE À UN DOSSIER
+	  — et les deux ne se contredisent pas. Le fil est borné côté SERVEUR :
+	  `filDuDossier` prend une créance, `repondre` écrit `portee: 'CREANCE'`, et
+	  c'est cette borne qui permet à chaque phrase de porter SA source. Ce qui
+	  manquait n'était donc pas une portée « établissement », c'était le geste :
+	  depuis n'importe quel écran, DIRE de quel dossier on parle. On le demande
+	  une fois, puis le fil s'ouvre — au lieu d'un panneau qui explique pourquoi
+	  il ne s'ouvrira pas.
+	*/
+	const [creanceChoisie, setCreanceChoisie] = useState<string | null>(null);
+	const dossierActif = creanceId ?? creanceChoisie;
+
 	const [dossierAffiche, setDossierAffiche] = useState<string | null>(creanceId);
 	if (dossierAffiche !== creanceId) {
 		setDossierAffiche(creanceId);
+		setCreanceChoisie(null);
 		setPanneau('AUCUN');
 	}
 
-	const surUnDossier = creanceId !== null;
+	const surUnDossier = dossierActif !== null;
 	const arretee = niveau === 'ARRETE';
 
 	/*
@@ -194,7 +218,7 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 					  entier sur un compteur de coût couperait l'expérience, ce que la
 					  décision « on ne coupe jamais l'expérience » interdit.
 					*/
-					if (creanceId !== null) {
+					if (dossierActif !== null) {
 						setPanneau('FIL');
 						return;
 					}
@@ -202,14 +226,28 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 						setPanneau('REFUS');
 						return;
 					}
-					setPanneau('PORTEE');
+					/*
+					  ⚠️ ET PLUS LE PANNEAU DE PORTÉE. Il disait ce que le compagnon ne
+					  savait pas faire depuis cet écran — un cul-de-sac poli. Demander le
+					  dossier mène au même endroit en un geste de moins.
+					*/
+					setPanneau('CHOIX');
 				}}
 			/>
 
 			<Popup
 				open={panneau !== 'AUCUN'}
 				onOpenChange={(ouvert) => {
-					if (!ouvert) setPanneau('AUCUN');
+					if (ouvert) return;
+					setPanneau('AUCUN');
+					/*
+					  ⚠️ REFERMER OUBLIE LE DOSSIER CHOISI — sauf si c'est l'écran qui le
+					  porte. Sans ça, la capsule dirait « ce dossier » sur la liste des
+					  clients en désignant une créance qu'on ne regarde plus : la portée
+					  affichée mentirait, et c'est exactement le défaut qu'on vient de
+					  réparer.
+					*/
+					setCreanceChoisie(null);
 				}}
 				headerLeft={
 					<span className="px-2 pb-1 text-cladd-sm font-semibold">{titreDuPanneau(panneau)}</span>
@@ -223,10 +261,24 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 					  écrans. `useQuery` n'a pas de `skip` collectif ; un composant démonté
 					  ne demande rien, ce qui est le seul moyen sûr.
 					*/}
-					{panneau === 'FIL' && creanceId !== null ? (
-						<FilDeLaCreance creanceId={creanceId as Id<'creances'>} />
+					{panneau === 'FIL' && dossierActif !== null ? (
+						<FilDeLaCreance
+							creanceId={dossierActif as Id<'creances'>}
+							/* Choisi à la main : on peut en changer sans quitter la feuille.
+							   Porté par la route : le dossier est celui de l'écran, et une
+							   rangée « changer » y promettrait une navigation qu'elle ne
+							   fait pas. */
+							onChangerDeDossier={creanceId === null ? () => setPanneau('CHOIX') : undefined}
+						/>
 					) : panneau === 'REFUS' ? (
 						<RefusDuPlafond cumul={cumul} />
+					) : panneau === 'CHOIX' ? (
+						<ChoixDuDossier
+							onChoisir={(id) => {
+								setCreanceChoisie(id);
+								setPanneau('FIL');
+							}}
+						/>
 					) : (
 						<PorteeDuCompagnon />
 					)}
@@ -239,6 +291,7 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 function titreDuPanneau(panneau: PanneauCompagnon): string {
 	if (panneau === 'FIL') return 'Demander sur ce dossier';
 	if (panneau === 'REFUS') return 'La conversation libre';
+	if (panneau === 'CHOIX') return 'Sur quel dossier ?';
 	return 'Ce que le compagnon lit';
 }
 
@@ -270,7 +323,14 @@ function messageDeLaPanne(e: unknown): string {
  * ⚠️ ET LE GESTE EST UNIQUE : « Demander », qui parle AU LOGICIEL. On ne relance
  * jamais le débiteur au nom du client.
  */
-function FilDeLaCreance({ creanceId }: { creanceId: Id<'creances'> }) {
+function FilDeLaCreance({
+	creanceId,
+	onChangerDeDossier
+}: {
+	creanceId: Id<'creances'>;
+	/** Présent seulement quand le dossier a été choisi à la main. */
+	onChangerDeDossier?: () => void;
+}) {
 	const fil = useQuery(api.recouvrement.conversationLecture.filDuDossier, { creanceId });
 	const demanderAuCompagnon = useAction(api.recouvrement.conversation.repondre);
 
@@ -353,7 +413,63 @@ function FilDeLaCreance({ creanceId }: { creanceId: Id<'creances'> }) {
 					{panne} Le dossier, lui, n’a pas changé : la question peut être reposée.
 				</p>
 			)}
+			{onChangerDeDossier === undefined ? null : (
+				<BoutonSecondaire onClick={onChangerDeDossier}>Changer de dossier</BoutonSecondaire>
+			)}
 		</>
+	);
+}
+
+/**
+ * LE CHOIX DU DOSSIER, DEPUIS N'IMPORTE QUEL ÉCRAN.
+ *
+ * ⚠️ IL N'INVENTE AUCUNE PORTÉE. La conversation reste bornée à une créance —
+ * c'est ce qui permet à chaque phrase de citer SA source. Ce panneau ne fait que
+ * poser la question que le serveur exige, une fois, au lieu d'expliquer au
+ * gérant qu'il aurait fallu ouvrir une autre page d'abord.
+ *
+ * ⚠️ ET IL NE CLASSE RIEN. `listerCreances` rend l'ordre du domaine ; le
+ * rejouer ici donnerait un second tri, qui divergerait du premier au premier
+ * changement de règle. Ce qui se voit sur une rangée — le débiteur, ce qui reste
+ * dû, le nombre de factures — vient de la requête, mot pour mot.
+ */
+function ChoixDuDossier({ onChoisir }: { onChoisir: (creanceId: string) => void }) {
+	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
+
+	if (creances === undefined) {
+		return (
+			<p role="status" className="text-cladd-2xs text-cladd-fg-soft">
+				Lecture des dossiers…
+			</p>
+		);
+	}
+
+	/*
+	  ⚠️ LE VIDE MONTRE LE CHEMIN, PAS UN CADRAN À ZÉRO. Sans facture importée le
+	  produit ne peut rien mesurer, donc le compagnon n'a rien à lire : le dire, et
+	  dire quoi faire, vaut mieux qu'une liste vide.
+	*/
+	if (creances.length === 0) {
+		return (
+			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+				Aucun dossier à lire pour l’instant. Déposez vos factures depuis l’accueil : le compagnon
+				lit ce qu’elles portent, jamais autre chose.
+			</p>
+		);
+	}
+
+	return (
+		<ListeAnalyses>
+			{creances.map((creance) => (
+				<LigneBouton
+					key={creance._id}
+					titre={creance.debiteur}
+					valeur={eurosCentimes(creance.principalRestantDu)}
+					precision={`${creance.nombreFactures} facture${pluriel(creance.nombreFactures)}`}
+					onClick={() => onChoisir(creance._id)}
+				/>
+			))}
+		</ListeAnalyses>
 	);
 }
 

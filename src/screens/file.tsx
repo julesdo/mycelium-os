@@ -429,16 +429,16 @@ export interface FileAffichee {
  * rythme haut que `/app/creance/$id` et `/app/debiteurs/$id`, qui sont les
  * écrans d'à côté dans la barre du bas.
  *
- * ⚠️ ET IL NOMME L'ÉCRAN, comme l'onglet qui y mène. C'est l'idiome relevé
- * (Asana, Attio) : la barre dit où l'on est allé, le titre dit où l'on est.
+ * ⚠️ MAIS IL NE NOMME PLUS L'ÉCRAN. Le titre « Aujourd'hui » a été retiré : la
+ * barre du bas dit déjà où l'on est, et le répéter en gros coûtait 64px de
+ * dégagement plus la hauteur du titre — c'est-à-dire la première rangée, celle
+ * qu'on regarde en ouvrant l'application. La rangée d'outils occupe désormais la
+ * barre seule, tout en haut, et le reste glisse dessous derrière son verre.
  */
-const TITRE_FILE = 'Aujourd’hui';
 
 export function EcranFile({ donnees }: { donnees: Lecture<FileAffichee> }) {
 	if (donnees.etat !== 'pret') {
-		return (
-			<PageEcran entete={{ genre: 'onglet', titre: TITRE_FILE }} etat={donnees.etat} />
-		);
+		return <PageEcran entete={{ genre: 'onglet' }} etat={donnees.etat} />;
 	}
 
 	return <FilePrete valeur={donnees.valeur} />;
@@ -528,7 +528,6 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		<PageEcran
 			entete={{
 				genre: 'onglet',
-				titre: TITRE_FILE,
 				actions: (
 					<RangeeDuHaut
 						selecteur={selecteur}

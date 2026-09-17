@@ -73,7 +73,11 @@ export interface RetourEcran {
 export type EnteteEcran =
 	| {
 			readonly genre: 'onglet';
-			readonly titre: string;
+			/**
+			 * Facultatif. Sans lui, la rangée d'outils occupe seule la barre du haut et
+			 * remonte de 64px — le dégagement n'a plus de titre à dégager.
+			 */
+			readonly titre?: string;
 			readonly sousTitre?: string;
 			readonly actions?: ReactNode;
 	  }
@@ -159,7 +163,7 @@ type ProprietesEcran = {
  */
 export function PageEcran(proprietes: ProprietesEcran) {
 	return (
-		<TitreEcran value={proprietes.entete.titre}>
+		<TitreEcran value={proprietes.entete.titre ?? null}>
 			<CorpsPageEcran {...proprietes} />
 		</TitreEcran>
 	);
@@ -205,10 +209,17 @@ function CorpsPageEcran({
 		);
 	}
 
+	/*
+	  ⚠️ L'EN-TÊTE EST DANS `PageBody`, PAS À CÔTÉ — et c'est ce qui fait passer le
+	  contenu dessous. Posé en frère de `PageBody`, il occupait sa propre bande :
+	  la zone visible commençait sous lui, plus rien ne glissait derrière, et son
+	  verre n'avait rien à flouter. C'est le raisonnement exact du dégagement bas
+	  de la barre de navigation, écrit juste en dessous — même piège, même remède.
+	*/
 	return (
 		<Page>
-			<Entete entete={entete} donneesPretes={etat === 'pret'} />
 			<PageBody>
+				<Entete entete={entete} donneesPretes={etat === 'pret'} />
 				{etat === 'pret' ? (
 					<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">{children}</div>
 				) : etat === 'attente' ? (
