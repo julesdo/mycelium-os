@@ -2,8 +2,10 @@ import { UploadIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
 	CeQuiEstDu,
+	CeQueLesDecomptesLaissentDeCote,
 	Lien,
 	PageEcran,
+	type AbandonsAffiches,
 	type BilanPertesAffiche,
 	type Lecture,
 	type RevelationAffichee
@@ -13,6 +15,24 @@ import {
 export interface RevelationDuJour {
 	readonly revelation: RevelationAffichee;
 	readonly bilan: BilanPertesAffiche;
+	/**
+	 * CE QUE LES DÉCOMPTES DÉJÀ ARRÊTÉS LAISSERAIENT DEHORS.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ UNE LECTURE DANS LA LECTURE, ET C'EST VOULU
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Les deux autres chiffres de cette page se lisent sur les factures ; le
+	 * contrôle de complétude, lui, relit TOUS les décomptes et TOUTES les
+	 * factures de l'établissement, puis rejoue `controlerDecompte` sur chacun.
+	 * C'est la seule lecture de la page qui peut être lente, et la faire entrer
+	 * dans l'attente commune ferait payer à l'écran entier — au chiffre qui
+	 * justifie l'abonnement — le coût du bloc le plus lourd.
+	 *
+	 * Elle voyage donc avec son propre état : le bloc s'affiche en train de
+	 * travailler, puis rempli, sans retenir le reste (règle d'écran n° 2).
+	 */
+	readonly laisseDeCote: Lecture<AbandonsAffiches>;
 	/**
 	 * LE JOUR OÙ LE CHIFFRE EST ARRÊTÉ.
 	 *
@@ -77,7 +97,7 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 
 	if (donnees.etat !== 'pret') return <PageEcran entete={entete} etat={donnees.etat} />;
 
-	const { revelation, bilan, arreteAu } = donnees.valeur;
+	const { revelation, bilan, arreteAu, laisseDeCote } = donnees.valeur;
 
 	// LE VIDE MONTRE LE CHEMIN, jamais des cadrans à zéro (règle d'écran n° 4).
 	// Un établissement sans facture en retard ne voit pas « 0,00 € dus » : il
@@ -120,6 +140,19 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 	return (
 		<PageEcran entete={entete}>
 			<CeQuiEstDu revelation={revelation} bilan={bilan} arreteAu={arreteAu} />
+
+			{/*
+			  ⚠️ APRÈS CE QUI EST DÛ, ET AVANT RIEN. Le bloc dit ce que les décomptes
+			  DÉJÀ ARRÊTÉS ne chiffrent pas : il ne se lit qu'une fois qu'on sait ce
+			  qui est dû, et il ne retire rien au total affiché plus haut — ce sont
+			  deux mesures distinctes, l'une sur les factures, l'autre sur les pièces
+			  produites. Le poser plus haut ferait chercher laquelle compte.
+
+			  Il n'apparaît pas dans l'état vide : un établissement sans facture n'a
+			  aucun décompte à contrôler, et l'écran vide montre le chemin plutôt que
+			  d'aligner des constats sur rien.
+			*/}
+			<CeQueLesDecomptesLaissentDeCote lecture={laisseDeCote} />
 		</PageEcran>
 	);
 }

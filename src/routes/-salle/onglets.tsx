@@ -7,6 +7,9 @@ import { EcranProcedures, type DossierAffiche } from '../../screens/procedures';
 import { EcranRevelation, type RevelationDuJour } from '../../screens/revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import {
+	ABANDONS_AUCUN_DEMO,
+	ABANDONS_DEMO,
+	ABANDONS_SANS_DECOMPTE_DEMO,
 	ARRETE_AU_DEMO,
 	BILAN_DEMO,
 	BILAN_SANS_FACTURE_DEMO,
@@ -204,7 +207,15 @@ function ProceduresDemo({ etat }: { etat: EtatDemo }) {
 const REVELATION_DU_JOUR_DEMO: RevelationDuJour = {
 	revelation: REVELATION_DEMO,
 	bilan: BILAN_DEMO,
-	arreteAu: ARRETE_AU_DEMO
+	arreteAu: ARRETE_AU_DEMO,
+	/*
+	  ⚠️ LA FORME PRINCIPALE PORTE DES ABANDONS, et ce n'est pas un hasard. Ce
+	  bloc est le seul de l'écran dont le rendu dépend de plusieurs natures de
+	  point, d'un regroupement par décompte et d'une addition qui doit retomber
+	  sur le chiffre annoncé : c'est celui qu'on vient regarder. Le cas où tout
+	  est complet est une phrase, et il a sa variante.
+	*/
+	laisseDeCote: { etat: 'pret', valeur: ABANDONS_DEMO }
 };
 
 /**
@@ -215,11 +226,36 @@ const REVELATION_DU_JOUR_DEMO: RevelationDuJour = {
  *   · « rien de chiffrable » — zéro facture chiffrée, mais des factures NON
  *     chiffrées. Ce n'est pas l'état vide, et c'est le cas qui posait un
  *     « 0,00 € » en corps de cinquante-six pixels sous « dus de plein droit ».
+ *
+ * Et les trois formes du contrôle de complétude, qui porte sa propre lecture :
+ *
+ *   · « rien laissé de côté » — des décomptes arrêtés, tous complets : une
+ *     phrase qui rassure, jamais une carte à 0,00 € ;
+ *   · « aucun décompte arrêté » — pas de sujet, donc pas de section : ce qu'on
+ *     vient vérifier ici, c'est qu'elle DISPARAÎT ;
+ *   · « contrôle en cours » et « contrôle en échec » — le bloc travaille, ou
+ *     dit qu'il n'a rien pu vérifier, pendant que le reste de l'écran est prêt.
  */
 const FORMES_REVELATION_DEMO: Readonly<Record<string, RevelationDuJour>> = {
 	'surveillance interrompue': {
 		...REVELATION_DU_JOUR_DEMO,
 		bilan: BILAN_SURVEILLANCE_INTERROMPUE_DEMO
+	},
+	'rien laissé de côté': {
+		...REVELATION_DU_JOUR_DEMO,
+		laisseDeCote: { etat: 'pret', valeur: ABANDONS_AUCUN_DEMO }
+	},
+	'aucun décompte arrêté': {
+		...REVELATION_DU_JOUR_DEMO,
+		laisseDeCote: { etat: 'pret', valeur: ABANDONS_SANS_DECOMPTE_DEMO }
+	},
+	'contrôle en cours': {
+		...REVELATION_DU_JOUR_DEMO,
+		laisseDeCote: { etat: 'attente' }
+	},
+	'contrôle en échec': {
+		...REVELATION_DU_JOUR_DEMO,
+		laisseDeCote: { etat: 'erreur' }
 	},
 	/*
 	  ⚠️ LE BILAN RESTE CELUI DE L'ÉTABLISSEMENT, ET N'EST PAS MIS À ZÉRO AVEC LE
@@ -242,11 +278,17 @@ const FORMES_REVELATION_DEMO: Readonly<Record<string, RevelationDuJour>> = {
 	}
 };
 
-/** Le vide : un établissement qui n'a encore déposé aucune facture. */
+/**
+ * Le vide : un établissement qui n'a encore déposé aucune facture.
+ *
+ * Sans facture, aucun décompte n'a pu être arrêté : le contrôle n'a rien à
+ * contrôler, et l'écran vide n'affiche de toute façon aucune section.
+ */
 const JOUR_SANS_FACTURE_DEMO: RevelationDuJour = {
 	revelation: REVELATION_SANS_FACTURE_DEMO,
 	bilan: BILAN_SANS_FACTURE_DEMO,
-	arreteAu: ARRETE_AU_DEMO
+	arreteAu: ARRETE_AU_DEMO,
+	laisseDeCote: { etat: 'pret', valeur: ABANDONS_SANS_DECOMPTE_DEMO }
 };
 
 export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
