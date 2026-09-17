@@ -1,5 +1,5 @@
 import type { HistoryState } from '@tanstack/react-router';
-import { Checkbox, Chip, ListTitle, SectionTitle, Surface } from '@cladd-ui/react';
+import { Checkbox, Chip, SectionTitle, Surface } from '@cladd-ui/react';
 import { ScaleIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,

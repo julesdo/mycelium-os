@@ -336,11 +336,20 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 				  direct, elle rouvre son débiteur. Son titre porte le débiteur : la
 				  page s'identifie seule.
 				*/
-				retour: {
-					vers: '/app/debiteurs',
-					recherche: pret === null ? undefined : { d: pret.debiteurId },
-					libelle: TITRE_ECRAN.debiteurs
-				},
+				/*
+				  ⚠️ LE RETOUR VISE LA PAGE DU DÉBITEUR DÈS QU'ON SAIT QUI IL EST, et
+				  la liste seulement tant qu'on ne le sait pas encore. Une route à
+				  paramètre ne se lie pas sans son paramètre : pendant l'attente, le
+				  seul retour honnête est la liste.
+				*/
+				retour:
+					pret === null
+						? { vers: '/app/debiteurs', libelle: TITRE_ECRAN.debiteurs }
+						: {
+								vers: '/app/debiteurs/$id',
+								parametres: { id: pret.debiteurId },
+								libelle: TITRE_ECRAN.debiteurs
+							},
 				titre: pret?.debiteur ?? 'Créance',
 				sousTitre:
 					pret === null
@@ -429,10 +438,12 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 			*/}
 			<ListeAnalyses>
 				<LigneAnalyse
-					vers="/app/debiteurs"
-					// Le volet d'un débiteur se choisit par la recherche d'URL sur
-					// l'écran de la liste. Voir la prop `recherche` de `LigneAnalyse`.
-					recherche={{ d: creance.debiteurId }}
+					vers="/app/debiteurs/$id"
+					// ⚠️ LA PAGE DU DÉBITEUR, PAS LA LISTE AVEC `?d=`. Cette dernière
+					// existe encore et redirige, mais elle fait payer un aller-retour
+					// visible pour arriver au même endroit. La page porte tout ce que
+					// cette rangée promet : son encours, ses créances, sa solvabilité.
+					parametres={{ id: creance.debiteurId }}
 					icone={<Building2Icon />}
 					titre={creance.debiteur}
 					{...rangeeDuDebiteur({ sante: creance.santeDebiteur })}

@@ -1,8 +1,4 @@
-import type {
-	ConditionAConfirmer,
-	CreanceOuverte,
-	RisqueAffiche
-} from '../../screens/creance';
+import type { CreanceOuverte } from '../../screens/creance';
 import { EcranCreance } from '../../screens/creance';
 import { additionner, depuisCentimes, enCentimes, soustraire } from '../../lib/socle/montants';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
@@ -27,7 +23,7 @@ import {
 	regimePrescription,
 	type SecteurCreance
 } from '../../lib/verticales/recouvrement/pays/france/prescription';
-import { PROCEDURES, proceduresEnvisageables } from '../../lib/verticales/recouvrement/procedures';
+import { PROCEDURES } from '../../lib/verticales/recouvrement/procedures';
 import {
 	ETAGES_DE_PREUVE,
 	pyramideDePreuves,
@@ -60,7 +56,7 @@ import {
 	type SoliditeAffichee
 } from '../../ui';
 import { BARREAUX_DEMO, CARNET_DEMO, ETABLISSEMENT_DEMO, voieDeLaCreance } from './communes';
-import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
+import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
 
 /**
  * LES ENTRÉES DE LA FAMILLE, DÉCLARÉES AVANT TOUT CE QUI S'EN CALCULE.
@@ -282,46 +278,6 @@ function conditionsDepuisReponses(
 		certaine: lireLitige(reponses).certaine
 	};
 }
-
-/** Les conditions de la famille, avec les réponses en cours au litige. */
-const CONDITIONS_DEMO = conditionsDepuisReponses(REPONSES_LITIGE_DEMO);
-
-/**
- * La qualification, par `qualifier()` appelée comme `creanceComplete` l'appelle
- * (`lecture.ts`, lignes 503 à 512) : les signaux de contestation viennent des
- * faits déclarés, et `retardsAnterieurs: 0` est la valeur que la lecture passe
- * aujourd'hui, en attendant l'historique des règlements.
- */
-function qualificationDepuisReponses(reponses: Reponses) {
-	return qualifier({
-		...conditionsDepuisReponses(reponses),
-		piecesFournies: PIECES_RATTACHEES_DEMO,
-		signauxContestation: signauxDepuisFaits(reponses),
-		santeDebiteur: SANTE_DEBITEUR_DEMO,
-		retardsAnterieurs: 0
-	});
-}
-
-/** Le score, l'éligibilité et les risques de la rangée : un seul appel, sur les réponses en cours. */
-const QUALIFICATION_DEMO = qualificationDepuisReponses(REPONSES_LITIGE_DEMO);
-
-/**
- * Les conditions à confirmer, composées exactement comme `creanceComplete` les
- * compose (`lecture.ts`, lignes 563 à 570) : `certaine` en est exclue, elle se
- * déduit des faits déclarés au litige. La rangée les compte, et la page du
- * litige les reçoit telles quelles (`creance.$id.litige.tsx`).
- */
-const CONDITIONS_A_CONFIRMER_DEMO: readonly ConditionAConfirmer[] = conditionsADemander(
-	CONDITIONS_DEMO
-)
-	.filter((condition) => condition !== 'certaine')
-	.map((condition) => ({
-		condition,
-		libelle: `Pouvez-vous confirmer ${
-			LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
-		} de cette créance ?`
-	}));
-
 /**
  * Les champs qui dépendent des réponses, calculés par `lireLitige` et
  * `questionsRestantes` (`litige.ts`) : jamais recopiés, pour que la
@@ -351,23 +307,6 @@ function litigeDepuisReponses(reponses: Reponses, propositions: readonly Proposi
 		litigieux: lecture.litigieux
 	};
 }
-
-/**
- * Les procédures, listées comme `creanceComplete` les liste (`lecture.ts`,
- * lignes 516, 517 et 606 à 609) : toutes, disponibles ou non, évaluées sur les
- * seules conditions.
- */
-const VOIES_ENVISAGEABLES_DEMO = new Set(
-	proceduresEnvisageables({ ...CONDITIONS_DEMO, piecesFournies: [] }).map(
-		(procedure) => procedure.cle
-	)
-);
-
-const PROCEDURES_DEMO = Object.values(PROCEDURES).map((procedure) => ({
-	cle: procedure.cle,
-	disponible: VOIES_ENVISAGEABLES_DEMO.has(procedure.cle) && procedure.peutEvaluer()
-}));
-
 /** La pyramide de preuves de la famille : la rangée en montre le compte, la page de solidité le détail. */
 const PYRAMIDE_DEMO = pyramideDePreuves(PIECES_RATTACHEES_DEMO);
 
@@ -459,7 +398,6 @@ const RELANCES_SUSPENDUES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements
 	constatRegistre: CONSTAT_REGISTRE_DEMO
 });
 
-
 /**
  * Les deux propositions du questionnaire (A4 et A10), composées par le DOMAINE
  * — `proposerFaits` — depuis une réserve lue sur un bon de livraison et une
@@ -480,32 +418,6 @@ const PROPOSITIONS_LITIGE_DEMO: readonly PropositionFait[] = proposerFaits({
 	]
 });
 
-/** Ce qu'une forme du litige porte : les réponses en base, et ce que le logiciel propose. */
-interface FormeLitige {
-	readonly reponses: Reponses;
-	readonly propositions: readonly PropositionFait[];
-}
-
-/** La forme principale : les réponses de la famille, sans proposition. */
-const FORME_LITIGE_DEMO: FormeLitige = { reponses: REPONSES_LITIGE_DEMO, propositions: [] };
-
-/** Le litige d'une forme, réponses et propositions ensemble. */
-function litigeDepuisForme(forme: FormeLitige) {
-	return litigeDepuisReponses(forme.reponses, forme.propositions);
-}
-
-/**
- * Les formes nommées du litige.
- *
- * « proposées » part d'un questionnaire NEUF — aucune réponse en base — parce
- * que c'est la seule situation où les questions que le logiciel sait déjà
- * remplir sont encore posées.
- */
-const FORMES_LITIGE_DEMO: Readonly<Record<string, FormeLitige>> = {
-	litigieux: { reponses: REPONSES_LITIGE_LITIGIEUSES_DEMO, propositions: [] },
-	proposees: { reponses: {}, propositions: PROPOSITIONS_LITIGE_DEMO }
-};
-
 // INCONNUE, la santé que l'import pose tant que le radar n'a rien relevé, et non celle de la famille : suspendus, les deux premiers niveaux cacheraient leurs brouillons.
 const RELANCES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements({
 	...ELEMENTS_RELANCE_DEMO,
@@ -523,23 +435,6 @@ const RELANCES_SANS_DECOMPTE_DEMO: readonly NiveauAffiche[] = niveauxDepuisEleme
 	decompte: undefined,
 	santeDebiteur: 'INCONNUE'
 });
-
-/** Les variantes de la page : relances suspendues, et niveau 2 sans décompte arrêté. */
-const FORMES_RELANCES_DEMO: Readonly<Record<string, readonly NiveauAffiche[]>> = {
-	suspendues: RELANCES_SUSPENDUES_DEMO,
-	'sans-decompte': RELANCES_SANS_DECOMPTE_DEMO
-};
-
-/** Les risques de la page : ceux de la qualification de la famille, donc la procédure collective seule. */
-const RISQUES_DEMO: readonly RisqueAffiche[] = QUALIFICATION_DEMO.risques;
-
-/**
- * La variante « litigieux » : les mêmes entrées, avec la contestation écrite
- * déclarée au litige. Elle garde visible le rendu d'un risque BLOQUANT.
- */
-const FORMES_RISQUES_DEMO: Readonly<Record<string, readonly RisqueAffiche[]>> = {
-	litigieux: qualificationDepuisReponses(REPONSES_LITIGE_LITIGIEUSES_DEMO).risques
-};
 
 /**
  * La même mise en forme que `DemoDetail` utilisait pour la pyramide, gardée
@@ -563,17 +458,6 @@ function soliditeDepuisPyramide(pyramide: Pyramide): SoliditeAffichee {
 }
 
 const SOLIDITE_DEMO: SoliditeAffichee = soliditeDepuisPyramide(PYRAMIDE_DEMO);
-
-/**
- * Les variantes « aucune pièce », et « toutes les pièces » : un exemplaire de
- * chaque type accepté par un étage.
- */
-const FORMES_SOLIDITE_DEMO: Readonly<Record<string, SoliditeAffichee>> = {
-	'aucune pièce': soliditeDepuisPyramide(pyramideDePreuves([])),
-	'toutes les pièces': soliditeDepuisPyramide(
-		pyramideDePreuves(ETAGES_DE_PREUVE.flatMap((etage) => etage.pieces))
-	)
-};
 /**
  * LA CRÉANCE DE LA FAMILLE, ASSEMBLÉE EN UNE SEULE FOIS.
  *
@@ -830,10 +714,7 @@ export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 		variantes: Object.keys(FORMES_CREANCE_DEMO),
 		Demo: ({ etat, variante }) => (
 			<EcranCreance
-				donnees={lectureDemo(
-					etat,
-					formeDemo(variante, CREANCE_OUVERTE_DEMO, FORMES_CREANCE_DEMO)
-				)}
+				donnees={lectureDemo(etat, formeDemo(variante, CREANCE_OUVERTE_DEMO, FORMES_CREANCE_DEMO))}
 			/>
 		)
 	}
