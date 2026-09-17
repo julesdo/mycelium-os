@@ -86,7 +86,9 @@ export function EcranPiece({
 			entete={{
 				genre: 'poussee',
 				retour: {
-					vers: '/app/creance/$id/decompte',
+					// La créance est une PAGE, en un seul défilement : le décompte y est
+					// une section, et n'a plus d'adresse à lui.
+					vers: '/app/creance/$id',
 					parametres: { id: creanceId },
 					libelle: pret?.debiteur ?? 'Créance'
 				},

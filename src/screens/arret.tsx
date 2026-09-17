@@ -165,7 +165,9 @@ export function EcranArret({
 			entete={{
 				genre: 'poussee',
 				retour: {
-					vers: '/app/creance/$id/decompte',
+					// La créance est une PAGE, en un seul défilement : le décompte y est
+					// une section, et n'a plus d'adresse à lui.
+					vers: '/app/creance/$id',
 					parametres: { id: identifiant },
 					libelle: pret?.debiteur ?? 'Créance'
 				},
