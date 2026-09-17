@@ -107,6 +107,28 @@ const APPELEES_AUTREMENT: Readonly<Record<string, string>> = {
 	abandonsDeLEtablissement:
 		'ÉCRITE AVANT SON LECTEUR — ce qui serait abandonné sur tout l’établissement, lu par la file et par l’écran d’arrêt (lot 2, T6 et T9). Sort de cette liste avec eux.',
 
+	// ─────────────────────────────────────────────────────────────────────────
+	// LES TROIS GESTES DE LA PROPOSITION, ÉCRITS AVANT LEUR RANGÉE (18/09/2026)
+	// ─────────────────────────────────────────────────────────────────────────
+	//
+	// ⚠️ MÊME RÉGIME QUE LES CINQ CI-DESSUS, ET MÊME DATE DE SORTIE. La pose,
+	// elle, n'est PAS ici : elle est appelée par `battement.ts` chaque nuit,
+	// donc branchée depuis le premier jour. Ce sont les trois entrées de la
+	// FILE — lire les propositions du jour, en retenir une, en écarter une avec
+	// son motif — et la file est T6.
+	//
+	// La quatrième fonction du module, `mesures`, n'est pas ici non plus :
+	// `/app/compte` l'appelle déjà. C'est délibéré, et c'est la moitié de T13 :
+	// une instrumentation livrée « plus tard » ne se livre pas, et sans elle la
+	// seule réponse à une file décevante serait d'annuler le lot entier au lieu
+	// de déplacer le plafond.
+	propositionsDuJour:
+		'ÉCRITE AVANT SON LECTEUR — les propositions posées cette nuit, et ce que le plafond a différé, lus par la file (lot 2, T6). Sort de cette liste avec elle.',
+	retenir:
+		'ÉCRITE AVANT SON LECTEUR — l’appui qui retient une proposition, sur une rangée de la file (lot 2, T6 et T8). Sort de cette liste avec elles.',
+	ecarter:
+		'ÉCRITE AVANT SON LECTEUR — l’appui qui écarte une proposition avec son motif, sur une rangée de la file (lot 2, T6 et T8). Sort de cette liste avec elles.',
+
 	// LA GESTION D'ABONNEMENT. Un client qui paie ne peut ni voir son
 	// abonnement ni ouvrir le portail Paddle pour changer de carte ou résilier.
 	// Sur un produit vendu par abonnement, c'est un manque de livrable.
