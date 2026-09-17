@@ -561,7 +561,24 @@ function FilePrete({
 		</Toolbar>
 	);
 
-	const liste = (
+	/**
+	 * LE PREMIER JOUR — et il ne montre AUCUN des deux nombres.
+	 *
+	 * ⚠️ « 0,00 € » ET « RÉPARTIS SUR 0 CLIENT » SONT DES CADRANS À ZÉRO, que la
+	 * règle d'écran n° 4 interdit. Ils n'apprennent rien — le gérant sait qu'il
+	 * n'a rien déposé — et ils lui apprennent surtout à sauter la tête des yeux,
+	 * c'est-à-dire l'endroit où la prescription de son portefeuille s'écrira
+	 * demain. Sans factures, le produit ne peut littéralement rien mesurer : tout
+	 * l'écran attend ce geste, donc le dépôt est le seul à avoir le droit d'être
+	 * en grand.
+	 */
+	const debute = tete.nombreFactures === 0 && rangees.length === 0;
+
+	const liste = debute ? (
+		<div className="mx-auto flex w-full max-w-3xl flex-col gap-cladd-2xs">
+			<FileVide onFichiers={onFichiers} accepteFichiers={accepteFichiers} />
+		</div>
+	) : (
 		<div className="mx-auto flex w-full max-w-3xl flex-col gap-cladd-2xs">
 			<Tete tete={tete} vue={vue} />
 
@@ -621,8 +638,6 @@ function FilePrete({
 							rangees={pleines}
 							ligneOuverte={ligneOuverte}
 							onOuvrirLigne={onOuvrirLigne}
-							onFichiers={onFichiers}
-							accepteFichiers={accepteFichiers}
 						/>
 					) : (
 						<ListeParClient
@@ -640,10 +655,7 @@ function FilePrete({
 
 			{vue === 'CLIENT' ? (
 				<SourceDeRangees nom="Les débiteurs sans identifiant">
-					<PliSansIdentifiant
-						debiteurs={sansIdentifiant}
-						optionsSecteur={optionsSecteur}
-					/>
+					<PliSansIdentifiant debiteurs={sansIdentifiant} optionsSecteur={optionsSecteur} />
 				</SourceDeRangees>
 			) : null}
 
@@ -651,8 +663,21 @@ function FilePrete({
 		</div>
 	);
 
+	/**
+	 * ⚠️ `pt-barre-app` : LE DÉGAGEMENT DE LA BARRE FLOTTANTE, ET IL PART AVEC ELLE.
+	 *
+	 * Un écran sans en-tête (`genre: 'aucun'`) ne reçoit aucun rembourrage haut de
+	 * `PageEcran` : c'est à lui de dégager la barre, comme `PageHero` le fait pour
+	 * l'accueil et l'attente pour son squelette. Sans ce dégagement, la barre
+	 * RECOUVRE la `Toolbar` — le sélecteur d'établissement, la bascule de vue et
+	 * le dépôt deviennent intapables, et rien à l'écran ne le dit.
+	 *
+	 * ⚠️ IL SE RETIRE À LA BASCULE (T15), en même temps que `src/app/barre.tsx` :
+	 * la barre morte, ce rembourrage devient une bande vide en tête du seul écran
+	 * de travail.
+	 */
 	const corps = (
-		<div className="flex flex-col gap-cladd-2xs p-cladd-3xs">
+		<div className="flex flex-col gap-cladd-2xs p-cladd-3xs pt-barre-app">
 			{barre}
 			{liste}
 		</div>
@@ -696,8 +721,7 @@ function comptesDePortees(
 			return {
 				cle,
 				compte:
-					facturesPortent.revelation.nombreFactures +
-					facturesPortent.revelation.nonChiffrees.length
+					facturesPortent.revelation.nombreFactures + facturesPortent.revelation.nonChiffrees.length
 			};
 		}
 		return { cle, compte: rangees.filter((r) => r.portees.includes(cle)).length };
@@ -740,18 +764,23 @@ function Tete({ tete, vue }: { tete: TeteDeFile; vue: VueFile }) {
 			<p className="text-cladd-xs text-cladd-fg-soft">
 				{vue === 'CREANCE' ? (
 					<>
-						Dont <span className="font-semibold tabular-nums">
+						Dont{' '}
+						<span className="font-semibold tabular-nums">
 							{eurosCentimes(tete.prescriptionSousPreavis)}
 						</span>{' '}
 						dont la prescription tombe sous {PREAVIS.PRESCRIPTION} jours.
 					</>
 				) : (
 					<>
-						Répartis sur{' '}
-						<span className="font-semibold tabular-nums">{tete.clientsConcernes}</span> client
+						Répartis sur <span className="font-semibold tabular-nums">{tete.clientsConcernes}</span>{' '}
+						client
 						{pluriel(tete.clientsConcernes)}, dont{' '}
-						<span className="font-semibold tabular-nums">{tete.clientsSousPreavis}</span> porte
-						{pluriel(tete.clientsSousPreavis)} une échéance sous {PREAVIS.PRESCRIPTION} jours.
+						<span className="font-semibold tabular-nums">{tete.clientsSousPreavis}</span>{' '}
+						{/* « portent », pas « porte » plus un `s` : le verbe s'accorde, il ne
+						    se suffixe pas. Un accord faux sur le seul chiffre de tête se lit
+						    comme un chiffre mal fait. */}
+						{tete.clientsSousPreavis > 1 ? 'portent' : 'porte'} une échéance sous{' '}
+						{PREAVIS.PRESCRIPTION} jours.
 					</>
 				)}
 			</p>
@@ -772,18 +801,24 @@ function Tete({ tete, vue }: { tete: TeteDeFile; vue: VueFile }) {
 function ListeParCreance({
 	rangees,
 	ligneOuverte,
-	onOuvrirLigne,
-	onFichiers,
-	accepteFichiers
+	onOuvrirLigne
 }: {
 	rangees: readonly RangeeDeLaFile[];
 	ligneOuverte: string | null;
 	onOuvrirLigne: (id: string) => void;
-	onFichiers: (fichiers: File[]) => void;
-	accepteFichiers: string;
 }) {
+	/**
+	 * ⚠️ CE N'EST PAS L'ÉTAT VIDE DU PRODUIT, c'est une portée que ce qu'on a
+	 * traité vient de vider sous les doigts. Le premier jour se rend ailleurs,
+	 * avec sa zone de dépôt ; ici il n'y a rien à montrer, et le dire est déjà
+	 * tout ce qu'il y a à dire.
+	 */
 	if (rangees.length === 0) {
-		return <FileVide onFichiers={onFichiers} accepteFichiers={accepteFichiers} />;
+		return (
+			<p className="text-cladd-xs text-cladd-fg-soft">
+				Plus rien à trancher dans cette portée. Les autres puces en portent encore.
+			</p>
+		);
 	}
 
 	return (
@@ -897,18 +932,69 @@ function FileVide({
 					Déposer un export comptable ou des factures
 				</BoutonPrincipal>
 			</ZoneDepot>
+
+			{/*
+			  TROIS RANGÉES FANTÔMES, ESTOMPÉES.
+
+			  ⚠️ ELLES MONTRENT LE CHEMIN, ELLES NE COMPTENT RIEN. Un écran vide qui
+			  ne dit pas à quoi il ressemblera une fois plein oblige à déposer pour
+			  savoir ce qu'on achète. Ce sont des exemples PLAUSIBLES, jamais des
+			  chiffres du gérant : `aria-hidden`, estompées, et aucune n'est tapable
+			  — une rangée qui a l'air cliquable et ne fait rien est pire qu'une
+			  rangée qui n'en a pas l'air.
+			*/}
+			<div aria-hidden className="pointer-events-none flex flex-col gap-cladd-3xs opacity-40">
+				{FANTOMES.map((fantome) => (
+					<RangeeFile
+						key={fantome.obstacle}
+						titre={fantome.titre}
+						obstacle={fantome.obstacle}
+						urgence={fantome.urgence}
+						montant={fantome.montant}
+					/>
+				))}
+			</div>
 		</SectionEcran>
 	);
 }
 
+/**
+ * Les trois rangées que le gérant lira une fois ses factures déposées.
+ *
+ * Une par argument de vente, dans l'ordre où le produit les vend : la
+ * prescription qui éteint un droit sans que personne n'ait rien fait, les
+ * intérêts que personne n'a calculés, et l'échéance illisible qu'il faut
+ * relever. Trois, parce que c'est assez pour lire la forme d'une rangée et
+ * trop peu pour qu'on les prenne pour des données.
+ */
+const FANTOMES: readonly {
+	readonly titre: string;
+	readonly obstacle: string;
+	readonly urgence: UrgenceRangee;
+	readonly montant: bigint;
+}[] = [
+	{
+		titre: 'Un de vos clients',
+		obstacle: 'Prescription dans 41 jours : passé cette date, la créance ne se réclame plus.',
+		urgence: 'CRITIQUE',
+		montant: 3_120_050n
+	},
+	{
+		titre: 'Un autre de vos clients',
+		obstacle: 'Décompte arrêtable, intérêts de retard et indemnité forfaitaire compris.',
+		urgence: 'HAUTE',
+		montant: 1_248_033n
+	},
+	{
+		titre: 'Un troisième',
+		obstacle: 'Échéance illisible sur 3 factures : le retard ne peut pas être établi.',
+		urgence: 'NORMALE',
+		montant: 41_200n
+	}
+];
+
 /** La ligne ouverte n'est pas dans cette portée. Jamais un volet orphelin sans explication. */
-function RangeeHorsPortee({
-	portee,
-	onAfficher
-}: {
-	portee: ClePortee;
-	onAfficher: () => void;
-}) {
+function RangeeHorsPortee({ portee, onAfficher }: { portee: ClePortee; onAfficher: () => void }) {
 	return (
 		<RangeeFile
 			titre="La ligne ouverte n’est pas dans cette portée"

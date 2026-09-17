@@ -114,10 +114,15 @@ export interface PropositionDeRangee {
  */
 export interface FaitsDuPli {
 	/**
-	 * Ce que la rangée dit d'elle-même une fois repliée, DÉJÀ AU PLURIEL : le pli
-	 * compte, il n'accorde pas. « factures payées dans les délais ».
+	 * Ce que la rangée dit d'elle-même une fois repliée, DANS LES DEUX NOMBRES.
+	 *
+	 * ⚠️ DEUX CHAÎNES, ET PAS UN `s` AJOUTÉ. Un accord français porte sur le nom ET
+	 * son participe — « 1 dépôt terminé », « 2 dépôts terminés » — et une règle
+	 * qui colle un `s` à la fin rend « 1 dépôts terminés ». Sur un produit dont
+	 * l'argument entier est l'exactitude, un compte mal accordé se lit comme un
+	 * compte mal fait.
 	 */
-	readonly libelle: string;
+	readonly libelle: { readonly un: string; readonly plusieurs: string };
 	/** Vrai quand rien n'est à trancher. Sans ça, la rangée reste pleine, toujours. */
 	readonly rienATrancher: boolean;
 	/** L'hypothèse retenue pour la calculer. Présente, la rangée reste pleine. */
@@ -277,8 +282,14 @@ export function RangeeFile({
 export function PliDeLaFile({ faits }: { faits: readonly FaitsDuPli[] }) {
 	if (faits.length === 0) return null;
 
-	const comptes = new Map<string, number>();
-	for (const fait of faits) comptes.set(fait.libelle, (comptes.get(fait.libelle) ?? 0) + 1);
+	// Groupé sur la forme au pluriel, qui est la clé stable ; la forme au
+	// singulier voyage avec elle pour le cas où le compte vaut un.
+	const comptes = new Map<string, { readonly un: string; compte: number }>();
+	for (const fait of faits) {
+		const deja = comptes.get(fait.libelle.plusieurs);
+		if (deja === undefined) comptes.set(fait.libelle.plusieurs, { un: fait.libelle.un, compte: 1 });
+		else deja.compte += 1;
+	}
 
 	return (
 		<Surface
@@ -289,9 +300,10 @@ export function PliDeLaFile({ faits }: { faits: readonly FaitsDuPli[] }) {
 			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-1 p-cladd-2xs"
 		>
-			{[...comptes].map(([libelle, compte]) => (
-				<p key={libelle} className="text-cladd-xs text-cladd-fg-soft">
-					<span className="font-semibold tabular-nums">{compte}</span> {libelle}, rien à faire
+			{[...comptes].map(([plusieurs, { un, compte }]) => (
+				<p key={plusieurs} className="text-cladd-xs text-cladd-fg-soft">
+					<span className="font-semibold tabular-nums">{compte}</span>{' '}
+					{compte === 1 ? un : plusieurs}, rien à faire
 				</p>
 			))}
 		</Surface>

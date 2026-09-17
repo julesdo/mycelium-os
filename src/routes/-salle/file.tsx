@@ -61,8 +61,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		debiteurId: DURAND,
 		debiteur: 'Fournitures Durand',
 		portees: ['AUJOURDHUI', 'PRESCRIPTION'],
-		obstacle:
-			'Prescription dans 41 jours : passé le 27/10/2026, cette créance ne se réclame plus.',
+		obstacle: 'Prescription dans 41 jours : passé le 27/10/2026, cette créance ne se réclame plus.',
 		urgence: 'CRITIQUE',
 		montant: 3_120_050n,
 		dateDuFait: '2026-10-27',
@@ -70,7 +69,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			'Le secteur de ce client n’est pas déterminé : la prescription est calculée sur le délai le plus court. Préciser le secteur lèvera cette hypothèse.',
 		verbe: { libelle: 'Retenir la créance', onPresser: () => {} },
 		pli: {
-			libelle: 'prescriptions proches',
+			libelle: { un: 'prescription proche', plusieurs: 'prescriptions proches' },
 			// Rien à trancher, et pourtant elle reste PLEINE : l'hypothèse la retient.
 			rienATrancher: true,
 			hypothese: 'secteur indéterminé'
@@ -91,7 +90,10 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			date: '2026-08-14'
 		},
 		onRepondre: () => {},
-		pli: { libelle: 'questions de litige', rienATrancher: false }
+		pli: {
+			libelle: { un: 'question de litige', plusieurs: 'questions de litige' },
+			rienATrancher: false
+		}
 	},
 	{
 		genre: 'OBSTACLE',
@@ -103,7 +105,10 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		urgence: 'HAUTE',
 		montant: 1_248_033n,
 		verbe: { libelle: 'Arrêter le décompte', onPresser: () => {} },
-		pli: { libelle: 'décomptes arrêtables', rienATrancher: false }
+		pli: {
+			libelle: { un: 'décompte arrêtable', plusieurs: 'décomptes arrêtables' },
+			rienATrancher: false
+		}
 	},
 	{
 		genre: 'OBSTACLE',
@@ -116,7 +121,10 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		urgence: 'CRITIQUE',
 		montant: 1_845_000n,
 		dateDuFait: '2026-09-12',
-		pli: { libelle: 'échéances de procédure', rienATrancher: false }
+		pli: {
+			libelle: { un: 'échéance de procédure', plusieurs: 'échéances de procédure' },
+			rienATrancher: false
+		}
 	},
 	{
 		genre: 'OBSTACLE',
@@ -124,12 +132,13 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		debiteurId: BELLIN,
 		debiteur: 'Transports Bellin',
 		portees: ['AUJOURDHUI', 'A_TRANCHER'],
-		obstacle: 'Date d’exigibilité inexploitable sur F-2024-114 : le retard ne peut pas être établi.',
+		obstacle:
+			'Date d’exigibilité inexploitable sur F-2024-114 : le retard ne peut pas être établi.',
 		urgence: 'HAUTE',
 		montant: null,
 		verbe: { libelle: 'Relever l’échéance', onPresser: () => {} },
 		pli: {
-			libelle: 'factures non chiffrées',
+			libelle: { un: 'facture non chiffrée', plusieurs: 'factures non chiffrées' },
 			// Rien à trancher au sens strict, et pourtant elle reste PLEINE.
 			rienATrancher: true,
 			nonChiffree: true
@@ -148,7 +157,10 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			onChercher: () => {},
 			onAppliquer: () => {}
 		},
-		pli: { libelle: 'rapprochements en attente', rienATrancher: false }
+		pli: {
+			libelle: { un: 'rapprochement en attente', plusieurs: 'rapprochements en attente' },
+			rienATrancher: false
+		}
 	},
 	{
 		genre: 'DEPOT',
@@ -158,7 +170,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		portees: ['AUJOURDHUI'],
 		depot: DEPOT_A_ECARTS_DEMO,
 		pli: {
-			libelle: 'dépôts terminés',
+			libelle: { un: 'dépôt terminé', plusieurs: 'dépôts terminés' },
 			// Rien à trancher, et pourtant il reste PLEIN : deux lignes écartées.
 			rienATrancher: true,
 			lignesEcartees: 2
@@ -172,7 +184,14 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		portees: ['AUJOURDHUI'],
 		depot: DEPOT_PARFAIT_DEMO,
 		// Rien d'écarté : c'est le SEUL dépôt qui a le droit de se replier.
-		pli: { libelle: 'dépôts terminés sans rien d’écarté', rienATrancher: true, lignesEcartees: 0 }
+		pli: {
+			libelle: {
+				un: 'dépôt terminé sans rien d’écarté',
+				plusieurs: 'dépôts terminés sans rien d’écarté'
+			},
+			rienATrancher: true,
+			lignesEcartees: 0
+		}
 	},
 	...Array.from({ length: 142 }, (_, rang): RangeeDeLaFile => {
 		const numero = `${rang + 1}`.padStart(3, '0');
@@ -185,7 +204,13 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			obstacle: `La facture FA-2026-1${numero} a été payée dans les délais.`,
 			urgence: 'NORMALE',
 			montant: null,
-			pli: { libelle: 'factures payées dans les délais', rienATrancher: true }
+			pli: {
+				libelle: {
+					un: 'facture payée dans les délais',
+					plusieurs: 'factures payées dans les délais'
+				},
+				rienATrancher: true
+			}
 		};
 	})
 ];
@@ -300,7 +325,10 @@ const FACTURES_PORTENT_DEMO: CeQueVosFacturesPortent = {
 	bilan: BILAN_DEMO,
 	anglesMorts: [
 		'Un délai d’opposition court depuis la signification de l’ordonnance d’Ateliers Martin. Sa durée n’est pas relevée dans le référentiel juridique de ce logiciel : cette échéance-là n’est pas surveillée, et reste à vérifier auprès de l’acte signifié, qui la porte.',
-		'Deux débiteurs n’ont aucun numéro au registre : leur solvabilité n’est pas interrogée, et une procédure collective ouverte contre eux passerait inaperçue.'
+		// ⚠️ UN, PARCE QU'IL Y EN A UN. La salle porte un seul débiteur sans
+		// identifiant ; en annoncer deux ferait mentir la démonstration sur le
+		// chiffre exact qu'on vient y vérifier.
+		'Un débiteur n’a aucun numéro au registre : sa solvabilité n’est pas interrogée, et une procédure collective ouverte contre lui passerait inaperçue.'
 	]
 };
 
