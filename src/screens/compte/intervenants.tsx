@@ -4,7 +4,6 @@ import {
 	RechercheAvocat,
 	RechercheCommissaire,
 	SaisirUneFiche,
-	SectionEcran,
 	precisionDeLaFiche,
 	type AvocatAffiche,
 	type EtatRechercheAvocat,
@@ -95,10 +94,7 @@ export function SectionIntervenants({
 	onRetenirAvocat
 }: IntervenantsAffiches) {
 	return (
-		<SectionEcran
-			titre="Votre carnet"
-			legende="Les professionnels que vous avez notés, et ceux que vous cherchez."
-		>
+		<>
 			{erreur ? (
 				<p className="text-cladd-xs leading-relaxed" role="alert">
 					{erreur}
@@ -185,6 +181,6 @@ export function SectionIntervenants({
 				onChoisirSpecialite={onChoisirSpecialite}
 				onRetenir={onRetenirAvocat}
 			/>
-		</SectionEcran>
+		</>
 	);
 }

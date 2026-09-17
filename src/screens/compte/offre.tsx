@@ -113,15 +113,19 @@ export function Offre({
  * panne. Le compte à rebours est donc à l'écran, avec sa date de fin en clair —
  * « trente jours » ne se convertit pas en une date de tête.
  */
-export function EssaiEnCours({ finLe }: { finLe: number }) {
-	// L'heure est LUE UNE FOIS, au montage, et pas à chaque rendu. Un `Date.now()`
-	// dans le corps d'un composant rend celui-ci non idempotent : deux rendus du
-	// même état peuvent donner deux nombres de jours différents, et React refuse
-	// cette hypothèse. `useState` avec une fonction d'initialisation fige la
-	// lecture pour la durée de vie du composant, ce qui est exactement la
-	// sémantique voulue.
-	const [maintenant] = useState(() => Date.now());
-	const jours = Math.max(0, Math.ceil((finLe - maintenant) / (24 * 60 * 60 * 1000)));
+export function EssaiEnCours({ finLe, maintenant }: { finLe: number; maintenant?: number }) {
+	/*
+	  L'heure est LUE UNE FOIS, et plus ici quand l'appelant en tient déjà une.
+
+	  ⚠️ DEUX HORLOGES DONNENT DEUX COMPTES. La rangée repliée de la section
+	  affiche « Essai, 12 j » à partir de l'heure que l'écran a figée au montage ;
+	  cette carte comptait la sienne. Montées à quelques millisecondes d'un
+	  passage de minuit, les deux affichaient des nombres différents à trois
+	  centimètres l'une de l'autre. L'appelant passe donc son heure, et le repli
+	  ne sert plus qu'aux rendus qui n'en ont pas (la salle d'exposition).
+	*/
+	const [propre] = useState(() => Date.now());
+	const jours = Math.max(0, Math.ceil((finLe - (maintenant ?? propre)) / (24 * 60 * 60 * 1000)));
 	const date = new Date(finLe).toLocaleDateString('fr-FR', {
 		day: 'numeric',
 		month: 'long',

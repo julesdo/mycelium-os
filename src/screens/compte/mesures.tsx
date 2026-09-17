@@ -1,5 +1,4 @@
 import {
-	SectionEcran,
 	Tableau,
 	TableauCellule,
 	TableauCorps,
@@ -87,33 +86,28 @@ export function SectionMesures({ jours }: MesuresAffichees) {
 	const trous = jours.reduce((total, jour) => total + jour.decideesSansHorodatage, 0);
 
 	return (
-		<SectionEcran
-			titre="Ce que la file propose"
-			legende={`${jours.length} jour${jours.length > 1 ? 's' : ''} relevé${jours.length > 1 ? 's' : ''}, ${posees} proposition${posees > 1 ? 's' : ''} posée${posees > 1 ? 's' : ''}`}
-		>
-			{/*
-			  Repliée : le geste est demandé pour l'OUVRIR, à l'inverse du bilan
-			  d'import. Personne n'ouvre `/app/compte` pour lire ceci, et une
-			  section dépliée qu'on fait défiler sans la lire coûte la place des
-			  réglages qu'on est venu changer.
-			*/}
-			<details className="flex flex-col gap-1.5">
-				<summary className="cursor-pointer text-cladd-2xs font-medium text-cladd-primary">
-					Le détail, jour par jour
-				</summary>
+		/*
+		  ⚠️ IL N'Y A PLUS DE `<details>` ICI, ET C'ÉTAIT UN SECOND REPLI. La
+		  section entière est désormais une rangée qui se déplie : un pli DANS un
+		  pli demandait deux gestes pour lire trois colonnes, et le second n'avait
+		  plus rien à protéger — la rangée repliée porte déjà « 3 jours relevés »
+		  et aucun taux ne remonte à la surface (`resumeMesures`).
+		*/
+		<>
+			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+				{jours.length} jour{jours.length > 1 ? 's' : ''} relevé{jours.length > 1 ? 's' : ''},{' '}
+				{posees} proposition{posees > 1 ? 's' : ''} posée{posees > 1 ? 's' : ''}. Trois nombres, et
+				ils se lisent ensemble. Le plafond de propositions descend quand la rétention monte pendant
+				que le délai de lecture descend ; il ne monte que si les corrections après coup restent à
+				zéro sur un mois plein.
+			</p>
 
-				<p className="mt-1.5 text-cladd-2xs text-cladd-fg-soft">
-					Trois nombres, et ils se lisent ensemble. Le plafond de propositions descend quand la
-					rétention monte pendant que le délai de lecture descend ; il ne monte que si les
-					corrections après coup restent à zéro sur un mois plein.
+			{jours.length === 0 ? (
+				<p className="text-cladd-2xs text-cladd-fg-softer">
+					Aucun relevé sur la période : la surveillance quotidienne n’a encore rien posé.
 				</p>
-
-				{jours.length === 0 ? (
-					<p className="mt-1.5 text-cladd-2xs text-cladd-fg-softer">
-						Aucun relevé sur la période : la surveillance quotidienne n’a encore rien posé.
-					</p>
-				) : (
-					<div className="mt-1.5">
+			) : (
+				<div>
 						<Tableau legende="Propositions posées, décidées et corrigées, par jour">
 							<TableauEntete>
 								<TableauTitre>Jour</TableauTitre>
@@ -172,17 +166,16 @@ export function SectionMesures({ jours }: MesuresAffichees) {
 				)}
 
 				{/*
-				  ⚠️ CE QUI MANQUE À LA MÉDIANE SE DIT. Une décision sans horodatage
-				  d'affichage ne vaut pas un délai de zéro : elle vaut un trou, et un
-				  trou tu ferait lire la médiane comme si elle portait sur tout.
-				*/}
-				{trous > 0 ? (
-					<p className="mt-1.5 text-cladd-2xs text-cladd-fg-softer">
-						{trous} décision{trous > 1 ? 's' : ''} sans horodatage d’affichage
-						{trous > 1 ? ' ne sont pas comptées' : ' n’est pas comptée'} dans le délai médian.
-					</p>
-				) : null}
-			</details>
-		</SectionEcran>
+			  ⚠️ CE QUI MANQUE À LA MÉDIANE SE DIT. Une décision sans horodatage
+			  d'affichage ne vaut pas un délai de zéro : elle vaut un trou, et un
+			  trou tu ferait lire la médiane comme si elle portait sur tout.
+			*/}
+			{trous > 0 ? (
+				<p className="text-cladd-2xs text-cladd-fg-softer">
+					{trous} décision{trous > 1 ? 's' : ''} sans horodatage d’affichage
+					{trous > 1 ? ' ne sont pas comptées' : ' n’est pas comptée'} dans le délai médian.
+				</p>
+			) : null}
+		</>
 	);
 }

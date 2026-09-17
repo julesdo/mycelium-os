@@ -1,6 +1,6 @@
 import { Button, List, ListItem, SectionTitle, Surface } from '@cladd-ui/react';
 import { DownloadIcon, TrashIcon, UserXIcon } from 'lucide-react';
-import { BoutonPrincipal, ConfirmationParSaisie, SectionEcran, pluriel } from '../../ui';
+import { BoutonPrincipal, ConfirmationParSaisie, pluriel } from '../../ui';
 
 const NOMBRE = new Intl.NumberFormat('fr-FR');
 
@@ -12,6 +12,21 @@ const NOMBRE = new Intl.NumberFormat('fr-FR');
  * il aurait fallu répondre à la main, à la première demande. Un droit qui dépend
  * de la disponibilité de son opérateur n'est pas exerçable.
  */
+/**
+ * ⚠️ LES QUATRE DERNIÈRES LIGNES MANQUAIENT, ET C'ÉTAIT UN INVENTAIRE FAUX.
+ *
+ * `apercuDeMesDonnees` compte NEUF catégories ; ce type n'en déclarait que
+ * cinq, et l'écran n'en affichait que cinq. Le journal, les échanges avec le
+ * compagnon, les propositions de la surveillance et les remises à un conseil
+ * étaient comptés par le serveur, écrits par l'export (`_pageDeJournal`,
+ * `_pageDeConversations`), effacés par la purge (`purgerEtablissement` les vide
+ * toutes les quatre) — et invisibles à la seule question que cette section
+ * existe pour répondre : « qu'est-ce que vous détenez sur moi ? »
+ *
+ * Le paragraphe sous l'inventaire énumère en outre ce qui N'Y FIGURE PAS, ce
+ * qui donnait à la liste l'autorité d'un relevé complet. Un inventaire RGPD qui
+ * sous-déclare est pire qu'un écran vide.
+ */
 export type ApercuDonnees = {
 	nomEtablissement: string;
 	estAdmin: boolean;
@@ -20,6 +35,10 @@ export type ApercuDonnees = {
 	factures: number;
 	decomptes: number;
 	debiteurs: number;
+	journal: number;
+	conversations: number;
+	propositions: number;
+	remisesAuConseil: number;
 	membres: number;
 };
 
@@ -83,46 +102,49 @@ export function SectionDonnees({
 	suppressionDeLEtablissement,
 	onSupprimerLEtablissement
 }: DonneesAffichees) {
+	if (apercu === null) {
+		return (
+			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+				Aucun établissement actif : il n’y a rien à inventorier, à emporter ni à effacer.
+			</p>
+		);
+	}
+
 	return (
-		<SectionEcran
-			titre="Vos données"
-			legende={
-				apercu === null
-					? undefined
-					: `Depuis le ${new Date(apercu.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
-			}
-		>
-			{apercu === null ? (
-				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-					Aucun établissement actif : il n’y a rien à inventorier, à emporter ni à effacer.
-				</p>
-			) : (
-				<>
-					<Inventaire apercu={apercu} />
+		<>
+			<Inventaire apercu={apercu} />
 
-					<SectionTitle>Emporter vos données</SectionTitle>
-					<Exportation apercu={apercu} exportation={exportation} />
+			<SectionTitle>Emporter vos données</SectionTitle>
+			<Exportation apercu={apercu} exportation={exportation} />
 
-					<SectionTitle>Effacer</SectionTitle>
-					<Effacements
-						apercu={apercu}
-						suppressionDuCompte={suppressionDuCompte}
-						onSupprimerLeCompte={onSupprimerLeCompte}
-						suppressionDeLEtablissement={suppressionDeLEtablissement}
-						onSupprimerLEtablissement={onSupprimerLEtablissement}
-					/>
-				</>
-			)}
-		</SectionEcran>
+			<SectionTitle>Effacer</SectionTitle>
+			<Effacements
+				apercu={apercu}
+				suppressionDuCompte={suppressionDuCompte}
+				onSupprimerLeCompte={onSupprimerLeCompte}
+				suppressionDeLEtablissement={suppressionDeLEtablissement}
+				onSupprimerLEtablissement={onSupprimerLEtablissement}
+			/>
+		</>
 	);
 }
 
 function Inventaire({ apercu }: { apercu: ApercuDonnees }) {
+	/*
+	  ⚠️ LES NEUF CATÉGORIES QUE LE SERVEUR COMPTE, TOUTES LES NEUF. L'ordre va du
+	  plus attendu au moins attendu : ce qu'on a déposé, ce qui en est sorti, puis
+	  ce que le produit a écrit de son côté. C'est le dernier tiers qui surprend,
+	  et c'est précisément celui qu'on venait vérifier.
+	*/
 	const lignes: readonly { quoi: string; combien: string }[] = [
 		{ quoi: 'Fichiers importés', combien: NOMBRE.format(apercu.depots) },
 		{ quoi: 'Factures enregistrées', combien: NOMBRE.format(apercu.factures) },
 		{ quoi: 'Débiteurs identifiés', combien: NOMBRE.format(apercu.debiteurs) },
 		{ quoi: 'Décomptes arrêtés', combien: NOMBRE.format(apercu.decomptes) },
+		{ quoi: 'Gestes consignés au journal', combien: NOMBRE.format(apercu.journal) },
+		{ quoi: 'Propositions de la surveillance', combien: NOMBRE.format(apercu.propositions) },
+		{ quoi: 'Échanges avec le compagnon', combien: NOMBRE.format(apercu.conversations) },
+		{ quoi: 'Remises à un conseil', combien: NOMBRE.format(apercu.remisesAuConseil) },
 		{ quoi: 'Personnes ayant accès', combien: NOMBRE.format(apercu.membres) }
 	];
 
