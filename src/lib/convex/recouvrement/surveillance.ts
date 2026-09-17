@@ -87,13 +87,33 @@ const vEvenement = v.object({
 	cible: v.optional(
 		v.object({
 			genre: v.union(v.literal('DEBITEUR'), v.literal('CREANCE')),
-			id: v.string()
+			id: v.string(),
+			/**
+			 * Le client d'une cible `CREANCE`. Une cible `DEBITEUR` dit déjà de qui
+			 * il s'agit ; une cible `CREANCE` ne le dit pas, et `reference` est un
+			 * texte qu'on affiche, jamais un identifiant qu'on rapproche.
+			 */
+			debiteurId: v.optional(v.string())
 		})
 	),
 	montant: v.union(v.int64(), v.null()),
 	urgence: vUrgence,
 	explication: v.string(),
-	action: v.string()
+	action: v.string(),
+	/**
+	 * LE JOUR OÙ CE QUE L'ÉVÉNEMENT CONSTATE SE PRODUIT, en AAAA-MM-JJ.
+	 *
+	 * ⚠️ FACULTATIVE, PARCE QUE LE DOMAINE LA REND FACULTATIVE : seuls
+	 * `FACTURE_ECHUE`, `PRESCRIPTION_PROCHE` et `ECHEANCE_PROCEDURE` ont une
+	 * date dans la donnée. Voir `Evenement.dateDuFait`, qui porte la règle.
+	 *
+	 * ⚠️ ET LES DEUX HANDLERS DE CE FICHIER LA RECOPIENT L'UN COMME L'AUTRE. Ils
+	 * reconstruisent l'événement champ par champ : en oublier un le supprime en
+	 * silence, sans que le compilateur ni le validateur ne bronchent. C'est ce
+	 * qui est arrivé à `cible` le 12 septembre 2026, et c'est pour ça que le
+	 * test qui part de la base jusqu'au bout existe.
+	 */
+	dateDuFait: v.optional(v.string())
 });
 
 const vFlux = v.object({
@@ -322,6 +342,9 @@ async function assembler(
 		// reconnaît, et la table est en main juste au-dessus.
 		reference: debiteurs.get(creance.debiteurId)?.denomination ?? 'Débiteur inconnu',
 		id: creance._id as string,
+		// Le client, pour que la cible `CREANCE` dise de qui elle parle. La
+		// dénomination juste au-dessus s'affiche ; elle ne se rapproche pas.
+		debiteurId: creance.debiteurId as string,
 		total: totalParCreance.get(creance._id) ?? ZERO,
 		// Absent sur les créances écrites avant ce champ : le doute ne profite
 		// jamais au produit, une maturité qu'on n'a pas calculée n'est pas acquise.
@@ -381,9 +404,28 @@ async function assembler(
 
 		if (suivi.echeances.length === 0) continue;
 		dossiers.push({
-			reference: creance._id as string,
+			// ⚠️ LA RÉFÉRENCE PORTAIT L'IDENTIFIANT CONVEX DE LA CRÉANCE, qui
+			// s'affichait tel quel dans la file et dans le briefing du matin : une
+			// suite de trente-deux caractères que personne ne peut rattacher à un
+			// client. Le même défaut que sur les créances mûres, corrigé là-bas et
+			// laissé ici — sur la seule rangée du produit qui annonce la perte d'un
+			// titre exécutoire. La table des débiteurs est en main depuis le haut de
+			// cette fonction.
+			reference: debiteurs.get(creance.debiteurId)?.denomination ?? 'Débiteur inconnu',
 			creanceId: creance._id as string,
-			montantEnJeu: ZERO,
+			debiteurId: creance.debiteurId as string,
+			// ⚠️ IL VALAIT `ZERO`, ÉCRIT EN DUR, SUR L'ÉCHÉANCE LA PLUS DANGEREUSE
+			// DU PRODUIT. Chaque événement de la file porte un montant, et c'est
+			// structurel : un gérant arbitre entre 12 000 € et 300 €, pas entre deux
+			// libellés. Une caducité annoncée à « 0,00 € » se lit comme une échéance
+			// sans enjeu — c'est-à-dire comme une ligne qu'on remet à demain, le jour
+			// où elle est la seule qui ne se rattrape pas.
+			//
+			// C'est le MÊME décompte que celui des créances mûres, pris à la même
+			// source : `resteDu`, déjà sommé par créance juste au-dessus. Le
+			// resoustraire ici donnerait deux définitions de ce qui reste dû, et
+			// elles finiraient par diverger.
+			montantEnJeu: totalParCreance.get(creance._id) ?? ZERO,
 			echeances: suivi.echeances.map((echeance) => ({
 				cle: echeance.cle,
 				libelle: echeance.libelle,
@@ -491,7 +533,11 @@ export const fluxInterne = internalQuery({
 				// ete commis ICI le 12 septembre 2026 : les rangees du flux etaient
 				// rendues cliquables, verifiees dans la salle d exposition — qui fournit
 				// SES PROPRES donnees — et inertes dans l application reelle.
-				...(evenement.cible === undefined ? {} : { cible: evenement.cible })
+				...(evenement.cible === undefined ? {} : { cible: evenement.cible }),
+				// ⚠️ MÊME PIÈGE, MÊME REMÈDE. `dateDuFait` est facultative : l'oublier
+				// ici la supprimerait en silence, et la file retomberait sur le tri par
+				// montant sans qu'un seul test ne tombe.
+				...(evenement.dateDuFait === undefined ? {} : { dateDuFait: evenement.dateDuFait })
 			})),
 			montantIdentifie: enCentimes(montantIdentifie(resultat)),
 			hypotheses,
@@ -531,7 +577,11 @@ export const flux = authedQuery({
 				// ete commis ICI le 12 septembre 2026 : les rangees du flux etaient
 				// rendues cliquables, verifiees dans la salle d exposition — qui fournit
 				// SES PROPRES donnees — et inertes dans l application reelle.
-				...(evenement.cible === undefined ? {} : { cible: evenement.cible })
+				...(evenement.cible === undefined ? {} : { cible: evenement.cible }),
+				// ⚠️ MÊME PIÈGE, MÊME REMÈDE. Voir `fluxInterne` juste au-dessus : une
+				// `dateDuFait` oubliée d'un seul des deux handlers rendrait la file
+				// triée dans l'application et pas dans le briefing, ou l'inverse.
+				...(evenement.dateDuFait === undefined ? {} : { dateDuFait: evenement.dateDuFait })
 			})),
 			montantIdentifie: enCentimes(montantIdentifie(resultat)),
 			hypotheses,

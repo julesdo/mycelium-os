@@ -159,7 +159,13 @@ export const executerPourOrganisation = internalMutation({
 				// Elle porte le lien de la notification : une alerte qu'on ne peut
 				// pas ouvrir oblige a retrouver l'objet a la main, et c'est ce que
 				// tout le reste du produit vient de cesser de faire.
-				...(brut.cible === undefined ? {} : { cible: brut.cible })
+				...(brut.cible === undefined ? {} : { cible: brut.cible }),
+				// ⚠️ TROISIEME RECONSTRUCTION DU MEME OBJET, ET LA SEULE HORS DE
+				// `surveillance.ts`. Sans cette ligne, `comparerEvenements` rangerait le
+				// briefing du matin sur le montant pendant que la file le range sur
+				// l'echeance : deux ordres pour une meme situation, alors que ce
+				// comparateur existe precisement pour qu'il n'y en ait qu'un.
+				...(brut.dateDuFait === undefined ? {} : { dateDuFait: brut.dateDuFait })
 			}));
 
 			const precedent = await precedentDe(ctx, organizationId, jour);

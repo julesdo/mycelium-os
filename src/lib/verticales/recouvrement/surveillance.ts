@@ -52,6 +52,20 @@ export type Urgence = 'CRITIQUE' | 'HAUTE' | 'NORMALE';
 export interface CibleEvenement {
 	readonly genre: 'DEBITEUR' | 'CREANCE';
 	readonly id: string;
+	/**
+	 * Le client dont relève cette cible, quand le genre est `CREANCE`.
+	 *
+	 * ⚠️ IL N'EST PAS REDONDANT AVEC `id`. Une cible `DEBITEUR` dit déjà de quel
+	 * client il s'agit ; une cible `CREANCE` ne le dit PAS, et rien d'autre dans
+	 * l'événement ne permet de le retrouver — `reference` est un texte qu'on
+	 * affiche, jamais un identifiant qu'on rapproche. Une file groupée par
+	 * client devrait alors deviner, et deviner un rattachement de créance est
+	 * exactement ce que ce produit refuse de faire.
+	 *
+	 * ⚠️ FACULTATIF, comme la cible elle-même : un appelant qui ne connaît pas
+	 * le débiteur n'en fabrique pas un.
+	 */
+	readonly debiteurId?: string;
 }
 
 export interface Evenement {
@@ -79,6 +93,38 @@ export interface Evenement {
 	 * à la main dans la liste.
 	 */
 	readonly cible?: CibleEvenement;
+	/**
+	 * LA DATE DU FAIT, en AAAA-MM-JJ — le jour où ce que l'événement constate
+	 * se produit, jamais le jour où on l'a détecté.
+	 *
+	 * ═════════════════════════════════════════════════════════════════════════
+	 * ⚠️ ELLE N'EXISTAIT QUE RÉCITÉE DANS UNE PHRASE
+	 * ═════════════════════════════════════════════════════════════════════════
+	 *
+	 * Chaque explication la porte déjà en toutes lettres — « sera prescrite le
+	 * 14 octobre 2026 », « la date limite du 20 septembre 2026 est DÉPASSÉE ».
+	 * Elle était donc LISIBLE et pas EXPLOITABLE : pour trier la file sur
+	 * l'échéance la plus proche, il aurait fallu relire un texte français et
+	 * en extraire une date, ce qu'aucun code sérieux ne fait.
+	 *
+	 * La conséquence tenait en une ligne de `comparerEvenements` : à urgence
+	 * égale, le produit remontait le plus GROS montant. Une prescription qui
+	 * tombe dans six jours passait donc sous une prescription plus grasse qui
+	 * tombe dans quatre-vingts — et c'est la première qui fait perdre l'argent,
+	 * puisque c'est la seule qu'on n'a plus le temps d'arrêter.
+	 *
+	 * ⚠️ TROIS TYPES LA PORTENT, ET PAS QUATRE. `FACTURE_ECHUE` (son échéance),
+	 * `PRESCRIPTION_PROCHE` (sa date de prescription) et `ECHEANCE_PROCEDURE`
+	 * (sa date limite) ont une date DANS LA DONNÉE. `CREANCE_MURE`,
+	 * `DEBITEUR_DEGRADE` et `HABITUDE_ROMPUE` n'en ont aucune : une maturité et
+	 * une dégradation sont des états, pas des échéances. Leur en fabriquer une
+	 * — la date du relevé, par exemple — les ferait entrer dans un tri
+	 * d'échéances où elles n'ont rien à faire, et le tri mentirait.
+	 *
+	 * ⚠️ FACULTATIVE, DONC, ET LE COMPARATEUR RANGE LES SANS-DATE APRÈS. Pas
+	 * avant : un événement sans échéance connue n'est pas le plus urgent.
+	 */
+	readonly dateDuFait?: string;
 }
 
 /**
@@ -171,6 +217,13 @@ export interface CreanceSurveillee {
 	readonly reference: string;
 	/** L'identifiant de la créance, pour que l'événement mène à son écran. */
 	readonly id?: string;
+	/**
+	 * Le client de cette créance, pour que la cible dise de qui il s'agit.
+	 *
+	 * Voir `CibleEvenement.debiteurId` : une cible `CREANCE` ne porte pas son
+	 * client, et `reference` est un texte d'affichage, pas un identifiant.
+	 */
+	readonly debiteurId?: string;
 	readonly total: Montant;
 	/**
 	 * Toutes conditions établies et aucun risque bloquant.
@@ -198,6 +251,16 @@ export interface DossierSurveille {
 	readonly reference: string;
 	/** La créance du dossier, pour que l'échéance mène à son écran. */
 	readonly creanceId?: string;
+	/** Le client du dossier. Voir `CibleEvenement.debiteurId`. */
+	readonly debiteurId?: string;
+	/**
+	 * CE QUI RESTE RÉELLEMENT DÛ SUR CE DOSSIER.
+	 *
+	 * ⚠️ IL VALAIT `ZERO`, EN DUR, CÔTÉ CONVEX — sur l'échéance la plus
+	 * dangereuse du produit. Une caducité annoncée à « 0,00 € » se lit comme une
+	 * échéance sans enjeu, c'est-à-dire comme une ligne qu'on remet à demain ;
+	 * or c'est la seule qui fasse perdre un titre exécutoire à date fixe.
+	 */
 	readonly montantEnJeu: Montant;
 	readonly echeances: readonly EcheanceSurveillee[];
 }
@@ -268,15 +331,33 @@ export interface EtatSurveille {
 const RANG_URGENCE: Record<Urgence, number> = { CRITIQUE: 0, HAUTE: 1, NORMALE: 2 };
 
 /**
- * Compare deux événements : le plus urgent d'abord, puis le plus gros
- * montant, puis la référence.
+ * Compare deux événements : le plus urgent d'abord, puis L'ÉCHÉANCE LA PLUS
+ * PROCHE, puis le plus gros montant, puis la référence.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ L'ÉCHÉANCE EST PASSÉE DEVANT LE MONTANT, ET C'EST LA CORRECTION
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Ce comparateur rangeait sur l'urgence puis sur le montant. À urgence égale —
+ * et toutes les prescriptions sont CRITIQUES — la plus GROSSE remontait la
+ * première. Une prescription de 30 000 € qui tombe dans quatre-vingts jours
+ * passait donc devant une prescription de 4 000 € qui tombe dans six, alors
+ * que la seconde est la seule des deux qu'on n'a plus le temps d'arrêter : au
+ * moment où elle s'éteint, ce n'est pas un montant qui baisse, c'est un droit
+ * qui disparaît. Trier sur le montant, c'est trier sur ce qu'on voudrait
+ * gagner ; trier sur la date, c'est trier sur ce qu'on est en train de perdre.
+ *
+ * ⚠️ LES SANS-DATE PASSENT APRÈS, JAMAIS AVANT. Une maturité, une dégradation
+ * ou une habitude rompue n'a pas d'échéance : la ranger devant une échéance
+ * connue reviendrait à traiter « on ne sait pas quand » comme « c'est pour
+ * demain ». Entre deux sans-date, le montant retrouve la main.
  *
  * LE DÉPARTAGE PAR RÉFÉRENCE N'EST PAS DÉCORATIF. Sans lui, deux événements de
- * même urgence et même montant ressortent dans l'ordre d'arrivée — un ordre
- * que rien ne documente et qui dépend de la façon dont l'appelant a construit
- * son tableau. Un briefing composé sur ce tri changerait alors de titre,
- * d'intro et d'action au hasard d'une exécution à l'autre pour une situation
- * pourtant identique.
+ * même urgence, même date et même montant ressortent dans l'ordre d'arrivée —
+ * un ordre que rien ne documente et qui dépend de la façon dont l'appelant a
+ * construit son tableau. Un briefing composé sur ce tri changerait alors de
+ * titre, d'intro et d'action au hasard d'une exécution à l'autre pour une
+ * situation pourtant identique.
  *
  * SEUL COMPARATEUR AU MONDE : c'est en le dupliquant qu'on a un jour perdu ce
  * départage. `detecterEvenements` et `composerBriefing` s'en servent tous les
@@ -285,6 +366,17 @@ const RANG_URGENCE: Record<Urgence, number> = { CRITIQUE: 0, HAUTE: 1, NORMALE: 
 export function comparerEvenements(a: Evenement, b: Evenement): number {
 	const parUrgence = RANG_URGENCE[a.urgence] - RANG_URGENCE[b.urgence];
 	if (parUrgence !== 0) return parUrgence;
+
+	// Les dates sont en AAAA-MM-JJ : l'ordre alphabétique EST l'ordre
+	// chronologique, et aucun fuseau ne s'en mêle.
+	const dateA = a.dateDuFait;
+	const dateB = b.dateDuFait;
+	if (dateA !== undefined && dateB !== undefined && dateA !== dateB) {
+		return dateA < dateB ? -1 : 1;
+	}
+	if (dateA !== undefined && dateB === undefined) return -1;
+	if (dateA === undefined && dateB !== undefined) return 1;
+
 	const montantA = a.montant ?? ZERO;
 	const montantB = b.montant ?? ZERO;
 	if (montantA === montantB) return a.reference.localeCompare(b.reference);
@@ -329,6 +421,8 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			urgence: 'NORMALE',
 			explication: `La facture ${facture.reference} est échue depuis le ${dateLisible(facture.dateEcheance)} et reste due.`,
 			action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.',
+			// La MÊME date que l'explication récite, exploitable cette fois.
+			dateDuFait: facture.dateEcheance,
 			// La cible est le DEBITEUR : une facture n'a pas d'ecran a elle.
 			...(facture.debiteurId === undefined
 				? {}
@@ -379,6 +473,10 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				? 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
 				: `Ouvrir la facture ${facture.reference} : ${versEuros(facture.montantExigible)} € y ` +
 					`sont décomptés, avec les pièces qui les soutiennent.`,
+			// LA DATE DE PRESCRIPTION, celle des deux branches de l'explication.
+			// C'est elle qui fait remonter la prescription la plus proche en tête
+			// de file au lieu de la plus grosse : voir `comparerEvenements`.
+			dateDuFait: facture.datePrescription,
 			// ⚠️ LA CIBLE VAUT AUSSI POUR LA BRANCHE ÉTEINTE. On pourrait croire
 			// qu'une créance perdue n'a plus d'écran à ouvrir — c'est l'inverse :
 			// c'est là qu'on va constater la perte, et c'est le seul endroit où
@@ -416,7 +514,18 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			// demander : ouvrir un écran et regarder ce qu'il porte. Même traitement
 			// que l'échéance de procédure, quelques lignes plus bas.
 			action: `Ouvrir cette créance : les conditions établies et les pièces qui les soutiennent y sont.`,
-			...(creance.id === undefined ? {} : { cible: { genre: 'CREANCE' as const, id: creance.id } })
+			// ⚠️ AUCUNE `dateDuFait` : une créance mûre est un ÉTAT, pas une
+			// échéance. Lui en fabriquer une la ferait entrer dans un tri de dates
+			// où elle n'a rien à faire. Voir `Evenement.dateDuFait`.
+			...(creance.id === undefined
+				? {}
+				: {
+						cible: {
+							genre: 'CREANCE' as const,
+							id: creance.id,
+							...(creance.debiteurId === undefined ? {} : { debiteurId: creance.debiteurId })
+						}
+					})
 		});
 	}
 
@@ -454,11 +563,20 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				// on ouvre un écran, ce qui est le seul geste que ce logiciel puisse
 				// honnêtement demander.
 				action: `Ouvrir ce dossier : la date limite et son journal y sont.`,
+				// LA DATE LIMITE, la seule du produit qui éteigne un droit à jour
+				// fixe. `estDateReelle` vient de la valider quelques lignes plus haut.
+				dateDuFait: echeance.dateLimite,
 				// « Ouvrir ce dossier » etait une consigne sans porte : rien n'etait
 				// cliquable dans le flux. La cible la rend vraie.
 				...(dossier.creanceId === undefined
 					? {}
-					: { cible: { genre: 'CREANCE' as const, id: dossier.creanceId } })
+					: {
+							cible: {
+								genre: 'CREANCE' as const,
+								id: dossier.creanceId,
+								...(dossier.debiteurId === undefined ? {} : { debiteurId: dossier.debiteurId })
+							}
+						})
 			});
 		}
 	}
