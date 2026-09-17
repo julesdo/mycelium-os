@@ -1,5 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { EcranDebiteurs, type CleFiltre, type LigneDebiteur } from '../../screens/debiteurs';
+import {
+	EcranDebiteurs,
+	type CleFiltre,
+	type HabitudeDeLaLigne,
+	type LigneDebiteur
+} from '../../screens/debiteurs';
 import { EcranDebiteur, type DebiteurComplet } from '../../screens/debiteur';
 import {
 	additionner,
@@ -647,6 +652,39 @@ function comportementDu(debiteurId: string) {
 	return { habitude, ruptures };
 }
 
+/**
+ * L'HABITUDE DE CHAQUE CLIENT POUR LA LISTE, comme la route la compose depuis
+ * `lireParEtablissement` (`routes/app/debiteurs.tsx`).
+ *
+ * ⚠️ MÊME CORPS DE CALCUL QUE LA PAGE, ET C'EST LE POINT. En production, la
+ * lecture par établissement et la lecture par client passent toutes deux par
+ * `composerComportement` — les deux écrans ne peuvent donc pas dire deux choses
+ * du même client. La salle tient la même contrainte en dérivant les deux de
+ * `comportementDu` : les recopier ferait mentir la démonstration exactement là
+ * où le produit, lui, ne ment pas.
+ *
+ * ⚠️ SEULES LES HABITUDES ÉTABLIES ENTRENT, comme dans la route. Le garage n'a
+ * pas assez de règlements datés : il n'a pas d'entrée, donc sa rangée ne porte
+ * aucun délai — c'est la forme qu'on vient regarder, et une entrée « à zéro »
+ * l'effacerait.
+ */
+const HABITUDES_DEMO: ReadonlyMap<string, HabitudeDeLaLigne> = new Map(
+	DEBITEURS_DEMO.flatMap((debiteur): Array<readonly [string, HabitudeDeLaLigne]> => {
+		const { habitude, ruptures } = comportementDu(debiteur._id);
+		if (!habitude.connue) return [];
+		return [
+			[
+				debiteur._id,
+				{
+					delaiMedianJours: habitude.delaiMedianJours,
+					echantillon: habitude.echantillon,
+					rompu: ruptures.length > 0
+				}
+			]
+		];
+	})
+);
+
 /** Une pièce telle que la requête la rend : ce que les écrans affichent, et l'instant du dépôt qui l'ordonne. */
 type PieceListee = PieceAffichee & { readonly ajouteeLe: number };
 
@@ -810,6 +848,14 @@ const FORMES_LISTE_DEMO: Readonly<
 	Record<string, { terme?: string; filtres?: readonly CleFiltre[] }>
 > = {
 	'un filtre posé': { filtres: ['SANS_SIREN'] },
+	/*
+	  ⚠️ CELLE-CI NE FAIT PAS DOUBLON AVEC LA PRÉCÉDENTE, et c'est pour ça qu'elle
+	  existe : elle ne laisse que l'imprimerie, seul client dont un impayé sort du
+	  délai auquel il règle d'habitude. C'est la forme qui répond à « par qui je
+	  commence » — et elle écarte le serrurier, qui paie tard depuis toujours et
+	  que la pilule « Facture échue » retiendrait pourtant.
+	*/
+	'rythme rompu': { filtres: ['RYTHME_ROMPU'] },
 	'recherche sans résultat': { terme: 'Zimmermann' }
 };
 
@@ -830,8 +876,14 @@ function DebiteursDemo({ etat, variante }: { etat: EtatDemo; variante?: string }
 			enfant={null}
 			donnees={lectureDemo(
 				etat,
-				{ debiteurs: LIGNES_DEMO, choisi: null, ...lecture },
-				{ debiteurs: [], choisi: null, ...lecture }
+				{ debiteurs: LIGNES_DEMO, choisi: null, habitudes: HABITUDES_DEMO, ...lecture },
+				/*
+				  ⚠️ LA CARTE RESTE LA MÊME DANS LE VIDE, elle ne passe pas à `undefined`.
+				  L'écran vide ne lit aucune habitude — il n'a aucune rangée — et lui
+				  donner une lecture « en vol » ferait regarder un état que ce vide-là ne
+				  produit jamais : un établissement sans débiteur n'a rien à mesurer.
+				*/
+				{ debiteurs: [], choisi: null, habitudes: HABITUDES_DEMO, ...lecture }
 			)}
 		/>
 	);
@@ -853,7 +905,12 @@ function AvecLaListe({ debiteurId, children }: { debiteurId: string; children: R
 	return (
 		<EcranDebiteurs
 			enfant={children}
-			donnees={lectureDemo('pret', { debiteurs: LIGNES_DEMO, choisi: debiteurId, ...lecture })}
+			donnees={lectureDemo('pret', {
+				debiteurs: LIGNES_DEMO,
+				choisi: debiteurId,
+				habitudes: HABITUDES_DEMO,
+				...lecture
+			})}
 		/>
 	);
 }
