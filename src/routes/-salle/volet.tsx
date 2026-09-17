@@ -588,9 +588,11 @@ function VoletDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
  * qu'on verra. Et rendu hors de `PageEcran`, il passait sous la barre flottante
  * de la coquille : son titre était caché par la recherche.
  *
- * ⚠️ LE VOLET GAUCHE EST UN PLACEHOLDER NOMMÉ, ET IL LE DIT. La file s'écrit en
- * T6 et T7 ; mettre une fausse liste sans le dire ferait regarder un écran que
- * le produit n'a pas. La fusion des deux tranches la remplace.
+ * ⚠️ LE VOLET GAUCHE TIENT LA PLACE, ET IL LE DIT. La file existe (T6, T7) et a
+ * son entrée à elle dans la salle ; ce qui n'existe pas encore, c'est le
+ * BRANCHEMENT des deux — la file qui écrit `?ligne=` et monte ce volet dans son
+ * `preuve`. Mettre une fausse liste sans le dire ferait regarder un écran que le
+ * produit n'a pas.
  *
  * Les sections ouvertes vivent ici, pour que `sectionsParDefaut` soit LU par la
  * salle comme la file le lira : une règle par défaut qu'aucune surface n'appelle
@@ -627,9 +629,10 @@ function VoletAvecSections({
 				liste: (
 					<PageBody>
 						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-							La file s’écrit en T6 et T7. Ce volet gauche n’est pas un écran du produit : il
-							tient la place, pour que le volet de preuve se regarde à la largeur qu’il aura —
-							40 % au-delà de 1024 px, une feuille en dessous.
+							La file est écrite, et se regarde sous « la file ». Ce volet gauche n’est pas un
+							écran du produit : il tient la place le temps que les deux se branchent l’un à
+							l’autre, pour que le volet de preuve se regarde dès maintenant à la largeur qu’il
+							aura — 40 % au-delà de 1024 px, une feuille en dessous.
 						</p>
 					</PageBody>
 				),

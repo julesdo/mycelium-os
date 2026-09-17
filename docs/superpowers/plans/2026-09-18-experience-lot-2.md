@@ -128,6 +128,25 @@ Le `Segmented` bascule sur `usePreference` (`use-preference.ts:34-56`), clé `le
 ### T8. Le volet de preuve, `?ligne=<id>`
 
 `src/screens/volet.tsx`, état adressable et non route. Un `Segmented` Cladd de trois positions le BASCULE (Pièce, Décompte, Conversation, décision 8) ; la position Pièce reste un seul flux vertical de dix sections dépliables, jamais d'onglets. Migrent telles quelles : `ui/suivi-procedure.tsx:160` en section 6 (la seule saisie de date que le produit ne peut pas déduire, en date du FAIT), `ui/bilan-import.tsx` en section 8, l'énumération de `analyses/procedure.tsx:337` et `ui/feuille-voie.tsx` en section 6 disponibles AVANT l'arrêt, `ui/solidite.tsx` et `ui/questionnaire-litige.tsx` en section 2, `ui/pieces.tsx` en section 5, `ui/choix-intervenant.tsx` en section 6. ⚠️ **`apresProcedure.engagerProcedure` est rebranchée ici**, avec `consignerEvenement`, `suiviDeLaCreance` et `rattacherIntervenant` : sans elle aucune créance ne passe à `ENGAGEE`, donc aucun `ECHEANCE_PROCEDURE` ne se produit, donc la portée « Engagés » naîtrait vide pour toujours et le montant que T2 vient de réparer ne s'afficherait jamais. C'est le défaut fondateur de `fonctions-appelees.test.ts:16-22`, et le refaire serait le refaire en connaissance de cause. Le brouillon de la section 9 reste produit par `relance.ts` sans appel modèle (B10), les trois refus s'affichent à sa place (B12), et `GesteRelance = 'ARRETER_DECOMPTE'` pointe vers `/app/arret/$id`, ce qui retire le `as never` de `ui/relances.tsx:187`. **B5 se tient par l'absence** : aucun composant d'envoi n'existe dans `src/ui/` aujourd'hui, et le volet n'en introduit aucun.
+
+**⚠️ Trois corrections relevées AU CODE pendant T8.**
+1. **Le `as never` de `ui/relances.tsx:187` NE PART PAS avec la route.** Il ne tenait pas à la
+   destination — déjà déclarée — mais à `as={Lien}` sur un `Button` : passer `Lien` en élément
+   d'un bouton efface le générique du routeur, donc le typage des paramètres avec lui. Le retirer
+   ne compile pas, quelle que soit la route visée. La DESTINATION, elle, reste vérifiée contre
+   l'arbre des routes et par `destinations-existent`. `ui/veilleur.tsx:415-416` porte la même
+   assertion pour la même raison.
+2. **`surveillance.ts:548-628` ne porte ni `hypotheses` ni `anglesMorts`.** Il n'existe AUCUN
+   `hypotheses` dans ce fichier ; `anglesMorts()` est à `:675-745`, et l'hypothèse du délai le
+   plus court vient de `regimePrescription()` (`pays/france/prescription.ts:179-194`), qui la
+   porte avec sa note. C'est de là que la section 3 du volet la tire.
+3. **Le « (i) par segment » de § 4.2 section 1 est rendu UNE FOIS PAR SURFACE, délibérément.** La
+   fiche est attachée à un PARAMÈTRE, pas à un segment : douze segments d'une même créance
+   renverraient douze fois aux deux mêmes fiches. `referentiel.ts` a déjà tranché cette question
+   dans ces termes — « le répéter à chaque segment serait du bruit, et le bruit s'apprend ». Le
+   tableau sous le décompte porte exactement ce que le « (i) » aurait ouvert : valeur, source,
+   date de relevé, `verifie`, `valideParAvocat`.
+
 **Acceptation.** On recharge une URL portant `?ligne=`, le volet revient ouvert sur la même section, un montant s'y déplie en segments portant base, taux, jours et base annuelle, et une voie déclarée engagée fait apparaître ses échéances dans la file au battement suivant.
 
 ### T9. `/app/arret/$id`, le seul écran plein cadre
