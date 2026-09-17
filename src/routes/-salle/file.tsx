@@ -88,13 +88,24 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		debiteurId: DURAND,
 		debiteur: 'Fournitures Durand',
 		portees: ['AUJOURDHUI', 'A_TRANCHER'],
-		question: 'La facture FA-2026-0311 a-t-elle été contestée par écrit ?',
+		question:
+			'Ce client vous a-t-il écrit pour contester cette facture : courrier, e-mail, ou réserve portée sur un bon de livraison ?',
 		urgence: 'HAUTE',
 		montant: 24_990n,
+		/*
+		  ⚠️ LA PROPOSITION PORTE SES DEUX APPUIS, comme toutes les autres. Elle
+		  n'en avait aucun ici, et la production n'en produisait pas non plus : la
+		  question de litige se retient ou s'écarte AVEC SON MOTIF, sinon elle est
+		  un constat qu'on lit et qu'on ne peut pas suivre. Le champ de motif
+		  s'ouvre en place sur « Écarter », et c'est aux quatre largeurs que ça se
+		  regarde — une rangée qui porte déjà trois réponses.
+		*/
 		proposition: {
 			valeur: 'oui',
 			source: 'réserve lue sur BL-2024-77, page 1',
-			date: '2026-08-14'
+			date: '2026-08-14',
+			onRetenir: () => {},
+			onEcarter: () => {}
 		},
 		onRepondre: () => {},
 		pli: {
@@ -166,20 +177,43 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		}
 	},
 	{
+		/*
+		  ⚠️ UNE SEULE RANGÉE POUR L'ÉTABLISSEMENT, ET SON CLIENT SE CHOISIT.
+		  `ui/lettrage.tsx` se rend replié, en une ligne « Rapprocher un virement » :
+		  une rangée par client donnerait quarante lignes identiques que rien ne
+		  distingue sans les ouvrir. Et le produit n'a AUCUNE source qui dise de qui
+		  vient un virement — un règlement que l'import ne sait rattacher est compté
+		  puis jeté — donc la liste des clients est fermée par le logiciel et le
+		  gérant ne confirme que lequel. `debiteurId: null` comme les dépôts : la
+		  rangée vise l'établissement, pas un client.
+		*/
 		genre: 'LETTRAGE',
 		id: 'r-lettrage',
-		debiteurId: DURAND,
-		debiteur: 'Fournitures Durand',
+		debiteurId: null,
+		debiteur: 'Rapprocher un virement',
 		portees: ['AUJOURDHUI', 'A_TRANCHER'],
+		ouvrable: false,
 		lettrage: {
 			proposition: null,
 			enCours: false,
 			erreur: null,
 			onChercher: () => {},
-			onAppliquer: () => {}
+			onAppliquer: () => {},
+			debiteurs: [
+				{
+					id: DURAND,
+					denomination: 'Fournitures Durand',
+					facturesOuvertes: 3,
+					encours: 3_120_050n
+				},
+				{ id: MARTIN, denomination: 'Ateliers Martin', facturesOuvertes: 6, encours: 1_845_000n },
+				{ id: BELLIN, denomination: 'Transports Bellin', facturesOuvertes: 1, encours: 24_990n }
+			],
+			debiteurChoisi: null,
+			onDebiteur: () => {}
 		},
 		pli: {
-			libelle: { un: 'rapprochement en attente', plusieurs: 'rapprochements en attente' },
+			libelle: { un: 'rapprochement possible', plusieurs: 'rapprochements possibles' },
 			rienATrancher: false
 		}
 	},
