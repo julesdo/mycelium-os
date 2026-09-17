@@ -322,7 +322,7 @@ export const suivreRemise = authedQuery({
 			debiteurId: sien === null ? null : sien._id,
 			debiteur: decompte.debiteur?.denomination ?? sien?.denomination ?? 'Débiteur inconnu',
 			remise:
-				remise === undefined
+				remise === undefined || remise === null
 					? null
 					: {
 							_id: remise._id,
