@@ -390,6 +390,13 @@ function FileDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 		 * divergeraient au premier ajout.
 		 */
 		travaux: [],
+		/**
+		 * ⚠️ IL ANNONCE, IL NE PORTE AUCUN CHIFFRE ÉCARTÉ. « 2 illisibles » et « 3
+		 * déjà connues » vivent sur la rangée datée du dépôt, qui ne se referme pas :
+		 * un bandeau qui serait leur seul support les ferait disparaître d'un geste
+		 * de fermeture, et l'omission porterait sur l'argent qu'on ne réclamera pas.
+		 */
+		annonce: '198 factures lues cette nuit, 17 créances entrent dans la surveillance.',
 		verrous: [],
 		ligneOuverte,
 		onOuvrirLigne: (id) => setLigneOuverte(id === ligneOuverte ? null : id),

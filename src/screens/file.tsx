@@ -6,10 +6,11 @@ import {
 	ToolbarButton,
 	ToolbarSeparator
 } from '@cladd-ui/react';
-import { ChevronDownIcon, ChevronRightIcon, UploadIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronRightIcon, InfoIcon, UploadIcon } from 'lucide-react';
 import { usePreference } from '../app/use-preference';
 import { PREAVIS } from '../lib/verticales/recouvrement/surveillance';
 import {
+	Bandeau,
 	BilanImport,
 	BilanPertes,
 	BoutonPrincipal,
@@ -399,6 +400,19 @@ export interface FileAffichee {
 	readonly facturesPortent: CeQueVosFacturesPortent;
 	/** Le travail de fond, en une rangée unique et comptée (§ 5.2). */
 	readonly travaux: readonly TacheVeilleur[];
+	/**
+	 * CE QUI S'EST TERMINÉ PENDANT QUE LE GÉRANT ÉTAIT AILLEURS.
+	 *
+	 * « 812 factures lues, 17 créances entrent dans la surveillance. »
+	 *
+	 * ⚠️ IL ANNONCE, IL NE PORTE PAS. Il est refermable, donc RIEN DE CHIFFRÉ ne
+	 * peut vivre là et nulle part ailleurs : le bilan d'un dépôt — doublons, hors
+	 * périmètre, orphelins, illisibles — vit dans sa rangée permanente et datée,
+	 * et dans la section 8 du volet. Un bandeau qui serait le seul support d'un
+	 * chiffre écarté ferait exactement ce que `ui/bilan-import.tsx` interdit :
+	 * mentir par omission, d'un geste de fermeture.
+	 */
+	readonly annonce?: string;
 	readonly verrous: readonly Verrou[];
 	/** La ligne dont la preuve est ouverte, lue dans l'adresse (`?ligne=`). */
 	readonly ligneOuverte: string | null;
@@ -470,6 +484,7 @@ function FilePrete({
 		optionsSecteur,
 		facturesPortent,
 		travaux,
+		annonce,
 		verrous,
 		ligneOuverte,
 		onOuvrirLigne,
@@ -485,6 +500,8 @@ function FilePrete({
 	const [clientDeplie, setClientDeplie] = useState<string | null>(null);
 	/** La zone de dépôt, dépliée par la `Toolbar`. Elle est permanente dans l'état vide. */
 	const [depotOuvert, setDepotOuvert] = useState(false);
+	/** Le bandeau d'annonce, refermé d'un geste. Il ne porte aucun chiffre : voir `annonce`. */
+	const [annonceFermee, setAnnonceFermee] = useState(false);
 
 	const rangeeOuverte = rangees.find((r) => r.id === ligneOuverte) ?? null;
 	const clientDeLaLigne = rangeeOuverte?.debiteurId ?? null;
@@ -580,6 +597,20 @@ function FilePrete({
 		</div>
 	) : (
 		<div className="mx-auto flex w-full max-w-3xl flex-col gap-cladd-2xs">
+			{/* LE BANDEAU, EN TÊTE ET REFERMABLE (§ 5.2). Il ANNONCE ce qui s'est
+			    terminé pendant que le gérant était ailleurs ; ce qui est chiffré vit
+			    dans la rangée datée du dépôt, qui ne se referme pas. */}
+			{annonce === undefined || annonceFermee ? null : (
+				<Bandeau
+					icone={<InfoIcon size={18} />}
+					action={
+						<BoutonSecondaire onClick={() => setAnnonceFermee(true)}>Fermer</BoutonSecondaire>
+					}
+				>
+					{annonce}
+				</Bandeau>
+			)}
+
 			<Tete tete={tete} vue={vue} />
 
 			{depotOuvert ? (
