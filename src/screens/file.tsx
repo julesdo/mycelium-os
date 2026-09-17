@@ -289,10 +289,6 @@ export type RangeeDeLaFile = RangeeObstacle | RangeeLitige | RangeeLettrage | Ra
 /** Les deux genres que la règle d'urgence sait ranger. Les deux autres vivent hors des groupes. */
 type RangeeGroupee = RangeeObstacle | RangeeLitige;
 
-function estGroupee(rangee: RangeeDeLaFile): rangee is RangeeGroupee {
-	return rangee.genre === 'OBSTACLE' || rangee.genre === 'LITIGE';
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // LA TÊTE
 // ─────────────────────────────────────────────────────────────────────────

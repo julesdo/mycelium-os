@@ -2,7 +2,7 @@ import { Button } from '@cladd-ui/react';
 import { BuildingIcon, ChevronDownIcon } from 'lucide-react';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
 import { DEPOT_A_ECARTS_DEMO, DEPOT_PARFAIT_DEMO } from './depots';
-import { REVELATION_DEMO, REVELATION_SANS_FACTURE_DEMO } from './revelation';
+import { REVELATION_DEMO } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
 import {
