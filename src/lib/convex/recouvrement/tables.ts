@@ -125,6 +125,34 @@ export const vTaux = v.object({
 	denominateur: v.int64()
 });
 
+/**
+ * D'OÙ SORT UN CONSTAT : une pièce du client, ou une entrée du référentiel.
+ *
+ * ⚠️ IL N'Y A PAS DE TROISIÈME FORME, ET C'EST UNE RÈGLE, PAS UNE COMMODITÉ.
+ * Une phrase sans pastille ne peut porter ni un MONTANT ni un ÉNONCÉ
+ * JURIDIQUE, et aucune référence légale ne se dit de mémoire. Une source
+ * libre en texte aurait rouvert exactement ce chemin : une affirmation
+ * sourcée par une phrase que rien ne résout, donc que rien ne corrige le jour
+ * où la valeur change.
+ *
+ * `page` est FACULTATIF, et c'est un angle mort DÉCLARÉ : une lecture qui n'a
+ * pas su dire à quelle page elle a trouvé sa valeur le dit, plutôt que d'en
+ * inventer une.
+ */
+export const vSourceConstat = v.union(
+	v.object({
+		nature: v.literal('PIECE'),
+		pieceId: v.id('pieces'),
+		/** La page où la valeur a été lue, quand la lecture a su le dire. */
+		page: v.optional(v.number())
+	}),
+	v.object({
+		nature: v.literal('REFERENTIEL'),
+		/** La clé de l'entrée de `parametres.ts` qui porte la valeur. */
+		cleParametre: v.string()
+	})
+);
+
 export const recouvrementTables = {
 	/**
 	 * Un fichier déposé, et où en est sa lecture.
@@ -653,6 +681,68 @@ export const recouvrementTables = {
 		.index('by_org', ['organizationId']),
 
 	/**
+	 * LE JOURNAL — une entrée par fait, et aucune ne se réécrit.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ APPEND SEUL, HORS PURGE RGPD
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Aucune entrée ne se modifie ni ne se supprime. C'est le SEUL point
+	 * d'entrée d'une contestation reçue hors du logiciel, donc le seul endroit
+	 * qui puisse dire QUAND ON A SU — et la règle « l'absence de contestation
+	 * CONNUE n'est pas une absence de contestation » n'a de prise que si cette
+	 * date existe quelque part et ne bouge plus.
+	 *
+	 * ⚠️ ELLE GROSSIT SANS BORNE, et c'est assumé : une entrée par geste, sur
+	 * des années. L'export la lit donc PAR PAGE, comme les factures, et jamais
+	 * d'un `.collect()` qui casserait le droit d'accès le jour où il compte.
+	 *
+	 * `avant` et `apres` portent l'état de part et d'autre, en toutes lettres :
+	 * « Qualité passée de indéterminée à commerçant ». Ce sont des CONSTATS
+	 * affichés, pas une machine à états — celle-ci vit dans
+	 * `evenementsProcedure` pour la procédure et dans `creances.statut` pour la
+	 * créance. Deux machines pour un même fait feraient deux vérités, et leur
+	 * divergence serait muette.
+	 */
+	journal: defineTable({
+		organizationId: v.id('organizations'),
+		/**
+		 * L'identifiant du document concerné, en chaîne.
+		 *
+		 * PAS UN `v.id(...)`, PARCE QU'IL N'Y A PAS UNE SEULE CIBLE. Un fait
+		 * porte sur une créance, un débiteur, une facture ou une pièce ; une
+		 * union de quatre identifiants demanderait quatre index là où l'écran
+		 * n'en interroge qu'un, celui de la ligne ouverte, dont il connaît déjà
+		 * la table.
+		 */
+		cible: v.string(),
+		/** La clé du fait, telle que le domaine la nomme. */
+		cle: v.string(),
+		/** L'état AVANT, en toutes lettres. Absent quand le fait n'en a pas. */
+		avant: v.optional(v.string()),
+		/** L'état APRÈS, en toutes lettres. */
+		apres: v.optional(v.string()),
+		/** D'où vient le fait, en toutes lettres : « BODACC du 16/09 ». */
+		source: v.optional(v.string()),
+		/**
+		 * Qui a produit le fait.
+		 *
+		 * DEUX VALEURS ET PAS TROIS : le compagnon n'est pas un troisième
+		 * auteur. Ce qu'il propose vit dans `propositions` tant que personne ne
+		 * l'a retenu ; ce qui entre ici est soit un calcul de la machine, soit
+		 * une déclaration du gérant. Lui inventer une signature ferait croire
+		 * qu'un tiers a décidé quelque chose.
+		 */
+		auteur: v.union(v.literal('MACHINE'), v.literal('GERANT')),
+		/** Qui, quand l'auteur est le gérant. */
+		auteurUserId: v.optional(v.string()),
+		/** Quand on l'a consigné. */
+		consigneLe: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_cible', ['organizationId', 'cible']),
+
+	/**
 	 * LE CARNET D'INTERVENANTS — à qui le gérant confie un acte.
 	 *
 	 * ⚠️ C'EST SON CARNET, PAS UN ANNUAIRE QUE LE PRODUIT PROPOSE. Le
@@ -834,5 +924,213 @@ export const recouvrementTables = {
 		termineLe: v.number()
 	})
 		.index('by_org_and_jour', ['organizationId', 'jour'])
+		.index('by_org', ['organizationId']),
+
+	/**
+	 * CE QUE LE COMPAGNON PROPOSE, ET CE QU'ON EN A FAIT.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ UNE PROPOSITION ÉCARTÉE N'EST JAMAIS SUPPRIMÉE, SEULEMENT MARQUÉE
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Le cycle de vie de la proposition EST la piste d'audit : le jour où le
+	 * débiteur conteste, il faut pouvoir dire ce qu'on n'a PAS retenu, et
+	 * quand. Une suppression physique rend la question sans réponse.
+	 *
+	 * LA SEULE SUPPRESSION EST LA PURGE RGPD, et elle n'épargne pas les
+	 * écartées : ce qu'un gérant a refusé sur son débiteur est sa donnée autant
+	 * que ce qu'il a retenu.
+	 *
+	 * `jour` n'est pas décoratif. Le plafond quotidien se compte par jour
+	 * CALENDAIRE et par établissement, et compter sans index balaierait la
+	 * table à chaque pose — sur la seule table du domaine dont le volume croît
+	 * avec l'usage plutôt qu'avec le portefeuille.
+	 */
+	propositions: defineTable({
+		organizationId: v.id('organizations'),
+		/** L'identifiant du document visé, en chaîne. Même raison que `journal`. */
+		cible: v.string(),
+		/** Le champ visé, tel que le domaine le nomme. */
+		champ: v.string(),
+		/** La valeur proposée, en toutes lettres. */
+		valeur: v.string(),
+		/** D'où elle sort. Sans source, il n'y a pas de proposition. */
+		source: vSourceConstat,
+		/**
+		 * ⚠️ `PROPOSEE` N'EST PAS `ok`. Une proposition non confirmée retombe
+		 * sur `unknown` partout où un critère la lit : le doute ne profite
+		 * jamais au produit, et une proposition qu'on n'a pas lue n'est pas une
+		 * réponse qu'on a donnée.
+		 */
+		etat: v.union(v.literal('PROPOSEE'), v.literal('RETENUE'), v.literal('ECARTEE')),
+		/** `AAAA-MM-JJ`, en UTC comme toutes les dates du produit. */
+		jour: v.string(),
+		/** Quand elle a été mise sous les yeux du gérant. */
+		afficheeLe: v.optional(v.number()),
+		/** Quand elle a été retenue ou écartée. */
+		decideeLe: v.optional(v.number()),
+		/** Qui l'a décidée. */
+		decideePar: v.optional(v.string()),
+		/**
+		 * Pourquoi elle a été écartée, en toutes lettres.
+		 *
+		 * PAS DE POUCE BAS, PAS D'ÉTOILES : on ne note pas un montant, il est
+		 * juste ou faux. Le seul retour qui vaille est la correction elle-même,
+		 * et c'est elle qui produit une trace opposable si le débiteur conteste.
+		 */
+		motifEcart: v.optional(v.string()),
+		poseeLe: v.number()
+	})
 		.index('by_org', ['organizationId'])
+		.index('by_org_and_etat', ['organizationId', 'etat'])
+		.index('by_org_and_jour', ['organizationId', 'jour']),
+
+	/**
+	 * LES TOURS DE PAROLE, UNE LIGNE CHACUN.
+	 *
+	 * ⚠️ UNE LIGNE PAR TOUR, PAS UN FIL DANS UN TABLEAU. Un tableau Convex
+	 * plafonne à 8 192 entrées et le dépassement fait échouer l'écriture
+	 * ENTIÈRE : un fil bavard perdrait son dernier tour ET tous les autres.
+	 * C'est la leçon d'`attestationRequests`, déjà payée une fois ici.
+	 *
+	 * ⚠️ ELLE GROSSIT SANS BORNE, comme `journal`, et l'export la lit par page.
+	 *
+	 * `pastilles` porte la source AU GRAIN DE LA PHRASE, jamais de la réponse.
+	 * Une phrase sans pastille s'affiche visiblement dégradée et ne peut porter
+	 * ni un montant ni un énoncé juridique ; une source posée sur la réponse
+	 * entière laisserait passer la phrase fausse au milieu de trois justes.
+	 *
+	 * `mois` et `usage` tiennent le compteur de coût : un avertissement, puis
+	 * un arrêt de la conversation LIBRE seule, par établissement et par mois.
+	 * Le reste du produit — la file, les calculs, les propositions, le décompte
+	 * — ne dépend d'aucun appel modèle et continue quand le compteur mord.
+	 */
+	conversations: defineTable({
+		organizationId: v.id('organizations'),
+		/** Le fil auquel ce tour appartient. */
+		fil: v.string(),
+		/**
+		 * Ce sur quoi le fil est borné. Le compagnon ne répond que là-dedans, et
+		 * un changement de portée s'inscrit dans le fil plutôt que de le
+		 * déplacer en silence.
+		 */
+		portee: v.union(v.literal('CREANCE'), v.literal('DEBITEUR'), v.literal('PORTEFEUILLE')),
+		/**
+		 * L'identifiant de ce que la portée désigne, en chaîne. Sur
+		 * `PORTEFEUILLE`, c'est celui de l'établissement : l'index reste
+		 * utilisable et aucune ligne ne porte de cible vide.
+		 */
+		cible: v.string(),
+		role: v.union(v.literal('GERANT'), v.literal('COMPAGNON')),
+		texte: v.string(),
+		/** Une pastille par phrase sourcée, au rang de la phrase dans `texte`. */
+		pastilles: v.array(v.object({ phrase: v.number(), source: vSourceConstat })),
+		/**
+		 * Ce que ce tour a consommé. Renseigné sur les tours du compagnon.
+		 *
+		 * ⚠️ `coutEstime` EST UN BUDGET DE PILOTAGE, EN DOLLARS, ET JAMAIS UN
+		 * MONTANT OPPOSABLE. `socle/modele/cout.ts` le dit de lui-même : ce sont
+		 * les « prix Opus 5 (liste), en dollars », « traités comme des euros »,
+		 * et c'est « un budget indicatif de pilotage, pas une facture, donc pas
+		 * de conversion de change ». C'est aussi pourquoi il est un `v.number()`
+		 * et non un `v.int64()` de centimes : la règle des entiers de centimes
+		 * porte sur ce qu'on RÉCLAME, et rien ici ne se réclame à personne. Le
+		 * jour où ce chiffre entre dans une décision de prix, il passe par une
+		 * conversion datée et change de nom.
+		 *
+		 * Les trois compteurs de jetons portent les noms d'`UsageAppel`, pour
+		 * qu'un usage capturé à l'appel s'écrive ici sans traduction.
+		 */
+		usage: v.optional(
+			v.object({
+				tokensIn: v.number(),
+				tokensOut: v.number(),
+				cacheReadTokens: v.number(),
+				coutEstime: v.number()
+			})
+		),
+		/** `AAAA-MM`, en UTC. Le grain du compteur mensuel. */
+		mois: v.string(),
+		diteLe: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_cible', ['organizationId', 'cible'])
+		.index('by_org_and_fil', ['organizationId', 'fil'])
+		.index('by_org_and_mois', ['organizationId', 'mois']),
+
+	/**
+	 * LE SUIVI D'UN DOSSIER REMIS AU CONSEIL.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ ON SUIT UNE REMISE, ON NE PILOTE PAS LE CONSEIL
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Le produit n'écrit pas au conseil, ne lui fixe aucun délai, ne le relance
+	 * pas, ne note pas son efficacité, et ne recommande aucune procédure à
+	 * personne. Les quatre états décrivent la REMISE, jamais la procédure, et
+	 * AUCUNE transition n'est automatique : chacune vient d'une déclaration
+	 * humaine. Tout le reste serait du recouvrement pour compte de tiers ou du
+	 * conseil juridique.
+	 *
+	 * `CLOS` existe pour une raison précise : sans lui, un dossier resté sans
+	 * retour serait ouvert pour toujours, et un suivi dont on ne peut pas
+	 * sortir est un mur.
+	 *
+	 * ⚠️ DEUX DATES PAR TRANSITION, comme `evenementsProcedure`. `remisLe`,
+	 * `revenuLe` et `closLe` sont les dates du FAIT, en AAAA-MM-JJ, et elles
+	 * seules comptent un délai ; `consigneLe` est celle de la saisie et n'entre
+	 * dans aucun calcul. Un gérant qui enregistre le 20 mars une remise faite
+	 * le 3 doit voir ses comptes partir du 3.
+	 *
+	 * ⚠️ `consigneLe` PORTE LA DERNIÈRE SAISIE, PAS TOUTES. La trace de chaque
+	 * transition — qui l'a déclarée, quand, depuis quel état — vit dans
+	 * `journal`, qui est en append seul et existe précisément pour ça. Trois
+	 * horodatages de saisie de plus ici auraient fait une seconde piste d'audit
+	 * à côté de la première, et leur divergence aurait été muette.
+	 *
+	 * ⚠️ `decompteId` NE CHANGE JAMAIS. Le dossier fige ce qu'il a emporté : la
+	 * question n'est pas « que dirait le dossier aujourd'hui » mais « qu'a lu
+	 * le conseil le jour où on le lui a remis ». Produire un dossier à jour
+	 * crée une NOUVELLE remise, datée, avec son propre décompte.
+	 *
+	 * ⚠️ ET LA PRESCRIPTION NE S'ARRÊTE PAS PARCE QUE LE DOSSIER EST PARTI.
+	 * `surveillance.ts` ne sait rien d'une remise et continue de produire ses
+	 * événements : c'est voulu, la remise est un fait du produit, pas un fait
+	 * du droit. `pays/france/prescription.ts` ne gère ni suspension ni
+	 * interruption, et le logiciel ignore donc si le conseil a interrompu quoi
+	 * que ce soit tant qu'un fait de procédure n'est pas consigné. C'est le
+	 * mode de panne le plus cher du produit : croire sa prescription
+	 * surveillée alors qu'elle ne l'est plus.
+	 */
+	remisesAuConseil: defineTable({
+		organizationId: v.id('organizations'),
+		creanceId: v.id('creances'),
+		/** Le décompte figé que le dossier emporte. Il ne change jamais. */
+		decompteId: v.id('decomptes'),
+		etat: v.union(v.literal('PREPARE'), v.literal('REMIS'), v.literal('REVENU'), v.literal('CLOS')),
+		/**
+		 * À qui, quand le gérant le nomme.
+		 *
+		 * ⚠️ FACULTATIF, ET C'EST LA LIGNE ROUGE. Un dossier se remet sans
+		 * nommer personne, et le produit ne propose JAMAIS de nom : la fiche
+		 * vient du carnet du gérant, pas d'un annuaire que le produit
+		 * recommanderait.
+		 */
+		intervenantId: v.optional(v.id('intervenants')),
+		/** La date du FAIT de la remise. AAAA-MM-JJ. */
+		remisLe: v.optional(v.string()),
+		/** La date du FAIT du retour. AAAA-MM-JJ. */
+		revenuLe: v.optional(v.string()),
+		/** La date du FAIT de la clôture. AAAA-MM-JJ. */
+		closLe: v.optional(v.string()),
+		/** Pourquoi le gérant met fin au suivi, en toutes lettres. */
+		motifCloture: v.optional(v.string()),
+		/** Ce que le gérant déclare attendre, en toutes lettres. */
+		attendu: v.optional(v.string()),
+		/** Quand la dernière transition a été saisie. Jamais dans un calcul. */
+		consigneLe: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_etat', ['organizationId', 'etat'])
+		.index('by_creance', ['creanceId'])
 };

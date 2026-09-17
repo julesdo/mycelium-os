@@ -53,6 +53,15 @@ import {
  * compteurs viennent des totaux déjà tenus sur les dépôts, jamais d'un
  * balayage des lignes : compter trois ans de factures à chaque ouverture de
  * l'écran des réglages coûterait plus cher que l'export lui-même.
+ *
+ * ⚠️ ET CE N'EST PAS CE QUE FAIT LE CODE CI-DESSOUS, IL FAUT LE DIRE. Chaque
+ * compteur est un `.collect()`, donc un balayage, borné par les limites de
+ * lecture d'une requête Convex. `journal` et `conversations` s'y ajoutent et
+ * grossissent sans borne, comme `facturesVente` avant elles : le jour où l'un
+ * d'eux dépasse, c'est l'aperçu ENTIER qui lève, et l'écran de suppression avec
+ * lui. Le compteur exact d'une table sans borne demande un agrégat que ce
+ * dépôt n'a pas ; l'export, lui, ne dépend pas de ces compteurs et lit par
+ * page.
  */
 export const apercuDeMesDonnees = authedQuery({
 	args: {},
@@ -66,6 +75,10 @@ export const apercuDeMesDonnees = authedQuery({
 			factures: v.number(),
 			decomptes: v.number(),
 			debiteurs: v.number(),
+			journal: v.number(),
+			conversations: v.number(),
+			propositions: v.number(),
+			remisesAuConseil: v.number(),
 			membres: v.number()
 		})
 	),
@@ -93,6 +106,22 @@ export const apercuDeMesDonnees = authedQuery({
 			.query('facturesVente')
 			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
 			.collect();
+		const journal = await ctx.db
+			.query('journal')
+			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+			.collect();
+		const conversations = await ctx.db
+			.query('conversations')
+			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+			.collect();
+		const propositions = await ctx.db
+			.query('propositions')
+			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+			.collect();
+		const remises = await ctx.db
+			.query('remisesAuConseil')
+			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+			.collect();
 		const membres = await ctx.db
 			.query('organizationMembers')
 			.withIndex('by_organization', (q) => q.eq('organizationId', orgId))
@@ -106,6 +135,10 @@ export const apercuDeMesDonnees = authedQuery({
 			factures: factures.length,
 			decomptes: decomptes.length,
 			debiteurs: debiteurs.length,
+			journal: journal.length,
+			conversations: conversations.length,
+			propositions: propositions.length,
+			remisesAuConseil: remises.length,
 			membres: membres.length
 		};
 	}
@@ -177,10 +210,50 @@ export const _pageDeReglements = internalQuery({
 });
 
 /**
+ * LE JOURNAL ET LA CONVERSATION GROSSISSENT SANS BORNE, ELLES AUSSI.
+ *
+ * Une entrée de journal par geste et un tour de parole par question, sur des
+ * années : ces deux tables suivent l'USAGE, pas le portefeuille. Les lire d'un
+ * `.collect()` ferait échouer l'export — c'est-à-dire le droit d'accès — au
+ * moment précis où il y a le plus à rendre. Elles passent donc par le même
+ * découpage que les factures.
+ */
+export const _pageDeJournal = internalQuery({
+	args: { organizationId: v.id('organizations'), curseur: v.union(v.string(), v.null()) },
+	returns: vPage,
+	handler: async (ctx, { organizationId, curseur }) => {
+		const page = await ctx.db
+			.query('journal')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.paginate({ cursor: curseur, numItems: PAR_PAGE });
+		return { elements: page.page, curseur: page.continueCursor, fini: page.isDone };
+	}
+});
+
+export const _pageDeConversations = internalQuery({
+	args: { organizationId: v.id('organizations'), curseur: v.union(v.string(), v.null()) },
+	returns: vPage,
+	handler: async (ctx, { organizationId, curseur }) => {
+		const page = await ctx.db
+			.query('conversations')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.paginate({ cursor: curseur, numItems: PAR_PAGE });
+		return { elements: page.page, curseur: page.continueCursor, fini: page.isDone };
+	}
+});
+
+/**
  * Tout ce qui tient en une lecture : l'établissement, ses dépôts, ses créances,
- * ses décomptes, ses débiteurs, ses membres, ses battements. Ces
- * tables se comptent en dizaines de lignes — seules les factures et les
- * règlements demandent une pagination.
+ * ses décomptes, ses débiteurs, ses membres, ses battements, ses propositions
+ * et ses remises au conseil. Ces tables se comptent en dizaines de lignes —
+ * seules les factures, les règlements, le journal et les conversations
+ * demandent une pagination.
+ *
+ * ⚠️ ET `propositions` EST LA PLUS EXPOSÉE DES NEUF, il faut le dire ici plutôt
+ * que de le découvrir sur un export qui lève : elle suit l’USAGE et non le
+ * portefeuille, comme le journal et les conversations. Le plafond quotidien
+ * borne ce qui s’AFFICHE, pas ce qui se pose. Le jour où un établissement en
+ * accumule des milliers, elle rejoint les paginées.
  */
 export const _entetesExport = internalQuery({
 	args: { organizationId: v.id('organizations') },
@@ -196,7 +269,9 @@ export const _entetesExport = internalQuery({
 			pieces,
 			membres,
 			invitations,
-			battements
+			battements,
+			propositions,
+			remises
 		] = await Promise.all([
 			ctx.db
 				.query('importsRecouvrement')
@@ -229,6 +304,14 @@ export const _entetesExport = internalQuery({
 			ctx.db
 				.query('battements')
 				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('propositions')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.collect(),
+			ctx.db
+				.query('remisesAuConseil')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 				.collect()
 		]);
 
@@ -241,7 +324,9 @@ export const _entetesExport = internalQuery({
 			pieces,
 			membres,
 			invitations,
-			battements
+			battements,
+			propositions,
+			remises
 		};
 	}
 });
@@ -258,6 +343,8 @@ type Entetes = {
 	membres: unknown[];
 	invitations: unknown[];
 	battements: unknown[];
+	propositions: unknown[];
+	remises: unknown[];
 };
 
 /**
@@ -313,6 +400,30 @@ export const exporterMesDonnees = action({
 			curseur = page.curseur;
 		}
 
+		const journal: unknown[] = [];
+		curseur = null;
+		for (;;) {
+			const page: { elements: unknown[]; curseur: string; fini: boolean } = await ctx.runQuery(
+				internal.rgpd._pageDeJournal,
+				{ organizationId, curseur }
+			);
+			journal.push(...page.elements);
+			if (page.fini) break;
+			curseur = page.curseur;
+		}
+
+		const conversations: unknown[] = [];
+		curseur = null;
+		for (;;) {
+			const page: { elements: unknown[]; curseur: string; fini: boolean } = await ctx.runQuery(
+				internal.rgpd._pageDeConversations,
+				{ organizationId, curseur }
+			);
+			conversations.push(...page.elements);
+			if (page.fini) break;
+			curseur = page.curseur;
+		}
+
 		const contenu = {
 			aPropos: {
 				produit: 'Letikette',
@@ -331,7 +442,11 @@ export const exporterMesDonnees = action({
 			pieces: entetes.pieces,
 			creances: entetes.creances,
 			decomptes: entetes.decomptes,
-			battements: entetes.battements
+			battements: entetes.battements,
+			propositions: entetes.propositions,
+			remisesAuConseil: entetes.remises,
+			journal,
+			conversations
 		};
 
 		const json = JSON.stringify(contenu, null, 2);
@@ -440,7 +555,23 @@ export const purgerEtablissement = internalMutation({
 			});
 		};
 
-		// 1. Les règlements — le plus gros volume : plusieurs par facture.
+		// 1. Ce que le compagnon a posé, et le suivi d'une remise. ELLES PARTENT
+		//    EN PREMIER parce qu'elles sont le feuillage le plus extérieur : une
+		//    proposition cite une pièce, une remise cite une créance, un décompte
+		//    et une fiche du carnet. Les vider plus tard laisserait, le temps
+		//    d'une passe, des lignes qui désignent des documents disparus.
+		//
+		//    ⚠️ LE JOURNAL ET LES PROPOSITIONS ÉCARTÉES PARTENT COMME LE RESTE.
+		//    Le produit ne les supprime jamais de lui-même — l'un est en append
+		//    seul, l'autre est sa piste d'audit — mais la purge RGPD est totale,
+		//    sans exception à justifier : ce qu'un gérant a refusé sur son
+		//    débiteur est sa donnée autant que ce qu'il a retenu.
+		budget = await viderParIndexOrg(ctx, 'remisesAuConseil', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'propositions', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'conversations', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'journal', organizationId, budget);
+
+		// 2. Les règlements — le plus gros volume : plusieurs par facture.
 		if (encore()) {
 			const reglements = await ctx.db
 				.query('reglements')
@@ -450,7 +581,7 @@ export const purgerEtablissement = internalMutation({
 			budget -= reglements.length;
 		}
 
-		// 2. Les factures de vente.
+		// 3. Les factures de vente.
 		if (encore()) {
 			const factures = await ctx.db
 				.query('facturesVente')
@@ -460,7 +591,7 @@ export const purgerEtablissement = internalMutation({
 			budget -= factures.length;
 		}
 
-		// 3. Les pièces, leur contenu dans le stockage, et leurs liaisons.
+		// 4. Les pièces, leur contenu dans le stockage, et leurs liaisons.
 		//    Le fichier part AVANT la ligne qui le référence : l'inverse laisserait
 		//    un objet orphelin dans le stockage, que plus rien ne désigne et que
 		//    personne ne saurait retrouver pour l'effacer.
@@ -479,7 +610,7 @@ export const purgerEtablissement = internalMutation({
 			budget -= pieces.length;
 		}
 
-		// 4. Les fichiers déposés, et leur contenu dans le stockage.
+		// 5. Les fichiers déposés, et leur contenu dans le stockage.
 		if (encore()) {
 			const depots = await ctx.db
 				.query('importsRecouvrement')
@@ -492,7 +623,7 @@ export const purgerEtablissement = internalMutation({
 			budget -= depots.length;
 		}
 
-		// 5. Le reste, table par table. L'ordre suit les dépendances : ce qui est
+		// 6. Le reste, table par table. L'ordre suit les dépendances : ce qui est
 		//    référencé part après ce qui le référence.
 		//
 		//    Le journal de procédure part AVANT les créances qu'il référence.
@@ -516,7 +647,7 @@ export const purgerEtablissement = internalMutation({
 			return null;
 		}
 
-		// 5. L'établissement lui-même, en dernier, et son logo avec lui.
+		// 7. L'établissement lui-même, en dernier, et son logo avec lui.
 		const org = await ctx.db.get(organizationId);
 		if (org) {
 			if (org.logoStorageId) await effacerDuStockage(ctx, org.logoStorageId);
@@ -707,9 +838,11 @@ type CtxEcriture = MutationCtx;
 /**
  * Vide une table cloisonnée par organisation, dans la limite du budget restant.
  *
- * Les six tables concernées portent toutes le même index sur `organizationId` —
- * seul son nom change, `by_org` ou `by_organization`. Écrire six fois la même
- * boucle aurait été six occasions d'en oublier une au prochain ajout de table.
+ * Les tables concernées portent toutes le même index sur `organizationId` —
+ * seul son nom change, `by_org` ou `by_organization`. Écrire la même boucle
+ * pour chacune aurait été autant d'occasions d'en oublier une au prochain ajout
+ * de table. ⚠️ Le compte n'est PAS écrit ici : il a été faux dès la septième, et
+ * un nombre dans un commentaire ne tombe pas quand il cesse d'être vrai.
  */
 async function viderParIndexOrg(
 	ctx: CtxEcriture,
@@ -722,7 +855,11 @@ async function viderParIndexOrg(
 		| 'profilsCreancier'
 		| 'notifications'
 		| 'battements'
-		| 'intervenants',
+		| 'intervenants'
+		| 'journal'
+		| 'propositions'
+		| 'conversations'
+		| 'remisesAuConseil',
 	organizationId: Id<'organizations'>,
 	budget: number
 ): Promise<number> {
