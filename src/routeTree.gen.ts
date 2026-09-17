@@ -29,7 +29,9 @@ import { Route as AppReglagesAbonnementRouteImport } from './routes/app/_reglage
 import { Route as AppReglagesDonneesRouteImport } from './routes/app/_reglages.donnees'
 import { Route as AppReglagesEquipeRouteImport } from './routes/app/_reglages.equipe'
 import { Route as AppReglagesParametresRouteImport } from './routes/app/_reglages.parametres'
+import { Route as AppArretIdRouteImport } from './routes/app/arret.$id'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
+import { Route as AppDecompteIdRouteImport } from './routes/app/decompte.$id'
 import { Route as AppDonneesSupprimerCompteRouteImport } from './routes/app/donnees_.supprimer-compte'
 import { Route as AppDonneesSupprimerEtablissementRouteImport } from './routes/app/donnees_.supprimer-etablissement'
 import { Route as AppImportFacturesIdRouteImport } from './routes/app/import-factures.$id'
@@ -148,9 +150,19 @@ const AppReglagesParametresRoute = AppReglagesParametresRouteImport.update({
   path: '/parametres',
   getParentRoute: () => AppReglagesRoute,
 } as any)
+const AppArretIdRoute = AppArretIdRouteImport.update({
+  id: '/arret/$id',
+  path: '/arret/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppCreanceIdRoute = AppCreanceIdRouteImport.update({
   id: '/creance/$id',
   path: '/creance/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDecompteIdRoute = AppDecompteIdRouteImport.update({
+  id: '/decompte/$id',
+  path: '/decompte/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppDonneesSupprimerCompteRoute =
@@ -272,7 +284,9 @@ export interface FileRoutesByFullPath {
   '/app/donnees': typeof AppReglagesDonneesRoute
   '/app/equipe': typeof AppReglagesEquipeRoute
   '/app/parametres': typeof AppReglagesParametresRoute
+  '/app/arret/$id': typeof AppArretIdRoute
   '/app/creance/$id': typeof AppCreanceIdRouteWithChildren
+  '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/donnees/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
   '/app/donnees/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
@@ -311,6 +325,8 @@ export interface FileRoutesByTo {
   '/app/donnees': typeof AppReglagesDonneesRoute
   '/app/equipe': typeof AppReglagesEquipeRoute
   '/app/parametres': typeof AppReglagesParametresRoute
+  '/app/arret/$id': typeof AppArretIdRoute
+  '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/donnees/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
   '/app/donnees/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
@@ -352,7 +368,9 @@ export interface FileRoutesById {
   '/app/_reglages/donnees': typeof AppReglagesDonneesRoute
   '/app/_reglages/equipe': typeof AppReglagesEquipeRoute
   '/app/_reglages/parametres': typeof AppReglagesParametresRoute
+  '/app/arret/$id': typeof AppArretIdRoute
   '/app/creance/$id': typeof AppCreanceIdRouteWithChildren
+  '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/donnees_/supprimer-compte': typeof AppDonneesSupprimerCompteRoute
   '/app/donnees_/supprimer-etablissement': typeof AppDonneesSupprimerEtablissementRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
@@ -394,7 +412,9 @@ export interface FileRouteTypes {
     | '/app/donnees'
     | '/app/equipe'
     | '/app/parametres'
+    | '/app/arret/$id'
     | '/app/creance/$id'
+    | '/app/decompte/$id'
     | '/app/donnees/supprimer-compte'
     | '/app/donnees/supprimer-etablissement'
     | '/app/import-factures/$id'
@@ -433,6 +453,8 @@ export interface FileRouteTypes {
     | '/app/donnees'
     | '/app/equipe'
     | '/app/parametres'
+    | '/app/arret/$id'
+    | '/app/decompte/$id'
     | '/app/donnees/supprimer-compte'
     | '/app/donnees/supprimer-etablissement'
     | '/app/import-factures/$id'
@@ -473,7 +495,9 @@ export interface FileRouteTypes {
     | '/app/_reglages/donnees'
     | '/app/_reglages/equipe'
     | '/app/_reglages/parametres'
+    | '/app/arret/$id'
     | '/app/creance/$id'
+    | '/app/decompte/$id'
     | '/app/donnees_/supprimer-compte'
     | '/app/donnees_/supprimer-etablissement'
     | '/app/import-factures/$id'
@@ -649,11 +673,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReglagesParametresRouteImport
       parentRoute: typeof AppReglagesRoute
     }
+    '/app/arret/$id': {
+      id: '/app/arret/$id'
+      path: '/arret/$id'
+      fullPath: '/app/arret/$id'
+      preLoaderRoute: typeof AppArretIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/creance/$id': {
       id: '/app/creance/$id'
       path: '/creance/$id'
       fullPath: '/app/creance/$id'
       preLoaderRoute: typeof AppCreanceIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/decompte/$id': {
+      id: '/app/decompte/$id'
+      path: '/decompte/$id'
+      fullPath: '/app/decompte/$id'
+      preLoaderRoute: typeof AppDecompteIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/donnees_/supprimer-compte': {
@@ -873,7 +911,9 @@ interface AppRouteRouteChildren {
   AppProceduresRoute: typeof AppProceduresRoute
   AppRevelationRoute: typeof AppRevelationRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppArretIdRoute: typeof AppArretIdRoute
   AppCreanceIdRoute: typeof AppCreanceIdRouteWithChildren
+  AppDecompteIdRoute: typeof AppDecompteIdRoute
   AppDonneesSupprimerCompteRoute: typeof AppDonneesSupprimerCompteRoute
   AppDonneesSupprimerEtablissementRoute: typeof AppDonneesSupprimerEtablissementRoute
 }
@@ -885,7 +925,9 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProceduresRoute: AppProceduresRoute,
   AppRevelationRoute: AppRevelationRoute,
   AppIndexRoute: AppIndexRoute,
+  AppArretIdRoute: AppArretIdRoute,
   AppCreanceIdRoute: AppCreanceIdRouteWithChildren,
+  AppDecompteIdRoute: AppDecompteIdRoute,
   AppDonneesSupprimerCompteRoute: AppDonneesSupprimerCompteRoute,
   AppDonneesSupprimerEtablissementRoute: AppDonneesSupprimerEtablissementRoute,
 }
