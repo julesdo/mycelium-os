@@ -51,7 +51,8 @@ const RACINE = join(import.meta.dirname, '..', '..');
 const ADMIS: Readonly<Record<string, string>> = {
 	denominationNormalisee:
 		'Écrite à l’import, lue par l’INDEX de dédoublonnage (by_org_and_denomination) et jamais comme propriété. Faux positif du balayage.',
-	majLe: 'Horodatage de dernière mise à jour du profil créancier. Écrit, pas encore affiché — trace d’audit.',
+	majLe:
+		'Horodatage de dernière mise à jour du profil créancier. Écrit, pas encore affiché — trace d’audit.',
 	consigneLe:
 		'La date à laquelle un événement de procédure a été CONSIGNÉ, distincte de sa survenance. Trace d’audit : elle existe pour qu’on puisse dire quand on a su, pas seulement quand c’est arrivé.',
 	produitLe:
@@ -59,7 +60,75 @@ const ADMIS: Readonly<Record<string, string>> = {
 	montantHT:
 		'Écrit à 0n par l’import : un FEC ne donne que le TTC, et déduire le HT d’un taux de TVA supposé serait inventer une ventilation. Le champ attend une source qui le porte.',
 	santeConstateeLe:
-		'Écrit par le radar quand la santé CHANGE. Pas encore affiché à côté du constat de registre — dette d’interface, pas de données.'
+		'Écrit par le radar quand la santé CHANGE. Pas encore affiché à côté du constat de registre — dette d’interface, pas de données.',
+
+	// ── Les quatre tables du compagnon, posées le 18 septembre 2026 ───────────
+	//
+	// ⚠️ CE BLOC EST DATÉ, ET IL EST ÉCRIT POUR DISPARAÎTRE. Le lot 2 pose
+	// `journal`, `propositions`, `conversations` et `remisesAuConseil` AVANT le
+	// code qui les écrira, et c'est une décision de livraison, pas un oubli : la
+	// bascule vers la file ne doit porter ni schéma, ni champ, ni fonction, pour
+	// qu'un `git revert` la rende en entier. Les tables partent donc seules et
+	// plusieurs jours avant.
+	//
+	// Le prix est ce bloc, et il se paie une fois. Chaque entrée NOMME la tâche
+	// qui l'alimentera ; une entrée qui survit à sa tâche devient un commentaire
+	// faux dans un test vert, et se retire le jour où la tâche livre. C'est la
+	// seule chose qui distingue une dette datée d'une dispense.
+	//
+	// ⚠️ ET CE N'EST PAS UN CHAMP ORPHELIN DE PLUS DANS CE DÉPÔT. Le défaut que
+	// ce test attrape est « déclaré, LU, écrit par personne » : un calcul dégradé
+	// en silence sur un chemin que quelqu'un croit alimenté. Ici, rien ne lit
+	// encore : il n'y a aucun repli silencieux à produire tant que le premier
+	// lecteur n'existe pas.
+
+	// `journal` — alimenté par T8 (le volet de preuve, section 7, seul point
+	// d'entrée d'une contestation reçue hors du logiciel) et relu par la mesure
+	// de T13 (le taux de correction après coup).
+	avant:
+		'L’état AVANT d’un fait du journal, en toutes lettres. Posé au T5 du lot 2, alimenté par T8.',
+	apres:
+		'L’état APRÈS d’un fait du journal, en toutes lettres. Posé au T5 du lot 2, alimenté par T8.',
+	auteur:
+		'MACHINE ou GERANT sur une entrée de journal. Deux valeurs et pas trois : le compagnon n’est pas un troisième auteur. Posé au T5 du lot 2, alimenté par T8.',
+	auteurUserId:
+		'Qui a consigné, quand l’auteur est le gérant. Posé au T5 du lot 2, alimenté par T8.',
+
+	// `propositions` — alimenté par T13, qui pose les propositions dans le
+	// battement quotidien, tient leur plafond et rend leurs trois mesures.
+	champ: 'Le champ qu’une proposition vise. Posé au T5 du lot 2, alimenté par T13.',
+	afficheeLe:
+		'Quand une proposition a été mise sous les yeux du gérant. Sans elle, la médiane du délai entre l’affichage et le tap — l’une des trois mesures qui autoriseront à déplacer le plafond de sept — ne se calcule pas. Posé au T5 du lot 2, alimenté par T13.',
+	decideeLe:
+		'Quand une proposition a été retenue ou écartée. Posé au T5 du lot 2, alimenté par T13.',
+	decideePar: 'Qui a retenu ou écarté une proposition. Posé au T5 du lot 2, alimenté par T13.',
+	motifEcart:
+		'Pourquoi une proposition a été écartée, en toutes lettres. Pas de pouce bas : on ne note pas un montant, il est juste ou faux. Posé au T5 du lot 2, alimenté par T13.',
+	poseeLe: 'Quand une proposition a été posée. Posé au T5 du lot 2, alimenté par T13.',
+
+	// `conversations` — alimenté par T14, qui écrit la conversation, son prompt
+	// figé et sa plomberie de coût.
+	fil: 'Le fil auquel un tour de parole appartient. Posé au T5 du lot 2, alimenté par T14.',
+	pastilles:
+		'Une source par PHRASE, jamais par réponse : une phrase sans pastille ne peut porter ni un montant ni un énoncé juridique. Posé au T5 du lot 2, alimenté par T14.',
+	usage:
+		'Les jetons consommés par un tour du compagnon, aux noms d’`UsageAppel`. C’est ce qui manque aujourd’hui pour que le plafond de coût existe : `estimerCout` et `CAP_EUR` n’ont aucun site d’appel, et l’usage facturé capté à l’extraction est jeté par ses deux appelants. Posé au T5 du lot 2, alimenté par T14.',
+	mois: 'AAAA-MM, le grain du compteur mensuel de coût. Posé au T5 du lot 2, alimenté par T14.',
+	diteLe: 'Quand un tour de parole a été dit. Posé au T5 du lot 2, alimenté par T14.',
+
+	// `remisesAuConseil` — alimenté par T10, qui produit la pièce arrêtée et
+	// suit le dossier remis.
+	decompteId:
+		'Le décompte FIGÉ qu’un dossier emporte. Il ne change jamais : la question n’est pas « que dirait le dossier aujourd’hui » mais « qu’a lu le conseil le jour où on le lui a remis ». Posé au T5 du lot 2, alimenté par T10.',
+	remisLe:
+		'La date du FAIT de la remise, AAAA-MM-JJ. Elle seule compte un délai ; `consigneLe` est celle de la saisie. Posé au T5 du lot 2, alimenté par T10.',
+	revenuLe: 'La date du FAIT du retour du conseil. Posé au T5 du lot 2, alimenté par T10.',
+	closLe:
+		'La date du FAIT de la clôture du suivi. Sans cet état, un dossier sans retour resterait ouvert pour toujours. Posé au T5 du lot 2, alimenté par T10.',
+	motifCloture:
+		'Pourquoi le gérant met fin au suivi, en toutes lettres. Posé au T5 du lot 2, alimenté par T10.',
+	attendu:
+		'Ce que le gérant déclare attendre du conseil, en toutes lettres. Le produit ne fixe aucun délai et ne relance personne : il enregistre ce que le gérant dit attendre. Posé au T5 du lot 2, alimenté par T10.'
 };
 
 function fichiers(dossier: string, acc: string[] = []): string[] {

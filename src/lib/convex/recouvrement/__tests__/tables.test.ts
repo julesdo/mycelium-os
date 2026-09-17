@@ -73,9 +73,16 @@ describe('schéma du recouvrement', () => {
 		// personne ne l'a lue, parce qu'elle vit hors des deux dossiers de tests
 		// qu'on relance d'habitude. C'est le mode de panne d'un test juste : il
 		// n'échoue pour personne.
+		//
+		// ⚠️ TREIZE SONT DEVENUES DIX-SEPT le 18 septembre 2026, avec les quatre
+		// tables du compagnon — `journal`, `propositions`, `conversations` et
+		// `remisesAuConseil`. Elles sont posées AVANT le code qui les écrira, et
+		// c'est une décision de livraison : la bascule vers la file ne doit
+		// porter aucun schéma, pour qu'un `git revert` la rende en entier.
 		expect(TABLES.map(([nom]) => nom).sort()).toEqual([
 			'annuaireAvocats',
 			'battements',
+			'conversations',
 			'creances',
 			'debiteurs',
 			'decomptes',
@@ -83,10 +90,13 @@ describe('schéma du recouvrement', () => {
 			'facturesVente',
 			'importsRecouvrement',
 			'intervenants',
+			'journal',
 			'pieces',
 			'piecesFactures',
 			'profilsCreancier',
-			'reglements'
+			'propositions',
+			'reglements',
+			'remisesAuConseil'
 		]);
 	});
 
