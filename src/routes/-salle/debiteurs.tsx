@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { EcranDebiteurs, type LigneDebiteur } from '../../screens/debiteurs';
+import { EcranDebiteurs, type CleFiltre, type LigneDebiteur } from '../../screens/debiteurs';
 import { EcranDebiteur, type DebiteurComplet } from '../../screens/debiteur';
 import {
 	additionner,
@@ -767,20 +767,71 @@ const COCHEES_DEMO: readonly string[] = facturesDu(PRINCIPAL_DEMO._id)
 	.map((facture) => facture._id);
 
 /**
+ * L'ÉTAT DE LECTURE DE LA LISTE, comme la route le tient
+ * (`routes/app/debiteurs.tsx`) : un terme et un jeu de pilules, avec leurs
+ * gestionnaires.
+ *
+ * ⚠️ IL PART D'UN DÉPART NOMMÉ, et c'est toute la raison de le tenir ici. Les
+ * deux formes que la liste ne prend QUE sous le doigt — filtrée, et sans
+ * résultat — n'existent dans aucune donnée : sans départ, on ne peut les
+ * regarder qu'en tapant dans la salle, donc jamais à quatre largeurs d'affilée.
+ * Elles restent vivantes : on peut retirer la pilule et voir la liste revenir.
+ */
+function useLectureDemo(depart: { terme?: string; filtres?: readonly CleFiltre[] }) {
+	const [terme, setTerme] = useState(depart.terme ?? '');
+	const [filtres, setFiltres] = useState<ReadonlySet<CleFiltre>>(
+		() => new Set<CleFiltre>(depart.filtres ?? [])
+	);
+
+	return {
+		terme,
+		filtres,
+		onTerme: setTerme,
+		onBasculerFiltre: (cle: CleFiltre) =>
+			setFiltres((precedents) => {
+				const suivants = new Set(precedents);
+				if (suivants.has(cle)) suivants.delete(cle);
+				else suivants.add(cle);
+				return suivants;
+			}),
+		onToutAfficher: () => {
+			setTerme('');
+			setFiltres(new Set<CleFiltre>());
+		}
+	};
+}
+
+/**
+ * Les formes nommées de la liste. Chacune rend autre chose que la principale :
+ * une pilule posée qui ne laisse qu'un client, et un terme qu'aucun nom ne
+ * porte, qui montre le vide de la recherche AVEC ses gestes encore à l'écran.
+ */
+const FORMES_LISTE_DEMO: Readonly<
+	Record<string, { terme?: string; filtres?: readonly CleFiltre[] }>
+> = {
+	'un filtre posé': { filtres: ['SANS_SIREN'] },
+	'recherche sans résultat': { terme: 'Zimmermann' }
+};
+
+/**
  * LA LISTE SEULE : aucun débiteur ouvert, donc aucun volet droit.
  *
  * ⚠️ ELLE NE PORTE PLUS DE VOLET DE PREUVE. Le détail d'un débiteur a son
  * adresse — `/app/debiteurs/$id` — et c'est l'entrée suivante qui le montre,
  * dans le volet droit de cette même liste.
  */
-function DebiteursDemo({ etat }: { etat: EtatDemo }) {
+function DebiteursDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+	// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
+	const depart = formeDemo(variante, {}, FORMES_LISTE_DEMO);
+	const lecture = useLectureDemo(depart);
+
 	return (
 		<EcranDebiteurs
 			enfant={null}
 			donnees={lectureDemo(
 				etat,
-				{ debiteurs: LIGNES_DEMO, choisi: null },
-				{ debiteurs: [], choisi: null }
+				{ debiteurs: LIGNES_DEMO, choisi: null, ...lecture },
+				{ debiteurs: [], choisi: null, ...lecture }
 			)}
 		/>
 	);
@@ -794,10 +845,15 @@ function DebiteursDemo({ etat }: { etat: EtatDemo }) {
  * voient ; en dessous, la page seule, plein écran.
  */
 function AvecLaListe({ debiteurId, children }: { debiteurId: string; children: ReactNode }) {
+	// La liste du volet gauche est rendue NUE, sans terme ni pilule : c'est la
+	// page de droite qu'on vient regarder, et un filtre posé ici cacherait le
+	// client qu'elle montre.
+	const lecture = useLectureDemo({});
+
 	return (
 		<EcranDebiteurs
 			enfant={children}
-			donnees={lectureDemo('pret', { debiteurs: LIGNES_DEMO, choisi: debiteurId })}
+			donnees={lectureDemo('pret', { debiteurs: LIGNES_DEMO, choisi: debiteurId, ...lecture })}
 		/>
 	);
 }
@@ -850,6 +906,7 @@ export const ECRANS_DEBITEURS: readonly EcranDuProduit[] = [
 		route: '/app/debiteurs',
 		libelle: 'débiteurs',
 		vide: true,
+		variantes: Object.keys(FORMES_LISTE_DEMO),
 		Demo: DebiteursDemo
 	},
 	{

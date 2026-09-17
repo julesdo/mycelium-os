@@ -189,3 +189,10 @@ export {
  * `app/barre.tsx` et `app/compagnon.tsx` — eux ne dessinent rien. */
 export { BarreDuBas, PastilleDeRappel, type DestinationBarre } from './barre-du-bas';
 export { CompagnonFlottant, type EtatCompagnon } from './compagnon-flottant';
+
+/* ── LE SOMMAIRE D'UNE LISTE (ecran/clients) ──────────────────────────────
+ *
+ * Le total d'une liste et ce qu'il recouvre, posé au-dessus d'elle. Écrit pour
+ * la liste des clients ; il ne sait rien d'elle et tiendra pour la prochaine.
+ * Voir le fichier : il dit pourquoi ce n'est pas `ChiffreHero`. */
+export { SommaireEncours } from './sommaire-encours';
