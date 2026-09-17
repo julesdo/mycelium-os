@@ -71,9 +71,16 @@ function taux(valeur: number | null): string {
 function delai(ms: number | null): string {
 	if (ms === null) return '—';
 	if (ms < 2000) return `${Math.round(ms)} ms`;
-	if (ms < 90_000) return `${(ms / 1000).toFixed(1)} s`;
+	// La virgule décimale, pas le point : l'interface est en français, et un
+	// « 14.2 s » au milieu d'un tableau se lit comme une copie d'un export.
+	if (ms < 90_000) return `${SECONDES.format(ms / 1000)} s`;
 	return `${Math.round(ms / 60_000)} min`;
 }
+
+const SECONDES = new Intl.NumberFormat('fr-FR', {
+	minimumFractionDigits: 1,
+	maximumFractionDigits: 1
+});
 
 export function SectionMesures({ jours }: MesuresAffichees) {
 	const posees = jours.reduce((total, jour) => total + jour.posees, 0);
@@ -121,7 +128,15 @@ export function SectionMesures({ jours }: MesuresAffichees) {
 							<TableauCorps>
 								{jours.map((jour) => (
 									<TableauLigne key={jour.jour}>
-										<TableauCellule>{dateCourte(jour.jour)}</TableauCellule>
+										{/*
+										  ⚠️ LA DATE NE SE COUPE PAS. À 375 px, « 17 sept. 2026 »
+										  se replie sur trois lignes et triple la hauteur de chaque
+										  rangée ; le conteneur du tableau défile déjà pour lui
+										  seul, donc rien n'est perdu à la garder d'un bloc.
+										*/}
+										<TableauCellule>
+											<span className="whitespace-nowrap">{dateCourte(jour.jour)}</span>
+										</TableauCellule>
 										<TableauCellule aDroite chiffre>
 											{jour.posees}
 										</TableauCellule>

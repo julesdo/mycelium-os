@@ -10,6 +10,8 @@ import { vEvenementDeSurveillance } from './surveillance';
 import { QUESTIONS_LITIGE, type CleFait, type Reponse } from '../../verticales/recouvrement/litige';
 import { estDateReelle } from '../../verticales/recouvrement/calendrier';
 import {
+	CHAMP_PRESCRIPTION,
+	champEteintUnDroit,
 	eteintUnDroit,
 	mesurerLeJour,
 	plafonner,
@@ -221,18 +223,31 @@ async function constatsDeReserve(
 }
 
 /**
+ * CE QU'UN ÉVÉNEMENT QUI ÉTEINT UN DROIT PEUT CITER — ou `null`.
+ *
+ * ⚠️ UNE CADUCITÉ ÉTEINT BIEN UN DROIT, ET NE PRODUIT POURTANT RIEN AUJOURD'HUI.
+ * `eteintUnDroit` la reconnaît — c'est sa gravité qui la fait remonter en
+ * CRITIQUE — mais aucune entrée de `parametres.ts` ne nomme le délai dont elle
+ * sort, et les trois délais de procédure relevés ne se rattachent pas à une
+ * échéance sans deviner lequel. B3 tranche : un énoncé juridique résout vers une
+ * entrée du référentiel, ou il n'est pas rendu. Se taire ici ne perd rien — la
+ * rangée de caducité, elle, reste dans le flux, avec son montant et sa date.
+ *
+ * Écrire `delaiPrescriptionCommerciale` sur une caducité serait le pire des
+ * deux mondes : une pastille qui a l'air vérifiable et qui cite le mauvais
+ * texte.
+ */
+function cleDuReferentiel(type: string): string | null {
+	return type === 'PRESCRIPTION_PROCHE' ? CLE_PRESCRIPTION : null;
+}
+
+/**
  * LES CONSTATS QUI ÉTEIGNENT UN DROIT, LUS SUR LE FLUX DU JOUR.
  *
  * ⚠️ L'EXPLICATION DU DOMAINE EST RECOPIÉE MOT POUR MOT. La reformuler ici
  * créerait une seconde version de la vérité, qui dériverait de la première —
  * c'est déjà la règle du battement pour les notifications, et elle vaut ici
  * pour la même raison : ces phrases portent une date de prescription.
- *
- * ⚠️ LA SOURCE EST LE RÉFÉRENTIEL, ET C'EST CE QUI REND LE CONSTAT RENDABLE.
- * B3 : un énoncé juridique résout vers une entrée de `parametres.ts` ou n'est
- * pas rendu. Une date de prescription sort de `delaiPrescriptionCommerciale`,
- * que `pays/france/prescription.ts` résout — la pastille l'affiche avec sa
- * source, sa date de relevé et ses deux booléens.
  *
  * ⚠️ UN ÉVÉNEMENT SANS CIBLE NE PRODUIT RIEN. Une proposition sans cible serait
  * une rangée qu'on ne peut ni ouvrir ni décider ; fabriquer un identifiant
@@ -253,6 +268,9 @@ function constatsDEcheance(
 		if (!eteintUnDroit(evenement)) continue;
 		if (evenement.cible === undefined) continue;
 
+		const cleParametre = cleDuReferentiel(evenement.type);
+		if (cleParametre === null) continue;
+
 		// Une seule par cible : un client dont six factures se prescrivent n'a
 		// pas six décisions à prendre, il en a une.
 		if (dejaVues.has(evenement.cible.id)) continue;
@@ -260,9 +278,9 @@ function constatsDEcheance(
 
 		candidats.push({
 			cible: evenement.cible.id,
-			champ: 'PRESCRIPTION',
+			champ: CHAMP_PRESCRIPTION,
 			valeur: evenement.explication,
-			source: { nature: 'REFERENTIEL', cleParametre: CLE_PRESCRIPTION },
+			source: { nature: 'REFERENTIEL', cleParametre },
 			eteintUnDroit: true
 		});
 	}
@@ -338,9 +356,12 @@ export const poserLesPropositionsDuJour = internalMutation({
 			neufs,
 			dejaCeJour.map((proposition) => ({
 				cible: proposition.cible,
-				// Relu du champ, et pas d'un booléen stocké : la règle vit dans le
-				// domaine, et un booléen en base la figerait au jour de l'écriture.
-				eteintUnDroit: proposition.champ === 'PRESCRIPTION'
+				// ⚠️ RELU DU CHAMP PAR LE DOMAINE, ET PAS COMPARÉ ICI. L'événement qui
+				// a produit ce candidat n'existe plus ; il ne reste que le champ écrit
+				// en base. Une seconde règle recopiée ici finirait par diverger, et une
+				// prescription posée le matin consommerait alors une des sept places de
+				// l'après-midi — en silence.
+				eteintUnDroit: champEteintUnDroit(proposition.champ)
 			}))
 		);
 

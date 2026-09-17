@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
 	PROPOSITIONS_PAR_JOUR,
 	PROPOSITIONS_PAR_RANGEE,
+	CHAMP_PRESCRIPTION,
+	champEteintUnDroit,
 	eteintUnDroit,
 	plafonner,
 	resumeDuPlafond,
@@ -47,7 +49,7 @@ function ordinaire(n: number, cible = 'creance-1'): CandidatProposition[] {
 function echeance(n: number): CandidatProposition[] {
 	return Array.from({ length: n }, (_, i) => ({
 		cible: `debiteur-${i}`,
-		champ: 'PRESCRIPTION',
+		champ: CHAMP_PRESCRIPTION,
 		valeur: `La facture F-${i} sera prescrite le 14 octobre 2026.`,
 		source: { nature: 'REFERENTIEL' as const, cleParametre: 'delaiPrescriptionCommerciale' },
 		eteintUnDroit: true
@@ -84,6 +86,21 @@ describe('garde-fou 1 : une échéance qui éteint un droit ne compte jamais dan
 		// Une seule place est prise : les trente échéances n'en prennent aucune.
 		expect(pose.aPoser).toHaveLength(PROPOSITIONS_PAR_JOUR - 1);
 		expect(pose.enAttente).toBe(1);
+	});
+
+	it('dit la même chose à la pose et au recompte', () => {
+		// ⚠️ LE TROU QUE CE CAS FERME. À la pose, l'exemption se lit sur
+		// l'ÉVÉNEMENT ; au recompte de ce qui a déjà été posé aujourd'hui,
+		// l'événement n'existe plus et il ne reste que le champ écrit en base. Si
+		// les deux lectures divergeaient, une prescription posée le matin
+		// consommerait une des sept places de l'après-midi, en silence.
+		const posee = echeance(1)[0]!;
+		expect(posee.eteintUnDroit).toBe(true);
+		expect(champEteintUnDroit(posee.champ)).toBe(true);
+
+		const ordinaires = ordinaire(1)[0]!;
+		expect(ordinaires.eteintUnDroit).toBe(false);
+		expect(champEteintUnDroit(ordinaires.champ)).toBe(false);
 	});
 
 	it('reconnaît la prescription et la caducité, et rien d’autre', () => {

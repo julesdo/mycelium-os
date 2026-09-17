@@ -206,6 +206,32 @@ export function eteintUnDroit(evenement: {
 	return evenement.type === 'ECHEANCE_PROCEDURE' && evenement.urgence === 'CRITIQUE';
 }
 
+/** Le champ d'un constat de prescription, nommé une fois. */
+export const CHAMP_PRESCRIPTION = 'PRESCRIPTION';
+
+/**
+ * LES CHAMPS DONT UNE PROPOSITION NE COMPTE JAMAIS DANS LES SEPT.
+ *
+ * ⚠️ IL EN FAUT DEUX LECTURES, ET C'EST POURQUOI ELLES VIVENT CÔTE À CÔTE. À la
+ * POSE, l'exemption se lit sur l'ÉVÉNEMENT qui produit le candidat
+ * (`eteintUnDroit`). Au RECOMPTE — ce qui a déjà été posé aujourd'hui —
+ * l'événement n'existe plus : il ne reste que le champ écrit en base. Les deux
+ * doivent dire la même chose, sans quoi une prescription posée le matin
+ * consommerait une des sept places de l'après-midi, en silence.
+ *
+ * ⚠️ UN SEUL CHAMP AUJOURD'HUI, ET LA CADUCITÉ N'Y EST PAS — parce qu'AUCUNE
+ * proposition de caducité n'est posée. `eteintUnDroit` la reconnaît bien, mais
+ * aucune entrée de `parametres.ts` ne nomme le délai dont elle sort : un constat
+ * qui ne résout vers aucune source ne se rend pas (B3). Le jour où ce délai est
+ * relevé, son champ entre ici EN MÊME TEMPS que son producteur.
+ */
+export const CHAMPS_QUI_ETEIGNENT_UN_DROIT: ReadonlySet<string> = new Set([CHAMP_PRESCRIPTION]);
+
+/** L'exemption, relue sur une proposition déjà en base. */
+export function champEteintUnDroit(champ: string): boolean {
+	return CHAMPS_QUI_ETEIGNENT_UN_DROIT.has(champ);
+}
+
 // ── Les trois nombres (§ 10, Q3) ────────────────────────────────────────────
 
 /** Une proposition du jour, réduite à ce que la mesure lit. */
