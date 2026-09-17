@@ -6,6 +6,7 @@ import {
 	BilanImport,
 	BoutonSecondaire,
 	ChoixIntervenant,
+	Conversation,
 	Decompte,
 	FeuilleDeclaration,
 	FeuilleVoie,
@@ -35,6 +36,7 @@ import {
 	pluriel,
 	type AvocatAffiche,
 	type ChoixDeclare,
+	type ConversationAffichee,
 	type DecompteAffiche,
 	type DepotAffiche,
 	type EtatRechercheAvocat,
@@ -92,8 +94,12 @@ import {
  *   · Décompte — ce qui a été ARRÊTÉ, c'est-à-dire figé et daté. La question
  *     n'y est pas « combien réclame-t-on aujourd'hui » — la section 1 y répond —
  *     mais « qu'a-t-on réclamé le jour où on l'a réclamé ».
- *   · Conversation — T14. La position existe, elle bascule, et elle dit en
- *     toutes lettres ce qui manque. Pas de bouton mort.
+ *   · Conversation — le seul endroit du volet qui passe par un appel modèle.
+ *     Chaque phrase de la réponse porte SA pastille ; ce qui ne se relie à
+ *     aucune source s'affiche dégradé et marqué « non sourcé », et ne peut
+ *     porter ni un montant ni un énoncé juridique. Quand le plafond de coût du
+ *     mois a mordu, le champ disparaît et le refus en quatre parties prend sa
+ *     place — le reste du volet ne dépend d'aucun appel et ne bouge pas.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ DEUX SECTIONS NE SE REPLIENT JAMAIS
@@ -305,6 +311,17 @@ export interface LigneOuverte {
 	// ── La position « Décompte » ───────────────────────────────────────────
 	readonly decomptesArretes: readonly DecompteArreteAffiche[];
 
+	// ── La position « Conversation » ───────────────────────────────────────
+	/**
+	 * LE FIL DU DOSSIER, SON COMPTEUR DE COÛT ET SON REFUS ÉVENTUEL.
+	 *
+	 * ⚠️ IL ARRIVE EN PROPRIÉTÉS, COMME TOUT LE RESTE DE CE VOLET. L'écran ne
+	 * parle à aucune fonction Convex : c'est ce qui permet à la salle
+	 * d'exposition de le rendre aux quatre largeurs sans backend ni compte, et
+	 * c'est aussi ce qui rendra la bascule (T15) révocable en trois fichiers.
+	 */
+	readonly conversation: ConversationAffichee;
+
 	readonly enCours: boolean;
 	readonly erreur: string | null;
 	/** La date du jour, venue de la SEULE horloge de l'interface. */
@@ -467,7 +484,7 @@ function CorpsVolet({
 	sectionsOuvertes: readonly SectionVolet[];
 	onSectionsOuvertes: (sections: readonly SectionVolet[]) => void;
 }) {
-	if (position === 'CONVERSATION') return <PositionConversation />;
+	if (position === 'CONVERSATION') return <PositionConversation conversation={ligne.conversation} />;
 	if (position === 'DECOMPTE') return <PositionDecompte ligne={ligne} />;
 	return (
 		<PositionPiece
@@ -480,22 +497,19 @@ function CorpsVolet({
 }
 
 /**
- * LA POSITION CONVERSATION — écrite par T14, et dite en attendant.
+ * LA POSITION CONVERSATION — le seul endroit du volet qui passe par un modèle.
  *
  * ⚠️ AUCUN BOUTON MORT, ET AUCUN CHAMP GRISÉ. Un champ de saisie désactivé se
- * lit comme une panne ; une phrase se lit comme une date. La position bascule
- * vraiment, et ce qu'elle porte est une ligne qui nomme ce qui manque.
+ * lit comme une panne. Quand le plafond de coût du mois a mordu, le champ
+ * DISPARAÎT et le refus en quatre parties prend sa place — en commençant par
+ * ce que le produit continue de faire, qui est presque tout.
+ *
+ * ⚠️ ET LE RESTE DU VOLET NE DÉPEND PAS D'ELLE. Les huit autres sections, le
+ * décompte et ses segments, les hypothèses et les angles morts sont calculés :
+ * une conversation arrêtée ne retire rien de ce qui s'affiche à côté.
  */
-function PositionConversation() {
-	return (
-		<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-			La conversation n’est pas encore ouverte. Ses cinq filtres avant rendu sont posés — le
-			lexique commercial interdit, l’énoncé juridique non résolu, le montant sans source, le champ
-			lexical de la procédure, le nom de tiers dans un brouillon —, et elle s’ouvrira quand elle
-			sera branchée dessus. D’ici là, tout ce que ce volet affiche est calculé, et rien n’y passe
-			par un modèle.
-		</p>
-	);
+function PositionConversation({ conversation }: { conversation: ConversationAffichee }) {
+	return <Conversation conversation={conversation} />;
 }
 
 /**

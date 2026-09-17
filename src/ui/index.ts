@@ -163,3 +163,13 @@ export {
 export { Solidite, type SoliditeAffichee, type EtageAffiche } from './solidite';
 export { Relances, type NiveauAffiche } from './relances';
 export { Lettrage, type PropositionLettrage, type CombinaisonAffichee } from './lettrage';
+export {
+	Conversation,
+	moisLisible,
+	type CompteurConversation,
+	type ConversationAffichee,
+	type GenreSourcePhrase,
+	type PhraseAffichee,
+	type RefusAffiche,
+	type TourAffiche
+} from './conversation';

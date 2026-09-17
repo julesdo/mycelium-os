@@ -107,6 +107,26 @@ const APPELEES_AUTREMENT: Readonly<Record<string, string>> = {
 	abandonsDeLEtablissement:
 		'ÉCRITE AVANT SON LECTEUR — ce qui serait abandonné sur tout l’établissement, lu par la file et par l’écran d’arrêt (lot 2, T6 et T9). Sort de cette liste avec eux.',
 
+	// ─────────────────────────────────────────────────────────────────────────
+	// LA CONVERSATION, ÉCRITE AVANT SA SURFACE (T14, lot 2)
+	// ─────────────────────────────────────────────────────────────────────────
+	//
+	// ⚠️ DEUX ENTRÉES DATÉES, DU MÊME GENRE QUE LES CINQ LECTURES CI-DESSUS, et
+	// pour la même raison de livraison : la bascule vers la file (T15) ne doit
+	// porter ni schéma, ni champ, ni fonction Convex, pour qu'un `git revert` la
+	// rende en entier. La conversation part donc seule, plusieurs jours avant
+	// l'écran qui la montera.
+	//
+	// Ce que la position « Conversation » du volet rend aujourd'hui est
+	// PRÉSENTATIONNEL : le volet reçoit son fil en propriétés, et la salle
+	// d'exposition le nourrit de données de démonstration, sans backend. C'est
+	// `routes/app/index.tsx` qui branchera ces deux fonctions le jour de la
+	// bascule, et ces deux lignes sortent d'ici ce jour-là.
+	repondre:
+		'ÉCRITE AVANT SA SURFACE — la position « Conversation » du volet de preuve (lot 2, T14). Le volet la reçoit en propriétés ; la bascule (T15) la branche. Sort de cette liste avec elle.',
+	filDuDossier:
+		'ÉCRITE AVANT SON LECTEUR — le fil d’un dossier et le compteur mensuel de coût, lus par la position « Conversation » du volet (lot 2, T14). Sort de cette liste avec la bascule (T15).',
+
 	// LA GESTION D'ABONNEMENT. Un client qui paie ne peut ni voir son
 	// abonnement ni ouvrir le portail Paddle pour changer de carte ou résilier.
 	// Sur un produit vendu par abonnement, c'est un manque de livrable.
@@ -173,7 +193,7 @@ function fonctionsPubliques(): readonly { nom: string; fichier: string }[] {
 		if (relatif.startsWith('__tests__/')) continue;
 		const source = readFileSync(chemin, 'utf8');
 		for (const [, nom] of source.matchAll(
-			/^export const (\w+) = (?:authedMutation|authedQuery|mutation|query|action)\(/gm
+			/^export const (\w+) = (?:authedMutation|authedQuery|authedAction|mutation|query|action)\(/gm
 		)) {
 			if (nom !== undefined) trouvees.push({ nom, fichier: relatif });
 		}

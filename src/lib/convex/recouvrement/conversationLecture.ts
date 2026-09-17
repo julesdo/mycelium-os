@@ -332,8 +332,8 @@ export const consignerEchange = internalMutation({
 		const creance = await ctx.db.get(args.creanceId);
 		if (creance === null || creance.organizationId !== organizationId) return null;
 
-		const diteLe = Date.now();
-		const mois = moisCourant();
+		const horodatage = Date.now();
+		const moisDuTour = moisCourant();
 
 		await ctx.db.insert('conversations', {
 			organizationId,
@@ -343,8 +343,8 @@ export const consignerEchange = internalMutation({
 			role: 'GERANT',
 			texte: args.question,
 			pastilles: [],
-			mois,
-			diteLe
+			mois: moisDuTour,
+			diteLe: horodatage
 		});
 
 		await ctx.db.insert('conversations', {
@@ -356,10 +356,10 @@ export const consignerEchange = internalMutation({
 			texte: args.reponse,
 			pastilles: args.pastilles,
 			usage: args.usage,
-			mois,
+			mois: moisDuTour,
 			// +1 ms : deux tours écrits dans la même transaction porteraient sinon
 			// le même horodatage, et l'ordre du fil dépendrait de l'ordre d'insertion.
-			diteLe: diteLe + 1
+			diteLe: horodatage + 1
 		});
 
 		return null;
