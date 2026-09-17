@@ -80,13 +80,20 @@ export function ceQuiManque({
 			titre: 'Vos factures',
 			debloque: 'Le logiciel n’a rien à compter',
 			/**
-			 * ⚠️ ELLE MÈNE À LA FILE, ET PLUS À L'ÉCRAN D'IMPORT. Le dépôt vit
-			 * désormais dans la `Toolbar` de la file et dans son état vide : c'est
-			 * elle la porte d'entrée des factures. Repointer était IMPOSSIBLE avant
-			 * la bascule — `Verrou.vers` est typé contre l'arbre des routes, et la
-			 * file n'avait pas d'adresse tant que l'accueil tenait `/app`.
+			 * ⚠️ ELLE MÈNE ENCORE À L'ÉCRAN D'IMPORT, ET C'EST UNE DETTE DATÉE.
+			 * Le dépôt vit désormais dans la `Toolbar` de la file et dans son état
+			 * vide : la bonne destination n'est plus une ADRESSE mais un GESTE,
+			 * ouvrir la zone de dépôt là où on est déjà.
+			 *
+			 * En attendant que ce geste existe, elle pointe l'écran d'import, qui
+			 * fonctionne jusqu'à T16. Ce qu'on ne fait PAS, c'est la pointer sur
+			 * `/app` : un verrou qui mène à la page qu'on regarde est un bouton
+			 * mort, et il se lit comme une panne.
+			 *
+			 * ⚠️ T16 SUPPRIME `/app/import-factures`. Ce lien doit être devenu un
+			 * geste CE JOUR-LÀ, pas repointé ailleurs.
 			 */
-			vers: '/app'
+			vers: '/app/import-factures'
 		});
 	}
 
@@ -123,12 +130,15 @@ export function ceQuiManque({
 			titre: `${debiteursSansSiren} débiteur${pluriel(debiteursSansSiren)} sans identifiant`,
 			debloque: 'Leur solvabilité n’est pas surveillée',
 			/**
-			 * ⚠️ MÊME REPOINTAGE, ET MÊME RAISON. Le pli « Les débiteurs sans
-			 * identifiant » vit dans la vue Par client de la file, avec la recherche
-			 * au registre et le choix de secteur : ce qui était un écran est une
-			 * section de celui-ci. `/app/debiteurs` meurt à T16.
+			 * ⚠️ MÊME DETTE, MÊME DATE. Le pli « Les débiteurs sans identifiant »
+			 * vit dans la vue Par client de la file, avec la recherche au registre
+			 * et le choix de secteur : la bonne destination est le GESTE qui bascule
+			 * la vue, pas une adresse.
+			 *
+			 * Jusqu'à T16, qui supprime `/app/debiteurs`, elle mène à l'écran qui
+			 * existe encore et qui fait le travail.
 			 */
-			vers: '/app'
+			vers: '/app/debiteurs'
 		});
 	}
 

@@ -179,6 +179,23 @@ const REGISTRE_AU_REPOS: EtatRecherche = { phase: 'REPOS' };
  * `PRESCRIPTION_PROCHE`, jamais en recomparant des dates ici. Deux calculs de
  * préavis divergeraient au premier changement de `PREAVIS`.
  */
+
+/**
+ * DEPUIS COMBIEN DE TEMPS CETTE PROPOSITION EST SOUS LES YEUX.
+ *
+ * ⚠️ HORS DU COMPOSANT, ET CE N'EST PAS UN DÉTAIL DE RANGEMENT. Écrite dans le
+ * corps du composant, elle lit l'horloge dans la portée du rendu, ce que la
+ * règle de pureté de React refuse : le compilateur ne peut pas prouver qu'un
+ * gestionnaire ne sera pas appelé pendant un rendu. Ici, elle ne peut l'être
+ * qu'au moment de l'appui, qui est exactement le moment qu'on mesure.
+ *
+ * Zéro quand la proposition n'a pas encore été vue : on ne prête jamais au
+ * gérant une lecture qu'on n'a pas observée.
+ */
+function delaiDeLecture(vues: Map<string, number>, id: string): number {
+	const vueLe = vues.get(id);
+	return vueLe === undefined ? 0 : Math.max(0, Date.now() - vueLe);
+}
 function File() {
 	const navigate = useNavigate();
 	const { ligne, position, sections } = Route.useSearch();
@@ -263,34 +280,6 @@ function File() {
 	const genererUrl = useMutation(api.recouvrement.depotMutations.genererUrlDepot);
 	const enregistrer = useMutation(api.recouvrement.depotMutations.enregistrerFichier);
 
-	if (flux === undefined || revelation === undefined || bilan === undefined) {
-		return <EcranFile donnees={{ etat: 'attente' }} />;
-	}
-
-	// ── CE QUI SERT À NOMMER ET À RÉSOUDRE ───────────────────────────────────
-
-	const nomDuDebiteur = new Map((debiteurs ?? []).map((d) => [d._id as string, d.denomination]));
-
-	/**
-	 * LA CRÉANCE D'UN CLIENT, ET IL N'Y EN A QU'UNE RÈGLE.
-	 *
-	 * ⚠️ `listerCreances` REND LES PLUS MÛRES D'ABORD, puis le montant le plus
-	 * lourd. La première de ce client est donc celle qu'on ouvrirait de toute
-	 * façon — et cet ordre ne dépend d'aucune horloge, donc la résolution est
-	 * stable d'un rechargement à l'autre. C'est ce qui permet à `?ligne=` de
-	 * rouvrir la même preuve demain.
-	 */
-	const creanceDuDebiteur = new Map<string, string>();
-	for (const creance of creances ?? []) {
-		if (!creanceDuDebiteur.has(creance.debiteurId as string)) {
-			creanceDuDebiteur.set(creance.debiteurId as string, creance._id as string);
-		}
-	}
-	const estUneCreance = new Set((creances ?? []).map((c) => c._id as string));
-
-	/** Une rangée n'est tapable que si son identifiant mène à un dossier. */
-	const ouvrable = (id: string) => estUneCreance.has(id) || creanceDuDebiteur.has(id);
-
 	// ── LES PROPOSITIONS, ET LE DÉLAI DE LECTURE QU'ELLES EXIGENT ────────────
 
 	/**
@@ -322,7 +311,33 @@ function File() {
 		}
 	}, [propositions]);
 
-	const lueDepuis = (id: string) => Math.max(0, Date.now() - (vuesLe.current.get(id) ?? Date.now()));
+	if (flux === undefined || revelation === undefined || bilan === undefined) {
+		return <EcranFile donnees={{ etat: 'attente' }} />;
+	}
+
+	// ── CE QUI SERT À NOMMER ET À RÉSOUDRE ───────────────────────────────────
+
+	const nomDuDebiteur = new Map((debiteurs ?? []).map((d) => [d._id as string, d.denomination]));
+
+	/**
+	 * LA CRÉANCE D'UN CLIENT, ET IL N'Y EN A QU'UNE RÈGLE.
+	 *
+	 * ⚠️ `listerCreances` REND LES PLUS MÛRES D'ABORD, puis le montant le plus
+	 * lourd. La première de ce client est donc celle qu'on ouvrirait de toute
+	 * façon — et cet ordre ne dépend d'aucune horloge, donc la résolution est
+	 * stable d'un rechargement à l'autre. C'est ce qui permet à `?ligne=` de
+	 * rouvrir la même preuve demain.
+	 */
+	const creanceDuDebiteur = new Map<string, string>();
+	for (const creance of creances ?? []) {
+		if (!creanceDuDebiteur.has(creance.debiteurId as string)) {
+			creanceDuDebiteur.set(creance.debiteurId as string, creance._id as string);
+		}
+	}
+	const estUneCreance = new Set((creances ?? []).map((c) => c._id as string));
+
+	/** Une rangée n'est tapable que si son identifiant mène à un dossier. */
+	const ouvrable = (id: string) => estUneCreance.has(id) || creanceDuDebiteur.has(id);
 
 	/**
 	 * LA PROPOSITION D'UNE CRÉANCE, S'IL Y EN A UNE QUI ATTEND ENCORE.
@@ -395,13 +410,13 @@ function File() {
 							onRetenir: () =>
 								void retenirProposition({
 									propositionId: proposition._id,
-									lueDepuisMs: lueDepuis(proposition._id)
+									lueDepuisMs: delaiDeLecture(vuesLe.current, proposition._id)
 								}),
 							onEcarter: (motif: string) =>
 								void ecarterProposition({
 									propositionId: proposition._id,
 									motif,
-									lueDepuisMs: lueDepuis(proposition._id)
+									lueDepuisMs: delaiDeLecture(vuesLe.current, proposition._id)
 								})
 						}
 					}),
