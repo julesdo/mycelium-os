@@ -3,8 +3,7 @@ import {
 	Segmented,
 	SegmentedButton,
 	Toolbar,
-	ToolbarButton,
-	ToolbarSeparator
+	ToolbarButton
 } from '@cladd-ui/react';
 import { ChevronDownIcon, ChevronRightIcon, InfoIcon, UploadIcon } from 'lucide-react';
 import { usePreference } from '../app/use-preference';
@@ -591,25 +590,19 @@ function FilePrete({
 
 	const barre = (
 		<Toolbar className="w-full overflow-x-auto" contentClassName="flex items-center gap-cladd-3xs">
-			{/*
-			  L'IDENTITÉ D'ABORD — qui regarde, et si la machine tourne.
-
-			  ⚠️ LES DEUX VIENNENT DE LA BARRE, QUI MEURT AVEC CET ÉCRAN (T15). La
-			  barre les tenait sur tous les écrans ; il n'y a plus qu'un écran, donc
-			  ils tiennent ici. L'avatar est la SEULE entrée de `/app/compte`.
-			*/}
-			{avatar}
-			{veilleur}
-			{avatar === undefined && veilleur === undefined ? null : <ToolbarSeparator />}
-
 			{/* LE SÉLECTEUR D'ÉTABLISSEMENT, PERMANENT — y compris sur un compte
 			    mono-site. Le cloisonnement est strict par établissement, et un gérant
 			    qui reprend sa tablette après une réunion doit lire sur LEQUEL il
 			    travaille sans avoir à cliquer. */}
 			{selecteur}
-			{selecteur === undefined ? null : <ToolbarSeparator />}
 
-			<Segmented activeColor="brand" activeVariant="solid">
+			{/*
+			  ⚠️ `shrink-0` : LA `Toolbar` DÉFILE, DONC RIEN N'Y RÉTRÉCIT. Sans lui,
+			  la bascule de vue se comprimait sous son contenu à 768 px et rendait
+			  « Par / créance » sur deux lignes, ce qui déforme la rangée entière.
+			  Mesuré au navigateur.
+			*/}
+			<Segmented className="shrink-0" activeColor="brand" activeVariant="solid">
 				<SegmentedButton active={vue === 'CREANCE'} onClick={() => onVue('CREANCE')}>
 					Par créance
 				</SegmentedButton>
@@ -618,7 +611,17 @@ function FilePrete({
 				</SegmentedButton>
 			</Segmented>
 
-			<ToolbarSeparator />
+			{/*
+			  ⚠️ PLUS AUCUN SÉPARATEUR DANS CETTE RANGÉE, ET LE REGARD L'A IMPOSÉ. Un
+			  `ToolbarSeparator` coûte 41 px — un trait et deux écarts — et la colonne
+			  de lecture de `PageEcran` borne cette `Toolbar` à 640 px à TOUTES les
+			  largeurs, y compris 1280. Trois séparateurs la faisaient déborder de
+			  45 px : l'avatar, seule entrée de `/app/compte`, n'était plus visible
+			  que sur trois pixels, et rien ne le disait.
+
+			  L'écart de la rangée suffit à grouper : un trait qui coûte plus large que
+			  l'objet qu'il met à part n'est pas une séparation, c'est une amputation.
+			*/}
 			{palette}
 			{/*
 			  LE DÉPÔT, PERMANENT DANS LA `Toolbar` QUAND LA FILE EST PLEINE.
@@ -633,6 +636,29 @@ function FilePrete({
 				<UploadIcon />
 				Déposer
 			</ToolbarButton>
+
+			{/*
+			  L'IDENTITÉ EN DERNIER — qui regarde, et si la machine tourne.
+
+			  ⚠️ LES DEUX VIENNENT DE LA BARRE, QUI MEURT AVEC CET ÉCRAN (T15). La
+			  barre les tenait sur tous les écrans ; il n'y a plus qu'un écran, donc
+			  ils tiennent ici. L'avatar est la SEULE entrée de `/app/compte`.
+
+			  ⚠️ ET ILS SONT EN QUEUE PARCE QUE LE REGARD À 375 px L'A EXIGÉ. Posés
+			  en tête, ils ajoutaient 115 px devant le reste et faisaient sortir la
+			  bascule de vue du champ visible : sur téléphone, la `Toolbar` montre
+			  311 px sur 520, et le premier contrôle de travail commençait à 328. On
+			  ne le trouvait qu'en découvrant un défilement horizontal. Aucun test ne
+			  le dit ; seul le regard le dit.
+
+			  Ce qui reste hors champ sur téléphone est ce qui se lit ailleurs : le
+			  veilleur redit ce que la rangée « Le travail de fond » porte en toutes
+			  lettres, et le compte s'atteint après un glissement. Ce qui ne se lit
+			  nulle part ailleurs — l'établissement courant et la bascule de vue —
+			  reste visible sans un geste.
+			*/}
+			{veilleur}
+			{avatar}
 		</Toolbar>
 	);
 

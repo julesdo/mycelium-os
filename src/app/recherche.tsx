@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, CatchBoundary } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
-import { Button } from '@cladd-ui/react';
-import { SearchIcon } from 'lucide-react';
 
 import {
+	DeclencheurRecherche,
 	PaletteRecherche,
 	bougesDuFlux,
 	type DestinationRecherche,
@@ -159,33 +158,12 @@ export function Recherche() {
 
 	return (
 		<>
-			<Button
-				size="md"
-				variant="transparent"
-				outline={false}
-				hoverable={false}
-				rounded
-				aria-haspopup="dialog"
-				className="verre verre-actif min-w-0 flex-1 lg:max-w-80"
-				contentClassName="w-full justify-start gap-cladd-3xs"
-				onClick={() => {
+			<DeclencheurRecherche
+				onOuvrir={() => {
 					setOuvertures((n) => n + 1);
 					setOuverte(true);
 				}}
-			>
-				<SearchIcon aria-hidden className="shrink-0 text-cladd-fg-softer" />
-				{/*
-				 * ⚠️ LA PHRASE COMPLÈTE DEMANDE 261 px, ET LA PILULE N'EN OFFRE QUE 133
-				 * À 768 px. Elle s'y coupait au milieu de la référence, ce qui apprenait
-				 * le contraire de ce qu'elle est là pour apprendre : « FA-2026-03… » ne
-				 * ressemble plus à un numéro de facture. Sous 1024 px, on garde le seul
-				 * mot qui dise la fonction, entier ; au-dessus, l'exemple revient.
-				 */}
-				<span className="truncate text-cladd-xs font-normal text-cladd-fg-softer">
-					<span className="lg:hidden">Rechercher</span>
-					<span className="hidden lg:inline">Rechercher « Durand, FA-2026-0311… »</span>
-				</span>
-			</Button>
+			/>
 			<CatchBoundary
 				getResetKey={() => ouvertures}
 				errorComponent={() => null}

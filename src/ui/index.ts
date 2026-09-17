@@ -123,7 +123,7 @@ export { rangeeDuDebiteur, secteursProposes } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
 /** ⚠️ TEMPORAIRE, ET DATÉ : la porte de la bascule. Elle part avec T16. */
 export { PorteDeTransition, FERMETURE_DE_LA_PORTE } from './porte-de-transition';
-export { VeilleurAvatar, type EtatVeilleur } from './veilleur-avatar';
+export { VeilleurAvatar, VeilleurDeLaToolbar, type EtatVeilleur } from './veilleur-avatar';
 export {
 	RechercheRegistre,
 	sirenLisible,
@@ -145,6 +145,7 @@ export {
 } from './recherche-avocat';
 export {
 	PaletteRecherche,
+	DeclencheurRecherche,
 	bougesDuFlux,
 	PREMIERS_PAR_FAMILLE,
 	type FamilleRecherche,

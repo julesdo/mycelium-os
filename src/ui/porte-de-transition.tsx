@@ -95,17 +95,24 @@ export function PorteDeTransition() {
 			contentClassName="p-0"
 		>
 			<List>
-				<ListTitle className="flex flex-col items-start gap-1">
-					<span>Les écrans de l’ancienne version</span>
-					{/*
-					  ⚠️ LA DATE EST DITE, PAS SUGGÉRÉE. « Bientôt » se lit « jamais » au
-					  bout de trois semaines ; un quantième se vérifie sur un calendrier.
-					*/}
-					<span className="text-cladd-2xs font-normal text-cladd-fg-softer">
-						Ils restent ouverts jusqu’au {dateCourte(FERMETURE_DE_LA_PORTE)}. Tout ce qu’ils
-						montraient se lit désormais sur cette file.
-					</span>
-				</ListTitle>
+				<ListTitle>Les écrans de l’ancienne version</ListTitle>
+
+				{/*
+				  ⚠️ LA DATE EST DITE, PAS SUGGÉRÉE. « Bientôt » se lit « jamais » au
+				  bout de trois semaines ; un quantième se vérifie sur un calendrier.
+
+				  ⚠️ ET ELLE EST HORS DU `ListTitle`, PARCE QUE LE REGARD À 375 px L'A
+				  EXIGÉ. Cladd met ses intitulés de liste en CAPITALES : une phrase de
+				  deux lignes en petites capitales se déchiffre au lieu de se lire, et
+				  c'est justement la phrase qui porte la seule date du bloc.
+				*/}
+				{/* Aucun rembourrage horizontal : la `List` pose déjà le sien, et le
+				    doubler décalait cette phrase de vingt pixels vers la droite par
+				    rapport à l'intitulé et aux rangées. Mesuré au navigateur. */}
+				<p className="pb-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+					Ils restent ouverts jusqu’au {dateCourte(FERMETURE_DE_LA_PORTE)}. Tout ce qu’ils
+					montraient se lit désormais sur cette file.
+				</p>
 
 				{TETES.map((tete) => (
 					<ListButton

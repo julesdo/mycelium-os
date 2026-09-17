@@ -3,7 +3,7 @@ import { useRouterState } from '@tanstack/react-router';
 
 import { Avatar } from '../ui/avatar';
 import { Lien } from '../ui/lien';
-import { VeilleurAvatar, type EtatVeilleur } from '../ui/veilleur-avatar';
+import { VeilleurDeLaToolbar, type EtatVeilleur } from '../ui/veilleur-avatar';
 import { api } from '../lib/convex/_generated/api';
 
 /**
@@ -91,23 +91,5 @@ export function VeilleurPresent() {
 			? 'ROMPU'
 			: 'VEILLE';
 
-	return (
-		<span
-			aria-label="Le veilleur"
-			className="verre-bouton relative flex size-cladd-md shrink-0 items-center justify-center rounded-full"
-		>
-			<VeilleurAvatar etat={etat} />
-			{/*
-			  ⚠️ LE COMPTE NE S'AFFICHE QU'AU-DESSUS DE ZERO, et il est RARE par
-			  construction : seul ce qui fait perdre un droit sans qu'on ait rien
-			  fait en produit un. Une pastille permanente a « 0 » serait du decor,
-			  et le chiffre ne dirait plus rien le jour ou il compte.
-			*/}
-			{nonLues !== undefined && nonLues > 0 ? (
-				<span className="compte-veilleur absolute -top-0.5 -right-0.5">
-					{nonLues > 9 ? '9+' : nonLues}
-				</span>
-			) : null}
-		</span>
-	);
+	return <VeilleurDeLaToolbar etat={etat} nonLues={nonLues} />;
 }

@@ -12,9 +12,62 @@ import {
 	Spinner,
 	Surface
 } from '@cladd-ui/react';
-import { FileTextIcon, GavelIcon, UploadIcon, UsersIcon } from 'lucide-react';
+import { FileTextIcon, GavelIcon, SearchIcon, UploadIcon, UsersIcon } from 'lucide-react';
 import { dateCourte, eurosCentimes } from './format';
 import { sirenLisible } from './recherche-registre';
+
+/**
+ * LE DÉCLENCHEUR : une pilule, pas un champ.
+ *
+ * ⚠️ IL VIVAIT DANS `src/app/barre.tsx`, ET LA BASCULE L'A DÉPLACÉ ICI (T15).
+ * Il n'interroge rien — c'est ce qui permet à la salle d'exposition de rendre la
+ * `Toolbar` de la file avec sa vraie géométrie, la seule qu'on puisse regarder
+ * aux quatre largeurs de référence.
+ *
+ * ⚠️ IL ÉTAIT UN `<input>`, ET ENTRÉE JETAIT LE TERME. Un champ dans la barre
+ * qui ouvrirait un second champ dans la palette ferait aussi taper deux fois :
+ * les premières lettres se perdraient pendant l'ouverture. On touche la pilule,
+ * et le curseur est déjà dans le seul champ.
+ */
+export function DeclencheurRecherche({ onOuvrir }: { onOuvrir: () => void }) {
+	return (
+		<Button
+			size="md"
+			variant="transparent"
+			outline={false}
+			hoverable={false}
+			rounded
+			aria-haspopup="dialog"
+			/*
+			  ⚠️ `shrink-0`, ET PLUS `flex-1 min-w-0`. Dans la barre morte, la pilule
+			  prenait toute la largeur restante d'une rangée à trois cibles. Dans la
+			  `Toolbar` de la file, qui en porte six et qui DÉFILE, `min-w-0` la
+			  laissait se comprimer sous son contenu : à 768 px elle rendait « Re… »,
+			  c'est-à-dire un mot coupé qui n'apprend plus ce qu'il désigne — le défaut
+			  exact que la phrase ci-dessous existe pour éviter. Mesuré au navigateur.
+			*/
+			className="verre verre-actif shrink-0"
+			contentClassName="w-full justify-start gap-cladd-3xs"
+			onClick={onOuvrir}
+		>
+			<SearchIcon aria-hidden className="shrink-0 text-cladd-fg-softer" />
+			{/*
+			  ⚠️ UN SEUL MOT, ET L'EXEMPLE A CHANGÉ DE PLACE (T15). La pilule portait
+			  « Rechercher « Durand, FA-2026-0311… » » au-dessus de 1024 px, où la
+			  barre avait 1280 px de large. La `Toolbar` de la file n'en a jamais
+			  plus de 640 : `PageEcran` borne sa colonne de lecture à `max-w-2xl`,
+			  quelle que soit la taille de l'écran. La phrase longue y débordait de
+			  215 px à TOUTES les largeurs, et rien à l'écran ne le disait — seule la
+			  mesure au navigateur le dit.
+
+			  Rien n'est perdu : le champ de la palette porte déjà
+			  `placeholder="Durand, FA-2026-0311…"`, c'est-à-dire le même exemple, au
+			  moment où l'on en a besoin — le curseur dedans.
+			*/}
+			<span className="truncate text-cladd-xs font-normal text-cladd-fg-softer">Rechercher</span>
+		</Button>
+	);
+}
 
 /**
  * LA PALETTE DE RECHERCHE : débiteurs, factures, procédures (spec § 7).

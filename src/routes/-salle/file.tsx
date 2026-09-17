@@ -16,7 +16,14 @@ import {
 	REVELATION_SANS_FACTURE_DEMO
 } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
-import type { EtatRecherche } from '../../ui';
+import { Chip } from '@cladd-ui/react';
+import { BuildingIcon } from 'lucide-react';
+import {
+	Avatar,
+	DeclencheurRecherche,
+	VeilleurDeLaToolbar,
+	type EtatRecherche
+} from '../../ui';
 
 /**
  * LA FILE, DANS LA SALLE — et c'est le SEUL endroit où elle est montée.
@@ -347,6 +354,46 @@ const FACTURES_PORTENT_VIDE: CeQueVosFacturesPortent = {
 };
 
 /**
+ * LES QUATRE SURFACES DE LA `Toolbar`, SANS CONVEX.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ SANS ELLES, ON REGARDE UNE `Toolbar` QUE PERSONNE NE VERRA
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'avatar, le veilleur, le sélecteur d'établissement et la palette de
+ * recherche viennent de la barre que la bascule supprime (T15), et ils
+ * INTERROGENT Convex : montés dans la salle, `Facultatif` les avale et la
+ * `Toolbar` se rend vide. On regarderait alors une rangée d'outils à deux
+ * éléments alors que le gérant en voit six, et le pire défaut de cette rangée
+ * — le débordement horizontal à 375 px — ne se verrait jamais.
+ *
+ * Les trois premiers sont donc les VRAIES primitives de `src/ui/`, montées avec
+ * des données de démonstration ; seul le sélecteur d'établissement est approché,
+ * parce que son dessin vit dans `src/app/` avec sa requête. Ce qu'on vérifie ici
+ * est la géométrie de la rangée, et sa pastille a la même.
+ */
+const TOOLBAR_DEMO = {
+	avatar: <Avatar nom="Camille Doré" />,
+	// Deux non lues : la pastille rare, et le seul signal du produit qui annonce
+	// une perte sèche. À zéro, on ne verrait pas qu'elle tient dans la rangée.
+	veilleur: <VeilleurDeLaToolbar etat="VEILLE" nonLues={2} />,
+	/*
+	  ⚠️ LA PASTILLE SEULE, COMME LE VRAI À TOUTES LES LARGEURS. Le sélecteur
+	  d'établissement n'écrit plus son nom à côté de ses initiales : la `Toolbar`
+	  est bornée à 640 px par la colonne de lecture de `PageEcran`, et cent pixels
+	  de nom en faisaient sortir l'avatar. Une approximation qui l'afficherait
+	  ferait mesurer au regard un débordement que la production n'a pas — ou
+	  l'inverse, ce qui est pire.
+	*/
+	selecteur: (
+		<Chip size="md" color="neutral" aria-label="Établissement : Boulangerie Doré">
+			<BuildingIcon />
+		</Chip>
+	),
+	palette: <DeclencheurRecherche onOuvrir={() => {}} />
+};
+
+/**
  * LA FILE GARNIE.
  *
  * `ligneOuverte` et les gestes du registre sont posés par le composant : ce sont
@@ -410,7 +457,8 @@ function FileDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 		onOuvrirLigne: (id) => setLigneOuverte(id === ligneOuverte ? null : id),
 		onFermerLigne: () => setLigneOuverte(null),
 		onFichiers: () => {},
-		accepteFichiers: '.csv,.txt,.pdf,image/*'
+		accepteFichiers: '.csv,.txt,.pdf,image/*',
+		...TOOLBAR_DEMO
 	};
 
 	/** Le premier jour : aucune facture, donc aucune rangée — et le chemin, pas un cadran à zéro. */

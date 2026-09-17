@@ -61,13 +61,27 @@ export function SelecteurEtablissement() {
 		</span>
 	);
 
+	/**
+	 * ⚠️ LE NOM NE S'ÉCRIT PLUS À CÔTÉ DE LA PASTILLE, ET C'EST LA BASCULE QUI
+	 * L'A RETIRÉ (T15).
+	 *
+	 * Il paraissait à partir de 1280 px, dans une barre qui faisait toute la
+	 * largeur de l'écran. La `Toolbar` de la file, elle, vit dans la colonne de
+	 * lecture de `PageEcran`, bornée à 640 px À TOUTES LES LARGEURS : le nom y
+	 * ajoutait cent pixels et faisait sortir l'avatar — seule entrée de
+	 * `/app/compte` — du champ visible, sans que rien à l'écran ne le dise.
+	 * Mesuré au navigateur à 1280 px.
+	 *
+	 * L'établissement reste lisible sans un clic : ses initiales sont dessinées,
+	 * son nom entier est dans le libellé accessible et dans la liste qui s'ouvre.
+	 */
 	if (!plusieurs) {
 		return (
-			<div className="flex items-center gap-cladd-3xs pr-1 pl-1">
+			<div
+				aria-label={`Établissement : ${courante.name}`}
+				className="flex items-center gap-cladd-3xs pr-1 pl-1"
+			>
 				{pastille}
-				<span className="hidden max-w-40 truncate text-cladd-2xs font-semibold xl:block">
-					{courante.name}
-				</span>
 			</div>
 		);
 	}
@@ -75,13 +89,13 @@ export function SelecteurEtablissement() {
 	return (
 		<PopoverRoot>
 			<PopoverTrigger>
+				{/* Même retrait du nom, et même raison : la rangée est bornée à 640 px. */}
 				<Button
 					rounded
 					aria-label={`Établissement : ${courante.name}. Changer d'établissement`}
-					className="max-w-48 min-w-cladd-md"
+					className="min-w-cladd-md shrink-0"
 				>
 					{pastille}
-					<span className="hidden min-w-0 truncate xl:inline">{courante.name}</span>
 					<ChevronDownIcon />
 				</Button>
 			</PopoverTrigger>
