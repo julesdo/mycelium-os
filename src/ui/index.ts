@@ -41,6 +41,7 @@ export { Facultatif } from './facultatif';
 export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
 export { SectionEcran } from './section';
+export { SectionsDepliables, SectionDepliable } from './section-depliable';
 export { ChampCopiable } from './champ-copiable';
 export { ConfirmationParSaisie } from './confirmation-par-saisie';
 export { ZoneDepot } from './zone-depot';
@@ -94,6 +95,7 @@ export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
 export { ListeAnalyses, LigneAnalyse, LigneBouton, EnteteDetail } from './navigation';
 export { Lien, useProvenance } from './lien';
 export { FeuilleVoie, type VoieAffichee } from './feuille-voie';
+export { FeuilleDeclaration, type ChoixDeclare } from './feuille-declaration';
 export {
 	ChoixIntervenant,
 	SaisirUneFiche,
