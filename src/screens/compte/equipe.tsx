@@ -384,7 +384,7 @@ function LigneMembre({
 							*/}
 							<ConfirmationParSaisie
 								titre={`Retirer ${titreDeLigne(membre)} ?`}
-								texte={`${titreDeLigne(membre)} perd immédiatement l’accès à toutes les factures, tous les débiteurs et tous les décomptes de cet établissement. Ses confirmations restent au dossier, et il faudra une nouvelle invitation pour la faire revenir. Saisissez ${valeurAConfirmer(membre)} pour confirmer.`}
+								texte={`${titreDeLigne(membre)} perd immédiatement l’accès à toutes les factures, tous les débiteurs et tous les décomptes de cet établissement. Ses confirmations restent au dossier, et il faudra une nouvelle invitation pour lui rendre l’accès. Saisissez ${valeurAConfirmer(membre)} pour confirmer.`}
 								valeurAttendue={valeurAConfirmer(membre)}
 								invite={membre.email ? 'Son adresse e-mail' : 'Son nom'}
 								intituleConfirmation="Retirer de l’établissement"

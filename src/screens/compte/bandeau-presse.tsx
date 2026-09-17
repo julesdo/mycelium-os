@@ -47,9 +47,9 @@ export function BandeauCeQuiPresse({
 			  ⚠️ L'ACCENT SE POSE ICI, ET C'EST LA SEULE FAÇON D'OBTENIR LE BLEU.
 			  `text-cladd-primary` ne nomme pas une couleur mais L'ACCENT COURANT, et
 			  hors de tout contexte `cladd-color-*` celui-ci vaut du neutre : mesuré
-			  au navigateur, `--color-cladd-primary` valait `oklch(from #fff 0.1 0 h)`,
-			  donc un noir. Posé sur la carte, `color="brand"` le fait retomber sur
-			  `oklch(from #1d3fa0 …)`, le bleu d'encre de la marque.
+			  au navigateur, `--color-cladd-primary` se dérivait du blanc, chroma
+			  zéro, donc un noir. Posé sur la carte, `color="brand"` le fait retomber
+			  sur la teinte de marque, le bleu d'encre.
 
 			  Rien d'autre dans cette carte ne lit l'accent, donc rien d'autre ne
 			  change de teinte.

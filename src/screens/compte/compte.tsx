@@ -1,10 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { ListItem, SectionTitle, Segmented, SegmentedButton } from '@cladd-ui/react';
+import { SectionTitle, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { MonitorIcon, MoonIcon, SunIcon } from 'lucide-react';
 import type { Theme } from '../../app/use-theme';
 import {
 	EmptyState,
-	ListeAnalyses,
 	PageEcran,
 	SectionDepliable,
 	SectionsDepliables,
@@ -394,24 +393,30 @@ function ContenuAffichage({
 	onChoisirTheme: (theme: Theme) => void;
 }) {
 	return (
-		<ListeAnalyses>
-			<ListItem className="flex flex-wrap items-center gap-cladd-3xs">
-				<span className="text-cladd-fg-soft">Apparence</span>
-				<Segmented className="ml-auto" activeColor="neutral" activeVariant="solid">
-					<SegmentedButton active={theme === 'auto'} onClick={() => onChoisirTheme('auto')}>
-						<MonitorIcon />
-						Automatique
-					</SegmentedButton>
-					<SegmentedButton active={theme === 'dark'} onClick={() => onChoisirTheme('dark')}>
-						<MoonIcon />
-						Sombre
-					</SegmentedButton>
-					<SegmentedButton active={theme === 'light'} onClick={() => onChoisirTheme('light')}>
-						<SunIcon />
-						Clair
-					</SegmentedButton>
-				</Segmented>
-			</ListItem>
-		</ListeAnalyses>
+		/*
+		  ⚠️ LE MOT « APPARENCE » A DISPARU, ET C'EST UNE CORRECTION DU REGARD.
+		  Le choix vivait dans une rangée « Apparence | [Automatique·Sombre·Clair] ».
+		  Mesuré à 375 px : le `Segmented` fait 293 px, la rangée qui l'accueillait
+		  n'en offrait que 287 — « Clair » était COUPÉ au bord de la carte. Et
+		  l'intitulé ne disait rien de plus que le titre de la section (« Affichage »)
+		  et sa légende (« Le thème de l'interface »), soit trois fois la même chose
+		  pour manger la place du seul contrôle.
+
+		  Seul, le `Segmented` prend toute la largeur du panneau et tient partout.
+		*/
+		<Segmented className="w-full" activeColor="neutral" activeVariant="solid">
+			<SegmentedButton active={theme === 'auto'} onClick={() => onChoisirTheme('auto')}>
+				<MonitorIcon />
+				Automatique
+			</SegmentedButton>
+			<SegmentedButton active={theme === 'dark'} onClick={() => onChoisirTheme('dark')}>
+				<MoonIcon />
+				Sombre
+			</SegmentedButton>
+			<SegmentedButton active={theme === 'light'} onClick={() => onChoisirTheme('light')}>
+				<SunIcon />
+				Clair
+			</SegmentedButton>
+		</Segmented>
 	);
 }
