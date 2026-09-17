@@ -36,7 +36,16 @@ export default {
 		'resend',
 		// Compat ESLint — nommés en chaîne de caractères dans eslint.config.js
 		'@typescript-eslint/eslint-plugin',
-		'@typescript-eslint/parser'
+		'@typescript-eslint/parser',
+		// Polices chargées par `@import` dans `src/styles/app.css` et par le
+		// générateur d'images sociales : knip ne lit pas le CSS.
+		'@fontsource-variable/newsreader',
+		'@fontsource-variable/plus-jakarta-sans',
+		'@fontsource/caveat-brush',
+		// Tailwind v4 s'invoque par `@import 'tailwindcss'` dans le CSS
+		'tailwindcss',
+		// Le CLI Vercel, appelé par `scripts/deploy/`
+		'vercel'
 	],
 	ignoreExportsUsedInFile: true,
 	rules: {

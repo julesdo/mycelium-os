@@ -933,6 +933,25 @@ export const recouvrementTables = {
 		cles: v.array(v.string()),
 		/** Le montant identifié au moment du battement, en centimes. */
 		montantIdentifie: v.int64(),
+		/**
+		 * CE QUE LE PLAFOND DE PROPOSITIONS A DIFFÉRÉ CETTE NUIT-LÀ (D13).
+		 *
+		 * ⚠️ IL EST STOCKÉ, ET C'EST LE SECOND GARDE-FOU QUI L'EXIGE. « 7
+		 * aujourd'hui, 12 en attente » ne se recalcule pas à la lecture : le
+		 * décompte des candidats parcourt les pièces et le flux de surveillance,
+		 * c'est-à-dire tout l'établissement. Le refaire à chaque rendu de la file
+		 * ferait payer un balayage complet pour afficher un nombre, et le taire
+		 * ferait exactement le défaut de `MODE_COMPACT` (`accueil.tsx:164`), où
+		 * les alertes 4 à N ne sont atteignables nulle part.
+		 *
+		 * Le grain est le bon : le battement tourne une fois par jour et par
+		 * établissement, ce qui est aussi le grain du plafond.
+		 *
+		 * Optionnel : les relevés antérieurs au 18 septembre 2026 n'en portent
+		 * pas, et un relevé en ÉCHEC n'a rien posé du tout. Absent, il se lit
+		 * comme « on ne sait pas », jamais comme zéro.
+		 */
+		propositionsEnAttente: v.optional(v.number()),
 		/** Renseigné uniquement quand `statut` vaut `ECHEC`. */
 		erreur: v.optional(v.string()),
 		termineLe: v.number()
@@ -997,7 +1016,23 @@ export const recouvrementTables = {
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_etat', ['organizationId', 'etat'])
-		.index('by_org_and_jour', ['organizationId', 'jour']),
+		.index('by_org_and_jour', ['organizationId', 'jour'])
+		/**
+		 * ⚠️ IL EXISTE POUR QU'ON NE REPOSE JAMAIS LA MÊME QUESTION.
+		 *
+		 * Une proposition écartée n'est pas supprimée : elle est marquée. Sans
+		 * cet index, la pose du lendemain devrait relire TOUTES les propositions
+		 * de l'établissement pour savoir si elle a déjà demandé ceci sur cette
+		 * cible — sur la seule table du domaine dont le volume croît avec
+		 * l'usage plutôt qu'avec le portefeuille. À défaut, elle reposerait
+		 * chaque nuit ce que le gérant vient d'écarter, ce qui est le rythme
+		 * d'acquittement que le plafond existe pour empêcher.
+		 *
+		 * C'est aussi lui que le volet de preuve interroge : les propositions
+		 * d'une rangée ouverte, et rien d'autre. Même besoin que
+		 * `journal.by_org_and_cible`, pour la même raison.
+		 */
+		.index('by_org_and_cible', ['organizationId', 'cible']),
 
 	/**
 	 * LES TOURS DE PAROLE, UNE LIGNE CHACUN.

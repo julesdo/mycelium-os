@@ -270,6 +270,26 @@ export const executerPourOrganisation = internalMutation({
 				}
 			}
 
+			/**
+			 * LES PROPOSITIONS DU JOUR — D13, une pose par jour et par
+			 * établissement.
+			 *
+			 * ⚠️ ELLE VIT ICI PARCE QU'UNE `query` N'ÉCRIT PAS. La file LIT ; une
+			 * mutation déclenchée sur son chemin de lecture réactif serait une
+			 * boucle. Le battement tourne déjà une fois par jour et par
+			 * établissement, ce qui est exactement le grain du plafond — et le
+			 * contrôle de non-rejeu en tête de ce handler garantit qu'une journée
+			 * ne se pose pas deux fois.
+			 *
+			 * ⚠️ TOUTE LA RÈGLE EST AILLEURS, comme pour le briefing. Ce fichier
+			 * passe le flux et reçoit deux nombres ; il ne décide ni de ce qui se
+			 * propose, ni de ce qui se coupe.
+			 */
+			const pose = await ctx.runMutation(
+				internal.recouvrement.propositions.poserLesPropositionsDuJour,
+				{ organizationId, jour, evenements: flux.evenements }
+			);
+
 			await ctx.db.insert('battements', {
 				organizationId,
 				jour,
@@ -277,6 +297,10 @@ export const executerPourOrganisation = internalMutation({
 				raison: verdict.raison,
 				cles: evenements.map(cleEvenement),
 				montantIdentifie: flux.montantIdentifie,
+				// ⚠️ CE QUI DÉPASSE EST ÉCRIT, PAS TU. « 7 aujourd'hui, 12 en
+				// attente » se lit sur ce champ : sans lui, la file tronquerait en
+				// silence, ce qui est le défaut de `MODE_COMPACT` qu'elle remplace.
+				propositionsEnAttente: pose.enAttente,
 				termineLe: Date.now()
 			});
 

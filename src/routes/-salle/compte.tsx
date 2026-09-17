@@ -17,6 +17,7 @@ import type {
 	FichierExport
 } from '../../screens/compte/donnees';
 import type { IntervenantsAffiches } from '../../screens/compte/intervenants';
+import type { MesuresAffichees } from '../../screens/compte/mesures';
 import { AVOCATS_DEMO, BARREAUX_DEMO, CARNET_DEMO, ETABLISSEMENT_DEMO } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
@@ -469,6 +470,66 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 	'sections en lecture': { ...COMPTE_DEMO, enLecture: true }
 };
 
+/**
+ * DEUX JOURNÉES DE PROPOSITIONS, ET ELLES DISENT DEUX CHOSES OPPOSÉES.
+ *
+ * La première est celle qui doit faire DESCENDRE le plafond : sept posées,
+ * douze différées, rétention à 100 % et médiane sous deux secondes — c'est du
+ * « Retenir » à l'aveugle, pas de la justesse. La seconde est une journée
+ * ordinaire : on lit, on retient, on écarte, et une retenue de la veille se
+ * corrige — le seul des trois nombres qui ne soit pas auto-référentiel.
+ *
+ * ⚠️ LA TROISIÈME LIGNE PORTE UN `enAttente` À `null`. C'est le jour où le
+ * battement n'a rien relevé : la colonne affiche un tiret, jamais un zéro, et
+ * la salle existe pour qu'on le VOIE avant qu'un client ne le voie.
+ */
+const MESURES_DEMO: MesuresAffichees = {
+	jours: [
+		{
+			jour: '2026-09-17',
+			posees: 7,
+			enAttente: 12,
+			retenues: 7,
+			ecartees: 0,
+			indecises: 0,
+			tauxRetention: 1,
+			delaiMedianMs: 940,
+			decideesSansHorodatage: 0,
+			corrections: 0,
+			tauxCorrection: 0
+		},
+		{
+			// Une correction : deux écartées, dont une qui avait été retenue. Le
+			// dénominateur du taux compte ce qui a été retenu AU MOINS UNE FOIS,
+			// soit 3 + 1.
+			jour: '2026-09-16',
+			posees: 5,
+			enAttente: 0,
+			retenues: 3,
+			ecartees: 2,
+			indecises: 0,
+			tauxRetention: 3 / 5,
+			delaiMedianMs: 14_200,
+			decideesSansHorodatage: 1,
+			corrections: 1,
+			tauxCorrection: 1 / 4
+		},
+		{
+			jour: '2026-09-15',
+			posees: 0,
+			enAttente: null,
+			retenues: 0,
+			ecartees: 0,
+			indecises: 0,
+			tauxRetention: null,
+			delaiMedianMs: null,
+			decideesSansHorodatage: 0,
+			corrections: 0,
+			tauxCorrection: null
+		}
+	]
+};
+
 /** La page, composée comme sa route la compose. */
 function compteDe(forme: FormeCompte, theme: Theme, onChoisirTheme: (t: Theme) => void) {
 	const attente = { etat: 'attente' } as const;
@@ -509,6 +570,7 @@ function compteDe(forme: FormeCompte, theme: Theme, onChoisirTheme: (t: Theme) =
 		intervenants: forme.enLecture
 			? attente
 			: ({ etat: 'pret', valeur: intervenantsDe(forme.carnet) } as const),
+		mesures: forme.enLecture ? attente : ({ etat: 'pret', valeur: MESURES_DEMO } as const),
 		theme,
 		onChoisirTheme,
 		onSeDeconnecter: () => undefined

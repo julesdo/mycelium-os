@@ -53,7 +53,14 @@ import { getUserOrg } from '../lib/auth';
 
 const vUrgence = v.union(v.literal('CRITIQUE'), v.literal('HAUTE'), v.literal('NORMALE'));
 
-const vEvenement = v.object({
+/**
+ * ⚠️ EXPORTÉ, POUR QU'IL N'EN EXISTE QU'UN. `propositions.ts` reçoit ces mêmes
+ * événements du battement pour en tirer les constats qui éteignent un droit ;
+ * en recopier la forme là-bas ferait deux validateurs pour une même donnée,
+ * et le jour où un type d'événement s'ajoute ici, l'autre l'accepterait ou le
+ * refuserait sans qu'aucun test ne le dise.
+ */
+export const vEvenementDeSurveillance = v.object({
 	type: v.union(
 		v.literal('FACTURE_ECHUE'),
 		v.literal('CREANCE_MURE'),
@@ -117,7 +124,7 @@ const vEvenement = v.object({
 });
 
 const vFlux = v.object({
-	evenements: v.array(vEvenement),
+	evenements: v.array(vEvenementDeSurveillance),
 	montantIdentifie: v.int64(),
 	/** Ce que le produit a SUPPOSÉ, faute de donnée. Jamais tu. */
 	hypotheses: v.array(v.string()),
