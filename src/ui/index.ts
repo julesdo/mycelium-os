@@ -58,10 +58,19 @@ export { euros, eurosCentimes, partsEurosCentimes, dateCourte, pourcent, pluriel
 // ── Recouvrement ────────────────────────────────────────────────────────────
 export {
 	Decompte,
+	PeriodesDInterets,
 	type DecompteAffiche,
 	type LigneDecompteAffichee,
 	type SegmentAffiche
 } from './decompte';
+export {
+	RemiseAuConseil,
+	type EcartAffiche,
+	type EtatRemise,
+	type FicheDuCarnet,
+	type RemiseAffichee,
+	type SuiviConseilAffiche
+} from './remise-conseil';
 export { FluxEvenements, type EvenementAffiche, type UrgenceEvenement } from './flux-evenements';
 export {
 	ChocRevelation,

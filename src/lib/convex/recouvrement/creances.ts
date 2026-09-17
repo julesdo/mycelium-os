@@ -71,7 +71,7 @@ const vReponses = v.object({
 });
 
 /** Ce qui reste dû sur une facture, règlements et avoirs déduits. */
-async function resteDu(ctx: MutationCtx, facture: Doc<'facturesVente'>) {
+export async function resteDu(ctx: MutationCtx, facture: Doc<'facturesVente'>) {
 	const reglements = await ctx.db
 		.query('reglements')
 		.withIndex('by_facture', (q) => q.eq('factureId', facture._id))

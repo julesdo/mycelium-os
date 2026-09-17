@@ -1,14 +1,15 @@
 import { v, ConvexError } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
-import { authedMutation, authedQuery } from '../functions';
-import { internal } from '../_generated/api';
+import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
-import type { MutationCtx, QueryCtx } from '../_generated/server';
+import type { QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import { depuisCentimes, enCentimes, fraction } from '../../socle/montants';
 import { controlerDecompte } from '../../verticales/recouvrement/controle';
 import {
 	decompterCreance,
+	type ConventionJours,
+	type DecompteCreance,
 	type FacturePourDecompte,
 	type PeriodeDeTaux,
 	type Reglement
@@ -51,7 +52,7 @@ import { vConventionJours, vTaux } from './tables';
  */
 
 async function reglementsDe(
-	ctx: MutationCtx,
+	ctx: QueryCtx,
 	factureId: Doc<'facturesVente'>['_id']
 ): Promise<Reglement[]> {
 	const lignes = await ctx.db
@@ -87,6 +88,111 @@ function periodesDe(facture: Doc<'facturesVente'>, arreteAu: string): PeriodeDeT
 	return periodesDeTauxParDefaut(debut, arreteAu);
 }
 
+/**
+ * Pourquoi un décompte ne se calcule pas, quand il ne se calcule pas.
+ *
+ * Trois motifs, et chacun se répare par un geste différent : une créance sans
+ * facture, une facture sans date d'exigibilité, un calcul que le référentiel
+ * refuse (un semestre absent de la série de taux, par exemple). Les confondre
+ * en « échec » enverrait le gérant chercher la panne au mauvais endroit.
+ */
+export type MotifRefusDecompte = 'AUCUNE_FACTURE' | 'EXIGIBILITE_MANQUANTE' | 'CALCUL_IMPOSSIBLE';
+
+export interface ProjectionDecompte {
+	/** Le décompte tel qu'il serait arrêté à cette date. `null` quand il ne se calcule pas. */
+	readonly decompte: DecompteCreance | null;
+	/** Le motif nommé, quand il ne se calcule pas. `null` sinon. Jamais les deux. */
+	readonly refus: { readonly motif: MotifRefusDecompte; readonly detail: string } | null;
+}
+
+/**
+ * LE DÉCOMPTE QU'ON OBTIENDRAIT, SANS RIEN ÉCRIRE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI ELLE NE LÈVE PAS, ALORS QUE `figerDecompte` LÈVE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `figerDecompte` est une MUTATION : elle lève, la transaction n'écrit rien, et
+ * l'écran affiche le message. Une QUERY qui lève, elle, ne rend pas un refus :
+ * elle rend un écran en erreur, et le gérant ne lit ni ce qui manque, ni ce que
+ * l'attente coûte. C'est exactement le mur que D0 interdit.
+ *
+ * Elle rend donc le motif NOMMÉ, et son appelant compose le refus en quatre
+ * parties. Ce n'est pas un repli silencieux : la donnée fausse n'existe pas ici,
+ * il n'y a qu'une donnée ABSENTE, et elle est dite.
+ *
+ * ⚠️ ET C'EST `figerDecompte` QUI L'APPELLE, pas l'inverse. Deux calculs de
+ * projection, l'un pour l'écran d'arrêt et l'autre pour le gel, se seraient
+ * séparés au premier changement de règle : l'écran aurait annoncé un total que
+ * le gel n'aurait pas produit.
+ */
+export async function projeterDecompte(
+	ctx: QueryCtx,
+	creance: Doc<'creances'>,
+	arreteAu: string,
+	convention: ConventionJours
+): Promise<ProjectionDecompte> {
+	const factures = await ctx.db
+		.query('facturesVente')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+		.collect();
+
+	if (factures.length === 0) {
+		return {
+			decompte: null,
+			refus: {
+				motif: 'AUCUNE_FACTURE',
+				detail: 'Cette créance ne porte aucune facture : il n’y a rien à décompter.'
+			}
+		};
+	}
+
+	for (const facture of factures) {
+		if (facture.dateExigibilite === undefined) {
+			return {
+				decompte: null,
+				refus: {
+					motif: 'EXIGIBILITE_MANQUANTE',
+					detail:
+						`La facture ${facture.reference} n’a pas de date d’exigibilité. Les intérêts ` +
+						'courent à compter de cette date : sans elle, le décompte serait arbitraire. ' +
+						'La renseigner avant de décompter.'
+				}
+			};
+		}
+	}
+
+	// ⚠️ LA CONSTRUCTION EST DANS LE `try`, ET PAS SEULEMENT LE CALCUL.
+	// `periodesDe` lève quand un semestre manque à la série légale, et ce
+	// refus-là est précisément celui qu'il ne faut pas laisser remonter en écran
+	// cassé : un décompte qui ne se calcule pas se DIT, il ne s'affiche pas en
+	// page blanche.
+	try {
+		const pourDecompte: FacturePourDecompte[] = [];
+		for (const facture of factures) {
+			pourDecompte.push({
+				reference: facture.reference,
+				montantExigible: depuisCentimes(facture.montantTTC),
+				dateExigibilite: facture.dateExigibilite!,
+				reglements: await reglementsDe(ctx, facture._id),
+				taux: periodesDe(facture, arreteAu)
+			});
+		}
+		return { decompte: decompterCreance(pourDecompte, arreteAu, convention), refus: null };
+	} catch (erreur) {
+		return {
+			decompte: null,
+			refus: {
+				motif: 'CALCUL_IMPOSSIBLE',
+				// Le message du domaine, MOT POUR MOT. Il nomme le semestre absent ou
+				// la date impossible ; le remplacer par « calcul impossible » perdrait
+				// la seule information qui dit quoi corriger.
+				detail: erreur instanceof Error ? erreur.message : String(erreur)
+			}
+		};
+	}
+}
+
 export const figerDecompte = internalMutation({
 	args: {
 		creanceId: v.id('creances'),
@@ -98,35 +204,14 @@ export const figerDecompte = internalMutation({
 		const creance = await ctx.db.get(creanceId);
 		if (creance === null) throw new ConvexError('Créance introuvable');
 
-		const factures = await ctx.db
-			.query('facturesVente')
-			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-			.collect();
-
-		if (factures.length === 0) {
-			throw new ConvexError('Cette créance ne porte aucune facture : il n’y a rien à décompter.');
+		// ⚠️ LE MÊME CALCUL QUE L'ÉCRAN D'ARRÊT, ET C'EST LE POINT. La projection
+		// rend un motif nommé là où le gel doit lever : une mutation qui échoue
+		// n'écrit rien, et son message remonte tel quel.
+		const projection = await projeterDecompte(ctx, creance, arreteAu, convention);
+		if (projection.decompte === null) {
+			throw new ConvexError(projection.refus!.detail);
 		}
-
-		const pourDecompte: FacturePourDecompte[] = [];
-		for (const facture of factures) {
-			if (facture.dateExigibilite === undefined) {
-				throw new ConvexError(
-					`La facture ${facture.reference} n’a pas de date d’exigibilité. Les intérêts ` +
-						'courent à compter de cette date : sans elle, le décompte serait arbitraire. ' +
-						'La renseigner avant de décompter.'
-				);
-			}
-
-			pourDecompte.push({
-				reference: facture.reference,
-				montantExigible: depuisCentimes(facture.montantTTC),
-				dateExigibilite: facture.dateExigibilite,
-				reglements: await reglementsDe(ctx, facture._id),
-				taux: periodesDe(facture, arreteAu)
-			});
-		}
-
-		const decompte = decompterCreance(pourDecompte, arreteAu, convention);
+		const decompte = projection.decompte;
 
 		// LES IDENTITES SE FIGENT AVEC LE CHIFFRE. Un decompte part chez un tiers ;
 		// regenere plus tard, il doit dire la MEME chose — y compris qui reclamait a
@@ -194,35 +279,22 @@ export const figerDecompte = internalMutation({
 });
 
 /**
- * L'entrée authentifiée.
+ * ⚠️ `produire` A ÉTÉ RETIRÉE LE 17 SEPTEMBRE 2026, ET C'EST UNE SUPPRESSION DE
+ * PORTE DÉROBÉE, PAS UN MÉNAGE.
  *
- * Le TYPE DE RETOUR est annoté à la main : ce handler appelle
- * `internal.recouvrement.decompte.figerDecompte`, une fonction de son propre
- * module, ce qui crée un cycle d'inférence. Sans l'annotation, TypeScript
- * retombe sur `any` et cet `any` remonte dans le type d'`api` tout entier —
- * tous les écrans du produit perdent leur inférence d'un coup. Voir `CLAUDE.md`.
+ * C'était l'entrée authentifiée du gel : un bouton, une mutation, un décompte
+ * figé. Elle ne passait par AUCUN contrôle de complétude. `controle.ts` chiffrait
+ * bien ce qui serait abandonné, mais APRÈS coup, à la relecture du décompte
+ * produit : au moment où plus rien ne se corrige.
+ *
+ * Le gel passe désormais par `recouvrement/arret.ts`, qui rejoue le contrôle
+ * côté serveur, exige les trois réponses du pré-vol et inscrit au journal ce
+ * qui est laissé de côté. Garder les deux portes aurait laissé la plus courte
+ * ouverte, et une barrière qu'on peut contourner n'est pas une barrière.
+ *
+ * `figerDecompte` reste, en `internalMutation` : elle fait confiance à son
+ * appelant, et il n'y en a plus qu'un.
  */
-export const produire = authedMutation({
-	args: { creanceId: v.id('creances'), convention: vConventionJours },
-	returns: v.id('decomptes'),
-	handler: async (ctx, { creanceId, convention }): Promise<Id<'decomptes'>> => {
-		const { organizationId } = await getUserOrg(ctx);
-
-		const creance = await ctx.db.get(creanceId);
-		if (creance === null || creance.organizationId !== organizationId) {
-			throw new ConvexError('Créance introuvable');
-		}
-
-		return await ctx.runMutation(internal.recouvrement.decompte.figerDecompte, {
-			creanceId,
-			// La date d'arrêté est CELLE DU JOUR, et elle est écrite dans le
-			// décompte. Laisser l'utilisateur la choisir ouvrirait la porte à un
-			// décompte arrêté à une date qui l'arrange.
-			arreteAu: new Date().toISOString().slice(0, 10),
-			convention
-		});
-	}
-});
 
 /**
  * Le dernier décompte arrêté, celui que l'écran montre — et ce qu'il ne couvre
@@ -273,6 +345,14 @@ const vIdentiteFigee = v.optional(
 );
 
 const vDernierDecompte = v.object({
+	/**
+	 * L'IDENTIFIANT DE LA PIÈCE, et il manquait.
+	 *
+	 * Cette requête compose un décompte ; elle ne rendait donc aucun identifiant,
+	 * et la pièce arrêtée n'avait aucune adresse atteignable depuis la créance qui
+	 * la porte. On ne pouvait la retrouver qu'en relisant toute la table.
+	 */
+	_id: v.id('decomptes'),
 	arreteAu: v.string(),
 	convention: vConventionJours,
 	principalRestantDu: v.int64(),
@@ -324,28 +404,37 @@ const vDernierDecompte = v.object({
 	)
 });
 
-async function composerDernierDecompte(
+/**
+ * Ce qu'un décompte figé n'a PAS couvert, recalculé contre les factures d'aujourd'hui.
+ *
+ * ⚠️ EXPORTÉE, ET C'EST VOULU : trois surfaces la lisent — la fiche de créance,
+ * l'écran d'arrêt et la pièce (`/app/decompte/$id`). Une seconde écriture du
+ * même contrôle se serait mise à dire autre chose au premier ajustement, sur le
+ * garde-fou le plus important du produit.
+ *
+ * ⚠️ FONCTION DE MODULE, PAS FONCTION CONVEX : aucune référence
+ * `internal.<module>`, donc aucun cycle d'inférence.
+ */
+export async function abandonsDuDecompte(
 	ctx: QueryCtx,
 	organizationId: Id<'organizations'>,
-	creanceId: Id<'creances'>
-) {
-	const decomptes = await ctx.db
-		.query('decomptes')
-		.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-		.order('desc')
-		.take(1);
+	decompte: Doc<'decomptes'>
+): Promise<
+	Array<{
+		nature: 'FACTURE_ECARTEE' | 'INTERETS_INEXPLIQUES' | 'PARAMETRE_MANQUANT';
+		reference: string;
+		montantEnJeu: bigint | null;
+		explication: string;
+	}>
+> {
+	const creance = await ctx.db.get(decompte.creanceId);
 
-	const dernier = decomptes[0];
-	if (dernier === undefined || dernier.organizationId !== organizationId) return null;
-
-	const creance = await ctx.db.get(creanceId);
-
-	// TOUTES les factures du MÊME débiteur — c'est la comparaison avec cette
+	// TOUTES les factures du MÊME débiteur : c'est la comparaison avec cette
 	// liste qui révèle l'oubli. Celles d'un autre débiteur n'ont rien à faire
 	// dans ce décompte : les annoncer « abandonnées » serait un faux positif, et
 	// la pièce perdrait sa crédibilité au premier lecteur attentif.
 	const facturesConnues =
-		creance === null
+		creance === null || creance.organizationId !== organizationId
 			? []
 			: (
 					await ctx.db
@@ -359,9 +448,13 @@ async function composerDernierDecompte(
 						montantExigible: depuisCentimes(facture.montantTTC)
 					}));
 
+	// ⚠️ `parametresRequis` N'EST PAS PASSÉ, ici comme chez les deux autres
+	// appelants. L'étage `PARAMETRE_MANQUANT` de `controle.ts` ne peut donc pas
+	// se produire, et l'écran qui lit ceci le DIT plutôt que de laisser croire à
+	// un verrou qui ne mord pas.
 	const controle = controlerDecompte({
 		decompte: {
-			lignes: dernier.lignes.map((ligne) => ({
+			lignes: decompte.lignes.map((ligne) => ({
 				reference: ligne.reference,
 				principalRestantDu: depuisCentimes(ligne.principalRestantDu),
 				interets: depuisCentimes(ligne.interets),
@@ -377,17 +470,40 @@ async function composerDernierDecompte(
 					interets: depuisCentimes(segment.interets)
 				}))
 			})),
-			principalRestantDu: depuisCentimes(dernier.principalRestantDu),
-			interets: depuisCentimes(dernier.interets),
-			indemniteForfaitaire: depuisCentimes(dernier.indemniteForfaitaire),
-			total: depuisCentimes(dernier.total),
-			arreteAu: dernier.arreteAu,
-			convention: dernier.convention
+			principalRestantDu: depuisCentimes(decompte.principalRestantDu),
+			interets: depuisCentimes(decompte.interets),
+			indemniteForfaitaire: depuisCentimes(decompte.indemniteForfaitaire),
+			total: depuisCentimes(decompte.total),
+			arreteAu: decompte.arreteAu,
+			convention: decompte.convention
 		},
 		facturesConnues
 	});
 
+	return controle.abandons.map((abandon) => ({
+		nature: abandon.nature,
+		reference: abandon.reference,
+		montantEnJeu: abandon.montantEnJeu === null ? null : enCentimes(abandon.montantEnJeu),
+		explication: abandon.explication
+	}));
+}
+
+async function composerDernierDecompte(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	creanceId: Id<'creances'>
+) {
+	const decomptes = await ctx.db
+		.query('decomptes')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+		.order('desc')
+		.take(1);
+
+	const dernier = decomptes[0];
+	if (dernier === undefined || dernier.organizationId !== organizationId) return null;
+
 	return {
+		_id: dernier._id,
 		arreteAu: dernier.arreteAu,
 		convention: dernier.convention,
 		principalRestantDu: dernier.principalRestantDu,
@@ -397,12 +513,7 @@ async function composerDernierDecompte(
 		creancier: dernier.creancier,
 		debiteur: dernier.debiteur,
 		lignes: dernier.lignes,
-		abandons: controle.abandons.map((abandon) => ({
-			nature: abandon.nature,
-			reference: abandon.reference,
-			montantEnJeu: abandon.montantEnJeu === null ? null : enCentimes(abandon.montantEnJeu),
-			explication: abandon.explication
-		}))
+		abandons: await abandonsDuDecompte(ctx, organizationId, dernier)
 	};
 }
 
@@ -512,5 +623,72 @@ export const listerDecomptes = authedQuery({
 		// Le plus récemment produit d'abord : c'est celui qu'on vient d'arrêter, et
 		// celui qu'on cherche. L'ordre ne dépend pas de l'ordre d'insertion en base.
 		return lignes.sort((a, b) => b.produitLe - a.produitLe);
+	}
+});
+
+/**
+ * UNE PIÈCE, À SON ADRESSE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * POURQUOI UN DÉCOMPTE SE LIT PAR SON PROPRE IDENTIFIANT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `dernierDecompte` rend « le dernier de cette créance » : une lecture qui
+ * change de contenu quand on rejoue. Un décompte arrêté, lui, est FIGÉ et daté,
+ * il part chez un tiers qui refera le calcul à la main, et la question qu'on lui
+ * pose n'est pas « où en est-on » mais « qu'a-t-on réclamé le 16 septembre ».
+ * Cette question n'a de réponse stable que si la pièce a une adresse à elle.
+ *
+ * ⚠️ LES ABANDONS SE RECALCULENT ICI AUSSI, contre les factures d'aujourd'hui.
+ * Une facture importée APRÈS l'arrêté doit apparaître comme non couverte : c'est
+ * même le cas le plus utile, puisqu'il dit qu'un nouveau décompte est à refaire
+ * avant d'agir. La pièce, elle, ne bouge pas d'un centime.
+ */
+const vPieceArretee = v.object({
+	...vDernierDecompte.fields,
+	_id: v.id('decomptes'),
+	creanceId: v.id('creances'),
+	/** Pour ouvrir le client depuis la pièce, sans relire la créance. */
+	debiteurId: v.union(v.id('debiteurs'), v.null()),
+	/** La dénomination FIGÉE quand il y en a une, celle d'aujourd'hui sinon. */
+	debiteurNom: v.string(),
+	denominationFigee: v.boolean(),
+	produitLe: v.number()
+});
+
+export const lireDecompte = authedQuery({
+	args: { decompteId: v.id('decomptes') },
+	returns: v.union(v.null(), vPieceArretee),
+	handler: async (ctx, { decompteId }) => {
+		const { organizationId } = await getUserOrg(ctx);
+
+		const decompte = await ctx.db.get(decompteId);
+		if (decompte === null || decompte.organizationId !== organizationId) return null;
+
+		const creance = await ctx.db.get(decompte.creanceId);
+		// Le cloisonnement est revérifié sur la créance : `decomptes` garantit le
+		// décompte, pas ce qu'il désigne.
+		const sienne = creance !== null && creance.organizationId === organizationId ? creance : null;
+		const debiteur = sienne === null ? null : await ctx.db.get(sienne.debiteurId);
+		const sien = debiteur !== null && debiteur.organizationId === organizationId ? debiteur : null;
+
+		return {
+			_id: decompte._id,
+			creanceId: decompte.creanceId,
+			debiteurId: sien === null ? null : sien._id,
+			debiteurNom: decompte.debiteur?.denomination ?? sien?.denomination ?? 'Débiteur inconnu',
+			denominationFigee: decompte.debiteur !== undefined,
+			produitLe: decompte.produitLe,
+			arreteAu: decompte.arreteAu,
+			convention: decompte.convention,
+			principalRestantDu: decompte.principalRestantDu,
+			interets: decompte.interets,
+			indemniteForfaitaire: decompte.indemniteForfaitaire,
+			total: decompte.total,
+			creancier: decompte.creancier,
+			debiteur: decompte.debiteur,
+			lignes: decompte.lignes,
+			abandons: await abandonsDuDecompte(ctx, organizationId, decompte)
+		};
 	}
 });
