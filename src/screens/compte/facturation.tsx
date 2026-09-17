@@ -21,6 +21,15 @@ export interface AbonnementAffiche {
 	readonly paddleStatus: string | null;
 	readonly paddleConfigure: boolean;
 	readonly essaiFiniLe: number | null;
+	/*
+	  ⚠️ `paddleCurrentPeriodEnd` N'EST PAS ICI, ET C'EST DÉLIBÉRÉ.
+	  `etatAbonnement` le renvoie, et il est tentant de l'afficher sur un
+	  abonnement résilié — « votre accès se ferme le … ». Ce serait FAUX :
+	  `resolveEffectivePlan` ne le lit pas. Dès que `paddleStatus` quitte
+	  `active`/`trialing`, le palier tombe TOUT DE SUITE sur l'essai s'il court,
+	  sur `none` sinon. La fin de période ne protège rien, et l'écrire
+	  promettrait un sursis qui n'existe pas.
+	*/
 }
 
 /**

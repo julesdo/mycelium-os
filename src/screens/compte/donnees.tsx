@@ -292,14 +292,25 @@ function Effacements({
 		<div className="flex flex-col gap-cladd-2xs">
 			{apercu.estAdmin ? (
 				<div className="flex flex-col gap-cladd-3xs">
+					{/*
+					  ⚠️ LA CONSÉQUENCE POINTE L'INVENTAIRE AU LIEU DE LE RECOPIER. Elle
+					  énumérait trois lignes sur neuf — factures, débiteurs, décomptes —
+					  alors que `purgerEtablissement` vide AUSSI le journal, les
+					  propositions, les échanges avec le compagnon et les remises à un
+					  conseil. Une liste partielle sous un bouton irréversible promet
+					  qu'on garde le reste. Renvoyer à l'inventaire dit vrai aujourd'hui
+					  et le restera quand une dixième table s'ajoutera.
+					*/}
 					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						Supprimer l’établissement efface ses {NOMBRE.format(apercu.factures)} facture
-						{pluriel(apercu.factures)}, ses {NOMBRE.format(apercu.debiteurs)} débiteur
-						{pluriel(apercu.debiteurs)}, ses {NOMBRE.format(apercu.decomptes)} décompte
-						{pluriel(apercu.decomptes)} et les pièces qui les soutiennent, définitivement. Les{' '}
-						{apercu.membres} personnes qui y accèdent en perdent l’accès immédiatement. Si vous
-						avez besoin de ces chiffres plus tard — une créance se prescrit en plusieurs années —
-						préparez votre export avant.
+						Supprimer l’établissement efface, définitivement, TOUT ce que l’inventaire ci-dessus
+						énumère : ses {NOMBRE.format(apercu.factures)} facture{pluriel(apercu.factures)}, ses{' '}
+						{NOMBRE.format(apercu.debiteurs)} débiteur{pluriel(apercu.debiteurs)}, ses{' '}
+						{NOMBRE.format(apercu.decomptes)} décompte{pluriel(apercu.decomptes)}, les pièces qui
+						les soutiennent, et jusqu’au journal, aux propositions de la surveillance, à vos
+						échanges avec le compagnon et à vos remises à un conseil. Les {apercu.membres}{' '}
+						personnes qui y accèdent en perdent l’accès immédiatement. Si vous avez besoin de ces
+						chiffres plus tard — une créance se prescrit en plusieurs années — préparez votre
+						export avant.
 					</p>
 
 					{suppressionDeLEtablissement.erreur ? (
