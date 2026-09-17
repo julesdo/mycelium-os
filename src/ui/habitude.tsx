@@ -61,10 +61,21 @@ function delaiLisible(jours: number): string {
 export function HabitudePaiement({
 	habitude,
 	ruptures,
+	nomme = true,
 	className
 }: {
 	habitude: HabitudeAffichee;
 	ruptures: readonly RuptureAffichee[];
+	/**
+	 * Faux quand une section de la page NOMME déjà ce bloc.
+	 *
+	 * ⚠️ SANS LUI, LE TITRE S'ÉCRIT DEUX FOIS À TRENTE PIXELS D'INTERVALLE. Sur
+	 * la page d'un débiteur, « SON HABITUDE DE PAIEMENT » est l'intitulé de
+	 * section, et la carte le redisait juste dessous — le même défaut que la
+	 * dénomination répétée sous le nom du client. Dans la file, la carte se
+	 * déplie sous une rangée qui ne la nomme pas : son titre reste.
+	 */
+	nomme?: boolean;
 	className?: string;
 }) {
 	return (
@@ -80,7 +91,7 @@ export function HabitudePaiement({
 					<ActivityIcon size={18} aria-hidden />
 				</span>
 				<div className="flex min-w-0 flex-col gap-0.5">
-					<h2 className="text-cladd-xs font-semibold">Son habitude de paiement</h2>
+					{nomme ? <h2 className="text-cladd-xs font-semibold">Son habitude de paiement</h2> : null}
 					{habitude.connue ? (
 						<p className="text-cladd-2xs text-cladd-fg-soft">
 							Règle {delaiLisible(habitude.delaiMedianJours)}, sur {habitude.echantillon} règlements

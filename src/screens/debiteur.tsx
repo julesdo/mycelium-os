@@ -597,7 +597,8 @@ function CorpsDebiteur({
 			*/}
 			<section className="flex flex-col gap-cladd-3xs">
 				<SectionTitle>Son habitude de paiement</SectionTitle>
-				<HabitudePaiement habitude={habitude} ruptures={ruptures} />
+				{/* `nomme={false}` : la section porte déjà le titre, juste au-dessus. */}
+				<HabitudePaiement habitude={habitude} ruptures={ruptures} nomme={false} />
 			</section>
 
 			{/*
