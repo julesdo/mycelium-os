@@ -126,14 +126,23 @@ export const vTaux = v.object({
 });
 
 /**
- * D'OÙ SORT UN CONSTAT : une pièce du client, ou une entrée du référentiel.
+ * D'OÙ SORT UN CONSTAT : une pièce du client, un décompte du dossier, ou une
+ * entrée du référentiel.
  *
- * ⚠️ IL N'Y A PAS DE TROISIÈME FORME, ET C'EST UNE RÈGLE, PAS UNE COMMODITÉ.
- * Une phrase sans pastille ne peut porter ni un MONTANT ni un ÉNONCÉ
- * JURIDIQUE, et aucune référence légale ne se dit de mémoire. Une source
- * libre en texte aurait rouvert exactement ce chemin : une affirmation
- * sourcée par une phrase que rien ne résout, donc que rien ne corrige le jour
- * où la valeur change.
+ * ⚠️ AUCUNE FORME LIBRE, ET C'EST UNE RÈGLE, PAS UNE COMMODITÉ. Une phrase
+ * sans pastille ne peut porter ni un MONTANT ni un ÉNONCÉ JURIDIQUE, et aucune
+ * référence légale ne se dit de mémoire. Une source libre en texte aurait
+ * rouvert exactement ce chemin : une affirmation sourcée par une phrase que
+ * rien ne résout, donc que rien ne corrige le jour où la valeur change.
+ *
+ * ⚠️ LA TROISIÈME FORME EST ARRIVÉE AVEC LA CONVERSATION (T14), ET ELLE NE
+ * ROUVRE PAS CE CHEMIN. La première écriture n'en comptait que deux, et la
+ * conséquence était muette : B4 exige qu'un montant soit relié à un décompte OU
+ * à une pièce, et `compagnon/filtres.ts` porte bien les trois genres de
+ * pastille — mais ce validateur n'en savait stocker que deux. Une phrase
+ * chiffrée par un décompte s'affichait sourcée et se persistait sans sa source.
+ * Un `decompteId` est exactement aussi résoluble qu'un `pieceId` : il désigne
+ * une pièce figée et datée du dossier, pas une phrase.
  *
  * `page` est FACULTATIF, et c'est un angle mort DÉCLARÉ : une lecture qui n'a
  * pas su dire à quelle page elle a trouvé sa valeur le dit, plutôt que d'en
@@ -145,6 +154,11 @@ export const vSourceConstat = v.union(
 		pieceId: v.id('pieces'),
 		/** La page où la valeur a été lue, quand la lecture a su le dire. */
 		page: v.optional(v.number())
+	}),
+	v.object({
+		nature: v.literal('DECOMPTE'),
+		/** Le décompte figé et daté dont le chiffre sort. */
+		decompteId: v.id('decomptes')
 	}),
 	v.object({
 		nature: v.literal('REFERENTIEL'),

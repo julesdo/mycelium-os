@@ -6,9 +6,14 @@
  *
  * @see https://stack.convex.dev/custom-functions
  */
-import { customQuery, customMutation, customCtx } from 'convex-helpers/server/customFunctions';
+import {
+	customQuery,
+	customMutation,
+	customAction,
+	customCtx
+} from 'convex-helpers/server/customFunctions';
 import { ConvexError } from 'convex/values';
-import { query, mutation } from './_generated/server';
+import { query, mutation, action } from './_generated/server';
 import { authComponent } from './auth';
 
 /**
@@ -60,6 +65,47 @@ export const authedQuery = customQuery(
  */
 export const authedMutation = customMutation(
 	mutation,
+	customCtx(async (ctx) => {
+		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
+		if (!user) {
+			throw new ConvexError('Authentication required');
+		}
+		return { user };
+	})
+);
+
+/**
+ * Action qui exige un compte authentifié — le seul chemin vers l'extérieur.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ TOUTE `authedAction` ANNOTE LE TYPE DE RETOUR DE SON HANDLER
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Ce n'est pas un goût de style, c'est le piège Convex qui casse TOUS les
+ * écrans d'un coup. Une action appelle nécessairement `ctx.runQuery` et
+ * `ctx.runMutation` sur `internal.<…>` ; dès que la cible vit dans le MÊME
+ * module, le type d'`internal` contient celui du handler, qui dépend
+ * d'`internal`. TypeScript renonce, retombe sur `any`, et cet `any` remonte
+ * dans le type d'`api` TOUT ENTIER : des dizaines de `TS7006` apparaissent
+ * alors dans des fichiers qu'on n'a pas touchés, et la cause n'est jamais
+ * là où ça se plaint.
+ *
+ * Le remède tient en une annotation, et il est déjà documenté sur place à
+ * `rgpd.ts` :
+ *
+ * ```ts
+ * handler: async (ctx, args): Promise<ReponseCompagnon> => { … }
+ * ```
+ *
+ * ⚠️ ET `ctx.user` NE DONNE PAS L'ÉTABLISSEMENT. Une action n'a pas de base de
+ * données : elle ne peut pas appeler `getUserOrg`, qui lit `userProfiles` et
+ * revérifie l'appartenance. Le cloisonnement se fait donc dans la `query` ou la
+ * `mutation` interne qu'elle appelle, où il se fait déjà — jamais en passant un
+ * `organizationId` en argument depuis le client, ce qui reviendrait à croire
+ * l'appelant sur parole.
+ */
+export const authedAction = customAction(
+	action,
 	customCtx(async (ctx) => {
 		const user = (await authComponent.getAuthUser(ctx)) as BetterAuthUser | null;
 		if (!user) {

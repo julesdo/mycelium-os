@@ -51,6 +51,8 @@ import type * as recouvrement_briefing from "../recouvrement/briefing.js";
 import type * as recouvrement_comportement from "../recouvrement/comportement.js";
 import type * as recouvrement_conseil from "../recouvrement/conseil.js";
 import type * as recouvrement_controle from "../recouvrement/controle.js";
+import type * as recouvrement_conversation from "../recouvrement/conversation.js";
+import type * as recouvrement_conversationLecture from "../recouvrement/conversationLecture.js";
 import type * as recouvrement_creances from "../recouvrement/creances.js";
 import type * as recouvrement_debiteurs from "../recouvrement/debiteurs.js";
 import type * as recouvrement_decompte from "../recouvrement/decompte.js";
@@ -126,6 +128,8 @@ declare const fullApi: ApiFromModules<{
   "recouvrement/comportement": typeof recouvrement_comportement;
   "recouvrement/conseil": typeof recouvrement_conseil;
   "recouvrement/controle": typeof recouvrement_controle;
+  "recouvrement/conversation": typeof recouvrement_conversation;
+  "recouvrement/conversationLecture": typeof recouvrement_conversationLecture;
   "recouvrement/creances": typeof recouvrement_creances;
   "recouvrement/debiteurs": typeof recouvrement_debiteurs;
   "recouvrement/decompte": typeof recouvrement_decompte;
