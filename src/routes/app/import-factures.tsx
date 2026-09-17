@@ -282,16 +282,27 @@ function ImportFactures() {
 	 * recherche, n'importe où sur l'écran — rend une liste de fichiers vide et
 	 * ne déclenche rien.
 	 */
+	/**
+	 * ⚠️ PAR UNE RÉFÉRENCE, ET PAS EN DÉPENDANCE. `deposer` change d'identité à
+	 * chaque changement de `envois` — c'est-à-dire À CHAQUE ÉVÉNEMENT DE
+	 * PROGRESSION, soit des dizaines de fois par fichier. En dépendance de
+	 * l'effet, l'écouteur se serait défait et refait autant de fois, précisément
+	 * pendant que le navigateur téléverse.
+	 */
+	const deposerCourant = useRef(deposer);
+	useEffect(() => {
+		deposerCourant.current = deposer;
+	});
 	useEffect(() => {
 		const coller = (evenement: ClipboardEvent) => {
 			const fichiers = [...(evenement.clipboardData?.files ?? [])];
 			if (fichiers.length === 0) return;
 			evenement.preventDefault();
-			void deposer(fichiers);
+			void deposerCourant.current(fichiers);
 		};
 		window.addEventListener('paste', coller);
 		return () => window.removeEventListener('paste', coller);
-	}, [deposer]);
+	}, []);
 
 	/** Renvoie UN fichier, celui que sa rangée nomme. */
 	const reessayer = useCallback(
