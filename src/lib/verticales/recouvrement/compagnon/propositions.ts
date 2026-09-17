@@ -265,7 +265,17 @@ export interface MesuresDuJour {
 	readonly decideesSansHorodatage: number;
 	/** 3. Le nombre de retenues corrigées après coup. */
 	readonly corrections: number;
-	/** 3. Corrections / retenues. `null` tant que rien n'a été retenu. */
+	/**
+	 * 3. Corrections / propositions retenues AU MOINS UNE FOIS. `null` tant que
+	 * rien n'a jamais été retenu.
+	 *
+	 * ⚠️ LE DÉNOMINATEUR COMPTE CE QUI A ÉTÉ RETENU, PAS CE QUI L'EST RESTÉ. Une
+	 * proposition corrigée est ÉCARTÉE aujourd'hui : la compter seulement au
+	 * numérateur ferait monter le taux au-dessus de 1, et un établissement qui
+	 * corrige tout aurait `retenues = 0` donc un taux `null` — c'est-à-dire que
+	 * le seul des trois nombres qui ne soit pas auto-référentiel disparaîtrait
+	 * exactement le jour où il compte.
+	 */
 	readonly tauxCorrection: number | null;
 }
 
@@ -310,6 +320,9 @@ export function mesurerLeJour(
 	}
 
 	const corrections = lignes.filter((l) => l.corrigee).length;
+	// Ce qui a été retenu au moins une fois : ce qui l'est encore, plus ce qui a
+	// été corrigé depuis. Voir `tauxCorrection`.
+	const retenuesAuMoinsUneFois = retenues + corrections;
 
 	return {
 		jour,
@@ -322,7 +335,7 @@ export function mesurerLeJour(
 		delaiMedianMs: mediane(delais),
 		decideesSansHorodatage,
 		corrections,
-		tauxCorrection: retenues === 0 ? null : corrections / retenues
+		tauxCorrection: retenuesAuMoinsUneFois === 0 ? null : corrections / retenuesAuMoinsUneFois
 	};
 }
 

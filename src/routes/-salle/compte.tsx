@@ -475,9 +475,9 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
  *
  * La première est celle qui doit faire DESCENDRE le plafond : sept posées,
  * douze différées, rétention à 100 % et médiane sous deux secondes — c'est du
- * « Retenir » à l'aveugle, pas de la justesse, et la correction qui suit le
- * confirme. La seconde est une journée ordinaire : on lit, on retient, on
- * écarte.
+ * « Retenir » à l'aveugle, pas de la justesse. La seconde est une journée
+ * ordinaire : on lit, on retient, on écarte, et une retenue de la veille se
+ * corrige — le seul des trois nombres qui ne soit pas auto-référentiel.
  *
  * ⚠️ LA TROISIÈME LIGNE PORTE UN `enAttente` À `null`. C'est le jour où le
  * battement n'a rien relevé : la colonne affiche un tiret, jamais un zéro, et
@@ -495,21 +495,24 @@ const MESURES_DEMO: MesuresAffichees = {
 			tauxRetention: 1,
 			delaiMedianMs: 940,
 			decideesSansHorodatage: 0,
-			corrections: 1,
-			tauxCorrection: 1 / 7
+			corrections: 0,
+			tauxCorrection: 0
 		},
 		{
+			// Une correction : deux écartées, dont une qui avait été retenue. Le
+			// dénominateur du taux compte ce qui a été retenu AU MOINS UNE FOIS,
+			// soit 3 + 1.
 			jour: '2026-09-16',
 			posees: 5,
 			enAttente: 0,
 			retenues: 3,
-			ecartees: 1,
-			indecises: 1,
-			tauxRetention: 3 / 4,
+			ecartees: 2,
+			indecises: 0,
+			tauxRetention: 3 / 5,
 			delaiMedianMs: 14_200,
 			decideesSansHorodatage: 1,
-			corrections: 0,
-			tauxCorrection: 0
+			corrections: 1,
+			tauxCorrection: 1 / 4
 		},
 		{
 			jour: '2026-09-15',
