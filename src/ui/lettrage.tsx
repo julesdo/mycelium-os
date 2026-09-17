@@ -130,7 +130,30 @@ export function Lettrage({
 	enCours: boolean;
 	erreur: string | null;
 	onChercher: (montantSaisi: string, date: string) => void;
-	onAppliquer: (references: readonly string[], total: bigint) => void;
+	/**
+	 * SOLDER, ET LA DATE PART AVEC LE GESTE.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ ELLE NE SE LIT PAS AILLEURS, ET C'EST UN MONTANT QUI EN DÉPEND
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Elle partait au seul appui sur « Chercher », et l'écran qui montait ce
+	 * composant la gardait de son côté jusqu'au solde. Or le calendrier reste
+	 * visible ET MODIFIABLE une fois la proposition affichée : le gérant qui
+	 * corrigeait la date puis soldait enregistrait le règlement à l'ANCIENNE
+	 * date, pendant que l'écran affichait la nouvelle.
+	 *
+	 * La date d'un règlement est le point d'arrêt des intérêts. C'était un
+	 * montant faux, pas une coquille.
+	 *
+	 * ⚠️ ET C'EST LE TROISIÈME ARGUMENT QUI L'EMPÊCHE DE SE RE-CASSER, pas une
+	 * invalidation de la proposition au changement de date. Invalider laisse
+	 * DEUX copies de la date en vie — celle du calendrier et celle qu'un écran
+	 * a rangée — et confie leur accord à un rappel qu'une prochaine main peut
+	 * oublier. Ici il n'y a plus qu'une date : celle qui est sous les yeux au
+	 * moment de l'appui, lue à cet instant-là.
+	 */
+	onAppliquer: (references: readonly string[], total: bigint, date: string) => void;
 	/**
 	 * LES CLIENTS CHEZ QUI LE RAPPROCHEMENT A DE LA MATIÈRE.
 	 *
@@ -331,11 +354,21 @@ export function Lettrage({
 										<span className="text-cladd-sm font-semibold tabular-nums">
 											{eurosCentimes(combinaison.total)}
 										</span>
+										{/*
+										  ⚠️ LA DATE EST LUE ICI, AU MOMENT DE L'APPUI, et le bouton
+										  reste éteint sans elle. Le calendrier n'ayant pas de date
+										  par défaut, un règlement sans jour n'a pas de point d'arrêt
+										  d'intérêts : le bouton le DIT en restant éteint, plutôt que
+										  d'enregistrer une date que personne n'a choisie.
+										*/}
 										<Button
 											size="md"
 											variant="transparent"
-											onClick={() => onAppliquer(combinaison.references, combinaison.total)}
-											disabled={enCours}
+											onClick={() => {
+												if (date === undefined) return;
+												onAppliquer(combinaison.references, combinaison.total, enISO(date));
+											}}
+											disabled={enCours || date === undefined}
 										>
 											Solder ces factures
 										</Button>

@@ -232,6 +232,31 @@ function delaiDeLecture(id: string): number {
 	const vueLe = PREMIERE_VUE.get(id);
 	return vueLe === undefined ? 0 : Math.max(0, Date.now() - vueLe);
 }
+
+/**
+ * LE REFUS DU SERVEUR, MOT POUR MOT.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ `ConvexError` PORTE SON MESSAGE DANS `.data`, PAS DANS `.message`
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `.message` rend le texte tel que le client Convex l'encadre — son préfixe et
+ * l'identifiant de la requête — et pas la phrase composée par la mutation. Or
+ * c'est cette phrase-là qui porte le seul détail permettant de reprendre :
+ * « les factures choisies font 4 810,00 €, pas 4 820,00 € ». Montrer le cadre du
+ * harnais à sa place remplace un chiffre par un numéro de ticket.
+ *
+ * La même lecture qu'à `volet-branche.tsx`, `arret.$id.tsx`, `decompte.$id.tsx`,
+ * `debiteurs.tsx` et `creance.$id.procedure.tsx`.
+ */
+function messageDuRefus(e: unknown): string {
+	if (typeof e === 'object' && e !== null && 'data' in e) {
+		const data = (e as { data: unknown }).data;
+		if (typeof data === 'string') return data;
+	}
+	return e instanceof Error && e.message !== '' ? e.message : 'Rapprochement refusé.';
+}
+
 function File() {
 	const navigate = useNavigate();
 	const { ligne, position, sections } = Route.useSearch();
@@ -354,9 +379,14 @@ function File() {
 	 * posé au moment de l'appui, qui déclenche la requête : chercher pendant
 	 * qu'on tape ferait défiler des propositions sous les doigts.
 	 */
+	/**
+	 * ⚠️ ET LA DATE DE VALEUR N'EST PAS ICI. Elle l'était, posée au moment de la
+	 * recherche et relue au moment du solde — deux instants séparés par un
+	 * calendrier qui reste modifiable entre les deux. Elle vit maintenant dans le
+	 * calendrier seul et part AVEC le geste de solde : voir `ui/lettrage.tsx`.
+	 */
 	const [debiteurLettrage, setDebiteurLettrage] = useState<Id<'debiteurs'> | null>(null);
 	const [montantCherche, setMontantCherche] = useState<bigint | null>(null);
-	const [dateReglement, setDateReglement] = useState('');
 	const [erreurLettrage, setErreurLettrage] = useState<string | null>(null);
 
 	/**
@@ -724,15 +754,38 @@ function File() {
 			encours: debiteur.encours
 		}));
 
-	function chercherLettrage(saisi: string, date: string) {
-		if (debiteurLettrage === null) return;
+	/**
+	 * LE CLIENT DU RAPPROCHEMENT, RELU SUR LA LISTE À CHAQUE RENDU.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ UN CLIENT SOLDÉ QUITTE LA LISTE, ET L'ÉTAT LE DÉSIGNAIT ENCORE
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * `debiteursRapprochables` ne garde que ceux dont une facture est encore
+	 * ouverte. Le client qu'on vient de solder en sort, le libellé du sélecteur
+	 * retombe sur « Choisir le client » — et l'état, lui, le désignait toujours :
+	 * le gérant croyait repartir à zéro et lançait sa recherche suivante sur
+	 * l'ancien client.
+	 *
+	 * ⚠️ DÉRIVÉ AU RENDU, ET PAS SEULEMENT REMIS À ZÉRO APRÈS LE SOLDE. La remise
+	 * à zéro ne couvre que le chemin qu'on a en tête ; la liste, elle, peut aussi
+	 * se vider d'ailleurs — un second onglet, un import qui solde. Ce qui ne peut
+	 * pas se re-casser, c'est que le choix N'EXISTE que tant que la liste le
+	 * porte : ce qu'on lit est alors ce qui partira.
+	 */
+	const debiteurRapprochable =
+		debiteurLettrage !== null && debiteursRapprochables.some((d) => d.id === debiteurLettrage)
+			? debiteurLettrage
+			: null;
+
+	function chercherLettrage(saisi: string) {
+		if (debiteurRapprochable === null) return;
 		setErreurLettrage(null);
 		setMontantCherche(null);
 		try {
 			// `depuisEuros` refuse trois décimales, NaN et la notation exponentielle.
 			// Un montant mal lu ici deviendrait un règlement faux en base.
 			setMontantCherche(enCentimes(depuisEuros(saisi.trim().replace(/\s/g, ''))));
-			setDateReglement(date.trim());
 		} catch {
 			setErreurLettrage(
 				`« ${saisi} » n’est pas un montant en euros. Deux décimales au plus, sans arrondi.`
@@ -740,25 +793,36 @@ function File() {
 		}
 	}
 
-	async function soldeLesFactures(references: readonly string[], total: bigint) {
-		if (debiteurLettrage === null) return;
+	/**
+	 * ⚠️ LA DATE ARRIVE AVEC LE GESTE, elle n'est pas relue dans un état. Elle
+	 * était posée au moment de « Chercher » et relue au moment de « Solder » ;
+	 * entre les deux, le calendrier reste modifiable. La date d'un règlement est
+	 * le point d'arrêt des intérêts : corriger la date puis solder enregistrait un
+	 * MONTANT faux, pendant que l'écran affichait la date corrigée.
+	 */
+	async function soldeLesFactures(references: readonly string[], total: bigint, date: string) {
+		if (debiteurRapprochable === null) return;
 		setErreurLettrage(null);
 		try {
 			await appliquerLettrage({
-				debiteurId: debiteurLettrage,
+				debiteurId: debiteurRapprochable,
 				references: [...references],
 				montant: total,
-				date: dateReglement
+				date
 			});
 			// Soldées : la recherche a fait son travail. La laisser affichée
 			// proposerait de solder une seconde fois des factures qui ne sont plus
 			// candidates, et le serveur refuserait — un bouton qui ne peut plus rien.
+			// Et le CLIENT repart avec elle : il vient de quitter la liste des
+			// rapprochables, et le garder choisi viserait la recherche suivante sur
+			// un client que le sélecteur ne nomme plus.
 			setMontantCherche(null);
+			setDebiteurLettrage(null);
 		} catch (e) {
 			// Le refus vient du serveur et NOMME ce qu'il a compté — « les factures
 			// choisies font 4 810,00 €, pas 4 820,00 € ». Le reformuler perdrait le
 			// seul détail qui permet de reprendre.
-			setErreurLettrage(e instanceof Error ? e.message : 'Rapprochement refusé.');
+			setErreurLettrage(messageDuRefus(e));
 		}
 	}
 
@@ -796,13 +860,23 @@ function File() {
 						portees: ['AUJOURDHUI', 'A_TRANCHER'],
 						ouvrable: false,
 						lettrage: {
-							proposition: propositionLettrage ?? null,
-							enCours: montantCherche !== null && propositionLettrage === undefined,
+							/*
+							  ⚠️ LA PROPOSITION NE SURVIT PAS À SON CLIENT. Tant que le choix
+							  n'est plus dans la liste, il n'y a personne à solder : afficher
+							  des combinaisons trouvées pour lui proposerait de solder les
+							  factures d'un client que le sélecteur ne nomme plus.
+							*/
+							proposition: debiteurRapprochable === null ? null : (propositionLettrage ?? null),
+							enCours:
+								debiteurRapprochable !== null &&
+								montantCherche !== null &&
+								propositionLettrage === undefined,
 							erreur: erreurLettrage,
 							onChercher: chercherLettrage,
-							onAppliquer: (references, total) => void soldeLesFactures(references, total),
+							onAppliquer: (references, total, date) =>
+								void soldeLesFactures(references, total, date),
 							debiteurs: debiteursRapprochables,
-							debiteurChoisi: debiteurLettrage,
+							debiteurChoisi: debiteurRapprochable,
 							onDebiteur: (id) => {
 								// Changer de client JETTE la proposition en cours : elle porte
 								// les factures d'un autre, et solder les mauvaises laisserait
