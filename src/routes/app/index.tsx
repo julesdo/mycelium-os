@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
@@ -210,6 +210,22 @@ function File() {
 	 * figure pas est perdu. La vue Par client le montre par client, en euros.
 	 */
 	const abandons = useQuery(api.recouvrement.controle.abandonsDeLEtablissement, {});
+	/**
+	 * LES PROPOSITIONS DU JOUR (D13), POSÉES PAR LE BATTEMENT.
+	 *
+	 * ⚠️ LA FILE LIT, ET N'ÉCRIT QUE SUR UN APPUI. Une `query` n'écrit pas, et une
+	 * mutation déclenchée sur un chemin de lecture réactif serait une boucle : la
+	 * pose se fait une fois par nuit et par établissement, dans `battement.ts`.
+	 *
+	 * ⚠️ ET LE JOUR EST CELUI DE L'INTERFACE. Demander « les propositions
+	 * d'aujourd'hui » avec l'horloge du serveur ferait, autour de minuit, lire un
+	 * jour pendant que la tête de file en compte un autre.
+	 */
+	const propositions = useQuery(api.recouvrement.propositions.propositionsDuJour, {
+		jour: aujourdHui
+	});
+	const retenirProposition = useMutation(api.recouvrement.propositions.retenir);
+	const ecarterProposition = useMutation(api.recouvrement.propositions.ecarter);
 
 	/**
 	 * LE REGISTRE : une ACTION, parce qu'elle appelle le BODACC.
@@ -275,6 +291,59 @@ function File() {
 	/** Une rangée n'est tapable que si son identifiant mène à un dossier. */
 	const ouvrable = (id: string) => estUneCreance.has(id) || creanceDuDebiteur.has(id);
 
+	// ── LES PROPOSITIONS, ET LE DÉLAI DE LECTURE QU'ELLES EXIGENT ────────────
+
+	/**
+	 * QUAND CHAQUE PROPOSITION EST APPARUE SOUS LES YEUX.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ POURQUOI L'ÉCRAN ENVOIE UNE DURÉE, ET PAS UN HORODATAGE
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * `retenir` et `ecarter` EXIGENT `lueDepuisMs` : c'est la deuxième des trois
+	 * mesures de D13 — la médiane du délai entre l'affichage et l'appui, celle qui
+	 * dit si on a LU ou si on a tapé. Elle est requise exprès pour qu'aucun site
+	 * d'appel ne puisse l'oublier en silence.
+	 *
+	 * Une DURÉE est immune à l'horloge du navigateur : deux horodatages absolus
+	 * venus du client rendraient une médiane fausse dès qu'une machine est
+	 * déréglée, et c'est précisément la médiane qui doit trancher.
+	 *
+	 * ⚠️ IL S'ÉCRIT DANS UNE RÉFÉRENCE, DEPUIS UN EFFET, ET JAMAIS DANS UN ÉTAT.
+	 * Lire l'horloge pendant le rendu rendrait ce composant impur ; poser un état
+	 * dans un effet est interdit par le projet et relancerait un rendu à chaque
+	 * arrivée de proposition. Un effet qui ne touche qu'une référence ne fait ni
+	 * l'un ni l'autre.
+	 */
+	const vuesLe = useRef(new Map<string, number>());
+	useEffect(() => {
+		for (const proposition of propositions?.propositions ?? []) {
+			if (!vuesLe.current.has(proposition._id)) vuesLe.current.set(proposition._id, Date.now());
+		}
+	}, [propositions]);
+
+	const lueDepuis = (id: string) => Math.max(0, Date.now() - (vuesLe.current.get(id) ?? Date.now()));
+
+	/**
+	 * LA PROPOSITION D'UNE CRÉANCE, S'IL Y EN A UNE QUI ATTEND ENCORE.
+	 *
+	 * ⚠️ UNE SEULE PAR RANGÉE, ET C'EST LA PLUS ANCIENNE. Le plafond en autorise
+	 * trois au plus par rangée ; la rangée, elle, n'en affiche qu'une — trois
+	 * propositions sous un même obstacle redemanderaient trois décisions sur une
+	 * ligne qui n'en nomme qu'une.
+	 *
+	 * ⚠️ ET UNE PROPOSITION DÉJÀ DÉCIDÉE NE REVIENT PAS. Elle reste en base, datée
+	 * et signée — c'est la trace de ce qui a été proposé ce jour-là — mais la
+	 * rangée ne la redemande plus.
+	 */
+	const propositionDe = new Map<string, (typeof propositionsEnAttente)[number]>();
+	const propositionsEnAttente = (propositions?.propositions ?? []).filter(
+		(proposition) => proposition.etat === 'PROPOSEE'
+	);
+	for (const proposition of [...propositionsEnAttente].sort((a, b) => a.poseeLe - b.poseeLe)) {
+		if (!propositionDe.has(proposition.cible)) propositionDe.set(proposition.cible, proposition);
+	}
+
 	// ── LES RANGÉES DE LA SURVEILLANCE ───────────────────────────────────────
 
 	const rangeesDuFlux: RangeeDeLaFile[] = flux.evenements.map((evenement, rang) => {
@@ -294,6 +363,14 @@ function File() {
 		 */
 		const id = cible?.id ?? `${evenement.type}:${evenement.reference}:${rang}`;
 
+		/*
+		  ⚠️ LA PROPOSITION SE RATTACHE PAR SA CIBLE, ET ELLE EST AFFICHÉE AVEC SA
+		  PROVENANCE. « Proposé : oui, réserve lue sur BL-2024-77. » La provenance
+		  n'est pas un ornement : c'est elle qui distingue une proposition d'une case
+		  précochée, et le libellé vient du serveur, le même que celui du journal.
+		*/
+		const proposition = propositionDe.get(id);
+
 		return {
 			genre: 'OBSTACLE' as const,
 			id,
@@ -308,6 +385,26 @@ function File() {
 			urgence: evenement.urgence as UrgenceRangee,
 			montant: evenement.montant,
 			...(evenement.dateDuFait === undefined ? {} : { dateDuFait: evenement.dateDuFait }),
+			...(proposition === undefined
+				? {}
+				: {
+						proposition: {
+							valeur: proposition.valeur,
+							source: proposition.sourceLisible,
+							date: proposition.jour,
+							onRetenir: () =>
+								void retenirProposition({
+									propositionId: proposition._id,
+									lueDepuisMs: lueDepuis(proposition._id)
+								}),
+							onEcarter: (motif: string) =>
+								void ecarterProposition({
+									propositionId: proposition._id,
+									motif,
+									lueDepuisMs: lueDepuis(proposition._id)
+								})
+						}
+					}),
 			pli: {
 				libelle: PLI_PAR_TYPE[evenement.type] ?? { un: 'rangée', plusieurs: 'rangées' },
 				rienATrancher: false
@@ -673,6 +770,9 @@ function File() {
 			anglesMorts: flux.anglesMorts
 		},
 		travaux,
+		// ⚠️ `null` QUAND LE BATTEMENT N A PAS DIT ce qu il a differe : on ne
+		// sait pas, et `propositionsDuJour` le rend tel quel plutot que zero.
+		resumeDuPlafond: propositions?.resume ?? null,
 		/**
 		 * ⚠️ `undefined` NE COMPTE PAS COMME « MANQUANT ». Tant que les requêtes
 		 * chargent, on ne sait pas si le profil existe : afficher « votre identité

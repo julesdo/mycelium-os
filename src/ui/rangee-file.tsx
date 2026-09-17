@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
-import { Chip, Surface } from '@cladd-ui/react';
+import { useState, type ReactNode } from 'react';
+import { Chip, Input, Surface } from '@cladd-ui/react';
 import { FileTextIcon, InfoIcon } from 'lucide-react';
 import { cn } from './cn';
+import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { dateCourte, eurosCentimes } from './format';
 
 /**
@@ -91,6 +92,22 @@ export interface PropositionDeRangee {
 	readonly source: string;
 	/** La date du fait qui l'a produite. Une proposition sans date se croit sur parole. */
 	readonly date: string;
+	/**
+	 * LES DEUX APPUIS. Absents, la proposition se LIT sans se décider.
+	 *
+	 * ⚠️ ILS SONT FACULTATIFS PARCE QU'UNE PROPOSITION DÉJÀ DÉCIDÉE N'EN A PLUS.
+	 * Retenue ou écartée, elle reste affichée — c'est la trace de ce qui a été
+	 * proposé ce jour-là — mais elle ne se rejoue pas.
+	 */
+	readonly onRetenir?: () => void;
+	/**
+	 * ⚠️ L'ÉCART EXIGE SON MOTIF EN TOUTES LETTRES, et la rangée le DEMANDE plutôt
+	 * que de l'inventer. Un motif par défaut — « écartée par le gérant » —
+	 * s'écrirait dans le journal sur toutes les propositions refusées, et le
+	 * journal cesserait de dire pourquoi. C'est aussi ce qui distingue un écart
+	 * d'une suppression : rien n'est effacé, on dit pourquoi on ne suit pas.
+	 */
+	readonly onEcarter?: (motif: string) => void;
 }
 
 /**
@@ -258,6 +275,14 @@ export function RangeeFile({
 				</button>
 			)}
 
+			{/* LES DEUX APPUIS DE LA PROPOSITION, frères de la zone de lecture eux
+			    aussi. Ils précèdent le verbe : la proposition est ce qu'on lit en
+			    premier sous l'obstacle, donc c'est elle qu'on tranche en premier. */}
+			{proposition === undefined ||
+			(proposition.onRetenir === undefined && proposition.onEcarter === undefined) ? null : (
+				<GestesDeLaProposition proposition={proposition} />
+			)}
+
 			{/* LE VERBE, FRÈRE DE LA ZONE DE LECTURE et jamais dedans : un bouton
 			    dans un bouton n'est pas du HTML valide, et le verbe doit rester
 			    visible et atteignable au doigt sans ouvrir la preuve. */}
@@ -265,6 +290,85 @@ export function RangeeFile({
 				<div className="flex flex-wrap items-center gap-cladd-3xs">{children}</div>
 			)}
 		</Surface>
+	);
+}
+
+/**
+ * RETENIR, OU ÉCARTER AVEC SON MOTIF.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ DEUX APPUIS DE MÊME POIDS, ET AUCUN N'EST PRÉSÉLECTIONNÉ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Une pilule pleine sur « Retenir » ferait de l'appui une formalité, sur une
+ * valeur que le logiciel a DÉDUITE et que le gérant est le seul à pouvoir
+ * confirmer. « Rien n'est enregistré tant que vous n'avez pas appuyé » est écrit
+ * juste au-dessus, et ces deux boutons sont ce que cette phrase promet.
+ *
+ * ⚠️ LE MOTIF S'OUVRE EN PLACE, ET IL EST EXIGÉ. « Écarter » ne déclenche rien
+ * tant qu'il est vide : un motif par défaut s'écrirait au journal sur toutes les
+ * propositions refusées, et le journal cesserait de dire pourquoi. Ce champ est
+ * la seule saisie libre de la file, et c'est le seul endroit où le logiciel ne
+ * peut RIEN déduire — la règle d'écran n° 1 ne s'y applique donc pas.
+ *
+ * ⚠️ ET « ANNULER » REFERME SANS RIEN ÉCRIRE. Un champ qu'on ouvre par erreur et
+ * qu'on ne peut plus fermer pousse à écrire n'importe quoi pour en sortir.
+ */
+function GestesDeLaProposition({ proposition }: { proposition: PropositionDeRangee }) {
+	const [motif, setMotif] = useState<string | null>(null);
+	const { onRetenir, onEcarter } = proposition;
+
+	if (motif === null) {
+		return (
+			<div className="flex flex-wrap items-center gap-cladd-3xs">
+				{onRetenir === undefined ? null : (
+					<BoutonSecondaire onClick={onRetenir}>Retenir</BoutonSecondaire>
+				)}
+				{onEcarter === undefined ? null : (
+					<BoutonSecondaire onClick={() => setMotif('')}>Écarter</BoutonSecondaire>
+				)}
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex flex-wrap items-center gap-cladd-3xs">
+			{/*
+			  `size="md"` : la rangée entière est en `md`, et le kit interdit de mêler
+			  les tailles dans une même ligne. Le défaut d'`Input` est `lg`.
+
+			  `tightFocusRing` : le champ vit dans une carte qui peut défiler, et
+			  l'anneau décalé de Cladd y ajouterait un débordement.
+			*/}
+			{/*
+			  ⚠️ `basis-full` : LE CHAMP PREND SA PROPRE LIGNE, À TOUTES LES LARGEURS.
+			  Sur la même ligne que ses deux boutons, il tombait à une centaine de
+			  pixels à 375 px et son intitulé s'y coupait — « Pourquoi vo… » — sur la
+			  SEULE saisie libre du produit, celle qui part au journal telle quelle.
+			  Mesuré au navigateur.
+			*/}
+			<Input
+				size="md"
+				tightFocusRing
+				className="min-w-0 basis-full"
+				placeholder="Pourquoi vous ne la suivez pas"
+				infoMessage="Il part au journal, daté, tel quel."
+				value={motif}
+				onChange={setMotif}
+			/>
+			<BoutonPrincipal
+				disabled={motif.trim() === ''}
+				onClick={() => {
+					const dit = motif.trim();
+					if (dit === '' || onEcarter === undefined) return;
+					setMotif(null);
+					onEcarter(dit);
+				}}
+			>
+				Écarter
+			</BoutonPrincipal>
+			<BoutonSecondaire onClick={() => setMotif(null)}>Annuler</BoutonSecondaire>
+		</div>
 	);
 }
 

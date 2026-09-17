@@ -16,7 +16,8 @@ import {
 	REVELATION_SANS_FACTURE_DEMO
 } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
- import { PreuveDeDemo } from './volet';
+import { PreuveDeDemo } from './volet';
+import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
 import { Chip } from '@cladd-ui/react';
 import { BuildingIcon } from 'lucide-react';
 import {
@@ -110,6 +111,20 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		obstacle: 'Décompte arrêtable, dont 1 240,33 € d’intérêts courus.',
 		urgence: 'HAUTE',
 		montant: 1_248_033n,
+		/*
+		  ⚠️ UNE PROPOSITION AVEC SES DEUX APPUIS, ET SOUS UN VERBE (D13). C'est la
+		  rangée la plus chargée de la file — un obstacle, une proposition sourcée,
+		  deux appuis et un verbe — et c'est donc elle qui dit si la carte tient à
+		  375 px. Le champ de motif s'ouvre en place sur « Écarter » : c'est la seule
+		  saisie libre de tout l'écran, et elle se regarde ici.
+		*/
+		proposition: {
+			valeur: 'taux stipulé de 12 %',
+			source: 'Pièce du dossier : CG-2024-03, page 4',
+			date: '2026-09-17',
+			onRetenir: () => {},
+			onEcarter: () => {}
+		},
 		verbe: { libelle: 'Arrêter le décompte', onPresser: () => {} },
 		pli: {
 			libelle: { un: 'décompte arrêtable', plusieurs: 'décomptes arrêtables' },
@@ -453,6 +468,13 @@ function FileDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 		 * de fermeture, et l'omission porterait sur l'argent qu'on ne réclamera pas.
 		 */
 		annonce: '198 factures lues cette nuit, 17 créances entrent dans la surveillance.',
+		/*
+		  ⚠️ LE RESTE EST COMPTÉ ET NOMMÉ, JAMAIS TRONQUÉ (D13). Sept par jour et
+		  par établissement ; ce qui dépasse se dit, sur cette ligne, et la phrase
+		  vient du domaine — `resumeDuPlafond()` — pour qu'on regarde ici le texte
+		  exact que le produit rendra.
+		*/
+		resumeDuPlafond: resumeDuPlafond(7, 12),
 		verrous: [],
 		ligneOuverte,
 		onOuvrirLigne: (id) => setLigneOuverte(id === ligneOuverte ? null : id),

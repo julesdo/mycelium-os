@@ -439,6 +439,25 @@ export interface FileAffichee {
 	 * mentir par omission, d'un geste de fermeture.
 	 */
 	readonly annonce?: string;
+	/**
+	 * CE QUE LE PLAFOND A DIFFÉRÉ, COMPTÉ ET NOMMÉ (D13).
+	 *
+	 * « 7 propositions aujourd’hui, 12 autres en attente. » Sept par jour et par
+	 * établissement, et ce qui dépasse se DIT.
+	 *
+	 * ⚠️ IL NE SE TRONQUE JAMAIS EN SILENCE, et c'est le second garde-fou du
+	 * plafond. `accueil.tsx:164` coupait sa liste à trois sans jamais dire combien
+	 * elle en portait : le gérant lisait trois échéances en croyant les avoir
+	 * toutes vues. `resumeDuPlafond()` ne rend jamais une phrase muette quand il
+	 * reste quelque chose, et un écran qui ne l'affiche pas se voit — le compte
+	 * n'apparaît alors nulle part.
+	 *
+	 * ⚠️ `null` VEUT DIRE « ON NE SAIT PAS », JAMAIS « RIEN EN ATTENTE ». Un
+	 * battement qui n'a pas tourné ne dit pas combien il a différé : annoncer
+	 * « rien en attente » serait un repli silencieux sur le seul compte qui dit
+	 * ce qu'on ne voit pas.
+	 */
+	readonly resumeDuPlafond: string | null;
 	readonly verrous: readonly Verrou[];
 	/** La ligne dont la preuve est ouverte, lue dans l'adresse (`?ligne=`). */
 	readonly ligneOuverte: string | null;
@@ -529,6 +548,7 @@ function FilePrete({
 		facturesPortent,
 		travaux,
 		annonce,
+		resumeDuPlafond,
 		verrous,
 		ligneOuverte,
 		onOuvrirLigne,
@@ -780,6 +800,7 @@ function FilePrete({
 				</SourceDeRangees>
 			) : (
 				<SourceDeRangees nom="Les rangées de la surveillance">
+					{RESUME_DU_PLAFOND(resumeDuPlafond)}
 					{vue === 'CREANCE' ? (
 						<ListeParCreance
 							rangees={pleines}
@@ -942,6 +963,18 @@ function Tete({ tete, vue }: { tete: TeteDeFile; vue: VueFile }) {
 // ─────────────────────────────────────────────────────────────────────────
 // LA VUE PAR CRÉANCE
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * LE COMPTE DU PLAFOND, en tête des rangées.
+ *
+ * ⚠️ IL NE SE REND PAS QUAND ON NE SAIT PAS. `null` veut dire « le battement n'a
+ * pas dit combien il a différé », et écrire « rien en attente » à sa place serait
+ * un repli silencieux sur le seul compte qui dit ce qu'on ne voit pas.
+ */
+function RESUME_DU_PLAFOND(resume: string | null) {
+	if (resume === null) return null;
+	return <p className="text-cladd-2xs text-cladd-fg-softer">{resume}</p>;
+}
 
 function ListeParCreance({
 	rangees,

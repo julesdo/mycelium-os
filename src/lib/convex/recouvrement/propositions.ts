@@ -85,7 +85,19 @@ const vProposition = v.object({
 	decideeLe: v.optional(v.number()),
 	decideePar: v.optional(v.string()),
 	motifEcart: v.optional(v.string()),
-	poseeLe: v.number()
+	poseeLe: v.number(),
+	/**
+	 * D'OÙ ELLE SORT, DIT COMME ON LE DIRAIT À VOIX HAUTE.
+	 *
+	 * ⚠️ IL EST CALCULÉ ICI, ET PAS À L'ÉCRAN. `source` est une ancre — un
+	 * identifiant de pièce, un identifiant de décompte, une clé du référentiel —
+	 * et un identifiant n'est pas une source : il est illisible par celui qui en
+	 * aura besoin, six mois plus tard, devant une contestation. Le libeller côté
+	 * écran obligerait à relire la pièce depuis l'écran, et surtout créerait une
+	 * SECONDE formulation à côté de celle que le journal inscrit. La rangée de la
+	 * file et la ligne de journal disent donc exactement la même phrase.
+	 */
+	sourceLisible: v.string()
 });
 
 /** La clé de `parametres.ts` d'où sort une échéance de prescription. */
@@ -425,14 +437,14 @@ export const propositionsDuJour = authedQuery({
 		const enAttente = releve?.propositionsEnAttente ?? null;
 
 		return {
-			propositions: propositions.map(versAffichage),
+			propositions: await Promise.all(propositions.map((p) => versAffichage(ctx, p))),
 			enAttente,
 			resume: enAttente === null ? null : resumeDuPlafond(propositions.length, enAttente)
 		};
 	}
 });
 
-function versAffichage(proposition: Doc<'propositions'>) {
+async function versAffichage(ctx: QueryCtx, proposition: Doc<'propositions'>) {
 	return {
 		_id: proposition._id,
 		cible: proposition.cible,
@@ -445,7 +457,8 @@ function versAffichage(proposition: Doc<'propositions'>) {
 		decideeLe: proposition.decideeLe,
 		decideePar: proposition.decideePar,
 		motifEcart: proposition.motifEcart,
-		poseeLe: proposition.poseeLe
+		poseeLe: proposition.poseeLe,
+		sourceLisible: await sourceEnToutesLettres(ctx, proposition)
 	};
 }
 
@@ -668,7 +681,10 @@ export const ecarter = authedMutation({
  * plutôt que d'écrire un identifiant qui ne mène plus nulle part.
  */
 async function sourceEnToutesLettres(
-	ctx: MutationCtx,
+	// ⚠️ `QueryCtx`, ET PLUS `MutationCtx` : elle ne fait que des `ctx.db.get`, et
+	// la file la lit désormais pour afficher la provenance d'une proposition. Deux
+	// copies de cette fonction feraient dire à la rangée autre chose qu'au journal.
+	ctx: QueryCtx,
 	proposition: Doc<'propositions'>
 ): Promise<string> {
 	if (proposition.source.nature === 'REFERENTIEL') {
