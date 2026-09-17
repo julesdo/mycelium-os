@@ -1,4 +1,5 @@
 import { versEuros, type Montant } from '../../socle/montants';
+import type { Refus } from './compagnon/refus';
 import { PARAMETRES, estUtilisable, type ParametreLegalBase } from './parametres';
 import type { SanteDebiteur } from './scoring';
 
@@ -109,6 +110,17 @@ export interface ElementsRelance {
 	readonly aujourdHui: string;
 }
 
+/**
+ * ⚠️ LA BRANCHE QUI REFUSE PORTE LE `Refus` PARTAGÉ, ET NE LE REDÉCLARE PLUS.
+ *
+ * Les quatre champs (`peutFaire` requis, `constat`, `blocages`,
+ * `coutDeLAttente`) sont nés ici, et ils y seraient restés seuls. Or D0 ne
+ * s'applique pas en gros : il s'applique à chaque endroit du produit qui dit
+ * non, et les filtres avant rendu du compagnon en ajoutent cinq d'un coup. La
+ * forme vit donc dans `compagnon/refus.ts`, et le compilateur la réclame
+ * partout ailleurs. Les trois refus de ce module, eux, n'ont pas bougé d'un
+ * mot.
+ */
 export type Relance =
 	| {
 			readonly disponible: true;
@@ -117,29 +129,11 @@ export type Relance =
 			/** Le texte, tel que le créancier l'enverra. Prêt, pas à retoucher. */
 			readonly corps: string;
 	  }
-	| {
+	| ({
 			readonly disponible: false;
-			/**
-			 * CE QUE LE PRODUIT FAIT TOUT DE SUITE, malgré ce refus.
-			 *
-			 * ⚠️ REQUIS, ET C'EST TOUT L'INTÉRÊT DU CHAMP. Un refus dont la
-			 * première ligne est vide est un mur, quel que soit ce qui suit ; en
-			 * faire un champ optionnel aurait laissé chaque nouveau site de refus
-			 * l'oublier sans que rien ne tombe. Le compilateur le réclame.
-			 */
-			readonly peutFaire: string;
-			/** Pourquoi il n'y a pas de brouillon. Un constat, jamais une consigne. */
-			readonly constat: string;
-			readonly blocages: readonly string[];
-			/**
-			 * CE QUE L'ATTENTE COÛTE, chiffré quand c'est chiffrable et DÉCLARÉ
-			 * non chiffrable sinon. Jamais tu : un total silencieusement amputé
-			 * est pire qu'un total incomplet annoncé.
-			 */
-			readonly coutDeLAttente: string;
 			/** Le geste qui lève ce refus, quand il en existe un DANS le produit. */
 			readonly geste?: GesteRelance;
-	  };
+	  } & Refus);
 
 /**
  * Le geste, à l'intérieur du produit, qui lève un refus de relance.
