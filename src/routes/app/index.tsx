@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
@@ -198,20 +198,38 @@ const REGISTRE_AU_REPOS: EtatRecherche = { phase: 'REPOS' };
  * préavis divergeraient au premier changement de `PREAVIS`.
  */
 
+
+/**
+ * QUAND CHAQUE PROPOSITION EST APPARUE SOUS LES YEUX, POUR LA PREMIÈRE FOIS.
+ *
+ * ⚠️ HORS DU COMPOSANT, ET CE N'EST PAS UN CONTOURNEMENT DE RÈGLE. Ce registre
+ * n'est pas de l'état d'affichage : rien ne se rend à partir de lui, et le
+ * modifier ne doit JAMAIS relancer un rendu. Posé dans une référence React, il
+ * faisait échouer la règle de pureté du compilateur — une référence lue par une
+ * fonction appelée pendant le rendu, même si la lecture n'a lieu qu'à l'appui.
+ * La règle avait raison sur la forme : ce n'est pas une référence qu'il fallait.
+ *
+ * Il ne porte que des identifiants opaques de propositions et des horodatages
+ * de navigateur. Rien ne s'en affiche, rien n'en sort vers le serveur sauf la
+ * DURÉE ci-dessous, et il est borné par le plafond de sept propositions par
+ * jour.
+ */
+const PREMIERE_VUE = new Map<string, number>();
+
 /**
  * DEPUIS COMBIEN DE TEMPS CETTE PROPOSITION EST SOUS LES YEUX.
  *
- * ⚠️ HORS DU COMPOSANT, ET CE N'EST PAS UN DÉTAIL DE RANGEMENT. Écrite dans le
- * corps du composant, elle lit l'horloge dans la portée du rendu, ce que la
- * règle de pureté de React refuse : le compilateur ne peut pas prouver qu'un
- * gestionnaire ne sera pas appelé pendant un rendu. Ici, elle ne peut l'être
- * qu'au moment de l'appui, qui est exactement le moment qu'on mesure.
+ * ⚠️ UNE DURÉE, JAMAIS DEUX HORODATAGES. C'est la deuxième des trois mesures de
+ * D13 — la médiane du délai entre l'affichage et l'appui, celle qui dit si on a
+ * LU ou si on a tapé. Deux horodatages absolus venus du client rendraient cette
+ * médiane fausse dès qu'une machine est déréglée, et c'est précisément elle qui
+ * doit trancher si sept est le bon nombre.
  *
  * Zéro quand la proposition n'a pas encore été vue : on ne prête jamais au
  * gérant une lecture qu'on n'a pas observée.
  */
-function delaiDeLecture(vues: Map<string, number>, id: string): number {
-	const vueLe = vues.get(id);
+function delaiDeLecture(id: string): number {
+	const vueLe = PREMIERE_VUE.get(id);
 	return vueLe === undefined ? 0 : Math.max(0, Date.now() - vueLe);
 }
 function File() {
@@ -359,32 +377,18 @@ function File() {
 
 	// ── LES PROPOSITIONS, ET LE DÉLAI DE LECTURE QU'ELLES EXIGENT ────────────
 
-	/**
-	 * QUAND CHAQUE PROPOSITION EST APPARUE SOUS LES YEUX.
-	 *
-	 * ═══════════════════════════════════════════════════════════════════════════
-	 * ⚠️ POURQUOI L'ÉCRAN ENVOIE UNE DURÉE, ET PAS UN HORODATAGE
-	 * ═══════════════════════════════════════════════════════════════════════════
-	 *
-	 * `retenir` et `ecarter` EXIGENT `lueDepuisMs` : c'est la deuxième des trois
-	 * mesures de D13 — la médiane du délai entre l'affichage et l'appui, celle qui
-	 * dit si on a LU ou si on a tapé. Elle est requise exprès pour qu'aucun site
-	 * d'appel ne puisse l'oublier en silence.
-	 *
-	 * Une DURÉE est immune à l'horloge du navigateur : deux horodatages absolus
-	 * venus du client rendraient une médiane fausse dès qu'une machine est
-	 * déréglée, et c'est précisément la médiane qui doit trancher.
-	 *
-	 * ⚠️ IL S'ÉCRIT DANS UNE RÉFÉRENCE, DEPUIS UN EFFET, ET JAMAIS DANS UN ÉTAT.
-	 * Lire l'horloge pendant le rendu rendrait ce composant impur ; poser un état
-	 * dans un effet est interdit par le projet et relancerait un rendu à chaque
-	 * arrivée de proposition. Un effet qui ne touche qu'une référence ne fait ni
-	 * l'un ni l'autre.
-	 */
-	const vuesLe = useRef(new Map<string, number>());
+	/*
+	  ON NOTE L'INSTANT OÙ CHAQUE PROPOSITION EST APPARUE, ET RIEN D'AUTRE.
+
+	  ⚠️ DANS UN EFFET, ET JAMAIS DANS UN ÉTAT. Lire l'horloge pendant le rendu
+	  rendrait ce composant impur ; poser un état dans un effet est interdit par
+	  le projet et relancerait un rendu à chaque arrivée de proposition. Le
+	  registre vit hors du composant (voir `PREMIERE_VUE` plus haut, avec la
+	  raison), et cet effet ne fait que l'alimenter.
+	*/
 	useEffect(() => {
 		for (const proposition of propositions?.propositions ?? []) {
-			if (!vuesLe.current.has(proposition._id)) vuesLe.current.set(proposition._id, Date.now());
+			if (!PREMIERE_VUE.has(proposition._id)) PREMIERE_VUE.set(proposition._id, Date.now());
 		}
 	}, [propositions]);
 
@@ -460,13 +464,13 @@ function File() {
 		onRetenir: () =>
 			void retenirProposition({
 				propositionId: proposition._id,
-				lueDepuisMs: delaiDeLecture(vuesLe.current, proposition._id)
+				lueDepuisMs: delaiDeLecture(proposition._id)
 			}),
 		onEcarter: (motif: string) =>
 			void ecarterProposition({
 				propositionId: proposition._id,
 				motif,
-				lueDepuisMs: delaiDeLecture(vuesLe.current, proposition._id)
+				lueDepuisMs: delaiDeLecture(proposition._id)
 			})
 	});
 
