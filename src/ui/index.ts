@@ -92,7 +92,7 @@ export {
 } from './questionnaire-litige';
 export { SuiviProcedure, type SuiviAffiche, type EcheanceAffichee } from './suivi-procedure';
 export { RailProcedure, type EtapeAffichee, type StatutEtapeAffiche } from './rail-procedure';
-export { Pieces, type PieceAffichee, type OptionTypePiece } from './pieces';
+export { Pieces, TYPES_PIECE, type PieceAffichee, type OptionTypePiece } from './pieces';
 export { ListeAnalyses, LigneAnalyse, LigneBouton, EnteteDetail } from './navigation';
 export { Lien, useProvenance } from './lien';
 export { FeuilleVoie, type VoieAffichee } from './feuille-voie';

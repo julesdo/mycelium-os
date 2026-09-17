@@ -57,6 +57,49 @@ export interface OptionTypePiece {
 	readonly apport: string;
 }
 
+/**
+ * Les natures de pièce, et ce que chacune ÉTABLIT.
+ *
+ * ⚠️ L'APPORT SOUS CHAQUE OPTION, PAS LE NOM SEUL. Un gérant ne classe pas un
+ * document pour le plaisir de la nomenclature : il le classe parce que ça
+ * change la solidité de son dossier. « Bon de livraison » ne dit rien ;
+ * « prouve que la marchandise a été remise » dit pourquoi ça compte.
+ *
+ * `INDETERMINE` y figure délibérément : c'est un état légitime — un document
+ * déposé dont la lecture n'a rien conclu — et le masquer empêcherait de revenir
+ * en arrière après un classement erroné.
+ *
+ * ⚠️ CETTE LISTE VIVAIT DANS `screens/debiteur-detail.tsx`, C'EST-À-DIRE DANS UN
+ * ÉCRAN QUE LA REFONTE SUPPRIME. Deux surfaces la lisent désormais — la page des
+ * pièces d'un débiteur et la section 5 du volet de preuve — et la laisser là-bas
+ * aurait fait partir la nomenclature avec l'écran. Ce n'est pas une valeur
+ * juridique : c'est une nomenclature d'affichage, et sa place est avec le
+ * composant qui la rend.
+ */
+export const TYPES_PIECE: readonly OptionTypePiece[] = [
+	{ cle: 'INDETERMINE', libelle: 'À classer', apport: 'Ne compte dans aucun critère' },
+	{
+		cle: 'BON_DE_COMMANDE',
+		libelle: 'Bon de commande',
+		apport: 'Établit que le client a commandé'
+	},
+	{ cle: 'DEVIS_SIGNE', libelle: 'Devis signé', apport: 'Établit que le client a commandé' },
+	{
+		cle: 'BON_DE_LIVRAISON',
+		libelle: 'Bon de livraison',
+		apport: 'Établit que la prestation a été reçue'
+	},
+	{ cle: 'CGV', libelle: 'Conditions générales', apport: 'Établit les conditions de paiement' },
+	{ cle: 'CONTRAT', libelle: 'Contrat', apport: 'Établit les conditions de paiement' },
+	{
+		cle: 'MISE_EN_DEMEURE',
+		libelle: 'Mise en demeure',
+		apport: 'Établit l’interpellation préalable'
+	},
+	{ cle: 'ECHANGES', libelle: 'Échanges', apport: 'Documente la relation, sans critère propre' },
+	{ cle: 'FACTURE', libelle: 'Facture', apport: 'La facture elle-même' }
+];
+
 export function Pieces({
 	pieces,
 	optionsType,

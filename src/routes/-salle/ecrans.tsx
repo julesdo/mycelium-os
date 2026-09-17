@@ -6,6 +6,7 @@ import { ECRANS_IMPORT } from './import';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
 import { ECRANS_PROCEDURE } from './procedure';
+import { ECRANS_VOLET } from './volet';
 
 /**
  * LES ÉCRANS DU PRODUIT, TELS QU'IL LES AFFICHE.
@@ -31,6 +32,7 @@ import { ECRANS_PROCEDURE } from './procedure';
  */
 export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	...ECRANS_ONGLETS,
+	...ECRANS_VOLET,
 	...ECRANS_CREANCE,
 	...ECRANS_PIECE,
 	...ECRANS_PROCEDURE,

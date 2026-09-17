@@ -15,6 +15,16 @@ export interface EcranDuProduit {
 	 * au lieu d'attendre la barrière de la salle.
 	 */
 	readonly route: Extract<RouteIds<RegisteredRouter['routeTree']>, `/app/${string}`>;
+	/**
+	 * Le nom du bouton dans la salle, ET l'identité de l'entrée.
+	 *
+	 * ⚠️ IL EST UNIQUE, ET LA ROUTE NE L'EST PLUS. Le volet de preuve est un
+	 * ÉTAT adressable et pas une route : il partage `/app/` avec la file. La
+	 * salle se choisissait par la route, ce qui rendait la seconde entrée
+	 * injoignable et donnait aux deux boutons la même `key`. C'est donc le
+	 * libellé qui identifie, et la route qui garde son seul rôle : être typée
+	 * par le routeur.
+	 */
 	readonly libelle: string;
 	/** Vrai si l'écran a une forme vide à regarder. Voir `lectureDemo`. */
 	readonly vide: boolean;

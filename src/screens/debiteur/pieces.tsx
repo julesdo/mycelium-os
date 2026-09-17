@@ -1,5 +1,4 @@
-import { PageEcran, Pieces, type Lecture, type PieceAffichee } from '../../ui';
-import { TYPES_PIECE } from '../debiteur-detail';
+import { PageEcran, Pieces, TYPES_PIECE, type Lecture, type PieceAffichee } from '../../ui';
 import { TITRE_ECRAN } from '../titres';
 
 /** Ce que la page affiche : le nom du débiteur pour son retour, ses pièces, et l'état du dépôt que la route pilote. */

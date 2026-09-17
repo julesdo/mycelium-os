@@ -878,11 +878,23 @@ const LIBELLE_ETAT: Record<EtatDemo, string> = {
 
 function Showroom() {
 	const [ecran, setEcran] = useState<Ecran>('veilleur');
-	const [produit, setProduit] = useState<string | null>(ECRANS_DU_PRODUIT[0]?.route ?? null);
+	/*
+	  ⚠️ LA SALLE SE CHOISIT PAR SON LIBELLÉ, ET PLUS PAR SA ROUTE. Depuis le
+	  volet de preuve, deux entrées partagent une adresse : la file et son volet
+	  vivent tous deux sur `/app/`, parce que le volet est un ÉTAT adressable et
+	  pas une route. Avec la route pour identité, la seconde entrée devenait
+	  injoignable — `find` rendait toujours la première — et les deux boutons
+	  portaient la même `key`.
+
+	  Le champ `route` garde son rôle, qui n'a jamais été celui-ci : il est typé
+	  par le routeur, et c'est lui qui fait échouer `bun run check` sur une
+	  adresse périmée. Voir `demo.ts`.
+	*/
+	const [produit, setProduit] = useState<string | null>(ECRANS_DU_PRODUIT[0]?.libelle ?? null);
 	const [etat, setEtat] = useState<EtatDemo>('pret');
 	const [variante, setVariante] = useState<string | undefined>(undefined);
 
-	const choisi = ECRANS_DU_PRODUIT.find((e) => e.route === produit) ?? null;
+	const choisi = ECRANS_DU_PRODUIT.find((e) => e.libelle === produit) ?? null;
 	// Trois états hors du produit : rien à regarder en attente ou en erreur sur
 	// une démonstration de composant, donc les boutons restent visibles mais
 	// `disabled`, plutôt que de faire sauter la rangée d'un écran à l'autre.
@@ -941,10 +953,10 @@ function Showroom() {
 					<Segmented activeColor="neutral" activeVariant="solid">
 						{ECRANS_DU_PRODUIT.map((e) => (
 							<SegmentedButton
-								key={e.route}
-								active={produit === e.route}
+								key={e.libelle}
+								active={produit === e.libelle}
 								onClick={() => {
-									setProduit(e.route);
+									setProduit(e.libelle);
 									setEtat('pret');
 									setVariante(undefined);
 								}}
@@ -978,7 +990,7 @@ function Showroom() {
 						  aux trois changements referme tout net, comme un nouvel écran.
 						*/}
 						<choisi.Demo
-							key={`${choisi.route}|${etat}|${variante ?? ''}`}
+							key={`${choisi.libelle}|${etat}|${variante ?? ''}`}
 							etat={etat}
 							variante={etat === 'pret' ? variante : undefined}
 						/>
