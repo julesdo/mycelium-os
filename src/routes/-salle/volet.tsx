@@ -39,6 +39,8 @@ import {
 } from '../../lib/verticales/recouvrement/relance';
 import { pyramideDePreuves } from '../../lib/verticales/recouvrement/solidite';
 import {
+	PageBody,
+	PageEcran,
 	TYPES_PIECE,
 	type DecompteAffiche,
 	type EtatRechercheCommissaire,
@@ -577,6 +579,19 @@ function VoletDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 }
 
 /**
+ * LE VOLET DANS SA VRAIE GÉOMÉTRIE : deux volets au-delà de 1024 px, une
+ * feuille en dessous.
+ *
+ * ⚠️ RENDU SEUL, IL SE REGARDAIT SUR LA MAUVAISE LARGEUR. En production le volet
+ * occupe l'`aside` de `TwoPane`, soit 40 % de l'écran : à 1280 px il fait 512 px,
+ * pas 1280. Une section qui tient « à 1280 » toute seule ne dit donc rien de ce
+ * qu'on verra. Et rendu hors de `PageEcran`, il passait sous la barre flottante
+ * de la coquille : son titre était caché par la recherche.
+ *
+ * ⚠️ LE VOLET GAUCHE EST UN PLACEHOLDER NOMMÉ, ET IL LE DIT. La file s'écrit en
+ * T6 et T7 ; mettre une fausse liste sans le dire ferait regarder un écran que
+ * le produit n'a pas. La fusion des deux tranches la remplace.
+ *
  * Les sections ouvertes vivent ici, pour que `sectionsParDefaut` soit LU par la
  * salle comme la file le lira : une règle par défaut qu'aucune surface n'appelle
  * est une règle qu'on croit tenue.
@@ -595,14 +610,47 @@ function VoletAvecSections({
 	const [ouvertes, setOuvertes] = useState<readonly SectionVolet[]>(() => sectionsParDefaut(ligne));
 
 	return (
-		<EcranVolet
-			ligneId={ligne.creanceId}
-			donnees={lectureDemo(etat, ligne)}
-			position={position}
-			onPosition={onPosition}
-			sectionsOuvertes={ouvertes}
-			onSectionsOuvertes={setOuvertes}
-			onFermer={() => undefined}
+		<PageEcran
+			entete={{
+				genre: 'onglet',
+				titre: 'La file',
+				sousTitre: 'Une ligne ouverte, et sa preuve à droite'
+			}}
+			/*
+			  `vide` n'existe pas pour cet écran — l'entrée déclare `vide: false`, et
+			  la salle n'en offre donc pas le bouton. Le repli est là pour que le type
+			  ne mente pas, pas pour couvrir un cas réel : `lectureDemo` lèverait de
+			  toute façon, faute de valeur vide.
+			*/
+			etat={etat === 'vide' ? 'pret' : etat}
+			volets={{
+				liste: (
+					<PageBody>
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+							La file s’écrit en T6 et T7. Ce volet gauche n’est pas un écran du produit : il
+							tient la place, pour que le volet de preuve se regarde à la largeur qu’il aura —
+							40 % au-delà de 1024 px, une feuille en dessous.
+						</p>
+					</PageBody>
+				),
+				preuve: (
+					<EcranVolet
+						ligneId={ligne.creanceId}
+						donnees={lectureDemo(etat, ligne)}
+						position={position}
+						onPosition={onPosition}
+						sectionsOuvertes={ouvertes}
+						onSectionsOuvertes={setOuvertes}
+						onFermer={() => undefined}
+					/>
+				),
+				/*
+				  Ouverte, parce que c'est l'état qu'on vient regarder : sous 1024 px,
+				  `?ligne=` rend la feuille, et c'est elle qui doit tenir à 375.
+				*/
+				preuveOuverte: true,
+				onFermerPreuve: () => undefined
+			}}
 		/>
 	);
 }

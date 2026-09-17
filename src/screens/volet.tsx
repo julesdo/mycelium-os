@@ -490,7 +490,7 @@ function PositionConversation() {
 	return (
 		<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 			La conversation n’est pas encore ouverte. Ses cinq filtres avant rendu sont posés — le
-			lexique de la garantie, l’énoncé juridique non résolu, le montant sans source, le champ
+			lexique commercial interdit, l’énoncé juridique non résolu, le montant sans source, le champ
 			lexical de la procédure, le nom de tiers dans un brouillon —, et elle s’ouvrira quand elle
 			sera branchée dessus. D’ici là, tout ce que ce volet affiche est calculé, et rien n’y passe
 			par un modèle.
@@ -587,6 +587,17 @@ function PositionPiece({
 				<p className="text-cladd-xs text-cladd-fg">{ligne.erreur}</p>
 			)}
 
+			{/*
+			  ⚠️ UN SEUL CONTENEUR, ET C'EST UN DÉFAUT CORRIGÉ AU NAVIGATEUR. Les
+			  sections repliables étaient réparties sur DEUX conteneurs, de part et
+			  d'autre des deux sections qui ne se replient pas. Chacun ne connaît que
+			  ses propres clés : ouvrir « Les brouillons » renvoyait donc la liste des
+			  ouvertes du SECOND conteneur seul, ce qui refermait « Le montant » du
+			  premier. Deux sections ne pouvaient jamais être ouvertes ensemble — le
+			  contraire exact de ce que `multiple` achète.
+			  `AccordionRoot` ne rend aucun DOM : les deux sections à plat vivent donc
+			  DANS le conteneur, à leur place dans le flux, sans en être des items.
+			*/}
 			<SectionsDepliables
 				ouvertes={sectionsOuvertes}
 				onOuvertesChange={(ouvertes) =>
@@ -602,21 +613,8 @@ function PositionPiece({
 			>
 				<SectionMontant ligne={ligne} />
 				<SectionAcquis ligne={ligne} aDemander={aDemander} />
-			</SectionsDepliables>
-
-			<SectionHypotheses ligne={ligne} />
-			<SectionAnglesMorts ligne={ligne} />
-
-			<SectionsDepliables
-				ouvertes={sectionsOuvertes}
-				onOuvertesChange={(ouvertes) =>
-					onSectionsOuvertes(
-						ouvertes.filter((cle): cle is SectionVolet =>
-							(SECTIONS_VOLET as readonly string[]).includes(cle)
-						)
-					)
-				}
-			>
+				<SectionHypotheses ligne={ligne} />
+				<SectionAnglesMorts ligne={ligne} />
 				<SectionPieces ligne={ligne} />
 				<SectionVoies ligne={ligne} />
 				<SectionJournal ligne={ligne} />
@@ -670,14 +668,19 @@ function SectionMontant({ ligne }: { ligne: LigneOuverte }) {
 					/>
 				)
 			) : (
-				<Decompte decompte={montant} />
+				<>
+					<Decompte decompte={montant} />
+					{/* ⚠️ CETTE PHRASE NE SE REND QU'AVEC UN MONTANT. Sous un refus, elle
+					    disait « ce montant se recalcule » à propos d'un montant qui ne se
+					    calcule pas. */}
+					<p className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+						Ce montant n’est pas arrêté : il se recalcule à chaque lecture, et il augmente tant
+						que la facture n’est pas réglée. Ce qui s’oppose à un tiers est un décompte arrêté,
+						daté et figé.
+					</p>
+				</>
 			)}
-
-			<p className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-				<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-				Ce montant n’est pas arrêté : il se recalcule à chaque lecture, et il augmente tant que la
-				facture n’est pas réglée. Ce qui s’oppose à un tiers est un décompte arrêté, daté et figé.
-			</p>
 
 			<FichesDesParametres fiches={ligne.fiches} />
 		</SectionDepliable>
@@ -930,10 +933,15 @@ function SectionVoies({ ligne }: { ligne: LigneOuverte }) {
 		<SectionDepliable
 			cle="voies"
 			titre={ligne.suivi === null ? 'Les voies envisageables' : 'Ce qui court depuis l’engagement'}
+			/*
+			  ⚠️ LA LÉGENDE NE REDIT PAS LE LIBELLÉ DU SUIVI. Elle le reprenait, et
+			  `SuiviProcedure` l'affiche deux lignes plus bas : la rangée dépliée
+			  lisait « Ordonnance rendue » trois fois de suite.
+			*/
 			legende={
 				ligne.suivi === null
 					? 'Énumérées, jamais classées. Aucune n’est mise en avant.'
-					: ligne.suivi.libelle
+					: 'Ce qui court, et les délais qui en découlent'
 			}
 			valeur={
 				ligne.suivi !== null
@@ -960,9 +968,10 @@ function SectionVoies({ ligne }: { ligne: LigneOuverte }) {
 							/>
 						))}
 					</ListeAnalyses>
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softest">
-						Énumérées, jamais classées. Aucune n’est mise en avant.
-					</p>
+					{/* ⚠️ « Énumérées, jamais classées » NE SE DIT QU'UNE FOIS, et c'est
+					    dans la légende — visible même repliée. Elle était répétée sous la
+					    liste, ce qui faisait lire deux fois la même phrase à trente
+					    centimètres d'écart. */}
 				</>
 			) : (
 				<>
