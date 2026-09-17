@@ -2,6 +2,42 @@
 
 Spec : `docs/superpowers/specs/2026-09-17-experience-compagnon-design.md`, décisions D0 à D16. Lot 1 livré aux commits `88f9589` et `672e774`. **Ce plan est une REPRISE** : la première écriture a été renvoyée par sa critique, et ce qu'elle corrige est écrit en clair au § « Ce que la reprise a démonté ».
 
+
+## État d'avancement — 17/09/2026 au soir
+
+**Les seize tâches sont livrées et en production, sauf T16.** `/app` rend la file
+depuis le commit `8cadd57`, déploiement Vercel vérifié. La suite est à 1 188 tests
+sur 100 fichiers, types et lint sans erreur.
+
+| Tâches | Commit de production |
+| --- | --- |
+| T1 à T5, les fondations | `88f9589`, `672e774`, `9990c21` |
+| T12, les filtres et le refus partagé | `2e88366` |
+| T9, T10, T11 : l'arrêt, la pièce, `/app/compte` | `55b6294` |
+| T6, T7, T8 : la file, ses deux vues, le volet | `d54ae9e` |
+| T13, les propositions et leur mesure | `ca662a5` |
+| T14, la conversation | `544547f` |
+| **T15, la bascule** | **`8cadd57`** |
+
+**T16 (le ménage) attend trente jours**, c'est sa condition : la porte de
+transition en bas de la file doit avoir servi avant qu'on supprime l'ancien arbre.
+
+**Trois dettes nommées, à ne pas perdre :**
+1. Les deux verrous de `ce-qui-manque.tsx` mènent encore à `/app/import-factures`
+   et `/app/debiteurs`. À T16 ils deviennent des GESTES (ouvrir le dépôt, basculer
+   la vue), **pas** d'autres adresses — les pointer sur `/app` a été essayé et
+   donne deux boutons morts.
+2. Le bilan du dépôt de la section 8 du volet vaut `null` : aucune table ne relie
+   une créance à l'import d'où viennent ses factures.
+3. Les `parts` d'un client en vue Par client valent son encours en principal,
+   intérêts et indemnités à zéro : `revelation` ne ventile pas par client, et un
+   prorata rendrait trois chiffres plausibles et faux.
+
+⚠️ **La table du compagnon s'appelle `echangesCompagnon`, pas `conversations`.**
+Le nom `conversations` entre en collision avec une table héritée de Fleet dont le
+déploiement de développement porte encore des documents sans le champ `cible`, ce
+qui cassait `bunx convex dev`. Convex tolère une table orpheline, jamais un champ
+requis manquant : on renomme, on ne purge pas.
 ## Les décisions de livraison, d'abord
 
 1. **La bascule visible tient en TROIS fichiers, et la suppression de l'ancien arbre est un lot séparé.** Raison : un commit qui supprime seize routes, la barre, vingt écrans et rebranche soixante-six fonctions publiques n'est pas révocable, et c'est la révocabilité qu'on achetait.
