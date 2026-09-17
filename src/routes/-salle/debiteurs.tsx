@@ -550,13 +550,6 @@ const LIGNES_DEMO = DEBITEURS_DEMO.map((debiteur) => {
 	};
 }).sort((a, b) => (b.encours > a.encours ? 1 : b.encours < a.encours ? -1 : 0));
 
-type LigneDemo = (typeof LIGNES_DEMO)[number];
-
-/** Le nom d'un débiteur, lu dans la liste comme les pages de détail le lisent. */
-function denominationDe(debiteurId: string): string | null {
-	return LIGNES_DEMO.find((ligne) => ligne._id === debiteurId)?.denomination ?? null;
-}
-
 /**
  * Les factures d'un débiteur, comme `listerFacturesDuDebiteur` les rend
  * (`lecture.ts`, lignes 181 à 229) : la prescription depuis l'exigibilité puis
