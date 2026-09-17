@@ -1,44 +1,58 @@
-import { Chip } from '@cladd-ui/react';
-import { EyeOffIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
 	Lien,
-	LigneAnalyse,
-	ListeAnalyses,
+	ListeDesDossiers,
 	PageBody,
 	PageEcran,
-	RailProcedure,
-	dateCourte,
-	type EtapeAffichee,
+	VoletDuDossier,
+	grouperParEcheance,
+	rangDuDossier,
+	type DossierEngage,
 	type Lecture
 } from '../ui';
 
-export interface DossierAffiche {
-	readonly creanceId: string;
-	readonly debiteur: string;
-	readonly libelle: string;
-	readonly engageeLe: string;
-	readonly intervenant: string | null;
-	readonly prochaineEcheance: {
-		readonly libelle: string;
-		readonly dateLimite: string;
-		readonly gravite: 'CADUCITE' | 'INFORMATIVE';
-		readonly consequence: string;
-	} | null;
-	readonly anglesMorts: readonly string[];
-	readonly etapes: readonly EtapeAffichee[];
-}
+/**
+ * Ce qu'une rangée de cet écran porte. Le type vit dans `ui/dossier.tsx`, avec
+ * la carte qui le rend : deux déclarations du même dossier finiraient par
+ * diverger, et la divergence ne casserait rien.
+ */
+export type DossierAffiche = DossierEngage;
 
 /** Ce que l'écran affiche une fois les dossiers de procédure chargés. */
 export interface ProceduresAffichees {
 	readonly dossiers: readonly DossierAffiche[];
 	/** Le dossier ouvert, lu dans l'adresse (`?p=`). */
 	readonly ouvertId: string | null;
+	/**
+	 * LE JOUR, DONNÉ ET JAMAIS LU ICI.
+	 *
+	 * ⚠️ TOUT CET ÉCRAN EST UNE SOUSTRACTION DE DATES. Un composant qui
+	 * interrogerait l'horloge lui-même ne se regarderait pas dans la salle : la
+	 * démonstration doit pouvoir poser un jour fixe pour que les quatre rangs —
+	 * dépassé, proche, plus tard, non compté — soient visibles ensemble. La route
+	 * le prend à `aujourdHuiISO`, seule lecture d'horloge de l'interface.
+	 */
+	readonly aujourdHui: string;
 	readonly onFermer: () => void;
 }
 
 /**
- * L'ONGLET DES PROCÉDURES.
+ * LES DOSSIERS ENGAGÉS — la troisième destination de la barre.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI CET ÉCRAN COMPTE PLUS QUE SA TAILLE NE LE LAISSE CROIRE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * C'est le seul endroit du produit où un droit s'éteint à DATE FIXE. Ailleurs,
+ * une prescription se voit venir sur des années ; ici, une ordonnance devient
+ * caduque trois mois après avoir été rendue, et ce jour-là tout est à reprendre
+ * pendant que la prescription continue de courir. L'écran est donc rangé par
+ * l'échéance qui APPROCHE, et jamais par date d'engagement : ce qui expire en
+ * premier se lit en premier.
+ *
+ * ⚠️ DES SECTIONS, PAS DES ONGLETS. Les quatre rangs sont des intitulés dans un
+ * seul défilement (`SectionTitle`). Un filtre à quatre positions ferait trancher
+ * avant de lire, et cacherait trois quarts de ce qui court.
  *
  * ⚠️ LE VIDE MONTRE LE CHEMIN, JAMAIS UN CADRAN À ZÉRO. Un gérant qui n'a rien
  * engagé est le cas courant, et de loin. L'écran lui dit ce que le logiciel
@@ -50,14 +64,14 @@ export interface ProceduresAffichees {
  * c'est ce qui permet de l'ouvrir aux quatre largeurs de référence sans backend
  * ni authentification.
  *
- * ⚠️ AUCUN `onOuvrir` : LES RANGÉES SONT DES LIENS. `LigneAnalyse` navigue
+ * ⚠️ AUCUN `onOuvrir` : LES CARTES SONT DES LIENS. `CarteDossier` navigue
  * elle-même vers `?p=<id>`, donc une callback d'ouverture serait déclarée, lue
  * par personne et jamais appelée — exactement le défaut « déclaré, lu, jamais
  * alimenté » que ce dépôt traque. La fermeture, elle, reste nécessaire : sous
  * 1024 px la preuve est une feuille, et c'est `TwoPane` qui la referme.
  */
 export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffichees> }) {
-	const entete = { genre: 'onglet', titre: 'Procédures' } as const;
+	const entete = { genre: 'onglet', titre: 'Dossiers' } as const;
 
 	if (donnees.etat !== 'pret') {
 		// `disposition="volets"` : l'attente se dessine déjà en deux volets, et la
@@ -65,8 +79,7 @@ export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffich
 		return <PageEcran entete={entete} etat={donnees.etat} disposition="volets" />;
 	}
 
-	const { dossiers, ouvertId, onFermer } = donnees.valeur;
-	const ouvert = dossiers.find((d) => d.creanceId === ouvertId) ?? null;
+	const { dossiers, ouvertId, aujourdHui, onFermer } = donnees.valeur;
 
 	if (dossiers.length === 0) {
 		return (
@@ -81,13 +94,13 @@ export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffich
 						  COMPTERA, et il rend la main.
 						*/
 						illustration: '⚖️',
-						titre: 'Rien d’engagé aujourd’hui',
+						titre: 'Aucun dossier engagé',
 						explication:
 							'Le jour où vous engagerez une voie, c’est ici que seront comptés les délais qui en découlent, et ceux dont l’oubli fait tout reprendre.',
 						etapes: [
 							'Vous déclarez ce que vous avez engagé, et à quelle date.',
 							'Le logiciel compte les délais qui en découlent, et nomme ceux qu’il ne sait pas compter.',
-							'Vous consignez ce qui se passe ; le rail avance tout seul.'
+							'Vous consignez ce qui se passe ; la frise avance tout seule.'
 						],
 						action: (
 							<BoutonPrincipal as={Lien} to="/app/debiteurs">
@@ -100,102 +113,41 @@ export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffich
 		);
 	}
 
+	const groupes = grouperParEcheance(dossiers, aujourdHui);
+	const ouvert = dossiers.find((dossier) => dossier.creanceId === ouvertId) ?? null;
+
+	/*
+	  LE SOUS-TITRE DIT CE QUI PRESSE, ET SE TAIT QUAND RIEN NE PRESSE.
+
+	  ⚠️ IL COMPTE CE QUE LES SECTIONS MONTRENT, par la MÊME fonction. Un second
+	  décompte écrit ici — « les échéances à moins de trente jours » — divergerait
+	  du rang du jour où le préavis change, et l'en-tête annoncerait un nombre que
+	  la liste ne montre pas.
+	*/
+	const pressants = dossiers.filter((dossier) => {
+		const rang = rangDuDossier(dossier, aujourdHui);
+		return rang === 'DEPASSEE' || rang === 'APPROCHE';
+	}).length;
+
+	const sousTitre =
+		pressants === 0
+			? `${dossiers.length} engagé${dossiers.length > 1 ? 's' : ''}`
+			: `${dossiers.length} engagé${dossiers.length > 1 ? 's' : ''} · ${pressants} échéance${pressants > 1 ? 's' : ''} sous préavis ou dépassée${pressants > 1 ? 's' : ''}`;
+
 	return (
 		<PageEcran
-			entete={{
-				...entete,
-				sousTitre: `${dossiers.length} engagée${dossiers.length > 1 ? 's' : ''}`
-			}}
+			entete={{ ...entete, sousTitre }}
 			volets={{
 				liste: (
 					<PageBody>
-						<ListeAnalyses>
-							{dossiers.map((dossier) => (
-								<LigneAnalyse
-									key={dossier.creanceId}
-									vers="/app/procedures"
-									recherche={{ p: dossier.creanceId }}
-									titre={dossier.debiteur}
-									precision={dossier.libelle}
-									valeur={
-										dossier.prochaineEcheance === null
-											? undefined
-											: dateCourte(dossier.prochaineEcheance.dateLimite)
-									}
-									attention={dossier.prochaineEcheance?.gravite === 'CADUCITE'}
-								/>
-							))}
-						</ListeAnalyses>
+						<ListeDesDossiers groupes={groupes} ouvertId={ouvertId} aujourdHui={aujourdHui} />
 					</PageBody>
 				),
-				preuve: ouvert === null ? null : <VoletDossier dossier={ouvert} />,
+				preuve:
+					ouvert === null ? null : <VoletDuDossier dossier={ouvert} aujourdHui={aujourdHui} />,
 				preuveOuverte: ouvert !== null,
 				onFermerPreuve: onFermer
 			}}
 		/>
-	);
-}
-
-function VoletDossier({ dossier }: { dossier: DossierAffiche }) {
-	return (
-		<div className="flex flex-col gap-cladd-xs p-cladd-2xs">
-			<div>
-				<h2 className="text-cladd-md font-bold tracking-tight">{dossier.debiteur}</h2>
-				<p className="text-cladd-xs text-cladd-fg-soft">
-					engagée le {dateCourte(dossier.engageeLe)}
-					{dossier.intervenant === null ? null : ` · ${dossier.intervenant}`}
-				</p>
-			</div>
-
-			{/* L'ordre des blocs est celui de la spec : où j'en suis, ce qui court,
-			    ce qui n'est PAS surveillé, puis le dossier. */}
-			<div className="verre-carte rounded-cladd-xl p-cladd-2xs">
-				<RailProcedure etapes={dossier.etapes} />
-			</div>
-
-			{dossier.prochaineEcheance === null ? null : (
-				<div className="verre-carte rounded-cladd-xl p-cladd-2xs">
-					<div className="flex items-center justify-between gap-cladd-3xs">
-						<span className="text-cladd-sm font-bold">{dossier.prochaineEcheance.libelle}</span>
-						<Chip
-							size="md"
-							color={dossier.prochaineEcheance.gravite === 'CADUCITE' ? 'red' : 'neutral'}
-						>
-							{dateCourte(dossier.prochaineEcheance.dateLimite)}
-						</Chip>
-					</div>
-					<p className="mt-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						{dossier.prochaineEcheance.consequence}
-					</p>
-				</div>
-			)}
-
-			{/*
-			  ⚠️ LES ANGLES MORTS AVANT LES RANGÉES, JAMAIS APRÈS. Un délai dont le
-			  référentiel ignore la durée court quand même. Le reléguer sous ce qui
-			  rassure le ferait lire après coup, donc souvent pas du tout, et un
-			  gérant qui croit sa procédure surveillée ne la surveille pas lui-même.
-			*/}
-			{dossier.anglesMorts.map((angle) => (
-				<p
-					key={angle}
-					className="flex items-start gap-cladd-3xs rounded-cladd-xl border border-dashed border-cladd-outline p-cladd-2xs text-cladd-2xs leading-relaxed text-cladd-fg-soft"
-				>
-					<EyeOffIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-					{angle}
-				</p>
-			))}
-
-			<ListeAnalyses>
-				<LigneAnalyse
-					// La créance est une PAGE, en un seul défilement : la procédure y est
-					// une section, et n'a plus d'adresse à lui.
-					vers="/app/creance/$id"
-					parametres={{ id: dossier.creanceId }}
-					titre="Le dossier complet"
-					valeur="Ouvrir"
-				/>
-			</ListeAnalyses>
-		</div>
 	);
 }

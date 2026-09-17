@@ -32,7 +32,11 @@ function Revelation() {
 				// un texte de l'écran prêt, et il apparaissait après lui.
 				revelation === undefined || bilan === undefined
 					? { etat: 'attente' }
-					: { etat: 'pret', valeur: { revelation, bilan } }
+					: // ⚠️ `arreteAu` EST LA DATE PASSÉE À LA REQUÊTE, pas une seconde
+						// lecture d'horloge. Deux appels à `aujourdHuiISO` peuvent tomber de
+						// part et d'autre de minuit, et l'écran daterait alors le chiffre
+						// d'un autre jour que celui où il a été calculé.
+						{ etat: 'pret', valeur: { revelation, bilan, arreteAu } }
 			}
 		/>
 	);
