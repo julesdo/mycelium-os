@@ -23,10 +23,10 @@ import { secteursProposes } from '../../screens/debiteur-detail';
  * Celles-ci traversent plusieurs familles d'écrans, ou sont montrées telles
  * quelles par une démonstration de composant dans `routes/showroom.tsx`. Les
  * fixtures propres à une seule famille vivent avec elle (`onglets.tsx`,
- * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`, `import.tsx`, `reglages.tsx`,
- * `abonnement.tsx`, `equipe.tsx`, `donnees.tsx`). Une famille qui dérive ses
- * données d'une autre les importe de celle-ci : les données tirent de l'équipe
- * leur compte connecté, et l'équipe tire ses places de l'abonnement.
+ * `creance.tsx`, `procedure.tsx`, `debiteurs.tsx`, `import.tsx`, `compte.tsx`).
+ * Une famille qui dérive ses données d'une autre les importe de celle-ci : la
+ * révélation tire du compte la date d'arrivée la plus ancienne de l'équipe, qui
+ * est la date de création de l'établissement.
  *
  * ⚠️ CE FICHIER NE GROSSIT PLUS. Il dépasse trois cents lignes : un jeu partagé
  * de plus prend son propre fichier, comme la révélation et son bilan
@@ -52,20 +52,19 @@ interface EtablissementDemo {
  * débiteur, la salle présenterait le client du gérant comme sa propre
  * entreprise.
  *
- * La famille créance le nomme sur les relances qu'elle compose. La famille des
- * réglages le montre sur ses pages : son identité, son volume de factures et le
- * profil de créancier que le gérant enregistre. La famille de l'abonnement en
- * tire le palier. Aucune famille n'écrit ailleurs son nom, son SIREN, son
- * adresse ni son volume.
+ * La famille créance le nomme sur les relances qu'elle compose. La famille du
+ * compte le montre sur sa page : son identité, son volume de factures, le profil
+ * de créancier que le gérant enregistre, et le palier qui s'en déduit. Aucune
+ * famille n'écrit ailleurs son nom, son SIREN, son adresse ni son volume.
  *
  * ⚠️ SA QUALITÉ DE COMMERÇANT NE VAUT QU'UNE FOIS SON PROFIL ENREGISTRÉ. `'ok'`
- * est ce que la page du créancier DÉDUIT de sa forme juridique, une société par
- * actions simplifiée, et que le gérant confirme en enregistrant son profil ;
- * seules les variantes « profil enregistré » de la famille des réglages la
- * lisent. Sans profil enregistré, elle est indéterminée : la page du créancier
- * se replie sur `'unknown'`, et la famille créance, qui ne lit aucun profil,
- * écrit la sienne à `'unknown'` (`CREANCIER_COMMERCANT_DEMO`), que son litige
- * vide répond `'ok'`.
+ * est ce que la section « Votre établissement » DÉDUIT de sa forme juridique,
+ * une société par actions simplifiée, et que le gérant confirme en enregistrant
+ * son profil ; seule la variante « profil enregistré » de la famille du compte
+ * la lit. Sans profil enregistré, elle est indéterminée : le formulaire se
+ * replie sur `'unknown'`, et la famille créance, qui ne lit aucun profil, écrit
+ * la sienne à `'unknown'` (`CREANCIER_COMMERCANT_DEMO`), que son litige vide
+ * répond `'ok'`.
  */
 export const ETABLISSEMENT_DEMO: EtablissementDemo = {
 	nom: 'Thumbbb Agency',

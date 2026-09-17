@@ -153,12 +153,18 @@ export function EssaiEnCours({ finLe }: { finLe: number }) {
 }
 
 /**
- * L'encart d'attente, tant que le compte marchand n'est pas ouvert.
+ * L'ENCART D'ATTENTE, TANT QUE LE COMPTE MARCHAND N'EST PAS OUVERT — écrit en
+ * QUATRE PARTIES, dans l'ordre que D0 impose.
  *
- * Il dit PRÉCISÉMENT pourquoi le paiement n'est pas encore disponible, plutôt
- * que « bientôt ». Un gérant à qui l'on donne la raison patiente ; un gérant à
- * qui l'on sert un slogan s'en va. Et il ne laisse pas la page sans issue : il
- * renvoie vers ce qu'il peut faire aujourd'hui, qui est tout le produit.
+ * ⚠️ CE N'EST PAS UNE MISE EN FORME, C'EST LA DÉCISION D0. Un refus se dit
+ * toujours dans cet ordre : ce que le produit peut faire tout de suite, et
+ * cette ligne n'est JAMAIS vide ; ce qui manque, nommé ; ce qui lève le manque,
+ * au CONSTAT et jamais à l'impératif ; ce que l'attente coûte, chiffré quand
+ * c'est chiffrable et déclaré non chiffrable sinon.
+ *
+ * ⚠️ ET CE QUE L'ATTENTE COÛTE EST ICI DÉCLARÉ NON CHIFFRABLE, plutôt
+ * qu'inventé. Tant qu'aucun prix n'est encaissé, l'attente ne coûte rien au
+ * gérant ; écrire un montant ferait croire à une dette qui court.
  */
 export function OuvertureEnCours() {
 	return (
@@ -168,11 +174,24 @@ export function OuvertureEnCours() {
 			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
-			<span className="text-cladd-sm font-bold">Le paiement en ligne ouvre bientôt.</span>
+			<span className="text-cladd-sm font-bold">
+				Tout le produit vous est ouvert, sans carte bancaire.
+			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Notre compte marchand est en cours d&rsquo;ouverture. En attendant, le produit vous est
-				ouvert sans limite et sans carte bancaire : déposez vos factures, voyez ce qui vous est dû,
-				et nous reviendrons vers vous avant toute facturation.
+				Déposez vos factures, lisez ce qui vous est dû, arrêtez un décompte : rien n&rsquo;est
+				retenu derrière le paiement aujourd&rsquo;hui.
+			</span>
+			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+				Ce qui manque : notre compte marchand n&rsquo;est pas ouvert, donc aucun paiement en ligne
+				ne peut être encaissé.
+			</span>
+			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+				Ce verrou se lève à l&rsquo;ouverture du compte marchand chez Paddle, qui attend nos
+				conditions générales.
+			</span>
+			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+				Ce que l&rsquo;attente coûte : rien qui se chiffre. Aucune somme n&rsquo;est due tant que
+				le paiement n&rsquo;est pas ouvert, et nous revenons vers vous avant toute facturation.
 			</span>
 			<span className="flex flex-wrap gap-cladd-3xs pt-cladd-3xs">
 				<BoutonPrincipal as={Lien} to="/app/import-factures">

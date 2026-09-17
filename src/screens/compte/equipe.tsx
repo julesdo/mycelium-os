@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from 'react';
+import { useState } from 'react';
 import {
 	Button,
 	Chip,
@@ -11,6 +11,7 @@ import {
 	PopoverRoot,
 	PopoverTrigger,
 	ListButton,
+	SectionTitle,
 	Segmented,
 	SegmentedButton,
 	Surface
@@ -24,39 +25,39 @@ import {
 	UserMinusIcon,
 	UserPlusIcon
 } from 'lucide-react';
-import {
-	BoutonPrincipal,
-	BoutonSecondaire,
-	Champ,
-	Lien,
-	LigneAnalyse,
-	ListeAnalyses,
-	PageEcran,
-	SectionEcran,
-	pluriel,
-	type Lecture
-} from '../../ui';
-import { TITRE_ECRAN } from '../titres';
+import { VALIDITE_INVITATION_EN_TOUTES_LETTRES } from '../../lib/config/invitations';
+import { BoutonPrincipal, BoutonSecondaire, Champ, SectionEcran, pluriel } from '../../ui';
 
 /**
- * L'écran d'équipe, sans backend.
+ * L'ÉQUIPE — la section, et l'invitation EN LIGNE.
  *
  * ONZE FONCTIONS EXISTAIENT, ZÉRO ÉCRAN LES APPELAIT. Inviter, accepter,
  * annuler, changer un rôle, retirer quelqu'un : tout était écrit côté serveur
  * depuis des mois, et la seule façon d'ajouter un collègue était d'écrire une
- * mutation à la main dans un tableau de bord. Une cantine, c'est un chef gérant
- * qui dépose et un directeur qui signe — à une seule place, le produit ne sert
- * qu'à moitié.
+ * mutation à la main dans un tableau de bord.
  *
- * TOUT EST ICI EN PROPS ET EN RAPPELS, comme les cartes d'offre. C'est ce qui
- * permet de le REGARDER dans la salle d'exposition aux quatre largeurs sans
- * ouvrir de session, donc sans saisir de mot de passe.
+ * ⚠️ L'INVITATION A PERDU SA PAGE, ET C'EST LA CONSÉQUENCE DIRECTE DE LA PAGE
+ * UNIQUE. Elle en avait une (`/app/equipe/inviter`) parce qu'elle vivait en BAS
+ * d'un écran, sous deux listes : sur un téléphone, il fallait défiler pour
+ * l'atteindre, puis le clavier repoussait le bouton d'envoi hors de l'écran.
+ * Ici, la section entière se déplie sur `/app/compte`, et le formulaire est le
+ * dernier bloc d'une section qu'on atteint déjà en défilant : lui donner une
+ * adresse ferait une quatorzième porte pour un champ et un choix.
+ *
+ * TOUT EST EN PROPS ET EN RAPPELS. C'est ce qui permet de le REGARDER dans la
+ * salle d'exposition aux quatre largeurs sans ouvrir de session.
  *
  * LE LIEN D'INVITATION EST AFFICHÉ, PAS SEULEMENT ENVOYÉ. Un e-mail
  * d'invitation tombe régulièrement dans les indésirables d'une messagerie
  * d'établissement, et le gérant n'a alors aucun recours. Le lien copiable se
  * transmet par n'importe quel canal ; sans lui, une invitation perdue est une
  * invitation morte, puisqu'on ne peut pas la renvoyer avant son expiration.
+ *
+ * ⚠️ FRONTIÈRE DÉCLARÉE. L'acceptation de l'invitation, la création du mot de
+ * passe et la récupération appartiennent à Better Auth : elles s'ouvrent sur
+ * SON parcours, hors de cette page. Ce qui appartient au prestataire sort de la
+ * grammaire de ce produit, et le dire vaut mieux que réimplémenter un tunnel
+ * qu'on ne contrôle pas.
  */
 
 export type RoleEquipe = 'ORG_ADMIN' | 'ORG_MEMBER';
@@ -129,7 +130,22 @@ function joursRestants(echeance: number): number {
 	return Math.max(0, Math.ceil((echeance - Date.now()) / (24 * 60 * 60 * 1000)));
 }
 
-export function Equipe({
+/** Ce que la section affiche, et les six gestes que la route pilote. */
+export interface EquipeAffichee {
+	readonly membres: readonly MembreEquipe[];
+	readonly invitations: readonly InvitationEnAttente[];
+	readonly estAdmin: boolean;
+	readonly siegesUtilises: number;
+	readonly siegesAutorises: number;
+	readonly onChangerRole: (membreId: string, role: RoleEquipe) => Promise<void>;
+	readonly onRetirer: (membreId: string) => Promise<void>;
+	readonly onAnnulerInvitation: (invitationId: string) => Promise<void>;
+	readonly onVerifierAdresse: (membreId: string) => Promise<void>;
+	/** Rend le LIEN d'invitation : c'est lui qui sauve une invitation tombée dans les indésirables. */
+	readonly onInviter: (email: string, role: RoleEquipe) => Promise<string>;
+}
+
+export function SectionEquipe({
 	membres,
 	invitations,
 	estAdmin,
@@ -138,57 +154,41 @@ export function Equipe({
 	onChangerRole,
 	onRetirer,
 	onAnnulerInvitation,
-	onVerifierAdresse
-}: {
-	membres: readonly MembreEquipe[];
-	invitations: readonly InvitationEnAttente[];
-	estAdmin: boolean;
-	siegesUtilises: number;
-	siegesAutorises: number;
-	onChangerRole: (membreId: string, role: RoleEquipe) => Promise<void>;
-	onRetirer: (membreId: string) => Promise<void>;
-	onAnnulerInvitation: (invitationId: string) => Promise<void>;
-	onVerifierAdresse: (membreId: string) => Promise<void>;
-}) {
+	onVerifierAdresse,
+	onInviter
+}: EquipeAffichee) {
 	const placesLibres = Math.max(0, siegesAutorises - siegesUtilises - invitations.length);
-	const complet = placesLibres === 0;
 
 	return (
-		<div className="flex max-w-180 flex-col gap-cladd-2xs">
-			{/*
-			  ⚠️ LES PLACES NE SE COMPTENT PLUS DEUX FOIS. « 3 sur 5 places » vivait
-			  ici, et « 2 places » sur la rangée d'invitation trois blocs plus bas :
-			  deux façons de dire le même reste, dont une seule mène au geste qui
-			  l'utilise. Celle qui reste est sur la rangée.
-			*/}
-			<SectionEcran titre="Les personnes de l’établissement">
-				<Surface
-					variant="transparent"
-					outline={false}
-					className="verre-carte rounded-cladd-xl"
-					contentClassName="p-0"
-				>
-					<List>
-						{membres.map((m, i) => (
-							<div key={m.id}>
-								{i > 0 ? <ListSeparator /> : null}
-								<LigneMembre
-									membre={m}
-									estAdmin={estAdmin}
-									onChangerRole={onChangerRole}
-									onRetirer={onRetirer}
-									onVerifierAdresse={onVerifierAdresse}
-								/>
-							</div>
-						))}
-					</List>
-				</Surface>
-			</SectionEcran>
+		<SectionEcran
+			titre="Équipe"
+			legende="Qui accède aux factures et aux créances de cet établissement."
+		>
+			<Surface
+				variant="transparent"
+				outline={false}
+				className="verre-carte rounded-cladd-xl"
+				contentClassName="p-0"
+			>
+				<List>
+					{membres.map((m, i) => (
+						<div key={m.id}>
+							{i > 0 ? <ListSeparator /> : null}
+							<LigneMembre
+								membre={m}
+								estAdmin={estAdmin}
+								onChangerRole={onChangerRole}
+								onRetirer={onRetirer}
+								onVerifierAdresse={onVerifierAdresse}
+							/>
+						</div>
+					))}
+				</List>
+			</Surface>
 
-			{/* La légende disait « 2 envoyées, pas encore acceptées » sous un titre qui
-			    dit déjà « en attente ». La liste dessous porte le compte. */}
 			{invitations.length > 0 ? (
-				<SectionEcran titre="Invitations en attente">
+				<>
+					<SectionTitle>Invitations en attente</SectionTitle>
 					<Surface
 						variant="transparent"
 						outline={false}
@@ -204,41 +204,46 @@ export function Equipe({
 							))}
 						</List>
 					</Surface>
-				</SectionEcran>
+				</>
 			) : null}
 
-			{/*
-			  ⚠️ INVITER EST DEVENU UNE PAGE, ET C'EST UN FORMULAIRE QUI LE DEMANDE.
-
-			  Il tenait en bas de l'écran : une adresse, un choix de rôle avec son
-			  explication, un bouton. Sur un téléphone, il arrivait après deux listes
-			  — donc après un défilement — et le clavier qui s'ouvre repoussait le
-			  bouton hors de vue.
-
-			  Une rangée dit ce qu'il reste de places ; la page a l'écran pour elle.
-
-			  ⚠️ ET ELLE NE S'AFFICHE PLUS À QUI NE PEUT PAS INVITER. Un membre y
-			  lisait « Réservé aux administrateurs » sous un chevron qui poussait vers
-			  une page dont le seul contenu était le même refus, écrit plus longuement :
-			  une page entière pour dire non. Il sait qui administre — chaque rangée de
-			  la liste au-dessus porte sa puce « Administrateur ». La garde de la page
-			  reste, pour un lien direct, et celle du serveur aussi.
-			*/}
+			<SectionTitle>Inviter un collègue</SectionTitle>
 			{estAdmin ? (
-				<ListeAnalyses>
-					<LigneAnalyse
-						vers="/app/equipe/inviter"
-						icone={<UserPlusIcon />}
-						titre="Inviter un collègue"
-						valeur={
-							complet
-								? 'Complet'
-								: `${placesLibres} place${pluriel(placesLibres)} libre${pluriel(placesLibres)}`
-						}
-					/>
-				</ListeAnalyses>
-			) : null}
-		</div>
+				<FormulaireInvitation
+					onInviter={onInviter}
+					complet={placesLibres === 0}
+					places={siegesAutorises}
+					placesLibres={placesLibres}
+				/>
+			) : (
+				/*
+				  ⚠️ LE REFUS EST ÉCRIT EN QUATRE PARTIES (D0), ET IL NE COMMENCE PAS
+				  PAR LE NON. Ce qu'on peut faire tout de suite, ce qui manque, ce qui
+				  le lève au CONSTAT, ce que l'attente coûte.
+				*/
+				<div className="flex flex-col gap-cladd-3xs">
+					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+						La liste ci-dessus dit qui administre cet établissement : chaque personne marquée «
+						Administrateur » peut inviter quelqu’un aujourd’hui.
+					</p>
+					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+						Ce qui manque : votre compte est membre, et l’invitation est réservée à un
+						administrateur.
+					</p>
+					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+						Ce verrou se lève par le passage de votre compte en administrateur, décidé par l’un
+						d’eux.
+					</p>
+					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+						Ce que l’attente coûte : {siegesUtilises} personne{pluriel(siegesUtilises)} sur{' '}
+						{siegesAutorises} accède
+						{siegesUtilises > 1 ? 'nt' : ''} à cet établissement, et {placesLibres} place
+						{pluriel(placesLibres)} reste{placesLibres > 1 ? 'nt' : ''} inoccupée
+						{pluriel(placesLibres)} d’ici là.
+					</p>
+				</div>
+			)}
+		</SectionEcran>
 	);
 }
 
@@ -405,21 +410,24 @@ function LigneInvitation({
 }
 
 /**
- * LE FORMULAIRE D'INVITATION.
+ * LE FORMULAIRE D'INVITATION, EN LIGNE DANS LA SECTION.
  *
- * ⚠️ IL NE PORTE PLUS SA PROPRE SECTION. Il vit sur `/app/equipe/inviter`, dont
- * l'en-tête porte déjà le titre et la légende : les répéter ferait lire deux
- * fois la même phrase avant d'arriver au champ.
+ * ⚠️ IL DIT CE QU'IL RESTE DE PLACES UNE SEULE FOIS. Le compte vivait en double
+ * — « 3 sur 5 places » en tête de l'écran d'équipe, « 2 places » sur la rangée
+ * qui poussait vers la page d'invitation — et deux façons de dire le même reste
+ * finissent par ne plus dire la même chose. Il vit ici, là où il décide.
  */
 export function FormulaireInvitation({
 	onInviter,
 	complet,
-	places
+	places,
+	placesLibres
 }: {
 	/** Rend le LIEN d'invitation : c'est lui qui sauve une invitation tombée dans les indésirables. */
 	onInviter: (email: string, role: RoleEquipe) => Promise<string>;
 	complet: boolean;
 	places: number;
+	placesLibres: number;
 }) {
 	const [email, setEmail] = useState('');
 	const [role, setRole] = useState<RoleEquipe>('ORG_MEMBER');
@@ -446,12 +454,32 @@ export function FormulaireInvitation({
 		}
 	}
 
+	/*
+	  ⚠️ PLUS DE PLACE LIBRE : LE REFUS S'ÉCRIT EN QUATRE PARTIES (D0). Ce qu'on
+	  peut faire tout de suite vient d'abord, et il n'est jamais vide — trois
+	  gestes rendent une place sans attendre personne.
+	*/
 	if (complet) {
 		return (
-			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Les {places} places de votre offre sont prises, invitations en attente comprises. Annulez
-				une invitation, retirez quelqu’un, ou passez à l’offre supérieure pour en ajouter.
-			</p>
+			<div className="flex flex-col gap-cladd-3xs">
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Une place se libère tout de suite : annulez une invitation en attente, ou retirez une
+					personne de la liste ci-dessus.
+				</p>
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Ce qui manque : les {places} places de votre offre sont prises, invitations en attente
+					comprises.
+				</p>
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Ce verrou se lève aussi par le passage à l’offre du palier supérieur, qui porte
+					davantage de places.
+				</p>
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Ce que l’attente coûte : la personne non invitée ne dépose aucune facture et ne confirme
+					aucun classement, et ce qu’elle aurait traité ne se chiffre pas tant qu’elle n’a pas
+					accès.
+				</p>
+			</div>
 		);
 	}
 
@@ -477,6 +505,12 @@ export function FormulaireInvitation({
 				void envoyer();
 			}}
 		>
+			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+				{placesLibres} place{pluriel(placesLibres)} libre{pluriel(placesLibres)} sur {places}. Le
+				collègue recevra un lien valable {VALIDITE_INVITATION_EN_TOUTES_LETTRES}, et créera son mot
+				de passe lui-même, sur le parcours de notre prestataire d’authentification.
+			</p>
+
 			<Champ etiquette="Adresse e-mail">
 				<Input
 					value={email}
@@ -540,11 +574,9 @@ export function FormulaireInvitation({
  * DEUX SECONDES ET DEMIE.
  *
  * Le formulaire se vidait, le bouton confirmait le temps d'un battement de
- * cils, et le gérant restait devant un champ vide. Or cet écran dit lui-même
- * qu'un e-mail d'invitation tombe régulièrement dans les indésirables d'une
- * messagerie d'établissement : le seul recours est le lien copiable, et il
- * n'était accessible qu'en revenant à l'équipe puis en retrouvant la bonne
- * rangée.
+ * cils, et le gérant restait devant un champ vide. Or cette section dit
+ * elle-même qu'un e-mail d'invitation tombe régulièrement dans les indésirables
+ * d'une messagerie d'établissement : le seul recours est le lien copiable.
  *
  * ⚠️ LE LIEN PORTE UN JETON. Il s'affiche, il se copie, et il ne se journalise
  * jamais : quiconque l'obtient entre dans l'établissement.
@@ -600,9 +632,6 @@ function InvitationPartie({
 					<UserPlusIcon />
 					Inviter quelqu’un d’autre
 				</BoutonSecondaire>
-				<BoutonSecondaire as={Lien} to="/app/equipe">
-					Revenir à l’équipe
-				</BoutonSecondaire>
 			</div>
 		</div>
 	);
@@ -615,22 +644,4 @@ export function messageDErreur(e: unknown): string {
 	}
 	if (e instanceof Error && e.message) return e.message;
 	return 'L’action n’a pas abouti. Réessayez dans un instant.';
-}
-
-export function EcranEquipe({ donnees }: { donnees: Lecture<ComponentProps<typeof Equipe>> }) {
-	return (
-		<PageEcran
-			entete={{
-				genre: 'onglet',
-				titre: TITRE_ECRAN.equipe,
-				// ⚠️ « ET AUX CRÉANCES », PLUS « ET AUX TAUX ». Le sous-titre parlait
-				// encore la langue d'EGalim, que la salle d'exposition avait déjà
-				// corrigée de son côté.
-				sousTitre: 'Qui accède aux factures et aux créances de cet établissement.'
-			}}
-			etat={donnees.etat}
-		>
-			{donnees.etat === 'pret' ? <Equipe {...donnees.valeur} /> : null}
-		</PageEcran>
-	);
 }

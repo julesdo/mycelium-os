@@ -99,7 +99,11 @@ export function ceQuiManque({
 			// l'injonction de payer ne peut pas être acquise. C'est un CONSTAT sur
 			// l'état du dossier, jamais une recommandation d'agir.
 			debloque: 'Aucune injonction de payer possible sans elle',
-			vers: '/app/parametres/creancier'
+			// ⚠️ ELLE MÈNE À `/app/compte`, ET PLUS À UNE PAGE DE CRÉANCIER. Les
+			// trois champs vivent désormais dans la section « Votre établissement »
+			// de la page unique du compte : la page qui les portait seule est morte
+			// avec les douze autres adresses de réglages.
+			vers: '/app/compte'
 		});
 	}
 

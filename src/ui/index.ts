@@ -96,6 +96,8 @@ export { Lien, useProvenance } from './lien';
 export { FeuilleVoie, type VoieAffichee } from './feuille-voie';
 export {
 	ChoixIntervenant,
+	SaisirUneFiche,
+	precisionDeLaFiche,
 	type FicheIntervenant,
 	type FicheASaisir,
 	type RoleIntervenant

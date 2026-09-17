@@ -49,7 +49,10 @@ describe('ce qui manque', () => {
 		// Le POURQUOI, et il est exact : c'est bien `entreCommercants` qui reste
 		// indéterminé sans profil, donc l'injonction de payer qui reste fermée.
 		expect(verrou?.debloque).toContain('injonction de payer');
-		expect(verrou?.vers).toBe('/app/parametres/creancier');
+		// Les trois champs du créancier vivent dans la section « Votre
+		// établissement » de `/app/compte` depuis que les treize adresses de
+		// réglages sont devenues une page.
+		expect(verrou?.vers).toBe('/app/compte');
 	});
 
 	it('compte les débiteurs que le radar ne peut pas suivre', () => {

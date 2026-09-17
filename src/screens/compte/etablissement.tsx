@@ -1,25 +1,21 @@
 import { useState, type ComponentProps } from 'react';
 import { Button, Input } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
-import { BoutonPrincipal, Champ, PageEcran, dateCourte, pluriel, type Lecture } from '../../ui';
-import { sansEtablissement } from '../sans-etablissement';
-import { TITRE_ECRAN } from '../titres';
+import { BoutonPrincipal, Champ, dateCourte, pluriel } from '../../ui';
 
 /**
  * LE FORMULAIRE DE L'ÉTABLISSEMENT.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * POURQUOI IL A QUITTÉ L'ÉCRAN DE RÉGLAGES
+ * ⚠️ IL N'EST PLUS UNE PAGE, IL EST UNE MOITIÉ DE SECTION
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Il y vivait, dépliés, en même temps qu'un second formulaire — celui du
- * créancier — et que l'apparence, trois liens et la déconnexion. À eux deux,
- * les formulaires faisaient l'essentiel du défilement : le créancier seul
- * mesure 2,99 écrans à 375 px.
- *
- * Or on n'ouvre pas les réglages pour remplir un formulaire : on les ouvre pour
- * ATTEINDRE quelque chose. La liste dit ce qui est réglé, la page règle. C'est
- * le motif de tous les écrans de réglages d'application mobile.
+ * Il a eu sa propre adresse, `/app/parametres/etablissement`, parce qu'il
+ * partageait un écran de réglages avec un second formulaire — celui du
+ * créancier — trois liens et la déconnexion, et que le tout faisait défiler.
+ * Treize adresses plus tard, ces deux formulaires sont les deux moitiés d'une
+ * seule section de `/app/compte` : le nom et le volume disent qui déclare, la
+ * dénomination, le SIREN et l'adresse disent ce qui s'imprime sur un décompte.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ IL NE DEMANDE PLUS DE SIREN, ET CE N'EST PAS UN OUBLI
@@ -174,7 +170,7 @@ export function FormulaireEtablissement({
 	);
 }
 
-/** Ce que la page affiche : le nom de l'établissement, son formulaire, la clé qui le remonte, et l'enregistrement que la route pilote. */
+/** Ce que la section affiche : le nom de l'établissement, son formulaire, la clé qui le remonte, et l'enregistrement que la route pilote. */
 export interface EtablissementAffiche {
 	readonly nom: string | undefined;
 	readonly initial: ComponentProps<typeof FormulaireEtablissement>['initial'];
@@ -183,33 +179,4 @@ export interface EtablissementAffiche {
 	/** L'identifiant de l'établissement : il remonte le formulaire quand on en change. */
 	readonly cle: string;
 	readonly onEnregistrer: ComponentProps<typeof FormulaireEtablissement>['onEnregistrer'];
-}
-
-export function EcranEtablissement({ donnees }: { donnees: Lecture<EtablissementAffiche | null> }) {
-	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
-
-	return (
-		<PageEcran
-			entete={{
-				genre: 'poussee',
-				retour: { vers: '/app/parametres', libelle: TITRE_ECRAN.reglages, masqueEnVolets: true },
-				titre: 'Votre établissement',
-				sousTitre: pret?.nom
-			}}
-			etat={
-				donnees.etat === 'pret' && pret === null
-					? sansEtablissement('Créez-en un pour le régler.')
-					: donnees.etat
-			}
-		>
-			{pret === null ? null : (
-				<FormulaireEtablissement
-					key={pret.cle}
-					initial={pret.initial}
-					mesure={pret.mesure}
-					onEnregistrer={pret.onEnregistrer}
-				/>
-			)}
-		</PageEcran>
-	);
 }

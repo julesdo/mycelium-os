@@ -13,7 +13,7 @@ import {
 	type FacturePourRevelation
 } from '../../lib/verticales/recouvrement/revelation';
 import type { BilanPertesAffiche, RevelationAffichee } from '../../ui';
-import { MEMBRES } from './equipe';
+import { MEMBRES } from './compte';
 
 /**
  * LA RÉVÉLATION ET LE BILAN DES PERTES DE LA SALLE, CALCULÉS PAR LE DOMAINE.
