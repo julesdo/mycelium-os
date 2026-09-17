@@ -256,6 +256,43 @@ function ImportFactures() {
 		[envois, porter, navigate]
 	);
 
+	/**
+	 * LE QUATRIÈME CHEMIN D'ENTRÉE — LE COLLAGE — ÉTAIT MORT, ET MESURÉ TEL.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * `ZoneDepot` documente quatre façons de verser un fichier : photographier,
+	 * parcourir, glisser-déposer, et COLLER. Elle porte bien un `onPaste`, mais
+	 * sur un `<div>` (`SurfaceCut`) qui n'est pas focalisable : `tabIndex` y
+	 * vaut -1. Or un événement de collage vise l'élément FOCALISÉ et remonte de
+	 * là. À l'ouverture de l'écran, le focus est sur `<body>` : l'événement ne
+	 * traverse jamais la zone.
+	 *
+	 * Vérifié au navigateur plutôt que raisonné : un `paste` émis depuis `body`
+	 * n'atteint pas la zone ; le même émis depuis un bouton DANS la zone
+	 * l'atteint. Le chemin ne marchait donc que pour qui avait déjà cliqué sur
+	 * « Choisir des fichiers » — c'est-à-dire pour personne.
+	 *
+	 * ⚠️ LE CORRECTIF DE FOND EST DANS `ui/zone-depot.tsx`, qui sert aussi les
+	 * pièces d'un dossier, et ce chantier ne touche pas à ce fichier. L'écouteur
+	 * est donc posé ici, sur la fenêtre, le temps que la zone soit corrigée une
+	 * fois pour ses deux appelants.
+	 *
+	 * ⚠️ IL NE PREND QUE DES FICHIERS. Un collage de texte — dans un champ de
+	 * recherche, n'importe où sur l'écran — rend une liste de fichiers vide et
+	 * ne déclenche rien.
+	 */
+	useEffect(() => {
+		const coller = (evenement: ClipboardEvent) => {
+			const fichiers = [...(evenement.clipboardData?.files ?? [])];
+			if (fichiers.length === 0) return;
+			evenement.preventDefault();
+			void deposer(fichiers);
+		};
+		window.addEventListener('paste', coller);
+		return () => window.removeEventListener('paste', coller);
+	}, [deposer]);
+
 	/** Renvoie UN fichier, celui que sa rangée nomme. */
 	const reessayer = useCallback(
 		(cle: string) => {

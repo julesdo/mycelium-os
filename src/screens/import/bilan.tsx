@@ -195,14 +195,34 @@ export function Bilan({ depot, minute }: { depot: DepotAffiche; minute: number |
 			</div>
 
 			{/*
+			  ⚠️ LA SEULE PAGE DU PRODUIT OÙ LE GÉRANT ATTEND, et elle ne contenait
+			  qu'une puce et une étape. Le dire une fois — la lecture continue sans
+			  lui — est ce qui le libère de l'écran ; sans cette phrase, la seule
+			  conduite raisonnable est de rester à regarder tourner une puce.
+
+			  Elle ne s'affiche QUE pendant la lecture, et disparaît avec elle : une
+			  fois le bilan là, il n'y a plus rien à attendre.
+			*/}
+			{enLecture && !sansNouvelle ? (
+				<p className="px-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+					La lecture se poursuit même si vous quittez cet écran. Le bilan s’affichera ici de
+					lui-même.
+				</p>
+			) : null}
+
+			{/*
 			  L'ÉCHEC, EN PREMIER ET EN ENCRE PLEINE.
 
 			  C'est le message que le serveur a composé, affiché tel quel : le
 			  reformuler ici fabriquerait une seconde version de la vérité, qui
 			  dériverait de la première à la première retouche du lecteur.
 			*/}
+			{/* Le titre emploie le même vocabulaire que la section des écarts —
+			    « entré » / « pas entré » — parce que c'est la seule question que le
+			    gérant se pose devant un dépôt, et qu'elle ne doit pas changer de mots
+			    d'un état à l'autre. */}
 			{depot.erreur ? (
-				<SectionEcran titre="Ce que la lecture a rencontré">
+				<SectionEcran titre="Pourquoi ce fichier n’est pas entré">
 					<p className="text-cladd-xs leading-relaxed">{depot.erreur}</p>
 					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
 						Corrigez le fichier, puis redéposez-le. Les factures déjà entrées par un autre dépôt ne
