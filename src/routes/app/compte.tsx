@@ -25,6 +25,7 @@ import {
 import type { DonneesAffichees, FichierExport } from '../../screens/compte/donnees';
 import type { IntervenantsAffiches } from '../../screens/compte/intervenants';
 import type { MesuresAffichees } from '../../screens/compte/mesures';
+import type { IdentiteDuCreancier } from '../../screens/compte/presse';
 
 /**
  * `/app/compte` — LA SEULE ADRESSE DERRIÈRE L'AVATAR.
@@ -72,6 +73,24 @@ function PageCompte() {
 	const chercherMonEtablissement = useAction(
 		api.recouvrement.monEtablissement.chercherMonEtablissementAuRegistre
 	);
+
+	/*
+	  ── LA BASCULE D'ÉTABLISSEMENT, LUE ICI ET PAS DANS L'ÉCRAN ───────────────
+
+	  ⚠️ ELLE NE RETIENT PAS LA PAGE. La liste et la bascule arrivent quand elles
+	  arrivent : tant que la liste se lit, l'en-tête n'affiche simplement pas de
+	  pilule de changement, et le nom de l'établissement courant — qui vient de
+	  `getMyOrg`, lui attendu — est déjà là. Faire attendre toute la page pour
+	  une pilule que la plupart des comptes ne verront jamais serait payer un
+	  répertoire pour un mono-site.
+
+	  ⚠️ ET ELLE NE PASSE PAS PAR `SelecteurEtablissement`. Celui-ci interroge
+	  Convex lui-même, ce qui le rend impossible à rendre dans la salle
+	  d'exposition — or l'écran entier doit s'y regarder aux quatre largeurs sans
+	  session. Voir `screens/compte/en-tete.tsx`.
+	*/
+	const mesEtablissements = useQuery(api.organizations.listMyOrganizations, {});
+	const basculer = useMutation(api.organizations.switchOrganization);
 
 	// ── La facturation ───────────────────────────────────────────────────────
 	const abonnement = useQuery(api.billing.etatAbonnement, {});
@@ -415,7 +434,38 @@ function PageCompte() {
 					}
 				};
 
+	/*
+	  ⚠️ « COMPLET » SE CALCULE ICI COMME L'ACCUEIL LE CALCULE, PAS AUTREMENT.
+	  `/app/index.tsx` pose `profilCreancierComplet: profil !== null && profil.siren !== undefined`
+	  et `ceQuiManque` en tire le verrou « Votre identité de créancier ». Deux
+	  définitions du même mot se désaccorderaient un jour, et l'accueil dirait
+	  « incomplet » pendant que le compte dirait « renseignée ».
+	*/
+	const identite: IdentiteDuCreancier | null =
+		org === null
+			? null
+			: {
+					nom: org.name ?? '',
+					siren: profil?.siren ?? null,
+					profilComplet: profil !== null && profil.siren !== undefined
+				};
+
 	const compteAffiche: CompteAffiche = {
+		identite,
+		/*
+		  Une liste encore en lecture est une liste VIDE ici, jamais une liste à
+		  un élément fabriquée depuis `org` : l'en-tête n'ouvrirait alors aucune
+		  pilule, ce qui est exactement le bon comportement tant qu'on ne sait pas
+		  s'il y a de quoi choisir.
+		*/
+		etablissements: (mesEtablissements ?? []).map((autre) => ({
+			id: autre._id,
+			nom: autre.name ?? 'Établissement sans nom'
+		})),
+		courantId: org?._id ?? null,
+		onBasculer: (id) => {
+			void basculer({ organizationId: id as Id<'organizations'> });
+		},
 		etablissement:
 			org === null
 				? null

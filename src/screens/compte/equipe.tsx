@@ -26,7 +26,13 @@ import {
 	UserPlusIcon
 } from 'lucide-react';
 import { VALIDITE_INVITATION_EN_TOUTES_LETTRES } from '../../lib/config/invitations';
-import { BoutonPrincipal, BoutonSecondaire, Champ, SectionEcran, pluriel } from '../../ui';
+import {
+	BoutonPrincipal,
+	BoutonSecondaire,
+	Champ,
+	ConfirmationParSaisie,
+	pluriel
+} from '../../ui';
 
 /**
  * L'ÉQUIPE — la section, et l'invitation EN LIGNE.
@@ -118,6 +124,18 @@ function titreDeLigne(m: MembreEquipe): string {
 	return m.nom?.trim() || m.email || 'Compte sans nom';
 }
 
+/**
+ * CE QU'IL FAUT SAISIR POUR RETIRER QUELQU'UN.
+ *
+ * L'adresse d'abord : elle est unique dans l'établissement, elle se recopie
+ * depuis la rangée, et c'est elle qu'on reconnaît. À défaut — un compte créé
+ * par invitation peut n'en porter aucune — le nom affiché, qui est alors la
+ * seule chaîne que la rangée montre et que l'œil peut vérifier.
+ */
+function valeurAConfirmer(m: MembreEquipe): string {
+	return m.email ?? titreDeLigne(m);
+}
+
 function sousTitreDeLigne(m: MembreEquipe): string {
 	const arrivee = `arrivé le ${enDate(m.arriveLe)}`;
 	const adresse = m.email ?? null;
@@ -160,10 +178,7 @@ export function SectionEquipe({
 	const placesLibres = Math.max(0, siegesAutorises - siegesUtilises - invitations.length);
 
 	return (
-		<SectionEcran
-			titre="Équipe"
-			legende="Qui accède aux factures et aux créances de cet établissement."
-		>
+		<>
 			<Surface
 				variant="transparent"
 				outline={false}
@@ -243,7 +258,7 @@ export function SectionEquipe({
 					</p>
 				</div>
 			)}
-		</SectionEcran>
+		</>
 	);
 }
 
@@ -345,21 +360,51 @@ function LigneMembre({
 								</ListButton>
 							</PopoverClose>
 							<ListSeparator />
-							<PopoverClose>
-								<ListButton
-									size="md"
-									color="red"
-									icon={<UserMinusIcon />}
-									footer="Ses confirmations restent au dossier."
-									onClick={() => void onRetirer(membre.id)}
-								>
-									Retirer de l’établissement
-								</ListButton>
-							</PopoverClose>
+							{/*
+							  ═══════════════════════════════════════════════════════════════
+							  ⚠️ RETIRER QUELQU'UN NE S'EXÉCUTE PLUS SUR UN SEUL DOIGT
+							  ═══════════════════════════════════════════════════════════════
+
+							  C'était un `onClick` direct : un doigt sur l'ellipse, un doigt
+							  sur « Retirer », et le collègue perdait l'accès. Aucune
+							  confirmation, et pas un mot sur ce que ça coûte — alors que
+							  c'est le seul geste de la page qui retire un droit à QUELQU'UN
+							  D'AUTRE. Il était le moins gardé des trois gestes destructeurs,
+							  et les deux autres exigeaient déjà une saisie exacte.
+
+							  ⚠️ ET IL RESTE DANS LE MENU, CE QUI A ÉTÉ VÉRIFIÉ AU NAVIGATEUR
+							  PLUTÔT QUE SUPPOSÉ. Le dialogue s'ouvre dans un portail ; on
+							  pouvait craindre que le survol se referme à ce clic et emporte
+							  son propre dialogue. Mesuré : le dialogue s'ouvre, son champ est
+							  présent, le survol se referme proprement derrière. La variante
+							  écartée — un second bouton rond sur la rangée — a été regardée à
+							  375 px : chez un membre qui porte déjà deux puces, la paire de
+							  boutons tombait ORPHELINE sur une troisième ligne, détachée de
+							  la personne qu'elle visait.
+							*/}
+							<ConfirmationParSaisie
+								titre={`Retirer ${titreDeLigne(membre)} ?`}
+								texte={`${titreDeLigne(membre)} perd immédiatement l’accès à toutes les factures, tous les débiteurs et tous les décomptes de cet établissement. Ses confirmations restent au dossier, et il faudra une nouvelle invitation pour lui rendre l’accès. Saisissez ${valeurAConfirmer(membre)} pour confirmer.`}
+								valeurAttendue={valeurAConfirmer(membre)}
+								invite={membre.email ? 'Son adresse e-mail' : 'Son nom'}
+								intituleConfirmation="Retirer de l’établissement"
+								onConfirmer={() => void onRetirer(membre.id)}
+								declencheur={
+									<ListButton
+										size="md"
+										color="red"
+										icon={<UserMinusIcon />}
+										footer="Ses confirmations restent au dossier."
+									>
+										Retirer de l’établissement
+									</ListButton>
+								}
+							/>
 						</List>
 					</Popover>
 				</PopoverRoot>
 			) : null}
+
 		</ListItem>
 	);
 }

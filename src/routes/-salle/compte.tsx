@@ -154,6 +154,14 @@ interface FacturationDemo {
 	readonly clePaddle: boolean;
 	/** `organizations.freeTrialEndsAt`, posé à la création de l'établissement. */
 	readonly essaiJusquAu: number;
+	/**
+	 * `organizations.paddleStatus`, tel que les rappels Paddle l'écrivent
+	 * (`paddle.ts`). Les trois qui ferment le palier — `past_due`, `paused`,
+	 * `canceled` — n'avaient AUCUN affichage avant cette tranche : la section
+	 * rendait `null` et montrait les offres comme à un visiteur. La salle les
+	 * porte maintenant, parce que c'est là qu'on les regarde.
+	 */
+	readonly statutPaddle?: 'active' | 'trialing' | 'past_due' | 'paused' | 'canceled';
 }
 
 /**
@@ -180,12 +188,20 @@ const FACTURATION_DEMO: FacturationDemo = {
  */
 function planEffectif(facturation: FacturationDemo) {
 	if (!facturation.clePaddle) return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
+
+	// `active` et `trialing` seuls ouvrent le palier souscrit. Les trois autres
+	// tombent plus bas, exactement comme `resolveEffectivePlan` les fait tomber.
+	if (facturation.statutPaddle === 'active' || facturation.statutPaddle === 'trialing') {
+		return { tier: 'procedures', isDev: false, seatsAllowed: 3 };
+	}
+
 	if (facturation.essaiJusquAu > Date.now()) {
 		return { tier: 'procedures', isDev: false, seatsAllowed: 3 };
 	}
-	throw new Error(
-		'Démonstration incomplète : cette forme termine l’essai, et la salle ne reproduit pas le plan qui suit.'
-	);
+
+	// `PLAN_SEATS.none` vaut zéro : plus une seule invitation possible, et c'est
+	// le seul verrou du palier fermé qui soit réellement appliqué aujourd'hui.
+	return { tier: 'none', isDev: false, seatsAllowed: 0 };
 }
 
 /**
@@ -204,7 +220,7 @@ function abonnementDe(facturation: FacturationDemo): AbonnementAffiche {
 		facturesParAn: facturation.facturesParAn ?? null,
 		tarifs: TARIFS[palier],
 		seatsAllowed,
-		paddleStatus: null,
+		paddleStatus: facturation.statutPaddle ?? null,
 		paddleConfigure: facturation.clePaddle,
 		essaiFiniLe: facturation.essaiJusquAu > Date.now() ? facturation.essaiJusquAu : null
 	};
@@ -291,12 +307,16 @@ function compteConnecte(membres: readonly MembreEquipe[]): MembreEquipe {
  * que `getBillingStatus` résout par `resolveEffectivePlan`, comme l'état
  * d'abonnement : sans clé Paddle, celles du plan de développement.
  */
-function equipeDe(membres: readonly MembreEquipe[], facturation: FacturationDemo): EquipeAffichee {
+function equipeDe(
+	membres: readonly MembreEquipe[],
+	facturation: FacturationDemo,
+	invitations: readonly InvitationEnAttente[] = INVITATIONS
+): EquipeAffichee {
 	const estAdmin = compteConnecte(membres).role === 'ORG_ADMIN';
 
 	return {
 		membres,
-		invitations: estAdmin ? INVITATIONS : [],
+		invitations: estAdmin ? invitations : [],
 		estAdmin,
 		siegesUtilises: membres.length,
 		siegesAutorises: planEffectif(facturation).seatsAllowed,
@@ -319,6 +339,15 @@ interface ContenuDemo {
 	readonly factures: number;
 	readonly decomptes: number;
 	readonly debiteurs: number;
+	/**
+	 * Les quatre catégories que l'inventaire a longtemps comptées sans les
+	 * montrer. Elles sont ici pour que la salle les VOIE : un inventaire RGPD
+	 * qui sous-déclare ne se rattrape pas par un test.
+	 */
+	readonly journal: number;
+	readonly conversations: number;
+	readonly propositions: number;
+	readonly remisesAuConseil: number;
 }
 
 /**
@@ -326,14 +355,27 @@ interface ContenuDemo {
  * lisant les lignes de chaque table. Aucune fonction de la salle ne produit ces
  * lignes : les nombres restent écrits.
  */
-const CONTENU_DEMO: ContenuDemo = { depots: 3, factures: 312, decomptes: 2, debiteurs: 47 };
+const CONTENU_DEMO: ContenuDemo = {
+	depots: 3,
+	factures: 312,
+	decomptes: 2,
+	debiteurs: 47,
+	journal: 184,
+	conversations: 26,
+	propositions: 61,
+	remisesAuConseil: 1
+};
 
 /** Un établissement qui vient d'être créé : rien d'importé, d'enregistré, d'identifié ni d'arrêté. */
 const CONTENU_NOUVEAU_CLIENT_DEMO: ContenuDemo = {
 	depots: 0,
 	factures: 0,
 	decomptes: 0,
-	debiteurs: 0
+	debiteurs: 0,
+	journal: 0,
+	conversations: 0,
+	propositions: 0,
+	remisesAuConseil: 0
 };
 
 /** Les règlements enregistrés : l'inventaire ne les compte pas, l'export les écrit un par un. */
@@ -358,6 +400,10 @@ function apercuDe(membres: readonly MembreEquipe[], contenu: ContenuDemo): Aperc
 		factures: contenu.factures,
 		decomptes: contenu.decomptes,
 		debiteurs: contenu.debiteurs,
+		journal: contenu.journal,
+		conversations: contenu.conversations,
+		propositions: contenu.propositions,
+		remisesAuConseil: contenu.remisesAuConseil,
 		membres: membres.length
 	};
 }
@@ -431,6 +477,14 @@ interface FormeCompte {
 	readonly carnet: readonly FicheIntervenant[];
 	/** Vrai quand les quatre sections qui ne retiennent pas la page se lisent encore. */
 	readonly enLecture: boolean;
+	/**
+	 * Les établissements joignables. À un seul, l'en-tête n'ouvre aucune pilule
+	 * de changement — ce qui est le cas de l'immense majorité des comptes, et
+	 * donc celui qu'on regarde par défaut.
+	 */
+	readonly etablissements: readonly { readonly id: string; readonly nom: string }[];
+	/** Les invitations en attente : c'est l'un des trois faits qui pressent. */
+	readonly invitations: readonly InvitationEnAttente[];
 }
 
 const COMPTE_DEMO: FormeCompte = {
@@ -440,7 +494,9 @@ const COMPTE_DEMO: FormeCompte = {
 	contenu: CONTENU_DEMO,
 	fichier: null,
 	carnet: CARNET_DEMO,
-	enLecture: false
+	enLecture: false,
+	etablissements: [{ id: ORGANISATION_DEMO._id, nom: ORGANISATION_DEMO.name }],
+	invitations: INVITATIONS
 };
 
 /**
@@ -467,7 +523,63 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 	'nouveau client': { ...COMPTE_DEMO, contenu: CONTENU_NOUVEAU_CLIENT_DEMO },
 	'export prêt': { ...COMPTE_DEMO, fichier: FICHIER_DEMO },
 	'carnet vide': { ...COMPTE_DEMO, carnet: [] },
-	'sections en lecture': { ...COMPTE_DEMO, enLecture: true }
+	'sections en lecture': { ...COMPTE_DEMO, enLecture: true },
+
+	/*
+	  ── LES TROIS FORMES AJOUTÉES AVEC LE REPLI DES SECTIONS ─────────────────
+
+	  Elles existent parce qu'une section repliée doit montrer ce qui presse SANS
+	  qu'on l'ouvre : ce sont les trois seuls états de la page qui le mettent à
+	  l'épreuve, et aucun n'était regardable.
+	*/
+
+	/** Un abonnement dont le dernier paiement a échoué : le palier retombe, et l'écran le disait NULLE PART. */
+	'paiement échoué': {
+		...COMPTE_DEMO,
+		profil: PROFIL_ENREGISTRE_DEMO,
+		facturation: {
+			...FACTURATION_DEMO,
+			clePaddle: true,
+			// L'essai est terminé : sans ça, il couvrirait le palier et la
+			// fermeture ne se verrait pas.
+			essaiJusquAu: Date.now() - 40 * 24 * 60 * 60 * 1000,
+			statutPaddle: 'past_due'
+		}
+	},
+
+	/** Un essai qui se termine dans deux jours : le bandeau doit le nommer, et la rangée repliée le porter. */
+	'essai qui se termine': {
+		...COMPTE_DEMO,
+		profil: PROFIL_ENREGISTRE_DEMO,
+		facturation: {
+			...FACTURATION_DEMO,
+			clePaddle: true,
+			essaiJusquAu: Date.now() + 2 * 24 * 60 * 60 * 1000
+		}
+	},
+
+	/** Trois établissements : c'est la seule forme où la pilule de changement s'ouvre. */
+	'plusieurs établissements': {
+		...COMPTE_DEMO,
+		etablissements: [
+			{ id: ORGANISATION_DEMO._id, nom: ORGANISATION_DEMO.name },
+			{ id: 'demo-etablissement-2', nom: 'Thumbbb Distribution Sud' },
+			{ id: 'demo-etablissement-3', nom: 'Thumbbb Logistique' }
+		]
+	},
+
+	/**
+	 * Tout est en ordre : profil renseigné, abonnement actif, aucune invitation,
+	 * aucune adresse en souffrance. Le bandeau « Ce qui presse » ne doit alors
+	 * rien rendre du tout — pas un cadran à zéro, pas une carte vide.
+	 */
+	'rien ne presse': {
+		...COMPTE_DEMO,
+		profil: PROFIL_ENREGISTRE_DEMO,
+		membres: MEMBRES.map((membre) => ({ ...membre, adresseVerifiee: true })),
+		invitations: [],
+		facturation: { ...FACTURATION_DEMO, clePaddle: true, statutPaddle: 'active' }
+	}
 };
 
 /**
@@ -539,6 +651,19 @@ function compteDe(forme: FormeCompte, theme: Theme, onChoisirTheme: (t: Theme) =
 
 	return {
 		etablissement: ETABLISSEMENT_AFFICHE_DEMO,
+		/*
+		  L'identité de l'en-tête, composée comme la route la compose : le critère
+		  de complétude est le SIREN, celui que `/app/index.tsx` et `ceQuiManque`
+		  emploient déjà. La salle n'en invente pas un second.
+		*/
+		identite: {
+			nom: ORGANISATION_DEMO.name,
+			siren: forme.profil?.siren ?? null,
+			profilComplet: forme.profil !== null && forme.profil.siren !== undefined
+		},
+		etablissements: forme.etablissements,
+		courantId: ORGANISATION_DEMO._id,
+		onBasculer: () => undefined,
 		creancier: {
 			cle: ORGANISATION_DEMO._id,
 			nomEtablissement: ORGANISATION_DEMO.name,
@@ -560,7 +685,10 @@ function compteDe(forme: FormeCompte, theme: Theme, onChoisirTheme: (t: Theme) =
 		abonnement,
 		equipe: forme.enLecture
 			? attente
-			: ({ etat: 'pret', valeur: equipeDe(forme.membres, forme.facturation) } as const),
+			: ({
+					etat: 'pret',
+					valeur: equipeDe(forme.membres, forme.facturation, forme.invitations)
+				} as const),
 		donnees: forme.enLecture
 			? attente
 			: ({
@@ -592,6 +720,15 @@ function compteSansEtablissement(theme: Theme, onChoisirTheme: (t: Theme) => voi
 	return {
 		...base,
 		etablissement: null,
+		/*
+		  ⚠️ SANS ÉTABLISSEMENT, L'EN-TÊTE N'A PLUS D'IDENTITÉ À PORTER, et il le
+		  DIT plutôt que d'afficher un nom vide. La déconnexion, elle, reste sur la
+		  pilule : une application dont on ne peut pas sortir n'est pas une
+		  simplification, et c'est précisément l'état où l'on veut en sortir.
+		*/
+		identite: null,
+		etablissements: [],
+		courantId: null,
 		abonnement: { etat: 'pret', valeur: null },
 		donnees: {
 			etat: 'pret',
