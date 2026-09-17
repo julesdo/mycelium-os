@@ -217,3 +217,15 @@ export {
 	type RangDuDossier
 } from './dossier';
 export { CeQuiEstDu } from './ce-qui-est-du';
+
+/* ── CE QUE LES DÉCOMPTES LAISSENT DE CÔTÉ (rebranche/abandons) ────────────
+ *
+ * Le contrôle de complétude, à l'échelle de l'établissement : ce qu'un décompte
+ * déjà arrêté ne chiffrerait pas, et que l'acte qu'il fonde ne couvrirait donc
+ * pas. Il complète « Ce qui est dû » par l'autre bout, et porte sa propre
+ * lecture — voir l'en-tête du fichier. */
+export {
+	CeQueLesDecomptesLaissentDeCote,
+	type AbandonAffiche,
+	type AbandonsAffiches
+} from './abandons-etablissement';

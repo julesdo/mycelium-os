@@ -1,6 +1,11 @@
 import { depuisCentimes, enCentimes } from '../../lib/socle/montants';
 import { ajouterJours } from '../../lib/verticales/recouvrement/calendrier';
-import type { PeriodeDeTaux, Reglement } from '../../lib/verticales/recouvrement/decompte';
+import { controlerDecompte } from '../../lib/verticales/recouvrement/controle';
+import {
+	decompterCreance,
+	type PeriodeDeTaux,
+	type Reglement
+} from '../../lib/verticales/recouvrement/decompte';
 import {
 	prescriptionDe,
 	type SecteurCreance
@@ -12,7 +17,7 @@ import {
 	reveler,
 	type FacturePourRevelation
 } from '../../lib/verticales/recouvrement/revelation';
-import type { BilanPertesAffiche, RevelationAffichee } from '../../ui';
+import type { AbandonsAffiches, BilanPertesAffiche, RevelationAffichee } from '../../ui';
 import { MEMBRES } from './compte';
 
 /**
@@ -247,3 +252,136 @@ export const REVELATION_SANS_FACTURE_DEMO: RevelationAffichee = revelationDe([])
 
 /** Le bilan du même établissement : rien d'éteint, rien d'échappé. */
 export const BILAN_SANS_FACTURE_DEMO: BilanPertesAffiche = bilanDe([]);
+
+/* ═════════════════════════════════════════════════════════════════════════
+   CE QUE LES DÉCOMPTES LAISSENT DE CÔTÉ, CALCULÉ PAR LE DOMAINE AUSSI
+   ═════════════════════════════════════════════════════════════════════════
+
+   ⚠️ RIEN N'EST ÉCRIT À LA MAIN ICI NON PLUS. Les abandons sortent de
+   `controlerDecompte` — la MÊME fonction que `abandonsDeLEtablissement`
+   rejoue sur le dernier décompte de chaque créance — appliquée à des
+   décomptes que `decompterCreance` produit sur les factures déclarées plus
+   haut. La salle ne fournit que ce qu'un établissement fournit : des
+   décomptes arrêtés, et ce qu'on sait par ailleurs des factures du client.
+
+   ⚠️ `parametresRequis` N'EST PAS PASSÉ, exactement comme au serveur : la
+   nature `PARAMETRE_MANQUANT` ne peut donc pas se produire, ni en
+   démonstration ni en production. La salle ne montre pas un verrou qui
+   n'existe pas encore. */
+
+/** Les identifiants de décompte de la salle. Ils mènent à `/app/decompte/$id`. */
+const DECOMPTE_ECARTS_DEMO = 'decompte-demo-ecarts';
+const DECOMPTE_INTERETS_DEMO = 'decompte-demo-interets';
+
+/** Ce qu'on sait par ailleurs des factures d'un client : référence et montant exigible. */
+function connues(references: readonly string[]) {
+	return FACTURES_PREPAREES_DEMO.filter((facture) => references.includes(facture.reference)).map(
+		(facture) => ({ reference: facture.reference, montantExigible: facture.montantExigible })
+	);
+}
+
+/** Les factures prêtes, choisies par référence, pour un décompte. */
+function pourDecompte(references: readonly string[]) {
+	return FACTURES_PREPAREES_DEMO.filter((facture) => references.includes(facture.reference));
+}
+
+/**
+ * PREMIER DÉCOMPTE : UN SEUL IMPAYÉ ARRÊTÉ, QUATRE AUTRES CONNUS ET DEHORS.
+ *
+ * Le cas le plus fréquent et le plus silencieux : le gérant arrête un décompte
+ * sur la facture qui lui vient à l'esprit, et les quatre autres du même client
+ * ne figurent nulle part dans l'acte qu'il fonderait.
+ */
+const CONTROLE_ECARTS_DEMO = controlerDecompte({
+	decompte: decompterCreance(pourDecompte(['FA-2023-0388']), ARRETE_AU_DEMO, CONVENTION),
+	facturesConnues: connues(FACTURES_DEMO.map((facture) => facture.reference))
+});
+
+/**
+ * SECOND DÉCOMPTE : DES INTÉRÊTS QUE SES PROPRES PÉRIODES NE JUSTIFIENT PLUS.
+ *
+ * ⚠️ LE DÉCALAGE EST ARBITRAIRE, ET IL N'A RIEN DE JURIDIQUE. Un décompte figé
+ * porte ses segments ; le jour où un total et ses périodes cessent de
+ * concorder, l'écart est un accident, pas une règle. La salle en fabrique un
+ * pour que le regard voie cette nature-là — c'est la seule dont l'explication
+ * s'affiche, parce qu'elle porte deux chiffres qu'aucune rangée ne montre.
+ */
+const DECOMPTE_DERIVE_DEMO = decompterCreance(
+	pourDecompte(['FA-2025-0602']),
+	ARRETE_AU_DEMO,
+	CONVENTION
+);
+const CONTROLE_INTERETS_DEMO = controlerDecompte({
+	decompte: {
+		...DECOMPTE_DERIVE_DEMO,
+		lignes: DECOMPTE_DERIVE_DEMO.lignes.map((ligne) => ({
+			...ligne,
+			interets: depuisCentimes(enCentimes(ligne.interets) + 4_512n)
+		}))
+	},
+	facturesConnues: connues(['FA-2025-0602'])
+});
+
+/** Le nom du client, tel que le décompte le fige (`decompte.debiteur.denomination`). */
+const CLIENT_DEMO = 'Transports Vallier & Fils';
+const AUTRE_CLIENT_DEMO = 'Ateliers Brunet';
+
+/** Les points d'un contrôle, dans la forme que `abandonsDeLEtablissement` rend. */
+function pointsDe(
+	controle: ReturnType<typeof controlerDecompte>,
+	decompteId: string,
+	debiteur: string
+) {
+	return controle.abandons.map((abandon) => ({
+		decompteId,
+		debiteur,
+		arreteAu: ARRETE_AU_DEMO,
+		nature: abandon.nature,
+		reference: abandon.reference,
+		montantEnJeu: abandon.montantEnJeu === null ? null : enCentimes(abandon.montantEnJeu),
+		explication: abandon.explication
+	}));
+}
+
+/**
+ * CE QUE LES DÉCOMPTES DE LA SALLE LAISSENT DEHORS.
+ *
+ * L'ordre est celui du serveur : le plus cher d'abord, ce qu'on ne sait pas
+ * chiffrer en dernier (`convex/recouvrement/controle.ts`, le tri final).
+ */
+export const ABANDONS_DEMO: AbandonsAffiches = {
+	abandons: [
+		...pointsDe(CONTROLE_ECARTS_DEMO, DECOMPTE_ECARTS_DEMO, CLIENT_DEMO),
+		...pointsDe(CONTROLE_INTERETS_DEMO, DECOMPTE_INTERETS_DEMO, AUTRE_CLIENT_DEMO)
+	].sort((a, b) => {
+		if (a.montantEnJeu === null) return b.montantEnJeu === null ? 0 : 1;
+		if (b.montantEnJeu === null) return -1;
+		return a.montantEnJeu > b.montantEnJeu ? -1 : a.montantEnJeu < b.montantEnJeu ? 1 : 0;
+	}),
+	montantAbandonne: enCentimes(CONTROLE_ECARTS_DEMO.montantAbandonne) +
+		enCentimes(CONTROLE_INTERETS_DEMO.montantAbandonne),
+	nombreNonChiffrables: [
+		...CONTROLE_ECARTS_DEMO.abandons,
+		...CONTROLE_INTERETS_DEMO.abandons
+	].filter((abandon) => abandon.montantEnJeu === null).length,
+	decomptesControles: 3,
+	decomptesIncomplets: 2
+};
+
+/** Deux décomptes arrêtés, complets tous les deux : le constat qui rassure. */
+export const ABANDONS_AUCUN_DEMO: AbandonsAffiches = {
+	abandons: [],
+	montantAbandonne: 0n,
+	nombreNonChiffrables: 0,
+	decomptesControles: 2,
+	decomptesIncomplets: 0
+};
+
+/** Aucun décompte arrêté : pas de sujet, donc pas de section du tout. */
+export const ABANDONS_SANS_DECOMPTE_DEMO: AbandonsAffiches = {
+	abandons: [],
+	montantAbandonne: 0n,
+	nombreNonChiffrables: 0,
+	decomptesControles: 0,
+	decomptesIncomplets: 0
+};
