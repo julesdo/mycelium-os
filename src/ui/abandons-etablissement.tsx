@@ -200,6 +200,25 @@ function CarteDuDecompte({ groupe }: { groupe: GroupeParDecompte }) {
 }
 
 /**
+ * LE SUJET DES DEUX PHRASES DE TÊTE, ACCORDÉ.
+ *
+ * ⚠️ ÉCRIT UNE FOIS, ET PAS BRICOLÉ À COUPS DE `pluriel()` DANS LE JSX. Ces
+ * phrases parlent d'un nombre de décomptes ET du nombre de clients derrière :
+ * « vos 3 décomptes arrêtés … de leur client » se lit comme si les trois
+ * appartenaient au même. Le produit soigne ses chiffres ; une phrase fausse
+ * autour d'eux les décrédibilise aussi sûrement qu'un total faux.
+ */
+function sujetDesDecomptes(nombre: number): {
+	sujet: string;
+	porte: string;
+	possessif: string;
+} {
+	return nombre > 1
+		? { sujet: `Vos ${nombre} décomptes arrêtés`, porte: 'portent', possessif: 'leurs clients' }
+		: { sujet: 'Votre décompte arrêté', porte: 'porte', possessif: 'son client' };
+}
+
+/**
  * CE QUE LE CONTRÔLE A TROUVÉ.
  *
  * ⚠️ ZÉRO N'EST PAS UN CADRAN VIDE (règle d'écran n° 4). Un établissement dont
@@ -209,26 +228,31 @@ function CarteDuDecompte({ groupe }: { groupe: GroupeParDecompte }) {
 function ConstatDuControle({ valeur }: { valeur: AbandonsAffiches }) {
 	const { abandons, montantAbandonne, nombreNonChiffrables, decomptesControles } = valeur;
 	const incomplets = valeur.decomptesIncomplets;
+	const tous = sujetDesDecomptes(decomptesControles);
 
 	if (abandons.length === 0) {
 		return (
 			<p className="px-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Vos {decomptesControles} décompte{pluriel(decomptesControles)} arrêté
-				{pluriel(decomptesControles)} porte{decomptesControles > 1 ? 'nt' : ''} toutes les factures
-				connues de leur client : aucune somme n’en est écartée. Le contrôle vient d’être refait,
-				contre les factures d’aujourd’hui.
+				{tous.sujet} {tous.porte} toutes les factures connues de {tous.possessif} : aucune somme
+				n’en est écartée. Le contrôle vient d’être refait, contre les factures d’aujourd’hui.
 			</p>
 		);
 	}
+
+	// « 1 de vos 1 décompte » ne s'écrit pas : quand tout l'établissement tient
+	// en un décompte, la phrase le nomme au singulier et se passe de fraction.
+	const vises = sujetDesDecomptes(incomplets);
+	const tete =
+		decomptesControles > 1
+			? `${incomplets} de vos ${decomptesControles} décomptes arrêtés ne ${incomplets > 1 ? 'portent' : 'porte'} pas tout ce qui est connu de ${vises.possessif}.`
+			: 'Votre seul décompte arrêté ne porte pas tout ce qui est connu de son client.';
 
 	return (
 		<>
 			<p className="flex items-start gap-1.5 px-1 text-cladd-xs leading-relaxed text-cladd-fg">
 				<AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
 				<span>
-					{incomplets} de vos {decomptesControles} décompte{pluriel(decomptesControles)} arrêté
-					{pluriel(decomptesControles)} ne porte{incomplets > 1 ? 'nt' : ''} pas tout ce qui est
-					connu de leur client.{' '}
+					{tete}{' '}
 					<span className="font-semibold tabular-nums">{eurosCentimes(montantAbandonne)}</span> n’y
 					sont pas chiffrés, et ce qu’un acte ne chiffre pas ne pourra plus être réclamé au titre de
 					cette procédure.
@@ -241,10 +265,10 @@ function ConstatDuControle({ valeur }: { valeur: AbandonsAffiches }) {
 
 			{nombreNonChiffrables > 0 ? (
 				<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-					{nombreNonChiffrables} de ces point{pluriel(nombreNonChiffrables)} ne se chiffre
-					{nombreNonChiffrables > 1 ? 'nt' : ''} pas, et n’entre
-					{nombreNonChiffrables > 1 ? 'nt' : ''} donc pas dans le total : les fondre dedans ferait
-					passer un abandon qu’on ne sait pas chiffrer pour un abandon de zéro euro.
+					{nombreNonChiffrables} de ces points ne se
+					{nombreNonChiffrables > 1 ? ' chiffrent' : ' chiffre'} pas, et n’
+					{nombreNonChiffrables > 1 ? 'entrent' : 'entre'} donc pas dans le total : les fondre
+					dedans ferait passer un abandon qu’on ne sait pas chiffrer pour un abandon de zéro euro.
 				</p>
 			) : null}
 		</>
