@@ -17,11 +17,37 @@ function DepotEnErreur() {
 	return <EcranDepot donnees={{ etat: 'erreur' }} />;
 }
 
-/** Le bilan d'un dépôt, branché sur la base ; le dessin vit dans `screens/import/depot.tsx`. */
+/** Le bilan d'un dépôt, branché sur la base ; le dessin vit dans `screens/import/`. */
 function PageDepot() {
 	const { id } = Route.useParams();
 	const importId = id as Id<'importsRecouvrement'>;
 	const depot = useQuery(api.recouvrement.depotMutations.suivreImport, { importId });
+
+	/**
+	 * LA DATE DE DÉPÔT, LUE SUR LA LISTE.
+	 *
+	 * ⚠️ `suivreImport` NE LA REND PAS, et cette page en a besoin pour une seule
+	 * chose : dire depuis combien de temps une lecture n'a rien écrit. C'est le
+	 * seul état du produit qui pouvait durer indéfiniment sans se distinguer
+	 * d'un état normal — la tâche de lecture peut tomber entre son étape et son
+	 * bilan, et plus rien ne la reprend.
+	 *
+	 * ⚠️ AUCUNE REQUÊTE DE PLUS EN PRATIQUE. `listerImports` est déjà souscrite
+	 * par la route parente, qui reste montée ; Convex partage une souscription
+	 * identique au lieu de la doubler.
+	 *
+	 * ⚠️ ET ELLE SE FABRIQUE ENCORE MOINS QU'AVANT. `Date.now()` afficherait la
+	 * date du JOUR sur un dépôt de l'an dernier. Absente — un dépôt plus ancien
+	 * que les vingt derniers — l'écran ne dit simplement rien sur l'ancienneté :
+	 * il ne devine pas.
+	 *
+	 * Un dépôt terminé ou échoué n'en a aucun besoin : rien ne l'attend plus.
+	 */
+	const recents = useQuery(
+		api.recouvrement.depotMutations.listerImports,
+		depot !== undefined && depot.statut !== 'TERMINE' && depot.statut !== 'ECHOUE' ? {} : 'skip'
+	);
+	const deposeLe = recents?.find((ligne) => ligne._id === importId)?.deposeLe;
 
 	return (
 		<EcranDepot
@@ -36,10 +62,8 @@ function PageDepot() {
 								statut: depot.statut,
 								etape: depot.etape,
 								erreur: depot.erreur,
-								// ⚠️ PAS DE DATE DE DÉPÔT. Le suivi ne la rend pas : elle est déjà
-								// sur la rangée d'où l'on vient. La fabriquer avec `Date.now()`
-								// aurait affiché la date du JOUR sur un dépôt de l'an dernier.
-								bilan: depot.bilan
+								bilan: depot.bilan,
+								deposeLe
 							}
 						}
 			}
