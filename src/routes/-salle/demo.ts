@@ -15,6 +15,21 @@ export interface EcranDuProduit {
 	 * au lieu d'attendre la barrière de la salle.
 	 */
 	readonly route: Extract<RouteIds<RegisteredRouter['routeTree']>, `/app/${string}`>;
+	/**
+	 * L'IDENTITÉ DE L'ENTRÉE DANS LA SALLE, quand la route ne suffit pas.
+	 *
+	 * ⚠️ DEUX ÉCRANS PEUVENT VISER LA MÊME ADRESSE PENDANT UNE BASCULE, et c'est
+	 * exactement l'état du lot 2 : la file REMPLACE l'accueil à `/app/`, mais la
+	 * bascule est une tâche séparée et volontairement révocable (T15). Les deux
+	 * cohabitent donc dans la salle le temps qu'on les regarde côte à côte — ce
+	 * qui est même la seule façon de vérifier au regard que la file rend ce que
+	 * l'accueil rendait.
+	 *
+	 * Sans clé, la seconde entrée serait injoignable : la salle choisit par
+	 * `route` et ne rendrait jamais que la première. Absente, l'identité reste la
+	 * route, et rien ne change pour les vingt-sept autres.
+	 */
+	readonly cle?: string;
 	readonly libelle: string;
 	/** Vrai si l'écran a une forme vide à regarder. Voir `lectureDemo`. */
 	readonly vide: boolean;
@@ -79,4 +94,16 @@ export function formeDemo<T>(
 	if (forme === undefined)
 		throw new Error(`Démonstration incomplète : aucune variante « ${variante} ».`);
 	return forme;
+}
+
+/**
+ * Ce qui identifie une entrée dans la salle : sa clé, ou sa route à défaut.
+ *
+ * Écrit une fois, parce que la salle s'en sert à quatre endroits — la sélection
+ * initiale, la recherche de l'entrée choisie, la clé React de son bouton et
+ * celle de sa démonstration — et qu'un seul oubli rendrait une entrée
+ * injoignable sans qu'aucun test ne tombe.
+ */
+export function cleDeLEcran(ecran: EcranDuProduit): string {
+	return ecran.cle ?? ecran.route;
 }
