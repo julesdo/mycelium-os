@@ -91,6 +91,14 @@ describe('le refus du plafond', () => {
 		expect(refus!.constat).toMatch(/jamais une facture/i);
 	});
 
+	it('écrit le cumul à la française, virgule comprise', () => {
+		// L'interface est en français, et « 30.00 » au milieu d'une phrase
+		// française se lit comme une sortie de machine — sur la seule ligne du
+		// produit qui doive convaincre que ce chiffre n'est pas une facture.
+		expect(refus!.constat).toContain(`${ARRET_MENSUEL.toFixed(2).replace('.', ',')}`);
+		expect(refus!.constat).not.toMatch(/\d\.\d\d/);
+	});
+
 	it('dit ce qui le lève au CONSTAT, jamais à l’impératif', () => {
 		// « ce verrou se lève par… », pas « attendez le mois prochain ».
 		expect(refus!.blocages.join(' ')).toMatch(/se lève/i);

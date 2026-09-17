@@ -155,8 +155,17 @@ function PastilleDeSource({ phrase }: { phrase: PhraseAffichee }) {
 		);
 	}
 
+	// ⚠️ `self-start`, SINON LA PASTILLE PREND TOUTE LA COLONNE. Le parent est un
+	// `flex-col` : un bouton y est étiré sur la largeur, et une source large de
+	// 410 px se lit comme une barre d'action, pas comme une citation.
 	return (
-		<Button size="md" variant="transparent" outline={false} onClick={phrase.onOuvrirSource}>
+		<Button
+			size="md"
+			variant="transparent"
+			outline={false}
+			className="self-start"
+			onClick={phrase.onOuvrirSource}
+		>
 			<Chip size="md" color="neutral">
 				{phrase.libelleSource}
 			</Chip>

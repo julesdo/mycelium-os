@@ -96,9 +96,16 @@ export function evaluerPlafond(cumul: number): EtatPlafond {
 	return { niveau: 'OUVERT', cumul, reste, refus: null };
 }
 
-/** Le cumul en toutes lettres, à deux décimales, avec son unité déclarée. */
+/**
+ * Le cumul en toutes lettres, à deux décimales, avec son unité déclarée.
+ *
+ * ⚠️ LA VIRGULE, PAS LE POINT. L'interface est en français, et « 30.00 » au
+ * milieu d'une phrase française se lit comme une sortie de machine — sur la
+ * seule ligne du produit qui doive convaincre que ce chiffre est un budget de
+ * pilotage et pas une facture.
+ */
 function budget(valeur: number): string {
-	return `${valeur.toFixed(2)} (budget de pilotage, jamais une facture)`;
+	return `${valeur.toFixed(2).replace('.', ',')} (budget de pilotage, jamais une facture)`;
 }
 
 /**

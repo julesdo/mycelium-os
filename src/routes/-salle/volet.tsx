@@ -535,7 +535,7 @@ function toursDemo(): readonly TourAffiche[] {
 			role: 'GERANT',
 			phrases: [
 				{
-					texte: 'Pourquoi l’indemnité forfaitaire est-elle comptée trois fois ?',
+					texte: `Pourquoi l’indemnité forfaitaire est-elle comptée ${FACTURES_DEMO.length} fois ?`,
 					genreSource: 'AUCUNE',
 					libelleSource: ''
 				}
@@ -547,8 +547,11 @@ function toursDemo(): readonly TourAffiche[] {
 			role: 'COMPAGNON',
 			phrases: [
 				{
-					texte:
-						'L’indemnité forfaitaire est due par facture en retard, et cette créance en porte trois.',
+					// ⚠️ LE COMPTE VIENT DES FACTURES DE LA DÉMONSTRATION, PAS D'UN MOT
+					// ÉCRIT. Une phrase du compagnon qui dirait « trois » au-dessus d'un
+					// décompte qui en chiffre deux ferait regarder, aux quatre largeurs,
+					// exactement ce que les pastilles existent pour empêcher.
+					texte: `L’indemnité forfaitaire est due par facture en retard, et cette créance en porte ${FACTURES_DEMO.length}.`,
 					genreSource: 'PARAMETRE',
 					libelleSource: 'indemniteForfaitaire',
 					onOuvrirSource: () => undefined
