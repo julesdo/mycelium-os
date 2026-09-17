@@ -415,11 +415,34 @@ export interface FileAffichee {
 	readonly palette?: ReactNode;
 }
 
-const ENTETE_FILE = { genre: 'aucun', titre: 'Aujourd’hui' } as const;
+/**
+ * ⚠️ `onglet`, ET PLUS `aucun` — LE REGARD AU NAVIGATEUR L'A IMPOSÉ.
+ *
+ * L'écran se rendait sans en-tête, et sa rangée d'outils défilait avec la
+ * liste. Deux défauts en sont sortis, mesurés :
+ *
+ *   · `PageEcran` dégage 64 px en haut de l'ATTENTE et de l'ERREUR quand l'écran
+ *     n'a pas d'en-tête, et rien du tout quand il est prêt. Le contenu
+ *     descendait puis remontait de 48 px à chaque chargement — le genre de saut
+ *     qu'aucun test ne voit ;
+ *   · la recherche, le dépôt, le veilleur et le compte partaient vers le haut
+ *     dès la deuxième rangée lue. Sur un écran qui porte cent cinquante rangées,
+ *     c'est-à-dire : introuvables.
+ *
+ * Un en-tête d'onglet règle les deux — il ne défile pas, et il pose le même
+ * rythme haut que `/app/creance/$id` et `/app/debiteurs/$id`, qui sont les
+ * écrans d'à côté dans la barre du bas.
+ *
+ * ⚠️ ET IL NOMME L'ÉCRAN, comme l'onglet qui y mène. C'est l'idiome relevé
+ * (Asana, Attio) : la barre dit où l'on est allé, le titre dit où l'on est.
+ */
+const TITRE_FILE = 'Aujourd’hui';
 
 export function EcranFile({ donnees }: { donnees: Lecture<FileAffichee> }) {
 	if (donnees.etat !== 'pret') {
-		return <PageEcran entete={ENTETE_FILE} etat={donnees.etat} />;
+		return (
+			<PageEcran entete={{ genre: 'onglet', titre: TITRE_FILE }} etat={donnees.etat} />
+		);
 	}
 
 	return <FilePrete valeur={donnees.valeur} />;
@@ -506,20 +529,26 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	const debute = tete.nombreFactures === 0 && rangees.length === 0;
 
 	return (
-		<PageEcran entete={ENTETE_FILE}>
-			<RangeeDuHaut
-				selecteur={selecteur}
-				palette={palette}
-				veilleur={veilleur}
-				avatar={avatar}
-				depotOuvert={depotOuvert}
-				onDepot={() => setDepotOuvert(!depotOuvert)}
-				/* Le premier jour, la zone de dépôt est déjà en grand au milieu de
-				   l'écran : un second bouton qui ouvre ce qui est déjà ouvert se lit
-				   comme une panne. */
-				avecDepot={!debute}
-			/>
-
+		<PageEcran
+			entete={{
+				genre: 'onglet',
+				titre: TITRE_FILE,
+				actions: (
+					<RangeeDuHaut
+						selecteur={selecteur}
+						palette={palette}
+						veilleur={veilleur}
+						avatar={avatar}
+						depotOuvert={depotOuvert}
+						onDepot={() => setDepotOuvert(!depotOuvert)}
+						/* Le premier jour, la zone de dépôt est déjà en grand au milieu de
+						   l'écran : un second bouton qui ouvre ce qui est déjà ouvert se lit
+						   comme une panne. */
+						avecDepot={!debute}
+					/>
+				)
+			}}
+		>
 			{debute ? (
 				<>
 					<FileVide onFichiers={onFichiers} accepteFichiers={accepteFichiers} />
@@ -639,7 +668,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * UNE SEULE RANGÉE EN HAUT, ET DES BOUTONS RONDS.
+ * LES CINQ CIBLES DE L'EN-TÊTE, ET DES BOUTONS RONDS.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ CE QU'ELLE N'EST PLUS
@@ -651,10 +680,10 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
  * (`/app/debiteurs`), et ce qui reste est ce qui n'est PAS une navigation :
  * l'établissement sur lequel on travaille, et quatre gestes.
  *
- * ⚠️ L'ÉTABLISSEMENT À GAUCHE, LES GESTES À DROITE. C'est l'idiome relevé
- * (Deel, Notion, GitHub) : l'identité du contexte tient le bord gauche, les
- * gestes tiennent le bord droit, et rien entre les deux. Une rangée dont tout
- * est aligné au même bord oblige à lire chaque cible pour trouver la sienne.
+ * ⚠️ ET ELLE NE DÉFILE PLUS. Elle vit dans l'en-tête de `PageEcran`, qui reste
+ * en place pendant que la liste défile : sur un écran qui porte cent cinquante
+ * rangées, une recherche qui part vers le haut à la deuxième rangée lue est une
+ * recherche qu'on n'a plus.
  *
  * ⚠️ ET LE SÉLECTEUR EST PERMANENT, y compris sur un compte mono-site. Le
  * cloisonnement est strict par établissement, et un gérant qui reprend sa
@@ -692,17 +721,14 @@ function RangeeDuHaut({
 		  ligne. Chaque groupe étant insécable, la coupure tombe entre les deux : une
 		  ligne qui dit OÙ l'on travaille, une ligne qui porte ce qu'on peut faire.
 
-		  `ml-auto` sur les gestes : ils tiennent le bord droit sur une ligne comme
-		  sur deux. C'est l'idiome relevé (Deel, Notion, GitHub) — l'identité du
-		  contexte à gauche, les gestes à droite, et rien entre les deux.
+		  `gap-2` et non `gap-cladd-3xs` : seize pixels entre quatre boutons ronds
+		  coûtent quarante-huit pixels de rangée, soit une cible entière. Huit
+		  suffisent à les séparer, et c'est ce que fait la référence.
 		*/
-		<div className="flex flex-wrap items-center gap-2 pt-cladd-3xs">
+		<div className="flex flex-wrap items-center justify-end gap-2">
 			<div className="flex min-w-0 shrink-0 items-center gap-2">{selecteur}</div>
 
-			{/* `gap-2` et non `gap-cladd-3xs` : seize pixels entre quatre boutons ronds
-			    coûtent quarante-huit pixels de rangée, soit une cible entière. Huit
-			    suffisent à les séparer, et c'est ce que fait la référence. */}
-			<div className="ml-auto flex shrink-0 items-center gap-2">
+			<div className="flex shrink-0 items-center gap-2">
 				{palette}
 				{avecDepot ? (
 					/*

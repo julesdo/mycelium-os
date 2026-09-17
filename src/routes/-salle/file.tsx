@@ -5,7 +5,13 @@ import { DEPOT_A_ECARTS_DEMO, DEPOT_PARFAIT_DEMO } from './depots';
 import { REVELATION_DEMO, REVELATION_SANS_FACTURE_DEMO } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
-import { Avatar, DeclencheurRecherche, VeilleurDeLaToolbar } from '../../ui';
+import {
+	Avatar,
+	DeclencheurRecherche,
+	VeilleurDeLaToolbar,
+	travauxDuVeilleur,
+	type TacheVeilleur
+} from '../../ui';
 
 /**
  * « AUJOURD'HUI », DANS LA SALLE — et c'est le SEUL endroit où il est monté.
@@ -327,6 +333,54 @@ const ANGLES_MORTS_DEMO: readonly string[] = [
 ];
 
 /**
+ * LE TRAVAIL DE FOND, COMPOSÉ PAR LA FONCTION DE PRODUCTION.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ IL ÉTAIT VIDE, ET SON BLOC NE SE REGARDAIT DONC NULLE PART
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * La démonstration passait `travaux: []`, en renvoyant à « l'entrée accueil, qui
+ * la monte avec ses deux régimes ». Cette entrée est morte avec l'accueil, et
+ * `Veilleur` rend `null` sur une liste vide : le bloc n'apparaissait donc à
+ * AUCUNE largeur, dans aucune entrée de la salle — alors que la production le
+ * monte sur cet écran-ci, tous les jours. C'est le défaut que la salle existe
+ * pour attraper, et elle l'a laissé passer parce qu'on l'avait renvoyé ailleurs.
+ *
+ * ⚠️ ET C'EST `travauxDuVeilleur` QUI LE COMPOSE, pas une liste écrite à la
+ * main. Elle décide de l'ordre, des libellés et des états à partir du relevé de
+ * la nuit et des dépôts en machine : une copie ici dériverait de la vraie au
+ * premier ajout, et on regarderait un bloc que personne ne verra.
+ *
+ * Le jeu couvre les trois choses qui coexistent un matin ordinaire : un dépôt
+ * qui TOURNE (la seule ligne qui bouge sous les yeux), le relevé de la nuit, et
+ * une trouvaille non lue — rare par construction, parce que seul ce qui fait
+ * perdre un droit sans qu'on ait rien fait en produit une.
+ */
+const TRAVAUX_DEMO: readonly TacheVeilleur[] = travauxDuVeilleur({
+	battement: {
+		jour: AUJOURDHUI_DEMO,
+		statut: 'PARLE',
+		raison:
+			'198 factures lues, 17 créances entrent dans la surveillance, 1 prescription passe sous le préavis.',
+		// Un horodatage figé : l'heure affichée ne doit pas changer selon le
+		// moment où l'on regarde la salle.
+		termineLe: Date.UTC(2026, 8, 17, 3, 12)
+	},
+	depotsEnCours: [{ id: 'depot-en-machine', filename: 'FEC-2026-T3.txt', etape: 'Extraction' }],
+	trouvailles: [
+		{
+			id: 'trouvaille-durand',
+			titre: 'Prescription sous 41 jours',
+			message:
+				'Fournitures Durand : passé le 27/10/2026, 31 200,50 € ne se réclament plus.',
+			lien: '/app/creance/demo-creance-durand'
+		}
+	],
+	onLire: () => {},
+	aujourdHui: AUJOURDHUI_DEMO
+});
+
+/**
  * LES QUATRE SURFACES DE LA RANGÉE DU HAUT, SANS CONVEX.
  *
  * ═══════════════════════════════════════════════════════════════════════════
@@ -379,13 +433,7 @@ const GARNIE: FileAffichee = {
 		prescriptionSousPreavis: 3_120_050n
 	},
 	rangees: RANGEES_DEMO,
-	/**
-	 * ⚠️ LE VEILLEUR RESTE VIDE ICI, ET C'EST DÉLIBÉRÉ. Sa rangée se regarde sous
-	 * l'entrée « veilleur » de la salle, qui la monte avec ses deux régimes. La
-	 * reprendre ici ferait deux jeux de démonstration pour le même composant, et
-	 * ils divergeraient au premier ajout.
-	 */
-	travaux: [],
+	travaux: TRAVAUX_DEMO,
 	hypotheses: HYPOTHESES_DEMO,
 	anglesMorts: ANGLES_MORTS_DEMO,
 	/**
