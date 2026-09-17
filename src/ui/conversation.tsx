@@ -4,7 +4,13 @@ import { cn } from './cn';
 import { RefusEnQuatreParties } from './refus';
 
 /**
- * LA CONVERSATION — troisième position du volet de preuve (D14, D15).
+ * LA CONVERSATION — le fil d'UN dossier, en feuille sur sa page (D14, D15).
+ *
+ * ⚠️ IL N'EST PLUS UNE POSITION DE VOLET, ET C'EST TOUT CE QUI A CHANGÉ. Le
+ * volet de preuve portait trois positions empilées ; il a été supprimé, et la
+ * conversation vit désormais dans la feuille qu'ouvre la capsule flottante sur
+ * `/app/creance/$id` (`app/compagnon.tsx`). Le fil, lui, est borné au dossier
+ * exactement comme avant — c'est le serveur qui le borne, pas l'écran.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ LA CITATION EST AU GRAIN DE LA PHRASE, PAS DE LA RÉPONSE
@@ -55,8 +61,6 @@ export interface PhraseAffichee {
 	 * 04/01 », « décompte du 12/09 », « BL-77 ». Vide sur `AUCUNE`.
 	 */
 	readonly libelleSource: string;
-	/** Ouvre la source dans la position voisine du volet, quand c'est possible. */
-	readonly onOuvrirSource?: () => void;
 }
 
 /** Un tour de parole. Le gérant n'en porte qu'une phrase, et sans pastille. */
@@ -93,11 +97,19 @@ export interface CompteurConversation {
 	readonly arret: number;
 }
 
-/** Tout ce que la position Conversation montre, et ce qu'elle déclenche. */
+/** Tout ce que la feuille de conversation montre, et ce qu'elle déclenche. */
 export interface ConversationAffichee {
 	readonly tours: readonly TourAffiche[];
 	readonly compteur: CompteurConversation;
-	/** Le refus du dernier échange, quand il y en a un. */
+	/**
+	 * Le refus qui tient la place du champ de saisie : celui du dernier échange,
+	 * ou celui du plafond quand il a mordu.
+	 *
+	 * ⚠️ IL EST RENDU PAR LE DOMAINE, JAMAIS COMPOSÉ ICI. `compagnon/refus.ts`
+	 * vérifie au point de construction que les quatre parties sont là ; une
+	 * cinquième formulation écrite dans l'interface dériverait de celle-là au
+	 * premier changement de plafond.
+	 */
 	readonly refus: RefusAffiche | null;
 	/** Ce que la question a déclenché, visible sans qu'on le demande. */
 	readonly enCours: boolean;
@@ -139,37 +151,24 @@ export function moisLisible(mois: string): string {
  * et `xs` à ce qui vit DANS un conteneur plus dense.
  */
 function PastilleDeSource({ phrase }: { phrase: PhraseAffichee }) {
-	if (phrase.genreSource === 'AUCUNE') {
-		return (
-			<Chip size="md" color="neutral" className="self-start">
-				non sourcé
-			</Chip>
-		);
-	}
+	/*
+	  ⚠️ ELLE SE LIT, ELLE NE SE CLIQUE PAS, ET C'EST UN RETRAIT ASSUMÉ. La
+	  pastille portait un geste facultatif — « ouvrir la source dans la position
+	  voisine du volet » —, et la position voisine a disparu avec le volet : plus
+	  aucun appelant ne l'alimentait, et la branche qui la rendait était
+	  injoignable. Un geste déclaré, lu, et jamais alimenté est le défaut que ce
+	  dépôt a relevé quatre fois en une semaine ; on le retire plutôt que de
+	  laisser croire qu'il existe. Ce que la pastille montre reste ce qui compte :
+	  l'entrée du référentiel ou le décompte daté, en toutes lettres.
 
-	if (phrase.onOuvrirSource === undefined) {
-		return (
-			<Chip size="md" color="neutral" className="self-start">
-				{phrase.libelleSource}
-			</Chip>
-		);
-	}
-
-	// ⚠️ `self-start`, SINON LA PASTILLE PREND TOUTE LA COLONNE. Le parent est un
-	// `flex-col` : un bouton y est étiré sur la largeur, et une source large de
-	// 410 px se lit comme une barre d'action, pas comme une citation.
+	  ⚠️ `self-start`, SINON LA PASTILLE PREND TOUTE LA COLONNE. Le parent est un
+	  `flex-col` : un enfant y est étiré sur la largeur, et une source large de
+	  410 px se lit comme une barre d'action, pas comme une citation.
+	*/
 	return (
-		<Button
-			size="md"
-			variant="transparent"
-			outline={false}
-			className="self-start"
-			onClick={phrase.onOuvrirSource}
-		>
-			<Chip size="md" color="neutral">
-				{phrase.libelleSource}
-			</Chip>
-		</Button>
+		<Chip size="md" color="neutral" className="self-start">
+			{phrase.genreSource === 'AUCUNE' ? 'non sourcé' : phrase.libelleSource}
+		</Chip>
 	);
 }
 
@@ -266,7 +265,7 @@ function Avertissement({ compteur }: { compteur: CompteurConversation }) {
 }
 
 /**
- * LA POSITION CONVERSATION, EN ENTIER.
+ * LE FIL, EN ENTIER.
  *
  * ⚠️ AUCUN COMPOSANT D'ENVOI AU DÉBITEUR N'EXISTE ICI (B5). Le seul verbe est
  * « Demander », et il parle au logiciel. On ne relance jamais le débiteur au
