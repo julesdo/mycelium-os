@@ -181,3 +181,11 @@ export {
 	type RefusAffiche,
 	type TourAffiche
 } from './conversation';
+
+/* ── LA BARRE DU BAS ET LE COMPAGNON FLOTTANT (refonte/barre-et-compagnon) ──
+ *
+ * Les deux objets qui flottent au-dessus de tous les écrans de `/app`. Ils sont
+ * montés une seule fois, dans la coquille (`app/shell.tsx`), et branchés par
+ * `app/barre.tsx` et `app/compagnon.tsx` — eux ne dessinent rien. */
+export { BarreDuBas, PastilleDeRappel, type DestinationBarre } from './barre-du-bas';
+export { CompagnonFlottant, type EtatCompagnon } from './compagnon-flottant';

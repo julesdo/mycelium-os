@@ -1,4 +1,5 @@
 import type { EcranDuProduit } from './demo';
+import { ECRANS_BARRE_ET_COMPAGNON } from './barre-et-compagnon';
 import { ECRANS_COMPTE } from './compte';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
@@ -48,5 +49,15 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	...ECRANS_PROCEDURE,
 	...ECRANS_DEBITEURS,
 	...ECRANS_IMPORT,
-	...ECRANS_COMPTE
+	...ECRANS_COMPTE,
+
+	/* ── LA BARRE DU BAS ET LE COMPAGNON (refonte/barre-et-compagnon) ──────────
+	 *
+	 * ⚠️ CE N'EST PAS UN ÉCRAN, ET ÇA VIT QUAND MÊME ICI. La coquille monte les
+	 * deux flottants sur TOUS les écrans de la salle — c'est ce qui permet d'y
+	 * mesurer le dégagement du bas. Mais la barre y est branchée sur le routeur,
+	 * et l'adresse de la salle est `/showroom` : aucun onglet n'y est jamais
+	 * actif. Cette entrée montre les sept états que la navigation réelle ne
+	 * produit pas d'un coup, chacun dans son cadre. */
+	...ECRANS_BARRE_ET_COMPAGNON
 ];

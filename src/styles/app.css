@@ -1340,3 +1340,82 @@ select:not(:disabled),
 .light .fond-grain {
 	opacity: 0.1;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE HALO DU COMPAGNON — la lueur qui respire derrière la capsule flottante.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ SIX SECONDES PAR CYCLE, ET UNE AMPLITUDE DE CINQ POUR CENT. C'est le
+ * réglage de l'iris du veilleur, repris à l'identique et pour la même raison :
+ * délibérément SOUS le seuil où l'on remarque un mouvement sans le chercher. Ce
+ * qui s'agite en permanence devient du décor en trois jours, et ne dit plus rien
+ * le jour où ça compte. On veut qu'on le sente vivant en le regardant, pas qu'on
+ * le voie bouger du coin de l'œil toute la journée.
+ *
+ * ⚠️ IL N'EST NI LE FAISCEAU D'ACTION NI LE FAISCEAU LENT, et c'est délibéré.
+ * Trois mouvements coexistent maintenant à l'écran — l'anneau de l'action qui
+ * APPELLE, l'anneau lent de l'onglet actif qui RESPIRE, et cette lueur PLEINE.
+ * Un anneau de plus aurait été le quatrième objet à contour lumineux, et aucun
+ * des trois n'aurait plus rien dit. Une lueur diffuse, sans contour, se
+ * distingue d'un anneau sans lui faire concurrence.
+ *
+ * ⚠️ AUCUNE COULEUR DE SEUIL. `--color-veille` est l'accent de marque, calibré
+ * séparément pour le thème clair et le sombre — c'est déjà lui qui porte la
+ * pastille de compte, et il relie la lueur au travail de fond qu'elle annonce.
+ * Le vert, le rouge et l'ambre ne disent qu'une chose dans ce produit.
+ *
+ * ⚠️ UN DISQUE PLEIN ET FLOUTÉ, PAS UN DÉGRADÉ RADIAL. Le flou fait la chute
+ * d'intensité mieux qu'une suite d'arrêts de couleur, et le résultat ne dépend
+ * pas de `color-mix`, qu'aucune autre feuille du projet n'emploie. Une pièce de
+ * moins à porter.
+ *
+ * `z-index: -1` : le conteneur de la capsule est en `relative`, ce qui borne le
+ * halo à son contexte — sans quoi il passerait derrière le fond de page, où
+ * personne ne le verrait. */
+.halo-compagnon {
+	position: absolute;
+	/* Il déborde de la capsule : une lueur qui s'arrête à son bord est une
+	   bordure, pas un halo. */
+	inset: -0.75rem;
+	z-index: -1;
+	border-radius: 9999px;
+	pointer-events: none;
+	background-color: var(--color-veille);
+	filter: blur(16px);
+	opacity: 0.32;
+	animation: halo-respire 6s ease-in-out infinite;
+}
+
+/* IL A QUELQUE CHOSE À DIRE — un peu plus vif, un peu plus rapide.
+ *
+ * ⚠️ « UN PEU », ET PAS « BEAUCOUP ». L'écart doit se voir quand on regarde et
+ * ne pas tirer l'œil quand on travaille : c'est la même économie que le
+ * balayage du veilleur, qui est franc PARCE QU'il est rare. Un halo qui
+ * doublerait de taille ferait de l'état ordinaire un état qui manque quelque
+ * chose. */
+.halo-compagnon-vif {
+	opacity: 0.5;
+	animation-duration: 3.4s;
+}
+
+@keyframes halo-respire {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.05);
+	}
+}
+
+/* ⚠️ ELLE NE BOUGE PLUS DU TOUT, ET ELLE NE DISPARAÎT PAS. Les keyframes
+ * partent et reviennent à l'état de repos : `animation: none` retombe donc
+ * exactement dessus, sans figer la lueur à mi-course. C'est la différence avec
+ * le faisceau conique, qui doit être REMPLACÉ sous cette règle parce qu'arrêté
+ * il se lit « cassé ». */
+@media (prefers-reduced-motion: reduce) {
+	.halo-compagnon {
+		animation: none;
+		transform: none;
+	}
+}

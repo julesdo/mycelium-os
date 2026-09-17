@@ -49,17 +49,26 @@ export function PageHeader({
  * flou n'a plus rien à flouter, et il ne reste qu'une bande noire morte. Le
  * verre ne tient qu'à ça.
  *
- * 7 rem = la barre (≈ 90 px) plus une carte de respiration. Franc plutôt
- * qu'ajusté au pixel : un calage exact se casse au premier changement de
- * taille de bouton, et le symptôme — la dernière carte à moitié cachée — ne se
- * voit qu'en faisant défiler jusqu'en bas.
+ * ⚠️ 9 REM, ET À TOUTES LES LARGEURS. Deux corrections d'un coup :
+ *
+ *   · la valeur. La barre mesure 76 px (48 d'onglet, 12 de rembourrage de
+ *     pilule, 16 de marge) et la capsule du compagnon flotte au-dessus, jusqu'à
+ *     136 px du bord. 7 rem dégageaient la barre seule ; le compagnon coupait
+ *     alors le coin bas droit de la dernière carte.
+ *   · la largeur. Le dégagement tombait à `cladd-xs` (28 px) au-delà de 768 px,
+ *     parce que la barre basse y cédait la place à une capsule posée dans la
+ *     barre HAUTE. Cette barre haute n'existe plus : la capsule est maintenant
+ *     la barre du bas elle-même, centrée, et elle est là à TOUTES les largeurs.
+ *     Le dégagement doit donc l'être aussi — sinon la dernière carte passe sous
+ *     elle sur tablette et sur bureau, c'est-à-dire sur la largeur de référence
+ *     du produit.
+ *
+ * Franc plutôt qu'ajusté au pixel : un calage exact se casse au premier
+ * changement de taille de bouton, et le symptôme — la dernière carte à moitié
+ * cachée — ne se voit qu'en faisant défiler jusqu'en bas.
  */
 export function PageBody({ children }: { children: ReactNode }) {
-	return (
-		<div className="min-h-0 flex-1 overflow-y-auto px-cladd-3xs pb-28 md:pb-cladd-xs">
-			{children}
-		</div>
-	);
+	return <div className="min-h-0 flex-1 overflow-y-auto px-cladd-3xs pb-36">{children}</div>;
 }
 
 /**
