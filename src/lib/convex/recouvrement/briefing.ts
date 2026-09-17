@@ -99,7 +99,13 @@ export const duJour = authedQuery({
 			urgence: brut.urgence,
 			explication: brut.explication,
 			action: brut.action,
-			...(brut.cible === undefined ? {} : { cible: brut.cible })
+			...(brut.cible === undefined ? {} : { cible: brut.cible }),
+			// ⚠️ QUATRIÈME SITE QUI RECONSTRUIT L'ÉVÉNEMENT CHAMP PAR CHAMP, et le plus
+			// facile à oublier parce qu'il vit dans un autre fichier que les trois
+			// autres. Sans cette ligne, le briefing du matin se rangerait sur le
+			// montant pendant que la file se range sur l'échéance : deux ordres au
+			// monde, alors que `comparerEvenements` existe pour qu'il n'y en ait qu'un.
+			...(brut.dateDuFait === undefined ? {} : { dateDuFait: brut.dateDuFait })
 		}));
 
 		const briefing = composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
