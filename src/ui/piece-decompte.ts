@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Piece } from '../lib/verticales/recouvrement/piece';
+import type { Dossier } from '../lib/verticales/recouvrement/dossier';
 
 /**
  * LE RENDU DE LA PIÈCE — et il ne décide de rien.
@@ -91,7 +92,19 @@ export function nomFichierPiece(piece: Piece): string {
 export function rendrePieceEnPdf(piece: Piece): jsPDF {
 	const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 	const curseur: Curseur = { y: MARGE + 4 };
+	poserPiece(doc, curseur, piece);
+	return doc;
+}
 
+/**
+ * Le corps de la pièce, posé sur un document déjà ouvert.
+ *
+ * ⚠️ EXTRAIT POUR ÊTRE POSÉ DEUX FOIS, et pas par goût de la factorisation : le
+ * dossier remis au conseil reprend le décompte EXACTEMENT tel que la pièce le
+ * dit. Deux rendus du même décompte auraient fini par dire deux choses, et c'est
+ * le document qu'un tiers refait à la main.
+ */
+function poserPiece(doc: jsPDF, curseur: Curseur, piece: Piece): void {
 	paragraphe(doc, curseur, piece.titre, { taille: 15, gras: true });
 	saut(doc, curseur, 1);
 	paragraphe(doc, curseur, piece.sousTitre, { taille: 8, gris: true });
@@ -194,6 +207,78 @@ export function rendrePieceEnPdf(piece: Piece): jsPDF {
 	// qu'un tiers lit : ce document n'est pas un acte et ne fait courir aucun
 	// délai.
 	paragraphe(doc, curseur, piece.avertissement, { taille: 8, gris: true });
+}
+
+/**
+ * LE DOSSIER REMIS AU CONSEIL, et il ne décide de rien non plus.
+ *
+ * Tout ce qu'il DIT vient de `verticales/recouvrement/dossier.ts` : la mention
+ * qui compte l'état du référentiel, les valeurs juridiques avec leur article et
+ * leur date de relevé, les hypothèses, les angles morts, et l'énumération des
+ * voies dans un ordre qui n'est pas un classement.
+ */
+export function nomFichierDossier(dossier: Dossier): string {
+	// Le même nom que la pièce, avec son préfixe à lui : le destinataire reçoit
+	// souvent les deux, et deux fichiers homonymes dans une boîte sont
+	// introuvables une semaine plus tard.
+	return nomFichierPiece(dossier.piece).replace(/^decompte-/, 'dossier-');
+}
+
+export function rendreDossierEnPdf(dossier: Dossier): jsPDF {
+	const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+	const curseur: Curseur = { y: MARGE + 4 };
+
+	paragraphe(doc, curseur, dossier.titre, { taille: 15, gras: true });
+	saut(doc, curseur, 1);
+	// ⚠️ LA MENTION EST EN TÊTE, PAS EN BAS DE PAGE. Un lecteur qui apprendrait
+	// à la dernière ligne qu'aucun juriste n'a contrôlé ces valeurs aurait déjà
+	// lu tout le reste comme si l'un l'avait fait.
+	paragraphe(doc, curseur, dossier.mentionReferentiel, { taille: 8, gris: true });
+	saut(doc, curseur, 6);
+
+	poserPiece(doc, curseur, dossier.piece);
+	saut(doc, curseur, 6);
+
+	paragraphe(doc, curseur, 'Les valeurs juridiques employées, et leur état', {
+		taille: 9,
+		gras: true
+	});
+	autoTable(doc, {
+		startY: curseur.y,
+		margin: { left: MARGE, right: MARGE },
+		head: [['Valeur', 'Source', 'Relevée le', 'Relevée', 'Contrôlée par un juriste']],
+		body: dossier.valeurs.map((valeur) => [
+			valeur.cle,
+			valeur.source,
+			valeur.verifieLe,
+			valeur.verifie ? 'oui' : 'non',
+			valeur.valideParAvocat ? 'oui' : 'non'
+		]),
+		styles: { font: 'helvetica', fontSize: 7.5, textColor: ENCRE },
+		headStyles: { fillColor: [250, 249, 247], textColor: ENCRE_DOUCE, fontStyle: 'normal' }
+	});
+	curseur.y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
+
+	paragraphe(doc, curseur, 'Les hypothèses retenues', { taille: 9, gras: true });
+	for (const hypothese of dossier.hypotheses) {
+		paragraphe(doc, curseur, `· ${hypothese}`, { taille: 8 });
+	}
+	saut(doc, curseur, 4);
+
+	paragraphe(doc, curseur, 'Ce que ce logiciel ne voit pas', { taille: 9, gras: true });
+	for (const angle of dossier.anglesMorts) {
+		paragraphe(doc, curseur, `· ${angle}`, { taille: 8 });
+	}
+	saut(doc, curseur, 4);
+
+	paragraphe(doc, curseur, 'Les voies que ces conditions ouvrent', { taille: 9, gras: true });
+	paragraphe(doc, curseur, dossier.noteSurLesVoies, { taille: 8, gris: true });
+	for (const voie of dossier.voies) {
+		paragraphe(doc, curseur, `· ${voie}`, { taille: 8 });
+	}
+	saut(doc, curseur, 5);
+
+	paragraphe(doc, curseur, dossier.avertissement, { taille: 8, gris: true });
 
 	return doc;
 }

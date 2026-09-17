@@ -88,7 +88,16 @@ function Poste({ libelle, montant }: { libelle: string; montant: bigint }) {
 	);
 }
 
-function Periodes({ segments }: { segments: readonly SegmentAffiche[] }) {
+/**
+ * Les périodes d'intérêts, en tableau.
+ *
+ * ⚠️ EXPORTÉE : le suivi d'un dossier remis au conseil décompose l'écart entre
+ * le décompte figé et le calcul du jour, et cet écart se lit avec les MÊMES
+ * colonnes. Deux tableaux de périodes auraient fini par afficher deux jeux de
+ * colonnes pour la même preuve, sur le seul chiffre qu'un tiers refait à la
+ * main.
+ */
+export function PeriodesDInterets({ segments }: { segments: readonly SegmentAffiche[] }) {
 	return (
 		<Tableau legende="Périodes d’intérêts">
 			<TableauEntete>
@@ -179,7 +188,7 @@ export function Decompte({ decompte }: { decompte: DecompteAffiche }) {
 							    l'empêcherait de se refermer complètement. */}
 							<CollapsiblePanel>
 								<div className="pt-cladd-3xs">
-									<Periodes segments={ligne.segments} />
+									<PeriodesDInterets segments={ligne.segments} />
 								</div>
 							</CollapsiblePanel>
 						</CollapsibleRoot>

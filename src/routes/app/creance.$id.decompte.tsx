@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { createFileRoute, useParams } from '@tanstack/react-router';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisCentimes } from '../../lib/socle/montants';
@@ -29,10 +28,6 @@ export function PageDecompte() {
 
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
 	const dernier = useQuery(api.recouvrement.decompte.dernierDecompte, { creanceId });
-	const figer = useMutation(api.recouvrement.decompte.produire);
-
-	const [enCours, setEnCours] = useState(false);
-	const [erreur, setErreur] = useState<string | null>(null);
 
 	/**
 	 * LA PIÈCE, TÉLÉCHARGÉE.
@@ -90,28 +85,6 @@ export function PageDecompte() {
 		rendrePieceEnPdf(piece).save(nomFichierPiece(piece));
 	}
 
-	async function produireDecompte() {
-		setEnCours(true);
-		setErreur(null);
-		try {
-			await figer({ creanceId, convention: 'ACT_365' });
-		} catch (e) {
-			// ⚠️ `ConvexError` PORTE SON MESSAGE DANS `data`, pas dans `message`.
-			// Le contrôle refuse un décompte incomplet en CHIFFRANT ce qui serait
-			// abandonné ; perdre ce texte reviendrait à afficher « échec ».
-			const convexe = e as { data?: unknown };
-			setErreur(
-				typeof convexe.data === 'string'
-					? convexe.data
-					: e instanceof Error
-						? e.message
-						: 'Le décompte n’a pas pu être produit.'
-			);
-		} finally {
-			setEnCours(false);
-		}
-	}
-
 	return (
 		<EcranDecompte
 			identifiant={id}
@@ -123,9 +96,7 @@ export function PageDecompte() {
 							valeur: {
 								debiteur: creance.debiteur,
 								dernier,
-								enCours,
-								erreur,
-								onArreter: () => void produireDecompte(),
+								dernierId: dernier?._id ?? null,
 								onTelecharger: () => void telecharger()
 							}
 						}

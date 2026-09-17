@@ -1,15 +1,22 @@
 import { Button, Surface } from '@cladd-ui/react';
 import { FileDownIcon } from 'lucide-react';
-import { BoutonPrincipal, Decompte, PageEcran, type DecompteAffiche, type Lecture } from '../../ui';
+import {
+	BoutonPrincipal,
+	BoutonSecondaire,
+	Decompte,
+	Lien,
+	PageEcran,
+	type DecompteAffiche,
+	type Lecture
+} from '../../ui';
 
-/** Ce que l'écran affiche : le débiteur, le dernier décompte arrêté, et les gestionnaires pour en produire un nouveau. */
+/** Ce que l'écran affiche : le débiteur, le dernier décompte arrêté, et de quoi en produire un nouveau. */
 export interface DecompteDeLaCreance {
 	readonly debiteur: string;
 	/** Le dernier décompte arrêté, ou `null` s'il n'y en a pas encore. */
 	readonly dernier: DecompteAffiche | null;
-	readonly enCours: boolean;
-	readonly erreur: string | null;
-	readonly onArreter: () => void;
+	/** L'identifiant du dernier décompte, pour ouvrir la pièce à son adresse. */
+	readonly dernierId: string | null;
 	readonly onTelecharger: () => void;
 }
 
@@ -82,12 +89,35 @@ export function EcranDecompte({
 						</Surface>
 					)}
 
-					{pret.erreur ? <p className="text-cladd-xs text-cladd-fg">{pret.erreur}</p> : null}
-
 					<div className="flex flex-wrap gap-cladd-3xs">
-						<BoutonPrincipal onClick={pret.onArreter} disabled={pret.enCours}>
-							{pret.enCours ? 'Calcul en cours…' : 'Arrêter un décompte à aujourd’hui'}
+						{/* ⚠️ CE BOUTON NE FIGE PLUS RIEN LUI-MÊME, ET C'EST LA CORRECTION.
+						    Il arrêtait un décompte d'un tap, sans qu'aucun contrôle de
+						    complétude n'ait été lu : `controle.ts` chiffrait ce qui serait
+						    abandonné APRÈS coup, à la relecture, quand plus rien ne se
+						    corrige. Il mène désormais à l'écran d'arrêt, qui porte le
+						    contrôle chiffré, le pré-vol et l'irréversibilité en toutes
+						    lettres. */}
+						<BoutonPrincipal
+							as={Lien}
+							to="/app/arret/$id"
+							// ⚠️ UNE ASSERTION, ET LA MÊME QUE DANS `ui/relances.tsx`. `as`
+							// efface le générique du routeur, donc le typage des paramètres
+							// avec lui ; la DESTINATION reste vérifiée contre l'arbre des
+							// routes, ici et par `__tests__/destinations-existent.test.ts`.
+							params={{ id: identifiant } as never}
+						>
+							Arrêter un décompte
 						</BoutonPrincipal>
+
+						{pret.dernierId !== null ? (
+							<BoutonSecondaire
+								as={Lien}
+								to="/app/decompte/$id"
+								params={{ id: pret.dernierId } as never}
+							>
+								Ouvrir la pièce
+							</BoutonSecondaire>
+						) : null}
 
 						{/* LA PIÈCE. C'est le troisième critère de fin de MVP : un décompte
 						    qui part chez un expert-comptable, un avocat ou un assureur SANS

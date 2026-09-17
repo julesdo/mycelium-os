@@ -149,6 +149,28 @@ export const REGIMES_PRESCRIPTION: Record<
 	}
 };
 
+/**
+ * L'ANGLE MORT DE CE MODULE, ÉCRIT POUR ÊTRE AFFICHÉ.
+ *
+ * ⚠️ IL ÉTAIT EN COMMENTAIRE, DONC INVISIBLE À L'UTILISATEUR. L'en-tête de ce
+ * fichier dit depuis le premier jour que ni suspension ni interruption ne sont
+ * gérées ; un gérant qui croit sa prescription surveillée ne la surveille pas
+ * lui-même, et c'est le mode de panne le plus cher du produit.
+ *
+ * Il devient une constante EXPORTÉE parce qu'un dossier parti chez un conseil
+ * est exactement la situation où l'angle mort se paie : le compteur continue de
+ * courir à l'écran, et le logiciel ne sait rien de ce que le conseil a fait.
+ *
+ * Il énonce un CONSTAT et ne prescrit aucune conduite : il dit ce que le
+ * logiciel ignore, pas ce qu'il faudrait faire.
+ */
+export const ANGLE_MORT_PRESCRIPTION =
+	'Ce logiciel ne gère ni suspension ni interruption de la prescription. Une mise en demeure, ' +
+	'une reconnaissance de dette ou une action en justice les provoquent, avec des effets ' +
+	'différents. Si votre conseil a saisi une juridiction, ce logiciel ne le sait pas tant qu’un ' +
+	'fait de procédure n’est pas consigné ici : la date affichée reste celle du calcul, pas celle ' +
+	'de votre dossier.';
+
 /** Le délai le plus court de tous les régimes connus, en années. */
 export function secteurLePlusCourt(): number {
 	return Math.min(...Object.values(REGIMES_PRESCRIPTION).map((r) => r.dureeAnnees));

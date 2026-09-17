@@ -431,9 +431,6 @@ const CREANCE_DEMO: CreanceAffichee = {
 /** Ce que la démonstration du décompte partage entre son état prêt et son état vide. */
 const DECOMPTE_BASE_DEMO = {
 	debiteur: DEBITEUR_DEMO,
-	enCours: false,
-	erreur: null,
-	onArreter: () => undefined,
 	onTelecharger: () => undefined
 };
 
@@ -598,8 +595,8 @@ function DecompteDemo({ etat }: { etat: EtatDemo }) {
 			identifiant="demo"
 			donnees={lectureDemo(
 				etat,
-				{ ...DECOMPTE_BASE_DEMO, dernier: DECOMPTE_DEMO },
-				{ ...DECOMPTE_BASE_DEMO, dernier: null }
+				{ ...DECOMPTE_BASE_DEMO, dernier: DECOMPTE_DEMO, dernierId: 'demo-decompte' },
+				{ ...DECOMPTE_BASE_DEMO, dernier: null, dernierId: null }
 			)}
 		/>
 	);
