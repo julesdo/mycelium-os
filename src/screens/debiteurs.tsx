@@ -552,7 +552,16 @@ export function EcranDebiteurs({
 						: `${debiteurs.length} débiteur${pluriel(debiteurs.length)}`
 				}
 				actions={
-					<span className="shrink-0 text-cladd-2xs text-cladd-fg-softest">
+					/*
+					  ⚠️ `fg-softer`, ET PAS `fg-softest`. Mesuré au navigateur en sombre :
+					  `fg-softest` rend rgb(133,139,147), et sur le fond de `verre-carte`
+					  — oklch(0.18 0.012 276) à 72 % — le rapport tombe à 4,45 pour un
+					  corps de 12 px, sous le seuil de 4,5. `fg-softer` le porte à 5,7.
+					  Le cran le plus pâle convient à une mention qu'on ne lit qu'une
+					  fois ; celle-ci explique POURQUOI la liste est rangée ainsi, et se
+					  relit à chaque visite.
+					*/
+					<span className="shrink-0 text-cladd-2xs text-cladd-fg-softer">
 						Le plus gros encours d’abord
 					</span>
 				}
