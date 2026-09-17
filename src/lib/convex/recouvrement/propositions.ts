@@ -540,8 +540,30 @@ export const retenir = authedMutation({
 				);
 			}
 
+			/*
+			  ⚠️ LE CLOISONNEMENT AVANT LA DÉLÉGATION. `declarerFaitLitige` fait
+			  confiance à son appelant — c'est le motif de tout le module
+			  `creances.ts` — donc la barrière se pose ICI. Elle est redondante par
+			  construction, puisque la pose n'écrit que des cibles déjà vérifiées ;
+			  elle reste parce qu'une invariante tenue par construction se perd au
+			  premier producteur ajouté, et parce que `cible` est une CHAÎNE, que
+			  rien n'empêche de pointer ailleurs.
+			*/
+			// `normalizeId` et pas un `as Id<…>` : un identifiant de DÉBITEUR passe
+			// la conversion de type sans un mot et rend un document qui porte bien
+			// un `organizationId`. Seul le normalisateur dit à quelle TABLE il est.
+			const cibleCreance = ctx.db.normalizeId('creances', proposition.cible);
+			const creance = cibleCreance === null ? null : await ctx.db.get(cibleCreance);
+			if (creance === null || creance.organizationId !== organizationId) {
+				throw new ConvexError(
+					'La créance visée par cette proposition est introuvable, et rien n’a été écrit. Le ' +
+						'constat reste affiché tel quel ; ce refus se lève en répondant au questionnaire de ' +
+						'litige sur la créance elle-même. L’attente ne coûte rien ici.'
+				);
+			}
+
 			await ctx.runMutation(internal.recouvrement.creances.declarerFaitLitige, {
-				creanceId: proposition.cible as Id<'creances'>,
+				creanceId: creance._id,
 				cle: proposition.champ as CleFait,
 				reponse,
 				aujourdHui: new Date().toISOString().slice(0, 10)
