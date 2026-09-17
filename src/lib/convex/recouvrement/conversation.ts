@@ -19,6 +19,10 @@ import {
 	type PhraseSourcee
 } from '../../verticales/recouvrement/compagnon/prompt';
 import {
+	pastillesAPersister,
+	phrasesAPersister
+} from '../../verticales/recouvrement/compagnon/tour';
+import {
 	coutDuTour,
 	evaluerPlafond,
 	refusAppelEchoue,
@@ -148,12 +152,19 @@ interface Consommation {
 	coutEstime: number;
 }
 
-type Pastille = { phrase: number; source: SourceDeLaPhrase };
-
-type SourceDeLaPhrase =
+/**
+ * Les mêmes objets que `compagnon/tour.ts` compose, aux identifiants BRANCHÉS.
+ *
+ * Le domaine ne connaît pas le harnais de plateforme : il rend des chaînes, et
+ * c'est ici, à la frontière, que la marque `Id<…>` se pose.
+ */
+type SourceEcrite =
 	| { nature: 'PIECE'; pieceId: Id<'pieces'>; page?: number }
 	| { nature: 'DECOMPTE'; decompteId: Id<'decomptes'> }
 	| { nature: 'REFERENTIEL'; cleParametre: string };
+
+type Pastille = { phrase: number; source: SourceEcrite };
+type PhraseEcrite = { texte: string; source?: SourceEcrite };
 
 function enRefus(refus: Refus, barriere: string | null, terme: string | null): ReponseDuCompagnon {
 	return {
@@ -226,36 +237,26 @@ async function consignerRefus(
 }
 
 /**
- * Les pastilles à persister, une par phrase sourcée.
+ * Ce qu'on écrit du tour : les phrases avec leur source, et les pastilles.
+ *
+ * ⚠️ LES PHRASES S'ÉCRIVENT, ELLES NE SE REDÉDUISENT PAS. `reponse` reste leur
+ * concaténation — le contexte du tour suivant la réinjecte telle quelle — mais
+ * les BORNES sont désormais une donnée. Les retrouver à la relecture en
+ * redécoupant sur la ponctuation faisait perdre toutes les pastilles d'un tour
+ * dès qu'une phrase arrivait sans point final — et, sur une abréviation, les
+ * faisait glisser d'un cran sur les phrases d'à côté.
  *
  * ⚠️ LES IDENTIFIANTS SONT DÉJÀ VÉRIFIÉS quand on arrive ici : `lireReponse` a
  * refusé toute référence qui ne figurait pas dans ce qu'on a nous-mêmes envoyé.
- * La conversion de type ci-dessous ne CROIT donc pas le modèle : elle constate
- * qu'on lui a redonné l'un de nos propres identifiants.
+ * Les deux conversions de type ci-dessous ne CROIENT donc pas le modèle : elles
+ * constatent qu'on lui a redonné l'un de nos propres identifiants.
  */
+function phrasesDe(phrases: readonly PhraseSourcee[]): PhraseEcrite[] {
+	return phrasesAPersister(phrases) as PhraseEcrite[];
+}
+
 function pastillesDe(phrases: readonly PhraseSourcee[]): Pastille[] {
-	const posees: Pastille[] = [];
-
-	phrases.forEach((phrase, rang) => {
-		if (phrase.genreSource === 'PARAMETRE') {
-			posees.push({
-				phrase: rang,
-				source: { nature: 'REFERENTIEL', cleParametre: phrase.reference }
-			});
-		} else if (phrase.genreSource === 'DECOMPTE') {
-			posees.push({
-				phrase: rang,
-				source: { nature: 'DECOMPTE', decompteId: phrase.reference as Id<'decomptes'> }
-			});
-		} else if (phrase.genreSource === 'PIECE') {
-			posees.push({
-				phrase: rang,
-				source: { nature: 'PIECE', pieceId: phrase.reference as Id<'pieces'> }
-			});
-		}
-	});
-
-	return posees;
+	return pastillesAPersister(phrases) as Pastille[];
 }
 
 /**
@@ -378,6 +379,7 @@ export const repondre = authedAction({
 			question,
 			reponse: rendu.texte,
 			pastilles: pastillesDe(rendu.phrases),
+			phrases: phrasesDe(rendu.phrases),
 			usage: consommation
 		});
 

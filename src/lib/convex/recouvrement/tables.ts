@@ -1044,10 +1044,12 @@ export const recouvrementTables = {
 	 *
 	 * ⚠️ ELLE GROSSIT SANS BORNE, comme `journal`, et l'export la lit par page.
 	 *
-	 * `pastilles` porte la source AU GRAIN DE LA PHRASE, jamais de la réponse.
-	 * Une phrase sans pastille s'affiche visiblement dégradée et ne peut porter
+	 * `phrases` porte la source AU GRAIN DE LA PHRASE, jamais de la réponse.
+	 * Une phrase sans source s'affiche visiblement dégradée et ne peut porter
 	 * ni un montant ni un énoncé juridique ; une source posée sur la réponse
 	 * entière laisserait passer la phrase fausse au milieu de trois justes.
+	 * `pastilles` est la première forme du même grain, indexée par RANG : elle
+	 * reste lue sur les tours écrits avant `phrases`, et elle reste écrite.
 	 *
 	 * `mois` et `usage` tiennent le compteur de coût : un avertissement, puis
 	 * un arrêt de la conversation LIBRE seule, par établissement et par mois.
@@ -1092,8 +1094,41 @@ export const recouvrementTables = {
 		cible: v.string(),
 		role: v.union(v.literal('GERANT'), v.literal('COMPAGNON')),
 		texte: v.string(),
-		/** Une pastille par phrase sourcée, au rang de la phrase dans `texte`. */
+		/**
+		 * Une pastille par phrase sourcée, au rang de la phrase dans `texte`.
+		 *
+		 * ⚠️ CE N'EST PLUS LE CHEMIN DE RELECTURE, et le champ reste. Les tours
+		 * écrits avant `phrases` n'ont que lui, et un champ requis ne se retire
+		 * pas d'une table qui porte déjà des documents : Convex valide la BASE,
+		 * pas seulement le code.
+		 */
 		pastilles: v.array(v.object({ phrase: v.number(), source: vSourceConstat })),
+		/**
+		 * LES PHRASES DU TOUR, TELLES QU'ELLES ONT ÉTÉ RENDUES, avec leur source.
+		 *
+		 * ⚠️ ELLES EXISTENT PARCE QUE LE RANG NE SUFFISAIT PAS. `texte` est la
+		 * concaténation des phrases, et les pastilles ci-dessus les désignent par
+		 * RANG : la relecture devait donc redécouper le texte sur les fins de
+		 * phrase pour retrouver ces rangs. Une phrase rendue sans point final
+		 * faisait rendre le tour en UNE phrase sans aucune pastille — une perte
+		 * honnête, mais une perte : la barrière qui relie chaque affirmation à sa
+		 * source tombait sur un défaut de ponctuation. Une abréviation, elle,
+		 * coupait une phrase en deux et faisait GLISSER chaque pastille d'un
+		 * cran, ce qui est pire et ce que `compagnon/tour.ts` ferme aussi.
+		 *
+		 * ⚠️ ET LE CHAMP EST FACULTATIF, DÉLIBÉRÉMENT. La table porte déjà des
+		 * documents ; un champ requis de plus les rendrait invalides et le
+		 * déploiement échouerait sur la base avant d'échouer sur le code. Absent,
+		 * il se lit « ce tour est antérieur », et `compagnon/tour.ts` reprend
+		 * l'ancien chemin — jamais « ce tour n'avait pas de source ».
+		 *
+		 * Il n'est renseigné que sur les tours du compagnon qui portent une
+		 * réponse : la question du gérant et le texte d'un refus n'ont jamais été
+		 * découpés en phrases sourcées, et rien ne les découpe ici après coup.
+		 */
+		phrases: v.optional(
+			v.array(v.object({ texte: v.string(), source: v.optional(vSourceConstat) }))
+		),
 		/**
 		 * Ce que ce tour a consommé. Renseigné sur les tours du compagnon.
 		 *
