@@ -140,14 +140,21 @@ export function LigneEnvoi({
 	return (
 		<ListItem className="gap-cladd-3xs">
 			{/*
-			  ⚠️ `2xs`, ET C'EST LA TAILLE JUSTE ICI. La documentation réserve `2xs`
-			  et `xs` à ce qui vit DANS un conteneur plus dense — ce qu'est la fente
-			  d'icône d'une rangée — et son avertissement (« 8 px, illisible ») porte
-			  sur l'échelle d'origine du kit. `tokens.css` décale la nôtre pour que
-			  `md` tombe sur 48 px : `2xs` y vaut 20 px, soit la taille des glyphes
-			  des rangées voisines.
+			  ⚠️ `xs`, ET LA TAILLE EST MESURÉE, PAS DEVINÉE.
+
+			  La documentation réserve `2xs` et `xs` à ce qui vit DANS un conteneur
+			  plus dense — ce qu'est la fente d'icône d'une rangée — et son
+			  avertissement (« 8 px, illisible ») porte sur l'échelle d'origine du
+			  kit, que `tokens.css` décale pour que `md` tombe sur 48 px.
+
+			  Relevé au navigateur sur l'échelle imbriquée du produit
+			  (`--spacing-cladd-nested-*`) : `2xs` rend 12 px, `xs` 20 px, `sm`
+			  32 px. Les glyphes des rangées voisines mesurent 17 px. `2xs` faisait
+			  donc un anneau visiblement plus petit que ses voisins ; `xs` tombe à
+			  trois pixels, et un anneau creux se lit toujours plus petit qu'un
+			  glyphe de même boîte.
 			*/}
-			{envoi.etat === 'ENVOI' ? <Spinner size="2xs" /> : <FileUpIcon size={18} />}
+			{envoi.etat === 'ENVOI' ? <Spinner size="xs" /> : <FileUpIcon size={18} />}
 			<span className="flex min-w-0 flex-col gap-0.5">
 				<span className="truncate">{envoi.nom}</span>
 				<span className="text-cladd-2xs leading-snug text-cladd-fg-softer">
