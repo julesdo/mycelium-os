@@ -32,7 +32,18 @@ export function TwoPane({
 		<div className="flex h-full min-h-0 w-full">
 			<div className="min-w-0 flex-1 overflow-y-auto">{liste}</div>
 
-			<aside className="hidden min-h-0 w-2/5 max-w-2xl shrink-0 overflow-y-auto border-l border-cladd-outline lg:block">
+			{/*
+			  ⚠️ `pb-36` : LE VOLET DE PREUVE DÉFILE LUI AUSSI, ET LA BARRE FLOTTE
+			  DEVANT. Au-delà de 1024 px, la capsule de navigation est centrée sur la
+			  fenêtre — donc à cheval sur la bordure de ce volet — et la capsule du
+			  compagnon est calée à droite, c'est-à-dire pile dessus. Sans dégagement,
+			  la dernière rangée du dossier passe dessous : le défaut classique, et
+			  celui qui ne se voit qu'en faisant défiler jusqu'en bas.
+
+			  La même valeur que `PageBody`, et pour la même raison : un dégagement
+			  qui diverge d'un conteneur à l'autre se répare deux fois.
+			*/}
+			<aside className="hidden min-h-0 w-2/5 max-w-2xl shrink-0 overflow-y-auto border-l border-cladd-outline pb-36 lg:block">
 				{preuve}
 			</aside>
 

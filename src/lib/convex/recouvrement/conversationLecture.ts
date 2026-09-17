@@ -463,3 +463,38 @@ export const filDuDossier = authedQuery({
 		};
 	}
 });
+
+/**
+ * LE COMPTEUR DU MOIS, SANS DOSSIER.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI IL EXISTE À CÔTÉ DE `filDuDossier`, QUI LE REND DÉJÀ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le plafond de coût est PAR ÉTABLISSEMENT et PAR MOIS — jamais par dossier. Or
+ * il n'était lisible qu'en demandant le fil d'une créance, c'est-à-dire en
+ * ouvrant un dossier. Le bouton flottant du compagnon, lui, vit sur tous les
+ * écrans, y compris ceux où aucune créance n'est ouverte : sans cette lecture,
+ * il ne pouvait pas dire que la conversation libre est arrêtée, et il l'aurait
+ * proposée jusqu'au refus.
+ *
+ * ⚠️ ELLE NE LIT AUCUN TOUR, ET C'EST TOUT L'INTÉRÊT. `filDuDossier` collecte
+ * les échanges d'une créance en plus du cumul ; celle-ci ne parcourt que
+ * `by_org_and_mois`, l'index du cumul, et ne rend aucun texte. C'est ce qui
+ * permet de la monter en permanence dans la coquille sans payer un dossier.
+ *
+ * ⚠️ AUCUN APPEL À `internal.<ce module>`. Une fonction Convex qui s'appelle
+ * elle-même par `internal` crée un cycle d'inférence qui fait retomber le type
+ * de `api` TOUT ENTIER sur `any`, et fait surgir des dizaines de `TS7006` dans
+ * des fichiers qu'on n'a pas touchés. Les deux aides employées ici sont de
+ * simples fonctions du module.
+ */
+export const compteurDeLEtablissement = authedQuery({
+	args: {},
+	returns: vCompteur,
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const mois = moisCourant();
+		return compteurDepuis(await cumulDuMois(ctx, organizationId, mois), mois);
+	}
+});
