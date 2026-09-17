@@ -480,6 +480,29 @@ function File() {
 	}
 
 	/**
+	 * LES DOSSIERS DONT LE LOGICIEL A EU QUELQUE CHOSE À DIRE AUJOURD'HUI —
+	 * retenu, écarté, ou encore en attente.
+	 *
+	 * ⚠️ TOUS LES ÉTATS, ET C'EST CE QUI REND L'ÉCART SURVIVABLE. Écarter une
+	 * proposition ne répond PAS à la question : `ecarter` le dit lui-même, « un
+	 * écart efface une proposition de l'écran, jamais une réponse déjà donnée ».
+	 * Si la rangée ne tenait qu'aux propositions EN ATTENTE, écarter la ferait
+	 * disparaître avant que le gérant ait pu répondre — c'est-à-dire qu'un refus
+	 * emporterait la question qu'il ouvre.
+	 *
+	 * Le fait qui donne droit à la rangée est « le logiciel avait une réponse à
+	 * proposer aujourd'hui », et ce fait ne se retire pas quand on la refuse.
+	 * Demain, la proposition n'est plus du jour et la rangée s'en va d'elle-même.
+	 */
+	const champsProposesAujourdHui = new Map<string, Set<string>>();
+	for (const proposition of propositions?.propositions ?? []) {
+		if (!CHAMPS_DE_LITIGE.has(proposition.champ)) continue;
+		const champs = champsProposesAujourdHui.get(proposition.cible) ?? new Set<string>();
+		champs.add(proposition.champ);
+		champsProposesAujourdHui.set(proposition.cible, champs);
+	}
+
+	/**
 	 * LES DEUX APPUIS D'UNE PROPOSITION, ÉCRITS UNE FOIS.
 	 *
 	 * ⚠️ `lueDepuisMs` EST REQUIS PAR LE SERVEUR, EXPRÈS : c'est la deuxième des
@@ -704,13 +727,50 @@ function File() {
 	 * n'emporte pas deux qualifications ; les éloigner l'une de l'autre ferait
 	 * payer cette séparation par un balayage de la file entière.
 	 */
+	/**
+	 * LE DOSSIER QU'UNE RANGÉE DU FLUX MET SUR LA TABLE.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * ⚠️ IL SE RÉSOUT COMME `?ligne=`, ET IL NE SE LISAIT QUE SUR DEUX TYPES
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * La question ne s'attachait qu'aux rangées dont l'identifiant EST une
+	 * créance. Or `surveillance.ts` ne pose `genre: 'CREANCE'` que sur deux de
+	 * ses six événements : `CREANCE_MURE` et `ECHEANCE_PROCEDURE`.
+	 * `PRESCRIPTION_PROCHE`, `FACTURE_ECHUE`, `DEBITEUR_DEGRADE` et
+	 * `HABITUDE_ROMPUE` visent un DÉBITEUR — « une facture n'a pas d'écran à
+	 * elle », dit `CibleEvenement` — donc leur identifiant n'était jamais dans
+	 * `estUneCreance`, et la question ne s'attachait presque jamais.
+	 *
+	 * L'établissement qui vient d'importer ses factures, dont une se prescrit
+	 * dans 41 jours, voyait la rangée de prescription et AUCUNE rangée de litige.
+	 * C'est pourtant le moment exact de poser la question : la réponse décide de
+	 * ce qu'on peut faire de ce dossier-là avant que le délai tombe.
+	 *
+	 * ⚠️ SUR `rangee.id`, ET JAMAIS SUR `rangee.debiteurId`. Une rangée qui NOMME
+	 * sa créance ne doit pas retomber sur la première du client : on poserait la
+	 * question d'un autre dossier que celui qu'on lit. La résolution est donc
+	 * exactement celle de `creanceOuverte` — la créance elle-même, sinon celle
+	 * que `?ligne=` ouvrirait pour ce client.
+	 */
+	const dossierDeLaRangee = (rangee: RangeeDeLaFile): string | null =>
+		estUneCreance.has(rangee.id) ? rangee.id : (creanceDuDebiteur.get(rangee.id) ?? null);
+
 	const rangeesAvecLitige: RangeeDeLaFile[] = [];
+	/**
+	 * ⚠️ PAR CRÉANCE, ET PLUS PAR RANGÉE. Deux rangées du même client résolvent
+	 * vers le même dossier : sans cette clé-ci, elles poseraient deux rangées de
+	 * litige de MÊME identifiant — deux lignes qui se surlignent ensemble et se
+	 * battent pour `?ligne=`.
+	 */
 	const litigePose = new Set<string>();
 	for (const rangee of rangeesDuFlux) {
 		rangeesAvecLitige.push(rangee);
-		const question = estUneCreance.has(rangee.id) ? questionParCreance.get(rangee.id) : undefined;
-		if (question === undefined || litigePose.has(rangee.id)) continue;
-		litigePose.add(rangee.id);
+		const creanceId = dossierDeLaRangee(rangee);
+		if (creanceId === null || litigePose.has(creanceId)) continue;
+		const question = questionParCreance.get(creanceId);
+		if (question === undefined) continue;
+		litigePose.add(creanceId);
 		// L'urgence de la question est celle du dossier qu'elle bloque : une
 		// créance qui se prescrit dans 41 jours n'attend pas sa réponse plus
 		// longtemps qu'elle n'attend le reste.
@@ -724,13 +784,13 @@ function File() {
 	  l'échéance aujourd'hui ; c'est le logiciel qui a quelque chose à dire, et
 	  l'urgence est donc celle d'un suivi, pas d'un délai.
 	*/
-	for (const [creanceId, proposition] of propositionLitigeDe) {
+	for (const [creanceId, champs] of champsProposesAujourdHui) {
 		if (litigePose.has(creanceId)) continue;
 		const question = questionParCreance.get(creanceId);
 		// La question a été répondue depuis que la proposition a été posée : la
 		// reposer redemanderait ce qui vient d'être tranché. La proposition reste
 		// en base, datée — c'est la trace de ce qui a été proposé ce jour-là.
-		if (question === undefined || proposition.champ !== question.cle) continue;
+		if (question === undefined || !champs.has(question.cle)) continue;
 		litigePose.add(creanceId);
 		rangeesAvecLitige.push(rangeeDeLitige(question, 'NORMALE'));
 	}

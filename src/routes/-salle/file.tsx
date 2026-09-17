@@ -51,8 +51,8 @@ const BELLIN = 'demo-debiteur-bellin';
  *
  * Le jeu couvre les quatre genres de rangée ET les trois vetos du pli (B9) :
  *
- *   · une prescription qui porte une HYPOTHÈSE retenue — elle reste pleine même
- *     quand rien n'est à trancher ;
+ *   · une prescription dont le PLI porte une hypothèse retenue — elle reste
+ *     pleine même quand rien n'est à trancher ;
  *   · une facture NON CHIFFRÉE — elle reste pleine, et le total de tête la nomme
  *     déjà au-dessus ;
  *   · un dépôt qui a ÉCARTÉ deux lignes — il reste plein, là où le dépôt parfait
@@ -60,6 +60,12 @@ const BELLIN = 'demo-debiteur-bellin';
  *
  * Sans ces trois-là côte à côte, on regarderait un pli qui a l'air juste parce
  * qu'il n'a jamais eu l'occasion de se tromper.
+ *
+ * ⚠️ ET LA QUESTION DE LITIGE Y EST DEUX FOIS, dans ses DEUX états, parce
+ * qu'ils ne coexistent plus sur une même rangée : sous une proposition, ce sont
+ * ses deux appuis qui tranchent ; sans proposition — le cas ordinaire, et celui
+ * où l'on retombe après un écart — ce sont les trois réponses. Une seule des
+ * deux en salle laisserait l'autre ne se regarder à aucune largeur.
  */
 const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 	{
@@ -72,9 +78,17 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		urgence: 'CRITIQUE',
 		montant: 3_120_050n,
 		dateDuFait: '2026-10-27',
-		hypothese:
-			'Le secteur de ce client n’est pas déterminé : la prescription est calculée sur le délai le plus court. Préciser le secteur lèvera cette hypothèse.',
-		verbe: { libelle: 'Retenir la créance', onPresser: () => {} },
+		/*
+		  ⚠️ NI `verbe` NI `hypothese` : LA PRODUCTION N'EN POSE AUCUN, et elle ne
+		  le peut pas — un événement de surveillance porte une `action` en PHRASE,
+		  pas un geste, et les hypothèses qu'elle déclare sont celles de
+		  l'établissement, affichées en entier par « Ce que les factures portent ».
+		  Les montrer ici faisait régler au navigateur une rangée que personne ne
+		  verrait. Voir `RangeeObstacle`.
+
+		  L'hypothèse retenue reste couverte : elle l'est au PLI, juste dessous,
+		  qui est l'endroit où B9 la fait compter.
+		*/
 		pli: {
 			libelle: { un: 'prescription proche', plusieurs: 'prescriptions proches' },
 			// Rien à trancher, et pourtant elle reste PLEINE : l'hypothèse la retient.
@@ -93,12 +107,13 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		urgence: 'HAUTE',
 		montant: 24_990n,
 		/*
-		  ⚠️ LA PROPOSITION PORTE SES DEUX APPUIS, comme toutes les autres. Elle
-		  n'en avait aucun ici, et la production n'en produisait pas non plus : la
-		  question de litige se retient ou s'écarte AVEC SON MOTIF, sinon elle est
-		  un constat qu'on lit et qu'on ne peut pas suivre. Le champ de motif
-		  s'ouvre en place sur « Écarter », et c'est aux quatre largeurs que ça se
-		  regarde — une rangée qui porte déjà trois réponses.
+		  ⚠️ LA PROPOSITION PORTE SES DEUX APPUIS, ET ELLE EST SEULE À LES PORTER.
+		  Cette rangée montrait AUSSI les trois réponses, sous les deux appuis :
+		  deux chemins d'écriture pour le même fait, dont un qui laissait la
+		  proposition ouverte à vie. Tant qu'une proposition est affichée, elle EST
+		  la question — la retenir vaut y répondre, l'écarter la rouvre. Le champ
+		  de motif s'ouvre en place sur « Écarter », et c'est la seule saisie libre
+		  de tout l'écran : c'est aux quatre largeurs qu'elle se regarde.
 		*/
 		proposition: {
 			valeur: 'oui',
@@ -107,6 +122,33 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			onRetenir: () => {},
 			onEcarter: () => {}
 		},
+		onRepondre: () => {},
+		pli: {
+			libelle: { un: 'question de litige', plusieurs: 'questions de litige' },
+			rienATrancher: false
+		}
+	},
+	{
+		/*
+		  ⚠️ LA MÊME RANGÉE SANS PROPOSITION, ET C'EST LE CAS ORDINAIRE. Le
+		  logiciel n'a presque jamais rien lu à proposer : la question se pose alors
+		  nue, avec ses trois réponses. C'est aussi l'état où retombe la rangée
+		  ci-dessus dès qu'on écarte sa proposition — la question reste ouverte, et
+		  il faut pouvoir y répondre.
+
+		  Sans cette seconde rangée, l'état le plus fréquent de la file ne se
+		  regarderait à aucune largeur : trois boutons de 48 px sur une ligne, c'est
+		  à 375 px que ça se vérifie.
+		*/
+		genre: 'LITIGE',
+		id: 'r-litige-bellin',
+		debiteurId: BELLIN,
+		debiteur: 'Transports Bellin',
+		portees: ['AUJOURDHUI', 'A_TRANCHER'],
+		question:
+			'Cette facture a-t-elle été émise entre professionnels, dans le cadre de votre activité et de la sienne ?',
+		urgence: 'NORMALE',
+		montant: 486_200n,
 		onRepondre: () => {},
 		pli: {
 			libelle: { un: 'question de litige', plusieurs: 'questions de litige' },
@@ -136,7 +178,6 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			onRetenir: () => {},
 			onEcarter: () => {}
 		},
-		verbe: { libelle: 'Arrêter le décompte', onPresser: () => {} },
 		pli: {
 			libelle: { un: 'décompte arrêtable', plusieurs: 'décomptes arrêtables' },
 			rienATrancher: false
@@ -168,7 +209,6 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			'Date d’exigibilité inexploitable sur F-2024-114 : le retard ne peut pas être établi.',
 		urgence: 'HAUTE',
 		montant: null,
-		verbe: { libelle: 'Relever l’échéance', onPresser: () => {} },
 		pli: {
 			libelle: { un: 'facture non chiffrée', plusieurs: 'factures non chiffrées' },
 			// Rien à trancher au sens strict, et pourtant elle reste PLEINE.
