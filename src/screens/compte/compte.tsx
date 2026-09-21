@@ -15,6 +15,7 @@ import { BandeauCeQuiPresse } from './bandeau-presse';
 import { EnTeteDuCompte } from './en-tete';
 import { FormulaireCreancier, type CreancierAffiche } from './creancier';
 import { FormulaireEtablissement, type EtablissementAffiche } from './etablissement';
+import { ChoixDuLogo, SectionProfil, type ProfilAffiche } from './profil';
 import { SectionFacturation, type AbonnementAffiche } from './facturation';
 import { SectionEquipe, type EquipeAffichee } from './equipe';
 import { SectionDonnees, type DonneesAffichees } from './donnees';
@@ -30,6 +31,7 @@ import {
 	resumeEtablissement,
 	resumeFacturation,
 	resumeMesures,
+	resumeProfil,
 	type IdentiteDuCreancier,
 	type SectionCompte
 } from './presse';
@@ -79,6 +81,8 @@ import {
  * « 0 membre » ni « Aucun abonnement », qui se lisent comme des réponses.
  */
 export interface CompteAffiche {
+	/** Le visage de la personne connectée : photo, avatar ou initiales. */
+	readonly profil: ProfilAffiche;
 	/** L'établissement actif, ou `null` : la coquille `/app` renvoie alors vers `/bienvenue`. */
 	readonly etablissement: EtablissementAffiche | null;
 	readonly creancier: CreancierAffiche;
@@ -167,6 +171,7 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 		<PageEcran entete={entete}>
 			<EnTeteDuCompte
 				identite={pret.identite}
+				logoUrl={pret.etablissement?.logo.url ?? null}
 				etablissements={pret.etablissements}
 				courantId={pret.courantId}
 				onBasculer={pret.onBasculer}
@@ -195,6 +200,12 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 					)
 				}
 			>
+				<Ancre cle="profil" ancres={ancres}>
+					<SectionDepliable cle="profil" titre="Votre profil" {...resumeProfil(pret.profil)}>
+						<SectionProfil {...pret.profil} />
+					</SectionDepliable>
+				</Ancre>
+
 				<Ancre cle="etablissement" ancres={ancres}>
 					<SectionDepliable
 						cle="etablissement"
@@ -350,6 +361,8 @@ function ContenuEtablissement({
 
 	return (
 		<>
+			<ChoixDuLogo {...etablissement.logo} />
+
 			<FormulaireEtablissement
 				key={etablissement.cle}
 				initial={etablissement.initial}

@@ -1,8 +1,14 @@
 import { useRouterState } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
-import { CircleUserIcon, GavelIcon, HomeIcon, UsersIcon } from 'lucide-react';
+import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
-import { BarreDuBas, Facultatif, PastilleDeRappel, type DestinationBarre } from '../ui';
+import {
+	BarreDuBas,
+	Facultatif,
+	IconeLetikette,
+	PastilleDeRappel,
+	type DestinationBarre
+} from '../ui';
 
 /**
  * LA BARRE DU BAS, BRANCHÉE SUR LE ROUTEUR.
@@ -39,7 +45,7 @@ import { BarreDuBas, Facultatif, PastilleDeRappel, type DestinationBarre } from 
  * maintenant à `bun run check`.
  */
 const DESTINATIONS = [
-	{ cle: 'aujourdhui', libelle: 'Aujourd’hui', vers: '/app', Icone: HomeIcon },
+	{ cle: 'aujourdhui', libelle: 'Aujourd’hui', vers: '/app', Icone: IconeLetikette },
 	{ cle: 'clients', libelle: 'Clients', vers: '/app/debiteurs', Icone: UsersIcon },
 	{ cle: 'creances', libelle: 'Créances', vers: '/app/procedures', Icone: GavelIcon },
 	{ cle: 'compte', libelle: 'Compte', vers: '/app/compte', Icone: CircleUserIcon }

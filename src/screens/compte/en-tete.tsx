@@ -51,6 +51,8 @@ import type { IdentiteDuCreancier } from './presse';
 export interface EnTeteDuCompteAffiche {
 	/** L'identité du créancier, ou `null` sans établissement actif. */
 	readonly identite: IdentiteDuCreancier | null;
+	/** Le logo de l'établissement, ou `null` : ses initiales en tiennent lieu. */
+	readonly logoUrl: string | null;
 	/** Les établissements joignables, dans l'ordre où le serveur les rend. */
 	readonly etablissements: readonly { readonly id: string; readonly nom: string }[];
 	readonly courantId: string | null;
@@ -60,6 +62,7 @@ export interface EnTeteDuCompteAffiche {
 
 export function EnTeteDuCompte({
 	identite,
+	logoUrl,
 	etablissements,
 	courantId,
 	onBasculer,
@@ -80,7 +83,7 @@ export function EnTeteDuCompte({
 				{/* Les initiales du produit, la même pastille que la barre de la file :
 				    deux marques d'identité qui ne se ressemblent que « presque » se
 				    lisent comme deux natures différentes. */}
-				<Avatar nom={identite?.nom} />
+				<Avatar nom={identite?.nom} image={logoUrl === null ? null : { url: logoUrl }} />
 
 				<span className="flex min-w-0 flex-1 flex-col">
 					<span className="truncate text-cladd-md leading-tight font-bold tracking-tight">

@@ -111,7 +111,32 @@ export default defineSchema({
 	userProfiles: defineTable({
 		userId: v.string(), // Better Auth string ID
 		currentOrganizationId: v.optional(v.id('organizations')),
-		hasUsedFreeTrial: v.optional(v.boolean()) // anti-abus : trial unique par userId
+		hasUsedFreeTrial: v.optional(v.boolean()), // anti-abus : trial unique par userId
+		/**
+		 * LE VISAGE DE LA PERSONNE : une photo téléversée, OU un avatar choisi.
+		 *
+		 * ⚠️ PAS DANS `user.image` DE BETTER AUTH, et pour une raison de ménage. Une
+		 * photo remplacée doit quitter le stockage avec son remplaçant, exactement
+		 * comme le logo d'un établissement (`saveOrgLogo`) — il faut donc garder
+		 * l'identifiant de stockage, que `user.image`, simple chaîne écrite par un
+		 * composant qu'on ne maîtrise pas, ne sait pas porter. Et `supprimerMonCompte`
+		 * efface le fichier avec cette ligne : la photo entre dans la purge.
+		 *
+		 * Photo et avatar s'excluent : choisir l'un efface l'autre. L'avatar est
+		 * stocké en DESCRIPTION (un style, une graine), jamais en image : DiceBear le
+		 * redessine à l'identique chez le client. Voir `imageDeProfil.ts`.
+		 */
+		imageStorageId: v.optional(v.id('_storage')),
+		imageUrl: v.optional(v.string()),
+		avatarStyle: v.optional(
+			v.union(
+				v.literal('notionists'),
+				v.literal('lorelei'),
+				v.literal('thumbs'),
+				v.literal('shapes')
+			)
+		),
+		avatarGraine: v.optional(v.string())
 	}).index('by_userId', ['userId']),
 
 	// In-app notifications - temps réel via Convex reactive queries

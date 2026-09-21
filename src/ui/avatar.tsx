@@ -1,4 +1,5 @@
 import { cn } from './cn';
+import { imageAvatar, type StyleAvatar } from './avatar-dicebear';
 
 /**
  * L'AVATAR — qui est connecté, et sur quel établissement.
@@ -22,10 +23,15 @@ import { cn } from './cn';
  * Monzo, Klarna. L'accueil, lui, se rejoint par la marque posée dans la barre
  * de navigation — voir `barre.tsx`.
  *
- * ⚠️ LES INITIALES, ET PAS UNE PHOTOGRAPHIE. Le produit ne demande pas de
- * photo et n'en stockera pas : ce serait une donnée personnelle de plus à
- * purger, sur un produit dont la purge RGPD est déjà totale et sans exception.
- * Deux lettres suffisent à distinguer deux comptes.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * UNE PHOTO, UN AVATAR CHOISI, OU LES INITIALES — dans cet ordre
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le produit a longtemps refusé la photo : une donnée personnelle de plus à
+ * purger. Le terrain l'a demandée le 21/09/2026, avec la bibliothèque d'avatars
+ * DiceBear pour qui n'en veut pas. La photo entre donc dans la purge du compte,
+ * comme tout le reste. Et les initiales restent le repli : un compte sans image
+ * n'est jamais un disque vide.
  */
 
 /**
@@ -48,13 +54,25 @@ export function initiales(nom: string | undefined | null): string {
 	return ((mots[0]?.[0] ?? '') + (mots[1]?.[0] ?? '')).toUpperCase();
 }
 
+/** Ce qu'un avatar peut montrer à la place des initiales. */
+export type ImageAvatar =
+	| { readonly url: string }
+	| { readonly style: StyleAvatar; readonly graine: string };
+
+/** L'adresse à poser dans `<img>`, quelle que soit la forme de l'image. */
+export function sourceImageAvatar(image: ImageAvatar): string {
+	return 'url' in image ? image.url : imageAvatar(image.style, image.graine);
+}
+
 export function Avatar({
 	nom,
+	image = null,
 	/** Un point d'attention sur l'avatar — une invitation, un réglage manquant. */
 	pastille = false,
 	className
 }: {
 	nom: string | undefined | null;
+	image?: ImageAvatar | null;
 	pastille?: boolean;
 	className?: string;
 }) {
@@ -65,9 +83,17 @@ export function Avatar({
 			  ouvre les réglages — donc il se vise, et un disque de 32 px se rate
 			  au pouce sur une barre dont les autres cibles font 48.
 			*/}
-			<span className="verre verre-actif flex size-cladd-md items-center justify-center rounded-full text-cladd-2xs font-semibold tracking-wide transition-colors">
-				{initiales(nom)}
-			</span>
+			{image === null ? (
+				<span className="verre verre-actif flex size-cladd-md items-center justify-center rounded-full text-cladd-2xs font-semibold tracking-wide transition-colors">
+					{initiales(nom)}
+				</span>
+			) : (
+				<img
+					src={sourceImageAvatar(image)}
+					alt=""
+					className="size-cladd-md rounded-full object-cover ring-1 ring-cladd-outline"
+				/>
+			)}
 
 			{/*
 			  LA PASTILLE. Elle emprunte l'accent `brand` et jamais

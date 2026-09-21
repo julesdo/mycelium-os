@@ -722,6 +722,9 @@ export const supprimerMonCompte = authedMutation({
 			.query('userProfiles')
 			.withIndex('by_userId', (q) => q.eq('userId', userId))
 			.unique();
+		// La photo de profil part avec le compte : un fichier que plus rien ne
+		// référence resterait sinon dans le stockage, hors de toute purge.
+		if (profile?.imageStorageId) await ctx.storage.delete(profile.imageStorageId);
 		if (profile) await ctx.db.delete(profile._id);
 
 		for (const organizationId of aPurger) {

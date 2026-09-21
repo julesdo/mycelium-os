@@ -152,3 +152,28 @@ export function LogoLetikette({ className }: { className?: string }) {
 		</svg>
 	);
 }
+
+/**
+ * LA MARQUE À LA TAILLE D'UNE ICÔNE — pour l'onglet d'accueil de la barre du bas.
+ *
+ * Même contrat qu'une icône Lucide (`size`, `aria-hidden`), pour prendre sa
+ * place sans que la barre ait à distinguer les deux. Le symbole garde ses
+ * couleurs : c'est une marque, pas une teinte héritée (voir plus haut).
+ */
+export function IconeLetikette({
+	size = 20,
+	'aria-hidden': cache
+}: {
+	size?: number;
+	'aria-hidden'?: boolean;
+}) {
+	return (
+		<span
+			aria-hidden={cache}
+			className="inline-flex shrink-0"
+			style={{ width: size, height: size }}
+		>
+			<LogoLetikette className="size-full" />
+		</span>
+	);
+}

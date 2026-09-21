@@ -11,7 +11,7 @@
  */
 
 export { cn } from './cn';
-export { LogoLetikette, MotLetikette } from './logo';
+export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
 export { Tablette } from './tablette';
 export { Page, PageHeader, PageBody, PageHero } from './page';
 export {
@@ -24,7 +24,15 @@ export {
 	type VoletsEcran
 } from './page-ecran';
 export { Fond } from './fond';
-export { Avatar, initiales } from './avatar';
+export { Avatar, initiales, sourceImageAvatar, type ImageAvatar } from './avatar';
+export {
+	STYLES_AVATAR,
+	LIBELLE_STYLE,
+	GRAINES_DE_DEPART,
+	imageAvatar,
+	type StyleAvatar
+} from './avatar-dicebear';
+export { ChoixImage } from './choix-image';
 export { aujourdHuiISO } from './horloge';
 export { lirePourLeSujet, type PosePourUnSujet } from './etat-par-sujet';
 export { ChiffreHero } from './chiffre';

@@ -1,6 +1,7 @@
 import { v, ConvexError } from 'convex/values';
 import { internalAction, query } from './_generated/server';
 import { authedQuery, authedMutation } from './functions';
+import { verifierImageStockee } from './images';
 import { components, internal } from './_generated/api';
 import { resend, assertResendApiKey } from './emails/resend';
 import { invitationHtml, invitationTexte } from './emails/modeles';
@@ -174,6 +175,7 @@ export const saveOrgLogo = authedMutation({
 	args: { storageId: v.id('_storage') },
 	handler: async (ctx, { storageId }) => {
 		const orgId = await requireAdminDeLOrgCourante(ctx, ctx.user._id);
+		await verifierImageStockee(ctx, storageId);
 
 		// L'ancien logo quitte le stockage avec le nouveau : sans ça, chaque
 		// changement laisse un fichier que plus rien ne référence et que rien ne

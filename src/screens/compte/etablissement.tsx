@@ -2,6 +2,7 @@ import { useState, type ComponentProps } from 'react';
 import { Button, Input } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
 import { BoutonPrincipal, Champ, dateCourte, pluriel } from '../../ui';
+import type { LogoAffiche } from './profil';
 
 /**
  * LE FORMULAIRE DE L'ÉTABLISSEMENT.
@@ -179,4 +180,6 @@ export interface EtablissementAffiche {
 	/** L'identifiant de l'établissement : il remonte le formulaire quand on en change. */
 	readonly cle: string;
 	readonly onEnregistrer: ComponentProps<typeof FormulaireEtablissement>['onEnregistrer'];
+	/** Le logo de l'établissement : voir `ChoixDuLogo`. */
+	readonly logo: LogoAffiche;
 }

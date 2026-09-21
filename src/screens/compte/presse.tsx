@@ -38,6 +38,7 @@ import type { MesuresAffichees } from './mesures';
  * détient, qui fait l'acte, ce que la file a proposé, comment l'écran se peint.
  */
 export const SECTIONS_COMPTE = [
+	'profil',
 	'etablissement',
 	'facturation',
 	'equipe',
@@ -115,6 +116,12 @@ export interface IdentiteDuCreancier {
 	readonly nom: string;
 	readonly siren: string | null;
 	readonly profilComplet: boolean;
+}
+
+/** « Photo », « Avatar » ou « Initiales » : ce que les autres voient de vous. */
+export function resumeProfil(profil: { readonly image: unknown; readonly avatar: unknown }): ResumeDeSection {
+	const valeur = profil.avatar !== null ? 'Avatar' : profil.image !== null ? 'Photo' : 'Initiales';
+	return { valeur, legende: 'Ce qui vous représente dans l’application.' };
 }
 
 export function resumeEtablissement(identite: IdentiteDuCreancier | null): ResumeDeSection {

@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { ComponentType, ReactNode } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
 import { cn } from './cn';
 import { Lien } from './lien';
@@ -49,7 +48,8 @@ export interface DestinationBarre {
 	/** L'identité de l'onglet dans la liste. Jamais affichée. */
 	readonly cle: string;
 	readonly libelle: string;
-	readonly Icone: LucideIcon;
+	/** Une icône Lucide, ou la marque (`IconeLetikette`) : tout ce qui prend une taille. */
+	readonly Icone: ComponentType<{ size?: number; 'aria-hidden'?: boolean }>;
 	/**
 	 * ⚠️ TYPÉE PAR LE ROUTEUR, pas en `string`. Voir l'en-tête : c'est la seule
 	 * barrière qui attrape une destination qui n'existe pas.

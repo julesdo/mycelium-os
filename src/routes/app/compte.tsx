@@ -5,6 +5,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
+import { messageDeRefus, televerser } from '../../app/televerser';
 import type {
 	AvocatAffiche,
 	EtatRechercheAvocat,
@@ -139,6 +140,38 @@ function PageCompte() {
 		api.recouvrement.annuaires.chercherUnCommissaireDeJustice
 	);
 	const [erreurCarnet, setErreurCarnet] = useState<string | null>(null);
+
+	// ── Le visage de la personne, et le logo de l'établissement ─────────────
+	const moi = useQuery(api.users.viewer, {});
+	const monImage = useQuery(api.imageDeProfil.monImage, {});
+	const genererUrlImage = useMutation(api.imageDeProfil.genererUrlImageProfil);
+	const enregistrerImage = useMutation(api.imageDeProfil.enregistrerImageProfil);
+	const choisirAvatar = useMutation(api.imageDeProfil.choisirAvatar);
+	const retirerImage = useMutation(api.imageDeProfil.retirerImageProfil);
+	const genererUrlLogo = useMutation(api.organizations.generateOrgLogoUploadUrl);
+	const enregistrerLogo = useMutation(api.organizations.saveOrgLogo);
+	const retirerLogo = useMutation(api.organizations.deleteOrgLogo);
+	const [imageEnCours, setImageEnCours] = useState(false);
+	const [erreurImage, setErreurImage] = useState<string | null>(null);
+	const [logoEnCours, setLogoEnCours] = useState(false);
+	const [erreurLogo, setErreurLogo] = useState<string | null>(null);
+
+	/** Un geste d'image : l'état d'envoi pendant, le refus lisible après. */
+	async function gesteImage(
+		action: () => Promise<unknown>,
+		setEnCours: (v: boolean) => void,
+		setErreur: (v: string | null) => void
+	) {
+		setEnCours(true);
+		setErreur(null);
+		try {
+			await action();
+		} catch (e) {
+			setErreur(messageDeRefus(e));
+		} finally {
+			setEnCours(false);
+		}
+	}
 	const [rechercheCommissaireOuverte, setRechercheCommissaireOuverte] = useState(false);
 	const [etatRechercheCommissaire, setEtatRechercheCommissaire] =
 		useState<EtatRechercheCommissaire>({ phase: 'REPOS' });
@@ -451,6 +484,30 @@ function PageCompte() {
 				};
 
 	const compteAffiche: CompteAffiche = {
+		profil: {
+			nom: moi?.name ?? moi?.email ?? undefined,
+			image:
+				monImage?.avatar != null
+					? monImage.avatar
+					: monImage?.imageUrl != null
+						? { url: monImage.imageUrl }
+						: null,
+			avatar: monImage?.avatar ?? null,
+			enCours: imageEnCours,
+			erreur: erreurImage,
+			onTeleverser: (fichier) =>
+				void gesteImage(
+					async () => {
+						const storageId = await televerser(() => genererUrlImage({}), fichier);
+						await enregistrerImage({ storageId });
+					},
+					setImageEnCours,
+					setErreurImage
+				),
+			onChoisirAvatar: (style, graine) =>
+				void gesteImage(() => choisirAvatar({ style, graine }), setImageEnCours, setErreurImage),
+			onRetirer: () => void gesteImage(() => retirerImage({}), setImageEnCours, setErreurImage)
+		},
 		identite,
 		/*
 		  Une liste encore en lecture est une liste VIDE ici, jamais une liste à
@@ -477,7 +534,24 @@ function PageCompte() {
 							factures: org.facturesParAn ? String(org.facturesParAn) : ''
 						},
 						mesure: mesure ?? null,
-						onEnregistrer: mettreAJourOrg
+						onEnregistrer: mettreAJourOrg,
+						logo: {
+							nomEtablissement: org.name ?? '',
+							url: org.logoUrl ?? null,
+							modifiable: monRole?.role === 'ORG_ADMIN',
+							enCours: logoEnCours,
+							erreur: erreurLogo,
+							onTeleverser: (fichier) =>
+								void gesteImage(
+									async () => {
+										const storageId = await televerser(() => genererUrlLogo({}), fichier);
+										await enregistrerLogo({ storageId });
+									},
+									setLogoEnCours,
+									setErreurLogo
+								),
+							onRetirer: () => void gesteImage(() => retirerLogo({}), setLogoEnCours, setErreurLogo)
+						}
 					},
 		creancier: {
 			cle: org?._id ?? 'aucun',

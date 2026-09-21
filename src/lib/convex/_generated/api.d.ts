@@ -10,7 +10,6 @@
 
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
-import type * as constants from "../constants.js";
 import type * as crons from "../crons.js";
 import type * as emails_events from "../emails/events.js";
 import type * as emails_helpers from "../emails/helpers.js";
@@ -36,6 +35,8 @@ import type * as files_vacuum from "../files/vacuum.js";
 import type * as functions from "../functions.js";
 import type * as http from "../http.js";
 import type * as i18n_translations from "../i18n/translations.js";
+import type * as imageDeProfil from "../imageDeProfil.js";
+import type * as images from "../images.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as localDev from "../localDev.js";
@@ -74,7 +75,6 @@ import type * as recouvrement_surveillance from "../recouvrement/surveillance.js
 import type * as recouvrement_tables from "../recouvrement/tables.js";
 import type * as recouvrement_tauxContractuel from "../recouvrement/tauxContractuel.js";
 import type * as rgpd from "../rgpd.js";
-import type * as storage from "../storage.js";
 import type * as tests from "../tests.js";
 import type * as users from "../users.js";
 import type * as utils_anonymousUser from "../utils/anonymousUser.js";
@@ -88,7 +88,6 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   billing: typeof billing;
-  constants: typeof constants;
   crons: typeof crons;
   "emails/events": typeof emails_events;
   "emails/helpers": typeof emails_helpers;
@@ -114,6 +113,8 @@ declare const fullApi: ApiFromModules<{
   functions: typeof functions;
   http: typeof http;
   "i18n/translations": typeof i18n_translations;
+  imageDeProfil: typeof imageDeProfil;
+  images: typeof images;
   "lib/auth": typeof lib_auth;
   "lib/crypto": typeof lib_crypto;
   localDev: typeof localDev;
@@ -152,7 +153,6 @@ declare const fullApi: ApiFromModules<{
   "recouvrement/tables": typeof recouvrement_tables;
   "recouvrement/tauxContractuel": typeof recouvrement_tauxContractuel;
   rgpd: typeof rgpd;
-  storage: typeof storage;
   tests: typeof tests;
   users: typeof users;
   "utils/anonymousUser": typeof utils_anonymousUser;

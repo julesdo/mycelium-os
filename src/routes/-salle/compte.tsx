@@ -141,7 +141,17 @@ const ETABLISSEMENT_AFFICHE_DEMO: EtablissementAffiche = {
 		jusqua: new Date(Date.now()).toISOString().slice(0, 10),
 		plafondAtteint: false
 	},
-	onEnregistrer: () => Promise.resolve()
+	onEnregistrer: () => Promise.resolve(),
+	/* Sans logo : la salle montre l'état de départ, et le geste qui le change. */
+	logo: {
+		nomEtablissement: ORGANISATION_DEMO.name,
+		url: null,
+		modifiable: true,
+		enCours: false,
+		erreur: null,
+		onTeleverser: () => undefined,
+		onRetirer: () => undefined
+	}
 };
 
 // ── La facturation ─────────────────────────────────────────────────────────
@@ -699,6 +709,17 @@ function compteDe(forme: FormeCompte, theme: Theme, onChoisirTheme: (t: Theme) =
 			? attente
 			: ({ etat: 'pret', valeur: intervenantsDe(forme.carnet) } as const),
 		mesures: forme.enLecture ? attente : ({ etat: 'pret', valeur: MESURES_DEMO } as const),
+		/* Un avatar déjà choisi : la bibliothèque montre la sélection en place. */
+		profil: {
+			nom: 'Camille Doré',
+			image: { style: 'notionists', graine: 'Camille' },
+			avatar: { style: 'notionists', graine: 'Camille' },
+			enCours: false,
+			erreur: null,
+			onTeleverser: () => undefined,
+			onChoisirAvatar: () => undefined,
+			onRetirer: () => undefined
+		},
 		theme,
 		onChoisirTheme,
 		onSeDeconnecter: () => undefined

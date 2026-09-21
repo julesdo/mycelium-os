@@ -38,6 +38,7 @@ import { api } from '../lib/convex/_generated/api';
  */
 export function AvatarConnecte() {
 	const moi = useQuery(api.users.viewer, {});
+	const monImage = useQuery(api.imageDeProfil.monImage, {});
 	const ici = useRouterState({ select: (s) => s.location.pathname === '/app/compte' });
 
 	return (
@@ -48,7 +49,16 @@ export function AvatarConnecte() {
 			  sur un point d'interrogation — jamais sur un disque vide, qu'on prend
 			  pour un défaut de chargement.
 			*/}
-			<Avatar nom={moi?.name ?? moi?.email} />
+			<Avatar
+				nom={moi?.name ?? moi?.email}
+				image={
+					monImage?.avatar != null
+						? monImage.avatar
+						: monImage?.imageUrl != null
+							? { url: monImage.imageUrl }
+							: null
+				}
+			/>
 		</Lien>
 	);
 }

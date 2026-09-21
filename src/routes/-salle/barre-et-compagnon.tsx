@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import { SectionTitle } from '@cladd-ui/react';
-import { CircleUserIcon, GavelIcon, HomeIcon, UsersIcon } from 'lucide-react';
+import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import {
 	BarreDuBas,
 	CompagnonFlottant,
+	IconeLetikette,
 	PastilleDeRappel,
 	PageEcran,
 	cn,
@@ -40,7 +41,7 @@ import { lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
  */
 
 const ICONES = {
-	aujourdhui: HomeIcon,
+	aujourdhui: IconeLetikette,
 	clients: UsersIcon,
 	creances: GavelIcon,
 	compte: CircleUserIcon

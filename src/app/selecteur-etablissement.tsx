@@ -52,7 +52,15 @@ export function SelecteurEtablissement() {
 
 	// La pastille d'initiales, dans la même géométrie que la marque à l'autre
 	// bout de la barre : deux cercles pleins qui tiennent les extrémités.
-	const pastille = (
+	// Le logo de l'établissement quand il en a un ; ses initiales sinon.
+	const pastille = courante.logoUrl ? (
+		<img
+			src={courante.logoUrl}
+			alt=""
+			aria-hidden
+			className="size-8 shrink-0 rounded-full bg-cladd-surface-cut object-cover"
+		/>
+	) : (
 		<span
 			aria-hidden
 			className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cladd-surface-cut text-cladd-3xs font-bold"

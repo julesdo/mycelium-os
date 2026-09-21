@@ -126,16 +126,6 @@ const APPELEES_AUTREMENT: Readonly<Record<string, string>> = {
 	getMySubscription: 'DETTE — aucun écran ne montre l’abonnement en cours.',
 	getPortalUrl: 'DETTE — le portail Paddle (carte, résiliation) est injoignable.',
 
-	// L'IDENTITÉ VISUELLE DE L'ÉTABLISSEMENT ET DU COMPTE. Héritées de Fleet,
-	// jamais rebranchées après le pivot. Le décompte porte l'en-tête du
-	// créancier depuis `profilsCreancier`, pas depuis ces logos.
-	generateOrgLogoUploadUrl: 'DETTE — dépôt du logo d’établissement, sans écran.',
-	saveOrgLogo: 'DETTE — idem.',
-	deleteOrgLogo: 'DETTE — idem.',
-	generateUploadUrl: 'DETTE — dépôt d’image de profil, sans écran.',
-	updateProfileImage: 'DETTE — idem.',
-	getProfileImageUrl: 'DETTE — idem. L’avatar se contente des initiales.',
-
 	// INVITATIONS ET AUTHENTIFICATION, héritées de Fleet. L'écran d'équipe
 	// invite UNE personne à la fois et accepte par jeton ; ces variantes-là
 	// n'ont jamais eu d'interface dans ce produit.
