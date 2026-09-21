@@ -189,8 +189,8 @@ select:not(:disabled),
 
 .verre {
 	background-color: oklch(0.18 0.012 276 / 0.7);
-	backdrop-filter: blur(20px) saturate(1.6);
 	-webkit-backdrop-filter: blur(20px) saturate(1.6);
+	backdrop-filter: blur(20px) saturate(1.6);
 	box-shadow:
 		inset 0 1px 0 0 oklch(1 0 0 / 0.14),
 		inset 0 0 0 1px oklch(1 0 0 / 0.06);
@@ -214,12 +214,31 @@ select:not(:disabled),
  * carte ne passe derrière. */
 .verre-dense {
 	background-color: oklch(0.19 0.012 276 / 0.62);
-	backdrop-filter: blur(40px) saturate(2);
 	-webkit-backdrop-filter: blur(40px) saturate(2);
+	backdrop-filter: blur(40px) saturate(2);
 	box-shadow:
 		inset 0 1px 0 0 oklch(1 0 0 / 0.16),
 		inset 0 0 0 1px oklch(1 0 0 / 0.08),
 		0 8px 32px -8px oklch(0 0 0 / 0.5);
+}
+
+/* LE CONTENEUR QUI DÉFILE, SANS BARRE DE DÉFILEMENT VISIBLE.
+ *
+ * ⚠️ C'EST ELLE QUI COUPAIT LA BARRE DU HAUT À DROITE. L'en-tête est collant À
+ * L'INTÉRIEUR du conteneur qui défile — c'est ce qui fait passer le contenu sous
+ * son flou — et il ne peut donc pas s'étendre au-delà de la zone de contenu. Sur
+ * un bureau Windows, la barre de défilement en prend 15 px à droite : la barre du
+ * haut s'arrêtait avant, et laissait une bande nue sur toute la hauteur de
+ * l'écran. Mesuré : en-tête de 0 à 1250, conteneur de 0 à 1265.
+ *
+ * La molette, le trackpad, le clavier et le doigt défilent toujours : seule la
+ * gouttière disparaît, comme sur la tablette et le téléphone, où elle est déjà
+ * superposée. */
+.defilement-sans-barre {
+	scrollbar-width: none;
+}
+.defilement-sans-barre::-webkit-scrollbar {
+	display: none;
 }
 
 /* LA BARRE DU HAUT : DU FLOU, ET RIEN D'AUTRE.
@@ -236,8 +255,8 @@ select:not(:disabled),
  * transparent n'a pas de couleur à changer de thème. */
 .verre-barre-haute {
 	background-color: transparent;
-	backdrop-filter: blur(40px) saturate(2);
 	-webkit-backdrop-filter: blur(40px) saturate(2);
+	backdrop-filter: blur(40px) saturate(2);
 }
 
 /* Le verre au survol. Séparé plutôt que porté par `.verre` : la capsule de
@@ -359,8 +378,8 @@ select:not(:disabled),
  * C'est le compromis assumé. */
 .cladd-input .bg-cladd-surface-cut {
 	background-color: oklch(0.25 0.012 276 / 0.66);
-	backdrop-filter: blur(20px) saturate(1.6);
 	-webkit-backdrop-filter: blur(20px) saturate(1.6);
+	backdrop-filter: blur(20px) saturate(1.6);
 	box-shadow:
 		inset 0 1px 0 0 oklch(1 0 0 / 0.12),
 		inset 0 0 0 1px oklch(1 0 0 / 0.07);
@@ -397,8 +416,8 @@ select:not(:disabled),
  * redeviendraient sombres, en silence, selon l'ordre du fichier. */
 .cladd-surface-cut:not(.cladd-input) > .bg-cladd-surface-cut {
 	background-color: oklch(0.1 0.01 276 / 0.55);
-	backdrop-filter: blur(16px) saturate(1.4);
 	-webkit-backdrop-filter: blur(16px) saturate(1.4);
+	backdrop-filter: blur(16px) saturate(1.4);
 	box-shadow:
 		inset 0 -1px 0 0 oklch(1 0 0 / 0.07),
 		inset 0 0 0 1px oklch(0 0 0 / 0.2);
@@ -464,8 +483,8 @@ select:not(:disabled),
  * lisible. Elle gagne donc de l'opacité — 0,10 → 0,14 — sans changer de sens. */
 .pilule-secondaire {
 	background-color: oklch(1 0 0 / 0.14);
-	backdrop-filter: blur(20px) saturate(1.6);
 	-webkit-backdrop-filter: blur(20px) saturate(1.6);
+	backdrop-filter: blur(20px) saturate(1.6);
 	box-shadow:
 		inset 0 1px 0 0 oklch(1 0 0 / 0.16),
 		inset 0 0 0 1px oklch(1 0 0 / 0.07);
@@ -1021,8 +1040,8 @@ select:not(:disabled),
  * en silence. */
 .verre-carte {
 	background-color: oklch(0.18 0.012 276 / 0.72);
-	backdrop-filter: blur(24px) saturate(1.7);
 	-webkit-backdrop-filter: blur(24px) saturate(1.7);
+	backdrop-filter: blur(24px) saturate(1.7);
 	box-shadow:
 		inset 0 1px 0 0 oklch(1 0 0 / 0.1),
 		inset 0 0 0 1px oklch(1 0 0 / 0.055);

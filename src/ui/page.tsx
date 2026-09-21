@@ -107,7 +107,13 @@ export function PageHeader({
  * cachée — ne se voit qu'en faisant défiler jusqu'en bas.
  */
 export function PageBody({ children }: { children: ReactNode }) {
-	return <div className="min-h-0 flex-1 overflow-y-auto px-cladd-3xs pb-36">{children}</div>;
+	// `defilement-sans-barre` : sans elle, la gouttière de défilement coupe la barre
+	// du haut à droite. Voir `app.css`.
+	return (
+		<div className="defilement-sans-barre min-h-0 flex-1 overflow-y-auto px-cladd-3xs pb-36">
+			{children}
+		</div>
+	);
 }
 
 /**
