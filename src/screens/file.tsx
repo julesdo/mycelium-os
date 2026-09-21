@@ -708,10 +708,10 @@ function RangeeDuHaut({
 		  coûtent quarante-huit pixels de rangée, soit une cible entière. Huit
 		  suffisent à les séparer, et c'est ce que fait la référence.
 		*/
-		<div className="flex flex-wrap items-center justify-end gap-2">
+		<div className="flex w-full flex-wrap items-center justify-between gap-2">
 			<div className="flex min-w-0 shrink-0 items-center gap-2">{selecteur}</div>
 
-			<div className="flex shrink-0 items-center gap-2">
+			<div className="ml-auto flex shrink-0 items-center gap-2">
 				{palette}
 				{avecDepot ? (
 					/*
