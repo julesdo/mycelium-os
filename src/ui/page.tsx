@@ -39,7 +39,7 @@ export function PageHeader({
 				  LE FLOU SEUL REND LE DÉFILEMENT SOUS LA BARRE LISIBLE. Ni fond, ni
 				  anneau, ni ombre (`verre-barre-haute`, voir `app.css`) : la barre est
 				  le bord de l'écran, pas un bandeau posé dessus. Ce qui passe derrière
-				  est étalé par un flou de 40px et une saturation à 2, jusqu'à ne plus
+				  est brouillé par un flou léger qui naît avec le défilement, jusqu’à ne plus
 				  former de lettres — sans lui, on lirait deux textes l'un sur l'autre.
 
 				  ⚠️ `sticky` NE TIENT QUE PARCE QUE L'EN-TÊTE EST DANS LE CONTENEUR QUI

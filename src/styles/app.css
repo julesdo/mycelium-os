@@ -249,14 +249,59 @@ select:not(:disabled),
  * barre du haut ne flotte pas : elle est le bord de l'écran. Son voile se lisait
  * comme un bandeau posé sur l'application, et son anneau comme une bordure basse.
  *
- * Ce qui garde les libellés lisibles n'est donc que le flou, au même dosage que
- * la barre du bas : 40 px et la saturation à 2 étalent ce qui passe derrière
- * jusqu'à ne plus former de lettres. Aucune variante claire : un fond
- * transparent n'a pas de couleur à changer de thème. */
+ * Ce qui garde les libellés lisibles n'est donc que le flou — et un flou LÉGER.
+ * Les 40 px de la barre du bas, repris ici au début, noyaient ce qui passait
+ * dessous dans une nappe opaque : on ne voyait plus du contenu flouté, on voyait
+ * un bandeau. 10 px et une saturation à 1,3 brouillent assez les lettres pour
+ * qu'elles ne se lisent pas sous les outils, en laissant voir ce qui défile.
+ * Aucune variante claire : un fond transparent n'a pas de couleur à changer de
+ * thème.
+ *
+ * ⚠️ LE PRÉFIXE `-webkit-` EN PREMIER, TOUJOURS. Dans l'autre ordre, le
+ * minifieur de production ne garde que lui, et Chrome n'a plus aucun flou. */
 .verre-barre-haute {
 	background-color: transparent;
-	-webkit-backdrop-filter: blur(40px) saturate(2);
-	backdrop-filter: blur(40px) saturate(2);
+	-webkit-backdrop-filter: blur(10px) saturate(1.3);
+	backdrop-filter: blur(10px) saturate(1.3);
+}
+
+/* LE FLOU MONTE AVEC LE DÉFILEMENT.
+ *
+ * En haut de l'écran, rien ne passe sous la barre : un flou n'y floute que le
+ * fond, et se lit comme une vitre sale posée sans raison. Il naît donc à zéro et
+ * atteint son plein sur les 64 premiers pixels défilés — le moment exact où le
+ * contenu commence à glisser dessous.
+ *
+ * ⚠️ PILOTÉ PAR LE DÉFILEMENT LUI-MÊME, SANS UNE LIGNE DE JAVASCRIPT. La
+ * chronologie `scroll(nearest block)` est celle du conteneur qui défile le plus
+ * proche — `PageBody`, puisque l'en-tête vit dedans. Le navigateur l'anime sur le
+ * compositeur : aucun écouteur, aucun rendu React à chaque pixel.
+ *
+ * Là où la chronologie n'existe pas (Firefox aujourd'hui), la règle au-dessus
+ * s'applique seule : un flou léger constant, pas une barre nue. Et là où
+ * l'en-tête n'a pas de conteneur défilant au-dessus de lui (les écrans à deux
+ * volets), la chronologie est inactive, l'animation ne s'applique pas, et c'est
+ * encore la règle constante qui tient. */
+@supports (animation-timeline: scroll()) {
+	.verre-barre-haute {
+		animation-name: flou-au-defilement;
+		animation-timing-function: linear;
+		animation-fill-mode: both;
+		animation-duration: auto;
+		animation-timeline: scroll(nearest block);
+		animation-range: 0 64px;
+	}
+}
+
+@keyframes flou-au-defilement {
+	from {
+		-webkit-backdrop-filter: blur(0) saturate(1);
+		backdrop-filter: blur(0) saturate(1);
+	}
+	to {
+		-webkit-backdrop-filter: blur(10px) saturate(1.3);
+		backdrop-filter: blur(10px) saturate(1.3);
+	}
 }
 
 /* Le verre au survol. Séparé plutôt que porté par `.verre` : la capsule de
