@@ -222,6 +222,24 @@ select:not(:disabled),
 		0 8px 32px -8px oklch(0 0 0 / 0.5);
 }
 
+/* LA BARRE DU HAUT : DU FLOU, ET RIEN D'AUTRE.
+ *
+ * ⚠️ PAS DE FOND, PAS D'ANNEAU, PAS D'OMBRE — c'est une demande du terrain, et
+ * elle tient debout. `verre-dense` porte un voile coloré, un liseré et une ombre
+ * portée parce qu'il doit FLOTTER au-dessus du contenu, en bas de l'écran. La
+ * barre du haut ne flotte pas : elle est le bord de l'écran. Son voile se lisait
+ * comme un bandeau posé sur l'application, et son anneau comme une bordure basse.
+ *
+ * Ce qui garde les libellés lisibles n'est donc que le flou, au même dosage que
+ * la barre du bas : 40 px et la saturation à 2 étalent ce qui passe derrière
+ * jusqu'à ne plus former de lettres. Aucune variante claire : un fond
+ * transparent n'a pas de couleur à changer de thème. */
+.verre-barre-haute {
+	background-color: transparent;
+	backdrop-filter: blur(40px) saturate(2);
+	-webkit-backdrop-filter: blur(40px) saturate(2);
+}
+
 /* Le verre au survol. Séparé plutôt que porté par `.verre` : la capsule de
  * navigation ne doit PAS s'éclaircir au survol de la barre entière, seuls ses
  * boutons le doivent. */

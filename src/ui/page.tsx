@@ -36,19 +36,18 @@ export function PageHeader({
 		<header
 			className={cn(
 				/*
-				  LE VERRE EST CE QUI REND LE DÉFILEMENT SOUS LA BARRE LISIBLE. Le même
-				  dosage que la barre du bas (`verre-dense`) : ce n'est pas l'opacité qui
-				  rend les libellés lisibles, c'est le flou de 40px et la saturation
-				  poussée à 2, qui étalent ce qui passe derrière jusqu'à ne plus former de
-				  forme. Une barre simplement translucide laisserait lire deux textes l'un
-				  sur l'autre.
+				  LE FLOU SEUL REND LE DÉFILEMENT SOUS LA BARRE LISIBLE. Ni fond, ni
+				  anneau, ni ombre (`verre-barre-haute`, voir `app.css`) : la barre est
+				  le bord de l'écran, pas un bandeau posé dessus. Ce qui passe derrière
+				  est étalé par un flou de 40px et une saturation à 2, jusqu'à ne plus
+				  former de lettres — sans lui, on lirait deux textes l'un sur l'autre.
 
 				  ⚠️ `sticky` NE TIENT QUE PARCE QUE L'EN-TÊTE EST DANS LE CONTENEUR QUI
 				  DÉFILE. Remonté à côté de `PageBody`, il n'a plus d'ancêtre défilant et
 				  redevient un bloc ordinaire : plus rien ne passe dessous, et le flou n'a
 				  plus rien à flouter. Voir `page-ecran.tsx`.
 				*/
-				'verre-dense sticky top-0 z-30 -mx-cladd-3xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-2xs px-cladd-3xs pb-cladd-3xs',
+				'verre-barre-haute sticky top-0 z-30 -mx-cladd-3xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-2xs px-cladd-3xs pb-cladd-3xs',
 				sansTitre ? 'pt-cladd-xs' : 'pt-barre-app'
 			)}
 		>

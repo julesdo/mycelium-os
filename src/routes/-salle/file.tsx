@@ -8,7 +8,6 @@ import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/pro
 import {
 	Avatar,
 	DeclencheurRecherche,
-	VeilleurDeLaToolbar,
 	travauxDuVeilleur,
 	type TacheVeilleur
 } from '../../ui';
@@ -402,7 +401,6 @@ const RANGEE_DU_HAUT_DEMO = {
 	avatar: <Avatar nom="Camille Doré" />,
 	// Deux non lues : la pastille rare, et le seul signal du produit qui annonce
 	// une perte sèche. À zéro, on ne verrait pas qu'elle tient dans la rangée.
-	veilleur: <VeilleurDeLaToolbar etat="VEILLE" nonLues={2} />,
 	/*
 	  ⚠️ LA MÊME GÉOMÉTRIE QUE LA PRODUCTION, AU PIXEL. `app/selecteur-etablissement.tsx`
 	  rend un `Button rounded` à `min-w-cladd-md` portant la pastille ET un chevron :

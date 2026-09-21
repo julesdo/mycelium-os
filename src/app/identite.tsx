@@ -3,7 +3,6 @@ import { useRouterState } from '@tanstack/react-router';
 
 import { Avatar } from '../ui/avatar';
 import { Lien } from '../ui/lien';
-import { VeilleurDeLaToolbar, type EtatVeilleur } from '../ui/veilleur-avatar';
 import { api } from '../lib/convex/_generated/api';
 
 /**
@@ -52,44 +51,4 @@ export function AvatarConnecte() {
 			<Avatar nom={moi?.name ?? moi?.email} />
 		</Lien>
 	);
-}
-
-/**
- * LE VEILLEUR, ET SA PASTILLE.
- *
- * ⚠️ CE N'EST PAS LA RANGÉE « LE TRAVAIL DE FOND » DE LA FILE. Celle-là dit ce
- * que la machine a FAIT cette nuit ; celui-ci dit qu'elle EST LÀ, et porte le
- * compte de ce qu'elle a trouvé et qu'on n'a pas lu. Les deux lectures ne se
- * recouvrent pas, et c'est pour ça que la file porte les deux.
- *
- * ⚠️ IL N'EST PLUS UN LIEN, ET C'EST LA BASCULE QUI L'A RETIRÉ. Dans la barre,
- * il menait à `/app` — c'est-à-dire à son journal, sur un autre écran. Son
- * journal EST maintenant l'écran où il se trouve : un lien vers la page qu'on
- * regarde déjà est une cible morte.
- *
- * Les trois requêtes sont celles que la file demande déjà, donc Convex les sert
- * depuis son cache : la `Toolbar` ne paie aucun aller-retour de plus.
- */
-export function VeilleurPresent() {
-	const battement = useQuery(api.recouvrement.battement.dernierBattement, {});
-	const depots = useQuery(api.recouvrement.depotMutations.listerImports, { limite: 5 });
-	const nonLues = useQuery(api.notifications.getUnreadCount, {});
-
-	const travaille = (depots ?? []).some(
-		(depot) => depot.statut === 'EN_ATTENTE' || depot.statut === 'LECTURE'
-	);
-
-	/**
-	 * ⚠️ `undefined` NE VAUT PAS « ROMPU ». Tant que la réponse n'est pas là, on
-	 * ne sait pas : afficher un veilleur éteint le temps d'un aller-retour ferait
-	 * clignoter une panne à chaque ouverture, et on apprendrait à l'ignorer —
-	 * exactement sur le signal qui ne doit jamais être ignoré.
-	 */
-	const etat: EtatVeilleur = travaille
-		? 'TRAVAILLE'
-		: battement?.statut === 'ECHEC'
-			? 'ROMPU'
-			: 'VEILLE';
-
-	return <VeilleurDeLaToolbar etat={etat} nonLues={nonLues} />;
 }

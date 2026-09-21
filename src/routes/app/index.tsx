@@ -14,7 +14,7 @@ import {
 } from '../../ui';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { QUESTIONS_LITIGE } from '../../lib/verticales/recouvrement/litige';
-import { AvatarConnecte, VeilleurPresent } from '../../app/identite';
+import { AvatarConnecte } from '../../app/identite';
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
@@ -928,11 +928,6 @@ function File() {
 		avatar: (
 			<Facultatif>
 				<AvatarConnecte />
-			</Facultatif>
-		),
-		veilleur: (
-			<Facultatif>
-				<VeilleurPresent />
 			</Facultatif>
 		),
 		selecteur: (

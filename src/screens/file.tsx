@@ -104,8 +104,8 @@ import {
  *
  * La route lui passe des données, la salle d'exposition lui en passe d'autres.
  * C'est ce qui permet de le VOIR aux quatre largeurs de référence sans backend
- * ni authentification. Les quatre surfaces que seule l'application peut composer
- * — l'avatar, le veilleur, le sélecteur d'établissement et la palette de
+ * ni authentification. Les trois surfaces que seule l’application peut composer
+ * — l'avatar, le sélecteur d'établissement et la palette de
  * recherche — arrivent en `ReactNode` : l'écran ne fait que leur garder leur
  * place dans la rangée du haut.
  */
@@ -397,14 +397,6 @@ export interface FileAffichee {
 	 * nommé « Compte » ne dit pas.
 	 */
 	readonly avatar?: ReactNode;
-	/**
-	 * LE VEILLEUR ET SA PASTILLE — la machine est là, et elle a trouvé.
-	 *
-	 * ⚠️ CE N'EST PAS LA RANGÉE « LE TRAVAIL DE FOND », qui dit ce qu'il a FAIT.
-	 * Celui-ci dit qu'il TOURNE, et porte le compte des notifications non lues :
-	 * la seule chose du produit qui annonce une perte sèche.
-	 */
-	readonly veilleur?: ReactNode;
 	/** Le sélecteur d'établissement, monté par l'application. Permanent. */
 	readonly selecteur?: ReactNode;
 	/** La palette de recherche (D16). */
@@ -421,7 +413,7 @@ export interface FileAffichee {
  *     n'a pas d'en-tête, et rien du tout quand il est prêt. Le contenu
  *     descendait puis remontait de 48 px à chaque chargement — le genre de saut
  *     qu'aucun test ne voit ;
- *   · la recherche, le dépôt, le veilleur et le compte partaient vers le haut
+ *   · la recherche, le dépôt et le compte partaient vers le haut
  *     dès la deuxième rangée lue. Sur un écran qui porte cent cinquante rangées,
  *     c'est-à-dire : introuvables.
  *
@@ -466,7 +458,6 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		onFichiers,
 		accepteFichiers,
 		avatar,
-		veilleur,
 		selecteur,
 		palette
 	} = valeur;
@@ -532,7 +523,6 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					<RangeeDuHaut
 						selecteur={selecteur}
 						palette={palette}
-						veilleur={veilleur}
 						avatar={avatar}
 						depotOuvert={depotOuvert}
 						onDepot={() => setDepotOuvert(!depotOuvert)}
@@ -687,7 +677,6 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 function RangeeDuHaut({
 	selecteur,
 	palette,
-	veilleur,
 	avatar,
 	depotOuvert,
 	onDepot,
@@ -695,7 +684,6 @@ function RangeeDuHaut({
 }: {
 	selecteur?: ReactNode;
 	palette?: ReactNode;
-	veilleur?: ReactNode;
 	avatar?: ReactNode;
 	depotOuvert: boolean;
 	onDepot: () => void;
@@ -755,7 +743,6 @@ function RangeeDuHaut({
 						<UploadIcon aria-hidden />
 					</Button>
 				) : null}
-				{veilleur}
 				{avatar}
 			</div>
 		</div>

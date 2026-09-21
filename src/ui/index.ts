@@ -125,7 +125,7 @@ export { rangeeDuDebiteur, secteursProposes } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
 /** ⚠️ TEMPORAIRE, ET DATÉ : la porte de la bascule. Elle part avec T16. */
 export { PorteDeTransition, FERMETURE_DE_LA_PORTE } from './porte-de-transition';
-export { VeilleurAvatar, VeilleurDeLaToolbar, type EtatVeilleur } from './veilleur-avatar';
+export { VeilleurAvatar, type EtatVeilleur } from './veilleur-avatar';
 export {
 	RechercheRegistre,
 	sirenLisible,

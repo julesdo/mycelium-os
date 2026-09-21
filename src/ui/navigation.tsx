@@ -355,8 +355,10 @@ export function EnteteDetail({
 	/** Voir `RetourEcran.masqueEnVolets` : la pastille passe en `lg:hidden`, rien d’autre. */
 	const classePastille = cn(PASTILLE_RETOUR.className, retourMasqueEnVolets && 'lg:hidden');
 
+	// Même bord d’écran que la barre des onglets : du flou seul, collant, et le contenu
+	// glisse dessous. Voir `PageHeader`.
 	return (
-		<header className="flex shrink-0 flex-col gap-cladd-3xs px-cladd-3xs pt-barre-app pb-cladd-3xs">
+		<header className="verre-barre-haute sticky top-0 z-30 -mx-cladd-3xs flex shrink-0 flex-col gap-cladd-3xs px-cladd-3xs pt-barre-app pb-cladd-3xs">
 			{parHistorique ? (
 				<Button
 					{...PASTILLE_RETOUR}

@@ -182,7 +182,11 @@ function CorpsPageEcran({
 	if (etat === 'pret' && volets !== undefined) {
 		return (
 			<Page>
-				<Entete entete={entete} donneesPretes />
+				{/* Hors du conteneur qui défile : cet habillage rend la gouttière que la barre
+				    reprend par sa marge négative, sinon ses outils toucheraient le bord. */}
+				<div className="px-cladd-3xs">
+					<Entete entete={entete} donneesPretes />
+				</div>
 				<Volets
 					liste={volets.liste}
 					preuve={volets.preuve}
@@ -196,7 +200,9 @@ function CorpsPageEcran({
 	if (etat === 'attente' && (volets !== undefined || disposition === 'volets')) {
 		return (
 			<Page>
-				<Entete entete={entete} donneesPretes={false} />
+				<div className="px-cladd-3xs">
+					<Entete entete={entete} donneesPretes={false} />
+				</div>
 				<Volets
 					liste={
 						<PageBody>
