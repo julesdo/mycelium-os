@@ -3,6 +3,7 @@ import { httpAction } from './_generated/server';
 import { authComponent, createAuth } from './auth';
 import { resend } from './emails/resend';
 import { webhookHandler as paddleWebhookHandler } from './paddle';
+import { retourQonto } from './connexions/qonto';
 
 const http = httpRouter();
 
@@ -22,5 +23,9 @@ http.route({
 // Paddle webhook — https://your-deployment.convex.site/paddle-webhook
 // Configure in Paddle Dashboard → Notifications
 http.route({ path: '/paddle-webhook', method: 'POST', handler: paddleWebhookHandler });
+
+// Retour OAuth de Qonto — à déclarer à l'identique sur https://developers.qonto.com :
+// https://<deployment>.convex.site/qonto/retour
+http.route({ path: '/qonto/retour', method: 'GET', handler: retourQonto });
 
 export default http;

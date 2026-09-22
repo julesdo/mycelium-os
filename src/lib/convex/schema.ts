@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { vEmailEvent } from '@convex-dev/resend';
 import { recouvrementTables } from './recouvrement/tables';
+import { vStatutConnexionQonto } from './connexions/validateurs';
 
 export default defineSchema({
 	// Note: Better Auth component manages its own tables (users, sessions, accounts, verifications)
@@ -78,6 +79,42 @@ export default defineSchema({
 		.index('by_name', ['name'])
 		.index('by_paddle_subscription', ['paddleSubscriptionId'])
 		.index('by_paddle_customer', ['paddleCustomerId']),
+
+	/**
+	 * LA CONNEXION D'UN ÉTABLISSEMENT À SON COMPTE QONTO.
+	 *
+	 * ⚠️ LES JETONS SONT CHIFFRÉS, ET AUCUNE FONCTION PUBLIQUE NE LES REND. Ils
+	 * ouvrent les factures d'une entreprise : en clair, ils fuiraient avec la
+	 * première sauvegarde exportée. `maConnexionQonto` ne rend que l'état.
+	 *
+	 * ⚠️ LECTURE SEULE. Les droits demandés ne permettent aucune écriture chez
+	 * Qonto et aucun mouvement d'argent : ligne rouge 2.
+	 */
+	connexionsQonto: defineTable({
+		organizationId: v.id('organizations'),
+		statut: vStatutConnexionQonto,
+		/** Le `state` OAuth en cours, et sa limite : dix minutes pour revenir de Qonto. */
+		etatOAuth: v.optional(v.string()),
+		etatExpireLe: v.optional(v.number()),
+		jetonAccesChiffre: v.optional(v.string()),
+		jetonRafraichissementChiffre: v.optional(v.string()),
+		jetonExpireLe: v.optional(v.number()),
+		secretWebhookChiffre: v.optional(v.string()),
+		abonnementWebhookId: v.optional(v.string()),
+		/** L'organisation côté Qonto : c'est par elle qu'un webhook retrouve sa connexion. */
+		qontoOrganizationId: v.optional(v.string()),
+		/** Horodatage ISO depuis lequel relire : le début de la dernière synchronisation réussie. */
+		curseur: v.optional(v.string()),
+		/** Posé au début d'une synchronisation : deux synchronisations ne se chevauchent pas. */
+		synchroDebuteeLe: v.optional(v.number()),
+		derniereSynchro: v.optional(v.number()),
+		facturesLues: v.optional(v.number()),
+		erreur: v.optional(v.string()),
+		creeLe: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_etat_oauth', ['etatOAuth'])
+		.index('by_qonto_organization', ['qontoOrganizationId']),
 
 	// Organization members - liaison utilisateur ↔ organisation avec rôle
 	organizationMembers: defineTable({

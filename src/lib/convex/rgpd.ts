@@ -578,6 +578,9 @@ export const purgerEtablissement = internalMutation({
 		budget = await viderParIndexOrg(ctx, 'propositions', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'echangesCompagnon', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'journal', organizationId, budget);
+		// Les jetons Qonto d'un établissement effacé partent avec lui : un jeton
+		// orphelin ouvrirait encore ses factures.
+		budget = await viderParIndexOrg(ctx, 'connexionsQonto', organizationId, budget);
 
 		// 2. Les règlements — le plus gros volume : plusieurs par facture.
 		if (encore()) {
@@ -870,7 +873,8 @@ async function viderParIndexOrg(
 		| 'journal'
 		| 'propositions'
 		| 'echangesCompagnon'
-		| 'remisesAuConseil',
+		| 'remisesAuConseil'
+		| 'connexionsQonto',
 	organizationId: Id<'organizations'>,
 	budget: number
 ): Promise<number> {

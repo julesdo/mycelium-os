@@ -10,6 +10,10 @@
 
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
+import type * as connexions_qonto from "../connexions/qonto.js";
+import type * as connexions_qontoConfig from "../connexions/qontoConfig.js";
+import type * as connexions_qontoDonnees from "../connexions/qontoDonnees.js";
+import type * as connexions_validateurs from "../connexions/validateurs.js";
 import type * as crons from "../crons.js";
 import type * as emails_events from "../emails/events.js";
 import type * as emails_helpers from "../emails/helpers.js";
@@ -88,6 +92,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   billing: typeof billing;
+  "connexions/qonto": typeof connexions_qonto;
+  "connexions/qontoConfig": typeof connexions_qontoConfig;
+  "connexions/qontoDonnees": typeof connexions_qontoDonnees;
+  "connexions/validateurs": typeof connexions_validateurs;
   crons: typeof crons;
   "emails/events": typeof emails_events;
   "emails/helpers": typeof emails_helpers;
