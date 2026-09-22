@@ -245,6 +245,59 @@ export const renseignerSiren = authedMutation({
 	}
 });
 
+/**
+ * L'ADRESSE ÉLECTRONIQUE DU CLIENT, SAISIE PAR LE GÉRANT.
+ *
+ * ⚠️ VIDE EFFACE, ET C'EST VOULU. Une adresse fausse est pire qu'une adresse
+ * absente : elle fait partir une relance chez quelqu'un qui n'est pas le
+ * débiteur, avec le détail de ce qu'il doit. Pouvoir retirer ce qu'on a saisi
+ * fait donc partie du geste.
+ *
+ * ⚠️ AUCUNE VALIDATION AU-DELÀ DE L'ARROBASE. Les règles d'adresse acceptable
+ * sont un nid à faux refus — les apostrophes, les points, les nouveaux
+ * domaines — et c'est la messagerie du gérant qui tranchera, sous ses yeux,
+ * avant qu'il appuie sur envoyer. On refuse seulement ce qui ne peut pas être
+ * une adresse du tout.
+ */
+export const renseignerEmail = authedMutation({
+	args: { debiteurId: v.id('debiteurs'), email: v.string() },
+	returns: v.null(),
+	handler: async (ctx, { debiteurId, email }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const propre = email.trim();
+		if (propre !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(propre)) {
+			throw new ConvexError(
+				`« ${propre} » ne ressemble pas à une adresse électronique : il y manque un arobase ou un domaine.`
+			);
+		}
+		await ctx.runMutation(internal.recouvrement.debiteurs.renseignerEmailInterne, {
+			organizationId,
+			debiteurId,
+			email: propre
+		});
+		return null;
+	}
+});
+
+export const renseignerEmailInterne = internalMutation({
+	args: {
+		organizationId: v.id('organizations'),
+		debiteurId: v.id('debiteurs'),
+		email: v.string()
+	},
+	returns: v.null(),
+	handler: async (ctx, { organizationId, debiteurId, email }): Promise<null> => {
+		const debiteur = await debiteurDe(ctx, organizationId, debiteurId);
+		await ctx.db.patch(debiteur._id, {
+			email: email === '' ? undefined : email,
+			// Effacer efface aussi la provenance : un champ vide marqué « saisi »
+			// empêcherait à jamais la banque de proposer la sienne.
+			emailSource: email === '' ? undefined : 'SAISIE'
+		});
+		return null;
+	}
+});
+
 export const renseignerSecteur = authedMutation({
 	args: { debiteurId: v.id('debiteurs'), secteur: vSecteurCreance },
 	returns: v.null(),

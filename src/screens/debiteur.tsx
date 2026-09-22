@@ -99,6 +99,16 @@ export interface DebiteurAffiche {
 	 * règle d'écran interdit.
 	 */
 	readonly adresse?: string;
+	/**
+	 * Son adresse électronique. C'est elle qui rend une relance envoyable.
+	 *
+	 * ⚠️ DEUX PROVENANCES, ET ELLES NE SE VALENT PAS : lue chez la banque, c'est
+	 * l'adresse de FACTURATION ; saisie ici, c'est celle que le gérant a fini par
+	 * trouver. L'écran les distingue, et la seconde n'est jamais écrasée.
+	 */
+	readonly email?: string;
+	/** Vrai quand l'adresse vient d'une synchronisation bancaire, pas d'une saisie. */
+	readonly emailVenuDeLaBanque?: boolean;
 	readonly secteur?: string;
 	readonly santeFinanciere: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
 	readonly constatRegistre?: ConstatRegistreAffiche;
@@ -128,6 +138,7 @@ export interface DebiteurComplet {
 	readonly optionsSecteur: readonly OptionSecteur[];
 	readonly etatRecherche: EtatRecherche;
 	readonly erreurSiren: string | null;
+	readonly erreurEmail: string | null;
 	readonly tauxStipule: string | undefined;
 	readonly constatTaux: string | null;
 	readonly propositionLettrage: PropositionLettrage | null;
@@ -140,6 +151,7 @@ export interface DebiteurComplet {
 	readonly onChercherAuRegistre: () => void;
 	readonly onRetenirEtablissement: (etablissement: EtablissementPropose) => void;
 	readonly onEnregistrerSiren: (saisi: string) => void;
+	readonly onEnregistrerEmail: (saisi: string) => void;
 	readonly onChoisirSecteur: (cle: string) => void;
 	readonly onEnregistrerTaux: (pourcentage: string | null) => void;
 	readonly onChercherLettrage: (montant: string, date: string) => void;
@@ -271,6 +283,7 @@ function CorpsDebiteur({
 	optionsSecteur,
 	etatRecherche,
 	erreurSiren,
+	erreurEmail,
 	tauxStipule,
 	constatTaux,
 	propositionLettrage,
@@ -283,6 +296,7 @@ function CorpsDebiteur({
 	onChercherAuRegistre,
 	onRetenirEtablissement,
 	onEnregistrerSiren,
+	onEnregistrerEmail,
 	onChoisirSecteur,
 	onEnregistrerTaux,
 	onChercherLettrage,
@@ -551,6 +565,10 @@ function CorpsDebiteur({
 					onRetenirEtablissement={onRetenirEtablissement}
 					secteur={debiteur.secteur}
 					optionsSecteur={optionsSecteur}
+					email={debiteur.email}
+					emailVenuDeLaBanque={debiteur.emailVenuDeLaBanque ?? false}
+					erreurEmail={erreurEmail}
+					onEnregistrerEmail={onEnregistrerEmail}
 					erreurSiren={erreurSiren}
 					onEnregistrerSiren={onEnregistrerSiren}
 					onChoisirSecteur={onChoisirSecteur}

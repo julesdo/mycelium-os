@@ -7,6 +7,7 @@ import {
 	type EtablissementPropose
 } from './recherche-registre';
 
+import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
 import {
 	REGIMES_PRESCRIPTION,
@@ -224,6 +225,70 @@ export function ChoixSecteur({
 	);
 }
 
+/**
+ * L'ADRESSE OÙ LA RELANCE PARTIRA — depuis la messagerie du gérant, jamais d'ici.
+ *
+ * ⚠️ ELLE N'EXISTAIT NULLE PART. Le produit composait des brouillons de relance
+ * depuis des semaines, et le gérant devait retrouver l'adresse de son client
+ * ailleurs pour les envoyer : c'est la double saisie de ce chantier, à son
+ * dernier mètre.
+ *
+ * ⚠️ CE QUE LA BANQUE DONNE SE DIT COMME TEL. L'adresse lue chez Qonto est
+ * l'adresse de FACTURATION ; celle qui débloque un impayé est souvent celle du
+ * comptable, et le gérant est le seul à la connaître. Afficher les deux de la
+ * même façon laisserait croire qu'il n'y a rien à vérifier.
+ *
+ * ⚠️ ET LA CORRIGER À LA MAIN LA REND DÉFINITIVE. Le rattrapage de six heures
+ * ne la réécrira jamais : voir `trouverOuCreerDebiteur`.
+ */
+function AdresseDuClient({
+	email,
+	erreur,
+	onEnregistrer,
+	venueDeLaBanque
+}: {
+	email: string | undefined;
+	erreur: string | null;
+	onEnregistrer: (saisi: string) => void;
+	venueDeLaBanque: boolean;
+}) {
+	/* La `key` porte l'adresse enregistrée : le champ suit ce que le serveur a
+	   retenu, sans effet. Voir la même discipline sur le taux, plus bas. */
+	const [saisi, setSaisi] = useState(email ?? '');
+
+	return (
+		<div className="flex flex-col gap-cladd-3xs">
+			<Champ
+				etiquette="Son adresse électronique"
+				aide={
+					email === undefined || email === ''
+						? 'Sans elle, une relance se prépare mais ne peut pas s’ouvrir dans votre messagerie.'
+						: venueDeLaBanque
+							? 'Venue de votre banque : c’est l’adresse de facturation. Celle qui débloque un impayé est souvent celle du comptable.'
+							: 'Votre message s’ouvrira dans votre messagerie, à cette adresse, sous votre signature.'
+				}
+			>
+				<input
+					value={saisi}
+					onChange={(e) => setSaisi(e.target.value)}
+					onBlur={() => {
+						if (saisi.trim() !== (email ?? '')) onEnregistrer(saisi);
+					}}
+					inputMode="email"
+					placeholder="comptabilite@exemple.fr"
+					aria-label="Adresse électronique du client"
+					className="verre h-cladd-md w-full rounded-full px-cladd-3xs text-cladd-xs text-cladd-fg placeholder:text-cladd-fg-softer focus:outline-none"
+				/>
+			</Champ>
+			{erreur === null ? null : (
+				<p className="text-cladd-2xs leading-snug text-cladd-fg-soft" role="alert">
+					{erreur}
+				</p>
+			)}
+		</div>
+	);
+}
+
 export function IdentiteDebiteur({
 	denomination,
 	siren,
@@ -231,6 +296,10 @@ export function IdentiteDebiteur({
 	etatRecherche,
 	onChercherAuRegistre,
 	onRetenirEtablissement,
+	email,
+	emailVenuDeLaBanque,
+	erreurEmail,
+	onEnregistrerEmail,
 	secteur,
 	optionsSecteur,
 	erreurSiren,
@@ -250,6 +319,13 @@ export function IdentiteDebiteur({
 	onChercherAuRegistre: () => void;
 	/** Retenir un établissement proposé : son numéro ET sa forme juridique. */
 	onRetenirEtablissement: (etablissement: EtablissementPropose) => void;
+	/** L'adresse électronique du client. C'est elle qui rend la relance envoyable. */
+	email: string | undefined;
+	/** Vrai quand elle vient d'une synchronisation bancaire, pas d'une saisie. */
+	emailVenuDeLaBanque: boolean;
+	/** Le refus venu du serveur, mot pour mot. */
+	erreurEmail: string | null;
+	onEnregistrerEmail: (saisi: string) => void;
 	secteur: string | undefined;
 	optionsSecteur: readonly OptionSecteur[];
 	/** Le refus venu du serveur, tel quel — c'est lui qui nomme le numéro reçu. */
@@ -293,6 +369,13 @@ export function IdentiteDebiteur({
 				onChercher={onChercherAuRegistre}
 				onRetenir={onRetenirEtablissement}
 				onSaisir={onEnregistrerSiren}
+			/>
+
+			<AdresseDuClient
+				email={email}
+				erreur={erreurEmail}
+				onEnregistrer={onEnregistrerEmail}
+				venueDeLaBanque={emailVenuDeLaBanque}
 			/>
 
 			<ChoixSecteur

@@ -326,6 +326,37 @@ export const recouvrementTables = {
 		 */
 		secteur: v.optional(vSecteurCreance),
 		adresse: v.optional(v.string()),
+		/**
+		 * L'ADRESSE ÉLECTRONIQUE DU CLIENT — et elle n'existait nulle part.
+		 *
+		 * ⚠️ SANS ELLE, « OUVRIR DANS MA MESSAGERIE » OUVRE UN MESSAGE SANS
+		 * DESTINATAIRE. Le produit compose des brouillons de relance depuis des
+		 * semaines, et le gérant devait retrouver l'adresse de son client ailleurs
+		 * pour les envoyer : la double saisie que ce chantier supprime, à son
+		 * dernier mètre.
+		 *
+		 * Deux chemins l'alimentent, et un seul gagne : `client.email` lu chez
+		 * Qonto à la synchronisation, et la saisie sur la page du client. Ce qui a
+		 * été corrigé à la main n'est JAMAIS écrasé par un champ d'API — une
+		 * adresse de facturation générique vaut moins que celle du comptable que
+		 * le gérant a fini par trouver.
+		 *
+		 * ⚠️ CE N'EST PAS `contact_email` DE QONTO. Celui-là est l'adresse de
+		 * l'ÉMETTEUR de la facture, c'est-à-dire notre propre client. L'y brancher
+		 * aurait fait préparer des relances adressées au créancier lui-même.
+		 */
+		email: v.optional(v.string()),
+		/**
+		 * D'OÙ VIENT CETTE ADRESSE, parce que les deux ne se valent pas.
+		 *
+		 * `BANQUE` : lue à la synchronisation. C'est l'adresse de FACTURATION, celle
+		 * à laquelle on envoie les factures — rarement celle qui débloque un
+		 * impayé. L'écran le dit, pour que le gérant vérifie au lieu de supposer.
+		 *
+		 * `SAISIE` : le gérant l'a écrite. Elle ne sera jamais réécrite par une
+		 * synchronisation, et c'est tout l'intérêt de distinguer les deux.
+		 */
+		emailSource: v.optional(v.union(v.literal('BANQUE'), v.literal('SAISIE'))),
 		creeLe: v.number()
 	})
 		.index('by_org', ['organizationId'])

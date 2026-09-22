@@ -53,6 +53,16 @@ const vDebiteur = v.object({
 	 * un numéro.
 	 */
 	adresse: v.optional(v.string()),
+	/** Son adresse électronique. C'est elle qui rend une relance envoyable. */
+	email: v.optional(v.string()),
+	/**
+	 * Vrai quand l'adresse vient d'une synchronisation bancaire.
+	 *
+	 * ⚠️ RENDU COMME UN BOOLÉEN, PAS COMME LA SOURCE. L'écran n'a qu'une question
+	 * à poser — faut-il inviter à vérifier ? — et rendre l'énumération l'aurait
+	 * obligé à connaître la liste des connecteurs pour y répondre.
+	 */
+	emailVenuDeLaBanque: v.boolean(),
 	estCommercant: vEtatCritere,
 	santeFinanciere: v.union(
 		v.literal('INCONNUE'),
@@ -181,6 +191,8 @@ export const listerDebiteurs = authedQuery({
 					siren: debiteur.siren,
 					formeJuridique: debiteur.formeJuridique,
 					adresse: debiteur.adresse,
+					email: debiteur.email,
+					emailVenuDeLaBanque: debiteur.emailSource === 'BANQUE',
 					estCommercant: debiteur.estCommercant,
 					santeFinanciere: debiteur.santeFinanciere,
 					secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',

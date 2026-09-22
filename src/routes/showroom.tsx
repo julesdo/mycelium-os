@@ -224,6 +224,10 @@ function DemoIdentite() {
 							onRetenirEtablissement={() => {}}
 							secteur={undefined}
 							optionsSecteur={SECTEURS_DEMO}
+							email={undefined}
+							emailVenuDeLaBanque={true}
+							erreurEmail={null}
+							onEnregistrerEmail={() => {}}
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
@@ -277,6 +281,10 @@ function DemoIdentite() {
 							onRetenirEtablissement={() => {}}
 							secteur={undefined}
 							optionsSecteur={SECTEURS_DEMO}
+							email={'comptabilite@ateliers-martin.fr'}
+							emailVenuDeLaBanque={false}
+							erreurEmail={null}
+							onEnregistrerEmail={() => {}}
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
@@ -297,6 +305,10 @@ function DemoIdentite() {
 							onRetenirEtablissement={() => {}}
 							secteur="TRANSPORT_MARCHANDISES"
 							optionsSecteur={SECTEURS_DEMO}
+							email={'comptabilite@ateliers-martin.fr'}
+							emailVenuDeLaBanque={true}
+							erreurEmail={null}
+							onEnregistrerEmail={() => {}}
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
@@ -328,6 +340,10 @@ function DemoIdentite() {
 							onRetenirEtablissement={() => {}}
 							secteur="GENERAL"
 							optionsSecteur={SECTEURS_DEMO}
+							email={'comptabilite@ateliers-martin.fr'}
+							emailVenuDeLaBanque={false}
+							erreurEmail={null}
+							onEnregistrerEmail={() => {}}
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
@@ -354,6 +370,10 @@ function DemoIdentite() {
 							onRetenirEtablissement={() => {}}
 							secteur={undefined}
 							optionsSecteur={SECTEURS_DEMO}
+							email={'comptabilite@ateliers-martin.fr'}
+							emailVenuDeLaBanque={true}
+							erreurEmail={null}
+							onEnregistrerEmail={() => {}}
 							erreurSiren={null}
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}
@@ -387,6 +407,10 @@ function DemoIdentite() {
 							onRetenirEtablissement={() => {}}
 							secteur={undefined}
 							optionsSecteur={SECTEURS_DEMO}
+							email={'facturation@'}
+							emailVenuDeLaBanque={false}
+							erreurEmail="« facturation@ » ne ressemble pas à une adresse électronique : il y manque un arobase ou un domaine."
+							onEnregistrerEmail={() => {}}
 							erreurSiren="« 853479237 » n’est pas un SIREN : sa clé de contrôle ne tombe pas."
 							onEnregistrerSiren={() => {}}
 							onChoisirSecteur={() => {}}

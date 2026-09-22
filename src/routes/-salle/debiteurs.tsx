@@ -84,6 +84,16 @@ interface DebiteurDemo {
 	 * elle ne s'invente pas.
 	 */
 	readonly adresse?: string;
+	/**
+	 * Son adresse électronique, et d'où elle vient.
+	 *
+	 * ⚠️ LES TROIS ÉTATS DOIVENT ÊTRE REGARDABLES : absente — la relance se
+	 * prépare mais ne s'ouvre pas —, venue de la banque — c'est l'adresse de
+	 * facturation, l'écran invite à vérifier — et saisie par le gérant, qui est la
+	 * seule qu'une resynchronisation ne réécrira jamais.
+	 */
+	readonly email?: string;
+	readonly emailVenuDeLaBanque?: boolean;
 	/** Le secteur choisi sur la fiche (`renseignerSecteur`). Absent : l'import n'en pose aucun. */
 	readonly secteur?: SecteurCreance;
 }
@@ -102,6 +112,9 @@ const PRINCIPAL_DEMO: DebiteurDemo = {
 	// servir à des captures publiées au dehors.
 	siren: '831647250',
 	adresse: '14 rue des Arts Graphiques 59000 Lille',
+	// Corrigée à la main : c'est l'adresse du comptable, celle qui débloque.
+	email: 'compta@arts-graphiques-lille.fr',
+	emailVenuDeLaBanque: false,
 	secteur: 'TRANSPORT_MARCHANDISES'
 };
 
@@ -109,6 +122,9 @@ const PRINCIPAL_DEMO: DebiteurDemo = {
 const PAYEUR_LENT_DEMO: DebiteurDemo = {
 	_id: 'demo-debiteur-caron',
 	denomination: 'Serrurerie Caron',
+	// Venue de la banque : c'est l'adresse de FACTURATION, et l'écran le dit.
+	email: 'facturation@serrurerie-caron.fr',
+	emailVenuDeLaBanque: true,
 	secteur: 'GENERAL'
 };
 
@@ -547,6 +563,8 @@ const LIGNES_DEMO = DEBITEURS_DEMO.map((debiteur) => {
 		denomination: debiteur.denomination,
 		siren: debiteur.siren,
 		adresse: debiteur.adresse,
+		email: debiteur.email,
+		emailVenuDeLaBanque: debiteur.emailVenuDeLaBanque ?? false,
 		...santeDuRegistre(debiteur),
 		secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',
 		secteur: debiteur.secteur,
@@ -773,6 +791,7 @@ function pageDu(
 		optionsSecteur: SECTEURS_DEMO,
 		etatRecherche: { phase: 'REPOS' },
 		erreurSiren: null,
+		erreurEmail: null,
 		tauxStipule: factures.find((facture) => facture.tauxContractuelPourcent !== undefined)
 			?.tauxContractuelPourcent,
 		constatTaux: TAUX_SAISI_DEMO.debiteurId === debiteurId ? CONTROLE_TAUX_DEMO.constat : null,
@@ -786,6 +805,7 @@ function pageDu(
 		onChercherAuRegistre: () => undefined,
 		onRetenirEtablissement: () => undefined,
 		onEnregistrerSiren: () => undefined,
+		onEnregistrerEmail: () => undefined,
 		onChoisirSecteur: () => undefined,
 		onEnregistrerTaux: () => undefined,
 		onChercherLettrage: () => undefined,

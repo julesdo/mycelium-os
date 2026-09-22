@@ -52,6 +52,14 @@ const vFactureImportee = v.object({
 	 * solvable est en liquidation.
 	 */
 	debiteurSiren: v.optional(v.string()),
+	/**
+	 * L'adresse électronique du client, quand la source en porte une.
+	 *
+	 * ⚠️ ELLE N'ARRIVE QUE DE QONTO POUR L'INSTANT. Un FEC n'en porte pas, et une
+	 * facture déposée n'en donne pas de façon fiable — celle qui figure sur un
+	 * PDF est le plus souvent celle de l'ÉMETTEUR.
+	 */
+	debiteurEmail: v.optional(v.string()),
 	montantTTC: v.int64(),
 	dateEmission: v.string(),
 	dateEcheance: v.optional(v.string())
@@ -77,7 +85,8 @@ async function trouverOuCreerDebiteur(
 	ctx: MutationCtx,
 	organizationId: Id<'organizations'>,
 	denomination: string,
-	siren: string | undefined
+	siren: string | undefined,
+	email: string | undefined
 ): Promise<{ id: Id<'debiteurs'>; cree: boolean }> {
 	const normalise = normaliserFournisseur(denomination);
 
@@ -98,13 +107,20 @@ async function trouverOuCreerDebiteur(
 		// dernier arrivé n'a aucune raison d'avoir raison, et écraser ferait
 		// interroger les registres publics sur une AUTRE entreprise.
 		const sirenNouveau = siren !== undefined && existant.siren === undefined;
+		// ⚠️ MÊME RÈGLE POUR L'ADRESSE, ET ELLE COMPTE DAVANTAGE ICI. Un gérant qui
+		// a corrigé l'adresse à la main a trouvé celle du comptable qui traite
+		// vraiment les impayés ; la resynchronisation Qonto ramènerait l'adresse de
+		// facturation générique et écraserait ce travail à chaque passage du
+		// rattrapage de six heures.
+		const emailNouveau = email !== undefined && existant.email === undefined;
 
-		if (graphieNouvelle || sirenNouveau) {
+		if (graphieNouvelle || sirenNouveau || emailNouveau) {
 			await ctx.db.patch(existant._id, {
 				...(graphieNouvelle
 					? { denominationsBrutes: [...existant.denominationsBrutes, denomination] }
 					: {}),
-				...(sirenNouveau ? { siren } : {})
+				...(sirenNouveau ? { siren } : {}),
+				...(emailNouveau ? { email, emailSource: 'BANQUE' as const } : {})
 			});
 		}
 		return { id: existant._id, cree: false };
@@ -118,6 +134,8 @@ async function trouverOuCreerDebiteur(
 		denominationNormalisee: normalise,
 		denominationsBrutes: [denomination],
 		siren,
+		email,
+		...(email === undefined ? {} : { emailSource: 'BANQUE' as const }),
 		estCommercant: 'unknown',
 		santeFinanciere: 'INCONNUE',
 		creeLe: Date.now()
@@ -225,7 +243,8 @@ export const enregistrerImport = internalMutation({
 				ctx,
 				organizationId,
 				facture.debiteur,
-				facture.debiteurSiren
+				facture.debiteurSiren,
+				facture.debiteurEmail
 			);
 			if (debiteur.cree) debiteursCrees++;
 

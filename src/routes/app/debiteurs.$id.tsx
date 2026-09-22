@@ -88,6 +88,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const creerCreance = useMutation(api.recouvrement.creances.creer);
 	const renseignerSiren = useMutation(api.recouvrement.debiteurs.renseignerSiren);
 	const chercherAuRegistre = useAction(api.recouvrement.debiteurs.chercherAuRegistre);
+	const renseignerEmail = useMutation(api.recouvrement.debiteurs.renseignerEmail);
 	const renseignerSecteur = useMutation(api.recouvrement.debiteurs.renseignerSecteur);
 	const poserTaux = useMutation(api.recouvrement.tauxContractuel.renseigner);
 	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
@@ -99,6 +100,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const [selection, setSelection] = useState<ReadonlySet<string>>(() => new Set());
 	const [erreur, setErreur] = useState<string | null>(null);
 	const [erreurSiren, setErreurSiren] = useState<string | null>(null);
+	const [erreurEmail, setErreurEmail] = useState<string | null>(null);
 	const [recherche, setRecherche] = useState<EtatRecherche>({ phase: 'REPOS' });
 	/**
 	 * LE CONSTAT QUE LE SERVEUR REND SUR LE TAUX.
@@ -192,6 +194,22 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 			setRecherche({ phase: 'REPOS' });
 		} catch (e) {
 			setErreurSiren(e instanceof Error ? e.message : 'Numéro refusé.');
+		}
+	}
+
+	/**
+	 * L'ADRESSE SAISIE PAR LE GÉRANT.
+	 *
+	 * ⚠️ LE REFUS DU SERVEUR REMONTE MOT POUR MOT : il nomme ce qui a été tapé.
+	 * Une phrase générique laisserait le gérant devant une erreur qu'il ne peut
+	 * pas corriger.
+	 */
+	async function enregistrerEmail(saisi: string) {
+		setErreurEmail(null);
+		try {
+			await renseignerEmail({ debiteurId, email: saisi });
+		} catch (e) {
+			setErreurEmail(e instanceof Error ? e.message : 'Adresse refusée.');
 		}
 	}
 
@@ -384,6 +402,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 								optionsSecteur: secteursProposes(),
 								etatRecherche: recherche,
 								erreurSiren,
+								erreurEmail,
 								tauxStipule,
 								constatTaux,
 								propositionLettrage: proposition ?? null,
@@ -396,6 +415,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 								onChercherAuRegistre: () => void chercherAuRegistrePour(),
 								onRetenirEtablissement: (etablissement) => void retenirEtablissement(etablissement),
 								onEnregistrerSiren: (saisi) => void enregistrerSiren(saisi),
+								onEnregistrerEmail: (saisi) => void enregistrerEmail(saisi),
 								onChoisirSecteur: (cle) =>
 									void renseignerSecteur({ debiteurId, secteur: cle as 'GENERAL' }),
 								onEnregistrerTaux: (pourcentage) => void enregistrerTaux(pourcentage),

@@ -329,6 +329,9 @@ export const synchroniser = internalAction({
 							...(facture.debiteurSiren === undefined
 								? {}
 								: { debiteurSiren: facture.debiteurSiren }),
+							...(facture.debiteurEmail === undefined
+								? {}
+								: { debiteurEmail: facture.debiteurEmail }),
 							montantTTC: facture.montantTTC,
 							dateEmission: facture.dateEmission,
 							...(facture.dateEcheance === undefined ? {} : { dateEcheance: facture.dateEcheance })

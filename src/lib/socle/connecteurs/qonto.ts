@@ -20,6 +20,17 @@ export interface ClientQonto {
 	readonly last_name?: string | null;
 	readonly vat_number?: string | null;
 	readonly tax_identification_number?: string | null;
+	/**
+	 * L'adresse du CLIENT, et pas celle de l'émetteur.
+	 *
+	 * ⚠️ NE PAS CONFONDRE AVEC `contact_email` DE LA FACTURE, qui est l'adresse
+	 * de celui qui l'a émise — notre propre client. L'y brancher préparerait des
+	 * relances adressées au créancier lui-même.
+	 *
+	 * ⚠️ ET `extra_emails` RESTE DEHORS. Qonto y accepte jusqu'à cent adresses en
+	 * copie : on ne relance pas une liste de diffusion.
+	 */
+	readonly email?: string | null;
 }
 
 /** Les champs lus d'une facture client Qonto — et seulement eux. */
@@ -40,6 +51,8 @@ export interface FactureDepuisQonto {
 	readonly reference: string;
 	readonly debiteur: string;
 	readonly debiteurSiren?: string;
+	/** Rendue TELLE QUELLE : le socle ne sait pas ce qu'est une adresse acceptable pour ce produit. */
+	readonly debiteurEmail?: string;
 	readonly montantTTC: bigint;
 	readonly dateEmission: string;
 	readonly dateEcheance?: string;
@@ -102,11 +115,14 @@ export function factureDepuisQonto(
 	// « paid » sans montant réglé renseigné : Qonto dit soldée, on la solde.
 	const cumul = facture.status === 'paid' && regle === 0n ? montantTTC : regle;
 	const siren = sirenDepuisClientQonto(client);
+	// Rendue sans validation : c'est la verticale qui décide de ce qu'elle garde.
+	const courriel = client.email?.trim() || undefined;
 
 	return {
 		reference,
 		debiteur,
 		...(siren === undefined ? {} : { debiteurSiren: siren }),
+		...(courriel === undefined ? {} : { debiteurEmail: courriel }),
 		montantTTC,
 		dateEmission,
 		...(facture.due_date ? { dateEcheance: facture.due_date } : {}),
