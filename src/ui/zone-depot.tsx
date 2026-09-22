@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { BoutonPrincipal } from './bouton';
+import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { SurfaceCut, Button } from '@cladd-ui/react';
 import { FolderOpenIcon, CameraIcon } from 'lucide-react';
 import { cn } from './cn';
@@ -35,11 +35,18 @@ export function ZoneDepot({
 	onFichiers,
 	desactive = false,
 	libellePhoto = 'Photographier un document',
+	discret = false,
 	children
 }: {
 	accept: string;
 	onFichiers: (fichiers: File[]) => void;
 	desactive?: boolean;
+	/**
+	 * Vrai quand un geste plus fort est proposé au-dessus (une connexion) : le
+	 * bouton photo passe alors en secondaire, pour qu'il n'y ait jamais deux
+	 * gestes principaux à l'écran.
+	 */
+	discret?: boolean;
 	/**
 	 * Ce que le bouton photo promet.
 	 *
@@ -53,6 +60,7 @@ export function ZoneDepot({
 }) {
 	const champ = useRef<HTMLInputElement>(null);
 	const appareilPhoto = useRef<HTMLInputElement>(null);
+	const BoutonPhoto = discret ? BoutonSecondaire : BoutonPrincipal;
 	const [survols, setSurvols] = useState(0);
 	const survole = survols > 0 && !desactive;
 
@@ -100,14 +108,14 @@ export function ZoneDepot({
 			{children}
 
 			<div className="flex flex-wrap items-center justify-center gap-cladd-3xs">
-				<BoutonPrincipal
+				<BoutonPhoto
 					disabled={desactive}
 					onClick={() => appareilPhoto.current?.click()}
 					className="hidden tactile:flex"
 				>
 					<CameraIcon />
 					{libellePhoto}
-				</BoutonPrincipal>
+				</BoutonPhoto>
 				<Button disabled={desactive} onClick={() => champ.current?.click()}>
 					<FolderOpenIcon />
 					Choisir des fichiers

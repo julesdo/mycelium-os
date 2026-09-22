@@ -15,6 +15,7 @@ import {
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { QUESTIONS_LITIGE } from '../../lib/verticales/recouvrement/litige';
 import { AvatarConnecte } from '../../app/identite';
+import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
@@ -157,6 +158,9 @@ function File() {
 	const aujourdHui = aujourdHuiISO();
 
 	const flux = useQuery(api.recouvrement.surveillance.flux, {});
+	// L'état de la connexion Qonto : la carte ne se passe à l'écran que si elle
+	// est activée, pour ne jamais rétrograder l'import sous une carte absente.
+	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
 	// La date d'arrêté vient de la SEULE horloge de l'interface : deux lectures
 	// différentes feraient diverger les totaux autour de minuit. Voir `ui/horloge.ts`.
 	const revelation = useQuery(api.recouvrement.revelation.revelation, { arreteAu: aujourdHui });
@@ -939,7 +943,14 @@ function File() {
 			<Facultatif>
 				<Recherche />
 			</Facultatif>
-		)
+		),
+		// La carte n'est passée que si Qonto est activé : sinon l'import reste le
+		// geste principal, au lieu d'être rétrogradé sous une carte absente.
+		connexion: qonto?.disponible ? (
+			<Facultatif>
+				<CarteQontoBranchee />
+			</Facultatif>
+		) : undefined
 	};
 
 	return <EcranFile donnees={{ etat: 'pret', valeur }} />;

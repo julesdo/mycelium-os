@@ -401,6 +401,12 @@ export interface FileAffichee {
 	readonly selecteur?: ReactNode;
 	/** La palette de recherche (D16). */
 	readonly palette?: ReactNode;
+	/**
+	 * LA CONNEXION À UN LOGICIEL DE FACTURATION, composée par l'application.
+	 * Absente quand aucune connexion n'est activée : l'import redevient alors le
+	 * geste principal.
+	 */
+	readonly connexion?: ReactNode;
 }
 
 /**
@@ -459,7 +465,8 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		accepteFichiers,
 		avatar,
 		selecteur,
-		palette
+		palette,
+		connexion
 	} = valeur;
 
 	/** La zone de dépôt, dépliée par la rangée du haut. Elle est permanente dans l'état vide. */
@@ -536,7 +543,11 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		>
 			{debute ? (
 				<>
-					<FileVide onFichiers={onFichiers} accepteFichiers={accepteFichiers} />
+					<FileVide
+						onFichiers={onFichiers}
+						accepteFichiers={accepteFichiers}
+						connexion={connexion}
+					/>
 					<PorteDeTransition />
 				</>
 			) : (
@@ -946,25 +957,35 @@ function CeQueLeLogicielSuppose({
  */
 function FileVide({
 	onFichiers,
-	accepteFichiers
+	accepteFichiers,
+	connexion
 }: {
 	onFichiers: (fichiers: File[]) => void;
 	accepteFichiers: string;
+	connexion?: ReactNode;
 }) {
+	/*
+	  ⚠️ CONNECTER D'ABORD, IMPORTER ENSUITE — l'ordre de Shop. Une connexion
+	  alimente le produit pour toujours ; un fichier, une fois. Quand aucune
+	  connexion n'est activée, l'import reprend la place principale.
+	*/
+	const Bouton = connexion === undefined ? BoutonPrincipal : BoutonSecondaire;
 	return (
 		<SectionEcran
 			titre="Rien à trancher aujourd’hui"
 			legende="Le logiciel surveille les échéances et la prescription dès qu’il a de quoi compter."
 		>
+			{connexion}
 			<ZoneDepot
 				accept={accepteFichiers}
 				onFichiers={onFichiers}
 				libellePhoto="Photographier une facture"
+				discret={connexion !== undefined}
 			>
-				<BoutonPrincipal pleineLargeur>
+				<Bouton pleineLargeur>
 					<UploadIcon />
 					Importer des fichiers
-				</BoutonPrincipal>
+				</Bouton>
 			</ZoneDepot>
 			{/* Aucun choix à faire : le dépôt reconnaît seul un FEC, un export CSV, un
 			    PDF ou une photo. Le dire évite qu'on se demande lequel déposer. */}

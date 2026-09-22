@@ -5,9 +5,12 @@ import { DEPOT_A_ECARTS_DEMO, DEPOT_PARFAIT_DEMO } from './depots';
 import { REVELATION_DEMO } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
+import { PROMESSE_QONTO } from '../../app/connexion-qonto';
 import {
 	Avatar,
+	CarteConnexion,
 	DeclencheurRecherche,
+	MonogrammeConnexion,
 	travauxDuVeilleur,
 	type TacheVeilleur
 } from '../../ui';
@@ -466,7 +469,20 @@ const VIERGE: FileAffichee = {
 	},
 	rangees: [],
 	hypotheses: [],
-	anglesMorts: []
+	anglesMorts: [],
+	// Le premier jour, la connexion d'abord : la carte telle qu'un gérant la voit
+	// avant d'avoir rien branché.
+	connexion: (
+		<CarteConnexion
+			nom="Qonto"
+			promesse={PROMESSE_QONTO}
+			logo={<MonogrammeConnexion lettre="Q" />}
+			etat={{ genre: 'A_CONNECTER' }}
+			onConnecter={() => undefined}
+			onSynchroniser={() => undefined}
+			onDeconnecter={() => undefined}
+		/>
+	)
 };
 
 /**

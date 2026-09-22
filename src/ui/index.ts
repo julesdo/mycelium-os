@@ -237,3 +237,5 @@ export {
 	type AbandonAffiche,
 	type AbandonsAffiches
 } from './abandons-etablissement';
+
+export { CarteConnexion, MonogrammeConnexion, type EtatConnexion } from './carte-connexion';
