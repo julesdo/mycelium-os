@@ -40,6 +40,12 @@ import { qualiteCommercantDeLaForme } from '../../lib/verticales/recouvrement/pa
  * registre : le gérant touche son entreprise, et le numéro arrive avec elle,
  * vers la table qui le lit.
  *
+ * ⚠️ ET LA RECHERCHE NE SE DEMANDE PAS. Elle part dès que le nom est écrit.
+ * Un bouton « Chercher » aurait été le dernier geste inutile de cet écran : le
+ * logiciel savait quoi chercher, il savait quand, et il attendait quand même un
+ * doigt. Il n'en reste qu'un « Chercher à nouveau », pour reprendre un silence
+ * du registre ou une panne.
+ *
  * ⚠️ RIEN NE BLOQUE SUR LE REGISTRE. Le BODACC ne publie que ce qui a fait
  * l'objet d'une annonce de greffe : une entreprise qui n'en a jamais eu n'y
  * figure pas, et doit pouvoir s'inscrire quand même, avec son seul nom. Le
@@ -71,6 +77,7 @@ export function EcranBienvenue({
 	recherche: EtatRecherche;
 	/** L'établissement que le gérant a touché dans la liste, s'il en a touché un. */
 	retenu: EtablissementPropose | null;
+	/** Reprendre une recherche qui n'a rien donné, ou qui n'a pas abouti. La première part seule. */
 	onChercher: () => void;
 	onRetenir: (etablissement: EtablissementPropose) => void;
 	/** Défaire un choix : un numéro retenu par erreur doit pouvoir se reprendre. */
@@ -85,7 +92,6 @@ export function EcranBienvenue({
 	  affichée à côté de lui.
 	*/
 	const deduction = qualiteCommercantDeLaForme(retenu?.formeJuridique);
-	const cherchable = nom.trim() !== '' && retenu === null;
 
 	return (
 		<CadreAuth
@@ -119,6 +125,17 @@ export function EcranBienvenue({
 							/>
 						) : null}
 
+						{/*
+						  ⚠️ LE TRAITEMENT SE VOIT SANS QU'ON LE DEMANDE — règle d'écran n° 2.
+						  La recherche part toute seule : sans cette ligne, le gérant taperait
+						  son nom devant une carte immobile, et ne saurait pas qu'on cherche.
+						*/}
+						{recherche.phase === 'EN_COURS' ? (
+							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft" aria-live="polite">
+								Recherche de « {nom.trim()} » au registre public…
+							</p>
+						) : null}
+
 						{recherche.phase === 'AUCUN' ? (
 							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 								Le registre ne publie aucune annonce au nom de « {nom.trim()} ». Il ne contient que
@@ -135,34 +152,34 @@ export function EcranBienvenue({
 							</p>
 						) : null}
 
-						{recherche.phase === 'REPOS' || recherche.phase === 'EN_COURS' ? (
+						{recherche.phase === 'REPOS' ? (
 							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 								Le registre public rend la dénomination, le numéro et l’adresse du siège : les trois
 								lignes qui s’impriment en tête d’un décompte, et le numéro dont dépend la
-								surveillance de vos clients.
+								surveillance de vos clients. Écrivez le nom, nous cherchons.
 							</p>
 						) : null}
 
 						{/*
-						  LE GESTE PORTE LE NOM CHERCHÉ : on voit sur quoi la recherche va
-						  porter avant de la lancer, pas après. `min-h-12` : 48 px, le
-						  plancher tactile du projet.
+						  ⚠️ LE BOUTON NE SERT PLUS QU'À REPRENDRE, et c'est ce qui reste
+						  quand la recherche part toute seule. « Chercher » était le dernier
+						  geste inutile de cet écran : le logiciel savait quoi chercher, il
+						  savait quand, et il attendait quand même un doigt.
+						  `min-h-12` : 48 px, le plancher tactile du projet.
 						*/}
-						<Button
-							size="sm"
-							variant="transparent"
-							outline={false}
-							hoverable={false}
-							className="verre verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
-							loading={recherche.phase === 'EN_COURS'}
-							readOnly={recherche.phase === 'EN_COURS' || !cherchable}
-							onClick={onChercher}
-						>
-							<SearchIcon size={16} />
-							{recherche.phase === 'REPOS' || recherche.phase === 'EN_COURS'
-								? `Chercher « ${nom.trim() === '' ? '…' : nom.trim()} »`
-								: 'Chercher à nouveau'}
-						</Button>
+						{recherche.phase === 'AUCUN' || recherche.phase === 'ECHEC' ? (
+							<Button
+								size="sm"
+								variant="transparent"
+								outline={false}
+								hoverable={false}
+								className="verre verre-bouton min-h-12 self-start rounded-full px-3 text-cladd-2xs"
+								onClick={onChercher}
+							>
+								<SearchIcon size={16} />
+								Chercher à nouveau
+							</Button>
+						) : null}
 					</Surface>
 				) : (
 					/*

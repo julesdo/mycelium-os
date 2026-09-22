@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useAction, useMutation, Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
 import { api } from '../lib/convex/_generated/api';
@@ -91,15 +91,24 @@ function Bienvenue() {
 	const [retenu, setRetenu] = useState<EtablissementPropose | null>(null);
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
+	/** Le dernier terme parti au registre : il sert de jeton contre les réponses périmées. */
+	const dernierTerme = useRef<string | null>(null);
 
-	async function lancerLaRecherche() {
-		const cherche = nom.trim();
+	async function lancerLaRecherche(cherche: string) {
 		if (cherche === '') return;
+		dernierTerme.current = cherche;
 		setRecherche({ phase: 'EN_COURS' });
 		try {
 			const { candidats } = await chercher({ nom: cherche });
+			// ⚠️ UNE RÉPONSE PÉRIMÉE NE S'AFFICHE PAS. La recherche part au fil de la
+			// frappe : deux appels peuvent être en vol, et le premier peut revenir en
+			// dernier. Sans ce contrôle, « BOULANGERIE MAR » écraserait les candidats
+			// de « BOULANGERIE MARTIN », et le gérant toucherait une autre entreprise
+			// que celle qu'il lit dans son champ.
+			if (dernierTerme.current !== cherche) return;
 			setRecherche(candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats });
 		} catch (e) {
+			if (dernierTerme.current !== cherche) return;
 			setRecherche({
 				phase: 'ECHEC',
 				message:
@@ -109,6 +118,32 @@ function Bienvenue() {
 			});
 		}
 	}
+
+	/**
+	 * LA RECHERCHE PART TOUTE SEULE, UNE FOIS LA FRAPPE POSÉE.
+	 *
+	 * ⚠️ C'EST UN EFFET PARCE QUE C'EN EST UN. La règle du projet interdit de
+	 * poser un ÉTAT dans un effet — ça se dérive au rendu. Interroger un registre
+	 * public n'est pas un état dérivé : c'est un appel réseau, déclenché par le
+	 * temps, et il n'a nulle part ailleurs où vivre.
+	 *
+	 * ⚠️ TROIS CARACTÈRES AU MOINS, ET UN SILENCE DE 600 ms. Le BODACC est un
+	 * service public gratuit et sans clé : partir à chaque touche en ferait
+	 * quinze appels pour un nom, et « BO » rendrait de toute façon des milliers
+	 * d'annonces dont aucune n'est la bonne.
+	 *
+	 * ⚠️ ET ON NE REFAIT PAS LA MÊME RECHERCHE. Sans cette garde, un retour à un
+	 * terme déjà cherché — une correction défaite, un « Changer » — relancerait
+	 * l'appel, et un échec se rejouerait en boucle.
+	 */
+	useEffect(() => {
+		const cherche = nom.trim();
+		if (retenu !== null || cherche.length < 3 || dernierTerme.current === cherche) return;
+		const minuteur = window.setTimeout(() => void lancerLaRecherche(cherche), 600);
+		return () => window.clearTimeout(minuteur);
+		// `lancerLaRecherche` se referme sur des `set*`, stables par construction.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [nom, retenu]);
 
 	async function soumettre() {
 		const saisi = nom.trim();
@@ -161,7 +196,7 @@ function Bienvenue() {
 			}}
 			recherche={recherche}
 			retenu={retenu}
-			onChercher={() => void lancerLaRecherche()}
+			onChercher={() => void lancerLaRecherche(nom.trim())}
 			onRetenir={(candidat) => {
 				setRetenu(candidat);
 				setNom(candidat.denomination);
