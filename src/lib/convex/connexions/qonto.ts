@@ -321,7 +321,18 @@ export const synchroniser = internalAction({
 				if (factures.length > 0) {
 					await ctx.runMutation(internal.recouvrement.import.enregistrerImport, {
 						organizationId: connexion.organizationId,
-						factures: factures.map(({ regleCumule: _regle, ...facture }) => facture),
+						// Champ par champ, et pas par décomposition : le validateur de
+						// l'import refuse tout champ en trop, et `regleCumule` n'en est pas un.
+						factures: factures.map((facture) => ({
+							reference: facture.reference,
+							debiteur: facture.debiteur,
+							...(facture.debiteurSiren === undefined
+								? {}
+								: { debiteurSiren: facture.debiteurSiren }),
+							montantTTC: facture.montantTTC,
+							dateEmission: facture.dateEmission,
+							...(facture.dateEcheance === undefined ? {} : { dateEcheance: facture.dateEcheance })
+						})),
 						reglements: [],
 						reglementsCumules: factures.flatMap((facture) =>
 							facture.regleCumule === null
