@@ -1,5 +1,6 @@
 import type { EcranDuProduit } from './demo';
 import { ECRANS_BARRE_ET_COMPAGNON } from './barre-et-compagnon';
+import { ECRANS_BIENVENUE } from './bienvenue';
 import { ECRANS_COMPTE } from './compte';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
@@ -31,6 +32,13 @@ import { ECRANS_PIECE } from './piece';
  * fichier-ci ne fait que les réunir.
  */
 export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
+	/*
+	  ⚠️ L'INSCRIPTION EN TÊTE, PARCE QUE C'EST LE PREMIER ÉCRAN. C'est aussi le
+	  seul de cette liste qui ne vive pas sous `/app/` : il s'ouvre avant que
+	  l'établissement existe, et c'est ce qui l'avait tenu hors de la salle depuis
+	  le début — une borne de typage, pas une décision.
+	*/
+	...ECRANS_BIENVENUE,
 	/**
 	 * ⚠️ LA FILE EN PREMIER, ET L'ACCUEIL JUSTE APRÈS. Elle le REMPLACE à `/app/`
 	 * (T6, T7), mais la bascule est une tâche séparée et volontairement révocable

@@ -13,8 +13,18 @@ export interface EcranDuProduit {
 	 * frappe, ou l'identifiant d'une page qui n'est pas un écran du produit
 	 * (`/connexion`, `/showroom`, la coquille `/app`), échoue à `bun run check`
 	 * au lieu d'attendre la barrière de la salle.
+	 *
+	 * ⚠️ ET `/bienvenue` EST ADMISE À CÔTÉ, NOMMÉMENT. C'est le seul écran de
+	 * travail qui ne vit pas sous `/app/` — il s'ouvre avant que l'établissement
+	 * existe —, et il est resté hors de la salle pendant des mois pour cette
+	 * seule raison de typage : la règle des quatre largeurs n'était pas outillée
+	 * pour lui. Une exception écrite en toutes lettres garde la barrière (une
+	 * faute de frappe échoue toujours) sans exclure une page réelle du regard.
 	 */
-	readonly route: Extract<RouteIds<RegisteredRouter['routeTree']>, `/app/${string}`>;
+	readonly route: Extract<
+		RouteIds<RegisteredRouter['routeTree']>,
+		`/app/${string}` | '/bienvenue'
+	>;
 	/**
 	 * L'IDENTITÉ DE L'ENTRÉE DANS LA SALLE, quand la route ne suffit pas.
 	 *

@@ -1,16 +1,7 @@
 import { useState, type ComponentProps } from 'react';
-import {
-	Button,
-	Input,
-	List,
-	ListButton,
-	ListTitle,
-	Segmented,
-	SegmentedButton,
-	Surface
-} from '@cladd-ui/react';
-import { Building2Icon, CheckIcon, SearchIcon } from 'lucide-react';
-import { BoutonPrincipal, Champ, dateCourte, sirenLisible } from '../../ui';
+import { Button, Input, Segmented, SegmentedButton, Surface } from '@cladd-ui/react';
+import { CheckIcon, SearchIcon } from 'lucide-react';
+import { BoutonPrincipal, Champ, ListeCandidatsRegistre } from '../../ui';
 import { qualiteCommercantDeLaForme } from '../../lib/verticales/recouvrement/pays/france/commercialite';
 
 /** Les trois états d'un critère de qualification. Jamais présumé favorablement. */
@@ -241,33 +232,11 @@ export function FormulaireCreancier({
 					contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 				>
 					{recherche.phase === 'TROUVE' ? (
-						<>
-							{/*
-							  ⚠️ « LE REGISTRE PROPOSE », PAS « NOUS AVONS TROUVÉ ». Le produit
-							  cite une source publique, il ne certifie pas une identité.
-							*/}
-							<List>
-								<ListTitle>Le registre propose</ListTitle>
-								{recherche.candidats.map((candidat) => (
-									<ListButton
-										key={candidat.siren}
-										icon={<Building2Icon size={18} />}
-										header={sirenLisible(candidat.siren)}
-										footer={sousLigneDuCandidat(candidat)}
-										className="verre-bouton"
-										hoverable={false}
-										onClick={() => retenir(candidat)}
-									>
-										<span className="truncate">{candidat.denomination}</span>
-									</ListButton>
-								))}
-							</List>
-							<p className="px-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softest">
-								Touchez celui qui est votre entreprise : les trois champs se remplissent, et rien
-								n’est écrit tant que vous n’avez pas enregistré. L’adresse est celle de l’annonce, à
-								sa date : relisez-la avant d’enregistrer.
-							</p>
-						</>
+						<ListeCandidatsRegistre
+							candidats={recherche.candidats}
+							aide="Touchez celui qui est votre entreprise : les trois champs se remplissent, et rien n’est écrit tant que vous n’avez pas enregistré. L’adresse est celle de l’annonce, à sa date : relisez-la avant d’enregistrer."
+							onRetenir={retenir}
+						/>
 					) : null}
 
 					{recherche.phase === 'AUCUN' ? (
@@ -424,31 +393,6 @@ export function FormulaireCreancier({
 			</BoutonPrincipal>
 		</div>
 	);
-}
-
-/**
- * Le siège et la date de l'annonce, en une ligne.
- *
- * ⚠️ L'ADRESSE SEULE QUAND ELLE EXISTE : elle CONTIENT déjà la ville. La ville
- * ne sert de repli que si le siège est illisible. La date, elle, vient toujours
- * en dernier : c'est ce qui dit de quand date l'adresse qu'on s'apprête à
- * imprimer.
- *
- * ⚠️ ET LA FORME VIENT EN TÊTE, parce que c'est elle qui fera répondre le
- * logiciel à la question de la qualité de commerçant. Elle se lit avant le
- * doigt, comme la date : une déduction qui apparaît après coup ne se vérifie
- * plus, elle se subit.
- */
-function sousLigneDuCandidat(candidat: EtablissementAuRegistre): string | undefined {
-	const lieu = candidat.adresse ?? candidat.ville;
-	const parution =
-		candidat.derniereParution === undefined
-			? undefined
-			: `annonce du ${dateCourte(candidat.derniereParution)}`;
-	const morceaux = [candidat.formeJuridique, lieu, parution].filter(
-		(m): m is string => m !== undefined
-	);
-	return morceaux.length === 0 ? undefined : morceaux.join(' · ');
 }
 
 /**

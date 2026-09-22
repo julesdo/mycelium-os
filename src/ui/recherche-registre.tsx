@@ -3,6 +3,7 @@ import { Button, List, ListButton, ListTitle, Surface } from '@cladd-ui/react';
 import { Building2Icon, SearchIcon } from 'lucide-react';
 import { BoutonPrincipal } from './bouton';
 import { Champ } from './cadre-auth';
+import { dateCourte } from './format';
 
 /**
  * IDENTIFIER UN DÉBITEUR AU REGISTRE — sans rien demander d'abord.
@@ -52,6 +53,86 @@ export interface EtablissementPropose {
 	readonly formeJuridique?: string;
 	readonly ville?: string;
 	readonly adresse?: string;
+	/**
+	 * La parution la plus récente qui porte cet établissement (AAAA-MM-JJ).
+	 *
+	 * ⚠️ ELLE N'EST PAS DÉCORATIVE. L'adresse vient d'une annonce de greffe qui
+	 * peut avoir des années, et elle s'imprimera ensuite sur des décomptes
+	 * FIGÉS. La date se lit avant le doigt, pas après.
+	 */
+	readonly derniereParution?: string;
+}
+
+/**
+ * Le siège et la date de l'annonce, en une ligne.
+ *
+ * ⚠️ L'ADRESSE SEULE QUAND ELLE EXISTE : elle CONTIENT déjà la ville. Les
+ * juxtaposer donnait « Fécamp · 6 Place Nicolas Selle 76400 Fécamp », qui répète
+ * la seule information servant à reconnaître son entreprise, et faisait repasser
+ * la rangée à la ligne. La ville ne sert de repli que si le siège est illisible.
+ *
+ * ⚠️ ET LA FORME VIENT EN TÊTE, parce que c'est elle qui fera répondre le
+ * logiciel à la question de la qualité de commerçant. Elle se lit avant le
+ * doigt, comme la date : une déduction qui apparaît après coup ne se vérifie
+ * plus, elle se subit.
+ */
+export function sousLigneDuCandidat(candidat: EtablissementPropose): string | undefined {
+	const lieu = candidat.adresse ?? candidat.ville;
+	const parution =
+		candidat.derniereParution === undefined
+			? undefined
+			: `annonce du ${dateCourte(candidat.derniereParution)}`;
+	const morceaux = [candidat.formeJuridique, lieu, parution].filter(
+		(m): m is string => m !== undefined
+	);
+	return morceaux.length === 0 ? undefined : morceaux.join(' · ');
+}
+
+/**
+ * LA LISTE DE CE QUE LE REGISTRE PROPOSE — écrite une fois, montrée partout.
+ *
+ * ⚠️ TROIS ÉCRANS LA RENDAIENT, CHACUN AVEC SA COPIE : le débiteur, l'identité
+ * de créancier, et maintenant l'inscription. Sur un chantier dont le but est de
+ * supprimer la double saisie, écrire une quatrième liste aurait été ironique —
+ * et les trois divergeaient déjà, la première n'affichant ni la forme juridique
+ * ni la date d'annonce.
+ *
+ * ⚠️ « LE REGISTRE PROPOSE », PAS « NOUS AVONS TROUVÉ ». Le produit cite une
+ * source publique, il ne certifie pas une identité. C'est la même discipline que
+ * `ConstatRegistre`, qui reprend la nature d'une annonce mot pour mot plutôt que
+ * de la reformuler.
+ */
+export function ListeCandidatsRegistre({
+	candidats,
+	aide,
+	onRetenir
+}: {
+	candidats: readonly EtablissementPropose[];
+	/** Ce que le doigt déclenche, dit avant qu'il se pose. */
+	aide: string;
+	onRetenir: (etablissement: EtablissementPropose) => void;
+}) {
+	return (
+		<>
+			<List>
+				<ListTitle>Le registre propose</ListTitle>
+				{candidats.map((candidat) => (
+					<ListButton
+						key={candidat.siren}
+						icon={<Building2Icon size={18} />}
+						header={sirenLisible(candidat.siren)}
+						footer={sousLigneDuCandidat(candidat)}
+						className="verre-bouton"
+						hoverable={false}
+						onClick={() => onRetenir(candidat)}
+					>
+						<span className="truncate">{candidat.denomination}</span>
+					</ListButton>
+				))}
+			</List>
+			<p className="px-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softest">{aide}</p>
+		</>
+	);
 }
 
 /** `421931452` → `421 931 452`. Neuf chiffres se relisent par trois. */
@@ -164,38 +245,11 @@ export function RechercheRegistre({
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
 			{etat.phase === 'TROUVE' && etat.candidats.length > 0 ? (
-				<>
-					{/*
-					  ⚠️ « LE REGISTRE PROPOSE », PAS « NOUS AVONS TROUVÉ ». Le produit
-					  cite une source publique, il ne certifie pas une identité. C'est la
-					  même discipline que `ConstatRegistre`, qui reprend la nature d'une
-					  annonce mot pour mot plutôt que de la reformuler.
-					*/}
-					<List>
-						<ListTitle>Le registre propose</ListTitle>
-						{etat.candidats.map((candidat) => (
-							<ListButton
-								key={candidat.siren}
-								icon={<Building2Icon size={18} />}
-								header={sirenLisible(candidat.siren)}
-								// ⚠️ L ADRESSE SEULE QUAND ELLE EXISTE : elle CONTIENT deja la ville.
-								// Les juxtaposer donnait « Fecamp · 6 Place Nicolas Selle 76400
-								// Fecamp », qui repete la seule information servant a reconnaitre son
-								// client — et faisait repasser la rangee a la ligne. La ville ne sert
-								// de repli que si le siege est illisible.
-								footer={candidat.adresse ?? candidat.ville}
-								className="verre-bouton"
-								hoverable={false}
-								onClick={() => onRetenir(candidat)}
-							>
-								<span className="truncate">{candidat.denomination}</span>
-							</ListButton>
-						))}
-					</List>
-					<p className="px-cladd-3xs text-cladd-2xs text-cladd-fg-softest">
-						Touchez celui qui est votre client. Rien n’est enregistré avant.
-					</p>
-				</>
+				<ListeCandidatsRegistre
+					candidats={etat.candidats}
+					aide="Touchez celui qui est votre client. Rien n’est enregistré avant."
+					onRetenir={onRetenir}
+				/>
 			) : null}
 
 			{etat.phase === 'AUCUN' ? (

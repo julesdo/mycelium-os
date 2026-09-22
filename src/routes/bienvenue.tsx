@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { useMutation, Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
-import { Input } from '@cladd-ui/react';
+import { useAction, useMutation, Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
 import { api } from '../lib/convex/_generated/api';
-import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
+import { BoutonPrincipal, type EtablissementPropose, type EtatRecherche } from '../ui';
+import { EcranBienvenue } from '../screens/inscription/entreprise';
+import { qualiteCommercantDeLaForme } from '../lib/verticales/recouvrement/pays/france/commercialite';
 
 export const Route = createFileRoute('/bienvenue')({ component: PageBienvenue });
 
@@ -48,57 +49,101 @@ function PageBienvenue() {
 }
 
 /**
- * La création de l'entreprise.
+ * La création de l'entreprise, et le câblage de la recherche au registre.
  *
- * UN SEUL CHAMP, ET C'EST LE BUT. Tout le reste se déduit des factures, et
- * c'est le principe du produit : on ne demande jamais une saisie que le
- * logiciel peut aller chercher lui-même.
- *
- * CE QUI A ÉTÉ RETIRÉ, ET POURQUOI ÇA COMPTE. Cet écran demandait un type
+ * CE QUI A ÉTÉ RETIRÉ ET N'EST PAS REVENU. Cet écran demandait un type
  * d'établissement — restaurant inter-entreprises, EHPAD, crèche — et un nombre
  * de couverts par jour, puis les JETAIT : ni l'un ni l'autre n'était envoyé à
  * la mutation. Un champ qu'on remplit pour rien est pire qu'un champ absent, il
- * apprend au lecteur que ses réponses ne servent à rien.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ LES DEUX FACULTATIFS SONT PARTIS AUSSI
- * ═══════════════════════════════════════════════════════════════════════════
- *
+ * apprend au lecteur que ses réponses ne servent à rien. Même sort pour
  * « Factures émises par an » : à cet instant précis, il n'y a encore AUCUNE
- * facture — et l'aide disait déjà que le palier le plus bas s'applique sans
- * lui. Le produit les importe ensuite, et les compte : la page de
- * l'établissement affiche cette mesure, avec sa fenêtre, et garde une saisie
- * pour corriger.
+ * facture, et le produit les compte une fois importées.
  *
- * « SIRET » : le même numéro se saisissait TROIS fois, dans deux champs
- * différents, pour n'être lu qu'une seule — sur `profilsCreancier.siren`, que
- * le décompte et le verrou de l'accueil lisent. Celui-ci écrivait
- * `organizations.siret`, qu'aucune règle du domaine ne consulte. Il se saisit
- * désormais une fois, sur la page du créancier, où le registre public le
- * propose sur le nom de l'entreprise.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QUI RAMÈNE LE NUMÉRO ICI : LE REGISTRE, PAS LA SAISIE
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Le numéro déjà en base n'est pas perdu : la page du créancier s'en sert comme
- * valeur de départ tant qu'aucun SIREN n'y a été enregistré.
+ * Le SIRET avait quitté cet écran parce qu'il s'y tapait TROIS fois, dans deux
+ * champs différents, pour n'être lu qu'une seule — sur `profilsCreancier.siren`,
+ * que le décompte et le verrou de l'accueil lisent. Celui d'ici écrivait
+ * `organizations.siret`, qu'aucune règle du domaine ne consulte.
+ *
+ * Il ne se tape plus nulle part. Le gérant écrit le nom de son entreprise, le
+ * registre public la propose, il la touche, et le numéro, la forme juridique et
+ * l'adresse partent avec elle — vers la table qui les lit, dans la MÊME
+ * mutation que la création de l'établissement.
+ *
+ * ⚠️ L'ÉTAT DE LA RECHERCHE VIT ICI, PAS DANS L'ÉCRAN, et c'est ce qui permet à
+ * la salle d'exposition de montrer les cinq phases sans rien cliquer.
+ *
+ * ⚠️ UNE PANNE N'EST PAS UNE ABSENCE. `AUCUN` et `ECHEC` sont deux états
+ * distincts jusque dans ce `catch` : rendre une liste vide sur une panne ferait
+ * croire que le registre ne connaît pas l'entreprise, ce qui est une réponse, et
+ * c'en est une fausse.
  */
 function Bienvenue() {
 	const navigate = useNavigate();
 	const creer = useMutation(api.organizations.createOrganization);
+	const chercher = useAction(api.recouvrement.monEtablissement.chercherAuRegistreALInscription);
 
 	const [nom, setNom] = useState('');
+	const [recherche, setRecherche] = useState<EtatRecherche>({ phase: 'REPOS' });
+	const [retenu, setRetenu] = useState<EtablissementPropose | null>(null);
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
 
-	async function soumettre(e: FormEvent) {
-		e.preventDefault();
-		if (!nom.trim()) return;
+	async function lancerLaRecherche() {
+		const cherche = nom.trim();
+		if (cherche === '') return;
+		setRecherche({ phase: 'EN_COURS' });
+		try {
+			const { candidats } = await chercher({ nom: cherche });
+			setRecherche(candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats });
+		} catch (e) {
+			setRecherche({
+				phase: 'ECHEC',
+				message:
+					e instanceof Error && e.message
+						? e.message
+						: 'Le registre n’a pas répondu. Réessayez dans un instant.'
+			});
+		}
+	}
+
+	async function soumettre() {
+		const saisi = nom.trim();
+		if (saisi === '' && retenu === null) return;
 		setErreur(null);
 		setEnCours(true);
 		try {
-			await creer({ name: nom.trim() });
+			await creer({
+				name: (retenu?.denomination ?? saisi).trim(),
+				// L'identité ne part que si le gérant a touché un candidat. Sans elle,
+				// l'établissement se crée comme avant, avec son seul nom.
+				...(retenu === null
+					? {}
+					: {
+							creancier: {
+								denomination: retenu.denomination,
+								siren: retenu.siren,
+								...(retenu.formeJuridique === undefined
+									? {}
+									: { formeJuridique: retenu.formeJuridique }),
+								...(retenu.adresse === undefined ? {} : { adresse: retenu.adresse }),
+								estCommercant: qualiteCommercantDeLaForme(retenu.formeJuridique).etat
+							}
+						})
+			});
 			await navigate({ to: '/app' });
-		} catch {
+		} catch (e) {
+			// ⚠️ LE REFUS DU SERVEUR, MOT POUR MOT. La clé de contrôle du numéro se
+			// vérifie à l'écriture, et son message NOMME le numéro reçu : le
+			// remplacer par une phrase générique laisserait le gérant devant une
+			// erreur qu'il ne peut pas corriger.
 			setErreur(
-				"Votre entreprise n'a pas pu être créée. Réessayez ; si le problème persiste, écrivez-nous."
+				e instanceof Error && e.message
+					? e.message
+					: "Votre entreprise n'a pas pu être créée. Réessayez ; si le problème persiste, écrivez-nous."
 			);
 		} finally {
 			setEnCours(false);
@@ -106,22 +151,26 @@ function Bienvenue() {
 	}
 
 	return (
-		<CadreAuth
-			large
-			titre="Votre entreprise"
-			explication="Son nom suffit pour commencer : déposez vos premières factures, et nous lirons le reste dedans."
-		>
-			<form onSubmit={soumettre} className="flex flex-col gap-cladd-2xs">
-				<Champ etiquette="Nom de l’entreprise">
-					<Input value={nom} onChange={setNom} name="organisation" required />
-				</Champ>
-
-				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
-
-				<BoutonPrincipal type="submit" loading={enCours} readOnly={enCours}>
-					Créer mon entreprise
-				</BoutonPrincipal>
-			</form>
-		</CadreAuth>
+		<EcranBienvenue
+			nom={nom}
+			onNom={(valeur) => {
+				setNom(valeur);
+				// Changer le nom périme la recherche : garder des candidats trouvés sur
+				// l'ancien ferait toucher une entreprise qui n'est plus celle du champ.
+				setRecherche({ phase: 'REPOS' });
+			}}
+			recherche={recherche}
+			retenu={retenu}
+			onChercher={() => void lancerLaRecherche()}
+			onRetenir={(candidat) => {
+				setRetenu(candidat);
+				setNom(candidat.denomination);
+				setRecherche({ phase: 'REPOS' });
+			}}
+			onChanger={() => setRetenu(null)}
+			enCours={enCours}
+			erreur={erreur}
+			onCreer={() => void soumettre()}
+		/>
 	);
 }
