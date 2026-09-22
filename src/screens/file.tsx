@@ -963,9 +963,14 @@ function FileVide({
 			>
 				<BoutonPrincipal pleineLargeur>
 					<UploadIcon />
-					Déposer un export comptable ou des factures
+					Importer des fichiers
 				</BoutonPrincipal>
 			</ZoneDepot>
+			{/* Aucun choix à faire : le dépôt reconnaît seul un FEC, un export CSV, un
+			    PDF ou une photo. Le dire évite qu'on se demande lequel déposer. */}
+			<p className="text-cladd-2xs text-cladd-fg-soft">
+				Export comptable, FEC, factures PDF ou photos : le format est reconnu seul.
+			</p>
 
 			{/*
 			  TROIS RANGÉES FANTÔMES, ESTOMPÉES.

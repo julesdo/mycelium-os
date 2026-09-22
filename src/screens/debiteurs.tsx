@@ -459,7 +459,7 @@ export function EcranDebiteurs({
 						explication:
 							'Les débiteurs apparaissent tout seuls quand vous importez vos factures : le logiciel les rapproche par leur raison sociale, quelle que soit la graphie.',
 						etapes: [
-							'Importez un export comptable ou vos factures de vente.',
+							'Importez vos fichiers de factures : le format est reconnu seul.',
 							'Le logiciel crée un débiteur par client et calcule son encours.',
 							'Ouvrez un client pour voir tout ce qu’il doit, facture par facture.'
 						],
