@@ -9,6 +9,8 @@ import { assertSeatAvailable, resolveEffectivePlan, finDeLEssai } from './billin
 import { requireEnv } from './env';
 import { shouldSkipTestEmail } from './emails/helpers';
 import { MS_VALIDITE_INVITATION } from '../config/invitations';
+import { vEtatCritere } from './recouvrement/tables';
+import type { Id } from './_generated/dataModel';
 import {
 	requireOrgMember,
 	requireAdminDeLOrgCourante,
@@ -49,13 +51,45 @@ export const getMyOrgMembership = authedQuery({
 	}
 });
 
+/**
+ * LA CRÉATION DE L'ÉTABLISSEMENT, ET L'IDENTITÉ AVEC LUI.
+ *
+ * ⚠️ LES DEUX ÉCRITURES TIENNENT DANS LA MÊME MUTATION, et c'est une question
+ * de transaction, pas de confort. Cette mutation pose `hasUsedFreeTrial` et
+ * `freeTrialEndsAt` : si un second appel échouait après elle, l'essai serait
+ * consommé, l'établissement existerait, `/app` ne redirigerait plus vers
+ * `/bienvenue`, et le gérant retomberait exactement sur le verrou « Votre
+ * identité de créancier » qu'on voulait lui épargner.
+ *
+ * ⚠️ `siret` ET `facturesParAn` NE S'ÉCRIVENT PLUS ICI. Le premier se saisissait
+ * trois fois pour n'être lu qu'une, sur `profilsCreancier.siren` ; le second se
+ * demandait avant qu'aucune facture n'existe. Les deux champs restent en base et
+ * gardent leur écrivain — `updateOrganization`, depuis la page de
+ * l'établissement — parce qu'un champ retiré d'un validateur casse au
+ * déploiement tant que des documents le portent.
+ */
 export const createOrganization = authedMutation({
 	args: {
 		name: v.string(),
-		siret: v.optional(v.string()),
-		facturesParAn: v.optional(v.number())
+		/**
+		 * L'identité retenue au registre, quand le gérant en a retenu une.
+		 *
+		 * Facultative, et ça n'est pas une tolérance : le BODACC ne publie que ce
+		 * qui a fait l'objet d'une annonce de greffe. Une entreprise qui n'y figure
+		 * pas doit pouvoir s'inscrire quand même, avec son seul nom.
+		 */
+		creancier: v.optional(
+			v.object({
+				denomination: v.string(),
+				siren: v.optional(v.string()),
+				formeJuridique: v.optional(v.string()),
+				adresse: v.optional(v.string()),
+				estCommercant: vEtatCritere
+			})
+		)
 	},
-	handler: async (ctx, args) => {
+	returns: v.id('organizations'),
+	handler: async (ctx, args): Promise<Id<'organizations'>> => {
 		if (!args.name.trim()) throw new ConvexError('Le nom est obligatoire');
 
 		const profile = await ctx.db
@@ -71,8 +105,6 @@ export const createOrganization = authedMutation({
 
 		const orgId = await ctx.db.insert('organizations', {
 			name: args.name.trim(),
-			siret: args.siret,
-			facturesParAn: args.facturesParAn,
 			country: 'FR',
 			currency: 'EUR',
 			timezone: 'Europe/Paris',
@@ -87,6 +119,18 @@ export const createOrganization = authedMutation({
 			role: 'ORG_ADMIN',
 			joinedAt: Date.now()
 		});
+
+		// ⚠️ LE SIREN SE REVÉRIFIE ICI, PAS DANS LE NAVIGATEUR. `enregistrerInterne`
+		// contrôle la clé et refuse en NOMMANT le numéro reçu : un numéro faux mais
+		// bien formé désigne une AUTRE entreprise, et il s'imprimerait en tête de
+		// décomptes figés. Le refus fait tomber toute la mutation, donc aussi
+		// l'établissement et l'essai : rien n'est consommé pour une identité fausse.
+		if (args.creancier !== undefined) {
+			await ctx.runMutation(internal.recouvrement.profil.enregistrerInterne, {
+				organizationId: orgId,
+				...args.creancier
+			});
+		}
 
 		if (profile) {
 			await ctx.db.patch(profile._id, {

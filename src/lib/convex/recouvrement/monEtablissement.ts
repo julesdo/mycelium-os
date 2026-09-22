@@ -1,7 +1,7 @@
 import { v, ConvexError } from 'convex/values';
 import { action } from '../_generated/server';
 import { api } from '../_generated/api';
-import { authedQuery } from '../functions';
+import { authedAction, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import {
 	lireEtablissements,
@@ -116,6 +116,57 @@ const ANNONCES_LUES = 60;
 const CANDIDATS_MAX = 8;
 
 /**
+ * La forme d'un candidat, écrite UNE fois pour les deux recherches.
+ *
+ * ⚠️ RECOPIÉE, ELLE DIVERGERAIT. Deux fonctions rendent désormais les mêmes
+ * candidats — celle du compte et celle de l'inscription. Un champ ajouté d'un
+ * seul côté ferait rejeter la réponse par le validateur de l'autre, en
+ * production, sur un chemin que rien ne relit.
+ */
+const vEtablissementTrouve = v.object({
+	siren: v.string(),
+	denomination: v.string(),
+	formeJuridique: v.optional(v.string()),
+	ville: v.optional(v.string()),
+	adresse: v.optional(v.string()),
+	derniereParution: v.optional(v.string())
+});
+
+/**
+ * L'INTERROGATION DU REGISTRE, à partir d'un terme déjà décidé.
+ *
+ * ⚠️ UNE PANNE N'EST PAS UNE ABSENCE. Un statut non-200 lève en le nommant ;
+ * rendre une liste vide ferait croire que le registre ne connaît pas
+ * l'entreprise, ce qui est une réponse, et c'en est une fausse.
+ */
+async function interrogerLeRegistre(cherche: string): Promise<EtablissementTrouve[]> {
+	// Le guillemet fermerait le littéral ODSQL et laisserait passer une
+	// expression : on le retire plutôt que de l'échapper.
+	const terme = cherche.replace(/"/g, ' ').trim();
+	if (terme === '') return [];
+
+	const url =
+		`${BASE_BODACC}?limit=${ANNONCES_LUES}&order_by=${encodeURIComponent('dateparution DESC')}` +
+		`&where=${encodeURIComponent(`commercant like "${terme}"`)}`;
+
+	const reponse = await fetch(url);
+	// ⚠️ ON NE REND PAS UNE LISTE VIDE SUR UNE PANNE. « Aucun établissement
+	// trouvé » et « le registre n'a pas répondu » mènent à deux gestes
+	// opposés : saisir le numéro à la main, ou réessayer. Les confondre
+	// serait un repli silencieux, donc un mensonge.
+	if (!reponse.ok) {
+		throw new ConvexError(
+			`Le registre a répondu ${reponse.status}. La recherche n’a pas pu aboutir.`
+		);
+	}
+
+	const charge = (await reponse.json()) as { results?: unknown[] };
+	const annonces = Array.isArray(charge.results) ? charge.results : [];
+
+	return [...lireEtablissements(annonces)].slice(0, CANDIDATS_MAX);
+}
+
+/**
  * IDENTIFIER SON PROPRE ÉTABLISSEMENT AU REGISTRE.
  *
  * ⚠️ AUCUN NOM LIBRE EN ARGUMENT, pour la même raison que du côté débiteur :
@@ -134,16 +185,7 @@ export const chercherMonEtablissementAuRegistre = action({
 	returns: v.object({
 		/** Le nom sur lequel la recherche a porté, pour que l'écran le rappelle. */
 		cherche: v.string(),
-		candidats: v.array(
-			v.object({
-				siren: v.string(),
-				denomination: v.string(),
-				formeJuridique: v.optional(v.string()),
-				ville: v.optional(v.string()),
-				adresse: v.optional(v.string()),
-				derniereParution: v.optional(v.string())
-			})
-		)
+		candidats: v.array(vEtablissementTrouve)
 	}),
 	handler: async (ctx): Promise<{ cherche: string; candidats: EtablissementTrouve[] }> => {
 		const org = await ctx.runQuery(api.organizations.getMyOrg, {});
@@ -154,29 +196,36 @@ export const chercherMonEtablissementAuRegistre = action({
 			);
 		}
 
-		// Le guillemet fermerait le littéral ODSQL et laisserait passer une
-		// expression : on le retire plutôt que de l'échapper.
-		const terme = cherche.replace(/"/g, ' ').trim();
-		if (terme === '') return { cherche, candidats: [] };
+		return { cherche, candidats: await interrogerLeRegistre(cherche) };
+	}
+});
 
-		const url =
-			`${BASE_BODACC}?limit=${ANNONCES_LUES}&order_by=${encodeURIComponent('dateparution DESC')}` +
-			`&where=${encodeURIComponent(`commercant like "${terme}"`)}`;
-
-		const reponse = await fetch(url);
-		// ⚠️ ON NE REND PAS UNE LISTE VIDE SUR UNE PANNE. « Aucun établissement
-		// trouvé » et « le registre n'a pas répondu » mènent à deux gestes
-		// opposés : saisir le numéro à la main, ou réessayer. Les confondre
-		// serait un repli silencieux, donc un mensonge.
-		if (!reponse.ok) {
-			throw new ConvexError(
-				`Le registre a répondu ${reponse.status}. La recherche n’a pas pu aboutir.`
-			);
-		}
-
-		const charge = (await reponse.json()) as { results?: unknown[] };
-		const annonces = Array.isArray(charge.results) ? charge.results : [];
-
-		return { cherche, candidats: [...lireEtablissements(annonces)].slice(0, CANDIDATS_MAX) };
+/**
+ * LA MÊME RECHERCHE, MAIS AVANT QUE L'ÉTABLISSEMENT EXISTE.
+ *
+ * ⚠️ POURQUOI UN NOM LIBRE EN ARGUMENT, alors que la fonction voisine le lit en
+ * base exprès pour ne pas en accepter. À l'inscription, il n'y a RIEN en base à
+ * lire : le nom n'existe que dans le champ de saisie. La garde correcte est donc
+ * une session — `authedAction` —, qui exige un compte sans exiger un
+ * établissement. C'est déjà le niveau que `annuaires.chercherUnCommissaireDeJustice`
+ * pose pour un département libre.
+ *
+ * ⚠️ ET SURTOUT : ON NE CRÉE PAS L'ÉTABLISSEMENT « JUSTE POUR POUVOIR
+ * CHERCHER ». `createOrganization` consomme l'essai gratuit ; une inscription
+ * abandonnée après la recherche le brûlerait pour rien.
+ */
+export const chercherAuRegistreALInscription = authedAction({
+	args: { nom: v.string() },
+	returns: v.object({
+		cherche: v.string(),
+		candidats: v.array(vEtablissementTrouve)
+	}),
+	handler: async (
+		_ctx,
+		{ nom }
+	): Promise<{ cherche: string; candidats: EtablissementTrouve[] }> => {
+		const cherche = nom.trim();
+		if (cherche === '') return { cherche, candidats: [] };
+		return { cherche, candidats: await interrogerLeRegistre(cherche) };
 	}
 });
