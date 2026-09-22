@@ -14,6 +14,8 @@ import {
 	documentVenteSchema,
 	resultatDepuisDocument
 } from '../../verticales/recouvrement/import/factureVente';
+import { lireFacturXDuPdf } from '../../socle/documents/facturx';
+import { resultatDepuisFacturX } from '../../verticales/recouvrement/import/factureFacturX';
 import { extraireAvecClaude, type ContenuDocument } from '../../socle/documents/extracteur';
 import { pluriel } from '../../socle/francais';
 
@@ -89,7 +91,8 @@ function bilanDe(
 }
 
 /**
- * Une facture déposée, relue par le modèle.
+ * Une facture déposée : lue dans le fichier quand elle s'y laisse lire, relue
+ * par le modèle sinon.
  *
  * ⚠️ ELLE REND LA MÊME FORME QUE L'EXPORT COMPTABLE. Tout ce qui suit —
  * enregistrement, dédoublonnage, bilan, lignes illisibles — est déjà écrit et
@@ -97,15 +100,37 @@ function bilanDe(
  * dédoublonnage, c'est-à-dire par créer deux créances contre le même débiteur
  * pour la même facture.
  *
- * ⚠️ ET LE PDF PART TEL QUEL. Le rastériser détruirait sa couche texte et ferait
- * relire par OCR des références et des montants déjà présents — sur un document
- * dont le total entre dans un décompte opposable.
+ * ⚠️ C'EST LE SEUL ENDROIT OÙ LA BIFURCATION PEUT VIVRE, et ce n'est pas une
+ * préférence : c'est la seule fonction qui connaisse ensemble le type MIME, les
+ * octets et le nom du fichier. `traiterImport` n'a donc pas une ligne à changer.
+ *
+ * ⚠️ ET LE PDF PART TEL QUEL AU MODÈLE. Le rastériser détruirait sa couche texte
+ * et ferait relire par OCR des références et des montants déjà présents — sur un
+ * document dont le total entre dans un décompte opposable.
  */
 async function lireFactureDeposee(
 	octets: Buffer,
 	mimeType: string,
-	nomFichier: string
+	nomFichier: string,
+	sirenDuCreancier: string | undefined
 ): Promise<ResultatImport> {
+	if (mimeType === 'application/pdf') {
+		/*
+		  ⚠️ LU DANS LE FICHIER : EXACT, GRATUIT, INSTANTANÉ. Les montants y sont
+		  du texte décimal, ils ne traversent aucun flottant, et aucun appel modèle
+		  n'a lieu.
+
+		  ⚠️ ABSENT ≠ FAUTIF. `null` veut dire « ce PDF ne porte pas de Factur-X » —
+		  une donnée absente, et le modèle prend légitimement le relais. Un
+		  Factur-X PRÉSENT mais fautif ne rend pas `null` : il ressort avec ses
+		  champs, et `resultatDepuisFacturX` le refuse EN LE NOMMANT. On ne
+		  retombe jamais discrètement sur le modèle après avoir constaté qu'un
+		  document dit autre chose que ce qu'on attend.
+		*/
+		const champs = await lireFacturXDuPdf(new Uint8Array(octets));
+		if (champs !== null) return resultatDepuisFacturX(champs, nomFichier, sirenDuCreancier);
+	}
+
 	const contenu: ContenuDocument =
 		mimeType === 'application/pdf'
 			? { type: 'pdf', base64: octets.toString('base64') }
@@ -169,11 +194,27 @@ export const traiterImport = internalAction({
 		 * Neuvième occurrence du défaut « déclaré, lu, jamais alimenté » dans ce
 		 * dépôt, et la plus visible : une promesse faite à l'écran.
 		 */
+		/*
+		  ⚠️ LE SIREN DU CRÉANCIER SERT À REFUSER UNE FACTURE D'ACHAT DÉPOSÉE PAR
+		  ERREUR. Le chemin modèle devine ce piège ; le XML d'un Factur-X permet de
+		  le trancher, à condition de savoir qui l'on est. Absent, on laisse passer
+		  et on le DIT : refuser bloquerait tout dépôt tant que l'identité n'est pas
+		  renseignée, se taire laisserait croire que la vérification a eu lieu.
+		*/
+		const profil = await ctx.runQuery(internal.recouvrement.profil.monProfilInterne, {
+			organizationId: suivi.organizationId
+		});
+
 		let resultat: ResultatImport;
 		try {
 			resultat =
 				suivi.mode === 'FACTURE_DEPOSEE'
-					? await lireFactureDeposee(octets, suivi.mimeType, suivi.filename)
+					? await lireFactureDeposee(
+							octets,
+							suivi.mimeType,
+							suivi.filename,
+							profil?.siren ?? undefined
+						)
 					: importerExportComptable(decoderTexte(octets));
 		} catch (erreur) {
 			await ctx.runMutation(internal.recouvrement.depotMutations.marquerEchec, {

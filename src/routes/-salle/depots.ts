@@ -32,6 +32,7 @@ export const DEPOT_A_ECARTS_DEMO: DepotDemo = {
 	// Le cas qui compte : un import largement réussi, MAIS deux lignes
 	// perdues. Elles doivent crever les yeux au milieu du succès.
 	bilan: {
+		format: 'FEC',
 		facturesCreees: 198,
 		reglementsCrees: 142,
 		debiteursCrees: 37,
@@ -56,6 +57,7 @@ export const DEPOT_PARFAIT_DEMO: DepotDemo = {
 	// Un import parfait : aucun dépliant ne doit s'ouvrir, et le
 	// hors-périmètre reste en gris — ce n'est pas une anomalie.
 	bilan: {
+		format: 'CSV_GENERIQUE',
 		facturesCreees: 41,
 		reglementsCrees: 0,
 		debiteursCrees: 4,
@@ -79,6 +81,69 @@ export const DEPOT_EN_COURS_DEMO: DepotDemo = {
 	mode: 'FACTURE_DEPOSEE'
 };
 
+/**
+ * LA FACTURE RELUE PAR LE MODÈLE, TERMINÉE.
+ *
+ * ⚠️ ELLE MANQUAIT, ET C'EST POUR ÇA QUE LE MENSONGE A TENU. Le seul PDF de la
+ * salle était EN COURS : sa rangée affichait son étape, jamais la phrase qui se
+ * pose une fois le dépôt terminé. On ne pouvait donc pas voir, dans la salle,
+ * ce que le produit écrivait sous un PDF fini.
+ */
+export const DEPOT_MODELE_DEMO: DepotDemo = {
+	id: 'd6',
+	filename: 'FA-2026-0402-scan.pdf',
+	statut: 'TERMINE',
+	etape: 'Lecture terminée.',
+	bilan: {
+		format: 'FACTURE_DEPOSEE',
+		facturesCreees: 1,
+		reglementsCrees: 0,
+		debiteursCrees: 0,
+		facturesDejaConnues: 0,
+		horsPerimetre: 0,
+		reglementsOrphelins: 0,
+		ignoreesTotal: 0,
+		ignorees: []
+	},
+	deposeLe: Date.parse('2026-09-08T10:15:00Z'),
+	mode: 'FACTURE_DEPOSEE'
+};
+
+/**
+ * LA FACTURE LUE DANS SON PROPRE FICHIER.
+ *
+ * ⚠️ ELLE EXISTE POUR ÊTRE VUE À CÔTÉ DE LA PRÉCÉDENTE. Les deux sont des PDF
+ * déposés, donc le même `mode` ; seule la rangée les distingue, et c'est
+ * `bilan.format` qui l'y autorise. Sans ces deux dépôts côte à côte, personne ne
+ * peut vérifier au regard que « Relue par le modèle » a cessé de s'écrire là où
+ * aucun modèle n'a été appelé.
+ */
+export const DEPOT_FACTURX_DEMO: DepotDemo = {
+	id: 'd5',
+	filename: 'FA-2026-0387.pdf',
+	statut: 'TERMINE',
+	etape: 'Lecture terminée.',
+	bilan: {
+		format: 'FACTUR_X',
+		facturesCreees: 1,
+		reglementsCrees: 0,
+		debiteursCrees: 1,
+		facturesDejaConnues: 0,
+		horsPerimetre: 0,
+		reglementsOrphelins: 0,
+		ignoreesTotal: 1,
+		ignorees: [
+			{
+				texte: 'FA-2026-0387.pdf',
+				raison:
+					'Un acompte est indiqué sur cette facture : c’est le net à payer qui a été retenu, pas le total. L’acompte n’entre pas comme règlement, faute de date dans le fichier.'
+			}
+		]
+	},
+	deposeLe: Date.parse('2026-09-09T07:45:00Z'),
+	mode: 'FACTURE_DEPOSEE'
+};
+
 export const DEPOT_EN_ECHEC_DEMO: DepotDemo = {
 	id: 'd4',
 	filename: 'scan-caisse.jpg',
@@ -91,6 +156,10 @@ export const DEPOT_EN_ECHEC_DEMO: DepotDemo = {
 export const DEPOTS_DEMO: readonly DepotDemo[] = [
 	DEPOT_A_ECARTS_DEMO,
 	DEPOT_PARFAIT_DEMO,
+	// ⚠️ LES DEUX PDF SE SUIVENT, EXPRÈS : « Lue dans le fichier » juste au-dessus
+	// de « Relue par le modèle », pour que la distinction se vérifie au regard.
+	DEPOT_FACTURX_DEMO,
+	DEPOT_MODELE_DEMO,
 	DEPOT_EN_COURS_DEMO,
 	DEPOT_EN_ECHEC_DEMO
 ];

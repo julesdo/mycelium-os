@@ -33,6 +33,20 @@ import { dateCourte, pluriel } from './format';
  */
 
 export interface BilanDepotAffiche {
+	/**
+	 * Par où la lecture est VRAIMENT passée : `FEC`, `CSV_GENERIQUE`,
+	 * `FACTURE_DEPOSEE` ou `FACTUR_X`.
+	 *
+	 * ⚠️ IL ÉTAIT ÉCRIT EN BASE, VALIDÉ, RENDU PAR LES REQUÊTES — ET JAMAIS LU.
+	 * Douzième occurrence de « déclaré, lu, jamais alimenté » dans ce dépôt, et
+	 * celle-ci faisait mentir un écran : tout dépôt de PDF affichait « Relue par
+	 * le modèle », y compris un Factur-X qui n'a coûté aucun appel.
+	 *
+	 * ⚠️ ET LE MODE NE SUFFIT PAS À LE DIRE. `mode` se décide dans le navigateur
+	 * avant l'envoi ; savoir si un PDF porte un Factur-X demande de l'ouvrir. La
+	 * vérité se découvre au serveur, et c'est par ce champ qu'elle voyage.
+	 */
+	readonly format: string;
 	readonly facturesCreees: number;
 	readonly reglementsCrees: number;
 	readonly debiteursCrees: number;

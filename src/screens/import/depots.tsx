@@ -109,6 +109,14 @@ function enLecture(depot: LigneDepot): boolean {
  * l'envoi. Un appel facturé qui ne se décide plus doit au moins se voir. Pendant
  * la lecture l'étape le dit déjà, mot pour mot : on ne l'écrit pas deux fois.
  *
+ * ⚠️ MAIS IL NE S'ÉCRIT PLUS SUR UN FACTUR-X, ET C'ÉTAIT UN MENSONGE À L'ÉCRAN.
+ * La phrase se déduisait du MODE, qui vaut `FACTURE_DEPOSEE` pour tout PDF
+ * déposé : une facture lue dans son propre fichier, sans un centime d'appel
+ * modèle, affichait quand même un appel qui n'avait jamais eu lieu — sur
+ * exactement le point que ce chemin apporte. C'est `bilan.format` qui tranche,
+ * parce qu'il est écrit APRÈS la lecture, par le serveur qui a ouvert le
+ * fichier.
+ *
  * ⚠️ ET UNE LECTURE MUETTE DEPUIS UN QUART D'HEURE LE DIT. C'est le seul état
  * du produit qui pouvait durer indéfiniment sans que rien ne le distingue d'un
  * état normal : la tâche de lecture peut tomber entre son étape et son bilan, et
@@ -127,6 +135,7 @@ function precisionDepot(depot: LigneDepot, minute: number | null): string {
 		return depot.etape ?? deposeLe;
 	}
 
+	if (depot.bilan?.format === 'FACTUR_X') return `Lue dans le fichier · ${deposeLe}`;
 	return depot.mode === 'FACTURE_DEPOSEE' ? `Relue par le modèle · ${deposeLe}` : deposeLe;
 }
 
