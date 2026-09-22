@@ -40,6 +40,7 @@ import type { MesuresAffichees } from './mesures';
 export const SECTIONS_COMPTE = [
 	'profil',
 	'etablissement',
+	'connexions',
 	'facturation',
 	'equipe',
 	'donnees',
@@ -119,6 +120,19 @@ export interface IdentiteDuCreancier {
 }
 
 /** « Photo », « Avatar » ou « Initiales » : ce que les autres voient de vous. */
+/** Ce que la rangée repliée dit de la connexion, sans l'ouvrir. */
+export function resumeConnexions(statut: string | null): ResumeDeSection {
+	const valeur =
+		statut === 'A_JOUR'
+			? 'Qonto connecté'
+			: statut === 'SYNCHRONISATION'
+				? 'Lecture en cours…'
+				: statut === 'ECHEC' || statut === 'REVOQUEE'
+					? 'À reconnecter'
+					: 'Aucune';
+	return { valeur, legende: 'Les logiciels d’où vos factures arrivent seules.' };
+}
+
 export function resumeProfil(profil: { readonly image: unknown; readonly avatar: unknown }): ResumeDeSection {
 	const valeur = profil.avatar !== null ? 'Avatar' : profil.image !== null ? 'Photo' : 'Initiales';
 	return { valeur, legende: 'Ce qui vous représente dans l’application.' };

@@ -32,6 +32,7 @@ import {
 	resumeFacturation,
 	resumeMesures,
 	resumeProfil,
+	resumeConnexions,
 	type IdentiteDuCreancier,
 	type SectionCompte
 } from './presse';
@@ -85,6 +86,8 @@ export interface CompteAffiche {
 	readonly profil: ProfilAffiche;
 	/** L'établissement actif, ou `null` : la coquille `/app` renvoie alors vers `/bienvenue`. */
 	readonly etablissement: EtablissementAffiche | null;
+	/** La connexion Qonto : son statut pour la rangée repliée, et la carte branchée. */
+	readonly connexions: { readonly statut: string | null; readonly contenu: ReactNode };
 	readonly creancier: CreancierAffiche;
 	/** Ce que l'en-tête affiche et ce dont « Ce qui presse » tire son premier fait. */
 	readonly identite: IdentiteDuCreancier | null;
@@ -213,6 +216,16 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 						{...resumeEtablissement(pret.identite)}
 					>
 						<ContenuEtablissement etablissement={pret.etablissement} creancier={pret.creancier} />
+					</SectionDepliable>
+				</Ancre>
+
+				<Ancre cle="connexions" ancres={ancres}>
+					<SectionDepliable
+						cle="connexions"
+						titre="Connexions"
+						{...resumeConnexions(pret.connexions.statut)}
+					>
+						{pret.connexions.contenu}
 					</SectionDepliable>
 				</Ancre>
 

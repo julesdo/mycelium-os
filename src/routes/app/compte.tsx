@@ -6,6 +6,7 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
 import { messageDeRefus, televerser } from '../../app/televerser';
+import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import type {
 	AvocatAffiche,
 	EtatRechercheAvocat,
@@ -67,6 +68,7 @@ function PageCompte() {
 
 	// ── L'établissement et l'identité du créancier ───────────────────────────
 	const org = useQuery(api.organizations.getMyOrg, {});
+	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	const mesure = useQuery(api.recouvrement.monEtablissement.volumeEmis, {});
 	const mettreAJourOrg = useMutation(api.organizations.updateOrganization);
@@ -509,6 +511,14 @@ function PageCompte() {
 			onRetirer: () => void gesteImage(() => retirerImage({}), setImageEnCours, setErreurImage)
 		},
 		identite,
+		/*
+		  Sans Qonto activé, la rangée repliée dit « Aucune » et ne s'ouvre sur rien :
+		  pas de phrase qui promettrait une connexion qu'on ne peut pas encore faire.
+		*/
+		connexions: {
+			statut: qonto?.statut ?? null,
+			contenu: qonto?.disponible ? <CarteQontoBranchee /> : null
+		},
 		/*
 		  Une liste encore en lecture est une liste VIDE ici, jamais une liste à
 		  un élément fabriquée depuis `org` : l'en-tête n'ouvrirait alors aucune

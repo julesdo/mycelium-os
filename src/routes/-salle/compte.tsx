@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Theme } from '../../app/use-theme';
 import { BORNES_PALIER, TARIFS, palierDeTaille } from '../../lib/config/tarifs';
 import type { EtatRechercheAvocat, FicheIntervenant, Lecture } from '../../ui';
+import { CarteConnexion, MonogrammeConnexion } from '../../ui';
+import { PROMESSE_QONTO } from '../../app/connexion-qonto';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
 import type { EtablissementAuRegistre, EtatCritere } from '../../screens/compte/creancier';
 import type { EtablissementAffiche } from '../../screens/compte/etablissement';
@@ -653,7 +655,11 @@ const MESURES_DEMO: MesuresAffichees = {
 };
 
 /** La page, composée comme sa route la compose. */
-function compteDe(forme: FormeCompte, theme: Theme, onChoisirTheme: (t: Theme) => void) {
+function compteDe(
+	forme: FormeCompte,
+	theme: Theme,
+	onChoisirTheme: (t: Theme) => void
+): CompteAffiche {
 	const attente = { etat: 'attente' } as const;
 	const abonnement: Lecture<AbonnementAffiche | null> = forme.enLecture
 		? attente
@@ -710,6 +716,21 @@ function compteDe(forme: FormeCompte, theme: Theme, onChoisirTheme: (t: Theme) =
 			: ({ etat: 'pret', valeur: intervenantsDe(forme.carnet) } as const),
 		mesures: forme.enLecture ? attente : ({ etat: 'pret', valeur: MESURES_DEMO } as const),
 		/* Un avatar déjà choisi : la bibliothèque montre la sélection en place. */
+		/* Une connexion déjà en place : ce qu'on vient retrouver ici, une fois l'accueil rempli. */
+		connexions: {
+			statut: 'A_JOUR',
+			contenu: (
+				<CarteConnexion
+					nom="Qonto"
+					promesse={PROMESSE_QONTO}
+					logo={<MonogrammeConnexion lettre="Q" />}
+					etat={{ genre: 'A_JOUR', depuis: 'il y a 3 min', facturesLues: 128 }}
+					onConnecter={() => undefined}
+					onSynchroniser={() => undefined}
+					onDeconnecter={() => undefined}
+				/>
+			)
+		},
 		profil: {
 			nom: 'Camille Doré',
 			image: { style: 'notionists', graine: 'Camille' },
