@@ -352,6 +352,15 @@ export const creanceComplete = authedQuery({
 		 */
 		debiteurId: v.id('debiteurs'),
 		/**
+		 * L'adresse électronique du client, quand elle est connue.
+		 *
+		 * ⚠️ ELLE VOYAGE JUSQU'À LA CRÉANCE PARCE QUE C'EST LÀ QUE LA RELANCE SE
+		 * COMPOSE. Sans elle, « ouvrir dans ma messagerie » ouvrirait un brouillon
+		 * sans destinataire — et l'écran préfère dire ce qui manque et mener à la
+		 * page du client, où l'adresse se saisit.
+		 */
+		debiteurEmail: v.optional(v.string()),
+		/**
 		 * LA SANTÉ RELEVÉE AU REGISTRE, celle que le radar écrit chaque nuit.
 		 *
 		 * ⚠️ ELLE ÉTAIT DÉJÀ LUE ICI, ET JETÉE. Le handler la passe à `qualifier()`,
@@ -567,6 +576,7 @@ export const creanceComplete = authedQuery({
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 			intervenantId: creance.intervenantId ?? null,
 			debiteurId: creance.debiteurId,
+			debiteurEmail: debiteur?.email,
 			// La MÊME valeur que celle passée à `qualifier()` plus haut, et c'est le
 			// point : `qualifier()` en tire un risque, jamais le score, et l'écran
 			// montre désormais le fait relevé au registre derrière ce risque au lieu

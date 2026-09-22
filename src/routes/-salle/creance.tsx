@@ -425,6 +425,25 @@ const RELANCES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements({
 });
 
 /**
+ * LA RELANCE QUI NE TIENT PAS DANS UNE MESSAGERIE.
+ *
+ * ⚠️ VINGT FACTURES, ET CE N'EST PAS UN CAS D'ÉCOLE. Les longueurs mesurées sur
+ * les gabarits réels placent la rupture entre la 14e et la 15e facture au
+ * niveau 1 : c'est le dossier d'un client qu'on relance depuis un an. Sans le
+ * garde-fou, on clique et il ne se passe RIEN — ou pire, l'adresse est tronquée
+ * au milieu d'un montant.
+ */
+const RELANCES_TROP_LONGUES_DEMO: readonly NiveauAffiche[] = niveauxDepuisElements({
+	...ELEMENTS_RELANCE_DEMO,
+	factures: Array.from({ length: 20 }, (_, i) => ({
+		reference: `FA-2026-${String(410 + i).padStart(4, '0')}`,
+		montantTTC: depuisCentimes(123_456n),
+		dateEcheance: '2026-07-15'
+	})),
+	santeDebiteur: 'INCONNUE'
+});
+
+/**
  * La variante « sans décompte » : le seul refus du module qui se lève d'un
  * geste, et donc le seul endroit où la rangée « Arrêter le décompte » se voit.
  * Sans elle, les quatre parties du refus de niveau 2 ne se regardaient nulle
@@ -475,7 +494,8 @@ function creanceDemo({
 	solidite = SOLIDITE_DEMO,
 	pieces = PIECES_DEMO,
 	journal = null,
-	commercants = false
+	commercants = false,
+	sansAdresse = false
 }: {
 	readonly reponses?: Reponses;
 	readonly propositions?: readonly PropositionFait[];
@@ -486,6 +506,15 @@ function creanceDemo({
 	readonly journal?: readonly EvenementSurvenu[] | null;
 	/** Les deux qualités de commerçant acquises : ce qu'il faut pour engager une voie. */
 	readonly commercants?: boolean;
+	/**
+	 * Vrai pour montrer le refus « adresse non renseignée ».
+	 *
+	 * ⚠️ UN BOOLÉEN, ET PAS UNE ADRESSE `undefined`. Passer `undefined` à un
+	 * paramètre qui porte une valeur par défaut REMET la valeur par défaut : la
+	 * variante affichait le bouton qu'elle était censée faire disparaître. Même
+	 * piège que dans les tests du lecteur Factur-X, le même jour.
+	 */
+	readonly sansAdresse?: boolean;
 } = {}): CreanceOuverte {
 	const qualite: EtatCritere = commercants ? 'ok' : 'unknown';
 	const conditions = conditionsDepuisReponses(reponses, qualite, qualite);
@@ -501,6 +530,7 @@ function creanceDemo({
 		identifiant: 'demo',
 		debiteur: DEBITEUR_DEMO,
 		debiteurId: 'demo-debiteur',
+		...(sansAdresse ? {} : { debiteurEmail: 'comptabilite@ateliers-martin.fr' }),
 		santeDebiteur: SANTE_DEBITEUR_DEMO,
 		eligible: qualification.eligible,
 		nombreFactures: FACTURES_DEMO.length,
@@ -673,6 +703,14 @@ const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
 	proposées: creanceDemo({ reponses: {}, propositions: PROPOSITIONS_LITIGE_DEMO }),
 	'litige répondu': creanceDemo({ reponses: REPONSES_LITIGE_TERMINEES_DEMO, commercants: true }),
 	'relances prêtes': creanceDemo({ relances: RELANCES_DEMO }),
+	/*
+	  ⚠️ LES DEUX REFUS DU BOUTON, CÔTE À CÔTE AVEC LE CAS QUI MARCHE. Sans
+	  adresse, la relance se prépare et ne peut pas s'ouvrir ; trop longue, elle
+	  échouerait EN SILENCE dans le navigateur, ce qui est précisément ce que le
+	  garde-fou remplace par une phrase.
+	*/
+	'relance sans adresse': creanceDemo({ relances: RELANCES_DEMO, sansAdresse: true }),
+	'relance trop longue': creanceDemo({ relances: RELANCES_TROP_LONGUES_DEMO }),
 	'sans décompte arrêté': creanceDemo({ relances: RELANCES_SANS_DECOMPTE_DEMO }),
 	'aucune pièce': creanceDemo({
 		solidite: soliditeDepuisPyramide(pyramideDePreuves([])),

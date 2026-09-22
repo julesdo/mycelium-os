@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { Button, Surface } from '@cladd-ui/react';
-import { CheckIcon, CopyIcon, InfoIcon, LockIcon } from 'lucide-react';
-import { BoutonSecondaire } from './bouton';
+import { CheckIcon, CopyIcon, InfoIcon, LockIcon, MailIcon } from 'lucide-react';
+import { BoutonPrincipal, BoutonSecondaire } from './bouton';
+import {
+	adresseMessagerie,
+	tientDansLaMessagerie
+} from '../lib/verticales/recouvrement/messagerie';
 import { Lien } from './lien';
 import { cn } from './cn';
 
@@ -76,11 +80,17 @@ export interface NiveauAffiche {
 
 export function Relances({
 	niveaux,
-	identifiant
+	identifiant,
+	destinataire,
+	identifiantDebiteur
 }: {
 	niveaux: readonly NiveauAffiche[];
 	/** La créance : le seul geste proposé mène à SON décompte. */
 	identifiant: string;
+	/** L'adresse du client, quand elle est connue. Sans elle, le brouillon n'a pas de « À : ». */
+	destinataire: string | undefined;
+	/** Le client : c'est sur SA page que l'adresse manquante se saisit. */
+	identifiantDebiteur: string;
 }) {
 	// ⚠️ RIEN N'EST OUVERT AU DÉPART, ET C'EST UNE MESURE, PAS UN GOÛT.
 	//
@@ -205,7 +215,12 @@ export function Relances({
 					) : null}
 
 					{niveau.disponible && ouvert === niveau.niveau && niveau.corps ? (
-						<Brouillon objet={niveau.objet ?? ''} corps={niveau.corps} />
+						<Brouillon
+							objet={niveau.objet ?? ''}
+							corps={niveau.corps}
+							destinataire={destinataire}
+							identifiantDebiteur={identifiantDebiteur}
+						/>
 					) : null}
 				</Surface>
 			))}
@@ -221,9 +236,66 @@ export function Relances({
  * ligne répète le sujet, et le créancier corrige à la main — ce qui était
  * précisément ce qu'on voulait lui épargner.
  */
-function Brouillon({ objet, corps }: { objet: string; corps: string }) {
+function Brouillon({
+	objet,
+	corps,
+	destinataire,
+	identifiantDebiteur
+}: {
+	objet: string;
+	corps: string;
+	destinataire: string | undefined;
+	identifiantDebiteur: string;
+}) {
+	/*
+	  ⚠️ ON MESURE AVANT D'OUVRIR, PARCE QUE L'ÉCHEC EST MUET. Au-delà d'environ
+	  2 046 caractères, Chrome affiche son invite, on clique, et rien ne se
+	  passe ; à 2 083, Windows tronque l'adresse en silence, au milieu d'un
+	  montant s'il le faut. Voir `verticales/recouvrement/messagerie.ts`.
+	*/
+	const adresse = adresseMessagerie({ destinataire, objet, corps });
+	const tient = tientDansLaMessagerie(adresse.longueur);
+
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
+			{/*
+			  ⚠️ « OUVRIR », JAMAIS « ENVOYER ». C'est la messagerie du gérant qui
+			  s'ouvre, sur un brouillon qu'il relit et signe. Ligne rouge n° 1 : ce
+			  produit n'écrit jamais au débiteur, et aucun libellé ne doit laisser
+			  penser le contraire.
+			*/}
+			{adresse.sansDestinataire ? (
+				/*
+				  LE VIDE MONTRE LE CHEMIN (règle d'écran n° 4). Un bouton grisé sans
+				  explication laisserait chercher ce qui manque ; on le nomme, et on
+				  mène là où ça se répare.
+				*/
+				<div className="flex flex-col gap-cladd-3xs">
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						L’adresse électronique de ce client n’est pas renseignée : le message ne peut pas s’ouvrir
+						dans votre messagerie. Le texte reste copiable ci-dessous.
+					</p>
+					<BoutonSecondaire
+						as={Lien}
+						to="/app/debiteurs/$id"
+						params={{ id: identifiantDebiteur } as never}
+					>
+						Renseigner son adresse
+					</BoutonSecondaire>
+				</div>
+			) : tient ? (
+				<BoutonPrincipal as="a" href={adresse.url} className="self-start">
+					<MailIcon className="size-4" aria-hidden />
+					Ouvrir dans ma messagerie
+				</BoutonPrincipal>
+			) : (
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					Ce message est trop long pour s’ouvrir dans une messagerie : au-delà d’environ deux mille
+					caractères, la plupart des logiciels de courrier le tronquent sans le dire. Copiez l’objet
+					et le texte ci-dessous, puis collez-les dans un message.
+				</p>
+			)}
+
 			<LigneCopiable etiquette="Objet" valeur={objet} />
 			<LigneCopiable etiquette="Message" valeur={corps} multiligne />
 		</div>

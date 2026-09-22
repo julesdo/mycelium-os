@@ -477,6 +477,7 @@ function PageCreance() {
 		identifiant: id,
 		debiteur: creance.debiteur,
 		debiteurId,
+		...(creance.debiteurEmail === undefined ? {} : { debiteurEmail: creance.debiteurEmail }),
 		santeDebiteur: creance.santeDebiteur,
 		eligible: creance.eligible,
 		nombreFactures: creance.factures.length,

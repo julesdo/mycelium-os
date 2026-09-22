@@ -184,6 +184,14 @@ export interface CreanceOuverte {
 	readonly identifiant: string;
 	readonly debiteur: string;
 	readonly debiteurId: string;
+	/**
+	 * L'adresse électronique du client, quand elle est connue.
+	 *
+	 * ⚠️ SANS ELLE, UN BROUILLON N'A PAS DE DESTINATAIRE. Elle voyage jusqu'ici
+	 * pour que la section des relances puisse ouvrir la messagerie du gérant, ou
+	 * dire ce qui l'en empêche et où le réparer.
+	 */
+	readonly debiteurEmail?: string;
 	readonly santeDebiteur: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
 	/** Toutes conditions établies, aucun risque bloquant. Un état, jamais une note. */
 	readonly eligible: boolean;
@@ -1148,7 +1156,12 @@ function SectionRelances({ creance }: { creance: CreanceOuverte }) {
 			legende="Des brouillons, à envoyer depuis votre messagerie"
 			valeur={prets > 0 ? `${prets} prêt${pluriel(prets)}` : 'Suspendues'}
 		>
-			<Relances niveaux={creance.relances} identifiant={creance.identifiant} />
+			<Relances
+				niveaux={creance.relances}
+				identifiant={creance.identifiant}
+				destinataire={creance.debiteurEmail}
+				identifiantDebiteur={creance.debiteurId}
+			/>
 		</SectionDepliable>
 	);
 }
