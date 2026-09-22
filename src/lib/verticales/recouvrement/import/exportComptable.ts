@@ -58,8 +58,14 @@ const COLONNES_FEC = ['CompteNum', 'PieceRef', 'Debit', 'Credit', 'EcritureDate'
  * des centaines. Le bilan le distingue, parce que « 1 facture creee » ne se lit
  * pas de la meme facon selon qu'on a depose un PDF ou un FEC de deux cents
  * lignes.
+ *
+ * ⚠️ ET `FACTUR_X` SE DISTINGUE DE `FACTURE_DEPOSEE` POUR UNE RAISON QUI SE
+ * LIT A L'ECRAN. Les deux arrivent par le meme geste — un PDF depose — mais
+ * l'un a ete RELU par un modele et l'autre LU dans le fichier, au centime. Le
+ * produit ecrivait « Relue par le modele » sous tout depot de PDF ; sur un
+ * Factur-X, ce serait un appel modele qui n'a jamais eu lieu.
  */
-export type FormatExport = 'FEC' | 'CSV_GENERIQUE' | 'FACTURE_DEPOSEE';
+export type FormatExport = 'FEC' | 'CSV_GENERIQUE' | 'FACTURE_DEPOSEE' | 'FACTUR_X';
 
 export interface FactureImportee {
 	readonly reference: string;

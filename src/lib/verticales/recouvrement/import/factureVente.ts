@@ -225,7 +225,7 @@ export function versFactureImportee(doc: DocumentVente): Conversion {
  * Ce qui manque ici est l'identifiant, jamais la créance : la facture reste
  * parfaitement exploitable sans lui.
  */
-function sirenLu(brut: string | null): string | undefined {
+export function sirenLu(brut: string | null): string | undefined {
 	if (brut === null) return undefined;
 	const nettoye = brut.trim();
 	if (nettoye === '') return undefined;
