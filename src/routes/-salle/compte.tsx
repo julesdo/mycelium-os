@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { Theme } from '../../app/use-theme';
 import { BORNES_PALIER, TARIFS, palierDeTaille } from '../../lib/config/tarifs';
 import type { EtatRechercheAvocat, FicheIntervenant, Lecture } from '../../ui';
-import { CarteConnexion, MonogrammeConnexion } from '../../ui';
-import { PROMESSE_QONTO } from '../../app/connexion-qonto';
+import { CarteConnexion, LogoConnexion } from '../../ui';
+import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
 import type { EtablissementAuRegistre, EtatCritere } from '../../screens/compte/creancier';
 import type { EtablissementAffiche } from '../../screens/compte/etablissement';
@@ -723,7 +723,8 @@ function compteDe(
 				<CarteConnexion
 					nom="Qonto"
 					promesse={PROMESSE_QONTO}
-					logo={<MonogrammeConnexion lettre="Q" />}
+					logo={<LogoConnexion src={LOGO_QONTO} />}
+			couverture={COUVERTURE_QONTO}
 					etat={{ genre: 'A_JOUR', depuis: 'il y a 3 min', facturesLues: 128 }}
 					onConnecter={() => undefined}
 					onSynchroniser={() => undefined}

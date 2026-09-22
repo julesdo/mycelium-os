@@ -5,12 +5,12 @@ import { DEPOT_A_ECARTS_DEMO, DEPOT_PARFAIT_DEMO } from './depots';
 import { REVELATION_DEMO } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
-import { PROMESSE_QONTO } from '../../app/connexion-qonto';
+import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
 import {
 	Avatar,
 	CarteConnexion,
 	DeclencheurRecherche,
-	MonogrammeConnexion,
+	LogoConnexion,
 	travauxDuVeilleur,
 	type TacheVeilleur
 } from '../../ui';
@@ -476,7 +476,8 @@ const VIERGE: FileAffichee = {
 		<CarteConnexion
 			nom="Qonto"
 			promesse={PROMESSE_QONTO}
-			logo={<MonogrammeConnexion lettre="Q" />}
+			logo={<LogoConnexion src={LOGO_QONTO} />}
+			couverture={COUVERTURE_QONTO}
 			etat={{ genre: 'A_CONNECTER' }}
 			onConnecter={() => undefined}
 			onSynchroniser={() => undefined}

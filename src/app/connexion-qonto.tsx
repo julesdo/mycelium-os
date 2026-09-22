@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAction, useQuery } from 'convex/react';
 import { api } from '../lib/convex/_generated/api';
 import { minutesDepuis, useMinute } from '../screens/import/horloge';
-import { CarteConnexion, MonogrammeConnexion, type EtatConnexion } from '../ui';
+import { CarteConnexion, LogoConnexion, type EtatConnexion } from '../ui';
 
 /**
  * LA CARTE QONTO, BRANCHÉE.
@@ -14,6 +14,15 @@ import { CarteConnexion, MonogrammeConnexion, type EtatConnexion } from '../ui';
  */
 
 /** La promesse, avant qu'on touche la carte : ce que la connexion fait, en une phrase. */
+/** Le symbole officiel, pris dans le kit média de Qonto et auto-hébergé. */
+export const LOGO_QONTO = '/connecteurs/qonto-symbole-noir.png';
+
+/**
+ * La couverture : une colonnade de pierre claire (Jesse Bauer, licence Unsplash).
+ * Elle dit la solidité d'une institution au moment où l'on demande l'accès.
+ */
+export const COUVERTURE_QONTO = '/connecteurs/couverture-colonnade.webp';
+
 export const PROMESSE_QONTO =
 	'Vos factures Qonto arrivent seules, et passent payées quand elles le sont.';
 
@@ -61,7 +70,8 @@ export function CarteQontoBranchee() {
 		<CarteConnexion
 			nom="Qonto"
 			promesse={PROMESSE_QONTO}
-			logo={<MonogrammeConnexion lettre="Q" />}
+			logo={<LogoConnexion src={LOGO_QONTO} />}
+			couverture={COUVERTURE_QONTO}
 			etat={etat}
 			onConnecter={() => {
 				setRedirection(true);
