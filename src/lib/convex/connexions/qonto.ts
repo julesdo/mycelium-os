@@ -5,6 +5,12 @@ import type { Doc, Id } from '../_generated/dataModel';
 import { authedAction } from '../functions';
 import { decryptToken, encryptToken, requireEncryptionKey } from '../lib/crypto';
 import { DROITS_QONTO, configQonto, entetesQonto, type ConfigQonto } from './qontoConfig';
+import {
+	factureDepuisQonto,
+	signatureQontoValide,
+	type FactureDepuisQonto,
+	type FactureQonto
+} from '../../socle/connecteurs/qonto';
 
 /**
  * LA CONNEXION QONTO : démarrer, revenir, s'abonner, se déconnecter.
@@ -223,11 +229,9 @@ export const abonner = internalAction({
 			// Le rattrapage périodique couvre un abonnement manqué.
 		}
 
-		// ⚠️ TÂCHE 4 REMPLACE CETTE LIGNE par la planification de `synchroniser`.
-		await ctx.runMutation(internal.connexions.qontoDonnees.marquerConnexion, {
-			connexionId,
-			statut: 'A_JOUR'
-		});
+		// La première lecture part tout de suite : le gérant revient de Qonto et
+		// regarde l'accueil se remplir.
+		await ctx.scheduler.runAfter(0, internal.connexions.qonto.synchroniser, { connexionId });
 		return null;
 	}
 });
@@ -264,4 +268,191 @@ export const deconnecterQonto = authedAction({
 		});
 		return null;
 	}
+});
+
+/** Un accès retiré depuis Qonto : se reconnecter, pas réessayer. */
+class AccesRetire extends Error {}
+
+/**
+ * LIRE LES FACTURES QONTO MODIFIÉES DEPUIS LA DERNIÈRE FOIS, et les écrire par
+ * le chemin d'import, qui dédoublonne déjà par référence.
+ *
+ * Le curseur est l'heure de DÉBUT de la synchronisation réussie : une facture
+ * modifiée pendant la lecture sera relue la fois suivante, ce qui ne coûte
+ * rien, puisque l'import est idempotent.
+ */
+export const synchroniser = internalAction({
+	args: { connexionId: v.id('connexionsQonto') },
+	returns: v.null(),
+	handler: async (ctx, { connexionId }): Promise<null> => {
+		const config = configQonto();
+		if (config === null) return null;
+		const connexion = await ctx.runMutation(internal.connexions.qontoDonnees.commencerSynchro, {
+			connexionId
+		});
+		if (connexion === null) return null;
+
+		const debut = new Date().toISOString();
+		const aujourdHui = debut.slice(0, 10);
+		try {
+			const jeton = await jetonValide(ctx, config, connexion);
+			let page: number | null = 1;
+			let importees = 0;
+
+			while (page !== null) {
+				const url = new URL(`${config.urlApi}/client_invoices`);
+				url.searchParams.set('page', String(page));
+				url.searchParams.set('per_page', '100');
+				if (connexion.curseur !== undefined) {
+					url.searchParams.set('filter[updated_at_from]', connexion.curseur);
+				}
+				const reponse = await fetch(url, { headers: entetesQonto(config, jeton) });
+				if (reponse.status === 401 || reponse.status === 403) throw new AccesRetire();
+				if (!reponse.ok) throw new Error(`Qonto a répondu ${reponse.status}`);
+
+				const corps = (await reponse.json()) as {
+					client_invoices?: FactureQonto[];
+					meta?: { next_page?: number | null };
+				};
+				const factures = (corps.client_invoices ?? [])
+					.map((facture) => factureDepuisQonto(facture, aujourdHui))
+					.filter((facture): facture is FactureDepuisQonto => facture !== null);
+
+				if (factures.length > 0) {
+					await ctx.runMutation(internal.recouvrement.import.enregistrerImport, {
+						organizationId: connexion.organizationId,
+						factures: factures.map(({ regleCumule: _regle, ...facture }) => facture),
+						reglements: [],
+						reglementsCumules: factures.flatMap((facture) =>
+							facture.regleCumule === null
+								? []
+								: [
+										{
+											reference: facture.reference,
+											date: facture.regleCumule.date,
+											montantCumule: facture.regleCumule.montant
+										}
+									]
+						),
+						aujourdHui
+					});
+				}
+				importees += factures.length;
+				await ctx.runMutation(internal.connexions.qontoDonnees.avancerSynchro, {
+					connexionId,
+					facturesLues: (connexion.facturesLues ?? 0) + importees
+				});
+				page = corps.meta?.next_page ?? null;
+			}
+
+			await ctx.runMutation(internal.connexions.qontoDonnees.terminerSynchro, {
+				connexionId,
+				curseur: debut
+			});
+		} catch (erreur) {
+			await ctx.runMutation(internal.connexions.qontoDonnees.marquerConnexion, {
+				connexionId,
+				statut: erreur instanceof AccesRetire ? 'REVOQUEE' : 'ECHEC',
+				erreur:
+					erreur instanceof AccesRetire
+						? 'L’accès a été retiré depuis Qonto.'
+						: 'La lecture des factures Qonto a échoué. Elle sera retentée.'
+			});
+		}
+		return null;
+	}
+});
+
+/** Le rattrapage : toutes les connexions vivantes, toutes les six heures. */
+export const synchroniserToutes = internalAction({
+	args: {},
+	returns: v.null(),
+	handler: async (ctx): Promise<null> => {
+		const connexions: Id<'connexionsQonto'>[] = await ctx.runQuery(
+			internal.connexions.qontoDonnees.connexionsASynchroniser,
+			{}
+		);
+		for (const connexionId of connexions) {
+			await ctx.scheduler.runAfter(0, internal.connexions.qonto.synchroniser, { connexionId });
+		}
+		return null;
+	}
+});
+
+/** Le bouton « Synchroniser » : n'importe quel membre peut le toucher. */
+export const synchroniserMaintenant = authedAction({
+	args: {},
+	returns: v.null(),
+	handler: async (ctx): Promise<null> => {
+		const organizationId: Id<'organizations'> = await ctx.runQuery(
+			internal.connexions.qontoDonnees.organisationDuMembre,
+			{ userId: ctx.user._id }
+		);
+		const connexion = await ctx.runQuery(
+			internal.connexions.qontoDonnees.connexionDeLOrganisation,
+			{ organizationId }
+		);
+		if (connexion !== null) {
+			await ctx.scheduler.runAfter(0, internal.connexions.qonto.synchroniser, {
+				connexionId: connexion._id
+			});
+		}
+		return null;
+	}
+});
+
+/**
+ * LE WEBHOOK QONTO. Il doit répondre en moins d'une seconde : on vérifie la
+ * signature, on PLANIFIE la synchronisation, et on rend la main aussitôt.
+ */
+export const webhookQonto = httpAction(async (ctx, requete) => {
+	const corps = await requete.text();
+	let evenement: {
+		event_type?: string;
+		type?: string;
+		organization_id?: string;
+		data?: { organization_id?: string };
+	};
+	try {
+		evenement = JSON.parse(corps) as typeof evenement;
+	} catch {
+		return new Response(null, { status: 400 });
+	}
+
+	const qontoOrganizationId = evenement.organization_id ?? evenement.data?.organization_id;
+	if (qontoOrganizationId === undefined) return new Response(null, { status: 200 });
+
+	const connexion = await ctx.runQuery(
+		internal.connexions.qontoDonnees.connexionParOrganisationQonto,
+		{ qontoOrganizationId }
+	);
+	if (connexion === null || connexion.secretWebhookChiffre === undefined) {
+		return new Response(null, { status: 200 });
+	}
+
+	const secret = await decryptToken(
+		connexion.secretWebhookChiffre,
+		requireEncryptionKey(CLE_CHIFFREMENT)
+	);
+	const signee = await signatureQontoValide(
+		corps,
+		requete.headers.get('X-Qonto-Signature'),
+		secret,
+		Math.floor(Date.now() / 1000)
+	);
+	if (!signee) return new Response(null, { status: 401 });
+
+	const type = evenement.event_type ?? evenement.type ?? '';
+	if (type.includes('consent')) {
+		await ctx.runMutation(internal.connexions.qontoDonnees.marquerConnexion, {
+			connexionId: connexion._id,
+			statut: 'REVOQUEE',
+			erreur: 'L’accès a été retiré depuis Qonto.'
+		});
+	} else {
+		await ctx.scheduler.runAfter(0, internal.connexions.qonto.synchroniser, {
+			connexionId: connexion._id
+		});
+	}
+	return new Response(null, { status: 200 });
 });

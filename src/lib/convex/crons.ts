@@ -43,4 +43,9 @@ crons.daily(
 	{ passe: 0 }
 );
 
+// LE RATTRAPAGE QONTO. Les webhooks font le temps réel ; celui-ci rattrape ce
+// qu'ils auraient manqué, et renouvelle au passage les jetons de rafraîchissement
+// (90 jours), qui ne s'éteignent donc jamais sur une connexion vivante.
+crons.interval('synchroQonto', { hours: 6 }, internal.connexions.qonto.synchroniserToutes, {});
+
 export default crons;

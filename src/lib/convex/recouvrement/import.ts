@@ -4,6 +4,7 @@ import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { normaliserFournisseur } from '../../socle/normalisation';
 import { rejouerQualificationDuDebiteur } from './creances';
+import { complementDeReglement } from '../../socle/connecteurs/qonto';
 
 /**
  * L'enregistrement d'un import de factures de vente.
@@ -150,6 +151,15 @@ export const enregistrerImport = internalMutation({
 		factures: v.array(vFactureImportee),
 		reglements: v.array(vReglementImporte),
 		/**
+		 * DES RÉGLÉS CUMULÉS, pas des règlements : ce que rend une source qui ne
+		 * donne que le total payé d'une facture (Qonto). Seul le complément de ce
+		 * qui est déjà enregistré entre : resynchroniser n'éteint jamais deux fois
+		 * la même dette.
+		 */
+		reglementsCumules: v.optional(
+			v.array(v.object({ reference: v.string(), date: v.string(), montantCumule: v.int64() }))
+		),
+		/**
 		 * LE FICHIER DONT CES FACTURES SONT ISSUES.
 		 *
 		 * ⚠️ FACULTATIF, ET IL DOIT LE RESTER. Une facture peut entrer autrement
@@ -174,7 +184,10 @@ export const enregistrerImport = internalMutation({
 		reglementsCrees: v.number(),
 		reglementsOrphelins: v.number()
 	}),
-	handler: async (ctx, { organizationId, factures, reglements, documentId, aujourdHui }) => {
+	handler: async (
+		ctx,
+		{ organizationId, factures, reglements, reglementsCumules, documentId, aujourdHui }
+	) => {
 		let debiteursCrees = 0;
 		let facturesCreees = 0;
 		let facturesDejaConnues = 0;
@@ -291,6 +304,43 @@ export const enregistrerImport = internalMutation({
 				factureId: cible.id,
 				date: reglement.date,
 				montant: reglement.montant,
+				nature: 'PAIEMENT',
+				creeLe: Date.now()
+			});
+			reglementsCrees++;
+		}
+
+		for (const cumul of reglementsCumules ?? []) {
+			let cible = touchees.get(cumul.reference);
+			if (cible === undefined) {
+				const trouvee = await factureParReference(ctx, organizationId, cumul.reference);
+				if (trouvee === null) {
+					reglementsOrphelins++;
+					continue;
+				}
+				cible = {
+					id: trouvee._id,
+					montantTTC: trouvee.montantTTC,
+					debiteurId: trouvee.debiteurId
+				};
+				touchees.set(cumul.reference, cible);
+				debiteursTouches.add(trouvee.debiteurId);
+			}
+
+			const factureId = cible.id;
+			const existants = await ctx.db
+				.query('reglements')
+				.withIndex('by_facture', (q) => q.eq('factureId', factureId))
+				.collect();
+			const dejaRegle = existants.reduce((somme, r) => somme + r.montant, 0n);
+			const complement = complementDeReglement(cumul.montantCumule, dejaRegle);
+			if (complement === 0n) continue;
+
+			await ctx.db.insert('reglements', {
+				organizationId,
+				factureId,
+				date: cumul.date,
+				montant: complement,
 				nature: 'PAIEMENT',
 				creeLe: Date.now()
 			});

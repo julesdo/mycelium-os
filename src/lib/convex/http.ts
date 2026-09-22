@@ -3,7 +3,7 @@ import { httpAction } from './_generated/server';
 import { authComponent, createAuth } from './auth';
 import { resend } from './emails/resend';
 import { webhookHandler as paddleWebhookHandler } from './paddle';
-import { retourQonto } from './connexions/qonto';
+import { retourQonto, webhookQonto } from './connexions/qonto';
 
 const http = httpRouter();
 
@@ -27,5 +27,8 @@ http.route({ path: '/paddle-webhook', method: 'POST', handler: paddleWebhookHand
 // Retour OAuth de Qonto — à déclarer à l'identique sur https://developers.qonto.com :
 // https://<deployment>.convex.site/qonto/retour
 http.route({ path: '/qonto/retour', method: 'GET', handler: retourQonto });
+
+// Webhooks Qonto (factures clients, retrait d'accès), signés en HMAC-SHA256.
+http.route({ path: '/qonto/webhook', method: 'POST', handler: webhookQonto });
 
 export default http;
