@@ -272,6 +272,16 @@
 	 * qu'elle gagne en caractère. */
 	--font-serif: 'Newsreader Variable', 'Newsreader', ui-serif, Georgia, 'Times New Roman', serif;
 
+	/* LA GROTESQUE D'AFFICHE. Voir l'import dans `app.css` pour ce qu'elle
+	 * remplace et pourquoi la fonte de l'application ne tient pas à ce corps-là.
+	 *
+	 * Elle ne s'emploie QU'AVEC `--text-affiche` et `--text-titre-section`. En
+	 * dessous de trente pixels, elle ne se distingue plus de la fonte courante
+	 * et ne fait qu'ajouter un fichier à télécharger. */
+	--font-affiche:
+		'Inter Tight Variable', 'Inter Tight', 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui,
+		sans-serif;
+
 	/* ⚠️ LE FOND SE RÉCHAUFFE, ET LE GRIS FROID DISPARAÎT.
 	 *
 	 * Le blanc pur et le gris bleuté donnaient une page correcte et FROIDE. Sur un
@@ -335,6 +345,59 @@
 	--color-plume-inversee: oklch(0.972 0.005 250);
 	--color-plume-inversee-douce: oklch(0.8 0.014 255);
 
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * LA NUIT — le noir et blanc de la page publique.
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * ⚠️ POURQUOI LE PREMIER ÉCRAN PASSE AU NOIR, APRÈS UN AN DE CRÈME.
+	 *
+	 * Ce n'est pas un goût, c'est une incohérence qu'on corrige. L'aperçu du
+	 * produit est un écran CLAIR posé sur un lavis bleu pâle : deux clartés
+	 * voisines, donc un objet qui ne se détache pas et se lit « autocollant ».
+	 * Sur du noir, le même aperçu devient la seule source de lumière de l'écran,
+	 * et c'est LUI qu'on regarde — ce qui est exactement ce qu'on veut d'un
+	 * premier écran dont le seul travail est de montrer le logiciel.
+	 *
+	 * ⚠️ NOIR VRAI, PAS UN GRIS TRÈS SOMBRE. Relevé le 23 septembre 2026 dans la
+	 * feuille servie par revolut.com : leurs fonds de section sont `rgb(0,0,0)`
+	 * et `rgb(255,255,255)`, sans intermédiaire. Un `#0a0a0c` lit « thème sombre
+	 * d'application » ; le noir vrai lit « affiche ». C'est la même discipline
+	 * que celle des filets plutôt que des ombres, transposée à la valeur.
+	 *
+	 * ⚠️ AUCUNE CHROMA. Les gris de la nuit sont rigoureusement neutres, et c'est
+	 * ce qui tient la commande « noir et blanc ». Le bleu d'encre reste l'accent
+	 * de marque et ne peint aucun fond ici. */
+	--color-nuit: oklch(0 0 0);
+	/* La surface qui se soulève à peine du noir : une carte, une rangée de
+	 * tableau, le verre d'une barre. À 0,16 elle est visible sans devenir un
+	 * gris — quatre pour cent de clarté, soit le minimum qui se distingue sur un
+	 * écran mal calibré. */
+	--color-nuit-relevee: oklch(0.16 0 0);
+	--color-nuit-haute: oklch(0.235 0 0);
+
+	/* L'ENCRE DE LA NUIT — quatre crans, mesurés contre le noir vrai.
+	 *
+	 * Le rapport de contraste sur noir vaut (Y + 0,05) / 0,05, et pour un gris
+	 * neutre Y suit de près le cube de la clarté oklch. D'où les quatre valeurs,
+	 * choisies pour ce qu'elles portent :
+	 *   craie        1,00 → 21,0:1 — les titres, et eux seuls.
+	 *   craie-douce  0,74 → 8,9:1  — le texte courant.
+	 *   craie-claire 0,58 → 4,9:1  — les mentions, au-dessus du plancher de 4,5.
+	 *   craie-sourde 0,46 → 2,9:1  — INTERDIT AU TEXTE. Filets, séparateurs,
+	 *                                numéros d'étape décoratifs doublés d'un
+	 *                                libellé lisible. */
+	--color-craie: oklch(1 0 0);
+	--color-craie-douce: oklch(0.74 0 0);
+	--color-craie-claire: oklch(0.58 0 0);
+	--color-craie-sourde: oklch(0.46 0 0);
+
+	/* LE FILET SUR LA NUIT. Même rôle que `--color-trait` sur le papier : une
+	 * règle, jamais une ombre. Sur du noir il se fait par de la lumière, donc
+	 * par de l'alpha sur du blanc — un gris opaque virerait au liseré dès qu'une
+	 * surface relevée passe dessous. */
+	--color-filet-nuit: oklch(1 0 0 / 0.14);
+	--color-filet-nuit-vif: oklch(1 0 0 / 0.28);
+
 	/* La trame de la section d'autorité vit dans `app.css`, en classe ordinaire,
 	 * et non ici en jeton. Voir `.encre-tramee` là-bas pour les deux raisons —
 	 * elles ont l'une et l'autre coûté un aller-retour au navigateur. */
@@ -357,10 +420,48 @@
 	 * descendent. L'écart entre le plus grand et le plus petit passe de 3,5 à 6.
 	 *
 	 * Les valeurs sont fluides : sur un téléphone, cent-quatre px déborderaient. */
-	--text-affiche: clamp(38px, 7.5vw, 104px);
+	/* ⚠️ ET ELLE MONTE ENCORE, AVEC LE PASSAGE À LA GROTESQUE D'AFFICHE.
+	 *
+	 * Cent-quatre pixels étaient le plafond d'une serif de presse, qui se
+	 * dilate quand on l'agrandit. Une grotesque à approches courtes tient
+	 * au-delà : relevé le 23 septembre 2026, Revolut monte son accroche à
+	 * cent-trente-six pixels. Le plafond passe donc à cent-vingt-huit, et le
+	 * plancher du téléphone à quarante-deux.
+	 *
+	 * ⚠️ IL RESTE À REBATTRE AVEC `--text-seuil-affiche` (124px), qui porte le
+	 * commentaire « aucun autre élément de la page n'a le droit de les
+	 * approcher ». C'était vrai quand l'accroche plafonnait à 104 ; ça ne l'est
+	 * plus. La section de la loi sera reprise à son tour — c'est là que les deux
+	 * échelles se rangeront, pas ici. */
+	--text-affiche: clamp(42px, 8.8vw, 128px);
+
+	/* ⚠️ L'ACCROCHE EN COLONNE, ET POURQUOI ELLE NE PEUT PAS ÊTRE LA MÊME.
+	 *
+	 * Le premier écran est passé en DEUX TEMPS — la phrase d'un côté, le
+	 * logiciel de l'autre. La colonne de texte n'a donc plus 1240 px mais un
+	 * peu plus de 700, et c'est une contrainte dure, pas une préférence : à
+	 * 128 px, le mot « s'éteignent » mesure environ 675 px à lui seul. Un mot
+	 * ne se coupe pas ; il DÉBORDE, et sur le seul élément que tout le monde
+	 * lit.
+	 *
+	 * Quatre-vingt-quatre pixels le ramènent à 443 px, ce qui tient dans la
+	 * colonne à toutes les largeurs de référence. C'est aussi le corps que les
+	 * premiers écrans en deux colonnes emploient — Ramp, Linear, Revolut
+	 * Business — pour exactement la même raison géométrique. */
+	--text-affiche-colonne: clamp(40px, 5.6vw, 84px);
 	--text-titre-section: clamp(30px, 4.4vw, 56px);
 	--text-intertitre: clamp(19px, 1.5vw, 22px);
 	--text-chapeau: clamp(18px, 1.5vw, 21px);
+
+	/* L'INTERLIGNE D'AFFICHE. À cent-trente pixels, un interligne de 1,0 laisse
+	 * entre deux lignes un couloir aussi large qu'une lettre : le bloc se
+	 * délite. Les affiches se composent sous l'unité — 0,92 serre les lignes
+	 * jusqu'à ce qu'elles fassent une MASSE, ce qui est précisément la
+	 * différence entre « un grand titre » et « une affiche ».
+	 *
+	 * Réservé à `--text-affiche`. Sur un paragraphe, un interligne inférieur à 1
+	 * fait se toucher les jambages. */
+	--leading-affiche: 0.92;
 
 	/* L'INTERLETTRAGE DES GRANDS CORPS, ET C'EST LE DÉTAIL QUI SÉPARE
 	 * « GRAND » DE « CHER ».

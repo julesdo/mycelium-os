@@ -15,6 +15,23 @@
  * français ne télécharge que le latin. Elle n'apparaît nulle part dans
  * l'application ; voir `--font-serif` dans `tokens.css`. */
 @import '@fontsource-variable/newsreader/wght.css';
+/* ⚠️ LA GROTESQUE D'AFFICHE, ET ELLE NE SERT QU'À LA PAGE PUBLIQUE.
+ *
+ * Plus Jakarta Sans est dessinée pour un corps de lecture : terminaisons
+ * arrondies, approches généreuses, un `a` ouvert. À seize pixels dans un écran
+ * de travail elle est excellente ; à cent-trente, elle se disperse et lit
+ * « application grand public ». Or c'est exactement le corps auquel la page
+ * d'accueil travaille désormais.
+ *
+ * Inter Tight est la même famille resserrée pour les titres — le dessin est
+ * neutre, les contreformes sont fermées, et elle tient le bloc à très grand
+ * corps sans qu'on ait à corriger l'interlettrage mot à mot. C'est la lecture
+ * de Revolut, de Linear et de Legend, qui emploient toutes une grotesque
+ * neutre à approches courtes, jamais une humaniste.
+ *
+ * L'axe de graisse seul, comme la serif : un fichier par sous-ensemble, et un
+ * lecteur français ne télécharge que le latin. */
+@import '@fontsource-variable/inter-tight/wght.css';
 @import 'tailwindcss';
 @import '@cladd-ui/react/css';
 @import './tokens.css';
@@ -1160,7 +1177,18 @@ select:not(:disabled),
 	}
 }
 
-.tablette-toile {
+/* LE CADRE DE TÉLÉPHONE. Même machinerie, une seule toile : 390 × 844, à toutes
+ * les largeurs et sans requête média. C'est la fenêtre d'un iPhone 14/15 en
+ * points CSS, donc la largeur exacte à laquelle le produit rend sa disposition
+ * téléphone — la seule valeur qui montre une mise en page qui existe. */
+.telephone-ecran {
+	--toile-l: 390;
+	--toile-h: 844;
+	container-type: inline-size;
+	aspect-ratio: var(--toile-l) / var(--toile-h);
+}
+
+.maquette-toile {
 	width: calc(var(--toile-l) * 1px);
 	height: calc(var(--toile-h) * 1px);
 	transform-origin: top left;
@@ -1801,6 +1829,647 @@ select:not(:disabled),
 	.brume-loin,
 	.brume-milieu,
 	.brume-pres {
+		animation: none;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LA NUIT — le premier écran de la page publique, et ce qui l'habite.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Voir `--color-nuit` dans `tokens.css` pour la raison du basculement. Ici, les
+ * quatre matières qui empêchent un aplat noir d'être un trou : le grain, la
+ * lumière que le produit répand, l'horizon, et la barre qui se contracte.
+ */
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * LA BARRE QUI SE CONTRACTE EN PILULE.
+ *
+ * En haut de page elle tient toute la largeur, sans fond : le premier écran
+ * commence vraiment au premier pixel. Dès qu'on défile, elle se resserre,
+ * descend d'un cran et prend son verre — elle cesse d'être le bord de la page
+ * pour devenir un objet posé dessus.
+ *
+ * ⚠️ ELLE EST SOMBRE DES DEUX CÔTÉS, ET C'EST CE QUI LA REND POSSIBLE. Une
+ * barre qui change de couleur selon la section qu'elle survole demande de
+ * savoir OÙ elle est, c'est-à-dire un observateur et un rendu React par section
+ * franchie. Une pilule d'encre à texte blanc se lit sur le noir du héros comme
+ * sur le crème des sections suivantes : le problème ne se pose plus.
+ *
+ * ⚠️ L'ÉTAT DE REPOS EST LA PILULE, DONC IL EST DANS `to`. C'est la règle du
+ * fichier, et elle mord ici : sans chronologie de défilement — Firefox
+ * aujourd'hui — `animation-duration: auto` vaut zéro seconde et la barre se
+ * pose directement sur son état final. Une pilule de verre en permanence est
+ * une barre finie ; une barre transparente en permanence, elle, deviendrait du
+ * texte blanc sur du crème dès la deuxième section.
+ *
+ * ⚠️ LE PRÉFIXE `-webkit-` EN PREMIER, DANS LA RÈGLE COMME DANS LES KEYFRAMES.
+ * Dans l'autre ordre, le minifieur de production ne garde que lui et Chrome
+ * perd tout flou — le défaut est invisible en développement.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.barre-pilule {
+	width: 100%;
+	max-width: 64rem;
+	margin-top: 0.75rem;
+	border: 1px solid var(--color-filet-nuit);
+	border-radius: 9999px;
+	background-color: oklch(0.12 0 0 / 0.72);
+	-webkit-backdrop-filter: blur(20px) saturate(1.5);
+	backdrop-filter: blur(20px) saturate(1.5);
+	animation-name: barre-se-contracte;
+	animation-fill-mode: both;
+	animation-duration: auto;
+	animation-timing-function: var(--ease-sortie-longue);
+}
+
+@supports (animation-timeline: scroll()) {
+	.barre-pilule {
+		animation-timeline: scroll();
+		/* Cent-soixante pixels : la contraction est terminée avant que le titre
+		   du héros ait quitté l'écran. Plus long, on la voit encore bouger en
+		   lisant ; plus court, elle claque. */
+		animation-range: 0px 160px;
+	}
+}
+
+@keyframes barre-se-contracte {
+	from {
+		max-width: 80rem;
+		margin-top: 0rem;
+		border-color: transparent;
+		border-radius: 0px;
+		background-color: oklch(0.12 0 0 / 0);
+		-webkit-backdrop-filter: blur(0px) saturate(1);
+		backdrop-filter: blur(0px) saturate(1);
+	}
+	to {
+		max-width: 64rem;
+		margin-top: 0.75rem;
+		border-color: var(--color-filet-nuit);
+		border-radius: 9999px;
+		background-color: oklch(0.12 0 0 / 0.72);
+		-webkit-backdrop-filter: blur(20px) saturate(1.5);
+		backdrop-filter: blur(20px) saturate(1.5);
+	}
+}
+
+/* Le mouvement réduit retombe sur la règle de base, c'est-à-dire la pilule. */
+@media (prefers-reduced-motion: reduce) {
+	.barre-pilule {
+		animation: none;
+	}
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * LA LEVÉE AU CHARGEMENT — et pourquoi elle ne peut PAS être `.apparait`.
+ *
+ * ⚠️ LES TROIS `.apparait` DU HÉROS N'ONT JAMAIS RIEN ANIMÉ. `view()` mesure
+ * l'entrée de l'élément DANS la fenêtre ; un élément déjà entièrement visible au
+ * chargement est à cent pour cent de sa plage d'entrée, donc posé d'emblée sur
+ * son état final. Toute la classe au-dessus de la ligne de flottaison est un
+ * décor inerte — ce qui explique qu'un premier écran couvert de `.apparait`
+ * soit resté rigoureusement immobile sans que personne le remarque.
+ *
+ * Le premier écran a donc besoin d'une animation de TEMPS, pas de défilement.
+ * C'est la seule du fichier, et elle ne joue qu'une fois.
+ *
+ * L'état de repos reste dans `to` : mouvement réduit, feuille partiellement
+ * chargée, rendu serveur — dans tous les cas le texte finit visible et immobile.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.leve {
+	animation-name: leve-au-chargement;
+	animation-duration: 0.9s;
+	animation-fill-mode: both;
+	animation-timing-function: var(--ease-sortie-longue);
+}
+
+/* Le décalage des enfants directs, porté par le parent pour la même raison que
+   `.cascade` : une ligne ajoutée un an plus tard hérite du rythme. */
+.leve-suite > *:nth-child(1) {
+	animation-delay: 0.04s;
+}
+.leve-suite > *:nth-child(2) {
+	animation-delay: 0.12s;
+}
+.leve-suite > *:nth-child(3) {
+	animation-delay: 0.2s;
+}
+.leve-suite > *:nth-child(4) {
+	animation-delay: 0.28s;
+}
+.leve-suite > *:nth-child(n + 5) {
+	animation-delay: 0.36s;
+}
+
+/* L'OBJET ENTRE APRÈS LA PHRASE, et c'est l'ordre de lecture qu'on veut : on
+ * lit ce qui se passe, puis on voit avec quoi. Il n'est pas enfant de
+ * `.leve-suite` — il vit dans l'autre colonne — donc son décalage est écrit
+ * ici, dans le prolongement de la même suite. */
+.leve-tard {
+	animation-delay: 0.44s;
+}
+
+@keyframes leve-au-chargement {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.leve {
+		animation: none;
+	}
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * LES PILULES DE LA PAGE PUBLIQUE.
+ *
+ * ⚠️ POURQUOI PAS `.pilule-principale`, QUI EXISTE DÉJÀ ET FAIT LA MÊME CHOSE.
+ * Parce qu'elle la fait en `var(--cladd-fg)` sur `var(--cladd-bg)`, c'est-à-dire
+ * SELON LE THÈME DU VISITEUR. Or `<html>` porte `light` ou `dark` d'après le
+ * réglage système du lecteur (voir `AMORCE_THEME`), et la page publique peint
+ * ses fonds en absolu — un prospect sous macOS en mode sombre aurait donc vu,
+ * sur le noir du héros, une pilule noire à texte blanc. Invisible, et
+ * invisible seulement chez lui.
+ *
+ * Les deux valeurs sont donc écrites, pas héritées. C'est la même règle que
+ * celle des fonds de section : « ces couleurs sont absolues, elles ne suivent
+ * PAS le thème clair/sombre ».
+ *
+ * Elles s'emploient par fond, jamais par importance : `craie` sur la nuit,
+ * `encre` sur le papier. Ce qui reste vrai de l'original, c'est qu'il n'y en a
+ * qu'UNE par écran — deux pilules pleines côte à côte, et il n'y a plus
+ * d'action principale.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.pilule-craie {
+	background-color: var(--color-craie);
+	color: var(--color-nuit);
+	transition:
+		background-color 200ms ease-out,
+		box-shadow 200ms ease-out,
+		transform 120ms ease-out;
+}
+
+.pilule-craie:hover {
+	background-color: var(--color-craie-douce);
+	box-shadow: 0 6px 28px -8px oklch(1 0 0 / 0.35);
+}
+
+.pilule-encre {
+	background-color: var(--color-nuit);
+	color: var(--color-craie);
+	transition:
+		background-color 200ms ease-out,
+		box-shadow 200ms ease-out,
+		transform 120ms ease-out;
+}
+
+.pilule-encre:hover {
+	background-color: var(--color-nuit-haute);
+	box-shadow: 0 6px 28px -8px oklch(0 0 0 / 0.45);
+}
+
+.pilule-craie:active,
+.pilule-encre:active {
+	transform: scale(0.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pilule-craie,
+	.pilule-encre {
+		transition: none;
+	}
+	.pilule-craie:active,
+	.pilule-encre:active {
+		transform: none;
+	}
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * LE GRAIN DE LA NUIT.
+ *
+ * ⚠️ `.fond-grain` NE PEUT PAS SERVIR ICI, ET L'ÉCHEC SERAIT SILENCIEUX : il
+ * compose en `overlay`, qui sur une base noire rend exactement du noir. Sur la
+ * nuit, le grain se fait en `screen` — le bruit ne peut qu'éclaircir, ce qui est
+ * le comportement d'un grain argentique sur une zone dense.
+ *
+ * Dix pour cent : à peine au-dessus du seuil de perception, assez pour qu'un
+ * aplat noir de mille pixels cesse d'être une zone morte sur un grand écran.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.grain-nuit {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='bruit'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23bruit)'/%3E%3C/svg%3E");
+	opacity: 0.1;
+	mix-blend-mode: screen;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * LA LUMIÈRE QUE LE PRODUIT RÉPAND.
+ *
+ * ⚠️ CE N'EST PAS UN « GLOW ORB », ET LA DIFFÉRENCE EST MOTIVÉE, PAS ESTHÉTIQUE.
+ * Le dépôt bannit nommément les halos lumineux. Celui-ci est admis pour une
+ * raison qui se vérifie à l'écran : l'aperçu du produit est un écran CLAIR, de
+ * mille pixels de large, posé sur du noir. Un écran allumé éclaire ce qui
+ * l'entoure. Retirer cette lumière ne rendrait pas la page plus sobre, elle la
+ * rendrait FAUSSE — une dalle blanche découpée au ciseau dans du noir.
+ *
+ * D'où les trois règles qu'elle respecte, et qui la séparent d'un ornement :
+ *   1. Elle est ANCRÉE sur l'objet qui l'émet, jamais posée dans le vide.
+ *   2. Elle est rigoureusement NEUTRE — c'est de la lumière blanche, parce que
+ *      l'écran qui l'émet est blanc. Aucune teinte n'est choisie « pour faire
+ *      joli », ce qui est la définition même de ce qu'on bannit.
+ *   3. Ses rayons dépassent le cadre : on ne peut situer ni son centre ni sa
+ *      fin, donc elle ne se lit pas comme une forme.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.lueur-produit {
+	background-image: radial-gradient(
+		76% 58% at 50% 48%,
+		oklch(1 0 0 / 0.17) 0%,
+		oklch(1 0 0 / 0.07) 38%,
+		transparent 74%
+	);
+}
+
+/* L'HORIZON. Une remontée de clarté depuis le bas de la section, plus un voile
+ * en haut pour que la barre ait quelque chose sous elle. Aucun rayon situable,
+ * aucun centre : une valeur qui varie sur la hauteur, c'est-à-dire de la
+ * profondeur et rien d'autre. */
+.nuit-horizon {
+	background-image:
+		radial-gradient(
+			150% 62% at 50% 104%,
+			oklch(1 0 0 / 0.085) 0%,
+			oklch(1 0 0 / 0.025) 44%,
+			transparent 78%
+		),
+		linear-gradient(to bottom, oklch(1 0 0 / 0.05) 0%, transparent 30%);
+}
+
+/* LA DÉRIVE. La lumière monte un peu plus lentement que la page, ce qui met le
+ * produit DEVANT elle. Même montage que la brume : `scroll()`, aucun script, et
+ * l'état de repos dans `from` parce que la couche est décorative et
+ * `aria-hidden` — sans chronologie, elle reste à sa place, qui est la bonne. */
+@supports (animation-timeline: scroll()) {
+	.derive-lumiere {
+		animation-name: lumiere-derive;
+		animation-timing-function: linear;
+		animation-fill-mode: both;
+		animation-duration: auto;
+		animation-timeline: scroll();
+		/* Bornée pour la même raison que le ciel : voir `.derive-ciel-*`. */
+		animation-range: 0px 150vh;
+	}
+}
+
+@keyframes lumiere-derive {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(0, -14%, 0) scale(1.14);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.derive-lumiere {
+		animation: none;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LA NÉBULEUSE ET LE CHAMP D'ÉTOILES.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ NI CANEVAS, NI VIDÉO, NI IMAGE — DU BRUIT FRACTAL MASQUÉ, ET RIEN D'AUTRE.
+ *
+ * C'est la même contrainte que la brume, et elle vaut encore plus ici : la page
+ * d'accueil est celle qu'un prospect ouvre sur un téléphone, en 4G, dans une
+ * salle d'attente. Le shader de l'application (`line-waves.tsx`, 359 lignes sur
+ * `ogl`) n'entre aujourd'hui dans le paquet que par la coquille et
+ * l'authentification ; le faire descendre ici pour décorer un fond coûterait
+ * une bibliothèque entière avant le premier mot lu.
+ *
+ * `feTurbulence` fait le même travail dans une URI de données de quelques
+ * centaines d'octets, rasterisée UNE fois par le navigateur puis composée sur
+ * le GPU comme un aplat. C'est littéralement la fonction de bruit de Perlin qui
+ * sert à dessiner des nuages depuis les années quatre-vingt, et c'est pour ça
+ * que le résultat ne ressemble pas à un dégradé : il a la structure fractale
+ * d'un vrai voile de poussière, à toutes les échelles.
+ *
+ * ⚠️ LE BRUIT NE PORTE PAS LA COULEUR, IL PORTE LA FORME. Chaque couche est un
+ * DÉGRADÉ de la palette, masqué par le bruit (`mask-image`). Sans ça, la teinte
+ * serait écrite en dur dans l'URI de données, hors de tout jeton, et une
+ * correction d'aurore laisserait le fond du site en arrière. Le masque ne
+ * décide que d'où la couleur passe.
+ *
+ * ⚠️ ET LA COULEUR EST CELLE DE L'APPLICATION, PAS UNE TEINTE CHOISIE POUR
+ * FAIRE JOLI. `--color-aurore-*` est le dégradé qui vit derrière le montant dû
+ * sur l'écran d'accueil du produit. Le premier écran du site et le premier
+ * écran du logiciel partagent donc leur ciel : c'est la seule chose qui relie
+ * visuellement la page publique à ce qu'on achète, et elle ne coûte aucun
+ * jeton nouveau.
+ *
+ * ⚠️ POURQUOI CE N'EST PAS LE « GLOW ORB » QUE LE DÉPÔT BANNIT. Un halo a un
+ * centre et une fin — on peut le montrer du doigt. Une nébuleuse fractale n'en
+ * a pas : sa densité varie à toutes les échelles, ses bords sont déchirés, et
+ * deux couches à des vitesses différentes empêchent l'œil de lui trouver une
+ * forme. C'est la même règle que la brume, appliquée à la nuit.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* LE VOILE — la couche lointaine et la plus large. Bruit très basse fréquence
+ * (0,011) sur quatre octaves : de grandes masses, avec du détail dedans.
+ * L'alpha du masque est une combinaison des canaux moins un seuil, ce qui
+ * DÉCHIRE le voile au lieu de l'estomper — c'est ce qui fait la différence
+ * entre un nuage et un flou. */
+.nebuleuse-voile {
+	background-image: radial-gradient(
+		132% 96% at 50% 104%,
+		var(--color-aurore-encre) 0%,
+		var(--color-aurore-azur) 38%,
+		transparent 76%
+	);
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.011' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0.7 0.5 0 -0.42'/%3E%3C/filter%3E%3Crect width='1200' height='1200' filter='url(%23v)'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.011' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0.7 0.5 0 -0.42'/%3E%3C/filter%3E%3Crect width='1200' height='1200' filter='url(%23v)'/%3E%3C/svg%3E");
+	-webkit-mask-size: 1400px 1400px;
+	mask-size: 1400px 1400px;
+	opacity: 0.62;
+}
+
+/* LE CŒUR — plus serré, plus violet, plus opaque, et il dérive dans l'AUTRE
+ * sens. Deux couches qui vont du même côté se lisent comme une seule image qui
+ * glisse ; c'est leur désaccord qui fait le volume. */
+.nebuleuse-coeur {
+	background-image: radial-gradient(
+		88% 78% at 62% 108%,
+		var(--color-aurore-violet) 0%,
+		var(--color-aurore-encre) 42%,
+		transparent 74%
+	);
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.019' numOctaves='5' seed='17' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.8 0.8 0.6 0 -0.52'/%3E%3C/filter%3E%3Crect width='1000' height='1000' filter='url(%23c)'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.019' numOctaves='5' seed='17' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.8 0.8 0.6 0 -0.52'/%3E%3C/filter%3E%3Crect width='1000' height='1000' filter='url(%23c)'/%3E%3C/svg%3E");
+	-webkit-mask-size: 1100px 1100px;
+	mask-size: 1100px 1100px;
+	opacity: 0.5;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * LE BROUILLARD QUI PASSE DEVANT.
+ *
+ * ⚠️ C'EST LA SEULE COUCHE DU FICHIER QUI SOIT AU-DESSUS DU CONTENU, ET C'EST
+ * TOUT L'EFFET. Les autres couches atmosphériques sont derrière : elles font un
+ * décor. Celle-ci passe DEVANT le bas du téléphone, et c'est ce qui le fait
+ * ÉMERGER au lieu d'être posé sur un fond. Un objet dont on voit le pied est un
+ * objet sur une image ; un objet dont le pied se perd dans quelque chose est un
+ * objet DANS un lieu.
+ *
+ * Deux pièces, et il faut les deux :
+ *
+ *   `.fondu-nuit` est un dégradé PLEIN, sans masque, qui va du noir de la page
+ *   au transparent. Il garantit que le bas de l'objet est absorbé, quoi qu'il
+ *   arrive — c'est la pièce qui ne peut pas rater.
+ *
+ *   `.brouillard-avant` est le même bruit fractal que la nébuleuse, à une
+ *   graine et une échelle différentes. C'est lui qui donne les LANGUES de
+ *   brume, c'est-à-dire la seule chose qui distingue du brouillard d'un fondu
+ *   au noir.
+ *
+ * Les deux sont `aria-hidden` et `pointer-events-none` : elles recouvrent une
+ * image du produit, jamais un contenu ni une cible.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.fondu-nuit {
+	background-image: linear-gradient(
+		to top,
+		var(--color-nuit) 0%,
+		var(--color-nuit) 18%,
+		transparent 100%
+	);
+}
+
+.brouillard-avant {
+	background-image: radial-gradient(
+		128% 112% at 50% 104%,
+		var(--color-aurore-encre) 0%,
+		var(--color-aurore-azur) 34%,
+		transparent 72%
+	);
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='5' seed='41' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0.8 0.5 0 -0.5'/%3E%3C/filter%3E%3Crect width='1000' height='1000' filter='url(%23b)'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='5' seed='41' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0.8 0.5 0 -0.5'/%3E%3C/filter%3E%3Crect width='1000' height='1000' filter='url(%23b)'/%3E%3C/svg%3E");
+	-webkit-mask-size: 1600px 1600px;
+	mask-size: 1600px 1600px;
+	opacity: 0.85;
+	/* Il roule dans l'autre sens que le voile du fond, et deux fois plus lentement
+	   que le cœur : c'est le désaccord des trois vitesses qui fait le volume. */
+	animation: brouillard-roule 190s ease-in-out infinite alternate;
+}
+
+@keyframes brouillard-roule {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(-5%, -2%, 0) scale(1.1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.brouillard-avant {
+		animation: none;
+	}
+}
+
+/* LES ÉTOILES.
+ *
+ * ⚠️ PAS UNE GRILLE DE POINTS. Un `radial-gradient` répété par `background-size`
+ * est la recette de champ d'étoiles la plus répandue, et elle donne exactement
+ * ce que le dépôt bannit sous le nom de « dot-grid » : un quadrillage régulier
+ * que l'œil trouve en une seconde. Le seuillage d'un bruit fractal donne des
+ * positions IRRÉGULIÈRES, qui est la seule chose qui distingue un ciel d'un
+ * motif.
+ *
+ * Le coefficient d'alpha (18, puis 26) est la dureté du seuil : plus il est
+ * haut, plus le point est net et plus il est rare. La constante qui le suit est
+ * la densité. Les deux couches n'ont ni la même graine, ni la même fréquence,
+ * ni la même taille de tuile — sans quoi la couche proche serait la lointaine
+ * en plus gros, et le décalage de parallaxe se lirait comme un défaut de
+ * superposition. */
+/* ⚠️ LE SEUIL PORTE LE CANAL ROUGE, PAS LE CANAL ALPHA — ET LA PREMIÈRE
+ * VERSION NE PEIGNAIT RIEN DU TOUT.
+ *
+ * Elle multipliait l'alpha de `feTurbulence` (4e colonne de la 4e rangée). Or
+ * l'alpha d'un bruit fractal est lui-même un bruit centré sur 0,5 dont la queue
+ * est courte : un seuil à 0,9 ne laissait passer aucun pixel. Rasterisé dans un
+ * canevas et compté, le résultat était sans appel — `alphaMax: 0`, zéro pixel
+ * allumé sur trois cent mille. Le ciel était là, dans la feuille, et il était
+ * VIDE. Rien ne pouvait le signaler : une couche décorative absente ressemble à
+ * une couche décorative discrète.
+ *
+ * La version ci-dessous prend le ROUGE (1re colonne) comme source du seuil, et
+ * les deux constantes ne sont pas choisies : elles sont RELEVÉES. Chaque
+ * candidat a été rasterisé dans un canevas et ses pixels comptés, le 23
+ * septembre 2026 :
+ *
+ *   seuil 0,745 → 4,34 ‰     seuil 0,78 → 0,58 ‰
+ *   seuil 0,755 → 2,60 ‰     seuil 0,79 → 0,34 ‰
+ *   seuil 0,765 → 1,53 ‰     seuil 0,82 → 0,03 ‰
+ *
+ * La courbe est brutale : un centième de seuil divise la densité par deux. Un
+ * réglage « à l'œil » sur une couche à dix pour cent d'opacité tombe donc
+ * forcément à côté, et c'est exactement ce qui s'était passé.
+ *
+ * LOIN : seuil 0,765, soit 1,53 ‰ — un fond dense et faible, 978 étoiles par
+ * tuile de 800 px. PRÈS : seuil 0,78 à plus basse fréquence, soit 0,58 ‰ — 181
+ * étoiles par tuile, rares et vives. C'est ce RAPPORT de densité, autant que
+ * celui des vitesses, qui donne la profondeur.
+ *
+ * Les tuiles n'ont ni la même graine, ni la même fréquence, ni la même taille :
+ * sans quoi la couche proche serait la lointaine en plus gros, et le décalage
+ * de parallaxe se lirait comme un défaut de superposition. */
+.champ-etoiles-loin {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800'%3E%3Cfilter id='el'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='1' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 28 0 0 0 -21.42'/%3E%3C/filter%3E%3Crect width='800' height='800' filter='url(%23el)'/%3E%3C/svg%3E");
+	background-size: 800px 800px;
+	opacity: 0.45;
+}
+
+.champ-etoiles-pres {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='560'%3E%3Cfilter id='ep'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='1' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 28 0 0 0 -21.84'/%3E%3C/filter%3E%3Crect width='560' height='560' filter='url(%23ep)'/%3E%3C/svg%3E");
+	background-size: 560px 560px;
+	opacity: 0.9;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * CE QUI BOUGE, ET À QUELLE VITESSE.
+ *
+ * Deux mouvements de nature différente, et ils ne se mélangent pas :
+ *
+ *   LA DÉRIVE est un mouvement de TEMPS, très lent — le ciel avance qu'on
+ *   défile ou non. Cent-vingt et cent-soixante secondes le cycle : c'est le
+ *   réglage de l'aurore de l'application (quarante secondes) ralenti d'un
+ *   facteur trois, parce qu'ici la surface est trois fois plus grande et qu'une
+ *   même vitesse angulaire y deviendrait visible.
+ *
+ *   LA PARALLAXE est un mouvement de DÉFILEMENT, porté par les conteneurs des
+ *   couches d'étoiles (voir `nebuleuse.tsx` : la dérive et la parallaxe vivent
+ *   sur deux éléments imbriqués, faute de quoi il faudrait deux chronologies
+ *   sur une seule règle `animation`).
+ *
+ * ⚠️ L'ÉTAT DE REPOS EST DANS `from`, comme pour la brume, et pour la même
+ * raison : ces couches ne portent aucun contenu, elles sont `aria-hidden`, et
+ * leur position de départ est leur position juste. Sans chronologie — Firefox
+ * aujourd'hui — le ciel est immobile, ce qui est un ciel.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.nebuleuse-voile,
+.nebuleuse-coeur {
+	animation-fill-mode: both;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+	animation-timing-function: ease-in-out;
+}
+
+.nebuleuse-voile {
+	animation-name: nebuleuse-derive-voile;
+	animation-duration: 120s;
+}
+
+.nebuleuse-coeur {
+	animation-name: nebuleuse-derive-coeur;
+	animation-duration: 160s;
+}
+
+@keyframes nebuleuse-derive-voile {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(3%, -2%, 0) scale(1.08);
+	}
+}
+
+@keyframes nebuleuse-derive-coeur {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(-4%, 1%, 0) scale(1.12);
+	}
+}
+
+/* LE SCINTILLEMENT. Sept secondes, et une amplitude de vingt pour cent
+ * d'opacité — c'est-à-dire délibérément SOUS le seuil où l'on remarque un
+ * mouvement sans le chercher, comme l'iris du veilleur et le halo du compagnon.
+ * Une étoile qui clignote franchement est un curseur, pas un ciel. */
+.etoiles-scintillent {
+	animation: etoiles-scintillement 7s ease-in-out infinite alternate;
+}
+
+@keyframes etoiles-scintillement {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0.78;
+	}
+}
+
+/* LA PARALLAXE DES DEUX CIELS. La couche proche monte près de trois fois plus
+ * vite que la lointaine : c'est ce rapport, et rien d'autre, qui fait la
+ * profondeur. */
+@supports (animation-timeline: scroll()) {
+	.derive-ciel-loin,
+	.derive-ciel-pres {
+		animation-timing-function: linear;
+		animation-fill-mode: both;
+		animation-duration: auto;
+		animation-timeline: scroll();
+		/* ⚠️ BORNÉE, ET SANS ÇA L'EFFET EST PAYÉ POUR RIEN. `scroll()` s'étale par
+		   défaut sur TOUT le document. Sur une page de onze sections, l'amplitude
+		   de défilement est de l'ordre de neuf mille pixels, dont le premier écran
+		   n'occupe que les quinze premiers pour cent : les couches n'auraient
+		   parcouru qu'un septième de leur course avant de quitter l'écran, soit
+		   quelques pixels sur un dégradé volontairement sans bord — c'est-à-dire
+		   rien de perceptible. La plage est donc calée sur la hauteur réelle du
+		   héros, qui est d'environ une fenêtre et demie. */
+		animation-range: 0px 150vh;
+	}
+	.derive-ciel-loin {
+		animation-name: ciel-derive-loin;
+	}
+	.derive-ciel-pres {
+		animation-name: ciel-derive-pres;
+	}
+}
+
+@keyframes ciel-derive-loin {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(0, -6%, 0);
+	}
+}
+
+@keyframes ciel-derive-pres {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(0, -17%, 0);
+	}
+}
+
+/* ⚠️ LE CIEL RESTE, SON MOUVEMENT PART. Même raisonnement que la brume : ces
+ * couches sont une TEXTURE, pas une animation. Les retirer changerait la mise
+ * en page pour les personnes qui demandent moins de mouvement, ce qui est
+ * exactement ce qu'on ne veut pas. */
+@media (prefers-reduced-motion: reduce) {
+	.nebuleuse-voile,
+	.nebuleuse-coeur,
+	.etoiles-scintillent,
+	.derive-ciel-loin,
+	.derive-ciel-pres {
 		animation: none;
 	}
 }

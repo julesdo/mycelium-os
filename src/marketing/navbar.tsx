@@ -1,47 +1,43 @@
-import { useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
-import { cn, LogoLetikette, MotLetikette } from '../ui';
+import { BoutonAffiche, LogoLetikette, MotLetikette } from '../ui';
 
 /**
  * La barre de la page publique.
  *
- * CE QU'ELLE ÉTAIT, ET POURQUOI ÇA NE TENAIT PAS. Une rangée dans le héros :
- * le logo à gauche, « Se connecter » à droite, rien au milieu. Deux défauts qui
- * se cumulent. Elle ne proposait AUCUN chemin — un visiteur qui veut savoir ce
- * que la loi demande, ou combien ça coûte, n'avait que le défilement. Et elle
- * disparaissait au premier écran franchi, donc l'appel à l'action aussi : sur
- * une page de deux mille pixels, c'est la moitié des visiteurs qui arrivent en
- * bas sans jamais avoir eu de bouton sous les yeux.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ELLE SE CONTRACTE EN PILULE, ET C'EST DU CSS — PLUS UNE LIGNE DE SCRIPT
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * ⚠️ ELLE EST POSÉE SUR LE HÉROS, PAS AU-DESSUS DE LUI. Elle a d'abord été un
- * bandeau collant, opaque, en flux : elle POUSSAIT le héros vers le bas et
- * portait son propre fond crème. Résultat, une bande claire barrait le haut du
- * lavis et le premier écran commençait sous un couvercle.
+ * La version précédente lisait `window.scrollY` par `useSyncExternalStore`
+ * pour basculer une classe. C'était propre, et c'était quand même un abonnement
+ * au défilement, un instantané, une divergence d'hydratation à éviter et un
+ * rendu React à chaque franchissement du seuil — pour une transition de
+ * couleur.
  *
- * En `fixed`, elle sort du flux et flotte sur le dégradé : on voit l'azur PASSER
- * DERRIÈRE le logo et les boutons, et le héros commence vraiment en haut de la
- * fenêtre. Le prix à payer est un retrait supérieur sur le héros, qu'aucune mise
- * en page ne calcule à sa place — d'où `--spacing-barre-publique`, écrit une
- * fois et lu aux deux endroits.
+ * `animation-timeline: scroll()` fait tout le travail dans la feuille de style,
+ * sur le compositeur : voir `.barre-pilule` dans `app.css`. Le composant n'a
+ * plus d'état, plus d'effet, plus de crochet. Ce qu'on y gagne n'est pas la
+ * performance — c'est qu'il n'y a plus rien à casser.
  *
- * LE FOND N'ARRIVE QU'AU DÉFILEMENT. En haut de page, il n'y a qu'un filet sous
- * la barre ; dès que la page bouge, le crème et son flou montent en un tiers de
- * seconde. C'est la seule façon d'avoir les deux : un premier écran ininterrompu,
- * et une barre lisible quand elle passe sur du texte, des photographies ou
- * l'aplat d'encre.
+ * ⚠️ ET ELLE FAIT MAINTENANT DAVANTAGE QUE CHANGER DE FOND. En haut de page
+ * elle tient toute la largeur, sans cadre : le premier écran commence vraiment
+ * au premier pixel. Dès qu'on défile, elle se RESSERRE et DESCEND d'un cran —
+ * elle cesse d'être le bord de la page pour devenir un objet posé dessus.
+ * C'est le geste des barres qu'on reconnaît (Superpower, Frontify, Coda), et
+ * il n'est pas gratuit : une barre qui se détache dit qu'on a quitté le haut,
+ * ce qu'une simple apparition de fond dit beaucoup moins bien.
  *
- * POURQUOI `useSyncExternalStore` ET PAS UN `useState` DANS UN EFFET. La
- * position de défilement est un état qui vit HORS de React, et la convention du
- * projet interdit d'appeler `setState` depuis un effet. Ce crochet est fait
- * exactement pour ça : il s'abonne, il lit, et son troisième argument donne
- * l'instantané du rendu SERVEUR — faux par construction, puisqu'il n'y a pas de
- * fenêtre. On lui répond « pas défilé », qui est vrai au premier rendu et évite
- * la divergence d'hydratation qu'un `window.scrollY` provoquerait.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ELLE EST SOMBRE SUR TOUTE LA PAGE, Y COMPRIS SUR LES SECTIONS CLAIRES
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * L'instantané rend un BOOLÉEN et jamais la position elle-même : React compare
- * par identité et redemanderait un rendu à chaque pixel parcouru.
+ * Une barre qui s'accorde à la section qu'elle survole demande de savoir OÙ
+ * elle est : un observateur d'intersection, une liste de sections à tenir à
+ * jour, et un rendu React par section franchie. Pour rien — une pilule d'encre
+ * à texte craie se lit aussi bien sur le noir du héros que sur le crème des
+ * sections suivantes. Le problème ne se pose plus, donc le code qui l'aurait
+ * résolu n'existe pas.
  *
  * LE LIEN DE SECTION N'EST PAS UN LIEN DE ROUTEUR. `<a href="#la-loi">` vise
  * une ancre de la MÊME page ; passer par `Link` demanderait au routeur de
@@ -61,44 +57,28 @@ const SECTIONS = [
 	{ ancre: '#tarifs', label: 'Le prix' }
 ] as const;
 
-/** Huit pixels : assez pour ignorer le rebond élastique d'un trackpad. */
-const DECLENCHEMENT = 8;
-
-function sAbonner(prevenir: () => void) {
-	window.addEventListener('scroll', prevenir, { passive: true });
-	return () => window.removeEventListener('scroll', prevenir);
-}
-
-function useDefile(): boolean {
-	return useSyncExternalStore(
-		sAbonner,
-		() => window.scrollY > DECLENCHEMENT,
-		() => false
-	);
-}
-
 export function Navbar() {
-	const defile = useDefile();
-
 	return (
-		<div
-			className={cn(
-				'fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ease-out',
-				// Le filet est là dès le premier pixel, et il est le seul. Sur le lavis
-				// comme sur le crème, une plume à dix pour cent donne le trait le plus
-				// fin qui se voit encore — `border-trait`, réglé pour le sable, s'y
-				// efface complètement.
-				defile ? 'border-trait bg-papier/85 backdrop-blur-md' : 'border-plume/10 bg-transparent'
-			)}
-		>
-			<div className="relative mx-auto flex w-full max-w-7xl items-center gap-cladd-2xs px-cladd-2xs py-cladd-3xs">
+		// ⚠️ `pointer-events-none` SUR LE RAIL, `auto` SUR LA PILULE. Le rail tient
+		// toute la largeur en permanence : sans ça, il intercepterait les clics sur
+		// les deux coins hauts du héros, qui sont vides et donc insoupçonnables.
+		<div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-cladd-3xs md:px-cladd-sm">
+			<div className="barre-pilule pointer-events-auto flex items-center gap-cladd-3xs px-cladd-3xs py-2 text-craie sm:gap-cladd-2xs sm:px-cladd-2xs">
+				{/* ⚠️ LE MOT DISPARAÎT SOUS 640 PX, ET C'EST UN DÉBORDEMENT MESURÉ, PAS
+				    une préférence. À 375 px, la pilule offre 303 px à son contenu ;
+				    le logo (36) plus le mot (96) plus l'action (190) en demandent 322.
+				    La pilule blanche — c'est-à-dire l'appel à l'action de toute la
+				    page — se faisait couper par le bord droit de l'écran.
+
+				    C'est le logotype qui cède, et pas l'action : une marque se
+				    reconnaît à sa marque, et celle-ci reste. */}
 				<Link
 					to="/"
 					aria-label="Letikette, accueil"
 					className="flex shrink-0 items-center gap-cladd-3xs"
 				>
-					<LogoLetikette className="size-11 shrink-0" />
-					<MotLetikette />
+					<LogoLetikette className="size-9 shrink-0" />
+					<MotLetikette className="hidden sm:inline" />
 				</Link>
 
 				{/* Centrée sur la BARRE, pas sur l'espace qui reste. Trois marges
@@ -115,7 +95,7 @@ export function Navbar() {
 						<a
 							key={ancre}
 							href={ancre}
-							className="rounded-full px-cladd-3xs py-2 text-cladd-xs font-medium text-plume-douce transition-colors hover:bg-plume/5 hover:text-plume"
+							className="rounded-full px-cladd-3xs py-2 text-cladd-xs font-medium text-craie-douce transition-colors hover:bg-craie/10 hover:text-craie"
 						>
 							{label}
 						</a>
@@ -123,19 +103,16 @@ export function Navbar() {
 				</nav>
 
 				<div className="ml-auto flex shrink-0 items-center gap-cladd-3xs">
-					<Button
-						as={Link}
+					<Link
 						to="/connexion"
-						variant="transparent"
-						rounded
-						className="hidden sm:flex"
+						className="hidden rounded-full px-cladd-3xs py-2 text-cladd-xs font-medium text-craie-douce transition-colors hover:text-craie sm:block"
 					>
 						Se connecter
-					</Button>
-					<Button as={Link} to="/inscription" color="brand" variant="solid-fill" rounded>
+					</Link>
+					<BoutonAffiche as={Link} to="/inscription" size="sm">
 						Voir mes créances
 						<ArrowRightIcon />
-					</Button>
+					</BoutonAffiche>
 				</div>
 			</div>
 		</div>

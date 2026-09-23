@@ -31,7 +31,7 @@ import { formeDemo, type EcranDuProduit } from './demo';
  */
 
 const SECTIONS = {
-	'héros et tablette': () => <Hero />,
+	'héros et téléphone': () => <Hero />,
 	'les chiffres de la loi': () => <LaLoi />,
 	'le décompte décomposé': () => <Preuve />,
 	'le bandeau en encre': () => <Bandeau />,
@@ -59,8 +59,8 @@ export const ECRANS_ACCUEIL: readonly EcranDuProduit[] = [
 		variantes: Object.keys(SECTIONS),
 		Demo: ({ variante }) => (
 			<Vitrine
-				key={variante ?? 'héros et tablette'}
-				rendu={formeDemo(variante, SECTIONS['héros et tablette'], SECTIONS)}
+				key={variante ?? 'héros et téléphone'}
+				rendu={formeDemo(variante, SECTIONS['héros et téléphone'], SECTIONS)}
 			/>
 		)
 	}

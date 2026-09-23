@@ -3,6 +3,7 @@ import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parame
 import { tauxPenaliteParDefaut } from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
 import { eurosCentimesCourts, tauxLisible } from '../ui/format';
+import { articleDe } from './articles';
 
 /**
  * La règle, avant l'outil.
@@ -78,10 +79,6 @@ import { eurosCentimesCourts, tauxLisible } from '../ui/format';
  * n'ont PAS d'article, et disent exactement ça. Inventer une référence
  * plausible serait la faute la plus grave que ce produit puisse commettre.
  */
-function articleDe(source: string): string | null {
-	const trouve = source.match(/\b[LRD]\.? ?\d{3}-\d+/);
-	return trouve ? trouve[0] : null;
-}
 
 /**
  * LES TROIS CHIFFRES QUE PERSONNE NE RÉCLAME.

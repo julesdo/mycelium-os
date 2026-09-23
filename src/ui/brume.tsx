@@ -76,7 +76,7 @@ export function Brume({
 		<div
 			aria-hidden
 			className={cn(
-				'pointer-events-none absolute inset-0 overflow-hidden',
+				'pointer-events-none absolute inset-0 overflow-clip',
 				intensite === 'pleine' ? 'opacity-100' : 'opacity-60',
 				className
 			)}

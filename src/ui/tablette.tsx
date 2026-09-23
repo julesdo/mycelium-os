@@ -43,7 +43,7 @@ import { cn } from './cn';
  * description.
  *
  * La mise à l'échelle de l'intérieur n'est pas ici : elle tient en deux règles
- * CSS, `.tablette-ecran` et `.tablette-toile`, dans `app.css`, où le
+ * CSS, `.tablette-ecran` et `.maquette-toile`, dans `app.css`, où le
  * contournement qu'elle demande est expliqué.
  */
 export function Tablette({
@@ -67,7 +67,7 @@ export function Tablette({
 			)}
 		>
 			<div className="tablette-ecran relative overflow-hidden rounded-[13px] bg-cladd-bg sm:rounded-[19px] md:rounded-[24px]">
-				<div className="tablette-toile" inert>
+				<div className="maquette-toile" inert>
 					{children}
 				</div>
 			</div>
