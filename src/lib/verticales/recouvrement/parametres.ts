@@ -73,6 +73,35 @@ export interface ParametreLegalBase {
 	readonly source: string;
 	/** Date ISO du relevé. */
 	readonly verifieLe: string;
+	/**
+	 * LE JOUR OÙ LA VERSION QU'ON A RELEVÉE CESSE D'ÊTRE EN VIGUEUR.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ CE N'EST PAS UNE DATE DE PÉREMPTION DE LA VALEUR
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * C'est la date à laquelle la PAGE qu'on cite devient une version
+	 * historique. La valeur qu'elle porte peut très bien être identique dans la
+	 * version suivante — c'est même le cas le plus fréquent. Ce champ ne dit
+	 * pas « cette valeur sera fausse », il dit « à partir de ce jour, quelqu'un
+	 * doit relire ».
+	 *
+	 * Pourquoi ça compte : la règle la plus stricte de ce projet est qu'un
+	 * numéro d'article inventé est plus dangereux qu'une source absente, parce
+	 * qu'il a l'air vérifiable. Un renvoi vers une version périmée a exactement
+	 * ce défaut — il s'ouvre, il s'affiche, et il ne dit plus le droit en
+	 * vigueur.
+	 *
+	 * ⚠️ ABSENT PAR DÉFAUT, ET ÇA N'EST PAS UN OUBLI. Sur les huit sources
+	 * relevées le 23/09/2026, UNE SEULE porte une date : L441-10, au
+	 * 1er janvier 2027. Écrire une date sur les sept autres « par précaution »
+	 * ferait lever le produit en nommant des entrées parfaitement à jour — et
+	 * un garde-fou qui crie à tort finit désactivé. Chaque sceptique du relevé
+	 * a nommé ce piège-là comme le plus probable.
+	 *
+	 * Format ISO `AAAA-MM-JJ`. La date doit avoir été LUE sur la source.
+	 */
+	readonly sourceValableJusqua?: string;
 	/** La valeur a été relevée sur une source publique citable. */
 	readonly verifie: boolean;
 	/** Un juriste a contrôlé la valeur ET son applicabilité. `false` par défaut. */
@@ -100,6 +129,14 @@ const LE = '2026-09-03';
  */
 const LE_16 = '2026-09-16';
 
+/**
+ * Le troisieme releve, mene sur Legifrance source par source avec un sceptique
+ * par source. Il a pose la date de fin de validite de L441-10 et, chemin
+ * faisant, trouve le regime transitoire de l'article 1411 que le produit
+ * ignorait.
+ */
+const LE_23 = '2026-09-23';
+
 const AVOCAT_ATTENDU =
 	'Relevé sur source publique par le logiciel, PAS validé par un avocat : utilisable pour ' +
 	'calculer et surveiller, insuffisant pour produire un acte.';
@@ -114,6 +151,16 @@ export const PARAMETRES = {
 		unite: 'sans',
 		source: 'Article L441-10 II du code de commerce',
 		verifieLe: LE,
+		// ⚠️ LA VALEUR NE BOUGE PAS, LA PAGE SI. Le II de L441-10 est identique au mot
+		// près dans la version qui entre en vigueur le 1er janvier 2027 — comparé par
+		// diff machine le 23/09/2026, zéro différence. La seule modification de tout
+		// l'article est un renvoi croisé DANS LE I, du 3 du I de l'article 289 du CGI
+		// vers l'article L. 216-34 du code des impositions sur les biens et services :
+		// un renvoi que nous ne citons pas. La date est donc posée pour faire RELIRE,
+		// pas parce que le chiffre expire. Texte modificateur : ordonnance n° 2026-671
+		// du 27 juillet 2026, art. 2 — et non l'ordonnance n° 2025-1247, que le premier
+		// relevé désignait à tort.
+		sourceValableJusqua: '2027-01-01',
 		verifie: true,
 		valideParAvocat: false,
 		resoluPar: 'pays/france/taux.ts → tauxPenaliteParDefaut(date)',
@@ -131,6 +178,16 @@ export const PARAMETRES = {
 		unite: 'sans',
 		source: 'Article L441-10 II du code de commerce',
 		verifieLe: LE,
+		// ⚠️ LA VALEUR NE BOUGE PAS, LA PAGE SI. Le II de L441-10 est identique au mot
+		// près dans la version qui entre en vigueur le 1er janvier 2027 — comparé par
+		// diff machine le 23/09/2026, zéro différence. La seule modification de tout
+		// l'article est un renvoi croisé DANS LE I, du 3 du I de l'article 289 du CGI
+		// vers l'article L. 216-34 du code des impositions sur les biens et services :
+		// un renvoi que nous ne citons pas. La date est donc posée pour faire RELIRE,
+		// pas parce que le chiffre expire. Texte modificateur : ordonnance n° 2026-671
+		// du 27 juillet 2026, art. 2 — et non l'ordonnance n° 2025-1247, que le premier
+		// relevé désignait à tort.
+		sourceValableJusqua: '2027-01-01',
 		verifie: true,
 		valideParAvocat: false,
 		resoluPar: 'pays/france/taux.ts → plancherContractuel(date)',
@@ -333,6 +390,67 @@ export const PARAMETRES = {
 			'du procès-verbal revêtu de la formule exécutoire : deux procédures, deux délais, deux ' +
 			`articles, et le produit surveille les deux. ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<number>,
+
+	/**
+	 * ⚠️ LE DÉLAI D'AVANT LA RÉFORME, ET IL COURT ENCORE AUJOURD'HUI.
+	 *
+	 * Le décret n° 2026-96 du 16 février 2026 a remplacé « six » par « trois »
+	 * à l'article 1411. Mais son article 9 porte un régime transitoire que le
+	 * produit ignorait : « Les dispositions prévues aux 3° à 6° de l'article 1er
+	 * du présent décret sont applicables aux ordonnances rendues à compter du
+	 * 1er septembre 2026. »
+	 *
+	 * ⚠️ LE DÉLAI DÉPEND DONC DE LA DATE DE L'ORDONNANCE, PAS DE LA DATE DU
+	 * JOUR — et les deux régimes sont vivants en même temps. Une ordonnance
+	 * rendue en août 2026 a jusqu'en février 2027 ; appliquer trois mois la
+	 * déclarerait caduque en novembre. Le produit aurait annoncé à un gérant
+	 * que sa procédure est à reprendre depuis le début, sur une ordonnance
+	 * parfaitement vivante, et c'est l'échéance qu'il dit lui-même être « la
+	 * plus dangereuse du produit ».
+	 *
+	 * Relevé le 23/09/2026 sur Légifrance : version en vigueur du 01/03/2022 au
+	 * 01/04/2026, décret n° 2022-245 du 25 février 2022.
+	 */
+	delaiSignificationInjonctionAncien: {
+		cle: 'delaiSignificationInjonctionAncien',
+		nature: 'CONSTANTE',
+		valeur: 6,
+		unite: 'mois',
+		source:
+			'Article 1411 du code de procédure civile, version en vigueur du 1er mars 2022 au ' +
+			'1er avril 2026 (décret n° 2022-245 du 25 février 2022)',
+		verifieLe: LE_23,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« L’ordonnance portant injonction de payer est non avenue si elle n’a pas été signifiée ' +
+			'dans les six mois de sa date. » S’applique aux ordonnances rendues AVANT le 1er septembre ' +
+			'2026, par l’article 9 du décret n° 2026-96 du 16 février 2026. Ce n’est pas une valeur ' +
+			'historique : au jour du relevé, des ordonnances relevant de ce régime ont encore leur ' +
+			`délai en cours. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	/**
+	 * La date qui départage les deux délais. Elle est LUE dans le décret, pas
+	 * choisie : l'écrire en dur dans `apres-procedure.ts` en aurait fait une
+	 * valeur juridique hors de ce fichier, ce que la règle 0.1 interdit.
+	 */
+	basculeDelaiSignificationInjonction: {
+		cle: 'basculeDelaiSignificationInjonction',
+		nature: 'CONSTANTE',
+		valeur: '2026-09-01',
+		unite: 'sans',
+		source: 'Article 9 du décret n° 2026-96 du 16 février 2026',
+		verifieLe: LE_23,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le présent décret entre en vigueur le 1er avril 2026. Les dispositions prévues aux 3° à ' +
+			'6° de l’article 1er du présent décret sont applicables aux ordonnances rendues à compter ' +
+			'du 1er septembre 2026. » La modification de l’article 1411 est au 3°. Une ordonnance ' +
+			'rendue AVANT cette date relève des six mois ; à compter d’elle, des trois mois. ' +
+			`${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<string>,
 
 	// ── Ce qui manque toujours ──────────────────────────────────────────────
 

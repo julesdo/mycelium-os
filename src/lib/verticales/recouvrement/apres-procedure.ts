@@ -158,10 +158,24 @@ const injonctionDePayer: MachineProcedure = {
 				}
 			],
 			echeances(depuisLe) {
-				// ⚠️ TROIS MOIS À COMPTER DE L'ORDONNANCE, pas du dépôt de la requête.
-				// C'est l'échéance la plus dangereuse du produit : passée, l'ordonnance
-				// est perdue et tout est à reprendre pendant que la prescription court.
-				const mois = exiger(PARAMETRES.delaiSignificationInjonction);
+				// ⚠️ LE DÉLAI COURT À COMPTER DE L'ORDONNANCE, pas du dépôt de la
+				// requête. C'est l'échéance la plus dangereuse du produit : passée,
+				// l'ordonnance est perdue et tout est à reprendre pendant que la
+				// prescription court.
+				//
+				// ⚠️ ET IL Y EN A DEUX, VIVANTS EN MÊME TEMPS. Le décret n° 2026-96 a
+				// ramené six mois à trois, mais son article 9 ne l'applique qu'aux
+				// ordonnances RENDUES à compter du 1er septembre 2026. Le produit
+				// appliquait trois mois à toutes : une ordonnance d'août 2026 aurait
+				// été déclarée caduque en novembre alors qu'elle vit jusqu'en février,
+				// et l'écran aurait annoncé « la procédure est à reprendre depuis le
+				// début » sur une procédure parfaitement valable. C'est la date de
+				// l'ordonnance qui tranche, jamais celle du jour.
+				const bascule = exiger(PARAMETRES.basculeDelaiSignificationInjonction);
+				const mois =
+					depuisLe < bascule
+						? exiger(PARAMETRES.delaiSignificationInjonctionAncien)
+						: exiger(PARAMETRES.delaiSignificationInjonction);
 				return [
 					{
 						cle: 'signification',

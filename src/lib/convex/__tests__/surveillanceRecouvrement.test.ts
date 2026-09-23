@@ -632,10 +632,20 @@ describe('les échéances d’une procédure engagée', () => {
 		'fait apparaître la caducité d’une ordonnance dans le flux',
 		async () => {
 			const t = convexTest(schema, modules);
-			// Ordonnance rendue le 20 juin : la signification tombe le 20 septembre,
-			// soit 17 jours après le jour de référence — sous le préavis de 30 jours
-			// que la surveillance applique à une échéance de CADUCITÉ.
-			const { organizationId } = await poserCreanceEngagee(t, { ordonnanceLe: '2026-06-20' });
+			/*
+			  Ordonnance rendue le 20 mars 2026, donc AVANT la bascule du 1er septembre
+			  2026 : elle relève des SIX mois de l'ancienne rédaction de l'article 1411,
+			  et la signification tombe le 20 septembre — soit 17 jours après le jour de
+			  référence, sous le préavis de 30 jours que la surveillance applique à une
+			  échéance de CADUCITÉ.
+
+			  ⚠️ CETTE FIXTURE DISAIT « 20 JUIN », et elle ne tenait que parce que le
+			  produit appliquait trois mois à toutes les ordonnances. Le décret
+			  n° 2026-96 ne ramène six mois à trois que pour les ordonnances rendues à
+			  compter du 1er septembre 2026 : une ordonnance de juin a en réalité
+			  jusqu'au 20 décembre, et cette échéance-ci n'existait pas encore.
+			*/
+			const { organizationId } = await poserCreanceEngagee(t, { ordonnanceLe: '2026-03-20' });
 
 			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
 				organizationId,
@@ -674,7 +684,7 @@ describe('les échéances d’une procédure engagée', () => {
 		async () => {
 			const t = convexTest(schema, modules);
 			const { organizationId, creanceId } = await poserCreanceEngagee(t, {
-				ordonnanceLe: '2026-06-20'
+				ordonnanceLe: '2026-03-20'
 			});
 
 			// La facture rattachée à la créance engagée : c'est ce rattachement qui
@@ -696,8 +706,9 @@ describe('les échéances d’une procédure engagée', () => {
 			expect(echeance).toBeDefined();
 			// 9 000,00 € : le reste dû de la seule facture du dossier, jamais ZERO.
 			expect(echeance!.montant).toBe(900_000n);
-			// Trois mois après l'ordonnance du 20 juin (`delaiSignificationInjonction`),
-			// la même date que l'explication récite en toutes lettres.
+			// Six mois après l'ordonnance du 20 mars — elle précède la bascule du
+			// 1er septembre 2026 — soit la même date que l'explication récite en
+			// toutes lettres.
 			expect(echeance!.dateDuFait).toBe('2026-09-20');
 			// Le nom du client, pas l'identifiant Convex de sa créance.
 			expect(echeance!.reference).toBe('Fournitures Durand');
@@ -728,7 +739,7 @@ describe('les échéances d’une procédure engagée', () => {
 			// continuer à l'annoncer userait la confiance dans toutes les autres.
 			const t = convexTest(schema, modules);
 			const { organizationId, creanceId } = await poserCreanceEngagee(t, {
-				ordonnanceLe: '2026-06-20'
+				ordonnanceLe: '2026-03-20'
 			});
 			await t.mutation(internal.recouvrement.apresProcedure.consignerInterne, {
 				creanceId,

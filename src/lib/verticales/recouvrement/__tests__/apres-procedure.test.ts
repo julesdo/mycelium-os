@@ -135,8 +135,60 @@ describe('les délais qui courent dans l’état', () => {
 		const signification = suivi.echeances.find((e) => e.cle === 'signification');
 		expect(signification).toBeDefined();
 		expect(signification!.gravite).toBe('CADUCITE');
-		expect(signification!.dateLimite).toBe('2026-04-10');
+		/*
+		  ⚠️ SIX MOIS, ET CE TEST A LONGTEMPS DIT TROIS. Il attendait `2026-04-10`,
+		  ce qui encodait le défaut plutôt que la loi : le décret n° 2026-96 a bien
+		  ramené six mois à trois, mais son article 9 ne l'applique qu'aux
+		  ordonnances RENDUES à compter du 1er septembre 2026. Celle-ci date du
+		  10 janvier 2026, elle relève donc des six mois.
+
+		  Le défaut n'était pas théorique : le produit aurait déclaré cette
+		  ordonnance caduque le 10 avril, trois mois avant sa vraie échéance, en
+		  annonçant que « la procédure est à reprendre depuis le début ».
+		*/
+		expect(signification!.dateLimite).toBe('2026-07-10');
+		expect(exiger(PARAMETRES.delaiSignificationInjonctionAncien)).toBe(6);
+	});
+
+	/**
+	 * L'AUTRE CÔTÉ DE LA BASCULE, et il faut les deux : un test qui ne
+	 * vérifierait qu'un seul régime repasserait au vert si quelqu'un supprimait
+	 * la condition et réécrivait le délai en dur.
+	 */
+	it('applique trois mois à une ordonnance rendue après la bascule du 1er septembre 2026', () => {
+		const suivi = suivreProcedure(
+			'injonction-de-payer',
+			[
+				evenement('requete-deposee', '2026-08-20'),
+				evenement('ordonnance-rendue', '2026-09-10')
+			],
+			ENGAGEE_LE
+		);
+
+		const signification = suivi.echeances.find((e) => e.cle === 'signification');
+		expect(signification!.dateLimite).toBe('2026-12-10');
 		expect(exiger(PARAMETRES.delaiSignificationInjonction)).toBe(3);
+	});
+
+	/**
+	 * ⚠️ LE JOUR PIVOT LUI-MÊME. « À compter du 1er septembre » inclut le
+	 * 1er septembre : une erreur d'un jour ici retirerait trois mois de sursis à
+	 * une ordonnance, sur l'échéance que le produit dit être la plus dangereuse.
+	 */
+	it('fait basculer le jour même, pas le lendemain', () => {
+		const laVeille = suivreProcedure(
+			'injonction-de-payer',
+			[evenement('ordonnance-rendue', '2026-08-31')],
+			ENGAGEE_LE
+		).echeances.find((e) => e.cle === 'signification');
+		expect(laVeille!.dateLimite).toBe('2027-02-28');
+
+		const leJour = suivreProcedure(
+			'injonction-de-payer',
+			[evenement('ordonnance-rendue', '2026-09-01')],
+			ENGAGEE_LE
+		).echeances.find((e) => e.cle === 'signification');
+		expect(leJour!.dateLimite).toBe('2026-12-01');
 	});
 
 	it('ne fait plus courir la signification une fois signifiée', () => {
