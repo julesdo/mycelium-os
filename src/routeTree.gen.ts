@@ -10,12 +10,16 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccordDeSousTraitanceRouteImport } from './routes/accord-de-sous-traitance'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
+import { Route as ConditionsGeneralesRouteImport } from './routes/conditions-generales'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as InscriptionRouteImport } from './routes/inscription'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
+import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppCompteRouteImport } from './routes/app/compte'
@@ -36,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccordDeSousTraitanceRoute = AccordDeSousTraitanceRouteImport.update({
+  id: '/accord-de-sous-traitance',
+  path: '/accord-de-sous-traitance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/app',
   path: '/app',
@@ -44,6 +53,11 @@ const AppRouteRoute = AppRouteRouteImport.update({
 const BienvenueRoute = BienvenueRouteImport.update({
   id: '/bienvenue',
   path: '/bienvenue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConditionsGeneralesRoute = ConditionsGeneralesRouteImport.update({
+  id: '/conditions-generales',
+  path: '/conditions-generales',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConnexionRoute = ConnexionRouteImport.update({
@@ -56,6 +70,11 @@ const InscriptionRoute = InscriptionRouteImport.update({
   path: '/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
   id: '/mot-de-passe-oublie',
   path: '/mot-de-passe-oublie',
@@ -66,6 +85,12 @@ const NouveauMotDePasseRoute = NouveauMotDePasseRouteImport.update({
   path: '/nouveau-mot-de-passe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PolitiqueDeConfidentialiteRoute =
+  PolitiqueDeConfidentialiteRouteImport.update({
+    id: '/politique-de-confidentialite',
+    path: '/politique-de-confidentialite',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ShowroomRoute = ShowroomRouteImport.update({
   id: '/showroom',
   path: '/showroom',
@@ -140,11 +165,15 @@ const AppImportFacturesIdRoute = AppImportFacturesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/accord-de-sous-traitance': typeof AccordDeSousTraitanceRoute
   '/bienvenue': typeof BienvenueRoute
+  '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
@@ -162,11 +191,15 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accord-de-sous-traitance': typeof AccordDeSousTraitanceRoute
   '/bienvenue': typeof BienvenueRoute
+  '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
@@ -186,11 +219,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/accord-de-sous-traitance': typeof AccordDeSousTraitanceRoute
   '/bienvenue': typeof BienvenueRoute
+  '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
@@ -211,11 +248,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/accord-de-sous-traitance'
     | '/bienvenue'
+    | '/conditions-generales'
     | '/connexion'
     | '/inscription'
+    | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/politique-de-confidentialite'
     | '/showroom'
     | '/app/compte'
     | '/app/debiteurs'
@@ -233,11 +274,15 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accord-de-sous-traitance'
     | '/bienvenue'
+    | '/conditions-generales'
     | '/connexion'
     | '/inscription'
+    | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/politique-de-confidentialite'
     | '/showroom'
     | '/app/compte'
     | '/app/debiteurs'
@@ -256,11 +301,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/accord-de-sous-traitance'
     | '/bienvenue'
+    | '/conditions-generales'
     | '/connexion'
     | '/inscription'
+    | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/politique-de-confidentialite'
     | '/showroom'
     | '/app/compte'
     | '/app/debiteurs'
@@ -280,11 +329,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
+  AccordDeSousTraitanceRoute: typeof AccordDeSousTraitanceRoute
   BienvenueRoute: typeof BienvenueRoute
+  ConditionsGeneralesRoute: typeof ConditionsGeneralesRoute
   ConnexionRoute: typeof ConnexionRoute
   InscriptionRoute: typeof InscriptionRoute
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
+  PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
   ShowroomRoute: typeof ShowroomRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -297,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accord-de-sous-traitance': {
+      id: '/accord-de-sous-traitance'
+      path: '/accord-de-sous-traitance'
+      fullPath: '/accord-de-sous-traitance'
+      preLoaderRoute: typeof AccordDeSousTraitanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -313,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BienvenueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conditions-generales': {
+      id: '/conditions-generales'
+      path: '/conditions-generales'
+      fullPath: '/conditions-generales'
+      preLoaderRoute: typeof ConditionsGeneralesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/connexion': {
       id: '/connexion'
       path: '/connexion'
@@ -327,6 +394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mot-de-passe-oublie': {
       id: '/mot-de-passe-oublie'
       path: '/mot-de-passe-oublie'
@@ -339,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/nouveau-mot-de-passe'
       fullPath: '/nouveau-mot-de-passe'
       preLoaderRoute: typeof NouveauMotDePasseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politique-de-confidentialite': {
+      id: '/politique-de-confidentialite'
+      path: '/politique-de-confidentialite'
+      fullPath: '/politique-de-confidentialite'
+      preLoaderRoute: typeof PolitiqueDeConfidentialiteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/showroom': {
@@ -496,11 +577,15 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
+  AccordDeSousTraitanceRoute: AccordDeSousTraitanceRoute,
   BienvenueRoute: BienvenueRoute,
+  ConditionsGeneralesRoute: ConditionsGeneralesRoute,
   ConnexionRoute: ConnexionRoute,
   InscriptionRoute: InscriptionRoute,
+  MentionsLegalesRoute: MentionsLegalesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
+  PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
   ShowroomRoute: ShowroomRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

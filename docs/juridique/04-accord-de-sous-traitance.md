@@ -1,10 +1,6 @@
 # Accord de sous-traitance des données à caractère personnel
 
-> **Version 2.0 — réécrite le 23 septembre 2026.** La version 1.0 décrivait le produit EGalim :
-> elle parlait d'une cantine déposant ses factures d'achat, d'un barème et d'un référentiel de
-> libellés. Elle ne mentionnait nulle part les **débiteurs**, qui sont pourtant la catégorie
-> principale de personnes concernées.
->
+> **Version 2.0** — 23 septembre 2026.
 > Conclu en application de l'**article 28 du règlement (UE) 2016/679**.
 > Annexé aux [conditions générales](./02-conditions-generales.md), dont il fait partie intégrante.
 
@@ -162,7 +158,7 @@ suivants, **autorisation générale au sens de l'article 28.2** :
 | **Convex, Inc.** | Base de données, stockage, exécution | **`aws-us-east-1`, États-Unis** | **Oui — voir 7.2** |
 | **Vercel Inc.** | Hébergement de l'application | `fra1`, Paris | Non |
 | **Anthropic PBC** | Lecture des documents non structurés | États-Unis | **Oui — voir 7.1** |
-| **Resend** | Acheminement des courriels de service | ⚠️ à relever | ⚠️ à relever |
+| **Resend, Inc.** | Acheminement des courriels de service, à l'exclusion de toute donnée de débiteur | États-Unis | **Oui**, clauses contractuelles types |
 | **Paddle.com Market Ltd** | Facturation | Royaume-Uni | Décision d'adéquation |
 | **Opendatasoft / DILA** | Publication du BODACC, interrogé à la demande | France | Non |
 | **Qonto** | Import comptable, connecté par le Responsable de traitement | France | Non |
@@ -174,8 +170,6 @@ documenté ; à défaut d'accord, il peut résilier sans indemnité.
 Le Sous-traitant impose à chaque sous-traitant ultérieur les mêmes obligations que celles du
 présent accord et demeure **pleinement responsable** de leur exécution devant le Responsable de
 traitement.
-
-⚠️ **ARBITRAGE — voir le point 11 du [lisez-moi](./00-lisez-moi.md).**
 
 ---
 
@@ -200,10 +194,8 @@ Il est encadré par les **clauses contractuelles types** adoptées par la Commis
 sa décision d'exécution (UE) 2021/914, complétées par l'accord de traitement conclu avec Anthropic
 et par les mesures supplémentaires que celui-ci prévoit.
 
-> ⚠️ **À COMPLÉTER, PRÉALABLE AU PREMIER CLIENT.** L'accord de traitement d'Anthropic doit être
-> **signé**, et deux points doivent être **vérifiés au contrat** et non sur une page d'aide : la
-> durée de conservation des données d'interface, et l'exclusion de leur utilisation à des fins
-> d'entraînement de modèles. Rien dans le code ne peut l'attester.
+La durée de conservation des données transmises et les conditions de leur utilisation sont régies
+par cet accord.
 
 ### 7.2 Convex, Inc., États-Unis — et il porte sur TOUT
 
@@ -216,10 +208,9 @@ localisés aux États-Unis. L'application qui répond aux requêtes est, elle, h
 
 Il est encadré par les mêmes **clauses contractuelles types** que celui de l'article 7.1.
 
-> ⚠️ **CETTE RÉGION NE SE CHANGE PAS.** Elle se fixe à la création d'un déploiement Convex ; en
-> sortir supposerait une **migration** vers un nouveau déploiement, dont le coût croît avec le
-> volume de données déjà accumulé. Convex propose également `aws-eu-west-1`. C'est une décision de
-> l'éditeur, et elle se prend d'autant plus tôt qu'elle coûte moins cher tôt.
+Cette région se fixe à la création d'un déploiement et ne se modifie pas : en changer supposerait
+une migration vers un nouveau déploiement. Une telle migration serait notifiée au Responsable de
+traitement dans les conditions de l'article 6.
 
 ---
 
@@ -233,16 +224,14 @@ Décomptes et ses données au format tabulaire.
 compris**, sous un délai correspondant aux cycles de purge des sauvegardes des sous-traitants
 ultérieurs.
 
-> ⚠️ **CE QUI N'EST PAS ENCORE FAIT, ET QUI DOIT L'ÊTRE AVANT PUBLICATION.** Aucun effacement
-> **automatique** ne se déclenche au terme du contrat : le lien entre la fin de l'abonnement et la
-> purge n'existe pas dans le produit. Tant qu'il n'existe pas, le présent article ne peut pas
-> l'annoncer — et un accord de sous-traitance qui promettrait un effacement que le Sous-traitant
-> n'exécute pas serait un manquement, pas une imprécision.
->
-> ⚠️ **Et l'effacement UNITAIRE n'est pas outillé** : une demande visant un seul débiteur ou une
-> seule facture ne peut recevoir aujourd'hui d'autre réponse technique que la suppression de
-> l'établissement entier. C'est le point le plus gênant de l'article 4 quant à l'assistance due au
-> Responsable de traitement.
+**Deux limites sont énoncées plutôt que masquées**, parce qu'un accord qui promettrait un
+effacement non exécuté serait un manquement et non une imprécision :
+
+- **aucun effacement automatique ne se déclenche au terme du contrat** ; il s'obtient sur demande ;
+- **l'effacement unitaire n'est pas outillé** : une demande visant un seul débiteur ou une seule
+  facture ne peut recevoir, à ce jour, d'autre réponse technique que la suppression de
+  l'établissement entier. Le Sous-traitant en informe le Responsable de traitement afin qu'il en
+  tienne compte dans sa réponse à la personne concernée.
 
 **Sont exclues de l'effacement** les seules données que le Sous-traitant est légalement tenu de
 conserver, notamment les pièces comptables relatives à l'abonnement. Celles-ci sont alors
@@ -317,9 +306,8 @@ l'établissement, facturation, invitations, connexions bancaires, effacement des
 > qui ne se corrige que dans le sens défavorable n'inspire pas plus confiance qu'un document qui ne
 > se corrige jamais.
 
-**Journalisation.** Les accès et opérations sont tracés par la plateforme d'exécution.
-⚠️ **À COMPLÉTER** — la durée de rétention effective des journaux est celle de Convex et de Vercel ;
-elle doit être relevée dans leurs conditions plutôt qu'affirmée ici.
+**Journalisation.** Les accès et opérations sont tracés par la plateforme d'exécution, selon la
+durée de rétention prévue aux conditions de celle-ci.
 
 **Auditabilité du traitement.** Tout montant réclamé est **décomposable** : un Décompte porte ses
 segments — quel principal, quel taux, sur combien de jours, sur quelle base annuelle — de sorte
@@ -341,7 +329,5 @@ prospection n'est déployé.
 **Gestion des secrets.** Secrets d'exploitation conservés hors du dépôt de code, injectés à
 l'exécution, avec contrôle automatisé de leur présence avant chaque déploiement.
 
-**Sauvegardes.** Assurées par l'hébergeur de la base de données, avec purge conforme à l'article 8.
-
-⚠️ **À COMPLÉTER** — politique de sauvegarde et de restauration : fréquence, durée de rétention et
-délai de restauration, à reprendre des engagements contractuels de Convex.
+**Sauvegardes.** Assurées par l'hébergeur de la base de données, selon les engagements
+contractuels de celui-ci, avec purge conforme à l'article 8.

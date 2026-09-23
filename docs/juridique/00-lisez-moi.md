@@ -1,6 +1,51 @@
 # Dossier juridique Letikette
 
 > Rédigé le 26 août 2026, à partir d'un audit du code et non d'un modèle générique.
+> **Réécrit le 23 septembre 2026** pour le produit de recouvrement : la version précédente
+> décrivait EGalim, retiré le 3 septembre.
+
+---
+
+## ⚠️ CE QUI RESTE À FAIRE, ET QUI N'EST PLUS DANS LES DOCUMENTS
+
+**Les quatre documents publiés ne portent plus aucune note de travail.** C'est volontaire : une
+page publique qui affiche nos pense-bêtes n'inspire pas confiance, et les masquer au rendu
+reviendrait à cacher ce qu'on sait. Tout ce qui reste à trancher vit donc ici, et **un test
+échoue si un `⚠️` réapparaît dans un document publié**.
+
+### Trois actions qui n'appartiennent qu'à Jules
+
+1. **Signer l'accord de traitement d'Anthropic**, et vérifier au contrat — pas sur une page
+   d'aide — la durée de conservation des données transmises et l'exclusion de leur utilisation à
+   des fins d'entraînement. Les documents renvoient à cet accord sans affirmer son contenu.
+2. **Relever la région Resend** au tableau de bord. Par prudence, les documents déclarent
+   aujourd'hui un transfert vers les **États-Unis** encadré par clauses contractuelles types : dans
+   le doute, on déclare le transfert plutôt que de l'omettre. Si le compte est configuré en région
+   européenne, les deux tableaux peuvent être allégés.
+3. **Publier la grille tarifaire** sur une page d'adresse stable. Les conditions générales y
+   renvoient sans reproduire aucun montant — un chiffre recopié dans un contrat finit par
+   contredire celui qui est affiché. Les montants présents dans le produit ont été transposés
+   d'EGalim sans être recalculés.
+
+### Deux écarts du produit, énoncés publiquement en attendant d'être comblés
+
+Ils sont **écrits** dans la politique de confidentialité (section 9) et dans l'accord de
+sous-traitance (article 8), parce que promettre un effacement qu'on n'exécute pas serait un
+manquement et non une imprécision.
+
+4. **Aucun effacement automatique au terme du contrat.** Le lien entre `subscription.canceled` et
+   la purge n'existe pas.
+5. **Aucun effacement unitaire d'un débiteur ou d'une facture.** Une demande visant une seule
+   personne ne peut recevoir d'autre réponse technique que la suppression de l'établissement
+   entier.
+
+### Une décision qui n'est pas juridique
+
+6. **L'hébergement est en `aws-us-east-1`.** Ce n'est pas un transfert accessoire : c'est le lieu
+   où vivent toutes les données. La région se fixe à la création d'un déploiement Convex et ne se
+   change pas — en sortir demande une migration, dont le coût croît avec le volume accumulé.
+   `aws-eu-west-1` existe. Héberger dans l'Union se défend plus simplement devant un dirigeant
+   français que des clauses contractuelles types.
 
 ---
 

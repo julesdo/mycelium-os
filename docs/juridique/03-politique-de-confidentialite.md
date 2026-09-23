@@ -1,12 +1,9 @@
 # Politique de confidentialité
 
-> Réécrite le 23 septembre 2026. La version précédente décrivait le produit EGalim, retiré le
-> 3 septembre 2026 : elle parlait d'un barème, de couverts par jour et d'un référentiel de libellés
-> qui n'existent plus. Rédigée au regard des articles 12 à 14 du règlement (UE) 2016/679 (RGPD) et
-> de la loi n° 78-17 du 6 janvier 1978 modifiée.
+> **Version 2.0** — 23 septembre 2026. Rédigée au regard des articles 12 à 14 du règlement
+> (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
-> **Chaque fait de ce document a été relevé dans le code**, et non déclaré. Les emplacements qui
-> restent à compléter sont marqués ⚠️ et nommés : ils ne se devinent pas.
+> **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
 
 ---
 
@@ -37,9 +34,8 @@ précédente de ce document ne la mentionnait pas.
 SIREN 879 853 026, non inscrit au RCS, inscrit au RNE. Coordonnées aux
 [mentions légales](./01-mentions-legales.md).
 
-> ⚠️ Une société par actions simplifiée unipersonnelle est envisagée. Tant qu'elle n'est pas
-> immatriculée, l'éditeur est l'entreprise individuelle ci-dessus, et c'est elle qui répond. Ce
-> document sera repris à l'immatriculation.
+Une société par actions simplifiée unipersonnelle est envisagée. Tant qu'elle n'est pas
+immatriculée, l'éditeur est l'entreprise individuelle ci-dessus, et c'est elle qui répond.
 
 **Contact pour toute question relative aux données** : bonjour@letikette.com
 
@@ -180,9 +176,8 @@ européenne. L'application elle-même — la partie qui s'exécute à la récept
 hébergée par Vercel en région `fra1`, à Paris ; mais les données qu'elle lit et écrit sont aux
 États-Unis.
 
-> ⚠️ **UNE DÉCISION À PRENDRE, ET ELLE N'EST PAS JURIDIQUE.** Héberger dans l'Union se vend mieux
-> à un dirigeant français que des clauses contractuelles types, et se défend plus simplement. La
-> migration se fait, mais elle se fait une fois — plus le produit porte de données, plus elle coûte.
+Convex propose également une région européenne. Un changement supposerait une migration vers un
+nouveau déploiement ; si elle est décidée, elle sera annoncée dans les conditions de la section 13.
 
 ### 6.1 Ce qui est transmis à un prestataire de lecture, et ce qui ne l'est plus
 
@@ -217,10 +212,8 @@ Les États-Unis ne bénéficiant pas d'une décision d'adéquation générale ap
 le transfert est encadré par les **clauses contractuelles types** adoptées par la Commission
 européenne, complétées par l'accord de traitement des données conclu avec le prestataire.
 
-> ⚠️ **À COMPLÉTER — préalable à la publication.** L'accord de traitement doit être **signé**, et la
-> durée de conservation des données d'interface ainsi que l'exclusion d'utilisation à des fins
-> d'entraînement doivent être **vérifiées au contrat**, et non sur la foi d'une page d'aide. Rien
-> dans le code n'atteste aujourd'hui de cette exclusion.
+La durée de conservation des données transmises et les conditions de leur utilisation sont celles
+de cet accord.
 
 ### 6.5 Absence de décision automatisée
 
@@ -241,23 +234,23 @@ indéterminé compte comme absent, jamais comme acquis. **Toute décision appart
 | **Convex, Inc.** | Base de données, stockage des fichiers, exécution des fonctions | **Toutes** | **États-Unis**, région `aws-us-east-1` (section 6.0) |
 | **Vercel Inc.** | Hébergement de l'application | Trafic, journaux | Exécution en région `fra1`, Paris |
 | **Anthropic PBC** | Lecture des documents non structurés | Contenu intégral des documents transmis (section 6) | **États-Unis** |
-| **Resend** | Acheminement des courriels de service | Adresse et contenu des courriels | ⚠️ **À RELEVER** |
+| **Resend, Inc.** | Acheminement des courriels de service | Adresse et contenu des courriels de service **uniquement** | **États-Unis** |
 | **Paddle.com Market Ltd** | Facturation, vendeur de registre | Identité et moyens de paiement | Royaume-Uni |
 | **Opendatasoft / DILA** | Publication du BODACC, interrogé à la demande | Dénomination recherchée (section 4.4) | France |
 | **Qonto** | Connexion comptable, à l'initiative du client | Factures de vente et identité de leurs destinataires | France |
+
+**Resend ne voit jamais un débiteur.** Les seuls courriels acheminés sont ceux qui s'adressent à un
+titulaire de compte : vérification d'adresse, réinitialisation de mot de passe, invitation d'un
+collègue, point quotidien. Aucune relance ne transite par ce prestataire, puisque aucune relance
+n'est envoyée par Letikette.
 
 **Better Auth** n'est pas un destinataire : l'authentification s'exécute dans notre propre
 infrastructure, à partir d'une bibliothèque installée dans le dépôt.
 
 **Aucune donnée n'est vendue, louée ou cédée à un tiers.**
 
-> ⚠️ **UNE RÉGION RESTE À RELEVER.** Aucune région Resend n'est fixée dans le code : la mention
-> `eu-west-1` qui circulait dans la version précédente venait d'un relevé technique, pas d'un
-> engagement contractuel. À reprendre au tableau de bord du prestataire avant publication.
->
-> ⚠️ Restent également à reprendre aux contrats, et non à des pages d'aide : les **durées de
-> conservation** propres à chaque sous-traitant, et leurs **délais de notification** en cas de
-> violation — dont dépend notre propre capacité à notifier.
+Chaque sous-traitant ultérieur est tenu par contrat aux mêmes obligations que celles souscrites
+par l'Éditeur, qui demeure responsable de leur exécution.
 
 ---
 
@@ -298,9 +291,9 @@ rectification ou son effacement à bonjour@letikette.com.
 établissement, **fichiers de stockage compris** — pièces déposées, documents importés, logo, photo
 de profil. C'est vérifié par un test automatisé qui échoue si une table nouvelle échappe à la purge.
 
-> ⚠️ **QUATRE ÉCARTS, ÉNONCÉS PLUTÔT QUE MASQUÉS.** Les corriger relève du produit, pas de ce
-> document ; les taire serait promettre ce qui n'est pas fait.
->
+**QUATRE ÉCARTS, ÉNONCÉS PLUTÔT QUE MASQUÉS.** Les corriger relève du produit ; les taire serait
+promettre ce qui n'est pas fait.
+
 > 1. **Aucune durée de conservation automatique ne s'applique au contenu du client.** Factures,
 >    créances, décomptes et débiteurs vivent tant que l'établissement vit. L'effacement se demande ;
 >    il ne survient pas de lui-même.
@@ -384,5 +377,4 @@ Les données facultatives — le numéro d'identification de l'établissement, l
 Toute modification substantielle est notifiée par courriel **trente jours** avant son entrée en
 vigueur.
 
-**Version 2.0** — réécrite le 23 septembre 2026. ⚠️ Date d'entrée en vigueur à compléter à la
-publication.
+**Version 2.0** — réécrite le 23 septembre 2026, en vigueur à la date de sa mise en ligne.

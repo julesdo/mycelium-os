@@ -23,3 +23,4 @@ export { Abonnement } from './abonnement';
 export { Tarifs } from './tarifs';
 export { Appel } from './appel';
 export { Pied } from './pied';
+export { DocumentLegal } from './document-legal';

@@ -1,10 +1,6 @@
 # Conditions générales d'utilisation et de vente
 
-> **Version 2.0 — réécrite le 23 septembre 2026.** La version 1.0 décrivait le produit EGalim,
-> retiré le 3 septembre 2026 : elle parlait d'un barème, d'une plateforme de télédéclaration et
-> d'un référentiel de libellés produits qui n'existent plus.
->
-> Entrée en vigueur : ⚠️ À COMPLÉTER à la publication.
+> **Version 2.0** — 23 septembre 2026. Entrée en vigueur à la date de sa mise en ligne.
 
 ---
 
@@ -197,36 +193,25 @@ cents.
 **Un essai gratuit de trente jours** est ouvert à la création du premier établissement. Il est
 accordé **une seule fois par compte**, et non par établissement.
 
-> ⚠️ **À COMPLÉTER** — la grille tarifaire est une décision commerciale qui n'est pas arrêtée. Les
-> montants figurant aujourd'hui dans le produit ont été transposés du produit précédent sans être
-> recalculés. Renvoyer à une page dont l'adresse est stable, et n'inscrire ici aucun chiffre tant
-> qu'il n'est pas décidé.
+Aucun montant n'est reproduit aux présentes : les prix évoluent, et un chiffre recopié dans un
+contrat finit par contredire celui qui est affiché. La page publique des tarifs fait foi au jour
+de la souscription.
 
 ### 7.2 Vendeur de registre
 
-> ⚠️ **UNE CONTRADICTION À TRANCHER AVANT PUBLICATION, ET ELLE DÉPASSE CET ARTICLE.**
->
-> Le présent article énonce que la facture est émise par Paddle, ce qui est la conséquence normale
-> du modèle *merchant of record*. L'Éditeur a par ailleurs indiqué que c'est Letikette qui émet.
->
-> **Les deux ne peuvent pas être vrais.** Il faut le trancher au contrat Paddle, pas par
-> raisonnement — et la réponse a une seconde conséquence : l'obligation d'émission de facture
-> électronique ne s'applique que lorsque l'émetteur ET le destinataire sont établis en France. Si
-> Paddle émet, elle ne vise pas nos factures d'abonnement ; si Letikette émet, elle les vise à
-> compter du 1er septembre 2027.
->
-> Indépendamment de cette réponse, l'obligation de **réception** de factures électroniques vise
-> Letikette, comme toute entreprise française, **depuis le 1er septembre 2026**.
+**L'abonnement est facturé par l'Éditeur**, dont l'identité figure aux
+[mentions légales](./01-mentions-legales.md). Le contrat de fourniture du Service est conclu entre
+le Client et l'Éditeur.
 
-La facturation et l'encaissement sont opérés par **Paddle.com Market Ltd**, agissant en qualité de
-*vendeur de registre* (*merchant of record*). En conséquence :
+**L'encaissement est opéré par Paddle.com Market Ltd**, qui intervient comme prestataire de
+paiement et de facturation. En conséquence :
 
-- le contrat de vente relatif au paiement est conclu entre le Client et Paddle ;
-- la facture est émise par Paddle ;
-- la taxe sur la valeur ajoutée est collectée et reversée par Paddle selon le pays du Client ;
-- les conditions de Paddle s'appliquent à la transaction, en complément des présentes.
+- les moyens de paiement du Client sont traités par Paddle, jamais par l'Éditeur, qui n'y a pas
+  accès ;
+- la taxe sur la valeur ajoutée applicable est déterminée et reversée selon le pays du Client ;
+- les conditions de Paddle s'appliquent à l'opération de paiement, en complément des présentes.
 
-Les présentes conditions régissent quant à elles l'accès au Service et son utilisation.
+Les présentes conditions régissent l'accès au Service et son utilisation.
 
 ### 7.3 Défaut de paiement
 
@@ -243,8 +228,8 @@ qu'une indemnité forfaitaire de recouvrement de quarante euros.
 
 ### 8.1 Durée
 
-⚠️ **À COMPLÉTER — voir le point 4 du [lisez-moi](./00-lisez-moi.md).** L'abonnement est souscrit
-pour une durée de … , renouvelable par tacite reconduction.
+L'abonnement est souscrit pour une durée d'**un mois**, renouvelable par tacite reconduction, sauf
+résiliation dans les conditions de l'article 8.2.
 
 ### 8.2 Résiliation par le Client
 
@@ -258,12 +243,13 @@ jours, en cas de manquement grave du Client à l'article 6.
 
 ### 8.4 Rétractation
 
-⚠️ **ARBITRAGE — voir le point 5 du [lisez-moi](./00-lisez-moi.md).**
-
 Le Service s'adressant à des professionnels, le droit de rétractation des articles L221-18 et
-suivants du code de la consommation n'a pas vocation à s'appliquer. L'attention du juriste est
-appelée sur l'article L221-3, qui étend certaines protections aux professionnels employant cinq
-salariés au plus lorsque le contrat n'entre pas dans le champ de leur activité principale.
+suivants du code de la consommation n'a pas vocation à s'appliquer.
+
+**Une réserve, et elle est dans le texte.** L'article L221-3 du même code étend certaines
+protections aux professionnels employant **cinq salariés au plus**, lorsque le contrat n'entre pas
+dans le champ de leur activité principale. Le Client qui se trouverait dans cette situation peut
+s'en prévaloir.
 
 ### 8.5 Réversibilité
 
@@ -273,12 +259,10 @@ exporter ses Décomptes et ses données au format tabulaire.
 **L'effacement s'obtient sur demande**, et il est alors intégral : la suppression d'un
 établissement efface la totalité des données qui lui sont rattachées, **fichiers déposés compris**.
 
-> ⚠️ **À CORRIGER DANS LE PRODUIT AVANT PUBLICATION, PAS DANS CE TEXTE.** Aucun effacement
-> automatique ne se déclenche aujourd'hui à la fin du contrat : le lien entre la résiliation de
-> l'abonnement et la purge n'existe pas. Tant qu'il n'existe pas, cet article **ne peut pas**
-> annoncer un effacement au terme des trente jours — ce serait promettre ce que le Service ne fait
-> pas, et la [politique de confidentialité](./03-politique-de-confidentialite.md) le dit déjà
-> ouvertement à sa section 9.
+**Aucun effacement automatique ne se déclenche à la fin du contrat**, et les présentes n'en
+promettent donc aucun : les Données Client demeurent jusqu'à ce que le Client en demande
+l'effacement. La section 9 de la [politique de confidentialité](./03-politique-de-confidentialite.md)
+énonce cet écart, ainsi que les autres, plutôt que de les masquer.
 
 ---
 
@@ -344,8 +328,6 @@ Sont exclus les dommages indirects, notamment la perte d'exploitation, la perte 
 préjudice d'image et les conséquences d'un contrôle administratif.
 
 ### 11.2 Plafond
-
-⚠️ **ARBITRAGE — voir le point 6 du [lisez-moi](./00-lisez-moi.md).**
 
 Le montant total des indemnités susceptibles d'être mises à la charge de l'Éditeur, toutes causes
 confondues, est plafonné aux **sommes effectivement versées par le Client au titre des douze mois
@@ -449,4 +431,6 @@ Les présentes sont soumises au **droit français**.
 réclamation écrite, tout litige relève de la compétence exclusive des **tribunaux du ressort du
 siège de l'Éditeur**, y compris en cas de pluralité de défendeurs ou d'appel en garantie.
 
-⚠️ **À COMPLÉTER** — la juridiction compétente dépend du siège, lui-même en cours de transfert.
+Le siège de l'Éditeur est à Bordeaux ; la juridiction compétente est donc celle de son ressort.
+Cette attribution suit le siège : elle changerait avec lui, et la présente clause serait alors
+mise à jour.

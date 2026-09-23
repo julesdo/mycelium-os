@@ -1,6 +1,6 @@
 # Mentions légales
 
-> Projet du 26 août 2026. À relire par un professionnel avant publication.
+> Version 2.0 — 23 septembre 2026.
 > Fondement : article 6-III de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans
 > l'économie numérique (LCEN).
 
@@ -12,38 +12,37 @@
 Nom commercial : **Letikette**
 Autre nom commercial exploité : Thumbbb Agency
 
-⚠️ **À COMPLÉTER — Siège social.** Le registre national des entreprises indique au 6 décembre 2025
-le 77 rue de Campeyraut, 33000 Bordeaux. Le transfert vers Suresnes doit être **déclaré au greffe
-et publié au registre** avant que cette page n'affiche la nouvelle adresse. Publier une adresse
-qui contredit le registre est plus risqué que de conserver l'ancienne.
+**Siège social** : 77 rue de Campeyraut, 33000 Bordeaux, France.
 
 - SIREN : 879 853 026
 - SIRET du siège : 879 853 026 00026
 - Numéro de TVA intracommunautaire : FR37879853026
 - Code APE / NAF : 62.01Z — Programmation informatique
 - Inscription : registre national des entreprises (RNE), tenu par l'INPI. Non inscrit au RCS.
+- Téléphone : 06 86 04 23 93
 - Contact : bonjour@letikette.com
 
-⚠️ **À COMPLÉTER — Directeur de la publication.** Nom et qualité de la personne physique
-responsable, au sens de l'article 6-III-1 de la LCEN. Pour un entrepreneur individuel, il s'agit
-en principe de l'entrepreneur lui-même.
+**Directeur de la publication** : Jules-Camille Doré, en qualité d'entrepreneur individuel
+exploitant le site, au sens de l'article 6-III-1 de la LCEN.
 
 ---
 
 ## Hébergement
 
-⚠️ **À COMPLÉTER.** La LCEN impose de désigner l'hébergeur par sa raison sociale, son adresse et
-son numéro de téléphone. Les trois prestataires ci-dessous concourent à l'hébergement et leurs
-mentions exactes doivent être reprises de leurs conditions générales respectives, sans être
-paraphrasées.
+Deux prestataires concourent à l'hébergement, et ils n'hébergent pas la même chose.
 
-**Application web** — Vercel Inc., États-Unis. Instances servies depuis la région `fra1` (Paris).
+**L'application web** — **Vercel Inc.**, 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.
+Les instances qui répondent aux requêtes sont servies depuis la région `fra1` (Paris).
 
-**Base de données, stockage des fichiers et exécution des traitements** — Convex, Inc.,
-États-Unis.
-⚠️ **La région d'hébergement effective est à vérifier au tableau de bord Convex.** Si elle est
-située hors Union européenne, la politique de confidentialité doit mentionner ce transfert au
-même titre que celui vers Anthropic.
+**La base de données, le stockage des fichiers et l'exécution des traitements** — **Convex, Inc.**,
+États-Unis, région `aws-us-east-1`.
+
+**Autrement dit : l'application répond depuis Paris, mais les données sont hébergées aux
+États-Unis.** Ce transfert est décrit, et son encadrement précisé, à la section 6 de la
+[politique de confidentialité](./03-politique-de-confidentialite.md).
+
+*Ces deux sociétés ne publient pas de numéro de téléphone destiné au public ; leurs coordonnées
+sont reprises de leurs conditions générales.*
 
 ---
 
@@ -75,9 +74,6 @@ bonjour@letikette.com.
 Le service s'adresse exclusivement à des professionnels agissant dans le cadre de leur activité.
 Le dispositif de médiation de la consommation, prévu aux articles L611-1 et suivants du code de la
 consommation, n'est donc pas applicable.
-
-⚠️ **Point d'arbitrage** — si le service devait être ouvert à des non-professionnels, l'adhésion à
-un médiateur de la consommation deviendrait obligatoire et cette mention devrait être remplacée.
 
 ---
 
