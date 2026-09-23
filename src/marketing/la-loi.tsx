@@ -1,9 +1,10 @@
-import { SectionMarketing, TitreSection, Exergue } from './section';
+import { SectionMarketing } from './section';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
 import { tauxPenaliteParDefaut } from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
 import { eurosCentimesCourts, tauxLisible } from '../ui/format';
-import { articleDe } from './articles';
+import { ScenePointeur } from '../ui';
+import { ARTICLES_DU_SOCLE } from './articles';
 
 /**
  * La règle, avant l'outil.
@@ -128,58 +129,161 @@ function seuilsDeLaLoi(aujourdHui: string) {
 	] as const;
 }
 
+
+/**
+ * LA SECTION DE LA LOI, REPRISE DANS LE VOCABULAIRE DE LA NUIT.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ELLE N'EMPLOIE NI `TitreSection` NI `Exergue`, ET CE N'EST PAS UN OUBLI
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Ces deux composants portent l'identité précédente — « papier, encre,
+ * filet » — et leur pièce maîtresse est la SERIF. Newsreader est juste sur du
+ * crème, où elle dit « imprimé, contrat, document opposable » ; posée sur le
+ * noir à côté d'une grotesque d'affiche, elle dit « deux sites collés bout à
+ * bout ».
+ *
+ * Les deux restent employés par les sections non encore reprises. Ils partiront
+ * avec la dernière, et ce jour-là il faudra les RETIRER, pas les laisser au cas
+ * où — voir la note sur `FONDS` dans `section.tsx`.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LES TROIS CHIFFRES RESTENT LE PLUS GROS CORPS DE TOUTE LA PAGE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le jeton `--text-affiche` est monté à 128 px avec le premier écran, et son
+ * commentaire annonçait que le rapport avec `--text-seuil-affiche` (124 px)
+ * serait « à rebattre ici ». Il l'est, et c'est la GÉOMÉTRIE qui a tranché, pas
+ * la hiérarchie.
+ *
+ * ⚠️ LES 124 PX NE TIENNENT PAS DANS UNE COLONNE DE TROIS, et ça se voit :
+ * « 12,40 % » y mesure plus de trois cents pixels et se casse entre le nombre
+ * et son unité. Le pourcent tombait seul sur la ligne suivante, ce qui n'est
+ * plus un chiffre. Les seuils prennent donc `--text-seuil-colonne`, calé pour
+ * qu'ils tiennent d'un bloc aux quatre largeurs de référence.
+ *
+ * Ils passent ainsi SOUS l'accroche du premier écran, et c'est une concession à
+ * admettre plutôt qu'à maquiller : le principe voulait que le droit crie plus
+ * fort que notre promesse, parce que c'est la seule chose de cette page qui ne
+ * nous appartienne pas. Ce qui le tient encore, à l'œil, c'est qu'ils sont
+ * TROIS, courts, alignés, et les seuls chiffres de la page. Le titre domine par
+ * la masse, les seuils par la répétition. Le jour où la section se refait en
+ * pleine largeur — un seuil par rangée, comme un grand livre — le corps
+ * d'origine redevient possible.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * LE MOUVEMENT, ET POURQUOI IL EST PORTÉ PAR LES CHIFFRES SEULS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Les trois colonnes vivent dans une `ScenePointeur` et dérivent à TROIS
+ * PROFONDEURS différentes — six, quatorze et vingt-six pixels. C'est ce
+ * désaccord qui fait le volume : trois couches qui bougent de la même quantité
+ * ne sont qu'une seule image qui glisse.
+ *
+ * ⚠️ MAIS SEULS LES CHIFFRES DÉRIVENT. Les libellés et les explications restent
+ * immobiles, et c'est la règle : ce qui se LIT ne bouge pas. Une ligne de texte
+ * courant qui suit le curseur est une ligne qu'on relit trois fois. Le
+ * mouvement est réservé à ce qu'on REGARDE.
+ *
+ * La `ScenePointeur` ne pose même pas son abonnement sans souris réelle, ni
+ * sous mouvement réduit : sur un téléphone, la section est rigoureusement
+ * immobile et c'est sa forme juste.
+ */
 export function LaLoi() {
 	const aujourdHui = new Date().toISOString().slice(0, 10);
 	const seuils = seuilsDeLaLoi(aujourdHui);
 
-	const articles = [
-		articleDe(PARAMETRES.tauxInteretLegalDefaut.source),
-		articleDe(PARAMETRES.delaiPrescriptionCommerciale.source)
-	].filter((a): a is string => a !== null);
-
 	return (
-		<SectionMarketing id="la-loi" fond="azur">
+		<SectionMarketing id="la-loi" fond="nuit">
 			{/*
-			  LE CHAPEAU MÈNE PAR CE QUI SURPREND. Ce n'est pas que la loi existe,
+			  LE RAIL TECHNIQUE, repris du premier écran. Il remplace la pastille de
+			  sur-titre : une étiquette posée au-dessus d'un titre dit « section » ;
+			  un rail tiré d'un bord à l'autre dit « planche d'instrument », et c'est
+			  le registre de toute la page depuis le haut.
+
+			  ⚠️ LES NUMÉROS D'ARTICLE NE SONT PAS ÉCRITS ICI. Ils sont extraits des
+			  sources relevées sur Légifrance et portées par les paramètres eux-mêmes
+			  — voir `articles.ts`. Une source sans numéro repérable ne rend rien,
+			  plutôt qu'un numéro de mémoire.
+			*/}
+			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
+				<span>De plein droit</span>
+				{ARTICLES_DU_SOCLE.length > 0 ? (
+					<span className="tabular-nums">Art. {ARTICLES_DU_SOCLE.join(' · ')}</span>
+				) : null}
+			</div>
+
+			{/*
+			  LE TITRE MÈNE PAR CE QUI SURPREND. Ce n'est pas que la loi existe,
 			  c'est que ces sommes sont dues SANS RIEN DEMANDER — et que presque
 			  personne ne les réclame, faute de savoir les calculer.
 			*/}
-			<TitreSection
-				sur={
-					articles.length > 0
-						? `Code de commerce · art. ${articles.join(' et ')}`
-						: 'Code de commerce'
-				}
-				titre="Ce que la loi vous doit"
-				chapeau="Ces sommes vous sont dues de plein droit. Ce délai, lui, court sans que personne ne vous prévienne."
-			/>
+			<div className="flex flex-col gap-cladd-2xs">
+				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
+					Ce que la loi vous doit,{' '}
+					<span className="text-craie-claire">et que personne ne réclame.</span>
+				</h2>
+				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
+					Ces sommes vous sont dues sans mise en demeure et sans clause au contrat. Ce délai, lui,
+					court sans que personne ne vous prévienne.
+				</p>
+			</div>
+
+			<ScenePointeur>
+				<dl className="cascade grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
+					{seuils.map((seuil, rang) => (
+						<div
+							key={seuil.titre}
+							className={
+								rang === 0
+									? 'flex flex-col gap-cladd-3xs md:border-r md:border-dashed md:border-filet-nuit md:pr-cladd-2xs'
+									: rang === 1
+										? 'flex flex-col gap-cladd-3xs md:border-r md:border-dashed md:border-filet-nuit md:px-cladd-2xs'
+										: 'flex flex-col gap-cladd-3xs md:pl-cladd-2xs'
+							}
+						>
+							{/* SEUL LE CHIFFRE DÉRIVE. Voir l'en-tête : ce qui se lit ne
+							    bouge pas, ce qu'on regarde peut bouger. */}
+							<dt
+								className={
+									rang === 0
+										? 'suit-pointeur-loin font-affiche text-seuil-colonne leading-none font-semibold tracking-affiche tabular-nums'
+										: rang === 1
+											? 'suit-pointeur-milieu font-affiche text-seuil-colonne leading-none font-semibold tracking-affiche tabular-nums'
+											: 'suit-pointeur-pres font-affiche text-seuil-colonne leading-none font-semibold tracking-affiche tabular-nums'
+								}
+							>
+								{seuil.valeur}
+							</dt>
+							<dd className="flex flex-col gap-1">
+								<span className="text-intertitre leading-snug font-medium">{seuil.titre}</span>
+								<span className="text-cladd-md leading-relaxed font-normal text-craie-douce">
+									{seuil.detail}
+								</span>
+							</dd>
+						</div>
+					))}
+				</dl>
+			</ScenePointeur>
 
 			{/*
-			  LES TROIS CHIFFRES RESTENT LE PLUS GROS CORPS DE LA PAGE, et c'est le
-			  contenu qui le justifie : c'est la seule chose ici qui ne nous
-			  appartienne pas. C'est la loi, elle est opposable, elle a le droit de
-			  crier. Rien d'autre n'a le droit d'approcher ce corps.
-			*/}
-			<dl className="cascade cladd-color-brand grid gap-cladd-sm lg:grid-cols-3 lg:gap-cladd-2xs">
-				{seuils.map((s) => (
-					<div key={s.titre} className="flex flex-col gap-cladd-3xs">
-						<dt className="font-serif text-seuil-affiche leading-none font-medium tracking-affiche text-cladd-primary tabular-nums">
-							{s.valeur}
-						</dt>
-						<dd className="flex flex-col gap-1">
-							<span className="font-serif text-intertitre leading-snug font-medium">{s.titre}</span>
-							<span className="text-cladd-md leading-relaxed font-normal text-plume-douce">
-								{s.detail}
-							</span>
-						</dd>
-					</div>
-				))}
-			</dl>
+			  LA PHRASE QUI DOIT RESTER QUAND TOUT LE RESTE EST OUBLIÉ.
 
-			<Exergue
-				phrase="Une facture de transport se prescrit en un an, pas en cinq."
-				appui="Et le délai court depuis la livraison, pas depuis votre dernière relance."
-			/>
+			  Elle remplace `Exergue`, qui est en serif. Ce qui fait qu'une phrase
+			  ressort n'a jamais été le contenant — c'est le CORPS et le VIDE autour.
+			  Le filet vertical suffit à dire « citation », et il est tireté comme
+			  tous les autres de la page.
+			*/}
+			<blockquote className="apparait flex max-w-4xl gap-cladd-2xs border-l border-dashed border-filet-nuit-vif pl-cladd-2xs">
+				<div className="flex flex-col gap-cladd-3xs">
+					<p className="font-affiche text-titre-section leading-tight font-medium tracking-titre-section text-balance">
+						Une facture de transport se prescrit en un an, pas en cinq.
+					</p>
+					<p className="text-cladd-md leading-relaxed font-normal text-craie-douce">
+						Et le délai court depuis la livraison, pas depuis votre dernière relance.
+					</p>
+				</div>
+			</blockquote>
 		</SectionMarketing>
 	);
 }

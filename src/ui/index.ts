@@ -251,4 +251,5 @@ export { Brume } from './brume';
 /* ── LA NUIT (la page publique refaite en noir et blanc) ───────────────────── */
 export { AtmosphereNuit, LueurProduit } from './nuit';
 export { Nebuleuse, BrouillardAvant } from './nebuleuse';
+export { ScenePointeur } from './scene-pointeur';
 export { BoutonAffiche, LienAffiche, type FondBouton } from './bouton-affiche';

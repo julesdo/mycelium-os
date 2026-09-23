@@ -449,6 +449,18 @@
 	 * premiers écrans en deux colonnes emploient — Ramp, Linear, Revolut
 	 * Business — pour exactement la même raison géométrique. */
 	--text-affiche-colonne: clamp(40px, 5.6vw, 84px);
+
+	/* ⚠️ LE SEUIL LÉGAL EN COLONNE, ET C'EST LA MÊME CONTRAINTE, MESURÉE.
+	 *
+	 * `--text-seuil-affiche` (124 px) a été écrit pour un chiffre posé en pleine
+	 * largeur. Dans une grille de trois colonnes, chacune fait quatre cents
+	 * pixels à 1280 et deux cent soixante-cinq à 916 : à 124 px, « 12,40 % »
+	 * mesure plus de trois cents pixels et se CASSE entre le nombre et son
+	 * unité. Vu au navigateur, le pourcent tombait seul sur la ligne suivante.
+	 *
+	 * Un chiffre coupé de son unité n'est plus un chiffre. Le corps descend donc
+	 * là où « 12,40 % » tient d'un bloc aux quatre largeurs de référence. */
+	--text-seuil-colonne: clamp(44px, 6.6vw, 104px);
 	--text-titre-section: clamp(30px, 4.4vw, 56px);
 	--text-intertitre: clamp(19px, 1.5vw, 22px);
 	--text-chapeau: clamp(18px, 1.5vw, 21px);

@@ -44,11 +44,30 @@ import { cn } from '../ui';
  * correspondant dans `tokens.css`.
  */
 
+/**
+ * ⚠️ `nuit` EST LE FOND VERS LEQUEL LA PAGE MIGRE, SECTION PAR SECTION.
+ *
+ * Le premier écran est passé au noir vrai le 23 septembre 2026, avec son ciel,
+ * sa nébuleuse et sa typographie d'affiche. Les quatre fonds clairs qui le
+ * suivent appartiennent à l'identité précédente — « papier, encre, filet » —
+ * et ils ne tiendront pas à côté : une page qui commence en noir et reprend en
+ * crème se lit comme deux sites collés bout à bout.
+ *
+ * La reprise se fait SECTION PAR SECTION, et les deux vocabulaires cohabitent
+ * le temps qu'elle dure. C'est délibéré : refondre les onze sections d'un coup
+ * signifie les livrer toutes à demi regardées, et c'est exactement ce qui a
+ * produit la tablette illisible pendant des mois.
+ *
+ * Les fonds clairs partiront avec la dernière section reprise. Ce jour-là,
+ * `encre-tramee`, `azur` et `froid` deviennent du code mort, et il faudra le
+ * retirer au lieu de le laisser « au cas où ».
+ */
 const FONDS = {
 	papier: 'bg-papier text-plume',
 	azur: 'bg-linear-to-b from-azur-clair via-papier to-papier text-plume',
 	froid: 'bg-papier-chaud text-plume',
-	encre: 'encre-tramee text-plume-inversee'
+	encre: 'encre-tramee text-plume-inversee',
+	nuit: 'bg-nuit text-craie'
 } as const;
 
 export type FondSection = keyof typeof FONDS;
@@ -79,7 +98,15 @@ export function SectionMarketing({
 				// `scroll-margin-top` est la seule propriété qui corrige ça, et elle ne se
 				// pose que là où il y a une ancre à viser.
 				id && 'scroll-mt-barre-publique',
-				filet && (fond === 'encre' ? 'border-b border-trait-encre' : 'border-b border-trait')
+				// LE FILET DE FERMETURE se peint dans l'encre de son propre fond : un
+				// trait de sable sur du noir ne se voit pas, et un trait clair sur du
+				// papier non plus. Trois cas, pas un de plus.
+				filet &&
+					(fond === 'nuit'
+						? 'border-b border-filet-nuit'
+						: fond === 'encre'
+							? 'border-b border-trait-encre'
+							: 'border-b border-trait')
 			)}
 		>
 			{/*

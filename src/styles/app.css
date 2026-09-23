@@ -2217,6 +2217,81 @@ select:not(:disabled),
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+ * LA PARALLAXE AU CURSEUR. Voir `src/ui/scene-pointeur.tsx` pour l'abonnement
+ * et les trois cas où il n'est pas posé.
+ *
+ * La scène écrit deux nombres entre −1 et 1 ; ces classes décident ce qu'un
+ * enfant en fait. TROIS PROFONDEURS, et pas un réglage libre : un nombre
+ * arbitraire posé à la main finit par valoir 17 px quelque part sans que
+ * personne sache le comparer. C'est le même raisonnement que les deux
+ * intensités de la brume.
+ *
+ * ⚠️ LA TRANSITION EST L'AMORTISSEUR, ET ELLE N'EST PAS DÉCORATIVE. Sans elle,
+ * la couche colle au curseur au pixel près : le mouvement est exact, sec, et il
+ * se lit « élément accroché à la souris ». Six cents millisecondes de sortie
+ * longue transforment la position en CIBLE que la couche rejoint — c'est ce
+ * décalage, et rien d'autre, qui donne l'inertie des pages qu'on remarque.
+ *
+ * ⚠️ ET ELLE EST AUSSI CE QUI RAMÈNE LA SCÈNE AU CENTRE à la sortie du
+ * pointeur : les deux variables retombent à zéro d'un coup, et la transition
+ * fait le retour. Aucun code ne s'en occupe.
+ *
+ * `will-change` est posé sur les couches les plus rapides seulement : le poser
+ * partout garde en mémoire une texture par élément, ce qui coûte plus cher que
+ * la recomposition qu'on évite.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.scene-pointeur {
+	--pointeur-x: 0;
+	--pointeur-y: 0;
+}
+
+.suit-pointeur-loin,
+.suit-pointeur-milieu,
+.suit-pointeur-pres {
+	transition: transform 600ms var(--ease-sortie-longue);
+}
+
+.suit-pointeur-loin {
+	transform: translate3d(
+		calc(var(--pointeur-x) * 6px),
+		calc(var(--pointeur-y) * 4px),
+		0
+	);
+}
+
+.suit-pointeur-milieu {
+	transform: translate3d(
+		calc(var(--pointeur-x) * 14px),
+		calc(var(--pointeur-y) * 9px),
+		0
+	);
+}
+
+.suit-pointeur-pres {
+	will-change: transform;
+	transform: translate3d(
+		calc(var(--pointeur-x) * 26px),
+		calc(var(--pointeur-y) * 16px),
+		0
+	);
+}
+
+/* ⚠️ LE MOUVEMENT RÉDUIT EST TENU DEUX FOIS, ET IL LE FAUT. La scène ne pose
+ * même pas son abonnement sous cette préférence, donc les variables restent à
+ * zéro et les transformées sont nulles : la règle ci-dessous ne sert à rien
+ * dans ce cas-là. Elle sert dans l'autre — la préférence changée en cours de
+ * visite, sans rechargement, où l'effet est déjà branché et où les variables
+ * portent la dernière position lue. */
+@media (prefers-reduced-motion: reduce) {
+	.suit-pointeur-loin,
+	.suit-pointeur-milieu,
+	.suit-pointeur-pres {
+		transition: none;
+		transform: none;
+	}
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
  * LE BROUILLARD QUI PASSE DEVANT.
  *
  * ⚠️ C'EST LA SEULE COUCHE DU FICHIER QUI SOIT AU-DESSUS DU CONTENU, ET C'EST
