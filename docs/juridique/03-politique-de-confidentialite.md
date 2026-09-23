@@ -158,11 +158,33 @@ d'affichage peuvent être conservées dans le navigateur ; elles ne quittent pas
 
 ---
 
-## 6. Le point le plus important : ce qui part chez un prestataire américain
+## 6. Le point le plus important : vos données sont hébergées aux États-Unis
 
-**Cette section mérite une lecture attentive.**
+**Cette section mérite une lecture attentive.** Elle porte sur deux transferts distincts, et le
+premier concerne **toutes** les données, pas seulement les documents déposés.
 
-### 6.1 Ce qui est transmis, et ce qui ne l'est plus
+### 6.0 L'hébergement lui-même
+
+La base de données, le stockage des fichiers et l'exécution des fonctions du Service sont assurés
+par **Convex, Inc.**, dans la région **`aws-us-east-1`**, c'est-à-dire **aux États-Unis**.
+
+Cela concerne l'intégralité des données du Service : comptes, établissements, factures, créances,
+décomptes, débiteurs, pièces déposées. Ce n'est pas un transfert accessoire — c'est le lieu
+d'hébergement.
+
+**Cette région se fixe à la création du déploiement et ne peut pas être modifiée.** En changer
+supposerait une migration vers un nouveau déploiement. Convex propose également `aws-eu-west-1`.
+
+Le transfert est encadré par les **clauses contractuelles types** adoptées par la Commission
+européenne. L'application elle-même — la partie qui s'exécute à la réception d'une requête — est
+hébergée par Vercel en région `fra1`, à Paris ; mais les données qu'elle lit et écrit sont aux
+États-Unis.
+
+> ⚠️ **UNE DÉCISION À PRENDRE, ET ELLE N'EST PAS JURIDIQUE.** Héberger dans l'Union se vend mieux
+> à un dirigeant français que des clauses contractuelles types, et se défend plus simplement. La
+> migration se fait, mais elle se fait une fois — plus le produit porte de données, plus elle coûte.
+
+### 6.1 Ce qui est transmis à un prestataire de lecture, et ce qui ne l'est plus
 
 Pour lire un document que l'utilisateur dépose, le Service en transmet le **fichier entier** au
 prestataire **Anthropic PBC**, société de droit américain, via son interface de programmation. Le
@@ -216,7 +238,7 @@ indéterminé compte comme absent, jamais comme acquis. **Toute décision appart
 
 | Destinataire | Rôle | Données | Localisation |
 |---|---|---|---|
-| **Convex, Inc.** | Base de données, stockage des fichiers, exécution des fonctions | Toutes | ⚠️ **À RELEVER** — voir ci-dessous |
+| **Convex, Inc.** | Base de données, stockage des fichiers, exécution des fonctions | **Toutes** | **États-Unis**, région `aws-us-east-1` (section 6.0) |
 | **Vercel Inc.** | Hébergement de l'application | Trafic, journaux | Exécution en région `fra1`, Paris |
 | **Anthropic PBC** | Lecture des documents non structurés | Contenu intégral des documents transmis (section 6) | **États-Unis** |
 | **Resend** | Acheminement des courriels de service | Adresse et contenu des courriels | ⚠️ **À RELEVER** |
@@ -229,13 +251,9 @@ infrastructure, à partir d'une bibliothèque installée dans le dépôt.
 
 **Aucune donnée n'est vendue, louée ou cédée à un tiers.**
 
-> ⚠️ **DEUX RÉGIONS À RELEVER, ET ELLES NE SE DÉDUISENT PAS DU CODE.**
->
-> - **Convex** : la région se fixe à la création du déploiement et ne se change pas. Elle se relève
->   au tableau de bord. Tant qu'elle ne l'est pas, on ne peut écrire ni « hébergé dans l'Union » ni
->   « transfert encadré » — on ignore lequel des deux est vrai.
-> - **Resend** : aucune région n'est fixée dans le code. La mention `eu-west-1` qui circulait dans
->   la version précédente venait d'un relevé technique, pas d'un engagement contractuel.
+> ⚠️ **UNE RÉGION RESTE À RELEVER.** Aucune région Resend n'est fixée dans le code : la mention
+> `eu-west-1` qui circulait dans la version précédente venait d'un relevé technique, pas d'un
+> engagement contractuel. À reprendre au tableau de bord du prestataire avant publication.
 >
 > ⚠️ Restent également à reprendre aux contrats, et non à des pages d'aide : les **durées de
 > conservation** propres à chaque sous-traitant, et leurs **délais de notification** en cas de

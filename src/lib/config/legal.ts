@@ -57,6 +57,29 @@ export const LEGAL_CONFIG = {
 	rne: 'Inscrit au RNE (INPI)',
 	vatNumber: 'FR37879853026',
 	naf: '62.01Z',
+	/**
+	 * LE TÉLÉPHONE, ET IL EST OBLIGATOIRE.
+	 *
+	 * L'article 1-1, I de la loi n° 2004-575 du 21 juin 2004 exige un numéro de
+	 * téléphone de l'éditeur sur un service en ligne. Le champ manquait depuis
+	 * l'origine : c'est pour ça que les mentions légales n'ont jamais pu être
+	 * publiées, autant que pour le directeur de la publication ci-dessous.
+	 *
+	 * Deux formes, et elles servent à deux choses : `telephone` s'affiche,
+	 * `telephoneAppelable` part dans un `href="tel:"` et doit être en format
+	 * international sans espaces.
+	 */
+	telephone: '06 86 04 23 93',
+	telephoneAppelable: '+33686042393',
+	/**
+	 * LE DIRECTEUR DE LA PUBLICATION, une personne physique nommée.
+	 *
+	 * Même article, même obligation. Sur une entreprise individuelle, c'est
+	 * l'exploitant lui-même ; il est écrit en toutes lettres plutôt que déduit de
+	 * `companyName`, parce que les deux se sépareront le jour où la société sera
+	 * immatriculée.
+	 */
+	directeurPublication: 'Jules-Camille Doré',
 	effectiveDate: 'June 29, 2026',
 	email: {
 		user: 'bonjour',
