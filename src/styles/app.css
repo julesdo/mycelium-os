@@ -1501,3 +1501,164 @@ select:not(:disabled),
 		transform: none;
 	}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE MOUVEMENT DE LA PAGE PUBLIQUE — piloté par le défilement, sans JavaScript.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ LA PAGE N'AVAIT AUCUN MOUVEMENT. Deux transitions de couleur sur la barre,
+ * et rien d'autre : ni apparition, ni glissement, ni la moindre réaction au
+ * défilement. Sur une page qui doit tenir onze sections, l'immobilité se lit
+ * comme un document, pas comme un produit vivant.
+ *
+ * ⚠️ ET LA RÉFÉRENCE NE FAIT PAS CE QU'ON CROIT. Mesuré le 23 septembre 2026
+ * sur revolut.com : leurs fonds de section sont `rgb(0,0,0)` et
+ * `rgb(255,255,255)`, leurs transitions durent 0,2 à 0,6 s, et ZÉRO élément ne
+ * porte de chronologie de défilement. Le spectaculaire vient de cinq vidéos et
+ * vingt-cinq images de produit, pas d'effets. Ce qui se transpose est donc la
+ * DISCIPLINE — des durées courtes, un vocabulaire minuscule — pas le registre.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LA RÈGLE QUI COMMANDE TOUTES CELLES QUI SUIVENT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'ÉTAT DE REPOS EST DANS `to`, JAMAIS DANS `from`. Autrement dit : sans
+ * chronologie de défilement, sans `@supports`, et avec un mouvement réduit, le
+ * contenu est VISIBLE ET IMMOBILE. Jamais transparent, jamais décalé, jamais
+ * absent.
+ *
+ * Ce n'est pas une précaution théorique. Firefox n'a pas encore livré
+ * `animation-timeline` en stable : une part réelle des visiteurs verra la page
+ * sans une seule animation, et elle doit être jugée finie dans cet état. Une
+ * apparition écrite à l'envers — opacité 0 au repos, 1 à l'arrivée — rendrait
+ * une page BLANCHE chez eux, et personne ne s'en apercevrait depuis Chrome.
+ *
+ * C'est le même raisonnement que le flou de la barre de l'application, plus
+ * haut dans ce fichier : la règle constante tient là où la chronologie n'existe
+ * pas.
+ */
+
+/* Les deux courbes, relevées sur revolut.com le 23/09/2026.
+ *
+ * `--sortie-longue` est celle qui fait « cher » : une décélération très longue,
+ * sans le moindre rebond. Un rebond dit « application grand public » ; sur une
+ * page qui parle de quarante mille euros d'impayés, il dirait « léger ». */
+@theme {
+	--ease-sortie-longue: cubic-bezier(0.35, 0, 0, 1);
+	--ease-entree-douce: cubic-bezier(0.15, 0.5, 0.5, 1);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * L'APPARITION À L'ENTRÉE DANS LA VUE.
+ *
+ * ⚠️ `view()` ET NON `scroll()`. La première se rapporte à la position de
+ * L'ÉLÉMENT dans la fenêtre, la seconde à l'avancement du CONTENEUR. Pour une
+ * apparition, seule la première a du sens : l'élément se révèle quand il entre,
+ * où qu'en soit le défilement de la page.
+ *
+ * `animation-range: entry 8% entry 46%` : le mouvement commence dès que
+ * l'élément a montré huit pour cent de lui-même, et il est TERMINÉ bien avant
+ * qu'il soit entièrement visible. Une apparition qui finit au moment où l'on
+ * commence à lire est une apparition qu'on subit.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.apparait {
+	animation-name: apparition-au-defilement;
+	animation-fill-mode: both;
+	animation-duration: auto;
+	animation-timing-function: var(--ease-sortie-longue);
+}
+
+@supports (animation-timeline: view()) {
+	.apparait {
+		animation-timeline: view();
+		animation-range: entry 8% entry 46%;
+	}
+}
+
+/* ⚠️ SANS `@supports`, L'ANIMATION TOURNERAIT SUR SA DURÉE PAR DÉFAUT et
+ * jouerait une fois au chargement, toutes sections confondues, y compris celles
+ * qu'on ne voit pas. `animation-duration: auto` vaut zéro seconde hors
+ * chronologie : l'élément est donc posé à son état final, immobile. */
+@keyframes apparition-au-defilement {
+	from {
+		opacity: 0;
+		transform: translateY(22px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* L'OBJET QUI S'APPROCHE — pour la tablette du héros et les panneaux de preuve.
+ *
+ * Un objet qui grandit légèrement en entrant donne la profondeur qu'une
+ * apparition plate n'a pas. Le facteur est volontairement minuscule : à 0,94 on
+ * lit « il arrive » ; à 0,8 on lit « effet ». */
+.approche {
+	animation-name: approche-au-defilement;
+	animation-fill-mode: both;
+	animation-duration: auto;
+	animation-timing-function: var(--ease-sortie-longue);
+}
+
+@supports (animation-timeline: view()) {
+	.approche {
+		animation-timeline: view();
+		animation-range: entry 0% entry 62%;
+	}
+}
+
+@keyframes approche-au-defilement {
+	from {
+		opacity: 0.55;
+		transform: scale(0.94) translateY(26px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* LE DÉCALAGE D'UNE LISTE. Chaque rangée entre un peu après la précédente, ce
+ * qui donne à l'œil le temps de suivre au lieu de tout recevoir d'un coup.
+ *
+ * ⚠️ PORTÉ PAR LE PARENT, sur ses enfants directs. Poser un délai à la main sur
+ * chaque rangée finirait par diverger du nombre de rangées, et une rangée
+ * ajoutée un an plus tard n'aurait aucun délai — le défaut serait invisible au
+ * compilateur et visible à l'écran. */
+.cascade > * {
+	animation-name: apparition-au-defilement;
+	animation-fill-mode: both;
+	animation-duration: auto;
+	animation-timing-function: var(--ease-sortie-longue);
+}
+
+@supports (animation-timeline: view()) {
+	.cascade > * {
+		animation-timeline: view();
+	}
+	.cascade > *:nth-child(1) {
+		animation-range: entry 6% entry 44%;
+	}
+	.cascade > *:nth-child(2) {
+		animation-range: entry 12% entry 50%;
+	}
+	.cascade > *:nth-child(3) {
+		animation-range: entry 18% entry 56%;
+	}
+	.cascade > *:nth-child(n + 4) {
+		animation-range: entry 24% entry 62%;
+	}
+}
+
+/* ⚠️ LE MOUVEMENT RÉDUIT COUPE TOUT, ET LE REPOS RESTE LE REPOS. Aucune de ces
+ * règles ne laisse un élément transparent ou décalé : c'est la conséquence
+ * directe d'avoir écrit l'état de repos dans `to`. */
+@media (prefers-reduced-motion: reduce) {
+	.apparait,
+	.approche,
+	.cascade > * {
+		animation: none;
+	}
+}

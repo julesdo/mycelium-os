@@ -74,12 +74,12 @@ export function Hero() {
 				  la dernière porter un mot seul. Sur un titre de cent pixels, une
 				  ligne orpheline se voit à trois mètres.
 				*/}
-				<h1 className="max-w-5xl font-serif text-affiche leading-none font-medium tracking-tight text-balance">
+				<h1 className="apparait max-w-5xl font-serif text-affiche leading-none font-medium tracking-affiche text-balance">
 					Vos impayés{' '}
 					<span className="cladd-color-brand text-cladd-primary">s’éteignent sans bruit.</span>
 				</h1>
 
-				<p className="max-w-xl text-chapeau leading-relaxed font-normal text-balance text-plume-douce">
+				<p className="apparait max-w-xl text-chapeau leading-relaxed font-normal text-balance text-plume-douce">
 					Le logiciel lit vos factures, surveille les échéances, et vous dit quelle créance devient
 					irrécouvrable — avant qu’elle le soit.
 				</p>
@@ -116,7 +116,7 @@ export function Hero() {
 			  `max-w-6xl` et pas la pleine largeur : une tablette de 1280px de large
 			  n'est plus une tablette, c'est un écran de bureau.
 			*/}
-			<div className="relative mx-auto w-full max-w-7xl px-cladd-2xs pt-cladd-2xl pb-cladd-sm md:pt-cladd-2xl">
+			<div className="approche relative mx-auto w-full max-w-7xl px-cladd-2xs pt-cladd-2xl pb-cladd-sm md:pt-cladd-2xl">
 				<Tablette
 					className="max-w-6xl"
 					description="Letikette sur tablette : l’écran « À traiter » — une facture déjà prescrite à 9 240 €, une signification d’ordonnance à neuf jours pour 18 450 €, une créance mûre à 31 200,50 €, et une facture échue à 249,90 €. Factures identifiées : 9 489,90 €."

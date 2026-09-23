@@ -169,7 +169,7 @@ export function TitreSection({
 			    grotesque. 600 sur l'encre rend le poids que 500 donne sur le papier. */}
 			<h2
 				className={cn(
-					'max-w-4xl font-serif text-titre-section leading-tight tracking-tight',
+					'apparait max-w-4xl font-serif text-titre-section leading-tight tracking-titre-section',
 					inverse ? 'font-semibold' : 'font-medium'
 				)}
 			>
@@ -278,7 +278,7 @@ export function Exergue({
 			<div className="flex flex-col gap-cladd-3xs">
 				<p
 					className={cn(
-						'font-serif text-titre-section leading-tight font-medium',
+						'apparait font-serif text-titre-section leading-tight font-medium tracking-titre-section',
 						inverse ? 'text-plume-inversee' : 'text-plume'
 					)}
 				>

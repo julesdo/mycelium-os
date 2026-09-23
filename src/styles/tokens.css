@@ -362,6 +362,29 @@
 	--text-intertitre: clamp(19px, 1.5vw, 22px);
 	--text-chapeau: clamp(18px, 1.5vw, 21px);
 
+	/* L'INTERLETTRAGE DES GRANDS CORPS, ET C'EST LE DÉTAIL QUI SÉPARE
+	 * « GRAND » DE « CHER ».
+	 *
+	 * ⚠️ RELEVÉ, PAS CHOISI. Mesuré le 23 septembre 2026 dans la feuille servie
+	 * par revolut.com : leur titre de héros porte −0,13rem à 104px et −0,17rem à
+	 * 136px, soit exactement −0,02em aux deux paliers ; leur titre de section
+	 * porte −0,01em. Le blueprint avait relevé la même chose en septembre sur
+	 * Revolut Business (« 54 px, interligne 1,0, interlettre −1,2 px ») sans en
+	 * tirer de jeton.
+	 *
+	 * POURQUOI ÇA COMPTE. Une fonte est dessinée pour un corps de lecture. Aux
+	 * environs de cent pixels, les approches prévues pour du seize deviennent des
+	 * trous : le mot se disperse au lieu de faire bloc. Resserrer rend au titre
+	 * la densité d'un logotype — c'est le même geste que celui d'un graphiste qui
+	 * crénerait une enseigne à la main.
+	 *
+	 * ⚠️ ET ÇA NE DESCEND PAS DANS LE TEXTE COURANT. Appliqué à un paragraphe,
+	 * le même resserrement abîme la lisibilité au lieu de la servir. Ces jetons
+	 * ne s'emploient qu'avec `--text-affiche`, `--text-titre-section` et
+	 * `--text-seuil-affiche`. */
+	--tracking-affiche: -0.02em;
+	--tracking-titre-section: -0.011em;
+
 	/* LE CORPS D'AFFICHE DU SEUIL LÉGAL.
 	 *
 	 * POURQUOI IL EST DÉMESURÉ, ET POURQUOI C'EST LUI. Comparée aux pages qui

@@ -163,10 +163,10 @@ export function LaLoi() {
 			  appartienne pas. C'est la loi, elle est opposable, elle a le droit de
 			  crier. Rien d'autre n'a le droit d'approcher ce corps.
 			*/}
-			<dl className="cladd-color-brand grid gap-cladd-sm lg:grid-cols-3 lg:gap-cladd-2xs">
+			<dl className="cascade cladd-color-brand grid gap-cladd-sm lg:grid-cols-3 lg:gap-cladd-2xs">
 				{seuils.map((s) => (
 					<div key={s.titre} className="flex flex-col gap-cladd-3xs">
-						<dt className="font-serif text-seuil-affiche leading-none font-medium text-cladd-primary tabular-nums">
+						<dt className="font-serif text-seuil-affiche leading-none font-medium tracking-affiche text-cladd-primary tabular-nums">
 							{s.valeur}
 						</dt>
 						<dd className="flex flex-col gap-1">

@@ -22,21 +22,34 @@ import { SectionMarketing, TitreSection, Exergue } from './section';
  * doit changer de registre — un filet épais, une serif, la voix qui se pose.
  */
 
+/**
+ * ⚠️ CES TROIS RAISONS SONT RESTÉES EN EGALIM PENDANT VINGT JOURS, EN LIGNE.
+ *
+ * Le titre et le chapeau de la section avaient été réécrits pour le
+ * recouvrement, pas elles. Un visiteur lisait donc, sur letikette.com, « le
+ * découvrir en mars, l'année est close », « une soirée en mars », et un
+ * fournisseur qui « monte la volaille de 10 % » — le calendrier de la
+ * déclaration annuelle d'une cantine, sur une page qui parle d'impayés.
+ *
+ * C'est le même défaut que les documents juridiques réécrits le 23 septembre :
+ * on remplace le cadre et on oublie ce qu'il contient. Le balayage large d'une
+ * réécriture de domaine ne doit pas s'arrêter aux titres.
+ */
 const RAISONS = [
 	{
-		titre: 'Un GPS, pas un constat après l’accident.',
+		titre: 'Une créance se prescrit un jour précis.',
 		texte:
-			'Le découvrir en mars, l’année est close. Le voir en octobre, c’est deux mois de commandes pour rattraper.'
+			'Pas à la fin du trimestre, pas quand vous y penserez : un jour, qui n’est pas le même selon le secteur. Le produit le surveille tous les jours, parce que c’est tous les jours qu’il se rapproche.'
 	},
 	{
-		titre: 'Cinq minutes par mois plutôt qu’une soirée en mars.',
+		titre: 'Les intérêts courent pendant que vous attendez.',
 		texte:
-			'Vous validez à chaud, pendant que vous vous souvenez des livraisons. En mars, le bilan est déjà fait.'
+			'Ils se calculent période par période, et le taux change deux fois par an. Un décompte arrêté six mois trop tard ne rattrape pas les six mois : il les perd.'
 	},
 	{
-		titre: 'Vos prix d’achat sous l’œil, toute l’année.',
+		titre: 'Un client solvable en janvier ne l’est pas en juin.',
 		texte:
-			'Un fournisseur monte la volaille de 10 % entre janvier et juin. Une fois par an, ça passe inaperçu et ça se paie douze mois.'
+			'Le registre publie les procédures collectives en continu. Le produit les relève chaque nuit, sur vos clients à vous, et vous le dit le lendemain.'
 	}
 ] as const;
 
