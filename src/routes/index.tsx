@@ -106,9 +106,29 @@ function Accueil() {
 			<Navbar />
 			<Hero />
 			<LaLoi />
+			{/*
+			  ⚠️ LA PREUVE EST REMONTÉE DE LA 6e À LA 4e PLACE, ET ELLE PORTE LE
+			  MEILLEUR ARGUMENT DU PRODUIT.
+
+			  Elle vivait derrière `Etapes` et `Bandeau`, c'est-à-dire qu'un visiteur
+			  devait traverser deux cent cinquante mots de mécanique avant de voir la
+			  seule chose qui prouve quoi que ce soit : un décompte décomposé période
+			  par période, avec son taux et ses jours. Le décompte était en outre
+			  l'étape 04 d'`Etapes`, donc enterré deux fois.
+
+			  L'ordre est maintenant : ce que la loi vous doit (des chiffres qui ne
+			  nous appartiennent pas), puis la preuve qu'on sait les calculer, puis
+			  seulement comment. Le visiteur apprend, vérifie, et ensuite regarde la
+			  mécanique — au lieu de devoir croire d'abord.
+
+			  C'est aussi ce que fait la référence : relevé le 23/09/2026, Revolut
+			  place ses deux blocs de preuve en positions 1 et 2, immédiatement sous
+			  le héros. Le pari — le doute précède la curiosité — est encore plus
+			  juste pour quelqu'un à qui on parle de quarante mille euros d'impayés.
+			*/}
+			<Preuve />
 			<Etapes />
 			<Bandeau />
-			<Preuve />
 			<Limites />
 			<Abonnement />
 			<Tarifs />

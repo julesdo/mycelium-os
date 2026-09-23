@@ -109,6 +109,20 @@ export function Hero() {
 						Voir ce que ça donne
 					</a>
 				</div>
+
+				{/*
+				  ⚠️ LA LEVÉE DE RISQUE EST ICI, ET PAS EN NEUVIÈME SECTION. « Trente
+				  jours, sans carte bancaire » vivait au bas des tarifs : un visiteur
+				  qui hésite devant le bouton ne l'a jamais lue, parce qu'il n'est
+				  jamais descendu jusque-là. Une objection se lève à l'endroit où elle
+				  naît, pas à l'endroit où c'est logique dans un plan.
+
+				  Elle est en petit corps et en plume claire : elle rassure celui qui
+				  la cherche, elle n'occupe pas celui qui ne la cherche pas.
+				*/}
+				<p className="apparait text-cladd-sm font-normal text-plume-claire">
+					Trente jours d’essai. Aucune carte bancaire.
+				</p>
 			</div>
 
 			{/*
@@ -124,7 +138,7 @@ export function Hero() {
 			<div className="approche relative mx-auto w-full max-w-7xl px-cladd-2xs pt-cladd-2xl pb-cladd-sm md:pt-cladd-2xl">
 				<Tablette
 					className="max-w-6xl"
-					description="Letikette sur tablette : l’écran « À traiter » — une facture déjà prescrite à 9 240 €, une signification d’ordonnance à neuf jours pour 18 450 €, une créance mûre à 31 200,50 €, et une facture échue à 249,90 €. Factures identifiées : 9 489,90 €."
+					description="Letikette : l’écran « À traiter » — une facture déjà prescrite à 9 240 €, une signification d’ordonnance à neuf jours pour 18 450 €, une créance mûre à 31 200,50 €, et une facture échue à 249,90 €. Factures identifiées : 9 489,90 €."
 				>
 					<ApercuApplication />
 				</Tablette>

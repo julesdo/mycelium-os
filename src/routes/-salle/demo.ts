@@ -20,10 +20,15 @@ export interface EcranDuProduit {
 	 * seule raison de typage : la règle des quatre largeurs n'était pas outillée
 	 * pour lui. Une exception écrite en toutes lettres garde la barrière (une
 	 * faute de frappe échoue toujours) sans exclure une page réelle du regard.
+	 *
+	 * ⚠️ ET `/` EST ADMISE DEPUIS LE 23 SEPTEMBRE 2026, pour la même raison et
+	 * au prix du même défaut. La page d'accueil n'avait jamais été regardée aux
+	 * quatre largeurs : sa tablette rendait son texte à 3,9 px au téléphone, et
+	 * rien ne le signalait parce qu'elle n'entrait pas dans la salle.
 	 */
 	readonly route: Extract<
 		RouteIds<RegisteredRouter['routeTree']>,
-		`/app/${string}` | '/bienvenue'
+		`/app/${string}` | '/bienvenue' | '/'
 	>;
 	/**
 	 * L'IDENTITÉ DE L'ENTRÉE DANS LA SALLE, quand la route ne suffit pas.

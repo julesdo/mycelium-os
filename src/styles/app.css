@@ -1126,16 +1126,45 @@ select:not(:disabled),
  * Le rapport de l'écran vaut celui de la toile : c'est lui qui réserve la
  * hauteur, qu'une transformation ne change jamais — un élément transformé
  * occupe toujours sa place d'origine dans le flux. */
+/* ⚠️ LA TOILE CHANGE DE FORMAT SOUS 640 PX, ET C'ÉTAIT LE PIRE DÉFAUT DE LA
+ * PAGE D'ACCUEIL.
+ *
+ * Le montage d'origine gardait une toile de 1180 px à toutes les largeurs et
+ * laissait le CADRE rétrécir. Le calcul est implacable : à 375 px de fenêtre, il
+ * reste 327 px pour la toile, soit un facteur de 327/1180 = 0,277. Le corps de
+ * 14 px des rangées rendait donc à 3,9 px — illisible, sur le seul élément de la
+ * page qui réponde à « à quoi ça ressemble, en vrai », et sur l'appareil où un
+ * prospect ouvre le site le plus souvent.
+ *
+ * ⚠️ LA CORRECTION N'EST PAS D'AGRANDIR LE TEXTE, C'EST DE CHANGER D'APPAREIL.
+ * Le produit est responsive et dessiné mobile d'abord : lui donner une toile de
+ * 390 px, c'est lui demander de rendre sa VRAIE mise en page téléphone, à son
+ * échelle réelle. Le facteur remonte alors à 327/390 = 0,84, et les 14 px
+ * rendent à 11,7 px — lisibles. Montrer une tablette à quelqu'un qui tient un
+ * téléphone était doublement faux : illisible, et pas l'objet qu'il a en main.
+ *
+ * Les deux jetons portent la largeur ET la hauteur parce que le rapport change
+ * avec eux : 1,43 en paysage pour la tablette, 0,46 en portrait pour le
+ * téléphone. Les écrire séparément laisserait dériver l'un des deux. */
 .tablette-ecran {
+	--toile-l: 390;
+	--toile-h: 844;
 	container-type: inline-size;
-	aspect-ratio: 1180 / 824;
+	aspect-ratio: var(--toile-l) / var(--toile-h);
+}
+
+@media (min-width: 640px) {
+	.tablette-ecran {
+		--toile-l: 1180;
+		--toile-h: 824;
+	}
 }
 
 .tablette-toile {
-	width: 1180px;
-	height: 824px;
+	width: calc(var(--toile-l) * 1px);
+	height: calc(var(--toile-h) * 1px);
 	transform-origin: top left;
-	transform: scale(tan(atan2(100cqw, 1180px)));
+	transform: scale(tan(atan2(100cqw, calc(var(--toile-l) * 1px))));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

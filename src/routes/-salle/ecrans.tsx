@@ -1,4 +1,5 @@
 import type { EcranDuProduit } from './demo';
+import { ECRANS_ACCUEIL } from './accueil';
 import { ECRANS_BARRE_ET_COMPAGNON } from './barre-et-compagnon';
 import { ECRANS_BIENVENUE } from './bienvenue';
 import { ECRANS_COMPTE } from './compte';
@@ -33,10 +34,17 @@ import { ECRANS_PIECE } from './piece';
  */
 export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	/*
-	  ⚠️ L'INSCRIPTION EN TÊTE, PARCE QUE C'EST LE PREMIER ÉCRAN. C'est aussi le
-	  seul de cette liste qui ne vive pas sous `/app/` : il s'ouvre avant que
-	  l'établissement existe, et c'est ce qui l'avait tenu hors de la salle depuis
-	  le début — une borne de typage, pas une décision.
+	  ⚠️ LA PAGE PUBLIQUE EN TÊTE, PARCE QU'ELLE EST LE PREMIER ÉCRAN DU PARCOURS.
+	  Elle est entrée ici le 23 septembre 2026, après qu'un défaut de mise à
+	  l'échelle y eut rendu la tablette du héros illisible au téléphone — 3,9 px —
+	  pendant des mois, sans que rien ne le signale.
+	*/
+	...ECRANS_ACCUEIL,
+	/*
+	  ⚠️ PUIS L'INSCRIPTION. Avec la page d'accueil, ce sont les deux seules
+	  entrées de cette liste qui ne vivent pas sous `/app/` : la première précède
+	  le compte, la seconde précède l'établissement. Toutes deux étaient tenues
+	  hors de la salle par une borne de typage, pas par une décision.
 	*/
 	...ECRANS_BIENVENUE,
 	/**
