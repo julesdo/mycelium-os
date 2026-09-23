@@ -44,9 +44,9 @@ import { SITE_CANONIQUE } from '../lib/config/legal';
  * vignette carrée de cent-vingt pixels, où il ne reste rien de lisible.
  */
 const APERCU = `${SITE_CANONIQUE}/partage.png`;
-const TITRE = 'Letikette — vos impayés, avant qu’ils ne s’éteignent';
+const TITRE = 'Letikette — vos impayés ont une date limite';
 const RESUME =
-	'Letikette lit vos factures, surveille vos échéances et chiffre vos créances au centime. Chaque euro réclamé montre d’où il vient : quel principal, quel taux, sur combien de jours.';
+	'Letikette surveille cette date sur chacune de vos factures, et calcule au centime les intérêts de retard et l’indemnité forfaitaire qui vous sont dus. Chaque euro montre d’où il vient : quel principal, quel taux, sur combien de jours.';
 
 export const Route = createFileRoute('/')({
 	head: () => ({
@@ -58,11 +58,11 @@ export const Route = createFileRoute('/')({
 			{ property: 'og:site_name', content: 'Letikette' },
 			{ property: 'og:locale', content: 'fr_FR' },
 			{ property: 'og:url', content: SITE_CANONIQUE },
-			{ property: 'og:title', content: 'Letikette — le recouvrement de créances B2B, mesuré' },
+			{ property: 'og:title', content: 'Letikette — vos impayés ont une date limite' },
 			{
 				property: 'og:description',
 				content:
-					'Vos impayés s’éteignent sans bruit. Letikette surveille vos échéances, repère les créances mûres et chiffre chaque décompte au centime.'
+					'Letikette surveille cette date sur chacune de vos factures, et calcule au centime les intérêts de retard et l’indemnité forfaitaire qui vous sont dus.'
 			},
 			{ property: 'og:image', content: APERCU },
 			{ property: 'og:image:width', content: '1200' },
@@ -70,13 +70,13 @@ export const Route = createFileRoute('/')({
 			{
 				property: 'og:image:alt',
 				content:
-					'Letikette — vos impayés, avant qu’ils ne s’éteignent. Intérêts de retard au taux légal, indemnité forfaitaire de 40 € par facture, prescription surveillée par secteur.'
+					'Letikette — vos impayés ont une date limite. Les trois chiffres du code de commerce : les intérêts de retard au taux BCE majoré de dix points, l’indemnité forfaitaire due par facture, et le délai de prescription.'
 			},
 
 			{ name: 'twitter:card', content: 'summary_large_image' },
 			{
 				name: 'twitter:title',
-				content: 'Letikette — le recouvrement de créances B2B, mesuré'
+				content: 'Letikette — vos impayés ont une date limite'
 			},
 			{ name: 'twitter:description', content: RESUME },
 			{ name: 'twitter:image', content: APERCU }

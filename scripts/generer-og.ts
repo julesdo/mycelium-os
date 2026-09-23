@@ -2,21 +2,46 @@
  * L'image de partage — celle qui s'affiche quand le lien est collé dans un
  * message, un fil, un courriel.
  *
- * POURQUOI ELLE EST DESSINÉE ET NON PHOTOGRAPHIÉE. Reprendre la photo du héros
- * donne une vignette qui pourrait appartenir à n'importe quel site de cuisine :
- * elle ne dit ni le nom, ni le sujet, ni ce qu'on vend. Une image de partage est
- * lue à trois cents pixels de large, une seconde, dans un fil qui défile. Elle
- * doit porter quatre choses et rien d'autre — la marque, la promesse, le sujet,
- * et de quoi comprendre qu'il s'agit d'une obligation légale.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ELLE A ANNONCÉ EGALIM PENDANT TROIS SEMAINES, EN LIGNE
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * ELLE EST SUR L'ENCRE, comme la section d'autorité de la page. Dans un fil
- * majoritairement blanc, un rectangle sombre s'arrête ; un rectangle blanc se
- * fond dans l'interface qui l'entoure.
+ * Le `partage.png` servi par letikette.com datait du 27 août 2026 et disait,
+ * mot pour mot : « Vos trois taux EGalim sont déjà dans vos factures », sous un
+ * sur-titre « RESTAURATION COLLECTIVE · LOI EGALIM », avec 50 % de produits
+ * durables, 20 % de bio, 60 % sur viande et poisson, et « Déclaration avant le
+ * 31 mars ».
  *
- * LES CHIFFRES SONT CEUX DE LA LOI, PAS CEUX D'UNE CANTINE. 50, 20 et 60 sont
- * des seuils réglementaires, vrais pour tout le monde. Reprendre les 39/21/42 de
- * la démonstration du héros aurait affiché, hors contexte, trois taux d'échec
- * sans dire de qui.
+ * Le produit a pivoté vers le recouvrement le 3 septembre. Chaque partage du
+ * site sur LinkedIn, WhatsApp ou par courriel a donc montré, pendant trois
+ * semaines, un produit qui n'existe plus — et c'est la SEULE chose que voit
+ * quelqu'un à qui on envoie le lien avant qu'il clique.
+ *
+ * C'est le troisième cas du même défaut : les trois raisons de l'abonnement
+ * restées en EGalim vingt jours, les commentaires des tarifs parlant encore de
+ * « couverts servis », et celui-ci. Le balayage d'une réécriture de domaine ne
+ * doit pas s'arrêter au code de la page : il doit atteindre ce que la page
+ * PRODUIT.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * CE QU'ELLE PORTE, ET RIEN D'AUTRE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Elle est lue à trois cents pixels de large, une seconde, dans un fil qui
+ * défile. Quatre choses : la marque, la promesse, les chiffres de la loi, et de
+ * quoi comprendre qu'il s'agit d'une obligation légale.
+ *
+ * ELLE EST NOIRE, comme la page. Dans un fil majoritairement blanc, un
+ * rectangle noir s'arrête ; un rectangle blanc se fond dans l'interface.
+ *
+ * ⚠️ LE TAUX EST ÉCRIT COMME UNE RÈGLE, PAS COMME UN NOMBRE. « BCE + 10 points »
+ * plutôt que « 12,40 % », et c'est délibéré : le taux est réancré chaque
+ * semestre, alors que cette image est régénérée à la main. Un nombre exact y
+ * deviendrait faux en janvier sans que personne le remarque, puisque personne ne
+ * relit une image. La règle, elle, ne périme pas.
+ *
+ * Les deux autres valeurs sont LUES sur `parametres.ts`, avec leur garde : une
+ * valeur non relevée ne s'affiche pas plutôt que de s'afficher de mémoire.
  *
  * ⚠️ LES POLICES SONT DÉCOMPRESSÉES AVANT D'ÊTRE PASSÉES À resvg. Le rendu SVG
  * ne sait pas lire le woff2 — et, ce qui est pire, il ne le dit pas : on lui
@@ -31,22 +56,36 @@ import { decompress } from 'wawoff2';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { PARAMETRES, estUtilisable } from '../src/lib/verticales/recouvrement/parametres';
+import { REGIMES_PRESCRIPTION } from '../src/lib/verticales/recouvrement/pays/france/prescription';
 
 const RACINE = join(import.meta.dirname, '..');
 const PUBLIC = join(RACINE, 'public');
 const MODULES = join(RACINE, 'node_modules');
 
-/** Les couleurs de la page publique. Mêmes valeurs que `tokens.css`. */
-const ENCRE = '#252b38';
-const FILET = '#39404e';
-const PAPIER = '#f4f6f9';
-const DOUX = '#aab2c0';
-const BLEU = '#4d78e0';
+/**
+ * Les couleurs de la nuit, converties depuis `tokens.css`.
+ *
+ * Les jetons sont en oklch ; resvg ne le lit pas. Les équivalents sRGB sont
+ * calculés une fois et écrits ici — c'est le seul endroit du dépôt où une
+ * couleur de la page est dupliquée, et c'est parce qu'un moteur de rendu SVG
+ * hors navigateur n'a pas accès à la feuille de style.
+ */
+const NUIT = '#000000';
+const CRAIE = '#ffffff';
+/** `--color-craie-douce`, oklch(0.74 0 0). */
+const CRAIE_DOUCE = '#a8a8a8';
+/** `--color-craie-claire`, oklch(0.58 0 0). */
+const CRAIE_CLAIRE = '#7a7a7a';
+/** `--color-craie-sourde`, oklch(0.46 0 0) — filets et sur-titres seulement. */
+const CRAIE_SOURDE = '#595959';
+/** `--color-filet-nuit`, du blanc à 14 % sur du noir. */
+const FILET = '#242424';
 
 /**
  * LES NOMS DE FAMILLE VIENNENT DU BINAIRE, PAS DE LA FEUILLE DE STYLE.
  *
- * `@fontsource` étiquette ses fontes « Newsreader Variable » et « Plus Jakarta
+ * `@fontsource` étiquette ses fontes « Inter Tight Variable » et « Plus Jakarta
  * Sans Variable » dans son CSS — mais resvg ne lit pas le CSS, il lit la table
  * `name` du TTF, qui dit tout autre chose. Un nom qui ne correspond pas ne
  * provoque aucune erreur : le rendu retombe sur la première fonte chargée, et
@@ -57,47 +96,57 @@ const BLEU = '#4d78e0';
  * montée de version de `@fontsource` :
  *
  *     fontkit.openSync(chemin).familyName
+ *
+ * ⚠️ LA SERIF EST PARTIE AVEC LE FOND CRÈME. Newsreader portait les titres de la
+ * page publique ; la page est passée à la grotesque d'affiche le 23 septembre,
+ * et l'image de partage la suit. Charger une fonte de moins, c'est aussi une
+ * famille de moins à se tromper de nom.
  */
-const SERIF = 'Newsreader 16pt 16pt';
+const AFFICHE = 'Inter Tight';
 const SANS = 'Plus Jakarta Sans';
 const BROSSE = 'Caveat Brush';
-
-/**
- * L'épaississement optique de la serif, en clair sur l'encre.
- *
- * POURQUOI PAS `font-weight`. Le fichier chargé est une fonte VARIABLE, et resvg
- * n'en instancie pas les axes : il rend l'instance par défaut, c'est-à-dire le
- * romain. Demander 600 ne produit donc rigoureusement rien.
- *
- * Le contour de la même couleur, avec `paint-order`, grossit le tracé sans le
- * salir — c'est le remède déjà employé pour le logotype, et documenté dans
- * `src/ui/logo.tsx`. Il compense le fait qu'un texte clair sur fond sombre
- * paraît plus fin qu'il ne l'est : la lumière déborde sur les contours et ronge
- * les déliés, ce dont une serif souffre plus qu'une grotesque.
- *
- * Six dixièmes de pixel, pas plus. Au-delà, les empattements se referment et le
- * titre passe de « imprimé » à « gras synthétique ».
- */
-const GRAS = `stroke="${PAPIER}" stroke-width="0.6" paint-order="stroke fill"`;
 
 const LARGEUR = 1200;
 const HAUTEUR = 630;
 
 /**
- * Les trois seuils du barème, dans l'ordre où la loi les énonce.
+ * LES TROIS CHIFFRES DE LA LOI.
  *
- * Écrits ici plutôt qu'importés du référentiel : ce script produit une image, il
- * n'a pas à embarquer le domaine. Le jour où le barème change, c'est la revue de
- * code du référentiel qui doit le rattraper — et elle passera aussi ici.
+ * ⚠️ DEUX SONT LUS, UN EST UNE RÈGLE. L'indemnité et le délai de prescription
+ * sont des constantes : elles viennent de `parametres.ts`, avec le garde
+ * `estUtilisable` qui exige qu'elles aient été relevées sur une source citable.
+ * Le taux, lui, est réancré chaque semestre — voir l'en-tête : il s'écrit comme
+ * la règle qui le produit, jamais comme le nombre du jour.
  */
-const SEUILS = [
-	{ valeur: '50 %', quoi: 'de produits durables' },
-	{ valeur: '20 %', quoi: 'dont du bio' },
-	{ valeur: '60 %', quoi: 'sur viande et poisson' }
-];
+function seuilsDeLaLoi(): { valeur: string; quoi: string }[] {
+	const indemnite = PARAMETRES.indemniteForfaitaire;
+	const general = REGIMES_PRESCRIPTION.GENERAL;
+
+	const seuils = [{ valeur: 'BCE + 10 pts', quoi: 'd’intérêts de retard' }];
+
+	if (estUtilisable(indemnite) && indemnite.valeur !== null) {
+		const euros = Number(indemnite.valeur) / 100;
+		seuils.push({ valeur: `${euros.toLocaleString('fr-FR')} €`, quoi: 'par facture en retard' });
+	}
+
+	seuils.push({ valeur: `${general.dureeAnnees} ans`, quoi: 'et souvent bien moins' });
+	return seuils;
+}
+
+/** Les articles, lus sur les sources des paramètres. Jamais écrits de mémoire. */
+function articles(): string {
+	const trouves = [
+		PARAMETRES.tauxInteretLegalDefaut.source,
+		PARAMETRES.delaiPrescriptionCommerciale.source
+	]
+		.map((source) => source.match(/\b[LRD]\.? ?\d{3}-\d+/))
+		.filter((trouve): trouve is RegExpMatchArray => trouve !== null)
+		.map((trouve) => trouve[0]);
+	return trouves.length > 0 ? trouves.join(' · ') : 'CODE DE COMMERCE';
+}
 
 /** L'accroche, coupée à la main : SVG ne sait pas faire de retour à la ligne. */
-const ACCROCHE = ['Vos trois taux EGalim', 'sont déjà dans vos factures.'];
+const ACCROCHE = { eteint: 'Vos impayés', vif: 'ont une date limite.' };
 
 /**
  * Décompresse un woff2 et le dépose en TTF, puis rend son chemin.
@@ -119,8 +168,8 @@ async function police(chemin: string, nom: string): Promise<string> {
 	return sortie;
 }
 
-/** Le corps de l'assiette, repris de l'icône pour qu'il n'existe qu'un dessin. */
-function assiette(): string {
+/** La marque, reprise du favicon pour qu'il n'existe qu'un seul dessin. */
+function marque(): string {
 	return readFileSync(join(PUBLIC, 'favicon.svg'), 'utf8')
 		.replace(/<\?xml[^>]*\?>/, '')
 		.replace(/<svg[^>]*>/, '')
@@ -129,48 +178,55 @@ function assiette(): string {
 
 function composition(): string {
 	const marge = 76;
-	const seuils = SEUILS.map((s, i) => {
-		const x = marge + i * 212;
-		return `
-<text x="${x}" y="512" font-family="${SERIF}" font-size="52" fill="${PAPIER}">${s.valeur}</text>
-<text x="${x}" y="545" font-family="${SANS}" font-size="17" fill="${DOUX}">${s.quoi}</text>`;
-	}).join('');
+	/* ⚠️ LA COLONNE EST CALCULEE, PAS CHOISIE. Un pas fixe de 232 px a fait
+	   CHEVAUCHER « BCE + 10 pts » et « 40 € » : le premier seuil mesure environ
+	   trois cents pixels a ce corps, et se voyait recouvert par le deuxieme. La
+	   largeur utile divisee par trois donne 349 px, ce qui laisse de la marge au
+	   plus long des trois. Vu en REGARDANT le PNG — aucune erreur n avait ete
+	   levee. */
+	const COLONNE = Math.floor((LARGEUR - 2 * marge) / 3);
+	const seuils = seuilsDeLaLoi()
+		.map((s, i) => {
+			const x = marge + i * COLONNE;
+			return `
+<text x="${x}" y="512" font-family="${AFFICHE}" font-size="46" font-weight="600" letter-spacing="-1" fill="${CRAIE}">${s.valeur}</text>
+<text x="${x}" y="545" font-family="${SANS}" font-size="17" fill="${CRAIE_DOUCE}">${s.quoi}</text>`;
+		})
+		.join('');
 
 	return `<svg width="${LARGEUR}" height="${HAUTEUR}" viewBox="0 0 ${LARGEUR} ${HAUTEUR}" xmlns="http://www.w3.org/2000/svg">
-<rect width="${LARGEUR}" height="${HAUTEUR}" fill="${ENCRE}"/>
-<!-- La trame de papier de sécurité, la même que sur la page. -->
-<defs>
-  <pattern id="trame" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-    <line x1="0" y1="0" x2="0" y2="14" stroke="#ffffff" stroke-opacity="0.035" stroke-width="1"/>
-  </pattern>
-</defs>
-<rect width="${LARGEUR}" height="${HAUTEUR}" fill="url(#trame)"/>
+<rect width="${LARGEUR}" height="${HAUTEUR}" fill="${NUIT}"/>
 
-<!-- L'assiette déborde à droite : elle ancre la marque sans disputer le texte. -->
-<g transform="translate(842 118) scale(3.94)">${assiette()}</g>
+<!-- Le logotype, à la brosse et en capitales, comme dans la barre du site. -->
+<g transform="translate(${marge} 62) scale(0.46)">${marque()}</g>
+<text x="${marge + 62}" y="104" font-family="${BROSSE}" font-size="40" fill="${CRAIE}" letter-spacing="2">LETIKETTE</text>
 
-<!-- Le logotype, à la brosse et en capitales, comme partout ailleurs. -->
-<text x="${marge}" y="112" font-family="${BROSSE}" font-size="42" fill="${PAPIER}" letter-spacing="2">LETIKETTE</text>
-<text x="${marge}" y="146" font-family="${SANS}" font-size="16" fill="${BLEU}" letter-spacing="2.4">RESTAURATION COLLECTIVE · LOI EGALIM</text>
+<!-- LE RAIL TECHNIQUE, tireté, comme en tête de chaque section de la page. -->
+<line x1="${marge}" y1="146" x2="${LARGEUR - marge}" y2="146" stroke="${FILET}" stroke-width="1" stroke-dasharray="4 4"/>
+<text x="${marge}" y="176" font-family="${SANS}" font-size="15" fill="${CRAIE_SOURDE}" letter-spacing="2.4">CODE DE COMMERCE</text>
+<text x="${LARGEUR - marge}" y="176" text-anchor="end" font-family="${SANS}" font-size="15" fill="${CRAIE_SOURDE}" letter-spacing="2.4">${articles()}</text>
 
-<!-- L'accroche. Deux lignes posées à la main, faute de retour automatique. -->
-<text x="${marge}" y="268" font-family="${SERIF}" font-size="62" fill="${PAPIER}" ${GRAS}>${ACCROCHE[0]}</text>
-<text x="${marge}" y="338" font-family="${SERIF}" font-size="62" fill="${PAPIER}" ${GRAS}>${ACCROCHE[1]}</text>
+<!-- L'accroche. La première ligne baisse la voix, la seconde porte la
+     révélation : c'est l'emphase par la VALEUR, la seule dont dispose une page
+     en noir et blanc. Deux lignes posées à la main, faute de retour auto. -->
+<text x="${marge}" y="288" font-family="${AFFICHE}" font-size="66" font-weight="600" letter-spacing="-1.6" fill="${CRAIE_CLAIRE}">${ACCROCHE.eteint}</text>
+<text x="${marge}" y="356" font-family="${AFFICHE}" font-size="66" font-weight="600" letter-spacing="-1.6" fill="${CRAIE}">${ACCROCHE.vif}</text>
 
-<text x="${marge}" y="392" font-family="${SANS}" font-size="21" fill="${DOUX}">Le logiciel les mesure ligne à ligne, et justifie chaque classement.</text>
+<text x="${marge}" y="406" font-family="${SANS}" font-size="20" fill="${CRAIE_DOUCE}">Letikette surveille cette date sur chacune de vos factures,</text>
+<text x="${marge}" y="434" font-family="${SANS}" font-size="20" fill="${CRAIE_DOUCE}">et calcule au centime ce qui vous est dû.</text>
 
-<line x1="${marge}" y1="440" x2="740" y2="440" stroke="${FILET}" stroke-width="1"/>
+<line x1="${marge}" y1="466" x2="${LARGEUR - marge}" y2="466" stroke="${FILET}" stroke-width="1" stroke-dasharray="4 4"/>
 ${seuils}
-<line x1="${marge}" y1="578" x2="${LARGEUR - marge}" y2="578" stroke="${FILET}" stroke-width="1"/>
-<text x="${marge}" y="606" font-family="${SANS}" font-size="17" fill="${DOUX}">letikette.com</text>
-<text x="${LARGEUR - marge}" y="606" text-anchor="end" font-family="${SANS}" font-size="17" fill="${DOUX}">Déclaration avant le 31 mars</text>
+<line x1="${marge}" y1="578" x2="${LARGEUR - marge}" y2="578" stroke="${FILET}" stroke-width="1" stroke-dasharray="4 4"/>
+<text x="${marge}" y="606" font-family="${SANS}" font-size="17" fill="${CRAIE_DOUCE}">letikette.com</text>
+<text x="${LARGEUR - marge}" y="606" text-anchor="end" font-family="${SANS}" font-size="17" fill="${CRAIE_DOUCE}">Trente jours d’essai</text>
 </svg>`;
 }
 
 const polices = [
 	await police(
-		'@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2',
-		'newsreader'
+		'@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2',
+		'inter-tight'
 	),
 	await police(
 		'@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2',
