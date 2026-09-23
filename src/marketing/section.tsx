@@ -217,6 +217,86 @@ export function TitreSection({
 }
 
 /**
+ * LE CADRE D'UN ÉCRAN DE PRODUIT, SUR LA NUIT.
+ *
+ * ⚠️ IL EST CLAIR SUR DU NOIR, ET C'EST LE SEUL ENDROIT DE LA PAGE OÙ UNE
+ * SURFACE A LE DROIT D'ÊTRE LUMINEUSE. La raison est la même que pour le
+ * téléphone du premier écran : l'application est montrée en thème CLAIR, donc
+ * un écran de produit posé sur le noir est une source de lumière. C'est ce qui
+ * le fait regarder avant le texte, et c'est exactement ce qu'on veut d'une
+ * démonstration.
+ *
+ * ⚠️ LE THÈME EST ÉCRIT SUR LE CADRE, PAS HÉRITÉ. `<html>` porte `light` ou
+ * `dark` selon le réglage SYSTÈME du visiteur. Sans `light` posé ici, un
+ * prospect sous macOS en mode sombre verrait des démonstrations sombres sur un
+ * fond noir, c'est-à-dire presque rien — et personne ne s'en apercevrait depuis
+ * un poste en clair.
+ *
+ * ⚠️ PAS D'OMBRE PORTÉE. Sur du noir, une ombre ne se voit pas ; ce qui détache
+ * le cadre est son ARÊTE de lumière, un liseré d'un pixel. C'est la même pièce
+ * que celle qui fait l'aluminium du téléphone, et la seule qui fonctionne sur
+ * un fond sombre.
+ */
+export function CadreNuit({
+	className,
+	contentClassName,
+	children
+}: {
+	className?: string;
+	contentClassName?: string;
+	children: ReactNode;
+}) {
+	return (
+		<div
+			className={cn(
+				'light cladd-color-brand overflow-hidden rounded-panneau bg-cladd-bg text-cladd-fg ring-1 ring-filet-nuit-vif',
+				className
+			)}
+		>
+			<div className={contentClassName}>{children}</div>
+		</div>
+	);
+}
+
+/**
+ * LA PUCE D'UNE CAPACITÉ, DANS UNE LISTE DE CAPACITÉS.
+ *
+ * ⚠️ CHAQUE ENTRÉE COMMENCE PAR UN VERBE ET PORTE UN CHIFFRE OU UN NOM PROPRE.
+ * Ce n'est pas une préférence de style : c'est la grammaire relevée le
+ * 23 septembre 2026 dans la page de Revolut Business, où aucune puce n'est
+ * abstraite. « Exchange 25+ currencies at the interbank rate », « Integrate
+ * with Pennylane, Sage, Odoo, and 45+ other tools ». Jamais « des paiements
+ * simplifiés » ni « une gestion optimisée ».
+ *
+ * La raison tient : un dirigeant qui lit « surveillance intelligente » ne sait
+ * pas ce qu'il achète, et il a raison de ne pas le croire. « Relever le BODACC
+ * à quatre heures sur vos débiteurs » se vérifie.
+ *
+ * Le filet tireté sépare, comme partout ailleurs sur la page. Jamais une puce
+ * ronde : elle ajouterait un objet décoratif par ligne, et il y en a douze.
+ */
+export function Capacites({
+	items,
+	className
+}: {
+	items: readonly string[];
+	className?: string;
+}) {
+	return (
+		<ul className={cn('flex flex-col', className)}>
+			{items.map((item) => (
+				<li
+					key={item}
+					className="border-b border-dashed border-filet-nuit py-cladd-3xs text-cladd-sm leading-relaxed font-normal text-craie-douce last:border-b-0"
+				>
+					{item}
+				</li>
+			))}
+		</ul>
+	);
+}
+
+/**
  * L'inventaire : une suite d'entrées, séparées par un filet clair.
  *
  * ⚠️ CE N'EST PLUS UN PANNEAU, ET C'EST LA CORRECTION LA PLUS IMPORTANTE DE LA

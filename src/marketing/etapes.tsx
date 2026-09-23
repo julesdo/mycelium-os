@@ -3,13 +3,14 @@ import { Button, Chip, Surface } from '@cladd-ui/react';
 import { RotateCcwIcon } from 'lucide-react';
 import {
 	cn,
+	ScenePointeur,
 	FluxEvenements,
 	Decompte,
 	EmptyState,
 	type EvenementAffiche,
 	type DecompteAffiche
 } from '../ui';
-import { SectionMarketing, TitreSection, Cadre, Inventaire } from './section';
+import { SectionMarketing, CadreNuit, Capacites } from './section';
 
 /**
  * Les quatre étapes, démontrées avec les composants du produit.
@@ -28,14 +29,64 @@ import { SectionMarketing, TitreSection, Cadre, Inventaire } from './section';
  * façon de le diluer.
  */
 
-/** Ce que l'import accepte. Une liste, pas trois cartes : c'est un inventaire. */
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * LES CAPACITÉS, ET LA GRAMMAIRE QU'ELLES SUIVENT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ CHAQUE LIGNE COMMENCE PAR UN VERBE ET PORTE UN CHIFFRE, UN FORMAT OU UNE
+ * HEURE. C'est la grammaire relevée le 23 septembre 2026 dans la page de
+ * Revolut Business, où aucune puce n'est abstraite : « Exchange 25+ currencies
+ * at the interbank rate », « Integrate with Pennylane, Sage, Odoo, and 45+
+ * other tools ». Jamais « des paiements simplifiés ».
+ *
+ * La raison tient debout : un dirigeant qui lit « surveillance intelligente »
+ * ne sait pas ce qu'il achète, et il a raison de ne pas le croire. « Relever le
+ * BODACC à quatre heures du matin » se vérifie.
+ *
+ * ⚠️ ET CHAQUE LIGNE CORRESPOND À DU CODE QUI TOURNE. Cette liste a été écrite
+ * en relisant les modules, pas de mémoire :
+ *
+ *   FEC, CSV, dépôt, Factur-X  →  `import/exportComptable.ts:68`, `FormatExport`
+ *   BODACC à 4 h, briefing à 6 h  →  `convex/crons.ts`, `radarSolvabilite`
+ *   prescription par secteur  →  `pays/france/prescription.ts`
+ *   rapprochement des règlements  →  `lettrage.ts`
+ *   certain / liquide / exigible  →  `qualification.ts`
+ *   ce qu'un acte laisserait  →  `controle.ts`
+ *   intérêts période par période  →  `decompte.ts`
+ *   remise au conseil  →  `ui/remise-conseil.tsx`
+ *
+ * ⚠️ CE QUI N'Y FIGURE PAS, ET POURQUOI. La connexion bancaire existe et son
+ * rattrapage tourne toutes les six heures (`crons.ts`, `synchroQonto`), mais
+ * elle n'a jamais été exercée contre un vrai compte : l'essai en bac à sable
+ * attend des identifiants. « Le doute ne profite jamais au produit » vaut aussi
+ * pour la page d'accueil. Le rapprochement des règlements est annoncé parce
+ * qu'il se fait DÉJÀ depuis l'export comptable, qui les porte. La banque
+ * entrera le jour où l'essai sera passé.
+ */
 const FORMATS = [
-	{
-		titre: 'Export comptable',
-		detail: 'Un FEC, ou un CSV. Le plus complet, et rien n’est relu par une machine.'
-	},
-	{ titre: 'Facture en PDF', detail: 'Quand l’export n’est pas sous la main.' },
-	{ titre: 'Photo prise au téléphone', detail: 'Une facture retrouvée dans un dossier.' }
+	'Lire un FEC, le fichier que tout logiciel comptable sait produire, et en tirer les factures de vente, les règlements et les débiteurs.',
+	'Lire une facture Factur-X et le XML qu’elle embarque, sans passer par un modèle.',
+	'Accepter une facture déposée en PDF ou photographiée, quand l’export n’est pas sous la main.',
+	'Écarter les doublons et les écritures hors périmètre, en les comptant et en disant lesquelles.'
+] as const;
+
+const SURVEILLANCE = [
+	'Relever le BODACC à quatre heures du matin sur vos débiteurs, et vous le dire à six.',
+	'Suivre la prescription facture par facture, au régime du secteur de chacune.',
+	'Rapprocher les règlements des factures qu’ils soldent, pour ne pas relancer un client qui a payé.'
+] as const;
+
+const QUALIFICATION = [
+	'Déduire le caractère certain, liquide et exigible de ce qui est déjà au dossier.',
+	'Poser la seule question qu’aucune facture ne répond, et horodater ce que vous répondez.',
+	'Chiffrer ce qu’un acte laisserait de côté, avant qu’il soit produit.'
+] as const;
+
+const DECOMPTE_CAPACITES = [
+	'Décomposer les intérêts période par période : quel principal, quel taux, sur combien de jours.',
+	'Figer un décompte à sa date, définitivement. Rejouer en produit un nouveau, daté.',
+	'Réunir les pièces et les remettre à votre avocat ou à votre commissaire de justice.'
 ] as const;
 
 /**
@@ -140,29 +191,29 @@ const DECOMPTE: DecompteAffiche = {
 
 export function Etapes() {
 	return (
-		<SectionMarketing id="comment" fond="froid" className="gap-cladd-2xl">
-			<TitreSection
-				titre="Quatre étapes, dont une seule vous demande du temps"
-				chapeau="Les écrans ci-dessous sont ceux du logiciel. Répondez à la question pour voir."
-			/>
+		<SectionMarketing id="comment" fond="nuit" className="gap-cladd-2xl">
+			{/* LE RAIL TECHNIQUE, comme sur le premier écran et sur la loi. */}
+			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
+				<span>Le logiciel</span>
+				<span className="tabular-nums">4 gestes</span>
+			</div>
+
+			<div className="flex flex-col gap-cladd-2xs">
+				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
+					Quatre gestes,{' '}
+					<span className="text-craie-claire">un seul vous demande du temps.</span>
+				</h2>
+				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
+					Les écrans ci-dessous sont ceux du logiciel, remplis de données de démonstration. Le
+					troisième se joue.
+				</p>
+			</div>
 
 			<Etape
 				numero="01"
-				titre="Vous importez ce que vous avez"
-				texte="Vos factures existent déjà, structurées, dans votre comptabilité. On les lit là où elles sont plutôt que de vous les faire re-scanner."
-				apres={
-					<Inventaire as="dl">
-						{FORMATS.map((f) => (
-							<div
-								key={f.titre}
-								className="flex flex-wrap items-baseline justify-between gap-cladd-3xs py-cladd-3xs"
-							>
-								<dt className="text-cladd-md font-semibold">{f.titre}</dt>
-								<dd className="text-cladd-sm text-plume-claire">{f.detail}</dd>
-							</div>
-						))}
-					</Inventaire>
-				}
+				titre="Vos factures sont déjà écrites"
+				texte="On les lit là où elles sont, plutôt que de vous les faire ressaisir."
+				capacites={FORMATS}
 			>
 				{/*
 				  LE BILAN D'IMPORT, ET NON LA ZONE DE DÉPÔT. `ZoneDepot` est un vrai
@@ -174,46 +225,49 @@ export function Etapes() {
 				  qui annonce « 312 factures » sans les mentionner ment par omission,
 				  et l'omission porte sur l'argent qu'on ne réclamera pas.
 				*/}
-				<Cadre contentClassName="p-cladd-2xs">
+				<CadreNuit contentClassName="p-cladd-2xs">
 					<BilanImport />
-				</Cadre>
+				</CadreNuit>
 			</Etape>
 
 			<Etape
 				inverse
 				numero="02"
-				titre="Le logiciel repère ce qui bouge"
-				texte="Ce qui arrive à échéance, ce qui devient mûr, ce qui approche de la prescription. Chaque ligne porte son montant : vous savez quoi traiter en premier."
+				titre="Le logiciel regarde toutes les nuits"
+				texte="Ce qui arrive à échéance, ce qui devient mûr, ce qui approche de la prescription."
+				capacites={SURVEILLANCE}
 			>
-				<Cadre contentClassName="p-cladd-2xs">
+				<CadreNuit contentClassName="p-cladd-2xs">
 					<FluxEvenements
 						evenements={EVENEMENTS}
 						montantIdentifie={948_990n}
 						hypotheses={[]}
 						anglesMorts={[]}
 					/>
-				</Cadre>
+				</CadreNuit>
 			</Etape>
 
 			<Etape
 				numero="03"
-				titre="Vous tranchez ce qui vous engage"
-				texte="Le logiciel déduit tout ce qu'il peut lire : le montant, l'échéance, la qualité des parties. Il ne vous demande que ce qu'aucune facture ne dit."
+				titre="Vous ne tranchez que l’indécidable"
+				texte="Le montant, l’échéance et la qualité des parties se lisent. La contestation, non."
+				capacites={QUALIFICATION}
 			>
-				<Cadre contentClassName="p-cladd-2xs">
+				<CadreNuit contentClassName="p-cladd-2xs">
 					<Question />
-				</Cadre>
+				</CadreNuit>
 			</Etape>
 
 			<Etape
 				inverse
 				numero="04"
-				titre="Votre décompte se refait à la main"
-				texte="Chaque euro réclamé montre d'où il vient : quel principal, quel taux, sur combien de jours. C'est ce que fera le débiteur qui le conteste."
+				titre="Un décompte qui se refait à la main"
+				texte="Chaque euro montre d’où il vient. C’est ce que fera le débiteur qui le conteste."
+				capacites={DECOMPTE_CAPACITES}
 			>
-				<Cadre contentClassName="p-cladd-2xs">
+				<CadreNuit contentClassName="p-cladd-2xs">
 					<Decompte decompte={DECOMPTE} />
-				</Cadre>
+				</CadreNuit>
 			</Etape>
 		</SectionMarketing>
 	);
@@ -268,37 +322,54 @@ function Etape({
 	numero,
 	titre,
 	texte,
-	apres,
+	capacites,
 	inverse = false,
 	children
 }: {
 	numero: string;
 	titre: string;
 	texte: string;
-	/** Ce qui suit le paragraphe, dans la colonne de texte. */
-	apres?: ReactNode;
+	/** Ce que cette étape SAIT FAIRE, en verbes. Voir l'en-tête de `FORMATS`. */
+	capacites: readonly string[];
 	/** L'écran passe à gauche et le texte à droite, au-delà de `lg`. */
 	inverse?: boolean;
 	children: ReactNode;
 }) {
 	return (
-		<div className="apparait grid items-start gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
-			<div className={cn('flex flex-col gap-cladd-2xs lg:col-span-5', inverse && 'lg:order-2')}>
+		// ⚠️ `ScenePointeur` ENVELOPPE L'ÉTAPE ENTIÈRE, et pas seulement l'écran :
+		// la scène doit mesurer le curseur sur toute la rangée, sinon la dérive ne
+		// commence qu'au moment où le pointeur entre dans le cadre, ce qui se lit
+		// comme un saut. Seul l'écran bouge ; le texte reste immobile, parce que
+		// ce qui se lit ne bouge pas.
+		<ScenePointeur className="apparait grid items-start gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
+			<div className={cn('flex max-w-2xl flex-col gap-cladd-2xs lg:col-span-5 lg:max-w-none',
+					inverse && 'lg:order-2')}>
 				<div className="flex flex-col gap-cladd-3xs">
-					<span className="cladd-color-brand w-fit rounded-full bg-cladd-primary/8 px-cladd-3xs py-1 text-cladd-2xs font-bold tracking-widest text-cladd-primary tabular-nums">
+					{/* LE NUMÉRO EST NU, en petites capitales, dans le ton le plus sourd.
+					    Il portait une pastille d'accent : sur une page qui n'a plus que
+					    deux valeurs, quatre pastilles bleues étaient les quatre premières
+					    choses que l'œil trouvait, avant les quatre titres. */}
+					<span className="text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase tabular-nums">
 						Étape {numero}
 					</span>
-					<h3 className="font-serif text-titre-section leading-tight font-medium tracking-tight">
+					<h3 className="font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
 						{titre}
 					</h3>
-					<p className="max-w-prose text-cladd-md leading-relaxed font-normal text-plume-douce">
+					<p className="max-w-prose text-cladd-md leading-relaxed font-normal text-craie-douce">
 						{texte}
 					</p>
 				</div>
-				{apres}
+				<Capacites items={capacites} />
 			</div>
-			<div className={cn('min-w-0 lg:col-span-7', inverse && 'lg:order-1')}>{children}</div>
-		</div>
+			<div
+				className={cn(
+					'suit-pointeur-loin min-w-0 lg:col-span-7',
+					inverse && 'lg:order-1'
+				)}
+			>
+				{children}
+			</div>
+		</ScenePointeur>
 	);
 }
 
