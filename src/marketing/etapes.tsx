@@ -282,7 +282,7 @@ function Etape({
 	children: ReactNode;
 }) {
 	return (
-		<div className="grid items-start gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
+		<div className="apparait grid items-start gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
 			<div className={cn('flex flex-col gap-cladd-2xs lg:col-span-5', inverse && 'lg:order-2')}>
 				<div className="flex flex-col gap-cladd-3xs">
 					<span className="cladd-color-brand w-fit rounded-full bg-cladd-primary/8 px-cladd-3xs py-1 text-cladd-2xs font-bold tracking-widest text-cladd-primary tabular-nums">

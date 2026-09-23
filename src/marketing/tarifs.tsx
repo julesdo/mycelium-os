@@ -141,7 +141,7 @@ export function Tarifs() {
 			    doublé, et les deux boutons d'appel ne tombent plus sur la même ligne.
 			    Deux pixels de décalage sur les seuls boutons de la section : personne
 			    ne sait dire pourquoi, tout le monde le voit. */}
-			<div className="grid gap-cladd-2xs md:grid-cols-2">
+			<div className="cascade grid gap-cladd-2xs md:grid-cols-2">
 				{OFFRES.map((o) => (
 					<div
 						key={o.titre}

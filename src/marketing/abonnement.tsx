@@ -76,7 +76,7 @@ export function Abonnement() {
 			  plus. C'est la seule pastille tolérée ici, parce qu'elle porte une
 			  information — le rang — et pas un effet.
 			*/}
-			<div className="cladd-color-brand grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
+			<div className="cascade cladd-color-brand grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
 				{RAISONS.map((r, i) => (
 					<div key={r.titre} className="flex flex-col gap-cladd-3xs">
 						<span className="flex size-8 items-center justify-center rounded-full bg-cladd-primary/10 text-cladd-2xs font-bold text-cladd-primary tabular-nums">

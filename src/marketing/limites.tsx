@@ -75,7 +75,7 @@ export function Limites() {
 				{LIMITES.map((l) => (
 					<div
 						key={l.titre}
-						className="grid items-start gap-cladd-3xs py-cladd-xs md:grid-cols-12 md:gap-cladd-2xs"
+						className="apparait grid items-start gap-cladd-3xs py-cladd-xs md:grid-cols-12 md:gap-cladd-2xs"
 					>
 						<h3 className="flex items-start gap-cladd-3xs font-serif text-intertitre leading-snug font-medium md:col-span-5">
 							<MinusIcon aria-hidden className="mt-2 size-4 shrink-0 text-plume-claire" />
