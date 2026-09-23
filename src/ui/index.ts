@@ -246,3 +246,4 @@ export {
 	MonogrammeConnexion,
 	type EtatConnexion
 } from './carte-connexion';
+export { Brume } from './brume';

@@ -1662,3 +1662,116 @@ select:not(:disabled),
 		animation: none;
 	}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LES TROIS COUCHES DE LA BRUME. Voir `src/ui/brume.tsx` pour le raisonnement.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ DES DÉGRADÉS RADIAUX, PAS UN FLOU. `filter: blur()` sur une surface de la
+ * taille de l'écran est l'un des rares effets qui coûte encore cher en 2026 :
+ * le navigateur peint la couche, puis la reflouté à chaque image. Un dégradé
+ * radial est calculé une fois et composé sur le GPU — c'est littéralement le
+ * même coût qu'un aplat.
+ *
+ * ⚠️ ET LES RAYONS DÉPASSENT LE CADRE, TOUJOURS. C'est ce qui empêche la
+ * lecture « halo » : on ne doit jamais pouvoir situer le centre ni la fin. Les
+ * pourcentages sont supérieurs à 100 % pour cette seule raison.
+ */
+.brume-loin {
+	background-image: radial-gradient(
+		118% 82% at 50% 8%,
+		color-mix(in oklch, var(--color-azur-lavis) 46%, transparent) 0%,
+		color-mix(in oklch, var(--color-azur-clair) 24%, transparent) 42%,
+		transparent 78%
+	);
+}
+
+.brume-milieu {
+	background-image: radial-gradient(
+		92% 64% at 22% 34%,
+		color-mix(in oklch, var(--color-azur-lavis) 34%, transparent) 0%,
+		transparent 72%
+	);
+}
+
+/* La couche proche tire vers le crème et non vers l'azur : c'est elle qui
+ * rejoint le papier en bas de section, et qui fait que la brume « se pose »
+ * au lieu de s'arrêter net. */
+.brume-pres {
+	background-image: radial-gradient(
+		104% 58% at 76% 96%,
+		color-mix(in oklch, var(--color-papier) 82%, transparent) 0%,
+		color-mix(in oklch, var(--color-papier-chaud) 40%, transparent) 46%,
+		transparent 80%
+	);
+}
+
+/* LA PARALLAXE. Trois vitesses, et c'est tout ce qui fait la profondeur.
+ *
+ * ⚠️ `scroll()` ET NON `view()`. On veut que les couches suivent l'avancement
+ * de la PAGE, pas leur propre entrée dans la fenêtre : une brume qui se
+ * réinitialiserait à chaque section se verrait immédiatement.
+ *
+ * ⚠️ L'ÉTAT DE REPOS EST DANS `from` ICI, ET C'EST LA SEULE EXCEPTION DU
+ * FICHIER. La raison tient à ce que la règle protège : ailleurs, elle garantit
+ * qu'un contenu reste LISIBLE sans chronologie. La brume ne porte aucun
+ * contenu — elle est décorative et `aria-hidden`. Sans chronologie, elle reste
+ * à sa position de départ, qui est sa position juste. */
+@supports (animation-timeline: scroll()) {
+	.brume-loin,
+	.brume-milieu,
+	.brume-pres {
+		animation-timing-function: linear;
+		animation-fill-mode: both;
+		animation-duration: auto;
+		animation-timeline: scroll();
+	}
+	.brume-loin {
+		animation-name: brume-derive-lente;
+	}
+	.brume-milieu {
+		animation-name: brume-derive-moyenne;
+	}
+	.brume-pres {
+		animation-name: brume-derive-rapide;
+	}
+}
+
+@keyframes brume-derive-lente {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(0, -4%, 0) scale(1.06);
+	}
+}
+
+@keyframes brume-derive-moyenne {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(3%, -11%, 0);
+	}
+}
+
+@keyframes brume-derive-rapide {
+	from {
+		transform: none;
+	}
+	to {
+		transform: translate3d(-4%, -22%, 0) scale(1.12);
+	}
+}
+
+/* ⚠️ MOUVEMENT RÉDUIT : LA BRUME RESTE, SON MOUVEMENT PART. Elle n'est pas une
+ * animation, c'est une texture — la retirer entièrement changerait la mise en
+ * page pour les personnes qui demandent moins de mouvement, ce qui est
+ * exactement ce qu'on ne veut pas. */
+@media (prefers-reduced-motion: reduce) {
+	.brume-loin,
+	.brume-milieu,
+	.brume-pres {
+		animation: none;
+	}
+}

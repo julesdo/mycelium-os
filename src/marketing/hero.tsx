@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
-import { Tablette } from '../ui';
+import { Brume, Tablette } from '../ui';
 import { ApercuApplication } from './apercu';
 
 /**
@@ -53,6 +53,11 @@ export function Hero() {
 		// fenêtre et passe DERRIÈRE la barre, qui est en `fixed` et ne réserve
 		// aucune place. Voir `--spacing-barre-publique`.
 		<header className="relative isolate w-full overflow-hidden border-b border-trait bg-linear-to-b from-azur-lavis via-azur-clair to-papier pt-barre-publique text-plume">
+			{/* ⚠️ LA BRUME EST POSÉE ICI, SOUS TOUT LE RESTE. `-z-10` la place entre
+			    l'aplat de l'en-tête et son contenu, par le même montage que le calque
+			    de dessins — c'est `isolate` sur l'en-tête qui rend ce z-index négatif
+			    possible sans que la couche disparaisse derrière le dégradé. */}
+			<Brume className="-z-10" intensite="pleine" />
 			{/* `isolate` sur l'en-tête, et le calque de dessins à `-z-10` : c'est le
 			    seul montage qui glisse une couche ENTRE le dégradé de l'en-tête et son
 			    contenu. Sans contexte d'empilement, un z-index négatif passerait
