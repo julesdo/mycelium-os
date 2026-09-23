@@ -249,5 +249,18 @@ export {
 /* ── LA NUIT (la page publique refaite en noir et blanc) ───────────────────── */
 export { AtmosphereNuit, LueurProduit } from './nuit';
 export { Nebuleuse, BrouillardAvant } from './nebuleuse';
+export {
+	PictoEcheance,
+	PictoInterets,
+	PictoFacture,
+	PictoPrescription,
+	PictoLecture,
+	PictoRegistre,
+	PictoDecompte,
+	PictoQuestion,
+	PictoRemise,
+	PictoRapprochement,
+	PictoInterdit
+} from './pictogrammes';
 export { ScenePointeur } from './scene-pointeur';
 export { BoutonAffiche, LienAffiche, type FondBouton } from './bouton-affiche';

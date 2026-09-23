@@ -150,8 +150,8 @@ export function CadreNuit({
  * simplifiés » ni « une gestion optimisée ».
  *
  * La raison tient debout : un dirigeant qui lit « surveillance intelligente »
- * ne sait pas ce qu'il achète, et il a raison de ne pas le croire. « Relever le
- * BODACC à quatre heures du matin » se vérifie.
+ * ne sait pas ce qu'il achète, et il a raison de ne pas le croire. « Relever
+ * chaque nuit au BODACC les procédures ouvertes sur vos débiteurs » se vérifie.
  *
  * Le filet tireté sépare, comme partout ailleurs sur la page. Jamais une puce
  * ronde : elle ajouterait un objet décoratif par ligne, et il y en a douze.

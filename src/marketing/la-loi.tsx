@@ -3,7 +3,7 @@ import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parame
 import { tauxPenaliteParDefaut } from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
 import { eurosCentimesCourts, tauxLisible } from '../ui/format';
-import { ScenePointeur } from '../ui';
+import { ScenePointeur, PictoInterets, PictoFacture, PictoPrescription } from '../ui';
 import { ARTICLES_DU_SOCLE } from './articles';
 
 /**
@@ -189,6 +189,16 @@ function seuilsDeLaLoi(aujourdHui: string) {
  * sous mouvement réduit : sur un téléphone, la section est rigoureusement
  * immobile et c'est sa forme juste.
  */
+/**
+ * LE SIGNE DE CHAQUE SEUIL, dans l ordre où la loi les énonce.
+ *
+ * ⚠️ IL NE REPETE PAS LE CHIFFRE, IL DIT SA NATURE. L escalier dit que les
+ * intérêts se calculent PAR PERIODES ; l étiquette dit que l indemnité est due
+ * PAR FACTURE et jamais par client ; l anneau ouvert dit qu un droit se FERME.
+ * Trois confusions fréquentes, réglées avant la première ligne de texte.
+ */
+const SIGNES = [PictoInterets, PictoFacture, PictoPrescription];
+
 export function LaLoi() {
 	const aujourdHui = new Date().toISOString().slice(0, 10);
 	const seuils = seuilsDeLaLoi(aujourdHui);
@@ -242,6 +252,7 @@ export function LaLoi() {
 										: 'flex flex-col gap-cladd-3xs md:pl-cladd-2xs'
 							}
 						>
+							{(() => { const Signe = SIGNES[rang] ?? PictoInterets; return <Signe className="size-7 text-craie-claire" />; })()}
 							{/* SEUL LE CHIFFRE DÉRIVE. Voir l'en-tête : ce qui se lit ne
 							    bouge pas, ce qu'on regarde peut bouger. */}
 							<dt

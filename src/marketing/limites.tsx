@@ -1,4 +1,4 @@
-import { MinusIcon } from 'lucide-react';
+import { PictoInterdit } from '../ui';
 import { SectionMarketing } from './section';
 
 /**
@@ -105,7 +105,7 @@ export function Limites() {
 						className="apparait grid items-start gap-cladd-3xs py-cladd-xs md:grid-cols-12 md:gap-cladd-2xs"
 					>
 						<h3 className="flex items-start gap-cladd-3xs text-intertitre leading-snug font-semibold md:col-span-5">
-							<MinusIcon aria-hidden className="mt-2 size-4 shrink-0 text-craie-sourde" />
+							<PictoInterdit className="mt-0.5 size-6 text-craie-sourde" />
 							{l.titre}
 						</h3>
 						<p className="text-cladd-md leading-relaxed font-normal text-craie-douce md:col-span-7">

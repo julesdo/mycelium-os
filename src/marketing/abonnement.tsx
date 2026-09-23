@@ -1,3 +1,4 @@
+import { PictoEcheance, PictoInterets, PictoRegistre } from '../ui';
 import { SectionMarketing } from './section';
 
 /**
@@ -53,6 +54,9 @@ const RAISONS = [
 	}
 ] as const;
 
+/** Le signe de chaque raison : la date, les intérêts qui courent, le registre. */
+const SIGNES = [PictoEcheance, PictoInterets, PictoRegistre];
+
 export function Abonnement() {
 	return (
 		<SectionMarketing id="abonnement">
@@ -102,7 +106,8 @@ export function Abonnement() {
 						key={r.titre}
 						className="flex flex-col gap-cladd-3xs border-t border-dashed border-filet-nuit pt-cladd-3xs"
 					>
-						<span className="text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase tabular-nums">
+						<span className="flex items-center gap-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase tabular-nums">
+							{(() => { const Signe = SIGNES[i] ?? PictoEcheance; return <Signe className="size-7 text-craie-douce" />; })()}
 							{`0${i + 1}`}
 						</span>
 						<span className="text-intertitre leading-snug font-semibold">{r.titre}</span>

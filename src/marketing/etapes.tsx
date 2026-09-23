@@ -7,6 +7,10 @@ import {
 	FluxEvenements,
 	Decompte,
 	EmptyState,
+	PictoLecture,
+	PictoRegistre,
+	PictoQuestion,
+	PictoDecompte,
 	type EvenementAffiche,
 	type DecompteAffiche
 } from '../ui';
@@ -41,14 +45,14 @@ import { SectionMarketing, CadreNuit, Capacites } from './section';
  * other tools ». Jamais « des paiements simplifiés ».
  *
  * La raison tient debout : un dirigeant qui lit « surveillance intelligente »
- * ne sait pas ce qu'il achète, et il a raison de ne pas le croire. « Relever le
- * BODACC à quatre heures du matin » se vérifie.
+ * ne sait pas ce qu'il achète, et il a raison de ne pas le croire. « Relever
+ * chaque nuit au BODACC les procédures ouvertes sur vos débiteurs » se vérifie.
  *
  * ⚠️ ET CHAQUE LIGNE CORRESPOND À DU CODE QUI TOURNE. Cette liste a été écrite
  * en relisant les modules, pas de mémoire :
  *
  *   FEC, CSV, dépôt, Factur-X  →  `import/exportComptable.ts:68`, `FormatExport`
- *   BODACC à 4 h, briefing à 6 h  →  `convex/crons.ts`, `radarSolvabilite`
+ *   BODACC la nuit, briefing au matin  →  `convex/crons.ts`, `radarSolvabilite`
  *   prescription par secteur  →  `pays/france/prescription.ts`
  *   rapprochement des règlements  →  `lettrage.ts`
  *   certain / liquide / exigible  →  `qualification.ts`
@@ -71,8 +75,26 @@ const FORMATS = [
 	'Écarter les doublons et les écritures hors périmètre, en les comptant et en disant lesquelles.'
 ] as const;
 
+/**
+ * ⚠️ AUCUNE HEURE D'HORLOGE ICI, ET C'EST UNE CORRECTION.
+ *
+ * La première version disait « relever le BODACC à quatre heures du matin, et
+ * vous le dire à six ». Les deux nombres sont justes dans `crons.ts` — et ils y
+ * sont en **UTC**. Pour un lecteur français, le radar tourne donc à six heures
+ * l'été et à cinq l'hiver, et le point du matin part à huit puis à sept. La
+ * phrase était fausse pour tout le monde sauf pour un serveur.
+ *
+ * C'est le piège des `hourUTC` : ils se lisent comme une heure locale, ils
+ * s'écrivent comme une heure locale dans une page commerciale, et rien ne le
+ * signale. Une page qui vend l'exactitude au centime ne peut pas se tromper
+ * d'heure sur la seule chose qu'elle raconte du travail de nuit.
+ *
+ * Ce qui reste vrai quelle que soit la saison : c'est LA NUIT, et le briefing
+ * est là AVANT la première heure de bureau. C'est d'ailleurs ce que le
+ * commentaire de `crons.ts` dit lui-même de son intention.
+ */
 const SURVEILLANCE = [
-	'Relever le BODACC à quatre heures du matin sur vos débiteurs, et vous le dire à six.',
+	'Relever chaque nuit au BODACC les procédures collectives ouvertes sur vos débiteurs, et vous le dire avant votre première heure de bureau.',
 	'Suivre la prescription facture par facture, au régime du secteur de chacune.',
 	'Rapprocher les règlements des factures qu’ils soldent, pour ne pas relancer un client qui a payé.'
 ] as const;
@@ -234,6 +256,7 @@ export function Etapes() {
 
 			<Etape
 				numero="01"
+				picto={<PictoLecture />}
 				titre="Vos factures sont déjà écrites"
 				texte="On les lit là où elles sont, plutôt que de vous les faire ressaisir."
 				capacites={FORMATS}
@@ -256,6 +279,7 @@ export function Etapes() {
 			<Etape
 				inverse
 				numero="02"
+				picto={<PictoRegistre />}
 				titre="Le logiciel regarde toutes les nuits"
 				texte="Ce qui arrive à échéance, ce qui devient mûr, ce qui approche de la prescription."
 				capacites={SURVEILLANCE}
@@ -295,6 +319,7 @@ export function Etapes() {
 
 			<Etape
 				numero="03"
+				picto={<PictoQuestion />}
 				titre="Vous ne tranchez que l’indécidable"
 				texte="Le montant, l’échéance et la qualité des parties se lisent. La contestation, non."
 				capacites={QUALIFICATION}
@@ -307,6 +332,7 @@ export function Etapes() {
 			<Etape
 				inverse
 				numero="04"
+				picto={<PictoDecompte />}
 				titre="Un décompte qui se refait à la main"
 				texte="Chaque euro montre d’où il vient. C’est ce que fera le débiteur qui le conteste."
 				capacites={DECOMPTE_CAPACITES}
@@ -365,6 +391,7 @@ function BilanImport() {
  * aucun sens sur une seule colonne.
  */
 function Etape({
+	picto,
 	numero,
 	titre,
 	texte,
@@ -372,6 +399,8 @@ function Etape({
 	inverse = false,
 	children
 }: {
+	/** Le signe du domaine qui ouvre l étape. Voir `ui/pictogrammes.tsx`. */
+	picto: ReactNode;
 	numero: string;
 	titre: string;
 	texte: string;
@@ -395,7 +424,8 @@ function Etape({
 					    Il portait une pastille d'accent : sur une page qui n'a plus que
 					    deux valeurs, quatre pastilles bleues étaient les quatre premières
 					    choses que l'œil trouvait, avant les quatre titres. */}
-					<span className="text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase tabular-nums">
+					<span className="flex items-center gap-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase tabular-nums">
+						<span className="text-craie-douce">{picto}</span>
 						Étape {numero}
 					</span>
 					<h3 className="font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">

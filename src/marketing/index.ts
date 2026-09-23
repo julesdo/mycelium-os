@@ -17,6 +17,7 @@ export { Hero } from './hero';
 export { LaLoi } from './la-loi';
 export { Etapes } from './etapes';
 export { Bandeau } from './bandeau';
+export { Veilleur } from './veilleur';
 export { Preuve } from './preuve';
 export { Limites } from './limites';
 export { Abonnement } from './abonnement';

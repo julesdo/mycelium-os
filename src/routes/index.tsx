@@ -5,6 +5,7 @@ import {
 	LaLoi,
 	Etapes,
 	Bandeau,
+	Veilleur,
 	Preuve,
 	Limites,
 	Abonnement,
@@ -129,6 +130,16 @@ function Accueil() {
 			<Preuve />
 			<Etapes />
 			<Bandeau />
+			{/*
+			  ⚠️ LE VEILLEUR VIENT JUSTE APRÈS LE MANIFESTE, ET L'ORDRE EST L'ARGUMENT.
+			  La section précédente pose le problème en une phrase — « une facture
+			  impayée ne fait aucun bruit le jour où elle devient irrécouvrable ».
+			  Celle-ci est la seule réponse que ce produit puisse donner honnêtement :
+			  non pas « nous récupérons votre argent », mais « ce jour-là, quelque
+			  chose regardait ». Les séparer casserait la seule articulation de la
+			  page qui tienne en deux écrans.
+			*/}
+			<Veilleur />
 			<Limites />
 			<Abonnement />
 			<Tarifs />

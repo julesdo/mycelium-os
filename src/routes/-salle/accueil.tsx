@@ -1,4 +1,12 @@
-import { Hero, LaLoi, Preuve, Bandeau, Abonnement, Pied } from '../../marketing';
+import {
+	Hero,
+	LaLoi,
+	Preuve,
+	Bandeau,
+	Veilleur as VeilleurSection,
+	Abonnement,
+	Pied
+} from '../../marketing';
 import { formeDemo, type EcranDuProduit } from './demo';
 
 /**
@@ -36,6 +44,7 @@ const SECTIONS = {
 	'le décompte décomposé': () => <Preuve />,
 	'la respiration et son ciel': () => <Bandeau />,
 	'les raisons de l’abonnement': () => <Abonnement />,
+	'le veilleur et ses signes': () => <VeilleurSection />,
 	'le pied et ses liens légaux': () => <Pied />
 } as const;
 
