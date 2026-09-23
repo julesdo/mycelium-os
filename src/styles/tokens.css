@@ -440,6 +440,19 @@
 	 * Un chiffre coupé de son unité n'est plus un chiffre. Le corps descend donc
 	 * là où « 12,40 % » tient d'un bloc aux quatre largeurs de référence. */
 	--text-seuil-colonne: clamp(44px, 6.6vw, 104px);
+
+	/* ⚠️ LE MONTANT D UNE FRISE, ET C EST ENCORE LA MEME CONTRAINTE, MESUREE.
+	 *
+	 * `--text-seuil-colonne` a ete cale sur des valeurs COURTES — « 40 € »,
+	 * « 5 ans », « 12,40 % ». Les montants de la frise en font onze caracteres :
+	 * « 13 977,60 € ». Dans une colonne de quatre, a ce corps-la, ils debordent et
+	 * se CHEVAUCHENT. Vu a l ecran le 24 septembre 2026 : trois montants
+	 * superposes, illisibles, sur la section qui vend l exactitude au centime.
+	 *
+	 * C est la deuxieme fois que le meme reflexe casse : un corps choisi sur
+	 * l exemple le plus court de la liste. Ici la borne haute est calculee pour le
+	 * plus LONG, aux quatre largeurs de reference. */
+	--text-montant-frise: clamp(26px, 3vw, 44px);
 	--text-titre-section: clamp(30px, 4.4vw, 56px);
 	--text-intertitre: clamp(19px, 1.5vw, 22px);
 	--text-chapeau: clamp(18px, 1.5vw, 21px);

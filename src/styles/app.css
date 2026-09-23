@@ -2130,6 +2130,147 @@ select:not(:disabled),
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+ * LA FRISE — le rail qui se remplit au défilement.
+ *
+ * C'est la seule animation de la page qui RACONTE quelque chose : le trait
+ * avance de la date d'émission vers la date de prescription, au rythme où l'on
+ * descend. Partout ailleurs, le mouvement accompagne ; ici il est le sujet,
+ * parce que le sujet EST le temps qui passe.
+ *
+ * ⚠️ `scaleX` ET PAS `width`. Une largeur animée relayout la ligne à chaque
+ * image ; une transformation est composée sur le GPU. `transform-origin: left`
+ * fait partir le trait de la première station et non du centre.
+ *
+ * ⚠️ L'ÉTAT DE REPOS EST DANS `to`, DONC LE RAIL PLEIN. Sans chronologie —
+ * Firefox aujourd'hui — la frise est complète et lisible : on perd le
+ * mouvement, jamais l'information. Un rail écrit à l'envers rendrait une frise
+ * VIDE chez eux, c'est-à-dire quatre dates reliées par rien.
+ *
+ * `cover 55%` et non `cover 100%` : le trait atteint la dernière station bien
+ * avant que la section sorte de l'écran. Une animation qui se termine au moment
+ * où l'on quitte le bloc est une animation que personne ne voit finir.
+ * ─────────────────────────────────────────────────────────────────────────── */
+/* ⚠️ LE SUJET DE LA CHRONOLOGIE EST LE BLOC, PAS LE TRAIT — ET C'EST UN PIÈGE
+ * QUI NE SE VOIT PAS.
+ *
+ * `animation-timeline: view()` prend pour sujet L'ÉLÉMENT QUI PORTE LA RÈGLE.
+ * Posée sur le rail, elle mesurait donc la traversée d'un élément d'UN PIXEL de
+ * haut : sa plage `entry` fait un pixel, elle est parcourue en une image, et
+ * l'animation est terminée avant que le bloc soit à l'écran.
+ *
+ * Mesuré au navigateur le 24 septembre 2026 : la chronologie tournait bien
+ * (`ViewTimeline`, `currentTime` à 71 %), et la progression de l'animation
+ * valait 1 à TOUTES les positions de défilement. Le rail était donc peint
+ * plein en permanence — c'est-à-dire exactement son état de repos, donc rien ne
+ * semblait cassé. Le même genre de panne muette que la brume accrochée à un
+ * `overflow-hidden`.
+ *
+ * Le remède est une chronologie NOMMÉE : le conteneur la déclare, le rail la
+ * consomme. Le sujet redevient le bloc entier, dont la traversée dure ce qu'il
+ * faut.
+ */
+/* ⚠️ ET LA CHRONOLOGIE NOMMÉE N'A PAS MARCHÉ NON PLUS. Deuxième tentative :
+ * `view-timeline-name: --frise` sur le bloc, `animation-timeline: --frise` sur
+ * le rail. Tout se résolvait correctement — les deux propriétés calculées
+ * portaient bien `--frise`, la règle était dans la feuille servie — et la
+ * chronologie restait INACTIVE, `currentTime` à `null` à toutes les positions.
+ *
+ * Ce qui a tranché : construite à la main en JavaScript sur le même sujet,
+ * `new ViewTimeline({ subject: bloc })` rendait 43 %. Le sujet était donc bon,
+ * et c'était la résolution du NOM qui échouait.
+ *
+ * ⚠️ LA SORTIE EST UNE PROPRIÉTÉ ENREGISTRÉE, ET ELLE EST MEILLEURE QUE CE
+ * QU'ELLE REMPLACE. L'animation vit sur le BLOC — un élément haut, donc un
+ * sujet dont la traversée dure ce qu'il faut — et n'anime qu'un nombre. Les
+ * deux rails le consomment dans leur `transform`, parce qu'une propriété
+ * personnalisée HÉRITE, ce qu'une transformation ne fait pas.
+ *
+ * Trois gains au passage : une seule chronologie pour les deux orientations,
+ * plus aucun nom à résoudre, et `initial-value: 1` qui rend le rail PLEIN là
+ * où rien n'anime. C'est la règle du fichier — l'état de repos est celui qu'on
+ * veut voir sans chronologie.
+ */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ET LE REMPLISSAGE N'A PAS PU ÊTRE VÉRIFIÉ DANS LE NAVIGATEUR INTÉGRÉ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Mesuré le 24 septembre 2026, après rechargement complet : TOUTES les
+ * chronologies `view()` de la page sont inactives dans ce navigateur-ci. Pas
+ * seulement celle de la frise — `.apparait` aussi, qui est livrée depuis des
+ * jours. `timeline.currentTime` y vaut `null` à toutes les positions de
+ * défilement, y compris sujet centré dans la fenêtre.
+ *
+ * Ce qui disculpe le CSS : construite à la main sur LE MÊME sujet, au même
+ * instant, `new ViewTimeline({ subject, axis: 'block' })` rend 49,97 %. Même
+ * sujet, même `source` (HTML), même axe — l'objet créé par le CSS porte les
+ * bonnes références et ne s'active jamais. Les chronologies `scroll()` de la
+ * page, elles, fonctionnent et ont été mesurées (barre qui se contracte, ciel
+ * qui dérive).
+ *
+ * Conséquence à assumer : ce remplissage est écrit selon la spécification et
+ * n'a PAS été vu bouger. Ce qui a été vérifié, c'est l'état sans chronologie —
+ * `initial-value: 1`, donc rail plein et frise entièrement lisible. C'est
+ * précisément pour ça que la règle du fichier veut le repos dans l'état
+ * complet : un effet qu'on ne peut pas confirmer ne doit jamais être ce qui
+ * rend l'information visible.
+ */
+@property --frise-avance {
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 1;
+}
+
+.frise {
+	animation-name: frise-progresse;
+	animation-fill-mode: both;
+	animation-duration: auto;
+	animation-timing-function: linear;
+}
+
+@supports (animation-timeline: view()) {
+	.frise {
+		animation-timeline: view();
+		/* Sur la plage de COUVERTURE, et non d'entrée : le trait se remplit
+		   pendant que le bloc traverse l'écran, et il a fini bien avant d'en
+		   sortir. Une frise qui se complète au moment où elle disparaît ne se
+		   voit jamais se compléter. */
+		animation-range: cover 20% cover 65%;
+	}
+}
+
+@keyframes frise-progresse {
+	from {
+		--frise-avance: 0;
+	}
+	to {
+		--frise-avance: 1;
+	}
+}
+
+.frise-rail {
+	transform-origin: left center;
+	transform: scaleX(var(--frise-avance));
+}
+
+/* Sur téléphone la frise bascule à la verticale, et le rail avec elle. Il
+ * consomme le MÊME nombre : c'est le même bloc qui traverse, et il n'y a donc
+ * qu'une chronologie pour les deux orientations. */
+.frise-rail-vertical {
+	transform-origin: center top;
+	transform: scaleY(var(--frise-avance));
+}
+
+/* ⚠️ LE MOUVEMENT RÉDUIT COUPE L'ANIMATION, DONC LE NOMBRE RETOMBE À SA VALEUR
+ * INITIALE — un. Les deux rails sont pleins, la frise reste entièrement
+ * lisible, et on ne perd que le fait de la voir se remplir. C'est la règle du
+ * fichier : l'état de repos est l'état complet. */
+@media (prefers-reduced-motion: reduce) {
+	.frise {
+		animation: none;
+	}
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
  * LE BROUILLARD QUI PASSE DEVANT.
  *
  * ⚠️ C'EST LA SEULE COUCHE DU FICHIER QUI SOIT AU-DESSUS DU CONTENU, ET C'EST

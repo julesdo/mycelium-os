@@ -420,14 +420,39 @@ function Etape({
 			<div className={cn('flex max-w-2xl flex-col gap-cladd-2xs lg:col-span-5 lg:max-w-none',
 					inverse && 'lg:order-2')}>
 				<div className="flex flex-col gap-cladd-3xs">
-					{/* LE NUMÉRO EST NU, en petites capitales, dans le ton le plus sourd.
-					    Il portait une pastille d'accent : sur une page qui n'a plus que
-					    deux valeurs, quatre pastilles bleues étaient les quatre premières
-					    choses que l'œil trouvait, avant les quatre titres. */}
-					<span className="flex items-center gap-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase tabular-nums">
-						<span className="text-craie-douce">{picto}</span>
-						Étape {numero}
-					</span>
+					{/*
+					  ⚠️ LE NUMÉRO PASSE DE DIX PIXELS À CENT-VINGT-HUIT, ET C'EST LA
+					  RUPTURE DE RYTHME QUE LA PAGE RÉCLAMAIT.
+
+					  Il a d'abord été une pastille d'accent — quatre ronds bleus, les
+					  quatre premières choses que l'œil trouvait, avant les quatre titres
+					  qu'ils numérotent. Puis une étiquette de dix pixels en capitales,
+					  juste et invisible.
+
+					  Relevé sur Trawelt le 24 septembre 2026 : leurs numéros d'étape
+					  occupent le tiers de la colonne, en aplat, et c'est à peu près tout
+					  ce qui distingue leur page d'une liste. Un chiffre énorme ne se lit
+					  pas, il se REPÈRE — c'est ce qui permet de retrouver où l'on en est
+					  après avoir regardé un écran de démonstration.
+
+					  ⚠️ ET IL EST DANS LE TON LE PLUS SOURD, PAS EN BLANC. À cent-vingt-
+					  huit pixels et en craie pleine, il écraserait le titre qu'il
+					  annonce. Sourd, il donne l'échelle sans prendre la parole : une
+					  masse, pas un mot. C'est la seule fois de la page où
+					  `--color-craie-sourde` porte quelque chose de grand, et c'est
+					  permis parce que le rang est aussi écrit en toutes lettres pour
+					  qui ne le voit pas.
+					*/}
+					<div className="flex items-center gap-cladd-2xs">
+						<span
+							aria-hidden
+							className="font-affiche text-affiche leading-none font-semibold tracking-affiche text-craie-sourde tabular-nums"
+						>
+							{numero}
+						</span>
+						<span className="text-craie-claire">{picto}</span>
+						<span className="sr-only">Étape {numero}</span>
+					</div>
 					<h3 className="font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
 						{titre}
 					</h3>

@@ -15,6 +15,7 @@ export { SectionMarketing, CadreNuit, Capacites } from './section';
 export { Navbar } from './navbar';
 export { Hero } from './hero';
 export { LaLoi } from './la-loi';
+export { Frise } from './frise';
 export { Etapes } from './etapes';
 export { Bandeau } from './bandeau';
 export { Veilleur } from './veilleur';

@@ -3,6 +3,7 @@ import {
 	Navbar,
 	Hero,
 	LaLoi,
+	Frise,
 	Etapes,
 	Bandeau,
 	Veilleur,
@@ -107,6 +108,14 @@ function Accueil() {
 			<Navbar />
 			<Hero />
 			<LaLoi />
+			{/*
+			  ⚠️ LA FRISE VIENT JUSTE APRÈS LA LOI, ET C'EST SA DÉMONSTRATION. La
+			  section précédente énonce trois chiffres — un taux, une indemnité, un
+			  délai. Celle-ci les fait TOURNER sur une facture : le montant grandit
+			  des deux premiers, puis le troisième le ramène à zéro. Séparer l'énoncé
+			  de sa démonstration obligerait à répéter les trois chiffres.
+			*/}
+			<Frise />
 			{/*
 			  ⚠️ LA PREUVE EST REMONTÉE DE LA 6e À LA 4e PLACE, ET ELLE PORTE LE
 			  MEILLEUR ARGUMENT DU PRODUIT.
