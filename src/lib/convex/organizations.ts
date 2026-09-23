@@ -188,22 +188,50 @@ export const switchOrganization = authedMutation({
 	}
 });
 
+/**
+ * LES RÉGLAGES DE L'ÉTABLISSEMENT.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ UN ARGUMENT ABSENT NE VEUT PAS DIRE « EFFACE »
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Ce patch écrivait `siret: args.siret` et `facturesParAn: args.facturesParAn`
+ * sans condition. Or son SEUL appelant, `FormulaireEtablissement`, n'envoie
+ * jamais le premier, et omet le second dès que le champ est vide ou ne porte
+ * pas un entier positif. Deux conséquences, en production :
+ *
+ *   · le SIRET était effacé à CHAQUE enregistrement de la page ;
+ *   · vider « factures émises par an » faisait retomber `palierDeTaille()` sur
+ *     le palier le plus bas, donc `etatAbonnement` renvoyait les tarifs du
+ *     palier S. **Le prix affiché baissait d'un palier tout seul**, par un geste
+ *     ordinaire — exactement ce que `monEtablissement.ts` déclare inacceptable :
+ *     « un abonnement qui change de palier tout seul est une modification de
+ *     prix que personne n'a demandée ».
+ *
+ * ⚠️ MAIS L'EFFACEMENT RESTE POSSIBLE, ET IL SE DEMANDE. Un gérant doit pouvoir
+ * revenir à « je ne sais pas » : `null` efface, `undefined` laisse en place. Un
+ * effacement demandé est un geste ; un effacement subi est un défaut.
+ */
 export const updateOrganization = authedMutation({
 	args: {
 		name: v.string(),
-		siret: v.optional(v.string()),
-		facturesParAn: v.optional(v.number())
+		siret: v.optional(v.union(v.string(), v.null())),
+		facturesParAn: v.optional(v.union(v.number(), v.null()))
 	},
-	handler: async (ctx, args) => {
+	returns: v.null(),
+	handler: async (ctx, args): Promise<null> => {
 		if (!args.name.trim()) throw new ConvexError('Le nom est obligatoire');
 
 		const orgId = await requireAdminDeLOrgCourante(ctx, ctx.user._id);
 
 		await ctx.db.patch(orgId, {
 			name: args.name.trim(),
-			siret: args.siret,
-			facturesParAn: args.facturesParAn
+			...(args.siret === undefined ? {} : { siret: args.siret ?? undefined }),
+			...(args.facturesParAn === undefined
+				? {}
+				: { facturesParAn: args.facturesParAn ?? undefined })
 		});
+		return null;
 	}
 });
 

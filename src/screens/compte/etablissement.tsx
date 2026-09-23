@@ -84,7 +84,13 @@ export function FormulaireEtablissement({
 	initial: { nom: string; factures: string };
 	/** La mesure, ou `null` tant qu'elle se lit : on n'affiche jamais un cadran à zéro en attendant. */
 	mesure: VolumeMesure | null;
-	onEnregistrer: (args: { name: string; facturesParAn?: number }) => Promise<unknown>;
+	/**
+	 * ⚠️ `null` EFFACE, `undefined` LAISSE EN PLACE. Le champ vidé exprès doit
+	 * pouvoir remettre le volume à « je ne sais pas » ; il ne doit pas pouvoir
+	 * l'effacer par accident, ce qui faisait retomber le palier tarifaire affiché
+	 * sur le plus bas sans que personne ne l'ait demandé.
+	 */
+	onEnregistrer: (args: { name: string; facturesParAn?: number | null }) => Promise<unknown>;
 }) {
 	const [nom, setNom] = useState(initial.nom);
 	const [factures, setFactures] = useState(initial.factures);
@@ -95,10 +101,13 @@ export function FormulaireEtablissement({
 		if (!nom.trim()) return;
 		setEnCours(true);
 		try {
-			const nb = Number.parseInt(factures, 10);
+			const saisi = factures.trim();
+			const nb = Number.parseInt(saisi, 10);
 			await onEnregistrer({
 				name: nom.trim(),
-				...(Number.isFinite(nb) && nb > 0 ? { facturesParAn: nb } : {})
+				// Un champ VIDE est une déclaration : « je ne sais pas ». Une saisie
+				// illisible n'en est pas une, et ne doit rien écraser.
+				facturesParAn: saisi === '' ? null : Number.isFinite(nb) && nb > 0 ? nb : undefined
 			});
 			setEnregistre(true);
 			window.setTimeout(() => setEnregistre(false), 2000);

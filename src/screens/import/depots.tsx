@@ -21,7 +21,7 @@ import { delaiLisible, minutesDepuis, useMinute, MINUTES_SANS_NOUVELLE } from '.
 export type ModeDepot = 'EXPORT_COMPTABLE' | 'FACTURE_DEPOSEE';
 
 /** Tout ce que la zone accepte, les deux chemins confondus. */
-export const FORMATS_ACCEPTES = '.csv,.tsv,.txt,.pdf,image/*';
+export const FORMATS_ACCEPTES = '.csv,.tsv,.txt,.xml,.pdf,image/*';
 
 /** Les extensions qu'un lecteur de document reconnaît, quand le type MIME manque. */
 const EXTENSIONS_DOCUMENT = /\.(pdf|png|jpe?g|heic|heif|webp|tiff?|gif|bmp)$/;
@@ -53,6 +53,19 @@ export function modeDuFichier(fichier: {
 }): ModeDepot {
 	const type = fichier.type.toLowerCase();
 	if (type === 'application/pdf' || type.startsWith('image/')) return 'FACTURE_DEPOSEE';
+	/*
+	  ⚠️ LE XML PASSE AVANT LA BRANCHE `text/`, ET C'EST TOUT LE PIÈGE. Un
+	  `text/xml` y tombait, donc une facture électronique partait au parseur
+	  d'export comptable, qui répondait « Format d'export non reconnu. Attendu :
+	  un FEC (colonnes CompteNum, PieceRef, Debit, Credit…) ». Le gérant concluait
+	  que le produit ne lit pas les factures, alors qu'il ne lisait pas CE
+	  format-là : un échec qui ment sur sa cause.
+
+	  Les trois formes possibles y passent : `text/xml`, `application/xml`, et le
+	  type MIME absent — fréquent sur un fichier glissé depuis un dossier.
+	*/
+	if (type === 'application/xml' || type === 'text/xml' || /\.xml$/.test(fichier.name.toLowerCase()))
+		return 'FACTURE_DEPOSEE';
 	if (type.startsWith('text/')) return 'EXPORT_COMPTABLE';
 	// Un FEC glissé depuis un dossier arrive souvent sans type MIME : le nom tranche.
 	return EXTENSIONS_DOCUMENT.test(fichier.name.toLowerCase())

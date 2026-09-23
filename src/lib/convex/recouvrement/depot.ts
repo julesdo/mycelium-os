@@ -14,7 +14,7 @@ import {
 	documentVenteSchema,
 	resultatDepuisDocument
 } from '../../verticales/recouvrement/import/factureVente';
-import { lireFacturXDuPdf } from '../../socle/documents/facturx';
+import { lireFacturXDuPdf, lireFacturXDuXml } from '../../socle/documents/facturx';
 import { resultatDepuisFacturX } from '../../verticales/recouvrement/import/factureFacturX';
 import { extraireAvecClaude, type ContenuDocument } from '../../socle/documents/extracteur';
 import { pluriel } from '../../socle/francais';
@@ -129,6 +129,40 @@ async function lireFactureDeposee(
 		*/
 		const champs = await lireFacturXDuPdf(new Uint8Array(octets));
 		if (champs !== null) return resultatDepuisFacturX(champs, nomFichier, sirenDuCreancier);
+	}
+
+	if (
+		mimeType === 'application/xml' ||
+		mimeType === 'text/xml' ||
+		nomFichier.toLowerCase().endsWith('.xml')
+	) {
+		/*
+		  LA FACTURE ÉLECTRONIQUE EN XML NU — celle que l'obligation d'émission de
+		  septembre 2027 va multiplier. Le lecteur est déjà écrit et testé : il
+		  suffit de lui passer le texte.
+
+		  ⚠️ UN XML QUI N'EST PAS DU CII NE PART PAS AU MODÈLE. `lireFacturXDuXml`
+		  ne connaît que les chemins `rsm:CrossIndustryInvoice/…` ; un UBL rend
+		  `null`. L'envoyer au modèle ferait facturer la lecture d'un document
+		  structuré qu'on SAIT ne pas savoir lire, et son total entrerait dans un
+		  décompte opposable. On refuse en le NOMMANT — c'est la règle du repli
+		  silencieux, prise à l'endroit où elle mord.
+		*/
+		const champs = lireFacturXDuXml(decoderTexte(octets));
+		if (champs !== null) return resultatDepuisFacturX(champs, nomFichier, sirenDuCreancier);
+		return {
+			format: 'FACTUR_X',
+			factures: [],
+			reglements: [],
+			ignorees: [
+				{
+					texte: nomFichier,
+					raison:
+						'Ce fichier XML n’est pas une facture au format CII (Factur-X). Le format UBL n’est pas encore lu.'
+				}
+			],
+			horsPerimetre: 0
+		};
 	}
 
 	const contenu: ContenuDocument =
