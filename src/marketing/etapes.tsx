@@ -83,6 +83,29 @@ const QUALIFICATION = [
 	'Chiffrer ce qu’un acte laisserait de côté, avant qu’il soit produit.'
 ] as const;
 
+/**
+ * CE QUE LE LOGICIEL SUPPOSE, ET CE QU'IL NE VOIT PAS.
+ *
+ * ⚠️ LES DEUX SONT RENSEIGNÉS, ET CE N'EST PAS UN DÉTAIL DE MAQUETTE. La règle
+ * du produit est explicite : « Ce que le logiciel ne voit pas s'affiche aussi.
+ * Un utilisateur qui croit sa prescription surveillée ne la surveille pas
+ * lui-même. » Le mode compact les replie en une ligne qui les DÉNOMBRE — deux
+ * tableaux vides afficheraient donc « 0 hypothèse, 0 angle mort ».
+ *
+ * ⚠️ ET LES DEUX NE SE CONFONDENT PAS. Une hypothèse est un calcul FAIT sur une
+ * donnée absente, et elle se LÈVE en renseignant la donnée. Un angle mort est
+ * un calcul qui n'est PAS fait du tout, et rien à l'écran ne le lèvera. Les
+ * fondre serait un mensonge par rangement.
+ */
+const HYPOTHESES_DEMO = [
+	'Secteur indéterminé pour 3 débiteurs : le délai de prescription le plus court est retenu.'
+] as const;
+
+const ANGLES_MORTS_DEMO = [
+	'Les factures antérieures à votre premier import ne sont pas surveillées.',
+	'Un règlement encaissé hors banque connectée n’est pas rapproché.'
+] as const;
+
 const DECOMPTE_CAPACITES = [
 	'Décomposer les intérêts période par période : quel principal, quel taux, sur combien de jours.',
 	'Figer un décompte à sa date, définitivement. Rejouer en produit un nouveau, daté.',
@@ -237,12 +260,35 @@ export function Etapes() {
 				texte="Ce qui arrive à échéance, ce qui devient mûr, ce qui approche de la prescription."
 				capacites={SURVEILLANCE}
 			>
+				{/*
+				  ⚠️ `limite` N'EST PAS UN RÉGLAGE D'ENCOMBREMENT, C'EST LE MODE QUE
+				  L'ACCUEIL EMPLOIE RÉELLEMENT. Sans elle, `FluxEvenements` rend son
+				  mode DÉTAIL : quatre rangées pleines, leurs explications en entier, et
+				  les deux blocs d'avertissement dépliés. C'est la disposition de
+				  `/app/revelation`, pas celle de l'accueil.
+
+				  Mesuré au navigateur à 375 px : ce cadre faisait 2 536 px de haut
+				  contre 408, 567 et 627 pour les trois autres. Une démonstration quatre
+				  fois plus haute que ses voisines n'est pas seulement longue, elle
+				  montre un écran que le gérant ne verra pas là où on le lui promet.
+				  C'est le même défaut que celui corrigé sur le téléphone du premier
+				  écran, au même endroit et pour la même raison.
+
+				  ⚠️ ET LES DEUX TABLEAUX NE SONT PLUS VIDES. En mode compact, les
+				  avertissements se replient en une ligne qui les DÉNOMBRE : passer des
+				  tableaux vides afficherait « 0 hypothèse, 0 angle mort », c'est-à-dire
+				  un logiciel qui ne suppose rien et ne rate rien. C'est exactement la
+				  promesse que ce produit refuse de faire, mise en image sur la page la
+				  plus lue du site.
+				*/}
 				<CadreNuit contentClassName="p-cladd-2xs">
 					<FluxEvenements
 						evenements={EVENEMENTS}
 						montantIdentifie={948_990n}
-						hypotheses={[]}
-						anglesMorts={[]}
+						hypotheses={HYPOTHESES_DEMO}
+						anglesMorts={ANGLES_MORTS_DEMO}
+						limite={2}
+						versDetail="/app/revelation"
 					/>
 				</CadreNuit>
 			</Etape>

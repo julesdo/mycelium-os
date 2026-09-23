@@ -101,42 +101,6 @@ select:not(:disabled),
 	cursor: pointer;
 }
 
-/* Le fond de la section d'autorité de la page publique : l'encre, et son grain.
- *
- * Un aplat bleu nuit de mille pixels de haut est un trou dans une page de
- * papier. Ces hachures à 135°, posées à trois pour cent d'opacité, lui donnent
- * la texture d'un papier de sécurité — celui d'un titre, d'un acte, d'un
- * diplôme — sans qu'on les remarque consciemment.
- *
- * POURQUOI UNE CLASSE ORDINAIRE, ET PAS UN JETON NI UNE `@utility`. Deux
- * tentatives, deux échecs mesurés au navigateur :
- *
- * 1. `--background-image-*` n'est pas un espace de noms de Tailwind v4. Le
- *    jeton ne génère aucune classe, et l'utilitaire retombe silencieusement sur
- *    `background-image: none` — aucune erreur, aucun avertissement, une section
- *    d'encre devenue transparente avec du texte blanc dessus.
- * 2. `@utility encre-tramee` déclarée dans `tokens.css`, importée ici, n'a rien
- *    produit non plus : la règle n'apparaissait dans aucune feuille de style de
- *    la page, redémarrage du serveur compris.
- *
- * Et il faut de toute façon poser DEUX propriétés — une couleur de fond et une
- * image. Les écrire en deux classes ne marcherait pas davantage :
- * `tailwind-merge`, qui nettoie nos `className`, range `bg-encre-nuit` et la
- * trame dans la même famille `bg-*` et ne garde que la dernière.
- *
- * Le nom ne commence pas par `bg-`, précisément pour qu'aucun fusionneur ne la
- * prenne pour un fond et ne la supprime. */
-.encre-tramee {
-	background-color: var(--color-encre-nuit);
-	background-image: repeating-linear-gradient(
-		135deg,
-		oklch(1 0 0 / 0.03) 0px,
-		oklch(1 0 0 / 0.03) 1px,
-		transparent 1px,
-		transparent 10px
-	);
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
  * LE VERRE.
  * ═══════════════════════════════════════════════════════════════════════════
@@ -144,8 +108,9 @@ select:not(:disabled),
  * Le bouton rond translucide de l'écran d'accueil, la barre basse du
  * téléphone, la capsule de navigation. Trois porteurs, un seul effet.
  *
- * POURQUOI UNE CLASSE ORDINAIRE, comme `.encre-tramee` juste au-dessus, et
- * pour EXACTEMENT les deux mêmes raisons déjà mesurées au navigateur :
+ * POURQUOI UNE CLASSE ORDINAIRE, ET NI UN JETON NI UNE `@utility`. Les deux
+ * raisons ont été mesurées au navigateur, sur une classe jumelle qui a depuis
+ * été retirée avec le fond d'encre de la page publique :
  *
  * 1. L'effet demande quatre propriétés qui n'ont de sens qu'ensemble — un
  *    fond translucide, un flou d'arrière-plan, un liseré de lumière en haut,
@@ -1163,20 +1128,6 @@ select:not(:disabled),
  * Les deux jetons portent la largeur ET la hauteur parce que le rapport change
  * avec eux : 1,43 en paysage pour la tablette, 0,46 en portrait pour le
  * téléphone. Les écrire séparément laisserait dériver l'un des deux. */
-.tablette-ecran {
-	--toile-l: 390;
-	--toile-h: 844;
-	container-type: inline-size;
-	aspect-ratio: var(--toile-l) / var(--toile-h);
-}
-
-@media (min-width: 640px) {
-	.tablette-ecran {
-		--toile-l: 1180;
-		--toile-h: 824;
-	}
-}
-
 /* LE CADRE DE TÉLÉPHONE. Même machinerie, une seule toile : 390 × 844, à toutes
  * les largeurs et sans requête média. C'est la fenêtre d'un iPhone 14/15 en
  * points CSS, donc la largeur exacte à laquelle le produit rend sa disposition
@@ -1716,119 +1667,6 @@ select:not(:disabled),
 	.apparait,
 	.approche,
 	.cascade > * {
-		animation: none;
-	}
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * LES TROIS COUCHES DE LA BRUME. Voir `src/ui/brume.tsx` pour le raisonnement.
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * ⚠️ DES DÉGRADÉS RADIAUX, PAS UN FLOU. `filter: blur()` sur une surface de la
- * taille de l'écran est l'un des rares effets qui coûte encore cher en 2026 :
- * le navigateur peint la couche, puis la reflouté à chaque image. Un dégradé
- * radial est calculé une fois et composé sur le GPU — c'est littéralement le
- * même coût qu'un aplat.
- *
- * ⚠️ ET LES RAYONS DÉPASSENT LE CADRE, TOUJOURS. C'est ce qui empêche la
- * lecture « halo » : on ne doit jamais pouvoir situer le centre ni la fin. Les
- * pourcentages sont supérieurs à 100 % pour cette seule raison.
- */
-.brume-loin {
-	background-image: radial-gradient(
-		118% 82% at 50% 8%,
-		color-mix(in oklch, var(--color-azur-lavis) 46%, transparent) 0%,
-		color-mix(in oklch, var(--color-azur-clair) 24%, transparent) 42%,
-		transparent 78%
-	);
-}
-
-.brume-milieu {
-	background-image: radial-gradient(
-		92% 64% at 22% 34%,
-		color-mix(in oklch, var(--color-azur-lavis) 34%, transparent) 0%,
-		transparent 72%
-	);
-}
-
-/* La couche proche tire vers le crème et non vers l'azur : c'est elle qui
- * rejoint le papier en bas de section, et qui fait que la brume « se pose »
- * au lieu de s'arrêter net. */
-.brume-pres {
-	background-image: radial-gradient(
-		104% 58% at 76% 96%,
-		color-mix(in oklch, var(--color-papier) 82%, transparent) 0%,
-		color-mix(in oklch, var(--color-papier-chaud) 40%, transparent) 46%,
-		transparent 80%
-	);
-}
-
-/* LA PARALLAXE. Trois vitesses, et c'est tout ce qui fait la profondeur.
- *
- * ⚠️ `scroll()` ET NON `view()`. On veut que les couches suivent l'avancement
- * de la PAGE, pas leur propre entrée dans la fenêtre : une brume qui se
- * réinitialiserait à chaque section se verrait immédiatement.
- *
- * ⚠️ L'ÉTAT DE REPOS EST DANS `from` ICI, ET C'EST LA SEULE EXCEPTION DU
- * FICHIER. La raison tient à ce que la règle protège : ailleurs, elle garantit
- * qu'un contenu reste LISIBLE sans chronologie. La brume ne porte aucun
- * contenu — elle est décorative et `aria-hidden`. Sans chronologie, elle reste
- * à sa position de départ, qui est sa position juste. */
-@supports (animation-timeline: scroll()) {
-	.brume-loin,
-	.brume-milieu,
-	.brume-pres {
-		animation-timing-function: linear;
-		animation-fill-mode: both;
-		animation-duration: auto;
-		animation-timeline: scroll();
-	}
-	.brume-loin {
-		animation-name: brume-derive-lente;
-	}
-	.brume-milieu {
-		animation-name: brume-derive-moyenne;
-	}
-	.brume-pres {
-		animation-name: brume-derive-rapide;
-	}
-}
-
-@keyframes brume-derive-lente {
-	from {
-		transform: none;
-	}
-	to {
-		transform: translate3d(0, -4%, 0) scale(1.06);
-	}
-}
-
-@keyframes brume-derive-moyenne {
-	from {
-		transform: none;
-	}
-	to {
-		transform: translate3d(3%, -11%, 0);
-	}
-}
-
-@keyframes brume-derive-rapide {
-	from {
-		transform: none;
-	}
-	to {
-		transform: translate3d(-4%, -22%, 0) scale(1.12);
-	}
-}
-
-/* ⚠️ MOUVEMENT RÉDUIT : LA BRUME RESTE, SON MOUVEMENT PART. Elle n'est pas une
- * animation, c'est une texture — la retirer entièrement changerait la mise en
- * page pour les personnes qui demandent moins de mouvement, ce qui est
- * exactement ce qu'on ne veut pas. */
-@media (prefers-reduced-motion: reduce) {
-	.brume-loin,
-	.brume-milieu,
-	.brume-pres {
 		animation: none;
 	}
 }

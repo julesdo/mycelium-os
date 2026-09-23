@@ -302,26 +302,7 @@
 	 * aliments, pas dans un lavis. */
 	--color-papier: oklch(0.995 0.004 85);
 	--color-papier-chaud: oklch(0.972 0.012 82);
-	--color-encre-nuit: oklch(0.235 0.022 258);
 
-	/* LE LAVIS D'AZUR — le dégradé du héros, et lui seul.
-	 *
-	 * Le reste de la page est un imprimé : des aplats francs, séparés par des
-	 * filets. Un dégradé y serait un ornement. En haut de page, il fait autre
-	 * chose — il donne une PROFONDEUR au premier écran, ce qui est exactement ce
-	 * qui manquait quand l'accroche était posée sur du blanc.
-	 *
-	 * Il descend du lavis vers le papier, sans rupture visible : la tablette se
-	 * détache sur le bleu, et la première section du texte commence sur le crème
-	 * habituel. Aucun autre bloc de la page n'a le droit d'en porter un.
-	 *
-	 * Bleu, bien sûr, et pas vert : c'est la teinte de l'accent de marque, la
-	 * seule qui puisse s'étaler sans voler leur sens aux trois couleurs de seuil.
-	 * Chroma volontairement bas — au-delà, l'azur devient un fond de logiciel de
-	 * gestion des années 2000, et les jauges vertes et rouges qui se posent
-	 * dessus commencent à vibrer. */
-	--color-azur-lavis: oklch(0.895 0.052 251);
-	--color-azur-clair: oklch(0.955 0.026 251);
 
 	/* LA COQUE DE LA TABLETTE. Deux tons : le corps, et l'arête que la lumière
 	 * accroche. Un cadre d'un seul aplat lit « rectangle noir » ; c'est ce
@@ -342,8 +323,6 @@
 	--color-plume: oklch(0.235 0.022 258);
 	--color-plume-douce: oklch(0.468 0.018 258);
 	--color-plume-claire: oklch(0.62 0.015 258);
-	--color-plume-inversee: oklch(0.972 0.005 250);
-	--color-plume-inversee-douce: oklch(0.8 0.014 255);
 
 	/* ═══════════════════════════════════════════════════════════════════════
 	 * LA NUIT — le noir et blanc de la page publique.

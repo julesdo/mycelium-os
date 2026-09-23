@@ -34,7 +34,7 @@ const SECTIONS = {
 	'héros et téléphone': () => <Hero />,
 	'les chiffres de la loi': () => <LaLoi />,
 	'le décompte décomposé': () => <Preuve />,
-	'le bandeau en encre': () => <Bandeau />,
+	'la respiration et son ciel': () => <Bandeau />,
 	'les raisons de l’abonnement': () => <Abonnement />,
 	'le pied et ses liens légaux': () => <Pied />
 } as const;

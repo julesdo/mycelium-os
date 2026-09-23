@@ -12,7 +12,6 @@
 
 export { cn } from './cn';
 export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
-export { Tablette } from './tablette';
 export { Telephone } from './telephone';
 export { Page, PageHeader, PageBody, PageHero } from './page';
 export {
@@ -247,7 +246,6 @@ export {
 	MonogrammeConnexion,
 	type EtatConnexion
 } from './carte-connexion';
-export { Brume } from './brume';
 /* ── LA NUIT (la page publique refaite en noir et blanc) ───────────────────── */
 export { AtmosphereNuit, LueurProduit } from './nuit';
 export { Nebuleuse, BrouillardAvant } from './nebuleuse';
