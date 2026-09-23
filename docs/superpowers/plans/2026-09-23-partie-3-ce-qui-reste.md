@@ -188,7 +188,22 @@ Relever et renseigner : `L441-9`, `L441-10`, `L441-11`, `L441-16` du code de com
 
 ---
 
-# LOT C — Publier les pages légales
+# LOT C — Réécrire, puis publier les pages légales
+
+> ⚠️ **CE LOT A CHANGÉ DE TAILLE LE 23/09/2026, APRÈS LECTURE DES DOCUMENTS.**
+> Il ne s'agit pas de publier quatre textes écrits. **Trois d'entre eux décrivent
+> le produit précédent** : le barème EGalim, la plateforme « ma cantine », le
+> « nombre de couverts par jour », et un accord de sous-traitance où « une cantine
+> dépose ses factures ». La politique de confidentialité cite même un chemin de
+> code qui n'existe plus (`src/lib/convex/egalim/tables.ts`).
+>
+> Les publier tels quels serait **pire que de n'avoir aucune page** : une politique
+> de confidentialité qui décrit un traitement que le logiciel ne fait pas est un
+> défaut de conformité, pas une page de confiance. Seules les mentions légales
+> (`01-`) sont exemptes de toute trace du produit retiré.
+>
+> Le lot devient donc : établir les faits, réécrire trois documents sur ces faits,
+> puis publier les quatre.
 
 **Le blocage écrit dans le code n'existe plus.** `src/marketing/pied.tsx:8-12` dit : « Les conditions générales et la politique de confidentialité sont rédigées — voir `docs/juridique/` — mais elles attendent la relecture d'un juriste et n'ont pas encore de route publique. »
 
@@ -200,11 +215,54 @@ Ce que ça débloque, dans l'ordre d'importance :
 2. Un prérequis de toute vérification Google ou Microsoft, si la question revenait un jour.
 3. Les quatre documents sont **écrits** (`docs/juridique/`).
 
-- [ ] **Step 1: Quatre routes publiques**, rendues depuis les fichiers Markdown, dans le système visuel de la page d'accueil (« papier, encre, filet »), pas celui de l'application.
-- [ ] **Step 2: Le pied de page les lie**, et son commentaire est réécrit pour dire ce qui a changé — surtout ne pas le supprimer.
-- [ ] **Step 3:** `destinations-existent.test.ts` et `aucun-ecran-orphelin.test.ts` doivent passer ; ces routes entrent dans `ATTEINTS_AUTREMENT` avec leur raison, ou reçoivent un lien littéral depuis le pied.
+## Ce que l'inventaire du 23/09 a établi
 
-⚠️ **Relire les quatre documents avant publication.** Ils ont été écrits avant le pivot vers le recouvrement ; `docs/agri/mentions-legales-a-rediger.md` existe encore. Un document publié qui décrit un produit qu'on ne vend plus est pire que pas de document.
+Cinq inventaires, chacun suivi d'un sceptique qui a rouvert les fichiers. **59 faits réfutés sur 180.** Ce qui suit est ce qui a survécu.
+
+### Cinq questions que Jules seul peut trancher, et la première bloque tout
+
+1. **LA FORME JURIDIQUE DE L'ÉDITEUR N'EST PAS ÉTABLIE, ET C'EST BLOQUANT.** `LEGAL_CONFIG` (`src/lib/config/legal.ts:47-58`) porte `companyName: 'Jules-Camille Doré'`, `legalForm: 'Entrepreneur Individuel'`, `rcs: 'Non inscrit au RCS'`, nom commercial « Thumbbb Agency », SIREN 879 853 026 — relevé au registre le 27 août 2026. Jules dit « Letikette SASU ». **Ce sont deux personnes juridiques différentes**, et une SASU est nécessairement immatriculée au RCS. Tant que ce n'est pas tranché, aucun des quatre documents ne peut être publié : les mentions légales nomment qui répond, les conditions générales nomment qui contracte.
+
+2. **Aucun numéro de téléphone n'existe dans le produit.** L'article 1-1, I de la LCEN l'exige, pour l'éditeur comme pour l'hébergeur. Ni champ, ni valeur nulle part.
+
+3. **Aucun directeur de la publication n'est désigné.** L'article 1-1, I exige le nom d'une personne physique. Le projet de document le signalait déjà, et ça n'a pas bougé en treize mois.
+
+4. **La région du déploiement Convex de production (`insightful-crow-128`) est inconnue.** Convex n'offre que `aws-us-east-1` ou `aws-eu-west-1`, la région se fixe à la création et **ne se change pas**. Rien dans le dépôt ne la porte : elle se relève au tableau de bord. Elle décide si l'on écrit « hébergé dans l'Union » ou « transfert encadré » — on ne peut pas écrire l'un tant qu'on ignore lequel est vrai.
+
+5. **La région Resend n'est fixée nulle part.** Le `eu-west-1` qui circule dans les documents vient d'un relevé DNS consigné dans un plan de travail, pas du produit. À reprendre au tableau de bord.
+
+### Le transfert qu'il faut nommer, et la nuance qui le sauve
+
+**Le contenu intégral de chaque document importé est transmis à Anthropic, aux États-Unis.** Trois points d'appel, nommés : `depot.ts:175` (extraction d'un document déposé), `preuve.ts:84` (lecture d'une pièce justificative), `conversation.ts:272` (le compagnon). Le PDF part **entier**, encodé en base64, sans rognage ni rastérisation. Le transfert hors Union est donc acquis, **indépendamment de la région Convex**.
+
+⚠️ **Et la nuance est un argument, pas une excuse** : depuis le lot B de la partie 2, un PDF portant un Factur-X — ou une facture électronique en XML — est lu **entièrement en local**, et rien ne sort. Le document doit dire les deux : le cas où le fichier part, et le cas où il ne part pas.
+
+Restent inconnus, et ils viennent des contrats, pas d'une page d'aide : l'accord de traitement avec Anthropic, l'exclusion contractuelle de l'entraînement, et les durées de conservation chez chaque sous-traitant.
+
+### Ce que le BODACC voit, et c'est deux traitements, pas un
+
+- **Le radar nocturne n'expose rien.** Il télécharge le delta national de la veille (`radar.ts:210-213`) et rapproche **localement** par SIREN. Aucune donnée client ne part. C'est un fait favorable et opposable, et il faut l'écrire : l'objection spontanée est l'inverse.
+- **La recherche à la demande, elle, envoie la dénomination du débiteur en clair** dans l'URL d'une requête à un tiers (`debiteurs.ts:346-383`). Deux traitements, deux phrases.
+
+### Cinq trous du produit qu'un document honnête ne peut pas contourner
+
+1. **Aucune durée de conservation n'existe pour le contenu client.** Ni constante, ni cron. Factures, créances, décomptes, débiteurs : ils vivent tant que l'établissement vit. La **seule** durée écrite dans le code est celle du journal d'envois d'e-mails, à 90 jours.
+2. **Rien ne se déclenche à la résiliation.** Le chaînon entre `subscription.canceled` (`paddle.ts:201`) et une purge n'existe pas. Le document ne peut donc promettre ni effacement au terme du contrat, ni fenêtre de récupération.
+3. **Aucun effacement unitaire d'un débiteur.** Une demande d'effacement visant une personne ne peut recevoir aujourd'hui d'autre réponse technique que la suppression de l'établissement entier. C'est le trou le plus difficile à écrire honnêtement.
+4. **Ni les sessions expirées, ni les invitations expirées ne sont purgées.** Les sessions portent une **adresse IP et un agent utilisateur** — le seul endroit du produit où une IP est stockée, mentionné nulle part. Les invitations portent l'adresse d'un tiers, et les documents annoncent 90 jours que **rien n'implémente**.
+5. **`annuaireAvocats` est une base nominative de personnes physiques, mutualisée, hors de toute purge** (`tables.ts:838-852` ; zéro occurrence dans `rgpd.ts`). Elle contredit la phrase de `CLAUDE.md` « rien n'est mutualisé entre clients […] la purge RGPD est donc totale, sans exception à justifier ». Le test-barrière ne la voit pas, et c'est correct : il ne couvre que les tables portant un `organizationId`. Il faut une catégorie de personnes concernées de plus, et l'information de l'article 14 du RGPD.
+
+**Et un cookie existe bien** : celui de session d'authentification, strictement nécessaire, exempté de consentement au titre de l'article 82 de la loi Informatique et Libertés. Aucun cookie de mesure, de publicité ni de réseau social. À décrire, pas à taire.
+
+### L'ordre des tâches, une fois les cinq réponses obtenues
+
+- [ ] **C1 — Corriger `LEGAL_CONFIG`** sur l'identité tranchée, et lui ajouter les champs manquants : téléphone, directeur de publication, capital social le cas échéant.
+- [ ] **C2 — Réécrire la politique de confidentialité** sur l'inventaire ci-dessus. C'est le document le plus faux et le plus important : il doit décrire les **débiteurs** comme catégorie de personnes concernées, ce qu'aucune version n'a jamais fait.
+- [ ] **C3 — Réécrire les conditions générales** sur le service réel, et l'accord de sous-traitance sur les sous-traitants réels.
+- [ ] **C4 — Quatre routes publiques**, dans le système visuel de la page d'accueil (« papier, encre, filet »), pas celui de l'application.
+- [ ] **C5 — Le pied de page les lie**, et son commentaire est réécrit pour dire ce qui a changé — surtout ne pas le supprimer. `destinations-existent.test.ts` et `aucun-ecran-orphelin.test.ts` doivent passer.
+
+⚠️ **Ne rien promettre qu'on ne fasse.** Les trous ci-dessus se décrivent tels qu'ils sont, ou se comblent avant publication. Un document qui annonce une durée de conservation que rien n'applique est le même défaut que « déclaré, jamais alimenté » — avec, cette fois, une conséquence opposable.
 
 ---
 
@@ -270,11 +328,23 @@ Compté dans le code : pour envoyer une relance **avec le décompte arrêté en 
 
 ---
 
-## Deux questions pour Jules, qu'aucun agent ne peut trancher
+## Les deux questions, répondues par Jules le 23/09/2026
 
-1. **Qui émet la facture d'abonnement à un client français ?** Paddle est vendeur de droit (*merchant of record*) et n'est pas établi en France. Or l'article 289 bis, I ne s'applique que « lorsque l'émetteur de la facture et son destinataire sont des assujettis établis en France ». Selon la réponse, la facturation électronique obligatoire **nous vise ou ne nous vise pas** pour nos propres factures. Et indépendamment : par quelle plateforme agréée recevons-nous nos factures fournisseurs depuis le 1er septembre 2026 ?
+**1. Qonto est une plateforme agréée.** Ce qui change : nous avons **déjà** un connecteur OAuth en production vers une plateforme agréée. La question « faut-il construire un connecteur plateforme » ne se pose donc plus en ces termes — elle devient : *que nous rend Qonto en tant que plateforme agréée que nous ne lisons pas encore ?*
 
-2. **Qonto est-il, ou s'adosse-t-il à, une plateforme agréée ?** Si oui, la question « faut-il construire un connecteur plateforme » est déjà à moitié répondue par un connecteur qui tourne en production, et les inconnues qui bloquent ce chantier se posent d'abord à Qonto — où l'on peut y répondre en une requête.
+Trois choses à établir auprès de Qonto, dans cet ordre, et **aucune ne demande d'écrire une ligne** :
+
+- Le statut du **cycle de vie** d'une facture (déposée, reçue, refusée, encaissée) est la donnée que la réforme fait circuler entre plateformes. Qonto l'expose-t-il ? C'est ce qui remplacerait notre lecture du « réglé cumulé ».
+- La **date effective de paiement** restituée au fournisseur. C'est elle qui, seule, supprimerait la fenêtre pendant laquelle le produit prépare une relance à un client qui a déjà payé.
+- Les **factures reçues** (et pas seulement émises) : un client qui reçoit par Qonto reçoit du structuré. C'est une entrée que le lot D construit péniblement par e-mail.
+
+⚠️ **À vérifier avant d'en tirer quoi que ce soit** : sur quelle liste officielle, et sous quel statut d'immatriculation. Au 6 août 2026, les 158 opérateurs de la liste DGFiP étaient tous à un stade non définitif — ce qui n'empêche pas d'exploiter, mais qu'il faut savoir avant d'écrire « notre partenaire est agréé » quelque part.
+
+**2. C'est Letikette SASU qui émet, via Paddle comme vendeur de droit.** Donc, pour nos propres factures : émetteur établi en France, destinataire professionnel établi en France → la condition de l'article 289 bis, I est remplie, et **la facturation électronique obligatoire nous vise**, à l'émission au 1er septembre 2027.
+
+Et indépendamment du sens de la vente : **l'obligation de RÉCEPTION nous vise depuis le 1er septembre 2026**, comme toute entreprise française, pour nos propres factures fournisseurs. Il faut donc une plateforme agréée en réception pour Letikette elle-même. Ce n'est pas une tâche de développement, c'est une démarche d'entreprise — et elle est en retard de trois semaines.
+
+⚠️ Le montage Paddle mérite d'être tranché pour de bon : dans un modèle *merchant of record*, la question de savoir qui émet juridiquement la facture au client final n'est pas un détail de configuration. Cette section enregistre la réponse de Jules ; elle ne la vérifie pas.
 
 ## Et un risque, qui n'est pas une tâche
 
