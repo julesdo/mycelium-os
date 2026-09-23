@@ -13,7 +13,7 @@ import {
 	type ColonneOffre,
 	type PalierTaille
 } from '../lib/config/tarifs';
-import { SectionMarketing, TitreSection } from './section';
+import { SectionMarketing } from './section';
 
 /**
  * Le prix, en clair.
@@ -32,21 +32,28 @@ import { SectionMarketing, TitreSection } from './section';
  * entre les deux ne casserait rien, ne lèverait aucune exception, et se
  * découvrirait par un client qui aurait raison de râler.
  *
- * ⚠️ LE PRIX DÉPEND DE LA TAILLE, ET ON NE FAIT PAS DEVINER. Trois paliers, par
- * couverts servis chaque jour. Deux mauvaises façons de le présenter ont été
- * écartées :
+ * ⚠️ DEUX RESTES D'EGALIM DORMAIENT DANS CE COMMENTAIRE, ET ILS SONT CORRIGÉS
+ * ICI : « trois paliers par couverts servis chaque jour » et « on choisit sa
+ * taille de cantine ». C'est exactement le défaut relevé sur les trois raisons
+ * de l'abonnement, qui sont restées en EGalim pendant vingt jours EN LIGNE : on
+ * réécrit le cadre et on oublie ce qu'il contient. Un commentaire faux ne casse
+ * rien et fait écrire faux à la personne suivante.
  *
- *   « À PARTIR DE 190 € » ne dit rien à qui sert six cents couverts, et le
+ * ⚠️ LE PRIX DÉPEND DE LA TAILLE, ET ON NE FAIT PAS DEVINER. Trois paliers, par
+ * nombre de FACTURES ÉMISES PAR AN. Deux mauvaises façons de le présenter ont
+ * été écartées :
+ *
+ *   « À PARTIR DE X € » ne dit rien à qui émet trois mille factures, et le
  *   laisse soupçonner que le vrai prix se négocie. Sur cette cible-là, le
  *   soupçon suffit à fermer l'onglet.
  *
- *   LES NEUF MONTANTS D'UN COUP — trois paliers fois deux offres, plus les
+ *   LES SIX MONTANTS D'UN COUP — trois paliers fois deux offres, plus les
  *   bornes — donnent un tableau que personne ne lit. Le visiteur n'a besoin que
  *   de SA ligne.
  *
  * Un sélecteur de palier rend donc les deux prix qui le concernent, et rien
- * d'autre. C'est un réglage MÉTIER, pas un curseur : on choisit sa taille de
- * cantine, une donnée qu'un gérant connaît par cœur, jamais un paramètre à
+ * d'autre. C'est un réglage MÉTIER, pas un curseur : on choisit son volume de
+ * facturation, une donnée qu'un dirigeant connaît, jamais un paramètre à
  * régler.
  *
  * ICI, UNE SURFACE POSÉE EST LÉGITIME, et c'est presque le seul endroit de la
@@ -105,12 +112,33 @@ export function Tarifs() {
 	const [palier, setPalier] = useState<PalierTaille>('S');
 
 	return (
-		<SectionMarketing id="tarifs" fond="papier">
-			<TitreSection
-				sur="Tarifs"
-				titre="Ce que ça coûte"
-				chapeau="Le prix suit le nombre de factures que vous émettez chaque année. Le produit, lui, est le même pour tout le monde."
-			/>
+		<SectionMarketing id="tarifs" className="dark cladd-color-brand">
+			{/*
+			  ⚠️ `dark cladd-color-brand` EST POSÉ SUR LE CONTENEUR DE LA SECTION, et
+			  c'est la seule section qui en ait besoin. Elle emploie de VRAIS
+			  contrôles du kit — `Segmented`, `SurfaceCut`, `Button` — qui lisent le
+			  thème de leur ancêtre. Sans cette classe, un visiteur dont le système
+			  est en clair verrait un sélecteur de palier blanc posé au milieu du
+			  noir, et personne ne s'en apercevrait depuis un poste en sombre.
+
+			  Les autres sections n'en ont pas besoin : elles ne posent que du texte
+			  et des filets, qui prennent leur couleur de la page.
+			*/}
+			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
+				<span>Tarifs</span>
+				<span className="tabular-nums">{DUREE_ESSAI_JOURS} jours d’essai</span>
+			</div>
+
+			<div className="flex flex-col gap-cladd-2xs">
+				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance text-craie">
+					Ce que ça coûte,{' '}
+					<span className="text-craie-claire">et ce que ça couvre.</span>
+				</h2>
+				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
+					Le prix suit le nombre de factures que vous émettez chaque année. Le produit, lui, est
+					le même pour tout le monde.
+				</p>
+			</div>
 
 			{/*
 			  LE SÉLECTEUR EST UN VRAI `Segmented`, dans un `SurfaceCut`, comme la
@@ -121,7 +149,7 @@ export function Tarifs() {
 			  puisse pas cliquer sur celui où l'on est déjà.
 			*/}
 			<div className="flex flex-col gap-cladd-3xs">
-				<span className="text-cladd-sm font-semibold text-plume-douce">
+				<span className="text-cladd-sm font-semibold text-craie-douce">
 					Combien de factures émettez-vous par an ?
 				</span>
 				<SurfaceCut outline className="w-fit rounded-full" contentClassName="p-1">
@@ -146,19 +174,19 @@ export function Tarifs() {
 					<div
 						key={o.titre}
 						className={cn(
-							'cladd-color-brand flex flex-col gap-cladd-2xs rounded-panneau bg-papier p-cladd-2xs md:p-cladd-xs',
+							'flex flex-col gap-cladd-2xs rounded-panneau bg-nuit-relevee p-cladd-2xs md:p-cladd-xs',
 							// L'offre mise en avant se distingue par son CONTOUR, pas par une
 							// couleur de fond : un aplat bleu derrière une liste de sept
 							// lignes en rendrait cinq illisibles, et c'est le prix qu'on veut
 							// voir en premier, pas la carte.
 							o.avant
-								? 'border-2 border-cladd-primary shadow-pose-haute'
-								: 'border border-trait shadow-pose'
+								? 'border border-craie'
+								: 'border border-filet-nuit'
 						)}
 					>
 						<div className="flex flex-col gap-cladd-3xs">
 							<span className="flex flex-wrap items-center gap-cladd-3xs">
-								<span className="font-serif text-intertitre font-medium">{o.titre}</span>
+								<span className="text-intertitre font-semibold">{o.titre}</span>
 								{o.avant ? (
 									<span className="rounded-full bg-cladd-primary/10 px-cladd-3xs py-1 text-cladd-2xs font-semibold tracking-widest text-cladd-primary uppercase">
 										Recommandé
@@ -173,13 +201,13 @@ export function Tarifs() {
 							  taille sans qu'une phrase ait à l'expliquer.
 							*/}
 							<span className="flex flex-wrap items-baseline gap-cladd-3xs">
-								<span className="font-serif text-titre-section leading-none font-medium tabular-nums">
+								<span className="font-affiche text-titre-section leading-none font-semibold tracking-titre-section tabular-nums">
 									{euros(montant(palier, o.colonne))}
 								</span>
-								<span className="text-cladd-sm text-plume-claire">HT, {o.cadence}</span>
+								<span className="text-cladd-sm text-craie-claire">HT, {o.cadence}</span>
 							</span>
 
-							<p className="text-cladd-md leading-relaxed text-plume-douce">{o.argument}</p>
+							<p className="text-cladd-md leading-relaxed text-craie-douce">{o.argument}</p>
 						</div>
 
 						<ul className="flex flex-col gap-cladd-3xs">
@@ -193,7 +221,7 @@ export function Tarifs() {
 												'flex size-5 shrink-0 items-center justify-center rounded-full',
 												inclus
 													? 'bg-cladd-primary/12 text-cladd-primary'
-													: 'bg-papier-chaud text-plume-claire'
+													: 'bg-craie/10 text-craie-claire'
 											)}
 										>
 											{inclus ? <CheckIcon size={13} /> : <MinusIcon size={13} />}
@@ -206,7 +234,7 @@ export function Tarifs() {
 										<span
 											className={cn(
 												'text-cladd-sm leading-snug',
-												inclus ? 'text-plume' : 'text-plume-claire'
+												inclus ? 'text-craie' : 'text-craie-claire'
 											)}
 										>
 											{l.libelle}
@@ -240,11 +268,11 @@ export function Tarifs() {
 			  juridique de plus : le prélèvement portera « Paddle » sur le relevé,
 			  et un gérant qui ne reconnaît pas le nom appelle sa banque.
 			*/}
-			<p className="max-w-3xl text-cladd-md leading-relaxed text-plume-douce">
+			<p className="max-w-3xl text-cladd-md leading-relaxed text-craie-douce">
 				{DUREE_ESSAI_JOURS} jours d&rsquo;essai, sans carte bancaire : vous voyez vos créances et
 				leurs échéances avant de décider quoi que ce soit. Les montants sont hors taxes, sans
 				engagement de durée, et la facturation est assurée par Paddle. Votre palier —{' '}
-				<span className="font-semibold text-plume">{BORNES_PALIER[palier]}</span> — se confirme dans
+				<span className="font-semibold text-craie">{BORNES_PALIER[palier]}</span> — se confirme dans
 				vos réglages, à partir du volume que vous déclarez.
 			</p>
 		</SectionMarketing>

@@ -191,7 +191,7 @@ const DECOMPTE: DecompteAffiche = {
 
 export function Etapes() {
 	return (
-		<SectionMarketing id="comment" fond="nuit" className="gap-cladd-2xl">
+		<SectionMarketing id="comment" className="gap-cladd-2xl">
 			{/* LE RAIL TECHNIQUE, comme sur le premier écran et sur la loi. */}
 			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
 				<span>Le logiciel</span>

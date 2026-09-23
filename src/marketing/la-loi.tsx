@@ -194,7 +194,7 @@ export function LaLoi() {
 	const seuils = seuilsDeLaLoi(aujourdHui);
 
 	return (
-		<SectionMarketing id="la-loi" fond="nuit">
+		<SectionMarketing id="la-loi">
 			{/*
 			  LE RAIL TECHNIQUE, repris du premier écran. Il remplace la pastille de
 			  sur-titre : une étiquette posée au-dessus d'un titre dit « section » ;

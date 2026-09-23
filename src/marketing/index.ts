@@ -11,7 +11,7 @@
  * celui de `section.tsx` pour le système visuel — papier, encre, filet — qui
  * n'est PAS celui de l'application.
  */
-export { SectionMarketing, TitreSection, Cadre, type FondSection } from './section';
+export { SectionMarketing, CadreNuit, Capacites } from './section';
 export { Navbar } from './navbar';
 export { Hero } from './hero';
 export { LaLoi } from './la-loi';

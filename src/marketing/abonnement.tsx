@@ -1,4 +1,4 @@
-import { SectionMarketing, TitreSection, Exergue } from './section';
+import { SectionMarketing } from './section';
 
 /**
  * Pourquoi un abonnement, pour une obligation annuelle.
@@ -14,12 +14,12 @@ import { SectionMarketing, TitreSection, Exergue } from './section';
  * qui parle au quotidien. La veille sur les prix en dernier, parce qu'elle
  * ouvre la suite sans rien promettre aujourd'hui.
  *
- * L'ANALOGIE COMPTABLE FERME LA SECTION, EN EXERGUE. C'est la seule qui fasse
- * comprendre l'abonnement en une phrase à quelqu'un qui n'a jamais acheté de
- * logiciel : le bilan fiscal sort une fois par an, et personne ne conteste de
- * payer son cabinet tous les mois pour autant. Elle était dans une carte de
- * plus, au même niveau que les trois arguments ; elle les conclut, donc elle
- * doit changer de registre — un filet épais, une serif, la voix qui se pose.
+ * L'ANALOGIE COMPTABLE FERME LA SECTION. C'est la seule qui fasse comprendre
+ * l'abonnement en une phrase à quelqu'un qui n'a jamais acheté de logiciel : le
+ * bilan fiscal sort une fois par an, et personne ne conteste de payer son
+ * cabinet tous les mois pour autant. Elle conclut les trois arguments, donc
+ * elle change de registre : un filet tireté sur le côté, le corps d'un titre de
+ * section, la voix qui se pose.
  */
 
 /**
@@ -55,11 +55,22 @@ const RAISONS = [
 
 export function Abonnement() {
 	return (
-		<SectionMarketing id="abonnement" fond="froid">
-			<TitreSection
-				titre="Une procédure est ponctuelle. Le risque, lui, court tous les jours."
-				chapeau="Pourquoi payer tous les mois pour des impayés qu’on traite deux fois par an ? Trois raisons."
-			/>
+		<SectionMarketing id="abonnement">
+			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
+				<span>L’abonnement</span>
+				<span className="tabular-nums">3 raisons</span>
+			</div>
+
+			<div className="flex flex-col gap-cladd-2xs">
+				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
+					Une procédure est ponctuelle.{' '}
+					<span className="text-craie-claire">Le risque court tous les jours.</span>
+				</h2>
+				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
+					Pourquoi payer tous les mois pour des impayés qu’on traite deux fois par an ? Trois
+					raisons.
+				</p>
+			</div>
 
 			{/*
 			  ⚠️ NI TROIS CARTES, NI UN PANNEAU : TROIS COLONNES SUR LE FOND. Trois
@@ -69,31 +80,59 @@ export function Abonnement() {
 			  avait déjà trop. Le vide entre les colonnes dit exactement la même
 			  chose, et ne coûte rien.
 
-			  LE NUMÉRO EST UNE PASTILLE D'ACCENT. La version précédente n'en avait
-			  aucun : trois blocs de texte de même poids, que l'œil ne pouvait pas
-			  ordonner alors qu'ils SONT ordonnés — du plus fort au plus faible pour
-			  la cible. Un chiffre en tête rend cet ordre lisible sans une phrase de
-			  plus. C'est la seule pastille tolérée ici, parce qu'elle porte une
-			  information — le rang — et pas un effet.
+			  LE NUMÉRO PORTE UNE INFORMATION, PAS UN EFFET. La version d'origine n'en
+			  avait aucun : trois blocs de texte de même poids, que l'œil ne pouvait
+			  pas ordonner alors qu'ils SONT ordonnés, du plus fort au plus faible
+			  pour la cible. Un chiffre en tête rend cet ordre lisible sans une
+			  phrase de plus.
+
+			  ⚠️ MAIS LA PASTILLE D'ACCENT A DISPARU AVEC LE PASSAGE À LA NUIT. Trois ronds
+			  bleus posés sur du noir étaient les trois premières choses que l'œil
+			  trouvait, avant les trois titres qu'ils numérotent. Le rang se lit aussi
+			  bien dans un chiffre nu, en petites capitales et dans le ton le plus
+			  sourd de la page : c'est l'ORDRE qu'il porte, pas une décoration, et un
+			  ordre n'a pas besoin de crier.
+
+			  Le filet tireté au-dessus du chiffre remplace le fond de la pastille :
+			  il ouvre la colonne au lieu d'y poser un objet.
 			*/}
-			<div className="cascade cladd-color-brand grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
+			<div className="cascade grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
 				{RAISONS.map((r, i) => (
-					<div key={r.titre} className="flex flex-col gap-cladd-3xs">
-						<span className="flex size-8 items-center justify-center rounded-full bg-cladd-primary/10 text-cladd-2xs font-bold text-cladd-primary tabular-nums">
-							{i + 1}
+					<div
+						key={r.titre}
+						className="flex flex-col gap-cladd-3xs border-t border-dashed border-filet-nuit pt-cladd-3xs"
+					>
+						<span className="text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase tabular-nums">
+							{`0${i + 1}`}
 						</span>
-						<span className="font-serif text-intertitre leading-snug font-medium">{r.titre}</span>
-						<span className="text-cladd-md leading-relaxed font-normal text-plume-douce">
+						<span className="text-intertitre leading-snug font-semibold">{r.titre}</span>
+						<span className="text-cladd-md leading-relaxed font-normal text-craie-douce">
 							{r.texte}
 						</span>
 					</div>
 				))}
 			</div>
 
-			<Exergue
-				phrase="C’est exactement votre cabinet comptable."
-				appui="Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les mois. Letikette fait la même chose pour vos impayés."
-			/>
+			{/*
+			  L'ANALOGIE FERME LA SECTION, et c'est la seule qui fasse comprendre
+			  l'abonnement en une phrase à quelqu'un qui n'a jamais acheté de
+			  logiciel : le bilan fiscal sort une fois par an, et personne ne conteste
+			  de payer son cabinet tous les mois pour autant.
+
+			  Elle remplace `Exergue`, qui est en serif — voir l'en-tête de
+			  `la-loi.tsx` pour ce que la serif fait sur du noir.
+			*/}
+			<blockquote className="apparait flex max-w-4xl gap-cladd-2xs border-l border-dashed border-filet-nuit-vif pl-cladd-2xs">
+				<div className="flex flex-col gap-cladd-3xs">
+					<p className="font-affiche text-titre-section leading-tight font-medium tracking-titre-section text-balance">
+						C’est exactement votre cabinet comptable.
+					</p>
+					<p className="text-cladd-md leading-relaxed font-normal text-craie-douce">
+						Votre bilan fiscal ne sort qu’une fois par an, et vous payez votre cabinet tous les
+						mois. Letikette fait la même chose pour vos impayés.
+					</p>
+				</div>
+			</blockquote>
 		</SectionMarketing>
 	);
 }

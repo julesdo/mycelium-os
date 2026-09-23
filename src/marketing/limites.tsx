@@ -1,5 +1,5 @@
 import { MinusIcon } from 'lucide-react';
-import { SectionMarketing, TitreSection, Inventaire } from './section';
+import { SectionMarketing } from './section';
 
 /**
  * Ce qu'on ne fait pas.
@@ -51,8 +51,35 @@ const LIMITES = [
 
 export function Limites() {
 	return (
-		<SectionMarketing fond="papier">
-			<TitreSection titre="Ce que Letikette ne fait pas" chapeau="Autant les lire maintenant." />
+		<SectionMarketing>
+			{/*
+			  LE RAIL TECHNIQUE, et il porte le compte. « 3 lignes rouges » n'est pas
+			  une formule : ce sont les trois interdits écrits en tête du `CLAUDE.md`,
+			  et un test balaie toute l'interface pour le mot qui les résume.
+			*/}
+			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
+				<span>Les limites</span>
+				<span className="tabular-nums">3 lignes rouges</span>
+			</div>
+
+			<div className="flex flex-col gap-cladd-2xs">
+				{/*
+				  ⚠️ LE TITRE ANNONCE UN MANQUE, ET C'EST VOLONTAIREMENT LA SEULE
+				  SECTION QUI LE FASSE. Une page commerciale qui énumère ce qu'elle ne
+				  fait pas passe pour maladroite ; elle l'est beaucoup moins qu'un
+				  dirigeant qui découvre au troisième mois qu'on ne relancera jamais
+				  son client à sa place. Les trois interdits sont structurels — le
+				  recouvrement pour compte de tiers est encadré — donc ils ne
+				  tomberont jamais, et mieux vaut qu'ils se lisent ici.
+				*/}
+				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
+					Ce que Letikette{' '}
+					<span className="text-craie-claire">ne fera jamais.</span>
+				</h2>
+				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
+					Autant les lire maintenant. Aucune des trois ne changera.
+				</p>
+			</div>
 
 			{/*
 			  ⚠️ LES RÈGLES NOIRES ONT DISPARU, ET LA CARTE QUI LES A REMPLACÉES
@@ -71,22 +98,22 @@ export function Limites() {
 			  barré est ce qui reste, et il est en plume claire — pas en rouge, qui
 			  ne veut dire qu'une chose dans ce produit.
 			*/}
-			<Inventaire>
+			<div className="flex flex-col divide-y divide-dashed divide-filet-nuit">
 				{LIMITES.map((l) => (
 					<div
 						key={l.titre}
 						className="apparait grid items-start gap-cladd-3xs py-cladd-xs md:grid-cols-12 md:gap-cladd-2xs"
 					>
-						<h3 className="flex items-start gap-cladd-3xs font-serif text-intertitre leading-snug font-medium md:col-span-5">
-							<MinusIcon aria-hidden className="mt-2 size-4 shrink-0 text-plume-claire" />
+						<h3 className="flex items-start gap-cladd-3xs text-intertitre leading-snug font-semibold md:col-span-5">
+							<MinusIcon aria-hidden className="mt-2 size-4 shrink-0 text-craie-sourde" />
 							{l.titre}
 						</h3>
-						<p className="text-cladd-md leading-relaxed font-normal text-plume-douce md:col-span-7">
+						<p className="text-cladd-md leading-relaxed font-normal text-craie-douce md:col-span-7">
 							{l.texte}
 						</p>
 					</div>
 				))}
-			</Inventaire>
+			</div>
 		</SectionMarketing>
 	);
 }

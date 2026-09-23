@@ -1,77 +1,68 @@
 import { Link } from '@tanstack/react-router';
-import { Button } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
+import { AtmosphereNuit, BoutonAffiche, LienAffiche, ScenePointeur } from '../ui';
 import { SectionMarketing } from './section';
 
 /**
- * La date, puis le bouton.
+ * LE DERNIER APPEL.
  *
- * POURQUOI L'ÉCHÉANCE AVANT LE BOUTON. Elle déplace plus qu'un argument, à
- * condition d'être vraie et vérifiable. La prescription n'est pas une urgence
- * fabriquée : elle éteint la créance toute seule, sans que personne n'ait rien
- * fait, et le dirigeant peut le vérifier en trente secondes.
+ * ⚠️ IL NE RÉSUME PAS LA PAGE, ET C'EST DÉLIBÉRÉ. La tentation d'une dernière
+ * section est de reprendre les trois arguments en trois puces, « au cas où ».
+ * Quelqu'un qui est descendu jusqu'ici les a lus ; les lui répéter dit qu'on ne
+ * croit pas qu'il ait lu, et lui donne une quatrième occasion d'hésiter.
  *
- * Ce qu'on n'écrit pas : « plus que X jours », un compte à rebours, une offre
- * qui expire. La cible est un professionnel qui reconnaît ces ficelles à dix
- * mètres, et les reconnaître suffit à faire fermer l'onglet.
+ * Elle ne porte qu'une chose : l'URGENCE, qui est le seul argument que la page
+ * n'a pas encore formulé comme une raison d'agir MAINTENANT plutôt qu'un jour.
+ * Une créance ne prévient pas qu'elle expire.
  *
- * ELLE EST SUR L'ENCRE, PLEINE LARGEUR, ET PLUS DANS UN BLOC POSÉ. La version
- * précédente peignait un rectangle bleu arrondi au milieu du beige : un bouton
- * géant, c'est-à-dire l'objet le plus reconnaissable d'un gabarit de logiciel.
- * En pleine largeur, la page se ferme comme elle s'est ouverte — par un aplat
- * qui va d'un bord à l'autre — et l'encre revient là où elle a du sens : sur ce
- * qui engage.
+ * ⚠️ PAS DE FILET DE FERMETURE, ET PAS DE RAIL TECHNIQUE. Les rails ouvrent des
+ * sections qui expliquent ; celle-ci ne s'ouvre pas, elle conclut. Et le filet
+ * de fermeture dirait qu'il y a encore quelque chose après, alors qu'il ne
+ * reste que le pied de page.
  *
- * DEUX SECTIONS D'ENCRE, ET AUCUNE RÉPÉTITION D'EFFET. Celle de la preuve porte
- * un document blanc en son centre ; celle-ci n'en porte aucun. L'une montre, et
- * l'autre demande.
- *
- * LE BOUTON EST BLANC SUR L'ENCRE, en angles droits. Sur un aplat sombre, un
- * `solid-fill` de marque se noierait dans son propre bleu ; le contraste maximal
- * disponible est le papier lui-même, qui est aussi le fond du reste de la page.
- *
- * L'ARGUMENT DE FOND N'EST PAS LA PEUR, C'EST LE DÉLAI DE LECTURE. Douze mois
- * de factures se lisent en une fois ; commencer en février laisse le temps de
- * corriger, commencer le 28 mars ne laisse que le temps de constater.
+ * ⚠️ LA LEVÉE DE RISQUE EST À CÔTÉ DU BOUTON, comme dans le premier écran et
+ * pour la même raison : une objection se lève à l'endroit où elle naît. Elle
+ * est ici plus longue qu'en haut, parce que le lecteur qui hésite à ce
+ * moment-là hésite sur le prix, pas sur le principe.
  */
 export function Appel() {
 	return (
-		<SectionMarketing fond="encre" filet={false} className="relative isolate gap-cladd-2xs">
-			<span className="w-fit rounded-full bg-plume-inversee/12 px-cladd-3xs py-1 text-cladd-2xs font-semibold tracking-widest text-plume-inversee-douce uppercase">
-				Le temps joue contre vous
-			</span>
-			{/*
-			  PLUS GROS ET PLUS GRAS QUE SUR LE PAPIER, et c'est de l'optique, pas du
-			  goût. Un texte clair sur fond sombre paraît plus fin qu'il ne l'est :
-			  la lumière déborde sur les contours et ronge les déliés. Une serif,
-			  dont l'intérêt est justement le contraste entre pleins et déliés, en
-			  souffre plus qu'une grotesque — sur un écran médiocre, les
-			  empattements disparaissent et le titre se met à baver.
-			  D'où +14 px au mobile et une graisse à 600 : c'est le réglage qui rend
-			  à ce titre, en clair sur l'encre, le poids qu'il a en noir sur blanc.
-			*/}
-			<h2 className="max-w-4xl font-serif text-titre-section leading-tight font-semibold tracking-tight">
-				Une créance ne prévient pas qu’elle expire. Elle expire.
-			</h2>
-			<p className="max-w-2xl text-chapeau leading-relaxed font-normal text-plume-inversee-douce">
-				Le mois d’avant, vous pouvez encore agir. Le lendemain, il ne reste qu’à constater.
-			</p>
-			<div className="flex flex-col items-start gap-cladd-3xs pt-cladd-3xs sm:flex-row sm:items-center">
-				<Button
-					as={Link}
-					to="/inscription"
-					variant="solid"
-					size="lg"
-					rounded
-					className="px-cladd-2xs"
-				>
-					Voir mes créances
-					<ArrowRightIcon />
-				</Button>
-				<span className="text-cladd-sm font-normal text-plume-inversee-douce">
-					Aucune carte bancaire. Vous voyez vos taux avant de décider quoi que ce soit.
+		<SectionMarketing filet={false} className="relative isolate gap-cladd-2xs">
+			{/* L'atmosphère seule, sans le ciel : les deux nébuleuses de la page sont
+			    réservées au premier écran et à la respiration du milieu. Voir
+			    l'en-tête de `bandeau.tsx` — une atmosphère qu'on retrouve toutes les
+			    deux sections est un papier peint. */}
+			<AtmosphereNuit className="-z-10" />
+
+			<ScenePointeur className="flex flex-col gap-cladd-2xs">
+				<span className="w-fit rounded-full border border-filet-nuit px-cladd-3xs py-2 text-cladd-2xs font-medium tracking-widest text-craie-douce uppercase">
+					Le temps joue contre vous
 				</span>
-			</div>
+
+				<h2 className="suit-pointeur-loin apparait max-w-4xl font-affiche text-affiche-colonne leading-affiche font-semibold tracking-affiche text-balance">
+					Une créance ne prévient pas qu’elle expire.{' '}
+					<span className="text-craie-claire">Elle expire.</span>
+				</h2>
+
+				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
+					Le mois d’avant, vous pouvez encore agir. Le lendemain, il ne reste qu’à constater.
+				</p>
+
+				<div className="flex w-full flex-col items-stretch gap-cladd-3xs pt-cladd-3xs sm:w-auto sm:flex-row sm:items-center">
+					<BoutonAffiche as={Link} to="/inscription">
+						Voir mes créances
+						<ArrowRightIcon />
+					</BoutonAffiche>
+					<LienAffiche href="#tarifs" className="justify-center sm:justify-start">
+						Voir le prix
+					</LienAffiche>
+				</div>
+
+				<p className="text-cladd-sm font-normal text-craie-claire">
+					Trente jours d’essai. Aucune carte bancaire. Vous voyez vos montants avant de décider
+					quoi que ce soit.
+				</p>
+			</ScenePointeur>
 		</SectionMarketing>
 	);
 }

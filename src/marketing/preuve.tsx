@@ -1,4 +1,4 @@
-import { SectionMarketing, TitreSection } from './section';
+import { SectionMarketing } from './section';
 
 /**
  * L'auditabilité, expliquée par un exemple plutôt que par un argument.
@@ -8,22 +8,26 @@ import { SectionMarketing, TitreSection } from './section';
  * différence entre un outil qu'on regarde et un outil qu'on peut opposer, et
  * c'est la seule chose qui compte le jour où quelqu'un pose la question.
  *
- * ELLE EST LA SEULE SECTION SUR FOND D'ENCRE, et c'est réservé. Le bleu de nuit,
- * pleine largeur, texte inversé, ne sert pas à séduire mais à faire autorité :
- * c'est le bouclier juridique du produit, il doit peser plus lourd que le reste
- * de la page.
+ * ⚠️ ELLE ÉTAIT « LA SEULE SECTION SUR FOND D'ENCRE », ET ÇA NE VEUT PLUS RIEN
+ * DIRE. Le bleu de nuit tramé était réservé à elle seule parce que la page
+ * était de papier : un aplat sombre au milieu du crème faisait autorité par
+ * contraste. La page entière passe au noir, section par section ; une bande
+ * sombre dans une page noire ne distingue plus rien.
  *
- * LA TRAME EST CE QUI LA SAUVE D'ÊTRE UN TROU. Un aplat sombre de mille pixels
- * de haut est une interruption dans une page de papier. Les hachures à 135°,
- * à trois pour cent d'opacité, lui donnent le grain d'un papier de sécurité —
- * celui d'un titre, d'un acte, d'un diplôme — sans qu'on les remarque
- * consciemment. Elles sont dans `tokens.css`, en dégradé CSS : pas de requête,
- * pas de fichier, pas de couleur littérale dans le JSX.
+ * Ce qui reste vrai, et qui est l'essentiel : LE DOCUMENT RESTE BLANC. Le
+ * contraste qui fait la démonstration n'a pas changé de sens, il a changé de
+ * côté. La pièce de preuve est un objet de PAPIER, posé sur le fond sombre,
+ * exactement comme elle le sera sur le bureau d'un contrôleur.
  *
- * LE DOCUMENT RESTE BLANC. C'est le contraste qui fait la démonstration : la
- * pièce de preuve est un objet de papier, posé sur le fond sombre, exactement
- * comme elle le sera sur le bureau d'un contrôleur. Ses angles sont droits, et
- * ses champs sont séparés par des filets — c'est un formulaire, pas une carte.
+ * LA TRAME DE SÉCURITÉ PART AVEC LE FOND D'ENCRE. Elle donnait le grain d'un
+ * titre ou d'un acte à un aplat qui n'existe plus. `encre-tramee` n'est plus
+ * appelée par personne depuis que les sept sections sont en noir vrai : c'est
+ * du CSS mort, et `section.tsx` dit quand il part.
+ *
+ * Ses angles sont droits et ses champs sont séparés par des filets pleins :
+ * c'est un FORMULAIRE, pas une carte. C'est le seul endroit de la page où le
+ * filet n'est pas tireté, parce que c'est le seul endroit qui imite un
+ * document et non une planche.
  *
  * On montre l'anatomie d'une ligne avec un vrai libellé abîmé par l'OCR,
  * « CAR0TTE », avec un zéro à la place du O. Un exemple propre laisserait croire
@@ -55,15 +59,32 @@ const ANATOMIE = [
 
 export function Preuve() {
 	return (
-		<SectionMarketing id="preuve" fond="encre">
-			<TitreSection
-				inverse
-				sur="Auditabilité"
-				titre="Chaque euro montre d’où il vient"
-				chapeau="Un débiteur ne contestera pas votre total. Il refera le calcul."
-			/>
+		<SectionMarketing id="preuve">
+			{/* LE RAIL TECHNIQUE, comme sur les autres sections reprises. */}
+			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
+				<span>Auditabilité</span>
+				<span className="tabular-nums">Décompte arrêté</span>
+			</div>
 
-			<div className="overflow-hidden rounded-panneau bg-papier text-plume">
+			<div className="flex flex-col gap-cladd-2xs">
+				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
+					Chaque euro montre{' '}
+					<span className="text-craie-claire">d’où il vient.</span>
+				</h2>
+				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
+					Un débiteur ne contestera pas votre total. Il refera le calcul.
+				</p>
+			</div>
+
+			{/*
+			  ⚠️ LA PIÈCE RESTE CLAIRE SUR LE NOIR, ET C'EST TOUT SON EFFET. Ailleurs
+			  sur la page, un panneau clair est un ÉCRAN du produit ; ici c'est un
+			  DOCUMENT, et c'est la seule chose de la page qui doive se lire comme
+			  une feuille qu'on sort d'un dossier. Le contraste maximal avec le fond
+			  est exactement ce qu'on veut : une pièce opposable ne se fond pas dans
+			  la mise en page qui l'entoure.
+			*/}
+			<div className="apparait overflow-hidden rounded-panneau bg-papier text-plume ring-1 ring-filet-nuit-vif">
 				{/*
 				  PAS D'ILLUSTRATION ICI, ET C'EST UN RETRAIT RÉFLÉCHI. Une vignette
 				  emoji ouvrait cette carte. Elle a sa place dans l'application, où elle
@@ -74,7 +95,7 @@ export function Preuve() {
 				  être celui d'un document, pas d'une interface.
 				*/}
 				<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-b border-trait bg-papier-chaud p-cladd-2xs md:p-cladd-xs">
-					<span className="font-serif text-intertitre font-medium">FA-2026-118</span>
+					<span className="text-intertitre font-semibold">FA-2026-118</span>
 					<span className="text-cladd-sm text-plume-claire tabular-nums">
 						Fournitures Durand · exigible le 1er mai 2026
 					</span>
@@ -100,7 +121,7 @@ export function Preuve() {
 				</dl>
 			</div>
 
-			<p className="max-w-3xl text-cladd-md leading-relaxed font-normal text-plume-inversee-douce">
+			<p className="max-w-3xl text-cladd-md leading-relaxed font-normal text-craie-douce">
 				Un décompte arrêté ne bouge plus. C&rsquo;est ce qui prouve ce que vous réclamiez le jour où vous l&rsquo;avez réclamé.
 			</p>
 		</SectionMarketing>

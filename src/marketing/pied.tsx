@@ -33,31 +33,31 @@ import { LEGAL_CONFIG, getLegalEmailAddress } from '../lib/config/legal';
  */
 /** La classe des quatre liens légaux, écrite une fois : seules les adresses se répètent. */
 const LIEN_LEGAL =
-	'py-cladd-3xs text-cladd-sm text-plume-inversee-douce underline underline-offset-4 hover:text-plume-inversee';
+	'py-cladd-3xs text-cladd-sm text-craie-douce underline underline-offset-4 hover:text-craie';
 
 export function Pied() {
 	return (
-		<footer className="encre-tramee w-full text-plume-inversee">
-			<div className="mx-auto flex w-full max-w-7xl flex-col gap-cladd-2xs border-t border-trait-encre px-cladd-2xs py-cladd-xl">
+		<footer className="w-full bg-nuit text-craie">
+			<div className="mx-auto flex w-full max-w-7xl flex-col gap-cladd-2xs border-t border-filet-nuit px-cladd-2xs py-cladd-xl">
 				<div className="flex flex-wrap items-center gap-cladd-3xs">
 					<LogoLetikette className="size-cladd-sm shrink-0" />
 					<MotLetikette />
 					<div className="ml-auto flex flex-wrap items-center gap-cladd-2xs">
 						<Link
 							to="/connexion"
-							className="py-cladd-3xs text-cladd-sm text-plume-inversee-douce underline underline-offset-4 hover:text-plume-inversee"
+							className="py-cladd-3xs text-cladd-sm text-craie-douce underline underline-offset-4 hover:text-craie"
 						>
 							Se connecter
 						</Link>
 						<Link
 							to="/inscription"
-							className="py-cladd-3xs text-cladd-sm text-plume-inversee-douce underline underline-offset-4 hover:text-plume-inversee"
+							className="py-cladd-3xs text-cladd-sm text-craie-douce underline underline-offset-4 hover:text-craie"
 						>
 							Créer un compte
 						</Link>
 						<a
 							href={`mailto:${getLegalEmailAddress()}`}
-							className="py-cladd-3xs text-cladd-sm text-plume-inversee-douce underline underline-offset-4 hover:text-plume-inversee"
+							className="py-cladd-3xs text-cladd-sm text-craie-douce underline underline-offset-4 hover:text-craie"
 						>
 							{getLegalEmailAddress()}
 						</a>
@@ -80,7 +80,7 @@ export function Pied() {
 				*/}
 				<nav
 					aria-label="Informations légales"
-					className="flex flex-wrap items-center gap-x-cladd-2xs gap-y-1 border-t border-trait-encre pt-cladd-2xs"
+					className="flex flex-wrap items-center gap-x-cladd-2xs gap-y-1 border-t border-filet-nuit pt-cladd-2xs"
 				>
 					<Link to="/mentions-legales" className={LIEN_LEGAL}>
 						Mentions légales
@@ -96,12 +96,12 @@ export function Pied() {
 					</Link>
 				</nav>
 
-				<p className="max-w-3xl text-cladd-sm leading-relaxed font-normal text-plume-inversee-douce">
+				<p className="max-w-3xl text-cladd-sm leading-relaxed font-normal text-craie-douce">
 					{LEGAL_CONFIG.companyName}, {LEGAL_CONFIG.legalForm}. SIRET {LEGAL_CONFIG.siret}. TVA{' '}
 					{LEGAL_CONFIG.vatNumber}. {LEGAL_CONFIG.address}. Téléphone {LEGAL_CONFIG.telephone}.
 				</p>
 
-				<p className="max-w-3xl text-cladd-sm leading-relaxed font-normal text-plume-inversee-douce">
+				<p className="max-w-3xl text-cladd-sm leading-relaxed font-normal text-craie-douce">
 					Letikette mesure vos créances, les documente et surveille leurs échéances, selon une
 					obligation de moyens. Il n’exerce aucune activité de recouvrement pour compte de tiers,
 					ne manipule aucun fonds et ne délivre aucun conseil juridique. Toute décision d’engager
