@@ -211,18 +211,6 @@ export function Frise() {
 				))}
 			</div>
 
-			{/*
-			  ⚠️ LA PHRASE QUI FERME DIT CE QUE LA FRISE NE PEUT PAS DIRE. Un dessin
-			  qui tombe à zéro peut se lire « vous allez tout perdre », ce qui serait
-			  une peur vendue plutôt qu'un constat. La date exacte dépend du secteur,
-			  et c'est justement pour ça qu'on la surveille facture par facture.
-			*/}
-			<p className="max-w-3xl text-cladd-md leading-relaxed font-normal text-craie-douce">
-				Cette date-là est celle du régime général. Sur le transport de marchandises elle tombe à{' '}
-				{REGIMES_PRESCRIPTION.TRANSPORT_MARCHANDISES.dureeAnnees} an, et à{' '}
-				{REGIMES_PRESCRIPTION.CONSOMMATEUR.dureeAnnees} sur ce qu’on fournit à un consommateur.
-				C’est pour ça qu’elle se surveille facture par facture, et pas une fois par an.
-			</p>
 		</SectionMarketing>
 	);
 }

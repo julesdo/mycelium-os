@@ -53,7 +53,6 @@ import { BoutonAffiche, LogoLetikette, MotLetikette } from '../ui';
 const SECTIONS = [
 	{ ancre: '#la-loi', label: 'La loi' },
 	{ ancre: '#comment', label: 'Le logiciel' },
-	{ ancre: '#preuve', label: 'La preuve' },
 	{ ancre: '#tarifs', label: 'Le prix' }
 ] as const;
 

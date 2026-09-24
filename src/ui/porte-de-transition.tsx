@@ -116,6 +116,7 @@ export function PorteDeTransition() {
 		<Surface
 			as="section"
 			aria-label="Les écrans de l’ancienne version"
+			data-porte-transition
 			variant="transparent"
 			outline={false}
 			className="verre-carte rounded-cladd-xl"

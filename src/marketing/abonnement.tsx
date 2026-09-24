@@ -71,8 +71,7 @@ export function Abonnement() {
 					<span className="text-craie-claire">Le risque court tous les jours.</span>
 				</h2>
 				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
-					Pourquoi payer tous les mois pour des impayés qu’on traite deux fois par an ? Trois
-					raisons.
+					Pourquoi payer tous les mois pour des impayés qu’on traite deux fois par an ?
 				</p>
 			</div>
 
@@ -100,7 +99,7 @@ export function Abonnement() {
 			  Le filet tireté au-dessus du chiffre remplace le fond de la pastille :
 			  il ouvre la colonne au lieu d'y poser un objet.
 			*/}
-			<div className="cascade grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
+			<div className="cascade grid gap-cladd-sm md:grid-cols-2 md:gap-cladd-2xs">
 				{RAISONS.map((r, i) => (
 					<div
 						key={r.titre}

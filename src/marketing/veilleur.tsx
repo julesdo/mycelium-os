@@ -115,8 +115,9 @@ export function Veilleur() {
 			  rappeler est celui où le malentendu naît, pas trois écrans plus bas.
 			*/}
 			<p className="max-w-3xl text-cladd-sm leading-relaxed font-normal text-craie-claire">
-				Il ne contacte jamais vos clients. Il lit des registres publics et vos propres factures,
-				et il vous rapporte. Ce qu’on en fait reste votre décision.
+				Il ne contacte jamais vos clients. Il lit des registres publics et vos
+				factures, et il vous rapporte. Ce que vous en faites, c’est votre décision, pas la
+				mienne.
 			</p>
 		</SectionMarketing>
 	);

@@ -102,7 +102,7 @@ function BarreBasse() {
 
 export function ApercuTelephone() {
 	return (
-		<div className="light cladd-color-brand relative size-full overflow-hidden bg-cladd-bg text-cladd-fg">
+		<div className="vitrine-produit light cladd-color-brand relative size-full overflow-hidden bg-cladd-bg text-cladd-fg">
 			{/* Le fond de l'application, moins son shader. Voir l'en-tête. */}
 			<div aria-hidden className="pointer-events-none absolute inset-0">
 				<div className="fond-releve absolute inset-0" />
@@ -118,7 +118,7 @@ export function ApercuTelephone() {
 							avatar: <Avatar nom="Jules Doré" />,
 							selecteur: (
 								<Chip size="sm">
-									Thumbbb Agency
+									Charpentes Vidal
 									<ChevronsUpDownIcon />
 								</Chip>
 							)

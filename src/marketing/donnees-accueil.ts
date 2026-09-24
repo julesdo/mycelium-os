@@ -115,14 +115,14 @@ const TRAVAUX: readonly TacheVeilleur[] = [
 		cle: 'demo-registre',
 		titre: 'Veille au registre',
 		dit: '47 débiteurs relevés au BODACC cette nuit. Aucune procédure collective ouverte.',
-		quand: '2026-09-23T04:12:00.000Z',
+		quand: 'cette nuit',
 		etat: 'TOURNE'
 	},
 	{
 		cle: 'demo-prescription',
 		titre: 'Prescription',
 		dit: '312 factures repassées. 2 entrent dans le préavis de prescription.',
-		quand: '2026-09-23T04:14:00.000Z',
+		quand: 'cette nuit',
 		etat: 'TOURNE'
 	}
 ];

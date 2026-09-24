@@ -2130,6 +2130,27 @@ select:not(:disabled),
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+ * LA SIGNATURE DE LA NOTE.
+ *
+ * ⚠️ C'EST LA FONTE DU LOGOTYPE, ET C'EST LA SEULE RAISON POUR LAQUELLE ELLE
+ * PEUT SERVIR ICI. Caveat Brush est déjà chargée pour « LETIKETTE » — un seul
+ * sous-ensemble latin, 67 ko, déjà payés. Une fonte de signature en plus, pour
+ * quatre mots, aurait été un octet de réseau pour de l'ornement.
+ *
+ * ⚠️ ET CE N'EST PAS UNE IMAGE DE SIGNATURE MANUSCRITE. Reproduire un
+ * paraphe scanné demanderait un fichier que personne n'a fourni, et fabriquer
+ * celui de quelqu'un d'autre serait un faux — au sens propre. Un nom posé dans
+ * la fonte de la marque dit « c'est moi qui écris » sans imiter une main.
+ *
+ * Elle n'est pas en craie pleine : une signature qui crie n'est plus une
+ * signature.
+ */
+.signature-note {
+	font-family: var(--font-manuscrit);
+	letter-spacing: 0.04em;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
  * LA FRISE — le rail qui se remplit au défilement.
  *
  * C'est la seule animation de la page qui RACONTE quelque chose : le trait
@@ -2526,4 +2547,33 @@ select:not(:disabled),
 	.derive-ciel-pres {
 		animation: none;
 	}
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * CE QUE LA VITRINE NE MONTRE PAS DE L'APPLICATION.
+ *
+ * ⚠️ MONTRER LE VRAI ÉCRAN A UN PRIX, ET LE VOICI. `ApercuTelephone` monte
+ * `EcranFile`, le composant que `/app` rend réellement — c'est tout l'intérêt,
+ * et ça veut dire que la vitrine hérite AUSSI de ce que l'application montre à
+ * ses clients existants.
+ *
+ * La porte de transition en est le cas net : un avis de migration qui annonce
+ * « les écrans de l'ancienne version restent ouverts jusqu'au 17 oct. 2026 ».
+ * Destiné à quelqu'un qui a déjà le produit, il dit à un prospect que le
+ * logiciel a déjà été refait une fois et qu'on y ferme des écrans dans trois
+ * semaines. Relevé par une relecture le 24 septembre 2026 : « ça n'inspire pas
+ * la stabilité, ça inspire le chantier ».
+ *
+ * ⚠️ ON LA TAIT, ON NE LA SUPPRIME PAS. Elle est juste et nécessaire DANS
+ * l'application, où elle part d'elle-même à la bascule (voir
+ * `FERMETURE_DE_LA_PORTE`). Ce qui n'a pas sa place, c'est sa présence sur une
+ * page de vente.
+ *
+ * Le sélecteur vise un attribut de données et non le libellé français : un
+ * texte se réécrit, un repère posé pour ça ne bouge pas. Le jour où la porte
+ * disparaît, cette règle devient morte — et elle le dira, parce qu'elle ne
+ * s'accrochera plus à rien.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.vitrine-produit [data-porte-transition] {
+	display: none;
 }

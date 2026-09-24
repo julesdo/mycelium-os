@@ -69,10 +69,9 @@ import { SectionMarketing, CadreNuit, Capacites } from './section';
  * entrera le jour où l'essai sera passé.
  */
 const FORMATS = [
-	'Lire un FEC, le fichier que tout logiciel comptable sait produire, et en tirer les factures de vente, les règlements et les débiteurs.',
-	'Lire une facture Factur-X et le XML qu’elle embarque, sans passer par un modèle.',
-	'Accepter une facture déposée en PDF ou photographiée, quand l’export n’est pas sous la main.',
-	'Écarter les doublons et les écritures hors périmètre, en les comptant et en disant lesquelles.'
+	'Lire un FEC, le fichier que tout logiciel comptable produit.',
+	'Lire une facture Factur-X et son XML, sans passer par un modèle.',
+	'Écarter les doublons et les écritures hors périmètre, en les comptant.'
 ] as const;
 
 /**
@@ -94,14 +93,13 @@ const FORMATS = [
  * commentaire de `crons.ts` dit lui-même de son intention.
  */
 const SURVEILLANCE = [
-	'Relever chaque nuit au BODACC les procédures collectives ouvertes sur vos débiteurs, et vous le dire avant votre première heure de bureau.',
-	'Suivre la prescription facture par facture, au régime du secteur de chacune.',
-	'Rapprocher les règlements des factures qu’ils soldent, pour ne pas relancer un client qui a payé.'
+	'Relever le BODACC chaque nuit, sur vos débiteurs à vous.',
+	'Suivre la prescription facture par facture, au régime de son secteur.',
+	'Rapprocher les règlements, pour ne pas relancer un client qui a payé.'
 ] as const;
 
 const QUALIFICATION = [
-	'Déduire le caractère certain, liquide et exigible de ce qui est déjà au dossier.',
-	'Poser la seule question qu’aucune facture ne répond, et horodater ce que vous répondez.',
+	'Déduire ce qui se lit : le montant, l’échéance, la qualité des parties.',
 	'Chiffrer ce qu’un acte laisserait de côté, avant qu’il soit produit.'
 ] as const;
 
@@ -129,9 +127,9 @@ const ANGLES_MORTS_DEMO = [
 ] as const;
 
 const DECOMPTE_CAPACITES = [
-	'Décomposer les intérêts période par période : quel principal, quel taux, sur combien de jours.',
-	'Figer un décompte à sa date, définitivement. Rejouer en produit un nouveau, daté.',
-	'Réunir les pièces et les remettre à votre avocat ou à votre commissaire de justice.'
+	'Décomposer les intérêts période par période : taux, jours, principal.',
+	'Figer un décompte à sa date. Rejouer en produit un nouveau, daté.',
+	'Réunir les pièces pour votre avocat ou votre commissaire de justice.'
 ] as const;
 
 /**
@@ -162,7 +160,7 @@ const EVENEMENTS: EvenementAffiche[] = [
 		// délai » est un impératif sur un acte de procédure, que la ligne rouge 3
 		// interdit. Le constat reste, le geste redevient d'ouvrir un écran.
 		explication:
-			'Signification de l’ordonnance : il reste 9 jours avant le 12 septembre. Passée cette ' +
+			'Signification de l’ordonnance : il reste 9 jours avant le 2 octobre. Passée cette ' +
 			'date, le droit est perdu.',
 		action: 'Ouvrir ce dossier : la date limite et son journal y sont.'
 	},
@@ -334,7 +332,7 @@ export function Etapes() {
 				numero="04"
 				picto={<PictoDecompte />}
 				titre="Un décompte qui se refait à la main"
-				texte="Chaque euro montre d’où il vient. C’est ce que fera le débiteur qui le conteste."
+				texte="Arrêté, il ne bouge plus. C’est ce qui prouve ce que vous réclamiez le jour où vous l’avez réclamé."
 				capacites={DECOMPTE_CAPACITES}
 			>
 				<CadreNuit contentClassName="p-cladd-2xs">

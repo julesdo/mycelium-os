@@ -35,7 +35,7 @@ const LIMITES = [
 	{
 		titre: 'On ne relance jamais votre client à votre place.',
 		texte:
-			'Le recouvrement pour compte de tiers est une activité encadrée. Nous préparons le dossier ; c’est vous, ou le professionnel que vous mandatez, qui agissez.'
+			'Le recouvrement pour compte de tiers est une activité encadrée. Je prépare le dossier ; c’est vous, ou le professionnel que vous mandatez, qui agissez.'
 	},
 	{
 		titre: 'On ne touche jamais à vos fonds.',
@@ -45,7 +45,7 @@ const LIMITES = [
 	{
 		titre: 'On ne vous dit pas quelle procédure engager.',
 		texte:
-			'Ce serait du conseil juridique, et nous ne sommes pas avocats. Le logiciel énonce des constats — « cette créance remplit telles conditions » — et vous laisse décider.'
+			'Ce serait du conseil juridique, et je ne suis pas avocat. Le logiciel énonce des constats — « cette créance remplit telles conditions » — et vous laisse décider.'
 	}
 ] as const;
 
