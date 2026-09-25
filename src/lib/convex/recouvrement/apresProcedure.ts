@@ -39,6 +39,8 @@ const vEcheance = v.object({
 	cle: v.string(),
 	libelle: v.string(),
 	dateLimite: v.string(),
+	// Le jour où le délai aurait fini sans le report au premier jour ouvrable (CPC 642).
+	reporteeDe: v.optional(v.string()),
 	gravite: v.union(v.literal('CADUCITE'), v.literal('INFORMATIVE')),
 	consequence: v.string()
 });

@@ -129,6 +129,22 @@ export const vImputation = v.object({
 	surPrincipal: v.int64()
 });
 
+/** L'ordre dans lequel un paiement éteint ce qui est dû. Voir `OrdreImputation` au domaine. */
+export const vOrdreImputation = v.union(
+	v.literal('PENALITES_DABORD'),
+	v.literal('PRINCIPAL_DABORD')
+);
+
+/**
+ * L'ordre appliqué à un décompte, figé avec lui. `totalAutreOrdre` n'existe que
+ * quand le gérant n'avait pas choisi et que l'autre ordre donnait un autre total.
+ */
+export const vImputationDuDecompte = v.object({
+	ordre: vOrdreImputation,
+	confirme: v.boolean(),
+	totalAutreOrdre: v.optional(v.int64())
+});
+
 /**
  * Un taux annuel, porté comme une fraction exacte.
  *
@@ -701,6 +717,14 @@ export const recouvrementTables = {
 		 * l'origine de délais dont un à peine de caducité.
 		 */
 		intervenantId: v.optional(v.id('intervenants')),
+		/**
+		 * L'ORDRE D'IMPUTATION CHOISI PAR LE GÉRANT, une fois par dossier.
+		 *
+		 * ⚠️ ABSENT, IL N'EST PAS « LES PÉNALITÉS D'ABORD ». Absent veut dire « pas
+		 * choisi » : le décompte chiffre alors les deux ordres et retient le plus bas.
+		 */
+		// Qui l’a choisi, et quand : au journal (clé ORDRE_IMPUTATION_CHOISI).
+		ordreImputation: v.optional(vOrdreImputation),
 		qualifieeLe: v.optional(v.number()),
 		creeLe: v.number()
 	})
@@ -952,6 +976,11 @@ export const recouvrementTables = {
 				adresse: v.optional(v.string())
 			})
 		),
+		/**
+		 * L'ordre d'imputation appliqué, figé avec le décompte. ⚠️ FACULTATIF : un
+		 * décompte figé avant le lot 1 de la page dossier n'en porte pas.
+		 */
+		imputation: v.optional(vImputationDuDecompte),
 		produitLe: v.number()
 	})
 		.index('by_creance', ['creanceId'])

@@ -712,7 +712,9 @@ describe('les échéances d’une procédure engagée', () => {
 			// Six mois après l'ordonnance du 20 mars — elle précède la bascule du
 			// 1er septembre 2026 — soit la même date que l'explication récite en
 			// toutes lettres.
-			expect(echeance!.dateDuFait).toBe('2026-09-20');
+			// Le 20 septembre 2026 est un dimanche : le délai est reporté au lundi 21
+			// (code de procédure civile, 642).
+			expect(echeance!.dateDuFait).toBe('2026-09-21');
 			// Le nom du client, pas l'identifiant Convex de sa créance.
 			expect(echeance!.reference).toBe('Fournitures Durand');
 		},

@@ -273,9 +273,7 @@ export const executerPourOrganisation = internalMutation({
 							// en base ; et `destinations-existent.test.ts` exclut nommément
 							// la forme `lien:` de son balayage. Les deux côtés se changent
 							// ensemble, ou chaque notification naît morte en silence.
-							...(evenement.cible === undefined
-								? {}
-								: { link: `/app?ligne=${evenement.cible.id}` })
+							...(evenement.cible === undefined ? {} : { link: `/app?ligne=${evenement.cible.id}` })
 						});
 					}
 				}

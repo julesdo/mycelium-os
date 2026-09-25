@@ -168,12 +168,43 @@ describe('décompte au taux légal français', () => {
 
 			await t.run(async (ctx) => {
 				const decompte = (await ctx.db.get(decompteId))!;
-				// Le règlement éteint D'ABORD les pénalités courues depuis le 1er mai
-				// (C. civ. 1343-1) : 61 j à 12,15 % sur 10 000,00 €
-				//   1 000 000 × 1 215 × 61 / (10 000 × 365) = 20 305,47… → 20 305 c
-				// puis 379 695 c de principal : 1 000 000 − 379 695 = 620 305 c.
-				// L'ancien calcul déduisait tout du principal et rendait 6 000,00 €.
+				// Le gérant n'a pas choisi l'ordre : les deux sont chiffrés, et le plus bas
+				// est retenu — principal d'abord, le paiement va entier au principal.
+				expect(versEuros(depuisCentimes(decompte.principalRestantDu))).toBe('6 000,00');
+				expect(decompte.imputation!.ordre).toBe('PRINCIPAL_DABORD');
+				expect(decompte.imputation!.confirme).toBe(false);
+				expect(decompte.imputation!.totalAutreOrdre! > decompte.total).toBe(true);
+				// Trois segments : exigibilité, changement de taux ET règlement
+				// tombent le 1er juillet, donc deux ruptures confondues en une.
+				expect(decompte.lignes[0]!.segments).toHaveLength(2);
+			});
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'applique l’ordre que le gérant a choisi',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t, {
+				reglement: { date: '2026-07-01', montant: 400_000n }
+			});
+			await t.run(async (ctx) => {
+				await ctx.db.patch(creanceId, { ordreImputation: 'PENALITES_DABORD' });
+			});
+
+			const decompteId = await t.mutation(internal.recouvrement.decompte.figerDecompte, {
+				creanceId,
+				arreteAu: '2026-09-01',
+				convention: 'ACT_365'
+			});
+
+			await t.run(async (ctx) => {
+				const decompte = (await ctx.db.get(decompteId))!;
+				// Le règlement éteint D'ABORD les pénalités courues depuis le 1er mai :
+				// 61 j à 12,15 % sur 10 000,00 € = 20 305 c, puis 379 695 c de principal.
 				expect(versEuros(depuisCentimes(decompte.principalRestantDu))).toBe('6 203,05');
+				expect(decompte.imputation).toEqual({ ordre: 'PENALITES_DABORD', confirme: true });
 				expect(decompte.lignes[0]!.imputations).toEqual([
 					{
 						date: '2026-07-01',
@@ -183,9 +214,6 @@ describe('décompte au taux légal français', () => {
 						surPrincipal: 379_695n
 					}
 				]);
-				// Trois segments : exigibilité, changement de taux ET règlement
-				// tombent le 1er juillet, donc deux ruptures confondues en une.
-				expect(decompte.lignes[0]!.segments).toHaveLength(2);
 			});
 		},
 		DELAI_CONVEX

@@ -67,11 +67,7 @@ import {
 
 // ── Ce que le domaine nomme, et ce que la base valide ───────────────────────
 
-const vEtatProposition = v.union(
-	v.literal('PROPOSEE'),
-	v.literal('RETENUE'),
-	v.literal('ECARTEE')
-);
+const vEtatProposition = v.union(v.literal('PROPOSEE'), v.literal('RETENUE'), v.literal('ECARTEE'));
 
 const vProposition = v.object({
 	_id: v.id('propositions'),
@@ -317,9 +313,7 @@ async function dejaPoseSurLaCible(
 ): Promise<boolean> {
 	const surLaCible = await ctx.db
 		.query('propositions')
-		.withIndex('by_org_and_cible', (q) =>
-			q.eq('organizationId', organizationId).eq('cible', cible)
-		)
+		.withIndex('by_org_and_cible', (q) => q.eq('organizationId', organizationId).eq('cible', cible))
 		.collect();
 	return surLaCible.some((proposition) => proposition.champ === champ);
 }
@@ -359,9 +353,7 @@ export const poserLesPropositionsDuJour = internalMutation({
 
 		const dejaCeJour = await ctx.db
 			.query('propositions')
-			.withIndex('by_org_and_jour', (q) =>
-				q.eq('organizationId', organizationId).eq('jour', jour)
-			)
+			.withIndex('by_org_and_jour', (q) => q.eq('organizationId', organizationId).eq('jour', jour))
 			.collect();
 
 		const pose = plafonner(
@@ -422,16 +414,12 @@ export const propositionsDuJour = authedQuery({
 
 		const propositions = await ctx.db
 			.query('propositions')
-			.withIndex('by_org_and_jour', (q) =>
-				q.eq('organizationId', organizationId).eq('jour', jour)
-			)
+			.withIndex('by_org_and_jour', (q) => q.eq('organizationId', organizationId).eq('jour', jour))
 			.collect();
 
 		const releve = await ctx.db
 			.query('battements')
-			.withIndex('by_org_and_jour', (q) =>
-				q.eq('organizationId', organizationId).eq('jour', jour)
-			)
+			.withIndex('by_org_and_jour', (q) => q.eq('organizationId', organizationId).eq('jour', jour))
 			.unique();
 
 		const enAttente = releve?.propositionsEnAttente ?? null;

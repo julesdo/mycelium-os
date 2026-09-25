@@ -13,16 +13,9 @@ import { getUserOrg } from '../lib/auth';
  * personne, et n'écrit à personne.
  */
 
-const vRole = v.union(
-	v.literal('AVOCAT'),
-	v.literal('COMMISSAIRE_DE_JUSTICE'),
-	v.literal('AUTRE')
-);
+const vRole = v.union(v.literal('AVOCAT'), v.literal('COMMISSAIRE_DE_JUSTICE'), v.literal('AUTRE'));
 
-const vOrigine = v.union(
-	v.literal('SAISI_A_LA_MAIN'),
-	v.literal('RETENU_DEPUIS_UN_REPERTOIRE')
-);
+const vOrigine = v.union(v.literal('SAISI_A_LA_MAIN'), v.literal('RETENU_DEPUIS_UN_REPERTOIRE'));
 
 const vIntervenant = v.object({
 	_id: v.id('intervenants'),

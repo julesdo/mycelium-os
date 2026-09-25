@@ -22,7 +22,7 @@ import {
 	type Reponses
 } from '../../verticales/recouvrement/litige';
 import type { ClePiece, EtatCritere } from '../../verticales/recouvrement/qualification';
-import { vCleFaitLitige, vEtatCritere, vReponseFait } from './tables';
+import { vCleFaitLitige, vEtatCritere, vOrdreImputation, vReponseFait } from './tables';
 
 /**
  * La constitution et la qualification d'une créance.
@@ -895,5 +895,40 @@ export const propositionsLitige = authedQuery({
 				}))
 			})
 		];
+	}
+});
+
+/**
+ * Le gérant choisit l'ordre d'imputation de ses paiements, pour ce dossier.
+ *
+ * ⚠️ C'EST UNE QUALIFICATION, ET ELLE LUI REVIENT. Le logiciel montre la règle du
+ * code civil et ce que chaque ordre donne en euros ; il ne choisit pas. Le choix
+ * vaut pour les décomptes FUTURS : un décompte figé garde l'ordre de son jour.
+ */
+export const choisirOrdreImputation = authedMutation({
+	args: { creanceId: v.id('creances'), ordre: vOrdreImputation },
+	returns: v.null(),
+	handler: async (ctx, { creanceId, ordre }) => {
+		const { organizationId, user } = await getUserOrg(ctx);
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null || creance.organizationId !== organizationId) {
+			throw new ConvexError('Créance introuvable');
+		}
+		const lisible = (o: typeof ordre) =>
+			o === 'PENALITES_DABORD'
+				? 'Paiements imputés d’abord sur les pénalités, puis sur le principal'
+				: 'Paiements imputés d’abord sur le principal, puis sur les pénalités';
+		await ctx.db.patch(creanceId, { ordreImputation: ordre });
+		await ctx.db.insert('journal', {
+			organizationId,
+			cible: creanceId as string,
+			cle: 'ORDRE_IMPUTATION_CHOISI',
+			...(creance.ordreImputation === undefined ? {} : { avant: lisible(creance.ordreImputation) }),
+			apres: `${lisible(ordre)}. Vaut pour les décomptes à venir ; ceux déjà arrêtés gardent le leur.`,
+			auteur: 'GERANT',
+			auteurUserId: user._id,
+			consigneLe: Date.now()
+		});
+		return null;
 	}
 });

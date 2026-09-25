@@ -16,7 +16,7 @@ import {
 import { prevolAuJournal, type ReponsesPrevol } from '../../verticales/recouvrement/prevol';
 import { projeterDecompte, vNatureAbandon } from './decompte';
 import { resteDu, rejouerQualification } from './creances';
-import { vConventionJours, vImputation, vTaux } from './tables';
+import { vConventionJours, vImputation, vImputationDuDecompte, vTaux } from './tables';
 
 /**
  * L'ARRÊT D'UN DÉCOMPTE : LE SEUL GESTE IRRÉVERSIBLE DU PRODUIT.
@@ -112,7 +112,8 @@ const vPreparationArret = v.object({
 			interets: v.int64(),
 			indemniteForfaitaire: v.int64(),
 			total: v.int64(),
-			lignes: v.array(vLigneProjetee)
+			lignes: v.array(vLigneProjetee),
+			imputation: vImputationDuDecompte
 		})
 	),
 	/** Le motif nommé quand le calcul n'aboutit pas. Jamais un écran cassé (D0). */
@@ -278,6 +279,13 @@ export const preparerArret = authedQuery({
 							interets: enCentimes(projection.decompte.interets),
 							indemniteForfaitaire: enCentimes(projection.decompte.indemniteForfaitaire),
 							total: enCentimes(projection.decompte.total),
+							imputation: {
+								ordre: projection.decompte.imputation.ordre,
+								confirme: projection.decompte.imputation.confirme,
+								...(projection.decompte.imputation.totalAutreOrdre === null
+									? {}
+									: { totalAutreOrdre: enCentimes(projection.decompte.imputation.totalAutreOrdre) })
+							},
 							lignes: projection.decompte.lignes.map((ligne) => ({
 								reference: ligne.reference,
 								principalRestantDu: enCentimes(ligne.principalRestantDu),
@@ -411,9 +419,7 @@ export const inclureFactures = authedMutation({
 				.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
 				.collect();
 
-			const restes = await Promise.all(
-				facturesDeLaCreance.map((facture) => resteDu(ctx, facture))
-			);
+			const restes = await Promise.all(facturesDeLaCreance.map((facture) => resteDu(ctx, facture)));
 			const montantExigible = restes.length > 0 ? additionner(...restes) : ZERO;
 
 			// L'exigibilité de la créance est la PLUS TARDIVE de ses factures : tant

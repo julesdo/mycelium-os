@@ -15,7 +15,7 @@ import {
 	type Reglement
 } from '../../verticales/recouvrement/decompte';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
-import { vConventionJours, vImputation, vTaux } from './tables';
+import { vConventionJours, vImputation, vImputationDuDecompte, vTaux } from './tables';
 
 /**
  * La production d'un décompte, et son gel.
@@ -179,7 +179,12 @@ export async function projeterDecompte(
 			});
 		}
 		return {
-			decompte: decompterCreance(pourDecompte, arreteAu, convention, 'A_CONFIRMER'),
+			decompte: decompterCreance(
+				pourDecompte,
+				arreteAu,
+				convention,
+				creance.ordreImputation ?? 'A_CONFIRMER'
+			),
 			refus: null
 		};
 	} catch (erreur) {
@@ -239,6 +244,13 @@ export const figerDecompte = internalMutation({
 			interets: enCentimes(decompte.interets),
 			indemniteForfaitaire: enCentimes(decompte.indemniteForfaitaire),
 			total: enCentimes(decompte.total),
+			imputation: {
+				ordre: decompte.imputation.ordre,
+				confirme: decompte.imputation.confirme,
+				...(decompte.imputation.totalAutreOrdre === null
+					? {}
+					: { totalAutreOrdre: enCentimes(decompte.imputation.totalAutreOrdre) })
+			},
 			lignes: decompte.lignes.map((ligne) => ({
 				reference: ligne.reference,
 				principalRestantDu: enCentimes(ligne.principalRestantDu),
@@ -394,6 +406,7 @@ const vDernierDecompte = v.object({
 			imputations: v.optional(v.array(vImputation))
 		})
 	),
+	imputation: v.optional(vImputationDuDecompte),
 	abandons: v.array(
 		v.object({
 			/**
@@ -535,6 +548,7 @@ async function composerDernierDecompte(
 		creancier: dernier.creancier,
 		debiteur: dernier.debiteur,
 		lignes: dernier.lignes,
+		imputation: dernier.imputation,
 		abandons: await abandonsDuDecompte(ctx, organizationId, dernier)
 	};
 }
@@ -710,6 +724,7 @@ export const lireDecompte = authedQuery({
 			creancier: decompte.creancier,
 			debiteur: decompte.debiteur,
 			lignes: decompte.lignes,
+			imputation: decompte.imputation,
 			abandons: await abandonsDuDecompte(ctx, organizationId, decompte)
 		};
 	}

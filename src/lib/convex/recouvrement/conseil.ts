@@ -282,8 +282,7 @@ export const suivreRemise = authedQuery({
 							.collect()
 					)
 						.filter(
-							(suivi) =>
-								suivi.organizationId === organizationId && suivi.decompteId === decompteId
+							(suivi) => suivi.organizationId === organizationId && suivi.decompteId === decompteId
 						)
 						.sort((a, b) => b.consigneLe - a.consigneLe)[0];
 
