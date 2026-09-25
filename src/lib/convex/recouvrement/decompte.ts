@@ -16,6 +16,7 @@ import {
 } from '../../verticales/recouvrement/decompte';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
 import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
+import { ajouterJours } from '../../verticales/recouvrement/calendrier';
 import { vConventionJours, vImputation, vImputationDuDecompte, vTaux } from './tables';
 
 /**
@@ -169,14 +170,14 @@ export async function projeterDecompte(
 	// cassé : un décompte qui ne se calcule pas se DIT, il ne s'affiche pas en
 	// page blanche.
 	// ⚠️ LE JUGEMENT D'OUVERTURE ARRÊTE LES PÉNALITÉS (L622-28). Quand il est connu et
-	// antérieur à l'arrêté, le calcul s'arrête à sa date : les jours comptés vont
-	// jusqu'à la veille, par prudence. Et une facture dont l'échéance tombe ce jour-là
+	// antérieur à l'arrêté, le calcul s'arrête à la veille, par prudence : le texte ne
+	// dit pas si le jour même du jugement produit des pénalités. Et une facture dont l'échéance tombe ce jour-là
 	// ou après ne porte pas de frais de recouvrement (L441-10 II).
 	const debiteur = await ctx.db.get(creance.debiteurId);
 	const jugement = debiteur?.annonceOuverture?.dateJugement;
 	const arretEffectif =
-		jugement !== undefined && jugement < arreteAu && exiger(PARAMETRES.arretCoursInterets)
-			? jugement
+		jugement !== undefined && jugement <= arreteAu && exiger(PARAMETRES.arretCoursInterets)
+			? ajouterJours(jugement, -1)
 			: arreteAu;
 
 	try {
