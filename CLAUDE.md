@@ -40,6 +40,10 @@ fonctionnalité doit répondre à deux questions : quelle tâche manuelle répé
 qu'elle change pour le dirigeant qui paie l'abonnement. Sans réponse chiffrée aux deux, on ne la
 construit pas.
 
+**Exception, décidée par le fondateur le 25/09/2026 et bornée à un chantier** : la règle est levée pour
+le chantier de la page dossier (`docs/superpowers/specs/2026-09-25-page-dossier-design.md`, lots 0 à 6).
+Elle s'applique de nouveau à tout le reste.
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.

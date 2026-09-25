@@ -1,7 +1,7 @@
 # La page dossier — design
 
-**Date** : 25 septembre 2026 · **Statut** : décisions de principe prises ; relu par trois relecteurs
-indépendants (74 points, tous traités) ; questions ouvertes au § 7
+**Date** : 25 septembre 2026 · **Statut** : validé par le fondateur le 25/09 ; relu par trois relecteurs
+indépendants (74 points, tous traités) ; deux questions restent chez les prestataires (§ 7)
 **Chantier** : 1 sur 7 de la refonte d'expérience (voir « Hors périmètre »)
 
 **Relevés sur lesquels ce design s'appuie** (contre-vérifiés, aucun relu par un avocat) :
@@ -37,10 +37,10 @@ annuaires ; le contrôle de complétude (`controle.ts`) ; les décomptes figés 
 |---|---|
 | Qu'est-ce qu'un dossier ? | **Un dossier ouvert par client**, avec toutes ses factures impayées. Un second dossier n'existe que pour les factures arrivées après la transmission à un professionnel (§ 4.1). On peut retirer une facture ; le produit chiffre ce qu'on abandonne. |
 | Jusqu'où l'agent agit-il ? | **Il prépare, le gérant valide d'un geste.** Rien ne s'écrit sans un clic. |
-| Qui envoie ? | **Le gérant, avec l'application, après sa validation.** Le document est à son seul nom et sous sa signature ; Letikette l'expédie sans y figurer et sans être son mandataire. Par l'app : au client débiteur, et au mandataire judiciaire. Par la messagerie du gérant, avec le paquet préparé par l'app : à son avocat et à son commissaire de justice (§ 3). **Jamais vers un tribunal ni un greffe.** |
+| Qui envoie ? | **Le gérant, avec l'application, après sa validation.** Le document est à son seul nom et sous sa signature ; Letikette l'expédie sans y figurer et sans être son mandataire. Par l'app : au client débiteur, et au mandataire judiciaire. Par la messagerie du gérant, avec le paquet préparé par l'app : à son avocat et à son commissaire de justice (§ 3). **Jamais vers un tribunal ni un greffe** ; seule exception, la déclaration de créance au mandataire (§ 7, question 1). |
 | Qui fait les actes de justice ? | **Les professionnels.** Letikette ne remplace aucun métier réglementé et ne conseille pas. |
 | Où est l'avocat ? | **Hors de l'app, dans sa messagerie.** Ses réponses arrivent chez le gérant (secret professionnel), qui les dépose dans le dossier. L'accès invité est un chantier ultérieur. |
-| La déclaration de créance ? | **Le gérant choisit, dossier par dossier, au moment de la préparer** : l'envoyer lui-même avec l'app (présélectionné quand aucun avocat n'est désigné), ou la faire partir comme projet chez son avocat (présélectionné quand un avocat est désigné). La jurisprudence la tient pour l'équivalent d'une demande en justice : voir § 7, question 1. |
+| La déclaration de créance ? | **Le gérant choisit, dossier par dossier, au moment de la préparer** : l'envoyer lui-même avec l'app (présélectionné quand aucun avocat n'est désigné), ou la faire partir comme projet chez son avocat (présélectionné quand un avocat est désigné). La jurisprudence la tient pour l'équivalent d'une demande en justice (§ 7, question 1) : **décision confirmée par le fondateur en connaissance de cause, le 25/09**. |
 | La barrière `exigerPourActe()` ? | **Levée pour la lettre de relance officielle, l'accord d'échéancier et la déclaration de créance : la validation du gérant suffit.** `valideParAvocat` reste `false` ; chaque document le dit avant validation. C'est une décision de gestion, contre la recommandation du relevé des envois (des gabarits relus par un avocat avant la production). La barrière reste pour tout acte adressé à un tribunal ou à un greffe. |
 | Pour qui écrit-on ? | **Monsieur tout le monde.** Quatre étapes, les mots du gérant, le terme juridique en second. Vaut pour toute l'app. |
 
@@ -277,7 +277,7 @@ rend la procédure simple et en suit chaque étape. Elle ne rédige pas leurs ac
 |---|---|---|---|
 | Lettre de relance officielle | Le client débiteur | Recommandé papier hybride (Maileva) ; recommandé électronique qualifié (AR24) en option | `exiger()` + validation du gérant (était candidate à `exigerPourActe()`, levée le 25/09) |
 | Accord d'échéancier | Le client débiteur, qui signe | Signature électronique au seul nom du créancier : le débiteur tape lui-même la somme en lettres et en chiffres (C. civ. 1376 ; admis par Cass. 1re civ., 13 mars 2008, sous l'ancien art. 1326 : lecture de continuité ; 1174 al. 2 en appui) ; niveau de signature à choisir (§ 7). Sinon, deux originaux papier | `exiger()` + validation du gérant (levée le 25/09) |
-| Déclaration de créance, avec pouvoir | La personne nommée par le tribunal, à l'adresse lue dans l'annonce d'ouverture | Recommandé papier hybride uniquement ; « date limite de dépôt à La Poste » (c'est l'envoi qui compte) ; si Maileva dépose le lendemain, le dernier clic utile est la veille | `exiger()` + validation du gérant (levée le 25/09 ; voir § 7, question 1) |
+| Déclaration de créance, avec pouvoir | La personne nommée par le tribunal, à l'adresse lue dans l'annonce d'ouverture | Recommandé papier hybride uniquement ; « date limite de dépôt à La Poste » (c'est l'envoi qui compte) ; si Maileva dépose le lendemain, le dernier clic utile est la veille | `exiger()` + validation du gérant (levée le 25/09, confirmée en connaissance de cause : § 7, question 1) |
 | Lettre d'information au mandataire | La personne nommée par le tribunal | Recommandé papier ou courrier | `exiger()` + validation du gérant |
 | Demande de signification | L'étude choisie par le gérant dans son carnet (`intervenants`), saisie à la main ou retenue depuis le registre des entreprises, qui n'est pas le tableau de la profession (l'écran le dit, avec la date du relevé) | Paquet préparé par l'app (lettre en PDF, ordonnance, pièces) et brouillon « Ouvrir dans ma messagerie » ; ou lettre que le gérant envoie ou remet lui-même avec l'original de l'ordonnance si l'étude le demande | `exiger()` + validation du gérant |
 | Transmission à l'avocat | L'avocat du gérant | Paquet préparé par l'app (lettre, décompte figé, pièces, bordereau, en une archive) et brouillon « Ouvrir dans ma messagerie » : le gérant joint le paquet et envoie depuis sa propre messagerie ; l'état « parti » est déclaré par lui, avec sa date | `exiger()` + validation du gérant |
@@ -324,7 +324,8 @@ prestataire ne la garde pas aussi longtemps que la créance.
 son seul nom et sous sa signature ; Letikette l'expédie sans y figurer, sans être son mandataire, sans
 recevoir ni fonds ni réponse du débiteur. Quand le gérant a un avocat, le projet part chez cet avocat,
 qui décide. Rien ne part vers un tribunal ou un greffe depuis l'app : ce qui va devant un tribunal passe
-par l'avocat que le gérant choisit. »
+par l'avocat que le gérant choisit. Seule exception : la déclaration de créance au mandataire, que la loi
+permet au créancier de faire lui-même. »
 
 **CLAUDE.md**, mis à jour au lot qui le rend vrai :
 - la ligne rouge n° 1 ci-dessus ;
@@ -471,22 +472,23 @@ Mode rapide, conformément à la consigne du projet :
   de commissaire de justice), le refus du compagnon sur « est remplie » ;
 - vérification du déploiement Vercel et de l'empreinte du contenu servi, pas seulement du push.
 
-## 7. Questions ouvertes
+## 7. Questions ouvertes, et ce qui a été tranché
+
+Tranché par le fondateur le 25/09/2026 :
 
 1. **La déclaration de créance « équivaut à une demande en justice »** (Ass. plén., 4 févr. 2011,
-   n° 09-14.619). Le fondateur a choisi qu'elle puisse partir avec l'app, au nom du gérant, sans avocat —
-   ce que la loi permet au créancier. À confirmer en connaissance de cette qualification : elle touche la
-   règle « rien vers la justice ». Si elle est confirmée, la règle se lit « rien vers un tribunal ni un
-   greffe ; seule exception, la déclaration de créance au mandataire ». Bloque le lot 5a pour ce seul
-   modèle.
-2. **Contrat Maileva par client ou unique** : réponse à obtenir de Maileva. Bloque le lot 5b.
-3. **Qui paie l'affranchissement** : avec un contrat unique, Letikette le refacture-t-il (Paddle) ou
-   l'inclut-il dans l'abonnement ? Décision du fondateur. Bloque le lot 5b.
-4. **Prestataire et niveau de signature électronique** (qualifiée ou avancée). Bloque le lot 5d.
-5. **Le principe anti-dérive** (CLAUDE.md) demande, pour chaque fonctionnalité, deux chiffres tirés du
-   journal de friction : la tâche manuelle supprimée avec son temps mesuré, et ce que ça change pour le
-   dirigeant. Ce design ne les porte pas. Le fondateur les fournit, ou lève la règle pour ce chantier,
-   et c'est écrit ici et dans CLAUDE.md.
+   n° 09-14.619). **Confirmé en connaissance de cause** : elle peut partir avec l'app, au nom du gérant,
+   sans avocat — ce que la loi permet au créancier. La règle se lit donc « rien vers un tribunal ni un
+   greffe ; seule exception, la déclaration de créance au mandataire ».
+2. **L'affranchissement est inclus dans l'abonnement.** Letikette ne le refacture pas ; le coût figure
+   quand même à l'état « à valider » (§ 3), pour que le gérant sache ce qui part.
+3. **Le principe anti-dérive est levé pour ce chantier** : pas de chiffres du journal de friction exigés
+   par lot. Écrit aussi dans CLAUDE.md, borné à ce chantier.
+
+Restent ouvertes, et elles dépendent des prestataires :
+
+4. **Contrat Maileva par client ou unique** : réponse à obtenir de Maileva. Bloque le lot 5b.
+5. **Prestataire et niveau de signature électronique** (qualifiée ou avancée). Bloque le lot 5d.
 
 ## Hors périmètre de ce chantier
 
