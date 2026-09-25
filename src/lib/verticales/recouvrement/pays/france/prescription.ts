@@ -46,10 +46,12 @@ import { joursEntre } from '../../decompte';
  * calcul. Il est donc fourni en argument, et le régime documente lequel
  * s'applique pour que l'utilisateur sache quelle date lui est demandée.
  *
- * Il ne gère ni suspension ni interruption. Une mise en demeure, une
- * reconnaissance de dette ou une action en justice les provoquent, avec des
- * effets différents. Les traiter demanderait des règles qui n'ont pas été
- * fournies.
+ * Il ne gère ni suspension ni interruption. Une reconnaissance du débiteur, une
+ * demande en justice, une mesure conservatoire ou un acte d'exécution forcée
+ * interrompent ; une mise en demeure, elle, n'interrompt pas (voir
+ * `ANGLE_MORT_PRESCRIPTION` plus bas, et la correction du 25/09/2026). Les
+ * suivre demanderait de consigner ces faits, ce que le produit ne fait pas
+ * encore.
  *
  * Sources relevées le 2026-09-03 sur legifrance.gouv.fr. Relevé par le
  * logiciel, pas validé par un avocat — voir `parametres.ts`.
@@ -163,11 +165,22 @@ export const REGIMES_PRESCRIPTION: Record<
  *
  * Il énonce un CONSTAT et ne prescrit aucune conduite : il dit ce que le
  * logiciel ignore, pas ce qu'il faudrait faire.
+ *
+ * ⚠️ IL A DIT FAUX PENDANT DES SEMAINES, ET DANS LE SENS LE PLUS CHER. Il
+ * rangeait la mise en demeure parmi ce qui interrompt la prescription. Elle ne
+ * l'interrompt pas, même par lettre recommandée (Cass. com., 18 mai 2022,
+ * n° 20-23.204, publié — `PARAMETRES.miseEnDemeureNonInterruptive`) : la liste
+ * des actes interruptifs est fermée (C. civ. 2240, 2241, 2244). Un gérant qui
+ * nous croyait laissait passer sa date en pensant sa lettre protectrice.
+ * « Peuvent l'interrompre » et non « l'interrompent » : une requête en
+ * injonction de payer, par exemple, n'interrompt qu'une fois signifiée.
  */
 export const ANGLE_MORT_PRESCRIPTION =
-	'Ce logiciel ne gère ni suspension ni interruption de la prescription. Une mise en demeure, ' +
-	'une reconnaissance de dette ou une action en justice les provoquent, avec des effets ' +
-	'différents. Si votre conseil a saisi une juridiction, ce logiciel ne le sait pas tant qu’un ' +
+	'Ce logiciel ne gère ni suspension ni interruption de la prescription. Une reconnaissance ' +
+	'par votre client de ce qu’il doit (un paiement partiel ou une demande de délai peuvent en ' +
+	'être une), une demande en justice, une mesure conservatoire ou un acte ' +
+	'd’exécution peuvent l’interrompre ; une mise en demeure, même envoyée en recommandé, ne ' +
+	'l’interrompt pas. Si votre conseil a saisi une juridiction, ce logiciel ne le sait pas tant qu’un ' +
 	'fait de procédure n’est pas consigné ici : la date affichée reste celle du calcul, pas celle ' +
 	'de votre dossier.';
 

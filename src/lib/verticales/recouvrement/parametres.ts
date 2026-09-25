@@ -137,6 +137,14 @@ const LE_16 = '2026-09-16';
  */
 const LE_23 = '2026-09-23';
 
+/**
+ * La relecture juridique du 25/09, source par source avec un contre-vérificateur
+ * par thème. Voir `docs/superpowers/specs/2026-09-25-relecture-juridique.md`.
+ * Elle a trouvé quatre erreurs dans le produit ; ces entrées sont celles qu'il
+ * fallait pour les corriger.
+ */
+const LE_25 = '2026-09-25';
+
 const AVOCAT_ATTENDU =
 	'Relevé sur source publique par le logiciel, PAS validé par un avocat : utilisable pour ' +
 	'calculer et surveiller, insuffisant pour produire un acte.';
@@ -451,6 +459,62 @@ export const PARAMETRES = {
 			'rendue AVANT cette date relève des six mois ; à compter d’elle, des trois mois. ' +
 			`${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<string>,
+
+	// ── Relecture du 25 septembre 2026 ──────────────────────────────────────
+
+	imputationPaiementPartiel: {
+		cle: 'imputationPaiementPartiel',
+		nature: 'CONSTANTE',
+		valeur: 'INTERETS_PUIS_PRINCIPAL',
+		unite: 'sans',
+		source: 'Article 1343-1, alinéa 1, du code civil',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le paiement partiel s’impute d’abord sur les intérêts. » La règle cède devant le ' +
+			'contrat : une clause d’imputation des conditions générales l’emporte, et elle n’est pas ' +
+			'encore lue par ce logiciel. L’appliquer aux pénalités de retard est une lecture — ce ' +
+			'sont des intérêts moratoires. Un AVOIR n’est pas un paiement : il réduit le prix, donc ' +
+			`le principal. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<'INTERETS_PUIS_PRINCIPAL'>,
+
+	miseEnDemeureNonInterruptive: {
+		cle: 'miseEnDemeureNonInterruptive',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Cour de cassation, chambre commerciale, 18 mai 2022, n° 20-23.204 (publié)',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Une mise en demeure, même par lettre recommandée avec avis de réception, n’interrompt ' +
+			'pas la prescription : la liste des actes interruptifs est fermée (reconnaissance du ' +
+			'débiteur, demande en justice, mesure conservatoire, acte d’exécution forcée — code civil, ' +
+			'articles 2240, 2241 et 2244). Aucun texte du produit ne doit laisser croire le ' +
+			`contraire. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	modesMiseEnDemeure: {
+		cle: 'modesMiseEnDemeure',
+		nature: 'CONSTANTE',
+		valeur: [
+			'une sommation',
+			'un acte portant interpellation suffisante',
+			'la seule exigibilité de l’obligation, si le contrat le prévoit'
+		],
+		unite: 'sans',
+		source: 'Article 1344 du code civil',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'La loi ne dresse AUCUNE liste de mentions obligatoires : elle exige une « interpellation ' +
+			'suffisante », que le juge du fond apprécie souverainement. C’est cette entrée, et non ' +
+			'les mentions d’une requête en injonction de payer, qui commande la lettre de relance ' +
+			`officielle. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<readonly string[]>,
 
 	// ── Ce qui manque toujours ──────────────────────────────────────────────
 

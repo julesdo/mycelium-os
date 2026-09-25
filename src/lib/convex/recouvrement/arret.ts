@@ -16,7 +16,7 @@ import {
 import { prevolAuJournal, type ReponsesPrevol } from '../../verticales/recouvrement/prevol';
 import { projeterDecompte, vNatureAbandon } from './decompte';
 import { resteDu, rejouerQualification } from './creances';
-import { vConventionJours, vTaux } from './tables';
+import { vConventionJours, vImputation, vTaux } from './tables';
 
 /**
  * L'ARRÊT D'UN DÉCOMPTE : LE SEUL GESTE IRRÉVERSIBLE DU PRODUIT.
@@ -67,7 +67,8 @@ const vLigneProjetee = v.object({
 	interets: v.int64(),
 	indemniteForfaitaire: v.int64(),
 	total: v.int64(),
-	segments: v.array(vSegment)
+	segments: v.array(vSegment),
+	imputations: v.array(vImputation)
 });
 
 /**
@@ -294,6 +295,13 @@ export const preparerArret = authedQuery({
 									},
 									baseAnnuelle: segment.baseAnnuelle,
 									interets: enCentimes(segment.interets)
+								})),
+								imputations: ligne.imputations.map((imputation) => ({
+									date: imputation.date,
+									nature: imputation.nature,
+									montant: enCentimes(imputation.montant),
+									surInterets: enCentimes(imputation.surInterets),
+									surPrincipal: enCentimes(imputation.surPrincipal)
 								}))
 							}))
 						},

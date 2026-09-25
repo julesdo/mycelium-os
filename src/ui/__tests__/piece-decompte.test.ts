@@ -28,6 +28,7 @@ function piece(surcharge: Partial<Piece> = {}): Piece {
 		totaux: { principal: '', interets: '', indemnites: '', total: '' },
 		fondements: [],
 		horsDecompte: [],
+		correctifs: [],
 		avertissement: '',
 		...surcharge
 	};

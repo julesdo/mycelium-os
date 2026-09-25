@@ -167,8 +167,11 @@ describe('assemblage de l’état surveillé', () => {
 			});
 
 			const prescription = flux.evenements.find((e) => e.type === 'PRESCRIPTION_PROCHE');
-			expect(prescription!.explication).toMatch(/est prescrite depuis le 1er novembre 2022/);
-			expect(prescription!.action).toMatch(/ne plus engager/i);
+			// Une date CALCULÉE, pas un verdict, et jamais une consigne d'abandon : la
+			// date ne suit pas les interruptions (relecture juridique du 25/09/2026).
+			expect(prescription!.explication).toMatch(/est passée depuis le 1er novembre 2022/);
+			expect(prescription!.action).toMatch(/Ouvrir la facture/);
+			expect(prescription!.action).not.toMatch(/ne plus engager/i);
 		},
 		DELAI_CONVEX
 	);

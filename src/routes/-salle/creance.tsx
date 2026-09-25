@@ -384,6 +384,7 @@ const ELEMENTS_RELANCE_DEMO: Omit<ElementsRelance, 'santeDebiteur' | 'constatReg
 	principalRestantDu: PRINCIPAL_RESTANT_DU_DEMO,
 	decompte: {
 		arreteAu: DECOMPTE_DEMO.arreteAu,
+		principalRestantDu: depuisCentimes(DECOMPTE_DEMO.principalRestantDu),
 		interets: depuisCentimes(DECOMPTE_DEMO.interets),
 		indemniteForfaitaire: depuisCentimes(DECOMPTE_DEMO.indemniteForfaitaire),
 		total: depuisCentimes(DECOMPTE_DEMO.total)

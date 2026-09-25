@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { versEuros } from '../../../../socle/montants';
+import { depuisEuros, fraction, versEuros } from '../../../../socle/montants';
+import { decompterFacture } from '../../decompte';
 import { importerExportComptable, detecterFormat } from '../exportComptable';
 
 /**
@@ -120,6 +121,59 @@ describe('import d’un FEC', () => {
 		expect(resultat.reglements[0]!.reference).toBe('FA-2026-0042');
 		expect(versEuros(resultat.reglements[0]!.montant)).toBe('4 000,00');
 		expect(resultat.reglements[0]!.date).toBe('2026-06-10');
+		// Un journal de banque porte un encaissement.
+		expect(resultat.reglements[0]!.nature).toBe('PAIEMENT');
+	});
+
+	it('distingue un avoir d’un paiement par le journal, parce qu’ils ne s’imputent pas pareil', () => {
+		// ⚠️ DEPUIS LE 25/09/2026, LA NATURE CHANGE LE MONTANT. Un paiement éteint
+		// d'abord les pénalités courues ; un avoir réduit le prix, donc le
+		// principal. Un avoir du journal de ventes pris pour un paiement ferait
+		// réclamer plus que ce qui est dû.
+		const avoir = ligneFec({
+			EcritureNum: 'VE0099',
+			EcritureDate: '20260610',
+			PieceDate: '20260610',
+			EcritureLib: 'Avoir sur FA-2026-0042',
+			Debit: '0,00',
+			Credit: '4000,00'
+		});
+		const resultat = importerExportComptable(fec(ligneFec({}), avoir));
+		const reglement = resultat.reglements[0]!;
+		expect(reglement.nature).toBe('AVOIR');
+
+		const decompte = decompterFacture(
+			{
+				reference: reglement.reference,
+				montantExigible: depuisEuros('12000,00'),
+				dateExigibilite: '2026-04-15',
+				reglements: [reglement],
+				taux: [{ debut: '2026-04-15', taux: fraction(10n, 100n) }]
+			},
+			'2026-12-31',
+			'ACT_365'
+		);
+		expect(versEuros(decompte.imputations[0]!.surInterets)).toBe('0,00');
+		expect(versEuros(decompte.imputations[0]!.surPrincipal)).toBe('4 000,00');
+	});
+
+	it('ne suppose pas un paiement quand le journal ne dit rien', () => {
+		// Un journal d'opérations diverses ne dit ni encaissement ni avoir : le crédit
+		// entre comme « non détaillé », imputé sur le principal — la lecture qui
+		// réclame le moins.
+		const resultat = importerExportComptable(
+			fec(
+				ligneFec({}),
+				ligneFec({
+					JournalCode: 'OD',
+					JournalLib: 'Opérations diverses',
+					EcritureNum: 'OD0003',
+					Debit: '0,00',
+					Credit: '500,00'
+				})
+			)
+		);
+		expect(resultat.reglements[0]!.nature).toBe('CREDIT');
 	});
 
 	it('ignore les contreparties de produit et de TVA, sans les perdre', () => {

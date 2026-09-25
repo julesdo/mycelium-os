@@ -957,10 +957,14 @@ describe('la ligne rouge 3, sur TOUS les événements', () => {
 		const prescriptions = evenements.filter((e) => e.type === 'PRESCRIPTION_PROCHE');
 
 		const proche = prescriptions.find((e) => e.reference === 'F-proche');
-		expect(proche!.explication).toMatch(/sera prescrite le/i);
+		expect(proche!.explication).toMatch(/date limite calculée pour réclamer la facture F-proche tombe le/i);
+		expect(proche!.explication).toMatch(/s’éteint, sauf interruption/);
 
 		// L'autre branche, qui porte l'argent déjà perdu : elle aussi constate.
 		const eteinte = prescriptions.find((e) => e.reference === 'F-eteinte');
-		expect(eteinte!.explication).toMatch(/est prescrite depuis le/i);
+		// ⚠️ PLUS « EST PRESCRITE » : c'est une date calculée sans les interruptions, et
+		// l'affirmer comme un fait faisait lâcher des créances peut-être vivantes.
+		expect(eteinte!.explication).toMatch(/est passée depuis le/i);
+		expect(eteinte!.explication).not.toMatch(/est prescrite/i);
 	});
 });

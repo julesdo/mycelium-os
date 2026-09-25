@@ -69,6 +69,8 @@ export { euros, eurosCentimes, partsEurosCentimes, dateCourte, pourcent, pluriel
 export {
 	Decompte,
 	PeriodesDInterets,
+	ReglementsImputes,
+	type ImputationAffichee,
 	type DecompteAffiche,
 	type LigneDecompteAffichee,
 	type SegmentAffiche

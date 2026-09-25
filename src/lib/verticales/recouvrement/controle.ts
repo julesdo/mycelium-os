@@ -111,8 +111,20 @@ export function controlerDecompte(args: ArgumentsControle): ControleDecompte {
 	//    BAS sont la part qu'on réclamerait en moins, donc qu'on abandonnerait.
 	//    Les deux se paient, et un écart signé ferait se compenser dans le total
 	//    deux lignes qui n'ont rien à voir l'une avec l'autre.
+	//
+	//    ⚠️ CE QUE LES RÈGLEMENTS ONT ÉTEINT SE RETRANCHE DES PÉRIODES. Un paiement
+	//    s'impute d'abord sur les pénalités déjà courues : les périodes disent ce
+	//    qui a couru, les imputations ce qui en a été payé, et la différence est
+	//    ce qui reste dû. Un décompte figé avant le 25/09/2026 n'a pas
+	//    d'imputations : il imputait tout au principal, et ses périodes font
+	//    exactement ses intérêts.
 	for (const ligne of decompte.lignes) {
-		const expliques = ligne.segments.reduce((somme, segment) => somme + segment.interets, 0n);
+		const courus = ligne.segments.reduce((somme, segment) => somme + segment.interets, 0n);
+		const eteints = ligne.imputations.reduce(
+			(somme, imputation) => somme + (imputation.surInterets as bigint),
+			0n
+		);
+		const expliques = courus - eteints;
 		if (expliques === (ligne.interets as bigint)) continue;
 		const brut = (ligne.interets as bigint) - expliques;
 		const ecart = depuisCentimes(brut < 0n ? -brut : brut);
@@ -123,7 +135,8 @@ export function controlerDecompte(args: ArgumentsControle): ControleDecompte {
 			explication:
 				`Sur la facture ${ligne.reference}, les intérêts annoncés ` +
 				`(${versEuros(ligne.interets)} €) ne correspondent pas à la somme des périodes ` +
-				`détaillées (${versEuros(depuisCentimes(expliques))} €) : l'écart est de ` +
+				`détaillées, moins ce que les règlements en ont éteint ` +
+				`(${versEuros(depuisCentimes(expliques))} €) : l'écart est de ` +
 				`${versEuros(ecart)} €. Un montant qu'aucune période ne justifie ne peut pas ` +
 				`figurer dans un acte : il serait indéfendable si le débiteur refaisait le calcul.`
 		});

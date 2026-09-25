@@ -474,7 +474,8 @@ export function filtrerMontants(sortie: SortieCompagnon): SortieCompagnon {
 				peutFaire:
 					'Les montants du dossier restent lisibles là où ils se décomposent : un décompte ' +
 					'arrêté porte ses segments, chacun avec sa base, son taux, ses jours et sa base ' +
-					'annuelle, et se refait à la main ligne par ligne.',
+					'annuelle, et ses règlements avec ce que chacun a éteint, et se refait à la main ' +
+					'ligne par ligne.',
 				constat:
 					`La phrase retenue rend le montant ${montant} sans aucune pastille qui le relie à ` +
 					`un décompte ou à une pièce du dossier.`,

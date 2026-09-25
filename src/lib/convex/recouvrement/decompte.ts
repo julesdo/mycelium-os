@@ -15,7 +15,7 @@ import {
 	type Reglement
 } from '../../verticales/recouvrement/decompte';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
-import { vConventionJours, vTaux } from './tables';
+import { vConventionJours, vImputation, vTaux } from './tables';
 
 /**
  * La production d'un décompte, et son gel.
@@ -255,6 +255,15 @@ export const figerDecompte = internalMutation({
 					},
 					baseAnnuelle: segment.baseAnnuelle,
 					interets: enCentimes(segment.interets)
+				})),
+				// Ce que chaque règlement a éteint. Sans cette ligne, la somme des
+				// périodes dépasse les intérêts dus et le total ne se refait plus.
+				imputations: ligne.imputations.map((imputation) => ({
+					date: imputation.date,
+					nature: imputation.nature,
+					montant: enCentimes(imputation.montant),
+					surInterets: enCentimes(imputation.surInterets),
+					surPrincipal: enCentimes(imputation.surPrincipal)
 				}))
 			})),
 			creancier:
@@ -378,7 +387,8 @@ const vDernierDecompte = v.object({
 					baseAnnuelle: v.number(),
 					interets: v.int64()
 				})
-			)
+			),
+			imputations: v.optional(v.array(vImputation))
 		})
 	),
 	abandons: v.array(
@@ -468,6 +478,15 @@ export async function abandonsDuDecompte(
 					taux: fraction(segment.taux.numerateur, segment.taux.denominateur),
 					baseAnnuelle: segment.baseAnnuelle,
 					interets: depuisCentimes(segment.interets)
+				})),
+				// Un décompte figé avant le 25/09/2026 n'en porte pas : il imputait
+				// tout au principal, et ses périodes font exactement ses intérêts.
+				imputations: (ligne.imputations ?? []).map((imputation) => ({
+					date: imputation.date,
+					nature: imputation.nature,
+					montant: depuisCentimes(imputation.montant),
+					surInterets: depuisCentimes(imputation.surInterets),
+					surPrincipal: depuisCentimes(imputation.surPrincipal)
 				}))
 			})),
 			principalRestantDu: depuisCentimes(decompte.principalRestantDu),

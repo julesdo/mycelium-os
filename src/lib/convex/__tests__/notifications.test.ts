@@ -44,6 +44,10 @@ describe('buildNotificationContent', () => {
 		});
 		expect(result.title).toBe('Prescription proche');
 		expect(result.message).toContain('FA-2021-0087');
-		expect(result.message).toContain('éteinte');
+		// La conséquence, dite comme une règle et non comme un verdict sur la facture :
+		// la date est CALCULÉE, sans les interruptions (relecture du 25/09/2026).
+		expect(result.message).toMatch(/s’éteint/);
+		expect(result.message).toMatch(/interruption/);
+		expect(result.message).not.toMatch(/est éteinte/);
 	});
 });

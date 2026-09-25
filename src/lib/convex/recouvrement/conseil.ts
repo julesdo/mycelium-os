@@ -12,7 +12,7 @@ import {
 	type SecteurCreance
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { projeterDecompte } from './decompte';
-import { vConventionJours, vTaux } from './tables';
+import { vConventionJours, vImputation, vTaux } from './tables';
 
 /**
  * LE SUIVI D'UN DOSSIER REMIS AU CONSEIL (décision D12).
@@ -107,7 +107,9 @@ const vEcart = v.object({
 			ecartTotal: v.int64(),
 			ecartInterets: v.int64(),
 			/** Les périodes du calcul du jour. C'est par elles que l'écart se refait à la main. */
-			segments: v.array(vSegment)
+			segments: v.array(vSegment),
+			/** Ce que les règlements ont éteint, sans quoi les périodes ne font pas les intérêts. */
+			imputations: v.array(vImputation)
 		})
 	)
 });
@@ -258,6 +260,13 @@ export const suivreRemise = authedQuery({
 									},
 									baseAnnuelle: segment.baseAnnuelle,
 									interets: enCentimes(segment.interets)
+								})),
+								imputations: ligne.imputations.map((imputation) => ({
+									date: imputation.date,
+									nature: imputation.nature,
+									montant: enCentimes(imputation.montant),
+									surInterets: enCentimes(imputation.surInterets),
+									surPrincipal: enCentimes(imputation.surPrincipal)
 								}))
 							};
 						})

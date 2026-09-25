@@ -154,6 +154,13 @@ export interface DecompteDuContexte {
 	readonly total: string;
 	/** Une ligne par segment : base, taux, jours, base annuelle. */
 	readonly segments: readonly string[];
+	/**
+	 * Une ligne par règlement, avec ce qu'il a éteint. ⚠️ Sans elles, la somme des
+	 * segments dépasse les intérêts dus dès qu'un paiement a couvert des pénalités, et
+	 * le décompte ne se refait plus. Facultatif : un décompte figé avant le
+	 * 25/09/2026 n'en porte pas.
+	 */
+	readonly reglements?: readonly string[];
 }
 
 /**
@@ -229,7 +236,8 @@ export function construireContexteDossier(contexte: ContexteDossier, question: s
 			'LES DÉCOMPTES, ET L’IDENTIFIANT À RECOPIER POUR LES CITER',
 			contexte.decomptes.flatMap((decompte) => [
 				`${decompte.arreteAu === null ? 'Calcul du jour, non arrêté' : `Arrêté au ${decompte.arreteAu}`}, total ${decompte.total} — identifiant DECOMPTE : ${decompte.id}`,
-				...decompte.segments.map((segment) => `  segment : ${segment}`)
+				...decompte.segments.map((segment) => `  segment : ${segment}`),
+				...(decompte.reglements ?? []).map((reglement) => `  règlement : ${reglement}`)
 			]),
 			'Aucun décompte sur ce dossier.'
 		),

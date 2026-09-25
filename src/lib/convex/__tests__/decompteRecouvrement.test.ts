@@ -168,7 +168,21 @@ describe('décompte au taux légal français', () => {
 
 			await t.run(async (ctx) => {
 				const decompte = (await ctx.db.get(decompteId))!;
-				expect(versEuros(depuisCentimes(decompte.principalRestantDu))).toBe('6 000,00');
+				// Le règlement éteint D'ABORD les pénalités courues depuis le 1er mai
+				// (C. civ. 1343-1) : 61 j à 12,15 % sur 10 000,00 €
+				//   1 000 000 × 1 215 × 61 / (10 000 × 365) = 20 305,47… → 20 305 c
+				// puis 379 695 c de principal : 1 000 000 − 379 695 = 620 305 c.
+				// L'ancien calcul déduisait tout du principal et rendait 6 000,00 €.
+				expect(versEuros(depuisCentimes(decompte.principalRestantDu))).toBe('6 203,05');
+				expect(decompte.lignes[0]!.imputations).toEqual([
+					{
+						date: '2026-07-01',
+						nature: 'PAIEMENT',
+						montant: 400_000n,
+						surInterets: 20_305n,
+						surPrincipal: 379_695n
+					}
+				]);
 				// Trois segments : exigibilité, changement de taux ET règlement
 				// tombent le 1er juillet, donc deux ruptures confondues en une.
 				expect(decompte.lignes[0]!.segments).toHaveLength(2);

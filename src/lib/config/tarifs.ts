@@ -100,7 +100,7 @@ export const CE_QUI_EST_INCLUS = [
 	{ libelle: 'Décompte au centime, période par période', bilan: true, abonnement: true },
 	{ libelle: 'Intérêts au taux légal et indemnité forfaitaire', bilan: true, abonnement: true },
 	{ libelle: 'Surveillance des échéances et de la prescription', bilan: false, abonnement: true },
-	{ libelle: 'Qualification des créances, et les conditions que chacune remplit', bilan: false, abonnement: true },
+	{ libelle: 'Les conditions prévues par les textes, face aux pièces de votre dossier', bilan: false, abonnement: true },
 	{ libelle: 'Alertes et suivi mensuel', bilan: false, abonnement: true }
 ] as const;
 

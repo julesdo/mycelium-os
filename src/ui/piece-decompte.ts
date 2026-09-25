@@ -189,6 +189,28 @@ function poserPiece(doc: jsPDF, curseur: Curseur, piece: Piece): void {
 			columnStyles: { 3: { halign: 'right' }, 6: { halign: 'right' } }
 		});
 		curseur.y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
+
+		// L'AUTRE MOITIÉ DE LA PREUVE. Un paiement éteint d'abord les intérêts
+		// déjà courus : sans ce tableau, la somme des périodes dépasse les
+		// intérêts dus, et le destinataire qui refait le calcul croit à une erreur.
+		if (facture.reglements.length === 0) continue;
+		paragraphe(doc, curseur, `Règlements et avoirs : ${facture.reference}`, { taille: 9, gras: true });
+		autoTable(doc, {
+			startY: curseur.y,
+			margin: { left: MARGE, right: MARGE },
+			head: [['Le', 'Nature', 'Montant', 'Sur les intérêts', 'Sur le principal']],
+			body: facture.reglements.map((reglement) => [
+				reglement.le,
+				reglement.nature,
+				reglement.montant,
+				reglement.surInterets,
+				reglement.surPrincipal
+			]),
+			styles: { font: 'helvetica', fontSize: 8, textColor: ENCRE },
+			headStyles: { fillColor: [250, 249, 247], textColor: ENCRE_DOUCE, fontStyle: 'normal' },
+			columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } }
+		});
+		curseur.y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
 	}
 
 	paragraphe(doc, curseur, 'Fondements', { taille: 9, gras: true });
@@ -196,6 +218,16 @@ function poserPiece(doc: jsPDF, curseur: Curseur, piece: Piece): void {
 		paragraphe(doc, curseur, `· ${fondement}`, { taille: 8 });
 	}
 	saut(doc, curseur, 4);
+
+	// Un décompte figé ne se réécrit pas : ce qu'une correction du calcul change à sa
+	// lecture se dit ici, plutôt que d'habiller un chiffre ancien du texte du jour.
+	if (piece.correctifs.length > 0) {
+		paragraphe(doc, curseur, 'Corrections du calcul depuis ce décompte', { taille: 9, gras: true });
+		for (const correctif of piece.correctifs) {
+			paragraphe(doc, curseur, `· ${correctif}`, { taille: 8 });
+		}
+		saut(doc, curseur, 4);
+	}
 
 	paragraphe(doc, curseur, 'Ce que ce décompte ne couvre pas', { taille: 9, gras: true });
 	for (const hors of piece.horsDecompte) {

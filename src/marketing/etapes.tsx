@@ -15,6 +15,9 @@ import {
 	type DecompteAffiche
 } from '../ui';
 import { SectionMarketing, CadreNuit, Capacites } from './section';
+import { depuisCentimes } from '../lib/socle/montants';
+import { decompterCreance } from '../lib/verticales/recouvrement/decompte';
+import { periodesDeTauxParDefaut } from '../lib/verticales/recouvrement/pays/france/taux';
 
 /**
  * Les quatre étapes, démontrées avec les composants du produit.
@@ -148,8 +151,14 @@ const EVENEMENTS: EvenementAffiche[] = [
 		reference: 'FA-2021-0087',
 		montant: 924_000n,
 		urgence: 'CRITIQUE',
-		explication: 'La facture FA-2021-0087 est PRESCRITE depuis le 14 août 2026.',
-		action: 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
+		// ⚠️ LE TEXTE DU PRODUIT, TEL QU'IL EST DEPUIS LE 25/09/2026. La démo disait
+		// « est PRESCRITE » et « la créance est éteinte » : un verdict sur une date
+		// calculée sans les interruptions, puis une consigne d'abandon.
+		explication:
+			'La date limite calculée pour réclamer la facture FA-2021-0087 est passée depuis le ' +
+			'14 août 2026. Ce calcul ne suit pas les interruptions : un paiement partiel ou une ' +
+			'reconnaissance de votre client peuvent l’avoir repoussée.',
+		action: 'Ouvrir la facture FA-2021-0087 : le calcul de sa date limite y est détaillé, avec ses hypothèses.'
 	},
 	{
 		type: 'ECHEANCE_PROCEDURE',
@@ -187,50 +196,31 @@ const EVENEMENTS: EvenementAffiche[] = [
 ];
 
 /**
- * Le décompte de démonstration, calculé au taux légal réel.
+ * Le décompte de démonstration, calculé par le VRAI moteur, au taux légal de
+ * chaque semestre.
  *
  * 10 000 € exigibles au 1er mai, arrêtés au 3 septembre, un règlement de
- * 4 000 € au 1er juillet. Les deux périodes portent le taux BCE majoré de dix
- * points de chaque semestre — 12,15 % puis 12,40 % — et leurs intérêts font
- * exactement le total affiché : 20 305 + 21 063 = 41 368 centimes.
+ * 4 000 € au 1er juillet — le même dossier que la salle de démonstration.
+ *
+ * ⚠️ IL ÉTAIT ÉCRIT À LA MAIN, ET IL MENTAIT DEUX FOIS. Il imputait le règlement
+ * sur le principal, la règle que la relecture juridique du 25/09/2026 a déclarée
+ * fausse ; et son second segment ne se refaisait même pas avec ses propres
+ * données. Recopier des chiffres sur la page publique, c'est aussi recopier les
+ * taux d'un semestre qui passera : calculés ici, ils suivent le registre.
  */
-const DECOMPTE: DecompteAffiche = {
-	arreteAu: '2026-09-03',
-	convention: 'ACT_365',
-	principalRestantDu: 600_000n,
-	interets: 41_368n,
-	indemniteForfaitaire: 4_000n,
-	total: 645_368n,
-	lignes: [
+const DECOMPTE: DecompteAffiche = decompterCreance(
+	[
 		{
 			reference: 'FA-2026-118',
-			principalRestantDu: 600_000n,
-			interets: 41_368n,
-			indemniteForfaitaire: 4_000n,
-			total: 645_368n,
-			segments: [
-				{
-					debut: '2026-05-01',
-					fin: '2026-07-01',
-					jours: 61,
-					principal: 1_000_000n,
-					taux: { numerateur: 1215n, denominateur: 10_000n },
-					baseAnnuelle: 365,
-					interets: 20_305n
-				},
-				{
-					debut: '2026-07-01',
-					fin: '2026-09-03',
-					jours: 64,
-					principal: 600_000n,
-					taux: { numerateur: 1240n, denominateur: 10_000n },
-					baseAnnuelle: 365,
-					interets: 21_063n
-				}
-			]
+			montantExigible: depuisCentimes(1_000_000n),
+			dateExigibilite: '2026-05-01',
+			reglements: [{ date: '2026-07-01', montant: depuisCentimes(400_000n), nature: 'PAIEMENT' }],
+			taux: periodesDeTauxParDefaut('2026-05-01', '2026-09-03')
 		}
-	]
-};
+	],
+	'2026-09-03',
+	'ACT_365'
+);
 
 export function Etapes() {
 	return (
@@ -507,8 +497,8 @@ function Question() {
 		return (
 			<EmptyState
 				illustration="✅"
-				titre="La créance est qualifiée."
-				explication="Les quatre conditions sont tranchées. Le décompte peut être arrêté, et les procédures envisageables s’affichent."
+				titre="Vos réponses sont enregistrées."
+				explication="Le montant, l’échéance et vos réponses sont au dossier. Le décompte peut être arrêté."
 				action={
 					<Button variant="solid" rounded onClick={() => setReponse(null)}>
 						<RotateCcwIcon />

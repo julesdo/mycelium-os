@@ -92,6 +92,13 @@ function PagePiece() {
 					taux: segment.taux,
 					baseAnnuelle: segment.baseAnnuelle,
 					interets: depuisCentimes(segment.interets)
+				})),
+				imputations: (ligne.imputations ?? []).map((imputation) => ({
+					date: imputation.date,
+					nature: imputation.nature,
+					montant: depuisCentimes(imputation.montant),
+					surInterets: depuisCentimes(imputation.surInterets),
+					surPrincipal: depuisCentimes(imputation.surPrincipal)
 				}))
 			})),
 			abandons: piece.abandons.map((abandon) => ({

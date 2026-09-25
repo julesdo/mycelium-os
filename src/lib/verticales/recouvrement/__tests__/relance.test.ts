@@ -22,10 +22,10 @@ import { depuisEuros } from '../../../socle/montants';
  * TROIS NIVEAUX, DONT UN QUI NE PEUT PAS ENCORE EXISTER
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Le niveau 3 est une mise en demeure : elle cite les articles et porte le
- * décompte chiffré. Les mentions obligatoires n'ont pas été fournies, et la
- * règle 0.1 interdit de les deviner. Il se déclare donc INDISPONIBLE et nomme
- * ce qui lui manque — exactement comme la procédure L.126 le fait déjà.
+ * Le niveau 3 est une mise en demeure. La loi ne lui impose aucune liste de
+ * mentions — une interpellation suffisante, que le juge apprécie — mais son
+ * modèle n'est pas encore branché : il se déclare donc INDISPONIBLE et nomme ce
+ * qui lui manque, exactement comme la procédure L.126 le fait déjà.
  *
  * Un module qui se déclare partiellement disponible est plus utile qu'un module
  * absent, et infiniment moins dangereux qu'un module qui enverrait une mise en
@@ -106,6 +106,7 @@ describe('le niveau 2 — le compte arrêté', () => {
 		...BASE,
 		decompte: {
 			arreteAu: '2026-09-03',
+			principalRestantDu: depuisEuros('12000,00'),
 			interets: depuisEuros('640,00'),
 			indemniteForfaitaire: depuisEuros('40,00'),
 			total: depuisEuros('12680,00')
@@ -130,15 +131,36 @@ describe('le niveau 2 — le compte arrêté', () => {
 		expect(texte).toContain('40,00');
 	});
 
+	it('prend le principal du décompte figé, pour que ses lignes s’additionnent', () => {
+		// ⚠️ LA LETTRE PRENAIT LE SOLDE DU JOUR, à côté des intérêts et du total
+		// figés. Depuis qu'un paiement éteint d'abord les pénalités, le principal
+		// figé dépasse ce solde : 12 203,05 + 640,00 + 40,00 = 12 883,05, et pas le
+		// solde de 12 000,00 qui ne s'additionnait plus avec le total.
+		const relance = composerRelance(2, {
+			...AVEC_DECOMPTE,
+			principalRestantDu: depuisEuros('12000,00'),
+			decompte: {
+				arreteAu: '2026-09-03',
+				principalRestantDu: depuisEuros('12203,05'),
+				interets: depuisEuros('640,00'),
+				indemniteForfaitaire: depuisEuros('40,00'),
+				total: depuisEuros('12883,05')
+			}
+		});
+		const texte = texteDe(relance);
+		expect(texte).toContain('Principal restant dû : 12 203,05');
+		expect(texte).not.toContain('Principal restant dû : 12 000,00');
+	});
+
 	it('date le compte, parce qu’un total sans date ne se vérifie pas', () => {
 		expect(texteDe(composerRelance(2, AVEC_DECOMPTE))).toContain('03/09/2026');
 	});
 
-	it('n’est PAS une mise en demeure, et ne s’en donne pas les mots', () => {
-		// ⚠️ Une mise en demeure produit des effets de droit. Un texte qui en
-		// emprunte la forme sans en avoir les mentions ferait croire au créancier
-		// qu'un délai est lancé — et la suite de sa procédure se calculerait sur
-		// une date fausse.
+	it('ne porte pas l’intitulé « mise en demeure », ni ses formules', () => {
+		// ⚠️ Une interpellation suffisante peut valoir mise en demeure quel que soit
+		// son titre : ce test ne prétend donc pas que ce courrier « n'en est pas une ».
+		// Il vérifie qu'il n'en emprunte ni l'intitulé ni les formules, pour ne pas
+		// laisser croire au créancier qu'un délai est lancé.
 		expect(texteDe(composerRelance(2, AVEC_DECOMPTE))).not.toMatch(
 			/mise en demeure|dernier rappel avant|sous huitaine|à défaut de quoi/i
 		);
@@ -147,9 +169,8 @@ describe('le niveau 2 — le compte arrêté', () => {
 
 describe('le niveau 3 — indisponible, et il dit pourquoi', () => {
 	it('refuse de composer une mise en demeure', () => {
-		// ⚠️ Les mentions obligatoires n'ont pas été fournies, et la règle 0.1
-		// interdit de les deviner. Une mise en demeure irrégulière est pire
-		// qu'aucune : elle ne produit pas les effets qu'on lui prête.
+		// Le modèle de lettre de relance officielle n'est pas encore branché : ce
+		// niveau refuse de composer un texte que personne n'a relu.
 		const relance = composerRelance(3, BASE);
 		expect(relance.disponible).toBe(false);
 	});
@@ -161,9 +182,18 @@ describe('le niveau 3 — indisponible, et il dit pourquoi', () => {
 		// que le gérant lit, pas sur ce que le développeur a tapé.
 		const relance = composerRelance(3, BASE);
 		const blocages = !relance.disponible && relance.blocages.join(' ');
-		expect(blocages).toMatch(/mentions obligatoires/i);
-		expect(blocages).toMatch(/mise en demeure/i);
-		expect(blocages).not.toMatch(/mentionsObligatoires/);
+		expect(blocages).toMatch(/lettre de relance officielle/i);
+		expect(blocages).not.toMatch(/[a-z][A-Z]/);
+	});
+
+	it('ne prétend plus qu’une mise en demeure a des mentions obligatoires', () => {
+		// ⚠️ LE NIVEAU 3 ATTENDAIT LES MENTIONS D'UNE REQUÊTE AU TRIBUNAL, et disait
+		// qu'une mise en demeure en avait. La loi n'en dresse aucune liste : elle
+		// demande une interpellation suffisante (relecture juridique du 25/09).
+		const relance = composerRelance(3, BASE);
+		const texte = !relance.disponible && `${relance.constat} ${relance.blocages.join(' ')}`;
+		expect(texte).not.toMatch(/ses mentions obligatoires ne sont/i);
+		expect(texte).toMatch(/interpellation suffisante/i);
 	});
 });
 
@@ -210,6 +240,7 @@ describe('ce qu’aucun brouillon ne contient, jamais', () => {
 			...BASE,
 			decompte: {
 				arreteAu: '2026-09-03',
+				principalRestantDu: depuisEuros('12000,00'),
 				interets: depuisEuros('640,00'),
 				indemniteForfaitaire: depuisEuros('40,00'),
 				total: depuisEuros('12680,00')

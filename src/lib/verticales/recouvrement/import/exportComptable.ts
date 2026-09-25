@@ -89,6 +89,43 @@ export interface ReglementImporte {
 	readonly reference: string;
 	readonly date: string;
 	readonly montant: Montant;
+	/** Ce que le journal de l'écriture dit de ce crédit : voir `natureDuCredit`. */
+	readonly nature: NatureCredit;
+}
+
+/** Un encaissement, un avoir, ou un crédit que le journal ne permet pas de classer. */
+export type NatureCredit = 'PAIEMENT' | 'AVOIR' | 'CREDIT';
+
+/**
+ * UN CRÉDIT SUR COMPTE CLIENT N'EST PAS TOUJOURS UN PAIEMENT.
+ *
+ * Un avoir crédite aussi le compte client, et depuis le 25/09/2026 la différence
+ * change le montant réclamé : un paiement éteint d'abord les pénalités déjà
+ * courues, un avoir réduit le prix, donc le principal. Le journal de l'écriture
+ * le dit : un journal de banque ou de caisse porte un encaissement, un journal de
+ * ventes porte un avoir.
+ *
+ * ⚠️ QUAND LE JOURNAL NE LE DIT PAS, LE CRÉDIT N'EST NI L'UN NI L'AUTRE. Il entre
+ * comme « crédit comptable » et s'impute sur le principal, comme un avoir : c'est
+ * la lecture qui réclame le moins, et le doute ne profite jamais au produit. Le
+ * décompte le nomme tel quel, sans le déguiser en paiement.
+ */
+export function natureDuCredit(journalCode: string, journalLib: string): NatureCredit {
+	const code = journalCode.trim().toUpperCase();
+	// Les accents retirés par leur plage de diacritiques combinants, écrite en
+	// échappements : « Trésorerie » et « Tresorerie » se lisent alors pareil.
+	const libelle = journalLib
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase();
+	if (
+		/\b(banque|bancaire|caisse|tresorerie|encaissements?|reglements?)\b/.test(libelle) ||
+		/^(BQ|BNQ|BAN|BK|CAI|TRE|ENC)/.test(code)
+	) {
+		return 'PAIEMENT';
+	}
+	if (/\bventes?\b/.test(libelle) || /^(VT|VE|VEN)/.test(code)) return 'AVOIR';
+	return 'CREDIT';
 }
 
 export interface LigneIgnoree {
@@ -191,6 +228,8 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 	const iEcritureDate = indexDe('EcritureDate');
 	const iDebit = indexDe('Debit');
 	const iCredit = indexDe('Credit');
+	const iJournalCode = indexDe('JournalCode');
+	const iJournalLib = indexDe('JournalLib');
 
 	// L'ordre d'apparition fait foi : deux débiteurs distincts ressortent dans
 	// l'ordre où la comptabilité les a écrits, ce qui est celui que le gérant
@@ -239,9 +278,16 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 			continue;
 		}
 
-		// Un crédit sur compte client éteint la créance : c'est un règlement.
+		// Un crédit sur compte client éteint la créance, en tout ou partie. Son journal
+		// dit s'il est un paiement ou un avoir, et ce n'est pas un détail : les deux
+		// ne s'imputent pas de la même façon.
 		if (credit > ZERO) {
-			reglements.push({ reference, date, montant: credit });
+			reglements.push({
+				reference,
+				date,
+				montant: credit,
+				nature: natureDuCredit(champs[iJournalCode] ?? '', champs[iJournalLib] ?? '')
+			});
 			continue;
 		}
 

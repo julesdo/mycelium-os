@@ -10,7 +10,12 @@ import {
 	Toolbar
 } from '@cladd-ui/react';
 import { ChevronDownIcon, InfoIcon } from 'lucide-react';
-import { PeriodesDInterets, type SegmentAffiche } from './decompte';
+import {
+	PeriodesDInterets,
+	ReglementsImputes,
+	type ImputationAffichee,
+	type SegmentAffiche
+} from './decompte';
 import { dateCourte, eurosCentimes, pluriel } from './format';
 import { ListeAnalyses, LigneBouton } from './navigation';
 import { aujourdHuiISO } from './horloge';
@@ -62,6 +67,8 @@ export interface EcartAffiche {
 		readonly ecartTotal: bigint;
 		readonly ecartInterets: bigint;
 		readonly segments: readonly SegmentAffiche[];
+		/** Ce que les règlements ont éteint : sans eux, les périodes ne font pas les intérêts. */
+		readonly imputations?: readonly ImputationAffichee[];
 	}[];
 }
 
@@ -165,7 +172,7 @@ function DeuxMontants({ suivi }: { suivi: SuiviConseilAffiche }) {
 							<div className="mt-cladd-3xs border-t border-cladd-outline pt-cladd-3xs">
 								<Poste libelle="Écart total" montant={suivi.ecart.total} />
 								<Poste libelle="dont principal" montant={suivi.ecart.principalRestantDu} />
-								<Poste libelle="dont intérêts courus" montant={suivi.ecart.interets} />
+								<Poste libelle="dont intérêts dus" montant={suivi.ecart.interets} />
 								<Poste
 									libelle="dont indemnités forfaitaires"
 									montant={suivi.ecart.indemniteForfaitaire}
@@ -190,8 +197,11 @@ function DeuxMontants({ suivi }: { suivi: SuiviConseilAffiche }) {
 										</Button>
 									</CollapsibleTrigger>
 									<CollapsiblePanel>
-										<div className="pt-cladd-3xs">
+										<div className="flex flex-col gap-cladd-3xs pt-cladd-3xs">
 											<PeriodesDInterets segments={facture.segments} />
+											{facture.imputations !== undefined && facture.imputations.length > 0 ? (
+												<ReglementsImputes imputations={facture.imputations} />
+											) : null}
 										</div>
 									</CollapsiblePanel>
 								</CollapsibleRoot>

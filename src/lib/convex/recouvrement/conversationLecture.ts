@@ -53,7 +53,8 @@ const vContexteDossier = v.object({
 			id: v.string(),
 			arreteAu: v.union(v.string(), v.null()),
 			total: v.string(),
-			segments: v.array(v.string())
+			segments: v.array(v.string()),
+			reglements: v.optional(v.array(v.string()))
 		})
 	),
 	valeurs: v.array(
@@ -252,6 +253,17 @@ export const contexteDuDossier = internalQuery({
 								`du ${segment.debut} au ${segment.fin}, ${segment.jours} jours, ` +
 								`taux ${pourcentageDepuisTaux(segment.taux)} %, base annuelle ${segment.baseAnnuelle}, ` +
 								`intérêts ${versEuros(depuisCentimes(segment.interets))} €`
+						)
+					),
+					// Ce que chaque règlement a éteint : sans ces lignes, la somme des segments
+					// dépasse les intérêts dus, et le décompte transmis ne se refait plus.
+					reglements: decompte.lignes.flatMap((ligne) =>
+						(ligne.imputations ?? []).map(
+							(imputation) =>
+								`${ligne.reference} : ${imputation.nature === 'AVOIR' ? 'avoir' : imputation.nature === 'CREDIT' ? 'crédit non détaillé' : 'règlement'} du ${imputation.date}, ` +
+								`${versEuros(depuisCentimes(imputation.montant))} €, dont ` +
+								`${versEuros(depuisCentimes(imputation.surInterets))} € sur les intérêts courus et ` +
+								`${versEuros(depuisCentimes(imputation.surPrincipal))} € sur le principal`
 						)
 					)
 				})),

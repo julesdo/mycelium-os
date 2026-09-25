@@ -212,6 +212,10 @@ describe('la révélation', () => {
 				arreteAu: AUJOURDHUI
 			});
 
+			// La révélation part du SOLDE que la comptabilité affiche déjà : 10 000 € moins
+			// 4 000 € réglés. Le décompte, lui, impute d'abord le règlement sur les
+			// pénalités courues (C. civ. 1343-1) : son principal est plus haut, et la
+			// révélation reporte ces pénalités éteintes dans ce qu'elle ajoute au solde.
 			expect(revelation.principal).toBe(600_000n);
 		},
 		DELAI_CONVEX

@@ -68,6 +68,14 @@ export interface SegmentFige {
 	readonly interets: Montant;
 }
 
+export interface ImputationFigee {
+	readonly date: string;
+	readonly nature: 'PAIEMENT' | 'ACOMPTE' | 'AVOIR' | 'CREDIT';
+	readonly montant: Montant;
+	readonly surInterets: Montant;
+	readonly surPrincipal: Montant;
+}
+
 export interface LigneFigee {
 	readonly reference: string;
 	readonly principalRestantDu: Montant;
@@ -75,6 +83,11 @@ export interface LigneFigee {
 	readonly indemniteForfaitaire: Montant;
 	readonly total: Montant;
 	readonly segments: readonly SegmentFige[];
+	/**
+	 * Ce que chaque règlement a éteint. ⚠️ Absent d'un décompte figé avant le
+	 * 25/09/2026 : il imputait tout au principal, et ses périodes font ses intérêts.
+	 */
+	readonly imputations?: readonly ImputationFigee[];
 }
 
 /** Le décompte tel qu'il a été FIGÉ. La pièce ne recalcule rien. */
@@ -101,6 +114,14 @@ export interface PeriodeAffichee {
 	readonly interets: string;
 }
 
+export interface ReglementAffiche {
+	readonly le: string;
+	readonly nature: string;
+	readonly montant: string;
+	readonly surInterets: string;
+	readonly surPrincipal: string;
+}
+
 export interface FactureAffichee {
 	readonly reference: string;
 	readonly principal: string;
@@ -108,6 +129,8 @@ export interface FactureAffichee {
 	readonly indemnite: string;
 	readonly total: string;
 	readonly periodes: readonly PeriodeAffichee[];
+	/** Les règlements, et ce que chacun a éteint. Vide quand il n'y en a pas. */
+	readonly reglements: readonly ReglementAffiche[];
 }
 
 export interface Piece {
@@ -136,9 +159,23 @@ export interface Piece {
 	readonly fondements: readonly string[];
 	/** Ce que le décompte NE couvre PAS. Jamais vide : dit « rien » quand c'est le cas. */
 	readonly horsDecompte: readonly string[];
+	/**
+	 * Ce qu'une correction du calcul, postérieure au décompte figé, change à sa lecture.
+	 * ⚠️ UN DÉCOMPTE FIGÉ NE SE RÉÉCRIT PAS : il garde la règle de son jour, et ce
+	 * document le DIT au lieu de l'habiller du texte du jour. Vide le plus souvent.
+	 */
+	readonly correctifs: readonly string[];
 	/** Ce que ce document n'est pas. La dernière chose qu'un tiers doit lire. */
 	readonly avertissement: string;
 }
+
+/** La nature d'un règlement, dite en clair sur le document. */
+const NATURE_REGLEMENT: Record<ImputationFigee['nature'], string> = {
+	PAIEMENT: 'Paiement',
+	ACOMPTE: 'Acompte',
+	AVOIR: 'Avoir',
+	CREDIT: 'Crédit non détaillé'
+};
 
 /** Un montant en euros, format du produit. Une seule façon d'écrire un chiffre. */
 function euros(montant: Montant): string {
@@ -197,6 +234,26 @@ function horsDecompte(abandons: readonly AbandonFige[]): string[] {
 }
 
 /**
+ * Ce que les corrections du 25/09/2026 changent à la lecture d'un décompte figé avant.
+ *
+ * ⚠️ L'INDEMNITÉ D'UNE FACTURE QUI N'ÉTAIT PAS EN RETARD. Le calcul comptait les
+ * 40 € même sur une facture pas encore échue à la date d'arrêté. Une ligne figée
+ * SANS AUCUNE PÉRIODE d'intérêts et AVEC une indemnité est exactement ce cas : le
+ * décompte reste tel quel, et le document le signale.
+ */
+function correctifs(decompte: DecompteFige): string[] {
+	return decompte.lignes
+		.filter((ligne) => ligne.segments.length === 0 && (ligne.indemniteForfaitaire as bigint) > 0n)
+		.map(
+			(ligne) =>
+				`La facture ${ligne.reference} porte ${euros(ligne.indemniteForfaitaire)} d’indemnité ` +
+				`forfaitaire alors qu’elle n’était pas échue à la date d’arrêté. Ce décompte a été figé ` +
+				`avant la correction du 25 septembre 2026, qui ne compte plus l’indemnité d’une facture ` +
+				`qui n’est pas en retard ; un décompte arrêté depuis ne la porte plus.`
+		);
+}
+
+/**
  * ⚠️ `dateLisible` SEULEMENT DANS LE TITRE. Les périodes d'intérêts restent en
  * ISO : elles se lisent en colonne, se trient, et un tiers qui refait le calcul
  * y cherche des bornes non ambiguës, pas une jolie phrase.
@@ -228,6 +285,15 @@ export function composerPiece(decompte: DecompteFige): Piece {
 				taux: tauxLisible(segment.taux),
 				base: segment.baseAnnuelle,
 				interets: euros(segment.interets)
+			})),
+			// L'AUTRE MOITIÉ DE LA PREUVE : ce que les règlements ont éteint. Sans
+			// elle, la somme des périodes dépasse les intérêts dus.
+			reglements: (ligne.imputations ?? []).map((imputation) => ({
+				le: imputation.date,
+				nature: NATURE_REGLEMENT[imputation.nature],
+				montant: euros(imputation.montant),
+				surInterets: euros(imputation.surInterets),
+				surPrincipal: euros(imputation.surPrincipal)
 			}))
 		})),
 
@@ -249,10 +315,22 @@ export function composerPiece(decompte: DecompteFige): Piece {
 			// ici rouvrirait la porte que tout le socle ferme.
 			`Indemnité forfaitaire de recouvrement, ${euros(
 				depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire))
-			)} par facture : ${PARAMETRES.indemniteForfaitaire.source}.`
+			)} par facture non réglée à son échéance : ${PARAMETRES.indemniteForfaitaire.source}.`,
+			// Cité seulement quand un règlement a été imputé : une règle qui ne sert
+			// pas au calcul n'a rien à faire dans ses fondements.
+			...(decompte.lignes.some((ligne) => (ligne.imputations ?? []).length > 0)
+				? [
+						`Paiements imputés d’abord sur les pénalités déjà courues, puis sur le principal : ` +
+							`${PARAMETRES.imputationPaiementPartiel.source}. Avoirs, et crédits dont la nature n’est ` +
+							`pas détaillée, imputés sur le principal à leur date. Aucune clause ` +
+							`d’imputation des conditions générales n’a été lue.`
+					]
+				: [])
 		],
 
 		horsDecompte: horsDecompte(decompte.abandons),
+
+		correctifs: correctifs(decompte),
 
 		avertissement:
 			'Ce document est un décompte de créance arrêté à la date indiquée. Ce n’est pas une ' +

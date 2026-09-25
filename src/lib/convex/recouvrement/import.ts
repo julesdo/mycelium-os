@@ -68,7 +68,13 @@ const vFactureImportee = v.object({
 const vReglementImporte = v.object({
 	reference: v.string(),
 	date: v.string(),
-	montant: v.int64()
+	montant: v.int64(),
+	/**
+	 * FACULTATIF : un onglet ouvert avant le 25/09/2026 envoie encore ses règlements
+	 * sans nature. Absente, elle vaut « crédit comptable », imputé sur le principal :
+	 * la lecture qui réclame le moins.
+	 */
+	nature: v.optional(v.union(v.literal('PAIEMENT'), v.literal('AVOIR'), v.literal('CREDIT')))
 });
 
 /**
@@ -323,7 +329,7 @@ export const enregistrerImport = internalMutation({
 				factureId: cible.id,
 				date: reglement.date,
 				montant: reglement.montant,
-				nature: 'PAIEMENT',
+				nature: reglement.nature ?? 'CREDIT',
 				creeLe: Date.now()
 			});
 			reglementsCrees++;
@@ -360,7 +366,10 @@ export const enregistrerImport = internalMutation({
 				factureId,
 				date: cumul.date,
 				montant: complement,
-				nature: 'PAIEMENT',
+				// Un cumul « déjà réglé » ne dit pas ce qui le compose : paiements, avoirs,
+				// ou les deux. Il entre comme crédit comptable, imputé sur le principal —
+				// la lecture qui réclame le moins (voir `natureDuCredit`).
+				nature: 'CREDIT',
 				creeLe: Date.now()
 			});
 			reglementsCrees++;

@@ -706,6 +706,7 @@ export const creanceComplete = authedQuery({
 							? undefined
 							: {
 									arreteAu: dernierDecompte.arreteAu,
+									principalRestantDu: depuisCentimes(dernierDecompte.principalRestantDu),
 									interets: depuisCentimes(dernierDecompte.interets),
 									indemniteForfaitaire: depuisCentimes(dernierDecompte.indemniteForfaitaire),
 									total: depuisCentimes(dernierDecompte.total)

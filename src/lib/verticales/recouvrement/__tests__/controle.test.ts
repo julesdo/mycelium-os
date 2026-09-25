@@ -109,6 +109,30 @@ describe('contrôle de complétude', () => {
 		expect(controle.complet).toBe(true);
 	});
 
+	it('ne prend pas pour inexpliqués les intérêts qu’un paiement a éteints', () => {
+		// Un paiement s'impute d'abord sur les intérêts courus : les périodes en
+		// font plus que ce qui reste dû, et la différence est exactement ce que
+		// le paiement a éteint. Le contrôle doit le savoir, sinon chaque dossier
+		// avec un règlement partiel serait bloqué à tort.
+		const decompte = decompterCreance(
+			[
+				{
+					...facture('F-001', '10000,00'),
+					reglements: [{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'PAIEMENT' }]
+				}
+			],
+			'2026-01-01',
+			'ACT_365'
+		);
+
+		const controle = controlerDecompte({
+			decompte,
+			facturesConnues: [{ reference: 'F-001', montantExigible: depuisEuros('10000,00') }]
+		});
+
+		expect(controle.abandons).toEqual([]);
+	});
+
 	it('signale des intérêts qu’aucune période ne justifie', () => {
 		// Défense en profondeur : si les périodes détaillées disparaissent, le
 		// montant d'intérêts n'est plus justifiable, et l'acte ne doit pas partir

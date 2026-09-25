@@ -45,7 +45,7 @@ const LIMITES = [
 	{
 		titre: 'On ne vous dit pas quelle procédure engager.',
 		texte:
-			'Ce serait du conseil juridique, et je ne suis pas avocat. Le logiciel énonce des constats — « cette créance remplit telles conditions » — et vous laisse décider.'
+			'Ce serait du conseil juridique, et je ne suis pas avocat. Le logiciel calcule, date et vous montre ses sources ; la décision d’agir, et comment, reste la vôtre.'
 	}
 ] as const;
 

@@ -364,7 +364,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 						? undefined
 						: `${pret.nombreFactures} facture${pluriel(pret.nombreFactures)} · ${eurosCentimes(
 								pret.principalRestantDu
-							)} restant dû`
+							)} impayés`
 			}}
 			etat={donnees.etat}
 		>
@@ -430,7 +430,7 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 		<>
 			<ChiffreHero
 				centimes={montant?.total ?? creance.principalRestantDu}
-				surTitre={montant === null ? 'Principal restant dû' : 'Dû aujourd’hui'}
+				surTitre={montant === null ? 'Reste à payer sur les factures' : 'Dû aujourd’hui'}
 				legende={
 					montant === null
 						? 'Les intérêts ne se calculent pas sur ce dossier : le décompte, plus bas, dit pourquoi.'

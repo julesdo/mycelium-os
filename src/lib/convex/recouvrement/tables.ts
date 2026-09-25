@@ -108,10 +108,26 @@ export const vTypePiece = v.union(
 export const vNatureReglement = v.union(
 	v.literal('PAIEMENT'),
 	v.literal('ACOMPTE'),
-	v.literal('AVOIR')
+	v.literal('AVOIR'),
+	// Un crédit porté au compte client dont le journal ne dit pas s'il est un
+	// paiement ou un avoir. Imputé comme un avoir, sur le principal : voir
+	// `natureDuCredit` dans `import/exportComptable.ts`.
+	v.literal('CREDIT')
 );
 
 export const vConventionJours = v.union(v.literal('ACT_365'), v.literal('ACT_ACT'));
+
+/**
+ * Ce qu'un règlement a éteint : d'abord les pénalités déjà courues, puis le
+ * principal. Voir `ImputationReglement` dans `verticales/recouvrement/decompte.ts`.
+ */
+export const vImputation = v.object({
+	date: v.string(),
+	nature: vNatureReglement,
+	montant: v.int64(),
+	surInterets: v.int64(),
+	surPrincipal: v.int64()
+});
 
 /**
  * Un taux annuel, porté comme une fraction exacte.
@@ -896,7 +912,14 @@ export const recouvrementTables = {
 						baseAnnuelle: v.number(),
 						interets: v.int64()
 					})
-				)
+				),
+				/**
+				 * ⚠️ FACULTATIF, ET C'EST LA BASE QUI L'IMPOSE. Les décomptes figés
+				 * avant le 25/09/2026 n'en portent pas : ils imputaient tout règlement
+				 * au principal, et leurs périodes font exactement leurs intérêts. Un
+				 * décompte figé ne se réécrit jamais ; il garde la règle de son jour.
+				 */
+				imputations: v.optional(v.array(vImputation))
 			})
 		),
 		/**

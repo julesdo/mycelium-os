@@ -58,9 +58,13 @@ export type ConventionJours = 'ACT_365' | 'ACT_ACT';
 /** Ce qui éteint tout ou partie d'une dette, à une date. */
 export interface Reglement {
 	readonly date: string;
-	/** Positif : ce qui vient en déduction du principal. */
+	/** Positif : ce qui vient en déduction de la dette (voir `decompterFacture` pour l'ordre). */
 	readonly montant: Montant;
-	readonly nature: 'PAIEMENT' | 'ACOMPTE' | 'AVOIR';
+	/**
+	 * `CREDIT` : un crédit comptable dont la nature n'est pas établie. Il s'impute
+	 * comme un avoir, sur le principal seul : c'est la lecture qui réclame le moins.
+	 */
+	readonly nature: 'PAIEMENT' | 'ACOMPTE' | 'AVOIR' | 'CREDIT';
 }
 
 /** Un taux annuel, en vigueur à compter de `debut` jusqu'au suivant. */
@@ -96,13 +100,36 @@ export interface SegmentInterets {
 	readonly interets: Montant;
 }
 
+/**
+ * Ce qu'un règlement a éteint : d'abord les pénalités déjà courues, puis le
+ * principal.
+ *
+ * ⚠️ SANS CETTE LIGNE, LE DÉCOMPTE NE SE REFAIT PLUS À LA MAIN. Un paiement
+ * imputé sur les pénalités ne fait pas baisser le principal d'autant : la
+ * somme des périodes dépasse alors les intérêts restant dus, et l'écart est
+ * exactement ce que les règlements ont éteint. Le débiteur qui refait le calcul
+ * doit le voir, règlement par règlement.
+ */
+export interface ImputationReglement {
+	readonly date: string;
+	readonly nature: Reglement['nature'];
+	readonly montant: Montant;
+	/** La part qui a éteint des pénalités déjà courues à sa date. */
+	readonly surInterets: Montant;
+	/** Le reste, qui a réduit le principal. */
+	readonly surPrincipal: Montant;
+}
+
 export interface LigneDecompte {
 	readonly reference: string;
 	readonly principalRestantDu: Montant;
+	/** Ce qui reste dû : la somme des périodes, moins ce que les règlements en ont éteint. */
 	readonly interets: Montant;
 	readonly indemniteForfaitaire: Montant;
 	readonly total: Montant;
 	readonly segments: readonly SegmentInterets[];
+	/** Chaque règlement compté, dans l'ordre des dates, avec ce qu'il a éteint. */
+	readonly imputations: readonly ImputationReglement[];
 }
 
 export interface DecompteCreance {
@@ -213,33 +240,103 @@ function tauxALaDate(facture: FacturePourDecompte, date: string): Fraction {
 	return retenu.taux;
 }
 
-/** Ce qui reste dû à une date : l'exigible, moins tout ce qui a été réglé jusque-là. */
-function principalAu(facture: FacturePourDecompte, date: string): Montant {
-	let restant = facture.montantExigible;
-	for (const reglement of facture.reglements) {
-		if (reglement.date <= date) restant = soustraire(restant, reglement.montant);
-	}
-	return restant;
+function plusPetit(a: Montant, b: Montant): Montant {
+	return (a as bigint) <= (b as bigint) ? a : b;
 }
 
+/**
+ * Le décompte d'une facture, période par période, règlement par règlement.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ UN RÈGLEMENT ÉTEINT D'ABORD LES PÉNALITÉS DÉJÀ COURUES, PUIS LE PRINCIPAL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * C'est la règle de `PARAMETRES.imputationPaiementPartiel`. Ce module l'a
+ * longtemps ignorée : il déduisait chaque règlement du principal, et réclamait
+ * donc MOINS que ce qui était dû — un débiteur qui réglait le principal en
+ * retard semblait quitte de ses pénalités. La relecture juridique du 25/09 l'a
+ * relevé.
+ *
+ * Un AVOIR n'est pas un paiement : il réduit le prix, donc le principal, à sa
+ * date. C'est aussi la lecture qui réclame le moins, et le doute ne profite
+ * jamais au produit.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LES 40 € NE SONT DUS QUE PAR UNE FACTURE PAYÉE EN RETARD
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `PARAMETRES.indemniteForfaitaire` le dit depuis le premier jour — « due dès
+ * le premier jour de retard » — et le calcul l'ajoutait quand même à une
+ * facture pas encore échue, ou réglée à temps. Il réclamait alors PLUS que ce
+ * qui était dû, dans le sens qui se retourne contre le client. Une facture est
+ * en retard quand il en reste quelque chose à payer une fois son échéance
+ * passée ; soldée depuis, elle doit toujours les 40 €.
+ */
 export function decompterFacture(
 	facture: FacturePourDecompte,
 	arreteAu: string,
 	convention: ConventionJours
 ): LigneDecompte {
-	const jalons = bornes(facture, arreteAu, convention);
+	// Lu pour être cité : la règle vit au registre, pas ici.
+	exiger(PARAMETRES.imputationPaiementPartiel);
+
+	const reglements = facture.reglements
+		.filter((reglement) => reglement.date <= arreteAu)
+		.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+	let principal = facture.montantExigible;
+	let interetsDus = ZERO;
+	const imputations: ImputationReglement[] = [];
+
+	function imputer(reglement: Reglement) {
+		// Seul un PAIEMENT (ou un acompte) s'impute sur les pénalités. Un avoir réduit
+		// le prix ; un crédit de nature inconnue est traité comme lui. Et jamais
+		// au-delà de ce qui a couru : un trop-perçu antérieur ne rend pas négative la
+		// part d'un règlement suivant.
+		const surInterets =
+			reglement.nature === 'AVOIR' || reglement.nature === 'CREDIT' || (interetsDus as bigint) <= 0n
+				? ZERO
+				: plusPetit(reglement.montant, interetsDus);
+		const surPrincipal = soustraire(reglement.montant, surInterets);
+		interetsDus = soustraire(interetsDus, surInterets);
+		principal = soustraire(principal, surPrincipal);
+		imputations.push({
+			date: reglement.date,
+			nature: reglement.nature,
+			montant: reglement.montant,
+			surInterets,
+			surPrincipal
+		});
+	}
+
+	// Jusqu'à l'exigibilité, rien ne court : tout règlement réduit le principal.
+	let rang = 0;
+	while (rang < reglements.length && reglements[rang]!.date <= facture.dateExigibilite) {
+		imputer(reglements[rang++]!);
+	}
+
+	const echue = arreteAu > facture.dateExigibilite;
+	const enRetard = echue && (principal as bigint) > 0n;
+
 	const segments: SegmentInterets[] = [];
 
 	// Un arrêté antérieur à l'exigibilité ne produit aucun segment, et donc
 	// aucun intérêt — mais le principal reste dû.
-	if (arreteAu > facture.dateExigibilite) {
+	if (echue) {
+		const jalons = bornes(facture, arreteAu, convention);
 		for (let i = 0; i < jalons.length - 1; i++) {
 			const debut = jalons[i]!;
 			const fin = jalons[i + 1]!;
+
+			// Les règlements de ce jour s'imputent AVANT la période qui s'ouvre :
+			// sur ce qui a couru jusque-là, puis sur le principal.
+			while (rang < reglements.length && reglements[rang]!.date <= debut) {
+				imputer(reglements[rang++]!);
+			}
+
 			const jours = joursEntre(debut, fin);
 			if (jours === 0) continue;
 
-			const principal = principalAu(facture, debut);
 			const taux = tauxALaDate(facture, debut);
 			const baseAnnuelle = convention === 'ACT_365' ? 365 : joursDansAnnee(annee(debut));
 
@@ -251,20 +348,25 @@ export function decompterFacture(
 			);
 
 			segments.push({ debut, fin, jours, principal, taux, baseAnnuelle, interets });
+			interetsDus = additionner(interetsDus, interets);
 		}
 	}
 
-	const interets = additionner(...segments.map((s) => s.interets));
-	const principalRestantDu = principalAu(facture, arreteAu);
-	const indemniteForfaitaire = depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire));
+	// Les règlements du jour d'arrêté s'imputent sur ce qui a couru jusqu'à lui.
+	while (rang < reglements.length) imputer(reglements[rang++]!);
+
+	const indemniteForfaitaire = enRetard
+		? depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire))
+		: ZERO;
 
 	return {
 		reference: facture.reference,
-		principalRestantDu,
-		interets,
+		principalRestantDu: principal,
+		interets: interetsDus,
 		indemniteForfaitaire,
-		total: additionner(principalRestantDu, interets, indemniteForfaitaire),
-		segments
+		total: additionner(principal, interetsDus, indemniteForfaitaire),
+		segments,
+		imputations
 	};
 }
 

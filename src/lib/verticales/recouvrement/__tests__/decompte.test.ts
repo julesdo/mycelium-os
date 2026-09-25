@@ -60,14 +60,19 @@ describe('décompte d’une facture', () => {
 		expect(versEuros(d.total)).toBe('11 040,00');
 	});
 
-	it('réduit la base d’intérêts à compter d’un paiement partiel', () => {
-		// Paiement de 4 000,00 € le 2025-07-01.
+	it('impute un paiement partiel d’abord sur les intérêts courus, puis sur le principal', () => {
+		// Paiement de 4 000,00 € le 2025-07-01 (C. civ. 1343-1).
 		//   segment 1 : 2025-01-01 → 2025-07-01, 181 j sur 10 000,00 €
-		//     1 000 000 × 10 × 181 / 36 500 = 49 589,04… → 49 589 c
-		//   segment 2 : 2025-07-01 → 2026-01-01, 184 j sur 6 000,00 €
-		//       600 000 × 10 × 184 / 36 500 = 30 246,57… → 30 247 c
-		//   intérêts = 79 836 c = 798,36 €
-		//   total    = 6 000,00 + 798,36 + 40,00 = 6 838,36 €
+		//     1 000 000 × 10 × 181 / 36 500 = 49 589,04… → 49 589 c courus
+		//   le paiement éteint 49 589 c d'intérêts, puis 350 411 c de principal
+		//     principal = 1 000 000 − 350 411 = 649 589 c
+		//   segment 2 : 2025-07-01 → 2026-01-01, 184 j sur 6 495,89 €
+		//       649 589 × 10 × 184 / 36 500 = 32 746,40… → 32 746 c
+		//   intérêts dus = 49 589 + 32 746 − 49 589 = 32 746 c = 327,46 €
+		//   total        = 6 495,89 + 327,46 + 40,00 = 6 863,35 €
+		//
+		// L'ancien calcul déduisait tout du principal et rendait 6 838,36 € :
+		// il abandonnait 24,99 € au débiteur sur cette seule facture.
 		const d = decompterFacture(
 			facture({
 				reglements: [{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'PAIEMENT' }]
@@ -76,15 +81,40 @@ describe('décompte d’une facture', () => {
 			'ACT_365'
 		);
 
-		expect(versEuros(d.principalRestantDu)).toBe('6 000,00');
-		expect(versEuros(d.interets)).toBe('798,36');
-		expect(versEuros(d.total)).toBe('6 838,36');
+		expect(versEuros(d.principalRestantDu)).toBe('6 495,89');
+		expect(versEuros(d.interets)).toBe('327,46');
+		expect(versEuros(d.total)).toBe('6 863,35');
+		expect(d.imputations.map((i) => [i.date, versEuros(i.surInterets), versEuros(i.surPrincipal)])).toEqual([
+			['2025-07-01', '495,89', '3 504,11']
+		]);
 	});
 
-	it('traite un avoir exactement comme un paiement, à sa date', () => {
-		// Un avoir de 4 000,00 € au 2025-07-01 doit donner le même décompte
-		// qu'un paiement du même montant à la même date : il éteint la dette
-		// pour l'avenir, pas rétroactivement.
+	it('laisse dues les pénalités d’un débiteur qui règle le principal en retard', () => {
+		// 10 000,00 € réglés le 2025-03-01, pour une échéance au 2025-01-01.
+		//   segment 1 : 59 j sur 10 000,00 € → 1 000 000 × 10 × 59 / 36 500 = 16 164,38… → 16 164 c
+		//   le paiement éteint d'abord les 16 164 c, puis 983 836 c de principal
+		//     principal = 16 164 c
+		//   segment 2 : 306 j sur 161,64 € → 16 164 × 10 × 306 / 36 500 = 1 355,11… → 1 355 c
+		//   total = 161,64 + 13,55 + 40,00 = 215,19 €
+		const d = decompterFacture(
+			facture({
+				reglements: [{ date: '2025-03-01', montant: depuisEuros('10000,00'), nature: 'PAIEMENT' }]
+			}),
+			'2026-01-01',
+			'ACT_365'
+		);
+
+		expect(versEuros(d.principalRestantDu)).toBe('161,64');
+		expect(versEuros(d.interets)).toBe('13,55');
+		expect(versEuros(d.indemniteForfaitaire)).toBe('40,00');
+		expect(versEuros(d.total)).toBe('215,19');
+	});
+
+	it('impute un avoir sur le principal seul, à sa date : il réduit le prix, ce n’est pas un paiement', () => {
+		// Un avoir de 4 000,00 € au 2025-07-01 éteint la dette pour l'avenir, pas
+		// rétroactivement, et il ne touche pas aux intérêts déjà courus.
+		//   segment 2 sur 6 000,00 € : 600 000 × 10 × 184 / 36 500 = 30 246,57… → 30 247 c
+		//   intérêts = 49 589 + 30 247 = 79 836 c = 798,36 €
 		const avecAvoir = decompterFacture(
 			facture({
 				reglements: [{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'AVOIR' }]
@@ -152,9 +182,26 @@ describe('décompte d’une facture', () => {
 		expect(versEuros(d.interets)).toBe('1 002,74');
 	});
 
-	it('ne produit aucun intérêt avant la date d’exigibilité', () => {
+	it('ne produit ni intérêt ni indemnité avant la date d’exigibilité', () => {
+		// Pas de retard, donc pas de frais de recouvrement : les 40 € n'étaient
+		// dus qu'à une facture en retard, et le calcul les ajoutait quand même.
 		const d = decompterFacture(facture(), '2024-06-01', 'ACT_365');
 		expect(versEuros(d.interets)).toBe('0,00');
+		expect(versEuros(d.indemniteForfaitaire)).toBe('0,00');
+		expect(versEuros(d.total)).toBe('10 000,00');
+	});
+
+	it('ne compte pas l’indemnité d’une facture réglée à son échéance', () => {
+		const d = decompterFacture(
+			facture({
+				reglements: [{ date: '2025-01-01', montant: depuisEuros('10000,00'), nature: 'PAIEMENT' }]
+			}),
+			'2026-01-01',
+			'ACT_365'
+		);
+		expect(versEuros(d.principalRestantDu)).toBe('0,00');
+		expect(versEuros(d.interets)).toBe('0,00');
+		expect(versEuros(d.indemniteForfaitaire)).toBe('0,00');
 	});
 
 	it('rend un décompte reproductible au centime', () => {
@@ -196,17 +243,39 @@ describe('traçabilité — chaque euro doit pouvoir être expliqué', () => {
 		]);
 	});
 
-	it('la somme des segments fait exactement le total des intérêts', () => {
+	it('les segments, moins ce que les règlements ont éteint, font exactement les intérêts dus', () => {
 		const d = decompterFacture(
 			facture({
-				reglements: [{ date: '2025-05-11', montant: depuisEuros('999,99'), nature: 'PAIEMENT' }]
+				reglements: [
+					{ date: '2025-05-11', montant: depuisEuros('999,99'), nature: 'PAIEMENT' },
+					{ date: '2025-09-30', montant: depuisEuros('150,00'), nature: 'AVOIR' }
+				]
 			}),
 			'2026-01-01',
 			'ACT_365'
 		);
 
 		const sommeSegments = d.segments.reduce((total, s) => total + s.interets, 0n);
-		expect(sommeSegments).toBe(d.interets);
+		const eteints = d.imputations.reduce((total, i) => total + i.surInterets, 0n);
+		expect(sommeSegments - eteints).toBe(d.interets);
+	});
+
+	it('les règlements, sur le principal, font exactement ce qui a été payé du principal', () => {
+		const d = decompterFacture(
+			facture({
+				reglements: [
+					{ date: '2024-12-15', montant: depuisEuros('500,00'), nature: 'ACOMPTE' },
+					{ date: '2025-05-11', montant: depuisEuros('999,99'), nature: 'PAIEMENT' }
+				]
+			}),
+			'2026-01-01',
+			'ACT_365'
+		);
+
+		const surPrincipal = d.imputations.reduce((total, i) => total + i.surPrincipal, 0n);
+		expect(depuisEuros('10000,00') - surPrincipal).toBe(d.principalRestantDu);
+		// L'acompte versé avant l'échéance va tout entier au principal : rien n'avait couru.
+		expect(versEuros(d.imputations[0]!.surInterets)).toBe('0,00');
 	});
 });
 

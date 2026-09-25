@@ -451,9 +451,20 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			reference: facture.reference,
 			montant: facture.montantExigible,
 			urgence: 'CRITIQUE',
+			// ⚠️ UNE DATE CALCULÉE, PAS UN VERDICT. Elle ne suit ni les interruptions ni
+			// les suspensions : un paiement partiel, une reconnaissance du client ou une
+			// demande en justice peuvent la repousser, et ce logiciel ne les voit pas tant
+			// qu'elles ne sont pas consignées. « Est prescrite » affirmait une
+			// qualification que la relecture juridique du 25/09/2026 range du mauvais
+			// côté de la ligne.
 			explication: eteinte
-				? `La facture ${facture.reference} est prescrite depuis le ${dateLisible(facture.datePrescription)}.`
-				: `La facture ${facture.reference} sera prescrite le ${dateLisible(facture.datePrescription)}, dans ${restant} jour${pluriel(restant)}.`,
+				? `La date limite calculée pour réclamer la facture ${facture.reference} est passée ` +
+					`depuis le ${dateLisible(facture.datePrescription)}. Ce calcul ne suit pas les ` +
+					`interruptions : un paiement partiel ou une reconnaissance de votre client peuvent ` +
+					`l’avoir repoussée.`
+				: `La date limite calculée pour réclamer la facture ${facture.reference} tombe le ` +
+					`${dateLisible(facture.datePrescription)}, dans ${restant} jour${pluriel(restant)} : au-delà, ` +
+					`le droit d’agir en justice s’éteint, sauf interruption que ce calcul ne suit pas.`,
 			// ⚠️ LIGNE ROUGE 3 : « On ne recommande jamais une procédure. Ce serait
 			// du conseil juridique. » Cette action disait littéralement « Engager une
 			// procédure avant le … », et le test qui gardait la règle ne regardait
@@ -464,13 +475,14 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			// dans N jours ». Ce qui reste ici est un geste LOGICIEL, et il en faut
 			// un : le briefing quotidien s'appuie sur ce champ, et un événement sans
 			// prise se referme.
-			// ⚠️ LA BRANCHE « ÉTEINTE » GARDE SON AVERTISSEMENT, et ce n'est pas une
-			// exception à la règle : « ne plus engager de frais » ne recommande
-			// aucune procédure — elle recommande de n'en engager AUCUNE. C'est le
-			// seul sens dans lequel ce produit peut parler sans conseiller, et c'est
-			// aussi l'avertissement qui protège le plus d'argent.
+			// ⚠️ LA BRANCHE « PASSÉE » N'ORDONNE PLUS D'ABANDONNER. Elle disait « Ne plus
+			// engager de frais : la créance est éteinte » — un verdict, puis une consigne,
+			// sur une date que ce logiciel calcule sans voir les interruptions. C'était le
+			// sens le plus cher : faire lâcher une créance peut-être vivante. Le geste
+			// redevient celui du logiciel : ouvrir la facture, où le calcul se lit.
 			action: eteinte
-				? 'Ne plus engager de frais sur cette facture : la créance est éteinte.'
+				? `Ouvrir la facture ${facture.reference} : le calcul de sa date limite y est ` +
+					`détaillé, avec ses hypothèses.`
 				: `Ouvrir la facture ${facture.reference} : ${versEuros(facture.montantExigible)} € y ` +
 					`sont décomptés, avec les pièces qui les soutiennent.`,
 			// LA DATE DE PRESCRIPTION, celle des deux branches de l'explication.

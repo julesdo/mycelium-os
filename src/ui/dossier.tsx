@@ -371,7 +371,7 @@ export function CarteDossier({
 
 				{dossier.nombreFactures === null || dossier.nombreFactures === 0 ? null : (
 					<span className="text-cladd-2xs text-cladd-fg-softer">
-						principal restant dû sur {dossier.nombreFactures} facture
+						reste à payer sur {dossier.nombreFactures} facture
 						{pluriel(dossier.nombreFactures)}
 					</span>
 				)}
@@ -492,7 +492,7 @@ export function VoletDuDossier({
 		<div className="flex flex-col gap-cladd-xs p-cladd-2xs">
 			<div className="flex flex-col gap-1">
 				<span className="text-cladd-2xs text-cladd-fg-softer">
-					Principal restant dû sur ce dossier
+					Reste à payer sur ce dossier
 				</span>
 				{dossier.principalRestantDu === null ? (
 					<p className="text-cladd-sm leading-relaxed text-cladd-fg-soft">

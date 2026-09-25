@@ -142,6 +142,15 @@ export const abandonsDeLEtablissement = authedQuery({
 							taux: fraction(segment.taux.numerateur, segment.taux.denominateur),
 							baseAnnuelle: segment.baseAnnuelle,
 							interets: depuisCentimes(segment.interets)
+						})),
+						// Un décompte figé avant le 25/09/2026 n'en porte pas : il imputait
+						// tout au principal, et ses périodes font exactement ses intérêts.
+						imputations: (ligne.imputations ?? []).map((imputation) => ({
+							date: imputation.date,
+							nature: imputation.nature,
+							montant: depuisCentimes(imputation.montant),
+							surInterets: depuisCentimes(imputation.surInterets),
+							surPrincipal: depuisCentimes(imputation.surPrincipal)
 						}))
 					})),
 					principalRestantDu: depuisCentimes(decompte.principalRestantDu),

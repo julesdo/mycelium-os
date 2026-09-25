@@ -35,13 +35,16 @@ import type { SanteDebiteur } from './scoring';
  * ⚠️ LE NIVEAU 3 NE PEUT PAS ENCORE EXISTER, ET IL LE DIT
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Une mise en demeure produit des effets de droit. Ses mentions obligatoires
- * n'ont pas été fournies, et la règle 0.1 interdit de les deviner. Elle se
- * déclare indisponible et NOMME ce qui lui manque, comme la procédure L.126.
+ * Une mise en demeure produit des effets de droit. La loi ne lui impose aucune
+ * liste de mentions — une interpellation suffisante, que le juge apprécie
+ * (`PARAMETRES.modesMiseEnDemeure`) — et ce module a longtemps affirmé le
+ * contraire. Ce qui manque est le MODÈLE de lettre de relance officielle,
+ * rédigé et contre-vérifié le 25/09/2026, qui arrive avec l'envoi des
+ * courriers. D'ici là, le niveau se déclare indisponible et le dit.
  *
- * Une mise en demeure irrégulière est pire qu'aucune : elle ne produit pas les
- * effets qu'on lui prête, et le créancier calcule la suite sur un délai qui
- * n'a jamais couru.
+ * ⚠️ UNE INTERPELLATION SUFFISANTE PEUT VALOIR MISE EN DEMEURE QUEL QUE SOIT
+ * SON TITRE. Le niveau 2 ne dit donc pas qu'il « n'est pas une mise en
+ * demeure » : il dit qu'il n'en porte pas l'intitulé.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ ET LE COUPE-CIRCUIT PASSE AVANT TOUT
@@ -76,20 +79,27 @@ export const NIVEAUX_RELANCE: readonly DescriptionNiveau[] = [
 		nom: 'Compte arrêté',
 		intention:
 			'Reprend les montants d’un décompte figé et daté, sans rien recalculer. ' +
-			'Ce n’est pas une mise en demeure et le texte n’en emprunte pas les mots.'
+			'Ce courrier ne porte pas l’intitulé « mise en demeure ».'
 	},
 	{
 		niveau: 3,
 		nom: 'Mise en demeure',
 		intention:
-			'Produit des effets de droit, et suppose des mentions obligatoires qui ne sont pas ' +
-			'relevées dans le référentiel. Indisponible tant qu’elles manquent.'
+			'Une interpellation suffisante de votre client, sous l’intitulé « mise en demeure ». ' +
+			'Le modèle n’est pas encore disponible dans ce logiciel.'
 	}
 ];
 
 /** Le décompte ARRÊTÉ dont le niveau 2 reprend les chiffres. Jamais recalculé. */
 export interface DecompteArrete {
 	readonly arreteAu: string;
+	/**
+	 * ⚠️ LE PRINCIPAL DU DÉCOMPTE FIGÉ, PAS LE SOLDE DES FACTURES. La lettre prenait le
+	 * solde du jour (le montant moins TOUS les règlements) à côté des intérêts et du
+	 * total figés : ses lignes ne s'additionnaient plus dès qu'un règlement avait
+	 * éteint des pénalités, ou était arrivé après l'arrêté.
+	 */
+	readonly principalRestantDu: Montant;
 	readonly interets: Montant;
 	readonly indemniteForfaitaire: Montant;
 	readonly total: Montant;
@@ -279,7 +289,7 @@ function compteArrete(elements: ElementsRelance): Relance {
 		};
 	}
 
-	const { arreteAu, interets, indemniteForfaitaire, total } = elements.decompte;
+	const { arreteAu, principalRestantDu, interets, indemniteForfaitaire, total } = elements.decompte;
 
 	return {
 		disponible: true,
@@ -294,8 +304,8 @@ function compteArrete(elements: ElementsRelance): Relance {
 				(facture) => `— facture ${facture.reference}, ${versEuros(facture.montantTTC)} €`
 			),
 			'',
-			`Principal restant dû : ${versEuros(elements.principalRestantDu)} €`,
-			`Intérêts de retard : ${versEuros(interets)} €`,
+			`Principal restant dû : ${versEuros(principalRestantDu)} €`,
+			`Pénalités de retard : ${versEuros(interets)} €`,
 			`Indemnité forfaitaire de recouvrement : ${versEuros(indemniteForfaitaire)} €`,
 			`Total arrêté au ${enFrancais(arreteAu)} : ${versEuros(total)} €`,
 			'',
@@ -329,49 +339,40 @@ const COUT_SANS_MISE_EN_DEMEURE =
 	'et datés par le décompte.';
 
 /**
- * NIVEAU 3 — la mise en demeure, et pourquoi elle n'existe pas.
+ * NIVEAU 3 — la mise en demeure, et pourquoi elle n'est pas encore composée.
  *
- * Le même raisonnement que `procedures.ts` pour la requête en injonction :
- * évaluer est possible, produire l'acte ne l'est pas. Ici il n'y a même rien à
- * évaluer — un texte aux mentions inventées serait inopérant, et ferait croire
- * un délai lancé.
+ * ⚠️ CE NIVEAU ÉTAIT BLOQUÉ POUR UNE RAISON FAUSSE. Il attendait
+ * `mentionsObligatoiresInjonction`, qui décrit une requête au tribunal, pas une
+ * lettre au débiteur ; et il affirmait qu'une mise en demeure a des « mentions
+ * obligatoires ». La loi n'en dresse aucune liste : elle demande une
+ * interpellation suffisante (`PARAMETRES.modesMiseEnDemeure`), que le juge
+ * apprécie. La relecture juridique du 25/09 l'a relevé.
+ *
+ * Ce qui manque vraiment est le MODÈLE : la lettre de relance officielle,
+ * rédigée et contre-vérifiée le 25/09, qui arrive avec l'envoi des courriers.
+ * D'ici là, ce niveau le dit, au lieu de composer un texte que personne n'a
+ * relu.
  */
 function miseEnDemeure(): Relance {
-	const cle = 'mentionsObligatoiresInjonction';
-	const p = parametre(cle);
-	const disponible = p !== undefined && estUtilisable(p);
-
-	if (disponible) {
-		// Le jour où les mentions sont relevées ET validées, ce niveau se
-		// construira ici. Refuser en le disant vaut mieux que composer un texte
-		// dont personne n'a vérifié la portée.
-		return {
-			disponible: false,
-			peutFaire: PEUT_FAIRE_SANS_MISE_EN_DEMEURE,
-			constat:
-				'Les mentions obligatoires sont désormais disponibles au référentiel : ce niveau ' +
-				'reste à construire, et à faire valider avant tout envoi.',
-			blocages: [],
-			coutDeLAttente: COUT_SANS_MISE_EN_DEMEURE
-		};
-	}
+	const regle = parametre('modesMiseEnDemeure');
+	const regleRelevee = regle !== undefined && estUtilisable(regle);
 
 	return {
 		disponible: false,
 		peutFaire: PEUT_FAIRE_SANS_MISE_EN_DEMEURE,
-		constat:
-			'Une mise en demeure produit des effets de droit, et ses mentions obligatoires ne sont ' +
-			'pas relevées dans le référentiel juridique de ce logiciel. Elle n’est donc pas ' +
-			'composée : une mise en demeure irrégulière ne produit pas les effets qu’on lui prête. ' +
-			'Ce verrou se lève par le relevé de ces mentions sur une source publique citable, et ' +
-			'par leur contrôle.',
-		// ⚠️ NI CLÉ DE CODE, NI NOTE DE DÉVELOPPEUR À L'ÉCRAN. Le blocage disait
-		// « « mentionsObligatoiresInjonction » : … » suivi de sept lignes écrites pour
-		// nous. Le gérant a besoin de savoir CE QUI MANQUE, pas comment on l'a nommé.
+		constat: regleRelevee
+			? 'La loi n’impose pas de liste de mentions à une mise en demeure : elle demande une ' +
+				'interpellation suffisante, que le juge apprécie. Ce logiciel ne compose pas encore ' +
+				'cette lettre ; elle viendra avec le modèle de lettre de relance officielle, que vous ' +
+				'relirez et validerez avant tout envoi.'
+			: 'La règle qui encadre une mise en demeure n’est pas relevée au référentiel juridique ' +
+				'de ce logiciel. Il ne compose donc pas cette lettre.',
+		// ⚠️ NI CLÉ DE CODE, NI NOTE DE DÉVELOPPEUR À L'ÉCRAN. Le gérant a besoin
+		// de savoir CE QUI MANQUE, pas comment on l'a nommé.
 		blocages: [
-			p === undefined
-				? 'Les mentions obligatoires d’une mise en demeure ne sont pas relevées au référentiel juridique de ce logiciel.'
-				: 'Les mentions obligatoires d’une mise en demeure sont relevées, mais leur source n’a pas encore été contrôlée.'
+			regleRelevee
+				? 'Le modèle de lettre de relance officielle n’est pas encore disponible dans ce logiciel.'
+				: 'La règle qui encadre une mise en demeure n’est pas relevée au référentiel juridique de ce logiciel.'
 		],
 		coutDeLAttente: COUT_SANS_MISE_EN_DEMEURE
 	};

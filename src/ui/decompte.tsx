@@ -54,6 +54,15 @@ export interface SegmentAffiche {
 	readonly interets: bigint;
 }
 
+/** Ce qu'un règlement a éteint : d'abord les pénalités déjà courues, puis le principal. */
+export interface ImputationAffichee {
+	readonly date: string;
+	readonly nature: 'PAIEMENT' | 'ACOMPTE' | 'AVOIR' | 'CREDIT';
+	readonly montant: bigint;
+	readonly surInterets: bigint;
+	readonly surPrincipal: bigint;
+}
+
 export interface LigneDecompteAffichee {
 	readonly reference: string;
 	readonly principalRestantDu: bigint;
@@ -61,6 +70,55 @@ export interface LigneDecompteAffichee {
 	readonly indemniteForfaitaire: bigint;
 	readonly total: bigint;
 	readonly segments: readonly SegmentAffiche[];
+	/**
+	 * ⚠️ FACULTATIF : un décompte figé avant le 25/09/2026 n'en porte pas. Il
+	 * imputait tout règlement au principal, et ses périodes font ses intérêts.
+	 */
+	readonly imputations?: readonly ImputationAffichee[];
+}
+
+const NATURE_LISIBLE: Record<ImputationAffichee['nature'], string> = {
+	PAIEMENT: 'Paiement',
+	ACOMPTE: 'Acompte',
+	AVOIR: 'Avoir',
+	CREDIT: 'Crédit non détaillé'
+};
+
+/**
+ * Les règlements, et ce que chacun a éteint.
+ *
+ * ⚠️ C'EST LA MOITIÉ DE LA PREUVE. Un paiement s'impute d'abord sur les
+ * pénalités déjà courues : les périodes disent ce qui a couru, ce tableau ce
+ * qui en a été payé. Sans lui, la somme des périodes dépasse les intérêts dus,
+ * et un tiers qui refait le calcul croit à une erreur.
+ */
+export function ReglementsImputes({
+	imputations
+}: {
+	imputations: readonly ImputationAffichee[];
+}) {
+	return (
+		<Tableau legende="Règlements, et ce que chacun a éteint">
+			<TableauEntete>
+				<TableauTitre>Le</TableauTitre>
+				<TableauTitre>Nature</TableauTitre>
+				<TableauTitre aDroite>Montant</TableauTitre>
+				<TableauTitre aDroite>Sur les intérêts</TableauTitre>
+				<TableauTitre aDroite>Sur le principal</TableauTitre>
+			</TableauEntete>
+			<TableauCorps>
+				{imputations.map((imputation, rang) => (
+					<TableauLigne key={`${imputation.date}-${rang}`}>
+						<TableauCellule>{dateCourte(imputation.date)}</TableauCellule>
+						<TableauCellule>{NATURE_LISIBLE[imputation.nature]}</TableauCellule>
+						<TableauCellule aDroite>{eurosCentimes(imputation.montant)}</TableauCellule>
+						<TableauCellule aDroite>{eurosCentimes(imputation.surInterets)}</TableauCellule>
+						<TableauCellule aDroite>{eurosCentimes(imputation.surPrincipal)}</TableauCellule>
+					</TableauLigne>
+				))}
+			</TableauCorps>
+		</Tableau>
+	);
 }
 
 export interface DecompteAffiche {
@@ -187,8 +245,11 @@ export function Decompte({ decompte }: { decompte: DecompteAffiche }) {
 							    sa hauteur jusqu'à zéro, et une marge verticale posée sur lui
 							    l'empêcherait de se refermer complètement. */}
 							<CollapsiblePanel>
-								<div className="pt-cladd-3xs">
+								<div className="flex flex-col gap-cladd-3xs pt-cladd-3xs">
 									<PeriodesDInterets segments={ligne.segments} />
+									{ligne.imputations !== undefined && ligne.imputations.length > 0 ? (
+										<ReglementsImputes imputations={ligne.imputations} />
+									) : null}
 								</div>
 							</CollapsiblePanel>
 						</CollapsibleRoot>

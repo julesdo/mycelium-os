@@ -49,7 +49,7 @@ export function buildNotificationContent(
 		case 'PRESCRIPTION_PROCHE':
 			return {
 				title: 'Prescription proche',
-				message: `${data.reference} sera prescrite le ${data.date}. Passée cette date, la créance est éteinte.`
+				message: `La date limite calculée pour réclamer ${data.reference} tombe le ${data.date} : au-delà, le droit d’agir en justice s’éteint, sauf interruption que ce calcul ne suit pas.`
 			};
 		case 'DEBITEUR_DEGRADE':
 			return {

@@ -45,8 +45,12 @@ export interface FacturePourRevelation extends FacturePourDecompte {
 
 export interface LigneRevelee {
 	readonly reference: string;
-	/** Ce que la comptabilité affiche déjà. */
+	/** Ce que la comptabilité affiche déjà : le montant, moins tout ce qui a été réglé. */
 	readonly principalRestantDu: Montant;
+	/**
+	 * Les pénalités COURUES, période par période — y compris celles qu'un règlement a
+	 * éteintes : la comptabilité a porté ce règlement en entier sur la facture.
+	 */
 	readonly interets: Montant;
 	readonly indemniteForfaitaire: Montant;
 	/** Ce que personne n'avait calculé : intérêts + indemnité. */
@@ -135,12 +139,20 @@ export function reveler(
 
 		try {
 			const decompte = decompterFacture(facture, arreteAu, convention);
+			// ⚠️ LE SOLDE DE LA COMPTABILITÉ, PAS LE PRINCIPAL DU DÉCOMPTE. Depuis le
+			// 25/09/2026, un règlement éteint d'abord les pénalités courues : le principal
+			// du décompte dépasse alors le solde du compte client exactement de ce que les
+			// règlements ont éteint. La révélation part de ce que le gérant voit déjà, et y
+			// ajoute TOUT ce que la loi y ajoute : les pénalités courues, y compris celles
+			// qu'un règlement a couvertes, et l'indemnité. Le total ne change pas.
+			const eteints = sommeOuZero(decompte.imputations.map((i) => i.surInterets));
+			const courus = sommeOuZero(decompte.segments.map((s) => s.interets));
 			lignes.push({
 				reference: decompte.reference,
-				principalRestantDu: decompte.principalRestantDu,
-				interets: decompte.interets,
+				principalRestantDu: soustraire(decompte.principalRestantDu, eteints),
+				interets: courus,
 				indemniteForfaitaire: decompte.indemniteForfaitaire,
-				supplement: additionner(decompte.interets, decompte.indemniteForfaitaire)
+				supplement: additionner(courus, decompte.indemniteForfaitaire)
 			});
 		} catch (erreur) {
 			// Le message porte la cause — un semestre de taux absent, une date qui
@@ -207,9 +219,10 @@ export function interetsCourusEntre(
 	const avant = reveler(dejaReclamables, depuis, convention).interets;
 	const apres = reveler(dejaReclamables, jusqua, convention).interets;
 
-	// Jamais négatif. `jusqua` antérieur à `depuis` n'a pas de sens ici, et une
-	// facture réglée entre-temps réduit le principal donc les intérêts à venir,
-	// sans que le passé se rétracte.
+	// Jamais négatif. `jusqua` antérieur à `depuis` n'a pas de sens ici. Les
+	// `interets` de la révélation sont les pénalités COURUES, pas celles qui restent
+	// dues : un règlement qui en éteint ne fait donc pas reculer le compteur, il
+	// réduit seulement ce qui courra ensuite. Le passé ne se rétracte pas.
 	return apres > avant ? soustraire(apres, avant) : ZERO;
 }
 

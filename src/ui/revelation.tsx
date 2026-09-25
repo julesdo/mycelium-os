@@ -144,11 +144,11 @@ export function ChocRevelation({ revelation }: { revelation: RevelationAffichee 
 					</span>
 				</div>
 
-				{/* Le principal en second, et nommé pour ce qu'il est : ce que la
-				    comptabilité affiche déjà. */}
+				{/* Le solde en second, et nommé pour ce qu'il est : ce que la comptabilité
+				    affiche déjà. Ce qui s'y ajoute est le chiffre de la révélation. */}
 				<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-t border-cladd-outline pt-cladd-2xs">
 					<span className="text-cladd-sm text-cladd-fg-soft">
-						Principal restant dû, que vous connaissez déjà
+						Reste à payer sur vos factures, que vous connaissez déjà
 					</span>
 					<span className="text-cladd-md font-semibold tabular-nums">
 						{eurosCentimes(revelation.principal)}
