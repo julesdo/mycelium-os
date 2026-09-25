@@ -93,7 +93,7 @@ function partsEntrees(bilan: BilanDepotAffiche): readonly { libelle: string; val
 	const parts = [
 		{ libelle: 'Factures créées', valeur: bilan.facturesCreees },
 		{ libelle: 'Règlements rapprochés', valeur: bilan.reglementsCrees },
-		{ libelle: 'Débiteurs créés', valeur: bilan.debiteursCrees },
+		{ libelle: 'Clients créés', valeur: bilan.debiteursCrees },
 		{ libelle: 'Factures déjà connues', valeur: bilan.facturesDejaConnues }
 	];
 	/**

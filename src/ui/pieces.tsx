@@ -93,7 +93,7 @@ export const TYPES_PIECE: readonly OptionTypePiece[] = [
 	{ cle: 'CONTRAT', libelle: 'Contrat', apport: 'Établit les conditions de paiement' },
 	{
 		cle: 'MISE_EN_DEMEURE',
-		libelle: 'Mise en demeure',
+		libelle: 'Lettre de relance officielle',
 		apport: 'Établit l’interpellation préalable'
 	},
 	{ cle: 'ECHANGES', libelle: 'Échanges', apport: 'Documente la relation, sans critère propre' },

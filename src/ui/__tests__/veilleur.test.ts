@@ -52,7 +52,12 @@ describe('le veilleur', () => {
 
 	it('rapporte la nuit où la machine a parlé, avec sa raison', () => {
 		const [surveillance] = travauxDuVeilleur({
-			battement: { jour: '2026-09-11', statut: 'PARLE', raison: '3 points critiques', termineLe: NUIT },
+			battement: {
+				jour: '2026-09-11',
+				statut: 'PARLE',
+				raison: '3 points critiques',
+				termineLe: NUIT
+			},
 			depotsEnCours: [],
 			aujourdHui: '2026-09-11'
 		});
@@ -152,7 +157,7 @@ describe('le veilleur', () => {
 		// s'éteint, et emporte la créance.
 		expect(travaux[0]?.etat).toBe('TROUVE');
 		expect(travaux[0]?.titre).toBe('Prescription proche');
-		expect(travaux[0]?.vers).toBe('/app/debiteurs');
+		expect(travaux[0]?.vers).toBe('/app/clients');
 	});
 
 	it('ne fabrique aucune destination pour une trouvaille sans lien', () => {

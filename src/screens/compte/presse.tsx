@@ -133,7 +133,10 @@ export function resumeConnexions(statut: string | null): ResumeDeSection {
 	return { valeur, legende: 'Les logiciels d’où vos factures arrivent seules.' };
 }
 
-export function resumeProfil(profil: { readonly image: unknown; readonly avatar: unknown }): ResumeDeSection {
+export function resumeProfil(profil: {
+	readonly image: unknown;
+	readonly avatar: unknown;
+}): ResumeDeSection {
 	const valeur = profil.avatar !== null ? 'Avatar' : profil.image !== null ? 'Photo' : 'Initiales';
 	return { valeur, legende: 'Ce qui vous représente dans l’application.' };
 }
@@ -157,7 +160,7 @@ function urgenceEtablissement(identite: IdentiteDuCreancier | null): UrgenceDuCo
 		  donc la condition de l'injonction de payer ne peut pas être acquise.
 		  C'est un état du dossier, jamais un conseil d'agir.
 		*/
-		consequence: 'Aucune injonction de payer possible sans elle.'
+		consequence: 'Sans elle, impossible de demander au tribunal de le faire payer.'
 	};
 }
 
@@ -253,8 +256,7 @@ const FAIT_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
  * ⚠️ LE JOUR OÙ `assertFeatureAccess` EST BRANCHÉE, CETTE PHRASE CHANGE. Elle
  * est ici, seule, pour que ce soit un remplacement et pas une chasse.
  */
-const CONSEQUENCE_DE_LA_FERMETURE =
-	'Plus personne ne peut être invité dans cet établissement.';
+const CONSEQUENCE_DE_LA_FERMETURE = 'Plus personne ne peut être invité dans cet établissement.';
 
 const VALEUR_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 	past_due: 'Paiement échoué',
@@ -348,7 +350,7 @@ export function resumeEquipe(lecture: Lecture<EquipeAffichee>): ResumeDeSection 
 		legende:
 			invitations.length > 0
 				? `${invitations.length} invitation${pluriel(invitations.length)} en attente`
-				: 'Qui accède aux factures et aux créances.'
+				: 'Qui accède aux factures et aux dossiers.'
 	};
 }
 

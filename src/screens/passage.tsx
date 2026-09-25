@@ -23,7 +23,7 @@ export function EcranIntrouvable() {
 		<div className="flex flex-col items-start gap-cladd-3xs p-cladd-xs">
 			<h1 className="text-cladd-md font-semibold">Cette page n&rsquo;existe pas.</h1>
 			<p className="text-cladd-xs text-cladd-fg-soft">
-				Le lien est peut-être ancien. Revenez à l&rsquo;accueil pour retrouver vos créances.
+				Le lien est peut-être ancien. Revenez à l&rsquo;accueil pour retrouver vos dossiers.
 			</p>
 			<BoutonPrincipal as={Lien} to="/app">
 				Revenir à l&rsquo;accueil
@@ -51,7 +51,7 @@ export function EcranEnErreur() {
 		<div className="flex h-dvh flex-col items-center justify-center gap-cladd-3xs p-cladd-xs text-center">
 			<h1 className="text-cladd-md font-semibold">Cet écran n&rsquo;a pas pu s&rsquo;afficher.</h1>
 			<p className="max-w-sm text-cladd-xs text-cladd-fg-soft">
-				Vos créances et vos décomptes sont intacts : c&rsquo;est l&rsquo;affichage qui a échoué, pas
+				Vos dossiers et vos calculs sont intacts : c&rsquo;est l&rsquo;affichage qui a échoué, pas
 				la mesure.
 			</p>
 			<BoutonPrincipal as={Lien} to="/app">

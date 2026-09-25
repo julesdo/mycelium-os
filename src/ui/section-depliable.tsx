@@ -92,6 +92,7 @@ export function SectionDepliable({
 		<AccordionItem value={cle}>
 			<Surface
 				as="section"
+				id={`section-${cle}`}
 				variant="transparent"
 				outline={false}
 				className="verre-carte rounded-cladd-xl"

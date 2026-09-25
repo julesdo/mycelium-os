@@ -121,7 +121,7 @@ function LigneEvenement({
 					as: Lien,
 					// Une facture n'a pas d'écran : c'est le volet de son débiteur qui
 					// la porte. Voir `CibleEvenement`, qui n'a donc que deux genres.
-					to: cible.genre === 'CREANCE' ? '/app/creance/$id' : '/app/debiteurs',
+					to: cible.genre === 'CREANCE' ? '/app/dossier/$id' : '/app/clients',
 					...(cible.genre === 'CREANCE'
 						? { params: { id: cible.id } }
 						: { search: { d: cible.id } })
@@ -247,7 +247,7 @@ export function FluxEvenements({
 							Factures identifiées, principal TTC
 						</span>
 						<span className="text-cladd-2xs text-cladd-fg-softer">
-							Hors intérêts de retard et indemnité forfaitaire
+							Hors pénalités de retard et frais de recouvrement
 						</span>
 					</div>
 					<span className="text-letikette-titre font-bold tabular-nums">

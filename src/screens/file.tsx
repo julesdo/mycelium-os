@@ -606,7 +606,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						{groupes.length === 0 ? (
 							<p className="text-cladd-xs text-cladd-fg-soft">
 								Rien à trancher aujourd’hui. La surveillance continue de tourner sur vos échéances
-								et sur la prescription.
+								et sur les dates limites pour agir en justice.
 							</p>
 						) : (
 							groupes.map(({ cle, rangees: siennes }) => (
@@ -792,7 +792,7 @@ function Tete({ tete }: { tete: TeteDeFile }) {
 				<span className="font-semibold tabular-nums">
 					{eurosCentimes(tete.prescriptionSousPreavis)}
 				</span>{' '}
-				dont la prescription tombe sous {PREAVIS.PRESCRIPTION} jours.
+				dont la date limite pour agir en justice tombe sous {PREAVIS.PRESCRIPTION} jours.
 			</p>
 
 			{/* LA RÈGLE D'AMPUTATION, SOUS LES DEUX NOMBRES ET JAMAIS REPLIÉE. Une
@@ -973,7 +973,7 @@ function FileVide({
 	return (
 		<SectionEcran
 			titre="Rien à trancher aujourd’hui"
-			legende="Le logiciel surveille les échéances et la prescription dès qu’il a de quoi compter."
+			legende="Le logiciel surveille les échéances et les dates limites pour agir en justice dès qu’il a de quoi compter."
 		>
 			{connexion}
 			<ZoneDepot
@@ -1037,14 +1037,15 @@ const FANTOMES: readonly {
 }[] = [
 	{
 		titre: 'Un de vos clients',
-		obstacle: 'Prescription dans 41 jours : passé cette date, la créance ne se réclame plus.',
+		obstacle:
+			'Date limite pour agir en justice dans 41 jours : passé cette date, le tribunal ne peut plus être saisi.',
 		urgence: 'CRITIQUE',
 		montant: 3_120_050n,
 		dateDuFait: '2026-10-27'
 	},
 	{
 		titre: 'Un autre de vos clients',
-		obstacle: 'Décompte arrêtable, intérêts de retard et indemnité forfaitaire compris.',
+		obstacle: 'Calcul prêt, pénalités de retard et frais de recouvrement compris.',
 		urgence: 'HAUTE',
 		montant: 1_248_033n,
 		dateDuFait: '2026-11-12'

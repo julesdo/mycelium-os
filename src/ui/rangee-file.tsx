@@ -301,8 +301,8 @@ export function RangeeFile({
 					<FileTextIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
 					<span>
 						Proposé : <span className="font-medium">{proposition.valeur}</span>,{' '}
-						{proposition.source}. {dateCourte(proposition.date)}. Rien n’est enregistré tant que vous
-						n’avez pas appuyé.
+						{proposition.source}. {dateCourte(proposition.date)}. Rien n’est enregistré tant que
+						vous n’avez pas appuyé.
 					</span>
 				</span>
 			)}

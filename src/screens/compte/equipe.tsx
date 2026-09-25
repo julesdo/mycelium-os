@@ -26,13 +26,7 @@ import {
 	UserPlusIcon
 } from 'lucide-react';
 import { VALIDITE_INVITATION_EN_TOUTES_LETTRES } from '../../lib/config/invitations';
-import {
-	BoutonPrincipal,
-	BoutonSecondaire,
-	Champ,
-	ConfirmationParSaisie,
-	pluriel
-} from '../../ui';
+import { BoutonPrincipal, BoutonSecondaire, Champ, ConfirmationParSaisie, pluriel } from '../../ui';
 
 /**
  * L'ÉQUIPE — la section, et l'invitation EN LIGNE.
@@ -384,7 +378,7 @@ function LigneMembre({
 							*/}
 							<ConfirmationParSaisie
 								titre={`Retirer ${titreDeLigne(membre)} ?`}
-								texte={`${titreDeLigne(membre)} perd immédiatement l’accès à toutes les factures, tous les débiteurs et tous les décomptes de cet établissement. Ses confirmations restent au dossier, et il faudra une nouvelle invitation pour lui rendre l’accès. Saisissez ${valeurAConfirmer(membre)} pour confirmer.`}
+								texte={`${titreDeLigne(membre)} perd immédiatement l’accès à toutes les factures, tous les clients et tous les calculs de cet établissement. Ses confirmations restent au dossier, et il faudra une nouvelle invitation pour lui rendre l’accès. Saisissez ${valeurAConfirmer(membre)} pour confirmer.`}
 								valeurAttendue={valeurAConfirmer(membre)}
 								invite={membre.email ? 'Son adresse e-mail' : 'Son nom'}
 								intituleConfirmation="Retirer de l’établissement"
@@ -404,7 +398,6 @@ function LigneMembre({
 					</Popover>
 				</PopoverRoot>
 			) : null}
-
 		</ListItem>
 	);
 }
@@ -516,8 +509,8 @@ export function FormulaireInvitation({
 					comprises.
 				</p>
 				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-					Ce verrou se lève aussi par le passage à l’offre du palier supérieur, qui porte
-					davantage de places.
+					Ce verrou se lève aussi par le passage à l’offre du palier supérieur, qui porte davantage
+					de places.
 				</p>
 				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 					Ce que l’attente coûte : la personne non invitée ne dépose aucune facture et ne confirme

@@ -83,9 +83,7 @@ export function CadreAuth({
 						{/* Aligné à gauche et nettement plus gros que le corps : c'est
 						    l'écart d'échelle qui fait qu'un écran d'entrée se lit en une
 						    seconde. Centré, comme avant, il se confondait avec sa légende. */}
-						<h1 className="text-letikette-titre leading-tight font-bold tracking-tight">
-							{titre}
-						</h1>
+						<h1 className="text-letikette-titre leading-tight font-bold tracking-tight">{titre}</h1>
 						{explication ? (
 							<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">{explication}</p>
 						) : null}

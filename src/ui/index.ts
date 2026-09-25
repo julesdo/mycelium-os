@@ -12,6 +12,14 @@
 
 export { cn } from './cn';
 export { TableauConditions, type LigneConditionAffichee } from './conditions';
+export {
+	DeuxColonnesDossier,
+	EtapeEnCours,
+	FilDesEtapes,
+	FriseDossier,
+	type EtapeDossierAffichee,
+	type LectureEtapesAffichee
+} from './etapes-dossier';
 export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
 export { Telephone } from './telephone';
 export { Page, PageHeader, PageBody, PageHero } from './page';

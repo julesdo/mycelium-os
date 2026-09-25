@@ -48,7 +48,7 @@ describe('ce qui manque', () => {
 		expect(verrou?.titre).toBe('Votre identité de créancier');
 		// Le POURQUOI, et il est exact : c'est bien `entreCommercants` qui reste
 		// indéterminé sans profil, donc l'injonction de payer qui reste fermée.
-		expect(verrou?.debloque).toContain('injonction de payer');
+		expect(verrou?.debloque).toContain('demander au tribunal de le faire payer');
 		// Les trois champs du créancier vivent dans la section « Votre
 		// établissement » de `/app/compte` depuis que les treize adresses de
 		// réglages sont devenues une page.
@@ -60,7 +60,7 @@ describe('ce qui manque', () => {
 
 		expect(verrou?.titre).toBe('4 débiteurs sans identifiant');
 		expect(verrou?.debloque).toContain('solvabilité');
-		expect(verrou?.vers).toBe('/app/debiteurs');
+		expect(verrou?.vers).toBe('/app/clients');
 	});
 
 	it('accorde au singulier — un gérant ne lit pas « 1 débiteurs »', () => {

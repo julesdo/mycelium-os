@@ -194,8 +194,8 @@ export function OuvertureEnCours() {
 				conditions générales.
 			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Ce que l&rsquo;attente coûte : rien qui se chiffre. Aucune somme n&rsquo;est due tant que
-				le paiement n&rsquo;est pas ouvert, et nous revenons vers vous avant toute facturation.
+				Ce que l&rsquo;attente coûte : rien qui se chiffre. Aucune somme n&rsquo;est due tant que le
+				paiement n&rsquo;est pas ouvert, et nous revenons vers vous avant toute facturation.
 			</span>
 			<span className="flex flex-wrap gap-cladd-3xs pt-cladd-3xs">
 				<BoutonPrincipal as={Lien} to="/app/import-factures">

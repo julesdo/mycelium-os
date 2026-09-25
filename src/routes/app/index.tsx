@@ -74,7 +74,10 @@ function FileEnErreur() {
  * d'écarté — c'est cette table-ci qui le dira, et `trierSelonLePli` le fera.
  */
 const PLI_PAR_TYPE: Record<string, { readonly un: string; readonly plusieurs: string }> = {
-	PRESCRIPTION_PROCHE: { un: 'prescription proche', plusieurs: 'prescriptions proches' },
+	PRESCRIPTION_PROCHE: {
+		un: 'date limite pour agir en justice proche',
+		plusieurs: 'dates limites pour agir en justice proches'
+	},
 	ECHEANCE_PROCEDURE: { un: 'échéance de procédure', plusieurs: 'échéances de procédure' },
 	FACTURE_ECHUE: { un: 'facture échue', plusieurs: 'factures échues' },
 	DEBITEUR_DEGRADE: { un: 'client dégradé au registre', plusieurs: 'clients dégradés au registre' },
@@ -327,10 +330,10 @@ function File() {
 		debiteurId: string | null
 	): DestinationRangee | undefined => {
 		if (cibleId !== null && estUneCreance.has(cibleId)) {
-			return { vers: '/app/creance/$id', parametres: { id: cibleId } };
+			return { vers: '/app/dossier/$id', parametres: { id: cibleId } };
 		}
 		if (debiteurId !== null) {
-			return { vers: '/app/debiteurs/$id', parametres: { id: debiteurId } };
+			return { vers: '/app/clients/$id', parametres: { id: debiteurId } };
 		}
 		return undefined;
 	};
@@ -564,7 +567,7 @@ function File() {
 			debiteur: nomDuDebiteur.get(question.debiteurId as string) ?? 'Client sans dénomination',
 			// Elle mène à SA créance, jamais à la première du client : c'est de CE
 			// dossier qu'on répond.
-			destination: { vers: '/app/creance/$id', parametres: { id: creanceId } },
+			destination: { vers: '/app/dossier/$id', parametres: { id: creanceId } },
 			// La question du domaine, MOT POUR MOT. `litige.ts` la formule pour être
 			// répondue en regardant sa boîte mail ; la reformuler ici en ferait une
 			// seconde version, qui dériverait de la première.

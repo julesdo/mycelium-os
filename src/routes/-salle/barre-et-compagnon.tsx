@@ -66,7 +66,7 @@ function destinations(actif: keyof typeof ICONES, rappel: ReactNode): Destinatio
 		{
 			cle: 'clients',
 			libelle: 'Clients',
-			vers: '/app/debiteurs',
+			vers: '/app/clients',
 			Icone: ICONES.clients,
 			actif: actif === 'clients'
 		},

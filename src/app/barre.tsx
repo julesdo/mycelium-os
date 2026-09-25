@@ -46,8 +46,8 @@ import {
  */
 const DESTINATIONS = [
 	{ cle: 'aujourdhui', libelle: 'Aujourd’hui', vers: '/app', Icone: IconeLetikette },
-	{ cle: 'clients', libelle: 'Clients', vers: '/app/debiteurs', Icone: UsersIcon },
-	{ cle: 'creances', libelle: 'Créances', vers: '/app/procedures', Icone: GavelIcon },
+	{ cle: 'clients', libelle: 'Clients', vers: '/app/clients', Icone: UsersIcon },
+	{ cle: 'creances', libelle: 'Dossiers', vers: '/app/procedures', Icone: GavelIcon },
 	{ cle: 'compte', libelle: 'Compte', vers: '/app/compte', Icone: CircleUserIcon }
 ] as const satisfies readonly Omit<DestinationBarre, 'actif' | 'rappel'>[];
 

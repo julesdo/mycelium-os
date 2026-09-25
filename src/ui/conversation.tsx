@@ -211,9 +211,7 @@ function Tour({ tour }: { tour: TourAffiche }) {
 					{tour.phrases.map((phrase) => phrase.texte).join(' ')}
 				</p>
 			) : (
-				tour.phrases.map((phrase, rang) => (
-					<Phrase key={`${tour.id}-${rang}`} phrase={phrase} />
-				))
+				tour.phrases.map((phrase, rang) => <Phrase key={`${tour.id}-${rang}`} phrase={phrase} />)
 			)}
 		</Surface>
 	);
@@ -229,10 +227,10 @@ function Tour({ tour }: { tour: TourAffiche }) {
 function FilVide() {
 	return (
 		<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-			Ce fil est borné à ce dossier : ses factures, ses pièces, ses décomptes et les valeurs du
+			Ce fil est borné à ce dossier : ses factures, ses documents, ses décomptes et les valeurs du
 			référentiel qui les chiffrent. Chaque phrase de la réponse portera sa source. Ce qui ne peut
-			pas être relié à une source n’est pas rendu, et ce qui relève d’une conduite à tenir n’est
-			pas écrit ici.
+			pas être relié à une source n’est pas rendu, et ce qui relève d’une conduite à tenir n’est pas
+			écrit ici.
 		</p>
 	);
 }
@@ -257,8 +255,8 @@ function Avertissement({ compteur }: { compteur: CompteurConversation }) {
 				La conversation de cet établissement a dépassé son repère de {compteur.avertissement} pour{' '}
 				{moisLisible(compteur.mois)}, sur un plafond de sécurité de {compteur.arret} — un budget de
 				pilotage, jamais une facture. Au plafond, la conversation libre s’arrête, et rien d’autre :
-				la file, les décomptes, les échéances et la prescription continuent de se calculer sans
-				elle.
+				la file, les calculs, les échéances et les dates limites pour agir en justice continuent de
+				se calculer sans elle.
 			</p>
 		</Surface>
 	);

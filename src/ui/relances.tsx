@@ -272,12 +272,12 @@ function Brouillon({
 				*/
 				<div className="flex flex-col gap-cladd-3xs">
 					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						L’adresse électronique de ce client n’est pas renseignée : le message ne peut pas s’ouvrir
-						dans votre messagerie. Le texte reste copiable ci-dessous.
+						L’adresse électronique de ce client n’est pas renseignée : le message ne peut pas
+						s’ouvrir dans votre messagerie. Le texte reste copiable ci-dessous.
 					</p>
 					<BoutonSecondaire
 						as={Lien}
-						to="/app/debiteurs/$id"
+						to="/app/clients/$id"
 						params={{ id: identifiantDebiteur } as never}
 					>
 						Renseigner son adresse

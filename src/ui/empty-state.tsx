@@ -35,7 +35,7 @@ export function EmptyState({
 		<div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-cladd-2xs py-cladd-xl text-center">
 			<span
 				aria-hidden
-				className="flex size-vignette-lg items-center justify-center rounded-cladd-2xl bg-famille-autre text-vignette-lg leading-none select-none"
+				className="bg-famille-autre flex size-vignette-lg items-center justify-center rounded-cladd-2xl text-vignette-lg leading-none select-none"
 			>
 				{illustration}
 			</span>

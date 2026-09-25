@@ -1,9 +1,4 @@
-import {
-	Avatar,
-	ChoixImage,
-	type ImageAvatar,
-	type StyleAvatar
-} from '../../ui';
+import { Avatar, ChoixImage, type ImageAvatar, type StyleAvatar } from '../../ui';
 
 /**
  * LE VISAGE DE LA PERSONNE CONNECTÉE, ET LE LOGO DE L'ÉTABLISSEMENT.

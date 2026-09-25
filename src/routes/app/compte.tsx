@@ -445,8 +445,7 @@ function PageCompte() {
 						carnet,
 						erreur: erreurCarnet,
 						onAjouter: (fiche) => void ajouterAuCarnet(fiche),
-						onOublier: (intervenantId) =>
-							void oublierDuCarnet(intervenantId as Id<'intervenants'>),
+						onOublier: (intervenantId) => void oublierDuCarnet(intervenantId as Id<'intervenants'>),
 						rechercheCommissaireOuverte,
 						etatRechercheCommissaire,
 						onOuvrirRechercheCommissaire: () => setRechercheCommissaireOuverte(true),

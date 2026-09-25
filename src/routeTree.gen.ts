@@ -22,6 +22,7 @@ import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-p
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppClientsRouteImport } from './routes/app/clients'
 import { Route as AppCompteRouteImport } from './routes/app/compte'
 import { Route as AppDebiteursRouteImport } from './routes/app/debiteurs'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
@@ -30,9 +31,11 @@ import { Route as AppRevelationRouteImport } from './routes/app/revelation'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppArretIdRouteImport } from './routes/app/arret.$id'
+import { Route as AppClientsIdRouteImport } from './routes/app/clients.$id'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
 import { Route as AppDebiteursIdRouteImport } from './routes/app/debiteurs.$id'
 import { Route as AppDecompteIdRouteImport } from './routes/app/decompte.$id'
+import { Route as AppDossierIdRouteImport } from './routes/app/dossier.$id'
 import { Route as AppImportFacturesIdRouteImport } from './routes/app/import-factures.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -101,6 +104,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppClientsRoute = AppClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppCompteRoute = AppCompteRouteImport.update({
   id: '/compte',
   path: '/compte',
@@ -141,6 +149,11 @@ const AppArretIdRoute = AppArretIdRouteImport.update({
   path: '/arret/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppClientsIdRoute = AppClientsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppClientsRoute,
+} as any)
 const AppCreanceIdRoute = AppCreanceIdRouteImport.update({
   id: '/creance/$id',
   path: '/creance/$id',
@@ -154,6 +167,11 @@ const AppDebiteursIdRoute = AppDebiteursIdRouteImport.update({
 const AppDecompteIdRoute = AppDecompteIdRouteImport.update({
   id: '/decompte/$id',
   path: '/decompte/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDossierIdRoute = AppDossierIdRouteImport.update({
+  id: '/dossier/$id',
+  path: '/dossier/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppImportFacturesIdRoute = AppImportFacturesIdRouteImport.update({
@@ -175,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
+  '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
@@ -184,9 +203,11 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
+  '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
+  '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
 }
 export interface FileRoutesByTo {
@@ -201,6 +222,7 @@ export interface FileRoutesByTo {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
+  '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
@@ -210,9 +232,11 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
+  '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
+  '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
 }
 export interface FileRoutesById {
@@ -229,6 +253,7 @@ export interface FileRoutesById {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
+  '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
@@ -238,9 +263,11 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
+  '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
+  '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
 }
 export interface FileRouteTypes {
@@ -258,6 +285,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/showroom'
+    | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
     | '/app/import-factures'
@@ -267,9 +295,11 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/auth/$'
     | '/app/arret/$id'
+    | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
     | '/app/decompte/$id'
+    | '/app/dossier/$id'
     | '/app/import-factures/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -284,6 +314,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/showroom'
+    | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
     | '/app/import-factures'
@@ -293,9 +324,11 @@ export interface FileRouteTypes {
     | '/app'
     | '/api/auth/$'
     | '/app/arret/$id'
+    | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
     | '/app/decompte/$id'
+    | '/app/dossier/$id'
     | '/app/import-factures/$id'
   id:
     | '__root__'
@@ -311,6 +344,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/showroom'
+    | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
     | '/app/import-factures'
@@ -320,9 +354,11 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/auth/$'
     | '/app/arret/$id'
+    | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
     | '/app/decompte/$id'
+    | '/app/dossier/$id'
     | '/app/import-factures/$id'
   fileRoutesById: FileRoutesById
 }
@@ -436,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/clients': {
+      id: '/app/clients'
+      path: '/clients'
+      fullPath: '/app/clients'
+      preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/compte': {
       id: '/app/compte'
       path: '/compte'
@@ -492,6 +535,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppArretIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/clients/$id': {
+      id: '/app/clients/$id'
+      path: '/$id'
+      fullPath: '/app/clients/$id'
+      preLoaderRoute: typeof AppClientsIdRouteImport
+      parentRoute: typeof AppClientsRoute
+    }
     '/app/creance/$id': {
       id: '/app/creance/$id'
       path: '/creance/$id'
@@ -513,6 +563,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDecompteIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/dossier/$id': {
+      id: '/app/dossier/$id'
+      path: '/dossier/$id'
+      fullPath: '/app/dossier/$id'
+      preLoaderRoute: typeof AppDossierIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/import-factures/$id': {
       id: '/app/import-factures/$id'
       path: '/$id'
@@ -522,6 +579,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AppClientsRouteChildren {
+  AppClientsIdRoute: typeof AppClientsIdRoute
+}
+
+const AppClientsRouteChildren: AppClientsRouteChildren = {
+  AppClientsIdRoute: AppClientsIdRoute,
+}
+
+const AppClientsRouteWithChildren = AppClientsRoute._addFileChildren(
+  AppClientsRouteChildren,
+)
 
 interface AppDebiteursRouteChildren {
   AppDebiteursIdRoute: typeof AppDebiteursIdRoute
@@ -547,6 +616,7 @@ const AppImportFacturesRouteWithChildren =
   AppImportFacturesRoute._addFileChildren(AppImportFacturesRouteChildren)
 
 interface AppRouteRouteChildren {
+  AppClientsRoute: typeof AppClientsRouteWithChildren
   AppCompteRoute: typeof AppCompteRoute
   AppDebiteursRoute: typeof AppDebiteursRouteWithChildren
   AppImportFacturesRoute: typeof AppImportFacturesRouteWithChildren
@@ -556,9 +626,11 @@ interface AppRouteRouteChildren {
   AppArretIdRoute: typeof AppArretIdRoute
   AppCreanceIdRoute: typeof AppCreanceIdRoute
   AppDecompteIdRoute: typeof AppDecompteIdRoute
+  AppDossierIdRoute: typeof AppDossierIdRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppClientsRoute: AppClientsRouteWithChildren,
   AppCompteRoute: AppCompteRoute,
   AppDebiteursRoute: AppDebiteursRouteWithChildren,
   AppImportFacturesRoute: AppImportFacturesRouteWithChildren,
@@ -568,6 +640,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppArretIdRoute: AppArretIdRoute,
   AppCreanceIdRoute: AppCreanceIdRoute,
   AppDecompteIdRoute: AppDecompteIdRoute,
+  AppDossierIdRoute: AppDossierIdRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

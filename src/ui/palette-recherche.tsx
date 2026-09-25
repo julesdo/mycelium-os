@@ -159,7 +159,7 @@ const MOTIF_EVENEMENT: Readonly<Record<string, string>> = {
 	FACTURE_ECHUE: 'Facture échue',
 	ECHEANCE_PROCEDURE: 'Échéance de procédure',
 	DEBITEUR_DEGRADE: 'Situation dégradée',
-	PRESCRIPTION_PROCHE: 'Prescription proche',
+	PRESCRIPTION_PROCHE: 'Date limite pour agir en justice proche',
 	HABITUDE_ROMPUE: 'Habitude rompue'
 };
 
@@ -216,7 +216,7 @@ function famillesRendues(resultat: ResultatRechercheAffiche): readonly FamilleRe
 	return [
 		{
 			famille: 'DEBITEURS',
-			titre: 'Débiteurs',
+			titre: 'Clients',
 			total: resultat.debiteurs.total,
 			borne: resultat.debiteurs.borne,
 			rangees: resultat.debiteurs.premiers.map((d) => ({
@@ -363,7 +363,7 @@ export function PaletteRecherche({
 			onOpenChange={(o) => {
 				if (!o) onFermer();
 			}}
-			aria-label="Rechercher un débiteur, une facture ou une procédure"
+			aria-label="Rechercher un client, une facture ou un dossier"
 			closeButton={false}
 			header={false}
 			// Ancrée en haut plutôt que centrée : sa hauteur suit les résultats, et
@@ -439,7 +439,7 @@ export function PaletteRecherche({
 				aJour && resultat !== null ? (
 					<PopupContent>
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Rien pour « {cherche} » dans les débiteurs, les factures et les procédures.
+							Rien pour « {cherche} » dans les clients, les factures et les dossiers.
 						</p>
 					</PopupContent>
 				) : null

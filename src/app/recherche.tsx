@@ -122,12 +122,12 @@ function PaletteBranchee({ ouverte, onFermer }: { ouverte: boolean; onFermer: ()
 		onFermer();
 
 		if (destination.genre === 'PROCEDURE') {
-			void navigate({ to: '/app/creance/$id', params: { id: destination.creanceId } });
+			void navigate({ to: '/app/dossier/$id', params: { id: destination.creanceId } });
 			return;
 		}
 
 		if (destination.genre === 'DEBITEUR') {
-			void navigate({ to: '/app/debiteurs/$id', params: { id: destination.debiteurId } });
+			void navigate({ to: '/app/clients/$id', params: { id: destination.debiteurId } });
 			return;
 		}
 

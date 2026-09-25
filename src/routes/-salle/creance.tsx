@@ -9,6 +9,7 @@ import {
 } from '../../lib/socle/montants';
 import { dateLisible } from '../../lib/verticales/recouvrement/calendrier';
 import { PARAMETRES } from '../../lib/verticales/recouvrement/parametres';
+import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
 import {
 	libelleEvenement,
@@ -541,6 +542,16 @@ function creanceDemo({
 		santeDebiteur: SANTE_DEBITEUR_DEMO,
 		nombreFactures: FACTURES_DEMO.length,
 		principalRestantDu: enCentimes(PRINCIPAL_RESTANT_DU_DEMO),
+		etapes: lireEtapes({
+			nombreFactures: FACTURES_DEMO.length,
+			resteDuCentimes: enCentimes(PRINCIPAL_RESTANT_DU_DEMO),
+			lettresValidees: [],
+			professionnelDesigne: false,
+			procedureEngageeLe: journal === null ? null : '2026-06-02',
+			classe: false,
+			dateLimiteAgir: '2031-05-01',
+			aujourdHui: AUJOURD_HUI_DEMO
+		}),
 
 		// Les deux dates de l'en-tête, lues sur les factures comme la route les lit.
 		echeanceLaPlusAncienne: FACTURES_DEMO.map((facture) => facture.dateEcheance).reduce(
@@ -758,7 +769,7 @@ const CREANCE_OUVERTE_DEMO: CreanceOuverte = creanceDemo();
 
 export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 	{
-		route: '/app/creance/$id',
+		route: '/app/dossier/$id',
 		libelle: 'créance',
 		// Une créance sans données n'existe pas : on ne l'ouvre qu'en la
 		// désignant, et ce qu'elle porte vient de ses factures.

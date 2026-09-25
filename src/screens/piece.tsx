@@ -88,7 +88,7 @@ export function EcranPiece({
 				retour: {
 					// La créance est une PAGE, en un seul défilement : le décompte y est
 					// une section, et n'a plus d'adresse à lui.
-					vers: '/app/creance/$id',
+					vers: '/app/dossier/$id',
 					parametres: { id: creanceId },
 					libelle: pret?.debiteur ?? 'Créance'
 				},
@@ -132,9 +132,8 @@ function CorpsPiece({ identifiant, donnees }: { identifiant: string; donnees: Pi
 				<Decompte decompte={donnees.decompte} />
 				{donnees.denominationFigee ? null : (
 					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-						Cette pièce a été produite avant que les identités ne soient figées : le nom affiché
-						est celui de la fiche d’aujourd’hui, pas celui que le client portait à la date
-						d’arrêté.
+						Cette pièce a été produite avant que les identités ne soient figées : le nom affiché est
+						celui de la fiche d’aujourd’hui, pas celui que le client portait à la date d’arrêté.
 					</p>
 				)}
 			</SectionEcran>
@@ -165,9 +164,9 @@ function CorpsPiece({ identifiant, donnees }: { identifiant: string; donnees: Pi
 				</Tableau>
 				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
 					Une valeur relevée sur une source publique citable suffit à calculer et à expliquer un
-					chiffre : un chiffre affiché se corrige. Le contrôle par un juriste de la valeur ET de
-					son applicabilité au cas d’espèce est ce qui manque, et c’est le seul champ que ce
-					logiciel ne peut pas remplir seul.
+					chiffre : un chiffre affiché se corrige. Le contrôle par un juriste de la valeur ET de son
+					applicabilité au cas d’espèce est ce qui manque, et c’est le seul champ que ce logiciel ne
+					peut pas remplir seul.
 				</p>
 			</SectionEcran>
 
@@ -210,8 +209,8 @@ function CorpsPiece({ identifiant, donnees }: { identifiant: string; donnees: Pi
 			>
 				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 					Ce dossier n’est ni un modèle de requête, ni un courrier au débiteur : c’est le document
-					que l’avocat lit. Il énumère les voies sans en désigner aucune, et il porte en tête ce
-					que valent les chiffres qu’il cite.
+					que l’avocat lit. Il énumère les voies sans en désigner aucune, et il porte en tête ce que
+					valent les chiffres qu’il cite.
 				</p>
 				<div className="flex flex-wrap gap-cladd-3xs">
 					<Button

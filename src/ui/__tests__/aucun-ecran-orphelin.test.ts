@@ -64,7 +64,14 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 	 * `to="/app"` posé dans un écran, et il n'y en aura jamais : un écran ne
 	 * porte pas de lien vers lui-même.
 	 */
-	'/app': 'La racine de l’espace connecté, et l’écran de travail lui-même. On n’y lie pas depuis lui.',
+	'/app':
+		'La racine de l’espace connecté, et l’écran de travail lui-même. On n’y lie pas depuis lui.',
+	'/app/creance/$id':
+		'L’ancienne adresse d’une créance : elle redirige vers son dossier, pour les liens déjà partis (notifications, favoris).',
+	'/app/debiteurs':
+		'L’ancienne adresse de la liste des clients : elle redirige vers /app/clients, pour les liens déjà partis.',
+	'/app/debiteurs/$id':
+		'L’ancienne adresse d’un client : elle redirige vers /app/clients/$id, pour les liens déjà partis.',
 	'/rejoindre/$token':
 		'Le lien d’invitation, reçu par courriel. Il ne peut PAS exister dans l’interface : le jeton est l’invitation.',
 	'/nouveau-mot-de-passe': 'Le lien de réinitialisation, reçu par courriel, et porteur d’un jeton.',

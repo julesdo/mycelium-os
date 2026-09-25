@@ -312,7 +312,7 @@ export function Lettrage({
 					) : proposition.issue === 'TROP_DE_CANDIDATES' ? (
 						<Avis>
 							<p className="text-cladd-xs font-semibold">
-								Trop de factures ouvertes chez ce débiteur ({proposition.candidates})
+								Trop de factures ouvertes chez ce client ({proposition.candidates})
 							</p>
 							<p className="text-cladd-xs text-cladd-fg-soft">
 								Chercher une somme parmi autant de factures prendrait un temps que personne

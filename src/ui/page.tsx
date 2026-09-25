@@ -133,13 +133,7 @@ export function PageBody({ children }: { children: ReactNode }) {
  * Il ne reste ici que la géométrie : de l'air, le contenu centré, et le
  * dégagement de la barre flottante.
  */
-export function PageHero({
-	children,
-	className
-}: {
-	children: ReactNode;
-	className?: string;
-}) {
+export function PageHero({ children, className }: { children: ReactNode; className?: string }) {
 	return (
 		<div
 			className={cn(

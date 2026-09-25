@@ -119,7 +119,7 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 						illustration: '🧾',
 						titre: 'Rien à chiffrer pour l’instant',
 						explication:
-							'Trois choses sont dues de plein droit sur une facture payée en retard, et presque jamais réclamées : les intérêts de retard, l’indemnité forfaitaire de 40 € par facture, et ce que le délai de prescription laisse encore le temps de demander. Le logiciel les calcule sur vos propres factures.',
+							'Trois choses sont dues de plein droit sur une facture payée en retard, et presque jamais réclamées : les pénalités de retard, les frais de recouvrement de 40 € par facture, et ce que le délai pour agir en justice laisse encore le temps de demander. Le logiciel les calcule sur vos propres factures.',
 						etapes: [
 							'Importez un export comptable — c’est le plus complet : il porte vos factures, vos règlements et vos clients d’un coup.',
 							'À défaut, déposez vos factures de vente en PDF ou en photo.',

@@ -980,14 +980,14 @@ function PageDebiteurDemo({ etat, variante }: { etat: EtatDemo; variante?: strin
 
 export const ECRANS_DEBITEURS: readonly EcranDuProduit[] = [
 	{
-		route: '/app/debiteurs',
+		route: '/app/clients',
 		libelle: 'débiteurs',
 		vide: true,
 		variantes: Object.keys(FORMES_LISTE_DEMO),
 		Demo: DebiteursDemo
 	},
 	{
-		route: '/app/debiteurs/$id',
+		route: '/app/clients/$id',
 		libelle: 'un débiteur',
 		vide: false,
 		variantes: Object.keys(FORMES_PAGE_DEMO),

@@ -56,8 +56,8 @@ export interface PartsDues {
 
 const PARTS = [
 	{ cle: 'principal', libelle: 'Principal', teinte: 'bg-part-principal' },
-	{ cle: 'interets', libelle: 'Intérêts de retard', teinte: 'bg-part-interets' },
-	{ cle: 'indemnites', libelle: 'Indemnité forfaitaire', teinte: 'bg-part-indemnites' }
+	{ cle: 'interets', libelle: 'Pénalités de retard', teinte: 'bg-part-interets' },
+	{ cle: 'indemnites', libelle: 'Frais de recouvrement', teinte: 'bg-part-indemnites' }
 ] as const;
 
 export function CompositionDue({ parts, className }: { parts: PartsDues; className?: string }) {
@@ -138,9 +138,7 @@ export function CompositionDue({ parts, className }: { parts: PartsDues; classNa
 				{PARTS.map(({ cle, libelle, teinte }, rang) => (
 					<div key={cle} className="flex items-center gap-cladd-3xs">
 						<span aria-hidden className={cn('size-2.5 shrink-0 rounded-full', teinte)} />
-						<dt className="min-w-0 flex-1 truncate text-cladd-xs text-cladd-fg-soft">
-							{libelle}
-						</dt>
+						<dt className="min-w-0 flex-1 truncate text-cladd-xs text-cladd-fg-soft">{libelle}</dt>
 						<dd className="shrink-0 text-cladd-xs font-semibold tabular-nums">
 							{eurosCentimes(valeurs[rang] ?? 0n)}
 						</dd>

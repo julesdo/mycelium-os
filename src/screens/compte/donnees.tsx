@@ -139,7 +139,7 @@ function Inventaire({ apercu }: { apercu: ApercuDonnees }) {
 	const lignes: readonly { quoi: string; combien: string }[] = [
 		{ quoi: 'Fichiers importés', combien: NOMBRE.format(apercu.depots) },
 		{ quoi: 'Factures enregistrées', combien: NOMBRE.format(apercu.factures) },
-		{ quoi: 'Débiteurs identifiés', combien: NOMBRE.format(apercu.debiteurs) },
+		{ quoi: 'Clients identifiés', combien: NOMBRE.format(apercu.debiteurs) },
 		{ quoi: 'Décomptes arrêtés', combien: NOMBRE.format(apercu.decomptes) },
 		{ quoi: 'Gestes consignés au journal', combien: NOMBRE.format(apercu.journal) },
 		{ quoi: 'Propositions de la surveillance', combien: NOMBRE.format(apercu.propositions) },
@@ -211,8 +211,8 @@ function Exportation({
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 				Un fichier JSON, lisible par n’importe quel tableur. Il contient l’intégralité de ce que
 				l’inventaire liste : chaque ligne de facture avec son libellé d’origine, sa classification,
-				sa justification et son indice de confiance. C’est le format que le règlement appelle
-				« structuré, couramment utilisé et lisible par machine ».
+				sa justification et son indice de confiance. C’est le format que le règlement appelle «
+				structuré, couramment utilisé et lisible par machine ».
 			</p>
 
 			{exportation.erreur ? (
@@ -304,13 +304,13 @@ function Effacements({
 					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 						Supprimer l’établissement efface, définitivement, TOUT ce que l’inventaire ci-dessus
 						énumère : ses {NOMBRE.format(apercu.factures)} facture{pluriel(apercu.factures)}, ses{' '}
-						{NOMBRE.format(apercu.debiteurs)} débiteur{pluriel(apercu.debiteurs)}, ses{' '}
-						{NOMBRE.format(apercu.decomptes)} décompte{pluriel(apercu.decomptes)}, les pièces qui
+						{NOMBRE.format(apercu.debiteurs)} client{pluriel(apercu.debiteurs)}, ses{' '}
+						{NOMBRE.format(apercu.decomptes)} décompte{pluriel(apercu.decomptes)}, les documents qui
 						les soutiennent, et jusqu’au journal, aux propositions de la surveillance, à vos
-						échanges avec le compagnon et à vos remises à un conseil. Les {apercu.membres}{' '}
-						personnes qui y accèdent en perdent l’accès immédiatement. Si vous avez besoin de ces
-						chiffres plus tard — une créance se prescrit en plusieurs années — préparez votre
-						export avant.
+						échanges avec le compagnon et à vos remises à un conseil. Les {apercu.membres} personnes
+						qui y accèdent en perdent l’accès immédiatement. Si vous avez besoin de ces chiffres
+						plus tard — on peut agir en justice pendant plusieurs années — préparez votre export
+						avant.
 					</p>
 
 					{suppressionDeLEtablissement.erreur ? (
@@ -340,8 +340,8 @@ function Effacements({
 				Supprimer votre compte efface votre profil et vos notifications, et retire votre identité du
 				service d’authentification. Les établissements dont vous êtes le seul membre sont supprimés
 				avec vous ; ceux que vous partagez restent à leurs autres membres. Si vous êtes le seul
-				administrateur d’un établissement qui compte d’autres personnes, la suppression est refusée :
-				elle se lève en nommant un autre administrateur, sinon plus personne ne pourrait le gérer.
+				administrateur d’un établissement qui compte d’autres personnes, la suppression est refusée
+				: elle se lève en nommant un autre administrateur, sinon plus personne ne pourrait le gérer.
 			</p>
 
 			{suppressionDuCompte.erreur ? (

@@ -84,7 +84,5 @@ function AvecLeControle({
 	rendre: (laisseDeCote: Lecture<AbandonsAffiches>) => ReactNode;
 }) {
 	const abandons = useQuery(api.recouvrement.controle.abandonsDeLEtablissement, {});
-	return rendre(
-		abandons === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: abandons }
-	);
+	return rendre(abandons === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: abandons });
 }

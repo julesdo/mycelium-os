@@ -126,10 +126,7 @@ export interface DebiteursAffiches {
  * capitales non accentuées.
  */
 function repliable(texte: string): string {
-	return texte
-		.normalize('NFD')
-		.replace(/[̀-ͯ]/g, '')
-		.toLowerCase();
+	return texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
 /** Les seuls chiffres d'une chaîne : « 831 647 250 » et « 831647250 » sont le même SIREN. */
@@ -455,12 +452,12 @@ export function EcranDebiteurs({
 				etat={{
 					vide: {
 						illustration: '🧾',
-						titre: 'Aucun débiteur pour l’instant',
+						titre: 'Aucun client pour l’instant',
 						explication:
-							'Les débiteurs apparaissent tout seuls quand vous importez vos factures : le logiciel les rapproche par leur raison sociale, quelle que soit la graphie.',
+							'Vos clients apparaissent tout seuls quand vous importez vos factures : le logiciel les rapproche par leur raison sociale, quelle que soit la graphie.',
 						etapes: [
 							'Importez vos fichiers de factures : le format est reconnu seul.',
-							'Le logiciel crée un débiteur par client et calcule son encours.',
+							'Le logiciel crée une fiche par client et calcule ce qu’il vous doit.',
 							'Ouvrez un client pour voir tout ce qu’il doit, facture par facture.'
 						],
 						action: (
@@ -556,7 +553,7 @@ export function EcranDebiteurs({
 		sansSiren === 0 ? null : `${sansSiren} sans SIREN, hors veille du registre`,
 		sansSecteur === 0
 			? null
-			: `${sansSecteur} sans secteur, au délai de prescription le plus court`,
+			: `${sansSecteur} sans réponse, au délai le plus court pour agir en justice`,
 		enRetardSansHabitude === 0
 			? null
 			: `${enRetardSansHabitude} en retard sans habitude de paiement mesurable`
@@ -694,7 +691,7 @@ export function EcranDebiteurs({
 				inputMode="search"
 				placeholder="Nom du client ou SIREN"
 				inputComponentProps={{
-					'aria-label': 'Chercher un débiteur par son nom ou son SIREN',
+					'aria-label': 'Chercher un client par son nom ou son SIREN',
 					enterKeyHint: 'search'
 				}}
 			/>
@@ -815,10 +812,10 @@ export function EcranDebiteurs({
 			*/
 			<CarteListe titre="Aucun résultat">
 				<ListItem className="text-cladd-fg-soft">
-					Aucun de vos {debiteurs.length} débiteurs ne répond à ce que vous cherchez.
+					Aucun de vos {debiteurs.length} clients ne répond à ce que vous cherchez.
 				</ListItem>
 				<ListButton icon={<RotateCcwIcon />} onClick={onToutAfficher}>
-					Afficher les {debiteurs.length} débiteurs
+					Afficher les {debiteurs.length} clients
 				</ListButton>
 			</CarteListe>
 		) : (
@@ -847,7 +844,7 @@ export function EcranDebiteurs({
 					<ListButton
 						key={debiteur._id}
 						as={Lien}
-						to="/app/debiteurs/$id"
+						to="/app/clients/$id"
 						/*
 						  ⚠️ UNE ASSERTION, ET UNE SEULE, À CET ENDROIT PRÉCIS. `ListButton` est
 						  polymorphe : en passant par son `as`, le générique du routeur est

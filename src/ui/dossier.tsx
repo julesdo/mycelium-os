@@ -491,12 +491,10 @@ export function VoletDuDossier({
 	return (
 		<div className="flex flex-col gap-cladd-xs p-cladd-2xs">
 			<div className="flex flex-col gap-1">
-				<span className="text-cladd-2xs text-cladd-fg-softer">
-					Reste à payer sur ce dossier
-				</span>
+				<span className="text-cladd-2xs text-cladd-fg-softer">Reste à payer sur ce dossier</span>
 				{dossier.principalRestantDu === null ? (
 					<p className="text-cladd-sm leading-relaxed text-cladd-fg-soft">
-						La créance de ce dossier n’a pas été retrouvée : son montant n’est pas repris ici.
+						Ce dossier n’a pas été retrouvé : son montant n’est pas repris ici.
 					</p>
 				) : (
 					<span className="text-letikette-chiffre leading-none font-bold tabular-nums">
@@ -588,7 +586,7 @@ export function VoletDuDossier({
 				<LigneAnalyse
 					// La créance est une PAGE, en un seul défilement : la procédure y est
 					// une section, et n'a plus d'adresse à elle.
-					vers="/app/creance/$id"
+					vers="/app/dossier/$id"
 					parametres={{ id: dossier.creanceId }}
 					titre="Le dossier complet"
 					valeur="Ouvrir"

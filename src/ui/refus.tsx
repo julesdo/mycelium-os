@@ -52,9 +52,7 @@ export function RefusEnQuatreParties({
 				</p>
 			))}
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">{coutDeLAttente}</p>
-			{geste === undefined ? null : (
-				<div className="flex flex-wrap gap-cladd-3xs">{geste}</div>
-			)}
+			{geste === undefined ? null : <div className="flex flex-wrap gap-cladd-3xs">{geste}</div>}
 		</Surface>
 	);
 }

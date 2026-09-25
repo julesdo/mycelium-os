@@ -46,9 +46,7 @@ export function SectionEcran({
 			<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
 				<div className="min-w-0">
 					<h2 className="text-cladd-sm leading-tight font-bold tracking-tight">{titre}</h2>
-					{legende ? (
-						<p className="mt-0.5 text-cladd-2xs text-cladd-fg-softer">{legende}</p>
-					) : null}
+					{legende ? <p className="mt-0.5 text-cladd-2xs text-cladd-fg-softer">{legende}</p> : null}
 				</div>
 				{actions ? <div className="flex shrink-0 items-center gap-cladd-3xs">{actions}</div> : null}
 			</div>

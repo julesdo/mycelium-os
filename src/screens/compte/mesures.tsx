@@ -108,64 +108,64 @@ export function SectionMesures({ jours }: MesuresAffichees) {
 				</p>
 			) : (
 				<div>
-						<Tableau legende="Propositions posées, décidées et corrigées, par jour">
-							<TableauEntete>
-								<TableauTitre>Jour</TableauTitre>
-								<TableauTitre aDroite>Posées</TableauTitre>
-								<TableauTitre aDroite>En attente</TableauTitre>
-								<TableauTitre aDroite>Retenues</TableauTitre>
-								<TableauTitre aDroite>Écartées</TableauTitre>
-								<TableauTitre aDroite>Rétention</TableauTitre>
-								<TableauTitre aDroite>Délai médian</TableauTitre>
-								<TableauTitre aDroite>Corrections</TableauTitre>
-							</TableauEntete>
-							<TableauCorps>
-								{jours.map((jour) => (
-									<TableauLigne key={jour.jour}>
-										{/*
+					<Tableau legende="Propositions posées, décidées et corrigées, par jour">
+						<TableauEntete>
+							<TableauTitre>Jour</TableauTitre>
+							<TableauTitre aDroite>Posées</TableauTitre>
+							<TableauTitre aDroite>En attente</TableauTitre>
+							<TableauTitre aDroite>Retenues</TableauTitre>
+							<TableauTitre aDroite>Écartées</TableauTitre>
+							<TableauTitre aDroite>Rétention</TableauTitre>
+							<TableauTitre aDroite>Délai médian</TableauTitre>
+							<TableauTitre aDroite>Corrections</TableauTitre>
+						</TableauEntete>
+						<TableauCorps>
+							{jours.map((jour) => (
+								<TableauLigne key={jour.jour}>
+									{/*
 										  ⚠️ LA DATE NE SE COUPE PAS. À 375 px, « 17 sept. 2026 »
 										  se replie sur trois lignes et triple la hauteur de chaque
 										  rangée ; le conteneur du tableau défile déjà pour lui
 										  seul, donc rien n'est perdu à la garder d'un bloc.
 										*/}
-										<TableauCellule>
-											<span className="whitespace-nowrap">{dateCourte(jour.jour)}</span>
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{jour.posees}
-										</TableauCellule>
-										{/*
+									<TableauCellule>
+										<span className="whitespace-nowrap">{dateCourte(jour.jour)}</span>
+									</TableauCellule>
+									<TableauCellule aDroite chiffre>
+										{jour.posees}
+									</TableauCellule>
+									{/*
 										  ⚠️ UN TIRET, JAMAIS UN ZÉRO. « 0 en attente » se lit comme
 										  une réponse — rien ne dépasse — alors que c'est l'absence
 										  de relevé. Les deux mènent à deux conclusions opposées.
 										*/}
-										<TableauCellule aDroite chiffre>
-											{jour.enAttente === null ? '—' : jour.enAttente}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{jour.retenues}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{jour.ecartees}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{taux(jour.tauxRetention)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{delai(jour.delaiMedianMs)}
-										</TableauCellule>
-										<TableauCellule aDroite chiffre>
-											{jour.corrections}
-											{jour.tauxCorrection === null ? '' : ` (${taux(jour.tauxCorrection)})`}
-										</TableauCellule>
-									</TableauLigne>
-								))}
-							</TableauCorps>
-						</Tableau>
-					</div>
-				)}
+									<TableauCellule aDroite chiffre>
+										{jour.enAttente === null ? '—' : jour.enAttente}
+									</TableauCellule>
+									<TableauCellule aDroite chiffre>
+										{jour.retenues}
+									</TableauCellule>
+									<TableauCellule aDroite chiffre>
+										{jour.ecartees}
+									</TableauCellule>
+									<TableauCellule aDroite chiffre>
+										{taux(jour.tauxRetention)}
+									</TableauCellule>
+									<TableauCellule aDroite chiffre>
+										{delai(jour.delaiMedianMs)}
+									</TableauCellule>
+									<TableauCellule aDroite chiffre>
+										{jour.corrections}
+										{jour.tauxCorrection === null ? '' : ` (${taux(jour.tauxCorrection)})`}
+									</TableauCellule>
+								</TableauLigne>
+							))}
+						</TableauCorps>
+					</Tableau>
+				</div>
+			)}
 
-				{/*
+			{/*
 			  ⚠️ CE QUI MANQUE À LA MÉDIANE SE DIT. Une décision sans horodatage
 			  d'affichage ne vaut pas un délai de zéro : elle vaut un trou, et un
 			  trou tu ferait lire la médiane comme si elle portait sur tout.

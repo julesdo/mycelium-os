@@ -106,7 +106,7 @@ describe('la coquille d’écran', () => {
 			<PageEcran
 				entete={ONGLET}
 				etat="erreur"
-				issue={<a href="/app/debiteurs">Voir mes débiteurs</a>}
+				issue={<a href="/app/clients">Voir mes débiteurs</a>}
 			/>
 		);
 		expect(html).toContain('Vos débiteurs');
@@ -121,7 +121,7 @@ describe('la coquille d’écran', () => {
 			<PageEcran
 				entete={ONGLET}
 				etat="erreur"
-				issue={<a href="/app/debiteurs">Voir mes débiteurs</a>}
+				issue={<a href="/app/clients">Voir mes débiteurs</a>}
 			/>
 		);
 		const depuisAlerte = html.slice(html.indexOf('role="alert"'));
@@ -143,7 +143,7 @@ describe('la coquille d’écran', () => {
 				entete={{
 					genre: 'poussee',
 					retour: {
-						vers: '/app/creance/$id',
+						vers: '/app/dossier/$id',
 						parametres: { id: 'c1' },
 						libelle: 'Fournitures Durand'
 					},
@@ -153,7 +153,7 @@ describe('la coquille d’écran', () => {
 				<p>contenu prêt</p>
 			</PageEcran>
 		);
-		expect(creance).toContain('href="/app/creance/$id"');
+		expect(creance).toContain('href="/app/dossier/$id"');
 		expect(creance).toContain('data-params="{&quot;id&quot;:&quot;c1&quot;}"');
 		expect(creance).toContain('Fournitures Durand');
 		expect(creance).toContain('Décompte');
@@ -165,7 +165,7 @@ describe('la coquille d’écran', () => {
 			<PageEcran
 				entete={{
 					genre: 'poussee',
-					retour: { vers: '/app/debiteurs', recherche: { d: 'd1' }, libelle: 'Débiteurs' },
+					retour: { vers: '/app/clients', recherche: { d: 'd1' }, libelle: 'Débiteurs' },
 					titre: 'Comment il paie d’habitude'
 				}}
 			/>
@@ -236,7 +236,7 @@ describe('la coquille d’écran', () => {
 				entete={ONGLET}
 				etat="erreur"
 				disposition="volets"
-				issue={<a href="/app/debiteurs">Voir mes débiteurs</a>}
+				issue={<a href="/app/clients">Voir mes débiteurs</a>}
 			/>
 		);
 		expect(erreur).toContain('role="alert"');

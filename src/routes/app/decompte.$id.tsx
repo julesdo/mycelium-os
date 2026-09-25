@@ -152,7 +152,7 @@ function PagePiece() {
 		const hypotheses = [
 			...(suivi.prescription.hypothese
 				? [
-						`Le secteur de ce client n’est pas déterminé : la prescription est calculée sur le délai le plus court connu (${suivi.prescription.dureeAnnees} an).`
+						`Le secteur de ce client n’est pas déterminé : la date limite pour agir en justice est calculée sur le délai le plus court connu (${suivi.prescription.dureeAnnees} an).`
 					]
 				: []),
 			creance.regimePrescriptionNote

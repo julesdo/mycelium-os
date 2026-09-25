@@ -139,7 +139,7 @@ export function ChocRevelation({ revelation }: { revelation: RevelationAffichee 
 						{eurosCentimes(revelation.supplement)}
 					</span>
 					<span className="text-cladd-2xs text-cladd-fg-softer">
-						Intérêts de retard {eurosCentimes(revelation.interets)} · indemnité forfaitaire{' '}
+						Pénalités de retard {eurosCentimes(revelation.interets)} · frais de recouvrement{' '}
 						{eurosCentimes(revelation.indemnites)}, soit 40 € par facture
 					</span>
 				</div>
@@ -175,8 +175,8 @@ export function ChocRevelation({ revelation }: { revelation: RevelationAffichee 
 						<span className="text-cladd-xs font-semibold">{ligne.reference}</span>
 						<div className="flex flex-wrap gap-cladd-2xs text-cladd-xs text-cladd-fg-soft tabular-nums">
 							<span>principal {eurosCentimes(ligne.principalRestantDu)}</span>
-							<span>intérêts {eurosCentimes(ligne.interets)}</span>
-							<span>indemnité {eurosCentimes(ligne.indemniteForfaitaire)}</span>
+							<span>pénalités {eurosCentimes(ligne.interets)}</span>
+							<span>frais {eurosCentimes(ligne.indemniteForfaitaire)}</span>
 						</div>
 						<span className="shrink-0 text-cladd-sm font-semibold tabular-nums sm:text-right">
 							{eurosCentimes(ligne.supplement)}
@@ -242,7 +242,8 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 						{eurosCentimes(bilan.eteintesAvant)}
 					</span>
 					<span className="text-cladd-2xs text-cladd-fg-softer">
-						{bilan.nombreEteintesAvant} facture{pluriel(bilan.nombreEteintesAvant)} prescrite
+						{bilan.nombreEteintesAvant} facture{pluriel(bilan.nombreEteintesAvant)} hors délai pour
+						agir en justice
 						{pluriel(bilan.nombreEteintesAvant)}
 					</span>
 				</Surface>
@@ -279,8 +280,8 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 						<p className="text-cladd-xs text-cladd-fg-soft">
 							{bilan.nonSurveillees.join(', ')} —{' '}
 							{bilan.nonSurveillees.length > 1
-								? 'leurs dates de prescription n’ont pas pu être établies, elles ne sont donc comptées ni d’un côté ni de l’autre.'
-								: 'sa date de prescription n’a pas pu être établie, elle n’est donc comptée ni d’un côté ni de l’autre.'}
+								? 'leurs dates limites pour agir en justice n’ont pas pu être établies, elles ne sont donc comptées ni d’un côté ni de l’autre.'
+								: 'sa date limite pour agir en justice n’a pas pu être établie, elle n’est donc comptée ni d’un côté ni de l’autre.'}
 						</p>
 					</div>
 				</Surface>

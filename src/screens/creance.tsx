@@ -50,7 +50,12 @@ import {
 	type OptionTypePiece,
 	type OrdreImputationAffichee,
 	type LigneConditionAffichee,
+	type LectureEtapesAffichee,
 	TableauConditions,
+	DeuxColonnesDossier,
+	EtapeEnCours,
+	FilDesEtapes,
+	FriseDossier,
 	type PieceAffichee,
 	type QuestionLitige,
 	type RepertoireAffiche,
@@ -162,6 +167,9 @@ export const SECTIONS_CREANCE = [
 ] as const;
 export type SectionCreance = (typeof SECTIONS_CREANCE)[number];
 
+/** Les sections de la colonne de gauche : ce qu'on peut faire. Les autres disent ce que contient le dossier. */
+const SECTIONS_GAUCHE: readonly string[] = ['relances', 'voies', 'litige'];
+
 /**
  * CE QUE LA PAGE MONTRE, ET CE QU'ELLE DÉCLENCHE.
  *
@@ -185,6 +193,9 @@ export interface CreanceOuverte {
 	readonly santeDebiteur: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
 	readonly nombreFactures: number;
 	readonly principalRestantDu: bigint;
+
+	// ── 0. Où en est le dossier : les quatre étapes, déduites des faits ────────
+	readonly etapes: LectureEtapesAffichee;
 
 	// ── 1. L'en-tête : de qui, combien, jusqu'à quand ───────────────────────
 	/**
@@ -327,6 +338,26 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 	const [choisies, setChoisies] = useState<readonly SectionCreance[] | null>(null);
 	const ouvertes = choisies ?? (pret === null ? [] : sectionsParDefaut(pret));
 
+	/** Remplace l'état d'un groupe de sections, sans toucher à l'autre colonne. */
+	function changer(groupe: readonly string[], liste: readonly string[]) {
+		setChoisies([
+			...ouvertes.filter((cle) => !groupe.includes(cle)),
+			...liste.filter((cle): cle is SectionCreance =>
+				(SECTIONS_CREANCE as readonly string[]).includes(cle)
+			)
+		]);
+	}
+
+	/** Ouvre une section et l'amène à l'écran : le geste de l'étape en cours. */
+	function ouvrir(cle: SectionCreance) {
+		setChoisies([...ouvertes.filter((c) => c !== cle), cle]);
+		requestAnimationFrame(() =>
+			document
+				.getElementById(`section-${cle}`)
+				?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+		);
+	}
+
 	return (
 		<PageEcran
 			entete={{
@@ -346,13 +377,13 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 				*/
 				retour:
 					pret === null
-						? { vers: '/app/debiteurs', libelle: TITRE_ECRAN.debiteurs }
+						? { vers: '/app/clients', libelle: TITRE_ECRAN.debiteurs }
 						: {
-								vers: '/app/debiteurs/$id',
+								vers: '/app/clients/$id',
 								parametres: { id: pret.debiteurId },
 								libelle: TITRE_ECRAN.debiteurs
 							},
-				titre: pret?.debiteur ?? 'Créance',
+				titre: pret?.debiteur ?? 'Dossier',
 				sousTitre:
 					pret === null
 						? undefined
@@ -361,6 +392,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 							)} impayés`
 			}}
 			etat={donnees.etat}
+			largeur="large"
 		>
 			{pret === null ? null : (
 				<>
@@ -370,29 +402,58 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 
 					<EnTeteCreance creance={pret} />
 
-					<SectionsDepliables
-						ouvertes={ouvertes}
-						onOuvertesChange={(liste) =>
-							setChoisies(
-								// Le kit rend des chaînes libres ; seules celles que cet écran
-								// déclare comptent. Une clé inconnue viendrait d'ailleurs.
-								liste.filter((cle): cle is SectionCreance =>
-									(SECTIONS_CREANCE as readonly string[]).includes(cle)
-								)
-							)
+					<FriseDossier lecture={pret.etapes} />
+
+					<DeuxColonnesDossier
+						gauche={
+							<>
+								<EtapeEnCours lecture={pret.etapes}>
+									{pret.etapes.etape === 'REGLE' ? null : (
+										<>
+											{/* ⚠️ UN CHOIX, DONC AUCUN BOUTON PRINCIPAL : les deux ont le même
+											    poids, et l'ordre suit la chronologie d'un dossier. */}
+											<BoutonSecondaire onClick={() => ouvrir('relances')}>
+												Lui écrire
+											</BoutonSecondaire>
+											<BoutonSecondaire onClick={() => ouvrir('voies')}>
+												Voir les autres choix
+											</BoutonSecondaire>
+										</>
+									)}
+								</EtapeEnCours>
+								<FilDesEtapes lecture={pret.etapes} />
+								<SectionsDepliables
+									ouvertes={ouvertes.filter((cle) => SECTIONS_GAUCHE.includes(cle))}
+									onOuvertesChange={(liste) => changer(SECTIONS_GAUCHE, liste)}
+								>
+									<SectionRelances creance={pret} />
+									<SectionVoies creance={pret} />
+									<SectionLitige creance={pret} />
+								</SectionsDepliables>
+							</>
 						}
-					>
-						<SectionDecompte creance={pret} />
-						<SectionValeursJuridiques fiches={pret.fiches} />
-						<SectionHypotheses creance={pret} />
-						<SectionAnglesMorts creance={pret} />
-						<SectionLitige creance={pret} />
-						<SectionRisques creance={pret} />
-						<SectionSolidite creance={pret} />
-						<SectionPieces creance={pret} />
-						<SectionVoies creance={pret} />
-						<SectionRelances creance={pret} />
-					</SectionsDepliables>
+						droite={
+							<>
+								<SectionRisques creance={pret} />
+								<SectionsDepliables
+									ouvertes={ouvertes.filter((cle) => !SECTIONS_GAUCHE.includes(cle))}
+									onOuvertesChange={(liste) =>
+										changer(
+											SECTIONS_CREANCE.filter((cle) => !SECTIONS_GAUCHE.includes(cle)),
+											liste
+										)
+									}
+								>
+									<SectionDecompte creance={pret} />
+									<SectionPieces creance={pret} />
+									<SectionSolidite creance={pret} />
+									<SectionValeursJuridiques fiches={pret.fiches} />
+									<SectionHypotheses creance={pret} />
+									<SectionAnglesMorts creance={pret} />
+								</SectionsDepliables>
+							</>
+						}
+					/>
 				</>
 			)}
 		</PageEcran>
@@ -427,8 +488,8 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 				surTitre={montant === null ? 'Reste à payer sur les factures' : 'Dû aujourd’hui'}
 				legende={
 					montant === null
-						? 'Les intérêts ne se calculent pas sur ce dossier : le décompte, plus bas, dit pourquoi.'
-						: 'Principal, intérêts et indemnité, au jour d’aujourd’hui. Il augmente chaque jour.'
+						? 'Les pénalités ne se calculent pas sur ce dossier : le calcul, plus bas, dit pourquoi.'
+						: 'Factures, pénalités de retard et frais de recouvrement, au jour d’aujourd’hui. Il augmente chaque jour.'
 				}
 			/>
 
@@ -440,7 +501,7 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 			*/}
 			<ListeAnalyses>
 				<LigneAnalyse
-					vers="/app/debiteurs/$id"
+					vers="/app/clients/$id"
 					// ⚠️ LA PAGE DU DÉBITEUR, PAS LA LISTE AVEC `?d=`. Cette dernière
 					// existe encore et redirige, mais elle fait payer un aller-retour
 					// visible pour arriver au même endroit. La page porte tout ce que
@@ -469,7 +530,7 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 				  « Ce que le logiciel a supposé ».
 				*/}
 				<LigneValeur
-					libelle="Prescription la plus proche"
+					libelle="Date limite pour agir en justice"
 					valeur={
 						creance.prescriptionLaPlusProche === null
 							? 'non calculable'
@@ -578,7 +639,7 @@ function SectionDecompte({ creance }: { creance: CreanceOuverte }) {
 				{creance.onTelechargerLaPiece === null ? null : (
 					<BoutonSecondaire onClick={creance.onTelechargerLaPiece}>
 						<FileDownIcon />
-						Télécharger la pièce
+						Télécharger le calcul
 					</BoutonSecondaire>
 				)}
 			</div>
@@ -826,8 +887,8 @@ function SectionRisques({ creance }: { creance: CreanceOuverte }) {
 						<p className="text-cladd-sm leading-snug">{risque.description}</p>
 						{risque.gravite === 'BLOQUANTE' ? (
 							<p className="text-cladd-2xs text-cladd-fg-soft">
-								À savoir : l’injonction de payer et la procédure du commissaire de justice se
-								déroulent sans débat, et une contestation y met fin.
+								À savoir : quand on demande au tribunal de le faire payer, ou qu’on passe par un
+								commissaire de justice, tout se fait sans débat, et une contestation y met fin.
 							</p>
 						) : null}
 					</div>
@@ -848,7 +909,7 @@ function SectionSolidite({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<SectionDepliable
 			cle="solidite"
-			titre="Ce que les pièces établissent"
+			titre="Ce que vos documents montrent"
 			legende="Ce qu’un tiers pourrait lire du dossier"
 			valeur={`${creance.solidite.etablies} sur ${creance.solidite.attendues}`}
 		>
@@ -862,7 +923,7 @@ function SectionPieces({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<SectionDepliable
 			cle="pieces"
-			titre="Les pièces"
+			titre="Les documents"
 			legende="Déposées ici, lues et classées toutes seules"
 			valeur={`${creance.pieces.length}`}
 		>

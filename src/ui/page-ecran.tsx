@@ -149,6 +149,11 @@ const RANGEES_D_ATTENTE = 4;
 type ProprietesEcran = {
 	entete: EnteteEcran;
 	etat?: EtatEcran;
+	/**
+	 * `large` : un écran de travail à deux colonnes au-delà de 1024 px (la page
+	 * dossier). Sans elle, le contenu tient dans la colonne de lecture.
+	 */
+	largeur?: 'normale' | 'large';
 	/** L'issue de l'état d'erreur. Absente ou `null` : l'accueil pour un onglet, la seule pastille de retour pour une page poussée. */
 	issue?: ReactNode;
 } & CorpsEcran;
@@ -175,6 +180,7 @@ function CorpsPageEcran({
 	issue,
 	volets,
 	disposition,
+	largeur = 'normale',
 	children
 }: ProprietesEcran) {
 	const sansEntete = entete.genre === 'aucun';
@@ -227,7 +233,14 @@ function CorpsPageEcran({
 			<PageBody>
 				<Entete entete={entete} donneesPretes={etat === 'pret'} />
 				{etat === 'pret' ? (
-					<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs">{children}</div>
+					<div
+						className={cn(
+							'mx-auto flex w-full max-w-2xl flex-col gap-cladd-xs',
+							largeur === 'large' && 'lg:max-w-6xl'
+						)}
+					>
+						{children}
+					</div>
 				) : etat === 'attente' ? (
 					<Attente sansEntete={sansEntete} pleineLargeur={false} />
 				) : etat === 'erreur' ? (

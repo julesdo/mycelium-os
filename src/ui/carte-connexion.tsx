@@ -86,42 +86,47 @@ export function CarteConnexion({
 					couverture !== undefined && '-mt-9'
 				)}
 			>
-			<div className={cn('flex gap-cladd-2xs', couverture === undefined ? 'items-center' : 'items-end')}>
-				<span
-					aria-hidden
+				<div
 					className={cn(
-						'flex shrink-0 items-center justify-center overflow-hidden rounded-cladd-2xs bg-white',
-						couverture === undefined ? 'size-cladd-md' : 'size-14 shadow-lg ring-1 ring-black/5'
+						'flex gap-cladd-2xs',
+						couverture === undefined ? 'items-center' : 'items-end'
 					)}
 				>
-					{logo}
-				</span>
-				<div className="min-w-0 flex-1">
-					<p className="text-cladd-sm font-semibold">{nom}</p>
-					<p role="status" className="text-cladd-2xs leading-snug text-cladd-fg-soft">
-						{ligneDEtat(etat, promesse)}
-					</p>
+					<span
+						aria-hidden
+						className={cn(
+							'flex shrink-0 items-center justify-center overflow-hidden rounded-cladd-2xs bg-white',
+							couverture === undefined ? 'size-cladd-md' : 'size-14 shadow-lg ring-1 ring-black/5'
+						)}
+					>
+						{logo}
+					</span>
+					<div className="min-w-0 flex-1">
+						<p className="text-cladd-sm font-semibold">{nom}</p>
+						<p role="status" className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+							{ligneDEtat(etat, promesse)}
+						</p>
+					</div>
+					{occupe ? <Spinner size="md" /> : null}
+					{etat.genre === 'A_JOUR' ? (
+						<CheckCircle2Icon aria-hidden className="size-5 shrink-0 text-cladd-fg-soft" />
+					) : null}
 				</div>
-				{occupe ? <Spinner size="md" /> : null}
-				{etat.genre === 'A_JOUR' ? (
-					<CheckCircle2Icon aria-hidden className="size-5 shrink-0 text-cladd-fg-soft" />
-				) : null}
-			</div>
 
-			{etat.genre === 'A_CONNECTER' ? (
-				<BoutonPrincipal pleineLargeur onClick={onConnecter}>
-					Connecter {nom}
-				</BoutonPrincipal>
-			) : etat.genre === 'ECHEC' || etat.genre === 'REVOQUEE' ? (
-				<BoutonPrincipal pleineLargeur onClick={onConnecter}>
-					Reconnecter {nom}
-				</BoutonPrincipal>
-			) : etat.genre === 'A_JOUR' ? (
-				<div className="flex flex-wrap gap-2">
-					<BoutonSecondaire onClick={onSynchroniser}>Synchroniser</BoutonSecondaire>
-					<BoutonSecondaire onClick={onDeconnecter}>Déconnecter</BoutonSecondaire>
-				</div>
-			) : null}
+				{etat.genre === 'A_CONNECTER' ? (
+					<BoutonPrincipal pleineLargeur onClick={onConnecter}>
+						Connecter {nom}
+					</BoutonPrincipal>
+				) : etat.genre === 'ECHEC' || etat.genre === 'REVOQUEE' ? (
+					<BoutonPrincipal pleineLargeur onClick={onConnecter}>
+						Reconnecter {nom}
+					</BoutonPrincipal>
+				) : etat.genre === 'A_JOUR' ? (
+					<div className="flex flex-wrap gap-2">
+						<BoutonSecondaire onClick={onSynchroniser}>Synchroniser</BoutonSecondaire>
+						<BoutonSecondaire onClick={onDeconnecter}>Déconnecter</BoutonSecondaire>
+					</div>
+				) : null}
 			</div>
 		</div>
 	);

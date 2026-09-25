@@ -218,12 +218,12 @@ function prescriptionLaPlusProche(
  */
 function phrasePrescription(proche: PrescriptionLaPlusProche): string {
 	if (proche.jours < 0) {
-		return `${proche.reference} est prescrite depuis le ${dateCourte(proche.date)}.`;
+		return `${proche.reference} : la date limite pour agir en justice est passée depuis le ${dateCourte(proche.date)}.`;
 	}
 	if (proche.jours === 0) {
-		return `${proche.reference} se prescrit aujourd’hui.`;
+		return `${proche.reference} : la date limite pour agir en justice tombe aujourd’hui.`;
 	}
-	return `${proche.reference} se prescrit le ${dateCourte(proche.date)}, dans ${proche.jours} jour${pluriel(proche.jours)}.`;
+	return `${proche.reference} : la date limite pour agir en justice tombe le ${dateCourte(proche.date)}, dans ${proche.jours} jour${pluriel(proche.jours)}.`;
 }
 
 export function EcranDebiteur({
@@ -247,7 +247,7 @@ export function EcranDebiteur({
 				 * seul chemin vers la liste : il reste.
 				 */
 				retour: {
-					vers: '/app/debiteurs',
+					vers: '/app/clients',
 					recherche: { d: identifiant },
 					libelle: TITRE_ECRAN.debiteurs,
 					masqueEnVolets: true
@@ -420,12 +420,12 @@ function CorpsDebiteur({
 			*/}
 			{creances.length === 0 ? null : (
 				<section className="flex flex-col gap-cladd-3xs">
-					<SectionTitle>Ses créances</SectionTitle>
+					<SectionTitle>Ses dossiers</SectionTitle>
 					<ListeAnalyses>
 						{creances.map((creance) => (
 							<LigneAnalyse
 								key={creance._id}
-								vers="/app/creance/$id"
+								vers="/app/dossier/$id"
 								parametres={{ id: creance._id }}
 								icone={<ScaleIcon />}
 								titre={`${creance.nombreFactures} facture${pluriel(creance.nombreFactures)}`}
@@ -502,12 +502,12 @@ function CorpsDebiteur({
 								<span className="flex flex-wrap items-center gap-1.5">
 									{facture.dansUneCreance ? (
 										<Chip size="md" color="neutral">
-											Déjà dans une créance
+											Déjà dans un dossier
 										</Chip>
 									) : null}
 									{facture.datePrescription ? (
 										<Chip size="md" color="neutral">
-											Prescription le {dateCourte(facture.datePrescription)}
+											Agir en justice avant le {dateCourte(facture.datePrescription)}
 										</Chip>
 									) : null}
 								</span>
@@ -636,7 +636,7 @@ function CorpsDebiteur({
 			*/}
 			<section className="flex flex-col gap-cladd-3xs">
 				<SectionTitle>
-					<span>Ses pièces</span>
+					<span>Ses documents</span>
 					{/* « 0 document » serait un cadran à zéro : le vide se dit en toutes lettres. */}
 					<span className="ml-auto text-cladd-2xs text-cladd-fg-softer normal-case">
 						{pieces.length === 0
@@ -693,7 +693,7 @@ function CorpsDebiteur({
 					    dessous, et il y prend toute la largeur plutôt que d'y rester échoué
 					    à gauche. */}
 					<BoutonPrincipal className="grow sm:grow-0" onClick={() => onConstituer(provenance)}>
-						Constituer une créance
+						Lancer le dossier
 					</BoutonPrincipal>
 				</Surface>
 			) : null}

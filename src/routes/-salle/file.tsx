@@ -68,7 +68,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		genre: 'OBSTACLE',
 		id: 'r-echeance-martin',
 		debiteur: 'Ateliers Martin',
-		destination: { vers: '/app/creance/$id', parametres: { id: CREANCE_MARTIN } },
+		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_MARTIN } },
 		obstacle:
 			'Signification de l’ordonnance : la date limite du 12 septembre 2026 est dépassée, l’ordonnance est non avenue.',
 		urgence: 'CRITIQUE',
@@ -84,7 +84,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		genre: 'OBSTACLE',
 		id: 'r-prescription-durand',
 		debiteur: 'Fournitures Durand',
-		destination: { vers: '/app/creance/$id', parametres: { id: CREANCE_DURAND } },
+		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_DURAND } },
 		obstacle: 'Prescription dans 41 jours : passé le 27/10/2026, cette créance ne se réclame plus.',
 		urgence: 'CRITIQUE',
 		montant: 3_120_050n,
@@ -109,7 +109,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		genre: 'LITIGE',
 		id: 'r-litige-durand',
 		debiteur: 'Fournitures Durand',
-		destination: { vers: '/app/creance/$id', parametres: { id: CREANCE_DURAND } },
+		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_DURAND } },
 		question:
 			'Ce client vous a-t-il écrit pour contester cette facture : courrier, e-mail, ou réserve portée sur un bon de livraison ?',
 		urgence: 'HAUTE',
@@ -138,7 +138,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		genre: 'OBSTACLE',
 		id: 'r-decompte-martin',
 		debiteur: 'Ateliers Martin',
-		destination: { vers: '/app/creance/$id', parametres: { id: CREANCE_MARTIN } },
+		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_MARTIN } },
 		obstacle: 'Décompte arrêtable, dont 1 240,33 € d’intérêts courus.',
 		urgence: 'HAUTE',
 		montant: 1_248_033n,
@@ -179,7 +179,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		genre: 'LITIGE',
 		id: 'r-litige-bellin',
 		debiteur: 'Transports Bellin',
-		destination: { vers: '/app/creance/$id', parametres: { id: CREANCE_BELLIN } },
+		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_BELLIN } },
 		question:
 			'Cette facture a-t-elle été émise entre professionnels, dans le cadre de votre activité et de la sienne ?',
 		urgence: 'NORMALE',
@@ -200,7 +200,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		genre: 'OBSTACLE',
 		id: 'r-degrade-bellin',
 		debiteur: 'Transports Bellin',
-		destination: { vers: '/app/debiteurs/$id', parametres: { id: BELLIN } },
+		destination: { vers: '/app/clients/$id', parametres: { id: BELLIN } },
 		obstacle:
 			'Une procédure collective est annoncée au registre contre ce client depuis le dernier passage du radar.',
 		urgence: 'HAUTE',
@@ -217,7 +217,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		genre: 'OBSTACLE',
 		id: 'r-non-chiffree-bellin',
 		debiteur: 'Transports Bellin',
-		destination: { vers: '/app/debiteurs/$id', parametres: { id: BELLIN } },
+		destination: { vers: '/app/clients/$id', parametres: { id: BELLIN } },
 		obstacle:
 			'Date d’exigibilité inexploitable sur F-2024-114 : le retard ne peut pas être établi.',
 		urgence: 'NORMALE',
@@ -299,7 +299,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			genre: 'OBSTACLE',
 			id: `r-payee-${numero}`,
 			debiteur: 'Fournitures Durand',
-			destination: { vers: '/app/debiteurs/$id', parametres: { id: DURAND } },
+			destination: { vers: '/app/clients/$id', parametres: { id: DURAND } },
 			obstacle: `La facture FA-2026-1${numero} a été payée dans les délais.`,
 			urgence: 'NORMALE',
 			montant: null,
@@ -374,7 +374,7 @@ const TRAVAUX_DEMO: readonly TacheVeilleur[] = travauxDuVeilleur({
 			id: 'trouvaille-durand',
 			titre: 'Prescription sous 41 jours',
 			message: 'Fournitures Durand : passé le 27/10/2026, 31 200,50 € ne se réclament plus.',
-			lien: '/app/creance/demo-creance-durand'
+			lien: '/app/dossier/demo-creance-durand'
 		}
 	],
 	onLire: () => {},

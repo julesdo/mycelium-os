@@ -72,7 +72,7 @@ import {
  */
 
 /** La route qui porte une créance, et la seule qui donne un fil au compagnon. */
-const ROUTE_CREANCE = '/app/creance/$id';
+const ROUTE_CREANCE = '/app/dossier/$id';
 
 /**
  * ⚠️ « IL A QUELQUE CHOSE À DIRE » N'EST ALIMENTÉ PAR AUCUNE SOURCE, ET ON LE
@@ -497,9 +497,9 @@ function RefusDuPlafond({ cumul }: { cumul: number | null }) {
 	if (refus === null) {
 		return (
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-				Le compteur de conversation de cet établissement ne s’est pas lu. Ce qui est sûr, et qui
-				ne dépend d’aucun appel modèle : la file, les échéances surveillées, le délai de
-				prescription et les décomptes continuent de se calculer.
+				Le compteur de conversation de cet établissement ne s’est pas lu. Ce qui est sûr, et qui ne
+				dépend d’aucun appel modèle : la file, les échéances surveillées, la date limite pour agir
+				en justice et les calculs continuent de se calculer.
 			</p>
 		);
 	}
@@ -533,13 +533,13 @@ function PorteeDuCompagnon() {
 	return (
 		<div className="flex flex-col items-start gap-cladd-3xs">
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-				Le compagnon lit un dossier à la fois : ses factures, ses pièces, ses décomptes et les
-				valeurs du référentiel qui les chiffrent. Chaque phrase de sa réponse porte sa source, et
-				ce qui ne peut pas être relié à une source n’est pas rendu.
+				Le compagnon lit un dossier à la fois : ses factures, ses documents, ses calculs et les
+				valeurs du référentiel qui les chiffrent. Chaque phrase de sa réponse porte sa source, et ce
+				qui ne peut pas être relié à une source n’est pas rendu.
 			</p>
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-				Il n’y a donc rien à lui demander depuis cet écran. Ouvrez une créance — chaque rangée de
-				la file mène à la sienne —, et cette capsule y ouvrira le fil de ce dossier. Ce qui relève
+				Il n’y a donc rien à lui demander depuis cet écran. Ouvrez un dossier — chaque rangée de la
+				file mène à la sienne —, et cette capsule y ouvrira le fil de ce dossier. Ce qui relève
 				d’une conduite à tenir n’est écrit nulle part : le logiciel mesure, il ne conseille pas.
 			</p>
 			<BoutonPrincipal as={Lien} to="/app">

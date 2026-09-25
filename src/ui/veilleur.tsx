@@ -208,12 +208,12 @@ function lienDeTrouvaille(
 
 	const creance = /^\/app\/creance\/([\w-]+)$/.exec(lien);
 	if (creance?.[1] !== undefined) {
-		return { vers: '/app/creance/$id', parametres: { id: creance[1] } };
+		return { vers: '/app/dossier/$id', parametres: { id: creance[1] } };
 	}
 
 	const debiteur = /^\/app\/debiteurs\?d=([\w-]+)$/.exec(lien);
 	if (debiteur?.[1] !== undefined) {
-		return { vers: '/app/debiteurs', recherche: { d: debiteur[1] } };
+		return { vers: '/app/clients', recherche: { d: debiteur[1] } };
 	}
 
 	return {};

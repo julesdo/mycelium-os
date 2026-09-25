@@ -9,7 +9,7 @@
  * changeait de nom au rechargement pour la même destination.
  */
 export const TITRE_ECRAN = {
-	debiteurs: 'Vos débiteurs',
+	debiteurs: 'Vos clients',
 	/*
 	  ⚠️ CINQ NOMS SONT PARTIS AVEC LEURS ADRESSES. « Abonnement », « Équipe »,
 	  « Réglages » et « Vos données » nommaient quatre écrans que `/app/compte`

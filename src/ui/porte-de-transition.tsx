@@ -76,14 +76,14 @@ const TETES: readonly {
 	 * pas, sur un écran qu'on découvre.
 	 */
 	{
-		to: '/app/debiteurs',
-		libelle: 'Vos débiteurs',
+		to: '/app/clients',
+		libelle: 'Vos clients',
 		ouSaLectureVit: 'L’onglet « Clients », dans la barre du bas'
 	},
 	{
 		to: '/app/procedures',
 		libelle: 'Les dossiers engagés',
-		ouSaLectureVit: 'L’onglet « Créances », dans la barre du bas'
+		ouSaLectureVit: 'L’onglet « Dossiers », dans la barre du bas'
 	},
 	{
 		to: '/app/import-factures',

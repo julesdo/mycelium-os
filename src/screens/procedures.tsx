@@ -104,8 +104,8 @@ export function EcranProcedures({ donnees }: { donnees: Lecture<ProceduresAffich
 							'Vous consignez ce qui se passe ; la frise avance tout seule.'
 						],
 						action: (
-							<BoutonPrincipal as={Lien} to="/app/debiteurs">
-								Voir mes débiteurs
+							<BoutonPrincipal as={Lien} to="/app/clients">
+								Voir mes clients
 							</BoutonPrincipal>
 						)
 					}

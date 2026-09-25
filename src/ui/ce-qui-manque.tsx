@@ -112,7 +112,7 @@ export function ceQuiManque({
 			// vaut `unknown`, donc `entreCommercants` aussi, donc la condition de
 			// l'injonction de payer ne peut pas être acquise. C'est un CONSTAT sur
 			// l'état du dossier, jamais une recommandation d'agir.
-			debloque: 'Aucune injonction de payer possible sans elle',
+			debloque: 'Sans elle, impossible de demander au tribunal de le faire payer',
 			// ⚠️ ELLE MÈNE À `/app/compte`, ET PLUS À UNE PAGE DE CRÉANCIER. Les
 			// trois champs vivent désormais dans la section « Votre établissement »
 			// de la page unique du compte : la page qui les portait seule est morte
@@ -138,7 +138,7 @@ export function ceQuiManque({
 			 * Jusqu'à T16, qui supprime `/app/debiteurs`, elle mène à l'écran qui
 			 * existe encore et qui fait le travail.
 			 */
-			vers: '/app/debiteurs'
+			vers: '/app/clients'
 		});
 	}
 

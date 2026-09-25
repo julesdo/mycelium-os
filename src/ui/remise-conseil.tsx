@@ -172,9 +172,9 @@ function DeuxMontants({ suivi }: { suivi: SuiviConseilAffiche }) {
 							<div className="mt-cladd-3xs border-t border-cladd-outline pt-cladd-3xs">
 								<Poste libelle="Écart total" montant={suivi.ecart.total} />
 								<Poste libelle="dont principal" montant={suivi.ecart.principalRestantDu} />
-								<Poste libelle="dont intérêts dus" montant={suivi.ecart.interets} />
+								<Poste libelle="dont pénalités de retard dues" montant={suivi.ecart.interets} />
 								<Poste
-									libelle="dont indemnités forfaitaires"
+									libelle="dont frais de recouvrement"
 									montant={suivi.ecart.indemniteForfaitaire}
 								/>
 							</div>
@@ -222,8 +222,8 @@ function CeQuiCourt({ suivi }: { suivi: SuiviConseilAffiche }) {
 		<Carte>
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg">
 				{suivi.prescription.date === null
-					? 'La prescription de cette créance ne se calcule pas : aucune date de départ exploitable n’a été trouvée sur ses factures. C’est un angle mort, et il est nommé ici plutôt que tu.'
-					: `La prescription tombe le ${dateCourte(suivi.prescription.date)}, dans ${jours ?? 0} jour${pluriel(jours ?? 0)}, et elle ne s’arrête pas parce que le dossier est parti.`}
+					? 'La date limite pour agir en justice ne se calcule pas sur ce dossier : aucune date de départ exploitable n’a été trouvée sur ses factures. C’est un angle mort, et il est nommé ici plutôt que tu.'
+					: `La date limite pour agir en justice tombe le ${dateCourte(suivi.prescription.date)}, dans ${jours ?? 0} jour${pluriel(jours ?? 0)}, et elle ne s’arrête pas parce que le dossier est parti.`}
 			</p>
 
 			{suivi.prescription.hypothese ? (

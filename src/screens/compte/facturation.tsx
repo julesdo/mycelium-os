@@ -127,7 +127,7 @@ export function SectionFacturation({
 					titre="L’abonnement"
 					prix={euros(abonnement.tarifs.abonnementMensuel)}
 					cadence="par mois"
-					description="Vos échéances surveillées toute l’année : ce qui arrive à terme, ce qui devient mûr, ce qui approche de la prescription."
+					description="Vos échéances surveillées toute l’année : ce qui arrive à terme, et les dates limites pour agir en justice qui approchent."
 					colonne="abonnement"
 					actif={abonne && abonnement.tier === 'procedures'}
 					recommande
@@ -187,7 +187,7 @@ function EtatCourant({
 	if (etat.genre === 'ferme') {
 		return (
 			<RefusEnQuatreParties
-				peutFaire="Tout ce qui est enregistré reste en place : vos factures, vos débiteurs et vos décomptes déjà arrêtés ne bougent pas, et un décompte arrêté ne se recalcule jamais."
+				peutFaire="Tout ce qui est enregistré reste en place : vos factures, vos clients et vos calculs déjà arrêtés ne bougent pas, et un décompte arrêté ne se recalcule jamais."
 				constat={CONSTAT_DE_LA_FERMETURE[etat.cause]}
 				/*
 				  ⚠️ CE QUI LÈVE LE VERROU EST UN CONSTAT, ET IL NOMME LE SEUL EFFET
@@ -214,8 +214,8 @@ function EtatCourant({
 		*/
 		return (
 			<CarteEtat titre="L’état de votre abonnement est indéterminé.">
-				Le palier rendu par le serveur ne correspond à aucun abonnement, à aucun essai en cours et
-				à aucun accès de développement. Ce que le produit vous ouvre ne peut donc pas être annoncé
+				Le palier rendu par le serveur ne correspond à aucun abonnement, à aucun essai en cours et à
+				aucun accès de développement. Ce que le produit vous ouvre ne peut donc pas être annoncé
 				ici, et rien n’est deviné à la place.
 			</CarteEtat>
 		);

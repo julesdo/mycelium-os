@@ -69,7 +69,7 @@ function MetreDuJour({
 				<span>
 					Depuis hier,{' '}
 					<span className="font-semibold text-cladd-fg tabular-nums">{eurosCentimes(couru)}</span>{' '}
-					d’intérêts ont couru sur ces factures.
+					de pénalités de retard ont couru sur ces factures.
 				</span>
 			) : null}
 		</p>

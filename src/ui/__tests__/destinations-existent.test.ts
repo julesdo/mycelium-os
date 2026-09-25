@@ -78,8 +78,8 @@ function normaliser(destination: string): string {
  * Toutes les destinations littérales, avec leur place.
  *
  * ⚠️ LA FORME OBJET COMPTE AUTANT QUE L'ATTRIBUT. Depuis la coquille `PageEcran`,
- * un retour s'écrit `retour: { vers: '/app/creance/$id', … }` et non plus
- * `retourVers="/app/creance/$id"`. Ne lire que les attributs aurait retiré les
+ * un retour s'écrit `retour: { vers: '/app/dossier/$id', … }` et non plus
+ * `retourVers="/app/dossier/$id"`. Ne lire que les attributs aurait retiré les
  * retours du balayage, en silence.
  */
 const DESTINATION = /\b(to|vers|retourVers)(?:=|:\s*)["'](\/[^"']*)["']/g;
@@ -129,10 +129,10 @@ describe('les destinations écrites dans le produit', () => {
 		// Ce test porte sur la lecture elle-même, sur des lignes écrites ici : il ne
 		// dépend d'aucun écran du produit, qui peut changer ses liens sans que la
 		// barrière cesse de fonctionner.
-		expect(destinationsDansLigne("retour: { vers: '/app/creance/$id', libelle }")).toEqual([
-			'/app/creance/$id'
+		expect(destinationsDansLigne("retour: { vers: '/app/dossier/$id', libelle }")).toEqual([
+			'/app/dossier/$id'
 		]);
-		expect(destinationsDansLigne('<Link to="/app/debiteurs">')).toEqual(['/app/debiteurs']);
+		expect(destinationsDansLigne('<Link to="/app/clients">')).toEqual(['/app/clients']);
 		expect(destinationsDansLigne('<EnteteDetail retourVers="/app/donnees" />')).toEqual([
 			'/app/donnees'
 		]);

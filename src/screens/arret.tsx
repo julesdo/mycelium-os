@@ -104,7 +104,7 @@ function coutDeLAttente(prescription: PrescriptionAffichee): string {
 	if (prescription.date === null) {
 		return (
 			'Ce que l’attente coûte sur ce dossier ne se chiffre pas : aucune date de départ ' +
-			'exploitable n’a été trouvée sur ses factures, donc la prescription n’y est pas ' +
+			'exploitable n’a été trouvée sur ses factures, donc la date limite pour agir en justice n’y est pas ' +
 			'surveillée. C’est un angle mort, et il est nommé ici plutôt que tu.'
 		);
 	}
@@ -114,7 +114,7 @@ function coutDeLAttente(prescription: PrescriptionAffichee): string {
 		: '';
 	return (
 		`Ce que l’attente coûte : rien sur ce décompte, qui ne part à aucun greffe. Sur ce ` +
-		`dossier, ce qui court est la prescription, au ${dateCourte(prescription.date)}, dans ` +
+		`dossier, ce qui court est la date limite pour agir en justice, au ${dateCourte(prescription.date)}, dans ` +
 		`${jours} jour${pluriel(jours)}.${hypothese}`
 	);
 }
@@ -167,9 +167,9 @@ export function EcranArret({
 				retour: {
 					// La créance est une PAGE, en un seul défilement : le décompte y est
 					// une section, et n'a plus d'adresse à lui.
-					vers: '/app/creance/$id',
+					vers: '/app/dossier/$id',
 					parametres: { id: identifiant },
-					libelle: pret?.debiteur ?? 'Créance'
+					libelle: pret?.debiteur ?? 'Dossier'
 				},
 				titre: 'Arrêter le décompte',
 				sousTitre:
@@ -192,8 +192,7 @@ function CorpsArret({ donnees }: { donnees: ArretDeLaCreance }) {
 	const controleOk = donnees.abandons.length === 0 || donnees.abandonsAssumes;
 	const rattachables = donnees.abandons.filter((abandon) => abandon.rattachable);
 
-	const atteignable =
-		donnees.projection !== null && controleOk && prevolOk && !donnees.enCours;
+	const atteignable = donnees.projection !== null && controleOk && prevolOk && !donnees.enCours;
 
 	return (
 		<>
@@ -209,8 +208,8 @@ function CorpsArret({ donnees }: { donnees: ArretDeLaCreance }) {
 				{donnees.abandons.length === 0 ? (
 					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 						Toutes les factures connues de {donnees.debiteur} sont comprises dans ce décompte :
-						aucune somme n’en est écartée. Le contrôle a été refait à l’instant, contre les
-						factures d’aujourd’hui.
+						aucune somme n’en est écartée. Le contrôle a été refait à l’instant, contre les factures
+						d’aujourd’hui.
 					</p>
 				) : (
 					<>
@@ -288,10 +287,10 @@ function CorpsArret({ donnees }: { donnees: ArretDeLaCreance }) {
 
 						{rattachables.length === 0 ? (
 							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-								Aucun de ces points ne se répare depuis cet écran : une facture déjà portée par
-								une autre créance ne peut pas rejoindre celle-ci, et la réclamer deux fois
-								exposerait les deux dossiers. Aucun geste du produit ne détache aujourd’hui une
-								facture de sa créance, et c’est dit ici plutôt que laissé à chercher.
+								Aucun de ces points ne se répare depuis cet écran : une facture déjà portée par un
+								autre dossier ne peut pas rejoindre celui-ci, et la réclamer deux fois exposerait
+								les deux dossiers. Aucun geste du produit ne détache aujourd’hui une facture de son
+								dossier, et c’est dit ici plutôt que laissé à chercher.
 							</p>
 						) : null}
 					</>
@@ -302,8 +301,8 @@ function CorpsArret({ donnees }: { donnees: ArretDeLaCreance }) {
 				<p className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
 					<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
 					{donnees.controleDesParametres.exerce
-						? `Les valeurs juridiques exigées par cette pièce sont contrôlées.`
-						: `Le contrôle des valeurs juridiques n’est pas exercé sur ce décompte, et c’est écrit ici plutôt que sous-entendu : aucune pièce de ce logiciel n’est un acte, donc aucune ne nomme les valeurs dont elle dépendrait. Sur ${donnees.controleDesParametres.total} valeurs au référentiel, ${donnees.controleDesParametres.clesNonUtilisables.length} ne sont pas utilisables en l’état${donnees.controleDesParametres.clesNonUtilisables.length > 0 ? ` : ${donnees.controleDesParametres.clesNonUtilisables.join(', ')}` : ''}.`}
+						? `Les valeurs juridiques exigées par ce document sont contrôlées.`
+						: `Le contrôle des valeurs juridiques n’est pas exercé sur ce décompte, et c’est écrit ici plutôt que sous-entendu : aucun document de ce logiciel n’est un acte, donc aucun ne nomme les valeurs dont elle dépendrait. Sur ${donnees.controleDesParametres.total} valeurs au référentiel, ${donnees.controleDesParametres.clesNonUtilisables.length} ne sont pas utilisables en l’état${donnees.controleDesParametres.clesNonUtilisables.length > 0 ? ` : ${donnees.controleDesParametres.clesNonUtilisables.join(', ')}` : ''}.`}
 				</p>
 			</SectionEcran>
 
@@ -365,7 +364,7 @@ function CorpsArret({ donnees }: { donnees: ArretDeLaCreance }) {
 			>
 				{donnees.projection === null ? (
 					<Refus
-						peutFaire="Cette créance est ouverte, ses factures se lisent, et rien de ce qui est enregistré n’est touché."
+						peutFaire="Ce dossier est ouvert, ses factures se lisent, et rien de ce qui est enregistré n’est touché."
 						constat={donnees.refusDeCalcul?.detail ?? 'Le décompte ne se calcule pas en l’état.'}
 						ceQuiLeLeve="La donnée nommée ci-dessus, une fois renseignée sur la facture concernée, fait repartir le calcul sans autre geste."
 						cout={cout}

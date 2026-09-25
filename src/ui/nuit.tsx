@@ -31,7 +31,10 @@ import { cn } from './cn';
  */
 export function AtmosphereNuit({ className }: { className?: string }) {
 	return (
-		<div aria-hidden className={cn('pointer-events-none absolute inset-0 overflow-clip', className)}>
+		<div
+			aria-hidden
+			className={cn('pointer-events-none absolute inset-0 overflow-clip', className)}
+		>
 			<div className="nuit-horizon absolute inset-0" />
 			<div className="grain-nuit absolute inset-0" />
 		</div>

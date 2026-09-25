@@ -101,7 +101,7 @@ export function ReglementsImputes({ imputations }: { imputations: readonly Imput
 				<TableauTitre>Le</TableauTitre>
 				<TableauTitre>Nature</TableauTitre>
 				<TableauTitre aDroite>Montant</TableauTitre>
-				<TableauTitre aDroite>Sur les intérêts</TableauTitre>
+				<TableauTitre aDroite>Sur les pénalités</TableauTitre>
 				<TableauTitre aDroite>Sur le principal</TableauTitre>
 			</TableauEntete>
 			<TableauCorps>
@@ -171,7 +171,7 @@ function Poste({ libelle, montant }: { libelle: string; montant: bigint }) {
  */
 export function PeriodesDInterets({ segments }: { segments: readonly SegmentAffiche[] }) {
 	return (
-		<Tableau legende="Périodes d’intérêts">
+		<Tableau legende="Périodes de pénalités">
 			<TableauEntete>
 				<TableauTitre>Du</TableauTitre>
 				<TableauTitre>Au</TableauTitre>
@@ -179,7 +179,7 @@ export function PeriodesDInterets({ segments }: { segments: readonly SegmentAffi
 				<TableauTitre aDroite>Principal</TableauTitre>
 				<TableauTitre aDroite>Taux</TableauTitre>
 				<TableauTitre aDroite>Base</TableauTitre>
-				<TableauTitre aDroite>Intérêts</TableauTitre>
+				<TableauTitre aDroite>Pénalités</TableauTitre>
 			</TableauEntete>
 			<TableauCorps>
 				{segments.map((segment) => (
@@ -215,11 +215,8 @@ export function Decompte({
 		<div className="flex flex-col gap-cladd-xs">
 			<SurfaceCut contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
 				<Poste libelle="Principal restant dû" montant={decompte.principalRestantDu} />
-				<Poste libelle="Intérêts de retard" montant={decompte.interets} />
-				<Poste
-					libelle="Indemnité forfaitaire de recouvrement"
-					montant={decompte.indemniteForfaitaire}
-				/>
+				<Poste libelle="Pénalités de retard" montant={decompte.interets} />
+				<Poste libelle="Frais de recouvrement" montant={decompte.indemniteForfaitaire} />
 
 				<div className="mt-cladd-3xs flex items-baseline justify-between gap-cladd-3xs border-t border-cladd-outline pt-cladd-3xs">
 					<span className="text-cladd-sm font-semibold">Total réclamé</span>
@@ -231,7 +228,7 @@ export function Decompte({
 				{/* Sans la date d'arrêté ni la convention, le chiffre n'est pas
 				    défendable : deux conventions donnent deux totaux différents. */}
 				<p className="text-cladd-xs text-cladd-fg-soft">
-					Arrêté au {dateCourte(decompte.arreteAu)}, intérêts calculés en{' '}
+					Arrêté au {dateCourte(decompte.arreteAu)}, pénalités calculées en{' '}
 					{CONVENTION_LISIBLE[decompte.convention]}.
 				</p>
 				{choixUtile && imputation !== undefined ? (
@@ -284,8 +281,8 @@ export function Decompte({
 					</div>
 
 					<Poste libelle="Principal" montant={ligne.principalRestantDu} />
-					<Poste libelle="Intérêts" montant={ligne.interets} />
-					<Poste libelle="Indemnité" montant={ligne.indemniteForfaitaire} />
+					<Poste libelle="Pénalités" montant={ligne.interets} />
+					<Poste libelle="Frais de recouvrement" montant={ligne.indemniteForfaitaire} />
 
 					{ligne.segments.length > 0 ? (
 						<CollapsibleRoot>
@@ -313,7 +310,8 @@ export function Decompte({
 						</CollapsibleRoot>
 					) : (
 						<p className="text-cladd-xs text-cladd-fg-soft">
-							Aucune période d’intérêts : la facture n’était pas encore exigible à la date d’arrêté.
+							Aucune période de pénalités : la date de paiement de la facture n’était pas encore
+							passée à la date d’arrêté.
 						</p>
 					)}
 				</Surface>

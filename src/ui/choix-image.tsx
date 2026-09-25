@@ -110,7 +110,11 @@ export function ChoixImage({
 			)}
 
 			{bibliotheque === undefined ? null : (
-				<Bibliotheque actuel={bibliotheque.actuel} onChoisir={bibliotheque.onChoisir} enCours={enCours} />
+				<Bibliotheque
+					actuel={bibliotheque.actuel}
+					onChoisir={bibliotheque.onChoisir}
+					enCours={enCours}
+				/>
 			)}
 		</div>
 	);

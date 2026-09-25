@@ -340,8 +340,8 @@ function AvecLaLecture<T>({
 		</p>
 	) : (
 		<p role="alert" className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-			Cette section n’a pas pu s’afficher. Rien de ce qui est enregistré n’est touché par cet
-			échec ; le reste de la page reste utilisable.
+			Cette section n’a pas pu s’afficher. Rien de ce qui est enregistré n’est touché par cet échec
+			; le reste de la page reste utilisable.
 		</p>
 	);
 }

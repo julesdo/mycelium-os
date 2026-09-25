@@ -650,7 +650,7 @@ export function ConstatRegistre({
 					{bascule ? 'Registre public' : 'Annonce au registre'}
 				</Chip>
 				<span className="text-cladd-2xs text-cladd-fg-soft">
-					publiée au BODACC le {dateCourte(constat.dateParution)}
+					publiée au journal officiel des entreprises le {dateCourte(constat.dateParution)}
 				</span>
 			</div>
 
@@ -677,7 +677,7 @@ export function ConstatRegistre({
 				rel="noreferrer"
 				className="inline-flex min-h-12 w-fit items-center text-cladd-xs text-cladd-primary underline underline-offset-2"
 			>
-				Lire l’annonce au BODACC
+				Lire l’annonce au journal officiel des entreprises
 			</a>
 		</Surface>
 	);

@@ -50,9 +50,7 @@ export function ChiffreHero({
 
 	return (
 		<div className={cn('flex flex-col items-center gap-1 text-center', className)}>
-			{surTitre ? (
-				<p className="text-cladd-xs font-medium text-cladd-fg-soft">{surTitre}</p>
-			) : null}
+			{surTitre ? <p className="text-cladd-xs font-medium text-cladd-fg-soft">{surTitre}</p> : null}
 
 			{/*
 			  `items-baseline` et non `items-center` : les centimes s'alignent sur la
