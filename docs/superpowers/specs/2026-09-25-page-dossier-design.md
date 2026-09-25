@@ -444,7 +444,7 @@ télécharger ; le bouton d'envoi arrive au lot 5.
   le principal figé ; révélation partie du solde comptable ; règlements transmis au compagnon ; textes
   publics (`etapes.tsx`, `tarifs.ts`, `limites.tsx`). Restent au lot 1 : l'exclusion de l'indemnité après
   un jugement d'ouverture et le choix de l'ordre d'imputation.
-- **Lot 1 — le référentiel et le calcul** : les entrées que ce lot emploie ; le calcul des délais (CPC 641,
+- **Lot 1 — le référentiel et le calcul** (LIVRÉ le 25/09/2026) : les entrées que ce lot emploie ; le calcul des délais (CPC 641,
   642 : fériés, report au premier jour ouvrable) et son branchement sur l'échéance de signification ;
   le choix de l'ordre d'imputation par le gérant, avec ses deux variantes (section 0) ; `tauxLisible`
   exact et unique ; la vérification qu'aucun jour de pénalité n'est compté en trop.

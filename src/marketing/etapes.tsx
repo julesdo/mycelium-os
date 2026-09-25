@@ -208,7 +208,9 @@ const EVENEMENTS: EvenementAffiche[] = [
  * données. Recopier des chiffres sur la page publique, c'est aussi recopier les
  * taux d'un semestre qui passera : calculés ici, ils suivent le registre.
  */
-const DECOMPTE: DecompteAffiche = decompterCreance(
+// La page publique montre le calcul, pas le choix de l’ordre d’imputation : « comme
+// vous l’avez choisi » ne s’adresserait à aucun visiteur.
+const { imputation: _choixDuGerant, ...DECOMPTE_CALCULE } = decompterCreance(
 	[
 		{
 			reference: 'FA-2026-118',
@@ -222,6 +224,7 @@ const DECOMPTE: DecompteAffiche = decompterCreance(
 	'ACT_365',
 	'PENALITES_DABORD'
 );
+const DECOMPTE: DecompteAffiche = DECOMPTE_CALCULE;
 
 export function Etapes() {
 	return (

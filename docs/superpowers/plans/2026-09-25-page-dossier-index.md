@@ -8,7 +8,7 @@ produit. Chaque lot est mis en production seul, et vérifié sur ce qui est serv
 | Lot | Contenu | Plan | État |
 |---|---|---|---|
 | 0 | Corrections en production (imputation, indemnité, prescription, textes publics) | — (fait hors plan) | Livré, `1b275b6` |
-| 1 | Le référentiel et le calcul : délais de procédure, ordre d'imputation choisi par le gérant, taux exact | [lot 1](2026-09-25-page-dossier-lot-1.md) | Prêt |
+| 1 | Le référentiel et le calcul : délais de procédure, ordre d’imputation choisi par le gérant, taux exact | [lot 1](2026-09-25-page-dossier-lot-1.md) | Livré |
 | 2 | Montrer, pas qualifier : tableau à trois colonnes, fin des verdicts et du score, conditions générales | à écrire | — |
 | 3 | La page dossier et le lexique : route, deux colonnes, états, machine du dossier, rattachement, redirections | à écrire | — |
 | 4 | Les situations : contestation, procédure collective (annonce d'ouverture stockée), paiement partiel et 1342-10, introuvable | à écrire | — |
