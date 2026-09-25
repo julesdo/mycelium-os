@@ -75,7 +75,8 @@ describe('les sources citées sont encore la version en vigueur', () => {
 		expect(perimeesAu('2026-12-31').map((p) => p.cle)).toEqual([]);
 		expect(perimeesAu('2027-01-01').map((p) => p.cle)).toEqual([
 			'tauxInteretLegalDefaut',
-			'tauxInteretMinimalLegal'
+			'tauxInteretMinimalLegal',
+			'pointDepartPenalitesRetard'
 		]);
 	});
 
@@ -89,7 +90,7 @@ describe('les sources citées sont encore la version en vigueur', () => {
 	 * Sur les huit sources relevées le 23/09/2026 — L441-10, D441-5, L110-4,
 	 * L210-1, 1845 du code civil, L311-1 du code rural, les trois articles
 	 * L126-x, l'article 1411 du code de procédure civile et la nomenclature
-	 * INSEE — UNE SEULE porte une version postérieure. Ce test fige ce compte.
+	 * INSEE — UNE SEULE page porte une version postérieure (L441-10), citée par trois entrées. Ce test fige ce compte.
 	 */
 	it('ne date que ce qui a une date, et rien de plus', () => {
 		const datees = tousLesParametres()
@@ -102,7 +103,7 @@ describe('les sources citées sont encore la version en vigueur', () => {
 			'Une date de fin a été posée sur une entrée qui n’en avait pas. Elle doit avoir été LUE ' +
 				'sur la source — un bandeau « version en vigueur du … AU … », ou une abrogation datée. ' +
 				'Si elle vient d’un raisonnement plutôt que d’une page, elle est inventée.'
-		).toEqual(['tauxInteretLegalDefaut', 'tauxInteretMinimalLegal']);
+		).toEqual(['pointDepartPenalitesRetard', 'tauxInteretLegalDefaut', 'tauxInteretMinimalLegal']);
 	});
 
 	it('n’accepte qu’une date ISO, jamais une phrase', () => {

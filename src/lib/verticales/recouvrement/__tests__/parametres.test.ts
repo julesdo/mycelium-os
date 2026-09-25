@@ -147,3 +147,33 @@ describe('la profession compétente par acte', () => {
 		expect(estUtilisable(PARAMETRES.professionCompetenteParActe)).toBe(false);
 	});
 });
+
+describe('les entrées du lot 1 de la page dossier (relecture du 25/09/2026)', () => {
+	const CLES = [
+		'pointDepartPenalitesRetard',
+		'indemniteParFacture',
+		'computationDelaisMois',
+		'reportDelaiJourNonOuvrable',
+		'joursFeriesLegaux'
+	] as const;
+
+	it('sont relevées sur leur source, datées du relevé, et non validées par un avocat', () => {
+		for (const cle of CLES) {
+			const parametre = PARAMETRES[cle];
+			expect(parametre.verifie, cle).toBe(true);
+			expect(parametre.valideParAvocat, cle).toBe(false);
+			expect(parametre.verifieLe, cle).toBe('2026-09-25');
+		}
+	});
+
+	it('porte les onze fêtes légales, et rien d’autre', () => {
+		// L3133-1 du code du travail : 1er janvier, lundi de Pâques, 1er mai, 8 mai,
+		// Ascension, lundi de Pentecôte, 14 juillet, Assomption, Toussaint,
+		// 11 novembre, Noël.
+		expect(exiger(PARAMETRES.joursFeriesLegaux)).toHaveLength(11);
+	});
+
+	it('cite pour l’indemnité la version du décret en vigueur', () => {
+		expect(PARAMETRES.indemniteForfaitaire.source).toMatch(/27 février 2021/);
+	});
+});

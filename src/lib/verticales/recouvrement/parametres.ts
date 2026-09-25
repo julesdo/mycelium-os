@@ -335,10 +335,12 @@ export const PARAMETRES = {
 		nature: 'CONSTANTE',
 		valeur: 4000n,
 		unite: 'centimes',
+		// Relu le 25/09/2026 : la version citée jusqu'ici n'était plus celle en
+		// vigueur. La valeur, elle, n'a pas bougé.
 		source:
-			'Article D441-5 du code de commerce, issu du décret n° 2012-1115 du 2 octobre 2012 ' +
-			'(pris pour l’application de L441-10)',
-		verifieLe: LE,
+			'Article D441-5 du code de commerce, version en vigueur depuis le 27 février 2021 ' +
+			'(décret n° 2021-211, art. 3)',
+		verifieLe: LE_25,
 		verifie: true,
 		valideParAvocat: false,
 		note:
@@ -459,6 +461,106 @@ export const PARAMETRES = {
 			'rendue AVANT cette date relève des six mois ; à compter d’elle, des trois mois. ' +
 			`${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<string>,
+
+	// ── Lot 1 de la page dossier (relecture du 25 septembre 2026, § 4.2 et 4.9) ──
+
+	pointDepartPenalitesRetard: {
+		cle: 'pointDepartPenalitesRetard',
+		nature: 'CONSTANTE',
+		valeur: 'LENDEMAIN_ECHEANCE',
+		unite: 'sans',
+		source: 'Article L441-10 II du code de commerce',
+		verifieLe: LE_25,
+		// Même page que `tauxInteretLegalDefaut`, relue avec sa version du 1er janvier 2027.
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« exigibles le jour suivant la date de règlement figurant sur la facture ». Le décompte ' +
+			'compte les jours de l’échéance incluse à l’arrêté exclu : c’est exactement le même NOMBRE ' +
+			'de jours que du lendemain de l’échéance à l’arrêté inclus, donc aucun jour n’est compté ' +
+			'en trop. Les deux conventions ne diffèrent que par le taux d’un seul jour, quand ' +
+			`l’échéance et l’arrêté tombent dans deux semestres différents. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<'LENDEMAIN_ECHEANCE'>,
+
+	indemniteParFacture: {
+		cle: 'indemniteParFacture',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Service-Public Entreprendre, fiche F23211 (lecture de l’administration)',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Elle s’applique à chaque facture qui n’a pas été payée dans les délais. » Une indemnité ' +
+			'par facture payée en retard, une seule fois. C’est la lecture de l’administration, pas un ' +
+			'texte : elle fonde le « par facture » du décompte, que l’article du montant ne dit pas. ' +
+			AVOCAT_ATTENDU
+	} satisfies ParametreLegal<boolean>,
+
+	computationDelaisMois: {
+		cle: 'computationDelaisMois',
+		nature: 'CONSTANTE',
+		valeur: 'MEME_QUANTIEME_SINON_DERNIER_JOUR',
+		unite: 'sans',
+		source: 'Article 641, alinéa 2, du code de procédure civile',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« A défaut d’un quantième identique, le délai expire le dernier jour du mois. » ' +
+			'`ajouterMois` (calendrier.ts) l’applique : un mois à compter du 31 janvier finit le 28 ou ' +
+			`le 29 février, jamais le 3 mars. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<'MEME_QUANTIEME_SINON_DERNIER_JOUR'>,
+
+	reportDelaiJourNonOuvrable: {
+		cle: 'reportDelaiJourNonOuvrable',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article 642 du code de procédure civile',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Le délai qui expirerait un samedi, un dimanche ou un jour férié ou chômé « est prorogé ' +
+			'jusqu’au premier jour ouvrable suivant ». Il vaut aussi en procédure collective (R662-1 ' +
+			'du code de commerce). Ce logiciel ne l’applique qu’aux délais de procédure, sur demande ' +
+			'expresse de l’appelant ; son application à la prescription n’a pas été relevée, et il ne ' +
+			`la prolonge donc pas. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	joursFeriesLegaux: {
+		cle: 'joursFeriesLegaux',
+		nature: 'CONSTANTE',
+		valeur: [
+			'01-01',
+			'PAQUES+1',
+			'05-01',
+			'05-08',
+			'PAQUES+39',
+			'PAQUES+50',
+			'07-14',
+			'08-15',
+			'11-01',
+			'11-11',
+			'12-25'
+		],
+		unite: 'sans',
+		source: 'Article L3133-1 du code du travail',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Les fêtes légales ci-après désignées sont des jours fériés » : le 1er janvier, le lundi ' +
+			'de Pâques, le 1er mai, le 8 mai, l’Ascension, le lundi de Pentecôte, le 14 juillet, ' +
+			'l’Assomption, la Toussaint, le 11 novembre et le jour de Noël. Leur effet sur l’article 642 ' +
+			'du code de procédure civile : Cass. 3e civ., 21 janv. 2021 (publié). Les fêtes mobiles sont ' +
+			'données par rapport au dimanche de Pâques, que `delais.ts` calcule. Les jours fériés ' +
+			'locaux (Alsace-Moselle, outre-mer) ne sont pas employés : leur effet sur l’article 642 ' +
+			`n’est pas jugé. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<readonly string[]>,
 
 	// ── Relecture du 25 septembre 2026 ──────────────────────────────────────
 
