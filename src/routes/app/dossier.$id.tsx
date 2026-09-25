@@ -5,7 +5,8 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisCentimes } from '../../lib/socle/montants';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
-import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
+import { QUESTIONS_PAR_ETAPE, lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
+import { poserAuCompagnon } from '../../app/compagnon';
 import { situationsDuDossier } from '../../lib/verticales/recouvrement/situations';
 import {
 	TYPES_PIECE,
@@ -533,6 +534,25 @@ function PageCreance() {
 	const intervenantChoisi = creance.intervenantId;
 	const nomIntervenant = carnet.find((fiche) => fiche._id === intervenantChoisi)?.nom ?? null;
 
+	// Où en est le dossier : déduit des faits, jamais d'un verdict.
+	const etapes = lireEtapes({
+		nombreFactures: creance.factures.length,
+		resteDuCentimes: creance.principalRestantDu,
+		// Une lettre au client validée ou partie : c'est elle qui fait passer le dossier à « On lui écrit ».
+		lettresValidees: (envoisDuDossier?.envois ?? [])
+			.filter(
+				(e) =>
+					(e.modele === 'RELANCE_OFFICIELLE' || e.modele === 'ACCORD_ECHEANCIER') &&
+					(e.etat === 'VALIDE' || e.etat === 'PARTI')
+			)
+			.map((e) => e.partiLe ?? new Date(e.valideLe ?? e.prepareLe).toISOString().slice(0, 10)),
+		professionnelDesigne: creance.intervenantId !== null,
+		procedureEngageeLe: creance.engageeLe,
+		classe: creance.statut === 'CLOSE',
+		dateLimiteAgir: laPlusProche(creance.factures.map((f) => f.datePrescription)),
+		aujourdHui
+	});
+
 	const valeur: CreanceOuverte = {
 		identifiant: id,
 		debiteur: creance.debiteur,
@@ -543,23 +563,9 @@ function PageCreance() {
 		principalRestantDu: creance.principalRestantDu,
 
 		// Où en est le dossier : déduit des faits, jamais d'un verdict.
-		etapes: lireEtapes({
-			nombreFactures: creance.factures.length,
-			resteDuCentimes: creance.principalRestantDu,
-			// Une lettre au client validée ou partie : c'est elle qui fait passer le dossier à « On lui écrit ».
-			lettresValidees: (envoisDuDossier?.envois ?? [])
-				.filter(
-					(e) =>
-						(e.modele === 'RELANCE_OFFICIELLE' || e.modele === 'ACCORD_ECHEANCIER') &&
-						(e.etat === 'VALIDE' || e.etat === 'PARTI')
-				)
-				.map((e) => e.partiLe ?? new Date(e.valideLe ?? e.prepareLe).toISOString().slice(0, 10)),
-			professionnelDesigne: creance.intervenantId !== null,
-			procedureEngageeLe: creance.engageeLe,
-			classe: creance.statut === 'CLOSE',
-			dateLimiteAgir: laPlusProche(creance.factures.map((f) => f.datePrescription)),
-			aujourdHui
-		}),
+		etapes,
+		questionsPreecrites: QUESTIONS_PAR_ETAPE[etapes.etape],
+		onPoserQuestion: poserAuCompagnon,
 		situations: situationsDuDossier({
 			aujourdHui,
 			sante: creance.santeDebiteur,

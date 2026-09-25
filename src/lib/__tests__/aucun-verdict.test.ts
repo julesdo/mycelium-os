@@ -42,6 +42,12 @@ const VERDICTS: readonly RegExp[] = [
 	/score de solidité/i
 ];
 
+/**
+ * Le seul fichier exempté, nommément : celui qui DÉFINIT les verdicts que le
+ * compagnon refuse de rendre. Ses motifs contiennent les mots qu'il interdit.
+ */
+const LISTE_DES_INTERDITS = join('compagnon', 'question-de-droit.ts');
+
 function fichiers(dossier: string): string[] {
 	if (!existsSync(dossier)) return [];
 	const trouves: string[] = [];
@@ -84,7 +90,7 @@ describe('aucun verdict juridique dans ce que le gérant lit', () => {
 
 	it('aucun écran, aucune alerte, aucune phrase du domaine ne qualifie une créance', () => {
 		const trouves: string[] = [];
-		for (const chemin of tous) {
+		for (const chemin of tous.filter((c) => !c.endsWith(LISTE_DES_INTERDITS))) {
 			const lisible = sansCommentaires(readFileSync(chemin, 'utf8'));
 			for (const [index, ligne] of lisible.split('\n').entries()) {
 				if (VERDICTS.some((v) => v.test(ligne))) {

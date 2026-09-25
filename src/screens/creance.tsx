@@ -60,6 +60,7 @@ import {
 	EtapeEnCours,
 	FilDesEtapes,
 	FriseDossier,
+	QuestionsPreecrites,
 	type PieceAffichee,
 	type QuestionLitige,
 	type RepertoireAffiche,
@@ -205,6 +206,9 @@ export interface CreanceOuverte {
 	readonly situations: readonly SituationAffichee[];
 	/** Les courriers du dossier : préparés ici, validés par un administrateur, envoyés par le gérant. */
 	readonly courriers: CourriersDuDossier;
+	/** Deux questions déjà écrites pour l'étape en cours, et le geste qui les pose au compagnon. */
+	readonly questionsPreecrites: readonly string[];
+	readonly onPoserQuestion: (question: string) => void;
 
 	// ── 1. L'en-tête : de qui, combien, jusqu'à quand ───────────────────────
 	/**
@@ -433,6 +437,10 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 										</>
 									)}
 								</EtapeEnCours>
+								<QuestionsPreecrites
+									questions={pret.questionsPreecrites}
+									onPoser={pret.onPoserQuestion}
+								/>
 								<SituationsDossier situations={pret.situations} />
 								<FilDesEtapes lecture={pret.etapes} />
 								<SectionsDepliables

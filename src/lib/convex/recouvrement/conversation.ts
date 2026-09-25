@@ -9,6 +9,10 @@ import { requireEnv } from '../env';
 import { extraireAvecClaude } from '../../socle/documents/extracteur';
 import { RefusDeRendu, filtrerAvantRendu } from '../../verticales/recouvrement/compagnon/filtres';
 import {
+	estQuestionDeDroit,
+	reponseAQuestionDeDroit
+} from '../../verticales/recouvrement/compagnon/question-de-droit';
+import {
 	AncreInconnue,
 	ancresDuContexte,
 	construireContexteDossier,
@@ -316,6 +320,31 @@ export const repondre = authedAction({
 			toursRepris: TOURS_REPRIS
 		});
 		if (lu === null) return enRefus(refusDossierIllisible(), null, null);
+
+		// ── 2 bis. Une question de droit ne part pas au modèle ─────────────────
+		// « Puis-je », « ai-je droit », « est-ce prescrit » : le compagnon montre les
+		// textes du référentiel et passe la main à l'avocat. Aucun appel, aucun coût.
+		if (estQuestionDeDroit(question)) {
+			const phrases = reponseAQuestionDeDroit(question);
+			await ctx.runMutation(internal.recouvrement.conversationLecture.consignerEchange, {
+				creanceId,
+				fil: creanceId,
+				question,
+				reponse: phrases.map((p) => p.texte).join(' '),
+				pastilles: pastillesDe(phrases),
+				phrases: phrasesDe(phrases),
+				usage: { tokensIn: 0, tokensOut: 0, cacheReadTokens: 0, coutEstime: 0 }
+			});
+			return {
+				genre: 'REPONSE',
+				phrases: phrases.map((p) => ({
+					texte: p.texte,
+					genreSource: p.genreSource,
+					reference: p.reference
+				})),
+				avertissement: null
+			};
+		}
 
 		// ── 3. Le plafond de sécurité, et D0 quand il mord ────────────────────
 		// Il arrête la conversation LIBRE, et elle seule : la file, les calculs,

@@ -9,7 +9,7 @@ import {
 } from '../../lib/socle/montants';
 import { dateLisible } from '../../lib/verticales/recouvrement/calendrier';
 import { PARAMETRES } from '../../lib/verticales/recouvrement/parametres';
-import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
+import { QUESTIONS_PAR_ETAPE, lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
 import { situationsDuDossier } from '../../lib/verticales/recouvrement/situations';
 import { composerLettreRelance } from '../../lib/verticales/recouvrement/gabarits/lettre-relance-officielle';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
@@ -632,6 +632,9 @@ function creanceDemo({
 			annonceOuverture: null,
 			dateLimiteAgir: '2031-05-01'
 		}),
+
+		questionsPreecrites: QUESTIONS_PAR_ETAPE.PRET,
+		onPoserQuestion: () => undefined,
 
 		// Une vraie lettre, composée par le gabarit sur les données de la salle.
 		courriers: {

@@ -27,6 +27,7 @@ export {
 	EtapeEnCours,
 	FilDesEtapes,
 	FriseDossier,
+	QuestionsPreecrites,
 	type EtapeDossierAffichee,
 	type LectureEtapesAffichee
 } from './etapes-dossier';

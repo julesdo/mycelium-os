@@ -405,29 +405,17 @@ export function lireReponse(
 
 		if (genreSource === 'PARAMETRE') {
 			if (!ancres.parametres.has(reference)) {
-				throw new AncreInconnue(
-					genreSource,
-					reference,
-					refusAncreInconnue(genreSource, reference)
-				);
+				throw new AncreInconnue(genreSource, reference, refusAncreInconnue(genreSource, reference));
 			}
 			pastilles.push({ genre: 'PARAMETRE', extrait: texte, cle: reference });
 		} else if (genreSource === 'DECOMPTE') {
 			if (!ancres.decomptes.has(reference)) {
-				throw new AncreInconnue(
-					genreSource,
-					reference,
-					refusAncreInconnue(genreSource, reference)
-				);
+				throw new AncreInconnue(genreSource, reference, refusAncreInconnue(genreSource, reference));
 			}
 			pastilles.push({ genre: 'DECOMPTE', extrait: texte, decompteId: reference });
 		} else if (genreSource === 'PIECE') {
 			if (!ancres.pieces.has(reference)) {
-				throw new AncreInconnue(
-					genreSource,
-					reference,
-					refusAncreInconnue(genreSource, reference)
-				);
+				throw new AncreInconnue(genreSource, reference, refusAncreInconnue(genreSource, reference));
 			}
 			pastilles.push({ genre: 'PIECE', extrait: texte, pieceId: reference });
 		}

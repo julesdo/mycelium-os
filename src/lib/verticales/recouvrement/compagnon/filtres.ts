@@ -1,6 +1,7 @@
 import { LEGAL_CONFIG, SITE_CANONIQUE } from '../../../config/legal';
 import { PARAMETRES } from '../parametres';
 import { composerRefus, type Refus } from './refus';
+import { VERDICTS_INTERDITS } from './question-de-droit';
 
 /**
  * LES CINQ FILTRES AVANT RENDU.
@@ -64,7 +65,7 @@ import { composerRefus, type Refus } from './refus';
  */
 
 /** La barrière qui a mordu. Le refus la nomme, pour qu'on sache quoi relire. */
-export type Barriere = 'B2' | 'B3' | 'B4' | 'B6' | 'B11';
+export type Barriere = 'B2' | 'B3' | 'B4' | 'B6' | 'B11' | 'B16';
 
 /**
  * Ce qui relie un fragment de phrase à sa source, et sans quoi il n'est pas
@@ -585,7 +586,39 @@ export function filtrerNomsDeTiers(texte: string, parties: PartiesDuBrouillon): 
  * sans aucun appel modèle (B10), donc sans pastille. Il s'appelle à son propre
  * point d'usage, `filtrerNomsDeTiers`.
  */
+/**
+ * B16. Aucun verdict juridique : ni « est remplie », ni « éligible », ni « vous
+ * devriez ». Le compagnon répond sur les faits et les calculs ; qualifier des
+ * faits au regard du droit revient au gérant, éclairé par un avocat (relecture
+ * du 25/09/2026, § 2).
+ */
+export function filtrerVerdicts(texte: string): string {
+	for (const motif of VERDICTS_INTERDITS) {
+		const trouve = motif.exec(texte);
+		if (trouve === null) continue;
+		throw new RefusDeRendu(
+			'B16',
+			trouve[0],
+			composerRefus({
+				peutFaire:
+					'Le tableau « Ce que dit la loi, en face de votre dossier » montre chaque condition, ce ' +
+					'que le dossier contient et ce que vous avez répondu.',
+				constat: `La réponse retenue qualifiait le dossier au regard du droit en écrivant « ${trouve[0]} ».`,
+				blocages: [
+					'Ce refus se lève par une question sur les faits ou les calculs du dossier. Une question de ' +
+						'droit sur votre cas précis, un avocat peut y répondre.'
+				],
+				coutDeLAttente:
+					'Ce que cette retenue coûte vaut zéro euro et ne fait courir aucun délai : un verdict que le ' +
+					'logiciel n’a pas le droit de rendre n’était de toute façon pas une information fiable.'
+			})
+		);
+	}
+	return texte;
+}
+
 export function filtrerAvantRendu(sortie: SortieCompagnon): SortieCompagnon {
+	filtrerVerdicts(sortie.texte);
 	filtrerLexiqueInterdit(sortie.texte);
 	filtrerChampLexicalProcedure(sortie.texte);
 	filtrerEnoncesJuridiques(sortie);

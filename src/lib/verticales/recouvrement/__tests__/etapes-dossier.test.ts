@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { etapeDuDossier, lireEtapes, type FaitsDuDossierPourEtape } from '../etapes-dossier';
+import {
+	QUESTIONS_PAR_ETAPE,
+	etapeDuDossier,
+	lireEtapes,
+	type FaitsDuDossierPourEtape
+} from '../etapes-dossier';
+import { estQuestionDeDroit } from '../compagnon/question-de-droit';
 
 function faits(surcharge: Partial<FaitsDuDossierPourEtape> = {}): FaitsDuDossierPourEtape {
 	return {
@@ -40,6 +46,14 @@ describe('les quatre étapes d’un dossier', () => {
 		]) {
 			const l = lireEtapes(f);
 			expect(`${l.ceQuiSePasse} ${l.siRienNeBouge}`).not.toMatch(/recommand|vous devriez|il faut/i);
+		}
+	});
+});
+
+describe('les questions déjà écrites', () => {
+	it('portent sur les faits et les calculs, jamais sur le droit', () => {
+		for (const questions of Object.values(QUESTIONS_PAR_ETAPE)) {
+			for (const question of questions) expect(estQuestionDeDroit(question), question).toBe(false);
 		}
 	});
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CatchBoundary, useRouterState } from '@tanstack/react-router';
 import { useAction, useQuery } from 'convex/react';
 import { Popup, PopupContent } from '@cladd-ui/react';
@@ -75,6 +75,19 @@ import {
 const ROUTE_CREANCE = '/app/dossier/$id';
 
 /**
+ * LES QUESTIONS PRÉÉCRITES DE LA PAGE DOSSIER, posées au compagnon.
+ *
+ * La page ne connaît pas la capsule : elle émet un événement, la capsule
+ * l'écoute, s'ouvre sur le fil du dossier et met la question dans le champ.
+ * Le gérant la relit et l'envoie lui-même.
+ */
+const EVENEMENT_QUESTION = 'letikette:question-au-compagnon';
+
+export function poserAuCompagnon(question: string): void {
+	window.dispatchEvent(new CustomEvent<string>(EVENEMENT_QUESTION, { detail: question }));
+}
+
+/**
  * ⚠️ « IL A QUELQUE CHOSE À DIRE » N'EST ALIMENTÉ PAR AUCUNE SOURCE, ET ON LE
  * DIT PLUTÔT QUE DE L'INVENTER.
  *
@@ -149,6 +162,21 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 	});
 
 	const [panneau, setPanneau] = useState<PanneauCompagnon>('AUCUN');
+	/** La question préécrite reçue de la page, avec un numéro qui remonte le champ. */
+	const [questionPreparee, setQuestionPreparee] = useState<{ texte: string; n: number } | null>(
+		null
+	);
+
+	// Un abonnement à un événement extérieur : l'état ne change que dans le rappel.
+	useEffect(() => {
+		function recevoir(evenement: Event) {
+			const texte = (evenement as CustomEvent<string>).detail;
+			setQuestionPreparee((avant) => ({ texte, n: (avant?.n ?? 0) + 1 }));
+			setPanneau('FIL');
+		}
+		window.addEventListener(EVENEMENT_QUESTION, recevoir);
+		return () => window.removeEventListener(EVENEMENT_QUESTION, recevoir);
+	}, []);
 
 	/*
 	  ⚠️ CHANGER DE DOSSIER REFERME CE QUE LA CAPSULE AVAIT OUVERT, et l'ajustement
@@ -263,6 +291,8 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 					*/}
 					{panneau === 'FIL' && dossierActif !== null ? (
 						<FilDeLaCreance
+							key={questionPreparee?.n ?? 0}
+							questionInitiale={questionPreparee?.texte ?? ''}
 							creanceId={dossierActif as Id<'creances'>}
 							/* Choisi à la main : on peut en changer sans quitter la feuille.
 							   Porté par la route : le dossier est celui de l'écran, et une
@@ -325,16 +355,19 @@ function messageDeLaPanne(e: unknown): string {
  */
 function FilDeLaCreance({
 	creanceId,
+	questionInitiale,
 	onChangerDeDossier
 }: {
 	creanceId: Id<'creances'>;
+	/** Une question préécrite, mise dans le champ ; le gérant l'envoie lui-même. */
+	questionInitiale: string;
 	/** Présent seulement quand le dossier a été choisi à la main. */
 	onChangerDeDossier?: () => void;
 }) {
 	const fil = useQuery(api.recouvrement.conversationLecture.filDuDossier, { creanceId });
 	const demanderAuCompagnon = useAction(api.recouvrement.conversation.repondre);
 
-	const [question, setQuestion] = useState('');
+	const [question, setQuestion] = useState(questionInitiale);
 	const [refusDuTour, setRefusDuTour] = useState<RefusAffiche | null>(null);
 	const [enCours, setEnCours] = useState(false);
 	const [panne, setPanne] = useState<string | null>(null);

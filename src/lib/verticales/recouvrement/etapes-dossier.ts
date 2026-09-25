@@ -141,3 +141,28 @@ export function lireEtapes(faits: FaitsDuDossierPourEtape): LectureEtapes {
 		siRienNeBouge: siRienNeBouge(etape, faits)
 	};
 }
+
+/**
+ * DEUX QUESTIONS DÉJÀ ÉCRITES PAR ÉTAPE, sur les faits et les calculs du dossier.
+ *
+ * ⚠️ AUCUNE N'EST UNE QUESTION DE DROIT. Le compagnon répond sur ce que le dossier
+ * contient ; une question de droit sur un cas précis revient à un avocat.
+ */
+export const QUESTIONS_PAR_ETAPE: Record<EtapeDossier, readonly [string, string]> = {
+	PRET: [
+		'Comment est calculé ce qu’il me doit ?',
+		'Quelles factures sont dans ce dossier, et depuis quand ?'
+	],
+	ON_LUI_ECRIT: [
+		'Combien de pénalités ont couru depuis ma lettre ?',
+		'Quelles factures ma lettre réclame-t-elle ?'
+	],
+	TRIBUNAL: [
+		'Quelles dates sont à surveiller dans ce dossier ?',
+		'Qu’est-ce qui a été noté dans la procédure, et quand ?'
+	],
+	REGLE: [
+		'Comment les paiements ont-ils été répartis ?',
+		'Quand la dernière facture a-t-elle été réglée ?'
+	]
+};

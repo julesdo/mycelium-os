@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Surface } from '@cladd-ui/react';
+import { Button, Surface } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
 import { cn } from './cn';
 
@@ -157,6 +157,37 @@ export function DeuxColonnesDossier({ gauche, droite }: { gauche: ReactNode; dro
 		<div className="flex flex-col gap-cladd-xs lg:grid lg:grid-cols-2 lg:items-start">
 			<div className="flex min-w-0 flex-col gap-cladd-xs">{gauche}</div>
 			<div className="flex min-w-0 flex-col gap-cladd-xs">{droite}</div>
+		</div>
+	);
+}
+
+/**
+ * DEUX QUESTIONS DÉJÀ ÉCRITES, sur les faits et les calculs du dossier. Un appui
+ * ouvre le compagnon avec la question prête ; le gérant l'envoie lui-même.
+ */
+export function QuestionsPreecrites({
+	questions,
+	onPoser
+}: {
+	questions: readonly string[];
+	onPoser: (question: string) => void;
+}) {
+	return (
+		<div className="flex flex-col gap-cladd-3xs">
+			<p className="text-cladd-2xs text-cladd-fg-softer">Demander au compagnon</p>
+			<div className="flex flex-wrap gap-cladd-3xs">
+				{questions.map((question) => (
+					<Button
+						key={question}
+						size="md"
+						variant="transparent"
+						className="verre verre-bouton h-auto min-h-12 rounded-full px-3 text-left text-cladd-xs"
+						onClick={() => onPoser(question)}
+					>
+						{question}
+					</Button>
+				))}
+			</div>
 		</div>
 	);
 }
