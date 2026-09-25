@@ -178,7 +178,10 @@ export async function projeterDecompte(
 				taux: periodesDe(facture, arreteAu)
 			});
 		}
-		return { decompte: decompterCreance(pourDecompte, arreteAu, convention), refus: null };
+		return {
+			decompte: decompterCreance(pourDecompte, arreteAu, convention, 'A_CONFIRMER'),
+			refus: null
+		};
 	} catch (erreur) {
 		return {
 			decompte: null,

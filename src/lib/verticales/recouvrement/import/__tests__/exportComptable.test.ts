@@ -151,7 +151,8 @@ describe('import d’un FEC', () => {
 				taux: [{ debut: '2026-04-15', taux: fraction(10n, 100n) }]
 			},
 			'2026-12-31',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 		expect(versEuros(decompte.imputations[0]!.surInterets)).toBe('0,00');
 		expect(versEuros(decompte.imputations[0]!.surPrincipal)).toBe('4 000,00');

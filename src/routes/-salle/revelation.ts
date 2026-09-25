@@ -293,7 +293,7 @@ function pourDecompte(references: readonly string[]) {
  * ne figurent nulle part dans l'acte qu'il fonderait.
  */
 const CONTROLE_ECARTS_DEMO = controlerDecompte({
-	decompte: decompterCreance(pourDecompte(['FA-2023-0388']), ARRETE_AU_DEMO, CONVENTION),
+	decompte: decompterCreance(pourDecompte(['FA-2023-0388']), ARRETE_AU_DEMO, CONVENTION, 'PENALITES_DABORD'),
 	facturesConnues: connues(FACTURES_DEMO.map((facture) => facture.reference))
 });
 
@@ -309,7 +309,8 @@ const CONTROLE_ECARTS_DEMO = controlerDecompte({
 const DECOMPTE_DERIVE_DEMO = decompterCreance(
 	pourDecompte(['FA-2025-0602']),
 	ARRETE_AU_DEMO,
-	CONVENTION
+	CONVENTION,
+	'PENALITES_DABORD'
 );
 const CONTROLE_INTERETS_DEMO = controlerDecompte({
 	decompte: {

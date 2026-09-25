@@ -138,7 +138,9 @@ export function reveler(
 		if (!entreDansLaRevelation(facture, arreteAu)) continue;
 
 		try {
-			const decompte = decompterFacture(facture, arreteAu, convention);
+			// ⚠️ L'ORDRE PRUDENT. La révélation couvre tout le portefeuille, sans choix du
+			// gérant facture par facture : elle retient l'ordre qui réclame le moins.
+			const decompte = decompterFacture(facture, arreteAu, convention, 'PRINCIPAL_DABORD');
 			// ⚠️ LE SOLDE DE LA COMPTABILITÉ, PAS LE PRINCIPAL DU DÉCOMPTE. Depuis le
 			// 25/09/2026, un règlement éteint d'abord les pénalités courues : le principal
 			// du décompte dépasse alors le solde du compte client exactement de ce que les

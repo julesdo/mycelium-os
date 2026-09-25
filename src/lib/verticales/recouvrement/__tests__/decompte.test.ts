@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { depuisEuros, versEuros, fraction } from '../../../socle/montants';
 import { decompterFacture, decompterCreance, joursEntre } from '../decompte';
+import { PARAMETRES, exiger } from '../parametres';
 import type { FacturePourDecompte } from '../decompte';
 
 /**
@@ -52,7 +53,7 @@ describe('décompte d’une facture', () => {
 	it('calcule une année pleine à taux fixe', () => {
 		// 10 000,00 € à 10 % sur 365 jours d'une base de 365 :
 		//   1 000 000 c × 10 × 365 / (100 × 365) = 100 000 c = 1 000,00 €
-		const d = decompterFacture(facture(), '2026-01-01', 'ACT_365');
+		const d = decompterFacture(facture(), '2026-01-01', 'ACT_365','PENALITES_DABORD');
 
 		expect(versEuros(d.principalRestantDu)).toBe('10 000,00');
 		expect(versEuros(d.interets)).toBe('1 000,00');
@@ -78,7 +79,8 @@ describe('décompte d’une facture', () => {
 				reglements: [{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'PAIEMENT' }]
 			}),
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.principalRestantDu)).toBe('6 495,89');
@@ -101,7 +103,8 @@ describe('décompte d’une facture', () => {
 				reglements: [{ date: '2025-03-01', montant: depuisEuros('10000,00'), nature: 'PAIEMENT' }]
 			}),
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.principalRestantDu)).toBe('161,64');
@@ -120,7 +123,8 @@ describe('décompte d’une facture', () => {
 				reglements: [{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'AVOIR' }]
 			}),
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		expect(versEuros(avecAvoir.interets)).toBe('798,36');
@@ -141,7 +145,8 @@ describe('décompte d’une facture', () => {
 				]
 			}),
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.interets)).toBe('1 504,11');
@@ -156,7 +161,8 @@ describe('décompte d’une facture', () => {
 				taux: [{ debut: '2024-01-01', taux: DIX_POUR_CENT }]
 			}),
 			'2025-01-01',
-			'ACT_ACT'
+			'ACT_ACT',
+		'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.interets)).toBe('1 000,00');
@@ -176,7 +182,8 @@ describe('décompte d’une facture', () => {
 				taux: [{ debut: '2024-01-01', taux: DIX_POUR_CENT }]
 			}),
 			'2025-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.interets)).toBe('1 002,74');
@@ -185,7 +192,7 @@ describe('décompte d’une facture', () => {
 	it('ne produit ni intérêt ni indemnité avant la date d’exigibilité', () => {
 		// Pas de retard, donc pas de frais de recouvrement : les 40 € n'étaient
 		// dus qu'à une facture en retard, et le calcul les ajoutait quand même.
-		const d = decompterFacture(facture(), '2024-06-01', 'ACT_365');
+		const d = decompterFacture(facture(), '2024-06-01', 'ACT_365','PENALITES_DABORD');
 		expect(versEuros(d.interets)).toBe('0,00');
 		expect(versEuros(d.indemniteForfaitaire)).toBe('0,00');
 		expect(versEuros(d.total)).toBe('10 000,00');
@@ -197,7 +204,8 @@ describe('décompte d’une facture', () => {
 				reglements: [{ date: '2025-01-01', montant: depuisEuros('10000,00'), nature: 'PAIEMENT' }]
 			}),
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 		expect(versEuros(d.principalRestantDu)).toBe('0,00');
 		expect(versEuros(d.interets)).toBe('0,00');
@@ -214,8 +222,8 @@ describe('décompte d’une facture', () => {
 				{ debut: '2025-09-01', taux: VINGT_POUR_CENT }
 			]
 		});
-		const a = decompterFacture(f, '2026-01-01', 'ACT_ACT');
-		const b = decompterFacture(f, '2026-01-01', 'ACT_ACT');
+		const a = decompterFacture(f, '2026-01-01', 'ACT_ACT','PENALITES_DABORD');
+		const b = decompterFacture(f, '2026-01-01', 'ACT_ACT','PENALITES_DABORD');
 		expect(versEuros(a.total)).toBe(versEuros(b.total));
 		expect(a.segments.length).toBe(b.segments.length);
 	});
@@ -232,7 +240,8 @@ describe('traçabilité — chaque euro doit pouvoir être expliqué', () => {
 				]
 			}),
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		// Trois ruptures : l'exigibilité, le paiement, le changement de taux.
@@ -252,7 +261,8 @@ describe('traçabilité — chaque euro doit pouvoir être expliqué', () => {
 				]
 			}),
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		const sommeSegments = d.segments.reduce((total, s) => total + s.interets, 0n);
@@ -269,7 +279,8 @@ describe('traçabilité — chaque euro doit pouvoir être expliqué', () => {
 				]
 			}),
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		const surPrincipal = d.imputations.reduce((total, i) => total + i.surPrincipal, 0n);
@@ -286,7 +297,8 @@ describe('décompte d’une créance — plusieurs factures', () => {
 		const creance = decompterCreance(
 			[facture({ reference: 'F-001' }), facture({ reference: 'F-002' })],
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		expect(versEuros(creance.principalRestantDu)).toBe('20 000,00');
@@ -307,7 +319,8 @@ describe('décompte d’une créance — plusieurs factures', () => {
 				})
 			],
 			'2026-01-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		expect(versEuros(creance.interets)).toBe('3 000,00');
@@ -321,7 +334,8 @@ describe('décompte d’une créance — plusieurs factures', () => {
 			decompterFacture(
 				facture({ taux: [{ debut: '2025-06-01', taux: DIX_POUR_CENT }] }),
 				'2026-01-01',
-				'ACT_365'
+				'ACT_365',
+			'PENALITES_DABORD'
 			)
 		).toThrowError(/taux/i);
 	});
@@ -353,5 +367,57 @@ describe('dates impossibles', () => {
 		expect(joursEntre('2026-02-28', '2026-03-01')).toBe(1);
 		expect(joursEntre('2024-02-28', '2024-03-01')).toBe(2);
 		expect(joursEntre('2026-03-01', '2026-02-28')).toBe(0);
+	});
+});
+
+describe('l’ordre d’imputation — un choix du gérant', () => {
+	const AVEC_PAIEMENT = facture({
+		reglements: [{ date: '2025-07-01', montant: depuisEuros('4000,00'), nature: 'PAIEMENT' }]
+	});
+
+	it('impute un paiement d’abord sur le principal quand c’est l’ordre choisi', () => {
+		// Paiement de 4 000,00 € le 2025-07-01, principal d'abord.
+		//   segment 1 : 181 j sur 10 000,00 € → 49 589 c courus
+		//   le paiement va entier au principal : 1 000 000 − 400 000 = 600 000 c
+		//   segment 2 : 184 j sur 6 000,00 € → 600 000 × 10 × 184 / 36 500 = 30 246,57… → 30 247 c
+		//   intérêts = 49 589 + 30 247 = 79 836 c ; total = 600 000 + 79 836 + 4 000 = 683 836 c
+		const d = decompterFacture(AVEC_PAIEMENT, '2026-01-01', 'ACT_365', 'PRINCIPAL_DABORD');
+		expect(versEuros(d.principalRestantDu)).toBe('6 000,00');
+		expect(versEuros(d.interets)).toBe('798,36');
+		expect(versEuros(d.total)).toBe('6 838,36');
+		expect(versEuros(d.imputations[0]!.surInterets)).toBe('0,00');
+	});
+
+	it('retient le total le plus bas tant que le gérant n’a pas choisi, et chiffre l’autre', () => {
+		// Pénalités d'abord : 6 863,35 € (voir plus haut). Principal d'abord : 6 838,36 €.
+		// Le doute ne profite jamais au produit : c'est le second qui est retenu.
+		const d = decompterCreance([AVEC_PAIEMENT], '2026-01-01', 'ACT_365', 'A_CONFIRMER');
+		expect(versEuros(d.total)).toBe('6 838,36');
+		expect(d.imputation.ordre).toBe('PRINCIPAL_DABORD');
+		expect(d.imputation.confirme).toBe(false);
+		expect(versEuros(d.imputation.totalAutreOrdre!)).toBe('6 863,35');
+	});
+
+	it('applique l’ordre confirmé, sans chiffrer d’autre variante', () => {
+		const d = decompterCreance([AVEC_PAIEMENT], '2026-01-01', 'ACT_365', 'PENALITES_DABORD');
+		expect(versEuros(d.total)).toBe('6 863,35');
+		expect(d.imputation).toEqual({ ordre: 'PENALITES_DABORD', confirme: true, totalAutreOrdre: null });
+	});
+
+	it('ne demande rien quand les deux ordres donnent le même total', () => {
+		// Aucun paiement : l'ordre ne change rien, il n'y a pas de variante à montrer.
+		const d = decompterCreance([facture()], '2026-01-01', 'ACT_365', 'A_CONFIRMER');
+		expect(d.imputation.totalAutreOrdre).toBeNull();
+	});
+});
+
+describe('aucun jour de pénalité compté en trop', () => {
+	it('compte exactement les jours de retard, de l’échéance à l’arrêté', () => {
+		// Échéance le 2025-01-01, arrêté le 2025-01-31 : 30 jours de retard. Que l'on
+		// compte de l'échéance incluse à l'arrêté exclu, ou du lendemain de
+		// l'échéance à l'arrêté inclus (L441-10 II), c'est le même nombre.
+		expect(exiger(PARAMETRES.pointDepartPenalitesRetard)).toBe('LENDEMAIN_ECHEANCE');
+		const d = decompterFacture(facture(), '2025-01-31', 'ACT_365', 'PENALITES_DABORD');
+		expect(d.segments.reduce((jours, s) => jours + s.jours, 0)).toBe(30);
 	});
 });

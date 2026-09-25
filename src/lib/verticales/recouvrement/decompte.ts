@@ -132,6 +132,30 @@ export interface LigneDecompte {
 	readonly imputations: readonly ImputationReglement[];
 }
 
+/**
+ * L'ordre dans lequel un PAIEMENT éteint ce qui est dû sur une facture.
+ *
+ * ⚠️ C'EST UN CHOIX JURIDIQUE, ET IL REVIENT AU GÉRANT. Le code civil pose « les
+ * intérêts d'abord » (`PARAMETRES.imputationPaiementPartiel`), mais la règle cède
+ * devant le contrat, et ce logiciel ne lit pas encore les conditions générales.
+ * Il chiffre donc les deux ordres tant que le gérant n'a pas choisi, et retient
+ * le plus bas : le doute ne profite jamais au produit. Un avoir, ou un crédit de
+ * nature inconnue, va toujours au principal, quel que soit l'ordre.
+ */
+export type OrdreImputation = 'PENALITES_DABORD' | 'PRINCIPAL_DABORD';
+
+/** L'ordre confirmé par le gérant, ou l'absence de choix. */
+export type ChoixImputation = OrdreImputation | 'A_CONFIRMER';
+
+export interface ImputationDuDecompte {
+	/** L'ordre appliqué au décompte. */
+	readonly ordre: OrdreImputation;
+	/** `false` : le gérant n'a pas choisi, et c'est le total le plus bas qui est retenu. */
+	readonly confirme: boolean;
+	/** Le total de l'autre ordre, quand le gérant n'a pas choisi et qu'il diffère. */
+	readonly totalAutreOrdre: Montant | null;
+}
+
 export interface DecompteCreance {
 	readonly lignes: readonly LigneDecompte[];
 	readonly principalRestantDu: Montant;
@@ -140,6 +164,7 @@ export interface DecompteCreance {
 	readonly total: Montant;
 	readonly arreteAu: string;
 	readonly convention: ConventionJours;
+	readonly imputation: ImputationDuDecompte;
 }
 
 const JOUR_MS = 86_400_000;
@@ -275,10 +300,12 @@ function plusPetit(a: Montant, b: Montant): Montant {
 export function decompterFacture(
 	facture: FacturePourDecompte,
 	arreteAu: string,
-	convention: ConventionJours
+	convention: ConventionJours,
+	ordre: OrdreImputation
 ): LigneDecompte {
-	// Lu pour être cité : la règle vit au registre, pas ici.
+	// Lus pour être cités : les règles vivent au registre, pas ici.
 	exiger(PARAMETRES.imputationPaiementPartiel);
+	exiger(PARAMETRES.pointDepartPenalitesRetard);
 
 	const reglements = facture.reglements
 		.filter((reglement) => reglement.date <= arreteAu)
@@ -293,10 +320,21 @@ export function decompterFacture(
 		// le prix ; un crédit de nature inconnue est traité comme lui. Et jamais
 		// au-delà de ce qui a couru : un trop-perçu antérieur ne rend pas négative la
 		// part d'un règlement suivant.
-		const surInterets =
-			reglement.nature === 'AVOIR' || reglement.nature === 'CREDIT' || (interetsDus as bigint) <= 0n
-				? ZERO
-				: plusPetit(reglement.montant, interetsDus);
+		const penalitesImputables =
+			(reglement.nature === 'PAIEMENT' || reglement.nature === 'ACOMPTE') &&
+			(interetsDus as bigint) > 0n
+				? interetsDus
+				: ZERO;
+
+		let surInterets: Montant;
+		if (ordre === 'PENALITES_DABORD') {
+			surInterets = plusPetit(reglement.montant, penalitesImputables);
+		} else {
+			// Principal d'abord : ce qui dépasse le principal restant va aux pénalités.
+			const principalImputable = (principal as bigint) > 0n ? principal : ZERO;
+			const reste = soustraire(reglement.montant, plusPetit(reglement.montant, principalImputable));
+			surInterets = plusPetit(reste, penalitesImputables);
+		}
 		const surPrincipal = soustraire(reglement.montant, surInterets);
 		interetsDus = soustraire(interetsDus, surInterets);
 		principal = soustraire(principal, surPrincipal);
@@ -378,14 +416,52 @@ export function decompterFacture(
  * deux sens : comptée une fois sur dix factures, neuf indemnités sont
  * abandonnées ; comptée par créance sur une facture unique, rien ne change et
  * le bug reste invisible jusqu'au premier dossier groupé.
+ *
+ * ⚠️ SANS CHOIX DU GÉRANT, LES DEUX ORDRES D'IMPUTATION SONT CHIFFRÉS, et le plus
+ * bas est retenu, avec l'autre total à côté. C'est ce qui permet à l'écran de
+ * dire ce que le choix change, en euros, avant que le gérant le fasse.
  */
 export function decompterCreance(
 	factures: readonly FacturePourDecompte[],
 	arreteAu: string,
-	convention: ConventionJours
+	convention: ConventionJours,
+	choix: ChoixImputation
 ): DecompteCreance {
-	const lignes = factures.map((facture) => decompterFacture(facture, arreteAu, convention));
+	const selon = (ordre: OrdreImputation) =>
+		assembler(
+			factures.map((facture) => decompterFacture(facture, arreteAu, convention, ordre)),
+			arreteAu,
+			convention
+		);
 
+	if (choix !== 'A_CONFIRMER') {
+		return { ...selon(choix), imputation: { ordre: choix, confirme: true, totalAutreOrdre: null } };
+	}
+
+	const penalites = selon('PENALITES_DABORD');
+	const principal = selon('PRINCIPAL_DABORD');
+	if ((principal.total as bigint) === (penalites.total as bigint)) {
+		return {
+			...penalites,
+			imputation: { ordre: 'PENALITES_DABORD', confirme: false, totalAutreOrdre: null }
+		};
+	}
+	return (principal.total as bigint) < (penalites.total as bigint)
+		? {
+				...principal,
+				imputation: { ordre: 'PRINCIPAL_DABORD', confirme: false, totalAutreOrdre: penalites.total }
+			}
+		: {
+				...penalites,
+				imputation: { ordre: 'PENALITES_DABORD', confirme: false, totalAutreOrdre: principal.total }
+			};
+}
+
+function assembler(
+	lignes: readonly LigneDecompte[],
+	arreteAu: string,
+	convention: ConventionJours
+): Omit<DecompteCreance, 'imputation'> {
 	const principalRestantDu = additionner(...lignes.map((l) => l.principalRestantDu));
 	const interets = additionner(...lignes.map((l) => l.interets));
 	const indemniteForfaitaire = additionner(...lignes.map((l) => l.indemniteForfaitaire));
@@ -409,5 +485,6 @@ export const DECOMPTE_NUL: DecompteCreance = {
 	indemniteForfaitaire: ZERO,
 	total: ZERO,
 	arreteAu: '',
-	convention: 'ACT_365'
+	convention: 'ACT_365',
+	imputation: { ordre: 'PENALITES_DABORD', confirme: false, totalAutreOrdre: null }
 };

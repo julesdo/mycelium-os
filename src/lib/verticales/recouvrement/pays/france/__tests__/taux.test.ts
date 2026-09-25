@@ -145,7 +145,8 @@ describe('bout en bout — un décompte réel au taux légal français', () => {
 				taux: periodesDeTauxParDefaut('2026-05-01', '2026-09-01')
 			},
 			'2026-09-01',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 
 		expect(decompte.segments).toHaveLength(2);
@@ -164,7 +165,8 @@ describe('bout en bout — un décompte réel au taux légal français', () => {
 				taux: periodesDeTauxParDefaut('2026-05-01', '2026-05-02')
 			},
 			'2026-05-02',
-			'ACT_365'
+			'ACT_365',
+		'PENALITES_DABORD'
 		);
 		expect(versEuros(decompte.indemniteForfaitaire)).toBe('40,00');
 	});

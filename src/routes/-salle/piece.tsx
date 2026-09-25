@@ -78,14 +78,16 @@ function pourDecompte(factures: readonly FactureDemo[], arreteAu: string): Factu
 const PROJECTION_DEMO: DecompteCreance = decompterCreance(
 	pourDecompte(FACTURES_DE_LA_CREANCE, AUJOURD_HUI_DEMO),
 	AUJOURD_HUI_DEMO,
-	'ACT_365'
+	'ACT_365',
+	'PENALITES_DABORD'
 );
 
 /** Le décompte déjà arrêté, dix-huit jours plus tôt : ce que la pièce porte. */
 const FIGE_DEMO: DecompteCreance = decompterCreance(
 	pourDecompte(FACTURES_DE_LA_CREANCE, ARRETE_LE_DEMO),
 	ARRETE_LE_DEMO,
-	'ACT_365'
+	'ACT_365',
+	'PENALITES_DABORD'
 );
 
 function enAffichage(decompte: DecompteCreance): DecompteAffiche {

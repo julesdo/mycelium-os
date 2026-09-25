@@ -55,7 +55,11 @@ export interface FactureConnue {
 }
 
 export interface ArgumentsControle {
-	readonly decompte: DecompteCreance;
+	/**
+	 * Sans `imputation` : le contrôle n'en a pas besoin, et un décompte figé avant
+	 * le lot 1 de la page dossier n'en porte pas.
+	 */
+	readonly decompte: Omit<DecompteCreance, 'imputation'>;
 	/**
 	 * TOUTES les factures connues de ce débiteur, y compris celles qu'on a
 	 * choisi de ne pas poursuivre. C'est la comparaison avec cette liste qui

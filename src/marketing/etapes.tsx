@@ -219,7 +219,8 @@ const DECOMPTE: DecompteAffiche = decompterCreance(
 		}
 	],
 	'2026-09-03',
-	'ACT_365'
+	'ACT_365',
+	'PENALITES_DABORD'
 );
 
 export function Etapes() {

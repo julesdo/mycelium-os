@@ -340,7 +340,8 @@ function factureVersDecompte(facture: FactureDemo, arreteAu: string): FacturePou
 const DECOMPTE_DEMO: DecompteAffiche = decompterCreance(
 	FACTURES_DEMO.map((facture) => factureVersDecompte(facture, AUJOURD_HUI_DEMO)),
 	AUJOURD_HUI_DEMO,
-	'ACT_365'
+	'ACT_365',
+	'A_CONFIRMER'
 );
 
 /** Les trois niveaux composés par `composerRelance` (`relance.ts`) pour un jeu d'éléments donné. */
