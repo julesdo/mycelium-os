@@ -11,6 +11,7 @@ import { dateLisible } from '../../lib/verticales/recouvrement/calendrier';
 import { PARAMETRES } from '../../lib/verticales/recouvrement/parametres';
 import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
 import { situationsDuDossier } from '../../lib/verticales/recouvrement/situations';
+import { composerLettreRelance } from '../../lib/verticales/recouvrement/gabarits/lettre-relance-officielle';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
 import {
 	libelleEvenement,
@@ -62,7 +63,8 @@ import {
 	type DecompteAffiche,
 	type NiveauAffiche,
 	type PieceAffichee,
-	type SoliditeAffichee
+	type SoliditeAffichee,
+	modelesProposables
 } from '../../ui';
 import { BARREAUX_DEMO, CARNET_DEMO, ETABLISSEMENT_DEMO, voieDeLaCreance } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
@@ -346,12 +348,75 @@ function factureVersDecompte(facture: FactureDemo, arreteAu: string): FacturePou
  * page le montre, la rangée en porte le total, et le brouillon de niveau 2 en
  * reprend les chiffres.
  */
+/** La lettre de relance de la salle : le gabarit réel, sur des données de démonstration. */
+function courrierDemo() {
+	const decompte = DECOMPTE_DEMO;
+	return composerLettreRelance({
+		creancier: {
+			denomination: 'Ateliers Martin',
+			formeJuridique: 'SARL',
+			siren: '552100554',
+			adresse: '12 rue des Forges, 33000 Bordeaux',
+			email: 'claire@ateliers-martin.fr',
+			signataireNom: 'Claire Martin',
+			signataireQualite: 'Gérante',
+			capitalSocial: 1_000_000n,
+			immatriculeRcs: true,
+			villeGreffeRcs: 'Bordeaux',
+			iban: 'FR7630006000011234567890189'
+		},
+		debiteur: {
+			denomination: DEBITEUR_DEMO,
+			formeJuridique: 'SAS',
+			siren: '732829320',
+			adresse: '4 avenue de la Gare, 69001 Lyon',
+			sante: 'SAINE'
+		},
+		factures: FACTURES_DEMO.map((f) => {
+			const reste = enCentimes(resteDu(f));
+			return {
+				reference: f.reference,
+				dateExigibilite: f.dateExigibilite,
+				montantTTC: f.montantTTC,
+				reglementsRecus: f.montantTTC - reste,
+				resteDu: reste,
+				exigibiliteLueSurLaFacture: true
+			};
+		}),
+		decompte: {
+			arreteAu: decompte.arreteAu,
+			convention: decompte.convention,
+			principal: decompte.principalRestantDu,
+			interets: decompte.interets,
+			indemnites: decompte.indemniteForfaitaire,
+			total: decompte.total,
+			lignes: decompte.lignes.map((l) => ({
+				reference: l.reference,
+				principal: l.principalRestantDu,
+				interets: l.interets,
+				indemnite: l.indemniteForfaitaire,
+				total: l.total,
+				tauxConvenu: false
+			}))
+		},
+		referenceInterne: 'D-DEMO42',
+		dateCourrier: AUJOURD_HUI_DEMO,
+		choix: {
+			delaiJours: 8,
+			suite: 'SUITE_GENERALE',
+			modalite: 'VIREMENT_IBAN',
+			reserveIndemnisationComplementaire: false
+		}
+	});
+}
+
 const DECOMPTE_DEMO: DecompteAffiche = decompterCreance(
 	FACTURES_DEMO.map((facture) => factureVersDecompte(facture, AUJOURD_HUI_DEMO)),
 	AUJOURD_HUI_DEMO,
 	'ACT_365',
 	'A_CONFIRMER'
 );
+const COURRIER_DEMO = courrierDemo();
 
 /** Les trois niveaux composés par `composerRelance` (`relance.ts`) pour un jeu d'éléments donné. */
 function niveauxDepuisElements(elements: ElementsRelance): NiveauAffiche[] {
@@ -567,6 +632,41 @@ function creanceDemo({
 			annonceOuverture: null,
 			dateLimiteAgir: '2031-05-01'
 		}),
+
+		// Une vraie lettre, composée par le gabarit sur les données de la salle.
+		courriers: {
+			modeles: modelesProposables(SANTE_DEBITEUR_DEMO, journal !== null),
+			envois: COURRIER_DEMO.ok
+				? [
+						{
+							id: 'demo-envoi',
+							titre: COURRIER_DEMO.titre,
+							destinataire: COURRIER_DEMO.destinataire,
+							canal: COURRIER_DEMO.canal,
+							objet: COURRIER_DEMO.objet,
+							corps: COURRIER_DEMO.corps,
+							resume: COURRIER_DEMO.resume,
+							etat: 'A_VALIDER' as const,
+							prepareLe: AUJOURD_HUI_DEMO,
+							annexeDisponible: true
+						}
+					]
+				: [],
+			peutValider: true,
+			intervenants: [],
+			citationAnnonce: null,
+			apercu: null,
+			aujourdHui: AUJOURD_HUI_DEMO,
+			enCours: false,
+			erreur: COURRIER_DEMO.ok ? null : COURRIER_DEMO.manques.join(' ; '),
+			onChoisir: () => undefined,
+			onPreparer: () => undefined,
+			onValider: () => undefined,
+			onDeclarerParti: () => undefined,
+			onAbandonner: () => undefined,
+			onTelechargerPdf: () => undefined,
+			onTelechargerAnnexe: () => undefined
+		},
 
 		// Les deux dates de l'en-tête, lues sur les factures comme la route les lit.
 		echeanceLaPlusAncienne: FACTURES_DEMO.map((facture) => facture.dateEcheance).reduce(

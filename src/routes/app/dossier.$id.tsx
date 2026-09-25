@@ -18,6 +18,7 @@ import {
 	type FicheASaisir
 } from '../../ui';
 import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
+import { modelesProposables, type ChoixCourrierAffiche, type EnvoiAffiche } from '../../ui';
 
 export const Route = createFileRoute('/app/dossier/$id')({
 	component: PageCreance,
@@ -51,6 +52,22 @@ function CreanceEnErreur() {
  * n'est pas accepté » — seraient remplacés par un message générique sans cette
  * lecture.
  */
+/** Les choix de l'écran, avec les identifiants typés que Convex attend. */
+function versConvex(choix: ChoixCourrierAffiche) {
+	if (choix.modele === 'TRANSMISSION_AVOCAT' || choix.modele === 'DEMANDE_SIGNIFICATION') {
+		return { ...choix, intervenantId: choix.intervenantId as Id<'intervenants'> | null };
+	}
+	return choix;
+}
+
+/** Un courrier validé, en PDF, au caractère près. */
+async function telechargerLeCourrier(envoi: EnvoiAffiche) {
+	const { rendreCourrierEnPdf, nomFichierCourrier } = await import('../../ui/courrier-pdf');
+	rendreCourrierEnPdf(envoi.corps, envoi.objet).save(
+		nomFichierCourrier(envoi.titre, envoi.destinataire, envoi.valideLe ?? envoi.prepareLe)
+	);
+}
+
 function messageDuRefus(e: unknown): string {
 	const convexe = e as { data?: unknown };
 	if (typeof convexe.data === 'string') return convexe.data;
@@ -88,6 +105,20 @@ function PageCreance() {
 	const carnet = useQuery(api.recouvrement.intervenants.monCarnet, {});
 	const decomptes = useQuery(api.recouvrement.decompte.listerDecomptes, {});
 	const dernier = useQuery(api.recouvrement.decompte.dernierDecompte, { creanceId });
+
+	// ── LES COURRIERS ────────────────────────────────────────────────────────
+	// L'aperçu se recompose côté serveur à chaque choix : l'écran n'écrit rien.
+	const [choixCourrier, setChoixCourrier] = useState<ChoixCourrierAffiche | null>(null);
+	const [erreurCourrier, setErreurCourrier] = useState<string | null>(null);
+	const envoisDuDossier = useQuery(api.recouvrement.envois.lister, { creanceId });
+	const apercuCourrier = useQuery(
+		api.recouvrement.envois.apercu,
+		choixCourrier === null ? 'skip' : { creanceId, choix: versConvex(choixCourrier) }
+	);
+	const preparerCourrier = useMutation(api.recouvrement.envois.preparer);
+	const validerCourrier = useMutation(api.recouvrement.envois.valider);
+	const declarerPartiCourrier = useMutation(api.recouvrement.envois.declarerParti);
+	const abandonnerCourrier = useMutation(api.recouvrement.envois.abandonner);
 	const pieces = useQuery(
 		api.recouvrement.pieces.listerPiecesDuDebiteur,
 		creance === undefined ? 'skip' : { debiteurId: creance.debiteurId }
@@ -286,7 +317,7 @@ function PageCreance() {
 	 * fichier. Écrire une seule phrase du document ici créerait un second endroit
 	 * où le produit parle de droit.
 	 */
-	async function telechargerLaPiece() {
+	async function telechargerLaPiece(annexe = false) {
 		if (dernier === undefined || dernier === null) return;
 
 		const [{ composerPiece }, { rendrePieceEnPdf, nomFichierPiece }] = await Promise.all([
@@ -294,55 +325,58 @@ function PageCreance() {
 			import('../../ui/piece-decompte')
 		]);
 
-		const piece = composerPiece({
-			arreteAu: dernier.arreteAu,
-			convention: dernier.convention,
-			principalRestantDu: depuisCentimes(dernier.principalRestantDu),
-			interets: depuisCentimes(dernier.interets),
-			indemniteForfaitaire: depuisCentimes(dernier.indemniteForfaitaire),
-			total: depuisCentimes(dernier.total),
-			creancier: dernier.creancier,
-			debiteur: dernier.debiteur,
-			lignes: dernier.lignes.map((ligne) => ({
-				reference: ligne.reference,
-				principalRestantDu: depuisCentimes(ligne.principalRestantDu),
-				interets: depuisCentimes(ligne.interets),
-				indemniteForfaitaire: depuisCentimes(ligne.indemniteForfaitaire),
-				total: depuisCentimes(ligne.total),
-				segments: ligne.segments.map((segment) => ({
-					debut: segment.debut,
-					fin: segment.fin,
-					jours: segment.jours,
-					principal: depuisCentimes(segment.principal),
-					taux: segment.taux,
-					baseAnnuelle: segment.baseAnnuelle,
-					interets: depuisCentimes(segment.interets)
+		const piece = composerPiece(
+			{
+				arreteAu: dernier.arreteAu,
+				convention: dernier.convention,
+				principalRestantDu: depuisCentimes(dernier.principalRestantDu),
+				interets: depuisCentimes(dernier.interets),
+				indemniteForfaitaire: depuisCentimes(dernier.indemniteForfaitaire),
+				total: depuisCentimes(dernier.total),
+				creancier: dernier.creancier,
+				debiteur: dernier.debiteur,
+				lignes: dernier.lignes.map((ligne) => ({
+					reference: ligne.reference,
+					principalRestantDu: depuisCentimes(ligne.principalRestantDu),
+					interets: depuisCentimes(ligne.interets),
+					indemniteForfaitaire: depuisCentimes(ligne.indemniteForfaitaire),
+					total: depuisCentimes(ligne.total),
+					segments: ligne.segments.map((segment) => ({
+						debut: segment.debut,
+						fin: segment.fin,
+						jours: segment.jours,
+						principal: depuisCentimes(segment.principal),
+						taux: segment.taux,
+						baseAnnuelle: segment.baseAnnuelle,
+						interets: depuisCentimes(segment.interets)
+					})),
+					imputations: (ligne.imputations ?? []).map((imputation) => ({
+						date: imputation.date,
+						nature: imputation.nature,
+						montant: depuisCentimes(imputation.montant),
+						surInterets: depuisCentimes(imputation.surInterets),
+						surPrincipal: depuisCentimes(imputation.surPrincipal)
+					}))
 				})),
-				imputations: (ligne.imputations ?? []).map((imputation) => ({
-					date: imputation.date,
-					nature: imputation.nature,
-					montant: depuisCentimes(imputation.montant),
-					surInterets: depuisCentimes(imputation.surInterets),
-					surPrincipal: depuisCentimes(imputation.surPrincipal)
+				imputation:
+					dernier.imputation === undefined
+						? undefined
+						: {
+								ordre: dernier.imputation.ordre,
+								confirme: dernier.imputation.confirme,
+								totalAutreOrdre:
+									dernier.imputation.totalAutreOrdre === undefined
+										? null
+										: depuisCentimes(dernier.imputation.totalAutreOrdre)
+							},
+				abandons: dernier.abandons.map((abandon) => ({
+					reference: abandon.reference,
+					montantEnJeu: abandon.montantEnJeu === null ? null : depuisCentimes(abandon.montantEnJeu),
+					explication: abandon.explication
 				}))
-			})),
-			imputation:
-				dernier.imputation === undefined
-					? undefined
-					: {
-							ordre: dernier.imputation.ordre,
-							confirme: dernier.imputation.confirme,
-							totalAutreOrdre:
-								dernier.imputation.totalAutreOrdre === undefined
-									? null
-									: depuisCentimes(dernier.imputation.totalAutreOrdre)
-						},
-			abandons: dernier.abandons.map((abandon) => ({
-				reference: abandon.reference,
-				montantEnJeu: abandon.montantEnJeu === null ? null : depuisCentimes(abandon.montantEnJeu),
-				explication: abandon.explication
-			}))
-		});
+			},
+			{ annexe }
+		);
 
 		rendrePieceEnPdf(piece).save(nomFichierPiece(piece));
 	}
@@ -512,7 +546,14 @@ function PageCreance() {
 		etapes: lireEtapes({
 			nombreFactures: creance.factures.length,
 			resteDuCentimes: creance.principalRestantDu,
-			lettresValidees: [],
+			// Une lettre au client validée ou partie : c'est elle qui fait passer le dossier à « On lui écrit ».
+			lettresValidees: (envoisDuDossier?.envois ?? [])
+				.filter(
+					(e) =>
+						(e.modele === 'RELANCE_OFFICIELLE' || e.modele === 'ACCORD_ECHEANCIER') &&
+						(e.etat === 'VALIDE' || e.etat === 'PARTI')
+				)
+				.map((e) => e.partiLe ?? new Date(e.valideLe ?? e.prepareLe).toISOString().slice(0, 10)),
 			professionnelDesigne: creance.intervenantId !== null,
 			procedureEngageeLe: creance.engageeLe,
 			classe: creance.statut === 'CLOSE',
@@ -534,6 +575,68 @@ function PageCreance() {
 			annonceOuverture: creance.annonceOuverture,
 			dateLimiteAgir: laPlusProche(creance.factures.map((f) => f.datePrescription))
 		}),
+
+		courriers: {
+			modeles: modelesProposables(
+				creance.santeDebiteur,
+				suivi?.journal.some((evenement) => evenement.cle === 'ordonnance-rendue') ?? false
+			),
+			envois: (envoisDuDossier?.envois ?? []).map((e) => ({
+				id: e._id,
+				titre: e.titre,
+				destinataire: e.destinataire,
+				canal: e.canal,
+				objet: e.objet,
+				corps: e.corps,
+				resume: e.resume,
+				etat: e.etat,
+				prepareLe: new Date(e.prepareLe).toISOString().slice(0, 10),
+				...(e.valideLe === undefined
+					? {}
+					: { valideLe: new Date(e.valideLe).toISOString().slice(0, 10) }),
+				...(e.empreinte === undefined ? {} : { empreinte: e.empreinte }),
+				...(e.partiLe === undefined ? {} : { partiLe: e.partiLe }),
+				// Le calcul joint se télécharge quand c'est bien celui que le courrier chiffre.
+				annexeDisponible: e.decompteId !== undefined && dernier?._id === e.decompteId
+			})),
+			peutValider: envoisDuDossier?.peutValider ?? false,
+			intervenants: carnet.map((fiche) => ({ id: fiche._id, nom: fiche.nom, role: fiche.role })),
+			citationAnnonce: creance.annonceOuverture?.complement ?? null,
+			apercu: choixCourrier === null ? null : apercuCourrier,
+			aujourdHui,
+			enCours,
+			erreur: erreurCourrier,
+			onChoisir: setChoixCourrier,
+			onPreparer: (choix) =>
+				void avec(async () => {
+					setErreurCourrier(null);
+					try {
+						await preparerCourrier({ creanceId, choix: versConvex(choix) });
+					} catch (e) {
+						setErreurCourrier(messageDuRefus(e));
+					}
+				}),
+			onValider: (envoiId) =>
+				void avec(async () => {
+					setErreurCourrier(null);
+					try {
+						const issue = await validerCourrier({ envoiId: envoiId as Id<'envois'> });
+						if (issue === 'A_RELIRE') {
+							setErreurCourrier(
+								'Le dossier a changé depuis la préparation : le texte a été mis à jour. Relisez-le, puis validez.'
+							);
+						}
+					} catch (e) {
+						setErreurCourrier(messageDuRefus(e));
+					}
+				}),
+			onDeclarerParti: (envoiId, partiLe) =>
+				void avec(() => declarerPartiCourrier({ envoiId: envoiId as Id<'envois'>, partiLe })),
+			onAbandonner: (envoiId) =>
+				void avec(() => abandonnerCourrier({ envoiId: envoiId as Id<'envois'> })),
+			onTelechargerPdf: (envoi) => void telechargerLeCourrier(envoi),
+			onTelechargerAnnexe: () => void telechargerLaPiece(true)
+		},
 
 		// Les deux dates que l'en-tête porte, lues sur les factures du dossier :
 		// la première échéance fait courir les intérêts, la première prescription

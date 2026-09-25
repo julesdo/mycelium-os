@@ -53,6 +53,8 @@ import {
 	type LectureEtapesAffichee,
 	type SituationAffichee,
 	SituationsDossier,
+	type CourriersDuDossier,
+	Courriers,
 	TableauConditions,
 	DeuxColonnesDossier,
 	EtapeEnCours,
@@ -159,6 +161,7 @@ export interface RisqueAffiche {
  * à porter, parce qu'elles sont toujours ouvertes.
  */
 export const SECTIONS_CREANCE = [
+	'courriers',
 	'decompte',
 	'valeurs',
 	'litige',
@@ -170,7 +173,7 @@ export const SECTIONS_CREANCE = [
 export type SectionCreance = (typeof SECTIONS_CREANCE)[number];
 
 /** Les sections de la colonne de gauche : ce qu'on peut faire. Les autres disent ce que contient le dossier. */
-const SECTIONS_GAUCHE: readonly string[] = ['relances', 'voies', 'litige'];
+const SECTIONS_GAUCHE: readonly string[] = ['courriers', 'relances', 'voies', 'litige'];
 
 /**
  * CE QUE LA PAGE MONTRE, ET CE QU'ELLE DÉCLENCHE.
@@ -200,6 +203,8 @@ export interface CreanceOuverte {
 	readonly etapes: LectureEtapesAffichee;
 	/** Ce qui se pose par-dessus les étapes : contestation, procédure collective, paiement partiel, radiation. */
 	readonly situations: readonly SituationAffichee[];
+	/** Les courriers du dossier : préparés ici, validés par un administrateur, envoyés par le gérant. */
+	readonly courriers: CourriersDuDossier;
 
 	// ── 1. L'en-tête : de qui, combien, jusqu'à quand ───────────────────────
 	/**
@@ -419,6 +424,9 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 											<BoutonSecondaire onClick={() => ouvrir('relances')}>
 												Lui écrire
 											</BoutonSecondaire>
+											<BoutonSecondaire onClick={() => ouvrir('courriers')}>
+												Préparer un courrier
+											</BoutonSecondaire>
 											<BoutonSecondaire onClick={() => ouvrir('voies')}>
 												Voir les autres choix
 											</BoutonSecondaire>
@@ -431,6 +439,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 									ouvertes={ouvertes.filter((cle) => SECTIONS_GAUCHE.includes(cle))}
 									onOuvertesChange={(liste) => changer(SECTIONS_GAUCHE, liste)}
 								>
+									<SectionCourriers creance={pret} />
 									<SectionRelances creance={pret} />
 									<SectionVoies creance={pret} />
 									<SectionLitige creance={pret} />
@@ -1169,6 +1178,26 @@ function SectionRelances({ creance }: { creance: CreanceOuverte }) {
 				destinataire={creance.debiteurEmail}
 				identifiantDebiteur={creance.debiteurId}
 			/>
+		</SectionDepliable>
+	);
+}
+
+/**
+ * VOS COURRIERS — la lettre de relance officielle, l'accord d'échéancier, la
+ * déclaration de ce qu'il vous doit, et ce qui part vers votre avocat ou le
+ * commissaire de justice. Préparés ici, validés par un administrateur, envoyés
+ * par vous.
+ */
+function SectionCourriers({ creance }: { creance: CreanceOuverte }) {
+	const aValider = creance.courriers.envois.filter((e) => e.etat === 'A_VALIDER').length;
+	return (
+		<SectionDepliable
+			cle="courriers"
+			titre="Vos courriers"
+			legende="À votre nom, relus et validés par vous, envoyés par vous"
+			valeur={aValider > 0 ? `${aValider} à valider` : undefined}
+		>
+			<Courriers courriers={creance.courriers} />
 		</SectionDepliable>
 	);
 }

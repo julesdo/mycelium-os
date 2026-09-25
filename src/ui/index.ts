@@ -14,6 +14,15 @@ export { cn } from './cn';
 export { TableauConditions, type LigneConditionAffichee } from './conditions';
 export { SituationsDossier, type SituationAffichee } from './situations';
 export {
+	Courriers,
+	modelesProposables,
+	type ApercuAffiche,
+	type ChoixCourrierAffiche,
+	type CourriersDuDossier,
+	type EnvoiAffiche,
+	type ModeleProposable
+} from './courriers';
+export {
 	DeuxColonnesDossier,
 	EtapeEnCours,
 	FilDesEtapes,

@@ -51,6 +51,12 @@ const RACINE = join(import.meta.dirname, '..', '..');
 const ADMIS: Readonly<Record<string, string>> = {
 	denominationNormalisee:
 		'Écrite à l’import, lue par l’INDEX de dédoublonnage (by_org_and_denomination) et jamais comme propriété. Faux positif du balayage.',
+	preparePar:
+		'Qui a préparé un courrier. Écrit à la préparation, pas encore affiché — trace d’audit du courrier.',
+	validePar:
+		'Qui a validé un courrier : l’administrateur. Écrit à la validation, avec l’empreinte — trace d’audit.',
+	partiDeclarePar:
+		'Qui a déclaré le départ d’un courrier. Écrit avec la date du départ — trace d’audit.',
 	majLe:
 		'Horodatage de dernière mise à jour du profil créancier. Écrit, pas encore affiché — trace d’audit.',
 	consigneLe:

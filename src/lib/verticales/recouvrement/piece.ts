@@ -281,7 +281,15 @@ function fondementImputation(imputation: DecompteFige['imputation']): string {
  * ISO : elles se lisent en colonne, se trient, et un tiers qui refait le calcul
  * y cherche des bornes non ambiguës, pas une jolie phrase.
  */
-export function composerPiece(decompte: DecompteFige): Piece {
+export function composerPiece(
+	decompte: DecompteFige,
+	/**
+	 * `annexe` : le décompte joint à un courrier (lettre de relance, déclaration).
+	 * ⚠️ L'avertissement « ce n'est pas une mise en demeure » contredirait alors la
+	 * lettre qu'il accompagne ; il est remplacé.
+	 */
+	options: { readonly annexe?: boolean } = {}
+): Piece {
 	// Lue pour être citée : le « par facture » vient d'elle, pas de l'article du montant.
 	exiger(PARAMETRES.indemniteParFacture);
 	return {
@@ -354,8 +362,11 @@ export function composerPiece(decompte: DecompteFige): Piece {
 		correctifs: correctifs(decompte),
 
 		avertissement:
-			'Ce document est un décompte de créance arrêté à la date indiquée. Ce n’est pas une ' +
-			'mise en demeure, ni un acte de procédure, et il ne fait courir aucun délai. Il présente ' +
-			'les sommes dues et le détail de leur calcul, à toutes fins utiles.'
+			options.annexe === true
+				? 'Ce document est le décompte de créance arrêté à la date indiquée, joint en annexe du ' +
+					'courrier qu’il accompagne. Il présente les sommes dues et le détail de leur calcul.'
+				: 'Ce document est un décompte de créance arrêté à la date indiquée. Ce n’est pas une ' +
+					'mise en demeure, ni un acte de procédure, et il ne fait courir aucun délai. Il présente ' +
+					'les sommes dues et le détail de leur calcul, à toutes fins utiles.'
 	};
 }

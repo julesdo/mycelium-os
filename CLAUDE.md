@@ -17,18 +17,26 @@ automatisés ; le dirigeant ne tranche que ce qu'aucune facture ne dit.
 ## Ce qu'on vend
 
 Un abonnement : import de factures (export comptable ou dépôt de fichiers), surveillance des
-échéances et de la prescription, qualification des créances, et décompte arrêté au centime,
+échéances et de la prescription, tableau des conditions que le gérant qualifie, courriers préparés
+à son nom, et décompte arrêté au centime,
 explicable période par période.
 
 ## ⚠️ Les trois lignes rouges
 
-1. **On ne relance jamais le débiteur au nom du client.** Le recouvrement pour compte de tiers est
-   une activité encadrée.
+1. **Rien ne part sans que le gérant ait validé ce document.** Il est à son seul nom et sous sa
+   signature ; Letikette le prépare sans y figurer, sans être son mandataire, sans recevoir ni fonds
+   ni réponse du débiteur (le recouvrement pour compte de tiers est une activité encadrée). Quand le
+   gérant a un avocat, le projet part chez cet avocat, qui décide. Rien ne part vers un tribunal ou un
+   greffe depuis l’app : ce qui va devant un tribunal passe par l’avocat que le gérant choisit. Seule
+   exception : la déclaration de créance au mandataire, que la loi permet au créancier de faire
+   lui-même. On ne remplace aucun métier réglementé.
 2. **On ne manipule jamais de fonds.** Aucun encaissement, aucun séquestre, aucune commission sur
    ce qui rentre.
-3. **On ne recommande jamais une procédure.** Ce serait du conseil juridique. Le produit énonce des
-   CONSTATS — « cette créance remplit les conditions X, Y, Z » — jamais « vous devriez engager
-   telle procédure ».
+3. **Le produit montre ce que dit la loi, ce qu’il y a dans le dossier et ce que le gérant a
+   répondu.** Il ne dit jamais qu’une condition est remplie, ni qu’il faudrait engager une
+   procédure : ce serait une consultation juridique (relecture du 25/09/2026). Le logiciel lit,
+   calcule et montre ; le gérant qualifie, choisit et signe. Deux tests le tiennent :
+   `aucun-verdict.test.ts` et `lexique.test.ts`.
 
 Et un mot interdit : **« garantie »**. On ne garantit aucun recouvrement. On **mesure**, on
 **documente**, on **alerte**. La décision d'agir reste celle du client.
@@ -57,7 +65,9 @@ Toute valeur juridique — taux, délai, montant, mention — vit dans
   chiffre affiché se corrige. `exiger()` l'exige.
 - `valideParAvocat` — un juriste a contrôlé la valeur ET son applicabilité. Suffit à **produire un
   acte** : un chiffre écrit dans une requête qui part au greffe ne se corrige pas.
-  `exigerPourActe()` l'exige.
+  `exigerPourActe()` l'exige. **Décision du 25/09/2026** : la lettre de relance officielle,
+  l'accord d'échéancier et la déclaration de créance passent sous `exiger()` et la validation du
+  gérant ; la barrière reste pour tout acte adressé à un tribunal ou à un greffe.
 
 **Ne jamais deviner un article de loi, même de mémoire.** Un numéro inventé recopié dans un
 courrier au débiteur est plus dangereux qu'une source absente, parce qu'il a l'air vérifiable.
@@ -85,6 +95,9 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
 - **Un seul espace : `/app/*`**. Une seule verticale, donc pas de sélecteur de domaine.
 - Rôles : `ORG_ADMIN`, `ORG_MEMBER`. Aucun rôle staff.
 - **Tablette d'abord**, paysage privilégié, sans casser le téléphone. Cibles tactiles 48 px.
+- **Le langage de tout le monde** : « votre client », « pénalités de retard », « date limite pour
+  agir en justice » ; le mot du droit en second, entre parenthèses (`lexique.ts`). Seul le corps
+  d'un document envoyé (`gabarits/`) garde le vocabulaire juridique exact.
 
 ### Socle et verticales — la frontière est un test, pas une convention
 
@@ -172,6 +185,7 @@ demonstration sans backend ni authentification, precisement pour ca.
 
 1. **Le logiciel decide, le gerant confirme.** Aucun ecran ne demande une saisie
    que le logiciel peut deduire. Un champ vide qu'il aurait pu remplir est un defaut.
+   Exception : pour une qualification juridique, le gerant qualifie, le logiciel documente.
 2. **Tout traitement se voit sans qu'on le demande.** Lecture en cours, echec,
    progression : chaque etat s'affiche de lui-meme, sans rechargement.
 3. **Deux volets au-dela de 1024px** sur tout ecran de travail : liste a gauche,

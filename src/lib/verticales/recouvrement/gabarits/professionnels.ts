@@ -70,11 +70,11 @@ export interface EntreesAvocat {
 
 /** Les démarches possibles, dans l'ordre où elles pourraient intervenir, sans préférence. */
 const DECISIONS_EN_ATTENTE = [
-	'adresser au débiteur une mise en demeure de payer',
-	'proposer au débiteur un accord d’échéancier',
-	'présenter une requête en injonction de payer',
-	'faire signifier une ordonnance, le cas échéant',
-	'engager une autre action que vous jugeriez adaptée'
+	'une mise en demeure de payer adressée au débiteur',
+	'un accord d’échéancier proposé au débiteur',
+	'une requête en injonction de payer',
+	'la signification d’une ordonnance, le cas échéant',
+	'toute autre action que vous jugeriez adaptée'
 ];
 
 export function composerTransmissionAvocat(e: EntreesAvocat): Composition {
@@ -190,7 +190,7 @@ export function composerTransmissionAvocat(e: EntreesAvocat): Composition {
 	);
 	for (const decision of DECISIONS_EN_ATTENTE) t.push(`- ${decision}`);
 	t.push(
-		'- ne donner aucune suite pour le moment.',
+		'- aucune suite pour le moment.',
 		'',
 		'Je souhaite connaître votre avis avant toute suite. Si vous acceptez de vous charger de ce dossier, l’étendue de votre mission et vos conditions d’intervention, notamment vos honoraires, sont à convenir directement entre nous.',
 		'',

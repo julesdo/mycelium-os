@@ -130,6 +130,16 @@ export const vImputation = v.object({
 });
 
 /** L'ordre dans lequel un paiement éteint ce qui est dû. Voir `OrdreImputation` au domaine. */
+/** Les six modèles de courrier (`src/lib/verticales/recouvrement/gabarits/`). */
+export const vModeleCourrier = v.union(
+	v.literal('RELANCE_OFFICIELLE'),
+	v.literal('ACCORD_ECHEANCIER'),
+	v.literal('DECLARATION_CREANCE'),
+	v.literal('INFORMATION_MANDATAIRE'),
+	v.literal('TRANSMISSION_AVOCAT'),
+	v.literal('DEMANDE_SIGNIFICATION')
+);
+
 export const vOrdreImputation = v.union(
 	v.literal('PENALITES_DABORD'),
 	v.literal('PRINCIPAL_DABORD')
@@ -948,6 +958,51 @@ export const recouvrementTables = {
 	 * l'archiver : ce qui compte est de prouver ce qui a été réclamé, à la date
 	 * où on l'a réclamé.
 	 */
+	/**
+	 * LES COURRIERS DU DOSSIER — préparés, validés, partis.
+	 *
+	 * ⚠️ RIEN NE PART SANS LA VALIDATION D'UN ADMINISTRATEUR. Un membre prépare ;
+	 * seul un `ORG_ADMIN` valide. La validation FIGE le texte et son empreinte :
+	 * rien ne le réécrit ensuite, sauf la purge RGPD. Le logiciel n'expédie rien
+	 * lui-même à ce jour : le gérant imprime et envoie en recommandé, ou joint le
+	 * document dans sa propre messagerie, puis déclare la date du départ.
+	 */
+	envois: defineTable({
+		organizationId: v.id('organizations'),
+		creanceId: v.id('creances'),
+		modele: vModeleCourrier,
+		/** Le décompte figé que le courrier chiffre, quand il en chiffre un. */
+		decompteId: v.optional(v.id('decomptes')),
+		destinataire: v.string(),
+		canal: v.union(
+			v.literal('IMPRIMER_RECOMMANDE'),
+			v.literal('IMPRIMER_SIMPLE'),
+			v.literal('MESSAGERIE')
+		),
+		objet: v.string(),
+		corps: v.string(),
+		resume: v.array(v.string()),
+		/** Les choix du gérant, pour recomposer à l'identique avant la validation. */
+		choix: v.string(),
+		etat: v.union(
+			v.literal('A_VALIDER'),
+			v.literal('VALIDE'),
+			v.literal('PARTI'),
+			v.literal('ABANDONNE')
+		),
+		preparePar: v.string(),
+		prepareLe: v.number(),
+		/** L'empreinte SHA-256 du texte validé. */
+		empreinte: v.optional(v.string()),
+		validePar: v.optional(v.string()),
+		valideLe: v.optional(v.number()),
+		/** La date du DÉPART, déclarée par le gérant (AAAA-MM-JJ). */
+		partiLe: v.optional(v.string()),
+		partiDeclarePar: v.optional(v.string())
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_creance', ['creanceId']),
+
 	decomptes: defineTable({
 		organizationId: v.id('organizations'),
 		creanceId: v.id('creances'),
