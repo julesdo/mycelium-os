@@ -12,6 +12,7 @@
 
 export { cn } from './cn';
 export { TableauConditions, type LigneConditionAffichee } from './conditions';
+export { SituationsDossier, type SituationAffichee } from './situations';
 export {
 	DeuxColonnesDossier,
 	EtapeEnCours,

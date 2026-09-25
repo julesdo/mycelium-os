@@ -425,3 +425,26 @@ describe('aucun jour de pénalité compté en trop', () => {
 		expect(d.segments.reduce((jours, s) => jours + s.jours, 0)).toBe(30);
 	});
 });
+
+describe('la procédure collective', () => {
+	it('ne compte pas de frais de recouvrement pour une échéance au jour du jugement ou après', () => {
+		// L441-10 II, dernière phrase : c'est la procédure qui empêche de payer.
+		const avant = decompterFacture(
+			facture({ jugementOuvertureLe: '2025-06-01' }),
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
+		expect(versEuros(avant.indemniteForfaitaire)).toBe('40,00');
+
+		const apres = decompterFacture(
+			facture({ jugementOuvertureLe: '2025-01-01' }),
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
+		expect(versEuros(apres.indemniteForfaitaire)).toBe('0,00');
+		// Les pénalités, elles, ne sont pas visées par cette phrase.
+		expect((apres.interets as bigint) > 0n).toBe(true);
+	});
+});

@@ -56,6 +56,15 @@ export interface PropositionLettrage {
 	readonly combinaisons: readonly CombinaisonAffichee[];
 	readonly tronque: boolean;
 	readonly candidates?: number;
+	/** Sur `AUCUNE` : la répartition que prévoit la loi (C. civ. 1342-10), à confirmer. */
+	readonly repartition?: {
+		readonly lignes: readonly {
+			readonly reference: string;
+			readonly montant: bigint;
+			readonly solde: boolean;
+		}[];
+		readonly nonAffecte: bigint;
+	};
 }
 
 /**
@@ -121,6 +130,7 @@ export function Lettrage({
 	erreur,
 	onChercher,
 	onAppliquer,
+	onRepartir,
 	debiteurs,
 	debiteurChoisi,
 	onDebiteur
@@ -154,6 +164,8 @@ export function Lettrage({
 	 * moment de l'appui, lue à cet instant-là.
 	 */
 	onAppliquer: (references: readonly string[], total: bigint, date: string) => void;
+	/** Confirme la répartition que prévoit la loi, à la date choisie. Absent : pas proposée. */
+	onRepartir?: (date: string) => void;
 	/**
 	 * LES CLIENTS CHEZ QUI LE RAPPROCHEMENT A DE LA MATIÈRE.
 	 *
@@ -308,6 +320,54 @@ export function Lettrage({
 								d’un escompte, d’un frais bancaire, ou d’une facture que le logiciel ne connaît pas
 								encore — trois situations qui n’appellent pas le même geste.
 							</p>
+							{proposition.repartition === undefined ||
+							proposition.repartition.lignes.length === 0 ||
+							onRepartir === undefined ? null : (
+								<>
+									<p className="text-cladd-xs text-cladd-fg-soft">
+										Si votre client n’a pas dit quelle facture il paie, la loi répartit le versement
+										d’abord sur les factures dont la date de paiement est passée, puis sur la plus
+										ancienne (article 1342-10 du code civil). Ce serait :
+									</p>
+									<ul className="flex flex-col gap-1">
+										{proposition.repartition.lignes.map((ligne) => (
+											<li
+												key={ligne.reference}
+												className="flex justify-between gap-cladd-3xs text-cladd-xs"
+											>
+												<span>
+													{ligne.reference}
+													{ligne.solde ? ' · soldée' : ' · en partie'}
+												</span>
+												<span className="tabular-nums">{eurosCentimes(ligne.montant)}</span>
+											</li>
+										))}
+									</ul>
+									{proposition.repartition.nonAffecte > 0n ? (
+										<p className="text-cladd-xs text-cladd-fg-soft">
+											{eurosCentimes(proposition.repartition.nonAffecte)} dépassent ce qui est dû :
+											ils ne sont affectés à aucune facture.
+										</p>
+									) : null}
+									<p className="text-cladd-2xs text-cladd-fg-softer">
+										À confirmer : vos conditions générales, ou ce que votre client a écrit avec son
+										versement, peuvent dire autrement. Rien ne vous oblige non plus à accepter un
+										paiement partiel (article 1342-4 du code civil).
+									</p>
+									<Button
+										size="md"
+										variant="transparent"
+										className="self-start"
+										onClick={() => {
+											if (date === undefined) return;
+											onRepartir(enISO(date));
+										}}
+										disabled={enCours || date === undefined}
+									>
+										Répartir ainsi
+									</Button>
+								</>
+							)}
 						</Avis>
 					) : proposition.issue === 'TROP_DE_CANDIDATES' ? (
 						<Avis>

@@ -12,7 +12,7 @@ import {
 	soustraire,
 	versEuros
 } from '../../socle/montants';
-import { lettrer } from '../../verticales/recouvrement/lettrage';
+import { lettrer, repartirSelonLaLoi } from '../../verticales/recouvrement/lettrage';
 import type { FactureCandidate } from '../../verticales/recouvrement/lettrage';
 import { estDateReelle } from '../../verticales/recouvrement/calendrier';
 
@@ -85,7 +85,17 @@ const vProposition = v.object({
 	/** Vrai quand d'autres combinaisons existent au-delà de ce qui est montré. */
 	tronque: v.boolean(),
 	/** Renseigné seulement sur `TROP_DE_CANDIDATES`. */
-	candidates: v.optional(v.number())
+	candidates: v.optional(v.number()),
+	/**
+	 * Sur `AUCUNE` : la répartition que prévoit la loi (C. civ. 1342-10) quand le
+	 * client ne dit pas quelle facture il paie. Une PROPOSITION, à confirmer.
+	 */
+	repartition: v.optional(
+		v.object({
+			lignes: v.array(v.object({ reference: v.string(), montant: v.int64(), solde: v.boolean() })),
+			nonAffecte: v.int64()
+		})
+	)
 });
 
 async function composerProposition(
@@ -130,7 +140,36 @@ async function composerProposition(
 			candidates: resultat.candidates
 		};
 	}
-	return { issue: 'AUCUNE' as const, combinaisons: [], tronque: false };
+	// AUCUNE combinaison exacte : un versement partiel, ou un trop-perçu. La loi dit
+	// comment le répartir ; le logiciel le propose, le gérant confirme.
+	const repartition = await repartitionDe(ctx, organizationId, debiteurId, montant);
+	return { issue: 'AUCUNE' as const, combinaisons: [], tronque: false, repartition };
+}
+
+async function repartitionDe(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	debiteurId: Id<'debiteurs'>,
+	montant: bigint
+) {
+	const candidates = await candidatesDe(ctx, organizationId, debiteurId);
+	const r = repartirSelonLaLoi(
+		candidates.map(({ facture, reste }) => ({
+			reference: facture.reference,
+			resteDu: depuisCentimes(reste),
+			dateEcheance: facture.dateExigibilite ?? facture.dateEcheance ?? null
+		})),
+		depuisCentimes(montant),
+		new Date().toISOString().slice(0, 10)
+	);
+	return {
+		lignes: r.lignes.map((l) => ({
+			reference: l.reference,
+			montant: enCentimes(l.montant),
+			solde: l.solde
+		})),
+		nonAffecte: enCentimes(r.nonAffecte)
+	};
 }
 
 /** Sans authentification — pour les tests. */
@@ -245,6 +284,51 @@ export const appliquer = authedMutation({
 			organizationId,
 			...args
 		});
+		return null;
+	}
+});
+
+/**
+ * LE GÉRANT CONFIRME LA RÉPARTITION QUE PRÉVOIT LA LOI (C. civ. 1342-10).
+ *
+ * ⚠️ ELLE EST RECALCULÉE ICI, JAMAIS REÇUE DE L'ÉCRAN : entre l'affichage et le
+ * geste, un règlement a pu arriver. Chaque part devient un règlement daté ; une
+ * facture que la part ne solde pas passe en « partiellement payée ».
+ */
+export const appliquerRepartition = authedMutation({
+	args: { debiteurId: v.id('debiteurs'), montant: v.int64(), date: v.string() },
+	returns: v.null(),
+	handler: async (ctx, { debiteurId, montant, date }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		if (!estDateReelle(date)) {
+			throw new ConvexError(
+				`« ${date} » n’est pas une date : un règlement mal daté décale le calcul des pénalités.`
+			);
+		}
+		const debiteur = await ctx.db.get(debiteurId);
+		if (debiteur === null || debiteur.organizationId !== organizationId) {
+			throw new ConvexError('Client introuvable');
+		}
+		const repartition = await repartitionDe(ctx, organizationId, debiteurId, montant);
+		if (repartition.lignes.length === 0) {
+			throw new ConvexError('Aucune facture de ce client n’attend de paiement.');
+		}
+		const candidates = await candidatesDe(ctx, organizationId, debiteurId);
+		const parReference = new Map(candidates.map((c) => [c.facture.reference, c.facture]));
+		for (const ligne of repartition.lignes) {
+			const facture = parReference.get(ligne.reference)!;
+			await ctx.db.insert('reglements', {
+				organizationId,
+				factureId: facture._id,
+				date,
+				montant: ligne.montant,
+				nature: 'PAIEMENT',
+				creeLe: Date.now()
+			});
+			await ctx.db.patch(facture._id, {
+				statutPaiement: ligne.solde ? 'SOLDEE' : 'PARTIELLEMENT_PAYEE'
+			});
+		}
 		return null;
 	}
 });

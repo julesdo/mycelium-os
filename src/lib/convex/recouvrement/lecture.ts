@@ -353,6 +353,19 @@ export const creanceComplete = authedQuery({
 		intervenantId: v.union(v.id('intervenants'), v.null()),
 		/** La date où une procédure a été consignée : elle place le dossier à l'étape du tribunal. */
 		engageeLe: v.union(v.string(), v.null()),
+		/** L'annonce d'ouverture d'une procédure collective, gardée à part du dernier constat. */
+		annonceOuverture: v.union(
+			v.object({
+				identifiantAnnonce: v.string(),
+				dateParution: v.string(),
+				nature: v.string(),
+				dateJugement: v.optional(v.string()),
+				tribunal: v.optional(v.string()),
+				url: v.string(),
+				complement: v.optional(v.string())
+			}),
+			v.null()
+		),
 		/**
 		 * L'IDENTIFIANT DU DÉBITEUR, pour que la créance puisse l'atteindre.
 		 *
@@ -605,6 +618,7 @@ export const creanceComplete = authedQuery({
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 			intervenantId: creance.intervenantId ?? null,
 			engageeLe: creance.engageeLe ?? null,
+			annonceOuverture: debiteur?.annonceOuverture ?? null,
 			debiteurId: creance.debiteurId,
 			debiteurEmail: debiteur?.email,
 			// La MÊME valeur que celle passée à `qualifier()` plus haut, et c'est le

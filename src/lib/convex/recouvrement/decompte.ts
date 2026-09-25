@@ -15,6 +15,7 @@ import {
 	type Reglement
 } from '../../verticales/recouvrement/decompte';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
+import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
 import { vConventionJours, vImputation, vImputationDuDecompte, vTaux } from './tables';
 
 /**
@@ -167,6 +168,17 @@ export async function projeterDecompte(
 	// refus-là est précisément celui qu'il ne faut pas laisser remonter en écran
 	// cassé : un décompte qui ne se calcule pas se DIT, il ne s'affiche pas en
 	// page blanche.
+	// ⚠️ LE JUGEMENT D'OUVERTURE ARRÊTE LES PÉNALITÉS (L622-28). Quand il est connu et
+	// antérieur à l'arrêté, le calcul s'arrête à sa date : les jours comptés vont
+	// jusqu'à la veille, par prudence. Et une facture dont l'échéance tombe ce jour-là
+	// ou après ne porte pas de frais de recouvrement (L441-10 II).
+	const debiteur = await ctx.db.get(creance.debiteurId);
+	const jugement = debiteur?.annonceOuverture?.dateJugement;
+	const arretEffectif =
+		jugement !== undefined && jugement < arreteAu && exiger(PARAMETRES.arretCoursInterets)
+			? jugement
+			: arreteAu;
+
 	try {
 		const pourDecompte: FacturePourDecompte[] = [];
 		for (const facture of factures) {
@@ -175,13 +187,14 @@ export async function projeterDecompte(
 				montantExigible: depuisCentimes(facture.montantTTC),
 				dateExigibilite: facture.dateExigibilite!,
 				reglements: await reglementsDe(ctx, facture._id),
-				taux: periodesDe(facture, arreteAu)
+				taux: periodesDe(facture, arretEffectif),
+				...(jugement === undefined ? {} : { jugementOuvertureLe: jugement })
 			});
 		}
 		return {
 			decompte: decompterCreance(
 				pourDecompte,
-				arreteAu,
+				arretEffectif,
 				convention,
 				creance.ordreImputation ?? 'A_CONFIRMER'
 			),

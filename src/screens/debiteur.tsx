@@ -160,6 +160,8 @@ export interface DebiteurComplet {
 		total: bigint,
 		date: string
 	) => void;
+	/** Confirme la répartition d'un versement que prévoit la loi (1342-10). */
+	readonly onRepartirLettrage?: (date: string) => void;
 	readonly onBasculerFacture: (factureId: string) => void;
 	/** `provenance` : ce que la créance ouverte ensuite relira pour revenir ici. Voir `useProvenance`. */
 	readonly onConstituer: (provenance: HistoryState) => void;
@@ -301,6 +303,7 @@ function CorpsDebiteur({
 	onEnregistrerTaux,
 	onChercherLettrage,
 	onAppliquerLettrage,
+	onRepartirLettrage,
 	onBasculerFacture,
 	onConstituer,
 	onDeposerPieces,
@@ -536,6 +539,7 @@ function CorpsDebiteur({
 						erreur={erreurLettrage}
 						onChercher={onChercherLettrage}
 						onAppliquer={onAppliquerLettrage}
+						{...(onRepartirLettrage === undefined ? {} : { onRepartir: onRepartirLettrage })}
 					/>
 				</ListeAnalyses>
 			</section>

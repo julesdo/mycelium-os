@@ -51,6 +51,8 @@ import {
 	type OrdreImputationAffichee,
 	type LigneConditionAffichee,
 	type LectureEtapesAffichee,
+	type SituationAffichee,
+	SituationsDossier,
 	TableauConditions,
 	DeuxColonnesDossier,
 	EtapeEnCours,
@@ -196,6 +198,8 @@ export interface CreanceOuverte {
 
 	// ── 0. Où en est le dossier : les quatre étapes, déduites des faits ────────
 	readonly etapes: LectureEtapesAffichee;
+	/** Ce qui se pose par-dessus les étapes : contestation, procédure collective, paiement partiel, radiation. */
+	readonly situations: readonly SituationAffichee[];
 
 	// ── 1. L'en-tête : de qui, combien, jusqu'à quand ───────────────────────
 	/**
@@ -421,6 +425,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 										</>
 									)}
 								</EtapeEnCours>
+								<SituationsDossier situations={pret.situations} />
 								<FilDesEtapes lecture={pret.etapes} />
 								<SectionsDepliables
 									ouvertes={ouvertes.filter((cle) => SECTIONS_GAUCHE.includes(cle))}

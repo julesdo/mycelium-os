@@ -562,6 +562,201 @@ export const PARAMETRES = {
 			`n’est pas jugé. ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<readonly string[]>,
 
+	// ── Lot 4 de la page dossier : les situations (relevé des exceptions, 25/09/2026) ──
+
+	delaiOppositionInjonction: {
+		cle: 'delaiOppositionInjonction',
+		nature: 'CONSTANTE',
+		valeur: 1,
+		unite: 'mois',
+		source: 'Article 1416, alinéa 1, du code de procédure civile',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« L’opposition est formée dans le mois qui suit la signification de l’ordonnance. » ' +
+			'Le point de départ est la signification, quelle qu’en soit la forme. Si elle n’a pas été ' +
+			'faite à la personne, l’opposition reste possible un mois après le premier acte remis à ' +
+			`la personne ou la première saisie (alinéa 2). ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	delaiConsignationFraisOpposition: {
+		cle: 'delaiConsignationFraisOpposition',
+		nature: 'CONSTANTE',
+		valeur: 15,
+		unite: 'jours',
+		source: 'Article 1425, alinéa 2, du code de procédure civile',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Celui-ci invite sans délai le demandeur, par lettre recommandée avec demande d’avis de ' +
+			'réception, à consigner les frais de l’opposition au greffe dans le délai de quinze jours ' +
+			'à peine de caducité de la demande. » Au tribunal de commerce. Le texte ne dit pas si le ' +
+			'délai part de l’envoi ou de la réception de la lettre du greffe : le logiciel le calcule ' +
+			`depuis la date la plus précoce connue, et le dit. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	delaiConstitutionAvocatOpposition: {
+		cle: 'delaiConstitutionAvocatOpposition',
+		nature: 'CONSTANTE',
+		valeur: 15,
+		unite: 'jours',
+		source: 'Article 1418 du code de procédure civile',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le créancier doit constituer avocat dans un délai de quinze jours à compter de la ' +
+			'notification. » Au tribunal judiciaire, quand la représentation par avocat est ' +
+			'obligatoire. La notification est celle de la copie de l’opposition ; si l’avis de ' +
+			`réception revient non signé, elle est datée du jour de présentation. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	seuilDispenseAvocatTribunalCommerce: {
+		cle: 'seuilDispenseAvocatTribunalCommerce',
+		nature: 'CONSTANTE',
+		valeur: 1_000_000n,
+		unite: 'centimes',
+		source: 'Article 853 du code de procédure civile',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Les parties sont dispensées de l’obligation de constituer avocat dans les cas prévus ' +
+			'par la loi ou le règlement, lorsque la demande porte sur un montant inférieur ou égal à ' +
+			'10 000 euros » — au tribunal de commerce. Au-delà, un avocat représente l’entreprise, ' +
+			`sauf les autres cas de l’article. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<bigint>,
+
+	seuilDispenseAvocatTribunalJudiciaire: {
+		cle: 'seuilDispenseAvocatTribunalJudiciaire',
+		nature: 'CONSTANTE',
+		valeur: 1_000_000n,
+		unite: 'centimes',
+		source: 'Article 761 du code de procédure civile',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« A l’exclusion des matières relevant de la compétence exclusive du tribunal judiciaire, ' +
+			'lorsque la demande porte sur un montant inférieur ou égal à 10 000 euros » — les parties ' +
+			`sont dispensées de constituer avocat. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<bigint>,
+
+	delaiDeclarationCreance: {
+		cle: 'delaiDeclarationCreance',
+		nature: 'CONSTANTE',
+		valeur: 2,
+		unite: 'mois',
+		source: 'Article R622-24, alinéa 1, du code de commerce (R641-25 en liquidation)',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le délai de déclaration fixé en application de l’article L. 622-26 est de deux mois à ' +
+			'compter de la publication du jugement d’ouverture au Bulletin officiel des annonces ' +
+			'civiles et commerciales. » Il part de la PARUTION de l’annonce d’ouverture, pas de la ' +
+			'date du jugement. La date de l’envoi compte, pas celle de la réception (Cass. com., ' +
+			`28 janv. 1997). ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	delaiReleveForclusion: {
+		cle: 'delaiReleveForclusion',
+		nature: 'CONSTANTE',
+		valeur: 6,
+		unite: 'mois',
+		source: 'Article L622-26, alinéa 3, du code de commerce',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« L’action en relevé de forclusion ne peut être exercée que dans le délai de six mois. ' +
+			'Ce délai court à compter de la publication du jugement d’ouverture » — le rattrapage ' +
+			`après le délai de déclaration, qui se demande au juge. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	delaiAnnulationPaiementInterdit: {
+		cle: 'delaiAnnulationPaiementInterdit',
+		nature: 'CONSTANTE',
+		valeur: 3,
+		unite: 'annees',
+		source: 'Article L622-7, III, du code de commerce',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Tout acte ou tout paiement passé en violation des dispositions du présent article est ' +
+			'annulé […] dans un délai de trois ans à compter de la conclusion de l’acte ou du paiement ' +
+			'de la créance. » Un paiement reçu après le jugement d’ouverture peut donc être repris : ' +
+			`le dossier ne passe pas en « Réglé » sans le signaler. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	arretCoursInterets: {
+		cle: 'arretCoursInterets',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L622-28, alinéa 1, du code de commerce (L641-3 en liquidation)',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Le jugement d’ouverture « arrête le cours des intérêts légaux et conventionnels, ainsi que ' +
+			'de tous intérêts de retard ». Les textes ne disent pas si le jour même du jugement produit ' +
+			'des intérêts : par prudence, le calcul les arrête la veille. Exception non suivie : les ' +
+			`prêts et paiements différés d’un an ou plus. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	exclusionIndemnitesProcedureCollective: {
+		cle: 'exclusionIndemnitesProcedureCollective',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L441-10 II, dernière phrase, du code de commerce',
+		verifieLe: LE_25,
+		// Même page que `tauxInteretLegalDefaut`, relue avec sa version du 1er janvier 2027.
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Le créancier « ne peut invoquer le bénéfice de ces indemnités lorsque l’ouverture d’une ' +
+			'procédure [...] interdit le paiement à son échéance ». Lu avec R621-4 : pas de frais de ' +
+			'recouvrement pour une facture dont l’échéance tombe le jour du jugement d’ouverture ou ' +
+			'après. Ne vise pas les pénalités de retard. Pour une échéance antérieure, l’indemnité ' +
+			`reste déclarable, sur une ligne marquée « lecture ». ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	refusPaiementPartielPossible: {
+		cle: 'refusPaiementPartielPossible',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article 1342-4 du code civil',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note: `« Le créancier peut refuser un paiement partiel même si la prestation est divisible. » ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	ordreImputationPlusieursDettes: {
+		cle: 'ordreImputationPlusieursDettes',
+		nature: 'CONSTANTE',
+		valeur: ['INDICATION_DEBITEUR', 'ECHUES', 'PLUS_INTERET_ACQUITTER', 'PLUS_ANCIENNE', 'PRORATA'],
+		unite: 'sans',
+		source: 'Article 1342-10 du code civil',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Sans indication du débiteur, le paiement s’impute « d’abord sur les dettes échues ; ' +
+			'parmi celles-ci, sur les dettes que le débiteur avait le plus d’intérêt d’acquitter », ' +
+			'puis sur la plus ancienne, puis au prorata. Le « plus d’intérêt » n’est défini par aucun ' +
+			'texte lu : le logiciel le montre comme indéterminé et propose la plus ancienne, à ' +
+			'confirmer par le gérant. Dans chaque facture, l’article 1343-1 impute ensuite sur les ' +
+			`pénalités d’abord. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<readonly string[]>,
+
 	// ── Relecture du 25 septembre 2026 ──────────────────────────────────────
 
 	imputationPaiementPartiel: {

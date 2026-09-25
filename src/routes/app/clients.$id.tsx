@@ -92,6 +92,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const renseignerSecteur = useMutation(api.recouvrement.debiteurs.renseignerSecteur);
 	const poserTaux = useMutation(api.recouvrement.tauxContractuel.renseigner);
 	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
+	const appliquerRepartition = useMutation(api.recouvrement.lettrage.appliquerRepartition);
 	const genererUrlPiece = useMutation(api.recouvrement.pieces.genererUrlPiece);
 	const deposerPiece = useMutation(api.recouvrement.pieces.deposerPiece);
 	const classerPiece = useMutation(api.recouvrement.pieces.classerPiece);
@@ -287,6 +288,25 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 		}
 	}
 
+	/** Le gérant confirme la répartition que prévoit la loi (C. civ. 1342-10). */
+	async function repartir(date: string) {
+		if (montantCherche === null) return;
+		setErreurLettrage(null);
+		try {
+			await appliquerRepartition({ debiteurId, montant: montantCherche, date });
+			setMontantCherche(null);
+		} catch (e) {
+			const convexe = e as { data?: unknown };
+			setErreurLettrage(
+				typeof convexe.data === 'string'
+					? convexe.data
+					: e instanceof Error
+						? e.message
+						: 'Répartition refusée.'
+			);
+		}
+	}
+
 	function basculer(factureId: string) {
 		setSelection((precedente) => {
 			const suivante = new Set(precedente);
@@ -422,6 +442,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 								onChercherLettrage: chercherLettrage,
 								onAppliquerLettrage: (references, total, date) =>
 									void soldeLesFactures(references, total, date),
+								onRepartirLettrage: (date) => void repartir(date),
 								onBasculerFacture: basculer,
 								onConstituer: (provenance) => void constituer(provenance),
 								onDeposerPieces: (fichiers) => void deposerPieces(fichiers),

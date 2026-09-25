@@ -10,6 +10,7 @@ import {
 import { dateLisible } from '../../lib/verticales/recouvrement/calendrier';
 import { PARAMETRES } from '../../lib/verticales/recouvrement/parametres';
 import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
+import { situationsDuDossier } from '../../lib/verticales/recouvrement/situations';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
 import {
 	libelleEvenement,
@@ -551,6 +552,20 @@ function creanceDemo({
 			classe: false,
 			dateLimiteAgir: '2031-05-01',
 			aujourdHui: AUJOURD_HUI_DEMO
+		}),
+		// La facture de démonstration a été payée en partie : la situation le dit.
+		situations: situationsDuDossier({
+			aujourdHui: AUJOURD_HUI_DEMO,
+			sante: SANTE_DEBITEUR_DEMO,
+			montantReclameCentimes: enCentimes(PRINCIPAL_RESTANT_DU_DEMO),
+			dejaVerseCentimes: FACTURES_DEMO.reduce(
+				(total, f) => total + f.reglements.reduce((t, r) => t + r.montant, 0n),
+				0n
+			),
+			resteDuCentimes: enCentimes(PRINCIPAL_RESTANT_DU_DEMO),
+			oppositionLe: null,
+			annonceOuverture: null,
+			dateLimiteAgir: '2031-05-01'
 		}),
 
 		// Les deux dates de l'en-tête, lues sur les factures comme la route les lit.

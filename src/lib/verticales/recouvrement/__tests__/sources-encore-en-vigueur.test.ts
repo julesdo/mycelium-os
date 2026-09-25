@@ -79,7 +79,8 @@ describe('les sources citées sont encore la version en vigueur', () => {
 		expect(perimeesAu('2027-01-01').map((p) => p.cle)).toEqual([
 			'tauxInteretLegalDefaut',
 			'tauxInteretMinimalLegal',
-			'pointDepartPenalitesRetard'
+			'pointDepartPenalitesRetard',
+			'exclusionIndemnitesProcedureCollective'
 		]);
 	});
 
@@ -106,7 +107,12 @@ describe('les sources citées sont encore la version en vigueur', () => {
 			'Une date de fin a été posée sur une entrée qui n’en avait pas. Elle doit avoir été LUE ' +
 				'sur la source — un bandeau « version en vigueur du … AU … », ou une abrogation datée. ' +
 				'Si elle vient d’un raisonnement plutôt que d’une page, elle est inventée.'
-		).toEqual(['pointDepartPenalitesRetard', 'tauxInteretLegalDefaut', 'tauxInteretMinimalLegal']);
+		).toEqual([
+			'exclusionIndemnitesProcedureCollective',
+			'pointDepartPenalitesRetard',
+			'tauxInteretLegalDefaut',
+			'tauxInteretMinimalLegal'
+		]);
 	});
 
 	it('n’accepte qu’une date ISO, jamais une phrase', () => {

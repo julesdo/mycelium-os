@@ -158,3 +158,91 @@ export function lettrer(candidates: readonly FactureCandidate[], montant: Montan
 	if (trouvees.length === 1 && !depasse) return { issue: 'UNIQUE', combinaison: trouvees[0]! };
 	return { issue: 'AMBIGU', combinaisons: trouvees, tronque: depasse };
 }
+
+/**
+ * LA RÉPARTITION D'UN VERSEMENT QUI NE SOLDE AUCUNE COMBINAISON — C. civ. 1342-10.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ UNE PROPOSITION, JAMAIS UNE ÉCRITURE D'OFFICE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Quand le client ne dit pas quelle facture il paie, la loi répartit : d'abord
+ * sur les factures échues ; parmi elles, sur celles qu'il avait « le plus
+ * d'intérêt d'acquitter » ; puis sur la plus ancienne ; puis au prorata. Aucun
+ * texte lu ne définit le « plus d'intérêt » : cette étape est montrée comme
+ * indéterminée, et la proposition retient la plus ancienne, que le gérant
+ * confirme ou non. Dans chaque facture, l'article 1343-1 impute ensuite sur les
+ * pénalités d'abord — c'est le décompte qui s'en charge.
+ *
+ * ⚠️ À ÉCHÉANCE ÉGALE, LE PRORATA, et la seule division arrondie est explicite :
+ * chaque part est tronquée au centime, et le reste va à la première facture.
+ */
+
+export interface FacturePourRepartition {
+	readonly reference: string;
+	readonly resteDu: Montant;
+	/** L'échéance, ou `null` quand aucune n'est lisible (rangée en dernier). */
+	readonly dateEcheance: string | null;
+}
+
+export interface LigneRepartition {
+	readonly reference: string;
+	readonly montant: Montant;
+	/** La facture est soldée par cette part. */
+	readonly solde: boolean;
+}
+
+export interface RepartitionLegale {
+	readonly lignes: readonly LigneRepartition[];
+	/** Ce qui dépasse le total dû et n'a pu être affecté. */
+	readonly nonAffecte: Montant;
+}
+
+export function repartirSelonLaLoi(
+	factures: readonly FacturePourRepartition[],
+	montant: Montant,
+	aujourdHui: string
+): RepartitionLegale {
+	const dues = factures.filter((f) => (f.resteDu as bigint) > 0n);
+	const echue = (f: FacturePourRepartition) =>
+		f.dateEcheance !== null && f.dateEcheance < aujourdHui;
+	const cle = (f: FacturePourRepartition) => f.dateEcheance ?? '9999-12-31';
+	// Les échues d'abord, puis la plus ancienne ; les groupes d'égale échéance se
+	// partagent au prorata.
+	const ordonnees = [...dues].sort((a, b) => {
+		if (echue(a) !== echue(b)) return echue(a) ? -1 : 1;
+		return cle(a) < cle(b) ? -1 : cle(a) > cle(b) ? 1 : a.reference < b.reference ? -1 : 1;
+	});
+
+	const lignes: LigneRepartition[] = [];
+	let reste = montant as bigint;
+	let i = 0;
+	while (i < ordonnees.length && reste > 0n) {
+		const groupe = ordonnees.filter(
+			(f) => cle(f) === cle(ordonnees[i]!) && echue(f) === echue(ordonnees[i]!)
+		);
+		i += groupe.length;
+		const totalGroupe = groupe.reduce((t, f) => t + (f.resteDu as bigint), 0n);
+		if (reste >= totalGroupe) {
+			for (const f of groupe)
+				lignes.push({ reference: f.reference, montant: f.resteDu, solde: true });
+			reste -= totalGroupe;
+			continue;
+		}
+		// Le prorata, tronqué au centime ; le reliquat va à la première.
+		const parts = groupe.map((f) => (reste * (f.resteDu as bigint)) / totalGroupe);
+		const reliquat = reste - parts.reduce((t, p) => t + p, 0n);
+		parts[0] = parts[0]! + reliquat;
+		groupe.forEach((f, k) => {
+			if (parts[k]! > 0n) {
+				lignes.push({
+					reference: f.reference,
+					montant: parts[k]! as Montant,
+					solde: parts[k] === (f.resteDu as bigint)
+				});
+			}
+		});
+		reste = 0n;
+	}
+	return { lignes, nonAffecte: (reste > 0n ? reste : 0n) as Montant };
+}

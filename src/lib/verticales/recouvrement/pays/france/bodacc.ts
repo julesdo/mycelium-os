@@ -66,6 +66,12 @@ export interface ConstatBodacc {
 	/** L'annonce elle-même, pour que le gérant puisse la lire à la source. */
 	readonly url: string;
 	readonly effetSurLaSante: EffetSurLaSante;
+	/**
+	 * Le texte du jugement, MOT POUR MOT (`complementJugement`). C'est là que se
+	 * lisent, quand l'annonce les porte, le nom et l'adresse de la personne nommée
+	 * par le tribunal. Le logiciel ne l'analyse pas : il le montre.
+	 */
+	readonly complement?: string;
 }
 
 /** La valeur que le BODACC pose lui-même sur un jugement qui OUVRE une procédure. */
@@ -90,6 +96,7 @@ interface JugementLu {
 	readonly famille: string;
 	readonly nature: string;
 	readonly date?: string;
+	readonly complement: string;
 }
 
 /** Le jugement, ou `null` si la chaîne n'est pas lisible. Ne lève pas. */
@@ -105,7 +112,8 @@ function lireJugement(brut: unknown): JugementLu | null {
 			nature: texteOuVide(objet.nature),
 			// Une date de jugement impossible n'écarte pas l'annonce : c'est la DATE
 			// qu'on ne sait pas lire, pas le jugement.
-			date: estDateReelle(date) ? date : undefined
+			date: estDateReelle(date) ? date : undefined,
+			complement: texteOuVide(objet.complementJugement)
 		};
 	} catch {
 		return null;
@@ -156,6 +164,7 @@ export function lireAnnonce(brut: unknown): ConstatBodacc | null {
 		dateJugement: jugement?.date,
 		tribunal: tribunal === '' ? undefined : tribunal,
 		url: texteOuVide(annonce.url_complete),
-		effetSurLaSante
+		effetSurLaSante,
+		...(jugement !== null && jugement.complement !== '' ? { complement: jugement.complement } : {})
 	};
 }

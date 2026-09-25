@@ -6,6 +6,7 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisCentimes } from '../../lib/socle/montants';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
 import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
+import { situationsDuDossier } from '../../lib/verticales/recouvrement/situations';
 import {
 	TYPES_PIECE,
 	aujourdHuiISO,
@@ -517,6 +518,21 @@ function PageCreance() {
 			classe: creance.statut === 'CLOSE',
 			dateLimiteAgir: laPlusProche(creance.factures.map((f) => f.datePrescription)),
 			aujourdHui
+		}),
+		situations: situationsDuDossier({
+			aujourdHui,
+			sante: creance.santeDebiteur,
+			montantReclameCentimes: projection?.total ?? creance.principalRestantDu,
+			dejaVerseCentimes: creance.factures.reduce(
+				(total, f) => total + (f.montantTTC - f.resteDu > 0n ? f.montantTTC - f.resteDu : 0n),
+				0n
+			),
+			resteDuCentimes: creance.principalRestantDu,
+			oppositionLe:
+				suivi?.journal.find((evenement) => evenement.cle === 'opposition-formee')?.survenuLe ??
+				null,
+			annonceOuverture: creance.annonceOuverture,
+			dateLimiteAgir: laPlusProche(creance.factures.map((f) => f.datePrescription))
 		}),
 
 		// Les deux dates que l'en-tête porte, lues sur les factures du dossier :

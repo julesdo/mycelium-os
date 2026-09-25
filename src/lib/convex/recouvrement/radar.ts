@@ -51,7 +51,9 @@ const vConstat = v.object({
 		v.literal('PROCEDURE_COLLECTIVE'),
 		v.literal('RADIEE'),
 		v.literal('AUCUN')
-	)
+	),
+	// Le texte du jugement, mot pour mot : le nom de la personne nommée par le tribunal s'y lit.
+	complement: v.optional(v.string())
 });
 
 /**
@@ -123,6 +125,21 @@ export const appliquerConstats = internalMutation({
 						tribunal: constat.tribunal,
 						url: constat.url
 					},
+					// L'annonce d'ouverture est gardée à part : c'est d'elle que part le délai
+					// pour déclarer ce que le client doit.
+					...(constat.effetSurLaSante === 'PROCEDURE_COLLECTIVE'
+						? {
+								annonceOuverture: {
+									identifiantAnnonce: constat.identifiantAnnonce,
+									dateParution: constat.dateParution,
+									nature: constat.nature,
+									dateJugement: constat.dateJugement,
+									tribunal: constat.tribunal,
+									url: constat.url,
+									complement: constat.complement
+								}
+							}
+						: {}),
 					...(vise === null
 						? {}
 						: {

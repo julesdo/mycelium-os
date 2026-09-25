@@ -87,6 +87,12 @@ export interface FacturePourDecompte {
 	readonly reglements: readonly Reglement[];
 	/** Au moins une période couvrant la date d'exigibilité. */
 	readonly taux: readonly PeriodeDeTaux[];
+	/**
+	 * La date du jugement d'ouverture d'une procédure collective contre ce client,
+	 * quand elle est connue. Une facture dont l'échéance tombe ce jour-là ou après
+	 * ne porte pas de frais de recouvrement (`exclusionIndemnitesProcedureCollective`).
+	 */
+	readonly jugementOuvertureLe?: string;
 }
 
 /** Une période homogène : même principal, même taux, même base. */
@@ -393,9 +399,16 @@ export function decompterFacture(
 	// Les règlements du jour d'arrêté s'imputent sur ce qui a couru jusqu'à lui.
 	while (rang < reglements.length) imputer(reglements[rang++]!);
 
-	const indemniteForfaitaire = enRetard
-		? depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire))
-		: ZERO;
+	// L441-10 II, dernière phrase : pas de frais de recouvrement quand c'est la
+	// procédure collective qui interdit de payer à l'échéance.
+	const exclueParLaProcedure =
+		facture.jugementOuvertureLe !== undefined &&
+		facture.dateExigibilite >= facture.jugementOuvertureLe &&
+		exiger(PARAMETRES.exclusionIndemnitesProcedureCollective);
+	const indemniteForfaitaire =
+		enRetard && !exclueParLaProcedure
+			? depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire))
+			: ZERO;
 
 	return {
 		reference: facture.reference,

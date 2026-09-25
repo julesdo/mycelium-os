@@ -331,6 +331,25 @@ export const recouvrementTables = {
 				v.literal('RADIEE')
 			)
 		),
+		/**
+		 * L'ANNONCE D'OUVERTURE D'UNE PROCÉDURE COLLECTIVE, gardée à part.
+		 *
+		 * ⚠️ `constatRegistre` porte le DERNIER constat (plan, conversion, clôture) :
+		 * le délai pour déclarer ce que le client doit part de la parution de
+		 * l'annonce d'OUVERTURE, et il se perdrait à la première annonce suivante.
+		 * Celle-ci n'est remplacée que par une nouvelle annonce d'ouverture.
+		 */
+		annonceOuverture: v.optional(
+			v.object({
+				identifiantAnnonce: v.string(),
+				dateParution: v.string(),
+				nature: v.string(),
+				dateJugement: v.optional(v.string()),
+				tribunal: v.optional(v.string()),
+				url: v.string(),
+				complement: v.optional(v.string())
+			})
+		),
 		/** Le dernier constat du registre public, cité VERBATIM. */
 		constatRegistre: v.optional(
 			v.object({
