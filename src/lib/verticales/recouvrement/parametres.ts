@@ -757,6 +757,144 @@ export const PARAMETRES = {
 			`pénalités d’abord. ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<readonly string[]>,
 
+	// ── Lot 5a de la page dossier : les courriers (modèles du 25/09/2026) ──
+
+	formulationPointDepartPenalites: {
+		cle: 'formulationPointDepartPenalites',
+		nature: 'CONSTANTE',
+		valeur: 'le jour suivant la date de règlement figurant sur la facture',
+		unite: 'sans',
+		source: 'Article L441-10 II du code de commerce',
+		verifieLe: LE_25,
+		// Même page que `tauxInteretLegalDefaut`, relue avec sa version du 1er janvier 2027.
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Les mots du texte, recopiés tels quels dans la lettre de relance officielle : « le taux ' +
+			'd’intérêt des pénalités de retard exigibles le jour suivant la date de règlement figurant ' +
+			`sur la facture ». ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<string>,
+
+	penalitesExigiblesSansRappel: {
+		cle: 'penalitesExigiblesSansRappel',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L441-10 II du code de commerce',
+		verifieLe: LE_25,
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note: `« Les pénalités de retard sont exigibles sans qu’un rappel soit nécessaire. » ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	indemniteDuePleinDroit: {
+		cle: 'indemniteDuePleinDroit',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L441-10 II du code de commerce',
+		verifieLe: LE_25,
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Tout professionnel en situation de retard de paiement est de plein droit débiteur, à ' +
+			'l’égard du créancier, d’une indemnité forfaitaire pour frais de recouvrement, dont le ' +
+			'montant est fixé par décret. » Le « de plein droit » vient d’ici ; le montant vient de ' +
+			`D441-5 (\`indemniteForfaitaire\`). ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	indemnisationComplementaireSurJustification: {
+		cle: 'indemnisationComplementaireSurJustification',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L441-10 II du code de commerce',
+		verifieLe: LE_25,
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Lorsque les frais de recouvrement exposés sont supérieurs au montant de cette indemnité ' +
+			'forfaitaire, le créancier peut demander une indemnisation complémentaire, sur ' +
+			`justification. » ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	destinataireDeclarationCreance: {
+		cle: 'destinataireDeclarationCreance',
+		nature: 'CONSTANTE',
+		valeur: {
+			SAUVEGARDE: { procedure: 'sauvegarde', libelle: 'mandataire judiciaire' },
+			REDRESSEMENT: { procedure: 'redressement judiciaire', libelle: 'mandataire judiciaire' },
+			LIQUIDATION: { procedure: 'liquidation judiciaire', libelle: 'liquidateur' }
+		},
+		unite: 'sans',
+		source:
+			'Articles L622-24, alinéa 1 (sauvegarde), L631-14 I, alinéa 1 (redressement) et L641-3, ' +
+			'dernier alinéa (liquidation), du code de commerce',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« A partir de la publication du jugement, tous les créanciers dont la créance est née ' +
+			'antérieurement au jugement d’ouverture, à l’exception des salariés, adressent la ' +
+			'déclaration de leurs créances au mandataire judiciaire » ; en liquidation, « Les ' +
+			`créanciers déclarent leurs créances au liquidateur ». ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<
+		Readonly<
+			Record<
+				'SAUVEGARDE' | 'REDRESSEMENT' | 'LIQUIDATION',
+				{ readonly procedure: string; readonly libelle: string }
+			>
+		>
+	>,
+
+	mentionCertificationSincerite: {
+		cle: 'mentionCertificationSincerite',
+		nature: 'CONSTANTE',
+		valeur: 'certifie sincère',
+		unite: 'sans',
+		source: 'Article L622-25, dernier alinéa, du code de commerce',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Sauf si elle résulte d’un titre exécutoire, la créance déclarée est certifiée sincère ' +
+			`par le créancier. » ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<string>,
+
+	listeCreanciersDuDebiteur: {
+		cle: 'listeCreanciersDuDebiteur',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L622-6, alinéa 2, du code de commerce',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le débiteur remet à l’administrateur et au mandataire judiciaire, pour les besoins de ' +
+			'l’exercice de leur mandat, la liste de ses créanciers, du montant de ses dettes et des ' +
+			`principaux contrats en cours. » ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	listeCreancesDeclarees: {
+		cle: 'listeCreancesDeclarees',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L624-1, alinéa 1, du code de commerce',
+		verifieLe: LE_25,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Dans le délai fixé par le tribunal, le mandataire judiciaire établit, après avoir ' +
+			'sollicité les observations du débiteur, la liste des créances déclarées avec ses ' +
+			`propositions d’admission, de rejet ou de renvoi devant la juridiction compétente. » ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
 	// ── Relecture du 25 septembre 2026 ──────────────────────────────────────
 
 	imputationPaiementPartiel: {

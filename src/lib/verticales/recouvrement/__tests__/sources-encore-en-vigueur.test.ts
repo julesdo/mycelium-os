@@ -80,7 +80,11 @@ describe('les sources citées sont encore la version en vigueur', () => {
 			'tauxInteretLegalDefaut',
 			'tauxInteretMinimalLegal',
 			'pointDepartPenalitesRetard',
-			'exclusionIndemnitesProcedureCollective'
+			'exclusionIndemnitesProcedureCollective',
+			'formulationPointDepartPenalites',
+			'penalitesExigiblesSansRappel',
+			'indemniteDuePleinDroit',
+			'indemnisationComplementaireSurJustification'
 		]);
 	});
 
@@ -109,6 +113,10 @@ describe('les sources citées sont encore la version en vigueur', () => {
 				'Si elle vient d’un raisonnement plutôt que d’une page, elle est inventée.'
 		).toEqual([
 			'exclusionIndemnitesProcedureCollective',
+			'formulationPointDepartPenalites',
+			'indemnisationComplementaireSurJustification',
+			'indemniteDuePleinDroit',
+			'penalitesExigiblesSansRappel',
 			'pointDepartPenalitesRetard',
 			'tauxInteretLegalDefaut',
 			'tauxInteretMinimalLegal'
