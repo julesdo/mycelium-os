@@ -13,7 +13,7 @@ import { sansEtablissement } from '../sans-etablissement';
 import { TITRE_ECRAN } from '../titres';
 import { BandeauCeQuiPresse } from './bandeau-presse';
 import { EnTeteDuCompte } from './en-tete';
-import { FormulaireCreancier, type CreancierAffiche } from './creancier';
+import { FormulaireCourriers, FormulaireCreancier, type CreancierAffiche } from './creancier';
 import { FormulaireEtablissement, type EtablissementAffiche } from './etablissement';
 import { ChoixDuLogo, SectionProfil, type ProfilAffiche } from './profil';
 import { SectionFacturation, type AbonnementAffiche } from './facturation';
@@ -394,6 +394,17 @@ function ContenuEtablissement({
 				onChercherAuRegistre={creancier.onChercherAuRegistre}
 				onEnregistrer={creancier.onEnregistrer}
 			/>
+
+			{creancier.courriers === null ? null : (
+				<>
+					<SectionTitle>Ce qui s’imprime sur vos courriers</SectionTitle>
+					<FormulaireCourriers
+						key={creancier.cle}
+						initial={creancier.courriers.initial}
+						onEnregistrer={creancier.courriers.onEnregistrer}
+					/>
+				</>
+			)}
 		</>
 	);
 }

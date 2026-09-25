@@ -276,6 +276,22 @@ export const recouvrementTables = {
 		 */
 		estCommercant: vEtatCritere,
 		adresse: v.optional(v.string()),
+		/**
+		 * CE QUI S'IMPRIME SUR LES COURRIERS, déclaré une fois par le gérant.
+		 *
+		 * ⚠️ UN COURRIER QUI MANQUE D'UNE DE CES DONNÉES NE SE COMPOSE PAS : il dit
+		 * laquelle manque. Le signataire est la personne qui signe ; s'il n'est pas le
+		 * représentant légal, un pouvoir est joint à la déclaration de créance.
+		 */
+		signataireNom: v.optional(v.string()),
+		signataireQualite: v.optional(v.string()),
+		email: v.optional(v.string()),
+		telephone: v.optional(v.string()),
+		/** En centimes : exigé en tête des courriers d'une SARL ou d'une société par actions (R123-238). */
+		capitalSocial: v.optional(v.int64()),
+		immatriculeRcs: v.optional(v.boolean()),
+		villeGreffeRcs: v.optional(v.string()),
+		iban: v.optional(v.string()),
 		majLe: v.number()
 	}).index('by_org', ['organizationId']),
 

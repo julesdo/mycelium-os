@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useAction } from 'convex/react';
+import { depuisCentimes, versEuros } from '../../lib/socle/montants';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { authClient } from '../../lib/client/auth';
@@ -73,6 +74,7 @@ function PageCompte() {
 	const mesure = useQuery(api.recouvrement.monEtablissement.volumeEmis, {});
 	const mettreAJourOrg = useMutation(api.organizations.updateOrganization);
 	const enregistrerProfil = useMutation(api.recouvrement.profil.enregistrer);
+	const enregistrerCourriers = useMutation(api.recouvrement.profil.enregistrerCourriers);
 	const chercherMonEtablissement = useAction(
 		api.recouvrement.monEtablissement.chercherMonEtablissementAuRegistre
 	);
@@ -587,7 +589,26 @@ function PageCompte() {
 				estCommercant: profil?.estCommercant ?? 'unknown'
 			},
 			onChercherAuRegistre: async () => (await chercherMonEtablissement({})).candidats,
-			onEnregistrer: enregistrerProfil
+			onEnregistrer: enregistrerProfil,
+			courriers:
+				profil === null || profil === undefined
+					? null
+					: {
+							initial: {
+								signataireNom: profil.signataireNom ?? '',
+								signataireQualite: profil.signataireQualite ?? '',
+								email: profil.email ?? '',
+								telephone: profil.telephone ?? '',
+								capitalSocialEuros:
+									profil.capitalSocial === undefined
+										? ''
+										: versEuros(depuisCentimes(profil.capitalSocial)),
+								immatriculeRcs: profil.immatriculeRcs ?? null,
+								villeGreffeRcs: profil.villeGreffeRcs ?? '',
+								iban: profil.iban ?? ''
+							},
+							onEnregistrer: (valeurs) => enregistrerCourriers({ ...valeurs })
+						}
 		},
 		abonnement:
 			abonnement === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: abonnement },

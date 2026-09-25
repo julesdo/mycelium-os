@@ -692,7 +692,20 @@ function compteDe(
 			  peut choisir seul.
 			*/
 			onChercherAuRegistre: () => Promise.resolve(CANDIDATS_REGISTRE_DEMO),
-			onEnregistrer: () => Promise.resolve()
+			onEnregistrer: () => Promise.resolve(),
+			courriers: {
+				initial: {
+					signataireNom: 'Claire Martin',
+					signataireQualite: 'Gérante',
+					email: 'claire@ateliers-demo.fr',
+					telephone: '',
+					capitalSocialEuros: '10 000,00',
+					immatriculeRcs: true,
+					villeGreffeRcs: 'Bordeaux',
+					iban: ''
+				},
+				onEnregistrer: () => Promise.resolve()
+			}
 		},
 		abonnement,
 		equipe: forme.enLecture

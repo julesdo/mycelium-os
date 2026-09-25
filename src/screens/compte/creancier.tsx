@@ -413,4 +413,157 @@ export interface CreancierAffiche {
 	readonly cle: string;
 	readonly onChercherAuRegistre: ComponentProps<typeof FormulaireCreancier>['onChercherAuRegistre'];
 	readonly onEnregistrer: ComponentProps<typeof FormulaireCreancier>['onEnregistrer'];
+	/** Ce qui s'imprime sur les courriers. `null` tant que l'entreprise n'est pas renseignée. */
+	readonly courriers: {
+		readonly initial: InitialCourriers;
+		readonly onEnregistrer: (valeurs: InitialCourriers) => Promise<unknown>;
+	} | null;
+}
+
+/** Ce que le formulaire des courriers relit et renvoie. */
+export interface InitialCourriers {
+	readonly signataireNom: string;
+	readonly signataireQualite: string;
+	readonly email: string;
+	readonly telephone: string;
+	/** En euros, tel que saisi : « 10 000 ». */
+	readonly capitalSocialEuros: string;
+	readonly immatriculeRcs: boolean | null;
+	readonly villeGreffeRcs: string;
+	readonly iban: string;
+}
+
+/**
+ * CE QUI S'IMPRIME SUR VOS COURRIERS.
+ *
+ * ⚠️ DÉCLARÉ UNE FOIS, RELU À CHAQUE COURRIER. Un courrier qui manque d'une de
+ * ces données ne se compose pas, et il dit laquelle : un en-tête incomplet est
+ * une contravention (R123-237), et une lettre sans signataire ne vaut rien.
+ * Rien de Letikette n'y figure : ni son nom, ni son adresse, ni son e-mail.
+ */
+export function FormulaireCourriers({
+	initial,
+	onEnregistrer
+}: {
+	initial: InitialCourriers;
+	onEnregistrer: (valeurs: InitialCourriers) => Promise<unknown>;
+}) {
+	const [valeurs, setValeurs] = useState<InitialCourriers>(initial);
+	const [enCours, setEnCours] = useState(false);
+	const [enregistre, setEnregistre] = useState(false);
+	const [erreur, setErreur] = useState<string | null>(null);
+
+	function champ<K extends keyof InitialCourriers>(cle: K, valeur: InitialCourriers[K]) {
+		setValeurs((avant) => ({ ...avant, [cle]: valeur }));
+	}
+
+	async function enregistrer() {
+		setEnCours(true);
+		setErreur(null);
+		try {
+			await onEnregistrer(valeurs);
+			setEnregistre(true);
+			window.setTimeout(() => setEnregistre(false), 2000);
+		} catch (e) {
+			const convexe = e as { data?: unknown };
+			setErreur(
+				typeof convexe.data === 'string'
+					? convexe.data
+					: e instanceof Error
+						? e.message
+						: 'Enregistrement refusé.'
+			);
+		} finally {
+			setEnCours(false);
+		}
+	}
+
+	return (
+		<div className="flex flex-col gap-cladd-2xs">
+			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+				Vos courriers partent à votre seul nom et sous votre signature. Ces informations s’impriment
+				en tête et en bas de chacun ; rien de Letikette n’y figure.
+			</p>
+
+			<Champ etiquette="Qui signe (nom et prénom)">
+				<Input
+					size="lg"
+					value={valeurs.signataireNom}
+					onChange={(v) => champ('signataireNom', v)}
+				/>
+			</Champ>
+			<Champ etiquette="Sa fonction (gérant, président…)">
+				<Input
+					size="lg"
+					value={valeurs.signataireQualite}
+					onChange={(v) => champ('signataireQualite', v)}
+				/>
+			</Champ>
+			<Champ etiquette="Votre adresse e-mail, pour les réponses">
+				<Input
+					size="lg"
+					value={valeurs.email}
+					onChange={(v) => champ('email', v)}
+					inputMode="email"
+				/>
+			</Champ>
+			<Champ etiquette="Votre téléphone (facultatif)">
+				<Input
+					size="lg"
+					value={valeurs.telephone}
+					onChange={(v) => champ('telephone', v)}
+					inputMode="tel"
+				/>
+			</Champ>
+			<Champ etiquette="Capital social, en euros (SARL, SAS, SA)">
+				<Input
+					size="lg"
+					value={valeurs.capitalSocialEuros}
+					onChange={(v) => champ('capitalSocialEuros', v)}
+					inputMode="decimal"
+				/>
+			</Champ>
+			<Champ etiquette="Êtes-vous inscrit au registre du commerce (RCS) ?">
+				<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
+					<SegmentedButton
+						className="min-w-cladd-md"
+						active={valeurs.immatriculeRcs === true}
+						onClick={() => champ('immatriculeRcs', true)}
+					>
+						Oui
+					</SegmentedButton>
+					<SegmentedButton
+						className="min-w-cladd-md"
+						active={valeurs.immatriculeRcs === false}
+						onClick={() => champ('immatriculeRcs', false)}
+					>
+						Non
+					</SegmentedButton>
+				</Segmented>
+			</Champ>
+			{valeurs.immatriculeRcs === true ? (
+				<Champ etiquette="Ville du greffe où vous êtes inscrit">
+					<Input
+						size="lg"
+						value={valeurs.villeGreffeRcs}
+						onChange={(v) => champ('villeGreffeRcs', v)}
+					/>
+				</Champ>
+			) : null}
+			<Champ etiquette="IBAN, pour que vos clients vous paient (facultatif)">
+				<Input
+					size="lg"
+					value={valeurs.iban}
+					onChange={(v) => champ('iban', v)}
+					valid={erreur === null}
+					errorMessage={erreur ?? undefined}
+				/>
+			</Champ>
+
+			<BoutonPrincipal className="self-start" onClick={() => void enregistrer()} disabled={enCours}>
+				{enregistre ? <CheckIcon /> : null}
+				{enregistre ? 'Enregistré' : enCours ? 'Enregistrement…' : 'Enregistrer'}
+			</BoutonPrincipal>
+		</div>
+	);
 }

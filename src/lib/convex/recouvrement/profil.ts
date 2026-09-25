@@ -5,6 +5,7 @@ import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { normaliserSiren, sirenDepuisSiret } from '../../verticales/recouvrement/pays/france/siren';
 import { vEtatCritere } from './tables';
+import { depuisEuros, enCentimes } from '../../socle/montants';
 
 /**
  * LE PROFIL CRÉANCIER — déclaré depuis le remodelage, lu à deux endroits, et
@@ -107,7 +108,15 @@ const vProfil = v.union(
 		siren: v.optional(v.string()),
 		formeJuridique: v.optional(v.string()),
 		adresse: v.optional(v.string()),
-		estCommercant: vEtatCritere
+		estCommercant: vEtatCritere,
+		signataireNom: v.optional(v.string()),
+		signataireQualite: v.optional(v.string()),
+		email: v.optional(v.string()),
+		telephone: v.optional(v.string()),
+		capitalSocial: v.optional(v.int64()),
+		immatriculeRcs: v.optional(v.boolean()),
+		villeGreffeRcs: v.optional(v.string()),
+		iban: v.optional(v.string())
 	})
 );
 
@@ -125,7 +134,15 @@ export const monProfilInterne = internalQuery({
 			siren: profil.siren,
 			formeJuridique: profil.formeJuridique,
 			adresse: profil.adresse,
-			estCommercant: profil.estCommercant
+			estCommercant: profil.estCommercant,
+			signataireNom: profil.signataireNom,
+			signataireQualite: profil.signataireQualite,
+			email: profil.email,
+			telephone: profil.telephone,
+			capitalSocial: profil.capitalSocial,
+			immatriculeRcs: profil.immatriculeRcs,
+			villeGreffeRcs: profil.villeGreffeRcs,
+			iban: profil.iban
 		};
 	}
 });
@@ -145,7 +162,15 @@ export const monProfil = authedQuery({
 			siren: profil.siren,
 			formeJuridique: profil.formeJuridique,
 			adresse: profil.adresse,
-			estCommercant: profil.estCommercant
+			estCommercant: profil.estCommercant,
+			signataireNom: profil.signataireNom,
+			signataireQualite: profil.signataireQualite,
+			email: profil.email,
+			telephone: profil.telephone,
+			capitalSocial: profil.capitalSocial,
+			immatriculeRcs: profil.immatriculeRcs,
+			villeGreffeRcs: profil.villeGreffeRcs,
+			iban: profil.iban
 		};
 	}
 });
@@ -169,6 +194,80 @@ export const enregistrer = authedMutation({
 		await ctx.runMutation(internal.recouvrement.profil.enregistrerInterne, {
 			organizationId,
 			...args
+		});
+		return null;
+	}
+});
+
+/** L'IBAN vérifié par sa clé (ISO 13616, reste 1 modulo 97). Rend `null` quand il ne tombe pas. */
+function ibanValide(saisi: string): string | null {
+	const iban = saisi.replace(/s+/g, '').toUpperCase();
+	if (!/^[A-Z]{2}d{2}[A-Z0-9]{11,30}$/.test(iban)) return null;
+	const deplace = iban.slice(4) + iban.slice(0, 4);
+	const chiffres = deplace.replace(/[A-Z]/g, (l) => String(l.charCodeAt(0) - 55));
+	let reste = 0;
+	for (const c of chiffres) reste = (reste * 10 + Number(c)) % 97;
+	return reste === 1 ? iban : null;
+}
+
+/**
+ * CE QUI S'IMPRIME SUR LES COURRIERS : le signataire, les coordonnées, les
+ * mentions de l'en-tête et l'IBAN. Chaque champ vide efface le précédent.
+ */
+export const enregistrerCourriers = authedMutation({
+	args: {
+		signataireNom: v.string(),
+		signataireQualite: v.string(),
+		email: v.string(),
+		telephone: v.string(),
+		capitalSocialEuros: v.string(),
+		immatriculeRcs: v.union(v.boolean(), v.null()),
+		villeGreffeRcs: v.string(),
+		iban: v.string()
+	},
+	returns: v.null(),
+	handler: async (ctx, args): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const profil = await ctx.db
+			.query('profilsCreancier')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+		if (profil === null) {
+			throw new ConvexError(
+				'Renseignez d’abord votre entreprise : sa dénomination s’imprime en tête des courriers.'
+			);
+		}
+		const email = args.email.trim();
+		if (email !== '' && !/^[^s@]+@[^s@]+.[^s@]+$/.test(email)) {
+			throw new ConvexError(`« ${email} » n’est pas une adresse électronique.`);
+		}
+		const ibanSaisi = args.iban.trim();
+		const iban = ibanSaisi === '' ? undefined : ibanValide(ibanSaisi);
+		if (iban === null) {
+			throw new ConvexError(
+				`« ${ibanSaisi} » n’est pas un IBAN : sa clé de contrôle ne tombe pas.`
+			);
+		}
+		const capitalSaisi = args.capitalSocialEuros.trim();
+		let capitalSocial: bigint | undefined;
+		if (capitalSaisi !== '') {
+			try {
+				capitalSocial = enCentimes(depuisEuros(capitalSaisi));
+			} catch {
+				throw new ConvexError(`« ${capitalSaisi} » n’est pas un montant en euros.`);
+			}
+		}
+		const texte = (s: string) => (s.trim() === '' ? undefined : s.trim());
+		await ctx.db.patch(profil._id, {
+			signataireNom: texte(args.signataireNom),
+			signataireQualite: texte(args.signataireQualite),
+			email: texte(email),
+			telephone: texte(args.telephone),
+			capitalSocial,
+			immatriculeRcs: args.immatriculeRcs ?? undefined,
+			villeGreffeRcs: texte(args.villeGreffeRcs),
+			iban,
+			majLe: Date.now()
 		});
 		return null;
 	}
