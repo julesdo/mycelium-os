@@ -258,8 +258,9 @@ tenir ; on s'en sert pour prolonger une attente avant d'agir.
    (relecture § 3.4), personne n'ayant qualité pour la recevoir tant qu'un mandataire ad hoc n'est pas
    désigné.
 
-Le référentiel reçoit environ 180 entrées nouvelles ou corrigées (relecture, § 4), `verifie: true` pour
-les confirmées dont l'extrait exact est recopié, `valideParAvocat: false` partout. On ne crée que les
+Le référentiel reçoit, lot après lot, les entrées de la relecture (§ 4) que chaque lot emploie —
+environ 180 au total, aucune déclarée avant d'être lue par le code —, `verifie: true` pour les
+confirmées dont l'extrait exact est recopié, `valideParAvocat: false` partout. On ne crée que les
 clés de la relecture. Le type `Unite` s'étend aux jours ouvrables (`joursOuvrables`), aux fractions
 (`fraction`) et aux effectifs (`salaries`).
 
@@ -443,13 +444,19 @@ télécharger ; le bouton d'envoi arrive au lot 5.
   le principal figé ; révélation partie du solde comptable ; règlements transmis au compagnon ; textes
   publics (`etapes.tsx`, `tarifs.ts`, `limites.tsx`). Restent au lot 1 : l'exclusion de l'indemnité après
   un jugement d'ouverture et le choix de l'ordre d'imputation.
-- **Lot 1 — le référentiel et le calcul** : entrées nouvelles, calcul des délais, § 4.6.
+- **Lot 1 — le référentiel et le calcul** : les entrées que ce lot emploie ; le calcul des délais (CPC 641,
+  642 : fériés, report au premier jour ouvrable) et son branchement sur l'échéance de signification ;
+  le choix de l'ordre d'imputation par le gérant, avec ses deux variantes (section 0) ; `tauxLisible`
+  exact et unique ; la vérification qu'aucun jour de pénalité n'est compté en trop.
 - **Lot 2 — montrer, pas qualifier** : section 0 et § 4.5, conditions générales comprises.
 - **Lot 3 — la page dossier et le lexique** : route, deux colonnes, états (§ 1 ter), frise et machine du
   dossier (§ 4.12), rattachement et retrait (§ 4.1), reprise des données, redirections, reprise du
   vocabulaire et son test.
 - **Lot 4 — les situations** : les quatre situations du § 2 ; la procédure collective avec l'extraction
-  et le stockage du § 4.11 ; les dates d'ordonnance et de réception (§ 4.3).
+  et le stockage du § 4.11 ; les dates d'ordonnance et de réception (§ 4.3) ; la répartition d'un
+  paiement entre plusieurs factures (C. civ. 1342-10), qui trouve là son premier appelant ; l'exclusion
+  de l'indemnité après un jugement d'ouverture, alimentée par l'annonce d'ouverture (§ 4.11) — posée
+  avant, elle serait lue et jamais alimentée.
 - **Lot 5a — les envois sans prestataire** : table `envois`, états, aperçu exact, validation par
   `ORG_ADMIN`, document figé avec empreinte, les six modèles, sortie en PDF à imprimer et paquet pour la
   messagerie du gérant.
