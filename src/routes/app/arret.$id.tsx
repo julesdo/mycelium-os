@@ -128,7 +128,13 @@ function PageArret() {
 													interets: preparation.projection.interets,
 													indemniteForfaitaire: preparation.projection.indemniteForfaitaire,
 													total: preparation.projection.total,
-													lignes: preparation.projection.lignes
+													lignes: preparation.projection.lignes,
+													imputation: {
+														ordre: preparation.projection.imputation.ordre,
+														confirme: preparation.projection.imputation.confirme,
+														totalAutreOrdre:
+															preparation.projection.imputation.totalAutreOrdre ?? null
+													}
 												},
 									refusDeCalcul: preparation.refusDeCalcul,
 									abandons: preparation.abandons.map((abandon) => ({
@@ -149,8 +155,7 @@ function PageArret() {
 									onInclure: () => void inclureLesFactures(),
 									inclusionEnCours,
 									abandonsAssumes: signature !== '' && assumePour === signature,
-									onAssumerAbandons: (valeur: boolean) =>
-										setAssumePour(valeur ? signature : null),
+									onAssumerAbandons: (valeur: boolean) => setAssumePour(valeur ? signature : null),
 									onArreter: () => void arreterLeDecompte(),
 									enCours,
 									erreur

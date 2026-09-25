@@ -71,6 +71,8 @@ export {
 	PeriodesDInterets,
 	ReglementsImputes,
 	type ImputationAffichee,
+	type ImputationDuDecompteAffichee,
+	type OrdreImputationAffichee,
 	type DecompteAffiche,
 	type LigneDecompteAffichee,
 	type SegmentAffiche

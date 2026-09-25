@@ -5,7 +5,9 @@ import {
 	CollapsibleRoot,
 	CollapsibleTrigger,
 	CollapsiblePanel,
-	CollapsibleIndicator
+	CollapsibleIndicator,
+	Segmented,
+	SegmentedButton
 } from '@cladd-ui/react';
 import { ChevronDownIcon } from 'lucide-react';
 import { eurosCentimes, dateCourte, tauxLisible } from './format';
@@ -92,11 +94,7 @@ const NATURE_LISIBLE: Record<ImputationAffichee['nature'], string> = {
  * qui en a été payé. Sans lui, la somme des périodes dépasse les intérêts dus,
  * et un tiers qui refait le calcul croit à une erreur.
  */
-export function ReglementsImputes({
-	imputations
-}: {
-	imputations: readonly ImputationAffichee[];
-}) {
+export function ReglementsImputes({ imputations }: { imputations: readonly ImputationAffichee[] }) {
 	return (
 		<Tableau legende="Règlements, et ce que chacun a éteint">
 			<TableauEntete>
@@ -121,6 +119,20 @@ export function ReglementsImputes({
 	);
 }
 
+export type OrdreImputationAffichee = 'PENALITES_DABORD' | 'PRINCIPAL_DABORD';
+
+export interface ImputationDuDecompteAffichee {
+	readonly ordre: OrdreImputationAffichee;
+	readonly confirme: boolean;
+	/** Le total de l'autre ordre, quand le gérant n'a pas choisi et qu'il diffère. */
+	readonly totalAutreOrdre: bigint | null;
+}
+
+const ORDRE_LISIBLE: Record<OrdreImputationAffichee, string> = {
+	PENALITES_DABORD: 'Les pénalités d’abord',
+	PRINCIPAL_DABORD: 'Les factures d’abord'
+};
+
 export interface DecompteAffiche {
 	readonly arreteAu: string;
 	readonly convention: 'ACT_365' | 'ACT_ACT';
@@ -129,6 +141,8 @@ export interface DecompteAffiche {
 	readonly indemniteForfaitaire: bigint;
 	readonly total: bigint;
 	readonly lignes: readonly LigneDecompteAffichee[];
+	/** Absent d'un décompte figé avant le lot 1 de la page dossier. */
+	readonly imputation?: ImputationDuDecompteAffichee;
 }
 
 /** La convention, dite en clair. « ACT_365 » ne se lit pas. */
@@ -184,7 +198,19 @@ export function PeriodesDInterets({ segments }: { segments: readonly SegmentAffi
 	);
 }
 
-export function Decompte({ decompte }: { decompte: DecompteAffiche }) {
+export function Decompte({
+	decompte,
+	onChoisirImputation
+}: {
+	decompte: DecompteAffiche;
+	/** Présent quand le gérant peut choisir ici ; absent sur un décompte figé. */
+	onChoisirImputation?: (ordre: OrdreImputationAffichee) => void;
+}) {
+	const imputation = decompte.imputation;
+	// ⚠️ ON NE DEMANDE RIEN QUAND LE CHOIX NE CHANGE RIEN : sans paiement imputable,
+	// les deux ordres donnent le même total.
+	const choixUtile =
+		imputation !== undefined && (imputation.totalAutreOrdre !== null || imputation.confirme);
 	return (
 		<div className="flex flex-col gap-cladd-xs">
 			<SurfaceCut contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
@@ -208,6 +234,38 @@ export function Decompte({ decompte }: { decompte: DecompteAffiche }) {
 					Arrêté au {dateCourte(decompte.arreteAu)}, intérêts calculés en{' '}
 					{CONVENTION_LISIBLE[decompte.convention]}.
 				</p>
+				{choixUtile && imputation !== undefined ? (
+					<div className="flex flex-col gap-cladd-3xs border-t border-cladd-outline pt-cladd-3xs">
+						<p className="text-cladd-xs text-cladd-fg-soft">
+							{imputation.ordre === 'PENALITES_DABORD'
+								? 'Les paiements reçus remboursent d’abord les pénalités déjà dues, puis les factures'
+								: 'Les paiements reçus remboursent d’abord les factures, puis les pénalités'}
+							{imputation.confirme ? ', comme vous l’avez choisi.' : '.'}
+						</p>
+						{imputation.confirme || imputation.totalAutreOrdre === null ? null : (
+							<p className="text-cladd-xs text-cladd-fg-soft">
+								À confirmer. La loi prévoit les pénalités d’abord, sauf si vos conditions générales
+								disent autrement : c’est à vous de choisir. En attendant, le calcul le plus bas est
+								retenu ; l’autre donnerait {eurosCentimes(imputation.totalAutreOrdre)}.
+							</p>
+						)}
+						{onChoisirImputation === undefined ? null : (
+							// ⚠️ AUCUN BOUTON N'EST ACTIF TANT QUE LE GÉRANT N'A PAS CHOISI. Un
+							// segment pré-sélectionné se lirait comme la réponse recommandée.
+							<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
+								{(['PENALITES_DABORD', 'PRINCIPAL_DABORD'] as const).map((ordre) => (
+									<SegmentedButton
+										key={ordre}
+										active={imputation.confirme && imputation.ordre === ordre}
+										onClick={() => onChoisirImputation(ordre)}
+									>
+										{ORDRE_LISIBLE[ordre]}
+									</SegmentedButton>
+								))}
+							</Segmented>
+						)}
+					</div>
+				) : null}
 			</SurfaceCut>
 
 			{decompte.lignes.map((ligne) => (

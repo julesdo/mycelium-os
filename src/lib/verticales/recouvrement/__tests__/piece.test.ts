@@ -251,3 +251,47 @@ describe('la date d’arrêté', () => {
 		expect(composerPiece(decompte()).dateArrete).toBe('2026-09-01');
 	});
 });
+
+describe('l’ordre d’imputation, dit par la pièce', () => {
+	// Le décompte de démonstration ne porte aucun règlement : on lui en donne un,
+	// sans quoi la pièce n'a aucune raison de parler d'imputation.
+	const AVEC_REGLEMENT = decompte().lignes.map((ligne) => ({
+		...ligne,
+		imputations: [
+			{
+				date: '2025-07-01',
+				nature: 'PAIEMENT' as const,
+				montant: depuisEuros('4000,00'),
+				surInterets: depuisEuros('0,00'),
+				surPrincipal: depuisEuros('4000,00')
+			}
+		]
+	}));
+
+	it('dit que l’ordre n’a pas été confirmé, et que le calcul le plus bas est retenu', () => {
+		const piece = composerPiece(
+			decompte({
+				lignes: AVEC_REGLEMENT,
+				imputation: { ordre: 'PRINCIPAL_DABORD', confirme: false, totalAutreOrdre: null }
+			})
+		);
+		const fondements = piece.fondements.join(' ');
+		expect(fondements).toMatch(/d’abord sur le principal/);
+		expect(fondements).toMatch(/non confirmé par le créancier/);
+	});
+
+	it('dit l’ordre choisi par le créancier', () => {
+		const piece = composerPiece(
+			decompte({
+				lignes: AVEC_REGLEMENT,
+				imputation: { ordre: 'PENALITES_DABORD', confirme: true, totalAutreOrdre: null }
+			})
+		);
+		expect(piece.fondements.join(' ')).toMatch(/Ordre choisi par le créancier/);
+	});
+
+	it('cite pour le « par facture » la source qui le dit', () => {
+		const piece = composerPiece(decompte());
+		expect(piece.fondements.join(' ')).toContain(PARAMETRES.indemniteParFacture.source);
+	});
+});

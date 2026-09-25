@@ -94,6 +94,7 @@ function PageCreance() {
 	// ── CE QU'IL DÉCLENCHE ───────────────────────────────────────────────────
 	const declarerFait = useMutation(api.recouvrement.creances.declarerFait);
 	const repondre = useMutation(api.recouvrement.creances.repondre);
+	const choisirOrdreImputation = useMutation(api.recouvrement.creances.choisirOrdreImputation);
 	const genererUrlPiece = useMutation(api.recouvrement.pieces.genererUrlPiece);
 	const deposerPiece = useMutation(api.recouvrement.pieces.deposerPiece);
 	const classerPiece = useMutation(api.recouvrement.pieces.classerPiece);
@@ -323,6 +324,17 @@ function PageCreance() {
 					surPrincipal: depuisCentimes(imputation.surPrincipal)
 				}))
 			})),
+			imputation:
+				dernier.imputation === undefined
+					? undefined
+					: {
+							ordre: dernier.imputation.ordre,
+							confirme: dernier.imputation.confirme,
+							totalAutreOrdre:
+								dernier.imputation.totalAutreOrdre === undefined
+									? null
+									: depuisCentimes(dernier.imputation.totalAutreOrdre)
+						},
 			abandons: dernier.abandons.map((abandon) => ({
 				reference: abandon.reference,
 				montantEnJeu: abandon.montantEnJeu === null ? null : depuisCentimes(abandon.montantEnJeu),
@@ -372,7 +384,12 @@ function PageCreance() {
 					interets: projection.interets,
 					indemniteForfaitaire: projection.indemniteForfaitaire,
 					total: projection.total,
-					lignes: projection.lignes
+					lignes: projection.lignes,
+					imputation: {
+						ordre: projection.imputation.ordre,
+						confirme: projection.imputation.confirme,
+						totalAutreOrdre: projection.imputation.totalAutreOrdre ?? null
+					}
 				};
 
 	const refusDuMontant: CreanceOuverte['refusDuMontant'] =
@@ -540,6 +557,7 @@ function PageCreance() {
 			void avec(() => declarerFait({ creanceId, cle: cle as 'CONTESTATION_ECRITE', reponse })),
 		onRepondreCondition: (condition, reponse) =>
 			void avec(() => repondre({ creanceId, reponses: { [condition]: reponse } })),
+		onChoisirImputation: (ordre) => void avec(() => choisirOrdreImputation({ creanceId, ordre })),
 
 		solidite: creance.solidite,
 		risques: creance.risques,

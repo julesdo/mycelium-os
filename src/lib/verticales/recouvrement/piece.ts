@@ -102,6 +102,15 @@ export interface DecompteFige {
 	readonly creancier?: IdentiteFigee;
 	readonly debiteur?: IdentiteFigee;
 	readonly lignes: readonly LigneFigee[];
+	/**
+	 * L'ordre d'imputation figé avec le décompte. Absent d'un décompte figé avant le
+	 * lot 1 de la page dossier.
+	 */
+	readonly imputation?: {
+		readonly ordre: 'PENALITES_DABORD' | 'PRINCIPAL_DABORD';
+		readonly confirme: boolean;
+		readonly totalAutreOrdre: Montant | null;
+	};
 	readonly abandons: readonly AbandonFige[];
 }
 
@@ -244,11 +253,37 @@ function correctifs(decompte: DecompteFige): string[] {
 }
 
 /**
+ * Ce que la pièce dit de l'ordre d'imputation.
+ *
+ * ⚠️ UN DÉCOMPTE FIGÉ AVANT LE CHOIX DU GÉRANT n'a pas d'`imputation` : il
+ * imputait les paiements d'abord sur les pénalités (25/09/2026) ou sur le
+ * principal (avant), et ses règlements le montrent ligne par ligne.
+ */
+function fondementImputation(imputation: DecompteFige['imputation']): string {
+	const avoirs =
+		'Avoirs, et crédits dont la nature n’est pas détaillée, imputés sur le principal à leur date. ' +
+		'Aucune clause d’imputation des conditions générales n’a été lue par ce logiciel.';
+	if (imputation === undefined) {
+		return `Règlements imputés comme le détaille le tableau de chaque facture. ${avoirs}`;
+	}
+	const ordre =
+		imputation.ordre === 'PENALITES_DABORD'
+			? `Paiements imputés d’abord sur les pénalités déjà courues, puis sur le principal : ${PARAMETRES.imputationPaiementPartiel.source}.`
+			: 'Paiements imputés d’abord sur le principal, puis sur les pénalités déjà courues.';
+	const choix = imputation.confirme
+		? ' Ordre choisi par le créancier.'
+		: ' Ordre non confirmé par le créancier : des deux ordres possibles, le calcul le plus bas est retenu.';
+	return `${ordre}${choix} ${avoirs}`;
+}
+
+/**
  * ⚠️ `dateLisible` SEULEMENT DANS LE TITRE. Les périodes d'intérêts restent en
  * ISO : elles se lisent en colonne, se trient, et un tiers qui refait le calcul
  * y cherche des bornes non ambiguës, pas une jolie phrase.
  */
 export function composerPiece(decompte: DecompteFige): Piece {
+	// Lue pour être citée : le « par facture » vient d'elle, pas de l'article du montant.
+	exiger(PARAMETRES.indemniteParFacture);
 	return {
 		titre: `Décompte de créance arrêté au ${dateLisible(decompte.arreteAu)}`,
 		dateArrete: decompte.arreteAu,
@@ -305,16 +340,12 @@ export function composerPiece(decompte: DecompteFige): Piece {
 			// ici rouvrirait la porte que tout le socle ferme.
 			`Indemnité forfaitaire de recouvrement, ${euros(
 				depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire))
-			)} par facture non réglée à son échéance : ${PARAMETRES.indemniteForfaitaire.source}.`,
+			)} : ${PARAMETRES.indemniteForfaitaire.source}. Due une fois par facture non réglée à ` +
+				`son échéance : ${PARAMETRES.indemniteParFacture.source}.`,
 			// Cité seulement quand un règlement a été imputé : une règle qui ne sert
 			// pas au calcul n'a rien à faire dans ses fondements.
 			...(decompte.lignes.some((ligne) => (ligne.imputations ?? []).length > 0)
-				? [
-						`Paiements imputés d’abord sur les pénalités déjà courues, puis sur le principal : ` +
-							`${PARAMETRES.imputationPaiementPartiel.source}. Avoirs, et crédits dont la nature n’est ` +
-							`pas détaillée, imputés sur le principal à leur date. Aucune clause ` +
-							`d’imputation des conditions générales n’a été lue.`
-					]
+				? [fondementImputation(decompte.imputation)]
 				: [])
 		],
 

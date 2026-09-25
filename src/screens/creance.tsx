@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { Chip } from '@cladd-ui/react';
-import {
-	AlertTriangleIcon,
-	Building2Icon,
-	EyeOffIcon,
-	FileDownIcon,
-	InfoIcon
-} from 'lucide-react';
+import { AlertTriangleIcon, Building2Icon, EyeOffIcon, FileDownIcon, InfoIcon } from 'lucide-react';
 import type { FicheParametre } from '../lib/verticales/recouvrement/referentiel';
 import {
 	BoutonPrincipal,
@@ -55,6 +49,7 @@ import {
 	type Lecture,
 	type NiveauAffiche,
 	type OptionTypePiece,
+	type OrdreImputationAffichee,
 	type PieceAffichee,
 	type QuestionLitige,
 	type RepertoireAffiche,
@@ -238,6 +233,8 @@ export interface CreanceOuverte {
 	readonly conditions: readonly ConditionAConfirmer[];
 	readonly onDeclarerFait: (cle: string, reponse: ReponseFait) => void;
 	readonly onRepondreCondition: (condition: string, reponse: 'ok' | 'ko') => void;
+	/** Le gérant choisit l'ordre d'imputation de ses paiements, pour ce dossier. */
+	readonly onChoisirImputation?: (ordre: OrdreImputationAffichee) => void;
 
 	// ── 5. La solidité, et ce qui affaiblit le dossier ──────────────────────
 	readonly solidite: SoliditeAffichee;
@@ -546,12 +543,12 @@ function SectionDecompte({ creance }: { creance: CreanceOuverte }) {
 				)
 			) : (
 				<>
-					<Decompte decompte={montant} />
+					<Decompte decompte={montant} onChoisirImputation={creance.onChoisirImputation} />
 					<p className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 						<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-						Ce montant n’est pas arrêté : il se recalcule à chaque lecture, et il augmente tant
-						que la facture n’est pas réglée. Ce qui s’oppose à un tiers est un décompte arrêté,
-						daté et figé.
+						Ce montant n’est pas arrêté : il se recalcule à chaque lecture, et il augmente tant que
+						la facture n’est pas réglée. Ce qui s’oppose à un tiers est un décompte arrêté, daté et
+						figé.
 					</p>
 				</>
 			)}
@@ -638,9 +635,9 @@ function SectionValeursJuridiques({ fiches }: { fiches: readonly FicheParametre[
 			valeur={`${verifiees} sur ${fiches.length}`}
 		>
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-				{verifiees} relevée{pluriel(verifiees)} sur {fiches.length} sur une source publique
-				citable, {controlees} contrôlée{pluriel(controlees)} par un juriste. Une valeur relevée
-				suffit à calculer ; seule une valeur contrôlée suffit à produire un acte.
+				{verifiees} relevée{pluriel(verifiees)} sur {fiches.length} sur une source publique citable,{' '}
+				{controlees} contrôlée{pluriel(controlees)} par un juriste. Une valeur relevée suffit à
+				calculer ; seule une valeur contrôlée suffit à produire un acte.
 			</p>
 			<Tableau legende="Valeurs juridiques, leur source et leur état">
 				<TableauEntete>
@@ -885,8 +882,8 @@ function SectionRisques({ creance }: { creance: CreanceOuverte }) {
 						<p className="text-cladd-sm leading-snug">{risque.description}</p>
 						{risque.gravite === 'BLOQUANTE' ? (
 							<p className="text-cladd-2xs text-cladd-fg-soft">
-								Ce constat ferme les procédures que ce logiciel évalue : elles se déroulent
-								toutes sans débat contradictoire.
+								Ce constat ferme les procédures que ce logiciel évalue : elles se déroulent toutes
+								sans débat contradictoire.
 							</p>
 						) : null}
 					</div>

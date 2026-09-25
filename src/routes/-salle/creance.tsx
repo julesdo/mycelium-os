@@ -600,6 +600,7 @@ function creanceDemo({
 			})),
 		onDeclarerFait: () => undefined,
 		onRepondreCondition: () => undefined,
+		onChoisirImputation: () => undefined,
 
 		solidite,
 		risques: qualification.risques,

@@ -101,6 +101,17 @@ function PagePiece() {
 					surPrincipal: depuisCentimes(imputation.surPrincipal)
 				}))
 			})),
+			imputation:
+				piece.imputation === undefined
+					? undefined
+					: {
+							ordre: piece.imputation.ordre,
+							confirme: piece.imputation.confirme,
+							totalAutreOrdre:
+								piece.imputation.totalAutreOrdre === undefined
+									? null
+									: depuisCentimes(piece.imputation.totalAutreOrdre)
+						},
 			abandons: piece.abandons.map((abandon) => ({
 				reference: abandon.reference,
 				montantEnJeu: abandon.montantEnJeu === null ? null : depuisCentimes(abandon.montantEnJeu),
@@ -186,7 +197,16 @@ function PagePiece() {
 										interets: piece.interets,
 										indemniteForfaitaire: piece.indemniteForfaitaire,
 										total: piece.total,
-										lignes: piece.lignes
+										lignes: piece.lignes,
+										...(piece.imputation === undefined
+											? {}
+											: {
+													imputation: {
+														ordre: piece.imputation.ordre,
+														confirme: piece.imputation.confirme,
+														totalAutreOrdre: piece.imputation.totalAutreOrdre ?? null
+													}
+												})
 									},
 									abandons: piece.abandons,
 									onTelechargerLaPiece: () => void telechargerLaPiece(),
@@ -232,9 +252,7 @@ function PagePiece() {
 												})
 											),
 										onRetour: (revenuLe) =>
-											void ecrire(() =>
-												consignerRetour({ remiseId: suivi.remise!._id, revenuLe })
-											),
+											void ecrire(() => consignerRetour({ remiseId: suivi.remise!._id, revenuLe })),
 										onClore: (closLe, motif) =>
 											void ecrire(() =>
 												clore({ remiseId: suivi.remise!._id, closLe, motifCloture: motif })
