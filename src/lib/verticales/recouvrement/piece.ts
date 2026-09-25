@@ -1,6 +1,7 @@
 import { depuisCentimes, versEuros, type Montant } from '../../socle/montants';
 import { PARAMETRES, exiger } from './parametres';
 import { dateLisible } from './calendrier';
+import { tauxLisible } from './taux-lisible';
 import type { ConventionJours } from './decompte';
 
 /**
@@ -180,17 +181,6 @@ const NATURE_REGLEMENT: Record<ImputationFigee['nature'], string> = {
 /** Un montant en euros, format du produit. Une seule façon d'écrire un chiffre. */
 function euros(montant: Montant): string {
 	return `${versEuros(montant)} €`;
-}
-
-/**
- * Le taux en pourcentage. **La division n'a lieu qu'ici**, pour l'œil.
- *
- * Il arrive en fraction exacte et le reste partout ailleurs : le convertir plus
- * tôt réintroduirait un flottant dans une chaîne qui n'en contient aucun.
- */
-function tauxLisible(taux: { numerateur: bigint; denominateur: bigint }): string {
-	const pourMille = (taux.numerateur * 10_000n) / taux.denominateur;
-	return `${pourMille / 100n},${(pourMille % 100n).toString().padStart(2, '0')} %`;
 }
 
 /**

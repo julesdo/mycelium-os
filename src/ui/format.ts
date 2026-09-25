@@ -105,12 +105,7 @@ export function dateCourte(iso: string): string {
  * Cette fonction ne rend qu'une chaîne : on ne peut pas recalculer avec son
  * résultat, et c'est voulu.
  */
-export function tauxLisible(taux: { numerateur: bigint; denominateur: bigint }): string {
-	const pourMille = (taux.numerateur * 10_000n) / taux.denominateur;
-	const entier = pourMille / 100n;
-	const decimales = (pourMille % 100n).toString().padStart(2, '0');
-	return `${entier},${decimales} %`;
-}
+export { tauxLisible } from '../lib/verticales/recouvrement/taux-lisible';
 
 /**
  * Un montant en centimes, sans ses centimes QUAND ILS SONT NULS.
