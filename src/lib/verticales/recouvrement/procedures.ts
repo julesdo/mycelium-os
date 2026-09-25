@@ -46,6 +46,11 @@ export interface Echeance {
 	readonly libelle: string;
 	readonly dateLimite: string;
 	/**
+	 * Le jour où le délai aurait fini sans le report au premier jour ouvrable
+	 * (code de procédure civile, 642). Absent quand il n'y a pas eu de report.
+	 */
+	readonly reporteeDe?: string;
+	/**
 	 * `CADUCITE` : passée cette date, le droit est perdu. `INFORMATIVE` : la
 	 * date structure la suite sans rien éteindre. La distinction commande
 	 * l'insistance de l'alerte — tout mettre au même niveau revient à ne rien

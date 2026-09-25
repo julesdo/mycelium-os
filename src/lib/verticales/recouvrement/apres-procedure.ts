@@ -1,4 +1,5 @@
-import { ajouterJours, ajouterMois } from './calendrier';
+import { ajouterJours, ajouterMois, dateLisible } from './calendrier';
+import { finDeDelai } from './delais';
 import { PARAMETRES, exiger } from './parametres';
 import type { Echeance } from './procedures';
 
@@ -176,16 +177,28 @@ const injonctionDePayer: MachineProcedure = {
 					depuisLe < bascule
 						? exiger(PARAMETRES.delaiSignificationInjonctionAncien)
 						: exiger(PARAMETRES.delaiSignificationInjonction);
+				// Un délai de procédure : il finit le dernier jour du mois quand le
+				// quantième manque, et il est reporté au premier jour ouvrable (642).
+				const { fin, reporteeDe } = finDeDelai(
+					depuisLe,
+					{ valeur: mois, unite: 'mois' },
+					{ reporterJourNonOuvrable: true }
+				);
 				return [
 					{
 						cle: 'signification',
 						libelle: 'Signification de l’ordonnance',
-						dateLimite: ajouterMois(depuisLe, mois),
+						dateLimite: fin,
+						...(reporteeDe === null ? {} : { reporteeDe }),
 						gravite: 'CADUCITE',
 						consequence:
 							`Passé ce délai de ${mois} mois, l’ordonnance est caduque. La créance n’est ` +
 							'pas éteinte, mais la procédure est à reprendre depuis le début, et le temps ' +
-							'écoulé rapproche la prescription.'
+							'écoulé rapproche la prescription.' +
+							(reporteeDe === null
+								? ''
+								: ` Le délai finissait le ${dateLisible(reporteeDe)}, un jour non ouvrable : ` +
+									'il est reporté au premier jour ouvrable suivant.')
 					}
 				];
 			},

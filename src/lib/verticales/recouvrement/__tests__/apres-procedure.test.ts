@@ -181,7 +181,12 @@ describe('les délais qui courent dans l’état', () => {
 			[evenement('ordonnance-rendue', '2026-08-31')],
 			ENGAGEE_LE
 		).echeances.find((e) => e.cle === 'signification');
-		expect(laVeille!.dateLimite).toBe('2027-02-28');
+		// Six mois (ancien régime) depuis le 31 août 2026 : le 28 février 2027, par le
+		// dernier jour du mois (641, al. 2). C'est un dimanche : le délai court
+		// jusqu'au lundi 1er mars (642).
+		expect(laVeille!.dateLimite).toBe('2027-03-01');
+		expect(laVeille!.reporteeDe).toBe('2027-02-28');
+		expect(laVeille!.consequence).toMatch(/premier jour ouvrable/);
 
 		const leJour = suivreProcedure(
 			'injonction-de-payer',
@@ -189,6 +194,8 @@ describe('les délais qui courent dans l’état', () => {
 			ENGAGEE_LE
 		).echeances.find((e) => e.cle === 'signification');
 		expect(leJour!.dateLimite).toBe('2026-12-01');
+		// Le mardi 1er décembre 2026 est ouvrable : aucun report.
+		expect(leJour!.reporteeDe).toBeUndefined();
 	});
 
 	it('ne fait plus courir la signification une fois signifiée', () => {
