@@ -67,7 +67,9 @@ export function joursFeries(annee: number): readonly string[] {
 /** Ni samedi, ni dimanche, ni fête légale. */
 export function estJourOuvrable(date: string): boolean {
 	if (!estDateReelle(date)) {
-		throw new Error(`Date attendue au format AAAA-MM-JJ et existante, reçue : ${JSON.stringify(date)}`);
+		throw new Error(
+			`Date attendue au format AAAA-MM-JJ et existante, reçue : ${JSON.stringify(date)}`
+		);
 	}
 	const jourDeLaSemaine = new Date(`${date}T00:00:00Z`).getUTCDay();
 	if (jourDeLaSemaine === 0 || jourDeLaSemaine === 6) return false;

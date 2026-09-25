@@ -69,21 +69,20 @@ describe('ce qui mérite une notification', () => {
 	it('écarte une échéance seulement informative', () => {
 		// Gravité INFORMATIVE → urgence HAUTE. Elle structure la suite, elle
 		// n'éteint rien : elle a sa place dans le flux, pas dans une interruption.
-		expect(
-			aNotifier([evenement({ type: 'ECHEANCE_PROCEDURE', urgence: 'HAUTE' })], [])
-		).toEqual([]);
+		expect(aNotifier([evenement({ type: 'ECHEANCE_PROCEDURE', urgence: 'HAUTE' })], [])).toEqual(
+			[]
+		);
 	});
 
-	it('écarte une rupture d’habitude, une facture échue, une créance mûre', () => {
-		// ⚠️ AUCUNE DES TROIS N'ÉTEINT QUOI QUE CE SOIT. Les notifier serait
+	it('écarte une rupture d’habitude et une facture échue', () => {
+		// ⚠️ AUCUNE DES DEUX N'ÉTEINT QUOI QUE CE SOIT. Les notifier serait
 		// exactement le bruit que la règle existe pour empêcher — et le jour où
 		// une prescription arrive, elle serait lue comme les autres.
 		expect(
 			aNotifier(
 				[
 					evenement({ type: 'HABITUDE_ROMPUE', urgence: 'NORMALE' }),
-					evenement({ type: 'FACTURE_ECHUE', urgence: 'NORMALE' }),
-					evenement({ type: 'CREANCE_MURE', urgence: 'HAUTE' })
+					evenement({ type: 'FACTURE_ECHUE', urgence: 'NORMALE' })
 				],
 				[]
 			)
@@ -101,10 +100,7 @@ describe('ce qui mérite une notification', () => {
 
 	it('dit ce qui est nouveau, même quand l’ancien court toujours', () => {
 		const deja = ['PRESCRIPTION_PROCHE:FA-2021-0087'];
-		const retenus = aNotifier(
-			[evenement(), evenement({ reference: 'FA-2022-0140' })],
-			deja
-		);
+		const retenus = aNotifier([evenement(), evenement({ reference: 'FA-2022-0140' })], deja);
 
 		expect(retenus).toHaveLength(1);
 		expect(retenus[0]?.reference).toBe('FA-2022-0140');

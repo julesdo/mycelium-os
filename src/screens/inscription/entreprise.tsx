@@ -196,7 +196,11 @@ export function EcranBienvenue({
 						contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 					>
 						<div className="flex items-start gap-cladd-3xs">
-							<Building2Icon size={18} className="mt-0.5 shrink-0 text-cladd-fg-softer" aria-hidden />
+							<Building2Icon
+								size={18}
+								className="mt-0.5 shrink-0 text-cladd-fg-softer"
+								aria-hidden
+							/>
 							<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 								<span className="truncate text-cladd-xs font-medium">{retenu.denomination}</span>
 								<span className="text-cladd-2xs text-cladd-fg-soft">
@@ -232,9 +236,9 @@ export function EcranBienvenue({
 						*/}
 						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 							{deduction.etat === 'ok'
-								? 'Déduit de votre forme juridique : vous êtes commerçant. '
+								? 'Proposé d’après votre forme juridique, à confirmer : vous êtes commerçant. '
 								: deduction.etat === 'ko'
-									? 'Déduit de votre forme juridique : vous n’êtes pas commerçant. '
+									? 'Proposé d’après votre forme juridique, à confirmer : vous n’êtes pas commerçant. '
 									: ''}
 							{deduction.fondement}
 						</p>

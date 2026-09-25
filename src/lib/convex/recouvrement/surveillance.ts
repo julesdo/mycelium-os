@@ -63,7 +63,6 @@ const vUrgence = v.union(v.literal('CRITIQUE'), v.literal('HAUTE'), v.literal('N
 export const vEvenementDeSurveillance = v.object({
 	type: v.union(
 		v.literal('FACTURE_ECHUE'),
-		v.literal('CREANCE_MURE'),
 		v.literal('ECHEANCE_PROCEDURE'),
 		v.literal('DEBITEUR_DEGRADE'),
 		v.literal('PRESCRIPTION_PROCHE'),
@@ -353,9 +352,6 @@ async function assembler(
 		// dénomination juste au-dessus s'affiche ; elle ne se rapproche pas.
 		debiteurId: creance.debiteurId as string,
 		total: totalParCreance.get(creance._id) ?? ZERO,
-		// Absent sur les créances écrites avant ce champ : le doute ne profite
-		// jamais au produit, une maturité qu'on n'a pas calculée n'est pas acquise.
-		eligible: creance.eligible ?? false,
 		statut: creance.statut
 	}));
 

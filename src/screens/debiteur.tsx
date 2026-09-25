@@ -399,7 +399,7 @@ function CorpsDebiteur({
 				    sections plus bas, sur cette même page. */}
 				{debiteur.secteur === undefined || debiteur.secteur === 'INDETERMINE' ? (
 					<Chip size="md" color="neutral">
-						Secteur à préciser
+						Ce que vous lui vendez : à préciser
 					</Chip>
 				) : null}
 				{debiteur.siren === undefined || debiteur.siren === '' ? (

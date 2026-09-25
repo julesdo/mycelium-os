@@ -1,6 +1,6 @@
 # Conditions générales d'utilisation et de vente
 
-> **Version 2.0** — 23 septembre 2026. Entrée en vigueur à la date de sa mise en ligne.
+> **Version 2.1** — 25 septembre 2026. Entrée en vigueur à la date de sa mise en ligne.
 
 ---
 
@@ -55,8 +55,9 @@ Le Service permet au Client :
    applicable, dont la durée varie selon le secteur de la relation commerciale ;
 4. de voir **relever au registre public** les annonces concernant ses Débiteurs, citées mot pour
    mot et jamais reformulées ;
-5. d'obtenir la **qualification** d'une Créance au regard de conditions vérifiables, chaque
-   condition non établie étant déclarée indéterminée plutôt que présumée remplie ;
+5. de voir, pour chaque Créance, les **conditions prévues par les textes en face des pièces de
+   son dossier** et des réponses qu'il a lui-même données ; une valeur que le Service pré-remplit
+   est marquée « à confirmer », et c'est le Client, seul, qui qualifie sa Créance ;
 6. d'obtenir un **Décompte arrêté à une date**, décomposable période par période — quel principal,
    quel taux, sur combien de jours, sur quelle base annuelle — et exportable ;
 7. d'obtenir des **textes de relance** que le Client adresse lui-même à son Débiteur, depuis sa
@@ -107,8 +108,10 @@ est l'abonnement au Service, et elle ne dépend d'aucun résultat.
 
 ### 4.3 L'Éditeur ne recommande aucune procédure
 
-Le Service énonce des **constats** : telle Créance remplit ou ne remplit pas telle condition
-vérifiable, tel délai expire à telle date, tel registre a publié telle annonce.
+Le Service énonce des **constats** : ce que dit tel texte, ce que contiennent les pièces et les
+réponses du Client, tel délai expire à telle date, tel registre a publié telle annonce. Il ne dit
+jamais d'une Créance qu'elle remplit ou ne remplit pas une condition légale : cette appréciation
+revient au Client, et un avocat peut l'éclairer.
 
 Il **n'indique jamais quelle voie engager**, n'exprime aucune opinion sur l'opportunité d'agir et
 ne hiérarchise aucune option. La décision d'engager une procédure, ou de n'en engager aucune,

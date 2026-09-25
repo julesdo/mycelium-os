@@ -1,13 +1,6 @@
 import type { Montant } from '../../socle/montants';
 import { PARAMETRES, estUtilisable, type ParametreLegalBase } from './parametres';
-import {
-	CONDITIONS_LEGALES,
-	LIBELLE_CONDITION,
-	type ClePiece,
-	type ConditionLegale,
-	type CreanceQualifiee,
-	type Evaluation
-} from './qualification';
+import type { ClePiece } from './qualification';
 
 /**
  * Les procédures comme modules — la décision d'architecture la plus importante
@@ -29,9 +22,11 @@ import {
  *
  * La contradiction n'est qu'apparente, et se résout en séparant :
  *
- *   - **ÉVALUER** — dire si une créance remplit les conditions, calculer son
- *     décompte, surveiller son calendrier. Disponible aujourd'hui, et c'est
- *     l'essentiel de ce qui porte l'abonnement.
+ *   - **MONTRER** — lire les pièces, calculer le décompte, surveiller le
+ *     calendrier, et mettre les conditions du texte en face du dossier. Le
+ *     logiciel ne conclut pas : c'est le gérant qui qualifie (relecture du
+ *     25/09/2026). Disponible aujourd'hui, et c'est l'essentiel de ce qui porte
+ *     l'abonnement.
  *   - **PRODUIRE L'ACTE** — écrire le document qui part au greffe. Bloqué tant
  *     que ses mentions ne sont pas fournies ET validées.
  *
@@ -71,11 +66,10 @@ export interface Procedure {
 	readonly plancherMontant: Montant | null;
 	readonly plafondMontant: Montant | null;
 	readonly conditionsEchec: readonly string[];
-	/** La procédure peut-elle au moins être évaluée contre une créance ? */
+	/** Le logiciel connaît-il assez cette voie pour la montrer et en suivre les délais ? */
 	peutEvaluer(): boolean;
 	/** Ce qui empêche de produire l'acte. Vide = rien n'empêche. */
 	blocagesProductionActe(): readonly string[];
-	evaluerEligibilite(creance: CreanceQualifiee): Evaluation;
 	/**
 	 * La machine à états qui décrit ce qui se passe APRÈS l'engagement.
 	 *
@@ -114,47 +108,6 @@ function blocages(cles: readonly string[]): string[] {
 		});
 }
 
-/**
- * L'évaluation contre les quatre conditions légales.
- *
- * LE DOUTE NE PROFITE À PERSONNE, et surtout pas au produit. Un critère
- * `unknown` empêche l'éligibilité au même titre qu'un `ko` — mais il est rangé
- * ailleurs, parce que le travail qu'il appelle est différent : un `ko` ferme le
- * dossier, un `unknown` se lève en posant une question. Les confondre
- * ferait renoncer à des créances recouvrables.
- */
-function evaluerConditionsLegales(creance: CreanceQualifiee): Evaluation {
-	const bloquants: ConditionLegale[] = [];
-	const aDeterminer: ConditionLegale[] = [];
-	const remplies: ConditionLegale[] = [];
-
-	for (const condition of CONDITIONS_LEGALES) {
-		const etat = creance[condition];
-		if (etat === 'ok') remplies.push(condition);
-		else if (etat === 'ko') bloquants.push(condition);
-		else aDeterminer.push(condition);
-	}
-
-	// Des constats, au présent, sans destinataire ni injonction.
-	const constats: string[] = [];
-	if (remplies.length > 0) {
-		constats.push(`La créance remplit ${remplies.map((c) => LIBELLE_CONDITION[c]).join(', ')}.`);
-	}
-	for (const condition of bloquants) {
-		constats.push(`${LIBELLE_CONDITION[condition]} n'est pas rempli.`);
-	}
-	for (const condition of aDeterminer) {
-		constats.push(`${LIBELLE_CONDITION[condition]} n'est pas déterminé par les pièces fournies.`);
-	}
-
-	return {
-		eligible: bloquants.length === 0 && aDeterminer.length === 0,
-		bloquants,
-		aDeterminer,
-		constats
-	};
-}
-
 const injonctionDePayer: Procedure = {
 	cle: 'injonction-de-payer',
 	nom: 'Injonction de payer',
@@ -166,12 +119,11 @@ const injonctionDePayer: Procedure = {
 	plafondMontant: null,
 	conditionsEchec: [
 		"Le débiteur forme opposition dans le délai : l'affaire bascule en procédure contradictoire.",
-		"L'ordonnance n'est pas signifiée dans les trois mois : elle est caduque, définitivement.",
+		"L'ordonnance n'est pas signifiée dans le délai légal : elle est non avenue, et tout est à refaire.",
 		'Le juge rejette la requête ou ne fait droit que partiellement.'
 	],
 	peutEvaluer: () => true,
 	blocagesProductionActe: () => blocages(injonctionDePayer.parametresRequis),
-	evaluerEligibilite: evaluerConditionsLegales,
 	machine: 'injonction-de-payer'
 };
 
@@ -199,7 +151,6 @@ const l126: Procedure = {
 	 */
 	peutEvaluer: () => blocages(l126.parametresRequis).length === 0,
 	blocagesProductionActe: () => blocages(l126.parametresRequis),
-	evaluerEligibilite: evaluerConditionsLegales,
 	machine: 'l126-creances-commerciales'
 };
 
@@ -214,18 +165,6 @@ const relanceAmiable: Procedure = {
 	conditionsEchec: ['Le débiteur ne répond pas, ou refuse de payer.'],
 	peutEvaluer: () => true,
 	blocagesProductionActe: () => [],
-	/**
-	 * TOUJOURS ÉLIGIBLE, délibérément. C'est la sortie par défaut du brief : on
-	 * ne laisse jamais un utilisateur sans action possible. Une créance dont
-	 * rien n'est établi reste une créance qu'on peut réclamer amiablement.
-	 *
-	 * Les constats de qualification sont conservés : ils expliquent pourquoi
-	 * les autres voies ne sont pas ouvertes, sans jamais recommander celle-ci.
-	 */
-	evaluerEligibilite(creance) {
-		const analyse = evaluerConditionsLegales(creance);
-		return { ...analyse, eligible: true };
-	},
 	// Aucune décision, donc aucun délai qui en découle. `null` le DIT, là où un
 	// tableau vide se lirait « rien ne court » sur une procédure qui en aurait.
 	machine: null
@@ -251,19 +190,19 @@ export function procedureParCle(cle: string): Procedure {
 }
 
 /**
- * Les procédures envisageables pour une créance.
+ * Les voies que le logiciel sait montrer et suivre.
+ *
+ * ⚠️ ELLE NE TRIE PLUS SELON LES CONDITIONS. Elle écartait une voie dont une
+ * condition manquait : c'était dire à la place du gérant que sa créance ne la
+ * permettait pas, une qualification juridique. Toutes les voies connues sont
+ * montrées, avec ce que dit la loi ; le gérant choisit, et un avocat peut lui
+ * répondre sur ce qui s'applique à son cas.
  *
  * NE REND JAMAIS UNE LISTE VIDE — la relance amiable en fait toujours partie.
- * C'est une exigence du brief, et c'est aussi la seule façon de ne pas laisser
- * quelqu'un devant un écran qui dit non sans dire quoi faire.
  *
  * ÉNUMÈRE, NE CLASSE PAS. Ordonner les procédures par « pertinence » reviendrait
  * à recommander la première, ce que le § 0.4 interdit.
  */
-export function proceduresEnvisageables(creance: CreanceQualifiee): readonly Procedure[] {
-	return Object.values(PROCEDURES).filter(
-		(procedure) =>
-			procedure.cle === 'relance-amiable' ||
-			(procedure.peutEvaluer() && procedure.evaluerEligibilite(creance).eligible)
-	);
+export function proceduresEnvisageables(): readonly Procedure[] {
+	return Object.values(PROCEDURES).filter((procedure) => procedure.peutEvaluer());
 }

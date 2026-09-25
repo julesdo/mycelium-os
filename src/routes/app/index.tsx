@@ -75,7 +75,6 @@ function FileEnErreur() {
  */
 const PLI_PAR_TYPE: Record<string, { readonly un: string; readonly plusieurs: string }> = {
 	PRESCRIPTION_PROCHE: { un: 'prescription proche', plusieurs: 'prescriptions proches' },
-	CREANCE_MURE: { un: 'créance mûre', plusieurs: 'créances mûres' },
 	ECHEANCE_PROCEDURE: { un: 'échéance de procédure', plusieurs: 'échéances de procédure' },
 	FACTURE_ECHUE: { un: 'facture échue', plusieurs: 'factures échues' },
 	DEBITEUR_DEGRADE: { un: 'client dégradé au registre', plusieurs: 'clients dégradés au registre' },
@@ -309,8 +308,8 @@ function File() {
 	 * Une rangée vise tantôt une créance, tantôt un client — c'est la
 	 * SURVEILLANCE qui le décide, pas l'écran : `PRESCRIPTION_PROCHE`,
 	 * `FACTURE_ECHUE`, `DEBITEUR_DEGRADE` et `HABITUDE_ROMPUE` visent un DÉBITEUR
-	 * (« une facture n'a pas d'écran à elle »), `CREANCE_MURE` et
-	 * `ECHEANCE_PROCEDURE` une CRÉANCE.
+	 * (« une facture n'a pas d'écran à elle »), `ECHEANCE_PROCEDURE` une
+	 * CRÉANCE.
 	 *
 	 * ⚠️ UN CLIENT SANS CRÉANCE CONSTITUÉE MÈNE À SA PAGE, ET C'EST UN GAIN. Le
 	 * volet était PAR CRÉANCE : une rangée dont le client n'avait encore aucune

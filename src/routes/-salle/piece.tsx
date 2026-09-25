@@ -14,7 +14,10 @@ import {
 	regimePrescription
 } from '../../lib/verticales/recouvrement/pays/france/prescription';
 import { periodesDeTauxParDefaut } from '../../lib/verticales/recouvrement/pays/france/taux';
-import { parametresManquants, tousLesParametres } from '../../lib/verticales/recouvrement/parametres';
+import {
+	parametresManquants,
+	tousLesParametres
+} from '../../lib/verticales/recouvrement/parametres';
 import type { DecompteAffiche, SuiviConseilAffiche } from '../../ui';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
@@ -121,13 +124,12 @@ function enAffichage(decompte: DecompteCreance): DecompteAffiche {
 function controleDemo(avecLesEcartees: boolean) {
 	return controlerDecompte({
 		decompte: PROJECTION_DEMO,
-		facturesConnues: [
-			...FACTURES_DE_LA_CREANCE,
-			...(avecLesEcartees ? FACTURES_ECARTEES : [])
-		].map((facture) => ({
-			reference: facture.reference,
-			montantExigible: depuisCentimes(facture.montantTTC)
-		}))
+		facturesConnues: [...FACTURES_DE_LA_CREANCE, ...(avecLesEcartees ? FACTURES_ECARTEES : [])].map(
+			(facture) => ({
+				reference: facture.reference,
+				montantExigible: depuisCentimes(facture.montantTTC)
+			})
+		)
 	});
 }
 
@@ -194,8 +196,7 @@ const ECART_DEMO = (() => {
 			enCentimes(PROJECTION_DEMO.principalRestantDu) - enCentimes(FIGE_DEMO.principalRestantDu),
 		interets: enCentimes(PROJECTION_DEMO.interets) - enCentimes(FIGE_DEMO.interets),
 		indemniteForfaitaire:
-			enCentimes(PROJECTION_DEMO.indemniteForfaitaire) -
-			enCentimes(FIGE_DEMO.indemniteForfaitaire),
+			enCentimes(PROJECTION_DEMO.indemniteForfaitaire) - enCentimes(FIGE_DEMO.indemniteForfaitaire),
 		total: enCentimes(PROJECTION_DEMO.total) - enCentimes(FIGE_DEMO.total),
 		parFacture: PROJECTION_DEMO.lignes.map((ligne) => {
 			const figee = figees.get(ligne.reference);
@@ -233,7 +234,11 @@ function suiviDemo(remise: SuiviConseilAffiche['remise']): SuiviConseilAffiche {
 		remise,
 		carnet: [
 			{ id: 'fiche-avocat', nom: 'Cabinet Perrin', precision: 'Avocat · Paris' },
-			{ id: 'fiche-commissaire', nom: 'Étude Lemoine', precision: 'Commissaire de justice · Bobigny' }
+			{
+				id: 'fiche-commissaire',
+				nom: 'Étude Lemoine',
+				precision: 'Commissaire de justice · Bobigny'
+			}
 		],
 		onPreparer: () => {},
 		onRemettre: () => {},
@@ -320,10 +325,7 @@ export const ECRANS_PIECE: readonly EcranDuProduit[] = [
 			<EcranPiece
 				identifiant="demo-decompte"
 				creanceId="demo-creance"
-				donnees={lectureDemo(
-					etat,
-					formeDemo(variante, pieceDemo(suiviDemo(null)), FORMES_PIECE)
-				)}
+				donnees={lectureDemo(etat, formeDemo(variante, pieceDemo(suiviDemo(null)), FORMES_PIECE))}
 			/>
 		)
 	}

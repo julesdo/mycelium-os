@@ -60,7 +60,8 @@ const MAINTENANT = Date.now();
 
 const RAISONS_REELLES: BilanDepotAffiche['ignorees'] = [
 	{
-		texte: '"2026";"VE";"4128";"20260312";"411DURAND";"Durand Menuiserie";"FA-2026-0188";"1 2З0,00";"0,00"',
+		texte:
+			'"2026";"VE";"4128";"20260312";"411DURAND";"Durand Menuiserie";"FA-2026-0188";"1 2З0,00";"0,00"',
 		raison: 'Montant illisible en débit ou en crédit.'
 	},
 	{

@@ -19,7 +19,10 @@ const styleAvatar = v.union(
 	v.literal('shapes')
 );
 
-async function profilDe(ctx: QueryCtx | MutationCtx, userId: string): Promise<Doc<'userProfiles'> | null> {
+async function profilDe(
+	ctx: QueryCtx | MutationCtx,
+	userId: string
+): Promise<Doc<'userProfiles'> | null> {
 	return ctx.db
 		.query('userProfiles')
 		.withIndex('by_userId', (q) => q.eq('userId', userId))

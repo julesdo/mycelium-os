@@ -482,7 +482,13 @@ export const repondreQuestionnaire = internalMutation({
 			entreCommercants: reponses.entreCommercants ?? creance.entreCommercants
 		};
 
-		await ctx.db.patch(creanceId, conditions);
+		// Chaque condition répondue ici est CONFIRMÉE par le gérant : elle cesse de
+		// s'afficher « à confirmer ».
+		const confirmees = new Set(creance.conditionsConfirmees ?? []);
+		for (const [condition, reponse] of Object.entries(reponses)) {
+			if (reponse !== undefined) confirmees.add(condition);
+		}
+		await ctx.db.patch(creanceId, { ...conditions, conditionsConfirmees: [...confirmees] });
 
 		const misAJour = (await ctx.db.get(creanceId))!;
 		const qualification = await recalculerScore(ctx, misAJour, aujourdHui);

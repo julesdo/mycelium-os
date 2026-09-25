@@ -25,8 +25,12 @@ import { cn } from './cn';
  * où en est ce dossier ».
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ AUCUNE COULEUR DE SEUIL, ET AUCUN VERDICT
+ * ⚠️ AUCUNE COULEUR DE SEUIL, AUCUN POIDS, ET AUCUN VERDICT
  * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Plus de « 3 points sur 20 » ni de « le plus lourd qui manque » depuis le
+ * 25/09/2026 : peser une pièce, c'est juger de sa force probante, une
+ * appréciation juridique. Le composant montre ce qui est là et ce qui manque.
  *
  * Le vert, l'ambre et le rouge ne disent qu'une chose dans ce produit —
  * au-dessus du seuil, tout près, en dessous. Un étage établi n'est pas un
@@ -44,7 +48,6 @@ export interface EtageAffiche {
 	readonly fait: string;
 	readonly etat: string;
 	readonly presente: boolean;
-	readonly poids: number;
 }
 
 export interface SoliditeAffichee {
@@ -52,8 +55,6 @@ export interface SoliditeAffichee {
 	readonly etablies: number;
 	readonly attendues: number;
 	readonly etages: readonly EtageAffiche[];
-	/** La clé de l'étage absent au poids le plus fort. Une mesure, pas une consigne. */
-	readonly prochaine: string | null;
 }
 
 export function Solidite({ solidite }: { solidite: SoliditeAffichee }) {
@@ -88,15 +89,6 @@ export function Solidite({ solidite }: { solidite: SoliditeAffichee }) {
 							>
 								{etage.etat}
 							</p>
-							{/* ⚠️ LE POIDS EST DIT, et c'est tout l'apport de ce composant.
-							    Sans lui, « bon de commande » et « mise en demeure » se
-							    ressemblent — alors que l'un vaut trois fois l'autre. */}
-							{!etage.presente ? (
-								<p className="text-cladd-2xs text-cladd-fg-softest">
-									{etage.poids} point{etage.poids > 1 ? 's' : ''} sur 20
-									{etage.cle === solidite.prochaine ? ' — c’est le plus lourd qui manque' : ''}
-								</p>
-							) : null}
 						</div>
 					</div>
 				))}

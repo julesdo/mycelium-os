@@ -303,8 +303,8 @@ Sept natures possibles, et une huitième qui est un aveu :
   demeure », « Dernier rappel avant poursuite », souvent en recommandé.
 - ECHANGES : des courriers ou courriels échangés avec le client.
 - INCONNU : tu n'es pas sûr. C'est une réponse LÉGITIME et attendue. Un
-  document mal classé compte dans un score de solidité qui décide si une
-  procédure s'engage ; le classer au hasard est pire que ne pas le classer.
+  document mal classé fausse ce que le gérant lit de son dossier ; le
+  classer au hasard est pire que ne pas le classer.
 
 CE QUE TU RELÈVES
 - La référence du document, telle qu'elle est imprimée.

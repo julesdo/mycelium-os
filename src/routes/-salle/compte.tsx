@@ -13,11 +13,7 @@ import type {
 	InvitationEnAttente,
 	MembreEquipe
 } from '../../screens/compte/equipe';
-import type {
-	ApercuDonnees,
-	DonneesAffichees,
-	FichierExport
-} from '../../screens/compte/donnees';
+import type { ApercuDonnees, DonneesAffichees, FichierExport } from '../../screens/compte/donnees';
 import type { IntervenantsAffiches } from '../../screens/compte/intervenants';
 import type { MesuresAffichees } from '../../screens/compte/mesures';
 import { AVOCATS_DEMO, BARREAUX_DEMO, CARNET_DEMO, ETABLISSEMENT_DEMO } from './communes';
@@ -724,7 +720,7 @@ function compteDe(
 					nom="Qonto"
 					promesse={PROMESSE_QONTO}
 					logo={<LogoConnexion src={LOGO_QONTO} />}
-			couverture={COUVERTURE_QONTO}
+					couverture={COUVERTURE_QONTO}
 					etat={{ genre: 'A_JOUR', depuis: 'il y a 3 min', facturesLues: 128 }}
 					onConnecter={() => undefined}
 					onSynchroniser={() => undefined}

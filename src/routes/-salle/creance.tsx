@@ -1,6 +1,14 @@
 import type { CreanceOuverte } from '../../screens/creance';
 import { EcranCreance } from '../../screens/creance';
-import { additionner, depuisCentimes, enCentimes, soustraire } from '../../lib/socle/montants';
+import {
+	additionner,
+	depuisCentimes,
+	enCentimes,
+	soustraire,
+	versEuros
+} from '../../lib/socle/montants';
+import { dateLisible } from '../../lib/verticales/recouvrement/calendrier';
+import { PARAMETRES } from '../../lib/verticales/recouvrement/parametres';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
 import {
 	libelleEvenement,
@@ -13,7 +21,6 @@ import {
 	type Reglement
 } from '../../lib/verticales/recouvrement/decompte';
 import {
-	conditionsADemander,
 	deduireConditions,
 	type ConditionsDeduites
 } from '../../lib/verticales/recouvrement/deduction';
@@ -30,7 +37,7 @@ import {
 	type Pyramide
 } from '../../lib/verticales/recouvrement/solidite';
 import {
-	LIBELLE_CONDITION,
+	lignesConditions,
 	type ClePiece,
 	type EtatCritere
 } from '../../lib/verticales/recouvrement/qualification';
@@ -467,13 +474,11 @@ function soliditeDepuisPyramide(pyramide: Pyramide): SoliditeAffichee {
 		constat: pyramide.constat,
 		etablies: pyramide.etablies,
 		attendues: pyramide.attendues,
-		prochaine: pyramide.prochaine?.cle ?? null,
 		etages: pyramide.etages.map((e) => ({
 			cle: e.cle,
 			fait: e.fait,
 			etat: e.etat,
-			presente: e.presente,
-			poids: e.poids
+			presente: e.presente
 		}))
 	};
 }
@@ -534,7 +539,6 @@ function creanceDemo({
 		debiteurId: 'demo-debiteur',
 		...(sansAdresse ? {} : { debiteurEmail: 'comptabilite@ateliers-martin.fr' }),
 		santeDebiteur: SANTE_DEBITEUR_DEMO,
-		eligible: qualification.eligible,
 		nombreFactures: FACTURES_DEMO.length,
 		principalRestantDu: enCentimes(PRINCIPAL_RESTANT_DU_DEMO),
 
@@ -589,15 +593,22 @@ function creanceDemo({
 		),
 
 		litige: litigeDepuisReponses(reponses, propositions),
-		conditions: conditionsADemander(conditions)
-			// `certaine` en est exclue : elle se déduit des faits déclarés au litige.
-			.filter((condition) => condition !== 'certaine')
-			.map((condition) => ({
-				condition,
-				libelle: `Pouvez-vous confirmer ${
-					LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
-				} de cette créance ?`
-			})),
+		lignesConditions: lignesConditions(
+			conditions,
+			[],
+			{
+				aujourdHui: AUJOURD_HUI_DEMO,
+				nombreFactures: FACTURES_DEMO.length,
+				totalFactures: `${versEuros(additionner(...FACTURES_DEMO.map((f) => depuisCentimes(f.montantTTC))))} €`,
+				echeanceLaPlusAncienne: FACTURES_DEMO.map((f) => f.dateExigibilite).sort()[0] ?? null,
+				litigeRenseigne: Object.keys(reponses).length > 0,
+				litigieux: litigeDepuisReponses(reponses, propositions).litigieux,
+				creancierCommercant: qualite,
+				debiteurCommercant: qualite
+			},
+			PARAMETRES.conditionsCreanceL126.source,
+			dateLisible
+		),
 		onDeclarerFait: () => undefined,
 		onRepondreCondition: () => undefined,
 		onChoisirImputation: () => undefined,
@@ -612,7 +623,7 @@ function creanceDemo({
 		onRetirer: () => undefined,
 
 		suivi: journal === null ? null : suiviDepuisJournal(journal),
-		voies: Object.values(PROCEDURES).map((procedure) => voieDeLaCreance(procedure, conditions)),
+		voies: Object.values(PROCEDURES).map((procedure) => voieDeLaCreance(procedure)),
 		carnet: CARNET_DEMO,
 		// Aucun intervenant rattaché : la page relit alors « Moi-même ».
 		intervenantChoisi: null,

@@ -495,7 +495,7 @@ function DemoVide() {
 				<EmptyState
 					illustration="📬"
 					titre="Rien à surveiller pour l’instant"
-					explication="Le logiciel repérera de lui-même les échéances passées, les créances mûres et les prescriptions qui approchent. Il lui faut d’abord vos factures."
+					explication="Le logiciel repérera de lui-même les échéances passées, les dates limites qui approchent et ce qui change chez vos clients. Il lui faut d’abord vos factures."
 					etapes={[
 						'Importez un export comptable — c’est le plus complet : il porte vos factures, vos règlements et vos clients d’un coup.',
 						'À défaut, déposez vos factures de vente en PDF ou en photo.',

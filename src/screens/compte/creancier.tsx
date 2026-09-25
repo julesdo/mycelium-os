@@ -305,7 +305,7 @@ export function FormulaireCreancier({
 			<Champ etiquette="Vous êtes commerçant">
 				<p className="text-cladd-2xs text-cladd-fg-softer">
 					Condition de certaines procédures, pour vous et pour votre client.
-					{deduit ? '' : ' Sans réponse, elle reste indéterminée et n’est jamais présumée remplie.'}
+					{deduit ? '' : ' Sans réponse, elle reste « pas déterminé ».'}
 				</p>
 
 				{/*
@@ -323,8 +323,8 @@ export function FormulaireCreancier({
 					>
 						<p className="text-cladd-2xs leading-relaxed text-cladd-fg">
 							{deduction.etat === 'ok'
-								? 'Déduit de votre forme juridique : vous êtes commerçant.'
-								: 'Déduit de votre forme juridique : vous n’êtes pas commerçant.'}
+								? 'Proposé d’après votre forme juridique, à confirmer : vous êtes commerçant.'
+								: 'Proposé d’après votre forme juridique, à confirmer : vous n’êtes pas commerçant.'}
 						</p>
 						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 							Forme relevée au registre : « {deduction.formeRelevee} ». {deduction.fondement}

@@ -82,26 +82,6 @@ describe('la cible d’un événement', () => {
 		expect(evenement?.cible).toEqual({ genre: 'DEBITEUR', id: 'deb_2' });
 	});
 
-	it('mène à la créance quand c’est une créance qui bouge', () => {
-		const [evenement] = detecterEvenements(
-			etat({
-				creances: [
-					{
-						reference: 'C-001',
-						id: 'cre_1',
-						total: depuisEuros('12000,00'),
-						eligible: true,
-						statut: 'QUALIFIEE'
-					}
-				]
-			}),
-			AUJOURDHUI
-		);
-
-		expect(evenement?.type).toBe('CREANCE_MURE');
-		expect(evenement?.cible).toEqual({ genre: 'CREANCE', id: 'cre_1' });
-	});
-
 	it('mène au débiteur quand sa situation se dégrade', () => {
 		const [evenement] = detecterEvenements(
 			etat({

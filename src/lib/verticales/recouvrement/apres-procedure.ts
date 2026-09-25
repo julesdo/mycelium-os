@@ -192,7 +192,7 @@ const injonctionDePayer: MachineProcedure = {
 						...(reporteeDe === null ? {} : { reporteeDe }),
 						gravite: 'CADUCITE',
 						consequence:
-							`Passé ce délai de ${mois} mois, l’ordonnance est caduque. La créance n’est ` +
+							`Passé ce délai de ${mois} mois, l’ordonnance est non avenue. La créance n’est ` +
 							'pas éteinte, mais la procédure est à reprendre depuis le début, et le temps ' +
 							'écoulé rapproche la prescription.' +
 							(reporteeDe === null

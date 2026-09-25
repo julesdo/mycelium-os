@@ -1,6 +1,6 @@
 import {
 	CONDITIONS_LEGALES,
-	LIBELLE_CONDITION,
+	NOM_CONDITION,
 	type ClePiece,
 	type ConditionLegale,
 	type EtatCritere
@@ -198,12 +198,14 @@ export function qualifier(elements: ElementsCreance): Qualification {
 		criteres.push({
 			nom: condition,
 			statut,
+			// ⚠️ LA RÉPONSE DU GÉRANT, PAS UN VERDICT DU LOGICIEL : « est rempli » serait une
+			// qualification juridique (relecture du 25/09/2026).
 			preuve:
 				statut === 'ok'
-					? `${LIBELLE_CONDITION[condition]} est établi.`
+					? `${NOM_CONDITION[condition]} : réponse « oui ».`
 					: statut === 'ko'
-						? `${LIBELLE_CONDITION[condition]} n'est pas rempli.`
-						: `${LIBELLE_CONDITION[condition]} n'est pas déterminé par les pièces fournies.`,
+						? `${NOM_CONDITION[condition]} : réponse « non ».`
+						: `${NOM_CONDITION[condition]} : pas encore de réponse.`,
 			poids: POIDS[condition]
 		});
 
@@ -211,7 +213,7 @@ export function qualifier(elements: ElementsCreance): Qualification {
 		// poser une question dont la réponse est déjà connue use la seule
 		// ressource vraiment rare, l'attention de l'utilisateur.
 		if (statut === 'unknown') {
-			questions.push(`Pouvez-vous confirmer ${LIBELLE_CONDITION[condition]} de cette créance ?`);
+			questions.push(`${NOM_CONDITION[condition]} : pouvez-vous le confirmer ?`);
 		}
 	}
 

@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ajouterMois } from '../calendrier';
 import { PROCEDURES, procedureParCle, proceduresEnvisageables } from '../procedures';
-import type { CreanceQualifiee } from '../qualification';
 
 /**
  * Les procédures comme modules (§ 6 du brief) — l'application doit rester
@@ -11,17 +10,6 @@ import type { CreanceQualifiee } from '../qualification';
  * doit fonctionner sans lui, et le module doit se déclarer indisponible plutôt
  * que d'échouer au moment de produire l'acte.
  */
-
-function qualifiee(surcharge: Partial<CreanceQualifiee> = {}): CreanceQualifiee {
-	return {
-		certaine: 'ok',
-		liquide: 'ok',
-		exigible: 'ok',
-		entreCommercants: 'ok',
-		piecesFournies: ['FACTURE'],
-		...surcharge
-	};
-}
 
 describe('calendrier — de quantième à quantième', () => {
 	it('ajoute des mois en gardant le quantième', () => {
@@ -42,36 +30,6 @@ describe('calendrier — de quantième à quantième', () => {
 
 describe('injonction de payer', () => {
 	const procedure = procedureParCle('injonction-de-payer');
-
-	it('évalue une créance qui remplit les quatre conditions', () => {
-		const evaluation = procedure.evaluerEligibilite(qualifiee());
-		expect(evaluation.eligible).toBe(true);
-		expect(evaluation.bloquants).toEqual([]);
-	});
-
-	it('écarte une créance dont une condition est expressément absente', () => {
-		const evaluation = procedure.evaluerEligibilite(qualifiee({ entreCommercants: 'ko' }));
-		expect(evaluation.eligible).toBe(false);
-		expect(evaluation.bloquants).toContain('entreCommercants');
-	});
-
-	it('n’éligibilise jamais sur une condition inconnue — le doute ne profite pas', () => {
-		// « Chaque critère renvoie unknown plutôt que ok si la donnée manque.
-		//   Ne jamais présumer favorablement. » (§ 5 du brief)
-		const evaluation = procedure.evaluerEligibilite(qualifiee({ exigible: 'unknown' }));
-		expect(evaluation.eligible).toBe(false);
-		expect(evaluation.aDeterminer).toContain('exigible');
-		// Un inconnu n'est PAS un bloquant : il se lève en posant la question.
-		expect(evaluation.bloquants).not.toContain('exigible');
-	});
-
-	it('énonce des constats, jamais une recommandation', () => {
-		// § 0.4 : « cette créance remplit les conditions X, Y, Z » est autorisé ;
-		// « vous devriez engager telle procédure » est interdit.
-		const evaluation = procedure.evaluerEligibilite(qualifiee());
-		const texte = evaluation.constats.join(' ').toLowerCase();
-		expect(texte).not.toMatch(/vous devriez|nous (vous )?recommandons|il faut engager|conseillons/);
-	});
 
 	it('renvoie à sa machine à états pour ce qui court après', () => {
 		// ⚠️ CE MODULE NE CALCULE PLUS DE DÉLAI. Il en calculait, depuis une date
@@ -123,13 +81,6 @@ describe('relance amiable — la sortie par défaut', () => {
 		expect(procedure.peutEvaluer()).toBe(true);
 		expect(procedure.blocagesProductionActe()).toEqual([]);
 	});
-
-	it('accepte une créance que rien ne qualifie', () => {
-		const evaluation = procedure.evaluerEligibilite(
-			qualifiee({ certaine: 'unknown', liquide: 'unknown', exigible: 'ko', entreCommercants: 'ko' })
-		);
-		expect(evaluation.eligible).toBe(true);
-	});
 });
 
 describe('registre des procédures', () => {
@@ -142,10 +93,16 @@ describe('registre des procédures', () => {
 	});
 
 	it('ne propose jamais une liste vide — la relance amiable reste', () => {
-		const envisageables = proceduresEnvisageables(
-			qualifiee({ certaine: 'ko', liquide: 'ko', exigible: 'ko', entreCommercants: 'ko' })
-		);
-		expect(envisageables.map((p) => p.cle)).toContain('relance-amiable');
+		expect(proceduresEnvisageables().map((p) => p.cle)).toContain('relance-amiable');
+	});
+
+	it('ne trie pas les voies selon les conditions : le gérant qualifie, pas le logiciel', () => {
+		// L'injonction de payer reste montrée quelles que soient les réponses : dire
+		// qu'une créance ne la permet pas serait une qualification juridique.
+		expect(proceduresEnvisageables().map((p) => p.cle)).toContain('injonction-de-payer');
+		for (const procedure of Object.values(PROCEDURES)) {
+			expect(procedure).not.toHaveProperty('evaluerEligibilite');
+		}
 	});
 
 	it('refuse une clé inconnue plutôt que de rendre undefined', () => {

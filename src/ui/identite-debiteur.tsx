@@ -122,12 +122,12 @@ export interface OptionSecteur {
  * telle qu'un gérant la reconnaît, pas telle que le code de commerce l'écrit.
  */
 const LIBELLE_SECTEUR: Record<string, string> = {
-	GENERAL: 'Régime général',
-	TRANSPORT_MARCHANDISES: 'Transport de marchandises',
-	CONSOMMATEUR: 'Vente à un consommateur',
-	NOURRITURE_MARINS: 'Nourriture des marins',
-	FOURNITURE_NAVIRE: 'Fourniture de navire',
-	OUVRAGE_ACCEPTE: 'Ouvrage accepté'
+	GENERAL: 'Des biens ou des services, à une entreprise',
+	CONSOMMATEUR: 'Des biens ou des services, à un particulier',
+	TRANSPORT_MARCHANDISES: 'Du transport de marchandises',
+	OUVRAGE_ACCEPTE: 'Des travaux, depuis leur réception',
+	NOURRITURE_MARINS: 'Des repas pour l’équipage d’un navire',
+	FOURNITURE_NAVIRE: 'Du matériel pour un navire'
 };
 
 export function secteursProposes(): OptionSecteur[] {
@@ -136,7 +136,7 @@ export function secteursProposes(): OptionSecteur[] {
 		return {
 			cle,
 			libelle: LIBELLE_SECTEUR[cle] ?? cle,
-			consequence: `Prescription : ${regime.dureeAnnees} an${regime.dureeAnnees > 1 ? 's' : ''}`
+			consequence: `Pour agir en justice : ${regime.dureeAnnees} an${regime.dureeAnnees > 1 ? 's' : ''} (${regime.source})`
 		};
 	});
 
@@ -149,7 +149,7 @@ export function secteursProposes(): OptionSecteur[] {
 		{
 			cle: 'INDETERMINE',
 			libelle: 'À préciser',
-			consequence: `Le délai le plus court est retenu par prudence : ${court} an${court > 1 ? 's' : ''}`
+			consequence: `En attendant votre réponse, le délai le plus court est surveillé, par prudence : ${court} an${court > 1 ? 's' : ''}`
 		},
 		...connus
 	];
@@ -209,7 +209,7 @@ export function ChoixSecteur({
 			className="w-full"
 			surface="cut"
 			size="lg"
-			title="Secteur de la relation"
+			title="Ce que vous lui vendez"
 			options={[...optionsSecteur]}
 			value={secteur ?? 'INDETERMINE'}
 			getOptionValue={(option) => option.cle}
@@ -217,10 +217,10 @@ export function ChoixSecteur({
 			renderOption={({ value }) => value.libelle}
 			renderOptionInfo={({ value }) => value.consequence}
 			keyboardHints={false}
-			placeholder="Secteur à préciser"
+			placeholder="À préciser"
 		>
 			{optionsSecteur.find((o) => o.cle === (secteur ?? 'INDETERMINE'))?.libelle ??
-				'Secteur à préciser'}
+				'Ce que vous lui vendez : à préciser'}
 		</Select>
 	);
 }

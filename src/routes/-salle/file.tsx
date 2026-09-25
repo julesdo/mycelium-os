@@ -70,7 +70,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		debiteur: 'Ateliers Martin',
 		destination: { vers: '/app/creance/$id', parametres: { id: CREANCE_MARTIN } },
 		obstacle:
-			'Signification de l’ordonnance : la date limite du 12 septembre 2026 est dépassée, l’ordonnance est caduque.',
+			'Signification de l’ordonnance : la date limite du 12 septembre 2026 est dépassée, l’ordonnance est non avenue.',
 		urgence: 'CRITIQUE',
 		montant: 1_845_000n,
 		// Passée : c'est elle, et elle seule, qui remplit le groupe « En retard ».
@@ -373,8 +373,7 @@ const TRAVAUX_DEMO: readonly TacheVeilleur[] = travauxDuVeilleur({
 		{
 			id: 'trouvaille-durand',
 			titre: 'Prescription sous 41 jours',
-			message:
-				'Fournitures Durand : passé le 27/10/2026, 31 200,50 € ne se réclament plus.',
+			message: 'Fournitures Durand : passé le 27/10/2026, 31 200,50 € ne se réclament plus.',
 			lien: '/app/creance/demo-creance-durand'
 		}
 	],
@@ -412,7 +411,11 @@ const RANGEE_DU_HAUT_DEMO = {
 	  regard un passage à la ligne qui ne tombait pas au même endroit.
 	*/
 	selecteur: (
-		<Button rounded className="min-w-cladd-md shrink-0" aria-label="Établissement : Boulangerie Doré">
+		<Button
+			rounded
+			className="min-w-cladd-md shrink-0"
+			aria-label="Établissement : Boulangerie Doré"
+		>
 			<BuildingIcon />
 			<ChevronDownIcon />
 		</Button>

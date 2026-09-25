@@ -3,11 +3,17 @@ import { pourcentageDepuisTaux } from '../../verticales/recouvrement/taux-contra
 import { authedQuery } from '../functions';
 import type { QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
-import { additionner, depuisCentimes, enCentimes, soustraire, ZERO } from '../../socle/montants';
+import {
+	additionner,
+	depuisCentimes,
+	enCentimes,
+	soustraire,
+	versEuros,
+	ZERO
+} from '../../socle/montants';
 import { qualifier } from '../../verticales/recouvrement/scoring';
 import { PROCEDURES, proceduresEnvisageables } from '../../verticales/recouvrement/procedures';
 import { MACHINES, etapesDeLaVoie } from '../../verticales/recouvrement/apres-procedure';
-import { conditionsADemander } from '../../verticales/recouvrement/deduction';
 import { pyramideDePreuves } from '../../verticales/recouvrement/solidite';
 import { NIVEAUX_RELANCE, composerRelance } from '../../verticales/recouvrement/relance';
 import {
@@ -16,7 +22,9 @@ import {
 	signauxDepuisFaits,
 	type Reponses
 } from '../../verticales/recouvrement/litige';
-import { LIBELLE_CONDITION, type ClePiece } from '../../verticales/recouvrement/qualification';
+import { lignesConditions, type ClePiece } from '../../verticales/recouvrement/qualification';
+import { dateLisible } from '../../verticales/recouvrement/calendrier';
+import { PARAMETRES } from '../../verticales/recouvrement/parametres';
 import {
 	regimePrescription,
 	prescriptionDe
@@ -374,8 +382,6 @@ export const creanceComplete = authedQuery({
 			v.literal('PROCEDURE_COLLECTIVE'),
 			v.literal('RADIEE')
 		),
-		score: v.number(),
-		eligible: v.boolean(),
 		principalRestantDu: v.int64(),
 		factures: v.array(vFacture),
 		conditions: v.object({
@@ -384,7 +390,28 @@ export const creanceComplete = authedQuery({
 			exigible: vEtatCritere,
 			entreCommercants: vEtatCritere
 		}),
-		questions: v.array(v.object({ condition: v.string(), libelle: v.string() })),
+		/**
+		 * LE TABLEAU À TROIS COLONNES : ce que dit la loi, ce qu'il y a dans le
+		 * dossier, ce que le gérant a répondu. Il remplace « mûre pour une procédure »,
+		 * un verdict que ce logiciel ne rend plus (relecture du 25/09/2026).
+		 */
+		lignesConditions: v.array(
+			v.object({
+				condition: v.string(),
+				nom: v.string(),
+				termeJuridique: v.string(),
+				ceQueDitLaLoi: v.string(),
+				source: v.string(),
+				dansLeDossier: v.string(),
+				reponse: vEtatCritere,
+				etatReponse: v.union(
+					v.literal('CONFIRMEE'),
+					v.literal('A_CONFIRMER'),
+					v.literal('SANS_REPONSE')
+				),
+				repondable: v.boolean()
+			})
+		),
 		/**
 		 * LE QUESTIONNAIRE DE QUALIFICATION DE LITIGE — module 3.2.
 		 *
@@ -568,7 +595,7 @@ export const creanceComplete = authedQuery({
 
 		const pyramide = pyramideDePreuves(piecesFournies);
 
-		const envisageables = proceduresEnvisageables({ ...conditions, piecesFournies: [] });
+		const envisageables = proceduresEnvisageables();
 		const clesEnvisageables = new Set(envisageables.map((p) => p.cle));
 
 		return {
@@ -582,8 +609,6 @@ export const creanceComplete = authedQuery({
 			// montre désormais le fait relevé au registre derrière ce risque au lieu
 			// de le compter sans le nommer.
 			santeDebiteur: debiteur?.santeFinanciere ?? 'INCONNUE',
-			score: qualification.score,
-			eligible: qualification.eligible,
 			principalRestantDu: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
 			factures: await Promise.all(
 				factures.map(async (facture) => {
@@ -611,20 +636,31 @@ export const creanceComplete = authedQuery({
 				})
 			),
 			conditions,
-			// Une question par condition non tranchée, et pour elles seules.
-			//
-			// ⚠️ `certaine` EN EST EXCLUE. Elle ne se tranche plus par une question
-			// générique — « pouvez-vous confirmer le caractère certain » est une
-			// qualification juridique — mais par les faits du questionnaire de
-			// litige, rendus juste en dessous.
-			questions: conditionsADemander(conditions)
-				.filter((condition) => condition !== 'certaine')
-				.map((condition) => ({
-					condition,
-					libelle: `Pouvez-vous confirmer ${
-						LIBELLE_CONDITION[condition as keyof typeof LIBELLE_CONDITION]
-					} de cette créance ?`
-				})),
+			lignesConditions: [
+				...lignesConditions(
+					conditions,
+					creance.conditionsConfirmees ?? [],
+					{
+						aujourdHui: new Date().toISOString().slice(0, 10),
+						nombreFactures: factures.length,
+						totalFactures:
+							factures.length === 0
+								? null
+								: `${versEuros(additionner(...factures.map((f) => depuisCentimes(f.montantTTC))))} €`,
+						echeanceLaPlusAncienne:
+							factures
+								.map((f) => f.dateExigibilite ?? f.dateEcheance)
+								.filter((d): d is string => d !== undefined)
+								.sort()[0] ?? null,
+						litigeRenseigne: (creance.faitsLitige ?? []).length > 0,
+						litigieux: litige.litigieux,
+						creancierCommercant: profil?.estCommercant ?? 'unknown',
+						debiteurCommercant: debiteur?.estCommercant ?? 'unknown'
+					},
+					PARAMETRES.conditionsCreanceL126.source,
+					dateLisible
+				)
+			],
 			litige: {
 				litigieux: litige.litigieux,
 				// Les constats du domaine, MOT POUR MOT. Ils portent l'aveu que le
@@ -735,7 +771,7 @@ export const creanceComplete = authedQuery({
 	}
 });
 
-/** Les créances de l'établissement, la plus mûre d'abord. */
+/** Les créances de l'établissement, le plus gros reste dû d'abord. */
 export const listerCreances = authedQuery({
 	args: {},
 	returns: v.array(
@@ -752,21 +788,8 @@ export const listerCreances = authedQuery({
 			 */
 			debiteurId: v.id('debiteurs'),
 			statut: v.string(),
-			/**
-			 * MÛRE, ET PLUS UN POURCENTAGE.
-			 *
-			 * ⚠️ `score` PARTAIT D'ICI ET N'AVAIT PLUS DE SENS À L'ÉCRAN. Une créance
-			 * mûre, c'est « toutes conditions établies et aucun bloquant » — pas un
-			 * score au-dessus d'un seuil (17 septembre 2026). Rendre le pourcentage
-			 * faisait lire un seuil là où il n'y en a plus, et sur une liste il ne
-			 * pouvait rien trancher : deux dossiers à 0,60 n'ont pas le même verdict.
-			 *
-			 * ⚠️ `?? false` ET PAS `?? true` : les créances écrites avant le champ
-			 * n'en portent pas, et une maturité qu'on n'a pas calculée n'est pas
-			 * acquise. Le doute ne profite jamais au produit. C'est la même lecture
-			 * que `surveillance.ts`, mot pour mot, pour que les deux ne divergent pas.
-			 */
-			eligible: v.boolean(),
+			// ⚠️ NI SCORE NI « MÛRE » : dire qu'une créance remplit ses conditions est une
+			// qualification juridique, qui revient au gérant (relecture du 25/09/2026).
 			principalRestantDu: v.int64(),
 			nombreFactures: v.number()
 		})
@@ -793,7 +816,6 @@ export const listerCreances = authedQuery({
 					debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 					debiteurId: creance.debiteurId,
 					statut: creance.statut,
-					eligible: creance.eligible ?? false,
 					principalRestantDu: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
 					nombreFactures: factures.length
 				};
@@ -803,11 +825,9 @@ export const listerCreances = authedQuery({
 		// ⚠️ LE TRI MANQUAIT, ET LE COMMENTAIRE DE CETTE REQUÊTE L'ANNONÇAIT DEPUIS
 		// LE DÉBUT. L'ordre rendu était celui de l'index, c'est-à-dire celui de
 		// l'insertion : la créance la plus ancienne en tête, sans rapport avec ce
-		// qu'on vient chercher. Les mûres d'abord, et à maturité égale le montant
-		// le plus lourd — un ordre qui ne dépend d'aucune horloge et se refait à la
+		// qu'on vient chercher. Le montant le plus lourd d'abord — un ordre qui ne dépend d'aucune horloge et se refait à la
 		// main sur les deux colonnes affichées.
 		return lignes.sort((a, b) => {
-			if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
 			return a.principalRestantDu > b.principalRestantDu
 				? -1
 				: a.principalRestantDu < b.principalRestantDu

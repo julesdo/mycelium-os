@@ -21,7 +21,7 @@ describe('buildNotificationContent', () => {
 			debiteur: 'Fournitures Durand',
 			montant: '31 200,50 €'
 		});
-		expect(result.title).toBe('Une créance est mûre');
+		expect(result.title).toBe('Un dossier à regarder');
 		expect(result.message).toContain('Fournitures Durand');
 		expect(result.message).toContain('31 200,50 €');
 	});

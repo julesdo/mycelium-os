@@ -213,8 +213,8 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 			<p className="text-cladd-3xs leading-relaxed text-cladd-fg-softest">
 				Ces cadres ne sont pas la vraie barre : ils enferment un exemplaire fixe grâce au
 				`transform` de leur scène. La vraie barre et le vrai bouton flottant sont en bas de cet
-				écran, comme sur tous les autres — c’est là que le dégagement du bas se regarde, et pas
-				dans ces cadres.
+				écran, comme sur tous les autres — c’est là que le dégagement du bas se regarde, et pas dans
+				ces cadres.
 			</p>
 		</PageEcran>
 	);

@@ -673,6 +673,14 @@ export const recouvrementTables = {
 		exigible: vEtatCritere,
 		entreCommercants: vEtatCritere,
 		/**
+		 * LES CONDITIONS QUE LE GÉRANT A CONFIRMÉES LUI-MÊME.
+		 *
+		 * ⚠️ UNE VALEUR PRÉ-REMPLIE N'EST PAS UNE RÉPONSE. Le montant et l'échéance
+		 * se déduisent des factures, la qualité de commerçant du registre : l'écran
+		 * les montre « à confirmer » tant que leur clé n'est pas ici.
+		 */
+		conditionsConfirmees: v.optional(v.array(v.string())),
+		/**
 		 * 0 à 1. La SOLIDITÉ PROBATOIRE du dossier, et rien de plus.
 		 *
 		 * ⚠️ IL NE DÉCIDE PLUS DE RIEN. Il a longtemps commandé la maturité de la
@@ -682,6 +690,10 @@ export const recouvrementTables = {
 		 */
 		score: v.optional(v.number()),
 		/**
+		 * ⚠️ PLUS LU PAR AUCUN ÉCRAN NI AUCUNE ALERTE depuis le 25/09/2026 : dire
+		 * qu'une créance remplit ses conditions est une qualification juridique, qui
+		 * revient au gérant. Gardé au schéma parce que des créances le portent.
+		 *
 		 * LA CRÉANCE EST-ELLE MÛRE : toutes conditions établies, aucun bloquant.
 		 *
 		 * ⚠️ STOCKÉ, ET C'EST UNE DÉCISION. Le recomposer à la lecture demanderait

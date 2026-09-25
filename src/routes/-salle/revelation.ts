@@ -293,7 +293,12 @@ function pourDecompte(references: readonly string[]) {
  * ne figurent nulle part dans l'acte qu'il fonderait.
  */
 const CONTROLE_ECARTS_DEMO = controlerDecompte({
-	decompte: decompterCreance(pourDecompte(['FA-2023-0388']), ARRETE_AU_DEMO, CONVENTION, 'PENALITES_DABORD'),
+	decompte: decompterCreance(
+		pourDecompte(['FA-2023-0388']),
+		ARRETE_AU_DEMO,
+		CONVENTION,
+		'PENALITES_DABORD'
+	),
 	facturesConnues: connues(FACTURES_DEMO.map((facture) => facture.reference))
 });
 
@@ -359,7 +364,8 @@ export const ABANDONS_DEMO: AbandonsAffiches = {
 		if (b.montantEnJeu === null) return -1;
 		return a.montantEnJeu > b.montantEnJeu ? -1 : a.montantEnJeu < b.montantEnJeu ? 1 : 0;
 	}),
-	montantAbandonne: enCentimes(CONTROLE_ECARTS_DEMO.montantAbandonne) +
+	montantAbandonne:
+		enCentimes(CONTROLE_ECARTS_DEMO.montantAbandonne) +
 		enCentimes(CONTROLE_INTERETS_DEMO.montantAbandonne),
 	nombreNonChiffrables: [
 		...CONTROLE_ECARTS_DEMO.abandons,

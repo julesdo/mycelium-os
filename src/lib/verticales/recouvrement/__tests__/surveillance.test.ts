@@ -198,40 +198,22 @@ describe('échéances de procédure', () => {
 });
 
 describe('créances mûres et débiteurs qui se dégradent', () => {
-	it('signale une créance dont les conditions sont établies, sans citer de chiffre', () => {
+	it('ne dit jamais qu’une créance est « mûre » : le gérant qualifie, pas le logiciel', () => {
+		// L’événement CREANCE_MURE disait « les quatre conditions sont établies » :
+		// une qualification juridique, retirée le 25/09/2026 (relecture, § 2).
 		const evenements = detecterEvenements(
 			etat({
-				creances: [
-					{
-						reference: 'C-001',
-						total: depuisEuros('30000,00'),
-						eligible: true,
-						statut: 'QUALIFIEE'
-					}
-				]
+				creances: [{ reference: 'C-001', total: depuisEuros('30000,00'), statut: 'QUALIFIEE' }]
 			}),
 			AUJOURDHUI
 		);
-		expect(evenements.map((e) => e.type)).toEqual(['CREANCE_MURE']);
-		expect(versEuros(evenements[0]!.montant!)).toBe('30 000,00');
-
-		// L'explication NOMME ce qui est établi, et ne cite aucun chiffre : elle
-		// portait « atteint le seuil de qualification (0.62 pour un seuil de
-		// 0.75) », une note que le gérant ne savait pas faire monter.
-		expect(evenements[0]!.explication).toContain('la qualité de commerçant des deux parties');
-		expect(evenements[0]!.explication).not.toContain('seuil');
-
-		// Et l'action ne désigne aucune voie de droit : ce serait du conseil
-		// juridique, ligne rouge 3.
-		expect(evenements[0]!.action).not.toContain('procédure');
+		expect(evenements).toEqual([]);
 	});
 
 	it('ne resignale pas une créance déjà engagée', () => {
 		const evenements = detecterEvenements(
 			etat({
-				creances: [
-					{ reference: 'C-001', total: depuisEuros('30000,00'), eligible: true, statut: 'ENGAGEE' }
-				]
+				creances: [{ reference: 'C-001', total: depuisEuros('30000,00'), statut: 'ENGAGEE' }]
 			}),
 			AUJOURDHUI
 		);
@@ -492,7 +474,6 @@ describe('montantIdentifie ne compte pas la même somme plusieurs fois', () => {
 					{
 						reference: 'C-001',
 						total: depuisEuros('10000,00'),
-						eligible: true,
 						statut: 'QUALIFIEE'
 					}
 				],
@@ -508,21 +489,22 @@ describe('montantIdentifie ne compte pas la même somme plusieurs fois', () => {
 			AUJOURDHUI
 		);
 
-		// Les quatre événements existent bien : la détection elle-même n'est pas
-		// en cause, seul le cumul l'est.
-		expect(evenements).toHaveLength(4);
+		// Les trois événements existent bien : la détection elle-même n'est pas
+		// en cause, seul le cumul l'est. (La créance n'en produit plus : le logiciel
+		// ne dit plus qu'elle est « mûre ».)
+		expect(evenements).toHaveLength(3);
 
-		// La somme des quatre montants serait 40 000,00 € — la preuve du défaut,
+		// La somme des trois montants serait 30 000,00 € — la preuve du défaut,
 		// reproduite ici exactement comme l'ancien `montantIdentifie` la calculait
 		// (additionner le montant de chaque événement, sans distinction de type).
 		const montantsBruts = evenements
 			.map((e) => e.montant)
 			.filter((montant): montant is Montant => montant !== null);
 		const sommeDesQuatre = montantsBruts.length > 0 ? additionner(...montantsBruts) : ZERO;
-		expect(versEuros(sommeDesQuatre)).toBe('40 000,00');
+		expect(versEuros(sommeDesQuatre)).toBe('30 000,00');
 
 		// Ce que `montantIdentifie` doit répondre : la facture est l'unité
-		// atomique de ce qui est dû, et elle vaut 10 000 €, pas 40 000 €.
+		// atomique de ce qui est dû, et elle vaut 10 000 €, pas 30 000 €.
 		expect(versEuros(montantIdentifie(evenements))).toBe('10 000,00');
 	});
 });
@@ -957,7 +939,9 @@ describe('la ligne rouge 3, sur TOUS les événements', () => {
 		const prescriptions = evenements.filter((e) => e.type === 'PRESCRIPTION_PROCHE');
 
 		const proche = prescriptions.find((e) => e.reference === 'F-proche');
-		expect(proche!.explication).toMatch(/date limite calculée pour réclamer la facture F-proche tombe le/i);
+		expect(proche!.explication).toMatch(
+			/date limite calculée pour réclamer la facture F-proche tombe le/i
+		);
 		expect(proche!.explication).toMatch(/s’éteint, sauf interruption/);
 
 		// L'autre branche, qui porte l'argent déjà perdu : elle aussi constate.

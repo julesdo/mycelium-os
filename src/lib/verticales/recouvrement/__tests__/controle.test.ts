@@ -30,7 +30,7 @@ function facture(reference: string, montant: string): FacturePourDecompte {
 describe('contrôle de complétude', () => {
 	it('laisse passer un décompte qui couvre toutes les factures du débiteur', () => {
 		const factures = [facture('F-001', '10000,00'), facture('F-002', '5000,00')];
-		const decompte = decompterCreance(factures, '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(factures, '2026-01-01', 'ACT_365', 'PENALITES_DABORD');
 
 		const controle = controlerDecompte({
 			decompte,
@@ -46,7 +46,12 @@ describe('contrôle de complétude', () => {
 	});
 
 	it('signale une facture du débiteur absente du décompte, avec son montant', () => {
-		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(
+			[facture('F-001', '10000,00')],
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
 
 		const controle = controlerDecompte({
 			decompte,
@@ -64,7 +69,12 @@ describe('contrôle de complétude', () => {
 	});
 
 	it('chiffre le total de plusieurs factures écartées', () => {
-		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(
+			[facture('F-001', '10000,00')],
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
 
 		const controle = controlerDecompte({
 			decompte,
@@ -79,7 +89,12 @@ describe('contrôle de complétude', () => {
 	});
 
 	it('signale un paramètre juridique manquant, sans pouvoir le chiffrer', () => {
-		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(
+			[facture('F-001', '10000,00')],
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
 
 		const controle = controlerDecompte({
 			decompte,
@@ -98,7 +113,12 @@ describe('contrôle de complétude', () => {
 	});
 
 	it('ne signale pas un paramètre requis qui est bien validé', () => {
-		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(
+			[facture('F-001', '10000,00')],
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
 
 		const controle = controlerDecompte({
 			decompte,
@@ -123,7 +143,7 @@ describe('contrôle de complétude', () => {
 			],
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		const controle = controlerDecompte({
@@ -138,7 +158,12 @@ describe('contrôle de complétude', () => {
 		// Défense en profondeur : si les périodes détaillées disparaissent, le
 		// montant d'intérêts n'est plus justifiable, et l'acte ne doit pas partir
 		// — même si ce montant se trouve être juste.
-		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(
+			[facture('F-001', '10000,00')],
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
 		const ampute = {
 			...decompte,
 			lignes: [{ ...decompte.lignes[0]!, segments: [] }]
@@ -158,7 +183,12 @@ describe('contrôle de complétude', () => {
 		// sont calculés dans la même boucle. Un abandon sans montant se lit comme
 		// une remarque de forme ; chiffré, il se lit comme ce qu'il est — de
 		// l'argent qui ne figurera pas dans l'acte, donc perdu.
-		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(
+			[facture('F-001', '10000,00')],
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
 		const ligne = decompte.lignes[0]!;
 
 		// Sans aucune période, l'écart vaut la totalité des intérêts annoncés.
@@ -189,7 +219,12 @@ describe('contrôle de complétude', () => {
 
 describe('exigerDecompteComplet — le refus', () => {
 	it('laisse produire l’acte quand tout est couvert', () => {
-		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(
+			[facture('F-001', '10000,00')],
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
 		const controle = controlerDecompte({
 			decompte,
 			facturesConnues: [{ reference: 'F-001', montantExigible: depuisEuros('10000,00') }]
@@ -199,7 +234,12 @@ describe('exigerDecompteComplet — le refus', () => {
 	});
 
 	it('refuse, et nomme dans le message ce qui serait perdu', () => {
-		const decompte = decompterCreance([facture('F-001', '10000,00')], '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const decompte = decompterCreance(
+			[facture('F-001', '10000,00')],
+			'2026-01-01',
+			'ACT_365',
+			'PENALITES_DABORD'
+		);
 		const controle = controlerDecompte({
 			decompte,
 			facturesConnues: [

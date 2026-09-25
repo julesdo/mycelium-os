@@ -1,7 +1,6 @@
 import { ZERO, additionner, versEuros, type Montant } from '../../socle/montants';
 import { joursEntre } from './decompte';
 import { dateLisible, estDateReelle } from './calendrier';
-import { CONDITIONS_LEGALES, LIBELLE_CONDITION } from './qualification';
 import type { SanteDebiteur } from './scoring';
 import { pluriel } from '../../socle/francais';
 
@@ -27,7 +26,6 @@ import { pluriel } from '../../socle/francais';
 
 export type TypeEvenement =
 	| 'FACTURE_ECHUE'
-	| 'CREANCE_MURE'
 	| 'ECHEANCE_PROCEDURE'
 	| 'DEBITEUR_DEGRADE'
 	| 'PRESCRIPTION_PROCHE'
@@ -115,9 +113,8 @@ export interface Evenement {
 	 *
 	 * ⚠️ TROIS TYPES LA PORTENT, ET PAS QUATRE. `FACTURE_ECHUE` (son échéance),
 	 * `PRESCRIPTION_PROCHE` (sa date de prescription) et `ECHEANCE_PROCEDURE`
-	 * (sa date limite) ont une date DANS LA DONNÉE. `CREANCE_MURE`,
-	 * `DEBITEUR_DEGRADE` et `HABITUDE_ROMPUE` n'en ont aucune : une maturité et
-	 * une dégradation sont des états, pas des échéances. Leur en fabriquer une
+	 * (sa date limite) ont une date DANS LA DONNÉE. `DEBITEUR_DEGRADE` et
+	 * `HABITUDE_ROMPUE` n'en ont aucune : une dégradation et une habitude sont des états, pas des échéances. Leur en fabriquer une
 	 * — la date du relevé, par exemple — les ferait entrer dans un tri
 	 * d'échéances où elles n'ont rien à faire, et le tri mentirait.
 	 *
@@ -155,16 +152,6 @@ const ECHELLE_SANTE: Record<SanteDebiteur, number> = {
 	PROCEDURE_COLLECTIVE: 2,
 	RADIEE: 3
 };
-
-/**
- * Les quatre conditions légales, énumérées comme on les lit.
- *
- * Elles viennent de `CONDITIONS_LEGALES` et de `LIBELLE_CONDITION`, jamais d'une
- * recopie : une créance mûre est une créance dont ces quatre-là sont établies, et
- * les nommer ailleurs qu'à leur source ferait diverger le mot de la règle.
- */
-const LIBELLES_CONDITIONS = CONDITIONS_LEGALES.map((condition) => LIBELLE_CONDITION[condition]);
-const CONDITIONS_ENUMEREES = `${LIBELLES_CONDITIONS.slice(0, -1).join(', ')} et ${LIBELLES_CONDITIONS[LIBELLES_CONDITIONS.length - 1]}`;
 
 /** Les deux seules raisons pour lesquelles une prescription n'est pas calculable. */
 export type MotifPrescriptionInconnue = 'AUCUNE_DATE_DE_DEPART' | 'DATE_DE_DEPART_INEXPLOITABLE';
@@ -225,17 +212,6 @@ export interface CreanceSurveillee {
 	 */
 	readonly debiteurId?: string;
 	readonly total: Montant;
-	/**
-	 * Toutes conditions établies et aucun risque bloquant.
-	 *
-	 * ⚠️ UN BOOLÉEN, ET PLUS UN SCORE. La file filtrait sur `score <
-	 * SEUIL_QUALIFICATION`, c'est-à-dire sur un seuil produit que § 2 démontre
-	 * infranchissable sans pièce de fond : la classe `CREANCE_MURE` n'entrait
-	 * jamais. Le critère vient désormais de `qualifier()`, calculé une fois et
-	 * stocké à côté du score, et il n'y a plus qu'UNE définition de « mûre » dans
-	 * le produit.
-	 */
-	readonly eligible: boolean;
 	readonly statut: 'BROUILLON' | 'QUALIFIEE' | 'ENGAGEE' | 'CLOSE';
 }
 
@@ -499,47 +475,10 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 		});
 	}
 
-	// ── Créances dont les quatre conditions sont établies ────────────────────
-	for (const creance of etat.creances) {
-		if (creance.statut !== 'QUALIFIEE') continue;
-		if (!creance.eligible) continue;
-
-		evenements.push({
-			type: 'CREANCE_MURE',
-			reference: creance.reference,
-			montant: creance.total,
-			urgence: 'HAUTE',
-			// UN CONSTAT, ET AUCUN CHIFFRE. La phrase citait « le seuil de
-			// qualification (0.62 pour un seuil de 0.75) », un score que rien à
-			// l'écran n'expliquait et une note que le gérant ne savait pas faire
-			// monter. Elle nomme maintenant ce qui est ÉTABLI — les mêmes quatre
-			// conditions que partout ailleurs, lues dans `LIBELLE_CONDITION`, sans
-			// quoi l'écran et la file diraient la même chose avec deux vocabulaires.
-			explication:
-				`Sur la créance ${creance.reference}, ${CONDITIONS_ENUMEREES} sont établis, et ` +
-				'aucun risque bloquant n’est relevé.',
-			// ⚠️ LIGNE ROUGE 3. Ce champ portait « Examiner les procédures
-			// envisageables pour cette créance. » — un impératif qui désigne des
-			// voies de droit, c'est-à-dire du conseil juridique, en production.
-			//
-			// Ce qui reste est le seul geste que ce logiciel puisse honnêtement
-			// demander : ouvrir un écran et regarder ce qu'il porte. Même traitement
-			// que l'échéance de procédure, quelques lignes plus bas.
-			action: `Ouvrir cette créance : les conditions établies et les pièces qui les soutiennent y sont.`,
-			// ⚠️ AUCUNE `dateDuFait` : une créance mûre est un ÉTAT, pas une
-			// échéance. Lui en fabriquer une la ferait entrer dans un tri de dates
-			// où elle n'a rien à faire. Voir `Evenement.dateDuFait`.
-			...(creance.id === undefined
-				? {}
-				: {
-						cible: {
-							genre: 'CREANCE' as const,
-							id: creance.id,
-							...(creance.debiteurId === undefined ? {} : { debiteurId: creance.debiteurId })
-						}
-					})
-		});
-	}
+	// ⚠️ PLUS D’ÉVÉNEMENT « CRÉANCE MÛRE » depuis le 25/09/2026. Dire qu’une créance
+	// remplit ses conditions est une qualification juridique : elle revient au gérant.
+	// Le logiciel montre ce que dit la loi, ce qu’il y a dans le dossier et ce que le
+	// gérant a répondu ; il ne conclut pas (relecture juridique, § 2).
 
 	// ── Échéances de procédure ───────────────────────────────────────────────
 	for (const dossier of etat.dossiers) {
@@ -792,7 +731,7 @@ export function detecterEvenements(
  * ⚠️ NE SOMME QUE LES FACTURES, JAMAIS LEURS AGRÉGATS. `detecter()` émet cinq
  * types d'événements, mais deux seulement portent une somme réellement
  * distincte : FACTURE_ECHUE et PRESCRIPTION_PROCHE, tous deux au montant d'UNE
- * facture. CREANCE_MURE (le total d'une créance), ECHEANCE_PROCEDURE (le
+ * facture. ECHEANCE_PROCEDURE (le
  * montant en jeu d'un dossier) et DEBITEUR_DEGRADE (l'encours d'un débiteur)
  * ne sont PAS de l'argent supplémentaire : ce sont des VUES AGRÉGÉES de la
  * MÊME monnaie que celle déjà portée par les factures qui les composent — une
@@ -800,12 +739,12 @@ export function detecterEvenements(
  * additionne toutes les factures d'un débiteur. Additionner un agrégat à ses
  * propres composants est un double compte PAR CONSTRUCTION, pas un cas limite :
  * une facture de 10 000 € échue ET proche de prescription ET portée par une
- * créance mûre ET comprise dans l'encours d'un débiteur dégradé produit QUATRE
+ * créance ET comprise dans l'encours d'un débiteur dégradé produit QUATRE
  * événements sur LA MÊME somme, et les additionner ferait passer 10 000 €
  * identifiés à 40 000 € affichés.
  *
  * La facture est l'unité atomique de ce qui est dû : rien de plus petit n'a de
- * sens à additionner, et rien n'est perdu à s'y limiter — une créance mûre ou
+ * sens à additionner, et rien n’est perdu à s’y limiter — une créance ou
  * un dossier en procédure reposent sur des factures échues, qui produisent
  * déjà leur propre événement.
  *

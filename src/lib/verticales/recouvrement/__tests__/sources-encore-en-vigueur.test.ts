@@ -52,7 +52,10 @@ describe('les sources citées sont encore la version en vigueur', () => {
 		const perimees = perimeesAu(aujourdHui());
 
 		expect(
-			perimees.map((p) => `« ${p.cle} » — source : ${p.source} (version relevée valable jusqu’au ${p.sourceValableJusqua})`),
+			perimees.map(
+				(p) =>
+					`« ${p.cle} » — source : ${p.source} (version relevée valable jusqu’au ${p.sourceValableJusqua})`
+			),
 			'Ces paramètres citent une version qui n’est PLUS en vigueur.\n\n' +
 				'Ce n’est pas forcément une valeur fausse : dans le cas le plus fréquent, le texte est ' +
 				'identique et seule la page a changé. Le geste attendu est donc de ROUVRIR la source, ' +

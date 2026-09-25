@@ -8,7 +8,6 @@ import type {
 	VoieAffichee
 } from '../../ui';
 import { MACHINES, etapesDeLaVoie } from '../../lib/verticales/recouvrement/apres-procedure';
-import type { ConditionsDeduites } from '../../lib/verticales/recouvrement/deduction';
 import {
 	PROCEDURES,
 	proceduresEnvisageables,
@@ -147,22 +146,6 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		// de procédure que la ligne rouge 3 interdit.
 		action: 'Ouvrir ce dossier : la date limite et son journal y sont.',
 		cible: { genre: 'CREANCE', id: 'demo-creance' }
-	},
-	{
-		type: 'CREANCE_MURE',
-		reference: 'Fournitures Durand',
-		montant: 3_120_050n,
-		urgence: 'HAUTE',
-		// LA MÊME FORMULATION QUE LE PRODUIT, ici aussi. L'ancienne citait un score
-		// et un seuil qui ne commandent plus rien, et son action désignait des voies
-		// de droit : une capture de démonstration ferait recopier les deux.
-		explication:
-			'Sur la créance Fournitures Durand, le caractère certain, le caractère liquide, le ' +
-			'caractère exigible et la qualité de commerçant des deux parties sont établis, et ' +
-			'aucun risque bloquant n’est relevé.',
-		action:
-			'Ouvrir cette créance : les conditions établies et les pièces qui les soutiennent y sont.',
-		cible: { genre: 'CREANCE', id: 'demo-creance' }
 	}
 	// ⚠️ L'ÉVÉNEMENT `FACTURE_ECHUE` DE FA-2026-0311 A ÉTÉ RETIRÉ D'ICI. Le
 	// détecteur ne l'émet plus dès qu'une rupture couvre la même facture — la
@@ -252,14 +235,9 @@ export type VoieDeLaCreance = VoieAffichee & { readonly suivie: boolean };
  * `blocages: []`, et cachait ainsi le seul blocage réel de l'injonction : ses
  * mentions obligatoires, que le référentiel ne fournit pas encore.
  */
-export function voieDeLaCreance(
-	procedure: Procedure,
-	conditions: ConditionsDeduites
-): VoieDeLaCreance {
+export function voieDeLaCreance(procedure: Procedure): VoieDeLaCreance {
 	const clesEnvisageables = new Set(
-		proceduresEnvisageables({ ...conditions, piecesFournies: [] }).map(
-			(envisageable) => envisageable.cle
-		)
+		proceduresEnvisageables().map((envisageable) => envisageable.cle)
 	);
 
 	return {
@@ -293,14 +271,7 @@ export function voieDeLaCreance(
  * sur la ligne, trois façons d'échouer — donc celle qui met la feuille à
  * l'épreuve sur les quatre largeurs de référence.
  */
-export const VOIE_DEMO: VoieAffichee = voieDeLaCreance(PROCEDURES['injonction-de-payer'], {
-	// Les quatre conditions acquises : la rangée de `DemoVoie` dit la voie
-	// « Envisageable », et le domaine ne la rend envisageable qu'ainsi.
-	certaine: 'ok',
-	liquide: 'ok',
-	exigible: 'ok',
-	entreCommercants: 'ok'
-});
+export const VOIE_DEMO: VoieAffichee = voieDeLaCreance(PROCEDURES['injonction-de-payer']);
 
 /**
  * LE CARNET DE LA SALLE — deux fiches, deux rôles, et « Moi-même » choisi.

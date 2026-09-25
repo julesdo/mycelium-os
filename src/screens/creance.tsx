@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Chip } from '@cladd-ui/react';
 import { AlertTriangleIcon, Building2Icon, EyeOffIcon, FileDownIcon, InfoIcon } from 'lucide-react';
 import type { FicheParametre } from '../lib/verticales/recouvrement/referentiel';
 import {
@@ -50,6 +49,8 @@ import {
 	type NiveauAffiche,
 	type OptionTypePiece,
 	type OrdreImputationAffichee,
+	type LigneConditionAffichee,
+	TableauConditions,
 	type PieceAffichee,
 	type QuestionLitige,
 	type RepertoireAffiche,
@@ -137,12 +138,6 @@ export interface DecompteArreteAffiche {
 	readonly total: bigint;
 }
 
-/** Une condition légale que le logiciel n'a pas pu déduire, à confirmer par le gérant. */
-export interface ConditionAConfirmer {
-	readonly condition: string;
-	readonly libelle: string;
-}
-
 /** Un risque de la créance, tel que le score le constate. */
 export interface RisqueAffiche {
 	readonly type: string;
@@ -188,8 +183,6 @@ export interface CreanceOuverte {
 	 */
 	readonly debiteurEmail?: string;
 	readonly santeDebiteur: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
-	/** Toutes conditions établies, aucun risque bloquant. Un état, jamais une note. */
-	readonly eligible: boolean;
 	readonly nombreFactures: number;
 	readonly principalRestantDu: bigint;
 
@@ -230,7 +223,8 @@ export interface CreanceOuverte {
 		readonly constats: readonly string[];
 		readonly questions: readonly QuestionLitige[];
 	};
-	readonly conditions: readonly ConditionAConfirmer[];
+	/** Ce que dit la loi, ce qu'il y a dans le dossier, ce que le gérant a répondu. */
+	readonly lignesConditions: readonly LigneConditionAffichee[];
 	readonly onDeclarerFait: (cle: string, reponse: ReponseFait) => void;
 	readonly onRepondreCondition: (condition: string, reponse: 'ok' | 'ko') => void;
 	/** Le gérant choisit l'ordre d'imputation de ses paiements, pour ce dossier. */
@@ -292,9 +286,12 @@ export interface CreanceOuverte {
 /** Ce que le gérant seul peut encore dire : les faits du litige et les conditions à confirmer. */
 function aConfirmer(creance: {
 	readonly litige: { readonly questions: readonly unknown[] };
-	readonly conditions: readonly unknown[];
+	readonly lignesConditions: readonly LigneConditionAffichee[];
 }): number {
-	return creance.litige.questions.length + creance.conditions.length;
+	return (
+		creance.litige.questions.length +
+		creance.lignesConditions.filter((l) => l.repondable && l.etatReponse !== 'CONFIRMEE').length
+	);
 }
 
 /**
@@ -456,20 +453,6 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 			</ListeAnalyses>
 
 			<CarteListe>
-				<LigneValeur
-					libelle="État"
-					valeur={
-						/*
-						  ⚠️ UNE PUCE NEUTRE, JAMAIS VERTE. Un vert sur « Mûre pour une
-						  procédure » ferait lire un seuil là où on vient précisément d'en
-						  retirer un : une créance mûre, c'est toutes conditions établies
-						  et aucun bloquant — un état, pas une note.
-						*/
-						<Chip size="md" color="neutral">
-							{creance.eligible ? 'Mûre pour une procédure' : 'Pas encore mûre'}
-						</Chip>
-					}
-				/>
 				<LigneValeur
 					libelle="Échéance la plus ancienne"
 					valeur={
@@ -806,51 +789,12 @@ function SectionLitige({ creance }: { creance: CreanceOuverte }) {
 				onRepondre={creance.onDeclarerFait}
 			/>
 
-			{creance.conditions.length === 0 ? null : (
-				<>
-					<p className="text-cladd-2xs font-semibold">Ce que le logiciel ne peut pas déduire</p>
-					{creance.conditions.map((question) => (
-						<div key={question.condition} className="flex flex-col gap-cladd-3xs">
-							<p className="text-cladd-sm leading-snug text-balance">{question.libelle}</p>
-							{/*
-							  ⚠️ « OUI » ET « NON » SONT IDENTIQUES, DÉLIBÉRÉMENT, et c'est une
-							  correction relevée au navigateur. « Oui » était une pilule
-							  PRINCIPALE et « Non » une secondaire : sur une question de FAIT
-							  dont la réponse décide si une procédure s'ouvre, le contraste
-							  poussait vers le oui. Le questionnaire de litige, deux blocs plus
-							  haut, rend déjà ses trois réponses à l'identique pour cette
-							  raison exacte ; deux conventions opposées sur le même écran
-							  faisaient lire une recommandation là où il n'y a qu'une question.
-
-							  Ce qui reste : l'écran n'a plus qu'UNE action principale, « Arrêter
-							  un décompte ». Deux pilules de même poids, et il n'y a plus
-							  d'action principale du tout.
-
-							  ⚠️ ET CE SONT DEUX CIBLES ISOLÉES, séparées par un vide : elles
-							  doivent tenir le plancher tactile dans LES DEUX dimensions. Un
-							  libellé de trois lettres ne remplit que ses rembourrages, soit
-							  43,9 px de large mesurés pour 56 de haut.
-							*/}
-							<div className="flex flex-wrap gap-cladd-3xs">
-								<BoutonSecondaire
-									className="min-w-cladd-md flex-1"
-									disabled={creance.enCours}
-									onClick={() => creance.onRepondreCondition(question.condition, 'ok')}
-								>
-									Oui
-								</BoutonSecondaire>
-								<BoutonSecondaire
-									className="min-w-cladd-md flex-1"
-									disabled={creance.enCours}
-									onClick={() => creance.onRepondreCondition(question.condition, 'ko')}
-								>
-									Non
-								</BoutonSecondaire>
-							</div>
-						</div>
-					))}
-				</>
-			)}
+			<p className="text-cladd-2xs font-semibold">Ce que dit la loi, en face de votre dossier</p>
+			<TableauConditions
+				lignes={creance.lignesConditions}
+				enCours={creance.enCours}
+				onRepondre={creance.onRepondreCondition}
+			/>
 		</SectionDepliable>
 	);
 }
@@ -872,7 +816,7 @@ function SectionRisques({ creance }: { creance: CreanceOuverte }) {
 
 	return (
 		<SectionEcran
-			titre="Ce qui affaiblit ce dossier"
+			titre="Ce que le logiciel a relevé"
 			legende={`${creance.risques.length} relevé${pluriel(creance.risques.length)}`}
 		>
 			{creance.risques.map((risque) => (
@@ -882,8 +826,8 @@ function SectionRisques({ creance }: { creance: CreanceOuverte }) {
 						<p className="text-cladd-sm leading-snug">{risque.description}</p>
 						{risque.gravite === 'BLOQUANTE' ? (
 							<p className="text-cladd-2xs text-cladd-fg-soft">
-								Ce constat ferme les procédures que ce logiciel évalue : elles se déroulent toutes
-								sans débat contradictoire.
+								À savoir : l’injonction de payer et la procédure du commissaire de justice se
+								déroulent sans débat, et une contestation y met fin.
 							</p>
 						) : null}
 					</div>

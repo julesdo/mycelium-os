@@ -72,7 +72,11 @@ describe('ce que la pyramide constate', () => {
 
 	it('ne porte jamais de jugement sur le dossier', () => {
 		// Le test qui porte toute la règle du module.
-		for (const jeu of [pieces(), pieces('BON_DE_COMMANDE'), pieces('BON_DE_COMMANDE', 'BON_DE_LIVRAISON', 'CGV', 'MISE_EN_DEMEURE')]) {
+		for (const jeu of [
+			pieces(),
+			pieces('BON_DE_COMMANDE'),
+			pieces('BON_DE_COMMANDE', 'BON_DE_LIVRAISON', 'CGV', 'MISE_EN_DEMEURE')
+		]) {
 			const p = pyramideDePreuves(jeu);
 			const texte = [p.constat, ...p.etages.map((e) => e.etat)].join(' ');
 			expect(texte).not.toMatch(

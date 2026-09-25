@@ -68,19 +68,15 @@ describe('qualité de commerçant — déductible des deux parties', () => {
 	});
 
 	it('est absente dès qu’une partie ne l’est pas', () => {
-		expect(
-			deduireConditions({ ...BASE, debiteurCommercant: 'ko' }).entreCommercants
-		).toBe('ko');
-		expect(
-			deduireConditions({ ...BASE, creancierCommercant: 'ko' }).entreCommercants
-		).toBe('ko');
+		expect(deduireConditions({ ...BASE, debiteurCommercant: 'ko' }).entreCommercants).toBe('ko');
+		expect(deduireConditions({ ...BASE, creancierCommercant: 'ko' }).entreCommercants).toBe('ko');
 	});
 
 	it('reste indéterminée dès qu’une partie est indéterminée', () => {
 		// Le doute d'un côté suffit : deux inconnues ne font pas une certitude.
-		expect(
-			deduireConditions({ ...BASE, debiteurCommercant: 'unknown' }).entreCommercants
-		).toBe('unknown');
+		expect(deduireConditions({ ...BASE, debiteurCommercant: 'unknown' }).entreCommercants).toBe(
+			'unknown'
+		);
 	});
 
 	it('laisse le « ko » l’emporter sur le « unknown »', () => {

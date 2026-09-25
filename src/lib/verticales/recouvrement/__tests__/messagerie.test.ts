@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	adresseMessagerie,
-	tientDansLaMessagerie,
-	PLAFOND_MAILTO
-} from '../messagerie';
+import { adresseMessagerie, tientDansLaMessagerie, PLAFOND_MAILTO } from '../messagerie';
 
 /**
  * CE QUI CASSE UNE RELANCE OUVERTE DANS UNE MESSAGERIE.
@@ -57,9 +53,9 @@ describe('adresseMessagerie', () => {
 
 		// Une chaîne vide ou blanche vaut absence : un destinataire fait d'espaces
 		// ouvrirait un brouillon dont le « À : » a l'air rempli.
-		expect(adresseMessagerie({ destinataire: '   ', objet: 'O', corps: 'C' }).sansDestinataire).toBe(
-			true
-		);
+		expect(
+			adresseMessagerie({ destinataire: '   ', objet: 'O', corps: 'C' }).sansDestinataire
+		).toBe(true);
 		expect(
 			adresseMessagerie({ destinataire: 'a@b.fr', objet: 'O', corps: 'C' }).sansDestinataire
 		).toBe(false);

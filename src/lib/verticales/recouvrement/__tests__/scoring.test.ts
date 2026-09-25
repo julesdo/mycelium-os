@@ -106,7 +106,7 @@ describe('le doute ne profite jamais au produit', () => {
 		//   réellement unknown. » (§ 5)
 		const q = qualifier(elements({ exigible: 'unknown', entreCommercants: 'unknown' }));
 		expect(q.questions).toHaveLength(2);
-		expect(q.questions.join(' ')).toMatch(/exigib/i);
+		expect(q.questions.join(' ')).toMatch(/date de paiement/i);
 		expect(q.questions.join(' ')).toMatch(/commerçant/i);
 	});
 

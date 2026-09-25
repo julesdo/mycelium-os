@@ -157,7 +157,6 @@ export interface EvenementBouge {
 
 const MOTIF_EVENEMENT: Readonly<Record<string, string>> = {
 	FACTURE_ECHUE: 'Facture échue',
-	CREANCE_MURE: 'Créance mûre',
 	ECHEANCE_PROCEDURE: 'Échéance de procédure',
 	DEBITEUR_DEGRADE: 'Situation dégradée',
 	PRESCRIPTION_PROCHE: 'Prescription proche',

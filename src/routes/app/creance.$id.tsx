@@ -503,7 +503,6 @@ function PageCreance() {
 		debiteurId,
 		...(creance.debiteurEmail === undefined ? {} : { debiteurEmail: creance.debiteurEmail }),
 		santeDebiteur: creance.santeDebiteur,
-		eligible: creance.eligible,
 		nombreFactures: creance.factures.length,
 		principalRestantDu: creance.principalRestantDu,
 
@@ -552,7 +551,7 @@ function PageCreance() {
 				};
 			})
 		},
-		conditions: creance.questions,
+		lignesConditions: creance.lignesConditions,
 		onDeclarerFait: (cle, reponse) =>
 			void avec(() => declarerFait({ creanceId, cle: cle as 'CONTESTATION_ECRITE', reponse })),
 		onRepondreCondition: (condition, reponse) =>

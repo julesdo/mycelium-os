@@ -62,16 +62,152 @@ export const LIBELLE_CONDITION: Record<ConditionLegale, string> = {
 	entreCommercants: 'la qualité de commerçant des deux parties'
 };
 
-export interface Evaluation {
-	readonly eligible: boolean;
-	/** Les conditions expressément absentes. Elles ferment la procédure. */
-	readonly bloquants: readonly ConditionLegale[];
-	/** Les conditions indéterminées. Elles se lèvent en posant la question. */
-	readonly aDeterminer: readonly ConditionLegale[];
+/**
+ * LE TABLEAU À TROIS COLONNES — ce que dit la loi, ce qu'il y a dans votre
+ * dossier, ce que vous avez répondu.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ IL REMPLACE UN VERDICT, ET IL N'EN REND AUCUN
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'écran disait « mûre pour une procédure » et la surveillance annonçait « une
+ * créance est mûre ». Dire d'une créance qu'elle remplit ses conditions, c'est
+ * qualifier des faits au regard du droit : une consultation juridique, que ce
+ * logiciel ne donne pas (relecture du 25/09/2026, § 2). Il lit, il calcule et il
+ * montre ; le gérant qualifie, choisit et signe.
+ *
+ * Aucune ligne ne conclut donc. La première colonne lit le texte, la deuxième
+ * dit ce que le logiciel a trouvé dans les factures et les réponses, la troisième
+ * rend la réponse du gérant — ou dit qu'elle manque, ou qu'elle a été
+ * pré-remplie et attend sa confirmation.
+ */
+
+/** Le nom d'une condition, en mots de tous les jours. Le terme juridique vient en second. */
+export const NOM_CONDITION: Record<ConditionLegale, string> = {
+	certaine: 'La somme est due',
+	liquide: 'Le montant est chiffré',
+	exigible: 'La date de paiement est passée',
+	entreCommercants: 'La facture est entre commerçants'
+};
+
+/** Le terme du texte, affiché en second, pour qui voudrait le retrouver. */
+export const TERME_JURIDIQUE: Record<ConditionLegale, string> = {
+	certaine: 'créance certaine',
+	liquide: 'créance liquide',
+	exigible: 'créance exigible',
+	entreCommercants: 'facturation entre commerçants'
+};
+
+/**
+ * Ce que dit la loi, condition par condition : une lecture du texte cité par
+ * `PARAMETRES.conditionsCreanceL126`, en mots simples. Une information sur
+ * l'état du droit, jamais une conclusion sur le dossier.
+ */
+export const CE_QUE_DIT_LA_LOI: Record<ConditionLegale, string> = {
+	certaine: 'Votre client doit vous devoir cette somme sans discussion possible.',
+	liquide: 'Le montant réclamé doit être connu et chiffré en euros.',
+	exigible: 'La date à laquelle il fallait payer doit être passée.',
+	entreCommercants: 'La facture doit avoir été émise entre commerçants.'
+};
+
+/** Ce que le logiciel a trouvé, pour remplir la colonne du milieu. */
+export interface FaitsDuDossier {
+	readonly aujourdHui: string;
+	readonly nombreFactures: number;
+	/** Le total des factures, déjà écrit en euros. `null` quand aucune n'est chiffrée. */
+	readonly totalFactures: string | null;
+	/** L'échéance la plus ancienne des factures, en ISO. */
+	readonly echeanceLaPlusAncienne: string | null;
+	/** Le gérant a-t-il répondu au moins une fois aux questions sur une contestation ? */
+	readonly litigeRenseigne: boolean;
+	readonly litigieux: boolean;
+	readonly creancierCommercant: EtatCritere;
+	readonly debiteurCommercant: EtatCritere;
+}
+
+export type EtatReponse = 'CONFIRMEE' | 'A_CONFIRMER' | 'SANS_REPONSE';
+
+export interface LigneCondition {
+	readonly condition: ConditionLegale;
+	readonly nom: string;
+	readonly termeJuridique: string;
+	readonly ceQueDitLaLoi: string;
+	readonly source: string;
+	readonly dansLeDossier: string;
+	/** La valeur retenue : celle du gérant, ou celle pré-remplie qu'il n'a pas encore confirmée. */
+	readonly reponse: EtatCritere;
+	readonly etatReponse: EtatReponse;
 	/**
-	 * Des CONSTATS, jamais des recommandations (§ 0.4 du brief). « Cette créance
-	 * remplit les conditions X, Y, Z » est autorisé ; « vous devriez engager
-	 * telle procédure » ne l'est pas — ce serait du conseil juridique.
+	 * `false` pour la somme due : elle se répond par les questions sur une éventuelle
+	 * contestation, des faits que le gérant seul connaît, jamais par un « oui » global.
 	 */
-	readonly constats: readonly string[];
+	readonly repondable: boolean;
+}
+
+function commercant(etat: EtatCritere): string {
+	return etat === 'ok' ? 'commerçant' : etat === 'ko' ? 'pas commerçant' : 'pas déterminé';
+}
+
+function dansLeDossier(
+	condition: ConditionLegale,
+	faits: FaitsDuDossier,
+	dateLisible: (iso: string) => string
+): string {
+	switch (condition) {
+		case 'certaine':
+			if (!faits.litigeRenseigne) return 'Vous n’avez pas encore dit si votre client conteste.';
+			return faits.litigieux
+				? 'Vous avez indiqué que votre client conteste, ou qu’un fait le laisse penser.'
+				: 'Vous n’avez signalé aucune contestation.';
+		case 'liquide':
+			return faits.totalFactures === null
+				? 'Aucune facture chiffrée dans ce dossier.'
+				: `${faits.nombreFactures} facture${faits.nombreFactures > 1 ? 's' : ''}, ${faits.totalFactures} au total.`;
+		case 'exigible':
+			if (faits.echeanceLaPlusAncienne === null) {
+				return 'Aucune date de paiement lisible sur les factures.';
+			}
+			return faits.echeanceLaPlusAncienne < faits.aujourdHui
+				? `Date de paiement dépassée depuis le ${dateLisible(faits.echeanceLaPlusAncienne)}.`
+				: `Date de paiement : le ${dateLisible(faits.echeanceLaPlusAncienne)}, pas encore passée.`;
+		case 'entreCommercants':
+			return (
+				`Vous : ${commercant(faits.creancierCommercant)}. ` +
+				`Votre client : ${commercant(faits.debiteurCommercant)}, d’après le registre.`
+			);
+	}
+}
+
+/**
+ * Les quatre lignes du tableau, dans l'ordre où elles se lisent.
+ *
+ * ⚠️ UNE VALEUR PRÉ-REMPLIE N'EST PAS UNE RÉPONSE. Le logiciel déduit le montant
+ * et l'échéance des factures, la qualité de commerçant du registre : il le dit
+ * « à confirmer » tant que le gérant ne l'a pas confirmé, et `confirmees` est la
+ * seule preuve qu'il l'a fait.
+ */
+export function lignesConditions(
+	etats: Pick<CreanceQualifiee, ConditionLegale>,
+	confirmees: readonly string[],
+	faits: FaitsDuDossier,
+	source: string,
+	dateLisible: (iso: string) => string
+): readonly LigneCondition[] {
+	return CONDITIONS_LEGALES.map((condition) => {
+		const reponse = etats[condition];
+		// La somme due se confirme par les réponses sur la contestation.
+		const confirmee =
+			condition === 'certaine' ? faits.litigeRenseigne : confirmees.includes(condition);
+		return {
+			condition,
+			nom: NOM_CONDITION[condition],
+			termeJuridique: TERME_JURIDIQUE[condition],
+			ceQueDitLaLoi: CE_QUE_DIT_LA_LOI[condition],
+			source,
+			dansLeDossier: dansLeDossier(condition, faits, dateLisible),
+			reponse,
+			etatReponse: reponse === 'unknown' ? 'SANS_REPONSE' : confirmee ? 'CONFIRMEE' : 'A_CONFIRMER',
+			repondable: condition !== 'certaine'
+		};
+	});
 }

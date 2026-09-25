@@ -6,6 +6,8 @@ import { pluriel } from '../socle/francais';
 // ─── Notification type shared validator ───────────────────────────────────────
 const notificationTypeValidator = v.union(
 	v.literal('IMPORT_TERMINE'),
+	// ⚠️ PLUS JAMAIS ÉMISE depuis le 25/09/2026 : le logiciel ne dit plus qu'une
+	// créance est « mûre ». Gardée pour les notifications déjà en base.
 	v.literal('CREANCE_MURE'),
 	v.literal('ECHEANCE_PROCHE'),
 	v.literal('PRESCRIPTION_PROCHE'),
@@ -38,8 +40,8 @@ export function buildNotificationContent(
 			};
 		case 'CREANCE_MURE':
 			return {
-				title: 'Une créance est mûre',
-				message: `${data.debiteur} — ${data.montant} restant dû.`
+				title: 'Un dossier à regarder',
+				message: `${data.debiteur} : ${data.montant} restant dû.`
 			};
 		case 'ECHEANCE_PROCHE':
 			return {

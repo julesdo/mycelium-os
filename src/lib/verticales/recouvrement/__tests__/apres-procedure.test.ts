@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-	MACHINES,
-	etatApres,
-	suivreProcedure,
-	type EvenementSurvenu
-} from '../apres-procedure';
+import { MACHINES, etatApres, suivreProcedure, type EvenementSurvenu } from '../apres-procedure';
 import { PARAMETRES, exiger } from '../parametres';
 
 /**
@@ -127,10 +122,11 @@ describe('les délais qui courent dans l’état', () => {
 		// dépôt de la requête avancerait la date limite de tout le temps
 		// d'instruction — et ferait annoncer une caducité qui n'existe pas, ou
 		// pire, la manquerait dans l'autre sens si l'instruction est rapide.
-		const suivi = suivreProcedure('injonction-de-payer', [
-			evenement('requete-deposee', '2025-11-02'),
-			evenement('ordonnance-rendue', '2026-01-10')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'injonction-de-payer',
+			[evenement('requete-deposee', '2025-11-02'), evenement('ordonnance-rendue', '2026-01-10')],
+			ENGAGEE_LE
+		);
 
 		const signification = suivi.echeances.find((e) => e.cle === 'signification');
 		expect(signification).toBeDefined();
@@ -158,10 +154,7 @@ describe('les délais qui courent dans l’état', () => {
 	it('applique trois mois à une ordonnance rendue après la bascule du 1er septembre 2026', () => {
 		const suivi = suivreProcedure(
 			'injonction-de-payer',
-			[
-				evenement('requete-deposee', '2026-08-20'),
-				evenement('ordonnance-rendue', '2026-09-10')
-			],
+			[evenement('requete-deposee', '2026-08-20'), evenement('ordonnance-rendue', '2026-09-10')],
 			ENGAGEE_LE
 		);
 
@@ -199,10 +192,14 @@ describe('les délais qui courent dans l’état', () => {
 	});
 
 	it('ne fait plus courir la signification une fois signifiée', () => {
-		const suivi = suivreProcedure('injonction-de-payer', [
-			evenement('ordonnance-rendue', '2026-01-10'),
-			evenement('ordonnance-signifiee', '2026-02-10')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'injonction-de-payer',
+			[
+				evenement('ordonnance-rendue', '2026-01-10'),
+				evenement('ordonnance-signifiee', '2026-02-10')
+			],
+			ENGAGEE_LE
+		);
 
 		expect(suivi.echeances.find((e) => e.cle === 'signification')).toBeUndefined();
 	});
@@ -210,9 +207,11 @@ describe('les délais qui courent dans l’état', () => {
 	it('additionne le mois de contestation et les huit jours du procès-verbal', () => {
 		// Les deux délais S'AJOUTENT : le procès-verbal se dresse huit jours après
 		// l'EXPIRATION du mois, pas huit jours après la signification.
-		const suivi = suivreProcedure('l126-creances-commerciales', [
-			evenement('commandement-signifie', '2026-01-15')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'l126-creances-commerciales',
+			[evenement('commandement-signifie', '2026-01-15')],
+			ENGAGEE_LE
+		);
 
 		expect(suivi.echeances.find((e) => e.cle === 'fin-contestation')!.dateLimite).toBe(
 			'2026-02-15'
@@ -223,19 +222,25 @@ describe('les délais qui courent dans l’état', () => {
 	});
 
 	it('rend les échéances dans l’ordre où elles tombent', () => {
-		const suivi = suivreProcedure('l126-creances-commerciales', [
-			evenement('commandement-signifie', '2026-01-15')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'l126-creances-commerciales',
+			[evenement('commandement-signifie', '2026-01-15')],
+			ENGAGEE_LE
+		);
 
 		const dates = suivi.echeances.map((e) => e.dateLimite);
 		expect([...dates].sort()).toEqual(dates);
 	});
 
 	it('ne fait courir aucun délai dans un état terminal', () => {
-		const suivi = suivreProcedure('l126-creances-commerciales', [
-			evenement('commandement-signifie', '2026-01-15'),
-			evenement('contestation-recue', '2026-01-28')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'l126-creances-commerciales',
+			[
+				evenement('commandement-signifie', '2026-01-15'),
+				evenement('contestation-recue', '2026-01-28')
+			],
+			ENGAGEE_LE
+		);
 
 		expect(suivi.echeances).toEqual([]);
 		expect(suivi.terminal).toBe(true);
@@ -248,10 +253,14 @@ describe('ce que la machine ne sait pas', () => {
 		// court après la signification ; sa durée n'est pas au référentiel. Ne rien
 		// montrer laisserait croire que rien ne court — et un gérant qui croit sa
 		// procédure surveillée ne la surveille pas lui-même.
-		const suivi = suivreProcedure('injonction-de-payer', [
-			evenement('ordonnance-rendue', '2026-01-10'),
-			evenement('ordonnance-signifiee', '2026-02-10')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'injonction-de-payer',
+			[
+				evenement('ordonnance-rendue', '2026-01-10'),
+				evenement('ordonnance-signifiee', '2026-02-10')
+			],
+			ENGAGEE_LE
+		);
 
 		expect(suivi.anglesMorts.length).toBeGreaterThan(0);
 		expect(suivi.anglesMorts.join(' ')).toMatch(/opposition/i);
@@ -261,10 +270,14 @@ describe('ce que la machine ne sait pas', () => {
 		// Un angle mort est une phrase, jamais une échéance datée. Une date
 		// inventée est plus dangereuse qu'une absence, parce qu'elle a l'air
 		// vérifiable — c'est la règle 0.1 du projet, appliquée au calendrier.
-		const suivi = suivreProcedure('injonction-de-payer', [
-			evenement('ordonnance-rendue', '2026-01-10'),
-			evenement('ordonnance-signifiee', '2026-02-10')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'injonction-de-payer',
+			[
+				evenement('ordonnance-rendue', '2026-01-10'),
+				evenement('ordonnance-signifiee', '2026-02-10')
+			],
+			ENGAGEE_LE
+		);
 
 		for (const echeance of suivi.echeances) {
 			expect(echeance.dateLimite).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -279,9 +292,11 @@ describe('ce que la machine ne sait pas', () => {
 
 describe('ce qu’on peut enregistrer ensuite', () => {
 	it('rend les événements qui sortent de l’état courant, et eux seuls', () => {
-		const suivi = suivreProcedure('injonction-de-payer', [
-			evenement('ordonnance-rendue', '2026-01-10')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'injonction-de-payer',
+			[evenement('ordonnance-rendue', '2026-01-10')],
+			ENGAGEE_LE
+		);
 
 		const cles = suivi.suites.map((s) => s.cle);
 		expect(cles).toContain('ordonnance-signifiee');
@@ -291,11 +306,15 @@ describe('ce qu’on peut enregistrer ensuite', () => {
 	});
 
 	it('ne propose plus rien dans un état terminal', () => {
-		const suivi = suivreProcedure('injonction-de-payer', [
-			evenement('ordonnance-rendue', '2026-01-10'),
-			evenement('ordonnance-signifiee', '2026-02-10'),
-			evenement('opposition-formee', '2026-02-20')
-		], ENGAGEE_LE);
+		const suivi = suivreProcedure(
+			'injonction-de-payer',
+			[
+				evenement('ordonnance-rendue', '2026-01-10'),
+				evenement('ordonnance-signifiee', '2026-02-10'),
+				evenement('opposition-formee', '2026-02-20')
+			],
+			ENGAGEE_LE
+		);
 
 		expect(suivi.suites).toEqual([]);
 		expect(suivi.terminal).toBe(true);

@@ -17,7 +17,10 @@ export function tauxLisible(taux: { numerateur: bigint; denominateur: bigint }):
 	let reste = centieme % taux.denominateur;
 
 	let decimales = '';
-	while (decimales.length < DECIMALES_MAXIMUM && (reste !== 0n || decimales.length < DECIMALES_MINIMUM)) {
+	while (
+		decimales.length < DECIMALES_MAXIMUM &&
+		(reste !== 0n || decimales.length < DECIMALES_MINIMUM)
+	) {
 		reste *= 10n;
 		decimales += (reste / taux.denominateur).toString();
 		reste %= taux.denominateur;

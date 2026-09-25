@@ -53,7 +53,7 @@ describe('décompte d’une facture', () => {
 	it('calcule une année pleine à taux fixe', () => {
 		// 10 000,00 € à 10 % sur 365 jours d'une base de 365 :
 		//   1 000 000 c × 10 × 365 / (100 × 365) = 100 000 c = 1 000,00 €
-		const d = decompterFacture(facture(), '2026-01-01', 'ACT_365','PENALITES_DABORD');
+		const d = decompterFacture(facture(), '2026-01-01', 'ACT_365', 'PENALITES_DABORD');
 
 		expect(versEuros(d.principalRestantDu)).toBe('10 000,00');
 		expect(versEuros(d.interets)).toBe('1 000,00');
@@ -80,15 +80,15 @@ describe('décompte d’une facture', () => {
 			}),
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.principalRestantDu)).toBe('6 495,89');
 		expect(versEuros(d.interets)).toBe('327,46');
 		expect(versEuros(d.total)).toBe('6 863,35');
-		expect(d.imputations.map((i) => [i.date, versEuros(i.surInterets), versEuros(i.surPrincipal)])).toEqual([
-			['2025-07-01', '495,89', '3 504,11']
-		]);
+		expect(
+			d.imputations.map((i) => [i.date, versEuros(i.surInterets), versEuros(i.surPrincipal)])
+		).toEqual([['2025-07-01', '495,89', '3 504,11']]);
 	});
 
 	it('laisse dues les pénalités d’un débiteur qui règle le principal en retard', () => {
@@ -104,7 +104,7 @@ describe('décompte d’une facture', () => {
 			}),
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.principalRestantDu)).toBe('161,64');
@@ -124,7 +124,7 @@ describe('décompte d’une facture', () => {
 			}),
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		expect(versEuros(avecAvoir.interets)).toBe('798,36');
@@ -146,7 +146,7 @@ describe('décompte d’une facture', () => {
 			}),
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.interets)).toBe('1 504,11');
@@ -162,7 +162,7 @@ describe('décompte d’une facture', () => {
 			}),
 			'2025-01-01',
 			'ACT_ACT',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.interets)).toBe('1 000,00');
@@ -183,7 +183,7 @@ describe('décompte d’une facture', () => {
 			}),
 			'2025-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		expect(versEuros(d.interets)).toBe('1 002,74');
@@ -192,7 +192,7 @@ describe('décompte d’une facture', () => {
 	it('ne produit ni intérêt ni indemnité avant la date d’exigibilité', () => {
 		// Pas de retard, donc pas de frais de recouvrement : les 40 € n'étaient
 		// dus qu'à une facture en retard, et le calcul les ajoutait quand même.
-		const d = decompterFacture(facture(), '2024-06-01', 'ACT_365','PENALITES_DABORD');
+		const d = decompterFacture(facture(), '2024-06-01', 'ACT_365', 'PENALITES_DABORD');
 		expect(versEuros(d.interets)).toBe('0,00');
 		expect(versEuros(d.indemniteForfaitaire)).toBe('0,00');
 		expect(versEuros(d.total)).toBe('10 000,00');
@@ -205,7 +205,7 @@ describe('décompte d’une facture', () => {
 			}),
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 		expect(versEuros(d.principalRestantDu)).toBe('0,00');
 		expect(versEuros(d.interets)).toBe('0,00');
@@ -222,8 +222,8 @@ describe('décompte d’une facture', () => {
 				{ debut: '2025-09-01', taux: VINGT_POUR_CENT }
 			]
 		});
-		const a = decompterFacture(f, '2026-01-01', 'ACT_ACT','PENALITES_DABORD');
-		const b = decompterFacture(f, '2026-01-01', 'ACT_ACT','PENALITES_DABORD');
+		const a = decompterFacture(f, '2026-01-01', 'ACT_ACT', 'PENALITES_DABORD');
+		const b = decompterFacture(f, '2026-01-01', 'ACT_ACT', 'PENALITES_DABORD');
 		expect(versEuros(a.total)).toBe(versEuros(b.total));
 		expect(a.segments.length).toBe(b.segments.length);
 	});
@@ -241,7 +241,7 @@ describe('traçabilité — chaque euro doit pouvoir être expliqué', () => {
 			}),
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		// Trois ruptures : l'exigibilité, le paiement, le changement de taux.
@@ -262,7 +262,7 @@ describe('traçabilité — chaque euro doit pouvoir être expliqué', () => {
 			}),
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		const sommeSegments = d.segments.reduce((total, s) => total + s.interets, 0n);
@@ -280,7 +280,7 @@ describe('traçabilité — chaque euro doit pouvoir être expliqué', () => {
 			}),
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		const surPrincipal = d.imputations.reduce((total, i) => total + i.surPrincipal, 0n);
@@ -298,7 +298,7 @@ describe('décompte d’une créance — plusieurs factures', () => {
 			[facture({ reference: 'F-001' }), facture({ reference: 'F-002' })],
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		expect(versEuros(creance.principalRestantDu)).toBe('20 000,00');
@@ -320,7 +320,7 @@ describe('décompte d’une créance — plusieurs factures', () => {
 			],
 			'2026-01-01',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 
 		expect(versEuros(creance.interets)).toBe('3 000,00');
@@ -335,7 +335,7 @@ describe('décompte d’une créance — plusieurs factures', () => {
 				facture({ taux: [{ debut: '2025-06-01', taux: DIX_POUR_CENT }] }),
 				'2026-01-01',
 				'ACT_365',
-			'PENALITES_DABORD'
+				'PENALITES_DABORD'
 			)
 		).toThrowError(/taux/i);
 	});
@@ -401,7 +401,11 @@ describe('l’ordre d’imputation — un choix du gérant', () => {
 	it('applique l’ordre confirmé, sans chiffrer d’autre variante', () => {
 		const d = decompterCreance([AVEC_PAIEMENT], '2026-01-01', 'ACT_365', 'PENALITES_DABORD');
 		expect(versEuros(d.total)).toBe('6 863,35');
-		expect(d.imputation).toEqual({ ordre: 'PENALITES_DABORD', confirme: true, totalAutreOrdre: null });
+		expect(d.imputation).toEqual({
+			ordre: 'PENALITES_DABORD',
+			confirme: true,
+			totalAutreOrdre: null
+		});
 	});
 
 	it('ne demande rien quand les deux ordres donnent le même total', () => {

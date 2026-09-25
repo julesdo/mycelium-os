@@ -158,7 +158,8 @@ const EVENEMENTS: EvenementAffiche[] = [
 			'La date limite calculée pour réclamer la facture FA-2021-0087 est passée depuis le ' +
 			'14 août 2026. Ce calcul ne suit pas les interruptions : un paiement partiel ou une ' +
 			'reconnaissance de votre client peuvent l’avoir repoussée.',
-		action: 'Ouvrir la facture FA-2021-0087 : le calcul de sa date limite y est détaillé, avec ses hypothèses.'
+		action:
+			'Ouvrir la facture FA-2021-0087 : le calcul de sa date limite y est détaillé, avec ses hypothèses.'
 	},
 	{
 		type: 'ECHEANCE_PROCEDURE',
@@ -172,18 +173,6 @@ const EVENEMENTS: EvenementAffiche[] = [
 			'Signification de l’ordonnance : il reste 9 jours avant le 2 octobre. Passée cette ' +
 			'date, le droit est perdu.',
 		action: 'Ouvrir ce dossier : la date limite et son journal y sont.'
-	},
-	{
-		type: 'CREANCE_MURE',
-		reference: 'Fournitures Durand',
-		montant: 3_120_050n,
-		urgence: 'HAUTE',
-		explication:
-			'Sur la créance Fournitures Durand, le caractère certain, le caractère liquide, le ' +
-			'caractère exigible et la qualité de commerçant des deux parties sont établis, et ' +
-			'aucun risque bloquant n’est relevé.',
-		action:
-			'Ouvrir cette créance : les conditions établies et les pièces qui les soutiennent y sont.'
 	},
 	{
 		type: 'FACTURE_ECHUE',
@@ -210,7 +199,7 @@ const EVENEMENTS: EvenementAffiche[] = [
  */
 // La page publique montre le calcul, pas le choix de l’ordre d’imputation : « comme
 // vous l’avez choisi » ne s’adresserait à aucun visiteur.
-const { imputation: _choixDuGerant, ...DECOMPTE_CALCULE } = decompterCreance(
+const CALCUL = decompterCreance(
 	[
 		{
 			reference: 'FA-2026-118',
@@ -224,7 +213,15 @@ const { imputation: _choixDuGerant, ...DECOMPTE_CALCULE } = decompterCreance(
 	'ACT_365',
 	'PENALITES_DABORD'
 );
-const DECOMPTE: DecompteAffiche = DECOMPTE_CALCULE;
+const DECOMPTE: DecompteAffiche = {
+	lignes: CALCUL.lignes,
+	principalRestantDu: CALCUL.principalRestantDu,
+	interets: CALCUL.interets,
+	indemniteForfaitaire: CALCUL.indemniteForfaitaire,
+	total: CALCUL.total,
+	arreteAu: CALCUL.arreteAu,
+	convention: CALCUL.convention
+};
 
 export function Etapes() {
 	return (
@@ -237,8 +234,7 @@ export function Etapes() {
 
 			<div className="flex flex-col gap-cladd-2xs">
 				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
-					Quatre gestes,{' '}
-					<span className="text-craie-claire">un seul vous demande du temps.</span>
+					Quatre gestes, <span className="text-craie-claire">un seul vous demande du temps.</span>
 				</h2>
 				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
 					Les écrans ci-dessous sont ceux du logiciel, remplis de données de démonstration. Le
@@ -409,8 +405,12 @@ function Etape({
 		// comme un saut. Seul l'écran bouge ; le texte reste immobile, parce que
 		// ce qui se lit ne bouge pas.
 		<ScenePointeur className="apparait grid items-start gap-cladd-xs lg:grid-cols-12 lg:gap-cladd-2xl">
-			<div className={cn('flex max-w-2xl flex-col gap-cladd-2xs lg:col-span-5 lg:max-w-none',
-					inverse && 'lg:order-2')}>
+			<div
+				className={cn(
+					'flex max-w-2xl flex-col gap-cladd-2xs lg:col-span-5 lg:max-w-none',
+					inverse && 'lg:order-2'
+				)}
+			>
 				<div className="flex flex-col gap-cladd-3xs">
 					{/*
 					  ⚠️ LE NUMÉRO PASSE DE DIX PIXELS À CENT-VINGT-HUIT, ET C'EST LA
@@ -454,12 +454,7 @@ function Etape({
 				</div>
 				<Capacites items={capacites} />
 			</div>
-			<div
-				className={cn(
-					'suit-pointeur-loin min-w-0 lg:col-span-7',
-					inverse && 'lg:order-1'
-				)}
-			>
+			<div className={cn('suit-pointeur-loin min-w-0 lg:col-span-7', inverse && 'lg:order-1')}>
 				{children}
 			</div>
 		</ScenePointeur>
