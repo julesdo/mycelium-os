@@ -686,6 +686,10 @@ function PageCreance() {
 			envois: (envoisDuDossier?.envois ?? []).map((e) => ({
 				id: e._id,
 				titre: e.titre,
+				modele:
+					e.modele === 'RELANCE_OFFICIELLE' || e.modele === 'ACCORD_ECHEANCIER'
+						? e.modele
+						: ('AUTRE' as const),
 				destinataire: e.destinataire,
 				canal: e.canal,
 				objet: e.objet,
@@ -732,8 +736,10 @@ function PageCreance() {
 						setErreurCourrier(messageDuRefus(e));
 					}
 				}),
-			onDeclarerParti: (envoiId, partiLe) =>
-				void avec(() => declarerPartiCourrier({ envoiId: envoiId as Id<'envois'>, partiLe })),
+			onDeclarerParti: (envoiId, partiLe, avecRappel) =>
+				void avec(() =>
+					declarerPartiCourrier({ envoiId: envoiId as Id<'envois'>, partiLe, avecRappel })
+				),
 			onAbandonner: (envoiId) =>
 				void avec(() => abandonnerCourrier({ envoiId: envoiId as Id<'envois'> })),
 			onTelechargerPdf: (envoi) => void telechargerLeCourrier(envoi),

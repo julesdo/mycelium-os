@@ -5,7 +5,7 @@ import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg, requireOrgAdmin } from '../lib/auth';
 import { enCentimes } from '../../socle/montants';
 import { sha256 } from '../../socle/empreinte';
-import { estDateReelle } from '../../verticales/recouvrement/calendrier';
+import { ajouterJours, estDateReelle } from '../../verticales/recouvrement/calendrier';
 import { libelleEvenement } from '../../verticales/recouvrement/apres-procedure';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
 import {
@@ -18,7 +18,10 @@ import type {
 	DebiteurCourrier,
 	DecompteCourrier
 } from '../../verticales/recouvrement/gabarits/commun';
-import { composerLettreRelance } from '../../verticales/recouvrement/gabarits/lettre-relance-officielle';
+import {
+	MARGE_ACHEMINEMENT_JOURS,
+	composerLettreRelance
+} from '../../verticales/recouvrement/gabarits/lettre-relance-officielle';
 import { composerAccordEcheancier } from '../../verticales/recouvrement/gabarits/accord-echeancier';
 import {
 	composerDeclaration,
@@ -534,9 +537,22 @@ export const valider = authedMutation({
 
 /** Le gérant déclare la date du départ : c'est elle qui compte. */
 export const declarerParti = authedMutation({
-	args: { envoiId: v.id('envois'), partiLe: v.string() },
+	args: {
+		envoiId: v.id('envois'),
+		partiLe: v.string(),
+		/**
+		 * Poser un rappel au jour où le délai de la lettre expire.
+		 *
+		 * ⚠️ DEMANDÉ, JAMAIS SUPPOSÉ. Écrire dans le suivi du gérant sans qu'il
+		 * l'ait coché serait une note qu'il n'a pas prise, et il la retrouverait
+		 * dans sa file sans savoir d'où elle vient. L'écran le propose coché — le
+		 * geste qui suit un envoi est toujours d'attendre, et attendre sans date
+		 * est précisément ce qui fait perdre les dossiers.
+		 */
+		avecRappel: v.optional(v.boolean())
+	},
 	returns: v.null(),
-	handler: async (ctx, { envoiId, partiLe }): Promise<null> => {
+	handler: async (ctx, { envoiId, partiLe, avecRappel }): Promise<null> => {
 		const { organizationId, user } = await getUserOrg(ctx);
 		const envoi = await ctx.db.get(envoiId);
 		if (envoi === null || envoi.organizationId !== organizationId)
@@ -547,6 +563,36 @@ export const declarerParti = authedMutation({
 			throw new ConvexError(`« ${partiLe} » n’est pas une date de départ possible.`);
 		}
 		await ctx.db.patch(envoiId, { etat: 'PARTI', partiLe, partiDeclarePar: user._id });
+
+		/*
+		  ⚠️ LE RAPPEL EST POSÉ SUR LE DÉLAI DE LA LETTRE, PAS SUR UN NOMBRE ROND.
+		  La lettre dit « au plus tard le X » ; le jour où l'on veut savoir si
+		  quelque chose est arrivé est celui-là, pas « dans quinze jours ». Le
+		  délai vit dans le choix figé avec le texte, ce qui le rend exact même si
+		  le réglage de l'établissement a changé depuis.
+
+		  ⚠️ ET CE N'EST PAS UNE RELANCE PROGRAMMÉE. Rien ne partira ce jour-là :
+		  le logiciel remonte le dossier dans la file, et le gérant décide. Envoyer
+		  à sa place, même sur son instruction préalable, serait procéder au
+		  recouvrement POUR LE COMPTE D'AUTRUI (décret n° 96-1112, article 1er,
+		  qui vise cette activité « même à titre accessoire ») — et l'article 4
+		  imposerait alors à la lettre de nommer le logiciel comme agent de
+		  recouvrement, ce que la ligne rouge n° 1 interdit.
+		*/
+		if (avecRappel === true) {
+			const choix = JSON.parse(envoi.choix) as ChoixCourrier;
+			if (choix.modele === 'RELANCE_OFFICIELLE') {
+				await ctx.db.insert('suiviDossier', {
+					organizationId,
+					creanceId: envoi.creanceId,
+					genre: 'RAPPEL',
+					texte: `Le délai de votre lettre du ${partiLe} expire. Regarder si un règlement est arrivé.`,
+					rappelLe: ajouterJours(partiLe, choix.delaiJours + MARGE_ACHEMINEMENT_JOURS),
+					auteurUserId: user._id,
+					ecritLe: Date.now()
+				});
+			}
+		}
 		return null;
 	}
 });

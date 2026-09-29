@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Chip, Input, Segmented, SegmentedButton, Surface } from '@cladd-ui/react';
+import { Checkbox, Chip, Input, Segmented, SegmentedButton, Surface } from '@cladd-ui/react';
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
@@ -101,6 +101,14 @@ export type ApercuAffiche =
 
 export interface EnvoiAffiche {
 	readonly id: string;
+	/**
+	 * Le modèle dont il est sorti.
+	 *
+	 * ⚠️ PAS SEULEMENT SON TITRE. Seule une lettre de relance porte un délai, donc
+	 * seule elle peut proposer un rappel au jour où ce délai expire. Le déduire du
+	 * titre marcherait jusqu'au jour où un titre changerait.
+	 */
+	readonly modele: 'RELANCE_OFFICIELLE' | 'ACCORD_ECHEANCIER' | 'AUTRE';
 	readonly titre: string;
 	readonly destinataire: string;
 	readonly canal: 'IMPRIMER_RECOMMANDE' | 'IMPRIMER_SIMPLE' | 'MESSAGERIE';
@@ -143,7 +151,7 @@ export interface CourriersDuDossier {
 	readonly onChoisir: (choix: ChoixCourrierAffiche | null) => void;
 	readonly onPreparer: (choix: ChoixCourrierAffiche) => void;
 	readonly onValider: (envoiId: string) => void;
-	readonly onDeclarerParti: (envoiId: string, partiLe: string) => void;
+	readonly onDeclarerParti: (envoiId: string, partiLe: string, avecRappel: boolean) => void;
 	readonly onAbandonner: (envoiId: string) => void;
 	readonly onTelechargerPdf: (envoi: EnvoiAffiche) => void;
 	readonly onTelechargerAnnexe: (envoi: EnvoiAffiche) => void;
@@ -690,12 +698,14 @@ function Envoi({
 	aujourdHui: string;
 	enCours: boolean;
 	onValider: () => void;
-	onDeclarerParti: (partiLe: string) => void;
+	onDeclarerParti: (partiLe: string, avecRappel: boolean) => void;
 	onAbandonner: () => void;
 	onTelechargerPdf: () => void;
 	onTelechargerAnnexe: () => void;
 }) {
 	const [partiLe, setPartiLe] = useState(aujourdHui);
+	/** Coché d'office : voir la case, plus bas. Il se décoche. */
+	const [avecRappel, setAvecRappel] = useState(true);
 	const [texteOuvert, setTexteOuvert] = useState(envoi.etat === 'A_VALIDER');
 	const [copie, setCopie] = useState(false);
 	const mailto = `mailto:?subject=${encodeURIComponent(envoi.objet)}&body=${encodeURIComponent(envoi.corps)}`;
@@ -788,11 +798,30 @@ function Envoi({
 					<p className="text-cladd-xs">
 						Une fois envoyé, dites-le ici : la date du départ est celle qui compte.
 					</p>
+					{/*
+					  ⚠️ LE RAPPEL EST PROPOSÉ COCHÉ, ET IL EST DEMANDÉ. Le geste qui suit
+					  un envoi est toujours d'attendre, et attendre sans date est ce qui
+					  fait perdre les dossiers. Mais une note que le gérant n'a pas prise
+					  le surprendrait dans sa file sans qu'il sache d'où elle vient :
+					  la case se décoche.
+
+					  ⚠️ ET CE N'EST PAS UNE RELANCE PROGRAMMÉE. Rien ne partira ce
+					  jour-là : le dossier remonte, et c'est lui qui décide.
+					*/}
+					{envoi.modele === 'RELANCE_OFFICIELLE' ? (
+						<label className="flex items-start gap-cladd-3xs">
+							<Checkbox as="span" checked={avecRappel} onChange={() => setAvecRappel(!avecRappel)} />
+							<span className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+								Me le rappeler le jour où le délai de cette lettre expire. Rien ne partira ce
+								jour-là : le dossier remontera dans votre file.
+							</span>
+						</label>
+					) : null}
 					<div className="flex flex-wrap items-end gap-cladd-3xs">
 						<Input size="lg" type="date" value={partiLe} onChange={setPartiLe} />
 						<BoutonSecondaire
 							disabled={enCours || partiLe === ''}
-							onClick={() => onDeclarerParti(partiLe)}
+							onClick={() => onDeclarerParti(partiLe, avecRappel)}
 						>
 							Je l’ai envoyé ce jour-là
 						</BoutonSecondaire>
@@ -830,7 +859,9 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 						aujourdHui={courriers.aujourdHui}
 						enCours={courriers.enCours}
 						onValider={() => courriers.onValider(envoi.id)}
-						onDeclarerParti={(partiLe) => courriers.onDeclarerParti(envoi.id, partiLe)}
+						onDeclarerParti={(partiLe, avecRappel) =>
+							courriers.onDeclarerParti(envoi.id, partiLe, avecRappel)
+						}
 						onAbandonner={() => courriers.onAbandonner(envoi.id)}
 						onTelechargerPdf={() => courriers.onTelechargerPdf(envoi)}
 						onTelechargerAnnexe={() => courriers.onTelechargerAnnexe(envoi)}

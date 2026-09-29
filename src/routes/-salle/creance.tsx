@@ -697,6 +697,7 @@ function creanceDemo({
 				? [
 						{
 							id: 'demo-envoi',
+							modele: 'RELANCE_OFFICIELLE' as const,
 							titre: COURRIER_DEMO.titre,
 							destinataire: COURRIER_DEMO.destinataire,
 							canal: COURRIER_DEMO.canal,
@@ -705,6 +706,29 @@ function creanceDemo({
 							resume: COURRIER_DEMO.resume,
 							etat: 'A_VALIDER' as const,
 							prepareLe: AUJOURD_HUI_DEMO,
+							annexeDisponible: true
+						},
+						/*
+						  ⚠️ UN SECOND COURRIER, VALIDÉ, ET C'EST LUI QU'ON VIENT REGARDER.
+						  Le bloc « je l'ai envoyé ce jour-là » — avec sa case « me le
+						  rappeler le jour où le délai expire » — ne se rend QUE sur un
+						  courrier validé. Sans ce cas, la salle ne montrait jamais l'état
+						  dans lequel le gérant passe le plus de temps : la lettre est
+						  signée, elle part, et il faut dire quand.
+						*/
+						{
+							id: 'demo-envoi-valide',
+							modele: 'RELANCE_OFFICIELLE' as const,
+							titre: COURRIER_DEMO.titre,
+							destinataire: COURRIER_DEMO.destinataire,
+							canal: COURRIER_DEMO.canal,
+							objet: COURRIER_DEMO.objet,
+							corps: COURRIER_DEMO.corps,
+							resume: COURRIER_DEMO.resume,
+							etat: 'VALIDE' as const,
+							prepareLe: '2026-08-28',
+							valideLe: '2026-08-29',
+							empreinte: 'b1946ac92492d2347c6235b4d2611184',
 							annexeDisponible: true
 						}
 					]
