@@ -7,9 +7,11 @@
 
 ---
 
-> **Suite donnée le 29 septembre 2026.** Les chantiers F, B, C, D et E ont été livrés en
-> production le jour même (commits `cb7a9d2` à `62b3b9f`). Le § 6 porte ce qui a été tranché,
-> sources à l'appui. Le chantier A reste bloqué sur trois comptes à ouvrir.
+> **Suite donnée les 29 et 30 septembre 2026.** Les chantiers F, B, C, D et E ont été livrés en
+> production le 29 (commits `cb7a9d2` à `62b3b9f`). **La page où le client paie** — le levier
+> nommé au § 6.2 — a été livrée le 30 (`4057796`), après correction d'un défaut qui la bloquait :
+> aucun IBAN ne pouvait être enregistré (`d2be9be`). Le chantier A reste bloqué sur trois comptes
+> à ouvrir.
 
 ## 0. La réponse courte
 
@@ -260,7 +262,7 @@ nouveau hors du chantier page dossier.
 | **Actions groupées** | 221 clics par import (mesuré §F2) | Une matinée devient dix minutes | Faible | Conforme |
 | **Note, promesse de paiement, échange consigné, rappel** | Le carnet et le tableur tenus à côté | L'application devient le lieu du travail | Faible | Conforme |
 | **Frise du dossier** (« ce qui s'est passé, et quand ») | Rechercher dans ses courriels | On sait où on en est en trois secondes | Faible — le journal existe déjà en base | Conforme |
-| **Page de paiement du client** | Retaper un RIB au téléphone, envoyer le décompte en pièce jointe | Le client voit ce qu'il doit et vire en deux gestes | Moyenne | **À faire vérifier** — voir §6 |
+| ~~**Page de paiement du client**~~ **livrée le 30/09** | Retaper un RIB au téléphone, envoyer le décompte en pièce jointe | Le client voit ce qu'il doit et vire en deux gestes | — | Conforme, vérifié auprès de l'ACPR |
 | **Relance de niveau 1 programmée** | Se souvenir de relancer à J+8 | Le premier rappel part sans qu'on y pense | Moyenne | À cadrer : c'est lui qui valide, une fois |
 | **Tableau de bord dirigeant** : DSO, encours par âge (0-30 / 30-60 / 60-90 / 90+), taux de récupération | Reconstruire le calcul dans un tableur pour la banque ou l'expert-comptable | Le chiffre qu'on montre à son banquier | Faible | Conforme |
 | **Écriture comptable des pénalités** | Ressaisir l'écriture chez le comptable | Ce qui est calculé se comptabilise | Faible | Conforme |

@@ -39,12 +39,19 @@ explicable période par période.
    ce qui rentre. *(Ce qui reste permis, vérifié auprès de l'ACPR le 29/09/2026 : TRANSMETTRE une
    information de paiement — afficher l'IBAN du créancier, un montant, une référence, un QR de
    virement européen. Un service de paiement suppose d'EXÉCUTER l'opération ou d'encaisser pour un
-   tiers ; montrer où payer n'en est pas un, et ne demande aucun agrément.)*
+   tiers ; montrer où payer n'en est pas un, et ne demande aucun agrément. C'est ce que fait
+   `/p/<jeton>`, livrée le 30/09/2026 : le client valide le virement dans SA banque.)*
 3. **Le produit montre ce que dit la loi, ce qu’il y a dans le dossier et ce que le gérant a
    répondu.** Il ne dit jamais qu’une condition est remplie, ni qu’il faudrait engager une
    procédure : ce serait une consultation juridique (relecture du 25/09/2026). Le logiciel lit,
    calcule et montre ; le gérant qualifie, choisit et signe. Deux tests le tiennent :
    `aucun-verdict.test.ts` et `lexique.test.ts`.
+
+**Trois surfaces partent vers un tiers, et chacune a sa barrière.** Le corps d'un courrier
+(`gabarits/`, tenu par `relance.test.ts`), le décompte en PDF (`ui/courrier-pdf.ts`, qui vide ses
+métadonnées d'auteur) et la page où le client paie (`/p/<jeton>`, tenue par
+`page-de-paiement.test.ts`). Aucune ne nomme ce logiciel, aucune ne menace d'une procédure, et
+aucune ne fait remonter quoi que ce soit du débiteur.
 
 Et un mot interdit : **« garantie »**. On ne garantit aucun recouvrement. On **mesure**, on
 **documente**, on **alerte**. La décision d'agir reste celle du client.
