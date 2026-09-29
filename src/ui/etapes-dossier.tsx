@@ -121,31 +121,6 @@ export function EtapeEnCours({
 	);
 }
 
-/** Le fil des étapes : passées avec leur date, à venir en gris. */
-export function FilDesEtapes({ lecture }: { lecture: LectureEtapesAffichee }) {
-	return (
-		<ol className="flex flex-col gap-cladd-3xs">
-			{lecture.etapes.map((etape) => (
-				<li key={etape.cle} className="flex items-start gap-cladd-3xs">
-					<Disque etat={etape.etat} />
-					<div className="flex min-w-0 flex-col">
-						<p
-							className={cn(
-								'text-cladd-xs',
-								etape.etat === 'A_VENIR' ? 'text-cladd-fg-softest' : 'text-cladd-fg'
-							)}
-						>
-							{etape.titre}
-						</p>
-						{etape.detail === null ? null : (
-							<p className="text-cladd-2xs text-cladd-fg-softer">{etape.detail}</p>
-						)}
-					</div>
-				</li>
-			))}
-		</ol>
-	);
-}
 
 /**
  * DEUX COLONNES À PARTIR DE 1024 PX : où j'en suis à gauche, ce que contient le

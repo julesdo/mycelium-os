@@ -14,6 +14,13 @@ import { Chip, Segmented, SegmentedButton, Surface } from '@cladd-ui/react';
  * signe. Aucune ligne ne conclut donc, et aucune couleur de seuil n'est portée :
  * une réponse « oui » n'est pas un seuil franchi.
  *
+ * ⚠️ LA SOURCE EST CITÉE UNE FOIS, EN PIED DE TABLEAU, PAS QUATRE FOIS. Les
+ * quatre conditions viennent du MÊME article : le répéter sous chaque ligne
+ * ajoutait trois fois trente mots à un écran qui en fait déjà onze sur un
+ * téléphone (audit du 29/09/2026, F4). Une source par ligne reste rendue quand
+ * les lignes n'ont pas la même — le jour où un second texte entrera au
+ * référentiel, le tableau le dira sans qu'on y pense.
+ *
  * ⚠️ AUCUN BOUTON N'EST ACTIF SUR UNE VALEUR PRÉ-REMPLIE. Le montant et la date
  * se déduisent des factures ; les montrer pré-sélectionnés se lirait comme la
  * réponse attendue. Seule une réponse confirmée allume son segment.
@@ -55,6 +62,15 @@ export function TableauConditions({
 	enCours: boolean;
 	onRepondre: (condition: string, reponse: 'ok' | 'ko') => void;
 }) {
+	/*
+	  ⚠️ COMPARÉ SUR LA VALEUR, PAS SUR LE NOMBRE DE LIGNES. Deux lignes qui
+	  citent le même texte n'ont qu'une source ; trois lignes dont une diffère en
+	  ont deux, et chacune doit alors porter la sienne. Un booléen « on cite en
+	  bas » écrit à la main se tromperait au premier ajout.
+	*/
+	const sources = new Set(lignes.map((ligne) => ligne.source));
+	const sourceCommune = sources.size === 1 ? [...sources][0] : null;
+
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
 			{lignes.map((ligne) => (
@@ -70,11 +86,20 @@ export function TableauConditions({
 						<span className="text-cladd-2xs text-cladd-fg-softer">« {ligne.termeJuridique} »</span>
 					</div>
 
-					<div className="grid gap-cladd-3xs md:grid-cols-3">
-						<Colonne titre="Ce que dit la loi">
-							<p className="text-cladd-xs leading-snug">{ligne.ceQueDitLaLoi}</p>
-							<p className="text-cladd-2xs text-cladd-fg-softest">{ligne.source}</p>
-						</Colonne>
+					{/*
+					  ⚠️ CE QUE DIT LA LOI EST EN TÊTE, PAS EN COLONNE — depuis le
+					  29/09/2026. Sa colonne portait un intitulé et une marge pour un
+					  texte d'une ligne, et coûtait 80 px par condition sur un téléphone,
+					  soit 320 px sur un tableau qui en compte quatre. Il reste EN FACE du
+					  dossier, en haut de la même carte : c'est la promesse du lot 2, et
+					  elle tient mieux en deux colonnes qu'en trois écrasées.
+					*/}
+					<p className="text-cladd-xs leading-snug text-cladd-fg-soft">{ligne.ceQueDitLaLoi}</p>
+					{sourceCommune === null ? (
+						<p className="text-cladd-2xs text-cladd-fg-softest">{ligne.source}</p>
+					) : null}
+
+					<div className="grid gap-cladd-3xs md:grid-cols-2">
 						<Colonne titre="Dans votre dossier">
 							<p className="text-cladd-xs leading-snug">{ligne.dansLeDossier}</p>
 						</Colonne>
@@ -116,6 +141,12 @@ export function TableauConditions({
 					</div>
 				</Surface>
 			))}
+
+			{sourceCommune === null ? null : (
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softest">
+					Ces {lignes.length} conditions viennent du même texte : {sourceCommune}
+				</p>
+			)}
 		</div>
 	);
 }

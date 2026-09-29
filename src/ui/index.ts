@@ -25,7 +25,6 @@ export {
 export {
 	DeuxColonnesDossier,
 	EtapeEnCours,
-	FilDesEtapes,
 	FriseDossier,
 	QuestionsPreecrites,
 	type EtapeDossierAffichee,

@@ -60,7 +60,6 @@ import {
 	TableauConditions,
 	DeuxColonnesDossier,
 	EtapeEnCours,
-	FilDesEtapes,
 	FriseDossier,
 	QuestionsPreecrites,
 	type PieceAffichee,
@@ -338,10 +337,23 @@ function aConfirmer(creance: {
  * qui BLOQUE, puisque sans ces réponses aucune créance ne franchit le seuil de
  * qualification.
  */
+/**
+ * LA SECTION OUVERTE D'EMBLÉE — UNE SEULE.
+ *
+ * ⚠️ IL Y EN AVAIT DEUX, ET ELLES FONT 3 700 PX À ELLES DEUX sur un téléphone :
+ * le décompte décomposé et le tableau des conditions. Ouvertes ensemble, elles
+ * poussaient tout le reste de la page — les courriers, les voies, les
+ * documents — sous quatre écrans de défilement (audit du 29/09/2026, F4).
+ *
+ * ⚠️ ET C'EST CELLE QUI DEMANDE QUELQUE CHOSE QUI S'OUVRE. Quand des conditions
+ * attendent une réponse, c'est le travail du jour ; sinon, c'est le décompte,
+ * qui répond à « combien il me doit ». Jamais les deux : la seconde serait lue
+ * par personne et coûterait la page entière.
+ */
 export function sectionsParDefaut(
 	creance: Parameters<typeof aConfirmer>[0]
 ): readonly SectionCreance[] {
-	return aConfirmer(creance) > 0 ? ['decompte', 'litige'] : ['decompte'];
+	return aConfirmer(creance) > 0 ? ['litige'] : ['decompte'];
 }
 
 export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) {
@@ -454,7 +466,14 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 									onPoser={pret.onPoserQuestion}
 								/>
 								<SituationsDossier situations={pret.situations} />
-								<FilDesEtapes lecture={pret.etapes} />
+								{/*
+								  ⚠️ LE FIL DES ÉTAPES A ÉTÉ RETIRÉ LE 29/09/2026. Il énumérait
+								  « Prêt · On lui écrit · Le tribunal, si besoin · Réglé » avec
+								  leur détail — c'est-à-dire, mot pour mot, ce que la frise du
+								  haut montre déjà, et ce que le bloc « Maintenant » dit en
+								  phrases juste au-dessus. Trois fois la même chose sur le même
+								  écran, 150 px de plus sur un téléphone.
+								*/}
 								<SectionsDepliables
 									ouvertes={ouvertes.filter((cle) => SECTIONS_GAUCHE.includes(cle))}
 									onOuvertesChange={(liste) => changer(SECTIONS_GAUCHE, liste)}

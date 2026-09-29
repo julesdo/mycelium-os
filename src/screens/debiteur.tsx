@@ -470,8 +470,20 @@ function CorpsDebiteur({
 				) : null}
 
 				{factures.length > 0 && aRegler.length === 0 ? (
-					<p className="text-cladd-xs text-cladd-fg-soft">
-						Toutes ses factures sont réglées.
+					<p className="text-cladd-xs text-cladd-fg-soft">Toutes ses factures sont réglées.</p>
+				) : null}
+
+				{/*
+				  ⚠️ DIT UNE FOIS, EN TÊTE, PAS SOUS CHAQUE LIGNE. Cette phrase était
+				  répétée à l'identique sur CHAQUE facture — cinq fois trente mots sur
+				  la page d'un client qui en a cinq (audit du 29/09/2026, F4).
+				  L'honnêteté du produit ne demande pas qu'on répète l'avertissement :
+				  elle demande qu'il soit dit, à sa place, et retrouvable.
+				*/}
+				{aRegler.some((facture) => facture.exigibiliteDeduite) ? (
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+						La date à laquelle le paiement devenait exigible est déduite de l’échéance de
+						chaque facture — à confirmer si vos conditions contractuelles disent autre chose.
 					</p>
 				) : null}
 
@@ -513,12 +525,6 @@ function CorpsDebiteur({
 									</span>
 								) : null}
 
-								{facture.exigibiliteDeduite ? (
-									<span className="text-cladd-2xs text-cladd-fg-softest">
-										Exigibilité déduite de l’échéance — à confirmer si vos conditions contractuelles
-										disent autre chose.
-									</span>
-								) : null}
 
 								<span className="flex flex-wrap items-center gap-1.5">
 									{facture.dansUneCreance ? (

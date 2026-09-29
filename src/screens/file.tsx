@@ -17,7 +17,9 @@ import {
 	PliDeLaFile,
 	PorteDeTransition,
 	RangeeFile,
+	SectionDepliable,
 	SectionEcran,
+	SectionsDepliables,
 	SourceDeRangees,
 	Veilleur,
 	ZoneDepot,
@@ -473,6 +475,8 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	const [depotOuvert, setDepotOuvert] = useState(false);
 	/** Le bandeau d'annonce, refermé d'un geste. Il ne porte aucun chiffre : voir `annonce`. */
 	const [annonceFermee, setAnnonceFermee] = useState(false);
+	/** Le pli des limites du logiciel, fermé au premier rendu. Voir `CeQueLeLogicielSuppose`. */
+	const [limitesOuvertes, setLimitesOuvertes] = useState<readonly string[]>([]);
 	/**
 	 * LES GROUPES QUE LE GÉRANT A REPLIÉS LUI-MÊME.
 	 *
@@ -648,7 +652,12 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						<Veilleur travaux={travaux} />
 					</SourceDeRangees>
 
-					<CeQueLeLogicielSuppose hypotheses={hypotheses} anglesMorts={anglesMorts} />
+					<CeQueLeLogicielSuppose
+						hypotheses={hypotheses}
+						anglesMorts={anglesMorts}
+						ouvertes={limitesOuvertes}
+						onOuvertesChange={setLimitesOuvertes}
+					/>
 
 					<PliDeLaFile faits={repliees.map((r) => r.pli)} />
 
@@ -895,52 +904,87 @@ function Rangee({ rangee }: { rangee: RangeeGroupee }) {
  * disparaissent pendant qu'on les lisait. C'est-à-dire qu'elles ne se lisaient
  * pas. Elles sont maintenant en bas de l'écran, à plat, dans le même défilement.
  *
- * ⚠️ ET ELLES RESTENT DEUX BLOCS. Une hypothèse se LÈVE — préciser le secteur
- * d'un client change la date à laquelle sa créance s'éteint — un angle mort ne
- * se lève pas depuis l'interface. Les fondre ferait croire que les seconds se
- * corrigent, ou que les premières ne se corrigent pas.
+ * ⚠️ ET ELLES RESTENT DEUX BLOCS SOUS LE MÊME PLI. Une hypothèse se LÈVE —
+ * préciser le secteur d'un client change la date à laquelle son dossier
+ * s'éteint — un angle mort ne se lève pas depuis l'interface. Les fondre en un
+ * seul paragraphe ferait croire que les seconds se corrigent, ou que les
+ * premières ne se corrigent pas : ils gardent donc chacun leur intitulé, et
+ * partagent seulement la rangée qui les compte.
  */
 function CeQueLeLogicielSuppose({
 	hypotheses,
-	anglesMorts
+	anglesMorts,
+	ouvertes,
+	onOuvertesChange
 }: {
 	hypotheses: readonly string[];
 	anglesMorts: readonly string[];
+	ouvertes: readonly string[];
+	onOuvertesChange: (ouvertes: readonly string[]) => void;
 }) {
 	if (hypotheses.length === 0 && anglesMorts.length === 0) return null;
 
-	return (
-		<>
-			{hypotheses.length === 0 ? null : (
-				<SectionEcran
-					titre="Ce que le logiciel a supposé"
-					legende="Un calcul fait sur une donnée absente. Renseigner la donnée lève l’hypothèse."
-				>
-					<div className="flex flex-col gap-cladd-3xs">
-						{hypotheses.map((hypothese) => (
-							<p key={hypothese} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-								{hypothese}
-							</p>
-						))}
-					</div>
-				</SectionEcran>
-			)}
+	/*
+	  ⚠️ REPLIÉ, MAIS COMPTÉ SUR SA RANGÉE — ET C'EST LA NUANCE QUI COMPTE.
 
-			{anglesMorts.length === 0 ? null : (
-				<SectionEcran
-					titre="Ce que le logiciel ne surveille pas"
-					legende="Un calcul qui n’est pas fait du tout. Rien à l’écran ne le lèvera."
-				>
-					<div className="flex flex-col gap-cladd-3xs">
-						{anglesMorts.map((angle) => (
-							<p key={angle} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-								{angle}
+	  Ces deux blocs tenaient 571 px en bas de l'écran du matin (audit du
+	  29/09/2026, F4 et D5) : c'est le produit qui parle de lui-même, à l'endroit
+	  où le gérant vient voir ce qu'il a à faire. Les replier n'est pas les
+	  cacher : la rangée DIT combien il y a d'hypothèses et combien d'angles
+	  morts, et un chiffre sur une rangée fermée se voit mieux qu'un paragraphe
+	  quatre écrans plus bas.
+
+	  ⚠️ CE QUI SERAIT INTERDIT, C'EST DE LES RETIRER. « Un utilisateur qui croit
+	  sa prescription surveillée ne la surveille pas lui-même » : le compte reste
+	  à l'écran, toujours, et il s'ouvre d'un doigt.
+	*/
+	const parties = [];
+	if (hypotheses.length > 0) {
+		parties.push(`${hypotheses.length} hypothèse${pluriel(hypotheses.length)}`);
+	}
+	if (anglesMorts.length > 0) {
+		parties.push(`${anglesMorts.length} angle${pluriel(anglesMorts.length)} mort${pluriel(anglesMorts.length)}`);
+	}
+
+	return (
+		<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={onOuvertesChange}>
+			<SectionDepliable
+				cle="limites"
+				titre="Ce que le logiciel ne fait pas pour vous"
+				legende="Ce qu’il a supposé faute de donnée, et ce qu’il ne surveille pas du tout"
+				valeur={parties.join(' · ')}
+			>
+				<div className="flex flex-col gap-cladd-2xs">
+					{hypotheses.length === 0 ? null : (
+						<div className="flex flex-col gap-cladd-3xs">
+							<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">
+								Ce qu’il a supposé — un calcul fait sur une donnée absente. Renseigner la
+								donnée lève l’hypothèse.
 							</p>
-						))}
-					</div>
-				</SectionEcran>
-			)}
-		</>
+							{hypotheses.map((hypothese) => (
+								<p key={hypothese} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+									{hypothese}
+								</p>
+							))}
+						</div>
+					)}
+
+					{anglesMorts.length === 0 ? null : (
+						<div className="flex flex-col gap-cladd-3xs">
+							<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">
+								Ce qu’il ne surveille pas — un calcul qui n’est pas fait du tout. Rien à
+								l’écran ne le lèvera.
+							</p>
+							{anglesMorts.map((angle) => (
+								<p key={angle} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+									{angle}
+								</p>
+							))}
+						</div>
+					)}
+				</div>
+			</SectionDepliable>
+		</SectionsDepliables>
 	);
 }
 
