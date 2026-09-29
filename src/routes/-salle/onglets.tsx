@@ -1,9 +1,6 @@
 import { useState } from 'react';
-import {
-	parcoursDeLaVoie,
-	suivreProcedure
-} from '../../lib/verticales/recouvrement/apres-procedure';
-import { EcranProcedures, type DossierAffiche } from '../../screens/procedures';
+import { suivreProcedure } from '../../lib/verticales/recouvrement/apres-procedure';
+import { EcranDossiers, type DossierDeLIndex, type DossiersAffiches } from '../../screens/dossiers';
 import { EcranRevelation, type RevelationDuJour } from '../../screens/revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import {
@@ -30,174 +27,155 @@ import {
 const AUJOURD_HUI_DEMO = ARRETE_AU_DEMO;
 
 /**
- * UN DOSSIER DE DÉMONSTRATION, COMPOSÉ PAR LE DOMAINE.
+ * UN DOSSIER DE L'INDEX, ET SON ÉCHÉANCE COMPOSÉE PAR LE DOMAINE.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ RIEN DE JURIDIQUE N'EST ÉCRIT ICI, ET C'EST TOUT L'INTÉRÊT
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * L'état courant, sa date, l'échéance qui commande, sa conséquence et les
- * angles morts sortent de `suivreProcedure` — la MÊME fonction que
- * `lireSuivi` appelle côté base. Le rail sort de `parcoursDeLaVoie`, sur le
- * même journal. La salle ne fournit donc que ce qu'un gérant fournit : la voie
- * engagée, sa date, et les faits consignés.
- *
- * La première version écrivait ces textes à la main. Elle avait déjà produit
- * une incohérence qu'aucun test n'aurait attrapée : un dossier annoncé à
- * l'entrée de la voie L.126 portait l'échéance de contestation, qui ne court
- * qu'une fois le commandement signifié. Le rail montrait un état, la carte en
- * décrivait un autre — et le regard au navigateur validait les deux.
+ * L'échéance qui commande sort de `suivreProcedure` — la MÊME fonction que
+ * `lireSuivi` appelle côté base. La salle ne fournit que ce qu'un gérant
+ * fournit : la voie engagée, sa date, et les faits consignés. Écrite à la main,
+ * elle a déjà produit une incohérence qu'aucun test n'aurait attrapée.
  */
-function dossierDemo(
-	identite: {
-		readonly creanceId: string;
-		readonly debiteur: string;
-		readonly intervenant: string | null;
-		readonly principalRestantDu: bigint | null;
-		readonly nombreFactures: number | null;
-	},
+function auTribunal(
+	identite: Omit<DossierDeLIndex, 'etape' | 'courrierAValider' | 'professionnelDesigne'>,
 	voie: {
 		readonly procedure: string;
 		readonly engageeLe: string;
 		readonly journal: readonly { readonly cle: string; readonly survenuLe: string }[];
 	}
-): DossierAffiche {
+): DossierDeLIndex {
 	const suivi = suivreProcedure(voie.procedure, voie.journal, voie.engageeLe);
-
+	const echeance = suivi.echeances[0];
 	return {
 		...identite,
-		engageeLe: voie.engageeLe,
-		libelle: suivi.libelle,
-		terminal: suivi.terminal,
-		prochaineEcheance: suivi.echeances[0] ?? null,
-		anglesMorts: [...suivi.anglesMorts],
-		etapes: parcoursDeLaVoie(voie.procedure, voie.journal, voie.engageeLe).map((etape) => ({
-			etat: etape.etat,
-			libelle: etape.libelle,
-			statut: etape.statut,
-			atteinteLe: etape.atteinteLe,
-			branches: etape.branches,
-			brancheSuivie: etape.brancheSuivie
-		}))
+		etape: 'TRIBUNAL',
+		courrierAValider: false,
+		professionnelDesigne: true,
+		...(echeance === undefined
+			? {}
+			: { prochaineEcheance: { libelle: echeance.libelle, dateLimite: echeance.dateLimite } })
 	};
 }
 
 /**
- * LES DOSSIERS ENGAGÉS — les quatre rangs de l'écran, côte à côte.
+ * LES DOSSIERS DE L'INDEX — une par étape, et les cas qui cassent.
  *
- * ⚠️ IL EN FAUT QUATRE, ET PAS DEUX. L'écran range les dossiers par l'échéance
- * qui approche : date dépassée, échéance proche, plus tard, aucune date comptée.
- * Un jeu qui n'en produirait que deux laisserait deux sections invisibles au
- * regard — et ce sont les deux dernières, celles qui disent ce que le logiciel
- * NE surveille PAS, qui sont les plus faciles à casser sans que rien ne tombe.
+ * ⚠️ LES QUATRE ÉTAPES SONT REPRÉSENTÉES, parce que le filtre en a quatre et
+ * qu'un filtre dont une position ne rend jamais rien ne se regarde pas.
  *
- * Chacun est là pour une raison, et sa DATE est choisie pour tomber dans son
- * rang au jour de la salle (9 septembre 2026) :
- *
- *   · Transports Vidal — ordonnance rendue le 28 mai, donc caduque le 28 août :
- *     une date DÉPASSÉE de douze jours ;
- *   · Comptoir Lefèvre — commandement L.126 signifié le 20 août, donc délai de
- *     contestation au 20 septembre : la seule échéance INFORMATIVE du jeu, et
- *     donc la seule pastille ambre ;
- *   · Ateliers Martin — ordonnance rendue le 28 août, donc caduque le
- *     28 novembre. Elle reste ROUGE parce qu'une caducité éteint un droit quelle
- *     que soit sa date, et elle se lit quand même en dernier : ce qui expire en
- *     premier se lit en premier ;
- *   · Fournitures Durand — ordonnance signifiée : la machine ne compte AUCUNE
- *     date dans cet état et déclare son angle mort. Sa créance est introuvable,
- *     donc son montant aussi.
+ * ⚠️ ET DEUX CAS SONT LÀ POUR CE QU'ILS CASSENT :
+ *   · Ateliers Martin porte une échéance de procédure DÉPASSÉE — c'est le seul
+ *     endroit du produit où un droit s'éteint à date fixe, et la rangée doit la
+ *     faire passer devant tout le reste ;
+ *   · Comptoir Lefèvre attend une validation de courrier : sa précision doit
+ *     passer devant sa date limite pour agir, qui est à cinq ans.
  */
-const DOSSIERS_DEMO: DossierAffiche[] = [
-	dossierDemo(
+const DOSSIERS_DEMO: readonly DossierDeLIndex[] = [
+	auTribunal(
 		{
-			creanceId: 'demo-creance-vidal',
-			debiteur: 'Transports Vidal',
-			intervenant: null,
-			principalRestantDu: 1_284_000n,
-			nombreFactures: 2
-		},
-		{
-			procedure: 'injonction-de-payer',
-			engageeLe: '2026-03-02',
-			journal: [{ cle: 'ordonnance-rendue', survenuLe: '2026-05-28' }]
-		}
-	),
-	dossierDemo(
-		{
-			creanceId: 'demo-creance-lefevre',
-			debiteur: 'Comptoir Lefèvre',
-			intervenant: 'SELARL Bonnet, commissaires de justice',
-			principalRestantDu: 318_000n,
-			nombreFactures: 1
-		},
-		{
-			procedure: 'l126-creances-commerciales',
-			engageeLe: '2026-07-15',
-			journal: [{ cle: 'commandement-signifie', survenuLe: '2026-08-20' }]
-		}
-	),
-	dossierDemo(
-		{
-			creanceId: 'demo-creance-martin',
+			_id: 'demo-creance-martin',
 			debiteur: 'Ateliers Martin',
-			intervenant: 'SCP Reynal & Vasseur, commissaires de justice',
+			debiteurId: 'demo-debiteur-martin',
 			principalRestantDu: 3_199_100n,
-			nombreFactures: 4
+			nombreFactures: 4,
+			dateLimiteAgir: '2031-05-01'
 		},
 		{
 			procedure: 'injonction-de-payer',
-			engageeLe: '2026-06-04',
-			journal: [{ cle: 'ordonnance-rendue', survenuLe: '2026-08-28' }]
+			engageeLe: '2025-10-14',
+			/*
+			  ⚠️ RENDUE AVANT LA BASCULE DU 1ER SEPTEMBRE 2026, donc six mois : la
+			  date tombe au 1er juin 2026, DÉPASSÉE au jour de la salle. Choisie pour
+			  ça, et à vérifier si le référentiel change de délai — une ordonnance de
+			  mai 2026 vivait jusqu'en novembre, et la rangée ne montrait alors plus
+			  aucun dépassement.
+			*/
+			journal: [{ cle: 'ordonnance-rendue', survenuLe: '2025-12-01' }]
 		}
 	),
-	dossierDemo(
-		{
-			creanceId: 'demo-creance-durand',
-			debiteur: 'Fournitures Durand',
-			intervenant: null,
-			/*
-			  ⚠️ `null`, ET PAS `0n`. C'est la branche qui protège l'écran du zéro de
-			  confort : une créance introuvable affiche « montant non repris », jamais
-			  « 0,00 € », qui se lirait « rien à perdre sur ce dossier ». Sans ce cas
-			  dans la salle, la branche ne se regarde jamais, et rien ne tomberait le
-			  jour où elle se remettrait à écrire un zéro.
-			*/
-			principalRestantDu: null,
-			nombreFactures: null
-		},
-		{
-			procedure: 'injonction-de-payer',
-			engageeLe: '2026-01-10',
-			journal: [
-				{ cle: 'ordonnance-rendue', survenuLe: '2026-01-20' },
-				{ cle: 'ordonnance-signifiee', survenuLe: '2026-02-10' }
-			]
-		}
-	)
+	{
+		_id: 'demo-creance-lefevre',
+		debiteur: 'Comptoir Lefèvre',
+		debiteurId: 'demo-debiteur-lefevre',
+		etape: 'ON_LUI_ECRIT',
+		principalRestantDu: 1_284_000n,
+		nombreFactures: 2,
+		dateLimiteAgir: '2031-08-20',
+		dernierCourrierLe: '2026-08-20',
+		courrierAValider: true,
+		professionnelDesigne: false
+	},
+	{
+		_id: 'demo-creance-durand',
+		debiteur: 'Fournitures Durand',
+		debiteurId: 'demo-debiteur-durand',
+		etape: 'PRET',
+		principalRestantDu: 620_050n,
+		nombreFactures: 3,
+		dateLimiteAgir: '2026-10-27',
+		courrierAValider: false,
+		professionnelDesigne: false
+	},
+	{
+		_id: 'demo-creance-vidal',
+		debiteur: 'Transports Vidal',
+		debiteurId: 'demo-debiteur-vidal',
+		etape: 'PRET',
+		principalRestantDu: 318_000n,
+		nombreFactures: 1,
+		courrierAValider: false,
+		professionnelDesigne: false
+	},
+	{
+		_id: 'demo-creance-bellin',
+		debiteur: 'Bellin & Fils',
+		debiteurId: 'demo-debiteur-bellin',
+		etape: 'REGLE',
+		principalRestantDu: 0n,
+		nombreFactures: 2,
+		dernierCourrierLe: '2026-06-11',
+		courrierAValider: false,
+		professionnelDesigne: false
+	}
 ];
 
 /**
- * ⚠️ LE DOSSIER EST OUVERT D'EMBLÉE, et c'est ce qu'on vient regarder : sous
- * 1024 px la preuve est une feuille plein écran, au-dessus c'est le volet droit.
+ * ⚠️ LE LOT SE REJOUE DANS LA SALLE, résultat compris. Sans lui, la feuille du
+ * lot — celle qui dit ce qui a été préparé ET ce qui a été refusé — ne se
+ * regarde jamais, et c'est exactement la partie qu'on ne peut pas se permettre
+ * de casser en silence : un lot qui tait ses refus fait croire à des lettres
+ * qui n'existent pas.
  */
-function ProceduresDemo({ etat }: { etat: EtatDemo }) {
-	const [ouvert, setOuvert] = useState<string | null>(DOSSIERS_DEMO[0]?.creanceId ?? null);
-	const fermer = () => setOuvert(null);
+function DossiersDemo({ etat }: { etat: EtatDemo }) {
+	const [lot, setLot] = useState<DossiersAffiches['lot']>('AUCUN');
 
-	return (
-		<EcranProcedures
-			donnees={lectureDemo(
-				etat,
-				{
-					dossiers: DOSSIERS_DEMO,
-					ouvertId: ouvert,
-					aujourdHui: AUJOURD_HUI_DEMO,
-					onFermer: fermer
-				},
-				{ dossiers: [], ouvertId: null, aujourdHui: AUJOURD_HUI_DEMO, onFermer: fermer }
-			)}
-		/>
-	);
+	const valeur: DossiersAffiches = {
+		dossiers: DOSSIERS_DEMO,
+		aujourdHui: AUJOURD_HUI_DEMO,
+		lot,
+		onPreparerRelances: (creanceIds) => {
+			setLot({
+				fait: {
+					prepares: Math.max(creanceIds.length - 1, 0),
+					refus:
+						creanceIds.length > 1
+							? [
+									{
+										debiteur: 'Comptoir Lefèvre',
+										raison: 'Un courrier du même modèle attend déjà votre validation sur ce dossier.'
+									}
+								]
+							: []
+				}
+			});
+		},
+		onFermerLeLot: () => setLot('AUCUN')
+	};
+
+	const vide: DossiersAffiches = { ...valeur, dossiers: [] };
+	return <EcranDossiers donnees={lectureDemo(etat, valeur, vide)} />;
 }
 
 /**
@@ -300,10 +278,10 @@ export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
 	  cohabitation est partie avec cette entrée-ci.
 	*/
 	{
-		route: '/app/procedures',
+		route: '/app/dossiers',
 		libelle: 'dossiers',
 		vide: true,
-		Demo: ProceduresDemo
+		Demo: DossiersDemo
 	},
 	{
 		route: '/app/revelation',

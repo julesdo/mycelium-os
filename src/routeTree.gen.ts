@@ -25,6 +25,7 @@ import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppClientsRouteImport } from './routes/app/clients'
 import { Route as AppCompteRouteImport } from './routes/app/compte'
 import { Route as AppDebiteursRouteImport } from './routes/app/debiteurs'
+import { Route as AppDossiersRouteImport } from './routes/app/dossiers'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
 import { Route as AppProceduresRouteImport } from './routes/app/procedures'
 import { Route as AppRevelationRouteImport } from './routes/app/revelation'
@@ -119,6 +120,11 @@ const AppDebiteursRoute = AppDebiteursRouteImport.update({
   path: '/debiteurs',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDossiersRoute = AppDossiersRouteImport.update({
+  id: '/dossiers',
+  path: '/dossiers',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppImportFacturesRoute = AppImportFacturesRouteImport.update({
   id: '/import-factures',
   path: '/import-factures',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
+  '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
+  '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
+  '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
@@ -288,6 +297,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
+    | '/app/dossiers'
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
+    | '/app/dossiers'
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
+    | '/app/dossiers'
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
@@ -493,6 +505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDebiteursRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/dossiers': {
+      id: '/app/dossiers'
+      path: '/dossiers'
+      fullPath: '/app/dossiers'
+      preLoaderRoute: typeof AppDossiersRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/import-factures': {
       id: '/app/import-factures'
       path: '/import-factures'
@@ -619,6 +638,7 @@ interface AppRouteRouteChildren {
   AppClientsRoute: typeof AppClientsRouteWithChildren
   AppCompteRoute: typeof AppCompteRoute
   AppDebiteursRoute: typeof AppDebiteursRouteWithChildren
+  AppDossiersRoute: typeof AppDossiersRoute
   AppImportFacturesRoute: typeof AppImportFacturesRouteWithChildren
   AppProceduresRoute: typeof AppProceduresRoute
   AppRevelationRoute: typeof AppRevelationRoute
@@ -633,6 +653,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppClientsRoute: AppClientsRouteWithChildren,
   AppCompteRoute: AppCompteRoute,
   AppDebiteursRoute: AppDebiteursRouteWithChildren,
+  AppDossiersRoute: AppDossiersRoute,
   AppImportFacturesRoute: AppImportFacturesRouteWithChildren,
   AppProceduresRoute: AppProceduresRoute,
   AppRevelationRoute: AppRevelationRoute,

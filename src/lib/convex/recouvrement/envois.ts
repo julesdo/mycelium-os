@@ -638,3 +638,95 @@ export const lister = authedQuery({
 		};
 	}
 });
+
+/**
+ * PRÉPARER LA MÊME LETTRE SUR PLUSIEURS DOSSIERS, EN UN GESTE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI CETTE MUTATION EXISTE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Tout se faisait par dossier, un par un. L'audit du 29/09/2026 l'a chiffré :
+ * sur un import de 198 factures, dix-sept dossiers s'ouvrent, et écrire à tous
+ * demandait dix-sept fois le même parcours. Au palier L — plus de huit cents
+ * factures par an — le produit devenait impraticable.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ELLE NE VALIDE RIEN, ET C'EST LA LIGNE ROUGE 1
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Elle PRÉPARE. Chaque lettre atterrit dans « à valider », à son dossier, et
+ * c'est le gérant qui la relit et la valide, une par une, comme avant. Ce qui
+ * est groupé est la composition, jamais l'engagement.
+ *
+ * ⚠️ ET UN ÉCHEC NE FAIT PAS TOMBER LE LOT. Un dossier dont la lettre ne peut
+ * pas se composer — une adresse absente, un décompte manquant — rend sa raison,
+ * NOMMÉE, et les autres se préparent quand même. Un lot qui échoue en entier
+ * pour un dossier abîmé ferait recommencer seize compositions valables ; un lot
+ * qui tait ses échecs ferait croire à dix-sept lettres là où il y en a seize.
+ */
+export const preparerEnLot = authedMutation({
+	args: { creanceIds: v.array(v.id('creances')), choix: vChoixCourrier },
+	returns: v.array(
+		v.object({
+			creanceId: v.id('creances'),
+			envoiId: v.optional(v.id('envois')),
+			refus: v.optional(v.string())
+		})
+	),
+	handler: async (
+		ctx,
+		{ creanceIds, choix }
+	): Promise<{ creanceId: Id<'creances'>; envoiId?: Id<'envois'>; refus?: string }[]> => {
+		const { organizationId, user } = await getUserOrg(ctx);
+		const aujourdHui = aujourdHuiIso();
+		const resultats: { creanceId: Id<'creances'>; envoiId?: Id<'envois'>; refus?: string }[] = [];
+
+		for (const creanceId of creanceIds) {
+			// ⚠️ UN DOSSIER DÉJÀ EN ATTENTE NE SE DOUBLE PAS. Sans ce garde-fou, un
+			// second passage sur la même sélection poserait deux lettres identiques
+			// à valider sur le même dossier, et le gérant en enverrait deux.
+			const dejaEnAttente = await ctx.db
+				.query('envois')
+				.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+				.collect();
+			if (dejaEnAttente.some((e) => e.etat === 'A_VALIDER' && e.modele === choix.modele)) {
+				resultats.push({
+					creanceId,
+					refus: 'Un courrier du même modèle attend déjà votre validation sur ce dossier.'
+				});
+				continue;
+			}
+
+			const { composition, decompteId } = await composer(
+				ctx,
+				organizationId,
+				creanceId,
+				choix,
+				aujourdHui
+			);
+			if (!composition.ok) {
+				resultats.push({ creanceId, refus: composition.manques.join(' ; ') });
+				continue;
+			}
+			const envoiId = await ctx.db.insert('envois', {
+				organizationId,
+				creanceId,
+				modele: choix.modele,
+				...(decompteId === null ? {} : { decompteId }),
+				destinataire: composition.destinataire,
+				canal: composition.canal,
+				objet: composition.objet,
+				corps: composition.corps,
+				resume: [...composition.resume],
+				choix: JSON.stringify(choix),
+				etat: 'A_VALIDER',
+				preparePar: user._id,
+				prepareLe: Date.now()
+			});
+			resultats.push({ creanceId, envoiId });
+		}
+
+		return resultats;
+	}
+});

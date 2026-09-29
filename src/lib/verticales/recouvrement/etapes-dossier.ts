@@ -68,6 +68,18 @@ export interface LectureEtapes {
 }
 
 /** Où en est le dossier, d'après ses faits. */
+/**
+ * La dernière lettre validée, par la date.
+ *
+ * ⚠️ PAS DE `.at(-1)` : ce module est importé par une fonction Convex depuis
+ * l'index des dossiers, et le `tsconfig` de Convex vise une bibliothèque
+ * antérieure à ES2022. `.at()` y fait échouer la compilation du backend entier.
+ */
+function derniereLettre(lettres: readonly string[]): string | undefined {
+	const triees = [...lettres].sort();
+	return triees[triees.length - 1];
+}
+
 export function etapeDuDossier(faits: FaitsDuDossierPourEtape): EtapeDossier {
 	if (faits.nombreFactures > 0 && faits.resteDuCentimes <= 0n) return 'REGLE';
 	if (faits.professionnelDesigne || faits.procedureEngageeLe !== null) return 'TRIBUNAL';
@@ -92,7 +104,7 @@ function ceQuiSePasse(etape: EtapeDossier, faits: FaitsDuDossierPourEtape): stri
 		case 'PRET':
 			return 'Le dossier est prêt : les factures impayées y sont, et le calcul de ce qu’il vous doit est à jour. Il n’a pas payé : à vous de choisir la suite.';
 		case 'ON_LUI_ECRIT': {
-			const derniere = [...faits.lettresValidees].sort().at(-1)!;
+			const derniere = derniereLettre(faits.lettresValidees)!;
 			return `Vous lui avez écrit le ${dateLisible(derniere)}. S’il ne paie pas, les choix qui suivent restent ouverts.`;
 		}
 		case 'TRIBUNAL':
@@ -111,7 +123,7 @@ function detail(cle: EtapeDossier, faits: FaitsDuDossierPourEtape): string | nul
 		case 'ON_LUI_ECRIT':
 			return faits.lettresValidees.length === 0
 				? null
-				: `Écrit le ${dateLisible([...faits.lettresValidees].sort().at(-1)!)}`;
+				: `Écrit le ${dateLisible(derniereLettre(faits.lettresValidees)!)}`;
 		case 'TRIBUNAL':
 			return faits.procedureEngageeLe !== null
 				? `Depuis le ${dateLisible(faits.procedureEngageeLe)}`

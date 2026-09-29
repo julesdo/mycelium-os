@@ -238,18 +238,6 @@ export { SommaireEncours } from './sommaire-encours';
  * dossiers rangée par l'échéance qui approche, et `/app/revelation`, le chiffre
  * qui justifie l'abonnement. Aucun des deux ne redessine un montant qu'un autre
  * composant rend déjà — voir l'en-tête de `ce-qui-est-du.tsx`. */
-export {
-	CarteDossier,
-	ListeDesDossiers,
-	VoletDuDossier,
-	grouperParEcheance,
-	joursDici,
-	rangDuDossier,
-	type DossierEngage,
-	type EcheanceDuDossier,
-	type GroupeDeDossiers,
-	type RangDuDossier
-} from './dossier';
 export { CeQuiEstDu } from './ce-qui-est-du';
 
 /* ── CE QUE LES DÉCOMPTES LAISSENT DE CÔTÉ (rebranche/abandons) ────────────

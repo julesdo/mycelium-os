@@ -73,7 +73,7 @@ function destinations(actif: keyof typeof ICONES, rappel: ReactNode): Destinatio
 		{
 			cle: 'creances',
 			libelle: 'Dossiers',
-			vers: '/app/procedures',
+			vers: '/app/dossiers',
 			Icone: ICONES.creances,
 			actif: actif === 'creances'
 		},
