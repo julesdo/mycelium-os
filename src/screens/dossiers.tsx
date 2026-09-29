@@ -103,6 +103,8 @@ export interface DossiersAffiches {
 	readonly aujourdHui: string;
 	/** Le lot en cours de préparation, ou son résultat. */
 	readonly lot: 'AUCUN' | 'EN_COURS' | { readonly fait: ResultatDuLot };
+	/** Le délai que le gérant accorde d'habitude (« Vos règles de calcul »). */
+	readonly delaiParDefaut?: number;
 	readonly onPreparerRelances: (
 		creanceIds: readonly string[],
 		delaiJours: number
@@ -151,7 +153,12 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 	const [selection, setSelection] = useState<ReadonlySet<string>>(new Set());
 	const [enSelection, setEnSelection] = useState(false);
 	const [feuilleOuverte, setFeuilleOuverte] = useState(false);
-	const [delai, setDelai] = useState<number>(DELAIS[0]);
+	/*
+	  ⚠️ DÉRIVÉ, PAS POSÉ. `useState(delaiParDefaut)` capturerait la valeur du
+	  PREMIER rendu — celui de l'attente, où le réglage n'est pas encore lu — et
+	  la feuille proposerait huit jours à un établissement qui en a choisi trente.
+	*/
+	const [delaiTouche, setDelaiTouche] = useState<number | undefined>(undefined);
 
 	const entete = { genre: 'onglet', titre: 'Dossiers' } as const;
 
@@ -159,7 +166,9 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 		return <PageEcran entete={entete} etat={donnees.etat} />;
 	}
 
-	const { dossiers, aujourdHui, lot, onPreparerRelances, onFermerLeLot } = donnees.valeur;
+	const { dossiers, aujourdHui, lot, delaiParDefaut, onPreparerRelances, onFermerLeLot } =
+		donnees.valeur;
+	const delai = delaiTouche ?? delaiParDefaut ?? DELAIS[0];
 
 	if (dossiers.length === 0) {
 		return (
@@ -358,7 +367,7 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 						aria-label="Délai laissé au client"
 					>
 						{DELAIS.map((j) => (
-							<SegmentedButton key={j} active={j === delai} onClick={() => setDelai(j)}>
+							<SegmentedButton key={j} active={j === delai} onClick={() => setDelaiTouche(j)}>
 								{j} jours
 							</SegmentedButton>
 						))}

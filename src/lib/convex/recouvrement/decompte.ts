@@ -139,6 +139,25 @@ export async function projeterDecompte(
 		.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
 		.collect();
 
+	/*
+	  ⚠️ L'ORDRE DU DOSSIER L'EMPORTE, PUIS CELUI DE L'ÉTABLISSEMENT, PUIS RIEN.
+
+	  L'ordre d'imputation dépend des conditions générales du créancier : il est
+	  le même sur tous ses dossiers, et il était pourtant demandé dossier par
+	  dossier (audit du 29/09/2026, F2). Le réglage de l'établissement sert de
+	  défaut ; il ne réécrit jamais le choix d'un dossier, et un décompte déjà
+	  figé garde de toute façon l'ordre de son jour.
+
+	  ⚠️ ET « PAS CHOISI » N'EST PAS « LES PÉNALITÉS D'ABORD ». Sans réglage ni
+	  choix, on reste sur `A_CONFIRMER`, qui chiffre les DEUX ordres et retient le
+	  plus bas : le doute ne profite jamais au produit.
+	*/
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', creance.organizationId))
+		.first();
+	const ordre = creance.ordreImputation ?? profil?.ordreImputationParDefaut ?? 'A_CONFIRMER';
+
 	if (factures.length === 0) {
 		return {
 			decompte: null,
@@ -197,7 +216,7 @@ export async function projeterDecompte(
 				pourDecompte,
 				arretEffectif,
 				convention,
-				creance.ordreImputation ?? 'A_CONFIRMER'
+				ordre
 			),
 			refus: null
 		};

@@ -18,6 +18,7 @@ import type {
 } from '../../ui';
 import { aujourdHuiISO } from '../../ui';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
+import type { OrdreParDefaut, ReglesAffichees } from '../../screens/compte/regles';
 import {
 	messageDErreur,
 	type EquipeAffichee,
@@ -75,6 +76,7 @@ function PageCompte() {
 	const mettreAJourOrg = useMutation(api.organizations.updateOrganization);
 	const enregistrerProfil = useMutation(api.recouvrement.profil.enregistrer);
 	const enregistrerCourriers = useMutation(api.recouvrement.profil.enregistrerCourriers);
+	const enregistrerRegles = useMutation(api.recouvrement.profil.enregistrerReglesDeCalcul);
 	const chercherMonEtablissement = useAction(
 		api.recouvrement.monEtablissement.chercherMonEtablissementAuRegistre
 	);
@@ -122,6 +124,24 @@ function PageCompte() {
 	const [erreurExport, setErreurExport] = useState<string | null>(null);
 	const [erreurCompte, setErreurCompte] = useState<string | null>(null);
 	const [erreurEtablissement, setErreurEtablissement] = useState<string | null>(null);
+
+	/*
+	  ── LES RÈGLES DE CALCUL, DÉRIVÉES AU RENDU ───────────────────────────────
+
+	  ⚠️ `undefined` VEUT DIRE « PAS TOUCHÉ », ET CE N'EST PAS `null`. `null`
+	  est une VALEUR de ce réglage — « pas choisi », l'état qui fait chiffrer les
+	  deux ordres et retenir le plus bas. Confondre les deux ferait afficher
+	  « Pas choisi » sur un établissement qui a choisi « les factures d'abord »,
+	  tant que le profil n'est pas arrivé.
+
+	  ⚠️ ET ON NE POSE RIEN DANS UN EFFET. La valeur affichée est ce que le gérant
+	  a touché, sinon ce que le profil porte : dérivée au rendu, elle ne retombe
+	  jamais d'un cran en retard derrière la lecture.
+	*/
+	const [ordreTouche, setOrdreTouche] = useState<OrdreParDefaut | undefined>(undefined);
+	const [delaiTouche, setDelaiTouche] = useState<number | null | undefined>(undefined);
+	const [enregistrementRegles, setEnregistrementRegles] =
+		useState<ReglesAffichees['enregistrement']>('REPOS');
 
 	/*
 	  ── Ce que la file propose, et ce qu'on en fait (D13) ─────────────────────
@@ -486,6 +506,11 @@ function PageCompte() {
 					profilComplet: profil !== null && profil.siren !== undefined
 				};
 
+	const ordreChoisi: OrdreParDefaut =
+		ordreTouche !== undefined ? ordreTouche : (profil?.ordreImputationParDefaut ?? null);
+	const delaiChoisi: number | null =
+		delaiTouche !== undefined ? delaiTouche : (profil?.delaiRelanceParDefautJours ?? null);
+
 	const compteAffiche: CompteAffiche = {
 		profil: {
 			nom: moi?.name ?? moi?.email ?? undefined,
@@ -564,6 +589,22 @@ function PageCompte() {
 							onRetirer: () => void gesteImage(() => retirerLogo({}), setLogoEnCours, setErreurLogo)
 						}
 					},
+		regles: {
+			ordre: ordreChoisi,
+			delaiJours: delaiChoisi,
+			enregistrement: enregistrementRegles,
+			onChoisirOrdre: setOrdreTouche,
+			onChoisirDelai: setDelaiTouche,
+			onEnregistrer: () => {
+				setEnregistrementRegles('EN_COURS');
+				void enregistrerRegles({
+					ordreImputationParDefaut: ordreChoisi,
+					delaiRelanceParDefautJours: delaiChoisi
+				})
+					.then(() => setEnregistrementRegles('REPOS'))
+					.catch((erreur: unknown) => setEnregistrementRegles({ erreur: messageDErreur(erreur) }));
+			}
+		},
 		creancier: {
 			cle: org?._id ?? 'aucun',
 			nomEtablissement: org?.name ?? '',

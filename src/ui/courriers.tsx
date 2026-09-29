@@ -132,6 +132,12 @@ export interface CourriersDuDossier {
 	/** L'aperçu des choix en cours : `undefined` en calcul, `null` sans choix. */
 	readonly apercu: ApercuAffiche | null | undefined;
 	readonly aujourdHui: string;
+	/**
+	 * Le délai que le gérant accorde d'habitude, posé dans « Vos règles de
+	 * calcul ». Absent, la lettre part sur huit jours — un défaut de formulaire,
+	 * sans valeur de droit.
+	 */
+	readonly delaiRelanceParDefaut?: number;
 	readonly enCours: boolean;
 	readonly erreur: string | null;
 	readonly onChoisir: (choix: ChoixCourrierAffiche | null) => void;
@@ -218,13 +224,25 @@ const ETAT: Record<EnvoiAffiche['etat'], string> = {
 	ABANDONNE: 'Abandonné'
 };
 
-/** Les choix de départ d'un modèle : aucune valeur juridique, seulement des choix de produit. */
-function choixInitial(modele: ModeleCourrierAffiche, aujourdHui: string): ChoixCourrierAffiche {
+/**
+ * Les choix de départ d'un modèle : aucune valeur juridique, seulement des
+ * choix de produit.
+ *
+ * ⚠️ LE DÉLAI VIENT DU RÉGLAGE DE L'ÉTABLISSEMENT QUAND IL EXISTE. C'est celui
+ * que le gérant accorde d'habitude, posé une fois dans « Vos règles de calcul »
+ * plutôt que rechoisi sur chaque lettre. Huit jours reste le défaut du défaut :
+ * il n'a aucune valeur de droit, et l'écran ne prétend pas le contraire.
+ */
+function choixInitial(
+	modele: ModeleCourrierAffiche,
+	aujourdHui: string,
+	delaiParDefaut: number | undefined
+): ChoixCourrierAffiche {
 	switch (modele) {
 		case 'RELANCE_OFFICIELLE':
 			return {
 				modele,
-				delaiJours: 8,
+				delaiJours: delaiParDefaut ?? 8,
 				suite: 'SUITE_GENERALE',
 				modalite: 'VIREMENT_IBAN',
 				reserveIndemnisationComplementaire: false
@@ -841,7 +859,11 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 								{m.indisponible === null ? (
 									<BoutonSecondaire
 										onClick={() =>
-											choisir(actif ? null : choixInitial(m.cle, courriers.aujourdHui))
+											choisir(
+												actif
+													? null
+													: choixInitial(m.cle, courriers.aujourdHui, courriers.delaiRelanceParDefaut)
+											)
 										}
 									>
 										{actif ? 'Fermer' : 'Préparer'}

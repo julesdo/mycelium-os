@@ -15,6 +15,7 @@ import { BandeauCeQuiPresse } from './bandeau-presse';
 import { EnTeteDuCompte } from './en-tete';
 import { FormulaireCourriers, FormulaireCreancier, type CreancierAffiche } from './creancier';
 import { FormulaireEtablissement, type EtablissementAffiche } from './etablissement';
+import { SectionRegles, resumeRegles, type ReglesAffichees } from './regles';
 import { ChoixDuLogo, SectionProfil, type ProfilAffiche } from './profil';
 import { SectionFacturation, type AbonnementAffiche } from './facturation';
 import { SectionEquipe, type EquipeAffichee } from './equipe';
@@ -89,6 +90,8 @@ export interface CompteAffiche {
 	/** La connexion Qonto : son statut pour la rangée repliée, et la carte branchée. */
 	readonly connexions: { readonly statut: string | null; readonly contenu: ReactNode };
 	readonly creancier: CreancierAffiche;
+	/** Ce que ses conditions générales disent, pour tous ses dossiers à la fois. */
+	readonly regles: ReglesAffichees;
 	/** Ce que l'en-tête affiche et ce dont « Ce qui presse » tire son premier fait. */
 	readonly identite: IdentiteDuCreancier | null;
 	/** Les établissements joignables : c'est ce qui fait de la bascule deux gestes. */
@@ -216,6 +219,18 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 						{...resumeEtablissement(pret.identite)}
 					>
 						<ContenuEtablissement etablissement={pret.etablissement} creancier={pret.creancier} />
+					</SectionDepliable>
+				</Ancre>
+
+				{/*
+				  ⚠️ JUSTE APRÈS L'ÉTABLISSEMENT, PARCE QU'ELLES LUI APPARTIENNENT. Ce
+				  sont les conditions générales du créancier qui disent ce que
+				  remboursent les paiements reçus : la règle est de la même nature que
+				  son adresse ou son IBAN, et ne se range pas avec les connexions.
+				*/}
+				<Ancre cle="regles" ancres={ancres}>
+					<SectionDepliable cle="regles" titre="Vos règles de calcul" {...resumeRegles(pret.regles)}>
+						<SectionRegles {...pret.regles} />
 					</SectionDepliable>
 				</Ancre>
 

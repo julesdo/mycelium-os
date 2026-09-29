@@ -4,7 +4,7 @@ import { internal } from '../_generated/api';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { normaliserSiren, sirenDepuisSiret } from '../../verticales/recouvrement/pays/france/siren';
-import { vEtatCritere } from './tables';
+import { vEtatCritere, vOrdreImputation } from './tables';
 import { depuisEuros, enCentimes } from '../../socle/montants';
 
 /**
@@ -116,7 +116,9 @@ const vProfil = v.union(
 		capitalSocial: v.optional(v.int64()),
 		immatriculeRcs: v.optional(v.boolean()),
 		villeGreffeRcs: v.optional(v.string()),
-		iban: v.optional(v.string())
+		iban: v.optional(v.string()),
+		ordreImputationParDefaut: v.optional(vOrdreImputation),
+		delaiRelanceParDefautJours: v.optional(v.number())
 	})
 );
 
@@ -142,7 +144,9 @@ export const monProfilInterne = internalQuery({
 			capitalSocial: profil.capitalSocial,
 			immatriculeRcs: profil.immatriculeRcs,
 			villeGreffeRcs: profil.villeGreffeRcs,
-			iban: profil.iban
+			iban: profil.iban,
+			ordreImputationParDefaut: profil.ordreImputationParDefaut,
+			delaiRelanceParDefautJours: profil.delaiRelanceParDefautJours
 		};
 	}
 });
@@ -170,7 +174,9 @@ export const monProfil = authedQuery({
 			capitalSocial: profil.capitalSocial,
 			immatriculeRcs: profil.immatriculeRcs,
 			villeGreffeRcs: profil.villeGreffeRcs,
-			iban: profil.iban
+			iban: profil.iban,
+			ordreImputationParDefaut: profil.ordreImputationParDefaut,
+			delaiRelanceParDefautJours: profil.delaiRelanceParDefautJours
 		};
 	}
 });
@@ -267,6 +273,59 @@ export const enregistrerCourriers = authedMutation({
 			immatriculeRcs: args.immatriculeRcs ?? undefined,
 			villeGreffeRcs: texte(args.villeGreffeRcs),
 			iban,
+			majLe: Date.now()
+		});
+		return null;
+	}
+});
+
+/**
+ * LES RÈGLES DE L'ÉTABLISSEMENT, POSÉES UNE FOIS POUR TOUS LES DOSSIERS.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI CETTE MUTATION EXISTE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'ordre d'imputation des paiements dépend des conditions générales du
+ * créancier : il est le même sur tous ses dossiers. Il était pourtant demandé
+ * dossier par dossier — dix-sept fois la même réponse sur un import de 198
+ * factures (audit du 29/09/2026, F2).
+ *
+ * ⚠️ CE RÉGLAGE NE RÉÉCRIT AUCUN CHOIX DÉJÀ FAIT. Il sert de défaut là où le
+ * dossier n'a rien choisi ; `creances.ordreImputation` l'emporte toujours. Un
+ * gérant qui change son réglage en octobre ne change pas ce qu'il a arrêté en
+ * septembre — et un décompte figé, lui, garde l'ordre de son jour quoi qu'il
+ * arrive.
+ *
+ * ⚠️ ET `null` REMET À « PAS CHOISI », qui n'est pas « les pénalités d'abord ».
+ * Sans choix, le décompte chiffre les DEUX ordres et retient le plus bas : le
+ * doute ne profite jamais au produit.
+ */
+export const enregistrerReglesDeCalcul = authedMutation({
+	args: {
+		ordreImputationParDefaut: v.union(vOrdreImputation, v.null()),
+		delaiRelanceParDefautJours: v.union(v.number(), v.null())
+	},
+	returns: v.null(),
+	handler: async (ctx, { ordreImputationParDefaut, delaiRelanceParDefautJours }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const profil = await ctx.db
+			.query('profilsCreancier')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+		if (profil === null) {
+			throw new ConvexError(
+				'Renseignez d’abord votre entreprise : ces règles s’attachent à elle.'
+			);
+		}
+		// ⚠️ LES DÉLAIS PROPOSÉS SONT LES TROIS DE L'ÉCRAN, et un quatrième saisi
+		// à la main ne se pose pas en silence : il se refuse en le disant.
+		if (delaiRelanceParDefautJours !== null && ![8, 15, 30].includes(delaiRelanceParDefautJours)) {
+			throw new ConvexError('Le délai proposé d’office est de 8, 15 ou 30 jours.');
+		}
+		await ctx.db.patch(profil._id, {
+			ordreImputationParDefaut: ordreImputationParDefaut ?? undefined,
+			delaiRelanceParDefautJours: delaiRelanceParDefautJours ?? undefined,
 			majLe: Date.now()
 		});
 		return null;

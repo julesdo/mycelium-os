@@ -664,6 +664,20 @@ function compteDe(
 	return {
 		etablissement: ETABLISSEMENT_AFFICHE_DEMO,
 		/*
+		  ⚠️ « PAS CHOISI » DANS LA SALLE, et c'est l'état qu'on vient regarder :
+		  c'est celui d'un établissement qui vient d'arriver, celui qui fait
+		  chiffrer les deux ordres et retenir le plus bas, et celui dont la
+		  troisième position du sélecteur doit dire qu'il n'est pas un vide.
+		*/
+		regles: {
+			ordre: null,
+			delaiJours: null,
+			enregistrement: 'REPOS',
+			onChoisirOrdre: () => undefined,
+			onChoisirDelai: () => undefined,
+			onEnregistrer: () => undefined
+		},
+		/*
 		  L'identité de l'en-tête, composée comme la route la compose : le critère
 		  de complétude est le SIREN, celui que `/app/index.tsx` et `ceQuiManque`
 		  emploient déjà. La salle n'en invente pas un second.

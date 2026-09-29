@@ -40,6 +40,7 @@ import type { MesuresAffichees } from './mesures';
 export const SECTIONS_COMPTE = [
 	'profil',
 	'etablissement',
+	'regles',
 	'connexions',
 	'facturation',
 	'equipe',

@@ -112,6 +112,14 @@ function PageCreance() {
 	const [choixCourrier, setChoixCourrier] = useState<ChoixCourrierAffiche | null>(null);
 	const [erreurCourrier, setErreurCourrier] = useState<string | null>(null);
 	const envoisDuDossier = useQuery(api.recouvrement.envois.lister, { creanceId });
+	/*
+	  ⚠️ LU POUR UN SEUL CHAMP, ET LA PAGE NE L'ATTEND PAS. Le délai que le gérant
+	  accorde d'habitude est posé une fois dans « Vos règles de calcul » ; tant
+	  qu'il n'est pas arrivé, la lettre part sur huit jours, qui n'a aucune valeur
+	  de droit. Faire attendre toute la page pour ça serait payer cher un défaut
+	  de formulaire.
+	*/
+	const profilCreancier = useQuery(api.recouvrement.profil.monProfil, {});
 	const apercuCourrier = useQuery(
 		api.recouvrement.envois.apercu,
 		choixCourrier === null ? 'skip' : { creanceId, choix: versConvex(choixCourrier) }
@@ -583,6 +591,9 @@ function PageCreance() {
 		}),
 
 		courriers: {
+			...(profilCreancier?.delaiRelanceParDefautJours === undefined
+				? {}
+				: { delaiRelanceParDefaut: profilCreancier.delaiRelanceParDefautJours }),
 			modeles: modelesProposables(
 				creance.santeDebiteur,
 				suivi?.journal.some((evenement) => evenement.cle === 'ordonnance-rendue') ?? false

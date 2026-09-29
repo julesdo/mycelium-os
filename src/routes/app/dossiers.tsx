@@ -41,6 +41,7 @@ function PageDossiers() {
 	  cacherait précisément la date dont l'oubli fait tout reprendre.
 	*/
 	const engages = useQuery(api.recouvrement.apresProcedure.dossiersEngages, {});
+	const profilCreancier = useQuery(api.recouvrement.profil.monProfil, {});
 	const preparerEnLot = useMutation(api.recouvrement.envois.preparerEnLot);
 
 	/**
@@ -111,6 +112,9 @@ function PageDossiers() {
 		),
 		aujourdHui,
 		lot,
+		...(profilCreancier?.delaiRelanceParDefautJours === undefined
+			? {}
+			: { delaiParDefaut: profilCreancier.delaiRelanceParDefautJours }),
 		onPreparerRelances: lancer,
 		onFermerLeLot: () => setLot('AUCUN')
 	};

@@ -302,6 +302,30 @@ export const recouvrementTables = {
 		immatriculeRcs: v.optional(v.boolean()),
 		villeGreffeRcs: v.optional(v.string()),
 		iban: v.optional(v.string()),
+		/**
+		 * ═══════════════════════════════════════════════════════════════════════
+		 * ⚠️ LES RÈGLES DE L'ÉTABLISSEMENT, POSÉES UNE FOIS
+		 * ═══════════════════════════════════════════════════════════════════════
+		 *
+		 * L'ordre d'imputation dépend des CONDITIONS GÉNÉRALES du créancier, pas du
+		 * dossier : il est le même sur les dix-sept dossiers d'un import. Il était
+		 * pourtant demandé dossier par dossier (audit du 29/09/2026, F2), soit
+		 * dix-sept fois la même réponse.
+		 *
+		 * ⚠️ IL NE REMPLACE PAS LE CHOIX D'UN DOSSIER, IL LUI SERT DE DÉFAUT.
+		 * `creances.ordreImputation` l'emporte toujours : un dossier dont le
+		 * contrat dit autre chose garde le sien, et un réglage changé plus tard ne
+		 * réécrit aucun choix déjà fait.
+		 */
+		ordreImputationParDefaut: v.optional(vOrdreImputation),
+		/**
+		 * Le délai proposé d'office sur une lettre de relance, en jours.
+		 *
+		 * ⚠️ UN DÉFAUT DE FORMULAIRE, PAS UNE RÈGLE DE DROIT. Aucun texte n'impose
+		 * de délai à une lettre de relance ; celui-ci est celui que le gérant
+		 * accorde d'habitude, et il reste modifiable sur chaque lettre.
+		 */
+		delaiRelanceParDefautJours: v.optional(v.number()),
 		majLe: v.number()
 	}).index('by_org', ['organizationId']),
 
