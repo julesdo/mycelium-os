@@ -23,7 +23,12 @@ explicable période par période.
 
 ## ⚠️ Les trois lignes rouges
 
-1. **Rien ne part sans que le gérant ait validé ce document.** Il est à son seul nom et sous sa
+1. **Rien ne part sans que le gérant ait validé ce document.** *(Fondement relevé le 29/09/2026 :
+   le décret n° 96-1112, article 1er, vise quiconque « procède au recouvrement amiable des créances
+   pour le compte d'autrui », « même à titre accessoire », SANS condition de manipulation de fonds ;
+   son article 4 imposerait alors à la lettre de nommer l'agent de recouvrement. Un envoi
+   automatique, même sur instruction préalable, ferait porter le nom de Letikette aux courriers du
+   gérant. Le logiciel RAPPELLE, il n'envoie pas.)* Il est à son seul nom et sous sa
    signature ; Letikette le prépare sans y figurer, sans être son mandataire, sans recevoir ni fonds
    ni réponse du débiteur (le recouvrement pour compte de tiers est une activité encadrée). Quand le
    gérant a un avocat, le projet part chez cet avocat, qui décide. Rien ne part vers un tribunal ou un
@@ -31,7 +36,10 @@ explicable période par période.
    exception : la déclaration de créance au mandataire, que la loi permet au créancier de faire
    lui-même. On ne remplace aucun métier réglementé.
 2. **On ne manipule jamais de fonds.** Aucun encaissement, aucun séquestre, aucune commission sur
-   ce qui rentre.
+   ce qui rentre. *(Ce qui reste permis, vérifié auprès de l'ACPR le 29/09/2026 : TRANSMETTRE une
+   information de paiement — afficher l'IBAN du créancier, un montant, une référence, un QR de
+   virement européen. Un service de paiement suppose d'EXÉCUTER l'opération ou d'encaisser pour un
+   tiers ; montrer où payer n'en est pas un, et ne demande aucun agrément.)*
 3. **Le produit montre ce que dit la loi, ce qu’il y a dans le dossier et ce que le gérant a
    répondu.** Il ne dit jamais qu’une condition est remplie, ni qu’il faudrait engager une
    procédure : ce serait une consultation juridique (relecture du 25/09/2026). Le logiciel lit,
@@ -51,6 +59,11 @@ construit pas.
 **Exception, décidée par le fondateur le 25/09/2026 et bornée à un chantier** : la règle est levée pour
 le chantier de la page dossier (`docs/superpowers/specs/2026-09-25-page-dossier-design.md`, lots 0 à 6).
 Elle s'applique de nouveau à tout le reste.
+
+**Et l'audit du 29/09/2026** (`docs/superpowers/specs/2026-09-29-etat-des-lieux-produit.md`) porte
+les chantiers A à F, commandés par le fondateur le jour même. Chaque lot y nomme le geste manuel
+qu'il supprime et ce qu'il change pour le dirigeant : la règle n'est pas levée, elle est
+renseignée. F, B, C, D et E sont livrés ; A attend trois comptes chez des prestataires.
 
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
@@ -96,8 +109,13 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
 - Rôles : `ORG_ADMIN`, `ORG_MEMBER`. Aucun rôle staff.
 - **Tablette d'abord**, paysage privilégié, sans casser le téléphone. Cibles tactiles 48 px.
 - **Le langage de tout le monde** : « votre client », « pénalités de retard », « date limite pour
-  agir en justice » ; le mot du droit en second, entre parenthèses (`lexique.ts`). Seul le corps
-  d'un document envoyé (`gabarits/`) garde le vocabulaire juridique exact.
+  agir en justice » ; le mot du droit en second, entre parenthèses ou entre guillemets
+  (`lexique.ts`). Le balayage couvre depuis le 29/09/2026 `src/ui`, `src/screens`,
+  `src/routes/app`, `src/routes/-salle`, `src/app`, `src/marketing` ET `src/lib/verticales`.
+  Gardent le mot du droit, chacun pour une raison écrite dans le test : le référentiel et
+  `pays/`, `gabarits/`, `piece.ts`, `dossier.ts`, `relance.ts` (documents transmis),
+  `termes-juridiques.ts` (la donnée elle-même), le prompt système et les motifs de refus du
+  compagnon, et les lecteurs de formats comptables.
 
 ### Socle et verticales — la frontière est un test, pas une convention
 

@@ -7,6 +7,10 @@
 
 ---
 
+> **Suite donnée le 29 septembre 2026.** Les chantiers F, B, C, D et E ont été livrés en
+> production le jour même (commits `cb7a9d2` à `62b3b9f`). Le § 6 porte ce qui a été tranché,
+> sources à l'appui. Le chantier A reste bloqué sur trois comptes à ouvrir.
+
 ## 0. La réponse courte
 
 **Le produit n'est pas sortable en l'état**, et ce n'est pas un problème de finition.
@@ -332,34 +336,44 @@ Chaque chantier est livrable seul, en production, et porte son critère de sorti
 
 ---
 
-## 6. Les décisions qui n'appartiennent qu'à toi
+## 6. Ce qui a été tranché le 29/09, et ce qui reste à toi
 
-1. **L'ordre des chantiers.** Ma recommandation : **B et C d'abord** (ils ne dépendent de
-   personne, ils se livrent en deux semaines, et ils transforment le quotidien), **A dès que tes
-   comptes sont ouverts**, D et E ensuite. Faire A en premier donnerait un produit qui envoie très
-   bien des courriers qu'on met une matinée à préparer.
+### Tranché, et vérifié aux sources
 
-2. **La page de paiement du client.** Une page à l'adresse du créancier, avec son décompte, son
-   RIB et un virement SEPA pré-rempli (le QR de virement européen) ne fait transiter **aucun
-   fonds** : le client vire directement au créancier. Elle reste donc compatible avec la ligne
-   rouge n° 2. Mais tout ce qui *déclenche* un paiement à la place du payeur relève de services de
-   paiement réglementés, et je ne suis pas en mesure de trancher où passe exactement la frontière.
-   **À faire vérifier par un avocat** avant qu'on écrive une ligne. Si c'est possible, c'est le
-   levier le plus fort du produit : c'est ce que fait Mercury avec sa page de facture publique.
+1. **L'ordre des chantiers.** F, B, C, D, E — dans cet ordre, livrés le 29/09/2026. A reste
+   bloqué sur les trois comptes à ouvrir.
 
-3. **Les relances automatiques.** PayPal propose des relances programmées configurées une fois
-   ([le parcours](https://mobbin.com/flows/a6c39118-8265-49e0-b205-5143aa67bfa3)). Chez nous, la
-   ligne rouge n° 1 veut une validation avant chaque envoi. Deux lectures possibles, et c'est toi
-   qui choisis : soit une validation par envoi, soit **une validation qui porte sur un plan** (« je
-   valide que ces trois relances partent à J+8, J+21 et J+35 »), avec la possibilité d'arrêter à
-   tout moment. La seconde est défendable et change tout à l'usage ; elle demande d'être écrite
-   noir sur blanc avant d'être codée.
+2. **La page de paiement du client : OUI, et ce n'est pas réglementé.** Vérifié auprès de l'ACPR :
+   un service de paiement suppose d'**exécuter** une opération — initier l'ordre à la place du
+   payeur, ou encaisser des fonds pour un tiers. La simple **transmission d'informations de
+   paiement** — afficher un IBAN, un montant, une référence, un QR de virement européen (EPC) —
+   n'en est pas un, et ne demande donc aucun agrément. Le client scanne, sa banque pré-remplit le
+   virement, il valide chez lui : aucun fonds ne passe par le logiciel, la ligne rouge n° 2 tient.
+   C'est ce que fait Mercury avec sa page de facture publique, et c'est constructible.
+   Source : [ACPR — de quel statut relève mon activité](https://acpr.banque-france.fr/fr/professionnels/lacpr-vous-accompagne/parcours-fintech/contenus-pedagogiques/de-quel-statut-releve-mon-activite/jouvre-des-comptes-je-fournis-des-cartes-de-paiement).
+
+3. **Les relances automatiques : NON, et la ligne rouge 1 est mieux fondée que je ne le pensais.**
+   Le décret n° 96-1112 vise, à son article 1er, quiconque « procède au recouvrement amiable des
+   créances pour le compte d'autrui », *« d'une manière habituelle ou occasionnelle, même à titre
+   accessoire »* — sans aucune condition de manipulation de fonds. Et son article 4 impose alors à
+   la lettre de **nommer l'agent de recouvrement** et de dire qu'il exerce cette activité : une
+   lettre envoyée par Letikette devrait donc porter le nom de Letikette, ce qui défait tout le
+   modèle. Ce qui est livré est donc la seule forme défendable : le logiciel **rappelle**, il
+   n'envoie pas. Quand une lettre part, il propose de rappeler le gérant au jour où son délai
+   expire ; le dossier remonte dans la file, et c'est lui qui décide.
+   Source : [décret n° 96-1112, article 1](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006498905/2025-08-13).
+
+### Ce qui reste à toi
 
 4. **Quel connecteur de facturation en premier ?** Pennylane et Sage couvrent le plus de PME
    françaises ; Axonaut et Henrri couvrent les plus petites. Le choix dépend de qui tu vises
    d'abord — je ne l'ai pas dans les documents du dépôt.
 
-5. **Le second pays.** La vision « néobanque numéro 1 pour le business en Europe » ne tient pas
+5. **Ouvrir les trois comptes du chantier A** : Maileva (et choisir le type de contrat), AR24, et
+   un prestataire de signature électronique. C'est le seul chemin critique que je ne peux pas
+   prendre à ta place.
+
+6. **Le second pays.** La vision « néobanque numéro 1 pour le business en Europe » ne tient pas
    avec un référentiel 100 % français. Ce n'est pas urgent, mais le jour où ce sera décidé, il
    faudra un mois de travail sur `pays/` — et la frontière socle/verticale a été tenue exactement
    pour ça.
