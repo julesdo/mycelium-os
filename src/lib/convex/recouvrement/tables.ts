@@ -1014,6 +1014,51 @@ export const recouvrementTables = {
 	 * est une : elle est notée parce qu'elle a une DATE, et qu'à cette date on
 	 * veut savoir si elle a été tenue.
 	 */
+	/**
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * LA PAGE OÙ LE CLIENT VOIT CE QU'IL DOIT, ET COMMENT LE PAYER
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * ⚠️ ELLE NE TOUCHE AUCUN FONDS, ET C'EST CE QUI LA REND POSSIBLE. Elle
+	 * MONTRE : le décompte arrêté, l'IBAN du créancier, la référence à rappeler,
+	 * et un QR que l'application bancaire du client sait lire. C'est lui qui
+	 * valide le virement, chez lui, dans sa banque. L'ACPR distingue exécuter une
+	 * opération de paiement — qui demande un agrément — de transmettre une
+	 * information de paiement, qui n'en demande aucun (relevé le 29/09/2026).
+	 *
+	 * ⚠️ UN LIEN PORTE UN DÉCOMPTE ARRÊTÉ, JAMAIS UN CALCUL VIVANT. Ce qui
+	 * s'oppose à un tiers est un décompte figé et daté : un montant qui augmente
+	 * pendant que le client lit sa page ne se paie pas, et le virement qu'il
+	 * lancerait serait déjà faux en arrivant.
+	 *
+	 * ⚠️ ET RIEN NE REMONTE DU CLIENT. Aucun formulaire, aucun bouton « je
+	 * conteste », aucune case « j'ai payé » : ce produit ne reçoit ni fonds ni
+	 * réponse du débiteur (ligne rouge n° 1). Une question se pose à l'adresse
+	 * électronique du créancier, qui est écrite sur la page.
+	 */
+	liensDePaiement: defineTable({
+		organizationId: v.id('organizations'),
+		creanceId: v.id('creances'),
+		/** Le décompte arrêté que la page montre. C'est lui qui fixe le montant. */
+		decompteId: v.id('decomptes'),
+		/**
+		 * Le jeton de l'adresse publique.
+		 *
+		 * ⚠️ IL EST LA SEULE SERRURE DE CETTE PAGE : qui l'a voit ce que le client
+		 * doit. C'est exactement ce que le créancier lui envoie, donc c'est bien
+		 * lui le destinataire — mais il vaut un `crypto.randomUUID()`, jamais un
+		 * identifiant de document, qui se devine de proche en proche.
+		 */
+		jeton: v.string(),
+		/** Fermé par le gérant : la page cesse de répondre, le lien ne vaut plus rien. */
+		revoqueLe: v.optional(v.number()),
+		creePar: v.string(),
+		creeLe: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_jeton', ['jeton'])
+		.index('by_creance', ['creanceId']),
+
 	suiviDossier: defineTable({
 		organizationId: v.id('organizations'),
 		creanceId: v.id('creances'),

@@ -49,6 +49,22 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 	'/showroom':
 		'La salle d’exposition, en développement seulement. Aucun lien depuis le produit, et c’est voulu.',
 	/**
+	 * ⚠️ AUCUN ÉCRAN N'Y MÈNE, ET AUCUN N'Y MÈNERA JAMAIS.
+	 *
+	 * C'est la page où le CLIENT du créancier paie. Elle s'atteint par un lien
+	 * que le gérant colle dans sa lettre ou dans son courriel — c'est lui qui
+	 * l'envoie, comme pour tout le reste. Un lien depuis le produit n'aurait
+	 * aucun sens : la personne qui l'ouvre n'a pas de compte ici, et n'en aura
+	 * pas.
+	 *
+	 * Le gérant, lui, la rejoint bien depuis un écran : l'adresse se copie sous
+	 * « Le lien où votre client paie », dans la section du décompte de la page
+	 * dossier. Mais c'est une CHAÎNE copiée, pas un lien de routeur — et ce test
+	 * ne compte que les seconds, à juste titre.
+	 */
+	'/p/$jeton':
+		'La page où le client du créancier paie. On y arrive par le lien que le gérant lui envoie, jamais depuis un écran.',
+	/**
 	 * ⚠️ CE N'EST PLUS UNE COQUILLE DE MISE EN PAGE, C'EST L'ÉCRAN DE TRAVAIL.
 	 *
 	 * Depuis la bascule (T15), `/app` rend la file : le seul écran que le gérant

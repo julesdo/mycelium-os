@@ -120,6 +120,11 @@ function PageCreance() {
 	  de formulaire.
 	*/
 	const profilCreancier = useQuery(api.recouvrement.profil.monProfil, {});
+	const liensDePaiement = useQuery(api.recouvrement.paiement.liensDuDossier, { creanceId });
+	const ouvrirLien = useMutation(api.recouvrement.paiement.ouvrirLienDePaiement);
+	const fermerLien = useMutation(api.recouvrement.paiement.fermerLienDePaiement);
+	const [erreurLien, setErreurLien] = useState<string | null>(null);
+	const [lienEnCours, setLienEnCours] = useState(false);
 	const notesDuDossier = useQuery(api.recouvrement.suivi.lire, { creanceId });
 	const friseDuDossier = useQuery(api.recouvrement.suivi.frise, { creanceId });
 	const noter = useMutation(api.recouvrement.suivi.noter);
@@ -205,6 +210,19 @@ function PageCreance() {
 	 * part, et un refus de note effacerait un refus de courrier. Deux gestes
 	 * indépendants ne partagent pas leur état.
 	 */
+	/** Le lien de paiement a son propre verrou : voir `avecLeSuivi`, même raison. */
+	async function avecLeLien(geste: () => Promise<unknown>) {
+		setErreurLien(null);
+		setLienEnCours(true);
+		try {
+			await geste();
+		} catch (e) {
+			setErreurLien(messageDuRefus(e));
+		} finally {
+			setLienEnCours(false);
+		}
+	}
+
 	async function avecLeSuivi(geste: () => Promise<unknown>) {
 		setErreurSuivi(null);
 		setSuiviEnCours(true);
@@ -587,6 +605,23 @@ function PageCreance() {
 		aujourdHui
 	});
 
+	/*
+	  LES DÉCOMPTES ARRÊTÉS DE CE DOSSIER, DU PLUS RÉCENT AU PLUS ANCIEN.
+
+	  ⚠️ CALCULÉS UNE FOIS. La section « Ce qui a été arrêté » les liste, et le
+	  lien de paiement s'ouvre sur le premier : deux tris écrits séparément
+	  finiraient par diverger, et le lien porterait alors un autre décompte que
+	  celui que l'écran montre en tête.
+	*/
+	const arretes = decomptes
+		.filter((decompte) => decompte.creanceId === creanceId)
+		.sort((a, b) => (a.arreteAu < b.arreteAu ? 1 : a.arreteAu > b.arreteAu ? -1 : 0))
+		.map((decompte) => ({
+			id: decompte._id as string,
+			arreteAu: decompte.arreteAu,
+			total: decompte.total
+		}));
+
 	const valeur: CreanceOuverte = {
 		identifiant: id,
 		debiteur: creance.debiteur,
@@ -756,15 +791,31 @@ function PageCreance() {
 		montantDuJour,
 		refusDuMontant,
 		fiches: FICHES_DU_REFERENTIEL,
-		decomptesArretes: decomptes
-			.filter((decompte) => decompte.creanceId === creanceId)
-			// Le plus récent d'abord : c'est celui qu'on vient relire.
-			.sort((a, b) => (a.arreteAu < b.arreteAu ? 1 : a.arreteAu > b.arreteAu ? -1 : 0))
-			.map((decompte) => ({
-				id: decompte._id,
-				arreteAu: decompte.arreteAu,
-				total: decompte.total
+		liensDePaiement: {
+			liens: (liensDePaiement ?? []).map((lien) => ({
+				jeton: lien.jeton,
+				arreteAu: lien.arreteAu,
+				total: lien.total,
+				creeLe: lien.creeLe,
+				...(lien.revoqueLe === undefined ? {} : { revoqueLe: lien.revoqueLe })
 			})),
+			dernierArrete: arretes[0] ?? null,
+			/*
+			  ⚠️ L'ADRESSE SE COMPOSE AVEC L'ORIGINE DU NAVIGATEUR, jamais avec une
+			  constante. En développement elle vaut `localhost:20173`, en production
+			  le domaine servi : une constante ferait coller dans une vraie lettre
+			  une adresse qui ne répond que sur la machine du développeur.
+			*/
+			adresseDe: (jeton: string) =>
+				`${typeof window === 'undefined' ? '' : window.location.origin}/p/${jeton}`,
+			enCours: lienEnCours,
+			erreur: erreurLien,
+			onOuvrir: (decompteId: string) =>
+				void avecLeLien(() => ouvrirLien({ decompteId: decompteId as Id<'decomptes'> })),
+			onFermer: (jeton: string) => void avecLeLien(() => fermerLien({ jeton }))
+		},
+		// Le plus récent d'abord : c'est celui qu'on vient relire. Voir `arretes`.
+		decomptesArretes: arretes,
 		onTelechargerLaPiece: dernier === null ? null : () => void telechargerLaPiece(),
 
 		hypotheses,

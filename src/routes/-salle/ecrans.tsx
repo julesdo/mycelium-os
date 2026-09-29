@@ -2,6 +2,7 @@ import type { EcranDuProduit } from './demo';
 import { ECRANS_ACCUEIL } from './accueil';
 import { ECRANS_BARRE_ET_COMPAGNON } from './barre-et-compagnon';
 import { ECRANS_BIENVENUE } from './bienvenue';
+import { ECRANS_PAIEMENT } from './paiement';
 import { ECRANS_COMPTE } from './compte';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
@@ -78,6 +79,13 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	...ECRANS_DEBITEURS,
 	...ECRANS_IMPORT,
 	...ECRANS_COMPTE,
+	/*
+	  ⚠️ LA PAGE DU CLIENT, ET ELLE N'EST PAS SOUS `/app/`. C'est la seule
+	  surface du produit qu'un tiers ouvre : sans compte, souvent sur un
+	  téléphone, depuis un lien reçu par courriel. S'il ne la comprend pas en
+	  trois secondes, il ne paie pas.
+	*/
+	...ECRANS_PAIEMENT,
 
 	/* ── LA BARRE DU BAS ET LE COMPAGNON (refonte/barre-et-compagnon) ──────────
 	 *

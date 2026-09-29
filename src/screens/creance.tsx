@@ -11,6 +11,7 @@ import {
 	FeuilleDeclaration,
 	FeuilleVoie,
 	Lien,
+	LiensDePaiement,
 	LigneAnalyse,
 	LigneBouton,
 	LigneValeur,
@@ -27,6 +28,7 @@ import {
 	SectionsDepliables,
 	Solidite,
 	SuiviDuDossier,
+	type LiensDePaiementAffiches,
 	type SuiviDossierAffiche,
 	SuiviProcedure,
 	Tableau,
@@ -208,6 +210,8 @@ export interface CreanceOuverte {
 	readonly situations: readonly SituationAffichee[];
 	/** Les courriers du dossier : préparés ici, validés par un administrateur, envoyés par le gérant. */
 	readonly courriers: CourriersDuDossier;
+	/** Les adresses publiques où le client peut payer, et ce qu'il faut pour en ouvrir une. */
+	readonly liensDePaiement: LiensDePaiementAffiches;
 	/**
 	 * Ce qui s'est passé sur le dossier : le journal de la machine et les notes
 	 * du gérant.
@@ -697,6 +701,13 @@ function SectionDecompte({ creance }: { creance: CreanceOuverte }) {
 					</BoutonSecondaire>
 				)}
 			</div>
+
+			{/*
+			  ⚠️ LE LIEN DE PAIEMENT EST ICI, SOUS LE DÉCOMPTE, ET PAS DANS LES
+			  COURRIERS. Il ne s'ouvre que sur un décompte ARRÊTÉ : sa place est
+			  auprès de ce qui l'arrête, pas auprès de ce qui l'envoie.
+			*/}
+			<LiensDePaiement {...creance.liensDePaiement} />
 		</SectionDepliable>
 	);
 }

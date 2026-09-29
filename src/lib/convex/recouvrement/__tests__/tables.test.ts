@@ -92,6 +92,7 @@ describe('schéma du recouvrement', () => {
 			'importsRecouvrement',
 			'intervenants',
 			'journal',
+			'liensDePaiement',
 			'pieces',
 			'piecesFactures',
 			'profilsCreancier',

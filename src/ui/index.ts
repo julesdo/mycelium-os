@@ -71,6 +71,12 @@ export { SectionEcran } from './section';
 export { SectionsDepliables, SectionDepliable } from './section-depliable';
 export { RefusEnQuatreParties } from './refus';
 export { ChampCopiable } from './champ-copiable';
+export { QrDeVirement } from './qr-virement';
+export {
+	LiensDePaiement,
+	type LienDePaiementAffiche,
+	type LiensDePaiementAffiches
+} from './lien-de-paiement';
 export { ConfirmationParSaisie } from './confirmation-par-saisie';
 export { ZoneDepot } from './zone-depot';
 export { BilanImport, type DepotAffiche, type BilanDepotAffiche } from './bilan-import';

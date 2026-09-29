@@ -29,6 +29,7 @@ import { Route as AppDossiersRouteImport } from './routes/app/dossiers'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
 import { Route as AppProceduresRouteImport } from './routes/app/procedures'
 import { Route as AppRevelationRouteImport } from './routes/app/revelation'
+import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppArretIdRouteImport } from './routes/app/arret.$id'
@@ -140,6 +141,11 @@ const AppRevelationRoute = AppRevelationRouteImport.update({
   path: '/revelation',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const PJetonRoute = PJetonRouteImport.update({
+  id: '/p/$jeton',
+  path: '/p/$jeton',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RejoindreTokenRoute = RejoindreTokenRouteImport.update({
   id: '/rejoindre/$token',
   path: '/rejoindre/$token',
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
+    | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app/'
     | '/api/auth/$'
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
+    | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app'
     | '/api/auth/$'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
+    | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app/'
     | '/api/auth/$'
@@ -387,6 +399,7 @@ export interface RootRouteChildren {
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
   PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
   ShowroomRoute: typeof ShowroomRoute
+  PJetonRoute: typeof PJetonRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -532,6 +545,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/revelation'
       preLoaderRoute: typeof AppRevelationRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/p/$jeton': {
+      id: '/p/$jeton'
+      path: '/p/$jeton'
+      fullPath: '/p/$jeton'
+      preLoaderRoute: typeof PJetonRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/rejoindre/$token': {
       id: '/rejoindre/$token'
@@ -681,6 +701,7 @@ const rootRouteChildren: RootRouteChildren = {
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
   PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
   ShowroomRoute: ShowroomRoute,
+  PJetonRoute: PJetonRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

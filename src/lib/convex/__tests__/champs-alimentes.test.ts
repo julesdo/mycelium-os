@@ -57,6 +57,8 @@ const ADMIS: Readonly<Record<string, string>> = {
 		'Qui a validé un courrier : l’administrateur. Écrit à la validation, avec l’empreinte — trace d’audit.',
 	partiDeclarePar:
 		'Qui a déclaré le départ d’un courrier. Écrit avec la date du départ — trace d’audit.',
+	creePar:
+		'Qui a ouvert un lien de paiement. Écrit à l’ouverture, pas encore affiché — même trace d’audit que `preparePar` et `validePar`, et pour la même raison : une adresse publique qui circule au nom de l’établissement doit porter qui l’a ouverte.',
 	majLe:
 		'Horodatage de dernière mise à jour du profil créancier. Écrit, pas encore affiché — trace d’audit.',
 	consigneLe:

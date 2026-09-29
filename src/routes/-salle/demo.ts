@@ -28,7 +28,15 @@ export interface EcranDuProduit {
 	 */
 	readonly route: Extract<
 		RouteIds<RegisteredRouter['routeTree']>,
-		`/app/${string}` | '/bienvenue' | '/'
+		/*
+		  ⚠️ ET `/p/$jeton` DEPUIS LE 30 SEPTEMBRE 2026, pour la raison la plus
+		  forte de toutes : c'est la SEULE page du produit qu'un tiers regarde.
+		  Le client du créancier l'ouvre sur son téléphone, sans compte, souvent
+		  depuis un lien reçu par courriel — et s'il ne la comprend pas en trois
+		  secondes, il ne paie pas. C'est l'écran qu'il faut le plus regarder aux
+		  quatre largeurs, et c'était le seul que la borne de typage excluait.
+		*/
+		`/app/${string}` | '/bienvenue' | '/' | '/p/$jeton'
 	>;
 	/**
 	 * L'IDENTITÉ DE L'ENTRÉE DANS LA SALLE, quand la route ne suffit pas.

@@ -644,6 +644,29 @@ function creanceDemo({
 		  fait ne vérifieraient pas le bloc « Ce qui attend une réponse de vous »,
 		  qui est précisément la partie qu'on ne peut pas casser en silence.
 		*/
+		/*
+		  ⚠️ LA DÉMONSTRATION PORTE UN LIEN VIVANT ET UN DÉCOMPTE ARRÊTÉ, parce que
+		  les deux états qu'on ne peut pas casser en silence sont là : l'adresse
+		  copiable avec son bouton « fermer », et le refus argumenté quand aucun
+		  décompte n'a été arrêté. La forme « sans décompte arrêté » du dossier
+		  rend le second.
+		*/
+		liensDePaiement: {
+			liens: [
+				{
+					jeton: '3f1c4b8a-7d22-4e91-9a10-c5e0b2f7d461',
+					arreteAu: AUJOURD_HUI_DEMO,
+					total: 637_350n,
+					creeLe: Date.UTC(2026, 8, 3, 10, 5)
+				}
+			],
+			dernierArrete: { id: 'demo-decompte', arreteAu: AUJOURD_HUI_DEMO },
+			adresseDe: (jeton: string) => `https://exemple.fr/p/${jeton}`,
+			enCours: false,
+			erreur: null,
+			onOuvrir: () => undefined,
+			onFermer: () => undefined
+		},
 		suiviDuDossier: {
 			frise: [
 				{
