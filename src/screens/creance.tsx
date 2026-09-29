@@ -26,6 +26,8 @@ import {
 	SectionEcran,
 	SectionsDepliables,
 	Solidite,
+	SuiviDuDossier,
+	type SuiviDossierAffiche,
 	SuiviProcedure,
 	Tableau,
 	TableauCellule,
@@ -162,6 +164,7 @@ export interface RisqueAffiche {
  * à porter, parce qu'elles sont toujours ouvertes.
  */
 export const SECTIONS_CREANCE = [
+	'suivi',
 	'courriers',
 	'decompte',
 	'valeurs',
@@ -174,7 +177,7 @@ export const SECTIONS_CREANCE = [
 export type SectionCreance = (typeof SECTIONS_CREANCE)[number];
 
 /** Les sections de la colonne de gauche : ce qu'on peut faire. Les autres disent ce que contient le dossier. */
-const SECTIONS_GAUCHE: readonly string[] = ['courriers', 'relances', 'voies', 'litige'];
+const SECTIONS_GAUCHE: readonly string[] = ['suivi', 'courriers', 'relances', 'voies', 'litige'];
 
 /**
  * CE QUE LA PAGE MONTRE, ET CE QU'ELLE DÉCLENCHE.
@@ -206,6 +209,15 @@ export interface CreanceOuverte {
 	readonly situations: readonly SituationAffichee[];
 	/** Les courriers du dossier : préparés ici, validés par un administrateur, envoyés par le gérant. */
 	readonly courriers: CourriersDuDossier;
+	/**
+	 * Ce qui s'est passé sur le dossier : le journal de la machine et les notes
+	 * du gérant.
+	 *
+	 * ⚠️ PAS `suivi`, QUI EST DÉJÀ PRIS par le suivi de PROCÉDURE — la machine à
+	 * états d'une injonction. Deux `suivi` sur le même objet se confondraient au
+	 * premier coup d'œil, et ce ne sont pas du tout les mêmes faits.
+	 */
+	readonly suiviDuDossier: SuiviDossierAffiche;
 	/** Deux questions déjà écrites pour l'étape en cours, et le geste qui les pose au compagnon. */
 	readonly questionsPreecrites: readonly string[];
 	readonly onPoserQuestion: (question: string) => void;
@@ -447,6 +459,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 									ouvertes={ouvertes.filter((cle) => SECTIONS_GAUCHE.includes(cle))}
 									onOuvertesChange={(liste) => changer(SECTIONS_GAUCHE, liste)}
 								>
+									<SectionSuivi creance={pret} />
 									<SectionCourriers creance={pret} />
 									<SectionRelances creance={pret} />
 									<SectionVoies creance={pret} />
@@ -1196,6 +1209,39 @@ function SectionRelances({ creance }: { creance: CreanceOuverte }) {
  * commissaire de justice. Préparés ici, validés par un administrateur, envoyés
  * par vous.
  */
+/**
+ * CE QUI S'EST PASSÉ, ET CE QU'ON Y NOTE.
+ *
+ * ⚠️ EN PREMIÈRE POSITION DE LA COLONNE DE GAUCHE, avant les courriers. « Où
+ * j'en suis » est la première question qu'on se pose en ouvrant un dossier, et
+ * elle n'avait aucune réponse : le journal des faits existait en base et ne
+ * s'affichait nulle part, et rien ne portait un appel, une promesse ou une note
+ * (audit du 29/09/2026, F3).
+ *
+ * ⚠️ LA VALEUR COMPTE CE QUI ATTEND, PAS CE QU'IL Y A. « 14 faits » est un
+ * cadran ; « 2 à trancher » dit qu'une promesse est arrivée à son jour sans
+ * qu'on sache si elle a été tenue, et c'est la seule chose qui appelle le
+ * gérant depuis cette rangée repliée.
+ */
+function SectionSuivi({ creance }: { creance: CreanceOuverte }) {
+	const enAttente =
+		creance.suiviDuDossier.notes.filter(
+			(note) =>
+				(note.genre === 'PROMESSE' && note.issue === undefined) ||
+				(note.genre === 'RAPPEL' && note.faitLe === undefined)
+		).length;
+	return (
+		<SectionDepliable
+			cle="suivi"
+			titre="Ce qui s’est passé"
+			legende="Vos notes, vos échanges, et ce que le logiciel a constaté"
+			valeur={enAttente > 0 ? `${enAttente} à trancher` : undefined}
+		>
+			<SuiviDuDossier {...creance.suiviDuDossier} />
+		</SectionDepliable>
+	);
+}
+
 function SectionCourriers({ creance }: { creance: CreanceOuverte }) {
 	const aValider = creance.courriers.envois.filter((e) => e.etat === 'A_VALIDER').length;
 	return (

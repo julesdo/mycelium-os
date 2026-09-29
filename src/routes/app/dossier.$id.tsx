@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useAction, useMutation, useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import { depuisCentimes } from '../../lib/socle/montants';
+import { depuisCentimes, depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
 import { QUESTIONS_PAR_ETAPE, lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
 import { poserAuCompagnon } from '../../app/compagnon';
@@ -120,6 +120,14 @@ function PageCreance() {
 	  de formulaire.
 	*/
 	const profilCreancier = useQuery(api.recouvrement.profil.monProfil, {});
+	const notesDuDossier = useQuery(api.recouvrement.suivi.lire, { creanceId });
+	const friseDuDossier = useQuery(api.recouvrement.suivi.frise, { creanceId });
+	const noter = useMutation(api.recouvrement.suivi.noter);
+	const trancherPromesse = useMutation(api.recouvrement.suivi.trancherPromesse);
+	const rappelFait = useMutation(api.recouvrement.suivi.rappelFait);
+	const effacerNote = useMutation(api.recouvrement.suivi.effacer);
+	const [erreurSuivi, setErreurSuivi] = useState<string | null>(null);
+	const [suiviEnCours, setSuiviEnCours] = useState(false);
 	const apercuCourrier = useQuery(
 		api.recouvrement.envois.apercu,
 		choixCourrier === null ? 'skip' : { creanceId, choix: versConvex(choixCourrier) }
@@ -190,6 +198,24 @@ function PageCreance() {
 			: avocats === undefined
 				? { phase: 'EN_COURS' }
 				: { phase: 'TROUVE', resultat: avocats };
+
+	/**
+	 * ⚠️ LE SUIVI A SON PROPRE VERROU, ET SA PROPRE ERREUR. Partager `avec` ferait
+	 * afficher « Enregistrement… » sur le dépôt d'une pièce pendant qu'une note
+	 * part, et un refus de note effacerait un refus de courrier. Deux gestes
+	 * indépendants ne partagent pas leur état.
+	 */
+	async function avecLeSuivi(geste: () => Promise<unknown>) {
+		setErreurSuivi(null);
+		setSuiviEnCours(true);
+		try {
+			await geste();
+		} catch (e) {
+			setErreurSuivi(messageDuRefus(e));
+		} finally {
+			setSuiviEnCours(false);
+		}
+	}
 
 	async function avec(geste: () => Promise<unknown>) {
 		setErreur(null);
@@ -590,6 +616,65 @@ function PageCreance() {
 			dateLimiteAgir: laPlusProche(creance.factures.map((f) => f.datePrescription))
 		}),
 
+		/*
+		  ⚠️ LA PAGE N'ATTEND PAS LE SUIVI. Tant qu'il se lit, la section montre
+		  une frise vide et son formulaire : c'est le seul bloc de cette page dont
+		  l'absence momentanée ne fausse aucun chiffre. Faire attendre le décompte
+		  pour une note serait payer cher une commodité.
+		*/
+		suiviDuDossier: {
+			frise: friseDuDossier ?? [],
+			notes: (notesDuDossier ?? []).map((note) => ({
+				_id: note._id,
+				genre: note.genre,
+				texte: note.texte,
+				...(note.canal === undefined ? {} : { canal: note.canal }),
+				...(note.survenuLe === undefined ? {} : { survenuLe: note.survenuLe }),
+				...(note.montantPromis === undefined ? {} : { montantPromis: note.montantPromis }),
+				...(note.promisPourLe === undefined ? {} : { promisPourLe: note.promisPourLe }),
+				...(note.issue === undefined ? {} : { issue: note.issue }),
+				...(note.rappelLe === undefined ? {} : { rappelLe: note.rappelLe }),
+				...(note.faitLe === undefined ? {} : { faitLe: note.faitLe }),
+				ecritLe: note.ecritLe
+			})),
+			aujourdHui,
+			enCours: suiviEnCours,
+			erreur: erreurSuivi,
+			onNoter: (saisie) =>
+				void avecLeSuivi(async () => {
+					/*
+					  ⚠️ LE MONTANT PASSE PAR `depuisEuros`, JAMAIS PAR `Number`. Toute
+					  la chaîne du produit est en centimes entiers, du parseur à l'écran,
+					  et une promesse de 2 000,10 € saisie en flottant finirait à
+					  200009 centimes une fois sur deux.
+					*/
+					await noter({
+						creanceId,
+						genre: saisie.genre,
+						texte: saisie.texte,
+						...(saisie.genre === 'ECHANGE'
+							? { canal: saisie.canal, survenuLe: saisie.survenuLe }
+							: {}),
+						...(saisie.genre === 'PROMESSE'
+							? {
+									montantPromis: enCentimes(depuisEuros(saisie.montantPromisEuros)),
+									promisPourLe: saisie.promisPourLe
+								}
+							: {}),
+						...(saisie.genre === 'RAPPEL' ? { rappelLe: saisie.rappelLe } : {})
+					});
+				}),
+			onTrancherPromesse: (noteId, issue) =>
+				void avecLeSuivi(() =>
+					trancherPromesse({ entreeId: noteId as Id<'suiviDossier'>, issue })
+				),
+			onRappelFait: (noteId) =>
+				void avecLeSuivi(() =>
+					rappelFait({ entreeId: noteId as Id<'suiviDossier'>, faitLe: aujourdHui })
+				),
+			onEffacer: (noteId) =>
+				void avecLeSuivi(() => effacerNote({ entreeId: noteId as Id<'suiviDossier'> }))
+		},
 		courriers: {
 			...(profilCreancier?.delaiRelanceParDefautJours === undefined
 				? {}

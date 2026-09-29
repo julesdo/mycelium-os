@@ -79,7 +79,9 @@ export const vEvenementDeSurveillance = v.object({
 		 * module existe pour éviter : du bruit qu'on apprend à ignorer, jusqu'au
 		 * jour où il portait le signal qui comptait.
 		 */
-		v.literal('HABITUDE_ROMPUE')
+		v.literal('HABITUDE_ROMPUE'),
+		v.literal('PROMESSE_ECHUE'),
+		v.literal('RAPPEL_DU_JOUR')
 	),
 	reference: v.string(),
 	/**
@@ -498,6 +500,51 @@ async function assembler(
 		aujourdHui
 	);
 
+	/*
+	  ── CE QUE LE GÉRANT A NOTÉ, ET QUI ARRIVE À SON JOUR ─────────────────────
+
+	  ⚠️ ON LIT TOUT LE SUIVI DE L'ÉTABLISSEMENT, PAS DOSSIER PAR DOSSIER. Une
+	  boucle sur les créances ferait une lecture par dossier, et ce flux est
+	  reconstruit à chaque ouverture de l'accueil comme à chaque battement de la
+	  nuit. L'index par établissement en fait une.
+
+	  ⚠️ ET ON NE RETIENT QUE CE QUI N'EST PAS TRANCHÉ. Une promesse dont le
+	  gérant a dit qu'elle avait été tenue — ou pas — ne remonte plus : elle a
+	  reçu sa réponse. Absent ne veut pas dire « non tenue », il veut dire « on
+	  ne sait pas encore », et c'est précisément ça qui doit revenir.
+	*/
+	const suivi = await ctx.db
+		.query('suiviDossier')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.collect();
+
+	const engagements = suivi
+		.filter(
+			(entree) =>
+				(entree.genre === 'PROMESSE' && entree.issue === undefined) ||
+				(entree.genre === 'RAPPEL' && entree.faitLe === undefined)
+		)
+		.flatMap((entree) => {
+			const date = entree.genre === 'PROMESSE' ? entree.promisPourLe : entree.rappelLe;
+			if (date === undefined) return [];
+			const creance = creancesBrutes.find((c) => c._id === entree.creanceId);
+			if (creance === undefined) return [];
+			const debiteur = debiteurs.get(creance.debiteurId);
+			return [
+				{
+					genre: entree.genre as 'PROMESSE' | 'RAPPEL',
+					reference: debiteur?.denomination ?? 'Client inconnu',
+					creanceId: entree.creanceId as string,
+					...(debiteur === undefined ? {} : { debiteurId: debiteur._id as string }),
+					date,
+					texte: entree.texte,
+					...(entree.montantPromis === undefined
+						? {}
+						: { montant: depuisCentimes(entree.montantPromis) })
+				}
+			];
+		});
+
 	return {
 		etat: {
 			factures,
@@ -505,7 +552,8 @@ async function assembler(
 			dossiers,
 			debiteurs: debiteursSurveilles,
 			debiteursSansIdentifiant,
-			ruptures
+			ruptures,
+			engagements
 		},
 		hypotheses: [...hypotheses]
 	};

@@ -81,7 +81,14 @@ const PLI_PAR_TYPE: Record<string, { readonly un: string; readonly plusieurs: st
 	ECHEANCE_PROCEDURE: { un: 'échéance de procédure', plusieurs: 'échéances de procédure' },
 	FACTURE_ECHUE: { un: 'facture échue', plusieurs: 'factures échues' },
 	DEBITEUR_DEGRADE: { un: 'client dégradé au registre', plusieurs: 'clients dégradés au registre' },
-	HABITUDE_ROMPUE: { un: 'habitude de paiement rompue', plusieurs: 'habitudes de paiement rompues' }
+	HABITUDE_ROMPUE: { un: 'habitude de paiement rompue', plusieurs: 'habitudes de paiement rompues' },
+	/*
+	  ⚠️ LES DEUX SEULS PLIS QUI VIENNENT DU GÉRANT, et pas d'un calcul. Une
+	  promesse de paiement et un rappel qu'il s'est posé remontent ici le jour
+	  dit — sans quoi une promesse notée resterait une note, et une note se perd.
+	*/
+	PROMESSE_ECHUE: { un: 'promesse de paiement arrivée', plusieurs: 'promesses de paiement arrivées' },
+	RAPPEL_DU_JOUR: { un: 'rappel que vous vous êtes posé', plusieurs: 'rappels que vous vous êtes posés' }
 };
 
 /**

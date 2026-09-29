@@ -637,6 +637,60 @@ function creanceDemo({
 		onPoserQuestion: () => undefined,
 
 		// Une vraie lettre, composée par le gabarit sur les données de la salle.
+		/*
+		  ⚠️ LA DÉMONSTRATION PORTE LES DEUX SOURCES ET DEUX ENTRÉES QUI ATTENDENT.
+		  Une frise qui ne montrerait que des notes du gérant ne vérifierait pas la
+		  colonne « Le logiciel » ; une promesse déjà tranchée et un rappel déjà
+		  fait ne vérifieraient pas le bloc « Ce qui attend une réponse de vous »,
+		  qui est précisément la partie qu'on ne peut pas casser en silence.
+		*/
+		suiviDuDossier: {
+			frise: [
+				{
+					quand: Date.UTC(2026, 8, 3, 9, 12),
+					auteur: 'VOUS' as const,
+					titre: 'Échange avec votre client',
+					detail: 'Il dit que la facture FA-2026-118 n’est jamais arrivée. Renvoyée le jour même.',
+					source: 'Au téléphone'
+				},
+				{
+					quand: Date.UTC(2026, 8, 3, 4, 2),
+					auteur: 'LOGICIEL' as const,
+					titre: 'Un décompte a été arrêté',
+					detail: 'Arrêté au 3 septembre 2026 : 6 373,50 €.'
+				},
+				{
+					quand: Date.UTC(2026, 7, 21, 6, 30),
+					auteur: 'LOGICIEL' as const,
+					titre: 'Une facture a rejoint le dossier',
+					detail: 'FA-2026-118, 6 000,00 €, échue le 1er mai 2026.'
+				}
+			],
+			notes: [
+				{
+					_id: 'demo-note-promesse',
+					genre: 'PROMESSE' as const,
+					texte: 'Il paie dès que son client du chantier Lefèvre l’aura réglé.',
+					montantPromis: 300_000n,
+					promisPourLe: '2026-09-05',
+					ecritLe: Date.UTC(2026, 8, 3, 9, 14)
+				},
+				{
+					_id: 'demo-note-rappel',
+					genre: 'RAPPEL' as const,
+					texte: 'Le rappeler si rien n’est arrivé.',
+					rappelLe: '2026-09-12',
+					ecritLe: Date.UTC(2026, 8, 3, 9, 15)
+				}
+			],
+			aujourdHui: AUJOURD_HUI_DEMO,
+			enCours: false,
+			erreur: null,
+			onNoter: () => undefined,
+			onTrancherPromesse: () => undefined,
+			onRappelFait: () => undefined,
+			onEffacer: () => undefined
+		},
 		courriers: {
 			modeles: modelesProposables(SANTE_DEBITEUR_DEMO, journal !== null),
 			envois: COURRIER_DEMO.ok

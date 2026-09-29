@@ -643,6 +643,10 @@ export const purgerEtablissement = internalMutation({
 		// de ce que porte une procédure.
 		budget = await viderParIndexOrg(ctx, 'intervenants', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'evenementsProcedure', organizationId, budget);
+		// Le suivi référence la créance : il part avant elle. Il porte les notes,
+		// les échanges, les promesses et les rappels du gérant — des données du
+		// client, comme le reste, donc purgées sans exception.
+		budget = await viderParIndexOrg(ctx, 'suiviDossier', organizationId, budget);
 		// Les courriers référencent la créance et le décompte : ils partent avant eux.
 		budget = await viderParIndexOrg(ctx, 'envois', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
@@ -865,6 +869,7 @@ async function viderParIndexOrg(
 	table:
 		| 'piecesFactures'
 		| 'evenementsProcedure'
+		| 'suiviDossier'
 		| 'envois'
 		| 'decomptes'
 		| 'creances'

@@ -991,6 +991,74 @@ export const recouvrementTables = {
 	 * lui-même à ce jour : le gérant imprime et envoie en recommandé, ou joint le
 	 * document dans sa propre messagerie, puis déclare la date du départ.
 	 */
+	/**
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 * LE SUIVI D'UN DOSSIER — ce que le gérant sait, et que le logiciel ignorait
+	 * ═══════════════════════════════════════════════════════════════════════════
+	 *
+	 * ⚠️ POURQUOI CETTE TABLE EXISTE. Le produit n'avait AUCUNE mémoire du
+	 * travail humain : ni note libre, ni promesse de paiement, ni appel consigné,
+	 * ni rappel qu'on se pose à soi-même (audit du 29/09/2026, F3). Le gérant
+	 * gardait donc son carnet à côté — et une application qui n'est pas le lieu
+	 * où le travail se fait est un rapport qu'on vient consulter.
+	 *
+	 * ⚠️ ELLE NE SE CONFOND PAS AVEC `journal`. Le journal porte ce que la
+	 * MACHINE a constaté et ce que le gérant a QUALIFIÉ — des faits qui changent
+	 * un calcul. Celle-ci porte ce qui s'est passé entre deux personnes, et qui
+	 * ne change aucun chiffre : un appel, une promesse, une note. Les mélanger
+	 * ferait entrer une conversation téléphonique dans la chaîne d'auditabilité
+	 * d'un décompte.
+	 *
+	 * ⚠️ ET AUCUNE ENTRÉE N'EN DÉDUIT DE DROIT. Une promesse de paiement n'est
+	 * pas une reconnaissance de dette, et ce logiciel ne dira jamais qu'elle en
+	 * est une : elle est notée parce qu'elle a une DATE, et qu'à cette date on
+	 * veut savoir si elle a été tenue.
+	 */
+	suiviDossier: defineTable({
+		organizationId: v.id('organizations'),
+		creanceId: v.id('creances'),
+		genre: v.union(
+			v.literal('NOTE'),
+			v.literal('ECHANGE'),
+			v.literal('PROMESSE'),
+			v.literal('RAPPEL')
+		),
+		/** Ce que le gérant écrit. Vide n'existe pas : une entrée sans texte ne dit rien. */
+		texte: v.string(),
+		/** Par quoi l'échange a eu lieu. Seulement pour un `ECHANGE`. */
+		canal: v.optional(
+			v.union(
+				v.literal('APPEL'),
+				v.literal('COURRIEL'),
+				v.literal('SMS'),
+				v.literal('COURRIER'),
+				v.literal('VISITE')
+			)
+		),
+		/** Le jour de l'échange (AAAA-MM-JJ), qui n'est pas celui de la saisie. */
+		survenuLe: v.optional(v.string()),
+		/** Ce qu'il a promis, en centimes. Seulement pour une `PROMESSE`. */
+		montantPromis: v.optional(v.int64()),
+		/** Le jour pour lequel il l'a promis (AAAA-MM-JJ). */
+		promisPourLe: v.optional(v.string()),
+		/**
+		 * Ce qu'il est advenu de la promesse, quand le gérant l'a tranché.
+		 *
+		 * ⚠️ ABSENT NE VEUT PAS DIRE « NON TENUE ». Absent veut dire « on ne sait
+		 * pas encore », et c'est ce qui fait remonter la promesse dans la file le
+		 * jour dit. Le doute ne profite jamais au produit.
+		 */
+		issue: v.optional(v.union(v.literal('TENUE'), v.literal('NON_TENUE'))),
+		/** Le jour où le gérant veut y revenir (AAAA-MM-JJ). Seulement pour un `RAPPEL`. */
+		rappelLe: v.optional(v.string()),
+		/** Le jour où le gérant a déclaré le rappel fait. Absent : il court encore. */
+		faitLe: v.optional(v.string()),
+		auteurUserId: v.string(),
+		ecritLe: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_creance', ['creanceId']),
+
 	envois: defineTable({
 		organizationId: v.id('organizations'),
 		creanceId: v.id('creances'),

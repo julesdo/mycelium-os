@@ -97,7 +97,8 @@ describe('schéma du recouvrement', () => {
 			'profilsCreancier',
 			'propositions',
 			'reglements',
-			'remisesAuConseil'
+			'remisesAuConseil',
+			'suiviDossier'
 		]);
 	});
 

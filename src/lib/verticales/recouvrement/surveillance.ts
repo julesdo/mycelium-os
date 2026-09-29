@@ -29,7 +29,18 @@ export type TypeEvenement =
 	| 'ECHEANCE_PROCEDURE'
 	| 'DEBITEUR_DEGRADE'
 	| 'PRESCRIPTION_PROCHE'
-	| 'HABITUDE_ROMPUE';
+	| 'HABITUDE_ROMPUE'
+	/**
+	 * ⚠️ LES DEUX SEULS TYPES QUE LE GÉRANT PRODUIT LUI-MÊME. Tous les autres
+	 * sortent d'un calcul ; ceux-ci sortent de ce qu'il a noté sur un dossier —
+	 * une promesse de paiement arrivée à son jour, un rappel qu'il s'est posé.
+	 *
+	 * Sans eux, une promesse notée resterait une note : elle ne remonterait
+	 * jamais le jour dit, et le produit garderait le défaut qu'on vient de
+	 * corriger — le carnet tenu à côté (audit du 29/09/2026, F3).
+	 */
+	| 'PROMESSE_ECHUE'
+	| 'RAPPEL_DU_JOUR';
 
 export type Urgence = 'CRITIQUE' | 'HAUTE' | 'NORMALE';
 
@@ -269,6 +280,27 @@ export interface RuptureSurveillee {
 	readonly constat: string;
 }
 
+/**
+ * CE QUE LE GÉRANT A NOTÉ ET QUI ARRIVE À SON JOUR.
+ *
+ * ⚠️ LE DOMAINE NE LIT AUCUNE BASE : l'appelant lui donne les engagements déjà
+ * relevés, comme il lui donne les factures. C'est ce qui permet de rejouer la
+ * détection à n'importe quelle date, sans harnais.
+ */
+export interface EngagementSuivi {
+	readonly genre: 'PROMESSE' | 'RAPPEL';
+	/** Le nom du client : c'est lui que la rangée annonce. */
+	readonly reference: string;
+	readonly creanceId: string;
+	readonly debiteurId?: string;
+	/** Le jour promis, ou celui du rappel (AAAA-MM-JJ). */
+	readonly date: string;
+	/** Ce que le gérant a écrit, mot pour mot. Jamais reformulé. */
+	readonly texte: string;
+	/** Ce qui a été promis. Absent sur un rappel. */
+	readonly montant?: Montant;
+}
+
 export interface EtatSurveille {
 	readonly factures: readonly FactureSurveillee[];
 	readonly creances: readonly CreanceSurveillee[];
@@ -286,6 +318,14 @@ export interface EtatSurveille {
 	 * pays. Elle reçoit des noms, elle les nomme.
 	 */
 	readonly debiteursSansIdentifiant?: readonly string[];
+
+	/**
+	 * Les promesses et les rappels arrivés à leur jour, et pas encore tranchés.
+	 *
+	 * ⚠️ FACULTATIF, comme les ruptures : un appelant qui ne les fournit pas
+	 * n'obtient aucun événement de ce type — il n'obtient pas un flux faux.
+	 */
+	readonly engagements?: readonly EngagementSuivi[];
 
 	/**
 	 * Les factures dont le retard SORT de l'habitude de leur debiteur.
@@ -583,6 +623,59 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			...(rupture.debiteurId === undefined
 				? {}
 				: { cible: { genre: 'DEBITEUR' as const, id: rupture.debiteurId } })
+		});
+	}
+
+	/*
+	  ── CE QUE LE GÉRANT A NOTÉ, ARRIVÉ À SON JOUR ────────────────────────────
+
+	  ⚠️ CE SONT LES DEUX SEULS ÉVÉNEMENTS QUE LE PRODUIT NE CALCULE PAS. Ils
+	  viennent de ce que le gérant a écrit sur un dossier, et ils remontent ici
+	  pour une seule raison : une promesse ou un rappel qui ne revient pas le
+	  jour dit est une note, et une note se perd. C'est exactement le carnet
+	  tenu à côté que ce chantier existe pour supprimer.
+
+	  ⚠️ ET LE PRODUIT N'EN DÉDUIT AUCUN DROIT. Une promesse de paiement n'est
+	  pas une reconnaissance de dette : l'explication dit ce que le gérant a
+	  noté, et rien de plus. L'action lui rend la main — c'est lui qui dira si
+	  elle a été tenue, parce que lui seul le sait.
+	*/
+	for (const engagement of etat.engagements ?? []) {
+		if (engagement.date > aujourdHui) continue;
+		const cible = {
+			genre: 'CREANCE' as const,
+			id: engagement.creanceId,
+			...(engagement.debiteurId === undefined ? {} : { debiteurId: engagement.debiteurId })
+		};
+
+		if (engagement.genre === 'PROMESSE') {
+			evenements.push({
+				type: 'PROMESSE_ECHUE',
+				reference: engagement.reference,
+				// ⚠️ LE MONTANT PROMIS N'EST PAS UNE SOMME DE PLUS : voir
+				// `montantIdentifie`, qui l'exclut. C'est une partie de ce que les
+				// factures de ce dossier portent déjà.
+				montant: engagement.montant ?? null,
+				urgence: 'HAUTE',
+				explication:
+					`${engagement.reference} avait promis de payer ` +
+					`pour le ${dateLisible(engagement.date)} : « ${engagement.texte} »`,
+				action: 'Ouvrir ce dossier : dites s’il a payé.',
+				dateDuFait: engagement.date,
+				cible
+			});
+			continue;
+		}
+
+		evenements.push({
+			type: 'RAPPEL_DU_JOUR',
+			reference: engagement.reference,
+			montant: null,
+			urgence: 'NORMALE',
+			explication: `Vous vouliez y revenir le ${dateLisible(engagement.date)} : « ${engagement.texte} »`,
+			action: 'Ouvrir ce dossier.',
+			dateDuFait: engagement.date,
+			cible
 		});
 	}
 
