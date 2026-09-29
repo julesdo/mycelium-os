@@ -6,6 +6,7 @@ import { getUserOrg } from '../lib/auth';
 import { normaliserSiren, sirenDepuisSiret } from '../../verticales/recouvrement/pays/france/siren';
 import { vEtatCritere, vOrdreImputation } from './tables';
 import { depuisEuros, enCentimes } from '../../socle/montants';
+import { lireIban } from '../../socle/iban';
 
 /**
  * LE PROFIL CRÉANCIER — déclaré depuis le remodelage, lu à deux endroits, et
@@ -205,17 +206,6 @@ export const enregistrer = authedMutation({
 	}
 });
 
-/** L'IBAN vérifié par sa clé (ISO 13616, reste 1 modulo 97). Rend `null` quand il ne tombe pas. */
-function ibanValide(saisi: string): string | null {
-	const iban = saisi.replace(/s+/g, '').toUpperCase();
-	if (!/^[A-Z]{2}d{2}[A-Z0-9]{11,30}$/.test(iban)) return null;
-	const deplace = iban.slice(4) + iban.slice(0, 4);
-	const chiffres = deplace.replace(/[A-Z]/g, (l) => String(l.charCodeAt(0) - 55));
-	let reste = 0;
-	for (const c of chiffres) reste = (reste * 10 + Number(c)) % 97;
-	return reste === 1 ? iban : null;
-}
-
 /**
  * CE QUI S'IMPRIME SUR LES COURRIERS : le signataire, les coordonnées, les
  * mentions de l'en-tête et l'IBAN. Chaque champ vide efface le précédent.
@@ -243,16 +233,35 @@ export const enregistrerCourriers = authedMutation({
 				'Renseignez d’abord votre entreprise : sa dénomination s’imprime en tête des courriers.'
 			);
 		}
+		/*
+		  ⚠️ CES DEUX CONTRÔLES ÉTAIENT CASSÉS EN PRODUCTION, ET MUETS.
+
+		  Leurs expressions régulières avaient perdu leurs barres obliques
+		  inverses : `[^s@]` refusait la lettre « s » au lieu des espaces — donc
+		  toute adresse commençant par un « s » — et `d{2}` exigeait deux « d »
+		  littéraux dans l'IBAN, ce qu'aucun IBAN ne porte. AUCUN IBAN ne pouvait
+		  donc être enregistré, et le refus annonçait une clé de contrôle qui
+		  n'avait jamais été calculée. La lettre avec virement ne pouvait pas se
+		  composer, et rien ne le disait.
+
+		  L'IBAN vit maintenant dans `socle/iban.ts`, avec son test.
+		*/
 		const email = args.email.trim();
-		if (email !== '' && !/^[^s@]+@[^s@]+.[^s@]+$/.test(email)) {
+		if (email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 			throw new ConvexError(`« ${email} » n’est pas une adresse électronique.`);
 		}
 		const ibanSaisi = args.iban.trim();
-		const iban = ibanSaisi === '' ? undefined : ibanValide(ibanSaisi);
-		if (iban === null) {
-			throw new ConvexError(
-				`« ${ibanSaisi} » n’est pas un IBAN : sa clé de contrôle ne tombe pas.`
-			);
+		let iban: string | undefined;
+		if (ibanSaisi !== '') {
+			const lu = lireIban(ibanSaisi);
+			if (!lu.ok) {
+				throw new ConvexError(
+					lu.motif === 'FORME'
+						? `« ${ibanSaisi} » n’a pas la forme d’un IBAN : deux lettres de pays, deux chiffres de clé, puis le numéro de compte.`
+						: `« ${ibanSaisi} » a la forme d’un IBAN, mais sa clé de contrôle ne tombe pas : un chiffre est faux.`
+				);
+			}
+			iban = lu.iban;
 		}
 		const capitalSaisi = args.capitalSocialEuros.trim();
 		let capitalSocial: bigint | undefined;
