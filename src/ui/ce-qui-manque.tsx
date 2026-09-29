@@ -65,10 +65,16 @@ export interface Verrou {
  */
 export function ceQuiManque({
 	profilCreancierComplet,
+	enTeteDeCourrierComplet,
 	nombreFactures,
 	debiteursSansSiren
 }: {
 	readonly profilCreancierComplet: boolean;
+	/**
+	 * Ce qui s'imprime en tête d'une lettre : le signataire, son adresse
+	 * électronique, l'IBAN. Sans eux, AUCUN courrier ne se compose.
+	 */
+	readonly enTeteDeCourrierComplet: boolean;
 	readonly nombreFactures: number;
 	readonly debiteursSansSiren: number;
 }): readonly Verrou[] {
@@ -117,6 +123,29 @@ export function ceQuiManque({
 			// trois champs vivent désormais dans la section « Votre établissement »
 			// de la page unique du compte : la page qui les portait seule est morte
 			// avec les douze autres adresses de réglages.
+			vers: '/app/compte'
+		});
+	}
+
+	/*
+	  ⚠️ CE VERROU MANQUAIT, ET C'EST LE PLUS COÛTEUX DES QUATRE.
+
+	  Le signataire, l'adresse électronique et l'IBAN s'impriment en tête de
+	  chaque lettre, et sans eux la composition REFUSE. Ils n'étaient demandés
+	  nulle part dans le parcours : on les découvrait le jour où une lettre de
+	  relance refusait de se composer — c'est-à-dire le jour où l'on avait
+	  décidé d'écrire, et où l'on était le moins disposé à remplir un formulaire
+	  (audit du 29/09/2026, F6).
+
+	  ⚠️ ET PAS AVANT D'AVOIR UNE FACTURE. Sans facture il n'y a personne à qui
+	  écrire : réclamer l'en-tête d'un courrier à quelqu'un qui n'a encore rien
+	  importé est exactement ce qui apprend à ignorer une liste.
+	*/
+	if (nombreFactures > 0 && !enTeteDeCourrierComplet) {
+		verrous.push({
+			cle: 'courriers',
+			titre: 'Ce qui s’imprime sur vos courriers',
+			debloque: 'Sans le signataire et l’IBAN, aucune lettre ne se compose',
 			vers: '/app/compte'
 		});
 	}

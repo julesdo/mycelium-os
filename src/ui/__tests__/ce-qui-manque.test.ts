@@ -34,6 +34,7 @@ import { ceQuiManque } from '../ce-qui-manque';
 describe('ce qui manque', () => {
 	const TOUT_VA_BIEN = {
 		profilCreancierComplet: true,
+		enTeteDeCourrierComplet: true,
 		nombreFactures: 12,
 		debiteursSansSiren: 0
 	};
@@ -52,6 +53,25 @@ describe('ce qui manque', () => {
 		// Les trois champs du créancier vivent dans la section « Votre
 		// établissement » de `/app/compte` depuis que les treize adresses de
 		// réglages sont devenues une page.
+		expect(verrou?.vers).toBe('/app/compte');
+	});
+
+	it('réclame l’en-tête des courriers, mais seulement quand il y a de quoi écrire', () => {
+		// ⚠️ SANS FACTURE, ON NE LE RÉCLAME PAS. Il n'y a personne à qui écrire :
+		// demander le signataire d'une lettre à quelqu'un qui n'a rien importé est
+		// exactement ce qui apprend à ignorer une liste.
+		const avantToutImport = ceQuiManque({
+			...TOUT_VA_BIEN,
+			nombreFactures: 0,
+			enTeteDeCourrierComplet: false
+		});
+		expect(avantToutImport.some((verrou) => verrou.cle === 'courriers')).toBe(false);
+
+		const [verrou] = ceQuiManque({ ...TOUT_VA_BIEN, enTeteDeCourrierComplet: false });
+		expect(verrou?.titre).toBe('Ce qui s’imprime sur vos courriers');
+		// Le POURQUOI, et il est exact : `composer()` refuse sans le signataire ni
+		// l'IBAN, et c'est ce refus qu'on découvrait le jour où l'on voulait écrire.
+		expect(verrou?.debloque).toContain('aucune lettre ne se compose');
 		expect(verrou?.vers).toBe('/app/compte');
 	});
 
@@ -74,6 +94,7 @@ describe('ce qui manque', () => {
 		// rien de visible, et le gérant conclurait que ça n'a servi à rien.
 		const verrous = ceQuiManque({
 			profilCreancierComplet: false,
+			enTeteDeCourrierComplet: false,
 			nombreFactures: 0,
 			debiteursSansSiren: 3
 		});
@@ -86,6 +107,10 @@ describe('ce qui manque', () => {
 		// réclamer quelque chose d'impossible, ce qui apprend à ignorer la liste.
 		const verrous = ceQuiManque({
 			profilCreancierComplet: true,
+			// Faux, et pourtant silencieux : sans facture, il n'y a personne à qui
+			// écrire. Le verrou de l'en-tête suit la même règle que celui des
+			// débiteurs, et ce cas le vérifie.
+			enTeteDeCourrierComplet: false,
 			nombreFactures: 0,
 			debiteursSansSiren: 0
 		});
@@ -100,8 +125,10 @@ describe('ce qui manque', () => {
 		// l'état du dossier ; « engagez une injonction de payer » serait du
 		// conseil juridique.
 		const INTERDITS = /engagez|vous devriez|il faut engager|saisissez le tribunal|déclarez/i;
+		// Les quatre verrous levés d'un coup : le balayage doit les voir TOUS.
 		const verrous = ceQuiManque({
 			profilCreancierComplet: false,
+			enTeteDeCourrierComplet: false,
 			nombreFactures: 5,
 			debiteursSansSiren: 2
 		});

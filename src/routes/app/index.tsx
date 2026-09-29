@@ -927,6 +927,18 @@ function File() {
 						// Le SIREN est ce qui compte : c'est lui qui porte `estCommercant`,
 						// donc la condition « entre commerçants ».
 						profilCreancierComplet: profil !== null && profil.siren !== undefined,
+						/*
+						  LES TROIS CHAMPS SANS LESQUELS UNE LETTRE REFUSE DE SE COMPOSER,
+						  et rien qu'eux : le signataire, son adresse électronique, l'IBAN.
+						  Le capital et la ville du greffe s'impriment quand ils sont là et
+						  ne bloquent rien — les exiger ferait clignoter un verrou qu'on ne
+						  peut pas lever.
+						*/
+						enTeteDeCourrierComplet:
+							profil !== null &&
+							profil.signataireNom !== undefined &&
+							profil.email !== undefined &&
+							profil.iban !== undefined,
 						nombreFactures: revelation.nombreFactures,
 						debiteursSansSiren: debiteurs.filter((d) => d.siren === undefined).length
 					}),

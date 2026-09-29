@@ -9,6 +9,8 @@ import {
 	BoutonSecondaire,
 	CeQuiManque,
 	ChiffreHero,
+	LigneAnalyse,
+	ListeAnalyses,
 	CompositionDue,
 	FacturesNonChiffrees,
 	GroupeDeFile,
@@ -808,6 +810,31 @@ function Tete({ tete }: { tete: TeteDeFile }) {
 			    facture non chiffrée est nommée ici ET comptée sur la rangée de son
 			    client ; elle n'est jamais absorbée par un total qui ne la compte pas. */}
 			<FacturesNonChiffrees lignes={tete.nonChiffrees} />
+
+			{/*
+			  ⚠️ LA PREMIÈRE VICTOIRE, ET ELLE NE SE CHERCHAIT PLUS.
+
+			  « Ce qui est dû » porte le seul chiffre qui justifie l'abonnement au
+			  douzième mois : ce qui est dû de PLEIN DROIT et n'a jamais été calculé.
+			  L'écran existait et n'était atteignable que depuis le veilleur et
+			  depuis la porte de transition, qui ferme en octobre (audit du
+			  29/09/2026, F6). Il a maintenant une rangée, sous le total dont il est
+			  la décomposition.
+
+			  ⚠️ ELLE NE S'AFFICHE QUE QUAND IL Y A QUELQUE CHOSE À MONTRER. Une
+			  rangée « 0,00 € jamais calculés » est un cadran à zéro, et le vide
+			  montre le chemin au lieu d'afficher un zéro.
+			*/}
+			{tete.parts.interets + tete.parts.indemnites > 0n ? (
+				<ListeAnalyses>
+					<LigneAnalyse
+						vers="/app/revelation"
+						titre="Ce qui vous est dû, et n’a jamais été calculé"
+						valeur={eurosCentimes(tete.parts.interets + tete.parts.indemnites)}
+						precision="Pénalités de retard et frais de recouvrement, dus de plein droit"
+					/>
+				</ListeAnalyses>
+			) : null}
 		</div>
 	);
 }
