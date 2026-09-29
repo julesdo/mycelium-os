@@ -101,20 +101,20 @@ function stations(aujourdHui: string): readonly Station[] | null {
 			quand: `31 mars ${ANNEE_ECHEANCE}`,
 			titre: 'Échue',
 			montant: eurosCentimes(PRINCIPAL + indemnite.valeur),
-			texte: `L’indemnité forfaitaire est due le jour même. Les intérêts commencent à courir, au taux de ${tauxLisible(taux)}.`
+			texte: `Les frais de recouvrement sont dus le jour même. Les pénalités de retard commencent à courir, au taux de ${tauxLisible(taux)}.`
 		},
 		{
 			quand: `31 mars ${ANNEE_ECHEANCE + 1}`,
 			titre: 'Un an plus tard',
 			montant: eurosCentimes(total),
 			texte:
-				'Le principal, une année d’intérêts et l’indemnité. C’est ce que le décompte réclame, décomposé période par période.'
+				'Le principal, une année de pénalités de retard et les frais de recouvrement. C’est ce que le décompte réclame, décomposé période par période.'
 		},
 		{
 			quand: `31 mars ${finPrescription}`,
 			titre: 'Éteinte',
 			montant: eurosCentimes(0n),
-			texte: `${REGIMES_PRESCRIPTION.GENERAL.dureeAnnees} ans après l’échéance, le droit est prescrit. Rien ne le rouvre, et rien ne prévient.`,
+			texte: `${REGIMES_PRESCRIPTION.GENERAL.dureeAnnees} ans après l’échéance, il est trop tard pour agir en justice. Rien ne le rouvre, et rien ne prévient.`,
 			eteinte: true
 		}
 	];

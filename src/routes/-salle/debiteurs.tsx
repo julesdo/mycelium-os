@@ -772,7 +772,7 @@ function pageDu(
 	// Une variante qui désigne un débiteur absent lève, plutôt que de rendre une
 	// page vide qu'on validerait au regard sans savoir ce qu'elle montre.
 	if (ligne === undefined) {
-		throw new Error(`Démonstration incomplète : aucun débiteur « ${debiteurId} ».`);
+		throw new Error(`Démonstration incomplète : aucun client « ${debiteurId} ».`);
 	}
 
 	const factures = facturesDu(debiteurId);
@@ -988,7 +988,7 @@ export const ECRANS_DEBITEURS: readonly EcranDuProduit[] = [
 	},
 	{
 		route: '/app/clients/$id',
-		libelle: 'un débiteur',
+		libelle: 'un client',
 		vide: false,
 		variantes: Object.keys(FORMES_PAGE_DEMO),
 		Demo: PageDebiteurDemo

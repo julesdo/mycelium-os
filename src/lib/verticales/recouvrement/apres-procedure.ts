@@ -127,8 +127,8 @@ const injonctionDePayer: MachineProcedure = {
 	ligne: ['REQUETE_DEPOSEE', 'ORDONNANCE_RENDUE', 'ORDONNANCE_SIGNIFIEE', 'TITRE_EXECUTOIRE'],
 	etats: {
 		REQUETE_DEPOSEE: {
-			libelle: 'Requête déposée',
-			constat: 'La requête est au greffe. Le juge statue sans débat, sur pièces.',
+			libelle: 'Demande déposée au tribunal',
+			constat: 'Votre demande est au tribunal. Le juge décide sans audience, sur les documents du dossier.',
 			transitions: [
 				{
 					cle: 'ordonnance-rendue',
@@ -149,12 +149,13 @@ const injonctionDePayer: MachineProcedure = {
 		},
 
 		ORDONNANCE_RENDUE: {
-			libelle: 'Ordonnance rendue',
-			constat: 'L’ordonnance existe et n’est pas encore signifiée au débiteur.',
+			libelle: 'Le juge a décidé (ordonnance)',
+			constat:
+				'La décision existe. Elle n’a pas encore été remise à votre client par un commissaire de justice.',
 			transitions: [
 				{
 					cle: 'ordonnance-signifiee',
-					libelle: 'L’ordonnance a été signifiée au débiteur',
+					libelle: 'La décision a été remise à votre client',
 					vers: 'ORDONNANCE_SIGNIFIEE'
 				}
 			],
@@ -187,14 +188,14 @@ const injonctionDePayer: MachineProcedure = {
 				return [
 					{
 						cle: 'signification',
-						libelle: 'Signification de l’ordonnance',
+						libelle: 'Remise de la décision à votre client',
 						dateLimite: fin,
 						...(reporteeDe === null ? {} : { reporteeDe }),
 						gravite: 'CADUCITE',
 						consequence:
-							`Passé ce délai de ${mois} mois, l’ordonnance est non avenue. La créance n’est ` +
-							'pas éteinte, mais la procédure est à reprendre depuis le début, et le temps ' +
-							'écoulé rapproche la prescription.' +
+							`Passé ce délai de ${mois} mois, la décision du juge ne vaut plus rien. Ce qu’il ` +
+							'vous doit n’est pas perdu, mais tout est à reprendre depuis le début, et le ' +
+							'temps écoulé rapproche la date limite pour agir en justice.' +
 							(reporteeDe === null
 								? ''
 								: ` Le délai finissait le ${dateLisible(reporteeDe)}, un jour non ouvrable : ` +
@@ -207,19 +208,19 @@ const injonctionDePayer: MachineProcedure = {
 		},
 
 		ORDONNANCE_SIGNIFIEE: {
-			libelle: 'Ordonnance signifiée',
+			libelle: 'Décision remise à votre client',
 			constat:
-				'Le débiteur a reçu l’ordonnance. Un délai d’opposition court à compter de cette ' +
-				'signification.',
+				'Votre client a reçu la décision. À partir de ce jour, il dispose d’un délai pour la ' +
+				'contester.',
 			transitions: [
 				{
 					cle: 'opposition-formee',
-					libelle: 'Le débiteur a formé opposition',
+					libelle: 'Votre client a contesté la décision',
 					vers: 'OPPOSITION'
 				},
 				{
 					cle: 'absence-opposition-constatee',
-					libelle: 'L’absence d’opposition a été constatée',
+					libelle: 'Le tribunal a constaté qu’il n’a pas contesté',
 					vers: 'TITRE_EXECUTOIRE'
 				}
 			],
@@ -229,37 +230,37 @@ const injonctionDePayer: MachineProcedure = {
 			// n'est donc ni ici, ni au référentiel. La deviner de mémoire ferait
 			// afficher une date fausse, que le gérant tiendrait pour surveillée.
 			anglesMorts: [
-				'Un délai d’opposition court depuis la signification. Sa durée n’est pas relevée dans ' +
-					'le référentiel juridique de ce logiciel : cette échéance-là n’est pas surveillée, et ' +
-					'reste à vérifier auprès de l’acte signifié, qui la porte.'
+				'Votre client a un délai pour contester, à partir du jour où la décision lui a été ' +
+					'remise. Sa durée n’est pas relevée dans le référentiel juridique de ce logiciel : ' +
+					'cette date-là n’est pas surveillée ici, et l’acte remis à votre client la porte.'
 			],
 			terminal: false
 		},
 
 		OPPOSITION: terminal(
-			'Opposition formée',
+			'Votre client a contesté',
 			'L’affaire bascule en procédure contradictoire. Les procédures que ce logiciel évalue ' +
 				'se déroulent toutes sans débat : ce dossier sort de ce qu’il sait mesurer.'
 		),
 
 		TITRE_EXECUTOIRE: {
-			libelle: 'Titre exécutoire',
+			libelle: 'Vous pouvez faire saisir',
 			constat: 'L’ordonnance est devenue exécutoire.',
 			transitions: [],
 			echeances: () => AUCUNE_ECHEANCE,
 			// Un titre exécutoire a lui aussi une durée de vie, et elle n'est pas au
 			// référentiel. Même traitement : on la nomme, on ne la chiffre pas.
 			anglesMorts: [
-				'Un titre exécutoire ne se conserve pas indéfiniment. Le délai qui s’y attache n’est ' +
-					'pas relevé dans le référentiel de ce logiciel : il n’est pas surveillé.'
+				'Le droit de faire saisir ne se conserve pas indéfiniment. Le délai qui s’y attache ' +
+					'n’est pas relevé dans le référentiel de ce logiciel : il n’est pas surveillé.'
 			],
 			terminal: true
 		},
 
 		REQUETE_REJETEE: terminal(
 			'Requête rejetée',
-			'Le juge n’a pas fait droit à la requête, ou pas entièrement. La créance n’est pas ' +
-				'éteinte ; cette voie-ci est fermée.'
+			'Le juge n’a pas suivi votre demande, ou pas entièrement. Ce qu’il vous doit n’est pas ' +
+				'perdu ; c’est cette voie-là qui est fermée.'
 		)
 	}
 };
@@ -284,12 +285,12 @@ const l126: MachineProcedure = {
 		ENGAGEE: {
 			libelle: 'Procédure engagée',
 			constat:
-				'Le commandement n’est pas encore signifié. Les délais de cette procédure courent ' +
-				'depuis la signification, pas depuis l’engagement.',
+				'La sommation de payer n’a pas encore été remise à votre client. Les délais de cette ' +
+				'procédure courent depuis cette remise, pas depuis le jour où vous l’avez engagée.',
 			transitions: [
 				{
 					cle: 'commandement-signifie',
-					libelle: 'Le commandement a été signifié au débiteur',
+					libelle: 'La sommation de payer a été remise à votre client',
 					vers: 'COMMANDEMENT_SIGNIFIE'
 				}
 			],
@@ -299,14 +300,14 @@ const l126: MachineProcedure = {
 		},
 
 		COMMANDEMENT_SIGNIFIE: {
-			libelle: 'Commandement signifié',
+			libelle: 'Sommation de payer remise',
 			constat:
-				'Le commandement a été signifié. Le débiteur peut contester, et une contestation ' +
-				'met fin à la procédure simplifiée, même infondée.',
+				'Votre client a reçu la sommation de payer. Il peut contester, et une contestation met ' +
+				'fin à cette procédure simplifiée, même si elle n’est pas fondée.',
 			transitions: [
 				{
 					cle: 'contestation-recue',
-					libelle: 'Le débiteur a contesté',
+					libelle: 'Votre client a contesté',
 					vers: 'CONTESTATION'
 				},
 				{
@@ -327,7 +328,7 @@ const l126: MachineProcedure = {
 						dateLimite: finContestation,
 						gravite: 'INFORMATIVE',
 						consequence:
-							'Jusqu’à cette date, le débiteur peut contester et mettre fin à la procédure ' +
+							'Jusqu’à cette date, votre client peut contester et mettre fin à cette procédure ' +
 							'simplifiée.'
 					},
 					{
@@ -353,7 +354,7 @@ const l126: MachineProcedure = {
 		),
 
 		TITRE_EXECUTOIRE: terminal(
-			'Titre exécutoire',
+			'Vous pouvez faire saisir',
 			'Le procès-verbal de non-contestation a été dressé.'
 		)
 	}

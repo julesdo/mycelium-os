@@ -74,8 +74,8 @@ export interface Etage {
 export const ETAGES_DE_PREUVE: readonly Etage[] = [
 	{
 		cle: 'commande',
-		fait: 'l’engagement du débiteur à commander',
-		etabli: 'L’engagement du débiteur à commander est documenté.',
+		fait: 'l’engagement de votre client à commander',
+		etabli: 'L’engagement de votre client à commander est documenté.',
 		pieces: ['BON_DE_COMMANDE', 'DEVIS_SIGNE'],
 		poids: POIDS.commande
 	},
@@ -141,7 +141,7 @@ export function pyramideDePreuves(piecesFournies: readonly ClePiece[]): Pyramide
 			presente,
 			// La forme négative se compose sans risque : « Aucune pièce ne documente
 			// X » ne s'accorde pas avec X. La positive, elle, est écrite à la main.
-			etat: presente ? etage.etabli : `Aucune pièce ne documente ${etage.fait}.`
+			etat: presente ? etage.etabli : `Aucun document ne montre ${etage.fait}.`
 		};
 	});
 
@@ -163,10 +163,10 @@ export function pyramideDePreuves(piecesFournies: readonly ClePiece[]): Pyramide
 		// constat, « ce dossier est trop faible » est un conseil.
 		constat:
 			absentes === 0
-				? `Les ${lettres(attendues)} pièces attendues sont réunies.`
+				? `Les ${lettres(attendues)} documents attendus sont réunis.`
 				: `${lettres(absentes).charAt(0).toUpperCase()}${lettres(absentes).slice(1)} des ` +
-					`${lettres(attendues)} pièces attendues ` +
-					`${absentes > 1 ? 'sont absentes' : 'est absente'}.`,
+					`${lettres(attendues)} documents attendus ` +
+					`${absentes > 1 ? 'sont absents' : 'est absent'}.`,
 		prochaine
 	};
 }

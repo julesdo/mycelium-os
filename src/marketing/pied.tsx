@@ -102,8 +102,8 @@ export function Pied() {
 				</p>
 
 				<p className="max-w-3xl text-cladd-sm leading-relaxed font-normal text-craie-douce">
-					Letikette mesure vos créances, les documente et surveille leurs échéances, selon une
-					obligation de moyens. Il n’exerce aucune activité de recouvrement pour compte de tiers,
+					Letikette mesure ce qu’on vous doit, le documente et surveille ses échéances, selon
+					une obligation de moyens. Il n’exerce aucune activité de recouvrement pour compte de tiers,
 					ne manipule aucun fonds et ne délivre aucun conseil juridique. Toute décision d’engager
 					une procédure reste la vôtre.
 				</p>

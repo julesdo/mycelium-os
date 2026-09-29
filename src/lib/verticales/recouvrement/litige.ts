@@ -106,7 +106,7 @@ export const QUESTIONS_LITIGE: readonly QuestionFait[] = [
 		cle: 'PENALITES_OPPOSEES',
 		question: 'Vous a-t-il opposé des pénalités, une note de débit ou une retenue ?',
 		portee:
-			'Une retenue opposée est une créance qu’il invoque contre la vôtre. Les deux se répondent.',
+			'Une retenue opposée est une somme qu’il vous réclame en face de la vôtre. Les deux se répondent.',
 		signeDeLitige: true
 	},
 	{
@@ -120,7 +120,7 @@ export const QUESTIONS_LITIGE: readonly QuestionFait[] = [
 		question:
 			'Vous a-t-il confirmé par écrit qu’il devait cette somme : échéancier, promesse de paiement, accusé de dette ?',
 		portee:
-			'Cet écrit est une pièce du dossier. Il ne remplace aucune des réponses précédentes et n’en efface aucune.',
+			'Cet écrit est un document du dossier. Il ne remplace aucune des réponses précédentes et n’en efface aucune.',
 		signeDeLitige: false
 	}
 ];
@@ -281,8 +281,9 @@ export function lireLitige(reponses: Reponses): LectureLitige {
 		// donc l'alerte arrive plus tôt. Mais un gérant qui croit sa prescription
 		// repoussée par cet écrit ne la surveille pas lui-même. On le dit.
 		constats.push(
-			'Cet écrit est enregistré comme une pièce du dossier. Il n’entre pas dans le calcul ' +
-				'du délai de prescription, qui continue de courir depuis l’échéance de la facture.'
+			'Cet écrit est enregistré comme un document du dossier. Il n’entre pas dans le calcul ' +
+				'de la date limite pour agir en justice, qui continue de courir depuis l’échéance de ' +
+				'la facture.'
 		);
 	}
 
@@ -402,7 +403,7 @@ export function proposerFaits(sources: SourcesDeProposition): readonly Propositi
 		propositions.set(declaration.cle, {
 			cle: declaration.cle,
 			reponse: declaration.reponse,
-			source: 'Réponse déjà donnée sur une autre créance de ce client.',
+			source: 'Réponse déjà donnée sur un autre dossier de ce client.',
 			date: declaration.date
 		});
 	}
@@ -412,7 +413,7 @@ export function proposerFaits(sources: SourcesDeProposition): readonly Propositi
 		propositions.set('CONTESTATION_ECRITE', {
 			cle: 'CONTESTATION_ECRITE',
 			reponse: 'OUI',
-			source: `Une réserve est lue sur la pièce ${reserve.piece} : « ${reserve.texte} »`,
+			source: `Une réserve est lue sur le document ${reserve.piece} : « ${reserve.texte} »`,
 			date: reserve.date
 		});
 	}

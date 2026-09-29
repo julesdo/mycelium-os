@@ -70,7 +70,11 @@ import { ACCUEIL_DEMO } from './donnees-accueil';
 const ONGLETS = [
 	{ libelle: 'Aujourd’hui', Icone: IconeLetikette, actif: true },
 	{ libelle: 'Clients', Icone: UsersIcon, actif: false },
-	{ libelle: 'Créances', Icone: GavelIcon, actif: false },
+	// ⚠️ « Dossiers », COMME LA VRAIE BARRE (`src/app/barre.tsx`). Cette maquette
+	// a vendu pendant des semaines un onglet « Créances » qui n'existe nulle
+	// part dans le produit : le premier écran promettait un mot, le second en
+	// montrait un autre.
+	{ libelle: 'Dossiers', Icone: GavelIcon, actif: false },
 	{ libelle: 'Compte', Icone: CircleUserIcon, actif: false }
 ] as const;
 

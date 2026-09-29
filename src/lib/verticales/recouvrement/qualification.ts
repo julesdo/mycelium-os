@@ -1,3 +1,5 @@
+import { TERME_JURIDIQUE } from './termes-juridiques';
+
 /**
  * Les types du domaine « qualification d'une créance ».
  *
@@ -90,13 +92,6 @@ export const NOM_CONDITION: Record<ConditionLegale, string> = {
 	entreCommercants: 'La facture est entre commerçants'
 };
 
-/** Le terme du texte, affiché en second, pour qui voudrait le retrouver. */
-export const TERME_JURIDIQUE: Record<ConditionLegale, string> = {
-	certaine: 'créance certaine',
-	liquide: 'créance liquide',
-	exigible: 'créance exigible',
-	entreCommercants: 'facturation entre commerçants'
-};
 
 /**
  * Ce que dit la loi, condition par condition : une lecture du texte cité par

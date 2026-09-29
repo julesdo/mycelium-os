@@ -66,7 +66,7 @@ const RAISONS_REELLES: BilanDepotAffiche['ignorees'] = [
 	},
 	{
 		texte: '"2026";"VE";"4310";"";"411LEROY";"Leroy TP";"FA-2026-0203";"4 980,00";"0,00"',
-		raison: 'Date de pièce et date d’écriture illisibles, ou absentes du calendrier.'
+		raison: 'Date du document et date d’écriture illisibles, ou absentes du calendrier.'
 	}
 ];
 

@@ -70,7 +70,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		debiteur: 'Ateliers Martin',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_MARTIN } },
 		obstacle:
-			'Signification de l’ordonnance : la date limite du 12 septembre 2026 est dépassée, l’ordonnance est non avenue.',
+			'Remise de la décision à votre client : la date limite du 12 septembre 2026 est dépassée, la décision du juge ne vaut plus rien.',
 		urgence: 'CRITIQUE',
 		montant: 1_845_000n,
 		// Passée : c'est elle, et elle seule, qui remplit le groupe « En retard ».
@@ -85,7 +85,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		id: 'r-prescription-durand',
 		debiteur: 'Fournitures Durand',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_DURAND } },
-		obstacle: 'Prescription dans 41 jours : passé le 27/10/2026, cette créance ne se réclame plus.',
+		obstacle: 'Date limite pour agir en justice dans 41 jours : passé le 27/10/2026, cette somme ne se réclame plus.',
 		urgence: 'CRITIQUE',
 		montant: 3_120_050n,
 		dateDuFait: '2026-10-27',
@@ -99,7 +99,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		  où B9 la fait compter.
 		*/
 		pli: {
-			libelle: { un: 'prescription proche', plusieurs: 'prescriptions proches' },
+			libelle: { un: 'date limite proche', plusieurs: 'dates limites proches' },
 			// Rien à trancher, et pourtant elle reste PLEINE : l'hypothèse la retient.
 			rienATrancher: true,
 			hypothese: 'secteur indéterminé'
@@ -139,7 +139,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		id: 'r-decompte-martin',
 		debiteur: 'Ateliers Martin',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_MARTIN } },
-		obstacle: 'Décompte arrêtable, dont 1 240,33 € d’intérêts courus.',
+		obstacle: 'Décompte arrêtable, dont 1 240,33 € de pénalités de retard courues.',
 		urgence: 'HAUTE',
 		montant: 1_248_033n,
 		/*
@@ -155,7 +155,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		*/
 		proposition: {
 			valeur: 'taux stipulé de 12 %',
-			source: 'Pièce du dossier : CG-2024-03, page 4',
+			source: 'Document du dossier : CG-2024-03, page 4',
 			date: '2026-09-17',
 			onRetenir: () => {},
 			onEcarter: () => {}
@@ -323,15 +323,15 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
  * vérifier que les deux blocs ne se ressemblent pas.
  */
 const HYPOTHESES_DEMO: readonly string[] = [
-	'Le secteur d’Ateliers Martin n’est pas déterminé : la prescription est calculée sur le délai le plus court. Préciser le secteur lèvera cette hypothèse.'
+	'Le secteur d’Ateliers Martin n’est pas déterminé : la date limite pour agir en justice est calculée sur le délai le plus court. Préciser le secteur lèvera cette hypothèse.'
 ];
 
 const ANGLES_MORTS_DEMO: readonly string[] = [
-	'Un délai d’opposition court depuis la signification de l’ordonnance d’Ateliers Martin. Sa durée n’est pas relevée dans le référentiel juridique de ce logiciel : cette échéance-là n’est pas surveillée, et reste à vérifier auprès de l’acte signifié, qui la porte.',
+	'Ateliers Martin a un délai pour contester la décision du juge, depuis le jour où elle lui a été remise. Sa durée n’est pas relevée dans le référentiel juridique de ce logiciel : cette date-là n’est pas surveillée ici, et l’acte remis la porte.',
 	// ⚠️ UN, PARCE QU'IL Y EN A UN. La salle porte un seul débiteur sans
 	// identifiant ; en annoncer deux ferait mentir la démonstration sur le
 	// chiffre exact qu'on vient y vérifier.
-	'Un débiteur n’a aucun numéro au registre : sa solvabilité n’est pas interrogée, et une procédure collective ouverte contre lui passerait inaperçue.'
+	'Un client n’a aucun numéro au registre : sa solvabilité n’est pas interrogée, et une procédure collective ouverte contre lui passerait inaperçue.'
 ];
 
 /**
@@ -363,7 +363,7 @@ const TRAVAUX_DEMO: readonly TacheVeilleur[] = travauxDuVeilleur({
 		jour: AUJOURDHUI_DEMO,
 		statut: 'PARLE',
 		raison:
-			'198 factures lues, 17 créances entrent dans la surveillance, 1 prescription passe sous le préavis.',
+			'198 factures lues, 17 dossiers entrent dans la surveillance, 1 date limite passe sous le préavis.',
 		// Un horodatage figé : l'heure affichée ne doit pas changer selon le
 		// moment où l'on regarde la salle.
 		termineLe: Date.UTC(2026, 8, 17, 3, 12)
@@ -372,7 +372,7 @@ const TRAVAUX_DEMO: readonly TacheVeilleur[] = travauxDuVeilleur({
 	trouvailles: [
 		{
 			id: 'trouvaille-durand',
-			titre: 'Prescription sous 41 jours',
+			titre: 'Date limite dans 41 jours',
 			message: 'Fournitures Durand : passé le 27/10/2026, 31 200,50 € ne se réclament plus.',
 			lien: '/app/dossier/demo-creance-durand'
 		}
@@ -446,7 +446,7 @@ const GARNIE: FileAffichee = {
 	 * un bandeau qui serait leur seul support les ferait disparaître d'un geste de
 	 * fermeture, et l'omission porterait sur l'argent qu'on ne réclamera pas.
 	 */
-	annonce: '198 factures lues cette nuit, 17 créances entrent dans la surveillance.',
+	annonce: '198 factures lues cette nuit, 17 dossiers entrent dans la surveillance.',
 	/*
 	  ⚠️ LE RESTE EST COMPTÉ ET NOMMÉ, JAMAIS TRONQUÉ (D13). Sept par jour et par
 	  établissement ; ce qui dépasse se dit, sur cette ligne, et la phrase vient du

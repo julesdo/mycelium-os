@@ -657,7 +657,7 @@ describe('les échéances d’une procédure engagée', () => {
 
 			const echeance = flux.evenements.find((e) => e.type === 'ECHEANCE_PROCEDURE');
 			expect(echeance).toBeDefined();
-			expect(echeance!.explication).toMatch(/signification/i);
+			expect(echeance!.explication).toMatch(/remise de la décision/i);
 			// La caducité est la seule urgence CRITIQUE des échéances de procédure.
 			expect(echeance!.urgence).toBe('CRITIQUE');
 		},

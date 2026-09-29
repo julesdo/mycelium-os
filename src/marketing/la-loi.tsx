@@ -106,16 +106,16 @@ function seuilsDeLaLoi(aujourdHui: string) {
 	return [
 		{
 			valeur: taux,
-			titre: 'd’intérêts de retard',
+			titre: 'de pénalités de retard',
 			detail:
-				'Taux de refinancement de la BCE majoré de dix points, dus sans mise en demeure. ' +
+				'Taux de refinancement de la BCE majoré de dix points, dus sans avoir à réclamer. ' +
 				'Réancré chaque semestre.'
 		},
 		{
 			valeur: estUtilisable(indemnite) ? eurosCentimesCourts(indemnite.valeur) : '40 €',
 			titre: 'par facture en retard',
 			detail:
-				'Indemnité forfaitaire de recouvrement, due de plein droit dès le premier jour. ' +
+				'Frais de recouvrement, dus de plein droit dès le premier jour. ' +
 				'Par facture, jamais par client.'
 		},
 		{
@@ -124,7 +124,7 @@ function seuilsDeLaLoi(aujourdHui: string) {
 			detail:
 				`${transport.dureeAnnees} an sur le transport de marchandises, ` +
 				`${consommateur.dureeAnnees} sur ce qu’on fournit à un consommateur. ` +
-				'Passé le délai, la créance est éteinte.'
+				'Passé le délai, il est trop tard : la somme ne se réclame plus.'
 		}
 	] as const;
 }
@@ -234,8 +234,8 @@ export function LaLoi() {
 					<span className="text-craie-claire">et que personne ne réclame.</span>
 				</h2>
 				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
-					Ces sommes vous sont dues sans mise en demeure et sans clause au contrat. Ce délai, lui,
-					court sans que personne ne vous prévienne.
+					Ces sommes vous sont dues sans avoir à les réclamer et sans clause au contrat. Ce
+					délai, lui, court sans que personne ne vous prévienne.
 				</p>
 			</div>
 
@@ -288,7 +288,7 @@ export function LaLoi() {
 			<blockquote className="apparait flex max-w-4xl gap-cladd-2xs border-l border-dashed border-filet-nuit-vif pl-cladd-2xs">
 				<div className="flex flex-col gap-cladd-3xs">
 					<p className="font-affiche text-titre-section leading-tight font-medium tracking-titre-section text-balance">
-						Une facture de transport se prescrit en un an, pas en cinq.
+						Pour une facture de transport, la date limite tombe à un an, pas à cinq.
 					</p>
 					<p className="text-cladd-md leading-relaxed font-normal text-craie-douce">
 						Et le délai court depuis la livraison, pas depuis votre dernière relance.

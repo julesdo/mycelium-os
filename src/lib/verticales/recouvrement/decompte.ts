@@ -264,8 +264,8 @@ function tauxALaDate(facture: FacturePourDecompte, date: string): Fraction {
 		// où elle est le seul moyen de savoir laquelle a manqué.
 		throw new Error(
 			`Facture ${facture.reference} : aucun taux applicable le ${dateLisible(date)}. ` +
-				`Ses intérêts ne peuvent donc pas être calculés, et ils ne sont pas comptés ` +
-				`pour zéro : la créance les abandonnerait définitivement.`
+				`Ses pénalités de retard ne peuvent donc pas être calculées, et elles ne sont pas ` +
+				`comptées pour zéro : le dossier les abandonnerait définitivement.`
 		);
 	}
 	return retenu.taux;

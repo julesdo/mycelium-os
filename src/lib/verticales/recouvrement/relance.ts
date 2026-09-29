@@ -72,20 +72,20 @@ export const NIVEAUX_RELANCE: readonly DescriptionNiveau[] = [
 		nom: 'Rappel',
 		intention:
 			'Suppose l’oubli : une facture qui n’est pas arrivée, une validation qui traîne. ' +
-			'Ne mentionne ni intérêts, ni indemnité, ni suite.'
+			'N’annonce ni pénalités de retard, ni frais de recouvrement, ni suite.'
 	},
 	{
 		niveau: 2,
 		nom: 'Compte arrêté',
 		intention:
 			'Reprend les montants d’un décompte figé et daté, sans rien recalculer. ' +
-			'Ce courrier ne porte pas l’intitulé « mise en demeure ».'
+			'Ce courrier ne vaut pas encore lettre de relance officielle (mise en demeure).'
 	},
 	{
 		niveau: 3,
-		nom: 'Mise en demeure',
+		nom: 'Lettre de relance officielle',
 		intention:
-			'Une interpellation suffisante de votre client, sous l’intitulé « mise en demeure ». ' +
+			'Une demande de payer assez claire pour valoir lettre de relance officielle (mise en demeure). ' +
 			'Le modèle n’est pas encore disponible dans ce logiciel.'
 	}
 ];
@@ -190,8 +190,8 @@ function suspension(elements: ElementsRelance): Relance | null {
 	return {
 		disponible: false,
 		peutFaire:
-			'La surveillance de cette créance continue, son décompte se chiffre au centime et ' +
-			's’imprime, et ses pièces se déposent comme sur n’importe quel dossier.',
+			'La surveillance de ce dossier continue, son décompte se chiffre au centime et ' +
+			's’imprime, et ses documents se déposent comme sur n’importe quel autre.',
 		// La formulation du blueprint, mot pour mot. Ce qui suit — déclarer la
 		// créance, saisir qui que ce soit — est une conduite à tenir, donc hors
 		// de ce que ce produit écrit.
@@ -206,7 +206,7 @@ function suspension(elements: ElementsRelance): Relance | null {
 		// — et le dire serait exactement la ligne rouge 3.
 		coutDeLAttente:
 			'Ce que cette suspension coûte n’est pas chiffrable par ce logiciel, et c’est un ' +
-			'angle mort déclaré : il ne mesure pas ce que devient une créance sur une entreprise ' +
+			'angle mort déclaré : il ne mesure pas ce que devient une somme due par une entreprise ' +
 			'dans cet état, et il ne l’écrit donc pas.'
 	};
 }
@@ -277,14 +277,15 @@ function compteArrete(elements: ElementsRelance): Relance {
 				'suppose l’oubli et n’annonce aucun chiffre, donc il n’attend aucun décompte.',
 			constat:
 				'Ce niveau reprend les montants d’un décompte arrêté, et aucun décompte n’a été ' +
-				'produit pour cette créance. Les chiffres d’une relance ne se recalculent pas à la ' +
+				'produit pour ce dossier. Les chiffres d’une relance ne se recalculent pas à la ' +
 				'volée : seul un décompte figé et daté est opposable. Ce refus se lève par l’arrêt ' +
-				'd’un décompte sur cette créance, qui fige ses chiffres et les date.',
+				'd’un décompte sur ce dossier, qui fige ses chiffres et les date.',
 			blocages: [],
 			coutDeLAttente:
 				`Tant qu’aucun décompte n’est arrêté, les ${versEuros(elements.principalRestantDu)} € ` +
-				`de principal restent réclamés sans intérêts ni indemnité forfaitaire chiffrés dans ` +
-				`un texte daté. Ce que ces intérêts représentent ne se chiffre que dans le décompte.`,
+				`de principal restent réclamés sans pénalités de retard ni frais de recouvrement ` +
+				`chiffrés dans un texte daté. Ce que ces pénalités représentent ne se chiffre que ` +
+				`dans le décompte.`,
 			geste: 'ARRETER_DECOMPTE'
 		};
 	}
@@ -334,7 +335,8 @@ const PEUT_FAIRE_SANS_MISE_EN_DEMEURE =
  * de dire quels effets de droit il produit, ce que ce logiciel ne mesure pas.
  */
 const COUT_SANS_MISE_EN_DEMEURE =
-	'Ce que l’attente coûte ici ne se chiffre pas : une mise en demeure n’ajoute aucune somme ' +
+	'Ce que l’attente coûte ici ne se chiffre pas : une lettre de relance officielle n’ajoute ' +
+	'aucune somme ' +
 	'à ce qui est réclamé, elle ouvre un délai. Les montants du dossier, eux, restent chiffrés ' +
 	'et datés par le décompte.';
 
@@ -361,18 +363,19 @@ function miseEnDemeure(): Relance {
 		disponible: false,
 		peutFaire: PEUT_FAIRE_SANS_MISE_EN_DEMEURE,
 		constat: regleRelevee
-			? 'La loi n’impose pas de liste de mentions à une mise en demeure : elle demande une ' +
+			? 'La loi n’impose pas de liste de mentions à une lettre de relance officielle (mise en ' +
+				'demeure) : elle demande une ' +
 				'interpellation suffisante, que le juge apprécie. Ce logiciel ne compose pas encore ' +
 				'cette lettre ; elle viendra avec le modèle de lettre de relance officielle, que vous ' +
 				'relirez et validerez avant tout envoi.'
-			: 'La règle qui encadre une mise en demeure n’est pas relevée au référentiel juridique ' +
-				'de ce logiciel. Il ne compose donc pas cette lettre.',
+			: 'La règle qui encadre une lettre de relance officielle n’est pas relevée au ' +
+				'référentiel juridique de ce logiciel. Il ne compose donc pas cette lettre.',
 		// ⚠️ NI CLÉ DE CODE, NI NOTE DE DÉVELOPPEUR À L'ÉCRAN. Le gérant a besoin
 		// de savoir CE QUI MANQUE, pas comment on l'a nommé.
 		blocages: [
 			regleRelevee
 				? 'Le modèle de lettre de relance officielle n’est pas encore disponible dans ce logiciel.'
-				: 'La règle qui encadre une mise en demeure n’est pas relevée au référentiel juridique de ce logiciel.'
+				: 'La règle qui encadre une lettre de relance officielle n’est pas relevée au référentiel juridique de ce logiciel.'
 		],
 		coutDeLAttente: COUT_SANS_MISE_EN_DEMEURE
 	};

@@ -180,7 +180,7 @@ describe('ce que les réponses établissent', () => {
 		// juridique qui n'a été ni relevée ni validée ici. On ne la devine pas, et
 		// on ne laisse pas croire qu'elle est prise en compte.
 		const lecture = lireLitige({ ...RIEN_DE_TOUT_CA, RECONNAISSANCE_ECRITE: 'OUI' });
-		expect(lecture.constats.join(' ')).toMatch(/prescription/i);
+		expect(lecture.constats.join(' ')).toMatch(/date limite pour agir en justice/i);
 	});
 });
 

@@ -322,6 +322,18 @@ function CorpsDebiteur({
 	const ouvertes = factures.filter((facture) => facture.resteDu > 0n).length;
 
 	/**
+	 * ⚠️ DEUX LISTES, PARCE QU'UNE FACTURE RÉGLÉE N'APPELLE PLUS RIEN. Mêlée aux
+	 * autres, elle affichait son reste dû — « 0,00 € » — et la date limite pour
+	 * agir en justice, sur une somme déjà encaissée. Le doute ne profite jamais
+	 * au produit, et un zéro n'est pas un montant : c'est une facture soldée.
+	 *
+	 * Dérivé au rendu, jamais posé dans un état : `factures` change à chaque
+	 * rapprochement de virement, et un état retomberait d'un cran en retard.
+	 */
+	const aRegler = factures.filter((facture) => facture.resteDu > 0n);
+	const reglees = factures.filter((facture) => facture.resteDu <= 0n);
+
+	/**
 	 * LE TAUX DE RETARD RELEVÉ SUR UNE PIÈCE, s'il y en a un.
 	 *
 	 * La plus récente d'abord — `listerPiecesDuDebiteur` les trie ainsi — donc
@@ -449,7 +461,7 @@ function CorpsDebiteur({
 			  ═══════════════════════════════════════════════════════════════════
 			*/}
 			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>Ses factures</SectionTitle>
+				<SectionTitle>Ce qu’il vous doit encore</SectionTitle>
 
 				{factures.length === 0 ? (
 					<p className="text-cladd-xs text-cladd-fg-soft">
@@ -457,7 +469,13 @@ function CorpsDebiteur({
 					</p>
 				) : null}
 
-				{factures.map((facture) => (
+				{factures.length > 0 && aRegler.length === 0 ? (
+					<p className="text-cladd-xs text-cladd-fg-soft">
+						Toutes ses factures sont réglées.
+					</p>
+				) : null}
+
+				{aRegler.map((facture) => (
 					<Surface
 						key={facture._id}
 						// En verre comme toutes les cartes du produit.
@@ -518,6 +536,50 @@ function CorpsDebiteur({
 						</label>
 					</Surface>
 				))}
+
+				{/*
+				  ═══════════════════════════════════════════════════════════════
+				  ⚠️ LES FACTURES RÉGLÉES, À PART ET APRÈS
+				  ═══════════════════════════════════════════════════════════════
+
+				  Elles étaient mêlées aux autres, et la liste affichait alors
+				  « 0,00 € » sur chacune — leur reste dû — à côté d'une carte qui
+				  annonçait 12 878,50 € dus. Pire : la puce « Agir en justice avant
+				  le … » s'affichait sur une facture déjà payée, c'est-à-dire une
+				  date limite sur un droit qu'on n'a plus besoin d'exercer.
+
+				  Elles restent visibles — c'est l'historique du client, et il sert
+				  à mesurer son habitude de paiement — mais après, sans montant
+				  trompeur et sans échéance.
+				*/}
+				{reglees.length > 0 ? (
+					<>
+						<SectionTitle>
+							{reglees.length} facture{pluriel(reglees.length)} réglée{pluriel(reglees.length)}
+						</SectionTitle>
+						{reglees.map((facture) => (
+							<Surface
+								key={facture._id}
+								variant="transparent"
+								outline={false}
+								className="verre-carte rounded-cladd-xl"
+								contentClassName="flex flex-wrap items-baseline justify-between gap-cladd-3xs p-cladd-2xs"
+							>
+								<span className="text-cladd-sm font-semibold">{facture.reference}</span>
+								<span className="flex items-center gap-cladd-3xs">
+									{facture.dateEcheance ? (
+										<span className="text-cladd-2xs text-cladd-fg-softer">
+											échue le {dateCourte(facture.dateEcheance)}
+										</span>
+									) : null}
+									<span className="text-cladd-sm tabular-nums text-cladd-fg-soft">
+										{eurosCentimes(facture.montantTTC)}
+									</span>
+								</span>
+							</Surface>
+						))}
+					</>
+				) : null}
 
 				{/*
 				  LE RAPPROCHEMENT D'UN VIREMENT, REPLIÉ EN UNE RANGÉE.

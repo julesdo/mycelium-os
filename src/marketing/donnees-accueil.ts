@@ -58,13 +58,13 @@ const RANGEES: readonly RangeeDeLaFile[] = [
 		genre: 'OBSTACLE',
 		id: 'demo-prescription-bellin',
 		debiteur: 'Bellin & Fils',
-		obstacle: 'La facture FA-2021-0087 est prescrite depuis le 14 août 2026.',
+		obstacle: 'Pour la facture FA-2021-0087, il est trop tard pour agir en justice depuis le 14 août 2026.',
 		urgence: 'CRITIQUE',
 		montant: 924_000n,
 		// Passée : elle tombe dans le groupe « En retard », en tête d'écran.
 		dateDuFait: '2026-08-14',
 		pli: {
-			libelle: { un: '1 prescription acquise', plusieurs: '2 prescriptions acquises' },
+			libelle: { un: '1 date limite dépassée', plusieurs: '2 dates limites dépassées' },
 			rienATrancher: false
 		}
 	},
@@ -77,8 +77,8 @@ const RANGEES: readonly RangeeDeLaFile[] = [
 		// conseil juridique sur la page la plus lue du site. Le constat reste
 		// entier ; le geste reste celui du gérant.
 		obstacle:
-			'Signification de l’ordonnance : il reste 9 jours avant le 2 octobre. Passée cette date, ' +
-			'le droit est perdu et 18 450,00 € cessent d’être couverts.',
+			'Remise de la décision à votre client : il reste 9 jours avant le 2 octobre. Passée ' +
+			'cette date, le droit est perdu et 18 450,00 € cessent d’être couverts.',
 		urgence: 'CRITIQUE',
 		montant: 1_845_000n,
 		dateDuFait: '2026-10-02',
@@ -114,14 +114,14 @@ const TRAVAUX: readonly TacheVeilleur[] = [
 	{
 		cle: 'demo-registre',
 		titre: 'Veille au registre',
-		dit: '47 débiteurs relevés au BODACC cette nuit. Aucune procédure collective ouverte.',
+		dit: '47 clients relevés cette nuit au journal officiel des entreprises. Aucune procédure collective ouverte.',
 		quand: 'cette nuit',
 		etat: 'TOURNE'
 	},
 	{
 		cle: 'demo-prescription',
-		titre: 'Prescription',
-		dit: '312 factures repassées. 2 entrent dans le préavis de prescription.',
+		titre: 'Dates limites pour agir',
+		dit: '312 factures repassées. 2 approchent de leur date limite pour agir en justice.',
 		quand: 'cette nuit',
 		etat: 'TOURNE'
 	}
@@ -152,7 +152,7 @@ export const ACCUEIL_DEMO: FileAffichee = {
 	rangees: RANGEES,
 	travaux: TRAVAUX,
 	hypotheses: [
-		'Secteur indéterminé pour 3 débiteurs : le délai de prescription le plus court est retenu.'
+		'Secteur indéterminé pour 3 clients : le délai le plus court pour agir en justice est retenu.'
 	],
 	anglesMorts: [
 		'Les factures antérieures à votre premier import ne sont pas surveillées.',

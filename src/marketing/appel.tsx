@@ -40,7 +40,7 @@ export function Appel() {
 				</span>
 
 				<h2 className="suit-pointeur-loin apparait max-w-4xl font-affiche text-affiche-colonne leading-affiche font-semibold tracking-affiche text-balance">
-					Une créance ne prévient pas qu’elle expire.{' '}
+					Une facture impayée ne prévient pas qu’il est trop tard.{' '}
 					<span className="text-craie-claire">Elle expire.</span>
 				</h2>
 
@@ -50,7 +50,7 @@ export function Appel() {
 
 				<div className="flex w-full flex-col items-stretch gap-cladd-3xs pt-cladd-3xs sm:w-auto sm:flex-row sm:items-center">
 					<BoutonAffiche as={Link} to="/inscription">
-						Voir mes créances
+						Voir ce qu’on me doit
 						<ArrowRightIcon />
 					</BoutonAffiche>
 					<LienAffiche href="#tarifs" className="justify-center sm:justify-start">

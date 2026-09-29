@@ -318,7 +318,7 @@ export const ECRANS_PIECE: readonly EcranDuProduit[] = [
 	},
 	{
 		route: '/app/decompte/$id',
-		libelle: 'pièce arrêtée',
+		libelle: 'décompte arrêté',
 		vide: false,
 		variantes: Object.keys(FORMES_PIECE),
 		Demo: ({ etat, variante }: { etat: EtatDemo; variante?: string }) => (

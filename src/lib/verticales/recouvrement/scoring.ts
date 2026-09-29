@@ -172,11 +172,11 @@ export const SEUIL_QUALIFICATION = 0.75;
 const RETARDS_TOLERES = 2;
 
 const DESCRIPTIONS_CONTESTATION: Record<SignalContestation, string> = {
-	RECLAMATION_ANTERIEURE: 'Le débiteur a formulé une réclamation antérieure sur cette facturation.',
+	RECLAMATION_ANTERIEURE: 'Votre client a déjà réclamé sur cette facturation.',
 	LITIGE_DANS_ECHANGES: 'Un litige est mentionné dans les échanges rattachés à ce dossier.',
 	AVOIR_PARTIEL_ACCORDE: 'Un avoir partiel a été accordé sur cette facturation.',
 	ECART_COMMANDE_FACTURE: 'Un écart existe entre ce qui a été commandé et ce qui a été facturé.',
-	RECEPTION_NON_DOCUMENTEE: "La réception de la prestation n'est documentée par aucune pièce.",
+	RECEPTION_NON_DOCUMENTEE: 'Aucun document ne montre que la prestation a été reçue.',
 	// Les déclarations du gérant portent leur formulation d'origine : elle vit
 	// dans `litige.ts`, avec la question qui l'a produite. La recopier ici
 	// ferait diverger ce que l'écran demande de ce que le risque affiche.
@@ -226,7 +226,7 @@ export function qualifier(elements: ElementsCreance): Qualification {
 		{
 			cle: 'commande',
 			accepte: ['BON_DE_COMMANDE', 'DEVIS_SIGNE'],
-			fait: "l'engagement du débiteur à commander"
+			fait: 'l’engagement de votre client à commander'
 		},
 		{ cle: 'livraison', accepte: ['BON_DE_LIVRAISON'], fait: 'la réception de la prestation' },
 		{
@@ -244,7 +244,7 @@ export function qualifier(elements: ElementsCreance): Qualification {
 			statut: presente ? 'ok' : 'unknown',
 			preuve: presente
 				? `${preuve.fait} est documenté.`
-				: `Aucune pièce ne documente ${preuve.fait}.`,
+				: `Aucun document ne montre ${preuve.fait}.`,
 			poids: POIDS[preuve.cle]
 		});
 	}
@@ -277,7 +277,7 @@ export function qualifier(elements: ElementsCreance): Qualification {
 			type: 'PROCEDURE_COLLECTIVE',
 			// Un CONSTAT. L'effet juridique d'une procédure collective sur le
 			// recouvrement n'a pas été fourni, et l'inventer serait du conseil.
-			description: "Le débiteur fait l'objet d'une procédure collective.",
+			description: 'Votre client est en procédure collective.',
 			gravite: 'HAUTE'
 		});
 	}
@@ -285,7 +285,7 @@ export function qualifier(elements: ElementsCreance): Qualification {
 	if (elements.santeDebiteur === 'RADIEE') {
 		risques.push({
 			type: 'DEBITEUR_RADIE',
-			description: 'Le débiteur est radié du registre.',
+			description: 'Votre client est radié du registre.',
 			gravite: 'HAUTE'
 		});
 	}
@@ -293,7 +293,7 @@ export function qualifier(elements: ElementsCreance): Qualification {
 	if (elements.retardsAnterieurs > RETARDS_TOLERES) {
 		risques.push({
 			type: 'RETARDS_REPETES',
-			description: `${elements.retardsAnterieurs} retards de paiement ont été observés sur ce débiteur.`,
+			description: `${elements.retardsAnterieurs} retards de paiement ont été relevés chez ce client.`,
 			gravite: 'MOYENNE'
 		});
 	}

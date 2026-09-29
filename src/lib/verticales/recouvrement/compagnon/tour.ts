@@ -138,7 +138,7 @@ function libelleDeLaSource(source: SourceDeLaPhrase): Omit<PhraseRelue, 'texte'>
 	return {
 		genreSource: 'PIECE',
 		libelleSource:
-			source.page === undefined ? 'pièce du dossier' : `pièce du dossier, page ${source.page}`
+			source.page === undefined ? 'document du dossier' : `document du dossier, page ${source.page}`
 	};
 }
 

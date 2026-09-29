@@ -66,8 +66,8 @@ export const QUESTIONS_PREVOL: readonly QuestionPrevol[] = [
 		ecarter: 'Aucun avoir à déduire',
 		declarer: 'Il en existe un',
 		peutFaire:
-			'Le décompte se calcule et se lit en entier : chaque facture, chaque période ' +
-			'd’intérêts, chaque centime se refait à la main. Il ne se fige pas tant qu’un avoir ' +
+			'Le décompte se calcule et se lit en entier : chaque facture, chaque période de ' +
+			'pénalités, chaque centime se refait à la main. Il ne se fige pas tant qu’un avoir ' +
 			'déclaré n’est pas déduit.',
 		constat:
 			'Un avoir que le logiciel n’a jamais lu ne diminue pas le principal qu’il calcule. Le ' +
@@ -85,13 +85,13 @@ export const QUESTIONS_PREVOL: readonly QuestionPrevol[] = [
 		declarer: 'Un règlement manque',
 		peutFaire:
 			'Le décompte se calcule sur les règlements connus, et montre période par période sur ' +
-			'quel principal les intérêts courent.',
+			'quel principal les pénalités de retard courent.',
 		constat:
-			'Un règlement absent laisse courir les intérêts sur un principal déjà entamé. Le total ' +
-			'arrêté serait plus élevé que ce qui reste dû, et le débiteur qui refait le calcul le ' +
-			'verra.',
+			'Un règlement absent laisse courir les pénalités sur un principal déjà entamé. Le ' +
+			'total arrêté serait plus élevé que ce qui reste dû, et votre client le verra s’il ' +
+			'refait le calcul.',
 		ceQuiLeLeve:
-			'Le règlement importé à sa date, ou lettré à sa facture, fait repartir les intérêts du ' +
+			'Le règlement importé à sa date, ou lettré à sa facture, fait repartir les pénalités du ' +
 			'bon principal au bon jour.',
 		ecarteAuJournal: 'règlement partiel non importé : écarté',
 		declareAuJournal: 'règlement partiel non importé : déclaré'

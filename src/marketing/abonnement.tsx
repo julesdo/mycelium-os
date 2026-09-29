@@ -38,12 +38,12 @@ import { SectionMarketing } from './section';
  */
 const RAISONS = [
 	{
-		titre: 'Une créance se prescrit un jour précis.',
+		titre: 'Ce qu’on vous doit a une date limite précise.',
 		texte:
 			'Pas à la fin du trimestre, pas quand vous y penserez : un jour, qui n’est pas le même selon le secteur. Le produit le surveille tous les jours, parce que c’est tous les jours qu’il se rapproche.'
 	},
 	{
-		titre: 'Les intérêts courent pendant que vous attendez.',
+		titre: 'Les pénalités de retard courent pendant que vous attendez.',
 		texte:
 			'Ils se calculent période par période, et le taux change deux fois par an. Un décompte arrêté six mois trop tard ne rattrape pas les six mois : il les perd.'
 	},

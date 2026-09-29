@@ -130,7 +130,7 @@ export function reveler(
 			nonChiffrees.push({
 				reference: facture.reference,
 				raison:
-					'Date d’exigibilité inexploitable, donc ni le retard ni les intérêts ne ' +
+					'Date d’exigibilité inexploitable, donc ni le retard ni les pénalités ne ' +
 					`peuvent être établis : ${JSON.stringify(facture.dateExigibilite)}.`
 			});
 			continue;

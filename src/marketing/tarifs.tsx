@@ -98,7 +98,7 @@ const OFFRES: Offre[] = [
 		colonne: 'abonnement',
 		cadence: 'par mois',
 		argument:
-			'Vos échéances surveillées toute l’année : ce qui arrive à terme, ce qui devient mûr, ce qui approche de la prescription.',
+			'Vos échéances surveillées toute l’année : ce qui arrive à terme, et ce qui approche de la date limite pour agir en justice.',
 		appel: 'Prendre l’abonnement',
 		avant: true
 	}
@@ -269,8 +269,8 @@ export function Tarifs() {
 			  et un gérant qui ne reconnaît pas le nom appelle sa banque.
 			*/}
 			<p className="max-w-3xl text-cladd-md leading-relaxed text-craie-douce">
-				{DUREE_ESSAI_JOURS} jours d&rsquo;essai, sans carte bancaire : vous voyez vos créances et
-				leurs échéances avant de décider quoi que ce soit. Les montants sont hors taxes, sans
+				{DUREE_ESSAI_JOURS} jours d&rsquo;essai, sans carte bancaire : vous voyez ce qu’on vous
+				doit et vos échéances avant de décider quoi que ce soit. Les montants sont hors taxes, sans
 				engagement de durée, et la facturation est assurée par Paddle. Votre palier —{' '}
 				<span className="font-semibold text-craie">{BORNES_PALIER[palier]}</span> — se confirme dans
 				vos réglages, à partir du volume que vous déclarez.

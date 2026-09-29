@@ -263,7 +263,7 @@ describe('ce que la machine ne sait pas', () => {
 		);
 
 		expect(suivi.anglesMorts.length).toBeGreaterThan(0);
-		expect(suivi.anglesMorts.join(' ')).toMatch(/opposition/i);
+		expect(suivi.anglesMorts.join(" ")).toMatch(/contester/i);
 	});
 
 	it('n’invente jamais une date pour un délai qu’elle ignore', () => {

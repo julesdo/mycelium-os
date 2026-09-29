@@ -72,7 +72,7 @@ function destinations(actif: keyof typeof ICONES, rappel: ReactNode): Destinatio
 		},
 		{
 			cle: 'creances',
-			libelle: 'Créances',
+			libelle: 'Dossiers',
 			vers: '/app/procedures',
 			Icone: ICONES.creances,
 			actif: actif === 'creances'
@@ -177,7 +177,7 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 			<Scene titre="« Clients » actif" hauteur="h-28">
 				<BarreDuBas destinations={destinations('clients', null)} />
 			</Scene>
-			<Scene titre="« Créances » actif" hauteur="h-28">
+			<Scene titre="« Dossiers » actif" hauteur="h-28">
 				<BarreDuBas destinations={destinations('creances', null)} />
 			</Scene>
 			<Scene titre="« Compte » actif, et un rappel au-dessus de neuf" hauteur="h-28">

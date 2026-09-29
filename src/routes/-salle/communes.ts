@@ -114,10 +114,10 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		// doit coller aux dates des autres fixtures, sans quoi on illustre un état
 		// que le calcul ne produirait jamais.
 		explication:
-			'Ce débiteur règle habituellement à 5 jours de son échéance, sur 23 règlements observés. Cette facture en est à 32, soit 27 de plus que son habitude.',
+			'Ce client règle habituellement à 5 jours de son échéance, sur 23 règlements observés. Cette facture en est à 32, soit 27 de plus que son habitude.',
 		action:
 			'Ouvrir la fiche de Fournitures Durand : son historique de règlements y est. ' +
-			'Ou rattacher cette facture à une créance, ou enregistrer son règlement.',
+			'Ou rattacher cette facture à un dossier, ou enregistrer son règlement.',
 		// ⚠️ CHAQUE RANGÉE DU FLUX S'OUVRE MAINTENANT, et la démonstration doit le
 		// montrer : c'est la correction qui compte sur cet écran. « Ouvrir la fiche
 		// de Fournitures Durand » était écrit depuis toujours, et rien ne
@@ -129,18 +129,18 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		reference: 'FA-2021-0087',
 		montant: 924_000n,
 		urgence: 'CRITIQUE',
-		explication: 'La facture FA-2021-0087 est prescrite depuis le 14 août 2026.',
-		action: 'Ne plus engager de frais sur cette facture : la créance est éteinte.',
+		explication: 'Pour la facture FA-2021-0087, il est trop tard pour agir en justice depuis le 14 août 2026.',
+		action: 'Ne plus engager de frais sur cette facture : la somme ne se réclame plus.',
 		// Même une créance éteinte s'ouvre : c'est là qu'on va CONSTATER la perte,
 		// et le seul endroit où « ne plus engager de frais » devient vérifiable.
 		cible: { genre: 'DEBITEUR', id: 'demo-debiteur' }
 	},
 	{
 		type: 'ECHEANCE_PROCEDURE',
-		reference: 'Ateliers Martin — injonction',
+		reference: 'Ateliers Martin — demande au tribunal',
 		montant: 1_845_000n,
 		urgence: 'CRITIQUE',
-		explication: "Signification de l'ordonnance : il reste 9 jour(s) avant le 12 septembre 2026.",
+		explication: 'Remise de la décision à votre client : il reste 9 jour(s) avant le 12 septembre 2026.',
 		// La démonstration porte la MÊME formulation que le produit : une capture
 		// qui montrerait « faire signifier sans délai » ferait recopier une consigne
 		// de procédure que la ligne rouge 3 interdit.
@@ -171,7 +171,7 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 export const RAIL_DEMO: EtapeAffichee[] = [
 	{
 		etat: 'REQUETE_DEPOSEE',
-		libelle: 'Requête déposée',
+		libelle: 'Demande déposée au tribunal',
 		statut: 'FRANCHIE',
 		atteinteLe: '2026-06-04',
 		branches: [
@@ -179,15 +179,15 @@ export const RAIL_DEMO: EtapeAffichee[] = [
 				etat: 'REQUETE_REJETEE',
 				libelle: 'Requête rejetée',
 				constat:
-					'Le juge n’a pas fait droit à la requête, ou pas entièrement. La créance n’est pas ' +
-					'éteinte ; cette voie-ci est fermée.'
+					'Le juge n’a pas suivi votre demande, ou pas entièrement. Ce qu’il vous doit n’est ' +
+					'pas perdu ; c’est cette voie-là qui est fermée.'
 			}
 		],
 		brancheSuivie: null
 	},
 	{
 		etat: 'ORDONNANCE_RENDUE',
-		libelle: 'Ordonnance rendue',
+		libelle: 'Le juge a décidé (ordonnance)',
 		statut: 'COURANTE',
 		atteinteLe: '2026-08-28',
 		branches: [],
@@ -195,13 +195,13 @@ export const RAIL_DEMO: EtapeAffichee[] = [
 	},
 	{
 		etat: 'ORDONNANCE_SIGNIFIEE',
-		libelle: 'Ordonnance signifiée',
+		libelle: 'Décision remise à votre client',
 		statut: 'A_VENIR',
 		atteinteLe: null,
 		branches: [
 			{
 				etat: 'OPPOSITION',
-				libelle: 'Opposition formée',
+				libelle: 'Votre client a contesté',
 				constat:
 					'L’affaire bascule en procédure contradictoire. Les procédures que ce logiciel ' +
 					'évalue se déroulent toutes sans débat : ce dossier sort de ce qu’il sait mesurer.'
@@ -211,7 +211,7 @@ export const RAIL_DEMO: EtapeAffichee[] = [
 	},
 	{
 		etat: 'TITRE_EXECUTOIRE',
-		libelle: 'Titre exécutoire',
+		libelle: 'Vous pouvez faire saisir',
 		statut: 'A_VENIR',
 		atteinteLe: null,
 		branches: [],

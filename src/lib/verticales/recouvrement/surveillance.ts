@@ -396,7 +396,7 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			montant: facture.montantExigible,
 			urgence: 'NORMALE',
 			explication: `La facture ${facture.reference} est échue depuis le ${dateLisible(facture.dateEcheance)} et reste due.`,
-			action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.',
+			action: 'Rattacher cette facture à un dossier, ou enregistrer son règlement.',
 			// La MÊME date que l'explication récite, exploitable cette fois.
 			dateDuFait: facture.dateEcheance,
 			// La cible est le DEBITEUR : une facture n'a pas d'ecran a elle.
@@ -460,7 +460,7 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 				? `Ouvrir la facture ${facture.reference} : le calcul de sa date limite y est ` +
 					`détaillé, avec ses hypothèses.`
 				: `Ouvrir la facture ${facture.reference} : ${versEuros(facture.montantExigible)} € y ` +
-					`sont décomptés, avec les pièces qui les soutiennent.`,
+					`sont décomptés, avec les documents qui les soutiennent.`,
 			// LA DATE DE PRESCRIPTION, celle des deux branches de l'explication.
 			// C'est elle qui fait remonter la prescription la plus proche en tête
 			// de file au lieu de la plus grosse : voir `comparerEvenements`.
@@ -578,7 +578,7 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			// avec elle.
 			action:
 				`Ouvrir la fiche de ${rupture.debiteur} : son historique de règlements y est. ` +
-				'Ou rattacher cette facture à une créance, ou enregistrer son règlement.',
+				'Ou rattacher cette facture à un dossier, ou enregistrer son règlement.',
 			// « Ouvrir la fiche de X » — et desormais on peut, d'un doigt.
 			...(rupture.debiteurId === undefined
 				? {}
@@ -652,7 +652,7 @@ function anglesMorts(etat: EtatSurveille): string[] {
 		const references = parMotif.get(motif);
 		if (references === undefined) return [];
 		return [
-			`Prescription non surveillée sur ${references.length} facture(s) : ` +
+			`Date limite pour agir en justice non surveillée sur ${references.length} facture(s) : ` +
 				`${references.join(', ')}. ${CONSIGNE_ANGLE_MORT[motif]}`
 		];
 	});

@@ -110,7 +110,7 @@ function blocages(cles: readonly string[]): string[] {
 
 const injonctionDePayer: Procedure = {
 	cle: 'injonction-de-payer',
-	nom: 'Injonction de payer',
+	nom: 'Demander au tribunal de le faire payer (injonction de payer)',
 	// Les mentions obligatoires manquent : la requête ne peut pas être écrite.
 	parametresRequis: ['mentionsObligatoiresInjonction', 'delaiSignificationInjonction'],
 	piecesExigees: ['FACTURE'],
@@ -118,9 +118,9 @@ const injonctionDePayer: Procedure = {
 	plancherMontant: null,
 	plafondMontant: null,
 	conditionsEchec: [
-		"Le débiteur forme opposition dans le délai : l'affaire bascule en procédure contradictoire.",
-		"L'ordonnance n'est pas signifiée dans le délai légal : elle est non avenue, et tout est à refaire.",
-		'Le juge rejette la requête ou ne fait droit que partiellement.'
+		'Votre client conteste dans le délai : l’affaire passe devant le juge, avec un débat.',
+		'La décision du juge n’est pas remise à votre client dans le délai légal : elle ne vaut plus rien, et tout est à refaire.',
+		'Le juge refuse votre demande, ou ne la suit que pour une partie.'
 	],
 	peutEvaluer: () => true,
 	blocagesProductionActe: () => blocages(injonctionDePayer.parametresRequis),
@@ -129,7 +129,7 @@ const injonctionDePayer: Procedure = {
 
 const l126: Procedure = {
 	cle: 'l126-creances-commerciales',
-	nom: 'Procédure L.126, créances commerciales',
+	nom: 'Procédure L.126, entre entreprises',
 	parametresRequis: [
 		'tarifCommissaireJusticeL126',
 		'delaiContestationL126',
@@ -141,8 +141,8 @@ const l126: Procedure = {
 	plancherMontant: null,
 	plafondMontant: null,
 	conditionsEchec: [
-		'Le débiteur conteste dans le mois : la procédure simplifiée prend fin, même si la contestation est infondée.',
-		'Le commandement ne peut pas être signifié au débiteur.'
+		'Votre client conteste dans le mois : cette procédure simplifiée prend fin, même si sa contestation n’est pas fondée.',
+		'La sommation de payer ne peut pas être remise à votre client.'
 	],
 	/**
 	 * Indisponible, et pas seulement pour produire l'acte : tant que le décret
@@ -162,7 +162,7 @@ const relanceAmiable: Procedure = {
 	piecesRecommandees: [],
 	plancherMontant: null,
 	plafondMontant: null,
-	conditionsEchec: ['Le débiteur ne répond pas, ou refuse de payer.'],
+	conditionsEchec: ['Votre client ne répond pas, ou refuse de payer.'],
 	peutEvaluer: () => true,
 	blocagesProductionActe: () => [],
 	// Aucune décision, donc aucun délai qui en découle. `null` le DIT, là où un

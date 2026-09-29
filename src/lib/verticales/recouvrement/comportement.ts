@@ -221,7 +221,7 @@ export function lireRupture(habitude: Habitude, retardJours: number): LectureRup
 		 * autorité qu'un fondé sur quarante.
 		 */
 		constat:
-			`Ce débiteur règle habituellement à ${habituel} jour${Math.abs(habituel) > 1 ? 's' : ''} ` +
+			`Ce client règle habituellement à ${habituel} jour${Math.abs(habituel) > 1 ? 's' : ''} ` +
 			`de son échéance, sur ${habitude.echantillon} règlements observés. ` +
 			`Cette facture en est à ${Math.round(retardJours)}, soit ${ecart} de plus que son habitude.`
 	};

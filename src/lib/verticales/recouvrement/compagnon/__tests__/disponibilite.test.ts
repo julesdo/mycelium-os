@@ -78,7 +78,7 @@ describe('le refus du plafond', () => {
 		// veut pas dire seulement la chaîne vide : une première ligne qui ne
 		// nommerait rien de concret en est un aussi.
 		expect(refus!.peutFaire).toMatch(/file/i);
-		expect(refus!.peutFaire).toMatch(/prescription/i);
+		expect(refus!.peutFaire).toMatch(/dates? limites? pour agir/i);
 		expect(refus!.peutFaire).toMatch(/décompte/i);
 	});
 

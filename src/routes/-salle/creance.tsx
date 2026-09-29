@@ -705,7 +705,7 @@ function creanceDemo({
 			{
 				cle: 'regime-prescription',
 				enonce: regimePrescription(SECTEUR_DEMO).note,
-				fait: 'Le secteur d’activité de ce client détermine le délai de prescription.',
+				fait: 'Le secteur d’activité de ce client détermine la date limite pour agir en justice.',
 				ceQuiLaLeve:
 					'Préciser le secteur du client, sur sa fiche, fixe le délai réellement applicable.'
 			}
@@ -855,11 +855,11 @@ const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
 	'relance sans adresse': creanceDemo({ relances: RELANCES_DEMO, sansAdresse: true }),
 	'relance trop longue': creanceDemo({ relances: RELANCES_TROP_LONGUES_DEMO }),
 	'sans décompte arrêté': creanceDemo({ relances: RELANCES_SANS_DECOMPTE_DEMO }),
-	'aucune pièce': creanceDemo({
+	'aucun document': creanceDemo({
 		solidite: soliditeDepuisPyramide(pyramideDePreuves([])),
 		pieces: []
 	}),
-	'toutes les pièces': creanceDemo({
+	'tous les documents': creanceDemo({
 		solidite: soliditeDepuisPyramide(
 			pyramideDePreuves(ETAGES_DE_PREUVE.flatMap((etage) => etage.pieces))
 		)

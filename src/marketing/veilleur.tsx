@@ -46,11 +46,11 @@ const TRAVAUX = [
 		Signe: PictoRegistre,
 		titre: 'Le registre',
 		texte:
-			'Les procédures collectives publiées la veille, relevées sur vos débiteurs à vous. Un client solvable en janvier ne l’est pas en juin.'
+			'Les procédures collectives publiées la veille, relevées sur vos clients à vous. Un client solvable en janvier ne l’est pas en juin.'
 	},
 	{
 		Signe: PictoEcheance,
-		titre: 'La prescription',
+		titre: 'La date limite pour agir',
 		texte:
 			'Chaque facture repassée, au régime du secteur de chacune. Ce qui entre dans le préavis vous est dit le jour où il y entre.'
 	}
@@ -86,8 +86,8 @@ export function Veilleur() {
 						<span className="text-craie-claire">Vous verrez ce qu’il a trouvé.</span>
 					</h2>
 					<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
-						Il tourne pendant la nuit, sur vos débiteurs et sur vos échéances. Au matin, vous
-						lisez ce qui a changé.
+						Il tourne pendant la nuit, sur vos clients et sur vos échéances. Au matin, vous lisez
+						ce qui a changé.
 					</p>
 				</div>
 			</ScenePointeur>

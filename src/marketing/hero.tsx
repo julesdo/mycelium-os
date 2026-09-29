@@ -110,9 +110,9 @@ import { ApercuTelephone } from './apercu-telephone';
 
 /** Ce que le logiciel mesure, dans l'ordre où la loi les fait naître. */
 const MESURES = [
-	{ titre: 'Intérêts de retard', detail: 'Période par période, au taux du semestre.' },
-	{ titre: 'Indemnité forfaitaire', detail: 'Par facture, jamais par client.' },
-	{ titre: 'Prescription', detail: 'Par secteur, à la date près.' }
+	{ titre: 'Pénalités de retard', detail: 'Période par période, au taux du semestre.' },
+	{ titre: 'Frais de recouvrement', detail: 'Par facture, jamais par client.' },
+	{ titre: 'Date limite pour agir', detail: 'Par secteur, à la date près.' }
 ] as const;
 
 /**
@@ -238,7 +238,7 @@ export function Hero() {
 					    le travail qu'on prétendait épargner au lecteur. */}
 					<div className="leve flex w-full flex-col items-stretch gap-cladd-3xs pt-cladd-3xs sm:w-auto sm:flex-row sm:items-center">
 						<BoutonAffiche as={Link} to="/inscription">
-							Voir mes créances
+							Voir ce qu’on me doit
 							<ArrowRightIcon />
 						</BoutonAffiche>
 						<LienAffiche href="#comment" className="justify-center">
@@ -279,7 +279,7 @@ export function Hero() {
 						*/}
 						<p className="text-cladd-md leading-relaxed font-normal text-craie-douce">
 							Letikette surveille cette date sur chacune de vos factures, et calcule au centime les
-							intérêts de retard et l’indemnité forfaitaire qui vous sont dus.
+							pénalités de retard et les frais de recouvrement qui vous sont dus.
 						</p>
 
 						{/* L'APPEL À DESCENDRE, et c'est le geste de la référence : une
@@ -310,7 +310,7 @@ export function Hero() {
 						    chiffres : c'est la seule version de cette image dont dispose
 						    quelqu'un qui ne la voit pas. Elle suit les données de
 						    `donnees-accueil.ts`, et bouge avec elles. */}
-						<Telephone description="Letikette sur téléphone, écran d’accueil : 59 340,40 € dus sur 312 factures, dont 54 210,00 € de principal, 4 690,40 € d’intérêts de retard et 440,00 € d’indemnité forfaitaire. En retard : une facture prescrite depuis le 14 août 2026 chez Bellin & Fils pour 9 240,00 €. À venir : une signification d’ordonnance à neuf jours chez Ateliers Martin pour 18 450,00 €.">
+						<Telephone description="Letikette sur téléphone, écran d’accueil : 59 340,40 € dus sur 312 factures, dont 54 210,00 € de principal, 4 690,40 € de pénalités de retard et 440,00 € de frais de recouvrement. En retard : une facture dont la date limite pour agir en justice est dépassée depuis le 14 août 2026 chez Bellin &amp; Fils, pour 9 240,00 €. À venir : une décision à faire remettre sous neuf jours chez Ateliers Martin, pour 18 450,00 €.">
 							<ApercuTelephone />
 						</Telephone>
 					</div>

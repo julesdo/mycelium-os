@@ -109,7 +109,7 @@ export function Navbar() {
 						Se connecter
 					</Link>
 					<BoutonAffiche as={Link} to="/inscription" size="sm">
-						Voir mes créances
+						Voir ce qu’on me doit
 						<ArrowRightIcon />
 					</BoutonAffiche>
 				</div>

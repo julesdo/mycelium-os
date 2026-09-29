@@ -96,8 +96,8 @@ const FORMATS = [
  * commentaire de `crons.ts` dit lui-même de son intention.
  */
 const SURVEILLANCE = [
-	'Relever le BODACC chaque nuit, sur vos débiteurs à vous.',
-	'Suivre la prescription facture par facture, au régime de son secteur.',
+	'Relever le journal officiel des entreprises chaque nuit, sur vos clients à vous.',
+	'Suivre la date limite pour agir en justice facture par facture, au régime de son secteur.',
 	'Rapprocher les règlements, pour ne pas relancer un client qui a payé.'
 ] as const;
 
@@ -121,7 +121,7 @@ const QUALIFICATION = [
  * fondre serait un mensonge par rangement.
  */
 const HYPOTHESES_DEMO = [
-	'Secteur indéterminé pour 3 débiteurs : le délai de prescription le plus court est retenu.'
+	'Secteur indéterminé pour 3 clients : le délai le plus court pour agir en justice est retenu.'
 ] as const;
 
 const ANGLES_MORTS_DEMO = [
@@ -130,9 +130,9 @@ const ANGLES_MORTS_DEMO = [
 ] as const;
 
 const DECOMPTE_CAPACITES = [
-	'Décomposer les intérêts période par période : taux, jours, principal.',
+	'Décomposer les pénalités de retard période par période : taux, jours, principal.',
 	'Figer un décompte à sa date. Rejouer en produit un nouveau, daté.',
-	'Réunir les pièces pour votre avocat ou votre commissaire de justice.'
+	'Réunir les documents pour votre avocat ou votre commissaire de justice.'
 ] as const;
 
 /**
@@ -170,8 +170,8 @@ const EVENEMENTS: EvenementAffiche[] = [
 		// délai » est un impératif sur un acte de procédure, que la ligne rouge 3
 		// interdit. Le constat reste, le geste redevient d'ouvrir un écran.
 		explication:
-			'Signification de l’ordonnance : il reste 9 jours avant le 2 octobre. Passée cette ' +
-			'date, le droit est perdu.',
+			'Remise de la décision à votre client : il reste 9 jours avant le 2 octobre. Passée ' +
+			'cette date, le droit est perdu.',
 		action: 'Ouvrir ce dossier : la date limite et son journal y sont.'
 	},
 	{
@@ -180,7 +180,7 @@ const EVENEMENTS: EvenementAffiche[] = [
 		montant: 24_990n,
 		urgence: 'NORMALE',
 		explication: 'La facture FA-2026-0311 est échue depuis le 1er août et reste due.',
-		action: 'Rattacher cette facture à une créance, ou enregistrer son règlement.'
+		action: 'Rattacher cette facture à un dossier, ou enregistrer son règlement.'
 	}
 ];
 
@@ -269,7 +269,7 @@ export function Etapes() {
 				numero="02"
 				picto={<PictoRegistre />}
 				titre="Le logiciel regarde toutes les nuits"
-				texte="Ce qui arrive à échéance, ce qui devient mûr, ce qui approche de la prescription."
+				texte="Ce qui arrive à échéance, et ce qui approche de sa date limite pour agir en justice."
 				capacites={SURVEILLANCE}
 			>
 				{/*
@@ -352,7 +352,7 @@ function BilanImport() {
 					</Chip>
 				</div>
 				<p className="text-cladd-xs text-plume-claire">
-					312 factures enregistrées, 118 règlements, 47 débiteurs créés.
+					312 factures enregistrées, 118 règlements, 47 clients créés.
 				</p>
 				<p className="text-cladd-xs text-plume-claire">
 					624 écritures hors périmètre (produits, TVA, trésorerie) — écartées à bon droit.
@@ -362,7 +362,7 @@ function BilanImport() {
 					· Montant illisible en débit ou en crédit.
 				</p>
 				<p className="text-cladd-xs text-plume-claire">
-					· Écriture sur compte client sans référence de pièce.
+					· Écriture sur compte client sans référence de document.
 				</p>
 			</Surface>
 		</div>
@@ -529,7 +529,7 @@ function Question() {
 
 			<Surface contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
 				<p className="text-cladd-md font-semibold">
-					Cette créance a-t-elle déjà fait l’objet d’une réclamation&nbsp;?
+					Ce client a-t-il déjà réclamé sur ces factures&nbsp;?
 				</p>
 				<p className="text-cladd-xs text-plume-claire">
 					Fournitures Durand · 4 factures · 31 200,50 €

@@ -88,7 +88,7 @@ export function controlerDecompte(args: ArgumentsControle): ControleDecompte {
 			montantEnJeu: connue.montantExigible,
 			explication:
 				`La facture ${connue.reference} (${versEuros(connue.montantExigible)} €) est connue ` +
-				`de ce débiteur mais ne figure pas au décompte. Elle ne sera pas couverte par l'acte, ` +
+				`de ce client mais ne figure pas au décompte. Elle ne sera pas couverte par l'acte, ` +
 				`et ne pourra plus être réclamée au titre de cette procédure.`
 		});
 	}
@@ -137,12 +137,12 @@ export function controlerDecompte(args: ArgumentsControle): ControleDecompte {
 			reference: ligne.reference,
 			montantEnJeu: ecart,
 			explication:
-				`Sur la facture ${ligne.reference}, les intérêts annoncés ` +
+				`Sur la facture ${ligne.reference}, les pénalités de retard annoncées ` +
 				`(${versEuros(ligne.interets)} €) ne correspondent pas à la somme des périodes ` +
 				`détaillées, moins ce que les règlements en ont éteint ` +
 				`(${versEuros(depuisCentimes(expliques))} €) : l'écart est de ` +
 				`${versEuros(ecart)} €. Un montant qu'aucune période ne justifie ne peut pas ` +
-				`figurer dans un acte : il serait indéfendable si le débiteur refaisait le calcul.`
+				`figurer dans un acte : il serait indéfendable si votre client refaisait le calcul.`
 		});
 	}
 
@@ -197,6 +197,6 @@ export function exigerDecompteComplet(controle: ControleDecompte): void {
 		`Décompte incomplet : l'acte ne peut pas être produit.\n\n${details}\n\n` +
 			`Montant chiffrable qui serait abandonné DÉFINITIVEMENT : ` +
 			`${versEuros(controle.montantAbandonne)} €.\n` +
-			`Le titre exécutoire ne porte que sur les sommes qu'il chiffre.`
+			`Le droit de faire saisir ne porte que sur les sommes qu'il chiffre.`
 	);
 }

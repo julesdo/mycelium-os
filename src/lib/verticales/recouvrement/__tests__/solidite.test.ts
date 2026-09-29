@@ -163,7 +163,7 @@ describe('l’accord grammatical, qui ne se dérive pas', () => {
 		]);
 
 		expect(complet.etages.map((e) => e.etat)).toEqual([
-			'L’engagement du débiteur à commander est documenté.',
+			'L’engagement de votre client à commander est documenté.',
 			'La réception de la prestation est documentée.',
 			'Les conditions de paiement applicables sont documentées.',
 			'L’interpellation préalable est documentée.'
@@ -173,7 +173,7 @@ describe('l’accord grammatical, qui ne se dérive pas', () => {
 	it('accorde aussi chaque état absent', () => {
 		const vide = pyramideDePreuves(['FACTURE']);
 		for (const etage of vide.etages) {
-			expect(etage.etat).toMatch(/^Aucune pièce ne documente /);
+			expect(etage.etat).toMatch(/^Aucun document ne montre /);
 			expect(etage.etat.endsWith('.')).toBe(true);
 		}
 	});

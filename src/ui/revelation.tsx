@@ -242,9 +242,15 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 						{eurosCentimes(bilan.eteintesAvant)}
 					</span>
 					<span className="text-cladd-2xs text-cladd-fg-softer">
+						{/*
+						  ⚠️ UN SEUL `pluriel()`, SUR « facture ». Il y en avait un SECOND à la
+						  fin, resté du temps où la phrase disait « factures prescrites » : le
+						  mot du droit portait la marque du pluriel, la tournure de tout le
+						  monde ne la porte plus. Il écrivait « hors délai pour agir en
+						  justices », en production, sur l'écran qui ouvre le produit.
+						*/}
 						{bilan.nombreEteintesAvant} facture{pluriel(bilan.nombreEteintesAvant)} hors délai pour
 						agir en justice
-						{pluriel(bilan.nombreEteintesAvant)}
 					</span>
 				</Surface>
 

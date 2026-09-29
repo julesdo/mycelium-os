@@ -82,7 +82,7 @@ const DOSSIERS = [
 ] as const;
 
 function nomDu(debiteurId: string): string {
-	return DEBITEURS.find((d) => d.id === debiteurId)?.denomination ?? 'Débiteur inconnu';
+	return DEBITEURS.find((d) => d.id === debiteurId)?.denomination ?? 'Client inconnu';
 }
 
 function encoursDu(debiteurId: string): bigint {

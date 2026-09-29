@@ -120,9 +120,9 @@ function refusPlafondAtteint(cumul: number): Refus {
 	return composerRefus({
 		peutFaire:
 			'Tout le reste du produit continue, et ne dépend d’aucun appel modèle : la file et son ' +
-			'tri, les échéances surveillées, le délai de prescription, les décomptes et leurs ' +
-			'segments, les propositions posées sur les rangées, les pièces classées et les ' +
-			'brouillons de courrier. Rien de ce qui se calcule ne s’arrête ici.',
+			'tri, les dates limites pour agir en justice, les décomptes et leurs segments, les ' +
+			'propositions posées sur les rangées, les documents classés et les brouillons de ' +
+			'courrier. Rien de ce qui se calcule ne s’arrête ici.',
 		constat:
 			`La conversation libre de cet établissement s’arrête pour ce mois-ci : son compteur ` +
 			`atteint ${budget(cumul)}, pour un plafond de sécurité de ${ARRET_MENSUEL}. Ce plafond ` +
@@ -151,8 +151,8 @@ export function refusSansCle(): Refus {
 	return composerRefus({
 		peutFaire:
 			'Tout le reste du produit continue, et ne dépend d’aucun appel modèle : la file et son ' +
-			'tri, les échéances surveillées, le délai de prescription, les décomptes et leurs ' +
-			'segments, les propositions posées sur les rangées et les brouillons de courrier.',
+			'tri, les dates limites pour agir en justice, les décomptes et leurs segments, les ' +
+			'propositions posées sur les rangées et les brouillons de courrier.',
 		constat:
 			'La conversation n’a pas de clé d’appel sur ce déploiement. Elle est la seule surface ' +
 			'du produit qui en dépende, avec la lecture des documents déposés.',
@@ -177,7 +177,8 @@ export function refusAppelEchoue(): Refus {
 	return composerRefus({
 		peutFaire:
 			'Tout le reste du produit continue, et ne dépend d’aucun appel modèle : la file, les ' +
-			'échéances surveillées, le délai de prescription, les décomptes et leurs segments.',
+			'échéances surveillées, les dates limites pour agir en justice, les décomptes et ' +
+			'leurs segments.',
 		constat:
 			'La réponse n’a pas abouti. L’appel a été émis une fois et n’a pas rendu de texte ' +
 			'exploitable ; rien n’a été réessayé en silence, et rien n’a été deviné à la place.',

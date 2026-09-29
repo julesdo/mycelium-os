@@ -163,7 +163,7 @@ describe('le journal des événements', () => {
 			expect(suivi.etat).toBe('ORDONNANCE_SIGNIFIEE');
 			// Signifiée : la caducité ne court plus, et l'angle mort apparaît.
 			expect(suivi.echeances).toEqual([]);
-			expect(suivi.anglesMorts.join(' ')).toMatch(/opposition/i);
+			expect(suivi.anglesMorts.join(' ')).toMatch(/contester/i);
 		},
 		DELAI_CONVEX
 	);
@@ -250,7 +250,7 @@ describe('les dossiers engagés', () => {
 			expect(dossier.debiteur).toBe('Fournitures Durand');
 			expect(dossier.procedure).toBe('injonction-de-payer');
 			expect(dossier.engageeLe).toBe('2026-06-04');
-			expect(dossier.libelle).toBe('Requête déposée');
+			expect(dossier.libelle).toBe('Demande déposée au tribunal');
 			expect(dossier.journal).toEqual([]);
 		},
 		DELAI_CONVEX

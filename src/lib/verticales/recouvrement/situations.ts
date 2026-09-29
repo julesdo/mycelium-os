@@ -97,7 +97,7 @@ function contestation(faits: FaitsSituations, oppositionLe: string): Situation {
 		],
 		dateLimite: {
 			date: frais.fin,
-			libelle: 'Au tribunal de commerce, payer les frais de l’opposition au greffe',
+			libelle: 'Au tribunal de commerce, payer au greffe les frais de la contestation',
 			reporteeDe: frais.reporteeDe,
 			departNonPrecise: `Le texte ne dit pas d’où part ce délai : il est calculé depuis la date de la contestation, le ${dateLisible(oppositionLe)}, la plus précoce connue. Le greffe vous écrira.`,
 			source: PARAMETRES.delaiConsignationFraisOpposition.source
@@ -105,7 +105,7 @@ function contestation(faits: FaitsSituations, oppositionLe: string): Situation {
 		options: [
 			'Confier la suite à un avocat',
 			...(auDela ? [] : ['Aller vous-même à l’audience']),
-			'Au tribunal de commerce : payer les frais de l’opposition, ou non',
+			'Au tribunal de commerce : payer les frais de la contestation, ou non',
 			'Chercher un arrangement avec votre client',
 			'Arrêter',
 			'Ne rien faire pour l’instant'
@@ -209,12 +209,12 @@ function radiee(): Situation {
 		titre: 'Votre client est radié du registre',
 		ceQuiSePasse: [
 			'Une société radiée doit toujours ce qu’elle doit (Cour de cassation, chambre commerciale, 20 septembre 2023).',
-			'Qui la représente : le liquidateur nommé dans l’annonce de dissolution, s’il y en a une. Sinon, le greffe du tribunal de commerce peut vous le dire.',
+			'Qui la représente : la personne nommée par le tribunal dans l’annonce de dissolution, s’il y en a une. Sinon, le greffe du tribunal de commerce peut vous le dire.',
 			'Aucune lettre n’est préparée pour une société radiée : personne n’a qualité pour la recevoir tant qu’un mandataire n’est pas désigné.'
 		],
 		dateLimite: null,
 		options: [
-			'Vous adresser au liquidateur',
+			'Vous adresser à la personne nommée par le tribunal',
 			'Faire désigner un mandataire par un professionnel',
 			'Attendre',
 			'Classer'
