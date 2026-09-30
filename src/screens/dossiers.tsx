@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import {
+	Button,
 	Checkbox,
 	Chip,
 	Popup,
 	PopupContent,
+	SearchField,
 	SectionTitle,
 	Segmented,
 	SegmentedButton,
-	Surface,
-	Toolbar
+	Surface
 } from '@cladd-ui/react';
-import { TITRE_ETAPE, type EtapeDossier } from '../lib/verticales/recouvrement/etapes-dossier';
+import { CheckIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react';
+import { type EtapeDossier } from '../lib/verticales/recouvrement/etapes-dossier';
 import {
+	Avatar,
 	BoutonPrincipal,
-	BoutonSecondaire,
+	BoutonTexte,
+	LigneAnalyse,
+	LigneBouton,
 	Lien,
 	ListeAnalyses,
-	Avatar,
-	LigneAnalyse,
 	PageBody,
 	PageEcran,
 	dateCourte,
@@ -27,46 +30,47 @@ import {
 } from '../ui';
 
 /**
- * L'INDEX DES DOSSIERS — tous, et c'est nouveau.
+ * L'INDEX DES DOSSIERS — calqué, écran pour écran, sur la liste des
+ * transactions de Revolut.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ CE QUE CET ÉCRAN REMPLACE, ET POURQUOI
+ * ⚠️ LE REPROCHE DU 30/09/2026, ET CE QU'IL MESURAIT
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * L'onglet « Dossiers » de la barre du bas menait à `/app/procedures`, qui ne
- * listait que les dossiers DÉJÀ portés devant un tribunal : quatre sur dix-sept
- * dans la démonstration. Il n'existait donc, dans tout le produit, aucun écran
- * qui liste les dossiers. Les seules portes étaient la file du jour — qui montre
- * ce qui PRESSE, pas ce qui EXISTE — et la page d'un client. « Tous mes dossiers
- * ouverts, du plus gros au plus petit » ne s'obtenait nulle part (audit du
- * 29/09/2026, F7).
+ * Mot pour mot : « j'ai l'impression qu'il y a des milliards de zones
+ * cliquables. La page qui affiche tous les dossiers est juste horrible, surtout
+ * avec le tab de 50 mille items ».
  *
- * Ce qu'apportait `/app/procedures` n'est pas perdu : la frise d'une procédure,
- * sa prochaine échéance et ses angles morts vivent sur la page du dossier
- * (`SuiviProcedure`), là où on les cherche. Le filtre « Au tribunal » rend la
- * même liste qu'avant.
+ * Relevé : cinq segments de filtre — « Tous · Prêt · On lui écrit · Le
+ * tribunal, si besoin · Réglé » — qui s'enroulaient sur TROIS lignes à 375 px ;
+ * une pilule « Sélectionner » de 56 px ; cinq rangées portant chacune un
+ * chevron. Seize cibles, dont onze habillées en bouton.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ LE PLUS GROS D'ABORD, ET C'EST UN CHOIX DE PRODUIT
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * La file du jour trie par urgence juridique — ce qui est juste, c'est son
- * métier. Mais aucun écran ne permettait de commencer par ce qui RAPPORTE. Le
- * tri vient de la requête, sur la colonne affichée : il se refait à la main.
+ * Chez Revolut, sur l'écran équivalent : une recherche, UN bouton filtre rond,
+ * les rangées. Trois cibles, et la liste se lit par GROUPES qui annoncent leur
+ * compte et leur total (`docs/superpowers/specs/2026-09-30-codes-des-references.md`).
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ LE MODE SÉLECTION, ET POURQUOI IL EST UN MODE
+ * ⚠️ CE QUI EST REPRIS, ET D'OÙ
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Une case cochable en permanence sur une rangée qui est AUSSI un lien force à
- * viser : la case ouvre le dossier une fois sur trois, sur un écran tactile de
- * 375 px. Le mode sépare les deux gestes — on lit, ou on sélectionne — et la
- * rangée entière reste une cible de 48 px dans les deux cas.
+ *   · la recherche et UN bouton filtre qui ouvre une feuille — Revolut ;
+ *   · les groupes par étape, leur compte et leur total — Revolut, par date ;
+ *   · aucun chevron sur une rangée de contenu — Shop et Revolut ;
+ *   · « Sélectionner » en texte seul, en haut à droite — Mail ;
+ *   · en sélection, la case prend la place de l'avatar — Mail.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE PLUS GROS D'ABORD, DANS CHAQUE GROUPE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * La file du jour trie par urgence juridique — c'est son métier. Cet écran-ci
+ * permet de commencer par ce qui RAPPORTE : le tri vient de la requête, sur la
+ * colonne affichée, et le regroupement le préserve.
  *
  * ⚠️ ET CE QUI SE GROUPE EST LA PRÉPARATION, JAMAIS L'ENGAGEMENT. Le lot
  * prépare des lettres ; chacune atterrit « à valider » sur son dossier, et le
- * gérant la relit et la valide une par une. C'est la ligne rouge n° 1, et elle
- * ne bouge pas parce qu'on gagne du temps.
+ * gérant la relit et la valide une par une. C'est la ligne rouge n° 1.
  */
 
 export interface DossierDeLIndex {
@@ -112,39 +116,51 @@ export interface DossiersAffiches {
 	readonly onFermerLeLot: () => void;
 }
 
-type CleFiltre = 'TOUS' | EtapeDossier;
+/** L'ordre des groupes : celui du fil d'un dossier. Ce qui est clos vient en dernier. */
+const ORDRE: readonly EtapeDossier[] = ['PRET', 'ON_LUI_ECRIT', 'TRIBUNAL', 'REGLE'];
 
-const FILTRES: readonly { readonly cle: CleFiltre; readonly libelle: string }[] = [
-	{ cle: 'TOUS', libelle: 'Tous' },
-	{ cle: 'PRET', libelle: TITRE_ETAPE.PRET },
-	{ cle: 'ON_LUI_ECRIT', libelle: TITRE_ETAPE.ON_LUI_ECRIT },
-	{ cle: 'TRIBUNAL', libelle: TITRE_ETAPE.TRIBUNAL },
-	{ cle: 'REGLE', libelle: TITRE_ETAPE.REGLE }
-];
+/**
+ * LE NOM D'UN GROUPE, QUI N'EST PAS CELUI DE L'ÉTAPE.
+ *
+ * ⚠️ « LE TRIBUNAL, SI BESOIN » EST UN INTITULÉ DE FIL, PAS D'INDEX. Sur la page
+ * d'un dossier, l'étape se lit AVANT qu'on y soit : le « si besoin » dit qu'elle
+ * n'est pas une fatalité. Ici, les dossiers de ce groupe y SONT déjà — un
+ * professionnel est désigné, ou une procédure est consignée. Le même libellé
+ * dirait une chose fausse.
+ */
+const LIBELLE_GROUPE: Readonly<Record<EtapeDossier, string>> = {
+	PRET: 'Prêts',
+	ON_LUI_ECRIT: 'On lui a écrit',
+	TRIBUNAL: 'Au tribunal',
+	REGLE: 'Réglés'
+};
 
 /** Les délais proposés sur une lettre de relance, comme sur un dossier seul. */
 const DELAIS = [8, 15, 30] as const;
 
 /**
- * Ce qu'une rangée dit sous le nom du client.
+ * CE QU'UNE RANGÉE DIT SOUS LE NOM DU CLIENT.
  *
- * ⚠️ UNE SEULE PHRASE, ET LA PLUS UTILE. Ce qui attend le gérant passe devant
- * une date limite lointaine : c'est lui qui bloque, pas le calendrier.
+ * ⚠️ TROIS À CINQ MOTS, ET LA DATE D'ABORD. La sous-ligne se coupe à une ligne
+ * (`apparenceRangee`), donc ce qui vient en dernier est ce qui disparaît. Le
+ * libellé d'une échéance de procédure passait DEVANT sa date — « Remise de la
+ * décision à votre client · 1 juin 2026 » — et la troncature mangeait la date,
+ * c'est-à-dire la seule chose qu'on venait lire. Le commentaire qui précédait
+ * cette fonction disait déjà « la date passe devant » ; le code faisait
+ * l'inverse.
  */
 function precisionDe(dossier: DossierDeLIndex, aujourdHui: string): string {
 	if (dossier.prochaineEcheance !== undefined) {
-		return `${dossier.prochaineEcheance.libelle} · ${dateCourte(dossier.prochaineEcheance.dateLimite)}`;
+		return `${dateCourte(dossier.prochaineEcheance.dateLimite)} · ${dossier.prochaineEcheance.libelle}`;
 	}
-	/*
-	  ⚠️ TROIS À CINQ MOTS, ET LA DATE EN DERNIER. Ces textes étaient des phrases
-	  — « Un courrier attend votre validation », « Date limite pour agir dépassée
-	  depuis le 12 sept. 2026 » — et une phrase dans une rangée de liste s'enroule
-	  sur trois lignes à 375 px. La sous-ligne se coupe désormais à une ligne
-	  (voir `apparenceRangee`), donc une phrase longue perdrait sa FIN, c'est-à-dire
-	  la date. C'est elle qu'on vient lire : elle passe donc devant.
-	*/
 	if (dossier.courrierAValider) return 'Un courrier à valider';
-	if (dossier.etape === 'REGLE') return 'Réglé';
+	/*
+	  UN DOSSIER RÉGLÉ NE DIT PAS « RÉGLÉ » : son groupe le dit déjà, en en-tête.
+	  Il dit ce qu'il contenait.
+	*/
+	if (dossier.etape === 'REGLE') {
+		return `${dossier.nombreFactures} facture${pluriel(dossier.nombreFactures)}`;
+	}
 	if (dossier.dateLimiteAgir !== undefined) {
 		return dossier.dateLimiteAgir < aujourdHui
 			? `Dépassé le ${dateCourte(dossier.dateLimiteAgir)}`
@@ -156,8 +172,55 @@ function precisionDe(dossier: DossierDeLIndex, aujourdHui: string): string {
 	return `${dossier.nombreFactures} facture${pluriel(dossier.nombreFactures)}`;
 }
 
+/** Un dossier à qui l'on peut encore écrire une lettre de relance. */
+function relancable(dossier: DossierDeLIndex): boolean {
+	return dossier.etape === 'PRET' || dossier.etape === 'ON_LUI_ECRIT';
+}
+
+/**
+ * La recherche : sur le nom du client, sans accents ni casse.
+ *
+ * ⚠️ « Lefevre » doit trouver « Lefèvre ». Un gérant qui tape au pouce ne pose
+ * pas d'accent, et une recherche qui rend « aucun résultat » pour un client
+ * qu'il voyait dans sa liste la veille est une recherche qu'il cesse d'utiliser.
+ */
+function normaliser(texte: string): string {
+	return texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
+/**
+ * L'EN-TÊTE D'UN GROUPE — son nom, puis son compte et son total à droite.
+ *
+ * ⚠️ C'EST L'EN-TÊTE « TODAY … +$18 » DE REVOLUT. Il dit, avant la moindre
+ * rangée, combien de dossiers et combien d'argent vivent à cette étape : la
+ * question qu'on se pose en balayant l'index n'est pas « lequel », c'est
+ * « où est l'argent ».
+ */
+function EnTeteDeGroupe({
+	libelle,
+	nombre,
+	total
+}: {
+	libelle: string;
+	nombre: number;
+	total: bigint | null;
+}) {
+	return (
+		<div className="flex items-baseline justify-between gap-cladd-3xs px-1">
+			<h2 className="text-cladd-sm font-semibold">{libelle}</h2>
+			<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">
+				{nombre}
+				{total === null ? null : <> · {eurosCentimes(total)}</>}
+			</span>
+		</div>
+	);
+}
+
 export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> }) {
-	const [filtre, setFiltre] = useState<CleFiltre>('TOUS');
+	/** L'étape retenue dans la feuille de filtre, ou `null` : toutes. */
+	const [etape, setEtape] = useState<EtapeDossier | null>(null);
+	const [terme, setTerme] = useState('');
+	const [filtreOuvert, setFiltreOuvert] = useState(false);
 	const [selection, setSelection] = useState<ReadonlySet<string>>(new Set());
 	const [enSelection, setEnSelection] = useState(false);
 	const [feuilleOuverte, setFeuilleOuverte] = useState(false);
@@ -204,19 +267,39 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 		);
 	}
 
-	const visibles = dossiers.filter((d) => filtre === 'TOUS' || d.etape === filtre);
+	const cherche = normaliser(terme);
+	const visibles = dossiers.filter(
+		(d) =>
+			(etape === null || d.etape === etape) &&
+			(cherche === '' || normaliser(d.debiteur).includes(cherche)) &&
+			/*
+			  ⚠️ EN SÉLECTION, SEULS CEUX À QUI L'ON PEUT ÉCRIRE. Un dossier réglé ou
+			  déjà au tribunal n'attend pas une lettre de relance : le proposer ferait
+			  composer un lot dont une partie serait refusée APRÈS le geste. Mail fait
+			  pareil — ce qui ne se sélectionne pas ne s'offre pas.
+			*/
+			(!enSelection || relancable(d))
+	);
 
 	/*
-	  ⚠️ SEULS LES DOSSIERS À QUI ON PEUT ENCORE ÉCRIRE SONT SÉLECTIONNABLES. Un
-	  dossier réglé ou déjà au tribunal n'attend pas une lettre de relance : le
-	  proposer ferait composer un lot dont la moitié serait refusée, et le refus
-	  arriverait APRÈS le geste. On ne propose pas ce qu'on refusera.
+	  ⚠️ LE SOUS-TITRE NE PORTE QUE L'ARGENT. Il disait « 54 211,50 € à
+	  recouvrer · 4 dossiers » et, depuis que « Sélectionner » partage sa ligne,
+	  il se coupait en « … · 4 » / « dossiers » à 393 px. Le compte y était de
+	  toute façon redondant : chaque en-tête de groupe porte le sien. Le montant
+	  total est la seule chose qu'on ne peut pas voir sans additionner. Les
+	  dossiers réglés n'y entrent pas : ils ne sont plus « à recouvrer ».
 	*/
-	const relancables = visibles.filter((d) => d.etape === 'PRET' || d.etape === 'ON_LUI_ECRIT');
-	const choisis = [...selection].filter((id) => relancables.some((d) => d._id === id));
+	const encours = dossiers.filter((d) => d.etape !== 'REGLE');
+	const total = encours.reduce((somme, d) => somme + d.principalRestantDu, 0n);
+	const sousTitre = `${eurosCentimes(total)} à recouvrer`;
 
-	const total = visibles.reduce((somme, d) => somme + d.principalRestantDu, 0n);
-	const sousTitre = `${visibles.length} dossier${pluriel(visibles.length)} · ${eurosCentimes(total)} à recouvrer`;
+	const groupes = ORDRE.map((cle) => ({
+		cle,
+		dossiers: visibles.filter((d) => d.etape === cle)
+	})).filter((groupe) => groupe.dossiers.length > 0);
+
+	const choisis = [...selection].filter((id) => visibles.some((d) => d._id === id));
+	const peutSelectionner = dossiers.some(relancable);
 
 	function basculer(id: string) {
 		setSelection((avant) => {
@@ -233,132 +316,251 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 	}
 
 	return (
-		<PageEcran entete={{ ...entete, sousTitre }}>
-			<PageBody>
-				<Toolbar>
-					<Segmented activeColor="neutral" activeVariant="solid" aria-label="Filtrer les dossiers">
-						{FILTRES.map((f) => (
-							<SegmentedButton
-								key={f.cle}
-								active={f.cle === filtre}
-								onClick={() => setFiltre(f.cle)}
-							>
-								{f.libelle}
-							</SegmentedButton>
-						))}
-					</Segmented>
-				</Toolbar>
-
-				{relancables.length > 0 ? (
-					<div className="flex justify-end">
-						{enSelection ? (
-							<BoutonSecondaire onClick={quitterLaSelection}>Annuler</BoutonSecondaire>
-						) : (
-							<BoutonSecondaire onClick={() => setEnSelection(true)}>Sélectionner</BoutonSecondaire>
-						)}
-					</div>
-				) : null}
-
-				{visibles.length === 0 ? (
-					<p className="text-cladd-xs text-cladd-fg-soft">
-						Aucun dossier à cette étape. Les autres sont sous « Tous ».
-					</p>
-				) : enSelection ? (
-					<div className="flex flex-col gap-cladd-3xs">
-						{visibles.map((dossier) => {
-							const cochable = dossier.etape === 'PRET' || dossier.etape === 'ON_LUI_ECRIT';
-							return (
-								<Surface
-									key={dossier._id}
-									variant="transparent"
-									outline={false}
-									className="verre-carte rounded-cladd-xl"
-									contentClassName="p-0"
-								>
-									{/* Toute la carte est l'étiquette de sa case : la cible fait la rangée. */}
-									<label
-										aria-label={`Sélectionner le dossier de ${dossier.debiteur}`}
-										className="flex items-center gap-cladd-3xs p-cladd-2xs"
-									>
-										<Checkbox
-											as="span"
-											checked={selection.has(dossier._id)}
-											onChange={() => basculer(dossier._id)}
-											disabled={!cochable}
-										/>
-										<span className="flex min-w-0 flex-1 flex-col">
-											<span className="truncate text-cladd-sm font-semibold">
-												{dossier.debiteur}
-											</span>
-											<span className="text-cladd-2xs text-cladd-fg-softer">
-												{cochable
-													? precisionDe(dossier, aujourdHui)
-													: `${TITRE_ETAPE[dossier.etape]} — pas de relance à préparer`}
-											</span>
-										</span>
-										<span className="shrink-0 text-cladd-sm tabular-nums">
-											{eurosCentimes(dossier.principalRestantDu)}
-										</span>
-									</label>
-								</Surface>
-							);
-						})}
-					</div>
+		<PageEcran
+			entete={{
+				...entete,
+				sousTitre,
+				/*
+				  ⚠️ UN MOT, PAS UNE PILULE. « Sélectionner » était un bouton de 56 px
+				  posé au-dessus de la liste. C'est le « Sélectionner » de Mail : un mot
+				  dans la couleur du lien, en haut à droite, qu'on trouve sans qu'il
+				  ressemble à une action. Et il ne s'affiche que s'il y a quelque chose
+				  à sélectionner.
+				*/
+				actions: !peutSelectionner ? undefined : enSelection ? (
+					<BoutonTexte onClick={quitterLaSelection}>Annuler</BoutonTexte>
 				) : (
-					<ListeAnalyses>
-						{visibles.map((dossier) => (
-							<LigneAnalyse
-								key={dossier._id}
-								vers="/app/dossier/$id"
-								parametres={{ id: dossier._id }}
-								titre={dossier.debiteur}
-								valeur={eurosCentimes(dossier.principalRestantDu)}
-								precision={precisionDe(dossier, aujourdHui)}
-								attention={dossier.courrierAValider}
-								/*
-								  ⚠️ UN CLIENT PORTE SON AVATAR, PAS UNE VIGNETTE DE FAMILLE.
-								  Cinq dossiers portaient cinq blocs de texte gris identiques :
-								  relevé au navigateur le 30/09/2026, l'écran entier comptait SIX
-								  pictogrammes. Une vignette de famille ne réglerait rien ici —
-								  les cinq rangées sont de la même nature, donc elles porteraient
-								  le même bleu. Les initiales, elles, changent à chaque rangée :
-								  c'est à « AM » qu'on retrouve Ateliers Martin.
+					<BoutonTexte onClick={() => setEnSelection(true)}>Sélectionner</BoutonTexte>
+				)
+			}}
+		>
+			<PageBody>
+				{/*
+				  LA RECHERCHE ET UN SEUL FILTRE — Revolut, à la lettre.
 
-								  ⚠️ LA BALANCE DU TRIBUNAL A SAUTÉ, et c'est délibéré : elle
-								  occupait la seule place que l'œil balaie, pour une information
-								  que la pastille d'étape et la précision disent déjà.
-								*/
-								avatar={<Avatar nom={dossier.debiteur} className="size-10" />}
-							/>
+				  ⚠️ LES CINQ SEGMENTS SONT PARTIS DANS UNE FEUILLE. Ils s'enroulaient sur
+				  trois lignes à 375 px et faisaient de l'en-tête de la liste une rangée
+				  d'onglets de plus. Le filtre par étape est un geste rare — les groupes,
+				  en dessous, séparent déjà les étapes ; ce qu'on cherche au quotidien, on
+				  le TAPE.
+				*/}
+				<div className="flex items-center gap-cladd-3xs">
+					<SearchField
+						size="md"
+						tightFocusRing
+						className="min-w-0 flex-1"
+						value={terme}
+						onChange={(valeur) => setTerme(valeur)}
+						inputMode="search"
+						placeholder="Rechercher un client"
+						inputComponentProps={{
+							'aria-label': 'Rechercher un dossier par le nom du client',
+							enterKeyHint: 'search'
+						}}
+					/>
+					{/*
+					  ⚠️ UN DISQUE PLEIN, PAS UNE ICÔNE NUE. En transparent, le bouton
+					  n'avait de contour qu'au survol — c'est-à-dire jamais, au doigt — et
+					  le glyphe flottait à côté du champ comme une décoration. Revolut le
+					  pose dans un disque plein de la même hauteur que la recherche : on
+					  voit que c'est un bouton, et qu'il va avec le champ.
+					*/}
+					<Button
+						size="md"
+						rounded
+						variant="solid"
+						outline={false}
+						className="shrink-0"
+						aria-label={
+							etape === null
+								? 'Filtrer par étape'
+								: `Filtré sur « ${LIBELLE_GROUPE[etape]} » — changer de filtre`
+						}
+						onClick={() => setFiltreOuvert(true)}
+					>
+						<SlidersHorizontalIcon />
+					</Button>
+				</div>
+
+				{/*
+				  LE FILTRE ACTIF SE LIT, ET SE RETIRE D'UN APPUI. Un filtre posé dans une
+				  feuille qu'on a refermée est un filtre qu'on oublie — et une liste qui
+				  n'en montre que deux sur cinq, sans dire pourquoi, se lit comme une
+				  perte de données.
+				*/}
+				{etape === null ? null : (
+					<div>
+						<Chip
+							as="button"
+							size="md"
+							rounded
+							icon={XIcon}
+							onClick={() => setEtape(null)}
+							aria-label={`Retirer le filtre « ${LIBELLE_GROUPE[etape]} »`}
+						>
+							{LIBELLE_GROUPE[etape]}
+						</Chip>
+					</div>
+				)}
+
+				{groupes.length === 0 ? (
+					<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
+						{cherche === ''
+							? 'Aucun dossier à cette étape.'
+							: `Aucun dossier ne correspond à « ${terme.trim()} ».`}
+					</p>
+				) : (
+					/*
+					  ⚠️ VINGT PIXELS ENTRE DEUX GROUPES, DOUZE DANS UN GROUPE. Au même écart,
+					  l'en-tête « On lui a écrit » collait à la carte du groupe PRÉCÉDENT et
+					  se lisait comme son pied. Chez Revolut, l'en-tête d'un groupe est plus
+					  près de SES rangées que de celles d'au-dessus : c'est ce qui fait qu'on
+					  sait à qui il appartient sans y penser.
+					*/
+					<div className="flex flex-col gap-cladd-xs">
+						{groupes.map((groupe) => (
+							<section key={groupe.cle} className="flex flex-col gap-cladd-3xs">
+								<EnTeteDeGroupe
+									libelle={LIBELLE_GROUPE[groupe.cle]}
+									nombre={groupe.dossiers.length}
+									// Un total de dossiers réglés vaut zéro par construction : un
+									// cadran à zéro, que la règle d'écran n° 4 interdit.
+									total={
+										groupe.cle === 'REGLE'
+											? null
+											: groupe.dossiers.reduce((s, d) => s + d.principalRestantDu, 0n)
+									}
+								/>
+								<ListeAnalyses>
+									{groupe.dossiers.map((dossier) =>
+										enSelection ? (
+											/*
+										  EN SÉLECTION, LA CASE PREND LA PLACE DE L'AVATAR — Mail.
+										  La rangée entière est la cible : une case de 20 px posée
+										  sur une rangée qui est AUSSI un lien ouvre le dossier une
+										  fois sur trois, au pouce.
+										*/
+											<LigneBouton
+												key={dossier._id}
+												genre="contenu"
+												titre={dossier.debiteur}
+												precision={precisionDe(dossier, aujourdHui)}
+												valeur={eurosCentimes(dossier.principalRestantDu)}
+												icone={
+													<Checkbox
+														as="span"
+														size="md"
+														checked={selection.has(dossier._id)}
+														aria-label={`Sélectionner le dossier de ${dossier.debiteur}`}
+													/>
+												}
+												onClick={() => basculer(dossier._id)}
+											/>
+										) : (
+											<LigneAnalyse
+												key={dossier._id}
+												genre="contenu"
+												vers="/app/dossier/$id"
+												parametres={{ id: dossier._id }}
+												titre={dossier.debiteur}
+												precision={precisionDe(dossier, aujourdHui)}
+												attention={dossier.courrierAValider}
+												{...(dossier.etape === 'REGLE'
+													? {}
+													: { valeur: eurosCentimes(dossier.principalRestantDu) })}
+												/*
+											  ⚠️ UN CLIENT PORTE SON AVATAR, PAS UNE VIGNETTE DE
+											  FAMILLE : toutes ces rangées sont de même nature, une
+											  vignette les peindrait toutes pareil. Les initiales
+											  changent à chaque rangée.
+											*/
+												avatar={<Avatar nom={dossier.debiteur} className="size-10" />}
+											/>
+										)
+									)}
+								</ListeAnalyses>
+							</section>
 						))}
-					</ListeAnalyses>
+					</div>
 				)}
 
 				{/*
-				  LA BARRE D'ACTION DU LOT.
+				  LA BARRE D'ACTION DU LOT — le seul bouton plein de l'écran.
 
 				  ⚠️ ELLE NE S'AFFICHE QU'AVEC UNE SÉLECTION, et elle DIT combien. Un
-				  bouton « Préparer les relances » sans compte ferait agir sur un nombre
-				  qu'on ne voit pas — et ce nombre est le nombre de lettres qui iront
-				  ensuite à la signature du gérant.
+				  bouton sans compte ferait agir sur un nombre qu'on ne voit pas — et ce
+				  nombre est celui des lettres qui iront ensuite à la signature du gérant.
 				*/}
 				{enSelection && choisis.length > 0 ? (
 					<Surface
 						variant="transparent"
 						outline={false}
 						className="verre-carte sticky bottom-cladd-2xs rounded-cladd-xl"
-						contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-2xs"
+						contentClassName="flex items-center justify-between gap-cladd-3xs p-cladd-3xs"
 					>
-						<span className="text-cladd-xs font-semibold">
-							{choisis.length} dossier{pluriel(choisis.length)} sélectionné
-							{pluriel(choisis.length)}
+						<span className="pl-1 text-cladd-2xs font-semibold">
+							{choisis.length} sélectionné{pluriel(choisis.length)}
 						</span>
 						<BoutonPrincipal onClick={() => setFeuilleOuverte(true)}>
-							Préparer une lettre de relance
+							Préparer {choisis.length} lettre{pluriel(choisis.length)}
 						</BoutonPrincipal>
 					</Surface>
 				) : null}
 			</PageBody>
+
+			{/*
+			  LA FEUILLE DE FILTRE — un choix unique, appliqué à l'appui.
+
+			  ⚠️ PAS DE BOUTON « FILTRER ». Revolut en met un parce que son filtre est
+			  multiple, avec des cases. Celui-ci est un choix unique : la coche d'iOS,
+			  et la feuille se referme sur la rangée touchée. Un appui de moins, et
+			  aucun état intermédiaire où la coche ne correspond pas à la liste.
+			*/}
+			<Popup
+				open={filtreOuvert}
+				onOpenChange={(o) => {
+					if (!o) setFiltreOuvert(false);
+				}}
+				headerLeft={
+					<span className="px-2 pb-1 text-cladd-xs font-semibold">Filtrer par étape</span>
+				}
+				contentClassName="max-w-lg"
+			>
+				<PopupContent>
+					<ListeAnalyses>
+						<LigneBouton
+							genre="contenu"
+							titre="Toutes les étapes"
+							valeur={`${dossiers.length}`}
+							icone={
+								etape === null ? <CheckIcon className="size-5" /> : <span className="size-5" />
+							}
+							onClick={() => {
+								setEtape(null);
+								setFiltreOuvert(false);
+							}}
+						/>
+						{ORDRE.map((cle) => {
+							const nombre = dossiers.filter((d) => d.etape === cle).length;
+							return (
+								<LigneBouton
+									key={cle}
+									genre="contenu"
+									titre={LIBELLE_GROUPE[cle]}
+									valeur={`${nombre}`}
+									icone={
+										etape === cle ? <CheckIcon className="size-5" /> : <span className="size-5" />
+									}
+									onClick={() => {
+										setEtape(cle);
+										setFiltreOuvert(false);
+									}}
+								/>
+							);
+						})}
+					</ListeAnalyses>
+				</PopupContent>
+			</Popup>
 
 			{/* LA FEUILLE DU LOT : un seul réglage, celui qui change la lettre. */}
 			<Popup
@@ -367,7 +569,7 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 					if (!o) setFeuilleOuverte(false);
 				}}
 				headerLeft={
-					<span className="px-2 pb-1 text-cladd-sm font-semibold">
+					<span className="px-2 pb-1 text-cladd-xs font-semibold">
 						Préparer {choisis.length} lettre{pluriel(choisis.length)}
 					</span>
 				}
@@ -389,8 +591,8 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 					</Segmented>
 					<p className="mt-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 						Chaque lettre est composée sur les chiffres de son dossier, à votre nom, et posée dans «
-						Vos courriers » à valider. Rien ne part : vous relisez et vous validez chacune, comme
-						pour un dossier seul.
+						Courriers » à valider. Rien ne part : vous relisez et vous validez chacune, comme pour
+						un dossier seul.
 					</p>
 				</PopupContent>
 
@@ -415,6 +617,7 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 				<PopupContent>
 					{lot !== 'AUCUN' && lot !== 'EN_COURS' ? (
 						<BoutonPrincipal
+							pleineLargeur
 							onClick={() => {
 								onFermerLeLot();
 								setFeuilleOuverte(false);
@@ -425,6 +628,7 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 						</BoutonPrincipal>
 					) : (
 						<BoutonPrincipal
+							pleineLargeur
 							disabled={lot === 'EN_COURS'}
 							onClick={() => void onPreparerRelances(choisis, delai)}
 						>
@@ -436,14 +640,5 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 				</PopupContent>
 			</Popup>
 		</PageEcran>
-	);
-}
-
-/** Le rang d'une étape, pour une puce qui reste lisible sans couleur de seuil. */
-export function ChipEtape({ etape }: { etape: EtapeDossier }) {
-	return (
-		<Chip size="md" color="neutral">
-			{TITRE_ETAPE[etape]}
-		</Chip>
 	);
 }

@@ -892,7 +892,9 @@ function actionsDuDossier(
 			onClick: () => onOuvrir('relances')
 		},
 		{
-			libelle: 'Le décompte',
+			// « Le décompte » se coupait en deux lignes sous son disque à 375 px ;
+			// « Décompte » est aussi le titre exact de la rangée qu'il ouvre.
+			libelle: 'Décompte',
 			icone: <PictoDecompte className="size-6" />,
 			onClick: () => onOuvrir('decompte')
 		},
