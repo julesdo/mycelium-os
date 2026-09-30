@@ -1,16 +1,19 @@
 import type { ReactNode } from 'react';
-import { Button, Surface } from '@cladd-ui/react';
-import { CheckIcon } from 'lucide-react';
-import { cn } from './cn';
+import { Button } from '@cladd-ui/react';
 
 /**
- * LA FRISE DES QUATRE ÉTAPES, ET L'ÉTAPE EN COURS.
+ * CE QUI RESTE DES QUATRE ÉTAPES : leurs types, la mise en colonnes, et les
+ * questions au compagnon.
  *
- * Prêt → On lui écrit → Le tribunal, si besoin → Réglé. Le détail juridique vit
- * à l'intérieur de l'étape 3 et ne se déplie que si on y arrive.
+ * ⚠️ `FriseDossier` ET `EtapeEnCours` ONT ÉTÉ RETIRÉS LE 30/09/2026. La frise
+ * horizontale écrivait « Prêt · On lui écrit · Le tribunal, si besoin · Réglé »,
+ * et deux cents pixels plus bas la carte « Maintenant » réécrivait le titre de
+ * l'étape en cours et l'expliquait en quatre phrases. Le même fait, deux fois,
+ * en quatre-vingt-dix mots — et les sept blocs qui APPARTIENNENT à une étape
+ * vivaient ailleurs, dans deux accordéons rangés par nature.
  *
- * ⚠️ AUCUNE COULEUR DE SEUIL. Une étape franchie n'est pas un seuil : elle se
- * marque par un disque plein, comme sur le rail d'une voie.
+ * Les deux sont remplacés par `fil-dossier.tsx` : un rail vertical où chaque
+ * bloc pend à l'étape à laquelle il appartient.
  */
 
 export type EtatEtapeAffiche = 'FAITE' | 'EN_COURS' | 'A_VENIR';
@@ -30,102 +33,25 @@ export interface LectureEtapesAffichee {
 	readonly siRienNeBouge: string;
 }
 
-function Disque({ etat }: { etat: EtatEtapeAffiche }) {
-	if (etat === 'FAITE') {
-		return (
-			<span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-cladd-fg">
-				<CheckIcon className="size-3 text-cladd-bg" aria-hidden />
-			</span>
-		);
-	}
-	return (
-		<span
-			className={cn(
-				'size-5 shrink-0 rounded-full',
-				etat === 'EN_COURS' ? 'border-[5px] border-cladd-fg' : 'border-2 border-cladd-outline'
-			)}
-		/>
-	);
-}
-
-export function FriseDossier({ lecture }: { lecture: LectureEtapesAffichee }) {
-	return (
-		<div className={cn('flex flex-col gap-cladd-3xs', lecture.classe && 'opacity-60')}>
-			<ol className="grid grid-cols-4 gap-cladd-3xs" aria-label="Les étapes du dossier">
-				{lecture.etapes.map((etape) => (
-					<li
-						key={etape.cle}
-						className="flex min-w-0 flex-col items-start gap-1"
-						aria-current={etape.etat === 'EN_COURS' ? 'step' : undefined}
-					>
-						<div className="flex w-full items-center gap-1">
-							<Disque etat={etape.etat} />
-							<span className="h-0.5 flex-1 rounded-full bg-cladd-outline" />
-						</div>
-						<p
-							className={cn(
-								'text-cladd-2xs leading-tight',
-								etape.etat === 'EN_COURS'
-									? 'font-semibold text-cladd-fg'
-									: etape.etat === 'FAITE'
-										? 'text-cladd-fg-soft'
-										: 'text-cladd-fg-softest'
-							)}
-						>
-							{etape.titre}
-						</p>
-					</li>
-				))}
-			</ol>
-			{lecture.classe ? (
-				<p className="text-cladd-2xs text-cladd-fg-soft">Dossier classé. Il peut être rouvert.</p>
-			) : null}
-		</div>
-	);
-}
-
 /**
- * L'ÉTAPE EN COURS — la seule chose mise en avant de la page.
+ * DEUX COLONNES À PARTIR DE 1024 PX, ET LA COUPURE A CHANGÉ DE NATURE.
  *
- * Ce qui se passe, ce qui arrive si rien ne bouge, et les gestes. ⚠️ Quand
- * l'étape pose un choix, aucun geste n'est principal : les enfants arrivent en
- * boutons de même poids.
- */
-export function EtapeEnCours({
-	lecture,
-	children
-}: {
-	lecture: LectureEtapesAffichee;
-	children?: ReactNode;
-}) {
-	const enCours = lecture.etapes.find((e) => e.etat === 'EN_COURS');
-	return (
-		<Surface
-			variant="transparent"
-			outline={false}
-			className="verre-carte rounded-cladd-xl"
-			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-		>
-			<p className="text-cladd-2xs text-cladd-fg-softer">Maintenant</p>
-			<p className="text-letikette-titre leading-tight font-semibold">
-				{enCours?.titre ?? 'Réglé'}
-			</p>
-			<p className="text-cladd-sm leading-snug">{lecture.ceQuiSePasse}</p>
-			<p className="text-cladd-xs leading-snug text-cladd-fg-soft">
-				Si rien ne bouge : {lecture.siRienNeBouge}
-			</p>
-			{children === undefined ? null : (
-				<div className="mt-cladd-3xs flex flex-wrap gap-cladd-3xs">{children}</div>
-			)}
-		</Surface>
-	);
-}
-
-
-/**
- * DEUX COLONNES À PARTIR DE 1024 PX : où j'en suis à gauche, ce que contient le
- * dossier à droite. En dessous, la droite s'empile sous la gauche : cette page
- * n'est pas une liste, et ouvrir le contenu en feuille cacherait le fil.
+ * ⚠️ ELLE NE SÉPARE PLUS « FAIRE » DE « SAVOIR ». L'ancienne répartition —
+ * `['suivi','courriers','relances','voies','litige']` à gauche, le reste à
+ * droite — était la taxonomie du LOGICIEL : le gérant ne se demande pas si ce
+ * qu'il cherche est une chose-à-faire ou une chose-à-savoir. Il demande où ça en
+ * est, et quoi faire. La coupure l'obligeait à tenir les deux colonnes en tête.
+ *
+ * Elle sépare maintenant LE TEMPS de LA MATIÈRE : à gauche le fil — le chiffre,
+ * les faits, ce qui bloque, les quatre étapes — qui est ce qu'on lit ; à droite
+ * la matière, dont la rangée ouverte ne pousse plus le fil vers le bas. C'était
+ * la raison pour laquelle on perdait sa place en ouvrant le décompte.
+ *
+ * Apple, page *Layout* des Human Interface Guidelines (révisée le 9 septembre
+ * 2026) : « Keep functionality the same as size classes change […] you can
+ * change the amount of functionality that's visible onscreen as the amount of
+ * space changes. » La même architecture aux quatre largeurs ; la largeur ne
+ * décide que de ce qui est déjà déplié.
  */
 export function DeuxColonnesDossier({ gauche, droite }: { gauche: ReactNode; droite: ReactNode }) {
 	return (
@@ -139,6 +65,11 @@ export function DeuxColonnesDossier({ gauche, droite }: { gauche: ReactNode; dro
 /**
  * DEUX QUESTIONS DÉJÀ ÉCRITES, sur les faits et les calculs du dossier. Un appui
  * ouvre le compagnon avec la question prête ; le gérant l'envoie lui-même.
+ *
+ * ⚠️ ELLES SONT DESCENDUES EN PIED DE PAGE. Elles occupaient le tiers supérieur
+ * de la colonne de gauche, entre l'étape en cours et les sections : deux pavés
+ * de huit mots, à l'endroit exact où le gérant vient faire un geste. Une aide se
+ * met là où l'on arrive quand on n'a pas trouvé, c'est-à-dire en bas.
  */
 export function QuestionsPreecrites({
 	questions,
@@ -147,9 +78,10 @@ export function QuestionsPreecrites({
 	questions: readonly string[];
 	onPoser: (question: string) => void;
 }) {
+	if (questions.length === 0) return null;
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
-			<p className="text-cladd-2xs text-cladd-fg-softer">Demander au compagnon</p>
+			<p className="text-cladd-2xs text-cladd-fg-softer">Demander</p>
 			<div className="flex flex-wrap gap-cladd-3xs">
 				{questions.map((question) => (
 					<Button

@@ -87,30 +87,47 @@ export function etapeDuDossier(faits: FaitsDuDossierPourEtape): EtapeDossier {
 	return 'PRET';
 }
 
+/**
+ * CE QUI ARRIVE SI RIEN NE BOUGE.
+ *
+ * ⚠️ LA DATE LIMITE NE S'Y RÉÉCRIT PLUS QUAND ELLE EST À VENIR. Elle est une
+ * pastille en tête de la page dossier, à quatre cents pixels d'ici, et la
+ * répéter était l'une des cinq redites relevées le 30/09/2026 — elle s'écrivait
+ * trois fois sur le même écran.
+ *
+ * ⚠️ PASSÉE, ELLE SE RÉPÈTE QUAND MÊME, ET C'EST DÉLIBÉRÉ. C'est le seul état du
+ * produit où l'on perd tout sans que personne n'ait rien fait, et une pastille
+ * seule y serait trop discrète. Une redite se juge à ce qu'elle coûte de ne pas
+ * la faire.
+ */
 function siRienNeBouge(etape: EtapeDossier, faits: FaitsDuDossierPourEtape): string {
 	if (etape === 'REGLE') return 'Plus rien ne court sur ce dossier.';
-	const limite =
-		faits.dateLimiteAgir === null
-			? null
-			: faits.dateLimiteAgir < faits.aujourdHui
-				? `La date limite pour agir en justice est passée depuis le ${dateLisible(faits.dateLimiteAgir)}.`
-				: `Le droit d’agir en justice s’éteint le ${dateLisible(faits.dateLimiteAgir)}, sauf interruption que ce calcul ne suit pas.`;
-	const penalites = 'Les pénalités de retard continuent de courir chaque jour.';
-	return limite === null ? penalites : `${penalites} ${limite}`;
+	const penalites = 'Les pénalités de retard courent chaque jour.';
+	if (faits.dateLimiteAgir !== null && faits.dateLimiteAgir < faits.aujourdHui) {
+		return `${penalites} La date limite pour agir en justice est passée depuis le ${dateLisible(faits.dateLimiteAgir)}.`;
+	}
+	return penalites;
 }
 
+/**
+ * CE QUI SE PASSE À L'ÉTAPE EN COURS — UNE PHRASE, DEUX AU PLUS.
+ *
+ * ⚠️ « À VOUS DE CHOISIR LA SUITE » ET « LES CHOIX QUI SUIVENT RESTENT OUVERTS »
+ * ONT ÉTÉ RETIRÉS. Ils disaient en mots ce que le fil du dossier montre
+ * désormais en trois échelons, juste en dessous.
+ */
 function ceQuiSePasse(etape: EtapeDossier, faits: FaitsDuDossierPourEtape): string {
 	switch (etape) {
 		case 'PRET':
-			return 'Le dossier est prêt : les factures impayées y sont, et le calcul de ce qu’il vous doit est à jour. Il n’a pas payé : à vous de choisir la suite.';
+			return 'Le dossier est prêt et chiffré. Il n’a pas payé.';
 		case 'ON_LUI_ECRIT': {
 			const derniere = derniereLettre(faits.lettresValidees)!;
-			return `Vous lui avez écrit le ${dateLisible(derniere)}. S’il ne paie pas, les choix qui suivent restent ouverts.`;
+			return `Vous lui avez écrit le ${dateLisible(derniere)}.`;
 		}
 		case 'TRIBUNAL':
 			return faits.procedureEngageeLe === null
-				? 'Un professionnel est désigné sur ce dossier. Les délais qui courent s’affichent ici dès qu’une étape est consignée.'
-				: `Une procédure est consignée depuis le ${dateLisible(faits.procedureEngageeLe)}. Les délais qui en découlent sont suivis ici.`;
+				? 'Un professionnel est désigné. Les délais s’affichent dès qu’une étape est consignée.'
+				: `Une procédure est consignée depuis le ${dateLisible(faits.procedureEngageeLe)}.`;
 		case 'REGLE':
 			return 'Toutes les factures de ce dossier sont réglées.';
 	}

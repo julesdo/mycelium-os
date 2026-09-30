@@ -12,7 +12,6 @@
 
 export { cn } from './cn';
 export { TableauConditions, type LigneConditionAffichee } from './conditions';
-export { SituationsDossier, type SituationAffichee } from './situations';
 export {
 	Courriers,
 	modelesProposables,
@@ -24,12 +23,14 @@ export {
 } from './courriers';
 export {
 	DeuxColonnesDossier,
-	EtapeEnCours,
-	FriseDossier,
 	QuestionsPreecrites,
 	type EtapeDossierAffichee,
 	type LectureEtapesAffichee
 } from './etapes-dossier';
+export { CarteEtape, Echelon, FilDuDossier, GestesDeLEtape } from './fil-dossier';
+export { FaitsDuDossier, type FaitDuDossier } from './faits-dossier';
+export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qui-bloque';
+export { ListeDuDossier, RangeeDuDossier } from './liste-dossier';
 export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
 export { Telephone } from './telephone';
 export { Page, PageHeader, PageBody, PageHero } from './page';

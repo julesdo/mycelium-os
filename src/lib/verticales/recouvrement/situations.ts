@@ -117,10 +117,17 @@ function contestation(faits: FaitsSituations, oppositionLe: string): Situation {
 function procedureCollective(faits: FaitsSituations): Situation {
 	const annonce = faits.annonceOuverture;
 	exiger(PARAMETRES.arretCoursInterets);
+	/*
+	  ⚠️ LA PREMIÈRE PHRASE NE RÉPÈTE PLUS LE TITRE. Elle disait « Une procédure
+	  collective est ouverte contre votre client » sous un titre qui dit « Votre
+	  client est en procédure collective » — la même chose, deux fois, à deux
+	  lignes d'intervalle. Ce qu'elle apportait vraiment, c'est la DATE du
+	  jugement : elle ne s'écrit donc que quand on l'a.
+	*/
 	const ceQuiSePasse = [
-		annonce?.dateJugement === undefined
-			? 'Une procédure collective est ouverte contre votre client.'
-			: `Une procédure collective est ouverte contre votre client, par jugement du ${dateLisible(annonce.dateJugement)}.`,
+		...(annonce?.dateJugement === undefined
+			? []
+			: [`Jugement du ${dateLisible(annonce.dateJugement)}.`]),
 		'Les poursuites et les pénalités de retard s’arrêtent au jugement. Seuls ceux qui déclarent ce qui leur est dû ont une part de ce qui sera réparti.',
 		...(faits.dejaVerseCentimes > 0n && annonce?.dateJugement !== undefined
 			? [
@@ -184,12 +191,18 @@ function paiementPartiel(faits: FaitsSituations): Situation {
 	return {
 		cle: 'PAIEMENT_PARTIEL',
 		titre: 'Votre client a payé en partie',
+		/*
+		  ⚠️ NI LE RESTE DÛ NI LA DATE LIMITE NE SE RÉÉCRIVENT ICI. Le reste dû est
+		  le chiffre en grand, en tête de page ; la date limite pour agir est une
+		  pastille sous lui. Les répéter dans cette carte les écrivait pour la
+		  deuxième et la troisième fois sur le même écran. Ce que cette carte
+		  apporte, et qu'aucun autre bloc ne dit, c'est le montant DÉJÀ VERSÉ et le
+		  fait que la date ne bouge pas.
+		*/
 		ceQuiSePasse: [
-			`Votre client a déjà versé ${euros(faits.dejaVerseCentimes)} ; il reste ${euros(faits.resteDuCentimes)} à payer.`,
+			`Votre client a déjà versé ${euros(faits.dejaVerseCentimes)}.`,
 			'Rien ne vous oblige à accepter un paiement partiel.',
-			faits.dateLimiteAgir === null
-				? 'La date limite pour agir en justice reste celle d’origine.'
-				: `La date limite pour agir en justice reste celle d’origine, le ${dateLisible(faits.dateLimiteAgir)}. Un paiement partiel peut la repousser, mais seul un juge le dirait : elle n’est pas prolongée ici.`
+			'La date limite pour agir en justice reste celle d’origine. Un paiement partiel peut la repousser, mais seul un juge le dirait.'
 		],
 		dateLimite: null,
 		options: [

@@ -1,33 +1,39 @@
 import { useState } from 'react';
-import { AlertTriangleIcon, Building2Icon, EyeOffIcon, FileDownIcon, InfoIcon } from 'lucide-react';
+import { Building2Icon, FileDownIcon, InfoIcon } from 'lucide-react';
 import type { FicheParametre } from '../lib/verticales/recouvrement/referentiel';
 import {
 	BoutonPrincipal,
 	BoutonSecondaire,
-	CarteListe,
+	CarteEtape,
+	CeQuiBloque,
 	ChiffreHero,
 	ChoixIntervenant,
 	Decompte,
+	Echelon,
+	FaitsDuDossier,
 	FeuilleDeclaration,
 	FeuilleVoie,
+	FilDuDossier,
+	GestesDeLEtape,
 	Lien,
 	LiensDePaiement,
 	LigneAnalyse,
 	LigneBouton,
-	LigneValeur,
 	ListeAnalyses,
+	ListeDuDossier,
 	PageEcran,
 	Pieces,
 	QuestionnaireLitige,
+	RangeeDuDossier,
 	RechercheAvocat,
 	RechercheCommissaire,
 	RefusEnQuatreParties,
 	Relances,
-	SectionDepliable,
-	SectionEcran,
 	SectionsDepliables,
 	Solidite,
 	SuiviDuDossier,
+	type AlerteDossier,
+	type FaitDuDossier,
 	type LiensDePaiementAffiches,
 	type SuiviDossierAffiche,
 	SuiviProcedure,
@@ -40,7 +46,6 @@ import {
 	dateCourte,
 	eurosCentimes,
 	pluriel,
-	rangeeDuDebiteur,
 	type AvocatAffiche,
 	type ChoixDeclare,
 	type DecompteAffiche,
@@ -56,13 +61,10 @@ import {
 	type LigneConditionAffichee,
 	type LectureEtapesAffichee,
 	type SituationAffichee,
-	SituationsDossier,
 	type CourriersDuDossier,
 	Courriers,
 	TableauConditions,
 	DeuxColonnesDossier,
-	EtapeEnCours,
-	FriseDossier,
 	QuestionsPreecrites,
 	type PieceAffichee,
 	type QuestionLitige,
@@ -75,54 +77,68 @@ import {
 import { TITRE_ECRAN } from './titres';
 
 /**
- * UNE CRÉANCE — UNE PAGE, UN SEUL DÉFILEMENT.
+ * UNE CRÉANCE — UN FIL, PUIS SA MATIÈRE.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ CE QU'ELLE ÉTAIT, ET LE REPROCHE QUI L'A DÉFAITE
+ * ⚠️ LE REPROCHE DU 30/09/2026, ET CE QU'IL MESURAIT
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Une créance avait SEPT sous-pages — `creance.$id.index`, `.decompte`,
- * `.litige`, `.procedure`, `.relances`, `.risques`, `.solidite` — sous une mise
- * en page qui n'affichait qu'un résumé et six portes. Le reproche du terrain,
- * mot pour mot : « Je te demande juste d'éviter les profondeurs de pages. […]
- * si on veut voir le détail précis d'une créance sur cette page pareil. »
+ * Mot pour mot : « elle manque d'intuitivité ! Il y a beaucoup trop de choses
+ * dans tous les sens ! […] On a encore l'impression que l'on a mis à plat toutes
+ * les features dans cette page avec des sous-onglets ou des modales. »
  *
- * Les rangées-et-chevrons étaient une réponse honnête à un VRAI défaut : sept
- * analyses empilées en cartes de prose faisaient 6,1 écrans de défilement à
- * 375 px. Mais elles ont réglé la longueur en achetant de la PROFONDEUR, et la
- * profondeur coûte plus cher : elle oblige à savoir sous quel intitulé du
- * domaine se range ce qu'on cherche, alors qu'on le cherche pour une raison qui
- * ne porte pas ce nom. « Pourquoi ce montant » ne s'appelle ni « Décompte » ni
- * « Solidité ».
- *
- * La longueur, elle, se règle autrement : une section se REPLIE, et repliée elle
- * porte encore sa valeur — « 2 sur 4 », « 3 prêts », « 1 240,50 € ». On lit la
- * colonne d'un coup d'œil, on déplie ce qu'on veut, et deux blocs se lisent côte
- * à côte quand on compare une hypothèse à la pièce qui la fonde. C'est ce que
- * `SectionsDepliables` fait, et c'est pour ça qu'il est `multiple` : un
- * accordéon qui referme le bloc précédent est un onglet qui s'ignore.
+ * Relevé au navigateur, sections REPLIÉES : 6 479 px à 375 px — huit écrans de
+ * défilement —, 845 mots, 129 lignes, 36 phrases de plus de six mots, 27 points
+ * de décision. Et cinq répétitions nommées : le nom du client trois fois,
+ * l'étape en cours deux fois, la date limite pour agir trois fois, le montant
+ * deux fois, « ce que vous pouvez faire » deux listes à puces dont aucune n'est
+ * cliquable.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ CE QUI EST GRAVE NE SE REPLIE PAS
+ * ⚠️ LES TROIS DÉFAUTS DE STRUCTURE, ET CE QUI LES REMPLACE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Trois blocs se rendent à plat, hors de l'accordéon, à leur place dans le flux :
- * « Ce que le logiciel a supposé », « Ce que le logiciel ne voit pas » et les
- * risques relevés. Une hypothèse repliée est une hypothèse qu'on ne lit pas, et
- * le doute ne profite jamais au produit : un utilisateur qui croit sa
- * prescription surveillée ne la surveille pas lui-même. Un risque bloquant ferme
- * toutes les voies que ce logiciel évalue ; le mettre derrière un pli reviendrait
- * à le taire.
+ * 1. L'ÉTAT ÉTAIT DIT QUATRE FOIS et n'était jamais le sujet de la page : le
+ *    titre, le bloc d'identité, la frise horizontale, la carte « Maintenant ».
+ *    Quatre-vingt-dix mots pour une seule chose. → `FilDuDossier`, un rail
+ *    vertical où chaque bloc PEND à l'étape à laquelle il appartient.
+ *
+ * 2. CHAQUE CONTENEUR ÉTAIT ÉTIQUETÉ D'UNE PHRASE. Neuf en-têtes en proposition
+ *    relative, chacun suivi d'une glose : cent vingt-six mots de mobilier avant
+ *    le moindre contenu. → Des NOMS, et la glose descend dans le panneau.
+ *    Apple, page *Writing* : « Check each word to be sure it needs to be
+ *    there », et « "Favorites" conveys the same message as "Your Favorites" ».
+ *
+ * 3. LES DEUX COLONNES ÉTAIENT UN ORGANIGRAMME — « ce qu'on peut faire » à
+ *    gauche, « ce que contient le dossier » à droite. C'est la taxonomie du
+ *    LOGICIEL. → La coupure sépare maintenant LE TEMPS (le fil) de LA MATIÈRE
+ *    (les rangées), et l'ordre de lecture est l'ordre du temps : le seul que
+ *    personne n'a besoin d'apprendre.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ ET ELLE N'EN RECOMMANDE AUCUNE
+ * ⚠️ CE QUI EST GRAVE NE SE REPLIE PAS : IL MONTE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Troisième ligne rouge du projet. Le produit ÉNUMÈRE sans ordre ce que du code
- * écrit, et dit ce qui manque à une voie indisponible ; il n'en conseille
- * jamais une. Les brouillons de relance ne portent aucune commande d'envoi :
- * le recouvrement pour compte de tiers est encadré, et une commande absente ne
- * s'active jamais par accident — une commande grisée, si.
+ * L'ancienne règle disait « ce qui est grave ne se replie pas », et trois blocs
+ * se rendaient donc à plat — au BAS de la colonne droite, après quatre sections
+ * repliées, à cinq écrans du haut. Ne pas replier ne suffisait pas. Les risques,
+ * les angles morts et l'urgence des situations montent désormais dans
+ * `CeQuiBloque`, juste sous le chiffre ; l'hypothèse devient une ligne sous les
+ * pastilles. Et quand il n'y a rien, RIEN ne s'écrit : « Aucun angle mort
+ * relevé » suivi de trente mots pour le confirmer était du bruit pur.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ET ELLE NE RECOMMANDE TOUJOURS RIEN
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Troisième ligne rouge du projet, et c'est LE point de vigilance de cette
+ * refonte : une action principale unique sur l'étape en cours ne doit pas
+ * devenir une recommandation déguisée. La règle tenue ici — le geste mis en
+ * avant ne nomme JAMAIS une voie de droit. Il nomme un geste de bureau
+ * (« Préparer un courrier »), et l'étape du tribunal reste une ligne qui
+ * ÉNUMÈRE sans classer. Les brouillons de relance ne portent aucune commande
+ * d'envoi : une commande absente ne s'active jamais par accident — une commande
+ * grisée, si.
  */
 
 /** Une hypothèse du logiciel, adossée au fait qui l'a produite. */
@@ -159,26 +175,27 @@ export interface RisqueAffiche {
 }
 
 /**
- * LES SECTIONS QUI SE REPLIENT, DANS L'ORDRE DU FLUX.
+ * LES RANGÉES QUI S'OUVRENT, DANS L'ORDRE DU FLUX.
  *
- * Les trois qui ne se replient pas n'y sont pas : elles n'ont pas d'état ouvert
- * à porter, parce qu'elles sont toujours ouvertes.
+ * ⚠️ TROIS D'ENTRE ELLES VIVENT DANS LE FIL, PAS DANS LA LISTE. `courriers` et
+ * `relances` pendent à l'étape « On lui écrit », `voies` à l'étape du tribunal :
+ * elles appartiennent à un moment du dossier, pas à sa matière. Elles partagent
+ * pourtant la même racine d'accordéon et la même liste d'ouvertes, parce que
+ * l'état ouvert est UN état, adressable, et qu'une racine par carte rendrait les
+ * deux familles ignorantes l'une de l'autre.
  */
 export const SECTIONS_CREANCE = [
-	'suivi',
 	'courriers',
+	'relances',
+	'voies',
 	'decompte',
-	'valeurs',
+	'pieces',
 	'litige',
 	'solidite',
-	'pieces',
-	'voies',
-	'relances'
+	'valeurs',
+	'suivi'
 ] as const;
 export type SectionCreance = (typeof SECTIONS_CREANCE)[number];
-
-/** Les sections de la colonne de gauche : ce qu'on peut faire. Les autres disent ce que contient le dossier. */
-const SECTIONS_GAUCHE: readonly string[] = ['suivi', 'courriers', 'relances', 'voies', 'litige'];
 
 /**
  * CE QUE LA PAGE MONTRE, ET CE QU'ELLE DÉCLENCHE.
@@ -354,47 +371,52 @@ function aConfirmer(creance: {
  * qui répond à « combien il me doit ». Jamais les deux : la seconde serait lue
  * par personne et coûterait la page entière.
  */
-export function sectionsParDefaut(
-	creance: Parameters<typeof aConfirmer>[0]
-): readonly SectionCreance[] {
-	return aConfirmer(creance) > 0 ? ['litige'] : ['decompte'];
-}
-
 export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) {
 	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
 
 	/**
-	 * LES SECTIONS OUVERTES.
+	 * LES RANGÉES OUVERTES — aucune à l'arrivée.
 	 *
-	 * ⚠️ `null` ET `[]` NE SONT PAS LA MÊME CHOSE. `null` veut dire « personne
-	 * n'a encore touché au pli », et c'est alors `sectionsParDefaut` qui tranche,
-	 * une fois la créance lue ; `[]` veut dire « le gérant a tout replié », et ça
-	 * se respecte. Les confondre rouvrirait le décompte à chaque rendu, sous les
-	 * doigts de celui qui vient de le fermer.
+	 * ⚠️ IL Y AVAIT UNE OUVERTURE PAR DÉFAUT, ET ELLE EST TOMBÉE. « Vos
+	 * réponses » s'ouvrait d'elle-même tant qu'il restait quelque chose à
+	 * confirmer, au motif que c'est la seule rangée qui BLOQUE. Le questionnaire
+	 * et le tableau des conditions font 2 000 px à 375 px : la page s'ouvrait
+	 * donc sur deux écrans et demi d'un contenu que personne n'avait demandé, et
+	 * le fil du dossier — ce qu'on vient voir — passait sous la ligne de
+	 * flottaison.
 	 *
-	 * ⚠️ ET RIEN NE SE SYNCHRONISE DANS UN EFFET. La valeur se DÉRIVE au rendu :
-	 * un `setState` dans un effet ferait un rendu de retard, visible comme un
-	 * clignotement du pli à l'arrivée des données.
+	 * Ce que l'ouverture automatique achetait, la VALEUR le rend gratuitement :
+	 * « 7 à confirmer » se lit rangée fermée. C'est à ça que sert
+	 * `RangeeDuDossier.valeur`, et c'est pour ça qu'elle est obligatoire.
+	 *
+	 * ⚠️ ET RIEN NE SE SYNCHRONISE DANS UN EFFET. Un `setState` dans un effet
+	 * ferait un rendu de retard, visible comme un clignotement du pli à l'arrivée
+	 * des données.
 	 */
-	const [choisies, setChoisies] = useState<readonly SectionCreance[] | null>(null);
-	const ouvertes = choisies ?? (pret === null ? [] : sectionsParDefaut(pret));
+	const [ouvertes, setChoisies] = useState<readonly SectionCreance[]>([]);
 
-	/** Remplace l'état d'un groupe de sections, sans toucher à l'autre colonne. */
-	function changer(groupe: readonly string[], liste: readonly string[]) {
-		setChoisies([
-			...ouvertes.filter((cle) => !groupe.includes(cle)),
-			...liste.filter((cle): cle is SectionCreance =>
+	/**
+	 * Remplace la liste des rangées ouvertes.
+	 *
+	 * ⚠️ UNE SEULE RACINE D'ACCORDÉON POUR TOUT L'ÉCRAN, donc une seule liste.
+	 * Il y en avait deux, une par colonne, et il fallait recoudre les deux
+	 * moitiés à chaque changement — un mécanisme dont la seule raison d'être
+	 * était la coupure « faire / savoir » qui vient de tomber.
+	 */
+	function changer(liste: readonly string[]) {
+		setChoisies(
+			liste.filter((cle): cle is SectionCreance =>
 				(SECTIONS_CREANCE as readonly string[]).includes(cle)
 			)
-		]);
+		);
 	}
 
-	/** Ouvre une section et l'amène à l'écran : le geste de l'étape en cours. */
+	/** Ouvre une rangée et l'amène à l'écran : le geste de l'étape en cours. */
 	function ouvrir(cle: SectionCreance) {
 		setChoisies([...ouvertes.filter((c) => c !== cle), cle]);
 		requestAnimationFrame(() =>
 			document
-				.getElementById(`section-${cle}`)
+				.getElementById(`rangee-${cle}`)
 				?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 		);
 	}
@@ -425,112 +447,372 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 								libelle: TITRE_ECRAN.debiteurs
 							},
 				titre: pret?.debiteur ?? 'Dossier',
-				sousTitre:
-					pret === null
-						? undefined
-						: `${pret.nombreFactures} facture${pluriel(pret.nombreFactures)} · ${eurosCentimes(
-								pret.principalRestantDu
-							)} impayés`
+				/*
+				  ⚠️ PLUS DE SOUS-TITRE. Il portait « 1 facture · 6 000,00 € impayés »,
+				  c'est-à-dire le nombre de factures — devenu une pastille cent pixels
+				  plus bas — et un montant qui n'est PAS celui du chiffre en grand :
+				  le principal restant dû, à côté du total pénalités comprises. Deux
+				  sommes voisines et différentes sous le même nom de client, c'est la
+				  lecture qu'on ne peut pas rattraper.
+				*/
+				sousTitre: undefined
 			}}
 			etat={donnees.etat}
 			largeur="large"
 		>
 			{pret === null ? null : (
-				<>
+				<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={changer}>
 					{pret.erreur === null ? null : (
 						<p className="text-cladd-xs text-cladd-fg">{pret.erreur}</p>
 					)}
 
 					<EnTeteCreance creance={pret} />
 
-					<FriseDossier lecture={pret.etapes} />
+					{/*
+					  ⚠️ CE QUI BLOQUE EST AU-DESSUS DES DEUX COLONNES, pas dans l'une
+					  d'elles. Une alerte rangée dans une colonne est une alerte qu'on
+					  peut ne pas regarder : à 1024 px, la colonne de droite commence
+					  sous le pouce droit, et l'œil descend la gauche.
+					*/}
+					<CeQuiBloque alertes={alertesDuDossier(pret)} />
 
 					<DeuxColonnesDossier
 						gauche={
 							<>
-								<EtapeEnCours lecture={pret.etapes}>
-									{pret.etapes.etape === 'REGLE' ? null : (
-										<>
-											{/* ⚠️ UN CHOIX, DONC AUCUN BOUTON PRINCIPAL : les deux ont le même
-											    poids, et l'ordre suit la chronologie d'un dossier. */}
-											<BoutonSecondaire onClick={() => ouvrir('relances')}>
-												Lui écrire
-											</BoutonSecondaire>
-											<BoutonSecondaire onClick={() => ouvrir('courriers')}>
-												Préparer un courrier
-											</BoutonSecondaire>
-											<BoutonSecondaire onClick={() => ouvrir('voies')}>
-												Voir les autres choix
-											</BoutonSecondaire>
-										</>
-									)}
-								</EtapeEnCours>
+								<FilDuDossier classe={pret.etapes.classe}>
+									{pret.etapes.etapes.map((etape, rang) => (
+										<Echelon
+											key={etape.cle}
+											etat={etape.etat}
+											titre={etape.titre}
+											detail={etape.etat === 'EN_COURS' ? null : etape.detail}
+											dernier={rang === pret.etapes.etapes.length - 1}
+										>
+											<ContenuEchelon
+												cle={etape.cle}
+												enCours={etape.etat === 'EN_COURS'}
+												creance={pret}
+												onOuvrir={ouvrir}
+											/>
+										</Echelon>
+									))}
+								</FilDuDossier>
+
+								{/*
+								  LE PIED DE LA COLONNE : la fiche du client, puis l'aide.
+								  C'est là qu'on arrive quand on n'a pas trouvé, et c'est la
+								  seule raison pour laquelle ces deux-là sont encore sur cette
+								  page — elles ne servent aucun des trois moments d'usage.
+								*/}
+								{/*
+								  ⚠️ LA SANTÉ DU CLIENT N'EST PLUS DÉCORÉE ICI. La rangée portait
+								  « Relevée au registre public » et « Procédure collective » — une
+								  troisième mention du même fait, après la pastille de l'en-tête
+								  et la carte de ce qui bloque. Ce que cette rangée apporte, et
+								  qu'aucun autre bloc ne donne, c'est le CHEMIN vers la fiche.
+								*/}
+								<ListeAnalyses>
+									<LigneAnalyse
+										vers="/app/clients/$id"
+										parametres={{ id: pret.debiteurId }}
+										icone={<Building2Icon />}
+										titre="Fiche du client"
+										valeur={pret.debiteur}
+									/>
+								</ListeAnalyses>
 								<QuestionsPreecrites
 									questions={pret.questionsPreecrites}
 									onPoser={pret.onPoserQuestion}
 								/>
-								<SituationsDossier situations={pret.situations} />
-								{/*
-								  ⚠️ LE FIL DES ÉTAPES A ÉTÉ RETIRÉ LE 29/09/2026. Il énumérait
-								  « Prêt · On lui écrit · Le tribunal, si besoin · Réglé » avec
-								  leur détail — c'est-à-dire, mot pour mot, ce que la frise du
-								  haut montre déjà, et ce que le bloc « Maintenant » dit en
-								  phrases juste au-dessus. Trois fois la même chose sur le même
-								  écran, 150 px de plus sur un téléphone.
-								*/}
-								<SectionsDepliables
-									ouvertes={ouvertes.filter((cle) => SECTIONS_GAUCHE.includes(cle))}
-									onOuvertesChange={(liste) => changer(SECTIONS_GAUCHE, liste)}
-								>
-									<SectionSuivi creance={pret} />
-									<SectionCourriers creance={pret} />
-									<SectionRelances creance={pret} />
-									<SectionVoies creance={pret} />
-									<SectionLitige creance={pret} />
-								</SectionsDepliables>
 							</>
 						}
 						droite={
-							<>
-								<SectionRisques creance={pret} />
-								<SectionsDepliables
-									ouvertes={ouvertes.filter((cle) => !SECTIONS_GAUCHE.includes(cle))}
-									onOuvertesChange={(liste) =>
-										changer(
-											SECTIONS_CREANCE.filter((cle) => !SECTIONS_GAUCHE.includes(cle)),
-											liste
-										)
-									}
-								>
-									<SectionDecompte creance={pret} />
-									<SectionPieces creance={pret} />
-									<SectionSolidite creance={pret} />
-									<SectionValeursJuridiques fiches={pret.fiches} />
-									<SectionHypotheses creance={pret} />
-									<SectionAnglesMorts creance={pret} />
-								</SectionsDepliables>
-							</>
+							<ListeDuDossier titre="Le dossier">
+								<RangeeDecompte creance={pret} />
+								<RangeePieces creance={pret} />
+								<RangeeLitige creance={pret} />
+								<RangeeSolidite creance={pret} />
+								<RangeeValeursJuridiques fiches={pret.fiches} />
+								<RangeeSuivi creance={pret} />
+							</ListeDuDossier>
 						}
 					/>
-				</>
+				</SectionsDepliables>
 			)}
 		</PageEcran>
 	);
 }
 
 /**
- * SECTION 1 — L'EN-TÊTE : DE QUI, COMBIEN, ET JUSQU'À QUAND.
+ * CE QUI PEND À UN ÉCHELON DU FIL.
  *
- * Le montant en grand, puis le débiteur, l'état, l'échéance et la prescription
- * avec sa date. C'est l'ordre des trois questions qu'on se pose en ouvrant un
- * dossier : combien, contre qui, et combien de temps reste-t-il.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CHAQUE BLOC VIT À L'ÉTAPE À LAQUELLE IL APPARTIENT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Les courriers et les relances pendent à « On lui écrit ». Les voies pendent au
+ * tribunal. Ils vivaient auparavant dans un accordéon rangé par NATURE — « ce
+ * qu'on peut faire » —, c'est-à-dire à un endroit qu'il fallait deviner.
+ *
+ * ⚠️ ILS PENDENT À LEUR ÉTAPE MÊME QUAND ELLE N'EST PAS ENCORE ATTEINTE, et
+ * c'est voulu : on prépare un courrier depuis l'étape « Prêt », et le geste doit
+ * mener quelque part. L'échelon à venir montre alors, d'un coup d'œil, que le
+ * geste qu'on s'apprête à faire fera avancer le dossier d'un cran.
+ */
+function ContenuEchelon({
+	cle,
+	enCours,
+	creance,
+	onOuvrir
+}: {
+	readonly cle: string;
+	readonly enCours: boolean;
+	readonly creance: CreanceOuverte;
+	readonly onOuvrir: (cle: SectionCreance) => void;
+}) {
+	const gestes = enCours ? (
+		<GestesDeLEtape
+			principal={
+				<BoutonPrincipal onClick={() => onOuvrir('courriers')}>
+					Préparer un courrier
+				</BoutonPrincipal>
+			}
+			autres={[
+				{ libelle: 'Lui écrire', onClick: () => onOuvrir('relances') },
+				{ libelle: 'Voir les suites', onClick: () => onOuvrir('voies') }
+			]}
+		/>
+	) : null;
+
+	const rangees =
+		cle === 'ON_LUI_ECRIT' ? (
+			<ListeDuDossier>
+				<RangeeCourriers creance={creance} />
+				<RangeeRelances creance={creance} />
+			</ListeDuDossier>
+		) : cle === 'TRIBUNAL' ? (
+			<ListeDuDossier>
+				<RangeeVoies creance={creance} />
+			</ListeDuDossier>
+		) : null;
+
+	if (enCours) {
+		return (
+			<CarteEtape
+				ceQuiSePasse={creance.etapes.ceQuiSePasse}
+				siRienNeBouge={creance.etapes.siRienNeBouge}
+			>
+				{rangees}
+				{creance.etapes.etape === 'REGLE' ? null : gestes}
+			</CarteEtape>
+		);
+	}
+
+	return rangees;
+}
+
+/**
+ * LES FAITS DU DOSSIER, TELS QU'ILS TIENNENT EN PASTILLES.
+ *
+ * ⚠️ TROIS MOTS PAR FAIT, ET AUCUN N'EST UN VERDICT. « procédure collective » se
+ * relève au registre public ; « dossier compromis » serait une appréciation
+ * juridique, et ce logiciel n'en rend aucune.
+ */
+function faitsDuDossier(creance: CreanceOuverte): readonly FaitDuDossier[] {
+	const faits: FaitDuDossier[] = [
+		{
+			cle: 'factures',
+			texte: `${creance.nombreFactures} facture${pluriel(creance.nombreFactures)}`
+		}
+	];
+
+	if (creance.echeanceLaPlusAncienne !== null) {
+		faits.push({
+			cle: 'echeance',
+			texte: `à payer le ${dateCourte(creance.echeanceLaPlusAncienne)}`
+		});
+	}
+
+	/*
+	  ⚠️ LA DATE LIMITE POUR AGIR PORTE SA DATE, PAS UN ADJECTIF. C'est la seule
+	  échéance qui éteint définitivement une créance sans que personne n'ait rien
+	  fait, et « bientôt » ne se vérifie pas. Quand elle ne se calcule pas, la
+	  pastille le DIT et se distingue : un fait manquant sur cette ligne-là vaut
+	  un fait grave.
+	*/
+	if (creance.prescriptionLaPlusProche === null) {
+		faits.push({ cle: 'agir', texte: 'date limite non calculable', marquant: true });
+	} else if (creance.prescriptionLaPlusProche < creance.aujourdHui) {
+		// Le seul état du produit où l'on perd tout sans que personne n'ait rien
+		// fait. La pastille le dit, et la ligne « Si rien ne bouge » le redit.
+		faits.push({
+			cle: 'agir',
+			texte: `date limite dépassée le ${dateCourte(creance.prescriptionLaPlusProche)}`,
+			marquant: true
+		});
+	} else {
+		faits.push({
+			cle: 'agir',
+			texte: `agir avant le ${dateCourte(creance.prescriptionLaPlusProche)}`
+		});
+	}
+
+	if (creance.santeDebiteur === 'PROCEDURE_COLLECTIVE') {
+		faits.push({ cle: 'sante', texte: 'procédure collective', marquant: true });
+	}
+	if (creance.santeDebiteur === 'RADIEE') {
+		faits.push({ cle: 'sante', texte: 'entreprise radiée', marquant: true });
+	}
+
+	return faits;
+}
+
+/**
+ * CE QUE LE LOGICIEL A SUPPOSÉ, EN UNE LIGNE.
+ *
+ * ⚠️ L'ÉNONCÉ JURIDIQUE N'Y EST PLUS, ET IL N'EST PAS PERDU. Il faisait trente
+ * mots de référentiel (« Régime général des obligations nées à l'occasion de
+ * leur commerce… ») en tête d'une carte que personne ne lisait. Il vit dans
+ * « Les chiffres de la loi », avec sa source et sa date de relevé, c'est-à-dire
+ * à l'endroit où on le contrôle. Ce qui reste ici est ce qui SERT : le fait qui
+ * a produit l'hypothèse, et le geste qui la lève.
+ */
+function suppositionDuDossier(creance: CreanceOuverte): string | null {
+	if (creance.hypotheses.length === 0) return null;
+	const phrases = creance.hypotheses
+		.map((hypothese) => `${hypothese.fait} ${hypothese.ceQuiLaLeve}`)
+		.join(' ');
+	// La phrase du référentiel commence par une majuscule ; elle suit ici un
+	// deux-points, donc elle ne peut pas la garder.
+	return `Supposé : ${phrases.charAt(0).toLocaleLowerCase('fr-FR')}${phrases.slice(1)}`;
+}
+
+/**
+ * LA SITUATION QUI COUVRE DÉJÀ UN RISQUE.
+ *
+ * ⚠️ SANS ÇA, LA PROCÉDURE COLLECTIVE S'ÉCRIRAIT DEUX FOIS DANS LE MÊME CADRE.
+ * Elle est à la fois une SITUATION (ce qui se passe, la date limite, les choix)
+ * et un RISQUE relevé par le score. Les deux blocs vivaient à deux écrans l'un
+ * de l'autre, ce qui masquait la répétition ; réunis en tête de page, elle
+ * saute aux yeux.
+ *
+ * Les quatre clés de situation sont CONTESTATION, PROCEDURE_COLLECTIVE,
+ * PAIEMENT_PARTIEL et RADIEE. Les types de risque sont PROCEDURE_COLLECTIVE,
+ * DEBITEUR_RADIE, RETARDS_REPETES, et tous les signaux de contestation — d'où
+ * les deux seules traductions nécessaires.
+ */
+function situationQuiCouvre(type: string): string {
+	if (type === 'DEBITEUR_RADIE') return 'RADIEE';
+	if (type === 'PROCEDURE_COLLECTIVE' || type === 'RETARDS_REPETES') return type;
+	return 'CONTESTATION';
+}
+
+/**
+ * CE QUI BLOQUE : les situations, puis les risques qu'aucune ne couvre, puis
+ * les angles morts.
+ *
+ * ⚠️ L'ORDRE N'EST PAS UN CLASSEMENT DE GRAVITÉ, c'est un ordre de NATURE : ce
+ * qui se passe, ce qui a été relevé, ce qui n'est pas vu. Trier par gravité
+ * reviendrait à dire lequel traiter d'abord, et personne ici n'a le droit de le
+ * dire.
+ */
+function alertesDuDossier(creance: CreanceOuverte): readonly AlerteDossier[] {
+	const couvertes = new Set(creance.situations.map((situation) => situation.cle));
+
+	const desSituations: AlerteDossier[] = creance.situations.map((situation) => ({
+		cle: `situation-${situation.cle}`,
+		titre: situation.titre,
+		phrases: situation.ceQuiSePasse,
+		echeance:
+			situation.dateLimite === null
+				? null
+				: {
+						libelle: situation.dateLimite.libelle,
+						date: situation.dateLimite.date,
+						precisions: [
+							...(situation.dateLimite.reporteeDe === null
+								? []
+								: [
+										`Le délai finissait le ${dateCourte(situation.dateLimite.reporteeDe)}, un jour non ouvrable : il est reporté au premier jour ouvrable suivant.`
+									]),
+							...(situation.dateLimite.departNonPrecise === null
+								? []
+								: [situation.dateLimite.departNonPrecise])
+						],
+						source: situation.dateLimite.source
+					},
+		options: situation.options,
+		citation: situation.citation
+	}));
+
+	/*
+	  ⚠️ UN RISQUE BLOQUANT FERME TOUTES LES VOIES QUE CE LOGICIEL ÉVALUE : elles
+	  se déroulent sans débat contradictoire, et une contestation, même infondée,
+	  y met fin. Le dossier peut être parfait par ailleurs, il ne passera pas.
+	  C'est la seule phrase que le risque ajoute, et elle ne s'écrit que pour un
+	  risque bloquant.
+	*/
+	const desRisques: AlerteDossier[] = creance.risques
+		.filter((risque) => !couvertes.has(situationQuiCouvre(risque.type)))
+		.map((risque) => ({
+			cle: `risque-${risque.type}`,
+			titre: risque.description,
+			phrases:
+				risque.gravite === 'BLOQUANTE'
+					? [
+							'Quand on demande au tribunal de le faire payer, ou qu’on passe par un commissaire de justice, tout se fait sans débat, et une contestation y met fin.'
+						]
+					: [],
+			echeance: null,
+			options: [],
+			citation: null
+		}));
+
+	/*
+	  ⚠️ « 0,00 € HORS SURVEILLANCE » NE S'ÉCRIT JAMAIS. Un angle mort dont le
+	  montant n'est pas chiffrable porte `null`, et le dire en euros le lirait
+	  « sans enjeu » alors qu'il veut dire « on n'a pas su compter ».
+	*/
+	const desAnglesMorts: AlerteDossier[] = creance.anglesMorts.map((angle) => ({
+		cle: `angle-${angle.cle}`,
+		titre: 'Ce que le logiciel ne voit pas',
+		phrases: [
+			angle.montantEnJeu === null
+				? `${angle.constat} (montant non chiffrable)`
+				: `${angle.constat} (${eurosCentimes(angle.montantEnJeu)})`
+		],
+		echeance: null,
+		options: [],
+		citation: null
+	}));
+
+	return [...desSituations, ...desRisques, ...desAnglesMorts];
+}
+
+/**
+ * L'EN-TÊTE : COMBIEN, ET LES FAITS QUI LE QUALIFIENT.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QU'IL PORTAIT, ET QUI EST PARTI
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Une rangée d'identité du client — déjà le titre de la page, donc le nom écrit
+ * trois fois sur le même écran — puis une carte de deux `LigneValeur` : deux
+ * lignes de 48 px pour deux dates de dix caractères. Les autres faits du dossier
+ * vivaient en cartes de prose, quatre écrans plus bas.
+ *
+ * Six faits, dispersés. Ils tiennent maintenant en deux lignes de pastilles, et
+ * c'est ce qui sert le moment d'usage le plus fréquent du produit : le client au
+ * téléphone, qui veut un chiffre et une date à voix haute, en cinq secondes.
+ *
+ * La fiche du client, elle, n'est pas perdue : elle est descendue en pied de la
+ * colonne de gauche, là où l'on arrive quand on n'a pas trouvé.
  *
  * ⚠️ LE CHIFFRE NE MENT PAS SUR CE QU'IL EST. Quand le calcul du jour aboutit,
  * c'est le TOTAL — principal, intérêts, indemnité — et la légende le dit. Quand
  * il ne se fait pas, le chiffre retombe sur le principal restant dû et la
  * légende le dit AUSSI : afficher le principal seul sous l'étiquette « dû
- * aujourd'hui » ferait lire un total amputé des intérêts, ce qu'aucune ligne de
- * l'écran ne rattraperait ensuite.
+ * aujourd'hui » ferait lire un total amputé des intérêts.
  *
  * ⚠️ ET IL N'EST JAMAIS COLORÉ. Le vert, le rouge et l'ambre ne disent qu'une
  * chose dans ce produit — au-dessus du seuil, tout près, en dessous. Un montant
@@ -540,63 +822,18 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 	const montant = creance.montantDuJour;
 
 	return (
-		<>
+		<div className="flex flex-col gap-cladd-2xs">
 			<ChiffreHero
 				centimes={montant?.total ?? creance.principalRestantDu}
 				surTitre={montant === null ? 'Reste à payer sur les factures' : 'Dû aujourd’hui'}
 				legende={
 					montant === null
-						? 'Les pénalités ne se calculent pas sur ce dossier : le calcul, plus bas, dit pourquoi.'
-						: 'Factures, pénalités de retard et frais de recouvrement, au jour d’aujourd’hui. Il augmente chaque jour.'
+						? 'Les pénalités ne se calculent pas : le décompte dit pourquoi.'
+						: 'Factures, pénalités et frais, au jour d’aujourd’hui. Il monte chaque jour.'
 				}
 			/>
-
-			{/*
-			  ⚠️ LE DÉBITEUR EST LA SEULE RANGÉE QUI SORTE DE LA CRÉANCE, et c'est
-			  aussi là que le verdict du radar arrive enfin à l'œil : il tourne chaque
-			  nuit, écrit sa santé sur le DÉBITEUR, et cette page-ci porte l'argent.
-			  Une procédure collective change pourtant tout ce que cette créance vaut.
-			*/}
-			<ListeAnalyses>
-				<LigneAnalyse
-					vers="/app/clients/$id"
-					// ⚠️ LA PAGE DU DÉBITEUR, PAS LA LISTE AVEC `?d=`. Cette dernière
-					// existe encore et redirige, mais elle fait payer un aller-retour
-					// visible pour arriver au même endroit. La page porte tout ce que
-					// cette rangée promet : son encours, ses créances, sa solvabilité.
-					parametres={{ id: creance.debiteurId }}
-					icone={<Building2Icon />}
-					titre={creance.debiteur}
-					{...rangeeDuDebiteur({ sante: creance.santeDebiteur })}
-				/>
-			</ListeAnalyses>
-
-			<CarteListe>
-				<LigneValeur
-					libelle="Échéance la plus ancienne"
-					valeur={
-						creance.echeanceLaPlusAncienne === null
-							? 'non lisible'
-							: dateCourte(creance.echeanceLaPlusAncienne)
-					}
-				/>
-				{/*
-				  ⚠️ LA PRESCRIPTION PORTE SA DATE, PAS UN ADJECTIF. C'est la seule
-				  échéance qui éteint définitivement une créance sans que personne
-				  n'ait rien fait, et « bientôt » ne se vérifie pas. Le délai retenu et
-				  la raison qui le retient se lisent juste en dessous, dans
-				  « Ce que le logiciel a supposé ».
-				*/}
-				<LigneValeur
-					libelle="Date limite pour agir en justice"
-					valeur={
-						creance.prescriptionLaPlusProche === null
-							? 'non calculable'
-							: dateCourte(creance.prescriptionLaPlusProche)
-					}
-				/>
-			</CarteListe>
-		</>
+			<FaitsDuDossier faits={faitsDuDossier(creance)} supposition={suppositionDuDossier(creance)} />
+		</div>
 	);
 }
 
@@ -619,14 +856,14 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
  * débiteur et CHIFFRE ce qui serait abandonné. Le titre exécutoire ne porte que
  * sur les sommes qu'il chiffre, et ce qui n'y figure pas est perdu.
  */
-function SectionDecompte({ creance }: { creance: CreanceOuverte }) {
+function RangeeDecompte({ creance }: { creance: CreanceOuverte }) {
 	const montant = creance.montantDuJour;
 
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="decompte"
-			titre="Le décompte, décomposé"
-			legende="Au jour d’aujourd’hui, et il bouge chaque jour"
+			titre="Décompte"
+			glose="Au jour d’aujourd’hui, et il bouge chaque jour."
 			valeur={montant === null ? 'non calculé' : eurosCentimes(montant.total)}
 		>
 			{montant === null ? (
@@ -708,7 +945,7 @@ function SectionDecompte({ creance }: { creance: CreanceOuverte }) {
 			  auprès de ce qui l'arrête, pas auprès de ce qui l'envoie.
 			*/}
 			<LiensDePaiement {...creance.liensDePaiement} />
-		</SectionDepliable>
+		</RangeeDuDossier>
 	);
 }
 
@@ -730,17 +967,17 @@ function SectionDecompte({ creance }: { creance: CreanceOuverte }) {
  * chiffre écrit dans une requête qui part au greffe ne se corrige pas. Les deux
  * colonnes restent distinctes pour cette seule raison.
  */
-function SectionValeursJuridiques({ fiches }: { fiches: readonly FicheParametre[] }) {
+function RangeeValeursJuridiques({ fiches }: { fiches: readonly FicheParametre[] }) {
 	if (fiches.length === 0) return null;
 
 	const verifiees = fiches.filter((fiche) => fiche.verifie).length;
 	const controlees = fiches.filter((fiche) => fiche.valideParAvocat).length;
 
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="valeurs"
-			titre="Les valeurs juridiques employées"
-			legende="Leur source, leur date de relevé, et ce qu’on a le droit d’en faire"
+			titre="Les chiffres de la loi"
+			glose="Leur source, leur date de relevé, et ce qu’on a le droit d’en faire."
 			valeur={`${verifiees} sur ${fiches.length}`}
 		>
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
@@ -768,111 +1005,7 @@ function SectionValeursJuridiques({ fiches }: { fiches: readonly FicheParametre[
 					))}
 				</TableauCorps>
 			</Tableau>
-		</SectionDepliable>
-	);
-}
-
-/**
- * SECTION 3a — CE QUE LE LOGICIEL A SUPPOSÉ. JAMAIS REPLIÉE.
- *
- * Chaque hypothèse est adossée au FAIT qui l'a produite, et dit ce qui la lève.
- * Une hypothèse repliée est une hypothèse qu'on ne lit pas : elle se rend donc
- * hors de l'accordéon, à sa place dans le flux.
- *
- * ⚠️ UNE HYPOTHÈSE QUI N'OFFRE AUCUN GESTE S'AFFICHE QUAND MÊME. On la SUBIT, et
- * c'est précisément ce qu'il faut lire.
- */
-function SectionHypotheses({ creance }: { creance: CreanceOuverte }) {
-	return (
-		<SectionEcran
-			titre="Ce que le logiciel a supposé"
-			legende={
-				creance.hypotheses.length === 0
-					? 'Rien n’est supposé sur ce dossier'
-					: `${creance.hypotheses.length} hypothèse${pluriel(creance.hypotheses.length)}, et chacune se lève`
-			}
-		>
-			{creance.hypotheses.length === 0 ? (
-				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-					Tout ce qui entre dans ce dossier est relevé sur une donnée que vous avez fournie ou sur
-					un registre public. Aucune valeur n’y est retenue par défaut.
-				</p>
-			) : (
-				creance.hypotheses.map((hypothese) => (
-					<div key={hypothese.cle} className="flex flex-col gap-1">
-						<p className="text-cladd-sm leading-relaxed font-medium text-balance">
-							{hypothese.enonce}
-						</p>
-						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{hypothese.fait}</p>
-						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-							{hypothese.ceQuiLaLeve}
-						</p>
-					</div>
-				))
-			)}
-		</SectionEcran>
-	);
-}
-
-/**
- * SECTION 3b — CE QUE LE LOGICIEL NE VOIT PAS, CHIFFRÉ. JAMAIS REPLIÉE.
- *
- * ⚠️ UN UTILISATEUR QUI CROIT SA PRESCRIPTION SURVEILLÉE NE LA SURVEILLE PAS
- * LUI-MÊME. Le silence du produit sur ce qu'il ne voit pas est ce qui rend
- * l'angle mort dangereux. Le reléguer sous ce qui rassure reviendrait à le
- * cacher.
- */
-function SectionAnglesMorts({ creance }: { creance: CreanceOuverte }) {
-	const chiffrables = creance.anglesMorts.filter((angle) => angle.montantEnJeu !== null);
-	const total = chiffrables.reduce((somme, angle) => somme + (angle.montantEnJeu ?? 0n), 0n);
-	const nonChiffrables = creance.anglesMorts.length - chiffrables.length;
-	const pointsNonChiffres = `${nonChiffrables} point${pluriel(nonChiffrables)} non chiffrable${pluriel(nonChiffrables)}`;
-
-	return (
-		<SectionEcran
-			titre="Ce que le logiciel ne voit pas"
-			/*
-			  ⚠️ « 0,00 € HORS SURVEILLANCE » NE S'ÉCRIT JAMAIS, et c'est une
-			  correction relevée au navigateur. Un dossier dont AUCUN angle mort n'est
-			  chiffrable affichait ce zéro suivi du compte des points non chiffrables :
-			  le zéro s'y lit « sans enjeu », alors qu'il veut dire « on n'a pas su
-			  compter ». C'est la faute que `montantEnJeu: null` existe précisément
-			  pour éviter, refaite un cran plus haut, dans la légende.
-			*/
-			legende={
-				creance.anglesMorts.length === 0
-					? 'Aucun angle mort relevé sur ce dossier'
-					: chiffrables.length === 0
-						? pointsNonChiffres
-						: nonChiffrables === 0
-							? `${eurosCentimes(total)} hors surveillance`
-							: `${eurosCentimes(total)} hors surveillance, plus ${pointsNonChiffres}`
-			}
-		>
-			{creance.anglesMorts.length === 0 ? (
-				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-					Toutes les factures de ce dossier portent une date de départ exploitable, et son échéance
-					se compte. Ce contrôle se refait à chaque lecture.
-				</p>
-			) : (
-				creance.anglesMorts.map((angle) => (
-					<p
-						key={angle.cle}
-						className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft"
-					>
-						<EyeOffIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-						<span>
-							{angle.constat}{' '}
-							<span className="font-semibold tabular-nums">
-								{angle.montantEnJeu === null
-									? '(montant non chiffrable)'
-									: `(${eurosCentimes(angle.montantEnJeu)})`}
-							</span>
-						</span>
-					</p>
-				))
-			)}
-		</SectionEcran>
+		</RangeeDuDossier>
 	);
 }
 
@@ -891,14 +1024,14 @@ function SectionAnglesMorts({ creance }: { creance: CreanceOuverte }) {
  * caractère certain de cette créance » n'était répondable que par un juriste ;
  * « avez-vous reçu une contestation écrite » se répond par oui ou par non.
  */
-function SectionLitige({ creance }: { creance: CreanceOuverte }) {
+function RangeeLitige({ creance }: { creance: CreanceOuverte }) {
 	const aDemander = aConfirmer(creance);
 
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="litige"
-			titre="Ce que vous seul pouvez dire"
-			legende="Des faits, pas une appréciation juridique"
+			titre="Vos réponses"
+			glose="Des faits, pas une appréciation juridique : vous seul pouvez les dire."
 			valeur={
 				aDemander > 0
 					? `${aDemander} à confirmer`
@@ -921,45 +1054,7 @@ function SectionLitige({ creance }: { creance: CreanceOuverte }) {
 				enCours={creance.enCours}
 				onRepondre={creance.onRepondreCondition}
 			/>
-		</SectionDepliable>
-	);
-}
-
-/**
- * SECTION 5a — CE QUI AFFAIBLIT CE DOSSIER. JAMAIS REPLIÉE.
- *
- * ⚠️ UN RISQUE BLOQUANT FERME TOUTES LES VOIES QUE CE LOGICIEL ÉVALUE : elles se
- * déroulent sans débat contradictoire, et une contestation, même infondée, y met
- * fin. Le dossier peut être parfait par ailleurs, il ne passera pas. Derrière un
- * pli, ce constat serait tu.
- *
- * ⚠️ ET CHAQUE RISQUE EST UN CONSTAT, JAMAIS UNE CONSÉQUENCE JURIDIQUE. « Le
- * débiteur fait l'objet d'une procédure collective » est un fait relevé au
- * registre ; ce qu'il faudrait en faire n'a été validé par personne.
- */
-function SectionRisques({ creance }: { creance: CreanceOuverte }) {
-	if (creance.risques.length === 0) return null;
-
-	return (
-		<SectionEcran
-			titre="Ce que le logiciel a relevé"
-			legende={`${creance.risques.length} relevé${pluriel(creance.risques.length)}`}
-		>
-			{creance.risques.map((risque) => (
-				<div key={risque.type} className="flex gap-cladd-3xs">
-					<AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
-					<div className="flex min-w-0 flex-col gap-1">
-						<p className="text-cladd-sm leading-snug">{risque.description}</p>
-						{risque.gravite === 'BLOQUANTE' ? (
-							<p className="text-cladd-2xs text-cladd-fg-soft">
-								À savoir : quand on demande au tribunal de le faire payer, ou qu’on passe par un
-								commissaire de justice, tout se fait sans débat, et une contestation y met fin.
-							</p>
-						) : null}
-					</div>
-				</div>
-			))}
-		</SectionEcran>
+		</RangeeDuDossier>
 	);
 }
 
@@ -970,26 +1065,26 @@ function SectionRisques({ creance }: { creance: CreanceOuverte }) {
  * attendues sont absentes » se vérifie ; « ce dossier est trop faible » est une
  * appréciation juridique.
  */
-function SectionSolidite({ creance }: { creance: CreanceOuverte }) {
+function RangeeSolidite({ creance }: { creance: CreanceOuverte }) {
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="solidite"
-			titre="Ce que vos documents montrent"
-			legende="Ce qu’un tiers pourrait lire du dossier"
+			titre="Solidité"
+			glose="Ce qu’un tiers pourrait lire du dossier, document par document."
 			valeur={`${creance.solidite.etablies} sur ${creance.solidite.attendues}`}
 		>
 			<Solidite solidite={creance.solidite} />
-		</SectionDepliable>
+		</RangeeDuDossier>
 	);
 }
 
-/** SECTION 6 — LES PIÈCES. Le dépôt, le classement, le retrait. */
-function SectionPieces({ creance }: { creance: CreanceOuverte }) {
+/** LES PIÈCES. Le dépôt, le classement, le retrait. */
+function RangeePieces({ creance }: { creance: CreanceOuverte }) {
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="pieces"
-			titre="Les documents"
-			legende="Déposées ici, lues et classées toutes seules"
+			titre="Documents"
+			glose="Déposés ici, lus et classés tout seuls."
 			valeur={`${creance.pieces.length}`}
 		>
 			<Pieces
@@ -1000,7 +1095,7 @@ function SectionPieces({ creance }: { creance: CreanceOuverte }) {
 				onClasser={creance.onClasser}
 				onRetirer={creance.onRetirer}
 			/>
-		</SectionDepliable>
+		</RangeeDuDossier>
 	);
 }
 
@@ -1036,7 +1131,7 @@ function SectionPieces({ creance }: { creance: CreanceOuverte }) {
  * trois mois partir du 20, soit dix-sept jours offerts en silence sur
  * l'échéance la plus dangereuse du produit.
  */
-function SectionVoies({ creance }: { creance: CreanceOuverte }) {
+function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 	/*
 	  ⚠️ LES FEUILLES SONT UN ÉTAT D'ÉCRAN, PAS UN ÉTAT D'ADRESSE. On ne met pas
 	  en signet une feuille ouverte. Les DEUX recherches de répertoire font
@@ -1055,15 +1150,13 @@ function SectionVoies({ creance }: { creance: CreanceOuverte }) {
 	const envisageables = creance.voies.filter((v) => v.disponible).length;
 
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="voies"
-			titre={
-				creance.suivi === null ? 'Les voies envisageables' : 'Ce qui court depuis l’engagement'
-			}
-			legende={
+			titre={creance.suivi === null ? 'Les suites' : 'Procédure'}
+			glose={
 				creance.suivi === null
 					? 'Énumérées, jamais classées. Aucune n’est mise en avant.'
-					: 'Les faits consignés, et les délais qui en découlent'
+					: 'Les faits consignés, et les délais qui en découlent.'
 			}
 			valeur={
 				creance.suivi !== null
@@ -1188,7 +1281,7 @@ function SectionVoies({ creance }: { creance: CreanceOuverte }) {
 				onChoisirSpecialite={creance.onChoisirSpecialite}
 				onRetenir={creance.onRetenirAvocat}
 			/>
-		</SectionDepliable>
+		</RangeeDuDossier>
 	);
 }
 
@@ -1213,14 +1306,14 @@ function SectionVoies({ creance }: { creance: CreanceOuverte }) {
  * délai qui n'a jamais couru ; et le niveau 2 sans décompte arrêté, le seul qui
  * se lève d'un geste, dont la rangée porte « Arrêter le décompte ».
  */
-function SectionRelances({ creance }: { creance: CreanceOuverte }) {
+function RangeeRelances({ creance }: { creance: CreanceOuverte }) {
 	const prets = creance.relances.filter((niveau) => niveau.disponible).length;
 
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="relances"
-			titre="Ce que vous pouvez lui écrire"
-			legende="Des brouillons, à envoyer depuis votre messagerie"
+			titre="Relances"
+			glose="Des brouillons, à envoyer depuis votre messagerie."
 			valeur={prets > 0 ? `${prets} prêt${pluriel(prets)}` : 'Suspendues'}
 		>
 			<Relances
@@ -1229,7 +1322,7 @@ function SectionRelances({ creance }: { creance: CreanceOuverte }) {
 				destinataire={creance.debiteurEmail}
 				identifiantDebiteur={creance.debiteurId}
 			/>
-		</SectionDepliable>
+		</RangeeDuDossier>
 	);
 }
 
@@ -1253,35 +1346,53 @@ function SectionRelances({ creance }: { creance: CreanceOuverte }) {
  * qu'on sache si elle a été tenue, et c'est la seule chose qui appelle le
  * gérant depuis cette rangée repliée.
  */
-function SectionSuivi({ creance }: { creance: CreanceOuverte }) {
-	const enAttente =
-		creance.suiviDuDossier.notes.filter(
-			(note) =>
-				(note.genre === 'PROMESSE' && note.issue === undefined) ||
-				(note.genre === 'RAPPEL' && note.faitLe === undefined)
-		).length;
+function RangeeSuivi({ creance }: { creance: CreanceOuverte }) {
+	const notes = creance.suiviDuDossier.notes;
+	const enAttente = notes.filter(
+		(note) =>
+			(note.genre === 'PROMESSE' && note.issue === undefined) ||
+			(note.genre === 'RAPPEL' && note.faitLe === undefined)
+	).length;
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="suivi"
-			titre="Ce qui s’est passé"
-			legende="Vos notes, vos échanges, et ce que le logiciel a constaté"
-			valeur={enAttente > 0 ? `${enAttente} à trancher` : undefined}
+			titre="Historique"
+			glose="Vos notes, vos échanges, et ce que le logiciel a constaté."
+			// ⚠️ LA VALEUR COMPTE CE QUI ATTEND AVANT CE QU'IL Y A. « 2 à trancher »
+			// dit qu'une promesse est arrivée à son jour sans qu'on sache si elle a
+			// été tenue ; « 14 faits » est un cadran. Mais une rangée sans valeur
+			// oblige à l'ouvrir pour savoir si elle est vide, alors le compte des
+			// faits prend le relais quand rien n'attend.
+			valeur={
+				enAttente > 0
+					? `${enAttente} à trancher`
+					: notes.length === 0
+						? 'rien encore'
+						: `${notes.length} fait${pluriel(notes.length)}`
+			}
 		>
 			<SuiviDuDossier {...creance.suiviDuDossier} />
-		</SectionDepliable>
+		</RangeeDuDossier>
 	);
 }
 
-function SectionCourriers({ creance }: { creance: CreanceOuverte }) {
-	const aValider = creance.courriers.envois.filter((e) => e.etat === 'A_VALIDER').length;
+function RangeeCourriers({ creance }: { creance: CreanceOuverte }) {
+	const envois = creance.courriers.envois;
+	const aValider = envois.filter((e) => e.etat === 'A_VALIDER').length;
 	return (
-		<SectionDepliable
+		<RangeeDuDossier
 			cle="courriers"
-			titre="Vos courriers"
-			legende="À votre nom, relus et validés par vous, envoyés par vous"
-			valeur={aValider > 0 ? `${aValider} à valider` : undefined}
+			titre="Courriers"
+			glose="À votre nom, relus et validés par vous, envoyés par vous."
+			valeur={
+				aValider > 0
+					? `${aValider} à valider`
+					: envois.length === 0
+						? 'aucun'
+						: `${envois.length} parti${pluriel(envois.length)}`
+			}
 		>
 			<Courriers courriers={creance.courriers} />
-		</SectionDepliable>
+		</RangeeDuDossier>
 	);
 }
