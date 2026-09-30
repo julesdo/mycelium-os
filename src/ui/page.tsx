@@ -47,12 +47,22 @@ export function PageHeader({
 				  redevient un bloc ordinaire : plus rien ne passe dessous, et le flou n'a
 				  plus rien à flouter. Voir `page-ecran.tsx`.
 				*/
-				'verre-barre-haute sticky top-0 z-30 -mx-cladd-3xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-2xs px-cladd-3xs pb-cladd-3xs',
+				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-3xs px-cladd-2xs pb-cladd-3xs',
 				sansTitre ? 'pt-cladd-xs' : 'pt-barre-app'
 			)}
 		>
 			{sansTitre ? null : (
-				<div className="min-w-0">
+				/*
+				  ⚠️ `flex-1 min-w-48`, ET LES DEUX COMPTENT. Sans `flex-1`, le bloc
+				  prenait la largeur de son sous-titre et poussait une action de cent
+				  pixels — « Sélectionner » — sur la ligne suivante, sous le titre, là
+				  où aucune application iOS ne la pose. Sans `min-w-48`, un écran dont
+				  les actions sont une barre d'outils entière (« Aujourd'hui ») écrasait
+				  son titre à quarante pixels au lieu de renvoyer la barre en dessous.
+				  Cent quatre-vingt-douze pixels : la place d'un grand titre de deux
+				  mots, et pas un de plus.
+				*/
+				<div className="min-w-48 flex-1">
 					<h1 className="text-letikette-titre leading-tight font-bold tracking-tight">{titre}</h1>
 					{sousTitre ? <p className="mt-1 text-cladd-xs text-cladd-fg-soft">{sousTitre}</p> : null}
 				</div>
@@ -110,7 +120,7 @@ export function PageBody({ children }: { children: ReactNode }) {
 	// `defilement-sans-barre` : sans elle, la gouttière de défilement coupe la barre
 	// du haut à droite. Voir `app.css`.
 	return (
-		<div className="defilement-sans-barre min-h-0 flex-1 overflow-y-auto px-cladd-3xs pb-36">
+		<div className="defilement-sans-barre min-h-0 flex-1 overflow-y-auto px-cladd-2xs pb-36">
 			{children}
 		</div>
 	);

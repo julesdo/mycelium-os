@@ -158,7 +158,7 @@ export function RangeeDepliable({
 		<AccordionItem value={cle} id={`rangee-${cle}`}>
 			<AccordionTrigger>
 				{/*
-				  ⚠️ `min-h-15` ET NON LA HAUTEUR DE `size="md"`. Le `h-auto` qu'il
+				  ⚠️ `min-h-13` ET NON LA HAUTEUR DE `size="md"`. Le `h-auto` qu'il
 				  faut poser pour laisser un titre revenir à la ligne annule aussi le
 				  plancher du kit : la rangée retombait sur la hauteur de son
 				  contenu, soit 34 px — sous les 44 pt d'Apple, et c'est très
@@ -171,7 +171,7 @@ export function RangeeDepliable({
 					outline={false}
 					hoverable={false}
 					size="md"
-					className="h-auto min-h-15 w-full rounded-none"
+					className="h-auto min-h-13 w-full rounded-none"
 					contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
 				>
 					{/*

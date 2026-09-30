@@ -102,8 +102,52 @@ export function BoutonSecondaire<C extends ElementType = 'button'>({
 			outline={false}
 			hoverable={false}
 			rounded
-			size="lg"
+			/*
+			  ⚠️ `md` ET NON PLUS `lg`, DEPUIS LE 30/09/2026. La secondaire avait la
+			  hauteur de la principale : deux capsules de même taille côte à côte, et
+			  la hiérarchie ne tenait plus qu'à la couleur. Relevé chez Shop et
+			  Claude : les actions secondaires font 29 à 37 pt, la principale 42 à
+			  46. La secondaire est donc d'un cran plus petite, et ça se voit avant
+			  même de lire.
+			*/
+			size="md"
 			className={cn('pilule-secondaire font-medium', pleineLargeur && 'w-full', className)}
+			{...reste}
+		>
+			{children}
+		</Button>
+	);
+}
+
+/**
+ * L'ACTION EN TEXTE SEUL — « Sélectionner », « Tout voir », « Annuler ».
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI ELLE EXISTE : « DES MILLIARDS DE ZONES CLIQUABLES »
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * C'est le reproche du terrain, le 30/09/2026. Relevé sur la liste des
+ * dossiers : seize cibles, dont onze habillées en bouton — la pilule
+ * « Sélectionner » à elle seule faisait 56 px. Chez Revolut, « Select all » est
+ * un mot bleu ; chez Mail, « Sélectionner » aussi. Un geste d'en-tête n'a pas à
+ * ressembler à une action : il suffit qu'on le trouve.
+ *
+ * ⚠️ ELLE N'A NI FOND NI CONTOUR, ET ELLE N'EN PRENDRA PAS. C'est la seule
+ * chose qui la distingue d'une `BoutonSecondaire` — et c'est tout son travail :
+ * réduire le nombre de choses qui ont l'air d'un bouton.
+ */
+export function BoutonTexte<C extends ElementType = 'button'>({
+	children,
+	className,
+	...reste
+}: Omit<ProprietesBouton<C>, 'pleineLargeur'>) {
+	return (
+		<Button
+			variant="transparent"
+			outline={false}
+			hoverable={false}
+			size="md"
+			className={cn('px-1 font-medium text-cladd-primary', className)}
 			{...reste}
 		>
 			{children}

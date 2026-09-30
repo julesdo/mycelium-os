@@ -126,6 +126,22 @@ interface ContenuRangee {
 	 */
 	avatar?: ReactNode;
 	/**
+	 * RANGÉE DE NAVIGATION OU RANGÉE DE CONTENU — et elles ne se ressemblent pas.
+	 *
+	 * ⚠️ C'EST LA DISTINCTION QUE SHOP ET REVOLUT TIENNENT, ET PAS NOUS. Relevé le
+	 * 30/09/2026 : chez Shop, une commande ne porte pas de chevron, mais « Order
+	 * receipt » en porte un ; chez Revolut, aucune transaction n'en porte. Le
+	 * chevron dit « ceci mène à un réglage, à une page annexe » ; posé sur chaque
+	 * rangée d'une liste de contenu, il dit « tout est un bouton », et c'est la
+	 * moitié des « milliards de zones cliquables » du reproche du terrain.
+	 *
+	 *   `navigation` (défaut) — chevron, valeur en gris : « Fiche du client »,
+	 *                           un réglage, « Jamais calculé ».
+	 *   `contenu`             — PAS de chevron, valeur forte : un dossier, un
+	 *                           client. Le montant est ce qu'on vient lire.
+	 */
+	genre?: 'navigation' | 'contenu';
+	/**
 	 * Marque la rangée qui demande quelque chose.
 	 *
 	 * ⚠️ AUCUNE COULEUR DE SEUIL. Le vert, l'ambre et le rouge ne disent qu'une
@@ -138,7 +154,15 @@ interface ContenuRangee {
 
 /** Les fentes du kit, remplies à l'identique pour les deux rangées. */
 function apparenceRangee(
-	{ valeur, precision, icone, famille, avatar, attention = false }: ContenuRangee,
+	{
+		valeur,
+		precision,
+		icone,
+		famille,
+		avatar,
+		attention = false,
+		genre = 'navigation'
+	}: ContenuRangee,
 	/**
 	 * Vrai quand la rangée sert de maître : à partir de 1024 px, elle ouvre le
 	 * volet voisin au lieu de pousser une page, et son chevron promettrait ce
@@ -167,17 +191,23 @@ function apparenceRangee(
 				{valeur === undefined ? null : (
 					<span
 						className={cn(
-							'text-cladd-2xs font-semibold tabular-nums',
-							attention ? 'text-cladd-fg' : 'text-cladd-fg-soft'
+							'tabular-nums',
+							genre === 'contenu'
+								? // Le montant d'une liste de contenu est ce qu'on vient lire :
+									// au corps du titre, en graisse moyenne — Revolut, ~16 px.
+									'text-cladd-xs font-medium text-cladd-fg'
+								: cn('text-cladd-2xs', attention ? 'text-cladd-fg' : 'text-cladd-fg-soft')
 						)}
 					>
 						{valeur}
 					</span>
 				)}
-				<ChevronRightIcon
-					className={cn('size-4 shrink-0 text-cladd-fg-softest', dansUnMaitre && 'lg:hidden')}
-					aria-hidden
-				/>
+				{genre === 'contenu' ? null : (
+					<ChevronRightIcon
+						className={cn('size-4 shrink-0 text-cladd-fg-softest', dansUnMaitre && 'lg:hidden')}
+						aria-hidden
+					/>
+				)}
 			</span>
 		),
 		className: 'verre-bouton',
@@ -410,7 +440,7 @@ export function EnteteDetail({
 	// Même bord d’écran que la barre des onglets : du flou seul, collant, et le contenu
 	// glisse dessous. Voir `PageHeader`.
 	return (
-		<header className="verre-barre-haute sticky top-0 z-30 -mx-cladd-3xs flex shrink-0 flex-col gap-cladd-3xs px-cladd-3xs pt-barre-app pb-cladd-3xs">
+		<header className="verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-col gap-cladd-3xs px-cladd-2xs pt-barre-app pb-cladd-3xs">
 			{parHistorique ? (
 				<Button
 					{...PASTILLE_RETOUR}

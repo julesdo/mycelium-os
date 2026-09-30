@@ -114,11 +114,11 @@ export const FAMILLES: Readonly<Record<FamilleRangee, Famille>> = {
 /**
  * LA VIGNETTE D'UNE RANGÉE — un carré arrondi teinté, et le signe dedans.
  *
- * ⚠️ 40 PX, ET C'EST LA MÊME MESURE QUE LE DOIGT. Elle n'est pas une cible —
- * c'est la rangée entière qui l'est — mais une vignette plus petite cesse de
- * porter le regard : à 24 px, le signe redevient un détail du texte au lieu
- * d'en être l'ancre. Revolut, Wise et Apple Wallet tiennent tous les trois
- * entre 40 et 44.
+ * ⚠️ 32 PX, ET UN SIGNE DE 20. Elle n'est pas une cible — c'est la rangée
+ * entière qui l'est. Posée d'abord à 40 px avec un signe de 24, elle écrasait
+ * une rangée d'une seule ligne : relevé sur les réglages de Claude, l'icône
+ * d'une rangée fait ~20 pt et la rangée ~51. Les avatars de 40 restent, eux,
+ * sur les rangées à DEUX lignes — c'est la proportion de Revolut.
  *
  * ⚠️ LE SIGNE RESTE MONOCHROME. Il prend `text-cladd-primary`, donc l'accent de
  * sa famille, sur un fond de surface de la même famille : deux valeurs d'une
@@ -138,10 +138,10 @@ export function VignetteRangee({
 			variant="solid"
 			outline={false}
 			color={teinte}
-			className={cn(`cladd-color-${teinte} size-10 shrink-0 rounded-cladd-2xs`, className)}
+			className={cn(`cladd-color-${teinte} size-8 shrink-0 rounded-cladd-sm`, className)}
 			contentClassName="flex size-full items-center justify-center"
 		>
-			<Picto className="size-6 text-cladd-primary" />
+			<Picto className="size-5 text-cladd-primary" />
 		</Surface>
 	);
 }
@@ -181,8 +181,8 @@ export function VignetteIcone({
 		<Surface
 			variant="solid"
 			outline={false}
-			className={cn('size-10 shrink-0 rounded-cladd-2xs', className)}
-			contentClassName="flex size-full items-center justify-center text-cladd-fg-soft [&>svg]:size-5"
+			className={cn('size-8 shrink-0 rounded-cladd-sm', className)}
+			contentClassName="flex size-full items-center justify-center text-cladd-fg-soft [&>svg]:size-4"
 		>
 			{icone}
 		</Surface>

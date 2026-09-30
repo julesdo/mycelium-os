@@ -15,27 +15,50 @@
 @theme {
 	/* ESPACEMENT — commande les hauteurs de contrôle.
 	 *
-	 * Cladd place son `md` à 28px et réserve `2xl` (48px) aux « full-bleed
-	 * mobile inputs ». Ce produit est précisément ce cas, mais sur TOUS ses
-	 * contrôles : le plancher tactile est de 48px.
+	 * Cladd place son `md` à 28px : c'est un kit d'éditeur piloté à la souris.
+	 * Ce produit se travaille au doigt, donc l'échelle est décalée, et on suit
+	 * ensuite les conventions du kit à la lettre : `md` pour la chrome, `lg` pour
+	 * l'action principale, `sm` pour ce qui est compact. « When in doubt, `md` ».
 	 *
-	 * Deux issues : écrire `size="2xl"` partout, ou décaler l'échelle. La
-	 * documentation de Cladd tranche elle-même — « Don't default to `lg`
-	 * everywhere », « When in doubt, `md` ». On décale donc l'échelle pour que
-	 * le défaut `md` tombe sur le plancher tactile, et on suit ensuite ses
-	 * conventions d'usage à la lettre : `md` pour la chrome, `lg` pour les
-	 * champs principaux, `sm` pour les rangées denses.
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ LE DÉCALAGE ÉTAIT TROP FORT, ET C'EST MESURÉ (30/09/2026)
+	 * ═══════════════════════════════════════════════════════════════════════
 	 *
-	 * La rampe imbriquée en découle : Cladd la calcule à -8px, donc un chip
-	 * `md` fait 40px. C'est voulu — un chip est une étiquette, pas une cible. */
-	--spacing-cladd-3xs: 16px;
-	--spacing-cladd-2xs: 20px;
-	--spacing-cladd-xs: 28px;
-	--spacing-cladd-sm: 40px;
-	--spacing-cladd-md: 48px;
-	--spacing-cladd-lg: 56px;
-	--spacing-cladd-xl: 64px;
-	--spacing-cladd-2xl: 72px;
+	 * Il avait été calé pour que `md` tombe sur 48px, le plancher tactile d'un
+	 * produit alors pensé pour la tablette. Relevé sur les captures de Claude,
+	 * Revolut et Shop (`docs/superpowers/specs/2026-09-30-codes-des-references.md`) :
+	 *
+	 *   bouton courant     références 32–37 pt   ici 48px   (+30 à +50 %)
+	 *   bouton principal   références 42–46 pt   ici 56px   (+20 à +30 %)
+	 *   pastille           références 24–29 pt   ici 40px   (+40 %)
+	 *   rembourrage        références ~16 pt     ici 20px
+	 *   écart courant      références 8–12 pt    ici 16px
+	 *
+	 * Le verdict du terrain, mot pour mot : « tous les éléments UI doivent être
+	 * beaucoup plus petits ! Regarde la taille des éléments sur l'app Claude
+	 * iOS ». Le corps du texte, lui, était juste — calibré à la même mesure.
+	 *
+	 * Les rangs se décalent donc d'un cran vers le bas :
+	 *
+	 *   `md`  36px → le contrôle courant (Claude « Upgrade » 37, Revolut 34)
+	 *   `lg`  44px → l'action principale, et le plancher tactile d'Apple
+	 *   `xl`  52px → le bouton plein d'une feuille (Revolut 52)
+	 *   `sm`  28px → ce qui est compact
+	 *
+	 * La rampe imbriquée suit, à -8px : une pastille `md` fait 28px (Shop 29).
+	 *
+	 * ⚠️ LA GOUTTIÈRE DE PAGE A ÉTÉ DÉCROCHÉE DE `3xs` AVANT LA BASCULE. Elle
+	 * partageait ce jeton avec 433 écarts courants et serait tombée à 12px, plus
+	 * serrée que toutes les références. Elle vit sur `2xs` (16px) dans
+	 * `page.tsx`, `page-ecran.tsx` et l'en-tête d'une page poussée. */
+	--spacing-cladd-3xs: 12px;
+	--spacing-cladd-2xs: 16px;
+	--spacing-cladd-xs: 20px;
+	--spacing-cladd-sm: 28px;
+	--spacing-cladd-md: 36px;
+	--spacing-cladd-lg: 44px;
+	--spacing-cladd-xl: 52px;
+	--spacing-cladd-2xl: 60px;
 
 	/* TYPOGRAPHIE — CALÉE SUR L'ÉCHELLE D'iOS, LE 30/09/2026.
 	 *
@@ -65,14 +88,32 @@
 	 *   4xs 11px → légende, et rien d'autre
 	 *
 	 * ⚠️ LE TEXTE DES BOUTONS EST FIGÉ SUR `xs` PAR LA BIBLIOTHÈQUE, quelle que
-	 * soit leur taille. Il passe donc de 14 à 17px, ce qui est précisément le
-	 * corps d'un bouton iOS — et ce n'est pas un effet de bord, c'est la raison
-	 * pour laquelle `xs` reçoit le corps et pas `sm`. */
-	--text-cladd-md: 22px;
-	--text-cladd-sm: 20px;
-	--text-cladd-xs: 17px;
-	--text-cladd-2xs: 15px;
-	--text-cladd-3xs: 13px;
+	 * soit leur taille.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ RECALÉ LE MÊME JOUR, SUR MESURE CETTE FOIS (30/09/2026, APRÈS-MIDI)
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Le passage aux corps d'Apple avait été fait en points SF Pro. Or Plus
+	 * Jakarta Sans n'est pas SF Pro, et l'œil compare des LARGEURS de texte, pas
+	 * des nombres de points. On a donc mesuré, au navigateur, la taille à
+	 * laquelle notre police rend les mêmes chaînes à la même largeur que dans
+	 * les captures de Claude et de Revolut :
+	 *
+	 *   titre de rangée   Claude 16,4–17,1 · Revolut 15,7   → `xs`  16px
+	 *   sous-ligne        Claude 13,3      · Revolut 12,3   → `2xs` 13px
+	 *   texte de bouton   Claude 12,9                        (reste sur `xs`)
+	 *   en-tête de groupe Revolut 17,4                       → `sm`  18px
+	 *   titre de barre    Claude 15,7                        → `xs`, semi-gras
+	 *
+	 * Le corps ne bouge que d'un pixel. C'est la SOUS-LIGNE qui était fausse de
+	 * deux — et elle porte 280 emplois : c'était l'essentiel du « trop gros »
+	 * lisible, avec la taille des contrôles (voir l'espacement, plus haut). */
+	--text-cladd-md: 20px;
+	--text-cladd-sm: 18px;
+	--text-cladd-xs: 16px;
+	--text-cladd-2xs: 13px;
+	--text-cladd-3xs: 12px;
 	--text-cladd-4xs: 11px;
 
 	/* La famille. Plus Jakarta Sans est une géométrique à hauteur d'x généreuse :
@@ -109,20 +150,22 @@
 	/* RAYONS — piège : Cladd calcule chaque pas avec des numérateurs écrits en
 	 * dur, rapportés à sa base `md`. Décaler l'espacement sans les réécrire
 	 * désaccorderait silencieusement les arrondis de l'échelle. Les trois blocs
-	 * se retunent ensemble, sur la nouvelle base md = 48px.
+	 * se retunent ensemble, sur la base md = 36px depuis le 30/09/2026.
 	 *
-	 * La base passe de 12 à 16px : sur des contrôles de 48px de haut, 12px
-	 * lisait « formulaire administratif ». 16px lit « application tactile »,
-	 * et porte les cartes à 24px (`2xl`), ce qui est la respiration voulue. */
-	--cladd-radius: 16px;
-	--radius-cladd-3xs: calc(var(--cladd-radius) * 16 / 48);
-	--radius-cladd-2xs: calc(var(--cladd-radius) * 20 / 48);
-	--radius-cladd-xs: calc(var(--cladd-radius) * 28 / 48);
-	--radius-cladd-sm: calc(var(--cladd-radius) * 40 / 48);
+	 * ⚠️ LA BASE REDESCEND DE 16 À 12px, ET C'EST LA MÊME MESURE QUE L'ESPACEMENT.
+	 * Sur des contrôles de 48px, 16px lisait « application tactile » ; sur des
+	 * contrôles de 36px, il en ferait des galets. Les cartes (`xl`) tombent à
+	 * 17px, ce que portent les cartes groupées de Revolut et les réglages de
+	 * Claude — entre 16 et 20. */
+	--cladd-radius: 12px;
+	--radius-cladd-3xs: calc(var(--cladd-radius) * 12 / 36);
+	--radius-cladd-2xs: calc(var(--cladd-radius) * 16 / 36);
+	--radius-cladd-xs: calc(var(--cladd-radius) * 20 / 36);
+	--radius-cladd-sm: calc(var(--cladd-radius) * 28 / 36);
 	--radius-cladd-md: var(--cladd-radius);
-	--radius-cladd-lg: calc(var(--cladd-radius) * 56 / 48);
-	--radius-cladd-xl: calc(var(--cladd-radius) * 64 / 48);
-	--radius-cladd-2xl: calc(var(--cladd-radius) * 72 / 48);
+	--radius-cladd-lg: calc(var(--cladd-radius) * 44 / 36);
+	--radius-cladd-xl: calc(var(--cladd-radius) * 52 / 36);
+	--radius-cladd-2xl: calc(var(--cladd-radius) * 60 / 36);
 
 	/* ACCENT — bleu d'encre. Clarté et chroma se règlent séparément pour le
 	 * clair et le sombre : le même bleu ne tient pas sur les deux fonds.

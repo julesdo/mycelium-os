@@ -190,7 +190,7 @@ function CorpsPageEcran({
 			<Page>
 				{/* Hors du conteneur qui défile : cet habillage rend la gouttière que la barre
 				    reprend par sa marge négative, sinon ses outils toucheraient le bord. */}
-				<div className="px-cladd-3xs">
+				<div className="px-cladd-2xs">
 					<Entete entete={entete} donneesPretes />
 				</div>
 				<Volets
@@ -206,7 +206,7 @@ function CorpsPageEcran({
 	if (etat === 'attente' && (volets !== undefined || disposition === 'volets')) {
 		return (
 			<Page>
-				<div className="px-cladd-3xs">
+				<div className="px-cladd-2xs">
 					<Entete entete={entete} donneesPretes={false} />
 				</div>
 				<Volets

@@ -128,14 +128,29 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
 - **Téléphone d'abord**, comme une application iOS native. _(Décision du fondateur, 30/09/2026 :
   « tout est trop petit et galère à manipuler, on doit être full mobile first, comme une app native
   iOS ». Elle remplace le « tablette d'abord » d'origine — la tablette reste servie, elle n'est plus
-  la cible qui tranche.)_ Cibles tactiles **48 px** minimum, et le corps du texte est celui d'iOS :
-  17 px. L'échelle typographique de `tokens.css` est calée sur celle d'Apple — 22 / 20 / **17** /
-  15 / 13 / 11 — parce que 82 % du texte du produit tombait sur 12 ou 14 px, c'est-à-dire sur la
-  LÉGENDE de cette échelle. Deux barrières le tiennent : `src/ui/__tests__/plancher-tactile.test.ts`
-  refuse un `h-auto` qui annule le plancher sans en reposer un, et vérifie le corps dans les jetons.
+  la cible qui tranche.)_
+- **Les tailles viennent des références, et elles sont MESURÉES**
+  (`docs/superpowers/specs/2026-09-30-codes-des-references.md`). Le même jour, le fondateur :
+  « tous les éléments UI doivent être beaucoup plus petits ! Regarde la taille des éléments sur l'app
+  Claude iOS ». Relevé sur les captures de Claude, Shop et Revolut, et calibré au navigateur (la
+  taille à laquelle NOTRE police rend les mêmes chaînes à la même largeur) : le corps du texte était
+  juste, **tout le reste était 20 à 50 % trop gros**. Échelle en vigueur :
+  - texte — 20 / 18 / **16** (corps, et texte des boutons) / **13** (sous-ligne) / 12 / 11 ;
+  - contrôles — `md` **36 px** (le courant), `lg` **44 px** (l'action principale), pastille 28 px ;
+  - rembourrage de carte 16 px, écart courant 12 px, **gouttière de page 16 px** (sur `2xs`, pas
+    `3xs` — elle partageait ce jeton avec 433 écarts).
+    Plancher tactile : **44 pt** (Apple) pour les rangées et l'action principale ; un contrôle
+    secondaire compact peut faire 36 px, comme chez Claude, Revolut et Shop.
+    `src/ui/__tests__/plancher-tactile.test.ts` refuse un `h-auto` sans `min-h-`, et tient le corps et
+    la sous-ligne dans une FOURCHETTE — ni la légende, ni au-dessus de ce que rendent les références.
+- **Contre les « milliards de zones cliquables »** (même relevé) : une rangée de CONTENU ne porte
+  pas de chevron (`genre="contenu"`) — le chevron se réserve à la navigation, comme chez Shop ; le
+  filtrage d'une liste est une FEUILLE ouverte par UN bouton rond, pas une rangée d'onglets ; une
+  action d'en-tête est du TEXTE (`BoutonTexte`, le « Sélectionner » de Mail) ; un seul bouton plein
+  par écran ; une liste longue se groupe, et chaque en-tête porte son compte et son total.
 - **Sous 1024 px, un panneau se PRÉSENTE ; au-dessus, il se déplie.** Déplier deux mille pixels au
   milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
-  application iOS ne le fait. `SectionDepliable` et `RangeeDuDossier` rendent donc une **feuille**
+  application iOS ne le fait. `SectionDepliable` et `RangeeDepliable` rendent donc une **feuille**
   (`Popup`) en dessous de 1024 px et un panneau au-dessus, sur le MÊME état — `useSectionOuverte`.
   C'est la règle d'Apple elle-même (_Layout_) : même fonction, présentation adaptée à la place.
 - **Le langage de tout le monde** : « votre client », « pénalités de retard », « date limite pour

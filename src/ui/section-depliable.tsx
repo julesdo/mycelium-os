@@ -177,12 +177,12 @@ export function SectionDepliable({
 						variant="transparent"
 						outline={false}
 						hoverable={false}
-						// ⚠️ `min-h-15` ET NON LA HAUTEUR DE `size="md"`. Le `h-auto` qu'il
+						// ⚠️ `min-h-13` ET NON LA HAUTEUR DE `size="md"`. Le `h-auto` qu'il
 						// faut poser pour laisser un titre revenir à la ligne annule aussi
 						// le plancher du kit, et la rangée retombait sur la hauteur de son
 						// contenu — sous les 44 pt d'Apple.
 						size="md"
-						className="h-auto min-h-15 w-full rounded-cladd-xl"
+						className="h-auto min-h-13 w-full rounded-cladd-xl"
 						contentClassName="w-full items-center justify-between gap-cladd-3xs p-cladd-2xs"
 					>
 						{/*
