@@ -1,6 +1,20 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { SectionTitle, Segmented, SegmentedButton } from '@cladd-ui/react';
-import { MonitorIcon, MoonIcon, SunIcon } from 'lucide-react';
+import {
+	Building2Icon,
+	ContactIcon,
+	CreditCardIcon,
+	ListChecksIcon,
+	MonitorIcon,
+	MoonIcon,
+	PlugIcon,
+	ShieldIcon,
+	SlidersHorizontalIcon,
+	SunIcon,
+	SunMoonIcon,
+	UserIcon,
+	UsersIcon
+} from 'lucide-react';
 import type { Theme } from '../../app/use-theme';
 import {
 	EmptyState,
@@ -207,7 +221,12 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				}
 			>
 				<Ancre cle="profil" ancres={ancres}>
-					<SectionDepliable cle="profil" titre="Votre profil" {...resumeProfil(pret.profil)}>
+					<SectionDepliable
+						cle="profil"
+						icone={<UserIcon />}
+						titre="Votre profil"
+						{...resumeProfil(pret.profil)}
+					>
 						<SectionProfil {...pret.profil} />
 					</SectionDepliable>
 				</Ancre>
@@ -215,6 +234,7 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				<Ancre cle="etablissement" ancres={ancres}>
 					<SectionDepliable
 						cle="etablissement"
+						icone={<Building2Icon />}
 						titre="Votre établissement"
 						{...resumeEtablissement(pret.identite)}
 					>
@@ -229,7 +249,12 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				  son adresse ou son IBAN, et ne se range pas avec les connexions.
 				*/}
 				<Ancre cle="regles" ancres={ancres}>
-					<SectionDepliable cle="regles" titre="Vos règles de calcul" {...resumeRegles(pret.regles)}>
+					<SectionDepliable
+						cle="regles"
+						icone={<SlidersHorizontalIcon />}
+						titre="Vos règles de calcul"
+						{...resumeRegles(pret.regles)}
+					>
 						<SectionRegles {...pret.regles} />
 					</SectionDepliable>
 				</Ancre>
@@ -237,6 +262,7 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				<Ancre cle="connexions" ancres={ancres}>
 					<SectionDepliable
 						cle="connexions"
+						icone={<PlugIcon />}
 						titre="Connexions"
 						{...resumeConnexions(pret.connexions.statut)}
 					>
@@ -247,6 +273,7 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				<Ancre cle="facturation" ancres={ancres}>
 					<SectionDepliable
 						cle="facturation"
+						icone={<CreditCardIcon />}
 						titre="Facturation"
 						{...resumeFacturation(pret.abonnement, maintenant)}
 					>
@@ -259,7 +286,12 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				</Ancre>
 
 				<Ancre cle="equipe" ancres={ancres}>
-					<SectionDepliable cle="equipe" titre="Équipe" {...resumeEquipe(pret.equipe)}>
+					<SectionDepliable
+						cle="equipe"
+						icone={<UsersIcon />}
+						titre="Équipe"
+						{...resumeEquipe(pret.equipe)}
+					>
 						<AvecLaLecture lecture={pret.equipe}>
 							{(equipe) => <SectionEquipe {...equipe} />}
 						</AvecLaLecture>
@@ -267,7 +299,12 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				</Ancre>
 
 				<Ancre cle="donnees" ancres={ancres}>
-					<SectionDepliable cle="donnees" titre="Vos données" {...resumeDonnees(pret.donnees)}>
+					<SectionDepliable
+						cle="donnees"
+						icone={<ShieldIcon />}
+						titre="Vos données"
+						{...resumeDonnees(pret.donnees)}
+					>
 						<AvecLaLecture lecture={pret.donnees}>
 							{(vos) => <SectionDonnees {...vos} />}
 						</AvecLaLecture>
@@ -275,7 +312,12 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				</Ancre>
 
 				<Ancre cle="carnet" ancres={ancres}>
-					<SectionDepliable cle="carnet" titre="Votre carnet" {...resumeCarnet(pret.intervenants)}>
+					<SectionDepliable
+						cle="carnet"
+						icone={<ContactIcon />}
+						titre="Votre carnet"
+						{...resumeCarnet(pret.intervenants)}
+					>
 						<AvecLaLecture lecture={pret.intervenants}>
 							{(carnet) => <SectionIntervenants {...carnet} />}
 						</AvecLaLecture>
@@ -285,6 +327,7 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				<Ancre cle="mesures" ancres={ancres}>
 					<SectionDepliable
 						cle="mesures"
+						icone={<ListChecksIcon />}
 						titre="Ce que la file propose"
 						{...resumeMesures(pret.mesures)}
 					>
@@ -295,7 +338,12 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				</Ancre>
 
 				<Ancre cle="affichage" ancres={ancres}>
-					<SectionDepliable cle="affichage" titre="Affichage" {...resumeAffichage(pret.theme)}>
+					<SectionDepliable
+						cle="affichage"
+						icone={<SunMoonIcon />}
+						titre="Affichage"
+						{...resumeAffichage(pret.theme)}
+					>
 						<ContenuAffichage theme={pret.theme} onChoisirTheme={pret.onChoisirTheme} />
 					</SectionDepliable>
 				</Ancre>

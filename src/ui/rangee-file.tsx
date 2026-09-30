@@ -323,6 +323,25 @@ export function RangeeFile({
 			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
+			{/*
+			  ⚠️ PAS D'AVATAR SUR CETTE RANGÉE-CI, ET C'EST UNE MESURE, PAS UN OUBLI.
+
+			  Il a été posé le 30/09/2026, par cohérence avec les listes de dossiers
+			  et de clients où il a tout changé. Relevé au navigateur à 375 px : la
+			  phrase d'obstacle tombait de 303 à 247 px et courait sur QUATRE à CINQ
+			  lignes, et l'écran du matin prenait 265 px de plus.
+
+			  Il a donc été retiré, pour deux raisons. La rangée de file porte DÉJÀ
+			  trois signes distinctifs que les listes n'avaient pas — une puce de
+			  date teintée par l'urgence, le nom en gras, le montant en gras — donc
+			  l'avatar n'y ajoutait presque rien. Et ce qui rend cette rangée haute
+			  n'est pas son absence de signe : c'est la LONGUEUR de sa phrase
+			  d'obstacle, qui porte une conséquence juridique et ne se raccourcit
+			  pas à la légère.
+
+			  C'est la même arbitration qu'à la ligne du montant, plus haut : sur
+			  cette rangée, la largeur de la phrase passe avant tout le reste.
+			*/}
 			{destination === undefined ? (
 				<span className="flex">{lecture}</span>
 			) : (

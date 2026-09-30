@@ -145,3 +145,46 @@ export function VignetteRangee({
 		</Surface>
 	);
 }
+
+/**
+ * LA MÊME VIGNETTE, SANS FAMILLE — pour ce qui n'est pas un objet du domaine.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI LES RÉGLAGES N'ONT PAS DE TEINTE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'écran du compte porte dix rangées — votre profil, vos règles de calcul, vos
+ * connexions, votre équipe, l'affichage… Aucune n'est de l'argent, du temps, du
+ * papier, un envoi, une question ou la machine : ce sont des RÉGLAGES, et leur
+ * coller une famille au chausse-pied ferait exactement ce que ce fichier
+ * interdit — une couleur qui ne veut rien dire, c'est-à-dire un ornement. Trois
+ * ajouts de ce genre et « la teinte dit de quoi il s'agit » ne tient plus.
+ *
+ * iOS colore pourtant ses réglages, et la couleur n'y signifie rien : elle sert
+ * de repère de position, et ça marche. On ne le copie pas ici, parce que ce
+ * produit a déjà un système où la couleur PORTE une information — les seuils —
+ * et qu'un second système décoratif à côté rendrait le premier illisible.
+ *
+ * Ce qui manquait vraiment n'était pas la couleur, c'était la FORME : dix
+ * rangées de texte gris sans un signe. Un glyphe distinct par réglage suffit à
+ * donner à l'œil son point d'accroche, et c'est le registre sobre de Wise —
+ * monochrome, et parfaitement balayable.
+ */
+export function VignetteIcone({
+	icone,
+	className
+}: {
+	readonly icone: ReactNode;
+	readonly className?: string;
+}) {
+	return (
+		<Surface
+			variant="solid"
+			outline={false}
+			className={cn('size-10 shrink-0 rounded-cladd-2xs', className)}
+			contentClassName="flex size-full items-center justify-center text-cladd-fg-soft [&>svg]:size-5"
+		>
+			{icone}
+		</Surface>
+	);
+}

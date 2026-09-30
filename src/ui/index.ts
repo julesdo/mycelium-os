@@ -31,7 +31,7 @@ export { CarteEtape, Echelon, FilDuDossier, GestesDeLEtape } from './fil-dossier
 export { FaitsDuDossier, type FaitDuDossier } from './faits-dossier';
 export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qui-bloque';
 export { ListeDeRangees, RangeeDepliable } from './liste-rangees';
-export { FAMILLES, VignetteRangee, type FamilleRangee } from './familles';
+export { FAMILLES, VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
 export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
 export { Telephone } from './telephone';
 export { Page, PageHeader, PageBody, PageHero } from './page';

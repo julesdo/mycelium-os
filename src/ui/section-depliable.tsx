@@ -11,6 +11,7 @@ import {
 	Surface
 } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
+import { VignetteIcone } from './familles';
 import { useDeuxVolets } from './maitre-detail';
 
 /**
@@ -116,6 +117,7 @@ export function SectionDepliable({
 	titre,
 	legende,
 	valeur,
+	icone,
 	children
 }: {
 	/** L'identité de la section, celle que l'adresse porte. */
@@ -130,6 +132,14 @@ export function SectionDepliable({
 	 * sections pour savoir laquelle parle.
 	 */
 	readonly valeur?: string;
+	/**
+	 * Le glyphe de la rangée, dans une vignette neutre.
+	 *
+	 * ⚠️ SANS TEINTE, ET C’EST VOULU : un réglage n’est pas un objet du domaine,
+	 * donc il n’a pas de famille. Ce qui lui manquait n’était pas la couleur mais
+	 * la FORME — dix rangées de texte gris sans un signe. Voir `familles.tsx`.
+	 */
+	readonly icone?: ReactNode;
 	readonly children: ReactNode;
 }) {
 	/**
@@ -182,6 +192,7 @@ export function SectionDepliable({
 						  moitié de la rangée ; la valeur revient à la ligne plutôt que de
 						  perdre sa fin.
 						*/}
+						{icone === undefined ? null : <VignetteIcone icone={icone} />}
 						<span className="flex min-w-0 flex-1 basis-1/2 flex-col items-start text-left">
 							<span className="text-cladd-sm leading-tight font-bold tracking-tight">{titre}</span>
 							{legende === undefined ? null : (
