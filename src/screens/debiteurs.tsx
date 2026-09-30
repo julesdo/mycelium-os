@@ -1,19 +1,13 @@
 import { useState, type ReactNode } from 'react';
-import {
-	Button,
-	Chip,
-	ListButton,
-	ListItem,
-	Popup,
-	PopupContent,
-	SearchField
-} from '@cladd-ui/react';
-import { CheckIcon, RotateCcwIcon, SlidersHorizontalIcon, UploadIcon, XIcon } from 'lucide-react';
+import { Button, Chip, Popup, PopupContent, SearchField } from '@cladd-ui/react';
+import { CheckIcon, SlidersHorizontalIcon, UploadIcon, XIcon } from 'lucide-react';
 import {
 	Avatar,
 	BoutonPrincipal,
 	Lien,
-	CarteListe,
+	BoutonTexte,
+	EnTeteDeGroupe,
+	LigneAnalyse,
 	LigneBouton,
 	ListeAnalyses,
 	MaitreDetail,
@@ -278,93 +272,43 @@ function delaiCourt(jours: number): string {
 	return `Règle à ${arrondi} j`;
 }
 
-/** La même habitude en une phrase, avec ce qui l'établit. Portée en `title`. */
-function habitudeEnClair(habitude: HabitudeDeLaLigne): string {
-	const arrondi = Math.round(habitude.delaiMedianJours);
-	const delai =
-		arrondi === 0
-			? 'le jour de son échéance'
-			: arrondi < 0
-				? `${Math.abs(arrondi)} jour${pluriel(arrondi)} avant son échéance`
-				: `${arrondi} jour${pluriel(arrondi)} après son échéance`;
-	return `Règle habituellement ${delai}, sur ${habitude.echantillon} règlements observés.`;
-}
-
 /**
- * CE QU'IL DOIT, ET COMMENT IL PAIE — L'UN SOUS L'AUTRE.
+ * LA LIGNE SOUS LE NOM D'UN CLIENT — ce qui décide de ce qu'on en fait
+ * aujourd'hui, en trois mots au plus par fait.
  *
- * L'encours reste la colonne qui commande la lecture — un gérant arbitre entre
- * douze mille euros et trois cents, pas entre deux raisons sociales. Mais il
- * reste au corps courant : dans une rangée, un chiffre de trente-deux pixels
- * écrase le nom.
+ * ⚠️ ELLE REMPLACE DEUX PUCES ET UNE COLONNE (30/09/2026). La rangée portait
+ * une puce orange « 4 échues », une puce rouge « Procédure collective » et, à
+ * droite, l'encours, « Rythme rompu » et le délai habituel sur trois lignes :
+ * quatre formes différentes pour une seule rangée, et la seule liste du produit
+ * qui ne ressemblait pas aux autres. C'est désormais la rangée partagée — celle
+ * des dossiers, de l'écran du matin, et des demandes de paiement de Wise :
+ * l'encours à droite, le délai habituel dessous, et les faits en une ligne.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ L'HABITUDE SE LOGE ICI, PAS DANS LE PIED DE LA RANGÉE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Et c'est une mesure qui l'a décidé, pas un goût. Cette colonne-ci est large
- * de ce que mesure le montant — 91 px à 375 px, pour « 12 878,50 € » — et cette
- * largeur ne dépend pas de la raison sociale. La colonne du NOM, elle, n'a que
- * 124 px au téléphone : tout ce qu'on y ajoute passe à la ligne et allonge la
- * rangée du client le plus abîmé, ce que le paragraphe des angles morts de cet
- * écran a déjà fait corriger une fois.
- *
- * Lue de haut en bas, la colonne fait une phrase : ce qu'il doit, ce qui
- * cloche, à quel rythme il règle d'ordinaire.
- *
- * ⚠️ LES DEUX MENTIONS TIENNENT SOUS 91 PX, ET C'EST LA CONTRAINTE QUI A CHOISI
- * LES MOTS. Mesurées au navigateur, dans la fonte du produit : « Rythme rompu »
- * 84 px, « Règle à 12 j » 63 px. Une formule qui aurait dit les deux d'un coup
- * — « Rompu · 12 j d'ordinaire », 132 px — élargissait la colonne de droite et
- * reprenait au nom les pixels qu'on venait de lui rendre.
+ * ⚠️ AUCUNE COULEUR. Le vert, l'ambre et le rouge ne disent que les seuils dans
+ * ce produit ; un état au registre se DIT, il ne se peint pas.
  *
  * ⚠️ LA RUPTURE NE DIT PAS DE COMBIEN, et c'est délibéré : l'écart et le constat
- * entier — la phrase du domaine, avec le nombre de règlements qui l'établit —
- * vivent sur la page du client, à un doigt d'ici. Un « +47 j » posé seul ferait
- * arbitrer sur un nombre sorti de son contexte, alors que le délai habituel est
- * écrit juste en dessous.
- *
- * ⚠️ NI ACCENT, NI PUCE, NI ICÔNE SUR LA RUPTURE. Ce qui la fait trouver, c'est
- * qu'elle est la seule mention en pleine encre dans une colonne de mentions
- * grises ; la peindre en rouge la ferait lire comme un état au registre, qui est
- * le seul fait de cette rangée à mériter une couleur. L'icône a été essayée,
- * mesurée, retirée : le chevron de la page du client portait la colonne de 91 à
- * 101 px — dix pixels repris au nom sur CHAQUE rangée, y compris celles qui
- * n'ont aucune rupture, pour un glyphe de douze pixels dont la pleine encre
- * faisait déjà le travail.
- *
- * ⚠️ RIEN QUAND L'HABITUDE N'EST PAS ÉTABLIE. Ni « — », ni « 0 j », ni
- * « inconnu » : quatre règlements datés sont le minimum du domaine, et en
- * dessous il n'y a pas un chiffre à nuancer, il n'y a rien. Ce que ce silence
- * coûte est compté au sommaire, en toutes lettres, une fois.
- *
- * ⚠️ `fg-softer` ET PAS `fg-softest` — même raison que la mention d'ordre en
- * tête de carte, mesurée au navigateur : le cran le plus pâle tombe à 4,45 sur
- * `verre-carte` à ce corps, sous le seuil de 4,5.
+ * entier vivent sur la page du client, à un doigt d'ici. Et RIEN QUAND
+ * L'HABITUDE N'EST PAS ÉTABLIE — ni « — », ni « 0 j » : en dessous de quatre
+ * règlements datés, il n'y a pas un chiffre à nuancer, il n'y a rien. Ce que ce
+ * silence coûte est écrit sous la liste, avec ce que le logiciel ne voit pas.
  */
-function ColonneDroite({
-	encours,
-	habitude
-}: {
-	encours: bigint;
-	habitude: HabitudeDeLaLigne | undefined;
-}) {
-	return (
-		<span className="flex shrink-0 flex-col items-end gap-0.5">
-			<span className="text-cladd-sm font-bold tabular-nums">{eurosCentimes(encours)}</span>
-			{habitude?.rompu === true ? (
-				<span className="text-cladd-2xs font-semibold">Rythme rompu</span>
-			) : null}
-			{habitude === undefined ? null : (
-				<span
-					className="text-cladd-2xs text-cladd-fg-softer tabular-nums"
-					title={habitudeEnClair(habitude)}
-				>
-					{delaiCourt(habitude.delaiMedianJours)}
-				</span>
-			)}
-		</span>
-	);
+function precisionDuClient(
+	debiteur: LigneDebiteur,
+	habitude: HabitudeDeLaLigne | undefined
+): string | undefined {
+	const faits = [
+		debiteur.facturesEchues === 0
+			? null
+			: `${debiteur.facturesEchues} échue${pluriel(debiteur.facturesEchues)}`,
+		debiteur.santeFinanciere === 'RADIEE'
+			? 'Radié'
+			: debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE'
+				? 'Procédure collective'
+				: null,
+		habitude?.rompu === true ? 'Rythme rompu' : null
+	].filter((fait): fait is string => fait !== null);
+	return faits.length === 0 ? undefined : faits.join(' · ');
 }
 
 /**
@@ -596,9 +540,6 @@ export function EcranDebiteurs({
 		)
 	);
 
-	/** Vrai dès qu'un geste de lecture cache quelque chose. */
-	const filtree = terme !== '' || filtres.size > 0;
-
 	/*
 	  ═════════════════════════════════════════════════════════════════════════
 	  LA BARRE : LA RECHERCHE ET UN SEUL FILTRE — comme les dossiers, et comme
@@ -770,112 +711,54 @@ export function EcranDebiteurs({
 	const liste =
 		retenus.length === 0 ? (
 			/*
-			  LE VIDE DE LA RECHERCHE MONTRE LE CHEMIN (règle d'écran n° 4).
-
-			  ⚠️ IL NE PASSE PAS PAR L'ÉTAT VIDE DE `PageEcran`, QUI REMPLACE L'ÉCRAN :
-			  la recherche et les pilules disparaîtraient avec la liste, et le gérant
-			  n'aurait plus rien pour défaire ce qu'il vient de faire. Le message vit
-			  donc DANS la carte, sous les gestes qui l'ont produit.
+			  LE VIDE DE LA RECHERCHE MONTRE LE CHEMIN (règle d'écran n° 4). Il ne passe
+			  pas par l'état vide de `PageEcran`, qui remplacerait l'écran : la barre et
+			  ses filtres disparaîtraient avec la liste, et le gérant n'aurait plus rien
+			  pour défaire ce qu'il vient de faire.
 			*/
-			<CarteListe titre="Aucun résultat">
-				<ListItem className="text-cladd-fg-soft">
+			<div className="flex flex-col items-start gap-1 px-1">
+				<p className="text-cladd-xs text-cladd-fg-soft">
 					Aucun de vos {debiteurs.length} clients ne répond à ce que vous cherchez.
-				</ListItem>
-				<ListButton icon={<RotateCcwIcon />} onClick={onToutAfficher}>
-					Afficher les {debiteurs.length} clients
-				</ListButton>
-			</CarteListe>
+				</p>
+				<BoutonTexte onClick={onToutAfficher}>Afficher les {debiteurs.length} clients</BoutonTexte>
+			</div>
 		) : (
-			<CarteListe
-				titre={
-					filtree
-						? `${retenus.length} sur ${debiteurs.length} client${pluriel(debiteurs.length)}`
-						: `${debiteurs.length} client${pluriel(debiteurs.length)}`
-				}
-				actions={
-					/*
-					  ⚠️ `fg-softer`, ET PAS `fg-softest`. Mesuré au navigateur en sombre :
-					  `fg-softest` rend rgb(133,139,147), et sur le fond de `verre-carte`
-					  — oklch(0.18 0.012 276) à 72 % — le rapport tombe à 4,45 pour un
-					  corps de 12 px, sous le seuil de 4,5. `fg-softer` le porte à 5,7.
-					  Le cran le plus pâle convient à une mention qu'on ne lit qu'une
-					  fois ; celle-ci explique POURQUOI la liste est rangée ainsi, et se
-					  relit à chaque visite.
-					*/
-					<span className="shrink-0 text-cladd-2xs text-cladd-fg-softer">
-						Le plus gros encours d’abord
-					</span>
-				}
-			>
-				{retenus.map((debiteur) => (
-					<ListButton
-						key={debiteur._id}
-						as={Lien}
-						to="/app/clients/$id"
-						/*
-						  ⚠️ UNE ASSERTION, ET UNE SEULE, À CET ENDROIT PRÉCIS. `ListButton` est
-						  polymorphe : en passant par son `as`, le générique du routeur est
-						  effacé et `params` retombe sur une signature large. Le `to` ci-dessus
-						  reste, lui, un littéral que `destinations-existent.test.ts` balaie.
-						*/
-						params={{ id: debiteur._id } as never}
-						selected={choisi === debiteur._id}
-						/*
-						  ⚠️ CHAQUE LIGNE PORTE UN AVATAR. Il donne à l'œil un point d'accroche
-						  fixe à gauche, et surtout il rend deux raisons sociales proches —
-						  « Ateliers Martin » et « Ateliers Martin Fils » — distinguables à la
-						  couleur avant d'être lues. Sur un produit où se tromper de débiteur
-						  envoie un décompte au mauvais tiers, ça compte.
-						*/
-						icon={<Avatar nom={debiteur.denomination} />}
-						footer={
-							/*
-							  DEUX PUCES AU PLUS, ET SEULEMENT CE QUI TOUCHE À L'ARGENT.
-
-							  Le retard, et l'état au registre. Ce sont les deux seuls faits qui
-							  décident de ce qu'on fait de ce client aujourd'hui, et ce sont les
-							  deux seuls qui ne se devinent pas depuis son encours.
-
-							  ⚠️ ET LA RUPTURE D'HABITUDE N'EN EST PAS UNE TROISIÈME, alors que
-							  c'était le réflexe. Essayée ici, mesurée au navigateur à 375 px :
-							  la colonne du nom ne dispose que de 124 px, « 4 échues » en prend
-							  74 avec son écart, et une puce « Rythme rompu » demande 110 px —
-							  elle passait à la ligne et portait la rangée de l'imprimerie à
-							  124 px contre 65 pour les autres. C'est mot pour mot le défaut que
-							  le paragraphe des angles morts, plus haut, a fait sortir d'ici :
-							  le client le plus abîmé produisait la rangée la plus haute.
-
-							  Elle est donc partie dans la colonne de droite, dont la largeur
-							  est fixée par le montant et non par la raison sociale.
-
-							  ⚠️ LES DEUX MANQUES — SIREN, SECTEUR — SONT PARTIS AU SOMMAIRE, et
-							  le raisonnement complet est écrit là-haut, avec la mesure qui l'a
-							  imposé. En bref : une puce de plus coûtait une ligne entière dans
-							  une colonne de 180 px, et elle ne disait jamais la conséquence.
-
-							  Les puces en pied de ligne plutôt qu'en rangée séparée : elles
-							  qualifient le débiteur, elles ne sont pas une information de même
-							  niveau que son nom.
-							*/
-							<span className="flex flex-wrap items-center gap-1.5">
-								{debiteur.facturesEchues > 0 ? (
-									<Chip size="sm" color="orange">
-										{debiteur.facturesEchues} échue{pluriel(debiteur.facturesEchues)}
-									</Chip>
-								) : null}
-								{debiteur.santeFinanciere !== 'SAINE' && debiteur.santeFinanciere !== 'INCONNUE' ? (
-									<Chip size="sm" color="red">
-										{debiteur.santeFinanciere === 'RADIEE' ? 'Radié' : 'Procédure collective'}
-									</Chip>
-								) : null}
-							</span>
-						}
-						after={<ColonneDroite encours={debiteur.encours} habitude={habitudeDe(debiteur)} />}
-					>
-						{debiteur.denomination}
-					</ListButton>
-				))}
-			</CarteListe>
+			<section className="flex flex-col gap-cladd-3xs">
+				{/*
+				  ⚠️ L'ORDRE EST ÉCRIT À L'ÉCRAN, DANS L'EN-TÊTE DU GROUPE — celui des
+				  dossiers et de l'écran du matin, avec son compte et son total. Il était
+				  une carte à titre en capitales (« 3 CLIENTS ») et une mention à droite,
+				  qui passaient sur deux lignes au téléphone.
+				*/}
+				<EnTeteDeGroupe
+					libelle="Le plus gros encours d’abord"
+					nombre={retenus.length}
+					total={retenus.reduce((somme, debiteur) => somme + debiteur.encours, 0n)}
+				/>
+				<ListeAnalyses>
+					{retenus.map((debiteur) => {
+						const habitude = habitudeDe(debiteur);
+						return (
+							<LigneAnalyse
+								key={debiteur._id}
+								genre="contenu"
+								vers="/app/clients/$id"
+								parametres={{ id: debiteur._id }}
+								// La liste sert de maître au-delà de 1024 px : l'anneau dit
+								// quel client est ouvert à droite.
+								selectionnee={choisi === debiteur._id}
+								titre={debiteur.denomination}
+								precision={precisionDuClient(debiteur, habitude)}
+								valeur={eurosCentimes(debiteur.encours)}
+								{...(habitude === undefined
+									? {}
+									: { sousValeur: delaiCourt(habitude.delaiMedianJours) })}
+								avatar={<Avatar nom={debiteur.denomination} className="size-10" />}
+							/>
+						);
+					})}
+				</ListeAnalyses>
+			</section>
 		);
 
 	return avecLaPage(
