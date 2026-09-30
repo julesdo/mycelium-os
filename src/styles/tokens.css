@@ -1028,8 +1028,18 @@ body {
 	 * Même raisonnement, et même jeton en miroir, que `--spacing-barre-publique`
 	 * sur la page commerciale.
 	 *
-	 * 64 px = 48 de contrôle (le plancher tactile) + deux fois 8 de bandeau. */
-	--spacing-barre-app: 64px;
+	 * ⚠️ LA BARRE HAUTE N'EXISTE PLUS, ET SON DÉGAGEMENT LUI AVAIT SURVÉCU. Elle a
+	 * été retirée de la coquille (`app/shell.tsx`), et ses 64 px fixes sont restés
+	 * en haut de chaque écran — 48 de contrôle et deux bandeaux de 8, pour un
+	 * contrôle qui n'était plus là. Relevé le 30/09/2026 : dans Safari, 64 px vides
+	 * au-dessus de chaque titre.
+	 *
+	 * Ce qui reste à dégager, c'est la zone de l'HORLOGE : l'application s'installe
+	 * en plein écran (`display: standalone`, `viewport-fit=cover`), et l'heure et
+	 * l'île passent alors par-dessus le contenu. `safe-area-inset-top` la mesure ;
+	 * dans un navigateur, elle vaut zéro. Les 16 px sont la respiration d'un
+	 * titre sous la barre d'état, la gouttière de la page. */
+	--spacing-barre-app: calc(env(safe-area-inset-top, 0px) + 16px);
 
 	/* LA COURBE DU SEGMENT QUI GLISSE, dans la barre basse.
 	 *

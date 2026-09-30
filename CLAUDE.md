@@ -160,6 +160,11 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   filtrage d'une liste est une FEUILLE ouverte par UN bouton rond, pas une rangée d'onglets ; une
   action d'en-tête est du TEXTE (`BoutonTexte`, le « Sélectionner » de Mail) ; un seul bouton plein
   par écran ; une liste longue se groupe, et chaque en-tête porte son compte et son total.
+- **Le grand titre d'une page poussée DÉFILE, comme sur iOS** : la barre collante ne garde que le
+  retour, et un petit titre centré y apparaît quand le grand passe dessous (`EnteteDetail`). Elle
+  faisait 162 px, soit 19 % d'un écran de téléphone en permanence ; elle en fait 64. Le dégagement
+  du haut suit la zone de l'horloge (`safe-area-inset-top`) : les 64 px fixes d'une barre haute
+  retirée depuis longtemps lui avaient survécu.
 - **Sous 1024 px, un panneau se PRÉSENTE ; au-dessus, il se déplie.** Déplier deux mille pixels au
   milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
   application iOS ne le fait. `SectionDepliable` et `RangeeDepliable` rendent donc une **feuille**
