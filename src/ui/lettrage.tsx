@@ -257,7 +257,12 @@ export function Lettrage({
 					<div className="flex flex-wrap items-center gap-cladd-3xs">
 						<Input
 							size="lg"
-							className="min-w-40 flex-1"
+							// ⚠️ `min-w-48` ET NON `min-w-40` : depuis que le corps du produit
+							// est passé à celui d'iOS, « Date de valeur » ne tenait plus dans
+							// 160px et se coupait à « Date de valeu ». Un libellé de champ
+							// amputé de sa dernière lettre est un champ qu'on remplit de
+							// travers.
+							className="min-w-48 flex-1"
 							value={montant}
 							onChange={setMontant}
 							placeholder="4820,00"
@@ -279,7 +284,12 @@ export function Lettrage({
 						<DatePicker
 							size="lg"
 							outline
-							className="min-w-40 flex-1"
+							// ⚠️ `min-w-48` ET NON `min-w-40` : depuis que le corps du produit
+							// est passé à celui d'iOS, « Date de valeur » ne tenait plus dans
+							// 160px et se coupait à « Date de valeu ». Un libellé de champ
+							// amputé de sa dernière lettre est un champ qu'on remplit de
+							// travers.
+							className="min-w-48 flex-1"
 							value={date}
 							onChange={setDate}
 							placeholder="Date de valeur"

@@ -5,10 +5,14 @@ import {
 	AccordionPanel,
 	AccordionTrigger,
 	Button,
+	Popup,
+	PopupContent,
 	SectionTitle,
 	Surface
 } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
+import { useDeuxVolets } from './maitre-detail';
+import { useSectionOuverte } from './section-depliable';
 
 /**
  * DES RANGÉES QUI PORTENT LEUR RÉPONSE, ET S'OUVRENT EN PLACE.
@@ -116,37 +120,95 @@ export function RangeeDuDossier({
 	readonly glose?: string;
 	readonly children: ReactNode;
 }) {
+	const { ouverte, fermer } = useSectionOuverte(cle);
+	/**
+	 * ⚠️ DEUX PRÉSENTATIONS POUR UN SEUL ÉTAT, ET C'EST LE CŒUR DU 30/09/2026.
+	 *
+	 * Le reproche du terrain : « galère à manipuler […] on doit être full mobile
+	 * first, comme une app native iOS ». Déplier « Vos réponses » injectait deux
+	 * mille pixels AU MILIEU du défilement : on perdait sa place, et il fallait
+	 * remonter pour refermer. Aucune application iOS ne fait ça — eBay, TheFork,
+	 * Yahoo Finance et Fiverr présentent tous ce contenu-là en FEUILLE, qu'on
+	 * renvoie d'un glissement pour se retrouver exactement où l'on était.
+	 *
+	 * Au-delà de 1024 px la feuille n'a plus de sens : la colonne de droite est
+	 * libre, et le fil ne bouge pas quand on y déplie quelque chose.
+	 *
+	 * C'est la règle d'Apple elle-même, page *Layout* : « Keep functionality the
+	 * same as size classes change […] you can change the amount of functionality
+	 * that's visible onscreen as the amount of space changes. » Même état, même
+	 * contenu, même rangée — seule la présentation change.
+	 */
+	const deuxVolets = useDeuxVolets();
+
+	const contenu = (
+		<>
+			{glose === undefined ? null : (
+				<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">{glose}</p>
+			)}
+			{children}
+		</>
+	);
+
 	return (
 		<AccordionItem value={cle} id={`rangee-${cle}`}>
 			<AccordionTrigger>
+				{/*
+				  ⚠️ `min-h-15` ET NON LA HAUTEUR DE `size="md"`. Le `h-auto` qu'il
+				  faut poser pour laisser un titre revenir à la ligne annule aussi le
+				  plancher du kit : la rangée retombait sur la hauteur de son
+				  contenu, soit 34 px — sous les 44 pt d'Apple, et c'est très
+				  exactement le « galère à manipuler » du terrain. 60 px est la
+				  hauteur d'une rangée de liste groupée iOS qui porte un intitulé et
+				  sa valeur.
+				*/}
 				<Button
 					variant="transparent"
 					outline={false}
 					hoverable={false}
-					// `md` vaut 48 px sur l'échelle décalée du produit : le plancher
-					// tactile, sans hauteur écrite à la main.
 					size="md"
-					className="h-auto w-full rounded-none"
-					contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs"
+					className="h-auto min-h-15 w-full rounded-none"
+					contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
 				>
-					<span className="min-w-0 truncate text-left text-cladd-xs font-semibold">{titre}</span>
+					<span className="min-w-0 text-left text-cladd-xs font-semibold">{titre}</span>
 					<span className="flex shrink-0 items-center gap-cladd-3xs">
-						<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">{valeur}</span>
+						<span className="text-cladd-xs text-cladd-fg-soft tabular-nums">{valeur}</span>
 						<AccordionIndicator className="flex text-cladd-fg-softer transition-transform duration-150 data-[open]:rotate-90">
-							<ChevronRightIcon className="size-4" aria-hidden />
+							<ChevronRightIcon className="size-5" aria-hidden />
 						</AccordionIndicator>
 					</span>
 				</Button>
 			</AccordionTrigger>
 
-			<AccordionPanel>
-				<div className="flex flex-col gap-cladd-2xs px-cladd-2xs pb-cladd-2xs">
-					{glose === undefined ? null : (
-						<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">{glose}</p>
-					)}
-					{children}
-				</div>
-			</AccordionPanel>
+			{deuxVolets ? (
+				<AccordionPanel>
+					<div className="flex flex-col gap-cladd-2xs px-cladd-2xs pb-cladd-2xs">{contenu}</div>
+				</AccordionPanel>
+			) : (
+				/*
+				  ⚠️ LA FEUILLE PORTE LE TITRE DE LA RANGÉE, et rien d'autre. Une
+				  feuille sans titre laisse le doigt qui l'a ouverte sans preuve
+				  qu'il a ouvert la bonne — c'est le défaut qui fait refermer pour
+				  vérifier, puis rouvrir.
+
+				  Elle se renvoie de trois façons : le glissement, la croix, et
+				  l'appui hors du cadre. Les trois passent par `onOpenChange`, donc
+				  par le même `onFermer` : un état d'ouverture qui se perdrait sur
+				  l'un des trois laisserait la rangée allumée sur une feuille
+				  fermée, et le prochain appui ne ferait rien du tout.
+				*/
+				<Popup
+					open={ouverte}
+					onOpenChange={(o) => {
+						if (!o) fermer();
+					}}
+					headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
+				>
+					<PopupContent>
+						<div className="flex flex-col gap-cladd-2xs">{contenu}</div>
+					</PopupContent>
+				</Popup>
+			)}
 		</AccordionItem>
 	);
 }

@@ -37,14 +37,43 @@
 	--spacing-cladd-xl: 64px;
 	--spacing-cladd-2xl: 72px;
 
-	/* TYPOGRAPHIE — remontée d'un cran. Le texte des boutons, figé sur `xs` par
-	 * la bibliothèque quelle que soit la taille, passe ainsi de 12px à 14px. */
-	--text-cladd-md: 18px;
-	--text-cladd-sm: 16px;
-	--text-cladd-xs: 14px;
-	--text-cladd-2xs: 12px;
-	--text-cladd-3xs: 10px;
-	--text-cladd-4xs: 8px;
+	/* TYPOGRAPHIE — CALÉE SUR L'ÉCHELLE D'iOS, LE 30/09/2026.
+	 *
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ⚠️ L'APPLICATION ENTIÈRE ÉTAIT ÉCRITE EN CORPS DE LÉGENDE
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Relevé : 280 emplois de `text-cladd-2xs` et 180 de `text-cladd-xs` contre
+	 * 90 pour tout le reste. Quatre-vingt-deux pour cent du texte du produit
+	 * tombait donc sur 12 ou 14px.
+	 *
+	 * Or l'échelle d'Apple place le CORPS à 17pt, la sous-ligne à 15, la note de
+	 * bas de page à 13 et la légende à 12. Écrire une application en 12-14px,
+	 * c'est l'écrire tout entière en LÉGENDE — et c'est exactement le reproche
+	 * du terrain, mot pour mot : « tout est trop petit et galère à manipuler ».
+	 *
+	 * Le remède n'est pas de reprendre cinq cent soixante classes une à une.
+	 * C'est de décaler l'échelle, comme on l'a déjà fait pour l'espacement
+	 * quelques lignes plus haut afin que `md` tombe sur le plancher tactile de
+	 * 48px. Le kit garde ses conventions ; seule la base change.
+	 *
+	 *   md  22px → Title 2, les titres d'écran portés par un contrôle
+	 *   sm  20px → Title 3, ce qui s'affirme dans une carte
+	 *   xs  17px → CORPS. C'est le cheval de trait du produit.
+	 *   2xs 15px → sous-ligne : ce qui accompagne sans être le sujet
+	 *   3xs 13px → note de bas de page
+	 *   4xs 11px → légende, et rien d'autre
+	 *
+	 * ⚠️ LE TEXTE DES BOUTONS EST FIGÉ SUR `xs` PAR LA BIBLIOTHÈQUE, quelle que
+	 * soit leur taille. Il passe donc de 14 à 17px, ce qui est précisément le
+	 * corps d'un bouton iOS — et ce n'est pas un effet de bord, c'est la raison
+	 * pour laquelle `xs` reçoit le corps et pas `sm`. */
+	--text-cladd-md: 22px;
+	--text-cladd-sm: 20px;
+	--text-cladd-xs: 17px;
+	--text-cladd-2xs: 15px;
+	--text-cladd-3xs: 13px;
+	--text-cladd-4xs: 11px;
 
 	/* La famille. Plus Jakarta Sans est une géométrique à hauteur d'x généreuse :
 	 * elle tient les petits corps sur une tablette tenue à bout de bras, là où
@@ -117,12 +146,24 @@
 
 	/* Les deux corps de chiffre. Le taux EGalim est le seul nombre que le gérant
 	 * retient de l'écran ; le second sert aux montants qui l'accompagnent. */
-	--text-letikette-taux: 56px;
+	/* ⚠️ FLUIDE DEPUIS LE 30/09/2026, ET C'EST UNE COUPURE MESURÉE. À 56px fixes,
+	 * « 18 443,92 € » demandait 318px pour un bloc qui en offre 287 à 375px : le
+	 * chiffre le plus important de l'écran de révélation était COUPÉ, en silence,
+	 * sur le format d'écran le plus fréquent. Un montant tronqué sur un écran qui
+	 * vend le produit par son montant est la pire faute que ce fichier puisse
+	 * laisser passer. */
+	--text-letikette-taux: clamp(36px, 10vw, 56px);
 	--text-letikette-chiffre: 32px;
-	/* Le titre d'écran. `--text-cladd-md` (18px) est un corps de contrôle, pas
-	 * un titre : sous une barre de navigation qui porte déjà le nom de la
-	 * section, un H1 de 18px ne se distingue plus de la légende qui le suit. */
-	--text-letikette-titre: 24px;
+	/* Le titre d'écran. `--text-cladd-md` est un corps de contrôle, pas un
+	 * titre : sous une barre de navigation qui porte déjà le nom de la section,
+	 * un H1 au corps d'un bouton ne se distingue plus de la légende qui le suit.
+	 *
+	 * ⚠️ 24 → 30px LE 30/09/2026. Le grand titre est la signature d'une
+	 * application iOS — 34pt chez Apple, posé DANS le flux et non dans la barre.
+	 * 30px ici parce que Plus Jakarta Sans rend plus large qu'SF Pro au même
+	 * corps, et qu'un nom de société de trente caractères doit tenir sur deux
+	 * lignes à 375px, pas sur trois. */
+	--text-letikette-titre: 30px;
 
 	/* ⚠️ `--spacing-rail` ET `--spacing-rail-deplie` ONT ÉTÉ SUPPRIMÉS. Ils
 	 * mesuraient un rail de navigation VERTICAL, remplacé par une barre
@@ -302,7 +343,6 @@
 	 * aliments, pas dans un lavis. */
 	--color-papier: oklch(0.995 0.004 85);
 	--color-papier-chaud: oklch(0.972 0.012 82);
-
 
 	/* LA COQUE DE LA TABLETTE. Deux tons : le corps, et l'arête que la lumière
 	 * accroche. Un cadre d'un seul aplat lit « rectangle noir » ; c'est ce

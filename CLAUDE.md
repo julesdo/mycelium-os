@@ -125,7 +125,19 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
 - Interface **en français uniquement** (le droit applicable est français).
 - **Un seul espace : `/app/*`**. Une seule verticale, donc pas de sélecteur de domaine.
 - Rôles : `ORG_ADMIN`, `ORG_MEMBER`. Aucun rôle staff.
-- **Tablette d'abord**, paysage privilégié, sans casser le téléphone. Cibles tactiles 48 px.
+- **Téléphone d'abord**, comme une application iOS native. *(Décision du fondateur, 30/09/2026 :
+  « tout est trop petit et galère à manipuler, on doit être full mobile first, comme une app native
+  iOS ». Elle remplace le « tablette d'abord » d'origine — la tablette reste servie, elle n'est plus
+  la cible qui tranche.)* Cibles tactiles **48 px** minimum, et le corps du texte est celui d'iOS :
+  17 px. L'échelle typographique de `tokens.css` est calée sur celle d'Apple — 22 / 20 / **17** /
+  15 / 13 / 11 — parce que 82 % du texte du produit tombait sur 12 ou 14 px, c'est-à-dire sur la
+  LÉGENDE de cette échelle. Deux barrières le tiennent : `src/ui/__tests__/plancher-tactile.test.ts`
+  refuse un `h-auto` qui annule le plancher sans en reposer un, et vérifie le corps dans les jetons.
+- **Sous 1024 px, un panneau se PRÉSENTE ; au-dessus, il se déplie.** Déplier deux mille pixels au
+  milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
+  application iOS ne le fait. `SectionDepliable` et `RangeeDuDossier` rendent donc une **feuille**
+  (`Popup`) en dessous de 1024 px et un panneau au-dessus, sur le MÊME état — `useSectionOuverte`.
+  C'est la règle d'Apple elle-même (*Layout*) : même fonction, présentation adaptée à la place.
 - **Le langage de tout le monde** : « votre client », « pénalités de retard », « date limite pour
   agir en justice » ; le mot du droit en second, entre parenthèses ou entre guillemets
   (`lexique.ts`). Le balayage couvre depuis le 29/09/2026 `src/ui`, `src/screens`,
