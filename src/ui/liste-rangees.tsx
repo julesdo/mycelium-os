@@ -12,6 +12,7 @@ import {
 } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
 import { useDeuxVolets } from './maitre-detail';
+import { VignetteRangee, type FamilleRangee } from './familles';
 import { useSectionOuverte } from './section-depliable';
 
 /**
@@ -100,6 +101,7 @@ export function RangeeDepliable({
 	cle,
 	titre,
 	valeur,
+	famille,
 	glose,
 	children
 }: {
@@ -116,6 +118,8 @@ export function RangeeDepliable({
 	 * laquelle parle — et c'est très exactement ce qu'on reprochait à la page.
 	 */
 	readonly valeur: string;
+	/** La famille de la rangée : son pictogramme et sa teinte. Voir familles.tsx. */
+	readonly famille?: FamilleRangee;
 	/** Ce que l'en-tête disait avant, descendu en tête du panneau. */
 	readonly glose?: string;
 	readonly children: ReactNode;
@@ -179,8 +183,15 @@ export function RangeeDepliable({
 					  moitié de la rangée, et la valeur revient à la ligne plutôt que de
 					  perdre sa fin : un compte amputé est un compte faux.
 					*/}
-					<span className="min-w-0 flex-1 basis-1/2 text-left text-cladd-xs font-semibold">
-						{titre}
+					{/*
+					  ⚠️ LA VIGNETTE EST L'ANCRE DE L'ŒIL, pas une décoration. Six rangées
+					  qui ne diffèrent que par leur intitulé se lisent une par une ; six
+					  vignettes de familles différentes se balaient. Relevé du 30/09/2026 :
+					  l'écran des dossiers portait six pictogrammes EN TOUT.
+					*/}
+					<span className="flex min-w-0 flex-1 basis-1/2 items-center gap-cladd-3xs text-left">
+						{famille === undefined ? null : <VignetteRangee famille={famille} />}
+						<span className="min-w-0 text-cladd-xs font-semibold">{titre}</span>
 					</span>
 					<span className="flex min-w-0 shrink items-center gap-cladd-3xs">
 						<span className="text-right text-cladd-xs text-cladd-fg-soft tabular-nums">

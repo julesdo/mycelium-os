@@ -1217,12 +1217,24 @@ select:not(:disabled),
 		0 10px 32px -12px oklch(0.3 0.02 264 / 0.14);
 }
 
+/* ⚠️ LA CARTE CLAIRE ÉTAIT INVISIBLE, ET C'ÉTAIT MESURÉ. Relevé au navigateur
+ * le 30/09/2026 : la carte rendait une luminance de 0,979 sur une page à 0,958,
+ * soit un écart de 0,021 et un rapport de contraste de 1,09 pour 1. Autant dire
+ * rien. L'œil ne pouvait pas SEGMENTER la page — tout était une seule nappe
+ * grise —, et c'est la moitié du reproche du terrain : « ça manque
+ * d'intuitivité à mort partout, je ne sais pas ce qui cloche ».
+ *
+ * La carte monte à l'opacité pleine et au blanc franc, comme une carte de liste
+ * groupée iOS sur son fond gris. L'écart passe à 0,042, le double. Le voile de
+ * translucidité ne servait à rien ici : il n'y a pas de photographie derrière
+ * une carte de l'application, seulement le drapé du fond, et le flou de
+ * `backdrop-filter` continue de le rendre. */
 .light .verre-carte {
-	background-color: oklch(0.985 0.004 258 / 0.78);
+	background-color: oklch(1 0 0 / 0.96);
 	box-shadow:
-		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.07),
-		0 1px 2px oklch(0.3 0.02 264 / 0.06),
-		0 10px 32px -12px oklch(0.3 0.02 264 / 0.14);
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.09),
+		0 1px 2px oklch(0.3 0.02 264 / 0.07),
+		0 10px 32px -12px oklch(0.3 0.02 264 / 0.16);
 }
 
 /* La barre basse. Son ombre portée montait à 0,5 d'alpha de noir : sur du
@@ -2090,28 +2102,16 @@ select:not(:disabled),
 }
 
 .suit-pointeur-loin {
-	transform: translate3d(
-		calc(var(--pointeur-x) * 6px),
-		calc(var(--pointeur-y) * 4px),
-		0
-	);
+	transform: translate3d(calc(var(--pointeur-x) * 6px), calc(var(--pointeur-y) * 4px), 0);
 }
 
 .suit-pointeur-milieu {
-	transform: translate3d(
-		calc(var(--pointeur-x) * 14px),
-		calc(var(--pointeur-y) * 9px),
-		0
-	);
+	transform: translate3d(calc(var(--pointeur-x) * 14px), calc(var(--pointeur-y) * 9px), 0);
 }
 
 .suit-pointeur-pres {
 	will-change: transform;
-	transform: translate3d(
-		calc(var(--pointeur-x) * 26px),
-		calc(var(--pointeur-y) * 16px),
-		0
-	);
+	transform: translate3d(calc(var(--pointeur-x) * 26px), calc(var(--pointeur-y) * 16px), 0);
 }
 
 /* ⚠️ LE MOUVEMENT RÉDUIT EST TENU DEUX FOIS, ET IL LE FAUT. La scène ne pose

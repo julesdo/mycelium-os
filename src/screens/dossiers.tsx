@@ -10,13 +10,13 @@ import {
 	Surface,
 	Toolbar
 } from '@cladd-ui/react';
-import { ScaleIcon } from 'lucide-react';
 import { TITRE_ETAPE, type EtapeDossier } from '../lib/verticales/recouvrement/etapes-dossier';
 import {
 	BoutonPrincipal,
 	BoutonSecondaire,
 	Lien,
 	ListeAnalyses,
+	Avatar,
 	LigneAnalyse,
 	PageBody,
 	PageEcran,
@@ -135,12 +135,20 @@ function precisionDe(dossier: DossierDeLIndex, aujourdHui: string): string {
 	if (dossier.prochaineEcheance !== undefined) {
 		return `${dossier.prochaineEcheance.libelle} · ${dateCourte(dossier.prochaineEcheance.dateLimite)}`;
 	}
-	if (dossier.courrierAValider) return 'Un courrier attend votre validation';
+	/*
+	  ⚠️ TROIS À CINQ MOTS, ET LA DATE EN DERNIER. Ces textes étaient des phrases
+	  — « Un courrier attend votre validation », « Date limite pour agir dépassée
+	  depuis le 12 sept. 2026 » — et une phrase dans une rangée de liste s'enroule
+	  sur trois lignes à 375 px. La sous-ligne se coupe désormais à une ligne
+	  (voir `apparenceRangee`), donc une phrase longue perdrait sa FIN, c'est-à-dire
+	  la date. C'est elle qu'on vient lire : elle passe donc devant.
+	*/
+	if (dossier.courrierAValider) return 'Un courrier à valider';
 	if (dossier.etape === 'REGLE') return 'Réglé';
 	if (dossier.dateLimiteAgir !== undefined) {
 		return dossier.dateLimiteAgir < aujourdHui
-			? `Date limite pour agir dépassée depuis le ${dateCourte(dossier.dateLimiteAgir)}`
-			: `Date limite pour agir : ${dateCourte(dossier.dateLimiteAgir)}`;
+			? `Dépassé le ${dateCourte(dossier.dateLimiteAgir)}`
+			: `Agir avant le ${dateCourte(dossier.dateLimiteAgir)}`;
 	}
 	if (dossier.dernierCourrierLe !== undefined) {
 		return `Écrit le ${dateCourte(dossier.dernierCourrierLe)}`;
@@ -246,9 +254,7 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 						{enSelection ? (
 							<BoutonSecondaire onClick={quitterLaSelection}>Annuler</BoutonSecondaire>
 						) : (
-							<BoutonSecondaire onClick={() => setEnSelection(true)}>
-								Sélectionner
-							</BoutonSecondaire>
+							<BoutonSecondaire onClick={() => setEnSelection(true)}>Sélectionner</BoutonSecondaire>
 						)}
 					</div>
 				) : null}
@@ -309,11 +315,20 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 								valeur={eurosCentimes(dossier.principalRestantDu)}
 								precision={precisionDe(dossier, aujourdHui)}
 								attention={dossier.courrierAValider}
-								icone={
-									dossier.etape === 'TRIBUNAL' ? (
-										<ScaleIcon className="size-4" aria-hidden />
-									) : undefined
-								}
+								/*
+								  ⚠️ UN CLIENT PORTE SON AVATAR, PAS UNE VIGNETTE DE FAMILLE.
+								  Cinq dossiers portaient cinq blocs de texte gris identiques :
+								  relevé au navigateur le 30/09/2026, l'écran entier comptait SIX
+								  pictogrammes. Une vignette de famille ne réglerait rien ici —
+								  les cinq rangées sont de la même nature, donc elles porteraient
+								  le même bleu. Les initiales, elles, changent à chaque rangée :
+								  c'est à « AM » qu'on retrouve Ateliers Martin.
+
+								  ⚠️ LA BALANCE DU TRIBUNAL A SAUTÉ, et c'est délibéré : elle
+								  occupait la seule place que l'œil balaie, pour une information
+								  que la pastille d'étape et la précision disent déjà.
+								*/
+								avatar={<Avatar nom={dossier.debiteur} className="size-10" />}
 							/>
 						))}
 					</ListeAnalyses>
@@ -373,9 +388,9 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 						))}
 					</Segmented>
 					<p className="mt-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						Chaque lettre est composée sur les chiffres de son dossier, à votre nom, et posée
-						dans « Vos courriers » à valider. Rien ne part : vous relisez et vous validez
-						chacune, comme pour un dossier seul.
+						Chaque lettre est composée sur les chiffres de son dossier, à votre nom, et posée dans «
+						Vos courriers » à valider. Rien ne part : vous relisez et vous validez chacune, comme
+						pour un dossier seul.
 					</p>
 				</PopupContent>
 

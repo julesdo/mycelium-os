@@ -23,12 +23,12 @@ explicable période par période.
 
 ## ⚠️ Les trois lignes rouges
 
-1. **Rien ne part sans que le gérant ait validé ce document.** *(Fondement relevé le 29/09/2026 :
+1. **Rien ne part sans que le gérant ait validé ce document.** _(Fondement relevé le 29/09/2026 :
    le décret n° 96-1112, article 1er, vise quiconque « procède au recouvrement amiable des créances
    pour le compte d'autrui », « même à titre accessoire », SANS condition de manipulation de fonds ;
    son article 4 imposerait alors à la lettre de nommer l'agent de recouvrement. Un envoi
    automatique, même sur instruction préalable, ferait porter le nom de Letikette aux courriers du
-   gérant. Le logiciel RAPPELLE, il n'envoie pas.)* Il est à son seul nom et sous sa
+   gérant. Le logiciel RAPPELLE, il n'envoie pas.)_ Il est à son seul nom et sous sa
    signature ; Letikette le prépare sans y figurer, sans être son mandataire, sans recevoir ni fonds
    ni réponse du débiteur (le recouvrement pour compte de tiers est une activité encadrée). Quand le
    gérant a un avocat, le projet part chez cet avocat, qui décide. Rien ne part vers un tribunal ou un
@@ -36,11 +36,11 @@ explicable période par période.
    exception : la déclaration de créance au mandataire, que la loi permet au créancier de faire
    lui-même. On ne remplace aucun métier réglementé.
 2. **On ne manipule jamais de fonds.** Aucun encaissement, aucun séquestre, aucune commission sur
-   ce qui rentre. *(Ce qui reste permis, vérifié auprès de l'ACPR le 29/09/2026 : TRANSMETTRE une
+   ce qui rentre. _(Ce qui reste permis, vérifié auprès de l'ACPR le 29/09/2026 : TRANSMETTRE une
    information de paiement — afficher l'IBAN du créancier, un montant, une référence, un QR de
    virement européen. Un service de paiement suppose d'EXÉCUTER l'opération ou d'encaisser pour un
    tiers ; montrer où payer n'en est pas un, et ne demande aucun agrément. C'est ce que fait
-   `/p/<jeton>`, livrée le 30/09/2026 : le client valide le virement dans SA banque.)*
+   `/p/<jeton>`, livrée le 30/09/2026 : le client valide le virement dans SA banque.)_
 3. **Le produit montre ce que dit la loi, ce qu’il y a dans le dossier et ce que le gérant a
    répondu.** Il ne dit jamais qu’une condition est remplie, ni qu’il faudrait engager une
    procédure : ce serait une consultation juridique (relecture du 25/09/2026). Le logiciel lit,
@@ -125,10 +125,10 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
 - Interface **en français uniquement** (le droit applicable est français).
 - **Un seul espace : `/app/*`**. Une seule verticale, donc pas de sélecteur de domaine.
 - Rôles : `ORG_ADMIN`, `ORG_MEMBER`. Aucun rôle staff.
-- **Téléphone d'abord**, comme une application iOS native. *(Décision du fondateur, 30/09/2026 :
+- **Téléphone d'abord**, comme une application iOS native. _(Décision du fondateur, 30/09/2026 :
   « tout est trop petit et galère à manipuler, on doit être full mobile first, comme une app native
   iOS ». Elle remplace le « tablette d'abord » d'origine — la tablette reste servie, elle n'est plus
-  la cible qui tranche.)* Cibles tactiles **48 px** minimum, et le corps du texte est celui d'iOS :
+  la cible qui tranche.)_ Cibles tactiles **48 px** minimum, et le corps du texte est celui d'iOS :
   17 px. L'échelle typographique de `tokens.css` est calée sur celle d'Apple — 22 / 20 / **17** /
   15 / 13 / 11 — parce que 82 % du texte du produit tombait sur 12 ou 14 px, c'est-à-dire sur la
   LÉGENDE de cette échelle. Deux barrières le tiennent : `src/ui/__tests__/plancher-tactile.test.ts`
@@ -137,7 +137,7 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
   application iOS ne le fait. `SectionDepliable` et `RangeeDuDossier` rendent donc une **feuille**
   (`Popup`) en dessous de 1024 px et un panneau au-dessus, sur le MÊME état — `useSectionOuverte`.
-  C'est la règle d'Apple elle-même (*Layout*) : même fonction, présentation adaptée à la place.
+  C'est la règle d'Apple elle-même (_Layout_) : même fonction, présentation adaptée à la place.
 - **Le langage de tout le monde** : « votre client », « pénalités de retard », « date limite pour
   agir en justice » ; le mot du droit en second, entre parenthèses ou entre guillemets
   (`lexique.ts`). Le balayage couvre depuis le 29/09/2026 `src/ui`, `src/screens`,
@@ -241,10 +241,24 @@ demonstration sans backend ni authentification, precisement pour ca.
 4. **Le vide montre le chemin**, jamais des cadrans a zero.
 5. **Le mot « garantie » est interdit**, et un test balaie toute l'interface.
 
-**Couleurs reservees.** Le vert, le rouge et l'ambre (`--color-seuil-*`) ne
-signifient qu'une chose : au-dessus du seuil, tout pres, en dessous. Aucun
-element decoratif ne les porte. C'est pour ca que l'accent de marque est un bleu
-d'encre et jamais un vert.
+**Couleurs reservees.** Le vert, le rouge et l'ambre (`--color-seuil-*`, plus les accents
+`green`, `lime`, `yellow`, `red` et l'`orange` du bandeau d'alerte) ne signifient qu'une chose :
+au-dessus du seuil, tout pres, en dessous. Aucun element decoratif ne les porte. C'est pour ca que
+l'accent de marque est un bleu d'encre et jamais un vert.
+
+**Et six familles portent la couleur, depuis le 30/09/2026** (`src/ui/familles.tsx`). La regle qui
+les rend possibles tient en une ligne : **la teinte dit DE QUOI il s'agit, jamais si c'est grave.**
+De l'argent (`brand`), du temps (`purple`), des papiers (`cyan`), ce qui part (`blue`), ce qu'on
+vous demande (`pink`), la machine (`neutral`) — six, prises hors des teintes de seuil, et chacune
+donne a sa rangee un pictogramme du domaine dans une vignette de 40 px. Un client, lui, porte son
+AVATAR : dans une liste de clients toutes les rangees sont de meme nature, donc une vignette les
+peindrait toutes pareil et ne distinguerait rien.
+
+_Pourquoi ce changement : l'ecran des dossiers portait SIX pictogrammes en tout, celui des clients
+DEUX, et la carte de verre rendait un contraste de 1,09 pour 1 avec la page. Le produit se LISAIT
+quand Shop et Revolut se BALAIENT — verdict du terrain : « ca manque d'intuitivite a mort partout,
+je ne sais pas ce qui cloche mais ca cloche »._ Tenu par `src/ui/__tests__/familles.test.ts`, qui
+refuse une teinte de seuil dans le registre ET une teinte forcee par un ecran.
 
 ## Conventions
 

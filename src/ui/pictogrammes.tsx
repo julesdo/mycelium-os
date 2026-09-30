@@ -34,10 +34,23 @@ import { cn } from './cn';
  *   · DEUX À QUATRE TRACÉS PAR SIGNE. Au-delà, ça devient une illustration, et
  *     une illustration à vingt-quatre pixels devient une tache.
  *
- * ⚠️ AUCUNE COULEUR. Ils prennent `currentColor`, donc la craie de la page.
- * Les trois couleurs de seuil ne disent qu'une chose dans ce produit — au-dessus
- * du seuil, tout près, en dessous — et un pictogramme décoratif qui les
- * emprunterait volerait leur sens aux vraies jauges, à deux écrans d'ici.
+ * ⚠️ AUCUNE COULEUR DANS LE TRACÉ. Ils prennent `currentColor`, donc la craie
+ * de ce qui les porte.
+ *
+ * ⚠️ MAIS LEUR PORTEUR, LUI, EST TEINTÉ DEPUIS LE 30/09/2026. `familles.tsx`
+ * pose six familles — de l'argent, du temps, des papiers, ce qui part, ce qu'on
+ * vous demande, la machine — et chacune donne au pictogramme sa teinte via
+ * `text-cladd-primary`, sur une vignette de la même teinte. Ce n'est pas un
+ * revirement : le tracé reste monochrome, et la règle qui comptait n'a pas
+ * bougé d'un pouce — le vert, l'ambre et le rouge restent INTERDITS à une
+ * famille, parce qu'ils ne disent qu'une chose dans ce produit : au-dessus du
+ * seuil, tout près, en dessous. La teinte d'une famille dit DE QUOI il s'agit,
+ * jamais si c'est grave, et `familles.test.ts` le tient.
+ *
+ * La raison du changement est mesurée : l'écran des dossiers portait SIX
+ * pictogrammes en tout, celui des clients DEUX, et chaque rangée était un bloc
+ * de texte gris parmi d'autres blocs de texte gris. Un jeu de signes qu'on ne
+ * pose nulle part n'a pas d'âme ; il n'existe pas.
  *
  * ⚠️ ET ILS SONT `aria-hidden`. Chacun est posé à côté d'un titre qui dit déjà
  * la même chose en toutes lettres ; les annoncer une seconde fois à un lecteur

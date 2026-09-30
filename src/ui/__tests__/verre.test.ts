@@ -36,11 +36,23 @@ import { describe, it, expect } from 'vitest';
 /**
  * Les surfaces qui ont le DROIT de rester opaques.
  *
- * Vide aujourd'hui, et c'est volontaire : aucun écran du produit n'en a besoin.
  * Cette liste existe pour que l'exception, le jour où elle arrive, soit ÉCRITE
- * et justifiée plutôt que glissée en silence.
+ * et justifiée plutôt que glissée en silence. Elle est restée vide jusqu'au
+ * 30 septembre 2026.
+ *
+ * ⚠️ `familles.tsx` — LA VIGNETTE D'UNE RANGÉE N'EST PAS UNE CARTE.
+ *
+ * Le verre existe pour que le fond animé se voie à travers les CARTES, qui font
+ * des centaines de pixels. Une vignette en fait quarante, et elle porte un
+ * pictogramme : translucide, le drapé passerait DERRIÈRE le signe et le ferait
+ * scintiller à chaque mouvement du fond — sur l'élément dont le seul travail
+ * est d'être un point fixe pour l'œil.
+ *
+ * Elle est teintée par sa famille, donc son aplat est ce qui la rend
+ * reconnaissable : c'est exactement la propriété que la translucidité
+ * détruirait. Un seul fichier, un seul composant, et il ne rend aucune carte.
  */
-const EXCEPTIONS: readonly string[] = [];
+const EXCEPTIONS: readonly string[] = ['familles.tsx'];
 
 describe('toutes les cartes du produit laissent voir le fond', () => {
 	it('aucune Surface n’est rendue opaque', () => {

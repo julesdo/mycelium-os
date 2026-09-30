@@ -706,6 +706,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						{depotsFinis.length === 0 ? null : (
 							<RangeeDepliable
 								cle="depots"
+								famille="PAPIERS"
 								titre="Vos dépôts"
 								glose="Ce qui est entré, ce qui n’est pas entré, et pourquoi."
 								valeur={`${depotsFinis.length} lu${pluriel(depotsFinis.length)}`}
@@ -720,6 +721,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 							<RangeeDepliable
 								key={rangee.id}
 								cle={`lettrage-${rangee.id}`}
+								famille="ARGENT"
 								titre="Rapprocher un virement"
 								glose="Ce qui empêche de relancer un client qui a déjà payé."
 								valeur="à faire"
@@ -736,6 +738,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						{travaux.length === 0 ? null : (
 							<RangeeDepliable
 								cle="veilleur"
+								famille="MACHINE"
 								titre="Le veilleur"
 								glose="Ce que la machine a fait cette nuit, et ce qu’elle fait en ce moment."
 								valeur={`${travaux.length} passage${pluriel(travaux.length)}`}
@@ -755,6 +758,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						    deux fois dans la même feuille, à deux centimètres d'écart. */}
 						<RangeeDepliable
 							cle="ancienne-version"
+							famille="MACHINE"
 							titre="L’ancienne version"
 							valeur={`jusqu’au ${dateCourte(FERMETURE_DE_LA_PORTE)}`}
 						>
@@ -938,6 +942,7 @@ function Tete({ tete }: { tete: TeteDeFile }) {
 			<ListeDeRangees>
 				<RangeeDepliable
 					cle="composition"
+					famille="ARGENT"
 					titre="De quoi c’est fait"
 					glose="Un montant qu’on ne peut pas décomposer est un montant qu’on demande de croire. Le client qui le conteste refera le calcul."
 					valeur={eurosCentimes(tete.total)}
@@ -956,6 +961,7 @@ function Tete({ tete }: { tete: TeteDeFile }) {
 				<ListeAnalyses>
 					<LigneAnalyse
 						vers="/app/revelation"
+						famille="ARGENT"
 						titre="Jamais calculé"
 						valeur={eurosCentimes(jamaisCalcule)}
 						precision="Pénalités de retard et frais de recouvrement, dus de plein droit"
@@ -1107,6 +1113,7 @@ function LimitesDuCalcul({
 	return (
 		<RangeeDepliable
 			cle="limites"
+			famille="MACHINE"
 			titre="Les limites du calcul"
 			glose="Ce que le logiciel a supposé faute de donnée, et ce qu’il ne surveille pas du tout."
 			valeur={parties.join(' · ')}

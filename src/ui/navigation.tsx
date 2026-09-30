@@ -15,6 +15,7 @@ import {
 import { Button, List, ListButton, Surface } from '@cladd-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from './cn';
+import { VignetteRangee, type FamilleRangee } from './familles';
 import { Lien } from './lien';
 
 /** Voir `EnteteDetail` : la valeur est déjà réactive, rien à écouter de plus. */
@@ -60,7 +61,19 @@ export function ListeAnalyses({ children }: { children: ReactNode }) {
 			// rembourrages superposés font une carte qui flotte dans sa propre marge.
 			contentClassName="p-0"
 		>
-			<List>{children}</List>
+			{/*
+			  ⚠️ `p-0` SUR LA LISTE, ET C'EST UNE MESURE DE LARGEUR. Relevé au
+			  navigateur le 30/09/2026 à 375 px : sur 295 px de rangée utile, la
+			  colonne de texte n'en recevait que 85 — le nom du client s'enroulait
+			  sur deux lignes et sa sous-ligne se coupait après trois mots. Huit
+			  pixels de chaque côté sur la liste, plus huit sur la rangée, faisaient
+			  trente-deux pixels de rembourrage superposé pour un seul bord.
+
+			  C'est le geste que la documentation du kit montre elle-même pour une
+			  liste posée dans une carte (`List className="-mx-4"`) : la rangée
+			  garde le sien, la carte ne le double pas.
+			*/}
+			<List className="p-0">{children}</List>
 		</Surface>
 	);
 }
@@ -91,6 +104,28 @@ interface ContenuRangee {
 	precision?: string;
 	icone?: ReactNode;
 	/**
+	 * La FAMILLE de la rangée : elle lui donne son pictogramme et sa teinte.
+	 *
+	 * ⚠️ C'EST LE POINT D'ANCRAGE DE L'ŒIL, ET IL MANQUAIT PARTOUT. Relevé au
+	 * navigateur le 30/09/2026 : six pictogrammes sur tout l'écran « Dossiers »,
+	 * deux sur celui des clients. Cinq rangées de texte gris rigoureusement
+	 * identiques, qu'on ne peut que LIRE une par une. Chez Revolut et Shop, on
+	 * cherche le disque coloré, pas le mot.
+	 *
+	 * Elle l'emporte sur `icone` quand les deux sont données : une famille est
+	 * une convention qui se retient, une icône isolée est un choix local.
+	 */
+	famille?: FamilleRangee;
+	/**
+	 * L'avatar d'un client, à la place de la vignette.
+	 *
+	 * ⚠️ IL L'EMPORTE SUR LA FAMILLE, parce qu'il en dit STRICTEMENT PLUS. Dans
+	 * une liste de clients ou de dossiers, toutes les rangées sont de la même
+	 * nature : une vignette de famille les peindrait toutes pareil, donc elle ne
+	 * distinguerait rien. Les initiales, elles, changent à chaque rangée.
+	 */
+	avatar?: ReactNode;
+	/**
 	 * Marque la rangée qui demande quelque chose.
 	 *
 	 * ⚠️ AUCUNE COULEUR DE SEUIL. Le vert, l'ambre et le rouge ne disent qu'une
@@ -103,7 +138,7 @@ interface ContenuRangee {
 
 /** Les fentes du kit, remplies à l'identique pour les deux rangées. */
 function apparenceRangee(
-	{ valeur, precision, icone, attention = false }: ContenuRangee,
+	{ valeur, precision, icone, famille, avatar, attention = false }: ContenuRangee,
 	/**
 	 * Vrai quand la rangée sert de maître : à partir de 1024 px, elle ouvre le
 	 * volet voisin au lieu de pousser une page, et son chevron promettrait ce
@@ -112,15 +147,28 @@ function apparenceRangee(
 	dansUnMaitre = false
 ) {
 	return {
-		icon: icone,
-		footer: precision,
+		icon: avatar ?? (famille === undefined ? icone : <VignetteRangee famille={famille} />),
+		/*
+		  ⚠️ LA SOUS-LIGNE TIENT SUR UNE LIGNE, ET ELLE SE COUPE. C'est la
+		  convention de toute liste iOS, et c'est ce qui sauve la rangée : sans
+		  elle, « Remise de la décision à votre client · 1 juin 2026 » s'enroulait
+		  sur quatre lignes à 375 px, et la rangée passait à cent cinquante pixels.
+		  Cinq rangées de ce genre ne se balaient plus — on les lit une par une.
+
+		  ⚠️ COUPER EST ACCEPTABLE ICI, ET SEULEMENT ICI. Le travail d'une rangée
+		  est de se faire TROUVER ; la phrase entière est sur la page qu'elle
+		  ouvre. Un libellé de CHAMP, lui, ne se coupe jamais : on le remplirait
+		  de travers.
+		*/
+		footer:
+			precision === undefined ? undefined : <span className="block truncate">{precision}</span>,
 		after: (
-			<span className="flex shrink-0 items-center gap-1.5">
+			<span className="flex shrink-0 items-center gap-1">
 				{valeur === undefined ? null : (
 					<span
 						className={cn(
-							'text-cladd-xs tabular-nums',
-							attention ? 'text-cladd-fg' : 'text-cladd-fg-softer'
+							'text-cladd-2xs font-semibold tabular-nums',
+							attention ? 'text-cladd-fg' : 'text-cladd-fg-soft'
 						)}
 					>
 						{valeur}
@@ -139,14 +187,18 @@ function apparenceRangee(
 
 function intituleRangee({ titre, attention = false }: ContenuRangee) {
 	return (
-		<span className="flex items-center gap-1.5">
+		// ⚠️ `truncate` ET `min-w-0` : un nom de société qui revient à la ligne
+		// double la hauteur de la rangée, et cinq rangées de deux lignes ne se
+		// balaient plus. Il se coupe donc, comme dans toute liste iOS — le nom
+		// entier est sur la page qu'elle ouvre, à un doigt d'ici.
+		<span className="flex min-w-0 items-center gap-1.5">
 			{attention ? (
 				<span
 					className="size-1.5 shrink-0 rounded-full bg-cladd-fg"
 					aria-label="demande une réponse"
 				/>
 			) : null}
-			{titre}
+			<span className="truncate">{titre}</span>
 		</span>
 	);
 }

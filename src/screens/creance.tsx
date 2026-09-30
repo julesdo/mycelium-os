@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Building2Icon, FileDownIcon, InfoIcon } from 'lucide-react';
+import { FileDownIcon, InfoIcon, MailIcon } from 'lucide-react';
 import type { FicheParametre } from '../lib/verticales/recouvrement/referentiel';
 import {
+	Avatar,
 	BoutonPrincipal,
 	BoutonSecondaire,
 	CarteEtape,
@@ -20,6 +21,11 @@ import {
 	LigneAnalyse,
 	LigneBouton,
 	ListeAnalyses,
+	PictoDecompte,
+	PictoEcheance,
+	PictoRemise,
+	RangeeActions,
+	type ActionRonde,
 	ListeDeRangees,
 	PageEcran,
 	Pieces,
@@ -466,7 +472,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 						<p className="text-cladd-xs text-cladd-fg">{pret.erreur}</p>
 					)}
 
-					<EnTeteCreance creance={pret} />
+					<EnTeteCreance creance={pret} onOuvrir={ouvrir} />
 
 					{/*
 					  ⚠️ CE QUI BLOQUE EST AU-DESSUS DES DEUX COLONNES, pas dans l'une
@@ -515,7 +521,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 									<LigneAnalyse
 										vers="/app/clients/$id"
 										parametres={{ id: pret.debiteurId }}
-										icone={<Building2Icon />}
+										avatar={<Avatar nom={pret.debiteur} className="size-10" />}
 										titre="Fiche du client"
 										valeur={pret.debiteur}
 									/>
@@ -818,7 +824,13 @@ function alertesDuDossier(creance: CreanceOuverte): readonly AlerteDossier[] {
  * chose dans ce produit — au-dessus du seuil, tout près, en dessous. Un montant
  * dû n'est pas un verdict : c'est une somme.
  */
-function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
+function EnTeteCreance({
+	creance,
+	onOuvrir
+}: {
+	creance: CreanceOuverte;
+	onOuvrir: (cle: SectionCreance) => void;
+}) {
 	const montant = creance.montantDuJour;
 
 	return (
@@ -833,8 +845,69 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 				}
 			/>
 			<FaitsDuDossier faits={faitsDuDossier(creance)} supposition={suppositionDuDossier(creance)} />
+
+			{/*
+			  ⚠️ LA RANGÉE D'ACTIONS EXISTAIT ET N'ÉTAIT SUR AUCUN ÉCRAN. `actions.tsx`
+			  la décrit comme « le geste central de la référence » — trois ou quatre
+			  disques sous le montant, chacun avec son libellé dessous — et elle était
+			  du code mort. C'est exactement ce que Revolut pose sous son solde, et
+			  c'est la réponse VISUELLE à « qu'est-ce que je peux faire ici », que le
+			  produit ne donnait nulle part : ses gestes étaient soit enfouis dans un
+			  échelon du fil, soit dans un panneau replié.
+
+			  ⚠️ AUCUN DE CES QUATRE NE NOMME UNE VOIE DE DROIT. « Préparer »,
+			  « écrire », « arrêter », « faire payer » sont des gestes de bureau.
+			  « Engager une injonction » serait une recommandation de procédure,
+			  c'est-à-dire une consultation juridique — troisième ligne rouge.
+			*/}
+			<RangeeActions actions={actionsDuDossier(creance, onOuvrir)} />
 		</div>
 	);
+}
+
+/**
+ * LES QUATRE GESTES DU DOSSIER, ET PAS UN DE PLUS.
+ *
+ * ⚠️ « Au-delà, ce n'est plus une rangée d'actions, c'est un menu » — la
+ * contrainte est dans le composant, pas dans la tête de celui qui écrit l'écran,
+ * et c'est ce qui l'empêche de redevenir la barre à huit cibles d'avant.
+ *
+ * ⚠️ LE DERNIER DISQUE MÈNE À L'ÉCRAN D'ARRÊT, IL N'ARRÊTE RIEN. Figer un
+ * décompte d'un seul appui, sans que le contrôle de complétude ait été lu, était
+ * le défaut d'origine : ce qui ne figure pas dans un titre exécutoire est perdu.
+ */
+function actionsDuDossier(
+	creance: CreanceOuverte,
+	onOuvrir: (cle: SectionCreance) => void
+): readonly ActionRonde[] {
+	return [
+		{
+			libelle: 'Préparer',
+			icone: <PictoRemise className="size-6" />,
+			onClick: () => onOuvrir('courriers')
+		},
+		{
+			libelle: 'Lui écrire',
+			icone: <MailIcon className="size-6" />,
+			onClick: () => onOuvrir('relances')
+		},
+		{
+			libelle: 'Le décompte',
+			icone: <PictoDecompte className="size-6" />,
+			onClick: () => onOuvrir('decompte')
+		},
+		/*
+		  ⚠️ « LES SUITES » ÉNUMÈRE, ELLE NE CONSEILLE PAS. Le disque ouvre la liste
+		  des voies, qui s'affichent sans classement et avec le motif de celles qui
+		  sont indisponibles. Un disque qui dirait « Aller au tribunal » mettrait
+		  une voie en avant, ce qui est très précisément interdit ici.
+		*/
+		{
+			libelle: 'Les suites',
+			icone: <PictoEcheance className="size-6" />,
+			onClick: () => onOuvrir('voies')
+		}
+	];
 }
 
 /**
@@ -862,6 +935,7 @@ function RangeeDecompte({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<RangeeDepliable
 			cle="decompte"
+			famille="ARGENT"
 			titre="Décompte"
 			glose="Au jour d’aujourd’hui, et il bouge chaque jour."
 			valeur={montant === null ? 'non calculé' : eurosCentimes(montant.total)}
@@ -976,6 +1050,7 @@ function RangeeValeursJuridiques({ fiches }: { fiches: readonly FicheParametre[]
 	return (
 		<RangeeDepliable
 			cle="valeurs"
+			famille="MACHINE"
 			titre="Les chiffres de la loi"
 			glose="Leur source, leur date de relevé, et ce qu’on a le droit d’en faire."
 			valeur={`${verifiees} sur ${fiches.length}`}
@@ -1030,6 +1105,7 @@ function RangeeLitige({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<RangeeDepliable
 			cle="litige"
+			famille="QUESTION"
 			titre="Vos réponses"
 			glose="Des faits, pas une appréciation juridique : vous seul pouvez les dire."
 			valeur={
@@ -1069,6 +1145,7 @@ function RangeeSolidite({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<RangeeDepliable
 			cle="solidite"
+			famille="PAPIERS"
 			titre="Solidité"
 			glose="Ce qu’un tiers pourrait lire du dossier, document par document."
 			valeur={`${creance.solidite.etablies} sur ${creance.solidite.attendues}`}
@@ -1083,6 +1160,7 @@ function RangeePieces({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<RangeeDepliable
 			cle="pieces"
+			famille="PAPIERS"
 			titre="Documents"
 			glose="Déposés ici, lus et classés tout seuls."
 			valeur={`${creance.pieces.length}`}
@@ -1152,6 +1230,7 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<RangeeDepliable
 			cle="voies"
+			famille="TEMPS"
 			titre={creance.suivi === null ? 'Les suites' : 'Procédure'}
 			glose={
 				creance.suivi === null
@@ -1312,6 +1391,7 @@ function RangeeRelances({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<RangeeDepliable
 			cle="relances"
+			famille="ENVOI"
 			titre="Relances"
 			glose="Des brouillons, à envoyer depuis votre messagerie."
 			valeur={prets > 0 ? `${prets} prêt${pluriel(prets)}` : 'Suspendues'}
@@ -1356,6 +1436,7 @@ function RangeeSuivi({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<RangeeDepliable
 			cle="suivi"
+			famille="MACHINE"
 			titre="Historique"
 			glose="Vos notes, vos échanges, et ce que le logiciel a constaté."
 			// ⚠️ LA VALEUR COMPTE CE QUI ATTEND AVANT CE QU'IL Y A. « 2 à trancher »
@@ -1382,6 +1463,7 @@ function RangeeCourriers({ creance }: { creance: CreanceOuverte }) {
 	return (
 		<RangeeDepliable
 			cle="courriers"
+			famille="ENVOI"
 			titre="Courriers"
 			glose="À votre nom, relus et validés par vous, envoyés par vous."
 			valeur={
