@@ -859,8 +859,14 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 
 	return (
 		<div className="flex flex-col gap-cladd-2xs">
+			{/*
+			  ⚠️ CENTRÉ, À LA DEMANDE DU FONDATEUR (30/09/2026). Sans grand titre au-dessus,
+			  rien n'impose plus le bord gauche : c'est le solde de Revolut sous sa barre
+			  compacte. La page dossier, elle, garde le sien à gauche, sous le nom du
+			  client — là, le titre donne le bord.
+			*/}
 			<ChiffreHero
-				aligne="gauche"
+				className="py-cladd-3xs"
 				centimes={tete.total}
 				// La date du jour vit ICI, et plus en sous-titre d'écran : elle date le
 				// chiffre, qui monte chaque jour avec les pénalités.
