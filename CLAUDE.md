@@ -107,6 +107,13 @@ bandeau refermable, la rangée « De quoi c'est fait » (la page « Ce qui est d
 détail), l'agrégat de prescription (chaque dossier est une rangée datée) et « Les écrans de
 l'ancienne version ». 29 → 16 cibles, 3 001 → 1 813 px.
 
+**La fiche client a suivi, sur Splitwise et Revolut Business** : ce qu'il doit et sa date limite ;
+UN bouton, « Lancer un dossier », qui ouvre une feuille où les factures échues sont DÉJÀ cochées (le
+logiciel propose, le gérant confirme) ; ce qui est grave en une ligne ; ses dossiers et ses
+factures à régler en rangées qui se LISENT (`LigneFixe` : plus une seule case dans la liste) ; puis
+identité, solvabilité, paiements, documents, virement et factures réglées en rangées qui portent
+leur valeur (« SIREN à trouver », « non surveillée », « règle à 45 j »). 28 → 10 cibles.
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.

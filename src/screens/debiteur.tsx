@@ -1,22 +1,30 @@
+import { useState } from 'react';
 import type { HistoryState } from '@tanstack/react-router';
-import { Checkbox, Chip, SectionTitle, Surface } from '@cladd-ui/react';
-import { ScaleIcon } from 'lucide-react';
+import { Checkbox, Popup, PopupContent } from '@cladd-ui/react';
 import {
 	BoutonPrincipal,
+	CeQuiBloque,
 	ChiffreHero,
 	ConstatRegistre,
+	EnTeteDeGroupe,
 	HabitudePaiement,
 	IdentiteDebiteur,
 	Lettrage,
 	LigneAnalyse,
+	LigneBouton,
+	LigneFixe,
 	ListeAnalyses,
+	ListeDeRangees,
 	PageEcran,
 	Pieces,
+	RangeeDepliable,
+	SectionsDepliables,
 	TYPES_PIECE,
 	dateCourte,
 	eurosCentimes,
 	pluriel,
 	useProvenance,
+	type AlerteDossier,
 	type ConstatRegistreAffiche,
 	type EtablissementPropose,
 	type EtatRecherche,
@@ -53,14 +61,15 @@ import { TITRE_ECRAN } from './titres';
  * est d'ouvrir une CRÉANCE, et c'est un seul niveau de plus.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * L'ORDRE DES SECTIONS
+ * L'ORDRE — ET CE QUI S'EST REPLIÉ LE 30/09/2026
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Ce qu'il doit d'abord — c'est la question qu'on se pose en ouvrant la fiche :
- * l'encours, puis ses créances déjà constituées, puis ses factures. Ensuite ce
- * que le gérant seul peut dire (identité, secteur, taux), ce que le registre
- * dit de sa solvabilité, comment il paie d'habitude, et enfin les pièces du
- * dossier — le plus long, donc le dernier.
+ * Ce qu'il doit d'abord — c'est la question qu'on se pose en ouvrant la fiche —,
+ * puis le seul geste (« Lancer un dossier »), ce qui est grave, ses dossiers et
+ * ses factures à régler. Tout le reste — identité, solvabilité, habitude,
+ * documents, virement, factures réglées — tient en rangées qui portent leur
+ * valeur et s'ouvrent en feuille : c'est la fiche de Splitwise et de Revolut
+ * Business, relevée sur Mobbin. Voir `CorpsDebiteur`.
  *
  * Ce fichier DESSINE et ne sait pas interroger Convex ; la route LIT et
  * traduit. C'est ce qui permet d'ouvrir la page aux quatre largeurs depuis la
@@ -212,20 +221,22 @@ function prescriptionLaPlusProche(
 }
 
 /**
- * CE QUE LA PRESCRIPTION LA PLUS PROCHE DIT, AU PRÉSENT DE CONSTAT.
+ * LA DATE LIMITE POUR AGIR, SOUS LE MONTANT, AU PRÉSENT DE CONSTAT.
  *
  * ⚠️ AUCUN VERBE D'ACTION, ET C'EST LA TROISIÈME LIGNE ROUGE. « Engagez une
  * procédure avant le … » serait du conseil juridique. Le produit énonce la
  * date et le nombre de jours ; la décision d'agir reste celle du gérant.
+ *
+ * ⚠️ COURTE, ET SANS LA RÉFÉRENCE DE LA FACTURE. « FA-2024-114 : la date limite
+ * pour agir en justice tombe le 27 oct. 2026, dans 41 jours » courait sur trois
+ * lignes sous le chiffre, à 393 px. La date est ce qu'on dit au téléphone ; la
+ * facture qui la porte se lit dans la liste, juste dessous (« agir avant le … »).
+ * Même phrase que sur la page d'un dossier.
  */
 function phrasePrescription(proche: PrescriptionLaPlusProche): string {
-	if (proche.jours < 0) {
-		return `${proche.reference} : la date limite pour agir en justice est passée depuis le ${dateCourte(proche.date)}.`;
-	}
-	if (proche.jours === 0) {
-		return `${proche.reference} : la date limite pour agir en justice tombe aujourd’hui.`;
-	}
-	return `${proche.reference} : la date limite pour agir en justice tombe le ${dateCourte(proche.date)}, dans ${proche.jours} jour${pluriel(proche.jours)}.`;
+	if (proche.jours < 0) return `Date limite pour agir dépassée le ${dateCourte(proche.date)}`;
+	if (proche.jours === 0) return 'Date limite pour agir : aujourd’hui';
+	return `Date limite pour agir : ${dateCourte(proche.date)}, dans ${proche.jours} jour${pluriel(proche.jours)}`;
 }
 
 export function EcranDebiteur({
@@ -244,9 +255,9 @@ export function EcranDebiteur({
 				genre: 'poussee',
 				/**
 				 * ⚠️ `masqueEnVolets` : À PARTIR DE 1024 px, LA LISTE EST DÉJÀ À GAUCHE.
-				 * Une pastille « Vos débiteurs » y mènerait à ce qui est affiché juste à
-				 * côté. Sous 1024 px, la page occupe l'écran entier et le retour est le
-				 * seul chemin vers la liste : il reste.
+				 * Un retour y mènerait à ce qui est affiché juste à côté. Sous 1024 px,
+				 * la page occupe l'écran entier et le retour est le seul chemin vers la
+				 * liste : il reste.
 				 */
 				retour: {
 					vers: '/app/clients',
@@ -256,12 +267,10 @@ export function EcranDebiteur({
 				},
 				titre: pret?.denomination ?? 'Ce client',
 				/*
-				  L'ADRESSE DU SIÈGE SOUS LE NOM, ET NULLE PART AILLEURS.
-
-				  C'est ce qui distingue « Ateliers Martin » d'« Ateliers Martin Fils »
-				  avant même de lire un numéro — et sur cette page, se tromper de client
-				  fait constituer une créance contre le mauvais tiers. Elle ne s'affiche
-				  que si le registre l'a donnée.
+				  L'ADRESSE DU SIÈGE SOUS LE NOM, EN PETIT, DANS LA BARRE. C'est ce qui
+				  distingue « Ateliers Martin » d'« Ateliers Martin Fils » avant même de
+				  lire un numéro — et sur cette page, se tromper de client fait
+				  constituer un dossier contre le mauvais tiers.
 				*/
 				sousTitre: pret?.debiteur.adresse
 			}}
@@ -272,6 +281,91 @@ export function EcranDebiteur({
 	);
 }
 
+/** Le délai habituel, écrit pour la valeur d'une rangée. */
+function habitudeCourte(habitude: HabitudeAffichee): string {
+	if (!habitude.connue) return 'pas assez d’historique';
+	const jours = Math.round(habitude.delaiMedianJours);
+	if (jours === 0) return 'règle le jour dit';
+	if (jours < 0) return `règle ${Math.abs(jours)} j en avance`;
+	return `règle à ${jours} j`;
+}
+
+/** Ce qui manque à son identité, le plus lourd d'abord — ou « complète ». */
+function identiteCourte(debiteur: DebiteurAffiche): string {
+	if (debiteur.siren === undefined || debiteur.siren === '') return 'SIREN à trouver';
+	if (debiteur.secteur === undefined || debiteur.secteur === 'INDETERMINE')
+		return 'secteur à préciser';
+	if (debiteur.email === undefined || debiteur.email === '') return 'e-mail à ajouter';
+	return 'complète';
+}
+
+/**
+ * CE QUI CHANGE LA DONNE SUR CE CLIENT — le registre, et lui seul.
+ *
+ * ⚠️ UN CONSTAT, CITÉ, JAMAIS UNE CONDUITE À TENIR. Le titre dit ce qui EST ;
+ * la citation renvoie à l'annonce. « Déclarez votre créance » serait un conseil
+ * juridique : troisième ligne rouge.
+ */
+function alertesDuClient(debiteur: DebiteurAffiche): readonly AlerteDossier[] {
+	if (
+		debiteur.santeFinanciere !== 'PROCEDURE_COLLECTIVE' &&
+		debiteur.santeFinanciere !== 'RADIEE'
+	) {
+		return [];
+	}
+	const constat = debiteur.constatRegistre;
+	return [
+		{
+			cle: `sante-${debiteur.santeFinanciere}`,
+			titre:
+				debiteur.santeFinanciere === 'RADIEE'
+					? 'Votre client est radié du registre'
+					: 'Votre client est en procédure collective',
+			phrases:
+				constat === undefined
+					? ['Le registre public l’a signalé au dernier passage du radar.']
+					: [
+							`Annonce parue le ${dateCourte(constat.dateParution)}${
+								constat.tribunal === undefined ? '' : `, ${constat.tribunal}`
+							}.`
+						],
+			echeance: null,
+			options: [],
+			citation:
+				constat === undefined
+					? null
+					: { texte: constat.nature, source: 'L’annonce au registre public', url: constat.url }
+		}
+	];
+}
+
+/**
+ * LE CORPS DE LA FICHE — ce qu'il doit, le seul geste, puis le reste en rangées.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QU'ELLE ÉTAIT, ET LE CODE QU'ELLE REPREND (30/09/2026)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le montant, quatre pastilles, les dossiers, chaque facture dans une carte
+ * avec sa case et deux pastilles, les factures réglées en cartes, le
+ * rapprochement, puis quatre sections à plat — identité, solvabilité, habitude,
+ * documents — et une barre qui surgissait en bas dès la première case cochée.
+ * La page la plus chargée du produit, pour la question la plus simple : « il me
+ * doit combien, et je fais quoi ? ».
+ *
+ * Relevé sur Mobbin : Splitwise, sur la fiche de quelqu'un qui vous doit — le
+ * solde, UN bouton plein, puis la liste datée ; Revolut Business, sur la fiche
+ * d'un client — le nom, un bouton, et des cartes courtes. D'où :
+ *
+ *   1. Ce qu'il doit, et la date limite pour agir.
+ *   2. UN bouton, « Lancer un dossier » : il ouvre une feuille où les factures
+ *      échues sont déjà cochées — le logiciel propose, le gérant confirme (règle
+ *      d'écran n° 1). Les cases ont quitté la liste : elle se LIT.
+ *   3. Ce qui est grave (procédure collective, radiation) monte en une ligne.
+ *   4. Ses dossiers, puis ses factures à régler, en rangées.
+ *   5. Le reste en rangées qui portent leur valeur : identité, solvabilité,
+ *      habitude, documents, virement, factures réglées.
+ */
 function CorpsDebiteur({
 	denomination,
 	debiteur,
@@ -311,36 +405,29 @@ function CorpsDebiteur({
 	onRetirerPiece
 }: DebiteurComplet) {
 	const provenance = useProvenance();
+	/** Les rangées ouvertes. Aucune à l'arrivée : leur valeur se lit fermée. */
+	const [ouvertes, setOuvertes] = useState<readonly string[]>([]);
+	/** La feuille « Lancer un dossier ». */
+	const [feuilleOuverte, setFeuilleOuverte] = useState(false);
 
 	const proche = prescriptionLaPlusProche(factures, aujourdHui);
-	const echues = factures.filter(
-		(facture) =>
-			facture.resteDu > 0n &&
-			facture.dateEcheance !== undefined &&
-			facture.dateEcheance < aujourdHui
-	).length;
-	const ouvertes = factures.filter((facture) => facture.resteDu > 0n).length;
 
 	/**
 	 * ⚠️ DEUX LISTES, PARCE QU'UNE FACTURE RÉGLÉE N'APPELLE PLUS RIEN. Mêlée aux
-	 * autres, elle affichait son reste dû — « 0,00 € » — et la date limite pour
-	 * agir en justice, sur une somme déjà encaissée. Le doute ne profite jamais
-	 * au produit, et un zéro n'est pas un montant : c'est une facture soldée.
-	 *
-	 * Dérivé au rendu, jamais posé dans un état : `factures` change à chaque
-	 * rapprochement de virement, et un état retomberait d'un cran en retard.
+	 * autres, elle affichait « 0,00 € » et une date limite pour agir sur une somme
+	 * déjà encaissée. Dérivé au rendu, jamais posé dans un état : `factures`
+	 * change à chaque rapprochement de virement.
 	 */
 	const aRegler = factures.filter((facture) => facture.resteDu > 0n);
 	const reglees = factures.filter((facture) => facture.resteDu <= 0n);
+	/** Ce qui peut entrer dans un dossier : dû, et dans aucun autre. */
+	const eligibles = aRegler.filter((facture) => !facture.dansUneCreance);
 
 	/**
-	 * LE TAUX DE RETARD RELEVÉ SUR UNE PIÈCE, s'il y en a un.
-	 *
-	 * La plus récente d'abord — `listerPiecesDuDebiteur` les trie ainsi — donc
-	 * des conditions générales déposées ce matin l'emportent sur celles de l'an
-	 * dernier. Une seule proposition à la fois : en montrer deux reviendrait à
-	 * demander laquelle des deux clauses gouverne la relation, ce qu'aucune
-	 * pièce ne dit.
+	 * LE TAUX DE RETARD RELEVÉ SUR UNE PIÈCE, s'il y en a un. La plus récente
+	 * d'abord — `listerPiecesDuDebiteur` les trie ainsi. Une seule proposition à
+	 * la fois : en montrer deux reviendrait à demander laquelle des deux clauses
+	 * gouverne la relation, ce qu'aucune pièce ne dit.
 	 */
 	const pieceQuiPorteLeTaux = pieces.find((piece) => piece.tauxRetardStipule !== undefined);
 	const propositionTaux: PropositionTaux | null =
@@ -353,32 +440,62 @@ function CorpsDebiteur({
 				};
 
 	// La somme des restes dus des factures cochées. ⚠️ EN `bigint`, comme toute la
-	// chaîne : un `Number` sur des centimes perd le dernier chiffre au-delà de
-	// quatre-vingt-dix mille milliards, et surtout il autorise un demi-centime.
+	// chaîne : un `Number` sur des centimes autoriserait un demi-centime.
 	const restesDusSelectionnes = factures.reduce(
 		(somme, facture) => (selection.has(facture._id) ? somme + facture.resteDu : somme),
 		0n
 	);
 
-	return (
-		<>
-			{/*
-			  ═══════════════════════════════════════════════════════════════════
-			  EN TÊTE : L'ENCOURS, ET CE QUI QUALIFIE CE CLIENT
-			  ═══════════════════════════════════════════════════════════════════
+	/**
+	 * OUVRIR LA FEUILLE, LES FACTURES ÉCHUES DÉJÀ COCHÉES.
+	 *
+	 * ⚠️ SEULEMENT SI RIEN N'EST ENCORE COCHÉ. Une sélection commencée — puis la
+	 * feuille refermée — se retrouve telle quelle ; la recocher d'office
+	 * défairait ce que le gérant vient de décocher. Et s'il n'y a aucune facture
+	 * échue, rien n'est proposé : cocher une facture pas encore due serait
+	 * choisir à sa place.
+	 */
+	function ouvrirLaFeuille() {
+		if (selection.size === 0) {
+			for (const facture of eligibles) {
+				if (facture.dateEcheance !== undefined && facture.dateEcheance < aujourdHui) {
+					onBasculerFacture(facture._id);
+				}
+			}
+		}
+		setFeuilleOuverte(true);
+	}
 
-			  ⚠️ PAS DE CADRAN À ZÉRO (règle d'écran n° 4). Un client à jour ne
-			  mérite pas un « 0,00 € » en corps de titre : il mérite qu'on le dise
-			  en toutes lettres, et que la page serve quand même à déposer une
-			  pièce ou à préciser son secteur.
+	/** Ce que dit une facture sous sa référence, en une ligne. */
+	function precisionDeFacture(facture: FactureAffichee): string | undefined {
+		const faits = [
+			facture.dateEcheance === undefined
+				? null
+				: facture.dateEcheance < aujourdHui
+					? `Échue le ${dateCourte(facture.dateEcheance)}`
+					: `À payer le ${dateCourte(facture.dateEcheance)}`,
+			facture.datePrescription === undefined
+				? null
+				: `agir avant le ${dateCourte(facture.datePrescription)}`
+		].filter((fait): fait is string => fait !== null);
+		return faits.length === 0 ? undefined : faits.join(' · ');
+	}
+
+	return (
+		<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={setOuvertes}>
+			{/*
+			  ⚠️ PAS DE CADRAN À ZÉRO (règle d'écran n° 4). Un client à jour ne mérite
+			  pas un « 0,00 € » en corps de titre : on le dit en toutes lettres, et la
+			  page sert quand même à déposer une pièce ou à préciser son secteur.
 			*/}
 			{encours > 0n ? (
 				<ChiffreHero
+					className="py-cladd-3xs"
 					centimes={encours}
 					surTitre="Ce qu’il vous doit"
 					legende={
 						proche === null
-							? `${ouvertes} facture${pluriel(ouvertes)} ouverte${pluriel(ouvertes)}`
+							? `${aRegler.length} facture${pluriel(aRegler.length)} à régler`
 							: phrasePrescription(proche)
 					}
 				/>
@@ -389,65 +506,38 @@ function CorpsDebiteur({
 			)}
 
 			{/*
-			  LA RANGÉE DE PILULES, SOUS LE NOM : ce qui qualifie le client, jamais
-			  une information de même niveau que son encours.
-
-			  ⚠️ ELLES NE PORTENT AUCUNE COULEUR DE SEUIL INVENTÉE ICI : ce sont
-			  exactement celles de la liste, pour qu'une fiche ouverte dise la même
-			  chose que la rangée qu'on vient de toucher.
+			  LE SEUL BOUTON DE LA FICHE. « Lancer un dossier » est un geste de bureau
+			  — réunir des factures pour en calculer ce qui est dû —, jamais une voie
+			  de droit. Il n'apparaît que s'il reste une facture à mettre dans un
+			  dossier.
 			*/}
-			<div className="flex flex-wrap items-center justify-center gap-1.5">
-				{echues > 0 ? (
-					<Chip size="md" color="orange">
-						{echues} échue{pluriel(echues)}
-					</Chip>
-				) : null}
-				{debiteur.santeFinanciere === 'RADIEE' || // Deux états que le radar pose, et qui changent tout.
-				debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE' ? (
-					<Chip size="md" color="red">
-						{debiteur.santeFinanciere === 'RADIEE' ? 'Radié' : 'Procédure collective'}
-					</Chip>
-				) : null}
-				{/* Un secteur indéterminé fait retenir le délai de prescription le plus
-				    court. Le dire ici évite que le gérant découvre l'hypothèse au moment
-				    où une créance est annoncée prescrite — et le choix est trois
-				    sections plus bas, sur cette même page. */}
-				{debiteur.secteur === undefined || debiteur.secteur === 'INDETERMINE' ? (
-					<Chip size="md" color="neutral">
-						Ce que vous lui vendez : à préciser
-					</Chip>
-				) : null}
-				{debiteur.siren === undefined || debiteur.siren === '' ? (
-					<Chip size="md" color="neutral">
-						Non identifié au registre
-					</Chip>
-				) : null}
-			</div>
+			{eligibles.length === 0 ? null : (
+				<BoutonPrincipal pleineLargeur onClick={ouvrirLaFeuille}>
+					Lancer un dossier
+				</BoutonPrincipal>
+			)}
 
-			{/*
-			  ═══════════════════════════════════════════════════════════════════
-			  SES CRÉANCES — le seul geste qui quitte cette page
-			  ═══════════════════════════════════════════════════════════════════
+			<CeQuiBloque alertes={alertesDuClient(debiteur)} />
 
-			  Un niveau de plus, et c'est tout : `/app/creance/$id`. La valeur de la
-			  rangée est le montant, parce que c'est ce qu'on vient chercher ; le
-			  compte de factures va en précision.
-			*/}
+			{/* SES DOSSIERS — le chemin vers la page où l'on agit. */}
 			{creances.length === 0 ? null : (
 				<section className="flex flex-col gap-cladd-3xs">
-					<SectionTitle>Ses dossiers</SectionTitle>
+					<EnTeteDeGroupe
+						libelle="Ses dossiers"
+						nombre={creances.length}
+						total={creances.reduce((somme, c) => somme + c.principalRestantDu, 0n)}
+					/>
 					<ListeAnalyses>
 						{creances.map((creance) => (
 							<LigneAnalyse
 								key={creance._id}
+								genre="contenu"
 								vers="/app/dossier/$id"
 								parametres={{ id: creance._id }}
-								icone={<ScaleIcon />}
 								titre={`${creance.nombreFactures} facture${pluriel(creance.nombreFactures)}`}
 								// Un brouillon n'est pas encore qualifié : le dire évite d'ouvrir
-								// une créance en croyant qu'elle est prête, et de lire un score
-								// qui ne porte encore sur rien.
-								precision={creance.statut === 'BROUILLON' ? 'Brouillon' : undefined}
+								// un dossier en croyant qu'il est prêt.
+								{...(creance.statut === 'BROUILLON' ? { precision: 'Brouillon' } : {})}
 								valeur={eurosCentimes(creance.principalRestantDu)}
 							/>
 						))}
@@ -455,320 +545,280 @@ function CorpsDebiteur({
 				</section>
 			)}
 
-			{/*
-			  ═══════════════════════════════════════════════════════════════════
-			  SES FACTURES — et le rapprochement d'un virement, juste à côté
-			  ═══════════════════════════════════════════════════════════════════
-			*/}
-			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>Ce qu’il vous doit encore</SectionTitle>
-
-				{factures.length === 0 ? (
-					<p className="text-cladd-xs text-cladd-fg-soft">
-						Aucune facture de ce client n’a encore été importée.
-					</p>
-				) : null}
-
-				{factures.length > 0 && aRegler.length === 0 ? (
-					<p className="text-cladd-xs text-cladd-fg-soft">Toutes ses factures sont réglées.</p>
-				) : null}
-
-				{/*
-				  ⚠️ DIT UNE FOIS, EN TÊTE, PAS SOUS CHAQUE LIGNE. Cette phrase était
-				  répétée à l'identique sur CHAQUE facture — cinq fois trente mots sur
-				  la page d'un client qui en a cinq (audit du 29/09/2026, F4).
-				  L'honnêteté du produit ne demande pas qu'on répète l'avertissement :
-				  elle demande qu'il soit dit, à sa place, et retrouvable.
-				*/}
-				{aRegler.some((facture) => facture.exigibiliteDeduite) ? (
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-						La date à laquelle le paiement devenait exigible est déduite de l’échéance de
-						chaque facture — à confirmer si vos conditions contractuelles disent autre chose.
-					</p>
-				) : null}
-
-				{aRegler.map((facture) => (
-					<Surface
-						key={facture._id}
-						// En verre comme toutes les cartes du produit.
-						variant="transparent"
-						outline={false}
-						className="verre-carte rounded-cladd-xl"
-					>
-						{/*
-						  ⚠️ TOUTE LA CARTE EST L'ÉTIQUETTE DE SA CASE. Cocher des factures est le
-						  geste principal de cette page, et la case seule faisait vingt pixels, moins
-						  de la moitié du plancher tactile de 48 px. La carte ne porte aucun autre
-						  contrôle : un appui n'importe où la coche.
-						*/}
-						<label
-							aria-label={`Sélectionner ${facture.reference}`}
-							className="flex gap-cladd-3xs p-cladd-2xs"
-						>
-							<Checkbox
-								as="span"
-								checked={selection.has(facture._id)}
-								onChange={() => onBasculerFacture(facture._id)}
-								disabled={facture.dansUneCreance}
-							/>
-							<span className="flex min-w-0 flex-1 flex-col gap-1.5">
-								<span className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-									<span className="text-cladd-sm font-semibold">{facture.reference}</span>
-									<span className="shrink-0 text-cladd-sm tabular-nums">
-										{eurosCentimes(facture.resteDu)}
-									</span>
-								</span>
-
-								{facture.dateEcheance ? (
-									<span className="text-cladd-2xs text-cladd-fg-softer">
-										Échue le {dateCourte(facture.dateEcheance)}
-									</span>
-								) : null}
-
-
-								<span className="flex flex-wrap items-center gap-1.5">
-									{facture.dansUneCreance ? (
-										<Chip size="md" color="neutral">
-											Déjà dans un dossier
-										</Chip>
-									) : null}
-									{facture.datePrescription ? (
-										<Chip size="md" color="neutral">
-											Agir en justice avant le {dateCourte(facture.datePrescription)}
-										</Chip>
-									) : null}
-								</span>
-							</span>
-						</label>
-					</Surface>
-				))}
-
-				{/*
-				  ═══════════════════════════════════════════════════════════════
-				  ⚠️ LES FACTURES RÉGLÉES, À PART ET APRÈS
-				  ═══════════════════════════════════════════════════════════════
-
-				  Elles étaient mêlées aux autres, et la liste affichait alors
-				  « 0,00 € » sur chacune — leur reste dû — à côté d'une carte qui
-				  annonçait 12 878,50 € dus. Pire : la puce « Agir en justice avant
-				  le … » s'affichait sur une facture déjà payée, c'est-à-dire une
-				  date limite sur un droit qu'on n'a plus besoin d'exercer.
-
-				  Elles restent visibles — c'est l'historique du client, et il sert
-				  à mesurer son habitude de paiement — mais après, sans montant
-				  trompeur et sans échéance.
-				*/}
-				{reglees.length > 0 ? (
-					<>
-						<SectionTitle>
-							{reglees.length} facture{pluriel(reglees.length)} réglée{pluriel(reglees.length)}
-						</SectionTitle>
-						{reglees.map((facture) => (
-							<Surface
-								key={facture._id}
-								variant="transparent"
-								outline={false}
-								className="verre-carte rounded-cladd-xl"
-								contentClassName="flex flex-wrap items-baseline justify-between gap-cladd-3xs p-cladd-2xs"
-							>
-								<span className="text-cladd-sm font-semibold">{facture.reference}</span>
-								<span className="flex items-center gap-cladd-3xs">
-									{facture.dateEcheance ? (
-										<span className="text-cladd-2xs text-cladd-fg-softer">
-											échue le {dateCourte(facture.dateEcheance)}
-										</span>
-									) : null}
-									<span className="text-cladd-sm tabular-nums text-cladd-fg-soft">
-										{eurosCentimes(facture.montantTTC)}
-									</span>
-								</span>
-							</Surface>
-						))}
-					</>
-				) : null}
-
-				{/*
-				  LE RAPPROCHEMENT D'UN VIREMENT, REPLIÉ EN UNE RANGÉE.
-
-				  ⚠️ IL EST SOUS LES FACTURES, PAS AU-DESSUS. Déplié en permanence, il
-				  poussait la sélection — le geste principal de cette page — sous la
-				  ligne de flottaison. Il se déplie tout seul dès qu'il a un résultat à
-				  montrer ; voir `ui/lettrage.tsx`.
-
-				  ⚠️ ET LA DATE ARRIVE AVEC LE GESTE, elle n'est pas relue dans un état
-				  de l'écran. Le calendrier reste modifiable après la recherche : la
-				  date d'un règlement est le point d'arrêt des intérêts, et la relire
-				  ailleurs enregistrait un montant faux.
-				*/}
-				<ListeAnalyses>
-					<Lettrage
-						proposition={propositionLettrage}
-						enCours={lettrageEnCours}
-						erreur={erreurLettrage}
-						onChercher={onChercherLettrage}
-						onAppliquer={onAppliquerLettrage}
-						{...(onRepartirLettrage === undefined ? {} : { onRepartir: onRepartirLettrage })}
+			{/* SES FACTURES À RÉGLER — elles se LISENT ; on les choisit dans la feuille. */}
+			{factures.length === 0 ? (
+				<p className="px-1 text-cladd-xs text-cladd-fg-soft">
+					Aucune facture de ce client n’a encore été importée.
+				</p>
+			) : aRegler.length === 0 ? (
+				<p className="px-1 text-cladd-xs text-cladd-fg-soft">Toutes ses factures sont réglées.</p>
+			) : (
+				<section className="flex flex-col gap-cladd-3xs">
+					<EnTeteDeGroupe
+						libelle="À régler"
+						nombre={aRegler.length}
+						total={aRegler.reduce((somme, facture) => somme + facture.resteDu, 0n)}
 					/>
-				</ListeAnalyses>
-			</section>
+					<ListeAnalyses>
+						{aRegler.map((facture) => (
+							<LigneFixe
+								key={facture._id}
+								genre="contenu"
+								titre={facture.reference}
+								{...(precisionDeFacture(facture) === undefined
+									? {}
+									: { precision: precisionDeFacture(facture) })}
+								// Deux lignes : l'échéance ET la date limite pour agir — la
+								// seconde est celle qui éteint le droit, elle ne se coupe pas.
+								lignes={2}
+								valeur={eurosCentimes(facture.resteDu)}
+								// « Dans un dossier » passait DEVANT les dates et les faisait
+								// disparaître à 393 px : c'est un état, il va sous le montant.
+								{...(facture.dansUneCreance ? { sousValeur: 'dans un dossier' } : {})}
+							/>
+						))}
+					</ListeAnalyses>
+					{/*
+					  ⚠️ DIT UNE FOIS, SOUS LA LISTE, PAS SOUS CHAQUE LIGNE (audit du
+					  29/09/2026, F4). L'honnêteté du produit ne demande pas qu'on répète
+					  l'avertissement : elle demande qu'il soit dit, à sa place.
+					*/}
+					{aRegler.some((facture) => facture.exigibiliteDeduite) ? (
+						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+							La date à laquelle le paiement devenait exigible est déduite de l’échéance de chaque
+							facture — à confirmer si vos conditions contractuelles disent autre chose.
+						</p>
+					) : null}
+				</section>
+			)}
 
-			{/*
-			  ═══════════════════════════════════════════════════════════════════
-			  SON IDENTITÉ — ce que le gérant seul peut dire
-			  ═══════════════════════════════════════════════════════════════════
+			{/* LE RESTE, EN RANGÉES QUI PORTENT LEUR VALEUR. */}
+			<ListeDeRangees>
+				{/*
+				  SON IDENTITÉ — ce que le gérant seul peut dire. Le SIREN se cherche au
+				  registre PAR NOM, et le produit propose sans jamais choisir : un SIREN
+				  d'homonyme désignerait une AUTRE entreprise. Sans lui, la solvabilité
+				  n'est pas surveillée et le délai le plus court est retenu.
+				*/}
+				<RangeeDepliable
+					cle="identite"
+					famille="QUESTION"
+					titre="Son identité"
+					glose="SIREN, ce que vous lui vendez, son adresse électronique et votre taux de retard."
+					valeur={identiteCourte(debiteur)}
+				>
+					<IdentiteDebiteur
+						denomination={denomination}
+						siren={debiteur.siren}
+						formeJuridique={debiteur.formeJuridique}
+						etatRecherche={etatRecherche}
+						onChercherAuRegistre={onChercherAuRegistre}
+						onRetenirEtablissement={onRetenirEtablissement}
+						secteur={debiteur.secteur}
+						optionsSecteur={optionsSecteur}
+						email={debiteur.email}
+						emailVenuDeLaBanque={debiteur.emailVenuDeLaBanque ?? false}
+						erreurEmail={erreurEmail}
+						onEnregistrerEmail={onEnregistrerEmail}
+						erreurSiren={erreurSiren}
+						onEnregistrerSiren={onEnregistrerSiren}
+						onChoisirSecteur={onChoisirSecteur}
+						tauxContractuel={tauxStipule}
+						propositionTaux={propositionTaux}
+						constatTaux={constatTaux}
+						onEnregistrerTaux={onEnregistrerTaux}
+					/>
+				</RangeeDepliable>
 
-			  Le SIREN se cherche au registre PAR NOM, sans clé, et le produit
-			  propose sans jamais choisir : un SIREN d'homonyme, bien formé, désigne
-			  une AUTRE entreprise, et le radar rendrait sur elle un « rien au
-			  registre » faux et rassurant.
+				{/*
+				  SA SOLVABILITÉ — le registre, cité mot pour mot. ⚠️ L'ABSENCE DE
+				  CONSTAT N'EST PAS UNE BONNE NOUVELLE, et la valeur le dit : sans SIREN,
+				  « non surveillée », jamais « rien au registre ».
+				*/}
+				<RangeeDepliable
+					cle="solvabilite"
+					famille="MACHINE"
+					titre="Solvabilité"
+					valeur={
+						debiteur.santeFinanciere === 'RADIEE'
+							? 'radié'
+							: debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE'
+								? 'procédure collective'
+								: debiteur.siren === undefined || debiteur.siren === ''
+									? 'non surveillée'
+									: 'rien au registre'
+					}
+				>
+					{debiteur.constatRegistre === undefined ? (
+						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+							{debiteur.siren === undefined || debiteur.siren === ''
+								? 'Sans SIREN, sa solvabilité n’est pas surveillée : aucun registre n’est interrogé à son nom.'
+								: 'Aucune annonce de greffe relevée à son nom au dernier passage du radar.'}
+						</p>
+					) : (
+						<ConstatRegistre constat={debiteur.constatRegistre} sante={debiteur.santeFinanciere} />
+					)}
+				</RangeeDepliable>
 
-			  Sans SIREN, un débiteur non identifié devient définitivement
-			  non identifiable : sa solvabilité n'est pas surveillée, et le produit
-			  retient alors le délai de prescription le plus court.
-			*/}
-			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>Son identité</SectionTitle>
-				<IdentiteDebiteur
-					denomination={denomination}
-					siren={debiteur.siren}
-					formeJuridique={debiteur.formeJuridique}
-					etatRecherche={etatRecherche}
-					onChercherAuRegistre={onChercherAuRegistre}
-					onRetenirEtablissement={onRetenirEtablissement}
-					secteur={debiteur.secteur}
-					optionsSecteur={optionsSecteur}
-					email={debiteur.email}
-					emailVenuDeLaBanque={debiteur.emailVenuDeLaBanque ?? false}
-					erreurEmail={erreurEmail}
-					onEnregistrerEmail={onEnregistrerEmail}
-					erreurSiren={erreurSiren}
-					onEnregistrerSiren={onEnregistrerSiren}
-					onChoisirSecteur={onChoisirSecteur}
-					tauxContractuel={tauxStipule}
-					propositionTaux={propositionTaux}
-					constatTaux={constatTaux}
-					onEnregistrerTaux={onEnregistrerTaux}
-				/>
-			</section>
+				{/*
+				  SON HABITUDE DE PAIEMENT — une statistique, qui a besoin d'être lue :
+				  le délai médian, l'échantillon, puis chaque rupture. Un historique trop
+				  court se DIT, sur la valeur même.
+				*/}
+				<RangeeDepliable
+					cle="habitude"
+					famille="TEMPS"
+					titre="Ses paiements"
+					valeur={ruptures.length > 0 ? 'rythme rompu' : habitudeCourte(habitude)}
+				>
+					{/* `nomme={false}` : la feuille porte déjà le titre. */}
+					<HabitudePaiement habitude={habitude} ruptures={ruptures} nomme={false} />
+				</RangeeDepliable>
 
-			{/*
-			  ═══════════════════════════════════════════════════════════════════
-			  SA SOLVABILITÉ — le registre, cité mot pour mot
-			  ═══════════════════════════════════════════════════════════════════
+				{/*
+				  SES DOCUMENTS. ⚠️ LE DÉPÔT N'IMPOSE AUCUN TYPE : la pièce entre « à
+				  classer », la lecture part en tâche de fond, et le gérant ne corrige
+				  que si elle s'est trompée.
+				*/}
+				<RangeeDepliable
+					cle="documents"
+					famille="PAPIERS"
+					titre="Documents"
+					glose="Déposés ici, lus et classés tout seuls."
+					valeur={pieces.length === 0 ? 'aucun' : `${pieces.length}`}
+				>
+					<Pieces
+						pieces={pieces}
+						optionsType={TYPES_PIECE}
+						enCours={depotEnCours}
+						onDeposer={onDeposerPieces}
+						onClasser={onClasserPiece}
+						onRetirer={onRetirerPiece}
+					/>
+					{erreurDepot ? <p className="text-cladd-xs text-cladd-fg">{erreurDepot}</p> : null}
+				</RangeeDepliable>
 
-			  ⚠️ L'ABSENCE DE CONSTAT N'EST PAS UNE BONNE NOUVELLE, et la page le
-			  dit. Un silence du registre sur un client identifié veut dire « aucune
-			  annonce depuis le dernier passage » ; sur un client sans SIREN, il veut
-			  dire « personne n'a rien regardé ». Les confondre ferait lire un feu
-			  vert là où il n'y a que du noir.
-			*/}
-			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>Sa solvabilité</SectionTitle>
-				{debiteur.constatRegistre === undefined ? (
-					<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-						{debiteur.siren === undefined || debiteur.siren === ''
-							? 'Sans SIREN, sa solvabilité n’est pas surveillée : aucun registre n’est interrogé à son nom.'
-							: 'Aucune annonce de greffe relevée à son nom au dernier passage du radar.'}
-					</p>
-				) : (
-					<ConstatRegistre constat={debiteur.constatRegistre} sante={debiteur.santeFinanciere} />
+				{/*
+				  LE RAPPROCHEMENT D'UN VIREMENT — ce qui empêche de relancer un client
+				  qui a déjà payé. ⚠️ LA DATE ARRIVE AVEC LE GESTE : la date d'un
+				  règlement est le point d'arrêt des pénalités, et la relire ailleurs
+				  enregistrait un montant faux.
+				*/}
+				<RangeeDepliable
+					cle="virement"
+					famille="ARGENT"
+					titre="Un virement reçu"
+					glose="Dites-le ici : le logiciel solde les bonnes factures, et personne n’est relancé pour ce qu’il a déjà payé."
+					valeur="à rapprocher"
+				>
+					<ListeAnalyses>
+						<Lettrage
+							proposition={propositionLettrage}
+							enCours={lettrageEnCours}
+							erreur={erreurLettrage}
+							onChercher={onChercherLettrage}
+							onAppliquer={onAppliquerLettrage}
+							{...(onRepartirLettrage === undefined ? {} : { onRepartir: onRepartirLettrage })}
+						/>
+					</ListeAnalyses>
+				</RangeeDepliable>
+
+				{/*
+				  LES FACTURES RÉGLÉES — l'historique du client, qui sert à mesurer son
+				  habitude. À part, sans montant trompeur et sans date limite.
+				*/}
+				{reglees.length === 0 ? null : (
+					<RangeeDepliable
+						cle="reglees"
+						famille="PAPIERS"
+						titre="Factures réglées"
+						valeur={`${reglees.length}`}
+					>
+						<ListeAnalyses>
+							{reglees.map((facture) => (
+								<LigneFixe
+									key={facture._id}
+									genre="contenu"
+									titre={facture.reference}
+									{...(facture.dateEcheance === undefined
+										? {}
+										: { precision: `Échue le ${dateCourte(facture.dateEcheance)}` })}
+									valeur={eurosCentimes(facture.montantTTC)}
+								/>
+							))}
+						</ListeAnalyses>
+					</RangeeDepliable>
 				)}
-			</section>
-
-			{/*
-			  ═══════════════════════════════════════════════════════════════════
-			  SON HABITUDE DE PAIEMENT — elle avait sa propre page, elle est ici
-			  ═══════════════════════════════════════════════════════════════════
-
-			  ⚠️ C'EST UNE STATISTIQUE, ET ELLE A BESOIN D'ÊTRE LUE. Le délai médian,
-			  la taille de l'échantillon, puis chaque rupture avec son écart. Un
-			  historique trop court se dit : le module est inopérant sur un client
-			  nouveau, et le produit l'annonce au lieu de faire semblant.
-			*/}
-			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>Son habitude de paiement</SectionTitle>
-				{/* `nomme={false}` : la section porte déjà le titre, juste au-dessus. */}
-				<HabitudePaiement habitude={habitude} ruptures={ruptures} nomme={false} />
-			</section>
-
-			{/*
-			  ═══════════════════════════════════════════════════════════════════
-			  SES PIÈCES — elles avaient leur propre page, elles sont ici
-			  ═══════════════════════════════════════════════════════════════════
-
-			  ⚠️ LE DÉPÔT N'IMPOSE AUCUN TYPE. La pièce entre « à classer », la
-			  lecture part en tâche de fond, et le gérant ne corrige que si elle
-			  s'est trompée. Demander la nature d'un PDF qui porte « BON DE
-			  LIVRAISON » en en-tête est exactement le champ vide que la première
-			  règle d'écran interdit.
-
-			  En DERNIER parce que c'est la section la plus longue : une pièce dit sa
-			  nature, son numéro, sa date, le constat de sa lecture et sa réserve
-			  éventuelle. Au-dessus, elle repousserait les factures sous l'horizon.
-			*/}
-			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>
-					<span>Ses documents</span>
-					{/* « 0 document » serait un cadran à zéro : le vide se dit en toutes lettres. */}
-					<span className="ml-auto text-cladd-2xs text-cladd-fg-softer normal-case">
-						{pieces.length === 0
-							? 'Aucun document'
-							: `${pieces.length} document${pluriel(pieces.length)}`}
-					</span>
-				</SectionTitle>
-				<Pieces
-					pieces={pieces}
-					optionsType={TYPES_PIECE}
-					enCours={depotEnCours}
-					onDeposer={onDeposerPieces}
-					onClasser={onClasserPiece}
-					onRetirer={onRetirerPiece}
-				/>
-				{erreurDepot ? <p className="text-cladd-xs text-cladd-fg">{erreurDepot}</p> : null}
-			</section>
+			</ListeDeRangees>
 
 			{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
 
 			{/*
-			  LA BARRE DE SÉLECTION, COLLÉE EN BAS DÈS LA PREMIÈRE CASE COCHÉE.
+			  LA FEUILLE « LANCER UN DOSSIER » — le choix des factures, puis le geste.
 
-			  ⚠️ ELLE EST LE DERNIER ÉLÉMENT DE LA PAGE, ET C'EST CE QUI LA FAIT
-			  SUIVRE TOUT LE DÉFILEMENT. Un `sticky` ne colle que tant que son
-			  conteneur est à l'écran : placée dans la section des factures, elle
-			  disparaîtrait dès qu'on descend vers les pièces, en emportant le seul
-			  geste qui transforme une sélection en créance. En fin de flux, elle
-			  reprend sa place au bas du défilement et ne recouvre plus rien.
-
-			  ⚠️ « RESTES DUS », JAMAIS « MONTANT RÉCLAMÉ ». Ce total est la somme
-			  des `resteDu` des factures cochées. Le principal de la créance est
-			  RECALCULÉ par le serveur à sa constitution, et le décompte y ajoute
-			  intérêts et indemnités : donner à ce chiffre le nom de ce qu'on
-			  réclame en ferait une promesse que la page suivante dément.
+			  ⚠️ « RESTES DUS », JAMAIS « MONTANT RÉCLAMÉ ». Ce total est la somme des
+			  `resteDu` cochés. Le principal du dossier est RECALCULÉ par le serveur à
+			  sa constitution, et le calcul y ajoute pénalités et frais : donner à ce
+			  chiffre le nom de ce qu'on réclame en ferait une promesse que la page
+			  suivante dément.
 			*/}
-			{selection.size > 0 ? (
-				<Surface
-					variant="transparent"
-					outline={false}
-					className="verre-carte sticky bottom-0 z-10 rounded-cladd-xl"
-					contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs p-cladd-3xs"
-				>
-					<span className="flex min-w-0 flex-col">
-						<span className="text-cladd-2xs text-cladd-fg-softer">
-							{selection.size} facture{pluriel(selection.size)} · restes dus
-						</span>
-						<span className="text-cladd-sm font-semibold tabular-nums">
-							{eurosCentimes(restesDusSelectionnes)}
-						</span>
-					</span>
-					{/* `grow` SOUS 640 px SEULEMENT. À 375 px, « 1 facture · restes dus »
-					    et le bouton manquent la même ligne de sept pixels : le bouton passe
-					    dessous, et il y prend toute la largeur plutôt que d'y rester échoué
-					    à gauche. */}
-					<BoutonPrincipal className="grow sm:grow-0" onClick={() => onConstituer(provenance)}>
-						Lancer le dossier
-					</BoutonPrincipal>
-				</Surface>
-			) : null}
-		</>
+			<Popup
+				open={feuilleOuverte}
+				onOpenChange={(o) => {
+					if (!o) setFeuilleOuverte(false);
+				}}
+				headerLeft={
+					<span className="px-2 pb-1 text-cladd-xs font-semibold">Lancer un dossier</span>
+				}
+				contentClassName="max-w-lg"
+			>
+				<PopupContent>
+					<div className="flex flex-col gap-cladd-2xs">
+						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+							Les factures échues sont cochées. Le dossier calculera ce qu’il vous doit, pénalités
+							et frais compris.
+						</p>
+						<ListeAnalyses>
+							{eligibles.map((facture) => (
+								<LigneBouton
+									key={facture._id}
+									genre="contenu"
+									titre={facture.reference}
+									{...(precisionDeFacture(facture) === undefined
+										? {}
+										: { precision: precisionDeFacture(facture) })}
+									valeur={eurosCentimes(facture.resteDu)}
+									icone={
+										<Checkbox
+											as="span"
+											size="md"
+											checked={selection.has(facture._id)}
+											aria-label={`Sélectionner ${facture.reference}`}
+										/>
+									}
+									onClick={() => onBasculerFacture(facture._id)}
+								/>
+							))}
+						</ListeAnalyses>
+						<div className="flex flex-col gap-cladd-3xs">
+							<p className="text-center text-cladd-2xs text-cladd-fg-soft tabular-nums">
+								{selection.size} facture{pluriel(selection.size)} · restes dus{' '}
+								{eurosCentimes(restesDusSelectionnes)}
+							</p>
+							<BoutonPrincipal
+								pleineLargeur
+								disabled={selection.size === 0}
+								onClick={() => {
+									setFeuilleOuverte(false);
+									onConstituer(provenance);
+								}}
+							>
+								Lancer le dossier
+							</BoutonPrincipal>
+						</div>
+					</div>
+				</PopupContent>
+			</Popup>
+		</SectionsDepliables>
 	);
 }

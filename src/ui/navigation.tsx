@@ -362,6 +362,25 @@ export function LigneBouton({
 }
 
 /**
+ * LA MÊME RANGÉE, QUI NE MÈNE NULLE PART — une facture qu'on lit.
+ *
+ * ⚠️ POURQUOI ELLE EXISTE : la fiche d'un client liste ses factures, et une
+ * facture n'a pas de page. Rendues en cartes, chacune avec sa case, ses deux
+ * pastilles et sa date, elles faisaient la page la plus chargée du produit ; en
+ * rangées, elles doivent ressembler à toutes les autres listes, sans promettre
+ * un appui qui ne fait rien. `ListItem` du kit n'a ni icône ni valeur : c'est
+ * donc le `ListButton` des autres rangées, rendu en `div` et en lecture seule —
+ * même rythme, même colonnes, aucun rôle de bouton.
+ */
+export function LigneFixe(contenu: ContenuRangee) {
+	return (
+		<ListButton as="div" readOnly {...apparenceRangee(contenu)}>
+			{intituleRangee(contenu)}
+		</ListButton>
+	);
+}
+
+/**
  * L'EN-TÊTE D'UNE PAGE POUSSÉE — un retour rond, et le nom centré.
  *
  * LE RETOUR, IDENTIQUE DANS SES DEUX BRANCHES : un disque de verre de 36 px
