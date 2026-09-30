@@ -34,10 +34,18 @@ import { TITRE_ETAPE } from '../../lib/verticales/recouvrement/etapes-dossier';
  */
 
 const RACINE = join(import.meta.dirname, '..');
-const ECRAN = join(RACINE, 'creance.tsx');
+
+/**
+ * ⚠️ LES DEUX ÉCRANS QUI PORTENT DES RANGÉES DÉPLIABLES, pas seulement celui du
+ * dossier. La règle d'écriture a été posée pour lui le 30/09/2026 au matin ;
+ * l'écran du jour a reçu les mêmes rangées l'après-midi, et une règle qui ne
+ * balaie qu'un fichier sur deux est une règle qui vient de doubler sa surface
+ * de fuite.
+ */
+const ECRANS = [join(RACINE, 'creance.tsx'), join(RACINE, 'file.tsx')];
 
 function source(): string {
-	return readFileSync(ECRAN, 'utf8');
+	return ECRANS.map((ecran) => readFileSync(ecran, 'utf8')).join('\n');
 }
 
 /**
@@ -86,7 +94,7 @@ function titresDeRangees(): readonly string[] {
 	const titres: string[] = [];
 	// `titre="X"` d'un côté ; `titre={ … 'A' … 'B' }` de l'autre, dont on relève
 	// CHAQUE branche.
-	for (const balise of [...balisesDe('RangeeDuDossier'), ...balisesDe('ListeDuDossier')]) {
+	for (const balise of [...balisesDe('RangeeDepliable'), ...balisesDe('ListeDeRangees')]) {
 		for (const [, entreGuillemets, entreAccolades] of balise.matchAll(
 			/\btitre=(?:"([^"]*)"|\{([\s\S]*?)\}\n)/g
 		)) {
@@ -147,12 +155,12 @@ describe('les titres de la page dossier', () => {
 	 * « Déposées ici, lues et classées toutes seules ». Six rangées fermées, six
 	 * gloses lues pour en ouvrir une.
 	 *
-	 * `RangeeDuDossier` n'a plus de `legende` : la glose est descendue dans le
+	 * `RangeeDepliable` n'a plus de `legende` : la glose est descendue dans le
 	 * panneau. Ce test empêche qu'on la remonte, ce qui est exactement le genre
 	 * d'ajout qui paraît anodin — une seule ligne, sur une seule rangée.
 	 */
 	it('ne portent aucune glose quand ils sont fermés', () => {
-		const fautives = balisesDe('RangeeDuDossier').filter((balise) => /\blegende=/.test(balise));
+		const fautives = balisesDe('RangeeDepliable').filter((balise) => /\blegende=/.test(balise));
 		expect(
 			fautives.length,
 			'La glose d’une rangée se rend DANS le panneau (prop `glose`), jamais sur l’en-tête fermé.'

@@ -467,10 +467,27 @@ function LigneTravail({ tache }: { tache: TacheVeilleur }) {
  * est normale — et le jour où il manque parce que la machine est tombée, plus
  * rien ne le distingue d'un jour calme.
  */
-export function Veilleur({ travaux }: { travaux: readonly TacheVeilleur[] }) {
-	if (travaux.length === 0) return null;
+export function Veilleur({
+	travaux,
+	seulementCeQuiTravaille = false
+}: {
+	readonly travaux: readonly TacheVeilleur[];
+	/**
+	 * N'affiche que ce qui tourne À L'INSTANT, et rien de ce qui est fini.
+	 *
+	 * ⚠️ C'EST LA RÈGLE D'ÉCRAN N° 2 PRISE AU MOT, PAS UN RACCOURCI. « Tout
+	 * traitement se voit sans qu'on le demande » vise ce qui TRAVAILLE : une
+	 * extraction en cours doit rester sous les yeux, un passage terminé cette
+	 * nuit est de l'histoire. Les trois lignes du veilleur tenaient 361 px sur
+	 * l'écran du matin, dont deux tiers d'histoire ; le reste se lit maintenant
+	 * dans la rangée « Le veilleur » du travail de fond, qui porte son compte.
+	 */
+	readonly seulementCeQuiTravaille?: boolean;
+}) {
+	const montrees = seulementCeQuiTravaille ? travaux.filter((t) => t.etat === 'EN_COURS') : travaux;
+	if (montrees.length === 0) return null;
 
-	const enCours = travaux.some((t) => t.etat === 'EN_COURS');
+	const enCours = montrees.some((t) => t.etat === 'EN_COURS');
 
 	return (
 		<Surface
@@ -509,7 +526,7 @@ export function Veilleur({ travaux }: { travaux: readonly TacheVeilleur[] }) {
 					{enCours ? <span className="normal-case">en ce moment</span> : null}
 				</ListTitle>
 
-				{travaux.map((tache) => (
+				{montrees.map((tache) => (
 					<LigneTravail key={tache.cle} tache={tache} />
 				))}
 			</List>

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
-import { InfoIcon, UploadIcon } from 'lucide-react';
+import { InfoIcon, UploadIcon, XIcon } from 'lucide-react';
 import { PREAVIS } from '../lib/verticales/recouvrement/surveillance';
 import {
 	Bandeau,
@@ -12,6 +12,13 @@ import {
 	LigneAnalyse,
 	ListeAnalyses,
 	CompositionDue,
+	FaitsDuDossier,
+	ListeDeRangees,
+	RangeeDepliable,
+	dateCourte,
+	dateLongue,
+	FERMETURE_DE_LA_PORTE,
+	type FaitDuDossier,
 	FacturesNonChiffrees,
 	GroupeDeFile,
 	Lettrage,
@@ -19,7 +26,6 @@ import {
 	PliDeLaFile,
 	PorteDeTransition,
 	RangeeFile,
-	SectionDepliable,
 	SectionEcran,
 	SectionsDepliables,
 	SourceDeRangees,
@@ -477,8 +483,14 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	const [depotOuvert, setDepotOuvert] = useState(false);
 	/** Le bandeau d'annonce, refermé d'un geste. Il ne porte aucun chiffre : voir `annonce`. */
 	const [annonceFermee, setAnnonceFermee] = useState(false);
-	/** Le pli des limites du logiciel, fermé au premier rendu. Voir `CeQueLeLogicielSuppose`. */
-	const [limitesOuvertes, setLimitesOuvertes] = useState<readonly string[]>([]);
+	/**
+	 * LES RANGÉES DÉPLIÉES — LA TÊTE ET LE TRAVAIL DE FOND, DANS UNE SEULE LISTE.
+	 *
+	 * ⚠️ UNE SEULE RACINE POUR L'ÉCRAN. Sous 1024 px, chacune de ces rangées
+	 * s'ouvre en FEUILLE plutôt que de pousser la file vers le bas ; la feuille
+	 * a besoin de savoir si elle est ouverte, et c'est cette liste qui le dit.
+	 */
+	const [depliees, setDepliees] = useState<readonly string[]>([]);
 	/**
 	 * LES GROUPES QUE LE GÉRANT A REPLIÉS LUI-MÊME.
 	 *
@@ -516,6 +528,19 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		(groupe) => groupe.rangees.length > 0
 	);
 
+	/*
+	  ⚠️ CE QUI TRAVAILLE RESTE À L'ÉCRAN ; CE QUI A FINI DEVIENT UNE RANGÉE.
+
+	  C'est la règle d'écran n° 2 du produit — « tout traitement se voit sans
+	  qu'on le demande » — appliquée à la lettre, et c'est ce qui permet de
+	  gagner les 464 px que le bilan d'un dépôt TERMINÉ occupait chaque matin en
+	  tête de file. Un dépôt qui lit encore, ou qui a échoué, ne se replie pas :
+	  le premier change sous les yeux, le second demande un geste.
+	*/
+	const depotsVivants = depots.filter((rangee) => rangee.depot.statut !== 'TERMINE');
+	const depotsFinis = depots.filter((rangee) => rangee.depot.statut === 'TERMINE');
+	const veilleurTravaille = travaux.some((tache) => tache.etat === 'EN_COURS');
+
 	/**
 	 * LE PREMIER JOUR — et il ne montre AUCUN des deux nombres.
 	 *
@@ -532,6 +557,17 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		<PageEcran
 			entete={{
 				genre: 'onglet',
+				/*
+				  ⚠️ LE GRAND TITRE EST REVENU LE 30/09/2026. L'écran n'en portait
+				  aucun : seule la barre du bas disait où l'on était, et rien n'ancrait
+				  le défilement. C'est la signature d'une application iOS — Asana,
+				  Craft et Numo posent tous le leur DANS le flux, au-dessus de la
+				  liste — et c'est aussi ce qui donne à la date sa place, qui est la
+				  première chose qu'on regarde sur un écran qui s'appelle
+				  « Aujourd'hui ».
+				*/
+				titre: 'Aujourd’hui',
+				sousTitre: dateLongue(aujourdHui),
 				actions: (
 					<RangeeDuHaut
 						selecteur={selecteur}
@@ -557,15 +593,27 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					<PorteDeTransition />
 				</>
 			) : (
-				<>
+				<SectionsDepliables ouvertes={depliees} onOuvertesChange={setDepliees}>
 					{/* LE BANDEAU, EN TÊTE ET REFERMABLE (§ 5.2). Il ANNONCE ce qui s'est
 					    terminé pendant que le gérant était ailleurs ; ce qui est chiffré vit
 					    dans la rangée datée du dépôt, qui ne se referme pas. */}
 					{annonce === undefined || annonceFermee ? null : (
 						<Bandeau
 							icone={<InfoIcon size={18} />}
+							/*
+							  ⚠️ UNE CROIX, PAS LE MOT « FERMER ». Le mot poussait la commande
+							  sur une ligne à elle et portait le bandeau à 174 px pour douze
+							  mots, en tête de l'écran du matin. La croix garde les 48 px du
+							  doigt et tient à droite du texte — c'est la forme d'une
+							  notification iOS, et `aria-label` dit ce que le glyphe ne dit pas.
+							*/
 							action={
-								<BoutonSecondaire onClick={() => setAnnonceFermee(true)}>Fermer</BoutonSecondaire>
+								<BoutonSecondaire
+									aria-label="Fermer cette annonce"
+									onClick={() => setAnnonceFermee(true)}
+								>
+									<XIcon size={18} />
+								</BoutonSecondaire>
 							}
 						>
 							{annonce}
@@ -587,23 +635,35 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						</ZoneDepot>
 					) : null}
 
-					{/* LES DÉPÔTS, HORS DES GROUPES ET JAMAIS REPLIÉS (règle d'écran n° 2).
-					    Un dépôt qui travaille change sous les yeux ; le ranger sous un pli
-					    reviendrait à cacher le seul traitement visible du produit. */}
-					{depots.length === 0 ? null : (
+					{/* CE QUI TRAVAILLE, OU CE QUI A ÉCHOUÉ. Jamais replié : un dépôt qui
+					    lit change sous les yeux, et un dépôt échoué demande un geste. */}
+					{depotsVivants.length === 0 ? null : (
 						<SourceDeRangees nom="Vos dépôts">
 							<div className="flex flex-col gap-cladd-3xs">
-								{depots.map((rangee) => (
+								{depotsVivants.map((rangee) => (
 									<BilanImport key={rangee.id} depot={rangee.depot} />
 								))}
 							</div>
 						</SourceDeRangees>
 					)}
 
+					{/* CE QUI TOURNE À L'INSTANT, ET RIEN D'AUTRE. L'histoire du veilleur
+					    est une rangée du travail de fond ; ce qui travaille reste sous les
+					    yeux, parce qu'un traitement en cours qu'il faut aller chercher est
+					    un traitement qu'on croit arrêté. */}
+					{veilleurTravaille ? (
+						<SourceDeRangees nom="Le travail de fond">
+							<Veilleur travaux={travaux} seulementCeQuiTravaille />
+						</SourceDeRangees>
+					) : null}
+
+					{/* CE QUI VOUS MANQUE MONTE AVANT LA FILE : c'est ce qui empêche, et ce
+					    qui empêche ne se cherche pas. */}
 					<SourceDeRangees nom="Ce qui vous manque">
 						<CeQuiManque verrous={verrous} />
 					</SourceDeRangees>
 
+					{/* ── LA FILE, ET ELLE COMMENCE ICI ────────────────────────────── */}
 					<SourceDeRangees nom="Les rangées de la surveillance">
 						{resumeDuPlafond === null ? null : (
 							<p className="text-cladd-2xs text-cladd-fg-softer">{resumeDuPlafond}</p>
@@ -637,34 +697,73 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						)}
 					</SourceDeRangees>
 
-					{/* LE RAPPROCHEMENT, APRÈS LES GROUPES ET HORS D'EUX. Ce n'est pas une
-					    alerte, c'est l'outil qui empêche de relancer un client qui a déjà
-					    payé — disponible tous les jours de la même façon. */}
-					{lettrages.map((rangee) => (
-						<SourceDeRangees key={rangee.id} nom="Le rapprochement d’un virement">
-							<Lettrage {...rangee.lettrage} />
-						</SourceDeRangees>
-					))}
+					{/* ── LE TRAVAIL DE FOND ───────────────────────────────────────────
+					    Tout ce qui n'est pas la file du jour, en rangées qui portent leur
+					    compte. Ces cinq blocs tenaient 1 462 px APRÈS la file — soit près
+					    de deux écrans de défilement, chaque matin, pour des choses dont
+					    aucune n'est un geste du jour. */}
+					<ListeDeRangees titre="Le travail de fond">
+						{depotsFinis.length === 0 ? null : (
+							<RangeeDepliable
+								cle="depots"
+								titre="Vos dépôts"
+								glose="Ce qui est entré, ce qui n’est pas entré, et pourquoi."
+								valeur={`${depotsFinis.length} lu${pluriel(depotsFinis.length)}`}
+							>
+								{depotsFinis.map((rangee) => (
+									<BilanImport key={rangee.id} depot={rangee.depot} />
+								))}
+							</RangeeDepliable>
+						)}
 
-					{/* LE VEILLEUR, EN UNE RANGÉE UNIQUE ET COMPTÉE. Il ne disparaît jamais :
-					    un bloc qui n'apparaît que les jours où il s'est passé quelque chose
-					    apprend que son absence est normale, et le jour où il manque parce que
-					    la machine est tombée, plus rien ne le distingue d'un jour calme. */}
-					<SourceDeRangees nom="Le travail de fond">
-						<Veilleur travaux={travaux} />
-					</SourceDeRangees>
+						{lettrages.map((rangee) => (
+							<RangeeDepliable
+								key={rangee.id}
+								cle={`lettrage-${rangee.id}`}
+								titre="Rapprocher un virement"
+								glose="Ce qui empêche de relancer un client qui a déjà payé."
+								valeur="à faire"
+							>
+								<Lettrage {...rangee.lettrage} />
+							</RangeeDepliable>
+						))}
 
-					<CeQueLeLogicielSuppose
-						hypotheses={hypotheses}
-						anglesMorts={anglesMorts}
-						ouvertes={limitesOuvertes}
-						onOuvertesChange={setLimitesOuvertes}
-					/>
+						{/* LE VEILLEUR NE DISPARAÎT JAMAIS : un bloc qui n'apparaît que les
+						    jours où il s'est passé quelque chose apprend que son absence est
+						    normale, et le jour où il manque parce que la machine est tombée,
+						    plus rien ne le distingue d'un jour calme. Il ne se replie pas non
+						    plus quand il TRAVAILLE — règle d'écran n° 2. */}
+						{travaux.length === 0 ? null : (
+							<RangeeDepliable
+								cle="veilleur"
+								titre="Le veilleur"
+								glose="Ce que la machine a fait cette nuit, et ce qu’elle fait en ce moment."
+								valeur={`${travaux.length} passage${pluriel(travaux.length)}`}
+							>
+								<Veilleur travaux={travaux} />
+							</RangeeDepliable>
+						)}
+
+						<LimitesDuCalcul hypotheses={hypotheses} anglesMorts={anglesMorts} />
+
+						{/* L'ANCIEN ARBRE, EN UNE RANGÉE. Il tenait 513 px en bas de l'écran
+						    du matin, tous les jours, pour un échafaudage qui ferme le
+						    17 octobre. Les liens restent écrits ici, littéralement, donc
+						    `aucun-ecran-orphelin.test.ts` continue de les lire. */}
+						{/* ⚠️ AUCUNE GLOSE ICI : `PorteDeTransition` porte déjà son intitulé
+						    et sa date de fermeture. En ajouter une écrivait la même phrase
+						    deux fois dans la même feuille, à deux centimètres d'écart. */}
+						<RangeeDepliable
+							cle="ancienne-version"
+							titre="L’ancienne version"
+							valeur={`jusqu’au ${dateCourte(FERMETURE_DE_LA_PORTE)}`}
+						>
+							<PorteDeTransition />
+						</RangeeDepliable>
+					</ListeDeRangees>
 
 					<PliDeLaFile faits={repliees.map((r) => r.pli)} />
-
-					<PorteDeTransition />
-				</>
+				</SectionsDepliables>
 			)}
 		</PageEcran>
 	);
@@ -775,62 +874,90 @@ function RangeeDuHaut({
 // LA TÊTE, RENDUE
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * LA TÊTE — LE CHIFFRE, PUIS CE QUI LE QUALIFIE, ET RIEN DE PLUS.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ ELLE FAISAIT 891 PX, SOIT UN ÉCRAN ENTIER AVANT LE PREMIER GESTE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Elle portait le chiffre, puis sa décomposition en trois lignes, puis une
+ * phrase sur les dates limites, puis un paragraphe de quarante-cinq mots sur la
+ * facture qui n'entre pas dans le total, puis une rangée. Relevé au navigateur
+ * le 30/09/2026 : 891 px et 117 mots, avant la première chose à faire.
+ *
+ * Or on ouvre cet écran le matin pour AGIR. Ce qui reste ici est ce qui se lit
+ * d'un coup d'œil — le chiffre, et les trois faits qui le qualifient, en
+ * pastilles. La décomposition et la facture non chiffrée descendent dans une
+ * rangée qui porte leur compte : elles ne sont pas perdues, elles ne sont plus
+ * sur le chemin.
+ *
+ * ⚠️ « CE QUI VOUS EST DÛ ET N'A JAMAIS ÉTÉ CALCULÉ » RESTE UNE RANGÉE, et ce
+ * n'est pas négociable : c'est le seul chiffre qui justifie l'abonnement au
+ * douzième mois, et son écran n'est atteignable que par ce lien.
+ */
 function Tete({ tete }: { tete: TeteDeFile }) {
+	const faits: FaitDuDossier[] = [];
+	if (tete.nombreFactures > 0) {
+		faits.push({
+			cle: 'factures',
+			texte: `${tete.nombreFactures} facture${pluriel(tete.nombreFactures)} en retard`
+		});
+	}
+	if (tete.prescriptionSousPreavis > 0n) {
+		faits.push({
+			cle: 'preavis',
+			texte: `${eurosCentimes(tete.prescriptionSousPreavis)} sous ${PREAVIS.PRESCRIPTION} jours`,
+			marquant: true
+		});
+	}
+	/*
+	  ⚠️ LA FACTURE NON CHIFFRÉE EST UNE PASTILLE MARQUANTE, PAS UN PARAGRAPHE.
+	  Elle n'est jamais absorbée par un total qui ne la compte pas — c'est la
+	  règle d'amputation du produit —, mais la dire en quarante-cinq mots au
+	  milieu du chemin la faisait sauter des yeux. Comptée ici, expliquée dans la
+	  rangée juste en dessous.
+	*/
+	if (tete.nonChiffrees.length > 0) {
+		const n = tete.nonChiffrees.length;
+		faits.push({
+			cle: 'non-chiffrees',
+			texte: `${n} facture${pluriel(n)} non chiffrée${pluriel(n)}`,
+			marquant: true
+		});
+	}
+
+	const jamaisCalcule = tete.parts.interets + tete.parts.indemnites;
+
 	return (
 		<div className="flex flex-col gap-cladd-2xs">
-			<ChiffreHero
-				centimes={tete.total}
-				surTitre="Ce qu’on vous doit"
-				legende={
-					tete.nombreFactures === 0 ? undefined : (
-						<span>
-							sur {tete.nombreFactures} facture{pluriel(tete.nombreFactures)} en retard
-						</span>
-					)
-				}
-			/>
+			<ChiffreHero centimes={tete.total} surTitre="Ce qu’on vous doit" />
 
-			{/* LE TOTAL SE DÉPLIE SUR PLACE, ET SANS CLIC. Un montant qu'on ne peut
-			    pas décomposer est un montant qu'on demande de croire ; le débiteur
-			    qui le conteste refera le calcul, le gérant doit pouvoir le refaire
-			    avant lui. */}
-			<CompositionDue parts={tete.parts} />
+			<FaitsDuDossier faits={faits} />
 
-			{/* LE SECOND NOMBRE, ET C'EST CELUI QUI DIT OÙ REGARDER. Il ne change plus
-			    avec une vue : il n'y a plus qu'une vue. */}
-			<p className="text-cladd-xs text-cladd-fg-soft">
-				Dont{' '}
-				<span className="font-semibold tabular-nums">
-					{eurosCentimes(tete.prescriptionSousPreavis)}
-				</span>{' '}
-				dont la date limite pour agir en justice tombe sous {PREAVIS.PRESCRIPTION} jours.
-			</p>
-
-			{/* LA RÈGLE D'AMPUTATION, SOUS LES DEUX NOMBRES ET JAMAIS REPLIÉE. Une
-			    facture non chiffrée est nommée ici ET comptée sur la rangée de son
-			    client ; elle n'est jamais absorbée par un total qui ne la compte pas. */}
-			<FacturesNonChiffrees lignes={tete.nonChiffrees} />
+			<ListeDeRangees>
+				<RangeeDepliable
+					cle="composition"
+					titre="De quoi c’est fait"
+					glose="Un montant qu’on ne peut pas décomposer est un montant qu’on demande de croire. Le client qui le conteste refera le calcul."
+					valeur={eurosCentimes(tete.total)}
+				>
+					<CompositionDue parts={tete.parts} />
+					<FacturesNonChiffrees lignes={tete.nonChiffrees} />
+				</RangeeDepliable>
+			</ListeDeRangees>
 
 			{/*
-			  ⚠️ LA PREMIÈRE VICTOIRE, ET ELLE NE SE CHERCHAIT PLUS.
-
-			  « Ce qui est dû » porte le seul chiffre qui justifie l'abonnement au
-			  douzième mois : ce qui est dû de PLEIN DROIT et n'a jamais été calculé.
-			  L'écran existait et n'était atteignable que depuis le veilleur et
-			  depuis la porte de transition, qui ferme en octobre (audit du
-			  29/09/2026, F6). Il a maintenant une rangée, sous le total dont il est
-			  la décomposition.
-
 			  ⚠️ ELLE NE S'AFFICHE QUE QUAND IL Y A QUELQUE CHOSE À MONTRER. Une
 			  rangée « 0,00 € jamais calculés » est un cadran à zéro, et le vide
 			  montre le chemin au lieu d'afficher un zéro.
 			*/}
-			{tete.parts.interets + tete.parts.indemnites > 0n ? (
+			{jamaisCalcule > 0n ? (
 				<ListeAnalyses>
 					<LigneAnalyse
 						vers="/app/revelation"
-						titre="Ce qui vous est dû, et n’a jamais été calculé"
-						valeur={eurosCentimes(tete.parts.interets + tete.parts.indemnites)}
+						titre="Jamais calculé"
+						valeur={eurosCentimes(jamaisCalcule)}
 						precision="Pénalités de retard et frais de recouvrement, dus de plein droit"
 					/>
 				</ListeAnalyses>
@@ -938,80 +1065,80 @@ function Rangee({ rangee }: { rangee: RangeeGroupee }) {
  * premières ne se corrigent pas : ils gardent donc chacun leur intitulé, et
  * partagent seulement la rangée qui les compte.
  */
-function CeQueLeLogicielSuppose({
+/**
+ * LES LIMITES DU CALCUL — ce qui a été supposé, et ce qui n'est pas vu.
+ *
+ * ⚠️ REPLIÉE, MAIS COMPTÉE SUR SA RANGÉE — ET C'EST LA NUANCE QUI COMPTE.
+ *
+ * Ces deux blocs tenaient 571 px en bas de l'écran du matin (audit du
+ * 29/09/2026, F4 et D5) : c'est le produit qui parle de lui-même, à l'endroit
+ * où le gérant vient voir ce qu'il a à faire. Les replier n'est pas les
+ * cacher : la rangée DIT combien il y a d'hypothèses et combien d'angles morts,
+ * et un chiffre sur une rangée fermée se voit mieux qu'un paragraphe quatre
+ * écrans plus bas.
+ *
+ * ⚠️ CE QUI SERAIT INTERDIT, C'EST DE LES RETIRER. « Un utilisateur qui croit
+ * sa prescription surveillée ne la surveille pas lui-même » : le compte reste à
+ * l'écran, toujours, et il s'ouvre d'un doigt.
+ *
+ * ⚠️ ELLE N'A PLUS DE RACINE À ELLE. Elle vit dans la liste « Le travail de
+ * fond », donc dans la même racine d'accordéon que les autres rangées — c'est
+ * ce qui lui donne, sous 1024 px, la feuille au lieu du dépliage sur place.
+ */
+function LimitesDuCalcul({
 	hypotheses,
-	anglesMorts,
-	ouvertes,
-	onOuvertesChange
+	anglesMorts
 }: {
 	hypotheses: readonly string[];
 	anglesMorts: readonly string[];
-	ouvertes: readonly string[];
-	onOuvertesChange: (ouvertes: readonly string[]) => void;
 }) {
 	if (hypotheses.length === 0 && anglesMorts.length === 0) return null;
 
-	/*
-	  ⚠️ REPLIÉ, MAIS COMPTÉ SUR SA RANGÉE — ET C'EST LA NUANCE QUI COMPTE.
-
-	  Ces deux blocs tenaient 571 px en bas de l'écran du matin (audit du
-	  29/09/2026, F4 et D5) : c'est le produit qui parle de lui-même, à l'endroit
-	  où le gérant vient voir ce qu'il a à faire. Les replier n'est pas les
-	  cacher : la rangée DIT combien il y a d'hypothèses et combien d'angles
-	  morts, et un chiffre sur une rangée fermée se voit mieux qu'un paragraphe
-	  quatre écrans plus bas.
-
-	  ⚠️ CE QUI SERAIT INTERDIT, C'EST DE LES RETIRER. « Un utilisateur qui croit
-	  sa prescription surveillée ne la surveille pas lui-même » : le compte reste
-	  à l'écran, toujours, et il s'ouvre d'un doigt.
-	*/
 	const parties = [];
 	if (hypotheses.length > 0) {
 		parties.push(`${hypotheses.length} hypothèse${pluriel(hypotheses.length)}`);
 	}
 	if (anglesMorts.length > 0) {
-		parties.push(`${anglesMorts.length} angle${pluriel(anglesMorts.length)} mort${pluriel(anglesMorts.length)}`);
+		parties.push(
+			`${anglesMorts.length} angle${pluriel(anglesMorts.length)} mort${pluriel(anglesMorts.length)}`
+		);
 	}
 
 	return (
-		<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={onOuvertesChange}>
-			<SectionDepliable
-				cle="limites"
-				titre="Ce que le logiciel ne fait pas pour vous"
-				legende="Ce qu’il a supposé faute de donnée, et ce qu’il ne surveille pas du tout"
-				valeur={parties.join(' · ')}
-			>
-				<div className="flex flex-col gap-cladd-2xs">
-					{hypotheses.length === 0 ? null : (
-						<div className="flex flex-col gap-cladd-3xs">
-							<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">
-								Ce qu’il a supposé — un calcul fait sur une donnée absente. Renseigner la
-								donnée lève l’hypothèse.
-							</p>
-							{hypotheses.map((hypothese) => (
-								<p key={hypothese} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-									{hypothese}
-								</p>
-							))}
-						</div>
-					)}
-
-					{anglesMorts.length === 0 ? null : (
-						<div className="flex flex-col gap-cladd-3xs">
-							<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">
-								Ce qu’il ne surveille pas — un calcul qui n’est pas fait du tout. Rien à
-								l’écran ne le lèvera.
-							</p>
-							{anglesMorts.map((angle) => (
-								<p key={angle} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-									{angle}
-								</p>
-							))}
-						</div>
-					)}
+		<RangeeDepliable
+			cle="limites"
+			titre="Les limites du calcul"
+			glose="Ce que le logiciel a supposé faute de donnée, et ce qu’il ne surveille pas du tout."
+			valeur={parties.join(' · ')}
+		>
+			{hypotheses.length === 0 ? null : (
+				<div className="flex flex-col gap-cladd-3xs">
+					<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">
+						Ce qu’il a supposé — un calcul fait sur une donnée absente. Renseigner la donnée lève
+						l’hypothèse.
+					</p>
+					{hypotheses.map((hypothese) => (
+						<p key={hypothese} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+							{hypothese}
+						</p>
+					))}
 				</div>
-			</SectionDepliable>
-		</SectionsDepliables>
+			)}
+
+			{anglesMorts.length === 0 ? null : (
+				<div className="flex flex-col gap-cladd-3xs">
+					<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">
+						Ce qu’il ne surveille pas — un calcul qui n’est pas fait du tout. Rien à l’écran ne le
+						lèvera.
+					</p>
+					{anglesMorts.map((angle) => (
+						<p key={angle} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+							{angle}
+						</p>
+					))}
+				</div>
+			)}
+		</RangeeDepliable>
 	);
 }
 

@@ -39,10 +39,17 @@ export function Bandeau({
 			outline={false}
 			color={ton === 'alerte' ? 'orange' : undefined}
 			className="verre-carte rounded-cladd-md"
-			contentClassName="flex flex-wrap items-center justify-between gap-cladd-3xs px-cladd-3xs py-cladd-3xs"
+			/*
+			  ⚠️ `flex-nowrap` DEPUIS LE 30/09/2026, ET C'EST UNE MESURE. Avec
+			  `flex-wrap`, un bandeau de deux lignes à 375 px renvoyait sa commande
+			  sur une troisième ligne à elle seule : 174 px de haut pour douze mots,
+			  en tête de l'écran du matin. Le geste tient à droite du texte, comme
+			  la croix d'une notification iOS, et le texte se replie contre lui.
+			*/
+			contentClassName="flex items-start justify-between gap-cladd-3xs px-cladd-3xs py-cladd-3xs"
 		>
-			<div className="flex min-w-0 items-center gap-cladd-3xs">
-				{icone ? <span className="shrink-0 text-cladd-fg-soft">{icone}</span> : null}
+			<div className="flex min-w-0 items-start gap-cladd-3xs">
+				{icone ? <span className="mt-1 shrink-0 text-cladd-fg-soft">{icone}</span> : null}
 				<div className="min-w-0 text-cladd-xs leading-snug">{children}</div>
 			</div>
 			{action ? <div className="shrink-0">{action}</div> : null}

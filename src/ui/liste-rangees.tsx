@@ -70,7 +70,7 @@ import { useSectionOuverte } from './section-depliable';
  * UNE CARTE DE RANGÉES. Avec un intitulé quand elle est une section de la page,
  * sans quand elle pend à un échelon du fil.
  */
-export function ListeDuDossier({
+export function ListeDeRangees({
 	titre,
 	children
 }: {
@@ -96,7 +96,7 @@ export function ListeDuDossier({
 	);
 }
 
-export function RangeeDuDossier({
+export function RangeeDepliable({
 	cle,
 	titre,
 	valeur,
@@ -170,9 +170,22 @@ export function RangeeDuDossier({
 					className="h-auto min-h-15 w-full rounded-none"
 					contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
 				>
-					<span className="min-w-0 text-left text-cladd-xs font-semibold">{titre}</span>
-					<span className="flex shrink-0 items-center gap-cladd-3xs">
-						<span className="text-cladd-xs text-cladd-fg-soft tabular-nums">{valeur}</span>
+					{/*
+					  ⚠️ `basis-1/2` SUR LE TITRE, ET C'EST UN DÉFAUT MESURÉ. Le groupe de
+					  droite était `shrink-0` : il prenait sa largeur naturelle en premier,
+					  et une valeur un peu longue — « 1 hypothèse · 2 angles morts » —
+					  écrasait le titre à dix-neuf pixels sur cinquante-quatre. « Les
+					  limites du calcul » se lisait « Les… ». Le titre garde désormais la
+					  moitié de la rangée, et la valeur revient à la ligne plutôt que de
+					  perdre sa fin : un compte amputé est un compte faux.
+					*/}
+					<span className="min-w-0 flex-1 basis-1/2 text-left text-cladd-xs font-semibold">
+						{titre}
+					</span>
+					<span className="flex min-w-0 shrink items-center gap-cladd-3xs">
+						<span className="text-right text-cladd-xs text-cladd-fg-soft tabular-nums">
+							{valeur}
+						</span>
 						<AccordionIndicator className="flex text-cladd-fg-softer transition-transform duration-150 data-[open]:rotate-90">
 							<ChevronRightIcon className="size-5" aria-hidden />
 						</AccordionIndicator>

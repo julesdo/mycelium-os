@@ -175,7 +175,14 @@ export function SectionDepliable({
 						className="h-auto min-h-15 w-full rounded-cladd-xl"
 						contentClassName="w-full items-center justify-between gap-cladd-3xs p-cladd-2xs"
 					>
-						<span className="flex min-w-0 flex-col items-start text-left">
+						{/*
+						  ⚠️ `basis-1/2` SUR L'INTITULÉ. Le groupe de droite était `shrink-0`,
+						  donc il prenait sa largeur naturelle en premier et une valeur un peu
+						  longue écrasait le titre jusqu'à l'illisible. L'intitulé garde la
+						  moitié de la rangée ; la valeur revient à la ligne plutôt que de
+						  perdre sa fin.
+						*/}
+						<span className="flex min-w-0 flex-1 basis-1/2 flex-col items-start text-left">
 							<span className="text-cladd-sm leading-tight font-bold tracking-tight">{titre}</span>
 							{legende === undefined ? null : (
 								<span className="mt-0.5 text-cladd-2xs font-normal text-cladd-fg-softer">
@@ -183,9 +190,11 @@ export function SectionDepliable({
 								</span>
 							)}
 						</span>
-						<span className="flex shrink-0 items-center gap-cladd-3xs">
+						<span className="flex min-w-0 shrink items-center gap-cladd-3xs">
 							{valeur === undefined ? null : (
-								<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">{valeur}</span>
+								<span className="text-right text-cladd-2xs text-cladd-fg-soft tabular-nums">
+									{valeur}
+								</span>
 							)}
 							<AccordionIndicator className="flex text-cladd-fg-softer transition-transform duration-150 data-[open]:rotate-90">
 								<ChevronRightIcon className="size-4" aria-hidden />

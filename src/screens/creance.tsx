@@ -20,11 +20,11 @@ import {
 	LigneAnalyse,
 	LigneBouton,
 	ListeAnalyses,
-	ListeDuDossier,
+	ListeDeRangees,
 	PageEcran,
 	Pieces,
 	QuestionnaireLitige,
-	RangeeDuDossier,
+	RangeeDepliable,
 	RechercheAvocat,
 	RechercheCommissaire,
 	RefusEnQuatreParties,
@@ -387,7 +387,7 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 	 *
 	 * Ce que l'ouverture automatique achetait, la VALEUR le rend gratuitement :
 	 * « 7 à confirmer » se lit rangée fermée. C'est à ça que sert
-	 * `RangeeDuDossier.valeur`, et c'est pour ça qu'elle est obligatoire.
+	 * `RangeeDepliable.valeur`, et c'est pour ça qu'elle est obligatoire.
 	 *
 	 * ⚠️ ET RIEN NE SE SYNCHRONISE DANS UN EFFET. Un `setState` dans un effet
 	 * ferait un rendu de retard, visible comme un clignotement du pli à l'arrivée
@@ -527,14 +527,14 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 							</>
 						}
 						droite={
-							<ListeDuDossier titre="Le dossier">
+							<ListeDeRangees titre="Le dossier">
 								<RangeeDecompte creance={pret} />
 								<RangeePieces creance={pret} />
 								<RangeeLitige creance={pret} />
 								<RangeeSolidite creance={pret} />
 								<RangeeValeursJuridiques fiches={pret.fiches} />
 								<RangeeSuivi creance={pret} />
-							</ListeDuDossier>
+							</ListeDeRangees>
 						}
 					/>
 				</SectionsDepliables>
@@ -586,14 +586,14 @@ function ContenuEchelon({
 
 	const rangees =
 		cle === 'ON_LUI_ECRIT' ? (
-			<ListeDuDossier>
+			<ListeDeRangees>
 				<RangeeCourriers creance={creance} />
 				<RangeeRelances creance={creance} />
-			</ListeDuDossier>
+			</ListeDeRangees>
 		) : cle === 'TRIBUNAL' ? (
-			<ListeDuDossier>
+			<ListeDeRangees>
 				<RangeeVoies creance={creance} />
-			</ListeDuDossier>
+			</ListeDeRangees>
 		) : null;
 
 	if (enCours) {
@@ -860,7 +860,7 @@ function RangeeDecompte({ creance }: { creance: CreanceOuverte }) {
 	const montant = creance.montantDuJour;
 
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="decompte"
 			titre="Décompte"
 			glose="Au jour d’aujourd’hui, et il bouge chaque jour."
@@ -945,7 +945,7 @@ function RangeeDecompte({ creance }: { creance: CreanceOuverte }) {
 			  auprès de ce qui l'arrête, pas auprès de ce qui l'envoie.
 			*/}
 			<LiensDePaiement {...creance.liensDePaiement} />
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }
 
@@ -974,7 +974,7 @@ function RangeeValeursJuridiques({ fiches }: { fiches: readonly FicheParametre[]
 	const controlees = fiches.filter((fiche) => fiche.valideParAvocat).length;
 
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="valeurs"
 			titre="Les chiffres de la loi"
 			glose="Leur source, leur date de relevé, et ce qu’on a le droit d’en faire."
@@ -1005,7 +1005,7 @@ function RangeeValeursJuridiques({ fiches }: { fiches: readonly FicheParametre[]
 					))}
 				</TableauCorps>
 			</Tableau>
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }
 
@@ -1028,7 +1028,7 @@ function RangeeLitige({ creance }: { creance: CreanceOuverte }) {
 	const aDemander = aConfirmer(creance);
 
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="litige"
 			titre="Vos réponses"
 			glose="Des faits, pas une appréciation juridique : vous seul pouvez les dire."
@@ -1054,7 +1054,7 @@ function RangeeLitige({ creance }: { creance: CreanceOuverte }) {
 				enCours={creance.enCours}
 				onRepondre={creance.onRepondreCondition}
 			/>
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }
 
@@ -1067,21 +1067,21 @@ function RangeeLitige({ creance }: { creance: CreanceOuverte }) {
  */
 function RangeeSolidite({ creance }: { creance: CreanceOuverte }) {
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="solidite"
 			titre="Solidité"
 			glose="Ce qu’un tiers pourrait lire du dossier, document par document."
 			valeur={`${creance.solidite.etablies} sur ${creance.solidite.attendues}`}
 		>
 			<Solidite solidite={creance.solidite} />
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }
 
 /** LES PIÈCES. Le dépôt, le classement, le retrait. */
 function RangeePieces({ creance }: { creance: CreanceOuverte }) {
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="pieces"
 			titre="Documents"
 			glose="Déposés ici, lus et classés tout seuls."
@@ -1095,7 +1095,7 @@ function RangeePieces({ creance }: { creance: CreanceOuverte }) {
 				onClasser={creance.onClasser}
 				onRetirer={creance.onRetirer}
 			/>
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }
 
@@ -1150,7 +1150,7 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 	const envisageables = creance.voies.filter((v) => v.disponible).length;
 
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="voies"
 			titre={creance.suivi === null ? 'Les suites' : 'Procédure'}
 			glose={
@@ -1281,7 +1281,7 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 				onChoisirSpecialite={creance.onChoisirSpecialite}
 				onRetenir={creance.onRetenirAvocat}
 			/>
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }
 
@@ -1310,7 +1310,7 @@ function RangeeRelances({ creance }: { creance: CreanceOuverte }) {
 	const prets = creance.relances.filter((niveau) => niveau.disponible).length;
 
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="relances"
 			titre="Relances"
 			glose="Des brouillons, à envoyer depuis votre messagerie."
@@ -1322,7 +1322,7 @@ function RangeeRelances({ creance }: { creance: CreanceOuverte }) {
 				destinataire={creance.debiteurEmail}
 				identifiantDebiteur={creance.debiteurId}
 			/>
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }
 
@@ -1354,7 +1354,7 @@ function RangeeSuivi({ creance }: { creance: CreanceOuverte }) {
 			(note.genre === 'RAPPEL' && note.faitLe === undefined)
 	).length;
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="suivi"
 			titre="Historique"
 			glose="Vos notes, vos échanges, et ce que le logiciel a constaté."
@@ -1372,7 +1372,7 @@ function RangeeSuivi({ creance }: { creance: CreanceOuverte }) {
 			}
 		>
 			<SuiviDuDossier {...creance.suiviDuDossier} />
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }
 
@@ -1380,7 +1380,7 @@ function RangeeCourriers({ creance }: { creance: CreanceOuverte }) {
 	const envois = creance.courriers.envois;
 	const aValider = envois.filter((e) => e.etat === 'A_VALIDER').length;
 	return (
-		<RangeeDuDossier
+		<RangeeDepliable
 			cle="courriers"
 			titre="Courriers"
 			glose="À votre nom, relus et validés par vous, envoyés par vous."
@@ -1393,6 +1393,6 @@ function RangeeCourriers({ creance }: { creance: CreanceOuverte }) {
 			}
 		>
 			<Courriers courriers={creance.courriers} />
-		</RangeeDuDossier>
+		</RangeeDepliable>
 	);
 }

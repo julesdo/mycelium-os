@@ -30,7 +30,7 @@ export {
 export { CarteEtape, Echelon, FilDuDossier, GestesDeLEtape } from './fil-dossier';
 export { FaitsDuDossier, type FaitDuDossier } from './faits-dossier';
 export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qui-bloque';
-export { ListeDuDossier, RangeeDuDossier } from './liste-dossier';
+export { ListeDeRangees, RangeeDepliable } from './liste-rangees';
 export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
 export { Telephone } from './telephone';
 export { Page, PageHeader, PageBody, PageHero } from './page';
@@ -89,7 +89,15 @@ export {
 	TableauTitre,
 	TableauCellule
 } from './tableau';
-export { euros, eurosCentimes, partsEurosCentimes, dateCourte, pourcent, pluriel } from './format';
+export {
+	euros,
+	eurosCentimes,
+	partsEurosCentimes,
+	dateCourte,
+	dateLongue,
+	pourcent,
+	pluriel
+} from './format';
 
 // ── Recouvrement ────────────────────────────────────────────────────────────
 export {
