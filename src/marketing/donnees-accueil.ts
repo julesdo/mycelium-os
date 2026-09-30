@@ -58,7 +58,8 @@ const RANGEES: readonly RangeeDeLaFile[] = [
 		genre: 'OBSTACLE',
 		id: 'demo-prescription-bellin',
 		debiteur: 'Bellin & Fils',
-		obstacle: 'Pour la facture FA-2021-0087, il est trop tard pour agir en justice depuis le 14 août 2026.',
+		obstacle:
+			'Pour la facture FA-2021-0087, il est trop tard pour agir en justice depuis le 14 août 2026.',
 		urgence: 'CRITIQUE',
 		montant: 924_000n,
 		// Passée : elle tombe dans le groupe « En retard », en tête d'écran.
@@ -146,8 +147,7 @@ export const ACCUEIL_DEMO: FileAffichee = {
 		 */
 		nonChiffrees: [
 			{ reference: 'FA-2026-0218', raison: 'Date d’échéance absente de l’export comptable.' }
-		],
-		prescriptionSousPreavis: 1_284_000n
+		]
 	},
 	rangees: RANGEES,
 	travaux: TRAVAUX,

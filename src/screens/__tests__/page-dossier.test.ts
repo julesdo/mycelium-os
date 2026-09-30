@@ -274,11 +274,13 @@ describe('ce qui est grave', () => {
 		const { renderToStaticMarkup } = await import('react-dom/server');
 		const { createElement } = await import('react');
 		const { CeQuiBloque } = await import('../../ui/ce-qui-bloque');
-		const { FaitsDuDossier } = await import('../../ui/faits-dossier');
+		const { PliDeLaFile } = await import('../../ui/rangee-file');
 
+		// Les pastilles de faits (`FaitsDuDossier`) ont été retirées le 30/09/2026 :
+		// la page dossier et l'écran du matin disent leurs faits en une ligne sous
+		// le chiffre. Le pli de la file prend leur place dans ce test — c'est
+		// l'autre bloc qui compte ce qui n'appelle rien, et qui doit se taire à zéro.
 		expect(renderToStaticMarkup(createElement(CeQuiBloque, { alertes: [] }))).toBe('');
-		expect(
-			renderToStaticMarkup(createElement(FaitsDuDossier, { faits: [], supposition: null }))
-		).toBe('');
+		expect(renderToStaticMarkup(createElement(PliDeLaFile, { faits: [] }))).toBe('');
 	});
 });

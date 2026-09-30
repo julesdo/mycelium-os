@@ -1,7 +1,7 @@
 import { Chip } from '@cladd-ui/react';
 import { ChevronsUpDownIcon, CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import { EcranFile } from '../screens/file';
-import { Avatar, IconeLetikette } from '../ui';
+import { IconeLetikette } from '../ui';
 import { ACCUEIL_DEMO } from './donnees-accueil';
 
 /**
@@ -119,7 +119,6 @@ export function ApercuTelephone() {
 						etat: 'pret',
 						valeur: {
 							...ACCUEIL_DEMO,
-							avatar: <Avatar nom="Jules Doré" />,
 							selecteur: (
 								<Chip size="sm">
 									Charpentes Vidal

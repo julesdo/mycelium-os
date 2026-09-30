@@ -26,7 +26,6 @@ export {
 	type EtapeDossierAffichee,
 	type LectureEtapesAffichee
 } from './etapes-dossier';
-export { FaitsDuDossier, type FaitDuDossier } from './faits-dossier';
 export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qui-bloque';
 export { ListeDeRangees, RangeeDepliable, RangeeLien } from './liste-rangees';
 export { FAMILLES, VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
@@ -56,6 +55,7 @@ export { aujourdHuiISO } from './horloge';
 export { lirePourLeSujet, type PosePourUnSujet } from './etat-par-sujet';
 export { ChiffreHero } from './chiffre';
 export { ApercuDuSuivi } from './apercu-suivi';
+export { EnTeteDeGroupe } from './en-tete-groupe';
 export { CarteListe, LigneValeur } from './carte-liste';
 export { CarteDemarrage } from './carte-demarrage';
 export { Faisceau } from './faisceau';
@@ -93,15 +93,7 @@ export {
 	TableauTitre,
 	TableauCellule
 } from './tableau';
-export {
-	euros,
-	eurosCentimes,
-	partsEurosCentimes,
-	dateCourte,
-	dateLongue,
-	pourcent,
-	pluriel
-} from './format';
+export { euros, eurosCentimes, partsEurosCentimes, dateCourte, pourcent, pluriel } from './format';
 
 // ── Recouvrement ────────────────────────────────────────────────────────────
 export {
@@ -125,8 +117,7 @@ export {
 } from './remise-conseil';
 export { FluxEvenements, type EvenementAffiche, type UrgenceEvenement } from './flux-evenements';
 export {
-	RangeeFile,
-	GroupeDeFile,
+	FeuilleDeDecision,
 	PliDeLaFile,
 	trierSelonLePli,
 	type UrgenceRangee,
@@ -174,7 +165,6 @@ export {
 export { rangeeDuDebiteur, secteursProposes } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
 /** ⚠️ TEMPORAIRE, ET DATÉ : la porte de la bascule. Elle part avec T16. */
-export { PorteDeTransition, FERMETURE_DE_LA_PORTE } from './porte-de-transition';
 export { VeilleurAvatar, type EtatVeilleur } from './veilleur-avatar';
 export {
 	RechercheRegistre,

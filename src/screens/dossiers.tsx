@@ -17,6 +17,7 @@ import {
 	Avatar,
 	BoutonPrincipal,
 	BoutonTexte,
+	EnTeteDeGroupe,
 	LigneAnalyse,
 	LigneBouton,
 	Lien,
@@ -186,34 +187,6 @@ function relancable(dossier: DossierDeLIndex): boolean {
  */
 function normaliser(texte: string): string {
 	return texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-}
-
-/**
- * L'EN-TÊTE D'UN GROUPE — son nom, puis son compte et son total à droite.
- *
- * ⚠️ C'EST L'EN-TÊTE « TODAY … +$18 » DE REVOLUT. Il dit, avant la moindre
- * rangée, combien de dossiers et combien d'argent vivent à cette étape : la
- * question qu'on se pose en balayant l'index n'est pas « lequel », c'est
- * « où est l'argent ».
- */
-function EnTeteDeGroupe({
-	libelle,
-	nombre,
-	total
-}: {
-	libelle: string;
-	nombre: number;
-	total: bigint | null;
-}) {
-	return (
-		<div className="flex items-baseline justify-between gap-cladd-3xs px-1">
-			<h2 className="text-cladd-sm font-semibold">{libelle}</h2>
-			<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">
-				{nombre}
-				{total === null ? null : <> · {eurosCentimes(total)}</>}
-			</span>
-		</div>
-	);
 }
 
 export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> }) {

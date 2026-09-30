@@ -1,31 +1,24 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
-import { InfoIcon, UploadIcon, XIcon } from 'lucide-react';
-import { PREAVIS } from '../lib/verticales/recouvrement/surveillance';
+import { UploadIcon } from 'lucide-react';
 import {
-	Bandeau,
+	Avatar,
 	BilanImport,
 	BoutonPrincipal,
 	BoutonSecondaire,
 	CeQuiManque,
 	ChiffreHero,
+	EnTeteDeGroupe,
+	FeuilleDeDecision,
 	LigneAnalyse,
+	LigneBouton,
 	ListeAnalyses,
-	CompositionDue,
-	FaitsDuDossier,
 	ListeDeRangees,
 	RangeeDepliable,
 	dateCourte,
-	dateLongue,
-	FERMETURE_DE_LA_PORTE,
-	type FaitDuDossier,
-	FacturesNonChiffrees,
-	GroupeDeFile,
 	Lettrage,
 	PageEcran,
 	PliDeLaFile,
-	PorteDeTransition,
-	RangeeFile,
 	SectionEcran,
 	SectionsDepliables,
 	SourceDeRangees,
@@ -87,10 +80,10 @@ import {
  * Un choix qui change tout l'écran est une destination, pas un onglet de plus.
  *
  * Restent trois GROUPES, tous à l'écran en même temps, dans un seul défilement,
- * et chacun repliable :
+ * et aucun ne se replie — un en-tête est un intitulé, pas une commande :
  *
  *   · **En retard** — la date du fait est déjà passée. Le délai court contre
- *     vous, et c'est le seul groupe qui porte un accent.
+ *     vous.
  *   · **Aujourd'hui** — urgence critique ou haute, ou une date qui tombe
  *     aujourd'hui. Ce qui presse.
  *   · **À venir** — le reste.
@@ -114,8 +107,8 @@ import {
  *
  * La route lui passe des données, la salle d'exposition lui en passe d'autres.
  * C'est ce qui permet de le VOIR aux quatre largeurs de référence sans backend
- * ni authentification. Les trois surfaces que seule l’application peut composer
- * — l'avatar, le sélecteur d'établissement et la palette de
+ * ni authentification. Les deux surfaces que seule l’application peut composer
+ * — le sélecteur d'établissement et la palette de
  * recherche — arrivent en `ReactNode` : l'écran ne fait que leur garder leur
  * place dans la rangée du haut.
  */
@@ -140,18 +133,14 @@ const LIBELLE_GROUPE: Record<GroupeFile, string> = {
 	AVENIR: 'À venir'
 };
 
-/**
- * CE QUE CHAQUE GROUPE DIT DE LUI-MÊME, sous son intitulé une fois ouvert.
- *
- * ⚠️ UNE RÈGLE, PAS UN SLOGAN. Le gérant doit pouvoir vérifier qu'une rangée est
- * au bon endroit : sans la règle écrite, un groupe est un rangement qu'on subit,
- * et on cesse de croire au compte qu'il affiche.
- */
-const REGLE_GROUPE: Record<GroupeFile, string> = {
-	RETARD: 'La date de ces faits est passée.',
-	AUJOURDHUI: 'Ce qui se décide maintenant : une échéance du jour, ou une urgence relevée.',
-	AVENIR: 'Une date à venir, ou un fait qui n’en porte aucune.'
-};
+/*
+  ⚠️ LA PHRASE QUI JUSTIFIAIT CHAQUE GROUPE EST PARTIE LE 30/09/2026. « La date
+  de ces faits est passée », « Ce qui se décide maintenant : une échéance du
+  jour, ou une urgence relevée » : trente mots sous trois intitulés qui disent
+  déjà la même chose. La règle de rangement reste écrite — dans `groupeDe`, juste
+  en dessous — et chaque rangée porte sa date en tête de ligne : c'est elle qui
+  permet de vérifier qu'une rangée est au bon endroit.
+*/
 
 /**
  * LE GROUPE D'UNE RANGÉE — la seule règle de rangement de l'écran.
@@ -328,8 +317,6 @@ export interface TeteDeFile {
 	 * le premier se croit exact.
 	 */
 	readonly nonChiffrees: readonly { readonly reference: string; readonly raison: string }[];
-	/** Le second nombre : ce dont la prescription tombe sous le préavis, en euros. */
-	readonly prescriptionSousPreavis: bigint;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -398,15 +385,6 @@ export interface FileAffichee {
 	/** Le dépôt de fichiers. Il vit ici : cet écran est la porte d'entrée des factures. */
 	readonly onFichiers: (fichiers: File[]) => void;
 	readonly accepteFichiers: string;
-	/**
-	 * QUI EST CONNECTÉ, ET LE CHEMIN VERS SON COMPTE.
-	 *
-	 * ⚠️ IL EST LA SEULE ENTRÉE DE `/app/compte`. La barre du bas y mène aussi
-	 * depuis son quatrième onglet ; le laisser tomber ne casserait donc rien, et
-	 * on le garde quand même : c'est lui qui dit QUI travaille, ce qu'un onglet
-	 * nommé « Compte » ne dit pas.
-	 */
-	readonly avatar?: ReactNode;
 	/** Le sélecteur d'établissement, monté par l'application. Permanent. */
 	readonly selecteur?: ReactNode;
 	/** La palette de recherche (D16). */
@@ -422,28 +400,11 @@ export interface FileAffichee {
 /**
  * ⚠️ `onglet`, ET PLUS `aucun` — LE REGARD AU NAVIGATEUR L'A IMPOSÉ.
  *
- * L'écran se rendait sans en-tête, et sa rangée d'outils défilait avec la
- * liste. Deux défauts en sont sortis, mesurés :
- *
- *   · `PageEcran` dégage 64 px en haut de l'ATTENTE et de l'ERREUR quand l'écran
- *     n'a pas d'en-tête, et rien du tout quand il est prêt. Le contenu
- *     descendait puis remontait de 48 px à chaque chargement — le genre de saut
- *     qu'aucun test ne voit ;
- *   · la recherche, le dépôt et le compte partaient vers le haut
- *     dès la deuxième rangée lue. Sur un écran qui porte cent cinquante rangées,
- *     c'est-à-dire : introuvables.
- *
- * Un en-tête d'onglet règle les deux — il ne défile pas, et il pose le même
- * rythme haut que `/app/creance/$id` et `/app/debiteurs/$id`, qui sont les
- * écrans d'à côté dans la barre du bas.
- *
- * ⚠️ MAIS IL NE NOMME PLUS L'ÉCRAN. Le titre « Aujourd'hui » a été retiré : la
- * barre du bas dit déjà où l'on est, et le répéter en gros coûtait 64px de
- * dégagement plus la hauteur du titre — c'est-à-dire la première rangée, celle
- * qu'on regarde en ouvrant l'application. La rangée d'outils occupe désormais la
- * barre seule, tout en haut, et le reste glisse dessous derrière son verre.
+ * Sans en-tête, la rangée d'outils défilait avec la liste, et la recherche et le
+ * dépôt partaient vers le haut dès la deuxième rangée lue. Un en-tête d'onglet
+ * ne défile pas, et il pose le même rythme haut que les écrans voisins de la
+ * barre du bas.
  */
-
 export function EcranFile({ donnees }: { donnees: Lecture<FileAffichee> }) {
 	if (donnees.etat !== 'pret') {
 		return <PageEcran entete={{ genre: 'onglet' }} etat={donnees.etat} />;
@@ -452,13 +413,54 @@ export function EcranFile({ donnees }: { donnees: Lecture<FileAffichee> }) {
 	return <FilePrete valeur={donnees.valeur} />;
 }
 
+/** Ce qui attend une réponse du gérant : une question de litige, ou une proposition à trancher. */
+function aTrancher(rangee: RangeeGroupee): boolean {
+	if (rangee.genre === 'LITIGE') return true;
+	const proposition = rangee.proposition;
+	return (
+		proposition !== undefined &&
+		(proposition.onRetenir !== undefined || proposition.onEcarter !== undefined)
+	);
+}
+
+/** Le total d'un groupe, quand au moins une rangée porte un montant. */
+function totalDe(rangees: readonly RangeeGroupee[]): bigint | null {
+	const montants = rangees.flatMap((rangee) => (rangee.montant === null ? [] : [rangee.montant]));
+	return montants.length === 0 ? null : montants.reduce((total, montant) => total + montant, 0n);
+}
+
 /**
- * Le corps, une fois les données là.
+ * « AUJOURD'HUI », UNE FOIS LES DONNÉES LÀ.
  *
- * Séparé parce que les crochets se déclarent avant tout retour anticipé : les
- * deux états d'affichage — la zone de dépôt et les groupes repliés — n'ont de
- * sens qu'ici, et les déclarer au-dessus du `if` de chargement les ferait vivre
- * dans les trois états.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE REPROCHE DU 30/09/2026 AU SOIR, ET CE QU'IL MESURAIT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * « On doit cliquer partout, il n'y a rien de clair […] Less is more. » Relevé à
+ * 393 px sur cet écran : VINGT-NEUF cibles, 391 mots, 3 001 px. Le montant dû
+ * s'écrivait deux fois (le chiffre, puis « De quoi c'est fait · 66 704,82 € »),
+ * le détail de ce montant vivait à la fois dans une rangée d'ici et sur la page
+ * « Ce qui est dû », trois groupes portaient chacun un chevron pour se replier
+ * et une phrase pour se justifier, et la file mêlait quatre formes de carte dont
+ * deux portaient leurs boutons — « Retenir », « Écarter », « Oui », « Non »,
+ * « Je ne sais pas ». Les mots étaient ceux du logiciel : « Le veilleur »,
+ * « Extraction », « Décompte arrêtable », « angles morts ».
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LA RÈGLE : CHAQUE QUESTION DU MATIN A UNE RÉPONSE, À UN SEUL ENDROIT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ *   1. Combien on me doit → le chiffre, une ligne dessous, et UNE rangée vers
+ *      « Ce qui est dû », qui porte déjà tout le détail.
+ *   2. Qu'est-ce que je fais → la file, en rangées TOUTES pareilles — avatar,
+ *      client, deux lignes, montant —, groupées avec leur compte et leur total,
+ *      comme l'écran des dossiers. Ce qui attend une réponse porte un point et
+ *      s'ouvre dans une feuille ; le reste mène à son dossier.
+ *   3. Ce que fait le logiciel → en bas, en silence, sauf ce qui TRAVAILLE : un
+ *      dépôt qui lit, un veilleur qui tourne restent sous les yeux (règle n° 2).
+ *
+ * C'est le code de Remote et de Wise sur une file d'approbations, relevé sur
+ * Mobbin le même jour : aucune rangée n'y porte de bouton.
  */
 function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	const {
@@ -473,34 +475,23 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		verrous,
 		onFichiers,
 		accepteFichiers,
-		avatar,
 		selecteur,
 		palette,
 		connexion
 	} = valeur;
 
-	/** La zone de dépôt, dépliée par la rangée du haut. Elle est permanente dans l'état vide. */
+	/** La zone de dépôt, dépliée par le bouton rond de l'en-tête. */
 	const [depotOuvert, setDepotOuvert] = useState(false);
-	/** Le bandeau d'annonce, refermé d'un geste. Il ne porte aucun chiffre : voir `annonce`. */
-	const [annonceFermee, setAnnonceFermee] = useState(false);
 	/**
-	 * LES RANGÉES DÉPLIÉES — LA TÊTE ET LE TRAVAIL DE FOND, DANS UNE SEULE LISTE.
+	 * LES RANGÉES DÉPLIÉES — le travail de fond et les rapprochements.
 	 *
-	 * ⚠️ UNE SEULE RACINE POUR L'ÉCRAN. Sous 1024 px, chacune de ces rangées
-	 * s'ouvre en FEUILLE plutôt que de pousser la file vers le bas ; la feuille
-	 * a besoin de savoir si elle est ouverte, et c'est cette liste qui le dit.
+	 * ⚠️ UNE SEULE RACINE POUR L'ÉCRAN. Sous 1024 px, chacune s'ouvre en FEUILLE
+	 * plutôt que de pousser la file vers le bas ; la feuille a besoin de savoir si
+	 * elle est ouverte, et c'est cette liste qui le dit.
 	 */
 	const [depliees, setDepliees] = useState<readonly string[]>([]);
-	/**
-	 * LES GROUPES QUE LE GÉRANT A REPLIÉS LUI-MÊME.
-	 *
-	 * ⚠️ TOUS OUVERTS TANT QU'IL N'A RIEN DIT, et c'est le sens du mot « file ».
-	 * Un groupe replié par défaut est un onglet fermé : ce qu'il contient cesse
-	 * d'exister pour celui qui balaie l'écran, et c'est exactement le défaut que
-	 * les trois groupes remplacent. On ne replie donc que ce qu'on a choisi de
-	 * replier, et le compte reste sous les yeux dans les deux cas.
-	 */
-	const [replies, setReplies] = useState<readonly GroupeFile[]>([]);
+	/** La rangée dont la feuille de décision est ouverte, par son identité. */
+	const [enDecision, setEnDecision] = useState<string | null>(null);
 
 	const { pleines, repliees } = trierSelonLePli(rangees);
 
@@ -527,29 +518,25 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	const groupes = ORDRE_GROUPES.map((cle) => ({ cle, rangees: parGroupe.get(cle) ?? [] })).filter(
 		(groupe) => groupe.rangees.length > 0
 	);
+	const decision =
+		[...parGroupe.values()].flat().find((rangee) => rangee.id === enDecision) ?? null;
 
 	/*
 	  ⚠️ CE QUI TRAVAILLE RESTE À L'ÉCRAN ; CE QUI A FINI DEVIENT UNE RANGÉE.
-
-	  C'est la règle d'écran n° 2 du produit — « tout traitement se voit sans
-	  qu'on le demande » — appliquée à la lettre, et c'est ce qui permet de
-	  gagner les 464 px que le bilan d'un dépôt TERMINÉ occupait chaque matin en
-	  tête de file. Un dépôt qui lit encore, ou qui a échoué, ne se replie pas :
-	  le premier change sous les yeux, le second demande un geste.
+	  C'est la règle d'écran n° 2 — « tout traitement se voit sans qu'on le
+	  demande ». Un dépôt qui lit encore, ou qui a échoué, ne se replie pas : le
+	  premier change sous les yeux, le second demande un geste.
 	*/
 	const depotsVivants = depots.filter((rangee) => rangee.depot.statut !== 'TERMINE');
 	const depotsFinis = depots.filter((rangee) => rangee.depot.statut === 'TERMINE');
 	const veilleurTravaille = travaux.some((tache) => tache.etat === 'EN_COURS');
 
 	/**
-	 * LE PREMIER JOUR — et il ne montre AUCUN des deux nombres.
+	 * LE PREMIER JOUR — et il ne montre AUCUN nombre.
 	 *
-	 * ⚠️ « 0,00 € » EST UN CADRAN À ZÉRO, que la règle d'écran n° 4 interdit. Il
-	 * n'apprend rien — le gérant sait qu'il n'a rien déposé — et il lui apprend
-	 * surtout à sauter la tête des yeux, c'est-à-dire l'endroit où la prescription
-	 * de son portefeuille s'écrira demain. Sans factures, le produit ne peut
-	 * littéralement rien mesurer : tout l'écran attend ce geste, donc le dépôt est
-	 * le seul à avoir le droit d'être en grand.
+	 * ⚠️ « 0,00 € » EST UN CADRAN À ZÉRO, que la règle d'écran n° 4 interdit.
+	 * Sans factures, le produit ne peut littéralement rien mesurer : tout l'écran
+	 * attend ce geste, donc le dépôt est le seul à avoir le droit d'être en grand.
 	 */
 	const debute = tete.nombreFactures === 0 && rangees.length === 0;
 
@@ -558,21 +545,22 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 			entete={{
 				genre: 'onglet',
 				/*
-				  ⚠️ LE GRAND TITRE EST REVENU LE 30/09/2026. L'écran n'en portait
-				  aucun : seule la barre du bas disait où l'on était, et rien n'ancrait
-				  le défilement. C'est la signature d'une application iOS — Asana,
-				  Craft et Numo posent tous le leur DANS le flux, au-dessus de la
-				  liste — et c'est aussi ce qui donne à la date sa place, qui est la
-				  première chose qu'on regarde sur un écran qui s'appelle
-				  « Aujourd'hui ».
+				  ⚠️ PAS DE GRAND TITRE, ET PAS DE DATE EN SOUS-TITRE. Verdict du
+				  fondateur, le 30/09/2026 au soir : « enlève-moi le Aujourd'hui et la
+				  date en dessous, on s'en fout […] et fais un vrai sticky header en
+				  haut ». La barre du bas dit déjà où l'on est ; le grand titre et la date
+				  coûtaient 78 px au-dessus du seul chiffre qu'on vient lire, et
+				  repoussaient la barre d'outils sur une deuxième ligne.
+
+				  Il reste une barre collante compacte — l'établissement, la recherche, le
+				  dépôt —, celle de Revolut au-dessus de son solde. La date n'est pas
+				  perdue : elle DATE le montant, sous le chiffre, parce que les pénalités
+				  courent chaque jour. C'est le seul endroit où elle dit quelque chose.
 				*/
-				titre: 'Aujourd’hui',
-				sousTitre: dateLongue(aujourdHui),
 				actions: (
 					<RangeeDuHaut
 						selecteur={selecteur}
 						palette={palette}
-						avatar={avatar}
 						depotOuvert={depotOuvert}
 						onDepot={() => setDepotOuvert(!depotOuvert)}
 						/* Le premier jour, la zone de dépôt est déjà en grand au milieu de
@@ -584,43 +572,10 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 			}}
 		>
 			{debute ? (
-				<>
-					<FileVide
-						onFichiers={onFichiers}
-						accepteFichiers={accepteFichiers}
-						connexion={connexion}
-					/>
-					<PorteDeTransition />
-				</>
+				<FileVide onFichiers={onFichiers} accepteFichiers={accepteFichiers} connexion={connexion} />
 			) : (
 				<SectionsDepliables ouvertes={depliees} onOuvertesChange={setDepliees}>
-					{/* LE BANDEAU, EN TÊTE ET REFERMABLE (§ 5.2). Il ANNONCE ce qui s'est
-					    terminé pendant que le gérant était ailleurs ; ce qui est chiffré vit
-					    dans la rangée datée du dépôt, qui ne se referme pas. */}
-					{annonce === undefined || annonceFermee ? null : (
-						<Bandeau
-							icone={<InfoIcon size={18} />}
-							/*
-							  ⚠️ UNE CROIX, PAS LE MOT « FERMER ». Le mot poussait la commande
-							  sur une ligne à elle et portait le bandeau à 174 px pour douze
-							  mots, en tête de l'écran du matin. La croix garde les 48 px du
-							  doigt et tient à droite du texte — c'est la forme d'une
-							  notification iOS, et `aria-label` dit ce que le glyphe ne dit pas.
-							*/
-							action={
-								<BoutonSecondaire
-									aria-label="Fermer cette annonce"
-									onClick={() => setAnnonceFermee(true)}
-								>
-									<XIcon size={18} />
-								</BoutonSecondaire>
-							}
-						>
-							{annonce}
-						</Bandeau>
-					)}
-
-					<Tete tete={tete} />
+					<Tete tete={tete} aujourdHui={aujourdHui} />
 
 					{depotOuvert ? (
 						<ZoneDepot
@@ -635,8 +590,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						</ZoneDepot>
 					) : null}
 
-					{/* CE QUI TRAVAILLE, OU CE QUI A ÉCHOUÉ. Jamais replié : un dépôt qui
-					    lit change sous les yeux, et un dépôt échoué demande un geste. */}
+					{/* CE QUI TRAVAILLE, OU CE QUI A ÉCHOUÉ. Jamais replié. */}
 					{depotsVivants.length === 0 ? null : (
 						<SourceDeRangees nom="Vos dépôts">
 							<div className="flex flex-col gap-cladd-3xs">
@@ -646,11 +600,6 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 							</div>
 						</SourceDeRangees>
 					)}
-
-					{/* CE QUI TOURNE À L'INSTANT, ET RIEN D'AUTRE. L'histoire du veilleur
-					    est une rangée du travail de fond ; ce qui travaille reste sous les
-					    yeux, parce qu'un traitement en cours qu'il faut aller chercher est
-					    un traitement qu'on croit arrêté. */}
 					{veilleurTravaille ? (
 						<SourceDeRangees nom="Le travail de fond">
 							<Veilleur travaux={travaux} seulementCeQuiTravaille />
@@ -663,45 +612,72 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						<CeQuiManque verrous={verrous} />
 					</SourceDeRangees>
 
-					{/* ── LA FILE, ET ELLE COMMENCE ICI ────────────────────────────── */}
+					{/* ── LA FILE ───────────────────────────────────────────────────── */}
 					<SourceDeRangees nom="Les rangées de la surveillance">
-						{resumeDuPlafond === null ? null : (
-							<p className="text-cladd-2xs text-cladd-fg-softer">{resumeDuPlafond}</p>
-						)}
-
 						{groupes.length === 0 ? (
-							<p className="text-cladd-xs text-cladd-fg-soft">
-								Rien à trancher aujourd’hui. La surveillance continue de tourner sur vos échéances
-								et sur les dates limites pour agir en justice.
+							<p className="px-1 text-cladd-xs text-cladd-fg-soft">
+								Rien à trancher aujourd’hui. La surveillance continue sur vos échéances et sur les
+								dates limites pour agir en justice.
 							</p>
 						) : (
 							groupes.map(({ cle, rangees: siennes }) => (
-								<GroupeDeFile
-									key={cle}
-									titre={LIBELLE_GROUPE[cle]}
-									compte={siennes.length}
-									ton={cle === 'RETARD' ? 'ALERTE' : 'NEUTRE'}
-									ouvert={!replies.includes(cle)}
-									onBasculer={() =>
-										setReplies((deja) =>
-											deja.includes(cle) ? deja.filter((autre) => autre !== cle) : [...deja, cle]
-										)
-									}
-								>
-									<p className="text-cladd-2xs text-cladd-fg-softer">{REGLE_GROUPE[cle]}</p>
-									{siennes.map((rangee) => (
-										<Rangee key={rangee.id} rangee={rangee} />
-									))}
-								</GroupeDeFile>
+								<section key={cle} className="flex flex-col gap-cladd-3xs">
+									<EnTeteDeGroupe
+										libelle={LIBELLE_GROUPE[cle]}
+										nombre={siennes.length}
+										total={totalDe(siennes)}
+									/>
+									<ListeAnalyses>
+										{siennes.map((rangee) => (
+											<LigneDeFile
+												key={rangee.id}
+												rangee={rangee}
+												onTrancher={() => setEnDecision(rangee.id)}
+											/>
+										))}
+									</ListeAnalyses>
+								</section>
 							))
+						)}
+
+						{/*
+						  ⚠️ CE QUE LE PLAFOND A DIFFÉRÉ SE DIT, SOUS LA FILE (D13). Sept
+						  propositions par jour, et ce qui dépasse est COMPTÉ : un rangement
+						  qui tairait ce qu'il n'a pas montré serait un repli silencieux.
+						*/}
+						{resumeDuPlafond === null ? null : (
+							<p className="px-1 text-cladd-2xs text-cladd-fg-softer">{resumeDuPlafond}</p>
 						)}
 					</SourceDeRangees>
 
-					{/* ── LE TRAVAIL DE FOND ───────────────────────────────────────────
-					    Tout ce qui n'est pas la file du jour, en rangées qui portent leur
-					    compte. Ces cinq blocs tenaient 1 462 px APRÈS la file — soit près
-					    de deux écrans de défilement, chaque matin, pour des choses dont
-					    aucune n'est un geste du jour. */}
+					{/*
+					  ⚠️ LE RAPPROCHEMENT EST UNE TÂCHE, PAS DU TRAVAIL DE FOND. Il vivait
+					  parmi les rangées de la machine, alors que c'est un geste du gérant —
+					  celui qui empêche de relancer un client qui a déjà payé, la pire erreur
+					  d'un logiciel de recouvrement. Il a son groupe, sans urgence inventée :
+					  ce n'est pas une alerte, c'est un outil disponible tous les jours.
+					*/}
+					{lettrages.length === 0 ? null : (
+						<section className="flex flex-col gap-cladd-3xs">
+							<EnTeteDeGroupe libelle="À rapprocher" nombre={lettrages.length} total={null} />
+							<ListeDeRangees>
+								{lettrages.map((rangee) => (
+									<RangeeDepliable
+										key={rangee.id}
+										cle={`lettrage-${rangee.id}`}
+										famille="ARGENT"
+										titre="Un virement reçu"
+										glose="Dites de qui il vient : le logiciel solde les bonnes factures, et personne n’est relancé pour ce qu’il a déjà payé."
+										valeur="à rapprocher"
+									>
+										<Lettrage {...rangee.lettrage} />
+									</RangeeDepliable>
+								))}
+							</ListeDeRangees>
+						</section>
+					)}
+
+					{/* ── LE TRAVAIL DE FOND ─────────────────────────────────────────── */}
 					<ListeDeRangees titre="Le travail de fond">
 						{depotsFinis.length === 0 ? null : (
 							<RangeeDepliable
@@ -717,30 +693,16 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 							</RangeeDepliable>
 						)}
 
-						{lettrages.map((rangee) => (
-							<RangeeDepliable
-								key={rangee.id}
-								cle={`lettrage-${rangee.id}`}
-								famille="ARGENT"
-								titre="Rapprocher un virement"
-								glose="Ce qui empêche de relancer un client qui a déjà payé."
-								valeur="à faire"
-							>
-								<Lettrage {...rangee.lettrage} />
-							</RangeeDepliable>
-						))}
-
 						{/* LE VEILLEUR NE DISPARAÎT JAMAIS : un bloc qui n'apparaît que les
 						    jours où il s'est passé quelque chose apprend que son absence est
 						    normale, et le jour où il manque parce que la machine est tombée,
-						    plus rien ne le distingue d'un jour calme. Il ne se replie pas non
-						    plus quand il TRAVAILLE — règle d'écran n° 2. */}
+						    plus rien ne le distingue d'un jour calme. */}
 						{travaux.length === 0 ? null : (
 							<RangeeDepliable
 								cle="veilleur"
 								famille="MACHINE"
-								titre="Le veilleur"
-								glose="Ce que la machine a fait cette nuit, et ce qu’elle fait en ce moment."
+								titre="Surveillance"
+								glose="Ce que le logiciel a relu cette nuit, et ce qu’il relit en ce moment."
 								valeur={`${travaux.length} passage${pluriel(travaux.length)}`}
 							>
 								<Veilleur travaux={travaux} />
@@ -749,24 +711,48 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 
 						<LimitesDuCalcul hypotheses={hypotheses} anglesMorts={anglesMorts} />
 
-						{/* L'ANCIEN ARBRE, EN UNE RANGÉE. Il tenait 513 px en bas de l'écran
-						    du matin, tous les jours, pour un échafaudage qui ferme le
-						    17 octobre. Les liens restent écrits ici, littéralement, donc
-						    `aucun-ecran-orphelin.test.ts` continue de les lire. */}
-						{/* ⚠️ AUCUNE GLOSE ICI : `PorteDeTransition` porte déjà son intitulé
-						    et sa date de fermeture. En ajouter une écrivait la même phrase
-						    deux fois dans la même feuille, à deux centimètres d'écart. */}
-						<RangeeDepliable
-							cle="ancienne-version"
-							famille="MACHINE"
-							titre="L’ancienne version"
-							valeur={`jusqu’au ${dateCourte(FERMETURE_DE_LA_PORTE)}`}
-						>
-							<PorteDeTransition />
-						</RangeeDepliable>
+						{/*
+						  ⚠️ « LES ÉCRANS DE L'ANCIENNE VERSION » SONT PARTIS LE 30/09/2026, avant
+						  leur date de fermeture du 17 octobre. Verdict du fondateur : « on s'en
+						  fout aussi ». Ses quatre liens menaient à des écrans que le produit
+						  atteint déjà ailleurs — la barre du bas pour les clients et les
+						  dossiers, le bouton de dépôt pour les imports, « Jamais réclamé » pour
+						  ce qui est dû. `/app/procedures` n'était plus qu'une redirection ; il
+						  rejoint les anciennes adresses d'`aucun-ecran-orphelin.test.ts`.
+						*/}
 					</ListeDeRangees>
 
+					{/*
+					  ⚠️ L'ANNONCE DE LA NUIT EST UNE LIGNE, PLUS UN BANDEAU. Elle ouvrait
+					  l'écran du matin, en tête, avec sa croix : une cible de plus et trois
+					  lignes pour dire ce que la machine a fait pendant que le gérant dormait.
+					  Elle ne porte rien de chiffré qui ne vive ailleurs (le bilan daté du
+					  dépôt) : sa place est avec ce qui n'appelle aucune décision.
+					*/}
+					{annonce === undefined ? null : (
+						<p className="px-1 text-cladd-2xs text-cladd-fg-softer">{annonce}</p>
+					)}
 					<PliDeLaFile faits={repliees.map((r) => r.pli)} />
+
+					{decision === null ? null : (
+						<FeuilleDeDecision
+							ouverte
+							onFermer={() => setEnDecision(null)}
+							titre={decision.debiteur}
+							enonce={decision.genre === 'LITIGE' ? decision.question : decision.obstacle}
+							montant={decision.montant}
+							{...(decision.proposition === undefined ? {} : { proposition: decision.proposition })}
+							{...(decision.genre === 'LITIGE'
+								? {
+										reponses: {
+											onRepondre: decision.onRepondre,
+											enCours: decision.enCours === true
+										}
+									}
+								: {})}
+							{...(decision.destination === undefined ? {} : { destination: decision.destination })}
+						/>
+					)}
 				</SectionsDepliables>
 			)}
 		</PageEcran>
@@ -778,61 +764,34 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * LES CINQ CIBLES DE L'EN-TÊTE, ET DES BOUTONS RONDS.
+ * L'ÉTABLISSEMENT, LA RECHERCHE ET LE DÉPÔT — trois cibles, et plus quatre.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ CE QU'ELLE N'EST PLUS
- * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ L'AVATAR EST PARTI LE 30/09/2026. Il menait au compte, que le quatrième
+ * onglet de la barre du bas ouvre déjà : deux chemins vers le même écran, à
+ * vingt centimètres l'un de l'autre. Son propre commentaire l'admettait — « le
+ * laisser tomber ne casserait rien ».
  *
- * Elle était une `Toolbar` à six cibles dont DEUX étaient des choix de vue —
- * « Par créance / Par client » — c'est-à-dire des onglets déguisés en outils.
- * La vue Par client est devenue une destination de la barre du bas
- * (`/app/debiteurs`), et ce qui reste est ce qui n'est PAS une navigation :
- * l'établissement sur lequel on travaille, et quatre gestes.
+ * ⚠️ ET ELLE NE DÉFILE PAS. Elle vit dans l'en-tête de `PageEcran` : sur un
+ * écran qui porte cent cinquante rangées, une recherche qui part vers le haut à
+ * la deuxième rangée lue est une recherche qu'on n'a plus.
  *
- * ⚠️ ET ELLE NE DÉFILE PLUS. Elle vit dans l'en-tête de `PageEcran`, qui reste
- * en place pendant que la liste défile : sur un écran qui porte cent cinquante
- * rangées, une recherche qui part vers le haut à la deuxième rangée lue est une
- * recherche qu'on n'a plus.
- *
- * ⚠️ ET LE SÉLECTEUR EST PERMANENT, y compris sur un compte mono-site. Le
- * cloisonnement est strict par établissement, et un gérant qui reprend sa
- * tablette après une réunion doit lire sur LEQUEL il travaille sans cliquer.
+ * ⚠️ LE SÉLECTEUR EST PERMANENT, y compris sur un compte mono-site. Le
+ * cloisonnement est strict par établissement.
  */
 function RangeeDuHaut({
 	selecteur,
 	palette,
-	avatar,
 	depotOuvert,
 	onDepot,
 	avecDepot
 }: {
 	selecteur?: ReactNode;
 	palette?: ReactNode;
-	avatar?: ReactNode;
 	depotOuvert: boolean;
 	onDepot: () => void;
 	avecDepot: boolean;
 }) {
 	return (
-		/*
-		  ⚠️ `flex-wrap`, ET C'EST CE QUI REMPLACE LE DÉFILEMENT HORIZONTAL. La
-		  `Toolbar` précédente défilait : à 375 px, la moitié de ses cibles étaient
-		  hors champ et rien ne le disait — on ne les trouvait qu'en découvrant un
-		  glissement. Une rangée qui passe à la ligne montre tout ce qu'elle porte,
-		  ce qui est la seule façon d'être joignable au doigt.
-
-		  ⚠️ ET ELLE PASSE À LA LIGNE PAR GROUPE, JAMAIS PAR CIBLE. Mesuré au
-		  navigateur : à 375 px, l'établissement et les quatre gestes demandent
-		  373 px pour 343 disponibles. Si les cinq cibles pouvaient se séparer, la
-		  coupure tomberait au milieu des gestes et laisserait l'avatar seul sur une
-		  ligne. Chaque groupe étant insécable, la coupure tombe entre les deux : une
-		  ligne qui dit OÙ l'on travaille, une ligne qui porte ce qu'on peut faire.
-
-		  `gap-2` et non `gap-cladd-3xs` : seize pixels entre quatre boutons ronds
-		  coûtent quarante-huit pixels de rangée, soit une cible entière. Huit
-		  suffisent à les séparer, et c'est ce que fait la référence.
-		*/
 		<div className="flex w-full flex-wrap items-center justify-between gap-2">
 			<div className="flex min-w-0 shrink-0 items-center gap-2">{selecteur}</div>
 
@@ -842,16 +801,8 @@ function RangeeDuHaut({
 					/*
 					  LE DÉPÔT, EN BOUTON ROND. Il OUVRE la zone, il ne la remplace pas :
 					  `ZoneDepot` porte les quatre gestes qu'un gérant fait selon d'où il
-					  vient — photographier sur la tablette, parcourir, glisser, coller —
-					  et un bouton qui n'ouvrirait qu'un sélecteur de fichiers en perdrait
-					  trois.
-					*/
-					/*
-					  ⚠️ `square` : SANS LUI, LA CIBLE FAIT 36 px DE LARGE. `size` fixe la
-					  HAUTEUR d'un bouton Cladd ; sa largeur suit son contenu, et une icône
-					  seule n'en fait pas assez. Le plancher tactile du projet est de 48 px,
-					  et il vaut sur les deux axes. Mesuré au navigateur — et c'est la prop
-					  du kit qui le dit, pas une largeur écrite à la main.
+					  vient — photographier, parcourir, glisser, coller. `square` : sans
+					  lui, la largeur suit l'icône et la cible tombe sous le doigt.
 					*/
 					<Button
 						size="md"
@@ -868,7 +819,6 @@ function RangeeDuHaut({
 						<UploadIcon aria-hidden />
 					</Button>
 				) : null}
-				{avatar}
 			</div>
 		</div>
 	);
@@ -879,92 +829,68 @@ function RangeeDuHaut({
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * LA TÊTE — LE CHIFFRE, PUIS CE QUI LE QUALIFIE, ET RIEN DE PLUS.
+ * COMBIEN ON ME DOIT — le chiffre, une ligne, et le chemin vers le détail.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ ELLE FAISAIT 891 PX, SOIT UN ÉCRAN ENTIER AVANT LE PREMIER GESTE
+ * ⚠️ LE MONTANT S'ÉCRIVAIT DEUX FOIS, ET SON DÉTAIL AUSSI
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Elle portait le chiffre, puis sa décomposition en trois lignes, puis une
- * phrase sur les dates limites, puis un paragraphe de quarante-cinq mots sur la
- * facture qui n'entre pas dans le total, puis une rangée. Relevé au navigateur
- * le 30/09/2026 : 891 px et 117 mots, avant la première chose à faire.
+ * Sous le chiffre : trois pastilles, puis « De quoi c'est fait · 66 704,82 € »
+ * — le même montant, cent pixels plus bas —, dont la feuille rendait la
+ * décomposition et les factures non chiffrées. La page « Ce qui est dû » rend
+ * EXACTEMENT les mêmes choses, facture par facture. Il ne reste donc qu'un
+ * chemin : la rangée « Jamais réclamé », qui porte le seul chiffre que la
+ * comptabilité du gérant ne lui donne pas — et le reçu entier derrière, comme
+ * « Order receipt » chez Shop.
  *
- * Or on ouvre cet écran le matin pour AGIR. Ce qui reste ici est ce qui se lit
- * d'un coup d'œil — le chiffre, et les trois faits qui le qualifient, en
- * pastilles. La décomposition et la facture non chiffrée descendent dans une
- * rangée qui porte leur compte : elles ne sont pas perdues, elles ne sont plus
- * sur le chemin.
+ * ⚠️ LA FACTURE NON COMPTÉE RESTE SOUS LE CHIFFRE, TOUJOURS. C'est la règle
+ * d'amputation de `revelation.ts` : « un total silencieusement amputé est pire
+ * qu'un total incomplet annoncé ». Elle se distingue par la graisse, pas par une
+ * couleur de seuil.
  *
- * ⚠️ « CE QUI VOUS EST DÛ ET N'A JAMAIS ÉTÉ CALCULÉ » RESTE UNE RANGÉE, et ce
- * n'est pas négociable : c'est le seul chiffre qui justifie l'abonnement au
- * douzième mois, et son écran n'est atteignable que par ce lien.
+ * ⚠️ LE MONTANT SOUS PRÉAVIS DE PRESCRIPTION N'EST PLUS UNE PASTILLE ICI : chaque
+ * dossier concerné est une rangée de la file, dans le groupe du jour, avec sa
+ * date. La pastille orange disait la même chose en agrégé, cent pixels au-dessus.
  */
-function Tete({ tete }: { tete: TeteDeFile }) {
-	const faits: FaitDuDossier[] = [];
-	if (tete.nombreFactures > 0) {
-		faits.push({
-			cle: 'factures',
-			texte: `${tete.nombreFactures} facture${pluriel(tete.nombreFactures)} en retard`
-		});
-	}
-	if (tete.prescriptionSousPreavis > 0n) {
-		faits.push({
-			cle: 'preavis',
-			texte: `${eurosCentimes(tete.prescriptionSousPreavis)} sous ${PREAVIS.PRESCRIPTION} jours`,
-			marquant: true
-		});
-	}
-	/*
-	  ⚠️ LA FACTURE NON CHIFFRÉE EST UNE PASTILLE MARQUANTE, PAS UN PARAGRAPHE.
-	  Elle n'est jamais absorbée par un total qui ne la compte pas — c'est la
-	  règle d'amputation du produit —, mais la dire en quarante-cinq mots au
-	  milieu du chemin la faisait sauter des yeux. Comptée ici, expliquée dans la
-	  rangée juste en dessous.
-	*/
-	if (tete.nonChiffrees.length > 0) {
-		const n = tete.nonChiffrees.length;
-		faits.push({
-			cle: 'non-chiffrees',
-			texte: `${n} facture${pluriel(n)} non chiffrée${pluriel(n)}`,
-			marquant: true
-		});
-	}
-
-	const jamaisCalcule = tete.parts.interets + tete.parts.indemnites;
+function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
+	const enRetard = tete.nombreFactures;
+	const nonComptees = tete.nonChiffrees.length;
+	const jamaisReclame = tete.parts.interets + tete.parts.indemnites;
 
 	return (
 		<div className="flex flex-col gap-cladd-2xs">
-			<ChiffreHero centimes={tete.total} surTitre="Ce qu’on vous doit" />
-
-			<FaitsDuDossier faits={faits} />
-
-			<ListeDeRangees>
-				<RangeeDepliable
-					cle="composition"
-					famille="ARGENT"
-					titre="De quoi c’est fait"
-					glose="Un montant qu’on ne peut pas décomposer est un montant qu’on demande de croire. Le client qui le conteste refera le calcul."
-					valeur={eurosCentimes(tete.total)}
-				>
-					<CompositionDue parts={tete.parts} />
-					<FacturesNonChiffrees lignes={tete.nonChiffrees} />
-				</RangeeDepliable>
-			</ListeDeRangees>
+			<ChiffreHero
+				aligne="gauche"
+				centimes={tete.total}
+				// La date du jour vit ICI, et plus en sous-titre d'écran : elle date le
+				// chiffre, qui monte chaque jour avec les pénalités.
+				surTitre={`Ce qu’on vous doit au ${dateCourte(aujourdHui)}`}
+				legende={
+					<>
+						{enRetard === 0 ? null : `${enRetard} facture${pluriel(enRetard)} en retard`}
+						{nonComptees === 0 ? null : (
+							<span className="font-semibold text-cladd-fg">
+								{enRetard === 0
+									? `${nonComptees} facture${pluriel(nonComptees)} non comptée${pluriel(nonComptees)}`
+									: ` · ${nonComptees} non comptée${pluriel(nonComptees)}`}
+							</span>
+						)}
+					</>
+				}
+			/>
 
 			{/*
-			  ⚠️ ELLE NE S'AFFICHE QUE QUAND IL Y A QUELQUE CHOSE À MONTRER. Une
-			  rangée « 0,00 € jamais calculés » est un cadran à zéro, et le vide
-			  montre le chemin au lieu d'afficher un zéro.
+			  ⚠️ ELLE NE S'AFFICHE QUE QUAND IL Y A QUELQUE CHOSE À MONTRER. Une rangée
+			  « 0,00 € jamais réclamés » est un cadran à zéro.
 			*/}
-			{jamaisCalcule > 0n ? (
+			{jamaisReclame > 0n ? (
 				<ListeAnalyses>
 					<LigneAnalyse
 						vers="/app/revelation"
 						famille="ARGENT"
-						titre="Jamais calculé"
-						valeur={eurosCentimes(jamaisCalcule)}
-						precision="Pénalités de retard et frais de recouvrement, dus de plein droit"
+						titre="Jamais réclamé"
+						precision="Pénalités et frais, dus de plein droit"
+						valeur={eurosCentimes(jamaisReclame)}
 					/>
 				</ListeAnalyses>
 			) : null}
@@ -973,81 +899,58 @@ function Tete({ tete }: { tete: TeteDeFile }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// LES RANGÉES, RENDUES
+// UNE RANGÉE DE LA FILE
 // ─────────────────────────────────────────────────────────────────────────
 
-function Rangee({ rangee }: { rangee: RangeeGroupee }) {
-	if (rangee.genre === 'LITIGE') {
-		return (
-			<RangeeFile
-				titre={rangee.debiteur}
-				obstacle={rangee.question}
-				urgence={rangee.urgence}
-				montant={rangee.montant}
-				{...(rangee.proposition === undefined ? {} : { proposition: rangee.proposition })}
-				{...(rangee.destination === undefined ? {} : { destination: rangee.destination })}
-			>
-				{/*
-				  ═══════════════════════════════════════════════════════════════════
-				  ⚠️ LES TROIS RÉPONSES NE S'AFFICHENT PAS SOUS UNE PROPOSITION
-				  ═══════════════════════════════════════════════════════════════════
+/**
+ * UNE RANGÉE DE LA FILE — la même, quel que soit ce qu'elle porte.
+ *
+ * ⚠️ AVATAR, CLIENT, DEUX LIGNES, MONTANT. C'est la rangée des dossiers et des
+ * clients, et c'est voulu : un gérant apprend UNE rangée pour tout le produit.
+ * L'avatar y avait été refusé quand la phrase d'obstacle s'étalait sur quatre
+ * lignes ; coupée à deux, elle lui laisse la place.
+ *
+ * ⚠️ LA DATE EST À DROITE, SOUS LE MONTANT — la colonne droite de Remote. En
+ * tête de ligne, « 12 sept. 2026 · » mangeait le tiers de la seule phrase qui
+ * dit ce qui se passe. Un quantième s'y vérifie toujours sur un calendrier.
+ *
+ * ⚠️ CE QUI ATTEND UNE RÉPONSE PORTE UN POINT, ET S'OUVRE EN FEUILLE ; le reste
+ * MÈNE à son dossier. Deux comportements, un seul signe pour les distinguer —
+ * celui que l'écran des dossiers pose déjà sur un courrier à valider.
+ */
+function LigneDeFile({
+	rangee,
+	onTrancher
+}: {
+	readonly rangee: RangeeGroupee;
+	readonly onTrancher: () => void;
+}) {
+	const enonce = rangee.genre === 'LITIGE' ? rangee.question : rangee.obstacle;
+	const date = rangee.genre === 'OBSTACLE' ? rangee.dateDuFait : undefined;
+	const contenu = {
+		genre: 'contenu' as const,
+		titre: rangee.debiteur,
+		precision: enonce,
+		lignes: 2 as const,
+		avatar: <Avatar nom={rangee.debiteur} className="size-10" />,
+		...(rangee.montant === null ? {} : { valeur: eurosCentimes(rangee.montant) }),
+		...(date === undefined ? {} : { sousValeur: dateCourte(date) })
+	};
 
-				  Elles s'affichaient EN PLUS de « Retenir » et « Écarter ». Les deux
-				  écrivent le même fait sur la même créance, par deux chemins — et le
-				  chemin des trois boutons ne touchait pas la proposition : le fait
-				  écrit, la question tombait, la rangée disparaissait, et la
-				  proposition restait `PROPOSEE` à vie, ses deux appuis injoignables.
+	if (aTrancher(rangee)) return <LigneBouton {...contenu} attention onClick={onTrancher} />;
 
-				  Ce n'est pas qu'un résidu en base. Le taux de rétention et la
-				  médiane du délai entre l'affichage et l'appui sont les deux mesures
-				  qui doivent dire si « sept par jour » est le bon nombre : une
-				  proposition tranchée ailleurs et jamais close les fausse toutes les
-				  deux, sans qu'aucun test ne tombe.
-
-				  Tant qu'une proposition est affichée, elle EST la question : la
-				  retenir vaut y répondre — `propositions.retenir` écrit le fait par
-				  `declarerFaitLitige`, le seul chemin d'écriture — et l'écarter la
-				  refuse AVEC SON MOTIF, sans rien poser sur la créance. La question
-				  reste alors ouverte et la rangée revient, avec ses trois réponses.
-				*/}
-				{rangee.proposition !== undefined ? undefined : (
-					<>
-						{/* TROIS RÉPONSES DE MÊME POIDS, et aucune n'est présélectionnée : une
-						    pilule blanche sur la réponse proposée ferait de l'appui une
-						    formalité, sur une déclaration qui décide de l'éligibilité. */}
-						<BoutonSecondaire
-							disabled={rangee.enCours === true}
-							onClick={() => rangee.onRepondre('OUI')}
-						>
-							Oui
-						</BoutonSecondaire>
-						<BoutonSecondaire
-							disabled={rangee.enCours === true}
-							onClick={() => rangee.onRepondre('NON')}
-						>
-							Non
-						</BoutonSecondaire>
-						<BoutonSecondaire
-							disabled={rangee.enCours === true}
-							onClick={() => rangee.onRepondre('INCONNU')}
-						>
-							Je ne sais pas
-						</BoutonSecondaire>
-					</>
-				)}
-			</RangeeFile>
-		);
-	}
+	/*
+	  ⚠️ UNE RANGÉE SANS DESTINATION S'OUVRE QUAND MÊME : sur la feuille, qui rend
+	  la phrase entière. Une rangée coupée à deux lignes qui ne mènerait nulle part
+	  laisserait la fin de sa phrase illisible.
+	*/
+	if (rangee.destination === undefined) return <LigneBouton {...contenu} onClick={onTrancher} />;
 
 	return (
-		<RangeeFile
-			titre={rangee.debiteur}
-			obstacle={rangee.obstacle}
-			urgence={rangee.urgence}
-			montant={rangee.montant}
-			{...(rangee.dateDuFait === undefined ? {} : { dateDuFait: rangee.dateDuFait })}
-			{...(rangee.proposition === undefined ? {} : { proposition: rangee.proposition })}
-			{...(rangee.destination === undefined ? {} : { destination: rangee.destination })}
+		<LigneAnalyse
+			{...contenu}
+			vers={rangee.destination.vers}
+			parametres={rangee.destination.parametres}
 		/>
 	);
 }
@@ -1057,39 +960,21 @@ function Rangee({ rangee }: { rangee: RangeeGroupee }) {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * ⚠️ ELLES NE SE REPLIENT PAS, ET ELLES NE SONT PLUS DERRIÈRE UNE PUCE.
- *
- * Les deux vivaient dans la portée « Ce que vos factures portent » : il fallait
- * savoir qu'elle existait, la choisir, et accepter que toutes les rangées
- * disparaissent pendant qu'on les lisait. C'est-à-dire qu'elles ne se lisaient
- * pas. Elles sont maintenant en bas de l'écran, à plat, dans le même défilement.
- *
- * ⚠️ ET ELLES RESTENT DEUX BLOCS SOUS LE MÊME PLI. Une hypothèse se LÈVE —
- * préciser le secteur d'un client change la date à laquelle son dossier
- * s'éteint — un angle mort ne se lève pas depuis l'interface. Les fondre en un
- * seul paragraphe ferait croire que les seconds se corrigent, ou que les
- * premières ne se corrigent pas : ils gardent donc chacun leur intitulé, et
- * partagent seulement la rangée qui les compte.
- */
-/**
  * LES LIMITES DU CALCUL — ce qui a été supposé, et ce qui n'est pas vu.
  *
- * ⚠️ REPLIÉE, MAIS COMPTÉE SUR SA RANGÉE — ET C'EST LA NUANCE QUI COMPTE.
+ * ⚠️ REPLIÉE, MAIS COMPTÉE SUR SA RANGÉE. Les replier n'est pas les cacher : la
+ * rangée DIT combien il y en a, et un chiffre sur une rangée fermée se voit
+ * mieux qu'un paragraphe quatre écrans plus bas. Ce qui serait interdit, c'est
+ * de les retirer : « un utilisateur qui croit sa prescription surveillée ne la
+ * surveille pas lui-même ».
  *
- * Ces deux blocs tenaient 571 px en bas de l'écran du matin (audit du
- * 29/09/2026, F4 et D5) : c'est le produit qui parle de lui-même, à l'endroit
- * où le gérant vient voir ce qu'il a à faire. Les replier n'est pas les
- * cacher : la rangée DIT combien il y a d'hypothèses et combien d'angles morts,
- * et un chiffre sur une rangée fermée se voit mieux qu'un paragraphe quatre
- * écrans plus bas.
+ * ⚠️ « HYPOTHÈSE » ET « ANGLE MORT » NE S'ÉCRIVENT PLUS SUR LA RANGÉE. Ce sont
+ * les mots du logiciel ; la feuille dit, elle, « ce qu'il a supposé » et « ce
+ * qu'il ne surveille pas », et la rangée n'en porte que le total.
  *
- * ⚠️ CE QUI SERAIT INTERDIT, C'EST DE LES RETIRER. « Un utilisateur qui croit
- * sa prescription surveillée ne la surveille pas lui-même » : le compte reste à
- * l'écran, toujours, et il s'ouvre d'un doigt.
- *
- * ⚠️ ELLE N'A PLUS DE RACINE À ELLE. Elle vit dans la liste « Le travail de
- * fond », donc dans la même racine d'accordéon que les autres rangées — c'est
- * ce qui lui donne, sous 1024 px, la feuille au lieu du dépliage sur place.
+ * ⚠️ ET LES DEUX RESTENT DISTINCTS DANS LA FEUILLE. Une supposition se LÈVE en
+ * renseignant la donnée ; ce qui n'est pas surveillé ne se lève pas depuis
+ * l'interface. Les fondre ferait croire l'un ou l'autre faux.
  */
 function LimitesDuCalcul({
 	hypotheses,
@@ -1100,29 +985,28 @@ function LimitesDuCalcul({
 }) {
 	if (hypotheses.length === 0 && anglesMorts.length === 0) return null;
 
-	const parties = [];
-	if (hypotheses.length > 0) {
-		parties.push(`${hypotheses.length} hypothèse${pluriel(hypotheses.length)}`);
-	}
-	if (anglesMorts.length > 0) {
-		parties.push(
-			`${anglesMorts.length} angle${pluriel(anglesMorts.length)} mort${pluriel(anglesMorts.length)}`
-		);
-	}
+	/*
+	  ⚠️ UN SEUL COMPTE SUR LA RANGÉE, LES DEUX DANS LA FEUILLE. « 1 hypothèse ·
+	  2 angles morts » revenait à la ligne des deux côtés à 393 px, titre et
+	  valeur : trois lignes pour une rangée. Le total reste à l'écran — c'est ce
+	  que la règle protège : que le compte ne disparaisse jamais — et la feuille
+	  sépare ce qui se lève de ce qui ne se lève pas.
+	*/
+	const compte = hypotheses.length + anglesMorts.length;
 
 	return (
 		<RangeeDepliable
 			cle="limites"
 			famille="MACHINE"
-			titre="Les limites du calcul"
+			titre="Limites du calcul"
 			glose="Ce que le logiciel a supposé faute de donnée, et ce qu’il ne surveille pas du tout."
-			valeur={parties.join(' · ')}
+			valeur={`${compte}`}
 		>
 			{hypotheses.length === 0 ? null : (
 				<div className="flex flex-col gap-cladd-3xs">
 					<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">
-						Ce qu’il a supposé — un calcul fait sur une donnée absente. Renseigner la donnée lève
-						l’hypothèse.
+						Ce qu’il a supposé — un calcul fait sur une donnée absente. Renseigner la donnée lève la
+						supposition.
 					</p>
 					{hypotheses.map((hypothese) => (
 						<p key={hypothese} className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
@@ -1199,26 +1083,31 @@ function FileVide({
 			</p>
 
 			{/*
-			  TROIS RANGÉES FANTÔMES, ESTOMPÉES.
+			  TROIS RANGÉES FANTÔMES, ESTOMPÉES — la forme exacte des vraies.
 
 			  ⚠️ ELLES MONTRENT LE CHEMIN, ELLES NE COMPTENT RIEN. Un écran vide qui
 			  ne dit pas à quoi il ressemblera une fois plein oblige à déposer pour
 			  savoir ce qu'on achète. Ce sont des exemples PLAUSIBLES, jamais des
-			  chiffres du gérant : `aria-hidden`, estompées, et aucune ne mène nulle
-			  part — une rangée qui a l'air cliquable et ne fait rien est pire qu'une
-			  rangée qui n'en a pas l'air.
+			  chiffres du gérant : `aria-hidden`, estompées, inertes — une rangée qui
+			  a l'air cliquable et ne fait rien est pire qu'une rangée qui n'en a pas
+			  l'air.
 			*/}
-			<div aria-hidden className="pointer-events-none flex flex-col gap-cladd-3xs opacity-40">
-				{FANTOMES.map((fantome) => (
-					<RangeeFile
-						key={fantome.obstacle}
-						titre={fantome.titre}
-						obstacle={fantome.obstacle}
-						urgence={fantome.urgence}
-						montant={fantome.montant}
-						dateDuFait={fantome.dateDuFait}
-					/>
-				))}
+			<div aria-hidden className="pointer-events-none opacity-40" inert>
+				<ListeAnalyses>
+					{FANTOMES.map((fantome) => (
+						<LigneBouton
+							key={fantome.obstacle}
+							genre="contenu"
+							titre={fantome.titre}
+							precision={fantome.obstacle}
+							sousValeur={dateCourte(fantome.dateDuFait)}
+							lignes={2}
+							avatar={<Avatar nom={fantome.titre} className="size-10" />}
+							valeur={eurosCentimes(fantome.montant)}
+							onClick={() => undefined}
+						/>
+					))}
+				</ListeAnalyses>
 			</div>
 		</SectionEcran>
 	);
@@ -1229,14 +1118,13 @@ function FileVide({
  *
  * Une par argument de vente, dans l'ordre où le produit les vend : la
  * prescription qui éteint un droit sans que personne n'ait rien fait, les
- * intérêts que personne n'a calculés, et l'échéance illisible qu'il faut
+ * pénalités que personne n'a calculées, et l'échéance illisible qu'il faut
  * relever. Trois, parce que c'est assez pour lire la forme d'une rangée et
  * trop peu pour qu'on les prenne pour des données.
  */
 const FANTOMES: readonly {
 	readonly titre: string;
 	readonly obstacle: string;
-	readonly urgence: UrgenceRangee;
 	readonly montant: bigint;
 	readonly dateDuFait: string;
 }[] = [
@@ -1244,21 +1132,18 @@ const FANTOMES: readonly {
 		titre: 'Un de vos clients',
 		obstacle:
 			'Date limite pour agir en justice dans 41 jours : passé cette date, le tribunal ne peut plus être saisi.',
-		urgence: 'CRITIQUE',
 		montant: 3_120_050n,
 		dateDuFait: '2026-10-27'
 	},
 	{
 		titre: 'Un autre de vos clients',
 		obstacle: 'Calcul prêt, pénalités de retard et frais de recouvrement compris.',
-		urgence: 'HAUTE',
 		montant: 1_248_033n,
 		dateDuFait: '2026-11-12'
 	},
 	{
 		titre: 'Un troisième',
 		obstacle: 'Échéance illisible sur 3 factures : le retard ne peut pas être établi.',
-		urgence: 'NORMALE',
 		montant: 41_200n,
 		dateDuFait: '2026-12-02'
 	}

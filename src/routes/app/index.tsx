@@ -14,7 +14,6 @@ import {
 } from '../../ui';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { QUESTIONS_LITIGE } from '../../lib/verticales/recouvrement/litige';
-import { AvatarConnecte } from '../../app/identite';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
@@ -81,14 +80,23 @@ const PLI_PAR_TYPE: Record<string, { readonly un: string; readonly plusieurs: st
 	ECHEANCE_PROCEDURE: { un: 'échéance de procédure', plusieurs: 'échéances de procédure' },
 	FACTURE_ECHUE: { un: 'facture échue', plusieurs: 'factures échues' },
 	DEBITEUR_DEGRADE: { un: 'client dégradé au registre', plusieurs: 'clients dégradés au registre' },
-	HABITUDE_ROMPUE: { un: 'habitude de paiement rompue', plusieurs: 'habitudes de paiement rompues' },
+	HABITUDE_ROMPUE: {
+		un: 'habitude de paiement rompue',
+		plusieurs: 'habitudes de paiement rompues'
+	},
 	/*
 	  ⚠️ LES DEUX SEULS PLIS QUI VIENNENT DU GÉRANT, et pas d'un calcul. Une
 	  promesse de paiement et un rappel qu'il s'est posé remontent ici le jour
 	  dit — sans quoi une promesse notée resterait une note, et une note se perd.
 	*/
-	PROMESSE_ECHUE: { un: 'promesse de paiement arrivée', plusieurs: 'promesses de paiement arrivées' },
-	RAPPEL_DU_JOUR: { un: 'rappel que vous vous êtes posé', plusieurs: 'rappels que vous vous êtes posés' }
+	PROMESSE_ECHUE: {
+		un: 'promesse de paiement arrivée',
+		plusieurs: 'promesses de paiement arrivées'
+	},
+	RAPPEL_DU_JOUR: {
+		un: 'rappel que vous vous êtes posé',
+		plusieurs: 'rappels que vous vous êtes posés'
+	}
 };
 
 /**
@@ -813,18 +821,6 @@ function File() {
 
 	// ── LA TÊTE, ET LE SECOND NOMBRE ─────────────────────────────────────────
 
-	/**
-	 * LE PRÉAVIS, LU SUR LA MÊME SOURCE QUE LA SURVEILLANCE.
-	 *
-	 * ⚠️ « SOUS PRÉAVIS » EST UNE QUESTION DE PRESCRIPTION, PAS DE DATE PROCHE. On
-	 * la lit sur les événements que la surveillance a déjà classés
-	 * `PRESCRIPTION_PROCHE`, jamais en recomparant des dates ici. Deux calculs de
-	 * préavis divergeraient au premier changement de `PREAVIS`.
-	 */
-	const prescriptionSousPreavis = flux.evenements
-		.filter((e) => e.type === 'PRESCRIPTION_PROCHE')
-		.reduce((total, e) => total + (e.montant ?? 0n), 0n);
-
 	// ── LE TRAVAIL DE FOND ───────────────────────────────────────────────────
 
 	const travaux = travauxDuVeilleur({
@@ -898,8 +894,7 @@ function File() {
 				interets: revelation.interets,
 				indemnites: revelation.indemnites
 			},
-			nonChiffrees: revelation.nonChiffrees,
-			prescriptionSousPreavis
+			nonChiffrees: revelation.nonChiffrees
 		},
 		rangees,
 		travaux,
@@ -950,11 +945,6 @@ function File() {
 		  — la requête lève, et un ornement ne doit jamais emporter l'écran de
 		  travail.
 		*/
-		avatar: (
-			<Facultatif>
-				<AvatarConnecte />
-			</Facultatif>
-		),
 		selecteur: (
 			<Facultatif>
 				<SelecteurEtablissement />

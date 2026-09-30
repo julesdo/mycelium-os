@@ -95,6 +95,18 @@ s'aligne sur elle (`GOUTTIERE_ENTETE`, dans `page.tsx`). Un panneau qu'un bouton
 rangée qui le double (`PanneauDuGeste`) : ajouter un geste, c'est d'abord chercher lequel il
 remplace.
 
+**L'écran « Aujourd'hui » a suivi le même soir, sur les files d'approbation de Remote et Wise.**
+Pas de grand titre ni de date en sous-titre (« on s'en fout ») : une barre collante compacte —
+établissement, recherche, dépôt —, la date en petit au-dessus du montant qu'elle date, et une
+seule rangée vers « Ce qui est dû ». La file est faite de rangées TOUTES pareilles (avatar, client,
+deux lignes, montant et date à droite), sans aucun bouton dedans : ce qui attend une réponse porte
+un point et s'ouvre dans une feuille (`FeuilleDeDecision`, qui garde les règles des trois réponses
+et du motif d'écart) ; le reste mène à son dossier. Les groupes ne se replient plus
+(`EnTeteDeGroupe`, partagé avec les dossiers). Retirés : l'avatar (l'onglet « Compte » y mène), le
+bandeau refermable, la rangée « De quoi c'est fait » (la page « Ce qui est dû » porte tout ce
+détail), l'agrégat de prescription (chaque dossier est une rangée datée) et « Les écrans de
+l'ancienne version ». 29 → 16 cibles, 3 001 → 1 813 px.
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.

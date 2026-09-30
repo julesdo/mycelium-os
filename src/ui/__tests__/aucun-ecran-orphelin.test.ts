@@ -88,6 +88,14 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 		'L’ancienne adresse de la liste des clients : elle redirige vers /app/clients, pour les liens déjà partis.',
 	'/app/debiteurs/$id':
 		'L’ancienne adresse d’un client : elle redirige vers /app/clients/$id, pour les liens déjà partis.',
+	/**
+	 * ⚠️ SA SEULE ARÊTE ENTRANTE ÉTAIT « LES ÉCRANS DE L'ANCIENNE VERSION », retirée
+	 * de l'écran du matin le 30/09/2026 (« on s'en fout aussi »). L'adresse ne
+	 * rend plus rien d'elle-même : elle redirige vers `/app/dossiers`, ou vers le
+	 * dossier que `?p=` désigne. Même statut que `/app/debiteurs`.
+	 */
+	'/app/procedures':
+		'L’ancienne adresse du troisième onglet : elle redirige vers /app/dossiers (ou vers le dossier de ?p=), pour les liens déjà partis.',
 	'/rejoindre/$token':
 		'Le lien d’invitation, reçu par courriel. Il ne peut PAS exister dans l’interface : le jeton est l’invitation.',
 	'/nouveau-mot-de-passe': 'Le lien de réinitialisation, reçu par courriel, et porteur d’un jeton.',
@@ -163,6 +171,23 @@ function destinationsEcrites(): ReadonlySet<string> {
 		for (const [, destination] of source.matchAll(/\bto:\s*["'](\/[^"']*)["']/g)) {
 			if (destination !== undefined) vues.add(destination);
 		}
+	}
+
+	/*
+	  ⚠️ LES ONGLETS DE LA BARRE DU BAS SONT DES ENTRÉES, ET ILS S'ÉCRIVENT EN CLÉS
+	  D'OBJET — `{ vers: '/app/compte', … }` dans `app/barre.tsx`. Ce test ne les
+	  voyait pas : `/app/compte` ne tenait qu'à l'avatar de l'écran du matin, et le
+	  retrait de cet avatar le 30/09/2026 l'a déclaré orphelin alors que le
+	  quatrième onglet y mène sur tous les écrans.
+
+	  On lit ce fichier-là, et pas `vers:` partout : les boutons de RETOUR
+	  s'écrivent aussi `{ vers: … }` (`retour: { vers: '/app/clients' }`), et les
+	  compter rendrait ce test complaisant — exactement ce que la règle sur
+	  `retourVers`, plus haut, interdit.
+	*/
+	const barre = readFileSync(join(RACINE, 'app', 'barre.tsx'), 'utf8');
+	for (const [, destination] of barre.matchAll(/\bvers:\s*["'](\/[^"']*)["']/g)) {
+		if (destination !== undefined) vues.add(destination);
 	}
 	return vues;
 }

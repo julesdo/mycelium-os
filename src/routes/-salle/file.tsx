@@ -7,7 +7,6 @@ import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './de
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
 import {
-	Avatar,
 	CarteConnexion,
 	DeclencheurRecherche,
 	LogoConnexion,
@@ -85,7 +84,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		id: 'r-prescription-durand',
 		debiteur: 'Fournitures Durand',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_DURAND } },
-		obstacle: 'Date limite pour agir en justice dans 41 jours : passé le 27/10/2026, cette somme ne se réclame plus.',
+		obstacle:
+			'Date limite pour agir en justice dans 41 jours : passé le 27/10/2026, cette somme ne se réclame plus.',
 		urgence: 'CRITIQUE',
 		montant: 3_120_050n,
 		dateDuFait: '2026-10-27',
@@ -382,25 +382,24 @@ const TRAVAUX_DEMO: readonly TacheVeilleur[] = travauxDuVeilleur({
 });
 
 /**
- * LES QUATRE SURFACES DE LA RANGÉE DU HAUT, SANS CONVEX.
+ * LES SURFACES DE LA RANGÉE DU HAUT, SANS CONVEX.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ SANS ELLES, ON REGARDE UNE RANGÉE QUE PERSONNE NE VERRA
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * L'avatar, le veilleur, le sélecteur d'établissement et la palette de
+ * Le sélecteur d'établissement et la palette de
  * recherche INTERROGENT Convex : montés dans la salle, `Facultatif` les avale et
  * la rangée se rend vide. On regarderait alors une rangée à un élément alors que
- * le gérant en voit cinq, et son pire défaut — le passage à la ligne à 375 px —
+ * le gérant en voit trois, et son pire défaut — le passage à la ligne à 375 px —
  * ne se verrait jamais.
  *
- * Les trois premiers sont donc les VRAIES primitives de `src/ui/`, montées avec
+ * La palette est donc la VRAIE primitive de `src/ui/`, montée avec
  * des données de démonstration ; seul le sélecteur d'établissement est approché,
  * parce que son dessin vit dans `src/app/` avec sa requête. Ce qu'on vérifie ici
  * est la géométrie de la rangée, et sa pastille a la même.
  */
 const RANGEE_DU_HAUT_DEMO = {
-	avatar: <Avatar nom="Camille Doré" />,
 	// Deux non lues : la pastille rare, et le seul signal du produit qui annonce
 	// une perte sèche. À zéro, on ne verrait pas qu'elle tient dans la rangée.
 	/*
@@ -433,8 +432,7 @@ const GARNIE: FileAffichee = {
 			interets: REVELATION_DEMO.interets,
 			indemnites: REVELATION_DEMO.indemnites
 		},
-		nonChiffrees: REVELATION_DEMO.nonChiffrees,
-		prescriptionSousPreavis: 3_120_050n
+		nonChiffrees: REVELATION_DEMO.nonChiffrees
 	},
 	rangees: RANGEES_DEMO,
 	travaux: TRAVAUX_DEMO,
@@ -467,8 +465,7 @@ const VIERGE: FileAffichee = {
 		total: 0n,
 		nombreFactures: 0,
 		parts: { principal: 0n, interets: 0n, indemnites: 0n },
-		nonChiffrees: [],
-		prescriptionSousPreavis: 0n
+		nonChiffrees: []
 	},
 	rangees: [],
 	hypotheses: [],

@@ -1,95 +1,47 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
-import {
-	Button,
-	Chip,
-	CollapsiblePanel,
-	CollapsibleRoot,
-	CollapsibleTrigger,
-	Input,
-	Surface
-} from '@cladd-ui/react';
-import { ChevronRightIcon, FileTextIcon, InfoIcon } from 'lucide-react';
+import { Input, Popup, PopupContent, Surface } from '@cladd-ui/react';
+import { FileTextIcon } from 'lucide-react';
 import { cn } from './cn';
-import { BoutonPrincipal, BoutonSecondaire } from './bouton';
+import { BoutonPrincipal, BoutonSecondaire, BoutonTexte } from './bouton';
 import { dateCourte, eurosCentimes } from './format';
 import { Lien } from './lien';
 
 /**
- * UNE RANGÉE D'« AUJOURD'HUI » — un ÉNONCÉ DE TRAVAIL, pas le résumé d'un
- * enregistrement.
+ * LA FILE D'« AUJOURD'HUI » — CE QUI RESTE DE SA RANGÉE, ET LA FEUILLE OÙ L'ON
+ * TRANCHE.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ ELLE MÈNE À UNE PAGE, ET PLUS À UN VOLET
+ * ⚠️ LA CARTE DE FILE A DISPARU LE 30/09/2026, ET C'EST UNE MESURE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Elle a posé `?ligne=<id>` et ouvert un troisième panneau à droite, avec sa
- * propre rangée d'onglets. Ce panneau existait parce qu'aucune vraie page
- * n'existait : un client et une créance ont maintenant chacun LA leur —
- * `/app/debiteurs/$id` et `/app/creance/$id`, une page, un seul défilement.
+ * Chaque rangée de la file était une carte à part : une puce de date teintée,
+ * le nom, le montant, une phrase d'obstacle sur trois lignes, une provenance en
+ * petits caractères — et, sous elle, ses boutons. « Retenir », « Écarter » ;
+ * « Oui », « Non », « Je ne sais pas ». Relevé à 393 px sur l'écran du matin :
+ * vingt-neuf cibles, dont treize dans la file, et quatre formes de carte
+ * différentes à apprendre. Verdict du fondateur : « on doit cliquer partout, il
+ * n'y a rien de clair ».
  *
- * Taper une rangée y mène donc, et c'est un VRAI lien : il se garde en signet,
- * s'ouvre dans un autre onglet, et le navigateur en montre la destination avant
- * qu'on appuie. Un `<button>` qui pousse une adresse n'offre aucun des trois.
+ * Chez Remote, Wise ou Airwallex — des files de choses à approuver, relevées
+ * sur Mobbin le même jour —, une rangée est TOUJOURS la même : un avatar, un
+ * nom, une ligne, un montant. Aucun bouton dedans. La décision se prend dans le
+ * détail, à un appui.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ UNE SEULE PUCE, ET C'EST LA DATE QUAND IL Y EN A UNE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * La rangée portait une puce d'urgence — « Critique », « À traiter », « À
- * suivre » — sur CHAQUE ligne. Les rangées sont désormais groupées PAR urgence,
- * et le groupe porte l'intitulé : répéter « Critique » sur chacune de ses
- * rangées écrit le même mot quinze fois dans une colonne.
- *
- * Ce que le groupe ne dit pas, c'est le QUANTIÈME — le jour où la chose se
- * produit. C'est lui qui passe dans la puce, avec l'accent de l'urgence :
- *
- *   · une date → la date, teintée par l'urgence. « 27 oct. 2026 » en rouge dit
- *     les deux à la fois, et un quantième se vérifie sur un calendrier là où
- *     « dans 41 jours » demande de croire un calcul ;
- *   · pas de date et une urgence CRITIQUE ou HAUTE → le mot d'urgence, parce
- *     qu'un état sans échéance (une créance mûre, une santé dégradée) n'a que
- *     lui pour dire ce qu'il pèse ;
- *   · pas de date et une urgence normale → RIEN. Le groupe « À venir » le dit
- *     déjà, et une puce qui redit son groupe est du décor.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ POURQUOI LA CARTE EST UNE `Surface` ET LE VERBE VIT DEHORS
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * La rangée ENTIÈRE s'ouvre au doigt, et elle porte ses appuis, VISIBLES, à
- * 48 px. Un bouton dans un lien n'est pas du HTML valide : le lien couvre donc
- * la zone de LECTURE, et les appuis en sont les FRÈRES, sous elle.
+ * La file rend donc ses rangées avec la rangée partagée du produit
+ * (`LigneAnalyse`, `LigneBouton` — les mêmes que l'écran des dossiers), et ce
+ * qui attend une réponse s'ouvre dans `FeuilleDeDecision`.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ AUCUNE COULEUR DE SEUIL
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Le vert, le rouge et l'ambre de `--color-seuil-*` ne disent qu'une chose dans
- * ce produit : au-dessus du seuil, tout près, en dessous. Les puces d'urgence
- * empruntent les accents du kit, qui sont d'autres jetons, et elles ne sont pas
- * décoratives : elles disent qu'un droit va s'éteindre.
+ * ce produit : au-dessus du seuil, tout près, en dessous. Le groupe « En retard »
+ * dit l'urgence ; la rangée n'en porte plus aucune couleur.
  */
 
 export type UrgenceRangee = 'CRITIQUE' | 'HAUTE' | 'NORMALE';
-
-/**
- * ⚠️ CES DEUX TABLES SONT UNE SECONDE COPIE, ET C'EST TEMPORAIRE.
- * `ui/flux-evenements.tsx` porte les mêmes, en privé, et il meurt avec l'accueil
- * (T16). Les exporter depuis un fichier condamné aurait fait dépendre la file de
- * ce qu'on supprime ; les recopier ici les met à l'endroit qui reste.
- */
-const LIBELLE_URGENCE: Record<UrgenceRangee, string> = {
-	CRITIQUE: 'Critique',
-	HAUTE: 'À traiter',
-	NORMALE: 'À suivre'
-};
-
-const ACCENT_URGENCE: Record<UrgenceRangee, 'red' | 'orange' | 'neutral'> = {
-	CRITIQUE: 'red',
-	HAUTE: 'orange',
-	NORMALE: 'neutral'
-};
 
 /**
  * OÙ MÈNE UNE RANGÉE — la page d'un client, ou celle d'une créance.
@@ -204,177 +156,6 @@ export function trierSelonLePli<T extends { readonly pli: FaitsDuPli }>(
 	return { pleines, repliees };
 }
 
-export function RangeeFile({
-	titre,
-	obstacle,
-	urgence,
-	montant,
-	dateDuFait,
-	hypothese,
-	proposition,
-	destination,
-	children
-}: {
-	/** Le débiteur, en titre. C'est lui qu'on cherche des yeux en balayant la file. */
-	titre: string;
-	/** L'obstacle, en UNE phrase au singulier. Jamais deux. */
-	obstacle: string;
-	urgence: UrgenceRangee;
-	/** `null` quand l'enjeu est réellement inconnu — jamais un zéro de confort. */
-	montant: bigint | null;
-	/** Le jour où ce que la rangée constate se produit. Jamais le jour de la détection. */
-	dateDuFait?: string;
-	/** L'hypothèse retenue pour calculer cette rangée. Affichée, jamais repliée. */
-	hypothese?: string;
-	proposition?: PropositionDeRangee;
-	/**
-	 * La page que cette rangée ouvre. Absente, la rangée ne mène nulle part — et
-	 * n'en a pas l'air.
-	 *
-	 * ⚠️ TOUTE RANGÉE N'A PAS DE PAGE. Une dégradation au registre vise un CLIENT ;
-	 * si ce client n'a encore aucune créance constituée, il n'y a pas de dossier à
-	 * ouvrir. La rangée s'affiche alors sans lien plutôt que d'ouvrir une page qui
-	 * dirait « ce dossier ne s'est pas lu », ce qui serait faux : il n'existe pas.
-	 */
-	destination?: DestinationRangee;
-	/** LE VERBE. Un seul, et son libellé nomme ce qu'il confirme. */
-	children?: ReactNode;
-}) {
-	/*
-	  LA PUCE, ET LA RÈGLE QUI DÉCIDE CE QU'ELLE PORTE. Voir l'en-tête : le
-	  groupe dit déjà l'urgence, la puce dit le quantième — et quand il n'y a ni
-	  quantième ni urgence à signaler, elle ne se rend pas du tout.
-	*/
-	const puce =
-		dateDuFait !== undefined ? (
-			<Chip size="md" color={ACCENT_URGENCE[urgence]}>
-				{dateCourte(dateDuFait)}
-			</Chip>
-		) : urgence === 'NORMALE' ? null : (
-			<Chip size="md" color={ACCENT_URGENCE[urgence]}>
-				{LIBELLE_URGENCE[urgence]}
-			</Chip>
-		);
-
-	/*
-	  ═══════════════════════════════════════════════════════════════════════════
-	  ⚠️ LE MONTANT VIT SUR LA PREMIÈRE LIGNE, ET PAS DANS UNE COLONNE
-	  ═══════════════════════════════════════════════════════════════════════════
-
-	  Il a été rendu dans une colonne de droite, frère de tout le texte. Mesuré au
-	  navigateur à 375 px : cette colonne prenait 116 px à demeure, et la phrase
-	  d'obstacle tombait à 180 px de large — « Signification de l'ordonnance : la
-	  date limite du 12 septembre 2026 est dépassée » s'étalait sur SIX lignes dans
-	  une carte qui en avait 343 de large.
-
-	  Le montant n'a besoin de la largeur que d'UNE ligne. Il tient donc le bord
-	  droit de la ligne de titre, et tout ce qui se lit en dessous — l'obstacle, la
-	  provenance d'une proposition, l'hypothèse — prend la carte entière. C'est
-	  l'idiome relevé (Asana, Attio, Remote) : une ligne d'en-tête à deux bords,
-	  puis du texte pleine largeur.
-	*/
-	const lecture = (
-		<span className="flex min-w-0 flex-1 flex-col gap-1">
-			<span className="flex items-start gap-1.5">
-				<span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-					{puce}
-					<span className="text-cladd-xs font-semibold">{titre}</span>
-				</span>
-
-				<span className="flex shrink-0 items-center gap-1.5">
-					{montant === null ? null : (
-						<span className="text-cladd-sm font-bold tabular-nums">{eurosCentimes(montant)}</span>
-					)}
-					{/* LE CHEVRON DIT QUE ÇA MÈNE QUELQUE PART, et il n'apparaît que
-					    lorsque c'est vrai. Une rangée qui a l'air ouvrable et ne fait rien
-					    est pire qu'une rangée qui n'en a pas l'air. */}
-					{destination === undefined ? null : (
-						<ChevronRightIcon className="size-4 text-cladd-fg-softest" aria-hidden />
-					)}
-				</span>
-			</span>
-
-			<span className="text-cladd-xs leading-snug text-cladd-fg-soft">{obstacle}</span>
-
-			{proposition === undefined ? null : (
-				<span className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-					<FileTextIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-					<span>
-						Proposé : <span className="font-medium">{proposition.valeur}</span>,{' '}
-						{proposition.source}. {dateCourte(proposition.date)}. Rien n’est enregistré tant que
-						vous n’avez pas appuyé.
-					</span>
-				</span>
-			)}
-
-			{hypothese === undefined ? null : (
-				<span className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-					<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-					<span>{hypothese}</span>
-				</span>
-			)}
-		</span>
-	);
-
-	return (
-		<Surface
-			variant="transparent"
-			outline={false}
-			className="verre-carte rounded-cladd-xl"
-			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-		>
-			{/*
-			  ⚠️ PAS D'AVATAR SUR CETTE RANGÉE-CI, ET C'EST UNE MESURE, PAS UN OUBLI.
-
-			  Il a été posé le 30/09/2026, par cohérence avec les listes de dossiers
-			  et de clients où il a tout changé. Relevé au navigateur à 375 px : la
-			  phrase d'obstacle tombait de 303 à 247 px et courait sur QUATRE à CINQ
-			  lignes, et l'écran du matin prenait 265 px de plus.
-
-			  Il a donc été retiré, pour deux raisons. La rangée de file porte DÉJÀ
-			  trois signes distinctifs que les listes n'avaient pas — une puce de
-			  date teintée par l'urgence, le nom en gras, le montant en gras — donc
-			  l'avatar n'y ajoutait presque rien. Et ce qui rend cette rangée haute
-			  n'est pas son absence de signe : c'est la LONGUEUR de sa phrase
-			  d'obstacle, qui porte une conséquence juridique et ne se raccourcit
-			  pas à la légère.
-
-			  C'est la même arbitration qu'à la ligne du montant, plus haut : sur
-			  cette rangée, la largeur de la phrase passe avant tout le reste.
-			*/}
-			{destination === undefined ? (
-				<span className="flex">{lecture}</span>
-			) : (
-				<Lien
-					to={destination.vers}
-					// Le `to` générique du routeur est effacé par le type de CE composant,
-					// qui le borne déjà à une route existante. Même assertion qu'à
-					// `navigation.tsx`, et pour la même raison.
-					params={destination.parametres as never}
-					className="flex rounded-cladd-lg text-left transition-colors"
-				>
-					{lecture}
-				</Lien>
-			)}
-
-			{/* LES DEUX APPUIS DE LA PROPOSITION, frères de la zone de lecture eux
-			    aussi. Ils précèdent le verbe : la proposition est ce qu'on lit en
-			    premier sous l'obstacle, donc c'est elle qu'on tranche en premier. */}
-			{proposition === undefined ||
-			(proposition.onRetenir === undefined && proposition.onEcarter === undefined) ? null : (
-				<GestesDeLaProposition proposition={proposition} />
-			)}
-
-			{/* LE VERBE, FRÈRE DE LA ZONE DE LECTURE et jamais dedans : un bouton
-			    dans un lien n'est pas du HTML valide, et le verbe doit rester
-			    visible et atteignable au doigt sans ouvrir la page. */}
-			{children === undefined ? null : (
-				<div className="flex flex-wrap items-center gap-cladd-3xs">{children}</div>
-			)}
-		</Surface>
-	);
-}
-
 /**
  * RETENIR, OU ÉCARTER AVEC SON MOTIF.
  *
@@ -455,89 +236,175 @@ function GestesDeLaProposition({ proposition }: { proposition: PropositionDeRang
 }
 
 /**
- * UN GROUPE DE LA FILE — son intitulé, son compte, et son pli.
+ * LA FEUILLE OÙ L'ON TRANCHE — la phrase entière, la proposition et sa
+ * provenance, puis les appuis.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ CE N'EST PAS UN ONGLET, ET C'EST TOUTE LA DIFFÉRENCE
+ * ⚠️ CE QUE LA RANGÉE COUPE, LA FEUILLE LE REND EN ENTIER
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * L'écran portait une rangée de huit puces — « Aujourd'hui · 151 »,
- * « Prescription · 1 », « À trancher · 4 »… — qui FILTRAIT la liste : ouvrir
- * l'une fermait les sept autres, et ce qu'on ne regardait pas cessait
- * d'exister. Le terrain l'a nommé : « ces tabs qui s'empilent de partout ».
+ * La rangée de la file tient sur deux lignes : le client, et le début de la
+ * question. C'est ce qui la rend balayable. La question entière, la proposition
+ * du logiciel et sa source — « réserve lue sur BL-2024-77, page 1 » — se lisent
+ * ICI, là où l'on décide. Une réponse de litige décide de l'éligibilité d'une
+ * créance : elle ne se donne pas sur une phrase amputée.
  *
- * Les groupes, eux, sont tous là, l'un sous l'autre, dans un seul défilement.
- * On les lit d'un coup d'œil — « En retard · 2, Aujourd'hui · 5, À venir · 9 » —
- * et on replie ce qui n'est pas pour maintenant. Rien ne disparaît, rien ne
- * s'exclut, et le compte est toujours sous les yeux.
+ * ⚠️ LES MÊMES RÈGLES QU'AVANT, À LA LETTRE. Trois réponses de même poids et
+ * aucune présélectionnée ; une proposition affichée REMPLACE les trois réponses
+ * (deux chemins d'écriture pour le même fait laissaient la proposition ouverte à
+ * vie) ; l'écart exige son motif. Seule la place a changé.
  *
- * ⚠️ IL N'A NI CARTE NI VERRE. Ses rangées EN SONT ; une carte de plus autour
- * d'elles ferait du verre sur du verre, que la doc du kit refuse et que l'œil
- * lit comme une profondeur qui n'existe pas. L'intitulé est un simple bouton, et
- * c'est l'idiome relevé (Attio, Asana, ClickUp).
+ * ⚠️ ELLE SE REFERME APRÈS L'APPUI. La rangée tranchée quitte la file ; la
+ * laisser ouverte sur une décision déjà prise ferait croire qu'elle n'a pas été
+ * enregistrée.
  *
- * ⚠️ ET UN GROUPE VIDE NE SE REND PAS. Un intitulé « En retard · 0 » est un
- * cadran à zéro (règle d'écran n° 4) : il n'apprend rien, et il apprend surtout
- * à sauter les intitulés des yeux.
+ * ⚠️ UNE FEUILLE À TOUTES LES LARGEURS, et c'est une exception assumée à la
+ * règle « au-delà de 1024 px, le panneau se déplie ». Cette règle protège la
+ * place de lecture dans une page ; ici, on tranche UNE chose, et la file doit
+ * rester intacte derrière pour qu'on y revienne à la même rangée.
  */
-export function GroupeDeFile({
+export function FeuilleDeDecision({
+	ouverte,
+	onFermer,
 	titre,
-	compte,
-	ton = 'NEUTRE',
-	ouvert,
-	onBasculer,
-	children
+	enonce,
+	montant,
+	proposition,
+	reponses,
+	destination
 }: {
-	titre: string;
-	/** Le nombre de rangées. Jamais zéro : un groupe vide ne se rend pas. */
-	compte: number;
-	/** `ALERTE` sur ce dont la date est passée. Le seul groupe qui porte un accent. */
-	ton?: 'ALERTE' | 'NEUTRE';
-	ouvert: boolean;
-	onBasculer: () => void;
-	children: ReactNode;
+	readonly ouverte: boolean;
+	readonly onFermer: () => void;
+	/** Le client : la preuve, pour le doigt, qu'il a ouvert la bonne rangée. */
+	readonly titre: string;
+	/** La phrase entière — la question, ou l'obstacle —, celle que la rangée coupe. */
+	readonly enonce: string;
+	readonly montant: bigint | null;
+	readonly proposition?: PropositionDeRangee;
+	/** Les trois réponses d'une question de litige, quand aucune proposition ne les remplace. */
+	readonly reponses?: {
+		readonly onRepondre: (reponse: 'OUI' | 'NON' | 'INCONNU') => void;
+		readonly enCours: boolean;
+	};
+	readonly destination?: DestinationRangee;
 }) {
-	return (
-		<CollapsibleRoot open={ouvert} onOpenChange={onBasculer}>
-			<CollapsibleTrigger>
-				{/*
-				  `size="md"` vaut 48 px sur l'échelle décalée du produit : le plancher
-				  tactile, sans hauteur écrite à la main. `transparent` et sans contour :
-				  c'est un intitulé, pas une commande.
-				*/}
-				{/*
-				  ⚠️ AUCUN REMBOURRAGE HORIZONTAL, ET LE REGARD L'A IMPOSÉ. Le bouton
-				  posait le sien : le chevron commençait alors seize pixels à droite du
-				  bord des cartes qu'il ouvre, et l'écran montrait trois bords gauches
-				  différents — l'intitulé, sa règle, et les rangées. Sans rembourrage,
-				  il n'en reste que deux : la colonne du chevron, et tout le reste.
-				*/}
-				<Button
-					className="group w-full"
-					variant="transparent"
-					outline={false}
-					hoverable={false}
-					size="md"
-					contentClassName="w-full items-center justify-start gap-cladd-3xs px-0"
-				>
-					<ChevronRightIcon
-						className="shrink-0 text-cladd-fg-softest transition-transform duration-150 group-data-[open]:rotate-90"
-						aria-hidden
-					/>
-					<span className="text-cladd-xs font-semibold">{titre}</span>
-					<Chip size="md" color={ton === 'ALERTE' ? 'red' : 'neutral'}>
-						{compte}
-					</Chip>
-				</Button>
-			</CollapsibleTrigger>
+	const decidable =
+		proposition !== undefined &&
+		(proposition.onRetenir !== undefined || proposition.onEcarter !== undefined);
 
-			{/* Le rembourrage vit sur un élément IMBRIQUÉ : le panneau anime sa propre
-			    hauteur jusqu'à zéro, et une marge verticale posée sur lui l'empêcherait
-			    de se refermer tout à fait. C'est la doc du kit, mot pour mot. */}
-			<CollapsiblePanel>
-				<div className="flex flex-col gap-cladd-3xs pt-cladd-3xs">{children}</div>
-			</CollapsiblePanel>
-		</CollapsibleRoot>
+	/*
+	  LES APPUIS REFERMENT LA FEUILLE, et c'est ici qu'on l'ajoute : la proposition
+	  reste celle de la route, rien n'est recopié.
+	*/
+	const propositionQuiReferme: PropositionDeRangee | undefined =
+		proposition === undefined
+			? undefined
+			: {
+					...proposition,
+					...(proposition.onRetenir === undefined
+						? {}
+						: {
+								onRetenir: () => {
+									proposition.onRetenir?.();
+									onFermer();
+								}
+							}),
+					...(proposition.onEcarter === undefined
+						? {}
+						: {
+								onEcarter: (motif: string) => {
+									proposition.onEcarter?.(motif);
+									onFermer();
+								}
+							})
+				};
+
+	return (
+		<Popup
+			open={ouverte}
+			onOpenChange={(o) => {
+				if (!o) onFermer();
+			}}
+			headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
+		>
+			<PopupContent>
+				<div className="flex flex-col gap-cladd-2xs">
+					<div className="flex flex-col gap-1">
+						{montant === null ? null : (
+							<p className="text-cladd-2xs text-cladd-fg-soft tabular-nums">
+								{eurosCentimes(montant)}
+							</p>
+						)}
+						<p className="text-cladd-sm leading-snug font-semibold">{enonce}</p>
+					</div>
+
+					{proposition === undefined ? null : (
+						<Surface
+							variant="transparent"
+							outline={false}
+							className="verre-carte rounded-cladd-xl"
+							contentClassName="flex items-start gap-cladd-3xs p-cladd-2xs"
+						>
+							<FileTextIcon className="mt-0.5 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
+							<span className="flex min-w-0 flex-col gap-0.5">
+								<span className="text-cladd-xs">
+									Proposé : <span className="font-semibold">{proposition.valeur}</span>
+								</span>
+								<span className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+									{proposition.source} · {dateCourte(proposition.date)}
+								</span>
+								<span className="text-cladd-2xs leading-snug text-cladd-fg-softer">
+									Rien n’est enregistré tant que vous n’avez pas appuyé.
+								</span>
+							</span>
+						</Surface>
+					)}
+
+					{decidable && propositionQuiReferme !== undefined ? (
+						<GestesDeLaProposition proposition={propositionQuiReferme} />
+					) : null}
+
+					{/* TROIS RÉPONSES DE MÊME POIDS, et aucune n'est présélectionnée : une
+					    pilule pleine sur la réponse attendue ferait de l'appui une
+					    formalité, sur une déclaration qui décide de l'éligibilité. */}
+					{reponses === undefined || proposition !== undefined ? null : (
+						<div className="flex flex-wrap gap-cladd-3xs">
+							{(
+								[
+									['OUI', 'Oui'],
+									['NON', 'Non'],
+									['INCONNU', 'Je ne sais pas']
+								] as const
+							).map(([reponse, libelle]) => (
+								<BoutonSecondaire
+									key={reponse}
+									disabled={reponses.enCours}
+									onClick={() => {
+										reponses.onRepondre(reponse);
+										onFermer();
+									}}
+								>
+									{libelle}
+								</BoutonSecondaire>
+							))}
+						</div>
+					)}
+
+					{destination === undefined ? null : (
+						<BoutonTexte
+							as={Lien}
+							to={destination.vers}
+							// ⚠️ UNE ASSERTION : `as` efface le générique du routeur. La
+							// destination reste typée par `DestinationRangee`.
+							params={destination.parametres as never}
+							className="self-start"
+						>
+							{destination.vers === '/app/clients/$id' ? 'Voir le client' : 'Ouvrir le dossier'}
+						</BoutonTexte>
+					)}
+				</div>
+			</PopupContent>
+		</Popup>
 	);
 }
 

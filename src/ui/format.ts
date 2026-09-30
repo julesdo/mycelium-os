@@ -94,21 +94,12 @@ export function dateCourte(iso: string): string {
 	return DATE_COURTE.format(new Date(Date.UTC(annee, mois - 1, jour)));
 }
 
-/**
- * La date telle qu'on la DIT — « jeudi 30 septembre 2026 ».
- *
- * ⚠️ ELLE N'EXISTE QUE POUR LE SOUS-TITRE DE L'ÉCRAN DU JOUR, sous son grand
- * titre. Partout ailleurs le produit écrit `dateCourte` : une date longue dans
- * une rangée de liste pousse le montant hors de l'écran à 375px, et c'est le
- * montant qu'on vient lire.
- */
-const DATE_LONGUE = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full' });
-
-export function dateLongue(iso: string): string {
-	const [annee, mois, jour] = iso.split('-').map(Number);
-	if (annee === undefined || mois === undefined || jour === undefined) return iso;
-	return DATE_LONGUE.format(new Date(Date.UTC(annee, mois - 1, jour)));
-}
+/*
+  ⚠️ `dateLongue` — « jeudi 30 septembre 2026 » — A ÉTÉ RETIRÉE LE 30/09/2026.
+  Elle n'existait que pour le sous-titre de l'écran du jour, que le fondateur a
+  fait enlever avec son grand titre (« on s'en fout »). Le produit n'écrit plus
+  que `dateCourte` : la date du jour vit désormais sous le chiffre qu'elle date.
+*/
 
 /**
  * Un taux, rendu lisible. LA DIVISION N'A LIEU QU'ICI.

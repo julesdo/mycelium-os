@@ -61,10 +61,13 @@ export function PageHeader({
 	colonne?: ColonneEntete;
 }) {
 	/*
-	  ⚠️ SANS TITRE, LA BARRE REMONTE — et c'est tout l'intérêt. `pt-barre-app`
-	  (64px) était le dégagement qui laissait respirer un titre d'écran. Quand il
-	  n'y a plus de titre, ces 64px ne dégagent plus rien : ils repoussent la
-	  rangée d'outils vers le bas de l'écran pour rien.
+	  ⚠️ SANS TITRE, LA BARRE N'EST PLUS QUE SA RANGÉE D'OUTILS — la barre collante
+	  compacte de Revolut au-dessus de son solde. Elle prenait `pt-cladd-xs`, soit
+	  20 px fixes, du temps où `pt-barre-app` valait 64 px. Depuis que ce jeton suit
+	  la zone de l'horloge (`safe-area-inset-top` + 16 px), les 20 px fixes étaient
+	  devenus un défaut : l'application installée en plein écran aurait passé
+	  l'heure et l'île PAR-DESSUS la recherche. Avec ou sans titre, le haut de la
+	  barre est donc le même jeton.
 	*/
 	const sansTitre = titre === undefined;
 	return (
@@ -82,9 +85,8 @@ export function PageHeader({
 				  redevient un bloc ordinaire : plus rien ne passe dessous, et le flou n'a
 				  plus rien à flouter. Voir `page-ecran.tsx`.
 				*/
-				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-3xs pb-cladd-3xs',
-				GOUTTIERE_ENTETE[colonne],
-				sansTitre ? 'pt-cladd-xs' : 'pt-barre-app'
+				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-3xs pt-barre-app pb-cladd-3xs',
+				GOUTTIERE_ENTETE[colonne]
 			)}
 		>
 			{sansTitre ? null : (

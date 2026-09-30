@@ -103,6 +103,26 @@ interface ContenuRangee {
 	valeur?: string;
 	/** Une précision courte sous l'intitulé, quand elle change la lecture. */
 	precision?: string;
+	/**
+	 * Combien de lignes la précision peut prendre avant de se couper : une, par
+	 * défaut.
+	 *
+	 * ⚠️ DEUX, ET SEULEMENT POUR LA FILE DU MATIN. Sa précision n'est pas une
+	 * étiquette mais une CONSÉQUENCE — « la date limite du 12 septembre est
+	 * dépassée, la décision du juge ne vaut plus rien » —, et coupée à une ligne
+	 * elle perdait précisément ce qui la rend urgente. Deux lignes la gardent
+	 * balayable ; trois en feraient un paragraphe.
+	 */
+	lignes?: 1 | 2;
+	/**
+	 * Une seconde valeur, sous la première, au bord droit : la date d'une rangée
+	 * de file sous son montant.
+	 *
+	 * ⚠️ C'EST LA COLONNE DROITE DE REMOTE ET DE REVOLUT — le montant, puis sa
+	 * date. Posée en tête de la précision, « 12 sept. 2026 · » mangeait le tiers
+	 * de la seule ligne qui dit ce qui se passe (relevé à 393 px, le 30/09/2026).
+	 */
+	sousValeur?: string;
 	icone?: ReactNode;
 	/**
 	 * La FAMILLE de la rangée : elle lui donne son pictogramme et sa teinte.
@@ -158,6 +178,8 @@ function apparenceRangee(
 	{
 		valeur,
 		precision,
+		lignes = 1,
+		sousValeur,
 		icone,
 		famille,
 		avatar,
@@ -186,21 +208,30 @@ function apparenceRangee(
 		  de travers.
 		*/
 		footer:
-			precision === undefined ? undefined : <span className="block truncate">{precision}</span>,
+			precision === undefined ? undefined : (
+				<span className={cn('block', lignes === 2 ? 'line-clamp-2' : 'truncate')}>{precision}</span>
+			),
 		after: (
 			<span className="flex shrink-0 items-center gap-1">
-				{valeur === undefined ? null : (
-					<span
-						className={cn(
-							'tabular-nums',
-							genre === 'contenu'
-								? // Le montant d'une liste de contenu est ce qu'on vient lire :
-									// au corps du titre, en graisse moyenne — Revolut, ~16 px.
-									'text-cladd-xs font-medium text-cladd-fg'
-								: cn('text-cladd-2xs', attention ? 'text-cladd-fg' : 'text-cladd-fg-soft')
+				{valeur === undefined && sousValeur === undefined ? null : (
+					<span className="flex flex-col items-end">
+						{valeur === undefined ? null : (
+							<span
+								className={cn(
+									'tabular-nums',
+									genre === 'contenu'
+										? // Le montant d'une liste de contenu est ce qu'on vient lire :
+											// au corps du titre, en graisse moyenne — Revolut, ~16 px.
+											'text-cladd-xs font-medium text-cladd-fg'
+										: cn('text-cladd-2xs', attention ? 'text-cladd-fg' : 'text-cladd-fg-soft')
+								)}
+							>
+								{valeur}
+							</span>
 						)}
-					>
-						{valeur}
+						{sousValeur === undefined ? null : (
+							<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">{sousValeur}</span>
+						)}
 					</span>
 				)}
 				{genre === 'contenu' ? null : (
