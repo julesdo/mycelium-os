@@ -16,14 +16,49 @@ export function Page({ children }: { children: ReactNode }) {
 	return <div className="flex h-full min-h-0 flex-col">{children}</div>;
 }
 
+/**
+ * LA COLONNE SUR LAQUELLE L'EN-TÊTE S'ALIGNE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE DÉFAUT QU'ELLE RETIRE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le corps d'un écran se centre dans une colonne de 672 px (`max-w-2xl`) ; son
+ * en-tête, lui, partait du bord gauche de la fenêtre. À 1280 px, le grand titre
+ * était à 16 px du bord et la première carte à 304 px : deux alignements sur le
+ * même écran, et l'œil qui saute de l'un à l'autre. Relevé le 30/09/2026 ; la
+ * page dossier, passée en une colonne le même soir, le rendait flagrant dès
+ * 1024 px.
+ *
+ * ⚠️ LA BARRE RESTE BORD À BORD, SEUL SON CONTENU SE RANGE. Son verre floute ce
+ * qui défile dessous sur toute la largeur — le rétrécir ferait apparaître deux
+ * bandes nettes de part et d'autre. C'est donc le REMBOURRAGE qui grandit : la
+ * gouttière, ou la moitié de ce qui dépasse la colonne, selon le plus grand.
+ *
+ * Le pourcentage d'un rembourrage se rapporte à la largeur du bloc CONTENANT —
+ * le corps qui défile, sans sa gouttière —, d'où le `+ gouttière` : la barre,
+ * elle, déborde d'une gouttière de chaque côté (`-mx-cladd-2xs`).
+ */
+export type ColonneEntete = 'normale' | 'large' | 'pleine';
+
+export const GOUTTIERE_ENTETE: Record<ColonneEntete, string> = {
+	normale: 'px-[max(var(--spacing-cladd-2xs),calc((100%_-_42rem)/2_+_var(--spacing-cladd-2xs)))]',
+	large:
+		'px-[max(var(--spacing-cladd-2xs),calc((100%_-_42rem)/2_+_var(--spacing-cladd-2xs)))] lg:px-[max(var(--spacing-cladd-2xs),calc((100%_-_72rem)/2_+_var(--spacing-cladd-2xs)))]',
+	pleine: 'px-cladd-2xs'
+};
+
 export function PageHeader({
 	titre,
 	sousTitre,
-	actions
+	actions,
+	colonne = 'pleine'
 }: {
 	titre?: string;
 	sousTitre?: string;
 	actions?: ReactNode;
+	/** La colonne du corps, sur laquelle le titre s'aligne. Voir `GOUTTIERE_ENTETE`. */
+	colonne?: ColonneEntete;
 }) {
 	/*
 	  ⚠️ SANS TITRE, LA BARRE REMONTE — et c'est tout l'intérêt. `pt-barre-app`
@@ -47,7 +82,8 @@ export function PageHeader({
 				  redevient un bloc ordinaire : plus rien ne passe dessous, et le flou n'a
 				  plus rien à flouter. Voir `page-ecran.tsx`.
 				*/
-				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-3xs px-cladd-2xs pb-cladd-3xs',
+				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-3xs pb-cladd-3xs',
+				GOUTTIERE_ENTETE[colonne],
 				sansTitre ? 'pt-cladd-xs' : 'pt-barre-app'
 			)}
 		>

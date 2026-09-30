@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import type { LinkProps } from '@tanstack/react-router';
+import { Lien } from './lien';
 import {
 	AccordionIndicator,
 	AccordionItem,
@@ -234,5 +236,51 @@ export function RangeeDepliable({
 				</Popup>
 			)}
 		</AccordionItem>
+	);
+}
+
+/**
+ * UNE RANGÉE QUI MÈNE AILLEURS, DANS LA MÊME LISTE QUE CELLES QUI S'OUVRENT.
+ *
+ * ⚠️ LA FICHE DU CLIENT VIVAIT DANS SA PROPRE CARTE, sous le fil, seule. Une
+ * carte pour une rangée, c'est un bloc de plus à balayer pour un seul chemin —
+ * et le terrain l'a dit : « on doit cliquer partout, il n'y a rien de clair ».
+ * Elle rejoint la liste du dossier, en dernier, avec son avatar : un client porte
+ * son visage, pas une vignette de famille (`familles.tsx`).
+ *
+ * Son chevron ne tourne pas : elle ne s'ouvre pas, elle MÈNE. C'est la
+ * distinction de Shop entre le détail d'une commande et « Order receipt ».
+ */
+export function RangeeLien({
+	vers,
+	parametres,
+	titre,
+	avatar
+}: {
+	readonly vers: NonNullable<LinkProps['to']>;
+	readonly parametres?: LinkProps['params'];
+	readonly titre: string;
+	readonly avatar?: ReactNode;
+}) {
+	return (
+		<Button
+			as={Lien}
+			to={vers}
+			// ⚠️ UNE ASSERTION : `as` efface le générique du routeur. La DESTINATION
+			// reste vérifiée par le type de `vers` et par `destinations-existent.test.ts`.
+			params={parametres as never}
+			variant="transparent"
+			outline={false}
+			hoverable={false}
+			size="md"
+			className="h-auto min-h-13 w-full rounded-none"
+			contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
+		>
+			<span className="flex min-w-0 flex-1 items-center gap-cladd-3xs text-left">
+				{avatar}
+				<span className="min-w-0 truncate text-cladd-xs font-semibold">{titre}</span>
+			</span>
+			<ChevronRightIcon className="size-5 shrink-0 text-cladd-fg-softer" aria-hidden />
+		</Button>
 	);
 }

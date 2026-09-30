@@ -17,6 +17,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from './cn';
 import { VignetteRangee, type FamilleRangee } from './familles';
 import { Lien } from './lien';
+import { GOUTTIERE_ENTETE, type ColonneEntete } from './page';
 
 /** Voir `EnteteDetail` : la valeur est déjà réactive, rien à écouter de plus. */
 function abonnementSansEffet() {
@@ -363,7 +364,8 @@ export function EnteteDetail({
 	retourMasqueEnVolets = false,
 	donneesPretes,
 	titre,
-	sousTitre
+	sousTitre,
+	colonne = 'pleine'
 }: {
 	retourVers: LinkProps['to'];
 	retourParametres?: LinkProps['params'];
@@ -387,6 +389,8 @@ export function EnteteDetail({
 	donneesPretes: boolean;
 	titre: string;
 	sousTitre?: string;
+	/** La colonne du corps, sur laquelle le titre s'aligne. Voir `GOUTTIERE_ENTETE`. */
+	colonne?: ColonneEntete;
 }) {
 	const router = useRouter();
 	const peutRevenir = useCanGoBack();
@@ -440,7 +444,12 @@ export function EnteteDetail({
 	// Même bord d’écran que la barre des onglets : du flou seul, collant, et le contenu
 	// glisse dessous. Voir `PageHeader`.
 	return (
-		<header className="verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-col gap-cladd-3xs px-cladd-2xs pt-barre-app pb-cladd-3xs">
+		<header
+			className={cn(
+				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-col gap-cladd-3xs pt-barre-app pb-cladd-3xs',
+				GOUTTIERE_ENTETE[colonne]
+			)}
+		>
 			{parHistorique ? (
 				<Button
 					{...PASTILLE_RETOUR}

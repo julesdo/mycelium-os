@@ -227,6 +227,34 @@ describe('la hiérarchie des gestes', () => {
 			].join('\n')
 		).toEqual([]);
 	});
+
+	/**
+	 * ⚠️ LE BOUTON UNIQUE DE LA PAGE DOSSIER PREND SON LIBELLÉ D'UNE FONCTION.
+	 *
+	 * Depuis le 30/09/2026 au soir, la carte de l'état ne porte qu'un bouton, et
+	 * son texte dépend de l'étape : `{geste.libelle}`. Le balayage ci-dessus lit
+	 * alors une expression, pas un mot, et il passerait au vert sur n'importe quel
+	 * libellé. On lit donc les libellés LÀ OÙ ILS SONT ÉCRITS — dans
+	 * `gesteDuDossier` —, et on exige d'en trouver.
+	 */
+	it('ni le bouton de l’état du dossier, quelle que soit l’étape', () => {
+		const texte = readFileSync(join(RACINE, 'creance.tsx'), 'utf8');
+		const debut = texte.indexOf('function gesteDuDossier(');
+		expect(debut, 'gesteDuDossier introuvable : la page a changé de forme.').toBeGreaterThan(-1);
+		const fin = texte.indexOf('\n}\n', debut);
+		const corps = texte.slice(debut, fin);
+
+		const libelles = [...corps.matchAll(/libelle:[^']*'([^']+)'(?:\s*:\s*'([^']+)')?/g)].flatMap(
+			([, premier, second]) => [premier, second].filter((l): l is string => l !== undefined)
+		);
+		expect(libelles.length, 'Aucun libellé lu dans gesteDuDossier.').toBeGreaterThan(2);
+
+		const fautifs = libelles.filter((libelle) => VOIES_DE_DROIT.test(libelle));
+		expect(
+			fautifs,
+			`Libellés du bouton unique qui nomment une voie de droit : ${fautifs.join(', ')}`
+		).toEqual([]);
+	});
 });
 
 describe('ce qui est grave', () => {

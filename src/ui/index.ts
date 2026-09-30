@@ -22,15 +22,13 @@ export {
 	type ModeleProposable
 } from './courriers';
 export {
-	DeuxColonnesDossier,
-	QuestionsPreecrites,
+	EtatDuDossier,
 	type EtapeDossierAffichee,
 	type LectureEtapesAffichee
 } from './etapes-dossier';
-export { CarteEtape, Echelon, FilDuDossier, GestesDeLEtape } from './fil-dossier';
 export { FaitsDuDossier, type FaitDuDossier } from './faits-dossier';
 export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qui-bloque';
-export { ListeDeRangees, RangeeDepliable } from './liste-rangees';
+export { ListeDeRangees, RangeeDepliable, RangeeLien } from './liste-rangees';
 export { FAMILLES, VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
 export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
 export { Telephone } from './telephone';
@@ -57,7 +55,7 @@ export { ChoixImage } from './choix-image';
 export { aujourdHuiISO } from './horloge';
 export { lirePourLeSujet, type PosePourUnSujet } from './etat-par-sujet';
 export { ChiffreHero } from './chiffre';
-export { RangeeActions, type ActionRonde } from './actions';
+export { ApercuDuSuivi } from './apercu-suivi';
 export { CarteListe, LigneValeur } from './carte-liste';
 export { CarteDemarrage } from './carte-demarrage';
 export { Faisceau } from './faisceau';
@@ -70,7 +68,12 @@ export { Facultatif, SourceDeRangees } from './facultatif';
 export { CadreAuth, Champ, MessageErreur } from './cadre-auth';
 export { Bandeau } from './bandeau';
 export { SectionEcran } from './section';
-export { SectionsDepliables, SectionDepliable } from './section-depliable';
+export {
+	PanneauDuGeste,
+	SectionsDepliables,
+	SectionDepliable,
+	useSectionOuverte
+} from './section-depliable';
 export { RefusEnQuatreParties } from './refus';
 export { ChampCopiable } from './champ-copiable';
 export { QrDeVirement } from './qr-virement';

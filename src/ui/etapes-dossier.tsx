@@ -1,19 +1,32 @@
 import type { ReactNode } from 'react';
-import { Button } from '@cladd-ui/react';
+import { Surface } from '@cladd-ui/react';
+import { cn } from './cn';
 
 /**
- * CE QUI RESTE DES QUATRE ÉTAPES : leurs types, la mise en colonnes, et les
- * questions au compagnon.
+ * OÙ EN EST LE DOSSIER, ET LE SEUL GESTE QUI S'Y FAIT.
  *
- * ⚠️ `FriseDossier` ET `EtapeEnCours` ONT ÉTÉ RETIRÉS LE 30/09/2026. La frise
- * horizontale écrivait « Prêt · On lui écrit · Le tribunal, si besoin · Réglé »,
- * et deux cents pixels plus bas la carte « Maintenant » réécrivait le titre de
- * l'étape en cours et l'expliquait en quatre phrases. Le même fait, deux fois,
- * en quatre-vingt-dix mots — et les sept blocs qui APPARTIENNENT à une étape
- * vivaient ailleurs, dans deux accordéons rangés par nature.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QU'IL REMPLACE, ET POURQUOI
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Les deux sont remplacés par `fil-dossier.tsx` : un rail vertical où chaque
- * bloc pend à l'étape à laquelle il appartient.
+ * Le 30/09/2026 au soir, le fondateur : « on doit cliquer partout, il n'y a rien
+ * de clair […] tu crois qu'en mettant plein de boutons on va prouver que c'est
+ * une app utile, alors que c'est totalement faux ! Less is more. »
+ *
+ * La page portait un rail vertical de quatre échelons, une carte « ce qui se
+ * passe / si rien ne bouge » et, SOUS le montant, quatre disques d'actions qui
+ * doublaient les trois boutons de l'échelon. Relevé à 393 px : vingt cibles pour
+ * quatre gestes.
+ *
+ * C'est le code de Shop sur une commande : UN titre qui répond à la seule
+ * question (« Arrives Jul 31–Aug 1 »), une ligne dessous, une barre fine. Et
+ * chez Walmart ou Amazon, la même barre porte le nom de chaque étape — « où on
+ * en est » se lit sans rien ouvrir, ce que le terrain réclame depuis deux
+ * semaines.
+ *
+ * ⚠️ UN SEUL BOUTON, ET IL NE NOMME JAMAIS UNE VOIE DE DROIT. C'est la
+ * troisième ligne rouge : le geste mis en avant est un geste de bureau
+ * (« Relancer », « Relire le courrier »). `page-dossier.test.ts` le vérifie.
  */
 
 export type EtatEtapeAffiche = 'FAITE' | 'EN_COURS' | 'A_VENIR';
@@ -34,67 +47,100 @@ export interface LectureEtapesAffichee {
 }
 
 /**
- * DEUX COLONNES À PARTIR DE 1024 PX, ET LA COUPURE A CHANGÉ DE NATURE.
+ * LE NOM COURT DE CHAQUE ÉTAPE, SOUS LA BARRE.
  *
- * ⚠️ ELLE NE SÉPARE PLUS « FAIRE » DE « SAVOIR ». L'ancienne répartition —
- * `['suivi','courriers','relances','voies','litige']` à gauche, le reste à
- * droite — était la taxonomie du LOGICIEL : le gérant ne se demande pas si ce
- * qu'il cherche est une chose-à-faire ou une chose-à-savoir. Il demande où ça en
- * est, et quoi faire. La coupure l'obligeait à tenir les deux colonnes en tête.
- *
- * Elle sépare maintenant LE TEMPS de LA MATIÈRE : à gauche le fil — le chiffre,
- * les faits, ce qui bloque, les quatre étapes — qui est ce qu'on lit ; à droite
- * la matière, dont la rangée ouverte ne pousse plus le fil vers le bas. C'était
- * la raison pour laquelle on perdait sa place en ouvrant le décompte.
- *
- * Apple, page *Layout* des Human Interface Guidelines (révisée le 9 septembre
- * 2026) : « Keep functionality the same as size classes change […] you can
- * change the amount of functionality that's visible onscreen as the amount of
- * space changes. » La même architecture aux quatre largeurs ; la largeur ne
- * décide que de ce qui est déjà déplié.
+ * ⚠️ UN QUART DE 361 PX, SOIT QUATRE-VINGTS PIXELS PAR ÉTIQUETTE. « Le tribunal,
+ * si besoin » y tenait sur deux lignes et poussait la barre ; « On lui écrit »
+ * disait un geste en cours plutôt qu'un état atteint. Le titre long reste celui
+ * du domaine (`TITRE_ETAPE`) ; ceci n'est que son étiquette de barre.
  */
-export function DeuxColonnesDossier({ gauche, droite }: { gauche: ReactNode; droite: ReactNode }) {
-	return (
-		<div className="flex flex-col gap-cladd-xs lg:grid lg:grid-cols-2 lg:items-start">
-			<div className="flex min-w-0 flex-col gap-cladd-xs">{gauche}</div>
-			<div className="flex min-w-0 flex-col gap-cladd-xs">{droite}</div>
-		</div>
-	);
-}
+const ETIQUETTE: Record<string, string> = {
+	PRET: 'Prêt',
+	ON_LUI_ECRIT: 'Relancé',
+	TRIBUNAL: 'Tribunal',
+	REGLE: 'Réglé'
+};
 
-/**
- * DEUX QUESTIONS DÉJÀ ÉCRITES, sur les faits et les calculs du dossier. Un appui
- * ouvre le compagnon avec la question prête ; le gérant l'envoie lui-même.
- *
- * ⚠️ ELLES SONT DESCENDUES EN PIED DE PAGE. Elles occupaient le tiers supérieur
- * de la colonne de gauche, entre l'étape en cours et les sections : deux pavés
- * de huit mots, à l'endroit exact où le gérant vient faire un geste. Une aide se
- * met là où l'on arrive quand on n'a pas trouvé, c'est-à-dire en bas.
- */
-export function QuestionsPreecrites({
-	questions,
-	onPoser
+export function EtatDuDossier({
+	etapes,
+	titre,
+	sousTitre,
+	classe,
+	geste,
+	children
 }: {
-	questions: readonly string[];
-	onPoser: (question: string) => void;
+	readonly etapes: readonly EtapeDossierAffichee[];
+	/** L'état, en toutes lettres : « Pas encore relancé », « Relancé le 29 août ». */
+	readonly titre: string;
+	/** Une ligne, un fait. Jamais un conseil. */
+	readonly sousTitre: string | null;
+	readonly classe: boolean;
+	/** Le seul bouton de la carte. Absent quand le dossier est réglé. */
+	readonly geste?: ReactNode;
+	/** Ce que le geste ouvre, quand il se déplie sur place (au-delà de 1024 px). */
+	readonly children?: ReactNode;
 }) {
-	if (questions.length === 0) return null;
 	return (
-		<div className="flex flex-col gap-cladd-3xs">
-			<p className="text-cladd-2xs text-cladd-fg-softer">Demander</p>
-			<div className="flex flex-wrap gap-cladd-3xs">
-				{questions.map((question) => (
-					<Button
-						key={question}
-						size="md"
-						variant="transparent"
-						className="verre verre-bouton h-auto min-h-12 rounded-full px-3 text-left text-cladd-xs"
-						onClick={() => onPoser(question)}
-					>
-						{question}
-					</Button>
-				))}
+		<Surface
+			as="section"
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
+			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+			aria-label="Où en est le dossier"
+		>
+			<div className="flex flex-col gap-0.5">
+				<p className="text-cladd-sm leading-tight font-bold tracking-tight">{titre}</p>
+				{sousTitre === null ? null : (
+					<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{sousTitre}</p>
+				)}
 			</div>
-		</div>
+
+			<ol
+				className={cn('grid grid-cols-4 gap-1 pt-1', classe && 'opacity-60')}
+				aria-label="Les étapes du dossier"
+			>
+				{etapes.map((etape) => (
+					<li
+						key={etape.cle}
+						className="flex min-w-0 flex-col gap-1.5"
+						aria-current={etape.etat === 'EN_COURS' ? 'step' : undefined}
+					>
+						{/*
+						  ⚠️ PAS DE VERT, MÊME POUR « FAIT ». Le vert, le rouge et l'ambre ne
+						  disent qu'une chose dans ce produit : au-dessus du seuil, tout près,
+						  en dessous. Une étape franchie n'est pas un seuil, c'est un fait —
+						  l'encre suffit.
+						*/}
+						<span
+							className={cn(
+								'h-1 rounded-full',
+								etape.etat === 'A_VENIR' ? 'bg-cladd-outline' : 'bg-cladd-fg'
+							)}
+							aria-hidden
+						/>
+						<span
+							className={cn(
+								'truncate text-cladd-3xs leading-tight',
+								etape.etat === 'EN_COURS'
+									? 'font-semibold text-cladd-fg'
+									: etape.etat === 'FAITE'
+										? 'text-cladd-fg-soft'
+										: 'text-cladd-fg-softest'
+							)}
+						>
+							{ETIQUETTE[etape.cle] ?? etape.titre}
+						</span>
+					</li>
+				))}
+			</ol>
+
+			{classe ? (
+				<p className="text-cladd-2xs text-cladd-fg-soft">Dossier classé. Il peut être rouvert.</p>
+			) : null}
+
+			{geste === undefined ? null : <div className="flex flex-col pt-1">{geste}</div>}
+			{children}
+		</Surface>
 	);
 }

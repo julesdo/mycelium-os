@@ -66,6 +66,7 @@ import { useDeuxVolets } from './maitre-detail';
 const ContexteSections = createContext<{
 	readonly ouvertes: readonly string[];
 	readonly fermer: (cle: string) => void;
+	readonly basculer: (cle: string) => void;
 } | null>(null);
 
 /**
@@ -75,14 +76,22 @@ const ContexteSections = createContext<{
  * rendrait une feuille qu'aucun geste ne pourrait refermer — un écran bloqué,
  * découvert au doigt et jamais en développement.
  */
-export function useSectionOuverte(cle: string): { ouverte: boolean; fermer: () => void } {
+export function useSectionOuverte(cle: string): {
+	ouverte: boolean;
+	fermer: () => void;
+	basculer: () => void;
+} {
 	const contexte = useContext(ContexteSections);
 	if (contexte === null) {
 		throw new Error(
 			'Une section dépliable est montée hors de SectionsDepliables : son état d’ouverture est partagé.'
 		);
 	}
-	return { ouverte: contexte.ouvertes.includes(cle), fermer: () => contexte.fermer(cle) };
+	return {
+		ouverte: contexte.ouvertes.includes(cle),
+		fermer: () => contexte.fermer(cle),
+		basculer: () => contexte.basculer(cle)
+	};
 }
 
 export function SectionsDepliables({
@@ -98,7 +107,11 @@ export function SectionsDepliables({
 		<ContexteSections.Provider
 			value={{
 				ouvertes,
-				fermer: (cle) => onOuvertesChange(ouvertes.filter((autre) => autre !== cle))
+				fermer: (cle) => onOuvertesChange(ouvertes.filter((autre) => autre !== cle)),
+				basculer: (cle) =>
+					onOuvertesChange(
+						ouvertes.includes(cle) ? ouvertes.filter((autre) => autre !== cle) : [...ouvertes, cle]
+					)
 			}}
 		>
 			<AccordionRoot
@@ -249,5 +262,61 @@ export function SectionDepliable({
 				)}
 			</Surface>
 		</AccordionItem>
+	);
+}
+
+/**
+ * LE PANNEAU QU'UN BOUTON OUVRE — SANS RANGÉE QUI LE DOUBLE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE DÉFAUT QU'IL RETIRE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Relevé le 30/09/2026 sur la page dossier, à 393 px : vingt cibles, qui ne
+ * faisaient que QUATRE choses. « Préparer » (un disque), « Préparer un
+ * courrier » (un bouton) et « Courriers » (une rangée) ouvraient le même
+ * panneau. Chaque panneau avait besoin d'une rangée pour exister, et chaque
+ * geste mis en avant la doublait. Verdict du terrain : « on doit cliquer
+ * partout, il n'y a rien de clair ».
+ *
+ * Ce panneau-ci n'a pas de rangée. C'est le bouton qui l'ouvre, et c'est tout.
+ *
+ * ⚠️ MÊME RÈGLE DE PRÉSENTATION QUE LES RANGÉES : sous 1024 px il se PRÉSENTE
+ * en feuille, au-dessus il se déplie sur place, sous son bouton. Et le même
+ * état — `useSectionOuverte` — pour que rien ne se désaccorde.
+ */
+export function PanneauDuGeste({
+	cle,
+	titre,
+	children
+}: {
+	readonly cle: string;
+	/** Le titre de la feuille : la preuve, pour le doigt, qu'il a ouvert la bonne. */
+	readonly titre: string;
+	readonly children: ReactNode;
+}) {
+	const deuxVolets = useDeuxVolets();
+	const { ouverte, fermer } = useSectionOuverte(cle);
+
+	if (deuxVolets) {
+		return ouverte ? (
+			<div id={`panneau-${cle}`} className="flex flex-col gap-cladd-2xs pt-cladd-3xs">
+				{children}
+			</div>
+		) : null;
+	}
+
+	return (
+		<Popup
+			open={ouverte}
+			onOpenChange={(o) => {
+				if (!o) fermer();
+			}}
+			headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
+		>
+			<PopupContent>
+				<div className="flex flex-col gap-cladd-2xs">{children}</div>
+			</PopupContent>
+		</Popup>
 	);
 }

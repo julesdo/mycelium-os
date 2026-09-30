@@ -5,8 +5,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisCentimes, depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
-import { QUESTIONS_PAR_ETAPE, lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
-import { poserAuCompagnon } from '../../app/compagnon';
+import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
 import { situationsDuDossier } from '../../lib/verticales/recouvrement/situations';
 import {
 	TYPES_PIECE,
@@ -633,8 +632,6 @@ function PageCreance() {
 
 		// Où en est le dossier : déduit des faits, jamais d'un verdict.
 		etapes,
-		questionsPreecrites: QUESTIONS_PAR_ETAPE[etapes.etape],
-		onPoserQuestion: poserAuCompagnon,
 		situations: situationsDuDossier({
 			aujourdHui,
 			sante: creance.santeDebiteur,
@@ -700,9 +697,7 @@ function PageCreance() {
 					});
 				}),
 			onTrancherPromesse: (noteId, issue) =>
-				void avecLeSuivi(() =>
-					trancherPromesse({ entreeId: noteId as Id<'suiviDossier'>, issue })
-				),
+				void avecLeSuivi(() => trancherPromesse({ entreeId: noteId as Id<'suiviDossier'>, issue })),
 			onRappelFait: (noteId) =>
 				void avecLeSuivi(() =>
 					rappelFait({ entreeId: noteId as Id<'suiviDossier'>, faitLe: aujourdHui })

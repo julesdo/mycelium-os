@@ -83,6 +83,18 @@ jamais une proposition relative, et il ne porte AUCUNE glose quand il est fermé
 dans le panneau. Le test tient aussi la ligne rouge n° 3 sous sa forme nouvelle : **le geste mis en
 avant ne nomme jamais une voie de droit.**
 
+**Et refaite le soir même sur le détail d'une commande Shop** — verdict du fondateur : « on doit
+cliquer partout, il n'y a rien de clair […] Less is more ». Relevé à 393 px : vingt cibles qui ne
+faisaient que QUATRE choses (« Préparer », « Préparer un courrier » et « Courriers » ouvraient le
+même panneau). Désormais **chaque question a une réponse, à un seul endroit** : le montant et la date
+limite pour agir ; une ligne par situation, le détail au toucher ; l'état en toutes lettres
+(« Pas encore relancé »), une barre de quatre étapes nommées et **un seul bouton** ; les trois
+derniers faits puis « Tout l'historique » ; et cinq rangées plus la fiche du client. 20 → 11
+cibles, 341 → 113 mots, 2 544 → 1 419 px. **Une colonne à toutes les largeurs**, et l'en-tête
+s'aligne sur elle (`GOUTTIERE_ENTETE`, dans `page.tsx`). Un panneau qu'un bouton ouvre n'a pas de
+rangée qui le double (`PanneauDuGeste`) : ajouter un geste, c'est d'abord chercher lequel il
+remplace.
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.

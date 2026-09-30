@@ -6,7 +6,7 @@ import { cn } from './cn';
 import { EmptyState } from './empty-state';
 import { Lien, TitreEcran } from './lien';
 import { EnteteDetail, ListeAnalyses } from './navigation';
-import { Page, PageBody, PageHeader } from './page';
+import { Page, PageBody, PageHeader, type ColonneEntete } from './page';
 import { TwoPane } from './two-pane';
 
 /**
@@ -231,7 +231,7 @@ function CorpsPageEcran({
 	return (
 		<Page>
 			<PageBody>
-				<Entete entete={entete} donneesPretes={etat === 'pret'} />
+				<Entete entete={entete} donneesPretes={etat === 'pret'} colonne={largeur} />
 				{etat === 'pret' ? (
 					<div
 						className={cn(
@@ -255,11 +255,29 @@ function CorpsPageEcran({
 	);
 }
 
-function Entete({ entete, donneesPretes }: { entete: EnteteEcran; donneesPretes: boolean }) {
+function Entete({
+	entete,
+	donneesPretes,
+	colonne = 'pleine'
+}: {
+	entete: EnteteEcran;
+	donneesPretes: boolean;
+	/**
+	 * La colonne du corps. `pleine` pour les deux volets, où la liste part du
+	 * bord ; la largeur de lecture sinon, pour que le titre et la première carte
+	 * partent du même bord. Voir `GOUTTIERE_ENTETE`.
+	 */
+	colonne?: ColonneEntete;
+}) {
 	if (entete.genre === 'aucun') return null;
 	if (entete.genre === 'onglet') {
 		return (
-			<PageHeader titre={entete.titre} sousTitre={entete.sousTitre} actions={entete.actions} />
+			<PageHeader
+				titre={entete.titre}
+				sousTitre={entete.sousTitre}
+				actions={entete.actions}
+				colonne={colonne}
+			/>
 		);
 	}
 	return (
@@ -272,6 +290,7 @@ function Entete({ entete, donneesPretes }: { entete: EnteteEcran; donneesPretes:
 			donneesPretes={donneesPretes}
 			titre={entete.titre}
 			sousTitre={entete.sousTitre}
+			colonne={colonne}
 		/>
 	);
 }

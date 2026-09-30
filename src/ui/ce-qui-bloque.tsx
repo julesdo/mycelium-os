@@ -1,6 +1,9 @@
-import { Surface } from '@cladd-ui/react';
-import { AlertTriangleIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Button, Popup, PopupContent, Surface } from '@cladd-ui/react';
+import { AlertTriangleIcon, ChevronRightIcon } from 'lucide-react';
+import { cn } from './cn';
 import { dateCourte } from './format';
+import { useDeuxVolets } from './maitre-detail';
 
 /**
  * CE QUI BLOQUE — en tête de page, ou nulle part.
@@ -115,70 +118,155 @@ function enMinuscule(option: string): string {
 	return option.charAt(0).toLocaleLowerCase('fr-FR') + option.slice(1);
 }
 
-export function CeQuiBloque({ alertes }: { readonly alertes: readonly AlerteDossier[] }) {
-	if (alertes.length === 0) return null;
+/**
+ * TOUT CE QUE L'ALERTE DIT, UNE FOIS OUVERTE.
+ *
+ * Le texte n'a pas bougé d'un mot : ce qui a changé, c'est qu'il ne s'impose
+ * plus à la lecture. Deux situations en tête de page faisaient deux cent vingt
+ * mots à plat, relevés à 393 px le 30/09/2026 — la page s'ouvrait sur un mur
+ * avant même de dire où en était le dossier.
+ */
+function DetailDeLAlerte({ alerte }: { readonly alerte: AlerteDossier }) {
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
-			{alertes.map((alerte) => (
-				<Surface
-					key={alerte.cle}
-					color="orange"
-					variant="transparent"
-					outline={false}
-					className="verre-carte rounded-cladd-xl"
-					contentClassName="flex gap-cladd-3xs p-cladd-2xs"
-				>
-					<AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-cladd-primary" aria-hidden />
-					<div className="flex min-w-0 flex-1 flex-col gap-1">
-						<p className="text-cladd-sm leading-tight font-semibold">{alerte.titre}</p>
-						{alerte.phrases.map((phrase) => (
-							<p key={phrase} className="text-cladd-xs leading-snug">
-								{phrase}
-							</p>
-						))}
-
-						{alerte.echeance === null ? null : (
-							<p className="text-cladd-xs leading-snug font-semibold">
-								{alerte.echeance.libelle} : avant le {dateCourte(alerte.echeance.date)}
-							</p>
-						)}
-						{alerte.echeance?.precisions.map((precision) => (
-							<p key={precision} className="text-cladd-2xs leading-snug text-cladd-fg-soft">
-								{precision}
-							</p>
-						))}
-
-						{alerte.options.length === 0 ? null : (
-							<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
-								Vous pouvez : {alerte.options.map(enMinuscule).join(' · ')}.
-							</p>
-						)}
-
-						{/*
-						  LA SOURCE, ET LE TEXTE QU'ELLE PORTE. Montrer ce que dit la loi est
-						  la moitié POSITIVE de la troisième ligne rouge : le produit ne rend
-						  pas de verdict, mais il ne cache pas le texte sur lequel il compte.
-						  Le filet de citation a sauté ; le guillemet suffit à dire qu'on cite.
-						*/}
-						{alerte.citation === null ? null : (
-							<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">
-								« {alerte.citation.texte} »{' '}
-								<a
-									href={alerte.citation.url}
-									target="_blank"
-									rel="noreferrer"
-									className="underline"
-								>
-									{alerte.citation.source}
-								</a>
-							</p>
-						)}
-						{alerte.echeance === null ? null : (
-							<p className="text-cladd-2xs text-cladd-fg-softest">{alerte.echeance.source}</p>
-						)}
-					</div>
-				</Surface>
+			{alerte.phrases.map((phrase) => (
+				<p key={phrase} className="text-cladd-xs leading-snug">
+					{phrase}
+				</p>
 			))}
+
+			{alerte.echeance === null ? null : (
+				<p className="text-cladd-xs leading-snug font-semibold">
+					{alerte.echeance.libelle} : avant le {dateCourte(alerte.echeance.date)}
+				</p>
+			)}
+			{alerte.echeance?.precisions.map((precision) => (
+				<p key={precision} className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+					{precision}
+				</p>
+			))}
+
+			{alerte.options.length === 0 ? null : (
+				<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+					Vous pouvez : {alerte.options.map(enMinuscule).join(' · ')}.
+				</p>
+			)}
+
+			{/*
+			  LA SOURCE, ET LE TEXTE QU'ELLE PORTE. Montrer ce que dit la loi est la
+			  moitié POSITIVE de la troisième ligne rouge : le produit ne rend pas de
+			  verdict, mais il ne cache pas le texte sur lequel il compte.
+			*/}
+			{alerte.citation === null ? null : (
+				<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">
+					« {alerte.citation.texte} »{' '}
+					<a href={alerte.citation.url} target="_blank" rel="noreferrer" className="underline">
+						{alerte.citation.source}
+					</a>
+				</p>
+			)}
+			{alerte.echeance === null ? null : (
+				<p className="text-cladd-2xs text-cladd-fg-softest">{alerte.echeance.source}</p>
+			)}
 		</div>
+	);
+}
+
+/**
+ * UNE LIGNE PAR ALERTE — LE CONSTAT, ET SA DATE QUAND IL EN A UNE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QUI EST GRAVE MONTE, MAIS IL NE S'ÉTALE PLUS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * La règle de monter reste : ces lignes sont juste sous le montant, au-dessus
+ * de tout le reste. Ce qui change est la place qu'elles prennent. Le constat
+ * suffit à dire qu'il se passe quelque chose — « Votre client est en procédure
+ * collective » —, et la date limite, quand il y en a une, est la seule autre
+ * chose qu'on doit voir sans ouvrir. Le reste — ce que ça change, ce qu'on peut
+ * faire, le texte de loi — se lit au toucher, comme le détail d'une livraison
+ * retardée chez Shop.
+ *
+ * ⚠️ UNE ALERTE REPLIÉE N'EST PAS UNE ALERTE TUE. Son titre ET sa date restent à
+ * l'écran ; le « doute qui ne profite jamais au produit » porte sur ce qu'on
+ * voit, et l'on voit ce qui compte.
+ *
+ * ⚠️ MÊME RÈGLE DE PRÉSENTATION QUE LE RESTE DE LA PAGE : sous 1024 px le détail
+ * se présente en feuille ; au-dessus il se déplie sous sa ligne.
+ */
+export function CeQuiBloque({ alertes }: { readonly alertes: readonly AlerteDossier[] }) {
+	const [ouverte, setOuverte] = useState<string | null>(null);
+	const deuxVolets = useDeuxVolets();
+
+	if (alertes.length === 0) return null;
+
+	const lue = alertes.find((alerte) => alerte.cle === ouverte) ?? null;
+
+	return (
+		<Surface
+			color="orange"
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
+			contentClassName="flex flex-col p-0 [&>*+*]:border-t [&>*+*]:border-cladd-outline"
+		>
+			{alertes.map((alerte) => (
+				<div key={alerte.cle} className="flex flex-col">
+					<Button
+						variant="transparent"
+						outline={false}
+						hoverable={false}
+						size="md"
+						// ⚠️ `min-h-13` : le `h-auto` qui laisse un constat long revenir à la
+						// ligne annule aussi le plancher du kit. Voir `plancher-tactile.test.ts`.
+						className="h-auto min-h-13 w-full rounded-none"
+						contentClassName="w-full items-center gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
+						aria-expanded={ouverte === alerte.cle}
+						onClick={() => setOuverte(ouverte === alerte.cle ? null : alerte.cle)}
+					>
+						<AlertTriangleIcon className="size-5 shrink-0 text-cladd-primary" aria-hidden />
+						<span className="flex min-w-0 flex-1 flex-col text-left">
+							<span className="text-cladd-xs leading-snug font-semibold">{alerte.titre}</span>
+							{alerte.echeance === null ? null : (
+								<span className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+									{alerte.echeance.libelle} : avant le {dateCourte(alerte.echeance.date)}
+								</span>
+							)}
+						</span>
+						<ChevronRightIcon
+							className={cn(
+								'size-5 shrink-0 text-cladd-fg-softer transition-transform duration-150',
+								deuxVolets && ouverte === alerte.cle && 'rotate-90'
+							)}
+							aria-hidden
+						/>
+					</Button>
+					{deuxVolets && ouverte === alerte.cle ? (
+						<div className="px-cladd-2xs pb-cladd-2xs pl-12">
+							<DetailDeLAlerte alerte={alerte} />
+						</div>
+					) : null}
+				</div>
+			))}
+
+			{/*
+			  ⚠️ UNE SEULE FEUILLE POUR TOUTES LES ALERTES, et c'est l'alerte LUE qui
+			  la remplit. Elle se renvoie de trois façons — glissement, croix, appui
+			  hors du cadre — qui passent toutes par `onOpenChange`.
+			*/}
+			{deuxVolets ? null : (
+				<Popup
+					open={lue !== null}
+					onOpenChange={(o) => {
+						if (!o) setOuverte(null);
+					}}
+					headerLeft={
+						<span className="px-2 pb-1 text-cladd-xs font-semibold">{lue?.titre ?? ''}</span>
+					}
+				>
+					<PopupContent>{lue === null ? null : <DetailDeLAlerte alerte={lue} />}</PopupContent>
+				</Popup>
+			)}
+		</Surface>
 	);
 }
