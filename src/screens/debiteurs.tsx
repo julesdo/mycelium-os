@@ -1,14 +1,23 @@
-import type { ReactNode } from 'react';
-import { Chip, ListButton, ListItem, SearchField, Toolbar, ToolbarButton } from '@cladd-ui/react';
-import { RotateCcwIcon, UploadIcon, XIcon } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import {
+	Button,
+	Chip,
+	ListButton,
+	ListItem,
+	Popup,
+	PopupContent,
+	SearchField
+} from '@cladd-ui/react';
+import { CheckIcon, RotateCcwIcon, SlidersHorizontalIcon, UploadIcon, XIcon } from 'lucide-react';
 import {
 	Avatar,
 	BoutonPrincipal,
 	Lien,
 	CarteListe,
+	LigneBouton,
+	ListeAnalyses,
 	MaitreDetail,
 	PageEcran,
-	SommaireEncours,
 	eurosCentimes,
 	pluriel,
 	type Lecture
@@ -425,6 +434,8 @@ export function EcranDebiteurs({
 	/** La page du débiteur ouvert (l'`Outlet` de la route), ou `null`. */
 	enfant: ReactNode;
 }) {
+	/** La feuille de filtre. Déclarée avant tout retour anticipé : c’est un crochet. */
+	const [filtreOuvert, setFiltreOuvert] = useState(false);
 	const entete = { genre: 'onglet', titre: TITRE_ECRAN.debiteurs } as const;
 
 	const avecLaPage = (liste: ReactNode) =>
@@ -482,10 +493,6 @@ export function EcranDebiteurs({
 	  les rangées retenues — se recalcule à chaque rendu depuis eux. Sur un livre
 	  de clients, ça coûte trois parcours de tableau.
 	*/
-
-	/** Le sommaire compte TOUS les débiteurs, jamais ceux que le filtre a laissés. */
-	const total = debiteurs.reduce((somme, debiteur) => somme + debiteur.encours, 0n);
-	const enRetard = debiteurs.filter((debiteur) => debiteur.facturesEchues > 0).length;
 
 	/*
 	  ═════════════════════════════════════════════════════════════════════════
@@ -594,189 +601,149 @@ export function EcranDebiteurs({
 
 	/*
 	  ═════════════════════════════════════════════════════════════════════════
-	  LE SOMMAIRE
+	  LA BARRE : LA RECHERCHE ET UN SEUL FILTRE — comme les dossiers, et comme
+	  Revolut au-dessus de ses transactions
 	  ═════════════════════════════════════════════════════════════════════════
 
-	  ⚠️ UN TOTAL NUL NE SE POSE PAS EN GROS (règle d'écran n° 4). Des clients
-	  sans encours, ça existe, et ce n'est pas un vide : ce sont des clients dont
-	  tout est réglé. On l'écrit, au lieu de peindre « 0,00 € » en trente-deux
-	  pixels — un cadran à zéro se lit comme une panne.
+	  ⚠️ CE QUI EST PARTI LE 30/09/2026, ET POURQUOI. L'écran posait trois étages
+	  avant le premier client : une carte « Encours total » (le montant qu'écrit
+	  déjà l'écran du matin), le champ de recherche, puis quatre pilules de filtre
+	  qui passaient sur TROIS lignes au téléphone. Verdict du fondateur : « less
+	  is more », et « la même barre compacte partout ». Splitwise, qui fait « qui
+	  me doit quoi », ouvre sa liste sur une barre fine et une seule ligne.
+
+	  La recherche et le filtre vivent donc dans la barre collante ; les quatre
+	  filtres, dans une feuille, avec leur compte — un filtre est un geste rare,
+	  ce qu'on cherche au quotidien, on le TAPE. La recherche reste là même sur
+	  trois clients : un livre passe de trois à quarante en un après-midi
+	  d'import, et un champ qui apparaît entre deux visites se cherche.
+
+	  ⚠️ LE COMPTE D'UN FILTRE SE LIT SUR CE QUE LA RECHERCHE A LAISSÉ (`comptes`,
+	  plus haut) : « parmi ce que tu vois, autant sont dans ce cas ». Et un filtre
+	  qui ne retiendrait personne ne se propose pas — sauf s'il est actif, pour
+	  qu'on puisse toujours le retirer.
 	*/
-	const sommaire = (
-		<SommaireEncours
-			surTitre="Encours total"
-			centimes={total === 0n ? null : total}
-			/*
-			  ⚠️ « DÉBITEURS », JAMAIS « CLIENTS », ET SUR TOUT L'ÉCRAN. Le titre de la
-			  page dit « Vos débiteurs » et la carte compte des débiteurs ; un sommaire
-			  qui compterait des « clients » ferait lire deux ensembles là où il n'y en
-			  a qu'un. (La barre du bas, elle, écrit « Clients » sur son onglet : ce
-			  mot-là vit dans `app/barre.tsx` et `screens/titres.ts`, hors de cet
-			  écran — c'est le seul écart qui reste, et il est noté.)
-
-			  ⚠️ ET « AUCUNE » PLUTÔT QUE « 0 » : un zéro écrit en chiffre au milieu
-			  d'une phrase se lit comme un compteur en panne.
-			*/
-			faits={
-				total === 0n
-					? `${debiteurs.length} débiteur${pluriel(debiteurs.length)}, aucun encours.`
-					: enRetard === 0
-						? `${debiteurs.length} débiteur${pluriel(debiteurs.length)}, aucun en retard.`
-						: `${debiteurs.length} débiteur${pluriel(debiteurs.length)}, dont ${enRetard} en retard.`
-			}
-			angleMort={
-				anglesMorts.length === 0
-					? undefined
-					: `Angle${pluriel(anglesMorts.length)} mort${pluriel(anglesMorts.length)} : ${anglesMorts.join(' ; ')}.`
-			}
-		/>
-	);
-
-	/*
-	  ═════════════════════════════════════════════════════════════════════════
-	  LA RECHERCHE ET LES PILULES
-	  ═════════════════════════════════════════════════════════════════════════
-
-	  ⚠️ LA RECHERCHE EST TOUJOURS LÀ, MÊME SUR TROIS CLIENTS. Elle pourrait
-	  n'apparaître qu'au-delà d'une certaine longueur de liste — mais un livre de
-	  clients passe de trois à quarante en un après-midi d'import, et un champ qui
-	  apparaît entre deux visites se cherche plus longtemps qu'il ne sert. Il
-	  coûte une rangée, il est au même endroit tous les jours.
-
-	  ⚠️ UNE PILULE QUI NE FILTRERAIT RIEN NE SE REND PAS. Proposer « Procédure
-	  collective » à un gérant dont aucun client n'en a est un bouton qui ne
-	  répond pas, et il l'essaiera une fois par visite avant de comprendre.
-	  Une pilule ACTIVE se rend toujours, même retombée à zéro : sans quoi elle
-	  disparaîtrait sous le doigt et le filtre resterait posé, sans rien pour le
-	  retirer.
-
-	  ⚠️ `ToolbarButton` ET PAS `Chip`. Un chip `md` mesure 40 px sur l'échelle du
-	  produit — la rampe imbriquée de Cladd en retire 8 : c'est une étiquette, pas
-	  une cible. Le plancher tactile est de 48, et c'est ce que rend un bouton
-	  `md`. Le COMPTE, lui, est bien un chip : il ne se vise pas.
-
-	  ⚠️ `variant="transparent"` ET `outline={false}` SUR LA `Toolbar` : le kit la
-	  dessine en pilule de verre par défaut, ce qui poserait une troisième surface
-	  entre le champ et la carte. Dissoute, il ne reste que les pilules — et on ne
-	  réinvente pas pour autant une rangée de boutons avec un `div`.
-	*/
-	const pilules = FILTRES.filter(
+	const proposes = FILTRES.filter(
 		(filtre) => (comptes.get(filtre.cle) ?? 0) > 0 || filtres.has(filtre.cle)
 	);
 
-	const gestesDeLecture = (
-		<div className="flex flex-col gap-cladd-3xs">
+	const barre = (
+		<>
 			{/*
-			  ⚠️ `inputComponentProps`, ET PAS UN `aria-label` POSÉ SUR LE CHAMP.
-			  `Input` — dont `SearchField` est l'habillage — a une liste de props
-			  FERMÉE : il ne répand rien sur son `<input>`. Un `aria-label` écrit
-			  directement ici disparaissait purement et simplement, et `enterKeyHint`
-			  avec lui. Vérifié au navigateur : l'attribut n'existait sur aucun nœud
-			  de la page. C'est la fente prévue pour ça, et c'est la seule.
-			*/}
-			{/*
-			  ⚠️ `tightFocusRing`, ET LE REGARD L'A IMPOSÉ. L'anneau de focus d'`Input`
-			  est posé à `-inset-1.5`, donc SIX PIXELS EN DEHORS du champ. Le champ
-			  occupe toute la colonne de lecture : mesuré au navigateur à 768 px,
-			  la colonne rendait `scrollWidth` 678 pour `clientWidth` 672, et la zone
-			  qui défile gagnait six pixels de ballant horizontal — assez pour qu'une
-			  liste tressaute sous le doigt, jamais assez pour qu'on voie pourquoi.
-			  C'est le cas que la documentation du kit nomme mot pour mot.
+			  ⚠️ `inputComponentProps`, ET PAS UN `aria-label` POSÉ SUR LE CHAMP :
+			  `Input` a une liste de props FERMÉE et l'avalerait sans rien dire.
+			  `tightFocusRing` : l'anneau du kit déborde de six pixels, et la barre
+			  en gagnait un ballant horizontal.
 			*/}
 			<SearchField
 				size="md"
 				tightFocusRing
+				className="min-w-0 flex-1"
 				value={terme}
 				onChange={(valeur) => onTerme(valeur)}
 				inputMode="search"
-				placeholder="Nom du client ou SIREN"
+				placeholder="Nom ou SIREN"
 				inputComponentProps={{
 					'aria-label': 'Chercher un client par son nom ou son SIREN',
 					enterKeyHint: 'search'
 				}}
 			/>
-
-			{pilules.length === 0 ? null : (
-				/*
-				  ⚠️ ELLES PASSENT À LA LIGNE, ELLES NE DÉFILENT PAS. La `Toolbar` de la
-				  file défile, et c'est juste pour elle : elle porte des OUTILS, dont on
-				  sait qu'ils sont là. Ici ce sont des OFFRES — une option qu'on ne voit
-				  pas n'existe pas, et ce qui sort du champ ne se voit pas.
-
-				  ⚠️ CE QUE LA QUATRIÈME COÛTE, MESURÉ ET ASSUMÉ. Relevées au
-				  navigateur : « Facture échue » 148 px, « Rythme rompu » 151,
-				  « SIREN manquant » 163, « Procédure collective » 192 — 678 px avec
-				  leurs écarts. Elles tiennent sur deux lignes dès 768 px ; au
-				  téléphone, où la colonne donne 343 px, il en faut trois, contre deux
-				  avant l'ajout. Soit 48 px de plus entre le sommaire et la première
-				  rangée, sur le seul téléphone.
-
-				  ⚠️ ET AUCUN ORDRE NE RAMÈNE À DEUX LIGNES, c'est vérifié plutôt que
-				  supposé : « SIREN manquant » et « Procédure collective » font 363 px
-				  à elles deux et ne partagent jamais une ligne de 343. Le prix n'est
-				  donc pas un défaut de rangement, c'est le prix de la quatrième offre
-				  — et il ne se paie que le jour où les quatre cas coexistent chez un
-				  même client, la procédure collective étant rare par construction.
-
-				  ⚠️ `justify-start` : LA `Toolbar` DE CLADD CENTRE SON CONTENU, et une
-				  dernière ligne centrée ne s'alignerait pas sur la première.
-
-				  ⚠️ PAS D'`aria-label` SUR LA `Toolbar` : `Surface`, dont elle hérite, a
-				  la même liste de props fermée qu'`Input` et l'aurait avalé sans rien
-				  dire (vérifié au navigateur). Ce qui nomme le groupe, ce sont les
-				  pilules elles-mêmes : chacune porte son libellé en toutes lettres et
-				  son `aria-pressed`.
-				*/
-				<Toolbar
+			{proposes.length === 0 ? null : (
+				<Button
 					size="md"
-					variant="transparent"
+					rounded
+					square
+					variant="solid"
 					outline={false}
-					className="w-full"
-					contentClassName="flex flex-wrap items-center justify-start gap-cladd-3xs p-0"
+					className="shrink-0"
+					aria-label={
+						filtres.size === 0
+							? 'Filtrer les clients'
+							: `${filtres.size} filtre${pluriel(filtres.size)} actif${pluriel(filtres.size)} — changer`
+					}
+					onClick={() => setFiltreOuvert(true)}
 				>
-					{pilules.map((filtre) => {
-						const actif = filtres.has(filtre.cle);
-						return (
-							/*
-							  ⚠️ UNE PILULE AU REPOS PORTE SON ANNEAU. Sans lui — la `Toolbar`
-							  rend ses boutons `transparent` et sans contour par défaut, pour
-							  qu'ils se fondent dans SA surface — les trois se lisaient comme
-							  des légendes posées sous le champ de recherche, et rien ne disait
-							  qu'on pouvait les toucher. La `Toolbar` étant dissoute ici, chaque
-							  pilule doit porter sa propre surface.
-
-							  Active, elle est INONDÉE de l'accent : c'est le seul état que l'œil
-							  doit trouver sans lire, parce que c'est lui qui explique pourquoi
-							  la liste est plus courte qu'hier.
-							*/
-							<ToolbarButton
-								key={filtre.cle}
-								className="shrink-0"
-								aria-pressed={actif}
-								title={filtre.precision}
-								color={actif ? 'brand' : undefined}
-								variant={actif ? 'gradient-fill' : 'gradient'}
-								outline={!actif}
-								onClick={() => onBasculerFiltre(filtre.cle)}
-							>
-								{filtre.libelle}
-								{/* Active, la pilule montre la croix qui la retire ; au repos,
-								    ce qu'elle retiendrait. Une pilule qui n'annonce pas sa
-								    valeur se clique pour voir, puis se déclique. */}
-								{actif ? (
-									<XIcon aria-hidden />
-								) : (
-									<Chip size="md" color="neutral">
-										{comptes.get(filtre.cle) ?? 0}
-									</Chip>
-								)}
-							</ToolbarButton>
-						);
-					})}
-				</Toolbar>
+					<SlidersHorizontalIcon />
+				</Button>
 			)}
-		</div>
+		</>
 	);
+
+	/*
+	  LES FILTRES ACTIFS SE LISENT, ET SE RETIRENT D'UN APPUI. Un filtre posé
+	  dans une feuille qu'on a refermée est un filtre qu'on oublie — et une liste
+	  plus courte qu'hier, sans dire pourquoi, se lit comme une perte de données.
+	*/
+	const filtresActifs =
+		filtres.size === 0 ? null : (
+			<div className="flex flex-wrap gap-cladd-3xs">
+				{FILTRES.filter((filtre) => filtres.has(filtre.cle)).map((filtre) => (
+					<Chip
+						key={filtre.cle}
+						as="button"
+						size="md"
+						rounded
+						icon={XIcon}
+						onClick={() => onBasculerFiltre(filtre.cle)}
+						aria-label={`Retirer le filtre « ${filtre.libelle} »`}
+					>
+						{filtre.libelle}
+					</Chip>
+				))}
+			</div>
+		);
+
+	/*
+	  LA FEUILLE DE FILTRE. Plusieurs filtres se cumulent (« échue » ET « rythme
+	  rompu ») : la feuille reste donc ouverte à chaque appui, et chaque rangée
+	  porte sa coche. Sa précision dit ce que le filtre retient, en toutes lettres.
+	*/
+	const feuilleDeFiltre = (
+		<Popup
+			open={filtreOuvert}
+			onOpenChange={(o) => {
+				if (!o) setFiltreOuvert(false);
+			}}
+			headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">Filtrer</span>}
+			contentClassName="max-w-lg"
+		>
+			<PopupContent>
+				<ListeAnalyses>
+					{proposes.map((filtre) => (
+						<LigneBouton
+							key={filtre.cle}
+							genre="contenu"
+							titre={filtre.libelle}
+							precision={filtre.precision}
+							valeur={`${comptes.get(filtre.cle) ?? 0}`}
+							icone={
+								filtres.has(filtre.cle) ? (
+									<CheckIcon className="size-5" />
+								) : (
+									<span className="size-5" />
+								)
+							}
+							onClick={() => onBasculerFiltre(filtre.cle)}
+						/>
+					))}
+				</ListeAnalyses>
+			</PopupContent>
+		</Popup>
+	);
+
+	/*
+	  ⚠️ CE QUE LE LOGICIEL NE VOIT PAS RESTE ÉCRIT, SOUS LA LISTE. Il vivait
+	  dans la carte « Encours total », partie avec elle. Un livre de clients dont
+	  trois n'ont pas de SIREN n'est pas surveillé au registre pour ces trois-là,
+	  et le gérant qui l'ignore croit qu'il l'est : la phrase ne se replie pas, et
+	  elle ne coûte aucune cible.
+	*/
+	const angleMort =
+		anglesMorts.length === 0 ? null : (
+			<p className="px-1 text-cladd-2xs text-cladd-fg-softer">
+				Ce que le logiciel ne voit pas : {anglesMorts.join(' ; ')}.
+			</p>
+		);
 
 	/*
 	  ═════════════════════════════════════════════════════════════════════════
@@ -822,8 +789,8 @@ export function EcranDebiteurs({
 			<CarteListe
 				titre={
 					filtree
-						? `${retenus.length} sur ${debiteurs.length} débiteur${pluriel(debiteurs.length)}`
-						: `${debiteurs.length} débiteur${pluriel(debiteurs.length)}`
+						? `${retenus.length} sur ${debiteurs.length} client${pluriel(debiteurs.length)}`
+						: `${debiteurs.length} client${pluriel(debiteurs.length)}`
 				}
 				actions={
 					/*
@@ -912,10 +879,11 @@ export function EcranDebiteurs({
 		);
 
 	return avecLaPage(
-		<PageEcran entete={entete}>
-			{sommaire}
-			{gestesDeLecture}
+		<PageEcran entete={{ ...entete, actions: barre }}>
+			{filtresActifs}
 			{liste}
+			{angleMort}
+			{feuilleDeFiltre}
 		</PageEcran>
 	);
 }

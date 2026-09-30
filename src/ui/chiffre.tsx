@@ -37,7 +37,6 @@ export function ChiffreHero({
 	centimes,
 	surTitre,
 	legende,
-	aligne = 'centre',
 	className
 }: {
 	centimes: bigint;
@@ -45,25 +44,18 @@ export function ChiffreHero({
 	surTitre?: string;
 	/** Ce qui qualifie le chiffre — la date d'arrêté, le nombre de créances. */
 	legende?: ReactNode;
-	/**
-	 * Centré sous un solde (Revolut), aligné à gauche sous un titre de page
-	 * (Shop). Une page dont le titre part du bord et le chiffre du milieu se lit
-	 * en zigzag.
-	 */
-	aligne?: 'centre' | 'gauche';
 	className?: string;
 }) {
 	const { signe, entiers, centimes: cents } = partsEurosCentimes(centimes);
-	const aGauche = aligne === 'gauche';
 
+	/*
+	  ⚠️ TOUJOURS CENTRÉ. Il a été aligné à gauche le 30/09/2026, sous le grand
+	  titre d'une page ; le grand titre est parti le même soir (« la même barre
+	  compacte partout »), et le fondateur a fait recentrer le montant. Sous une
+	  barre compacte, c'est le solde de Revolut : rien n'impose plus le bord.
+	*/
 	return (
-		<div
-			className={cn(
-				'flex flex-col gap-1',
-				aGauche ? 'items-start text-left' : 'items-center text-center',
-				className
-			)}
-		>
+		<div className={cn('flex flex-col items-center gap-1 text-center', className)}>
 			{surTitre ? <p className="text-cladd-xs font-medium text-cladd-fg-soft">{surTitre}</p> : null}
 
 			{/*
@@ -76,12 +68,7 @@ export function ChiffreHero({
 			  le seul endroit du produit où un chiffre qui change de largeur
 			  déplacerait toute la mise en page sous lui.
 			*/}
-			<p
-				className={cn(
-					'flex items-baseline tabular-nums',
-					aGauche ? 'justify-start' : 'justify-center'
-				)}
-			>
+			<p className="flex items-baseline justify-center tabular-nums">
 				<span className="text-letikette-hero leading-none font-extrabold tracking-tight">
 					{signe}
 					{entiers}

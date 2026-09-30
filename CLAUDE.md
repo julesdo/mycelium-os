@@ -172,11 +172,15 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   filtrage d'une liste est une FEUILLE ouverte par UN bouton rond, pas une rangée d'onglets ; une
   action d'en-tête est du TEXTE (`BoutonTexte`, le « Sélectionner » de Mail) ; un seul bouton plein
   par écran ; une liste longue se groupe, et chaque en-tête porte son compte et son total.
-- **Le grand titre d'une page poussée DÉFILE, comme sur iOS** : la barre collante ne garde que le
-  retour, et un petit titre centré y apparaît quand le grand passe dessous (`EnteteDetail`). Elle
-  faisait 162 px, soit 19 % d'un écran de téléphone en permanence ; elle en fait 64. Le dégagement
-  du haut suit la zone de l'horloge (`safe-area-inset-top`) : les 64 px fixes d'une barre haute
-  retirée depuis longtemps lui avaient survécu.
+- **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
+  (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
+  Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
+  `2026-09-30-codes-des-references.md`) : un onglet qui a des ACTIONS les met dans la barre, la
+  recherche en tête (Aujourd'hui, Dossiers, Clients) ; un écran sans action y écrit son nom en
+  petit, centré (Compte, Dépôts) ; une page poussée y pose un retour ROND et son nom centré
+  (`PageHeader`, `EnteteDetail`). 64 px au lieu de 162. **Le titre reste publié** même quand il ne
+  s'affiche pas : il nomme le retour de la page suivante. Le dégagement du haut suit la zone de
+  l'horloge (`safe-area-inset-top`). Le montant principal d'un écran est centré dessous.
 - **Sous 1024 px, un panneau se PRÉSENTE ; au-dessus, il se déplie.** Déplier deux mille pixels au
   milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
   application iOS ne le fait. `SectionDepliable` et `RangeeDepliable` rendent donc une **feuille**

@@ -407,7 +407,7 @@ export interface FileAffichee {
  */
 export function EcranFile({ donnees }: { donnees: Lecture<FileAffichee> }) {
 	if (donnees.etat !== 'pret') {
-		return <PageEcran entete={{ genre: 'onglet' }} etat={donnees.etat} />;
+		return <PageEcran entete={{ genre: 'onglet', titre: 'Aujourd’hui' }} etat={donnees.etat} />;
 	}
 
 	return <FilePrete valeur={donnees.valeur} />;
@@ -544,6 +544,13 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		<PageEcran
 			entete={{
 				genre: 'onglet',
+				/*
+				  ⚠️ LE TITRE EST PUBLIÉ, PAS AFFICHÉ. Les actions occupent la barre seules
+				  (`PageHeader`) ; le titre, lui, nomme le retour de la page suivante. Il
+				  avait été retiré avec son affichage, et un dossier ouvert d'ici revenait
+				  alors vers « Vos clients » au lieu d'« Aujourd'hui ».
+				*/
+				titre: 'Aujourd’hui',
 				/*
 				  ⚠️ PAS DE GRAND TITRE, ET PAS DE DATE EN SOUS-TITRE. Verdict du
 				  fondateur, le 30/09/2026 au soir : « enlève-moi le Aujourd'hui et la

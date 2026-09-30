@@ -64,7 +64,11 @@ export function modeDuFichier(fichier: {
 	  Les trois formes possibles y passent : `text/xml`, `application/xml`, et le
 	  type MIME absent — fréquent sur un fichier glissé depuis un dossier.
 	*/
-	if (type === 'application/xml' || type === 'text/xml' || /\.xml$/.test(fichier.name.toLowerCase()))
+	if (
+		type === 'application/xml' ||
+		type === 'text/xml' ||
+		/\.xml$/.test(fichier.name.toLowerCase())
+	)
 		return 'FACTURE_DEPOSEE';
 	if (type.startsWith('text/')) return 'EXPORT_COMPTABLE';
 	// Un FEC glissé depuis un dossier arrive souvent sans type MIME : le nom tranche.
@@ -247,8 +251,8 @@ export function EcranImport({
 
 	const entete: EnteteEcran = {
 		genre: 'onglet',
-		titre: TITRE_ECRAN.imports,
-		sousTitre: 'Vos factures de vente, et les règlements déjà reçus'
+		// Sans sous-titre depuis le 30/09/2026 : la barre compacte n’écrit que le nom.
+		titre: TITRE_ECRAN.imports
 	};
 
 	const avecLeDepot = (page: ReactNode) => (
@@ -299,9 +303,7 @@ export function EcranImport({
 						  fichiers… » se vérifie contre les rangées juste dessous ; « Envoi en
 						  cours… » ne se vérifiait contre rien et ne bougeait jamais.
 						*/}
-						<p className="text-cladd-sm font-semibold">
-							{enRoute ?? 'Déposez vos fichiers ici'}
-						</p>
+						<p className="text-cladd-sm font-semibold">{enRoute ?? 'Déposez vos fichiers ici'}</p>
 						{/* Les formats acceptés sont ÉCRITS. Sans eux, on découvre qu'un
 						    fichier est refusé après l'avoir choisi — et on ne sait pas
 						    lequel prendre à la place. */}

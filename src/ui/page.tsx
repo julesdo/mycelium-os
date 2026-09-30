@@ -61,13 +61,29 @@ export function PageHeader({
 	colonne?: ColonneEntete;
 }) {
 	/*
-	  ⚠️ SANS TITRE, LA BARRE N'EST PLUS QUE SA RANGÉE D'OUTILS — la barre collante
-	  compacte de Revolut au-dessus de son solde. Elle prenait `pt-cladd-xs`, soit
-	  20 px fixes, du temps où `pt-barre-app` valait 64 px. Depuis que ce jeton suit
-	  la zone de l'horloge (`safe-area-inset-top` + 16 px), les 20 px fixes étaient
-	  devenus un défaut : l'application installée en plein écran aurait passé
-	  l'heure et l'île PAR-DESSUS la recherche. Avec ou sans titre, le haut de la
-	  barre est donc le même jeton.
+	  ═══════════════════════════════════════════════════════════════════════════
+	  ⚠️ UNE BARRE COMPACTE, SUR TOUS LES ONGLETS — ET PLUS AUCUN GRAND TITRE
+	  ═══════════════════════════════════════════════════════════════════════════
+
+	  Décision du fondateur, le 30/09/2026 au soir : « fais la même barre compacte
+	  partout, less is more ». Le grand titre de trente pixels et son sous-titre
+	  coûtaient 78 px au-dessus du premier contenu, et renvoyaient les actions sur
+	  une deuxième ligne. La barre du bas dit déjà où l'on est.
+
+	  Relevé sur Mobbin le même soir, dans des applications qui font notre métier
+	  ou s'en approchent :
+	    · Revolut (accueil) et Splitwise (« qui me doit quoi ») — la barre porte la
+	      recherche et une ou deux actions rondes, et aucun titre ;
+	    · bunq (profil) — un petit titre centré, et c'est tout.
+
+	  D'où la règle, tenue ici et nulle part ailleurs : quand l'écran a des
+	  ACTIONS, elles occupent la barre seules ; quand il n'en a pas, son titre s'y
+	  écrit en petit, centré. Dans les deux cas le titre reste PUBLIÉ par
+	  `PageEcran` : c'est lui qui nomme le retour de la page suivante (« ‹
+	  Aujourd'hui »), et l'effacer du rendu ne doit pas l'effacer de là.
+
+	  ⚠️ `min-h-9` SUR LA RANGÉE : une barre de titre et une barre d'outils font la
+	  même hauteur, sinon le contenu saute de quelques pixels d'un onglet à l'autre.
 	*/
 	const sansTitre = titre === undefined;
 	return (
@@ -85,38 +101,24 @@ export function PageHeader({
 				  redevient un bloc ordinaire : plus rien ne passe dessous, et le flou n'a
 				  plus rien à flouter. Voir `page-ecran.tsx`.
 				*/
-				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 flex-wrap items-end justify-between gap-cladd-3xs pt-barre-app pb-cladd-3xs',
+				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 items-center pt-barre-app pb-cladd-3xs',
 				GOUTTIERE_ENTETE[colonne]
 			)}
 		>
-			{sansTitre ? null : (
-				/*
-				  ⚠️ `flex-1 min-w-48`, ET LES DEUX COMPTENT. Sans `flex-1`, le bloc
-				  prenait la largeur de son sous-titre et poussait une action de cent
-				  pixels — « Sélectionner » — sur la ligne suivante, sous le titre, là
-				  où aucune application iOS ne la pose. Sans `min-w-48`, un écran dont
-				  les actions sont une barre d'outils entière (« Aujourd'hui ») écrasait
-				  son titre à quarante pixels au lieu de renvoyer la barre en dessous.
-				  Cent quatre-vingt-douze pixels : la place d'un grand titre de deux
-				  mots, et pas un de plus.
-				*/
-				<div className="min-w-48 flex-1">
-					<h1 className="text-letikette-titre leading-tight font-bold tracking-tight">{titre}</h1>
-					{sousTitre ? <p className="mt-1 text-cladd-xs text-cladd-fg-soft">{sousTitre}</p> : null}
-				</div>
-			)}
 			{actions ? (
-				<div
-					className={cn(
-						'flex min-w-0 items-center gap-cladd-3xs',
-						// Seule sur la rangée, la barre prend toute la largeur : c'est elle
-						// qui répartit ses propres groupes, et elle sait le faire.
-						sansTitre ? 'w-full' : 'shrink-0'
-					)}
-				>
+				<div className="flex min-h-9 w-full min-w-0 items-center gap-cladd-3xs">
+					{sansTitre ? null : <h1 className="sr-only">{titre}</h1>}
 					{actions}
 				</div>
-			) : null}
+			) : sansTitre ? null : (
+				<div className="flex min-h-9 w-full min-w-0 flex-col items-center justify-center text-center">
+					{/* Un `h1` quand même : le lecteur d'écran y cherche le nom de la page. */}
+					<h1 className="max-w-full truncate text-cladd-xs leading-tight font-semibold">{titre}</h1>
+					{sousTitre ? (
+						<p className="max-w-full truncate text-cladd-3xs text-cladd-fg-soft">{sousTitre}</p>
+					) : null}
+				</div>
+			)}
 		</header>
 	);
 }

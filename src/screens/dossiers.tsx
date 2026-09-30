@@ -22,7 +22,6 @@ import {
 	LigneBouton,
 	Lien,
 	ListeAnalyses,
-	PageBody,
 	PageEcran,
 	dateCourte,
 	eurosCentimes,
@@ -254,18 +253,6 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 			(!enSelection || relancable(d))
 	);
 
-	/*
-	  ⚠️ LE SOUS-TITRE NE PORTE QUE L'ARGENT. Il disait « 54 211,50 € à
-	  recouvrer · 4 dossiers » et, depuis que « Sélectionner » partage sa ligne,
-	  il se coupait en « … · 4 » / « dossiers » à 393 px. Le compte y était de
-	  toute façon redondant : chaque en-tête de groupe porte le sien. Le montant
-	  total est la seule chose qu'on ne peut pas voir sans additionner. Les
-	  dossiers réglés n'y entrent pas : ils ne sont plus « à recouvrer ».
-	*/
-	const encours = dossiers.filter((d) => d.etape !== 'REGLE');
-	const total = encours.reduce((somme, d) => somme + d.principalRestantDu, 0n);
-	const sousTitre = `${eurosCentimes(total)} à recouvrer`;
-
 	const groupes = ORDRE.map((cle) => ({
 		cle,
 		dossiers: visibles.filter((d) => d.etape === cle)
@@ -292,69 +279,68 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 		<PageEcran
 			entete={{
 				...entete,
-				sousTitre,
 				/*
-				  ⚠️ UN MOT, PAS UNE PILULE. « Sélectionner » était un bouton de 56 px
-				  posé au-dessus de la liste. C'est le « Sélectionner » de Mail : un mot
-				  dans la couleur du lien, en haut à droite, qu'on trouve sans qu'il
-				  ressemble à une action. Et il ne s'affiche que s'il y a quelque chose
-				  à sélectionner.
+				  ⚠️ LA RECHERCHE, LE FILTRE ET « SÉLECTIONNER » VIVENT DANS LA BARRE
+				  COLLANTE, SUR UNE SEULE LIGNE — et le grand titre « Dossiers » et son
+				  sous-titre « … à recouvrer » sont partis (30/09/2026, « la même barre
+				  compacte partout »). La barre du bas dit où l'on est ; chaque en-tête de
+				  groupe porte son total. C'est la barre de Revolut au-dessus de ses
+				  transactions : ce qu'on cherche au quotidien, on le TAPE, et le champ
+				  reste sous le pouce quand la liste défile.
+
+				  ⚠️ LE FILTRE EST UN DISQUE PLEIN, PAS UNE ICÔNE NUE : en transparent, il
+				  n'avait de contour qu'au survol — c'est-à-dire jamais, au doigt.
+
+				  ⚠️ « SÉLECTIONNER » EST UN MOT, PAS UNE PILULE — le « Sélectionner » de
+				  Mail, en haut à droite. Il ne s'affiche que s'il y a quelque chose à
+				  sélectionner.
 				*/
-				actions: !peutSelectionner ? undefined : enSelection ? (
-					<BoutonTexte onClick={quitterLaSelection}>Annuler</BoutonTexte>
-				) : (
-					<BoutonTexte onClick={() => setEnSelection(true)}>Sélectionner</BoutonTexte>
+				actions: (
+					<>
+						<SearchField
+							size="md"
+							tightFocusRing
+							className="min-w-0 flex-1"
+							value={terme}
+							onChange={(valeur) => setTerme(valeur)}
+							inputMode="search"
+							placeholder="Rechercher"
+							inputComponentProps={{
+								'aria-label': 'Rechercher un dossier par le nom du client',
+								enterKeyHint: 'search'
+							}}
+						/>
+						<Button
+							size="md"
+							rounded
+							square
+							variant="solid"
+							outline={false}
+							className="shrink-0"
+							aria-label={
+								etape === null
+									? 'Filtrer par étape'
+									: `Filtré sur « ${LIBELLE_GROUPE[etape]} » — changer de filtre`
+							}
+							onClick={() => setFiltreOuvert(true)}
+						>
+							<SlidersHorizontalIcon />
+						</Button>
+						{!peutSelectionner ? null : enSelection ? (
+							<BoutonTexte className="shrink-0" onClick={quitterLaSelection}>
+								Annuler
+							</BoutonTexte>
+						) : (
+							<BoutonTexte className="shrink-0" onClick={() => setEnSelection(true)}>
+								Sélectionner
+							</BoutonTexte>
+						)}
+					</>
 				)
 			}}
 		>
-			<PageBody>
-				{/*
-				  LA RECHERCHE ET UN SEUL FILTRE — Revolut, à la lettre.
-
-				  ⚠️ LES CINQ SEGMENTS SONT PARTIS DANS UNE FEUILLE. Ils s'enroulaient sur
-				  trois lignes à 375 px et faisaient de l'en-tête de la liste une rangée
-				  d'onglets de plus. Le filtre par étape est un geste rare — les groupes,
-				  en dessous, séparent déjà les étapes ; ce qu'on cherche au quotidien, on
-				  le TAPE.
-				*/}
-				<div className="flex items-center gap-cladd-3xs">
-					<SearchField
-						size="md"
-						tightFocusRing
-						className="min-w-0 flex-1"
-						value={terme}
-						onChange={(valeur) => setTerme(valeur)}
-						inputMode="search"
-						placeholder="Rechercher un client"
-						inputComponentProps={{
-							'aria-label': 'Rechercher un dossier par le nom du client',
-							enterKeyHint: 'search'
-						}}
-					/>
-					{/*
-					  ⚠️ UN DISQUE PLEIN, PAS UNE ICÔNE NUE. En transparent, le bouton
-					  n'avait de contour qu'au survol — c'est-à-dire jamais, au doigt — et
-					  le glyphe flottait à côté du champ comme une décoration. Revolut le
-					  pose dans un disque plein de la même hauteur que la recherche : on
-					  voit que c'est un bouton, et qu'il va avec le champ.
-					*/}
-					<Button
-						size="md"
-						rounded
-						variant="solid"
-						outline={false}
-						className="shrink-0"
-						aria-label={
-							etape === null
-								? 'Filtrer par étape'
-								: `Filtré sur « ${LIBELLE_GROUPE[etape]} » — changer de filtre`
-						}
-						onClick={() => setFiltreOuvert(true)}
-					>
-						<SlidersHorizontalIcon />
-					</Button>
-				</div>
-
+			{/* Plus de `PageBody` imbriqué : c’était une seconde zone de défilement dans la première, et son rembourrage décalait la liste de 16 px sous la barre. */}
+			<>
 				{/*
 				  LE FILTRE ACTIF SE LIT, ET SE RETIRE D'UN APPUI. Un filtre posé dans une
 				  feuille qu'on a refermée est un filtre qu'on oublie — et une liste qui
@@ -479,7 +465,7 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 						</BoutonPrincipal>
 					</Surface>
 				) : null}
-			</PageBody>
+			</>
 
 			{/*
 			  LA FEUILLE DE FILTRE — un choix unique, appliqué à l'appui.

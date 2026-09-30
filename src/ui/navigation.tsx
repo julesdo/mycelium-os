@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useSyncExternalStore, type ReactNode } from 'react';
 // ⚠️ LE SEUL `Link` DES ÉCRANS : le repli du retour, qui mène au parent de
 // l'adresse et ne transmet aucune provenance. S'il en transmettait une, la
 // créance rouverte depuis une analyse reviendrait à l'analyse, en boucle. Tout
@@ -362,29 +362,22 @@ export function LigneBouton({
 }
 
 /**
- * L'EN-TÊTE D'UNE PAGE POUSSÉE.
+ * L'EN-TÊTE D'UNE PAGE POUSSÉE — un retour rond, et le nom centré.
  *
- * ⚠️ LE RETOUR EST UN CHEVRON EN HAUT À GAUCHE, et il porte le nom de l'écran
- * d'où l'on vient. C'est la convention de toutes les applications mobiles, et
- * elle dit deux choses en un geste : on peut revenir, et on sait où.
- *
- * Il est posé AVANT le titre, pas à côté : un titre long le pousserait hors de
- * l'écran s'ils partageaient la ligne, et c'est le retour qu'on perdrait.
- */
-/**
- * LA PASTILLE DE RETOUR, IDENTIQUE DANS SES DEUX BRANCHES.
- *
- * Le `Button` du kit, en `md`, qui tombe à 48 px par `tokens.css` : le plancher
- * tactile, sans hauteur écrite à la main. Il tronque son libellé sur une ligne,
- * donc un titre de provenance long ne décale pas le titre de la page. Seul le
- * texte change d'une branche à l'autre, jamais la forme.
+ * LE RETOUR, IDENTIQUE DANS SES DEUX BRANCHES : un disque de verre de 36 px
+ * (`md` et `square` — la largeur d'un bouton du kit suit son contenu, et un
+ * chevron seul n'en fait pas assez), comme le retour de Revolut Business. Seul
+ * le nom lu par le lecteur d'écran change d'une branche à l'autre, jamais la
+ * forme.
  */
 const PASTILLE_RETOUR = {
 	variant: 'transparent',
 	outline: false,
 	hoverable: false,
 	rounded: true,
-	className: 'verre-bouton max-w-full self-start text-cladd-fg-soft'
+	square: true,
+	size: 'md',
+	className: 'verre-bouton shrink-0 text-cladd-fg-soft'
 } as const;
 
 export function EnteteDetail({
@@ -469,112 +462,67 @@ export function EnteteDetail({
 	 */
 	const parHistorique = donneesPretes && peutRevenir && titreDeProvenance !== null;
 
-	/**
-	 * LE GRAND TITRE EST-IL PASSÉ SOUS LA BARRE ?
-	 *
-	 * ═══════════════════════════════════════════════════════════════════════════
-	 * ⚠️ LE GRAND TITRE D'iOS, ET CE QU'IL COÛTAIT ICI
-	 * ═══════════════════════════════════════════════════════════════════════════
-	 *
-	 * La barre collante portait le retour ET le grand titre : 162 px à 393 px de
-	 * large, soit 19 % de l'écran d'un téléphone, en permanence (relevé du
-	 * 30/09/2026 sur la page dossier). Sur iOS, le grand titre DÉFILE avec la
-	 * page ; quand il passe sous la barre, un petit titre centré prend sa place
-	 * et le retour se réduit à son chevron. Réglages, Mail, Revolut, Claude : tous
-	 * le font, et c'est ce qui rend l'écran au contenu.
-	 *
-	 * ⚠️ L'OBSERVATEUR NE SYNCHRONISE AUCUN ÉTAT DÉRIVÉ. Il s'abonne à un fait
-	 * extérieur — la position du titre dans la fenêtre — et c'est la seule chose
-	 * qu'un effet a le droit de faire ici. Sa marge haute est la hauteur de la
-	 * barre, mesurée une fois : elle ne dépend que de la zone de l'horloge.
-	 */
-	const [replie, setReplie] = useState(false);
-	const barre = useRef<HTMLElement>(null);
-	const grandTitre = useRef<HTMLDivElement>(null);
-	useEffect(() => {
-		const cible = grandTitre.current;
-		const haut = barre.current;
-		if (cible === null || haut === null || typeof IntersectionObserver === 'undefined') return;
-		const observateur = new IntersectionObserver(
-			([entree]) => setReplie(entree !== undefined && !entree.isIntersecting),
-			{ rootMargin: `-${Math.round(haut.getBoundingClientRect().height)}px 0px 0px 0px` }
-		);
-		observateur.observe(cible);
-		return () => observateur.disconnect();
-	}, []);
-
-	/** Voir `RetourEcran.masqueEnVolets` : la pastille passe en `lg:hidden`, rien d’autre. */
-	const classePastille = cn(
-		PASTILLE_RETOUR.className,
-		retourMasqueEnVolets && 'lg:hidden',
-		replie && 'shrink-0'
-	);
 	/*
-	  ⚠️ LE LIBELLÉ DU RETOUR NE DISPARAÎT QU'À L'ŒIL. Réduit au chevron, le bouton
-	  garde son nom pour un lecteur d'écran : « Vos clients », pas « bouton ».
-	*/
-	const libelleRetour = (libelle: string) =>
-		replie ? <span className="sr-only">{libelle}</span> : libelle;
+	  ═══════════════════════════════════════════════════════════════════════════
+	  ⚠️ UNE BARRE COMPACTE, ET PLUS DE GRAND TITRE DANS LA PAGE
+	  ═══════════════════════════════════════════════════════════════════════════
 
-	// Même bord d’écran que la barre des onglets : du flou seul, collant, et le contenu
-	// glisse dessous. Voir `PageHeader`.
+	  Le 30/09/2026, la barre collante portait le retour ET un grand titre de
+	  trente pixels : 162 px à 393 px, 19 % de l'écran d'un téléphone. Le même
+	  soir, le grand titre a défilé avec la page (le code d'iOS) ; puis le
+	  fondateur a tranché pour tout le produit : « fais la même barre compacte
+	  partout, less is more ».
+
+	  C'est la page de Revolut Business sur une facture, relevée sur Mobbin : un
+	  retour ROND à gauche, sans libellé, et le nom centré en petit. Le contenu
+	  commence juste dessous — ici, le montant.
+
+	  ⚠️ LE LIBELLÉ DU RETOUR NE DISPARAÎT QU'À L'ŒIL. Le bouton garde son nom pour
+	  un lecteur d'écran — « Aujourd'hui », « Vos clients » — et les deux branches
+	  ci-dessous restent distinctes : le nom tiré de l'historique ne va qu'avec le
+	  geste qui y retourne.
+
+	  ⚠️ TROIS COLONNES, ET LA TROISIÈME EST VIDE. Elle vaut la largeur du retour :
+	  c'est ce qui centre le titre sur l'ÉCRAN et non sur la place qui lui reste.
+	  Quand le retour se masque en deux volets, sa colonne reste — le titre ne
+	  bouge pas d'un pixel en passant 1024 px.
+	*/
+	const classeRetour = cn(PASTILLE_RETOUR.className, retourMasqueEnVolets && 'lg:invisible');
+
 	return (
-		<>
-			<header
-				ref={barre}
-				className={cn(
-					'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 items-center gap-cladd-3xs pt-barre-app pb-cladd-3xs',
-					GOUTTIERE_ENTETE[colonne]
-				)}
-			>
-				{parHistorique ? (
-					<Button
-						{...PASTILLE_RETOUR}
-						className={classePastille}
-						onClick={() => router.history.back()}
-					>
-						<ChevronLeftIcon aria-hidden />
-						{libelleRetour(titreDeProvenance)}
-					</Button>
-				) : (
-					<Button
-						{...PASTILLE_RETOUR}
-						className={classePastille}
-						as={Link}
-						to={retourVers}
-						// Même assertion que `LigneAnalyse` : le `as` polymorphe efface le
-						// générique du routeur, les props de CE composant restent typées par lui.
-						params={retourParametres as never}
-						search={retourRecherche as never}
-					>
-						<ChevronLeftIcon aria-hidden />
-						{libelleRetour(retourLibelle)}
-					</Button>
-				)}
-				{/*
-				  LE PETIT TITRE, CENTRÉ SUR L'ÉCRAN ET PAS SUR SA PLACE : la marge droite
-				  vaut la pastille réduite et son écart, sinon il pencherait à droite de
-				  la largeur du chevron.
-				*/}
-				<p
-					aria-hidden
-					className={cn(
-						'min-w-0 flex-1 truncate pr-12 text-center text-cladd-xs font-semibold transition-opacity duration-200',
-						replie ? 'opacity-100' : 'opacity-0'
-					)}
+		<header
+			className={cn(
+				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs grid shrink-0 grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-cladd-3xs pt-barre-app pb-cladd-3xs',
+				GOUTTIERE_ENTETE[colonne]
+			)}
+		>
+			{parHistorique ? (
+				<Button {...PASTILLE_RETOUR} className={classeRetour} onClick={() => router.history.back()}>
+					<ChevronLeftIcon aria-hidden />
+					<span className="sr-only">{titreDeProvenance}</span>
+				</Button>
+			) : (
+				<Button
+					{...PASTILLE_RETOUR}
+					className={classeRetour}
+					as={Link}
+					to={retourVers}
+					// Même assertion que `LigneAnalyse` : le `as` polymorphe efface le
+					// générique du routeur, les props de CE composant restent typées par lui.
+					params={retourParametres as never}
+					search={retourRecherche as never}
 				>
-					{titre}
-				</p>
-			</header>
-			<div
-				ref={grandTitre}
-				className={cn('-mx-cladd-2xs min-w-0 pb-cladd-3xs', GOUTTIERE_ENTETE[colonne])}
-			>
-				<h1 className="text-letikette-titre leading-tight font-bold tracking-tight text-balance">
-					{titre}
-				</h1>
-				{sousTitre ? <p className="mt-1 text-cladd-xs text-cladd-fg-soft">{sousTitre}</p> : null}
+					<ChevronLeftIcon aria-hidden />
+					<span className="sr-only">{retourLibelle}</span>
+				</Button>
+			)}
+			<div className="flex min-w-0 flex-col items-center text-center">
+				<h1 className="max-w-full truncate text-cladd-xs leading-tight font-semibold">{titre}</h1>
+				{sousTitre ? (
+					<p className="max-w-full truncate text-cladd-3xs text-cladd-fg-soft">{sousTitre}</p>
+				) : null}
 			</div>
-		</>
+			<span aria-hidden />
+		</header>
 	);
 }

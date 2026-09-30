@@ -224,3 +224,28 @@ recherche sur le nom du client, un bouton filtre et sa feuille, des groupes par 
 leur compte et leur total.
 
 Le mode sélection garde les mêmes rangées : la case prend la place de l'avatar, comme dans Mail.
+
+---
+
+## Les applications de notre métier (relevé du 30/09/2026 au soir)
+
+Demande du fondateur : « trouve sur Mobbin des apps qui font la même chose que nous, étudie leurs
+parcours et prends exemple ». Relevé sur iOS : Revolut Business (factures), PayPal (facture,
+relance), Jobber (facture d'artisan), Splitwise (qui me doit quoi), Afterpay (ce que je dois),
+Wise (demandes de paiement), bunq et Revolut Business (profil).
+
+| Parcours                                | Ce qu'ils font                                                                                                                      | Ce que Letikette en reprend                                                                           |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Liste des factures (Revolut Business)   | Groupes par date ; une rangée = client, état en quatre mots (« Due in 9 days · INV-4 »), montant                                    | Groupes avec compte et total (`EnTeteDeGroupe`), rangée partagée, état court                          |
+| Détail d'une facture (Revolut Business) | Montant en grand, client, **un** bouton (« Mark as paid ») + « ··· », puis cartes courtes (statut, client, lignes, chronologie)     | Page dossier : montant, état, un bouton, trois derniers faits                                         |
+| Relancer (PayPal)                       | « Send reminder » sous le montant dû → feuille de confirmation → écran « Reminder sent » → « Done »                                 | Le bouton de l'état ouvre la feuille « Courriers et e-mails » (rien ne part d'ici : ligne rouge n° 1) |
+| Facture (Jobber)                        | L'état en tête (« Awaiting Payment »), puis Resend / Collect Payment / ···                                                          | L'état en toutes lettres avant le bouton                                                              |
+| Onglet « Friends » (Splitwise)          | **Pas de grand titre** : une barre fine (loupe, un mot d'action), une ligne « Overall, you owe… », la liste avec le solde de chacun | Barre compacte sur tous les onglets ; la carte « Encours total » des clients retirée                  |
+| « Your orders » (Afterpay)              | Le montant dû centré, trois petits chiffres dessous, la liste                                                                       | Montant centré sous la barre (« Aujourd'hui », page dossier)                                          |
+| Profil (bunq)                           | Petit titre centré dans la barre, une icône                                                                                         | Barre d'un écran sans action : son nom en petit, centré (Compte, Dépôts)                              |
+| Détail (Revolut Business)               | Retour **rond** sans libellé, nom centré                                                                                            | Barre des pages poussées : retour rond, nom centré, adresse en petit                                  |
+
+**La règle qui en sort** (`PageHeader`, `EnteteDetail`) : une seule barre fine et collante sur
+tout le produit. Un écran qui a des actions les met dans la barre (la recherche en tête) ; un écran
+qui n'en a pas y écrit son nom en petit ; une page poussée y met un retour rond et son nom. Le titre
+reste publié pour nommer le retour de la page suivante.

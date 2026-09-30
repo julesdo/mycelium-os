@@ -459,7 +459,7 @@ function EnTeteCreance({ creance }: { creance: CreanceOuverte }) {
 
 	return (
 		<ChiffreHero
-			aligne="gauche"
+			className="py-cladd-3xs"
 			centimes={montant?.total ?? creance.principalRestantDu}
 			surTitre={
 				montant === null ? 'Reste à payer, hors pénalités' : 'Dû aujourd’hui, pénalités comprises'

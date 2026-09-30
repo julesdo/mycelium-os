@@ -239,7 +239,6 @@ export { CompagnonFlottant, type EtatCompagnon } from './compagnon-flottant';
  * Le total d'une liste et ce qu'il recouvre, posé au-dessus d'elle. Écrit pour
  * la liste des clients ; il ne sait rien d'elle et tiendra pour la prochaine.
  * Voir le fichier : il dit pourquoi ce n'est pas `ChiffreHero`. */
-export { SommaireEncours } from './sommaire-encours';
 /* ── LES DOSSIERS ENGAGÉS ET « CE QUI EST DÛ » (ecran/dossiers) ─────────────
  *
  * Les deux écrans refaits sur références : `/app/procedures`, la liste des
