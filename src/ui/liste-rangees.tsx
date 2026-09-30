@@ -14,7 +14,7 @@ import {
 } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
 import { useDeuxVolets } from './maitre-detail';
-import { VignetteRangee, type FamilleRangee } from './familles';
+import { VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
 import { useSectionOuverte } from './section-depliable';
 
 /**
@@ -104,6 +104,8 @@ export function RangeeDepliable({
 	titre,
 	valeur,
 	famille,
+	icone,
+	attention = false,
 	glose,
 	children
 }: {
@@ -122,6 +124,18 @@ export function RangeeDepliable({
 	readonly valeur: string;
 	/** La famille de la rangée : son pictogramme et sa teinte. Voir familles.tsx. */
 	readonly famille?: FamilleRangee;
+	/**
+	 * Un glyphe NEUTRE, pour une rangée qui n'est pas un objet du domaine — un
+	 * réglage. Voir `familles.tsx` : la teinte dit de quoi il s'agit, et un
+	 * réglage n'est de rien.
+	 */
+	readonly icone?: ReactNode;
+	/**
+	 * Marque la rangée qui attend quelque chose du gérant — le point de
+	 * `LigneAnalyse`, jamais une couleur de seuil. C'est ce qui remplace, sur
+	 * l'écran du compte, l'encart « Ce qui presse » qui répétait les valeurs.
+	 */
+	readonly attention?: boolean;
 	/** Ce que l'en-tête disait avant, descendu en tête du panneau. */
 	readonly glose?: string;
 	readonly children: ReactNode;
@@ -177,13 +191,19 @@ export function RangeeDepliable({
 					contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
 				>
 					{/*
-					  ⚠️ `basis-1/2` SUR LE TITRE, ET C'EST UN DÉFAUT MESURÉ. Le groupe de
-					  droite était `shrink-0` : il prenait sa largeur naturelle en premier,
-					  et une valeur un peu longue — « 1 hypothèse · 2 angles morts » —
-					  écrasait le titre à dix-neuf pixels sur cinquante-quatre. « Les
-					  limites du calcul » se lisait « Les… ». Le titre garde désormais la
-					  moitié de la rangée, et la valeur revient à la ligne plutôt que de
-					  perdre sa fin : un compte amputé est un compte faux.
+					  ⚠️ LE TITRE PREND SA LARGEUR, PLAFONNÉE À 60 %, ET LA VALEUR LE RESTE.
+					  Deux défauts mesurés, l'un après l'autre :
+					    · le groupe de droite était `shrink-0` : une valeur un peu longue —
+					      « 1 hypothèse · 2 angles morts » — écrasait le titre à dix-neuf
+					      pixels. « Les limites du calcul » se lisait « Les… » ;
+					    · la correction fut `basis-1/2` sur le titre, qui lui réservait la
+					      moitié de la rangée MÊME quand il fait six lettres. Sur l'écran du
+					      compte, « Équipe » gardait 126 px pour 60 de texte, et « 1
+					      invitation en attente » revenait à la ligne dans le reste.
+					  Le titre prend donc sa largeur naturelle (`shrink-0`), jamais plus de
+					  60 % (il revient à la ligne au-delà) ; la valeur prend tout le reste
+					  (`flex-1`), donc au moins 40 %. Aucun des deux ne peut plus écraser
+					  l'autre, et aucun pixel ne reste réservé pour rien.
 					*/}
 					{/*
 					  ⚠️ LA VIGNETTE EST L'ANCRE DE L'ŒIL, pas une décoration. Six rangées
@@ -191,11 +211,21 @@ export function RangeeDepliable({
 					  vignettes de familles différentes se balaient. Relevé du 30/09/2026 :
 					  l'écran des dossiers portait six pictogrammes EN TOUT.
 					*/}
-					<span className="flex min-w-0 flex-1 basis-1/2 items-center gap-cladd-3xs text-left">
-						{famille === undefined ? null : <VignetteRangee famille={famille} />}
+					<span className="flex max-w-[60%] min-w-0 shrink-0 items-center gap-cladd-3xs text-left">
+						{famille !== undefined ? (
+							<VignetteRangee famille={famille} />
+						) : icone !== undefined ? (
+							<VignetteIcone icone={icone} />
+						) : null}
+						{attention ? (
+							<span
+								className="size-1.5 shrink-0 rounded-full bg-cladd-fg"
+								aria-label="demande une réponse"
+							/>
+						) : null}
 						<span className="min-w-0 text-cladd-xs font-semibold">{titre}</span>
 					</span>
-					<span className="flex min-w-0 shrink items-center gap-cladd-3xs">
+					<span className="flex min-w-0 flex-1 items-center justify-end gap-cladd-3xs">
 						<span className="text-right text-cladd-xs text-cladd-fg-soft tabular-nums">
 							{valeur}
 						</span>

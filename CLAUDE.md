@@ -114,6 +114,14 @@ factures à régler en rangées qui se LISENT (`LigneFixe` : plus une seule case
 identité, solvabilité, paiements, documents, virement et factures réglées en rangées qui portent
 leur valeur (« SIREN à trouver », « non surveillée », « règle à 45 j »). 28 → 10 cibles.
 
+**Et l'écran Compte, sur les Réglages d'iOS, bunq et Revolut Business** : l'identité centrée
+sans aucun bouton ; deux cartes de rangées groupées au lieu de dix cartes (le profil absorbe
+l'affichage, les données absorbent la mesure de la file) ; la déconnexion en dernière rangée. Le
+bandeau « Ce qui presse », qui redisait les valeurs des rangées, est remplacé par un POINT sur la
+rangée concernée et une valeur qui dit quoi (`RangeeDepliable.attention`). 14 → 9 cibles,
+179 → 40 mots, 1 896 → 955 px. Et dans toute rangée dépliable, le titre prend sa largeur
+(60 % au plus) et la valeur le reste — `basis-1/2` réservait la moitié à « Équipe ».
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.

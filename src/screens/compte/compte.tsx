@@ -1,31 +1,34 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SectionTitle, Segmented, SegmentedButton } from '@cladd-ui/react';
 import {
+	ArrowLeftRightIcon,
 	Building2Icon,
+	CheckIcon,
 	ContactIcon,
 	CreditCardIcon,
-	ListChecksIcon,
+	LogOutIcon,
 	MonitorIcon,
 	MoonIcon,
 	PlugIcon,
 	ShieldIcon,
 	SlidersHorizontalIcon,
 	SunIcon,
-	SunMoonIcon,
 	UserIcon,
 	UsersIcon
 } from 'lucide-react';
 import type { Theme } from '../../app/use-theme';
 import {
 	EmptyState,
+	LigneBouton,
+	ListeAnalyses,
+	ListeDeRangees,
 	PageEcran,
-	SectionDepliable,
+	RangeeDepliable,
 	SectionsDepliables,
 	type Lecture
 } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
 import { TITRE_ECRAN } from '../titres';
-import { BandeauCeQuiPresse } from './bandeau-presse';
 import { EnTeteDuCompte } from './en-tete';
 import { FormulaireCourriers, FormulaireCreancier, type CreancierAffiche } from './creancier';
 import { FormulaireEtablissement, type EtablissementAffiche } from './etablissement';
@@ -37,23 +40,21 @@ import { SectionDonnees, type DonneesAffichees } from './donnees';
 import { SectionIntervenants, type IntervenantsAffiches } from './intervenants';
 import { SectionMesures, type MesuresAffichees } from './mesures';
 import {
-	SECTIONS_COMPTE,
 	ceQuiPresse,
-	resumeAffichage,
 	resumeCarnet,
 	resumeDonnees,
 	resumeEquipe,
 	resumeEtablissement,
 	resumeFacturation,
-	resumeMesures,
 	resumeProfil,
 	resumeConnexions,
 	type IdentiteDuCreancier,
+	type ResumeDeSection,
 	type SectionCompte
 } from './presse';
 
 /**
- * VOTRE COMPTE — UNE IDENTITÉ, CE QUI PRESSE, ET SEPT RANGÉES QUI SE DÉPLIENT.
+ * VOTRE COMPTE — UNE IDENTITÉ, DEUX CARTES DE RANGÉES, ET LA SORTIE EN DERNIER.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ TREIZE ADRESSES SONT DEVENUES UNE PAGE, PUIS UNE PAGE QU'ON LIT D'UN COUP
@@ -77,18 +78,19 @@ import {
  * ⚠️ ET UN REPLI SE PAIE, DONC IL SE COMPENSE. Une section repliée qui cache un
  * abonnement retombé sur `none` — dépôt, surveillance et décompte fermés —
  * serait pire que la page longue : le gérant aurait REGARDÉ sans rien voir.
- * Deux choses l'empêchent, et elles se calculent au même endroit
- * (`presse.tsx`) : la valeur de la rangée repliée, et le bandeau « Ce qui
- * presse » qui passe devant tout le reste.
+ * Ce qui l'empêche se calcule à un seul endroit (`presse.tsx`) et se lit sur
+ * la RANGÉE : un point, et une valeur qui dit quoi. Le bandeau « Ce qui
+ * presse » qui le redisait en tête de page est parti le 30/09/2026.
  *
  * ⚠️ `multiple`, DONC CE NE SONT PAS DES ONGLETS. Un accordéon qui referme le
  * voisin à chaque ouverture est un onglet qui s'ignore, et l'utilisateur a
  * refusé les onglets empilés. Ici deux sections se lisent côte à côte, et ce
  * qu'on a ouvert reste ouvert.
  *
- * ⚠️ LA DÉCONNEXION ET LE CHANGEMENT D'ÉTABLISSEMENT SONT SORTIS DES SECTIONS.
- * Ils vivent dans l'en-tête d'identité, visibles sans défiler : voir
- * `en-tete.tsx` pour ce que chacun coûtait avant.
+ * ⚠️ LA DÉCONNEXION ET LE CHANGEMENT D'ÉTABLISSEMENT SONT DES RANGÉES. Ils
+ * étaient des boutons de l'en-tête, et la sortie y était le geste le plus
+ * visible de la page : voir `en-tete.tsx`. La déconnexion est la dernière
+ * rangée, comme dans les Réglages d'iOS et chez Revolut Business.
  *
  * ⚠️ CHAQUE SECTION ATTEND SA PROPRE LECTURE. Attendre que la facturation,
  * l'équipe, l'inventaire et le carnet aient tous répondu pour peindre la page
@@ -131,33 +133,32 @@ export interface CompteAffiche {
 }
 
 /**
- * Les ancres de défilement, une par section : voir `ouvrirEtRejoindre`.
+ * LA VALEUR COURTE D'UNE URGENCE, quand elle tient sur une rangée.
  *
- * Décrit par sa forme plutôt que par le type du `useRef` : celui de React a
- * changé de nom deux fois, et ce composant n'a besoin que du `current`.
+ * « 1 invitation en attente. » dit mieux que « 3 personnes » ce qui attend le
+ * gérant sur l'équipe ; « Votre identité de créancier est incomplète. » ne tient
+ * pas, et la valeur du résumé (« À compléter ») le dit déjà. Vingt-six signes :
+ * ce qui tient à droite d'un titre court à 393 px.
  */
-interface Ancres {
-	readonly current: Map<SectionCompte, HTMLDivElement | null>;
+function valeurUrgente(fait: string): string | null {
+	const court = fait.replace(/\.$/, '');
+	return court.length <= 26 ? court : null;
 }
 
 export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 	/**
-	 * ⚠️ TOUT PART REPLIÉ, ET C'EST LA DÉCISION. Ouvrir d'office ce qui presse
-	 * repousserait les six autres sections hors de l'écran au moment précis où
-	 * la page est censée se lire d'un coup d'œil. Le bandeau nomme ce qui presse
-	 * et le doigt y mène : un geste, pas zéro, mais rien n'est caché.
+	 * ⚠️ TOUT PART REPLIÉ, ET C'EST LA DÉCISION. Une rangée qui attend quelque
+	 * chose porte un point et une valeur qui dit quoi : un geste, pas zéro, mais
+	 * rien n'est caché.
 	 */
-	const [ouvertes, setOuvertes] = useState<readonly SectionCompte[]>([]);
+	const [ouvertes, setOuvertes] = useState<readonly string[]>([]);
 
 	/*
 	  ⚠️ L'HEURE EST LUE UNE FOIS, AU MONTAGE. Un `Date.now()` dans le corps du
 	  composant le rend non idempotent : deux rendus du même état donneraient
-	  deux nombres de jours différents pour la fin d'essai, et React ne fait pas
-	  cette hypothèse.
+	  deux nombres de jours différents pour la fin d'essai.
 	*/
 	const [maintenant] = useState(() => Date.now());
-
-	const ancres = useRef(new Map<SectionCompte, HTMLDivElement | null>());
 
 	const entete = { genre: 'onglet', titre: TITRE_ECRAN.compte } as const;
 
@@ -167,216 +168,232 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 
 	const pret = donnees.valeur;
 
-	function ouvrirEtRejoindre(cle: SectionCompte) {
-		setOuvertes((deja) => (deja.includes(cle) ? deja : [...deja, cle]));
+	/*
+	  ═══════════════════════════════════════════════════════════════════════════
+	  ⚠️ L'ENCART « CE QUI PRESSE » EST PARTI, ET IL N'EST PAS PERDU (30/09/2026)
+	  ═══════════════════════════════════════════════════════════════════════════
 
-		/*
-		  ⚠️ LE DÉFILEMENT ATTEND LE RENDU SUIVANT. Le panneau n'existe pas encore
-		  à l'instant du clic : viser la rangée avant qu'elle ait bougé ferait
-		  atterrir à côté dès que deux sections au-dessus sont ouvertes.
+	  Il ouvrait la page sur trois rangées — « Votre identité de créancier est
+	  incomplète », « 1 invitation en attente », « 1 adresse non vérifiée » — qui
+	  menaient chacune à une section dont la rangée, vingt pixels plus bas,
+	  disait la même chose. Deux chemins pour chaque urgence, et trois cibles de
+	  plus en tête d'un écran de réglages.
 
-		  ⚠️ ET IL NE GLISSE PAS SI ON NE LE VEUT PAS. `behavior: 'smooth'` ignore
-		  `prefers-reduced-motion`, que le reste du produit respecte partout.
-		*/
-		requestAnimationFrame(() => {
-			const doux = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-			ancres.current.get(cle)?.scrollIntoView({
-				block: 'start',
-				behavior: doux ? 'smooth' : 'auto'
-			});
-		});
+	  Le calcul reste (`ceQuiPresse`, un seul endroit), et il se lit sur la
+	  RANGÉE : un point, la valeur qui dit quoi, et dans le panneau le fait avec
+	  sa conséquence. C'est ce que fait iOS sur ses Réglages — une pastille sur
+	  la rangée, jamais un encart qui la redit.
+	*/
+	const presse = ceQuiPresse({
+		identite: pret.identite,
+		abonnement: pret.abonnement,
+		equipe: pret.equipe,
+		maintenant
+	});
+
+	/** Ce qu'une rangée affiche : sa valeur, sa glose, et son point s'il le faut. */
+	function rangee(
+		cle: SectionCompte,
+		resume: ResumeDeSection
+	): { valeur: string; glose?: string; attention: boolean } {
+		const siennes = presse.urgences.filter((urgence) => urgence.cle === cle);
+		const premiere = siennes[0];
+		if (premiere === undefined) {
+			return {
+				valeur: resume.valeur,
+				...(resume.legende === undefined ? {} : { glose: resume.legende }),
+				attention: false
+			};
+		}
+		return {
+			valeur: valeurUrgente(premiere.fait) ?? resume.valeur,
+			glose: siennes.map((urgence) => `${urgence.fait} ${urgence.consequence}`).join(' '),
+			attention: true
+		};
 	}
+
+	const plusieurs = pret.etablissements.length > 1;
 
 	return (
 		<PageEcran entete={entete}>
-			<EnTeteDuCompte
-				identite={pret.identite}
-				logoUrl={pret.etablissement?.logo.url ?? null}
-				etablissements={pret.etablissements}
-				courantId={pret.courantId}
-				onBasculer={pret.onBasculer}
-				onSeDeconnecter={pret.onSeDeconnecter}
-			/>
+			<EnTeteDuCompte identite={pret.identite} logoUrl={pret.etablissement?.logo.url ?? null} />
 
-			<BandeauCeQuiPresse
-				presse={ceQuiPresse({
-					identite: pret.identite,
-					abonnement: pret.abonnement,
-					equipe: pret.equipe,
-					maintenant
-				})}
-				onOuvrir={ouvrirEtRejoindre}
-			/>
+			<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={setOuvertes}>
+				{/*
+				  ═════════════════════════════════════════════════════════════════
+				  DEUX CARTES DE RANGÉES, ET PLUS DIX CARTES
+				  ═════════════════════════════════════════════════════════════════
 
-			<SectionsDepliables
-				ouvertes={ouvertes}
-				onOuvertesChange={(liste) =>
-					setOuvertes(
-						// Le kit rend des chaînes libres ; seules celles que cet écran
-						// déclare comptent. Une clé inconnue viendrait d'ailleurs.
-						liste.filter((cle): cle is SectionCompte =>
-							(SECTIONS_COMPTE as readonly string[]).includes(cle)
-						)
-					)
-				}
-			>
-				<Ancre cle="profil" ancres={ancres}>
-					<SectionDepliable
-						cle="profil"
-						icone={<UserIcon />}
-						titre="Votre profil"
-						{...resumeProfil(pret.profil)}
-					>
-						<SectionProfil {...pret.profil} />
-					</SectionDepliable>
-				</Ancre>
+				  Chaque section était sa propre carte, avec une phrase sous son titre
+				  (« Ce qui vous représente dans l'application. »). Dix cartes et dix
+				  phrases pour dix réglages qu'on ouvre deux fois par an. Ce sont
+				  maintenant des rangées groupées, comme les Réglages d'iOS, le profil
+				  de bunq ou celui de Revolut Business : le titre à gauche, la valeur à
+				  droite, et la phrase descendue dans le panneau.
 
-				<Ancre cle="etablissement" ancres={ancres}>
-					<SectionDepliable
+				  La première carte dit QUI vous êtes pour vos clients et ce qui fait
+				  tourner le compte ; la seconde, ce qui vous appartient à vous.
+				*/}
+				<ListeDeRangees>
+					<RangeeDepliable
 						cle="etablissement"
 						icone={<Building2Icon />}
-						titre="Votre établissement"
-						{...resumeEtablissement(pret.identite)}
+						titre="Établissement"
+						{...rangee('etablissement', resumeEtablissement(pret.identite))}
 					>
 						<ContenuEtablissement etablissement={pret.etablissement} creancier={pret.creancier} />
-					</SectionDepliable>
-				</Ancre>
+					</RangeeDepliable>
 
-				{/*
-				  ⚠️ JUSTE APRÈS L'ÉTABLISSEMENT, PARCE QU'ELLES LUI APPARTIENNENT. Ce
-				  sont les conditions générales du créancier qui disent ce que
-				  remboursent les paiements reçus : la règle est de la même nature que
-				  son adresse ou son IBAN, et ne se range pas avec les connexions.
-				*/}
-				<Ancre cle="regles" ancres={ancres}>
-					<SectionDepliable
+					{/*
+					  LA BASCULE D'ÉTABLISSEMENT, SEULEMENT S'IL Y EN A PLUSIEURS. Elle
+					  était un bouton dans l'en-tête ; un seul établissement n'a rien à
+					  changer, et une rangée qui ne mène qu'à lui serait un bouton mort.
+					*/}
+					{plusieurs ? (
+						<RangeeDepliable
+							cle="etablissements"
+							icone={<ArrowLeftRightIcon />}
+							titre="Changer d’établissement"
+							valeur={`${pret.etablissements.length}`}
+						>
+							<ListeAnalyses>
+								{pret.etablissements.map((etablissement) => (
+									<LigneBouton
+										key={etablissement.id}
+										genre="contenu"
+										titre={etablissement.nom}
+										icone={
+											etablissement.id === pret.courantId ? (
+												<CheckIcon className="size-5" />
+											) : (
+												<span className="size-5" />
+											)
+										}
+										onClick={() => {
+											setOuvertes((deja) => deja.filter((cle) => cle !== 'etablissements'));
+											pret.onBasculer(etablissement.id);
+										}}
+									/>
+								))}
+							</ListeAnalyses>
+						</RangeeDepliable>
+					) : null}
+
+					{/*
+					  ⚠️ JUSTE APRÈS L'ÉTABLISSEMENT, PARCE QU'ELLES LUI APPARTIENNENT.
+					  Ce sont les conditions générales du créancier qui disent ce que
+					  remboursent les paiements reçus.
+					*/}
+					<RangeeDepliable
 						cle="regles"
 						icone={<SlidersHorizontalIcon />}
-						titre="Vos règles de calcul"
-						{...resumeRegles(pret.regles)}
+						titre="Règles de calcul"
+						{...rangee('regles', resumeRegles(pret.regles))}
 					>
 						<SectionRegles {...pret.regles} />
-					</SectionDepliable>
-				</Ancre>
+					</RangeeDepliable>
 
-				<Ancre cle="connexions" ancres={ancres}>
-					<SectionDepliable
+					<RangeeDepliable
 						cle="connexions"
 						icone={<PlugIcon />}
 						titre="Connexions"
-						{...resumeConnexions(pret.connexions.statut)}
+						{...rangee('connexions', resumeConnexions(pret.connexions.statut))}
 					>
 						{pret.connexions.contenu}
-					</SectionDepliable>
-				</Ancre>
+					</RangeeDepliable>
 
-				<Ancre cle="facturation" ancres={ancres}>
-					<SectionDepliable
+					<RangeeDepliable
 						cle="facturation"
 						icone={<CreditCardIcon />}
-						titre="Facturation"
-						{...resumeFacturation(pret.abonnement, maintenant)}
+						titre="Abonnement"
+						{...rangee('facturation', resumeFacturation(pret.abonnement, maintenant))}
 					>
 						<AvecLaLecture lecture={pret.abonnement}>
 							{(abonnement) => (
 								<SectionFacturation abonnement={abonnement} maintenant={maintenant} />
 							)}
 						</AvecLaLecture>
-					</SectionDepliable>
-				</Ancre>
+					</RangeeDepliable>
 
-				<Ancre cle="equipe" ancres={ancres}>
-					<SectionDepliable
+					<RangeeDepliable
 						cle="equipe"
 						icone={<UsersIcon />}
 						titre="Équipe"
-						{...resumeEquipe(pret.equipe)}
+						{...rangee('equipe', resumeEquipe(pret.equipe))}
 					>
 						<AvecLaLecture lecture={pret.equipe}>
 							{(equipe) => <SectionEquipe {...equipe} />}
 						</AvecLaLecture>
-					</SectionDepliable>
-				</Ancre>
+					</RangeeDepliable>
+				</ListeDeRangees>
 
-				<Ancre cle="donnees" ancres={ancres}>
-					<SectionDepliable
-						cle="donnees"
-						icone={<ShieldIcon />}
-						titre="Vos données"
-						{...resumeDonnees(pret.donnees)}
-					>
-						<AvecLaLecture lecture={pret.donnees}>
-							{(vos) => <SectionDonnees {...vos} />}
-						</AvecLaLecture>
-					</SectionDepliable>
-				</Ancre>
-
-				<Ancre cle="carnet" ancres={ancres}>
-					<SectionDepliable
+				<ListeDeRangees>
+					<RangeeDepliable
 						cle="carnet"
 						icone={<ContactIcon />}
 						titre="Votre carnet"
-						{...resumeCarnet(pret.intervenants)}
+						{...rangee('carnet', resumeCarnet(pret.intervenants))}
 					>
 						<AvecLaLecture lecture={pret.intervenants}>
 							{(carnet) => <SectionIntervenants {...carnet} />}
 						</AvecLaLecture>
-					</SectionDepliable>
-				</Ancre>
+					</RangeeDepliable>
 
-				<Ancre cle="mesures" ancres={ancres}>
-					<SectionDepliable
-						cle="mesures"
-						icone={<ListChecksIcon />}
-						titre="Ce que la file propose"
-						{...resumeMesures(pret.mesures)}
+					{/*
+					  ⚠️ « CE QUE LA FILE PROPOSE » EST ENTRÉ ICI. C'était une rangée à
+					  elle, pour un instrument qu'on ouvre pour l'admirer (D13) : il
+					  mesure ce que la surveillance a proposé, jour par jour — une donnée
+					  du compte, rangée avec les autres.
+					*/}
+					<RangeeDepliable
+						cle="donnees"
+						icone={<ShieldIcon />}
+						titre="Vos données"
+						{...rangee('donnees', resumeDonnees(pret.donnees))}
 					>
+						<AvecLaLecture lecture={pret.donnees}>
+							{(vos) => <SectionDonnees {...vos} />}
+						</AvecLaLecture>
+						<SectionTitle>Ce que la file propose</SectionTitle>
 						<AvecLaLecture lecture={pret.mesures}>
 							{(mesures) => <SectionMesures {...mesures} />}
 						</AvecLaLecture>
-					</SectionDepliable>
-				</Ancre>
+					</RangeeDepliable>
 
-				<Ancre cle="affichage" ancres={ancres}>
-					<SectionDepliable
-						cle="affichage"
-						icone={<SunMoonIcon />}
-						titre="Affichage"
-						{...resumeAffichage(pret.theme)}
+					{/*
+					  ⚠️ L'AFFICHAGE EST ENTRÉ DANS LE PROFIL. Deux réglages de la
+					  personne — son visage et son thème —, deux rangées de moins à
+					  parcourir pour qui cherche autre chose.
+					*/}
+					<RangeeDepliable
+						cle="profil"
+						icone={<UserIcon />}
+						titre="Votre profil"
+						{...rangee('profil', resumeProfil(pret.profil))}
 					>
+						<SectionProfil {...pret.profil} />
+						<SectionTitle>Affichage</SectionTitle>
 						<ContenuAffichage theme={pret.theme} onChoisirTheme={pret.onChoisirTheme} />
-					</SectionDepliable>
-				</Ancre>
+					</RangeeDepliable>
+				</ListeDeRangees>
+
+				{/*
+				  ⚠️ LA DÉCONNEXION EST LA DERNIÈRE RANGÉE, seule dans sa carte, comme
+				  dans les Réglages d'iOS et chez Revolut Business. Elle était un bouton
+				  de l'en-tête — le geste le plus visible de la page, mesuré à 375 px.
+				  En bas d'une page de deux cartes, on l'atteint sans la chercher, et on
+				  ne l'appuie plus par erreur en visant autre chose.
+				*/}
+				<ListeAnalyses>
+					<LigneBouton
+						genre="contenu"
+						icone={<LogOutIcon className="size-5" />}
+						titre="Se déconnecter"
+						onClick={pret.onSeDeconnecter}
+					/>
+				</ListeAnalyses>
 			</SectionsDepliables>
 		</PageEcran>
-	);
-}
-
-/**
- * L'ANCRE D'UNE SECTION.
- *
- * ⚠️ UN `<div>` ENTRE LA RACINE ET L'ARTICLE NE CASSE RIEN : `AccordionRoot` ne
- * rend aucun DOM et passe son état par contexte, pas par ses enfants directs.
- * C'est ce qui permet de viser une rangée sans toucher à `SectionDepliable`,
- * qui sert aussi la page d'une créance.
- */
-function Ancre({
-	cle,
-	ancres,
-	children
-}: {
-	readonly cle: SectionCompte;
-	readonly ancres: Ancres;
-	readonly children: ReactNode;
-}) {
-	return (
-		<div
-			ref={(noeud) => {
-				ancres.current.set(cle, noeud);
-			}}
-		>
-			{children}
-		</div>
 	);
 }
 
