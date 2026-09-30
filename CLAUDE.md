@@ -72,6 +72,17 @@ les chantiers A à F, commandés par le fondateur le jour même. Chaque lot y no
 qu'il supprime et ce qu'il change pour le dirigeant : la règle n'est pas levée, elle est
 renseignée. F, B, C, D et E sont livrés ; A attend trois comptes chez des prestataires.
 
+**La page dossier a été refondue le 30/09/2026**
+(`docs/superpowers/specs/2026-09-30-page-dossier-refonte.md`). Mesuré, sections repliées :
+6 479 px → 2 335 px à 375 px, 845 → 344 mots, 27 → 17 points de décision. La frise est devenue un
+rail vertical où chaque bloc pend à l'étape à laquelle il appartient ; les neuf sections repliables
+sont devenues six rangées qui portent leur valeur ; ce qui bloque MONTE en tête au lieu de « ne pas
+se replier » au bas d'une colonne. **Deux règles y sont désormais exécutables**
+(`src/screens/__tests__/page-dossier.test.ts`) : un titre de rangée est un NOM d'au plus cinq mots,
+jamais une proposition relative, et il ne porte AUCUNE glose quand il est fermé — la glose descend
+dans le panneau. Le test tient aussi la ligne rouge n° 3 sous sa forme nouvelle : **le geste mis en
+avant ne nomme jamais une voie de droit.**
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.
