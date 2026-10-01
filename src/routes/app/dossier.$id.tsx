@@ -18,7 +18,7 @@ import {
 	type FicheASaisir
 } from '../../ui';
 import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
-import { useProfessionnelsProposes } from '../../app/use-professionnels';
+import { useDirigeantsDuClient, useProfessionnelsProposes } from '../../app/use-professionnels';
 import { modelesProposables, type ChoixCourrierAffiche, type EnvoiAffiche } from '../../ui';
 
 export const Route = createFileRoute('/app/dossier/$id')({
@@ -163,6 +163,8 @@ function PageCreance() {
 	);
 	// Les professionnels près du client : la feuille « Qui fait l'acte » les propose.
 	const professionnels = useProfessionnelsProposes(creance?.debiteurId, carnet);
+	// « Qui signe pour votre client », proposé d'après le registre.
+	const dirigeantsDuClient = useDirigeantsDuClient(creance?.debiteurId);
 
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -709,6 +711,7 @@ function PageCreance() {
 		},
 		courriers: {
 			professionnels,
+			dirigeantsDuClient,
 			...(profilCreancier?.delaiRelanceParDefautJours === undefined
 				? {}
 				: { delaiRelanceParDefaut: profilCreancier.delaiRelanceParDefautJours }),

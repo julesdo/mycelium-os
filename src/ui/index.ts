@@ -84,6 +84,7 @@ export {
 } from './lien-de-paiement';
 export { ConfirmationParSaisie } from './confirmation-par-saisie';
 export { AjoutDeFichiers, ZoneDepot } from './zone-depot';
+export { DirigeantsProposes, type DirigeantPropose, type EtatDirigeants } from './dirigeants';
 export { BilanImport, type DepotAffiche, type BilanDepotAffiche } from './bilan-import';
 export {
 	Tableau,

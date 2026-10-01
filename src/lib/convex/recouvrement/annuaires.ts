@@ -939,3 +939,124 @@ export const professionnelsPresDuClient = action({
 		return { client: client.denomination, lieu, commissaires, avocats };
 	}
 });
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * LES DIRIGEANTS AU REGISTRE — « QUI SIGNE », PROPOSÉ AU LIEU D'ÊTRE TAPÉ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le gérant tapait le nom et la fonction de son signataire une fois à
+ * l'installation, puis ceux du signataire de son client à chaque échéancier.
+ * Le registre des entreprises publie les dirigeants d'une société : nom,
+ * prénoms, qualité (« Président de SAS »). Ils sont PROPOSÉS, un toucher remplit
+ * les deux champs, et le gérant corrige s'il le faut — c'est lui qui sait qui
+ * signe vraiment.
+ *
+ * ⚠️ SEULES LES PERSONNES PHYSIQUES. Le registre liste aussi les commissaires
+ * aux comptes, qui sont des personnes morales et ne signent pas pour la société.
+ */
+
+/** Un dirigeant tel que la feuille le propose : « Olivier ROUX », « Président de SAS ». */
+export interface DirigeantAuRegistre {
+	readonly nom: string;
+	readonly fonction: string;
+}
+
+const vDirigeants = v.object({
+	dirigeants: v.array(v.object({ nom: v.string(), fonction: v.string() })),
+	releveeLe: v.string()
+});
+
+/** « OLIVIER JEAN » rend « Olivier » : le premier prénom, comme on signe. */
+function premierPrenom(prenoms: string): string {
+	const premier = prenoms.trim().split(/\s+/)[0] ?? '';
+	return premier
+		.toLowerCase()
+		.split('-')
+		.map((morceau) => morceau.charAt(0).toUpperCase() + morceau.slice(1))
+		.join('-');
+}
+
+/** La fiche d'une entreprise au registre, vérifiée sur son SIREN, ou `null`. */
+async function ficheAuRegistre(siren: string): Promise<Record<string, unknown> | null> {
+	const reponse = await fetch(
+		`${BASE_RECHERCHE_ENTREPRISES}?q=${encodeURIComponent(siren)}&page=1&per_page=1`
+	);
+	if (!reponse.ok) {
+		throw new ConvexError(
+			`Le registre des entreprises a répondu ${reponse.status} : les dirigeants sont inconnus, pas absents.`
+		);
+	}
+	const charge = (await reponse.json()) as { results?: unknown };
+	const premier = Array.isArray(charge.results) ? charge.results[0] : undefined;
+	if (typeof premier !== 'object' || premier === null) return null;
+	const fiche = premier as Record<string, unknown>;
+	return fiche.siren === siren ? fiche : null;
+}
+
+async function dirigeantsDuSiren(siren: string): Promise<DirigeantAuRegistre[]> {
+	const fiche = await ficheAuRegistre(siren);
+	const bruts = fiche !== null && Array.isArray(fiche.dirigeants) ? fiche.dirigeants : [];
+	const dirigeants: DirigeantAuRegistre[] = [];
+	for (const brut of bruts) {
+		if (typeof brut !== 'object' || brut === null) continue;
+		const d = brut as {
+			nom?: unknown;
+			prenoms?: unknown;
+			qualite?: unknown;
+			type_dirigeant?: unknown;
+		};
+		if (d.type_dirigeant !== 'personne physique') continue;
+		const nom = texte(d.nom);
+		if (nom === undefined) continue;
+		const prenom = texte(d.prenoms) === undefined ? '' : premierPrenom(texte(d.prenoms)!);
+		dirigeants.push({
+			nom: `${prenom} ${nom.toUpperCase()}`.trim(),
+			fonction: texte(d.qualite) ?? ''
+		});
+	}
+	return dirigeants;
+}
+
+/** Les dirigeants d'un SIREN — celui de l'établissement, que le gérant a déjà renseigné. */
+export const dirigeantsAuRegistre = action({
+	args: { siren: v.string() },
+	returns: vDirigeants,
+	// ⚠️ ANNOTATION DE RETOUR OBLIGATOIRE : l'action appelle son propre module.
+	handler: async (
+		ctx,
+		{ siren }
+	): Promise<{ dirigeants: DirigeantAuRegistre[]; releveeLe: string }> => {
+		await ctx.runQuery(api.recouvrement.annuaires.sessionRequise, {});
+		return {
+			dirigeants: await dirigeantsDuSiren(siren.trim()),
+			releveeLe: new Date().toISOString().slice(0, 10)
+		};
+	}
+});
+
+/** Les dirigeants du client d'un dossier, d'après le SIREN de sa fiche. */
+export const dirigeantsDuClient = action({
+	args: { debiteurId: v.id('debiteurs') },
+	returns: vDirigeants,
+	handler: async (
+		ctx,
+		{ debiteurId }
+	): Promise<{ dirigeants: DirigeantAuRegistre[]; releveeLe: string }> => {
+		const client = await ctx.runQuery(api.recouvrement.annuaires.lieuConnuDuClient, {
+			debiteurId
+		});
+		if (client === null) {
+			throw new ConvexError('Ce client n’appartient pas à votre établissement.');
+		}
+		if (client.siren === null) {
+			throw new ConvexError(
+				`Le SIREN de ${client.denomination} n’est pas connu : renseigné sur sa fiche, il donnera ses dirigeants.`
+			);
+		}
+		return {
+			dirigeants: await dirigeantsDuSiren(client.siren),
+			releveeLe: new Date().toISOString().slice(0, 10)
+		};
+	}
+});

@@ -718,7 +718,16 @@ function compteDe(
 					villeGreffeRcs: 'Bordeaux',
 					iban: ''
 				},
-				onEnregistrer: () => Promise.resolve()
+				onEnregistrer: () => Promise.resolve(),
+				// Les dirigeants tels que le registre les rend, déjà lus : c'est l'état qu'on vient regarder.
+				dirigeants: {
+					etat: {
+						phase: 'TROUVE',
+						dirigeants: [{ nom: 'Claire MARTIN', fonction: 'Gérant' }],
+						releveeLe: '2026-10-01'
+					},
+					onDemander: () => undefined
+				}
 			}
 		},
 		abonnement,

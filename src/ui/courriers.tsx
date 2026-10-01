@@ -4,6 +4,7 @@ import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
 import { ChoixIntervenant, type ProfessionnelsProposes } from './choix-intervenant';
+import { DirigeantsProposes, type EtatDirigeants } from './dirigeants';
 import { LigneBouton, ListeAnalyses } from './navigation';
 
 /**
@@ -143,6 +144,14 @@ export interface CourriersDuDossier {
 	 * que « Qui fait l'acte », au lieu d'exiger qu'il soit d'abord au carnet.
 	 */
 	readonly professionnels: ProfessionnelsProposes;
+	/**
+	 * Les dirigeants du client au registre, pour « qui signe pour votre client »
+	 * d'un échéancier (01/10/2026) ; `null` quand son SIREN n'est pas connu.
+	 */
+	readonly dirigeantsDuClient: {
+		readonly etat: EtatDirigeants;
+		readonly onDemander: () => void;
+	} | null;
 	/** Le texte de l'annonce d'ouverture, mot pour mot, pour y lire la personne nommée. */
 	readonly citationAnnonce: string | null;
 	/** L'aperçu des choix en cours : `undefined` en calcul, `null` sans choix. */
@@ -386,12 +395,14 @@ function FormulaireChoix({
 	onChange,
 	intervenants,
 	professionnels,
+	dirigeantsDuClient,
 	citationAnnonce
 }: {
 	choix: ChoixCourrierAffiche;
 	onChange: (c: ChoixCourrierAffiche) => void;
 	intervenants: readonly IntervenantProposable[];
 	professionnels: ProfessionnelsProposes;
+	dirigeantsDuClient: CourriersDuDossier['dirigeantsDuClient'];
 	citationAnnonce: string | null;
 }) {
 	switch (choix.modele) {
@@ -502,6 +513,19 @@ function FormulaireChoix({
 							}
 						/>
 					</Champ>
+					{dirigeantsDuClient === null ? null : (
+						<DirigeantsProposes
+							etat={dirigeantsDuClient.etat}
+							onDemander={dirigeantsDuClient.onDemander}
+							onChoisir={(dirigeant) =>
+								onChange({
+									...choix,
+									debiteurSignataireNom: dirigeant.nom,
+									debiteurSignataireQualite: dirigeant.fonction
+								})
+							}
+						/>
+					)}
 					<Champ etiquette="Qui signe pour votre client (nom et prénom)">
 						<Input
 							size="lg"
@@ -973,6 +997,7 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 										onChange={choisir}
 										intervenants={courriers.intervenants}
 										professionnels={courriers.professionnels}
+										dirigeantsDuClient={courriers.dirigeantsDuClient}
 										citationAnnonce={courriers.citationAnnonce}
 									/>
 									<Apercu

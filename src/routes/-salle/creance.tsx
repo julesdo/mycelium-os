@@ -719,6 +719,7 @@ function creanceDemo({
 		},
 		courriers: {
 			professionnels: PROFESSIONNELS_DEMO,
+			dirigeantsDuClient: { etat: { phase: 'REPOS' }, onDemander: () => undefined },
 			modeles: modelesProposables(SANTE_DEBITEUR_DEMO, journal !== null),
 			envois: COURRIER_DEMO.ok
 				? [

@@ -1,7 +1,13 @@
 import { useState, type ComponentProps } from 'react';
 import { Button, Input, Segmented, SegmentedButton, Surface } from '@cladd-ui/react';
 import { CheckIcon, SearchIcon } from 'lucide-react';
-import { BoutonPrincipal, Champ, ListeCandidatsRegistre } from '../../ui';
+import {
+	BoutonPrincipal,
+	Champ,
+	DirigeantsProposes,
+	ListeCandidatsRegistre,
+	type EtatDirigeants
+} from '../../ui';
 import { qualiteCommercantDeLaForme } from '../../lib/verticales/recouvrement/pays/france/commercialite';
 
 /** Les trois états d'un critère de qualification. Jamais présumé favorablement. */
@@ -417,6 +423,8 @@ export interface CreancierAffiche {
 	readonly courriers: {
 		readonly initial: InitialCourriers;
 		readonly onEnregistrer: (valeurs: InitialCourriers) => Promise<unknown>;
+		/** « Qui signe », proposé d'après le registre ; `null` sans SIREN. */
+		readonly dirigeants: DirigeantsDuFormulaire | null;
 	} | null;
 }
 
@@ -441,12 +449,20 @@ export interface InitialCourriers {
  * une contravention (R123-237), et une lettre sans signataire ne vaut rien.
  * Rien de Letikette n'y figure : ni son nom, ni son adresse, ni son e-mail.
  */
+/** Ce que le formulaire reçoit pour proposer les dirigeants au registre. */
+export interface DirigeantsDuFormulaire {
+	readonly etat: EtatDirigeants;
+	readonly onDemander: () => void;
+}
+
 export function FormulaireCourriers({
 	initial,
-	onEnregistrer
+	onEnregistrer,
+	dirigeants = null
 }: {
 	initial: InitialCourriers;
 	onEnregistrer: (valeurs: InitialCourriers) => Promise<unknown>;
+	dirigeants?: DirigeantsDuFormulaire | null;
 }) {
 	const [valeurs, setValeurs] = useState<InitialCourriers>(initial);
 	const [enCours, setEnCours] = useState(false);
@@ -485,6 +501,16 @@ export function FormulaireCourriers({
 				en tête et en bas de chacun ; rien de Letikette n’y figure.
 			</p>
 
+			{dirigeants === null ? null : (
+				<DirigeantsProposes
+					etat={dirigeants.etat}
+					onDemander={dirigeants.onDemander}
+					onChoisir={(dirigeant) => {
+						champ('signataireNom', dirigeant.nom);
+						champ('signataireQualite', dirigeant.fonction);
+					}}
+				/>
+			)}
 			<Champ etiquette="Qui signe (nom et prénom)">
 				<Input
 					size="lg"

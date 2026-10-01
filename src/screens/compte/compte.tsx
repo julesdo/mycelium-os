@@ -482,6 +482,7 @@ function ContenuEtablissement({
 						key={creancier.cle}
 						initial={creancier.courriers.initial}
 						onEnregistrer={creancier.courriers.onEnregistrer}
+						dirigeants={creancier.courriers.dirigeants}
 					/>
 				</>
 			)}

@@ -10,6 +10,7 @@ import { messageDeRefus, televerser } from '../../app/televerser';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import type {
 	AvocatAffiche,
+	EtatDirigeants,
 	EtatRechercheAvocat,
 	EtatRechercheCommissaire,
 	EtudeAffichee,
@@ -117,6 +118,9 @@ function PageCompte() {
 	const apercu = useQuery(api.rgpd.apercuDeMesDonnees, {});
 	const compte = useQuery(api.auth.getCurrentUser, {});
 	const exporter = useAction(api.rgpd.exporterMesDonnees);
+	// « Qui signe », proposé d'après le registre (01/10/2026).
+	const lireDirigeants = useAction(api.recouvrement.annuaires.dirigeantsAuRegistre);
+	const [etatDirigeants, setEtatDirigeants] = useState<EtatDirigeants>({ phase: 'REPOS' });
 	const supprimerLeCompte = useMutation(api.rgpd.supprimerMonCompte);
 	const supprimerLEtablissement = useMutation(api.rgpd.supprimerEtablissement);
 	const [exportEnCours, setExportEnCours] = useState(false);
@@ -648,7 +652,32 @@ function PageCompte() {
 								villeGreffeRcs: profil.villeGreffeRcs ?? '',
 								iban: profil.iban ?? ''
 							},
-							onEnregistrer: (valeurs) => enregistrerCourriers({ ...valeurs })
+							onEnregistrer: (valeurs) => enregistrerCourriers({ ...valeurs }),
+							dirigeants:
+								profil.siren === undefined
+									? null
+									: {
+											etat: etatDirigeants,
+											onDemander: () => {
+												const siren = profil.siren;
+												if (siren === undefined) return;
+												setEtatDirigeants({ phase: 'EN_COURS' });
+												lireDirigeants({ siren })
+													.then(({ dirigeants, releveeLe }) =>
+														setEtatDirigeants({ phase: 'TROUVE', dirigeants, releveeLe })
+													)
+													.catch((e: unknown) => {
+														const convexe = e as { data?: unknown };
+														setEtatDirigeants({
+															phase: 'ECHEC',
+															message:
+																typeof convexe.data === 'string'
+																	? convexe.data
+																	: 'Le registre des entreprises n’a pas répondu.'
+														});
+													});
+											}
+										}
 						}
 		},
 		abonnement:
