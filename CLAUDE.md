@@ -143,6 +143,16 @@ quatre parties (D0) reste entier, à l'endroit où le produit dit non : « Si l'
 faux » et « Ce décompte ne se calcule pas ». Le détail par facture (`LignesDuDecompte`), les
 valeurs de loi et le dernier décompte arrêté sont des rangées. 2 835 → 1 412 px, 469 → 168 mots.
 
+**Et la page où le client paie (`/p/<jeton>`), sur Square, Stripe, OKX et Airwallex**
+(01/10/2026). Les initiales et le nom du créancier centrés, le reste à régler en grand avec sa
+date d'arrêté, puis les coordonnées du virement dans UNE carte — une rangée chacune, la copie au
+bout (`LigneCopiable`) —, le détail facture par facture plus pénalités et frais (la somme se refait
+à la main), et la main rendue au créancier par deux rangées qui sortent (`mailto:`, `tel:`,
+`LigneLien`). **Le code QR ne s'affiche qu'à partir de 640 px** : sur un téléphone, il occupait le
+haut du virement alors qu'aucune banque ne scanne l'écran qui l'affiche. Le montant se colle
+« 6373,50 », pas « 6 373,50 € ». 1 656 → 1 083 px. Au passage, `Avatar` gagne `grand` (64 px) :
+`className` ne dimensionnait que l'enveloppe, et l'en-tête du compte rendait un disque de 36 px.
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.

@@ -69,13 +69,25 @@ export function Avatar({
 	image = null,
 	/** Un point d'attention sur l'avatar — une invitation, un réglage manquant. */
 	pastille = false,
+	grand = false,
 	className
 }: {
 	nom: string | undefined | null;
 	image?: ImageAvatar | null;
 	pastille?: boolean;
+	/**
+	 * 64 px au lieu de 36 : l'identité en tête d'une page, celle du compte ou du
+	 * créancier sur sa page de paiement.
+	 *
+	 * ⚠️ `className` NE LE FAIT PAS. Il dimensionne l'enveloppe, et le disque
+	 * garde ses 36 px au milieu : relevé au navigateur le 01/10/2026, un
+	 * `size-16` posé sur l'en-tête du compte rendait un disque de 36 px dans une
+	 * boîte de 64.
+	 */
+	grand?: boolean;
 	className?: string;
 }) {
+	const disque = grand ? 'size-16 text-cladd-sm' : 'size-cladd-md text-cladd-2xs';
 	return (
 		<span className={cn('relative inline-flex shrink-0', className)}>
 			{/*
@@ -84,14 +96,19 @@ export function Avatar({
 			  au pouce sur une barre dont les autres cibles font 48.
 			*/}
 			{image === null ? (
-				<span className="verre verre-actif flex size-cladd-md items-center justify-center rounded-full text-cladd-2xs font-semibold tracking-wide transition-colors">
+				<span
+					className={cn(
+						'verre verre-actif flex items-center justify-center rounded-full font-semibold tracking-wide transition-colors',
+						disque
+					)}
+				>
 					{initiales(nom)}
 				</span>
 			) : (
 				<img
 					src={sourceImageAvatar(image)}
 					alt=""
-					className="size-cladd-md rounded-full object-cover ring-1 ring-cladd-outline"
+					className={cn('rounded-full object-cover ring-1 ring-cladd-outline', disque)}
 				/>
 			)}
 

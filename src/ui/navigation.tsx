@@ -381,6 +381,22 @@ export function LigneFixe(contenu: ContenuRangee) {
 }
 
 /**
+ * LA MÊME RANGÉE, QUI SORT DU PRODUIT — un `mailto:`, un `tel:`.
+ *
+ * ⚠️ POURQUOI PAS `LigneAnalyse` : elle passe par le routeur, qui ne connaît
+ * que les routes de l'application. La page où le client paie rend la main au
+ * créancier par sa messagerie et son téléphone (01/10/2026) : une conversation
+ * qui commence chez le client et finit chez le créancier, sans passer par ici.
+ */
+export function LigneLien({ href, ...contenu }: ContenuRangee & { href: string }) {
+	return (
+		<ListButton as="a" href={href} {...apparenceRangee(contenu)}>
+			{intituleRangee(contenu)}
+		</ListButton>
+	);
+}
+
+/**
  * L'EN-TÊTE D'UNE PAGE POUSSÉE — un retour rond, et le nom centré.
  *
  * LE RETOUR, IDENTIQUE DANS SES DEUX BRANCHES : un disque de verre de 36 px

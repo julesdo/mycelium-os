@@ -75,7 +75,7 @@ export {
 	useSectionOuverte
 } from './section-depliable';
 export { RefusEnQuatreParties } from './refus';
-export { ChampCopiable } from './champ-copiable';
+export { ChampCopiable, LigneCopiable } from './champ-copiable';
 export { QrDeVirement } from './qr-virement';
 export {
 	LiensDePaiement,
@@ -152,7 +152,14 @@ export {
 export { SuiviProcedure, type SuiviAffiche, type EcheanceAffichee } from './suivi-procedure';
 export { RailProcedure, type EtapeAffichee, type StatutEtapeAffiche } from './rail-procedure';
 export { Pieces, TYPES_PIECE, type PieceAffichee, type OptionTypePiece } from './pieces';
-export { ListeAnalyses, LigneAnalyse, LigneBouton, LigneFixe, EnteteDetail } from './navigation';
+export {
+	ListeAnalyses,
+	LigneAnalyse,
+	LigneBouton,
+	LigneFixe,
+	LigneLien,
+	EnteteDetail
+} from './navigation';
 export { Lien, useProvenance } from './lien';
 export { FeuilleVoie, type VoieAffichee } from './feuille-voie';
 export { FeuilleDeclaration, type ChoixDeclare } from './feuille-declaration';
