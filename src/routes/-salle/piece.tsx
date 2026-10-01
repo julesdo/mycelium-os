@@ -22,6 +22,7 @@ import {
 } from '../../lib/verticales/recouvrement/parametres';
 import type { DecompteAffiche, SuiviConseilAffiche } from '../../ui';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
+import { CARNET_DEMO, PROFESSIONNELS_DEMO } from './communes';
 
 /**
  * L'ARRÊT ET LA PIÈCE, DANS LA SALLE D'EXPOSITION.
@@ -234,14 +235,9 @@ function suiviDemo(remise: SuiviConseilAffiche['remise']): SuiviConseilAffiche {
 			remise?.remisLe == null ? null : ecartJours(remise.remisLe, AUJOURD_HUI_DEMO),
 		faitsDeProcedureDepuisLaRemise: 0,
 		remise,
-		carnet: [
-			{ id: 'fiche-avocat', nom: 'Cabinet Perrin', precision: 'Avocat · Paris' },
-			{
-				id: 'fiche-commissaire',
-				nom: 'Étude Lemoine',
-				precision: 'Commissaire de justice · Bobigny'
-			}
-		],
+		carnet: CARNET_DEMO,
+		professionnels: PROFESSIONNELS_DEMO,
+		onAjouterFiche: () => {},
 		onPreparer: () => {},
 		onRemettre: () => {},
 		onRetour: () => {},

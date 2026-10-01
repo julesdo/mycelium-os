@@ -1232,6 +1232,7 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 				}}
 				propositions={creance.professionnels.propositions}
 				enCours={creance.professionnels.enCours}
+				erreur={creance.professionnels.erreur}
 				onRetenirEtude={(etude) =>
 					void creance.professionnels.onRetenirEtude(etude).then((id) => {
 						if (id === null) return;

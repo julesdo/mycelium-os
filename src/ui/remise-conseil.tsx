@@ -18,6 +18,12 @@ import {
 } from './decompte';
 import { dateCourte, eurosCentimes, pluriel } from './format';
 import { ListeAnalyses, LigneBouton } from './navigation';
+import {
+	ChoixIntervenant,
+	type FicheASaisir,
+	type FicheIntervenant,
+	type ProfessionnelsProposes
+} from './choix-intervenant';
 import { aujourdHuiISO } from './horloge';
 
 /**
@@ -72,12 +78,6 @@ export interface EcartAffiche {
 	}[];
 }
 
-export interface FicheDuCarnet {
-	readonly id: string;
-	readonly nom: string;
-	readonly precision: string;
-}
-
 export interface SuiviConseilAffiche {
 	readonly fige: { readonly arreteAu: string; readonly total: bigint };
 	readonly duJour: { readonly arreteAu: string; readonly total: bigint } | null;
@@ -93,8 +93,16 @@ export interface SuiviConseilAffiche {
 	readonly joursDepuisLaRemise: number | null;
 	readonly faitsDeProcedureDepuisLaRemise: number;
 	readonly remise: RemiseAffichee | null;
-	/** Le carnet du gérant. Le produit ne propose JAMAIS de nom. */
-	readonly carnet: readonly FicheDuCarnet[];
+	/** Le carnet du gérant : ceux qu'il a déjà retenus. */
+	readonly carnet: readonly FicheIntervenant[];
+	/**
+	 * Les professionnels près du client, proposés sans rien saisir (01/10/2026).
+	 * Avant, la remise ne montrait que le carnet — « le produit ne propose JAMAIS
+	 * de nom » —, ce qui obligeait à passer par les réglages pour pouvoir nommer
+	 * un avocat. Le fondateur a demandé la liste ; rien n'y est présélectionné.
+	 */
+	readonly professionnels: ProfessionnelsProposes;
+	readonly onAjouterFiche: (fiche: FicheASaisir) => void;
 	readonly onPreparer: () => void;
 	readonly onRemettre: (remisLe: string, intervenantId: string | null, attendu: string) => void;
 	readonly onRetour: (revenuLe: string) => void;
@@ -256,6 +264,7 @@ export function RemiseAuConseil({ suivi }: { suivi: SuiviConseilAffiche }) {
 	const [attendu, setAttendu] = useState('');
 	const [motif, setMotif] = useState('');
 	const [intervenantId, setIntervenantId] = useState<string | null>(null);
+	const [choixOuvert, setChoixOuvert] = useState(false);
 	const [cloture, setCloture] = useState(false);
 
 	const remise = suivi.remise;
@@ -336,26 +345,57 @@ export function RemiseAuConseil({ suivi }: { suivi: SuiviConseilAffiche }) {
 								placeholder="Ce que vous attendez en retour (facultatif)"
 							/>
 
-							{/* ⚠️ « PERSONNE » EST UN CHOIX, PAS UN DÉFAUT MANQUANT. Un
-							    dossier se remet sans nommer qui que ce soit, et le produit
-							    ne propose JAMAIS de nom : ces fiches viennent du carnet du
-							    gérant. */}
+							{/* ⚠️ « PERSONNE » EST UN CHOIX, PAS UN DÉFAUT MANQUANT : un dossier se
+							    remet sans nommer qui que ce soit. La rangée ouvre la feuille où le
+							    carnet et les professionnels près du client sont proposés. */}
 							<ListeAnalyses>
 								<LigneBouton
-									titre="Sans nommer personne"
-									valeur={intervenantId === null ? 'choisi' : undefined}
-									onClick={() => setIntervenantId(null)}
+									titre="À qui"
+									valeur={
+										intervenantId === null
+											? 'Sans nommer personne'
+											: (suivi.carnet.find((fiche) => fiche._id === intervenantId)?.nom ??
+												'Fiche retirée')
+									}
+									onClick={() => {
+										suivi.professionnels.onDemander();
+										setChoixOuvert(true);
+									}}
 								/>
-								{suivi.carnet.map((fiche) => (
-									<LigneBouton
-										key={fiche.id}
-										titre={fiche.nom}
-										precision={fiche.precision}
-										valeur={intervenantId === fiche.id ? 'choisi' : undefined}
-										onClick={() => setIntervenantId(fiche.id)}
-									/>
-								))}
 							</ListeAnalyses>
+							<ChoixIntervenant
+								titre="À qui remettre le dossier"
+								sansPersonne={{
+									titre: 'Sans nommer personne',
+									precision: 'Le dossier se remet quand même'
+								}}
+								carnet={suivi.carnet}
+								choisi={intervenantId}
+								ouverte={choixOuvert}
+								propositions={suivi.professionnels.propositions}
+								enCours={suivi.professionnels.enCours}
+								erreur={suivi.professionnels.erreur}
+								onFermer={() => setChoixOuvert(false)}
+								onChoisir={(id) => {
+									setIntervenantId(id);
+									setChoixOuvert(false);
+								}}
+								onRetenirEtude={(etude) =>
+									void suivi.professionnels.onRetenirEtude(etude).then((id) => {
+										if (id === null) return;
+										setIntervenantId(id);
+										setChoixOuvert(false);
+									})
+								}
+								onRetenirAvocat={(avocat) =>
+									void suivi.professionnels.onRetenirAvocat(avocat).then((id) => {
+										if (id === null) return;
+										setIntervenantId(id);
+										setChoixOuvert(false);
+									})
+								}
+								onAjouter={suivi.onAjouterFiche}
+							/>
 
 							<Toolbar className="flex-wrap" size="md">
 								<Button

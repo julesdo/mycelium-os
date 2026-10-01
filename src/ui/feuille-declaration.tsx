@@ -192,6 +192,7 @@ export function FeuilleDeclaration({
 				}}
 				propositions={professionnels.propositions}
 				enCours={professionnels.enCours}
+				erreur={professionnels.erreur}
 				onRetenirEtude={(etude) =>
 					void professionnels.onRetenirEtude(etude).then((id) => {
 						if (id === null) return;

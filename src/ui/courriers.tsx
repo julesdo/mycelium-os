@@ -3,6 +3,8 @@ import { Checkbox, Chip, Input, Segmented, SegmentedButton, Surface } from '@cla
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
+import { ChoixIntervenant, type ProfessionnelsProposes } from './choix-intervenant';
+import { LigneBouton, ListeAnalyses } from './navigation';
 
 /**
  * VOS COURRIERS — préparer, relire, valider, envoyer soi-même.
@@ -135,6 +137,12 @@ export interface CourriersDuDossier {
 	readonly envois: readonly EnvoiAffiche[];
 	readonly peutValider: boolean;
 	readonly intervenants: readonly IntervenantProposable[];
+	/**
+	 * Les professionnels près du client (01/10/2026) : le destinataire d'une lettre
+	 * à l'avocat ou d'une demande au commissaire se choisit dans la même feuille
+	 * que « Qui fait l'acte », au lieu d'exiger qu'il soit d'abord au carnet.
+	 */
+	readonly professionnels: ProfessionnelsProposes;
 	/** Le texte de l'annonce d'ouverture, mot pour mot, pour y lire la personne nommée. */
 	readonly citationAnnonce: string | null;
 	/** L'aperçu des choix en cours : `undefined` en calcul, `null` sans choix. */
@@ -309,15 +317,81 @@ function Choix<T extends string | number | boolean | null>({
 	);
 }
 
+/**
+ * LE DESTINATAIRE D'UNE LETTRE À UN PROFESSIONNEL — une rangée, et la feuille des
+ * professionnels près du client.
+ *
+ * ⚠️ PLUS DE « AJOUTEZ-LE D'ABORD À VOTRE CARNET » (01/10/2026). Sans fiche au
+ * carnet, le champ restait vide et renvoyait vers un autre écran ; la feuille
+ * propose maintenant les avocats (ou les études) près du client, et un toucher
+ * les ajoute et les choisit.
+ */
+function DestinataireDuCourrier({
+	role,
+	intervenants,
+	valeur,
+	onChange,
+	professionnels
+}: {
+	role: 'AVOCAT' | 'COMMISSAIRE_DE_JUSTICE';
+	intervenants: readonly IntervenantProposable[];
+	valeur: string | null;
+	onChange: (intervenantId: string) => void;
+	professionnels: ProfessionnelsProposes;
+}) {
+	const [ouverte, setOuverte] = useState(false);
+	const siens = intervenants.filter((i) => i.role === role);
+	const choisi = siens.find((i) => i.id === valeur);
+	const retenu = (id: string | null) => {
+		if (id === null) return;
+		onChange(id);
+		setOuverte(false);
+	};
+
+	return (
+		<>
+			<ListeAnalyses>
+				<LigneBouton
+					titre={role === 'AVOCAT' ? 'Votre avocat' : 'Le commissaire de justice'}
+					valeur={choisi?.nom ?? 'Choisir'}
+					attention={choisi === undefined}
+					onClick={() => {
+						professionnels.onDemander();
+						setOuverte(true);
+					}}
+				/>
+			</ListeAnalyses>
+			<ChoixIntervenant
+				titre={role === 'AVOCAT' ? 'À quel avocat' : 'À quel commissaire de justice'}
+				role={role}
+				sansPersonne={null}
+				carnet={siens.map((i) => ({ _id: i.id, nom: i.nom, role: i.role }))}
+				choisi={valeur ?? undefined}
+				ouverte={ouverte}
+				propositions={professionnels.propositions}
+				enCours={professionnels.enCours}
+				erreur={professionnels.erreur}
+				onFermer={() => setOuverte(false)}
+				onChoisir={retenu}
+				onRetenirEtude={(etude) => void professionnels.onRetenirEtude(etude).then(retenu)}
+				onRetenirAvocat={(avocat) => void professionnels.onRetenirAvocat(avocat).then(retenu)}
+				onAjouter={(fiche) => void professionnels.onAjouter(fiche).then(retenu)}
+			/>
+		</>
+	);
+}
+
 function FormulaireChoix({
 	choix,
 	onChange,
 	intervenants,
+	professionnels,
 	citationAnnonce
 }: {
 	choix: ChoixCourrierAffiche;
 	onChange: (c: ChoixCourrierAffiche) => void;
 	intervenants: readonly IntervenantProposable[];
+	professionnels: ProfessionnelsProposes;
 	citationAnnonce: string | null;
 }) {
 	switch (choix.modele) {
@@ -553,32 +627,15 @@ function FormulaireChoix({
 		case 'TRANSMISSION_AVOCAT':
 		case 'DEMANDE_SIGNIFICATION': {
 			const role = choix.modele === 'TRANSMISSION_AVOCAT' ? 'AVOCAT' : 'COMMISSAIRE_DE_JUSTICE';
-			const proposables = intervenants.filter((i) => i.role === role);
 			return (
 				<div className="flex flex-col gap-cladd-2xs">
-					<Champ
-						etiquette={
-							choix.modele === 'TRANSMISSION_AVOCAT'
-								? 'Votre avocat'
-								: 'Le commissaire de justice (l’ancien huissier)'
-						}
-						aide={
-							proposables.length === 0
-								? 'Ajoutez-le d’abord à votre carnet, dans « Voir les autres choix ».'
-								: undefined
-						}
-					>
-						{proposables.length === 0 ? null : (
-							<Choix
-								options={proposables.map((i) => ({
-									valeur: i.id as string | null,
-									libelle: i.nom
-								}))}
-								valeur={choix.intervenantId}
-								onChange={(intervenantId) => onChange({ ...choix, intervenantId })}
-							/>
-						)}
-					</Champ>
+					<DestinataireDuCourrier
+						role={role}
+						intervenants={intervenants}
+						valeur={choix.intervenantId}
+						onChange={(intervenantId) => onChange({ ...choix, intervenantId })}
+						professionnels={professionnels}
+					/>
 					{choix.modele === 'TRANSMISSION_AVOCAT' ? (
 						<Champ etiquette="Marquer la lettre « confidentiel »">
 							<Choix
@@ -810,7 +867,11 @@ function Envoi({
 					*/}
 					{envoi.modele === 'RELANCE_OFFICIELLE' ? (
 						<label className="flex items-start gap-cladd-3xs">
-							<Checkbox as="span" checked={avecRappel} onChange={() => setAvecRappel(!avecRappel)} />
+							<Checkbox
+								as="span"
+								checked={avecRappel}
+								onChange={() => setAvecRappel(!avecRappel)}
+							/>
 							<span className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 								Me le rappeler le jour où le délai de cette lettre expire. Rien ne partira ce
 								jour-là : le dossier remontera dans votre file.
@@ -893,7 +954,11 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 											choisir(
 												actif
 													? null
-													: choixInitial(m.cle, courriers.aujourdHui, courriers.delaiRelanceParDefaut)
+													: choixInitial(
+															m.cle,
+															courriers.aujourdHui,
+															courriers.delaiRelanceParDefaut
+														)
 											)
 										}
 									>
@@ -907,6 +972,7 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 										choix={choix}
 										onChange={choisir}
 										intervenants={courriers.intervenants}
+										professionnels={courriers.professionnels}
 										citationAnnonce={courriers.citationAnnonce}
 									/>
 									<Apercu

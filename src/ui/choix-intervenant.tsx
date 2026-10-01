@@ -192,10 +192,13 @@ function Propositions({
 	onRetenirEtude,
 	onRetenirAvocat,
 	onChercherUnCommissaire,
-	onChercherUnAvocat
+	onChercherUnAvocat,
+	role
 }: {
 	propositions: PropositionsAffichees;
 	enCours: boolean;
+	/** Un seul groupe quand le geste vise une profession — le courrier à l'avocat. */
+	role?: 'AVOCAT' | 'COMMISSAIRE_DE_JUSTICE';
 	onRetenirEtude: (etude: EtudeProposee) => void;
 	onRetenirAvocat: (avocat: AvocatProposeAffiche) => void;
 	onChercherUnCommissaire?: () => void;
@@ -255,81 +258,85 @@ function Propositions({
 
 	return (
 		<>
-			<section className="flex flex-col gap-cladd-3xs">
-				<TitreDeGroupe titre="Commissaires de justice" precision={`Près de ${client} · ${ou}`} />
-				{commissaires.etat === 'ECHEC' ? (
-					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						{commissaires.message}
-					</p>
-				) : etudes.length === 0 ? (
-					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						Aucune étude relevée dans ce département.
-					</p>
-				) : (
-					<>
-						<ListeAnalyses>
-							{etudesMontrees.map((etude) => (
-								<LigneBouton
-									key={etude.siren}
-									genre="contenu"
-									titre={etude.nom}
-									precision={`${etude.commune} ${etude.codePostal}`.trim()}
-									icone={<Ajout />}
-									onClick={() => {
-										if (!enCours) onRetenirEtude(etude);
-									}}
-								/>
-							))}
-						</ListeAnalyses>
-						{etudes.length > ETUDES_MONTREES && !toutesLesEtudes ? (
-							<BoutonTexte className="self-start" onClick={() => setToutesLesEtudes(true)}>
-								Voir les {etudes.length - ETUDES_MONTREES} autres
-							</BoutonTexte>
-						) : null}
-					</>
-				)}
-			</section>
+			{role === 'AVOCAT' ? null : (
+				<section className="flex flex-col gap-cladd-3xs">
+					<TitreDeGroupe titre="Commissaires de justice" precision={`Près de ${client} · ${ou}`} />
+					{commissaires.etat === 'ECHEC' ? (
+						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							{commissaires.message}
+						</p>
+					) : etudes.length === 0 ? (
+						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							Aucune étude relevée dans ce département.
+						</p>
+					) : (
+						<>
+							<ListeAnalyses>
+								{etudesMontrees.map((etude) => (
+									<LigneBouton
+										key={etude.siren}
+										genre="contenu"
+										titre={etude.nom}
+										precision={`${etude.commune} ${etude.codePostal}`.trim()}
+										icone={<Ajout />}
+										onClick={() => {
+											if (!enCours) onRetenirEtude(etude);
+										}}
+									/>
+								))}
+							</ListeAnalyses>
+							{etudes.length > ETUDES_MONTREES && !toutesLesEtudes ? (
+								<BoutonTexte className="self-start" onClick={() => setToutesLesEtudes(true)}>
+									Voir les {etudes.length - ETUDES_MONTREES} autres
+								</BoutonTexte>
+							) : null}
+						</>
+					)}
+				</section>
+			)}
 
-			<section className="flex flex-col gap-cladd-3xs">
-				<TitreDeGroupe titre="Avocats" precision={`Près de ${client} · ${ou}`} />
-				{avocats === null || avocats.releveeLe === null ? (
-					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						L’annuaire des avocats se met à jour chaque nuit depuis le fichier national ; il n’est
-						pas encore chargé.
-					</p>
-				) : avocats.specialises.length === 0 && avocats.autres.length === 0 ? (
-					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						Aucun avocat relevé dans ce département.
-					</p>
-				) : (
-					<>
-						{avocats.specialises.length === 0 ? null : (
-							<>
-								<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
-									Ont déclaré une spécialité en droit commercial, ou en sûretés et mesures
-									d’exécution
-								</p>
-								<ListeAnalyses>{avocats.specialises.map(ligneAvocat)}</ListeAnalyses>
-							</>
-						)}
-						{avocats.autres.length === 0 ? null : (
-							<>
-								{avocats.specialises.length === 0 ? null : (
+			{role === 'COMMISSAIRE_DE_JUSTICE' ? null : (
+				<section className="flex flex-col gap-cladd-3xs">
+					<TitreDeGroupe titre="Avocats" precision={`Près de ${client} · ${ou}`} />
+					{avocats === null || avocats.releveeLe === null ? (
+						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							L’annuaire des avocats se met à jour chaque nuit depuis le fichier national ; il n’est
+							pas encore chargé.
+						</p>
+					) : avocats.specialises.length === 0 && avocats.autres.length === 0 ? (
+						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							Aucun avocat relevé dans ce département.
+						</p>
+					) : (
+						<>
+							{avocats.specialises.length === 0 ? null : (
+								<>
 									<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
-										Les autres{lieu.commune === null ? '' : `, à ${lieu.commune} d’abord`}
+										Ont déclaré une spécialité en droit commercial, ou en sûretés et mesures
+										d’exécution
 									</p>
-								)}
-								<ListeAnalyses>{avocats.autres.map(ligneAvocat)}</ListeAnalyses>
-							</>
-						)}
-						{avocats.autresEnPlus && onChercherUnAvocat !== undefined ? (
-							<BoutonTexte className="self-start" onClick={onChercherUnAvocat}>
-								Chercher parmi tous les avocats d’un barreau
-							</BoutonTexte>
-						) : null}
-					</>
-				)}
-			</section>
+									<ListeAnalyses>{avocats.specialises.map(ligneAvocat)}</ListeAnalyses>
+								</>
+							)}
+							{avocats.autres.length === 0 ? null : (
+								<>
+									{avocats.specialises.length === 0 ? null : (
+										<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
+											Les autres{lieu.commune === null ? '' : `, à ${lieu.commune} d’abord`}
+										</p>
+									)}
+									<ListeAnalyses>{avocats.autres.map(ligneAvocat)}</ListeAnalyses>
+								</>
+							)}
+							{avocats.autresEnPlus && onChercherUnAvocat !== undefined ? (
+								<BoutonTexte className="self-start" onClick={onChercherUnAvocat}>
+									Chercher parmi tous les avocats d’un barreau
+								</BoutonTexte>
+							) : null}
+						</>
+					)}
+				</section>
+			)}
 
 			{/*
 			  ⚠️ LES SOURCES, ÉCRITES. Ni l'une ni l'autre n'est le tableau d'une
@@ -379,23 +386,36 @@ export function ChoixIntervenant<I extends string>({
 	choisi,
 	ouverte,
 	titre = 'Qui fait l’acte',
+	sansPersonne = { titre: 'Moi-même', precision: 'Aucun professionnel' },
 	propositions,
 	enCours = false,
+	erreur = null,
 	onFermer,
 	onChoisir,
 	onRetenirEtude,
 	onRetenirAvocat,
 	onAjouter,
 	onChercherUnCommissaire,
-	onChercherUnAvocat
+	onChercherUnAvocat,
+	role
 }: {
 	carnet: readonly FicheIntervenant<I>[];
 	/** `null` : moi-même ; `undefined` : rien de choisi encore. */
 	choisi?: I | null;
 	ouverte: boolean;
 	titre?: string;
+	/** Le premier choix, celui qui ne nomme personne : « Moi-même » pour un acte. */
+	sansPersonne?: { readonly titre: string; readonly precision: string } | null;
+	/**
+	 * La profession que le geste vise, quand il en vise une : le carnet et les
+	 * propositions ne montrent qu'elle. Une lettre à l'avocat ne s'adresse pas
+	 * à un commissaire.
+	 */
+	role?: 'AVOCAT' | 'COMMISSAIRE_DE_JUSTICE';
 	propositions: PropositionsAffichees;
 	enCours?: boolean;
+	/** Le refus du dernier ajout au carnet : il se lit dans la feuille, là où le geste a eu lieu. */
+	erreur?: string | null;
 	onFermer: () => void;
 	onChoisir: (intervenantId: I | null) => void;
 	/** Ajoute l'étude au carnet ET la choisit. */
@@ -407,6 +427,7 @@ export function ChoixIntervenant<I extends string>({
 	onChercherUnAvocat?: () => void;
 }) {
 	const [autre, setAutre] = useState(false);
+	const siens = role === undefined ? carnet : carnet.filter((fiche) => fiche.role === role);
 
 	return (
 		<Popup
@@ -419,31 +440,41 @@ export function ChoixIntervenant<I extends string>({
 		>
 			<PopupContent>
 				<div className="flex flex-col gap-cladd-xs">
+					{erreur === null ? null : (
+						<p role="alert" className="px-1 text-cladd-xs leading-relaxed text-cladd-fg">
+							{erreur}
+						</p>
+					)}
 					{/* ⚠️ « MOI-MÊME » EN PREMIER, et pas par courtoisie : un gérant qui
 					    dépose lui-même est un cas courant, et le reléguer après les
 					    professionnels ferait lire la liste comme une incitation à en
 					    prendre un. */}
-					<ListeAnalyses>
-						<LigneBouton
-							genre="contenu"
-							titre="Moi-même"
-							precision="Aucun professionnel"
-							icone={<Coche choisie={choisi === null} />}
-							onClick={() => onChoisir(null)}
-						/>
-						{carnet.map((fiche) => (
-							<LigneBouton
-								key={fiche._id}
-								genre="contenu"
-								titre={fiche.nom}
-								precision={precisionDeLaFiche(fiche)}
-								icone={<Coche choisie={choisi === fiche._id} />}
-								onClick={() => onChoisir(fiche._id)}
-							/>
-						))}
-					</ListeAnalyses>
+					{sansPersonne === null && siens.length === 0 ? null : (
+						<ListeAnalyses>
+							{sansPersonne === null ? null : (
+								<LigneBouton
+									genre="contenu"
+									titre={sansPersonne.titre}
+									precision={sansPersonne.precision}
+									icone={<Coche choisie={choisi === null} />}
+									onClick={() => onChoisir(null)}
+								/>
+							)}
+							{siens.map((fiche) => (
+								<LigneBouton
+									key={fiche._id}
+									genre="contenu"
+									titre={fiche.nom}
+									precision={precisionDeLaFiche(fiche)}
+									icone={<Coche choisie={choisi === fiche._id} />}
+									onClick={() => onChoisir(fiche._id)}
+								/>
+							))}
+						</ListeAnalyses>
+					)}
 
 					<Propositions
+						role={role}
 						propositions={propositions}
 						enCours={enCours}
 						onRetenirEtude={onRetenirEtude}
@@ -611,5 +642,9 @@ export interface ProfessionnelsProposes {
 	readonly onRetenirEtude: (etude: EtudeProposee) => Promise<string | null>;
 	/** Ajoute l'avocat au carnet — ou le retrouve — et rend l'identifiant de sa fiche. */
 	readonly onRetenirAvocat: (avocat: AvocatProposeAffiche) => Promise<string | null>;
+	/** Ajoute une fiche saisie à la main, et rend son identifiant. */
+	readonly onAjouter: (fiche: FicheASaisir) => Promise<string | null>;
 	readonly enCours: boolean;
+	/** Le refus du dernier geste, lisible, ou `null`. */
+	readonly erreur: string | null;
 }

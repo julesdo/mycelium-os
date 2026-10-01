@@ -113,7 +113,6 @@ export {
 	RemiseAuConseil,
 	type EcartAffiche,
 	type EtatRemise,
-	type FicheDuCarnet,
 	type RemiseAffichee,
 	type SuiviConseilAffiche
 } from './remise-conseil';

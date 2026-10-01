@@ -718,6 +718,7 @@ function creanceDemo({
 			onEffacer: () => undefined
 		},
 		courriers: {
+			professionnels: PROFESSIONNELS_DEMO,
 			modeles: modelesProposables(SANTE_DEBITEUR_DEMO, journal !== null),
 			envois: COURRIER_DEMO.ok
 				? [

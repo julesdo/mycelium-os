@@ -540,5 +540,7 @@ export const PROFESSIONNELS_DEMO: ProfessionnelsProposes = {
 	onDemander: () => undefined,
 	onRetenirEtude: () => Promise.resolve(null),
 	onRetenirAvocat: () => Promise.resolve(null),
-	enCours: false
+	onAjouter: () => Promise.resolve(null),
+	enCours: false,
+	erreur: null
 };
