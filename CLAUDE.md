@@ -133,6 +133,16 @@ reste en rangées, puis « Pas entré » ligne à ligne, et la phrase qui déblo
 La rangée « Vos dépôts » d'Aujourd'hui MÈNE à cet écran au lieu d'en redire les bilans dans une
 feuille. 973 → 758 px, 96 → 78 mots.
 
+**Puis l'arrêt du décompte, sur Mercury, Chime, Coinbase et World App** (01/10/2026). Le total
+centré avec le client et la date, ses trois postes en rangées, ce qui est laissé de côté (et ses
+deux sorties de même poids), puis TROIS CASES À COCHER — ce que le logiciel ne voit pas, écrit en
+affirmations (« Aucun avoir à déduire ») au lieu de trois segments à deux choix —, et UN bouton
+qui porte le montant, toujours visible, inerte tant qu'il reste quelque chose : la ligne dessous
+dit quoi (« Reste 1 case à cocher. »). Une case vide ne franchit rien, comme avant. Le refus en
+quatre parties (D0) reste entier, à l'endroit où le produit dit non : « Si l'un de ces points est
+faux » et « Ce décompte ne se calcule pas ». Le détail par facture (`LignesDuDecompte`), les
+valeurs de loi et le dernier décompte arrêté sont des rangées. 2 835 → 1 412 px, 469 → 168 mots.
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.

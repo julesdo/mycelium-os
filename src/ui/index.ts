@@ -98,6 +98,8 @@ export { euros, eurosCentimes, partsEurosCentimes, dateCourte, pourcent, pluriel
 // ── Recouvrement ────────────────────────────────────────────────────────────
 export {
 	Decompte,
+	LignesDuDecompte,
+	conventionLisible,
 	PeriodesDInterets,
 	ReglementsImputes,
 	type ImputationAffichee,

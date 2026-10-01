@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { EcranArret, type ArretDeLaCreance } from '../../screens/arret';
 import { EcranPiece, type PieceArretee } from '../../screens/piece';
 import { depuisCentimes, enCentimes } from '../../lib/socle/montants';
 import { ecartJours } from '../../lib/verticales/recouvrement/calendrier';
 import { controlerDecompte } from '../../lib/verticales/recouvrement/controle';
+import type { ReponsesPrevol } from '../../lib/verticales/recouvrement/prevol';
 import {
 	decompterCreance,
 	type DecompteCreance,
@@ -303,18 +305,37 @@ const FORMES_PIECE: Readonly<Record<string, PieceArretee>> = {
 	)
 };
 
+/**
+ * L'ARRÊT, VIVANT. Les cases et le choix sur ce qui est laissé de côté tiennent
+ * dans un état local, comme la route les tient : sans ça, la salle montrait un
+ * bouton inerte qu'aucun geste ne pouvait réveiller, et rien ne prouvait que
+ * les trois cases plus le choix l'activent.
+ */
+function ArretDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+	const [reponses, setReponses] = useState<ReponsesPrevol>({});
+	const [assumes, setAssumes] = useState(false);
+	const forme = formeDemo(variante, arretDemo(true), FORMES_ARRET);
+	return (
+		<EcranArret
+			identifiant="demo-creance"
+			donnees={lectureDemo(etat, {
+				...forme,
+				reponses,
+				onRepondre: (cle, reponse) => setReponses((avant) => ({ ...avant, [cle]: reponse })),
+				abandonsAssumes: assumes,
+				onAssumerAbandons: setAssumes
+			})}
+		/>
+	);
+}
+
 export const ECRANS_PIECE: readonly EcranDuProduit[] = [
 	{
 		route: '/app/arret/$id',
 		libelle: 'arrêt du décompte',
 		vide: false,
 		variantes: Object.keys(FORMES_ARRET),
-		Demo: ({ etat, variante }: { etat: EtatDemo; variante?: string }) => (
-			<EcranArret
-				identifiant="demo-creance"
-				donnees={lectureDemo(etat, formeDemo(variante, arretDemo(true), FORMES_ARRET))}
-			/>
-		)
+		Demo: ArretDemo
 	},
 	{
 		route: '/app/decompte/$id',

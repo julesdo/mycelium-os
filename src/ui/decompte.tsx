@@ -265,7 +265,23 @@ export function Decompte({
 				) : null}
 			</SurfaceCut>
 
-			{decompte.lignes.map((ligne) => (
+			<LignesDuDecompte lignes={decompte.lignes} />
+		</div>
+	);
+}
+
+/**
+ * LE DÉTAIL PAR FACTURE — la carte de chaque facture, ses trois postes et ses
+ * périodes de pénalités.
+ *
+ * Sorti de `Decompte` le 01/10/2026 pour l'écran d'arrêt, qui pose le total
+ * et ses trois postes sur la page et range ce détail dans une rangée : le même
+ * rendu, à un seul endroit du code.
+ */
+export function LignesDuDecompte({ lignes }: { lignes: readonly LigneDecompteAffichee[] }) {
+	return (
+		<>
+			{lignes.map((ligne) => (
 				<Surface
 					key={ligne.reference}
 					variant="transparent"
@@ -297,8 +313,8 @@ export function Decompte({
 								</Button>
 							</CollapsibleTrigger>
 							{/* Le rembourrage vit sur un élément IMBRIQUÉ : le panneau anime
-							    sa hauteur jusqu'à zéro, et une marge verticale posée sur lui
-							    l'empêcherait de se refermer complètement. */}
+					    sa hauteur jusqu'à zéro, et une marge verticale posée sur lui
+					    l'empêcherait de se refermer complètement. */}
 							<CollapsiblePanel>
 								<div className="flex flex-col gap-cladd-3xs pt-cladd-3xs">
 									<PeriodesDInterets segments={ligne.segments} />
@@ -316,6 +332,11 @@ export function Decompte({
 					)}
 				</Surface>
 			))}
-		</div>
+		</>
 	);
+}
+
+/** La convention de calcul des pénalités, en toutes lettres. */
+export function conventionLisible(convention: DecompteAffiche['convention']): string {
+	return CONVENTION_LISIBLE[convention];
 }

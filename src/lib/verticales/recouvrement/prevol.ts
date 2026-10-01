@@ -43,10 +43,21 @@ export type ReponsesPrevol = Partial<Record<ClePrevol, ReponsePrevol>>;
 export interface QuestionPrevol {
 	readonly cle: ClePrevol;
 	readonly question: string;
-	/** Le libellé du choix qui écarte le fait. */
+	/**
+	 * L'affirmation que le gérant COCHE pour écarter le fait.
+	 *
+	 * ⚠️ UNE CASE, PLUS DEUX BOUTONS (01/10/2026). Chaque question portait un
+	 * segment à deux choix — six cibles pour trois faits. C'est désormais la
+	 * liste à cocher de Coinbase ou de World App avant un geste irréversible :
+	 * trois affirmations, et le bouton reste inerte tant qu'elles ne sont pas
+	 * toutes cochées. Une case non cochée est une question SANS RÉPONSE, qui ne
+	 * franchit rien ; c'est la règle d'origine, tenue autrement.
+	 *
+	 * Court, parce qu'il tient sur UNE rangée à 393 px.
+	 */
 	readonly ecarter: string;
-	/** Le libellé du choix qui le déclare. */
-	readonly declarer: string;
+	/** Pourquoi la case compte, en une ligne : la sous-ligne de la rangée. */
+	readonly pourquoi: string;
 	/** Première partie du refus : ce que le produit fait tout de suite. */
 	readonly peutFaire: string;
 	/** Deuxième partie : ce qui manque, au constat. */
@@ -64,7 +75,7 @@ export const QUESTIONS_PREVOL: readonly QuestionPrevol[] = [
 		cle: 'AVOIR_NON_RAPPROCHE',
 		question: 'Un avoir émis à ce client, que ce décompte ne connaît pas ?',
 		ecarter: 'Aucun avoir à déduire',
-		declarer: 'Il en existe un',
+		pourquoi: 'Un avoir que le logiciel n’a pas lu gonflerait le total.',
 		peutFaire:
 			'Le décompte se calcule et se lit en entier : chaque facture, chaque période de ' +
 			'pénalités, chaque centime se refait à la main. Il ne se fige pas tant qu’un avoir ' +
@@ -81,8 +92,8 @@ export const QUESTIONS_PREVOL: readonly QuestionPrevol[] = [
 	{
 		cle: 'REGLEMENT_NON_IMPORTE',
 		question: 'Un règlement partiel reçu et non importé ?',
-		ecarter: 'Tout ce qui est reçu est importé',
-		declarer: 'Un règlement manque',
+		ecarter: 'Tous les règlements importés',
+		pourquoi: 'Un règlement absent ferait courir des pénalités en trop.',
 		peutFaire:
 			'Le décompte se calcule sur les règlements connus, et montre période par période sur ' +
 			'quel principal les pénalités de retard courent.',
@@ -100,7 +111,7 @@ export const QUESTIONS_PREVOL: readonly QuestionPrevol[] = [
 		cle: 'CONTESTATION_HORS_LOGICIEL',
 		question: 'Une contestation reçue hors du logiciel ?',
 		ecarter: 'Aucune contestation reçue',
-		declarer: 'Une contestation est arrivée',
+		pourquoi: 'Par courrier, e-mail ou téléphone : le logiciel ne voit que ce qu’on lui déclare.',
 		peutFaire:
 			'Le décompte se calcule et se lit en entier. Il constate un compte arrêté à une date, ' +
 			'et rien de plus.',
