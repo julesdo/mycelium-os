@@ -153,6 +153,20 @@ haut du virement alors qu'aucune banque ne scanne l'écran qui l'affiche. Le mon
 « 6373,50 », pas « 6 373,50 € ». 1 656 → 1 083 px. Au passage, `Avatar` gagne `grand` (64 px) :
 `className` ne dimensionnait que l'enveloppe, et l'en-tête du compte rendait un disque de 36 px.
 
+**Puis la chasse aux manipulations administratives** (01/10/2026, le fondateur : « pourquoi on doit
+enregistrer un avocat ou un commissaire dans les paramètres pour ensuite le sélectionner dans le
+dossier ? […] alors qu'on a déjà toutes les infos sur l'affaire »). Une seule feuille « Qui fait
+l'acte » (`ChoixIntervenant`) sert au dossier, à la déclaration d'une voie, à la remise au conseil et
+aux courriers adressés à un professionnel : « Moi-même » et le carnet en tête, puis, **d'après le
+SIREN du client**, les études de son département (registre) et les avocats qui y exercent — ceux qui
+ont DÉCLARÉ une spécialité en droit commercial ou en sûretés et mesures d'exécution d'abord, puis
+ceux de sa commune. Un toucher ajoute au carnet et choisit (`useProfessionnelsProposes`). « Près
+de » n'est pas « compétent », et rien n'est présélectionné. **L'annuaire des avocats était vide en
+production** (un script à lancer à la main, jamais lancé) : il se nourrit désormais seul chaque nuit
+depuis data.gouv.fr (`annuaireNuit.ts`, lecture partagée dans `annuaire-avocats.ts`). Et « qui
+signe » — pour l'établissement comme pour le client d'un échéancier — se propose d'après les
+dirigeants publiés au registre (`DirigeantsProposes`).
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.
