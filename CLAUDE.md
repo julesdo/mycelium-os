@@ -122,6 +122,17 @@ rangée concernée et une valeur qui dit quoi (`RangeeDepliable.attention`). 14 
 179 → 40 mots, 1 896 → 955 px. Et dans toute rangée dépliable, le titre prend sa largeur
 (60 % au plus) et la valeur le reste — `basis-1/2` réservait la moitié à « Équipe ».
 
+**Puis les Dépôts, sur Fi, Revolut Business, YouTube et Expensify** (01/10/2026). Au doigt, UN
+bouton « Ajouter des factures » : le sélecteur d'iOS propose déjà photo, photothèque et fichiers,
+et le creux « Déposez vos fichiers ici » (un geste qu'aucun téléphone ne permet) plus le bouton
+photo doublaient ce geste. À la souris, un bandeau creux d'une ligne, cliquable en entier
+(`AjoutDeFichiers`). Puis « En cours » en tête, et les dépôts lus groupés par mois : à gauche ce
+qui s'est passé (« 2 lignes non lues » passe avant la provenance), à droite ce qui est entré, la
+date dessous. Le bilan d'un dépôt pose le nombre de factures entrées en grand (`NombreHero`), le
+reste en rangées, puis « Pas entré » ligne à ligne, et la phrase qui débloque le redépôt UNE fois.
+La rangée « Vos dépôts » d'Aujourd'hui MÈNE à cet écran au lieu d'en redire les bilans dans une
+feuille. 973 → 758 px, 96 → 78 mots.
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.

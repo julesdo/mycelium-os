@@ -1,6 +1,6 @@
-import { ListItem, Spinner } from '@cladd-ui/react';
+import { Spinner } from '@cladd-ui/react';
 import { FileUpIcon, TriangleAlertIcon } from 'lucide-react';
-import { LigneBouton } from '../../ui';
+import { LigneBouton, LigneFixe, VignetteIcone } from '../../ui';
 
 /**
  * L'ENVOI D'UN FICHIER — le seul moment du produit que le gérant PASSE À
@@ -110,9 +110,16 @@ function precisionEnvoi(envoi: EnvoiAffiche): string {
  * apparence que celles des dépôts au pixel près, cible tactile et anneau de
  * focus compris. Un `<div>` cliquable perdrait les trois.
  *
- * Les deux autres ne mènent nulle part — il n'y a rien à ouvrir tant que le
- * serveur ne connaît pas le fichier — donc `ListItem`, la rangée statique du
- * kit, montée comme le veilleur monte les siennes.
+ * ⚠️ LES DEUX AUTRES SONT DES `LigneFixe`, PLUS DES `ListItem` (01/10/2026).
+ * Elles ne mènent nulle part — il n'y a rien à ouvrir tant que le serveur ne
+ * connaît pas le fichier —, et la rangée statique du kit rendait une sous-ligne
+ * plus petite, sans vignette, à une autre hauteur que les dépôts du même groupe
+ * « En cours ». Le fichier changeait de forme en passant de l'envoi à la
+ * lecture ; il garde maintenant la même rangée, et seule sa vignette bouge.
+ *
+ * L'AVANCEMENT EN CHIFFRES, ET PAS EN BARRE : le kit ne fournit aucune barre de
+ * progression, et le pourcentage tient dans la fente que toutes les rangées
+ * utilisent pour leur valeur.
  */
 export function LigneEnvoi({
 	envoi,
@@ -126,7 +133,7 @@ export function LigneEnvoi({
 		return (
 			<LigneBouton
 				onClick={() => onReessayer(envoi.cle)}
-				icone={<TriangleAlertIcon />}
+				icone={<VignetteIcone icone={<TriangleAlertIcon />} />}
 				titre={envoi.nom}
 				precision={precisionEnvoi(envoi)}
 				valeur="Réessayer"
@@ -138,65 +145,22 @@ export function LigneEnvoi({
 	}
 
 	return (
-		<ListItem className="gap-cladd-3xs">
-			{/*
-			  ⚠️ `xs`, ET LA TAILLE EST MESURÉE, PAS DEVINÉE.
-
-			  La documentation réserve `2xs` et `xs` à ce qui vit DANS un conteneur
-			  plus dense — ce qu'est la fente d'icône d'une rangée — et son
-			  avertissement (« 8 px, illisible ») porte sur l'échelle d'origine du
-			  kit, que `tokens.css` décale pour que `md` tombe sur 48 px.
-
-			  Relevé au navigateur sur l'échelle imbriquée du produit
-			  (`--spacing-cladd-nested-*`) : `2xs` rend 12 px, `xs` 20 px, `sm`
-			  32 px. Les glyphes des rangées voisines mesurent 17 px. `2xs` faisait
-			  donc un anneau visiblement plus petit que ses voisins ; `xs` tombe à
-			  trois pixels, et un anneau creux se lit toujours plus petit qu'un
-			  glyphe de même boîte.
-			*/}
-			{envoi.etat === 'ENVOI' ? <Spinner size="xs" /> : <FileUpIcon size={18} />}
-			<span className="flex min-w-0 flex-col gap-0.5">
-				<span className="truncate">{envoi.nom}</span>
-				<span className="text-cladd-2xs leading-snug text-cladd-fg-softer">
-					{precisionEnvoi(envoi)}
-				</span>
-			</span>
-			{/*
-			  L'AVANCEMENT EN CHIFFRES, ET PAS EN BARRE.
-
-			  Le kit ne fournit aucune barre de progression, et une barre bâtie à la
-			  main ici serait exactement le composant réinventé que le projet
-			  interdit. Le pourcentage dit la même chose, se lit d'un coup d'œil, et
-			  tient dans la fente que toutes les autres rangées utilisent pour leur
-			  valeur — donc la liste garde un seul rythme.
-			*/}
-			{envoi.avancement === undefined ? null : (
-				<span className="ml-auto shrink-0 text-cladd-xs text-cladd-fg-softer tabular-nums">
-					{Math.round(envoi.avancement * 100)} %
-				</span>
-			)}
-		</ListItem>
+		<LigneFixe
+			genre="contenu"
+			/*
+			  ⚠️ `xs` POUR LE SPINNER, ET LA TAILLE EST MESURÉE. Sur l'échelle imbriquée
+			  du produit, `2xs` rend 12 px et `xs` 20 px ; les glyphes des vignettes
+			  voisines en font 16. Un anneau creux se lit toujours plus petit qu'un
+			  glyphe de même boîte : `xs` tombe juste à l'œil.
+			*/
+			icone={
+				<VignetteIcone icone={envoi.etat === 'ENVOI' ? <Spinner size="xs" /> : <FileUpIcon />} />
+			}
+			titre={envoi.nom}
+			precision={precisionEnvoi(envoi)}
+			{...(envoi.avancement === undefined
+				? {}
+				: { valeur: `${Math.round(envoi.avancement * 100)} %` })}
+		/>
 	);
-}
-
-/**
- * Ce que la zone de dépôt annonce pendant qu'elle travaille.
- *
- * ⚠️ ELLE COMPTE, elle ne dit pas « en cours ». « Envoi de 2 fichiers sur 5 »
- * se vérifie contre les rangées juste dessous ; « Envoi en cours… » ne se
- * vérifie contre rien et ne bouge jamais, ce qui est la définition d'un écran
- * dont on finit par douter.
- */
-export function libelleZone(envois: readonly EnvoiAffiche[]): string | null {
-	/**
-	 * ⚠️ ON NE COMPTE QUE CE QUI EST ENCORE EN ROUTE, jamais « le 3ᵉ sur 5 ».
-	 * Les envois réussis quittent la liste dès que le serveur connaît le dépôt,
-	 * et les échecs y restent : un rang calculé sur ce qui reste aurait reculé
-	 * quand un fichier échoue, et compté un total qui ne veut plus rien dire.
-	 * Ce qui reste à envoyer, lui, est toujours vrai.
-	 */
-	const restants = envois.filter((envoi) => envoi.etat !== 'ECHEC').length;
-	if (restants === 0) return null;
-	if (restants === 1) return 'Envoi d’un fichier…';
-	return `Envoi de ${restants} fichiers…`;
 }

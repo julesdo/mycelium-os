@@ -285,12 +285,22 @@ export function RangeeLien({
 	vers,
 	parametres,
 	titre,
-	avatar
+	avatar,
+	famille,
+	valeur
 }: {
 	readonly vers: NonNullable<LinkProps['to']>;
 	readonly parametres?: LinkProps['params'];
 	readonly titre: string;
 	readonly avatar?: ReactNode;
+	/**
+	 * La famille, comme sur les rangées qui s'ouvrent : « Vos dépôts », sur
+	 * l'écran du jour, MÈNE à son écran au lieu d'en redire le contenu dans une
+	 * feuille (01/10/2026), et garde sa vignette de papiers.
+	 */
+	readonly famille?: FamilleRangee;
+	/** Ce que la rangée porte à droite, comme ses voisines : « 4 lus ». */
+	readonly valeur?: string;
 }) {
 	return (
 		<Button
@@ -307,10 +317,15 @@ export function RangeeLien({
 			contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
 		>
 			<span className="flex min-w-0 flex-1 items-center gap-cladd-3xs text-left">
-				{avatar}
+				{avatar ?? (famille === undefined ? null : <VignetteRangee famille={famille} />)}
 				<span className="min-w-0 truncate text-cladd-xs font-semibold">{titre}</span>
 			</span>
-			<ChevronRightIcon className="size-5 shrink-0 text-cladd-fg-softer" aria-hidden />
+			<span className="flex shrink-0 items-center gap-cladd-3xs">
+				{valeur === undefined ? null : (
+					<span className="text-cladd-xs text-cladd-fg-soft tabular-nums">{valeur}</span>
+				)}
+				<ChevronRightIcon className="size-5 shrink-0 text-cladd-fg-softer" aria-hidden />
+			</span>
 		</Button>
 	);
 }

@@ -53,7 +53,7 @@ export {
 export { ChoixImage } from './choix-image';
 export { aujourdHuiISO } from './horloge';
 export { lirePourLeSujet, type PosePourUnSujet } from './etat-par-sujet';
-export { ChiffreHero } from './chiffre';
+export { ChiffreHero, NombreHero } from './chiffre';
 export { ApercuDuSuivi } from './apercu-suivi';
 export { EnTeteDeGroupe } from './en-tete-groupe';
 export { CarteListe, LigneValeur } from './carte-liste';
@@ -83,7 +83,7 @@ export {
 	type LiensDePaiementAffiches
 } from './lien-de-paiement';
 export { ConfirmationParSaisie } from './confirmation-par-saisie';
-export { ZoneDepot } from './zone-depot';
+export { AjoutDeFichiers, ZoneDepot } from './zone-depot';
 export { BilanImport, type DepotAffiche, type BilanDepotAffiche } from './bilan-import';
 export {
 	Tableau,

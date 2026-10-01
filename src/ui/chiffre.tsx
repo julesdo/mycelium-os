@@ -82,3 +82,38 @@ export function ChiffreHero({
 		</div>
 	);
 }
+
+const NOMBRE = new Intl.NumberFormat('fr-FR');
+
+/**
+ * UN NOMBRE, EN GRAND — le même geste que le montant, pour ce qui se compte.
+ *
+ * Le bilan d'un dépôt répond d'abord à une question : combien de factures sont
+ * entrées. C'est la composition d'Expensify après un import (« 20 categories
+ * have been added ») et celle du montant de nos autres écrans : ce dont on
+ * parle, le chiffre, puis ce qui le qualifie. Même corps, même centrage, pour
+ * qu'un écran n'ait jamais deux façons de poser son chiffre principal.
+ */
+export function NombreHero({
+	nombre,
+	surTitre,
+	legende,
+	className
+}: {
+	nombre: number;
+	/** Ce dont on parle : « Factures entrées ». */
+	surTitre: string;
+	/** Ce qui qualifie le chiffre : d'où il vient, quand. */
+	legende?: ReactNode;
+	className?: string;
+}) {
+	return (
+		<div className={cn('flex flex-col items-center gap-1 text-center', className)}>
+			<p className="text-cladd-xs font-medium text-cladd-fg-soft">{surTitre}</p>
+			<p className="text-letikette-hero leading-none font-extrabold tracking-tight tabular-nums">
+				{NOMBRE.format(nombre)}
+			</p>
+			{legende ? <div className="text-cladd-xs text-cladd-fg-soft">{legende}</div> : null}
+		</div>
+	);
+}

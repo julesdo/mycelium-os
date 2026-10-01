@@ -15,6 +15,7 @@ import {
 	ListeAnalyses,
 	ListeDeRangees,
 	RangeeDepliable,
+	RangeeLien,
 	dateCourte,
 	Lettrage,
 	PageEcran,
@@ -686,18 +687,19 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 
 					{/* ── LE TRAVAIL DE FOND ─────────────────────────────────────────── */}
 					<ListeDeRangees titre="Le travail de fond">
+						{/*
+						  ⚠️ ELLE MÈNE À L'ÉCRAN DES DÉPÔTS, ELLE NE LE REDIT PLUS (01/10/2026).
+						  Elle ouvrait une feuille où chaque dépôt lu reprenait sa carte de
+						  bilan : la même réponse qu'à l'écran « Vos dépôts », à deux endroits.
+						  Chaque question a sa réponse à un seul endroit.
+						*/}
 						{depotsFinis.length === 0 ? null : (
-							<RangeeDepliable
-								cle="depots"
+							<RangeeLien
+								vers="/app/import-factures"
 								famille="PAPIERS"
 								titre="Vos dépôts"
-								glose="Ce qui est entré, ce qui n’est pas entré, et pourquoi."
 								valeur={`${depotsFinis.length} lu${pluriel(depotsFinis.length)}`}
-							>
-								{depotsFinis.map((rangee) => (
-									<BilanImport key={rangee.id} depot={rangee.depot} />
-								))}
-							</RangeeDepliable>
+							/>
 						)}
 
 						{/* LE VEILLEUR NE DISPARAÎT JAMAIS : un bloc qui n'apparaît que les

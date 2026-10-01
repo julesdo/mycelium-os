@@ -1,20 +1,22 @@
 import type { ReactNode } from 'react';
-import { FileSpreadsheetIcon, FileTextIcon, UploadIcon } from 'lucide-react';
+import { FileSpreadsheetIcon, FileTextIcon } from 'lucide-react';
 import {
+	AjoutDeFichiers,
+	EmptyState,
+	EnTeteDeGroupe,
 	LigneAnalyse,
 	ListeAnalyses,
 	MaitreDetail,
 	PageEcran,
-	SectionEcran,
-	ZoneDepot,
-	dateCourte,
+	VignetteIcone,
 	pluriel,
 	type BilanDepotAffiche,
 	type EnteteEcran,
 	type Lecture
 } from '../../ui';
 import { TITRE_ECRAN } from '../titres';
-import { LigneEnvoi, libelleZone, type EnvoiAffiche } from './envois';
+import { provenance } from './bilan';
+import { LigneEnvoi, type EnvoiAffiche } from './envois';
 import { delaiLisible, minutesDepuis, useMinute, MINUTES_SANS_NOUVELLE } from './horloge';
 
 /** Les deux chemins par lesquels les factures arrivent. */
@@ -112,36 +114,35 @@ function enLecture(depot: LigneDepot): boolean {
 	return depot.statut !== 'TERMINE' && depot.statut !== 'ECHOUE';
 }
 
+/** Vrai quand la lecture n'a rien écrit depuis un quart d'heure. Voir `horloge.ts`. */
+function sansNouvelle(depot: LigneDepot, minute: number | null): boolean {
+	return enLecture(depot) && (minutesDepuis(depot.deposeLe, minute) ?? 0) >= MINUTES_SANS_NOUVELLE;
+}
+
 /**
- * CE QUE LA RANGÉE DIT SOUS LE NOM DU FICHIER.
+ * CE QUE LA RANGÉE DIT SOUS LE NOM DU FICHIER — ce qui s'est passé, jamais la
+ * date.
  *
- * ⚠️ UNE RANGÉE TERMINÉE ÉCRIVAIT DEUX FOIS LE MÊME CHIFFRE. La précision
- * reprenait l'étape — « 198 factures enregistrées. » — et la valeur, à droite,
- * disait « 198 factures ». Le repli sur la date ne s'affichait jamais, parce
- * qu'une étape est posée dès l'enregistrement : la date d'un dépôt n'était donc
- * visible nulle part. Savoir quel dépôt a fait entrer quelle facture, et quand,
- * est précisément ce qu'on redemande à un import six mois plus tard.
+ * ⚠️ LA DATE EST PASSÉE À DROITE, SOUS LE CHIFFRE (01/10/2026). « Relue par le
+ * modèle · Déposé le 9 sept. 2026 » se coupait à 393 px après « Déposé l… » :
+ * la date ne se lisait pas, et elle mangeait la seule ligne qui dit ce qui
+ * s'est passé. C'est la colonne droite de Revolut Business — le chiffre, puis sa
+ * date (`sousValeur`) —, et le mois est dans l'en-tête du groupe.
  *
- * ⚠️ « RELUE PAR LE MODÈLE » EST ÉCRIT ICI parce qu'on ne le choisit plus avant
- * l'envoi. Un appel facturé qui ne se décide plus doit au moins se voir. Pendant
- * la lecture l'étape le dit déjà, mot pour mot : on ne l'écrit pas deux fois.
+ * ⚠️ CE QUI N'EST PAS ENTRÉ PASSE AVANT LA PROVENANCE. Une rangée qui porte un
+ * point doit dire pourquoi, sur la rangée même : « 2 lignes non lues » est de
+ * l'argent qu'on ne réclamera pas, « Export comptable (FEC) » est un
+ * renseignement. La provenance reste écrite sur le bilan du dépôt.
  *
- * ⚠️ MAIS IL NE S'ÉCRIT PLUS SUR UN FACTUR-X, ET C'ÉTAIT UN MENSONGE À L'ÉCRAN.
- * La phrase se déduisait du MODE, qui vaut `FACTURE_DEPOSEE` pour tout PDF
- * déposé : une facture lue dans son propre fichier, sans un centime d'appel
- * modèle, affichait quand même un appel qui n'avait jamais eu lieu — sur
- * exactement le point que ce chemin apporte. C'est `bilan.format` qui tranche,
- * parce qu'il est écrit APRÈS la lecture, par le serveur qui a ouvert le
- * fichier.
+ * ⚠️ « RELUE PAR LE MODÈLE » SE DÉDUIT DU BILAN, PAS DU MODE. Un Factur-X est un
+ * PDF lu dans son propre fichier, sans un centime d'appel modèle : voir
+ * `provenance`, dans `bilan.tsx`.
  *
  * ⚠️ ET UNE LECTURE MUETTE DEPUIS UN QUART D'HEURE LE DIT. C'est le seul état
  * du produit qui pouvait durer indéfiniment sans que rien ne le distingue d'un
- * état normal : la tâche de lecture peut tomber entre son étape et son bilan, et
- * plus rien ne la reprend. Voir `horloge.ts`.
+ * état normal. Voir `horloge.ts`.
  */
 function precisionDepot(depot: LigneDepot, minute: number | null): string {
-	const deposeLe = `Déposé le ${dateCourte(new Date(depot.deposeLe).toISOString().slice(0, 10))}`;
-
 	if (depot.statut === 'ECHOUE') return depot.erreur ?? 'Lecture en échec';
 
 	if (enLecture(depot)) {
@@ -149,85 +150,94 @@ function precisionDepot(depot: LigneDepot, minute: number | null): string {
 		if (age !== null && age >= MINUTES_SANS_NOUVELLE) {
 			return `Sans nouvelle depuis ${delaiLisible(age)}`;
 		}
-		return depot.etape ?? deposeLe;
+		return depot.etape ?? 'Lecture en cours';
 	}
 
-	if (depot.bilan?.format === 'FACTUR_X') return `Lue dans le fichier · ${deposeLe}`;
-	return depot.mode === 'FACTURE_DEPOSEE' ? `Relue par le modèle · ${deposeLe}` : deposeLe;
+	const bilan = depot.bilan;
+	if (bilan !== undefined && bilan.ignoreesTotal > 0) {
+		const n = bilan.ignoreesTotal;
+		return `${n} ligne${pluriel(n)} non lue${pluriel(n)}`;
+	}
+	if (bilan !== undefined && bilan.reglementsOrphelins > 0) {
+		const n = bilan.reglementsOrphelins;
+		return `${n} règlement${pluriel(n)} sans facture`;
+	}
+	return provenance(bilan?.format, depot.mode);
 }
 
-/** Ce que la rangée montre à droite : un chiffre, ou l'état quand il n'y a pas de chiffre. */
-function valeurDepot(depot: LigneDepot): string {
+/** Ce que la rangée montre à droite : ce qui est entré, ou l'échec. Rien pendant la lecture. */
+function valeurDepot(depot: LigneDepot): string | undefined {
 	if (depot.bilan) {
 		return `${depot.bilan.facturesCreees} facture${pluriel(depot.bilan.facturesCreees)}`;
 	}
 	if (depot.statut === 'ECHOUE') return 'Échec';
-	return 'Lecture…';
+	return undefined;
+}
+
+const JOUR = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
+const MOIS = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+
+/** Le mois d'un dépôt, tel que son groupe le nomme : « Septembre 2026 ». */
+function moisDe(instant: number): string {
+	const mois = MOIS.format(new Date(instant));
+	return mois.charAt(0).toUpperCase() + mois.slice(1);
 }
 
 /**
- * CE QUI SE PASSE APRÈS LE LÂCHER — écrit UNE fois, au premier dépôt, jamais
- * après.
+ * LES DÉPÔTS LUS, PAR MOIS — dans l'ordre où le serveur les rend, le plus
+ * récent d'abord.
  *
- * ⚠️ RÈGLE D'ÉCRAN N° 4 : le vide montre le chemin. La zone de dépôt le montre
- * déjà ; ce qu'elle ne peut pas dire, c'est ce qui arrive ENSUITE. Deux faits,
- * et deux seulement, parce qu'ils changent ce que le gérant fait de sa journée :
- * il peut partir pendant la lecture, et il devra revenir regarder ce qui n'est
- * pas entré.
- *
- * ⚠️ UNE TROISIÈME PHRASE A ÉTÉ ÉCRITE PUIS RETIRÉE : « rien à choisir avant
- * l'envoi, le chemin se déduit du fichier ». Elle était vraie, et elle se
- * retournait contre la règle d'écran n° 1. Dire qu'il n'y a rien à choisir
- * INTRODUIT l'idée d'un choix : le gérant se demande ce qu'il ne choisit pas,
- * et cherche le réglage. Une déduction bien faite ne s'annonce pas — elle se
- * constate après coup, sur la rangée du dépôt, qui dit par où il est passé.
- *
- * ⚠️ ET LE BLOC DISPARAÎT AU PREMIER DÉPÔT. Une explication qui reste devient du
- * décor, et du décor sur l'écran d'entrée du produit est exactement ce qu'on
- * corrige.
+ * ⚠️ UN EN-TÊTE PAR MOIS, ET PLUS « VOS DÉPÔTS » EN CAPITALES. C'est la liste de
+ * Revolut Business (« Today », « November 26 ») et la règle du produit : une
+ * liste longue se groupe, et chaque en-tête porte son compte (`EnTeteDeGroupe`,
+ * partagé avec les dossiers et la file). Un export par mois et quelques PDF
+ * font vite trente rangées d'un seul tenant.
  */
-function CeQuiSePasseEnsuite() {
-	return (
-		<SectionEcran titre="Ce qui se passe ensuite">
-			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				La lecture se poursuit même si vous quittez cet écran.
-			</p>
-			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Chaque dépôt dit ensuite ce qui est entré, et ligne par ligne ce qui n’a pas pu être lu.
-			</p>
-		</SectionEcran>
-	);
+function parMois(depots: readonly LigneDepot[]): { mois: string; depots: LigneDepot[] }[] {
+	const groupes: { mois: string; depots: LigneDepot[] }[] = [];
+	for (const depot of depots) {
+		const mois = moisDe(depot.deposeLe);
+		const dernier = groupes.at(-1);
+		if (dernier !== undefined && dernier.mois === mois) dernier.depots.push(depot);
+		else groupes.push({ mois, depots: [depot] });
+	}
+	return groupes;
 }
+
+/** Les formats, écrits sous le bouton comme dans le bandeau. */
+const FORMATS_LISIBLES = 'FEC, CSV, PDF ou photo';
 
 /**
  * L'IMPORT DE FACTURES DE VENTE.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ UNE SEULE ZONE, UNE SEULE LISTE, AUCUN ONGLET
+ * ⚠️ UN BOUTON, PUIS LA LISTE — RELEVÉ SUR FI, REVOLUT BUSINESS ET YOUTUBE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * L'écran a porté successivement un groupe segmenté puis deux rangées pour
- * faire choisir « par où vos factures arrivent ». Les deux formes réglaient la
- * même fausse question : le fichier déposé y répond seul, et `modeDuFichier`
- * le déduit. Il ne reste qu'une zone de dépôt.
+ * Mesuré à 393 px le 01/10/2026 : un creux de deux cent soixante pixels
+ * (« Déposez vos fichiers ici », deux boutons), une phrase de conseil, puis une
+ * liste sans groupes dont chaque sous-ligne se coupait sur sa date. Chez Fi,
+ * Gusto ou Revolut Business, ajouter un document est UN bouton, et la liste des
+ * documents est l'écran ; chez YouTube, ce qui se téléverse forme un groupe à
+ * part, en tête (« Uploading · 1 »).
  *
- * LES DEUX CHEMINS NE SE VALENT PAS POUR AUTANT, et l'écran continue de le
- * dire — mais après le dépôt, là où c'est actionnable. L'export comptable
- * porte les factures, les règlements et les clients d'un seul coup, structurés,
- * sans qu'aucune machine ne relise quoi que ce soit ; un PDF passe par le
- * modèle, ce qui est un appel facturé et une marge d'erreur que l'export n'a
- * pas. D'où la phrase sous la zone, et « Relue par le modèle » sur la rangée
- * des dépôts qui y sont passés.
+ * D'où l'écran : le bouton (un bandeau à la souris, voir `AjoutDeFichiers`) ; le
+ * groupe « En cours » — les fichiers en route et les lectures —, puis les
+ * dépôts lus par mois. Chaque rangée dit ce qui s'est passé à gauche, ce qui est
+ * entré à droite, et sa date dessous.
+ *
+ * ⚠️ LE CHEMIN SE DÉDUIT TOUJOURS DU FICHIER (`modeDuFichier`), et rien ne
+ * l'annonce avant l'envoi : une déduction bien faite se constate après coup,
+ * sur la rangée du dépôt ou sur son bilan.
  *
  * ⚠️ UNE SEULE LISTE POUR LES DEUX ÂGES D'UN FICHIER. Les envois en route et
- * les dépôts que le serveur connaît vivent dans la MÊME liste, les premiers
- * au-dessus. Deux listes auraient fait sauter chaque fichier de l'une à l'autre
- * en cours de route, alors que ce sont les mêmes objets à deux instants.
+ * les lectures vivent dans le même groupe : un fichier ne saute pas d'une liste
+ * à l'autre en cours de route, il passe seulement du groupe « En cours » à son
+ * mois quand il est lu.
  *
- * ⚠️ LA ZONE NE SE GRISE PLUS PENDANT UN ENVOI. Chaque fichier part
- * indépendamment : bloquer la zone empêchait d'ajouter le fichier qu'on vient
- * de retrouver, sans aucune raison technique. C'est le traitement des
- * références — Airwallex écrit « you can upload more while they match ».
+ * ⚠️ LE BOUTON NE SE GRISE JAMAIS PENDANT UN ENVOI. Chaque fichier part
+ * indépendamment : c'est le traitement des références — Airwallex écrit « you
+ * can upload more while they match ».
  */
 export function EcranImport({
 	donnees,
@@ -249,11 +259,8 @@ export function EcranImport({
 	// nombre de crochets ne change pas entre l'attente et l'arrivée des données.
 	const minute = useMinute();
 
-	const entete: EnteteEcran = {
-		genre: 'onglet',
-		// Sans sous-titre depuis le 30/09/2026 : la barre compacte n’écrit que le nom.
-		titre: TITRE_ECRAN.imports
-	};
+	// Un écran sans action dans la barre : son nom, en petit, centré.
+	const entete: EnteteEcran = { genre: 'onglet', titre: TITRE_ECRAN.imports };
 
 	const avecLeDepot = (page: ReactNode) => (
 		<MaitreDetail maitre={page} detail={detail} detailOuvert={depotOuvert !== null} />
@@ -263,119 +270,103 @@ export function EcranImport({
 		return avecLeDepot(<PageEcran entete={entete} etat={donnees.etat} />);
 
 	const { imports, envois, onDeposer, onReessayer } = donnees.valeur;
-	const enRoute = libelleZone(envois);
-	const premierImport = imports.length === 0 && envois.length === 0;
+	const lectures = imports.filter(enLecture);
+	const lus = imports.filter((depot) => !enLecture(depot));
+	const enCours = envois.length + lectures.length;
+
+	const ajout = (
+		<AjoutDeFichiers
+			accept={FORMATS_ACCEPTES}
+			onFichiers={onDeposer}
+			libelle="Ajouter des factures"
+			formats={FORMATS_LISIBLES}
+		/>
+	);
+
+	/** La rangée d'un dépôt que le serveur connaît. Elle mène à son bilan. */
+	const rangee = (depot: LigneDepot) => (
+		<LigneAnalyse
+			key={depot._id}
+			vers="/app/import-factures/$id"
+			parametres={{ id: depot._id }}
+			// Définie seulement quand un bilan est ouvert : l'import pleine
+			// largeur n'est pas un maître, et ses rangées gardent leur chevron.
+			selectionnee={depotOuvert === null ? undefined : depot._id === depotOuvert}
+			// L'icône dit par où le dépôt est passé : une feuille de calcul pour un
+			// export, un document pour une facture déposée.
+			icone={
+				<VignetteIcone
+					icone={depot.mode === 'FACTURE_DEPOSEE' ? <FileTextIcon /> : <FileSpreadsheetIcon />}
+				/>
+			}
+			titre={depot.filename}
+			precision={precisionDepot(depot, minute)}
+			// Un échec dit sa raison entière : c'est la seule rangée qui ne se lit
+			// pas sans elle.
+			lignes={depot.statut === 'ECHOUE' ? 2 : 1}
+			valeur={valeurDepot(depot)}
+			sousValeur={JOUR.format(new Date(depot.deposeLe))}
+			// ⚠️ CE QUI N'A PAS PU ÊTRE LU, SIGNALÉ SUR LA RANGÉE. C'est de l'argent
+			// potentiellement perdu, et personne n'entrerait dans un bilan qui
+			// annonce « 198 factures ». Une lecture muette le mérite aussi.
+			attention={
+				depot.statut === 'ECHOUE' ||
+				(depot.bilan?.ignoreesTotal ?? 0) > 0 ||
+				sansNouvelle(depot, minute)
+			}
+		/>
+	);
+
+	/*
+	  ⚠️ LE PREMIER JOUR, LE VIDE MONTRE LE CHEMIN (règle d'écran n° 4). Deux
+	  phrases, et deux seulement, parce qu'elles changent ce que le gérant fait :
+	  l'export comptable apporte aussi ses règlements — ce qui évite de relancer un
+	  client qui a payé —, et il peut partir pendant la lecture. Elles
+	  disparaissent au premier dépôt : une explication qui reste devient du décor.
+	*/
+	if (imports.length === 0 && envois.length === 0) {
+		return avecLeDepot(
+			<PageEcran entete={entete}>
+				<EmptyState
+					titre="Ajoutez vos factures"
+					explication="Un export comptable apporte aussi vos règlements et vos clients. La lecture continue même si vous quittez cet écran."
+					action={<div className="flex w-full flex-col gap-cladd-3xs">{ajout}</div>}
+				/>
+			</PageEcran>
+		);
+	}
 
 	return avecLeDepot(
 		<PageEcran entete={entete}>
-			<div className="flex flex-col gap-cladd-2xs">
-				<ZoneDepot
-					accept={FORMATS_ACCEPTES}
-					onFichiers={onDeposer}
-					libellePhoto="Photographier une facture"
-				>
-					<div className="flex flex-col items-center gap-cladd-3xs text-center">
-						{/*
-						 * ⚠️ IL REVIENT AU VERRE, ET C'EST LA RUSTINE QUI PART.
-						 *
-						 * Ce disque portait `verre`. Le 16 septembre 2026, le verre du produit
-						 * était écrit en dur en sombre : posé dans le creux de la zone de dépôt,
-						 * lui-même du verre sombre dans les deux thèmes, il rendait 2,03:1 en
-						 * thème clair — l'élément le moins lisible de l'écran était celui qui
-						 * dit quoi faire. Il a donc été sorti du système, en `bg-cladd-surface`
-						 * plus `shadow-cladd-outline`, pour suivre le thème au lieu de le
-						 * contredire.
-						 *
-						 * La palette claire existe maintenant : `.light .verre` porte un
-						 * presque-blanc translucide et son arête est une ombre. L'exception ne
-						 * se justifie plus, et elle coûtait l'arête du verre — un disque plat
-						 * au milieu d'un écran qui en compte trois autres du même motif.
-						 *
-						 * PAS UN `<Surface>` : `ui/__tests__/verre.test.ts` exige que toute
-						 * surface du kit soit transparente, et une surface transparente ne
-						 * peint aucun disque.
-						 */}
-						<span className="verre flex size-cladd-lg shrink-0 items-center justify-center rounded-full text-cladd-fg-soft">
-							<UploadIcon size={22} aria-hidden />
-						</span>
-						{/*
-						  ⚠️ ELLE COMPTE, ELLE NE DIT PLUS « EN COURS ». « Envoi de 3
-						  fichiers… » se vérifie contre les rangées juste dessous ; « Envoi en
-						  cours… » ne se vérifiait contre rien et ne bougeait jamais.
-						*/}
-						<p className="text-cladd-sm font-semibold">{enRoute ?? 'Déposez vos fichiers ici'}</p>
-						{/* Les formats acceptés sont ÉCRITS. Sans eux, on découvre qu'un
-						    fichier est refusé après l'avoir choisi — et on ne sait pas
-						    lequel prendre à la place. */}
-						<p className="text-cladd-2xs text-cladd-fg-softer">FEC, CSV, PDF ou photo</p>
-					</div>
-				</ZoneDepot>
+			{ajout}
 
-				{/* Ce qui reste du choix disparu : non plus une question, mais ce qu'on
-				    gagne à sortir l'export plutôt qu'à rassembler des PDF. */}
-				<p className="px-cladd-3xs text-cladd-2xs text-cladd-fg-softer">
-					Un export comptable apporte aussi vos règlements et vos clients.
-				</p>
+			{/*
+			  CE QUI BOUGE MAINTENANT PASSE DEVANT. Un fichier en route est la seule
+			  rangée dont l'état changera pendant qu'on la regarde ; la reléguer sous
+			  des dépôts vieux de six mois obligerait à la chercher.
 
-				{/*
-				  ⚠️ PLUS AUCUN BANDEAU D'ERREUR GLOBAL. Il disait « L'envoi de X a
-				  échoué. » pour tout un lot, sans dire ce qu'étaient devenus les
-				  autres, et il effaçait le précédent à chaque échec suivant. Chaque
-				  échec vit désormais sur la rangée de SON fichier, avec son geste —
-				  « jamais un "3 erreurs" sans dire lesquelles ».
-				*/}
+			  ⚠️ PLUS AUCUN BANDEAU D'ERREUR GLOBAL : chaque échec vit sur la rangée
+			  de SON fichier, avec son geste — jamais un « 3 erreurs » sans dire
+			  lesquelles.
+			*/}
+			{enCours === 0 ? null : (
+				<section className="flex flex-col gap-cladd-3xs">
+					<EnTeteDeGroupe libelle="En cours" nombre={enCours} total={null} />
+					<ListeAnalyses>
+						{envois.map((envoi) => (
+							<LigneEnvoi key={envoi.cle} envoi={envoi} onReessayer={onReessayer} />
+						))}
+						{lectures.map(rangee)}
+					</ListeAnalyses>
+				</section>
+			)}
 
-				{premierImport ? <CeQuiSePasseEnsuite /> : null}
-
-				{envois.length > 0 || imports.length > 0 ? (
-					<section className="flex flex-col gap-cladd-3xs">
-						<h2 className="px-cladd-3xs text-cladd-2xs font-medium tracking-wide text-cladd-fg-softer uppercase">
-							Vos dépôts
-						</h2>
-						<ListeAnalyses>
-							{/*
-							  CE QUI BOUGE MAINTENANT PASSE DEVANT. Un fichier en cours d'envoi
-							  est la seule rangée dont l'état changera pendant qu'on la regarde ;
-							  la reléguer sous des dépôts vieux de six mois obligerait à la
-							  chercher. Même ordre que le veilleur, et pour la même raison.
-							*/}
-							{envois.map((envoi) => (
-								<LigneEnvoi key={envoi.cle} envoi={envoi} onReessayer={onReessayer} />
-							))}
-
-							{imports.map((depot) => (
-								<LigneAnalyse
-									key={depot._id}
-									vers="/app/import-factures/$id"
-									parametres={{ id: depot._id }}
-									// Définie seulement quand un bilan est ouvert : l'import pleine
-									// largeur n'est pas un maître, et ses rangées gardent leur chevron.
-									selectionnee={depotOuvert === null ? undefined : depot._id === depotOuvert}
-									// L'icône dit par où le dépôt est passé : une feuille de calcul
-									// pour un export, un document pour ce qui est relu par le modèle.
-									icone={
-										depot.mode === 'FACTURE_DEPOSEE' ? <FileTextIcon /> : <FileSpreadsheetIcon />
-									}
-									titre={depot.filename}
-									precision={precisionDepot(depot, minute)}
-									valeur={valeurDepot(depot)}
-									// ⚠️ CE QUI N'A PAS PU ÊTRE LU, SIGNALÉ SUR LA RANGÉE. C'est
-									// de l'argent potentiellement perdu, et personne n'entrerait
-									// dans un bilan qui annonce « 198 factures créées ». Une
-									// lecture muette depuis un quart d'heure le mérite aussi : elle
-									// n'aboutira peut-être jamais.
-									attention={
-										depot.statut === 'ECHOUE' ||
-										(depot.bilan?.ignoreesTotal ?? 0) > 0 ||
-										(enLecture(depot) &&
-											(minutesDepuis(depot.deposeLe, minute) ?? 0) >= MINUTES_SANS_NOUVELLE)
-									}
-								/>
-							))}
-						</ListeAnalyses>
-					</section>
-				) : null}
-			</div>
+			{parMois(lus).map((groupe) => (
+				<section key={groupe.mois} className="flex flex-col gap-cladd-3xs">
+					<EnTeteDeGroupe libelle={groupe.mois} nombre={groupe.depots.length} total={null} />
+					<ListeAnalyses>{groupe.depots.map(rangee)}</ListeAnalyses>
+				</section>
+			))}
 		</PageEcran>
 	);
 }
