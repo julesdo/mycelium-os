@@ -2,6 +2,8 @@ import type {
 	EtapeAffichee,
 	EvenementAffiche,
 	FicheIntervenant,
+	ProfessionnelsProposes,
+	PropositionsAffichees,
 	RepertoireAffiche,
 	ResultatAnnuaireAffiche,
 	ResultatAvocatsAffiche,
@@ -129,7 +131,8 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		reference: 'FA-2021-0087',
 		montant: 924_000n,
 		urgence: 'CRITIQUE',
-		explication: 'Pour la facture FA-2021-0087, il est trop tard pour agir en justice depuis le 14 août 2026.',
+		explication:
+			'Pour la facture FA-2021-0087, il est trop tard pour agir en justice depuis le 14 août 2026.',
 		action: 'Ne plus engager de frais sur cette facture : la somme ne se réclame plus.',
 		// Même une créance éteinte s'ouvre : c'est là qu'on va CONSTATER la perte,
 		// et le seul endroit où « ne plus engager de frais » devient vérifiable.
@@ -140,7 +143,8 @@ export const EVENEMENTS_DEMO: EvenementAffiche[] = [
 		reference: 'Ateliers Martin — demande au tribunal',
 		montant: 1_845_000n,
 		urgence: 'CRITIQUE',
-		explication: 'Remise de la décision à votre client : il reste 9 jour(s) avant le 12 septembre 2026.',
+		explication:
+			'Remise de la décision à votre client : il reste 9 jour(s) avant le 12 septembre 2026.',
 		// La démonstration porte la MÊME formulation que le produit : une capture
 		// qui montrerait « faire signifier sans délai » ferait recopier une consigne
 		// de procédure que la ligne rouge 3 interdit.
@@ -451,4 +455,90 @@ export const AVOCATS_DEMO: ResultatAvocatsAffiche = {
 		'Les spécialités sont celles que l’avocat a DÉCLARÉES au fichier : leur absence ne dit pas ' +
 		'qu’il n’en a aucune, elle dit qu’aucune n’est inscrite.',
 	releveeLe: '2026-07-17'
+};
+
+/**
+ * LES PROFESSIONNELS PRÈS DU CLIENT, TELS QUE LE DOSSIER LES PROPOSE
+ * (01/10/2026) — et ce sont de vraies fiches publiques.
+ *
+ * Les études sont celles du département 44 ci-dessus. Les avocats viennent de
+ * la livraison du 23/09/2026 de l'annuaire national : sur 1 497 avocats en
+ * Loire-Atlantique, 14 déclarent une spécialité proche d'un impayé commercial,
+ * et 578 exercent au code postal 44000. La salle en montre une poignée.
+ */
+export const PROPOSITIONS_DEMO: PropositionsAffichees = {
+	etat: 'PRET',
+	client: 'Fournitures Durand',
+	lieu: { departement: '44', commune: 'NANTES' },
+	commissaires: {
+		etat: 'TROUVE',
+		etudes: ETUDES_DEMO.etudes,
+		source: ETUDES_DEMO.source,
+		releveeLe: ETUDES_DEMO.releveeLe
+	},
+	avocats: {
+		specialises: [
+			{
+				barreau: 'NANTES',
+				nom: 'BAILLEUX',
+				prenom: 'Véronique',
+				raisonSociale: 'BAILLEUX VÉRONIQUE',
+				siren: '411007768',
+				adresse: '8 impasse de Lande Bourne, Zone artisanale Pan Loup',
+				codePostal: '44220',
+				ville: 'COUERON',
+				specialites: ['Droit commercial, des affaires et de la concurrence']
+			}
+		],
+		autres: [
+			{
+				barreau: 'NANTES',
+				nom: 'ADAMCZYK',
+				prenom: 'Delphine',
+				raisonSociale: 'AD CONSEIL',
+				siren: '813980893',
+				adresse: '3 place du Bon Pasteur',
+				codePostal: '44000',
+				ville: 'NANTES',
+				specialites: ['Droit de la famille, des personnes et de leur patrimoine']
+			},
+			{
+				barreau: 'NANTES',
+				nom: 'AGOSTINI',
+				prenom: 'Camille',
+				raisonSociale: 'GILLES RENAUD ASSOCIES',
+				siren: '799109863',
+				adresse: '2 rue Jean-Jacques Rousseau',
+				codePostal: '44000',
+				ville: 'NANTES',
+				specialites: []
+			},
+			{
+				barreau: 'NANTES',
+				nom: 'AH-FAH',
+				prenom: 'Philippe',
+				raisonSociale: 'AH-FAH PHILIPPE',
+				siren: '502532989',
+				adresse: '36 rue Russeil',
+				codePostal: '44000',
+				ville: 'NANTES',
+				specialites: [
+					'Droit de la sécurité sociale et de la protection sociale',
+					'Droit du travail'
+				]
+			}
+		],
+		autresEnPlus: true,
+		source: AVOCATS_DEMO.source,
+		releveeLe: '2026-09-23'
+	}
+};
+
+/** Les mêmes, avec des gestes inertes : la salle ne touche à aucune base. */
+export const PROFESSIONNELS_DEMO: ProfessionnelsProposes = {
+	propositions: PROPOSITIONS_DEMO,
+	onDemander: () => undefined,
+	onRetenirEtude: () => Promise.resolve(null),
+	onRetenirAvocat: () => Promise.resolve(null),
+	enCours: false
 };

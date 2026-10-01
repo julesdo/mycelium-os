@@ -967,10 +967,21 @@ export const recouvrementTables = {
 		ville: v.optional(v.string()),
 		specialites: v.array(v.string()),
 		/** La date de relevé du fichier source, au format ISO. */
-		releveeLe: v.string()
+		releveeLe: v.string(),
+		/**
+		 * Vrai quand une spécialité DÉCLARÉE touche à un impayé entre entreprises
+		 * (`specialiteProche`), calculé à l'ingestion. Un tableau ne s'indexe pas :
+		 * sans ce repère, trouver les spécialistes de Paris obligerait à lire ses
+		 * trente-cinq mille fiches.
+		 */
+		procheDuRecouvrement: v.optional(v.boolean())
 	})
 		.index('by_barreau', ['barreau'])
-		.index('by_barreau_and_nom', ['barreau', 'nom']),
+		.index('by_barreau_and_nom', ['barreau', 'nom'])
+		// Les avocats PRÈS DU CLIENT (01/10/2026) : un département se lit comme un
+		// intervalle de codes postaux, de « 44 » inclus à « 45 » exclu.
+		.index('by_code_postal', ['codePostal'])
+		.index('by_proche_and_code_postal', ['procheDuRecouvrement', 'codePostal']),
 
 	/**
 	 * Un décompte FIGÉ. Il ne se recalcule jamais.

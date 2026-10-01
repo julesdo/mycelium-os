@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-	Button,
 	Input,
 	List,
 	ListButton,
@@ -8,11 +7,12 @@ import {
 	PopupContent,
 	SectionTitle,
 	Select,
-	Surface
+	Spinner
 } from '@cladd-ui/react';
-import { SearchIcon, Trash2Icon } from 'lucide-react';
-import { cn } from './cn';
-import { BoutonPrincipal } from './bouton';
+import { CheckIcon, PlusIcon, SearchIcon } from 'lucide-react';
+import { BoutonPrincipal, BoutonTexte } from './bouton';
+import { dateCourte } from './format';
+import { LigneBouton, ListeAnalyses } from './navigation';
 
 /**
  * QUI FAIT L'ACTE — en feuille, une décision à la fois.
@@ -88,176 +88,382 @@ export function precisionDeLaFiche(fiche: FicheIntervenant<string>): string {
 		: `${role} · ${fiche.ressort}`;
 }
 
-/**
- * UNE CARTE DU CARNET.
- *
- * ⚠️ LE RETRAIT EST UN FRÈRE, PAS UN ENFANT. La carte entière est le bouton de
- * choix ; un second bouton posé DEDANS serait un bouton dans un bouton, que le
- * navigateur défait en silence et qu'aucun type n'attrape. Il est donc posé à
- * côté, en absolu, et le rembourrage droit de la carte lui fait sa place.
- */
-function CarteIntervenant({
-	nom,
-	precision,
-	choisie,
-	onChoisir,
-	onOublier
-}: {
-	nom: string;
-	precision: string;
-	choisie: boolean;
-	onChoisir: () => void;
-	/** Absent sur « Moi-même » : il n'y a aucune fiche à retirer. */
-	onOublier?: () => void;
-}) {
-	return (
-		<div className="relative">
-			<Surface
-				as="button"
-				type="button"
-				onClick={onChoisir}
-				aria-pressed={choisie}
-				variant="transparent"
-				outline={false}
-				// ⚠️ L'ANNEAU PORTE L'ACCENT DE MARQUE, JAMAIS UNE COULEUR DE SEUIL. Le
-				// vert, l'ambre et le rouge ne disent qu'une chose dans ce produit —
-				// au-dessus du seuil, tout près, en dessous — et choisir un
-				// professionnel n'est pas un verdict.
-				className={cn(
-					'verre verre-bouton w-full rounded-cladd-xl text-left',
-					choisie && 'ring-2 ring-cladd-primary'
-				)}
-				contentClassName={cn(
-					'flex min-h-cladd-md flex-col justify-center gap-0.5 p-cladd-3xs',
-					onOublier !== undefined && 'pr-14'
-				)}
-			>
-				<span className="text-cladd-xs leading-tight font-semibold">{nom}</span>
-				<span className="text-cladd-2xs leading-tight text-cladd-fg-softer">{precision}</span>
-			</Surface>
+/** Une étude de commissaire de justice proposée près du client. */
+export interface EtudeProposee {
+	readonly siren: string;
+	readonly nom: string;
+	readonly commune: string;
+	readonly codePostal: string;
+	readonly adresse?: string;
+}
 
-			{onOublier === undefined ? null : (
-				<Button
-					variant="transparent"
-					outline={false}
-					hoverable={false}
-					rounded
-					size="md"
-					onClick={onOublier}
-					aria-label={`Oublier ${nom}`}
-					className="verre-bouton absolute top-1/2 right-1 -translate-y-1/2"
-				>
-					<Trash2Icon />
-				</Button>
+/** Un avocat proposé près du client. */
+export interface AvocatProposeAffiche {
+	readonly nom: string;
+	readonly prenom: string;
+	readonly raisonSociale?: string;
+	readonly siren?: string;
+	readonly adresse?: string;
+	readonly codePostal?: string;
+	readonly ville?: string;
+	readonly specialites: readonly string[];
+	readonly barreau: string;
+}
+
+/**
+ * LES PROFESSIONNELS PRÈS DU CLIENT, tels que la route les a lus.
+ *
+ * ⚠️ QUATRE ÉTATS, ET « INCONNU » N'EST PAS « VIDE ». Un client sans SIREN n'a
+ * pas de lieu connu : la feuille le dit, et propose de chercher à la main. Un
+ * registre qui ne répond pas rend une liste INCONNUE, jamais une liste vide.
+ */
+export type PropositionsAffichees =
+	| { readonly etat: 'CHARGEMENT' }
+	| { readonly etat: 'ECHEC'; readonly message: string }
+	| { readonly etat: 'LIEU_INCONNU'; readonly client: string }
+	| {
+			readonly etat: 'PRET';
+			readonly client: string;
+			readonly lieu: { readonly departement: string; readonly commune: string | null };
+			readonly commissaires:
+				| {
+						readonly etat: 'TROUVE';
+						readonly etudes: readonly EtudeProposee[];
+						readonly source: string;
+						readonly releveeLe: string;
+				  }
+				| { readonly etat: 'ECHEC'; readonly message: string };
+			readonly avocats: {
+				readonly specialises: readonly AvocatProposeAffiche[];
+				readonly autres: readonly AvocatProposeAffiche[];
+				readonly autresEnPlus: boolean;
+				readonly source: string;
+				readonly releveeLe: string | null;
+			} | null;
+	  };
+
+/** Combien d'études se montrent avant « Voir les autres ». */
+const ETUDES_MONTREES = 12;
+
+/** Le choix en cours, marqué comme une case d'iOS : une coche, ou rien. */
+function Coche({ choisie }: { choisie: boolean }) {
+	// ⚠️ UNE BOÎTE POUR LES DEUX ÉTATS : le kit ramène une icône posée seule à
+	// 16 px, et une case vide de 20 décalait de quatre pixels les noms du carnet
+	// par rapport à « Moi-même ».
+	return (
+		<span className="flex size-5 shrink-0 items-center justify-center">
+			{choisie ? <CheckIcon className="size-5 text-cladd-primary" aria-label="choisi" /> : null}
+		</span>
+	);
+}
+
+/** Le signe d'une proposition : un toucher l'ajoute. Même boîte que la coche. */
+function Ajout() {
+	return (
+		<span className="flex size-5 shrink-0 items-center justify-center">
+			<PlusIcon className="size-5 text-cladd-fg-soft" aria-hidden />
+		</span>
+	);
+}
+
+/** L'intitulé d'un groupe de la feuille : ce qu'il contient, et où. */
+function TitreDeGroupe({ titre, precision }: { titre: string; precision?: string }) {
+	return (
+		<div className="flex flex-col gap-0.5 px-1">
+			<h3 className="text-cladd-xs font-semibold">{titre}</h3>
+			{precision === undefined ? null : (
+				<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{precision}</p>
 			)}
 		</div>
 	);
 }
 
+/**
+ * LES PROFESSIONNELS PRÈS DU CLIENT — la liste que le fondateur a demandée.
+ *
+ * ⚠️ UN TOUCHER, ET C'EST FAIT. Toucher une étude ou un avocat l'ajoute au
+ * carnet (avec sa source et sa date de relevé, comme avant) ET le choisit : la
+ * feuille se referme. Plus de recherche à ouvrir, de département à taper, de
+ * fiche à retenir puis à re-choisir.
+ */
+function Propositions({
+	propositions,
+	enCours,
+	onRetenirEtude,
+	onRetenirAvocat,
+	onChercherUnCommissaire,
+	onChercherUnAvocat
+}: {
+	propositions: PropositionsAffichees;
+	enCours: boolean;
+	onRetenirEtude: (etude: EtudeProposee) => void;
+	onRetenirAvocat: (avocat: AvocatProposeAffiche) => void;
+	onChercherUnCommissaire?: () => void;
+	onChercherUnAvocat?: () => void;
+}) {
+	const [toutesLesEtudes, setToutesLesEtudes] = useState(false);
+
+	if (propositions.etat === 'CHARGEMENT') {
+		return (
+			<p className="flex items-center gap-cladd-3xs px-1 text-cladd-2xs text-cladd-fg-soft">
+				<Spinner size="xs" />
+				Recherche des professionnels près de votre client…
+			</p>
+		);
+	}
+
+	if (propositions.etat === 'ECHEC' || propositions.etat === 'LIEU_INCONNU') {
+		return (
+			<div className="flex flex-col gap-cladd-3xs px-1">
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					{propositions.etat === 'ECHEC'
+						? propositions.message
+						: `Le lieu de ${propositions.client} n’est pas connu : son SIREN, sur sa fiche, le donnera, et la liste des professionnels près de lui s’affichera ici.`}
+				</p>
+				<div className="flex flex-wrap gap-cladd-3xs">
+					{onChercherUnCommissaire === undefined ? null : (
+						<BoutonTexte onClick={onChercherUnCommissaire}>Chercher un commissaire</BoutonTexte>
+					)}
+					{onChercherUnAvocat === undefined ? null : (
+						<BoutonTexte onClick={onChercherUnAvocat}>Chercher un avocat</BoutonTexte>
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	const { client, lieu, commissaires, avocats } = propositions;
+	const ou =
+		lieu.commune === null
+			? `département ${lieu.departement}`
+			: `${lieu.commune} (${lieu.departement})`;
+	const etudes = commissaires.etat === 'TROUVE' ? commissaires.etudes : [];
+	const etudesMontrees = toutesLesEtudes ? etudes : etudes.slice(0, ETUDES_MONTREES);
+
+	const ligneAvocat = (avocat: AvocatProposeAffiche) => (
+		<LigneBouton
+			key={`${avocat.nom}|${avocat.prenom}|${avocat.barreau}`}
+			genre="contenu"
+			titre={`${avocat.prenom} ${avocat.nom}`}
+			precision={[avocat.raisonSociale, avocat.ville].filter((p) => p !== undefined).join(' · ')}
+			icone={<Ajout />}
+			onClick={() => {
+				if (!enCours) onRetenirAvocat(avocat);
+			}}
+		/>
+	);
+
+	return (
+		<>
+			<section className="flex flex-col gap-cladd-3xs">
+				<TitreDeGroupe titre="Commissaires de justice" precision={`Près de ${client} · ${ou}`} />
+				{commissaires.etat === 'ECHEC' ? (
+					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						{commissaires.message}
+					</p>
+				) : etudes.length === 0 ? (
+					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						Aucune étude relevée dans ce département.
+					</p>
+				) : (
+					<>
+						<ListeAnalyses>
+							{etudesMontrees.map((etude) => (
+								<LigneBouton
+									key={etude.siren}
+									genre="contenu"
+									titre={etude.nom}
+									precision={`${etude.commune} ${etude.codePostal}`.trim()}
+									icone={<Ajout />}
+									onClick={() => {
+										if (!enCours) onRetenirEtude(etude);
+									}}
+								/>
+							))}
+						</ListeAnalyses>
+						{etudes.length > ETUDES_MONTREES && !toutesLesEtudes ? (
+							<BoutonTexte className="self-start" onClick={() => setToutesLesEtudes(true)}>
+								Voir les {etudes.length - ETUDES_MONTREES} autres
+							</BoutonTexte>
+						) : null}
+					</>
+				)}
+			</section>
+
+			<section className="flex flex-col gap-cladd-3xs">
+				<TitreDeGroupe titre="Avocats" precision={`Près de ${client} · ${ou}`} />
+				{avocats === null || avocats.releveeLe === null ? (
+					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						L’annuaire des avocats se met à jour chaque nuit depuis le fichier national ; il n’est
+						pas encore chargé.
+					</p>
+				) : avocats.specialises.length === 0 && avocats.autres.length === 0 ? (
+					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						Aucun avocat relevé dans ce département.
+					</p>
+				) : (
+					<>
+						{avocats.specialises.length === 0 ? null : (
+							<>
+								<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
+									Ont déclaré une spécialité en droit commercial, ou en sûretés et mesures
+									d’exécution
+								</p>
+								<ListeAnalyses>{avocats.specialises.map(ligneAvocat)}</ListeAnalyses>
+							</>
+						)}
+						{avocats.autres.length === 0 ? null : (
+							<>
+								{avocats.specialises.length === 0 ? null : (
+									<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
+										Les autres{lieu.commune === null ? '' : `, à ${lieu.commune} d’abord`}
+									</p>
+								)}
+								<ListeAnalyses>{avocats.autres.map(ligneAvocat)}</ListeAnalyses>
+							</>
+						)}
+						{avocats.autresEnPlus && onChercherUnAvocat !== undefined ? (
+							<BoutonTexte className="self-start" onClick={onChercherUnAvocat}>
+								Chercher parmi tous les avocats d’un barreau
+							</BoutonTexte>
+						) : null}
+					</>
+				)}
+			</section>
+
+			{/*
+			  ⚠️ LES SOURCES, ÉCRITES. Ni l'une ni l'autre n'est le tableau d'une
+			  profession, et « près de » n'est pas « compétent » : le référentiel ne
+			  relève pas quelle profession ni quel ressort convient à quel acte.
+			*/}
+			<p className="px-1 text-cladd-3xs leading-relaxed text-cladd-fg-softest">
+				{commissaires.etat === 'TROUVE'
+					? `Études : registre des entreprises, relevé du ${dateCourte(commissaires.releveeLe)}. `
+					: ''}
+				{avocats !== null && avocats.releveeLe !== null
+					? `Avocats : annuaire du Conseil national des barreaux, relevé du ${dateCourte(avocats.releveeLe)}. `
+					: ''}
+				« Près de » dit où ils exercent, pas qui est compétent : rien n’est présélectionné.
+			</p>
+		</>
+	);
+}
+
+/**
+ * QUI FAIT L'ACTE — UNE FEUILLE, ET TOUT Y EST PROPOSÉ.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QUE LE GÉRANT DEVAIT FAIRE, ET CE QU'IL FAIT (01/10/2026)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Avant : enregistrer d'abord un avocat ou un commissaire dans le carnet de son
+ * compte, ou ouvrir depuis cette feuille une recherche, y taper un département
+ * ou choisir un barreau parmi cent soixante, puis une spécialité, retenir une
+ * fiche, revenir ici et la choisir. Le fondateur : « pourquoi on doit nous-même
+ * mettre les caractéristiques (régions, villes, spécialités) alors qu'on a déjà
+ * toutes les infos sur l'affaire ? pourquoi ne pas directement proposer la
+ * liste dans le dossier ? »
+ *
+ * Maintenant : « Moi-même » et le carnet en tête ; puis les études et les
+ * avocats près du client, lus d'après son SIREN ; un toucher choisit. La saisie
+ * à la main reste, en dernier, pour quelqu'un qu'aucune source ne connaît.
+ *
+ * ⚠️ LES CRITÈRES SONT CEUX DE L'AFFAIRE, ET ILS SONT ÉCRITS. Le lieu du client,
+ * et pour les avocats la spécialité DÉCLARÉE au fichier national — un fait du
+ * fichier, nommé dans le titre du groupe, jamais un avis sur qui défendrait
+ * mieux. Dans chaque groupe, l'ordre reste alphabétique, et rien n'est
+ * présélectionné.
+ */
 export function ChoixIntervenant<I extends string>({
 	carnet,
 	choisi,
 	ouverte,
+	titre = 'Qui fait l’acte',
+	propositions,
+	enCours = false,
 	onFermer,
 	onChoisir,
+	onRetenirEtude,
+	onRetenirAvocat,
 	onAjouter,
-	onOublier,
 	onChercherUnCommissaire,
 	onChercherUnAvocat
 }: {
-	/** Les fiches du gérant, dans l'ordre où `monCarnet` les rend. */
 	carnet: readonly FicheIntervenant<I>[];
-	/**
-	 * Ce qui porte l'anneau — et il y a TROIS états, pas deux.
-	 *
-	 * `undefined` — personne n'a encore répondu : aucune carte n'est marquée.
-	 * `null` — « Moi-même », c'est-à-dire aucun intervenant rattaché.
-	 * `…` — la fiche rattachée.
-	 *
-	 * ⚠️ CONFONDRE `undefined` ET `null` FERAIT UNE PRÉSÉLECTION. Un anneau posé
-	 * sur « Moi-même » avant que la question soit posée se lit comme une réponse
-	 * du logiciel, et ce logiciel ne répond pas à celle-là.
-	 */
+	/** `null` : moi-même ; `undefined` : rien de choisi encore. */
 	choisi?: I | null;
 	ouverte: boolean;
+	titre?: string;
+	propositions: PropositionsAffichees;
+	enCours?: boolean;
 	onFermer: () => void;
 	onChoisir: (intervenantId: I | null) => void;
-	/**
-	 * Ajouter une fiche saisie à la main.
-	 *
-	 * ⚠️ L'ORIGINE N'EST PAS UN CHAMP DE CE FORMULAIRE. Une fiche saisie ici est
-	 * `SAISI_A_LA_MAIN` par construction — c'est l'appelant qui l'écrit. Une
-	 * fiche venue d'un répertoire public porterait EN PLUS sa source et sa date
-	 * de relevé, sans quoi rien ne la distinguerait d'une donnée officielle et
-	 * fraîche ; ce formulaire-ci ne peut donc pas en produire une.
-	 */
+	/** Ajoute l'étude au carnet ET la choisit. */
+	onRetenirEtude: (etude: EtudeProposee) => void;
+	/** Ajoute l'avocat au carnet ET le choisit. */
+	onRetenirAvocat: (avocat: AvocatProposeAffiche) => void;
 	onAjouter: (fiche: FicheASaisir) => void;
-	onOublier: (intervenantId: I) => void;
-	/**
-	 * Ouvrir la recherche d'un commissaire de justice, en feuille par-dessus
-	 * celle-ci.
-	 *
-	 * ⚠️ FACULTATIF, ET C'EST UN CONSTAT PLUTÔT QU'UNE COMMODITÉ. La recherche
-	 * demande une action Convex ; un écran qui ne peut pas l'appeler ne doit pas
-	 * afficher une rangée qui ne mènerait nulle part. Absent, le geste
-	 * n'apparaît pas — plutôt qu'un bouton mort.
-	 */
 	onChercherUnCommissaire?: () => void;
-	/**
-	 * Ouvrir la recherche d'un avocat, en feuille par-dessus celle-ci.
-	 *
-	 * ⚠️ FACULTATIF POUR LA MÊME RAISON QUE SA SŒUR : un écran qui ne peut pas
-	 * lire le répertoire ne doit pas afficher une rangée qui ne mènerait nulle
-	 * part. Absent, le geste n'apparaît pas — plutôt qu'un bouton mort.
-	 */
 	onChercherUnAvocat?: () => void;
 }) {
+	const [autre, setAutre] = useState(false);
+
 	return (
 		<Popup
 			open={ouverte}
 			onOpenChange={(o) => {
 				if (!o) onFermer();
 			}}
-			headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">Qui fait l’acte</span>}
+			headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
 			contentClassName="max-w-lg"
 		>
 			<PopupContent>
-				<SectionTitle>Le carnet</SectionTitle>
-				<div className="mt-cladd-3xs grid grid-cols-1 gap-cladd-3xs min-[420px]:grid-cols-2">
+				<div className="flex flex-col gap-cladd-xs">
 					{/* ⚠️ « MOI-MÊME » EN PREMIER, et pas par courtoisie : un gérant qui
 					    dépose lui-même est un cas courant, et le reléguer après les
 					    professionnels ferait lire la liste comme une incitation à en
 					    prendre un. */}
-					<CarteIntervenant
-						nom="Moi-même"
-						precision="Aucun intervenant rattaché"
-						choisie={choisi === null}
-						onChoisir={() => onChoisir(null)}
-					/>
-					{carnet.map((fiche) => (
-						<CarteIntervenant
-							key={fiche._id}
-							nom={fiche.nom}
-							precision={precisionDeLaFiche(fiche)}
-							choisie={choisi === fiche._id}
-							onChoisir={() => onChoisir(fiche._id)}
-							onOublier={() => onOublier(fiche._id)}
+					<ListeAnalyses>
+						<LigneBouton
+							genre="contenu"
+							titre="Moi-même"
+							precision="Aucun professionnel"
+							icone={<Coche choisie={choisi === null} />}
+							onClick={() => onChoisir(null)}
 						/>
-					))}
+						{carnet.map((fiche) => (
+							<LigneBouton
+								key={fiche._id}
+								genre="contenu"
+								titre={fiche.nom}
+								precision={precisionDeLaFiche(fiche)}
+								icone={<Coche choisie={choisi === fiche._id} />}
+								onClick={() => onChoisir(fiche._id)}
+							/>
+						))}
+					</ListeAnalyses>
+
+					<Propositions
+						propositions={propositions}
+						enCours={enCours}
+						onRetenirEtude={onRetenirEtude}
+						onRetenirAvocat={onRetenirAvocat}
+						onChercherUnCommissaire={onChercherUnCommissaire}
+						onChercherUnAvocat={onChercherUnAvocat}
+					/>
+
+					{autre ? (
+						<SaisirUneFiche
+							onAjouter={onAjouter}
+							onChercherUnCommissaire={onChercherUnCommissaire}
+							onChercherUnAvocat={onChercherUnAvocat}
+						/>
+					) : (
+						<BoutonTexte className="self-start" onClick={() => setAutre(true)}>
+							Quelqu’un d’autre
+						</BoutonTexte>
+					)}
 				</div>
-
-				<p className="mt-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-softest">
-					La profession compétente pour cet acte n’est pas relevée dans le référentiel juridique de
-					ce logiciel : rien n’est présélectionné, et cette liste n’est pas triée.
-				</p>
-			</PopupContent>
-
-			<PopupContent>
-				<SaisirUneFiche
-					onAjouter={onAjouter}
-					onChercherUnCommissaire={onChercherUnCommissaire}
-					onChercherUnAvocat={onChercherUnAvocat}
-				/>
 			</PopupContent>
 		</Popup>
 	);
@@ -387,4 +593,23 @@ export function SaisirUneFiche({
 			</div>
 		</>
 	);
+}
+
+/**
+ * CE QU'UNE FEUILLE « QUI FAIT L'ACTE » REÇOIT DE SA ROUTE, EN UN SEUL OBJET.
+ *
+ * La lecture des professionnels près du client vit dans la route (elle
+ * interroge le registre et l'annuaire) ; la feuille, elle, s'ouvre depuis trois
+ * endroits — « Qui fait l'acte » au dossier, la déclaration d'une voie, la
+ * remise au conseil. Un objet plutôt que quatre props répétées trois fois.
+ */
+export interface ProfessionnelsProposes {
+	readonly propositions: PropositionsAffichees;
+	/** Lance la lecture si elle n'a pas eu lieu : appelée à l'ouverture de la feuille. */
+	readonly onDemander: () => void;
+	/** Ajoute l'étude au carnet — ou la retrouve — et rend l'identifiant de sa fiche. */
+	readonly onRetenirEtude: (etude: EtudeProposee) => Promise<string | null>;
+	/** Ajoute l'avocat au carnet — ou le retrouve — et rend l'identifiant de sa fiche. */
+	readonly onRetenirAvocat: (avocat: AvocatProposeAffiche) => Promise<string | null>;
+	readonly enCours: boolean;
 }

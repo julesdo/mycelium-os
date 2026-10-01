@@ -1,8 +1,14 @@
 import { v, ConvexError } from 'convex/values';
-import { action, internalMutation } from '../_generated/server';
-import type { Doc } from '../_generated/dataModel';
-import { api } from '../_generated/api';
+import { action, internalMutation, internalQuery } from '../_generated/server';
+import type { Doc, Id } from '../_generated/dataModel';
+import { api, internal } from '../_generated/api';
 import { authedQuery } from '../functions';
+import { getUserOrg } from '../lib/auth';
+import {
+	prefixeDuCodePostal,
+	prefixeSuivant,
+	specialiteProche
+} from '../../verticales/recouvrement/annuaire-avocats';
 
 /**
  * LES RÉPERTOIRES PUBLICS.
@@ -210,62 +216,69 @@ export const chercherUnCommissaireDeJustice = action({
 		// TypeScript renonce, retombe sur `any`, et TOUS les écrans du produit
 		// perdent leur inférence — y compris ceux qui n'ont pas été touchés.
 		await ctx.runQuery(api.recouvrement.annuaires.sessionRequise, {});
+		return await etudesDuDepartement(departement);
+	}
+});
 
-		const recherche = departement.trim();
-		if (recherche === '') {
-			// Sans département, l'API répond 400 ; mais le dire ici nomme la cause
-			// au lieu de faire remonter un code de statut qui ne l'explique pas.
+/**
+ * LES ÉTUDES D'UN DÉPARTEMENT, LUES AU REGISTRE — écrite une fois pour la
+ * recherche à la main et pour les propositions du dossier (01/10/2026).
+ */
+async function etudesDuDepartement(departement: string): Promise<ResultatAnnuaire> {
+	const recherche = departement.trim();
+	if (recherche === '') {
+		// Sans département, l'API répond 400 ; mais le dire ici nomme la cause
+		// au lieu de faire remonter un code de statut qui ne l'explique pas.
+		throw new ConvexError(
+			'Aucun département n’a été donné. La recherche porte sur un département à la fois.'
+		);
+	}
+
+	const etudes: EtudeTrouvee[] = [];
+	let total = 0;
+
+	for (let page = 1; page <= PAGES_MAX; page++) {
+		const url =
+			`${BASE_RECHERCHE_ENTREPRISES}?id_convention_collective=${CONVENTION_COLLECTIVE_COMMISSAIRES}` +
+			`&activite_principale=${encodeURIComponent(ACTIVITE_JURIDIQUE)}` +
+			`&departement=${encodeURIComponent(recherche)}` +
+			`&per_page=${PAR_PAGE}&page=${page}`;
+
+		const reponse = await fetch(url);
+		if (!reponse.ok) {
+			// ⚠️ LE 400 EST NOMMÉ À PART. C'est la réponse de l'API à un
+			// département qu'elle n'accepte pas — « 9 » au lieu de « 09 », une
+			// coquille, un code qui n'existe pas. Un « le registre a répondu 400 »
+			// ferait chercher une panne là où il n'y a qu'une saisie à corriger.
 			throw new ConvexError(
-				'Aucun département n’a été donné. La recherche porte sur un département à la fois.'
+				reponse.status === 400
+					? `Le registre des entreprises n’a pas accepté le département « ${recherche} ». ` +
+							'Il attend deux caractères — 44, 09, 2A — ou trois outre-mer.'
+					: `Le registre des entreprises a répondu ${reponse.status}. ` +
+							'La recherche n’a pas pu aboutir, et la liste n’est donc pas vide : elle est inconnue.'
 			);
 		}
 
-		const etudes: EtudeTrouvee[] = [];
-		let total = 0;
+		const charge = (await reponse.json()) as { results?: unknown; total_results?: unknown };
+		if (typeof charge.total_results === 'number') total = charge.total_results;
 
-		for (let page = 1; page <= PAGES_MAX; page++) {
-			const url =
-				`${BASE_RECHERCHE_ENTREPRISES}?id_convention_collective=${CONVENTION_COLLECTIVE_COMMISSAIRES}` +
-				`&activite_principale=${encodeURIComponent(ACTIVITE_JURIDIQUE)}` +
-				`&departement=${encodeURIComponent(recherche)}` +
-				`&per_page=${PAR_PAGE}&page=${page}`;
-
-			const reponse = await fetch(url);
-			if (!reponse.ok) {
-				// ⚠️ LE 400 EST NOMMÉ À PART. C'est la réponse de l'API à un
-				// département qu'elle n'accepte pas — « 9 » au lieu de « 09 », une
-				// coquille, un code qui n'existe pas. Un « le registre a répondu 400 »
-				// ferait chercher une panne là où il n'y a qu'une saisie à corriger.
-				throw new ConvexError(
-					reponse.status === 400
-						? `Le registre des entreprises n’a pas accepté le département « ${recherche} ». ` +
-								'Il attend deux caractères — 44, 09, 2A — ou trois outre-mer.'
-						: `Le registre des entreprises a répondu ${reponse.status}. ` +
-								'La recherche n’a pas pu aboutir, et la liste n’est donc pas vide : elle est inconnue.'
-				);
-			}
-
-			const charge = (await reponse.json()) as { results?: unknown; total_results?: unknown };
-			if (typeof charge.total_results === 'number') total = charge.total_results;
-
-			const lots = Array.isArray(charge.results) ? charge.results : [];
-			for (const brut of lots) {
-				const etude = lireEtude(brut);
-				if (etude !== null) etudes.push(etude);
-			}
-
-			if (lots.length < PAR_PAGE) break;
+		const lots = Array.isArray(charge.results) ? charge.results : [];
+		for (const brut of lots) {
+			const etude = lireEtude(brut);
+			if (etude !== null) etudes.push(etude);
 		}
 
-		return {
-			departement: recherche,
-			etudes: etudes.sort((a, b) => a.nom.localeCompare(b.nom, 'fr')),
-			total,
-			source: SOURCE,
-			releveeLe: new Date().toISOString().slice(0, 10)
-		};
+		if (lots.length < PAR_PAGE) break;
 	}
-});
+
+	return {
+		departement: recherche,
+		etudes: etudes.sort((a, b) => a.nom.localeCompare(b.nom, 'fr')),
+		total,
+		source: SOURCE,
+		releveeLe: new Date().toISOString().slice(0, 10)
+	};
+}
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -606,9 +619,323 @@ export const insererUnLot = internalMutation({
 				codePostal: fiche.codePostal,
 				ville: fiche.ville,
 				specialites: fiche.specialites,
-				releveeLe: releveDeLaLivraison
+				releveeLe: releveDeLaLivraison,
+				procheDuRecouvrement: fiche.specialites.some(specialiteProche)
 			});
 		}
 		return fiches.length;
+	}
+});
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * LES PROFESSIONNELS PRÈS DU CLIENT — PROPOSÉS DANS LE DOSSIER, SANS RIEN SAISIR
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le fondateur, le 01/10/2026 : « pourquoi on doit enregistrer un avocat ou un
+ * commissaire de justice dans les paramètres pour ensuite le sélectionner dans
+ * le dossier ? […] pourquoi on doit nous-même mettre les caractéristiques
+ * (régions, villes, spécialités) alors qu'on a déjà toutes les infos sur
+ * l'affaire ? »
+ *
+ * Le dossier connaît son client, et le client son SIREN : le registre des
+ * entreprises donne alors le département et la commune de son siège. De là, les
+ * études de commissaires de justice de ce département (registre, en direct) et
+ * les avocats qui y exercent (annuaire du Conseil national des barreaux, ingéré
+ * chaque nuit par `annuaireNuit.ts`).
+ *
+ * ⚠️ « PRÈS DU CLIENT » EST UN FAIT DE LIEU, PAS UNE COMPÉTENCE. Le référentiel
+ * juridique de ce logiciel ne relève pas quelle profession ni quel ressort
+ * convient à quel acte : la liste dit où les professionnels exercent, et le
+ * gérant choisit. Rien n'est présélectionné.
+ */
+
+/** La date du relevé en base, ou `null` quand l'annuaire n'a jamais été nourri. */
+export const releveEnBase = internalQuery({
+	args: {},
+	returns: v.union(v.string(), v.null()),
+	handler: async (ctx): Promise<string | null> => {
+		const fiche = await ctx.db.query('annuaireAvocats').first();
+		return fiche?.releveeLe ?? null;
+	}
+});
+
+/** Un avocat proposé : la fiche lue, et le barreau qui dit devant qui il plaide. */
+export interface AvocatPropose extends AvocatTrouve {
+	readonly barreau: string;
+}
+
+const vAvocatPropose = v.object({
+	nom: v.string(),
+	prenom: v.string(),
+	raisonSociale: v.optional(v.string()),
+	siren: v.optional(v.string()),
+	adresse: v.optional(v.string()),
+	codePostal: v.optional(v.string()),
+	ville: v.optional(v.string()),
+	specialites: v.array(v.string()),
+	barreau: v.string()
+});
+
+export interface AvocatsPres {
+	/** Ceux qui ont DÉCLARÉ une spécialité proche d'un impayé commercial. */
+	readonly specialises: AvocatPropose[];
+	/** Les autres, à la commune du client d'abord. */
+	readonly autres: AvocatPropose[];
+	/** Vrai quand il en existe d'autres que ceux montrés. */
+	readonly autresEnPlus: boolean;
+	readonly source: string;
+	readonly releveeLe: string | null;
+}
+
+const vAvocatsPres = v.object({
+	specialises: v.array(vAvocatPropose),
+	autres: v.array(vAvocatPropose),
+	autresEnPlus: v.boolean(),
+	source: v.string(),
+	releveeLe: v.union(v.string(), v.null())
+});
+
+/** Combien d'avocats « autres » se montrent avant « et d'autres ». */
+const AUTRES_MONTRES = 30;
+
+function propose(fiche: Doc<'annuaireAvocats'>): AvocatPropose {
+	return {
+		nom: fiche.nom,
+		prenom: fiche.prenom,
+		raisonSociale: fiche.raisonSociale,
+		siren: fiche.siren,
+		adresse: fiche.adresse,
+		codePostal: fiche.codePostal,
+		ville: fiche.ville,
+		specialites: fiche.specialites,
+		barreau: fiche.barreau
+	};
+}
+
+function parNom(a: AvocatPropose, b: AvocatPropose): number {
+	return a.nom.localeCompare(b.nom, 'fr') || a.prenom.localeCompare(b.prenom, 'fr');
+}
+
+/**
+ * LES AVOCATS D'UN DÉPARTEMENT, LUS PAR CODE POSTAL.
+ *
+ * ⚠️ LES « AUTRES » PARTENT DE LA COMMUNE DU CLIENT. Un département compte en
+ * médiane 226 avocats, Paris 35 000 : une liste du département entier ne se lit
+ * pas. Ceux du code postal du client d'abord, puis, s'il n'y en a aucun, ceux
+ * du département — trente au plus, et « d'autres » le dit.
+ */
+export const avocatsPres = internalQuery({
+	args: { prefixe: v.string(), codePostal: v.optional(v.string()) },
+	returns: vAvocatsPres,
+	handler: async (ctx, { prefixe, codePostal }): Promise<AvocatsPres> => {
+		const suivant = prefixeSuivant(prefixe);
+
+		const specialises = (
+			await ctx.db
+				.query('annuaireAvocats')
+				.withIndex('by_proche_and_code_postal', (q) =>
+					q.eq('procheDuRecouvrement', true).gte('codePostal', prefixe).lt('codePostal', suivant)
+				)
+				.take(100)
+		)
+			.map(propose)
+			.sort(parNom);
+
+		const dejaVus = new Set(specialises.map((a) => `${a.nom}|${a.prenom}|${a.barreau}`));
+		const lireAutres = async (exact: boolean) =>
+			(
+				await (
+					exact && codePostal !== undefined
+						? ctx.db
+								.query('annuaireAvocats')
+								.withIndex('by_code_postal', (q) => q.eq('codePostal', codePostal))
+						: ctx.db
+								.query('annuaireAvocats')
+								.withIndex('by_code_postal', (q) =>
+									q.gte('codePostal', prefixe).lt('codePostal', suivant)
+								)
+				).take(AUTRES_MONTRES + 1 + specialises.length)
+			)
+				.map(propose)
+				.filter((a) => !dejaVus.has(`${a.nom}|${a.prenom}|${a.barreau}`));
+
+		let autres = codePostal === undefined ? [] : await lireAutres(true);
+		if (autres.length === 0) autres = await lireAutres(false);
+
+		const premiere = await ctx.db.query('annuaireAvocats').first();
+		return {
+			specialises,
+			autres: autres.slice(0, AUTRES_MONTRES).sort(parNom),
+			autresEnPlus: autres.length > AUTRES_MONTRES,
+			source: SOURCE_AVOCATS,
+			releveeLe: premiere?.releveeLe ?? null
+		};
+	}
+});
+
+/** Ce que le dossier sait du client pour le situer. `null` hors de l'établissement. */
+export const lieuConnuDuClient = authedQuery({
+	args: { debiteurId: v.id('debiteurs') },
+	returns: v.union(
+		v.null(),
+		v.object({
+			denomination: v.string(),
+			siren: v.union(v.string(), v.null()),
+			adresse: v.union(v.string(), v.null())
+		})
+	),
+	handler: async (
+		ctx,
+		{ debiteurId }
+	): Promise<{ denomination: string; siren: string | null; adresse: string | null } | null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const client = await ctx.db.get(debiteurId);
+		if (client === null || client.organizationId !== organizationId) return null;
+		return {
+			denomination: client.denomination,
+			siren: client.siren ?? null,
+			adresse: client.adresse ?? null
+		};
+	}
+});
+
+/** Où est le client : son département, son code postal, sa commune. */
+export interface LieuDuClient {
+	readonly departement: string;
+	readonly codePostal: string | null;
+	readonly commune: string | null;
+}
+
+/**
+ * LE LIEU DU CLIENT, LU AU REGISTRE PAR SON SIREN — sinon dans l'adresse que le
+ * registre a déjà donnée.
+ *
+ * ⚠️ JAMAIS LE LIEU DU CRÉANCIER EN REPLI. Le proposer ferait chercher au
+ * mauvais endroit un gérant qui ne relirait pas le champ, et il conclurait que
+ * la région de son client ne compte aucune étude. Sans lieu connu, on le dit.
+ */
+async function lieuDuClient(client: {
+	siren: string | null;
+	adresse: string | null;
+}): Promise<LieuDuClient | null> {
+	if (client.siren !== null) {
+		try {
+			const reponse = await fetch(
+				`${BASE_RECHERCHE_ENTREPRISES}?q=${encodeURIComponent(client.siren)}&page=1&per_page=1`
+			);
+			if (reponse.ok) {
+				const charge = (await reponse.json()) as { results?: unknown };
+				const premier = Array.isArray(charge.results) ? charge.results[0] : undefined;
+				const siege =
+					typeof premier === 'object' && premier !== null
+						? (premier as { siren?: unknown; siege?: unknown })
+						: null;
+				if (siege !== null && siege.siren === client.siren && typeof siege.siege === 'object') {
+					const lu = siege.siege as {
+						departement?: unknown;
+						code_postal?: unknown;
+						libelle_commune?: unknown;
+					};
+					const departement = texte(lu.departement);
+					if (departement !== undefined) {
+						return {
+							departement,
+							codePostal: texte(lu.code_postal) ?? null,
+							commune: texte(lu.libelle_commune) ?? null
+						};
+					}
+				}
+			}
+		} catch {
+			// Le registre ne répond pas : l'adresse déjà connue prend le relais.
+		}
+	}
+
+	const codePostal =
+		client.adresse === null ? null : (/\b(\d{5})\b/.exec(client.adresse)?.[1] ?? null);
+	const prefixe = codePostal === null ? null : prefixeDuCodePostal(codePostal);
+	if (codePostal === null || prefixe === null) return null;
+	return { departement: prefixe, codePostal, commune: null };
+}
+
+const vEtatCommissaires = v.union(
+	v.object({
+		etat: v.literal('TROUVE'),
+		resultat: v.object({
+			departement: v.string(),
+			etudes: v.array(vEtude),
+			total: v.number(),
+			source: v.string(),
+			releveeLe: v.string()
+		})
+	}),
+	v.object({ etat: v.literal('ECHEC'), message: v.string() })
+);
+
+export type EtatCommissaires =
+	| { readonly etat: 'TROUVE'; readonly resultat: ResultatAnnuaire }
+	| { readonly etat: 'ECHEC'; readonly message: string };
+
+export interface ProfessionnelsPres {
+	readonly client: string;
+	readonly lieu: LieuDuClient | null;
+	readonly commissaires: EtatCommissaires | null;
+	readonly avocats: AvocatsPres | null;
+}
+
+export const professionnelsPresDuClient = action({
+	args: { debiteurId: v.id('debiteurs') },
+	returns: v.object({
+		client: v.string(),
+		lieu: v.union(
+			v.null(),
+			v.object({
+				departement: v.string(),
+				codePostal: v.union(v.string(), v.null()),
+				commune: v.union(v.string(), v.null())
+			})
+		),
+		commissaires: v.union(v.null(), vEtatCommissaires),
+		avocats: v.union(v.null(), vAvocatsPres)
+	}),
+	// ⚠️ ANNOTATION DE RETOUR OBLIGATOIRE : l'action appelle son propre module.
+	handler: async (ctx, { debiteurId }): Promise<ProfessionnelsPres> => {
+		const client = await ctx.runQuery(api.recouvrement.annuaires.lieuConnuDuClient, {
+			debiteurId: debiteurId as Id<'debiteurs'>
+		});
+		if (client === null) {
+			throw new ConvexError('Ce client n’appartient pas à votre établissement.');
+		}
+
+		const lieu = await lieuDuClient(client);
+		if (lieu === null) {
+			return { client: client.denomination, lieu: null, commissaires: null, avocats: null };
+		}
+
+		const prefixe =
+			(lieu.codePostal === null ? null : prefixeDuCodePostal(lieu.codePostal)) ??
+			(/^\d{2,3}$/.test(lieu.departement) ? lieu.departement : null);
+
+		const [commissaires, avocats] = await Promise.all([
+			etudesDuDepartement(lieu.departement).then(
+				(resultat): EtatCommissaires => ({ etat: 'TROUVE', resultat }),
+				(erreur: unknown): EtatCommissaires => ({
+					etat: 'ECHEC',
+					message:
+						erreur instanceof ConvexError && typeof erreur.data === 'string'
+							? erreur.data
+							: 'Le registre des entreprises n’a pas répondu : la liste des études est inconnue, pas vide.'
+				})
+			),
+			prefixe === null
+				? Promise.resolve(null)
+				: ctx.runQuery(internal.recouvrement.annuaires.avocatsPres, {
+						prefixe,
+						...(lieu.codePostal === null ? {} : { codePostal: lieu.codePostal })
+					})
+		]);
+
+		return { client: client.denomination, lieu, commissaires, avocats };
 	}
 });

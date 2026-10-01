@@ -167,8 +167,12 @@ export {
 	ChoixIntervenant,
 	SaisirUneFiche,
 	precisionDeLaFiche,
+	type AvocatProposeAffiche,
+	type EtudeProposee,
 	type FicheIntervenant,
 	type FicheASaisir,
+	type ProfessionnelsProposes,
+	type PropositionsAffichees,
 	type RoleIntervenant
 } from './choix-intervenant';
 export { rangeeDuDebiteur, secteursProposes } from './identite-debiteur';

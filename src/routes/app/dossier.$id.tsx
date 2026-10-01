@@ -12,10 +12,13 @@ import {
 	aujourdHuiISO,
 	pluriel,
 	type AvocatAffiche,
+	type AvocatProposeAffiche,
 	type EtatRechercheAvocat,
 	type EtatRechercheCommissaire,
 	type EtudeAffichee,
-	type FicheASaisir
+	type EtudeProposee,
+	type FicheASaisir,
+	type PropositionsAffichees
 } from '../../ui';
 import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
 import { modelesProposables, type ChoixCourrierAffiche, type EnvoiAffiche } from '../../ui';
@@ -157,10 +160,11 @@ function PageCreance() {
 	const engagerProcedure = useMutation(api.recouvrement.apresProcedure.engagerProcedure);
 	const rattacherIntervenant = useMutation(api.recouvrement.apresProcedure.rattacherIntervenant);
 	const ajouterIntervenant = useMutation(api.recouvrement.intervenants.ajouterIntervenant);
-	const oublierIntervenant = useMutation(api.recouvrement.intervenants.oublierIntervenant);
 	const chercherUnCommissaire = useAction(
 		api.recouvrement.annuaires.chercherUnCommissaireDeJustice
 	);
+	const proposerProfessionnels = useAction(api.recouvrement.annuaires.professionnelsPresDuClient);
+	const [propositions, setPropositions] = useState<PropositionsAffichees | null>(null);
 
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -354,6 +358,121 @@ function PageCreance() {
 			});
 			setRechercheAvocatOuverte(false);
 		});
+	}
+
+	/**
+	 * LES PROFESSIONNELS PRÈS DU CLIENT, LUS UNE FOIS PAR PAGE.
+	 *
+	 * ⚠️ À LA DEMANDE, PAS AU CHARGEMENT. La lecture interroge le registre des
+	 * entreprises deux fois et l'annuaire des avocats : la faire à chaque
+	 * ouverture de dossier ferait payer une liste que personne n'a demandée. Elle
+	 * part quand la feuille « Qui fait l'acte » s'ouvre, et se garde ensuite ; un
+	 * échec, lui, se retente à l'ouverture suivante.
+	 */
+	function demanderPropositions(debiteurId: Id<'debiteurs'>) {
+		if (propositions !== null && propositions.etat !== 'ECHEC') return;
+		setPropositions({ etat: 'CHARGEMENT' });
+		proposerProfessionnels({ debiteurId })
+			.then((lu) => {
+				if (lu.lieu === null) {
+					setPropositions({ etat: 'LIEU_INCONNU', client: lu.client });
+					return;
+				}
+				setPropositions({
+					etat: 'PRET',
+					client: lu.client,
+					lieu: { departement: lu.lieu.departement, commune: lu.lieu.commune },
+					commissaires:
+						lu.commissaires === null
+							? {
+									etat: 'ECHEC',
+									message: 'Le département de votre client n’a pas pu être lu au registre.'
+								}
+							: lu.commissaires.etat === 'TROUVE'
+								? {
+										etat: 'TROUVE',
+										etudes: lu.commissaires.resultat.etudes,
+										source: lu.commissaires.resultat.source,
+										releveeLe: lu.commissaires.resultat.releveeLe
+									}
+								: lu.commissaires,
+					avocats: lu.avocats
+				});
+			})
+			.catch((e: unknown) => setPropositions({ etat: 'ECHEC', message: messageDuRefus(e) }));
+	}
+
+	/**
+	 * RETENIR UNE ÉTUDE PROPOSÉE — l'ajouter au carnet, ou la retrouver, et
+	 * rendre sa fiche pour que la feuille la choisisse dans le même geste.
+	 *
+	 * ⚠️ UNE ÉTUDE DÉJÀ AU CARNET N'Y ENTRE PAS DEUX FOIS : on la reconnaît à son
+	 * SIREN. Deux fiches pour la même étude feraient deux lignes identiques dans
+	 * chaque feuille suivante, et la seconde ne porterait aucun historique.
+	 */
+	async function retenirEtudeProposee(etude: EtudeProposee): Promise<string | null> {
+		if (propositions?.etat !== 'PRET' || propositions.commissaires.etat !== 'TROUVE') return null;
+		const deja = carnet?.find(
+			(fiche) => fiche.role === 'COMMISSAIRE_DE_JUSTICE' && fiche.siren === etude.siren
+		);
+		if (deja !== undefined) return deja._id;
+		const { source, releveeLe } = propositions.commissaires;
+		setEnCours(true);
+		setErreur(null);
+		try {
+			return await ajouterIntervenant({
+				nom: etude.nom,
+				role: 'COMMISSAIRE_DE_JUSTICE',
+				ressort: `${etude.commune} ${etude.codePostal}`.trim(),
+				adresse: etude.adresse,
+				siren: etude.siren,
+				origine: 'RETENU_DEPUIS_UN_REPERTOIRE',
+				sourceRepertoire: source,
+				sourceReleveeLe: releveeLe
+			});
+		} catch (e) {
+			setErreur(messageDuRefus(e));
+			return null;
+		} finally {
+			setEnCours(false);
+		}
+	}
+
+	/**
+	 * RETENIR UN AVOCAT PROPOSÉ — même geste. Le ressort est le BARREAU, tel que
+	 * le fichier l'écrit ; un avocat se reconnaît au carnet par son nom et son
+	 * barreau, faute d'identifiant propre dans le fichier national.
+	 */
+	async function retenirAvocatPropose(avocat: AvocatProposeAffiche): Promise<string | null> {
+		if (propositions?.etat !== 'PRET' || propositions.avocats === null) return null;
+		const { source, releveeLe } = propositions.avocats;
+		if (releveeLe === null) return null;
+		const nom = `${avocat.prenom} ${avocat.nom}`.trim();
+		const deja = carnet?.find(
+			(fiche) => fiche.role === 'AVOCAT' && fiche.nom === nom && fiche.ressort === avocat.barreau
+		);
+		if (deja !== undefined) return deja._id;
+		setEnCours(true);
+		setErreur(null);
+		try {
+			return await ajouterIntervenant({
+				nom,
+				role: 'AVOCAT',
+				ressort: avocat.barreau,
+				adresse: [avocat.adresse, `${avocat.codePostal ?? ''} ${avocat.ville ?? ''}`.trim()]
+					.filter((morceau) => morceau !== undefined && morceau !== '')
+					.join(', '),
+				siren: avocat.siren,
+				origine: 'RETENU_DEPUIS_UN_REPERTOIRE',
+				sourceRepertoire: source,
+				sourceReleveeLe: releveeLe
+			});
+		} catch (e) {
+			setErreur(messageDuRefus(e));
+			return null;
+		} finally {
+			setEnCours(false);
+		}
 	}
 
 	/**
@@ -905,8 +1024,13 @@ function PageCreance() {
 					origine: 'SAISI_A_LA_MAIN'
 				})
 			),
-		onOublierFiche: (intervenantId) =>
-			void avec(() => oublierIntervenant({ intervenantId: intervenantId as Id<'intervenants'> })),
+		professionnels: {
+			propositions: propositions ?? { etat: 'CHARGEMENT' },
+			onDemander: () => demanderPropositions(debiteurId),
+			onRetenirEtude: retenirEtudeProposee,
+			onRetenirAvocat: retenirAvocatPropose,
+			enCours
+		},
 
 		rechercheCommissaireOuverte,
 		etatRechercheCommissaire,

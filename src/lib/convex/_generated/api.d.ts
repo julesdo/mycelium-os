@@ -48,6 +48,7 @@ import type * as notifications from "../notifications.js";
 import type * as organizations from "../organizations.js";
 import type * as paddle from "../paddle.js";
 import type * as previewDev from "../previewDev.js";
+import type * as recouvrement_annuaireNuit from "../recouvrement/annuaireNuit.js";
 import type * as recouvrement_annuaires from "../recouvrement/annuaires.js";
 import type * as recouvrement_apresProcedure from "../recouvrement/apresProcedure.js";
 import type * as recouvrement_arret from "../recouvrement/arret.js";
@@ -133,6 +134,7 @@ declare const fullApi: ApiFromModules<{
   organizations: typeof organizations;
   paddle: typeof paddle;
   previewDev: typeof previewDev;
+  "recouvrement/annuaireNuit": typeof recouvrement_annuaireNuit;
   "recouvrement/annuaires": typeof recouvrement_annuaires;
   "recouvrement/apresProcedure": typeof recouvrement_apresProcedure;
   "recouvrement/arret": typeof recouvrement_arret;

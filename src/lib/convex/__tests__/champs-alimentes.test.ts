@@ -49,6 +49,8 @@ const RACINE = join(import.meta.dirname, '..', '..');
  * faire passer le test : on en ajoute quand on a regardé et conclu.
  */
 const ADMIS: Readonly<Record<string, string>> = {
+	procheDuRecouvrement:
+		'Écrit à l’ingestion de l’annuaire des avocats, lu par l’INDEX by_proche_and_code_postal (les avocats près du client qui ont déclaré une spécialité proche) et jamais comme propriété. Même faux positif que denominationNormalisee.',
 	denominationNormalisee:
 		'Écrite à l’import, lue par l’INDEX de dédoublonnage (by_org_and_denomination) et jamais comme propriété. Faux positif du balayage.',
 	preparePar:

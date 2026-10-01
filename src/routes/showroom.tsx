@@ -40,6 +40,7 @@ import {
 	CARNET_DEMO,
 	ETUDES_DEMO,
 	EVENEMENTS_DEMO,
+	PROPOSITIONS_DEMO,
 	RAIL_DEMO,
 	SECTEURS_DEMO,
 	VOIE_DEMO
@@ -722,8 +723,10 @@ function DemoIntervenant() {
 						ouverte={ouverte}
 						onFermer={() => setOuverte(false)}
 						onChoisir={setChoisi}
+						propositions={PROPOSITIONS_DEMO}
+						onRetenirEtude={() => setOuverte(false)}
+						onRetenirAvocat={() => setOuverte(false)}
 						onAjouter={() => setOuverte(false)}
-						onOublier={() => setOuverte(false)}
 					/>
 				</div>
 			</PageBody>

@@ -66,7 +66,13 @@ import {
 	type SoliditeAffichee,
 	modelesProposables
 } from '../../ui';
-import { BARREAUX_DEMO, CARNET_DEMO, ETABLISSEMENT_DEMO, voieDeLaCreance } from './communes';
+import {
+	BARREAUX_DEMO,
+	CARNET_DEMO,
+	ETABLISSEMENT_DEMO,
+	PROFESSIONNELS_DEMO,
+	voieDeLaCreance
+} from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
 
 /**
@@ -859,7 +865,7 @@ function creanceDemo({
 		onDeclarerVoie: () => undefined,
 		onRattacher: () => undefined,
 		onAjouterFiche: () => undefined,
-		onOublierFiche: () => undefined,
+		professionnels: PROFESSIONNELS_DEMO,
 		rechercheCommissaireOuverte: false,
 		etatRechercheCommissaire: { phase: 'REPOS' },
 		onOuvrirRechercheCommissaire: () => undefined,

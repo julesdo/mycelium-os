@@ -48,4 +48,16 @@ crons.daily(
 // (90 jours), qui ne s'éteignent donc jamais sur une connexion vivante.
 crons.interval('synchroQonto', { hours: 6 }, internal.connexions.qonto.synchroniserToutes, {});
 
+/*
+  L'ANNUAIRE DES AVOCATS SE NOURRIT SEUL (01/10/2026). Un appel de métadonnées par
+  nuit à data.gouv.fr ; le fichier ne se télécharge que quand une livraison plus
+  récente que celle en base a paru. Voir `recouvrement/annuaireNuit.ts`.
+*/
+crons.daily(
+	'annuaireAvocats',
+	{ hourUTC: 2, minuteUTC: 30 },
+	internal.recouvrement.annuaireNuit.rafraichirAnnuaireAvocats,
+	{}
+);
+
 export default crons;

@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Input, Popup, PopupContent, SectionTitle } from '@cladd-ui/react';
 import { BoutonPrincipal } from './bouton';
-import { ChoixIntervenant, type FicheASaisir, type FicheIntervenant } from './choix-intervenant';
+import {
+	ChoixIntervenant,
+	type FicheASaisir,
+	type FicheIntervenant,
+	type ProfessionnelsProposes
+} from './choix-intervenant';
 import { dateCourte } from './format';
 import { LigneBouton, ListeAnalyses } from './navigation';
 
@@ -62,7 +67,7 @@ export function FeuilleDeclaration({
 	aujourdHui,
 	onFermer,
 	onAjouter,
-	onOublier,
+	professionnels,
 	onChercherUnCommissaire,
 	onChercherUnAvocat,
 	onDeclarer
@@ -72,7 +77,8 @@ export function FeuilleDeclaration({
 	aujourdHui: string;
 	onFermer: () => void;
 	onAjouter: (fiche: FicheASaisir) => void;
-	onOublier: (intervenantId: string) => void;
+	/** Les professionnels près du client, proposés sans rien saisir (01/10/2026). */
+	professionnels: ProfessionnelsProposes;
 	onChercherUnCommissaire: () => void;
 	onChercherUnAvocat: () => void;
 	onDeclarer: (engageeLe: string, choix: ChoixDeclare) => void;
@@ -138,7 +144,10 @@ export function FeuilleDeclaration({
 							<LigneBouton
 								titre="Qui fait l’acte"
 								valeur={nomChoisi}
-								onClick={() => setCarnetOuvert(true)}
+								onClick={() => {
+									professionnels.onDemander();
+									setCarnetOuvert(true);
+								}}
 							/>
 						</ListeAnalyses>
 						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softest">
@@ -181,8 +190,23 @@ export function FeuilleDeclaration({
 					setChoix({ id: intervenantId });
 					setCarnetOuvert(false);
 				}}
+				propositions={professionnels.propositions}
+				enCours={professionnels.enCours}
+				onRetenirEtude={(etude) =>
+					void professionnels.onRetenirEtude(etude).then((id) => {
+						if (id === null) return;
+						setChoix({ id });
+						setCarnetOuvert(false);
+					})
+				}
+				onRetenirAvocat={(avocat) =>
+					void professionnels.onRetenirAvocat(avocat).then((id) => {
+						if (id === null) return;
+						setChoix({ id });
+						setCarnetOuvert(false);
+					})
+				}
 				onAjouter={onAjouter}
-				onOublier={onOublier}
 				onChercherUnCommissaire={onChercherUnCommissaire}
 				onChercherUnAvocat={onChercherUnAvocat}
 			/>

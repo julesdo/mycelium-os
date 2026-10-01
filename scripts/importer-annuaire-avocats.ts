@@ -51,6 +51,10 @@ import { readFileSync } from 'node:fs';
 import Papa from 'papaparse';
 import { decoderTexte } from '../src/lib/socle/documents/csv.ts';
 import { estDateReelle } from '../src/lib/verticales/recouvrement/calendrier.ts';
+import {
+	lireLivraison,
+	type FicheAvocat
+} from '../src/lib/verticales/recouvrement/annuaire-avocats.ts';
 
 /**
  * Le nombre de fiches par appel de mutation.
@@ -63,164 +67,18 @@ const LOT = 500;
 /** La fonction qu'on appelle, telle que le déploiement la nomme. */
 const MODULE = 'recouvrement/annuaires';
 
-/**
- * LES COLONNES DONT CE SCRIPT A BESOIN, ET LEURS GRAPHIES CONNUES.
- *
- * ⚠️ CHAQUE GRAPHIE A ÉTÉ LUE DANS UN VRAI FICHIER, jamais supposée. La
- * comparaison se fait en minuscules parce que `Barreau` et `barreau` sont le
- * même champ — mais PAS sans accents ni ponctuation : `acDateEntree` et
- * `acdateentree` coexistent dans la livraison de 2026, et un aplatissement trop
- * zélé ferait de deux colonnes distinctes une seule.
- *
- * Relevé le 12 septembre 2026 sur deux livraisons :
- *
- *   · 20260717 — civilit;acSalarie;Barreau;BarreauId;avCnbfCode;avLANG;avNom;
- *     avPrenom;avBarEntree;cbAdresse1;cbAdresse2;cbCp;cbVille;cbTel;cbFax;
- *     cbSiretSiren;cbSiretNic;cbRaisonSociale;acDateEntree;cbFormJuri;
- *     acdateentree;avMelOrdre;spLibelle1;spLibelle2;spLibelle3;acDateSerment;
- *     avDateExer;avInscription;<deux colonnes sans nom>
- *   · 20221011 — NomBarreau;avNom;avPrenom;cbRaisonSociale;cbSiretSiren;
- *     cbAdresse1;cbAdresse2;cbCp;cbVille;spLibelle1;spLibelle2;spLibelle3;
- *     acDateSerment
- */
-const COLONNES = {
-	barreau: ['barreau', 'nombarreau'],
-	nom: ['avnom'],
-	prenom: ['avprenom'],
-	raisonSociale: ['cbraisonsociale'],
-	siren: ['cbsiretsiren'],
-	adresse1: ['cbadresse1'],
-	adresse2: ['cbadresse2'],
-	codePostal: ['cbcp'],
-	ville: ['cbville'],
-	specialite1: ['splibelle1'],
-	specialite2: ['splibelle2'],
-	specialite3: ['splibelle3']
-} as const satisfies Record<string, readonly string[]>;
-
-type Champ = keyof typeof COLONNES;
-
-/**
- * TOUTES REQUISES, SANS EXCEPTION — y compris `cbAdresse2`, presque toujours
- * vide.
- *
- * ⚠️ C'EST LA COLONNE QUI DOIT EXISTER, PAS SON CONTENU. Une colonne vide dit
- * « cette information est absente de cette fiche » ; une colonne DISPARUE dit
- * « cette information est absente de toutes les fiches », et rien ne les
- * distingue une fois les données en base. Tolérer l'absence d'une seule
- * rendrait le garde-fou négociable, et il ne l'est pas.
- */
-const CHAMPS = Object.keys(COLONNES) as Champ[];
-
-/** Une fiche, telle que la mutation d'ingestion l'attend. */
-interface FicheAImporter {
-	barreau: string;
-	nom: string;
-	prenom: string;
-	raisonSociale?: string;
-	siren?: string;
-	adresse?: string;
-	codePostal?: string;
-	ville?: string;
-	specialites: string[];
-}
+/*
+  LA LECTURE DU FICHIER VIT DANS `verticales/recouvrement/annuaire-avocats.ts`, que
+  la tâche nocturne du serveur partage avec ce script depuis le 01/10/2026 : les
+  graphies de colonnes, le refus d'une colonne disparue et l'écart des rangées
+  incomplètes ne s'écrivent plus qu'à un seul endroit.
+*/
 
 function echouer(...lignes: string[]): never {
 	console.error('');
 	for (const ligne of lignes) console.error(ligne);
 	console.error('');
 	process.exit(1);
-}
-
-/** Une chaîne non vide, ou `undefined`. Jamais une chaîne vide en base. */
-function texte(brut: string | undefined): string | undefined {
-	const propre = (brut ?? '').trim();
-	return propre === '' ? undefined : propre;
-}
-
-/**
- * Associe chaque champ à son index de colonne, ou LÈVE en nommant ce qui manque.
- *
- * Le message porte les en-têtes RÉELLEMENT lus : sans eux, « colonne barreau
- * introuvable » envoie ouvrir le fichier à la main pour découvrir qu'elle
- * s'appelle autrement. Avec eux, la correction tient dans une ligne de
- * `COLONNES`.
- */
-function repererColonnes(entetes: readonly string[]): Record<Champ, number> {
-	const normalisees = entetes.map((e) => e.trim().toLowerCase());
-	const trouves: Partial<Record<Champ, number>> = {};
-	const manquants: string[] = [];
-
-	for (const champ of CHAMPS) {
-		const graphies: readonly string[] = COLONNES[champ];
-		const index = normalisees.findIndex((e) => graphies.includes(e));
-		if (index === -1) manquants.push(`${champ} (attendu : ${graphies.join(' ou ')})`);
-		else trouves[champ] = index;
-	}
-
-	if (manquants.length > 0) {
-		echouer(
-			'Colonnes introuvables dans l’en-tête du CSV :',
-			...manquants.map((m) => `  · ${m}`),
-			'',
-			`En-têtes réellement lus (${entetes.length}) :`,
-			`  ${entetes.map((e) => JSON.stringify(e)).join(' ; ')}`,
-			'',
-			'Le Conseil national des barreaux a déjà renommé des colonnes d’une livraison à',
-			'l’autre : le barreau s’appelait « NomBarreau » en 2022 et « Barreau » en 2026.',
-			'Relevez la nouvelle graphie sur le fichier et ajoutez-la dans COLONNES.',
-			'',
-			'⚠️ NE CONTOURNEZ PAS CE REFUS. Ingérer sans la colonne remplirait la base de',
-			'soixante-dix mille fiches au champ vide, sans qu’aucun test ne tombe.'
-		);
-	}
-
-	return trouves as Record<Champ, number>;
-}
-
-/**
- * Construit une fiche à partir d'une rangée, ou `null` si elle n'en est pas une.
- *
- * ⚠️ UNE FICHE SANS BARREAU, SANS NOM OU SANS PRÉNOM EST ÉCARTÉE, PAS COMPLÉTÉE.
- * Le fichier se termine par des rangées vides, et ses deux dernières colonnes
- * n'ont pas de nom. Inventer un barreau pour sauver une rangée produirait une
- * fiche introuvable — ou pire, trouvable au mauvais endroit.
- */
-function lireFiche(rangee: readonly string[], ou: Record<Champ, number>): FicheAImporter | null {
-	const cellule = (champ: Champ): string | undefined => texte(rangee[ou[champ]]);
-
-	const barreau = cellule('barreau');
-	const nom = cellule('nom');
-	const prenom = cellule('prenom');
-	if (barreau === undefined || nom === undefined || prenom === undefined) return null;
-
-	// Les deux lignes d'adresse recollées en une, séparées par une virgule. La
-	// seconde est presque toujours vide ; quand elle porte un bâtiment ou un
-	// complément, la perdre ferait chercher une porte qui n'existe pas.
-	const adresse = [cellule('adresse1'), cellule('adresse2')].filter((l) => l !== undefined);
-
-	// ⚠️ LES TROIS CHAMPS DE SPÉCIALITÉ, DANS UN SEUL TABLEAU, dédoublonnés. Ce
-	// sont les seules compétences que l'écran filtre, et elles viennent du
-	// fichier telles quelles : aucune n'est déduite, aucune n'est reformulée.
-	const specialites = [
-		...new Set(
-			[cellule('specialite1'), cellule('specialite2'), cellule('specialite3')].filter(
-				(s) => s !== undefined
-			)
-		)
-	];
-
-	return {
-		barreau,
-		nom,
-		prenom,
-		raisonSociale: cellule('raisonSociale'),
-		siren: cellule('siren'),
-		adresse: adresse.length === 0 ? undefined : adresse.join(', '),
-		codePostal: cellule('codePostal'),
-		ville: cellule('ville'),
-		specialites
-	};
 }
 
 // ---------------------------------------------------------------------------
@@ -342,29 +200,18 @@ const rangees = Papa.parse<string[]>(contenu, {
 	skipEmptyLines: true
 }).data;
 
-const entetes = rangees[0];
-if (entetes === undefined) echouer(`Le fichier ${chemin} est vide.`);
-
-const ou = repererColonnes(entetes);
-
-const fiches: FicheAImporter[] = [];
-let ecartees = 0;
-for (const rangee of rangees.slice(1)) {
-	const fiche = lireFiche(rangee, ou);
-	if (fiche === null) ecartees++;
-	else fiches.push(fiche);
-}
-
-if (fiches.length === 0) {
+let lecture: { fiches: FicheAvocat[]; ecartees: number };
+try {
+	lecture = lireLivraison(rangees);
+} catch (erreur) {
 	echouer(
-		`Aucune fiche lisible dans ${chemin} : ${ecartees} rangées écartées.`,
-		'L’en-tête a été reconnu, donc le séparateur est bon — mais aucune rangée ne',
-		'porte à la fois un barreau, un nom et un prénom.',
+		erreur instanceof Error ? erreur.message : String(erreur),
 		'',
-		'⚠️ ON NE VIDE PAS L’ANNUAIRE SUR CE CONSTAT. Remplacer une livraison complète',
-		'par rien serait perdre celle qui est en base au profit d’un fichier illisible.'
+		'⚠️ NE CONTOURNEZ PAS CE REFUS. Ingérer sans la colonne, ou remplacer une livraison',
+		'complète par rien, serait pire qu’un annuaire ancien.'
 	);
 }
+const { fiches, ecartees } = lecture;
 
 console.log(`${fiches.length} fiches lues dans ${chemin} (${ecartees} rangées écartées).`);
 console.log(`Date de relevé déclarée : ${releveeLe}.`);

@@ -58,6 +58,7 @@ import {
 	type EtudeAffichee,
 	type FicheASaisir,
 	type FicheIntervenant,
+	type ProfessionnelsProposes,
 	type Lecture,
 	type LectureEtapesAffichee,
 	type LiensDePaiementAffiches,
@@ -293,7 +294,12 @@ export interface CreanceOuverte {
 	readonly onDeclarerVoie: (procedure: string, engageeLe: string, choix: ChoixDeclare) => void;
 	readonly onRattacher: (intervenantId: string | null) => void;
 	readonly onAjouterFiche: (fiche: FicheASaisir) => void;
-	readonly onOublierFiche: (intervenantId: string) => void;
+	/**
+	 * Les professionnels près du client, proposés dans la feuille « Qui fait
+	 * l'acte » sans rien saisir (01/10/2026). Le carnet du compte n'est plus un
+	 * passage obligé : un toucher ajoute et choisit.
+	 */
+	readonly professionnels: ProfessionnelsProposes;
 	// Les deux recherches de répertoire : leur état vit hors de l'écran, parce
 	// que leurs requêtes sont SAUTÉES tant que la feuille est fermée.
 	readonly rechercheCommissaireOuverte: boolean;
@@ -1173,7 +1179,10 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 						<LigneBouton
 							titre="Qui fait l’acte"
 							valeur={creance.nomIntervenant ?? 'Moi-même'}
-							onClick={() => setCarnetOuvert(true)}
+							onClick={() => {
+								creance.professionnels.onDemander();
+								setCarnetOuvert(true);
+							}}
 						/>
 					</ListeAnalyses>
 				</>
@@ -1201,7 +1210,7 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 					aujourdHui={creance.aujourdHui}
 					onFermer={() => setVoieDeclaree(null)}
 					onAjouter={creance.onAjouterFiche}
-					onOublier={creance.onOublierFiche}
+					professionnels={creance.professionnels}
 					onChercherUnCommissaire={creance.onOuvrirRechercheCommissaire}
 					onChercherUnAvocat={creance.onOuvrirRechercheAvocat}
 					onDeclarer={(engageeLe, choix) => {
@@ -1221,8 +1230,23 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 					creance.onRattacher(intervenantId);
 					setCarnetOuvert(false);
 				}}
+				propositions={creance.professionnels.propositions}
+				enCours={creance.professionnels.enCours}
+				onRetenirEtude={(etude) =>
+					void creance.professionnels.onRetenirEtude(etude).then((id) => {
+						if (id === null) return;
+						creance.onRattacher(id);
+						setCarnetOuvert(false);
+					})
+				}
+				onRetenirAvocat={(avocat) =>
+					void creance.professionnels.onRetenirAvocat(avocat).then((id) => {
+						if (id === null) return;
+						creance.onRattacher(id);
+						setCarnetOuvert(false);
+					})
+				}
 				onAjouter={creance.onAjouterFiche}
-				onOublier={creance.onOublierFiche}
 				onChercherUnCommissaire={creance.onOuvrirRechercheCommissaire}
 				onChercherUnAvocat={creance.onOuvrirRechercheAvocat}
 			/>
