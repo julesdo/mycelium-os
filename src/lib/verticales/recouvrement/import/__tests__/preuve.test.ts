@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { ClePiece } from '../../qualification';
 import {
 	documentPreuveSchema,
 	construirePromptPreuve,
@@ -48,6 +49,7 @@ function doc(surcharge: Partial<DocumentPreuve> = {}): DocumentPreuve {
 		reservesEmises: false,
 		reserves: null,
 		tauxRetardPourcent: null,
+		juridiction: null,
 		illisible: false,
 		raisonIllisible: null,
 		...surcharge
@@ -179,5 +181,40 @@ describe('lire ce que le modèle a rendu', () => {
 			const lue = lirePreuve(doc({ type }));
 			expect(lue.constat).not.toMatch(/vous devriez|il faut|déposez|ajoutez|pensez à/i);
 		}
+	});
+});
+
+describe('une décision du juge (06/10/2026)', () => {
+	it('relève le tribunal et le numéro d’une ordonnance', () => {
+		const lue = lirePreuve(
+			doc({
+				type: 'ORDONNANCE',
+				reference: 'RG 2026F00412',
+				date: '2026-09-18',
+				referencesLiees: [],
+				receptionSignee: null,
+				juridiction: ' Tribunal de commerce de Nantes '
+			})
+		);
+		expect(lue.type).toBe('ORDONNANCE');
+		expect(lue.juridiction).toBe('Tribunal de commerce de Nantes');
+		expect(lue.reference).toBe('RG 2026F00412');
+		expect(lue.constat).toContain('rendue par Tribunal de commerce de Nantes');
+	});
+
+	it('ignore un tribunal lu ailleurs que sur une ordonnance', () => {
+		// « Compétence exclusive du tribunal de… » dans des CGV : ce tribunal n'a
+		// rendu aucune décision, et le recopier rendrait la demande fausse.
+		const lue = lirePreuve(doc({ type: 'CGV', juridiction: 'Tribunal de commerce de Paris' }));
+		expect(lue.juridiction).toBeNull();
+	});
+
+	it('ne range pas l’ordonnance parmi les preuves de la créance', () => {
+		// Une barrière de COMPILATION : le jour où quelqu'un ajoute l'ordonnance
+		// aux `ClePiece`, elle ferait monter le score de solidité, et cette
+		// ligne cesse d'être une erreur — `bun run check` tombe.
+		// @ts-expect-error — l'ordonnance n'est pas une preuve de la créance.
+		const preuve: ClePiece = 'ORDONNANCE';
+		expect(preuve).toBe('ORDONNANCE');
 	});
 });

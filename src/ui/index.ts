@@ -20,6 +20,7 @@ export {
 	type CourriersDuDossier,
 	type EnvoiAffiche,
 	type ModeleProposable,
+	type OrdonnanceLueAffichee,
 	type PersonneNommeeAffichee
 } from './courriers';
 export {

@@ -101,6 +101,9 @@ export const lireLaPiece = internalAction({
 				// poser d'office ici réécrirait toutes les factures non soldées du
 				// débiteur depuis une ligne lue par un modèle.
 				tauxRetardStipule: lue.tauxRetardPourcent,
+				// Le tribunal d'une ordonnance, recopié pour la demande de
+				// signification ; `lirePreuve` ne le rend que sur une ordonnance.
+				juridiction: lue.juridiction,
 				// ⚠️ LE CONSTAT DU DOMAINE, MOT POUR MOT. Le reformuler ici ferait un
 				// second endroit où le produit dit ce qu'il a lu dans une pièce.
 				constat: lue.constat,

@@ -102,7 +102,13 @@ export const vTypePiece = v.union(
 	v.literal('CGV'),
 	v.literal('CONTRAT'),
 	v.literal('ECHANGES'),
-	v.literal('MISE_EN_DEMEURE')
+	v.literal('MISE_EN_DEMEURE'),
+	/**
+	 * Une décision du juge, rendue sur la requête (06/10/2026). Elle n'entre
+	 * dans AUCUN critère de solidité : ce n'est pas une preuve de la créance,
+	 * c'est ce que les courriers d'après citent (tribunal, numéro).
+	 */
+	v.literal('ORDONNANCE')
 );
 
 export const vNatureReglement = v.union(
@@ -648,6 +654,11 @@ export const recouvrementTables = {
 		mimeType: v.optional(v.string()),
 		/** Le numéro imprimé sur le document, tel quel. */
 		reference: v.optional(v.string()),
+		/**
+		 * Sur une décision du juge : le tribunal qui l'a rendue, tel qu'imprimé.
+		 * La demande de signification le recopie au lieu de le faire taper.
+		 */
+		juridiction: v.optional(v.string()),
 		/** La date du document, AAAA-MM-JJ. Distincte de `ajouteeLe`. */
 		dateDocument: v.optional(v.string()),
 		/**

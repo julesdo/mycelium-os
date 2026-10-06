@@ -47,9 +47,14 @@ import type { ClePiece } from '../qualification';
 /**
  * Les types qu'on sait reconnaître.
  *
- * ⚠️ SOUS-ENSEMBLE DE `ClePiece`, ET C'EST VOULU. `FACTURE` n'y est pas : elle
+ * ⚠️ DES PREUVES (`ClePiece`), PLUS L'ORDONNANCE. `FACTURE` n'y est pas : elle
  * a son propre extracteur, qui lit des montants et des échéances. `INCONNU`
  * n'est pas un type de pièce mais l'aveu que la lecture n'a pas abouti.
+ *
+ * ⚠️ L'ORDONNANCE N'EST PAS UNE PREUVE (06/10/2026). Elle n'est pas dans
+ * `ClePiece`, donc dans aucun critère de solidité : la reconnaître sert à en
+ * recopier le tribunal et le numéro dans la demande au commissaire de justice,
+ * que le gérant tapait à la main.
  */
 export const TYPES_RECONNUS = [
 	'BON_DE_COMMANDE',
@@ -58,8 +63,9 @@ export const TYPES_RECONNUS = [
 	'CGV',
 	'CONTRAT',
 	'MISE_EN_DEMEURE',
-	'ECHANGES'
-] as const satisfies readonly ClePiece[];
+	'ECHANGES',
+	'ORDONNANCE'
+] as const satisfies readonly (ClePiece | 'ORDONNANCE')[];
 
 export type TypeReconnu = (typeof TYPES_RECONNUS)[number];
 
@@ -81,7 +87,18 @@ export const documentPreuveSchema = z.object({
 		.describe(
 			'La nature du document. INCONNU si tu n’en es pas sûr — ne choisis jamais au hasard.'
 		),
-	reference: z.string().nullable().describe('Le numéro du document, tel qu’il est imprimé.'),
+	reference: z
+		.string()
+		.nullable()
+		.describe(
+			'Le numéro du document, tel qu’il est imprimé. Sur une ORDONNANCE : le numéro de la décision.'
+		),
+	juridiction: z
+		.string()
+		.nullable()
+		.describe(
+			'UNIQUEMENT sur une ORDONNANCE : le tribunal qui l’a rendue, tel qu’il est imprimé. null partout ailleurs.'
+		),
 	date: z.string().nullable().describe('La date du document, au format AAAA-MM-JJ.'),
 	referencesLiees: z
 		.array(z.string())
@@ -143,6 +160,8 @@ export interface PreuveLue {
 	readonly reserves: string | null;
 	/** Le taux stipulé, en pourcentage saisissable. `null` hors CGV et contrat. */
 	readonly tauxRetardPourcent: string | null;
+	/** Le tribunal, tel qu'imprimé. `null` sur tout ce qui n'est pas une ordonnance. */
+	readonly juridiction: string | null;
 	/** Ce qu'on a lu, dit au présent. Un constat, jamais une consigne. */
 	readonly constat: string;
 }
@@ -154,7 +173,8 @@ const NOM_DU_TYPE: Record<TypeReconnu, string> = {
 	CGV: 'des conditions générales de vente',
 	CONTRAT: 'un contrat',
 	MISE_EN_DEMEURE: 'une mise en demeure',
-	ECHANGES: 'des échanges'
+	ECHANGES: 'des échanges',
+	ORDONNANCE: 'une décision du juge (ordonnance)'
 };
 
 /**
@@ -181,6 +201,7 @@ export function lirePreuve(brut: DocumentPreuve): PreuveLue {
 			type: null,
 			reserves: null,
 			tauxRetardPourcent: null,
+			juridiction: null,
 			constat:
 				brut.raisonIllisible ??
 				'Ce document n’a pas pu être lu : sa nature n’est pas identifiée, et il ne compte ' +
@@ -199,7 +220,17 @@ export function lirePreuve(brut: DocumentPreuve): PreuveLue {
 			? lireTaux(brut.tauxRetardPourcent)
 			: null;
 
+	// ⚠️ UN TRIBUNAL NE SE LIT QUE SUR UNE ORDONNANCE. Un nom de tribunal cité
+	// dans des CGV (« compétence exclusive du tribunal de… ») n'est pas celui
+	// d'une décision, et le recopier dans une demande de signification la
+	// rendrait fausse.
+	const juridiction =
+		type === 'ORDONNANCE' && brut.juridiction !== null && brut.juridiction.trim() !== ''
+			? brut.juridiction.trim()
+			: null;
+
 	const morceaux = [`Ce document est ${NOM_DU_TYPE[type]}`];
+	if (juridiction !== null) morceaux.push(`, rendue par ${juridiction}`);
 	if (brut.reference !== null) morceaux.push(`, n° ${brut.reference}`);
 	// ⚠️ LA DATE ISO RESTE DANS LA DONNÉE (`commun.date`), et ne se met en
 	// français QUE dans cette phrase-là. `dateLisible` rend la chaîne telle
@@ -248,6 +279,7 @@ export function lirePreuve(brut: DocumentPreuve): PreuveLue {
 		type,
 		reserves: brut.reservesEmises === true ? brut.reserves : null,
 		tauxRetardPourcent,
+		juridiction,
 		constat: morceaux.join('')
 	};
 }
@@ -285,7 +317,7 @@ propre traitement. Tu dois dire ce qu'est ce document, et relever ce qui le
 rattache au dossier.
 
 RECONNAÎTRE LA NATURE DU DOCUMENT
-Sept natures possibles, et une huitième qui est un aveu :
+Huit natures possibles, et une neuvième qui est un aveu :
 
 - BON_DE_COMMANDE : le client commande. En-tête « Bon de commande »,
   « Commande n° », « Purchase order ». Porte souvent une signature ou un cachet
@@ -302,6 +334,10 @@ Sept natures possibles, et une huitième qui est un aveu :
 - MISE_EN_DEMEURE : une interpellation formelle du débiteur. « Mise en
   demeure », « Dernier rappel avant poursuite », souvent en recommandé.
 - ECHANGES : des courriers ou courriels échangés avec le client.
+- ORDONNANCE : une décision rendue par un juge, souvent « Ordonnance portant
+  injonction de payer », avec l'en-tête d'un tribunal, un numéro de
+  décision et la formule exécutoire. Ce n'est pas un courrier : c'est le
+  tribunal qui l'a rendue.
 - INCONNU : tu n'es pas sûr. C'est une réponse LÉGITIME et attendue. Un
   document mal classé fausse ce que le gérant lit de son dossier ; le
   classer au hasard est pire que ne pas le classer.
@@ -314,6 +350,13 @@ CE QUE TU RELÈVES
 - Le nom de l'autre partie.
 - S'il porte une signature, un tampon, un émargement, une mention
   d'acceptation ou de réception.
+
+SUR UNE ORDONNANCE
+Recopie le nom du tribunal qui l'a rendue, tel qu'il est imprimé dans
+l'en-tête, et le numéro de la décision comme référence, avec ce qui le précède
+s'il est imprimé (« RG », « minute »). Sur tout autre document, laisse le
+tribunal vide : un tribunal cité dans une clause de conditions générales n'a
+rendu aucune décision.
 
 LES RÉSERVES, ET POURQUOI ELLES COMPTENT AUTANT
 Une mention manuscrite « 2 colis manquants », « refusé », « sous réserve de

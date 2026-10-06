@@ -367,6 +367,7 @@ const TAUX_SAISI_DEMO = { debiteurId: PRINCIPAL_DEMO._id, pourcentage: '12' };
 const RIEN_RELEVE_DEMO: DocumentPreuve = {
 	type: 'INCONNU',
 	reference: null,
+	juridiction: null,
 	date: null,
 	referencesLiees: [],
 	contrepartie: null,

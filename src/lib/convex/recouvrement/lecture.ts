@@ -286,7 +286,9 @@ export const listerFacturesDuDebiteur = authedQuery({
  * `INDETERMINE`, donc l'oublier est une erreur de build, pas un défaut muet.
  */
 function compteCommePreuve(type: string): type is ClePiece {
-	return type !== 'INDETERMINE';
+	// L'ordonnance non plus : c'est une décision du juge, pas une preuve de la
+	// créance, et elle ne doit faire monter aucun score (06/10/2026).
+	return type !== 'INDETERMINE' && type !== 'ORDONNANCE';
 }
 
 /** Les pièces qui soutiennent une créance, toutes portées confondues. */
@@ -1096,10 +1098,7 @@ export const indexDossiers = authedQuery({
 				// La plus PROCHE des dates limites, jamais la plus lointaine : c'est
 				// celle qui décide du jour où le droit s'éteint sur ce dossier.
 				const limites = factures
-					.map(
-						(f) =>
-							prescriptionDe([f.dateExigibilite, f.dateEcheance], secteur).datePrescription
-					)
+					.map((f) => prescriptionDe([f.dateExigibilite, f.dateEcheance], secteur).datePrescription)
 					.filter((d): d is string => d !== undefined)
 					.sort();
 

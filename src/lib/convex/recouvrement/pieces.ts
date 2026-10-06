@@ -190,6 +190,8 @@ export const consignerLectureInterne = internalMutation({
 		reserves: v.union(v.string(), v.null()),
 		/** Le taux stipulé, en pourcentage saisissable. `null` hors CGV et contrat. */
 		tauxRetardStipule: v.union(v.string(), v.null()),
+		/** Le tribunal d'une ordonnance, tel qu'imprimé. `null` sur tout autre document. */
+		juridiction: v.union(v.string(), v.null()),
 		constat: v.string(),
 		/**
 		 * LA DATE EST UN ARGUMENT, comme partout où une qualification se rejoue.
@@ -201,7 +203,17 @@ export const consignerLectureInterne = internalMutation({
 	returns: v.null(),
 	handler: async (
 		ctx,
-		{ pieceId, type, reference, dateDocument, reserves, tauxRetardStipule, constat, aujourdHui }
+		{
+			pieceId,
+			type,
+			reference,
+			dateDocument,
+			reserves,
+			tauxRetardStipule,
+			juridiction,
+			constat,
+			aujourdHui
+		}
 	) => {
 		const piece = await ctx.db.get(pieceId);
 		if (piece === null) throw new ConvexError('Pièce introuvable');
@@ -213,6 +225,7 @@ export const consignerLectureInterne = internalMutation({
 			dateDocument: dateDocument ?? undefined,
 			reserves: reserves ?? undefined,
 			tauxRetardStipule: tauxRetardStipule ?? undefined,
+			juridiction: juridiction ?? undefined,
 			constat
 		});
 
@@ -391,6 +404,8 @@ export const listerPiecesDuDebiteur = authedQuery({
 			reserves: v.optional(v.string()),
 			/** Le taux lu sur cette pièce. Une PROPOSITION : rien ne s'applique sans un geste. */
 			tauxRetardStipule: v.optional(v.string()),
+			/** Sur une ordonnance : le tribunal, que la demande de signification recopie. */
+			juridiction: v.optional(v.string()),
 			constat: v.optional(v.string()),
 			ajouteeLe: v.number()
 		})
@@ -437,6 +452,7 @@ export const listerPiecesDuDebiteur = authedQuery({
 				dateDocument: piece.dateDocument,
 				reserves: piece.reserves,
 				tauxRetardStipule: piece.tauxRetardStipule,
+				juridiction: piece.juridiction,
 				constat: piece.constat,
 				ajouteeLe: piece.ajouteeLe
 			});

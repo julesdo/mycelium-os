@@ -772,6 +772,13 @@ function creanceDemo({
 				ANNONCES_RELEVEES.liquidation.complement,
 				ANNONCES_RELEVEES.liquidation.nature
 			),
+			// Une décision du juge déposée et lue : la demande au commissaire de
+			// justice en reprend le tribunal et le numéro (inventés ici).
+			ordonnanceLue: {
+				juridiction: 'Tribunal de commerce de Nantes',
+				numero: 'RG 2026F00412',
+				fichier: 'ordonnance-injonction.pdf'
+			},
 			apercu: null,
 			aujourdHui: AUJOURD_HUI_DEMO,
 			enCours: false,

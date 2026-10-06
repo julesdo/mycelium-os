@@ -97,6 +97,11 @@ export const TYPES_PIECE: readonly OptionTypePiece[] = [
 		apport: 'Établit l’interpellation préalable'
 	},
 	{ cle: 'ECHANGES', libelle: 'Échanges', apport: 'Documente la relation, sans critère propre' },
+	{
+		cle: 'ORDONNANCE',
+		libelle: 'Décision du juge',
+		apport: 'Ne compte dans aucun critère : ses références remplissent les courriers'
+	},
 	{ cle: 'FACTURE', libelle: 'Facture', apport: 'La facture elle-même' }
 ];
 

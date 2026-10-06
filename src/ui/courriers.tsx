@@ -81,6 +81,14 @@ export type ChoixCourrierAffiche =
 			readonly nombrePieces: number;
 	  };
 
+/** Le tribunal et le numéro d'une ordonnance, tels que la pièce déposée les imprime. */
+export interface OrdonnanceLueAffichee {
+	readonly juridiction: string;
+	readonly numero: string;
+	/** Le nom du fichier déposé : la phrase sous les champs dit d'où ils viennent. */
+	readonly fichier: string;
+}
+
 /** Nom et adresse de la personne nommée, tels que l'annonce les écrit. */
 export interface PersonneNommeeAffichee {
 	readonly nom: string;
@@ -168,6 +176,12 @@ export interface CourriersDuDossier {
 	 * vides, comme avant.
 	 */
 	readonly personneNommee: PersonneNommeeAffichee | null;
+	/**
+	 * La dernière décision du juge déposée au dossier, LUE (06/10/2026) : la
+	 * demande de signification part avec son tribunal et son numéro au lieu de
+	 * les faire recopier. `null` sans ordonnance lue.
+	 */
+	readonly ordonnanceLue: OrdonnanceLueAffichee | null;
 	/** L'aperçu des choix en cours : `undefined` en calcul, `null` sans choix. */
 	readonly apercu: ApercuAffiche | null | undefined;
 	readonly aujourdHui: string;
@@ -276,10 +290,13 @@ function choixInitial(
 	modele: ModeleCourrierAffiche,
 	aujourdHui: string,
 	delaiParDefaut: number | undefined,
-	personneNommee: PersonneNommeeAffichee | null
+	lu: {
+		readonly personneNommee: PersonneNommeeAffichee | null;
+		readonly ordonnance: OrdonnanceLueAffichee | null;
+	}
 ): ChoixCourrierAffiche {
-	const mandataireNom = personneNommee?.nom ?? '';
-	const mandataireAdresse = personneNommee?.adresse ?? '';
+	const mandataireNom = lu.personneNommee?.nom ?? '';
+	const mandataireAdresse = lu.personneNommee?.adresse ?? '';
 	switch (modele) {
 		case 'RELANCE_OFFICIELLE':
 			return {
@@ -315,7 +332,13 @@ function choixInitial(
 		case 'TRANSMISSION_AVOCAT':
 			return { modele, intervenantId: null, confidentiel: true };
 		case 'DEMANDE_SIGNIFICATION':
-			return { modele, intervenantId: null, juridiction: '', numero: '', nombrePieces: 0 };
+			return {
+				modele,
+				intervenantId: null,
+				juridiction: lu.ordonnance?.juridiction ?? '',
+				numero: lu.ordonnance?.numero ?? '',
+				nombrePieces: 0
+			};
 	}
 }
 
@@ -414,7 +437,8 @@ function FormulaireChoix({
 	professionnels,
 	dirigeantsDuClient,
 	citationAnnonce,
-	personneNommee
+	personneNommee,
+	ordonnanceLue
 }: {
 	choix: ChoixCourrierAffiche;
 	onChange: (c: ChoixCourrierAffiche) => void;
@@ -423,6 +447,7 @@ function FormulaireChoix({
 	dirigeantsDuClient: CourriersDuDossier['dirigeantsDuClient'];
 	citationAnnonce: string | null;
 	personneNommee: PersonneNommeeAffichee | null;
+	ordonnanceLue: OrdonnanceLueAffichee | null;
 }) {
 	switch (choix.modele) {
 		case 'RELANCE_OFFICIELLE':
@@ -702,6 +727,15 @@ function FormulaireChoix({
 						</Champ>
 					) : (
 						<>
+							{/* ⚠️ PRÉ-REMPLI, PAS DÉCIDÉ. Le tribunal et le numéro viennent
+							    de la lecture de la pièce déposée ; la phrase nomme le fichier,
+							    pour que le gérant compare avec la décision qu'il a sous la
+							    main avant de valider le courrier. */}
+							{ordonnanceLue === null ? null : (
+								<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+									{`Repris de « ${ordonnanceLue.fichier} », à vérifier sur la décision.`}
+								</p>
+							)}
 							<Champ etiquette="Le tribunal qui a rendu la décision (tel qu’écrit dessus)">
 								<Input
 									size="lg"
@@ -1011,7 +1045,10 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 															m.cle,
 															courriers.aujourdHui,
 															courriers.delaiRelanceParDefaut,
-															courriers.personneNommee
+															{
+																personneNommee: courriers.personneNommee,
+																ordonnance: courriers.ordonnanceLue
+															}
 														)
 											)
 										}
@@ -1030,6 +1067,7 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 										dirigeantsDuClient={courriers.dirigeantsDuClient}
 										citationAnnonce={courriers.citationAnnonce}
 										personneNommee={courriers.personneNommee}
+										ordonnanceLue={courriers.ordonnanceLue}
 									/>
 									<Apercu
 										apercu={courriers.apercu}

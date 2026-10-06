@@ -20,7 +20,12 @@ import {
 } from '../../ui';
 import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
 import { useDirigeantsDuClient, useProfessionnelsProposes } from '../../app/use-professionnels';
-import { modelesProposables, type ChoixCourrierAffiche, type EnvoiAffiche } from '../../ui';
+import {
+	modelesProposables,
+	type ChoixCourrierAffiche,
+	type EnvoiAffiche,
+	type OrdonnanceLueAffichee
+} from '../../ui';
 
 export const Route = createFileRoute('/app/dossier/$id')({
 	component: PageCreance,
@@ -753,6 +758,7 @@ function PageCreance() {
 							creance.annonceOuverture.complement,
 							creance.annonceOuverture.nature
 						),
+			ordonnanceLue: ordonnanceLue(pieces),
 			apercu: choixCourrier === null ? null : apercuCourrier,
 			aujourdHui,
 			enCours,
@@ -956,4 +962,31 @@ function PageCreance() {
 	};
 
 	return <EcranCreance donnees={{ etat: 'pret', valeur }} />;
+}
+
+/**
+ * La dernière décision du juge déposée au dossier, telle que sa lecture l'a
+ * relevée : la demande de signification en recopie le tribunal et le numéro.
+ * `null` quand aucune ordonnance n'a été lue, ou qu'elle n'en porte aucun des
+ * deux : un champ pré-rempli à vide ne dirait rien de plus que le champ vide.
+ */
+function ordonnanceLue(
+	pieces:
+		| readonly {
+				readonly type: string;
+				readonly filename: string;
+				readonly reference?: string;
+				readonly juridiction?: string;
+		  }[]
+		| undefined
+): OrdonnanceLueAffichee | null {
+	// Les pièces arrivent la plus récente d'abord.
+	const ordonnance = pieces?.find((piece) => piece.type === 'ORDONNANCE');
+	if (ordonnance === undefined) return null;
+	if (ordonnance.juridiction === undefined && ordonnance.reference === undefined) return null;
+	return {
+		juridiction: ordonnance.juridiction ?? '',
+		numero: ordonnance.reference ?? '',
+		fichier: ordonnance.filename
+	};
 }
