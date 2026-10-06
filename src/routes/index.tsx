@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import {
 	Navbar,
 	Hero,
+	Situations,
 	LaLoi,
 	Frise,
 	Etapes,
@@ -89,24 +90,26 @@ export const Route = createFileRoute('/')({
 });
 
 /**
- * L'ordre des sections est le rythme des fonds, et il se lit d'un coup :
+ * L'ORDRE DES SECTIONS EST LE RYTHME DU PAPIER (06/10/2026).
  *
- *   beige · beige · CLAIR · ENCRE · creux · beige · beige
+ *   crème · crème · PROFOND · crème · PROFOND · ENCRE · crème · PROFOND ·
+ *   crème · PROFOND · crème · crème · ENCRE
  *
- * Chaque changement de fond annonce un changement de sujet. Le clair porte les
- * démonstrations, qui ont besoin du contraste maximal. L'encre porte la preuve,
- * la seule section qui doit faire autorité. Le creux porte les limites, la seule
- * qui baisse la voix. Le beige respire entre les deux.
- *
- * Le conteneur ne borne plus rien : chaque section porte son fond sur toute la
- * largeur et borne sa lecture elle-même. Sans ça, aucun aplat ne peut aller de
- * bord à bord.
+ * Chaque changement de ton annonce un changement de sujet, et il se fait par un
+ * arc doux (`courbe`) : la section se pose sur la précédente comme une colline.
+ * Le crème raconte, le crème profond démontre, l'encre ne porte que le manifeste
+ * et le pied de page. Voir
+ * `docs/superpowers/specs/2026-10-06-site-direction-artistique.md`.
  */
 function Accueil() {
 	return (
-		<main className="flex w-full flex-col">
+		<main className="flex w-full flex-col bg-creme">
 			<Navbar />
 			<Hero />
+			{/* LA CIBLE, JUSTE APRÈS L'ACCROCHE (06/10/2026) : trois gérants, en
+			    situations types, avant la loi et le logiciel. On parle d'abord de la
+			    personne qui a les impayés. */}
+			<Situations />
 			<LaLoi />
 			{/*
 			  ⚠️ LA FRISE VIENT JUSTE APRÈS LA LOI, ET C'EST SA DÉMONSTRATION. La

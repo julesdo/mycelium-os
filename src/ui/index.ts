@@ -32,7 +32,6 @@ export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qu
 export { ListeDeRangees, RangeeDepliable, RangeeLien } from './liste-rangees';
 export { FAMILLES, VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
 export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
-export { Telephone } from './telephone';
 export { Page, PageHeader, PageBody, PageHero } from './page';
 export {
 	PageEcran,
@@ -294,8 +293,6 @@ export {
 	type EtatConnexion
 } from './carte-connexion';
 /* ── LA NUIT (la page publique refaite en noir et blanc) ───────────────────── */
-export { AtmosphereNuit, LueurProduit } from './nuit';
-export { Nebuleuse, BrouillardAvant } from './nebuleuse';
 export {
 	PictoEcheance,
 	PictoInterets,
@@ -309,5 +306,4 @@ export {
 	PictoRapprochement,
 	PictoInterdit
 } from './pictogrammes';
-export { ScenePointeur } from './scene-pointeur';
 export { BoutonAffiche, LienAffiche, type FondBouton } from './bouton-affiche';

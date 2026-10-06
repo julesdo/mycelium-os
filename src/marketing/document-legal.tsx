@@ -87,10 +87,10 @@ export function DocumentLegal({ titre, markdown }: { titre: string; markdown: st
 		.replace(/<\/table>/g, '</table></div>');
 
 	return (
-		<div className="bg-papier text-plume">
+		<div className="bg-creme text-encre-site">
 			<Navbar />
 
-			<main className="mx-auto w-full max-w-3xl px-cladd-2xs pt-cladd-2xl pb-cladd-xl">
+			<main className="mx-auto w-full max-w-3xl px-cladd-2xs pt-28 pb-36">
 				{/*
 				  ⚠️ LA REMONTÉE EST EN HAUT, ET C'EST UNE RÈGLE D'ÉCRAN. Une page
 				  légale s'atteint depuis le pied de page, souvent au milieu d'une
@@ -115,4 +115,3 @@ export function DocumentLegal({ titre, markdown }: { titre: string; markdown: st
 		</div>
 	);
 }
-

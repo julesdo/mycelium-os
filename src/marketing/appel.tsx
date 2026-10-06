@@ -1,68 +1,50 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
-import { AtmosphereNuit, BoutonAffiche, LienAffiche, ScenePointeur } from '../ui';
+import { BoutonAffiche, LienAffiche } from '../ui';
 import { SectionMarketing } from './section';
 
 /**
- * LE DERNIER APPEL.
+ * L'APPEL FINAL — un panneau abricot, une phrase, un bouton (06/10/2026).
  *
- * ⚠️ IL NE RÉSUME PAS LA PAGE, ET C'EST DÉLIBÉRÉ. La tentation d'une dernière
- * section est de reprendre les trois arguments en trois puces, « au cas où ».
- * Quelqu'un qui est descendu jusqu'ici les a lus ; les lui répéter dit qu'on ne
- * croit pas qu'il ait lu, et lui donne une quatrième occasion d'hésiter.
- *
- * Elle ne porte qu'une chose : l'URGENCE, qui est le seul argument que la page
- * n'a pas encore formulé comme une raison d'agir MAINTENANT plutôt qu'un jour.
- * Une créance ne prévient pas qu'elle expire.
- *
- * ⚠️ PAS DE FILET DE FERMETURE, ET PAS DE RAIL TECHNIQUE. Les rails ouvrent des
- * sections qui expliquent ; celle-ci ne s'ouvre pas, elle conclut. Et le filet
- * de fermeture dirait qu'il y a encore quelque chose après, alors qu'il ne
- * reste que le pied de page.
- *
- * ⚠️ LA LEVÉE DE RISQUE EST À CÔTÉ DU BOUTON, comme dans le premier écran et
- * pour la même raison : une objection se lève à l'endroit où elle naît. Elle
- * est ici plus longue qu'en haut, parce que le lecteur qui hésite à ce
- * moment-là hésite sur le prix, pas sur le principe.
+ * Le dernier écran avant le pied de page. Il redit la seule chose qui compte —
+ * le temps joue contre le gérant — et ne propose qu'un geste. Hilos pour le
+ * panneau arrondi et la serif ; deux galets pour qu'il ne soit pas un rectangle.
  */
 export function Appel() {
 	return (
-		<SectionMarketing filet={false} className="relative isolate gap-cladd-2xs">
-			{/* L'atmosphère seule, sans le ciel : les deux nébuleuses de la page sont
-			    réservées au premier écran et à la respiration du milieu. Voir
-			    l'en-tête de `bandeau.tsx` — une atmosphère qu'on retrouve toutes les
-			    deux sections est un papier peint. */}
-			<AtmosphereNuit className="-z-10" />
+		<SectionMarketing ton="creme" className="py-cladd-xl md:py-respiration">
+			<div className="apparait relative isolate flex flex-col items-center gap-cladd-2xs overflow-clip rounded-carte-site bg-teinte-abricot px-cladd-sm py-cladd-xl text-center md:py-respiration">
+				<div
+					aria-hidden
+					className="galet -top-20 -left-16 -z-10 size-56 bg-galet-abricot opacity-70"
+				/>
+				<div
+					aria-hidden
+					className="galet galet-b -right-20 -bottom-24 -z-10 size-72 bg-teinte-temps"
+				/>
 
-			<ScenePointeur className="flex flex-col gap-cladd-2xs">
-				<span className="w-fit rounded-full border border-filet-nuit px-cladd-3xs py-2 text-cladd-2xs font-medium tracking-widest text-craie-douce uppercase">
-					Le temps joue contre vous
+				<span className="manuscrit autocollant rounded-full bg-papier px-cladd-2xs py-1 text-intertitre">
+					le temps joue contre vous
 				</span>
-
-				<h2 className="suit-pointeur-loin apparait max-w-4xl font-affiche text-affiche-colonne leading-affiche font-semibold tracking-affiche text-balance">
-					Une facture impayée ne prévient pas qu’il est trop tard.{' '}
-					<span className="text-craie-claire">Elle expire.</span>
+				<h2 className="max-w-3xl font-serif text-affiche-colonne leading-tight font-medium tracking-titre-section text-balance">
+					Une facture impayée ne prévient pas. Elle expire.
 				</h2>
-
-				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
+				<p className="max-w-xl text-chapeau leading-relaxed text-encre-site-douce">
 					Le mois d’avant, vous pouvez encore agir. Le lendemain, il ne reste qu’à constater.
 				</p>
-
 				<div className="flex w-full flex-col items-stretch gap-cladd-3xs pt-cladd-3xs sm:w-auto sm:flex-row sm:items-center">
-					<BoutonAffiche as={Link} to="/inscription">
+					<BoutonAffiche as={Link} to="/inscription" fond="jour">
 						Voir ce qu’on me doit
 						<ArrowRightIcon />
 					</BoutonAffiche>
-					<LienAffiche href="#tarifs" className="justify-center sm:justify-start">
+					<LienAffiche href="#tarifs" className="justify-center">
 						Voir le prix
 					</LienAffiche>
 				</div>
-
-				<p className="text-cladd-sm font-normal text-craie-claire">
-					Trente jours d’essai. Aucune carte bancaire. Vous voyez vos montants avant de décider
-					quoi que ce soit.
+				<p className="text-cladd-sm text-encre-site-douce">
+					Trente jours d’essai. Aucune carte bancaire. Vous voyez vos montants avant de décider.
 				</p>
-			</ScenePointeur>
+			</div>
 		</SectionMarketing>
 	);
 }

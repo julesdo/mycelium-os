@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Button, Segmented, SegmentedButton, SurfaceCut } from '@cladd-ui/react';
+import { Segmented, SegmentedButton, SurfaceCut } from '@cladd-ui/react';
 import { ArrowRightIcon, CheckIcon, MinusIcon } from 'lucide-react';
-import { cn, euros } from '../ui';
+import { BoutonAffiche, cn, euros } from '../ui';
 import {
 	BORNES_COURTES,
 	BORNES_PALIER,
@@ -13,7 +13,7 @@ import {
 	type ColonneOffre,
 	type PalierTaille
 } from '../lib/config/tarifs';
-import { SectionMarketing } from './section';
+import { Chapeau, SectionMarketing, SurTitre, TitreSection } from './section';
 
 /**
  * Le prix, en clair.
@@ -112,47 +112,26 @@ export function Tarifs() {
 	const [palier, setPalier] = useState<PalierTaille>('S');
 
 	return (
-		<SectionMarketing id="tarifs" className="dark cladd-color-brand">
-			{/*
-			  ⚠️ `dark cladd-color-brand` EST POSÉ SUR LE CONTENEUR DE LA SECTION, et
-			  c'est la seule section qui en ait besoin. Elle emploie de VRAIS
-			  contrôles du kit — `Segmented`, `SurfaceCut`, `Button` — qui lisent le
-			  thème de leur ancêtre. Sans cette classe, un visiteur dont le système
-			  est en clair verrait un sélecteur de palier blanc posé au milieu du
-			  noir, et personne ne s'en apercevrait depuis un poste en sombre.
-
-			  Les autres sections n'en ont pas besoin : elles ne posent que du texte
-			  et des filets, qui prennent leur couleur de la page.
-			*/}
-			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
-				<span>Tarifs</span>
-				<span className="tabular-nums">{DUREE_ESSAI_JOURS} jours d’essai</span>
-			</div>
-
+		<SectionMarketing
+			id="tarifs"
+			ton="profond"
+			courbe
+			className="light cladd-color-brand gap-cladd-lg"
+		>
 			<div className="flex flex-col gap-cladd-2xs">
-				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance text-craie">
-					Ce que ça coûte,{' '}
-					<span className="text-craie-claire">et ce que ça couvre.</span>
-				</h2>
-				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
-					Le prix suit le nombre de factures que vous émettez chaque année. Le produit, lui, est
-					le même pour tout le monde.
-				</p>
+				<SurTitre teinte="argent">{`Le prix · ${DUREE_ESSAI_JOURS} jours d’essai`}</SurTitre>
+				<TitreSection suite="et ce que ça couvre.">Ce que ça coûte,</TitreSection>
+				<Chapeau>
+					Le prix suit le nombre de factures que vous émettez chaque année. Le logiciel, lui, est le
+					même pour tout le monde.
+				</Chapeau>
 			</div>
 
-			{/*
-			  LE SÉLECTEUR EST UN VRAI `Segmented`, dans un `SurfaceCut`, comme la
-			  barre de l'application. C'est le cas d'école du composant — un choix
-			  unique dans un petit ensemble — et le reconstruire à la main avec trois
-			  boutons perdrait ce que le kit porte tout seul : la taille propagée,
-			  l'élément actif qui remonte en relief dans le creux, et le fait qu'on ne
-			  puisse pas cliquer sur celui où l'on est déjà.
-			*/}
 			<div className="flex flex-col gap-cladd-3xs">
-				<span className="text-cladd-sm font-semibold text-craie-douce">
+				<span className="text-cladd-sm font-semibold">
 					Combien de factures émettez-vous par an ?
 				</span>
-				<SurfaceCut outline className="w-fit rounded-full" contentClassName="p-1">
+				<SurfaceCut outline className="w-fit max-w-full rounded-full" contentClassName="p-1">
 					<Segmented activeColor="brand" activeVariant="solid-fill">
 						{PALIERS.map((p) => (
 							<SegmentedButton key={p} active={p === palier} onClick={() => setPalier(p)}>
@@ -163,51 +142,31 @@ export function Tarifs() {
 				</SurfaceCut>
 			</div>
 
-			{/* Les deux cartes s'étirent à la même hauteur — c'est le défaut de la
-			    grille, et il faut se garder d'y poser `items-start`. Sans lui, la
-			    carte recommandée dépasse de deux pixels à cause de son contour
-			    doublé, et les deux boutons d'appel ne tombent plus sur la même ligne.
-			    Deux pixels de décalage sur les seuls boutons de la section : personne
-			    ne sait dire pourquoi, tout le monde le voit. */}
-			<div className="cascade grid gap-cladd-2xs md:grid-cols-2">
+			<div className="cascade grid gap-cladd-sm md:grid-cols-2 md:gap-cladd-lg">
 				{OFFRES.map((o) => (
 					<div
 						key={o.titre}
 						className={cn(
-							'flex flex-col gap-cladd-2xs rounded-panneau bg-nuit-relevee p-cladd-2xs md:p-cladd-xs',
-							// L'offre mise en avant se distingue par son CONTOUR, pas par une
-							// couleur de fond : un aplat bleu derrière une liste de sept
-							// lignes en rendrait cinq illisibles, et c'est le prix qu'on veut
-							// voir en premier, pas la carte.
-							o.avant
-								? 'border border-craie'
-								: 'border border-filet-nuit'
+							'flex flex-col gap-cladd-2xs rounded-carte-site bg-papier p-cladd-xs md:p-cladd-sm',
+							o.avant ? 'carte-decalee' : 'border border-filet-creme'
 						)}
 					>
 						<div className="flex flex-col gap-cladd-3xs">
 							<span className="flex flex-wrap items-center gap-cladd-3xs">
 								<span className="text-intertitre font-semibold">{o.titre}</span>
 								{o.avant ? (
-									<span className="rounded-full bg-cladd-primary/10 px-cladd-3xs py-1 text-cladd-2xs font-semibold tracking-widest text-cladd-primary uppercase">
-										Recommandé
+									<span className="manuscrit autocollant rounded-full bg-teinte-abricot px-cladd-3xs py-0.5 text-cladd-md">
+										recommandé
 									</span>
 								) : null}
 							</span>
-
-							{/*
-							  LE MONTANT EST LE PLUS GROS CORPS DE LA SECTION, et il change
-							  sous l'œil quand on déplace le sélecteur — c'est ce mouvement,
-							  et lui seul, qui fait comprendre que le prix dépend de la
-							  taille sans qu'une phrase ait à l'expliquer.
-							*/}
-							<span className="flex flex-wrap items-baseline gap-cladd-3xs">
-								<span className="font-affiche text-titre-section leading-none font-semibold tracking-titre-section tabular-nums">
+							<span className="flex flex-wrap items-baseline gap-cladd-3xs border-b border-dashed border-filet-creme pb-cladd-3xs">
+								<span className="font-serif text-seuil-colonne leading-none font-medium tracking-titre-section tabular-nums">
 									{euros(montant(palier, o.colonne))}
 								</span>
-								<span className="text-cladd-sm text-craie-claire">HT, {o.cadence}</span>
+								<span className="text-cladd-sm text-encre-site-claire">HT, {o.cadence}</span>
 							</span>
-
-							<p className="text-cladd-md leading-relaxed text-craie-douce">{o.argument}</p>
+							<p className="text-cladd-md leading-relaxed text-encre-site-douce">{o.argument}</p>
 						</div>
 
 						<ul className="flex flex-col gap-cladd-3xs">
@@ -218,23 +177,18 @@ export function Tarifs() {
 										<span
 											aria-hidden
 											className={cn(
-												'flex size-5 shrink-0 items-center justify-center rounded-full',
+												'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full',
 												inclus
-													? 'bg-cladd-primary/12 text-cladd-primary'
-													: 'bg-craie/10 text-craie-claire'
+													? 'bg-teinte-argent text-encre-site'
+													: 'bg-creme-profonde text-encre-site-claire'
 											)}
 										>
 											{inclus ? <CheckIcon size={13} /> : <MinusIcon size={13} />}
 										</span>
-										{/* Ce qui manque est GRISÉ, jamais barré. Un texte rayé se lit
-										    comme une promesse retirée ; le gris et le trait dans la
-										    pastille disent « pas dans cette offre-ci », ce qui est la
-										    vérité. C'est aussi le réglage de l'écran d'abonnement du
-										    produit, et les deux doivent se ressembler. */}
 										<span
 											className={cn(
 												'text-cladd-sm leading-snug',
-												inclus ? 'text-craie' : 'text-craie-claire'
+												inclus ? 'text-encre-site' : 'text-encre-site-claire line-through'
 											)}
 										>
 											{l.libelle}
@@ -244,36 +198,36 @@ export function Tarifs() {
 							})}
 						</ul>
 
-						<Button
-							as={Link}
-							to="/inscription"
-							color="brand"
-							variant={o.avant ? 'solid-fill' : 'solid'}
-							rounded
-							className="mt-auto w-full"
-						>
-							{o.appel}
-							<ArrowRightIcon />
-						</Button>
+						{o.avant ? (
+							<BoutonAffiche
+								as={Link}
+								to="/inscription"
+								fond="jour"
+								pleineLargeur
+								className="mt-auto"
+							>
+								{o.appel}
+								<ArrowRightIcon />
+							</BoutonAffiche>
+						) : (
+							<Link
+								to="/inscription"
+								className="mt-auto flex items-center justify-center gap-cladd-3xs rounded-full border border-encre-site px-cladd-2xs py-cladd-3xs text-cladd-md font-semibold transition-colors hover:bg-teinte-argent"
+							>
+								{o.appel}
+								<ArrowRightIcon size={18} />
+							</Link>
+						)}
 					</div>
 				))}
 			</div>
 
-			{/*
-			  LA LIGNE DE BAS DE GRILLE RÉPOND AUX TROIS QUESTIONS QUI RESTENT, et
-			  elle les répond dans l'ordre où elles se posent : est-ce que je
-			  m'engage, qu'est-ce que je paie vraiment, et qui me facture.
-
-			  Le vendeur de registre est nommé. Ce n'est pas une précaution
-			  juridique de plus : le prélèvement portera « Paddle » sur le relevé,
-			  et un gérant qui ne reconnaît pas le nom appelle sa banque.
-			*/}
-			<p className="max-w-3xl text-cladd-md leading-relaxed text-craie-douce">
-				{DUREE_ESSAI_JOURS} jours d&rsquo;essai, sans carte bancaire : vous voyez ce qu’on vous
-				doit et vos échéances avant de décider quoi que ce soit. Les montants sont hors taxes, sans
-				engagement de durée, et la facturation est assurée par Paddle. Votre palier —{' '}
-				<span className="font-semibold text-craie">{BORNES_PALIER[palier]}</span> — se confirme dans
-				vos réglages, à partir du volume que vous déclarez.
+			<p className="max-w-3xl text-cladd-md leading-relaxed text-encre-site-douce">
+				{DUREE_ESSAI_JOURS} jours d’essai, sans carte bancaire : vous voyez ce qu’on vous doit et
+				vos échéances avant de décider quoi que ce soit. Les montants sont hors taxes, sans
+				engagement de durée, et la facturation est assurée par Paddle. Votre palier,{' '}
+				<span className="font-semibold text-encre-site">{BORNES_PALIER[palier]}</span>, se confirme
+				dans vos réglages, à partir du volume que vous déclarez.
 			</p>
 		</SectionMarketing>
 	);

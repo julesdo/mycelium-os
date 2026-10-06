@@ -2,7 +2,7 @@ import { eurosCentimes, tauxLisible } from '../ui/format';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
 import { tauxPenaliteParDefaut } from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
-import { SectionMarketing } from './section';
+import { Chapeau, SectionMarketing, SurTitre, TitreSection } from './section';
 
 /**
  * LA VIE D'UNE FACTURE IMPAYÉE.
@@ -121,75 +121,57 @@ function stations(aujourdHui: string): readonly Station[] | null {
 }
 
 export function Frise() {
-	// La date du jour sert UNIQUEMENT à choisir le semestre du taux. Les dates
-	// de la frise, elles, sont figées : un exemple qui change de forme selon le
-	// jour où on l'ouvre ne se vérifie jamais.
 	const aujourdHui = new Date().toISOString().slice(0, 10);
 	const etapes = stations(aujourdHui);
 	if (etapes === null) return null;
 
 	return (
-		<SectionMarketing>
-			<div className="flex items-center justify-between gap-cladd-2xs border-b border-dashed border-filet-nuit pb-cladd-3xs text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase">
-				<span>La vie d’une facture</span>
-				<span className="tabular-nums">FA-2026-0118</span>
-			</div>
-
+		<SectionMarketing ton="creme" courbe className="gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
-				<h2 className="apparait max-w-4xl font-affiche text-titre-section leading-tight font-semibold tracking-titre-section text-balance">
-					Elle ne meurt pas d’un coup.{' '}
-					<span className="text-craie-claire">Elle grandit, puis elle tombe à zéro.</span>
-				</h2>
-				<p className="apparait max-w-2xl text-chapeau leading-relaxed font-normal text-craie-douce">
-					Un exemple, calculé au taux du semestre en cours. Les quatre montants se refont à la
-					main.
-				</p>
+				<SurTitre teinte="temps">La vie d’une facture</SurTitre>
+				<TitreSection suite="Elle grandit, puis elle tombe à zéro.">
+					Elle ne meurt pas d’un coup.
+				</TitreSection>
+				<Chapeau>
+					Un exemple, la facture FA-2026-0118, calculé au taux du semestre en cours. Les quatre
+					montants se refont à la main.
+				</Chapeau>
 			</div>
 
 			{/*
-			  LA FRISE. Quatre stations sur un rail qui se remplit au défilement.
-
-			  ⚠️ ELLE BASCULE À LA VERTICALE SOUS 1024 PX, et ce n'est pas un repli par
-			  défaut : quatre colonnes de cent-soixante pixels sur un téléphone
-			  rendraient « 13 977,60 € » sur trois lignes, ce qui casse le seul geste
-			  de la section — quatre montants qu'on compare d'un coup d'œil. À la
-			  verticale, chaque montant garde sa ligne et le rail descend.
+			  LE RAIL QUI SE REMPLIT AU DÉFILEMENT — la seule animation de la page qui
+			  RACONTE : le trait avance de l'émission vers l'extinction, au rythme où
+			  l'on descend. Vertical sur téléphone, horizontal au-delà de 1024 px.
 			*/}
 			<div className="frise relative flex flex-col gap-cladd-sm lg:grid lg:grid-cols-4 lg:gap-cladd-2xs">
-				{/* LE RAIL, sous les stations. Deux traits superposés : le gris qui
-				    montre le chemin entier, et le clair qui le parcourt. Sans le
-				    premier, on ne verrait pas ce qui reste à faire. */}
 				<div
 					aria-hidden
-					className="pointer-events-none absolute top-0 bottom-0 left-2 w-px bg-filet-nuit lg:top-2 lg:right-0 lg:bottom-auto lg:left-0 lg:h-px lg:w-auto"
+					className="pointer-events-none absolute top-0 bottom-0 left-2.5 w-0.5 rounded-full bg-filet-creme lg:top-2.5 lg:right-0 lg:bottom-auto lg:left-0 lg:h-0.5 lg:w-auto"
 				>
-					<div className="frise-rail-vertical size-full bg-craie lg:hidden" />
-					<div className="frise-rail hidden size-full bg-craie lg:block" />
+					<div className="frise-rail-vertical size-full rounded-full bg-galet-temps lg:hidden" />
+					<div className="frise-rail hidden size-full rounded-full bg-galet-temps lg:block" />
 				</div>
 
 				{etapes.map((station) => (
 					<div
 						key={station.titre}
-						className="apparait relative flex flex-col gap-cladd-3xs pl-cladd-2xs lg:pt-cladd-2xs lg:pl-0"
+						className="apparait relative flex flex-col gap-cladd-3xs pl-cladd-sm lg:pt-cladd-sm lg:pl-0"
 					>
-						{/* LA PASTILLE. Pleine sur les trois premières, creuse sur la
-						    dernière : une station qu'on n'atteint pas se dessine en creux. */}
 						<span
 							aria-hidden
 							className={
 								station.eteinte
-									? 'absolute top-1.5 left-0 size-4 rounded-full border border-craie-sourde bg-nuit lg:top-0 lg:left-0'
-									: 'absolute top-1.5 left-0 size-4 rounded-full border border-craie bg-craie lg:top-0 lg:left-0'
+									? 'absolute top-1 left-0 size-5 rounded-full border-2 border-encre-site-claire bg-creme lg:top-0'
+									: 'absolute top-1 left-0 size-5 rounded-full border-2 border-papier bg-galet-temps shadow-carte-chaude lg:top-0'
 							}
 						/>
-
-						<span className="text-cladd-3xs font-medium tracking-widest text-craie-sourde uppercase tabular-nums">
+						<span className="text-cladd-xs font-semibold text-encre-site-claire tabular-nums">
 							{station.quand}
 						</span>
 						<span
 							className={
 								station.eteinte
-									? 'text-intertitre leading-snug font-semibold text-craie-claire'
+									? 'text-intertitre leading-snug font-semibold text-encre-site-claire'
 									: 'text-intertitre leading-snug font-semibold'
 							}
 						>
@@ -198,19 +180,22 @@ export function Frise() {
 						<span
 							className={
 								station.eteinte
-									? 'font-affiche text-montant-frise leading-none font-semibold tracking-affiche text-craie-sourde tabular-nums'
-									: 'font-affiche text-montant-frise leading-none font-semibold tracking-affiche tabular-nums'
+									? 'font-serif text-montant-frise leading-none font-medium text-encre-site-claire tabular-nums line-through'
+									: 'font-serif text-montant-frise leading-none font-medium tabular-nums'
 							}
 						>
 							{station.montant}
 						</span>
-						<span className="text-cladd-sm leading-relaxed font-normal text-craie-douce">
+						<span className="text-cladd-sm leading-relaxed text-encre-site-douce">
 							{station.texte}
 						</span>
 					</div>
 				))}
 			</div>
 
+			<p className="apparait manuscrit -rotate-1 self-center text-titre-section leading-tight text-encre-site-douce">
+				Et ce dernier jour-là, personne ne prévient.
+			</p>
 		</SectionMarketing>
 	);
 }

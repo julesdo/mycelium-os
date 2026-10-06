@@ -460,6 +460,54 @@
 	--color-filet-nuit: oklch(1 0 0 / 0.14);
 	--color-filet-nuit-vif: oklch(1 0 0 / 0.28);
 
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * LE PAPIER CHAUD — la page publique depuis le 06/10/2026.
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * ⚠️ POURQUOI LA NUIT S'EN VA. Le site entier était noir, en « instrument de
+	 * mesure » : rigoureux, et froid. Le fondateur a demandé des formes, de
+	 * l'humanité, un ressenti, pour un gérant de TPE qui n'est ni juriste ni
+	 * financier. Le papier crème, l'encre bleue et les teintes douces disent
+	 * « quelqu'un est de votre côté » là où le noir disait « salle des marchés ».
+	 * Voir `docs/superpowers/specs/2026-10-06-site-direction-artistique.md`.
+	 *
+	 * ⚠️ AUCUNE TEINTE DE SEUIL. Le vert, l'ambre et le rouge restent réservés aux
+	 * jauges du produit, qui apparaissent sur ses captures. L'abricot est tenu
+	 * pâle, assez pour lire « papier », jamais « alerte ». */
+	--color-creme: oklch(0.975 0.014 85);
+	--color-creme-profonde: oklch(0.948 0.024 80);
+	/* L'encre : la couleur de la marque, poussée vers le profond pour porter le
+	 * texte. Quatre crans mesurés contre le crème : titres, courant, mentions. */
+	--color-encre-site: oklch(0.27 0.05 266);
+	--color-encre-site-douce: oklch(0.4 0.035 266);
+	--color-encre-site-claire: oklch(0.5 0.028 266);
+	--color-filet-creme: oklch(0.27 0.05 266 / 0.14);
+	/* Le crème sur l'encre, pour la section du manifeste et le pied de page. */
+	--color-creme-sur-encre: oklch(0.94 0.02 85);
+	--color-creme-sur-encre-douce: oklch(0.8 0.025 266);
+
+	/* LES TEINTES DES FAMILLES — la règle du produit portée sur sa vitrine : la
+	 * teinte dit DE QUOI il s'agit. L'argent en bleu, le temps en lavande, les
+	 * papiers en ciel, ce qu'on vous demande en rose ; l'abricot pour la chaleur
+	 * du papier. Les aplats de fond, puis les galets, un cran plus soutenus. */
+	--color-teinte-argent: oklch(0.935 0.035 258);
+	--color-teinte-temps: oklch(0.93 0.045 300);
+	--color-teinte-papiers: oklch(0.94 0.035 215);
+	--color-teinte-question: oklch(0.94 0.04 350);
+	--color-teinte-abricot: oklch(0.93 0.05 62);
+	--color-galet-argent: oklch(0.82 0.085 258);
+	--color-galet-temps: oklch(0.82 0.09 300);
+	--color-galet-papiers: oklch(0.86 0.07 215);
+	--color-galet-question: oklch(0.85 0.075 350);
+	--color-galet-abricot: oklch(0.86 0.085 62);
+
+	/* La grande carte du site : plus ronde que le panneau, parce qu'elle porte
+	 * une forme ou un écran, et que ce sont les bords doux qui la font lire
+	 * « objet posé » plutôt que « cadre ». */
+	--radius-carte-site: 32px;
+	--shadow-carte-chaude:
+		0 1px 2px oklch(0.4 0.04 70 / 0.06), 0 22px 48px -26px oklch(0.35 0.05 266 / 0.32);
+
 	/* La trame de la section d'autorité vit dans `app.css`, en classe ordinaire,
 	 * et non ici en jeton. Voir `.encre-tramee` là-bas pour les deux raisons —
 	 * elles ont l'une et l'autre coûté un aller-retour au navigateur. */
