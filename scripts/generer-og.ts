@@ -31,8 +31,9 @@
  * défile. Quatre choses : la marque, la promesse, les chiffres de la loi, et de
  * quoi comprendre qu'il s'agit d'une obligation légale.
  *
- * ELLE EST NOIRE, comme la page. Dans un fil majoritairement blanc, un
- * rectangle noir s'arrête ; un rectangle blanc se fond dans l'interface.
+ * ELLE EST SUR LE PAPIER CHAUD, comme la page depuis le 06/10/2026 : crème,
+ * encre bleue, galets et titre en serif. Le noir de l'ancienne page est parti
+ * avec elle.
  *
  * ⚠️ LE TAUX EST ÉCRIT COMME UNE RÈGLE, PAS COMME UN NOMBRE. « BCE + 10 points »
  * plutôt que « 12,40 % », et c'est délibéré : le taux est réancré chaque
@@ -71,16 +72,17 @@ const MODULES = join(RACINE, 'node_modules');
  * couleur de la page est dupliquée, et c'est parce qu'un moteur de rendu SVG
  * hors navigateur n'a pas accès à la feuille de style.
  */
-const NUIT = '#000000';
-const CRAIE = '#ffffff';
-/** `--color-craie-douce`, oklch(0.74 0 0). */
-const CRAIE_DOUCE = '#a8a8a8';
-/** `--color-craie-claire`, oklch(0.58 0 0). */
-const CRAIE_CLAIRE = '#7a7a7a';
-/** `--color-craie-sourde`, oklch(0.46 0 0) — filets et sur-titres seulement. */
-const CRAIE_SOURDE = '#595959';
-/** `--color-filet-nuit`, du blanc à 14 % sur du noir. */
-const FILET = '#242424';
+/* Les jetons du papier chaud (`tokens.css`), convertis d'oklch en sRGB :
+   resvg ne lit pas oklch. */
+const CREME = '#fbf6ec';
+const ENCRE = '#1b253f';
+const ENCRE_DOUCE = '#3f485b';
+const ENCRE_CLAIRE = '#5c6374';
+const TEINTE_ARGENT = '#dbebff';
+const TEINTE_PAPIERS = '#d2f2fa';
+const TEINTE_TEMPS = '#ece2ff';
+const TEINTE_ABRICOT = '#ffe1c7';
+const GALET_ABRICOT = '#fac597';
 
 /**
  * LES NOMS DE FAMILLE VIENNENT DU BINAIRE, PAS DE LA FEUILLE DE STYLE.
@@ -102,7 +104,9 @@ const FILET = '#242424';
  * et l'image de partage la suit. Charger une fonte de moins, c'est aussi une
  * famille de moins à se tromper de nom.
  */
-const AFFICHE = 'Inter Tight';
+// Le nom de famille INTERNE du fichier variable (table name, id 1) : « Newsreader »
+// seul ne trouve rien, et resvg rend alors le texte dans la fonte par défaut.
+const SERIF = 'Newsreader 16pt 16pt';
 const SANS = 'Plus Jakarta Sans';
 const BROSSE = 'Caveat Brush';
 
@@ -122,7 +126,7 @@ function seuilsDeLaLoi(): { valeur: string; quoi: string }[] {
 	const indemnite = PARAMETRES.indemniteForfaitaire;
 	const general = REGIMES_PRESCRIPTION.GENERAL;
 
-	const seuils = [{ valeur: 'BCE + 10 pts', quoi: 'd’intérêts de retard' }];
+	const seuils = [{ valeur: 'BCE + 10 pts', quoi: 'de pénalités de retard' }];
 
 	if (estUtilisable(indemnite) && indemnite.valeur !== null) {
 		const euros = Number(indemnite.valeur) / 100;
@@ -179,54 +183,53 @@ function marque(): string {
 function composition(): string {
 	const marge = 76;
 	/* ⚠️ LA COLONNE EST CALCULEE, PAS CHOISIE. Un pas fixe de 232 px a fait
-	   CHEVAUCHER « BCE + 10 pts » et « 40 € » : le premier seuil mesure environ
-	   trois cents pixels a ce corps, et se voyait recouvert par le deuxieme. La
-	   largeur utile divisee par trois donne 349 px, ce qui laisse de la marge au
-	   plus long des trois. Vu en REGARDANT le PNG — aucune erreur n avait ete
-	   levee. */
+	   CHEVAUCHER « BCE + 10 pts » et « 40 € ». La largeur utile divisee par trois
+	   laisse de la marge au plus long des trois. */
 	const COLONNE = Math.floor((LARGEUR - 2 * marge) / 3);
+	const TEINTES = [TEINTE_ARGENT, TEINTE_PAPIERS, TEINTE_TEMPS];
 	const seuils = seuilsDeLaLoi()
 		.map((s, i) => {
 			const x = marge + i * COLONNE;
 			return `
-<text x="${x}" y="512" font-family="${AFFICHE}" font-size="46" font-weight="600" letter-spacing="-1" fill="${CRAIE}">${s.valeur}</text>
-<text x="${x}" y="545" font-family="${SANS}" font-size="17" fill="${CRAIE_DOUCE}">${s.quoi}</text>`;
+<rect x="${x}" y="452" width="${COLONNE - 18}" height="116" rx="26" fill="${TEINTES[i] ?? TEINTE_ARGENT}"/>
+<text x="${x + 24}" y="512" font-family="${SERIF}" font-size="44" font-weight="500" fill="${ENCRE}">${s.valeur}</text>
+<text x="${x + 24}" y="545" font-family="${SANS}" font-size="17" fill="${ENCRE_DOUCE}">${s.quoi}</text>`;
 		})
 		.join('');
 
 	return `<svg width="${LARGEUR}" height="${HAUTEUR}" viewBox="0 0 ${LARGEUR} ${HAUTEUR}" xmlns="http://www.w3.org/2000/svg">
-<rect width="${LARGEUR}" height="${HAUTEUR}" fill="${NUIT}"/>
+<rect width="${LARGEUR}" height="${HAUTEUR}" fill="${CREME}"/>
+
+<!-- Les galets du site : abricot en haut à droite, lavande en bas à gauche. -->
+<path d="M 860 -60 C 1010 -90 1250 -20 1240 150 C 1232 290 1080 330 960 280 C 860 238 760 120 790 30 C 805 -20 830 -50 860 -60 Z" fill="${TEINTE_ABRICOT}"/>
+<path d="M -80 470 C 20 430 170 470 190 560 C 210 650 90 700 -20 690 C -120 680 -170 520 -80 470 Z" fill="${TEINTE_TEMPS}"/>
 
 <!-- Le logotype, à la brosse et en capitales, comme dans la barre du site. -->
-<g transform="translate(${marge} 62) scale(0.46)">${marque()}</g>
-<text x="${marge + 62}" y="104" font-family="${BROSSE}" font-size="40" fill="${CRAIE}" letter-spacing="2">LETIKETTE</text>
+<g transform="translate(${marge} 58) scale(0.46)">${marque()}</g>
+<text x="${marge + 62}" y="100" font-family="${BROSSE}" font-size="40" fill="${ENCRE}" letter-spacing="2">LETIKETTE</text>
 
-<!-- LE RAIL TECHNIQUE, tireté, comme en tête de chaque section de la page. -->
-<line x1="${marge}" y1="146" x2="${LARGEUR - marge}" y2="146" stroke="${FILET}" stroke-width="1" stroke-dasharray="4 4"/>
-<text x="${marge}" y="176" font-family="${SANS}" font-size="15" fill="${CRAIE_SOURDE}" letter-spacing="2.4">CODE DE COMMERCE</text>
-<text x="${LARGEUR - marge}" y="176" text-anchor="end" font-family="${SANS}" font-size="15" fill="${CRAIE_SOURDE}" letter-spacing="2.4">${articles()}</text>
+<!-- La pastille : à qui ça s'adresse, comme en tête du héros. -->
+<rect x="${marge}" y="150" width="424" height="40" rx="14" fill="${TEINTE_ABRICOT}"/>
+<text x="${marge + 18}" y="176" font-family="${SANS}" font-size="17" font-weight="600" fill="${ENCRE}">Pour les PME qui facturent d’autres entreprises</text>
 
-<!-- L'accroche. La première ligne baisse la voix, la seconde porte la
-     révélation : c'est l'emphase par la VALEUR, la seule dont dispose une page
-     en noir et blanc. Deux lignes posées à la main, faute de retour auto. -->
-<text x="${marge}" y="288" font-family="${AFFICHE}" font-size="66" font-weight="600" letter-spacing="-1.6" fill="${CRAIE_CLAIRE}">${ACCROCHE.eteint}</text>
-<text x="${marge}" y="356" font-family="${AFFICHE}" font-size="66" font-weight="600" letter-spacing="-1.6" fill="${CRAIE}">${ACCROCHE.vif}</text>
+<!-- L'accroche en serif, et le trait tiré à la main sous « date limite ». -->
+<text x="${marge}" y="270" font-family="${SERIF}" font-size="68" font-weight="500" fill="${ENCRE}">${ACCROCHE.eteint}</text>
+<text x="${marge}" y="346" font-family="${SERIF}" font-size="68" font-weight="500" fill="${ENCRE}">${ACCROCHE.vif}</text>
+<path d="M ${marge + 4} 362 C ${marge + 120} 352, ${marge + 260} 350, ${marge + 380} 356 S ${marge + 520} 364, ${marge + 560} 354" fill="none" stroke="${GALET_ABRICOT}" stroke-width="7" stroke-linecap="round"/>
 
-<text x="${marge}" y="406" font-family="${SANS}" font-size="20" fill="${CRAIE_DOUCE}">Letikette surveille cette date sur chacune de vos factures,</text>
-<text x="${marge}" y="434" font-family="${SANS}" font-size="20" fill="${CRAIE_DOUCE}">et calcule au centime ce qui vous est dû.</text>
+<text x="${marge}" y="406" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">Letikette surveille cette date sur chacune de vos factures,</text>
+<text x="${marge}" y="432" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">et calcule au centime ce qui vous est dû.</text>
 
-<line x1="${marge}" y1="466" x2="${LARGEUR - marge}" y2="466" stroke="${FILET}" stroke-width="1" stroke-dasharray="4 4"/>
 ${seuils}
-<line x1="${marge}" y1="578" x2="${LARGEUR - marge}" y2="578" stroke="${FILET}" stroke-width="1" stroke-dasharray="4 4"/>
-<text x="${marge}" y="606" font-family="${SANS}" font-size="17" fill="${CRAIE_DOUCE}">letikette.com</text>
-<text x="${LARGEUR - marge}" y="606" text-anchor="end" font-family="${SANS}" font-size="17" fill="${CRAIE_DOUCE}">Trente jours d’essai</text>
+<text x="${marge}" y="606" font-family="${SANS}" font-size="17" fill="${ENCRE_CLAIRE}">letikette.com · ${articles()}</text>
+<text x="${LARGEUR - marge}" y="606" text-anchor="end" font-family="${BROSSE}" font-size="24" fill="${ENCRE_DOUCE}">trente jours d’essai</text>
 </svg>`;
 }
 
 const polices = [
 	await police(
-		'@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2',
-		'inter-tight'
+		'@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2',
+		'newsreader'
 	),
 	await police(
 		'@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2',
