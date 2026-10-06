@@ -34,6 +34,8 @@ import {
 	type SecteurCreance
 } from '../../lib/verticales/recouvrement/pays/france/prescription';
 import { PROCEDURES } from '../../lib/verticales/recouvrement/procedures';
+import { personneNommeeDansLAnnonce } from '../../lib/verticales/recouvrement/pays/france/personne-nommee';
+import { ANNONCES_RELEVEES } from '../../lib/verticales/recouvrement/pays/france/annonces-relevees';
 import {
 	ETAGES_DE_PREUVE,
 	pyramideDePreuves,
@@ -763,7 +765,13 @@ function creanceDemo({
 				: [],
 			peutValider: true,
 			intervenants: [],
-			citationAnnonce: null,
+			// Une annonce RÉELLE, relevée au BODACC : le formulaire de la
+			// déclaration en tire la personne nommée par le même lecteur que la route.
+			citationAnnonce: ANNONCES_RELEVEES.liquidation.complement,
+			personneNommee: personneNommeeDansLAnnonce(
+				ANNONCES_RELEVEES.liquidation.complement,
+				ANNONCES_RELEVEES.liquidation.nature
+			),
 			apercu: null,
 			aujourdHui: AUJOURD_HUI_DEMO,
 			enCours: false,

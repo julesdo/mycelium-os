@@ -43,7 +43,7 @@ export interface ProcedureCollectiveCourrier {
 	readonly dateJugement?: string;
 	readonly dateParution: string;
 	readonly tribunal?: string;
-	/** Nom et adresse de la personne nommée, lus par le gérant dans l'annonce. */
+	/** Nom et adresse de la personne nommée, repris de l'annonce et vérifiés par le gérant. */
 	readonly mandataireNom: string;
 	readonly mandataireAdresse: string;
 	readonly referenceDossier?: string;

@@ -19,7 +19,8 @@ export {
 	type ChoixCourrierAffiche,
 	type CourriersDuDossier,
 	type EnvoiAffiche,
-	type ModeleProposable
+	type ModeleProposable,
+	type PersonneNommeeAffichee
 } from './courriers';
 export {
 	EtatDuDossier,

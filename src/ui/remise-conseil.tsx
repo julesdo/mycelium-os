@@ -398,7 +398,9 @@ function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 					setChoixOuvert(false);
 				}}
 				onRetenirEtude={(etude) => void suivi.professionnels.onRetenirEtude(etude).then(retenir)}
-				onRetenirAvocat={(avocat) => void suivi.professionnels.onRetenirAvocat(avocat).then(retenir)}
+				onRetenirAvocat={(avocat) =>
+					void suivi.professionnels.onRetenirAvocat(avocat).then(retenir)
+				}
 				onAjouter={suivi.onAjouterFiche}
 			/>
 		</>
@@ -414,7 +416,9 @@ function FeuilleRetour({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 			onOpenChange={(ouvert) => {
 				if (!ouvert) onFermer();
 			}}
-			headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">Mon conseil a répondu</span>}
+			headerLeft={
+				<span className="px-2 pb-1 text-cladd-sm font-semibold">Mon conseil a répondu</span>
+			}
 			contentClassName="max-w-lg"
 		>
 			<ChampDuFait
@@ -453,7 +457,9 @@ function FeuilleCloture({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFer
 			onOpenChange={(ouvert) => {
 				if (!ouvert) onFermer();
 			}}
-			headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">Mettre fin au suivi</span>}
+			headerLeft={
+				<span className="px-2 pb-1 text-cladd-sm font-semibold">Mettre fin au suivi</span>
+			}
 			contentClassName="max-w-lg"
 		>
 			<ChampDuFait

@@ -7,6 +7,7 @@ import { depuisCentimes, depuisEuros, enCentimes } from '../../lib/socle/montant
 import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel';
 import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
 import { situationsDuDossier } from '../../lib/verticales/recouvrement/situations';
+import { personneNommeeDansLAnnonce } from '../../lib/verticales/recouvrement/pays/france/personne-nommee';
 import {
 	TYPES_PIECE,
 	aujourdHuiISO,
@@ -744,6 +745,14 @@ function PageCreance() {
 			peutValider: envoisDuDossier?.peutValider ?? false,
 			intervenants: carnet.map((fiche) => ({ id: fiche._id, nom: fiche.nom, role: fiche.role })),
 			citationAnnonce: creance.annonceOuverture?.complement ?? null,
+			// Le nom et l'adresse de la personne nommée, lus dans la même annonce.
+			personneNommee:
+				creance.annonceOuverture?.complement === undefined
+					? null
+					: personneNommeeDansLAnnonce(
+							creance.annonceOuverture.complement,
+							creance.annonceOuverture.nature
+						),
 			apercu: choixCourrier === null ? null : apercuCourrier,
 			aujourdHui,
 			enCours,

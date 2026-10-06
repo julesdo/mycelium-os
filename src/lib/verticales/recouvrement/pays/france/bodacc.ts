@@ -69,7 +69,8 @@ export interface ConstatBodacc {
 	/**
 	 * Le texte du jugement, MOT POUR MOT (`complementJugement`). C'est là que se
 	 * lisent, quand l'annonce les porte, le nom et l'adresse de la personne nommée
-	 * par le tribunal. Le logiciel ne l'analyse pas : il le montre.
+	 * par le tribunal. Le logiciel le montre, et n'en tire que ces deux champs
+	 * (`personne-nommee.ts`), recopiés pour que le gérant les vérifie.
 	 */
 	readonly complement?: string;
 }

@@ -81,6 +81,12 @@ export type ChoixCourrierAffiche =
 			readonly nombrePieces: number;
 	  };
 
+/** Nom et adresse de la personne nommée, tels que l'annonce les écrit. */
+export interface PersonneNommeeAffichee {
+	readonly nom: string;
+	readonly adresse: string;
+}
+
 export interface ModeleProposable {
 	readonly cle: ModeleCourrierAffiche;
 	readonly titre: string;
@@ -154,6 +160,14 @@ export interface CourriersDuDossier {
 	} | null;
 	/** Le texte de l'annonce d'ouverture, mot pour mot, pour y lire la personne nommée. */
 	readonly citationAnnonce: string | null;
+	/**
+	 * La personne nommée par le tribunal, LUE dans cette annonce (06/10/2026) :
+	 * la déclaration et la lettre au mandataire partent pré-remplies au lieu de
+	 * faire recopier un nom et une adresse que l'annonce écrit déjà. `null`
+	 * quand l'annonce manque ou que sa forme n'est pas sûre : les champs restent
+	 * vides, comme avant.
+	 */
+	readonly personneNommee: PersonneNommeeAffichee | null;
 	/** L'aperçu des choix en cours : `undefined` en calcul, `null` sans choix. */
 	readonly apercu: ApercuAffiche | null | undefined;
 	readonly aujourdHui: string;
@@ -261,8 +275,11 @@ const ETAT: Record<EnvoiAffiche['etat'], string> = {
 function choixInitial(
 	modele: ModeleCourrierAffiche,
 	aujourdHui: string,
-	delaiParDefaut: number | undefined
+	delaiParDefaut: number | undefined,
+	personneNommee: PersonneNommeeAffichee | null
 ): ChoixCourrierAffiche {
+	const mandataireNom = personneNommee?.nom ?? '';
+	const mandataireAdresse = personneNommee?.adresse ?? '';
 	switch (modele) {
 		case 'RELANCE_OFFICIELLE':
 			return {
@@ -286,15 +303,15 @@ function choixInitial(
 		case 'DECLARATION_CREANCE':
 			return {
 				modele,
-				mandataireNom: '',
-				mandataireAdresse: '',
+				mandataireNom,
+				mandataireAdresse,
 				referenceDossier: '',
 				aucuneSurete: false,
 				aucunProces: false,
 				pouvoir: null
 			};
 		case 'INFORMATION_MANDATAIRE':
-			return { modele, mandataireNom: '', mandataireAdresse: '' };
+			return { modele, mandataireNom, mandataireAdresse };
 		case 'TRANSMISSION_AVOCAT':
 			return { modele, intervenantId: null, confidentiel: true };
 		case 'DEMANDE_SIGNIFICATION':
@@ -396,7 +413,8 @@ function FormulaireChoix({
 	intervenants,
 	professionnels,
 	dirigeantsDuClient,
-	citationAnnonce
+	citationAnnonce,
+	personneNommee
 }: {
 	choix: ChoixCourrierAffiche;
 	onChange: (c: ChoixCourrierAffiche) => void;
@@ -404,6 +422,7 @@ function FormulaireChoix({
 	professionnels: ProfessionnelsProposes;
 	dirigeantsDuClient: CourriersDuDossier['dirigeantsDuClient'];
 	citationAnnonce: string | null;
+	personneNommee: PersonneNommeeAffichee | null;
 }) {
 	switch (choix.modele) {
 		case 'RELANCE_OFFICIELLE':
@@ -552,6 +571,16 @@ function FormulaireChoix({
 						<blockquote className="border-l-2 border-cladd-outline pl-cladd-3xs text-cladd-2xs leading-relaxed">
 							« {citationAnnonce} »
 						</blockquote>
+					)}
+					{/* ⚠️ PRÉ-REMPLI, PAS DÉCIDÉ. Le nom et l'adresse sont recopiés de
+					    l'annonce citée juste au-dessus, et la phrase le dit : le gérant
+					    compare d'un coup d'œil, corrige s'il le faut, et valide le
+					    courrier avant qu'il parte. */}
+					{personneNommee === null ? null : (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							Repris de cette annonce, à vérifier : c’est à ce nom et à cette adresse que le
+							courrier partira.
+						</p>
 					)}
 					<Champ etiquette="La personne nommée par le tribunal (nom, tel qu’écrit dans l’annonce)">
 						<Input
@@ -981,7 +1010,8 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 													: choixInitial(
 															m.cle,
 															courriers.aujourdHui,
-															courriers.delaiRelanceParDefaut
+															courriers.delaiRelanceParDefaut,
+															courriers.personneNommee
 														)
 											)
 										}
@@ -999,6 +1029,7 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 										professionnels={courriers.professionnels}
 										dirigeantsDuClient={courriers.dirigeantsDuClient}
 										citationAnnonce={courriers.citationAnnonce}
+										personneNommee={courriers.personneNommee}
 									/>
 									<Apercu
 										apercu={courriers.apercu}
