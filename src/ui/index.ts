@@ -87,6 +87,11 @@ export {
 export { ConfirmationParSaisie } from './confirmation-par-saisie';
 export { AjoutDeFichiers, ZoneDepot } from './zone-depot';
 export { DirigeantsProposes, type DirigeantPropose, type EtatDirigeants } from './dirigeants';
+export {
+	ImmatriculationProposeeAuRegistre,
+	type EtatImmatriculation,
+	type ImmatriculationProposee
+} from './immatriculation';
 export { BilanImport, type DepotAffiche, type BilanDepotAffiche } from './bilan-import';
 export {
 	Tableau,

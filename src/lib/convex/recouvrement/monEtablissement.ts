@@ -7,6 +7,8 @@ import {
 	lireEtablissements,
 	type EtablissementTrouve
 } from '../../verticales/recouvrement/pays/france/etablissements';
+import { immatriculationDesAnnonces } from '../../verticales/recouvrement/pays/france/immatriculation';
+import { estSirenValide } from '../../verticales/recouvrement/pays/france/siren';
 
 /**
  * CE QUE LE LOGICIEL SAIT DÉJÀ DE L'ÉTABLISSEMENT DU GÉRANT.
@@ -227,5 +229,60 @@ export const chercherAuRegistreALInscription = authedAction({
 		const cherche = nom.trim();
 		if (cherche === '') return { cherche, candidats: [] };
 		return { cherche, candidats: await interrogerLeRegistre(cherche) };
+	}
+});
+
+/** Assez d'annonces pour remonter jusqu'à une immatriculation ancienne, sans tout lire. */
+const ANNONCES_D_IMMATRICULATION = 100;
+
+const vImmatriculation = v.union(
+	v.null(),
+	v.object({
+		capitalCentimes: v.union(v.int64(), v.null()),
+		capitalPublieLe: v.union(v.string(), v.null()),
+		registre: v.union(v.string(), v.null()),
+		villeGreffe: v.union(v.string(), v.null()),
+		greffePublieLe: v.union(v.string(), v.null()),
+		/** Le jour de la lecture : une source publique se cite avec sa date. */
+		releveeLe: v.string()
+	})
+);
+
+/**
+ * LE CAPITAL ET LE GREFFE DE L'ÉTABLISSEMENT, LUS AU BODACC (06/10/2026).
+ *
+ * Le gérant tapait son capital social et la ville de son greffe, que ses
+ * propres annonces d'immatriculation et de modification publient. On propose,
+ * on n'écrit rien : un toucher remplit les champs, « Enregistrer » écrit.
+ *
+ * ⚠️ UNE PANNE N'EST PAS UNE ABSENCE. Un statut non-200 lève en le nommant ;
+ * `null` veut dire « le registre ne publie rien de tel pour ce SIREN ».
+ */
+export const immatriculationAuRegistre = action({
+	args: { siren: v.string() },
+	returns: vImmatriculation,
+	handler: async (ctx, { siren }) => {
+		await ctx.runQuery(api.recouvrement.annuaires.sessionRequise, {});
+		const nu = siren.replace(/\D/g, '');
+		if (!estSirenValide(nu)) {
+			throw new ConvexError(
+				`Le SIREN « ${siren} » n’est pas valide : le registre ne peut pas être interrogé.`
+			);
+		}
+
+		const url =
+			`${BASE_BODACC}?limit=${ANNONCES_D_IMMATRICULATION}` +
+			`&order_by=${encodeURIComponent('dateparution DESC')}` +
+			`&select=${encodeURIComponent('dateparution,listepersonnes')}` +
+			`&where=${encodeURIComponent(`registre="${nu}"`)}`;
+		const reponse = await fetch(url);
+		if (!reponse.ok) {
+			throw new ConvexError(
+				`Le journal officiel des entreprises (BODACC) a répondu ${reponse.status} : le capital et le greffe sont inconnus, pas absents.`
+			);
+		}
+		const charge = (await reponse.json()) as { results?: unknown[] };
+		const lue = immatriculationDesAnnonces(Array.isArray(charge.results) ? charge.results : [], nu);
+		return lue === null ? null : { ...lue, releveeLe: new Date().toISOString().slice(0, 10) };
 	}
 });

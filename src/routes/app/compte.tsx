@@ -11,6 +11,7 @@ import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import type {
 	AvocatAffiche,
 	EtatDirigeants,
+	EtatImmatriculation,
 	EtatRechercheAvocat,
 	EtatRechercheCommissaire,
 	EtudeAffichee,
@@ -121,6 +122,13 @@ function PageCompte() {
 	// « Qui signe », proposé d'après le registre (01/10/2026).
 	const lireDirigeants = useAction(api.recouvrement.annuaires.dirigeantsAuRegistre);
 	const [etatDirigeants, setEtatDirigeants] = useState<EtatDirigeants>({ phase: 'REPOS' });
+	// Le capital et le greffe, lus au BODACC au même toucher (06/10/2026).
+	const lireImmatriculation = useAction(
+		api.recouvrement.monEtablissement.immatriculationAuRegistre
+	);
+	const [etatImmatriculation, setEtatImmatriculation] = useState<EtatImmatriculation>({
+		phase: 'REPOS'
+	});
 	const supprimerLeCompte = useMutation(api.rgpd.supprimerMonCompte);
 	const supprimerLEtablissement = useMutation(api.rgpd.supprimerEtablissement);
 	const [exportEnCours, setExportEnCours] = useState(false);
@@ -658,9 +666,41 @@ function PageCompte() {
 									? null
 									: {
 											etat: etatDirigeants,
+											immatriculation: etatImmatriculation,
 											onDemander: () => {
 												const siren = profil.siren;
 												if (siren === undefined) return;
+												setEtatImmatriculation({ phase: 'EN_COURS' });
+												lireImmatriculation({ siren })
+													.then((lue) =>
+														setEtatImmatriculation({
+															phase: 'TROUVE',
+															proposee:
+																lue === null
+																	? null
+																	: {
+																			capitalEuros:
+																				lue.capitalCentimes === null
+																					? null
+																					: versEuros(depuisCentimes(lue.capitalCentimes)),
+																			capitalPublieLe: lue.capitalPublieLe,
+																			inscritAuRcs: lue.registre === 'RCS',
+																			villeGreffe: lue.villeGreffe,
+																			greffePublieLe: lue.greffePublieLe,
+																			releveeLe: lue.releveeLe
+																		}
+														})
+													)
+													.catch((e: unknown) => {
+														const convexe = e as { data?: unknown };
+														setEtatImmatriculation({
+															phase: 'ECHEC',
+															message:
+																typeof convexe.data === 'string'
+																	? convexe.data
+																	: 'Le journal officiel des entreprises n’a pas répondu.'
+														});
+													});
 												setEtatDirigeants({ phase: 'EN_COURS' });
 												lireDirigeants({ siren })
 													.then(({ dirigeants, releveeLe }) =>

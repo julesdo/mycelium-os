@@ -5,8 +5,10 @@ import {
 	BoutonPrincipal,
 	Champ,
 	DirigeantsProposes,
+	ImmatriculationProposeeAuRegistre,
 	ListeCandidatsRegistre,
-	type EtatDirigeants
+	type EtatDirigeants,
+	type EtatImmatriculation
 } from '../../ui';
 import { qualiteCommercantDeLaForme } from '../../lib/verticales/recouvrement/pays/france/commercialite';
 
@@ -453,6 +455,11 @@ export interface InitialCourriers {
 export interface DirigeantsDuFormulaire {
 	readonly etat: EtatDirigeants;
 	readonly onDemander: () => void;
+	/**
+	 * Le capital et le greffe, lus au BODACC au MÊME toucher (06/10/2026) : un
+	 * seul « Proposer d'après le registre » pour tout ce que le registre publie.
+	 */
+	readonly immatriculation?: EtatImmatriculation;
 }
 
 export function FormulaireCourriers({
@@ -541,6 +548,17 @@ export function FormulaireCourriers({
 					inputMode="tel"
 				/>
 			</Champ>
+			{dirigeants?.immatriculation === undefined ? null : (
+				<ImmatriculationProposeeAuRegistre
+					etat={dirigeants.immatriculation}
+					onReprendre={(proposee) => {
+						if (proposee.capitalEuros !== null) champ('capitalSocialEuros', proposee.capitalEuros);
+						// Un « oui » seulement : le registre ne dit jamais « pas inscrit ».
+						if (proposee.inscritAuRcs) champ('immatriculeRcs', true);
+						if (proposee.villeGreffe !== null) champ('villeGreffeRcs', proposee.villeGreffe);
+					}}
+				/>
+			)}
 			<Champ etiquette="Capital social, en euros (SARL, SAS, SA)">
 				<Input
 					size="lg"

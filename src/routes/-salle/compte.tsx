@@ -726,6 +726,18 @@ function compteDe(
 						dirigeants: [{ nom: 'Claire MARTIN', fonction: 'Gérant' }],
 						releveeLe: '2026-10-01'
 					},
+					// Le capital publié depuis a changé : le toucher remplace les 10 000 €.
+					immatriculation: {
+						phase: 'TROUVE',
+						proposee: {
+							capitalEuros: '12 000,00',
+							capitalPublieLe: '2025-11-18',
+							inscritAuRcs: true,
+							villeGreffe: 'Bordeaux',
+							greffePublieLe: '2025-11-18',
+							releveeLe: '2026-10-06'
+						}
+					},
 					onDemander: () => undefined
 				}
 			}
