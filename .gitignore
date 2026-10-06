@@ -70,3 +70,6 @@ docs/lp-inspi/
 
 # Compagnon visuel de brainstorming (superpowers)
 .superpowers/
+
+# Le blog compilé par content-collections (régénéré à chaque build)
+.content-collections

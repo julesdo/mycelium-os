@@ -81,8 +81,6 @@ const ENCRE_CLAIRE = '#5c6374';
 const TEINTE_ARGENT = '#dbebff';
 const TEINTE_PAPIERS = '#d2f2fa';
 const TEINTE_TEMPS = '#ece2ff';
-const TEINTE_ABRICOT = '#ffe1c7';
-const GALET_ABRICOT = '#fac597';
 
 /**
  * LES NOMS DE FAMILLE VIENNENT DU BINAIRE, PAS DE LA FEUILLE DE STYLE.
@@ -149,9 +147,6 @@ function articles(): string {
 	return trouves.length > 0 ? trouves.join(' · ') : 'CODE DE COMMERCE';
 }
 
-/** Le trait sous « à temps », en pixels depuis la marge : réglé à l'œil sur le rendu. */
-const SOULIGNE = { debut: 560, fin: 790 };
-
 /** L'accroche, coupée à la main : SVG ne sait pas faire de retour à la ligne. */
 const ACCROCHE = { eteint: 'Relancez vos factures impayées', vif: 'au bon montant, et à temps.' };
 
@@ -194,7 +189,7 @@ function composition(): string {
 		.map((s, i) => {
 			const x = marge + i * COLONNE;
 			return `
-<rect x="${x}" y="452" width="${COLONNE - 18}" height="116" rx="26" fill="${TEINTES[i] ?? TEINTE_ARGENT}"/>
+<rect x="${x}" y="452" width="${COLONNE - 18}" height="116" rx="20" fill="${TEINTES[i] ?? TEINTE_ARGENT}"/>
 <text x="${x + 24}" y="512" font-family="${SERIF}" font-size="44" font-weight="500" fill="${ENCRE}">${s.valeur}</text>
 <text x="${x + 24}" y="545" font-family="${SANS}" font-size="17" fill="${ENCRE_DOUCE}">${s.quoi}</text>`;
 		})
@@ -203,22 +198,17 @@ function composition(): string {
 	return `<svg width="${LARGEUR}" height="${HAUTEUR}" viewBox="0 0 ${LARGEUR} ${HAUTEUR}" xmlns="http://www.w3.org/2000/svg">
 <rect width="${LARGEUR}" height="${HAUTEUR}" fill="${CREME}"/>
 
-<!-- Les galets du site : abricot en haut à droite, lavande en bas à gauche. -->
-<path d="M 860 -60 C 1010 -90 1250 -20 1240 150 C 1232 290 1080 330 960 280 C 860 238 760 120 790 30 C 805 -20 830 -50 860 -60 Z" fill="${TEINTE_ABRICOT}"/>
-<path d="M -80 470 C 20 430 170 470 190 560 C 210 650 90 700 -20 690 C -120 680 -170 520 -80 470 Z" fill="${TEINTE_TEMPS}"/>
 
 <!-- Le logotype, à la brosse et en capitales, comme dans la barre du site. -->
 <g transform="translate(${marge} 58) scale(0.46)">${marque()}</g>
 <text x="${marge + 62}" y="100" font-family="${BROSSE}" font-size="40" fill="${ENCRE}" letter-spacing="2">LETIKETTE</text>
 
-<!-- La pastille : à qui ça s'adresse, comme en tête du héros. -->
-<rect x="${marge}" y="150" width="352" height="40" rx="14" fill="${TEINTE_ABRICOT}"/>
-<text x="${marge + 18}" y="176" font-family="${SANS}" font-size="17" font-weight="600" fill="${ENCRE}">Logiciel de recouvrement pour les PME</text>
+<!-- À qui ça s'adresse, en une ligne : plus de pastille (06/10/2026 au soir). -->
+<text x="${marge}" y="178" font-family="${SANS}" font-size="19" font-weight="600" fill="${ENCRE_DOUCE}">Logiciel de recouvrement pour les PME</text>
 
-<!-- L'accroche en serif, et le trait tiré à la main sous « à temps ». -->
+<!-- L'accroche en serif, d'une seule valeur. -->
 <text x="${marge}" y="270" font-family="${SERIF}" font-size="68" font-weight="500" fill="${ENCRE}">${ACCROCHE.eteint}</text>
 <text x="${marge}" y="346" font-family="${SERIF}" font-size="68" font-weight="500" fill="${ENCRE}">${ACCROCHE.vif}</text>
-<path d="M ${marge + SOULIGNE.debut} 362 C ${marge + SOULIGNE.debut + 60} 354, ${marge + SOULIGNE.debut + 140} 352, ${marge + SOULIGNE.fin} 357" fill="none" stroke="${GALET_ABRICOT}" stroke-width="7" stroke-linecap="round"/>
 
 <text x="${marge}" y="406" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">Letikette calcule les pénalités et les frais dus sur chaque facture,</text>
 <text x="${marge}" y="432" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">surveille les délais et prépare vos relances.</text>

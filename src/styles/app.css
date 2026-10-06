@@ -2022,29 +2022,16 @@ select:not(:disabled),
  * superposition. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * LE PAPIER CHAUD — les formes de la page publique (06/10/2026).
+ * LE PAPIER CHAUD : ce qui reste en CSS pour la page publique (06/10/2026).
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Tout est en CSS, et c'est la contrainte de départ : le ciel de nébuleuse et le
- * téléphone dessiné en SVG faisaient saccader la page sur téléphone. Un galet
- * est un `border-radius`, un bord courbe est un rayon elliptique, un trait à la
- * main est une image de fond de quelques centaines d'octets.
+ * Le soir du 06/10, le fondateur a demandé une DA « plus pro et sûre, moins AI
+ * slop » : les galets, les autocollants penchés, le trait tiré à la main, les
+ * bords courbes, l'ombre décalée et le flottement sont partis. Restent le cadre
+ * du téléphone, la FAQ, la barre et le carrousel ; la couleur vit dans les
+ * cartes et les bandes, en classes Tailwind.
  * Voir `docs/superpowers/specs/2026-10-06-site-direction-artistique.md`.
  */
-
-/* LE GALET — une forme organique, jamais un cercle. Trois variantes pour que
-   deux galets voisins ne se répètent pas. Toujours décoratif : `aria-hidden`. */
-.galet {
-	position: absolute;
-	pointer-events: none;
-	border-radius: 58% 42% 46% 54% / 52% 48% 52% 48%;
-}
-.galet-b {
-	border-radius: 42% 58% 61% 39% / 47% 39% 61% 53%;
-}
-.galet-c {
-	border-radius: 63% 37% 37% 63% / 43% 57% 43% 57%;
-}
 
 /* LE CADRE DU TÉLÉPHONE, AUTOUR D'UNE CAPTURE PNG. Une bordure d'encre et deux
    rayons : de quoi lire « téléphone » sans dessiner un appareil. */
@@ -2065,18 +2052,6 @@ select:not(:disabled),
 	border-radius: 37px;
 }
 
-/* L'AUTOCOLLANT — une étiquette posée de travers, comme collée à la main. */
-/* ⚠️ `rotate`, PAS `transform` : l'animation de flottement réécrit `transform`,
-   et l'inclinaison disparaissait dès que la carte se mettait à flotter. */
-.autocollant {
-	rotate: -3deg;
-	box-shadow: 0 10px 24px -14px oklch(0.27 0.05 266 / 0.45);
-}
-.autocollant-droite {
-	rotate: 2.5deg;
-	box-shadow: 0 10px 24px -14px oklch(0.27 0.05 266 / 0.45);
-}
-
 /* LA FAQ : `<details>` natif, sans le triangle du navigateur (Safari garde le
    sien tant que le pseudo-élément n'est pas masqué). */
 .faq summary {
@@ -2086,86 +2061,40 @@ select:not(:disabled),
 	display: none;
 }
 
-/* L'ÉCRITURE À LA MAIN, pour les annotations seulement : un mot souligné, une
-   flèche, une remarque dans la marge. Jamais un paragraphe. */
-.manuscrit {
-	font-family: var(--font-manuscrit);
-	letter-spacing: 0.02em;
-}
-
-/* LE TRAIT TIRÉ À LA MAIN sous un mot. L'image est un seul tracé, de couleur
-   abricot soutenu : sous un titre d'encre, il se lit « souligné au feutre ». */
+/* LE TRAIT TIRÉ À LA MAIN sous « à temps », dans le titre du héros, et nulle part
+   ailleurs : revenu à la demande du fondateur (06/10/2026), en jaune moutarde.
+   L'image est un seul tracé de quelques centaines d'octets. */
 .souligne-main {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 20' preserveAspectRatio='none'%3E%3Cpath d='M3 14 C 60 6, 120 4, 180 8 S 270 13, 297 7' fill='none' stroke='%23F0A86C' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 20' preserveAspectRatio='none'%3E%3Cpath d='M3 14 C 60 6, 120 4, 180 8 S 270 13, 297 7' fill='none' stroke='%23D9A21E' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
 	background-position: 0 92%;
 	background-size: 100% 0.32em;
 	padding-bottom: 0.06em;
 }
 
-/* LE BORD DE SECTION COURBE — un rayon elliptique en haut, et la section
-   d'après semble posée sur une colline douce plutôt que coupée au cordeau. */
-.bord-courbe {
-	/* ⚠️ LA SECTION CHEVAUCHE LA PRÉCÉDENTE de la hauteur de son arc. Sans ça,
-	   les coins arrondis laissent voir le fond de la PAGE, pas la section d'au-
-	   dessus, et l'arc se lit comme un trou. Celle d'avant a toujours plus de
-	   rembourrage bas que l'arc n'est haut (60 px contre 56 sur téléphone, 112
-	   contre 96 au-delà) : rien de son contenu ne passe dessous. */
-	margin-top: -56px;
-	border-top-left-radius: 50% 56px;
-	border-top-right-radius: 50% 56px;
-}
-@media (min-width: 768px) {
-	.bord-courbe {
-		margin-top: -96px;
-		border-top-left-radius: 50% 96px;
-		border-top-right-radius: 50% 96px;
-	}
+/* LA BARRE PUBLIQUE : pleine largeur, le papier un peu transparent, un filet
+   dessous. ⚠️ LE PRÉFIXE `-webkit-` EN PREMIER : dans l'autre ordre, le
+   minifieur ne garde que lui et Chrome perd tout flou, en production seulement. */
+.barre-publique {
+	border-bottom: 1px solid var(--color-filet-creme);
+	background-color: oklch(0.975 0.014 85 / 0.88);
+	-webkit-backdrop-filter: blur(14px) saturate(1.2);
+	backdrop-filter: blur(14px) saturate(1.2);
 }
 
-/* LA CARTE DÉCALÉE — posée sur son propre aplat de couleur, comme une fiche
-   sur une pile. Réservée à l'offre mise en avant. */
-.carte-decalee {
-	border: 1.5px solid var(--color-encre-site);
-	box-shadow: 10px 10px 0 0 var(--color-galet-argent);
+/* LE FIL D'ARIANE D'UN ARTICLE, collé sous la barre publique : le même papier
+   et le même flou. Son filet n'apparaît qu'une fois collé, quand le texte passe
+   dessous ; au repos, il se confond avec la page. Préfixe `-webkit-` en premier,
+   pour la même raison que la barre. */
+.fil-ariane {
+	border-bottom: 1px solid transparent;
+	background-color: oklch(0.975 0.014 85 / 0.88);
+	-webkit-backdrop-filter: blur(14px) saturate(1.2);
+	backdrop-filter: blur(14px) saturate(1.2);
+	transition: border-color 150ms ease;
 }
-
-/* LE FLOTTEMENT, pour les cartes posées autour du téléphone du héros. Lent et
-   court : on doit le sentir plus que le voir. */
-.flotte {
-	animation: flotte 7s ease-in-out infinite;
-}
-.flotte-tard {
-	animation-delay: -3.5s;
-}
-@keyframes flotte {
-	0%,
-	100% {
-		transform: translateY(0);
-	}
-	50% {
-		transform: translateY(-8px);
-	}
-}
-@media (prefers-reduced-motion: reduce) {
-	.flotte {
-		animation: none;
-	}
-}
-
-/* LA BARRE SUR LE PAPIER — le verre crème de la barre publique.
-   ⚠️ LE PRÉFIXE `-webkit-` EN PREMIER : dans l'autre ordre, le minifieur ne
-   garde que lui et Chrome perd tout flou, en production seulement. */
-.barre-creme {
-	width: 100%;
-	max-width: 64rem;
-	margin-top: 0.75rem;
-	border: 1px solid var(--color-filet-creme);
-	border-radius: 9999px;
-	background-color: oklch(0.975 0.014 85 / 0.82);
-	-webkit-backdrop-filter: blur(18px) saturate(1.4);
-	backdrop-filter: blur(18px) saturate(1.4);
-	box-shadow: 0 8px 30px -18px oklch(0.27 0.05 266 / 0.35);
+.fil-ariane[data-colle] {
+	border-bottom-color: var(--color-filet-creme);
 }
 
 /* LE CARROUSEL À FAIRE GLISSER, sur téléphone seulement : les cartes défilent

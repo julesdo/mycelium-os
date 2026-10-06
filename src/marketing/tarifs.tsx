@@ -12,7 +12,7 @@ import {
 	type ColonneOffre,
 	type PalierTaille
 } from '../lib/config/tarifs';
-import { Chapeau, SectionMarketing, SurTitre, TitreSection } from './section';
+import { Chapeau, SectionMarketing, TitreSection } from './section';
 
 /**
  * Le prix, en clair.
@@ -109,14 +109,8 @@ export function Tarifs() {
 	const [palier, setPalier] = useState<PalierTaille>('S');
 
 	return (
-		<SectionMarketing
-			id="tarifs"
-			ton="profond"
-			courbe
-			className="light cladd-color-brand gap-cladd-lg"
-		>
+		<SectionMarketing id="tarifs" ton="profond" className="light cladd-color-brand gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
-				<SurTitre teinte="argent">Tarifs</SurTitre>
 				<TitreSection suite="sans engagement.">Un prix selon votre volume,</TitreSection>
 				<Chapeau>Le prix dépend du nombre de factures que vous émettez par an.</Chapeau>
 			</div>
@@ -136,14 +130,18 @@ export function Tarifs() {
 				</SurfaceCut>
 			</div>
 
-			<div className="cascade grid gap-cladd-sm md:grid-cols-2 md:gap-cladd-lg">
+			<div className="cascade grid gap-cladd-sm md:grid-cols-2 md:gap-x-cladd-lg md:gap-y-0">
 				{OFFRES.map((o) => (
 					<div
 						key={o.titre}
 						className={cn(
-							'flex flex-col gap-cladd-2xs rounded-carte-site bg-papier p-cladd-xs md:p-cladd-sm',
+							// Une sous-grille de trois rangées (offre, liste, bouton) : les listes et les
+							// boutons des deux offres s'alignent, quelle que soit la longueur du texte.
+							'flex flex-col gap-cladd-2xs rounded-carte-site bg-papier p-cladd-xs md:row-span-3 md:grid md:grid-rows-subgrid md:p-cladd-sm',
 							// Sur téléphone, l'offre recommandée passe devant : on lit d'abord celle qu'on conseille.
-							o.avant ? 'carte-decalee order-first md:order-none' : 'border border-filet-creme'
+							o.avant
+								? 'order-first border-2 border-encre-site md:order-none'
+								: 'border-2 border-filet-creme'
 						)}
 					>
 						<div className="flex flex-col gap-cladd-3xs">
@@ -156,7 +154,7 @@ export function Tarifs() {
 								) : null}
 							</span>
 							<span className="flex flex-wrap items-baseline gap-cladd-3xs border-b border-dashed border-filet-creme pb-cladd-3xs">
-								<span className="font-serif text-seuil-colonne leading-none font-medium tracking-titre-section tabular-nums">
+								<span className="font-serif text-seuil-colonne leading-none font-medium tracking-titre-section whitespace-nowrap tabular-nums">
 									{euros(montant(palier, o.colonne))}
 								</span>
 								<span className="text-cladd-sm text-encre-site-claire">HT, {o.cadence}</span>
@@ -216,7 +214,7 @@ export function Tarifs() {
 						) : (
 							<Link
 								to="/inscription"
-								className="mt-auto flex items-center justify-center gap-cladd-3xs rounded-full border border-encre-site px-cladd-2xs py-cladd-3xs text-cladd-md font-semibold transition-colors hover:bg-teinte-argent"
+								className="mt-auto flex min-h-11 items-center justify-center gap-cladd-3xs rounded-full border border-encre-site px-cladd-2xs text-cladd-md font-semibold transition-colors hover:bg-teinte-argent"
 							>
 								{o.appel}
 								<ArrowRightIcon size={18} />

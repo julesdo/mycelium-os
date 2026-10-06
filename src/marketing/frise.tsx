@@ -2,7 +2,7 @@ import { eurosCentimes, tauxLisible } from '../ui/format';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
 import { tauxPenaliteParDefaut } from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
-import { Chapeau, SectionMarketing, SurTitre, TitreSection } from './section';
+import { Chapeau, SectionMarketing, TitreSection } from './section';
 
 /**
  * LA VIE D'UNE FACTURE IMPAYÉE.
@@ -125,9 +125,8 @@ export function Frise() {
 	if (etapes === null) return null;
 
 	return (
-		<SectionMarketing ton="creme" courbe className="gap-cladd-lg">
+		<SectionMarketing ton="creme" className="gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
-				<SurTitre teinte="temps">Exemple</SurTitre>
 				<TitreSection suite="jusqu’à la date limite.">
 					Une facture impayée prend de la valeur
 				</TitreSection>
@@ -176,8 +175,8 @@ export function Frise() {
 						<span
 							className={
 								station.eteinte
-									? 'font-serif text-montant-frise leading-none font-medium text-encre-site-claire tabular-nums line-through'
-									: 'font-serif text-montant-frise leading-none font-medium tabular-nums'
+									? 'font-serif text-montant-frise leading-none font-medium whitespace-nowrap text-encre-site-claire tabular-nums line-through'
+									: 'font-serif text-montant-frise leading-none font-medium whitespace-nowrap tabular-nums'
 							}
 						>
 							{station.montant}

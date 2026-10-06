@@ -1,0 +1,112 @@
+---
+titre: Pénalités de retard, le calcul expliqué pas à pas
+description: À partir de quel jour, à quel taux, sur combien de jours. Comment se calculent les pénalités de retard d'une facture entre entreprises, sur un exemple chiffré.
+date: 2026-10-06
+categorie: La loi
+illustration: decompte
+enBref:
+  - Dès le lendemain de l'échéance, une facture impayée porte des pénalités de retard, sans qu'il faille les réclamer.
+  - À défaut d'un autre taux dans vos conditions générales, c'est le taux de la Banque centrale européenne majoré de dix points.
+  - Ce taux de référence change à chaque semestre, si bien qu'un long retard se calcule par périodes.
+  - Un taux prévu au contrat ne peut pas descendre sous trois fois le taux d'intérêt légal.
+brouillon: true
+---
+
+Une facture payée en retard ne coûte pas seulement de la trésorerie. La loi y ajoute des pénalités,
+calculées jour après jour, que votre client vous doit même si vous ne lui avez rien demandé.
+
+Encore faut-il savoir les calculer. Trois questions suffisent : à partir de quel jour, à quel taux,
+et sur combien de jours. Reprenons-les une par une, puis sur un exemple complet.
+
+## Ce que dit la loi, en une phrase
+
+Entre professionnels, toute facture réglée après sa date d'échéance porte des pénalités de retard.
+Elles sont dues « sans qu'un rappel soit nécessaire » (<Source de="penalitesExigiblesSansRappel" />).
+
+Autrement dit, vous n'avez pas besoin d'envoyer une relance pour qu'elles commencent à courir. La
+relance sert à vous faire payer ; elle n'ouvre aucun droit que vous n'ayez déjà.
+
+## À partir de quel jour
+
+Les pénalités sont exigibles « le jour suivant la date de règlement figurant sur la facture »
+(<Source de="formulationPointDepartPenalites" />).
+
+Si votre facture indique un paiement au 31 mars, les pénalités courent à partir du 1er avril. C'est
+la date écrite sur la facture qui compte : pas le jour où vous remarquez le retard, ni celui de votre
+première relance.
+
+<Encadre titre="Idée reçue" variante="attention">
+
+« Tant que je n'ai pas relancé, les pénalités ne courent pas. » C'est faux. Elles sont dues dès le
+lendemain de l'échéance, que vous ayez écrit à votre client ou non.
+
+</Encadre>
+
+## À quel taux
+
+Tout dépend de ce que disent vos conditions générales de vente.
+
+**Elles prévoient un taux.** C'est lui qui s'applique, avec une limite : il ne peut pas être
+inférieur à trois fois le taux d'intérêt légal (<Source de="tauxInteretMinimalLegal" />). Ce
+semestre, le taux d'intérêt légal entre professionnels est de <TauxLegal />, ce qui place ce plancher
+à <PlancherContractuel />.
+
+**Elles ne prévoient rien.** Le taux est alors celui de la Banque centrale européenne, majoré de dix
+points (<Source de="tauxInteretLegalDefaut" />). Ce semestre, cela fait **<TauxDePenalites /> par
+an**.
+
+Le taux de la Banque centrale européenne bouge. Le taux de référence est donc fixé pour chaque
+semestre, et une facture impayée depuis neuf mois se calcule sur deux ou trois périodes, chacune à
+son taux. C'est la source d'erreur la plus fréquente : appliquer le taux du jour à tout le retard.
+
+## Un exemple complet
+
+Prenons une menuiserie d'exemple. Elle a posé les fenêtres d'un immeuble de bureaux et facturé
+12 400 € à l'entreprise générale, payable au 31 mars 2026. Le 30 septembre, rien n'est arrivé.
+Voici ce que la facture vaut ce jour-là, calculé par le moteur de Letikette.
+
+<ExempleDecompte montant={12400} echeance="2026-03-31" arrete="2026-09-30" />
+
+Trois choses à remarquer.
+
+- **Deux lignes de pénalités, et non une seule.** Le retard traverse le 1er juillet : la première
+  période se calcule au taux du premier semestre, la seconde au taux du second.
+- **La formule ne change jamais** : montant dû × taux × nombre de jours ÷ 365. Votre client peut la
+  refaire à la calculatrice, ce qui rend le montant difficile à contester.
+- **Les frais de recouvrement s'ajoutent**, une fois par facture : <Indemnite />. Ils ont leurs
+  propres règles, détaillées dans
+  [notre article sur les frais de recouvrement](/blog/frais-de-recouvrement-40-euros).
+
+## Quand votre client paie une partie
+
+Un paiement partiel ne remet pas le compteur à zéro. Il s'impute d'abord sur les intérêts, donc sur
+les pénalités, puis sur le montant de la facture (<Source de="imputationPaiementPartiel" />), sauf si
+vos conditions générales prévoient un autre ordre. Les pénalités continuent ensuite de courir sur ce
+qui reste dû.
+
+Exemple : sur la facture ci-dessus, un versement de 3 000 € paie d'abord les pénalités déjà
+accumulées ; le reste seulement réduit les 12 400 €. Le détail est dans
+[notre article sur les paiements partiels](/blog/paiement-partiel-comment-il-s-impute).
+
+## Quand votre client fait l'objet d'une procédure collective
+
+Si votre client est placé en sauvegarde, en redressement ou en liquidation judiciaire, le jugement
+d'ouverture « arrête le cours » des intérêts de retard (<Source de="arretCoursInterets" />). Les
+pénalités cessent alors de courir. Par prudence, Letikette arrête le calcul la veille du jugement,
+parce que les textes ne disent pas si le jour même compte.
+
+## Ce que fait Letikette
+
+Letikette fait ce calcul pour chacune de vos factures, chaque jour, au taux de chaque semestre, et le
+détaille ligne par ligne comme ci-dessus. Une fois arrêté, le décompte est daté et figé : c'est ce
+que vous joignez à un courrier, à votre nom.
+
+<Capture
+	ecran="decompte"
+	legende="L'arrêt d'un décompte dans Letikette : le total, ses trois postes, et ce qui est laissé de côté."
+/>
+
+---
+
+Cet article présente des règles générales. Il ne constitue pas un conseil juridique : la décision
+d'agir, et la manière de le faire, restent les vôtres.

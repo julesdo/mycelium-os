@@ -1,13 +1,6 @@
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
 import { cn } from '../ui';
-import {
-	Chapeau,
-	Photo,
-	SectionMarketing,
-	SurTitre,
-	TitreSection,
-	type PhotoSite
-} from './section';
+import { Chapeau, Photo, SectionMarketing, TitreSection, type PhotoSite } from './section';
 
 /**
  * POUR QUI — trois métiers, trois photos (06/10/2026, réécrite le soir même).
@@ -58,7 +51,6 @@ export function Situations() {
 	return (
 		<SectionMarketing id="pour-qui" ton="creme" className="gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
-				<SurTitre teinte="argent">Pour qui</SurTitre>
 				<TitreSection>Pour les entreprises qui facturent d’autres entreprises.</TitreSection>
 				<Chapeau>
 					Artisans, commerçants, transporteurs, industriels, prestataires de services.

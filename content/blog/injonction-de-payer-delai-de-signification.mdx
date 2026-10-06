@@ -1,0 +1,119 @@
+---
+titre: Injonction de payer, le délai de signification a été raccourci
+description: Une ordonnance d'injonction de payer qui n'est pas signifiée à temps est perdue. Ce qui a changé pour les ordonnances récentes, et les autres délais à connaître.
+date: 2026-10-06
+categorie: Procédures
+illustration: horloge
+enBref:
+  - L'injonction de payer permet d'obtenir d'un juge une ordonnance qui condamne votre client à payer, sans audience.
+  - Cette ordonnance doit être signifiée à votre client dans un délai précis, faute de quoi elle ne vaut plus rien.
+  - Ce délai a été raccourci pour les ordonnances les plus récentes, et c'est la date de l'ordonnance qui compte.
+  - Après la signification, votre client dispose d'un délai pour faire opposition.
+brouillon: true
+---
+
+L'injonction de payer est la procédure la plus utilisée pour une facture impayée. Elle est rapide,
+écrite, et ne demande pas d'audience. Mais elle a un point faible que beaucoup découvrent trop tard :
+l'ordonnance obtenue doit être signifiée à votre client dans un délai court. Passé ce délai, elle ne
+vaut plus rien, et tout est à recommencer.
+
+Ce délai vient d'être raccourci. Voici ce qui a changé, et les autres délais de la procédure.
+
+## L'injonction de payer en quelques lignes
+
+Vous, ou votre avocat, adressez une requête au tribunal avec vos factures. Le juge l'examine sans
+entendre votre client. S'il l'accepte, il rend une ordonnance portant injonction de payer.
+
+Devant le tribunal de commerce comme devant le tribunal judiciaire, vous n'êtes pas obligé d'avoir un
+avocat tant que la demande ne dépasse pas <Valeur de="seuilDispenseAvocatTribunalCommerce" />
+(<Source de="seuilDispenseAvocatTribunalCommerce" /> ; <Source de="seuilDispenseAvocatTribunalJudiciaire" />).
+
+L'ordonnance n'a pas encore de force à ce stade. Elle doit d'abord être portée officiellement à la
+connaissance de votre client, par un commissaire de justice : c'est la signification.
+
+## Le délai qui a changé
+
+L'ordonnance devient « non avenue », c'est-à-dire perdue, si elle n'est pas signifiée à temps. Ce
+délai est désormais de **<Valeur de="delaiSignificationInjonction" />** à compter de la date de
+l'ordonnance (<Source de="delaiSignificationInjonction" />).
+
+Il était auparavant de <Valeur de="delaiSignificationInjonctionAncien" />
+(<Source de="delaiSignificationInjonctionAncien" />). Le nouveau délai s'applique aux ordonnances
+rendues à compter du <Valeur de="basculeDelaiSignificationInjonction" />
+(<Source de="basculeDelaiSignificationInjonction" />).
+
+<BarresDeDelais
+	delais={[
+		{
+			libelle: <>Ordonnance rendue avant le <Valeur de="basculeDelaiSignificationInjonction" /></>,
+			de: 'delaiSignificationInjonctionAncien'
+		},
+		{
+			libelle: <>Ordonnance rendue à compter du <Valeur de="basculeDelaiSignificationInjonction" /></>,
+			de: 'delaiSignificationInjonction'
+		}
+	]}
+	legende="Le délai pour signifier l'ordonnance à votre client, selon la date de l'ordonnance."
+/>
+
+<Encadre titre="Le piège" variante="attention">
+
+C'est la **date de l'ordonnance** qui décide du délai, pas la date du jour. Les deux régimes coexistent
+encore : une ordonnance rendue juste avant la bascule garde l'ancien délai, une ordonnance rendue juste
+après a le nouveau, plus court.
+
+</Encadre>
+
+Deux ordonnances d'exemple, rendues à quelques semaines d'écart, et leur date limite de signification :
+
+<ExempleSignification avant="2026-08-20" apres="2026-09-15" />
+
+## Après la signification : l'opposition
+
+Une fois l'ordonnance signifiée, votre client peut la contester en formant opposition. Il dispose pour
+cela de <Valeur de="delaiOppositionInjonction" /> à compter de la signification
+(<Source de="delaiOppositionInjonction" />). Si la signification ne lui a pas été remise en personne,
+ce délai part du premier acte qui lui est remis en personne, ou de la première saisie.
+
+S'il forme opposition, l'affaire revient devant le tribunal, et deux délais vous concernent alors
+directement.
+
+<Etapes>
+	<Etape titre="Au tribunal de commerce" quand={<>sous <Valeur de="delaiConsignationFraisOpposition" /></>}>
+		Le greffe vous demande, par lettre recommandée, de consigner les frais de l'opposition. Sans
+		consignation dans ce délai, la demande tombe (<Source de="delaiConsignationFraisOpposition" />).
+	</Etape>
+	<Etape titre="Au tribunal judiciaire" quand={<>sous <Valeur de="delaiConstitutionAvocatOpposition" /></>}>
+		Quand la représentation par avocat est obligatoire, vous devez constituer avocat dans ce délai à
+		compter de la notification (<Source de="delaiConstitutionAvocatOpposition" />).
+	</Etape>
+</Etapes>
+
+Sans opposition dans le délai, l'ordonnance peut être rendue exécutoire, et votre client peut être
+contraint de payer.
+
+## Les délais en un coup d'œil
+
+| Étape                          | Délai                                              | Il part de                 |
+| ------------------------------ | -------------------------------------------------- | -------------------------- |
+| Signifier l'ordonnance         | <Valeur de="delaiSignificationInjonction" />       | la date de l'ordonnance    |
+| Former opposition (votre client) | <Valeur de="delaiOppositionInjonction" />        | la signification           |
+| Consigner les frais (commerce) | <Valeur de="delaiConsignationFraisOpposition" />   | la lettre du greffe        |
+| Constituer avocat (judiciaire) | <Valeur de="delaiConstitutionAvocatOpposition" />  | la notification            |
+
+Pour une ordonnance rendue avant le <Valeur de="basculeDelaiSignificationInjonction" />, le délai de
+signification reste de <Valeur de="delaiSignificationInjonctionAncien" />.
+
+## Ce que fait Letikette
+
+Quand vous déposez une ordonnance dans Letikette, le logiciel en lit le tribunal et le numéro, calcule
+la date limite de signification selon la date de l'ordonnance, et la surveille. Il prépare la demande
+au commissaire de justice que vous choisissez ; c'est lui qui signifie.
+
+Engager une injonction de payer, ou non, reste votre décision. Elle se prend avec l'avocat ou le
+commissaire de justice de votre choix.
+
+---
+
+Cet article présente des règles générales. Il ne constitue pas un conseil juridique : la décision
+d'agir, et la manière de le faire, restent les vôtres.

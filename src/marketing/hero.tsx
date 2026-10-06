@@ -4,7 +4,7 @@ import { BoutonAffiche, FAMILLES, LienAffiche } from '../ui';
 import { eurosCentimesCourts } from '../ui/format';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
-import { EcranProduit, Photo, SurTitre } from './section';
+import { EcranProduit, Photo } from './section';
 
 /**
  * L'ENTRÉE (06/10/2026, réécrite le soir même).
@@ -44,22 +44,16 @@ export function Hero() {
 		// LE RETRAIT SUPÉRIEUR EST CELUI DE LA BARRE : elle est en `fixed` et ne
 		// réserve aucune place. Voir `--spacing-barre-publique`.
 		<header className="relative isolate w-full overflow-clip bg-creme pt-barre-publique text-encre-site">
-			{/* Les galets du fond. Décoratifs, coupés au bord de l'en-tête. */}
+			{/* LA BANDE ABRICOT DU BAS : la photo et le téléphone passent du papier à la
+			    couleur, comme la page « Our story » de Mailchimp. Une bande droite à la
+			    place des deux galets. */}
 			<div
 				aria-hidden
-				className="galet -top-16 -right-24 -z-10 size-80 bg-teinte-abricot md:-right-10 md:size-130"
-			/>
-			<div
-				aria-hidden
-				className="galet galet-b top-1/2 -left-28 -z-10 size-64 bg-teinte-temps md:-left-16 md:size-96"
+				className="absolute inset-x-0 bottom-0 -z-10 h-72 bg-teinte-abricot md:h-96"
 			/>
 
 			<div className="mx-auto flex w-full max-w-6xl flex-col items-center px-cladd-2xs pt-cladd-xl md:px-cladd-sm md:pt-cladd-2xl">
 				<div className="leve-suite flex flex-col items-center gap-cladd-2xs text-center">
-					<span className="leve">
-						<SurTitre>Logiciel de recouvrement pour les PME</SurTitre>
-					</span>
-
 					<h1 className="leve max-w-4xl font-serif text-affiche-colonne leading-tight font-medium tracking-titre-section text-balance">
 						Relancez vos factures impayées au bon montant, et{' '}
 						<span className="souligne-main whitespace-nowrap">à temps</span>.
@@ -98,10 +92,6 @@ export function Hero() {
 				  nomme un métier, pas une personne : aucun prénom à côté.
 				*/}
 				<div className="leve leve-tard relative mt-cladd-xl mb-24 w-full max-w-sm md:mt-cladd-2xl md:mb-32 md:max-w-md">
-					<div
-						aria-hidden
-						className="galet galet-c -inset-x-6 -inset-y-8 -z-10 bg-galet-abricot opacity-60"
-					/>
 					<div className="overflow-hidden rounded-carte-site shadow-carte-chaude">
 						<Photo
 							photo="artisan"
@@ -115,7 +105,7 @@ export function Hero() {
 					{/* Le téléphone, posé sur la photo : le vrai écran d'accueil.
 					    ⚠️ La position va sur l'ENVELOPPE : `.ecran-telephone` pose
 					    `position: relative` hors couche, et l'emporte sur `absolute`. */}
-					<div className="absolute -right-3 -bottom-16 w-36 rotate-3 md:-right-24 md:-bottom-20 md:w-52">
+					<div className="absolute -right-3 -bottom-16 w-36 md:-right-24 md:-bottom-20 md:w-52">
 						<EcranProduit
 							capture="aujourdhui"
 							prioritaire
@@ -124,7 +114,7 @@ export function Hero() {
 					</div>
 
 					{indemnite === null ? null : (
-						<div className="flotte autocollant absolute -bottom-10 -left-3 flex w-44 flex-col gap-1 rounded-cladd-xl bg-papier p-cladd-3xs text-left shadow-carte-chaude md:-bottom-8 md:-left-24 md:w-52">
+						<div className="absolute -bottom-10 -left-3 flex w-44 flex-col gap-1 rounded-cladd-xl border border-filet-creme bg-papier p-cladd-3xs text-left shadow-carte-chaude md:-bottom-8 md:-left-24 md:w-52">
 							<span className="flex items-center gap-cladd-3xs">
 								<span className="flex size-8 shrink-0 items-center justify-center rounded-cladd-sm bg-teinte-argent">
 									<PictoArgent className="size-5 text-encre-site" />
@@ -141,7 +131,7 @@ export function Hero() {
 
 					{/* La date limite, en grand écran seulement : sur téléphone, la photo,
 					    le téléphone et une carte suffisent à remplir l'écran. */}
-					<div className="flotte flotte-tard autocollant-droite absolute top-24 -left-32 hidden w-52 flex-col gap-1 rounded-cladd-xl bg-papier p-cladd-3xs text-left shadow-carte-chaude md:flex lg:-left-40">
+					<div className="absolute top-24 -left-32 hidden w-52 flex-col gap-1 rounded-cladd-xl border border-filet-creme bg-papier p-cladd-3xs text-left shadow-carte-chaude md:flex lg:-left-40">
 						<span className="flex items-center gap-cladd-3xs">
 							<span className="flex size-8 shrink-0 items-center justify-center rounded-cladd-sm bg-teinte-temps">
 								<PictoTemps className="size-5 text-encre-site" />

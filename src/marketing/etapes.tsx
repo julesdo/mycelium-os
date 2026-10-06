@@ -3,10 +3,8 @@ import { cn } from '../ui';
 import {
 	EcranProduit,
 	SectionMarketing,
-	SurTitre,
 	TitreSection,
 	fondDeTeinte,
-	galetDeTeinte,
 	type CaptureProduit,
 	type TeinteSite
 } from './section';
@@ -122,9 +120,8 @@ const ETAPES: readonly Etape[] = [
 
 export function Etapes() {
 	return (
-		<SectionMarketing id="comment" ton="profond" courbe className="gap-cladd-lg md:gap-cladd-2xl">
+		<SectionMarketing id="comment" ton="profond" className="gap-cladd-lg md:gap-cladd-2xl">
 			<div className="flex flex-col gap-cladd-2xs">
-				<SurTitre teinte="papiers">Comment ça marche</SurTitre>
 				<TitreSection suite="en cinq étapes.">De l’import au paiement,</TitreSection>
 				<p className="text-cladd-sm text-encre-site-claire">
 					Captures du logiciel, avec des données de démonstration.
@@ -153,13 +150,6 @@ export function Etapes() {
 								rang % 2 === 1 && 'md:order-2'
 							)}
 						>
-							<div
-								aria-hidden
-								className={cn(
-									'galet galet-c -top-16 -left-14 -z-10 size-56',
-									galetDeTeinte(etape.teinte)
-								)}
-							/>
 							<EcranProduit
 								capture={etape.capture}
 								description={etape.description}

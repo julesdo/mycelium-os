@@ -501,12 +501,13 @@
 	--color-galet-question: oklch(0.85 0.075 350);
 	--color-galet-abricot: oklch(0.86 0.085 62);
 
-	/* La grande carte du site : plus ronde que le panneau, parce qu'elle porte
-	 * une forme ou un écran, et que ce sont les bords doux qui la font lire
-	 * « objet posé » plutôt que « cadre ». */
-	--radius-carte-site: 32px;
+	/* Le rayon des cartes, photos et panneaux du site : 20 px. Il valait 32
+	 * jusqu'au soir du 06/10/2026 ; les bulles très rondes faisaient partie des
+	 * tics que le fondateur a demandé de retirer. L'ombre est courte et nette,
+	 * sans le grand halo qui faisait « carte posée sur un nuage ». */
+	--radius-carte-site: 20px;
 	--shadow-carte-chaude:
-		0 1px 2px oklch(0.4 0.04 70 / 0.06), 0 22px 48px -26px oklch(0.35 0.05 266 / 0.32);
+		0 1px 2px oklch(0.27 0.05 266 / 0.06), 0 6px 16px -10px oklch(0.27 0.05 266 / 0.22);
 
 	/* La trame de la section d'autorité vit dans `app.css`, en classe ordinaire,
 	 * et non ici en jeton. Voir `.encre-tramee` là-bas pour les deux raisons —
@@ -690,8 +691,15 @@
 	 * sur-titre sous le logo — un défaut qui ne se voit qu'en haut de page, à une
 	 * seule largeur, c'est-à-dire jamais.
 	 *
-	 * 80 px = 48 de contrôle (le plancher tactile) + deux fois 16 de bandeau. */
-	--spacing-barre-publique: 80px;
+	 * 64 px depuis le 06/10/2026 au soir : une barre pleine largeur collée en
+	 * haut, et non plus une pilule flottante avec sa marge. */
+	--spacing-barre-publique: 64px;
+
+	/* LE FIL D'ARIANE D'UN ARTICLE DU BLOG, collé sous la barre publique, et ce
+	 * que la lecture doit donc dégager au-dessus d'un intertitre : la barre, le fil,
+	 * et une respiration. Le sommaire collé et les ancres lisent la même somme. */
+	--spacing-fil-ariane: 44px;
+	--spacing-lecture: calc(var(--spacing-barre-publique) + var(--spacing-fil-ariane) + 16px);
 
 	/* LE GRAND SOUFFLE. Une fois et demie le plus grand écart du kit (72 px), pour
 	 * les deux ou trois endroits d'une page commerciale où un bloc doit se

@@ -66,7 +66,7 @@ export const Route = createFileRoute('/')({
 			{
 				property: 'og:image:alt',
 				content:
-					'Letikette, logiciel de recouvrement pour les PME : relancez vos factures impayées au bon montant, et à temps. Pénalités au taux BCE majoré de dix points, frais forfaitaires par facture, délai pour agir en justice.'
+					'Letikette, logiciel de recouvrement pour les PME. Pénalités au taux BCE majoré de dix points, frais forfaitaires par facture, délai pour agir en justice.'
 			},
 
 			{ name: 'twitter:card', content: 'summary_large_image' },

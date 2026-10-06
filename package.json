@@ -32,6 +32,7 @@
 		"@anthropic-ai/sdk": "^0.117.1",
 		"@better-auth/passkey": "~1.6.9",
 		"@cladd-ui/react": "0.18.5",
+		"@content-collections/mdx": "0.2.2",
 		"@convex-dev/agent": "^0.6.1",
 		"@convex-dev/better-auth": "^0.12.5",
 		"@convex-dev/rate-limiter": "^0.3.2",
@@ -82,6 +83,8 @@
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "4.11.3",
+		"@content-collections/core": "0.15.3",
+		"@content-collections/vite": "0.3.1",
 		"@convex-dev/eslint-plugin": "2.0.0",
 		"@eslint/compat": "2.1.0",
 		"@eslint/js": "10.0.1",
@@ -118,6 +121,7 @@
 		"oxlint-plugin-convex": "0.1.1",
 		"prettier": "3.8.3",
 		"prettier-plugin-tailwindcss": "0.8.0",
+		"remark-gfm": "^4.0.1",
 		"rollup-plugin-visualizer": "7.0.1",
 		"tailwind-merge": "3.5.0",
 		"tailwind-variants": "3.2.2",
@@ -129,8 +133,8 @@
 		"vaul-svelte": "1.0.0-next.7",
 		"vercel": "53.1.1",
 		"vite": "8.0.10",
-		"wawoff2": "2.0.1",
-		"vitest": "4.1.5"
+		"vitest": "4.1.5",
+		"wawoff2": "2.0.1"
 	},
 	"patchedDependencies": {
 		"oxlint-plugin-convex@0.1.1": "patches/oxlint-plugin-convex@0.1.1.patch"

@@ -2,7 +2,7 @@ import { PlusIcon } from 'lucide-react';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
 import { eurosCentimesCourts } from '../ui/format';
-import { SectionMarketing, SurTitre, TitreSection } from './section';
+import { SectionMarketing, TitreSection } from './section';
 
 /**
  * QUESTIONS FRÉQUENTES (06/10/2026).
@@ -64,10 +64,9 @@ function questions(): readonly { question: string; reponse: string }[] {
 
 export function Faq() {
 	return (
-		<SectionMarketing id="faq" ton="creme" courbe className="gap-cladd-lg">
+		<SectionMarketing id="faq" ton="creme" className="gap-cladd-lg">
 			<div className="grid gap-cladd-lg md:grid-cols-5">
 				<div className="flex flex-col gap-cladd-2xs md:col-span-2">
-					<SurTitre teinte="question">Questions fréquentes</SurTitre>
 					<TitreSection>Vos questions, nos réponses.</TitreSection>
 				</div>
 				<div className="faq flex flex-col gap-cladd-3xs md:col-span-3">

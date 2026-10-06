@@ -16,48 +16,42 @@ import { cn } from '../ui';
  * des formes, de l'humanité et un ressenti pour une cible de gérants de TPE.
  * Voir `docs/superpowers/specs/2026-10-06-site-direction-artistique.md`.
  *
- * ⚠️ `overflow-clip`, ET PAS `overflow-hidden` : les galets débordent de leur
- * section et doivent être coupés à son bord, sans créer de conteneur de
- * défilement qui casserait les animations au défilement (`.apparait`).
+ * ⚠️ DES BORDS DROITS ET DES BANDES DE COULEUR UNIE (06/10/2026, au soir). Le
+ * fondateur a validé la direction et demandé de la rendre « plus pro et sûre,
+ * moins AI slop ». Relevé sur Mailchimp, Retool et Windsurf : la couleur vit
+ * dans des bandes pleine largeur et des tuiles nettes, jamais dans des formes
+ * organiques posées derrière les objets. Les arcs entre sections, les galets,
+ * les cartes penchées qui flottent et le trait tiré à la main sont partis ; les
+ * teintes, la serif, les photos et les captures restent.
+ *
+ *   `abricot`  — une bande de la couleur chaude du papier, pour l'appel final.
  */
-export type TonSection = 'creme' | 'profond' | 'encre';
+export type TonSection = 'creme' | 'profond' | 'encre' | 'abricot';
 
 const FOND: Record<TonSection, string> = {
 	creme: 'bg-creme text-encre-site',
 	profond: 'bg-creme-profonde text-encre-site',
-	encre: 'bg-encre-site text-creme-sur-encre'
+	encre: 'bg-encre-site text-creme-sur-encre',
+	abricot: 'bg-teinte-abricot text-encre-site'
 };
 
 export function SectionMarketing({
 	id,
 	ton = 'creme',
-	courbe = false,
 	className,
 	children
 }: {
 	id?: string;
 	ton?: TonSection;
-	/** Le bord du haut en arc doux : la section se pose sur la précédente. */
-	courbe?: boolean;
 	className?: string;
 	children: ReactNode;
 }) {
 	return (
-		<section
-			id={id}
-			className={cn(
-				'relative isolate w-full overflow-clip',
-				FOND[ton],
-				id && 'scroll-mt-barre-publique',
-				courbe && 'bord-courbe'
-			)}
-		>
+		<section id={id} className={cn('relative w-full', FOND[ton], id && 'scroll-mt-barre-publique')}>
 			<div
 				className={cn(
 					// Plus d'air sur téléphone (80 px) : moins de texte, et de la place autour.
 					'mx-auto flex w-full max-w-6xl flex-col gap-cladd-sm px-cladd-2xs py-20 md:px-cladd-sm md:py-respiration',
-					// L'arc mange le haut de la section : le rembourrage le rend.
-					courbe && 'pt-32 md:pt-48',
 					className
 				)}
 			>
@@ -68,10 +62,10 @@ export function SectionMarketing({
 }
 
 /**
- * LE SUR-TITRE — une pastille, à la place du rail tireté en capitales.
- *
- * Elle porte la teinte de la famille dont parle la section : la même règle que
- * dans le produit, « la teinte dit de quoi il s'agit ».
+ * LES TEINTES DES FAMILLES, sur les cartes du site : la même règle que dans le
+ * produit, « la teinte dit de quoi il s'agit ». Le sur-titre qui les portait
+ * au-dessus de chaque titre a disparu le 06/10/2026 au soir (« très AI slop,
+ * pas naturel », le fondateur) ; elles vivent dans les cartes et les bandes.
  */
 export type TeinteSite = 'argent' | 'temps' | 'papiers' | 'question' | 'abricot';
 
@@ -83,49 +77,17 @@ const PASTILLE: Record<TeinteSite, string> = {
 	abricot: 'bg-teinte-abricot'
 };
 
-export function SurTitre({
-	teinte = 'abricot',
-	children
-}: {
-	teinte?: TeinteSite;
-	children: ReactNode;
-}) {
-	return (
-		<span
-			className={cn(
-				// `rounded-2xl` et pas `full` : si le texte passe à la ligne, la pastille
-				// devient un rectangle doux au lieu d'une gélule déformée.
-				'inline-block w-fit max-w-full rounded-2xl px-cladd-3xs py-1.5 text-cladd-xs font-semibold text-balance text-encre-site',
-				PASTILLE[teinte]
-			)}
-		>
-			{children}
-		</span>
-	);
-}
-
 /** L'aplat de fond d'une carte, par famille. */
 export function fondDeTeinte(teinte: TeinteSite): string {
 	return PASTILLE[teinte];
 }
 
-/** Le galet, un cran plus soutenu que l'aplat, par famille. */
-export function galetDeTeinte(teinte: TeinteSite): string {
-	return {
-		argent: 'bg-galet-argent',
-		temps: 'bg-galet-temps',
-		papiers: 'bg-galet-papiers',
-		question: 'bg-galet-question',
-		abricot: 'bg-galet-abricot'
-	}[teinte];
-}
-
 /**
  * LE TITRE DE SECTION, EN SERIF.
  *
- * ⚠️ L'EMPHASE SE FAIT PAR LA VALEUR : la seconde moitié s'éteint d'un cran, la
- * première reste pleine. C'est la hiérarchie du site depuis le début ; seule la
- * fonte change, de la grotesque d'affiche à la serif, plus humaine.
+ * ⚠️ D'UNE SEULE VALEUR depuis le 06/10/2026 au soir : la seconde moitié en
+ * gris à 60 % était un des tics relevés. `suite` reste, pour couper la phrase
+ * là où elle respire.
  */
 export function TitreSection({
 	children,
@@ -133,7 +95,7 @@ export function TitreSection({
 	className
 }: {
 	children: ReactNode;
-	/** La seconde moitié, un cran plus douce. */
+	/** La seconde moitié de la phrase. */
 	suite?: ReactNode;
 	className?: string;
 }) {
@@ -145,12 +107,7 @@ export function TitreSection({
 			)}
 		>
 			{children}
-			{suite === undefined ? null : (
-				<>
-					{' '}
-					<span className="opacity-60">{suite}</span>
-				</>
-			)}
+			{suite === undefined ? null : <> {suite}</>}
 		</h2>
 	);
 }

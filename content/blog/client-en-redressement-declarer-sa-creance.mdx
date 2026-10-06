@@ -1,0 +1,122 @@
+---
+titre: Votre client est en redressement judiciaire, déclarer votre créance à temps
+description: Sauvegarde, redressement, liquidation. À qui déclarer, dans quel délai, quoi écrire, et ce que deviennent les pénalités et les paiements reçus après le jugement.
+date: 2026-10-06
+categorie: Procédures
+illustration: declaration
+enBref:
+  - Quand une procédure collective s'ouvre, une facture impayée ne se réclame plus à votre client, elle se déclare au mandataire judiciaire ou au liquidateur.
+  - Le délai part de la publication du jugement au Bulletin officiel des annonces civiles et commerciales, pas de la date du jugement.
+  - La loi permet au créancier de faire cette déclaration lui-même.
+  - Les pénalités de retard cessent de courir au jugement, et un paiement reçu après peut être repris.
+brouillon: true
+---
+
+Un matin, un client ne répond plus, ou vous apprenez qu'il est « en redressement ». Le réflexe est
+d'attendre d'y voir plus clair. C'est le mauvais : à partir de ce moment, vos factures ne se
+réclament plus comme avant, et un délai court déjà.
+
+Voici ce que change l'ouverture d'une procédure collective, et comment ne pas perdre ce qui vous est
+dû.
+
+## Ce que change le jugement d'ouverture
+
+Il existe trois procédures collectives : la sauvegarde, le redressement judiciaire et la liquidation
+judiciaire. Dans les trois cas, le tribunal nomme un professionnel chargé de recenser les dettes de
+votre client.
+
+À partir de la publication du jugement, les créanciers dont la facture est antérieure au jugement
+« adressent la déclaration de leurs créances au mandataire judiciaire » ; en liquidation, ils les
+déclarent au liquidateur (<Source de="destinataireDeclarationCreance" />).
+
+Concrètement, vous ne relancez plus votre client : vous déclarez votre créance à ce professionnel. Et
+la loi vous permet de le faire vous-même, sans avocat.
+
+## Le délai, et son point de départ
+
+Vous disposez de **<Valeur de="delaiDeclarationCreance" />** à compter de la publication du jugement
+d'ouverture au Bulletin officiel des annonces civiles et commerciales, le BODACC
+(<Source de="delaiDeclarationCreance" />).
+
+Deux précisions comptent :
+
+- **C'est la publication qui fait courir le délai, pas le jugement.** Entre les deux, il peut se
+  passer plusieurs jours.
+- **C'est la date d'envoi de votre déclaration qui compte**, pas celle de sa réception, selon la Cour
+  de cassation.
+
+<ExempleDelai
+	depart="2026-10-01"
+	de="delaiDeclarationCreance"
+	libelleDepart="Publication du jugement au BODACC (exemple)"
+	libelleFin="Date limite pour déclarer"
+/>
+
+<Encadre titre="Idée reçue" variante="attention">
+
+« Le mandataire va me contacter, puisque je suis sur la liste des créanciers. » Votre client remet bien
+la liste de ses créanciers au mandataire (<Source de="listeCreanciersDuDebiteur" />), mais n'attendez
+pas un appel pour agir : le délai de déclaration court depuis la publication, que vous ayez été
+prévenu ou non.
+
+</Encadre>
+
+## Si le délai est passé : le relevé de forclusion
+
+Une créance déclarée trop tard n'est pas forcément perdue. Il est possible de demander au juge d'être
+« relevé de la forclusion », c'est-à-dire autorisé à déclarer hors délai. Cette demande ne peut être
+faite que dans les <Valeur de="delaiReleveForclusion" /> qui suivent la publication du jugement
+(<Source de="delaiReleveForclusion" />).
+
+<BarresDeDelais
+	delais={[
+		{ libelle: 'Déclarer votre créance', de: 'delaiDeclarationCreance' },
+		{ libelle: 'Demander à être relevé de la forclusion', de: 'delaiReleveForclusion' }
+	]}
+	legende="Les deux délais partent du même jour : la publication du jugement au BODACC."
+/>
+
+Le relevé de forclusion est une demande au juge, qui l'accorde ou non selon les circonstances. C'est
+un rattrapage, pas un droit acquis : mieux vaut déclarer dans le premier délai.
+
+## Ce que contient la déclaration
+
+La déclaration indique ce que votre client vous doit au jour du jugement : le montant des factures,
+les pénalités de retard acquises jusqu'à cette date, et les frais de recouvrement lorsqu'ils sont
+dus. Sauf si elle résulte d'un titre exécutoire, la créance déclarée est « certifiée sincère » par le
+créancier (<Source de="mentionCertificationSincerite" />).
+
+Le mandataire établit ensuite la liste des créances déclarées, avec ses propositions d'admission ou
+de rejet (<Source de="listeCreancesDeclarees" />).
+
+## Ce que deviennent les pénalités et les frais
+
+- **Les pénalités s'arrêtent.** Le jugement d'ouverture « arrête le cours » des intérêts de retard
+  (<Source de="arretCoursInterets" />). Par prudence, Letikette arrête le calcul la veille du jugement.
+- **Les frais de recouvrement dépendent de l'échéance.** Pour une facture dont l'échéance tombe le
+  jour du jugement ou après, ils ne peuvent pas être invoqués (<Source de="exclusionIndemnitesProcedureCollective" />).
+  Pour une facture échue avant le jugement, ils peuvent figurer dans la déclaration.
+
+## Un paiement reçu après le jugement
+
+Votre client vous paie une facture après le jugement d'ouverture ? Ce paiement peut être annulé, et
+la somme reprise, pendant <Valeur de="delaiAnnulationPaiementInterdit" /> après le paiement
+(<Source de="delaiAnnulationPaiementInterdit" />). Il ne faut donc pas considérer la facture comme
+réglée sans en parler au mandataire ou à un avocat.
+
+## Ce que fait Letikette
+
+Letikette relève chaque nuit les annonces du BODACC sur vos clients. Quand un jugement d'ouverture est
+publié, le logiciel vous le signale, affiche la date de publication, calcule la date limite de
+déclaration, et prépare la déclaration chiffrée au jour du jugement, avec le nom et l'adresse du
+mandataire lus dans l'annonce. Vous la relisez, la certifiez et l'envoyez vous-même.
+
+<Capture
+	ecran="aujourdhui"
+	legende="L'écran d'accueil de Letikette : ce qui presse en premier, dont les clients dont la situation a changé."
+/>
+
+---
+
+Cet article présente des règles générales. Il ne constitue pas un conseil juridique : la décision
+d'agir, et la manière de le faire, restent les vôtres.

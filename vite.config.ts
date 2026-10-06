@@ -7,6 +7,7 @@ import { convexLocal } from 'convex-vite-plugin';
 import { resetRedactionMap } from 'varlock/env';
 import { DEV_FEATURES, type DevFeature } from './src/lib/dev/features';
 import { findAvailablePort, portlessOwnsPort } from './scripts/dev-ports';
+import contentCollections from '@content-collections/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
@@ -322,6 +323,9 @@ export default defineConfig(async ({ mode }) => {
 	plugins.push(
 		varlockVitePlugin(mode === 'production' ? { ssrInjectMode: 'resolved-env' } : {}),
 		tailwindcss(),
+		// Le blog : compile `content/blog/*.mdx` au build et les sert sous l'alias
+		// `content-collections`. Voir `content-collections.ts`.
+		contentCollections(),
 		// L'ordre compte : tanstackStart genere l'arbre de routes, react() compile le JSX.
 		// plugin React en double.
 		tanstackStart(),

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { BanknoteIcon, LockIcon, PenLineIcon, Trash2Icon } from 'lucide-react';
-import { Photo, SectionMarketing, SurTitre, TitreSection } from './section';
+import { Photo, SectionMarketing, TitreSection } from './section';
 
 /**
  * SÉCURITÉ — ce qui rassure, en faits vérifiables (06/10/2026).
@@ -42,14 +42,9 @@ const GARDE_FOUS = [
 
 export function Securite() {
 	return (
-		<SectionMarketing id="securite" ton="encre" courbe className="gap-cladd-lg">
-			<div
-				aria-hidden
-				className="galet -top-24 -right-24 -z-10 size-96 bg-encre-site-douce opacity-60"
-			/>
+		<SectionMarketing id="securite" ton="encre" className="gap-cladd-lg">
 			<div className="grid w-full items-center gap-cladd-lg md:grid-cols-5">
 				<div className="flex flex-col gap-cladd-2xs md:col-span-3">
-					<SurTitre teinte="argent">Sécurité</SurTitre>
 					<TitreSection suite="sur vos clients et sur votre argent.">
 						Vous gardez la main
 					</TitreSection>
@@ -64,13 +59,15 @@ export function Securite() {
 				</div>
 			</div>
 
+			{/* Chaque carte est une sous-grille (titre, texte) : les textes commencent à la
+			    même hauteur même quand un titre tient sur deux lignes. */}
 			<dl className="cascade grid gap-cladd-sm md:grid-cols-2 md:gap-cladd-2xs xl:grid-cols-4">
 				{GARDE_FOUS.map(({ Icone, titre, texte }) => (
 					<div
 						key={titre}
-						className="flex flex-col gap-cladd-3xs rounded-carte-site border border-creme-sur-encre/15 p-cladd-xs"
+						className="flex flex-col gap-cladd-3xs rounded-carte-site border border-creme-sur-encre/15 p-cladd-xs md:row-span-2 md:grid md:grid-rows-subgrid"
 					>
-						<dt className="flex items-center gap-cladd-3xs">
+						<dt className="flex flex-col items-start gap-cladd-2xs">
 							<span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-papier text-encre-site">
 								<Icone aria-hidden size={20} />
 							</span>

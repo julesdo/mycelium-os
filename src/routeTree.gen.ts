@@ -21,6 +21,7 @@ import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oubl
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
 import { Route as ShowroomRouteImport } from './routes/showroom'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppClientsRouteImport } from './routes/app/clients'
 import { Route as AppCompteRouteImport } from './routes/app/compte'
@@ -29,6 +30,9 @@ import { Route as AppDossiersRouteImport } from './routes/app/dossiers'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
 import { Route as AppProceduresRouteImport } from './routes/app/procedures'
 import { Route as AppRevelationRouteImport } from './routes/app/revelation'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
+import { Route as BlogAdresseRouteImport } from './routes/blog/$adresse'
+import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -101,6 +105,11 @@ const ShowroomRoute = ShowroomRouteImport.update({
   path: '/showroom',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -140,6 +149,21 @@ const AppRevelationRoute = AppRevelationRouteImport.update({
   id: '/revelation',
   path: '/revelation',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogAdresseRoute = BlogAdresseRouteImport.update({
+  id: '/blog/$adresse',
+  path: '/blog/$adresse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
+  id: '/blog/rss.xml',
+  path: '/blog/rss.xml',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PJetonRoute = PJetonRouteImport.update({
   id: '/p/$jeton',
@@ -205,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
@@ -212,9 +237,12 @@ export interface FileRoutesByFullPath {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/blog/$adresse': typeof BlogAdresseRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
   '/app/clients/$id': typeof AppClientsIdRoute
@@ -236,6 +264,7 @@ export interface FileRoutesByTo {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
@@ -243,9 +272,12 @@ export interface FileRoutesByTo {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/blog/$adresse': typeof BlogAdresseRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app': typeof AppIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
   '/app/clients/$id': typeof AppClientsIdRoute
@@ -269,6 +301,7 @@ export interface FileRoutesById {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/showroom': typeof ShowroomRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
@@ -276,9 +309,12 @@ export interface FileRoutesById {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/blog/$adresse': typeof BlogAdresseRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/arret/$id': typeof AppArretIdRoute
   '/app/clients/$id': typeof AppClientsIdRoute
@@ -303,6 +339,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/showroom'
+    | '/sitemap.xml'
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
@@ -310,9 +347,12 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
+    | '/blog/$adresse'
+    | '/blog/rss.xml'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app/'
+    | '/blog/'
     | '/api/auth/$'
     | '/app/arret/$id'
     | '/app/clients/$id'
@@ -334,6 +374,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/showroom'
+    | '/sitemap.xml'
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
@@ -341,9 +382,12 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
+    | '/blog/$adresse'
+    | '/blog/rss.xml'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app'
+    | '/blog'
     | '/api/auth/$'
     | '/app/arret/$id'
     | '/app/clients/$id'
@@ -366,6 +410,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/showroom'
+    | '/sitemap.xml'
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
@@ -373,9 +418,12 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/procedures'
     | '/app/revelation'
+    | '/blog/$adresse'
+    | '/blog/rss.xml'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app/'
+    | '/blog/'
     | '/api/auth/$'
     | '/app/arret/$id'
     | '/app/clients/$id'
@@ -399,8 +447,12 @@ export interface RootRouteChildren {
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
   PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
   ShowroomRoute: typeof ShowroomRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  BlogAdresseRoute: typeof BlogAdresseRoute
+  BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   PJetonRoute: typeof PJetonRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -490,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShowroomRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -545,6 +604,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/revelation'
       preLoaderRoute: typeof AppRevelationRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$adresse': {
+      id: '/blog/$adresse'
+      path: '/blog/$adresse'
+      fullPath: '/blog/$adresse'
+      preLoaderRoute: typeof BlogAdresseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/rss.xml': {
+      id: '/blog/rss.xml'
+      path: '/blog/rss.xml'
+      fullPath: '/blog/rss.xml'
+      preLoaderRoute: typeof BlogRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/p/$jeton': {
       id: '/p/$jeton'
@@ -701,8 +781,12 @@ const rootRouteChildren: RootRouteChildren = {
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
   PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
   ShowroomRoute: ShowroomRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  BlogAdresseRoute: BlogAdresseRoute,
+  BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   PJetonRoute: PJetonRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
+  BlogIndexRoute: BlogIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

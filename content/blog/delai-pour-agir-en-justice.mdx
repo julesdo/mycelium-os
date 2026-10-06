@@ -1,0 +1,132 @@
+---
+titre: La date limite pour agir en justice, ce qui la fait courir et ce qui ne l'arrête pas
+description: Combien de temps une facture se réclame en justice selon votre secteur, à partir de quand, et pourquoi une lettre recommandée n'arrête pas le compte.
+date: 2026-10-06
+categorie: La loi
+illustration: calendrier
+enBref:
+  - Une facture impayée ne se réclame en justice que pendant un temps limité, appelé prescription.
+  - Ce délai dépend de votre activité, et il est beaucoup plus court pour le transport de marchandises.
+  - Une mise en demeure, même par lettre recommandée, n'arrête pas ce délai.
+  - Seuls quelques actes l'interrompent, comme une reconnaissance de la dette par votre client ou une demande en justice.
+brouillon: true
+---
+
+Une facture impayée ne fait aucun bruit le jour où elle devient impossible à réclamer devant un
+juge. Pas d'alerte, pas de courrier : le délai expire, et c'est tout.
+
+Ce délai a un nom juridique, la prescription. Il varie selon votre activité, il part d'un jour précis,
+et il ne s'arrête que dans des cas que la loi énumère. Une relance, même solennelle, n'en fait pas
+partie.
+
+## Pourquoi il existe une date limite
+
+La loi ne laisse pas une dette se réclamer indéfiniment. Passé un certain délai, vous ne pouvez plus
+demander à un tribunal de faire payer votre client.
+
+Ce délai ne se voit nulle part sur la facture. C'est pour cela qu'il se perd : on garde une facture
+« pour plus tard », on attend que le client aille mieux, et le jour où l'on veut agir, il est trop
+tard.
+
+## Combien de temps, selon votre activité
+
+<DelaisParSecteur />
+
+**Entre professionnels, en général : <DelaiPourAgir />** (<Source de="prescription-general" />).
+C'est le cas le plus courant : une menuiserie qui facture une entreprise, une agence qui facture un
+client professionnel.
+
+**Pour le transport de marchandises : <DelaiPourAgir regime="TRANSPORT_MARCHANDISES" />**
+(<Source de="prescription-transport" />). Ce délai court concerne toutes les actions nées du contrat
+de transport, y compris le paiement du prix. Si vous êtes transporteur, vos factures de transport
+se réclament dans ce délai, et non dans le délai général. Il vise le transport terrestre en France ;
+le transport international, maritime ou aérien relève d'autres textes.
+
+**Pour ce qu'un professionnel fournit à un particulier : <DelaiPourAgir regime="CONSOMMATEUR" />**
+(<Source de="prescription-consommateur" />). Attention, « particulier » veut dire une personne
+physique. Une association, par exemple, relève du délai général.
+
+<Encadre titre="Idée reçue" variante="attention">
+
+« J'ai <DelaiPourAgir />, j'ai le temps. » Seulement si vous êtes dans le cas général. Un
+transporteur qui attend plus de <DelaiPourAgir regime="TRANSPORT_MARCHANDISES" /> avant de réclamer
+une facture de transport a déjà laissé passer la date limite.
+
+</Encadre>
+
+## À partir de quand le délai court
+
+Le point de départ n'est pas le même selon le cas.
+
+- **Cas général** : <PointDeDepart regime="GENERAL" />
+- **Transport de marchandises** : <PointDeDepart regime="TRANSPORT_MARCHANDISES" />
+- **Vente à un particulier** : <PointDeDepart regime="CONSOMMATEUR" />
+
+Pour une facture impayée entre professionnels, ce jour est le plus souvent celui de son échéance :
+c'est à ce moment que vous savez que votre client n'a pas payé. Dans une situation particulière, le
+point de départ exact se fait confirmer par un avocat.
+
+## Le piège de la lettre recommandée
+
+C'est l'erreur la plus répandue. Beaucoup de gérants pensent qu'une mise en demeure envoyée en
+recommandé « arrête le compteur ». Ce n'est pas le cas : une mise en demeure, même par lettre
+recommandée avec avis de réception, n'interrompt pas la prescription
+(<Source de="miseEnDemeureNonInterruptive" />).
+
+La liste des actes qui l'interrompent est fermée, fixée par le code civil. Tout ce qui n'y figure
+pas, aussi ferme soit-il, laisse le délai courir.
+
+<Comparaison
+	titreOui="Interrompt le délai"
+	oui={[
+		'Une reconnaissance de la dette par votre client',
+		'Une demande en justice',
+		'Une mesure conservatoire',
+		'Un acte d’exécution forcée'
+	]}
+	titreNon="N’interrompt pas le délai"
+	non={[
+		'Une relance par e-mail',
+		'Un appel téléphonique',
+		'Une lettre simple',
+		'Une mise en demeure, même en recommandé avec avis de réception'
+	]}
+/>
+
+La mise en demeure garde toute son utilité : elle constate le retard et demande clairement le
+paiement. Elle ne protège simplement pas contre la date limite.
+
+## Repérer les factures qui approchent de la date limite
+
+Trois habitudes suffisent à ne pas se faire surprendre.
+
+<Etapes>
+	<Etape titre="Classer les impayés par date d'échéance">
+		La plus ancienne n'est pas toujours la plus grosse, mais c'est elle dont le délai expire en
+		premier.
+	</Etape>
+	<Etape titre="Noter l'activité de chaque client">
+		Transport, vente à un particulier, échange entre professionnels : c'est elle qui fixe le délai.
+		En cas de doute, retenez le délai le plus court.
+	</Etape>
+	<Etape titre="Regarder la liste chaque mois">
+		Une facture dont le délai approche mérite une décision : la réclamer, la négocier ou y renoncer.
+		Une décision prise à temps, quelle qu'elle soit, vaut mieux qu'un délai qui expire en silence.
+	</Etape>
+</Etapes>
+
+## Ce que fait Letikette
+
+Letikette calcule la date limite de chaque facture, au délai de son secteur, et la surveille chaque
+nuit. Quand le secteur d'un client n'est pas connu, il retient le délai le plus court, et vous le
+dit : vous savez toujours sur quelle hypothèse repose la date affichée.
+
+<Capture
+	ecran="dossier"
+	legende="Un dossier dans Letikette : le montant dû et, juste dessous, la date limite pour agir."
+/>
+
+---
+
+Cet article présente des règles générales. Il ne constitue pas un conseil juridique : la décision
+d'agir, et la manière de le faire, restent les vôtres.

@@ -1,12 +1,13 @@
 import { Link } from '@tanstack/react-router';
 import { LogoLetikette } from '../ui';
 import { getLegalEmailAddress } from '../lib/config/legal';
+import { articlesPublies } from './blog';
 
 /**
  * LE PIED DE PAGE — l'encre, la marque en grand, les liens légaux (06/10/2026).
  *
- * La page se referme sur la couleur de la marque, avec un bord courbe : elle se
- * pose comme une colline sous l'appel final, plutôt qu'une barre de fin. La
+ * La page se referme sur la couleur de la marque, d'un bord droit sous la
+ * bande abricot de l'appel final. La
  * marque y est écrite en grand, dans son écriture — The Leap pour le geste.
  *
  * ⚠️ LES QUATRE LIENS LÉGAUX RESTENT VISIBLES, et la phrase qui borne le produit
@@ -20,12 +21,8 @@ const LIEN =
 
 export function Pied() {
 	return (
-		<footer className="bord-courbe relative isolate w-full overflow-clip bg-encre-site text-creme-sur-encre">
-			<div
-				aria-hidden
-				className="galet galet-b -top-24 -right-24 -z-10 size-96 bg-encre-site-douce opacity-50"
-			/>
-			<div className="mx-auto flex w-full max-w-6xl flex-col gap-cladd-sm px-cladd-2xs pt-28 pb-cladd-xl md:px-cladd-sm md:pt-48">
+		<footer className="w-full bg-encre-site text-creme-sur-encre">
+			<div className="mx-auto flex w-full max-w-6xl flex-col gap-cladd-sm px-cladd-2xs pt-cladd-xl pb-cladd-xl md:px-cladd-sm md:pt-cladd-2xl">
 				<div className="flex flex-col gap-cladd-2xs md:flex-row md:items-end md:justify-between">
 					<Link to="/" aria-label="Letikette, accueil" className="flex items-center gap-cladd-2xs">
 						<LogoLetikette className="size-14 shrink-0 md:size-20" />
@@ -34,6 +31,11 @@ export function Pied() {
 						</span>
 					</Link>
 					<div className="flex flex-wrap items-center gap-x-cladd-2xs gap-y-1">
+						{articlesPublies().length > 0 ? (
+							<Link to="/blog" className={LIEN}>
+								Blog
+							</Link>
+						) : null}
 						<Link to="/connexion" className={LIEN}>
 							Se connecter
 						</Link>
