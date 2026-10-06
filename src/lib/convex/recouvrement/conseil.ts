@@ -125,7 +125,7 @@ const vSuiviRemise = v.object({
 			_id: v.id('remisesAuConseil'),
 			etat: vEtatRemise,
 			intervenantId: v.union(v.id('intervenants'), v.null()),
-			/** Le nom tel que le carnet du gérant le porte. Jamais proposé par le produit. */
+			/** Le nom tel que le carnet du gérant le porte. Jamais présélectionné par le produit. */
 			intervenant: v.union(v.string(), v.null()),
 			remisLe: v.union(v.string(), v.null()),
 			revenuLe: v.union(v.string(), v.null()),
@@ -379,24 +379,60 @@ export const suivreRemise = authedQuery({
 });
 
 /**
- * LE DOSSIER EST PRÊT : IL EST FIGÉ ET DATÉ, ET IL N'EST PAS PARTI.
+ * LE GÉRANT DÉCLARE AVOIR REMIS LE DOSSIER, À UNE DATE — EN UN SEUL GESTE.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ IL N'Y A PLUS DE « PRÉPARER » (06/10/2026)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le gérant touchait « Préparer un dossier sur ce décompte », puis remplissait
+ * la date et l'intervenant, puis touchait « Déclarer ce dossier remis ». L'état
+ * intermédiaire ne disait rien qu'il ne sache : le dossier est prêt dès que le
+ * décompte est arrêté, et il le télécharge sur la même page. La remise se
+ * déclare donc d'un geste, depuis le décompte ; le suivi naît à cet instant.
+ *
+ * Un suivi `PREPARE` d'avant ce changement se reprend tel quel : la remise le
+ * fait passer à `REMIS`, au lieu d'en ouvrir un second.
  *
  * ⚠️ UN SEUL SUIVI OUVERT PAR DÉCOMPTE. Deux suivis sur la même pièce feraient
  * deux vérités sur une question qui n'en a qu'une : ce dossier est-il parti, et
  * quand.
+ *
+ * ⚠️ L'INTERVENANT EST FACULTATIF. Un dossier se remet sans nommer personne ;
+ * la fiche vient du carnet du gérant, où il l'a retenue lui-même — depuis les
+ * professionnels près de son client, que la feuille propose sans en
+ * présélectionner aucun.
  */
-export const preparerDossier = authedMutation({
-	args: { decompteId: v.id('decomptes') },
+export const declarerRemise = authedMutation({
+	args: {
+		decompteId: v.id('decomptes'),
+		/** La date du FAIT. */
+		remisLe: v.string(),
+		intervenantId: v.optional(v.id('intervenants')),
+		/** Ce que le gérant déclare attendre, en toutes lettres. Facultatif. */
+		attendu: v.optional(v.string())
+	},
 	returns: v.id('remisesAuConseil'),
-	handler: async (ctx, { decompteId }): Promise<Id<'remisesAuConseil'>> => {
+	handler: async (
+		ctx,
+		{ decompteId, remisLe, intervenantId, attendu }
+	): Promise<Id<'remisesAuConseil'>> => {
 		const { organizationId } = await getUserOrg(ctx);
 
 		const decompte = await ctx.db.get(decompteId);
 		if (decompte === null || decompte.organizationId !== organizationId) {
 			throw new ConvexError('Décompte introuvable');
 		}
+		exigerDateDuFait(remisLe, 'de remise');
 
-		const deja = (
+		if (intervenantId !== undefined) {
+			const intervenant = await ctx.db.get(intervenantId);
+			if (intervenant === null || intervenant.organizationId !== organizationId) {
+				throw new ConvexError('Intervenant introuvable dans votre carnet');
+			}
+		}
+
+		const ouvert = (
 			await ctx.db
 				.query('remisesAuConseil')
 				.withIndex('by_creance', (q) => q.eq('creanceId', decompte.creanceId))
@@ -408,43 +444,9 @@ export const preparerDossier = authedMutation({
 				suivi.etat !== 'CLOS'
 		);
 
-		if (deja !== undefined) return deja._id;
-
-		return await ctx.db.insert('remisesAuConseil', {
-			organizationId,
-			creanceId: decompte.creanceId,
-			decompteId,
-			etat: 'PREPARE',
-			consigneLe: Date.now()
-		});
-	}
-});
-
-/**
- * LE GÉRANT DÉCLARE AVOIR REMIS LE DOSSIER, À UNE DATE.
- *
- * ⚠️ L'INTERVENANT EST FACULTATIF, ET C'EST LA LIGNE ROUGE. Un dossier se remet
- * sans nommer personne, et le produit ne propose JAMAIS de nom : la fiche vient
- * du carnet du gérant, pas d'un annuaire que le produit recommanderait.
- */
-export const declarerRemise = authedMutation({
-	args: {
-		remiseId: v.id('remisesAuConseil'),
-		/** La date du FAIT. */
-		remisLe: v.string(),
-		intervenantId: v.optional(v.id('intervenants')),
-		/** Ce que le gérant déclare attendre, en toutes lettres. Facultatif. */
-		attendu: v.optional(v.string())
-	},
-	returns: v.null(),
-	handler: async (ctx, { remiseId, remisLe, intervenantId, attendu }): Promise<null> => {
-		const { organizationId } = await getUserOrg(ctx);
-		const remise = await remiseDuDecompte(ctx, organizationId, remiseId);
-		exigerDateDuFait(remisLe, 'de remise');
-
-		if (remise.etat !== 'PREPARE') {
+		if (ouvert !== undefined && ouvert.etat !== 'PREPARE') {
 			throw new ConvexError(
-				`Ce dossier est déjà suivi à l’état « ${remise.etat} », et son suivi se lit sur cette ` +
+				`Ce dossier est déjà suivi à l’état « ${ouvert.etat} », et son suivi se lit sur cette ` +
 					'page. Ce qui manque est un dossier encore à remettre : une remise ne se déclare ' +
 					'qu’une fois, sans quoi la date du fait cesserait de dire quand il est parti. Ce ' +
 					'refus se lève par un nouveau dossier produit depuis un décompte arrêté, qui porte ' +
@@ -453,23 +455,26 @@ export const declarerRemise = authedMutation({
 			);
 		}
 
-		if (intervenantId !== undefined) {
-			const intervenant = await ctx.db.get(intervenantId);
-			if (intervenant === null || intervenant.organizationId !== organizationId) {
-				throw new ConvexError('Intervenant introuvable dans votre carnet');
-			}
-		}
-
-		await ctx.db.patch(remiseId, {
-			etat: 'REMIS',
+		const remise = {
+			etat: 'REMIS' as const,
 			remisLe,
 			intervenantId,
-			attendu,
+			attendu: attendu === undefined || attendu.trim() === '' ? undefined : attendu.trim(),
 			// La date de SAISIE, à côté de la date du FAIT. Les confondre offrirait
 			// des jours qui n'ont pas eu lieu sur l'échéance la plus dangereuse.
 			consigneLe: Date.now()
+		};
+
+		if (ouvert !== undefined) {
+			await ctx.db.patch(ouvert._id, remise);
+			return ouvert._id;
+		}
+		return await ctx.db.insert('remisesAuConseil', {
+			organizationId,
+			creanceId: decompte.creanceId,
+			decompteId,
+			...remise
 		});
-		return null;
 	}
 });
 

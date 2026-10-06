@@ -38,7 +38,6 @@ function PagePiece() {
 		piece === undefined || piece === null ? 'skip' : { creanceId: piece.creanceId }
 	);
 
-	const preparer = useMutation(api.recouvrement.conseil.preparerDossier);
 	const remettre = useMutation(api.recouvrement.conseil.declarerRemise);
 	const consignerRetour = useMutation(api.recouvrement.conseil.declarerRetour);
 	const clore = useMutation(api.recouvrement.conseil.cloreRemise);
@@ -248,17 +247,16 @@ function PagePiece() {
 													origine: 'SAISI_A_LA_MAIN'
 												})
 											),
-										onPreparer: () => void ecrire(() => preparer({ decompteId })),
 										onRemettre: (remisLe, intervenantId, attendu) =>
 											void ecrire(() =>
 												remettre({
-													remiseId: suivi.remise!._id,
+													decompteId,
 													remisLe,
 													intervenantId:
 														intervenantId === null
 															? undefined
 															: (intervenantId as Id<'intervenants'>),
-													attendu: attendu.trim() === '' ? undefined : attendu.trim()
+													attendu
 												})
 											),
 										onRetour: (revenuLe) =>

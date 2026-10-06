@@ -238,7 +238,6 @@ function suiviDemo(remise: SuiviConseilAffiche['remise']): SuiviConseilAffiche {
 		carnet: CARNET_DEMO,
 		professionnels: PROFESSIONNELS_DEMO,
 		onAjouterFiche: () => {},
-		onPreparer: () => {},
 		onRemettre: () => {},
 		onRetour: () => {},
 		onClore: () => {},
@@ -277,18 +276,7 @@ const REMISE_DEMO: SuiviConseilAffiche['remise'] = {
 };
 
 const FORMES_PIECE: Readonly<Record<string, PieceArretee>> = {
-	'dossier préparé': pieceDemo(
-		suiviDemo({
-			id: 'demo-remise',
-			etat: 'PREPARE',
-			intervenant: null,
-			remisLe: null,
-			revenuLe: null,
-			closLe: null,
-			motifCloture: null,
-			attendu: null
-		})
-	),
+	'à remettre': pieceDemo(suiviDemo(null)),
 	'dossier remis': pieceDemo(suiviDemo(REMISE_DEMO)),
 	'suivi clos': pieceDemo(
 		suiviDemo({
@@ -325,6 +313,47 @@ function ArretDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	);
 }
 
+/**
+ * LA PIÈCE, VIVANTE : la remise, le retour et la clôture tiennent dans un état
+ * local, comme la base les tiendrait. Sans ça, « Je l’ai remis » refermait une
+ * feuille sur un écran qui ne changeait pas, et rien ne prouvait que la remise
+ * se fait d’un seul geste.
+ */
+function PieceDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+	const depart = formeDemo(variante, pieceDemo(suiviDemo(null)), FORMES_PIECE);
+	const [remise, setRemise] = useState<SuiviConseilAffiche['remise']>(depart.suivi.remise);
+	const suivi: SuiviConseilAffiche = {
+		...suiviDemo(remise),
+		onRemettre: (remisLe, intervenantId, attendu) =>
+			setRemise({
+				id: 'demo-remise',
+				etat: 'REMIS',
+				intervenant:
+					intervenantId === null
+						? null
+						: (CARNET_DEMO.find((fiche) => fiche._id === intervenantId)?.nom ?? null),
+				remisLe,
+				revenuLe: null,
+				closLe: null,
+				motifCloture: null,
+				attendu: attendu.trim() === '' ? null : attendu.trim()
+			}),
+		onRetour: (revenuLe) =>
+			setRemise((avant) => (avant === null ? avant : { ...avant, etat: 'REVENU', revenuLe })),
+		onClore: (closLe, motif) =>
+			setRemise((avant) =>
+				avant === null ? avant : { ...avant, etat: 'CLOS', closLe, motifCloture: motif.trim() }
+			)
+	};
+	return (
+		<EcranPiece
+			identifiant='demo-decompte'
+			creanceId='demo-creance'
+			donnees={lectureDemo(etat, { ...depart, suivi })}
+		/>
+	);
+}
+
 export const ECRANS_PIECE: readonly EcranDuProduit[] = [
 	{
 		route: '/app/arret/$id',
@@ -338,12 +367,9 @@ export const ECRANS_PIECE: readonly EcranDuProduit[] = [
 		libelle: 'décompte arrêté',
 		vide: false,
 		variantes: Object.keys(FORMES_PIECE),
+		// La clé remet la remise locale à zéro quand on change de variante.
 		Demo: ({ etat, variante }: { etat: EtatDemo; variante?: string }) => (
-			<EcranPiece
-				identifiant="demo-decompte"
-				creanceId="demo-creance"
-				donnees={lectureDemo(etat, formeDemo(variante, pieceDemo(suiviDemo(null)), FORMES_PIECE))}
-			/>
+			<PieceDemo key={variante ?? ''} etat={etat} variante={variante} />
 		)
 	}
 ];

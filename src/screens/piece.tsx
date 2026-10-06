@@ -242,7 +242,7 @@ function CorpsPiece({ identifiant, donnees }: { identifiant: string; donnees: Pi
 
 			<SectionEcran
 				titre="Le suivi de ce dossier"
-				legende="Quatre états, et chacun vient d’une déclaration de votre part"
+				legende="Remis, répondu, clos : chaque étape vient de vous"
 			>
 				<RemiseAuConseil suivi={donnees.suivi} />
 			</SectionEcran>

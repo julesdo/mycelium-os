@@ -6,8 +6,10 @@ import {
 	CollapsibleRoot,
 	CollapsibleTrigger,
 	Input,
-	Surface,
-	Toolbar
+	Popup,
+	PopupContent,
+	SectionTitle,
+	Surface
 } from '@cladd-ui/react';
 import { ChevronDownIcon, InfoIcon } from 'lucide-react';
 import {
@@ -17,7 +19,8 @@ import {
 	type SegmentAffiche
 } from './decompte';
 import { dateCourte, eurosCentimes, pluriel } from './format';
-import { ListeAnalyses, LigneBouton } from './navigation';
+import { BoutonPrincipal, BoutonTexte } from './bouton';
+import { ListeAnalyses, LigneBouton, LigneFixe } from './navigation';
 import {
 	ChoixIntervenant,
 	type FicheASaisir,
@@ -103,20 +106,13 @@ export interface SuiviConseilAffiche {
 	 */
 	readonly professionnels: ProfessionnelsProposes;
 	readonly onAjouterFiche: (fiche: FicheASaisir) => void;
-	readonly onPreparer: () => void;
+	/** Déclare la remise d’un geste : le suivi naît là, sans « préparer » d’abord. */
 	readonly onRemettre: (remisLe: string, intervenantId: string | null, attendu: string) => void;
 	readonly onRetour: (revenuLe: string) => void;
 	readonly onClore: (closLe: string, motif: string) => void;
 	readonly enCours: boolean;
 	readonly erreur: string | null;
 }
-
-const LIBELLE_ETAT: Record<EtatRemise, string> = {
-	PREPARE: 'Dossier préparé, il n’est pas parti',
-	REMIS: 'Dossier remis à votre conseil',
-	REVENU: 'Votre conseil a rendu quelque chose',
-	CLOS: 'Suivi clos'
-};
 
 function Carte({ children }: { children: ReactNode }) {
 	return (
@@ -258,246 +254,349 @@ function CeQuiCourt({ suivi }: { suivi: SuiviConseilAffiche }) {
 	);
 }
 
-export function RemiseAuConseil({ suivi }: { suivi: SuiviConseilAffiche }) {
-	const aujourdHui = aujourdHuiISO();
-	const [quand, setQuand] = useState(aujourdHui);
+/** Une date du FAIT, demandée et jamais supposée, avec ce qu'elle fait courir. */
+function ChampDuFait({
+	quand,
+	onQuand,
+	consequence
+}: {
+	quand: string;
+	onQuand: (quand: string) => void;
+	consequence: string;
+}) {
+	return (
+		<PopupContent>
+			<SectionTitle>Quel jour</SectionTitle>
+			{/* ⚠️ LA DATE EST DEMANDÉE, PAS SUPPOSÉE. C'est la date du FAIT : un
+			    gérant qui enregistre le 20 mars une remise du 3 doit voir le
+			    compteur partir du 3. Le champ part sur aujourd'hui parce que
+			    c'est le cas le plus fréquent, et il se corrige d'un geste. */}
+			<div className="mt-cladd-3xs flex flex-col gap-cladd-3xs">
+				<Input
+					size="lg"
+					type="date"
+					value={quand}
+					onChange={onQuand}
+					infoMessage="La date du FAIT, pas celle de la saisie."
+				/>
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+					{quand === '' ? 'Sans date, rien ne peut être compté.' : consequence}
+				</p>
+			</div>
+		</PopupContent>
+	);
+}
+
+/** Le refus du serveur, là où le geste a été fait : dans la feuille. */
+function RefusDansLaFeuille({ erreur }: { erreur: string | null }) {
+	if (erreur === null) return null;
+	return (
+		<p role="alert" className="text-cladd-xs leading-relaxed text-cladd-fg">
+			{erreur}
+		</p>
+	);
+}
+
+/**
+ * LA REMISE, EN UNE FEUILLE : À QUI, QUEL JOUR, CE QU'ON ATTEND.
+ *
+ * ⚠️ « PERSONNE » EST UN CHOIX, PAS UN DÉFAUT MANQUANT : un dossier se remet
+ * sans nommer qui que ce soit. La rangée « À qui » ouvre la feuille où le
+ * carnet et les professionnels près du client sont proposés, sans
+ * présélection.
+ */
+function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFermer: () => void }) {
+	const [quand, setQuand] = useState(aujourdHuiISO);
 	const [attendu, setAttendu] = useState('');
-	const [motif, setMotif] = useState('');
 	const [intervenantId, setIntervenantId] = useState<string | null>(null);
 	const [choixOuvert, setChoixOuvert] = useState(false);
-	const [cloture, setCloture] = useState(false);
+
+	function retenir(id: string | null) {
+		if (id === null) return;
+		setIntervenantId(id);
+		setChoixOuvert(false);
+	}
+
+	return (
+		<>
+			<Popup
+				open
+				onOpenChange={(ouvert) => {
+					if (!ouvert) onFermer();
+				}}
+				headerLeft={
+					<span className="px-2 pb-1 text-cladd-sm font-semibold">Je l’ai remis à mon conseil</span>
+				}
+				contentClassName="max-w-lg"
+			>
+				<PopupContent>
+					<ListeAnalyses>
+						<LigneBouton
+							titre="À qui"
+							valeur={
+								intervenantId === null
+									? 'Sans nommer personne'
+									: (suivi.carnet.find((fiche) => fiche._id === intervenantId)?.nom ??
+										'Fiche retirée')
+							}
+							onClick={() => {
+								suivi.professionnels.onDemander();
+								setChoixOuvert(true);
+							}}
+						/>
+					</ListeAnalyses>
+				</PopupContent>
+
+				<ChampDuFait
+					quand={quand}
+					onQuand={setQuand}
+					consequence={`Le temps passé chez votre conseil se comptera depuis le ${dateCourte(quand)}.`}
+				/>
+
+				<PopupContent>
+					<SectionTitle>Ce que vous attendez</SectionTitle>
+					<div className="mt-cladd-3xs">
+						<Input
+							size="lg"
+							value={attendu}
+							onChange={setAttendu}
+							placeholder="Facultatif, par exemple son avis"
+						/>
+					</div>
+				</PopupContent>
+
+				<PopupContent>
+					<div className="flex flex-col gap-cladd-3xs">
+						<RefusDansLaFeuille erreur={suivi.erreur} />
+						<BoutonPrincipal
+							pleineLargeur
+							loading={suivi.enCours}
+							readOnly={suivi.enCours || quand === ''}
+							onClick={() => suivi.onRemettre(quand, intervenantId, attendu)}
+						>
+							Je l’ai remis
+						</BoutonPrincipal>
+					</div>
+				</PopupContent>
+			</Popup>
+
+			<ChoixIntervenant
+				titre="À qui remettre le dossier"
+				sansPersonne={{
+					titre: 'Sans nommer personne',
+					precision: 'Le dossier se remet quand même'
+				}}
+				carnet={suivi.carnet}
+				choisi={intervenantId}
+				ouverte={choixOuvert}
+				propositions={suivi.professionnels.propositions}
+				enCours={suivi.professionnels.enCours}
+				erreur={suivi.professionnels.erreur}
+				onFermer={() => setChoixOuvert(false)}
+				onChoisir={(id) => {
+					setIntervenantId(id);
+					setChoixOuvert(false);
+				}}
+				onRetenirEtude={(etude) => void suivi.professionnels.onRetenirEtude(etude).then(retenir)}
+				onRetenirAvocat={(avocat) => void suivi.professionnels.onRetenirAvocat(avocat).then(retenir)}
+				onAjouter={suivi.onAjouterFiche}
+			/>
+		</>
+	);
+}
+
+/** Le conseil a rendu quelque chose : seul le jour se demande. */
+function FeuilleRetour({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFermer: () => void }) {
+	const [quand, setQuand] = useState(aujourdHuiISO);
+	return (
+		<Popup
+			open
+			onOpenChange={(ouvert) => {
+				if (!ouvert) onFermer();
+			}}
+			headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">Mon conseil a répondu</span>}
+			contentClassName="max-w-lg"
+		>
+			<ChampDuFait
+				quand={quand}
+				onQuand={setQuand}
+				consequence={`Le retour sera consigné au ${dateCourte(quand)}.`}
+			/>
+			<PopupContent>
+				<div className="flex flex-col gap-cladd-3xs">
+					<RefusDansLaFeuille erreur={suivi.erreur} />
+					<BoutonPrincipal
+						pleineLargeur
+						loading={suivi.enCours}
+						readOnly={suivi.enCours || quand === ''}
+						onClick={() => suivi.onRetour(quand)}
+					>
+						Consigner le retour
+					</BoutonPrincipal>
+				</div>
+			</PopupContent>
+		</Popup>
+	);
+}
+
+/**
+ * ⚠️ SANS CETTE SORTIE, UN DOSSIER SANS RETOUR RESTERAIT OUVERT POUR TOUJOURS,
+ * et un suivi dont on ne peut pas sortir est un mur. Le motif s'écrit en
+ * toutes lettres : c'est cette phrase qui se relira dans un an.
+ */
+function FeuilleCloture({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFermer: () => void }) {
+	const [quand, setQuand] = useState(aujourdHuiISO);
+	const [motif, setMotif] = useState('');
+	return (
+		<Popup
+			open
+			onOpenChange={(ouvert) => {
+				if (!ouvert) onFermer();
+			}}
+			headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">Mettre fin au suivi</span>}
+			contentClassName="max-w-lg"
+		>
+			<ChampDuFait
+				quand={quand}
+				onQuand={setQuand}
+				consequence={`Le suivi sera clos au ${dateCourte(quand)}.`}
+			/>
+			<PopupContent>
+				<SectionTitle>Pourquoi</SectionTitle>
+				<div className="mt-cladd-3xs">
+					<Input
+						size="lg"
+						value={motif}
+						onChange={setMotif}
+						placeholder="Par exemple, le client a réglé"
+						infoMessage="En toutes lettres : c’est cette phrase qui se relira dans un an."
+					/>
+				</div>
+			</PopupContent>
+			<PopupContent>
+				<div className="flex flex-col gap-cladd-3xs">
+					<RefusDansLaFeuille erreur={suivi.erreur} />
+					<BoutonPrincipal
+						pleineLargeur
+						loading={suivi.enCours}
+						readOnly={suivi.enCours || quand === '' || motif.trim() === ''}
+						onClick={() => suivi.onClore(quand, motif)}
+					>
+						Clore le suivi
+					</BoutonPrincipal>
+				</div>
+			</PopupContent>
+		</Popup>
+	);
+}
+
+/** Où en est la remise, en rangées qui se lisent. */
+function EtatDeLaRemise({ remise }: { remise: RemiseAffichee }) {
+	return (
+		<ListeAnalyses>
+			{remise.remisLe === null ? null : (
+				<LigneFixe
+					famille="ENVOI"
+					genre="contenu"
+					titre="Remis à votre conseil"
+					precision={remise.intervenant ?? 'Sans intervenant nommé'}
+					valeur={dateCourte(remise.remisLe)}
+				/>
+			)}
+			{remise.attendu === null || remise.attendu === '' ? null : (
+				<LigneFixe
+					famille="QUESTION"
+					genre="contenu"
+					titre="Attendu"
+					precision={remise.attendu}
+					lignes={2}
+				/>
+			)}
+			{remise.revenuLe === null ? null : (
+				<LigneFixe
+					famille="PAPIERS"
+					genre="contenu"
+					titre="Réponse du conseil"
+					valeur={dateCourte(remise.revenuLe)}
+				/>
+			)}
+			{remise.closLe === null ? null : (
+				<LigneFixe
+					famille="TEMPS"
+					genre="contenu"
+					titre="Suivi clos"
+					precision={remise.motifCloture ?? undefined}
+					lignes={2}
+					valeur={dateCourte(remise.closLe)}
+				/>
+			)}
+		</ListeAnalyses>
+	);
+}
+
+type Feuille = 'REMISE' | 'RETOUR' | 'CLOTURE';
+
+/**
+ * LA REMISE AU CONSEIL, EN UN GESTE (06/10/2026).
+ *
+ * Avant : « Préparer un dossier sur ce décompte », puis trois champs posés dans
+ * la page, puis « Déclarer ce dossier remis ». Deux boutons pour un seul fait.
+ * Désormais UN bouton, « Je l’ai remis à mon conseil », qui ouvre UNE feuille ;
+ * le suivi naît quand le gérant la valide.
+ *
+ * ⚠️ LES FEUILLES SE REFERMENT PAR L'ÉTAT, PAS PAR LE CLIC. Celle de la remise
+ * ne s'affiche que tant que rien n'est remis : quand le serveur a accepté, la
+ * remise change d'état et la feuille disparaît d'elle-même ; quand il refuse,
+ * elle reste ouverte avec le refus et la saisie intacte.
+ */
+export function RemiseAuConseil({ suivi }: { suivi: SuiviConseilAffiche }) {
+	const [feuille, setFeuille] = useState<Feuille | null>(null);
+	const fermer = () => setFeuille(null);
 
 	const remise = suivi.remise;
+	// Un suivi « préparé » d'avant le 06/10/2026 n'est pas parti : il se remet
+	// comme un dossier sans suivi.
+	const aRemettre = remise === null || remise.etat === 'PREPARE';
+	const ouverte: Feuille | null =
+		feuille === 'REMISE' && aRemettre
+			? 'REMISE'
+			: feuille === 'RETOUR' && remise?.etat === 'REMIS'
+				? 'RETOUR'
+				: feuille === 'CLOTURE' && remise !== null && remise.etat !== 'CLOS'
+					? 'CLOTURE'
+					: null;
 
 	return (
 		<div className="flex flex-col gap-cladd-2xs">
+			{aRemettre ? null : <EtatDeLaRemise remise={remise} />}
 			<DeuxMontants suivi={suivi} />
 			<CeQuiCourt suivi={suivi} />
 
-			{suivi.erreur ? (
+			{suivi.erreur !== null && ouverte === null ? (
 				<p role="alert" className="text-cladd-xs leading-relaxed text-cladd-fg">
 					{suivi.erreur}
 				</p>
 			) : null}
 
-			{remise === null ? (
-				<Carte>
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						Ce décompte n’est suivi par aucun dossier. Un dossier fige ce qu’il emporte : son
-						décompte ne change jamais, et la question qu’on lui posera est « qu’a lu le conseil le
-						jour où on le lui a remis ».
-					</p>
-					<Toolbar className="flex-wrap" size="md">
-						<Button
-							variant="transparent"
-							outline={false}
-							hoverable={false}
-							rounded
-							className="verre verre-bouton font-medium"
-							disabled={suivi.enCours}
-							onClick={suivi.onPreparer}
-						>
-							Préparer un dossier sur ce décompte
-						</Button>
-					</Toolbar>
-				</Carte>
-			) : (
-				<Carte>
-					<span className="text-cladd-sm font-semibold">{LIBELLE_ETAT[remise.etat]}</span>
+			{aRemettre ? (
+				<BoutonPrincipal pleineLargeur onClick={() => setFeuille('REMISE')}>
+					Je l’ai remis à mon conseil
+				</BoutonPrincipal>
+			) : null}
+			{remise?.etat === 'REMIS' ? (
+				<BoutonPrincipal pleineLargeur onClick={() => setFeuille('RETOUR')}>
+					Mon conseil a répondu
+				</BoutonPrincipal>
+			) : null}
+			{remise !== null && (remise.etat === 'REMIS' || remise.etat === 'REVENU') ? (
+				<BoutonTexte className="self-center" onClick={() => setFeuille('CLOTURE')}>
+					Mettre fin au suivi
+				</BoutonTexte>
+			) : null}
 
-					{remise.remisLe ? (
-						<p className="text-cladd-2xs text-cladd-fg-soft">
-							{`Remis le ${dateCourte(remise.remisLe)}${remise.intervenant === null ? ', sans intervenant nommé' : ` à ${remise.intervenant}`}.`}
-						</p>
-					) : null}
-					{remise.attendu ? (
-						<p className="text-cladd-2xs text-cladd-fg-softer">Attendu : {remise.attendu}</p>
-					) : null}
-					{remise.revenuLe ? (
-						<p className="text-cladd-2xs text-cladd-fg-soft">
-							Retour consigné le {dateCourte(remise.revenuLe)}.
-						</p>
-					) : null}
-					{remise.closLe ? (
-						<p className="text-cladd-2xs text-cladd-fg-soft">
-							{`Suivi clos le ${dateCourte(remise.closLe)} : ${remise.motifCloture ?? ''}`}
-						</p>
-					) : null}
-
-					{remise.etat === 'PREPARE' ? (
-						<>
-							{/* ⚠️ LA DATE EST DEMANDÉE, PAS SUPPOSÉE. C'est la date du FAIT :
-							    un gérant qui enregistre le 20 mars une remise du 3 doit voir
-							    le compteur partir du 3. Le champ part sur aujourd'hui parce
-							    que c'est le cas le plus fréquent, et il se corrige d'un
-							    geste. */}
-							<Input
-								size="lg"
-								type="date"
-								value={quand}
-								onChange={setQuand}
-								infoMessage="La date du FAIT, pas celle de la saisie."
-							/>
-							<Input
-								size="lg"
-								value={attendu}
-								onChange={setAttendu}
-								placeholder="Ce que vous attendez en retour (facultatif)"
-							/>
-
-							{/* ⚠️ « PERSONNE » EST UN CHOIX, PAS UN DÉFAUT MANQUANT : un dossier se
-							    remet sans nommer qui que ce soit. La rangée ouvre la feuille où le
-							    carnet et les professionnels près du client sont proposés. */}
-							<ListeAnalyses>
-								<LigneBouton
-									titre="À qui"
-									valeur={
-										intervenantId === null
-											? 'Sans nommer personne'
-											: (suivi.carnet.find((fiche) => fiche._id === intervenantId)?.nom ??
-												'Fiche retirée')
-									}
-									onClick={() => {
-										suivi.professionnels.onDemander();
-										setChoixOuvert(true);
-									}}
-								/>
-							</ListeAnalyses>
-							<ChoixIntervenant
-								titre="À qui remettre le dossier"
-								sansPersonne={{
-									titre: 'Sans nommer personne',
-									precision: 'Le dossier se remet quand même'
-								}}
-								carnet={suivi.carnet}
-								choisi={intervenantId}
-								ouverte={choixOuvert}
-								propositions={suivi.professionnels.propositions}
-								enCours={suivi.professionnels.enCours}
-								erreur={suivi.professionnels.erreur}
-								onFermer={() => setChoixOuvert(false)}
-								onChoisir={(id) => {
-									setIntervenantId(id);
-									setChoixOuvert(false);
-								}}
-								onRetenirEtude={(etude) =>
-									void suivi.professionnels.onRetenirEtude(etude).then((id) => {
-										if (id === null) return;
-										setIntervenantId(id);
-										setChoixOuvert(false);
-									})
-								}
-								onRetenirAvocat={(avocat) =>
-									void suivi.professionnels.onRetenirAvocat(avocat).then((id) => {
-										if (id === null) return;
-										setIntervenantId(id);
-										setChoixOuvert(false);
-									})
-								}
-								onAjouter={suivi.onAjouterFiche}
-							/>
-
-							<Toolbar className="flex-wrap" size="md">
-								<Button
-									variant="transparent"
-									outline={false}
-									hoverable={false}
-									rounded
-									className="verre verre-bouton font-medium"
-									disabled={suivi.enCours || quand === ''}
-									onClick={() => suivi.onRemettre(quand, intervenantId, attendu)}
-								>
-									Déclarer ce dossier remis
-								</Button>
-							</Toolbar>
-						</>
-					) : null}
-
-					{remise.etat === 'REMIS' ? (
-						<>
-							<Input
-								size="lg"
-								type="date"
-								value={quand}
-								onChange={setQuand}
-								infoMessage="La date du FAIT, pas celle de la saisie."
-							/>
-							<Toolbar className="flex-wrap" size="md">
-								<Button
-									variant="transparent"
-									outline={false}
-									hoverable={false}
-									rounded
-									className="verre verre-bouton font-medium"
-									disabled={suivi.enCours || quand === ''}
-									onClick={() => suivi.onRetour(quand)}
-								>
-									Consigner un retour de votre conseil
-								</Button>
-								<Button
-									variant="transparent"
-									outline={false}
-									hoverable={false}
-									rounded
-									className="verre verre-bouton font-medium"
-									onClick={() => setCloture(!cloture)}
-								>
-									{cloture ? 'Ne pas clore' : 'Mettre fin à ce suivi'}
-								</Button>
-							</Toolbar>
-						</>
-					) : null}
-
-					{remise.etat === 'REVENU' ? (
-						<Toolbar className="flex-wrap" size="md">
-							<Button
-								variant="transparent"
-								outline={false}
-								hoverable={false}
-								rounded
-								className="verre verre-bouton font-medium"
-								onClick={() => setCloture(!cloture)}
-							>
-								{cloture ? 'Ne pas clore' : 'Mettre fin à ce suivi'}
-							</Button>
-						</Toolbar>
-					) : null}
-
-					{/* ⚠️ SANS CET ÉTAT, UN DOSSIER SANS RETOUR RESTERAIT OUVERT POUR
-					    TOUJOURS, et un suivi dont on ne peut pas sortir est un mur. */}
-					{cloture && remise.etat !== 'CLOS' ? (
-						<>
-							<Input
-								size="lg"
-								type="date"
-								value={quand}
-								onChange={setQuand}
-								infoMessage="La date du FAIT, pas celle de la saisie."
-							/>
-							<Input
-								size="lg"
-								value={motif}
-								onChange={setMotif}
-								placeholder="Pourquoi vous mettez fin à ce suivi"
-								infoMessage="En toutes lettres : c’est cette phrase qui se relira dans un an."
-							/>
-							<Toolbar className="flex-wrap" size="md">
-								<Button
-									variant="transparent"
-									outline={false}
-									hoverable={false}
-									rounded
-									className="verre verre-bouton font-medium"
-									disabled={suivi.enCours || quand === '' || motif.trim() === ''}
-									onClick={() => suivi.onClore(quand, motif)}
-								>
-									Clore le suivi
-								</Button>
-							</Toolbar>
-						</>
-					) : null}
-				</Carte>
-			)}
+			{ouverte === 'REMISE' ? <FeuilleRemise suivi={suivi} onFermer={fermer} /> : null}
+			{ouverte === 'RETOUR' ? <FeuilleRetour suivi={suivi} onFermer={fermer} /> : null}
+			{ouverte === 'CLOTURE' ? <FeuilleCloture suivi={suivi} onFermer={fermer} /> : null}
 		</div>
 	);
 }
