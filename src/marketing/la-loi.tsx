@@ -6,6 +6,7 @@ import { cn, PictoInterets, PictoFacture, PictoPrescription } from '../ui';
 import { ARTICLES_DU_SOCLE } from './articles';
 import {
 	Chapeau,
+	Photo,
 	SectionMarketing,
 	SurTitre,
 	TitreSection,
@@ -112,16 +113,32 @@ export function LaLoi() {
 				))}
 			</dl>
 
-			{/* LE CAS QUI SURPREND, POSÉ COMME UNE NOTE COLLÉE. Un an au lieu de cinq :
-			    c'est la phrase qui fait relire ses factures de transport. */}
-			<aside className="apparait autocollant flex max-w-2xl flex-col gap-cladd-3xs self-start rounded-carte-site bg-teinte-abricot p-cladd-xs">
-				<p className="font-serif text-intertitre leading-snug font-medium text-balance md:text-titre-section md:leading-tight">
-					Pour une facture de transport, la date limite tombe à un an, pas à cinq.
-				</p>
-				<p className="text-cladd-md leading-relaxed text-encre-site-douce">
-					Et le délai court depuis la livraison, pas depuis votre dernière relance.
-				</p>
-			</aside>
+			{/* LE CAS QUI SURPREND, POSÉ COMME UNE NOTE COLLÉE SUR UNE PHOTO. Un an
+			    au lieu de cinq : c'est la phrase qui fait relire ses factures de
+			    transport, et le chauffeur dit à qui elle s'adresse sans un mot de
+			    plus. Un métier, pas une personne : aucun prénom à côté. */}
+			<div className="grid items-center gap-cladd-sm md:grid-cols-2 md:gap-cladd-lg">
+				<div className="apparait relative">
+					<div className="overflow-hidden rounded-carte-site shadow-carte-chaude">
+						<Photo
+							photo="chauffeur"
+							description="Un chauffeur souriant au volant de sa camionnette, vitre baissée."
+							className="aspect-4/3"
+						/>
+					</div>
+					<span className="manuscrit autocollant absolute -bottom-4 left-4 rounded-full bg-papier px-cladd-2xs py-1 text-intertitre shadow-carte-chaude">
+						lui, il livre
+					</span>
+				</div>
+				<aside className="apparait autocollant-droite flex flex-col gap-cladd-3xs rounded-carte-site bg-teinte-abricot p-cladd-xs max-md:mx-cladd-3xs">
+					<p className="font-serif text-titre-section leading-tight font-medium text-balance">
+						Pour une facture de transport, la date limite tombe à un an, pas à cinq.
+					</p>
+					<p className="text-cladd-md leading-relaxed text-encre-site-douce">
+						Et le délai court depuis la livraison, pas depuis votre dernière relance.
+					</p>
+				</aside>
+			</div>
 		</SectionMarketing>
 	);
 }

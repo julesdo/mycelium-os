@@ -1,7 +1,27 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
-import { BoutonAffiche, LienAffiche } from '../ui';
-import { SectionMarketing } from './section';
+import { BoutonAffiche, cn, LienAffiche } from '../ui';
+import { Photo, SectionMarketing, type PhotoSite } from './section';
+
+const POLAROIDS: readonly {
+	photo: PhotoSite;
+	legende: string;
+	description: string;
+	incline: string;
+}[] = [
+	{
+		photo: 'entrepot',
+		legende: 'l’entrepôt',
+		description: 'Deux personnes qui marchent dans l’allée d’un entrepôt, un classeur à la main.',
+		incline: '-rotate-6 translate-x-1 translate-y-3'
+	},
+	{
+		photo: 'commercante',
+		legende: 'la boutique',
+		description: 'Une commerçante souriante dans sa boutique, devant ses rayonnages.',
+		incline: 'rotate-4 -translate-x-1'
+	}
+];
 
 /**
  * L'APPEL FINAL — un panneau abricot, une phrase, un bouton (06/10/2026).
@@ -22,6 +42,31 @@ export function Appel() {
 					aria-hidden
 					className="galet galet-b -right-20 -bottom-24 -z-10 size-72 bg-teinte-temps"
 				/>
+
+				{/* DEUX POLAROÏDS : une boutique, un entrepôt. Des métiers, jamais des
+				    prénoms — un visage réel accolé à un nom se lirait comme un client
+				    qui témoigne. */}
+				<div className="flex justify-center pb-cladd-3xs">
+					{POLAROIDS.map(({ photo, legende, description, incline }) => (
+						<figure
+							key={photo}
+							className={cn(
+								'flex w-32 flex-col gap-1 rounded-cladd-md bg-papier p-1.5 pb-2 shadow-carte-chaude md:w-44 md:p-2',
+								incline
+							)}
+						>
+							<Photo
+								photo={photo}
+								description={description}
+								sizes="(min-width: 768px) 176px, 128px"
+								className="aspect-4/5 rounded-cladd-sm"
+							/>
+							<figcaption className="manuscrit text-cladd-md leading-none text-encre-site-douce">
+								{legende}
+							</figcaption>
+						</figure>
+					))}
+				</div>
 
 				<span className="manuscrit autocollant rounded-full bg-papier px-cladd-2xs py-1 text-intertitre">
 					le temps joue contre vous

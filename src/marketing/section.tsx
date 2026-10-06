@@ -209,3 +209,53 @@ export function EcranProduit({
 		</div>
 	);
 }
+
+/**
+ * UNE PHOTOGRAPHIE DE LA PAGE (06/10/2026) — des gens au travail.
+ *
+ * Prises sur Unsplash sous sa licence et HÉBERGÉES PAR NOUS
+ * (`scripts/preparer-photos.ts`, crédits dans `public/CREDITS.md`). WebP en
+ * deux largeurs, dimensions écrites pour que rien ne saute au chargement.
+ *
+ * ⚠️ JAMAIS DE PRÉNOM À CÔTÉ. Une photo nomme un métier — « menuisier »,
+ * « chauffeur » —, jamais une personne : un visage réel accolé à un prénom se
+ * lirait comme un client qui témoigne, et ce produit ne fabrique aucune preuve.
+ */
+export type PhotoSite = 'artisan' | 'chauffeur' | 'factures' | 'commercante' | 'entrepot';
+
+const FORMAT_PHOTO: Record<PhotoSite, readonly [number, number]> = {
+	artisan: [1280, 1600],
+	chauffeur: [1280, 960],
+	factures: [1280, 853],
+	commercante: [1280, 1600],
+	entrepot: [1280, 1600]
+};
+
+export function Photo({
+	photo,
+	description,
+	sizes = '(min-width: 768px) 480px, 90vw',
+	prioritaire = false,
+	className
+}: {
+	photo: PhotoSite;
+	description: string;
+	sizes?: string;
+	prioritaire?: boolean;
+	className?: string;
+}) {
+	const [largeur, hauteur] = FORMAT_PHOTO[photo];
+	return (
+		<img
+			src={`/photos/${photo}-640.webp`}
+			srcSet={`/photos/${photo}-640.webp 640w, /photos/${photo}-1280.webp 1280w`}
+			sizes={sizes}
+			width={largeur}
+			height={hauteur}
+			alt={description}
+			loading={prioritaire ? 'eager' : 'lazy'}
+			decoding="async"
+			className={cn('block h-auto w-full object-cover', className)}
+		/>
+	);
+}

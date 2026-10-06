@@ -3,7 +3,7 @@ import { ArrowRightIcon } from 'lucide-react';
 import { BoutonAffiche, FAMILLES, LienAffiche, PERSONNAGES, PortraitDessine } from '../ui';
 import { eurosCentimesCourts } from '../ui/format';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
-import { EcranProduit, SurTitre } from './section';
+import { EcranProduit, Photo, SurTitre } from './section';
 
 /**
  * L'ENTRÉE — le papier chaud (06/10/2026).
@@ -123,25 +123,47 @@ export function Hero() {
 				</div>
 
 				{/*
-				  L'OBJET : le vrai écran d'accueil, et deux cartes posées autour.
+				  LA SCÈNE : un gérant au travail, et son téléphone posé dessus.
 
-				  ⚠️ LES CARTES SONT DU TEXTE, PAS DES IMAGES. Elles se lisent, se
-				  traduisent et se mettent à l'échelle ; et le montant de la première
-				  vient des paramètres, pas d'un dessin.
+				  ⚠️ QUICKEN POUR LE GESTE : une vraie personne au travail, et les
+				  données posées autour d'elle. Le premier écran montrait un téléphone
+				  seul sur du crème ; il montre désormais POUR QUI est le téléphone. La
+				  photo nomme un métier, pas une personne : aucun prénom à côté.
+
+				  ⚠️ LES CARTES SONT DU TEXTE, PAS DES IMAGES, et le montant de la
+				  première vient des paramètres, pas d'un dessin.
 				*/}
-				<div className="leve leve-tard relative mt-cladd-xl mb-24 w-64 md:mt-cladd-2xl md:mb-32 md:w-80">
+				<div className="leve leve-tard relative mt-cladd-xl mb-24 w-full max-w-sm md:mt-cladd-2xl md:mb-32 md:max-w-md">
 					<div
 						aria-hidden
-						className="galet galet-c inset-x-4 -inset-y-6 -z-10 bg-galet-abricot opacity-70"
+						className="galet galet-c -inset-x-6 -inset-y-8 -z-10 bg-galet-abricot opacity-60"
 					/>
-					<EcranProduit
-						capture="aujourdhui"
-						prioritaire
-						description="L’écran d’accueil de Letikette sur téléphone : 66 704,82 € dus au 17 septembre 2026 sur 4 factures en retard, dont 18 443,92 € de pénalités et de frais jamais réclamés, puis la liste des clients à traiter aujourd’hui."
-					/>
+					<div className="overflow-hidden rounded-carte-site shadow-carte-chaude">
+						<Photo
+							photo="artisan"
+							prioritaire
+							sizes="(min-width: 768px) 448px, 90vw"
+							description="Un artisan souriant à son établi, dans son atelier de menuiserie."
+							className="aspect-4/5 object-right"
+						/>
+					</div>
+					<span className="manuscrit autocollant absolute -top-4 right-4 rounded-full bg-papier px-cladd-2xs py-1 text-intertitre shadow-carte-chaude">
+						lui, il a des chantiers à finir
+					</span>
+
+					{/* Le téléphone, posé sur la photo : le vrai écran d'accueil.
+					    ⚠️ La position va sur l'ENVELOPPE : `.ecran-telephone` pose
+					    `position: relative` hors couche, et l'emporte sur `absolute`. */}
+					<div className="absolute -right-3 -bottom-16 w-36 rotate-3 md:-right-24 md:-bottom-20 md:w-52">
+						<EcranProduit
+							capture="aujourdhui"
+							prioritaire
+							description="L’écran d’accueil de Letikette sur téléphone : 66 704,82 € dus au 17 septembre 2026 sur 4 factures en retard, dont 18 443,92 € de pénalités et de frais jamais réclamés, puis la liste des clients à traiter aujourd’hui."
+						/>
+					</div>
 
 					{indemnite === null ? null : (
-						<div className="flotte autocollant absolute top-48 -left-12 flex w-40 flex-col gap-1 rounded-cladd-xl bg-papier p-cladd-3xs text-left md:top-56 md:-left-44 md:w-52">
+						<div className="flotte autocollant absolute -bottom-10 -left-3 flex w-44 flex-col gap-1 rounded-cladd-xl bg-papier p-cladd-3xs text-left shadow-carte-chaude md:-bottom-8 md:-left-24 md:w-52">
 							<span className="flex items-center gap-cladd-3xs">
 								<span className="flex size-8 shrink-0 items-center justify-center rounded-cladd-sm bg-teinte-argent">
 									<PictoArgent className="size-5 text-encre-site" />
@@ -157,7 +179,9 @@ export function Hero() {
 						</div>
 					)}
 
-					<div className="flotte flotte-tard autocollant-droite absolute -right-10 bottom-20 flex w-40 flex-col gap-1 rounded-cladd-xl bg-papier p-cladd-3xs text-left shadow-carte-chaude md:-right-40 md:bottom-32 md:w-52">
+					{/* La date limite, en grand écran seulement : sur téléphone, la photo,
+					    le téléphone et une carte suffisent à remplir l'écran. */}
+					<div className="flotte flotte-tard autocollant-droite absolute top-24 -left-32 hidden w-52 flex-col gap-1 rounded-cladd-xl bg-papier p-cladd-3xs text-left shadow-carte-chaude md:flex lg:-left-40">
 						<span className="flex items-center gap-cladd-3xs">
 							<span className="flex size-8 shrink-0 items-center justify-center rounded-cladd-sm bg-teinte-temps">
 								<PictoTemps className="size-5 text-encre-site" />
