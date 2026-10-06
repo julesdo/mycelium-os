@@ -11,6 +11,7 @@ import {
 	type FactureDepuisQonto,
 	type FactureQonto
 } from '../../socle/connecteurs/qonto';
+import { estSirenValide } from '../../verticales/recouvrement/pays/france/siren';
 
 /**
  * LA CONNEXION QONTO : démarrer, revenir, s'abonner, se déconnecter.
@@ -217,10 +218,7 @@ export const abonner = internalAction({
 					await ctx.runMutation(internal.connexions.qontoDonnees.enregistrerAbonnement, {
 						connexionId,
 						abonnementWebhookId: abonnement.id,
-						secretWebhookChiffre: await encryptToken(
-							secret,
-							requireEncryptionKey(CLE_CHIFFREMENT)
-						),
+						secretWebhookChiffre: await encryptToken(secret, requireEncryptionKey(CLE_CHIFFREMENT)),
 						qontoOrganizationId: abonnement.organization_id
 					});
 				}
@@ -326,9 +324,11 @@ export const synchroniser = internalAction({
 						factures: factures.map((facture) => ({
 							reference: facture.reference,
 							debiteur: facture.debiteur,
-							...(facture.debiteurSiren === undefined
-								? {}
-								: { debiteurSiren: facture.debiteurSiren }),
+							// Le validateur de l'import attend un SIREN déjà vérifié : un SIREN
+							// à la clé fausse rattacherait la facture au mauvais client.
+							...(facture.debiteurSiren !== undefined && estSirenValide(facture.debiteurSiren)
+								? { debiteurSiren: facture.debiteurSiren }
+								: {}),
 							...(facture.debiteurEmail === undefined
 								? {}
 								: { debiteurEmail: facture.debiteurEmail }),
