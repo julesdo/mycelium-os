@@ -9,7 +9,6 @@ import {
 	Bandeau,
 	Veilleur,
 	Limites,
-	Note,
 	Abonnement,
 	Tarifs,
 	Appel,
@@ -132,14 +131,6 @@ function Accueil() {
 			*/}
 			<Veilleur />
 			<Limites />
-			{/*
-			  ⚠️ LA NOTE SUIT LES LIMITES, ET C EST L ORDRE QUI LA REND UTILE. La
-			  section precedente enumere trois refus. Sans personne derriere, un refus
-			  se lit comme une clause de protection ; signe, il se lit comme un choix.
-			  Et c est le dernier ecran avant qu on demande de l argent : celui qui le
-			  demande s est presente d abord.
-			*/}
-			<Note />
 			<Abonnement />
 			<Tarifs />
 			<Appel />

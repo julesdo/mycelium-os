@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { LogoLetikette } from '../ui';
-import { LEGAL_CONFIG, getLegalEmailAddress } from '../lib/config/legal';
+import { getLegalEmailAddress } from '../lib/config/legal';
 
 /**
  * LE PIED DE PAGE — l'encre, la marque en grand, les liens légaux (06/10/2026).
@@ -9,9 +9,11 @@ import { LEGAL_CONFIG, getLegalEmailAddress } from '../lib/config/legal';
  * pose comme une colline sous l'appel final, plutôt qu'une barre de fin. La
  * marque y est écrite en grand, dans son écriture — The Leap pour le geste.
  *
- * ⚠️ LES QUATRE LIENS LÉGAUX RESTENT VISIBLES, ET LES MENTIONS AUSSI. La société,
- * son numéro, son adresse et la phrase qui borne le produit (aucun recouvrement
- * pour compte d'autrui, aucun fonds, aucun conseil) ne se replient pas.
+ * ⚠️ LES QUATRE LIENS LÉGAUX RESTENT VISIBLES, et la phrase qui borne le produit
+ * (aucun recouvrement pour compte d'autrui, aucun fonds, aucun conseil) aussi.
+ * L'identité de l'éditeur — raison sociale, SIRET, adresse — vit sur la page
+ * « Mentions légales », où la loi la demande ; le pied de page ne la répète plus
+ * (décision du fondateur, 06/10/2026).
  */
 const LIEN =
 	'py-cladd-3xs text-cladd-sm text-creme-sur-encre-douce underline underline-offset-4 transition-colors hover:text-creme-sur-encre';
@@ -62,10 +64,6 @@ export function Pied() {
 					</Link>
 				</nav>
 
-				<p className="max-w-3xl text-cladd-sm leading-relaxed text-creme-sur-encre-douce">
-					{LEGAL_CONFIG.companyName}, {LEGAL_CONFIG.legalForm}. SIRET {LEGAL_CONFIG.siret}. TVA{' '}
-					{LEGAL_CONFIG.vatNumber}. {LEGAL_CONFIG.address}. Téléphone {LEGAL_CONFIG.telephone}.
-				</p>
 				<p className="max-w-3xl text-cladd-sm leading-relaxed text-creme-sur-encre-douce">
 					Letikette mesure ce qu’on vous doit, le documente et surveille ses échéances, selon une
 					obligation de moyens. Il n’exerce aucune activité de recouvrement pour compte de tiers, ne

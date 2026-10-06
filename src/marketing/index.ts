@@ -22,7 +22,6 @@ export { Etapes } from './etapes';
 export { Bandeau } from './bandeau';
 export { Veilleur } from './veilleur';
 export { Limites } from './limites';
-export { Note } from './note';
 export { Abonnement } from './abonnement';
 export { Tarifs } from './tarifs';
 export { Appel } from './appel';
