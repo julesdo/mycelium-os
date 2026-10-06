@@ -170,7 +170,7 @@ select:not(:disabled),
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 .verre {
-	background-color: oklch(0.18 0.012 276 / 0.7);
+	background-color: oklch(0.18 0.026 266 / 0.7);
 	-webkit-backdrop-filter: blur(20px) saturate(1.6);
 	backdrop-filter: blur(20px) saturate(1.6);
 	box-shadow:
@@ -195,7 +195,7 @@ select:not(:disabled),
  * une barre translucide sur fond sombre se confond avec le fond dès qu'aucune
  * carte ne passe derrière. */
 .verre-dense {
-	background-color: oklch(0.19 0.012 276 / 0.62);
+	background-color: oklch(0.19 0.026 266 / 0.62);
 	-webkit-backdrop-filter: blur(40px) saturate(2);
 	backdrop-filter: blur(40px) saturate(2);
 	box-shadow:
@@ -290,7 +290,7 @@ select:not(:disabled),
  * navigation ne doit PAS s'éclaircir au survol de la barre entière, seuls ses
  * boutons le doivent. */
 .verre-actif:hover {
-	background-color: oklch(0.27 0.014 276 / 0.72);
+	background-color: oklch(0.27 0.028 266 / 0.72);
 }
 
 /* LE VERRE D'UN BOUTON — son survol et son enfoncement.
@@ -341,7 +341,7 @@ select:not(:disabled),
 }
 
 .verre-bouton:hover {
-	background-color: oklch(0.27 0.014 276 / 0.72);
+	background-color: oklch(0.27 0.028 266 / 0.72);
 	/* L'arête se renforce en même temps que le fond s'éclaircit : c'est ce qui
 	 * fait lire « le verre prend la lumière » plutôt que « le fond a changé ». */
 	box-shadow:
@@ -404,7 +404,7 @@ select:not(:disabled),
  * sera un champ redevenu opaque — visible au premier écran, donc rattrapable.
  * C'est le compromis assumé. */
 .cladd-input .bg-cladd-surface-cut {
-	background-color: oklch(0.25 0.012 276 / 0.66);
+	background-color: oklch(0.25 0.026 266 / 0.66);
 	-webkit-backdrop-filter: blur(20px) saturate(1.6);
 	backdrop-filter: blur(20px) saturate(1.6);
 	box-shadow:
@@ -418,7 +418,7 @@ select:not(:disabled),
  * interne, pas sur la racine qui porte la couche de fond. */
 .cladd-input:hover .bg-cladd-surface-cut,
 .cladd-input:focus-within .bg-cladd-surface-cut {
-	background-color: oklch(0.32 0.014 276 / 0.7);
+	background-color: oklch(0.32 0.028 266 / 0.7);
 }
 
 /* LES CREUX, EUX AUSSI SUR LE SYSTÈME DE VERRE.
@@ -442,7 +442,7 @@ select:not(:disabled),
  * (0,2,0) et c'est le dernier écrit qui gagne — donc tous les champs
  * redeviendraient sombres, en silence, selon l'ordre du fichier. */
 .cladd-surface-cut:not(.cladd-input) > .bg-cladd-surface-cut {
-	background-color: oklch(0.1 0.01 276 / 0.55);
+	background-color: oklch(0.1 0.022 266 / 0.55);
 	-webkit-backdrop-filter: blur(16px) saturate(1.4);
 	backdrop-filter: blur(16px) saturate(1.4);
 	box-shadow:
@@ -493,7 +493,7 @@ select:not(:disabled),
  * valeur maximale ; l'éclaircir ne produirait rien du tout. Dans les deux cas
  * la règle réelle est la même : le survol AUGMENTE le contraste avec le fond. */
 .pilule-principale:hover {
-	background-color: oklch(0.9 0.004 258);
+	background-color: oklch(0.9 0.016 85);
 	box-shadow: 0 4px 20px -6px oklch(1 0 0 / 0.25);
 }
 
@@ -535,8 +535,8 @@ select:not(:disabled),
  * exactement l'information utile sur un formulaire incomplet. */
 .pilule-principale:disabled,
 .pilule-principale[aria-disabled='true'] {
-	background-color: oklch(0.42 0.012 258);
-	color: oklch(0.68 0.01 258);
+	background-color: oklch(0.42 0.026 266);
+	color: oklch(0.68 0.016 85);
 	box-shadow: none;
 	transform: none;
 }
@@ -1001,21 +1001,21 @@ select:not(:disabled),
 	background-image:
 		radial-gradient(
 			130% 55% at 50% 0%,
-			oklch(0.6 0.06 258 / 0.18) 0%,
-			oklch(0.6 0.06 258 / 0.08) 45%,
+			oklch(0.6 0.06 266 / 0.18) 0%,
+			oklch(0.6 0.06 266 / 0.08) 45%,
 			transparent 72%
 		),
 		radial-gradient(
 			130% 45% at 50% 100%,
-			oklch(0.6 0.06 258 / 0.16) 0%,
-			oklch(0.6 0.06 258 / 0.07) 48%,
+			oklch(0.6 0.06 266 / 0.16) 0%,
+			oklch(0.6 0.06 266 / 0.07) 48%,
 			transparent 75%
 		),
 		/* Un troisième lavis, décentré, très large : il casse la symétrie
 		   parfaite des deux premiers. Deux dégradés strictement centrés se lisent
 		   comme un vignettage de logiciel ; un troisième hors axe fait lire une
 		   source de lumière. */
-		radial-gradient(90% 60% at 18% 38%, oklch(0.62 0.07 250 / 0.09) 0%, transparent 70%);
+		radial-gradient(90% 60% at 18% 38%, oklch(0.62 0.07 266 / 0.09) 0%, transparent 70%);
 }
 
 /* LE GRAIN. Du bruit, à deux pour cent, en surimpression.
@@ -1066,7 +1066,7 @@ select:not(:disabled),
  * Une carte rendue à l'intérieur de la couche de fond ne floute rien du tout,
  * en silence. */
 .verre-carte {
-	background-color: oklch(0.18 0.012 276 / 0.72);
+	background-color: oklch(0.18 0.026 266 / 0.72);
 	-webkit-backdrop-filter: blur(24px) saturate(1.7);
 	backdrop-filter: blur(24px) saturate(1.7);
 	box-shadow:
@@ -1078,7 +1078,7 @@ select:not(:disabled),
  * couche : deux translucidités superposées donnent un gris qui ne réfracte
  * plus rien. */
 .verre-carte-actif:hover {
-	background-color: oklch(0.26 0.014 276 / 0.74);
+	background-color: oklch(0.26 0.028 266 / 0.74);
 }
 
 /* L'ÉCRAN DE LA TABLETTE, ET SA MISE À L'ÉCHELLE.

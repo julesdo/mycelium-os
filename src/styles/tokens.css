@@ -973,7 +973,16 @@ body {
  * ⚠️ CE QU'ON NE COPIE PAS, ET C'EST LA SEULE CHOSE. Revolut peint ses
  * variations en vert et en rouge. Ici, le vert, l'ambre et le rouge ne veulent
  * dire qu'une chose — au-dessus du seuil, tout près, en dessous — et aucun
- * élément décoratif ne les porte. La règle tient toujours ; voir plus haut. */
+ * élément décoratif ne les porte. La règle tient toujours ; voir plus haut.
+ *
+ * ⚠️ LA NUIT D'ENCRE DU SITE, DEPUIS LE 06/10/2026. Le fondateur : « applique
+ * aussi la DA au mode sombre ». Le modèle est la section d'encre de la page
+ * publique (`ton="encre"`) : un fond bleu d'encre, le texte principal en crème,
+ * le texte secondaire en crème bleuté. Le charbon bleuté (258, chroma 0,018)
+ * devient une encre (266, chroma relevée) ; le blanc froid devient le crème
+ * (85). CHAQUE CLARTÉ EST RESTÉE LA MÊME : recalculés sur la page, la crête du
+ * lavis, la carte et le creux, les rapports sont identiques au centième —
+ * `fg-softest` tient toujours 4,80:1 sur la crête. */
 :root.dark,
 .dark,
 .dark .cladd-color-neutral,
@@ -982,19 +991,19 @@ body {
 	 * sur les dalles OLED et écrase la rampe de surfaces : il ne reste plus
 	 * aucune marche sous la première carte. Un charbon très bleuté garde la
 	 * profondeur ET la teinte de l'encre de marque. */
-	--cladd-bg: oklch(0.155 0.018 258);
+	--cladd-bg: oklch(0.155 0.03 266);
 
 	/* La carte. Un seul ton pour toutes, et c'est délibéré : Revolut ne dessine
 	 * pas de contour et ne pose pas d'ombre — la séparation d'avec le fond se
 	 * fait UNIQUEMENT par la clarté. Cinq points d'écart suffisent sur un fond
 	 * sombre, là où il en faudrait quinze sur un fond clair. */
-	--cladd-surface: oklch(0.225 0.02 258);
+	--cladd-surface: oklch(0.225 0.034 266);
 	--cladd-surface-mix-color: var(--cladd-surface-white);
 	--cladd-surface-mix-amount: 5%;
 
 	/* Le creux : un champ est une découpe DANS la carte, donc plus sombre
 	 * qu'elle et non plus clair. */
-	--cladd-surface-cut: oklch(0.185 0.018 258);
+	--cladd-surface-cut: oklch(0.185 0.03 266);
 
 	/* ⚠️ LES CONTOURS SONT PRESQUE INVISIBLES, ET C'EST LE RÉGLAGE QUI DÉCIDE
 	 * DE TOUT. Cladd pose un anneau franc autour de chaque surface ; posé sur
@@ -1003,17 +1012,17 @@ body {
 	 * d'appels le passent, et la prop porte aussi l'anneau d'accent au focus.
 	 * On l'atténue donc à la source : le contour existe encore pour l'œil qui
 	 * le cherche, et disparaît pour celui qui lit. */
-	--cladd-bg-outline: oklch(0.26 0.018 258);
-	--cladd-outline: oklch(0.285 0.018 258);
+	--cladd-bg-outline: oklch(0.26 0.03 266);
+	--cladd-outline: oklch(0.285 0.03 266);
 
 	/* LE TEXTE. Quatre crans nettement séparés — c'est ce qui permet à une
 	 * carte de porter un titre, une valeur et deux légendes sans qu'aucune
 	 * bordure soit nécessaire pour les distinguer. Le gris de Revolut
 	 * (#8E8E93) tombe sur `fg-softer` ; il sert aux libellés de ses lignes
 	 * clé/valeur, et c'est le ton le plus employé de toute son interface. */
-	--cladd-fg: oklch(0.985 0.004 258);
-	--cladd-fg-soft: oklch(0.82 0.012 258);
-	--cladd-fg-softer: oklch(0.7 0.014 258);
+	--cladd-fg: oklch(0.985 0.012 85);
+	--cladd-fg-soft: oklch(0.82 0.022 266);
+	--cladd-fg-softer: oklch(0.7 0.022 266);
 	/* ⚠️ REMONTÉ DE 0,58 À 0,635, ET C'EST UNE CORRECTION D'ACCESSIBILITÉ.
 	 *
 	 * Mesuré au navigateur : à 0,58 sur le fond nu, ce ton rendait 4,58:1 —
@@ -1032,7 +1041,7 @@ body {
 	 *
 	 * ⚠️ CE JETON ET L'OPACITÉ DU LAVIS SONT LIÉS. Bouger l'un sans refaire le
 	 * calcul de l'autre casse le contraste en silence. */
-	--cladd-fg-softest: oklch(0.635 0.014 258);
+	--cladd-fg-softest: oklch(0.635 0.022 266);
 }
 
 /* L'accent, en sombre. Cladd le veut clair sur fond sombre — il sert au texte
