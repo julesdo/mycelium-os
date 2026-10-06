@@ -48,6 +48,10 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 	'/': 'La page publique. On y arrive par le domaine.',
 	'/showroom':
 		'La salle d’exposition, en développement seulement. Aucun lien depuis le produit, et c’est voulu.',
+	'/sitemap.xml':
+		'Le plan du site, pour les moteurs de recherche. Ils le trouvent par robots.txt, pas par un lien.',
+	'/blog/rss.xml':
+		'Le flux du blog. Les lecteurs de flux le trouvent par la balise alternate des pages du blog.',
 	/**
 	 * ⚠️ AUCUN ÉCRAN N'Y MÈNE, ET AUCUN N'Y MÈNERA JAMAIS.
 	 *

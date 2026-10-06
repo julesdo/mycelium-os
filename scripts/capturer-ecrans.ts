@@ -38,6 +38,11 @@ interface Capture {
 	readonly variante?: string;
 	/** Défilement vertical avant la prise, en pixels CSS. */
 	readonly defilement?: number;
+	/**
+	 * Sans la barre du bas : la salle d'exposition la monte sur tous ses écrans,
+	 * mais la page où le client paie ne la porte pas — un débiteur n'a pas d'onglets.
+	 */
+	readonly sansBarre?: boolean;
 }
 
 const CAPTURES: readonly Capture[] = [
@@ -46,7 +51,7 @@ const CAPTURES: readonly Capture[] = [
 	{ nom: 'file', ecran: 'aujourd’hui', defilement: 330 },
 	{ nom: 'dossier', ecran: 'créance' },
 	{ nom: 'decompte', ecran: 'arrêt du décompte' },
-	{ nom: 'paiement', ecran: 'le client paie' },
+	{ nom: 'paiement', ecran: 'le client paie', sansBarre: true },
 	{ nom: 'depots', ecran: 'dépôt' }
 ];
 
@@ -75,8 +80,23 @@ async function main(): Promise<void> {
 			for (const bouton of document.querySelectorAll('button')) {
 				if (bouton.textContent?.trim() === 'Demander') bouton.style.visibility = 'hidden';
 			}
+			// Sa lueur est une sœur du bouton, pas un enfant : masquer le bouton seul
+			// laissait une tache bleue sans objet en bas de chaque capture.
+			for (const halo of document.querySelectorAll('.halo-compagnon')) {
+				if (halo instanceof HTMLElement) halo.style.visibility = 'hidden';
+			}
 		});
 		await page.waitForTimeout(900);
+		if (capture.sansBarre === true) {
+			await page.evaluate(() => {
+				// La barre est le seul bloc FIXE qui porte l'onglet « Dossiers ».
+				for (const bloc of document.querySelectorAll('body *')) {
+					if (!(bloc instanceof HTMLElement)) continue;
+					if (getComputedStyle(bloc).position !== 'fixed') continue;
+					if (bloc.textContent?.includes('Dossiers')) bloc.style.display = 'none';
+				}
+			});
+		}
 		if (capture.defilement !== undefined) {
 			await page.mouse.move(LARGEUR / 2, HAUTEUR / 2);
 			await page.mouse.wheel(0, capture.defilement);

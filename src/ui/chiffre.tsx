@@ -32,6 +32,13 @@ import { partsEurosCentimes } from './format';
  * dessous — et un montant dû n'est pas un verdict : c'est une somme. Le verdict
  * se pose à côté, dans un mot qu'on peut lire, jamais dans la couleur du
  * chiffre lui-même.
+ *
+ * ⚠️ EN NEWSREADER, LA SERIF DU SITE, ET NULLE PART AILLEURS DANS L'APP
+ * (06/10/2026, choix du fondateur : « montants seulement »). C'est le marqueur
+ * le plus fort de la DA publique, posé sur le seul chiffre de chaque écran ;
+ * tout le reste de l'interface reste en sans-serif. Graisse moyenne comme les
+ * titres du site, chiffres alignés et de largeur fixe (`lining-nums`,
+ * `tabular-nums`) : la serif a des chiffres elzéviriens qui danseraient.
  */
 export function ChiffreHero({
 	centimes,
@@ -68,12 +75,12 @@ export function ChiffreHero({
 			  le seul endroit du produit où un chiffre qui change de largeur
 			  déplacerait toute la mise en page sous lui.
 			*/}
-			<p className="flex items-baseline justify-center tabular-nums">
-				<span className="text-letikette-hero leading-none font-extrabold tracking-tight">
+			<p className="flex items-baseline justify-center font-serif lining-nums tabular-nums">
+				<span className="text-letikette-hero leading-none font-medium tracking-titre-section">
 					{signe}
 					{entiers}
 				</span>
-				<span className="text-letikette-hero-centimes leading-none font-extrabold tracking-tight">
+				<span className="text-letikette-hero-centimes leading-none font-medium tracking-titre-section">
 					,{cents}&nbsp;€
 				</span>
 			</p>
@@ -110,7 +117,7 @@ export function NombreHero({
 	return (
 		<div className={cn('flex flex-col items-center gap-1 text-center', className)}>
 			<p className="text-cladd-xs font-medium text-cladd-fg-soft">{surTitre}</p>
-			<p className="text-letikette-hero leading-none font-extrabold tracking-tight tabular-nums">
+			<p className="font-serif text-letikette-hero leading-none font-medium tracking-titre-section lining-nums tabular-nums">
 				{NOMBRE.format(nombre)}
 			</p>
 			{legende ? <div className="text-cladd-xs text-cladd-fg-soft">{legende}</div> : null}

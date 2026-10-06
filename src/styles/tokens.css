@@ -804,7 +804,16 @@
  * de (0,2,0). Pour un élément `.light` IMBRIQUÉ — la tablette de la page
  * commerciale, `marketing/apercu.tsx`, rendue dans un document qui peut porter
  * `.dark` — seul `.light` matchait ici, soit (0,1,0) : le kit gagnait, et cette
- * tablette rendait la palette par défaut de Cladd, pas celle de Letikette. */
+ * tablette rendait la palette par défaut de Cladd, pas celle de Letikette.
+ *
+ * ⚠️ LE PAPIER CHAUD DU SITE, DEPUIS LE 06/10/2026. Le fondateur : « que l'on
+ * retrouve notre DA dans l'app tout en gardant le côté moderne ». Le fond, la
+ * carte, le creux et le filet passent de la teinte 258 (bleu-gris) au crème du
+ * site (80-85) ; l'encre passe au bleu d'encre de la marque (266, chroma
+ * relevée). CHAQUE CLARTÉ EST RESTÉE LA MÊME, et c'est ce qui rend le changement
+ * sûr : recalculé, tous les rapports de contraste écrits plus bas sont
+ * identiques au centième (13,97 → 14,01 pour l'encre sur la page, le reste
+ * inchangé). Le verre, le grain et le lavis restent : c'est le côté moderne. */
 :root.light,
 .light,
 .dark .light,
@@ -821,7 +830,7 @@
 	 * assombrir, aucun contraste ne serait garanti et le défaut n'apparaîtrait
 	 * qu'à certaines phases — invisible sur une capture. Voir `.light
 	 * .fond-releve`, qui ne pose que des tons plus clairs que celui-ci. */
-	--cladd-bg: oklch(0.958 0.007 258);
+	--cladd-bg: oklch(0.958 0.017 82);
 
 	/* LA CARTE. Presque blanche, et pas blanche pure, pour deux raisons
 	 * mesurées : le blanc pur est le plafond, donc plus rien ne peut monter
@@ -830,14 +839,14 @@
 	 * distingue pas à l'œil. Elle ne tient que 1,08:1 au-dessus de la page —
 	 * sur fond clair il en faudrait quinze points — d'où le filet et l'ombre
 	 * qu'elle porte en plus, dans `app.css`. */
-	--cladd-surface: oklch(0.995 0.001 258);
+	--cladd-surface: oklch(0.995 0.004 85);
 	--cladd-surface-mix-color: var(--cladd-surface-black);
 	--cladd-surface-mix-amount: 3%;
 
 	/* Le creux garde la teinte du fond : un champ est une découpe DANS la page,
 	 * pas une pièce rapportée grise. 1,16:1 sous la surface, et il reste
 	 * au-dessus de la page pour ne pas percer un trou. */
-	--cladd-surface-cut: oklch(0.945 0.008 258);
+	--cladd-surface-cut: oklch(0.945 0.018 82);
 
 	/* LE FILET QUI SÉPARE — et il n'a pas de seuil à tenir. WCAG 1.4.11 vise
 	 * « l'information nécessaire à identifier les composants d'interface », pas
@@ -850,8 +859,8 @@
 	 * Chroma 0,010 et non 0 : un gris neutre posé sur un fond bleuté tire au
 	 * jaune par contraste simultané — ce fichier a déjà pris la leçon à
 	 * l'envers, du temps où le fond était chaud. */
-	--cladd-bg-outline: oklch(0.912 0.01 258);
-	--cladd-outline: oklch(0.912 0.01 258);
+	--cladd-bg-outline: oklch(0.912 0.018 80);
+	--cladd-outline: oklch(0.912 0.018 80);
 
 	/* LE TEXTE — encre bleu-noir plutôt que gris, et QUATRE CRANS ÉCARTÉS.
 	 *
@@ -879,10 +888,10 @@
 	 * creux — et le creux est le plus sombre des trois. À 0,545, la valeur qui
 	 * tient tout juste 4,5:1 sur la page, il tombait à 4,23:1 dans un champ.
 	 * D'où 0,515, qui tient 4,75:1 même là. */
-	--cladd-fg: oklch(0.255 0.028 264);
-	--cladd-fg-soft: oklch(0.395 0.024 264);
-	--cladd-fg-softer: oklch(0.475 0.02 264);
-	--cladd-fg-softest: oklch(0.515 0.016 264);
+	--cladd-fg: oklch(0.255 0.05 266);
+	--cladd-fg-soft: oklch(0.395 0.036 266);
+	--cladd-fg-softer: oklch(0.475 0.028 266);
+	--cladd-fg-softest: oklch(0.515 0.022 266);
 }
 
 /* Le texte porté PAR l'accent, en mode clair.
