@@ -133,7 +133,7 @@ function seuilsDeLaLoi(): { valeur: string; quoi: string }[] {
 		seuils.push({ valeur: `${euros.toLocaleString('fr-FR')} €`, quoi: 'par facture en retard' });
 	}
 
-	seuils.push({ valeur: `${general.dureeAnnees} ans`, quoi: 'et souvent bien moins' });
+	seuils.push({ valeur: `${general.dureeAnnees} ans`, quoi: 'pour agir en justice' });
 	return seuils;
 }
 
@@ -149,8 +149,11 @@ function articles(): string {
 	return trouves.length > 0 ? trouves.join(' · ') : 'CODE DE COMMERCE';
 }
 
+/** Le trait sous « à temps », en pixels depuis la marge : réglé à l'œil sur le rendu. */
+const SOULIGNE = { debut: 560, fin: 790 };
+
 /** L'accroche, coupée à la main : SVG ne sait pas faire de retour à la ligne. */
-const ACCROCHE = { eteint: 'Vos impayés', vif: 'ont une date limite.' };
+const ACCROCHE = { eteint: 'Relancez vos factures impayées', vif: 'au bon montant, et à temps.' };
 
 /**
  * Décompresse un woff2 et le dépose en TTF, puis rend son chemin.
@@ -209,20 +212,20 @@ function composition(): string {
 <text x="${marge + 62}" y="100" font-family="${BROSSE}" font-size="40" fill="${ENCRE}" letter-spacing="2">LETIKETTE</text>
 
 <!-- La pastille : à qui ça s'adresse, comme en tête du héros. -->
-<rect x="${marge}" y="150" width="424" height="40" rx="14" fill="${TEINTE_ABRICOT}"/>
-<text x="${marge + 18}" y="176" font-family="${SANS}" font-size="17" font-weight="600" fill="${ENCRE}">Pour les PME qui facturent d’autres entreprises</text>
+<rect x="${marge}" y="150" width="352" height="40" rx="14" fill="${TEINTE_ABRICOT}"/>
+<text x="${marge + 18}" y="176" font-family="${SANS}" font-size="17" font-weight="600" fill="${ENCRE}">Logiciel de recouvrement pour les PME</text>
 
-<!-- L'accroche en serif, et le trait tiré à la main sous « date limite ». -->
+<!-- L'accroche en serif, et le trait tiré à la main sous « à temps ». -->
 <text x="${marge}" y="270" font-family="${SERIF}" font-size="68" font-weight="500" fill="${ENCRE}">${ACCROCHE.eteint}</text>
 <text x="${marge}" y="346" font-family="${SERIF}" font-size="68" font-weight="500" fill="${ENCRE}">${ACCROCHE.vif}</text>
-<path d="M ${marge + 4} 362 C ${marge + 120} 352, ${marge + 260} 350, ${marge + 380} 356 S ${marge + 520} 364, ${marge + 560} 354" fill="none" stroke="${GALET_ABRICOT}" stroke-width="7" stroke-linecap="round"/>
+<path d="M ${marge + SOULIGNE.debut} 362 C ${marge + SOULIGNE.debut + 60} 354, ${marge + SOULIGNE.debut + 140} 352, ${marge + SOULIGNE.fin} 357" fill="none" stroke="${GALET_ABRICOT}" stroke-width="7" stroke-linecap="round"/>
 
-<text x="${marge}" y="406" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">Letikette surveille cette date sur chacune de vos factures,</text>
-<text x="${marge}" y="432" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">et calcule au centime ce qui vous est dû.</text>
+<text x="${marge}" y="406" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">Letikette calcule les pénalités et les frais dus sur chaque facture,</text>
+<text x="${marge}" y="432" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">surveille les délais et prépare vos relances.</text>
 
 ${seuils}
 <text x="${marge}" y="606" font-family="${SANS}" font-size="17" fill="${ENCRE_CLAIRE}">letikette.com · ${articles()}</text>
-<text x="${LARGEUR - marge}" y="606" text-anchor="end" font-family="${BROSSE}" font-size="24" fill="${ENCRE_DOUCE}">trente jours d’essai</text>
+<text x="${LARGEUR - marge}" y="606" text-anchor="end" font-family="${SANS}" font-size="17" font-weight="600" fill="${ENCRE_DOUCE}">30 jours d’essai, sans carte bancaire</text>
 </svg>`;
 }
 

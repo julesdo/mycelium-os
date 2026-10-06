@@ -28,6 +28,10 @@ import {
  *
  * Chaque étape porte la teinte de sa famille dans le produit, et l'écran est
  * coupé dans une grande carte de couleur — Airtasker et Braintrust.
+ *
+ * ⚠️ DES TITRES D'ACTION, UNE PHRASE CHACUN (réécriture du 06/10 au soir, sur
+ * Stripe et Sequence : « Create a link », « Share the link », « Get paid »).
+ * Plus de note manuscrite collée sur l'écran.
  */
 
 interface Etape {
@@ -38,88 +42,81 @@ interface Etape {
 	readonly capture: CaptureProduit;
 	readonly description: string;
 	readonly teinte: TeinteSite;
-	/** La note collée sur l'écran, écrite à la main : ce qu'il faut y voir. */
-	readonly note: string;
 }
 
 const ETAPES: readonly Etape[] = [
 	{
 		numero: '01',
-		titre: 'Vos factures sont déjà écrites',
-		texte: 'On les lit là où elles sont, plutôt que de vous les faire ressaisir.',
+		titre: 'Importez vos factures',
+		texte: 'Depuis votre logiciel comptable, en Factur-X ou en PDF. Aucune ressaisie.',
 		capacites: [
-			'L’export de votre logiciel comptable (le FEC), tel quel.',
-			'Vos factures électroniques Factur-X, et vos PDF.',
-			'Les doublons écartés, et comptés, plutôt que perdus.'
+			'Export comptable (FEC) lu tel quel.',
+			'Factures électroniques Factur-X et PDF.',
+			'Doublons détectés et écartés.'
 		],
 		capture: 'depots',
 		description:
 			'Le bilan d’un dépôt dans Letikette : 198 factures entrées depuis un export comptable, 142 règlements rapprochés, 37 clients créés, et les lignes qui ne sont pas entrées, avec la raison.',
-		teinte: 'papiers',
-		note: '198 factures, lues d’un coup'
+		teinte: 'papiers'
 	},
 	{
 		numero: '02',
-		titre: 'Le logiciel regarde toutes les nuits',
-		texte: 'Ce qui arrive à échéance, et ce qui approche de sa date limite pour agir en justice.',
+		titre: 'Suivez vos échéances',
+		texte:
+			'Chaque nuit, Letikette vérifie les délais de chaque facture et la situation de vos clients.',
 		capacites: [
-			'Le journal officiel des entreprises relevé chaque nuit, sur vos clients à vous.',
-			'La date limite suivie facture par facture, au régime de son secteur.',
-			'Les règlements rapprochés, pour ne pas relancer un client qui a payé.'
+			'Date limite suivie facture par facture, selon le secteur.',
+			'Procédures collectives relevées au journal officiel des entreprises (BODACC).',
+			'Paiements rapprochés : pas de relance pour une facture réglée.'
 		],
 		capture: 'file',
 		description:
 			'La file du matin dans Letikette : les clients à traiter aujourd’hui, chacun avec son montant, sa date et ce qui se passe.',
-		teinte: 'temps',
-		note: 'ce qui presse, en premier'
+		teinte: 'temps'
 	},
 	{
 		numero: '03',
-		titre: 'Vous ne tranchez que ce qui ne se lit pas',
+		titre: 'Validez chaque dossier',
 		texte:
-			'Le montant, l’échéance et la qualité des parties se lisent. Une contestation de votre client, non : c’est vous qui la connaissez.',
+			'Vous confirmez ce que les factures ne disent pas, comme une contestation de votre client.',
 		capacites: [
-			'Un seul bouton par dossier, et l’état écrit en toutes lettres.',
-			'Les situations qui changent tout, en une ligne chacune.',
-			'Ce qu’un acte laisserait de côté, chiffré avant qu’il soit préparé.'
+			'Un bouton par dossier, l’état écrit en clair.',
+			'Les points à vérifier, une ligne chacun.',
+			'Les sommes oubliées signalées avant tout courrier.'
 		],
 		capture: 'dossier',
 		description:
 			'Un dossier dans Letikette : 6 373,50 € dus aujourd’hui, pénalités comprises, la date limite pour agir, deux situations à lire, et un seul bouton, « Relire le courrier ».',
-		teinte: 'question',
-		note: 'un seul bouton'
+		teinte: 'question'
 	},
 	{
 		numero: '04',
-		titre: 'Un décompte qui se refait à la main',
+		titre: 'Envoyez une relance chiffrée',
 		texte:
-			'Arrêté, il ne bouge plus. C’est ce qui prouve ce que vous réclamiez le jour où vous l’avez réclamé.',
+			'Le décompte détaille montant, pénalités et frais. Vous le relisez, le signez et l’envoyez.',
 		capacites: [
-			'Les pénalités décomposées période par période : taux, jours, principal.',
-			'Ce qui est laissé de côté, dit avant d’arrêter.',
-			'Les documents réunis pour votre avocat ou votre commissaire de justice.'
+			'Pénalités détaillées période par période.',
+			'Décompte daté et figé une fois arrêté.',
+			'Dossier prêt à transmettre à votre avocat ou commissaire de justice.'
 		],
 		capture: 'decompte',
 		description:
 			'L’arrêt d’un décompte dans Letikette : 20 044,54 € au 3 septembre 2026, décomposés en principal, pénalités de retard et frais de recouvrement, avec les factures laissées de côté.',
-		teinte: 'argent',
-		note: 'au centime près'
+		teinte: 'argent'
 	},
 	{
 		numero: '05',
-		titre: 'Votre client vous paie, directement',
-		texte:
-			'Une page de paiement à votre nom : votre IBAN, le montant, la référence. L’argent va de son compte au vôtre, sans passer par nous.',
+		titre: 'Votre client paie directement',
+		texte: 'Par virement sur votre compte, depuis une page à votre nom. Aucune commission.',
 		capacites: [
-			'Le détail du montant, facture par facture, que votre client peut refaire.',
-			'Un code de virement que sa banque reconnaît.',
-			'Aucun encaissement, aucune commission sur ce qui rentre.'
+			'Détail facture par facture.',
+			'Code QR de virement reconnu par les banques.',
+			'Aucun encaissement par Letikette.'
 		],
 		capture: 'paiement',
 		description:
 			'La page de paiement que reçoit votre client : votre nom, le reste à régler, 6 373,50 €, et les coordonnées du virement, chacune avec un bouton pour la copier.',
-		teinte: 'abricot',
-		note: 'droit sur votre compte'
+		teinte: 'abricot'
 	}
 ];
 
@@ -128,9 +125,9 @@ export function Etapes() {
 		<SectionMarketing id="comment" ton="profond" courbe className="gap-cladd-lg md:gap-cladd-2xl">
 			<div className="flex flex-col gap-cladd-2xs">
 				<SurTitre teinte="papiers">Comment ça marche</SurTitre>
-				<TitreSection suite="un seul vous demande du temps.">Cinq gestes,</TitreSection>
+				<TitreSection suite="en cinq étapes.">De l’import au paiement,</TitreSection>
 				<p className="text-cladd-sm text-encre-site-claire">
-					Les vrais écrans du logiciel, avec des données de démonstration.
+					Captures du logiciel, avec des données de démonstration.
 				</p>
 			</div>
 
@@ -168,11 +165,6 @@ export function Etapes() {
 								description={etape.description}
 								className="w-52 self-start md:w-72"
 							/>
-							{/* LA NOTE COLLÉE — quelqu'un a regardé l'écran et vous dit quoi
-							    y voir. Graza pour le geste. */}
-							<span className="manuscrit autocollant absolute bottom-5 left-3 rounded-full bg-papier px-cladd-2xs py-1 text-intertitre whitespace-nowrap md:bottom-10 md:left-8">
-								{etape.note}
-							</span>
 						</div>
 
 						<div className="flex flex-col gap-cladd-3xs md:gap-cladd-2xs">
@@ -212,12 +204,6 @@ export function Etapes() {
 					</article>
 				))}
 			</div>
-			<p
-				aria-hidden
-				className="manuscrit -mt-cladd-2xs self-end text-intertitre text-encre-site-claire md:hidden"
-			>
-				faites glisser →
-			</p>
 		</SectionMarketing>
 	);
 }

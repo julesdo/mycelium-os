@@ -46,9 +46,9 @@ import { Chapeau, SectionMarketing, SurTitre, TitreSection } from './section';
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Les trois premiers montants montent et s'éclaircissent ; le quatrième tombe à
- * zéro ET s'éteint. C'est l'inversion qui porte tout le sens : ce n'est pas une
- * courbe qui redescend, c'est une lumière qui s'arrête. Le mot « éteinte » est
- * d'ailleurs le terme juridique exact de l'extinction d'une créance.
+ * zéro ET s'éteint : ce n'est pas une courbe qui redescend, c'est une valeur qui
+ * cesse d'exister. Titres et textes en mots simples depuis la réécriture du
+ * 06/10 au soir (« Délai dépassé » plutôt que « Éteinte »).
  */
 
 /**
@@ -95,26 +95,25 @@ function stations(aujourdHui: string): readonly Station[] | null {
 			quand: `1er mars ${ANNEE_ECHEANCE}`,
 			titre: 'Émise',
 			montant: eurosCentimes(PRINCIPAL),
-			texte: 'Le principal, et rien d’autre. À ce stade, personne ne doit rien de plus.'
+			texte: 'Le montant de la facture.'
 		},
 		{
 			quand: `31 mars ${ANNEE_ECHEANCE}`,
 			titre: 'Échue',
 			montant: eurosCentimes(PRINCIPAL + indemnite.valeur),
-			texte: `Les frais de recouvrement sont dus le jour même. Les pénalités de retard commencent à courir, au taux de ${tauxLisible(taux)}.`
+			texte: `Les frais de recouvrement sont dus. Les pénalités courent au taux de ${tauxLisible(taux)} par an.`
 		},
 		{
 			quand: `31 mars ${ANNEE_ECHEANCE + 1}`,
 			titre: 'Un an plus tard',
 			montant: eurosCentimes(total),
-			texte:
-				'Le principal, une année de pénalités de retard et les frais de recouvrement. C’est ce que le décompte réclame, décomposé période par période.'
+			texte: 'Le montant, un an de pénalités et les frais, détaillés période par période.'
 		},
 		{
 			quand: `31 mars ${finPrescription}`,
-			titre: 'Éteinte',
+			titre: 'Délai dépassé',
 			montant: eurosCentimes(0n),
-			texte: `${REGIMES_PRESCRIPTION.GENERAL.dureeAnnees} ans après l’échéance, il est trop tard pour agir en justice. Rien ne le rouvre, et rien ne prévient.`,
+			texte: `${REGIMES_PRESCRIPTION.GENERAL.dureeAnnees} ans après l’échéance, la facture ne se réclame plus en justice.`,
 			eteinte: true
 		}
 	];
@@ -128,14 +127,11 @@ export function Frise() {
 	return (
 		<SectionMarketing ton="creme" courbe className="gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
-				<SurTitre teinte="temps">La vie d’une facture</SurTitre>
-				<TitreSection suite="Elle grandit, puis elle tombe à zéro.">
-					Elle ne meurt pas d’un coup.
+				<SurTitre teinte="temps">Exemple</SurTitre>
+				<TitreSection suite="jusqu’à la date limite.">
+					Une facture impayée prend de la valeur
 				</TitreSection>
-				<Chapeau>
-					Un exemple, la facture FA-2026-0118, calculé au taux du semestre en cours. Les quatre
-					montants se refont à la main.
-				</Chapeau>
+				<Chapeau>Calculé au taux en vigueur ce semestre. Chaque montant se vérifie.</Chapeau>
 			</div>
 
 			{/*
@@ -192,10 +188,6 @@ export function Frise() {
 					</div>
 				))}
 			</div>
-
-			<p className="apparait manuscrit -rotate-1 self-center text-titre-section leading-tight text-encre-site-douce">
-				Et ce dernier jour-là, personne ne prévient.
-			</p>
 		</SectionMarketing>
 	);
 }

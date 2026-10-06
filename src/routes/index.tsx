@@ -6,11 +6,9 @@ import {
 	LaLoi,
 	Frise,
 	Etapes,
-	Bandeau,
-	Veilleur,
-	Limites,
-	Abonnement,
+	Securite,
 	Tarifs,
+	Faq,
 	Appel,
 	Pied
 } from '../marketing';
@@ -46,9 +44,9 @@ import { SITE_CANONIQUE } from '../lib/config/legal';
  * vignette carrée de cent-vingt pixels, où il ne reste rien de lisible.
  */
 const APERCU = `${SITE_CANONIQUE}/partage.png`;
-const TITRE = 'Letikette — vos impayés ont une date limite';
+const TITRE = 'Letikette · Logiciel de recouvrement des factures impayées pour PME';
 const RESUME =
-	'Letikette surveille cette date sur chacune de vos factures, et calcule au centime les intérêts de retard et l’indemnité forfaitaire qui vous sont dus. Chaque euro montre d’où il vient : quel principal, quel taux, sur combien de jours.';
+	'Letikette calcule les pénalités et les frais dus sur chaque facture en retard, surveille les délais et prépare vos relances. Rien ne part sans votre validation.';
 
 export const Route = createFileRoute('/')({
 	head: () => ({
@@ -60,26 +58,19 @@ export const Route = createFileRoute('/')({
 			{ property: 'og:site_name', content: 'Letikette' },
 			{ property: 'og:locale', content: 'fr_FR' },
 			{ property: 'og:url', content: SITE_CANONIQUE },
-			{ property: 'og:title', content: 'Letikette — vos impayés ont une date limite' },
-			{
-				property: 'og:description',
-				content:
-					'Letikette surveille cette date sur chacune de vos factures, et calcule au centime les intérêts de retard et l’indemnité forfaitaire qui vous sont dus.'
-			},
+			{ property: 'og:title', content: TITRE },
+			{ property: 'og:description', content: RESUME },
 			{ property: 'og:image', content: APERCU },
 			{ property: 'og:image:width', content: '1200' },
 			{ property: 'og:image:height', content: '630' },
 			{
 				property: 'og:image:alt',
 				content:
-					'Letikette — vos impayés ont une date limite. Les trois chiffres du code de commerce : les intérêts de retard au taux BCE majoré de dix points, l’indemnité forfaitaire due par facture, et le délai de prescription.'
+					'Letikette, logiciel de recouvrement pour les PME : relancez vos factures impayées au bon montant, et à temps. Pénalités au taux BCE majoré de dix points, frais forfaitaires par facture, délai pour agir en justice.'
 			},
 
 			{ name: 'twitter:card', content: 'summary_large_image' },
-			{
-				name: 'twitter:title',
-				content: 'Letikette — vos impayés ont une date limite'
-			},
+			{ name: 'twitter:title', content: TITRE },
 			{ name: 'twitter:description', content: RESUME },
 			{ name: 'twitter:image', content: APERCU }
 		],
@@ -91,12 +82,12 @@ export const Route = createFileRoute('/')({
 /**
  * L'ORDRE DES SECTIONS EST LE RYTHME DU PAPIER (06/10/2026).
  *
- *   crème · crème · PROFOND · crème · PROFOND · ENCRE · crème · PROFOND ·
- *   crème · PROFOND · crème · crème · ENCRE
+ *   crème · crème · PROFOND · crème · PROFOND · ENCRE · PROFOND · crème ·
+ *   crème · ENCRE
  *
  * Chaque changement de ton annonce un changement de sujet, et il se fait par un
  * arc doux (`courbe`) : la section se pose sur la précédente comme une colline.
- * Le crème raconte, le crème profond démontre, l'encre ne porte que le manifeste
+ * Le crème raconte, le crème profond démontre, l'encre ne porte que la sécurité
  * et le pied de page. Voir
  * `docs/superpowers/specs/2026-10-06-site-direction-artistique.md`.
  */
@@ -105,9 +96,8 @@ function Accueil() {
 		<main className="flex w-full flex-col bg-creme">
 			<Navbar />
 			<Hero />
-			{/* LA CIBLE, JUSTE APRÈS L'ACCROCHE (06/10/2026) : trois gérants, en
-			    situations types, avant la loi et le logiciel. On parle d'abord de la
-			    personne qui a les impayés. */}
+			{/* LA CIBLE, JUSTE APRÈS L'ACCROCHE : les métiers, avant la loi et le
+			    logiciel. On parle d'abord de celui qui a les impayés. */}
 			<Situations />
 			<LaLoi />
 			{/*
@@ -119,20 +109,15 @@ function Accueil() {
 			*/}
 			<Frise />
 			<Etapes />
-			<Bandeau />
 			{/*
-			  ⚠️ LE VEILLEUR VIENT JUSTE APRÈS LE MANIFESTE, ET L'ORDRE EST L'ARGUMENT.
-			  La section précédente pose le problème en une phrase — « une facture
-			  impayée ne fait aucun bruit le jour où elle devient irrécouvrable ».
-			  Celle-ci est la seule réponse que ce produit puisse donner honnêtement :
-			  non pas « nous récupérons votre argent », mais « ce jour-là, quelque
-			  chose regardait ». Les séparer casserait la seule articulation de la
-			  page qui tienne en deux écrans.
+			  LA SÉCURITÉ AVANT LE PRIX (réécriture du 06/10 au soir) : ce qui rassure
+			  — rien ne part sans vous, aucun fonds touché — se lit avant qu'on
+			  demande de l'argent. Elle remplace le manifeste, le veilleur, les
+			  limites et la défense de l'abonnement.
 			*/}
-			<Veilleur />
-			<Limites />
-			<Abonnement />
+			<Securite />
 			<Tarifs />
+			<Faq />
 			<Appel />
 			<Pied />
 		</main>

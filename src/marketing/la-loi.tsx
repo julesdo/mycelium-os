@@ -6,7 +6,6 @@ import { cn, PictoInterets, PictoFacture, PictoPrescription } from '../ui';
 import { ARTICLES_DU_SOCLE } from './articles';
 import {
 	Chapeau,
-	Photo,
 	SectionMarketing,
 	SurTitre,
 	TitreSection,
@@ -42,24 +41,22 @@ function seuilsDeLaLoi(aujourdHui: string) {
 	return [
 		{
 			valeur: taux,
-			titre: 'de pénalités de retard',
-			detail:
-				'Taux de refinancement de la BCE majoré de dix points, dus sans avoir à réclamer. Réancré chaque semestre.',
+			titre: 'de pénalités de retard par an',
+			detail: 'Taux de la BCE majoré de dix points, mis à jour chaque semestre.',
 			teinte: 'argent' as TeinteSite,
 			Picto: PictoInterets
 		},
 		{
 			valeur: estUtilisable(indemnite) ? eurosCentimesCourts(indemnite.valeur) : '40 €',
 			titre: 'par facture en retard',
-			detail:
-				'Frais de recouvrement, dus de plein droit dès le premier jour. Par facture, jamais par client.',
+			detail: 'Frais de recouvrement dus dès le premier jour de retard, pour chaque facture.',
 			teinte: 'papiers' as TeinteSite,
 			Picto: PictoFacture
 		},
 		{
 			valeur: `${general.dureeAnnees} ans`,
-			titre: 'et souvent bien moins',
-			detail: `${transport.dureeAnnees} an sur le transport de marchandises, ${consommateur.dureeAnnees} sur ce qu’on fournit à un consommateur. Passé le délai, la somme ne se réclame plus.`,
+			titre: 'pour agir en justice',
+			detail: `${transport.dureeAnnees} an pour le transport de marchandises, ${consommateur.dureeAnnees} ans pour une vente à un particulier. Au-delà, la facture ne se réclame plus.`,
 			teinte: 'temps' as TeinteSite,
 			Picto: PictoPrescription
 		}
@@ -77,10 +74,9 @@ export function LaLoi() {
 					De plein droit
 					{ARTICLES_DU_SOCLE.length > 0 ? ` · art. ${ARTICLES_DU_SOCLE.join(', ')}` : ''}
 				</SurTitre>
-				<TitreSection suite="et que personne ne réclame.">Ce que la loi vous doit,</TitreSection>
+				<TitreSection suite="sur chaque facture en retard.">Ce que la loi vous doit</TitreSection>
 				<Chapeau>
-					Ces sommes vous sont dues sans avoir à les réclamer et sans clause au contrat. Le délai,
-					lui, court sans que personne ne vous prévienne.
+					Dû automatiquement, sans clause au contrat. Letikette le calcule pour vous.
 				</Chapeau>
 			</div>
 
@@ -112,33 +108,6 @@ export function LaLoi() {
 					</div>
 				))}
 			</dl>
-
-			{/* LE CAS QUI SURPREND, POSÉ COMME UNE NOTE COLLÉE SUR UNE PHOTO. Un an
-			    au lieu de cinq : c'est la phrase qui fait relire ses factures de
-			    transport, et le chauffeur dit à qui elle s'adresse sans un mot de
-			    plus. Un métier, pas une personne : aucun prénom à côté. */}
-			<div className="grid items-center gap-cladd-sm md:grid-cols-2 md:gap-cladd-lg">
-				<div className="apparait relative">
-					<div className="overflow-hidden rounded-carte-site shadow-carte-chaude">
-						<Photo
-							photo="chauffeur"
-							description="Un chauffeur souriant au volant de sa camionnette, vitre baissée."
-							className="aspect-4/3"
-						/>
-					</div>
-					<span className="manuscrit autocollant absolute -bottom-4 left-4 rounded-full bg-papier px-cladd-2xs py-1 text-intertitre shadow-carte-chaude">
-						lui, il livre
-					</span>
-				</div>
-				<aside className="apparait autocollant-droite flex flex-col gap-cladd-3xs rounded-carte-site bg-teinte-abricot p-cladd-xs max-md:mx-cladd-3xs">
-					<p className="font-serif text-titre-section leading-tight font-medium text-balance">
-						Pour une facture de transport, la date limite tombe à un an, pas à cinq.
-					</p>
-					<p className="text-cladd-md leading-relaxed text-encre-site-douce">
-						Et le délai court depuis la livraison, pas depuis votre dernière relance.
-					</p>
-				</aside>
-			</div>
 		</SectionMarketing>
 	);
 }

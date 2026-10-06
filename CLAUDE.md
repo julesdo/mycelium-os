@@ -188,8 +188,13 @@ produit sur de grandes cartes (`SectionMarketing`, `SurTitre`, `TitreSection` da
 `marketing/section.tsx`). Le produit s'y montre en **captures PNG** des vrais écrans
 (`scripts/capturer-ecrans.ts`, à lancer avec `node --experimental-strip-types` : Playwright se
 bloque sous Bun sur Windows), jamais plus en composants sous un ciel SVG, qui faisait saccader le
-téléphone. La cible a sa section, « Vous vous reconnaissez ? » : des situations types aux prénoms
-d'exemple, et la page le dit — aucun faux témoignage.
+téléphone. **Le texte a été réécrit le soir même** (le fondateur : « pas du tout le ton d'une
+entreprise comme la nôtre, ça ne rassure pas »), sur Acctual, Wise, Mercury, Stripe et Midday : un
+titre qui dit ce que fait le produit, une phrase factuelle, des levées de risque cochées, plus
+aucune annotation manuscrite ni formule. La cible se présente par MÉTIERS, en photos, jamais un
+prénom à côté d'un visage. Une section **Sécurité** et une **FAQ** remplacent le manifeste, le
+veilleur, « ce que Letikette ne fera jamais » et la défense de l'abonnement ; la sécurité ne cite
+que des mesures en place — la base est chez Convex aux États-Unis, donc jamais « hébergé en France ».
 
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 

@@ -307,4 +307,3 @@ export {
 	PictoInterdit
 } from './pictogrammes';
 export { BoutonAffiche, LienAffiche, type FondBouton } from './bouton-affiche';
-export { PortraitDessine, PERSONNAGES, type Personnage, type Coiffure } from './portrait-dessine';

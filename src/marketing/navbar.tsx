@@ -5,7 +5,7 @@ import { BoutonAffiche, LogoLetikette, MotLetikette } from '../ui';
 /**
  * LA BARRE PUBLIQUE — une pilule de verre crème qui flotte sur la page.
  *
- * Trois ancres au centre, et rien d'autre : la page se lit d'un seul
+ * Quatre ancres courtes au centre, et rien d'autre : la page se lit d'un seul
  * défilement, et une barre chargée de liens ferait croire à un site de dix
  * pages. L'action principale à droite, la connexion en simple texte.
  *
@@ -17,9 +17,10 @@ import { BoutonAffiche, LogoLetikette, MotLetikette } from '../ui';
  * ligne, et c'est le seul geste que la barre doit offrir partout.
  */
 const SECTIONS = [
-	{ ancre: '#la-loi', label: 'La loi' },
-	{ ancre: '#comment', label: 'Le logiciel' },
-	{ ancre: '#tarifs', label: 'Le prix' }
+	{ ancre: '#comment', label: 'Logiciel' },
+	{ ancre: '#securite', label: 'Sécurité' },
+	{ ancre: '#tarifs', label: 'Tarifs' },
+	{ ancre: '#faq', label: 'FAQ' }
 ] as const;
 
 export function Navbar() {
@@ -55,7 +56,7 @@ export function Navbar() {
 						Se connecter
 					</Link>
 					<BoutonAffiche as={Link} to="/inscription" size="sm" fond="jour">
-						Voir ce qu’on me doit
+						Essayer gratuitement
 						<ArrowRightIcon />
 					</BoutonAffiche>
 				</div>

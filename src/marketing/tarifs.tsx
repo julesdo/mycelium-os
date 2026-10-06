@@ -5,7 +5,6 @@ import { ArrowRightIcon, CheckIcon, MinusIcon } from 'lucide-react';
 import { BoutonAffiche, cn, euros } from '../ui';
 import {
 	BORNES_COURTES,
-	BORNES_PALIER,
 	CE_QUI_EST_INCLUS,
 	DUREE_ESSAI_JOURS,
 	PALIERS,
@@ -86,20 +85,18 @@ type Offre = {
 
 const OFFRES: Offre[] = [
 	{
-		titre: 'La première mesure',
+		titre: 'Bilan ponctuel',
 		colonne: 'bilan',
 		cadence: 'une fois',
-		argument:
-			'Vos impayés lus en une fois. Vous saurez ce qui est encore récupérable, et ce qui va s’éteindre, en euros.',
-		appel: 'Commencer par la mesure'
+		argument: 'Un état complet de vos impayés : ce qui se réclame encore, et combien.',
+		appel: 'Choisir le bilan'
 	},
 	{
-		titre: 'L’abonnement',
+		titre: 'Abonnement',
 		colonne: 'abonnement',
 		cadence: 'par mois',
-		argument:
-			'Vos échéances surveillées toute l’année : ce qui arrive à terme, et ce qui approche de la date limite pour agir en justice.',
-		appel: 'Prendre l’abonnement',
+		argument: 'Vos factures suivies toute l’année : échéances, délais et situation de vos clients.',
+		appel: 'Choisir l’abonnement',
 		avant: true
 	}
 ];
@@ -119,12 +116,9 @@ export function Tarifs() {
 			className="light cladd-color-brand gap-cladd-lg"
 		>
 			<div className="flex flex-col gap-cladd-2xs">
-				<SurTitre teinte="argent">{`Le prix · ${DUREE_ESSAI_JOURS} jours d’essai`}</SurTitre>
-				<TitreSection suite="et ce que ça couvre.">Ce que ça coûte,</TitreSection>
-				<Chapeau>
-					Le prix suit le nombre de factures que vous émettez chaque année. Le logiciel, lui, est le
-					même pour tout le monde.
-				</Chapeau>
+				<SurTitre teinte="argent">Tarifs</SurTitre>
+				<TitreSection suite="sans engagement.">Un prix selon votre volume,</TitreSection>
+				<Chapeau>Le prix dépend du nombre de factures que vous émettez par an.</Chapeau>
 			</div>
 
 			<div className="flex flex-col gap-cladd-3xs">
@@ -156,7 +150,7 @@ export function Tarifs() {
 							<span className="flex flex-wrap items-center gap-cladd-3xs">
 								<span className="text-intertitre font-semibold">{o.titre}</span>
 								{o.avant ? (
-									<span className="manuscrit autocollant rounded-full bg-teinte-abricot px-cladd-3xs py-0.5 text-cladd-md">
+									<span className="rounded-full bg-teinte-abricot px-cladd-3xs py-0.5 text-cladd-xs font-semibold">
 										recommandé
 									</span>
 								) : null}
@@ -233,13 +227,8 @@ export function Tarifs() {
 			</div>
 
 			<p className="max-w-3xl text-cladd-sm leading-relaxed text-encre-site-douce md:text-cladd-md">
-				{DUREE_ESSAI_JOURS} jours d’essai, sans carte bancaire. Prix hors taxes, sans engagement.{' '}
-				<span className="hidden md:inline">
-					Vous voyez ce qu’on vous doit et vos échéances avant de décider quoi que ce soit ; la
-					facturation est assurée par Paddle. Votre palier,{' '}
-					<span className="font-semibold text-encre-site">{BORNES_PALIER[palier]}</span>, se
-					confirme dans vos réglages, à partir du volume que vous déclarez.
-				</span>
+				{DUREE_ESSAI_JOURS} jours d’essai, sans carte bancaire. Prix hors taxes, sans engagement.
+				Facturation assurée par Paddle.
 			</p>
 		</SectionMarketing>
 	);

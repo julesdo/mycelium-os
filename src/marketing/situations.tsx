@@ -1,53 +1,56 @@
-import { cn, PERSONNAGES, PortraitDessine, type Personnage } from '../ui';
-import { SectionMarketing, SurTitre, TitreSection, fondDeTeinte, type TeinteSite } from './section';
+import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
+import { cn } from '../ui';
+import {
+	Chapeau,
+	Photo,
+	SectionMarketing,
+	SurTitre,
+	TitreSection,
+	type PhotoSite
+} from './section';
 
 /**
- * « VOUS VOUS RECONNAISSEZ ? » — LA CIBLE, EN TROIS VISAGES (06/10/2026).
+ * POUR QUI — trois métiers, trois photos (06/10/2026, réécrite le soir même).
  *
- * ⚠️ DES SITUATIONS TYPES, PAS DES TÉMOIGNAGES. Les prénoms sont des exemples,
- * la page le dit, et les visages sont DESSINÉS : un dessin se lit « exemple »,
- * une photographie de banque d'images se lirait « client ». Aucune carte ne
- * porte de guillemets ni de note.
+ * Remplace « Vous vous reconnaissez ? » : trois gérants dessinés aux prénoms
+ * d'exemple. Le fondateur a jugé le ton peu rassurant ; les sites du métier
+ * (Revolut Business, Squarespace, Wise) présentent leurs segments par leur
+ * NOM, une photo et une ligne. Des métiers, jamais un prénom à côté d'un
+ * visage réel.
  *
- * ⚠️ UNE PHRASE PAR CARTE. Sur téléphone, la section faisait 1 440 px et
- * 150 mots (« beaucoup de pâté de texte », le fondateur). Chaque carte dit
- * désormais une situation en une phrase, et ce que Letikette en fait à la
- * main ; elles défilent d'un geste au lieu de s'empiler.
+ * ⚠️ LA DURÉE DU TRANSPORT EST LUE, PAS ÉCRITE : `REGIMES_PRESCRIPTION`.
  */
 
-interface Situation {
-	readonly qui: string;
-	readonly metier: string;
-	readonly personnage: Personnage;
-	readonly recit: string;
-	readonly reponse: string;
-	readonly teinte: TeinteSite;
+function annees(n: number): string {
+	return `${n} ${n > 1 ? 'ans' : 'an'}`;
 }
 
-const SITUATIONS: readonly Situation[] = [
+const SEGMENTS: readonly {
+	readonly metier: string;
+	readonly texte: string;
+	readonly photo: PhotoSite;
+	readonly description: string;
+	readonly cadrage?: string;
+}[] = [
 	{
-		qui: 'Karim',
-		metier: 'menuisier à Nantes',
-		personnage: PERSONNAGES.karim,
-		recit: 'Trois chantiers livrés, trois clients qui « paient le mois prochain ».',
-		reponse: 'ce qu’on lui doit, au centime',
-		teinte: 'papiers'
+		metier: 'Commerce et négoce',
+		texte: 'Beaucoup de factures, et des relances faites à la main quand on a le temps.',
+		photo: 'commercante',
+		description: 'Une commerçante souriante dans sa boutique, devant ses rayonnages.',
+		cadrage: 'object-top'
 	},
 	{
-		qui: 'Sophie',
-		metier: 'grossiste à Lyon',
-		personnage: PERSONNAGES.sophie,
-		recit: 'Deux cents factures par mois, et les relances le vendredi soir.',
-		reponse: 'celles qui approchent de la date limite',
-		teinte: 'temps'
+		metier: 'Transport et livraison',
+		texte: `Une facture de transport se réclame pendant ${annees(REGIMES_PRESCRIPTION.TRANSPORT_MARCHANDISES.dureeAnnees)}, contre ${annees(REGIMES_PRESCRIPTION.GENERAL.dureeAnnees)} en général.`,
+		photo: 'chauffeur',
+		description: 'Un chauffeur souriant au volant de sa camionnette, vitre baissée.'
 	},
 	{
-		qui: 'Julien',
-		metier: 'agence à Bordeaux',
-		personnage: PERSONNAGES.julien,
-		recit: 'Son plus gros client a quatre mois de retard, et il n’ose pas le relancer.',
-		reponse: 'une lettre prête, à son nom',
-		teinte: 'question'
+		metier: 'Industrie et logistique',
+		texte: 'Des montants élevés, des clients réguliers, et des retards qui s’installent.',
+		photo: 'entrepot',
+		description: 'Deux personnes qui marchent dans l’allée d’un entrepôt, un classeur à la main.',
+		cadrage: 'object-top'
 	}
 ];
 
@@ -56,49 +59,33 @@ export function Situations() {
 		<SectionMarketing id="pour-qui" ton="creme" className="gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
 				<SurTitre teinte="argent">Pour qui</SurTitre>
-				<TitreSection>Vous vous reconnaissez ?</TitreSection>
-				<p className="text-cladd-sm text-encre-site-claire">
-					Trois situations types. Les prénoms sont des exemples.
-				</p>
+				<TitreSection>Pour les entreprises qui facturent d’autres entreprises.</TitreSection>
+				<Chapeau>
+					Artisans, commerçants, transporteurs, industriels, prestataires de services.
+				</Chapeau>
 			</div>
 
 			{/* LE CARROUSEL SUR TÉLÉPHONE, LA GRILLE AU-DELÀ. Les cartes débordent
-			    jusqu'au bord de l'écran (marges négatives) : c'est ce qui dit qu'il y
-			    en a d'autres à droite. */}
+			    jusqu'au bord de l'écran : c'est ce qui dit qu'il y en a d'autres. */}
 			<div className="carrousel -mx-cladd-2xs flex snap-x snap-mandatory gap-cladd-2xs overflow-x-auto px-cladd-2xs pb-cladd-3xs md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
-				{SITUATIONS.map((s) => (
+				{SEGMENTS.map((s) => (
 					<article
-						key={s.qui}
-						className={cn(
-							'flex w-4/5 shrink-0 snap-center flex-col items-center gap-cladd-2xs rounded-carte-site px-cladd-xs py-cladd-sm text-center md:w-auto',
-							fondDeTeinte(s.teinte)
-						)}
+						key={s.metier}
+						className="flex w-4/5 shrink-0 snap-center flex-col overflow-hidden rounded-carte-site bg-papier shadow-carte-chaude md:w-auto"
 					>
-						<PortraitDessine
-							personnage={s.personnage}
-							fond="var(--color-papier)"
-							className="size-28"
-							titre={`${s.qui}, ${s.metier} (dessin)`}
+						<Photo
+							photo={s.photo}
+							description={s.description}
+							sizes="(min-width: 768px) 360px, 80vw"
+							className={cn('aspect-4/3', s.cadrage)}
 						/>
-						<div className="flex flex-col">
-							<span className="font-serif text-titre-section leading-none font-medium">
-								{s.qui}
-							</span>
-							<span className="text-cladd-sm text-encre-site-douce">{s.metier}</span>
+						<div className="flex flex-col gap-1 p-cladd-xs">
+							<h3 className="text-intertitre leading-snug font-semibold">{s.metier}</h3>
+							<p className="text-cladd-md leading-relaxed text-encre-site-douce">{s.texte}</p>
 						</div>
-						<p className="text-cladd-md leading-relaxed text-balance">{s.recit}</p>
-						<p className="manuscrit mt-auto text-intertitre leading-snug text-encre-site-douce">
-							Letikette lui montre {s.reponse}.
-						</p>
 					</article>
 				))}
 			</div>
-			<p
-				aria-hidden
-				className="manuscrit -mt-cladd-2xs self-end text-intertitre text-encre-site-claire md:hidden"
-			>
-				faites glisser →
-			</p>
 		</SectionMarketing>
 	);
 }

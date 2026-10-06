@@ -3,9 +3,8 @@ import {
 	Situations,
 	LaLoi,
 	Frise as FriseSection,
-	Bandeau,
-	Veilleur as VeilleurSection,
-	Abonnement,
+	Securite,
+	Faq,
 	Pied
 } from '../../marketing';
 import { formeDemo, type EcranDuProduit } from './demo';
@@ -41,12 +40,11 @@ import { formeDemo, type EcranDuProduit } from './demo';
 
 const SECTIONS = {
 	'héros et téléphone': () => <Hero />,
-	'vous vous reconnaissez': () => <Situations />,
+	'pour qui': () => <Situations />,
 	'les chiffres de la loi': () => <LaLoi />,
 	'la vie d’une facture': () => <FriseSection />,
-	'le manifeste': () => <Bandeau />,
-	'les raisons de l’abonnement': () => <Abonnement />,
-	'le veilleur et ses signes': () => <VeilleurSection />,
+	'la sécurité': () => <Securite />,
+	'les questions fréquentes': () => <Faq />,
 	'le pied et ses liens légaux': () => <Pied />
 } as const;
 

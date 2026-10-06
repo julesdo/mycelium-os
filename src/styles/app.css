@@ -2077,6 +2077,15 @@ select:not(:disabled),
 	box-shadow: 0 10px 24px -14px oklch(0.27 0.05 266 / 0.45);
 }
 
+/* LA FAQ : `<details>` natif, sans le triangle du navigateur (Safari garde le
+   sien tant que le pseudo-élément n'est pas masqué). */
+.faq summary {
+	list-style: none;
+}
+.faq summary::-webkit-details-marker {
+	display: none;
+}
+
 /* L'ÉCRITURE À LA MAIN, pour les annotations seulement : un mot souligné, une
    flèche, une remarque dans la marge. Jamais un paragraphe. */
 .manuscrit {
