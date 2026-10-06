@@ -1,7 +1,6 @@
 import { CheckIcon } from 'lucide-react';
 import { cn } from '../ui';
 import {
-	Chapeau,
 	EcranProduit,
 	SectionMarketing,
 	SurTitre,
@@ -39,6 +38,8 @@ interface Etape {
 	readonly capture: CaptureProduit;
 	readonly description: string;
 	readonly teinte: TeinteSite;
+	/** La note collée sur l'écran, écrite à la main : ce qu'il faut y voir. */
+	readonly note: string;
 }
 
 const ETAPES: readonly Etape[] = [
@@ -54,7 +55,8 @@ const ETAPES: readonly Etape[] = [
 		capture: 'depots',
 		description:
 			'Le bilan d’un dépôt dans Letikette : 198 factures entrées depuis un export comptable, 142 règlements rapprochés, 37 clients créés, et les lignes qui ne sont pas entrées, avec la raison.',
-		teinte: 'papiers'
+		teinte: 'papiers',
+		note: '198 factures, lues d’un coup'
 	},
 	{
 		numero: '02',
@@ -68,7 +70,8 @@ const ETAPES: readonly Etape[] = [
 		capture: 'file',
 		description:
 			'La file du matin dans Letikette : les clients à traiter aujourd’hui, chacun avec son montant, sa date et ce qui se passe.',
-		teinte: 'temps'
+		teinte: 'temps',
+		note: 'ce qui presse, en premier'
 	},
 	{
 		numero: '03',
@@ -83,7 +86,8 @@ const ETAPES: readonly Etape[] = [
 		capture: 'dossier',
 		description:
 			'Un dossier dans Letikette : 6 373,50 € dus aujourd’hui, pénalités comprises, la date limite pour agir, deux situations à lire, et un seul bouton, « Relire le courrier ».',
-		teinte: 'question'
+		teinte: 'question',
+		note: 'un seul bouton'
 	},
 	{
 		numero: '04',
@@ -98,7 +102,8 @@ const ETAPES: readonly Etape[] = [
 		capture: 'decompte',
 		description:
 			'L’arrêt d’un décompte dans Letikette : 20 044,54 € au 3 septembre 2026, décomposés en principal, pénalités de retard et frais de recouvrement, avec les factures laissées de côté.',
-		teinte: 'argent'
+		teinte: 'argent',
+		note: 'au centime près'
 	},
 	{
 		numero: '05',
@@ -113,83 +118,106 @@ const ETAPES: readonly Etape[] = [
 		capture: 'paiement',
 		description:
 			'La page de paiement que reçoit votre client : votre nom, le reste à régler, 6 373,50 €, et les coordonnées du virement, chacune avec un bouton pour la copier.',
-		teinte: 'abricot'
+		teinte: 'abricot',
+		note: 'droit sur votre compte'
 	}
 ];
 
 export function Etapes() {
 	return (
-		<SectionMarketing id="comment" ton="profond" courbe className="gap-cladd-2xl">
+		<SectionMarketing id="comment" ton="profond" courbe className="gap-cladd-lg md:gap-cladd-2xl">
 			<div className="flex flex-col gap-cladd-2xs">
 				<SurTitre teinte="papiers">Comment ça marche</SurTitre>
 				<TitreSection suite="un seul vous demande du temps.">Cinq gestes,</TitreSection>
-				<Chapeau>
-					Les écrans ci-dessous sont ceux du logiciel, pris tels quels, avec des données de
-					démonstration.
-				</Chapeau>
+				<p className="text-cladd-sm text-encre-site-claire">
+					Les vrais écrans du logiciel, avec des données de démonstration.
+				</p>
 			</div>
 
-			{ETAPES.map((etape, rang) => (
-				<article
-					key={etape.numero}
-					className="grid items-center gap-cladd-sm md:grid-cols-2 md:gap-cladd-xl"
-				>
-					{/* L'ÉCRAN, COUPÉ DANS SA CARTE. Le bas du téléphone sort par le bord :
-					    on voit ce qui compte, la carte garde une hauteur raisonnable sur
-					    téléphone. */}
-					<div
-						className={cn(
-							'relative isolate flex h-96 justify-center overflow-clip rounded-carte-site px-cladd-sm pt-cladd-sm md:h-120',
-							fondDeTeinte(etape.teinte),
-							rang % 2 === 1 && 'md:order-2'
-						)}
+			{/*
+			  ⚠️ UN CARROUSEL SUR TÉLÉPHONE, DES RANGÉES AU-DELÀ. La section faisait
+			  5 200 px sur téléphone : cinq cartes de 384 px, chacune suivie de son
+			  titre, d'une phrase et de trois puces. Sur téléphone, les cinq écrans
+			  défilent d'un geste, comme les captures d'une fiche d'application, avec
+			  un titre et une phrase chacun ; les puces n'apparaissent qu'à partir de
+			  la tablette, où elles ont la place d'être lues.
+			*/}
+			<div className="carrousel -mx-cladd-2xs flex snap-x snap-mandatory gap-cladd-2xs overflow-x-auto px-cladd-2xs pb-cladd-3xs md:mx-0 md:flex-col md:gap-cladd-2xl md:overflow-visible md:px-0">
+				{ETAPES.map((etape, rang) => (
+					<article
+						key={etape.numero}
+						className="flex w-4/5 shrink-0 snap-center flex-col gap-cladd-2xs md:grid md:w-auto md:grid-cols-2 md:items-center md:gap-cladd-xl"
 					>
+						{/* L'ÉCRAN, COUPÉ DANS SA CARTE : le bas du téléphone sort par le bord. */}
 						<div
-							aria-hidden
 							className={cn(
-								'galet galet-c -top-16 -left-14 -z-10 size-56',
-								galetDeTeinte(etape.teinte)
-							)}
-						/>
-						<EcranProduit
-							capture={etape.capture}
-							description={etape.description}
-							className="apparait w-60 self-start md:w-72"
-						/>
-					</div>
-
-					<div className="flex flex-col gap-cladd-2xs">
-						<span
-							className={cn(
-								'flex size-12 items-center justify-center rounded-full font-serif text-intertitre font-medium',
-								fondDeTeinte(etape.teinte)
+								'relative isolate flex h-80 justify-center overflow-clip rounded-carte-site px-cladd-xs pt-cladd-xs md:h-120 md:px-cladd-sm md:pt-cladd-sm',
+								fondDeTeinte(etape.teinte),
+								rang % 2 === 1 && 'md:order-2'
 							)}
 						>
-							{etape.numero}
-						</span>
-						<h3 className="font-serif text-titre-section leading-tight font-medium tracking-titre-section text-balance">
-							{etape.titre}
-						</h3>
-						<p className="text-chapeau leading-relaxed text-encre-site-douce">{etape.texte}</p>
-						<ul className="flex flex-col gap-cladd-3xs pt-cladd-3xs">
-							{etape.capacites.map((capacite) => (
-								<li key={capacite} className="flex items-start gap-cladd-3xs">
-									<span
-										aria-hidden
-										className={cn(
-											'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full',
-											fondDeTeinte(etape.teinte)
-										)}
-									>
-										<CheckIcon size={14} />
-									</span>
-									<span className="text-cladd-md leading-relaxed">{capacite}</span>
-								</li>
-							))}
-						</ul>
-					</div>
-				</article>
-			))}
+							<div
+								aria-hidden
+								className={cn(
+									'galet galet-c -top-16 -left-14 -z-10 size-56',
+									galetDeTeinte(etape.teinte)
+								)}
+							/>
+							<EcranProduit
+								capture={etape.capture}
+								description={etape.description}
+								className="w-52 self-start md:w-72"
+							/>
+							{/* LA NOTE COLLÉE — quelqu'un a regardé l'écran et vous dit quoi
+							    y voir. Graza pour le geste. */}
+							<span className="manuscrit autocollant absolute bottom-5 left-3 rounded-full bg-papier px-cladd-2xs py-1 text-intertitre whitespace-nowrap md:bottom-10 md:left-8">
+								{etape.note}
+							</span>
+						</div>
+
+						<div className="flex flex-col gap-cladd-3xs md:gap-cladd-2xs">
+							<span className="flex items-center gap-cladd-3xs">
+								<span
+									className={cn(
+										'flex size-9 shrink-0 items-center justify-center rounded-full font-serif text-cladd-md font-medium md:size-12 md:text-intertitre',
+										fondDeTeinte(etape.teinte)
+									)}
+								>
+									{etape.numero}
+								</span>
+								<h3 className="font-serif text-intertitre leading-tight font-medium text-balance md:text-titre-section md:tracking-titre-section">
+									{etape.titre}
+								</h3>
+							</span>
+							<p className="text-cladd-md leading-relaxed text-encre-site-douce md:text-chapeau">
+								{etape.texte}
+							</p>
+							<ul className="hidden flex-col gap-cladd-3xs pt-cladd-3xs md:flex">
+								{etape.capacites.map((capacite) => (
+									<li key={capacite} className="flex items-start gap-cladd-3xs">
+										<span
+											aria-hidden
+											className={cn(
+												'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full',
+												fondDeTeinte(etape.teinte)
+											)}
+										>
+											<CheckIcon size={14} />
+										</span>
+										<span className="text-cladd-md leading-relaxed">{capacite}</span>
+									</li>
+								))}
+							</ul>
+						</div>
+					</article>
+				))}
+			</div>
+			<p
+				aria-hidden
+				className="manuscrit -mt-cladd-2xs self-end text-intertitre text-encre-site-claire md:hidden"
+			>
+				faites glisser →
+			</p>
 		</SectionMarketing>
 	);
 }

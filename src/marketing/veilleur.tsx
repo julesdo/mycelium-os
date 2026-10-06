@@ -79,14 +79,21 @@ export function Veilleur() {
 							</span>
 							<span className="text-intertitre leading-snug font-semibold">{titre}</span>
 						</dt>
-						<dd className="text-cladd-md leading-relaxed text-encre-site-douce">{texte}</dd>
+						<dd className="hidden text-cladd-md leading-relaxed text-encre-site-douce md:block">
+							{texte}
+						</dd>
 					</div>
 				))}
 			</dl>
 
 			<p className="max-w-3xl text-cladd-md leading-relaxed text-encre-site-douce">
-				Il ne contacte jamais vos clients. Il lit des registres publics et vos factures, et il vous
-				rapporte. Ce que vous en faites, c’est votre décision.
+				<span className="manuscrit text-intertitre text-encre-site">
+					Il ne contacte jamais vos clients.
+				</span>{' '}
+				<span className="hidden md:inline">
+					Il lit des registres publics et vos factures, et il vous rapporte. Ce que vous en faites,
+					c’est votre décision.
+				</span>
 			</p>
 		</SectionMarketing>
 	);

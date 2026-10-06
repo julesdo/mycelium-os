@@ -104,7 +104,9 @@ export function LaLoi() {
 						</dt>
 						<dd className="flex flex-col gap-1">
 							<span className="text-intertitre leading-snug font-semibold">{titre}</span>
-							<span className="text-cladd-md leading-relaxed text-encre-site-douce">{detail}</span>
+							<span className="hidden text-cladd-md leading-relaxed text-encre-site-douce md:block">
+								{detail}
+							</span>
 						</dd>
 					</div>
 				))}

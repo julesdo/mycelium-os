@@ -2158,3 +2158,14 @@ select:not(:disabled),
 	backdrop-filter: blur(18px) saturate(1.4);
 	box-shadow: 0 8px 30px -18px oklch(0.27 0.05 266 / 0.35);
 }
+
+/* LE CARROUSEL À FAIRE GLISSER, sur téléphone seulement : les cartes défilent
+   d'un geste du pouce, comme les captures d'une fiche d'application, au lieu de
+   s'empiler en une colonne de texte. Sans barre de défilement visible. */
+.carrousel {
+	scrollbar-width: none;
+	-webkit-overflow-scrolling: touch;
+}
+.carrousel::-webkit-scrollbar {
+	display: none;
+}

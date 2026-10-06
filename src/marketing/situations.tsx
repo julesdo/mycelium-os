@@ -1,125 +1,104 @@
-import { cn } from '../ui';
-import {
-	Chapeau,
-	SectionMarketing,
-	SurTitre,
-	TitreSection,
-	fondDeTeinte,
-	galetDeTeinte,
-	type TeinteSite
-} from './section';
+import { cn, PERSONNAGES, PortraitDessine, type Personnage } from '../ui';
+import { SectionMarketing, SurTitre, TitreSection, fondDeTeinte, type TeinteSite } from './section';
 
 /**
- * « VOUS VOUS RECONNAISSEZ ? » — LA CIBLE, EN TROIS PERSONNES (06/10/2026).
+ * « VOUS VOUS RECONNAISSEZ ? » — LA CIBLE, EN TROIS VISAGES (06/10/2026).
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ DES SITUATIONS TYPES, PAS DES TÉMOIGNAGES — ET LA PAGE LE DIT
- * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ DES SITUATIONS TYPES, PAS DES TÉMOIGNAGES. Les prénoms sont des exemples,
+ * la page le dit, et les visages sont DESSINÉS : un dessin se lit « exemple »,
+ * une photographie de banque d'images se lirait « client ». Aucune carte ne
+ * porte de guillemets ni de note.
  *
- * Le fondateur a demandé de l'humanité et d'« intégrer notre cible ». La page ne
- * parlait que de la loi et du logiciel ; elle ne montrait jamais la personne
- * qui a les impayés. Ces trois cartes la montrent : un menuisier, une
- * grossiste, une agence, et ce qui les tient éveillés.
- *
- * Ce ne sont PAS des clients. Un faux témoignage serait une preuve fabriquée —
- * ce que ce produit ne s'autorise nulle part. Les prénoms sont des exemples, la
- * phrase sous le titre le dit, et aucune carte ne porte de guillemets ni de
- * note.
- *
- * Chaque carte prend la teinte de ce qui la concerne, comme dans le produit :
- * les papiers (des chantiers facturés), le temps (des dates qui approchent), ce
- * qu'on vous demande (une décision délicate).
+ * ⚠️ UNE PHRASE PAR CARTE. Sur téléphone, la section faisait 1 440 px et
+ * 150 mots (« beaucoup de pâté de texte », le fondateur). Chaque carte dit
+ * désormais une situation en une phrase, et ce que Letikette en fait à la
+ * main ; elles défilent d'un geste au lieu de s'empiler.
  */
 
 interface Situation {
-	readonly initiales: string;
 	readonly qui: string;
 	readonly metier: string;
+	readonly personnage: Personnage;
 	readonly recit: string;
-	/** Ce que Letikette lui montre, à la main, en bas de la carte. */
 	readonly reponse: string;
 	readonly teinte: TeinteSite;
 }
 
 const SITUATIONS: readonly Situation[] = [
 	{
-		initiales: 'KB',
 		qui: 'Karim',
 		metier: 'menuisier à Nantes',
-		recit:
-			'Trois chantiers livrés au printemps, trois clients qui « paient le mois prochain ». 18 400 € dehors depuis l’été, et pas une minute pour compter le reste.',
-		reponse: 'ce qu’on lui doit vraiment, au centime',
+		personnage: PERSONNAGES.karim,
+		recit: 'Trois chantiers livrés, trois clients qui « paient le mois prochain ».',
+		reponse: 'ce qu’on lui doit, au centime',
 		teinte: 'papiers'
 	},
 	{
-		initiales: 'SL',
 		qui: 'Sophie',
 		metier: 'grossiste à Lyon',
-		recit:
-			'Deux cents factures par mois, et les relances le vendredi soir, quand il reste du temps. Elle ne sait jamais lesquelles approchent de leur date limite.',
-		reponse: 'celles qui approchent, avant qu’il soit tard',
+		personnage: PERSONNAGES.sophie,
+		recit: 'Deux cents factures par mois, et les relances le vendredi soir.',
+		reponse: 'celles qui approchent de la date limite',
 		teinte: 'temps'
 	},
 	{
-		initiales: 'JM',
 		qui: 'Julien',
-		metier: 'agence de communication à Bordeaux',
-		recit:
-			'Son plus gros client a quatre mois de retard. Le relancer, c’est risquer la relation ; attendre, c’est risquer la facture.',
-		reponse: 'une lettre prête, à son nom, s’il décide',
+		metier: 'agence à Bordeaux',
+		personnage: PERSONNAGES.julien,
+		recit: 'Son plus gros client a quatre mois de retard, et il n’ose pas le relancer.',
+		reponse: 'une lettre prête, à son nom',
 		teinte: 'question'
 	}
 ];
 
 export function Situations() {
 	return (
-		<SectionMarketing ton="creme" className="gap-cladd-lg">
+		<SectionMarketing id="pour-qui" ton="creme" className="gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
 				<SurTitre teinte="argent">Pour qui</SurTitre>
 				<TitreSection>Vous vous reconnaissez ?</TitreSection>
-				<Chapeau>
-					Trois situations types, avec des prénoms d’exemple. Si l’une d’elles est la vôtre,
-					Letikette a été écrit pour vous.
-				</Chapeau>
+				<p className="text-cladd-sm text-encre-site-claire">
+					Trois situations types. Les prénoms sont des exemples.
+				</p>
 			</div>
 
-			<div className="cascade grid gap-cladd-sm md:grid-cols-3 md:gap-cladd-2xs">
+			{/* LE CARROUSEL SUR TÉLÉPHONE, LA GRILLE AU-DELÀ. Les cartes débordent
+			    jusqu'au bord de l'écran (marges négatives) : c'est ce qui dit qu'il y
+			    en a d'autres à droite. */}
+			<div className="carrousel -mx-cladd-2xs flex snap-x snap-mandatory gap-cladd-2xs overflow-x-auto px-cladd-2xs pb-cladd-3xs md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
 				{SITUATIONS.map((s) => (
 					<article
 						key={s.qui}
 						className={cn(
-							'relative isolate flex flex-col gap-cladd-2xs overflow-clip rounded-carte-site p-cladd-xs',
+							'flex w-4/5 shrink-0 snap-center flex-col items-center gap-cladd-2xs rounded-carte-site px-cladd-xs py-cladd-sm text-center md:w-auto',
 							fondDeTeinte(s.teinte)
 						)}
 					>
-						<div
-							aria-hidden
-							className={cn(
-								'galet galet-b -top-10 -right-12 -z-10 size-40',
-								galetDeTeinte(s.teinte)
-							)}
+						<PortraitDessine
+							personnage={s.personnage}
+							fond="var(--color-papier)"
+							className="size-28"
+							titre={`${s.qui}, ${s.metier} (dessin)`}
 						/>
-						<div className="flex items-center gap-cladd-3xs">
-							<span
-								aria-hidden
-								className="flex size-12 shrink-0 items-center justify-center rounded-full bg-papier text-cladd-sm font-semibold"
-							>
-								{s.initiales}
+						<div className="flex flex-col">
+							<span className="font-serif text-titre-section leading-none font-medium">
+								{s.qui}
 							</span>
-							<span className="flex flex-col">
-								<span className="text-intertitre leading-tight font-semibold">{s.qui}</span>
-								<span className="text-cladd-sm text-encre-site-douce">{s.metier}</span>
-							</span>
+							<span className="text-cladd-sm text-encre-site-douce">{s.metier}</span>
 						</div>
-						<p className="text-cladd-md leading-relaxed text-encre-site-douce">{s.recit}</p>
-						<p className="mt-auto flex items-start gap-1 border-t border-filet-creme pt-cladd-3xs">
-							<span className="manuscrit text-intertitre leading-snug">
-								→ Letikette lui montre {s.reponse}.
-							</span>
+						<p className="text-cladd-md leading-relaxed text-balance">{s.recit}</p>
+						<p className="manuscrit mt-auto text-intertitre leading-snug text-encre-site-douce">
+							Letikette lui montre {s.reponse}.
 						</p>
 					</article>
 				))}
 			</div>
+			<p
+				aria-hidden
+				className="manuscrit -mt-cladd-2xs self-end text-intertitre text-encre-site-claire md:hidden"
+			>
+				faites glisser →
+			</p>
 		</SectionMarketing>
 	);
 }

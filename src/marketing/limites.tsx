@@ -43,15 +43,17 @@ export function Limites() {
 				{LIMITES.map((l) => (
 					<div
 						key={l.titre}
-						className="flex flex-col gap-cladd-2xs rounded-carte-site bg-papier p-cladd-xs shadow-carte-chaude"
+						className="flex items-center gap-cladd-2xs rounded-carte-site bg-papier p-cladd-xs shadow-carte-chaude md:flex-col md:items-start"
 					>
-						<span className="flex size-11 items-center justify-center rounded-full bg-teinte-question">
+						<span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-teinte-question">
 							<PictoInterdit className="size-6 text-encre-site" />
 						</span>
 						<h3 className="font-serif text-intertitre leading-snug font-medium text-balance">
 							{l.titre}
 						</h3>
-						<p className="text-cladd-md leading-relaxed text-encre-site-douce">{l.texte}</p>
+						<p className="hidden text-cladd-md leading-relaxed text-encre-site-douce md:block">
+							{l.texte}
+						</p>
 					</div>
 				))}
 			</div>

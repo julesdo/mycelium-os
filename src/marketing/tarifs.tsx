@@ -148,7 +148,8 @@ export function Tarifs() {
 						key={o.titre}
 						className={cn(
 							'flex flex-col gap-cladd-2xs rounded-carte-site bg-papier p-cladd-xs md:p-cladd-sm',
-							o.avant ? 'carte-decalee' : 'border border-filet-creme'
+							// Sur téléphone, l'offre recommandée passe devant : on lit d'abord celle qu'on conseille.
+							o.avant ? 'carte-decalee order-first md:order-none' : 'border border-filet-creme'
 						)}
 					>
 						<div className="flex flex-col gap-cladd-3xs">
@@ -169,11 +170,20 @@ export function Tarifs() {
 							<p className="text-cladd-md leading-relaxed text-encre-site-douce">{o.argument}</p>
 						</div>
 
-						<ul className="flex flex-col gap-cladd-3xs">
+						<ul
+							// La liste de l'offre ponctuelle se lit à côté de l'autre, en grand ; sur
+							// téléphone, son prix et sa phrase suffisent.
+							className={cn('flex-col gap-cladd-3xs', o.avant ? 'flex' : 'hidden md:flex')}
+						>
 							{CE_QUI_EST_INCLUS.map((l) => {
 								const inclus = l[o.colonne];
 								return (
-									<li key={l.libelle} className="flex items-start gap-cladd-3xs">
+									<li
+										key={l.libelle}
+										// Sur téléphone, seulement ce qui est COMPRIS : la liste des « non » se lit
+										// à côté de l'autre offre, là où les deux colonnes tiennent.
+										className={cn('items-start gap-cladd-3xs', inclus ? 'flex' : 'hidden md:flex')}
+									>
 										<span
 											aria-hidden
 											className={cn(
@@ -222,12 +232,14 @@ export function Tarifs() {
 				))}
 			</div>
 
-			<p className="max-w-3xl text-cladd-md leading-relaxed text-encre-site-douce">
-				{DUREE_ESSAI_JOURS} jours d’essai, sans carte bancaire : vous voyez ce qu’on vous doit et
-				vos échéances avant de décider quoi que ce soit. Les montants sont hors taxes, sans
-				engagement de durée, et la facturation est assurée par Paddle. Votre palier,{' '}
-				<span className="font-semibold text-encre-site">{BORNES_PALIER[palier]}</span>, se confirme
-				dans vos réglages, à partir du volume que vous déclarez.
+			<p className="max-w-3xl text-cladd-sm leading-relaxed text-encre-site-douce md:text-cladd-md">
+				{DUREE_ESSAI_JOURS} jours d’essai, sans carte bancaire. Prix hors taxes, sans engagement.{' '}
+				<span className="hidden md:inline">
+					Vous voyez ce qu’on vous doit et vos échéances avant de décider quoi que ce soit ; la
+					facturation est assurée par Paddle. Votre palier,{' '}
+					<span className="font-semibold text-encre-site">{BORNES_PALIER[palier]}</span>, se
+					confirme dans vos réglages, à partir du volume que vous déclarez.
+				</span>
 			</p>
 		</SectionMarketing>
 	);

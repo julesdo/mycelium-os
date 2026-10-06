@@ -54,9 +54,10 @@ export function SectionMarketing({
 		>
 			<div
 				className={cn(
-					'mx-auto flex w-full max-w-6xl flex-col gap-cladd-sm px-cladd-2xs py-cladd-2xl md:px-cladd-sm md:py-respiration',
+					// Plus d'air sur téléphone (80 px) : moins de texte, et de la place autour.
+					'mx-auto flex w-full max-w-6xl flex-col gap-cladd-sm px-cladd-2xs py-20 md:px-cladd-sm md:py-respiration',
 					// L'arc mange le haut de la section : le rembourrage le rend.
-					courbe && 'pt-28 md:pt-48',
+					courbe && 'pt-32 md:pt-48',
 					className
 				)}
 			>

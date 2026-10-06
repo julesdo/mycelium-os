@@ -186,7 +186,7 @@ export function Frise() {
 						>
 							{station.montant}
 						</span>
-						<span className="text-cladd-sm leading-relaxed text-encre-site-douce">
+						<span className="hidden text-cladd-sm leading-relaxed text-encre-site-douce md:block">
 							{station.texte}
 						</span>
 					</div>

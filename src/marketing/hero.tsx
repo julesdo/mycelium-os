@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
-import { BoutonAffiche, FAMILLES, LienAffiche } from '../ui';
+import { BoutonAffiche, FAMILLES, LienAffiche, PERSONNAGES, PortraitDessine } from '../ui';
 import { eurosCentimesCourts } from '../ui/format';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
 import { EcranProduit, SurTitre } from './section';
@@ -96,6 +96,30 @@ export function Hero() {
 					<p className="leve text-cladd-sm text-encre-site-claire">
 						Trente jours d’essai. Aucune carte bancaire.
 					</p>
+
+					{/* DES VISAGES DÈS LE PREMIER ÉCRAN : les trois gérants des situations
+					    types, dessinés, qui mènent à leur section. Ce ne sont pas des
+					    clients et rien ne le prétend : « pour des gérants comme eux ». */}
+					<a
+						href="#pour-qui"
+						className="leve flex items-center gap-cladd-3xs rounded-full bg-papier py-1 pr-cladd-2xs pl-1 shadow-carte-chaude"
+					>
+						<span className="flex -space-x-2.5">
+							{[PERSONNAGES.karim, PERSONNAGES.sophie, PERSONNAGES.julien].map(
+								(personnage, rang) => (
+									<PortraitDessine
+										key={rang}
+										personnage={personnage}
+										fond="var(--color-teinte-abricot)"
+										className="size-10 rounded-full ring-2 ring-papier"
+									/>
+								)
+							)}
+						</span>
+						<span className="manuscrit text-intertitre leading-none">
+							pour des gérants comme eux
+						</span>
+					</a>
 				</div>
 
 				{/*

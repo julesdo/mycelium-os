@@ -77,7 +77,9 @@ export function Abonnement() {
 							</span>
 						</span>
 						<span className="text-intertitre leading-snug font-semibold">{titre}</span>
-						<span className="text-cladd-md leading-relaxed text-encre-site-douce">{texte}</span>
+						<span className="hidden text-cladd-md leading-relaxed text-encre-site-douce md:block">
+							{texte}
+						</span>
 					</div>
 				))}
 			</div>
