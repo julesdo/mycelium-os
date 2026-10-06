@@ -195,6 +195,20 @@ aucune annotation manuscrite ni formule. La cible se présente par MÉTIERS, en 
 prénom à côté d'un visage. Une section **Sécurité** et une **FAQ** remplacent le manifeste, le
 veilleur, « ce que Letikette ne fera jamais » et la défense de l'abonnement ; la sécurité ne cite
 que des mesures en place — la base est chez Convex aux États-Unis, donc jamais « hébergé en France ».
+**Puis la DA a été épurée** (le fondateur : les sur-titres en pastille « font très AI slop ») : plus
+aucun sur-titre, plus de galets ni d'autocollants, une barre pleine largeur translucide, et des
+cartes voisines alignées ligne à ligne par sous-grilles (`md:grid-rows-subgrid`) — un décalage de
+ligne entre deux cartes est un défaut. Un seul trait manuscrit reste : la moutarde sous « à temps ».
+
+**Le blog est en ligne depuis le 06/10/2026**, sans CMS : des fichiers `content/blog/*.mdx`
+compilés par content-collections (`content-collections.ts`, schéma validé au build), lus par
+`src/marketing/blog.ts` seul — le jour d'un CMS, seul ce module change. Chaque article a sa
+couverture dessinée dans la DA, teintée par catégorie (`blog-couvertures.tsx`). **Aucune valeur
+juridique n'est tapée dans un article** : `<Source de>`, `<Valeur de>`, `<Indemnite />` lisent le
+registre, et les exemples chiffrés passent par les moteurs du produit (`blog-illustrations.tsx`).
+Le balayage du lexique couvre ces composants, pas `content/` : un article se relit à la main. Le
+fil d'Ariane suit la section lue (`lecture.ts`), et l'accueil porte une section « Le blog », seul
+accès au téléphone (la barre n'a pas de liens sous 1024 px).
 
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
