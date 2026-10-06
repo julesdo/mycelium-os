@@ -162,7 +162,8 @@ function PageCreance() {
 	const retirerPiece = useMutation(api.recouvrement.pieces.retirerPiece);
 	const consignerEvenement = useMutation(api.recouvrement.apresProcedure.consignerEvenement);
 	const engagerProcedure = useMutation(api.recouvrement.apresProcedure.engagerProcedure);
-	const rattacherIntervenant = useMutation(api.recouvrement.apresProcedure.rattacherIntervenant);
+	const designerIntervenant = useMutation(api.recouvrement.apresProcedure.designerIntervenant);
+	const aucunIntervenant = useMutation(api.recouvrement.apresProcedure.aucunIntervenant);
 	const ajouterIntervenant = useMutation(api.recouvrement.intervenants.ajouterIntervenant);
 	const chercherUnCommissaire = useAction(
 		api.recouvrement.annuaires.chercherUnCommissaireDeJustice
@@ -592,8 +593,13 @@ function PageCreance() {
 			}))
 	];
 
-	const intervenantChoisi = creance.intervenantId;
-	const nomIntervenant = carnet.find((fiche) => fiche._id === intervenantChoisi)?.nom ?? null;
+	const intervenantsChoisis = creance.intervenantIds;
+	// Une fiche retirée du carnet ne garde pas son nom : elle se tait plutôt que
+	// d'afficher « Fiche retirée » parmi les autres.
+	const nomsIntervenants = intervenantsChoisis.flatMap((id) => {
+		const fiche = carnet.find((f) => f._id === id);
+		return fiche === undefined ? [] : [fiche.nom];
+	});
 
 	// Où en est le dossier : déduit des faits, jamais d'un verdict.
 	const etapes = lireEtapes({
@@ -607,7 +613,7 @@ function PageCreance() {
 					(e.etat === 'VALIDE' || e.etat === 'PARTI')
 			)
 			.map((e) => e.partiLe ?? new Date(e.valideLe ?? e.prepareLe).toISOString().slice(0, 10)),
-		professionnelDesigne: creance.intervenantId !== null,
+		professionnelDesigne: creance.intervenantIds.length > 0,
 		procedureEngageeLe: creance.engageeLe,
 		classe: creance.statut === 'CLOSE',
 		dateLimiteAgir: laPlusProche(creance.factures.map((f) => f.datePrescription)),
@@ -880,8 +886,8 @@ function PageCreance() {
 		suivi,
 		voies: creance.procedures,
 		carnet,
-		intervenantChoisi,
-		nomIntervenant,
+		intervenantsChoisis,
+		nomsIntervenants,
 		/*
 		  ⚠️ `survenuLe` VIENT DU CHAMP, jamais de l'horloge. Les délais courent
 		  depuis le FAIT, pas depuis la saisie : les confondre offrirait des jours
@@ -898,20 +904,26 @@ function PageCreance() {
 		onDeclarerVoie: (procedure, engageeLe, choix) =>
 			void avec(async () => {
 				await engagerProcedure({ creanceId, procedure, engageeLe });
+				// « Moi-même » vide la liste ; une fiche s'AJOUTE à ceux déjà nommés.
 				if (choix !== null) {
-					await rattacherIntervenant({
-						creanceId,
-						intervenantId: choix.id as Id<'intervenants'> | null
-					});
+					await (choix.id === null
+						? aucunIntervenant({ creanceId })
+						: designerIntervenant({
+								creanceId,
+								intervenantId: choix.id as Id<'intervenants'>,
+								designe: true
+							}));
 				}
 			}),
-		onRattacher: (intervenantId) =>
+		onDesigner: (intervenantId, designe) =>
 			void avec(() =>
-				rattacherIntervenant({
+				designerIntervenant({
 					creanceId,
-					intervenantId: intervenantId as Id<'intervenants'> | null
+					intervenantId: intervenantId as Id<'intervenants'>,
+					designe
 				})
 			),
+		onAucunIntervenant: () => void avec(() => aucunIntervenant({ creanceId })),
 		/*
 		  ⚠️ `origine` EST ÉCRITE ICI, PAS SAISIE. Une fiche tapée à la main est
 		  `SAISI_A_LA_MAIN` par construction ; une fiche venue d'un répertoire porte

@@ -31,7 +31,7 @@ import {
 	prescriptionDe
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
-import { vCleFaitLitige, vEtatCritere, vSecteurCreance } from './tables';
+import { professionnelsDe, vCleFaitLitige, vEtatCritere, vSecteurCreance } from './tables';
 
 /**
  * Les lectures du recouvrement — ce que les écrans consomment.
@@ -354,6 +354,12 @@ export const creanceComplete = authedQuery({
 		 * lit un rattachement qui n'est pas celui qu'il a fait.
 		 */
 		intervenantId: v.union(v.id('intervenants'), v.null()),
+		/**
+		 * TOUS les professionnels du dossier (06/10/2026), ancien champ compris.
+		 * `intervenantId` reste rendu, le premier d'entre eux, pour les écrans
+		 * qui n'en montrent qu'un.
+		 */
+		intervenantIds: v.array(v.id('intervenants')),
 		/** La date où une procédure a été consignée : elle place le dossier à l'étape du tribunal. */
 		engageeLe: v.union(v.string(), v.null()),
 		/** L'annonce d'ouverture d'une procédure collective, gardée à part du dernier constat. */
@@ -619,7 +625,8 @@ export const creanceComplete = authedQuery({
 		return {
 			statut: creance.statut,
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
-			intervenantId: creance.intervenantId ?? null,
+			intervenantId: professionnelsDe(creance)[0] ?? null,
+			intervenantIds: professionnelsDe(creance),
 			engageeLe: creance.engageeLe ?? null,
 			annonceOuverture: debiteur?.annonceOuverture ?? null,
 			debiteurId: creance.debiteurId,
@@ -1118,7 +1125,7 @@ export const indexDossiers = authedQuery({
 					nombreFactures: factures.length,
 					resteDuCentimes: restant,
 					lettresValidees: partis,
-					professionnelDesigne: creance.intervenantId !== undefined,
+					professionnelDesigne: professionnelsDe(creance).length > 0,
 					procedureEngageeLe: creance.engageeLe ?? null,
 					classe: creance.statut === 'CLOSE',
 					dateLimiteAgir: limites[0] ?? null,
@@ -1136,7 +1143,7 @@ export const indexDossiers = authedQuery({
 					...(limites[0] === undefined ? {} : { dateLimiteAgir: limites[0] }),
 					...(partis.length === 0 ? {} : { dernierCourrierLe: partis[partis.length - 1]! }),
 					courrierAValider: auClient.some((e) => e.etat === 'A_VALIDER'),
-					professionnelDesigne: creance.intervenantId !== undefined
+					professionnelDesigne: professionnelsDe(creance).length > 0
 				};
 			})
 		);

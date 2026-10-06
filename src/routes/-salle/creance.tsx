@@ -875,12 +875,14 @@ function creanceDemo({
 		suivi: journal === null ? null : suiviDepuisJournal(journal),
 		voies: Object.values(PROCEDURES).map((procedure) => voieDeLaCreance(procedure)),
 		carnet: CARNET_DEMO,
-		// Aucun intervenant rattaché : la page relit alors « Moi-même ».
-		intervenantChoisi: null,
-		nomIntervenant: null,
+		// Une voie engagée nomme DEUX professionnels — un avocat et une étude — :
+		// c'est le cas que le choix multiple (06/10/2026) rend possible.
+		intervenantsChoisis: journal === null ? [] : CARNET_DEMO.map((fiche) => fiche._id),
+		nomsIntervenants: journal === null ? [] : CARNET_DEMO.map((fiche) => fiche.nom),
 		onConsigner: () => undefined,
 		onDeclarerVoie: () => undefined,
-		onRattacher: () => undefined,
+		onDesigner: () => undefined,
+		onAucunIntervenant: () => undefined,
 		onAjouterFiche: () => undefined,
 		professionnels: PROFESSIONNELS_DEMO,
 		rechercheCommissaireOuverte: false,

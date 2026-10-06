@@ -286,13 +286,19 @@ export interface CreanceOuverte {
 	readonly suivi: SuiviAffiche | null;
 	readonly voies: readonly VoieAffichee[];
 	readonly carnet: readonly FicheIntervenant[];
-	/** L'intervenant rattaché, relu PAR IDENTIFIANT. `null` : moi-même. */
-	readonly intervenantChoisi: string | null;
-	readonly nomIntervenant: string | null;
+	/**
+	 * Les professionnels du dossier, relus PAR IDENTIFIANT (06/10/2026 : il peut
+	 * y en avoir plusieurs). Vide : moi-même.
+	 */
+	readonly intervenantsChoisis: readonly string[];
+	readonly nomsIntervenants: readonly string[];
 	/** La date du FAIT, jamais celle de la saisie. */
 	readonly onConsigner: (cle: string, survenuLe: string) => void;
 	readonly onDeclarerVoie: (procedure: string, engageeLe: string, choix: ChoixDeclare) => void;
-	readonly onRattacher: (intervenantId: string | null) => void;
+	/** Ajoute (`true`) ou retire (`false`) UN professionnel du dossier. */
+	readonly onDesigner: (intervenantId: string, designe: boolean) => void;
+	/** « Moi-même » : plus aucun professionnel sur le dossier. */
+	readonly onAucunIntervenant: () => void;
 	readonly onAjouterFiche: (fiche: FicheASaisir) => void;
 	/**
 	 * Les professionnels près du client, proposés dans la feuille « Qui fait
@@ -1178,7 +1184,13 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 					<ListeAnalyses>
 						<LigneBouton
 							titre="Qui fait l’acte"
-							valeur={creance.nomIntervenant ?? 'Moi-même'}
+							valeur={
+								creance.nomsIntervenants.length === 0
+									? 'Moi-même'
+									: creance.nomsIntervenants.length === 1
+										? creance.nomsIntervenants[0]
+										: `${creance.nomsIntervenants.length} personnes`
+							}
 							onClick={() => {
 								creance.professionnels.onDemander();
 								setCarnetOuvert(true);
@@ -1223,28 +1235,28 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 
 			<ChoixIntervenant
 				carnet={creance.carnet}
-				choisi={creance.intervenantChoisi}
 				ouverte={carnetOuvert}
 				onFermer={() => setCarnetOuvert(false)}
-				onChoisir={(intervenantId) => {
-					creance.onRattacher(intervenantId);
-					setCarnetOuvert(false);
+				// Le mode « plusieurs » ne passe jamais par `onChoisir`.
+				onChoisir={() => undefined}
+				plusieurs={{
+					choisis: creance.intervenantsChoisis,
+					onBasculer: creance.onDesigner,
+					onPersonne: creance.onAucunIntervenant
 				}}
 				propositions={creance.professionnels.propositions}
 				enCours={creance.professionnels.enCours}
 				erreur={creance.professionnels.erreur}
+				// Retenir une proposition l'ajoute au carnet ET au dossier, et la feuille
+				// reste ouverte : on peut en nommer une seconde.
 				onRetenirEtude={(etude) =>
 					void creance.professionnels.onRetenirEtude(etude).then((id) => {
-						if (id === null) return;
-						creance.onRattacher(id);
-						setCarnetOuvert(false);
+						if (id !== null) creance.onDesigner(id, true);
 					})
 				}
 				onRetenirAvocat={(avocat) =>
 					void creance.professionnels.onRetenirAvocat(avocat).then((id) => {
-						if (id === null) return;
-						creance.onRattacher(id);
-						setCarnetOuvert(false);
+						if (id !== null) creance.onDesigner(id, true);
 					})
 				}
 				onAjouter={creance.onAjouterFiche}

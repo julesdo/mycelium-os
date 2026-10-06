@@ -397,7 +397,8 @@ export function ChoixIntervenant<I extends string>({
 	onAjouter,
 	onChercherUnCommissaire,
 	onChercherUnAvocat,
-	role
+	role,
+	plusieurs
 }: {
 	carnet: readonly FicheIntervenant<I>[];
 	/** `null` : moi-même ; `undefined` : rien de choisi encore. */
@@ -425,8 +426,22 @@ export function ChoixIntervenant<I extends string>({
 	onAjouter: (fiche: FicheASaisir) => void;
 	onChercherUnCommissaire?: () => void;
 	onChercherUnAvocat?: () => void;
+	/**
+	 * PLUSIEURS PERSONNES SUR LE MÊME DOSSIER (06/10/2026) — un avocat ET un
+	 * commissaire de justice. Fourni, chaque toucher coche ou décoche une fiche
+	 * sans refermer la feuille, « Moi-même » décoche tout, et « Terminé » ferme.
+	 * Absent, la feuille garde un choix unique, comme pour une lettre ou une
+	 * remise qui ne vont qu'à une personne.
+	 */
+	plusieurs?: {
+		readonly choisis: readonly I[];
+		readonly onBasculer: (intervenantId: I, designe: boolean) => void;
+		readonly onPersonne: () => void;
+	};
 }) {
 	const [autre, setAutre] = useState(false);
+	const estChoisie = (id: I) =>
+		plusieurs === undefined ? choisi === id : plusieurs.choisis.includes(id);
 	const siens = role === undefined ? carnet : carnet.filter((fiche) => fiche.role === role);
 
 	return (
@@ -456,8 +471,16 @@ export function ChoixIntervenant<I extends string>({
 									genre="contenu"
 									titre={sansPersonne.titre}
 									precision={sansPersonne.precision}
-									icone={<Coche choisie={choisi === null} />}
-									onClick={() => onChoisir(null)}
+									icone={
+										<Coche
+											choisie={
+												plusieurs === undefined ? choisi === null : plusieurs.choisis.length === 0
+											}
+										/>
+									}
+									onClick={() =>
+										plusieurs === undefined ? onChoisir(null) : plusieurs.onPersonne()
+									}
 								/>
 							)}
 							{siens.map((fiche) => (
@@ -466,8 +489,12 @@ export function ChoixIntervenant<I extends string>({
 									genre="contenu"
 									titre={fiche.nom}
 									precision={precisionDeLaFiche(fiche)}
-									icone={<Coche choisie={choisi === fiche._id} />}
-									onClick={() => onChoisir(fiche._id)}
+									icone={<Coche choisie={estChoisie(fiche._id)} />}
+									onClick={() =>
+										plusieurs === undefined
+											? onChoisir(fiche._id)
+											: plusieurs.onBasculer(fiche._id, !plusieurs.choisis.includes(fiche._id))
+									}
 								/>
 							))}
 						</ListeAnalyses>
@@ -493,6 +520,12 @@ export function ChoixIntervenant<I extends string>({
 						<BoutonTexte className="self-start" onClick={() => setAutre(true)}>
 							Quelqu’un d’autre
 						</BoutonTexte>
+					)}
+
+					{plusieurs === undefined ? null : (
+						<BoutonPrincipal pleineLargeur onClick={onFermer}>
+							Terminé
+						</BoutonPrincipal>
 					)}
 				</div>
 			</PopupContent>

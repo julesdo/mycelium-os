@@ -9,6 +9,7 @@ import {
 	libelleEvenement,
 	suivreProcedure
 } from '../../verticales/recouvrement/apres-procedure';
+import { professionnelsDe } from './tables';
 
 /**
  * LA MACHINE À ÉTATS POST-PROCÉDURE, CÔTÉ BASE — module 4.5.
@@ -299,8 +300,11 @@ async function listerDossiers(ctx: QueryCtx, organizationId: Id<'organizations'>
 
 		const suivi = await lireSuivi(ctx, creance);
 		const debiteur = await ctx.db.get(creance.debiteurId);
-		const intervenant =
-			creance.intervenantId === undefined ? null : await ctx.db.get(creance.intervenantId);
+		const noms: string[] = [];
+		for (const id of professionnelsDe(creance)) {
+			const fiche = await ctx.db.get(id);
+			if (fiche !== null && fiche.organizationId === organizationId) noms.push(fiche.nom);
+		}
 
 		dossiers.push({
 			creanceId: creance._id,
@@ -311,7 +315,7 @@ async function listerDossiers(ctx: QueryCtx, organizationId: Id<'organizations'>
 			libelle: suivi.libelle,
 			terminal: suivi.terminal,
 			prochaineEcheance: suivi.echeances[0] ?? null,
-			intervenant: intervenant?.nom ?? null,
+			intervenant: noms.length === 0 ? null : noms.join(', '),
 			anglesMorts: suivi.anglesMorts,
 			journal: suivi.journal.map((e) => ({ cle: e.cle, survenuLe: e.survenuLe }))
 		});
@@ -342,26 +346,55 @@ export const dossiersEngages = authedQuery({
 	}
 });
 
-export const rattacherIntervenant = authedMutation({
+/**
+ * DÉSIGNER, OU RETIRER, UN PROFESSIONNEL DU DOSSIER (06/10/2026).
+ *
+ * Un dossier peut avoir plusieurs professionnels — un avocat ET un commissaire
+ * de justice. Chaque toucher dans la feuille « Qui fait l'acte » en ajoute ou en
+ * retire UN, et la liste se compose ICI, côté serveur, à partir de ce qui est en
+ * base : deux touchers rapides ne se recouvrent pas comme le feraient deux
+ * listes complètes envoyées depuis un écran pas encore rafraîchi.
+ *
+ * ⚠️ L'ANCIEN CHAMP S'EFFACE À LA PREMIÈRE DÉSIGNATION : `professionnelsDe` le
+ * reprend dans la liste, puis `intervenantId` est vidé. Une seule vérité.
+ */
+export const designerIntervenant = authedMutation({
 	args: {
 		creanceId: v.id('creances'),
-		intervenantId: v.union(v.id('intervenants'), v.null())
+		intervenantId: v.id('intervenants'),
+		/** `true` l'ajoute au dossier, `false` l'en retire. */
+		designe: v.boolean()
 	},
 	returns: v.null(),
-	handler: async (ctx, { creanceId, intervenantId }): Promise<null> => {
+	handler: async (ctx, { creanceId, intervenantId, designe }): Promise<null> => {
 		const { organizationId } = await getUserOrg(ctx);
-		await mienne(ctx, creanceId, organizationId);
+		const creance = await mienne(ctx, creanceId, organizationId);
 
-		if (intervenantId !== null) {
-			const fiche = await ctx.db.get(intervenantId);
-			if (fiche === null || fiche.organizationId !== organizationId) {
-				throw new ConvexError('Intervenant introuvable');
-			}
+		const fiche = await ctx.db.get(intervenantId);
+		if (fiche === null || fiche.organizationId !== organizationId) {
+			throw new ConvexError('Intervenant introuvable');
 		}
 
-		await ctx.db.patch(creanceId, {
-			intervenantId: intervenantId ?? undefined
-		});
+		const avant = professionnelsDe(creance);
+		const apres = designe
+			? avant.includes(intervenantId)
+				? avant
+				: [...avant, intervenantId]
+			: avant.filter((id) => id !== intervenantId);
+
+		await ctx.db.patch(creanceId, { intervenantIds: apres, intervenantId: undefined });
+		return null;
+	}
+});
+
+/** « Moi-même » : le dossier ne nomme plus aucun professionnel. */
+export const aucunIntervenant = authedMutation({
+	args: { creanceId: v.id('creances') },
+	returns: v.null(),
+	handler: async (ctx, { creanceId }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		await mienne(ctx, creanceId, organizationId);
+		await ctx.db.patch(creanceId, { intervenantIds: [], intervenantId: undefined });
 		return null;
 	}
 });

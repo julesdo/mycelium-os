@@ -1,5 +1,5 @@
 import { defineTable } from 'convex/server';
-import { v } from 'convex/values';
+import { v, type GenericId } from 'convex/values';
 
 /**
  * Le modèle de domaine du recouvrement (phase 2 du brief de remodelage).
@@ -807,8 +807,19 @@ export const recouvrementTables = {
 		 * ne sait pas encore par qui l'acte suivant passera. Rendre le champ
 		 * obligatoire ferait retarder la déclaration elle-même, donc décaler
 		 * l'origine de délais dont un à peine de caducité.
+		 *
+		 * ⚠️ ANCIEN CHAMP, LU ET PLUS ÉCRIT (06/10/2026). Un dossier peut désormais
+		 * avoir PLUSIEURS professionnels (`intervenantIds`). Celui-ci reste au
+		 * schéma parce que Convex valide la base entière ; `professionnelsDe` le
+		 * relit pour les dossiers d'avant, et la première désignation l'efface.
 		 */
 		intervenantId: v.optional(v.id('intervenants')),
+		/**
+		 * Les professionnels du dossier (06/10/2026) : un avocat ET un commissaire
+		 * de justice, par exemple. Vide ou absent : « moi-même ». Le fondateur a
+		 * demandé de « choisir le ou les personnes ».
+		 */
+		intervenantIds: v.optional(v.array(v.id('intervenants'))),
 		/**
 		 * L'ORDRE D'IMPUTATION CHOISI PAR LE GÉRANT, une fois par dossier.
 		 *
@@ -1582,3 +1593,15 @@ export const recouvrementTables = {
 		.index('by_org_and_etat', ['organizationId', 'etat'])
 		.index('by_creance', ['creanceId'])
 };
+
+/**
+ * Les professionnels d'un dossier, ancien champ compris : `intervenantIds`
+ * quand il existe, sinon l'`intervenantId` unique d'avant le 06/10/2026.
+ */
+export function professionnelsDe(creance: {
+	readonly intervenantIds?: readonly GenericId<'intervenants'>[];
+	readonly intervenantId?: GenericId<'intervenants'>;
+}): GenericId<'intervenants'>[] {
+	if (creance.intervenantIds !== undefined) return [...creance.intervenantIds];
+	return creance.intervenantId === undefined ? [] : [creance.intervenantId];
+}
