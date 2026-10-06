@@ -17,3 +17,10 @@ export const vStatutConnexionQonto = v.union(
 );
 
 export type StatutConnexionQonto = Infer<typeof vStatutConnexionQonto>;
+
+/**
+ * Les mêmes cinq états, pour toute connexion à un logiciel tiers : Qonto en
+ * direct comme les logiciels que relie Chift. L'écran les dit de la même façon.
+ */
+export const vStatutConnexion = vStatutConnexionQonto;
+export type StatutConnexion = StatutConnexionQonto;

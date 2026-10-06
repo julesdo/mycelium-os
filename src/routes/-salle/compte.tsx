@@ -2,8 +2,9 @@ import { useState } from 'react';
 import type { Theme } from '../../app/use-theme';
 import { BORNES_PALIER, TARIFS, palierDeTaille } from '../../lib/config/tarifs';
 import type { EtatRechercheAvocat, FicheIntervenant, Lecture } from '../../ui';
-import { CarteConnexion, LogoConnexion } from '../../ui';
+import { CarteConnexion, LogoConnexion, PictoLogiciel, PileDeConnexions } from '../../ui';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
+import { PROMESSE_CHIFT } from '../../app/connexion-chift';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
 import type { EtablissementAuRegistre, EtatCritere } from '../../screens/compte/creancier';
 import type { EtablissementAffiche } from '../../screens/compte/etablissement';
@@ -763,17 +764,30 @@ function compteDe(
 		/* Une connexion déjà en place : ce qu'on vient retrouver ici, une fois l'accueil rempli. */
 		connexions: {
 			statut: 'A_JOUR',
+			nom: 'Pennylane',
 			contenu: (
-				<CarteConnexion
-					nom="Qonto"
-					promesse={PROMESSE_QONTO}
-					logo={<LogoConnexion src={LOGO_QONTO} />}
-					couverture={COUVERTURE_QONTO}
-					etat={{ genre: 'A_JOUR', depuis: 'il y a 3 min', facturesLues: 128 }}
-					onConnecter={() => undefined}
-					onSynchroniser={() => undefined}
-					onDeconnecter={() => undefined}
-				/>
+				<PileDeConnexions>
+					<CarteConnexion
+						nom="Qonto"
+						promesse={PROMESSE_QONTO}
+						logo={<LogoConnexion src={LOGO_QONTO} />}
+						couverture={COUVERTURE_QONTO}
+						etat={{ genre: 'A_CONNECTER' }}
+						onConnecter={() => undefined}
+						onSynchroniser={() => undefined}
+						onDeconnecter={() => undefined}
+					/>
+					<CarteConnexion
+						nom="Pennylane"
+						promesse={PROMESSE_CHIFT}
+						logo={<PictoLogiciel />}
+						couverture={COUVERTURE_QONTO}
+						etat={{ genre: 'A_JOUR', depuis: 'il y a 3 min', facturesLues: 128, nonLues: 2 }}
+						onConnecter={() => undefined}
+						onSynchroniser={() => undefined}
+						onDeconnecter={() => undefined}
+					/>
+				</PileDeConnexions>
 			)
 		},
 		profil: {

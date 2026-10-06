@@ -1,4 +1,5 @@
 import { depuisEuros, enCentimes } from '../montants';
+import type { FactureDepuisConnecteur } from './facture-connecteur';
 
 /**
  * LE TRADUCTEUR QONTO : une facture client telle que l'API la rend, traduite
@@ -47,22 +48,8 @@ export interface FactureQonto {
 	readonly client?: ClientQonto | null;
 }
 
-export interface FactureDepuisQonto {
-	readonly reference: string;
-	readonly debiteur: string;
-	readonly debiteurSiren?: string;
-	/** Rendue TELLE QUELLE : le socle ne sait pas ce qu'est une adresse acceptable pour ce produit. */
-	readonly debiteurEmail?: string;
-	readonly montantTTC: bigint;
-	readonly dateEmission: string;
-	readonly dateEcheance?: string;
-	/**
-	 * Ce que Qonto dit avoir été réglé AU TOTAL, et le jour où on le constate.
-	 * `null` : rien de réglé. Un cumul, jamais un règlement : voir
-	 * `complementDeReglement`.
-	 */
-	readonly regleCumule: { readonly montant: bigint; readonly date: string } | null;
-}
+/** La forme commune à tous les connecteurs, sous le nom que ce module a toujours exporté. */
+export type FactureDepuisQonto = FactureDepuisConnecteur;
 
 /**
  * LE SIREN, SEULEMENT QUAND IL SE LIT.

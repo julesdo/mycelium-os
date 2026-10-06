@@ -10,6 +10,9 @@
 
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
+import type * as connexions_chift from "../connexions/chift.js";
+import type * as connexions_chiftConfig from "../connexions/chiftConfig.js";
+import type * as connexions_chiftDonnees from "../connexions/chiftDonnees.js";
 import type * as connexions_qonto from "../connexions/qonto.js";
 import type * as connexions_qontoConfig from "../connexions/qontoConfig.js";
 import type * as connexions_qontoDonnees from "../connexions/qontoDonnees.js";
@@ -96,6 +99,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   billing: typeof billing;
+  "connexions/chift": typeof connexions_chift;
+  "connexions/chiftConfig": typeof connexions_chiftConfig;
+  "connexions/chiftDonnees": typeof connexions_chiftDonnees;
   "connexions/qonto": typeof connexions_qonto;
   "connexions/qontoConfig": typeof connexions_qontoConfig;
   "connexions/qontoDonnees": typeof connexions_qontoDonnees;

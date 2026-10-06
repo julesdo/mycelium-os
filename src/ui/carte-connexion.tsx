@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Spinner } from '@cladd-ui/react';
-import { CheckCircle2Icon } from 'lucide-react';
+import { CalculatorIcon, CheckCircle2Icon } from 'lucide-react';
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { cn } from './cn';
 import { pluriel } from './format';
@@ -18,7 +18,13 @@ export type EtatConnexion =
 	| { readonly genre: 'A_CONNECTER' }
 	| { readonly genre: 'REDIRECTION' }
 	| { readonly genre: 'SYNCHRONISATION'; readonly facturesLues: number }
-	| { readonly genre: 'A_JOUR'; readonly depuis: string; readonly facturesLues: number }
+	| {
+			readonly genre: 'A_JOUR';
+			readonly depuis: string;
+			readonly facturesLues: number;
+			/** Les créances vues mais pas lues (devise, numéro, client) : on les compte au lieu de les taire. */
+			readonly nonLues?: number;
+	  }
 	| { readonly genre: 'ECHEC'; readonly message: string }
 	| { readonly genre: 'REVOQUEE' };
 
@@ -33,7 +39,10 @@ function ligneDEtat(etat: EtatConnexion, promesse: string): string {
 				? 'Lecture de vos factures…'
 				: `${etat.facturesLues} facture${pluriel(etat.facturesLues)} lue${pluriel(etat.facturesLues)}…`;
 		case 'A_JOUR':
-			return `À jour ${etat.depuis} · ${etat.facturesLues} facture${pluriel(etat.facturesLues)}`;
+			return (
+				`À jour ${etat.depuis} · ${etat.facturesLues} facture${pluriel(etat.facturesLues)}` +
+				(etat.nonLues ? ` · ${etat.nonLues} non lue${pluriel(etat.nonLues)}` : '')
+			);
 		case 'ECHEC':
 			return etat.message;
 		case 'REVOQUEE':
@@ -43,6 +52,7 @@ function ligneDEtat(etat: EtatConnexion, promesse: string): string {
 
 export function CarteConnexion({
 	nom,
+	nomDansLaPhrase,
 	promesse,
 	logo,
 	couverture,
@@ -52,6 +62,11 @@ export function CarteConnexion({
 	onDeconnecter
 }: {
 	nom: string;
+	/**
+	 * Le nom tel qu'il s'écrit dans « Connecter … », quand il diffère du titre :
+	 * « Votre logiciel » en titre, « votre logiciel » dans le bouton.
+	 */
+	nomDansLaPhrase?: string;
 	/** Ce que la connexion fait, en une phrase, avant qu'on la touche. */
 	promesse: string;
 	logo: ReactNode;
@@ -115,11 +130,11 @@ export function CarteConnexion({
 
 				{etat.genre === 'A_CONNECTER' ? (
 					<BoutonPrincipal pleineLargeur onClick={onConnecter}>
-						Connecter {nom}
+						Connecter {nomDansLaPhrase ?? nom}
 					</BoutonPrincipal>
 				) : etat.genre === 'ECHEC' || etat.genre === 'REVOQUEE' ? (
 					<BoutonPrincipal pleineLargeur onClick={onConnecter}>
-						Reconnecter {nom}
+						Reconnecter {nomDansLaPhrase ?? nom}
 					</BoutonPrincipal>
 				) : etat.genre === 'A_JOUR' ? (
 					<div className="flex flex-wrap gap-2">
@@ -140,6 +155,23 @@ export function CarteConnexion({
  */
 export function LogoConnexion({ src }: { src: string }) {
 	return <img src={src} alt="" className="size-full object-cover" />;
+}
+
+/**
+ * LE PICTOGRAMME D'UN LOGICIEL QU'ON NE CONNAÎT PAS ENCORE : la carte qui
+ * propose de brancher « votre logiciel », quel qu'il soit. Encre sur la tuile
+ * blanche, en clair comme en sombre, comme les logos des kits presse.
+ */
+export function PictoLogiciel() {
+	return <CalculatorIcon aria-hidden className="size-1/2 text-encre-site" />;
+}
+
+/**
+ * PLUSIEURS CONNEXIONS L'UNE SOUS L'AUTRE — Qonto en direct, et « votre
+ * logiciel » par Chift. L'écart courant entre deux cartes, rien de plus.
+ */
+export function PileDeConnexions({ children }: { children: ReactNode }) {
+	return <div className="flex flex-col gap-cladd-2xs">{children}</div>;
 }
 
 /** Le monogramme d'un service, en attendant son logo officiel. */

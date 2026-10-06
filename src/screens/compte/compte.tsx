@@ -104,7 +104,12 @@ export interface CompteAffiche {
 	/** L'établissement actif, ou `null` : la coquille `/app` renvoie alors vers `/bienvenue`. */
 	readonly etablissement: EtablissementAffiche | null;
 	/** La connexion Qonto : son statut pour la rangée repliée, et la carte branchée. */
-	readonly connexions: { readonly statut: string | null; readonly contenu: ReactNode };
+	readonly connexions: {
+		readonly statut: string | null;
+		/** Le logiciel que dit la rangée repliée (« Pennylane connecté ») ; Qonto par défaut. */
+		readonly nom?: string;
+		readonly contenu: ReactNode;
+	};
 	readonly creancier: CreancierAffiche;
 	/** Ce que ses conditions générales disent, pour tous ses dossiers à la fois. */
 	readonly regles: ReglesAffichees;
@@ -297,7 +302,7 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 						cle="connexions"
 						icone={<PlugIcon />}
 						titre="Connexions"
-						{...rangee('connexions', resumeConnexions(pret.connexions.statut))}
+						{...rangee('connexions', resumeConnexions(pret.connexions.statut, pret.connexions.nom))}
 					>
 						{pret.connexions.contenu}
 					</RangeeDepliable>

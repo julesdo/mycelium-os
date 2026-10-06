@@ -122,10 +122,10 @@ export interface IdentiteDuCreancier {
 
 /** « Photo », « Avatar » ou « Initiales » : ce que les autres voient de vous. */
 /** Ce que la rangée repliée dit de la connexion, sans l'ouvrir. */
-export function resumeConnexions(statut: string | null): ResumeDeSection {
+export function resumeConnexions(statut: string | null, nom = 'Qonto'): ResumeDeSection {
 	const valeur =
 		statut === 'A_JOUR'
-			? 'Qonto connecté'
+			? `${nom} connecté`
 			: statut === 'SYNCHRONISATION'
 				? 'Lecture en cours…'
 				: statut === 'ECHEC' || statut === 'REVOQUEE'

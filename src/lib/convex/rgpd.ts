@@ -581,6 +581,22 @@ export const purgerEtablissement = internalMutation({
 		// Les jetons Qonto d'un établissement effacé partent avec lui : un jeton
 		// orphelin ouvrirait encore ses factures.
 		budget = await viderParIndexOrg(ctx, 'connexionsQonto', organizationId, budget);
+		// Les logiciels reliés par Chift aussi, et leurs accès CHEZ Chift avec
+		// eux : la ligne d'ici ne porte aucun jeton, mais le consommateur distant
+		// garde l'accès au logiciel du gérant tant qu'on ne le supprime pas.
+		if (budget > 0) {
+			const reliees = await ctx.db
+				.query('connexionsChift')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.take(budget);
+			for (const reliee of reliees) {
+				await ctx.scheduler.runAfter(0, internal.connexions.chift.oublierConsommateur, {
+					consommateurId: reliee.consommateurId
+				});
+				await ctx.db.delete(reliee._id);
+			}
+			budget -= reliees.length;
+		}
 
 		// 2. Les règlements — le plus gros volume : plusieurs par facture.
 		if (encore()) {

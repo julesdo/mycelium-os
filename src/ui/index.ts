@@ -290,6 +290,8 @@ export {
 	CarteConnexion,
 	LogoConnexion,
 	MonogrammeConnexion,
+	PictoLogiciel,
+	PileDeConnexions,
 	type EtatConnexion
 } from './carte-connexion';
 /* ── LA NUIT (la page publique refaite en noir et blanc) ───────────────────── */
