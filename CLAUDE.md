@@ -167,6 +167,17 @@ depuis data.gouv.fr (`annuaireNuit.ts`, lecture partagée dans `annuaire-avocats
 signe » — pour l'établissement comme pour le client d'un échéancier — se propose d'après les
 dirigeants publiés au registre (`DirigeantsProposes`).
 
+**La chasse a continué le 06/10/2026, sur quatre saisies que le dossier contenait déjà.** La remise
+au conseil se déclare d'UN geste (« Je l'ai remis à mon conseil », une feuille, `declarerRemise`
+qui crée le suivi ; `preparerDossier` a disparu). Le nom et l'adresse du mandataire se lisent dans
+l'annonce d'ouverture (`pays/france/personne-nommee.ts` : 248 annonces sur 250 relevées, les autres
+laissent le champ vide plutôt qu'une adresse fausse). Le lecteur de pièces reconnaît l'ORDONNANCE
+et en recopie le tribunal et le numéro pour la demande au commissaire — elle n'entre dans AUCUN
+critère de solidité (`compteCommePreuve`, et un `@ts-expect-error` dans `preuve.test.ts`). Le
+capital, le RCS et la ville du greffe se reprennent des annonces BODACC du créancier
+(`pays/france/immatriculation.ts`). Chaque fois : pré-rempli sous sa source et sa date, modifiable,
+rien d'écrit avant que le gérant valide.
+
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
 C'est la règle la plus stricte du projet, héritée du brief de remodelage.
