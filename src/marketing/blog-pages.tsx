@@ -71,6 +71,43 @@ function Vignette({
 	);
 }
 
+/**
+ * UNE CARTE D'ARTICLE : la couverture, la ligne de méta, le titre, et la
+ * description quand la place le permet. La liste du blog, « À lire ensuite » et
+ * la page d'accueil la partagent. Au-delà de 768 px, c'est une sous-grille :
+ * dans une grille de cartes, son titre tombe à la hauteur de celui des voisines.
+ */
+export function CarteArticle({
+	article,
+	niveau = 'h3',
+	avecDescription = true
+}: {
+	article: ArticleBlog;
+	niveau?: 'h2' | 'h3';
+	avecDescription?: boolean;
+}) {
+	const Titre = niveau;
+	return (
+		<Link
+			to="/blog/$adresse"
+			params={{ adresse: article.adresse }}
+			className={cn(
+				'group flex flex-col gap-cladd-2xs md:grid md:grid-rows-subgrid',
+				avecDescription ? 'md:row-span-4' : 'md:row-span-3'
+			)}
+		>
+			<Vignette article={article} />
+			<Meta article={article} />
+			<Titre className="text-intertitre leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">
+				{article.titre}
+			</Titre>
+			{avecDescription ? (
+				<p className="text-cladd-md leading-relaxed text-encre-site-douce">{article.description}</p>
+			) : null}
+		</Link>
+	);
+}
+
 export function PageListeBlog() {
 	const articles = articlesPublies();
 	const [premier, ...suivants] = articles;
@@ -119,20 +156,7 @@ export function PageListeBlog() {
 											key={article.adresse}
 											className="md:row-span-4 md:grid md:grid-rows-subgrid"
 										>
-											<Link
-												to="/blog/$adresse"
-												params={{ adresse: article.adresse }}
-												className="group flex flex-col gap-cladd-2xs md:row-span-4 md:grid md:grid-rows-subgrid"
-											>
-												<Vignette article={article} />
-												<Meta article={article} />
-												<h2 className="text-intertitre leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">
-													{article.titre}
-												</h2>
-												<p className="text-cladd-md leading-relaxed text-encre-site-douce">
-													{article.description}
-												</p>
-											</Link>
+											<CarteArticle article={article} niveau="h2" />
 										</li>
 									))}
 								</ul>
@@ -318,20 +342,7 @@ export function PageArticleBlog({ article }: { article: ArticleBlog }) {
 								<ul className="grid gap-cladd-lg md:grid-cols-3 md:gap-x-cladd-sm">
 									{lies.map((lie) => (
 										<li key={lie.adresse} className="md:row-span-4 md:grid md:grid-rows-subgrid">
-											<Link
-												to="/blog/$adresse"
-												params={{ adresse: lie.adresse }}
-												className="group flex flex-col gap-cladd-2xs md:row-span-4 md:grid md:grid-rows-subgrid"
-											>
-												<Vignette article={lie} />
-												<Meta article={lie} />
-												<span className="text-intertitre leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">
-													{lie.titre}
-												</span>
-												<span className="text-cladd-md leading-relaxed text-encre-site-douce">
-													{lie.description}
-												</span>
-											</Link>
+											<CarteArticle article={lie} niveau="h3" />
 										</li>
 									))}
 								</ul>

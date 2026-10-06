@@ -9,6 +9,7 @@ import {
 	Securite,
 	Tarifs,
 	Faq,
+	BlogAccueil,
 	Appel,
 	Pied
 } from '../marketing';
@@ -118,6 +119,7 @@ function Accueil() {
 			<Securite />
 			<Tarifs />
 			<Faq />
+			<BlogAccueil />
 			<Appel />
 			<Pied />
 		</main>

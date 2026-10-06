@@ -22,6 +22,7 @@ export { Etapes } from './etapes';
 export { Securite } from './securite';
 export { Tarifs } from './tarifs';
 export { Faq } from './faq';
+export { BlogAccueil } from './blog-accueil';
 export { Appel } from './appel';
 export { Pied } from './pied';
 export { DocumentLegal } from './document-legal';
