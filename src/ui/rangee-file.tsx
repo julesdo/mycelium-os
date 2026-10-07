@@ -2,8 +2,9 @@ import { useState } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
 import { Input, Popup, PopupContent, Surface } from '@cladd-ui/react';
 import { FileTextIcon } from 'lucide-react';
-import { cn } from './cn';
 import { BoutonPrincipal, BoutonSecondaire, BoutonTexte } from './bouton';
+import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
+import { EnTeteDeGroupe } from './en-tete-groupe';
 import { dateCourte, eurosCentimes } from './format';
 import { Lien } from './lien';
 
@@ -431,21 +432,29 @@ export function PliDeLaFile({ faits }: { faits: readonly FaitsDuPli[] }) {
 		else deja.compte += 1;
 	}
 
+	/*
+	  ⚠️ UN RELEVÉ SOUS « RIEN À FAIRE », PLUS UN PARAGRAPHE (07/10/2026). Chaque
+	  type s'écrivait « 142 factures payées dans les délais, rien à faire » en corps
+	  de texte, et revenait à la ligne à 375 px : la formule répétée faisait le
+	  paragraphe. L'en-tête le dit une fois ; chaque ligne nomme le type et son
+	  compte, à droite, où l'œil cherche un nombre.
+	*/
+	const total = [...comptes.values()].reduce((somme, { compte }) => somme + compte, 0);
 	return (
-		<Surface
-			as="section"
-			aria-label="Ce qui n’appelle aucune décision"
-			variant="transparent"
-			outline={false}
-			className={cn('verre-carte rounded-cladd-xl')}
-			contentClassName="flex flex-col gap-1 p-cladd-2xs"
-		>
-			{[...comptes].map(([plusieurs, { un, compte }]) => (
-				<p key={plusieurs} className="text-cladd-xs text-cladd-fg-soft">
-					<span className="font-semibold tabular-nums">{compte}</span>{' '}
-					{compte === 1 ? un : plusieurs}, rien à faire
-				</p>
-			))}
-		</Surface>
+		<section aria-label="Ce qui n’appelle aucune décision" className="flex flex-col gap-cladd-3xs">
+			<EnTeteDeGroupe libelle="Rien à faire" nombre={total} />
+			<ListeDeReleve>
+				{[...comptes].map(([plusieurs, { un, compte }]) => {
+					const libelle = compte === 1 ? un : plusieurs;
+					return (
+						<LigneDeReleve
+							key={plusieurs}
+							titre={libelle.charAt(0).toUpperCase() + libelle.slice(1)}
+							montant={String(compte)}
+						/>
+					);
+				})}
+			</ListeDeReleve>
+		</section>
 	);
 }

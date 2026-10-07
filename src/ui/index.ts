@@ -228,6 +228,7 @@ export {
 	type ProcedureTrouveeAffichee
 } from './palette-recherche';
 export {
+	TravailEnCours,
 	Veilleur,
 	travauxDuVeilleur,
 	type TacheVeilleur,

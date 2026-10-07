@@ -9,10 +9,10 @@ import {
 	Button,
 	Popup,
 	PopupContent,
-	SectionTitle,
 	Surface
 } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
+import { EnTeteDeGroupe } from './en-tete-groupe';
 import { useDeuxVolets } from './maitre-detail';
 import { VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
 import { useSectionOuverte } from './section-depliable';
@@ -82,7 +82,14 @@ export function ListeDeRangees({
 }) {
 	return (
 		<section className="flex flex-col gap-cladd-3xs">
-			{titre === undefined ? null : <SectionTitle>{titre}</SectionTitle>}
+			{/*
+			  ⚠️ L'EN-TÊTE DES GROUPES, PLUS L'INTITULÉ EN CAPITALES DU KIT (07/10/2026).
+			  Sur l'écran du matin, « LE TRAVAIL DE FOND » en capitales grises suivait
+			  « En retard », « Aujourd'hui », « À rapprocher » en titres de 18 px : deux
+			  formes d'en-tête sur un écran, et l'œil croit changer de produit. Les
+			  feuilles gardent les capitales, comme les sections des Réglages d'iOS.
+			*/}
+			{titre === undefined ? null : <EnTeteDeGroupe libelle={titre} />}
 			<Surface
 				variant="transparent"
 				outline={false}

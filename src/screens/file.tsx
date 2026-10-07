@@ -11,8 +11,6 @@ import {
 	ChiffreHero,
 	EnTeteDeGroupe,
 	FeuilleDeDecision,
-	LigneAnalyse,
-	ListeAnalyses,
 	ListeDeCartes,
 	ListeDeRangees,
 	RangeeDepliable,
@@ -24,7 +22,9 @@ import {
 	SectionEcran,
 	SectionsDepliables,
 	SourceDeRangees,
+	TravailEnCours,
 	Veilleur,
+	VignetteRangee,
 	ZoneDepot,
 	eurosCentimes,
 	pluriel,
@@ -624,7 +624,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					)}
 					{veilleurTravaille ? (
 						<SourceDeRangees nom="Le travail de fond">
-							<Veilleur travaux={travaux} seulementCeQuiTravaille />
+							<TravailEnCours travaux={travaux} />
 						</SourceDeRangees>
 					) : null}
 
@@ -916,15 +916,13 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 			  « 0,00 € jamais réclamés » est un cadran à zéro.
 			*/}
 			{jamaisReclame > 0n ? (
-				<ListeAnalyses>
-					<LigneAnalyse
-						vers="/app/revelation"
-						famille="ARGENT"
-						titre="Jamais réclamé"
-						precision="Pénalités et frais, dus de plein droit"
-						valeur={eurosCentimes(jamaisReclame)}
-					/>
-				</ListeAnalyses>
+				<CarteLien
+					vers="/app/revelation"
+					icone={<VignetteRangee famille="ARGENT" className="size-10" />}
+					titre="Jamais réclamé"
+					ligne="Pénalités et frais, dus de plein droit"
+					montant={eurosCentimes(jamaisReclame)}
+				/>
 			) : null}
 		</div>
 	);

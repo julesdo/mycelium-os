@@ -1,5 +1,8 @@
 import type { LinkProps } from '@tanstack/react-router';
-import { List, ListButton, ListItem, ListTitle, Surface } from '@cladd-ui/react';
+import { List, ListButton, ListItem, ListTitle, Spinner, Surface } from '@cladd-ui/react';
+import { CarteFixe, CarteLien, ListeDeCartes } from './carte-rangee';
+import { EnTeteDeGroupe } from './en-tete-groupe';
+import { VignetteIcone } from './familles';
 import {
 	AlertTriangleIcon,
 	ChevronRightIcon,
@@ -531,5 +534,52 @@ export function Veilleur({
 				))}
 			</List>
 		</Surface>
+	);
+}
+
+/**
+ * CE QUI TOURNE À L'INSTANT, SUR L'ÉCRAN DU MATIN — en cartes, comme le reste.
+ *
+ * ⚠️ IL REMPLACE `<Veilleur seulementCeQuiTravaille />` SUR L'ACCUEIL (07/10/2026).
+ * Le bloc était une carte à intitulé en capitales (« LE VEILLEUR · en ce
+ * moment ») posée entre la rangée du haut et la file : une troisième forme sur
+ * un écran qui n'en a plus que deux. Chaque travail est désormais une carte de
+ * la file — le fichier, ce que la machine en fait, quand —, et l'indicateur qui
+ * TOURNE dans sa vignette dit qu'il travaille (règle d'écran n° 2), là où un
+ * pictogramme fixe disait seulement de quel travail il s'agit.
+ *
+ * ⚠️ « EN CE MOMENT » RESTE VRAI PAR CONSTRUCTION : le groupe ne s'affiche que
+ * s'il y a un travail EN COURS, et il n'en montre aucun autre.
+ */
+export function TravailEnCours({ travaux }: { readonly travaux: readonly TacheVeilleur[] }) {
+	const enCours = travaux.filter((tache) => tache.etat === 'EN_COURS');
+	if (enCours.length === 0) return null;
+
+	return (
+		<section aria-label="Le travail de fond" className="flex flex-col gap-cladd-3xs">
+			<EnTeteDeGroupe libelle="En ce moment" nombre={enCours.length} />
+			<ListeDeCartes>
+				{enCours.map((tache) => {
+					const contenu = {
+						titre: tache.titre,
+						ligne: tache.dit,
+						...(tache.quand === null ? {} : { date: tache.quand }),
+						icone: <VignetteIcone className="size-10" icone={<Spinner size="xs" />} />
+					};
+					return tache.vers === undefined ? (
+						<CarteFixe key={tache.cle} {...contenu} />
+					) : (
+						<CarteLien
+							key={tache.cle}
+							vers={tache.vers}
+							{...(tache.parametres === undefined ? {} : { parametres: tache.parametres })}
+							{...(tache.recherche === undefined ? {} : { recherche: tache.recherche })}
+							{...(tache.onOuvrir === undefined ? {} : { onClick: tache.onOuvrir })}
+							{...contenu}
+						/>
+					);
+				})}
+			</ListeDeCartes>
+		</section>
 	);
 }

@@ -194,11 +194,17 @@ const CONTENU_CARTE = 'w-full items-center gap-2.5 px-3.5 py-cladd-3xs';
 export function CarteLien({
 	vers,
 	parametres,
+	recherche,
+	onClick,
 	selectionnee,
 	...contenu
 }: ContenuCarte & {
 	readonly vers: NonNullable<LinkProps['to']>;
 	readonly parametres?: LinkProps['params'];
+	/** La recherche d'URL, quand la destination en dépend (`?p=`, `?d=`). */
+	readonly recherche?: LinkProps['search'];
+	/** Ce qui se passe en plus de la navigation : marquer un travail comme lu. */
+	readonly onClick?: () => void;
 	/**
 	 * La carte dont le détail est ouvert dans le volet voisin, au-delà de
 	 * 1024 px. DÉFINIE, la liste sert de maître et le chevron s'efface à cette
@@ -214,6 +220,8 @@ export function CarteLien({
 			// ⚠️ UNE ASSERTION : `as` efface le générique du routeur. La destination
 			// reste vérifiée par le type de `vers`.
 			params={parametres as never}
+			search={recherche as never}
+			{...(onClick === undefined ? {} : { onClick })}
 			{...CARTE}
 			// Le contour et non l'anneau : `.verre-carte` porte déjà son ombre en
 			// `box-shadow`, qu'un `ring-` remplacerait au lieu de s'y ajouter.
