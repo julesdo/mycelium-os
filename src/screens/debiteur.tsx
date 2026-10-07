@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { HistoryState } from '@tanstack/react-router';
 import { Checkbox, Popup, PopupContent } from '@cladd-ui/react';
+import { ArrowDownLeftIcon, FolderPlusIcon, MailIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
 	CeQuiBloque,
@@ -9,6 +10,8 @@ import {
 	EnTeteDeGroupe,
 	HabitudePaiement,
 	IdentiteDebiteur,
+	ActionsRapides,
+	Avatar,
 	CarteLien,
 	Lettrage,
 	LigneBouton,
@@ -412,6 +415,8 @@ function CorpsDebiteur({
 	const [ouvertes, setOuvertes] = useState<readonly string[]>([]);
 	/** La feuille « Lancer un dossier ». */
 	const [feuilleOuverte, setFeuilleOuverte] = useState(false);
+	/** La feuille « Un virement reçu », ouverte par son action rapide. */
+	const [virementOuvert, setVirementOuvert] = useState(false);
 
 	const proche = prescriptionLaPlusProche(factures, aujourdHui);
 
@@ -501,34 +506,80 @@ function CorpsDebiteur({
 			  pas un « 0,00 € » en corps de titre : on le dit en toutes lettres, et la
 			  page sert quand même à déposer une pièce ou à préciser son secteur.
 			*/}
-			{encours > 0n ? (
-				<ChiffreHero
-					className="py-cladd-3xs"
-					centimes={encours}
-					surTitre="Ce qu’il vous doit"
-					legende={
-						proche === null
-							? `${aRegler.length} facture${pluriel(aRegler.length)} à régler`
-							: phrasePrescription(proche)
-					}
-				/>
-			) : (
-				<p className="text-center text-cladd-xs text-cladd-fg-soft">
-					Ce client ne vous doit rien aujourd’hui.
-				</p>
-			)}
+			{/*
+			  ⚠️ L'AVATAR AU-DESSUS DU MONTANT, PUIS LES ACTIONS RAPIDES (07/10/2026).
+			  Toutes les fiches de contact relevées sur Mobbin (Telegram, Apple, Quo)
+			  posent l'identité, puis une rangée de boutons ronds ; notre page de
+			  paiement pose déjà les initiales du créancier au-dessus de son montant.
+			  La barre porte le nom et l'adresse : l'avatar ne les redit pas.
+			*/}
+			<div className="flex flex-col items-center gap-cladd-3xs">
+				<Avatar nom={denomination} grand surCarte />
+				{encours > 0n ? (
+					<ChiffreHero
+						className="py-cladd-3xs"
+						centimes={encours}
+						surTitre="Ce qu’il vous doit"
+						legende={
+							proche === null
+								? `${aRegler.length} facture${pluriel(aRegler.length)} à régler`
+								: phrasePrescription(proche)
+						}
+					/>
+				) : (
+					<p className="text-center text-cladd-xs text-cladd-fg-soft">
+						Ce client ne vous doit rien aujourd’hui.
+					</p>
+				)}
+			</div>
 
 			{/*
-			  LE SEUL BOUTON DE LA FICHE. « Lancer un dossier » est un geste de bureau
-			  — réunir des factures pour en calculer ce qui est dû —, jamais une voie
-			  de droit. Il n'apparaît que s'il reste une facture à mettre dans un
-			  dossier.
+			  LES ACTIONS RAPIDES. Chacune en remplace une : « Lancer un dossier »
+			  était le bouton pleine largeur, « Virement reçu » la rangée du même nom au
+			  bas de la page. « E-mail » ouvre la messagerie du gérant — c'est lui qui
+			  écrit et qui envoie, rien ne part d'ici (première ligne rouge) ; sans
+			  adresse, il ouvre son identité pour la renseigner.
 			*/}
-			{eligibles.length === 0 ? null : (
-				<BoutonPrincipal pleineLargeur onClick={ouvrirLaFeuille}>
-					Lancer un dossier
-				</BoutonPrincipal>
-			)}
+			<ActionsRapides
+				actions={[
+					...(eligibles.length === 0
+						? []
+						: [
+								{
+									cle: 'dossier',
+									libelle: 'Lancer un dossier',
+									icone: <FolderPlusIcon />,
+									principale: true,
+									onClick: ouvrirLaFeuille
+								}
+							]),
+					debiteur.email === undefined || debiteur.email === ''
+						? {
+								cle: 'email',
+								libelle: 'E-mail',
+								icone: <MailIcon />,
+								nomComplet: 'Renseigner son adresse électronique',
+								onClick: () =>
+									setOuvertes((avant) =>
+										avant.includes('identite') ? avant : [...avant, 'identite']
+									)
+							}
+						: {
+								cle: 'email',
+								libelle: 'E-mail',
+								icone: <MailIcon />,
+								nomComplet: `Écrire à ${debiteur.email}`,
+								href: `mailto:${debiteur.email}`
+							},
+					{
+						cle: 'virement',
+						libelle: 'Virement reçu',
+						icone: <ArrowDownLeftIcon />,
+						nomComplet: 'Rapprocher un virement reçu de ce client',
+						onClick: () => setVirementOuvert(true)
+					}
+				]}
+			/>
 
 			<CeQuiBloque alertes={alertesDuClient(debiteur)} />
 
@@ -715,31 +766,6 @@ function CorpsDebiteur({
 				</RangeeDepliable>
 
 				{/*
-				  LE RAPPROCHEMENT D'UN VIREMENT — ce qui empêche de relancer un client
-				  qui a déjà payé. ⚠️ LA DATE ARRIVE AVEC LE GESTE : la date d'un
-				  règlement est le point d'arrêt des pénalités, et la relire ailleurs
-				  enregistrait un montant faux.
-				*/}
-				<RangeeDepliable
-					cle="virement"
-					famille="ARGENT"
-					titre="Un virement reçu"
-					glose="Dites-le ici : le logiciel solde les bonnes factures, et personne n’est relancé pour ce qu’il a déjà payé."
-					valeur="à rapprocher"
-				>
-					<ListeAnalyses>
-						<Lettrage
-							proposition={propositionLettrage}
-							enCours={lettrageEnCours}
-							erreur={erreurLettrage}
-							onChercher={onChercherLettrage}
-							onAppliquer={onAppliquerLettrage}
-							{...(onRepartirLettrage === undefined ? {} : { onRepartir: onRepartirLettrage })}
-						/>
-					</ListeAnalyses>
-				</RangeeDepliable>
-
-				{/*
 				  LES FACTURES RÉGLÉES — l'historique du client, qui sert à mesurer son
 				  habitude. À part, sans montant trompeur et sans date limite.
 				*/}
@@ -767,6 +793,39 @@ function CorpsDebiteur({
 			</ListeDeRangees>
 
 			{erreur ? <p className="text-cladd-xs text-cladd-fg">{erreur}</p> : null}
+
+			{/*
+			  LA FEUILLE « UN VIREMENT REÇU » — ouverte par son action rapide.
+			  ⚠️ LA DATE ARRIVE AVEC LE GESTE : la date d'un règlement est le point
+			  d'arrêt des pénalités, et la relire ailleurs enregistrait un montant faux.
+			*/}
+			<Popup
+				open={virementOuvert}
+				onOpenChange={(o) => {
+					if (!o) setVirementOuvert(false);
+				}}
+				headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">Un virement reçu</span>}
+				contentClassName="max-w-lg"
+			>
+				<PopupContent>
+					<div className="flex flex-col gap-cladd-2xs">
+						<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">
+							Dites-le ici : le logiciel solde les bonnes factures, et personne n’est relancé pour
+							ce qu’il a déjà payé.
+						</p>
+						<ListeAnalyses>
+							<Lettrage
+								proposition={propositionLettrage}
+								enCours={lettrageEnCours}
+								erreur={erreurLettrage}
+								onChercher={onChercherLettrage}
+								onAppliquer={onAppliquerLettrage}
+								{...(onRepartirLettrage === undefined ? {} : { onRepartir: onRepartirLettrage })}
+							/>
+						</ListeAnalyses>
+					</div>
+				</PopupContent>
+			</Popup>
 
 			{/*
 			  LA FEUILLE « LANCER UN DOSSIER » — le choix des factures, puis le geste.
