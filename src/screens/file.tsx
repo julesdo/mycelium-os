@@ -17,6 +17,7 @@ import {
 	RangeeDepliable,
 	RangeeLien,
 	dateCourte,
+	dateRelative,
 	Lettrage,
 	PageEcran,
 	PliDeLaFile,
@@ -661,6 +662,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 											<LigneDeFile
 												key={rangee.id}
 												rangee={rangee}
+												aujourdHui={aujourdHui}
 												onTrancher={() => setEnDecision(rangee.id)}
 											/>
 										))}
@@ -957,9 +959,12 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
  */
 function LigneDeFile({
 	rangee,
+	aujourdHui,
 	onTrancher
 }: {
 	readonly rangee: RangeeGroupee;
+	/** Pour dire la date en distance : « dans 41 j », « il y a 12 j ». */
+	readonly aujourdHui: string;
 	readonly onTrancher: () => void;
 }) {
 	const date = rangee.genre === 'OBSTACLE' ? rangee.dateDuFait : undefined;
@@ -978,7 +983,7 @@ function LigneDeFile({
 		// qui s'ouvre en feuille de ce qui mène au dossier.
 		famille: rangee.genre === 'OBSTACLE' && !decision ? rangee.famille : ('QUESTION' as const),
 		...(rangee.montant === null ? {} : { montant: eurosCentimes(rangee.montant) }),
-		...(date === undefined ? {} : { date: dateCourte(date) })
+		...(date === undefined ? {} : { date: dateRelative(date, aujourdHui) })
 	};
 
 	if (decision) return <CarteBouton {...contenu} attention onClick={onTrancher} />;

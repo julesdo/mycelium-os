@@ -108,7 +108,15 @@ export {
 	TableauTitre,
 	TableauCellule
 } from './tableau';
-export { euros, eurosCentimes, partsEurosCentimes, dateCourte, pourcent, pluriel } from './format';
+export {
+	euros,
+	eurosCentimes,
+	partsEurosCentimes,
+	dateCourte,
+	dateRelative,
+	pourcent,
+	pluriel
+} from './format';
 
 // ── Recouvrement ────────────────────────────────────────────────────────────
 export {

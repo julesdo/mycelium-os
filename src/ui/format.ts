@@ -94,6 +94,39 @@ export function dateCourte(iso: string): string {
 	return DATE_COURTE.format(new Date(Date.UTC(annee, mois - 1, jour)));
 }
 
+/**
+ * UNE DATE DITE PAR RAPPORT À AUJOURD'HUI — « dans 41 j », « il y a 12 j » —,
+ * et la date exacte au-delà de quatre-vingt-dix jours.
+ *
+ * ⚠️ POURQUOI (relevé du 07/10/2026). Revolut Business écrit « Due in 2 days »
+ * sur ses factures, pas « 9 oct. 2026 » : une échéance se lit en distance, et
+ * « 27 oct. 2026 » oblige à compter de tête. Au-delà de trois mois la distance
+ * ne dit plus rien d'utile (« dans 4 ans ») et la date exacte revient. Sur une
+ * carte seulement : la page du dossier garde toujours la date exacte, et c'est
+ * elle qui fait foi.
+ *
+ * ⚠️ SANS HORLOGE : \`aujourdHui\` est un argument, comme partout dans le produit.
+ * Les deux dates sont des jours (AAAA-MM-JJ), comptés en UTC : aucune heure
+ * d'été ne décale un jour.
+ */
+export function dateRelative(iso: string, aujourdHui: string): string {
+	const jour = (texte: string): number | null => {
+		const [annee, mois, j] = texte.split('-').map(Number);
+		if (annee === undefined || mois === undefined || j === undefined) return null;
+		const t = Date.UTC(annee, mois - 1, j);
+		return Number.isNaN(t) ? null : t;
+	};
+	const cible = jour(iso);
+	const base = jour(aujourdHui);
+	if (cible === null || base === null) return dateCourte(iso);
+	const ecart = Math.round((cible - base) / 86_400_000);
+	if (Math.abs(ecart) > 90) return dateCourte(iso);
+	if (ecart === 0) return 'aujourd’hui';
+	if (ecart === 1) return 'demain';
+	if (ecart === -1) return 'hier';
+	return ecart > 0 ? `dans ${ecart} j` : `il y a ${-ecart} j`;
+}
+
 /*
   ⚠️ `dateLongue` — « jeudi 30 septembre 2026 » — A ÉTÉ RETIRÉE LE 30/09/2026.
   Elle n'existait que pour le sous-titre de l'écran du jour, que le fondateur a

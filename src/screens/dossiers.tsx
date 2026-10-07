@@ -25,6 +25,7 @@ import {
 	ListeDeCartes,
 	PageEcran,
 	dateCourte,
+	dateRelative,
 	eurosCentimes,
 	pluriel,
 	type FamilleRangee,
@@ -162,7 +163,7 @@ function resumeDe(
 	if (dossier.prochaineEcheance !== undefined) {
 		return {
 			ligne: dossier.prochaineEcheance.libelle,
-			date: dateCourte(dossier.prochaineEcheance.dateLimite),
+			date: dateRelative(dossier.prochaineEcheance.dateLimite, aujourdHui),
 			famille: 'TEMPS'
 		};
 	}
@@ -176,11 +177,14 @@ function resumeDe(
 	if (dossier.dateLimiteAgir !== undefined) {
 		return {
 			ligne: dossier.dateLimiteAgir < aujourdHui ? 'Date limite passée' : 'Date limite pour agir',
-			date: dateCourte(dossier.dateLimiteAgir)
+			date: dateRelative(dossier.dateLimiteAgir, aujourdHui)
 		};
 	}
 	if (dossier.dernierCourrierLe !== undefined) {
-		return { ligne: 'Dernier courrier', date: dateCourte(dossier.dernierCourrierLe) };
+		return {
+			ligne: 'Dernier courrier',
+			date: dateRelative(dossier.dernierCourrierLe, aujourdHui)
+		};
 	}
 	return { ligne: factures };
 }
