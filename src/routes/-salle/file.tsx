@@ -2,7 +2,7 @@ import { Button } from '@cladd-ui/react';
 import { BuildingIcon, ChevronDownIcon } from 'lucide-react';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
 import { DEPOT_A_ECARTS_DEMO, DEPOT_PARFAIT_DEMO } from './depots';
-import { REVELATION_DEMO } from './revelation';
+import { ANCIENNETE_DEMO, REVELATION_DEMO } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
@@ -447,7 +447,8 @@ const GARNIE: FileAffichee = {
 			interets: REVELATION_DEMO.interets,
 			indemnites: REVELATION_DEMO.indemnites
 		},
-		nonChiffrees: REVELATION_DEMO.nonChiffrees
+		nonChiffrees: REVELATION_DEMO.nonChiffrees,
+		anciennete: ANCIENNETE_DEMO
 	},
 	rangees: RANGEES_DEMO,
 	travaux: TRAVAUX_DEMO,
@@ -480,7 +481,8 @@ const VIERGE: FileAffichee = {
 		total: 0n,
 		nombreFactures: 0,
 		parts: { principal: 0n, interets: 0n, indemnites: 0n },
-		nonChiffrees: []
+		nonChiffrees: [],
+		anciennete: []
 	},
 	rangees: [],
 	hypotheses: [],

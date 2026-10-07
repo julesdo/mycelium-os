@@ -17,7 +17,12 @@ import {
 	reveler,
 	type FacturePourRevelation
 } from '../../lib/verticales/recouvrement/revelation';
-import type { AbandonsAffiches, BilanPertesAffiche, RevelationAffichee } from '../../ui';
+import type {
+	AbandonsAffiches,
+	BilanPertesAffiche,
+	LigneDAnciennete,
+	RevelationAffichee
+} from '../../ui';
 import { MEMBRES } from './compte';
 
 /**
@@ -236,6 +241,20 @@ const FACTURES_PREPAREES_DEMO = FACTURES_DEMO.map(preparer);
 export const REVELATION_DEMO: RevelationAffichee = revelationDe(FACTURES_PREPAREES_DEMO);
 
 export const BILAN_DEMO: BilanPertesAffiche = bilanDe(FACTURES_PREPAREES_DEMO);
+
+/**
+ * L'ANCIENNETÉ, composée comme la route la compose : le total de chaque ligne
+ * — principal et supplément — et le jour de départ que le calcul a pris.
+ */
+export const ANCIENNETE_DEMO: readonly LigneDAnciennete[] = REVELATION_DEMO.lignes.map((ligne) => {
+	const depart = FACTURES_PREPAREES_DEMO.find(
+		(facture) => facture.reference === ligne.reference
+	)?.dateExigibilite;
+	return {
+		montant: ligne.principalRestantDu + ligne.supplement,
+		...(depart === undefined ? {} : { exigibleDepuis: depart })
+	};
+});
 
 /**
  * Le même bilan, après un battement en échec depuis l'arrivée : `composerBilan`

@@ -110,6 +110,8 @@ interface RepereFacture {
 	readonly _id: Id<'facturesVente'>;
 	readonly debiteurId: Id<'debiteurs'>;
 	readonly debiteur: string;
+	/** Le jour d'où court le retard — le MÊME `departDe` que le calcul. */
+	readonly exigibleDepuis: string;
 }
 
 async function facturesPour(
@@ -145,7 +147,8 @@ async function facturesPour(
 		reperes?.set(facture.reference, {
 			_id: facture._id,
 			debiteurId: facture.debiteurId,
-			debiteur: debiteur?.denomination ?? 'Débiteur inconnu'
+			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
+			exigibleDepuis: depart
 		});
 
 		let taux: PeriodeDeTaux[] = [];
@@ -207,7 +210,18 @@ const vRevelation = v.object({
 			principalRestantDu: v.int64(),
 			interets: v.int64(),
 			indemniteForfaitaire: v.int64(),
-			supplement: v.int64()
+			supplement: v.int64(),
+			/**
+			 * LE JOUR D'OÙ COURT LE RETARD, celui-là même que le calcul emploie
+			 * (`departDe`). C'est lui qui range la facture dans sa tranche
+			 * d'ancienneté sur l'écran du matin (07/10/2026) ; le relire ailleurs
+			 * ferait ranger par une date que le calcul n'a pas prise.
+			 *
+			 * ⚠️ FACULTATIF POUR LA MÊME RAISON QUE `_id` : une facture que la règle
+			 * nomme sans que ce fichier l'ait repérée n'en a pas, et l'écran la
+			 * nomme à part au lieu de la ranger au hasard.
+			 */
+			exigibleDepuis: v.optional(v.string())
 		})
 	),
 	nonChiffrees: v.array(v.object({ reference: v.string(), raison: v.string() }))
@@ -245,7 +259,8 @@ async function composerRevelation(
 				principalRestantDu: enCentimes(ligne.principalRestantDu),
 				interets: enCentimes(ligne.interets),
 				indemniteForfaitaire: enCentimes(ligne.indemniteForfaitaire),
-				supplement: enCentimes(ligne.supplement)
+				supplement: enCentimes(ligne.supplement),
+				exigibleDepuis: repere?.exigibleDepuis
 			};
 		}),
 		nonChiffrees: revelation.nonChiffrees.map((n) => ({ ...n }))

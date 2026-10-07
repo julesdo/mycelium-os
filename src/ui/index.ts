@@ -282,6 +282,7 @@ export {
 	type SuiviDossierAffiche
 } from './suivi-dossier';
 export { CeQuiEstDu } from './ce-qui-est-du';
+export { BandeDAnciennete, repartirParAnciennete, type LigneDAnciennete } from './anciennete';
 
 /* ── CE QUE LES DÉCOMPTES LAISSENT DE CÔTÉ (rebranche/abandons) ────────────
  *

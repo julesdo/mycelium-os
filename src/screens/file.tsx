@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import {
+	BandeDAnciennete,
 	BilanImport,
 	BoutonPrincipal,
 	BoutonSecondaire,
@@ -33,6 +34,7 @@ import {
 	type DestinationRangee,
 	type FaitsDuPli,
 	type FamilleRangee,
+	type LigneDAnciennete,
 	type Lecture,
 	type PartsDues,
 	type PropositionDeRangee,
@@ -332,6 +334,11 @@ export interface TeteDeFile {
 	 * le premier se croit exact.
 	 */
 	readonly nonChiffrees: readonly { readonly reference: string; readonly raison: string }[];
+	/**
+	 * Chaque facture comptée dans `total`, avec le jour d'où court son retard :
+	 * la bande d'ancienneté sous le montant héros (`BandeDAnciennete`).
+	 */
+	readonly anciennete: readonly LigneDAnciennete[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -910,6 +917,9 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 					</>
 				}
 			/>
+
+			{/* DEPUIS COMBIEN DE TEMPS : la forme sous le nombre (Afterpay). */}
+			<BandeDAnciennete lignes={tete.anciennete} aujourdHui={aujourdHui} />
 
 			{/*
 			  ⚠️ ELLE NE S'AFFICHE QUE QUAND IL Y A QUELQUE CHOSE À MONTRER. Une rangée

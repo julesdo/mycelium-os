@@ -944,7 +944,13 @@ function File() {
 				interets: revelation.interets,
 				indemnites: revelation.indemnites
 			},
-			nonChiffrees: revelation.nonChiffrees
+			nonChiffrees: revelation.nonChiffrees,
+			// Ce que chaque facture porte au total — principal et supplément —, et le
+			// jour d'où court son retard, celui du calcul.
+			anciennete: revelation.lignes.map((ligne) => ({
+				montant: ligne.principalRestantDu + ligne.supplement,
+				...(ligne.exigibleDepuis === undefined ? {} : { exigibleDepuis: ligne.exigibleDepuis })
+			}))
 		},
 		rangees,
 		travaux,
