@@ -106,7 +106,7 @@ export interface CompteAffiche {
 	/** La connexion Qonto : son statut pour la rangée repliée, et la carte branchée. */
 	readonly connexions: {
 		readonly statut: string | null;
-		/** Le logiciel que dit la rangée repliée (« Pennylane connecté ») ; Qonto par défaut. */
+		/** Le logiciel que nomme la rangée repliée (« Pennylane ») ; Qonto par défaut. */
 		readonly nom?: string;
 		readonly contenu: ReactNode;
 	};

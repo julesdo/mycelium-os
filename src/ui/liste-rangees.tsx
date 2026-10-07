@@ -13,6 +13,7 @@ import {
 } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
 import { EnTeteDeGroupe } from './en-tete-groupe';
+import { cn } from './cn';
 import { useDeuxVolets } from './maitre-detail';
 import { VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
 import { useSectionOuverte } from './section-depliable';
@@ -195,10 +196,26 @@ export function RangeeDepliable({
 					hoverable={false}
 					size="md"
 					className="h-auto min-h-13 w-full rounded-none"
-					contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
+					contentClassName="w-full items-center justify-between gap-2 px-3.5 py-cladd-3xs"
 				>
 					{/*
-					  ⚠️ LE TITRE PREND SA LARGEUR, PLAFONNÉE À 60 %, ET LA VALEUR LE RESTE.
+					  ⚠️ AUCUNE BORNE FIXE : LE TITRE ET LA VALEUR PRENNENT LEUR LARGEUR, ET
+					  RÉTRÉCISSENT ENSEMBLE, EN PROPORTION, QUAND LA SOMME DÉPASSE
+					  (07/10/2026). Mesuré à 375 px :
+					    · la règle ci-dessous plafonnait le TITRE à 60 % : « Courriers et
+					      e-mails » (152 px) revenait à la ligne à côté de « 1 à valider »,
+					      qui laissait 40 % de la rangée vide ;
+					    · plafonner la VALEUR à 45 % faisait l'inverse : « Pennylane
+					      connecté » et « 1 invitation en attente » passaient sur deux lignes
+					      à côté de « Connexions » et d'« Équipe ».
+					  Une borne fixe a toujours tort pour l'un des deux. Le titre en
+					  `flex-auto`, la valeur en rétrécissement libre : tant que les deux
+					  tiennent, aucun ne revient à la ligne ; quand ils ne tiennent pas,
+					  chacun cède en proportion de sa longueur, et aucun ne peut plus être
+					  écrasé à dix-neuf pixels. Quatorze pixels de côté, comme les cartes.
+
+					  Historique de la règle remplacée — LE TITRE PREND SA LARGEUR,
+					  PLAFONNÉE À 60 %, ET LA VALEUR LE RESTE.
 					  Deux défauts mesurés, l'un après l'autre :
 					    · le groupe de droite était `shrink-0` : une valeur un peu longue —
 					      « 1 hypothèse · 2 angles morts » — écrasait le titre à dix-neuf
@@ -218,24 +235,37 @@ export function RangeeDepliable({
 					  vignettes de familles différentes se balaient. Relevé du 30/09/2026 :
 					  l'écran des dossiers portait six pictogrammes EN TOUT.
 					*/}
-					<span className="flex max-w-[60%] min-w-0 shrink-0 items-center gap-cladd-3xs text-left">
+					<span className="flex min-w-0 flex-auto items-center gap-2.5 text-left">
 						{famille !== undefined ? (
 							<VignetteRangee famille={famille} />
 						) : icone !== undefined ? (
 							<VignetteIcone icone={icone} />
 						) : null}
+						<span className="min-w-0 text-cladd-xs font-semibold">{titre}</span>
+					</span>
+					<span className="flex min-w-0 items-center justify-end gap-2">
+						{/*
+						  ⚠️ CE QUI ATTEND LE GÉRANT SE DIT À DROITE, PAS DEVANT LE TITRE
+						  (07/10/2026). Le point posé avant le titre décalait « Établissement »
+						  et « Équipe » de dix pixels par rapport à leurs voisines : la colonne
+						  des titres ne s'alignait plus, et le point se lisait comme une puce
+						  de liste. Comme le badge des Réglages d'iOS, il vit avant le chevron,
+						  et la valeur qui dit QUOI passe à l'encre pleine.
+						*/}
+						<span
+							className={cn(
+								'text-right text-cladd-xs tabular-nums',
+								attention ? 'font-medium text-cladd-fg' : 'text-cladd-fg-soft'
+							)}
+						>
+							{valeur}
+						</span>
 						{attention ? (
 							<span
-								className="size-1.5 shrink-0 rounded-full bg-cladd-fg"
+								className="size-2 shrink-0 rounded-full bg-cladd-fg"
 								aria-label="demande une réponse"
 							/>
 						) : null}
-						<span className="min-w-0 text-cladd-xs font-semibold">{titre}</span>
-					</span>
-					<span className="flex min-w-0 flex-1 items-center justify-end gap-cladd-3xs">
-						<span className="text-right text-cladd-xs text-cladd-fg-soft tabular-nums">
-							{valeur}
-						</span>
 						<AccordionIndicator className="flex text-cladd-fg-softer transition-transform duration-150 data-[open]:rotate-90">
 							<ChevronRightIcon className="size-5" aria-hidden />
 						</AccordionIndicator>
@@ -321,7 +351,7 @@ export function RangeeLien({
 			hoverable={false}
 			size="md"
 			className="h-auto min-h-13 w-full rounded-none"
-			contentClassName="w-full items-center justify-between gap-cladd-3xs px-cladd-2xs py-cladd-3xs"
+			contentClassName="w-full items-center justify-between gap-cladd-3xs px-3.5 py-cladd-3xs"
 		>
 			<span className="flex min-w-0 flex-1 items-center gap-cladd-3xs text-left">
 				{avatar ?? (famille === undefined ? null : <VignetteRangee famille={famille} />)}

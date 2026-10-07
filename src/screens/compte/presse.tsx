@@ -125,7 +125,9 @@ export interface IdentiteDuCreancier {
 export function resumeConnexions(statut: string | null, nom = 'Qonto'): ResumeDeSection {
 	const valeur =
 		statut === 'A_JOUR'
-			? `${nom} connecté`
+			? // Le nom seul : sous « Connexions », il dit déjà qu'il est relié, et
+				// « Pennylane connecté » revenait à la ligne à 375 px.
+				nom
 			: statut === 'SYNCHRONISATION'
 				? 'Lecture en cours…'
 				: statut === 'ECHEC' || statut === 'REVOQUEE'
