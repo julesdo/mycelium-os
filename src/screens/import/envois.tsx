@@ -1,6 +1,6 @@
 import { Spinner } from '@cladd-ui/react';
 import { FileUpIcon, TriangleAlertIcon } from 'lucide-react';
-import { LigneBouton, LigneFixe, VignetteIcone } from '../../ui';
+import { CarteBouton, CarteFixe, VignetteIcone } from '../../ui';
 
 /**
  * L'ENVOI D'UN FICHIER — le seul moment du produit que le gérant PASSE À
@@ -131,22 +131,25 @@ export function LigneEnvoi({
 }) {
 	if (envoi.etat === 'ECHEC') {
 		return (
-			<LigneBouton
+			<CarteBouton
 				onClick={() => onReessayer(envoi.cle)}
-				icone={<VignetteIcone icone={<TriangleAlertIcon />} />}
+				icone={<VignetteIcone className="size-10" icone={<TriangleAlertIcon />} />}
 				titre={envoi.nom}
-				precision={precisionEnvoi(envoi)}
-				valeur="Réessayer"
-				// Un envoi qui n'est pas arrivé attend une réponse : le point, jamais
-				// une couleur de seuil. Voir `navigation.tsx`.
+				ligne={precisionEnvoi(envoi)}
+				// La raison d'un échec se lit entière, comme sur un dépôt.
+				retour
+				montant="Réessayer"
+				// Un envoi qui n'est pas arrivé attend une réponse : la ligne à l'encre
+				// pleine, jamais une couleur de seuil.
 				attention
+				// Toucher relance, ça ne mène nulle part : pas de chevron.
+				chevron={false}
 			/>
 		);
 	}
 
 	return (
-		<LigneFixe
-			genre="contenu"
+		<CarteFixe
 			/*
 			  ⚠️ `xs` POUR LE SPINNER, ET LA TAILLE EST MESURÉE. Sur l'échelle imbriquée
 			  du produit, `2xs` rend 12 px et `xs` 20 px ; les glyphes des vignettes
@@ -154,13 +157,16 @@ export function LigneEnvoi({
 			  glyphe de même boîte : `xs` tombe juste à l'œil.
 			*/
 			icone={
-				<VignetteIcone icone={envoi.etat === 'ENVOI' ? <Spinner size="xs" /> : <FileUpIcon />} />
+				<VignetteIcone
+					className="size-10"
+					icone={envoi.etat === 'ENVOI' ? <Spinner size="xs" /> : <FileUpIcon />}
+				/>
 			}
 			titre={envoi.nom}
-			precision={precisionEnvoi(envoi)}
+			ligne={precisionEnvoi(envoi)}
 			{...(envoi.avancement === undefined
 				? {}
-				: { valeur: `${Math.round(envoi.avancement * 100)} %` })}
+				: { montant: `${Math.round(envoi.avancement * 100)} %` })}
 		/>
 	);
 }

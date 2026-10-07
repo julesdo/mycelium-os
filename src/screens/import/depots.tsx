@@ -4,8 +4,8 @@ import {
 	AjoutDeFichiers,
 	EmptyState,
 	EnTeteDeGroupe,
-	LigneAnalyse,
-	ListeAnalyses,
+	CarteLien,
+	ListeDeCartes,
 	MaitreDetail,
 	PageEcran,
 	VignetteIcone,
@@ -285,27 +285,35 @@ export function EcranImport({
 
 	/** La rangée d'un dépôt que le serveur connaît. Elle mène à son bilan. */
 	const rangee = (depot: LigneDepot) => (
-		<LigneAnalyse
+		<CarteLien
 			key={depot._id}
 			vers="/app/import-factures/$id"
 			parametres={{ id: depot._id }}
 			// Définie seulement quand un bilan est ouvert : l'import pleine
-			// largeur n'est pas un maître, et ses rangées gardent leur chevron.
-			selectionnee={depotOuvert === null ? undefined : depot._id === depotOuvert}
+			// largeur n'est pas un maître, et ses cartes gardent leur chevron.
+			{...(depotOuvert === null ? {} : { selectionnee: depot._id === depotOuvert })}
 			// L'icône dit par où le dépôt est passé : une feuille de calcul pour un
 			// export, un document pour une facture déposée.
 			icone={
 				<VignetteIcone
+					className="size-10"
 					icone={depot.mode === 'FACTURE_DEPOSEE' ? <FileTextIcon /> : <FileSpreadsheetIcon />}
 				/>
 			}
 			titre={depot.filename}
-			precision={precisionDepot(depot, minute)}
-			// Un échec dit sa raison entière : c'est la seule rangée qui ne se lit
-			// pas sans elle.
-			lignes={depot.statut === 'ECHOUE' ? 2 : 1}
-			valeur={valeurDepot(depot)}
-			sousValeur={JOUR.format(new Date(depot.deposeLe))}
+			ligne={precisionDepot(depot, minute)}
+			// Un échec dit sa raison ENTIÈRE, et elle revient à la ligne au lieu de
+			// se couper : c'est la seule carte qui ne se lit pas sans elle.
+			retour={depot.statut === 'ECHOUE'}
+			/*
+			  ⚠️ LE NOM DU FICHIER PREND TOUTE LA PREMIÈRE LIGNE, comme dans Fichiers
+			  d'iOS. Avec « 198 factures » à côté, « FEC-2026-exercice.txt » se lisait
+			  « FEC-2026-exer… » à 375 px : la seule chose qui distingue deux dépôts.
+			  Ce qui est entré rejoint la date, au bout de la seconde ligne.
+			*/
+			date={[valeurDepot(depot), JOUR.format(new Date(depot.deposeLe))]
+				.filter((morceau) => morceau !== undefined)
+				.join(' · ')}
 			// ⚠️ CE QUI N'A PAS PU ÊTRE LU, SIGNALÉ SUR LA RANGÉE. C'est de l'argent
 			// potentiellement perdu, et personne n'entrerait dans un bilan qui
 			// annonce « 198 factures ». Une lecture muette le mérite aussi.
@@ -352,19 +360,19 @@ export function EcranImport({
 			{enCours === 0 ? null : (
 				<section className="flex flex-col gap-cladd-3xs">
 					<EnTeteDeGroupe libelle="En cours" nombre={enCours} total={null} />
-					<ListeAnalyses>
+					<ListeDeCartes>
 						{envois.map((envoi) => (
 							<LigneEnvoi key={envoi.cle} envoi={envoi} onReessayer={onReessayer} />
 						))}
 						{lectures.map(rangee)}
-					</ListeAnalyses>
+					</ListeDeCartes>
 				</section>
 			)}
 
 			{parMois(lus).map((groupe) => (
 				<section key={groupe.mois} className="flex flex-col gap-cladd-3xs">
 					<EnTeteDeGroupe libelle={groupe.mois} nombre={groupe.depots.length} total={null} />
-					<ListeAnalyses>{groupe.depots.map(rangee)}</ListeAnalyses>
+					<ListeDeCartes>{groupe.depots.map(rangee)}</ListeDeCartes>
 				</section>
 			))}
 		</PageEcran>

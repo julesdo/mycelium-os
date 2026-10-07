@@ -32,6 +32,7 @@ export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qu
 export { ListeDeRangees, RangeeDepliable, RangeeLien } from './liste-rangees';
 export {
 	CarteBouton,
+	CarteFixe,
 	CarteLien,
 	LigneDeReleve,
 	ListeDeCartes,

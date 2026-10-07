@@ -100,6 +100,13 @@ function DeuxLignes({
 	attention = false,
 	retour = false
 }: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention' | 'retour'>) {
+	/*
+	  ⚠️ UNE LIGNE QUI REVIENT À LA LIGNE LAISSE SA DATE MONTER, quand la première
+	  ligne a la place. Restée à sa droite, la date réservait sa colonne sur toute
+	  la hauteur : la raison d'un dépôt en échec s'enroulait sur quatre lignes de
+	  190 px à 375 px. En haut, elle laisse la raison prendre toute la largeur.
+	*/
+	const dateEnHaut = retour && montant === undefined && date !== undefined;
 	return (
 		<span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
 			<span className="flex items-baseline justify-between gap-2">
@@ -107,8 +114,11 @@ function DeuxLignes({
 				{montant === undefined ? null : (
 					<span className="shrink-0 text-cladd-xs font-semibold tabular-nums">{montant}</span>
 				)}
+				{dateEnHaut ? (
+					<span className="shrink-0 text-cladd-2xs text-cladd-fg-soft tabular-nums">{date}</span>
+				) : null}
 			</span>
-			{ligne === undefined && date === undefined ? null : (
+			{ligne === undefined && (date === undefined || dateEnHaut) ? null : (
 				<span
 					className={cn(
 						'flex items-baseline justify-between gap-2 text-cladd-2xs',
@@ -119,7 +129,9 @@ function DeuxLignes({
 						{ligne}
 						{attention ? <span className="sr-only"> — demande une réponse</span> : null}
 					</span>
-					{date === undefined ? null : <span className="shrink-0 tabular-nums">{date}</span>}
+					{date === undefined || dateEnHaut ? null : (
+						<span className="shrink-0 tabular-nums">{date}</span>
+					)}
 				</span>
 			)}
 		</span>
@@ -228,6 +240,27 @@ export function CarteBouton({
 		<Button {...CARTE} onClick={onClick} className={CLASSES_CARTE} contentClassName={CONTENU_CARTE}>
 			<Interieur {...contenu} {...(chevron ? {} : { sansChevron: 'toujours' })} />
 		</Button>
+	);
+}
+
+/**
+ * LA CARTE QUI NE MÈNE NULLE PART — ENCORE. Un fichier en route vers le serveur :
+ * il n'y a rien à ouvrir tant que le serveur ne le connaît pas.
+ *
+ * ⚠️ LA MÊME SILHOUETTE QUE SES VOISINES, sans chevron ni enfoncement. Un fichier
+ * passe de l'envoi à la lecture sous les yeux, dans le même groupe « En cours » :
+ * s'il changeait de forme en route, on croirait à une ligne de plus.
+ */
+export function CarteFixe(contenu: ContenuCarte) {
+	return (
+		<Surface
+			variant="transparent"
+			outline={false}
+			className="verre-carte min-h-17 rounded-cladd-xl"
+			contentClassName={cn('flex h-full', CONTENU_CARTE)}
+		>
+			<Interieur {...contenu} sansChevron="toujours" />
+		</Surface>
 	);
 }
 
