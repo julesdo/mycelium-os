@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
-import { Button } from '@cladd-ui/react';
+import { Button, Surface } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
 import { Avatar } from './avatar';
 import { cn } from './cn';
@@ -77,44 +77,59 @@ interface ContenuCarte {
 	readonly attention?: boolean;
 }
 
-function Interieur({
+/**
+ * LES DEUX LIGNES D'UNE CARTE OU D'UN RELEVÉ — le nom et le montant, puis ce qui
+ * se passe et sa date. Écrites une fois : une copie divergerait au premier
+ * ajustement de largeur, et c'est la largeur qui fait tout ici.
+ */
+function DeuxLignes({
 	titre,
 	ligne,
 	montant,
 	date,
-	famille,
+	attention = false
+}: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention'>) {
+	return (
+		<span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
+			<span className="flex items-baseline justify-between gap-2">
+				<span className="min-w-0 truncate text-cladd-xs font-semibold">{titre}</span>
+				{montant === undefined ? null : (
+					<span className="shrink-0 text-cladd-xs font-semibold tabular-nums">{montant}</span>
+				)}
+			</span>
+			{ligne === undefined && date === undefined ? null : (
+				<span
+					className={cn(
+						'flex items-baseline justify-between gap-2 text-cladd-2xs',
+						attention ? 'text-cladd-fg' : 'text-cladd-fg-soft'
+					)}
+				>
+					<span className="min-w-0 truncate">
+						{ligne}
+						{attention ? <span className="sr-only"> — demande une réponse</span> : null}
+					</span>
+					{date === undefined ? null : <span className="shrink-0 tabular-nums">{date}</span>}
+				</span>
+			)}
+		</span>
+	);
+}
+
+function Interieur({
 	icone,
-	attention = false,
-	sansChevron
+	famille,
+	sansChevron,
+	...lignes
 }: ContenuCarte & { readonly sansChevron?: 'toujours' | 'large' }) {
 	return (
 		<>
 			<span className="relative flex shrink-0">
-				{icone ?? <Avatar nom={titre} surCarte />}
-				{icone === undefined && famille !== undefined ? <PastilleFamille famille={famille} /> : null}
+				{icone ?? <Avatar nom={lignes.titre} surCarte />}
+				{icone === undefined && famille !== undefined ? (
+					<PastilleFamille famille={famille} />
+				) : null}
 			</span>
-			<span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
-				<span className="flex items-baseline justify-between gap-2">
-					<span className="min-w-0 truncate text-cladd-xs font-semibold">{titre}</span>
-					{montant === undefined ? null : (
-						<span className="shrink-0 text-cladd-xs font-semibold tabular-nums">{montant}</span>
-					)}
-				</span>
-				{ligne === undefined && date === undefined ? null : (
-					<span
-						className={cn(
-							'flex items-baseline justify-between gap-2 text-cladd-2xs',
-							attention ? 'text-cladd-fg' : 'text-cladd-fg-soft'
-						)}
-					>
-						<span className="min-w-0 truncate">
-							{ligne}
-							{attention ? <span className="sr-only"> — demande une réponse</span> : null}
-						</span>
-						{date === undefined ? null : <span className="shrink-0 tabular-nums">{date}</span>}
-					</span>
-				)}
-			</span>
+			<DeuxLignes {...lignes} />
 			{sansChevron === 'toujours' ? null : (
 				<ChevronRightIcon
 					aria-hidden
@@ -199,12 +214,7 @@ export function CarteBouton({
 	...contenu
 }: ContenuCarte & { readonly onClick: () => void; readonly chevron?: boolean }) {
 	return (
-		<Button
-			{...CARTE}
-			onClick={onClick}
-			className={CLASSES_CARTE}
-			contentClassName={CONTENU_CARTE}
-		>
+		<Button {...CARTE} onClick={onClick} className={CLASSES_CARTE} contentClassName={CONTENU_CARTE}>
 			<Interieur {...contenu} {...(chevron ? {} : { sansChevron: 'toujours' })} />
 		</Button>
 	);
@@ -219,4 +229,48 @@ export function CarteBouton({
  */
 export function ListeDeCartes({ children }: { readonly children: ReactNode }) {
 	return <div className="flex flex-col gap-2">{children}</div>;
+}
+
+/**
+ * LE RELEVÉ — ce qui se LIT et ne s'ouvre pas : les factures d'un client.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ DEUX NATURES, DEUX FORMES, ET C'EST TOUT L'INTÉRÊT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Ce qui se touche FLOTTE : une carte par élément, qui s'enfonce et porte un
+ * chevron. Ce qui se lit est POSÉ : un seul bloc de verre, un filet entre les
+ * lignes, aucun chevron, aucun enfoncement — un relevé de banque. Les deux
+ * côte à côte sur la fiche d'un client (ses dossiers au-dessus, ses factures
+ * dessous) disent sans un mot lesquels s'ouvrent. Une facture rendue en carte
+ * promettrait un appui qui ne fait rien ; un dossier rendu en relevé cacherait
+ * qu'il mène quelque part — c'était le reproche du 07/10/2026.
+ *
+ * ⚠️ LES MÊMES DEUX LIGNES QUE LES CARTES (`DeuxLignes`), sans avatar : toutes
+ * les factures d'un relevé sont du même client, et un disque d'initiales
+ * répété dix fois ne distinguerait rien. La place rendue va à la ligne courte.
+ */
+export function ListeDeReleve({ children }: { readonly children: ReactNode }) {
+	return (
+		<Surface
+			variant="transparent"
+			outline={false}
+			className="verre-carte rounded-cladd-xl"
+			// Le filet est posé par le conteneur : une ligne ne sait pas si elle est
+			// la première.
+			contentClassName="flex flex-col [&>*+*]:border-t [&>*+*]:border-cladd-outline"
+		>
+			{children}
+		</Surface>
+	);
+}
+
+export function LigneDeReleve(
+	contenu: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention'>
+) {
+	return (
+		<div className="flex min-h-14 items-center px-3.5 py-2.5">
+			<DeuxLignes {...contenu} />
+		</div>
+	);
 }

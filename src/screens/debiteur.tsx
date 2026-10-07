@@ -9,17 +9,20 @@ import {
 	EnTeteDeGroupe,
 	HabitudePaiement,
 	IdentiteDebiteur,
+	CarteLien,
 	Lettrage,
-	LigneAnalyse,
 	LigneBouton,
-	LigneFixe,
+	LigneDeReleve,
 	ListeAnalyses,
+	ListeDeCartes,
 	ListeDeRangees,
+	ListeDeReleve,
 	PageEcran,
 	Pieces,
 	RangeeDepliable,
 	SectionsDepliables,
 	TYPES_PIECE,
+	VignetteRangee,
 	dateCourte,
 	eurosCentimes,
 	pluriel,
@@ -466,19 +469,29 @@ function CorpsDebiteur({
 		setFeuilleOuverte(true);
 	}
 
-	/** Ce que dit une facture sous sa référence, en une ligne. */
-	function precisionDeFacture(facture: FactureAffichee): string | undefined {
-		const faits = [
-			facture.dateEcheance === undefined
-				? null
-				: facture.dateEcheance < aujourdHui
-					? `Échue le ${dateCourte(facture.dateEcheance)}`
-					: `À payer le ${dateCourte(facture.dateEcheance)}`,
-			facture.datePrescription === undefined
-				? null
-				: `agir avant le ${dateCourte(facture.datePrescription)}`
-		].filter((fait): fait is string => fait !== null);
-		return faits.length === 0 ? undefined : faits.join(' · ');
+	/** L'échéance d'une facture, en une ligne : la gauche de sa seconde ligne. */
+	function echeanceDe(facture: FactureAffichee): string | undefined {
+		if (facture.dateEcheance === undefined) return undefined;
+		return facture.dateEcheance < aujourdHui
+			? `Échue le ${dateCourte(facture.dateEcheance)}`
+			: `À payer le ${dateCourte(facture.dateEcheance)}`;
+	}
+
+	/**
+	 * LA DROITE DE SA SECONDE LIGNE : où elle en est, ou jusqu'à quand agir.
+	 *
+	 * ⚠️ « DANS UN DOSSIER » PASSE DEVANT LA DATE LIMITE, ET ELLE NE SE PERD PAS : le
+	 * dossier la suit et l'affiche en tête de sa page. Pour une facture qu'aucun
+	 * dossier ne suit, c'est la date limite qui compte — c'est elle qui éteint le
+	 * droit, et elle a ici sa place à part, qu'aucune troncature ne mange. Collée à
+	 * l'échéance sur une ligne coupée, elle passait sur deux lignes à 375 px et
+	 * faisait de chaque facture un paragraphe.
+	 */
+	function etatDeFacture(facture: FactureAffichee): string | undefined {
+		if (facture.dansUneCreance) return 'Dans un dossier';
+		return facture.datePrescription === undefined
+			? undefined
+			: `Agir avant le ${dateCourte(facture.datePrescription)}`;
 	}
 
 	return (
@@ -527,21 +540,27 @@ function CorpsDebiteur({
 						nombre={creances.length}
 						total={creances.reduce((somme, c) => somme + c.principalRestantDu, 0n)}
 					/>
-					<ListeAnalyses>
+					{/*
+					  ⚠️ DES CARTES, PARCE QU'ILS S'OUVRENT — et une vignette de dossier au
+					  lieu de l'avatar : tous ces dossiers sont du même client, et ses
+					  initiales répétées ne distingueraient rien.
+					*/}
+					<ListeDeCartes>
 						{creances.map((creance) => (
-							<LigneAnalyse
+							<CarteLien
 								key={creance._id}
-								genre="contenu"
 								vers="/app/dossier/$id"
 								parametres={{ id: creance._id }}
+								icone={<VignetteRangee famille="ARGENT" className="size-10" />}
+								// « Dossier de » est dit par l'en-tête et la vignette ; il coupait le titre.
 								titre={`${creance.nombreFactures} facture${pluriel(creance.nombreFactures)}`}
 								// Un brouillon n'est pas encore qualifié : le dire évite d'ouvrir
 								// un dossier en croyant qu'il est prêt.
-								{...(creance.statut === 'BROUILLON' ? { precision: 'Brouillon' } : {})}
-								valeur={eurosCentimes(creance.principalRestantDu)}
+								{...(creance.statut === 'BROUILLON' ? { ligne: 'Brouillon' } : {})}
+								montant={eurosCentimes(creance.principalRestantDu)}
 							/>
 						))}
-					</ListeAnalyses>
+					</ListeDeCartes>
 				</section>
 			)}
 
@@ -559,25 +578,22 @@ function CorpsDebiteur({
 						nombre={aRegler.length}
 						total={aRegler.reduce((somme, facture) => somme + facture.resteDu, 0n)}
 					/>
-					<ListeAnalyses>
-						{aRegler.map((facture) => (
-							<LigneFixe
-								key={facture._id}
-								genre="contenu"
-								titre={facture.reference}
-								{...(precisionDeFacture(facture) === undefined
-									? {}
-									: { precision: precisionDeFacture(facture) })}
-								// Deux lignes : l'échéance ET la date limite pour agir — la
-								// seconde est celle qui éteint le droit, elle ne se coupe pas.
-								lignes={2}
-								valeur={eurosCentimes(facture.resteDu)}
-								// « Dans un dossier » passait DEVANT les dates et les faisait
-								// disparaître à 393 px : c'est un état, il va sous le montant.
-								{...(facture.dansUneCreance ? { sousValeur: 'dans un dossier' } : {})}
-							/>
-						))}
-					</ListeAnalyses>
+					{/* UN RELEVÉ, PARCE QU'ELLES SE LISENT : une facture n'a pas de page. */}
+					<ListeDeReleve>
+						{aRegler.map((facture) => {
+							const echeance = echeanceDe(facture);
+							const etat = etatDeFacture(facture);
+							return (
+								<LigneDeReleve
+									key={facture._id}
+									titre={facture.reference}
+									montant={eurosCentimes(facture.resteDu)}
+									{...(echeance === undefined ? {} : { ligne: echeance })}
+									{...(etat === undefined ? {} : { date: etat })}
+								/>
+							);
+						})}
+					</ListeDeReleve>
 					{/*
 					  ⚠️ DIT UNE FOIS, SOUS LA LISTE, PAS SOUS CHAQUE LIGNE (audit du
 					  29/09/2026, F4). L'honnêteté du produit ne demande pas qu'on répète
@@ -734,19 +750,18 @@ function CorpsDebiteur({
 						titre="Factures réglées"
 						valeur={`${reglees.length}`}
 					>
-						<ListeAnalyses>
+						<ListeDeReleve>
 							{reglees.map((facture) => (
-								<LigneFixe
+								<LigneDeReleve
 									key={facture._id}
-									genre="contenu"
 									titre={facture.reference}
 									{...(facture.dateEcheance === undefined
 										? {}
-										: { precision: `Échue le ${dateCourte(facture.dateEcheance)}` })}
-									valeur={eurosCentimes(facture.montantTTC)}
+										: { ligne: `Échue le ${dateCourte(facture.dateEcheance)}` })}
+									montant={eurosCentimes(facture.montantTTC)}
 								/>
 							))}
-						</ListeAnalyses>
+						</ListeDeReleve>
 					</RangeeDepliable>
 				)}
 			</ListeDeRangees>
@@ -784,9 +799,7 @@ function CorpsDebiteur({
 									key={facture._id}
 									genre="contenu"
 									titre={facture.reference}
-									{...(precisionDeFacture(facture) === undefined
-										? {}
-										: { precision: precisionDeFacture(facture) })}
+									{...(echeanceDe(facture) === undefined ? {} : { precision: echeanceDe(facture) })}
 									valeur={eurosCentimes(facture.resteDu)}
 									icone={
 										<Checkbox
