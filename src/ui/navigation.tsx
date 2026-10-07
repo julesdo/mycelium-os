@@ -74,7 +74,14 @@ export function ListeAnalyses({ children }: { children: ReactNode }) {
 			  liste posée dans une carte (`List className="-mx-4"`) : la rangée
 			  garde le sien, la carte ne le double pas.
 			*/}
-			<List className="p-0">{children}</List>
+			{/*
+			  ⚠️ UN FILET ENTRE DEUX RANGÉES (07/10/2026), comme toute liste groupée
+			  d'iOS. Sans lui, trois cases à cocher de deux lignes chacune se lisaient
+			  comme un seul paragraphe de six lignes : on ne savait plus quelle
+			  explication allait avec quelle case. Le filet est posé par la liste, pas
+			  par la rangée, qui ne sait pas si elle est la première.
+			*/}
+			<List className="p-0 [&>*+*]:border-t [&>*+*]:border-cladd-outline">{children}</List>
 		</Surface>
 	);
 }
@@ -209,7 +216,18 @@ function apparenceRangee(
 		*/
 		footer:
 			precision === undefined ? undefined : (
-				<span className={cn('block', lignes === 2 ? 'line-clamp-2' : 'truncate')}>{precision}</span>
+				// ⚠️ AU CORPS DE LA SOUS-LIGNE, 13 PX, et plus au corps du texte : la fente
+				// `footer` du kit rendait 16 px, la taille du titre au-dessus, et la rangée
+				// se lisait comme deux titres empilés (relevé du 07/10/2026, sur les cases
+				// de l'arrêt et les feuilles de filtre). C'est la taille des cartes.
+				<span
+					className={cn(
+						'block text-cladd-2xs leading-snug',
+						lignes === 2 ? 'line-clamp-2' : 'truncate'
+					)}
+				>
+					{precision}
+				</span>
 			),
 		after: (
 			<span className="flex shrink-0 items-center gap-1">

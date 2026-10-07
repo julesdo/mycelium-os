@@ -1,7 +1,7 @@
-import { SectionTitle } from '@cladd-ui/react';
 import {
 	Avatar,
 	ChiffreHero,
+	EnTeteDeGroupe,
 	LigneCopiable,
 	LigneFixe,
 	LigneLien,
@@ -214,7 +214,9 @@ export function EcranPaiement({ donnees }: { donnees: EtatPaiement }) {
 			  référence ce qu'elle porte de pénalités et de frais.
 			*/}
 			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>De quoi ce montant est fait</SectionTitle>
+				{/* L'en-tête de « Payer par virement », juste au-dessus : deux formes
+				    d'intitulé sur une page de deux sections se lisaient comme deux pages. */}
+				<EnTeteDeGroupe libelle="De quoi ce montant est fait" />
 				<ListeAnalyses>
 					{p.lignes.length === 0 ? (
 						<LigneFixe
