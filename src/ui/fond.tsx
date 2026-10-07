@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { cn } from './cn';
-import { LineWaves } from './line-waves';
+import { MicroSlats } from './micro-slats';
 
 /**
  * LE THÈME RÉELLEMENT PEINT, LU SUR LA RACINE DU DOCUMENT.
@@ -31,62 +31,72 @@ function themePeint(): 'light' | 'dark' {
 	return document.documentElement.classList.contains('light') ? 'light' : 'dark';
 }
 
+/** Un pointeur fin (souris, trackpad) : seul lui remue l'eau. Un doigt fait défiler. */
+const POINTEUR_FIN = '(pointer: fine)';
+
+function souscrireAuPointeur(prevenir: () => void) {
+	const requete = window.matchMedia(POINTEUR_FIN);
+	requete.addEventListener('change', prevenir);
+	return () => requete.removeEventListener('change', prevenir);
+}
+
 /**
- * LE FOND — les ondes, sur lesquelles tout le reste est posé.
+ * LES LAMELLES : DE L'ENCRE SUR LE CRÈME, DU CRÈME SUR L'ENCRE (07/10/2026).
+ *
+ * Choix du fondateur : MicroSlats (React Bits), « recoloré en encre sur crème, en
+ * fondu dégradé d'opacité vers le bas de l'écran, pour avoir l'animation qu'en
+ * haut comme sur Revolut ».
+ *
+ * ⚠️ L'OPACITÉ EST UN PLAFOND CALCULÉ CONTRE LE TEXTE, AU PIRE. En haut de l'écran
+ * — la barre, le montant, sa légende —, les tons posés directement sur le fond
+ * sont `fg`, `fg-soft` et parfois `fg-softer` (mesuré écran par écran dans la
+ * salle d'exposition). Une lamelle à son plafond y laisse chacun à 4,5:1 au moins :
+ *
+ *   · clair — encre #1b253f (oklch 0,27 0,05 266) à 14 % au plus, reflet blanc :
+ *     au pire le papier tombe à #d8d4cd, `fg-softer` 4,53:1 ;
+ *   · sombre — crème #f1eadc à 19 % au plus, reflet crème chaud #fee3c5 : au pire
+ *     l'encre monte à #33363e, `fg-softer` 4,52:1.
+ *
+ * `fg-softest` n'est pas tenu au plafond : il ne se trouve pas dans le haut de
+ * l'écran, et le fondu a éteint les lamelles avant les écrans où il apparaît
+ * (le bilan d'un dépôt, plus bas). NE PAS MONTER UNE OPACITÉ SANS REFAIRE CE
+ * CALCUL.
+ */
+const LAMELLES = {
+	clair: { color: '#1b253f', glintColor: '#ffffff', opacity: 0.14 },
+	sombre: { color: '#f1eadc', glintColor: '#fee3c5', opacity: 0.19 }
+} as const;
+
+/**
+ * LE FOND — le papier, ses lamelles en haut d'écran, et son grain.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ POURQUOI IL COUVRE TOUT L'ÉCRAN, ET PLUS SEULEMENT LE HAUT
+ * ⚠️ IL EST `fixed`, ET IL NE PORTE AUCUNE INFORMATION
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * La première version ne peignait qu'un dégradé derrière le montant, éteint
- * avant la première carte. Comparée à la référence, l'écart ne venait pas des
- * composants : il venait de ce qu'il y a DERRIÈRE eux.
+ * Il ne défile pas : c'est ce qui permet aux cartes de verre de GLISSER DEVANT
+ * la houle. Et les trois couleurs de seuil — vert, ambre, rouge — sont les seules
+ * du produit qui portent un verdict : le fond n'en porte aucune.
  *
- * Un verre n'a d'effet que s'il a quelque chose à réfracter. Posé sur un aplat
- * uniforme, il est indiscernable d'un aplat un peu plus clair. Il faut donc que
- * le fond soit à la fois PRÉSENT PARTOUT et VARIÉ — sans quoi toutes les
- * translucidités de l'interface retombent en aplats.
+ * LES TROIS COUCHES, DANS CET ORDRE :
  *
- * ⚠️ IL EST `fixed`, ET C'EST UN RENVERSEMENT ASSUMÉ. Le dégradé précédent
- * défilait avec le contenu, ce qui était juste tant qu'il appartenait au hero.
- * Un fond d'écran, lui, ne défile pas : c'est ce qui permet aux cartes de
- * GLISSER DEVANT lui et de changer ce qu'on voit au travers pendant qu'on fait
- * défiler. Un fond solidaire du contenu donnerait un verre figé, donc invisible.
- *
- * ⚠️ ET IL NE PORTE AUCUNE INFORMATION, JAMAIS. Il serait tentant de le faire
- * virer au rouge quand une prescription approche. Les trois couleurs de seuil —
- * vert, ambre, rouge — sont les seules du produit qui portent un verdict, et un
- * verdict doit se lire sur un élément qu'on peut désigner du doigt, pas sur un
- * écran entier de lavis. D'où ces bleus : la seule famille que le produit
- * n'emploie pour rien d'autre.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ EN THÈME CLAIR, LES ONDES NE SONT PAS RENDUES DU TOUT
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Et ce n'est pas un réglage de goût : le shader est ADDITIF sur du noir. Ses
- * trois couleurs sont des bleus moyens (#5a7fd4, #7b6ad8, #4a9ad4) multipliés
- * par `brightness`, et le canevas sort `vec4(col, length(col))` — donc là où une
- * ligne passe, le navigateur compose un bleu moyen sur ce qu'il y a derrière.
- * Sur un fond sombre, ça éclaircit et ça fait de la matière ; sur du papier, ça
- * ASSOMBRIT. Le voile n'y change rien : il ne couvre que 0–28 % et 62–100 % de
- * la hauteur, donc toute la bande centrale de l'écran resterait salie.
- *
- * Aucun réglage de verre ne rattrape ça, et le symptôme est trompeur : l'écran
- * a l'air correct en haut et en bas, donc on cherche la faute dans les cartes.
- *
- * ⚠️ NI LES ONDES NI LE VOILE, DONC — le voile n'a plus rien à voiler, et son
- * dégradé vers `--cladd-bg` écraserait le lavis qui le remplace. Ce qui reste en
- * clair est `.fond-releve`, devenu un lavis IMMOBILE dont chaque ton est plus
- * clair que la page (voir `app.css`), et le grain.
- *
- * Et le contexte WebGL n'est pas seulement caché : il n'est pas créé. Un
- * `display: none` aurait laissé la boucle de rendu tourner toute la journée sur
- * un canevas que personne ne regarde.
+ * 1. LE RELÈVEMENT (`.fond-releve`) : le lavis immobile de la page.
+ * 2. LES LAMELLES (`micro-slats.tsx`, porté de React Bits), en haut de l'écran
+ *    seulement (`h-lamelles`) et éteintes vers le bas par un masque
+ *    (`.fondu-lamelles`). Elles remplacent les ondes du sombre et le voile qui les
+ *    rendait lisibles : leur opacité est plafonnée au pire cas, il n'y a plus rien
+ *    à voiler. Le curseur remue l'eau sous une souris ; un doigt fait défiler, et
+ *    ne déclenche rien.
+ * 3. LE GRAIN (`.fond-grain`), en dernier : la matière du papier.
  */
 export function Fond({ className }: { className?: string }) {
 	const theme = useSyncExternalStore(souscrireAuTheme, themePeint, (): 'light' | 'dark' => 'dark');
-	const sombre = theme === 'dark';
+	const pointeurFin = useSyncExternalStore(
+		souscrireAuPointeur,
+		() => window.matchMedia(POINTEUR_FIN).matches,
+		() => false
+	);
+	const lamelles = LAMELLES[theme === 'dark' ? 'sombre' : 'clair'];
 
 	return (
 		<div
@@ -98,101 +108,31 @@ export function Fond({ className }: { className?: string }) {
 			// en silence.
 			className={cn('pointer-events-none fixed inset-0 -z-10 overflow-hidden', className)}
 		>
-			{/*
-			  LES ONDES.
-
-			  ⚠️ LES TROIS COULEURS SONT DES BLEUS, ET C'EST LA SEULE CONTRAINTE
-			  NON NÉGOCIABLE DE CE COMPOSANT. Le shader d'origine cycle sur ses trois
-			  canaux et produit, en blanc, des irisations qui passent par le vert et
-			  le rouge. Sur ce produit-là, ces deux teintes ne veulent dire qu'une
-			  chose — au-dessus du seuil, en dessous — et un fond qui les traverse
-			  en permanence apprend à l'œil à les ignorer. En les tenant toutes les
-			  trois dans la famille bleu-indigo, le cycle ne fait plus varier que la
-			  nuance, jamais le sens.
-
-			  `enableMouseInteraction` reste FAUX. Sur un fond plein écran, la
-			  déformation au curseur donne l'impression que l'interface réagit à
-			  autre chose qu'à ce qu'on vise — et elle coûte un écouteur de souris
-			  global plus un rendu à chaque mouvement, sur un écran qu'on utilise
-			  huit heures par jour.
-
-			  ⚠️ `brightness` EST PASSÉ DE 0,26 À 0,21, ET C'EST UNE MESURE.
-
-			  La crête du shader — le pixel le plus clair qu'il puisse peindre, soit
-			  les trois couleurs additionnées et multipliées par `brightness` —
-			  valait rgb(75, 101, 166). Le texte le plus pâle du produit
-			  (`--cladd-fg-softest`) posé dessus à travers une carte de verre
-			  tombait à 1,45:1 : illisible, et la raison pour laquelle l'application
-			  paraissait « floue » là où les lignes passaient.
-
-			  À 0,21 la crête tombe à rgb(60, 81, 134). C'est la moitié de la
-			  correction ; l'autre moitié est l'opacité des cartes, dans `app.css`.
-			  Agir sur les deux permet de garder du verre au lieu de le rendre
-			  presque opaque : à opacité de carte égale, baisser la crête gagne
-			  autant de contraste qu'ajouter dix points d'alpha.
-			*/}
-			{sombre ? (
-				<LineWaves
-					className="size-full"
-					speed={0.22}
-					innerLineCount={30}
-					outerLineCount={38}
-					warpIntensity={1.05}
-					rotation={-45}
-					edgeFadeWidth={0}
-					colorCycleSpeed={0.55}
-					brightness={0.21}
-					color1="#5a7fd4"
-					color2="#7b6ad8"
-					color3="#4a9ad4"
-					enableMouseInteraction={false}
-				/>
-			) : null}
-
-			{/*
-			  LE VOILE. Il assombrit le haut et le bas, là où vivent les deux barres
-			  de verre et le montant.
-
-			  ⚠️ SANS LUI, LES ONDES PASSENT DERRIÈRE LE CHIFFRE ET LE RENDENT
-			  ILLISIBLE à certaines phases de l'animation — c'est-à-dire par
-			  intermittence, ce qui est le pire cas : le défaut n'apparaît pas sur
-			  une capture d'écran, seulement à l'usage. Le voile garantit un plancher
-			  de contraste quelle que soit la position des lignes.
-
-			  Il tombe avec elles : sans ondes, il n'a plus rien à voiler, et son
-			  dégradé vers la couleur de page écraserait le lavis qui les remplace.
-			*/}
-			{sombre ? (
-				<div className="absolute inset-0 bg-[linear-gradient(to_bottom,var(--cladd-bg)_0%,transparent_28%,transparent_62%,var(--cladd-bg)_100%)] opacity-80" />
-			) : null}
-
-			{/*
-			  LE RELÈVEMENT. Il vient APRÈS le voile, et cet ordre est le réglage.
-
-			  Le voile garantit le contraste en écrasant le haut et le bas vers la
-			  couleur de page ; mesuré, il y tombait à 0,154 de clarté — un
-			  quasi-noir où le verre des barres n'a plus rien à réfracter et où
-			  l'écran paraît éteint. Ce lavis les relève à 0,240.
-
-			  ⚠️ ET IL N'EST PAS RÉGLABLE SEUL. Sur un thème sombre, éclaircir le
-			  fond BAISSE le contraste du texte clair — le contre-sens exact qu'on
-			  fait en croyant améliorer la lisibilité. `--cladd-fg-softest` a dû
-			  être remonté en même temps, de 0,58 à 0,635, faute de quoi tout le
-			  texte secondaire passait sous 4,5:1. Les deux valeurs sont calculées
-			  l'une pour l'autre ; `.fond-releve` porte le détail des mesures.
-
-			  Posé AVANT le voile, il serait écrasé par lui et ne servirait à rien.
-			*/}
 			<div className="fond-releve absolute inset-0" />
-
-			{/*
-			  LE GRAIN. Deux pour cent de bruit, en surimpression.
-
-			  C'est la couche qu'on est tenté de sauter et celle qui fait la
-			  différence entre « matière » et « rectangle calculé ». Elle masque au
-			  passage les bandes de quantification qu'un grand dégradé sombre produit
-			  sur une dalle 8 bits. Voir `.fond-grain`.
-			*/}
+			<MicroSlats
+				className="fondu-lamelles absolute inset-x-0 top-0 h-lamelles"
+				preset="swell"
+				color={lamelles.color}
+				glintColor={lamelles.glintColor}
+				opacity={lamelles.opacity}
+				backgroundColor="transparent"
+				slatWidth={8}
+				slatHeight={22}
+				gap={3}
+				roundness={0.75}
+				// Le plafond d'opacité est bas (14 et 19 %) : on allume donc PRESQUE toutes
+				// les lamelles près de lui, au lieu de laisser la houle les éteindre à moitié.
+				// La houle se lit alors dans les reflets et la longueur des lamelles.
+				contrast={0.45}
+				glint={0.9}
+				perspective={0.45}
+				fog={0}
+				interactive={pointeurFin}
+				cursorStrength={1}
+				cursorSize={48}
+				trail={1.4}
+				intro
+			/>
 			<div className="fond-grain absolute inset-0" />
 		</div>
 	);

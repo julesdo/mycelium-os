@@ -1034,6 +1034,17 @@ select:not(:disabled),
  * `overlay` plutôt qu'une simple opacité : le grain éclaircit les zones claires
  * et assombrit les sombres, ce que fait un vrai grain argentique. En opacité
  * simple il voilerait uniformément l'image d'un gris. */
+
+/* LE FONDU DES LAMELLES (07/10/2026) : la mer est pleine en haut de l'écran et
+   s'éteint vers le bas, comme le champ de couleur de Revolut, avant la file des
+   cartes. Un masque plutôt qu'un dégradé peint par-dessus : il ne cache rien du
+   papier, il retire seulement les lamelles. ⚠️ LE PRÉFIXE `-webkit-` EN PREMIER :
+   dans l'autre ordre, le minifieur ne garde que lui (voir `.barre-publique`). */
+.fondu-lamelles {
+	-webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 28%, transparent 100%);
+	mask-image: linear-gradient(to bottom, #000 0%, #000 28%, transparent 100%);
+}
+
 .fond-grain {
 	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 	opacity: 0.16;

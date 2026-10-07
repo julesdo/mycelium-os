@@ -1085,6 +1085,12 @@ body {
 	 * Un dégradé à hauteur fixe posé sur un bloc plus court se coupe net. */
 	--spacing-aurore: 44dvh;
 
+	/* LA HAUTEUR DES LAMELLES (07/10/2026). La mer de lamelles ne vit qu'en haut de
+	 * l'écran, comme le champ de couleur de Revolut : pleine sous la barre et le
+	 * montant, éteinte au bas de cette hauteur, avant la file des cartes. Le canevas
+	 * n'est pas plus haut : rien n'est calculé sous la zone où il s'éteint. */
+	--spacing-lamelles: 60dvh;
+
 	/* LA HAUTEUR DE LA BARRE DE L'APPLICATION, et pourquoi elle doit être écrite.
 	 *
 	 * La barre haute FLOTTE au-dessus du contenu, elle ne le pousse pas vers le
