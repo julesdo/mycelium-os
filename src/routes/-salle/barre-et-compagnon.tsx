@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SectionTitle } from '@cladd-ui/react';
 import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import {
 	BarreDuBas,
 	BoutonCompagnon,
+	Conversation,
 	IconeLetikette,
 	PastilleDeRappel,
 	PageEcran,
@@ -155,6 +156,8 @@ const ETATS_COMPAGNON: readonly {
 
 function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 	const lecture = lectureDemo(etat, true);
+	/** La question du fil vide : un toucher sur une question prête la remplit. */
+	const [question, setQuestion] = useState('');
 
 	return (
 		<PageEcran
@@ -204,6 +207,24 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 					/>
 				</Scene>
 			))}
+
+			{/*
+			  LE FIL VIDE D'UN DOSSIER, tel que la feuille l'ouvre : sa portée, ses
+			  trois questions prêtes, le champ. Il ne se voit nulle part ailleurs sans
+			  serveur — et c'est le premier écran que le gérant y lit.
+			*/}
+			<SectionTitle>Le fil d’un dossier, vide</SectionTitle>
+			<Conversation
+				conversation={{
+					tours: [],
+					compteur: { niveau: 'OUVERT', mois: '2026-10', avertissement: 40, arret: 80 },
+					refus: null,
+					enCours: false,
+					question,
+					onQuestion: setQuestion,
+					onDemander: () => undefined
+				}}
+			/>
 
 			{/*
 			  ⚠️ CE QUE CETTE PAGE NE PROUVE PAS, ET IL FAUT LE DIRE. La salle empile sa

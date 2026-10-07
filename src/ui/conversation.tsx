@@ -236,6 +236,29 @@ function FilVide() {
 }
 
 /**
+ * TROIS QUESTIONS TOUTES PRÊTES, sous le fil vide.
+ *
+ * ⚠️ POURQUOI (relevé du 07/10/2026). Origin, Starling et Cash App ouvrent leur
+ * assistant sur trois questions à toucher ; le nôtre s'ouvrait sur un
+ * paragraphe et un champ vide, et c'est au gérant d'inventer ce qu'on peut
+ * demander. Elles disent la portée mieux que le paragraphe : ce qu'on peut
+ * demander, c'est ça.
+ *
+ * ⚠️ PRISES DANS CE QUE LE FIL SAIT LIRE, ET RIEN D'AUTRE : le décompte, les
+ * factures, les valeurs du référentiel (voir `FilVide`). Aucune ne porte sur une
+ * conduite à tenir — le fil la refuserait, et une suggestion qui mène à un refus
+ * est un piège.
+ *
+ * ⚠️ UN TOUCHER REMPLIT LE CHAMP, IL N'ENVOIE PAS. La question part au modèle et
+ * compte au plafond du mois : le gérant la relit et appuie sur « Demander ».
+ */
+const QUESTIONS_PRETES = [
+	'D’où vient ce montant ?',
+	'Quelles factures sont dans ce dossier ?',
+	'Quel taux est appliqué aux pénalités ?'
+] as const;
+
+/**
  * L'AVERTISSEMENT DU PLAFOND MOU — on prévient, on ne coupe rien.
  *
  * ⚠️ IL NE PORTE AUCUNE COULEUR RÉSERVÉE. Un ambre sur un compteur de coût
@@ -280,7 +303,27 @@ export function Conversation({ conversation }: { conversation: ConversationAffic
 				<Avertissement compteur={conversation.compteur} />
 			) : null}
 
-			{conversation.tours.length === 0 && conversation.refus === null ? <FilVide /> : null}
+			{conversation.tours.length === 0 && conversation.refus === null ? (
+				<>
+					<FilVide />
+					{arretee ? null : (
+						<div className="flex flex-wrap gap-2">
+							{QUESTIONS_PRETES.map((pret) => (
+								<Chip
+									key={pret}
+									as="button"
+									size="md"
+									rounded
+									className="verre-carte verre-bouton"
+									onClick={() => conversation.onQuestion(pret)}
+								>
+									{pret}
+								</Chip>
+							))}
+						</div>
+					)}
+				</>
+			) : null}
 
 			{conversation.tours.map((tour) => (
 				<Tour key={tour.id} tour={tour} />
