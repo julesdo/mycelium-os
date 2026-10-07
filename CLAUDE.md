@@ -310,7 +310,19 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   garde la date exacte). L'assistant s'ouvre sur trois questions prêtes, qui remplissent le champ
   sans envoyer. L'arrêt d'un décompte se marque d'une `FeuilleDeReussite` (coche à l'encre).
   Écarté exprès : une barre d'étape sur chaque carte de dossier, qui répéterait l'en-tête de son
-  groupe.
+  groupe. **Puis le 08/10** : une carte de dossier se BALAIE (`CarteGlissable` : « Relancer »,
+  composée au délai habituel et posée à valider, et « Rappel », trois dates ; l'appui long et le
+  clic droit ouvrent les mêmes gestes en menu ; chaque geste se confirme par un mot au-dessus de
+  la barre du bas) ; les notifications ont leur BOÎTE DE RÉCEPTION (`/app/notifications`, ouverte
+  par la cloche d'Aujourd'hui, titre déduit du type, liens relus dans toutes leurs graphies) ;
+  le montant DÉFILE jusqu'à sa valeur (React écrit toujours la valeur exacte), les pages GLISSENT
+  (View Transitions, sens lu dans l'historique) et la coche de réussite se TRACE. La poignée des
+  feuilles est écartée : les feuilles du kit sont centrées, une poignée qu'on ne tire pas mentirait.
+- **Le parcours compagnon** (`docs/superpowers/specs/2026-10-08-parcours-compagnon.md`, analyse
+  du 08/10/2026, PROPOSITIONS non tranchées) : l'application est un établi, pas un clerc — environ
+  trente gestes par dossier jusqu'à la mise en demeure. Cible : les dossiers naissent seuls, un
+  plan daté dit la suite, le gérant ne fait plus que signer (un geste par lettre) et répondre à ce
+  qu'aucun document ne dit, au moment où l'étape l'exige.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
