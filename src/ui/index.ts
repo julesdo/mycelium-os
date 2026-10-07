@@ -297,6 +297,7 @@ export {
 } from './suivi-dossier';
 export { CeQuiEstDu } from './ce-qui-est-du';
 export { ActionsRapides, type ActionRapide } from './actions-rapides';
+export { FeuilleDeReussite } from './reussite';
 export { BandeDAnciennete, repartirParAnciennete, type LigneDAnciennete } from './anciennete';
 
 /* ── CE QUE LES DÉCOMPTES LAISSENT DE CÔTÉ (rebranche/abandons) ────────────

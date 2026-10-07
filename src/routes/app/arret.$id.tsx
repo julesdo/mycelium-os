@@ -9,6 +9,7 @@ import type {
 	ReponsesPrevol
 } from '../../lib/verticales/recouvrement/prevol';
 import { EcranArret } from '../../screens/arret';
+import { FeuilleDeReussite, dateCourte } from '../../ui';
 
 export const Route = createFileRoute('/app/arret/$id')({
 	component: PageArret,
@@ -47,6 +48,17 @@ function PageArret() {
 	const [inclusionEnCours, setInclusionEnCours] = useState(false);
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
+	/**
+	 * LE DÉCOMPTE QUI VIENT D'ÊTRE ARRÊTÉ, figé au moment du geste : la feuille de
+	 * réussite le montre tel qu'il a été arrêté, même si la préparation se relit
+	 * derrière elle.
+	 */
+	const [arrete, setArrete] = useState<{
+		readonly decompteId: string;
+		readonly total: bigint | null;
+		readonly debiteur: string;
+		readonly arreteAu: string;
+	} | null>(null);
 
 	const signature =
 		preparation === undefined || preparation === null
@@ -95,9 +107,19 @@ function PageArret() {
 				},
 				abandonsAssumes: signature !== '' && assumePour === signature
 			});
-			// LA PIÈCE EST LA SUITE NATURELLE DU GESTE. On vient de la produire ; la
-			// laisser derrière un retour obligerait à la chercher.
-			await navigate({ to: '/app/decompte/$id', params: { id: decompteId } });
+			/*
+			  LA PIÈCE EST LA SUITE NATURELLE DU GESTE — mais le geste se marque d'abord
+			  (07/10/2026). PayPal, Coinbase, Zopa posent un écran de réussite après un
+			  paiement ; on passait ici droit à la pièce, sans que rien n'ait dit que
+			  c'était fait, ni que cette pièce ne changera plus. La feuille le dit, et
+			  son action principale mène à la pièce.
+			*/
+			setArrete({
+				decompteId,
+				total: preparation.projection?.total ?? null,
+				debiteur: preparation.debiteur,
+				arreteAu: preparation.arreteAu
+			});
 		} catch (e) {
 			setErreur(messageDeRefus(e));
 		} finally {
@@ -105,63 +127,87 @@ function PageArret() {
 		}
 	}
 
+	const versLaPiece = () => {
+		if (arrete === null) return;
+		void navigate({ to: '/app/decompte/$id', params: { id: arrete.decompteId } });
+	};
+
 	return (
-		<EcranArret
-			identifiant={id}
-			donnees={
-				preparation === undefined
-					? { etat: 'attente' }
-					: preparation === null
-						? { etat: 'erreur' }
-						: {
-								etat: 'pret',
-								valeur: {
-									debiteur: preparation.debiteur,
-									arreteAu: preparation.arreteAu,
-									projection:
-										preparation.projection === null
-											? null
-											: {
-													arreteAu: preparation.arreteAu,
-													convention: preparation.convention,
-													principalRestantDu: preparation.projection.principalRestantDu,
-													interets: preparation.projection.interets,
-													indemniteForfaitaire: preparation.projection.indemniteForfaitaire,
-													total: preparation.projection.total,
-													lignes: preparation.projection.lignes,
-													imputation: {
-														ordre: preparation.projection.imputation.ordre,
-														confirme: preparation.projection.imputation.confirme,
-														totalAutreOrdre:
-															preparation.projection.imputation.totalAutreOrdre ?? null
-													}
-												},
-									refusDeCalcul: preparation.refusDeCalcul,
-									abandons: preparation.abandons.map((abandon) => ({
-										nature: abandon.nature,
-										reference: abandon.reference,
-										montantEnJeu: abandon.montantEnJeu,
-										explication: abandon.explication,
-										rattachable: abandon.rattachable
-									})),
-									montantAbandonne: preparation.montantAbandonne,
-									nombreNonChiffrables: preparation.nombreNonChiffrables,
-									controleDesParametres: preparation.controleDesParametres,
-									prescription: preparation.prescription,
-									dernierDecompteId: preparation.dernierDecompte?._id ?? null,
-									reponses,
-									onRepondre: (cle: ClePrevol, reponse: ReponsePrevol) =>
-										setReponses((avant) => ({ ...avant, [cle]: reponse })),
-									onInclure: () => void inclureLesFactures(),
-									inclusionEnCours,
-									abandonsAssumes: signature !== '' && assumePour === signature,
-									onAssumerAbandons: (valeur: boolean) => setAssumePour(valeur ? signature : null),
-									onArreter: () => void arreterLeDecompte(),
-									enCours,
-									erreur
+		<>
+			<FeuilleDeReussite
+				ouverte={arrete !== null}
+				titre="Décompte arrêté"
+				{...(arrete?.total === null || arrete === null ? {} : { montant: arrete.total })}
+				{...(arrete === null ? {} : { pour: arrete.debiteur })}
+				detail={
+					arrete === null
+						? undefined
+						: `Arrêté au ${dateCourte(arrete.arreteAu)}. Cette pièce ne changera plus : la refaire plus tard en produira une nouvelle, datée.`
+				}
+				principale={{ libelle: 'Voir la pièce', onClick: versLaPiece }}
+				secondaire={{
+					libelle: 'Retour au dossier',
+					onClick: () => void navigate({ to: '/app/dossier/$id', params: { id } })
+				}}
+			/>
+			<EcranArret
+				identifiant={id}
+				donnees={
+					preparation === undefined
+						? { etat: 'attente' }
+						: preparation === null
+							? { etat: 'erreur' }
+							: {
+									etat: 'pret',
+									valeur: {
+										debiteur: preparation.debiteur,
+										arreteAu: preparation.arreteAu,
+										projection:
+											preparation.projection === null
+												? null
+												: {
+														arreteAu: preparation.arreteAu,
+														convention: preparation.convention,
+														principalRestantDu: preparation.projection.principalRestantDu,
+														interets: preparation.projection.interets,
+														indemniteForfaitaire: preparation.projection.indemniteForfaitaire,
+														total: preparation.projection.total,
+														lignes: preparation.projection.lignes,
+														imputation: {
+															ordre: preparation.projection.imputation.ordre,
+															confirme: preparation.projection.imputation.confirme,
+															totalAutreOrdre:
+																preparation.projection.imputation.totalAutreOrdre ?? null
+														}
+													},
+										refusDeCalcul: preparation.refusDeCalcul,
+										abandons: preparation.abandons.map((abandon) => ({
+											nature: abandon.nature,
+											reference: abandon.reference,
+											montantEnJeu: abandon.montantEnJeu,
+											explication: abandon.explication,
+											rattachable: abandon.rattachable
+										})),
+										montantAbandonne: preparation.montantAbandonne,
+										nombreNonChiffrables: preparation.nombreNonChiffrables,
+										controleDesParametres: preparation.controleDesParametres,
+										prescription: preparation.prescription,
+										dernierDecompteId: preparation.dernierDecompte?._id ?? null,
+										reponses,
+										onRepondre: (cle: ClePrevol, reponse: ReponsePrevol) =>
+											setReponses((avant) => ({ ...avant, [cle]: reponse })),
+										onInclure: () => void inclureLesFactures(),
+										inclusionEnCours,
+										abandonsAssumes: signature !== '' && assumePour === signature,
+										onAssumerAbandons: (valeur: boolean) =>
+											setAssumePour(valeur ? signature : null),
+										onArreter: () => void arreterLeDecompte(),
+										enCours,
+										erreur
+									}
 								}
-							}
-			}
-		/>
+				}
+			/>
+		</>
 	);
 }

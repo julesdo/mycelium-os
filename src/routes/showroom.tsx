@@ -3,6 +3,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { Toolbar, Segmented, SegmentedButton, SectionTitle, Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon } from 'lucide-react';
 import {
+	FeuilleDeReussite,
 	Page,
 	PageHeader,
 	PageBody,
@@ -892,7 +893,8 @@ const ECRANS = [
 	'muette',
 	'introuvable',
 	'erreur',
-	'coquille'
+	'coquille',
+	'reussite'
 ] as const;
 type Ecran = (typeof ECRANS)[number];
 
@@ -1031,6 +1033,18 @@ function Showroom() {
 						{ecran === 'muette' ? <DemoSurveillanceMuette /> : null}
 						{ecran === 'introuvable' ? <EcranIntrouvable /> : null}
 						{ecran === 'erreur' ? <EcranEnErreur /> : null}
+						{/* La feuille de réussite d'un arrêt, telle que la route la pose. */}
+						{ecran === 'reussite' ? (
+							<FeuilleDeReussite
+								ouverte
+								titre="Décompte arrêté"
+								montant={1_992_897n}
+								pour="Fournitures Durand"
+								detail="Arrêté au 16 août 2026. Cette pièce ne changera plus : la refaire plus tard en produira une nouvelle, datée."
+								principale={{ libelle: 'Voir la pièce', onClick: () => undefined }}
+								secondaire={{ libelle: 'Retour au dossier', onClick: () => undefined }}
+							/>
+						) : null}
 						{ecran === 'coquille' ? (
 							<Shell>
 								<DemoFlux />
