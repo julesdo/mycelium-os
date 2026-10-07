@@ -26,8 +26,14 @@ export function EnTeteDeGroupe({
 }) {
 	return (
 		<div className="flex items-baseline justify-between gap-cladd-3xs px-1">
-			<h2 className="text-cladd-sm font-semibold">{libelle}</h2>
-			<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">
+			{/*
+			  ⚠️ LE COMPTE NE REVIENT JAMAIS À LA LIGNE, LE LIBELLÉ SI. Relevé à
+			  375 px le 07/10/2026 : « 3 · 14 939,50 € » se cassait en deux sous
+			  « Le plus gros encours d'abord », et le total se lisait comme une
+			  ligne de plus.
+			*/}
+			<h2 className="min-w-0 text-cladd-sm font-semibold">{libelle}</h2>
+			<span className="shrink-0 text-cladd-2xs whitespace-nowrap text-cladd-fg-soft tabular-nums">
 				{nombre}
 				{total === null ? null : <> · {eurosCentimes(total)}</>}
 			</span>

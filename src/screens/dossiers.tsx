@@ -14,18 +14,20 @@ import {
 import { CheckIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react';
 import { type EtapeDossier } from '../lib/verticales/recouvrement/etapes-dossier';
 import {
-	Avatar,
 	BoutonPrincipal,
 	BoutonTexte,
+	CarteBouton,
+	CarteLien,
 	EnTeteDeGroupe,
-	LigneAnalyse,
 	LigneBouton,
 	Lien,
 	ListeAnalyses,
+	ListeDeCartes,
 	PageEcran,
 	dateCourte,
 	eurosCentimes,
 	pluriel,
+	type FamilleRangee,
 	type Lecture
 } from '../ui';
 
@@ -139,37 +141,48 @@ const LIBELLE_GROUPE: Readonly<Record<EtapeDossier, string>> = {
 const DELAIS = [8, 15, 30] as const;
 
 /**
- * CE QU'UNE RANGÉE DIT SOUS LE NOM DU CLIENT.
+ * CE QU'UNE CARTE DIT SOUS LE NOM DU CLIENT — ce qui se passe, sa date au bout,
+ * et la pastille de ce qui arrive.
  *
- * ⚠️ TROIS À CINQ MOTS, ET LA DATE D'ABORD. La sous-ligne se coupe à une ligne
- * (`apparenceRangee`), donc ce qui vient en dernier est ce qui disparaît. Le
- * libellé d'une échéance de procédure passait DEVANT sa date — « Remise de la
- * décision à votre client · 1 juin 2026 » — et la troncature mangeait la date,
- * c'est-à-dire la seule chose qu'on venait lire. Le commentaire qui précédait
- * cette fonction disait déjà « la date passe devant » ; le code faisait
- * l'inverse.
+ * ⚠️ LA DATE A SA PROPRE PLACE, AU BOUT DE LA LIGNE. La sous-ligne se coupe à une
+ * ligne, donc ce qui vient en dernier est ce qui disparaît. Collée au libellé —
+ * « Remise de la décision à votre client · 1 juin 2026 » —, la troncature
+ * mangeait la date ou le libellé, selon l'ordre, c'est-à-dire toujours une des
+ * deux choses qu'on venait lire. Séparée, elle ne se coupe jamais (`carte-rangee.tsx`).
+ *
+ * ⚠️ UNE PASTILLE SEULEMENT QUAND IL Y A QUELQUE CHOSE. Une échéance de procédure
+ * porte l'horloge, un courrier à valider porte l'envoi ; un dossier qui attend
+ * tranquillement n'en porte aucune. Une pastille sur chaque carte ne
+ * distinguerait plus rien.
  */
-function precisionDe(dossier: DossierDeLIndex, aujourdHui: string): string {
+function resumeDe(
+	dossier: DossierDeLIndex,
+	aujourdHui: string
+): { readonly ligne: string; readonly date?: string; readonly famille?: FamilleRangee } {
 	if (dossier.prochaineEcheance !== undefined) {
-		return `${dateCourte(dossier.prochaineEcheance.dateLimite)} · ${dossier.prochaineEcheance.libelle}`;
+		return {
+			ligne: dossier.prochaineEcheance.libelle,
+			date: dateCourte(dossier.prochaineEcheance.dateLimite),
+			famille: 'TEMPS'
+		};
 	}
-	if (dossier.courrierAValider) return 'Un courrier à valider';
+	if (dossier.courrierAValider) return { ligne: 'Un courrier à valider', famille: 'ENVOI' };
+	const factures = `${dossier.nombreFactures} facture${pluriel(dossier.nombreFactures)}`;
 	/*
 	  UN DOSSIER RÉGLÉ NE DIT PAS « RÉGLÉ » : son groupe le dit déjà, en en-tête.
 	  Il dit ce qu'il contenait.
 	*/
-	if (dossier.etape === 'REGLE') {
-		return `${dossier.nombreFactures} facture${pluriel(dossier.nombreFactures)}`;
-	}
+	if (dossier.etape === 'REGLE') return { ligne: factures };
 	if (dossier.dateLimiteAgir !== undefined) {
-		return dossier.dateLimiteAgir < aujourdHui
-			? `Dépassé le ${dateCourte(dossier.dateLimiteAgir)}`
-			: `Agir avant le ${dateCourte(dossier.dateLimiteAgir)}`;
+		return {
+			ligne: dossier.dateLimiteAgir < aujourdHui ? 'Date limite passée' : 'Date limite pour agir',
+			date: dateCourte(dossier.dateLimiteAgir)
+		};
 	}
 	if (dossier.dernierCourrierLe !== undefined) {
-		return `Écrit le ${dateCourte(dossier.dernierCourrierLe)}`;
+		return { ligne: 'Dernier courrier', date: dateCourte(dossier.dernierCourrierLe) };
 	}
-	return `${dossier.nombreFactures} facture${pluriel(dossier.nombreFactures)}`;
+	return { ligne: factures };
 }
 
 /** Un dossier à qui l'on peut encore écrire une lettre de relance. */
@@ -390,54 +403,54 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 											: groupe.dossiers.reduce((s, d) => s + d.principalRestantDu, 0n)
 									}
 								/>
-								<ListeAnalyses>
-									{groupe.dossiers.map((dossier) =>
-										enSelection ? (
+								<ListeDeCartes>
+									{groupe.dossiers.map((dossier) => {
+										const resume = resumeDe(dossier, aujourdHui);
+										const contenu = {
+											titre: dossier.debiteur,
+											ligne: resume.ligne,
+											...(resume.date === undefined ? {} : { date: resume.date }),
+											// Un total de dossier réglé vaut zéro : un cadran à zéro.
+											...(dossier.etape === 'REGLE'
+												? {}
+												: { montant: eurosCentimes(dossier.principalRestantDu) })
+										};
+										return enSelection ? (
 											/*
-										  EN SÉLECTION, LA CASE PREND LA PLACE DE L'AVATAR — Mail.
-										  La rangée entière est la cible : une case de 20 px posée
-										  sur une rangée qui est AUSSI un lien ouvre le dossier une
-										  fois sur trois, au pouce.
-										*/
-											<LigneBouton
+											  EN SÉLECTION, LA CASE PREND LA PLACE DE L'AVATAR — Mail.
+											  La carte entière est la cible : une case de 20 px posée
+											  sur une carte qui est AUSSI un lien ouvre le dossier une
+											  fois sur trois, au pouce. Et pas de chevron : cocher ne
+											  mène nulle part.
+											*/
+											<CarteBouton
 												key={dossier._id}
-												genre="contenu"
-												titre={dossier.debiteur}
-												precision={precisionDe(dossier, aujourdHui)}
-												valeur={eurosCentimes(dossier.principalRestantDu)}
+												{...contenu}
+												chevron={false}
 												icone={
-													<Checkbox
-														as="span"
-														size="md"
-														checked={selection.has(dossier._id)}
-														aria-label={`Sélectionner le dossier de ${dossier.debiteur}`}
-													/>
+													<span className="flex size-10 items-center justify-center">
+														<Checkbox
+															as="span"
+															size="md"
+															checked={selection.has(dossier._id)}
+															aria-label={`Sélectionner le dossier de ${dossier.debiteur}`}
+														/>
+													</span>
 												}
 												onClick={() => basculer(dossier._id)}
 											/>
 										) : (
-											<LigneAnalyse
+											<CarteLien
 												key={dossier._id}
-												genre="contenu"
 												vers="/app/dossier/$id"
 												parametres={{ id: dossier._id }}
-												titre={dossier.debiteur}
-												precision={precisionDe(dossier, aujourdHui)}
+												{...contenu}
 												attention={dossier.courrierAValider}
-												{...(dossier.etape === 'REGLE'
-													? {}
-													: { valeur: eurosCentimes(dossier.principalRestantDu) })}
-												/*
-											  ⚠️ UN CLIENT PORTE SON AVATAR, PAS UNE VIGNETTE DE
-											  FAMILLE : toutes ces rangées sont de même nature, une
-											  vignette les peindrait toutes pareil. Les initiales
-											  changent à chaque rangée.
-											*/
-												avatar={<Avatar nom={dossier.debiteur} className="size-10" />}
+												{...(resume.famille === undefined ? {} : { famille: resume.famille })}
 											/>
-										)
-									)}
-								</ListeAnalyses>
+										);
+									})}
+								</ListeDeCartes>
 							</section>
 						))}
 					</div>

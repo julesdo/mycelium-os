@@ -50,7 +50,12 @@ import { describe, it, expect } from 'vitest';
  *
  * Elle est teintée par sa famille, donc son aplat est ce qui la rend
  * reconnaissable : c'est exactement la propriété que la translucidité
- * détruirait. Un seul fichier, un seul composant, et il ne rend aucune carte.
+ * détruirait. Un seul fichier, et il ne rend aucune carte.
+ *
+ * La PASTILLE de famille (07/10/2026) y vit pour la même raison, en plus
+ * petit : vingt pixels posés sur l'avatar d'une carte de liste, en aplat plein
+ * comme les badges de Revolut Business. Elle est le signe ; la carte qui la
+ * porte, elle, reste de verre.
  */
 const EXCEPTIONS: readonly string[] = ['familles.tsx'];
 

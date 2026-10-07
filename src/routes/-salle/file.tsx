@@ -69,6 +69,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 	{
 		genre: 'OBSTACLE',
 		id: 'r-echeance-martin',
+		libelle: 'Échéance dépassée',
+		famille: 'TEMPS',
 		debiteur: 'Ateliers Martin',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_MARTIN } },
 		obstacle:
@@ -85,6 +87,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 	{
 		genre: 'OBSTACLE',
 		id: 'r-prescription-durand',
+		libelle: 'Date limite pour agir',
+		famille: 'TEMPS',
 		debiteur: 'Fournitures Durand',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_DURAND } },
 		obstacle:
@@ -140,6 +144,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 	{
 		genre: 'OBSTACLE',
 		id: 'r-decompte-martin',
+		libelle: 'Décompte prêt',
+		famille: 'ARGENT',
 		debiteur: 'Ateliers Martin',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_MARTIN } },
 		obstacle: 'Décompte arrêtable, dont 1 240,33 € de pénalités de retard courues.',
@@ -202,6 +208,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		*/
 		genre: 'OBSTACLE',
 		id: 'r-degrade-bellin',
+		libelle: 'Procédure collective annoncée',
+		famille: 'MACHINE',
 		debiteur: 'Transports Bellin',
 		destination: { vers: '/app/clients/$id', parametres: { id: BELLIN } },
 		obstacle:
@@ -219,6 +227,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 	{
 		genre: 'OBSTACLE',
 		id: 'r-non-chiffree-bellin',
+		libelle: 'Échéance illisible',
+		famille: 'PAPIERS',
 		debiteur: 'Transports Bellin',
 		destination: { vers: '/app/clients/$id', parametres: { id: BELLIN } },
 		obstacle:
@@ -301,6 +311,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		return {
 			genre: 'OBSTACLE',
 			id: `r-payee-${numero}`,
+			libelle: 'Payée dans les délais',
+			famille: 'PAPIERS',
 			debiteur: 'Fournitures Durand',
 			destination: { vers: '/app/clients/$id', parametres: { id: DURAND } },
 			obstacle: `La facture FA-2026-1${numero} a été payée dans les délais.`,

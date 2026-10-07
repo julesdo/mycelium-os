@@ -2,17 +2,18 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
 import { UploadIcon } from 'lucide-react';
 import {
-	Avatar,
 	BilanImport,
 	BoutonPrincipal,
 	BoutonSecondaire,
+	CarteBouton,
+	CarteLien,
 	CeQuiManque,
 	ChiffreHero,
 	EnTeteDeGroupe,
 	FeuilleDeDecision,
 	LigneAnalyse,
-	LigneBouton,
 	ListeAnalyses,
+	ListeDeCartes,
 	ListeDeRangees,
 	RangeeDepliable,
 	RangeeLien,
@@ -31,6 +32,7 @@ import {
 	type DepotAffiche,
 	type DestinationRangee,
 	type FaitsDuPli,
+	type FamilleRangee,
 	type Lecture,
 	type PartsDues,
 	type PropositionDeRangee,
@@ -213,8 +215,20 @@ interface CommunDeRangee {
  */
 export interface RangeeObstacle extends CommunDeRangee {
 	readonly genre: 'OBSTACLE';
-	/** L'obstacle en UNE phrase au singulier. */
+	/** L'obstacle en UNE phrase au singulier. La feuille la rend en entier. */
 	readonly obstacle: string;
+	/**
+	 * CE QUI SE PASSE, EN CINQ MOTS AU PLUS : la ligne de la carte.
+	 *
+	 * ⚠️ ELLE NE RÉSUME PAS LA PHRASE, ELLE LA NOMME. « Date limite pour agir »,
+	 * « Facture échue ». La carte coupait `obstacle` à deux lignes — « Date
+	 * limite pour agir en justice dans 41… » — et ce qui restait n'était ni un
+	 * titre ni une phrase. Le nom se lit d'un coup d'œil ; la phrase entière, avec
+	 * ses réserves, reste dans la feuille et sur la page du dossier.
+	 */
+	readonly libelle: string;
+	/** La famille de ce qui arrive : la pastille posée sur l'avatar. */
+	readonly famille: FamilleRangee;
 	readonly urgence: UrgenceRangee;
 	readonly montant: bigint | null;
 	readonly dateDuFait?: string;
@@ -635,7 +649,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 										nombre={siennes.length}
 										total={totalDe(siennes)}
 									/>
-									<ListeAnalyses>
+									<ListeDeCartes>
 										{siennes.map((rangee) => (
 											<LigneDeFile
 												key={rangee.id}
@@ -643,7 +657,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 												onTrancher={() => setEnDecision(rangee.id)}
 											/>
 										))}
-									</ListeAnalyses>
+									</ListeDeCartes>
 								</section>
 							))
 						)}
@@ -676,7 +690,10 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 										famille="ARGENT"
 										titre="Un virement reçu"
 										glose="Dites de qui il vient : le logiciel solde les bonnes factures, et personne n’est relancé pour ce qu’il a déjà payé."
-										valeur="à rapprocher"
+										// Pas « à rapprocher » : l'en-tête du groupe le dit déjà, et le
+										// doublon revenait à la ligne à 375 px. La valeur dit ce qu'on
+										// vous demande en ouvrant.
+										valeur="De qui ?"
 									>
 										<Lettrage {...rangee.lettrage} />
 									</RangeeDepliable>
@@ -918,20 +935,17 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * UNE RANGÉE DE LA FILE — la même, quel que soit ce qu'elle porte.
+ * UNE CARTE DE LA FILE — la même, quel que soit ce qu'elle porte.
  *
- * ⚠️ AVATAR, CLIENT, DEUX LIGNES, MONTANT. C'est la rangée des dossiers et des
- * clients, et c'est voulu : un gérant apprend UNE rangée pour tout le produit.
- * L'avatar y avait été refusé quand la phrase d'obstacle s'étalait sur quatre
- * lignes ; coupée à deux, elle lui laisse la place.
+ * ⚠️ LA CARTE DES DOSSIERS ET DES CLIENTS (`carte-rangee.tsx`), et c'est voulu :
+ * un gérant apprend UNE carte pour tout le produit. Le client et son montant
+ * sur la première ligne ; ce qui se passe, nommé en cinq mots, et sa date sur
+ * la seconde.
  *
- * ⚠️ LA DATE EST À DROITE, SOUS LE MONTANT — la colonne droite de Remote. En
- * tête de ligne, « 12 sept. 2026 · » mangeait le tiers de la seule phrase qui
- * dit ce qui se passe. Un quantième s'y vérifie toujours sur un calendrier.
- *
- * ⚠️ CE QUI ATTEND UNE RÉPONSE PORTE UN POINT, ET S'OUVRE EN FEUILLE ; le reste
- * MÈNE à son dossier. Deux comportements, un seul signe pour les distinguer —
- * celui que l'écran des dossiers pose déjà sur un courrier à valider.
+ * ⚠️ CE QUI ATTEND UNE RÉPONSE PORTE LA PASTILLE DES QUESTIONS, ET S'OUVRE EN
+ * FEUILLE ; le reste MÈNE à son dossier. Deux comportements, un seul signe pour
+ * les distinguer. Il était un point de six pixels devant le nom, qui décalait
+ * le nom et qu'on prenait pour une puce de liste.
  */
 function LigneDeFile({
 	rangee,
@@ -940,29 +954,36 @@ function LigneDeFile({
 	readonly rangee: RangeeGroupee;
 	readonly onTrancher: () => void;
 }) {
-	const enonce = rangee.genre === 'LITIGE' ? rangee.question : rangee.obstacle;
 	const date = rangee.genre === 'OBSTACLE' ? rangee.dateDuFait : undefined;
+	const decision = aTrancher(rangee);
 	const contenu = {
-		genre: 'contenu' as const,
 		titre: rangee.debiteur,
-		precision: enonce,
-		lignes: 2 as const,
-		avatar: <Avatar nom={rangee.debiteur} className="size-10" />,
-		...(rangee.montant === null ? {} : { valeur: eurosCentimes(rangee.montant) }),
-		...(date === undefined ? {} : { sousValeur: dateCourte(date) })
+		/*
+		  ⚠️ UNE QUESTION DE LITIGE N'A PAS DE NOM PROPRE : elle est toujours la
+		  même chose pour le gérant, une réponse qu'on lui demande. Sa phrase
+		  entière — « ce client vous a-t-il écrit pour contester… » — est dans la
+		  feuille, où l'on répond.
+		*/
+		ligne: rangee.genre === 'LITIGE' ? 'Une question pour vous' : rangee.libelle,
+		// CE QUI ATTEND UNE RÉPONSE PORTE LA PASTILLE DES QUESTIONS, quelle que soit
+		// sa famille : c'est elle, et non un point devant le nom, qui distingue ce
+		// qui s'ouvre en feuille de ce qui mène au dossier.
+		famille: rangee.genre === 'OBSTACLE' && !decision ? rangee.famille : ('QUESTION' as const),
+		...(rangee.montant === null ? {} : { montant: eurosCentimes(rangee.montant) }),
+		...(date === undefined ? {} : { date: dateCourte(date) })
 	};
 
-	if (aTrancher(rangee)) return <LigneBouton {...contenu} attention onClick={onTrancher} />;
+	if (decision) return <CarteBouton {...contenu} attention onClick={onTrancher} />;
 
 	/*
 	  ⚠️ UNE RANGÉE SANS DESTINATION S'OUVRE QUAND MÊME : sur la feuille, qui rend
-	  la phrase entière. Une rangée coupée à deux lignes qui ne mènerait nulle part
-	  laisserait la fin de sa phrase illisible.
+	  la phrase entière. Une carte qui ne mènerait nulle part laisserait sa phrase
+	  illisible.
 	*/
-	if (rangee.destination === undefined) return <LigneBouton {...contenu} onClick={onTrancher} />;
+	if (rangee.destination === undefined) return <CarteBouton {...contenu} onClick={onTrancher} />;
 
 	return (
-		<LigneAnalyse
+		<CarteLien
 			{...contenu}
 			vers={rangee.destination.vers}
 			parametres={rangee.destination.parametres}
@@ -1108,21 +1129,19 @@ function FileVide({
 			  l'air.
 			*/}
 			<div aria-hidden className="pointer-events-none opacity-40" inert>
-				<ListeAnalyses>
+				<ListeDeCartes>
 					{FANTOMES.map((fantome) => (
-						<LigneBouton
-							key={fantome.obstacle}
-							genre="contenu"
+						<CarteBouton
+							key={fantome.libelle}
 							titre={fantome.titre}
-							precision={fantome.obstacle}
-							sousValeur={dateCourte(fantome.dateDuFait)}
-							lignes={2}
-							avatar={<Avatar nom={fantome.titre} className="size-10" />}
-							valeur={eurosCentimes(fantome.montant)}
+							ligne={fantome.libelle}
+							famille={fantome.famille}
+							date={dateCourte(fantome.dateDuFait)}
+							montant={eurosCentimes(fantome.montant)}
 							onClick={() => undefined}
 						/>
 					))}
-				</ListeAnalyses>
+				</ListeDeCartes>
 			</div>
 		</SectionEcran>
 	);
@@ -1139,26 +1158,29 @@ function FileVide({
  */
 const FANTOMES: readonly {
 	readonly titre: string;
-	readonly obstacle: string;
+	readonly libelle: string;
+	readonly famille: FamilleRangee;
 	readonly montant: bigint;
 	readonly dateDuFait: string;
 }[] = [
 	{
 		titre: 'Un de vos clients',
-		obstacle:
-			'Date limite pour agir en justice dans 41 jours : passé cette date, le tribunal ne peut plus être saisi.',
+		libelle: 'Date limite pour agir',
+		famille: 'TEMPS',
 		montant: 3_120_050n,
 		dateDuFait: '2026-10-27'
 	},
 	{
 		titre: 'Un autre de vos clients',
-		obstacle: 'Calcul prêt, pénalités de retard et frais de recouvrement compris.',
+		libelle: 'Pénalités et frais calculés',
+		famille: 'ARGENT',
 		montant: 1_248_033n,
 		dateDuFait: '2026-11-12'
 	},
 	{
 		titre: 'Un troisième',
-		obstacle: 'Échéance illisible sur 3 factures : le retard ne peut pas être établi.',
+		libelle: 'Échéance illisible',
+		famille: 'PAPIERS',
 		montant: 41_200n,
 		dateDuFait: '2026-12-02'
 	}

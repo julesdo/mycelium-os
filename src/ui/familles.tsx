@@ -188,3 +188,29 @@ export function VignetteIcone({
 		</Surface>
 	);
 }
+
+/**
+ * La pastille de famille, posée sur le bord de l'avatar.
+ *
+ * ⚠️ EN APLAT PLEIN (`solid-fill`), PAS EN TEINTE DOUCE. La teinte douce des
+ * vignettes de 32 px rendait, sur 20 px, un disque presque blanc sur une carte
+ * blanche : relevé au navigateur, un fond à 0,97 de clarté sous un trait de
+ * 12 px. Les pastilles de Revolut Business sont pleines, l'icône en négatif.
+ */
+export function PastilleFamille({ famille }: { readonly famille: FamilleRangee }) {
+	const { teinte, Picto } = FAMILLES[famille];
+	return (
+		<Surface
+			aria-hidden
+			variant="solid-fill"
+			outline={false}
+			color={teinte}
+			// `pastille-carte` l'entoure de la couleur de la carte (app.css) : sans
+			// cet anneau, elle se fond dans l'avatar et se lit comme une tache.
+			className={`cladd-color-${teinte} pastille-carte absolute -right-1 -bottom-1 size-5 rounded-full`}
+			contentClassName="flex size-full items-center justify-center"
+		>
+			<Picto className="size-3 text-cladd-on-primary" />
+		</Surface>
+	);
+}

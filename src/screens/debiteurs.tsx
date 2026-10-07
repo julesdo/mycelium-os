@@ -2,18 +2,19 @@ import { useState, type ReactNode } from 'react';
 import { Button, Chip, Popup, PopupContent, SearchField } from '@cladd-ui/react';
 import { CheckIcon, SlidersHorizontalIcon, UploadIcon, XIcon } from 'lucide-react';
 import {
-	Avatar,
 	BoutonPrincipal,
+	CarteLien,
 	Lien,
 	BoutonTexte,
 	EnTeteDeGroupe,
-	LigneAnalyse,
 	LigneBouton,
+	ListeDeCartes,
 	ListeAnalyses,
 	MaitreDetail,
 	PageEcran,
 	eurosCentimes,
 	pluriel,
+	type FamilleRangee,
 	type Lecture
 } from '../ui';
 import { TITRE_ECRAN } from './titres';
@@ -297,10 +298,7 @@ function precisionDuClient(
 	debiteur: LigneDebiteur,
 	habitude: HabitudeDeLaLigne | undefined
 ): string | undefined {
-	const faits = [
-		debiteur.facturesEchues === 0
-			? null
-			: `${debiteur.facturesEchues} échue${pluriel(debiteur.facturesEchues)}`,
+	const autres = [
 		debiteur.santeFinanciere === 'RADIEE'
 			? 'Radié'
 			: debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE'
@@ -308,7 +306,35 @@ function precisionDuClient(
 				: null,
 		habitude?.rompu === true ? 'Rythme rompu' : null
 	].filter((fait): fait is string => fait !== null);
+	const n = debiteur.facturesEchues;
+	/*
+	  « 4 factures échues » quand c'est tout ce qu'il y a à dire ; « 4 échues »
+	  quand un autre fait la suit. La carte n'a qu'une ligne, et la coupure
+	  tomberait sinon sur le fait le plus grave, toujours placé après.
+	*/
+	const echues =
+		n === 0
+			? null
+			: autres.length === 0
+				? `${n} facture${pluriel(n)} échue${pluriel(n)}`
+				: `${n} échue${pluriel(n)}`;
+	const faits = echues === null ? autres : [echues, ...autres];
 	return faits.length === 0 ? undefined : faits.join(' · ');
+}
+
+/**
+ * LA PASTILLE D'UN CLIENT : ce que le registre ou son rythme a relevé, et rien
+ * d'autre. Un client sans histoire n'en porte pas — une pastille sur chaque
+ * carte ne distinguerait plus rien.
+ */
+function familleDuClient(
+	debiteur: LigneDebiteur,
+	habitude: HabitudeDeLaLigne | undefined
+): FamilleRangee | undefined {
+	if (debiteur.santeFinanciere === 'RADIEE' || debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE') {
+		return 'MACHINE';
+	}
+	return habitude?.rompu === true ? 'TEMPS' : undefined;
 }
 
 /**
@@ -731,33 +757,34 @@ export function EcranDebiteurs({
 				  qui passaient sur deux lignes au téléphone.
 				*/}
 				<EnTeteDeGroupe
-					libelle="Le plus gros encours d’abord"
+					libelle="Plus gros encours d’abord"
 					nombre={retenus.length}
 					total={retenus.reduce((somme, debiteur) => somme + debiteur.encours, 0n)}
 				/>
-				<ListeAnalyses>
+				<ListeDeCartes>
 					{retenus.map((debiteur) => {
 						const habitude = habitudeDe(debiteur);
+						const famille = familleDuClient(debiteur, habitude);
+						const ligne = precisionDuClient(debiteur, habitude);
 						return (
-							<LigneAnalyse
+							<CarteLien
 								key={debiteur._id}
-								genre="contenu"
 								vers="/app/clients/$id"
 								parametres={{ id: debiteur._id }}
-								// La liste sert de maître au-delà de 1024 px : l'anneau dit
+								// La liste sert de maître au-delà de 1024 px : le contour dit
 								// quel client est ouvert à droite.
 								selectionnee={choisi === debiteur._id}
 								titre={debiteur.denomination}
-								precision={precisionDuClient(debiteur, habitude)}
-								valeur={eurosCentimes(debiteur.encours)}
+								montant={eurosCentimes(debiteur.encours)}
+								{...(ligne === undefined ? {} : { ligne })}
 								{...(habitude === undefined
 									? {}
-									: { sousValeur: delaiCourt(habitude.delaiMedianJours) })}
-								avatar={<Avatar nom={debiteur.denomination} className="size-10" />}
+									: { date: delaiCourt(habitude.delaiMedianJours) })}
+								{...(famille === undefined ? {} : { famille })}
 							/>
 						);
 					})}
-				</ListeAnalyses>
+				</ListeDeCartes>
 			</section>
 		);
 

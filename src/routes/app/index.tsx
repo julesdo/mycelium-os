@@ -11,8 +11,10 @@ import {
 	travauxDuVeilleur,
 	type DebiteurRapprochable,
 	type DestinationRangee,
+	type FamilleRangee,
 	type UrgenceRangee
 } from '../../ui';
+import type { TypeEvenement } from '../../lib/verticales/recouvrement/surveillance';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { QUESTIONS_LITIGE } from '../../lib/verticales/recouvrement/litige';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
@@ -62,6 +64,49 @@ export const Route = createFileRoute('/app/')({
 function FileEnErreur() {
 	return <EcranFile donnees={{ etat: 'erreur' }} />;
 }
+
+/**
+ * LE NOM DE CE QUI ARRIVE, EN CINQ MOTS AU PLUS, ET SA FAMILLE — la ligne d'une
+ * carte de la file, et la pastille posée sur l'avatar du client.
+ *
+ * ⚠️ CE N'EST PAS UNE SECONDE VERSION DE L'EXPLICATION. `explication` reste
+ * recopiée mot pour mot dans la rangée, et la feuille la rend entière ; ceci est
+ * son NOM, comme « Facture échue » est le nom d'un fait et non sa description.
+ * La carte coupait l'explication à deux lignes — « Date limite pour agir en
+ * justice dans 41… » —, et ce qui restait n'était ni un nom ni une phrase.
+ *
+ * ⚠️ ET LA DATE N'Y EST PAS : elle a sa place au bout de la ligne, sortie de
+ * `dateDuFait`. « Passée » se calcule sur la même date que l'explication
+ * récite, jamais sur un mot relu dans la phrase — et avec la MÊME comparaison
+ * que `surveillance.ts` : la date limite pour agir est passée LE jour même
+ * (`<=`, « éteinte »), une échéance de procédure le lendemain (`<`).
+ *
+ * ⚠️ `Record<TypeEvenement, …>` : un type ajouté au domaine sans son nom ici
+ * échoue à la compilation, au lieu de s'afficher sous un libellé de repli.
+ */
+const RESUME_PAR_TYPE: Readonly<
+	Record<
+		TypeEvenement,
+		(date: { readonly du: string | undefined; readonly aujourdHui: string }) => {
+			readonly libelle: string;
+			readonly famille: FamilleRangee;
+		}
+	>
+> = {
+	PRESCRIPTION_PROCHE: ({ du, aujourdHui }) => ({
+		libelle: du !== undefined && du <= aujourdHui ? 'Date limite passée' : 'Date limite pour agir',
+		famille: 'TEMPS'
+	}),
+	ECHEANCE_PROCEDURE: ({ du, aujourdHui }) => ({
+		libelle: du !== undefined && du < aujourdHui ? 'Échéance dépassée' : 'Échéance de procédure',
+		famille: 'TEMPS'
+	}),
+	FACTURE_ECHUE: () => ({ libelle: 'Facture échue', famille: 'PAPIERS' }),
+	DEBITEUR_DEGRADE: () => ({ libelle: 'Situation dégradée au registre', famille: 'MACHINE' }),
+	HABITUDE_ROMPUE: () => ({ libelle: 'Paie plus tard que d’habitude', famille: 'TEMPS' }),
+	PROMESSE_ECHUE: () => ({ libelle: 'Promesse de paiement', famille: 'ARGENT' }),
+	RAPPEL_DU_JOUR: () => ({ libelle: 'Votre rappel', famille: 'TEMPS' })
+};
 
 /**
  * CE QUE CHAQUE TYPE DIT DE LUI-MÊME AU PLI, accordé au singulier ET au pluriel.
@@ -471,6 +516,7 @@ function File() {
 			// L'explication du domaine, MOT POUR MOT. La reformuler ici créerait une
 			// seconde version de la vérité, qui dériverait de la première.
 			obstacle: evenement.explication,
+			...RESUME_PAR_TYPE[evenement.type]({ du: evenement.dateDuFait, aujourdHui }),
 			urgence: evenement.urgence as UrgenceRangee,
 			montant: evenement.montant,
 			...(evenement.dateDuFait === undefined ? {} : { dateDuFait: evenement.dateDuFait }),

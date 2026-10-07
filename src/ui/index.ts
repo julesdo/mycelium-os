@@ -30,6 +30,7 @@ export {
 } from './etapes-dossier';
 export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qui-bloque';
 export { ListeDeRangees, RangeeDepliable, RangeeLien } from './liste-rangees';
+export { CarteBouton, CarteLien, ListeDeCartes } from './carte-rangee';
 export { FAMILLES, VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
 export { IconeLetikette, LogoLetikette, MotLetikette } from './logo';
 export { Page, PageHeader, PageBody, PageHero } from './page';

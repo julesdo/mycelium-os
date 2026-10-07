@@ -70,6 +70,7 @@ export function Avatar({
 	/** Un point d'attention sur l'avatar — une invitation, un réglage manquant. */
 	pastille = false,
 	grand = false,
+	surCarte = false,
 	className
 }: {
 	nom: string | undefined | null;
@@ -85,9 +86,24 @@ export function Avatar({
 	 * boîte de 64.
 	 */
 	grand?: boolean;
+	/**
+	 * 40 px, teinté d'encre, sans verre : l'avatar d'un client sur sa carte de
+	 * liste (`carte-rangee.tsx`).
+	 *
+	 * ⚠️ LE VERRE Y ÉTAIT INVISIBLE. Sur une carte blanche, le disque de verre
+	 * clair rendait un cercle crème cerclé d'un filet — un bouton vide, pas un
+	 * visage. L'encre à 8 % donne un disque qu'on voit, et des initiales qui
+	 * portent la couleur de la marque, dans les deux thèmes (`fg` est l'encre
+	 * sur le crème, le crème sur l'encre).
+	 */
+	surCarte?: boolean;
 	className?: string;
 }) {
-	const disque = grand ? 'size-16 text-cladd-sm' : 'size-cladd-md text-cladd-2xs';
+	const disque = grand
+		? 'size-16 text-cladd-sm'
+		: surCarte
+			? 'size-10 text-cladd-2xs'
+			: 'size-cladd-md text-cladd-2xs';
 	return (
 		<span className={cn('relative inline-flex shrink-0', className)}>
 			{/*
@@ -98,7 +114,8 @@ export function Avatar({
 			{image === null ? (
 				<span
 					className={cn(
-						'verre verre-actif flex items-center justify-center rounded-full font-semibold tracking-wide transition-colors',
+						'flex items-center justify-center rounded-full font-semibold tracking-wide transition-colors',
+						surCarte ? 'bg-cladd-fg/8 text-cladd-fg' : 'verre verre-actif',
 						disque
 					)}
 				>

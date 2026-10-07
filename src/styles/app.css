@@ -1092,6 +1092,16 @@ select:not(:disabled),
 	background-color: oklch(0.26 0.028 266 / 0.74);
 }
 
+/* LA PASTILLE DE FAMILLE SUR L'AVATAR D'UNE CARTE (`carte-rangee.tsx`).
+ *
+ * Un anneau de la couleur de la carte la détache de l'avatar : sans lui, la
+ * pastille touche le disque et les deux se lisent comme une seule tache. C'est
+ * l'anneau blanc des badges de Revolut Business, à la teinte de NOTRE carte —
+ * le verre sombre ici, le blanc en thème clair plus bas. */
+.pastille-carte {
+	box-shadow: 0 0 0 2px oklch(0.2 0.026 266);
+}
+
 /* L'ÉCRAN DE LA TABLETTE, ET SA MISE À L'ÉCHELLE.
  *
  * Le problème. L'aperçu montré dans le cadre est l'application elle-même, avec
@@ -1236,6 +1246,10 @@ select:not(:disabled),
 		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.09),
 		0 1px 2px oklch(0.3 0.02 264 / 0.07),
 		0 10px 32px -12px oklch(0.3 0.02 264 / 0.16);
+}
+
+.light .pastille-carte {
+	box-shadow: 0 0 0 2px oklch(1 0 0);
 }
 
 /* La barre basse. Son ombre portée montait à 0,5 d'alpha de noir : sur du

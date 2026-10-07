@@ -98,9 +98,9 @@ remplace.
 **L'écran « Aujourd'hui » a suivi le même soir, sur les files d'approbation de Remote et Wise.**
 Pas de grand titre ni de date en sous-titre (« on s'en fout ») : une barre collante compacte —
 établissement, recherche, dépôt —, la date en petit au-dessus du montant qu'elle date, et une
-seule rangée vers « Ce qui est dû ». La file est faite de rangées TOUTES pareilles (avatar, client,
-deux lignes, montant et date à droite), sans aucun bouton dedans : ce qui attend une réponse porte
-un point et s'ouvre dans une feuille (`FeuilleDeDecision`, qui garde les règles des trois réponses
+seule rangée vers « Ce qui est dû ». La file est faite de cartes TOUTES pareilles (avatar, client et
+montant, puis ce qui se passe et sa date — voir plus bas, `carte-rangee.tsx`), sans aucun bouton
+dedans : ce qui attend une réponse porte la pastille rose des questions et s'ouvre dans une feuille (`FeuilleDeDecision`, qui garde les règles des trois réponses
 et du motif d'écart) ; le reste mène à son dossier. Les groupes ne se replient plus
 (`EnTeteDeGroupe`, partagé avec les dossiers). Retirés : l'avatar (l'onglet « Compte » y mène), le
 bandeau refermable, la rangée « De quoi c'est fait » (la page « Ce qui est dû » porte tout ce
@@ -270,11 +270,20 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     secondaire compact peut faire 36 px, comme chez Claude, Revolut et Shop.
     `src/ui/__tests__/plancher-tactile.test.ts` refuse un `h-auto` sans `min-h-`, et tient le corps et
     la sous-ligne dans une FOURCHETTE — ni la légende, ni au-dessus de ce que rendent les références.
-- **Contre les « milliards de zones cliquables »** (même relevé) : une rangée de CONTENU ne porte
-  pas de chevron (`genre="contenu"`) — le chevron se réserve à la navigation, comme chez Shop ; le
-  filtrage d'une liste est une FEUILLE ouverte par UN bouton rond, pas une rangée d'onglets ; une
-  action d'en-tête est du TEXTE (`BoutonTexte`, le « Sélectionner » de Mail) ; un seul bouton plein
-  par écran ; une liste longue se groupe, et chaque en-tête porte son compte et son total.
+- **Contre les « milliards de zones cliquables »** (même relevé) : le filtrage d'une liste est une
+  FEUILLE ouverte par UN bouton rond, pas une rangée d'onglets ; une action d'en-tête est du TEXTE
+  (`BoutonTexte`, le « Sélectionner » de Mail) ; un seul bouton plein par écran ; une liste longue
+  se groupe, et chaque en-tête porte son compte et son total.
+- **Un client, un dossier, une rangée du matin : UNE CARTE chacun** (`ui/carte-rangee.tsx`,
+  07/10/2026, sur Revolut Business, Zip, Linktree et Wise). Verdict du fondateur sur les rangées
+  serrées dans une carte commune : « horribles, on n'a même pas l'impression qu'elles sont
+  cliquables, le contenu paraît entassé ». Chaque élément flotte dans son verre, à 8 px du suivant ;
+  l'avatar fait 40 px et porte la PASTILLE de sa famille (la teinte dit de quoi, jamais si c'est
+  grave) ; le nom et le montant sur la première ligne, ce qui se passe NOMMÉ en cinq mots et sa date
+  sur la seconde — jamais une phrase coupée, elle reste dans la feuille ; et un chevron, parce
+  qu'une carte qui mène quelque part le dit (la règle « pas de chevron sur une rangée de contenu »,
+  prise chez Shop, a coûté l'impression qu'on pouvait toucher). La file reçoit ce nom de la route
+  (`RESUME_PAR_TYPE`, typé par `TypeEvenement`).
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
