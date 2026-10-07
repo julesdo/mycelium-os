@@ -9,6 +9,7 @@
  * changeait de nom au rechargement pour la même destination.
  */
 export const TITRE_ECRAN = {
+	aujourdhui: 'Aujourd’hui',
 	debiteurs: 'Vos clients',
 	/*
 	  ⚠️ CINQ NOMS SONT PARTIS AVEC LEURS ADRESSES. « Abonnement », « Équipe »,

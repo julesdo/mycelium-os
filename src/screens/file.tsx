@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
-import { SendIcon, UploadIcon } from 'lucide-react';
+import { BellIcon, SendIcon, UploadIcon } from 'lucide-react';
 import {
 	BandeDAnciennete,
 	BilanImport,
@@ -20,7 +20,9 @@ import {
 	dateCourte,
 	dateRelative,
 	Lettrage,
+	Lien,
 	PageEcran,
+	PastilleDeRappel,
 	PliDeLaFile,
 	SectionEcran,
 	SectionsDepliables,
@@ -44,6 +46,7 @@ import {
 	type UrgenceRangee,
 	type Verrou
 } from '../ui';
+import { TITRE_ECRAN } from './titres';
 
 /**
  * « AUJOURD'HUI » — le premier onglet de la barre, et l'écran qu'on ouvre le
@@ -371,6 +374,11 @@ export interface FileAffichee {
 	/** Le travail de fond, en une rangée unique et comptée (§ 5.2). */
 	readonly travaux: readonly TacheVeilleur[];
 	/**
+	 * CE QUE LA BOÎTE DE RÉCEPTION N'A PAS ENCORE MONTRÉ : le compte de la cloche.
+	 * Absent tant qu'on ne sait pas — la cloche reste alors sans chiffre.
+	 */
+	readonly nonLues?: number;
+	/**
 	 * CE QUE LE LOGICIEL A SUPPOSÉ, faute de donnée — et c'est UNE AUTRE CHOSE
 	 * qu'un angle mort.
 	 *
@@ -439,7 +447,7 @@ export interface FileAffichee {
  */
 export function EcranFile({ donnees }: { donnees: Lecture<FileAffichee> }) {
 	if (donnees.etat !== 'pret') {
-		return <PageEcran entete={{ genre: 'onglet', titre: 'Aujourd’hui' }} etat={donnees.etat} />;
+		return <PageEcran entete={{ genre: 'onglet', titre: TITRE_ECRAN.aujourdhui }} etat={donnees.etat} />;
 	}
 
 	return <FilePrete valeur={donnees.valeur} />;
@@ -500,6 +508,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		tete,
 		rangees,
 		travaux,
+		nonLues,
 		hypotheses,
 		anglesMorts,
 		annonce,
@@ -582,7 +591,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 				  avait été retiré avec son affichage, et un dossier ouvert d'ici revenait
 				  alors vers « Vos clients » au lieu d'« Aujourd'hui ».
 				*/
-				titre: 'Aujourd’hui',
+				titre: TITRE_ECRAN.aujourdhui,
 				/*
 				  ⚠️ PAS DE GRAND TITRE, ET PAS DE DATE EN SOUS-TITRE. Verdict du
 				  fondateur, le 30/09/2026 au soir : « enlève-moi le Aujourd'hui et la
@@ -602,6 +611,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						palette={palette}
 						depotOuvert={depotOuvert}
 						onDepot={() => setDepotOuvert(!depotOuvert)}
+						{...(nonLues === undefined ? {} : { nonLues })}
 						/* Le premier jour, la zone de dépôt est déjà en grand au milieu de
 						   l'écran : un second bouton qui ouvre ce qui est déjà ouvert se lit
 						   comme une panne. */
@@ -827,13 +837,15 @@ function RangeeDuHaut({
 	palette,
 	depotOuvert,
 	onDepot,
-	avecDepot
+	avecDepot,
+	nonLues
 }: {
 	selecteur?: ReactNode;
 	palette?: ReactNode;
 	depotOuvert: boolean;
 	onDepot: () => void;
 	avecDepot: boolean;
+	nonLues?: number;
 }) {
 	return (
 		<div className="flex w-full flex-wrap items-center justify-between gap-2">
@@ -841,6 +853,37 @@ function RangeeDuHaut({
 
 			<div className="ml-auto flex shrink-0 items-center gap-2">
 				{palette}
+				{/*
+				  LA CLOCHE — la boîte de réception, comme chez Revolut Business.
+
+				  ⚠️ ELLE PORTE LE COMPTE QUE LA BARRE DU BAS PORTAIT SEULE. La pastille
+				  d'« Aujourd'hui » comptait des notifications qu'on ne trouvait qu'au
+				  fond de la feuille « Surveillance », au bas de l'écran. Le compte mène
+				  maintenant à ce qu'il compte.
+				*/}
+				<Button
+					as={Lien}
+					to="/app/notifications"
+					size="md"
+					square
+					rounded
+					variant="transparent"
+					outline={false}
+					hoverable={false}
+					aria-label={
+						nonLues === undefined || nonLues === 0
+							? 'Notifications'
+							: `Notifications, ${nonLues} non lue${nonLues > 1 ? 's' : ''}`
+					}
+					className="verre-bouton relative shrink-0"
+				>
+					<BellIcon aria-hidden />
+					{nonLues === undefined ? null : (
+						<span aria-hidden className="absolute -top-0.5 -right-0.5">
+							<PastilleDeRappel compte={nonLues} />
+						</span>
+					)}
+				</Button>
 				{avecDepot ? (
 					/*
 					  LE DÉPÔT, EN BOUTON ROND. Il OUVRE la zone, il ne la remplace pas :

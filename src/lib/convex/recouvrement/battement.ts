@@ -236,7 +236,7 @@ export const executerPourOrganisation = internalMutation({
 					const contenu = {
 						title:
 							evenement.type === 'PRESCRIPTION_PROCHE'
-								? 'Prescription proche'
+								? 'Date limite pour agir'
 								: 'Échéance de procédure',
 						// ⚠️ L'EXPLICATION DU DOMAINE, MOT POUR MOT. La reformuler ici
 						// créerait une seconde version de la vérité, qui dériverait de
@@ -258,22 +258,22 @@ export const executerPourOrganisation = internalMutation({
 							// ouvrirait le mauvais dossier — pire qu'une notification
 							// qu'on ne peut pas ouvrir.
 							//
-							// ⚠️ ET LA GRAPHIE A CHANGÉ À LA BASCULE (T15). Le produit
-							// n'a plus qu'un écran de travail : `/app/creance/<id>` et
-							// `/app/debiteurs?d=<id>` sont des adresses que T16 supprime,
-							// et une notification créée aujourd'hui les porterait jusqu'à
-							// devenir morte. `?ligne=<id>` ouvre le volet de preuve sur la
-							// file, et c'est la même chaîne que la rangée elle-même porte :
-							// un genre ne se traduit plus en chemin, c'est la file qui
-							// résout une créance ou un client vers son dossier.
-							//
-							// ⚠️ SI CETTE LIGNE SEULE CHANGEAIT, RIEN NE TOMBERAIT. Le
-							// lecteur est `ui/veilleur.tsx`, qui accepte les DEUX graphies
-							// pendant trente jours pour ne pas tuer les notifications déjà
-							// en base ; et `destinations-existent.test.ts` exclut nommément
-							// la forme `lien:` de son balayage. Les deux côtés se changent
-							// ensemble, ou chaque notification naît morte en silence.
-							...(evenement.cible === undefined ? {} : { link: `/app?ligne=${evenement.cible.id}` })
+							// ⚠️ LE LIEN MÈNE À LA PAGE, PLUS À LA FILE (08/10/2026). Il
+							// écrivait `/app?ligne=<id>`, qui ouvrait jadis le volet de
+							// preuve ; le volet est parti, et la ligne ne menait plus qu'à
+							// « Aujourd'hui ». La cible dit son GENRE : un dossier a sa
+							// page, un client la sienne. Le lecteur est
+							// `screens/notifications.tsx` (`destinationDeNotification`),
+							// qui relit aussi les trois graphies d'avant : une
+							// notification garde le lien de sa nuit.
+							...(evenement.cible === undefined
+								? {}
+								: {
+										link:
+											evenement.cible.genre === 'CREANCE'
+												? `/app/dossier/${evenement.cible.id}`
+												: `/app/clients/${evenement.cible.id}`
+									})
 						});
 					}
 				}

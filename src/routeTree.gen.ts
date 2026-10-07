@@ -28,6 +28,7 @@ import { Route as AppCompteRouteImport } from './routes/app/compte'
 import { Route as AppDebiteursRouteImport } from './routes/app/debiteurs'
 import { Route as AppDossiersRouteImport } from './routes/app/dossiers'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
+import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
 import { Route as AppProceduresRouteImport } from './routes/app/procedures'
 import { Route as AppRevelationRouteImport } from './routes/app/revelation'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
@@ -140,6 +141,11 @@ const AppImportFacturesRoute = AppImportFacturesRouteImport.update({
   path: '/import-factures',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppProceduresRoute = AppProceduresRouteImport.update({
   id: '/procedures',
   path: '/procedures',
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
   '/blog/$adresse': typeof BlogAdresseRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
   '/blog/$adresse': typeof BlogAdresseRoute
@@ -307,6 +315,7 @@ export interface FileRoutesById {
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
   '/blog/$adresse': typeof BlogAdresseRoute
@@ -345,6 +354,7 @@ export interface FileRouteTypes {
     | '/app/debiteurs'
     | '/app/dossiers'
     | '/app/import-factures'
+    | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
     | '/blog/$adresse'
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/app/debiteurs'
     | '/app/dossiers'
     | '/app/import-factures'
+    | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
     | '/blog/$adresse'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/app/debiteurs'
     | '/app/dossiers'
     | '/app/import-factures'
+    | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
     | '/blog/$adresse'
@@ -591,6 +603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppImportFacturesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/procedures': {
       id: '/app/procedures'
       path: '/procedures'
@@ -740,6 +759,7 @@ interface AppRouteRouteChildren {
   AppDebiteursRoute: typeof AppDebiteursRouteWithChildren
   AppDossiersRoute: typeof AppDossiersRoute
   AppImportFacturesRoute: typeof AppImportFacturesRouteWithChildren
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppProceduresRoute: typeof AppProceduresRoute
   AppRevelationRoute: typeof AppRevelationRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -755,6 +775,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDebiteursRoute: AppDebiteursRouteWithChildren,
   AppDossiersRoute: AppDossiersRoute,
   AppImportFacturesRoute: AppImportFacturesRouteWithChildren,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppProceduresRoute: AppProceduresRoute,
   AppRevelationRoute: AppRevelationRoute,
   AppIndexRoute: AppIndexRoute,

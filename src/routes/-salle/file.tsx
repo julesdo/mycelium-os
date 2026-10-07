@@ -371,9 +371,9 @@ const ANGLES_MORTS_DEMO: readonly string[] = [
  * premier ajout, et on regarderait un bloc que personne ne verra.
  *
  * Le jeu couvre les trois choses qui coexistent un matin ordinaire : un dépôt
- * qui TOURNE (la seule ligne qui bouge sous les yeux), le relevé de la nuit, et
- * une trouvaille non lue — rare par construction, parce que seul ce qui fait
- * perdre un droit sans qu'on ait rien fait en produit une.
+ * qui TOURNE (la seule ligne qui bouge sous les yeux) et le relevé de la nuit.
+ * Ce que le veilleur a trouvé vit dans la boîte de réception, dont la cloche
+ * porte le compte (`nonLues`, plus bas).
  */
 const TRAVAUX_DEMO: readonly TacheVeilleur[] = travauxDuVeilleur({
 	battement: {
@@ -386,15 +386,6 @@ const TRAVAUX_DEMO: readonly TacheVeilleur[] = travauxDuVeilleur({
 		termineLe: Date.UTC(2026, 8, 17, 3, 12)
 	},
 	depotsEnCours: [{ id: 'depot-en-machine', filename: 'FEC-2026-T3.txt', etape: 'Extraction' }],
-	trouvailles: [
-		{
-			id: 'trouvaille-durand',
-			titre: 'Date limite dans 41 jours',
-			message: 'Fournitures Durand : passé le 27/10/2026, 31 200,50 € ne se réclament plus.',
-			lien: '/app/dossier/demo-creance-durand'
-		}
-	],
-	onLire: () => {},
 	aujourdHui: AUJOURDHUI_DEMO
 });
 
@@ -454,6 +445,7 @@ const GARNIE: FileAffichee = {
 	},
 	rangees: RANGEES_DEMO,
 	travaux: TRAVAUX_DEMO,
+	nonLues: 2,
 	hypotheses: HYPOTHESES_DEMO,
 	anglesMorts: ANGLES_MORTS_DEMO,
 	/**

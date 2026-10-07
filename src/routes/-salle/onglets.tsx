@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { suivreProcedure } from '../../lib/verticales/recouvrement/apres-procedure';
 import { EcranDossiers, type DossierDeLIndex, type DossiersAffiches } from '../../screens/dossiers';
 import { EcranRevelation, type RevelationDuJour } from '../../screens/revelation';
+import {
+	EcranNotifications,
+	type NotificationAffichee,
+	type NotificationsAffichees
+} from '../../screens/notifications';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import {
 	ABANDONS_AUCUN_DEMO,
@@ -183,6 +188,52 @@ function DossiersDemo({ etat }: { etat: EtatDemo }) {
 }
 
 /**
+ * LA BOÎTE DE RÉCEPTION, avec ce que la nuit y écrit vraiment : une date limite
+ * pour agir (le message du domaine, mot pour mot dans sa forme), une échéance de
+ * procédure, un dépôt lu. Deux non lues, une lue, et une sans lien — celle qui
+ * s'affiche sans mener nulle part.
+ */
+const NOTIFICATIONS_DEMO: readonly NotificationAffichee[] = [
+	{
+		id: 'n-durand',
+		genre: 'PRESCRIPTION_PROCHE',
+		message:
+			'La date limite calculée pour réclamer FA-2021-0087 tombe le 27 oct. 2026 : au-delà, le droit d’agir en justice s’éteint, sauf interruption que ce calcul ne suit pas.',
+		jour: AUJOURD_HUI_DEMO,
+		lue: false,
+		destination: { vers: '/app/dossier/$id', parametres: { id: 'demo-creance-durand' } }
+	},
+	{
+		id: 'n-martin',
+		genre: 'ECHEANCE_PROCHE',
+		message: 'Remise de la décision à votre client : il reste 12 jours.',
+		jour: AUJOURD_HUI_DEMO,
+		lue: false,
+		destination: { vers: '/app/dossier/$id', parametres: { id: 'demo-creance-martin' } }
+	},
+	{
+		id: 'n-import',
+		genre: 'IMPORT_TERMINE',
+		message: '198 factures enregistrées.',
+		jour: '2026-09-08',
+		lue: true
+	}
+];
+
+function NotificationsDemo({ etat }: { etat: EtatDemo }) {
+	const [lues, setLues] = useState<ReadonlySet<string>>(new Set());
+	const valeur: NotificationsAffichees = {
+		aujourdHui: AUJOURD_HUI_DEMO,
+		notifications: NOTIFICATIONS_DEMO.map((n) => ({ ...n, lue: n.lue || lues.has(n.id) })),
+		onLire: (id) => setLues((avant) => new Set([...avant, id])),
+		onToutLire: () => setLues(new Set(NOTIFICATIONS_DEMO.map((n) => n.id)))
+	};
+	return (
+		<EcranNotifications donnees={lectureDemo(etat, valeur, { ...valeur, notifications: [] })} />
+	);
+}
+
+/**
  * La révélation du jour : les factures de `revelation.ts`, calculées par le
  * domaine, et le bilan de ce qui s'en est éteint.
  */
@@ -286,6 +337,12 @@ export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
 		libelle: 'dossiers',
 		vide: true,
 		Demo: DossiersDemo
+	},
+	{
+		route: '/app/notifications',
+		libelle: 'notifications',
+		vide: true,
+		Demo: NotificationsDemo
 	},
 	{
 		route: '/app/revelation',

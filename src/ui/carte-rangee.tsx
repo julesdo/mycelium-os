@@ -85,6 +85,11 @@ interface ContenuCarte {
 	 * deux, et c'est le prix d'un chiffre entier.
 	 */
 	readonly retour?: boolean;
+	/**
+	 * Une notification qu'on n'a pas encore ouverte : un point d'encre au bout de
+	 * la carte, avant le chevron — la place du point « à faire » des rangées.
+	 */
+	readonly nonLue?: boolean;
 }
 
 /**
@@ -142,6 +147,7 @@ function Interieur({
 	icone,
 	famille,
 	sansChevron,
+	nonLue = false,
 	...lignes
 }: ContenuCarte & { readonly sansChevron?: 'toujours' | 'large' }) {
 	return (
@@ -153,6 +159,12 @@ function Interieur({
 				) : null}
 			</span>
 			<DeuxLignes {...lignes} />
+			{nonLue ? (
+				<span className="flex shrink-0 items-center">
+					<span aria-hidden className="size-2 rounded-full bg-cladd-fg" />
+					<span className="sr-only">Non lue</span>
+				</span>
+			) : null}
 			{sansChevron === 'toujours' ? null : (
 				<ChevronRightIcon
 					aria-hidden

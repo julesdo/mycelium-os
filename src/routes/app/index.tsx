@@ -238,8 +238,8 @@ function File() {
 	 * sixième rangée n'apprend plus rien.
 	 */
 	const depots = useQuery(api.recouvrement.depotMutations.listerImports, { limite: 5 });
-	const notifications = useQuery(api.notifications.listMyNotifications, {});
-	const marquerLue = useMutation(api.notifications.markAsRead);
+	/** Le compte de la cloche : ce que la boîte de réception n'a pas encore montré. */
+	const nonLues = useQuery(api.notifications.getUnreadCount, {});
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	/**
 	 * L'ÉTAPE DE CHAQUE DOSSIER, pour savoir à qui l'on peut encore écrire : la
@@ -915,18 +915,6 @@ function File() {
 				filename: depot.filename,
 				...(depot.etape === undefined ? {} : { etape: depot.etape })
 			})),
-		// Les non lues seulement : une notification lue a fait son travail.
-		trouvailles: (notifications ?? [])
-			.filter((notification) => !notification.isRead)
-			.map((notification) => ({
-				id: notification._id as string,
-				titre: notification.title,
-				message: notification.message,
-				...(notification.link === undefined ? {} : { lien: notification.link })
-			})),
-		// Ouvrir vaut acquitter. Sans ça, la pastille du veilleur ne s'éteint
-		// jamais et le compte devient du décor.
-		onLire: (id) => void marquerLue({ notificationId: id as Id<'notifications'> }),
 		aujourdHui
 	});
 
@@ -985,6 +973,9 @@ function File() {
 		},
 		rangees,
 		travaux,
+		// `undefined` est le chargement : la cloche reste sans compte, plutôt que de
+		// dire « rien de nouveau » le temps d'un aller-retour.
+		...(nonLues === undefined ? {} : { nonLues }),
 		/**
 		 * ⚠️ LES DEUX SE RENDENT À PLAT, ET C'EST UNE RÈGLE D'AUDITABILITÉ. Elles
 		 * vivaient derrière une puce de portée qu'il fallait aller chercher :

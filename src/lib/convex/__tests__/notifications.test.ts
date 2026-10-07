@@ -42,7 +42,8 @@ describe('buildNotificationContent', () => {
 			reference: 'FA-2021-0087',
 			date: '2026-11-01'
 		});
-		expect(result.title).toBe('Prescription proche');
+		// Le mot de tous les jours, comme sur les cartes du matin (08/10/2026).
+		expect(result.title).toBe('Date limite pour agir');
 		expect(result.message).toContain('FA-2021-0087');
 		// La conséquence, dite comme une règle et non comme un verdict sur la facture :
 		// la date est CALCULÉE, sans les interruptions (relecture du 25/09/2026).

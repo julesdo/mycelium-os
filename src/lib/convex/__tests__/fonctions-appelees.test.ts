@@ -76,10 +76,9 @@ const APPELEES_AUTREMENT: Readonly<Record<string, string>> = {
 	// qu'on ouvre l'écran ». Il était DOUBLEMENT mort : rien n'en écrivait,
 	// rien n'en lisait. `listMyNotifications`, `getUnreadCount` et `markAsRead`
 	// ont quitté cette liste le 12 septembre 2026 — le battement en écrit
-	// désormais, le veilleur les affiche, la pastille les compte, et les ouvrir
-	// les acquitte.
-	markAllAsRead:
-		'DETTE — aucun geste « tout marquer comme lu ». Ouvrir une trouvaille l’acquitte, et elles sont rares par construction : le geste de masse ne manque pas encore.',
+	// désormais, la pastille les compte, et les ouvrir les acquitte.
+	// `markAllAsRead` l'a quittée le 8 octobre, avec la boîte de réception
+	// (`/app/notifications`) et son « Tout marquer comme lu ».
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// LES CINQ LECTURES D'ÉTABLISSEMENT, ÉCRITES AVANT LEUR LECTEUR (17/09/2026)
