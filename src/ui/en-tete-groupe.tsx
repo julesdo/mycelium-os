@@ -21,8 +21,14 @@ export function EnTeteDeGroupe({
 	total
 }: {
 	readonly libelle: string;
-	readonly nombre: number;
-	readonly total: bigint | null;
+	/**
+	 * Absent, l'en-tête n'est qu'un intitulé : « Ce qui s'est éteint » n'a pas de
+	 * compte qui veuille dire quelque chose. Il garde quand même LA forme des
+	 * autres groupes — un intitulé en capitales de Cladd sur un écran, des titres
+	 * de 18 px sur le voisin, et l'œil croit changer de produit.
+	 */
+	readonly nombre?: number;
+	readonly total?: bigint | null;
 }) {
 	return (
 		<div className="flex items-baseline justify-between gap-cladd-3xs px-1">
@@ -33,10 +39,12 @@ export function EnTeteDeGroupe({
 			  ligne de plus.
 			*/}
 			<h2 className="min-w-0 text-cladd-sm font-semibold">{libelle}</h2>
-			<span className="shrink-0 text-cladd-2xs whitespace-nowrap text-cladd-fg-soft tabular-nums">
-				{nombre}
-				{total === null ? null : <> · {eurosCentimes(total)}</>}
-			</span>
+			{nombre === undefined ? null : (
+				<span className="shrink-0 text-cladd-2xs whitespace-nowrap text-cladd-fg-soft tabular-nums">
+					{nombre}
+					{total === null || total === undefined ? null : <> · {eurosCentimes(total)}</>}
+				</span>
+			)}
 		</div>
 	);
 }

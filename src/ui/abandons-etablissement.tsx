@@ -1,8 +1,9 @@
-import { SectionTitle, Surface } from '@cladd-ui/react';
+import { Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon } from 'lucide-react';
 import type { NatureAbandon } from '../lib/verticales/recouvrement/controle';
+import { CarteLien, ListeDeCartes } from './carte-rangee';
+import { EnTeteDeGroupe } from './en-tete-groupe';
 import { dateCourte, eurosCentimes, pluriel } from './format';
-import { Lien } from './lien';
 import type { Lecture } from './page-ecran';
 
 /**
@@ -150,64 +151,28 @@ const NON_CHIFFRABLE = 'montant non chiffrable';
  * disparaît se reconstitue depuis la rangée et l'en-tête.
  */
 function CarteDuDecompte({ groupe }: { groupe: GroupeParDecompte }) {
+	/*
+	  ⚠️ UNE CARTE DE LISTE, ET LE DÉTAIL SUR LA PAGE DU DÉCOMPTE (07/10/2026).
+	  Chaque décompte empilait ici tous ses points, chacun avec son explication
+	  entière : la carte faisait un écran à elle seule, et elle était un lien sans
+	  chevron — on ne savait ni qu'elle s'ouvrait, ni où s'arrêtait la lecture.
+	  Le décompte arrêté rend déjà chaque point avec sa phrase (`decompte.$id`) :
+	  la carte dit combien, de qui, et depuis quand, et elle y mène.
+	*/
+	const points = groupe.points.length;
 	return (
-		<Surface
-			variant="transparent"
-			outline={false}
-			className="verre-carte rounded-cladd-xl"
-			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-		>
-			<Lien
-				to="/app/decompte/$id"
-				// Le `to` générique du routeur est effacé par le type de CE composant,
-				// qui le borne déjà à une route existante. Même assertion qu'à
-				// `navigation.tsx` et `rangee-file.tsx`, et pour la même raison.
-				params={{ id: groupe.decompteId } as never}
-				className="flex flex-col gap-cladd-3xs rounded-cladd-lg text-left transition-colors"
-			>
-				<span className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-					<span className="text-cladd-sm font-semibold">{groupe.debiteur}</span>
-					<span className="text-cladd-sm font-semibold tabular-nums">
-						{groupe.rienNeSeChiffre ? NON_CHIFFRABLE : eurosCentimes(groupe.montant)}
-					</span>
-				</span>
-				<span className="text-cladd-2xs text-cladd-fg-softer">
-					Décompte arrêté au {dateCourte(groupe.arreteAu)} · {groupe.points.length} point
-					{pluriel(groupe.points.length)} relevé{pluriel(groupe.points.length)}
-				</span>
-
-				{groupe.points.map((point) => (
-					<span
-						key={`${point.nature}-${point.reference}`}
-						className="flex flex-col gap-0.5 border-t border-cladd-outline pt-cladd-3xs"
-					>
-						<span className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-							<span className="text-cladd-xs font-medium">{point.reference}</span>
-							<span className="text-cladd-xs text-cladd-fg-soft tabular-nums">
-								{point.montantEnJeu === null ? NON_CHIFFRABLE : eurosCentimes(point.montantEnJeu)}
-							</span>
-						</span>
-						{point.nature === 'FACTURE_ECARTEE' ? null : (
-							<span className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-								{point.explication}
-							</span>
-						)}
-					</span>
-				))}
-			</Lien>
-		</Surface>
+		<CarteLien
+			vers="/app/decompte/$id"
+			parametres={{ id: groupe.decompteId }}
+			titre={groupe.debiteur}
+			famille="ARGENT"
+			montant={groupe.rienNeSeChiffre ? NON_CHIFFRABLE : eurosCentimes(groupe.montant)}
+			ligne={`Arrêté au ${dateCourte(groupe.arreteAu)}`}
+			date={`${points} point${pluriel(points)}`}
+		/>
 	);
 }
 
-/**
- * LE SUJET DES DEUX PHRASES DE TÊTE, ACCORDÉ.
- *
- * ⚠️ ÉCRIT UNE FOIS, ET PAS BRICOLÉ À COUPS DE `pluriel()` DANS LE JSX. Ces
- * phrases parlent d'un nombre de décomptes ET du nombre de clients derrière :
- * « vos 3 décomptes arrêtés … de leur client » se lit comme si les trois
- * appartenaient au même. Le produit soigne ses chiffres ; une phrase fausse
- * autour d'eux les décrédibilise aussi sûrement qu'un total faux.
- */
 function sujetDesDecomptes(nombre: number): {
 	sujet: string;
 	porte: string;
@@ -249,19 +214,20 @@ function ConstatDuControle({ valeur }: { valeur: AbandonsAffiches }) {
 
 	return (
 		<>
-			<p className="flex items-start gap-1.5 px-1 text-cladd-xs leading-relaxed text-cladd-fg">
-				<AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-				<span>
-					{tete}{' '}
-					<span className="font-semibold tabular-nums">{eurosCentimes(montantAbandonne)}</span> n’y
-					sont pas chiffrés, et ce qu’un acte ne chiffre pas ne pourra plus être réclamé au titre de
-					cette procédure.
-				</span>
+			<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
+				{tete}{' '}
+				<span className="font-semibold text-cladd-fg tabular-nums">
+					{eurosCentimes(montantAbandonne)}
+				</span>{' '}
+				n’y sont pas chiffrés, et ce qu’un acte ne chiffre pas ne pourra plus être réclamé au titre
+				de cette procédure.
 			</p>
 
-			{grouperParDecompte(abandons).map((groupe) => (
-				<CarteDuDecompte key={groupe.decompteId} groupe={groupe} />
-			))}
+			<ListeDeCartes>
+				{grouperParDecompte(abandons).map((groupe) => (
+					<CarteDuDecompte key={groupe.decompteId} groupe={groupe} />
+				))}
+			</ListeDeCartes>
 
 			{nombreNonChiffrables > 0 ? (
 				<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
@@ -302,7 +268,21 @@ export function CeQueLesDecomptesLaissentDeCote({
 
 	return (
 		<section className="flex flex-col gap-cladd-3xs">
-			<SectionTitle>Ce que vos décomptes laissent de côté</SectionTitle>
+			{/*
+			  L'EN-TÊTE DES AUTRES GROUPES, et plus un intitulé en capitales du kit : il
+			  passait sur deux lignes à 375 px, et c'était le seul de l'écran à cette
+			  forme. Le compte et le total disent, comme ailleurs, combien et combien
+			  d'argent.
+			*/}
+			<EnTeteDeGroupe
+				libelle="Hors de vos décomptes"
+				{...(lecture.etat === 'pret' && lecture.valeur.abandons.length > 0
+					? {
+							nombre: lecture.valeur.decomptesIncomplets,
+							total: lecture.valeur.montantAbandonne
+						}
+					: {})}
+			/>
 
 			{lecture.etat === 'attente' ? (
 				<div className="flex flex-col gap-cladd-3xs px-1">

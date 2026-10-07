@@ -1,4 +1,5 @@
-import { SectionTitle, Surface } from '@cladd-ui/react';
+import { Surface } from '@cladd-ui/react';
+import { EnTeteDeGroupe } from './en-tete-groupe';
 import { dateCourte, eurosCentimes } from './format';
 import {
 	BilanPertes,
@@ -92,7 +93,7 @@ function MetreDuJour({
 function RienDeChiffrable({ revelation }: { revelation: RevelationAffichee }) {
 	return (
 		<section className="flex flex-col gap-cladd-3xs">
-			<SectionTitle>Rien n’a pu être chiffré aujourd’hui</SectionTitle>
+			<EnTeteDeGroupe libelle="Rien n’a pu être chiffré aujourd’hui" />
 			<Surface
 				variant="transparent"
 				outline={false}
@@ -130,14 +131,18 @@ export function CeQuiEstDu({
 }) {
 	return (
 		<div className="flex flex-col gap-cladd-xs">
-			<MetreDuJour revelation={revelation} arreteAu={arreteAu} />
-
 			{revelation.nombreFactures === 0 ? (
-				<RienDeChiffrable revelation={revelation} />
+				<>
+					{/* Sans montant héros, la date d'arrêté garde sa ligne à elle. */}
+					<MetreDuJour revelation={revelation} arreteAu={arreteAu} />
+					<RienDeChiffrable revelation={revelation} />
+				</>
 			) : (
 				// Le supplément, le principal, le total, la décomposition facture par
-				// facture et la règle d'amputation : un seul rendu, celui-ci.
-				<ChocRevelation revelation={revelation} />
+				// facture et la règle d'amputation : un seul rendu, celui-ci — qui
+				// porte aussi la date d'arrêté et ce qui a couru depuis hier, sous le
+				// montant héros.
+				<ChocRevelation revelation={revelation} arreteAu={arreteAu} />
 			)}
 
 			{/*
@@ -148,7 +153,7 @@ export function CeQuiEstDu({
 			  éviter.
 			*/}
 			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>Ce qui s’est éteint</SectionTitle>
+				<EnTeteDeGroupe libelle="Ce qui s’est éteint" />
 				<BilanPertes bilan={bilan} />
 			</section>
 		</div>

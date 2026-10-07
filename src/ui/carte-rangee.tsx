@@ -75,6 +75,16 @@ interface ContenuCarte {
 	 * et le lecteur d'écran l'entend. Aucune couleur de seuil.
 	 */
 	readonly attention?: boolean;
+	/**
+	 * La ligne courte REVIENT À LA LIGNE au lieu de se couper.
+	 *
+	 * ⚠️ POUR UNE LIGNE QUI PORTE DES MONTANTS, ET SEULEMENT POUR ELLE. Un nom
+	 * coupé se devine ; « frais 40,00 … » ne se devine pas, et un montant tronqué
+	 * est un chiffre faux. La décomposition facture par facture de « Ce qui est
+	 * dû » tient sur une ligne presque toujours — la plus grosse facture passe sur
+	 * deux, et c'est le prix d'un chiffre entier.
+	 */
+	readonly retour?: boolean;
 }
 
 /**
@@ -87,8 +97,9 @@ function DeuxLignes({
 	ligne,
 	montant,
 	date,
-	attention = false
-}: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention'>) {
+	attention = false,
+	retour = false
+}: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention' | 'retour'>) {
 	return (
 		<span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
 			<span className="flex items-baseline justify-between gap-2">
@@ -104,7 +115,7 @@ function DeuxLignes({
 						attention ? 'text-cladd-fg' : 'text-cladd-fg-soft'
 					)}
 				>
-					<span className="min-w-0 truncate">
+					<span className={retour ? 'min-w-0' : 'min-w-0 truncate'}>
 						{ligne}
 						{attention ? <span className="sr-only"> — demande une réponse</span> : null}
 					</span>
@@ -266,7 +277,7 @@ export function ListeDeReleve({ children }: { readonly children: ReactNode }) {
 }
 
 export function LigneDeReleve(
-	contenu: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention'>
+	contenu: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention' | 'retour'>
 ) {
 	return (
 		<div className="flex min-h-14 items-center px-3.5 py-2.5">

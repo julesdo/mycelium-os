@@ -1,5 +1,8 @@
-import { Surface, SurfaceCut } from '@cladd-ui/react';
+import { Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon } from 'lucide-react';
+import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
+import { ChiffreHero } from './chiffre';
+import { EnTeteDeGroupe } from './en-tete-groupe';
 import { dateCourte, eurosCentimes } from './format';
 
 /**
@@ -110,10 +113,17 @@ export function FacturesNonChiffrees({
 					{lignes.length} facture{pluriel(lignes.length)} n’
 					{lignes.length > 1 ? 'entrent' : 'entre'} pas dans ce total
 				</p>
+				{/*
+				  LA RÉFÉRENCE AU-DESSUS DE SA RAISON, AU CORPS DE LA SOUS-LIGNE. En corps
+				  de texte et à la suite (« FA-2020-0930 — Facture FA-2020-0930 : … »),
+				  la raison faisait un paragraphe de sept lignes à 375 px, le plus lourd
+				  de l'écran. Elle reste entière : c'est elle qui dit pourquoi.
+				*/}
 				{lignes.map((ligne) => (
-					<p key={ligne.reference} className="text-cladd-xs text-cladd-fg-soft">
-						<span className="font-semibold">{ligne.reference}</span> — {ligne.raison}
-					</p>
+					<div key={ligne.reference} className="flex flex-col gap-0.5">
+						<p className="text-cladd-2xs font-semibold">{ligne.reference}</p>
+						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{ligne.raison}</p>
+					</div>
 				))}
 			</div>
 		</Surface>
@@ -125,65 +135,107 @@ export function FacturesNonChiffrees({
  *
  * L'appelant décide de l'afficher : sur un établissement sans facture échue,
  * la règle d'écran n° 4 veut qu'on montre le chemin, pas un cadran à zéro.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ REFAITE LE 07/10/2026 SUR LE « BALANCE DETAILS » D'APPLE WALLET
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Elle empilait trois gros totaux en sans-serif dans un creux beige, chacun
+ * sous un intitulé de deux lignes (« Reste à payer sur vos factures, que vous
+ * connaissez déjà »), puis une carte de quatre lignes par facture : 3 036 px et
+ * 394 mots à 375 px, pour trois cibles. Désormais :
+ *
+ *   1. LE SUPPLÉMENT EN MONTANT HÉROS, centré, comme partout dans le produit —
+ *      c'est le chiffre que la rangée « Jamais réclamé » de l'accueil promet.
+ *   2. DEUX CARTES DE LIGNES, intitulé à gauche, montant à droite : ce qui le
+ *      compose, puis le passage au total réclamable.
+ *   3. LA DÉCOMPOSITION EN RELEVÉ, facture par facture, et toujours SANS CLIC :
+ *      chaque ligne porte son principal, ses pénalités et ses frais, et le
+ *      montant de tête est leur somme — elle se refait à la main.
+ *
+ * ⚠️ « 40 € PAR FACTURE » N'EST PLUS ÉCRIT À L'ÉCRAN. C'était une valeur
+ * juridique tapée dans un composant, ce que le projet interdit ; le forfait se
+ * nomme, son montant vient du calcul, ligne par ligne.
  */
-export function ChocRevelation({ revelation }: { revelation: RevelationAffichee }) {
+export function ChocRevelation({
+	revelation,
+	arreteAu
+}: {
+	revelation: RevelationAffichee;
+	arreteAu: string;
+}) {
+	const couru = revelation.interetsCourusDepuisHier;
+
 	return (
 		<div className="flex flex-col gap-cladd-xs">
-			<SurfaceCut contentClassName="flex flex-col gap-cladd-2xs p-cladd-xs">
-				<div className="flex flex-col gap-1">
-					<span className="text-cladd-sm text-cladd-fg-soft">
-						Dus de plein droit sur vos {revelation.nombreFactures} facture
-						{pluriel(revelation.nombreFactures)} en retard, et jamais calculés
+			<ChiffreHero
+				centimes={revelation.supplement}
+				surTitre="Jamais réclamé"
+				legende={
+					<span className="flex flex-col items-center gap-0.5">
+						<span>
+							Dus de plein droit sur {revelation.nombreFactures} facture
+							{pluriel(revelation.nombreFactures)} en retard
+						</span>
+						<span className="text-cladd-2xs text-cladd-fg-softer">
+							Arrêté au {dateCourte(arreteAu)}
+							{couru > 0n ? (
+								<>
+									{' · '}
+									<span className="font-semibold text-cladd-fg tabular-nums">
+										+{eurosCentimes(couru)}
+									</span>{' '}
+									depuis hier
+								</>
+							) : null}
+						</span>
 					</span>
-					<span className="text-letikette-taux leading-none font-bold tabular-nums">
-						{eurosCentimes(revelation.supplement)}
-					</span>
-					<span className="text-cladd-2xs text-cladd-fg-softer">
-						Pénalités de retard {eurosCentimes(revelation.interets)} · frais de recouvrement{' '}
-						{eurosCentimes(revelation.indemnites)}, soit 40 € par facture
-					</span>
-				</div>
+				}
+			/>
 
-				{/* Le solde en second, et nommé pour ce qu'il est : ce que la comptabilité
-				    affiche déjà. Ce qui s'y ajoute est le chiffre de la révélation. */}
-				<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs border-t border-cladd-outline pt-cladd-2xs">
-					<span className="text-cladd-sm text-cladd-fg-soft">
-						Reste à payer sur vos factures, que vous connaissez déjà
-					</span>
-					<span className="text-cladd-md font-semibold tabular-nums">
-						{eurosCentimes(revelation.principal)}
-					</span>
-				</div>
-				<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-					<span className="text-cladd-sm font-semibold">Total réclamable à ce jour</span>
-					<span className="text-letikette-chiffre font-bold tabular-nums">
-						{eurosCentimes(revelation.total)}
-					</span>
-				</div>
-			</SurfaceCut>
+			<ListeDeReleve>
+				<LigneDeReleve titre="Pénalités de retard" montant={eurosCentimes(revelation.interets)} />
+				<LigneDeReleve
+					titre="Frais de recouvrement"
+					montant={eurosCentimes(revelation.indemnites)}
+					ligne="Un forfait par facture en retard"
+				/>
+			</ListeDeReleve>
+
+			{/* Le solde en second, et nommé pour ce qu'il est : ce que la comptabilité
+			    affiche déjà. Ce qui s'y ajoute est le chiffre de tête. */}
+			<ListeDeReleve>
+				<LigneDeReleve
+					titre="Reste à payer"
+					montant={eurosCentimes(revelation.principal)}
+					ligne="Ce que votre comptabilité affiche déjà"
+				/>
+				<LigneDeReleve
+					titre="Total réclamable à ce jour"
+					montant={eurosCentimes(revelation.total)}
+				/>
+			</ListeDeReleve>
 
 			{/* LA DÉCOMPOSITION, À L'ÉCRAN ET SANS CLIC. */}
-			<div className="flex flex-col gap-cladd-3xs">
-				{revelation.lignes.map((ligne) => (
-					<Surface
-						variant="transparent"
-						outline={false}
-						className="verre-carte rounded-cladd-xl"
-						key={ligne.reference}
-						contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs sm:flex-row sm:items-center sm:justify-between"
-					>
-						<span className="text-cladd-xs font-semibold">{ligne.reference}</span>
-						<div className="flex flex-wrap gap-cladd-2xs text-cladd-xs text-cladd-fg-soft tabular-nums">
-							<span>principal {eurosCentimes(ligne.principalRestantDu)}</span>
-							<span>pénalités {eurosCentimes(ligne.interets)}</span>
-							<span>frais {eurosCentimes(ligne.indemniteForfaitaire)}</span>
-						</div>
-						<span className="shrink-0 text-cladd-sm font-semibold tabular-nums sm:text-right">
-							{eurosCentimes(ligne.supplement)}
-						</span>
-					</Surface>
-				))}
-			</div>
+			<section className="flex flex-col gap-cladd-3xs">
+				<EnTeteDeGroupe
+					libelle="Facture par facture"
+					nombre={revelation.lignes.length}
+					total={revelation.supplement}
+				/>
+				<ListeDeReleve>
+					{revelation.lignes.map((ligne) => (
+						<LigneDeReleve
+							key={ligne.reference}
+							titre={ligne.reference}
+							montant={eurosCentimes(ligne.supplement)}
+							ligne={`Pénalités ${eurosCentimes(ligne.interets)} · frais ${eurosCentimes(ligne.indemniteForfaitaire)}`}
+							date={`sur ${eurosCentimes(ligne.principalRestantDu)}`}
+							retour
+						/>
+					))}
+				</ListeDeReleve>
+			</section>
 
 			<FacturesNonChiffrees lignes={revelation.nonChiffrees} />
 		</div>
@@ -228,47 +280,23 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
-			<div className="flex flex-col gap-cladd-3xs sm:flex-row">
-				<Surface
-					variant="transparent"
-					outline={false}
-					className="verre-carte rounded-cladd-xl"
-					contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs"
-				>
-					<span className="text-cladd-sm text-cladd-fg-soft">
-						Éteint avant votre arrivée, en silence
-					</span>
-					<span className="text-letikette-chiffre font-bold tabular-nums">
-						{eurosCentimes(bilan.eteintesAvant)}
-					</span>
-					<span className="text-cladd-2xs text-cladd-fg-softer">
-						{/*
-						  ⚠️ UN SEUL `pluriel()`, SUR « facture ». Il y en avait un SECOND à la
-						  fin, resté du temps où la phrase disait « factures prescrites » : le
-						  mot du droit portait la marque du pluriel, la tournure de tout le
-						  monde ne la porte plus. Il écrivait « hors délai pour agir en
-						  justices », en production, sur l'écran qui ouvre le produit.
-						*/}
-						{bilan.nombreEteintesAvant} facture{pluriel(bilan.nombreEteintesAvant)} hors délai pour
-						agir en justice
-					</span>
-				</Surface>
-
-				<Surface
-					variant="transparent"
-					outline={false}
-					className="verre-carte rounded-cladd-xl"
-					contentClassName="flex flex-1 flex-col gap-0.5 p-cladd-2xs"
-				>
-					<span className="text-cladd-sm text-cladd-fg-soft">Éteint depuis, sous surveillance</span>
-					<span className="text-letikette-chiffre font-bold tabular-nums">
-						{eurosCentimes(bilan.eteintesDepuis)}
-					</span>
-					<span className="text-cladd-2xs text-cladd-fg-softer">
-						{bilan.joursSousSurveillance} jour{pluriel(bilan.joursSousSurveillance)} de surveillance
-					</span>
-				</Surface>
-			</div>
+			{/*
+			  UN RELEVÉ DE DEUX LIGNES, et plus deux cartes à gros chiffre côte à côte :
+			  deux montants qu'on compare se lisent l'un SOUS l'autre, alignés sur la
+			  même colonne. Le second s'affiche même à zéro — voir plus haut.
+			*/}
+			<ListeDeReleve>
+				<LigneDeReleve
+					titre="Éteint avant votre arrivée"
+					montant={eurosCentimes(bilan.eteintesAvant)}
+					ligne={`${bilan.nombreEteintesAvant} facture${pluriel(bilan.nombreEteintesAvant)} hors délai pour agir en justice`}
+				/>
+				<LigneDeReleve
+					titre="Éteint depuis, sous surveillance"
+					montant={eurosCentimes(bilan.eteintesDepuis)}
+					ligne={`${bilan.joursSousSurveillance} jour${pluriel(bilan.joursSousSurveillance)} de surveillance`}
+				/>
+			</ListeDeReleve>
 
 			{bilan.nonSurveillees.length > 0 ? (
 				<Surface
@@ -283,7 +311,7 @@ export function BilanPertes({ bilan }: { bilan: BilanPertesAffiche }) {
 							Ces chiffres ne couvrent pas {bilan.nonSurveillees.length} facture
 							{pluriel(bilan.nonSurveillees.length)}
 						</p>
-						<p className="text-cladd-xs text-cladd-fg-soft">
+						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
 							{bilan.nonSurveillees.join(', ')} —{' '}
 							{bilan.nonSurveillees.length > 1
 								? 'leurs dates limites pour agir en justice n’ont pas pu être établies, elles ne sont donc comptées ni d’un côté ni de l’autre.'
