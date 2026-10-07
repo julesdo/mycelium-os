@@ -955,6 +955,7 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 			<ChiffreHero
 				className="py-cladd-3xs"
 				centimes={tete.total}
+				defile
 				// La date du jour vit ICI, et plus en sous-titre d'écran : elle date le
 				// chiffre, qui monte chaque jour avec les pénalités.
 				surTitre={`Ce qu’on vous doit au ${dateCourte(aujourdHui)}`}

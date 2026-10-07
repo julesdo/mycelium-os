@@ -139,7 +139,7 @@ export function BarreDuBas({
 		  posée, centrée, étiquetée à côté de l'icône. C'est le même objet, pas un
 		  second composant : un second se serait mis à diverger au premier ajustement.
 		*/
-		<div className="mb-safe fixed inset-x-0 bottom-0 z-40 flex justify-center px-cladd-3xs pb-cladd-3xs">
+		<div className="barre-fixe mb-safe fixed inset-x-0 bottom-0 z-40 flex justify-center px-cladd-3xs pb-cladd-3xs">
 			{/*
 			  LA RANGÉE : la pilule des onglets, puis l'accessoire à sa droite.
 			  `items-stretch` donne à l'accessoire la hauteur exacte de la pilule.

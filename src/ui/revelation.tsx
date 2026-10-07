@@ -170,6 +170,7 @@ export function ChocRevelation({
 		<div className="flex flex-col gap-cladd-xs">
 			<ChiffreHero
 				centimes={revelation.supplement}
+				defile
 				surTitre="Jamais réclamé"
 				legende={
 					<span className="flex flex-col items-center gap-0.5">

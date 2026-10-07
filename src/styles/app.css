@@ -2152,3 +2152,110 @@ select:not(:disabled),
 		right: 1rem;
 	}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LA COCHE QUI SE TRACE — la feuille de réussite (`ui/reussite.tsx`).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le disque monte avec un léger rebond, puis le trait se dessine de gauche à
+ * droite : c'est ce qui dit « c'est fait » avant qu'on ait lu un mot. Le trait
+ * attend que la feuille ait fini d'entrer (le kit l'anime une demi-seconde). */
+.reussite-disque {
+	animation: reussite-disque 420ms cubic-bezier(0.2, 1.4, 0.4, 1) 120ms both;
+}
+.coche-tracee {
+	stroke-dasharray: 1;
+	stroke-dashoffset: 1;
+	animation: coche-tracee 380ms cubic-bezier(0.65, 0, 0.35, 1) 380ms forwards;
+}
+@keyframes reussite-disque {
+	from {
+		transform: scale(0.6);
+		opacity: 0;
+	}
+}
+@keyframes coche-tracee {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.reussite-disque {
+		animation: none;
+	}
+	.coche-tracee {
+		animation: none;
+		stroke-dashoffset: 0;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LES PAGES QUI GLISSENT — une page poussée entre par la droite, le retour la
+ * renvoie, un onglet se fond dans l'autre.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le routeur nomme le sens de chaque navigation (`router.tsx`,
+ * `typesDeTransition`) et le navigateur anime les deux instantanés
+ * (View Transitions). Un navigateur qui ne connaît pas les types fait un fondu,
+ * un navigateur qui ne connaît rien change de page sans animation : rien ne
+ * casse, ça glisse seulement moins.
+ *
+ * ⚠️ UN GLISSEMENT COURT, PAS LA LARGEUR DE L'ÉCRAN. Le fond animé est peint
+ * sur toute la page ; poussé de cent pour cent, il glisserait avec elle et se
+ * lirait comme un écran qui part. Décalé de quelques pour cent sous un fondu,
+ * c'est le CONTENU qui semble arriver.
+ *
+ * ⚠️ LA BARRE DU BAS NE BOUGE PAS : elle a son propre instantané
+ * (`.barre-fixe`), identique avant et après. */
+.barre-fixe {
+	view-transition-name: barre-du-bas;
+}
+@media (prefers-reduced-motion: no-preference) {
+	html:active-view-transition-type(pousser)::view-transition-old(root) {
+		animation: page-part-gauche 240ms cubic-bezier(0.3, 0, 0.2, 1) both;
+	}
+	html:active-view-transition-type(pousser)::view-transition-new(root) {
+		animation: page-entre-droite 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+	}
+	html:active-view-transition-type(retour)::view-transition-old(root) {
+		animation: page-part-droite 240ms cubic-bezier(0.3, 0, 0.2, 1) both;
+	}
+	html:active-view-transition-type(retour)::view-transition-new(root) {
+		animation: page-entre-gauche 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+	}
+	html:active-view-transition-type(onglet)::view-transition-old(root),
+	html:active-view-transition-type(onglet)::view-transition-new(root) {
+		animation-duration: 160ms;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+}
+@keyframes page-entre-droite {
+	from {
+		opacity: 0;
+		transform: translateX(12%);
+	}
+}
+@keyframes page-part-gauche {
+	to {
+		opacity: 0;
+		transform: translateX(-5%);
+	}
+}
+@keyframes page-entre-gauche {
+	from {
+		opacity: 0;
+		transform: translateX(-12%);
+	}
+}
+@keyframes page-part-droite {
+	to {
+		opacity: 0;
+		transform: translateX(5%);
+	}
+}

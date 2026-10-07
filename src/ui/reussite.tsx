@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { Popup, PopupContent } from '@cladd-ui/react';
-import { CheckIcon } from 'lucide-react';
 import { BoutonPrincipal, BoutonTexte } from './bouton';
 import { ChiffreHero } from './chiffre';
 
@@ -58,11 +57,27 @@ export function FeuilleDeReussite({
 		>
 			<PopupContent>
 				<div className="flex flex-col items-center gap-cladd-2xs pt-2 pb-1 text-center">
+					{/*
+					  LA COCHE SE TRACE : le disque monte, puis le trait se dessine, comme
+					  après un paiement chez Apple. C'est le dessin de lucide (`CheckIcon`),
+					  posé à la main pour que son trait s'anime (`.coche-tracee`, app.css).
+					  Rien ne bouge sous `prefers-reduced-motion` : la coche est là, entière.
+					*/}
 					<span
 						aria-hidden
-						className="pilule-principale flex size-14 items-center justify-center rounded-full"
+						className="pilule-principale reussite-disque flex size-14 items-center justify-center rounded-full"
 					>
-						<CheckIcon className="size-7" strokeWidth={2.5} />
+						<svg
+							viewBox="0 0 24 24"
+							className="size-7"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth={2.5}
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<path d="M20 6 9 17l-5-5" pathLength={1} className="coche-tracee" />
+						</svg>
 					</span>
 					<div className="flex flex-col items-center gap-1">
 						<p className="text-cladd-sm font-semibold">{titre}</p>
@@ -70,7 +85,7 @@ export function FeuilleDeReussite({
 							<p className="text-cladd-2xs text-cladd-fg-soft">{pour}</p>
 						)}
 					</div>
-					{montant === undefined ? null : <ChiffreHero centimes={montant} />}
+					{montant === undefined ? null : <ChiffreHero centimes={montant} defile />}
 					{detail === undefined ? null : (
 						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{detail}</p>
 					)}
