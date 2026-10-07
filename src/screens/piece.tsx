@@ -1,4 +1,5 @@
-import { Button, Surface } from '@cladd-ui/react';
+import { useState } from 'react';
+import { Button } from '@cladd-ui/react';
 import { FileDownIcon, InfoIcon } from 'lucide-react';
 import { dateLisible } from '../lib/verticales/recouvrement/calendrier';
 import {
@@ -6,16 +7,16 @@ import {
 	mentionEtatReferentiel
 } from '../lib/verticales/recouvrement/referentiel';
 import {
+	ChiffreHero,
 	Decompte,
+	EnTeteDeGroupe,
+	LigneDeReleve,
+	ListeDeRangees,
+	ListeDeReleve,
 	PageEcran,
+	RangeeDepliable,
 	RemiseAuConseil,
-	SectionEcran,
-	Tableau,
-	TableauCellule,
-	TableauCorps,
-	TableauEntete,
-	TableauLigne,
-	TableauTitre,
+	SectionsDepliables,
 	dateCourte,
 	eurosCentimes,
 	pluriel,
@@ -93,10 +94,9 @@ export function EcranPiece({
 					libelle: pret?.debiteur ?? 'Créance'
 				},
 				titre: 'Décompte arrêté',
-				sousTitre:
-					pret === null
-						? undefined
-						: `${pret.debiteur}, arrêté au ${dateLisible(pret.decompte.arreteAu)}. Cette pièce ne change plus.`
+				// Le client est déjà le nom du retour : le sous-titre ne dit que la date,
+				// et tient sur une ligne au lieu de se couper (« …, arrêté au 16 août 2026… »).
+				sousTitre: pret === null ? undefined : `Arrêté au ${dateLisible(pret.decompte.arreteAu)}`
 			}}
 			etat={donnees.etat}
 		>
@@ -105,112 +105,137 @@ export function EcranPiece({
 	);
 }
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ REFAITE LE 07/10/2026 : 10 100 PX ET 1 366 MOTS À 375 PX
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Un paragraphe de dix lignes en tête, une carte de section qui contenait un
+ * creux de gros chiffres, une carte de quatre postes par facture, puis le
+ * tableau des quarante-cinq valeurs juridiques avec leurs articles — c'est lui
+ * qui faisait les neuf dixièmes de la hauteur. Sur Mercury et Apple Wallet :
+ *
+ *   1. LA MENTION RESTE EN TÊTE, EN UNE LIGNE QUI COMPTE. C'est la règle de cet
+ *      écran (voir plus haut) ; elle ne demande pas un paragraphe, elle demande
+ *      que le compte soit lu AVANT les chiffres. La phrase entière s'ouvre avec
+ *      le tableau, dans la rangée « Valeurs juridiques ».
+ *   2. LE TOTAL EN MONTANT HÉROS, puis sa composition et le détail par facture
+ *      en relevé (`Decompte`), les périodes toujours dépliables sur place.
+ *   3. LES QUARANTE-CINQ VALEURS DANS UNE RANGÉE, chacune en ligne de relevé :
+ *      sa source entière, sa date, son état. Elles ne sont ni retirées ni
+ *      résumées — elles ne s'imposent plus à qui vient lire un total.
+ */
 function CorpsPiece({ identifiant, donnees }: { identifiant: string; donnees: PieceArretee }) {
 	const etat = etatDuReferentiel();
+	const [ouvertes, setOuvertes] = useState<readonly string[]>([]);
+	const controlees =
+		etat.validesParAvocat === 0
+			? 'aucune contrôlée'
+			: `${etat.validesParAvocat} contrôlée${pluriel(etat.validesParAvocat)}`;
 
 	return (
-		<>
+		<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={setOuvertes}>
 			{/* LA MENTION, EN TÊTE. Elle se COMPTE à chaque rendu : une phrase qui
 			    annoncerait « douze valeurs vérifiées » en dur deviendrait fausse le
 			    jour où une treizième est relevée, sans qu'aucun test ne tombe. */}
-			<Surface
-				variant="transparent"
-				outline={false}
-				className="verre-carte rounded-cladd-xl"
-				contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-			>
-				<p className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-					<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-					{mentionEtatReferentiel(etat)}
-				</p>
-			</Surface>
+			<p className="flex items-start gap-1.5 px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
+				<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+				<span>
+					{etat.verifies} valeur{pluriel(etat.verifies)} juridique{pluriel(etat.verifies)} relevée
+					{pluriel(etat.verifies)} sur {etat.total}, {controlees} par un juriste.
+				</span>
+			</p>
 
-			<SectionEcran
-				titre="Le décompte, période par période"
-				legende={`Pièce n° ${identifiant.slice(-6)}, produite le ${dateCourte(new Date(donnees.produitLe).toISOString().slice(0, 10))}`}
-			>
-				<Decompte decompte={donnees.decompte} />
-				{donnees.denominationFigee ? null : (
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-						Cette pièce a été produite avant que les identités ne soient figées : le nom affiché est
-						celui de la fiche d’aujourd’hui, pas celui que le client portait à la date d’arrêté.
-					</p>
-				)}
-			</SectionEcran>
-
-			<SectionEcran
-				titre="Les valeurs juridiques employées"
-				legende={`${etat.verifies} relevée${pluriel(etat.verifies)} sur ${etat.total}, ${etat.validesParAvocat} contrôlée${pluriel(etat.validesParAvocat)} par un juriste`}
-			>
-				<Tableau legende="Valeurs juridiques, leur source et leur état">
-					<TableauEntete>
-						<TableauTitre>Valeur</TableauTitre>
-						<TableauTitre>Source</TableauTitre>
-						<TableauTitre>Relevée le</TableauTitre>
-						<TableauTitre>Relevée</TableauTitre>
-						<TableauTitre>Contrôlée par un juriste</TableauTitre>
-					</TableauEntete>
-					<TableauCorps>
-						{etat.fiches.map((fiche) => (
-							<TableauLigne key={fiche.cle}>
-								<TableauCellule>{fiche.cle}</TableauCellule>
-								<TableauCellule>{fiche.source}</TableauCellule>
-								<TableauCellule>{dateCourte(fiche.verifieLe)}</TableauCellule>
-								<TableauCellule>{fiche.verifie ? 'oui' : 'non'}</TableauCellule>
-								<TableauCellule>{fiche.valideParAvocat ? 'oui' : 'non'}</TableauCellule>
-							</TableauLigne>
-						))}
-					</TableauCorps>
-				</Tableau>
-				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-					Une valeur relevée sur une source publique citable suffit à calculer et à expliquer un
-					chiffre : un chiffre affiché se corrige. Le contrôle par un juriste de la valeur ET de son
-					applicabilité au cas d’espèce est ce qui manque, et c’est le seul champ que ce logiciel ne
-					peut pas remplir seul.
-				</p>
-			</SectionEcran>
-
-			<SectionEcran
-				titre="Ce que ce décompte ne couvre pas"
+			<ChiffreHero
+				centimes={donnees.decompte.total}
+				surTitre="Total réclamé"
 				legende={
-					donnees.abandons.length === 0
-						? 'Aucune somme écartée'
-						: `${donnees.abandons.length} point${pluriel(donnees.abandons.length)}, recalculé${pluriel(donnees.abandons.length)} contre les factures d’aujourd’hui`
+					<span className="flex flex-col items-center gap-0.5">
+						<span>Cette pièce ne change plus</span>
+						<span className="text-cladd-2xs text-cladd-fg-softer">
+							Pièce n° {identifiant.slice(-6)}, produite le{' '}
+							{dateCourte(new Date(donnees.produitLe).toISOString().slice(0, 10))}
+						</span>
+					</span>
 				}
-			>
+			/>
+
+			<Decompte decompte={donnees.decompte} totalEnTete />
+			{donnees.denominationFigee ? null : (
+				<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-softer">
+					Cette pièce a été produite avant que les identités ne soient figées : le nom affiché est
+					celui de la fiche d’aujourd’hui, pas celui que le client portait à la date d’arrêté.
+				</p>
+			)}
+
+			<section className="flex flex-col gap-cladd-3xs">
+				<EnTeteDeGroupe
+					libelle="Hors de ce décompte"
+					{...(donnees.abandons.length === 0 ? {} : { nombre: donnees.abandons.length })}
+				/>
 				{donnees.abandons.length === 0 ? (
-					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
 						Toutes les factures connues de {donnees.debiteur} sont comprises dans ce décompte :
 						aucune somme n’en a été écartée. Ce contrôle se refait à chaque lecture, contre les
 						factures du jour.
 					</p>
 				) : (
-					donnees.abandons.map((abandon) => (
-						<div key={abandon.reference} className="flex flex-col gap-1">
-							<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-								<span className="text-cladd-sm font-semibold">{abandon.reference}</span>
-								<span className="text-cladd-sm font-semibold tabular-nums">
-									{abandon.montantEnJeu === null
-										? 'montant non chiffrable'
-										: eurosCentimes(abandon.montantEnJeu)}
-								</span>
-							</div>
-							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-								{abandon.explication}
-							</p>
-						</div>
-					))
+					<ListeDeReleve>
+						{donnees.abandons.map((abandon) => (
+							<LigneDeReleve
+								key={abandon.reference}
+								titre={abandon.reference}
+								montant={
+									abandon.montantEnJeu === null
+										? 'non chiffrable'
+										: eurosCentimes(abandon.montantEnJeu)
+								}
+								ligne={abandon.explication}
+								// L'explication dit pourquoi la somme est perdue : entière.
+								retour
+							/>
+						))}
+					</ListeDeReleve>
 				)}
-			</SectionEcran>
+			</section>
 
-			<SectionEcran
-				titre="Dossier à remettre à votre conseil"
-				legende="Le décompte, ses sources, ses hypothèses, ses angles morts et les voies que ces conditions ouvrent"
-			>
-				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-					Ce dossier n’est ni un modèle de requête, ni un courrier au débiteur : c’est le document
-					que l’avocat lit. Il énumère les voies sans en désigner aucune, et il porte en tête ce que
-					valent les chiffres qu’il cite.
+			<ListeDeRangees>
+				<RangeeDepliable
+					cle="valeurs-juridiques"
+					famille="MACHINE"
+					titre="Valeurs juridiques"
+					valeur={`${etat.verifies} sur ${etat.total} relevées`}
+					glose={mentionEtatReferentiel(etat)}
+				>
+					<ListeDeReleve>
+						{etat.fiches.map((fiche) => (
+							<LigneDeReleve
+								key={fiche.cle}
+								titre={fiche.cle}
+								montant={
+									fiche.valideParAvocat ? 'contrôlée' : fiche.verifie ? 'relevée' : 'non relevée'
+								}
+								ligne={fiche.source}
+								date={dateCourte(fiche.verifieLe)}
+								retour
+							/>
+						))}
+					</ListeDeReleve>
+					<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">
+						Une valeur relevée sur une source publique citable suffit à calculer et à expliquer un
+						chiffre : un chiffre affiché se corrige. Le contrôle par un juriste de la valeur ET de
+						son applicabilité au cas d’espèce est ce qui manque, et c’est le seul champ que ce
+						logiciel ne peut pas remplir seul.
+					</p>
+				</RangeeDepliable>
+			</ListeDeRangees>
+
+			<section className="flex flex-col gap-cladd-3xs">
+				<EnTeteDeGroupe libelle="Pour votre conseil" />
+				<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
+					Le décompte, ses sources, ses hypothèses, ses angles morts et les voies que ces conditions
+					ouvrent. Ce dossier n’est ni un modèle de requête, ni un courrier au débiteur : c’est le
+					document que l’avocat lit. Il énumère les voies sans en désigner aucune.
 				</p>
 				<div className="flex flex-wrap gap-cladd-3xs">
 					<Button
@@ -235,17 +260,15 @@ function CorpsPiece({ identifiant, donnees }: { identifiant: string; donnees: Pi
 						onClick={donnees.onTelechargerLaPiece}
 					>
 						<FileDownIcon />
-						Télécharger le décompte seul
+						Le décompte seul
 					</Button>
 				</div>
-			</SectionEcran>
+			</section>
 
-			<SectionEcran
-				titre="Le suivi de ce dossier"
-				legende="Remis, répondu, clos : chaque étape vient de vous"
-			>
+			<section className="flex flex-col gap-cladd-3xs">
+				<EnTeteDeGroupe libelle="Le suivi de ce dossier" />
 				<RemiseAuConseil suivi={donnees.suivi} />
-			</SectionEcran>
-		</>
+			</section>
+		</SectionsDepliables>
 	);
 }

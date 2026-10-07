@@ -1,6 +1,5 @@
 import {
 	Surface,
-	SurfaceCut,
 	Button,
 	CollapsibleRoot,
 	CollapsibleTrigger,
@@ -10,6 +9,8 @@ import {
 	SegmentedButton
 } from '@cladd-ui/react';
 import { ChevronDownIcon } from 'lucide-react';
+import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
+import { EnTeteDeGroupe } from './en-tete-groupe';
 import { eurosCentimes, dateCourte, tauxLisible } from './format';
 import {
 	Tableau,
@@ -151,15 +152,6 @@ const CONVENTION_LISIBLE: Record<DecompteAffiche['convention'], string> = {
 	ACT_ACT: 'base réelle de l’année (365 ou 366 jours)'
 };
 
-function Poste({ libelle, montant }: { libelle: string; montant: bigint }) {
-	return (
-		<div className="flex items-baseline justify-between gap-cladd-3xs">
-			<span className="text-cladd-sm text-cladd-fg-soft">{libelle}</span>
-			<span className="text-cladd-sm font-semibold tabular-nums">{eurosCentimes(montant)}</span>
-		</div>
-	);
-}
-
 /**
  * Les périodes d'intérêts, en tableau.
  *
@@ -198,13 +190,32 @@ export function PeriodesDInterets({ segments }: { segments: readonly SegmentAffi
 	);
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ UN RELEVÉ, PLUS UN CREUX À GROS CHIFFRES (07/10/2026)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * La composition vivait dans un creux beige, posé dans la carte de section,
+ * elle-même posée sur la page : trois cadres l'un dans l'autre, des postes en
+ * corps de 18 px et un total en corps de titre. Relevé à 375 px, c'était le
+ * bloc le plus lourd de la pièce arrêtée, avant même le détail. C'est le relevé
+ * d'Apple Wallet (« Balance Details ») : intitulé à gauche, montant à droite,
+ * une note dessous — et le total en montant héros quand l'écran en a un.
+ */
 export function Decompte({
 	decompte,
-	onChoisirImputation
+	onChoisirImputation,
+	totalEnTete = false
 }: {
 	decompte: DecompteAffiche;
 	/** Présent quand le gérant peut choisir ici ; absent sur un décompte figé. */
 	onChoisirImputation?: (ordre: OrdreImputationAffichee) => void;
+	/**
+	 * Vrai quand l'écran porte déjà le total en montant héros : la ligne « Total
+	 * réclamé » du relevé le redirait, et le même chiffre deux fois fait chercher
+	 * lequel compte.
+	 */
+	totalEnTete?: boolean;
 }) {
 	const imputation = decompte.imputation;
 	// ⚠️ ON NE DEMANDE RIEN QUAND LE CHOIX NE CHANGE RIEN : sans paiement imputable,
@@ -213,59 +224,76 @@ export function Decompte({
 		imputation !== undefined && (imputation.totalAutreOrdre !== null || imputation.confirme);
 	return (
 		<div className="flex flex-col gap-cladd-xs">
-			<SurfaceCut contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs">
-				<Poste libelle="Principal restant dû" montant={decompte.principalRestantDu} />
-				<Poste libelle="Pénalités de retard" montant={decompte.interets} />
-				<Poste libelle="Frais de recouvrement" montant={decompte.indemniteForfaitaire} />
-
-				<div className="mt-cladd-3xs flex items-baseline justify-between gap-cladd-3xs border-t border-cladd-outline pt-cladd-3xs">
-					<span className="text-cladd-sm font-semibold">Total réclamé</span>
-					<span className="text-letikette-titre font-bold tabular-nums">
-						{eurosCentimes(decompte.total)}
-					</span>
-				</div>
+			<div className="flex flex-col gap-cladd-3xs">
+				<ListeDeReleve>
+					<LigneDeReleve
+						titre="Principal restant dû"
+						montant={eurosCentimes(decompte.principalRestantDu)}
+					/>
+					<LigneDeReleve titre="Pénalités de retard" montant={eurosCentimes(decompte.interets)} />
+					<LigneDeReleve
+						titre="Frais de recouvrement"
+						montant={eurosCentimes(decompte.indemniteForfaitaire)}
+					/>
+					{totalEnTete ? null : (
+						<LigneDeReleve titre="Total réclamé" montant={eurosCentimes(decompte.total)} />
+					)}
+				</ListeDeReleve>
 
 				{/* Sans la date d'arrêté ni la convention, le chiffre n'est pas
 				    défendable : deux conventions donnent deux totaux différents. */}
-				<p className="text-cladd-xs text-cladd-fg-soft">
+				<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
 					Arrêté au {dateCourte(decompte.arreteAu)}, pénalités calculées en{' '}
 					{CONVENTION_LISIBLE[decompte.convention]}.
 				</p>
-				{choixUtile && imputation !== undefined ? (
-					<div className="flex flex-col gap-cladd-3xs border-t border-cladd-outline pt-cladd-3xs">
-						<p className="text-cladd-xs text-cladd-fg-soft">
-							{imputation.ordre === 'PENALITES_DABORD'
-								? 'Les paiements reçus remboursent d’abord les pénalités déjà dues, puis les factures'
-								: 'Les paiements reçus remboursent d’abord les factures, puis les pénalités'}
-							{imputation.confirme ? ', comme vous l’avez choisi.' : '.'}
-						</p>
-						{imputation.confirme || imputation.totalAutreOrdre === null ? null : (
-							<p className="text-cladd-xs text-cladd-fg-soft">
-								À confirmer. La loi prévoit les pénalités d’abord, sauf si vos conditions générales
-								disent autrement : c’est à vous de choisir. En attendant, le calcul le plus bas est
-								retenu ; l’autre donnerait {eurosCentimes(imputation.totalAutreOrdre)}.
-							</p>
-						)}
-						{onChoisirImputation === undefined ? null : (
-							// ⚠️ AUCUN BOUTON N'EST ACTIF TANT QUE LE GÉRANT N'A PAS CHOISI. Un
-							// segment pré-sélectionné se lirait comme la réponse recommandée.
-							<Segmented className="self-start" activeColor="neutral" activeVariant="solid">
-								{(['PENALITES_DABORD', 'PRINCIPAL_DABORD'] as const).map((ordre) => (
-									<SegmentedButton
-										key={ordre}
-										active={imputation.confirme && imputation.ordre === ordre}
-										onClick={() => onChoisirImputation(ordre)}
-									>
-										{ORDRE_LISIBLE[ordre]}
-									</SegmentedButton>
-								))}
-							</Segmented>
-						)}
-					</div>
-				) : null}
-			</SurfaceCut>
+			</div>
 
-			<LignesDuDecompte lignes={decompte.lignes} />
+			{choixUtile && imputation !== undefined ? (
+				<Surface
+					variant="transparent"
+					outline={false}
+					className="verre-carte rounded-cladd-xl"
+					contentClassName="flex flex-col gap-cladd-3xs p-3.5"
+				>
+					<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+						{imputation.ordre === 'PENALITES_DABORD'
+							? 'Les paiements reçus remboursent d’abord les pénalités déjà dues, puis les factures'
+							: 'Les paiements reçus remboursent d’abord les factures, puis les pénalités'}
+						{imputation.confirme ? ', comme vous l’avez choisi.' : '.'}
+					</p>
+					{imputation.confirme || imputation.totalAutreOrdre === null ? null : (
+						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+							À confirmer. La loi prévoit les pénalités d’abord, sauf si vos conditions générales
+							disent autrement : c’est à vous de choisir. En attendant, le calcul le plus bas est
+							retenu ; l’autre donnerait {eurosCentimes(imputation.totalAutreOrdre)}.
+						</p>
+					)}
+					{onChoisirImputation === undefined ? null : (
+						// ⚠️ AUCUN BOUTON N'EST ACTIF TANT QUE LE GÉRANT N'A PAS CHOISI. Un
+						// segment pré-sélectionné se lirait comme la réponse recommandée.
+						<Segmented className="w-full" activeColor="neutral" activeVariant="solid">
+							{(['PENALITES_DABORD', 'PRINCIPAL_DABORD'] as const).map((ordre) => (
+								<SegmentedButton
+									key={ordre}
+									active={imputation.confirme && imputation.ordre === ordre}
+									onClick={() => onChoisirImputation(ordre)}
+								>
+									{ORDRE_LISIBLE[ordre]}
+								</SegmentedButton>
+							))}
+						</Segmented>
+					)}
+				</Surface>
+			) : null}
+
+			<section className="flex flex-col gap-cladd-3xs">
+				<EnTeteDeGroupe
+					libelle="Facture par facture"
+					nombre={decompte.lignes.length}
+					total={decompte.total}
+				/>
+				<LignesDuDecompte lignes={decompte.lignes} />
+			</section>
 		</div>
 	);
 }
@@ -279,44 +307,54 @@ export function Decompte({
  * rendu, à un seul endroit du code.
  */
 export function LignesDuDecompte({ lignes }: { lignes: readonly LigneDecompteAffichee[] }) {
+	/*
+	  ⚠️ UNE LIGNE DE RELEVÉ PAR FACTURE, PLUS UNE CARTE DE QUATRE POSTES (07/10/2026).
+	  Chaque facture portait sa carte, son total, puis trois postes en corps de
+	  18 px l'un sous l'autre et un bouton pleine largeur : deux factures faisaient
+	  un écran. Ses trois postes tiennent sur une ligne — principal, pénalités,
+	  frais —, qui revient à la ligne plutôt que de couper un montant, et le total
+	  de tête est leur somme.
+
+	  ⚠️ LES PÉRIODES RESTENT DÉPLIABLES SUR PLACE, JAMAIS ABSENTES. C'est le parti
+	  pris de ce fichier (voir l'en-tête) : un total qu'on ne peut pas décomposer est
+	  un chiffre qu'on demande de croire.
+	*/
 	return (
-		<>
+		<ListeDeReleve>
 			{lignes.map((ligne) => (
-				<Surface
-					key={ligne.reference}
-					variant="transparent"
-					outline={false}
-					className="verre-carte rounded-cladd-xl"
-					contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-				>
-					<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
-						<span className="text-cladd-sm font-semibold">{ligne.reference}</span>
-						<span className="text-cladd-sm font-semibold tabular-nums">
-							{eurosCentimes(ligne.total)}
-						</span>
-					</div>
-
-					<Poste libelle="Principal" montant={ligne.principalRestantDu} />
-					<Poste libelle="Pénalités" montant={ligne.interets} />
-					<Poste libelle="Frais de recouvrement" montant={ligne.indemniteForfaitaire} />
-
+				<div key={ligne.reference} className="flex flex-col">
+					<LigneDeReleve
+						titre={ligne.reference}
+						montant={eurosCentimes(ligne.total)}
+						ligne={`Principal ${eurosCentimes(ligne.principalRestantDu)} · pénalités ${eurosCentimes(ligne.interets)} · frais ${eurosCentimes(ligne.indemniteForfaitaire)}`}
+						retour
+					/>
 					{ligne.segments.length > 0 ? (
 						<CollapsibleRoot>
 							<CollapsibleTrigger>
-								<Button variant="transparent" contentClassName="justify-between" size="md">
-									{`Voir le détail des ${ligne.segments.length} période${
+								<Button
+									variant="transparent"
+									outline={false}
+									hoverable={false}
+									size="md"
+									className="w-full rounded-none"
+									contentClassName="w-full justify-between px-3.5 text-cladd-2xs text-cladd-fg-soft"
+								>
+									{`Détail des ${ligne.segments.length} période${
 										ligne.segments.length > 1 ? 's' : ''
 									}`}
-									<CollapsibleIndicator className="text-cladd-fg-soft">
-										{({ open }) => <ChevronDownIcon className={open ? 'rotate-180' : undefined} />}
+									<CollapsibleIndicator className="text-cladd-fg-softer">
+										{({ open }) => (
+											<ChevronDownIcon className={open ? 'size-4 rotate-180' : 'size-4'} />
+										)}
 									</CollapsibleIndicator>
 								</Button>
 							</CollapsibleTrigger>
 							{/* Le rembourrage vit sur un élément IMBRIQUÉ : le panneau anime
-					    sa hauteur jusqu'à zéro, et une marge verticale posée sur lui
-					    l'empêcherait de se refermer complètement. */}
+							    sa hauteur jusqu'à zéro, et une marge verticale posée sur lui
+							    l'empêcherait de se refermer complètement. */}
 							<CollapsiblePanel>
-								<div className="flex flex-col gap-cladd-3xs pt-cladd-3xs">
+								<div className="flex flex-col gap-cladd-3xs px-3.5 pb-3.5">
 									<PeriodesDInterets segments={ligne.segments} />
 									{ligne.imputations !== undefined && ligne.imputations.length > 0 ? (
 										<ReglementsImputes imputations={ligne.imputations} />
@@ -325,14 +363,14 @@ export function LignesDuDecompte({ lignes }: { lignes: readonly LigneDecompteAff
 							</CollapsiblePanel>
 						</CollapsibleRoot>
 					) : (
-						<p className="text-cladd-xs text-cladd-fg-soft">
+						<p className="px-3.5 pb-3 text-cladd-2xs leading-snug text-cladd-fg-softer">
 							Aucune période de pénalités : la date de paiement de la facture n’était pas encore
 							passée à la date d’arrêté.
 						</p>
 					)}
-				</Surface>
+				</div>
 			))}
-		</>
+		</ListeDeReleve>
 	);
 }
 
