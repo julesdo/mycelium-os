@@ -284,6 +284,19 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   qu'une carte qui mène quelque part le dit (la règle « pas de chevron sur une rangée de contenu »,
   prise chez Shop, a coûté l'impression qu'on pouvait toucher). La file reçoit ce nom de la route
   (`RESUME_PAR_TYPE`, typé par `TypeEvenement`).
+- **Ce qui se touche FLOTTE, ce qui se lit est POSÉ** (même jour, passe sur toute l'app). Trois
+  formes, une seule mise en page sur deux lignes (`DeuxLignes`) : la carte (`CarteLien`,
+  `CarteBouton`), la carte inerte d'un fichier en route (`CarteFixe`), et le RELEVÉ — un bloc de
+  verre, un filet entre les lignes, ni chevron ni enfoncement (`ListeDeReleve`, `LigneDeReleve`) —
+  pour les factures d'un client, la composition d'un montant, ce qui s'est éteint. Un montant ne
+  se coupe jamais : une ligne qui en porte revient à la ligne (`retour`). Un écran de chiffres suit
+  le « Balance Details » d'Apple Wallet : le montant héros centré, ses composantes en relevé, la
+  note dessous. Mesuré : « Ce qui est dû » 3 036 → 1 780 px, le décompte arrêté 10 100 → 2 485 px
+  (le tableau des valeurs juridiques est dans sa rangée, la mention qui les compte reste en tête).
+  Les en-têtes de groupe ont UNE forme (`EnTeteDeGroupe`, aussi pour `ListeDeRangees titre=`) ; les
+  capitales du kit ne restent que dans les feuilles, comme les sections des Réglages d'iOS. Dans
+  une rangée dépliable, ni le titre ni la valeur n'ont de borne fixe : ils cèdent en proportion,
+  et le point « à faire » se pose à droite, avant le chevron.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir

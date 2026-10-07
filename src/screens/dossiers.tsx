@@ -317,7 +317,11 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 							value={terme}
 							onChange={(valeur) => setTerme(valeur)}
 							inputMode="search"
-							placeholder="Rechercher"
+							// « Client » et non « Rechercher » : à côté du filtre et de
+							// « Sélectionner », le champ ne reçoit qu'une centaine de pixels à
+							// 375 px, et « Rechercher » s'y lisait « Recherch ». Le mot dit
+							// aussi ce qu'on tape — la recherche porte sur le nom du client.
+							placeholder="Client"
 							inputComponentProps={{
 								'aria-label': 'Rechercher un dossier par le nom du client',
 								enterKeyHint: 'search'
