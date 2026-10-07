@@ -419,6 +419,8 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 								pieces,
 								habitude: comportement.habitude,
 								ruptures: comportement.ruptures,
+								historique: comportement.historique,
+								enCours: comportement.enCours,
 								optionsSecteur: secteursProposes(),
 								etatRecherche: recherche,
 								erreurSiren,

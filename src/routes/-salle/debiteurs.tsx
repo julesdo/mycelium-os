@@ -668,7 +668,28 @@ function comportementDu(debiteurId: string) {
 	}
 	ruptures.sort((a, b) => b.ecartJours - a.ecartJours);
 
-	return { habitude, ruptures };
+	// Le dessin, composé comme `composerComportement` le compose.
+	const historique = observes
+		.map((paiement) => ({
+			reference: paiement.reference,
+			datePaiement: paiement.datePaiement,
+			delaiJours: ecartJours(paiement.dateExigibilite, paiement.datePaiement)
+		}))
+		.sort((a, b) => a.datePaiement.localeCompare(b.datePaiement))
+		.slice(-12);
+	const enCours = miennes
+		.filter(
+			(facture) => facture.statutPaiement !== 'SOLDEE' && estDateReelle(facture.dateExigibilite)
+		)
+		.map((facture) => ({
+			reference: facture.reference,
+			retardJours: ecartJours(facture.dateExigibilite, AUJOURD_HUI_DEMO)
+		}))
+		.filter((retard) => retard.retardJours > 0)
+		.sort((a, b) => b.retardJours - a.retardJours)
+		.slice(0, 6);
+
+	return { habitude, ruptures, historique, enCours };
 }
 
 /**
@@ -777,7 +798,7 @@ function pageDu(
 	}
 
 	const factures = facturesDu(debiteurId);
-	const { habitude, ruptures } = comportementDu(debiteurId);
+	const { habitude, ruptures, historique, enCours } = comportementDu(debiteurId);
 
 	return {
 		denomination: ligne.denomination,
@@ -789,6 +810,8 @@ function pageDu(
 		pieces: piecesDu(debiteurId),
 		habitude,
 		ruptures,
+		historique,
+		enCours,
 		optionsSecteur: SECTEURS_DEMO,
 		etatRecherche: { phase: 'REPOS' },
 		erreurSiren: null,

@@ -155,7 +155,13 @@ export {
 	type OptionSecteur,
 	type PropositionTaux
 } from './identite-debiteur';
-export { HabitudePaiement, type HabitudeAffichee, type RuptureAffichee } from './habitude';
+export {
+	RythmeDePaiement,
+	type HabitudeAffichee,
+	type PaiementAffiche,
+	type RetardEnCours,
+	type RuptureAffichee
+} from './habitude';
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
 export {
 	QuestionnaireLitige,

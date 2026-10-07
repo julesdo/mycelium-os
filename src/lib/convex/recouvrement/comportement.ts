@@ -80,7 +80,18 @@ const vLecture = v.object({
 			ecartJours: v.number(),
 			constat: v.string()
 		})
-	)
+	),
+	/**
+	 * LES RÈGLEMENTS QUI ONT ÉTABLI L'HABITUDE, un par facture, du plus ancien au
+	 * plus récent — les douze derniers. C'est ce que la fiche dessine en barres
+	 * (07/10/2026) : un délai médian se croit, une rangée de barres se voit.
+	 * Le délai est compté comme l'habitude le compte, de l'exigibilité au règlement.
+	 */
+	historique: v.array(
+		v.object({ reference: v.string(), datePaiement: v.string(), delaiJours: v.number() })
+	),
+	/** Les factures encore dues et déjà exigibles, avec leur retard au jour dit. */
+	enCours: v.array(v.object({ reference: v.string(), retardJours: v.number() }))
 });
 
 /**
@@ -165,7 +176,33 @@ async function composerComportement(
 	// veut les lire, et il ne dépend pas de l'ordre d'insertion en base.
 	ruptures.sort((a, b) => b.ecartJours - a.ecartJours);
 
-	return { habitude, ruptures };
+	// ── CE QUE LA FICHE DESSINE ─────────────────────────────────────────────
+	// Les mêmes règlements que l'habitude, et les mêmes retards que les ruptures :
+	// le dessin ne compte rien que le calcul n'ait compté.
+	const historique = observes
+		.filter((paiement) => estDateReelle(paiement.datePaiement))
+		.map((paiement) => ({
+			reference: paiement.reference,
+			datePaiement: paiement.datePaiement,
+			delaiJours: ecartJours(paiement.dateExigibilite, paiement.datePaiement)
+		}))
+		.sort((a, b) => a.datePaiement.localeCompare(b.datePaiement))
+		.slice(-12);
+
+	const enCours: { reference: string; retardJours: number }[] = [];
+	for (const facture of miennes) {
+		if (facture.statutPaiement === 'SOLDEE') continue;
+		const exigibilite = facture.dateExigibilite;
+		if (exigibilite === undefined || !estDateReelle(exigibilite)) continue;
+		const retard = ecartJours(exigibilite, aujourdHui);
+		if (retard <= 0) continue;
+		enCours.push({ reference: facture.reference, retardJours: retard });
+	}
+	// Du plus ancien retard au plus récent, après les règlements : la rangée se lit
+	// dans le temps, de gauche à droite, jusqu'à aujourd'hui.
+	enCours.sort((a, b) => b.retardJours - a.retardJours);
+
+	return { habitude, ruptures, historique, enCours: enCours.slice(0, 6) };
 }
 
 async function lireComportement(

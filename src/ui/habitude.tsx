@@ -1,5 +1,5 @@
 import { Surface } from '@cladd-ui/react';
-import { ActivityIcon, TrendingUpIcon } from 'lucide-react';
+import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { cn } from './cn';
 
 /**
@@ -50,88 +50,183 @@ export interface RuptureAffichee {
 	readonly constat: string;
 }
 
-/** Le délai habituel, écrit comme un gérant le dit. */
-function delaiLisible(jours: number): string {
-	const arrondi = Math.round(jours);
-	if (arrondi === 0) return 'le jour de l’échéance';
-	if (arrondi < 0) return `${Math.abs(arrondi)} jour${Math.abs(arrondi) > 1 ? 's' : ''} en avance`;
-	return `${arrondi} jour${arrondi > 1 ? 's' : ''} après l’échéance`;
+/*
+ * ⚠️ `HabitudePaiement` A ÉTÉ RETIRÉ LE 07/10/2026 : la phrase « règle 12 jours
+ * après l'échéance, sur 9 règlements » dans une feuille est devenue le dessin
+ * `RythmeDePaiement`, sur la fiche même. Il n'avait plus d'autre appelant.
+ */
+
+/** Un règlement qui a établi l'habitude : son délai, de l'exigibilité au paiement. */
+export interface PaiementAffiche {
+	readonly reference: string;
+	readonly datePaiement: string;
+	/** En jours. Négatif quand le client a payé en avance. */
+	readonly delaiJours: number;
 }
 
-export function HabitudePaiement({
+/** Une facture encore due et déjà exigible, avec son retard au jour dit. */
+export interface RetardEnCours {
+	readonly reference: string;
+	readonly retardJours: number;
+}
+
+/** « 12 j », « 3 j d'avance » : la valeur d'une tuile, en un coup d'œil. */
+function joursCourts(jours: number): string {
+	const arrondi = Math.round(jours);
+	return arrondi < 0 ? `${Math.abs(arrondi)} j d’avance` : `${arrondi} j`;
+}
+
+/**
+ * LE RYTHME DE PAIEMENT D'UN CLIENT, DESSINÉ — sur sa fiche, sans rien ouvrir.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QUI MANQUAIT (relevé du 07/10/2026)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'habitude d'un client vivait dans une feuille, en une phrase : « règle 12
+ * jours après l'échéance, sur 9 règlements ». Chez Origin, Copilot ou Apple
+ * Wallet, la page d'un commerçant pose son historique en BARRES, avec trois ou
+ * quatre chiffres en tuiles. Une médiane se croit ; une rangée de barres se voit
+ * — et une facture qui sort du rythme dépasse au premier regard, ce qu'aucune
+ * phrase ne fait.
+ *
+ * Une barre par règlement (le délai, de l'exigibilité au paiement), puis une
+ * barre PLEINE par facture encore due (son retard aujourd'hui), et une ligne en
+ * pointillé à la hauteur de son habitude. Rien n'y est calculé ici : les délais,
+ * les retards et la médiane viennent du domaine (`comportement.ts`).
+ *
+ * ⚠️ AUCUNE COULEUR DE SEUIL : l'encre, légère pour ce qui est réglé, pleine pour
+ * ce qui court. Ce n'est pas un verdict, c'est un relevé de dates.
+ */
+export function RythmeDePaiement({
 	habitude,
 	ruptures,
-	nomme = true,
-	className
+	historique,
+	enCours
 }: {
-	habitude: HabitudeAffichee;
-	ruptures: readonly RuptureAffichee[];
-	/**
-	 * Faux quand une section de la page NOMME déjà ce bloc.
-	 *
-	 * ⚠️ SANS LUI, LE TITRE S'ÉCRIT DEUX FOIS À TRENTE PIXELS D'INTERVALLE. Sur
-	 * la page d'un débiteur, « SON HABITUDE DE PAIEMENT » est l'intitulé de
-	 * section, et la carte le redisait juste dessous — le même défaut que la
-	 * dénomination répétée sous le nom du client. Dans la file, la carte se
-	 * déplie sous une rangée qui ne la nomme pas : son titre reste.
-	 */
-	nomme?: boolean;
-	className?: string;
+	readonly habitude: HabitudeAffichee;
+	readonly ruptures: readonly RuptureAffichee[];
+	readonly historique: readonly PaiementAffiche[];
+	readonly enCours: readonly RetardEnCours[];
 }) {
-	return (
-		<Surface
-			as="section"
-			variant="transparent"
-			outline={false}
-			className={cn('verre-carte rounded-cladd-xl', className)}
-			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-		>
-			<div className="flex items-center gap-cladd-3xs">
-				<span className="verre flex size-cladd-sm shrink-0 items-center justify-center rounded-full">
-					<ActivityIcon size={18} aria-hidden />
-				</span>
-				<div className="flex min-w-0 flex-col gap-0.5">
-					{nomme ? <h2 className="text-cladd-xs font-semibold">Son habitude de paiement</h2> : null}
-					{habitude.connue ? (
-						<p className="text-cladd-2xs text-cladd-fg-soft">
-							Règle {delaiLisible(habitude.delaiMedianJours)}, sur {habitude.echantillon} règlements
-							observés
-						</p>
-					) : (
-						// L'inconnu se dit, il ne se masque pas : « aucune rupture » et
-						// « aucune mesure » ne doivent jamais se confondre.
-						<p className="text-cladd-2xs text-cladd-fg-softer">{habitude.raison}</p>
-					)}
-				</div>
-			</div>
+	const barres = [
+		...historique.map((paiement) => ({
+			cle: `r-${paiement.reference}`,
+			reference: paiement.reference,
+			jours: paiement.delaiJours,
+			court: false
+		})),
+		...enCours.map((retard) => ({
+			cle: `c-${retard.reference}`,
+			reference: retard.reference,
+			jours: retard.retardJours,
+			court: true
+		}))
+	];
+	const mediane = habitude.connue ? habitude.delaiMedianJours : null;
+	// L'échelle : la plus haute barre, l'habitude avec de l'air au-dessus, et au
+	// moins un mois — sans quoi trois règlements à deux jours rempliraient la hauteur.
+	const plafond = Math.max(30, ...barres.map((barre) => barre.jours), (mediane ?? 0) * 1.5);
+	const resume =
+		barres.length === 0
+			? ''
+			: `${historique.length} règlement${historique.length > 1 ? 's' : ''}` +
+				(enCours.length === 0
+					? ''
+					: `, ${enCours.length} facture${enCours.length > 1 ? 's' : ''} encore due${enCours.length > 1 ? 's' : ''}`) +
+				(mediane === null ? '' : `, habitude ${joursCourts(mediane)}`);
 
-			{ruptures.length > 0 ? (
-				<div className="flex flex-col gap-1.5">
-					{ruptures.map((rupture) => (
-						<div
-							key={rupture.reference}
-							className="verre-carte flex gap-cladd-3xs rounded-cladd-lg p-cladd-3xs"
-						>
-							<TrendingUpIcon className="mt-0.5 size-4 shrink-0 text-cladd-fg-soft" aria-hidden />
-							<div className="flex min-w-0 flex-col gap-0.5">
-								<span className="text-cladd-2xs font-semibold">{rupture.reference}</span>
-								{/*
-								  LE CONSTAT VIENT DU DOMAINE, MOT POUR MOT. L'écran ne le
-								  reformule pas : c'est ce qui garantit qu'aucun verbe d'action
-								  n'y entre, et un test du module le vérifie.
-								*/}
-								<span className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-									{rupture.constat}
-								</span>
+	return (
+		<div className="flex flex-col gap-cladd-3xs">
+			<Surface
+				variant="transparent"
+				outline={false}
+				className="verre-carte rounded-cladd-xl"
+				contentClassName="flex flex-col gap-3 p-3.5"
+			>
+				{barres.length === 0 ? null : (
+					<>
+						<div role="img" aria-label={resume} className="relative h-28">
+							{mediane === null ? null : (
+								<div
+									aria-hidden
+									className="absolute inset-x-0 border-t border-dashed border-cladd-fg/35"
+									style={{ bottom: `${(Math.max(0, mediane) / plafond) * 100}%` }}
+								>
+									<span className="absolute right-0 bottom-0.5 text-cladd-4xs text-cladd-fg-soft">
+										habitude {joursCourts(mediane)}
+									</span>
+								</div>
+							)}
+							<div className="flex h-full items-end gap-1">
+								{barres.map((barre) => (
+									<span
+										key={barre.cle}
+										title={`${barre.reference} : ${joursCourts(barre.jours)}`}
+										className={cn(
+											'min-h-0.5 max-w-6 flex-1 rounded-t-sm',
+											barre.court ? 'bg-cladd-fg' : 'bg-cladd-fg/25'
+										)}
+										// La seule division est ici, pour l'œil : une hauteur.
+										style={{ height: `${(Math.max(0, barre.jours) / plafond) * 100}%` }}
+									/>
+								))}
 							</div>
 						</div>
+						<p aria-hidden className="flex items-center gap-3 text-cladd-4xs text-cladd-fg-soft">
+							<span className="flex items-center gap-1">
+								<span className="size-1.5 rounded-full bg-cladd-fg/25" /> réglées
+							</span>
+							{enCours.length === 0 ? null : (
+								<span className="flex items-center gap-1">
+									<span className="size-1.5 rounded-full bg-cladd-fg" /> encore dues
+								</span>
+							)}
+						</p>
+					</>
+				)}
+
+				{habitude.connue ? (
+					<dl className="grid grid-cols-3 gap-2 border-t border-cladd-outline pt-3">
+						{[
+							['Délai habituel', joursCourts(habitude.delaiMedianJours)],
+							['Règlements', String(habitude.echantillon)],
+							['Écart habituel', `± ${Math.round(habitude.dispersionJours)} j`]
+						].map(([terme, valeur]) => (
+							<div key={terme} className="flex min-w-0 flex-col-reverse gap-0.5">
+								<dt className="text-cladd-3xs text-cladd-fg-soft">{terme}</dt>
+								<dd className="text-cladd-xs font-semibold tabular-nums">{valeur}</dd>
+							</div>
+						))}
+					</dl>
+				) : (
+					// L'inconnu se dit, il ne se masque pas : « aucune rupture » et
+					// « aucune mesure » ne doivent jamais se confondre.
+					<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{habitude.raison}</p>
+				)}
+			</Surface>
+
+			{ruptures.length === 0 ? (
+				habitude.connue ? (
+					<p className="px-1 text-cladd-2xs text-cladd-fg-softer">
+						Aucun de ses impayés ne sort de cette habitude.
+					</p>
+				) : null
+			) : (
+				<ListeDeReleve>
+					{ruptures.map((rupture) => (
+						// LE CONSTAT VIENT DU DOMAINE, MOT POUR MOT : aucun verbe d'action n'y
+						// entre, et un test du module le vérifie.
+						<LigneDeReleve
+							key={rupture.reference}
+							titre={rupture.reference}
+							montant={`+${rupture.ecartJours} j`}
+							ligne={rupture.constat}
+							retour
+						/>
 					))}
-				</div>
-			) : habitude.connue ? (
-				<p className="text-cladd-2xs text-cladd-fg-softer">
-					Aucun de ses impayés ne sort de cette habitude.
-				</p>
-			) : null}
-		</Surface>
+				</ListeDeReleve>
+			)}
+		</div>
 	);
 }

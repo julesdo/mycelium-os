@@ -8,7 +8,6 @@ import {
 	ChiffreHero,
 	ConstatRegistre,
 	EnTeteDeGroupe,
-	HabitudePaiement,
 	IdentiteDebiteur,
 	ActionsRapides,
 	Avatar,
@@ -22,6 +21,7 @@ import {
 	ListeDeReleve,
 	PageEcran,
 	Pieces,
+	RythmeDePaiement,
 	RangeeDepliable,
 	SectionsDepliables,
 	TYPES_PIECE,
@@ -37,9 +37,11 @@ import {
 	type HabitudeAffichee,
 	type Lecture,
 	type OptionSecteur,
+	type PaiementAffiche,
 	type PieceAffichee,
 	type PropositionLettrage,
 	type PropositionTaux,
+	type RetardEnCours,
 	type RuptureAffichee
 } from '../ui';
 import { ecartJours, estDateReelle } from '../lib/verticales/recouvrement/calendrier';
@@ -150,6 +152,9 @@ export interface DebiteurComplet {
 	readonly pieces: readonly PieceAffichee[];
 	readonly habitude: HabitudeAffichee;
 	readonly ruptures: readonly RuptureAffichee[];
+	/** Les règlements qui ont établi l'habitude, et les retards qui courent : le dessin. */
+	readonly historique: readonly PaiementAffiche[];
+	readonly enCours: readonly RetardEnCours[];
 	readonly optionsSecteur: readonly OptionSecteur[];
 	readonly etatRecherche: EtatRecherche;
 	readonly erreurSiren: string | null;
@@ -287,15 +292,6 @@ export function EcranDebiteur({
 	);
 }
 
-/** Le délai habituel, écrit pour la valeur d'une rangée. */
-function habitudeCourte(habitude: HabitudeAffichee): string {
-	if (!habitude.connue) return 'pas assez d’historique';
-	const jours = Math.round(habitude.delaiMedianJours);
-	if (jours === 0) return 'règle le jour dit';
-	if (jours < 0) return `règle ${Math.abs(jours)} j en avance`;
-	return `règle à ${jours} j`;
-}
-
 /** Ce qui manque à son identité, le plus lourd d'abord — ou « complète ». */
 function identiteCourte(debiteur: DebiteurAffiche): string {
 	if (debiteur.siren === undefined || debiteur.siren === '') return 'SIREN à trouver';
@@ -382,6 +378,8 @@ function CorpsDebiteur({
 	pieces,
 	habitude,
 	ruptures,
+	historique,
+	enCours,
 	optionsSecteur,
 	etatRecherche,
 	erreurSiren,
@@ -659,6 +657,22 @@ function CorpsDebiteur({
 				</section>
 			)}
 
+			{/*
+			  SES PAIEMENTS, DESSINÉS SUR LA PAGE — et plus une rangée qui ouvrait une
+			  phrase (07/10/2026). Une barre par règlement, une barre pleine par facture
+			  encore due, la ligne de son habitude : la facture qui sort du rythme se
+			  voit sans rien ouvrir. Voir `RythmeDePaiement`.
+			*/}
+			<section className="flex flex-col gap-cladd-3xs">
+				<EnTeteDeGroupe libelle="Ses paiements" />
+				<RythmeDePaiement
+					habitude={habitude}
+					ruptures={ruptures}
+					historique={historique}
+					enCours={enCours}
+				/>
+			</section>
+
 			{/* LE RESTE, EN RANGÉES QUI PORTENT LEUR VALEUR. */}
 			<ListeDeRangees>
 				{/*
@@ -725,21 +739,6 @@ function CorpsDebiteur({
 					) : (
 						<ConstatRegistre constat={debiteur.constatRegistre} sante={debiteur.santeFinanciere} />
 					)}
-				</RangeeDepliable>
-
-				{/*
-				  SON HABITUDE DE PAIEMENT — une statistique, qui a besoin d'être lue :
-				  le délai médian, l'échantillon, puis chaque rupture. Un historique trop
-				  court se DIT, sur la valeur même.
-				*/}
-				<RangeeDepliable
-					cle="habitude"
-					famille="TEMPS"
-					titre="Ses paiements"
-					valeur={ruptures.length > 0 ? 'rythme rompu' : habitudeCourte(habitude)}
-				>
-					{/* `nomme={false}` : la feuille porte déjà le titre. */}
-					<HabitudePaiement habitude={habitude} ruptures={ruptures} nomme={false} />
 				</RangeeDepliable>
 
 				{/*
