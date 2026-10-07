@@ -91,6 +91,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		famille: 'TEMPS',
 		debiteur: 'Fournitures Durand',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_DURAND } },
+		// La carte qu'on balaie pour relancer : dans la salle, le geste se regarde.
+		onRelancer: () => undefined,
 		obstacle:
 			'Date limite pour agir en justice dans 41 jours : passé le 27/10/2026, cette somme ne se réclame plus.',
 		urgence: 'CRITIQUE',

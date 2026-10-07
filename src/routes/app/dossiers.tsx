@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
+import { choixDeRelance, useGestesDeDossier } from '../../app/gestes-dossier';
 import { aujourdHuiISO } from '../../ui';
 import {
 	EcranDossiers,
@@ -43,6 +44,7 @@ function PageDossiers() {
 	const engages = useQuery(api.recouvrement.apresProcedure.dossiersEngages, {});
 	const profilCreancier = useQuery(api.recouvrement.profil.monProfil, {});
 	const preparerEnLot = useMutation(api.recouvrement.envois.preparerEnLot);
+	const gestes = useGestesDeDossier();
 
 	/**
 	 * ⚠️ TROIS ÉTATS, PAS UN BOOLÉEN. « En cours » et « fait » ne se déduisent pas
@@ -67,24 +69,15 @@ function PageDossiers() {
 			])
 	);
 
+	const nomDe = (id: string) => (dossiers ?? []).find((d) => d._id === id)?.debiteur ?? 'ce client';
+
 	async function lancer(creanceIds: readonly string[], delaiJours: number) {
 		setLot('EN_COURS');
 		const resultats = await preparerEnLot({
 			creanceIds: creanceIds as Id<'creances'>[],
-			choix: {
-				modele: 'RELANCE_OFFICIELLE',
-				delaiJours,
-				// Les mêmes valeurs par défaut que sur un dossier seul : un lot qui
-				// composerait autrement produirait des lettres différentes de celles
-				// que le gérant a déjà relues.
-				suite: 'SUITE_GENERALE',
-				modalite: 'SELON_FACTURES',
-				reserveIndemnisationComplementaire: false
-			}
+			choix: choixDeRelance(delaiJours)
 		});
 
-		const nomDe = (id: string) =>
-			(dossiers ?? []).find((d) => d._id === id)?.debiteur ?? 'Dossier';
 		const fait: ResultatDuLot = {
 			prepares: resultats.filter((r) => r.envoiId !== undefined).length,
 			refus: resultats
@@ -116,7 +109,9 @@ function PageDossiers() {
 			? {}
 			: { delaiParDefaut: profilCreancier.delaiRelanceParDefautJours }),
 		onPreparerRelances: lancer,
-		onFermerLeLot: () => setLot('AUCUN')
+		onFermerLeLot: () => setLot('AUCUN'),
+		onRelancer: (creanceId, delaiJours) => gestes.relancer(creanceId, nomDe(creanceId), delaiJours),
+		onRappeler: (creanceId, rappelLe) => gestes.rappeler(creanceId, nomDe(creanceId), rappelLe)
 	};
 
 	return <EcranDossiers donnees={{ etat: 'pret', valeur }} />;

@@ -11,23 +11,25 @@ import {
 	SegmentedButton,
 	Surface
 } from '@cladd-ui/react';
-import { CheckIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react';
+import { AlarmClockIcon, CheckIcon, SendIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react';
 import { type EtapeDossier } from '../lib/verticales/recouvrement/etapes-dossier';
 import {
 	BoutonPrincipal,
 	BoutonTexte,
 	CarteBouton,
+	CarteGlissable,
 	CarteLien,
 	EnTeteDeGroupe,
+	FeuilleDeRappel,
 	LigneBouton,
 	Lien,
 	ListeAnalyses,
 	ListeDeCartes,
 	PageEcran,
-	dateCourte,
 	dateRelative,
 	eurosCentimes,
 	pluriel,
+	type ActionDeCarte,
 	type FamilleRangee,
 	type Lecture
 } from '../ui';
@@ -117,6 +119,16 @@ export interface DossiersAffiches {
 		delaiJours: number
 	) => void | Promise<void>;
 	readonly onFermerLeLot: () => void;
+	/**
+	 * PRÉPARER LA LETTRE D'UN SEUL DOSSIER, depuis sa carte balayée.
+	 *
+	 * ⚠️ AU DÉLAI QUE LA FEUILLE DU LOT PROPOSERAIT. Le geste balayé n'ouvre pas
+	 * de feuille : il compose au délai habituel du gérant, et la lettre attend sa
+	 * relecture dans le dossier, comme toutes les autres. Rien ne part.
+	 */
+	readonly onRelancer?: (creanceId: string, delaiJours: number) => void | Promise<void>;
+	/** Poser un rappel sur un dossier : ce jour-là, il remonte dans « Aujourd'hui ». */
+	readonly onRappeler?: (creanceId: string, rappelLe: string) => void | Promise<void>;
 }
 
 /** L'ordre des groupes : celui du fil d'un dossier. Ce qui est clos vient en dernier. */
@@ -219,6 +231,8 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 	  la feuille proposerait huit jours à un établissement qui en a choisi trente.
 	*/
 	const [delaiTouche, setDelaiTouche] = useState<number | undefined>(undefined);
+	/** Le dossier dont la feuille « Me le rappeler » est ouverte. */
+	const [rappelPour, setRappelPour] = useState<DossierDeLIndex | null>(null);
 
 	const entete = { genre: 'onglet', titre: 'Dossiers' } as const;
 
@@ -226,8 +240,16 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 		return <PageEcran entete={entete} etat={donnees.etat} />;
 	}
 
-	const { dossiers, aujourdHui, lot, delaiParDefaut, onPreparerRelances, onFermerLeLot } =
-		donnees.valeur;
+	const {
+		dossiers,
+		aujourdHui,
+		lot,
+		delaiParDefaut,
+		onPreparerRelances,
+		onFermerLeLot,
+		onRelancer,
+		onRappeler
+	} = donnees.valeur;
 	const delai = delaiTouche ?? delaiParDefaut ?? DELAIS[0];
 
 	if (dossiers.length === 0) {
@@ -290,6 +312,40 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 	function quitterLaSelection() {
 		setEnSelection(false);
 		setSelection(new Set());
+	}
+
+	/**
+	 * LES GESTES D'UNE CARTE BALAYÉE — chacun existe aussi sur la page du dossier.
+	 *
+	 * ⚠️ « RELANCER » SEULEMENT LÀ OÙ LA SÉLECTION L'OFFRIRAIT : un dossier à qui
+	 * l'on peut encore écrire, et qui n'a pas déjà une lettre qui attend. Une
+	 * seconde lettre identique à valider ferait envoyer deux fois la même.
+	 */
+	function gestesDe(dossier: DossierDeLIndex): ActionDeCarte[] {
+		return [
+			...(onRelancer !== undefined && relancable(dossier) && !dossier.courrierAValider
+				? [
+						{
+							cle: 'relancer',
+							libelle: 'Relancer',
+							nomComplet: 'Préparer la lettre de relance',
+							icone: <SendIcon />,
+							onClick: () => void onRelancer(dossier._id, delai)
+						}
+					]
+				: []),
+			...(onRappeler !== undefined && dossier.etape !== 'REGLE'
+				? [
+						{
+							cle: 'rappel',
+							libelle: 'Rappel',
+							nomComplet: 'Me le rappeler',
+							icone: <AlarmClockIcon />,
+							onClick: () => setRappelPour(dossier)
+						}
+					]
+				: [])
+		];
 	}
 
 	return (
@@ -448,14 +504,19 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 												onClick={() => basculer(dossier._id)}
 											/>
 										) : (
-											<CarteLien
+											<CarteGlissable
 												key={dossier._id}
-												vers="/app/dossier/$id"
-												parametres={{ id: dossier._id }}
-												{...contenu}
-												attention={dossier.courrierAValider}
-												{...(resume.famille === undefined ? {} : { famille: resume.famille })}
-											/>
+												titre={dossier.debiteur}
+												actions={gestesDe(dossier)}
+											>
+												<CarteLien
+													vers="/app/dossier/$id"
+													parametres={{ id: dossier._id }}
+													{...contenu}
+													attention={dossier.courrierAValider}
+													{...(resume.famille === undefined ? {} : { famille: resume.famille })}
+												/>
+											</CarteGlissable>
 										);
 									})}
 								</ListeDeCartes>
@@ -541,6 +602,19 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 					</ListeAnalyses>
 				</PopupContent>
 			</Popup>
+
+			{rappelPour === null || onRappeler === undefined ? null : (
+				<FeuilleDeRappel
+					ouverte
+					pour={rappelPour.debiteur}
+					aujourdHui={aujourdHui}
+					onChoisir={(rappelLe) => {
+						void onRappeler(rappelPour._id, rappelLe);
+						setRappelPour(null);
+					}}
+					onFermer={() => setRappelPour(null)}
+				/>
+			)}
 
 			{/* LA FEUILLE DU LOT : un seul réglage, celui qui change la lettre. */}
 			<Popup

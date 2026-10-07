@@ -18,6 +18,7 @@ import type { TypeEvenement } from '../../lib/verticales/recouvrement/surveillan
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { QUESTIONS_LITIGE } from '../../lib/verticales/recouvrement/litige';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
+import { DELAI_DE_RELANCE_PAR_DEFAUT, useGestesDeDossier } from '../../app/gestes-dossier';
 import { CarteChiftBranchee } from '../../app/connexion-chift';
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
@@ -240,6 +241,13 @@ function File() {
 	const notifications = useQuery(api.notifications.listMyNotifications, {});
 	const marquerLue = useMutation(api.notifications.markAsRead);
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
+	/**
+	 * L'ÉTAPE DE CHAQUE DOSSIER, pour savoir à qui l'on peut encore écrire : la
+	 * carte balayée n'offre « Relancer » que là. La même lecture que l'onglet
+	 * Dossiers, donc la même règle.
+	 */
+	const indexDossiers = useQuery(api.recouvrement.lecture.indexDossiers, {});
+	const gestes = useGestesDeDossier();
 	const debiteurs = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
 	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
 	/**
@@ -364,6 +372,18 @@ function File() {
 		}
 	}
 	const estUneCreance = new Set((creances ?? []).map((c) => c._id as string));
+	/**
+	 * Les dossiers à qui une lettre de relance peut encore partir, et qui n'en
+	 * ont pas déjà une qui attend : la règle de la sélection, onglet Dossiers.
+	 */
+	const relancables = new Set(
+		(indexDossiers ?? [])
+			.filter(
+				(d) => (d.etape === 'PRET' || d.etape === 'ON_LUI_ECRIT') && !d.courrierAValider
+			)
+			.map((d) => d._id as string)
+	);
+	const delaiDeRelance = profil?.delaiRelanceParDefautJours ?? DELAI_DE_RELANCE_PAR_DEFAUT;
 
 	/**
 	 * OÙ MÈNE UNE RANGÉE — et il n'y a que deux destinations possibles.
@@ -506,12 +526,23 @@ function File() {
 		  précochée, et le libellé vient du serveur, le même que celui du journal.
 		*/
 		const proposition = propositionDe.get(id);
+		const debiteur =
+			(debiteurId === null ? undefined : nomDuDebiteur.get(debiteurId)) ?? evenement.reference;
+		/*
+		  ⚠️ « RELANCER » SEULEMENT QUAND LA RANGÉE DÉSIGNE UN DOSSIER. Une facture
+		  échue ou une prescription désigne un CLIENT, qui peut avoir plusieurs
+		  dossiers : choisir lequel relancer serait deviner. Un rappel arrivé à son
+		  jour, une promesse échue désignent le leur.
+		*/
+		const creanceId = cible?.genre === 'CREANCE' ? cible.id : null;
 
 		return {
 			genre: 'OBSTACLE' as const,
 			id,
-			debiteur:
-				(debiteurId === null ? undefined : nomDuDebiteur.get(debiteurId)) ?? evenement.reference,
+			debiteur,
+			...(creanceId !== null && relancables.has(creanceId)
+				? { onRelancer: () => void gestes.relancer(creanceId, debiteur, delaiDeRelance) }
+				: {}),
 			...(destination === undefined ? {} : { destination }),
 			// L'explication du domaine, MOT POUR MOT. La reformuler ici créerait une
 			// seconde version de la vérité, qui dériverait de la première.

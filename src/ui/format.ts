@@ -127,6 +127,16 @@ export function dateRelative(iso: string, aujourdHui: string): string {
 	return ecart > 0 ? `dans ${ecart} j` : `il y a ${-ecart} j`;
 }
 
+/**
+ * Le jour `jours` jours après (ou avant) `iso`, en `AAAA-MM-JJ`. Compté en UTC,
+ * comme `dateRelative` : aucune heure d'été ne fait sauter ni doubler un jour.
+ */
+export function jourDecale(iso: string, jours: number): string {
+	const [annee, mois, jour] = iso.split('-').map(Number);
+	if (annee === undefined || mois === undefined || jour === undefined) return iso;
+	return new Date(Date.UTC(annee, mois - 1, jour + jours)).toISOString().slice(0, 10);
+}
+
 /*
   ⚠️ `dateLongue` — « jeudi 30 septembre 2026 » — A ÉTÉ RETIRÉE LE 30/09/2026.
   Elle n'existait que pour le sous-titre de l'écran du jour, que le fondateur a

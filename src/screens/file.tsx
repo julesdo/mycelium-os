@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
-import { UploadIcon } from 'lucide-react';
+import { SendIcon, UploadIcon } from 'lucide-react';
 import {
 	BandeDAnciennete,
 	BilanImport,
 	BoutonPrincipal,
 	BoutonSecondaire,
 	CarteBouton,
+	CarteGlissable,
 	CarteLien,
 	CeQuiManque,
 	ChiffreHero,
@@ -236,6 +237,14 @@ export interface RangeeObstacle extends CommunDeRangee {
 	readonly montant: bigint | null;
 	readonly dateDuFait?: string;
 	readonly proposition?: PropositionDeRangee;
+	/**
+	 * PRÉPARER LA LETTRE DE RELANCE DE CE DOSSIER, depuis la carte balayée.
+	 *
+	 * ⚠️ ABSENTE QUAND LE DOSSIER NE S'Y PRÊTE PAS : la rangée ne désigne pas un
+	 * dossier, il est au tribunal ou réglé, ou une lettre attend déjà sa
+	 * relecture. C'est la route qui le sait ; l'écran n'offre que ce qu'elle passe.
+	 */
+	readonly onRelancer?: () => void;
 }
 
 /**
@@ -995,12 +1004,36 @@ function LigneDeFile({
 	*/
 	if (rangee.destination === undefined) return <CarteBouton {...contenu} onClick={onTrancher} />;
 
-	return (
+	const carte = (
 		<CarteLien
 			{...contenu}
 			vers={rangee.destination.vers}
 			parametres={rangee.destination.parametres}
 		/>
+	);
+
+	/*
+	  ⚠️ LE SEUL GESTE BALAYÉ DE LA FILE EST « RELANCER ». Un rappel posé d'ici ne
+	  ferait rien voir : la carte est déjà dans « Aujourd'hui », et y resterait.
+	  Il vit sur la carte du dossier, dans l'onglet Dossiers.
+	*/
+	const onRelancer = rangee.genre === 'OBSTACLE' ? rangee.onRelancer : undefined;
+	if (onRelancer === undefined) return carte;
+	return (
+		<CarteGlissable
+			titre={rangee.debiteur}
+			actions={[
+				{
+					cle: 'relancer',
+					libelle: 'Relancer',
+					nomComplet: 'Préparer la lettre de relance',
+					icone: <SendIcon />,
+					onClick: onRelancer
+				}
+			]}
+		>
+			{carte}
+		</CarteGlissable>
 	);
 }
 

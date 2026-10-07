@@ -171,7 +171,11 @@ function DossiersDemo({ etat }: { etat: EtatDemo }) {
 				}
 			});
 		},
-		onFermerLeLot: () => setLot('AUCUN')
+		onFermerLeLot: () => setLot('AUCUN'),
+		// Les gestes d'une carte balayée : dans la salle, on regarde le geste, pas
+		// la lettre qu'il compose.
+		onRelancer: () => undefined,
+		onRappeler: () => undefined
 	};
 
 	const vide: DossiersAffiches = { ...valeur, dossiers: [] };

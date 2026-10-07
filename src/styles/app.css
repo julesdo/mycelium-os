@@ -2132,3 +2132,23 @@ select:not(:disabled),
 .carrousel::-webkit-scrollbar {
 	display: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE MOT QUI CONFIRME UN GESTE, AU-DESSUS DE LA BARRE DU BAS.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le kit pose ses notifications à seize pixels du coin bas droit : sur un
+ * téléphone, c'est exactement là que vit la barre des onglets, et le mot
+ * « Lettre préparée » couvrait « Dossiers » et « Compte » pendant cinq secondes.
+ * Il monte de la hauteur de la barre (79 px relevés à 375 px) plus l'écart
+ * courant, et prend la largeur de l'écran sous 640 px — la pilule de Revolut
+ * Business au-dessus de sa barre (« Request confirmed »). */
+.cladd-toast {
+	bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+}
+@media (max-width: 639px) {
+	.cladd-toast {
+		left: 1rem;
+		right: 1rem;
+	}
+}
