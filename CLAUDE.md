@@ -297,6 +297,20 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   capitales du kit ne restent que dans les feuilles, comme les sections des Réglages d'iOS. Dans
   une rangée dépliable, ni le titre ni la valeur n'ont de borne fixe : ils cèdent en proportion,
   et le point « à faire » se pose à droite, avant le chevron.
+- **Ce qui manquait face aux meilleures apps iOS** (analyse Mobbin du 07/10/2026, livrée le soir
+  même). Le bouton « Demander » est dans la RANGÉE de la barre du bas, à droite de la pilule
+  (`BoutonCompagnon`, l'`accessoire` de `BarreDuBas`), et plus au-dessus du contenu où il cachait
+  les montants. Le produit a des VISUALISATIONS, toujours en nuances d'encre et jamais aux couleurs
+  de seuil : l'ancienneté de ce qu'on vous doit sous le montant de l'accueil (`BandeDAnciennete`,
+  Afterpay), le rythme de paiement d'un client sur sa fiche (`RythmeDePaiement`, une barre par
+  règlement, la ligne de son habitude). La fiche client pose l'avatar au-dessus du montant et des
+  ACTIONS RAPIDES (`ActionsRapides` : « Lancer un dossier », « E-mail » qui ouvre la messagerie du
+  gérant, « Virement reçu ») — chacune a remplacé une rangée. Les cartes disent leurs dates en
+  distance (`dateRelative` : « dans 41 j », la date exacte au-delà de 90 jours ; la page du dossier
+  garde la date exacte). L'assistant s'ouvre sur trois questions prêtes, qui remplissent le champ
+  sans envoyer. L'arrêt d'un décompte se marque d'une `FeuilleDeReussite` (coche à l'encre).
+  Écarté exprès : une barre d'étape sur chaque carte de dossier, qui répéterait l'en-tête de son
+  groupe.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
