@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { CatchBoundary, useRouterState } from '@tanstack/react-router';
 import { useAction, useQuery } from 'convex/react';
 import { Popup, PopupContent } from '@cladd-ui/react';
@@ -12,7 +12,7 @@ import { relireTour } from '../lib/verticales/recouvrement/compagnon/tour';
 import {
 	BoutonPrincipal,
 	BoutonSecondaire,
-	CompagnonFlottant,
+	BoutonCompagnon,
 	Conversation,
 	Lien,
 	LigneBouton,
@@ -91,7 +91,7 @@ export function poserAuCompagnon(question: string): void {
  * ⚠️ « IL A QUELQUE CHOSE À DIRE » N'EST ALIMENTÉ PAR AUCUNE SOURCE, ET ON LE
  * DIT PLUTÔT QUE DE L'INVENTER.
  *
- * `CompagnonFlottant` porte l'état `A_DIRE`, la salle le montre, et rien dans le
+ * `BoutonCompagnon` porte l'état `A_DIRE`, la salle le montre, et rien dans le
  * produit ne le produit AUJOURD'HUI : le compagnon répond quand on lui demande,
  * il n'interpelle jamais de lui-même. Le seul compte qui existe est celui du
  * veilleur, et il est déjà posé sur l'onglet « Aujourd'hui », qui mène à ce
@@ -106,7 +106,18 @@ export function poserAuCompagnon(question: string): void {
 /** Ce que le bouton a ouvert : rien, le fil du dossier, le refus, ou sa portée. */
 type PanneauCompagnon = 'AUCUN' | 'FIL' | 'REFUS' | 'PORTEE' | 'CHOIX';
 
-export function CompagnonBranche() {
+/**
+ * ⚠️ LE BOUTON EST RENDU À L'APPELANT, QUI LE POSE DANS LA BARRE (07/10/2026).
+ * L'état — la feuille ouverte, la question préparée, le dossier choisi — reste
+ * ici ; seul le bouton déménage, dans la rangée de la barre du bas. Un
+ * `children` en fonction plutôt qu'un état partagé : la barre n'a rien à savoir
+ * du compagnon, et le compagnon rien de la barre.
+ */
+export function CompagnonBranche({
+	children
+}: {
+	readonly children: (bouton: ReactNode) => ReactNode;
+}) {
 	return (
 		/*
 		  ⚠️ LE COMPTEUR PEUT LEVER, ET LA CAPSULE NE DOIT PAS PARTIR AVEC LUI. Sans
@@ -122,9 +133,13 @@ export function CompagnonBranche() {
 		*/
 		<CatchBoundary
 			getResetKey={() => 'compagnon'}
-			errorComponent={() => <Compagnon niveau={null} cumul={null} />}
+			errorComponent={() => (
+				<Compagnon niveau={null} cumul={null}>
+					{children}
+				</Compagnon>
+			)}
 		>
-			<CompagnonAvecCompteur />
+			<CompagnonAvecCompteur>{children}</CompagnonAvecCompteur>
 		</CatchBoundary>
 	);
 }
@@ -136,12 +151,28 @@ export function CompagnonBranche() {
  * écran. Le fil, lui, n'est lu que par `FilDeLaCreance`, qui n'est monté que
  * pendant que la feuille est ouverte.
  */
-function CompagnonAvecCompteur() {
+function CompagnonAvecCompteur({
+	children
+}: {
+	readonly children: (bouton: ReactNode) => ReactNode;
+}) {
 	const compteur = useQuery(api.recouvrement.conversationLecture.compteurDeLEtablissement, {});
-	return <Compagnon niveau={compteur?.niveau ?? null} cumul={compteur?.cumul ?? null} />;
+	return (
+		<Compagnon niveau={compteur?.niveau ?? null} cumul={compteur?.cumul ?? null}>
+			{children}
+		</Compagnon>
+	);
 }
 
-function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: number | null }) {
+function Compagnon({
+	niveau,
+	cumul,
+	children
+}: {
+	niveau: NiveauPlafond | null;
+	cumul: number | null;
+	readonly children: (bouton: ReactNode) => ReactNode;
+}) {
 	/*
 	  LA CRÉANCE QU'ON REGARDE, ou `null` quand on n'en regarde aucune.
 
@@ -234,11 +265,12 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 
 	return (
 		<>
-			<CompagnonFlottant
-				portee={portee}
-				etat={etat}
-				onOuvrir={() => {
-					/*
+			{children(
+				<BoutonCompagnon
+					portee={portee}
+					etat={etat}
+					onOuvrir={() => {
+						/*
 					  ⚠️ SUR UN DOSSIER, LE FIL S'OUVRE MÊME QUAND LE PLAFOND A MORDU. Ce
 					  qui s'arrête est la question suivante, pas la relecture de ce qui a
 					  été demandé et répondu : la feuille rend le fil, et le refus en
@@ -246,22 +278,23 @@ function Compagnon({ niveau, cumul }: { niveau: NiveauPlafond | null; cumul: num
 					  entier sur un compteur de coût couperait l'expérience, ce que la
 					  décision « on ne coupe jamais l'expérience » interdit.
 					*/
-					if (dossierActif !== null) {
-						setPanneau('FIL');
-						return;
-					}
-					if (arretee) {
-						setPanneau('REFUS');
-						return;
-					}
-					/*
+						if (dossierActif !== null) {
+							setPanneau('FIL');
+							return;
+						}
+						if (arretee) {
+							setPanneau('REFUS');
+							return;
+						}
+						/*
 					  ⚠️ ET PLUS LE PANNEAU DE PORTÉE. Il disait ce que le compagnon ne
 					  savait pas faire depuis cet écran — un cul-de-sac poli. Demander le
 					  dossier mène au même endroit en un geste de moins.
 					*/
-					setPanneau('CHOIX');
-				}}
-			/>
+						setPanneau('CHOIX');
+					}}
+				/>
+			)}
 
 			<Popup
 				open={panneau !== 'AUCUN'}

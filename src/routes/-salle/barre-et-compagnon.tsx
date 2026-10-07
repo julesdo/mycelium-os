@@ -3,7 +3,7 @@ import { SectionTitle } from '@cladd-ui/react';
 import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import {
 	BarreDuBas,
-	CompagnonFlottant,
+	BoutonCompagnon,
 	IconeLetikette,
 	PastilleDeRappel,
 	PageEcran,
@@ -193,11 +193,15 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 				/>
 			</Scene>
 
-			<SectionTitle>Le compagnon, au-dessus de la barre</SectionTitle>
+			<SectionTitle>Le compagnon, dans la barre</SectionTitle>
 			{ETATS_COMPAGNON.map(({ titre, portee, etat: etatCompagnon }) => (
 				<Scene key={titre} titre={titre} hauteur="h-60">
-					<BarreDuBas destinations={destinations('aujourdhui', null)} />
-					<CompagnonFlottant portee={portee} etat={etatCompagnon} onOuvrir={() => undefined} />
+					<BarreDuBas
+						destinations={destinations('aujourdhui', null)}
+						accessoire={
+							<BoutonCompagnon portee={portee} etat={etatCompagnon} onOuvrir={() => undefined} />
+						}
+					/>
 				</Scene>
 			))}
 

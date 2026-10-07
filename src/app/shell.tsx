@@ -53,8 +53,8 @@ export function Shell({ children }: { children: ReactNode }) {
 
 			<main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
 
-			<BarreBranchee />
-			<CompagnonBranche />
+			{/* Le bouton du compagnon se pose DANS la barre, à droite de la pilule. */}
+			<CompagnonBranche>{(bouton) => <BarreBranchee accessoire={bouton} />}</CompagnonBranche>
 		</div>
 	);
 }

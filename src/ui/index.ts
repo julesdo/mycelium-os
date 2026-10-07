@@ -260,7 +260,7 @@ export {
  * montés une seule fois, dans la coquille (`app/shell.tsx`), et branchés par
  * `app/barre.tsx` et `app/compagnon.tsx` — eux ne dessinent rien. */
 export { BarreDuBas, PastilleDeRappel, type DestinationBarre } from './barre-du-bas';
-export { CompagnonFlottant, type EtatCompagnon } from './compagnon-flottant';
+export { BoutonCompagnon, type EtatCompagnon } from './bouton-compagnon';
 
 /* ── LE SOMMAIRE D'UNE LISTE (ecran/clients) ──────────────────────────────
  *

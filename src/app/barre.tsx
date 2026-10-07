@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
@@ -81,7 +82,7 @@ function RappelDuVeilleur() {
 	return <PastilleDeRappel compte={nonLues ?? 0} />;
 }
 
-export function BarreBranchee() {
+export function BarreBranchee({ accessoire }: { readonly accessoire?: ReactNode } = {}) {
 	const chemin = useRouterState({ select: (etat) => etat.location.pathname });
 
 	const destinations: DestinationBarre[] = DESTINATIONS.map((destination) => ({
@@ -107,5 +108,5 @@ export function BarreBranchee() {
 			: {})
 	}));
 
-	return <BarreDuBas destinations={destinations} />;
+	return <BarreDuBas destinations={destinations} accessoire={accessoire} />;
 }

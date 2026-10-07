@@ -105,7 +105,19 @@ export function PastilleDeRappel({ compte }: { compte: number }) {
  */
 const REMBOURRAGE_PILULE = '0.75rem';
 
-export function BarreDuBas({ destinations }: { destinations: readonly DestinationBarre[] }) {
+export function BarreDuBas({
+	destinations,
+	accessoire
+}: {
+	destinations: readonly DestinationBarre[];
+	/**
+	 * Ce qui se pose à DROITE de la pilule, dans la même rangée : le bouton du
+	 * compagnon (`BoutonCompagnon`). Comme le bouton rond d'iOS 26 et de
+	 * Telegram à côté de leur barre d'onglets — et plus au-dessus d'elle, sur le
+	 * contenu qui défile, où il cachait les montants (07/10/2026).
+	 */
+	accessoire?: ReactNode;
+}) {
 	/*
 	  −1 quand on est ailleurs que sur les quatre onglets (une page poussée, un
 	  décompte). Le bloc s'efface alors au lieu de rester accroché au dernier
@@ -127,15 +139,21 @@ export function BarreDuBas({ destinations }: { destinations: readonly Destinatio
 		  posée, centrée, étiquetée à côté de l'icône. C'est le même objet, pas un
 		  second composant : un second se serait mis à diverger au premier ajustement.
 		*/
-		<nav
-			aria-label="Navigation principale"
-			className="mb-safe fixed inset-x-0 bottom-0 z-40 flex justify-center px-cladd-3xs pb-cladd-3xs"
-		>
-			{/* `rounded-full` et non un rayon d'échelle : la référence pose une vraie
+		<div className="mb-safe fixed inset-x-0 bottom-0 z-40 flex justify-center px-cladd-3xs pb-cladd-3xs">
+			{/*
+			  LA RANGÉE : la pilule des onglets, puis l'accessoire à sa droite.
+			  `items-stretch` donne à l'accessoire la hauteur exacte de la pilule.
+			  Au-delà de 768 px, la rangée se resserre autour de la capsule centrée.
+			*/}
+			<div className="flex w-full items-stretch gap-2 md:w-auto">
+				{/* `rounded-full` et non un rayon d'échelle : la référence pose une vraie
 			    pilule, et c'est ce qui la fait lire comme un objet POSÉ sur l'écran
 			    plutôt que comme un bandeau accroché au bord. */}
-			<div className="verre-dense relative flex w-full items-stretch rounded-full p-1.5 md:w-auto">
-				{/*
+				<nav
+					aria-label="Navigation principale"
+					className="verre-dense relative flex min-w-0 flex-1 items-stretch rounded-full p-1.5 md:flex-none"
+				>
+					{/*
 				  LE BLOC DE VERRE QUI SE DÉPLACE.
 
 				  Un seul bloc GLISSE d'un onglet à l'autre, au lieu que quatre fonds
@@ -149,22 +167,22 @@ export function BarreDuBas({ destinations }: { destinations: readonly Destinatio
 				  l'onglet lui-même, et un lecteur d'écran n'a que faire d'un bloc
 				  décoratif qui se déplace.
 				*/}
-				<span
-					aria-hidden
-					className="verre absolute inset-y-1.5 left-1.5 rounded-full transition duration-500 ease-glisse"
-					style={{
-						width: `calc((100% - ${REMBOURRAGE_PILULE}) / ${destinations.length})`,
-						transform: `translateX(${Math.max(rang, 0) * 100}%)`,
-						opacity: rang === -1 ? 0 : 1
-					}}
-				/>
+					<span
+						aria-hidden
+						className="verre absolute inset-y-1.5 left-1.5 rounded-full transition duration-500 ease-glisse"
+						style={{
+							width: `calc((100% - ${REMBOURRAGE_PILULE}) / ${destinations.length})`,
+							transform: `translateX(${Math.max(rang, 0) * 100}%)`,
+							opacity: rang === -1 ? 0 : 1
+						}}
+					/>
 
-				{destinations.map(({ cle, libelle, Icone, vers, actif, rappel }) => (
-					<Lien
-						key={cle}
-						to={vers}
-						aria-current={actif ? 'page' : undefined}
-						/*
+					{destinations.map(({ cle, libelle, Icone, vers, actif, rappel }) => (
+						<Lien
+							key={cle}
+							to={vers}
+							aria-current={actif ? 'page' : undefined}
+							/*
 						  `min-h-cladd-md` — 48 px, le plancher tactile du projet. Il vaut
 						  aussi au-delà de 768 px : la cible PREMIÈRE de ce produit est une
 						  tablette en paysage, qui est large ET tactile, donc c'est un doigt
@@ -183,15 +201,15 @@ export function BarreDuBas({ destinations }: { destinations: readonly Destinatio
 						  passent DERRIÈRE le verre et l'onglet actif devient le moins
 						  lisible de tous.
 						*/
-						className={cn(
-							'relative z-10 flex min-h-cladd-md min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full px-1 py-1.5',
-							'md:min-w-28 md:flex-row md:gap-2',
-							'transition duration-150 ease-out active:scale-95',
-							actif ? 'text-cladd-fg' : 'text-cladd-fg-softer'
-						)}
-					>
-						<span className="relative inline-flex shrink-0">
-							{/*
+							className={cn(
+								'relative z-10 flex min-h-cladd-md min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full px-0.5 py-1.5',
+								'md:min-w-28 md:flex-row md:gap-2',
+								'transition duration-150 ease-out active:scale-95',
+								actif ? 'text-cladd-fg' : 'text-cladd-fg-softer'
+							)}
+						>
+							<span className="relative inline-flex shrink-0">
+								{/*
 							  LE FAISCEAU, SUR L'ONGLET ACTIF SEUL.
 
 							  ⚠️ C'EST LE FAISCEAU LENT, PAS CELUI DE L'ACTION. Deux faisceaux
@@ -206,28 +224,35 @@ export function BarreDuBas({ destinations }: { destinations: readonly Destinatio
 							  devient du décor en trois jours, et ne dit plus rien le jour où
 							  ça compte.
 							*/}
-							<span
-								className={cn(
-									'inline-flex size-7 items-center justify-center rounded-full',
-									actif && 'faisceau-lent'
-								)}
-							>
-								<Icone size={20} aria-hidden />
-							</span>
-							{/* La pastille, quand l'appelant en donne une. Elle est posée sur
+								<span
+									className={cn(
+										'inline-flex size-7 items-center justify-center rounded-full',
+										actif && 'faisceau-lent'
+									)}
+								>
+									<Icone size={20} aria-hidden />
+								</span>
+								{/* La pastille, quand l'appelant en donne une. Elle est posée sur
 							    l'ICÔNE et non sur l'onglet : au-delà de 768 px le libellé passe
 							    à droite, et une pastille calée sur l'onglet se retrouverait à
 							    deux centimètres de ce qu'elle compte. */}
-							{rappel === undefined ? null : (
-								<span className="absolute -top-0.5 -right-0.5">{rappel}</span>
-							)}
-						</span>
-						<span className="text-cladd-3xs leading-none font-medium md:text-cladd-2xs">
-							{libelle}
-						</span>
-					</Lien>
-				))}
+								{rappel === undefined ? null : (
+									<span className="absolute -top-0.5 -right-0.5">{rappel}</span>
+								)}
+							</span>
+							{/*
+						  ⚠️ 11 PX SOUS 768 PX, LA TAILLE DES ONGLETS D'iOS. Le bouton du
+						  compagnon prend 64 px de la rangée ; chaque onglet passe de 85 à
+						  67 px, et « Aujourd'hui » mesure 65 px en 12 px — il débordait.
+						*/}
+							<span className="text-cladd-4xs leading-none font-medium md:text-cladd-2xs">
+								{libelle}
+							</span>
+						</Lien>
+					))}
+				</nav>
+				{accessoire}
 			</div>
-		</nav>
+		</div>
 	);
 }
