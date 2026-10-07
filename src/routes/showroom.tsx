@@ -1040,8 +1040,8 @@ function Showroom() {
 								titre="Décompte arrêté"
 								montant={1_992_897n}
 								pour="Fournitures Durand"
-								detail="Arrêté au 16 août 2026. Cette pièce ne changera plus : la refaire plus tard en produira une nouvelle, datée."
-								principale={{ libelle: 'Voir la pièce', onClick: () => undefined }}
+								detail="Arrêté au 16 août 2026. Ce décompte ne changera plus : le refaire plus tard en produira un nouveau, daté."
+								principale={{ libelle: 'Voir le décompte', onClick: () => undefined }}
 								secondaire={{ libelle: 'Retour au dossier', onClick: () => undefined }}
 							/>
 						) : null}

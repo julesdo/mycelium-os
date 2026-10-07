@@ -142,9 +142,9 @@ function PageArret() {
 				detail={
 					arrete === null
 						? undefined
-						: `Arrêté au ${dateCourte(arrete.arreteAu)}. Cette pièce ne changera plus : la refaire plus tard en produira une nouvelle, datée.`
+						: `Arrêté au ${dateCourte(arrete.arreteAu)}. Ce décompte ne changera plus : le refaire plus tard en produira un nouveau, daté.`
 				}
-				principale={{ libelle: 'Voir la pièce', onClick: versLaPiece }}
+				principale={{ libelle: 'Voir le décompte', onClick: versLaPiece }}
 				secondaire={{
 					libelle: 'Retour au dossier',
 					onClick: () => void navigate({ to: '/app/dossier/$id', params: { id } })
