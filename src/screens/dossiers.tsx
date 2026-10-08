@@ -89,6 +89,8 @@ export interface DossierDeLIndex {
 	readonly dateLimiteAgir?: string;
 	readonly dernierCourrierLe?: string;
 	readonly courrierAValider: boolean;
+	/** Préparé par Plume, pas encore démarré : rien ne part avant. */
+	readonly aDemarrer?: boolean;
 	readonly professionnelDesigne: boolean;
 	/**
 	 * L'échéance de procédure la plus proche, pour un dossier au tribunal.
@@ -191,6 +193,8 @@ function resumeDe(
 		};
 	}
 	if (dossier.courrierAValider) return { ligne: 'Un courrier à valider', famille: 'ENVOI' };
+	// Préparé par Plume : rien ne part tant que le gérant ne l'a pas démarré.
+	if (dossier.aDemarrer === true) return { ligne: 'Prêt à démarrer', famille: 'QUESTION' };
 	/*
 	  ⚠️ UNE DATE LIMITE PROCHE PASSE DEVANT LE PLAN. Un droit qui s'éteint dans
 	  quatre-vingt-dix jours se dit avant le prochain rappel : c'est la seule date

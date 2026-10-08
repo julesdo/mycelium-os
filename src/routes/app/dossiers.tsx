@@ -99,6 +99,7 @@ function PageDossiers() {
 				...(d.dateLimiteAgir === undefined ? {} : { dateLimiteAgir: d.dateLimiteAgir }),
 				...(d.dernierCourrierLe === undefined ? {} : { dernierCourrierLe: d.dernierCourrierLe }),
 				courrierAValider: d.courrierAValider,
+				aDemarrer: d.aDemarrer,
 				professionnelDesigne: d.professionnelDesigne,
 				...(d.prochaineEtape === undefined
 					? {}

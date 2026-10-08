@@ -1088,6 +1088,8 @@ export const indexDossiers = authedQuery({
 			dernierCourrierLe: v.optional(v.string()),
 			/** Un courrier préparé attend la validation du gérant. */
 			courrierAValider: v.boolean(),
+			/** Préparé par Plume, pas encore démarré : la carte le dit avant tout le reste. */
+			aDemarrer: v.boolean(),
 			professionnelDesigne: v.boolean(),
 			/**
 			 * CE QUE LE PILOTE FERA ENSUITE, ET QUAND (`plan-relance.ts`). Absent pour un
@@ -1183,6 +1185,7 @@ export const indexDossiers = authedQuery({
 					...(limites[0] === undefined ? {} : { dateLimiteAgir: limites[0] }),
 					...(partis.length === 0 ? {} : { dernierCourrierLe: partis[partis.length - 1]! }),
 					courrierAValider: auClient.some((e) => e.etat === 'A_VALIDER'),
+					aDemarrer: creance.aDemarrer === true,
 					professionnelDesigne: professionnelsDe(creance).length > 0
 				};
 			})
