@@ -310,6 +310,21 @@ export {
 	TravailDePlume,
 	type EtapeDeTravail
 } from './fil-plume';
+export {
+	BarreDEtapes,
+	BoutonDeReponse,
+	BulleDeReponse,
+	CarteDeFactures,
+	CarteDuPlan,
+	ChampDeReponse,
+	ChoixDeDate,
+	ListeACocher,
+	RangeeDeReponses,
+	ZoneDeReponse,
+	type ElementACocher,
+	type EtapeDuPlanAffichee,
+	type FactureProposee
+} from './demarrage';
 export { SuiteDuPlan, type EtapeAVenir } from './suite-plan';
 export { BandeDAnciennete, repartirParAnciennete, type LigneDAnciennete } from './anciennete';
 

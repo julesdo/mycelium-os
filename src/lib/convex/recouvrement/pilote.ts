@@ -317,6 +317,8 @@ async function executerEffet(
 				factureIds: libres,
 				aujourdHui: new Date().toISOString().slice(0, 10)
 			});
+			// ⚠️ PRÉPARÉ, PAS DÉMARRÉ : rien ne part tant que le gérant ne l'a pas démarré.
+			await ctx.db.patch(creanceId, { aDemarrer: true });
 			/*
 			  ⚠️ LE DOSSIER DIT QUI L'A OUVERT. Sans cette ligne, la frise du dossier
 			  commençait au premier geste du gérant, et un dossier ouvert par le pilote
@@ -333,8 +335,8 @@ async function executerEffet(
 				cle: 'OUVERT_PAR_LE_PILOTE',
 				avant: 'aucun dossier pour ces factures',
 				apres:
-					`Le pilote a ouvert ce dossier : ${libres.length} facture${pluriel(libres.length)} ` +
-					`échue${pluriel(libres.length)}, ${versEuros(depuisCentimes(total))} €.`,
+					`Plume a préparé ce dossier : ${libres.length} facture${pluriel(libres.length)} ` +
+					`échue${pluriel(libres.length)}, ${versEuros(depuisCentimes(total))} €. Il attend que vous le démarriez.`,
 				source: 'Le pilote, à l’échéance',
 				auteur: 'MACHINE',
 				consigneLe: Date.now()
@@ -377,7 +379,41 @@ async function executerEffet(
 		case 'ENVOYER':
 			await envoyerMaintenant(ctx, effet.envoiId);
 			return;
+		case 'DEMARRER_DOSSIER':
+			await marquerDemarre(ctx, organizationId, effet.creanceId, effet.par);
+			return;
 	}
+}
+
+/**
+ * DÉMARRER UN DOSSIER — ce que fait « Démarrer », seul ou en lot.
+ *
+ * ⚠️ LE JOURNAL LE PORTE AU NOM DU GÉRANT : c'est lui qui a décidé de démarrer,
+ * même quand Plume coche l'étape. Un dossier déjà démarré, classé ou d'un autre
+ * établissement ne bouge pas.
+ */
+export async function marquerDemarre(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	creanceId: Id<'creances'>,
+	par: string
+): Promise<boolean> {
+	const creance = await ctx.db.get(creanceId);
+	if (creance === null || creance.organizationId !== organizationId) return false;
+	if (creance.aDemarrer !== true || creance.statut === 'CLOSE') return false;
+	await ctx.db.patch(creanceId, { aDemarrer: undefined });
+	await ctx.db.insert('journal', {
+		organizationId,
+		cible: creanceId as string,
+		cle: 'DOSSIER_DEMARRE',
+		avant: 'préparé par Plume',
+		apres: 'Vous avez démarré ce dossier : Plume suit son plan de relance.',
+		source: 'Votre démarrage',
+		auteur: 'GERANT',
+		auteurUserId: par,
+		consigneLe: Date.now()
+	});
+	return true;
 }
 
 /**
@@ -818,6 +854,8 @@ export const programmerLesRelances = internalMutation({
 		for (const creance of creances) {
 			if (etapes.length >= RELANCES_PAR_TRAVAIL) break;
 			if (creance.statut === 'CLOSE' || creance.engageeLe !== undefined) continue;
+			// Préparé par Plume, pas encore démarré : rien ne part.
+			if (creance.aDemarrer === true) continue;
 			if (occupes.has(creance._id)) continue;
 			const debiteur = await ctx.db.get(creance.debiteurId);
 			if (debiteur === null || debiteur.horsPilote === true) continue;
@@ -897,6 +935,7 @@ async function programmerUneRelance(
 	if (!estEnvoyable(etape)) return;
 	const creance = await ctx.db.get(creanceId);
 	if (creance === null || creance.statut === 'CLOSE' || creance.engageeLe !== undefined) return;
+	if (creance.aDemarrer === true) return;
 	const debiteur = await ctx.db.get(creance.debiteurId);
 	if (debiteur === null || debiteur.horsPilote === true) return;
 	const jour = new Date().toISOString().slice(0, 10);
@@ -1325,6 +1364,8 @@ export const etat = authedQuery({
 		activeParVous: v.boolean(),
 		/** Ce compte peut activer ou couper les relances : un administrateur. */
 		peutActiver: v.boolean(),
+		/** Les dossiers que Plume a préparés et qui attendent d'être démarrés. */
+		aDemarrer: v.number(),
 		/** Les relances programmées, la plus proche d'abord : ce qui part bientôt. */
 		programmes: v.array(
 			v.object({
@@ -1374,7 +1415,14 @@ export const etat = authedQuery({
 			.withIndex('by_org_and_commence', (q) => q.eq('organizationId', organizationId))
 			.order('desc')
 			.take(8);
+		const prepares = await ctx.db
+			.query('creances')
+			.withIndex('by_org_and_aDemarrer', (q) =>
+				q.eq('organizationId', organizationId).eq('aDemarrer', true)
+			)
+			.take(500);
 		return {
+			aDemarrer: prepares.filter((c) => c.statut !== 'CLOSE').length,
 			envoiAutomatique: pilote?.envoiAutomatique === true,
 			activeLe: pilote?.activeLe ?? null,
 			activeParVous: pilote?.activePar === user._id,

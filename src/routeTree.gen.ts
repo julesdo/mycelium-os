@@ -42,6 +42,8 @@ import { Route as AppClientsIdRouteImport } from './routes/app/clients.$id'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
 import { Route as AppDebiteursIdRouteImport } from './routes/app/debiteurs.$id'
 import { Route as AppDecompteIdRouteImport } from './routes/app/decompte.$id'
+import { Route as AppDemarrerIndexRouteImport } from './routes/app/demarrer.index'
+import { Route as AppDemarrerIdRouteImport } from './routes/app/demarrer.$id'
 import { Route as AppDossierIdRouteImport } from './routes/app/dossier.$id'
 import { Route as AppImportFacturesIdRouteImport } from './routes/app/import-factures.$id'
 import { Route as AppPiloteIndexRouteImport } from './routes/app/pilote.index'
@@ -213,6 +215,16 @@ const AppDecompteIdRoute = AppDecompteIdRouteImport.update({
   path: '/decompte/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDemarrerIndexRoute = AppDemarrerIndexRouteImport.update({
+  id: '/demarrer/',
+  path: '/demarrer/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDemarrerIdRoute = AppDemarrerIdRouteImport.update({
+  id: '/demarrer/$id',
+  path: '/demarrer/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppDossierIdRoute = AppDossierIdRouteImport.update({
   id: '/dossier/$id',
   path: '/dossier/$id',
@@ -268,9 +280,11 @@ export interface FileRoutesByFullPath {
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
+  '/app/demarrer/$id': typeof AppDemarrerIdRoute
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/demarrer/': typeof AppDemarrerIndexRoute
   '/app/pilote/': typeof AppPiloteIndexRoute
 }
 export interface FileRoutesByTo {
@@ -306,9 +320,11 @@ export interface FileRoutesByTo {
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
+  '/app/demarrer/$id': typeof AppDemarrerIdRoute
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/demarrer': typeof AppDemarrerIndexRoute
   '/app/pilote': typeof AppPiloteIndexRoute
 }
 export interface FileRoutesById {
@@ -346,9 +362,11 @@ export interface FileRoutesById {
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
   '/app/decompte/$id': typeof AppDecompteIdRoute
+  '/app/demarrer/$id': typeof AppDemarrerIdRoute
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/demarrer/': typeof AppDemarrerIndexRoute
   '/app/pilote/': typeof AppPiloteIndexRoute
 }
 export interface FileRouteTypes {
@@ -387,9 +405,11 @@ export interface FileRouteTypes {
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
     | '/app/decompte/$id'
+    | '/app/demarrer/$id'
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
     | '/app/pilote/$id'
+    | '/app/demarrer/'
     | '/app/pilote/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -425,9 +445,11 @@ export interface FileRouteTypes {
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
     | '/app/decompte/$id'
+    | '/app/demarrer/$id'
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
     | '/app/pilote/$id'
+    | '/app/demarrer'
     | '/app/pilote'
   id:
     | '__root__'
@@ -464,9 +486,11 @@ export interface FileRouteTypes {
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
     | '/app/decompte/$id'
+    | '/app/demarrer/$id'
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
     | '/app/pilote/$id'
+    | '/app/demarrer/'
     | '/app/pilote/'
   fileRoutesById: FileRoutesById
 }
@@ -725,6 +749,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDecompteIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/demarrer/': {
+      id: '/app/demarrer/'
+      path: '/demarrer'
+      fullPath: '/app/demarrer/'
+      preLoaderRoute: typeof AppDemarrerIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/demarrer/$id': {
+      id: '/app/demarrer/$id'
+      path: '/demarrer/$id'
+      fullPath: '/app/demarrer/$id'
+      preLoaderRoute: typeof AppDemarrerIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/dossier/$id': {
       id: '/app/dossier/$id'
       path: '/dossier/$id'
@@ -804,8 +842,10 @@ interface AppRouteRouteChildren {
   AppArretIdRoute: typeof AppArretIdRoute
   AppCreanceIdRoute: typeof AppCreanceIdRoute
   AppDecompteIdRoute: typeof AppDecompteIdRoute
+  AppDemarrerIdRoute: typeof AppDemarrerIdRoute
   AppDossierIdRoute: typeof AppDossierIdRoute
   AppPiloteIdRoute: typeof AppPiloteIdRoute
+  AppDemarrerIndexRoute: typeof AppDemarrerIndexRoute
   AppPiloteIndexRoute: typeof AppPiloteIndexRoute
 }
 
@@ -822,8 +862,10 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppArretIdRoute: AppArretIdRoute,
   AppCreanceIdRoute: AppCreanceIdRoute,
   AppDecompteIdRoute: AppDecompteIdRoute,
+  AppDemarrerIdRoute: AppDemarrerIdRoute,
   AppDossierIdRoute: AppDossierIdRoute,
   AppPiloteIdRoute: AppPiloteIdRoute,
+  AppDemarrerIndexRoute: AppDemarrerIndexRoute,
   AppPiloteIndexRoute: AppPiloteIndexRoute,
 }
 

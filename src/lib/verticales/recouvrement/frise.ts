@@ -45,7 +45,17 @@ export interface FaitDeLaFrise {
  * le reste : mieux vaut un titre vague et un détail exact qu'un code.
  */
 export const INTITULE_DU_FAIT: Readonly<Record<string, string>> = {
-	OUVERT_PAR_LE_PILOTE: 'Le pilote a ouvert le dossier',
+	OUVERT_PAR_LE_PILOTE: 'Plume a préparé le dossier',
+	DOSSIER_DEMARRE: 'Vous avez démarré le dossier',
+	DOSSIER_DEMARRE_GUIDE: 'Vous avez démarré le dossier avec Plume',
+	GESTE_RELANCER: 'Plume a préparé une relance, à votre demande',
+	GESTE_RAPPEL: 'Vous avez posé un rappel',
+	GESTE_PROMESSE: 'Vous avez noté une promesse de paiement',
+	GESTE_NOTE: 'Vous avez noté quelque chose',
+	GESTE_EMAIL: 'Vous avez enregistré son adresse',
+	GESTE_RETIRER_DU_PILOTE: 'Vous avez retiré ce client du pilote',
+	GESTE_REMETTRE_AU_PILOTE: 'Vous avez remis ce client au pilote',
+	GESTE_RETENIR: 'Vous avez retenu une relance',
 	DECOMPTE_ARRETE: 'Un décompte a été arrêté',
 	FACTURE_RATTACHEE: 'Une facture a rejoint le dossier',
 	ORDRE_IMPUTATION_CHOISI: 'Vous avez choisi ce que remboursent les paiements reçus',

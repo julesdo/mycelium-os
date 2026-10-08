@@ -190,6 +190,12 @@ export interface DebiteurComplet {
 	readonly onBasculerFacture: (factureId: string) => void;
 	/** `provenance` : ce que la créance ouverte ensuite relira pour revenir ici. Voir `useProvenance`. */
 	readonly onConstituer: (provenance: HistoryState) => void;
+	/**
+	 * « Lancer un dossier » OUVRE LE DÉMARRAGE GUIDÉ PAR PLUME (08/10/2026), quand
+	 * l'appelant le branche : les factures, l'adresse, ce que Plume ne peut pas
+	 * deviner, le plan. Absent (la salle), la feuille de choix des factures reste.
+	 */
+	readonly onDemarrer?: () => void;
 	readonly onDeposerPieces: (fichiers: File[]) => void;
 	readonly onClasserPiece: (pieceId: string, type: string) => void;
 	readonly onRetirerPiece: (pieceId: string) => void;
@@ -410,6 +416,7 @@ function CorpsDebiteur({
 	onRepartirLettrage,
 	onBasculerFacture,
 	onConstituer,
+	onDemarrer,
 	onDeposerPieces,
 	onClasserPiece,
 	onRetirerPiece
@@ -468,6 +475,10 @@ function CorpsDebiteur({
 	 * choisir à sa place.
 	 */
 	function ouvrirLaFeuille() {
+		if (onDemarrer !== undefined) {
+			onDemarrer();
+			return;
+		}
 		if (selection.size === 0) {
 			for (const facture of eligibles) {
 				if (facture.dateEcheance !== undefined && facture.dateEcheance < aujourdHui) {

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Popup, PopupContent, Spinner, Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon, CheckIcon } from 'lucide-react';
 import { PLAN_PAR_DEFAUT } from '../lib/verticales/recouvrement/plan-relance';
-import { BoutonPrincipal, BoutonTexte } from './bouton';
+import { BoutonPrincipal, BoutonSecondaire, BoutonTexte } from './bouton';
+import { Lien } from './lien';
+import { pluriel } from './format';
 import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { cn } from './cn';
 import { dateCourte } from './format';
@@ -60,6 +62,8 @@ export interface PiloteAffiche {
 	readonly peutActiver: boolean;
 	/** Ce qui part bientôt, le plus proche d'abord. */
 	readonly programmes: readonly RelanceProgrammeeAffichee[];
+	/** Les dossiers que Plume a préparés et qui attendent d'être démarrés. */
+	readonly aDemarrer?: number;
 }
 
 /** L'heure du gérant, pas celle du serveur : « 14 h 32 ». */
@@ -94,8 +98,13 @@ export function PiloteEnDirect({
 	  demande votre attention quand son dernier travail a été interrompu, il veille
 	  sinon. Un Plume qui sourit pendant une panne mentirait.
 	*/
+	const aDemarrer = pilote.aDemarrer ?? 0;
 	const humeur: HumeurPlume =
-		enCours !== null ? 'travaille' : faits[0]?.etat === 'ECHEC' ? 'attention' : 'repos';
+		enCours !== null
+			? 'travaille'
+			: faits[0]?.etat === 'ECHEC' || aDemarrer > 0
+				? 'attention'
+				: 'repos';
 
 	return (
 		<Surface
@@ -135,6 +144,23 @@ export function PiloteEnDirect({
 			)}
 
 			{/*
+			  LES DOSSIERS PRÉPARÉS — Plume les a réunis, le gérant les démarre. C'est
+			  l'action du bloc quand il y en a : un seul bouton plein.
+			*/}
+			{aDemarrer === 0 ? null : (
+				<div className="flex flex-col gap-1.5 border-t border-cladd-outline pt-cladd-3xs">
+					<p className="text-cladd-2xs leading-snug">
+						J’ai préparé {aDemarrer} dossier{pluriel(aDemarrer)} de clients en retard. Je ne relance
+						rien tant que vous ne {aDemarrer > 1 ? 'les avez' : 'l’avez'} pas démarré
+						{pluriel(aDemarrer)}.
+					</p>
+					<BoutonPrincipal as={Lien} to="/app/demarrer" pleineLargeur>
+						{aDemarrer > 1 ? `Démarrer les ${aDemarrer} dossiers` : 'Démarrer le dossier'}
+					</BoutonPrincipal>
+				</div>
+			)}
+
+			{/*
 			  LES RELANCES — ce qui part bientôt, ou l'invitation à les lui confier.
 
 			  ⚠️ CE QUI PART SEUL SE VOIT AVANT DE PARTIR, avec le geste pour l'arrêter.
@@ -149,9 +175,15 @@ export function PiloteEnDirect({
 							nom.
 						</p>
 						{pilote.peutActiver && onActiver !== undefined ? (
-							<BoutonPrincipal pleineLargeur onClick={() => setFeuille(true)}>
-								Laisser {NOM_DU_PILOTE} relancer
-							</BoutonPrincipal>
+							aDemarrer > 0 ? (
+								<BoutonSecondaire pleineLargeur onClick={() => setFeuille(true)}>
+									Laisser {NOM_DU_PILOTE} relancer
+								</BoutonSecondaire>
+							) : (
+								<BoutonPrincipal pleineLargeur onClick={() => setFeuille(true)}>
+									Laisser {NOM_DU_PILOTE} relancer
+								</BoutonPrincipal>
+							)
 						) : (
 							<p className="text-cladd-2xs text-cladd-fg-softer">
 								Un administrateur de votre entreprise peut l’activer.

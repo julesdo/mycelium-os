@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAction, useMutation, useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -101,6 +101,7 @@ function PageCreance() {
 	const { id } = Route.useParams();
 	const creanceId = id as Id<'creances'>;
 	const aujourdHui = aujourdHuiISO();
+	const navigate = useNavigate();
 
 	// ── CE QUE LE DOSSIER PORTE ──────────────────────────────────────────────
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
@@ -648,6 +649,8 @@ function PageCreance() {
 		identifiant: id,
 		debiteur: creance.debiteur,
 		debiteurId,
+		aDemarrer: creance.aDemarrer,
+		onDemarrer: () => void navigate({ to: '/app/demarrer/$id', params: { id: debiteurId } }),
 		...(creance.debiteurEmail === undefined ? {} : { debiteurEmail: creance.debiteurEmail }),
 		santeDebiteur: creance.santeDebiteur,
 		nombreFactures: creance.factures.length,

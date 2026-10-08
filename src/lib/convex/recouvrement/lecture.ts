@@ -342,6 +342,8 @@ export const creanceComplete = authedQuery({
 			v.literal('ENGAGEE'),
 			v.literal('CLOSE')
 		),
+		/** Préparé par Plume, pas encore démarré : sa page invite à le démarrer. */
+		aDemarrer: v.boolean(),
 		debiteur: v.string(),
 		/**
 		 * QUI FAIT L'ACTE, PAR SON IDENTIFIANT — et pas par son nom.
@@ -628,6 +630,7 @@ export const creanceComplete = authedQuery({
 
 		return {
 			statut: creance.statut,
+			aDemarrer: creance.aDemarrer === true,
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 			intervenantId: professionnelsDe(creance)[0] ?? null,
 			intervenantIds: professionnelsDe(creance),

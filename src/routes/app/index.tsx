@@ -986,6 +986,7 @@ function File() {
 						void retenirRelance({ envoiId: envoiId as Id<'envois'> }),
 					pilote: {
 						envoiAutomatique: pilote.envoiAutomatique,
+						aDemarrer: pilote.aDemarrer,
 						activeLe: pilote.activeLe,
 						activeParVous: pilote.activeParVous,
 						peutActiver: pilote.peutActiver,

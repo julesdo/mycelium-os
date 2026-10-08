@@ -9,6 +9,8 @@ import {
 	type HumeurPlume
 } from '../../ui';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
+import { EcranDemarrage } from '../../screens/demarrage';
+import { EcranDemarrageEnLot, type DossierADemarrer } from '../../screens/demarrage-lot';
 import type { EcranDuProduit, EtatDemo } from './demo';
 
 /**
@@ -167,6 +169,110 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 	);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DÉMARRER UN DOSSIER, GUIDÉ — on peut le parcourir en entier dans la salle.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function DemoDemarrage() {
+	return (
+		<EcranDemarrage
+			demarrage={{
+				client: 'Fournitures Durand',
+				emailClient: 'compta@durand.fr',
+				emailReponses: null,
+				suspendu: false,
+				horsPilote: false,
+				factures: [
+					{ id: 'f1', reference: 'FA-2026-0042', resteDu: 2_400_00n, echeance: '2026-08-31' },
+					{ id: 'f2', reference: 'FA-2026-0057', resteDu: 1_850_00n, echeance: '2026-09-15' },
+					{ id: 'f3', reference: 'FA-2026-0071', resteDu: 1_750_00n, echeance: '2026-09-30' }
+				],
+				envoiAutomatique: true,
+				aujourdHui: '2026-10-08',
+				retour: { vers: '/app/clients', libelle: 'Clients' },
+				onDemarrer: () =>
+					new Promise((resoudre) =>
+						window.setTimeout(
+							() => resoudre({ creanceId: 'demo', prochaine: { nom: 'Rappel', le: '2026-10-08' } }),
+							1200
+						)
+					),
+				onVoirDossier: () => undefined,
+				onParlerAPlume: () => undefined,
+				onRevenir: () => undefined
+			}}
+		/>
+	);
+}
+
+const LOT_DEMO: readonly DossierADemarrer[] = [
+	{
+		creanceId: 'c1',
+		debiteurId: 'd1',
+		client: 'Fournitures Durand',
+		restantDu: 6_000_00n,
+		nombreFactures: 3,
+		manque: null
+	},
+	{
+		creanceId: 'c2',
+		debiteurId: 'd2',
+		client: 'Transports Vidal',
+		restantDu: 4_320_50n,
+		nombreFactures: 2,
+		manque: null
+	},
+	{
+		creanceId: 'c3',
+		debiteurId: 'd3',
+		client: 'Boulangerie Martin',
+		restantDu: 1_180_00n,
+		nombreFactures: 1,
+		manque: null
+	},
+	{
+		creanceId: 'c4',
+		debiteurId: 'd4',
+		client: 'Atelier Rousseau',
+		restantDu: 2_640_00n,
+		nombreFactures: 4,
+		manque: 'Il me manque son adresse e-mail'
+	},
+	{
+		creanceId: 'c5',
+		debiteurId: 'd5',
+		client: 'Garage Leroy',
+		restantDu: 890_00n,
+		nombreFactures: 1,
+		manque: 'En procédure collective ou radié'
+	}
+];
+
+function DemoLot({ variante }: { etat: EtatDemo; variante?: string }) {
+	const forme = variante ?? 'liste';
+	return (
+		<EcranDemarrageEnLot
+			lot={{
+				dossiers: forme === 'vide' ? [] : LOT_DEMO,
+				emailReponsesConnu: true,
+				travail:
+					forme === 'travail'
+						? {
+								titre: 'Démarre 3 dossiers',
+								etapes: [
+									{ libelle: 'Démarre le dossier de Fournitures Durand', etat: 'faite' },
+									{ libelle: 'Démarre le dossier de Transports Vidal', etat: 'courante' },
+									{ libelle: 'Démarre le dossier de Boulangerie Martin', etat: 'avenir' }
+								]
+							}
+						: null,
+				onDemarrer: async (ids) => ids.length,
+				onCompleter: () => undefined
+			}}
+		/>
+	);
+}
+
 export const ECRANS_PLUME: readonly EcranDuProduit[] = [
 	{
 		route: '/app/',
@@ -181,5 +287,18 @@ export const ECRANS_PLUME: readonly EcranDuProduit[] = [
 		vide: false,
 		variantes: ['vide', 'travail', 'reponse', 'geste'],
 		Demo: DemoConversation
+	},
+	{
+		route: '/app/demarrer/$id',
+		libelle: 'Démarrer avec Plume',
+		vide: false,
+		Demo: DemoDemarrage
+	},
+	{
+		route: '/app/demarrer/',
+		libelle: 'Démarrer en lot',
+		vide: false,
+		variantes: ['liste', 'travail', 'vide'],
+		Demo: DemoLot
 	}
 ];

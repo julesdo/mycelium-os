@@ -47,19 +47,27 @@ export function CompagnonBranche({
 function PlumeAvecEtat({ children }: { readonly children: (bouton: ReactNode) => ReactNode }) {
 	const pilote = useQuery(api.recouvrement.pilote.etat, {});
 	const travaux = pilote?.travaux ?? [];
+	const aDemarrer = pilote?.aDemarrer ?? 0;
 	const humeur: HumeurPlume = travaux.some((t) => t.etat === 'EN_COURS')
 		? 'travaille'
-		: travaux.find((t) => t.etat !== 'EN_ATTENTE')?.etat === 'ECHEC'
+		: travaux.find((t) => t.etat !== 'EN_ATTENTE')?.etat === 'ECHEC' || aDemarrer > 0
 			? 'attention'
 			: 'repos';
-	return <Plume humeur={humeur}>{children}</Plume>;
+	return (
+		<Plume humeur={humeur} compte={aDemarrer}>
+			{children}
+		</Plume>
+	);
 }
 
 function Plume({
 	humeur,
+	compte = 0,
 	children
 }: {
 	readonly humeur: HumeurPlume;
+	/** Les dossiers préparés qui attendent d'être démarrés. */
+	readonly compte?: number;
 	readonly children: (bouton: ReactNode) => ReactNode;
 }) {
 	const navigate = useNavigate();
@@ -74,6 +82,7 @@ function Plume({
 	return children(
 		<BoutonCompagnon
 			humeur={humeur}
+			compte={compte}
 			description={
 				dossier === null ? `Parler à ${NOM_DU_PILOTE}` : `Parler à ${NOM_DU_PILOTE}, sur ce dossier`
 			}

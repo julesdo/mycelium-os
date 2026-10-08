@@ -76,6 +76,8 @@ import {
 	type SuiviDossierAffiche,
 	type VoieAffichee,
 	type EtapeAVenir,
+	NOM_DU_PILOTE,
+	Plume,
 	SuiteDuPlan
 } from '../ui';
 import { TITRE_ECRAN } from './titres';
@@ -198,6 +200,13 @@ export interface CreanceOuverte {
 	readonly identifiant: string;
 	readonly debiteur: string;
 	readonly debiteurId: string;
+	/**
+	 * PRÉPARÉ PAR PLUME, PAS ENCORE DÉMARRÉ. La page le dit en tête, avec le seul
+	 * geste qui compte alors : le démarrer, guidé par Plume. Rien ne part avant.
+	 */
+	readonly aDemarrer?: boolean;
+	/** Ouvre le démarrage guidé de ce dossier. */
+	readonly onDemarrer?: () => void;
 	/**
 	 * L'adresse électronique du client, quand elle est connue.
 	 *
@@ -432,6 +441,10 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 					*/}
 					<CeQuiBloque alertes={alertesDuDossier(pret)} />
 
+					{pret.aDemarrer === true && pret.onDemarrer !== undefined ? (
+						<PlumeADemarrer client={pret.debiteur} onDemarrer={pret.onDemarrer} />
+					) : null}
+
 					<CarteDeLEtat creance={pret} onOuvrir={ouvrir} />
 
 					{/* CE QUI VIENT, SOUS CE QUI EST : la frise continue après aujourd’hui. */}
@@ -578,6 +591,30 @@ function gesteDuDossier(
 	return { libelle: 'Relancer', ouvre: 'courriers' };
 }
 
+/**
+ * CE DOSSIER ATTEND D'ÊTRE DÉMARRÉ — Plume l'a préparé, le gérant le démarre.
+ *
+ * ⚠️ C'EST LE SEUL BOUTON PLEIN DE LA PAGE QUAND IL EST LÀ : la carte de l'état
+ * perd alors le sien (« Relancer » n'a pas de sens sur un dossier qu'on n'a pas
+ * encore démarré).
+ */
+function PlumeADemarrer({ client, onDemarrer }: { client: string; onDemarrer: () => void }) {
+	return (
+		<div className="verre-carte flex flex-col gap-cladd-3xs rounded-cladd-xl p-cladd-2xs">
+			<div className="flex items-start gap-3">
+				<Plume humeur="attention" taille={44} />
+				<p className="text-cladd-xs leading-snug">
+					J’ai préparé le dossier de {client}. Je ne le relance pas tant que vous ne l’avez pas
+					démarré : trois questions, et c’est parti.
+				</p>
+			</div>
+			<BoutonPrincipal pleineLargeur onClick={onDemarrer}>
+				Démarrer avec {NOM_DU_PILOTE}
+			</BoutonPrincipal>
+		</div>
+	);
+}
+
 function CarteDeLEtat({
 	creance,
 	onOuvrir
@@ -586,7 +623,7 @@ function CarteDeLEtat({
 	onOuvrir: (cle: SectionCreance) => void;
 }) {
 	const { titre, sousTitre } = etatEnClair(creance);
-	const geste = gesteDuDossier(creance);
+	const geste = creance.aDemarrer === true ? null : gesteDuDossier(creance);
 
 	return (
 		<EtatDuDossier

@@ -62,7 +62,10 @@ const MOTS_VIDES = new Set([
 ]);
 
 function normaliser(texte: string): string {
-	return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+	return texte
+		.normalize('NFD')
+		.replace(/\p{Diacritic}/gu, '')
+		.toLowerCase();
 }
 
 function motsDe(texte: string): string[] {
@@ -143,7 +146,11 @@ function ConversationDePlume() {
 	const enCours = travaux.find((t) => t.etat === 'EN_COURS') ?? null;
 	const faits = travaux.filter((t) => t.etat === 'FAIT' || t.etat === 'ECHEC').slice(0, 3);
 	const humeur: HumeurPlume =
-		enCours !== null ? 'travaille' : faits[0]?.etat === 'ECHEC' ? 'attention' : 'repos';
+		enCours !== null
+			? 'travaille'
+			: faits[0]?.etat === 'ECHEC' || (pilote?.aDemarrer ?? 0) > 0
+				? 'attention'
+				: 'repos';
 
 	/* ── Le relevé de Plume, avant toute question ─────────────────────────── */
 	const preambule: MessageAffiche[] = [];
@@ -182,6 +189,24 @@ function ConversationDePlume() {
 						/>
 					))}
 				</ListeDeReleve>
+			)
+		});
+	}
+	const aDemarrer = pilote?.aDemarrer ?? 0;
+	if (aDemarrer > 0) {
+		preambule.push({
+			genre: 'PLUME',
+			id: 'a-demarrer',
+			humeur: 'attention',
+			texte: `J’ai préparé ${aDemarrer} dossier${pluriel(aDemarrer)} de clients en retard. Je ne relance rien tant que vous ne ${aDemarrer > 1 ? 'les avez' : 'l’avez'} pas démarré${pluriel(aDemarrer)}.`,
+			suite: (
+				<ListeDeCartes>
+					<CarteBouton
+						titre={aDemarrer > 1 ? `Démarrer les ${aDemarrer} dossiers` : 'Démarrer le dossier'}
+						ligne="Tout est prêt : vous décochez ceux que vous gardez en main"
+						onClick={() => void navigate({ to: '/app/demarrer' })}
+					/>
+				</ListeDeCartes>
 			)
 		});
 	}

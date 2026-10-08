@@ -449,6 +449,8 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 								onRepartirLettrage: (date) => void repartir(date),
 								onBasculerFacture: basculer,
 								onConstituer: (provenance) => void constituer(provenance),
+								onDemarrer: () =>
+									void navigate({ to: '/app/demarrer/$id', params: { id: debiteurId } }),
 								onDeposerPieces: (fichiers) => void deposerPieces(fichiers),
 								onClasserPiece: (pieceId, type) =>
 									void classerPiece({

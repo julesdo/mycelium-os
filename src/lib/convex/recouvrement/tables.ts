@@ -866,11 +866,27 @@ export const recouvrementTables = {
 		// Qui l’a choisi, et quand : au journal (clé ORDRE_IMPUTATION_CHOISI).
 		ordreImputation: v.optional(vOrdreImputation),
 		qualifieeLe: v.optional(v.number()),
+		/**
+		 * PRÉPARÉ PAR PLUME, PAS ENCORE DÉMARRÉ (08/10/2026).
+		 *
+		 * ⚠️ PLUME PRÉPARE, LE GÉRANT DÉMARRE. Un dossier que Plume ouvre seul (une
+		 * facture qui passe son échéance) porte `true` : ses factures sont réunies,
+		 * son plan est prêt, et RIEN NE PART tant que le gérant ne l'a pas démarré —
+		 * seul (`/app/demarrer/$id`, guidé) ou en lot (`/app/demarrer`). Le
+		 * fondateur : « si on a 40 procédures détectées à démarrer […] il faut une
+		 * solution ». Le gérant garde la main sur ses clients sensibles sans avoir à
+		 * les retirer un par un.
+		 *
+		 * Absent : démarré. Les dossiers ouverts avant ce champ, et ceux que le gérant
+		 * ouvre lui-même, le sont d'emblée.
+		 */
+		aDemarrer: v.optional(v.boolean()),
 		creeLe: v.number()
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_debiteur', ['debiteurId'])
-		.index('by_org_and_statut', ['organizationId', 'statut']),
+		.index('by_org_and_statut', ['organizationId', 'statut'])
+		.index('by_org_and_aDemarrer', ['organizationId', 'aDemarrer']),
 
 	/**
 	 * LE JOURNAL D'UNE PROCÉDURE ENGAGÉE — module 4.5.
@@ -1730,6 +1746,13 @@ export const recouvrementTables = {
 						v.object({
 							genre: v.literal('ENVOYER'),
 							envoiId: v.id('envois')
+						}),
+						/** Démarrer un dossier que Plume avait préparé, à la demande du gérant (le lot). */
+						v.object({
+							genre: v.literal('DEMARRER_DOSSIER'),
+							creanceId: v.id('creances'),
+							/** Qui l'a demandé : le journal le porte à son nom. */
+							par: v.string()
 						})
 					)
 				),
