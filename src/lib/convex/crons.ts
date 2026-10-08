@@ -26,6 +26,15 @@ crons.daily(
 // LE BATTEMENT QUOTIDIEN. Six heures UTC : le briefing doit être arrivé avant
 // que le gérant n'ouvre sa boîte, et assez tard pour que les registres publics
 // de la veille soient à jour.
+/*
+  ⚠️ LE PILOTE VIT EN PERMANENCE (08/10/2026). Il remplace le battement de 6 h UTC :
+  chaque établissement se réveille toutes les quinze minutes pour ce que le temps
+  seul fait avancer, en plus des réveils à chaque changement (`pilote.reveiller`).
+  Le relevé du jour — briefing et notifications — se joue à la première veille de
+  la journée, plus une fois à 6 h pour qu'aucun jour ne soit sauté.
+*/
+crons.interval('pilote', { minutes: 15 }, internal.recouvrement.pilote.reveillerTous, {});
+
 crons.daily(
 	'battementQuotidien',
 	{ hourUTC: 6, minuteUTC: 0 },

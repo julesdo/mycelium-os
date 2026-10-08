@@ -125,7 +125,7 @@ const HEURE = new Intl.DateTimeFormat('fr-FR', {
  * raison : un calcul rejouable est un calcul vérifiable.
  */
 function quandLisible(jour: string, termineLe: number, aujourdHui: string): string {
-	if (jour === aujourdHui) return `cette nuit, ${HEURE.format(new Date(termineLe))}`;
+	if (jour === aujourdHui) return `aujourd’hui, ${HEURE.format(new Date(termineLe))}`;
 	return dateCourte(jour);
 }
 

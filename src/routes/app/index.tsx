@@ -240,6 +240,8 @@ function File() {
 	const depots = useQuery(api.recouvrement.depotMutations.listerImports, { limite: 5 });
 	/** Le compte de la cloche : ce que la boîte de réception n'a pas encore montré. */
 	const nonLues = useQuery(api.notifications.getUnreadCount, {});
+	/** Le pilote en direct : ce qu'il fait, étape par étape, et sa dernière veille. */
+	const pilote = useQuery(api.recouvrement.pilote.etat, {});
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	/**
 	 * L'ÉTAPE DE CHAQUE DOSSIER, pour savoir à qui l'on peut encore écrire : la
@@ -976,6 +978,21 @@ function File() {
 		// `undefined` est le chargement : la cloche reste sans compte, plutôt que de
 		// dire « rien de nouveau » le temps d'un aller-retour.
 		...(nonLues === undefined ? {} : { nonLues }),
+		...(pilote === undefined
+			? {}
+			: {
+					pilote: {
+						derniereVeille: pilote.derniereVeille,
+						travaux: pilote.travaux.map((t) => ({
+							id: t.id,
+							titre: t.titre,
+							etapes: t.etapes,
+							etat: t.etat,
+							bilan: t.bilan,
+							termineLe: t.termineLe
+						}))
+					}
+				}),
 		/**
 		 * ⚠️ LES DEUX SE RENDENT À PLAT, ET C'EST UNE RÈGLE D'AUDITABILITÉ. Elles
 		 * vivaient derrière une puce de portée qu'il fallait aller chercher :

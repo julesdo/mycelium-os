@@ -2259,3 +2259,31 @@ select:not(:disabled),
 		transform: translateX(5%);
 	}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE PILOTE AU TRAVAIL — chaque étape apparaît, puis se coche (`ui/pilote.tsx`).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.pilote-etape {
+	animation: pilote-etape 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.pilote-coche {
+	animation: pilote-coche 280ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes pilote-etape {
+	from {
+		opacity: 0;
+		transform: translateY(3px);
+	}
+}
+@keyframes pilote-coche {
+	from {
+		transform: scale(0.4);
+		opacity: 0;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.pilote-etape,
+	.pilote-coche {
+		animation: none;
+	}
+}

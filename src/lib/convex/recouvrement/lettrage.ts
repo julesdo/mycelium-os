@@ -284,6 +284,8 @@ export const appliquer = authedMutation({
 			organizationId,
 			...args
 		});
+		// Un virement rapproché déplace ce qui reste dû : le pilote relit tout de suite.
+		await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
 		return null;
 	}
 });
@@ -329,6 +331,7 @@ export const appliquerRepartition = authedMutation({
 				statutPaiement: ligne.solde ? 'SOLDEE' : 'PARTIELLEMENT_PAYEE'
 			});
 		}
+		await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
 		return null;
 	}
 });

@@ -446,6 +446,25 @@ const GARNIE: FileAffichee = {
 	rangees: RANGEES_DEMO,
 	travaux: TRAVAUX_DEMO,
 	nonLues: 2,
+	// Le pilote au milieu d'une relecture : deux étapes cochées, une en cours.
+	pilote: {
+		derniereVeille: Date.UTC(2026, 8, 17, 12, 32),
+		travaux: [
+			{
+				id: 'travail-demo',
+				titre: 'Relit votre dépôt',
+				etapes: [
+					{ libelle: 'Lit 198 factures et 40 règlements', faite: true },
+					{ libelle: 'Range par client : 23 clients', faite: true },
+					{ libelle: 'Repère 17 factures en retard', faite: false },
+					{ libelle: 'Met à jour les dates limites pour agir', faite: false }
+				],
+				etat: 'EN_COURS',
+				bilan: '17 factures en retard chez 9 clients.',
+				termineLe: null
+			}
+		]
+	},
 	hypotheses: HYPOTHESES_DEMO,
 	anglesMorts: ANGLES_MORTS_DEMO,
 	/**
@@ -454,7 +473,7 @@ const GARNIE: FileAffichee = {
 	 * un bandeau qui serait leur seul support les ferait disparaître d'un geste de
 	 * fermeture, et l'omission porterait sur l'argent qu'on ne réclamera pas.
 	 */
-	annonce: '198 factures lues cette nuit, 17 dossiers entrent dans la surveillance.',
+	annonce: '198 factures lues, 17 dossiers entrent dans la surveillance.',
 	/*
 	  ⚠️ LE RESTE EST COMPTÉ ET NOMMÉ, JAMAIS TRONQUÉ (D13). Sept par jour et par
 	  établissement ; ce qui dépasse se dit, sur cette ligne, et la phrase vient du

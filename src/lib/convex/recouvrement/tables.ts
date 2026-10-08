@@ -1591,7 +1591,93 @@ export const recouvrementTables = {
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_etat', ['organizationId', 'etat'])
-		.index('by_creance', ['creanceId'])
+		.index('by_creance', ['creanceId']),
+
+	/**
+	 * LE PILOTE — un par établissement, et il ne dort jamais (08/10/2026).
+	 *
+	 * ⚠️ IL REMPLACE « LE BATTEMENT DE LA NUIT ». Le produit relisait tout une fois
+	 * par jour, à 6 h UTC : un dépôt de l'après-midi attendait le lendemain pour
+	 * produire ses propositions, et l'écran disait « cette nuit ». Verdict du
+	 * fondateur : « stop cette histoire d'agent qui ne fonctionne que le soir, tout
+	 * doit se faire en live ». Le pilote se réveille à chaque changement (un dépôt,
+	 * un virement rapproché, une réponse) et toutes les quinze minutes pour ce que
+	 * le temps seul fait avancer.
+	 */
+	pilotes: defineTable({
+		organizationId: v.id('organizations'),
+		/**
+		 * LA PROCHAINE VEILLE DÉJÀ PROGRAMMÉE. Un réveil qui arrive pendant qu'une
+		 * veille attend ne s'empile pas : dix virements rapprochés d'affilée font
+		 * une veille, pas dix.
+		 */
+		veilleProgrammee: v.optional(v.id('_scheduled_functions')),
+		veilleProgrammeePour: v.optional(v.number()),
+		/** La dernière veille terminée : « relu il y a 3 min ». */
+		derniereVeille: v.optional(v.number())
+	}).index('by_org', ['organizationId']),
+
+	/**
+	 * CE QUE LE PILOTE FAIT, ÉTAPE PAR ÉTAPE, SOUS LES YEUX DU GÉRANT.
+	 *
+	 * ⚠️ LE TRAVAIL SE MONTRE, ET C'EST UNE CONDITION DE LA CONFIANCE. Un
+	 * automatisme instantané ne se croit pas : on veut tout revérifier, et c'est
+	 * l'effet « prise de notes » qu'on retire. Chaque travail porte ses étapes ;
+	 * elles se cochent une à une, au rythme où elles se font, et l'EFFET d'une
+	 * étape (ouvrir un dossier, programmer une relance) n'a lieu qu'au moment où
+	 * elle se coche. Ce qu'on voit est ce qui se passe.
+	 */
+	travauxPilote: defineTable({
+		organizationId: v.id('organizations'),
+		genre: v.union(
+			v.literal('RELECTURE'),
+			v.literal('DOSSIERS'),
+			v.literal('RELANCES'),
+			v.literal('PAIEMENTS')
+		),
+		/** Ce que fait le pilote, au présent : « Relit votre dépôt ». */
+		titre: v.string(),
+		etapes: v.array(
+			v.object({
+				libelle: v.string(),
+				/** Ce que l'étape produit, exécuté quand elle se coche. */
+				effet: v.optional(
+					v.union(
+						v.object({
+							genre: v.literal('OUVRIR_DOSSIER'),
+							debiteurId: v.id('debiteurs'),
+							factureIds: v.array(v.id('facturesVente'))
+						}),
+						v.object({
+							genre: v.literal('PROGRAMMER_RELANCE'),
+							creanceId: v.id('creances'),
+							etape: v.string()
+						})
+					)
+				),
+				faiteLe: v.optional(v.number())
+			})
+		),
+		/**
+		 * ⚠️ `EN_ATTENTE` : UN TRAVAIL À LA FOIS. Deux travaux qui se cochent en même
+		 * temps se lisent comme une machine qui s'emballe ; le second attend que le
+		 * premier ait fini, comme un collaborateur qui finit ce qu'il fait.
+		 */
+		etat: v.union(
+			v.literal('EN_ATTENTE'),
+			v.literal('EN_COURS'),
+			v.literal('FAIT'),
+			v.literal('ECHEC')
+		),
+		/** Ce que le travail a produit, en une ligne, une fois fini. */
+		bilan: v.optional(v.string()),
+		erreur: v.optional(v.string()),
+		commenceLe: v.number(),
+		termineLe: v.optional(v.number())
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_commence', ['organizationId', 'commenceLe'])
+		.index('by_org_and_etat', ['organizationId', 'etat'])
 };
 
 /**

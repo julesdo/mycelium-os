@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
+import { internal } from '../_generated/api';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { normaliserFournisseur } from '../../socle/normalisation';
@@ -404,6 +405,19 @@ export const enregistrerImport = internalMutation({
 		for (const debiteurId of debiteursTouches) {
 			await rejouerQualificationDuDebiteur(ctx, organizationId, debiteurId, aujourdHui);
 		}
+
+		/*
+		  ⚠️ LE PILOTE SE RÉVEILLE ICI, PAS LE LENDEMAIN (08/10/2026). C'est le point
+		  d'entrée de TOUS les imports — dépôt, Qonto, Chift — et le seul endroit où
+		  ce qui vient d'entrer est connu. La relecture se montre étape par étape,
+		  puis la veille pose les propositions et la suite.
+		*/
+		await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.relireApresImport, {
+			organizationId,
+			facturesCreees,
+			reglementsCrees,
+			debiteursTouches: [...debiteursTouches]
+		});
 
 		return {
 			debiteursCrees,

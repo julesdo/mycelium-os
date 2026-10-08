@@ -95,11 +95,14 @@ describe('schéma du recouvrement', () => {
 			'liensDePaiement',
 			'pieces',
 			'piecesFactures',
+			'pilotes',
 			'profilsCreancier',
 			'propositions',
 			'reglements',
 			'remisesAuConseil',
-			'suiviDossier'
+			'suiviDossier',
+			// Le pilote, qui vit en permanence, et le journal de ce qu'il fait (08/10/2026).
+			'travauxPilote'
 		]);
 	});
 

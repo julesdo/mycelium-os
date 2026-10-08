@@ -23,6 +23,7 @@ import {
 	Lien,
 	PageEcran,
 	PastilleDeRappel,
+	PiloteEnDirect,
 	PliDeLaFile,
 	SectionEcran,
 	SectionsDepliables,
@@ -40,6 +41,7 @@ import {
 	type FamilleRangee,
 	type LigneDAnciennete,
 	type Lecture,
+	type PiloteAffiche,
 	type PartsDues,
 	type PropositionDeRangee,
 	type TacheVeilleur,
@@ -379,6 +381,11 @@ export interface FileAffichee {
 	 */
 	readonly nonLues?: number;
 	/**
+	 * LE PILOTE, EN DIRECT : ce qu'il fait maintenant, ou ce qu'il vient de faire.
+	 * Absent tant que la lecture n'est pas arrivée.
+	 */
+	readonly pilote?: PiloteAffiche;
+	/**
 	 * CE QUE LE LOGICIEL A SUPPOSÉ, faute de donnée — et c'est UNE AUTRE CHOSE
 	 * qu'un angle mort.
 	 *
@@ -509,6 +516,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		rangees,
 		travaux,
 		nonLues,
+		pilote,
 		hypotheses,
 		anglesMorts,
 		annonce,
@@ -625,6 +633,14 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 			) : (
 				<SectionsDepliables ouvertes={depliees} onOuvertesChange={setDepliees}>
 					<Tete tete={tete} aujourdHui={aujourdHui} />
+
+					{/*
+					  LE PILOTE, SOUS LE CHIFFRE ET AVANT LA FILE. C'est la voix du produit :
+					  ce qu'il fait pendant qu'on regarde, puis ce qu'il vient de faire. Il
+					  passe avant ce qu'on demande au gérant, parce qu'il dit d'abord que le
+					  travail se fait.
+					*/}
+					{pilote === undefined ? null : <PiloteEnDirect pilote={pilote} />}
 
 					{depotOuvert ? (
 						<ZoneDepot
@@ -756,7 +772,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 								cle="veilleur"
 								famille="MACHINE"
 								titre="Surveillance"
-								glose="Ce que le logiciel a relu cette nuit, et ce qu’il relit en ce moment."
+								glose="Ce que le pilote a relu aujourd’hui, et ce qu’il relit en ce moment."
 								valeur={`${travaux.length} passage${pluriel(travaux.length)}`}
 							>
 								<Veilleur travaux={travaux} />

@@ -667,6 +667,10 @@ export const purgerEtablissement = internalMutation({
 		// les échanges, les promesses et les rappels du gérant — des données du
 		// client, comme le reste, donc purgées sans exception.
 		budget = await viderParIndexOrg(ctx, 'suiviDossier', organizationId, budget);
+		// Les travaux du pilote citent des clients, des factures et des dossiers : ils
+		// partent avant eux, avec l'état du pilote lui-même.
+		budget = await viderParIndexOrg(ctx, 'travauxPilote', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'pilotes', organizationId, budget);
 		// Les courriers référencent la créance et le décompte : ils partent avant eux.
 		budget = await viderParIndexOrg(ctx, 'envois', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
@@ -898,6 +902,8 @@ async function viderParIndexOrg(
 		| 'profilsCreancier'
 		| 'notifications'
 		| 'battements'
+		| 'pilotes'
+		| 'travauxPilote'
 		| 'intervenants'
 		| 'journal'
 		| 'propositions'

@@ -301,6 +301,7 @@ export { ActionsRapides, type ActionRapide } from './actions-rapides';
 export { FeuilleDeReussite } from './reussite';
 export { CarteGlissable, type ActionDeCarte } from './carte-glissable';
 export { FeuilleDeRappel } from './feuille-rappel';
+export { PiloteEnDirect, type PiloteAffiche, type TravailPiloteAffiche } from './pilote';
 export { BandeDAnciennete, repartirParAnciennete, type LigneDAnciennete } from './anciennete';
 
 /* ── CE QUE LES DÉCOMPTES LAISSENT DE CÔTÉ (rebranche/abandons) ────────────
