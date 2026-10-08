@@ -188,6 +188,18 @@ capital, le RCS et la ville du greffe se reprennent des annonces BODACC du créa
 rien d'écrit avant que le gérant valide. Et un dossier nomme désormais PLUSIEURS professionnels
 (`intervenantIds`, l'ancien `intervenantId` relu par `professionnelsDe`).
 
+**La défense est devenue un service le 08/10/2026**, sur la fiche praticien d'Alan, les cartes de
+Zocdoc et Preply et le lieu chez Fresha (le fondateur : « hyper quali, avec des images des avocats,
+cabinets, commissaires »). Chaque professionnel a une CARTE — portrait, profession, lieu et distance
+au siège du client, spécialités déclarées — et une FICHE : appeler, écrire, l'itinéraire, la carte
+du cabinet (tuiles Plan IGN ; l'adresse d'un avocat se géocode à l'ouverture, rue ou numéro
+seulement), ce que le registre publie (création, taille, qui y exerce) et un seul bouton plein
+(`ui/professionnel.tsx`). « Qui fait l'acte » ouvre la fiche DANS sa feuille. L'équipe a son écran,
+`/app/defense` — l'équipe, les professionnels près de chaque client en cours, la recherche — et le
+Compte y mène. **Aucun visage n'est inventé** : aucune source publique ne publie la photo d'un avocat
+ou d'un commissaire, un portrait se dessine d'après le nom, et la vraie photo s'ajoute depuis la fiche
+d'un membre de l'équipe (`poserPhoto`). Ni note ni avis : rien de vérifiable n'en publie.
+
 **Le site public a changé de direction artistique le 06/10/2026**
 (`docs/superpowers/specs/2026-10-06-site-direction-artistique.md`, vingt références Mobbin). Le
 fondateur : « des formes, de l'humanité, un feeling, une vraie DA en intégrant notre cible ». La
