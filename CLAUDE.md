@@ -144,7 +144,10 @@ centré avec le client et la date, ses trois postes en rangées, ce qui est lais
 deux sorties de même poids), puis TROIS CASES À COCHER — ce que le logiciel ne voit pas, écrit en
 affirmations (« Aucun avoir à déduire ») au lieu de trois segments à deux choix —, et UN bouton
 qui porte le montant, toujours visible, inerte tant qu'il reste quelque chose : la ligne dessous
-dit quoi (« Reste 1 case à cocher. »). Une case vide ne franchit rien, comme avant. Le refus en
+dit quoi (« Reste 1 case à cocher. »). Une case vide ne franchit rien, comme avant. **Depuis le
+08/10/2026, il n'en reste que DEUX** (avoir, règlement : ils changent le montant) : la
+contestation se déclare, facultative, s'inscrit au journal de l'arrêt et ne retient rien (voir
+« Une contestation ne bloque jamais rien », plus bas). Le refus en
 quatre parties (D0) reste entier, à l'endroit où le produit dit non : « Si l'un de ces points est
 faux » et « Ce décompte ne se calcule pas ». Le détail par facture (`LignesDuDecompte`), les
 valeurs de loi et le dernier décompte arrêté sont des rangées. 2 835 → 1 412 px, 469 → 168 mots.
@@ -376,6 +379,14 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     démarre d'un bouton, en travail visible.
   - **Le dossier avance à vue** (`ui/plume-dossier.tsx`) : en tête, ce que fait Plume, la date
     de la suite, ce qui arrive si rien ne bouge, et ce qui est récupéré.
+  - **Une contestation ne bloque jamais rien** (le fondateur, le même soir : « Plume doit être
+    capable de tout faire et ne jamais bloquer même si le client a contesté »). C'est un FAIT du
+    dossier, montré et noté, jamais un verrou : l'arrêt du décompte ne l'exige plus (`prevol.ts`,
+    `QUESTION_CONTESTATION`), le démarrage ne retire plus le client du pilote, les relances
+    continuent, et les écrans disent que le dossier continue. Plume note une contestation (ou sa
+    fin), arrête le décompte, ouvre la page de paiement et note la remise au conseil, toujours
+    après « Confirmer » ; quand les filtres retiennent sa phrase, ses gestes restent. Ce qui reste
+    suspendu l'est par la LOI (procédure collective, radiation), pas par une contestation.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
