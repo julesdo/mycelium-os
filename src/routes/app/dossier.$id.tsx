@@ -650,6 +650,18 @@ function PageCreance() {
 		debiteur: creance.debiteur,
 		debiteurId,
 		aDemarrer: creance.aDemarrer,
+		horsPilote: creance.horsPilote,
+		totalFactures: creance.factures.reduce((total, f) => total + f.montantTTC, 0n),
+		dejaRecupere: creance.factures.reduce(
+			(total, f) => total + (f.montantTTC - f.resteDu > 0n ? f.montantTTC - f.resteDu : 0n),
+			0n
+		),
+		onDemanderAPlume: (question?: string) =>
+			void navigate({
+				to: '/app/pilote/$id',
+				params: { id },
+				search: question === undefined ? {} : { question }
+			}),
 		onDemarrer: () => void navigate({ to: '/app/demarrer/$id', params: { id: debiteurId } }),
 		...(creance.debiteurEmail === undefined ? {} : { debiteurEmail: creance.debiteurEmail }),
 		santeDebiteur: creance.santeDebiteur,

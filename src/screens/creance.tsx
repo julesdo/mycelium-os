@@ -78,7 +78,10 @@ import {
 	type EtapeAVenir,
 	NOM_DU_PILOTE,
 	Plume,
-	SuiteDuPlan
+	PlumeSurLeDossier,
+	SuiteDuPlan,
+	dateRelative,
+	type HumeurPlume
 } from '../ui';
 import { TITRE_ECRAN } from './titres';
 
@@ -207,6 +210,13 @@ export interface CreanceOuverte {
 	readonly aDemarrer?: boolean;
 	/** Ouvre le démarrage guidé de ce dossier. */
 	readonly onDemarrer?: () => void;
+	/** Le gérant a retiré ce client du pilote : Plume suit ses dates sans le relancer. */
+	readonly horsPilote?: boolean;
+	/** Le total des factures du dossier, et ce qui en est déjà rentré : « Récupéré ». */
+	readonly totalFactures?: bigint;
+	readonly dejaRecupere?: bigint;
+	/** Ouvre la conversation de Plume sur ce dossier, une question prête dans le champ. */
+	readonly onDemanderAPlume?: (question?: string) => void;
 	/**
 	 * L'adresse électronique du client, quand elle est connue.
 	 *
@@ -443,7 +453,15 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 
 					{pret.aDemarrer === true && pret.onDemarrer !== undefined ? (
 						<PlumeADemarrer client={pret.debiteur} onDemarrer={pret.onDemarrer} />
-					) : null}
+					) : pret.onDemanderAPlume === undefined ? null : (
+						<PlumeSurLeDossier
+							{...ceQueFaitPlume(pret)}
+							recupere={pret.dejaRecupere ?? 0n}
+							total={pret.totalFactures ?? 0n}
+							suggestions={SUGGESTIONS_SUR_LE_DOSSIER}
+							onDemander={pret.onDemanderAPlume}
+						/>
+					)}
 
 					<CarteDeLEtat creance={pret} onOuvrir={ouvrir} />
 
@@ -589,6 +607,113 @@ function gesteDuDossier(
 		return { libelle: 'Préparer un courrier', ouvre: 'courriers' };
 	}
 	return { libelle: 'Relancer', ouvre: 'courriers' };
+}
+
+/** Ce qu'on demande le plus souvent à Plume sur un dossier : un toucher remplit le champ. */
+const SUGGESTIONS_SUR_LE_DOSSIER = [
+	'Relance-le',
+	'Il a promis de payer à la fin du mois',
+	'Rappelle-moi mardi prochain',
+	'Combien me doit-il, pénalités comprises ?'
+] as const;
+
+/** « jeudi 10:00 » : le jour et l'heure d'un départ, chez le gérant. */
+const DEPART = new Intl.DateTimeFormat('fr-FR', {
+	weekday: 'long',
+	hour: '2-digit',
+	minute: '2-digit'
+});
+
+/**
+ * CE QUE PLUME DIT DU DOSSIER, À LA PREMIÈRE PERSONNE — et ce qui arrive si rien
+ * ne bouge.
+ *
+ * ⚠️ DES FAITS ET DES DATES, JAMAIS UN CONSEIL (ligne rouge n° 3). « Prochaine
+ * étape : deuxième rappel, dans 6 j » est le plan ; « si Durand ne paie pas d'ici
+ * là, je l'envoie » est la règle qu'a choisie le gérant en activant les relances.
+ * La remise au conseil ne s'annonce jamais comme une suite : « c'est vous qui la
+ * décidez ».
+ *
+ * ⚠️ L'ORDRE EST CELUI DE CE QUI PRESSE LE GÉRANT : ce qui part bientôt (et se
+ * retient encore), ce qui attend sa relecture, puis le plan.
+ */
+function ceQueFaitPlume(creance: CreanceOuverte): {
+	humeur: HumeurPlume;
+	phrase: string;
+	siRienNeBouge: string | null;
+} {
+	const client = creance.debiteur;
+	const quand = (le: string) =>
+		le <= creance.aujourdHui ? 'aujourd’hui' : dateRelative(le, creance.aujourdHui);
+	if (creance.etapes.etape === 'REGLE') {
+		return { humeur: 'content', phrase: 'C’est réglé : tout est payé.', siRienNeBouge: null };
+	}
+	if (creance.etapes.etape === 'TRIBUNAL') {
+		return {
+			humeur: 'repos',
+			phrase: 'Le dossier est entre les mains de votre conseil. Je surveille ses délais.',
+			siRienNeBouge: null
+		};
+	}
+	if (creance.santeDebiteur === 'PROCEDURE_COLLECTIVE' || creance.santeDebiteur === 'RADIEE') {
+		return {
+			humeur: 'attention',
+			phrase: `${client} est en procédure collective ou radié : je ne le relance pas.`,
+			siRienNeBouge: 'Je surveille ses dates, et ce qui le concerne au registre.'
+		};
+	}
+	const programme = creance.courriers.envois.find((e) => e.etat === 'PROGRAMME');
+	if (programme !== undefined) {
+		return {
+			humeur: 'travaille',
+			phrase:
+				programme.partiraLe === undefined
+					? `Je relance ${client} très bientôt, à votre nom.`
+					: `Je relance ${client} ${DEPART.format(new Date(programme.partiraLe))}, à votre nom.`,
+			siRienNeBouge: 'Vous pouvez encore retenir l’envoi, dans ses courriers.'
+		};
+	}
+	if (creance.courriers.envois.some((e) => e.etat === 'A_VALIDER')) {
+		return {
+			humeur: 'attention',
+			phrase: 'J’ai préparé une relance : elle attend votre relecture dans ses courriers.',
+			siRienNeBouge: null
+		};
+	}
+	if (creance.horsPilote === true) {
+		return {
+			humeur: 'repos',
+			phrase: 'Vous gardez ce client en main : je suis ses dates, sans le relancer.',
+			siRienNeBouge: null
+		};
+	}
+	const prochaine = creance.planAVenir?.[0];
+	if (prochaine === undefined) {
+		return {
+			humeur: 'repos',
+			phrase: 'Je surveille ce dossier et ses dates.',
+			siRienNeBouge: null
+		};
+	}
+	if (!prochaine.automatique) {
+		return {
+			humeur: 'attention',
+			phrase: 'J’ai fait tout ce que prévoit le plan de relance.',
+			siRienNeBouge: 'La remise à votre conseil, c’est vous qui la décidez.'
+		};
+	}
+	return creance.envoiAutomatique === true
+		? {
+				humeur: 'repos',
+				phrase: `Je m’occupe de ce dossier. Prochaine étape : ${prochaine.nom.toLowerCase()}, ${quand(prochaine.le)}.`,
+				siRienNeBouge: `Si ${client} ne paie pas d’ici là, je l’envoie à votre nom. Un paiement arrête tout.`
+			}
+		: {
+				humeur: 'repos',
+				phrase: `Prochaine étape : ${prochaine.nom.toLowerCase()}, ${quand(prochaine.le)}.`,
+				siRienNeBouge:
+					'Je la préparerai, et vous la relirez avant qu’elle parte. Un paiement arrête tout.'
+			};
 }
 
 /**

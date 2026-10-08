@@ -344,6 +344,8 @@ export const creanceComplete = authedQuery({
 		),
 		/** Préparé par Plume, pas encore démarré : sa page invite à le démarrer. */
 		aDemarrer: v.boolean(),
+		/** Le gérant a retiré ce client du pilote : Plume suit ses dates sans le relancer. */
+		horsPilote: v.boolean(),
 		debiteur: v.string(),
 		/**
 		 * QUI FAIT L'ACTE, PAR SON IDENTIFIANT — et pas par son nom.
@@ -631,6 +633,7 @@ export const creanceComplete = authedQuery({
 		return {
 			statut: creance.statut,
 			aDemarrer: creance.aDemarrer === true,
+			horsPilote: debiteur?.horsPilote === true,
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 			intervenantId: professionnelsDe(creance)[0] ?? null,
 			intervenantIds: professionnelsDe(creance),

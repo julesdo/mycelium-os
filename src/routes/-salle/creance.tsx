@@ -797,6 +797,13 @@ function creanceDemo({
 		echeanceLaPlusAncienne: FACTURES_DEMO.map((facture) => facture.dateEcheance).reduce(
 			(tot, date) => (date < tot ? date : tot)
 		),
+		// Plume en tête du dossier : ce qu'il fait, ce qui est rentré, et la conversation.
+		envoiAutomatique: true,
+		totalFactures: FACTURES_DEMO.reduce((total, facture) => total + facture.montantTTC, 0n),
+		dejaRecupere:
+			FACTURES_DEMO.reduce((total, facture) => total + facture.montantTTC, 0n) -
+			enCentimes(PRINCIPAL_RESTANT_DU_DEMO),
+		onDemanderAPlume: () => undefined,
 		// La suite que le domaine projette, depuis la plus ancienne échéance : jamais
 		// écrite à la main.
 		planAVenir: suiteDuPlan({

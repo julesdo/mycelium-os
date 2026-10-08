@@ -299,6 +299,7 @@ export {
 	type TravailPiloteAffiche
 } from './pilote';
 export { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
+export { PlumeSurLeDossier } from './plume-dossier';
 export {
 	AccueilDePlume,
 	BulleDuGerant,
