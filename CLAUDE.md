@@ -399,6 +399,20 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     fin), arrête le décompte, ouvre la page de paiement et note la remise au conseil, toujours
     après « Confirmer » ; quand les filtres retiennent sa phrase, ses gestes restent. Ce qui reste
     suspendu l'est par la LOI (procédure collective, radiation), pas par une contestation.
+- **La parole du client fait taire le pilote** (analyse des parcours d'impayés du 08/10/2026,
+  `docs/superpowers/specs/2026-10-08-parcours-impayes.md`). Le pilote relançait un client qui
+  venait de promettre de payer, et la somme entière à un client qui payait en trois fois.
+  Désormais (`verticales/recouvrement/parole.ts`) une promesse fait taire le plan jusqu'au jour
+  promis + 3 jours de grâce, et un échéancier tant que ses versements arrivent ; la relance que le
+  pilote avait programmée est abandonnée quand le client donne sa parole, et relue au départ. Un
+  versement passé son délai sans être reçu rend la main au plan et remonte dans Aujourd'hui
+  (`VERSEMENT_MANQUE`). **« Tenue » reste le mot du gérant** : le logiciel dit ce qui est arrivé
+  depuis, il ne tranche pas. Sur le dossier, « Il vous a répondu ? » (sous le seul bouton) ouvre
+  cinq issues comme chez Cash App ; le paiement en plusieurs fois se convient comme chez Affirm et
+  se suit comme chez Afterpay (`ui/echeancier.tsx`). Un dossier se **classe** enfin (quatre
+  raisons, `convex/recouvrement/classement.ts`) : rien n'est effacé, il sort des alertes et du
+  montant de l'accueil, et se rouvre d'un toucher ; « il a payé » n'est pas une raison, le
+  règlement se note sur la fiche. Plume sait aussi convenir d'un échéancier et classer.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
