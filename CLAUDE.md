@@ -30,7 +30,7 @@ explicable période par période.
    pas : ils envoient les relances de leurs clients, au nom de ces clients.)_ Le pilote envoie les
    rappels et la lettre officielle du plan de relance (`plan-relance.ts`), par e-mail, au nom du
    gérant, **une fois qu'un administrateur l'a activé** (`activerRelances`), après avoir lu ce qui
-   partira ; chaque relance **s'affiche une heure avant de partir et se retient d'un geste**
+   partira, et sur les seuls dossiers que le gérant a **démarrés** (`aDemarrer`) ; chaque relance **s'affiche une heure avant de partir et se retient d'un geste**
    (`retenir`, qui retire le client du pilote) ; un paiement arrivé entre-temps l'arrête ; la lettre
    officielle attend un décompte arrêté par le gérant. Tenu par
    `src/lib/convex/__tests__/piloteRelances.test.ts`. Un courrier préparé à la main suit toujours
@@ -352,6 +352,30 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     configuré, la relance redevient un courrier à valider. L'adresse d'envoi est `RELANCES_EMAIL`,
     à défaut celle d'`AUTH_EMAIL`, avec le nom du créancier devant : un domaine neutre reste à
     poser pour qu'aucun e-mail ne nomme le logiciel.
+- **Le pilote s'appelle Plume, et il vit dans l'application**
+  (`docs/superpowers/specs/2026-10-08-plume.md`, le soir du 08/10). Le fondateur : « personnifié
+  comme une mascotte rassurante », « la bulle et popup de discussion est juste horrible »,
+  « on doit pouvoir tout faire sur un dossier par cette interface en langage naturel ». Relevé
+  sur Claude, Alan (Mo), Lemonade (Maya), Manus, Copilot Money et Vestiaire :
+  - **Plume** (`ui/plume.tsx`) : une goutte d'encre avec une plume d'écriture, en SVG, cinq
+    humeurs qui suivent l'état réel (veille, travaille, content, attention, écoute). Il remplace
+    « Demander » dans la barre du bas, avec la pastille des dossiers à démarrer. Le nom est une
+    constante (`NOM_DU_PILOTE`) et n'entre jamais dans ce qui part vers un client.
+  - **La conversation est plein écran**, sur les codes de Claude (`ui/fil-plume.tsx`,
+    `/app/pilote/$id` pour un dossier, `/app/pilote` ailleurs) : la question en bulle à droite,
+    la réponse sans bulle, le travail qui se coche dans le fil, un compositeur flottant. Une
+    phrase sans source n'est marquée « non sourcé » que si elle porte un chiffre.
+  - **Elle agit** : Plume propose des gestes pris dans un catalogue fermé
+    (`compagnon/gestes.ts` : relancer, rappel, promesse, note, e-mail, retirer ou remettre au
+    pilote, retenir, ouvrir un écran), relus contre l'état du dossier, et qui ne se font qu'au
+    « Confirmer » du gérant (`gestesPlume.confirmer`, journal au nom du gérant). « Relancer »
+    prépare la prochaine étape du plan, à relire.
+  - **Plume prépare, le gérant démarre** : un dossier que Plume ouvre seul porte `aDemarrer`,
+    et rien ne se relance avant. Le démarrage guidé (`/app/demarrer/$id`) mêle fil et barre
+    d'étapes, une question à la fois ; le lot (`/app/demarrer`) coche tout ce qui est prêt et le
+    démarre d'un bouton, en travail visible.
+  - **Le dossier avance à vue** (`ui/plume-dossier.tsx`) : en tête, ce que fait Plume, la date
+    de la suite, ce qui arrive si rien ne bouge, et ce qui est récupéré.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
