@@ -23,14 +23,20 @@ explicable période par période.
 
 ## ⚠️ Les trois lignes rouges
 
-1. **Rien ne part sans que le gérant ait validé ce document.** _(Fondement relevé le 29/09/2026 :
-   le décret n° 96-1112, article 1er, vise quiconque « procède au recouvrement amiable des créances
-   pour le compte d'autrui », « même à titre accessoire », SANS condition de manipulation de fonds ;
-   son article 4 imposerait alors à la lettre de nommer l'agent de recouvrement. Un envoi
-   automatique, même sur instruction préalable, ferait porter le nom de Letikette aux courriers du
-   gérant. Le logiciel RAPPELLE, il n'envoie pas.)_ Il est à son seul nom et sous sa
-   signature ; Letikette le prépare sans y figurer, sans être son mandataire, sans recevoir ni fonds
-   ni réponse du débiteur (le recouvrement pour compte de tiers est une activité encadrée). Quand le
+1. **Les relances partent seules quand le gérant l'a décidé ; rien ne part vers un tribunal.**
+   _(Décision du fondateur, 08/10/2026 : « on fait comme Qonto et les autres, on s'autorise à
+   relancer automatiquement ». Elle remplace la lecture prudente du décret n° 96-1112 relevée le
+   29/09/2026 — « le logiciel RAPPELLE, il n'envoie pas » —, que Pennylane, Qonto et Upflow ne font
+   pas : ils envoient les relances de leurs clients, au nom de ces clients.)_ Le pilote envoie les
+   rappels et la lettre officielle du plan de relance (`plan-relance.ts`), par e-mail, au nom du
+   gérant, **une fois qu'un administrateur l'a activé** (`activerRelances`), après avoir lu ce qui
+   partira ; chaque relance **s'affiche une heure avant de partir et se retient d'un geste**
+   (`retenir`, qui retire le client du pilote) ; un paiement arrivé entre-temps l'arrête ; la lettre
+   officielle attend un décompte arrêté par le gérant. Tenu par
+   `src/lib/convex/__tests__/piloteRelances.test.ts`. Un courrier préparé à la main suit toujours
+   l'ancien chemin : le gérant le valide, puis l'envoie. Tout part à son seul nom ; Letikette n'y
+   figure pas, n'est pas son mandataire, et ne reçoit ni fonds ni réponse du débiteur : les réponses
+   arrivent à l'adresse du gérant. Quand le
    gérant a un avocat, le projet part chez cet avocat, qui décide. Rien ne part vers un tribunal ou un
    greffe depuis l’app : ce qui va devant un tribunal passe par l’avocat que le gérant choisit. Seule
    exception : la déclaration de créance au mandataire, que la loi permet au créancier de faire
@@ -337,8 +343,15 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   - **Les dossiers naissent seuls** : une facture échue entre dans le dossier de son client, ouvert
     s'il n'existe pas, par lots de 25, signé « machine » au journal. Un client se retire du pilote
     sur sa fiche (`horsPilote`).
-  - **L'envoi automatique des relances n'est PAS livré** : la garde de sécurité de la session l'a
-    bloqué (action à effet réel). Il attend une autorisation explicite du fondateur.
+  - **Les relances partent seules**, autorisées explicitement par le fondateur le soir même : voir
+    la ligne rouge n° 1. Le bloc « Le pilote » de l'accueil porte l'activation (une feuille qui dit
+    tout ce qui partira) puis « Part bientôt », chaque relance avec son « Retenir » ; la carte d'un
+    courrier programmé dans le dossier aussi. En semaine, de 9 h à 18 h, heure de Paris
+    (`prochainCreneauDEnvoi`). Ce qui manque pour envoyer (l'e-mail du client, le vôtre, un
+    décompte arrêté) arrive une fois dans la boîte de réception (`PILOTE_BLOQUE`). Sans envoi
+    configuré, la relance redevient un courrier à valider. L'adresse d'envoi est `RELANCES_EMAIL`,
+    à défaut celle d'`AUTH_EMAIL`, avec le nom du créancier devant : un domaine neutre reste à
+    poser pour qu'aucun e-mail ne nomme le logiciel.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir

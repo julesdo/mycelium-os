@@ -7,19 +7,18 @@ import type { SanteDebiteur } from './scoring';
  * LES RELANCES ASYMÉTRIQUES — module 3.1 du blueprint.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ CE SONT DES BROUILLONS. C'EST UNE LIGNE ROUGE, PAS UN CHOIX DE PRODUIT
+ * ⚠️ CE MODULE COMPOSE ; LE PILOTE ENVOIE (08/10/2026)
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * « Le recouvrement amiable pour le compte d'autrui est une activité encadrée.
- * En Phase 1, les relances sont des BROUILLONS générés dans la boîte du client.
- * C'est lui qui envoie, depuis sa propre adresse, sous sa propre signature.
- * Letikette n'apparaît à aucun moment dans la chaîne. »
+ * Les relances étaient des BROUILLONS que le gérant envoyait lui-même. Le
+ * fondateur a décidé le 08/10/2026 que le pilote relance seul, au nom du
+ * gérant, une fois qu'il l'a activé (`recouvrement/pilote.ts`, ligne rouge n° 1
+ * de CLAUDE.md). Ce module, lui, n'a pas changé de rôle : il compose un texte,
+ * et rien d'autre. Il n'expédie rien et ne planifie rien.
  *
- * Ce module compose donc un texte, et rien d'autre. Il n'expédie rien, ne
- * planifie rien, et aucun brouillon ne nomme le logiciel — un test balaie
- * chaque texte produit. Un débiteur qui lirait le nom d'un tiers y verrait un
- * mandat de recouvrement, c'est-à-dire précisément l'activité qu'on n'exerce
- * pas.
+ * ⚠️ ET AUCUN TEXTE NE NOMME LE LOGICIEL — un test balaie chaque texte produit.
+ * Ce qui part est la lettre du créancier ; un débiteur qui lirait le nom d'un
+ * tiers y verrait un mandat de recouvrement.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * L'ASYMÉTRIE : CHAQUE NIVEAU GARDE UNE MARCHE AU-DESSUS DE LUI
@@ -118,6 +117,12 @@ export interface ElementsRelance {
 	readonly santeDebiteur: SanteDebiteur;
 	readonly constatRegistre?: { readonly nature: string; readonly dateJugement?: string };
 	readonly aujourdHui: string;
+	/**
+	 * LE RANG DU RAPPEL DANS LE PLAN DU PILOTE (`plan-relance.ts`) : le premier
+	 * suppose l'oubli, le second dit qu'on revient — et ni l'un ni l'autre ne
+	 * menace. 1 par défaut.
+	 */
+	readonly rang?: 1 | 2;
 }
 
 /**
@@ -234,15 +239,31 @@ function rappel(elements: ElementsRelance): Relance {
 		return `— facture ${facture.reference}, ${versEuros(facture.montantTTC)} €${echeance}`;
 	});
 
+	/*
+	  ⚠️ LE SECOND RAPPEL DIT QU'ON REVIENT, PAS PLUS. Il garde l'asymétrie : ni
+	  pénalités, ni frais, ni suite. La lettre officielle, qui vient après lui, est
+	  la seule à les annoncer.
+	*/
+	const second = elements.rang === 2;
+	const pluriel = elements.factures.length > 1 ? 's' : '';
 	return {
 		disponible: true,
 		niveau: 1,
-		objet: `Facture${elements.factures.length > 1 ? 's' : ''} en attente de règlement`,
+		objet: second
+			? `Second rappel : facture${pluriel} en attente de règlement`
+			: `Facture${pluriel} en attente de règlement`,
 		corps: [
 			'Bonjour,',
 			'',
-			'Sauf erreur de notre part, le règlement de la ou des factures suivantes ne nous est',
-			'pas encore parvenu :',
+			...(second
+				? [
+						'Nous revenons vers vous : sauf erreur de notre part, le règlement de la ou des',
+						'factures suivantes ne nous est toujours pas parvenu :'
+					]
+				: [
+						'Sauf erreur de notre part, le règlement de la ou des factures suivantes ne nous est',
+						'pas encore parvenu :'
+					]),
 			'',
 			...lignes,
 			'',

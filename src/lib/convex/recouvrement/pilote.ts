@@ -1,12 +1,25 @@
-import { v } from 'convex/values';
+import { v, ConvexError } from 'convex/values';
 import { internalMutation } from '../_generated/server';
 import type { MutationCtx } from '../_generated/server';
 import { internal } from '../_generated/api';
 import type { Doc, Id } from '../_generated/dataModel';
-import { authedQuery } from '../functions';
-import { getUserOrg } from '../lib/auth';
+import { authedMutation, authedQuery } from '../functions';
+import { getUserOrg, requireOrgAdmin } from '../lib/auth';
+import { sha256 } from '../../socle/empreinte';
+import { composerRelance } from '../../verticales/recouvrement/relance';
+import {
+	PLAN_PAR_DEFAUT,
+	prochainCreneauDEnvoi,
+	type CleEtapePlan
+} from '../../verticales/recouvrement/plan-relance';
+import { resend, assertResendApiKey } from '../emails/resend';
+import { relanceHtml } from '../emails/modeles/relance';
+import { requireEnv } from '../env';
+import { composer, type ChoixCourrier } from './envois';
+import { planDuDossier } from './plan';
+import { resteDu } from './lecture';
 import { pluriel } from '../../socle/francais';
-import { depuisCentimes, versEuros } from '../../socle/montants';
+import { ZERO, additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
 import { rattacherFactures } from './arret';
 
 /**
@@ -54,6 +67,18 @@ const VEILLE_PERDUE_MS = 60_000;
  * par lots, un lot par veille, plutôt qu'en une liste de deux cents étapes.
  */
 const CLIENTS_PAR_TRAVAIL = 25;
+/**
+ * LE TEMPS POUR RETENIR UNE RELANCE. Elle est composée, programmée, visible sur
+ * l'accueil et dans son dossier ; pendant une heure, le gérant peut l'arrêter
+ * d'un geste. C'est le « Annuler l'envoi » de Gmail, à l'échelle d'un courrier.
+ */
+const DELAI_POUR_RETENIR_MS = 60 * 60 * 1000;
+/**
+ * Le délai laissé au client par la lettre officielle, quand le gérant n'en a pas
+ * choisi : le même que celui que propose l'écran (`DELAI_DE_RELANCE_PAR_DEFAUT`,
+ * dans `app/gestes-dossier.ts`).
+ */
+const DELAI_LETTRE_PAR_DEFAUT = 8;
 
 /** Le pilote de l'établissement, créé à son premier réveil. */
 async function piloteDe(
@@ -150,6 +175,14 @@ export const veiller = internalMutation({
 			organizationId,
 			jour
 		});
+
+		// 4. LES RELANCES DU JOUR — seulement si le gérant a laissé le pilote relancer.
+		if (pilote.envoiAutomatique === true) {
+			await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.programmerLesRelances, {
+				organizationId,
+				jour
+			});
+		}
 
 		await ctx.db.patch(pilote._id, {
 			veilleProgrammee: undefined,
@@ -339,9 +372,11 @@ async function executerEffet(
 			return;
 		}
 		case 'PROGRAMMER_RELANCE':
-			// Les relances du pilote arrivent avec leur propre lot ; aucun travail ne
-			// porte encore cet effet. Le dire vaut mieux qu'un succès qui ne fait rien.
-			throw new Error('La programmation des relances n’est pas encore branchée.');
+			await programmerUneRelance(ctx, organizationId, effet.creanceId, effet.etape);
+			return;
+		case 'ENVOYER':
+			await envoyerMaintenant(ctx, effet.envoiId);
+			return;
 	}
 }
 
@@ -387,8 +422,16 @@ export const avancerTravail = internalMutation({
 			await ctx.db.patch(travailId, { etat: 'FAIT', termineLe: Date.now() });
 		}
 
-		if (fini) await demarrerLeSuivant(ctx, travail.organizationId);
-		else {
+		if (fini) {
+			await demarrerLeSuivant(ctx, travail.organizationId);
+			// Des dossiers viennent de s'ouvrir : leurs relances se programment tout de
+			// suite, pas au prochain quart d'heure.
+			if (travail.genre === 'DOSSIERS') {
+				await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, {
+					organizationId: travail.organizationId
+				});
+			}
+		} else {
 			await ctx.scheduler.runAfter(CADENCE_MS, internal.recouvrement.pilote.avancerTravail, {
 				travailId
 			});
@@ -466,7 +509,9 @@ export const ouvrirLesDossiers = internalMutation({
 		for (const etat of ['EN_COURS', 'EN_ATTENTE'] as const) {
 			const travaux = await ctx.db
 				.query('travauxPilote')
-				.withIndex('by_org_and_etat', (q) => q.eq('organizationId', organizationId).eq('etat', etat))
+				.withIndex('by_org_and_etat', (q) =>
+					q.eq('organizationId', organizationId).eq('etat', etat)
+				)
 				.collect();
 			for (const travail of travaux) {
 				for (const etape of travail.etapes) {
@@ -543,6 +588,539 @@ export const ouvrirLesDossiers = internalMutation({
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// LES RELANCES QUI PARTENT SEULES (P3)
+// ─────────────────────────────────────────────────────────────────────────
+
+/*
+  ⚠️ LA DÉCISION DU 08/10/2026, ET CE QU'ELLE CHANGE.
+
+  Jusqu'ici, rien ne partait sans que le gérant ait validé le document : le
+  logiciel préparait, le gérant validait puis envoyait lui-même. Le fondateur a
+  tranché : « on fait comme Qonto et les autres, on s'autorise à relancer
+  automatiquement ». Pennylane, Qonto et Upflow envoient les relances de leurs
+  clients depuis leur plateforme, au nom de ces clients.
+
+  Ce que le pilote garde de l'ancienne règle :
+    · rien ne part tant qu'un ADMINISTRATEUR n'a pas activé les relances
+      (`activerRelances`), une fois, après avoir lu ce qui partira ;
+    · chaque relance est visible et RETENABLE pendant une heure avant de partir ;
+    · elle part au nom du créancier, et les réponses arrivent à SON adresse ;
+    · un client en procédure collective ou radié ne se relance pas ;
+    · rien ne va vers un tribunal ni chez un avocat sans le gérant : l'étape
+      « remise à votre conseil » n'est jamais automatique.
+*/
+
+const NOM_DE_L_ETAPE: Readonly<Record<'RAPPEL' | 'SECOND_RAPPEL' | 'LETTRE_OFFICIELLE', string>> = {
+	RAPPEL: 'le rappel',
+	SECOND_RAPPEL: 'le deuxième rappel',
+	LETTRE_OFFICIELLE: 'la lettre officielle'
+};
+
+type EtapeEnvoyable = 'RAPPEL' | 'SECOND_RAPPEL' | 'LETTRE_OFFICIELLE';
+
+function estEnvoyable(cle: string): cle is EtapeEnvoyable {
+	return cle === 'RAPPEL' || cle === 'SECOND_RAPPEL' || cle === 'LETTRE_OFFICIELLE';
+}
+
+type Composee =
+	| {
+			readonly ok: true;
+			readonly modele: 'RAPPEL' | 'RELANCE_OFFICIELLE';
+			readonly objet: string;
+			readonly corps: string;
+			readonly resume: readonly string[];
+			readonly choix: string;
+			readonly decompteId: Id<'decomptes'> | null;
+	  }
+	| { readonly ok: false; readonly manques: readonly string[] };
+
+/**
+ * LA LETTRE D'UNE ÉTAPE, COMPOSÉE COMME À LA MAIN — et ce qui l'empêche, nommé.
+ *
+ * ⚠️ LES MÊMES GABARITS QUE LE GÉRANT : le rappel de niveau 1 (`relance.ts`),
+ * la lettre officielle des courriers (`envois.ts`, `composer`). Le pilote
+ * n'écrit aucune phrase à lui.
+ *
+ * ⚠️ ET CE QUI MANQUE POUR ENVOYER EST COMPTÉ ICI, PAS DÉCOUVERT À L'ENVOI :
+ * l'adresse du client, la vôtre pour les réponses, et pour la lettre officielle
+ * un décompte arrêté (les trois points que seul le gérant connaît).
+ */
+async function composerEtape(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	creance: Doc<'creances'>,
+	debiteur: Doc<'debiteurs'>,
+	etape: EtapeEnvoyable,
+	aujourdHui: string
+): Promise<Composee> {
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	const manques: string[] = [];
+	if (debiteur.email === undefined || debiteur.email === '') {
+		manques.push(`l’adresse e-mail de ${debiteur.denomination} (sa fiche)`);
+	}
+	if (profil?.email === undefined || profil.email === '') {
+		manques.push('votre adresse e-mail pour les réponses (Mon compte, vos courriers)');
+	}
+	if (profil?.denomination === undefined || profil.denomination === '') {
+		manques.push('le nom de votre entreprise (Mon compte)');
+	}
+
+	if (etape === 'LETTRE_OFFICIELLE') {
+		const choix: ChoixCourrier = {
+			modele: 'RELANCE_OFFICIELLE',
+			delaiJours: profil?.delaiRelanceParDefautJours ?? DELAI_LETTRE_PAR_DEFAUT,
+			suite: 'SUITE_GENERALE',
+			modalite:
+				profil?.iban !== undefined && profil.iban !== '' ? 'VIREMENT_IBAN' : 'SELON_FACTURES',
+			reserveIndemnisationComplementaire: false
+		};
+		const { composition, decompteId } = await composer(
+			ctx,
+			organizationId,
+			creance._id,
+			choix,
+			aujourdHui
+		);
+		if (!composition.ok) return { ok: false, manques: [...manques, ...composition.manques] };
+		if (manques.length > 0) return { ok: false, manques };
+		return {
+			ok: true,
+			modele: 'RELANCE_OFFICIELLE',
+			objet: composition.objet,
+			corps: composition.corps,
+			resume: composition.resume,
+			choix: JSON.stringify(choix),
+			decompteId
+		};
+	}
+
+	const factures = (
+		await ctx.db
+			.query('facturesVente')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+			.collect()
+	).filter((f) => f.statutPaiement !== 'SOLDEE');
+	const restes = await Promise.all(factures.map((f) => resteDu(ctx, f)));
+	const relance = composerRelance(1, {
+		creancier: profil?.denomination ?? '',
+		debiteur: debiteur.denomination,
+		factures: factures.map((f) => ({
+			reference: f.reference,
+			montantTTC: depuisCentimes(f.montantTTC),
+			dateEcheance: f.dateEcheance
+		})),
+		principalRestantDu: restes.length > 0 ? additionner(...restes) : ZERO,
+		santeDebiteur: debiteur.santeFinanciere,
+		constatRegistre: debiteur.constatRegistre,
+		aujourdHui,
+		rang: etape === 'SECOND_RAPPEL' ? 2 : 1
+	});
+	if (!relance.disponible) return { ok: false, manques: [...manques, relance.constat] };
+	if (manques.length > 0) return { ok: false, manques };
+	return {
+		ok: true,
+		modele: 'RAPPEL',
+		objet: relance.objet,
+		corps: relance.corps,
+		resume: factures.map(
+			(f) => `Facture ${f.reference}, ${versEuros(depuisCentimes(f.montantTTC))} €`
+		),
+		choix: JSON.stringify({ modele: 'RAPPEL', rang: etape === 'SECOND_RAPPEL' ? 2 : 1 }),
+		decompteId: null
+	};
+}
+
+/**
+ * DIRE AU GÉRANT CE QUI MANQUE — une fois, dans sa boîte de réception.
+ *
+ * ⚠️ PAS DEUX FOIS LA MÊME. Une notification non lue sur le même dossier, avec
+ * le même message, suffit : la répéter à chaque quart d'heure en ferait du bruit.
+ */
+async function signalerCeQuiManque(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	creanceId: Id<'creances'>,
+	client: string,
+	etape: EtapeEnvoyable,
+	manques: readonly string[]
+): Promise<void> {
+	const lien = `/app/dossier/${creanceId}`;
+	const message = `Pour ${NOM_DE_L_ETAPE[etape]} de ${client}, il manque ${manques.join(', ')}.`;
+	const deja = await ctx.db
+		.query('notifications')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.collect();
+	if (
+		deja.some(
+			(n) => n.type === 'PILOTE_BLOQUE' && n.link === lien && n.message === message && !n.isRead
+		)
+	) {
+		return;
+	}
+	const membres = await ctx.db
+		.query('organizationMembers')
+		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+		.collect();
+	for (const membre of membres) {
+		await ctx.runMutation(internal.notifications.createNotification, {
+			organizationId,
+			userId: membre.userId,
+			type: 'PILOTE_BLOQUE',
+			title: 'Le pilote a besoin de vous',
+			message,
+			link: lien
+		});
+	}
+}
+
+/**
+ * LES RELANCES DU JOUR — ce que le pilote programme à cette veille.
+ *
+ * ⚠️ IL NE PROGRAMME QUE CE QUI EST DÛ, DANS L'ORDRE DU PLAN, ET RIEN D'AUTRE :
+ *   · un dossier classé, confié à un professionnel, ou dont le client est retiré
+ *     du pilote, en procédure collective ou radié, ne se relance pas ;
+ *   · un dossier qui a déjà un courrier en attente (programmé, ou préparé à la
+ *     main et pas encore validé) attend que celui-là soit parti ;
+ *   · ce qui manque pour envoyer se signale au gérant, une fois.
+ */
+export const programmerLesRelances = internalMutation({
+	args: { organizationId: v.id('organizations'), jour: v.string() },
+	returns: v.null(),
+	handler: async (ctx, { organizationId, jour }): Promise<null> => {
+		const pilote = await piloteDe(ctx, organizationId);
+		if (pilote.envoiAutomatique !== true) return null;
+
+		const occupes = new Set<string>();
+		for (const etat of ['EN_COURS', 'EN_ATTENTE'] as const) {
+			const travaux = await ctx.db
+				.query('travauxPilote')
+				.withIndex('by_org_and_etat', (q) =>
+					q.eq('organizationId', organizationId).eq('etat', etat)
+				)
+				.collect();
+			for (const travail of travaux) {
+				for (const etape of travail.etapes) {
+					if (etape.faiteLe === undefined && etape.effet?.genre === 'PROGRAMMER_RELANCE') {
+						occupes.add(etape.effet.creanceId);
+					}
+				}
+			}
+		}
+
+		const creances = await ctx.db
+			.query('creances')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect();
+		const etapes: { libelle: string; effet: Effet }[] = [];
+		for (const creance of creances) {
+			if (etapes.length >= RELANCES_PAR_TRAVAIL) break;
+			if (creance.statut === 'CLOSE' || creance.engageeLe !== undefined) continue;
+			if (occupes.has(creance._id)) continue;
+			const debiteur = await ctx.db.get(creance.debiteurId);
+			if (debiteur === null || debiteur.horsPilote === true) continue;
+			if (
+				debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE' ||
+				debiteur.santeFinanciere === 'RADIEE'
+			) {
+				continue;
+			}
+
+			const envois = await ctx.db
+				.query('envois')
+				.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+				.collect();
+			if (envois.some((e) => e.etat === 'PROGRAMME' || e.etat === 'A_VALIDER')) continue;
+
+			const factures = await ctx.db
+				.query('facturesVente')
+				.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+				.collect();
+			const plan = await planDuDossier(ctx, creance, factures, jour, envois);
+			if (plan === null || !plan.prochaine.due) continue;
+			const cle = plan.prochaine.etape.cle;
+			// La remise au conseil n'est jamais automatique : la carte du dossier la
+			// porte avec la pastille des questions, et c'est le gérant qui décide.
+			if (!plan.prochaine.etape.automatique || !estEnvoyable(cle)) continue;
+
+			const essai = await composerEtape(ctx, organizationId, creance, debiteur, cle, jour);
+			if (!essai.ok) {
+				await signalerCeQuiManque(
+					ctx,
+					organizationId,
+					creance._id,
+					debiteur.denomination,
+					cle,
+					essai.manques
+				);
+				continue;
+			}
+			etapes.push({
+				libelle: `Prépare ${NOM_DE_L_ETAPE[cle]} de ${debiteur.denomination}`,
+				effet: { genre: 'PROGRAMMER_RELANCE', creanceId: creance._id, etape: cle }
+			});
+		}
+		if (etapes.length === 0) return null;
+
+		await commencerTravail(ctx, {
+			organizationId,
+			genre: 'RELANCES',
+			titre: 'Prépare les relances du jour',
+			etapes,
+			bilan:
+				`${etapes.length} relance${pluriel(etapes.length)} programmée${pluriel(etapes.length)}, ` +
+				'à retenir pendant une heure avant leur départ.'
+		});
+		return null;
+	}
+});
+
+/** Au plus tant de relances par travail, comme pour les dossiers. */
+const RELANCES_PAR_TRAVAIL = 25;
+
+/**
+ * PROGRAMMER UNE RELANCE — l'effet de l'étape « Prépare le rappel de Durand ».
+ *
+ * ⚠️ IL RELIT TOUT, COMME TOUS LES EFFETS : un paiement arrivé, un client retiré
+ * du pilote, une étape déjà faite entre la décision et maintenant, et rien n'est
+ * programmé. Ce qui manque désormais se signale ; rien ne lève, pour ne pas
+ * arrêter les relances des autres clients du même travail.
+ */
+async function programmerUneRelance(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	creanceId: Id<'creances'>,
+	etape: string
+): Promise<void> {
+	if (!estEnvoyable(etape)) return;
+	const creance = await ctx.db.get(creanceId);
+	if (creance === null || creance.statut === 'CLOSE' || creance.engageeLe !== undefined) return;
+	const debiteur = await ctx.db.get(creance.debiteurId);
+	if (debiteur === null || debiteur.horsPilote === true) return;
+	const jour = new Date().toISOString().slice(0, 10);
+	const factures = await ctx.db
+		.query('facturesVente')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+		.collect();
+	const plan = await planDuDossier(ctx, creance, factures, jour);
+	if (plan === null || !plan.prochaine.due || plan.prochaine.etape.cle !== etape) return;
+
+	const lettre = await composerEtape(ctx, organizationId, creance, debiteur, etape, jour);
+	if (!lettre.ok) {
+		await signalerCeQuiManque(
+			ctx,
+			organizationId,
+			creanceId,
+			debiteur.denomination,
+			etape,
+			lettre.manques
+		);
+		return;
+	}
+
+	const partiraLe = prochainCreneauDEnvoi(Date.now() + DELAI_POUR_RETENIR_MS);
+	const envoiId = await ctx.db.insert('envois', {
+		organizationId,
+		creanceId,
+		modele: lettre.modele,
+		...(lettre.decompteId === null ? {} : { decompteId: lettre.decompteId }),
+		destinataire: debiteur.email!,
+		canal: 'MESSAGERIE',
+		objet: lettre.objet,
+		corps: lettre.corps,
+		resume: [...lettre.resume],
+		choix: lettre.choix,
+		etat: 'PROGRAMME',
+		preparePar: 'pilote',
+		prepareLe: Date.now(),
+		etapePlan: etape,
+		partiraLe
+	});
+	const depart = await ctx.scheduler.runAt(partiraLe, internal.recouvrement.pilote.lancerEnvoi, {
+		envoiId
+	});
+	await ctx.db.patch(envoiId, { envoiProgramme: depart });
+}
+
+/** L'adresse d'où partent les relances, et le nom du créancier devant. */
+function expediteurPour(denomination: string): string {
+	const brute =
+		process.env.RELANCES_EMAIL ?? requireEnv('AUTH_EMAIL', { feature: 'relances du pilote' });
+	const adresse = /<([^>]+)>/.exec(brute)?.[1] ?? brute.trim();
+	const nom = denomination.replace(/["<>]/g, '').trim();
+	return `"${nom}" <${adresse}>`;
+}
+
+/**
+ * L'HEURE DU DÉPART EST ARRIVÉE — le pilote le montre, puis envoie.
+ *
+ * ⚠️ SANS L'ENVOI CONFIGURÉ, LA RELANCE REDEVIENT UN COURRIER À VALIDER. Une
+ * clé d'envoi absente ne doit ni laisser la relance « programmée » pour toujours
+ * (le plan la croirait partie), ni la jeter : elle attend le gérant, qui le sait.
+ */
+export const lancerEnvoi = internalMutation({
+	args: { envoiId: v.id('envois') },
+	returns: v.null(),
+	handler: async (ctx, { envoiId }): Promise<null> => {
+		const envoi = await ctx.db.get(envoiId);
+		if (envoi === null || envoi.etat !== 'PROGRAMME') return null;
+		const creance = await ctx.db.get(envoi.creanceId);
+		const debiteur = creance === null ? null : await ctx.db.get(creance.debiteurId);
+		const client = debiteur?.denomination ?? 'ce client';
+
+		const configure =
+			process.env.AUTH_E2E_TEST_SECRET === undefined &&
+			process.env.RESEND_API_KEY !== undefined &&
+			(process.env.RELANCES_EMAIL !== undefined || process.env.AUTH_EMAIL !== undefined);
+		if (!configure) {
+			await ctx.db.patch(envoiId, { etat: 'A_VALIDER', envoiProgramme: undefined });
+			if (envoi.etapePlan !== undefined) {
+				await signalerCeQuiManque(
+					ctx,
+					envoi.organizationId,
+					envoi.creanceId,
+					client,
+					envoi.etapePlan,
+					[
+						'l’envoi des e-mails, qui n’est pas configuré : la relance attend votre validation dans le dossier'
+					]
+				);
+			}
+			return null;
+		}
+
+		const nom = envoi.etapePlan === undefined ? 'la relance' : NOM_DE_L_ETAPE[envoi.etapePlan];
+		await commencerTravail(ctx, {
+			organizationId: envoi.organizationId,
+			genre: 'RELANCES',
+			titre: `Envoie ${nom} à ${client}`,
+			etapes: [
+				{ libelle: 'Vérifie qu’aucun paiement n’est arrivé' },
+				{ libelle: 'Relit le texte, tel qu’il a été programmé' },
+				{ libelle: `Envoie à ${envoi.destinataire}`, effet: { genre: 'ENVOYER', envoiId } }
+			],
+			bilan: `${nom.charAt(0).toUpperCase()}${nom.slice(1)} est parti chez ${client}.`
+		});
+		return null;
+	}
+});
+
+/**
+ * ENVOYER — l'effet de la dernière étape.
+ *
+ * ⚠️ UN PAIEMENT ARRIVÉ ENTRE-TEMPS ARRÊTE TOUT. Ce qui reste dû se relit au
+ * moment du départ : une relance pour une facture payée dans l'heure est la
+ * pire erreur d'un logiciel de recouvrement.
+ */
+async function envoyerMaintenant(ctx: MutationCtx, envoiId: Id<'envois'>): Promise<void> {
+	const envoi = await ctx.db.get(envoiId);
+	if (envoi === null || envoi.etat !== 'PROGRAMME') return;
+	const creance = await ctx.db.get(envoi.creanceId);
+	const debiteur = creance === null ? null : await ctx.db.get(creance.debiteurId);
+	if (
+		creance === null ||
+		debiteur === null ||
+		creance.statut === 'CLOSE' ||
+		creance.engageeLe !== undefined ||
+		debiteur.horsPilote === true
+	) {
+		await ctx.db.patch(envoiId, { etat: 'ABANDONNE', envoiProgramme: undefined });
+		return;
+	}
+	const factures = await ctx.db
+		.query('facturesVente')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+		.collect();
+	const restes = await Promise.all(factures.map((f) => resteDu(ctx, f)));
+	const reste = enCentimes(restes.length > 0 ? additionner(...restes) : ZERO);
+	if (reste <= 0n) {
+		await ctx.db.patch(envoiId, { etat: 'ABANDONNE', envoiProgramme: undefined });
+		return;
+	}
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', envoi.organizationId))
+		.first();
+	if (profil?.email === undefined || profil.email === '') {
+		throw new ConvexError('Il manque votre adresse e-mail pour les réponses.');
+	}
+
+	assertResendApiKey();
+	await resend.sendEmail(ctx, {
+		from: expediteurPour(profil.denomination),
+		to: envoi.destinataire,
+		subject: envoi.objet,
+		text: envoi.corps,
+		html: relanceHtml(envoi.corps),
+		replyTo: [profil.email]
+	});
+	await ctx.db.patch(envoiId, {
+		etat: 'PARTI',
+		partiLe: new Date().toISOString().slice(0, 10),
+		empreinte: sha256(envoi.corps),
+		validePar: 'pilote',
+		valideLe: Date.now(),
+		envoiProgramme: undefined
+	});
+}
+
+/**
+ * RETENIR UNE RELANCE PROGRAMMÉE — le geste qui reste au gérant.
+ *
+ * ⚠️ RETENIR RETIRE LE CLIENT DU PILOTE. Annuler seulement cette relance la
+ * ferait reprogrammer au quart d'heure suivant ; le gérant qui retient dit qu'il
+ * garde ce client en main. Il le rend au pilote depuis sa fiche.
+ */
+export const retenir = authedMutation({
+	args: { envoiId: v.id('envois') },
+	returns: v.null(),
+	handler: async (ctx, { envoiId }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const envoi = await ctx.db.get(envoiId);
+		if (envoi === null || envoi.organizationId !== organizationId) {
+			throw new ConvexError('Relance introuvable');
+		}
+		if (envoi.etat !== 'PROGRAMME') {
+			throw new ConvexError(
+				'Cette relance n’est plus programmée : elle est partie, ou déjà retenue.'
+			);
+		}
+		if (envoi.envoiProgramme !== undefined) await ctx.scheduler.cancel(envoi.envoiProgramme);
+		await ctx.db.patch(envoiId, { etat: 'ABANDONNE', envoiProgramme: undefined });
+		const creance = await ctx.db.get(envoi.creanceId);
+		if (creance !== null) await ctx.db.patch(creance.debiteurId, { horsPilote: true });
+		return null;
+	}
+});
+
+/**
+ * LAISSER LE PILOTE RELANCER — l'activation, une fois, par un administrateur.
+ *
+ * ⚠️ UN ADMINISTRATEUR, COMME POUR VALIDER UN COURRIER : c'est la même
+ * responsabilité, prise une fois pour toutes les relances du plan au lieu d'une
+ * fois par lettre. L'écran montre avant ce qui partira, à qui, d'où et quand.
+ */
+export const activerRelances = authedMutation({
+	args: { actif: v.boolean() },
+	returns: v.null(),
+	handler: async (ctx, { actif }): Promise<null> => {
+		const { organizationId, user } = await getUserOrg(ctx);
+		await requireOrgAdmin(ctx, organizationId, user._id);
+		const pilote = await piloteDe(ctx, organizationId);
+		await ctx.db.patch(pilote._id, {
+			envoiAutomatique: actif,
+			...(actif ? { activeLe: Date.now(), activePar: user._id } : {})
+		});
+		if (actif) {
+			await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
+		}
+		return null;
+	}
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // APRÈS UN DÉPÔT — la relecture, montrée
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -594,9 +1172,7 @@ export const relireApresImport = internalMutation({
 		const lu =
 			facturesCreees > 0
 				? `${facturesCreees} facture${pluriel(facturesCreees)}` +
-					(reglementsCrees > 0
-						? ` et ${reglementsCrees} règlement${pluriel(reglementsCrees)}`
-						: '')
+					(reglementsCrees > 0 ? ` et ${reglementsCrees} règlement${pluriel(reglementsCrees)}` : '')
 				: `${reglementsCrees} règlement${pluriel(reglementsCrees)}`;
 		const clients = debiteursTouches.length;
 		const nbClientsEnRetard = clientsEnRetard.size;
@@ -662,10 +1238,54 @@ export const etat = authedQuery({
 	args: {},
 	returns: v.object({
 		derniereVeille: v.union(v.number(), v.null()),
-		travaux: v.array(vTravail)
+		travaux: v.array(vTravail),
+		/** Le gérant a laissé le pilote relancer seul. */
+		envoiAutomatique: v.boolean(),
+		/** Quand les relances ont été activées, et si c'est par ce compte : la trace de l'engagement. */
+		activeLe: v.union(v.number(), v.null()),
+		activeParVous: v.boolean(),
+		/** Ce compte peut activer ou couper les relances : un administrateur. */
+		peutActiver: v.boolean(),
+		/** Les relances programmées, la plus proche d'abord : ce qui part bientôt. */
+		programmes: v.array(
+			v.object({
+				envoiId: v.id('envois'),
+				creanceId: v.id('creances'),
+				client: v.string(),
+				etape: v.string(),
+				partiraLe: v.number()
+			})
+		)
 	}),
 	handler: async (ctx) => {
-		const { organizationId } = await getUserOrg(ctx);
+		const { organizationId, user } = await getUserOrg(ctx);
+		const membre = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', organizationId).eq('userId', user._id)
+			)
+			.first();
+		const enAttente = await ctx.db
+			.query('envois')
+			.withIndex('by_org_and_etat', (q) =>
+				q.eq('organizationId', organizationId).eq('etat', 'PROGRAMME')
+			)
+			.take(20);
+		const programmes = [];
+		for (const envoi of enAttente) {
+			const creance = await ctx.db.get(envoi.creanceId);
+			const debiteur = creance === null ? null : await ctx.db.get(creance.debiteurId);
+			programmes.push({
+				envoiId: envoi._id,
+				creanceId: envoi.creanceId,
+				client: debiteur?.denomination ?? 'Client',
+				etape:
+					PLAN_PAR_DEFAUT.find((e) => e.cle === (envoi.etapePlan as CleEtapePlan | undefined))
+						?.nom ?? 'Relance',
+				partiraLe: envoi.partiraLe ?? envoi.prepareLe
+			});
+		}
+		programmes.sort((a, b) => a.partiraLe - b.partiraLe);
 		const pilote = await ctx.db
 			.query('pilotes')
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
@@ -676,6 +1296,11 @@ export const etat = authedQuery({
 			.order('desc')
 			.take(8);
 		return {
+			envoiAutomatique: pilote?.envoiAutomatique === true,
+			activeLe: pilote?.activeLe ?? null,
+			activeParVous: pilote?.activePar === user._id,
+			peutActiver: membre?.role === 'ORG_ADMIN',
+			programmes,
 			derniereVeille: pilote?.derniereVeille ?? null,
 			travaux: recents.map((t) => ({
 				id: t._id,

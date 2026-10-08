@@ -140,3 +140,35 @@ export function suiteDuPlan(args: {
 	}
 	return suite;
 }
+
+/**
+ * LE PROCHAIN MOMENT OÙ UNE RELANCE PEUT PARTIR : un jour de semaine, entre 9 h
+ * et 18 h, heure de Paris.
+ *
+ * ⚠️ UN RAPPEL REÇU LE DIMANCHE À 23 H SE LIT COMME UN ROBOT. Chaser et Upflow
+ * n'envoient qu'aux heures de bureau ; le pilote aussi. Ce n'est pas une valeur
+ * juridique : c'est la politesse d'une entreprise qui écrit à un client.
+ *
+ * Le pas d'un quart d'heure suffit : le premier quart d'heure ouvrable venu.
+ */
+export function prochainCreneauDEnvoi(depuis: number): number {
+	const paris = new Intl.DateTimeFormat('en-GB', {
+		timeZone: 'Europe/Paris',
+		weekday: 'short',
+		hour: '2-digit',
+		hourCycle: 'h23'
+	});
+	const ouvrable = (t: number): boolean => {
+		const parts = paris.formatToParts(new Date(t));
+		const jour = parts.find((p) => p.type === 'weekday')?.value;
+		const heure = Number(parts.find((p) => p.type === 'hour')?.value);
+		return jour !== 'Sat' && jour !== 'Sun' && heure >= 9 && heure < 18;
+	};
+	let t = depuis;
+	// Quatre jours de quarts d'heure : un vendredi soir de pont trouve son lundi.
+	for (let i = 0; i < 4 * 24 * 4; i++) {
+		if (ouvrable(t)) return t;
+		t += 15 * 60_000;
+	}
+	return depuis;
+}

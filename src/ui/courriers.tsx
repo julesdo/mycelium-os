@@ -132,7 +132,11 @@ export interface EnvoiAffiche {
 	readonly objet: string;
 	readonly corps: string;
 	readonly resume: readonly string[];
-	readonly etat: 'A_VALIDER' | 'VALIDE' | 'PARTI' | 'ABANDONNE';
+	readonly etat: 'A_VALIDER' | 'VALIDE' | 'PROGRAMME' | 'PARTI' | 'ABANDONNE';
+	/** Quand une relance programmée par le pilote partira (horodatage). */
+	readonly partiraLe?: number;
+	/** Préparée et envoyée par le pilote, selon le plan de relance. */
+	readonly parLePilote?: boolean;
 	readonly prepareLe: string;
 	readonly valideLe?: string;
 	readonly empreinte?: string;
@@ -198,6 +202,11 @@ export interface CourriersDuDossier {
 	readonly onValider: (envoiId: string) => void;
 	readonly onDeclarerParti: (envoiId: string, partiLe: string, avecRappel: boolean) => void;
 	readonly onAbandonner: (envoiId: string) => void;
+	/**
+	 * RETENIR UNE RELANCE QUE LE PILOTE A PROGRAMMÉE. Elle ne part pas, et le
+	 * client est retiré du pilote : le gérant le garde en main.
+	 */
+	readonly onRetenir?: (envoiId: string) => void;
 	readonly onTelechargerPdf: (envoi: EnvoiAffiche) => void;
 	readonly onTelechargerAnnexe: (envoi: EnvoiAffiche) => void;
 }
@@ -270,9 +279,19 @@ const CANAL: Record<EnvoiAffiche['canal'], string> = {
 	MESSAGERIE: 'À envoyer depuis votre propre messagerie'
 };
 
+/** « jeudi 9 oct. à 10:00 » : l'heure du gérant, pas celle du serveur. */
+const DATE_ET_HEURE = new Intl.DateTimeFormat('fr-FR', {
+	weekday: 'long',
+	day: 'numeric',
+	month: 'short',
+	hour: '2-digit',
+	minute: '2-digit'
+});
+
 const ETAT: Record<EnvoiAffiche['etat'], string> = {
 	A_VALIDER: 'À valider',
 	VALIDE: 'Validé',
+	PROGRAMME: 'Programmé',
 	PARTI: 'Parti',
 	ABANDONNE: 'Abandonné'
 };
@@ -835,7 +854,8 @@ function Envoi({
 	onDeclarerParti,
 	onAbandonner,
 	onTelechargerPdf,
-	onTelechargerAnnexe
+	onTelechargerAnnexe,
+	onRetenir
 }: {
 	envoi: EnvoiAffiche;
 	peutValider: boolean;
@@ -846,6 +866,7 @@ function Envoi({
 	onAbandonner: () => void;
 	onTelechargerPdf: () => void;
 	onTelechargerAnnexe: () => void;
+	onRetenir?: () => void;
 }) {
 	const [partiLe, setPartiLe] = useState(aujourdHui);
 	/** Coché d'office : voir la case, plus bas. Il se décoche. */
@@ -871,9 +892,45 @@ function Envoi({
 				</Chip>
 			</div>
 			<p className="text-cladd-xs text-cladd-fg-soft">
-				Pour {envoi.destinataire} · {CANAL[envoi.canal]} · préparé le {dateCourte(envoi.prepareLe)}
-				{envoi.valideLe === undefined ? '' : ` · validé le ${dateCourte(envoi.valideLe)}`}
+				Pour {envoi.destinataire} · {CANAL[envoi.canal]} ·{' '}
+				{envoi.parLePilote === true ? 'préparé par le pilote le' : 'préparé le'}{' '}
+				{dateCourte(envoi.prepareLe)}
+				{envoi.valideLe === undefined || envoi.parLePilote === true
+					? ''
+					: ` · validé le ${dateCourte(envoi.valideLe)}`}
 			</p>
+
+			{/*
+			  LA RELANCE PROGRAMMÉE : quand elle part, et le geste pour l'arrêter.
+
+			  ⚠️ LE GESTE EST À CÔTÉ DE LA DATE. Une relance qui part seule ne se croit
+			  que si on voit quand, et qu'on peut l'arrêter d'ici là sans chercher.
+			*/}
+			{envoi.etat === 'PROGRAMME' ? (
+				<div className="flex flex-col gap-cladd-3xs">
+					<p className="text-cladd-xs leading-snug">
+						{envoi.partiraLe === undefined
+							? 'Part bientôt, par e-mail, à votre nom.'
+							: `Part le ${DATE_ET_HEURE.format(new Date(envoi.partiraLe))}, par e-mail, à votre nom. Les réponses arrivent à votre adresse.`}
+					</p>
+					{envoi.resume.map((phrase) => (
+						<p key={phrase} className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+							{phrase}
+						</p>
+					))}
+					{onRetenir === undefined ? null : (
+						<div className="flex flex-col gap-1">
+							<BoutonSecondaire className="self-start" disabled={enCours} onClick={onRetenir}>
+								Retenir
+							</BoutonSecondaire>
+							<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">
+								Elle ne partira pas, et le pilote ne relancera plus ce client : vous le gardez en
+								main. Vous le lui rendez depuis sa fiche.
+							</p>
+						</div>
+					)}
+				</div>
+			) : null}
 			{envoi.etat === 'A_VALIDER'
 				? envoi.resume.map((phrase) => (
 						<p key={phrase} className="text-cladd-xs leading-snug">
@@ -1011,6 +1068,9 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 							courriers.onDeclarerParti(envoi.id, partiLe, avecRappel)
 						}
 						onAbandonner={() => courriers.onAbandonner(envoi.id)}
+						{...(courriers.onRetenir === undefined
+							? {}
+							: { onRetenir: () => courriers.onRetenir?.(envoi.id) })}
 						onTelechargerPdf={() => courriers.onTelechargerPdf(envoi)}
 						onTelechargerAnnexe={() => courriers.onTelechargerAnnexe(envoi)}
 					/>

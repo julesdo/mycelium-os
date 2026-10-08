@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { prochaineEtape, suiteDuPlan } from '../plan-relance';
+import { prochainCreneauDEnvoi, prochaineEtape, suiteDuPlan } from '../plan-relance';
 
 describe('le plan de relance', () => {
 	it('commence par le rappel, trois jours après la plus ancienne échéance', () => {
@@ -56,5 +56,25 @@ describe('le plan de relance', () => {
 			['LETTRE_OFFICIELLE', '2026-10-24'],
 			['CONSEIL', '2026-11-08']
 		]);
+	});
+});
+
+describe('le créneau d’envoi', () => {
+	it('garde l’heure quand elle est ouvrable', () => {
+		// Mercredi 7 octobre 2026, 10 h 00 à Paris (8 h 00 UTC).
+		const t = Date.UTC(2026, 9, 7, 8, 0);
+		expect(prochainCreneauDEnvoi(t)).toBe(t);
+	});
+
+	it('repousse un soir de semaine au lendemain, 9 h', () => {
+		// Mercredi 7 octobre 2026, 20 h 00 à Paris → jeudi 9 h 00 (7 h 00 UTC).
+		const t = Date.UTC(2026, 9, 7, 18, 0);
+		expect(prochainCreneauDEnvoi(t)).toBe(Date.UTC(2026, 9, 8, 7, 0));
+	});
+
+	it('repousse un samedi au lundi, 9 h', () => {
+		// Samedi 10 octobre 2026, 11 h 00 à Paris → lundi 12 octobre, 9 h 00.
+		const t = Date.UTC(2026, 9, 10, 9, 0);
+		expect(prochainCreneauDEnvoi(t)).toBe(Date.UTC(2026, 9, 12, 7, 0));
 	});
 });

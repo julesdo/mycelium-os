@@ -1130,7 +1130,10 @@ export const indexDossiers = authedQuery({
 					.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
 					.collect();
 				const auClient = envois.filter(
-					(e) => e.modele === 'RELANCE_OFFICIELLE' || e.modele === 'ACCORD_ECHEANCIER'
+					(e) =>
+						e.modele === 'RAPPEL' ||
+						e.modele === 'RELANCE_OFFICIELLE' ||
+						e.modele === 'ACCORD_ECHEANCIER'
 				);
 				const partis = auClient
 					.filter((e) => e.etat === 'VALIDE' || e.etat === 'PARTI')

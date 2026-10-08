@@ -44,7 +44,8 @@ export type GenreNotification =
 	| 'ECHEANCE_PROCHE'
 	| 'PRESCRIPTION_PROCHE'
 	| 'DEBITEUR_DEGRADE'
-	| 'HUMAN_ASSIST_REPLY';
+	| 'HUMAN_ASSIST_REPLY'
+	| 'PILOTE_BLOQUE';
 
 /** La teinte dit DE QUOI il s'agit, jamais si c'est grave (`familles.tsx`). */
 const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
@@ -53,7 +54,9 @@ const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
 	IMPORT_TERMINE: 'PAPIERS',
 	DEBITEUR_DEGRADE: 'MACHINE',
 	HUMAN_ASSIST_REPLY: 'QUESTION',
-	CREANCE_MURE: 'ARGENT'
+	CREANCE_MURE: 'ARGENT',
+	// Ce que le pilote ne peut pas faire sans le gérant : une question, rose.
+	PILOTE_BLOQUE: 'QUESTION'
 };
 
 /**
@@ -71,7 +74,8 @@ const TITRE: Readonly<Record<GenreNotification, string>> = {
 	IMPORT_TERMINE: 'Import terminé',
 	DEBITEUR_DEGRADE: 'Situation dégradée au registre',
 	HUMAN_ASSIST_REPLY: 'Nouvelle réponse',
-	CREANCE_MURE: 'Un dossier à regarder'
+	CREANCE_MURE: 'Un dossier à regarder',
+	PILOTE_BLOQUE: 'Le pilote a besoin de vous'
 };
 
 export interface NotificationAffichee {

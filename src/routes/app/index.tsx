@@ -242,6 +242,8 @@ function File() {
 	const nonLues = useQuery(api.notifications.getUnreadCount, {});
 	/** Le pilote en direct : ce qu'il fait, étape par étape, et sa dernière veille. */
 	const pilote = useQuery(api.recouvrement.pilote.etat, {});
+	const activerRelances = useMutation(api.recouvrement.pilote.activerRelances);
+	const retenirRelance = useMutation(api.recouvrement.pilote.retenir);
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	/**
 	 * L'ÉTAPE DE CHAQUE DOSSIER, pour savoir à qui l'on peut encore écrire : la
@@ -380,9 +382,7 @@ function File() {
 	 */
 	const relancables = new Set(
 		(indexDossiers ?? [])
-			.filter(
-				(d) => (d.etape === 'PRET' || d.etape === 'ON_LUI_ECRIT') && !d.courrierAValider
-			)
+			.filter((d) => (d.etape === 'PRET' || d.etape === 'ON_LUI_ECRIT') && !d.courrierAValider)
 			.map((d) => d._id as string)
 	);
 	const delaiDeRelance = profil?.delaiRelanceParDefautJours ?? DELAI_DE_RELANCE_PAR_DEFAUT;
@@ -981,7 +981,20 @@ function File() {
 		...(pilote === undefined
 			? {}
 			: {
+					onActiverRelances: (actif: boolean) => void activerRelances({ actif }),
+					onRetenirRelance: (envoiId: string) =>
+						void retenirRelance({ envoiId: envoiId as Id<'envois'> }),
 					pilote: {
+						envoiAutomatique: pilote.envoiAutomatique,
+						activeLe: pilote.activeLe,
+						activeParVous: pilote.activeParVous,
+						peutActiver: pilote.peutActiver,
+						programmes: pilote.programmes.map((p) => ({
+							envoiId: p.envoiId,
+							client: p.client,
+							etape: p.etape,
+							partiraLe: p.partiraLe
+						})),
 						derniereVeille: pilote.derniereVeille,
 						travaux: pilote.travaux.map((t) => ({
 							id: t.id,

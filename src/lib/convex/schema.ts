@@ -223,7 +223,9 @@ export default defineSchema({
 			v.literal('ECHEANCE_PROCHE'),
 			v.literal('PRESCRIPTION_PROCHE'),
 			v.literal('DEBITEUR_DEGRADE'),
-			v.literal('HUMAN_ASSIST_REPLY')
+			v.literal('HUMAN_ASSIST_REPLY'),
+			/** Le pilote ne peut pas faire une étape sans le gérant : il dit quoi. */
+			v.literal('PILOTE_BLOQUE')
 		),
 		title: v.string(),
 		message: v.string(),

@@ -385,6 +385,10 @@ export interface FileAffichee {
 	 * Absent tant que la lecture n'est pas arrivée.
 	 */
 	readonly pilote?: PiloteAffiche;
+	/** Laisser le pilote relancer seul, ou le couper (un administrateur). */
+	readonly onActiverRelances?: (actif: boolean) => void;
+	/** Retenir une relance programmée. */
+	readonly onRetenirRelance?: (envoiId: string) => void;
 	/**
 	 * CE QUE LE LOGICIEL A SUPPOSÉ, faute de donnée — et c'est UNE AUTRE CHOSE
 	 * qu'un angle mort.
@@ -517,6 +521,8 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		travaux,
 		nonLues,
 		pilote,
+		onActiverRelances,
+		onRetenirRelance,
 		hypotheses,
 		anglesMorts,
 		annonce,
@@ -640,7 +646,14 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					  passe avant ce qu'on demande au gérant, parce qu'il dit d'abord que le
 					  travail se fait.
 					*/}
-					{pilote === undefined ? null : <PiloteEnDirect pilote={pilote} aujourdHui={aujourdHui} />}
+					{pilote === undefined ? null : (
+						<PiloteEnDirect
+							pilote={pilote}
+							aujourdHui={aujourdHui}
+							{...(onActiverRelances === undefined ? {} : { onActiver: onActiverRelances })}
+							{...(onRetenirRelance === undefined ? {} : { onRetenir: onRetenirRelance })}
+						/>
+					)}
 
 					{depotOuvert ? (
 						<ZoneDepot

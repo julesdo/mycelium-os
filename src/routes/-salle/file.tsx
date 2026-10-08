@@ -446,8 +446,27 @@ const GARNIE: FileAffichee = {
 	rangees: RANGEES_DEMO,
 	travaux: TRAVAUX_DEMO,
 	nonLues: 2,
+	onActiverRelances: () => undefined,
+	onRetenirRelance: () => undefined,
 	// Le pilote au milieu d'une relecture : deux étapes cochées, une en cours.
 	pilote: {
+		// Relances activées : deux partent dans l'heure, chacune retenable.
+		envoiAutomatique: true,
+		peutActiver: true,
+		programmes: [
+			{
+				envoiId: 'envoi-demo-durand',
+				client: 'Fournitures Durand',
+				etape: 'Rappel',
+				partiraLe: Date.UTC(2026, 8, 17, 8, 0)
+			},
+			{
+				envoiId: 'envoi-demo-vidal',
+				client: 'Transports Vidal',
+				etape: 'Deuxième rappel',
+				partiraLe: Date.UTC(2026, 8, 17, 8, 15)
+			}
+		],
 		derniereVeille: Date.UTC(2026, 8, 17, 12, 32),
 		travaux: [
 			{

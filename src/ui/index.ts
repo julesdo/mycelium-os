@@ -301,7 +301,12 @@ export { ActionsRapides, type ActionRapide } from './actions-rapides';
 export { FeuilleDeReussite } from './reussite';
 export { CarteGlissable, type ActionDeCarte } from './carte-glissable';
 export { FeuilleDeRappel } from './feuille-rappel';
-export { PiloteEnDirect, type PiloteAffiche, type TravailPiloteAffiche } from './pilote';
+export {
+	PiloteEnDirect,
+	type PiloteAffiche,
+	type RelanceProgrammeeAffichee,
+	type TravailPiloteAffiche
+} from './pilote';
 export { SuiteDuPlan, type EtapeAVenir } from './suite-plan';
 export { BandeDAnciennete, repartirParAnciennete, type LigneDAnciennete } from './anciennete';
 

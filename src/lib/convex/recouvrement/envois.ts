@@ -104,7 +104,7 @@ const vChoixCourrier = v.union(
 	})
 );
 
-type ChoixCourrier = Infer<typeof vChoixCourrier>;
+export type ChoixCourrier = Infer<typeof vChoixCourrier>;
 
 const vComposition = v.union(
 	v.object({
@@ -125,6 +125,7 @@ const vComposition = v.union(
 
 /** Le titre d'un modèle, en mots de tous les jours. */
 export const TITRE_MODELE: Record<Infer<typeof vModeleCourrier>, string> = {
+	RAPPEL: 'Rappel de paiement',
 	RELANCE_OFFICIELLE: 'Lettre de relance officielle',
 	ACCORD_ECHEANCIER: 'Accord d’échéancier',
 	DECLARATION_CREANCE: 'Déclarer ce qu’il vous doit',
@@ -135,6 +136,7 @@ export const TITRE_MODELE: Record<Infer<typeof vModeleCourrier>, string> = {
 
 /** Les modèles qui s'adressent au client lui-même : ils font passer le dossier à « On lui écrit ». */
 export const MODELES_AU_CLIENT: ReadonlySet<string> = new Set([
+	'RAPPEL',
 	'RELANCE_OFFICIELLE',
 	'ACCORD_ECHEANCIER'
 ]);
@@ -179,7 +181,7 @@ function decompteCourrier(d: Doc<'decomptes'>): DecompteCourrier {
 	};
 }
 
-async function composer(
+export async function composer(
 	ctx: QueryCtx,
 	organizationId: Id<'organizations'>,
 	creanceId: Id<'creances'>,
@@ -571,13 +573,11 @@ export const declarerParti = authedMutation({
 		  délai vit dans le choix figé avec le texte, ce qui le rend exact même si
 		  le réglage de l'établissement a changé depuis.
 
-		  ⚠️ ET CE N'EST PAS UNE RELANCE PROGRAMMÉE. Rien ne partira ce jour-là :
-		  le logiciel remonte le dossier dans la file, et le gérant décide. Envoyer
-		  à sa place, même sur son instruction préalable, serait procéder au
-		  recouvrement POUR LE COMPTE D'AUTRUI (décret n° 96-1112, article 1er,
-		  qui vise cette activité « même à titre accessoire ») — et l'article 4
-		  imposerait alors à la lettre de nommer le logiciel comme agent de
-		  recouvrement, ce que la ligne rouge n° 1 interdit.
+		  ⚠️ ET CE N'EST PAS UNE RELANCE PROGRAMMÉE. Ce courrier-ci a été préparé et
+		  envoyé à la main : le rappel remonte le dossier dans la file, et le gérant
+		  décide. Les relances qui partent seules sont celles du pilote, que le
+		  gérant a activées (`pilote.ts`, décision du fondateur du 08/10/2026, qui
+		  remplace la lecture du décret n° 96-1112 relevée le 29/09).
 		*/
 		if (avecRappel === true) {
 			const choix = JSON.parse(envoi.choix) as ChoixCourrier;
@@ -634,9 +634,14 @@ export const lister = authedQuery({
 				etat: v.union(
 					v.literal('A_VALIDER'),
 					v.literal('VALIDE'),
+					v.literal('PROGRAMME'),
 					v.literal('PARTI'),
 					v.literal('ABANDONNE')
 				),
+				/** Quand un courrier programmé par le pilote partira. */
+				partiraLe: v.optional(v.number()),
+				/** Préparé par le pilote, pas par un membre de l'équipe. */
+				parLePilote: v.boolean(),
 				prepareLe: v.number(),
 				valideLe: v.optional(v.number()),
 				empreinte: v.optional(v.string()),
@@ -675,6 +680,8 @@ export const lister = authedQuery({
 					corps: e.corps,
 					resume: e.resume,
 					etat: e.etat,
+					...(e.partiraLe === undefined ? {} : { partiraLe: e.partiraLe }),
+					parLePilote: e.etapePlan !== undefined,
 					prepareLe: e.prepareLe,
 					...(e.valideLe === undefined ? {} : { valideLe: e.valideLe }),
 					...(e.empreinte === undefined ? {} : { empreinte: e.empreinte }),

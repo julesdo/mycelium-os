@@ -1,5 +1,9 @@
-import { Spinner, Surface } from '@cladd-ui/react';
+import { useState } from 'react';
+import { Popup, PopupContent, Spinner, Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon, CheckIcon } from 'lucide-react';
+import { PLAN_PAR_DEFAUT } from '../lib/verticales/recouvrement/plan-relance';
+import { BoutonPrincipal, BoutonTexte } from './bouton';
+import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { cn } from './cn';
 import { dateCourte } from './format';
 
@@ -33,11 +37,28 @@ export interface TravailPiloteAffiche {
 	readonly termineLe: number | null;
 }
 
+export interface RelanceProgrammeeAffichee {
+	readonly envoiId: string;
+	readonly client: string;
+	/** « Rappel », « Deuxième rappel », « Lettre officielle ». */
+	readonly etape: string;
+	readonly partiraLe: number;
+}
+
 export interface PiloteAffiche {
 	/** La dernière veille terminée, ou `null` : il ne s'est jamais réveillé ici. */
 	readonly derniereVeille: number | null;
 	/** Les plus récents d'abord. */
 	readonly travaux: readonly TravailPiloteAffiche[];
+	/** Le gérant a laissé le pilote relancer seul. */
+	readonly envoiAutomatique: boolean;
+	/** Quand les relances ont été activées, et si c'est par ce compte. */
+	readonly activeLe?: number | null;
+	readonly activeParVous?: boolean;
+	/** Ce compte peut activer ou couper les relances : un administrateur. */
+	readonly peutActiver: boolean;
+	/** Ce qui part bientôt, le plus proche d'abord. */
+	readonly programmes: readonly RelanceProgrammeeAffichee[];
 }
 
 /** L'heure du gérant, pas celle du serveur : « 14 h 32 ». */
@@ -45,12 +66,19 @@ const HEURE = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-dig
 
 export function PiloteEnDirect({
 	pilote,
-	aujourdHui
+	aujourdHui,
+	onActiver,
+	onRetenir
 }: {
 	readonly pilote: PiloteAffiche;
 	/** Le jour de l'interface (UTC) : une tâche d'aujourd'hui dit son heure, une plus ancienne sa date. */
 	readonly aujourdHui: string;
+	/** Laisser le pilote relancer seul, ou le couper. */
+	readonly onActiver?: (actif: boolean) => void;
+	/** Retenir une relance programmée : elle ne part pas, le client sort du pilote. */
+	readonly onRetenir?: (envoiId: string) => void;
 }) {
+	const [feuille, setFeuille] = useState(false);
 	const enCours = pilote.travaux.find((t) => t.etat === 'EN_COURS') ?? null;
 	const enAttente = pilote.travaux.filter((t) => t.etat === 'EN_ATTENTE').length;
 	/*
@@ -102,7 +130,160 @@ export function PiloteEnDirect({
 					qu’une facture ou un virement arrive.
 				</p>
 			)}
+
+			{/*
+			  LES RELANCES — ce qui part bientôt, ou l'invitation à les lui confier.
+
+			  ⚠️ CE QUI PART SEUL SE VOIT AVANT DE PARTIR, avec le geste pour l'arrêter.
+			  C'est la condition de la confiance dans un envoi automatique : on ne
+			  laisse partir que ce qu'on aurait pu retenir.
+			*/}
+			<div className="flex flex-col gap-1.5 border-t border-cladd-outline pt-cladd-3xs">
+				{!pilote.envoiAutomatique ? (
+					<>
+						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+							Il peut envoyer seul les rappels et la lettre officielle de votre plan, à votre nom.
+						</p>
+						{pilote.peutActiver && onActiver !== undefined ? (
+							<BoutonPrincipal pleineLargeur onClick={() => setFeuille(true)}>
+								Laisser le pilote relancer
+							</BoutonPrincipal>
+						) : (
+							<p className="text-cladd-2xs text-cladd-fg-softer">
+								Un administrateur de votre entreprise peut l’activer.
+							</p>
+						)}
+					</>
+				) : pilote.programmes.length === 0 ? (
+					<div className="flex items-center justify-between gap-2">
+						<p className="text-cladd-2xs text-cladd-fg-soft">
+							{pilote.activeLe === undefined || pilote.activeLe === null
+								? 'Il relance pour vous.'
+								: `Activé ${pilote.activeParVous === true ? 'par vous ' : ''}le ${dateCourte(new Date(pilote.activeLe).toISOString().slice(0, 10))}.`}{' '}
+							Rien ne part dans l’heure.
+						</p>
+						{pilote.peutActiver && onActiver !== undefined ? (
+							<BoutonTexte onClick={() => onActiver(false)}>Couper</BoutonTexte>
+						) : null}
+					</div>
+				) : (
+					<>
+						<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">Part bientôt</p>
+						<ul className="flex flex-col gap-1">
+							{pilote.programmes.slice(0, 3).map((relance) => (
+								<li key={relance.envoiId} className="flex items-center justify-between gap-2">
+									<span className="min-w-0 text-cladd-2xs leading-snug">
+										<span className="font-medium">{relance.etape}</span>
+										<span className="text-cladd-fg-soft">
+											{' · '}
+											{relance.client} · {DEPART.format(new Date(relance.partiraLe))}
+										</span>
+									</span>
+									{onRetenir === undefined ? null : (
+										<BoutonTexte className="shrink-0" onClick={() => onRetenir(relance.envoiId)}>
+											Retenir
+										</BoutonTexte>
+									)}
+								</li>
+							))}
+						</ul>
+						{pilote.programmes.length > 3 ? (
+							<p className="text-cladd-2xs text-cladd-fg-softer">
+								Et {pilote.programmes.length - 3} autre{pilote.programmes.length - 3 > 1 ? 's' : ''}
+								, dans leurs dossiers.
+							</p>
+						) : null}
+					</>
+				)}
+			</div>
+
+			{onActiver === undefined ? null : (
+				<FeuilleDActivation
+					ouverte={feuille}
+					onFermer={() => setFeuille(false)}
+					onActiver={() => {
+						setFeuille(false);
+						onActiver(true);
+					}}
+				/>
+			)}
 		</Surface>
+	);
+}
+
+/** « jeu. 10:00 » : le jour et l'heure du départ, chez le gérant. */
+const DEPART = new Intl.DateTimeFormat('fr-FR', {
+	weekday: 'short',
+	hour: '2-digit',
+	minute: '2-digit'
+});
+
+/** Ce qui sépare deux étapes, dit en clair : « 3 jours après l'échéance ». */
+function delaiEnClair(rang: number, attente: number): string {
+	return rang === 0 ? `${attente} jours après l’échéance` : `${attente} jours plus tard`;
+}
+
+/**
+ * CE QUE LE PILOTE ENVERRA, LU AVANT DE LE LUI CONFIER.
+ *
+ * ⚠️ L'ACTIVATION EST UN ENGAGEMENT, DONC ELLE SE FAIT EN CONNAISSANCE DE CAUSE.
+ * Le plan tel qu'il est, d'où et quand ça part, ce qui l'arrête, et ce qui ne
+ * part jamais seul : tout ce qu'il faut pour ne pas être surpris par un envoi.
+ */
+function FeuilleDActivation({
+	ouverte,
+	onFermer,
+	onActiver
+}: {
+	readonly ouverte: boolean;
+	readonly onFermer: () => void;
+	readonly onActiver: () => void;
+}) {
+	return (
+		<Popup
+			open={ouverte}
+			onOpenChange={(o) => {
+				if (!o) onFermer();
+			}}
+			headerLeft={
+				<span className="px-2 pb-1 text-cladd-xs font-semibold">Laisser le pilote relancer</span>
+			}
+			contentClassName="max-w-lg"
+		>
+			<PopupContent>
+				<div className="flex flex-col gap-cladd-3xs">
+					<ListeDeReleve>
+						{PLAN_PAR_DEFAUT.map((etape, rang) => (
+							<LigneDeReleve
+								key={etape.cle}
+								titre={etape.nom}
+								ligne={
+									etape.automatique
+										? delaiEnClair(rang, etape.attente)
+										: `${delaiEnClair(rang, etape.attente)}, vous décidez`
+								}
+							/>
+						))}
+					</ListeDeReleve>
+					<ul className="flex flex-col gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						<li>Par e-mail, à votre nom. Les réponses arrivent à votre adresse.</li>
+						<li>En semaine, entre 9 h et 18 h.</li>
+						<li>Chaque relance s’affiche une heure avant de partir, et se retient d’un geste.</li>
+						<li>
+							La lettre officielle attend un décompte arrêté par vous : trois points que vous seul
+							connaissez.
+						</li>
+						<li>
+							Un paiement arrête tout. Un client en procédure collective ou radié n’est pas relancé,
+							et un client se retire du pilote depuis sa fiche.
+						</li>
+					</ul>
+					<BoutonPrincipal pleineLargeur onClick={onActiver}>
+						Activer les relances
+					</BoutonPrincipal>
+				</div>
+			</PopupContent>
+		</Popup>
 	);
 }
 

@@ -106,6 +106,9 @@ function PageCreance() {
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
 	/** La suite du plan, au futur : ce que le pilote fera, et quand. */
 	const planAVenir = useQuery(api.recouvrement.plan.suiteDuDossier, { creanceId });
+	/** Le pilote : s'il relance seul, la suite du plan le dit (« le pilote l'envoie »). */
+	const pilote = useQuery(api.recouvrement.pilote.etat, {});
+	const retenirRelance = useMutation(api.recouvrement.pilote.retenir);
 	const preparation = useQuery(api.recouvrement.arret.preparerArret, { creanceId });
 	const suivi = useQuery(api.recouvrement.apresProcedure.suiviDeLaCreance, { creanceId });
 	const propositionsDeLitige = useQuery(api.recouvrement.creances.propositionsLitige, {
@@ -611,7 +614,9 @@ function PageCreance() {
 		lettresValidees: (envoisDuDossier?.envois ?? [])
 			.filter(
 				(e) =>
-					(e.modele === 'RELANCE_OFFICIELLE' || e.modele === 'ACCORD_ECHEANCIER') &&
+					(e.modele === 'RAPPEL' ||
+						e.modele === 'RELANCE_OFFICIELLE' ||
+						e.modele === 'ACCORD_ECHEANCIER') &&
 					(e.etat === 'VALIDE' || e.etat === 'PARTI')
 			)
 			.map((e) => e.partiLe ?? new Date(e.valideLe ?? e.prepareLe).toISOString().slice(0, 10)),
@@ -746,6 +751,8 @@ function PageCreance() {
 				corps: e.corps,
 				resume: e.resume,
 				etat: e.etat,
+				...(e.partiraLe === undefined ? {} : { partiraLe: e.partiraLe }),
+				parLePilote: e.parLePilote,
 				prepareLe: new Date(e.prepareLe).toISOString().slice(0, 10),
 				...(e.valideLe === undefined
 					? {}
@@ -801,6 +808,7 @@ function PageCreance() {
 				),
 			onAbandonner: (envoiId) =>
 				void avec(() => abandonnerCourrier({ envoiId: envoiId as Id<'envois'> })),
+			onRetenir: (envoiId) => void avec(() => retenirRelance({ envoiId: envoiId as Id<'envois'> })),
 			onTelechargerPdf: (envoi) => void telechargerLeCourrier(envoi),
 			onTelechargerAnnexe: () => void telechargerLaPiece(true)
 		},
@@ -811,6 +819,7 @@ function PageCreance() {
 		// posées sur chaque facture.
 		echeanceLaPlusAncienne: laPlusProche(creance.factures.map((f) => f.dateEcheance)),
 		...(planAVenir === undefined || planAVenir === null ? {} : { planAVenir }),
+		envoiAutomatique: pilote?.envoiAutomatique === true,
 		prescriptionLaPlusProche: laPlusProche(creance.factures.map((f) => f.datePrescription)),
 
 		montantDuJour,

@@ -25,11 +25,20 @@ export function etapesFaites(
 ): EtapeFaite[] {
 	const faites: EtapeFaite[] = [];
 	for (const envoi of envois) {
-		if (envoi.etat !== 'PARTI' && envoi.etat !== 'VALIDE') continue;
-		const le = envoi.partiLe ?? new Date(envoi.valideLe ?? envoi.prepareLe).toISOString().slice(0, 10);
+		/*
+		  ⚠️ UN COURRIER PROGRAMMÉ COMPTE DÉJÀ. Il partira seul dans l'heure ; le
+		  compter « à faire » ferait programmer la même étape une seconde fois à la
+		  veille suivante.
+		*/
+		if (envoi.etat !== 'PARTI' && envoi.etat !== 'VALIDE' && envoi.etat !== 'PROGRAMME') continue;
+		const le =
+			envoi.partiLe ??
+			new Date(envoi.partiraLe ?? envoi.valideLe ?? envoi.prepareLe).toISOString().slice(0, 10);
 		// Une lettre officielle préparée à la main compte pour son étape : le plan ne
 		// repropose pas un rappel courtois à qui l'a déjà reçue.
-		if (envoi.modele === 'RELANCE_OFFICIELLE') faites.push({ cle: 'LETTRE_OFFICIELLE', le });
+		const cle =
+			envoi.etapePlan ?? (envoi.modele === 'RELANCE_OFFICIELLE' ? 'LETTRE_OFFICIELLE' : null);
+		if (cle !== null) faites.push({ cle, le });
 	}
 	for (const remise of remises) {
 		if (remise.remisLe !== undefined) faites.push({ cle: 'CONSEIL', le: remise.remisLe });

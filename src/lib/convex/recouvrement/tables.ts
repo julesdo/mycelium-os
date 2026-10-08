@@ -138,6 +138,8 @@ export const vImputation = v.object({
 /** L'ordre dans lequel un paiement éteint ce qui est dû. Voir `OrdreImputation` au domaine. */
 /** Les six modèles de courrier (`src/lib/verticales/recouvrement/gabarits/`). */
 export const vModeleCourrier = v.union(
+	/** Le rappel courtois que le pilote envoie seul (`relance.ts`, niveau 1). */
+	v.literal('RAPPEL'),
 	v.literal('RELANCE_OFFICIELLE'),
 	v.literal('ACCORD_ECHEANCIER'),
 	v.literal('DECLARATION_CREANCE'),
@@ -1163,6 +1165,11 @@ export const recouvrementTables = {
 		etat: v.union(
 			v.literal('A_VALIDER'),
 			v.literal('VALIDE'),
+			/**
+			 * PRÉPARÉ PAR LE PILOTE, ET IL PARTIRA SEUL À `partiraLe`. D'ici là, le
+			 * gérant peut le retenir d'un geste.
+			 */
+			v.literal('PROGRAMME'),
 			v.literal('PARTI'),
 			v.literal('ABANDONNE')
 		),
@@ -1174,10 +1181,23 @@ export const recouvrementTables = {
 		valideLe: v.optional(v.number()),
 		/** La date du DÉPART, déclarée par le gérant (AAAA-MM-JJ). */
 		partiLe: v.optional(v.string()),
-		partiDeclarePar: v.optional(v.string())
+		partiDeclarePar: v.optional(v.string()),
+		/**
+		 * L'ÉTAPE DU PLAN DE RELANCE QUE CE COURRIER FAIT (`plan-relance.ts`).
+		 * Absente sur un courrier préparé à la main : une lettre officielle compte
+		 * quand même pour son étape, par son modèle.
+		 */
+		etapePlan: v.optional(
+			v.union(v.literal('RAPPEL'), v.literal('SECOND_RAPPEL'), v.literal('LETTRE_OFFICIELLE'))
+		),
+		/** Quand un courrier programmé par le pilote partira (horodatage). */
+		partiraLe: v.optional(v.number()),
+		/** Le départ programmé : le retenir l'annule. */
+		envoiProgramme: v.optional(v.id('_scheduled_functions'))
 	})
 		.index('by_org', ['organizationId'])
-		.index('by_creance', ['creanceId']),
+		.index('by_creance', ['creanceId'])
+		.index('by_org_and_etat', ['organizationId', 'etat']),
 
 	decomptes: defineTable({
 		organizationId: v.id('organizations'),
@@ -1620,7 +1640,15 @@ export const recouvrementTables = {
 		veilleProgrammee: v.optional(v.id('_scheduled_functions')),
 		veilleProgrammeePour: v.optional(v.number()),
 		/** La dernière veille terminée : « relu il y a 3 min ». */
-		derniereVeille: v.optional(v.number())
+		derniereVeille: v.optional(v.number()),
+		/**
+		 * LE GÉRANT A LAISSÉ LE PILOTE RELANCER SEUL (décision du fondateur,
+		 * 08/10/2026 : « on fait comme Qonto et les autres »). Activé une fois, par
+		 * un administrateur ; chaque envoi reste retenable pendant son délai.
+		 */
+		envoiAutomatique: v.optional(v.boolean()),
+		activeLe: v.optional(v.number()),
+		activePar: v.optional(v.string())
 	}).index('by_org', ['organizationId']),
 
 	/**
@@ -1663,6 +1691,10 @@ export const recouvrementTables = {
 							genre: v.literal('PROGRAMMER_RELANCE'),
 							creanceId: v.id('creances'),
 							etape: v.string()
+						}),
+						v.object({
+							genre: v.literal('ENVOYER'),
+							envoiId: v.id('envois')
 						})
 					)
 				),

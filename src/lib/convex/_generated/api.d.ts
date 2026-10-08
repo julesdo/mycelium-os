@@ -28,6 +28,7 @@ import type * as emails_modeles_invitation from "../emails/modeles/invitation.js
 import type * as emails_modeles_newTicketAdminNotification from "../emails/modeles/newTicketAdminNotification.js";
 import type * as emails_modeles_newUserSignupNotification from "../emails/modeles/newUserSignupNotification.js";
 import type * as emails_modeles_passwordReset from "../emails/modeles/passwordReset.js";
+import type * as emails_modeles_relance from "../emails/modeles/relance.js";
 import type * as emails_modeles_verification from "../emails/modeles/verification.js";
 import type * as emails_modeles_verificationCode from "../emails/modeles/verificationCode.js";
 import type * as emails_resend from "../emails/resend.js";
@@ -119,6 +120,7 @@ declare const fullApi: ApiFromModules<{
   "emails/modeles/newTicketAdminNotification": typeof emails_modeles_newTicketAdminNotification;
   "emails/modeles/newUserSignupNotification": typeof emails_modeles_newUserSignupNotification;
   "emails/modeles/passwordReset": typeof emails_modeles_passwordReset;
+  "emails/modeles/relance": typeof emails_modeles_relance;
   "emails/modeles/verification": typeof emails_modeles_verification;
   "emails/modeles/verificationCode": typeof emails_modeles_verificationCode;
   "emails/resend": typeof emails_resend;
