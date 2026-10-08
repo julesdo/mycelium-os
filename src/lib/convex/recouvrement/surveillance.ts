@@ -14,6 +14,7 @@ import {
 	montantIdentifie,
 	type DebiteurSurveille,
 	type DossierSurveille,
+	type EngagementSuivi,
 	type EtatSurveille,
 	type FactureSurveillee,
 	type RuptureSurveillee
@@ -25,6 +26,7 @@ import {
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
 import { dossiersClasses } from './classement';
+import { lireEcheancier } from '../../verticales/recouvrement/parole';
 
 /**
  * Le flux d'événements — ce qui donne une raison d'ouvrir le produit.
@@ -82,7 +84,8 @@ export const vEvenementDeSurveillance = v.object({
 		 */
 		v.literal('HABITUDE_ROMPUE'),
 		v.literal('PROMESSE_ECHUE'),
-		v.literal('RAPPEL_DU_JOUR')
+		v.literal('RAPPEL_DU_JOUR'),
+		v.literal('VERSEMENT_MANQUE')
 	),
 	reference: v.string(),
 	/**
@@ -524,7 +527,7 @@ async function assembler(
 		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 		.collect();
 
-	const engagements = suivi
+	const engagements: EngagementSuivi[] = suivi
 		.filter(
 			(entree) =>
 				(entree.genre === 'PROMESSE' && entree.issue === undefined) ||
@@ -550,6 +553,51 @@ async function assembler(
 				}
 			];
 		});
+
+	/*
+	  ── LES VERSEMENTS D'ÉCHÉANCIER QUI NE SONT PAS ARRIVÉS ──────────────────
+
+	  Un échéancier qui court se lit contre les règlements de son dossier
+	  (`parole.ts`) : le premier versement passé son délai de grâce sans être reçu
+	  remonte, une fois, jusqu'à ce que l'échéancier soit tenu ou arrêté.
+	*/
+	for (const entree of suivi) {
+		if (entree.genre !== 'ECHEANCIER' || entree.issue !== undefined) continue;
+		if (entree.echeances === undefined || entree.echeances.length === 0) continue;
+		if (classes.has(entree.creanceId)) continue;
+		const creance = creancesBrutes.find((c) => c._id === entree.creanceId);
+		if (creance === undefined) continue;
+		const reglements: { le: string; montant: bigint }[] = [];
+		for (const facture of facturesBrutes) {
+			if (facture.creanceId !== entree.creanceId) continue;
+			const siens = await ctx.db
+				.query('reglements')
+				.withIndex('by_facture', (q) => q.eq('factureId', facture._id))
+				.collect();
+			for (const r of siens) reglements.push({ le: r.date, montant: r.montant });
+		}
+		const lu = lireEcheancier(
+			{
+				accordeLe: new Date(entree.ecritLe).toISOString().slice(0, 10),
+				echeances: entree.echeances
+			},
+			reglements,
+			aujourdHui
+		);
+		const manque =
+			lu.etat === 'EN_RETARD' ? lu.echeances.find((e) => e.etat === 'EN_RETARD') : undefined;
+		if (manque === undefined) continue;
+		const debiteur = debiteurs.get(creance.debiteurId);
+		engagements.push({
+			genre: 'VERSEMENT',
+			reference: debiteur?.denomination ?? 'Client inconnu',
+			creanceId: entree.creanceId as string,
+			...(debiteur === undefined ? {} : { debiteurId: debiteur._id as string }),
+			date: manque.le,
+			texte: entree.texte,
+			montant: depuisCentimes(manque.montant - manque.paye)
+		});
+	}
 
 	return {
 		etat: {

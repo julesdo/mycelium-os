@@ -40,7 +40,13 @@ export type TypeEvenement =
 	 * corriger — le carnet tenu à côté (audit du 29/09/2026, F3).
 	 */
 	| 'PROMESSE_ECHUE'
-	| 'RAPPEL_DU_JOUR';
+	| 'RAPPEL_DU_JOUR'
+	/**
+	 * UN VERSEMENT D'ÉCHÉANCIER QUI N'EST PAS ARRIVÉ (08/10/2026) : son délai de
+	 * grâce est passé, le plan de relance a repris, et le gérant doit le savoir
+	 * sans ouvrir le dossier (`parole.ts`).
+	 */
+	| 'VERSEMENT_MANQUE';
 
 export type Urgence = 'CRITIQUE' | 'HAUTE' | 'NORMALE';
 
@@ -288,7 +294,8 @@ export interface RuptureSurveillee {
  * détection à n'importe quelle date, sans harnais.
  */
 export interface EngagementSuivi {
-	readonly genre: 'PROMESSE' | 'RAPPEL';
+	/** `VERSEMENT` : un versement d'échéancier passé son délai de grâce sans être reçu. */
+	readonly genre: 'PROMESSE' | 'RAPPEL' | 'VERSEMENT';
 	/** Le nom du client : c'est lui que la rangée annonce. */
 	readonly reference: string;
 	readonly creanceId: string;
@@ -661,6 +668,23 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 					`${engagement.reference} avait promis de payer ` +
 					`pour le ${dateLisible(engagement.date)} : « ${engagement.texte} »`,
 				action: 'Ouvrir ce dossier : dites s’il a payé.',
+				dateDuFait: engagement.date,
+				cible
+			});
+			continue;
+		}
+
+		if (engagement.genre === 'VERSEMENT') {
+			evenements.push({
+				type: 'VERSEMENT_MANQUE',
+				reference: engagement.reference,
+				// Comme une promesse : une partie de ce que les factures portent déjà.
+				montant: engagement.montant ?? null,
+				urgence: 'HAUTE',
+				explication:
+					`Le versement que ${engagement.reference} devait faire le ` +
+					`${dateLisible(engagement.date)} n’est pas arrivé : les relances ont repris.`,
+				action: 'Ouvrir ce dossier.',
 				dateDuFait: engagement.date,
 				cible
 			});

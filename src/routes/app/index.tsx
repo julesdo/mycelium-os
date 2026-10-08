@@ -106,7 +106,8 @@ const RESUME_PAR_TYPE: Readonly<
 	DEBITEUR_DEGRADE: () => ({ libelle: 'Situation dégradée au registre', famille: 'MACHINE' }),
 	HABITUDE_ROMPUE: () => ({ libelle: 'Paie plus tard que d’habitude', famille: 'TEMPS' }),
 	PROMESSE_ECHUE: () => ({ libelle: 'Promesse de paiement', famille: 'ARGENT' }),
-	RAPPEL_DU_JOUR: () => ({ libelle: 'Votre rappel', famille: 'TEMPS' })
+	RAPPEL_DU_JOUR: () => ({ libelle: 'Votre rappel', famille: 'TEMPS' }),
+	VERSEMENT_MANQUE: () => ({ libelle: 'Versement pas arrivé', famille: 'ARGENT' })
 };
 
 /**
@@ -144,6 +145,10 @@ const PLI_PAR_TYPE: Record<string, { readonly un: string; readonly plusieurs: st
 	RAPPEL_DU_JOUR: {
 		un: 'rappel que vous vous êtes posé',
 		plusieurs: 'rappels que vous vous êtes posés'
+	},
+	VERSEMENT_MANQUE: {
+		un: 'versement d’échéancier pas arrivé',
+		plusieurs: 'versements d’échéancier pas arrivés'
 	}
 };
 
