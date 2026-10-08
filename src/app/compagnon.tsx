@@ -75,9 +75,7 @@ function Plume({
 		<BoutonCompagnon
 			humeur={humeur}
 			description={
-				dossier === null
-					? `Parler à ${NOM_DU_PILOTE}`
-					: `Parler à ${NOM_DU_PILOTE}, sur ce dossier`
+				dossier === null ? `Parler à ${NOM_DU_PILOTE}` : `Parler à ${NOM_DU_PILOTE}, sur ce dossier`
 			}
 			onOuvrir={() => {
 				if (dossier === null) void navigate({ to: '/app/pilote' });

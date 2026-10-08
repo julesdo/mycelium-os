@@ -769,7 +769,7 @@ async function signalerCeQuiManque(
 			organizationId,
 			userId: membre.userId,
 			type: 'PILOTE_BLOQUE',
-			title: 'Le pilote a besoin de vous',
+			title: 'Plume a besoin de vous',
 			message,
 			link: lien
 		});
@@ -942,6 +942,85 @@ async function programmerUneRelance(
 		envoiId
 	});
 	await ctx.db.patch(envoiId, { envoiProgramme: depart });
+}
+
+/**
+ * PRÉPARER LA PROCHAINE RELANCE, À LA DEMANDE DU GÉRANT — le geste « Relancer » que
+ * Plume propose dans la conversation d'un dossier.
+ *
+ * ⚠️ ELLE N'EST PAS PROGRAMMÉE, ELLE ATTEND SA RELECTURE. Comme tout courrier
+ * demandé à la main, elle se pose « à valider » dans le dossier : le gérant la relit,
+ * la valide, puis l'envoie. Seul ce que le plan fait seul part seul.
+ *
+ * ⚠️ C'EST L'ÉTAPE SUIVANTE DU PLAN, MÊME SI SON JOUR N'EST PAS ARRIVÉ : le gérant
+ * qui demande « relance-le » veut relancer maintenant. Le rappel courtois si rien
+ * n'est parti, le deuxième rappel ensuite, la lettre officielle après ; jamais la
+ * remise au conseil, qui reste sa décision.
+ */
+export async function preparerProchaineRelance(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	creanceId: Id<'creances'>,
+	par: string
+): Promise<
+	| { readonly ok: true; readonly envoiId: Id<'envois'>; readonly etape: string }
+	| { readonly ok: false; readonly raison: string }
+> {
+	const creance = await ctx.db.get(creanceId);
+	if (creance === null || creance.organizationId !== organizationId) {
+		return { ok: false, raison: 'Ce dossier est introuvable.' };
+	}
+	const debiteur = await ctx.db.get(creance.debiteurId);
+	if (debiteur === null) return { ok: false, raison: 'Ce client est introuvable.' };
+	if (
+		debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE' ||
+		debiteur.santeFinanciere === 'RADIEE'
+	) {
+		return {
+			ok: false,
+			raison: 'Ce client est en procédure collective ou radié : les relances sont suspendues.'
+		};
+	}
+	const envois = await ctx.db
+		.query('envois')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+		.collect();
+	if (envois.some((e) => e.etat === 'A_VALIDER' || e.etat === 'PROGRAMME')) {
+		return { ok: false, raison: 'Une relance attend déjà sur ce dossier : celle-là d’abord.' };
+	}
+	const jour = new Date().toISOString().slice(0, 10);
+	const factures = await ctx.db
+		.query('facturesVente')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+		.collect();
+	const plan = await planDuDossier(ctx, creance, factures, jour, envois);
+	if (plan === null) return { ok: false, raison: 'Ce dossier n’a plus d’étape de relance.' };
+	const cle = plan.prochaine.etape.cle;
+	if (!estEnvoyable(cle)) {
+		return {
+			ok: false,
+			raison: 'L’étape suivante est la remise à votre conseil : c’est vous qui la décidez.'
+		};
+	}
+	const lettre = await composerEtape(ctx, organizationId, creance, debiteur, cle, jour);
+	if (!lettre.ok) return { ok: false, raison: `Il manque ${lettre.manques.join(', ')}.` };
+	const envoiId = await ctx.db.insert('envois', {
+		organizationId,
+		creanceId,
+		modele: lettre.modele,
+		...(lettre.decompteId === null ? {} : { decompteId: lettre.decompteId }),
+		destinataire: debiteur.email!,
+		canal: 'MESSAGERIE',
+		objet: lettre.objet,
+		corps: lettre.corps,
+		resume: [...lettre.resume],
+		choix: lettre.choix,
+		etat: 'A_VALIDER',
+		preparePar: par,
+		prepareLe: Date.now(),
+		etapePlan: cle
+	});
+	return { ok: true, envoiId, etape: NOM_DE_L_ETAPE[cle] };
 }
 
 /** L'adresse d'où partent les relances, et le nom du créancier devant. */

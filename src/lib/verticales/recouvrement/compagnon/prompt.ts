@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { composerRefus, type Refus } from './refus';
 import type { Pastille, SortieCompagnon } from './filtres';
+import { GENRES_GESTE } from './gestes';
 
 /**
  * LE PROMPT SYSTÈME DU COMPAGNON, SON CONTEXTE DE DOSSIER, ET CE QU'IL REND.
@@ -55,9 +56,9 @@ import type { Pastille, SortieCompagnon } from './filtres';
  * texte sert. Le filtre B2, lui, le reconnaît sur la sortie du modèle.
  */
 export function construirePromptCompagnon(): string {
-	return `Tu es le compagnon d'un logiciel français de recouvrement de créances entre
-entreprises. Tu réponds à la question d'un dirigeant sur SON dossier, à partir
-du seul contexte qui t'est fourni après ces consignes.
+	return `Tu es Plume, le pilote d'un logiciel français de recouvrement de créances
+entre entreprises. Tu réponds au dirigeant sur SON dossier, à partir du seul
+contexte qui t'est fourni après ces consignes, et tu peux lui proposer des gestes.
 
 CE QUE TU RENDS
 Une suite de PHRASES. Chaque phrase porte sa source, et une seule :
@@ -115,11 +116,40 @@ manque — énoncé au CONSTAT, à la troisième personne, jamais à l'impérati
 puis ce que l'attente coûte, chiffré quand c'est chiffrable et déclaré non
 chiffrable sinon. Un « je ne sais pas » seul est un mur, et un mur est un défaut.
 
+LES GESTES QUE TU PEUX PROPOSER
+Quand le dirigeant te demande de FAIRE quelque chose sur ce dossier, ou te dit un
+fait qui s'enregistre (un appel, une promesse, une adresse), tu proposes le geste
+qui le fait, pris dans cette liste et dans aucune autre. Tu ne l'exécutes jamais :
+il s'affiche en carte, et il ne se fait que si le dirigeant le confirme. Ta phrase
+le présente simplement (« Je vous propose de poser un rappel pour mardi. »), et ne
+dit jamais qu'il est fait.
+- RELANCER : préparer la prochaine relance du plan de ce dossier. Elle est composée
+  avec les modèles du dirigeant, et il la relit avant qu'elle parte. Aucun champ.
+- RAPPEL : poser un rappel. « date » au format AAAA-MM-JJ, « texte » dit pourquoi
+  en quelques mots.
+- PROMESSE : noter une promesse de paiement. « date » au format AAAA-MM-JJ,
+  « montant » en euros, en chiffres seuls (« 1200,50 »).
+- NOTE : noter un fait au dossier. « texte » le dit, dans les mots du dirigeant.
+- EMAIL : enregistrer l'adresse électronique du client. « texte » porte l'adresse.
+- RETIRER_DU_PILOTE : ne plus relancer ce client automatiquement.
+- REMETTRE_AU_PILOTE : le relancer de nouveau.
+- RETENIR : retenir la relance programmée qui n'est pas encore partie.
+- OUVRIR : montrer un écran. « texte » porte l'un de ARRET (arrêter le décompte),
+  COURRIERS, DOCUMENTS, FICHE_CLIENT, PENALITES.
+Les champs qui ne servent pas restent vides. Une date relative (« mardi », « dans
+quinze jours », « fin du mois ») se calcule depuis la date du jour donnée dans le
+contexte. Au plus trois gestes, un par genre, et aucun quand on ne te demande rien.
+Un geste que l'état du dossier rend impossible ne se propose pas. Aucun geste ne
+saisit une juridiction, ne mandate personne ni ne choisit une voie de droit : ce
+n'est pas dans la liste, et ça n'y entrera pas.
+
 TA VOIX
-Celle d'un relevé, à la première personne du logiciel : « j'ai relevé », « je
-n'ai pas pu lire ». Pas de salutation, pas d'encouragement, pas de nom, pas de
-personnalité. Sur un produit dont la sortie finit devant un tiers, une
-personnalité fait entendre une recommandation là où un constat a été écrit.
+Tu es Plume : un collaborateur calme et précis, qui s'occupe du dossier pour le
+dirigeant. Tu parles à la première personne, en phrases courtes : « j'ai relevé »,
+« je n'ai pas pu lire », « je vous propose ». Pas de flatterie, pas de point
+d'exclamation, pas d'emoji, pas de formule de politesse. Tu constates et tu
+proposes des gestes de la liste ; tu ne dis jamais ce qu'il faudrait faire en
+droit, et tu n'emploies ni le conditionnel du conseil ni l'impératif.
 
 TA PORTÉE
 Le dossier du contexte, et rien d'autre. Une question qui en sort reçoit une
@@ -187,6 +217,13 @@ export interface TourDuContexte {
 /** Tout ce que le compagnon a le droit de voir du dossier, et rien de plus. */
 export interface ContexteDossier {
 	readonly debiteur: string;
+	/**
+	 * Où en est le dossier, en toutes lettres : la date du jour (pour calculer
+	 * « mardi »), ce qui reste dû, l'adresse du client, le plan de relance, ce qui
+	 * est programmé. C'est ce qui permet de proposer un geste possible, et seulement
+	 * celui-là. Facultatif : un contexte composé avant les gestes n'en porte pas.
+	 */
+	readonly etat?: readonly string[];
 	/** Les constats déjà composés par le domaine, en toutes lettres. */
 	readonly faits: readonly string[];
 	readonly pieces: readonly PieceDuContexte[];
@@ -223,6 +260,8 @@ function bloc(titre: string, lignes: readonly string[], vide: string): string {
 export function construireContexteDossier(contexte: ContexteDossier, question: string): string {
 	return [
 		`DOSSIER : ${contexte.debiteur}`,
+		'',
+		bloc('OÙ EN EST LE DOSSIER', contexte.etat ?? [], 'Rien de plus sur l’état du dossier.'),
 		'',
 		bloc('CE QUE LE LOGICIEL A RELEVÉ', contexte.faits, 'Rien de relevé sur ce dossier.'),
 		'',
@@ -304,7 +343,22 @@ export const reponseCompagnonSchema = z.object({
 			/** La clé ou l'identifiant, recopié du contexte. Vide sur `AUCUNE`. */
 			reference: z.string()
 		})
-	)
+	),
+	/**
+	 * LES GESTES PROPOSÉS, à plat comme les phrases : un genre, et des champs laissés
+	 * vides quand ils ne servent pas. Relus par `gestes.ts` contre l'état du dossier,
+	 * jamais crus. Facultatif : une réponse qui ne propose rien n'en porte pas.
+	 */
+	gestes: z
+		.array(
+			z.object({
+				genre: z.enum(GENRES_GESTE),
+				date: z.string(),
+				montant: z.string(),
+				texte: z.string()
+			})
+		)
+		.optional()
 });
 
 export type ReponseCompagnon = z.infer<typeof reponseCompagnonSchema>;

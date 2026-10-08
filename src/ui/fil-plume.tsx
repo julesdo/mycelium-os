@@ -27,8 +27,8 @@ import { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
  *   · ce qu'on peut demander, en pastilles au-dessus du compositeur.
  *
  * ⚠️ LES BARRIÈRES DE L'ANCIEN FIL RESTENT. Chaque phrase porte sa source, et une
- * phrase sans source s'affiche dégradée, marquée « non sourcé ». Le grain reste la
- * phrase, jamais la réponse.
+ * phrase sans source qui porte un chiffre s'affiche dégradée, marquée « non
+ * sourcé » (voir `aMarquer`). Le grain reste la phrase, jamais la réponse.
  */
 
 /** La question du gérant, dans sa bulle, à droite. */
@@ -49,7 +49,21 @@ export function BulleDuGerant({ texte }: { readonly texte: string }) {
  * et la réponse se lisait comme un formulaire. La source suit la phrase, en
  * petit, comme une note — et elle reste visible, toujours.
  */
+/**
+ * ⚠️ UNE PHRASE SANS SOURCE N'EST MARQUÉE QUE SI ELLE PORTE UN CHIFFRE. « Je vous
+ * propose de noter sa promesse » ne s'appuie sur rien et n'a pas à le faire : la
+ * marquer « non sourcé », en italique, faisait douter de Plume au moment même où il
+ * propose d'agir. Un chiffre sans source, lui (une date, un nombre de jours, un
+ * compte), reste dégradé et marqué. Les montants et les règles de droit ne peuvent
+ * de toute façon pas arriver jusqu'ici sans source : les filtres avant rendu les
+ * arrêtent (`compagnon/filtres.ts`).
+ */
+function aMarquer(phrase: PhraseAffichee): boolean {
+	return phrase.genreSource === 'AUCUNE' && /\d/.test(phrase.texte);
+}
+
 function SourceDeLaPhrase({ phrase }: { readonly phrase: PhraseAffichee }) {
+	if (phrase.genreSource === 'AUCUNE' && !aMarquer(phrase)) return null;
 	return (
 		<span className="ml-1 inline-flex translate-y-[-1px] items-center rounded-full border border-cladd-outline px-1.5 align-middle text-cladd-3xs leading-5 whitespace-nowrap text-cladd-fg-soft not-italic">
 			{phrase.genreSource === 'AUCUNE' ? 'non sourcé' : phrase.libelleSource}
@@ -87,7 +101,7 @@ export function ReponseDePlume({
 								key={rang}
 								className={cn(
 									'text-cladd-xs leading-relaxed',
-									phrase.genreSource === 'AUCUNE' ? 'text-cladd-fg-softer italic' : 'text-cladd-fg'
+									aMarquer(phrase) ? 'text-cladd-fg-softer italic' : 'text-cladd-fg'
 								)}
 							>
 								{phrase.texte}
@@ -345,7 +359,9 @@ export function CarteDeGeste({
 							{resultat ?? 'Fait.'}
 						</p>
 					) : etat === 'ECARTEE' ? (
-						<p className="mt-0.5 text-cladd-2xs leading-snug text-cladd-fg-softer">Laissé de côté.</p>
+						<p className="mt-0.5 text-cladd-2xs leading-snug text-cladd-fg-softer">
+							Laissé de côté.
+						</p>
 					) : null}
 				</div>
 			</div>

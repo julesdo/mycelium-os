@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { AvatarPlume, NOM_DU_PILOTE, PageEcran, Plume, type HumeurPlume } from '../../ui';
+import { AlarmClockIcon, HandCoinsIcon } from 'lucide-react';
+import {
+	AvatarPlume,
+	CarteDeGeste,
+	NOM_DU_PILOTE,
+	PageEcran,
+	Plume,
+	type HumeurPlume
+} from '../../ui';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import type { EcranDuProduit, EtatDemo } from './demo';
 
@@ -31,7 +39,6 @@ function DemoPlume() {
 	);
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════════
  * LA CONVERSATION D'UN DOSSIER — vide, en travail, puis répondue.
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -44,34 +51,76 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 	const messages: MessageAffiche[] =
 		forme === 'vide'
 			? []
-			: forme === 'travail'
-				? [{ genre: 'GERANT', id: 'q', texte: QUESTION_DEMO }]
-				: [
-						{ genre: 'GERANT', id: 'q', texte: QUESTION_DEMO },
+			: forme === 'geste'
+				? [
+						{
+							genre: 'GERANT',
+							id: 'q',
+							texte: 'Je l’ai eu au téléphone, il paie 2 000 € le 20 et le reste fin novembre.'
+						},
 						{
 							genre: 'PLUME',
 							id: 'r',
 							phrases: [
 								{
 									texte:
-										'Fournitures Durand doit 6 373,50 € à ce jour : 6 000,00 € de factures, 253,50 € de pénalités et 120,00 € de frais de recouvrement.',
-									genreSource: 'DECOMPTE',
-									libelleSource: 'calcul du jour'
-								},
-								{
-									texte:
-										'Les pénalités courent au taux de la BCE majoré de dix points, depuis l’échéance de chaque facture.',
-									genreSource: 'PARAMETRE',
-									libelleSource: 'taux des pénalités, relevé le 04/01'
-								},
-								{
-									texte: 'Le montant bouge chaque jour tant que les factures ne sont pas réglées.',
+										'Je vous propose de noter sa promesse, et de poser un rappel le lendemain pour vérifier que le virement est arrivé.',
 									genreSource: 'AUCUNE',
 									libelleSource: ''
 								}
-							]
+							],
+							suite: (
+								<div className="flex flex-col gap-2">
+									<CarteDeGeste
+										icone={<HandCoinsIcon />}
+										titre="Promesse de 2 000,00 € pour mardi 20 octobre"
+										detail="Si rien n’arrive ce jour-là, le dossier remonte dans Aujourd’hui."
+										etat="FAITE"
+										resultat="Promesse de 2 000,00 € notée pour mardi 20 octobre."
+									/>
+									<CarteDeGeste
+										icone={<AlarmClockIcon />}
+										titre="Rappel mercredi 21 octobre"
+										detail="Vérifier le virement promis. Ce jour-là, le dossier remonte dans Aujourd’hui."
+										etat="PROPOSEE"
+										principal
+										libelleConfirmer="Poser le rappel"
+										onConfirmer={() => undefined}
+										onEcarter={() => undefined}
+									/>
+								</div>
+							)
 						}
-					];
+					]
+				: forme === 'travail'
+					? [{ genre: 'GERANT', id: 'q', texte: QUESTION_DEMO }]
+					: [
+							{ genre: 'GERANT', id: 'q', texte: QUESTION_DEMO },
+							{
+								genre: 'PLUME',
+								id: 'r',
+								phrases: [
+									{
+										texte:
+											'Fournitures Durand doit 6 373,50 € à ce jour : 6 000,00 € de factures, 253,50 € de pénalités et 120,00 € de frais de recouvrement.',
+										genreSource: 'DECOMPTE',
+										libelleSource: 'calcul du jour'
+									},
+									{
+										texte:
+											'Les pénalités courent au taux de la BCE majoré de dix points, depuis l’échéance de chaque facture.',
+										genreSource: 'PARAMETRE',
+										libelleSource: 'taux des pénalités, relevé le 04/01'
+									},
+									{
+										texte:
+											'Le montant bouge chaque jour tant que les factures ne sont pas réglées.',
+										genreSource: 'AUCUNE',
+										libelleSource: ''
+									}
+								]
+							}
+						];
 	return (
 		<EcranConversationPilote
 			fil={{
@@ -130,7 +179,7 @@ export const ECRANS_PLUME: readonly EcranDuProduit[] = [
 		route: '/app/pilote/$id',
 		libelle: 'Parler à Plume',
 		vide: false,
-		variantes: ['vide', 'travail', 'reponse'],
+		variantes: ['vide', 'travail', 'reponse', 'geste'],
 		Demo: DemoConversation
 	}
 ];

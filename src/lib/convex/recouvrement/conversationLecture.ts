@@ -14,7 +14,8 @@ import {
 	ARRET_MENSUEL,
 	evaluerPlafond
 } from '../../verticales/recouvrement/compagnon/disponibilite';
-import { vSourceConstat } from './tables';
+import { vGestePropose, vSourceConstat } from './tables';
+import { jourEnClair } from '../../verticales/recouvrement/compagnon/gestes';
 
 /**
  * CE QUI SE LIT ET S'ÉCRIT AUTOUR DE LA CONVERSATION.
@@ -48,6 +49,7 @@ import { vSourceConstat } from './tables';
 
 const vContexteDossier = v.object({
 	debiteur: v.string(),
+	etat: v.optional(v.array(v.string())),
 	faits: v.array(v.string()),
 	pieces: v.array(v.object({ id: v.string(), libelle: v.string() })),
 	decomptes: v.array(
@@ -135,9 +137,28 @@ function compteurDepuis(cumul: number, mois: string) {
  * elle se fait ici, une fois. Laisser un nombre traverser jusqu'au modèle
  * rouvrirait la porte au flottant sur un chiffre qui finit dans un décompte.
  */
+/** Ce que `gestes.ts` relit : l'état du dossier, au moment de la question. */
+const vPourGestes = v.object({
+	aujourdHui: v.string(),
+	restantDu: v.int64(),
+	relancable: v.boolean(),
+	horsPilote: v.boolean(),
+	relanceProgrammee: v.boolean(),
+	emailConnu: v.union(v.string(), v.null())
+});
+
 interface ContexteLu {
+	pourGestes: {
+		aujourdHui: string;
+		restantDu: bigint;
+		relancable: boolean;
+		horsPilote: boolean;
+		relanceProgrammee: boolean;
+		emailConnu: string | null;
+	};
 	contexte: {
 		debiteur: string;
+		etat: string[];
 		faits: string[];
 		pieces: { id: string; libelle: string }[];
 		decomptes: { id: string; arreteAu: string | null; total: string; segments: string[] }[];
@@ -164,7 +185,10 @@ interface ContexteLu {
 
 export const contexteDuDossier = internalQuery({
 	args: { creanceId: v.id('creances'), toursRepris: v.number() },
-	returns: v.union(v.null(), v.object({ contexte: vContexteDossier, compteur: vCompteur })),
+	returns: v.union(
+		v.null(),
+		v.object({ contexte: vContexteDossier, compteur: vCompteur, pourGestes: vPourGestes })
+	),
 	handler: async (ctx, { creanceId, toursRepris }): Promise<ContexteLu | null> => {
 		const { organizationId } = await getUserOrg(ctx);
 		const mois = moisCourant();
@@ -221,6 +245,62 @@ export const contexteDuDossier = internalQuery({
 					]
 				: [`Le secteur retenu pour ce client est ${debiteur.secteur}.`];
 
+		/*
+		  OÙ EN EST LE DOSSIER — ce qui permet à Plume de proposer un geste possible,
+		  et seulement celui-là : la date du jour (« mardi » se calcule), ce qui reste
+		  dû, l'adresse du client, le plan, ce qui est programmé ou attend.
+		*/
+		const aujourdHui = new Date().toISOString().slice(0, 10);
+		const restes = await Promise.all(factures.map((facture) => resteDu(ctx, facture)));
+		const restantDu = enCentimes(additionner(...restes));
+		const envois = await ctx.db
+			.query('envois')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+			.collect();
+		const programmee = envois.find((e) => e.etat === 'PROGRAMME');
+		const enAttente = envois.some((e) => e.etat === 'A_VALIDER');
+		const pilote = await ctx.db
+			.query('pilotes')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+		const plan = await planDuDossier(ctx, creance, factures, aujourdHui, envois);
+		const suspendu =
+			debiteur?.santeFinanciere === 'PROCEDURE_COLLECTIVE' ||
+			debiteur?.santeFinanciere === 'RADIEE';
+		const relancable =
+			creance.statut !== 'CLOSE' && creance.engageeLe === undefined && !suspendu && restantDu > 0n;
+		const horsPilote = debiteur?.horsPilote === true;
+		const etat: string[] = [
+			`Aujourd’hui : ${jourEnClair(aujourdHui)} ${aujourdHui.slice(0, 4)} (${aujourdHui}).`,
+			`Reste à payer sur les factures du dossier, hors pénalités : ${versEuros(depuisCentimes(restantDu))} €.`,
+			debiteur?.email === undefined || debiteur.email === ''
+				? 'Adresse électronique du client : inconnue.'
+				: `Adresse électronique du client : ${debiteur.email}.`,
+			horsPilote
+				? 'Le dirigeant a retiré ce client du pilote : Plume ne le relance pas.'
+				: pilote?.envoiAutomatique === true
+					? 'Plume envoie seul les relances du plan, au nom du dirigeant, une heure après les avoir montrées.'
+					: 'Plume prépare les relances ; le dirigeant les relit et les envoie lui-même.',
+			plan === null
+				? 'Le plan de relance n’a plus d’étape à venir sur ce dossier.'
+				: `Prochaine étape du plan : ${plan.prochaine.etape.nom}, prévue le ${plan.prochaine.le}.`,
+			...(programmee === undefined
+				? []
+				: [
+						`Une relance est programmée et partira le ${new Date(programmee.partiraLe ?? programmee.prepareLe).toISOString().slice(0, 10)}, sauf si le dirigeant la retient.`
+					]),
+			...(enAttente ? ['Un courrier attend la relecture du dirigeant dans ce dossier.'] : []),
+			...(relancable
+				? []
+				: [
+						suspendu
+							? 'Ce client est en procédure collective ou radié : les relances sont suspendues.'
+							: restantDu <= 0n
+								? 'Les factures de ce dossier sont réglées : il n’y a plus rien à relancer.'
+								: 'Ce dossier est classé ou confié à un professionnel : il ne se relance plus.'
+					])
+		];
+
 		const anglesMorts: string[] = [];
 		if (debiteur?.siren === undefined) {
 			anglesMorts.push(
@@ -234,8 +314,17 @@ export const contexteDuDossier = internalQuery({
 		}
 
 		return {
+			pourGestes: {
+				aujourdHui,
+				restantDu,
+				relancable,
+				horsPilote,
+				relanceProgrammee: programmee !== undefined,
+				emailConnu: debiteur?.email ?? null
+			},
 			contexte: {
 				debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
+				etat,
 				faits,
 				pieces: pieces.map((piece) => ({
 					id: piece._id,
@@ -341,6 +430,8 @@ export const consignerEchange = internalMutation({
 		phrases: v.optional(
 			v.array(v.object({ texte: v.string(), source: v.optional(vSourceConstat) }))
 		),
+		/** Les gestes proposés, déjà relus par `gestes.ts`. */
+		gestes: v.optional(v.array(vGestePropose)),
 		usage: v.optional(
 			v.object({
 				tokensIn: v.number(),
@@ -381,6 +472,7 @@ export const consignerEchange = internalMutation({
 			texte: args.reponse,
 			pastilles: args.pastilles,
 			phrases: args.phrases,
+			...(args.gestes === undefined || args.gestes.length === 0 ? {} : { gestes: args.gestes }),
 			usage: args.usage,
 			mois: moisDuTour,
 			// +1 ms : deux tours écrits dans la même transaction porteraient sinon
@@ -423,6 +515,8 @@ const vTourAffiche = v.object({
 	texte: v.optional(v.string()),
 	/** Absent sur les tours écrits avant que les phrases le soient, et sur les refus. */
 	phrases: v.optional(v.array(v.object({ texte: v.string(), source: v.optional(vSourceConstat) }))),
+	/** Les gestes que Plume a proposés dans ce tour, et ce qu'il en est advenu. */
+	gestes: v.optional(v.array(vGestePropose)),
 	diteLe: v.number()
 });
 
@@ -470,6 +564,7 @@ export const filDuDossier = authedQuery({
 						role: tour.role,
 						texte: portePhrases ? undefined : tour.texte,
 						phrases: portePhrases ? tour.phrases : undefined,
+						gestes: tour.gestes,
 						diteLe: tour.diteLe
 					};
 				}),
@@ -477,7 +572,6 @@ export const filDuDossier = authedQuery({
 		};
 	}
 });
-
 
 /**
  * CE QUE L'EN-TÊTE DE LA CONVERSATION D'UN DOSSIER DIT : le client, ce qu'il doit

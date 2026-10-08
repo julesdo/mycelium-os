@@ -1,15 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
-import { useAction, useQuery } from 'convex/react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useAction, useMutation, useQuery } from 'convex/react';
+import { useToast } from '@cladd-ui/react';
+import {
+	AlarmClockIcon,
+	ArrowUpRightIcon,
+	HandCoinsIcon,
+	HandIcon,
+	MailIcon,
+	SendIcon,
+	StickyNoteIcon,
+	UserCheckIcon,
+	UserMinusIcon
+} from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { evaluerPlafond } from '../../lib/verticales/recouvrement/compagnon/disponibilite';
 import { relireTour } from '../../lib/verticales/recouvrement/compagnon/tour';
+import { decrireGeste, type GenreGeste } from '../../lib/verticales/recouvrement/compagnon/gestes';
+import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import {
-	EcranConversationPilote,
-	type MessageAffiche
-} from '../../screens/conversation-pilote';
-import {
+	CarteDeGeste,
 	NOM_DU_PILOTE,
 	aujourdHuiISO,
 	dateRelative,
@@ -27,7 +38,9 @@ import {
  * tapée depuis la conversation de Plume, et qui l'a mené ici.
  */
 export const Route = createFileRoute('/app/pilote/$id')({
-	validateSearch: (recherche: Record<string, unknown>): { question?: string; envoyer?: string } => ({
+	validateSearch: (
+		recherche: Record<string, unknown>
+	): { question?: string; envoyer?: string } => ({
 		...(typeof recherche.question === 'string' ? { question: recherche.question } : {}),
 		...(typeof recherche.envoyer === 'string' ? { envoyer: recherche.envoyer } : {})
 	}),
@@ -43,6 +56,19 @@ function messageDeLaPanne(e: unknown): string {
 	return e instanceof Error ? e.message : 'La demande n’a pas abouti.';
 }
 
+/** L'icône de chaque geste : ce qu'il touche, d'un coup d'œil. */
+const ICONE_DU_GESTE: Readonly<Record<GenreGeste, ReactNode>> = {
+	RELANCER: <SendIcon />,
+	RAPPEL: <AlarmClockIcon />,
+	PROMESSE: <HandCoinsIcon />,
+	NOTE: <StickyNoteIcon />,
+	EMAIL: <MailIcon />,
+	RETIRER_DU_PILOTE: <UserMinusIcon />,
+	REMETTRE_AU_PILOTE: <UserCheckIcon />,
+	RETENIR: <HandIcon />,
+	OUVRIR: <ArrowUpRightIcon />
+};
+
 /** Le temps qu'une étape reste affichée avant que la suivante commence. */
 const CADENCE_DES_ETAPES_MS = 1100;
 
@@ -53,6 +79,11 @@ function ConversationDuDossier() {
 	const fil = useQuery(api.recouvrement.conversationLecture.filDuDossier, { creanceId });
 	const resume = useQuery(api.recouvrement.conversationLecture.resumeDuDossier, { creanceId });
 	const demanderAPlume = useAction(api.recouvrement.conversation.repondre);
+	const confirmerGeste = useMutation(api.recouvrement.gestesPlume.confirmer);
+	const ecarterGeste = useMutation(api.recouvrement.gestesPlume.ecarter);
+	const navigate = useNavigate();
+	const toast = useToast();
+	const [gesteEnCours, setGesteEnCours] = useState<string | null>(null);
 
 	const [question, setQuestion] = useState(recherche.question ?? '');
 	const [envoyee, setEnvoyee] = useState<string | null>(null);
@@ -110,10 +141,81 @@ function ConversationDuDossier() {
 	const aujourdHui = aujourdHuiISO();
 	const refusDuPlafond = fil === undefined ? null : evaluerPlafond(fil.compteur.cumul).refus;
 
-	const messages: MessageAffiche[] = (fil?.tours ?? []).map((tour): MessageAffiche => {
+	/*
+	  LE GESTE EN ATTENTE LE PLUS RÉCENT PORTE LE BOUTON PLEIN — un seul par écran.
+	  Les plus anciens, encore proposés, gardent un bouton de verre.
+	*/
+	const tours = fil?.tours ?? [];
+	const dernierAvecGeste = [...tours]
+		.reverse()
+		.find((t) => (t.gestes ?? []).some((g) => g.etat === 'PROPOSEE'));
+	const principal =
+		dernierAvecGeste === undefined
+			? null
+			: `${dernierAvecGeste._id}-${(dernierAvecGeste.gestes ?? []).findIndex((g) => g.etat === 'PROPOSEE')}`;
+
+	async function confirmer(
+		echangeId: Id<'echangesCompagnon'>,
+		rang: number,
+		genre: GenreGeste,
+		ecran?: string
+	) {
+		const cle = `${echangeId}-${rang}`;
+		if (genre === 'OUVRIR') {
+			if (ecran === 'ARRET') void navigate({ to: '/app/arret/$id', params: { id } });
+			else if (ecran === 'FICHE_CLIENT' && resume !== undefined && resume !== null) {
+				void navigate({ to: '/app/clients/$id', params: { id: resume.debiteurId } });
+			} else void navigate({ to: '/app/dossier/$id', params: { id } });
+			return;
+		}
+		setGesteEnCours(cle);
+		try {
+			await confirmerGeste({ echangeId, rang });
+		} catch (e) {
+			toast({ title: 'Pas fait', text: messageDeLaPanne(e) });
+		} finally {
+			setGesteEnCours(null);
+		}
+	}
+
+	const messages: MessageAffiche[] = tours.map((tour): MessageAffiche => {
 		if (tour.role === 'GERANT') return { genre: 'GERANT', id: tour._id, texte: tour.texte ?? '' };
 		const phrases = relireTour(tour);
-		return { genre: 'PLUME', id: tour._id, phrases };
+		const gestes = tour.gestes ?? [];
+		return {
+			genre: 'PLUME',
+			id: tour._id,
+			phrases,
+			...(gestes.length === 0
+				? {}
+				: {
+						suite: (
+							<div className="flex flex-col gap-2">
+								{gestes.map((geste, rang) => {
+									const description = decrireGeste(geste);
+									const cle = `${tour._id}-${rang}`;
+									return (
+										<CarteDeGeste
+											key={cle}
+											icone={ICONE_DU_GESTE[geste.genre]}
+											titre={description.titre}
+											{...(description.detail === undefined ? {} : { detail: description.detail })}
+											etat={geste.etat}
+											{...(geste.resultat === undefined ? {} : { resultat: geste.resultat })}
+											principal={cle === principal}
+											libelleConfirmer={description.confirmer}
+											enCours={gesteEnCours === cle}
+											onConfirmer={() => void confirmer(tour._id, rang, geste.genre, geste.texte)}
+											{...(geste.genre === 'OUVRIR'
+												? {}
+												: { onEcarter: () => void ecarterGeste({ echangeId: tour._id, rang }) })}
+										/>
+									);
+								})}
+							</div>
+						)
+					})
+		};
 	});
 	if (envoyee !== null) messages.push({ genre: 'GERANT', id: 'en-cours', texte: envoyee });
 
@@ -162,7 +264,8 @@ function ConversationDuDossier() {
 								? null
 								: ` · ${prochaine.nom.toLowerCase()} ${prochaine.le <= aujourdHui ? 'aujourd’hui' : dateRelative(prochaine.le, aujourdHui)}`}
 							<br />
-							Posez-moi une question sur ce dossier : chaque phrase de ma réponse porte sa source.
+							Demandez-moi ce que vous voulez sur ce dossier, ou dites-moi quoi faire : je vous
+							propose le geste, vous confirmez.
 						</>
 					)
 				},
@@ -175,9 +278,10 @@ function ConversationDuDossier() {
 						? `La conversation de votre établissement approche de son plafond du mois. Au plafond, elle s’arrête, et rien d’autre : vos dossiers, leurs calculs et leurs relances continuent.`
 						: null,
 				suggestions: [
-					'Combien me doit-il, pénalités comprises ?',
-					'Quelles factures sont dans ce dossier ?',
-					'Quel taux est appliqué aux pénalités ?'
+					'Relance-le',
+					'Rappelle-moi mardi prochain',
+					'Il a promis de payer à la fin du mois',
+					'Combien me doit-il, pénalités comprises ?'
 				],
 				question,
 				onQuestion: setQuestion,

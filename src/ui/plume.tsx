@@ -157,13 +157,38 @@ export function Plume({
 						d="M43.5 24 C44.5 14.5 50.5 6 60.5 1 C61.6 9.6 56.6 18.6 46.6 25.4 Z"
 						className="plume-barbe"
 					/>
-					<path d="M49.4 13.2 L53.6 11.6 M47.6 17.2 L52.2 16.2 M46.2 21 L50.4 20.6" className="plume-tuyau" strokeWidth={0.9} strokeLinecap="round" />
-					<path d="M44.6 25 Q51 13.6 60 2" className="plume-tuyau" strokeWidth={1.2} fill="none" strokeLinecap="round" />
+					<path
+						d="M49.4 13.2 L53.6 11.6 M47.6 17.2 L52.2 16.2 M46.2 21 L50.4 20.6"
+						className="plume-tuyau"
+						strokeWidth={0.9}
+						strokeLinecap="round"
+					/>
+					<path
+						d="M44.6 25 Q51 13.6 60 2"
+						className="plume-tuyau"
+						strokeWidth={1.2}
+						fill="none"
+						strokeLinecap="round"
+					/>
 				</g>
 				{/* Les bras : deux petites nageoires, la droite salue quand il est content. */}
-				<ellipse cx="9.6" cy="45" rx="3.5" ry="5.6" className="plume-bras" transform="rotate(16 9.6 45)" />
+				<ellipse
+					cx="9.6"
+					cy="45"
+					rx="3.5"
+					ry="5.6"
+					className="plume-bras"
+					transform="rotate(16 9.6 45)"
+				/>
 				<g className="plume-bras-droit">
-					<ellipse cx="54.4" cy="45" rx="3.5" ry="5.6" className="plume-bras" transform="rotate(-16 54.4 45)" />
+					<ellipse
+						cx="54.4"
+						cy="45"
+						rx="3.5"
+						ry="5.6"
+						className="plume-bras"
+						transform="rotate(-16 54.4 45)"
+					/>
 				</g>
 				{/* Le corps : une goutte d'encre posée, sa pointe recourbée comme un coup de plume. */}
 				<path
@@ -171,7 +196,14 @@ export function Plume({
 					className="plume-corps"
 				/>
 				<ellipse cx="32" cy="50" rx="14.5" ry="7.4" className="plume-ventre" />
-				<ellipse cx="21" cy="28.5" rx="5.6" ry="3" className="plume-reflet" transform="rotate(-38 21 28.5)" />
+				<ellipse
+					cx="21"
+					cy="28.5"
+					rx="5.6"
+					ry="3"
+					className="plume-reflet"
+					transform="rotate(-38 21 28.5)"
+				/>
 				<ellipse cx="17.4" cy="45.4" rx="3.6" ry="2.2" className="plume-joue" />
 				<ellipse cx="46.6" cy="45.4" rx="3.6" ry="2.2" className="plume-joue" />
 				<Oeil cx={24} humeur={humeur} />

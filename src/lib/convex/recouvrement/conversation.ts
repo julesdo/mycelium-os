@@ -33,6 +33,7 @@ import {
 	refusSansCle
 } from '../../verticales/recouvrement/compagnon/disponibilite';
 import { composerRefus, type Refus } from '../../verticales/recouvrement/compagnon/refus';
+import { lireGestes, type Geste } from '../../verticales/recouvrement/compagnon/gestes';
 
 /**
  * LA CONVERSATION — le seul endroit du produit où une question part au modèle.
@@ -283,6 +284,17 @@ async function appelerLeModele(contexte: ContexteDossier, question: string) {
 	}
 }
 
+/** Un geste relu, tel qu'il s'écrit au fil : proposé, en attente du gérant. */
+function enGesteEcrit(geste: Geste) {
+	return {
+		genre: geste.genre,
+		...(geste.date === undefined ? {} : { date: geste.date }),
+		...(geste.montant === undefined ? {} : { montant: geste.montant }),
+		...(geste.texte === undefined ? {} : { texte: geste.texte }),
+		etat: 'PROPOSEE' as const
+	};
+}
+
 function avertissementDu(compteur: { avertissement: number; arret: number }): string {
 	return (
 		`Le compteur de conversation de cet établissement a dépassé ${compteur.avertissement} ` +
@@ -401,6 +413,12 @@ export const repondre = authedAction({
 			return enRefus(refus, null, null);
 		}
 
+		// ── 5 bis. Les gestes proposés, relus contre l'état du dossier ─────────
+		// Le modèle choisit un genre et remplit des champs ; `lireGestes` écarte tout
+		// ce que l'état du dossier rend impossible. Rien ne se fait ici : chaque geste
+		// attend le « Confirmer » du gérant (`gestesPlume.confirmer`).
+		const gestes = lireGestes(appel.doc.gestes ?? [], lu.pourGestes).map(enGesteEcrit);
+
 		// ── 6. Les deux tours, écrits ensemble ────────────────────────────────
 		await ctx.runMutation(internal.recouvrement.conversationLecture.consignerEchange, {
 			creanceId,
@@ -409,6 +427,7 @@ export const repondre = authedAction({
 			reponse: rendu.texte,
 			pastilles: pastillesDe(rendu.phrases),
 			phrases: phrasesDe(rendu.phrases),
+			gestes,
 			usage: consommation
 		});
 

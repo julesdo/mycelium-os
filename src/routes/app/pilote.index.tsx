@@ -3,10 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
-import {
-	EcranConversationPilote,
-	type MessageAffiche
-} from '../../screens/conversation-pilote';
+import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import {
 	BoutonTexte,
 	CarteBouton,
@@ -65,10 +62,7 @@ const MOTS_VIDES = new Set([
 ]);
 
 function normaliser(texte: string): string {
-	return texte
-		.normalize('NFD')
-		.replace(/[̀-ͯ]/g, '')
-		.toLowerCase();
+	return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 }
 
 function motsDe(texte: string): string[] {

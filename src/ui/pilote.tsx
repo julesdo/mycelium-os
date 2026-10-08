@@ -145,7 +145,8 @@ export function PiloteEnDirect({
 				{!pilote.envoiAutomatique ? (
 					<>
 						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
-							Je peux envoyer moi-même les rappels et la lettre officielle de votre plan, à votre nom.
+							Je peux envoyer moi-même les rappels et la lettre officielle de votre plan, à votre
+							nom.
 						</p>
 						{pilote.peutActiver && onActiver !== undefined ? (
 							<BoutonPrincipal pleineLargeur onClick={() => setFeuille(true)}>

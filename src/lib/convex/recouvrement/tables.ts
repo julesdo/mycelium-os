@@ -217,6 +217,35 @@ export const vSourceConstat = v.union(
 	})
 );
 
+/**
+ * UN GESTE PROPOSÉ PAR PLUME dans la conversation d'un dossier (08/10/2026), et ce
+ * qu'il en est advenu. Le genre vient du catalogue fermé de
+ * `verticales/recouvrement/compagnon/gestes.ts` ; rien ne se fait qu'au « Confirmer »
+ * du gérant (`gestesPlume.confirmer`), et la trace de qui l'a confirmé va au journal.
+ */
+export const vGestePropose = v.object({
+	genre: v.union(
+		v.literal('RELANCER'),
+		v.literal('RAPPEL'),
+		v.literal('PROMESSE'),
+		v.literal('NOTE'),
+		v.literal('EMAIL'),
+		v.literal('RETIRER_DU_PILOTE'),
+		v.literal('REMETTRE_AU_PILOTE'),
+		v.literal('RETENIR'),
+		v.literal('OUVRIR')
+	),
+	/** `AAAA-MM-JJ` : le jour d'un rappel ou d'une promesse. */
+	date: v.optional(v.string()),
+	/** En centimes : le montant d'une promesse. */
+	montant: v.optional(v.int64()),
+	/** Le motif d'un rappel, une note, une adresse, ou l'écran à ouvrir. */
+	texte: v.optional(v.string()),
+	etat: v.union(v.literal('PROPOSEE'), v.literal('FAITE'), v.literal('ECARTEE')),
+	/** Ce que le geste a produit, une fois fait : « Rappel posé pour mardi 13 octobre. » */
+	resultat: v.optional(v.string())
+});
+
 export const recouvrementTables = {
 	/**
 	 * Un fichier déposé, et où en est sa lecture.
@@ -1510,6 +1539,12 @@ export const recouvrementTables = {
 		phrases: v.optional(
 			v.array(v.object({ texte: v.string(), source: v.optional(vSourceConstat) }))
 		),
+		/**
+		 * LES GESTES QUE PLUME A PROPOSÉS DANS CE TOUR, et ce qu'il en est advenu.
+		 * Facultatif : les tours écrits avant le 08/10/2026 n'en portent pas, et une
+		 * réponse qui ne propose rien non plus.
+		 */
+		gestes: v.optional(v.array(vGestePropose)),
 		/**
 		 * Ce que ce tour a consommé. Renseigné sur les tours du compagnon.
 		 *

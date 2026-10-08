@@ -51,7 +51,11 @@ export interface ConversationPiloteAffichee {
 		readonly libelle: string;
 	};
 	/** Ce qui s'affiche tant que rien n'a été dit, sous Plume en grand. */
-	readonly accueil: { readonly titre: string; readonly sousTitre?: ReactNode; readonly contenu?: ReactNode };
+	readonly accueil: {
+		readonly titre: string;
+		readonly sousTitre?: ReactNode;
+		readonly contenu?: ReactNode;
+	};
 	/** Ce qui se dit avant même la première question : le relevé de Plume, sur l'établissement. */
 	readonly preambule?: readonly MessageAffiche[];
 	readonly messages: readonly MessageAffiche[];
@@ -164,7 +168,10 @@ export function EcranConversationPilote({ fil }: { readonly fil: ConversationPil
 			)}
 
 			{fil.panne === null ? null : (
-				<ReponseDePlume humeur="attention" texte={`${fil.panne} Le dossier, lui, n’a pas changé : vous pouvez reposer la question.`} />
+				<ReponseDePlume
+					humeur="attention"
+					texte={`${fil.panne} Le dossier, lui, n’a pas changé : vous pouvez reposer la question.`}
+				/>
 			)}
 
 			{fil.refus === null ? null : (
