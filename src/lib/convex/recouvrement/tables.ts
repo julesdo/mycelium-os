@@ -464,6 +464,12 @@ export const recouvrementTables = {
 		 * synchronisation, et c'est tout l'intérêt de distinguer les deux.
 		 */
 		emailSource: v.optional(v.union(v.literal('BANQUE'), v.literal('SAISIE'))),
+		/**
+		 * LE GÉRANT NE VEUT PAS QUE LE PILOTE S'OCCUPE DE CE CLIENT : un client à
+		 * ménager, une relation qu'il garde en main. Le pilote n'ouvre pas son
+		 * dossier et ne le relance pas ; tout reste possible à la main.
+		 */
+		horsPilote: v.optional(v.boolean()),
 		creeLe: v.number()
 	})
 		.index('by_org', ['organizationId'])
@@ -1646,6 +1652,11 @@ export const recouvrementTables = {
 						v.object({
 							genre: v.literal('OUVRIR_DOSSIER'),
 							debiteurId: v.id('debiteurs'),
+							factureIds: v.array(v.id('facturesVente'))
+						}),
+						v.object({
+							genre: v.literal('RATTACHER_AU_DOSSIER'),
+							creanceId: v.id('creances'),
 							factureIds: v.array(v.id('facturesVente'))
 						}),
 						v.object({

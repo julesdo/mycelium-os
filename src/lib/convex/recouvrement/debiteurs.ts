@@ -397,3 +397,26 @@ export const chercherAuRegistre = action({
 		return { cherche, candidats: [...lireEtablissements(annonces)].slice(0, CANDIDATS_MAX) };
 	}
 });
+
+/**
+ * LAISSER LE PILOTE S'OCCUPER DE CE CLIENT, OU NON.
+ *
+ * ⚠️ C'EST LE SEUL RÉGLAGE PAR CLIENT, ET IL EST FACULTATIF. Par défaut, le
+ * pilote ouvre le dossier d'un client dès qu'une facture passe son échéance ; le
+ * gérant peut retirer un client qu'il garde en main. Rien n'est effacé : les
+ * dossiers déjà ouverts restent, seuls l'ouverture et les relances s'arrêtent.
+ */
+export const reglerPilote = authedMutation({
+	args: { debiteurId: v.id('debiteurs'), horsPilote: v.boolean() },
+	returns: v.null(),
+	handler: async (ctx, { debiteurId, horsPilote }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const debiteur = await debiteurDe(ctx, organizationId, debiteurId);
+		await ctx.db.patch(debiteur._id, { horsPilote: horsPilote ? true : undefined });
+		// Remis au pilote, le client est relu tout de suite, pas au prochain quart d'heure.
+		if (!horsPilote) {
+			await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
+		}
+		return null;
+	}
+});

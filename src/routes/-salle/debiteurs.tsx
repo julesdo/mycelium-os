@@ -830,6 +830,8 @@ function pageDu(
 		onRetenirEtablissement: () => undefined,
 		onEnregistrerSiren: () => undefined,
 		onEnregistrerEmail: () => undefined,
+		// Le réglage du pilote pour ce client : dans la salle, il se regarde.
+		onReglerPilote: () => undefined,
 		onChoisirSecteur: () => undefined,
 		onEnregistrerTaux: () => undefined,
 		onChercherLettrage: () => undefined,

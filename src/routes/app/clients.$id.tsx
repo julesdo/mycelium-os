@@ -89,6 +89,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const renseignerSiren = useMutation(api.recouvrement.debiteurs.renseignerSiren);
 	const chercherAuRegistre = useAction(api.recouvrement.debiteurs.chercherAuRegistre);
 	const renseignerEmail = useMutation(api.recouvrement.debiteurs.renseignerEmail);
+	const reglerPilote = useMutation(api.recouvrement.debiteurs.reglerPilote);
 	const renseignerSecteur = useMutation(api.recouvrement.debiteurs.renseignerSecteur);
 	const poserTaux = useMutation(api.recouvrement.tauxContractuel.renseigner);
 	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
@@ -438,6 +439,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 								onRetenirEtablissement: (etablissement) => void retenirEtablissement(etablissement),
 								onEnregistrerSiren: (saisi) => void enregistrerSiren(saisi),
 								onEnregistrerEmail: (saisi) => void enregistrerEmail(saisi),
+								onReglerPilote: (horsPilote) => void reglerPilote({ debiteurId, horsPilote }),
 								onChoisirSecteur: (cle) =>
 									void renseignerSecteur({ debiteurId, secteur: cle as 'GENERAL' }),
 								onEnregistrerTaux: (pourcentage) => void enregistrerTaux(pourcentage),

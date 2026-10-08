@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { HistoryState } from '@tanstack/react-router';
-import { Checkbox, Popup, PopupContent } from '@cladd-ui/react';
+import { Checkbox, Popup, PopupContent, Switch } from '@cladd-ui/react';
 import { ArrowDownLeftIcon, FolderPlusIcon, MailIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
@@ -126,6 +126,8 @@ export interface DebiteurAffiche {
 	readonly email?: string;
 	/** Vrai quand l'adresse vient d'une synchronisation bancaire, pas d'une saisie. */
 	readonly emailVenuDeLaBanque?: boolean;
+	/** Le gérant a retiré ce client du pilote : rien ne s'ouvre ni ne part seul. */
+	readonly horsPilote?: boolean;
 	readonly secteur?: string;
 	readonly santeFinanciere: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
 	readonly constatRegistre?: ConstatRegistreAffiche;
@@ -172,6 +174,8 @@ export interface DebiteurComplet {
 	readonly onRetenirEtablissement: (etablissement: EtablissementPropose) => void;
 	readonly onEnregistrerSiren: (saisi: string) => void;
 	readonly onEnregistrerEmail: (saisi: string) => void;
+	/** Retirer ce client du pilote, ou le lui rendre. */
+	readonly onReglerPilote?: (horsPilote: boolean) => void;
 	readonly onChoisirSecteur: (cle: string) => void;
 	readonly onEnregistrerTaux: (pourcentage: string | null) => void;
 	readonly onChercherLettrage: (montant: string, date: string) => void;
@@ -397,6 +401,7 @@ function CorpsDebiteur({
 	onRetenirEtablissement,
 	onEnregistrerSiren,
 	onEnregistrerEmail,
+	onReglerPilote,
 	onChoisirSecteur,
 	onEnregistrerTaux,
 	onChercherLettrage,
@@ -675,6 +680,39 @@ function CorpsDebiteur({
 
 			{/* LE RESTE, EN RANGÉES QUI PORTENT LEUR VALEUR. */}
 			<ListeDeRangees>
+				{/*
+				  LE PILOTE ET CE CLIENT — le seul réglage par client, facultatif.
+
+				  ⚠️ PAR DÉFAUT, LE PILOTE S'EN OCCUPE : il ouvre le dossier dès qu'une
+				  facture passe son échéance et suit le plan de relance. Un client à
+				  ménager se retire d'un geste ; rien n'est effacé, et tout reste
+				  possible à la main.
+				*/}
+				{onReglerPilote === undefined ? null : (
+					<RangeeDepliable
+						cle="pilote"
+						famille="ENVOI"
+						titre="Le pilote"
+						valeur={debiteur.horsPilote === true ? 'retiré' : 's’en occupe'}
+					>
+						<label className="flex items-center justify-between gap-cladd-3xs">
+							<span className="text-cladd-xs font-medium">
+								Laisser le pilote s’occuper de ce client
+							</span>
+							<Switch
+								as="div"
+								checked={debiteur.horsPilote !== true}
+								onChange={(actif: boolean) => onReglerPilote(!actif)}
+							/>
+						</label>
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							{debiteur.horsPilote === true
+								? 'Retiré : aucun dossier ne s’ouvre et aucune relance ne part seule pour ce client. Vous gardez la main, et tout reste possible depuis ses dossiers.'
+								: 'Il ouvre son dossier dès qu’une facture passe son échéance, et suit le plan de relance. Un paiement arrête tout.'}
+						</p>
+					</RangeeDepliable>
+				)}
+
 				{/*
 				  SON IDENTITÉ — ce que le gérant seul peut dire. Le SIREN se cherche au
 				  registre PAR NOM, et le produit propose sans jamais choisir : un SIREN

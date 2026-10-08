@@ -3,6 +3,7 @@ import { authedMutation, authedQuery } from '../functions';
 import { internal } from '../_generated/api';
 import { getUserOrg } from '../lib/auth';
 import type { Doc, Id } from '../_generated/dataModel';
+import type { MutationCtx } from '../_generated/server';
 import { ZERO, additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
 import { controlerDecompte } from '../../verticales/recouvrement/controle';
 import { parametresManquants, tousLesParametres } from '../../verticales/recouvrement/parametres';
@@ -354,12 +355,30 @@ export const preparerArret = authedQuery({
  * parce que seules elles dépendent du montant et de la date, qui viennent de
  * changer.
  */
-export const inclureFactures = authedMutation({
-	args: { creanceId: v.id('creances'), factureIds: v.array(v.id('facturesVente')) },
-	returns: v.number(),
-	handler: async (ctx, { creanceId, factureIds }): Promise<number> => {
-		const { organizationId, user } = await getUserOrg(ctx);
-
+/**
+ * RATTACHER DES FACTURES À UN DOSSIER — le geste du gérant à l'arrêt, et celui du
+ * pilote quand une nouvelle facture du même client passe son échéance.
+ *
+ * ⚠️ UNE SEULE ÉCRITURE POUR LES DEUX. Les conditions se redéduisent de la même
+ * façon, le journal dit qui a rattaché (`GERANT` ou `MACHINE`) : deux copies
+ * divergeraient au premier changement de la règle d'exigibilité.
+ */
+export async function rattacherFactures(
+	ctx: MutationCtx,
+	{
+		organizationId,
+		creanceId,
+		factureIds,
+		par
+	}: {
+		readonly organizationId: Id<'organizations'>;
+		readonly creanceId: Id<'creances'>;
+		readonly factureIds: readonly Id<'facturesVente'>[];
+		readonly par:
+			| { readonly auteur: 'GERANT'; readonly userId: string; readonly source: string; readonly phrase: string }
+			| { readonly auteur: 'MACHINE'; readonly source: string; readonly phrase: string };
+	}
+): Promise<number> {
 		const creance = await ctx.db.get(creanceId);
 		if (creance === null || creance.organizationId !== organizationId) {
 			throw new ConvexError('Créance introuvable');
@@ -405,10 +424,10 @@ export const inclureFactures = authedMutation({
 				avant: 'hors de cette créance',
 				apres:
 					`La facture ${facture.reference} (${versEuros(depuisCentimes(facture.montantTTC))} €) ` +
-					'rejoint cette créance avant l’arrêt du décompte.',
-				source: 'Contrôle de complétude, écran d’arrêt',
-				auteur: 'GERANT',
-				auteurUserId: user._id,
+					par.phrase,
+				source: par.source,
+				auteur: par.auteur,
+				...(par.auteur === 'GERANT' ? { auteurUserId: par.userId } : {}),
 				consigneLe: Date.now()
 			});
 		}
@@ -451,6 +470,24 @@ export const inclureFactures = authedMutation({
 		}
 
 		return aRattacher.length;
+}
+
+export const inclureFactures = authedMutation({
+	args: { creanceId: v.id('creances'), factureIds: v.array(v.id('facturesVente')) },
+	returns: v.number(),
+	handler: async (ctx, { creanceId, factureIds }): Promise<number> => {
+		const { organizationId, user } = await getUserOrg(ctx);
+		return await rattacherFactures(ctx, {
+			organizationId,
+			creanceId,
+			factureIds,
+			par: {
+				auteur: 'GERANT',
+				userId: user._id,
+				source: 'Contrôle de complétude, écran d’arrêt',
+				phrase: 'rejoint cette créance avant l’arrêt du décompte.'
+			}
+		});
 	}
 });
 

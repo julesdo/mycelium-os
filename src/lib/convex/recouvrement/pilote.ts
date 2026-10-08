@@ -6,6 +6,8 @@ import type { Doc, Id } from '../_generated/dataModel';
 import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { pluriel } from '../../socle/francais';
+import { depuisCentimes, versEuros } from '../../socle/montants';
+import { rattacherFactures } from './arret';
 
 /**
  * LE PILOTE — l'agent qui vit en permanence (08/10/2026).
@@ -47,6 +49,11 @@ const CADENCE_MS = 700;
 const DELAI_REVEIL_MS = 1500;
 /** Une veille programmée qui n'a pas eu lieu depuis ce délai est tenue pour perdue. */
 const VEILLE_PERDUE_MS = 60_000;
+/**
+ * Au plus tant de clients par travail : un portefeuille repris d'un coup s'ouvre
+ * par lots, un lot par veille, plutôt qu'en une liste de deux cents étapes.
+ */
+const CLIENTS_PAR_TRAVAIL = 25;
 
 /** Le pilote de l'établissement, créé à son premier réveil. */
 async function piloteDe(
@@ -133,6 +140,13 @@ export const veiller = internalMutation({
 		  posé : on peut l'appeler à chaque veille sans rien doubler.
 		*/
 		await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.poserPropositions, {
+			organizationId,
+			jour
+		});
+
+		// 3. LES DOSSIERS QUI NAISSENT SEULS : une facture échue entre dans le
+		//    dossier de son client, ouvert s'il n'existe pas.
+		await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.ouvrirLesDossiers, {
 			organizationId,
 			jour
 		});
@@ -272,6 +286,36 @@ async function executerEffet(
 			});
 			return;
 		}
+		case 'RATTACHER_AU_DOSSIER': {
+			const creance = await ctx.db.get(effet.creanceId);
+			// Le dossier a été classé ou engagé entre-temps : on n'y ajoute rien, la
+			// facture attendra la prochaine veille, qui en ouvrira un autre.
+			if (creance === null || creance.statut === 'CLOSE' || creance.engageeLe !== undefined) return;
+			const libres: Id<'facturesVente'>[] = [];
+			for (const factureId of effet.factureIds) {
+				const facture = await ctx.db.get(factureId);
+				if (
+					facture !== null &&
+					facture.debiteurId === creance.debiteurId &&
+					facture.creanceId === undefined &&
+					facture.statutPaiement !== 'SOLDEE'
+				) {
+					libres.push(factureId);
+				}
+			}
+			if (libres.length === 0) return;
+			await rattacherFactures(ctx, {
+				organizationId,
+				creanceId: effet.creanceId,
+				factureIds: libres,
+				par: {
+					auteur: 'MACHINE',
+					source: 'Le pilote, à l’échéance',
+					phrase: 'rejoint le dossier : elle a passé son échéance sans être réglée.'
+				}
+			});
+			return;
+		}
 		case 'PROGRAMMER_RELANCE':
 			// Les relances du pilote arrivent avec leur propre lot ; aucun travail ne
 			// porte encore cet effet. Le dire vaut mieux qu'un succès qui ne fait rien.
@@ -348,6 +392,133 @@ async function demarrerLeSuivant(
 		travailId: suivant._id
 	});
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// LES DOSSIERS QUI NAISSENT SEULS (P2)
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * OUVRIR LES DOSSIERS DES CLIENTS EN RETARD — sans que le gérant ait rien touché.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CE QU'IL REMPLACE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * « Lancer un dossier », client par client, depuis sa fiche : le premier geste
+ * de tout le parcours, et le premier que les applications du marché ne
+ * demandent pas. Une facture qui passe son échéance entre dans le dossier de son
+ * client ; s'il n'en a pas d'ouvert, le pilote l'ouvre.
+ *
+ * ⚠️ CE QU'IL NE TOUCHE PAS
+ *
+ *   · un client que le gérant a retiré du pilote (`horsPilote`) ;
+ *   · une facture en litige, ou déjà dans un dossier ;
+ *   · un dossier classé ou porté devant un professionnel : une nouvelle facture
+ *     y ouvrirait un autre dossier, jamais ne s'y glisserait ;
+ *   · un client déjà dans un travail qui attend : deux travaux ne se disputent
+ *     pas le même dossier.
+ */
+export const ouvrirLesDossiers = internalMutation({
+	args: { organizationId: v.id('organizations'), jour: v.string() },
+	returns: v.null(),
+	handler: async (ctx, { organizationId, jour }): Promise<null> => {
+		const enRetard: Doc<'facturesVente'>[] = [];
+		for (const statut of ['IMPAYEE', 'PARTIELLEMENT_PAYEE'] as const) {
+			const factures = await ctx.db
+				.query('facturesVente')
+				.withIndex('by_org_and_statut', (q) =>
+					q.eq('organizationId', organizationId).eq('statutPaiement', statut)
+				)
+				.collect();
+			for (const facture of factures) {
+				const exigible = facture.dateExigibilite ?? facture.dateEcheance;
+				if (facture.creanceId === undefined && exigible !== undefined && exigible < jour) {
+					enRetard.push(facture);
+				}
+			}
+		}
+		if (enRetard.length === 0) return null;
+
+		// Les clients déjà dans un travail qui tourne ou qui attend.
+		const occupes = new Set<string>();
+		for (const etat of ['EN_COURS', 'EN_ATTENTE'] as const) {
+			const travaux = await ctx.db
+				.query('travauxPilote')
+				.withIndex('by_org_and_etat', (q) => q.eq('organizationId', organizationId).eq('etat', etat))
+				.collect();
+			for (const travail of travaux) {
+				for (const etape of travail.etapes) {
+					if (etape.faiteLe !== undefined || etape.effet === undefined) continue;
+					if (etape.effet.genre === 'OUVRIR_DOSSIER') occupes.add(etape.effet.debiteurId);
+					if (etape.effet.genre === 'RATTACHER_AU_DOSSIER') {
+						const creance = await ctx.db.get(etape.effet.creanceId);
+						if (creance !== null) occupes.add(creance.debiteurId);
+					}
+				}
+			}
+		}
+
+		const parClient = new Map<Id<'debiteurs'>, Doc<'facturesVente'>[]>();
+		for (const facture of enRetard) {
+			if (occupes.has(facture.debiteurId)) continue;
+			const siennes = parClient.get(facture.debiteurId) ?? [];
+			siennes.push(facture);
+			parClient.set(facture.debiteurId, siennes);
+		}
+
+		const etapes: { libelle: string; effet: Effet }[] = [];
+		let ouverts = 0;
+		let ajoutees = 0;
+		for (const [debiteurId, factures] of parClient) {
+			if (etapes.length >= CLIENTS_PAR_TRAVAIL) break;
+			const debiteur = await ctx.db.get(debiteurId);
+			if (debiteur === null || debiteur.horsPilote === true) continue;
+
+			const dossiers = await ctx.db
+				.query('creances')
+				.withIndex('by_debiteur', (q) => q.eq('debiteurId', debiteurId))
+				.collect();
+			const ouvert = dossiers.find((c) => c.statut !== 'CLOSE' && c.engageeLe === undefined);
+			const total = factures.reduce((somme, f) => somme + f.montantTTC, 0n);
+			const combien = `${factures.length} facture${pluriel(factures.length)}, ${versEuros(depuisCentimes(total))} €`;
+			const factureIds = factures.map((f) => f._id);
+
+			if (ouvert === undefined) {
+				etapes.push({
+					libelle: `Ouvre le dossier de ${debiteur.denomination} : ${combien}`,
+					effet: { genre: 'OUVRIR_DOSSIER', debiteurId, factureIds }
+				});
+				ouverts += 1;
+			} else {
+				etapes.push({
+					libelle: `Ajoute au dossier de ${debiteur.denomination} : ${combien}`,
+					effet: { genre: 'RATTACHER_AU_DOSSIER', creanceId: ouvert._id, factureIds }
+				});
+				ajoutees += factures.length;
+			}
+		}
+		if (etapes.length === 0) return null;
+
+		const morceaux = [
+			ouverts === 0 ? null : `${ouverts} dossier${pluriel(ouverts)} ouvert${pluriel(ouverts)}`,
+			ajoutees === 0
+				? null
+				: `${ajoutees} facture${pluriel(ajoutees)} ajoutée${pluriel(ajoutees)} à un dossier`
+		].filter((m): m is string => m !== null);
+
+		await commencerTravail(ctx, {
+			organizationId,
+			genre: 'DOSSIERS',
+			titre:
+				ouverts > 0
+					? 'Ouvre les dossiers de vos clients en retard'
+					: 'Range les nouvelles factures en retard',
+			etapes,
+			bilan: `${morceaux.join(', ')}.`
+		});
+		return null;
+	}
+});
 
 // ─────────────────────────────────────────────────────────────────────────
 // APRÈS UN DÉPÔT — la relecture, montrée

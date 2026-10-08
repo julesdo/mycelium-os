@@ -73,6 +73,8 @@ const vDebiteur = v.object({
 	 * obligé à connaître la liste des connecteurs pour y répondre.
 	 */
 	emailVenuDeLaBanque: v.boolean(),
+	/** Le gérant a retiré ce client du pilote. */
+	horsPilote: v.boolean(),
 	estCommercant: vEtatCritere,
 	santeFinanciere: v.union(
 		v.literal('INCONNUE'),
@@ -203,6 +205,7 @@ export const listerDebiteurs = authedQuery({
 					adresse: debiteur.adresse,
 					email: debiteur.email,
 					emailVenuDeLaBanque: debiteur.emailSource === 'BANQUE',
+					horsPilote: debiteur.horsPilote === true,
 					estCommercant: debiteur.estCommercant,
 					santeFinanciere: debiteur.santeFinanciere,
 					secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',
