@@ -640,7 +640,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					  passe avant ce qu'on demande au gérant, parce qu'il dit d'abord que le
 					  travail se fait.
 					*/}
-					{pilote === undefined ? null : <PiloteEnDirect pilote={pilote} />}
+					{pilote === undefined ? null : <PiloteEnDirect pilote={pilote} aujourdHui={aujourdHui} />}
 
 					{depotOuvert ? (
 						<ZoneDepot

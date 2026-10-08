@@ -462,6 +462,23 @@ const GARNIE: FileAffichee = {
 				etat: 'EN_COURS',
 				bilan: '17 factures en retard chez 9 clients.',
 				termineLe: null
+			},
+			// Ce qu'il a fait avant : la liste qu'on lit quand il ne travaille pas.
+			{
+				id: 'travail-demo-dossiers',
+				titre: 'Ouvre les dossiers de vos clients en retard',
+				etapes: [{ libelle: 'Ouvre le dossier de Fournitures Durand : 3 factures', faite: true }],
+				etat: 'FAIT',
+				bilan: '3 dossiers ouverts.',
+				termineLe: Date.UTC(2026, 8, 17, 9, 14)
+			},
+			{
+				id: 'travail-demo-releve',
+				titre: 'Relit votre dépôt',
+				etapes: [{ libelle: 'Lit 42 factures', faite: true }],
+				etat: 'FAIT',
+				bilan: '6 factures en retard chez 3 clients.',
+				termineLe: Date.UTC(2026, 8, 17, 9, 13)
 			}
 		]
 	},

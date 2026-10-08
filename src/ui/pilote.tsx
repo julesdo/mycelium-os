@@ -1,6 +1,7 @@
 import { Spinner, Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon, CheckIcon } from 'lucide-react';
 import { cn } from './cn';
+import { dateCourte } from './format';
 
 /**
  * LE PILOTE, EN DIRECT — ce que l'agent fait, sous les yeux du gérant.
@@ -42,10 +43,23 @@ export interface PiloteAffiche {
 /** L'heure du gérant, pas celle du serveur : « 14 h 32 ». */
 const HEURE = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-export function PiloteEnDirect({ pilote }: { readonly pilote: PiloteAffiche }) {
+export function PiloteEnDirect({
+	pilote,
+	aujourdHui
+}: {
+	readonly pilote: PiloteAffiche;
+	/** Le jour de l'interface (UTC) : une tâche d'aujourd'hui dit son heure, une plus ancienne sa date. */
+	readonly aujourdHui: string;
+}) {
 	const enCours = pilote.travaux.find((t) => t.etat === 'EN_COURS') ?? null;
 	const enAttente = pilote.travaux.filter((t) => t.etat === 'EN_ATTENTE').length;
-	const dernier = pilote.travaux.find((t) => t.etat === 'FAIT' || t.etat === 'ECHEC') ?? null;
+	/*
+	  ⚠️ CE QU'IL A FAIT, ET PAS SEULEMENT SA DERNIÈRE TÂCHE. Une relecture suivie
+	  de l'ouverture de trois dossiers se lisait comme une seule ligne : on ne
+	  voyait que la fin. Les trois dernières tâches disent la suite de ce qui a été
+	  fait, comme le relevé d'un collaborateur.
+	*/
+	const faits = pilote.travaux.filter((t) => t.etat === 'FAIT' || t.etat === 'ECHEC').slice(0, 3);
 
 	return (
 		<Surface
@@ -76,8 +90,12 @@ export function PiloteEnDirect({ pilote }: { readonly pilote: PiloteAffiche }) {
 
 			{enCours !== null ? (
 				<TravailEnDirect travail={enCours} enAttente={enAttente} />
-			) : dernier !== null ? (
-				<DernierTravail travail={dernier} />
+			) : faits.length > 0 ? (
+				<ul className="flex flex-col gap-1.5">
+					{faits.map((travail) => (
+						<TravailFait key={travail.id} travail={travail} aujourdHui={aujourdHui} />
+					))}
+				</ul>
 			) : (
 				<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
 					Il surveille vos échéances et vos dates limites pour agir, et se remet au travail dès
@@ -145,11 +163,23 @@ function TravailEnDirect({
 	);
 }
 
-/** Ce que le pilote vient de faire, en une ligne : le titre, puis ce que ça a donné. */
-function DernierTravail({ travail }: { readonly travail: TravailPiloteAffiche }) {
+/** Ce que le pilote a fait, en une ligne : le titre, puis ce que ça a donné, et quand. */
+function TravailFait({
+	travail,
+	aujourdHui
+}: {
+	readonly travail: TravailPiloteAffiche;
+	readonly aujourdHui: string;
+}) {
 	const echec = travail.etat === 'ECHEC';
+	const quand =
+		travail.termineLe === null
+			? null
+			: new Date(travail.termineLe).toISOString().slice(0, 10) === aujourdHui
+				? HEURE.format(new Date(travail.termineLe))
+				: dateCourte(new Date(travail.termineLe).toISOString().slice(0, 10));
 	return (
-		<div className="flex items-start gap-2 text-cladd-2xs leading-snug">
+		<li className="flex items-start gap-2 text-cladd-2xs leading-snug">
 			<span aria-hidden className="flex size-4 shrink-0 items-center justify-center pt-0.5">
 				{echec ? (
 					<AlertTriangleIcon className="size-3.5" />
@@ -164,9 +194,11 @@ function DernierTravail({ travail }: { readonly travail: TravailPiloteAffiche })
 					{echec
 						? 'interrompu. Il reprendra à la prochaine veille.'
 						: (travail.bilan ?? 'terminé.')}
-					{travail.termineLe === null ? null : ` ${HEURE.format(new Date(travail.termineLe))}`}
 				</span>
 			</span>
-		</div>
+			{quand === null ? null : (
+				<span className="ml-auto shrink-0 pl-2 text-cladd-fg-softer tabular-nums">{quand}</span>
+			)}
+		</li>
 	);
 }

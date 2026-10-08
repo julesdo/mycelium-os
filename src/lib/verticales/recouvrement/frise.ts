@@ -45,6 +45,7 @@ export interface FaitDeLaFrise {
  * le reste : mieux vaut un titre vague et un détail exact qu'un code.
  */
 export const INTITULE_DU_FAIT: Readonly<Record<string, string>> = {
+	OUVERT_PAR_LE_PILOTE: 'Le pilote a ouvert le dossier',
 	DECOMPTE_ARRETE: 'Un décompte a été arrêté',
 	FACTURE_RATTACHEE: 'Une facture a rejoint le dossier',
 	ORDRE_IMPUTATION_CHOISI: 'Vous avez choisi ce que remboursent les paiements reçus',

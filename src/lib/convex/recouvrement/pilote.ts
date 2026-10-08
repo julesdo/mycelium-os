@@ -279,10 +279,32 @@ async function executerEffet(
 				}
 			}
 			if (libres.length === 0) return;
-			await ctx.runMutation(internal.recouvrement.creances.creerCreance, {
+			const creanceId = await ctx.runMutation(internal.recouvrement.creances.creerCreance, {
 				organizationId,
 				factureIds: libres,
 				aujourdHui: new Date().toISOString().slice(0, 10)
+			});
+			/*
+			  ⚠️ LE DOSSIER DIT QUI L'A OUVERT. Sans cette ligne, la frise du dossier
+			  commençait au premier geste du gérant, et un dossier ouvert par le pilote
+			  semblait sorti de nulle part — exactement ce qui fait tout revérifier.
+			*/
+			let total = 0n;
+			for (const factureId of libres) {
+				const facture = await ctx.db.get(factureId);
+				if (facture !== null) total += facture.montantTTC;
+			}
+			await ctx.db.insert('journal', {
+				organizationId,
+				cible: creanceId as string,
+				cle: 'OUVERT_PAR_LE_PILOTE',
+				avant: 'aucun dossier pour ces factures',
+				apres:
+					`Le pilote a ouvert ce dossier : ${libres.length} facture${pluriel(libres.length)} ` +
+					`échue${pluriel(libres.length)}, ${versEuros(depuisCentimes(total))} €.`,
+				source: 'Le pilote, à l’échéance',
+				auteur: 'MACHINE',
+				consigneLe: Date.now()
 			});
 			return;
 		}
