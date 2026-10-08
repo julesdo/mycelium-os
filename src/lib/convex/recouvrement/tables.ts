@@ -247,8 +247,24 @@ export const vGestePropose = v.object({
 	texte: v.optional(v.string()),
 	etat: v.union(v.literal('PROPOSEE'), v.literal('FAITE'), v.literal('ECARTEE')),
 	/** Ce que le geste a produit, une fois fait : « Rappel posé pour mardi 13 octobre. » */
-	resultat: v.optional(v.string())
+	resultat: v.optional(v.string()),
+	/**
+	 * CE QUE LE GESTE A CRÉÉ, POUR Y MENER D'UN TOUCHER (08/10/2026) : le décompte
+	 * arrêté, le jeton de la page de paiement. La carte faite porte alors « Voir le
+	 * décompte », « Copier le lien » au lieu de dire où aller le chercher.
+	 */
+	cible: v.optional(v.string())
 });
+
+/**
+ * UNE LIGNE DE « OÙ EN EST LE DOSSIER », et où elle mène (08/10/2026) : `section:courriers`,
+ * `section:decompte`, `fiche`, `arret`, `decompte:<id>`, `demarrer`. Une chaîne seule
+ * est une ligne écrite avant que les lignes mènent quelque part : elle reste lisible.
+ */
+export const vLigneDEtat = v.union(
+	v.string(),
+	v.object({ texte: v.string(), vers: v.optional(v.string()) })
+);
 
 export const recouvrementTables = {
 	/**
@@ -1571,7 +1587,7 @@ export const recouvrementTables = {
 		 * quand une de ses phrases n'a pas pu être rendue faute de source : il ne
 		 * laisse jamais le gérant sans réponse. Ce sont les faits de la base, en clair.
 		 */
-		etatDuDossier: v.optional(v.array(v.string())),
+		etatDuDossier: v.optional(v.array(vLigneDEtat)),
 		/**
 		 * Ce que ce tour a consommé. Renseigné sur les tours du compagnon.
 		 *

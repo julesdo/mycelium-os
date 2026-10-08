@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ArrowUpIcon } from 'lucide-react';
 import { eurosCentimes } from './format';
 import { NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
@@ -31,7 +32,8 @@ export function PlumeSurLeDossier({
 	recupere,
 	total,
 	suggestions,
-	onDemander
+	onDemander,
+	action
 }: {
 	readonly humeur: HumeurPlume;
 	/** Ce que fait Plume, à la première personne : « Je relance Durand jeudi à 10 h. » */
@@ -42,6 +44,11 @@ export function PlumeSurLeDossier({
 	readonly total: bigint;
 	readonly suggestions: readonly string[];
 	readonly onDemander: (question?: string) => void;
+	/**
+	 * CE QUI MÈNE À CE QUE LA PHRASE NOMME : « Relire le courrier » sous « elle attend
+	 * votre relecture ». Une phrase qui dit où aller sans y mener fait chercher.
+	 */
+	readonly action?: ReactNode;
 }) {
 	const part = total > 0n ? Number((recupere * 1000n) / total) / 10 : 0;
 	return (
@@ -56,6 +63,7 @@ export function PlumeSurLeDossier({
 					{siRienNeBouge === null ? null : (
 						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{siRienNeBouge}</p>
 					)}
+					{action === undefined ? null : <div className="flex pt-1.5">{action}</div>}
 				</div>
 			</div>
 

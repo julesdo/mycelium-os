@@ -42,6 +42,8 @@ export interface TravailPiloteAffiche {
 
 export interface RelanceProgrammeeAffichee {
 	readonly envoiId: string;
+	/** Le dossier de cette relance : le nom du client y mène. */
+	readonly creanceId?: string;
 	readonly client: string;
 	/** « Rappel », « Deuxième rappel », « Lettre officielle ». */
 	readonly etape: string;
@@ -212,7 +214,19 @@ export function PiloteEnDirect({
 										<span className="font-medium">{relance.etape}</span>
 										<span className="text-cladd-fg-soft">
 											{' · '}
-											{relance.client} · {DEPART.format(new Date(relance.partiraLe))}
+											{relance.creanceId === undefined ? (
+												relance.client
+											) : (
+												<Lien
+													to="/app/dossier/$id"
+													params={{ id: relance.creanceId }}
+													search={{ ouvrir: 'courriers' }}
+													className="underline underline-offset-2"
+												>
+													{relance.client}
+												</Lien>
+											)}{' '}
+											· {DEPART.format(new Date(relance.partiraLe))}
 										</span>
 									</span>
 									{onRetenir === undefined ? null : (
@@ -224,10 +238,14 @@ export function PiloteEnDirect({
 							))}
 						</ul>
 						{pilote.programmes.length > 3 ? (
-							<p className="text-cladd-2xs text-cladd-fg-softer">
-								Et {pilote.programmes.length - 3} autre{pilote.programmes.length - 3 > 1 ? 's' : ''}
-								, dans leurs dossiers.
-							</p>
+							// Elles se lisent toutes chez Plume, chacune avec « Retenir » : on y mène.
+							<Lien
+								to="/app/pilote"
+								className="self-start text-cladd-2xs font-medium text-cladd-primary"
+							>
+								Et {pilote.programmes.length - 3} autre{pilote.programmes.length - 3 > 1 ? 's' : ''}{' '}
+								: les voir
+							</Lien>
 						) : null}
 					</>
 				)}

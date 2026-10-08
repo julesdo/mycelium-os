@@ -3,7 +3,7 @@ import { useToast } from '@cladd-ui/react';
 import { AlarmClockIcon, SendIcon } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
-import { dateCourte } from '../ui';
+import { Lien, dateCourte } from '../ui';
 
 /**
  * LES GESTES D'UNE CARTE BALAYÉE, BRANCHÉS — et le mot qui dit qu'ils sont faits.
@@ -54,9 +54,23 @@ export function useGestesDeDossier() {
 			choix: choixDeRelance(delaiJours)
 		});
 		if (resultat?.envoiId !== undefined) {
+			// ⚠️ LE MOT MÈNE À LA LETTRE (08/10/2026) : « elle attend dans le dossier »
+			// sans y mener faisait chercher ce qu'on venait de faire.
 			toast({
 				title: 'Lettre préparée',
-				text: `Elle attend votre relecture dans le dossier de ${client}. Rien n’est parti.`,
+				text: (
+					<>
+						Elle attend votre relecture. Rien n’est parti.{' '}
+						<Lien
+							to="/app/dossier/$id"
+							params={{ id: creanceId }}
+							search={{ ouvrir: 'courriers' }}
+							className="font-medium text-cladd-primary underline underline-offset-2"
+						>
+							Relire la lettre de {client}
+						</Lien>
+					</>
+				),
 				icon: SendIcon
 			});
 			return;
@@ -77,7 +91,19 @@ export function useGestesDeDossier() {
 		});
 		toast({
 			title: 'Rappel posé',
-			text: `Le ${dateCourte(rappelLe)}, le dossier de ${client} remontera dans Aujourd’hui.`,
+			text: (
+				<>
+					Le {dateCourte(rappelLe)}, le dossier de {client} remontera dans Aujourd’hui.{' '}
+					<Lien
+						to="/app/dossier/$id"
+						params={{ id: creanceId }}
+						search={{ ouvrir: 'suivi' }}
+						className="font-medium text-cladd-primary underline underline-offset-2"
+					>
+						Voir l’historique
+					</Lien>
+				</>
+			),
 			icon: AlarmClockIcon
 		});
 	}

@@ -992,6 +992,7 @@ function File() {
 						peutActiver: pilote.peutActiver,
 						programmes: pilote.programmes.map((p) => ({
 							envoiId: p.envoiId,
+							creanceId: p.creanceId,
 							client: p.client,
 							etape: p.etape,
 							partiraLe: p.partiraLe

@@ -76,7 +76,7 @@ const DELAI_POUR_RETENIR_MS = 60 * 60 * 1000;
 /**
  * Le délai laissé au client par la lettre officielle, quand le gérant n'en a pas
  * choisi : le même que celui que propose l'écran (`DELAI_DE_RELANCE_PAR_DEFAUT`,
- * dans `app/gestes-dossier.ts`).
+ * dans `app/gestes-dossier.tsx`).
  */
 const DELAI_LETTRE_PAR_DEFAUT = 8;
 
@@ -779,11 +779,24 @@ async function signalerCeQuiManque(
 	ctx: MutationCtx,
 	organizationId: Id<'organizations'>,
 	creanceId: Id<'creances'>,
+	debiteurId: Id<'debiteurs'> | null,
 	client: string,
 	etape: EtapeEnvoyable,
 	manques: readonly string[]
 ): Promise<void> {
-	const lien = `/app/dossier/${creanceId}`;
+	/*
+	  ⚠️ LA NOTIFICATION MÈNE LÀ OÙ ÇA SE RÉPARE (08/10/2026) : la fiche du client
+	  pour son adresse, votre compte pour la vôtre, l'arrêt pour un décompte. Elle
+	  menait au dossier, qui ne permet de réparer aucun des trois.
+	*/
+	const lien =
+		debiteurId !== null && manques.some((manque) => manque.includes('(sa fiche)'))
+			? `/app/clients/${debiteurId}`
+			: manques.some((manque) => manque.includes('(Mon compte'))
+				? '/app/compte'
+				: manques.some((manque) => manque.includes('décompte'))
+					? `/app/arret/${creanceId}`
+					: `/app/dossier/${creanceId}`;
 	const message = `Pour ${NOM_DE_L_ETAPE[etape]} de ${client}, il manque ${manques.join(', ')}.`;
 	const deja = await ctx.db
 		.query('notifications')
@@ -889,6 +902,7 @@ export const programmerLesRelances = internalMutation({
 					ctx,
 					organizationId,
 					creance._id,
+					debiteur._id,
 					debiteur.denomination,
 					cle,
 					essai.manques
@@ -952,6 +966,7 @@ async function programmerUneRelance(
 			ctx,
 			organizationId,
 			creanceId,
+			debiteur._id,
 			debiteur.denomination,
 			etape,
 			lettre.manques
@@ -1099,6 +1114,7 @@ export const lancerEnvoi = internalMutation({
 					ctx,
 					envoi.organizationId,
 					envoi.creanceId,
+					creance?.debiteurId ?? null,
 					client,
 					envoi.etapePlan,
 					[

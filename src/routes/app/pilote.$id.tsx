@@ -24,8 +24,10 @@ import { relireTour } from '../../lib/verticales/recouvrement/compagnon/tour';
 import { decrireGeste, type GenreGeste } from '../../lib/verticales/recouvrement/compagnon/gestes';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import {
+	BoutonSecondaire,
 	CarteDeGeste,
 	CarteEtatDuDossier,
+	Lien,
 	NOM_DU_PILOTE,
 	aujourdHuiISO,
 	dateRelative,
@@ -58,6 +60,91 @@ function messageDeLaPanne(e: unknown): string {
 	const convexe = e as { data?: unknown };
 	if (typeof convexe.data === 'string') return convexe.data;
 	return e instanceof Error ? e.message : 'La demande n’a pas abouti.';
+}
+
+/**
+ * CE QUI MÈNE À CE QU'UN GESTE A PRODUIT, une fois fait (08/10/2026).
+ *
+ * Le fondateur, devant « Son lien se copie dans le dossier, sous « Pénalités et
+ * frais » » : « qu'on puisse accéder directement aux éléments, c'est un principe
+ * d'UX de base ». Chaque carte faite porte donc l'accès à ce qu'elle a fait : le
+ * lien à copier et la page à voir, le courrier à relire, le décompte arrêté,
+ * l'historique, la fiche du client.
+ */
+function accesDuGeste(
+	geste: { readonly genre: GenreGeste; readonly cible?: string },
+	{
+		id,
+		debiteurId,
+		onCopier
+	}: {
+		readonly id: string;
+		readonly debiteurId: string | null;
+		readonly onCopier: (texte: string) => void;
+	}
+): ReactNode | undefined {
+	const dossier = (ouvrir: string, libelle: string) => (
+		<BoutonSecondaire
+			as={Lien}
+			to="/app/dossier/$id"
+			// ⚠️ UNE ASSERTION : `as` efface le générique du routeur. La destination reste
+			// vérifiée par `destinations-existent.test.ts`.
+			params={{ id } as never}
+			search={{ ouvrir } as never}
+		>
+			{libelle}
+		</BoutonSecondaire>
+	);
+	const fiche =
+		debiteurId === null ? undefined : (
+			<BoutonSecondaire as={Lien} to="/app/clients/$id" params={{ id: debiteurId } as never}>
+				Voir sa fiche
+			</BoutonSecondaire>
+		);
+	switch (geste.genre) {
+		case 'RELANCER':
+		case 'RETENIR':
+			return dossier(
+				'courriers',
+				geste.genre === 'RELANCER' ? 'Relire le courrier' : 'Voir ses courriers'
+			);
+		case 'RAPPEL':
+		case 'PROMESSE':
+		case 'NOTE':
+			return dossier('suivi', 'Voir l’historique');
+		case 'CONTESTATION':
+			return dossier('litige', 'Voir vos réponses');
+		case 'EMAIL':
+		case 'RETIRER_DU_PILOTE':
+		case 'REMETTRE_AU_PILOTE':
+			return fiche;
+		case 'ARRETER_DECOMPTE':
+		case 'REMISE_CONSEIL':
+			return geste.cible === undefined ? (
+				dossier('decompte', 'Voir le décompte')
+			) : (
+				<BoutonSecondaire as={Lien} to="/app/decompte/$id" params={{ id: geste.cible } as never}>
+					{geste.genre === 'ARRETER_DECOMPTE' ? 'Voir le décompte' : 'Voir le suivi'}
+				</BoutonSecondaire>
+			);
+		case 'LIEN_PAIEMENT':
+			return geste.cible === undefined ? (
+				dossier('decompte', 'Voir le lien')
+			) : (
+				<>
+					<BoutonSecondaire
+						onClick={() => onCopier(`${window.location.origin}/p/${geste.cible ?? ''}`)}
+					>
+						Copier le lien
+					</BoutonSecondaire>
+					<BoutonSecondaire as="a" href={`/p/${geste.cible}`} target="_blank" rel="noreferrer">
+						Voir la page
+					</BoutonSecondaire>
+				</>
+			);
+		case 'OUVRIR':
+			return undefined;
+	}
 }
 
 /** L'icône de chaque geste : ce qu'il touche, d'un coup d'œil. */
@@ -184,11 +271,40 @@ function ConversationDuDossier() {
 		}
 	}
 
+	/**
+	 * UNE LIGNE DE « OÙ EN EST LE DOSSIER », ET OÙ ELLE MÈNE. Les lignes écrites
+	 * avant qu'elles mènent quelque part (une chaîne seule) se lisent sans geste.
+	 */
+	function lireLigne(ligne: string | { readonly texte: string; readonly vers?: string }) {
+		if (typeof ligne === 'string' || ligne.vers === undefined) {
+			return { texte: typeof ligne === 'string' ? ligne : ligne.texte };
+		}
+		const vers = ligne.vers;
+		const onOuvrir = (): void => {
+			if (vers.startsWith('section:')) {
+				void navigate({
+					to: '/app/dossier/$id',
+					params: { id },
+					search: { ouvrir: vers.slice('section:'.length) as never }
+				});
+			} else if (vers.startsWith('decompte:')) {
+				void navigate({ to: '/app/decompte/$id', params: { id: vers.slice('decompte:'.length) } });
+			} else if (vers === 'arret') {
+				void navigate({ to: '/app/arret/$id', params: { id } });
+			} else if (vers === 'fiche' && resume !== undefined && resume !== null) {
+				void navigate({ to: '/app/clients/$id', params: { id: resume.debiteurId } });
+			} else if (vers === 'demarrer' && resume !== undefined && resume !== null) {
+				void navigate({ to: '/app/demarrer/$id', params: { id: resume.debiteurId } });
+			}
+		};
+		return { texte: ligne.texte, onOuvrir };
+	}
+
 	const messages: MessageAffiche[] = tours.map((tour): MessageAffiche => {
 		if (tour.role === 'GERANT') return { genre: 'GERANT', id: tour._id, texte: tour.texte ?? '' };
 		const phrases = relireTour(tour);
 		const gestes = tour.gestes ?? [];
-		const etat = tour.etatDuDossier ?? [];
+		const etat = (tour.etatDuDossier ?? []).map((ligne) => lireLigne(ligne));
 		return {
 			genre: 'PLUME',
 			id: tour._id,
@@ -214,6 +330,17 @@ function ConversationDuDossier() {
 											libelleConfirmer={description.confirmer}
 											enCours={gesteEnCours === cle}
 											onConfirmer={() => void confirmer(tour._id, rang, geste.genre, geste.texte)}
+											{...(() => {
+												const acces = accesDuGeste(geste, {
+													id,
+													debiteurId: resume?.debiteurId ?? null,
+													onCopier: (texte) =>
+														void navigator.clipboard
+															.writeText(texte)
+															.then(() => toast({ title: 'Lien copié', text: texte }))
+												});
+												return acces === undefined ? {} : { acces };
+											})()}
 											{...(geste.genre === 'OUVRIR'
 												? {}
 												: { onEcarter: () => void ecarterGeste({ echangeId: tour._id, rang }) })}

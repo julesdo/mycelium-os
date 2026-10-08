@@ -1,6 +1,6 @@
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Button, Spinner, Textarea } from '@cladd-ui/react';
-import { ArrowUpIcon, CheckIcon } from 'lucide-react';
+import { ArrowUpIcon, CheckIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from './cn';
 import type { PhraseAffichee } from './conversation';
 import { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
@@ -323,7 +323,8 @@ export function CarteDeGeste({
 	onConfirmer,
 	onEcarter,
 	libelleConfirmer = 'Confirmer',
-	enCours = false
+	enCours = false,
+	acces
 }: {
 	readonly icone: ReactNode;
 	readonly titre: string;
@@ -337,6 +338,12 @@ export function CarteDeGeste({
 	readonly onEcarter?: () => void;
 	readonly libelleConfirmer?: string;
 	readonly enCours?: boolean;
+	/**
+	 * CE QUI MÈNE À CE QUE LE GESTE A PRODUIT, une fois fait : « Copier le lien »,
+	 * « Voir le décompte ». Une carte qui dit « c'est dans le dossier » sans y mener
+	 * fait chercher ce qu'elle vient de montrer (08/10/2026).
+	 */
+	readonly acces?: ReactNode;
 }) {
 	return (
 		<div
@@ -365,6 +372,9 @@ export function CarteDeGeste({
 					) : null}
 				</div>
 			</div>
+			{etat === 'FAITE' && acces !== undefined ? (
+				<div className="flex flex-wrap items-center gap-2 pl-12">{acces}</div>
+			) : null}
 			{etat === 'PROPOSEE' && onConfirmer !== undefined ? (
 				<div className="flex items-center gap-2">
 					<Button
@@ -435,16 +445,46 @@ export function PageConversation({
  * depuis la base (pas par le modèle) : quand on lui demande où en est le dossier, ou
  * quand une de ses phrases n'a pas pu être rendue. La question a toujours une réponse.
  */
-export function CarteEtatDuDossier({ lignes }: { readonly lignes: readonly string[] }) {
+export interface LigneDEtatAffichee {
+	readonly texte: string;
+	/** Ce qui mène à ce que la ligne dit : la rubrique, la fiche, le décompte. */
+	readonly onOuvrir?: () => void;
+}
+
+export function CarteEtatDuDossier({ lignes }: { readonly lignes: readonly LigneDEtatAffichee[] }) {
 	if (lignes.length === 0) return null;
 	return (
-		<div className="verre-carte flex flex-col gap-2 rounded-cladd-xl p-3.5">
-			<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">Où en est le dossier</p>
-			<ul className="flex flex-col gap-1.5">
+		<div className="verre-carte flex flex-col rounded-cladd-xl py-1.5">
+			<p className="px-3.5 pt-2 pb-1 text-cladd-2xs font-semibold text-cladd-fg-soft">
+				Où en est le dossier
+			</p>
+			<ul className="flex flex-col">
 				{lignes.map((ligne) => (
-					<li key={ligne} className="flex gap-2 text-cladd-xs leading-snug">
-						<span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-cladd-fg-soft" />
-						<span className="min-w-0">{ligne}</span>
+					<li key={ligne.texte}>
+						{/*
+						  ⚠️ UNE LIGNE QUI MÈNE QUELQUE PART SE TOUCHE, ET LE DIT PAR SON CHEVRON
+						  (08/10/2026, le fondateur : « qu'on puisse accéder directement aux
+						  éléments »). Celle qui ne mène nulle part se lit.
+						*/}
+						{ligne.onOuvrir === undefined ? (
+							<div className="flex min-h-11 items-start gap-2 px-3.5 py-2 text-cladd-xs leading-snug">
+								<span
+									aria-hidden
+									className="mt-2 size-1.5 shrink-0 rounded-full bg-cladd-fg-soft"
+								/>
+								<span className="min-w-0">{ligne.texte}</span>
+							</div>
+						) : (
+							<button
+								type="button"
+								onClick={ligne.onOuvrir}
+								className="flex min-h-11 w-full items-center gap-2 px-3.5 py-2 text-left text-cladd-xs leading-snug transition active:scale-[0.99] active:bg-cladd-fg/5"
+							>
+								<span aria-hidden className="size-1.5 shrink-0 rounded-full bg-cladd-fg-soft" />
+								<span className="min-w-0 flex-1">{ligne.texte}</span>
+								<ChevronRightIcon className="size-4 shrink-0 text-cladd-fg-softer" aria-hidden />
+							</button>
+						)}
 					</li>
 				))}
 			</ul>

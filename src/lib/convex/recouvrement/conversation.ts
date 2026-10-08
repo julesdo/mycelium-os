@@ -305,7 +305,7 @@ async function consignerEchangeDeSecours(
 		usage
 	}: {
 		readonly texte: string;
-		readonly resume: readonly string[];
+		readonly resume: readonly { readonly texte: string; readonly vers?: string }[];
 		readonly gestes: readonly ReturnType<typeof enGesteEcrit>[];
 		readonly usage: Consommation | undefined;
 	}

@@ -4,6 +4,7 @@ import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
 import { NOM_DU_PILOTE } from './plume';
+import { TexteQuiMene } from './texte-qui-mene';
 import { ChoixIntervenant, type ProfessionnelsProposes } from './choix-intervenant';
 import { DirigeantsProposes, type EtatDirigeants } from './dirigeants';
 import { LigneBouton, ListeAnalyses } from './navigation';
@@ -153,6 +154,8 @@ export interface IntervenantProposable {
 }
 
 export interface CourriersDuDossier {
+	/** Le client du dossier : « (sa fiche) » dans ce qui manque mène à sa fiche. */
+	readonly debiteurId?: string;
 	readonly modeles: readonly ModeleProposable[];
 	readonly envois: readonly EnvoiAffiche[];
 	readonly peutValider: boolean;
@@ -799,11 +802,13 @@ function Texte({ corps }: { corps: string }) {
 function Apercu({
 	apercu,
 	enCours,
-	onPreparer
+	onPreparer,
+	debiteurId
 }: {
 	apercu: ApercuAffiche | null | undefined;
 	enCours: boolean;
 	onPreparer: () => void;
+	debiteurId?: string;
 }) {
 	if (apercu === undefined) {
 		return <p className="text-cladd-xs text-cladd-fg-soft">Composition de l’aperçu…</p>;
@@ -816,7 +821,7 @@ function Apercu({
 				<ul className="flex flex-col gap-0.5">
 					{apercu.manques.map((m) => (
 						<li key={m} className="text-cladd-xs text-cladd-fg-soft">
-							· {m}
+							· <TexteQuiMene texte={m} {...(debiteurId === undefined ? {} : { debiteurId })} />
 						</li>
 					))}
 				</ul>
@@ -856,7 +861,8 @@ function Envoi({
 	onAbandonner,
 	onTelechargerPdf,
 	onTelechargerAnnexe,
-	onRetenir
+	onRetenir,
+	debiteurId
 }: {
 	envoi: EnvoiAffiche;
 	peutValider: boolean;
@@ -868,6 +874,8 @@ function Envoi({
 	onTelechargerPdf: () => void;
 	onTelechargerAnnexe: () => void;
 	onRetenir?: () => void;
+	/** Le client : « vous le lui rendez depuis sa fiche » y mène. */
+	debiteurId?: string;
 }) {
 	const [partiLe, setPartiLe] = useState(aujourdHui);
 	/** Coché d'office : voir la case, plus bas. Il se décoche. */
@@ -925,8 +933,11 @@ function Envoi({
 								Retenir
 							</BoutonSecondaire>
 							<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">
-								Elle ne partira pas, et le pilote ne relancera plus ce client : vous le gardez en
-								main. Vous le lui rendez depuis sa fiche.
+								Elle ne partira pas, et Plume ne relancera plus ce client : vous le gardez en main.{' '}
+								<TexteQuiMene
+									texte="Vous le lui rendez depuis (sa fiche)."
+									{...(debiteurId === undefined ? {} : { debiteurId })}
+								/>
 							</p>
 						</div>
 					)}
@@ -1072,6 +1083,7 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 						{...(courriers.onRetenir === undefined
 							? {}
 							: { onRetenir: () => courriers.onRetenir?.(envoi.id) })}
+						{...(courriers.debiteurId === undefined ? {} : { debiteurId: courriers.debiteurId })}
 						onTelechargerPdf={() => courriers.onTelechargerPdf(envoi)}
 						onTelechargerAnnexe={() => courriers.onTelechargerAnnexe(envoi)}
 					/>
@@ -1132,6 +1144,9 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 									/>
 									<Apercu
 										apercu={courriers.apercu}
+										{...(courriers.debiteurId === undefined
+											? {}
+											: { debiteurId: courriers.debiteurId })}
 										enCours={courriers.enCours}
 										onPreparer={() => {
 											courriers.onPreparer(choix);

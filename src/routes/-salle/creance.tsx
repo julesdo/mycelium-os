@@ -849,8 +849,7 @@ function creanceDemo({
 				cle: 'regime-prescription',
 				enonce: regimePrescription(SECTEUR_DEMO).note,
 				fait: 'Le secteur d’activité de ce client détermine la date limite pour agir en justice.',
-				ceQuiLaLeve:
-					'Préciser le secteur du client, sur sa fiche, fixe le délai réellement applicable.'
+				ceQuiLaLeve: 'Préciser le secteur du client (sa fiche) fixe le délai réellement applicable.'
 			}
 		],
 		/*

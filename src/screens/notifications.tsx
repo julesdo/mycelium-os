@@ -128,8 +128,14 @@ export function destinationDeNotification(
 	if (dossier !== undefined) return { vers: '/app/dossier/$id', parametres: { id: dossier } };
 
 	const client =
-		/^\/app\/clients\/([\w-]+)$/.exec(lien)?.[1] ?? /^\/app\/debiteurs\?d=([\w-]+)$/.exec(lien)?.[1];
+		/^\/app\/clients\/([\w-]+)$/.exec(lien)?.[1] ??
+		/^\/app\/debiteurs\?d=([\w-]+)$/.exec(lien)?.[1];
 	if (client !== undefined) return { vers: '/app/clients/$id', parametres: { id: client } };
+
+	// Là où se répare ce qui manque : votre compte, l'arrêt d'un décompte.
+	if (lien === '/app/compte') return { vers: '/app/compte' };
+	const arret = /^\/app\/arret\/([\w-]+)$/.exec(lien)?.[1];
+	if (arret !== undefined) return { vers: '/app/arret/$id', parametres: { id: arret } };
 
 	const ligne = /^(?:\/app)?\?ligne=([\w-]+)$/.exec(lien)?.[1];
 	if (ligne !== undefined) {
@@ -178,7 +184,8 @@ export function EcranNotifications({ donnees }: { donnees: Lecture<Notifications
 	const parJour: { jour: string; siennes: NotificationAffichee[] }[] = [];
 	for (const notification of notifications) {
 		const dernier = parJour.at(-1);
-		if (dernier !== undefined && dernier.jour === notification.jour) dernier.siennes.push(notification);
+		if (dernier !== undefined && dernier.jour === notification.jour)
+			dernier.siennes.push(notification);
 		else parJour.push({ jour: notification.jour, siennes: [notification] });
 	}
 	const nonLues = notifications.filter((n) => !n.lue).length;

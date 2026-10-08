@@ -300,6 +300,7 @@ export {
 } from './pilote';
 export { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
 export { PlumeSurLeDossier } from './plume-dossier';
+export { TexteQuiMene } from './texte-qui-mene';
 export {
 	AccueilDePlume,
 	BulleDuGerant,
@@ -310,7 +311,8 @@ export {
 	ReponseDePlume,
 	SuggestionsAPlume,
 	TravailDePlume,
-	type EtapeDeTravail
+	type EtapeDeTravail,
+	type LigneDEtatAffichee
 } from './fil-plume';
 export {
 	BarreDEtapes,

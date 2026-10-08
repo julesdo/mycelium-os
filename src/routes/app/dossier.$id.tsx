@@ -18,7 +18,12 @@ import {
 	type EtudeAffichee,
 	type FicheASaisir
 } from '../../ui';
-import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
+import {
+	EcranCreance,
+	SECTIONS_CREANCE,
+	type CreanceOuverte,
+	type SectionCreance
+} from '../../screens/creance';
 import { useDirigeantsDuClient, useProfessionnelsProposes } from '../../app/use-professionnels';
 import {
 	modelesProposables,
@@ -27,7 +32,18 @@ import {
 	type OrdonnanceLueAffichee
 } from '../../ui';
 
+/**
+ * `?ouvrir=courriers` (ou `decompte`, `pieces`, `litige`, `voies`, `suivi`) ouvre
+ * cette rubrique à l'arrivée (08/10/2026). Un écran qui dit « c'est dans ses
+ * courriers » doit pouvoir y MENER, d'un toucher : Plume, la carte d'état, les
+ * notifications s'en servent.
+ */
 export const Route = createFileRoute('/app/dossier/$id')({
+	validateSearch: (recherche: Record<string, unknown>): { ouvrir?: SectionCreance } =>
+		typeof recherche.ouvrir === 'string' &&
+		(SECTIONS_CREANCE as readonly string[]).includes(recherche.ouvrir)
+			? { ouvrir: recherche.ouvrir as SectionCreance }
+			: {},
 	component: PageCreance,
 	errorComponent: CreanceEnErreur
 });
@@ -100,6 +116,7 @@ function laPlusProche(dates: readonly (string | undefined)[]): string | null {
 function PageCreance() {
 	const { id } = Route.useParams();
 	const creanceId = id as Id<'creances'>;
+	const recherche = Route.useSearch();
 	const aujourdHui = aujourdHuiISO();
 	const navigate = useNavigate();
 
@@ -535,8 +552,7 @@ function PageCreance() {
 			cle: 'regime-prescription',
 			enonce: creance.regimePrescriptionNote,
 			fait: 'Ce que vous vendez à ce client détermine le délai pour agir en justice.',
-			ceQuiLaLeve:
-				'Préciser le secteur du client, sur sa fiche, fixe le délai réellement applicable.'
+			ceQuiLaLeve: 'Préciser le secteur du client (sa fiche) fixe le délai réellement applicable.'
 		},
 		/*
 		  ⚠️ UNE EXIGIBILITÉ DÉDUITE EST UNE HYPOTHÈSE, ET LE CHAMP LE DIT DÉJÀ.
@@ -744,6 +760,7 @@ function PageCreance() {
 				void avecLeSuivi(() => effacerNote({ entreeId: noteId as Id<'suiviDossier'> }))
 		},
 		courriers: {
+			debiteurId,
 			professionnels,
 			dirigeantsDuClient,
 			...(profilCreancier?.delaiRelanceParDefautJours === undefined
@@ -1000,7 +1017,12 @@ function PageCreance() {
 		aujourdHui
 	};
 
-	return <EcranCreance donnees={{ etat: 'pret', valeur }} />;
+	return (
+		<EcranCreance
+			donnees={{ etat: 'pret', valeur }}
+			{...(recherche.ouvrir === undefined ? {} : { ouvrirAuDepart: recherche.ouvrir })}
+		/>
+	);
 }
 
 /**

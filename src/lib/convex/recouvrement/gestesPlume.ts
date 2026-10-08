@@ -77,10 +77,18 @@ async function trancher(
 	echange: Doc<'echangesCompagnon'>,
 	rang: number,
 	etat: 'FAITE' | 'ECARTEE',
-	resultat?: string
+	resultat?: string,
+	cible?: string
 ): Promise<void> {
 	const gestes = (echange.gestes ?? []).map((g, i) =>
-		i === rang ? { ...g, etat, ...(resultat === undefined ? {} : { resultat }) } : g
+		i === rang
+			? {
+					...g,
+					etat,
+					...(resultat === undefined ? {} : { resultat }),
+					...(cible === undefined ? {} : { cible })
+				}
+			: g
 	);
 	await ctx.db.patch(echange._id, { gestes });
 }
@@ -92,7 +100,18 @@ async function faire(
 	userId: string,
 	geste: GesteEcrit,
 	creance: Doc<'creances'>
-): Promise<string> {
+): Promise<{ resultat: string; cible?: string }> {
+	const texte = await faireLeGeste(ctx, organizationId, userId, geste, creance);
+	return typeof texte === 'string' ? { resultat: texte } : texte;
+}
+
+async function faireLeGeste(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	userId: string,
+	geste: GesteEcrit,
+	creance: Doc<'creances'>
+): Promise<string | { resultat: string; cible: string }> {
 	const aujourdHui = new Date().toISOString().slice(0, 10);
 	const debiteur = await ctx.db.get(creance.debiteurId);
 	if (debiteur === null) throw new ConvexError('Ce client est introuvable.');
@@ -101,7 +120,10 @@ async function faire(
 		case 'RELANCER': {
 			const essai = await preparerProchaineRelance(ctx, organizationId, creance._id, userId);
 			if (!essai.ok) throw new ConvexError(essai.raison);
-			return `J’ai préparé ${essai.etape}. Il vous attend dans les courriers du dossier, à relire avant qu’il parte.`;
+			return {
+				resultat: `J’ai préparé ${essai.etape} : il attend votre relecture avant de partir.`,
+				cible: essai.envoiId
+			};
 		}
 		case 'RAPPEL': {
 			const date = geste.date ?? '';
@@ -161,7 +183,7 @@ async function faire(
 		}
 		case 'RETIRER_DU_PILOTE':
 			await ctx.db.patch(debiteur._id, { horsPilote: true });
-			return `Je ne relance plus ${debiteur.denomination}. Vous le remettez depuis sa fiche, ou en me le demandant.`;
+			return `Je ne relance plus ${debiteur.denomination}. Je le reprends dès que vous me le demandez.`;
 		case 'REMETTRE_AU_PILOTE':
 			await ctx.db.patch(debiteur._id, { horsPilote: undefined });
 			await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
@@ -202,7 +224,7 @@ async function faire(
 				: 'C’est noté : il ne conteste plus.';
 		}
 		case 'ARRETER_DECOMPTE': {
-			const { total } = await arreterLeDecompte(ctx, {
+			const { total, decompteId } = await arreterLeDecompte(ctx, {
 				organizationId,
 				userId,
 				creanceId: creance._id,
@@ -210,15 +232,18 @@ async function faire(
 				prevol: { AVOIR_NON_RAPPROCHE: 'ECARTE', REGLEMENT_NON_IMPORTE: 'ECARTE' },
 				abandonsAssumes: false
 			});
-			return `Décompte arrêté à ${versEuros(depuisCentimes(total))} €. Il ne se modifie plus.`;
+			return {
+				resultat: `Décompte arrêté à ${versEuros(depuisCentimes(total))} €. Il ne se modifie plus.`,
+				cible: decompteId
+			};
 		}
 		case 'LIEN_PAIEMENT': {
 			const decompte = await dernierDecompte(ctx, organizationId, creance._id);
 			if (decompte === null) {
 				throw new ConvexError('Aucun décompte n’est arrêté : demandez-moi d’abord de l’arrêter.');
 			}
-			await ouvrirLaPageDePaiement(ctx, organizationId, userId, decompte._id);
-			return 'Sa page de paiement est ouverte. Son lien se copie dans le dossier, sous « Pénalités et frais ».';
+			const jeton = await ouvrirLaPageDePaiement(ctx, organizationId, userId, decompte._id);
+			return { resultat: 'Sa page de paiement est ouverte.', cible: jeton };
 		}
 		case 'REMISE_CONSEIL': {
 			const decompte = await dernierDecompte(ctx, organizationId, creance._id);
@@ -232,7 +257,10 @@ async function faire(
 				remisLe,
 				...(geste.texte === undefined ? {} : { attendu: geste.texte })
 			});
-			return `Remise notée au ${jourEnClair(remisLe)}. Je suis ses dates.`;
+			return {
+				resultat: `Remise notée au ${jourEnClair(remisLe)}. Je suis ses dates.`,
+				cible: decompte._id
+			};
 		}
 	}
 }
@@ -249,8 +277,8 @@ export const confirmer = authedMutation({
 	handler: async (ctx, { echangeId, rang }): Promise<string> => {
 		const { organizationId, user } = await getUserOrg(ctx);
 		const { echange, geste, creance } = await leGeste(ctx, organizationId, echangeId, rang);
-		const resultat = await faire(ctx, organizationId, user._id, geste, creance);
-		await trancher(ctx, echange, rang, 'FAITE', resultat);
+		const { resultat, cible } = await faire(ctx, organizationId, user._id, geste, creance);
+		await trancher(ctx, echange, rang, 'FAITE', resultat, cible);
 		if (geste.genre !== 'OUVRIR') {
 			await ctx.db.insert('journal', {
 				organizationId,

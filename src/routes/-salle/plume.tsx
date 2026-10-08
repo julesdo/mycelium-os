@@ -126,11 +126,17 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 								suite: (
 									<CarteEtatDuDossier
 										lignes={[
-											'Il reste 6 000,00 € à payer sur 3 factures.',
-											'Prochaine étape : deuxième rappel, mardi 13 octobre.',
-											'Je lui écris à compta@durand.fr.',
-											'Il conteste : c’est noté, et le dossier continue.',
-											'Aucun décompte n’est encore arrêté.'
+											{
+												texte: 'Il reste 6 000,00 € à payer sur 3 factures.',
+												onOuvrir: () => undefined
+											},
+											{
+												texte: 'Prochaine étape : deuxième rappel, mardi 13 octobre.',
+												onOuvrir: () => undefined
+											},
+											{ texte: 'Je lui écris à compta@durand.fr.', onOuvrir: () => undefined },
+											{ texte: 'Il conteste : c’est noté, et le dossier continue.' },
+											{ texte: 'Aucun décompte n’est encore arrêté.', onOuvrir: () => undefined }
 										]}
 									/>
 								)

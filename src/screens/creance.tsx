@@ -80,6 +80,7 @@ import {
 	Plume,
 	PlumeSurLeDossier,
 	SuiteDuPlan,
+	TexteQuiMene,
 	dateRelative,
 	type HumeurPlume
 } from '../ui';
@@ -373,7 +374,14 @@ function aConfirmer(creance: {
 	);
 }
 
-export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) {
+export function EcranCreance({
+	donnees,
+	ouvrirAuDepart
+}: {
+	donnees: Lecture<CreanceOuverte>;
+	/** La rubrique à ouvrir à l'arrivée (`?ouvrir=`) : un lien qui MÈNE, pas qui décrit. */
+	ouvrirAuDepart?: SectionCreance;
+}) {
 	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
 	const deuxVolets = useDeuxVolets();
 
@@ -385,7 +393,9 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 	 * fermée. Et rien ne se synchronise dans un effet — un rendu de retard se
 	 * voit comme un clignotement à l'arrivée des données.
 	 */
-	const [ouvertes, setChoisies] = useState<readonly SectionCreance[]>([]);
+	const [ouvertes, setChoisies] = useState<readonly SectionCreance[]>(
+		ouvrirAuDepart === undefined ? [] : [ouvrirAuDepart]
+	);
 
 	/** Remplace la liste des panneaux ouverts, en ne gardant que ceux de la page. */
 	function changer(liste: readonly string[]) {
@@ -455,7 +465,27 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 						<PlumeADemarrer client={pret.debiteur} onDemarrer={pret.onDemarrer} />
 					) : pret.onDemanderAPlume === undefined ? null : (
 						<PlumeSurLeDossier
-							{...ceQueFaitPlume(pret)}
+							{...(() => {
+								const { mene, ...reste } = ceQueFaitPlume(pret);
+								if (mene === undefined) return reste;
+								return {
+									...reste,
+									action:
+										mene.vers === 'FICHE' ? (
+											<BoutonSecondaire
+												as={Lien}
+												to="/app/clients/$id"
+												params={{ id: pret.debiteurId } as never}
+											>
+												{mene.libelle}
+											</BoutonSecondaire>
+										) : (
+											<BoutonSecondaire onClick={() => ouvrir(mene.vers as SectionCreance)}>
+												{mene.libelle}
+											</BoutonSecondaire>
+										)
+								};
+							})()}
 							recupere={pret.dejaRecupere ?? 0n}
 							total={pret.totalFactures ?? 0n}
 							suggestions={SUGGESTIONS_SUR_LE_DOSSIER}
@@ -641,6 +671,8 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 	humeur: HumeurPlume;
 	phrase: string;
 	siRienNeBouge: string | null;
+	/** Ce que la phrase nomme, pour y mener : une rubrique de la page, ou la fiche du client. */
+	mene?: { readonly libelle: string; readonly vers: SectionCreance | 'FICHE' };
 } {
 	const client = creance.debiteur;
 	const quand = (le: string) =>
@@ -652,7 +684,8 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 		return {
 			humeur: 'repos',
 			phrase: 'Le dossier est entre les mains de votre conseil. Je surveille ses délais.',
-			siRienNeBouge: null
+			siRienNeBouge: null,
+			mene: { libelle: 'Suivre la procédure', vers: 'voies' }
 		};
 	}
 	if (creance.santeDebiteur === 'PROCEDURE_COLLECTIVE' || creance.santeDebiteur === 'RADIEE') {
@@ -670,21 +703,24 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 				programme.partiraLe === undefined
 					? `Je relance ${client} très bientôt, à votre nom.`
 					: `Je relance ${client} ${DEPART.format(new Date(programme.partiraLe))}, à votre nom.`,
-			siRienNeBouge: 'Vous pouvez encore retenir l’envoi, dans ses courriers.'
+			siRienNeBouge: 'Vous pouvez encore retenir l’envoi.',
+			mene: { libelle: 'Voir le courrier', vers: 'courriers' }
 		};
 	}
 	if (creance.courriers.envois.some((e) => e.etat === 'A_VALIDER')) {
 		return {
 			humeur: 'attention',
-			phrase: 'J’ai préparé une relance : elle attend votre relecture dans ses courriers.',
-			siRienNeBouge: null
+			phrase: 'J’ai préparé une relance : elle attend votre relecture.',
+			siRienNeBouge: null,
+			mene: { libelle: 'Relire le courrier', vers: 'courriers' }
 		};
 	}
 	if (creance.horsPilote === true) {
 		return {
 			humeur: 'repos',
 			phrase: 'Vous gardez ce client en main : je suis ses dates, sans le relancer.',
-			siRienNeBouge: null
+			siRienNeBouge: null,
+			mene: { libelle: 'Voir sa fiche', vers: 'FICHE' }
 		};
 	}
 	const prochaine = creance.planAVenir?.[0];
@@ -1113,7 +1149,8 @@ function RangeeDecompte({ creance }: { creance: CreanceOuverte }) {
 					<SectionTitle>Suppositions du calcul</SectionTitle>
 					{creance.hypotheses.map((hypothese) => (
 						<p key={hypothese.cle} className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-							{hypothese.fait} {hypothese.ceQuiLaLeve}
+							{hypothese.fait}{' '}
+							<TexteQuiMene texte={hypothese.ceQuiLaLeve} debiteurId={creance.debiteurId} />
 						</p>
 					))}
 				</section>

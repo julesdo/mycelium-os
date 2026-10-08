@@ -14,7 +14,7 @@ import {
 	ARRET_MENSUEL,
 	evaluerPlafond
 } from '../../verticales/recouvrement/compagnon/disponibilite';
-import { vGestePropose, vSourceConstat } from './tables';
+import { vGestePropose, vLigneDEtat, vSourceConstat } from './tables';
 import { jourEnClair } from '../../verticales/recouvrement/compagnon/gestes';
 
 /**
@@ -154,7 +154,7 @@ const vPourGestes = v.object({
 
 interface ContexteLu {
 	/** Où en est le dossier, en clair : ce que Plume joint quand il ne peut pas répondre mieux. */
-	resume: string[];
+	resume: { texte: string; vers?: string }[];
 	pourGestes: {
 		aujourdHui: string;
 		restantDu: bigint;
@@ -203,7 +203,7 @@ export const contexteDuDossier = internalQuery({
 			contexte: vContexteDossier,
 			compteur: vCompteur,
 			pourGestes: vPourGestes,
-			resume: v.array(v.string())
+			resume: v.array(v.object({ texte: v.string(), vers: v.optional(v.string()) }))
 		})
 	),
 	handler: async (ctx, { creanceId, toursRepris }): Promise<ContexteLu | null> => {
@@ -370,37 +370,71 @@ export const contexteDuDossier = internalQuery({
 		});
 		const leJour = (iso: string) =>
 			iso <= aujourdHui ? 'aujourd’hui' : JOUR.format(new Date(`${iso}T00:00:00.000Z`));
-		const resume: string[] = [
+		/*
+		  ⚠️ CHAQUE LIGNE MÈNE À CE QU'ELLE DIT (08/10/2026) : le reste à payer aux
+		  pénalités et frais, la relance au courrier, l'adresse à la fiche, le décompte
+		  arrêté à sa page. Une ligne qui dit « c'est là » sans y mener fait chercher.
+		*/
+		const resume: { texte: string; vers?: string }[] = [
 			restantDu > 0n
-				? `Il reste ${versEuros(depuisCentimes(restantDu))} € à payer sur ${factures.length} facture${factures.length > 1 ? 's' : ''}.`
-				: 'Ses factures sont payées.',
+				? {
+						texte: `Il reste ${versEuros(depuisCentimes(restantDu))} € à payer sur ${factures.length} facture${factures.length > 1 ? 's' : ''}.`,
+						vers: 'section:decompte'
+					}
+				: { texte: 'Ses factures sont payées.' },
 			...(creance.aDemarrer === true
-				? ['Le dossier est prêt, et attend que vous le démarriez : je ne relance rien avant.']
+				? [
+						{
+							texte:
+								'Le dossier est prêt, et attend que vous le démarriez : je ne relance rien avant.',
+							vers: 'demarrer'
+						}
+					]
 				: []),
 			...(suspendu
-				? ['Il est en procédure collective ou radié : les relances sont suspendues.']
+				? [{ texte: 'Il est en procédure collective ou radié : les relances sont suspendues.' }]
 				: horsPilote
-					? ['Vous gardez ce client en main : je ne le relance pas.']
+					? [{ texte: 'Vous gardez ce client en main : je ne le relance pas.', vers: 'fiche' }]
 					: []),
 			...(programmee === undefined
 				? []
 				: [
-						`Une relance part ${leJour(new Date(programmee.partiraLe ?? programmee.prepareLe).toISOString().slice(0, 10))}, à votre nom. Vous pouvez encore la retenir.`
+						{
+							texte: `Une relance part ${leJour(new Date(programmee.partiraLe ?? programmee.prepareLe).toISOString().slice(0, 10))}, à votre nom. Vous pouvez encore la retenir.`,
+							vers: 'section:courriers'
+						}
 					]),
-			...(enAttente ? ['Un courrier attend votre relecture.'] : []),
+			...(enAttente
+				? [{ texte: 'Un courrier attend votre relecture.', vers: 'section:courriers' }]
+				: []),
 			...(plan === null || programmee !== undefined || creance.aDemarrer === true || !relancable
 				? []
 				: [
-						`Prochaine étape : ${plan.prochaine.etape.nom.toLowerCase()}, ${leJour(plan.prochaine.le)}.`
+						{
+							texte: `Prochaine étape : ${plan.prochaine.etape.nom.toLowerCase()}, ${leJour(plan.prochaine.le)}.`,
+							vers: 'section:courriers'
+						}
 					]),
 			debiteur?.email === undefined || debiteur.email === ''
-				? 'Son adresse e-mail manque : je ne peux pas lui écrire.'
-				: `Je lui écris à ${debiteur.email}.`,
-			...(contestationDeclaree ? ['Il conteste : c’est noté, et le dossier continue.'] : []),
+				? { texte: 'Son adresse e-mail manque : je ne peux pas lui écrire.', vers: 'fiche' }
+				: { texte: `Je lui écris à ${debiteur.email}.`, vers: 'fiche' },
+			...(contestationDeclaree
+				? [{ texte: 'Il conteste : c’est noté, et le dossier continue.', vers: 'section:litige' }]
+				: []),
 			dernierArrete === undefined
-				? 'Aucun décompte n’est encore arrêté.'
-				: `Décompte arrêté le ${JOUR.format(new Date(`${dernierArrete.arreteAu}T00:00:00.000Z`))}.`,
-			...(remiseEnCours ? ['Le dossier est remis à votre conseil.'] : [])
+				? { texte: 'Aucun décompte n’est encore arrêté.', vers: 'arret' }
+				: {
+						texte: `Décompte arrêté le ${JOUR.format(new Date(`${dernierArrete.arreteAu}T00:00:00.000Z`))}.`,
+						vers: `decompte:${dernierArrete._id}`
+					},
+			...(remiseEnCours
+				? [
+						{
+							texte: 'Le dossier est remis à votre conseil.',
+							...(dernierArrete === undefined ? {} : { vers: `decompte:${dernierArrete._id}` })
+						}
+					]
+				: [])
 		];
 
 		const anglesMorts: string[] = [];
@@ -541,7 +575,7 @@ export const consignerEchange = internalMutation({
 		/** Les gestes proposés, déjà relus par `gestes.ts`. */
 		gestes: v.optional(v.array(vGestePropose)),
 		/** Où en est le dossier, en clair, quand Plume le joint à sa réponse. */
-		etatDuDossier: v.optional(v.array(v.string())),
+		etatDuDossier: v.optional(v.array(vLigneDEtat)),
 		usage: v.optional(
 			v.object({
 				tokensIn: v.number(),
@@ -631,7 +665,7 @@ const vTourAffiche = v.object({
 	/** Les gestes que Plume a proposés dans ce tour, et ce qu'il en est advenu. */
 	gestes: v.optional(v.array(vGestePropose)),
 	/** Où en est le dossier, en clair, quand Plume l'a joint. */
-	etatDuDossier: v.optional(v.array(v.string())),
+	etatDuDossier: v.optional(v.array(vLigneDEtat)),
 	diteLe: v.number()
 });
 
