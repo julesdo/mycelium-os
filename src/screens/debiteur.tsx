@@ -3,6 +3,7 @@ import type { HistoryState } from '@tanstack/react-router';
 import { Checkbox, Popup, PopupContent, Switch } from '@cladd-ui/react';
 import { ArrowDownLeftIcon, FolderPlusIcon, MailIcon } from 'lucide-react';
 import {
+	NOM_DU_PILOTE,
 	BoutonPrincipal,
 	CeQuiBloque,
 	ChiffreHero,
@@ -692,7 +693,7 @@ function CorpsDebiteur({
 					<RangeeDepliable
 						cle="pilote"
 						famille="ENVOI"
-						titre="Le pilote"
+						titre={NOM_DU_PILOTE}
 						valeur={debiteur.horsPilote === true ? 'retiré' : 's’en occupe'}
 					>
 						<label className="flex items-center justify-between gap-cladd-3xs">

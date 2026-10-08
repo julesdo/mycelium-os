@@ -6,6 +6,7 @@ import { BoutonPrincipal, BoutonTexte } from './bouton';
 import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { cn } from './cn';
 import { dateCourte } from './format';
+import { NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
 
 /**
  * LE PILOTE, EN DIRECT — ce que l'agent fait, sous les yeux du gérant.
@@ -88,6 +89,13 @@ export function PiloteEnDirect({
 	  fait, comme le relevé d'un collaborateur.
 	*/
 	const faits = pilote.travaux.filter((t) => t.etat === 'FAIT' || t.etat === 'ECHEC').slice(0, 3);
+	/*
+	  ⚠️ SON HUMEUR SUIT L'ÉTAT RÉEL : il travaille quand un travail tourne, il
+	  demande votre attention quand son dernier travail a été interrompu, il veille
+	  sinon. Un Plume qui sourit pendant une panne mentirait.
+	*/
+	const humeur: HumeurPlume =
+		enCours !== null ? 'travaille' : faits[0]?.etat === 'ECHEC' ? 'attention' : 'repos';
 
 	return (
 		<Surface
@@ -96,24 +104,19 @@ export function PiloteEnDirect({
 			className="verre-carte rounded-cladd-xl"
 			contentClassName="flex flex-col gap-cladd-3xs px-3.5 py-cladd-3xs"
 		>
-			<div className="flex items-center justify-between gap-2">
-				<span className="flex items-center gap-2 text-cladd-xs font-semibold">
-					<span
-						aria-hidden
-						className={cn(
-							'relative inline-flex size-2 shrink-0 rounded-full bg-cladd-fg',
-							enCours !== null && 'pouls'
-						)}
-					/>
-					Le pilote
-				</span>
-				<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">
-					{enCours !== null
-						? 'au travail'
-						: pilote.derniereVeille === null
-							? 'pas encore relu'
-							: `relu à ${HEURE.format(new Date(pilote.derniereVeille))}`}
-				</span>
+			{/* PLUME, ET CE QU'IL FAIT EN CE MOMENT, EN UNE LIGNE. */}
+			<div className="flex items-center gap-3">
+				<Plume humeur={humeur} taille={44} />
+				<div className="flex min-w-0 flex-col">
+					<span className="text-cladd-xs font-semibold">{NOM_DU_PILOTE}</span>
+					<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums" aria-live="polite">
+						{enCours !== null
+							? 'Au travail'
+							: pilote.derniereVeille === null
+								? 'Pas encore passé'
+								: `Tout relu à ${HEURE.format(new Date(pilote.derniereVeille))}`}
+					</span>
+				</div>
 			</div>
 
 			{enCours !== null ? (
@@ -126,7 +129,7 @@ export function PiloteEnDirect({
 				</ul>
 			) : (
 				<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
-					Il surveille vos échéances et vos dates limites pour agir, et se remet au travail dès
+					Je surveille vos échéances et vos dates limites pour agir. Je me remets au travail dès
 					qu’une facture ou un virement arrive.
 				</p>
 			)}
@@ -142,11 +145,11 @@ export function PiloteEnDirect({
 				{!pilote.envoiAutomatique ? (
 					<>
 						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
-							Il peut envoyer seul les rappels et la lettre officielle de votre plan, à votre nom.
+							Je peux envoyer moi-même les rappels et la lettre officielle de votre plan, à votre nom.
 						</p>
 						{pilote.peutActiver && onActiver !== undefined ? (
 							<BoutonPrincipal pleineLargeur onClick={() => setFeuille(true)}>
-								Laisser le pilote relancer
+								Laisser {NOM_DU_PILOTE} relancer
 							</BoutonPrincipal>
 						) : (
 							<p className="text-cladd-2xs text-cladd-fg-softer">
@@ -158,7 +161,7 @@ export function PiloteEnDirect({
 					<div className="flex items-center justify-between gap-2">
 						<p className="text-cladd-2xs text-cladd-fg-soft">
 							{pilote.activeLe === undefined || pilote.activeLe === null
-								? 'Il relance pour vous.'
+								? 'Je relance pour vous.'
 								: `Activé ${pilote.activeParVous === true ? 'par vous ' : ''}le ${dateCourte(new Date(pilote.activeLe).toISOString().slice(0, 10))}.`}{' '}
 							Rien ne part dans l’heure.
 						</p>
@@ -246,7 +249,9 @@ function FeuilleDActivation({
 				if (!o) onFermer();
 			}}
 			headerLeft={
-				<span className="px-2 pb-1 text-cladd-xs font-semibold">Laisser le pilote relancer</span>
+				<span className="px-2 pb-1 text-cladd-xs font-semibold">
+					Laisser {NOM_DU_PILOTE} relancer
+				</span>
 			}
 			contentClassName="max-w-lg"
 		>

@@ -1,6 +1,7 @@
 import { EnTeteDeGroupe } from './en-tete-groupe';
 import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { dateCourte, dateRelative } from './format';
+import { NOM_DU_PILOTE } from './plume';
 
 /**
  * LA SUITE D'UN DOSSIER, AU FUTUR — ce que le pilote fera, et quand.
@@ -65,7 +66,7 @@ export function SuiteDuPlan({
 							!etape.automatique
 								? 'Vous déciderez'
 								: envoiAutomatique
-									? 'Le pilote l’envoie'
+									? `${NOM_DU_PILOTE} l’envoie`
 									: 'Prévu au plan'
 						}
 						date={quand(etape.le, aujourdHui)}

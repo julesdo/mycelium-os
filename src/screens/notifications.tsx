@@ -1,4 +1,5 @@
 import {
+	NOM_DU_PILOTE,
 	BoutonTexte,
 	CarteFixe,
 	CarteLien,
@@ -75,7 +76,7 @@ const TITRE: Readonly<Record<GenreNotification, string>> = {
 	DEBITEUR_DEGRADE: 'Situation dégradée au registre',
 	HUMAN_ASSIST_REPLY: 'Nouvelle réponse',
 	CREANCE_MURE: 'Un dossier à regarder',
-	PILOTE_BLOQUE: 'Le pilote a besoin de vous'
+	PILOTE_BLOQUE: `${NOM_DU_PILOTE} a besoin de vous`
 };
 
 export interface NotificationAffichee {

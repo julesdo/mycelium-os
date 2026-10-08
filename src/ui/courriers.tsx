@@ -3,6 +3,7 @@ import { Checkbox, Chip, Input, Segmented, SegmentedButton, Surface } from '@cla
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
 import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
+import { NOM_DU_PILOTE } from './plume';
 import { ChoixIntervenant, type ProfessionnelsProposes } from './choix-intervenant';
 import { DirigeantsProposes, type EtatDirigeants } from './dirigeants';
 import { LigneBouton, ListeAnalyses } from './navigation';
@@ -893,7 +894,7 @@ function Envoi({
 			</div>
 			<p className="text-cladd-xs text-cladd-fg-soft">
 				Pour {envoi.destinataire} · {CANAL[envoi.canal]} ·{' '}
-				{envoi.parLePilote === true ? 'préparé par le pilote le' : 'préparé le'}{' '}
+				{envoi.parLePilote === true ? `préparé par ${NOM_DU_PILOTE} le` : 'préparé le'}{' '}
 				{dateCourte(envoi.prepareLe)}
 				{envoi.valideLe === undefined || envoi.parLePilote === true
 					? ''

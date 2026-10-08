@@ -307,6 +307,7 @@ export {
 	type RelanceProgrammeeAffichee,
 	type TravailPiloteAffiche
 } from './pilote';
+export { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
 export { SuiteDuPlan, type EtapeAVenir } from './suite-plan';
 export { BandeDAnciennete, repartirParAnciennete, type LigneDAnciennete } from './anciennete';
 

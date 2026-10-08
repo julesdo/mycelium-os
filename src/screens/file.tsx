@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
 import { BellIcon, SendIcon, UploadIcon } from 'lucide-react';
 import {
+	NOM_DU_PILOTE,
 	BandeDAnciennete,
 	BilanImport,
 	BoutonPrincipal,
@@ -785,7 +786,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 								cle="veilleur"
 								famille="MACHINE"
 								titre="Surveillance"
-								glose="Ce que le pilote a relu aujourd’hui, et ce qu’il relit en ce moment."
+								glose={`Ce que ${NOM_DU_PILOTE} a relu aujourd’hui, et ce qu’il relit en ce moment.`}
 								valeur={`${travaux.length} passage${pluriel(travaux.length)}`}
 							>
 								<Veilleur travaux={travaux} />

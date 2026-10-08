@@ -1,6 +1,7 @@
 import type { EcranDuProduit } from './demo';
 import { ECRANS_ACCUEIL } from './accueil';
 import { ECRANS_BARRE_ET_COMPAGNON } from './barre-et-compagnon';
+import { ECRANS_PLUME } from './plume';
 import { ECRANS_BIENVENUE } from './bienvenue';
 import { ECRANS_PAIEMENT } from './paiement';
 import { ECRANS_COMPTE } from './compte';
@@ -95,5 +96,6 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	 * et l'adresse de la salle est `/showroom` : aucun onglet n'y est jamais
 	 * actif. Cette entrée montre les sept états que la navigation réelle ne
 	 * produit pas d'un coup, chacun dans son cadre. */
-	...ECRANS_BARRE_ET_COMPAGNON
+	...ECRANS_BARRE_ET_COMPAGNON,
+	...ECRANS_PLUME
 ];
