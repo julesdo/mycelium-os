@@ -5,6 +5,10 @@ import type { FicheParametre } from '../lib/verticales/recouvrement/referentiel'
 import {
 	ApercuDuSuivi,
 	Avatar,
+	FeuilleEcheancier,
+	FeuilleReponseClient,
+	SuiviEcheancier,
+	type EcheancierAffiche,
 	BoutonPrincipal,
 	BoutonSecondaire,
 	BoutonTexte,
@@ -270,6 +274,21 @@ export interface CreanceOuverte {
 		readonly jusquAu: string;
 		readonly montant?: bigint;
 	};
+	/**
+	 * LE CLIENT A RÉPONDU (08/10/2026) — ce qu'il faut pour noter sa réponse d'un
+	 * geste : ce qui reste dû (le montant proposé d'office, la somme d'un
+	 * échéancier), l'échéancier qui court, et les gestes. Absent : la page ne
+	 * propose pas la question (la salle d'exposition, un dossier réglé).
+	 */
+	readonly reponse?: {
+		readonly resteDu: bigint;
+		readonly echeancier: EcheancierAffiche | null;
+		readonly enCours: boolean;
+		readonly erreur: string | null;
+		readonly onPromesse: (promesse: { montantEuros: string; le: string }) => void;
+		readonly onConvenirEcheancier: (choix: { nombre: number; premiereLe: string }) => void;
+		readonly onArreterEcheancier: (id: string) => void;
+	};
 	/** Le gérant a laissé le pilote relancer seul : le plan dit alors « le pilote l’envoie ». */
 	readonly envoiAutomatique?: boolean;
 	/** La prescription la plus proche, celle qui éteint la première. */
@@ -394,6 +413,8 @@ export function EcranCreance({
 }) {
 	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
 	const deuxVolets = useDeuxVolets();
+	const [reponseOuverte, setReponseOuverte] = useState(false);
+	const [echeancierOuvert, setEcheancierOuvert] = useState(false);
 
 	/**
 	 * LES PANNEAUX OUVERTS — aucun à l'arrivée.
@@ -503,7 +524,26 @@ export function EcranCreance({
 						/>
 					)}
 
-					<CarteDeLEtat creance={pret} onOuvrir={ouvrir} />
+					{/* L'ÉCHÉANCIER QUI COURT : c'est l'état du dossier tant qu'il court. */}
+					{pret.reponse?.echeancier === null ||
+					pret.reponse?.echeancier === undefined ||
+					pret.reponse.echeancier.etat === 'ARRETE' ? null : (
+						<SuiviEcheancier
+							echeancier={pret.reponse.echeancier}
+							onArreter={() => {
+								const id = pret.reponse?.echeancier?.id;
+								if (id !== undefined) pret.reponse?.onArreterEcheancier(id);
+							}}
+						/>
+					)}
+
+					<CarteDeLEtat
+						creance={pret}
+						onOuvrir={ouvrir}
+						{...(pret.reponse === undefined || pret.etapes.etape === 'REGLE'
+							? {}
+							: { onReponse: () => setReponseOuverte(true) })}
+					/>
 
 					{/* CE QUI VIENT, SOUS CE QUI EST : la frise continue après aujourd’hui. */}
 					{pret.planAVenir === undefined ? null : (
@@ -530,6 +570,46 @@ export function EcranCreance({
 						/>
 					</ListeDeRangees>
 				</SectionsDepliables>
+			)}
+
+			{pret === null || pret.reponse === undefined ? null : (
+				<>
+					<FeuilleReponseClient
+						ouverte={reponseOuverte}
+						onFermer={() => setReponseOuverte(false)}
+						client={pret.debiteur}
+						debiteurId={pret.debiteurId}
+						resteDu={pret.reponse.resteDu}
+						aujourdHui={pret.aujourdHui}
+						enCours={pret.reponse.enCours}
+						erreur={pret.reponse.erreur}
+						onPromesse={pret.reponse.onPromesse}
+						{...(pret.reponse.resteDu <= 0n ||
+						pret.reponse.echeancier?.etat === 'EN_COURS' ||
+						pret.reponse.echeancier?.etat === 'EN_RETARD'
+							? {}
+							: { onEcheancier: () => setEcheancierOuvert(true) })}
+						onContestation={() => ouvrir('litige')}
+						onAutre={() => ouvrir('suivi')}
+					/>
+					<FeuilleEcheancier
+						ouverte={echeancierOuvert}
+						onFermer={() => setEcheancierOuvert(false)}
+						client={pret.debiteur}
+						resteDu={pret.reponse.resteDu}
+						aujourdHui={pret.aujourdHui}
+						enCours={pret.reponse.enCours}
+						erreur={pret.reponse.erreur}
+						onConvenir={(choix) => {
+							pret.reponse?.onConvenirEcheancier(choix);
+							setEcheancierOuvert(false);
+						}}
+						onAccordEcrit={() => {
+							setEcheancierOuvert(false);
+							ouvrir('courriers');
+						}}
+					/>
+				</>
 			)}
 		</PageEcran>
 	);
@@ -643,6 +723,10 @@ function gesteDuDossier(
 		};
 	}
 	if (creance.etapes.etape === 'TRIBUNAL') return { libelle: 'Suivre le dossier', ouvre: 'voies' };
+	// ⚠️ LE CLIENT A DONNÉ SA PAROLE (une promesse, un échéancier) : « Relancer » en
+	// bouton plein contredirait ce que la page dit juste au-dessus. La relance reste
+	// possible dans Courriers ; la page n'en fait plus le geste mis en avant.
+	if (creance.pause !== undefined) return null;
 	if (creance.santeDebiteur === 'PROCEDURE_COLLECTIVE' || creance.santeDebiteur === 'RADIEE') {
 		return { libelle: 'Préparer un courrier', ouvre: 'courriers' };
 	}
@@ -811,10 +895,13 @@ function PlumeADemarrer({ client, onDemarrer }: { client: string; onDemarrer: ()
 
 function CarteDeLEtat({
 	creance,
-	onOuvrir
+	onOuvrir,
+	onReponse
 }: {
 	creance: CreanceOuverte;
 	onOuvrir: (cle: SectionCreance) => void;
+	/** « Il vous a répondu ? » : le geste le plus fréquent d'un impayé, en texte. */
+	onReponse?: () => void;
 }) {
 	const { titre, sousTitre } = etatEnClair(creance);
 	const geste = creance.aDemarrer === true ? null : gesteDuDossier(creance);
@@ -826,10 +913,19 @@ function CarteDeLEtat({
 			sousTitre={sousTitre}
 			classe={creance.etapes.classe}
 			geste={
-				geste === null ? undefined : (
-					<BoutonPrincipal pleineLargeur onClick={() => onOuvrir(geste.ouvre)}>
-						{geste.libelle}
-					</BoutonPrincipal>
+				geste === null && onReponse === undefined ? undefined : (
+					<>
+						{geste === null ? null : (
+							<BoutonPrincipal pleineLargeur onClick={() => onOuvrir(geste.ouvre)}>
+								{geste.libelle}
+							</BoutonPrincipal>
+						)}
+						{onReponse === undefined ? null : (
+							<BoutonTexte className="self-center" onClick={onReponse}>
+								Il vous a répondu ?
+							</BoutonTexte>
+						)}
+					</>
 				)
 			}
 		/>

@@ -1180,7 +1180,9 @@ export const recouvrementTables = {
 			v.literal('NOTE'),
 			v.literal('ECHANGE'),
 			v.literal('PROMESSE'),
-			v.literal('RAPPEL')
+			v.literal('RAPPEL'),
+			// Un paiement en plusieurs fois, convenu avec le client (08/10/2026).
+			v.literal('ECHEANCIER')
 		),
 		/** Ce que le gérant écrit. Vide n'existe pas : une entrée sans texte ne dit rien. */
 		texte: v.string(),
@@ -1200,6 +1202,12 @@ export const recouvrementTables = {
 		montantPromis: v.optional(v.int64()),
 		/** Le jour pour lequel il l'a promis (AAAA-MM-JJ). */
 		promisPourLe: v.optional(v.string()),
+		/**
+		 * LES VERSEMENTS D'UN ÉCHÉANCIER, dans l'ordre. Seulement pour un
+		 * `ECHEANCIER`. Ce qui en est payé ne s'écrit pas : il se relit dans les
+		 * règlements (`verticales/recouvrement/parole.ts`).
+		 */
+		echeances: v.optional(v.array(v.object({ le: v.string(), montant: v.int64() }))),
 		/**
 		 * Ce qu'il est advenu de la promesse, quand le gérant l'a tranché.
 		 *

@@ -77,7 +77,8 @@ export const INTITULE_DE_LA_NOTE: Readonly<Record<string, string>> = {
 	NOTE: 'Note',
 	ECHANGE: 'Échange avec votre client',
 	PROMESSE: 'Il a promis de payer',
-	RAPPEL: 'Vous vouliez y revenir'
+	RAPPEL: 'Vous vouliez y revenir',
+	ECHEANCIER: 'Paiement en plusieurs fois convenu'
 };
 
 /** Par quoi l'échange a eu lieu, dit comme on le dit. */

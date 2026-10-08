@@ -1,9 +1,17 @@
 import { useMutation } from 'convex/react';
 import { useToast } from '@cladd-ui/react';
-import { AlarmClockIcon, SendIcon } from 'lucide-react';
+import { AlarmClockIcon, CalendarCheckIcon, HandshakeIcon, SendIcon } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
-import { Lien, dateCourte } from '../ui';
+import { depuisEuros, enCentimes } from '../lib/socle/montants';
+import { Lien, dateCourte, eurosCentimes } from '../ui';
+
+/** Le message d'un refus : `ConvexError` le porte dans `data`, pas dans `message`. */
+function messageDuRefus(e: unknown): string {
+	const convexe = e as { data?: unknown };
+	if (typeof convexe.data === 'string') return convexe.data;
+	return e instanceof Error ? e.message : 'L’opération n’a pas abouti.';
+}
 
 /**
  * LES GESTES D'UNE CARTE BALAYÉE, BRANCHÉS — et le mot qui dit qu'ils sont faits.
@@ -43,6 +51,8 @@ export const DELAI_DE_RELANCE_PAR_DEFAUT = 8;
 export function useGestesDeDossier() {
 	const preparerEnLot = useMutation(api.recouvrement.envois.preparerEnLot);
 	const noter = useMutation(api.recouvrement.suivi.noter);
+	const convenir = useMutation(api.recouvrement.parole.convenirEcheancier);
+	const arreter = useMutation(api.recouvrement.parole.arreterEcheancier);
 	const toast = useToast();
 
 	/** Composer la lettre de relance d'un dossier et la poser à valider. */
@@ -108,5 +118,69 @@ export function useGestesDeDossier() {
 		});
 	}
 
-	return { relancer, rappeler };
+	/**
+	 * NOTER UNE PROMESSE — et dire ce qu'elle change : les relances se taisent
+	 * jusqu'à son jour (`parole.ts`).
+	 *
+	 * ⚠️ LE MONTANT PASSE PAR `depuisEuros`, JAMAIS PAR `Number` : toute la chaîne
+	 * est en centimes entiers. Un montant illisible se refuse en le disant.
+	 */
+	async function promettre(creanceId: string, client: string, montantEuros: string, le: string) {
+		try {
+			const montant = enCentimes(depuisEuros(montantEuros));
+			await noter({
+				creanceId: creanceId as Id<'creances'>,
+				genre: 'PROMESSE',
+				texte: 'Promesse de paiement',
+				montantPromis: montant,
+				promisPourLe: le
+			});
+			toast({
+				title: 'Promesse notée',
+				text: `${client} paiera ${eurosCentimes(montant)} le ${dateCourte(le)}. Je ne le relance pas d’ici là.`,
+				icon: HandshakeIcon
+			});
+		} catch (e) {
+			toast({ title: 'Promesse non notée', text: messageDuRefus(e) });
+		}
+	}
+
+	/** CONVENIR D'UN PAIEMENT EN PLUSIEURS FOIS — suivi versement par versement. */
+	async function convenirEcheancier(
+		creanceId: string,
+		client: string,
+		nombre: number,
+		premiereLe: string
+	) {
+		try {
+			await convenir({
+				creanceId: creanceId as Id<'creances'>,
+				nombre,
+				premiereLe,
+				intervalleMois: 1
+			});
+			toast({
+				title: `Paiement en ${nombre} fois convenu`,
+				text: `Premier versement le ${dateCourte(premiereLe)}. Tant que les versements arrivent, je ne relance pas ${client}.`,
+				icon: CalendarCheckIcon
+			});
+		} catch (e) {
+			toast({ title: 'Échéancier non convenu', text: messageDuRefus(e) });
+		}
+	}
+
+	/** ARRÊTER UN ÉCHÉANCIER — il reste dans l'historique ; le plan reprend. */
+	async function arreterEcheancier(entreeId: string) {
+		try {
+			await arreter({ entreeId: entreeId as Id<'suiviDossier'> });
+			toast({
+				title: 'Échéancier arrêté',
+				text: 'Il reste dans l’historique. Les relances du plan reprennent à la prochaine veille.'
+			});
+		} catch (e) {
+			toast({ title: 'Échéancier non arrêté', text: messageDuRefus(e) });
+		}
+	}
+
+	return { relancer, rappeler, promettre, convenirEcheancier, arreterEcheancier };
 }

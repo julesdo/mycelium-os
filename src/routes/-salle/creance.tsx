@@ -978,6 +978,17 @@ const JOURNAL_TERMINE_DEMO: readonly EvenementSurvenu[] = [
 	{ cle: 'absence-opposition-constatee', survenuLe: '2026-08-20' }
 ];
 
+/** « Il vous a répondu ? », branché sur des gestes inertes : la salle ne touche à aucune base. */
+const REPONSE_DEMO: NonNullable<CreanceOuverte['reponse']> = {
+	resteDu: 600_000n,
+	echeancier: null,
+	enCours: false,
+	erreur: null,
+	onPromesse: () => undefined,
+	onConvenirEcheancier: () => undefined,
+	onArreterEcheancier: () => undefined
+};
+
 /**
  * LES FORMES NOMMÉES DE LA PAGE.
  *
@@ -1002,7 +1013,39 @@ const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
 			planAVenir: [
 				{ cle: 'SECOND_RAPPEL', nom: 'Deuxième rappel', le: '2026-10-24', automatique: true }
 			],
-			envoiAutomatique: true
+			envoiAutomatique: true,
+			reponse: REPONSE_DEMO
+		} satisfies CreanceOuverte;
+	})(),
+	/* Un paiement en trois fois : le premier versement reçu, le deuxième attendu. */
+	'échéancier en cours': (() => {
+		const base = creanceDemo({});
+		return {
+			...base,
+			pause: { raison: 'ECHEANCIER', le: '2026-11-01', jusquAu: '2026-11-04', montant: 200_000n },
+			santeDebiteur: 'SAINE',
+			situations: [],
+			courriers: { ...base.courriers, envois: [] },
+			planAVenir: [
+				{ cle: 'SECOND_RAPPEL', nom: 'Deuxième rappel', le: '2026-11-05', automatique: true }
+			],
+			envoiAutomatique: true,
+			reponse: {
+				...REPONSE_DEMO,
+				echeancier: {
+					id: 'echeancier-demo',
+					etat: 'EN_COURS',
+					total: 600_000n,
+					paye: 200_000n,
+					payees: 1,
+					prochaine: 1,
+					echeances: [
+						{ le: '2026-10-01', montant: 200_000n, paye: 200_000n, etat: 'PAYEE' },
+						{ le: '2026-11-01', montant: 200_000n, paye: 0n, etat: 'A_VENIR' },
+						{ le: '2026-12-01', montant: 200_000n, paye: 0n, etat: 'A_VENIR' }
+					]
+				}
+			}
 		} satisfies CreanceOuverte;
 	})(),
 	/*

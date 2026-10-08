@@ -24,10 +24,17 @@ describe('une promesse', () => {
 	});
 
 	it('ne se dit jamais « tenue » ni « non tenue » à la place du gérant', () => {
-		const couverte = lirePromesse(promesse, [{ le: '2026-10-19', montant: 120_000n }], '2026-10-30', 180_000n);
+		const couverte = lirePromesse(
+			promesse,
+			[{ le: '2026-10-19', montant: 120_000n }],
+			'2026-10-30',
+			180_000n
+		);
 		expect(couverte.couverte).toBe(true);
 		expect(couverte.etat).toBe('ECHUE');
-		expect(lirePromesse({ ...promesse, issue: 'NON_TENUE' }, [], '2026-10-30', 0n).etat).toBe('NON_TENUE');
+		expect(lirePromesse({ ...promesse, issue: 'NON_TENUE' }, [], '2026-10-30', 0n).etat).toBe(
+			'NON_TENUE'
+		);
 	});
 
 	it('se tait encore quand l’argent arrive avant le jour promis : personne n’est relancé avant', () => {
@@ -45,7 +52,11 @@ describe('une promesse', () => {
 		const base = { echeanciers: [], reglements: [], resteDu: 300_000n };
 		expect(pauseDuPlan({ ...base, promesses: [promesse], aujourdHui: '2026-10-24' })).toBeNull();
 		expect(
-			pauseDuPlan({ ...base, promesses: [{ ...promesse, issue: 'NON_TENUE' }], aujourdHui: '2026-10-10' })
+			pauseDuPlan({
+				...base,
+				promesses: [{ ...promesse, issue: 'NON_TENUE' }],
+				aujourdHui: '2026-10-10'
+			})
 		).toBeNull();
 	});
 });

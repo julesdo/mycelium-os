@@ -33,7 +33,7 @@ import { dateCourte, eurosCentimes } from './format';
  * cette date on veut savoir si elle a été tenue.
  */
 
-export type GenreDeNote = 'NOTE' | 'ECHANGE' | 'PROMESSE' | 'RAPPEL';
+export type GenreDeNote = 'NOTE' | 'ECHANGE' | 'PROMESSE' | 'RAPPEL' | 'ECHEANCIER';
 export type CanalDEchange = 'APPEL' | 'COURRIEL' | 'SMS' | 'COURRIER' | 'VISITE';
 
 export interface NoteDuDossier {
@@ -54,7 +54,8 @@ export interface NoteDuDossier {
 
 /** Ce que le gérant a saisi dans le formulaire, avant de l'envoyer. */
 export interface SaisieDeNote {
-	readonly genre: GenreDeNote;
+	/** Ce qu'on note ici. L'échéancier se convient dans sa propre feuille. */
+	readonly genre: Exclude<GenreDeNote, 'ECHEANCIER'>;
 	readonly texte: string;
 	readonly canal: CanalDEchange;
 	readonly survenuLe: string;
@@ -75,7 +76,7 @@ export interface SuiviDossierAffiche {
 	readonly onEffacer: (noteId: string) => void;
 }
 
-const GENRES: readonly { readonly cle: GenreDeNote; readonly libelle: string }[] = [
+const GENRES: readonly { readonly cle: Exclude<GenreDeNote, 'ECHEANCIER'>; readonly libelle: string }[] = [
 	{ cle: 'NOTE', libelle: 'Une note' },
 	{ cle: 'ECHANGE', libelle: 'Un échange' },
 	{ cle: 'PROMESSE', libelle: 'Une promesse' },
@@ -88,7 +89,8 @@ const INVITE: Record<GenreDeNote, string> = {
 	NOTE: 'Ce que vous voulez retenir sur ce dossier.',
 	ECHANGE: 'Ce qu’il vous a dit, et ce que vous avez répondu.',
 	PROMESSE: 'Ce qu’il a promis, dans ses mots.',
-	RAPPEL: 'Ce que vous voulez faire ce jour-là.'
+	RAPPEL: 'Ce que vous voulez faire ce jour-là.',
+	ECHEANCIER: 'Le paiement en plusieurs fois convenu.'
 };
 
 /** Un auteur, dit comme on le dit. Jamais une couleur de seuil : ce n'est pas un verdict. */
@@ -109,7 +111,7 @@ export function SuiviDuDossier({
 	onRappelFait,
 	onEffacer
 }: SuiviDossierAffiche) {
-	const [genre, setGenre] = useState<GenreDeNote>('NOTE');
+	const [genre, setGenre] = useState<Exclude<GenreDeNote, 'ECHEANCIER'>>('NOTE');
 	const [texte, setTexte] = useState('');
 	const [canal, setCanal] = useState<CanalDEchange>('APPEL');
 	const [survenuLe, setSurvenuLe] = useState(aujourdHui);

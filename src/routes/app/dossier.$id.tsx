@@ -25,6 +25,7 @@ import {
 	type SectionCreance
 } from '../../screens/creance';
 import { useDirigeantsDuClient, useProfessionnelsProposes } from '../../app/use-professionnels';
+import { useGestesDeDossier } from '../../app/gestes-dossier';
 import {
 	modelesProposables,
 	type ChoixCourrierAffiche,
@@ -126,6 +127,7 @@ function PageCreance() {
 	const planAVenir = useQuery(api.recouvrement.plan.suiteDuDossier, { creanceId });
 	/** Ce que le client a dit : une promesse en cours fait taire le plan jusqu'à son jour. */
 	const parole = useQuery(api.recouvrement.parole.duDossier, { creanceId });
+	const gestesParole = useGestesDeDossier();
 	/** Le pilote : s'il relance seul, la suite du plan le dit (« le pilote l'envoie »). */
 	const pilote = useQuery(api.recouvrement.pilote.etat, {});
 	const retenirRelance = useMutation(api.recouvrement.pilote.retenir);
@@ -855,6 +857,25 @@ function PageCreance() {
 		echeanceLaPlusAncienne: laPlusProche(creance.factures.map((f) => f.dateEcheance)),
 		...(planAVenir === undefined || planAVenir === null ? {} : { planAVenir }),
 		...(parole?.pause === undefined || parole.pause === null ? {} : { pause: parole.pause }),
+		/*
+		  « IL VOUS A RÉPONDU ? » (08/10/2026) : sa promesse, un paiement en plusieurs
+		  fois, et l'échéancier qui court, notés d'un geste et confirmés d'un mot.
+		*/
+		...(parole === undefined || parole === null
+			? {}
+			: {
+					reponse: {
+						resteDu: parole.resteDu,
+						echeancier: parole.echeancier,
+						enCours: false,
+						erreur: null,
+						onPromesse: ({ montantEuros, le }) =>
+							void gestesParole.promettre(creanceId, creance.debiteur, montantEuros, le),
+						onConvenirEcheancier: ({ nombre, premiereLe }) =>
+							void gestesParole.convenirEcheancier(creanceId, creance.debiteur, nombre, premiereLe),
+						onArreterEcheancier: (id) => void gestesParole.arreterEcheancier(id)
+					}
+				}),
 		envoiAutomatique: pilote?.envoiAutomatique === true,
 		prescriptionLaPlusProche: laPlusProche(creance.factures.map((f) => f.datePrescription)),
 

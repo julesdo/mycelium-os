@@ -12,6 +12,7 @@ import {
 import { ajouterJours } from '../../verticales/recouvrement/calendrier';
 import {
 	pauseDuPlan,
+	type EcheancierVu,
 	type PauseDuPlan,
 	type PromesseVue,
 	type ReglementVu
@@ -87,6 +88,10 @@ export async function paroleDuDossier(
 	factures: readonly Doc<'facturesVente'>[]
 ): Promise<{
 	readonly promesses: readonly (PromesseVue & { readonly id: Id<'suiviDossier'> })[];
+	readonly echeanciers: readonly (EcheancierVu & {
+		readonly id: Id<'suiviDossier'>;
+		readonly ecritLe: number;
+	})[];
 	readonly reglements: readonly ReglementVu[];
 	readonly resteDu: bigint;
 }> {
@@ -123,7 +128,20 @@ export async function paroleDuDossier(
 				]
 			: []
 	);
-	return { promesses, reglements, resteDu };
+	const echeanciers = suivi.flatMap((entree) =>
+		entree.genre === 'ECHEANCIER' && entree.echeances !== undefined && entree.echeances.length > 0
+			? [
+					{
+						id: entree._id,
+						ecritLe: entree.ecritLe,
+						accordeLe: new Date(entree.ecritLe).toISOString().slice(0, 10),
+						echeances: entree.echeances,
+						...(entree.issue === undefined ? {} : { issue: entree.issue })
+					}
+				]
+			: []
+	);
+	return { promesses, echeanciers, reglements, resteDu };
 }
 
 /** Jusqu'à quand la parole du client fait taire le plan de ce dossier, ou `null`. */
@@ -136,7 +154,7 @@ export async function pauseDuDossier(
 	const parole = await paroleDuDossier(ctx, creanceId, factures);
 	return pauseDuPlan({
 		promesses: parole.promesses,
-		echeanciers: [],
+		echeanciers: parole.echeanciers,
 		reglements: parole.reglements,
 		aujourdHui,
 		resteDu: parole.resteDu
@@ -176,11 +194,21 @@ export async function planDuDossier(
 	*/
 	const pause = await pauseDuDossier(ctx, creance._id, factures, aujourdHui);
 	const pasAvant = pause === null ? undefined : ajouterJours(pause.jusquAu, 1);
-	const prochaine = prochaineEtape({ ancre, faites, aujourdHui, ...(pasAvant === undefined ? {} : { pasAvant }) });
+	const prochaine = prochaineEtape({
+		ancre,
+		faites,
+		aujourdHui,
+		...(pasAvant === undefined ? {} : { pasAvant })
+	});
 	if (prochaine === null) return null;
 	return {
 		prochaine,
-		suite: suiteDuPlan({ ancre, faites, aujourdHui, ...(pasAvant === undefined ? {} : { pasAvant }) }),
+		suite: suiteDuPlan({
+			ancre,
+			faites,
+			aujourdHui,
+			...(pasAvant === undefined ? {} : { pasAvant })
+		}),
 		pause
 	};
 }

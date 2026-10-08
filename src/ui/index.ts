@@ -224,6 +224,13 @@ export {
 	type ProfessionnelAffiche,
 	type RoleProfessionnel
 } from './professionnel';
+export {
+	FeuilleEcheancier,
+	SuiviEcheancier,
+	type EcheancierAffiche,
+	type EtatEcheanceAffiche
+} from './echeancier';
+export { FeuilleReponseClient } from './reponse-client';
 export { rangeeDuDebiteur, secteursProposes } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
 /** ⚠️ TEMPORAIRE, ET DATÉ : la porte de la bascule. Elle part avec T16. */

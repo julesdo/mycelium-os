@@ -55,9 +55,12 @@ const vCanal = v.union(
 	v.literal('VISITE')
 );
 
+/** Ce qu'on lit : les quatre genres qu'on note ici, et l'échéancier, convenu ailleurs. */
+const vGenreLu = v.union(vGenre, v.literal('ECHEANCIER'));
+
 const vEntree = v.object({
 	_id: v.id('suiviDossier'),
-	genre: vGenre,
+	genre: vGenreLu,
 	texte: v.string(),
 	canal: v.optional(vCanal),
 	survenuLe: v.optional(v.string()),
