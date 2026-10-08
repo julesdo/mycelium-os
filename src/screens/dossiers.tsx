@@ -28,6 +28,7 @@ import {
 	PageEcran,
 	dateRelative,
 	eurosCentimes,
+	jourDecale,
 	pluriel,
 	type ActionDeCarte,
 	type FamilleRangee,
@@ -99,6 +100,16 @@ export interface DossierDeLIndex {
 	 * compare pas à celle-là.
 	 */
 	readonly prochaineEcheance?: { readonly libelle: string; readonly dateLimite: string };
+	/**
+	 * CE QUE LE PILOTE FERA ENSUITE, ET QUAND : « Deuxième rappel, dans 5 j ».
+	 * C'est la phrase au futur qui manquait (analyse du 08/10/2026) : le dossier
+	 * dit ce qui va se passer sans qu'on l'ouvre.
+	 */
+	readonly prochaineEtape?: {
+		readonly nom: string;
+		readonly le: string;
+		readonly automatique: boolean;
+	};
 }
 
 /** Ce que le lot a produit, dossier par dossier : préparé, ou refusé en le disant. */
@@ -180,6 +191,21 @@ function resumeDe(
 		};
 	}
 	if (dossier.courrierAValider) return { ligne: 'Un courrier à valider', famille: 'ENVOI' };
+	/*
+	  ⚠️ UNE DATE LIMITE PROCHE PASSE DEVANT LE PLAN. Un droit qui s'éteint dans
+	  quatre-vingt-dix jours se dit avant le prochain rappel : c'est la seule date
+	  du dossier qui fait perdre quelque chose sans que personne n'ait rien fait.
+	*/
+	const limiteProche =
+		dossier.dateLimiteAgir !== undefined && dossier.dateLimiteAgir <= jourDecale(aujourdHui, 90);
+	if (dossier.prochaineEtape !== undefined && !limiteProche) {
+		return {
+			ligne: dossier.prochaineEtape.nom,
+			date: dateRelative(dossier.prochaineEtape.le, aujourdHui),
+			// Ce qui part porte l'envoi ; ce qui attend le gérant porte la question.
+			famille: dossier.prochaineEtape.automatique ? 'ENVOI' : 'QUESTION'
+		};
+	}
 	const factures = `${dossier.nombreFactures} facture${pluriel(dossier.nombreFactures)}`;
 	/*
 	  UN DOSSIER RÉGLÉ NE DIT PAS « RÉGLÉ » : son groupe le dit déjà, en en-tête.

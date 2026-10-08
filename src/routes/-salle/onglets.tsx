@@ -131,7 +131,9 @@ const DOSSIERS_DEMO: readonly DossierDeLIndex[] = [
 		principalRestantDu: 318_000n,
 		nombreFactures: 1,
 		courrierAValider: false,
-		professionnelDesigne: false
+		professionnelDesigne: false,
+		// Ce que le pilote fera ensuite : la phrase au futur de la carte.
+		prochaineEtape: { nom: 'Deuxième rappel', le: '2026-09-14', automatique: true }
 	},
 	{
 		_id: 'demo-creance-bellin',

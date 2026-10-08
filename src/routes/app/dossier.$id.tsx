@@ -104,6 +104,8 @@ function PageCreance() {
 
 	// ── CE QUE LE DOSSIER PORTE ──────────────────────────────────────────────
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
+	/** La suite du plan, au futur : ce que le pilote fera, et quand. */
+	const planAVenir = useQuery(api.recouvrement.plan.suiteDuDossier, { creanceId });
 	const preparation = useQuery(api.recouvrement.arret.preparerArret, { creanceId });
 	const suivi = useQuery(api.recouvrement.apresProcedure.suiviDeLaCreance, { creanceId });
 	const propositionsDeLitige = useQuery(api.recouvrement.creances.propositionsLitige, {
@@ -808,6 +810,7 @@ function PageCreance() {
 		// éteint. Aucune des deux n'est calculée ici — le domaine les a déjà
 		// posées sur chaque facture.
 		echeanceLaPlusAncienne: laPlusProche(creance.factures.map((f) => f.dateEcheance)),
+		...(planAVenir === undefined || planAVenir === null ? {} : { planAVenir }),
 		prescriptionLaPlusProche: laPlusProche(creance.factures.map((f) => f.datePrescription)),
 
 		montantDuJour,

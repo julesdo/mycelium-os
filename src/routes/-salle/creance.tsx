@@ -1,4 +1,5 @@
 import type { CreanceOuverte } from '../../screens/creance';
+import { suiteDuPlan } from '../../lib/verticales/recouvrement/plan-relance';
 import { EcranCreance } from '../../screens/creance';
 import {
 	additionner,
@@ -796,6 +797,20 @@ function creanceDemo({
 		echeanceLaPlusAncienne: FACTURES_DEMO.map((facture) => facture.dateEcheance).reduce(
 			(tot, date) => (date < tot ? date : tot)
 		),
+		// La suite que le domaine projette, depuis la plus ancienne échéance : jamais
+		// écrite à la main.
+		planAVenir: suiteDuPlan({
+			ancre: FACTURES_DEMO.map((facture) => facture.dateEcheance).reduce((tot, date) =>
+				date < tot ? date : tot
+			),
+			faites: [],
+			aujourdHui: AUJOURD_HUI_DEMO
+		}).map((e) => ({
+			cle: e.etape.cle,
+			nom: e.etape.nom,
+			le: e.le,
+			automatique: e.etape.automatique
+		})),
 		// La prescription que le domaine pose sur la facture : la date d'exigibilité
 		// plus le délai du régime retenu. Jamais écrite à la main.
 		prescriptionLaPlusProche:

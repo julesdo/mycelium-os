@@ -74,7 +74,9 @@ import {
 	type SoliditeAffichee,
 	type SuiviAffiche,
 	type SuiviDossierAffiche,
-	type VoieAffichee
+	type VoieAffichee,
+	type EtapeAVenir,
+	SuiteDuPlan
 } from '../ui';
 import { TITRE_ECRAN } from './titres';
 
@@ -233,6 +235,13 @@ export interface CreanceOuverte {
 	 * rangée le dit, parce que c'est elle qui fait courir les intérêts.
 	 */
 	readonly echeanceLaPlusAncienne: string | null;
+	/**
+	 * LA SUITE DU PLAN, AU FUTUR : ce que le pilote fera, et quand. Vide pour un
+	 * dossier réglé, au tribunal ou au bout du plan.
+	 */
+	readonly planAVenir?: readonly EtapeAVenir[];
+	/** Le gérant a laissé le pilote relancer seul : le plan dit alors « le pilote l’envoie ». */
+	readonly envoiAutomatique?: boolean;
 	/** La prescription la plus proche, celle qui éteint la première. */
 	readonly prescriptionLaPlusProche: string | null;
 
@@ -424,6 +433,15 @@ export function EcranCreance({ donnees }: { donnees: Lecture<CreanceOuverte> }) 
 					<CeQuiBloque alertes={alertesDuDossier(pret)} />
 
 					<CarteDeLEtat creance={pret} onOuvrir={ouvrir} />
+
+					{/* CE QUI VIENT, SOUS CE QUI EST : la frise continue après aujourd’hui. */}
+					{pret.planAVenir === undefined ? null : (
+						<SuiteDuPlan
+							etapes={pret.planAVenir}
+							aujourdHui={pret.aujourdHui}
+							envoiAutomatique={pret.envoiAutomatique === true}
+						/>
+					)}
 
 					<CarteDuSuivi creance={pret} />
 

@@ -31,6 +31,7 @@ import {
 	prescriptionDe
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
+import { planDuDossier } from './plan';
 import { professionnelsDe, vCleFaitLitige, vEtatCritere, vSecteurCreance } from './tables';
 
 /**
@@ -1078,7 +1079,19 @@ export const indexDossiers = authedQuery({
 			dernierCourrierLe: v.optional(v.string()),
 			/** Un courrier préparé attend la validation du gérant. */
 			courrierAValider: v.boolean(),
-			professionnelDesigne: v.boolean()
+			professionnelDesigne: v.boolean(),
+			/**
+			 * CE QUE LE PILOTE FERA ENSUITE, ET QUAND (`plan-relance.ts`). Absent pour un
+			 * dossier réglé, au tribunal, sans échéance connue, ou au bout du plan.
+			 */
+			prochaineEtape: v.optional(
+				v.object({
+					cle: v.string(),
+					nom: v.string(),
+					le: v.string(),
+					automatique: v.boolean()
+				})
+			)
 		})
 	),
 	handler: async (ctx) => {
@@ -1132,12 +1145,27 @@ export const indexDossiers = authedQuery({
 					aujourdHui
 				});
 
+				const plan =
+					(etape === 'PRET' || etape === 'ON_LUI_ECRIT') && restant > 0n
+						? await planDuDossier(ctx, creance, factures, aujourdHui, envois)
+						: null;
+
 				return {
 					_id: creance._id,
 					debiteur: debiteur?.denomination ?? 'Client inconnu',
 					debiteurId: creance.debiteurId,
 					statut: creance.statut,
 					etape,
+					...(plan === null
+						? {}
+						: {
+								prochaineEtape: {
+									cle: plan.prochaine.etape.cle,
+									nom: plan.prochaine.etape.nom,
+									le: plan.prochaine.le,
+									automatique: plan.prochaine.etape.automatique
+								}
+							}),
 					principalRestantDu: restant,
 					nombreFactures: factures.length,
 					...(limites[0] === undefined ? {} : { dateLimiteAgir: limites[0] }),

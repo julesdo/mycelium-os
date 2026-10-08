@@ -100,6 +100,15 @@ function PageDossiers() {
 				...(d.dernierCourrierLe === undefined ? {} : { dernierCourrierLe: d.dernierCourrierLe }),
 				courrierAValider: d.courrierAValider,
 				professionnelDesigne: d.professionnelDesigne,
+				...(d.prochaineEtape === undefined
+					? {}
+					: {
+							prochaineEtape: {
+								nom: d.prochaineEtape.nom,
+								le: d.prochaineEtape.le,
+								automatique: d.prochaineEtape.automatique
+							}
+						}),
 				...(echeanceDe.has(d._id) ? { prochaineEcheance: echeanceDe.get(d._id)! } : {})
 			})
 		),
