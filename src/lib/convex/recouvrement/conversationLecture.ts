@@ -149,7 +149,9 @@ const vPourGestes = v.object({
 	decompteArrete: v.boolean(),
 	ibanConnu: v.boolean(),
 	remiseEnCours: v.boolean(),
-	arretable: v.boolean()
+	arretable: v.boolean(),
+	echeancierEnCours: v.optional(v.boolean()),
+	classe: v.optional(v.boolean())
 });
 
 interface ContexteLu {
@@ -167,6 +169,8 @@ interface ContexteLu {
 		ibanConnu: boolean;
 		remiseEnCours: boolean;
 		arretable: boolean;
+		echeancierEnCours?: boolean;
+		classe?: boolean;
 	};
 	contexte: {
 		debiteur: string;
@@ -469,7 +473,9 @@ export const contexteDuDossier = internalQuery({
 				decompteArrete: dernierArrete !== undefined,
 				ibanConnu,
 				remiseEnCours,
-				arretable
+				arretable,
+				echeancierEnCours: plan?.pause?.raison === 'ECHEANCIER',
+				classe: creance.statut === 'CLOSE'
 			},
 			contexte: {
 				debiteur: debiteur?.denomination ?? 'Débiteur inconnu',

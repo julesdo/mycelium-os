@@ -4,8 +4,10 @@ import { useAction, useMutation, useQuery } from 'convex/react';
 import { useToast } from '@cladd-ui/react';
 import {
 	AlarmClockIcon,
+	ArchiveIcon,
 	ArrowUpRightIcon,
 	BriefcaseIcon,
+	CalendarRangeIcon,
 	LinkIcon,
 	LockIcon,
 	MessageSquareWarningIcon,
@@ -112,6 +114,10 @@ function accesDuGeste(
 		case 'PROMESSE':
 		case 'NOTE':
 			return dossier('suivi', 'Voir l’historique');
+		case 'ECHEANCIER':
+			return dossier('suivi', 'Voir le dossier');
+		case 'CLASSER':
+			return dossier('suivi', 'Voir le dossier');
 		case 'CONTESTATION':
 			return dossier('litige', 'Voir vos réponses');
 		case 'EMAIL':
@@ -161,7 +167,9 @@ const ICONE_DU_GESTE: Readonly<Record<GenreGeste, ReactNode>> = {
 	CONTESTATION: <MessageSquareWarningIcon />,
 	ARRETER_DECOMPTE: <LockIcon />,
 	LIEN_PAIEMENT: <LinkIcon />,
-	REMISE_CONSEIL: <BriefcaseIcon />
+	REMISE_CONSEIL: <BriefcaseIcon />,
+	ECHEANCIER: <CalendarRangeIcon />,
+	CLASSER: <ArchiveIcon />
 };
 
 /** Le temps qu'une étape reste affichée avant que la suivante commence. */

@@ -10,7 +10,8 @@ import { preparerProchaineRelance } from './pilote';
 import { arreterLeDecompte } from './arret';
 import { ouvrirLaPageDePaiement } from './paiement';
 import { declarerLaRemise } from './conseil';
-import { apresUneParole } from './parole';
+import { apresUneParole, convenirLEcheancier } from './parole';
+import { classerLeDossier } from './classement';
 
 /** Le dernier décompte arrêté d'un dossier, ou `null`. */
 async function dernierDecompte(
@@ -264,6 +265,25 @@ async function faireLeGeste(
 				resultat: `Remise notée au ${jourEnClair(remisLe)}. Je suis ses dates.`,
 				cible: decompte._id
 			};
+		}
+		case 'ECHEANCIER': {
+			const nombre = Number.parseInt(geste.texte ?? '', 10);
+			const date = geste.date ?? '';
+			await convenirLEcheancier(ctx, organizationId, userId, {
+				creanceId: creance._id,
+				nombre,
+				premiereLe: date,
+				intervalleMois: 1
+			});
+			return `Paiement en ${nombre} fois convenu, premier versement ${jourEnClair(date)}. Tant que les versements arrivent, je ne le relance pas.`;
+		}
+		case 'CLASSER': {
+			const motif = geste.texte;
+			if (motif !== 'GESTE_COMMERCIAL' && motif !== 'IRRECOUVRABLE' && motif !== 'ERREUR') {
+				throw new ConvexError('Cette raison ne se classe pas d’un geste : dites-la-moi.');
+			}
+			await classerLeDossier(ctx, organizationId, userId, { creanceId: creance._id, motif });
+			return 'Dossier classé. Les relances s’arrêtent, et il se rouvre depuis sa page.';
 		}
 	}
 }

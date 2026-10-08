@@ -1,5 +1,5 @@
 import { v, ConvexError } from 'convex/values';
-import type { QueryCtx } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { authedMutation } from '../functions';
 import { getUserOrg } from '../lib/auth';
@@ -58,6 +58,67 @@ export async function dossiersClasses(
 	return new Set(creances.filter((c) => c.statut === 'CLOSE').map((c) => c._id as string));
 }
 
+export async function classerLeDossier(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	userId: string,
+	{
+		creanceId,
+		motif,
+		note
+	}: {
+		creanceId: Id<'creances'>;
+		motif: 'GESTE_COMMERCIAL' | 'IRRECOUVRABLE' | 'ERREUR' | 'AUTRE';
+		note?: string;
+	}
+): Promise<void> {
+	const creance = await ctx.db.get(creanceId);
+	if (creance === null || creance.organizationId !== organizationId) {
+		throw new ConvexError('Dossier introuvable');
+	}
+	if (creance.statut === 'CLOSE') throw new ConvexError('Ce dossier est déjà classé.');
+	const precision = note?.trim();
+	if (motif === 'AUTRE' && (precision === undefined || precision === '')) {
+		throw new ConvexError('Dites en quelques mots pourquoi vous le classez.');
+	}
+
+	// Ce qui allait partir ne part pas : une relance programmée, un courrier
+	// préparé pas encore validé. Ce qui est parti reste lisible, figé.
+	const envois = await ctx.db
+		.query('envois')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+		.collect();
+	for (const envoi of envois) {
+		if (envoi.etat !== 'PROGRAMME' && envoi.etat !== 'A_VALIDER') continue;
+		if (envoi.envoiProgramme !== undefined) await ctx.scheduler.cancel(envoi.envoiProgramme);
+		await ctx.db.patch(envoi._id, { etat: 'ABANDONNE', envoiProgramme: undefined });
+	}
+
+	await ctx.db.patch(creanceId, {
+		statut: 'CLOSE',
+		aDemarrer: undefined,
+		classement: {
+			motif,
+			le: new Date().toISOString().slice(0, 10),
+			statutAvant: creance.statut,
+			...(precision === undefined || precision === '' ? {} : { note: precision })
+		}
+	});
+	await ctx.db.insert('journal', {
+		organizationId,
+		cible: creanceId as string,
+		cle: 'DOSSIER_CLASSE',
+		apres:
+			precision === undefined || precision === ''
+				? (LIBELLE_MOTIF[motif] ?? motif)
+				: `${LIBELLE_MOTIF[motif] ?? motif}. ${precision}`,
+		source: 'Votre décision',
+		auteur: 'GERANT',
+		auteurUserId: userId,
+		consigneLe: Date.now()
+	});
+}
+
 export const classer = authedMutation({
 	args: {
 		creanceId: v.id('creances'),
@@ -65,53 +126,9 @@ export const classer = authedMutation({
 		note: v.optional(v.string())
 	},
 	returns: v.null(),
-	handler: async (ctx, { creanceId, motif, note }): Promise<null> => {
+	handler: async (ctx, args): Promise<null> => {
 		const { organizationId, user } = await getUserOrg(ctx);
-		const creance = await ctx.db.get(creanceId);
-		if (creance === null || creance.organizationId !== organizationId) {
-			throw new ConvexError('Dossier introuvable');
-		}
-		if (creance.statut === 'CLOSE') throw new ConvexError('Ce dossier est déjà classé.');
-		const precision = note?.trim();
-		if (motif === 'AUTRE' && (precision === undefined || precision === '')) {
-			throw new ConvexError('Dites en quelques mots pourquoi vous le classez.');
-		}
-
-		// Ce qui allait partir ne part pas : une relance programmée, un courrier
-		// préparé pas encore validé. Ce qui est parti reste lisible, figé.
-		const envois = await ctx.db
-			.query('envois')
-			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-			.collect();
-		for (const envoi of envois) {
-			if (envoi.etat !== 'PROGRAMME' && envoi.etat !== 'A_VALIDER') continue;
-			if (envoi.envoiProgramme !== undefined) await ctx.scheduler.cancel(envoi.envoiProgramme);
-			await ctx.db.patch(envoi._id, { etat: 'ABANDONNE', envoiProgramme: undefined });
-		}
-
-		await ctx.db.patch(creanceId, {
-			statut: 'CLOSE',
-			aDemarrer: undefined,
-			classement: {
-				motif,
-				le: new Date().toISOString().slice(0, 10),
-				statutAvant: creance.statut,
-				...(precision === undefined || precision === '' ? {} : { note: precision })
-			}
-		});
-		await ctx.db.insert('journal', {
-			organizationId,
-			cible: creanceId as string,
-			cle: 'DOSSIER_CLASSE',
-			apres:
-				precision === undefined || precision === ''
-					? (LIBELLE_MOTIF[motif] ?? motif)
-					: `${LIBELLE_MOTIF[motif] ?? motif}. ${precision}`,
-			source: 'Votre décision',
-			auteur: 'GERANT',
-			auteurUserId: user._id,
-			consigneLe: Date.now()
-		});
+		await classerLeDossier(ctx, organizationId, user._id, args);
 		return null;
 	}
 });

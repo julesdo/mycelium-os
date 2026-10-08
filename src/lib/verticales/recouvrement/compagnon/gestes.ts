@@ -38,7 +38,11 @@ export const GENRES_GESTE = [
 	'CONTESTATION',
 	'ARRETER_DECOMPTE',
 	'LIEN_PAIEMENT',
-	'REMISE_CONSEIL'
+	'REMISE_CONSEIL',
+	// Analyse des parcours du 08/10/2026 : le paiement en plusieurs fois, et le
+	// dossier qu'on classe. Deux gestes de bureau, qui ne franchissent aucune ligne.
+	'ECHEANCIER',
+	'CLASSER'
 ] as const;
 export type GenreGeste = (typeof GENRES_GESTE)[number];
 
@@ -90,7 +94,23 @@ export interface EtatPourGestes {
 	readonly remiseEnCours: boolean;
 	/** Le dossier n'est ni classé ni réglé : son décompte peut s'arrêter. */
 	readonly arretable: boolean;
+	/** Un paiement en plusieurs fois court déjà sur ce dossier. */
+	readonly echeancierEnCours?: boolean;
+	/** Le gérant a classé ce dossier. */
+	readonly classe?: boolean;
 }
+
+/** Les nombres de versements qu'un échéancier admet (le serveur relit la même liste). */
+export const NOMBRES_DE_VERSEMENTS = [2, 3, 4, 5, 6, 8, 10, 12] as const;
+
+/** Les raisons de classer que Plume peut proposer : « autre raison » demande les mots du gérant. */
+export const MOTIFS_DE_CLASSEMENT = ['GESTE_COMMERCIAL', 'IRRECOUVRABLE', 'ERREUR'] as const;
+
+const LIBELLE_DU_MOTIF: Readonly<Record<(typeof MOTIFS_DE_CLASSEMENT)[number], string>> = {
+	GESTE_COMMERCIAL: 'Geste commercial : vous renoncez à cette somme',
+	IRRECOUVRABLE: 'Vous n’y croyez plus',
+	ERREUR: 'Facture en erreur ou en double'
+};
 
 /** Au plus tant de gestes par réponse : au-delà, la réponse redevient un formulaire. */
 export const GESTES_PAR_REPONSE = 3;
@@ -163,6 +183,21 @@ function relire(brut: GesteBrut, etat: EtatPourGestes): Geste | null {
 				...(texte === '' ? {} : { texte: texte.slice(0, 300) })
 			};
 		}
+		case 'ECHEANCIER': {
+			if (etat.classe === true || etat.echeancierEnCours === true || etat.restantDu <= 0n)
+				return null;
+			if (!dateDuCalendrier(date) || date < etat.aujourdHui) return null;
+			const nombre = Number.parseInt(texte, 10);
+			if (!(NOMBRES_DE_VERSEMENTS as readonly number[]).includes(nombre)) return null;
+			return { genre: 'ECHEANCIER', date, texte: String(nombre), montant: etat.restantDu };
+		}
+		case 'CLASSER': {
+			if (etat.classe === true) return null;
+			const motif = texte.toUpperCase();
+			return (MOTIFS_DE_CLASSEMENT as readonly string[]).includes(motif)
+				? { genre: 'CLASSER', texte: motif }
+				: null;
+		}
 	}
 }
 
@@ -234,7 +269,8 @@ export function decrireGeste(geste: Geste): {
 		case 'PROMESSE':
 			return {
 				titre: `Promesse de ${versEuros(depuisCentimes(geste.montant ?? 0n))} € pour ${jourEnClair(geste.date ?? '')}`,
-				detail: 'Si rien n’arrive ce jour-là, le dossier remonte dans Aujourd’hui.',
+				detail:
+					'Je ne le relance pas avant ce jour, plus trois jours pour que le virement arrive. Ce jour-là, le dossier remonte dans Aujourd’hui.',
 				confirmer: 'Noter la promesse'
 			};
 		case 'NOTE':
@@ -302,5 +338,22 @@ export function decrireGeste(geste: Geste): {
 				detail: `Avec le dernier décompte arrêté. Je suis la remise et ses dates.${geste.texte === undefined ? '' : ` Ce que vous attendez : « ${geste.texte} ».`}`,
 				confirmer: 'Noter la remise'
 			};
+		case 'ECHEANCIER': {
+			const nombre = Number.parseInt(geste.texte ?? '0', 10);
+			const part = nombre > 0 ? (geste.montant ?? 0n) / BigInt(nombre) : 0n;
+			return {
+				titre: `Paiement en ${nombre} fois, à partir du ${jourEnClair(geste.date ?? '')}`,
+				detail: `${nombre} versements mensuels d’environ ${versEuros(depuisCentimes(part))} €, hors pénalités. Tant qu’ils arrivent, je ne le relance pas.`,
+				confirmer: 'Convenir'
+			};
+		}
+		case 'CLASSER': {
+			const motif = (geste.texte ?? 'GESTE_COMMERCIAL') as (typeof MOTIFS_DE_CLASSEMENT)[number];
+			return {
+				titre: 'Classer le dossier',
+				detail: `${LIBELLE_DU_MOTIF[motif] ?? 'Classé'}. Les relances s’arrêtent ; il se rouvre d’un toucher.`,
+				confirmer: 'Classer'
+			};
+		}
 	}
 }

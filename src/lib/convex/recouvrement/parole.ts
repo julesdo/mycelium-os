@@ -148,6 +148,62 @@ const NOMBRES_ADMIS = [2, 3, 4, 5, 6, 8, 10, 12] as const;
  * qu'on en convienne d'un autre : deux calendriers sur une même dette ne
  * diraient plus lequel compte.
  */
+export async function convenirLEcheancier(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	userId: string,
+	args: { creanceId: Id<'creances'>; nombre: number; premiereLe: string; intervalleMois: number }
+): Promise<Id<'suiviDossier'>> {
+	const creance = await ctx.db.get(args.creanceId);
+	if (creance === null || creance.organizationId !== organizationId) {
+		throw new ConvexError('Dossier introuvable');
+	}
+	if (creance.statut === 'CLOSE')
+		throw new ConvexError('Ce dossier est classé : rouvrez-le d’abord.');
+	if (!(NOMBRES_ADMIS as readonly number[]).includes(args.nombre)) {
+		throw new ConvexError('Choisissez un nombre de versements entre 2 et 12.');
+	}
+	if (args.intervalleMois !== 1) {
+		throw new ConvexError('Les versements sont mensuels.');
+	}
+	const aujourdHui = new Date().toISOString().slice(0, 10);
+	if (!estDateReelle(args.premiereLe) || args.premiereLe < aujourdHui) {
+		throw new ConvexError('Le premier versement tombe aujourd’hui ou plus tard.');
+	}
+	const factures = await ctx.db
+		.query('facturesVente')
+		.withIndex('by_creance', (q) => q.eq('creanceId', args.creanceId))
+		.collect();
+	const parole = await paroleDuDossier(ctx, args.creanceId, factures);
+	if (parole.resteDu <= 0n) throw new ConvexError('Il ne reste rien à payer sur ce dossier.');
+	const encours = parole.echeanciers.some((e) => {
+		const lu = lireEcheancier(e, parole.reglements, aujourdHui);
+		return lu.etat === 'EN_COURS' || lu.etat === 'EN_RETARD';
+	});
+	if (encours) {
+		throw new ConvexError('Un échéancier court déjà sur ce dossier : arrêtez-le d’abord.');
+	}
+
+	const echeances = versements(
+		parole.resteDu,
+		args.nombre,
+		args.premiereLe,
+		args.intervalleMois
+	).map((versement) => ({ le: versement.date, montant: versement.montant }));
+	const entreeId = await ctx.db.insert('suiviDossier', {
+		organizationId,
+		creanceId: args.creanceId,
+		genre: 'ECHEANCIER',
+		texte: `Paiement en ${args.nombre} fois, un versement par mois`,
+		echeances,
+		auteurUserId: userId,
+		ecritLe: Date.now()
+	});
+	await apresUneParole(ctx, args.creanceId);
+	return entreeId;
+}
+
+/** Le paiement en plusieurs fois, depuis la feuille du dossier. */
 export const convenirEcheancier = authedMutation({
 	args: {
 		creanceId: v.id('creances'),
@@ -158,51 +214,7 @@ export const convenirEcheancier = authedMutation({
 	returns: v.id('suiviDossier'),
 	handler: async (ctx, args): Promise<Id<'suiviDossier'>> => {
 		const { organizationId, user } = await getUserOrg(ctx);
-		const creance = await ctx.db.get(args.creanceId);
-		if (creance === null || creance.organizationId !== organizationId) {
-			throw new ConvexError('Dossier introuvable');
-		}
-		if (!(NOMBRES_ADMIS as readonly number[]).includes(args.nombre)) {
-			throw new ConvexError('Choisissez un nombre de versements entre 2 et 12.');
-		}
-		if (args.intervalleMois !== 1) {
-			throw new ConvexError('Les versements sont mensuels.');
-		}
-		const aujourdHui = new Date().toISOString().slice(0, 10);
-		if (!estDateReelle(args.premiereLe) || args.premiereLe < aujourdHui) {
-			throw new ConvexError('Le premier versement tombe aujourd’hui ou plus tard.');
-		}
-		const factures = await ctx.db
-			.query('facturesVente')
-			.withIndex('by_creance', (q) => q.eq('creanceId', args.creanceId))
-			.collect();
-		const parole = await paroleDuDossier(ctx, args.creanceId, factures);
-		if (parole.resteDu <= 0n) throw new ConvexError('Il ne reste rien à payer sur ce dossier.');
-		const encours = parole.echeanciers.some((e) => {
-			const lu = lireEcheancier(e, parole.reglements, aujourdHui);
-			return lu.etat === 'EN_COURS' || lu.etat === 'EN_RETARD';
-		});
-		if (encours) {
-			throw new ConvexError('Un échéancier court déjà sur ce dossier : arrêtez-le d’abord.');
-		}
-
-		const echeances = versements(
-			parole.resteDu,
-			args.nombre,
-			args.premiereLe,
-			args.intervalleMois
-		).map((versement) => ({ le: versement.date, montant: versement.montant }));
-		const entreeId = await ctx.db.insert('suiviDossier', {
-			organizationId,
-			creanceId: args.creanceId,
-			genre: 'ECHEANCIER',
-			texte: `Paiement en ${args.nombre} fois, un versement par mois`,
-			echeances,
-			auteurUserId: user._id,
-			ecritLe: Date.now()
-		});
-		await apresUneParole(ctx, args.creanceId);
-		return entreeId;
+		return await convenirLEcheancier(ctx, organizationId, user._id, args);
 	}
 });
 
