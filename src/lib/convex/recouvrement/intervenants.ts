@@ -4,6 +4,7 @@ import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
+import { verifierImageStockee } from '../images';
 
 /**
  * LE CARNET D'INTERVENANTS.
@@ -28,7 +29,8 @@ const vIntervenant = v.object({
 	siren: v.optional(v.string()),
 	origine: vOrigine,
 	sourceRepertoire: v.optional(v.string()),
-	sourceReleveeLe: v.optional(v.string())
+	sourceReleveeLe: v.optional(v.string()),
+	photoUrl: v.optional(v.string())
 });
 
 const argsAjout = {
@@ -106,7 +108,8 @@ async function lister(ctx: QueryCtx, organizationId: Id<'organizations'>) {
 			siren: l.siren,
 			origine: l.origine,
 			sourceRepertoire: l.sourceRepertoire,
-			sourceReleveeLe: l.sourceReleveeLe
+			sourceReleveeLe: l.sourceReleveeLe,
+			photoUrl: l.photoUrl
 		}));
 }
 
@@ -150,7 +153,47 @@ export const oublierIntervenant = authedMutation({
 		if (fiche === null || fiche.organizationId !== organizationId) {
 			throw new ConvexError('Intervenant introuvable');
 		}
+		// La photo part avec la fiche : plus rien ne la désignerait.
+		if (fiche.photoStorageId !== undefined) await ctx.storage.delete(fiche.photoStorageId);
 		await ctx.db.delete(intervenantId);
+		return null;
+	}
+});
+
+/** L'adresse d'envoi d'une photo : le fichier monte directement au stockage. */
+export const genererUrlPhoto = authedMutation({
+	args: {},
+	returns: v.string(),
+	handler: async (ctx): Promise<string> => {
+		await getUserOrg(ctx);
+		return await ctx.storage.generateUploadUrl();
+	}
+});
+
+/**
+ * POSER LA PHOTO D'UN MEMBRE DE L'ÉQUIPE — la sienne, ou le logo de son cabinet.
+ *
+ * ⚠️ LE FICHIER EST CONTRÔLÉ ICI, SUR CE QUE LE STOCKAGE A ENREGISTRÉ
+ * (`verifierImageStockee`) : type et poids. Et l'ancienne photo quitte le
+ * stockage avec l'arrivée de la nouvelle, comme pour un logo d'établissement.
+ */
+export const poserPhoto = authedMutation({
+	args: { intervenantId: v.id('intervenants'), storageId: v.id('_storage') },
+	returns: v.null(),
+	handler: async (ctx, { intervenantId, storageId }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const fiche = await ctx.db.get(intervenantId);
+		if (fiche === null || fiche.organizationId !== organizationId) {
+			await ctx.storage.delete(storageId);
+			throw new ConvexError('Intervenant introuvable');
+		}
+		await verifierImageStockee(ctx, storageId);
+		const photoUrl = await ctx.storage.getUrl(storageId);
+		if (photoUrl === null) throw new ConvexError('Fichier introuvable');
+		if (fiche.photoStorageId !== undefined && fiche.photoStorageId !== storageId) {
+			await ctx.storage.delete(fiche.photoStorageId);
+		}
+		await ctx.db.patch(intervenantId, { photoStorageId: storageId, photoUrl });
 		return null;
 	}
 });

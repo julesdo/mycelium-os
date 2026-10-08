@@ -2535,3 +2535,30 @@ select:not(:disabled),
 		animation: none !important;
 	}
 }
+
+/* LA DÉFENSE (08/10/2026) — le badge de profession posé sur un portrait, et le
+ * Plan IGN adouci pour tenir dans la palette d'encre : ses couleurs vives
+ * (beige des bâtiments, rose des équipements) criaient plus fort que la fiche.
+ * En sombre, le plan s'inverse — une carte claire dans une feuille sombre
+ * éblouit. */
+.badge-profession {
+	background-color: oklch(0.24 0.03 266);
+	color: oklch(0.97 0.01 85);
+	box-shadow: 0 0 0 2px oklch(0.18 0.026 266);
+}
+
+.light .badge-profession {
+	background-color: oklch(1 0 0);
+	color: oklch(0.38 0.14 266);
+	box-shadow:
+		0 0 0 2px oklch(1 0 0),
+		0 1px 3px oklch(0.3 0.02 264 / 0.25);
+}
+
+.plan-ign {
+	filter: invert(0.92) hue-rotate(180deg) saturate(0.35) brightness(0.92) contrast(0.92);
+}
+
+.light .plan-ign {
+	filter: saturate(0.4) contrast(0.96) brightness(1.03);
+}

@@ -26,6 +26,7 @@ import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppClientsRouteImport } from './routes/app/clients'
 import { Route as AppCompteRouteImport } from './routes/app/compte'
 import { Route as AppDebiteursRouteImport } from './routes/app/debiteurs'
+import { Route as AppDefenseRouteImport } from './routes/app/defense'
 import { Route as AppDossiersRouteImport } from './routes/app/dossiers'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
 import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
@@ -133,6 +134,11 @@ const AppCompteRoute = AppCompteRouteImport.update({
 const AppDebiteursRoute = AppDebiteursRouteImport.update({
   id: '/debiteurs',
   path: '/debiteurs',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDefenseRoute = AppDefenseRouteImport.update({
+  id: '/defense',
+  path: '/defense',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppDossiersRoute = AppDossiersRouteImport.update({
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
+  '/app/defense': typeof AppDefenseRoute
   '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
@@ -303,6 +310,7 @@ export interface FileRoutesByTo {
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
+  '/app/defense': typeof AppDefenseRoute
   '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
+  '/app/defense': typeof AppDefenseRoute
   '/app/dossiers': typeof AppDossiersRoute
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
@@ -388,6 +397,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
+    | '/app/defense'
     | '/app/dossiers'
     | '/app/import-factures'
     | '/app/notifications'
@@ -428,6 +438,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
+    | '/app/defense'
     | '/app/dossiers'
     | '/app/import-factures'
     | '/app/notifications'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/compte'
     | '/app/debiteurs'
+    | '/app/defense'
     | '/app/dossiers'
     | '/app/import-factures'
     | '/app/notifications'
@@ -635,6 +647,13 @@ declare module '@tanstack/react-router' {
       path: '/debiteurs'
       fullPath: '/app/debiteurs'
       preLoaderRoute: typeof AppDebiteursRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/defense': {
+      id: '/app/defense'
+      path: '/defense'
+      fullPath: '/app/defense'
+      preLoaderRoute: typeof AppDefenseRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/dossiers': {
@@ -833,6 +852,7 @@ interface AppRouteRouteChildren {
   AppClientsRoute: typeof AppClientsRouteWithChildren
   AppCompteRoute: typeof AppCompteRoute
   AppDebiteursRoute: typeof AppDebiteursRouteWithChildren
+  AppDefenseRoute: typeof AppDefenseRoute
   AppDossiersRoute: typeof AppDossiersRoute
   AppImportFacturesRoute: typeof AppImportFacturesRouteWithChildren
   AppNotificationsRoute: typeof AppNotificationsRoute
@@ -853,6 +873,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppClientsRoute: AppClientsRouteWithChildren,
   AppCompteRoute: AppCompteRoute,
   AppDebiteursRoute: AppDebiteursRouteWithChildren,
+  AppDefenseRoute: AppDefenseRoute,
   AppDossiersRoute: AppDossiersRoute,
   AppImportFacturesRoute: AppImportFacturesRouteWithChildren,
   AppNotificationsRoute: AppNotificationsRoute,

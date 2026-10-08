@@ -795,7 +795,7 @@ function PageCreance() {
 				annexeDisponible: e.decompteId !== undefined && dernier?._id === e.decompteId
 			})),
 			peutValider: envoisDuDossier?.peutValider ?? false,
-			intervenants: carnet.map((fiche) => ({ id: fiche._id, nom: fiche.nom, role: fiche.role })),
+			intervenants: carnet.map(({ _id, ...fiche }) => ({ id: _id, ...fiche })),
 			citationAnnonce: creance.annonceOuverture?.complement ?? null,
 			// Le nom et l'adresse de la personne nommée, lus dans la même annonce.
 			personneNommee:

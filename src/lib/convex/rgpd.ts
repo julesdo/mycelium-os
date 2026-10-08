@@ -657,7 +657,18 @@ export const purgerEtablissement = internalMutation({
 		// `intervenants` ne référence aucune autre table du domaine : sa place dans
 		// l'ordre est libre. Elle part en premier pour rester groupée avec le reste
 		// de ce que porte une procédure.
-		budget = await viderParIndexOrg(ctx, 'intervenants', organizationId, budget);
+		//    Leurs photos partent AVANT les fiches, pour la même raison que les pièces.
+		if (encore()) {
+			const fiches = await ctx.db
+				.query('intervenants')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.take(budget);
+			for (const fiche of fiches) {
+				if (fiche.photoStorageId !== undefined) await effacerDuStockage(ctx, fiche.photoStorageId);
+				await ctx.db.delete(fiche._id);
+			}
+			budget -= fiches.length;
+		}
 		budget = await viderParIndexOrg(ctx, 'evenementsProcedure', organizationId, budget);
 		// Les liens de paiement référencent la créance et le décompte : ils partent
 		// avant eux. Une purge qui les laisserait laisserait aussi des adresses

@@ -194,8 +194,14 @@ export { FeuilleVoie, type VoieAffichee } from './feuille-voie';
 export { FeuilleDeclaration, type ChoixDeclare } from './feuille-declaration';
 export {
 	ChoixIntervenant,
+	FeuillePresDuClient,
 	SaisirUneFiche,
+	avocatAuCarnet,
+	etudeAuCarnet,
 	precisionDeLaFiche,
+	proDAvocat,
+	proDEtude,
+	proDuCarnet,
 	type AvocatProposeAffiche,
 	type EtudeProposee,
 	type FicheIntervenant,
@@ -204,6 +210,20 @@ export {
 	type PropositionsAffichees,
 	type RoleIntervenant
 } from './choix-intervenant';
+export {
+	AvatarProfessionnel,
+	CarteDuLieu,
+	CarteProfessionnel,
+	FeuilleProfessionnel,
+	FicheProfessionnel,
+	GesteDeCarte,
+	PortraitsDeLEquipe,
+	distanceDepuis,
+	type Depuis,
+	type GestesDeLaFiche,
+	type ProfessionnelAffiche,
+	type RoleProfessionnel
+} from './professionnel';
 export { rangeeDuDebiteur, secteursProposes } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
 /** ⚠️ TEMPORAIRE, ET DATÉ : la porte de la bascule. Elle part avec T16. */

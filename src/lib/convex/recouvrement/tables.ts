@@ -1032,6 +1032,14 @@ export const recouvrementTables = {
 		/** Le répertoire d'où vient la fiche, et quand il a été relevé. */
 		sourceRepertoire: v.optional(v.string()),
 		sourceReleveeLe: v.optional(v.string()),
+		/**
+		 * SA VRAIE PHOTO, OU LE LOGO DU CABINET (08/10/2026) — ajoutée par le
+		 * gérant, pour quelqu'un de son équipe. Aucune source publique n'en donne :
+		 * sans elle, la fiche porte un portrait dessiné d'après le nom, jamais un
+		 * visage emprunté.
+		 */
+		photoStorageId: v.optional(v.id('_storage')),
+		photoUrl: v.optional(v.string()),
 		creeLe: v.number()
 	})
 		.index('by_org', ['organizationId'])

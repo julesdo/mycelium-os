@@ -10,13 +10,8 @@ import { messageDeRefus, televerser } from '../../app/televerser';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import { CarteChiftBranchee } from '../../app/connexion-chift';
 import type {
-	AvocatAffiche,
 	EtatDirigeants,
 	EtatImmatriculation,
-	EtatRechercheAvocat,
-	EtatRechercheCommissaire,
-	EtudeAffichee,
-	FicheASaisir,
 	Lecture
 } from '../../ui';
 import { aujourdHuiISO, PileDeConnexions } from '../../ui';
@@ -30,9 +25,8 @@ import {
 	type RoleEquipe
 } from '../../screens/compte/equipe';
 import type { DonneesAffichees, FichierExport } from '../../screens/compte/donnees';
-import type { IntervenantsAffiches } from '../../screens/compte/intervenants';
 import type { MesuresAffichees } from '../../screens/compte/mesures';
-import type { IdentiteDuCreancier } from '../../screens/compte/presse';
+import type { CarnetResume, IdentiteDuCreancier } from '../../screens/compte/presse';
 
 /**
  * `/app/compte` — LA SEULE ADRESSE DERRIÈRE L'AVATAR.
@@ -170,14 +164,8 @@ function PageCompte() {
 		depuis: aujourdHui
 	});
 
-	// ── Le carnet d'intervenants ─────────────────────────────────────────────
+	// ── L'équipe de défense : son nombre, que la rangée porte (l'écran est /app/defense) ──
 	const carnet = useQuery(api.recouvrement.intervenants.monCarnet, {});
-	const ajouterIntervenant = useMutation(api.recouvrement.intervenants.ajouterIntervenant);
-	const oublierIntervenant = useMutation(api.recouvrement.intervenants.oublierIntervenant);
-	const chercherUnCommissaire = useAction(
-		api.recouvrement.annuaires.chercherUnCommissaireDeJustice
-	);
-	const [erreurCarnet, setErreurCarnet] = useState<string | null>(null);
 
 	// ── Le visage de la personne, et le logo de l'établissement ─────────────
 	const moi = useQuery(api.users.viewer, {});
@@ -210,43 +198,6 @@ function PageCompte() {
 			setEnCours(false);
 		}
 	}
-	const [rechercheCommissaireOuverte, setRechercheCommissaireOuverte] = useState(false);
-	const [etatRechercheCommissaire, setEtatRechercheCommissaire] =
-		useState<EtatRechercheCommissaire>({ phase: 'REPOS' });
-	const [rechercheAvocatOuverte, setRechercheAvocatOuverte] = useState(false);
-	const [barreau, setBarreau] = useState('');
-	const [specialite, setSpecialite] = useState('');
-
-	/*
-	  ⚠️ LES DEUX LECTURES DU RÉPERTOIRE SONT SAUTÉES TANT QUE LA FEUILLE EST
-	  FERMÉE. Le parcours des barreaux lit un document par barreau, et la
-	  recherche jusqu'à quatre mille fiches : les faire tourner à l'ouverture de
-	  `/app/compte` ferait payer un répertoire que personne n'a demandé, sur une
-	  page qu'on ouvre pour corriger une adresse.
-	*/
-	const repertoire = useQuery(
-		api.recouvrement.annuaires.barreauxDuRepertoire,
-		rechercheAvocatOuverte ? {} : 'skip'
-	);
-	const avocats = useQuery(
-		api.recouvrement.annuaires.chercherUnAvocat,
-		rechercheAvocatOuverte && barreau !== ''
-			? { barreau, specialite: specialite === '' ? undefined : specialite }
-			: 'skip'
-	);
-
-	/*
-	  ⚠️ « PAS ENCORE CHOISI » ET « JE LIS » SONT DEUX ÉTATS, pas un. Les
-	  confondre ferait attendre un résultat que personne n'a demandé — et, à
-	  l'inverse, ferait lire un écran de repos pendant une lecture réelle.
-	*/
-	const etatAvocats: EtatRechercheAvocat =
-		barreau === ''
-			? { phase: 'AUCUN_BARREAU' }
-			: avocats === undefined
-				? { phase: 'EN_COURS' }
-				: { phase: 'TROUVE', resultat: avocats };
-
 	async function preparerExport() {
 		setExportEnCours(true);
 		setErreurExport(null);
@@ -281,120 +232,6 @@ function PageCompte() {
 		void supprimerLEtablissement({ confirmation: apercu?.nomEtablissement ?? '' })
 			.then(() => navigate({ to: '/bienvenue' }))
 			.catch((e: unknown) => setErreurEtablissement(messageDErreur(e)));
-	}
-
-	/**
-	 * ⚠️ `origine` EST ÉCRITE ICI, PAS SAISIE. Une fiche tapée à la main est
-	 * `SAISI_A_LA_MAIN` par construction. Une fiche venue d'un répertoire public
-	 * porterait EN PLUS sa source et sa date de relevé — la mutation refuse sans
-	 * elles — et ce formulaire ne peut donc pas en fabriquer une.
-	 */
-	async function ajouterAuCarnet(fiche: FicheASaisir) {
-		setErreurCarnet(null);
-		try {
-			await ajouterIntervenant({
-				nom: fiche.nom,
-				role: fiche.role,
-				ressort: fiche.ressort,
-				origine: 'SAISI_A_LA_MAIN'
-			});
-		} catch (e) {
-			setErreurCarnet(messageDErreur(e));
-		}
-	}
-
-	async function oublierDuCarnet(intervenantId: Id<'intervenants'>) {
-		setErreurCarnet(null);
-		try {
-			await oublierIntervenant({ intervenantId });
-		} catch (e) {
-			setErreurCarnet(messageDErreur(e));
-		}
-	}
-
-	/**
-	 * ⚠️ UN ÉCHEC NE DEVIENT JAMAIS UNE LISTE VIDE. « Aucune étude dans ce
-	 * département » et « le registre n'a pas répondu » mènent à deux gestes
-	 * opposés, et les confondre ferait chercher ailleurs un gérant dont la seule
-	 * erreur était d'avoir cliqué une minute trop tôt.
-	 */
-	async function chercherUneEtude(departement: string) {
-		setEtatRechercheCommissaire({ phase: 'EN_COURS' });
-		try {
-			setEtatRechercheCommissaire({
-				phase: 'TROUVE',
-				resultat: await chercherUnCommissaire({ departement })
-			});
-		} catch (e) {
-			setEtatRechercheCommissaire({ phase: 'ECHEC', message: messageDErreur(e) });
-		}
-	}
-
-	/**
-	 * ⚠️ LA SOURCE ET SA DATE PARTENT AVEC LA FICHE, et la mutation la REFUSE
-	 * sans elles. Une fiche venue d'un répertoire public sans sa provenance
-	 * devient indiscernable d'une donnée officielle et fraîche — or celle-ci
-	 * n'est ni l'un ni l'autre.
-	 */
-	async function retenirUneEtude(etude: EtudeAffichee) {
-		if (etatRechercheCommissaire.phase !== 'TROUVE') return;
-		const { resultat } = etatRechercheCommissaire;
-		setErreurCarnet(null);
-		try {
-			await ajouterIntervenant({
-				nom: etude.nom,
-				role: 'COMMISSAIRE_DE_JUSTICE',
-				ressort: `${etude.commune} ${etude.codePostal}`.trim(),
-				adresse: etude.adresse,
-				siren: etude.siren,
-				origine: 'RETENU_DEPUIS_UN_REPERTOIRE',
-				sourceRepertoire: resultat.source,
-				sourceReleveeLe: resultat.releveeLe
-			});
-			setRechercheCommissaireOuverte(false);
-		} catch (e) {
-			setErreurCarnet(messageDErreur(e));
-		}
-	}
-
-	/**
-	 * ⚠️ SANS DATE DE RELEVÉ, ON NE RETIENT PAS — et on le dit. `releveeLe` vaut
-	 * `null` quand aucune livraison n'a été ingérée ; dater du jour pour faire
-	 * passer la mutation ferait entrer au carnet une fiche qui se présenterait
-	 * comme relevée aujourd'hui, ce qu'elle n'est pas.
-	 *
-	 * ⚠️ LE RESSORT EST LE BARREAU, TEL QUE LE FICHIER L'ÉCRIT. Le recomposer
-	 * depuis la ville ferait afficher « NANTES » pour un avocat inscrit au
-	 * barreau de Nantes mais installé à Saint-Herblain.
-	 */
-	async function retenirUnAvocat(avocat: AvocatAffiche) {
-		if (etatAvocats.phase !== 'TROUVE') return;
-		const { resultat } = etatAvocats;
-
-		if (resultat.releveeLe === null) {
-			setErreurCarnet(
-				'Ce répertoire ne porte pas de date de relevé : la fiche ne peut pas être retenue au ' +
-					'carnet, faute de pouvoir dire de quand elle date.'
-			);
-			return;
-		}
-
-		setErreurCarnet(null);
-		try {
-			await ajouterIntervenant({
-				nom: `${avocat.nom} ${avocat.prenom}`.trim(),
-				role: 'AVOCAT',
-				ressort: resultat.barreau,
-				adresse: avocat.adresse,
-				siren: avocat.siren,
-				origine: 'RETENU_DEPUIS_UN_REPERTOIRE',
-				sourceRepertoire: resultat.source,
-				sourceReleveeLe: resultat.releveeLe
-			});
-			setRechercheAvocatOuverte(false);
-		} catch (e) {
-			setErreurCarnet(messageDErreur(e));
-		}
 	}
 
 	if (org === undefined || profil === undefined) {
@@ -472,37 +309,10 @@ function PageCompte() {
 			? { etat: 'attente' }
 			: { etat: 'pret', valeur: { jours: mesuresDuPlafond } };
 
-	const intervenants: Lecture<IntervenantsAffiches> =
+	const intervenants: Lecture<CarnetResume> =
 		carnet === undefined
 			? { etat: 'attente' }
-			: {
-					etat: 'pret',
-					valeur: {
-						carnet,
-						erreur: erreurCarnet,
-						onAjouter: (fiche) => void ajouterAuCarnet(fiche),
-						onOublier: (intervenantId) => void oublierDuCarnet(intervenantId as Id<'intervenants'>),
-						rechercheCommissaireOuverte,
-						etatRechercheCommissaire,
-						onOuvrirRechercheCommissaire: () => setRechercheCommissaireOuverte(true),
-						onFermerRechercheCommissaire: () => setRechercheCommissaireOuverte(false),
-						onChercherCommissaire: (departement) => void chercherUneEtude(departement),
-						onRetenirEtude: (etude) => void retenirUneEtude(etude),
-						rechercheAvocatOuverte,
-						repertoire: repertoire ?? null,
-						barreau,
-						specialite,
-						etatAvocats,
-						onOuvrirRechercheAvocat: () => setRechercheAvocatOuverte(true),
-						onFermerRechercheAvocat: () => setRechercheAvocatOuverte(false),
-						onChoisirBarreau: (choisi) => {
-							setBarreau(choisi);
-							setSpecialite('');
-						},
-						onChoisirSpecialite: (choisie) => setSpecialite(choisie),
-						onRetenirAvocat: (avocat) => void retenirUnAvocat(avocat)
-					}
-				};
+			: { etat: 'pret', valeur: { nombre: carnet.length } };
 
 	/*
 	  ⚠️ « COMPLET » SE CALCULE ICI COMME L'ACCUEIL LE CALCULE, PAS AUTREMENT.
@@ -727,7 +537,7 @@ function PageCompte() {
 															message:
 																typeof convexe.data === 'string'
 																	? convexe.data
-																	: 'Le registre des entreprises n’a pas répondu.'
+																	: 'Le registre n’a pas répondu.'
 														});
 													});
 											}

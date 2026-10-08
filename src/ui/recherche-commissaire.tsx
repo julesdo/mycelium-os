@@ -54,6 +54,12 @@ export interface EtudeAffichee {
 	readonly commune: string;
 	readonly codePostal: string;
 	readonly adresse?: string;
+	/** Ce que le registre publie aussi (08/10/2026) : la carte, l'âge, la taille, qui y exerce. */
+	readonly latitude?: number;
+	readonly longitude?: number;
+	readonly creeeLe?: string;
+	readonly effectif?: string;
+	readonly associes?: readonly string[];
 }
 
 export interface ResultatAnnuaireAffiche {

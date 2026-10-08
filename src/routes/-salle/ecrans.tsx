@@ -5,6 +5,7 @@ import { ECRANS_PLUME } from './plume';
 import { ECRANS_BIENVENUE } from './bienvenue';
 import { ECRANS_PAIEMENT } from './paiement';
 import { ECRANS_COMPTE } from './compte';
+import { ECRANS_DEFENSE } from './defense';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
 import { ECRANS_FILE } from './file';
@@ -80,6 +81,7 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	...ECRANS_DEBITEURS,
 	...ECRANS_IMPORT,
 	...ECRANS_COMPTE,
+	...ECRANS_DEFENSE,
 	/*
 	  ⚠️ LA PAGE DU CLIENT, ET ELLE N'EST PAS SOUS `/app/`. C'est la seule
 	  surface du produit qu'un tiers ouvre : sans compte, souvent sur un

@@ -317,21 +317,44 @@ export const ETUDES_DEMO: ResultatAnnuaireAffiche = {
 			nom: "COMMISSAIRES DE L'OUEST (COMMISSAIRES DE L'OUEST) (CDOUEST)",
 			commune: 'NANTES',
 			codePostal: '44100',
-			adresse: '14 BOULEVARD WINSTON CHURCHILL 44100 NANTES'
+			adresse: '14 BOULEVARD WINSTON CHURCHILL 44100 NANTES',
+			// Relevés au registre le 08/10/2026, comme le reste de la fiche.
+			latitude: 47.2068076852616,
+			longitude: -1.61244912650945,
+			creeeLe: '2022-11-14',
+			effectif: '50 à 99 salariés',
+			associes: [
+				'STEPHAN BOGHEN',
+				'MARIE-BENEDICTE BOURGEOIS',
+				'JEAN-MARIE DIRIDOLLOU',
+				'PHILIPPE GACHET',
+				'LYDIA LE TALLEC',
+				'KLERVI LEROUX'
+			]
 		},
 		{
 			siren: '883711400',
 			nom: 'MOCAER, CLAVIERE, VIOTTI',
 			commune: 'NORT-SUR-ERDRE',
 			codePostal: '44390',
-			adresse: "5 RUE D'ANJOU 44390 NORT-SUR-ERDRE"
+			adresse: "5 RUE D'ANJOU 44390 NORT-SUR-ERDRE",
+			latitude: 47.4377425755558,
+			longitude: -1.48157336315301,
+			creeeLe: '2020-06-03',
+			effectif: '3 à 5 salariés',
+			associes: ['GUILLAUME CLAVIERE', 'VALERIE MOCAER', 'AURELIE VIOTTI']
 		},
 		{
 			siren: '911195980',
 			nom: 'SOLUTIONS HUISSIER',
 			commune: 'SAINT-NAZAIRE',
 			codePostal: '44600',
-			adresse: '5 RUE DES TROENES 44600 SAINT-NAZAIRE'
+			adresse: '5 RUE DES TROENES 44600 SAINT-NAZAIRE',
+			latitude: 47.2670540268492,
+			longitude: -2.25255404235491,
+			creeeLe: '2022-03-07',
+			effectif: '1 ou 2 salariés',
+			associes: ['JULIEN BEAUFILS', 'CELINE DILLENSIGER', 'CAROLINE HACHET']
 		}
 	],
 	source:
@@ -469,7 +492,8 @@ export const AVOCATS_DEMO: ResultatAvocatsAffiche = {
 export const PROPOSITIONS_DEMO: PropositionsAffichees = {
 	etat: 'PRET',
 	client: 'Fournitures Durand',
-	lieu: { departement: '44', commune: 'NANTES' },
+	// Le siège de démonstration : la place Royale, à Nantes.
+	lieu: { departement: '44', commune: 'NANTES', latitude: 47.2135, longitude: -1.5589 },
 	commissaires: {
 		etat: 'TROUVE',
 		etudes: ETUDES_DEMO.etudes,

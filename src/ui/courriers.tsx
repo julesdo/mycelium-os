@@ -5,7 +5,11 @@ import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
 import { NOM_DU_PILOTE } from './plume';
 import { TexteQuiMene } from './texte-qui-mene';
-import { ChoixIntervenant, type ProfessionnelsProposes } from './choix-intervenant';
+import {
+	ChoixIntervenant,
+	type FicheIntervenant,
+	type ProfessionnelsProposes
+} from './choix-intervenant';
 import { DirigeantsProposes, type EtatDirigeants } from './dirigeants';
 import { LigneBouton, ListeAnalyses } from './navigation';
 
@@ -147,10 +151,13 @@ export interface EnvoiAffiche {
 	readonly annexeDisponible: boolean;
 }
 
-export interface IntervenantProposable {
+/**
+ * Une fiche du carnet, proposable comme destinataire. Elle porte tout ce que la
+ * fiche dit (adresse, téléphone, photo…) : la feuille du choix la montre comme une
+ * personne, pas comme un nom seul (08/10/2026).
+ */
+export interface IntervenantProposable extends Omit<FicheIntervenant<string>, '_id'> {
 	readonly id: string;
-	readonly nom: string;
-	readonly role: 'AVOCAT' | 'COMMISSAIRE_DE_JUSTICE' | 'AUTRE';
 }
 
 export interface CourriersDuDossier {
@@ -437,7 +444,7 @@ function DestinataireDuCourrier({
 				titre={role === 'AVOCAT' ? 'À quel avocat' : 'À quel commissaire de justice'}
 				role={role}
 				sansPersonne={null}
-				carnet={siens.map((i) => ({ _id: i.id, nom: i.nom, role: i.role }))}
+				carnet={siens.map(({ id, ...fiche }) => ({ _id: id, ...fiche }))}
 				choisi={valeur ?? undefined}
 				ouverte={ouverte}
 				propositions={professionnels.propositions}

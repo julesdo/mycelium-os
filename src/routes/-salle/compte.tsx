@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Theme } from '../../app/use-theme';
 import { BORNES_PALIER, TARIFS, palierDeTaille } from '../../lib/config/tarifs';
-import type { EtatRechercheAvocat, FicheIntervenant, Lecture } from '../../ui';
+import type { FicheIntervenant, Lecture } from '../../ui';
 import { CarteConnexion, LogoConnexion, PictoLogiciel, PileDeConnexions } from '../../ui';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
 import { PROMESSE_CHIFT } from '../../app/connexion-chift';
@@ -15,9 +15,8 @@ import type {
 	MembreEquipe
 } from '../../screens/compte/equipe';
 import type { ApercuDonnees, DonneesAffichees, FichierExport } from '../../screens/compte/donnees';
-import type { IntervenantsAffiches } from '../../screens/compte/intervenants';
 import type { MesuresAffichees } from '../../screens/compte/mesures';
-import { AVOCATS_DEMO, BARREAUX_DEMO, CARNET_DEMO, ETABLISSEMENT_DEMO } from './communes';
+import { CARNET_DEMO, ETABLISSEMENT_DEMO } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
 /**
@@ -449,29 +448,8 @@ function donneesDe(
  * même table, lue par deux surfaces. Les deux recherches partent fermées, comme
  * en production.
  */
-function intervenantsDe(carnet: readonly FicheIntervenant[]): IntervenantsAffiches {
-	return {
-		carnet,
-		erreur: null,
-		onAjouter: () => undefined,
-		onOublier: () => undefined,
-		rechercheCommissaireOuverte: false,
-		etatRechercheCommissaire: { phase: 'REPOS' },
-		onOuvrirRechercheCommissaire: () => undefined,
-		onFermerRechercheCommissaire: () => undefined,
-		onChercherCommissaire: () => undefined,
-		onRetenirEtude: () => undefined,
-		rechercheAvocatOuverte: false,
-		repertoire: BARREAUX_DEMO,
-		barreau: AVOCATS_DEMO.barreau,
-		specialite: '',
-		etatAvocats: { phase: 'TROUVE', resultat: AVOCATS_DEMO } satisfies EtatRechercheAvocat,
-		onOuvrirRechercheAvocat: () => undefined,
-		onFermerRechercheAvocat: () => undefined,
-		onChoisirBarreau: () => undefined,
-		onChoisirSpecialite: () => undefined,
-		onRetenirAvocat: () => undefined
-	};
+function intervenantsDe(carnet: readonly FicheIntervenant[]): { readonly nombre: number } {
+	return { nombre: carnet.length };
 }
 
 // ── Les formes de la page ──────────────────────────────────────────────────

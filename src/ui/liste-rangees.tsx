@@ -324,6 +324,7 @@ export function RangeeLien({
 	titre,
 	avatar,
 	famille,
+	icone,
 	valeur
 }: {
 	readonly vers: NonNullable<LinkProps['to']>;
@@ -336,6 +337,8 @@ export function RangeeLien({
 	 * feuille (01/10/2026), et garde sa vignette de papiers.
 	 */
 	readonly famille?: FamilleRangee;
+	/** Un glyphe neutre, comme les rangées voisines qui s'ouvrent (`RangeeDepliable.icone`). */
+	readonly icone?: ReactNode;
 	/** Ce que la rangée porte à droite, comme ses voisines : « 4 lus ». */
 	readonly valeur?: string;
 }) {
@@ -354,7 +357,12 @@ export function RangeeLien({
 			contentClassName="w-full items-center justify-between gap-cladd-3xs px-3.5 py-cladd-3xs"
 		>
 			<span className="flex min-w-0 flex-1 items-center gap-cladd-3xs text-left">
-				{avatar ?? (famille === undefined ? null : <VignetteRangee famille={famille} />)}
+				{avatar ??
+					(famille !== undefined ? (
+						<VignetteRangee famille={famille} />
+					) : icone !== undefined ? (
+						<VignetteIcone icone={icone} />
+					) : null)}
 				<span className="min-w-0 truncate text-cladd-xs font-semibold">{titre}</span>
 			</span>
 			<span className="flex shrink-0 items-center gap-cladd-3xs">

@@ -4,7 +4,7 @@ import {
 	ArrowLeftRightIcon,
 	Building2Icon,
 	CheckIcon,
-	ContactIcon,
+	ScaleIcon,
 	CreditCardIcon,
 	LogOutIcon,
 	MonitorIcon,
@@ -24,6 +24,7 @@ import {
 	ListeDeRangees,
 	PageEcran,
 	RangeeDepliable,
+	RangeeLien,
 	SectionsDepliables,
 	type Lecture
 } from '../../ui';
@@ -37,7 +38,6 @@ import { ChoixDuLogo, SectionProfil, type ProfilAffiche } from './profil';
 import { SectionFacturation, type AbonnementAffiche } from './facturation';
 import { SectionEquipe, type EquipeAffichee } from './equipe';
 import { SectionDonnees, type DonneesAffichees } from './donnees';
-import { SectionIntervenants, type IntervenantsAffiches } from './intervenants';
 import { SectionMesures, type MesuresAffichees } from './mesures';
 import {
 	ceQuiPresse,
@@ -48,6 +48,7 @@ import {
 	resumeFacturation,
 	resumeProfil,
 	resumeConnexions,
+	type CarnetResume,
 	type IdentiteDuCreancier,
 	type ResumeDeSection,
 	type SectionCompte
@@ -122,7 +123,8 @@ export interface CompteAffiche {
 	readonly abonnement: Lecture<AbonnementAffiche | null>;
 	readonly equipe: Lecture<EquipeAffichee>;
 	readonly donnees: Lecture<DonneesAffichees>;
-	readonly intervenants: Lecture<IntervenantsAffiches>;
+	/** Combien de professionnels dans l'équipe : la rangée « Votre défense » le porte. */
+	readonly intervenants: Lecture<CarnetResume>;
 	/**
 	 * L'instrument du plafond de propositions (D13).
 	 *
@@ -333,16 +335,19 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 				</ListeDeRangees>
 
 				<ListeDeRangees>
-					<RangeeDepliable
-						cle="carnet"
-						icone={<ContactIcon />}
-						titre="Votre carnet"
-						{...rangee('carnet', resumeCarnet(pret.intervenants))}
-					>
-						<AvecLaLecture lecture={pret.intervenants}>
-							{(carnet) => <SectionIntervenants {...carnet} />}
-						</AvecLaLecture>
-					</RangeeDepliable>
+					{/*
+					  ⚠️ « VOTRE CARNET » EST DEVENU UN ÉCRAN (08/10/2026). Le fondateur :
+					  « le choix de la défense est un service qui fait partie de l'app ».
+					  Replié ici, c'était une liste de noms avec une corbeille ; l'équipe a
+					  maintenant sa page — des portraits, des fiches, la carte de chaque
+					  cabinet. La rangée MÈNE, elle ne s'ouvre plus.
+					*/}
+					<RangeeLien
+						vers="/app/defense"
+						icone={<ScaleIcon />}
+						titre="Votre défense"
+						valeur={resumeCarnet(pret.intervenants).valeur}
+					/>
 
 					{/*
 					  ⚠️ « CE QUE LA FILE PROPOSE » EST ENTRÉ ICI. C'était une rangée à

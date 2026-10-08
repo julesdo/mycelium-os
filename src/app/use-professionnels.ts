@@ -49,19 +49,38 @@ function messageDuRefus(e: unknown): string {
 export function useProfessionnelsProposes(
 	debiteurId: Id<'debiteurs'> | undefined,
 	carnet: readonly FicheDuCarnet[] | undefined
-): ProfessionnelsProposes {
+): ProfessionnelsProposes & {
+	/** Lire pour un autre client que celui du dossier : l'écran « Défense » en change. */
+	readonly demanderPour: (debiteurId: Id<'debiteurs'>) => void;
+} {
 	const proposer = useAction(api.recouvrement.annuaires.professionnelsPresDuClient);
 	const ajouterIntervenant = useMutation(api.recouvrement.intervenants.ajouterIntervenant);
 
-	const [propositions, setPropositions] = useState<PropositionsAffichees | null>(null);
+	/*
+	  ⚠️ LA LECTURE PORTE LE CLIENT POUR QUI ELLE A ÉTÉ FAITE. L'écran « Défense »
+	  passe d'un client à l'autre : une lecture gardée sans son client montrerait
+	  les études de Nantes sous le nom d'un client de Lyon.
+	*/
+	const [lu, setLu] = useState<{
+		readonly pour: Id<'debiteurs'>;
+		readonly propositions: PropositionsAffichees;
+	} | null>(null);
+	const propositions = lu !== null && lu.pour === debiteurId ? lu.propositions : null;
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
 
-	function demander() {
-		if (debiteurId === undefined) return;
-		if (propositions !== null && propositions.etat !== 'ECHEC') return;
+	function demander(pour: Id<'debiteurs'> | undefined = debiteurId) {
+		if (pour === undefined) return;
+		if (lu !== null && lu.pour === pour && lu.propositions.etat !== 'ECHEC') return;
+		const setPropositions = (propositions: PropositionsAffichees) =>
+			setLu((avant) =>
+				// Une réponse arrivée après qu'on a changé de client ne remplace pas la lecture en cours.
+				avant !== null && avant.pour !== pour && propositions.etat !== 'CHARGEMENT'
+					? avant
+					: { pour, propositions }
+			);
 		setPropositions({ etat: 'CHARGEMENT' });
-		proposer({ debiteurId })
+		proposer({ debiteurId: pour })
 			.then((lu) => {
 				if (lu.lieu === null) {
 					setPropositions({ etat: 'LIEU_INCONNU', client: lu.client });
@@ -70,7 +89,13 @@ export function useProfessionnelsProposes(
 				setPropositions({
 					etat: 'PRET',
 					client: lu.client,
-					lieu: { departement: lu.lieu.departement, commune: lu.lieu.commune },
+					lieu: {
+						departement: lu.lieu.departement,
+						commune: lu.lieu.commune,
+						...(lu.lieu.latitude === undefined || lu.lieu.longitude === undefined
+							? {}
+							: { latitude: lu.lieu.latitude, longitude: lu.lieu.longitude })
+					},
 					commissaires:
 						lu.commissaires === null
 							? {
@@ -153,7 +178,8 @@ export function useProfessionnelsProposes(
 
 	return {
 		propositions: propositions ?? { etat: 'CHARGEMENT' },
-		onDemander: demander,
+		onDemander: () => demander(),
+		demanderPour: (pour) => demander(pour),
 		onRetenirEtude: retenirEtude,
 		onRetenirAvocat: retenirAvocat,
 		onAjouter: (fiche) =>

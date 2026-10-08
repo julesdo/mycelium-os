@@ -4,7 +4,6 @@ import type { Theme } from '../../app/use-theme';
 import type { AbonnementAffiche } from './facturation';
 import type { EquipeAffichee } from './equipe';
 import type { DonneesAffichees } from './donnees';
-import type { IntervenantsAffiches } from './intervenants';
 import type { MesuresAffichees } from './mesures';
 
 /**
@@ -410,15 +409,19 @@ export function resumeDonnees(lecture: Lecture<DonneesAffichees>): ResumeDeSecti
 
 // ── Votre carnet ───────────────────────────────────────────────────────────
 
-export function resumeCarnet(lecture: Lecture<IntervenantsAffiches>): ResumeDeSection {
+/** Ce que la rangée « Votre défense » a besoin de savoir de l'équipe. */
+export interface CarnetResume {
+	readonly nombre: number;
+}
+
+export function resumeCarnet(lecture: Lecture<CarnetResume>): ResumeDeSection {
 	if (lecture.etat === 'attente') return EN_LECTURE;
 	if (lecture.etat === 'erreur') return INDISPONIBLE;
 
-	const { carnet } = lecture.valeur;
+	const { nombre } = lecture.valeur;
 	return {
-		valeur:
-			carnet.length === 0 ? 'Aucune fiche' : `${carnet.length} fiche${pluriel(carnet.length)}`,
-		legende: 'Commissaires de justice et avocats que vous avez notés.'
+		valeur: nombre === 0 ? 'Personne' : `${nombre} professionnel${pluriel(nombre)}`,
+		legende: 'Les avocats et commissaires de justice avec qui vous travaillez.'
 	};
 }
 

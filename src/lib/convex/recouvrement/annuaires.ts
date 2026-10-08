@@ -96,6 +96,16 @@ export interface EtudeTrouvee {
 	readonly commune: string;
 	readonly codePostal: string;
 	readonly adresse?: string;
+	/**
+	 * CE QUE LE REGISTRE DIT AUSSI DE L'ÉTUDE (08/10/2026), pour une fiche qui ait de
+	 * la matière : où elle est (la carte), depuis quand elle existe, sa taille, et
+	 * qui y exerce. Des faits publics, cités tels quels, jamais une appréciation.
+	 */
+	readonly latitude?: number;
+	readonly longitude?: number;
+	readonly creeeLe?: string;
+	readonly effectif?: string;
+	readonly associes?: string[];
 }
 
 export interface ResultatAnnuaire {
@@ -118,8 +128,56 @@ const vEtude = v.object({
 	nom: v.string(),
 	commune: v.string(),
 	codePostal: v.string(),
-	adresse: v.optional(v.string())
+	adresse: v.optional(v.string()),
+	latitude: v.optional(v.number()),
+	longitude: v.optional(v.number()),
+	creeeLe: v.optional(v.string()),
+	effectif: v.optional(v.string()),
+	associes: v.optional(v.array(v.string()))
 });
+
+/**
+ * LA TRANCHE D'EFFECTIF DU REGISTRE, EN CLAIR — les codes de l'INSEE, tels qu'ils
+ * sont publiés. Un code inconnu ne s'affiche pas plutôt que de deviner.
+ */
+const TRANCHES_EFFECTIF: Readonly<Record<string, string>> = {
+	'00': 'Sans salarié',
+	'01': '1 ou 2 salariés',
+	'02': '3 à 5 salariés',
+	'03': '6 à 9 salariés',
+	'11': '10 à 19 salariés',
+	'12': '20 à 49 salariés',
+	'21': '50 à 99 salariés',
+	'22': '100 à 199 salariés',
+	'31': '200 à 249 salariés',
+	'32': '250 à 499 salariés',
+	'41': '500 à 999 salariés',
+	'42': '1 000 à 1 999 salariés'
+};
+
+/** Un nombre lu dans le registre, qui le rend souvent en chaîne. */
+function nombre(valeur: unknown): number | undefined {
+	const lu =
+		typeof valeur === 'number' ? valeur : typeof valeur === 'string' ? Number(valeur) : NaN;
+	return Number.isFinite(lu) ? lu : undefined;
+}
+
+/** Les personnes qui dirigent : « Prénom NOM », dans l'ordre du registre. */
+function personnesQuiDirigent(brut: unknown): string[] | undefined {
+	if (!Array.isArray(brut)) return undefined;
+	const noms: string[] = [];
+	for (const dirigeant of brut) {
+		if (typeof dirigeant !== 'object' || dirigeant === null) continue;
+		const d = dirigeant as { type_dirigeant?: unknown; nom?: unknown; prenoms?: unknown };
+		if (d.type_dirigeant !== 'personne physique') continue;
+		// Le registre double parfois le nom d'usage entre parenthèses : « GACHET (GACHET) ».
+		const nom = texte(d.nom)?.replace(/\s*\([^)]*\)\s*$/, '');
+		if (nom === undefined || nom === '') continue;
+		const prenom = texte(d.prenoms)?.split(' ')[0];
+		noms.push(prenom === undefined ? nom : `${prenom} ${nom}`);
+	}
+	return noms.length === 0 ? undefined : noms.slice(0, 12);
+}
 
 /** Une chaîne non vide, ou `undefined`. Le registre rend `null` sur ce qu'il ignore. */
 function texte(valeur: unknown): string | undefined {
@@ -144,7 +202,14 @@ function texte(valeur: unknown): string | undefined {
  */
 function lireEtude(brut: unknown): EtudeTrouvee | null {
 	if (typeof brut !== 'object' || brut === null) return null;
-	const enregistrement = brut as { siren?: unknown; nom_complet?: unknown; siege?: unknown };
+	const enregistrement = brut as {
+		siren?: unknown;
+		nom_complet?: unknown;
+		siege?: unknown;
+		date_creation?: unknown;
+		tranche_effectif_salarie?: unknown;
+		dirigeants?: unknown;
+	};
 
 	const siren = texte(enregistrement.siren);
 	const nom = texte(enregistrement.nom_complet);
@@ -156,15 +221,27 @@ function lireEtude(brut: unknown): EtudeTrouvee | null {
 					libelle_commune?: unknown;
 					code_postal?: unknown;
 					adresse?: unknown;
+					latitude?: unknown;
+					longitude?: unknown;
 				})
 			: {};
 
+	const latitude = nombre(siege.latitude);
+	const longitude = nombre(siege.longitude);
+	const creeeLe = texte(enregistrement.date_creation);
+	const tranche = texte(enregistrement.tranche_effectif_salarie);
+	const effectif = tranche === undefined ? undefined : TRANCHES_EFFECTIF[tranche];
+	const associes = personnesQuiDirigent(enregistrement.dirigeants);
 	return {
 		siren,
 		nom,
 		commune: texte(siege.libelle_commune) ?? '',
 		codePostal: texte(siege.code_postal) ?? '',
-		adresse: texte(siege.adresse)
+		adresse: texte(siege.adresse),
+		...(latitude === undefined || longitude === undefined ? {} : { latitude, longitude }),
+		...(creeeLe === undefined ? {} : { creeeLe }),
+		...(effectif === undefined ? {} : { effectif }),
+		...(associes === undefined ? {} : { associes })
 	};
 }
 
@@ -805,6 +882,9 @@ export interface LieuDuClient {
 	readonly departement: string;
 	readonly codePostal: string | null;
 	readonly commune: string | null;
+	/** Le siège du client sur la carte, quand le registre le place : la distance aux professionnels. */
+	readonly latitude?: number;
+	readonly longitude?: number;
 }
 
 /**
@@ -836,13 +916,18 @@ async function lieuDuClient(client: {
 						departement?: unknown;
 						code_postal?: unknown;
 						libelle_commune?: unknown;
+						latitude?: unknown;
+						longitude?: unknown;
 					};
 					const departement = texte(lu.departement);
+					const latitude = nombre(lu.latitude);
+					const longitude = nombre(lu.longitude);
 					if (departement !== undefined) {
 						return {
 							departement,
 							codePostal: texte(lu.code_postal) ?? null,
-							commune: texte(lu.libelle_commune) ?? null
+							commune: texte(lu.libelle_commune) ?? null,
+							...(latitude === undefined || longitude === undefined ? {} : { latitude, longitude })
 						};
 					}
 				}
@@ -893,7 +978,9 @@ export const professionnelsPresDuClient = action({
 			v.object({
 				departement: v.string(),
 				codePostal: v.union(v.string(), v.null()),
-				commune: v.union(v.string(), v.null())
+				commune: v.union(v.string(), v.null()),
+				latitude: v.optional(v.number()),
+				longitude: v.optional(v.number())
 			})
 		),
 		commissaires: v.union(v.null(), vEtatCommissaires),
