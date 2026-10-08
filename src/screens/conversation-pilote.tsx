@@ -130,7 +130,12 @@ export function EcranConversationPilote({ fil }: { readonly fil: ConversationPil
 						enCours={fil.enCours}
 						placeholder={fil.placeholder}
 						dessus={
-							fil.enCours || fil.question.trim() !== '' ? null : (
+							/*
+							  ⚠️ LES QUESTIONS PRÊTES NE S'OFFRENT QU'AU DÉBUT, comme chez Claude :
+							  une fois la conversation lancée, elles flottaient par-dessus les
+							  cartes de gestes et cachaient leurs boutons (relevé du 08/10/2026).
+							*/
+							fil.enCours || fil.question.trim() !== '' || fil.messages.length > 0 ? null : (
 								<SuggestionsAPlume suggestions={fil.suggestions} onChoisir={fil.onQuestion} />
 							)
 						}

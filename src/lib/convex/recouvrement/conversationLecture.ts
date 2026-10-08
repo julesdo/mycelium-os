@@ -153,6 +153,8 @@ const vPourGestes = v.object({
 });
 
 interface ContexteLu {
+	/** Où en est le dossier, en clair : ce que Plume joint quand il ne peut pas répondre mieux. */
+	resume: string[];
 	pourGestes: {
 		aujourdHui: string;
 		restantDu: bigint;
@@ -197,7 +199,12 @@ export const contexteDuDossier = internalQuery({
 	args: { creanceId: v.id('creances'), toursRepris: v.number() },
 	returns: v.union(
 		v.null(),
-		v.object({ contexte: vContexteDossier, compteur: vCompteur, pourGestes: vPourGestes })
+		v.object({
+			contexte: vContexteDossier,
+			compteur: vCompteur,
+			pourGestes: vPourGestes,
+			resume: v.array(v.string())
+		})
 	),
 	handler: async (ctx, { creanceId, toursRepris }): Promise<ContexteLu | null> => {
 		const { organizationId } = await getUserOrg(ctx);
@@ -227,18 +234,29 @@ export const contexteDuDossier = internalQuery({
 				.collect()
 		).filter((piece) => piece.organizationId === organizationId);
 
+		/*
+		  ⚠️ DES FAITS EN CLAIR, ET PLUS LES CRITÈRES JURIDIQUES DE LA BASE. Le contexte
+		  portait « Qualité de commerçant du débiteur : ok » et « Créance certaine :
+		  unknown. Liquide… Exigible… » : le modèle les recopiait dans sa réponse, et les
+		  filtres retenaient la phrase pour un mot du droit sans source (« commerçant »).
+		  Ces critères se lisent sur la page du dossier ; ils n'aident pas à répondre au
+		  gérant.
+		*/
+		const ETAT_DE_PAIEMENT: Readonly<Record<string, string>> = {
+			IMPAYEE: 'pas encore payée',
+			PARTIELLEMENT_PAYEE: 'payée en partie',
+			SOLDEE: 'payée',
+			LITIGIEUSE: 'contestée'
+		};
 		const faits: string[] = [
-			`La créance est au statut ${creance.statut}.`,
-			`${factures.length} facture${factures.length > 1 ? 's' : ''} y sont rattachée${factures.length > 1 ? 's' : ''}.`,
-			`Qualité de commerçant du débiteur : ${creance.entreCommercants}.`,
-			`Créance certaine : ${creance.certaine}. Liquide : ${creance.liquide}. Exigible : ${creance.exigible}.`
+			`${factures.length} facture${factures.length > 1 ? 's' : ''} dans ce dossier.`
 		];
 		for (const facture of factures) {
 			faits.push(
 				`Facture ${facture.reference}, émise le ${facture.dateEmission}, ` +
-					`échue le ${facture.dateEcheance}, ` +
+					`à payer le ${facture.dateEcheance}, ` +
 					`montant TTC ${versEuros(depuisCentimes(facture.montantTTC))} €, ` +
-					`statut de paiement ${facture.statutPaiement}.`
+					`${ETAT_DE_PAIEMENT[facture.statutPaiement] ?? facture.statutPaiement}.`
 			);
 		}
 
@@ -339,6 +357,52 @@ export const contexteDuDossier = internalQuery({
 					])
 		];
 
+		/*
+		  OÙ EN EST LE DOSSIER, EN CLAIR — composé ici, à partir de la base, jamais par
+		  le modèle. Plume le joint à sa réponse quand on lui demande où en est le
+		  dossier, ou quand une de ses phrases n'a pas pu être rendue.
+		*/
+		const JOUR = new Intl.DateTimeFormat('fr-FR', {
+			weekday: 'long',
+			day: 'numeric',
+			month: 'long',
+			timeZone: 'UTC'
+		});
+		const leJour = (iso: string) =>
+			iso <= aujourdHui ? 'aujourd’hui' : JOUR.format(new Date(`${iso}T00:00:00.000Z`));
+		const resume: string[] = [
+			restantDu > 0n
+				? `Il reste ${versEuros(depuisCentimes(restantDu))} € à payer sur ${factures.length} facture${factures.length > 1 ? 's' : ''}.`
+				: 'Ses factures sont payées.',
+			...(creance.aDemarrer === true
+				? ['Le dossier est prêt, et attend que vous le démarriez : je ne relance rien avant.']
+				: []),
+			...(suspendu
+				? ['Il est en procédure collective ou radié : les relances sont suspendues.']
+				: horsPilote
+					? ['Vous gardez ce client en main : je ne le relance pas.']
+					: []),
+			...(programmee === undefined
+				? []
+				: [
+						`Une relance part ${leJour(new Date(programmee.partiraLe ?? programmee.prepareLe).toISOString().slice(0, 10))}, à votre nom. Vous pouvez encore la retenir.`
+					]),
+			...(enAttente ? ['Un courrier attend votre relecture.'] : []),
+			...(plan === null || programmee !== undefined || creance.aDemarrer === true || !relancable
+				? []
+				: [
+						`Prochaine étape : ${plan.prochaine.etape.nom.toLowerCase()}, ${leJour(plan.prochaine.le)}.`
+					]),
+			debiteur?.email === undefined || debiteur.email === ''
+				? 'Son adresse e-mail manque : je ne peux pas lui écrire.'
+				: `Je lui écris à ${debiteur.email}.`,
+			...(contestationDeclaree ? ['Il conteste : c’est noté, et le dossier continue.'] : []),
+			dernierArrete === undefined
+				? 'Aucun décompte n’est encore arrêté.'
+				: `Décompte arrêté le ${JOUR.format(new Date(`${dernierArrete.arreteAu}T00:00:00.000Z`))}.`,
+			...(remiseEnCours ? ['Le dossier est remis à votre conseil.'] : [])
+		];
+
 		const anglesMorts: string[] = [];
 		if (debiteur?.siren === undefined) {
 			anglesMorts.push(
@@ -352,6 +416,7 @@ export const contexteDuDossier = internalQuery({
 		}
 
 		return {
+			resume,
 			pourGestes: {
 				aujourdHui,
 				restantDu,
@@ -475,6 +540,8 @@ export const consignerEchange = internalMutation({
 		),
 		/** Les gestes proposés, déjà relus par `gestes.ts`. */
 		gestes: v.optional(v.array(vGestePropose)),
+		/** Où en est le dossier, en clair, quand Plume le joint à sa réponse. */
+		etatDuDossier: v.optional(v.array(v.string())),
 		usage: v.optional(
 			v.object({
 				tokensIn: v.number(),
@@ -516,6 +583,9 @@ export const consignerEchange = internalMutation({
 			pastilles: args.pastilles,
 			phrases: args.phrases,
 			...(args.gestes === undefined || args.gestes.length === 0 ? {} : { gestes: args.gestes }),
+			...(args.etatDuDossier === undefined || args.etatDuDossier.length === 0
+				? {}
+				: { etatDuDossier: args.etatDuDossier }),
 			usage: args.usage,
 			mois: moisDuTour,
 			// +1 ms : deux tours écrits dans la même transaction porteraient sinon
@@ -560,6 +630,8 @@ const vTourAffiche = v.object({
 	phrases: v.optional(v.array(v.object({ texte: v.string(), source: v.optional(vSourceConstat) }))),
 	/** Les gestes que Plume a proposés dans ce tour, et ce qu'il en est advenu. */
 	gestes: v.optional(v.array(vGestePropose)),
+	/** Où en est le dossier, en clair, quand Plume l'a joint. */
+	etatDuDossier: v.optional(v.array(v.string())),
 	diteLe: v.number()
 });
 
@@ -608,6 +680,7 @@ export const filDuDossier = authedQuery({
 						texte: portePhrases ? undefined : tour.texte,
 						phrases: portePhrases ? tour.phrases : undefined,
 						gestes: tour.gestes,
+						etatDuDossier: tour.etatDuDossier,
 						diteLe: tour.diteLe
 					};
 				}),

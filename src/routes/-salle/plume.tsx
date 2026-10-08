@@ -3,6 +3,7 @@ import { AlarmClockIcon, HandCoinsIcon } from 'lucide-react';
 import {
 	AvatarPlume,
 	CarteDeGeste,
+	CarteEtatDuDossier,
 	NOM_DU_PILOTE,
 	PageEcran,
 	Plume,
@@ -120,7 +121,19 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 										genreSource: 'AUCUNE',
 										libelleSource: ''
 									}
-								]
+								],
+								// Ce que la base sait du dossier, joint par le logiciel à « où en est ».
+								suite: (
+									<CarteEtatDuDossier
+										lignes={[
+											'Il reste 6 000,00 € à payer sur 3 factures.',
+											'Prochaine étape : deuxième rappel, mardi 13 octobre.',
+											'Je lui écris à compta@durand.fr.',
+											'Il conteste : c’est noté, et le dossier continue.',
+											'Aucun décompte n’est encore arrêté.'
+										]}
+									/>
+								)
 							}
 						];
 	return (

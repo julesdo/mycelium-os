@@ -25,6 +25,7 @@ import { decrireGeste, type GenreGeste } from '../../lib/verticales/recouvrement
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import {
 	CarteDeGeste,
+	CarteEtatDuDossier,
 	NOM_DU_PILOTE,
 	aujourdHuiISO,
 	dateRelative,
@@ -187,15 +188,17 @@ function ConversationDuDossier() {
 		if (tour.role === 'GERANT') return { genre: 'GERANT', id: tour._id, texte: tour.texte ?? '' };
 		const phrases = relireTour(tour);
 		const gestes = tour.gestes ?? [];
+		const etat = tour.etatDuDossier ?? [];
 		return {
 			genre: 'PLUME',
 			id: tour._id,
 			phrases,
-			...(gestes.length === 0
+			...(gestes.length === 0 && etat.length === 0
 				? {}
 				: {
 						suite: (
 							<div className="flex flex-col gap-2">
+								<CarteEtatDuDossier lignes={etat} />
 								{gestes.map((geste, rang) => {
 									const description = decrireGeste(geste);
 									const cle = `${tour._id}-${rang}`;

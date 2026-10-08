@@ -304,6 +304,7 @@ export {
 	AccueilDePlume,
 	BulleDuGerant,
 	CarteDeGeste,
+	CarteEtatDuDossier,
 	Composeur,
 	PageConversation,
 	ReponseDePlume,

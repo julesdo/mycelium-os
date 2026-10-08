@@ -7,7 +7,7 @@ import type { Id } from '../_generated/dataModel';
 import { authedAction } from '../functions';
 import { requireEnv } from '../env';
 import { extraireAvecClaude } from '../../socle/documents/extracteur';
-import { RefusDeRendu, filtrerAvantRendu } from '../../verticales/recouvrement/compagnon/filtres';
+// Les filtres avant rendu s'appliquent phrase par phrase : voir `compagnon/tri.ts`.
 import {
 	estQuestionDeDroit,
 	reponseAQuestionDeDroit
@@ -34,6 +34,7 @@ import {
 } from '../../verticales/recouvrement/compagnon/disponibilite';
 import { composerRefus, type Refus } from '../../verticales/recouvrement/compagnon/refus';
 import { lireGestes, type Geste } from '../../verticales/recouvrement/compagnon/gestes';
+import { trierLesPhrases } from '../../verticales/recouvrement/compagnon/tri';
 
 /**
  * LA CONVERSATION — le seul endroit du produit où une question part au modèle.
@@ -286,6 +287,42 @@ async function appelerLeModele(contexte: ContexteDossier, question: string) {
 	}
 }
 
+/** « Où en est Durand ? », « fais le point », « quelle est la situation » : une question d'état. */
+const DEMANDE_D_ETAT = /o[uù] en est|le point|situation|statut|avancement|r[ée]sum/i;
+
+/**
+ * UN ÉCHANGE OÙ PLUME RÉPOND PAR CE QUE LA BASE SAIT, sans le modèle : l'appel n'a
+ * pas abouti. Le gérant lit l'état du dossier plutôt qu'un refus technique.
+ */
+async function consignerEchangeDeSecours(
+	ctx: ActionCtx,
+	creanceId: Id<'creances'>,
+	question: string,
+	{
+		texte,
+		resume,
+		gestes,
+		usage
+	}: {
+		readonly texte: string;
+		readonly resume: readonly string[];
+		readonly gestes: readonly ReturnType<typeof enGesteEcrit>[];
+		readonly usage: Consommation | undefined;
+	}
+): Promise<void> {
+	await ctx.runMutation(internal.recouvrement.conversationLecture.consignerEchange, {
+		creanceId,
+		fil: creanceId,
+		question,
+		reponse: texte,
+		pastilles: [],
+		phrases: [{ texte }],
+		...(gestes.length === 0 ? {} : { gestes: [...gestes] }),
+		etatDuDossier: [...resume],
+		usage
+	});
+}
+
 /** Un geste relu, tel qu'il s'écrit au fil : proposé, en attente du gérant. */
 function enGesteEcrit(geste: Geste) {
 	return {
@@ -379,9 +416,16 @@ export const repondre = authedAction({
 			// usage voyage dans l'erreur. On ne l'écrit pas au compteur, parce
 			// qu'aucun tour ne le porterait à l'écran et que le gérant ne pourrait
 			// pas relier le chiffre à un échange. La reprise du socle le borne.
-			const refus = refusAppelEchoue();
-			await consignerRefus(ctx, creanceId, question, refus, undefined);
-			return enRefus(refus, null, null);
+			//
+			// ⚠️ ET PLUME NE LAISSE PAS LE GÉRANT SANS RÉPONSE : il dit ce qu'il sait
+			// du dossier, depuis la base, sans le modèle.
+			await consignerEchangeDeSecours(ctx, creanceId, question, {
+				texte: 'Je n’ai pas pu formuler de réponse cette fois. Voici où en est le dossier.',
+				resume: lu.resume,
+				gestes: [],
+				usage: undefined
+			});
+			return enRefus(refusAppelEchoue(), null, null);
 		}
 
 		const consommation: Consommation = {
@@ -391,73 +435,60 @@ export const repondre = authedAction({
 			coutEstime: coutDuTour(appel.usage)
 		};
 
-		// ── 5. Les ancres, puis les quatre filtres avant rendu ────────────────
-		let rendu: { phrases: readonly PhraseSourcee[]; texte: string };
-		try {
-			const { sortie, phrases } = lireReponse(appel.doc, ancres);
-			filtrerAvantRendu(sortie);
-			rendu = { phrases, texte: sortie.texte };
-		} catch (erreur) {
-			// ⚠️ LE REFUS PORTE L'USAGE, PARCE QUE L'APPEL A BIEN ÉTÉ FACTURÉ. Une
-			// réponse retenue avant rendu a coûté exactement ce qu'aurait coûté une
-			// réponse rendue ; ne pas la compter ferait qu'un modèle qui déraille
-			// coûte, au compteur, moins cher qu'un modèle qui répond.
-			/*
-			  ⚠️ LE TEXTE EST RETENU, LES GESTES RESTENT (08/10/2026, le fondateur :
-			  « Plume doit être capable de tout faire et ne jamais bloquer »). Un geste
-			  n'est pas une phrase : il est relu à part, contre l'état du dossier, et il
-			  ne se fait qu'au « Confirmer ». Le gérant lit pourquoi la phrase n'est pas
-			  rendue, ET garde de quoi faire avancer son dossier.
-			*/
-			const gestesMalgreTout = lireGestes(appel.doc.gestes ?? [], lu.pourGestes).map(enGesteEcrit);
-			if (erreur instanceof RefusDeRendu) {
-				await consignerRefus(
-					ctx,
-					creanceId,
-					question,
-					erreur.refus,
-					consommation,
-					gestesMalgreTout
-				);
-				return enRefus(erreur.refus, erreur.barriere, erreur.terme);
-			}
-			if (erreur instanceof AncreInconnue) {
-				await consignerRefus(
-					ctx,
-					creanceId,
-					question,
-					erreur.refus,
-					consommation,
-					gestesMalgreTout
-				);
-				return enRefus(erreur.refus, 'ANCRE', erreur.reference);
-			}
-			const refus = refusAppelEchoue();
-			await consignerRefus(ctx, creanceId, question, refus, consommation);
-			return enRefus(refus, null, null);
-		}
-
-		// ── 5 bis. Les gestes proposés, relus contre l'état du dossier ─────────
+		// ── 5. Les gestes proposés, relus contre l'état du dossier ────────────
 		// Le modèle choisit un genre et remplit des champs ; `lireGestes` écarte tout
 		// ce que l'état du dossier rend impossible. Rien ne se fait ici : chaque geste
-		// attend le « Confirmer » du gérant (`gestesPlume.confirmer`).
+		// attend le « Confirmer » du gérant (`gestesPlume.confirmer`). Ils restent
+		// même quand aucune phrase n'est rendue : Plume ne laisse jamais sans issue.
 		const gestes = lireGestes(appel.doc.gestes ?? [], lu.pourGestes).map(enGesteEcrit);
 
-		// ── 6. Les deux tours, écrits ensemble ────────────────────────────────
+		// ── 6. Les ancres, puis les filtres, PHRASE PAR PHRASE (`compagnon/tri.ts`) ─
+		// ⚠️ UNE SOURCE INVENTÉE FAIT TOUJOURS TOMBER TOUT LE TEXTE : un identifiant de
+		// décompte forgé ancrerait un montant forgé. Mais le gérant ne lit plus un mur :
+		// il lit ce que la base sait du dossier, et garde les gestes proposés.
+		let lues: readonly PhraseSourcee[];
+		try {
+			lues = lireReponse(appel.doc, ancres).phrases;
+		} catch (erreur) {
+			if (!(erreur instanceof AncreInconnue)) throw erreur;
+			lues = [];
+		}
+		const { gardees, retenues } = trierLesPhrases(lues);
+		const demandeOuEnEst = DEMANDE_D_ETAT.test(question);
+		const rendues: readonly PhraseSourcee[] =
+			gardees.length > 0
+				? gardees
+				: [
+						{
+							texte:
+								'Je préfère ne rien avancer que je ne puisse prouver. Voici où en est le dossier.',
+							genreSource: 'AUCUNE',
+							reference: ''
+						}
+					];
+		/*
+		  LE RÉSUMÉ DU DOSSIER, composé par le logiciel, se joint quand on demande où en
+		  est le dossier, ou quand une phrase n'a pas pu être rendue : la question a
+		  toujours une réponse, même quand la phrase de Plume tombe.
+		*/
+		const etatDuDossier = demandeOuEnEst || retenues.length > 0 || gardees.length === 0;
+
+		// ── 7. Les deux tours, écrits ensemble ────────────────────────────────
 		await ctx.runMutation(internal.recouvrement.conversationLecture.consignerEchange, {
 			creanceId,
 			fil: creanceId,
 			question,
-			reponse: rendu.texte,
-			pastilles: pastillesDe(rendu.phrases),
-			phrases: phrasesDe(rendu.phrases),
+			reponse: rendues.map((phrase) => phrase.texte).join(' '),
+			pastilles: pastillesDe(rendues),
+			phrases: phrasesDe(rendues),
 			gestes,
+			...(etatDuDossier ? { etatDuDossier: lu.resume } : {}),
 			usage: consommation
 		});
 
 		return {
 			genre: 'REPONSE',
-			phrases: rendu.phrases.map((phrase) => ({
+			phrases: rendues.map((phrase) => ({
 				texte: phrase.texte,
 				genreSource: phrase.genreSource,
 				reference: phrase.reference

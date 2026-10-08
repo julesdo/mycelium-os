@@ -1566,6 +1566,13 @@ export const recouvrementTables = {
 		 */
 		gestes: v.optional(v.array(vGestePropose)),
 		/**
+		 * OÙ EN EST LE DOSSIER, COMPOSÉ PAR LE LOGICIEL, PAS PAR LE MODÈLE (08/10/2026).
+		 * Plume le joint à sa réponse quand on lui demande où en est le dossier, ou
+		 * quand une de ses phrases n'a pas pu être rendue faute de source : il ne
+		 * laisse jamais le gérant sans réponse. Ce sont les faits de la base, en clair.
+		 */
+		etatDuDossier: v.optional(v.array(v.string())),
+		/**
 		 * Ce que ce tour a consommé. Renseigné sur les tours du compagnon.
 		 *
 		 * ⚠️ `coutEstime` EST UN BUDGET DE PILOTAGE, EN DOLLARS, ET JAMAIS UN

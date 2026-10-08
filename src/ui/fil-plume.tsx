@@ -429,3 +429,25 @@ export function PageConversation({
 		</div>
 	);
 }
+
+/**
+ * OÙ EN EST LE DOSSIER — ce que Plume joint à sa réponse, composé par le logiciel
+ * depuis la base (pas par le modèle) : quand on lui demande où en est le dossier, ou
+ * quand une de ses phrases n'a pas pu être rendue. La question a toujours une réponse.
+ */
+export function CarteEtatDuDossier({ lignes }: { readonly lignes: readonly string[] }) {
+	if (lignes.length === 0) return null;
+	return (
+		<div className="verre-carte flex flex-col gap-2 rounded-cladd-xl p-3.5">
+			<p className="text-cladd-2xs font-semibold text-cladd-fg-soft">Où en est le dossier</p>
+			<ul className="flex flex-col gap-1.5">
+				{lignes.map((ligne) => (
+					<li key={ligne} className="flex gap-2 text-cladd-xs leading-snug">
+						<span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-cladd-fg-soft" />
+						<span className="min-w-0">{ligne}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	);
+}
