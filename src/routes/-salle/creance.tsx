@@ -1014,7 +1014,24 @@ const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
 				{ cle: 'SECOND_RAPPEL', nom: 'Deuxième rappel', le: '2026-10-24', automatique: true }
 			],
 			envoiAutomatique: true,
-			reponse: REPONSE_DEMO
+			reponse: REPONSE_DEMO,
+			onClasserLeDossier: () => Promise.resolve(true)
+		} satisfies CreanceOuverte;
+	})(),
+	/* Classé par le gérant : le bandeau dit pourquoi, et le geste qui le rouvre. */
+	'dossier classé': (() => {
+		const base = creanceDemo({});
+		return {
+			...base,
+			santeDebiteur: 'SAINE',
+			situations: [],
+			courriers: { ...base.courriers, envois: [] },
+			classement: {
+				libelle: 'Geste commercial : vous renoncez à cette somme',
+				le: '2026-09-03',
+				note: 'Client historique, commande en cours'
+			},
+			onRouvrirLeDossier: () => undefined
 		} satisfies CreanceOuverte;
 	})(),
 	/* Un paiement en trois fois : le premier versement reçu, le deuxième attendu. */

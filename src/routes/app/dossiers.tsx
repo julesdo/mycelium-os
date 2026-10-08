@@ -100,6 +100,7 @@ function PageDossiers() {
 				...(d.dernierCourrierLe === undefined ? {} : { dernierCourrierLe: d.dernierCourrierLe }),
 				courrierAValider: d.courrierAValider,
 				aDemarrer: d.aDemarrer,
+				classe: d.classe,
 				professionnelDesigne: d.professionnelDesigne,
 				...(d.prochaineEtape === undefined
 					? {}

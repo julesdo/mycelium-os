@@ -16,6 +16,7 @@ import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/fran
 import { prescriptionDe } from '../../verticales/recouvrement/pays/france/prescription';
 import type { SecteurCreance } from '../../verticales/recouvrement/pays/france/prescription';
 import { estDateReelle } from '../../verticales/recouvrement/calendrier';
+import { dossiersClasses } from './classement';
 import { ajouterJours } from '../../verticales/recouvrement/calendrier';
 
 /**
@@ -135,8 +136,11 @@ async function facturesPour(
 	);
 
 	const preparees: FacturePourRevelation[] = [];
+	// Ce que le gérant a classé n'est plus « ce qui vous est dû » (`classement.ts`).
+	const classes = await dossiersClasses(ctx, organizationId);
 
 	for (const facture of brutes) {
+		if (facture.creanceId !== undefined && classes.has(facture.creanceId)) continue;
 		const depart = departDe(facture);
 		const debiteur = debiteurs.get(facture.debiteurId);
 		const secteur: SecteurCreance = debiteur?.secteur ?? 'INDETERMINE';

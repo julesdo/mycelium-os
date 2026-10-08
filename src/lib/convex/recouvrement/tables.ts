@@ -901,6 +901,24 @@ export const recouvrementTables = {
 		 * ouvre lui-même, le sont d'emblée.
 		 */
 		aDemarrer: v.optional(v.boolean()),
+		/**
+		 * LE DOSSIER CLASSÉ PAR LE GÉRANT, et pourquoi (`classement.ts`, 08/10/2026).
+		 * Présent si et seulement si `statut` vaut `CLOSE` par son geste : rouvrir
+		 * rend le statut d'avant.
+		 */
+		classement: v.optional(
+			v.object({
+				motif: v.union(
+					v.literal('GESTE_COMMERCIAL'),
+					v.literal('IRRECOUVRABLE'),
+					v.literal('ERREUR'),
+					v.literal('AUTRE')
+				),
+				le: v.string(),
+				note: v.optional(v.string()),
+				statutAvant: v.union(v.literal('BROUILLON'), v.literal('QUALIFIEE'), v.literal('ENGAGEE'))
+			})
+		),
 		creeLe: v.number()
 	})
 		.index('by_org', ['organizationId'])

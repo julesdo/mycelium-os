@@ -5,6 +5,9 @@ import type { FicheParametre } from '../lib/verticales/recouvrement/referentiel'
 import {
 	ApercuDuSuivi,
 	Avatar,
+	BandeauDossierClasse,
+	FeuilleClassement,
+	type MotifClassement,
 	FeuilleEcheancier,
 	FeuilleReponseClient,
 	SuiviEcheancier,
@@ -280,6 +283,13 @@ export interface CreanceOuverte {
 	 * échéancier), l'échéancier qui court, et les gestes. Absent : la page ne
 	 * propose pas la question (la salle d'exposition, un dossier réglé).
 	 */
+	/**
+	 * LE DOSSIER CLASSÉ PAR LE GÉRANT (08/10/2026), et les deux gestes : classer,
+	 * rouvrir. Absents : la page ne propose ni l'un ni l'autre.
+	 */
+	readonly classement?: { readonly libelle: string; readonly le: string; readonly note?: string };
+	readonly onClasserLeDossier?: (motif: MotifClassement, note?: string) => Promise<boolean>;
+	readonly onRouvrirLeDossier?: () => void;
 	readonly reponse?: {
 		readonly resteDu: bigint;
 		readonly echeancier: EcheancierAffiche | null;
@@ -415,6 +425,7 @@ export function EcranCreance({
 	const deuxVolets = useDeuxVolets();
 	const [reponseOuverte, setReponseOuverte] = useState(false);
 	const [echeancierOuvert, setEcheancierOuvert] = useState(false);
+	const [classementOuvert, setClassementOuvert] = useState(false);
 
 	/**
 	 * LES PANNEAUX OUVERTS — aucun à l'arrivée.
@@ -485,6 +496,17 @@ export function EcranCreance({
 
 					<EnTeteCreance creance={pret} />
 
+					{pret.classement === undefined ? null : (
+						<BandeauDossierClasse
+							libelle={pret.classement.libelle}
+							le={pret.classement.le}
+							{...(pret.classement.note === undefined ? {} : { note: pret.classement.note })}
+							{...(pret.onRouvrirLeDossier === undefined
+								? {}
+								: { onRouvrir: pret.onRouvrirLeDossier })}
+						/>
+					)}
+
 					{/*
 					  ⚠️ CE QUI CHANGE LA DONNE PASSE AVANT L'ÉTAT. Une procédure
 					  collective suspend les relances : lire « Relancer » avant de lire
@@ -540,7 +562,9 @@ export function EcranCreance({
 					<CarteDeLEtat
 						creance={pret}
 						onOuvrir={ouvrir}
-						{...(pret.reponse === undefined || pret.etapes.etape === 'REGLE'
+						{...(pret.reponse === undefined ||
+						pret.etapes.etape === 'REGLE' ||
+						pret.classement !== undefined
 							? {}
 							: { onReponse: () => setReponseOuverte(true) })}
 					/>
@@ -569,7 +593,27 @@ export function EcranCreance({
 							avatar={<Avatar nom={pret.debiteur} className="size-8" />}
 						/>
 					</ListeDeRangees>
+
+					{/* CLASSER, EN DERNIER ET EN TEXTE : une décision rare, jamais le geste du jour. */}
+					{pret.onClasserLeDossier === undefined || pret.classement !== undefined ? null : (
+						<BoutonTexte className="self-center" onClick={() => setClassementOuvert(true)}>
+							Classer ce dossier
+						</BoutonTexte>
+					)}
 				</SectionsDepliables>
+			)}
+
+			{pret === null || pret.onClasserLeDossier === undefined ? null : (
+				<FeuilleClassement
+					ouverte={classementOuvert}
+					onFermer={() => setClassementOuvert(false)}
+					debiteurId={pret.debiteurId}
+					onClasser={(motif, note) => {
+						void pret.onClasserLeDossier?.(motif, note).then((fait) => {
+							if (fait) setClassementOuvert(false);
+						});
+					}}
+				/>
 			)}
 
 			{pret === null || pret.reponse === undefined ? null : (
@@ -713,7 +757,7 @@ function etatEnClair(creance: CreanceOuverte): { titre: string; sousTitre: strin
 function gesteDuDossier(
 	creance: CreanceOuverte
 ): { readonly libelle: string; readonly ouvre: SectionCreance } | null {
-	if (creance.etapes.etape === 'REGLE') return null;
+	if (creance.etapes.etape === 'REGLE' || creance.classement !== undefined) return null;
 
 	const aValider = creance.courriers.envois.filter((e) => e.etat === 'A_VALIDER').length;
 	if (aValider > 0) {
@@ -771,6 +815,13 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 	const client = creance.debiteur;
 	const quand = (le: string) =>
 		le <= creance.aujourdHui ? 'aujourd’hui' : dateRelative(le, creance.aujourdHui);
+	if (creance.classement !== undefined) {
+		return {
+			humeur: 'repos',
+			phrase: 'Vous avez classé ce dossier : je ne le relance plus.',
+			siRienNeBouge: null
+		};
+	}
 	if (creance.etapes.etape === 'REGLE') {
 		return { humeur: 'content', phrase: 'C’est réglé : tout est payé.', siRienNeBouge: null };
 	}

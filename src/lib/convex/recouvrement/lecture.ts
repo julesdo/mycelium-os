@@ -32,6 +32,7 @@ import {
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
 import { planDuDossier } from './plan';
+import { LIBELLE_MOTIF } from './classement';
 import { professionnelsDe, vCleFaitLitige, vEtatCritere, vSecteurCreance } from './tables';
 
 /**
@@ -346,6 +347,15 @@ export const creanceComplete = authedQuery({
 		aDemarrer: v.boolean(),
 		/** Le gérant a retiré ce client du pilote : Plume suit ses dates sans le relancer. */
 		horsPilote: v.boolean(),
+		/** Classé par le gérant : pourquoi, et quand (`classement.ts`). */
+		classement: v.optional(
+			v.object({
+				motif: v.string(),
+				libelle: v.string(),
+				le: v.string(),
+				note: v.optional(v.string())
+			})
+		),
 		debiteur: v.string(),
 		/**
 		 * QUI FAIT L'ACTE, PAR SON IDENTIFIANT — et pas par son nom.
@@ -634,6 +644,16 @@ export const creanceComplete = authedQuery({
 			statut: creance.statut,
 			aDemarrer: creance.aDemarrer === true,
 			horsPilote: debiteur?.horsPilote === true,
+			...(creance.classement === undefined
+				? {}
+				: {
+						classement: {
+							motif: creance.classement.motif,
+							libelle: LIBELLE_MOTIF[creance.classement.motif] ?? creance.classement.motif,
+							le: creance.classement.le,
+							...(creance.classement.note === undefined ? {} : { note: creance.classement.note })
+						}
+					}),
 			debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 			intervenantId: professionnelsDe(creance)[0] ?? null,
 			intervenantIds: professionnelsDe(creance),
@@ -1074,6 +1094,8 @@ export const indexDossiers = authedQuery({
 			debiteur: v.string(),
 			debiteurId: v.id('debiteurs'),
 			statut: v.string(),
+			/** Classé par le gérant : il quitte les groupes du fil pour « Classés ». */
+			classe: v.boolean(),
 			etape: v.union(
 				v.literal('PRET'),
 				v.literal('ON_LUI_ECRIT'),
@@ -1176,6 +1198,7 @@ export const indexDossiers = authedQuery({
 					debiteur: debiteur?.denomination ?? 'Client inconnu',
 					debiteurId: creance.debiteurId,
 					statut: creance.statut,
+					classe: creance.statut === 'CLOSE',
 					etape,
 					...(plan === null
 						? {}

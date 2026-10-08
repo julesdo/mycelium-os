@@ -24,6 +24,7 @@ import {
 	type SecteurCreance
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
+import { dossiersClasses } from './classement';
 
 /**
  * Le flux d'événements — ce qui donne une raison d'ouvrir le produit.
@@ -269,9 +270,12 @@ async function assembler(
 
 	const hypotheses = new Set<string>();
 	const factures: FactureSurveillee[] = [];
+	// Un dossier que le gérant a classé ne lève plus d'alerte (`classement.ts`).
+	const classes = await dossiersClasses(ctx, organizationId);
 
 	for (const facture of facturesBrutes) {
 		if (facture.statutPaiement === 'SOLDEE') continue;
+		if (facture.creanceId !== undefined && classes.has(facture.creanceId)) continue;
 
 		const debiteur = debiteurs.get(facture.debiteurId);
 		const secteur: SecteurCreance = debiteur?.secteur ?? 'INDETERMINE';
@@ -343,19 +347,21 @@ async function assembler(
 		);
 	}
 
-	const creances = creancesBrutes.map((creance) => ({
-		// ⚠️ LA RÉFÉRENCE PORTAIT L'IDENTIFIANT CONVEX DE LA CRÉANCE, qui s'affichait
-		// tel quel dans la file : une suite de trente-deux caractères que personne
-		// ne peut rattacher à un client. Le nom du débiteur est ce que le gérant
-		// reconnaît, et la table est en main juste au-dessus.
-		reference: debiteurs.get(creance.debiteurId)?.denomination ?? 'Débiteur inconnu',
-		id: creance._id as string,
-		// Le client, pour que la cible `CREANCE` dise de qui elle parle. La
-		// dénomination juste au-dessus s'affiche ; elle ne se rapproche pas.
-		debiteurId: creance.debiteurId as string,
-		total: totalParCreance.get(creance._id) ?? ZERO,
-		statut: creance.statut
-	}));
+	const creances = creancesBrutes
+		.filter((creance) => creance.statut !== 'CLOSE')
+		.map((creance) => ({
+			// ⚠️ LA RÉFÉRENCE PORTAIT L'IDENTIFIANT CONVEX DE LA CRÉANCE, qui s'affichait
+			// tel quel dans la file : une suite de trente-deux caractères que personne
+			// ne peut rattacher à un client. Le nom du débiteur est ce que le gérant
+			// reconnaît, et la table est en main juste au-dessus.
+			reference: debiteurs.get(creance.debiteurId)?.denomination ?? 'Débiteur inconnu',
+			id: creance._id as string,
+			// Le client, pour que la cible `CREANCE` dise de qui elle parle. La
+			// dénomination juste au-dessus s'affiche ; elle ne se rapproche pas.
+			debiteurId: creance.debiteurId as string,
+			total: totalParCreance.get(creance._id) ?? ZERO,
+			statut: creance.statut
+		}));
 
 	/**
 	 * ⚠️ LES ÉCHÉANCES DE PROCÉDURE VIENNENT DE LA MACHINE À ÉTATS, PLUS DE LA

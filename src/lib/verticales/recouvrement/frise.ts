@@ -50,6 +50,8 @@ export const INTITULE_DU_FAIT: Readonly<Record<string, string>> = {
 	DOSSIER_DEMARRE_GUIDE: 'Vous avez démarré le dossier avec Plume',
 	GESTE_RELANCER: 'Plume a préparé une relance, à votre demande',
 	GESTE_RAPPEL: 'Vous avez posé un rappel',
+	DOSSIER_CLASSE: 'Vous avez classé le dossier',
+	DOSSIER_ROUVERT: 'Vous avez rouvert le dossier',
 	GESTE_PROMESSE: 'Vous avez noté une promesse de paiement',
 	GESTE_NOTE: 'Vous avez noté quelque chose',
 	GESTE_EMAIL: 'Vous avez enregistré son adresse',

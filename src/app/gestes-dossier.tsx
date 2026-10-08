@@ -53,6 +53,8 @@ export function useGestesDeDossier() {
 	const noter = useMutation(api.recouvrement.suivi.noter);
 	const convenir = useMutation(api.recouvrement.parole.convenirEcheancier);
 	const arreter = useMutation(api.recouvrement.parole.arreterEcheancier);
+	const classerLeDossier = useMutation(api.recouvrement.classement.classer);
+	const rouvrirLeDossier = useMutation(api.recouvrement.classement.rouvrir);
 	const toast = useToast();
 
 	/** Composer la lettre de relance d'un dossier et la poser à valider. */
@@ -182,5 +184,40 @@ export function useGestesDeDossier() {
 		}
 	}
 
-	return { relancer, rappeler, promettre, convenirEcheancier, arreterEcheancier };
+	/** CLASSER UN DOSSIER — rien n'est effacé ; il se rouvre d'un toucher. */
+	async function classer(
+		creanceId: string,
+		motif: 'GESTE_COMMERCIAL' | 'IRRECOUVRABLE' | 'ERREUR' | 'AUTRE',
+		note?: string
+	): Promise<boolean> {
+		try {
+			await classerLeDossier({
+				creanceId: creanceId as Id<'creances'>,
+				motif,
+				...(note === undefined ? {} : { note })
+			});
+			toast({
+				title: 'Dossier classé',
+				text: 'Les relances s’arrêtent, et il quitte vos alertes. Il se rouvre depuis sa page.'
+			});
+			return true;
+		} catch (e) {
+			toast({ title: 'Dossier non classé', text: messageDuRefus(e) });
+			return false;
+		}
+	}
+
+	async function rouvrir(creanceId: string) {
+		try {
+			await rouvrirLeDossier({ creanceId: creanceId as Id<'creances'> });
+			toast({
+				title: 'Dossier rouvert',
+				text: 'Il reprend sa place, et le plan de relance aussi.'
+			});
+		} catch (e) {
+			toast({ title: 'Dossier non rouvert', text: messageDuRefus(e) });
+		}
+	}
+
+	return { relancer, rappeler, promettre, convenirEcheancier, arreterEcheancier, classer, rouvrir };
 }

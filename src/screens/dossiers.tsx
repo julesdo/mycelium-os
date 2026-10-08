@@ -91,6 +91,8 @@ export interface DossierDeLIndex {
 	readonly courrierAValider: boolean;
 	/** Préparé par Plume, pas encore démarré : rien ne part avant. */
 	readonly aDemarrer?: boolean;
+	/** Classé par le gérant : il quitte les groupes du fil pour « Classés », en dernier. */
+	readonly classe?: boolean;
 	readonly professionnelDesigne: boolean;
 	/**
 	 * L'échéance de procédure la plus proche, pour un dossier au tribunal.
@@ -198,6 +200,7 @@ function resumeDe(
 			famille: 'TEMPS'
 		};
 	}
+	if (dossier.classe === true) return { ligne: 'Classé' };
 	if (dossier.courrierAValider) return { ligne: 'Un courrier à valider', famille: 'ENVOI' };
 	// Préparé par Plume : rien ne part tant que le gérant ne l'a pas démarré.
 	if (dossier.aDemarrer === true) return { ligne: 'Prêt à démarrer', famille: 'QUESTION' };
@@ -249,6 +252,7 @@ function resumeDe(
 
 /** Un dossier à qui l'on peut encore écrire une lettre de relance. */
 function relancable(dossier: DossierDeLIndex): boolean {
+	if (dossier.classe === true) return false;
 	return dossier.etape === 'PRET' || dossier.etape === 'ON_LUI_ECRIT';
 }
 
@@ -338,10 +342,18 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 			(!enSelection || relancable(d))
 	);
 
-	const groupes = ORDRE.map((cle) => ({
-		cle,
-		dossiers: visibles.filter((d) => d.etape === cle)
-	})).filter((groupe) => groupe.dossiers.length > 0);
+	/*
+	  ⚠️ LES DOSSIERS CLASSÉS EN DERNIER, DANS LEUR PROPRE GROUPE, SANS TOTAL
+	  (08/10/2026). Le gérant y a renoncé ou n'y croit plus : les compter avec ce
+	  qu'il attend gonflerait chaque en-tête d'une somme qui ne viendra pas.
+	*/
+	const groupes = [
+		...ORDRE.map((cle) => ({
+			cle: cle as EtapeDossier | 'CLASSE',
+			dossiers: visibles.filter((d) => d.etape === cle && d.classe !== true)
+		})),
+		{ cle: 'CLASSE' as const, dossiers: visibles.filter((d) => d.classe === true) }
+	].filter((groupe) => groupe.dossiers.length > 0);
 
 	const choisis = [...selection].filter((id) => visibles.some((d) => d._id === id));
 	const peutSelectionner = dossiers.some(relancable);
@@ -503,12 +515,13 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 						{groupes.map((groupe) => (
 							<section key={groupe.cle} className="flex flex-col gap-cladd-3xs">
 								<EnTeteDeGroupe
-									libelle={LIBELLE_GROUPE[groupe.cle]}
+									libelle={groupe.cle === 'CLASSE' ? 'Classés' : LIBELLE_GROUPE[groupe.cle]}
 									nombre={groupe.dossiers.length}
 									// Un total de dossiers réglés vaut zéro par construction : un
-									// cadran à zéro, que la règle d'écran n° 4 interdit.
+									// cadran à zéro, que la règle d'écran n° 4 interdit. Celui des
+									// classés ne se compte pas : il ne viendra pas.
 									total={
-										groupe.cle === 'REGLE'
+										groupe.cle === 'REGLE' || groupe.cle === 'CLASSE'
 											? null
 											: groupe.dossiers.reduce((s, d) => s + d.principalRestantDu, 0n)
 									}

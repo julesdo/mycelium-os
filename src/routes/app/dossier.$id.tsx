@@ -861,6 +861,22 @@ function PageCreance() {
 		  « IL VOUS A RÉPONDU ? » (08/10/2026) : sa promesse, un paiement en plusieurs
 		  fois, et l'échéancier qui court, notés d'un geste et confirmés d'un mot.
 		*/
+		/* CLASSER ET ROUVRIR (08/10/2026) : le motif, ou le geste qui rend le dossier. */
+		...(creance.classement === undefined
+			? {
+					onClasserLeDossier: (
+						motif: 'GESTE_COMMERCIAL' | 'IRRECOUVRABLE' | 'ERREUR' | 'AUTRE',
+						note?: string
+					) => gestesParole.classer(creanceId, motif, note)
+				}
+			: {
+					classement: {
+						libelle: creance.classement.libelle,
+						le: creance.classement.le,
+						...(creance.classement.note === undefined ? {} : { note: creance.classement.note })
+					},
+					onRouvrirLeDossier: () => void gestesParole.rouvrir(creanceId)
+				}),
 		...(parole === undefined || parole === null
 			? {}
 			: {
