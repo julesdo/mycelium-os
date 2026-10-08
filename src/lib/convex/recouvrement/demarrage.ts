@@ -147,9 +147,10 @@ const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * tant que le gérant n'a pas appuyé sur « Démarrer » : on peut revenir sur une
  * réponse, quitter, recommencer, sans rien laisser à moitié écrit.
  *
- * ⚠️ UNE CONTESTATION SORT LE CLIENT DU PILOTE. Une facture contestée se règle en
- * parlant avec le client, pas par des rappels automatiques : Plume le dit dans le
- * fil avant le démarrage, et le dossier démarre sans relance automatique.
+ * ⚠️ UNE CONTESTATION NE BLOQUE RIEN (décision du fondateur, 08/10/2026 : « on ne
+ * devrait pas bloquer »). Elle est notée au dossier, et le dossier démarre comme les
+ * autres : Plume le suit et le relance selon le plan. Le gérant qui préfère garder
+ * ce client en main le retire du pilote, d'un geste ou d'une phrase à Plume.
  */
 export const demarrer = authedMutation({
 	args: {
@@ -262,7 +263,6 @@ export const demarrer = authedMutation({
 			reponse: args.avoir,
 			aujourdHui
 		});
-		if (args.contestation === 'OUI') await ctx.db.patch(debiteur._id, { horsPilote: true });
 		if (args.promesse !== undefined) {
 			if (!dateDuCalendrier(args.promesse.date) || args.promesse.montant <= 0n) {
 				throw new ConvexError('Cette promesse est incomplète : il manque son jour ou son montant.');

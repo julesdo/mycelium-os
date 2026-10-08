@@ -34,7 +34,11 @@ export const GENRES_GESTE = [
 	'RETIRER_DU_PILOTE',
 	'REMETTRE_AU_PILOTE',
 	'RETENIR',
-	'OUVRIR'
+	'OUVRIR',
+	'CONTESTATION',
+	'ARRETER_DECOMPTE',
+	'LIEN_PAIEMENT',
+	'REMISE_CONSEIL'
 ] as const;
 export type GenreGeste = (typeof GENRES_GESTE)[number];
 
@@ -76,6 +80,16 @@ export interface EtatPourGestes {
 	readonly horsPilote: boolean;
 	readonly relanceProgrammee: boolean;
 	readonly emailConnu: string | null;
+	/** Le gérant a déclaré que le client conteste : c'est noté, et rien ne s'arrête. */
+	readonly contestationDeclaree: boolean;
+	/** Un décompte a déjà été arrêté sur ce dossier : la page de paiement et la remise en ont besoin. */
+	readonly decompteArrete: boolean;
+	/** Votre IBAN est renseigné : la page de paiement dit où payer. */
+	readonly ibanConnu: boolean;
+	/** Une remise au conseil est déjà déclarée et suivie. */
+	readonly remiseEnCours: boolean;
+	/** Le dossier n'est ni classé ni réglé : son décompte peut s'arrêter. */
+	readonly arretable: boolean;
 }
 
 /** Au plus tant de gestes par réponse : au-delà, la réponse redevient un formulaire. */
@@ -130,6 +144,25 @@ function relire(brut: GesteBrut, etat: EtatPourGestes): Geste | null {
 			return (ECRANS_OUVRABLES as readonly string[]).includes(texte)
 				? { genre: 'OUVRIR', texte }
 				: null;
+		case 'CONTESTATION': {
+			// ⚠️ NOTER UNE CONTESTATION NE BLOQUE RIEN : c'est un fait du dossier, pas un verrou.
+			const conteste = texte.toUpperCase() !== 'NON';
+			if (conteste === etat.contestationDeclaree) return null;
+			return { genre: 'CONTESTATION', texte: conteste ? 'OUI' : 'NON' };
+		}
+		case 'ARRETER_DECOMPTE':
+			return etat.arretable ? { genre: 'ARRETER_DECOMPTE' } : null;
+		case 'LIEN_PAIEMENT':
+			return etat.decompteArrete && etat.ibanConnu ? { genre: 'LIEN_PAIEMENT' } : null;
+		case 'REMISE_CONSEIL': {
+			if (!etat.decompteArrete || etat.remiseEnCours) return null;
+			const le = dateDuCalendrier(date) && date <= etat.aujourdHui ? date : etat.aujourdHui;
+			return {
+				genre: 'REMISE_CONSEIL',
+				date: le,
+				...(texte === '' ? {} : { texte: texte.slice(0, 300) })
+			};
+		}
 	}
 }
 
@@ -235,6 +268,39 @@ export function decrireGeste(geste: Geste): {
 			return {
 				titre: TITRE_ECRAN[(geste.texte ?? 'FICHE_CLIENT') as EcranOuvrable] ?? 'Ouvrir',
 				confirmer: 'Ouvrir'
+			};
+		case 'CONTESTATION':
+			return geste.texte === 'NON'
+				? {
+						titre: 'Noter qu’il ne conteste plus',
+						detail: 'Le dossier garde la trace de la contestation et de sa fin.',
+						confirmer: 'Noter'
+					}
+				: {
+						titre: 'Noter que votre client conteste',
+						detail:
+							'C’est noté au dossier, et rien ne s’arrête : je continue de le suivre et de le relancer, sauf si vous me demandez de le garder en main.',
+						confirmer: 'Noter'
+					};
+		case 'ARRETER_DECOMPTE':
+			return {
+				titre: 'Arrêter le décompte à aujourd’hui',
+				detail:
+					'En confirmant, vous affirmez qu’aucun avoir n’est à déduire et que tous ses règlements sont importés. Un décompte arrêté ne se modifie plus.',
+				confirmer: 'Arrêter le décompte'
+			};
+		case 'LIEN_PAIEMENT':
+			return {
+				titre: 'Ouvrir sa page de paiement',
+				detail:
+					'Une page à votre nom, avec le dernier décompte arrêté et votre IBAN : il paie depuis sa banque.',
+				confirmer: 'Ouvrir la page'
+			};
+		case 'REMISE_CONSEIL':
+			return {
+				titre: `Noter la remise à votre conseil, ${jourEnClair(geste.date ?? '')}`,
+				detail: `Avec le dernier décompte arrêté. Je suis la remise et ses dates.${geste.texte === undefined ? '' : ` Ce que vous attendez : « ${geste.texte} ».`}`,
+				confirmer: 'Noter la remise'
 			};
 	}
 }

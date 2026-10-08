@@ -229,7 +229,8 @@ async function consignerRefus(
 	creanceId: Id<'creances'>,
 	question: string,
 	refus: Refus,
-	usage: Consommation | undefined
+	usage: Consommation | undefined,
+	gestes: readonly ReturnType<typeof enGesteEcrit>[] = []
 ): Promise<void> {
 	await ctx.runMutation(internal.recouvrement.conversationLecture.consignerEchange, {
 		creanceId,
@@ -237,6 +238,7 @@ async function consignerRefus(
 		question,
 		reponse: [refus.peutFaire, refus.constat, ...refus.blocages, refus.coutDeLAttente].join(' '),
 		pastilles: [],
+		...(gestes.length === 0 ? {} : { gestes: [...gestes] }),
 		usage
 	});
 }
@@ -400,12 +402,34 @@ export const repondre = authedAction({
 			// réponse retenue avant rendu a coûté exactement ce qu'aurait coûté une
 			// réponse rendue ; ne pas la compter ferait qu'un modèle qui déraille
 			// coûte, au compteur, moins cher qu'un modèle qui répond.
+			/*
+			  ⚠️ LE TEXTE EST RETENU, LES GESTES RESTENT (08/10/2026, le fondateur :
+			  « Plume doit être capable de tout faire et ne jamais bloquer »). Un geste
+			  n'est pas une phrase : il est relu à part, contre l'état du dossier, et il
+			  ne se fait qu'au « Confirmer ». Le gérant lit pourquoi la phrase n'est pas
+			  rendue, ET garde de quoi faire avancer son dossier.
+			*/
+			const gestesMalgreTout = lireGestes(appel.doc.gestes ?? [], lu.pourGestes).map(enGesteEcrit);
 			if (erreur instanceof RefusDeRendu) {
-				await consignerRefus(ctx, creanceId, question, erreur.refus, consommation);
+				await consignerRefus(
+					ctx,
+					creanceId,
+					question,
+					erreur.refus,
+					consommation,
+					gestesMalgreTout
+				);
 				return enRefus(erreur.refus, erreur.barriere, erreur.terme);
 			}
 			if (erreur instanceof AncreInconnue) {
-				await consignerRefus(ctx, creanceId, question, erreur.refus, consommation);
+				await consignerRefus(
+					ctx,
+					creanceId,
+					question,
+					erreur.refus,
+					consommation,
+					gestesMalgreTout
+				);
 				return enRefus(erreur.refus, 'ANCRE', erreur.reference);
 			}
 			const refus = refusAppelEchoue();

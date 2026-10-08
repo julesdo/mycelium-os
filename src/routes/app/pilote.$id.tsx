@@ -5,6 +5,10 @@ import { useToast } from '@cladd-ui/react';
 import {
 	AlarmClockIcon,
 	ArrowUpRightIcon,
+	BriefcaseIcon,
+	LinkIcon,
+	LockIcon,
+	MessageSquareWarningIcon,
 	HandCoinsIcon,
 	HandIcon,
 	MailIcon,
@@ -26,8 +30,7 @@ import {
 	dateRelative,
 	eurosCentimes,
 	pluriel,
-	type EtapeDeTravail,
-	type RefusAffiche
+	type EtapeDeTravail
 } from '../../ui';
 
 /**
@@ -66,7 +69,11 @@ const ICONE_DU_GESTE: Readonly<Record<GenreGeste, ReactNode>> = {
 	RETIRER_DU_PILOTE: <UserMinusIcon />,
 	REMETTRE_AU_PILOTE: <UserCheckIcon />,
 	RETENIR: <HandIcon />,
-	OUVRIR: <ArrowUpRightIcon />
+	OUVRIR: <ArrowUpRightIcon />,
+	CONTESTATION: <MessageSquareWarningIcon />,
+	ARRETER_DECOMPTE: <LockIcon />,
+	LIEN_PAIEMENT: <LinkIcon />,
+	REMISE_CONSEIL: <BriefcaseIcon />
 };
 
 /** Le temps qu'une étape reste affichée avant que la suivante commence. */
@@ -87,7 +94,6 @@ function ConversationDuDossier() {
 
 	const [question, setQuestion] = useState(recherche.question ?? '');
 	const [envoyee, setEnvoyee] = useState<string | null>(null);
-	const [refusDuTour, setRefusDuTour] = useState<RefusAffiche | null>(null);
 	const [panne, setPanne] = useState<string | null>(null);
 	const [etape, setEtape] = useState(0);
 	const enCours = envoyee !== null;
@@ -95,14 +101,13 @@ function ConversationDuDossier() {
 	async function demander(texte: string) {
 		const posee = texte.trim();
 		if (posee === '' || envoyee !== null) return;
-		setRefusDuTour(null);
 		setPanne(null);
 		setEtape(0);
 		setEnvoyee(posee);
 		setQuestion('');
 		try {
-			const reponse = await demanderAPlume({ creanceId, question: posee });
-			if (reponse.genre === 'REFUS') setRefusDuTour(reponse.refus);
+			// Un refus s'inscrit au fil, avec les gestes proposés malgré tout : il se lit là.
+			await demanderAPlume({ creanceId, question: posee });
 		} catch (e) {
 			// Une panne de transport n'est pas un refus du domaine : elle se dit telle quelle.
 			setPanne(messageDeLaPanne(e));
@@ -271,7 +276,7 @@ function ConversationDuDossier() {
 				},
 				messages,
 				travail,
-				refus: refusDuTour ?? refusDuPlafond,
+				refus: refusDuPlafond,
 				panne,
 				avertissement:
 					fil?.compteur.niveau === 'AVERTI'

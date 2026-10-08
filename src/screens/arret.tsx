@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Checkbox, Popup, PopupContent } from '@cladd-ui/react';
 import {
 	QUESTIONS_PREVOL,
+	QUESTION_CONTESTATION,
 	prevolFranchi,
 	type ClePrevol,
 	type ReponsePrevol,
@@ -400,12 +401,16 @@ function CorpsArret({ donnees }: { donnees: ArretDeLaCreance }) {
 
 			{/*
 			  ═════════════════════════════════════════════════════════════════════
-			  TROIS CASES — ce que le logiciel ne peut pas voir
+			  DEUX CASES — ce que le logiciel ne peut pas voir et qui change le montant
 			  ═════════════════════════════════════════════════════════════════════
 
 			  Le gérant coche ce qu'il affirme ; une case vide ne franchit rien. La
 			  rangée entière est la cible, comme les factures à cocher de la fiche
 			  client.
+
+			  ⚠️ LA CONTESTATION N'EST PLUS UNE CASE À COCHER (08/10/2026, le fondateur :
+			  « on ne devrait pas bloquer »). Elle se déclare dessous, facultative : elle
+			  s'inscrit au journal de l'arrêt, et le décompte se fige quand même.
 			*/}
 			<section className="flex flex-col gap-cladd-3xs">
 				<EnTeteDeGroupe
@@ -430,6 +435,28 @@ function CorpsArret({ donnees }: { donnees: ArretDeLaCreance }) {
 							/>
 						);
 					})}
+				</ListeAnalyses>
+				<ListeAnalyses>
+					<LigneBouton
+						genre="contenu"
+						titre={QUESTION_CONTESTATION.declarer}
+						precision={QUESTION_CONTESTATION.pourquoi}
+						lignes={2}
+						icone={
+							<Checkbox
+								as="span"
+								size="md"
+								checked={donnees.reponses.CONTESTATION_HORS_LOGICIEL === 'DECLARE'}
+								aria-label={QUESTION_CONTESTATION.declarer}
+							/>
+						}
+						onClick={() =>
+							donnees.onRepondre(
+								QUESTION_CONTESTATION.cle,
+								donnees.reponses.CONTESTATION_HORS_LOGICIEL === 'DECLARE' ? 'ECARTE' : 'DECLARE'
+							)
+						}
+					/>
 				</ListeAnalyses>
 				<BoutonTexte className="self-start" onClick={() => setSiFaux(true)}>
 					Si l’un de ces points est faux
@@ -486,6 +513,10 @@ function CorpsArret({ donnees }: { donnees: ArretDeLaCreance }) {
 								</p>
 							</div>
 						))}
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg">
+							Une contestation, elle, ne retient pas l’arrêt : le décompte constate un compte à une
+							date. Déclarée, elle s’inscrit au journal de l’arrêt.
+						</p>
 						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">{cout}</p>
 					</div>
 				</PopupContent>

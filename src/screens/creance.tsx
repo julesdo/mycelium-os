@@ -883,7 +883,7 @@ function alertesDuDossier(creance: CreanceOuverte): readonly AlerteDossier[] {
 			phrases:
 				risque.gravite === 'BLOQUANTE'
 					? [
-							'Quand on demande au tribunal de le faire payer, ou qu’on passe par un commissaire de justice, tout se fait sans débat, et une contestation y met fin.'
+							'Le dossier continue : relances, décompte et remise à votre conseil restent possibles. Seules les démarches sans débat (demander au tribunal de le faire payer, passer par un commissaire de justice) prennent fin sur une contestation.'
 						]
 					: [],
 			echeance: null,

@@ -233,7 +233,11 @@ export const vGestePropose = v.object({
 		v.literal('RETIRER_DU_PILOTE'),
 		v.literal('REMETTRE_AU_PILOTE'),
 		v.literal('RETENIR'),
-		v.literal('OUVRIR')
+		v.literal('OUVRIR'),
+		v.literal('CONTESTATION'),
+		v.literal('ARRETER_DECOMPTE'),
+		v.literal('LIEN_PAIEMENT'),
+		v.literal('REMISE_CONSEIL')
 	),
 	/** `AAAA-MM-JJ` : le jour d'un rappel ou d'une promesse. */
 	date: v.optional(v.string()),

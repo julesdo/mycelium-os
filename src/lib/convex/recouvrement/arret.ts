@@ -14,7 +14,11 @@ import {
 	regimePrescription,
 	type SecteurCreance
 } from '../../verticales/recouvrement/pays/france/prescription';
-import { prevolAuJournal, type ReponsesPrevol } from '../../verticales/recouvrement/prevol';
+import {
+	declaresQuiRetiennent,
+	prevolAuJournal,
+	type ReponsesPrevol
+} from '../../verticales/recouvrement/prevol';
 import { projeterDecompte, vNatureAbandon } from './decompte';
 import { resteDu, rejouerQualification } from './creances';
 import { vConventionJours, vImputation, vImputationDuDecompte, vTaux } from './tables';
@@ -375,101 +379,106 @@ export async function rattacherFactures(
 		readonly creanceId: Id<'creances'>;
 		readonly factureIds: readonly Id<'facturesVente'>[];
 		readonly par:
-			| { readonly auteur: 'GERANT'; readonly userId: string; readonly source: string; readonly phrase: string }
+			| {
+					readonly auteur: 'GERANT';
+					readonly userId: string;
+					readonly source: string;
+					readonly phrase: string;
+			  }
 			| { readonly auteur: 'MACHINE'; readonly source: string; readonly phrase: string };
 	}
 ): Promise<number> {
-		const creance = await ctx.db.get(creanceId);
-		if (creance === null || creance.organizationId !== organizationId) {
-			throw new ConvexError('Créance introuvable');
+	const creance = await ctx.db.get(creanceId);
+	if (creance === null || creance.organizationId !== organizationId) {
+		throw new ConvexError('Créance introuvable');
+	}
+
+	const aujourdHui = new Date().toISOString().slice(0, 10);
+	const aRattacher: Array<Doc<'facturesVente'>> = [];
+
+	for (const factureId of factureIds) {
+		const facture = await ctx.db.get(factureId);
+		if (facture === null || facture.organizationId !== organizationId) {
+			throw new ConvexError('Facture introuvable');
 		}
-
-		const aujourdHui = new Date().toISOString().slice(0, 10);
-		const aRattacher: Array<Doc<'facturesVente'>> = [];
-
-		for (const factureId of factureIds) {
-			const facture = await ctx.db.get(factureId);
-			if (facture === null || facture.organizationId !== organizationId) {
-				throw new ConvexError('Facture introuvable');
-			}
-			if (facture.debiteurId !== creance.debiteurId) {
-				throw new ConvexError(
-					`La facture ${facture.reference} n’est pas émise au même client que cette créance. ` +
-						'Ce qui manque est un débiteur unique : une créance ne porte que les factures ' +
-						'd’un seul. Ce refus se lève par une créance constituée pour ce client-là. ' +
-						'L’attente ne coûte rien ici : rien n’a changé, et le décompte reste calculable ' +
-						'en l’état.'
-				);
-			}
-			if (facture.creanceId !== undefined && facture.creanceId !== creanceId) {
-				throw new ConvexError(
-					`La facture ${facture.reference} est déjà réclamée par une autre créance, et rien ` +
-						'n’en est perdu. Ce qui manque est la possibilité de la porter une seconde fois : ' +
-						'la réclamer deux fois exposerait les deux procédures. Ce refus se lève par un ' +
-						'décompte produit sur la créance qui la porte déjà ; aucun geste du produit ne ' +
-						'détache aujourd’hui une facture de sa créance, et c’est dit ici plutôt que ' +
-						'laissé à chercher. L’attente ne coûte rien sur cette facture, puisqu’elle est ' +
-						'déjà réclamée.'
-				);
-			}
-			if (facture.creanceId === undefined) aRattacher.push(facture);
+		if (facture.debiteurId !== creance.debiteurId) {
+			throw new ConvexError(
+				`La facture ${facture.reference} n’est pas émise au même client que cette créance. ` +
+					'Ce qui manque est un débiteur unique : une créance ne porte que les factures ' +
+					'd’un seul. Ce refus se lève par une créance constituée pour ce client-là. ' +
+					'L’attente ne coûte rien ici : rien n’a changé, et le décompte reste calculable ' +
+					'en l’état.'
+			);
 		}
-
-		for (const facture of aRattacher) {
-			await ctx.db.patch(facture._id, { creanceId });
-			await ctx.db.insert('journal', {
-				organizationId,
-				cible: creanceId as string,
-				cle: 'FACTURE_RATTACHEE',
-				avant: 'hors de cette créance',
-				apres:
-					`La facture ${facture.reference} (${versEuros(depuisCentimes(facture.montantTTC))} €) ` +
-					par.phrase,
-				source: par.source,
-				auteur: par.auteur,
-				...(par.auteur === 'GERANT' ? { auteurUserId: par.userId } : {}),
-				consigneLe: Date.now()
-			});
+		if (facture.creanceId !== undefined && facture.creanceId !== creanceId) {
+			throw new ConvexError(
+				`La facture ${facture.reference} est déjà réclamée par une autre créance, et rien ` +
+					'n’en est perdu. Ce qui manque est la possibilité de la porter une seconde fois : ' +
+					'la réclamer deux fois exposerait les deux procédures. Ce refus se lève par un ' +
+					'décompte produit sur la créance qui la porte déjà ; aucun geste du produit ne ' +
+					'détache aujourd’hui une facture de sa créance, et c’est dit ici plutôt que ' +
+					'laissé à chercher. L’attente ne coûte rien sur cette facture, puisqu’elle est ' +
+					'déjà réclamée.'
+			);
 		}
+		if (facture.creanceId === undefined) aRattacher.push(facture);
+	}
 
-		if (aRattacher.length > 0) {
-			const facturesDeLaCreance = await ctx.db
-				.query('facturesVente')
-				.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-				.collect();
+	for (const facture of aRattacher) {
+		await ctx.db.patch(facture._id, { creanceId });
+		await ctx.db.insert('journal', {
+			organizationId,
+			cible: creanceId as string,
+			cle: 'FACTURE_RATTACHEE',
+			avant: 'hors de cette créance',
+			apres:
+				`La facture ${facture.reference} (${versEuros(depuisCentimes(facture.montantTTC))} €) ` +
+				par.phrase,
+			source: par.source,
+			auteur: par.auteur,
+			...(par.auteur === 'GERANT' ? { auteurUserId: par.userId } : {}),
+			consigneLe: Date.now()
+		});
+	}
 
-			const restes = await Promise.all(facturesDeLaCreance.map((facture) => resteDu(ctx, facture)));
-			const montantExigible = restes.length > 0 ? additionner(...restes) : ZERO;
+	if (aRattacher.length > 0) {
+		const facturesDeLaCreance = await ctx.db
+			.query('facturesVente')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+			.collect();
 
-			// L'exigibilité de la créance est la PLUS TARDIVE de ses factures : tant
-			// qu'une seule n'est pas due, l'ensemble ne l'est pas. Même règle qu'à la
-			// constitution, et pour la même raison.
-			const exigibilites = facturesDeLaCreance
-				.map((facture) => facture.dateExigibilite)
-				.filter((date): date is string => date !== undefined);
-			const dateExigibilite =
-				exigibilites.length === facturesDeLaCreance.length && exigibilites.length > 0
-					? exigibilites.reduce((tardive, date) => (date > tardive ? date : tardive))
-					: undefined;
+		const restes = await Promise.all(facturesDeLaCreance.map((facture) => resteDu(ctx, facture)));
+		const montantExigible = restes.length > 0 ? additionner(...restes) : ZERO;
 
-			const conditions = deduireConditions({
-				montantExigible,
-				dateExigibilite,
-				aujourdHui,
-				// Ces deux-là ne servent qu'à `entreCommercants`, qu'on ne réécrit pas.
-				creancierCommercant: 'unknown',
-				debiteurCommercant: 'unknown'
-			});
+		// L'exigibilité de la créance est la PLUS TARDIVE de ses factures : tant
+		// qu'une seule n'est pas due, l'ensemble ne l'est pas. Même règle qu'à la
+		// constitution, et pour la même raison.
+		const exigibilites = facturesDeLaCreance
+			.map((facture) => facture.dateExigibilite)
+			.filter((date): date is string => date !== undefined);
+		const dateExigibilite =
+			exigibilites.length === facturesDeLaCreance.length && exigibilites.length > 0
+				? exigibilites.reduce((tardive, date) => (date > tardive ? date : tardive))
+				: undefined;
 
-			await ctx.db.patch(creanceId, {
-				liquide: conditions.liquide,
-				exigible: conditions.exigible
-			});
+		const conditions = deduireConditions({
+			montantExigible,
+			dateExigibilite,
+			aujourdHui,
+			// Ces deux-là ne servent qu'à `entreCommercants`, qu'on ne réécrit pas.
+			creancierCommercant: 'unknown',
+			debiteurCommercant: 'unknown'
+		});
 
-			await rejouerQualification(ctx, organizationId, [creanceId], aujourdHui);
-		}
+		await ctx.db.patch(creanceId, {
+			liquide: conditions.liquide,
+			exigible: conditions.exigible
+		});
 
-		return aRattacher.length;
+		await rejouerQualification(ctx, organizationId, [creanceId], aujourdHui);
+	}
+
+	return aRattacher.length;
 }
 
 export const inclureFactures = authedMutation({
@@ -519,7 +528,11 @@ export const arreter = authedMutation({
 		prevol: v.object({
 			AVOIR_NON_RAPPROCHE: vReponsePrevol,
 			REGLEMENT_NON_IMPORTE: vReponsePrevol,
-			CONTESTATION_HORS_LOGICIEL: vReponsePrevol
+			/**
+			 * ⚠️ FACULTATIVE, ET ELLE NE RETIENT RIEN (08/10/2026) : déclarée, elle
+			 * s'inscrit au journal de l'arrêt, et le décompte se fige quand même.
+			 */
+			CONTESTATION_HORS_LOGICIEL: v.optional(vReponsePrevol)
 		}),
 		abandonsAssumes: v.boolean()
 	},
@@ -529,95 +542,129 @@ export const arreter = authedMutation({
 		{ creanceId, convention, prevol, abandonsAssumes }
 	): Promise<Id<'decomptes'>> => {
 		const { organizationId, user } = await getUserOrg(ctx);
-
-		const creance = await ctx.db.get(creanceId);
-		if (creance === null || creance.organizationId !== organizationId) {
-			throw new ConvexError('Créance introuvable');
-		}
-
-		const reponses: ReponsesPrevol = prevol;
-		const declares = Object.entries(prevol).filter(([, reponse]) => reponse === 'DECLARE');
-		if (declares.length > 0) {
-			throw new ConvexError(
-				'Ce décompte se calcule et se lit en entier, et il ne se fige pas. Ce qui manque est ' +
-					'l’élément que vous venez de déclarer : il change le principal ou ce que le logiciel ' +
-					'sait du dossier, et un décompte figé ne se corrige plus. Ce refus se lève quand ' +
-					'l’élément déclaré est entré dans le logiciel, ou quand il cesse d’exister. ' +
-					`L’attente ne coûte rien au décompte : il n’est parti nulle part. Ce qui court est ` +
-					'la prescription, affichée sur cet écran.'
-			);
-		}
-
-		const arreteAu = new Date().toISOString().slice(0, 10);
-
-		// LE CONTRÔLE SE REJOUE ICI, ET PAS SEULEMENT À L'ÉCRAN. Entre la lecture
-		// et le tap, un import a pu ajouter une facture ; un contrôle qui ne
-		// vivrait que dans le rendu laisserait figer un décompte que l'écran
-		// n'avait pas contrôlé.
-		const projection = await projeterDecompte(ctx, creance, arreteAu, convention);
-		if (projection.decompte === null) throw new ConvexError(projection.refus!.detail);
-
-		const facturesDuDebiteur = (
-			await ctx.db
-				.query('facturesVente')
-				.withIndex('by_debiteur', (q) => q.eq('debiteurId', creance.debiteurId))
-				.collect()
-		).filter((facture) => facture.organizationId === organizationId);
-
-		const controle = controlerDecompte({
-			decompte: projection.decompte,
-			facturesConnues: facturesDuDebiteur.map((facture) => ({
-				reference: facture.reference,
-				montantExigible: depuisCentimes(facture.montantTTC)
-			}))
-		});
-
-		if (!controle.complet && !abandonsAssumes) {
-			throw new ConvexError(
-				'Le décompte est calculé et chacun de ses postes se lit : rien n’est perdu à ce ' +
-					'stade. Ce qui manque est votre décision sur ce que ce décompte laisse de côté, ' +
-					`chiffré à ${versEuros(controle.montantAbandonne)} € : le titre ne porte que sur ` +
-					'les sommes qu’il chiffre. Ce refus se lève de deux façons, de même poids : les ' +
-					'factures écartées rejoignent la créance et le décompte se refait, ou l’arrêt se ' +
-					'fait sans elles et la décision s’inscrit au journal. L’attente ne coûte rien au ' +
-					'décompte ; ce qui court est la prescription de la créance.'
-			);
-		}
-
-		const decompteId: Id<'decomptes'> = await ctx.runMutation(
-			internal.recouvrement.decompte.figerDecompte,
-			{ creanceId, arreteAu, convention }
-		);
-
-		await ctx.db.insert('journal', {
+		const { decompteId } = await arreterLeDecompte(ctx, {
 			organizationId,
-			cible: decompteId as string,
-			cle: 'DECOMPTE_ARRETE',
-			apres:
-				`Décompte arrêté au ${arreteAu}, total ${versEuros(projection.decompte.total)} €, ` +
-				`sur ${projection.decompte.lignes.length} facture(s). Il est figé définitivement.`,
-			source: `Pré-vol : ${prevolAuJournal(reponses)}`,
-			auteur: 'GERANT',
-			auteurUserId: user._id,
-			consigneLe: Date.now()
+			userId: user._id,
+			creanceId,
+			convention,
+			prevol,
+			abandonsAssumes
 		});
-
-		// UNE ENTRÉE PAR ABANDON, ET PAS UNE LIGNE RÉCAPITULATIVE. Ce qui se
-		// relit six mois plus tard est « quelle facture », pas « combien au
-		// total » : le total se refait, la référence ne se retrouve pas.
-		for (const abandon of controle.abandons) {
-			await ctx.db.insert('journal', {
-				organizationId,
-				cible: decompteId as string,
-				cle: 'ABANDON_ASSUME_A_L_ARRET',
-				apres: abandon.explication,
-				source: 'Contrôle de complétude, au moment de l’arrêt',
-				auteur: 'GERANT',
-				auteurUserId: user._id,
-				consigneLe: Date.now()
-			});
-		}
-
 		return decompteId;
 	}
 });
+
+/**
+ * ARRÊTER LE DÉCOMPTE D'UN DOSSIER — le cœur de `arreter`, que Plume emploie aussi
+ * (le geste « Arrêter le décompte » de sa conversation, confirmé par le gérant).
+ *
+ * ⚠️ SEULS L'AVOIR ET LE RÈGLEMENT OUBLIÉS RETIENNENT L'ARRÊT : ils changent le
+ * montant. Une contestation, non (voir `prevol.ts`).
+ */
+export async function arreterLeDecompte(
+	ctx: MutationCtx,
+	{
+		organizationId,
+		userId,
+		creanceId,
+		convention,
+		prevol,
+		abandonsAssumes
+	}: {
+		readonly organizationId: Id<'organizations'>;
+		readonly userId: string;
+		readonly creanceId: Id<'creances'>;
+		readonly convention: 'ACT_365' | 'ACT_ACT';
+		readonly prevol: ReponsesPrevol;
+		readonly abandonsAssumes: boolean;
+	}
+): Promise<{ decompteId: Id<'decomptes'>; total: bigint }> {
+	const creance = await ctx.db.get(creanceId);
+	if (creance === null || creance.organizationId !== organizationId) {
+		throw new ConvexError('Créance introuvable');
+	}
+
+	const reponses: ReponsesPrevol = prevol;
+	if (declaresQuiRetiennent(reponses).length > 0) {
+		throw new ConvexError(
+			'Ce décompte se calcule et se lit en entier, et il ne se fige pas. Ce qui manque est ' +
+				'l’élément que vous venez de déclarer : il change le principal ou ce que le logiciel ' +
+				'sait du dossier, et un décompte figé ne se corrige plus. Ce refus se lève quand ' +
+				'l’élément déclaré est entré dans le logiciel, ou quand il cesse d’exister. ' +
+				`L’attente ne coûte rien au décompte : il n’est parti nulle part. Ce qui court est ` +
+				'la prescription, affichée sur cet écran.'
+		);
+	}
+
+	const arreteAu = new Date().toISOString().slice(0, 10);
+
+	// LE CONTRÔLE SE REJOUE ICI, ET PAS SEULEMENT À L'ÉCRAN. Entre la lecture
+	// et le tap, un import a pu ajouter une facture ; un contrôle qui ne
+	// vivrait que dans le rendu laisserait figer un décompte que l'écran
+	// n'avait pas contrôlé.
+	const projection = await projeterDecompte(ctx, creance, arreteAu, convention);
+	if (projection.decompte === null) throw new ConvexError(projection.refus!.detail);
+
+	const facturesDuDebiteur = (
+		await ctx.db
+			.query('facturesVente')
+			.withIndex('by_debiteur', (q) => q.eq('debiteurId', creance.debiteurId))
+			.collect()
+	).filter((facture) => facture.organizationId === organizationId);
+
+	const controle = controlerDecompte({
+		decompte: projection.decompte,
+		facturesConnues: facturesDuDebiteur.map((facture) => ({
+			reference: facture.reference,
+			montantExigible: depuisCentimes(facture.montantTTC)
+		}))
+	});
+
+	if (!controle.complet && !abandonsAssumes) {
+		throw new ConvexError(
+			'Le décompte est calculé et chacun de ses postes se lit : rien n’est perdu à ce ' +
+				'stade. Ce qui manque est votre décision sur ce que ce décompte laisse de côté, ' +
+				`chiffré à ${versEuros(controle.montantAbandonne)} € : le titre ne porte que sur ` +
+				'les sommes qu’il chiffre. Ce refus se lève de deux façons, de même poids : les ' +
+				'factures écartées rejoignent la créance et le décompte se refait, ou l’arrêt se ' +
+				'fait sans elles et la décision s’inscrit au journal. L’attente ne coûte rien au ' +
+				'décompte ; ce qui court est la prescription de la créance.'
+		);
+	}
+
+	const decompteId: Id<'decomptes'> = await ctx.runMutation(
+		internal.recouvrement.decompte.figerDecompte,
+		{ creanceId, arreteAu, convention }
+	);
+
+	await ctx.db.insert('journal', {
+		organizationId,
+		cible: decompteId as string,
+		cle: 'DECOMPTE_ARRETE',
+		apres:
+			`Décompte arrêté au ${arreteAu}, total ${versEuros(projection.decompte.total)} €, ` +
+			`sur ${projection.decompte.lignes.length} facture(s). Il est figé définitivement.`,
+		source: `Pré-vol : ${prevolAuJournal(reponses)}`,
+		auteur: 'GERANT',
+		auteurUserId: userId,
+		consigneLe: Date.now()
+	});
+
+	// UNE ENTRÉE PAR ABANDON, ET PAS UNE LIGNE RÉCAPITULATIVE. Ce qui se
+	// relit six mois plus tard est « quelle facture », pas « combien au
+	// total » : le total se refait, la référence ne se retrouve pas.
+	for (const abandon of controle.abandons) {
+		await ctx.db.insert('journal', {
+			organizationId,
+			cible: decompteId as string,
+			cle: 'ABANDON_ASSUME_A_L_ARRET',
+			apres: abandon.explication,
+			source: 'Contrôle de complétude, au moment de l’arrêt',
+			auteur: 'GERANT',
+			auteurUserId: userId,
+			consigneLe: Date.now()
+		});
+	}
+
+	return { decompteId, total: enCentimes(projection.decompte.total) };
+}

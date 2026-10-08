@@ -103,7 +103,10 @@ function PageArret() {
 				prevol: {
 					AVOIR_NON_RAPPROCHE: reponses.AVOIR_NON_RAPPROCHE ?? 'DECLARE',
 					REGLEMENT_NON_IMPORTE: reponses.REGLEMENT_NON_IMPORTE ?? 'DECLARE',
-					CONTESTATION_HORS_LOGICIEL: reponses.CONTESTATION_HORS_LOGICIEL ?? 'DECLARE'
+					// Facultative : déclarée, elle s'inscrit au journal ; elle ne retient rien.
+					...(reponses.CONTESTATION_HORS_LOGICIEL === 'DECLARE'
+						? { CONTESTATION_HORS_LOGICIEL: 'DECLARE' as const }
+						: {})
 				},
 				abandonsAssumes: signature !== '' && assumePour === signature
 			});

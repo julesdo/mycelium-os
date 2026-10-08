@@ -1,5 +1,6 @@
 import { v, ConvexError } from 'convex/values';
 import { query } from '../_generated/server';
+import type { MutationCtx } from '../_generated/server';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import type { Id } from '../_generated/dataModel';
@@ -187,43 +188,57 @@ export const ouvrirLienDePaiement = authedMutation({
 	returns: v.string(),
 	handler: async (ctx, { decompteId }): Promise<string> => {
 		const { organizationId, user } = await getUserOrg(ctx);
-
-		const decompte = await ctx.db.get(decompteId);
-		if (decompte === null || decompte.organizationId !== organizationId) {
-			throw new ConvexError('Décompte introuvable');
-		}
-
-		const profil = await ctx.db
-			.query('profilsCreancier')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.first();
-		if (profil?.iban === undefined) {
-			throw new ConvexError(
-				'Renseignez votre IBAN dans « Ce qui s’imprime sur vos courriers » : sans lui, la page ne dit pas où payer.'
-			);
-		}
-
-		const deja = await ctx.db
-			.query('liensDePaiement')
-			.withIndex('by_creance', (q) => q.eq('creanceId', decompte.creanceId))
-			.collect();
-		const vivant = deja.find(
-			(lien) => lien.decompteId === decompteId && lien.revoqueLe === undefined
-		);
-		if (vivant !== undefined) return vivant.jeton;
-
-		const jeton = crypto.randomUUID();
-		await ctx.db.insert('liensDePaiement', {
-			organizationId,
-			creanceId: decompte.creanceId,
-			decompteId,
-			jeton,
-			creePar: user._id,
-			creeLe: Date.now()
-		});
-		return jeton;
+		return await ouvrirLaPageDePaiement(ctx, organizationId, user._id, decompteId);
 	}
 });
+
+/**
+ * OUVRIR LA PAGE OÙ LE CLIENT PAIE, sur un décompte arrêté — le cœur de
+ * `ouvrirLienDePaiement`, que Plume emploie aussi (son geste « Ouvrir sa page de
+ * paiement », confirmé par le gérant). Un lien vivant sur ce décompte est rendu tel
+ * quel : on n'en ouvre pas deux.
+ */
+export async function ouvrirLaPageDePaiement(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	userId: string,
+	decompteId: Id<'decomptes'>
+): Promise<string> {
+	const decompte = await ctx.db.get(decompteId);
+	if (decompte === null || decompte.organizationId !== organizationId) {
+		throw new ConvexError('Décompte introuvable');
+	}
+
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	if (profil?.iban === undefined) {
+		throw new ConvexError(
+			'Renseignez votre IBAN dans « Ce qui s’imprime sur vos courriers » : sans lui, la page ne dit pas où payer.'
+		);
+	}
+
+	const deja = await ctx.db
+		.query('liensDePaiement')
+		.withIndex('by_creance', (q) => q.eq('creanceId', decompte.creanceId))
+		.collect();
+	const vivant = deja.find(
+		(lien) => lien.decompteId === decompteId && lien.revoqueLe === undefined
+	);
+	if (vivant !== undefined) return vivant.jeton;
+
+	const jeton = crypto.randomUUID();
+	await ctx.db.insert('liensDePaiement', {
+		organizationId,
+		creanceId: decompte.creanceId,
+		decompteId,
+		jeton,
+		creePar: userId,
+		creeLe: Date.now()
+	});
+	return jeton;
+}
 
 /** Fermer un lien : l'adresse cesse de répondre, pour tout le monde et tout de suite. */
 export const fermerLienDePaiement = authedMutation({

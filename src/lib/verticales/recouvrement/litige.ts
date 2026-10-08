@@ -253,8 +253,14 @@ export function lireLitige(reponses: Reponses): LectureLitige {
 		// qu'il resterait à faire — cette phrase-là serait du conseil juridique.
 		constats.push(
 			'Les procédures que ce logiciel évalue se déroulent toutes sans débat contradictoire : ' +
-				'une contestation y met fin, même infondée, et les frais engagés restent dus. Ce ' +
-				'dossier sort de ce que le logiciel sait mesurer.'
+				'une contestation y met fin, même infondée, et les frais engagés restent dus.'
+		);
+		// ⚠️ ET RIEN NE S'ARRÊTE (08/10/2026, le fondateur : « on ne devrait pas bloquer »).
+		// La contestation est un fait du dossier, pas un verrou : le dire, pour qu'elle ne
+		// se lise pas comme une fin.
+		constats.push(
+			'Le dossier continue : les relances, l’arrêt du décompte, la page de paiement et la ' +
+				'remise à votre conseil restent possibles.'
 		);
 	} else if (faitsIndetermines.length > 0) {
 		constats.push(

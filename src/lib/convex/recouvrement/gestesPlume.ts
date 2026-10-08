@@ -7,6 +7,24 @@ import { getUserOrg } from '../lib/auth';
 import { depuisCentimes, versEuros } from '../../socle/montants';
 import { dateDuCalendrier, jourEnClair } from '../../verticales/recouvrement/compagnon/gestes';
 import { preparerProchaineRelance } from './pilote';
+import { arreterLeDecompte } from './arret';
+import { ouvrirLaPageDePaiement } from './paiement';
+import { declarerLaRemise } from './conseil';
+
+/** Le dernier décompte arrêté d'un dossier, ou `null`. */
+async function dernierDecompte(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	creanceId: Id<'creances'>
+): Promise<Doc<'decomptes'> | null> {
+	const decomptes = (
+		await ctx.db
+			.query('decomptes')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+			.collect()
+	).filter((d) => d.organizationId === organizationId);
+	return decomptes.sort((a, b) => b.arreteAu.localeCompare(a.arreteAu))[0] ?? null;
+}
 
 /**
  * LES GESTES DE PLUME, CONFIRMÉS PAR LE GÉRANT (08/10/2026).
@@ -170,6 +188,52 @@ async function faire(
 		case 'OUVRIR':
 			// Un écran s'ouvre côté navigateur : rien ne s'écrit ici.
 			return 'Ouvert.';
+		case 'CONTESTATION': {
+			// ⚠️ UN FAIT DU DOSSIER, PAS UN VERROU : rien ne s'arrête quand on le note.
+			const conteste = geste.texte !== 'NON';
+			await ctx.runMutation(internal.recouvrement.creances.declarerFaitLitige, {
+				creanceId: creance._id,
+				cle: 'CONTESTATION_ECRITE',
+				reponse: conteste ? 'OUI' : 'NON',
+				aujourdHui
+			});
+			return conteste
+				? 'C’est noté : votre client conteste. Rien ne s’arrête, je continue de suivre le dossier.'
+				: 'C’est noté : il ne conteste plus.';
+		}
+		case 'ARRETER_DECOMPTE': {
+			const { total } = await arreterLeDecompte(ctx, {
+				organizationId,
+				userId,
+				creanceId: creance._id,
+				convention: 'ACT_365',
+				prevol: { AVOIR_NON_RAPPROCHE: 'ECARTE', REGLEMENT_NON_IMPORTE: 'ECARTE' },
+				abandonsAssumes: false
+			});
+			return `Décompte arrêté à ${versEuros(depuisCentimes(total))} €. Il ne se modifie plus.`;
+		}
+		case 'LIEN_PAIEMENT': {
+			const decompte = await dernierDecompte(ctx, organizationId, creance._id);
+			if (decompte === null) {
+				throw new ConvexError('Aucun décompte n’est arrêté : demandez-moi d’abord de l’arrêter.');
+			}
+			await ouvrirLaPageDePaiement(ctx, organizationId, userId, decompte._id);
+			return 'Sa page de paiement est ouverte. Son lien se copie dans le dossier, sous « Pénalités et frais ».';
+		}
+		case 'REMISE_CONSEIL': {
+			const decompte = await dernierDecompte(ctx, organizationId, creance._id);
+			if (decompte === null) {
+				throw new ConvexError('Aucun décompte n’est arrêté : demandez-moi d’abord de l’arrêter.');
+			}
+			const remisLe =
+				geste.date !== undefined && dateDuCalendrier(geste.date) ? geste.date : aujourdHui;
+			await declarerLaRemise(ctx, organizationId, {
+				decompteId: decompte._id,
+				remisLe,
+				...(geste.texte === undefined ? {} : { attendu: geste.texte })
+			});
+			return `Remise notée au ${jourEnClair(remisLe)}. Je suis ses dates.`;
+		}
 	}
 }
 

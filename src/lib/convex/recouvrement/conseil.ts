@@ -418,65 +418,91 @@ export const declarerRemise = authedMutation({
 		{ decompteId, remisLe, intervenantId, attendu }
 	): Promise<Id<'remisesAuConseil'>> => {
 		const { organizationId } = await getUserOrg(ctx);
-
-		const decompte = await ctx.db.get(decompteId);
-		if (decompte === null || decompte.organizationId !== organizationId) {
-			throw new ConvexError('Décompte introuvable');
-		}
-		exigerDateDuFait(remisLe, 'de remise');
-
-		if (intervenantId !== undefined) {
-			const intervenant = await ctx.db.get(intervenantId);
-			if (intervenant === null || intervenant.organizationId !== organizationId) {
-				throw new ConvexError('Intervenant introuvable dans votre carnet');
-			}
-		}
-
-		const ouvert = (
-			await ctx.db
-				.query('remisesAuConseil')
-				.withIndex('by_creance', (q) => q.eq('creanceId', decompte.creanceId))
-				.collect()
-		).find(
-			(suivi) =>
-				suivi.organizationId === organizationId &&
-				suivi.decompteId === decompteId &&
-				suivi.etat !== 'CLOS'
-		);
-
-		if (ouvert !== undefined && ouvert.etat !== 'PREPARE') {
-			throw new ConvexError(
-				`Ce dossier est déjà suivi à l’état « ${ouvert.etat} », et son suivi se lit sur cette ` +
-					'page. Ce qui manque est un dossier encore à remettre : une remise ne se déclare ' +
-					'qu’une fois, sans quoi la date du fait cesserait de dire quand il est parti. Ce ' +
-					'refus se lève par un nouveau dossier produit depuis un décompte arrêté, qui porte ' +
-					'sa propre remise. L’attente ne coûte rien : rien n’est modifié, et ce qui court ' +
-					'reste la prescription, affichée ci-dessus.'
-			);
-		}
-
-		const remise = {
-			etat: 'REMIS' as const,
+		return await declarerLaRemise(ctx, organizationId, {
+			decompteId,
 			remisLe,
 			intervenantId,
-			attendu: attendu === undefined || attendu.trim() === '' ? undefined : attendu.trim(),
-			// La date de SAISIE, à côté de la date du FAIT. Les confondre offrirait
-			// des jours qui n'ont pas eu lieu sur l'échéance la plus dangereuse.
-			consigneLe: Date.now()
-		};
-
-		if (ouvert !== undefined) {
-			await ctx.db.patch(ouvert._id, remise);
-			return ouvert._id;
-		}
-		return await ctx.db.insert('remisesAuConseil', {
-			organizationId,
-			creanceId: decompte.creanceId,
-			decompteId,
-			...remise
+			attendu
 		});
 	}
 });
+
+/**
+ * DÉCLARER LA REMISE AU CONSEIL — le cœur de `declarerRemise`, que Plume emploie
+ * aussi (son geste « Noter la remise à votre conseil », confirmé par le gérant).
+ */
+export async function declarerLaRemise(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	{
+		decompteId,
+		remisLe,
+		intervenantId,
+		attendu
+	}: {
+		readonly decompteId: Id<'decomptes'>;
+		readonly remisLe: string;
+		readonly intervenantId?: Id<'intervenants'>;
+		readonly attendu?: string;
+	}
+): Promise<Id<'remisesAuConseil'>> {
+	const decompte = await ctx.db.get(decompteId);
+	if (decompte === null || decompte.organizationId !== organizationId) {
+		throw new ConvexError('Décompte introuvable');
+	}
+	exigerDateDuFait(remisLe, 'de remise');
+
+	if (intervenantId !== undefined) {
+		const intervenant = await ctx.db.get(intervenantId);
+		if (intervenant === null || intervenant.organizationId !== organizationId) {
+			throw new ConvexError('Intervenant introuvable dans votre carnet');
+		}
+	}
+
+	const ouvert = (
+		await ctx.db
+			.query('remisesAuConseil')
+			.withIndex('by_creance', (q) => q.eq('creanceId', decompte.creanceId))
+			.collect()
+	).find(
+		(suivi) =>
+			suivi.organizationId === organizationId &&
+			suivi.decompteId === decompteId &&
+			suivi.etat !== 'CLOS'
+	);
+
+	if (ouvert !== undefined && ouvert.etat !== 'PREPARE') {
+		throw new ConvexError(
+			`Ce dossier est déjà suivi à l’état « ${ouvert.etat} », et son suivi se lit sur cette ` +
+				'page. Ce qui manque est un dossier encore à remettre : une remise ne se déclare ' +
+				'qu’une fois, sans quoi la date du fait cesserait de dire quand il est parti. Ce ' +
+				'refus se lève par un nouveau dossier produit depuis un décompte arrêté, qui porte ' +
+				'sa propre remise. L’attente ne coûte rien : rien n’est modifié, et ce qui court ' +
+				'reste la prescription, affichée ci-dessus.'
+		);
+	}
+
+	const remise = {
+		etat: 'REMIS' as const,
+		remisLe,
+		intervenantId,
+		attendu: attendu === undefined || attendu.trim() === '' ? undefined : attendu.trim(),
+		// La date de SAISIE, à côté de la date du FAIT. Les confondre offrirait
+		// des jours qui n'ont pas eu lieu sur l'échéance la plus dangereuse.
+		consigneLe: Date.now()
+	};
+
+	if (ouvert !== undefined) {
+		await ctx.db.patch(ouvert._id, remise);
+		return ouvert._id;
+	}
+	return await ctx.db.insert('remisesAuConseil', {
+		organizationId,
+		creanceId: decompte.creanceId,
+		decompteId,
+		...remise
+	});
+}
 
 /** LE CONSEIL A RENDU QUELQUE CHOSE, ET LE GÉRANT LE CONSIGNE. */
 export const declarerRetour = authedMutation({

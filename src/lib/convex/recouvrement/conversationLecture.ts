@@ -144,7 +144,12 @@ const vPourGestes = v.object({
 	relancable: v.boolean(),
 	horsPilote: v.boolean(),
 	relanceProgrammee: v.boolean(),
-	emailConnu: v.union(v.string(), v.null())
+	emailConnu: v.union(v.string(), v.null()),
+	contestationDeclaree: v.boolean(),
+	decompteArrete: v.boolean(),
+	ibanConnu: v.boolean(),
+	remiseEnCours: v.boolean(),
+	arretable: v.boolean()
 });
 
 interface ContexteLu {
@@ -155,6 +160,11 @@ interface ContexteLu {
 		horsPilote: boolean;
 		relanceProgrammee: boolean;
 		emailConnu: string | null;
+		contestationDeclaree: boolean;
+		decompteArrete: boolean;
+		ibanConnu: boolean;
+		remiseEnCours: boolean;
+		arretable: boolean;
 	};
 	contexte: {
 		debiteur: string;
@@ -270,6 +280,22 @@ export const contexteDuDossier = internalQuery({
 		const relancable =
 			creance.statut !== 'CLOSE' && creance.engageeLe === undefined && !suspendu && restantDu > 0n;
 		const horsPilote = debiteur?.horsPilote === true;
+		const contestationDeclaree = (creance.faitsLitige ?? []).some(
+			(fait) => fait.cle === 'CONTESTATION_ECRITE' && fait.reponse === 'OUI'
+		);
+		const profil = await ctx.db
+			.query('profilsCreancier')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+		const ibanConnu = profil?.iban !== undefined && profil.iban !== '';
+		const remiseEnCours = (
+			await ctx.db
+				.query('remisesAuConseil')
+				.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+				.collect()
+		).some((remise) => remise.etat === 'REMIS' || remise.etat === 'REVENU');
+		const dernierArrete = [...decomptes].sort((a, b) => b.arreteAu.localeCompare(a.arreteAu))[0];
+		const arretable = creance.statut !== 'CLOSE' && restantDu > 0n;
 		const etat: string[] = [
 			`Aujourd’hui : ${jourEnClair(aujourdHui)} ${aujourdHui.slice(0, 4)} (${aujourdHui}).`,
 			`Reste à payer sur les factures du dossier, hors pénalités : ${versEuros(depuisCentimes(restantDu))} €.`,
@@ -290,6 +316,18 @@ export const contexteDuDossier = internalQuery({
 						`Une relance est programmée et partira le ${new Date(programmee.partiraLe ?? programmee.prepareLe).toISOString().slice(0, 10)}, sauf si le dirigeant la retient.`
 					]),
 			...(enAttente ? ['Un courrier attend la relecture du dirigeant dans ce dossier.'] : []),
+			...(contestationDeclaree
+				? [
+						'Le dirigeant a noté que le client conteste. Cela ne bloque rien : le dossier continue, relances comprises.'
+					]
+				: []),
+			dernierArrete === undefined
+				? 'Aucun décompte n’est arrêté sur ce dossier.'
+				: `Dernier décompte arrêté le ${dernierArrete.arreteAu}.`,
+			ibanConnu
+				? 'L’IBAN du dirigeant est renseigné : la page de paiement peut s’ouvrir.'
+				: 'L’IBAN du dirigeant n’est pas renseigné : la page de paiement ne peut pas s’ouvrir.',
+			...(remiseEnCours ? ['Le dossier est remis au conseil du dirigeant.'] : []),
 			...(relancable
 				? []
 				: [
@@ -320,7 +358,12 @@ export const contexteDuDossier = internalQuery({
 				relancable,
 				horsPilote,
 				relanceProgrammee: programmee !== undefined,
-				emailConnu: debiteur?.email ?? null
+				emailConnu: debiteur?.email ?? null,
+				contestationDeclaree,
+				decompteArrete: dernierArrete !== undefined,
+				ibanConnu,
+				remiseEnCours,
+				arretable
 			},
 			contexte: {
 				debiteur: debiteur?.denomination ?? 'Débiteur inconnu',

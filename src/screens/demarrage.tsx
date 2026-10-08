@@ -229,7 +229,8 @@ export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAff
 					quand: e.le <= d.aujourdHui ? 'aujourd’hui' : dateCourte(e.le),
 					automatique: e.etape.automatique
 				}));
-	const relance = !d.suspendu && !d.horsPilote && contestation !== 'OUI';
+	// ⚠️ UNE CONTESTATION NE RETIRE PAS LE CLIENT DU PLAN : elle est notée, c'est tout.
+	const relance = !d.suspendu && !d.horsPilote;
 	const emailFinal = saisieEmail ? (sansEmail ? null : email.trim()) : d.emailClient;
 
 	/* ── Le démarrage, qui se voit ───────────────────────────────────────── */
@@ -333,7 +334,7 @@ export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAff
 					<ReponseDePlume
 						texte={
 							contestation === 'OUI'
-								? `Compris : je ne le relancerai pas automatiquement. Une facture contestée se règle en parlant avec lui ; je suis le dossier et ses dates, vous gardez la main. ${d.client} vous a-t-il réclamé un avoir ou une remise ?`
+								? `C’est noté au dossier, et rien ne s’arrête : je le suis et je le relance selon le plan. Si vous préférez le garder en main, il suffit de me le dire. ${d.client} vous a-t-il réclamé un avoir ou une remise ?`
 								: `${d.client} vous a-t-il réclamé un avoir ou une remise ?`
 						}
 					/>
@@ -356,7 +357,7 @@ export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAff
 							{!relance
 								? d.suspendu
 									? 'Il est en procédure collective ou radié : je ne le relance pas, je suis ses dates.'
-									: 'Je ne le relance pas : je suis le dossier et ses dates, et vous gardez la main.'
+									: 'Vous gardez ce client en main : je suis le dossier et ses dates, sans le relancer. Je le reprends dès que vous me le demandez.'
 								: emailFinal === null || emailFinal === ''
 									? 'Sans son adresse, je prépare les courriers et vous les envoyez. Donnez-la-moi quand vous l’aurez.'
 									: d.envoiAutomatique

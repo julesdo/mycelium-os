@@ -20,6 +20,13 @@
  * ne se calcule : ce module ne touche à aucune valeur juridique, et c'est
  * pourquoi il peut vivre hors de `parametres.ts`.
  *
+ * ⚠️ UNE CONTESTATION NE BLOQUE PLUS L'ARRÊT (décision du fondateur, 08/10/2026 :
+ * « on ne devrait pas bloquer »). Un avoir ou un règlement oublié change le
+ * MONTANT : le figer serait figer un chiffre faux, et ces deux cases restent à
+ * cocher. Une contestation, elle, ne change aucun chiffre : le décompte constate un
+ * compte à une date. Elle se DÉCLARE, s'inscrit au journal de l'arrêt, et l'arrêt se
+ * fait quand même. Elle a sa propre question, hors des cases (`QUESTION_CONTESTATION`).
+ *
  * ⚠️ LES QUATRE PARTIES D'UN REFUS VIVENT ICI, SAUF LA QUATRIÈME (D0). Ce que
  * le produit peut faire tout de suite, ce qui manque, ce qui le lève : ces
  * trois-là sont les mêmes quel que soit le dossier. Ce que l'attente coûte
@@ -106,26 +113,24 @@ export const QUESTIONS_PREVOL: readonly QuestionPrevol[] = [
 			'bon principal au bon jour.',
 		ecarteAuJournal: 'règlement partiel non importé : écarté',
 		declareAuJournal: 'règlement partiel non importé : déclaré'
-	},
-	{
-		cle: 'CONTESTATION_HORS_LOGICIEL',
-		question: 'Une contestation reçue hors du logiciel ?',
-		ecarter: 'Aucune contestation reçue',
-		pourquoi: 'Par courrier, e-mail ou téléphone : le logiciel ne voit que ce qu’on lui déclare.',
-		peutFaire:
-			'Le décompte se calcule et se lit en entier. Il constate un compte arrêté à une date, ' +
-			'et rien de plus.',
-		constat:
-			'Le logiciel ne connaît que ce qui lui est déclaré : l’absence de contestation CONNUE ' +
-			'n’est pas une absence de contestation. Une contestation arrivée par un autre canal ne ' +
-			'figure nulle part dans ce qu’il chiffre.',
-		ceQuiLeLeve:
-			'La date à laquelle cette contestation a été sue, portée quelque part que le logiciel ' +
-			'lit. Tant que rien ne la porte, il chiffre comme si elle n’existait pas.',
-		ecarteAuJournal: 'contestation hors du logiciel : écartée',
-		declareAuJournal: 'contestation hors du logiciel : déclarée'
 	}
 ];
+
+/**
+ * LA CONTESTATION — une déclaration facultative, qui ne retient rien.
+ *
+ * Le gérant la coche s'il en a reçu une (par courrier, e-mail ou téléphone) : elle
+ * s'inscrit au journal de l'arrêt, et le décompte se fige quand même. Laissée vide,
+ * elle se dit « non déclarée », jamais « aucune » : le logiciel ne sait que ce qu'on
+ * lui déclare.
+ */
+export const QUESTION_CONTESTATION = {
+	cle: 'CONTESTATION_HORS_LOGICIEL' as const,
+	declarer: 'Mon client conteste tout ou partie',
+	pourquoi: 'Facultatif : c’est noté au journal de l’arrêt, et rien ne bloque.',
+	declareAuJournal: 'contestation reçue : déclarée, l’arrêt se fait quand même',
+	nonDeclareeAuJournal: 'contestation : non déclarée'
+};
 
 /** Les questions auxquelles personne n'a encore répondu. */
 export function questionsSansReponse(reponses: ReponsesPrevol): readonly QuestionPrevol[] {
@@ -138,7 +143,7 @@ export function questionsDeclarees(reponses: ReponsesPrevol): readonly QuestionP
 }
 
 /**
- * Le pré-vol est franchi quand les TROIS faits sont écartés.
+ * Le pré-vol est franchi quand les DEUX faits qui changent le montant sont écartés.
  *
  * ⚠️ PAS « aucun n'est déclaré ». Une question laissée sans réponse ne franchit
  * rien : c'est la même règle que `unknown` dans les conditions de qualification,
@@ -156,11 +161,21 @@ export function prevolFranchi(reponses: ReponsesPrevol): boolean {
  * a-t-il été figé ».
  */
 export function prevolAuJournal(reponses: ReponsesPrevol): string {
-	return QUESTIONS_PREVOL.map((question) => {
-		const reponse = reponses[question.cle];
-		if (reponse === 'ECARTE') return question.ecarteAuJournal;
-		if (reponse === 'DECLARE') return question.declareAuJournal;
-		const sujet = question.ecarteAuJournal.split(' : ')[0] ?? question.cle;
-		return `${sujet} : sans réponse`;
-	}).join(' ; ');
+	return [
+		...QUESTIONS_PREVOL.map((question) => {
+			const reponse = reponses[question.cle];
+			if (reponse === 'ECARTE') return question.ecarteAuJournal;
+			if (reponse === 'DECLARE') return question.declareAuJournal;
+			const sujet = question.ecarteAuJournal.split(' : ')[0] ?? question.cle;
+			return `${sujet} : sans réponse`;
+		}),
+		reponses.CONTESTATION_HORS_LOGICIEL === 'DECLARE'
+			? QUESTION_CONTESTATION.declareAuJournal
+			: QUESTION_CONTESTATION.nonDeclareeAuJournal
+	].join(' ; ');
+}
+
+/** Les faits déclarés qui RETIENNENT l'arrêt : ceux qui changent le montant, seuls. */
+export function declaresQuiRetiennent(reponses: ReponsesPrevol): readonly QuestionPrevol[] {
+	return QUESTIONS_PREVOL.filter((question) => reponses[question.cle] === 'DECLARE');
 }

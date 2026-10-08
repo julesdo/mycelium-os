@@ -10,7 +10,12 @@ const ETAT: EtatPourGestes = {
 	relancable: true,
 	horsPilote: false,
 	relanceProgrammee: false,
-	emailConnu: null
+	emailConnu: null,
+	contestationDeclaree: false,
+	decompteArrete: false,
+	ibanConnu: true,
+	remiseEnCours: false,
+	arretable: true
 };
 
 function brut(genre: GesteBrut['genre'], champs: Partial<GesteBrut> = {}): GesteBrut {
@@ -54,6 +59,24 @@ describe('les gestes de Plume', () => {
 			ETAT
 		);
 		expect(gestes.map((g) => g.genre)).toEqual(['NOTE', 'RAPPEL', 'RELANCER']);
+	});
+
+	it('note une contestation sans rien bloquer, et propose encore de relancer', () => {
+		const gestes = lireGestes([brut('CONTESTATION', { texte: 'OUI' }), brut('RELANCER')], ETAT);
+		expect(gestes.map((g) => g.genre)).toEqual(['CONTESTATION', 'RELANCER']);
+		expect(
+			lireGestes([brut('RELANCER')], { ...ETAT, contestationDeclaree: true }).map((g) => g.genre)
+		).toEqual(['RELANCER']);
+	});
+
+	it('n’ouvre la page de paiement et la remise qu’avec un décompte arrêté', () => {
+		expect(lireGestes([brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL')], ETAT)).toEqual([]);
+		expect(
+			lireGestes([brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL')], {
+				...ETAT,
+				decompteArrete: true
+			}).map((g) => g.genre)
+		).toEqual(['LIEN_PAIEMENT', 'REMISE_CONSEIL']);
 	});
 
 	it('décrit chaque geste en toutes lettres, sans promettre ce qu’il ne fait pas', () => {
