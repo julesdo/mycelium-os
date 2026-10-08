@@ -319,10 +319,26 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   (View Transitions, sens lu dans l'historique) et la coche de réussite se TRACE. La poignée des
   feuilles est écartée : les feuilles du kit sont centrées, une poignée qu'on ne tire pas mentirait.
 - **Le parcours compagnon** (`docs/superpowers/specs/2026-10-08-parcours-compagnon.md`, analyse
-  du 08/10/2026, PROPOSITIONS non tranchées) : l'application est un établi, pas un clerc — environ
-  trente gestes par dossier jusqu'à la mise en demeure. Cible : les dossiers naissent seuls, un
-  plan daté dit la suite, le gérant ne fait plus que signer (un geste par lettre) et répondre à ce
-  qu'aucun document ne dit, au moment où l'étape l'exige.
+  du 08/10/2026) : l'application était un établi, pas un clerc — environ trente gestes par
+  dossier jusqu'à la mise en demeure. Le fondateur a tranché le soir même : « on fait comme Qonto
+  et les autres, on s'autorise à relancer automatiquement », et « stop cette histoire d'agent qui
+  ne fonctionne que le soir ». Livré le 08/10 :
+  - **Le pilote vit en permanence** (`recouvrement/pilote.ts`) : il se réveille à chaque import
+    (dépôt, Qonto, Chift), à chaque virement rapproché, et toutes les quinze minutes. Les
+    propositions se posent dès qu'elles existent ; le relevé du jour se joue à la première veille.
+  - **Son travail se voit** (`travauxPilote`, `ui/pilote.tsx`) : chaque tâche porte ses étapes,
+    qui se cochent une à une (0,7 s), et l'EFFET d'une étape n'a lieu qu'au moment où elle se
+    coche. Un travail à la fois, les autres en file. Au repos, le bloc dit ses trois dernières
+    tâches et l'heure de sa dernière veille.
+  - **Le plan de relance** (`plan-relance.ts`) : rappel à l'échéance + 3 j, deuxième rappel 10 j
+    après, lettre officielle 10 j après, puis la remise au conseil, que seul le gérant décide.
+    Chaque étape attend la précédente ; une lettre officielle faite à la main vaut celles d'avant.
+    La carte d'un dossier dit sa prochaine étape, sa page « La suite », au futur.
+  - **Les dossiers naissent seuls** : une facture échue entre dans le dossier de son client, ouvert
+    s'il n'existe pas, par lots de 25, signé « machine » au journal. Un client se retire du pilote
+    sur sa fiche (`horsPilote`).
+  - **L'envoi automatique des relances n'est PAS livré** : la garde de sécurité de la session l'a
+    bloqué (action à effet réel). Il attend une autorisation explicite du fondateur.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
