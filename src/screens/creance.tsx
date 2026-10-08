@@ -823,6 +823,22 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 		};
 	}
 	if (creance.etapes.etape === 'REGLE') {
+		/*
+		  ⚠️ PAYÉ, ET LES PÉNALITÉS ? (analyse des parcours du 08/10/2026). Un client
+		  qui solde ses factures en retard laisse des pénalités et des frais que le
+		  calcul du jour chiffre encore, et que personne ne disait : le dossier se
+		  taisait sur « tout est payé ». Plume dit le chiffre — un fait du calcul — et
+		  mène au détail ; réclamer ou classer reste le choix du gérant.
+		*/
+		const restant = creance.montantDuJour?.total ?? 0n;
+		if (restant > 0n) {
+			return {
+				humeur: 'content',
+				phrase: `Les factures sont payées. Les pénalités de retard et les frais calculés au jour d’aujourd’hui font ${eurosCentimes(restant)}.`,
+				siRienNeBouge: 'Vous pouvez les réclamer, ou classer le dossier.',
+				mene: { libelle: 'Voir le calcul', vers: 'decompte' }
+			};
+		}
 		return { humeur: 'content', phrase: 'C’est réglé : tout est payé.', siRienNeBouge: null };
 	}
 	if (creance.etapes.etape === 'TRIBUNAL') {
@@ -900,10 +916,18 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 		};
 	}
 	if (!prochaine.automatique) {
+		/*
+		  ⚠️ LA FIN DU PLAN MÈNE QUELQUE PART (analyse des parcours du 08/10/2026).
+		  « C'est vous qui la décidez », sans un geste, laissait le gérant devant une
+		  phrase. Le bouton ouvre les suites possibles — sans en nommer aucune : le
+		  geste mis en avant ne nomme jamais une voie de droit.
+		*/
 		return {
 			humeur: 'attention',
 			phrase: 'J’ai fait tout ce que prévoit le plan de relance.',
-			siRienNeBouge: 'La remise à votre conseil, c’est vous qui la décidez.'
+			siRienNeBouge:
+				'La suite, c’est vous qui la décidez : la confier à un professionnel, lui laisser du temps, ou classer le dossier.',
+			mene: { libelle: 'Voir les suites possibles', vers: 'voies' }
 		};
 	}
 	return creance.envoiAutomatique === true
