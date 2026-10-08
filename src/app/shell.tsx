@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useRouterState } from '@tanstack/react-router';
 import { Fond } from '../ui/fond';
 import { BarreBranchee } from './barre';
 import { CompagnonBranche } from './compagnon';
@@ -53,8 +54,23 @@ export function Shell({ children }: { children: ReactNode }) {
 
 			<main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
 
-			{/* Le bouton du compagnon se pose DANS la barre, à droite de la pilule. */}
-			<CompagnonBranche>{(bouton) => <BarreBranchee accessoire={bouton} />}</CompagnonBranche>
+			{/* Plume se pose DANS la barre, à droite de la pilule. */}
+			<BarreSaufEnConversation />
 		</div>
 	);
+}
+
+/**
+ * ⚠️ PAS DE BARRE D'ONGLETS DANS UNE CONVERSATION AVEC PLUME, NI PENDANT UN
+ * DÉMARRAGE GUIDÉ : le compositeur, ou les réponses, prennent sa place, comme
+ * chez Claude et Alan. Le retour rond de l'en-tête ramène d'où l'on vient.
+ */
+function BarreSaufEnConversation() {
+	const enConversation = useRouterState({
+		select: (etat) =>
+			etat.location.pathname.startsWith('/app/pilote') ||
+			etat.location.pathname.startsWith('/app/demarrer')
+	});
+	if (enConversation) return null;
+	return <CompagnonBranche>{(bouton) => <BarreBranchee accessoire={bouton} />}</CompagnonBranche>;
 }

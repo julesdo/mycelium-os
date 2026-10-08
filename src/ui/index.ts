@@ -258,16 +258,7 @@ export {
 	type CombinaisonAffichee,
 	type DebiteurRapprochable
 } from './lettrage';
-export {
-	Conversation,
-	moisLisible,
-	type CompteurConversation,
-	type ConversationAffichee,
-	type GenreSourcePhrase,
-	type PhraseAffichee,
-	type RefusAffiche,
-	type TourAffiche
-} from './conversation';
+export { type GenreSourcePhrase, type PhraseAffichee, type RefusAffiche } from './conversation';
 
 /* ── LA BARRE DU BAS ET LE COMPAGNON FLOTTANT (refonte/barre-et-compagnon) ──
  *
@@ -275,7 +266,7 @@ export {
  * montés une seule fois, dans la coquille (`app/shell.tsx`), et branchés par
  * `app/barre.tsx` et `app/compagnon.tsx` — eux ne dessinent rien. */
 export { BarreDuBas, PastilleDeRappel, type DestinationBarre } from './barre-du-bas';
-export { BoutonCompagnon, type EtatCompagnon } from './bouton-compagnon';
+export { BoutonCompagnon } from './bouton-compagnon';
 
 /* ── LE SOMMAIRE D'UNE LISTE (ecran/clients) ──────────────────────────────
  *
@@ -308,6 +299,17 @@ export {
 	type TravailPiloteAffiche
 } from './pilote';
 export { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
+export {
+	AccueilDePlume,
+	BulleDuGerant,
+	CarteDeGeste,
+	Composeur,
+	PageConversation,
+	ReponseDePlume,
+	SuggestionsAPlume,
+	TravailDePlume,
+	type EtapeDeTravail
+} from './fil-plume';
 export { SuiteDuPlan, type EtapeAVenir } from './suite-plan';
 export { BandeDAnciennete, repartirParAnciennete, type LigneDAnciennete } from './anciennete';
 

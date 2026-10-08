@@ -1,16 +1,15 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { SectionTitle } from '@cladd-ui/react';
 import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import {
 	BarreDuBas,
 	BoutonCompagnon,
-	Conversation,
 	IconeLetikette,
 	PastilleDeRappel,
 	PageEcran,
 	cn,
 	type DestinationBarre,
-	type EtatCompagnon
+	type HumeurPlume
 } from '../../ui';
 import { lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
@@ -120,44 +119,20 @@ function Scene({
 
 const ETATS_COMPAGNON: readonly {
 	readonly titre: string;
-	readonly portee: string | null;
-	readonly etat: EtatCompagnon;
+	readonly humeur: HumeurPlume;
+	readonly compte: number;
 }[] = [
+	{ titre: 'Plume veille : il respire, cligne, regarde autour', humeur: 'repos', compte: 0 },
+	{ titre: 'Plume travaille : ses yeux lisent', humeur: 'travaille', compte: 0 },
 	{
-		titre: 'Au repos, sur un dossier — la lueur respire, six secondes par cycle',
-		portee: 'ce dossier',
-		etat: { genre: 'REPOS' }
-	},
-	{
-		/*
-		 * ⚠️ L'ÉTAT SANS DOSSIER SE REGARDE AUSSI, ET C'EST CELUI QU'ON VOIT LE
-		 * PLUS. La capsule n'écrit alors AUCUNE portée : « cet établissement »
-		 * promettrait une conversation à l'échelle du dépôt, que le produit ne
-		 * tient pas. Ce qu'il lit s'explique en l'ouvrant.
-		 */
-		titre: 'Au repos, sans dossier ouvert — aucune portée écrite sur la capsule',
-		portee: null,
-		etat: { genre: 'REPOS' }
-	},
-	{
-		titre: 'Il a quelque chose à dire — la lueur s’anime, le compte se pose',
-		portee: 'ce dossier',
-		etat: { genre: 'A_DIRE', compte: 3 }
-	},
-	{
-		titre: 'Indisponible — la capsule reste, et l’ouvrir montre le refus complet',
-		portee: 'ce dossier',
-		etat: {
-			genre: 'INDISPONIBLE',
-			phrase: 'Conversation libre arrêtée jusqu’au mois prochain.'
-		}
+		titre: 'Quelque chose vous attend : il s’agite, la pastille compte',
+		humeur: 'attention',
+		compte: 3
 	}
 ];
 
 function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 	const lecture = lectureDemo(etat, true);
-	/** La question du fil vide : un toucher sur une question prête la remplit. */
-	const [question, setQuestion] = useState('');
 
 	return (
 		<PageEcran
@@ -197,34 +172,21 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 			</Scene>
 
 			<SectionTitle>Le compagnon, dans la barre</SectionTitle>
-			{ETATS_COMPAGNON.map(({ titre, portee, etat: etatCompagnon }) => (
+			{ETATS_COMPAGNON.map(({ titre, humeur, compte }) => (
 				<Scene key={titre} titre={titre} hauteur="h-60">
 					<BarreDuBas
 						destinations={destinations('aujourdhui', null)}
 						accessoire={
-							<BoutonCompagnon portee={portee} etat={etatCompagnon} onOuvrir={() => undefined} />
+							<BoutonCompagnon
+								humeur={humeur}
+								compte={compte}
+								description="Parler à Plume"
+								onOuvrir={() => undefined}
+							/>
 						}
 					/>
 				</Scene>
 			))}
-
-			{/*
-			  LE FIL VIDE D'UN DOSSIER, tel que la feuille l'ouvre : sa portée, ses
-			  trois questions prêtes, le champ. Il ne se voit nulle part ailleurs sans
-			  serveur — et c'est le premier écran que le gérant y lit.
-			*/}
-			<SectionTitle>Le fil d’un dossier, vide</SectionTitle>
-			<Conversation
-				conversation={{
-					tours: [],
-					compteur: { niveau: 'OUVERT', mois: '2026-10', avertissement: 40, arret: 80 },
-					refus: null,
-					enCours: false,
-					question,
-					onQuestion: setQuestion,
-					onDemander: () => undefined
-				}}
-			/>
 
 			{/*
 			  ⚠️ CE QUE CETTE PAGE NE PROUVE PAS, ET IL FAUT LE DIRE. La salle empile sa

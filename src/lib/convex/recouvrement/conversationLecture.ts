@@ -4,7 +4,9 @@ import type { QueryCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
 import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
-import { depuisCentimes, versEuros } from '../../socle/montants';
+import { additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
+import { planDuDossier } from './plan';
+import { resteDu } from './lecture';
 import { etatDuReferentiel } from '../../verticales/recouvrement/referentiel';
 import { pourcentageDepuisTaux } from '../../verticales/recouvrement/taux-contractuel';
 import {
@@ -476,37 +478,60 @@ export const filDuDossier = authedQuery({
 	}
 });
 
+
 /**
- * LE COMPTEUR DU MOIS, SANS DOSSIER.
+ * CE QUE L'EN-TÊTE DE LA CONVERSATION D'UN DOSSIER DIT : le client, ce qu'il doit
+ * encore, et la prochaine étape du plan. C'est la phrase d'accueil de Plume :
+ * « Je m'occupe du dossier de Durand. Prochaine étape : rappel, jeudi. »
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ POURQUOI IL EXISTE À CÔTÉ DE `filDuDossier`, QUI LE REND DÉJÀ
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Le plafond de coût est PAR ÉTABLISSEMENT et PAR MOIS — jamais par dossier. Or
- * il n'était lisible qu'en demandant le fil d'une créance, c'est-à-dire en
- * ouvrant un dossier. Le bouton flottant du compagnon, lui, vit sur tous les
- * écrans, y compris ceux où aucune créance n'est ouverte : sans cette lecture,
- * il ne pouvait pas dire que la conversation libre est arrêtée, et il l'aurait
- * proposée jusqu'au refus.
- *
- * ⚠️ ELLE NE LIT AUCUN TOUR, ET C'EST TOUT L'INTÉRÊT. `filDuDossier` collecte
- * les échanges d'une créance en plus du cumul ; celle-ci ne parcourt que
- * `by_org_and_mois`, l'index du cumul, et ne rend aucun texte. C'est ce qui
- * permet de la monter en permanence dans la coquille sans payer un dossier.
- *
- * ⚠️ AUCUN APPEL À `internal.<ce module>`. Une fonction Convex qui s'appelle
- * elle-même par `internal` crée un cycle d'inférence qui fait retomber le type
- * de `api` TOUT ENTIER sur `any`, et fait surgir des dizaines de `TS7006` dans
- * des fichiers qu'on n'a pas touchés. Les deux aides employées ici sont de
- * simples fonctions du module.
+ * ⚠️ UN DOSSIER D'UN AUTRE ÉTABLISSEMENT REND `null`, comme `contexteDuDossier` :
+ * un message distinct dirait que l'identifiant existe ailleurs.
  */
-export const compteurDeLEtablissement = authedQuery({
-	args: {},
-	returns: vCompteur,
-	handler: async (ctx) => {
+export const resumeDuDossier = authedQuery({
+	args: { creanceId: v.id('creances') },
+	returns: v.union(
+		v.null(),
+		v.object({
+			client: v.string(),
+			debiteurId: v.id('debiteurs'),
+			restantDu: v.int64(),
+			nombreFactures: v.number(),
+			prochaineEtape: v.union(
+				v.null(),
+				v.object({ nom: v.string(), le: v.string(), automatique: v.boolean() })
+			),
+			envoiAutomatique: v.boolean()
+		})
+	),
+	handler: async (ctx, { creanceId }) => {
 		const { organizationId } = await getUserOrg(ctx);
-		const mois = moisCourant();
-		return compteurDepuis(await cumulDuMois(ctx, organizationId, mois), mois);
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null || creance.organizationId !== organizationId) return null;
+		const debiteur = await ctx.db.get(creance.debiteurId);
+		const factures = await ctx.db
+			.query('facturesVente')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+			.collect();
+		const restes = await Promise.all(factures.map((facture) => resteDu(ctx, facture)));
+		const plan = await planDuDossier(ctx, creance, factures, new Date().toISOString().slice(0, 10));
+		const pilote = await ctx.db
+			.query('pilotes')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+		return {
+			client: debiteur?.denomination ?? 'Client',
+			debiteurId: creance.debiteurId,
+			restantDu: enCentimes(additionner(...restes)),
+			nombreFactures: factures.length,
+			prochaineEtape:
+				plan === null
+					? null
+					: {
+							nom: plan.prochaine.etape.nom,
+							le: plan.prochaine.le,
+							automatique: plan.prochaine.etape.automatique
+						},
+			envoiAutomatique: pilote?.envoiAutomatique === true
+		};
 	}
 });

@@ -44,6 +44,8 @@ import { Route as AppDebiteursIdRouteImport } from './routes/app/debiteurs.$id'
 import { Route as AppDecompteIdRouteImport } from './routes/app/decompte.$id'
 import { Route as AppDossierIdRouteImport } from './routes/app/dossier.$id'
 import { Route as AppImportFacturesIdRouteImport } from './routes/app/import-factures.$id'
+import { Route as AppPiloteIndexRouteImport } from './routes/app/pilote.index'
+import { Route as AppPiloteIdRouteImport } from './routes/app/pilote.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -221,6 +223,16 @@ const AppImportFacturesIdRoute = AppImportFacturesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppImportFacturesRoute,
 } as any)
+const AppPiloteIndexRoute = AppPiloteIndexRouteImport.update({
+  id: '/pilote/',
+  path: '/pilote/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppPiloteIdRoute = AppPiloteIdRouteImport.update({
+  id: '/pilote/$id',
+  path: '/pilote/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -258,6 +270,8 @@ export interface FileRoutesByFullPath {
   '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
+  '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/pilote/': typeof AppPiloteIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -294,6 +308,8 @@ export interface FileRoutesByTo {
   '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
+  '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/pilote': typeof AppPiloteIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -332,6 +348,8 @@ export interface FileRoutesById {
   '/app/decompte/$id': typeof AppDecompteIdRoute
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
+  '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/pilote/': typeof AppPiloteIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -371,6 +389,8 @@ export interface FileRouteTypes {
     | '/app/decompte/$id'
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
+    | '/app/pilote/$id'
+    | '/app/pilote/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -407,6 +427,8 @@ export interface FileRouteTypes {
     | '/app/decompte/$id'
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
+    | '/app/pilote/$id'
+    | '/app/pilote'
   id:
     | '__root__'
     | '/'
@@ -444,6 +466,8 @@ export interface FileRouteTypes {
     | '/app/decompte/$id'
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
+    | '/app/pilote/$id'
+    | '/app/pilote/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -715,6 +739,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppImportFacturesIdRouteImport
       parentRoute: typeof AppImportFacturesRoute
     }
+    '/app/pilote/': {
+      id: '/app/pilote/'
+      path: '/pilote'
+      fullPath: '/app/pilote/'
+      preLoaderRoute: typeof AppPiloteIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/pilote/$id': {
+      id: '/app/pilote/$id'
+      path: '/pilote/$id'
+      fullPath: '/app/pilote/$id'
+      preLoaderRoute: typeof AppPiloteIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -767,6 +805,8 @@ interface AppRouteRouteChildren {
   AppCreanceIdRoute: typeof AppCreanceIdRoute
   AppDecompteIdRoute: typeof AppDecompteIdRoute
   AppDossierIdRoute: typeof AppDossierIdRoute
+  AppPiloteIdRoute: typeof AppPiloteIdRoute
+  AppPiloteIndexRoute: typeof AppPiloteIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -783,6 +823,8 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppCreanceIdRoute: AppCreanceIdRoute,
   AppDecompteIdRoute: AppDecompteIdRoute,
   AppDossierIdRoute: AppDossierIdRoute,
+  AppPiloteIdRoute: AppPiloteIdRoute,
+  AppPiloteIndexRoute: AppPiloteIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
