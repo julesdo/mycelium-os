@@ -85,17 +85,21 @@ function decaler(iso: string, jours: number): string {
  *
  * @param ancre la plus ancienne date d'exigibilité des factures du dossier
  * @param faites les étapes déjà faites, dans n'importe quel ordre
+ * @param pasAvant le premier jour où le plan peut reprendre, quand la parole du
+ *   client le suspend (`parole.ts` : une promesse en cours, un échéancier tenu)
  */
 export function prochaineEtape({
 	ancre,
 	faites,
 	aujourdHui,
-	plan = PLAN_PAR_DEFAUT
+	plan = PLAN_PAR_DEFAUT,
+	pasAvant
 }: {
 	readonly ancre: string;
 	readonly faites: readonly EtapeFaite[];
 	readonly aujourdHui: string;
 	readonly plan?: readonly EtapePlan[];
+	readonly pasAvant?: string;
 }): ProchaineEtape | null {
 	// La plus avancée des étapes faites : tout ce qui la précède est réputé fait.
 	let rangFait = -1;
@@ -113,7 +117,8 @@ export function prochaineEtape({
 
 	const depart = rangFait < 0 || faiteLe === null ? ancre : faiteLe;
 	const prevu = decaler(depart, suivante.attente);
-	const le = prevu < aujourdHui ? aujourdHui : prevu;
+	const plancher = pasAvant !== undefined && pasAvant > aujourdHui ? pasAvant : aujourdHui;
+	const le = prevu < plancher ? plancher : prevu;
 	return { etape: suivante, le, due: le <= aujourdHui };
 }
 
@@ -128,6 +133,7 @@ export function suiteDuPlan(args: {
 	readonly faites: readonly EtapeFaite[];
 	readonly aujourdHui: string;
 	readonly plan?: readonly EtapePlan[];
+	readonly pasAvant?: string;
 }): readonly ProchaineEtape[] {
 	const plan = args.plan ?? PLAN_PAR_DEFAUT;
 	const suite: ProchaineEtape[] = [];

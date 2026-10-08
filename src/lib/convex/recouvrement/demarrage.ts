@@ -12,6 +12,7 @@ import { resteDu } from './lecture';
 import { rattacherFactures } from './arret';
 import { planDuDossier } from './plan';
 import { commencerTravail } from './pilote';
+import { apresUneParole } from './parole';
 
 /**
  * DÉMARRER UN DOSSIER — seul et guidé, ou en lot (08/10/2026).
@@ -277,6 +278,7 @@ export const demarrer = authedMutation({
 				auteurUserId: user._id,
 				ecritLe: Date.now()
 			});
+			await apresUneParole(ctx, creanceId);
 		}
 
 		const total = choisies.reduce((somme, f) => somme + f.montantTTC, 0n);

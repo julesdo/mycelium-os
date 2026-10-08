@@ -111,6 +111,12 @@ export interface DossierDeLIndex {
 		readonly nom: string;
 		readonly le: string;
 		readonly automatique: boolean;
+		/**
+		 * LA PAROLE DU CLIENT QUI FAIT TAIRE LE PLAN (08/10/2026) : une promesse en
+		 * cours, un échéancier tenu. La carte dit CE QU'IL A DIT et pour quand, pas
+		 * l'étape repoussée.
+		 */
+		readonly pause?: { readonly raison: 'PROMESSE' | 'ECHEANCIER'; readonly le: string };
 	};
 }
 
@@ -202,6 +208,16 @@ function resumeDe(
 	*/
 	const limiteProche =
 		dossier.dateLimiteAgir !== undefined && dossier.dateLimiteAgir <= jourDecale(aujourdHui, 90);
+	if (dossier.prochaineEtape?.pause !== undefined && !limiteProche) {
+		return {
+			ligne:
+				dossier.prochaineEtape.pause.raison === 'PROMESSE'
+					? 'Il a promis de payer'
+					: 'Échéancier en cours',
+			date: dateRelative(dossier.prochaineEtape.pause.le, aujourdHui),
+			famille: 'TEMPS'
+		};
+	}
 	if (dossier.prochaineEtape !== undefined && !limiteProche) {
 		return {
 			ligne: dossier.prochaineEtape.nom,

@@ -107,7 +107,8 @@ function PageDossiers() {
 							prochaineEtape: {
 								nom: d.prochaineEtape.nom,
 								le: d.prochaineEtape.le,
-								automatique: d.prochaineEtape.automatique
+								automatique: d.prochaineEtape.automatique,
+								...(d.prochaineEtape.pause === undefined ? {} : { pause: d.prochaineEtape.pause })
 							}
 						}),
 				...(echeanceDe.has(d._id) ? { prochaineEcheance: echeanceDe.get(d._id)! } : {})

@@ -990,6 +990,21 @@ const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
 	proposées: creanceDemo({ reponses: {}, propositions: PROPOSITIONS_LITIGE_DEMO }),
 	'litige répondu': creanceDemo({ reponses: REPONSES_LITIGE_TERMINEES_DEMO, commercants: true }),
 	'relances prêtes': creanceDemo({ relances: RELANCES_DEMO }),
+	/* La parole du client fait taire le plan : Plume le dit, et dit ce qui reprend. */
+	'promesse en cours': (() => {
+		const base = creanceDemo({});
+		return {
+			...base,
+			pause: { raison: 'PROMESSE', le: '2026-10-20', jusquAu: '2026-10-23', montant: 120_000n },
+			santeDebiteur: 'SAINE',
+			situations: [],
+			courriers: { ...base.courriers, envois: [] },
+			planAVenir: [
+				{ cle: 'SECOND_RAPPEL', nom: 'Deuxième rappel', le: '2026-10-24', automatique: true }
+			],
+			envoiAutomatique: true
+		} satisfies CreanceOuverte;
+	})(),
 	/*
 	  ⚠️ LES DEUX REFUS DU BOUTON, CÔTE À CÔTE AVEC LE CAS QUI MARCHE. Sans
 	  adresse, la relance se prépare et ne peut pas s'ouvrir ; trop longue, elle

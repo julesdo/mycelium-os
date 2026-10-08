@@ -124,6 +124,8 @@ function PageCreance() {
 	const creance = useQuery(api.recouvrement.lecture.creanceComplete, { creanceId });
 	/** La suite du plan, au futur : ce que le pilote fera, et quand. */
 	const planAVenir = useQuery(api.recouvrement.plan.suiteDuDossier, { creanceId });
+	/** Ce que le client a dit : une promesse en cours fait taire le plan jusqu'à son jour. */
+	const parole = useQuery(api.recouvrement.parole.duDossier, { creanceId });
 	/** Le pilote : s'il relance seul, la suite du plan le dit (« le pilote l'envoie »). */
 	const pilote = useQuery(api.recouvrement.pilote.etat, {});
 	const retenirRelance = useMutation(api.recouvrement.pilote.retenir);
@@ -721,6 +723,7 @@ function PageCreance() {
 				...(note.issue === undefined ? {} : { issue: note.issue }),
 				...(note.rappelLe === undefined ? {} : { rappelLe: note.rappelLe }),
 				...(note.faitLe === undefined ? {} : { faitLe: note.faitLe }),
+				...(note.recuDepuis === undefined ? {} : { recuDepuis: note.recuDepuis }),
 				ecritLe: note.ecritLe
 			})),
 			aujourdHui,
@@ -851,6 +854,7 @@ function PageCreance() {
 		// posées sur chaque facture.
 		echeanceLaPlusAncienne: laPlusProche(creance.factures.map((f) => f.dateEcheance)),
 		...(planAVenir === undefined || planAVenir === null ? {} : { planAVenir }),
+		...(parole?.pause === undefined || parole.pause === null ? {} : { pause: parole.pause }),
 		envoiAutomatique: pilote?.envoiAutomatique === true,
 		prescriptionLaPlusProche: laPlusProche(creance.factures.map((f) => f.datePrescription)),
 

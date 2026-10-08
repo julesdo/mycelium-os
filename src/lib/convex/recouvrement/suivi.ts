@@ -9,6 +9,8 @@ import {
 	intituleDuFait,
 	type FaitDeLaFrise
 } from '../../verticales/recouvrement/frise';
+import { apresUneParole } from './parole';
+import { paroleDuDossier } from './plan';
 
 /**
  * LE SUIVI D'UN DOSSIER — ce que le gérant sait, et que le logiciel ignorait.
@@ -64,7 +66,13 @@ const vEntree = v.object({
 	issue: v.optional(v.union(v.literal('TENUE'), v.literal('NON_TENUE'))),
 	rappelLe: v.optional(v.string()),
 	faitLe: v.optional(v.string()),
-	ecritLe: v.number()
+	ecritLe: v.number(),
+	/**
+	 * Pour une promesse pas encore tranchée : ce qui est arrivé sur le dossier
+	 * depuis qu'elle a été notée. Un FAIT qui aide le gérant à trancher — jamais
+	 * le logiciel qui tranche à sa place (voir `trancherPromesse`).
+	 */
+	recuDepuis: v.optional(v.int64())
 });
 
 /** Une date du calendrier, ou rien. Une chaîne mal formée ne s'enregistre pas en silence. */
@@ -105,6 +113,23 @@ export const lire = authedQuery({
 			.query('suiviDossier')
 			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
 			.collect();
+		const ouvertes = entrees.some((e) => e.genre === 'PROMESSE' && e.issue === undefined);
+		const reglements = ouvertes
+			? (
+					await paroleDuDossier(
+						ctx,
+						creanceId,
+						await ctx.db
+							.query('facturesVente')
+							.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+							.collect()
+					)
+				).reglements
+			: [];
+		const recuDepuis = (ecritLe: number): bigint => {
+			const depuis = new Date(ecritLe).toISOString().slice(0, 10);
+			return reglements.reduce((s, r) => (r.le >= depuis ? s + r.montant : s), 0n);
+		};
 
 		return entrees
 			.filter((e) => e.organizationId === organizationId)
@@ -120,7 +145,10 @@ export const lire = authedQuery({
 				issue: e.issue,
 				rappelLe: e.rappelLe,
 				faitLe: e.faitLe,
-				ecritLe: e.ecritLe
+				ecritLe: e.ecritLe,
+				...(e.genre === 'PROMESSE' && e.issue === undefined
+					? { recuDepuis: recuDepuis(e.ecritLe) }
+					: {})
 			}));
 	}
 });
@@ -175,7 +203,7 @@ export const noter = authedMutation({
 			}
 		}
 
-		return await ctx.db.insert('suiviDossier', {
+		const entreeId = await ctx.db.insert('suiviDossier', {
 			organizationId,
 			creanceId: args.creanceId,
 			genre: args.genre,
@@ -188,6 +216,9 @@ export const noter = authedMutation({
 			auteurUserId: user._id,
 			ecritLe: Date.now()
 		});
+		// Une promesse fait taire le plan : la relance programmée par le pilote ne part pas.
+		if (args.genre === 'PROMESSE') await apresUneParole(ctx, args.creanceId);
+		return entreeId;
 	}
 });
 

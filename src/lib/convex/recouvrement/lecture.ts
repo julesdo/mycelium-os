@@ -1100,7 +1100,14 @@ export const indexDossiers = authedQuery({
 					cle: v.string(),
 					nom: v.string(),
 					le: v.string(),
-					automatique: v.boolean()
+					automatique: v.boolean(),
+					/** La parole du client fait taire le plan jusque-là (`parole.ts`). */
+					pause: v.optional(
+						v.object({
+							raison: v.union(v.literal('PROMESSE'), v.literal('ECHEANCIER')),
+							le: v.string()
+						})
+					)
 				})
 			)
 		})
@@ -1177,7 +1184,10 @@ export const indexDossiers = authedQuery({
 									cle: plan.prochaine.etape.cle,
 									nom: plan.prochaine.etape.nom,
 									le: plan.prochaine.le,
-									automatique: plan.prochaine.etape.automatique
+									automatique: plan.prochaine.etape.automatique,
+									...(plan.pause === null
+										? {}
+										: { pause: { raison: plan.pause.raison, le: plan.pause.le } })
 								}
 							}),
 					principalRestantDu: restant,

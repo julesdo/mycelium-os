@@ -48,6 +48,8 @@ export interface NoteDuDossier {
 	readonly rappelLe?: string;
 	readonly faitLe?: string;
 	readonly ecritLe: number;
+	/** Une promesse pas encore tranchée : ce qui est arrivé depuis. Un fait, pas un verdict. */
+	readonly recuDepuis?: bigint;
 }
 
 /** Ce que le gérant a saisi dans le formulaire, avant de l'envoyer. */
@@ -153,11 +155,28 @@ export function SuiviDuDossier({
 									: ` pour le ${dateCourte(note.promisPourLe)}`}
 							</p>
 							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{note.texte}</p>
+							{/*
+							  ⚠️ CE QUI EST ARRIVÉ DEPUIS, ÉCRIT EN FAIT (08/10/2026). Le gérant
+							  tranche, mais il ne devrait pas avoir à aller chercher sa banque pour
+							  le faire : le logiciel voit les règlements, il les dit, sans dire
+							  qu'ils sont CEUX qui étaient promis.
+							*/}
+							{note.recuDepuis === undefined ? null : (
+								<p className="text-cladd-2xs text-cladd-fg">
+									{note.recuDepuis > 0n
+										? `Reçu depuis sa promesse : ${eurosCentimes(note.recuDepuis)}.`
+										: 'Rien reçu depuis sa promesse.'}
+								</p>
+							)}
 							{note.promisPourLe !== undefined && note.promisPourLe <= aujourdHui ? (
 								<p className="text-cladd-2xs text-cladd-fg-softer">
 									Le jour est arrivé. A-t-il payé ?
 								</p>
-							) : null}
+							) : (
+								<p className="text-cladd-2xs text-cladd-fg-softer">
+									Les relances automatiques se taisent jusqu’à son jour.
+								</p>
+							)}
 							<span className="flex flex-wrap gap-cladd-3xs">
 								<BoutonSecondaire onClick={() => onTrancherPromesse(note._id, 'TENUE')}>
 									Il a payé

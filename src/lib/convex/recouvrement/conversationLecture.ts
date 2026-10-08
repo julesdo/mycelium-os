@@ -328,6 +328,13 @@ export const contexteDuDossier = internalQuery({
 			plan === null
 				? 'Le plan de relance n’a plus d’étape à venir sur ce dossier.'
 				: `Prochaine étape du plan : ${plan.prochaine.etape.nom}, prévue le ${plan.prochaine.le}.`,
+			...(plan?.pause === null || plan?.pause === undefined
+				? []
+				: [
+						plan.pause.raison === 'PROMESSE'
+							? `Le client a promis de payer le ${plan.pause.le} : les relances automatiques se taisent jusqu’au ${plan.pause.jusquAu} inclus.`
+							: `Un échéancier est en cours, prochain versement le ${plan.pause.le} : les relances automatiques se taisent jusqu’au ${plan.pause.jusquAu} inclus.`
+					]),
 			...(programmee === undefined
 				? []
 				: [

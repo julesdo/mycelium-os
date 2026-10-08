@@ -260,6 +260,16 @@ export interface CreanceOuverte {
 	 * dossier réglé, au tribunal ou au bout du plan.
 	 */
 	readonly planAVenir?: readonly EtapeAVenir[];
+	/**
+	 * LA PAROLE DU CLIENT QUI FAIT TAIRE LE PLAN (08/10/2026) : une promesse en
+	 * cours, un échéancier tenu, et jusqu'à quand (`verticales/recouvrement/parole.ts`).
+	 */
+	readonly pause?: {
+		readonly raison: 'PROMESSE' | 'ECHEANCIER';
+		readonly le: string;
+		readonly jusquAu: string;
+		readonly montant?: bigint;
+	};
 	/** Le gérant a laissé le pilote relancer seul : le plan dit alors « le pilote l’envoie ». */
 	readonly envoiAutomatique?: boolean;
 	/** La prescription la plus proche, celle qui éteint la première. */
@@ -724,6 +734,29 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 		};
 	}
 	const prochaine = creance.planAVenir?.[0];
+	/*
+	  ⚠️ LA PAROLE DU CLIENT PASSE AVANT LE PLAN. Il a dit quand il paierait : Plume
+	  le répète, dit qu'il se tait jusque-là, et ce qui reprend si rien n'arrive.
+	*/
+	if (creance.pause !== undefined) {
+		const combien =
+			creance.pause.montant === undefined ? '' : `${eurosCentimes(creance.pause.montant)} `;
+		const reprise =
+			prochaine === undefined
+				? null
+				: `Si rien n’arrive, je reprends le ${dateCourte(prochaine.le)} : ${prochaine.nom.toLowerCase()}.`;
+		return creance.pause.raison === 'PROMESSE'
+			? {
+					humeur: 'repos',
+					phrase: `${client} a promis de payer ${combien}le ${dateCourte(creance.pause.le)}. Je ne le relance pas d’ici là.`,
+					siRienNeBouge: reprise
+				}
+			: {
+					humeur: 'repos',
+					phrase: `${client} paie en plusieurs fois. Prochain versement : ${combien}le ${dateCourte(creance.pause.le)}.`,
+					siRienNeBouge: reprise
+				};
+	}
 	if (prochaine === undefined) {
 		return {
 			humeur: 'repos',

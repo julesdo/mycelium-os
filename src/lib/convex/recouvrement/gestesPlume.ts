@@ -10,6 +10,7 @@ import { preparerProchaineRelance } from './pilote';
 import { arreterLeDecompte } from './arret';
 import { ouvrirLaPageDePaiement } from './paiement';
 import { declarerLaRemise } from './conseil';
+import { apresUneParole } from './parole';
 
 /** Le dernier décompte arrêté d'un dossier, ou `null`. */
 async function dernierDecompte(
@@ -157,6 +158,8 @@ async function faireLeGeste(
 				auteurUserId: userId,
 				ecritLe: Date.now()
 			});
+			// La relance que le pilote avait programmée ne part pas sur une parole donnée.
+			await apresUneParole(ctx, creance._id);
 			return `Promesse de ${versEuros(depuisCentimes(montant))} € notée pour ${jourEnClair(date)}.`;
 		}
 		case 'NOTE': {

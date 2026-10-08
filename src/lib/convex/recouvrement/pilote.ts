@@ -16,7 +16,7 @@ import { resend, assertResendApiKey } from '../emails/resend';
 import { relanceHtml } from '../emails/modeles/relance';
 import { requireEnv } from '../env';
 import { composer, type ChoixCourrier } from './envois';
-import { planDuDossier } from './plan';
+import { pauseDuDossier, planDuDossier } from './plan';
 import { resteDu } from './lecture';
 import { pluriel } from '../../socle/francais';
 import { ZERO, additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
@@ -1170,6 +1170,16 @@ async function envoyerMaintenant(ctx: MutationCtx, envoiId: Id<'envois'>): Promi
 	const restes = await Promise.all(factures.map((f) => resteDu(ctx, f)));
 	const reste = enCentimes(restes.length > 0 ? additionner(...restes) : ZERO);
 	if (reste <= 0n) {
+		await ctx.db.patch(envoiId, { etat: 'ABANDONNE', envoiProgramme: undefined });
+		return;
+	}
+	// Le client a donné sa parole entre la programmation et le départ : la
+	// relance du pilote ne part pas (`parole.ts`). Celle du gérant, si.
+	if (
+		envoi.preparePar === 'pilote' &&
+		(await pauseDuDossier(ctx, creance._id, factures, new Date().toISOString().slice(0, 10))) !==
+			null
+	) {
 		await ctx.db.patch(envoiId, { etat: 'ABANDONNE', envoiProgramme: undefined });
 		return;
 	}
