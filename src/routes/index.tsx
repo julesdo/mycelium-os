@@ -47,7 +47,7 @@ import { SITE_CANONIQUE } from '../lib/config/legal';
 const APERCU = `${SITE_CANONIQUE}/partage.png`;
 const TITRE = 'Letikette · Logiciel de recouvrement des factures impayées pour PME';
 const RESUME =
-	'Letikette calcule les pénalités et les frais dus sur chaque facture en retard, surveille les délais et prépare vos relances. Rien ne part sans votre validation.';
+	'Letikette calcule les pénalités et les frais dus sur chaque facture en retard, surveille les délais et prépare vos relances. Rien ne part sans votre accord.';
 
 export const Route = createFileRoute('/')({
 	head: () => ({

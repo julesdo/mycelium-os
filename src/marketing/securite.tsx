@@ -21,7 +21,7 @@ const GARDE_FOUS = [
 		Icone: PenLineIcon,
 		titre: 'Rien ne part sans vous',
 		texte:
-			'Chaque courrier est à votre nom et attend votre validation. Letikette ne contacte jamais vos clients.'
+			'Les relances partent à votre nom, une fois que vous les avez activées, et chacune se retient pendant l’heure qui précède son départ. Rien ne part vers un tribunal.'
 	},
 	{
 		Icone: BanknoteIcon,

@@ -21,7 +21,7 @@ import { EcranProduit, Photo } from './section';
  * citable.
  *
  * ⚠️ AUCUNE PROMESSE DE RÉSULTAT. Le logiciel calcule, surveille et prépare ;
- * le gérant valide et envoie.
+ * le gérant décide de ce qui part.
  */
 
 function indemniteLisible(): string | null {
@@ -61,7 +61,7 @@ export function Hero() {
 
 					<p className="leve max-w-2xl text-chapeau leading-relaxed text-encre-site-douce">
 						Letikette calcule les pénalités et les frais dus sur chaque facture en retard, surveille
-						les délais et prépare vos relances. Rien ne part sans votre validation.
+						les délais et prépare vos relances. Rien ne part sans votre accord.
 					</p>
 
 					{/* ⚠️ UNE SEULE PILULE, ET UN LIEN. Deux boutons pleins côte à côte

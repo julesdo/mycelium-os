@@ -146,11 +146,11 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 	{
 		genre: 'OBSTACLE',
 		id: 'r-decompte-martin',
-		libelle: 'Décompte prêt',
+		libelle: 'Taux lu dans vos conditions',
 		famille: 'ARGENT',
 		debiteur: 'Ateliers Martin',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_MARTIN } },
-		obstacle: 'Décompte arrêtable, dont 1 240,33 € de pénalités de retard courues.',
+		obstacle: 'Vos conditions générales prévoient un taux de pénalités : il changerait les 1 240,33 € comptés à ce jour.',
 		urgence: 'HAUTE',
 		montant: 1_248_033n,
 		/*
@@ -172,7 +172,7 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			onEcarter: () => {}
 		},
 		pli: {
-			libelle: { un: 'décompte arrêtable', plusieurs: 'décomptes arrêtables' },
+			libelle: { un: 'taux à confirmer', plusieurs: 'taux à confirmer' },
 			rienATrancher: false
 		}
 	},

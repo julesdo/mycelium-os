@@ -50,7 +50,8 @@ const CAPTURES: readonly Capture[] = [
 	// La file du matin : le même écran, descendu jusqu'aux clients à traiter.
 	{ nom: 'file', ecran: 'aujourd’hui', defilement: 330 },
 	{ nom: 'dossier', ecran: 'créance' },
-	{ nom: 'decompte', ecran: 'arrêt du décompte' },
+	// Le montant réclamé, daté : l'écran d'arrêt n'existe plus depuis le 09/10/2026.
+	{ nom: 'decompte', ecran: 'montant réclamé' },
 	{ nom: 'paiement', ecran: 'le client paie', sansBarre: true },
 	{ nom: 'depots', ecran: 'dépôt' }
 ];
@@ -65,7 +66,11 @@ async function main(): Promise<void> {
 		locale: 'fr-FR'
 	});
 
-	for (const capture of CAPTURES) {
+	// `node … capturer-ecrans.ts decompte` ne refait que cette capture-là.
+	const seulement = process.argv.slice(2);
+	const aPrendre =
+		seulement.length === 0 ? CAPTURES : CAPTURES.filter((capture) => seulement.includes(capture.nom));
+	for (const capture of aPrendre) {
 		await page.goto(BASE, { waitUntil: 'networkidle' });
 		await page.getByRole('button', { name: capture.ecran, exact: true }).first().click();
 		if (capture.variante !== undefined) {

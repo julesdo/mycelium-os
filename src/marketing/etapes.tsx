@@ -91,15 +91,15 @@ const ETAPES: readonly Etape[] = [
 		numero: '04',
 		titre: 'Envoyez une relance chiffrée',
 		texte:
-			'Le décompte détaille montant, pénalités et frais. Vous le relisez, le signez et l’envoyez.',
+			'Le décompte détaille montant, pénalités et frais. La relance part à votre nom, quand vous l’avez décidé.',
 		capacites: [
 			'Pénalités détaillées période par période.',
-			'Décompte daté et figé une fois arrêté.',
+			'Le montant daté et figé quand il est réclamé.',
 			'Dossier prêt à transmettre à votre avocat ou commissaire de justice.'
 		],
 		capture: 'decompte',
 		description:
-			'L’arrêt d’un décompte dans Letikette : 20 044,54 € au 3 septembre 2026, décomposés en principal, pénalités de retard et frais de recouvrement, avec les factures laissées de côté.',
+			'Un montant réclamé dans Letikette : 19 928,97 € au 16 août 2026, décomposés en principal, pénalités de retard et frais de recouvrement, facture par facture.',
 		teinte: 'argent'
 	},
 	{

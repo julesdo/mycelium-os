@@ -29,7 +29,7 @@ function questions(): readonly { question: string; reponse: string }[] {
 		{
 			question: 'Letikette contacte-t-il mes clients ?',
 			reponse:
-				'Non. Les courriers sont préparés à votre nom ; vous les relisez et les envoyez vous-même.'
+				'Seulement si vous le décidez. Une fois les relances activées, les rappels et la lettre officielle partent par e-mail à votre nom, et chacun s’affiche une heure avant de partir pour que vous puissiez le retenir. Les réponses arrivent à votre adresse.'
 		},
 		{
 			question: 'Letikette encaisse-t-il l’argent ?',

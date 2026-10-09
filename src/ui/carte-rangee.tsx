@@ -132,7 +132,7 @@ function DeuxLignes({
 				>
 					<span className={retour ? 'min-w-0' : 'min-w-0 truncate'}>
 						{ligne}
-						{attention ? <span className="sr-only"> — demande une réponse</span> : null}
+						{attention ? <span className="sr-only">, demande une réponse</span> : null}
 					</span>
 					{date === undefined || dateEnHaut ? null : (
 						<span className="shrink-0 tabular-nums">{date}</span>

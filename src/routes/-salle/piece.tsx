@@ -275,7 +275,7 @@ function PieceDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	};
 	return (
 		<EcranPiece
-			identifiant="demo-decompte"
+			identifiant="kd7c2m9a4r81e6x5"
 			creanceId="demo-creance"
 			donnees={lectureDemo(etat, { ...depart, suivi })}
 		/>
