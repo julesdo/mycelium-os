@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { CreanceOuverte } from '../../screens/creance';
+import type { ChoixCourrierAffiche } from '../../ui';
 import { suiteDuPlan } from '../../lib/verticales/recouvrement/plan-relance';
 import { EcranCreance } from '../../screens/creance';
 import {
@@ -76,7 +78,7 @@ import {
 	PROFESSIONNELS_DEMO,
 	voieDeLaCreance
 } from './communes';
-import { formeDemo, lectureDemo, type EcranDuProduit } from './demo';
+import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
 /**
  * LES ENTRÉES DE LA FAMILLE, DÉCLARÉES AVANT TOUT CE QUI S'EN CALCULE.
@@ -1042,7 +1044,18 @@ const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
 			pause: { raison: 'ECHEANCIER', le: '2026-11-01', jusquAu: '2026-11-04', montant: 200_000n },
 			santeDebiteur: 'SAINE',
 			situations: [],
-			courriers: { ...base.courriers, envois: [] },
+			// Les deux versements à venir, comme la route les reprend pour l'accord écrit.
+			courriers: {
+				...base.courriers,
+				envois: [],
+				modeles: modelesProposables('SAINE', false),
+				echeancierConvenu: {
+					nombre: 2,
+					premiereEcheance: '2026-11-01',
+					intervalleMois: 1,
+					convenuLe: '2026-09-24'
+				}
+			},
 			planAVenir: [
 				{ cle: 'SECOND_RAPPEL', nom: 'Deuxième rappel', le: '2026-11-05', automatique: true }
 			],
@@ -1112,10 +1125,23 @@ export const ECRANS_CREANCE: readonly EcranDuProduit[] = [
 		// désignant, et ce qu'elle porte vient de ses factures.
 		vide: false,
 		variantes: Object.keys(FORMES_CREANCE_DEMO),
-		Demo: ({ etat, variante }) => (
-			<EcranCreance
-				donnees={lectureDemo(etat, formeDemo(variante, CREANCE_OUVERTE_DEMO, FORMES_CREANCE_DEMO))}
-			/>
-		)
+		Demo: CreanceDemo
 	}
 ];
+
+/**
+ * Le courrier en préparation vit dans la salle comme dans la route : l'accord
+ * écrit s'ouvre déjà rempli depuis l'échéancier, et se regarde ici.
+ */
+function CreanceDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+	const forme = formeDemo(variante, CREANCE_OUVERTE_DEMO, FORMES_CREANCE_DEMO);
+	const [choix, setChoix] = useState<ChoixCourrierAffiche | null>(null);
+	return (
+		<EcranCreance
+			donnees={lectureDemo(etat, {
+				...forme,
+				courriers: { ...forme.courriers, choix, onChoisir: setChoix }
+			})}
+		/>
+	);
+}

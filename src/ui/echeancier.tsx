@@ -104,8 +104,11 @@ export function FeuilleEcheancier({
 	readonly enCours?: boolean;
 	readonly erreur?: string | null;
 	readonly onConvenir: (choix: { nombre: number; premiereLe: string }) => void;
-	/** Ouvre les courriers, où l'accord écrit à faire signer se prépare : ce qui dit où, y mène. */
-	readonly onAccordEcrit?: () => void;
+	/**
+	 * Ouvre l'accord écrit à faire signer, rempli du calendrier choisi ici (le
+	 * nombre de fois et le premier versement) : ce qui dit où, y mène.
+	 */
+	readonly onAccordEcrit?: (calendrier: { nombre: number; premiereLe: string } | null) => void;
 }) {
 	const [nombre, setNombre] = useState<number>(3);
 	const [depart, setDepart] = useState<Depart>('PREMIER');
@@ -204,7 +207,10 @@ export function FeuilleEcheancier({
 						plus de trois jours, les relances reprennent.
 					</p>
 					{onAccordEcrit === undefined ? null : (
-						<BoutonTexte className="self-center" onClick={onAccordEcrit}>
+						<BoutonTexte
+							className="self-center"
+							onClick={() => onAccordEcrit(valide ? { nombre, premiereLe } : null)}
+						>
 							Préparer l’accord écrit, à lui faire signer
 						</BoutonTexte>
 					)}
@@ -227,10 +233,13 @@ const LIBELLE_ETAT: Readonly<Record<EtatEcheanceAffiche, string>> = {
  */
 export function SuiviEcheancier({
 	echeancier,
-	onArreter
+	onArreter,
+	onAccordEcrit
 }: {
 	readonly echeancier: EcheancierAffiche;
 	readonly onArreter?: () => void;
+	/** Ouvre l'accord écrit à faire signer, rempli de ce calendrier. */
+	readonly onAccordEcrit?: () => void;
 }) {
 	const { echeances, prochaine, etat } = echeancier;
 	const part =
@@ -313,10 +322,15 @@ export function SuiviEcheancier({
 				</p>
 			) : null}
 
-			{onArreter === undefined || etat === 'TERMINE' ? null : (
-				<BoutonTexte className="self-start" onClick={onArreter}>
-					Arrêter l’échéancier
-				</BoutonTexte>
+			{etat === 'TERMINE' || (onArreter === undefined && onAccordEcrit === undefined) ? null : (
+				<div className="flex flex-wrap gap-x-cladd-2xs">
+					{onAccordEcrit === undefined || etat !== 'EN_COURS' ? null : (
+						<BoutonTexte onClick={onAccordEcrit}>L’accord écrit, à lui faire signer</BoutonTexte>
+					)}
+					{onArreter === undefined ? null : (
+						<BoutonTexte onClick={onArreter}>Arrêter l’échéancier</BoutonTexte>
+					)}
+				</div>
 			)}
 		</section>
 	);

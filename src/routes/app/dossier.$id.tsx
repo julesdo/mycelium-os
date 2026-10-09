@@ -28,6 +28,7 @@ import { useDirigeantsDuClient, useProfessionnelsProposes } from '../../app/use-
 import { useGestesDeDossier } from '../../app/gestes-dossier';
 import {
 	modelesProposables,
+	type CalendrierConvenu,
 	type ChoixCourrierAffiche,
 	type EnvoiAffiche,
 	type OrdonnanceLueAffichee
@@ -144,6 +145,25 @@ function PageCreance() {
 	// L'aperçu se recompose côté serveur à chaque choix : l'écran n'écrit rien.
 	const [choixCourrier, setChoixCourrier] = useState<ChoixCourrierAffiche | null>(null);
 	const [erreurCourrier, setErreurCourrier] = useState<string | null>(null);
+	/*
+	  LE CALENDRIER QUE L'ACCORD ÉCRIT REPREND : les versements encore à venir du
+	  paiement en plusieurs fois qui court. Un versement déjà passé ne s'écrit pas
+	  dans un accord qu'on signe aujourd'hui ; il en faut deux au moins.
+	*/
+	const echeancier = parole?.echeancier;
+	const aVenir =
+		echeancier === undefined || echeancier === null || echeancier.etat !== 'EN_COURS'
+			? []
+			: echeancier.echeances.filter((e) => e.etat !== 'PAYEE' && e.le >= aujourdHui);
+	const echeancierConvenu: CalendrierConvenu | undefined =
+		echeancier === undefined || echeancier === null || aVenir.length < 2
+			? undefined
+			: {
+					nombre: aVenir.length,
+					premiereEcheance: aVenir[0]!.le,
+					intervalleMois: 1,
+					convenuLe: echeancier.accordeLe
+				};
 	const envoisDuDossier = useQuery(api.recouvrement.envois.lister, { creanceId });
 	/*
 	  ⚠️ LU POUR UN SEUL CHAMP, ET LA PAGE NE L'ATTEND PAS. Le délai que le gérant
@@ -768,6 +788,9 @@ function PageCreance() {
 			debiteurId,
 			professionnels,
 			dirigeantsDuClient,
+			// Tenu ici : l'échéancier ouvre l'accord écrit déjà rempli.
+			choix: choixCourrier,
+			...(echeancierConvenu === undefined ? {} : { echeancierConvenu }),
 			...(profilCreancier?.delaiRelanceParDefautJours === undefined
 				? {}
 				: { delaiRelanceParDefaut: profilCreancier.delaiRelanceParDefautJours }),

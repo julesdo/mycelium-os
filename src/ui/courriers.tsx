@@ -160,9 +160,30 @@ export interface IntervenantProposable extends Omit<FicheIntervenant<string>, '_
 	readonly id: string;
 }
 
+/**
+ * LE CALENDRIER D'UN PAIEMENT EN PLUSIEURS FOIS, convenu avec le client ou en
+ * train de l'être : l'accord écrit le reprend au lieu de le faire ressaisir
+ * (09/10/2026).
+ */
+export interface CalendrierConvenu {
+	readonly nombre: number;
+	readonly premiereEcheance: string;
+	readonly intervalleMois: number;
+	/** Le jour où il a été convenu ; absent tant que la feuille est ouverte. */
+	readonly convenuLe?: string;
+}
+
 export interface CourriersDuDossier {
 	/** Le client du dossier : « (sa fiche) » dans ce qui manque mène à sa fiche. */
 	readonly debiteurId?: string;
+	/**
+	 * Le courrier en cours de préparation, quand la route le tient : un autre
+	 * endroit de la page peut alors l'ouvrir déjà rempli (l'accord écrit depuis
+	 * le paiement en plusieurs fois). Absent, la liste le tient elle-même.
+	 */
+	readonly choix?: ChoixCourrierAffiche | null;
+	/** Le paiement en plusieurs fois qui court : l'accord écrit en reprend le calendrier. */
+	readonly echeancierConvenu?: CalendrierConvenu;
 	readonly modeles: readonly ModeleProposable[];
 	readonly envois: readonly EnvoiAffiche[];
 	readonly peutValider: boolean;
@@ -323,6 +344,7 @@ function choixInitial(
 	lu: {
 		readonly personneNommee: PersonneNommeeAffichee | null;
 		readonly ordonnance: OrdonnanceLueAffichee | null;
+		readonly calendrier?: CalendrierConvenu;
 	}
 ): ChoixCourrierAffiche {
 	const mandataireNom = lu.personneNommee?.nom ?? '';
@@ -337,11 +359,12 @@ function choixInitial(
 				reserveIndemnisationComplementaire: false
 			};
 		case 'ACCORD_ECHEANCIER':
+			// Le calendrier convenu au téléphone, quand il y en a un : il ne se ressaisit pas.
 			return {
 				modele,
-				nombre: 3,
-				premiereEcheance: aujourdHui,
-				intervalleMois: 1,
+				nombre: lu.calendrier?.nombre ?? 3,
+				premiereEcheance: lu.calendrier?.premiereEcheance ?? aujourdHui,
+				intervalleMois: lu.calendrier?.intervalleMois ?? 1,
 				penalites: null,
 				delaiRegularisationJours: 15,
 				debiteurSignataireNom: '',
@@ -370,6 +393,22 @@ function choixInitial(
 				nombrePieces: 0
 			};
 	}
+}
+
+/**
+ * L'ACCORD ÉCRIT, DÉJÀ REMPLI DU CALENDRIER — celui de la feuille du paiement en
+ * plusieurs fois quand on en vient, sinon celui qui court sur le dossier.
+ */
+export function choixDeLAccord(
+	courriers: CourriersDuDossier,
+	calendrier?: CalendrierConvenu
+): ChoixCourrierAffiche {
+	const repris = calendrier ?? courriers.echeancierConvenu;
+	return choixInitial('ACCORD_ECHEANCIER', courriers.aujourdHui, courriers.delaiRelanceParDefaut, {
+		personneNommee: courriers.personneNommee,
+		ordonnance: courriers.ordonnanceLue,
+		...(repris === undefined ? {} : { calendrier: repris })
+	});
 }
 
 function Choix<T extends string | number | boolean | null>({
@@ -468,7 +507,8 @@ function FormulaireChoix({
 	dirigeantsDuClient,
 	citationAnnonce,
 	personneNommee,
-	ordonnanceLue
+	ordonnanceLue,
+	echeancierConvenu
 }: {
 	choix: ChoixCourrierAffiche;
 	onChange: (c: ChoixCourrierAffiche) => void;
@@ -478,6 +518,7 @@ function FormulaireChoix({
 	citationAnnonce: string | null;
 	personneNommee: PersonneNommeeAffichee | null;
 	ordonnanceLue: OrdonnanceLueAffichee | null;
+	echeancierConvenu: CalendrierConvenu | undefined;
 }) {
 	switch (choix.modele) {
 		case 'RELANCE_OFFICIELLE':
@@ -534,6 +575,20 @@ function FormulaireChoix({
 		case 'ACCORD_ECHEANCIER':
 			return (
 				<div className="flex flex-col gap-cladd-2xs">
+					{/* ⚠️ PRÉ-REMPLI, PAS DÉCIDÉ, ET LA DIFFÉRENCE EST DITE. Le paiement
+					    convenu au téléphone porte sur les factures seules ; l'accord fait
+					    aussi reconnaître les pénalités et les frais déjà dus. */}
+					{echeancierConvenu !== undefined &&
+					echeancierConvenu.nombre === choix.nombre &&
+					echeancierConvenu.premiereEcheance === choix.premiereEcheance ? (
+						<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							{`Repris du paiement en ${echeancierConvenu.nombre} fois${
+								echeancierConvenu.convenuLe === undefined
+									? ''
+									: ` convenu le ${dateCourte(echeancierConvenu.convenuLe)}`
+							}. L’accord y ajoute les pénalités et les frais déjà dus.`}
+						</p>
+					) : null}
 					<Champ etiquette="Nombre de versements">
 						<Input
 							size="lg"
@@ -1060,10 +1115,13 @@ function Envoi({
 }
 
 export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
-	const [choix, setChoix] = useState<ChoixCourrierAffiche | null>(null);
+	// Tenu par la route quand elle le fournit (un autre endroit de la page peut
+	// ouvrir un courrier déjà rempli) ; sinon, ici.
+	const [local, setLocal] = useState<ChoixCourrierAffiche | null>(null);
+	const choix = courriers.choix === undefined ? local : courriers.choix;
 
 	function choisir(c: ChoixCourrierAffiche | null) {
-		setChoix(c);
+		setLocal(c);
 		courriers.onChoisir(c);
 	}
 
@@ -1127,7 +1185,10 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 															courriers.delaiRelanceParDefaut,
 															{
 																personneNommee: courriers.personneNommee,
-																ordonnance: courriers.ordonnanceLue
+																ordonnance: courriers.ordonnanceLue,
+																...(courriers.echeancierConvenu === undefined
+																	? {}
+																	: { calendrier: courriers.echeancierConvenu })
 															}
 														)
 											)
@@ -1148,6 +1209,7 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 										citationAnnonce={courriers.citationAnnonce}
 										personneNommee={courriers.personneNommee}
 										ordonnanceLue={courriers.ordonnanceLue}
+										echeancierConvenu={courriers.echeancierConvenu}
 									/>
 									<Apercu
 										apercu={courriers.apercu}

@@ -14,8 +14,10 @@ export { cn } from './cn';
 export { TableauConditions, type LigneConditionAffichee } from './conditions';
 export {
 	Courriers,
+	choixDeLAccord,
 	modelesProposables,
 	type ApercuAffiche,
+	type CalendrierConvenu,
 	type ChoixCourrierAffiche,
 	type CourriersDuDossier,
 	type EnvoiAffiche,

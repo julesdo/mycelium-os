@@ -11,6 +11,7 @@ import {
 	FeuilleEcheancier,
 	FeuilleReponseClient,
 	SuiviEcheancier,
+	choixDeLAccord,
 	type EcheancierAffiche,
 	BoutonPrincipal,
 	BoutonSecondaire,
@@ -556,6 +557,14 @@ export function EcranCreance({
 								const id = pret.reponse?.echeancier?.id;
 								if (id !== undefined) pret.reponse?.onArreterEcheancier(id);
 							}}
+							{...(accordPossible(pret)
+								? {
+										onAccordEcrit: () => {
+											pret.courriers.onChoisir(choixDeLAccord(pret.courriers));
+											ouvrir('courriers');
+										}
+									}
+								: {})}
 						/>
 					)}
 
@@ -648,14 +657,40 @@ export function EcranCreance({
 							pret.reponse?.onConvenirEcheancier(choix);
 							setEcheancierOuvert(false);
 						}}
-						onAccordEcrit={() => {
-							setEcheancierOuvert(false);
-							ouvrir('courriers');
-						}}
+						{...(accordPossible(pret)
+							? {
+									onAccordEcrit: (calendrier: { nombre: number; premiereLe: string } | null) => {
+										setEcheancierOuvert(false);
+										pret.courriers.onChoisir(
+											choixDeLAccord(
+												pret.courriers,
+												calendrier === null
+													? undefined
+													: {
+															nombre: calendrier.nombre,
+															premiereEcheance: calendrier.premiereLe,
+															intervalleMois: 1
+														}
+											)
+										);
+										ouvrir('courriers');
+									}
+								}
+							: {})}
 					/>
 				</>
 			)}
 		</PageEcran>
+	);
+}
+
+/**
+ * L'accord écrit se propose quand son modèle s'applique : pas à un client en
+ * procédure collective ou radié (`modelesProposables`).
+ */
+function accordPossible(creance: CreanceOuverte): boolean {
+	return (
+		creance.courriers.modeles.find((m) => m.cle === 'ACCORD_ECHEANCIER')?.indisponible === null
 	);
 }
 
