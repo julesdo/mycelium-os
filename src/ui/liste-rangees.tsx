@@ -354,20 +354,26 @@ export function RangeeLien({
 			hoverable={false}
 			size="md"
 			className="h-auto min-h-13 w-full rounded-none"
-			contentClassName="w-full items-center justify-between gap-cladd-3xs px-3.5 py-cladd-3xs"
+			contentClassName="w-full items-center justify-between gap-2 px-3.5 py-cladd-3xs"
 		>
-			<span className="flex min-w-0 flex-1 items-center gap-cladd-3xs text-left">
+			{/*
+			  ⚠️ LA RÈGLE DE `RangeeDepliable`, ENFIN ICI AUSSI (09/10/2026). La valeur
+			  était `shrink-0` et le titre tronqué : sur le compte, « Votre défense »
+			  se lisait « Votre défe… » à côté de « 2 professionnels ». Le titre et la
+			  valeur prennent leur largeur et cèdent ensemble, en proportion.
+			*/}
+			<span className="flex min-w-0 flex-auto items-center gap-2.5 text-left">
 				{avatar ??
 					(famille !== undefined ? (
 						<VignetteRangee famille={famille} />
 					) : icone !== undefined ? (
 						<VignetteIcone icone={icone} />
 					) : null)}
-				<span className="min-w-0 truncate text-cladd-xs font-semibold">{titre}</span>
+				<span className="min-w-0 text-cladd-xs font-semibold">{titre}</span>
 			</span>
-			<span className="flex shrink-0 items-center gap-cladd-3xs">
+			<span className="flex min-w-0 items-center justify-end gap-2">
 				{valeur === undefined ? null : (
-					<span className="text-cladd-xs text-cladd-fg-soft tabular-nums">{valeur}</span>
+					<span className="text-right text-cladd-xs text-cladd-fg-soft tabular-nums">{valeur}</span>
 				)}
 				<ChevronRightIcon className="size-5 shrink-0 text-cladd-fg-softer" aria-hidden />
 			</span>
