@@ -1,11 +1,11 @@
 import type { ComponentProps, ReactNode } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
-import { ListItem } from '@cladd-ui/react';
 import { BoutonPrincipal, BoutonSecondaire } from './bouton';
+import { CarteFantome, ListeDeCartes } from './carte-rangee';
 import { cn } from './cn';
 import { EmptyState } from './empty-state';
 import { Lien, TitreEcran } from './lien';
-import { EnteteDetail, ListeAnalyses } from './navigation';
+import { EnteteDetail } from './navigation';
 import { Page, PageBody, PageHeader, type ColonneEntete } from './page';
 import { TwoPane } from './two-pane';
 
@@ -328,9 +328,9 @@ function Volets(props: ComponentProps<typeof TwoPane>) {
  * n'est pas garanti, et ne le serait qu'avec une région vivante permanente dans
  * la coquille de l'application.
  *
- * ⚠️ LA MÊME CARTE QUE LES LISTES DU PRODUIT. Les rangées de substitution vivent
- * dans `ListeAnalyses`, pour que la page change peu quand le contenu arrive, et
- * prennent la largeur de la liste quand l'écran a deux volets. Elles respirent
+ * ⚠️ LA MÊME CARTE QUE LES LISTES DU PRODUIT. Les cartes de substitution ont la
+ * forme de `CarteRangee` (`CarteFantome`), pour que la page change peu quand le
+ * contenu arrive, et prennent la largeur de la liste quand l'écran a deux volets. Elles respirent
  * au rythme `pouls`, celui des traitements en cours.
  */
 function Attente({ sansEntete, pleineLargeur }: { sansEntete: boolean; pleineLargeur: boolean }) {
@@ -345,16 +345,24 @@ function Attente({ sansEntete, pleineLargeur }: { sansEntete: boolean; pleineLar
 			<p role="status" className="sr-only">
 				Chargement de l’écran…
 			</p>
-			<div aria-busy="true" aria-hidden="true">
-				<ListeAnalyses>
-					{Array.from({ length: RANGEES_D_ATTENTE }, (_, rang) => (
-						<ListItem key={rang}>
-							<span className="size-5 shrink-0 animate-pouls rounded-full bg-cladd-fg/10" />
-							<span className="h-3 w-2/5 animate-pouls rounded-full bg-cladd-fg/10" />
-							<span className="ml-auto h-3 w-1/6 animate-pouls rounded-full bg-cladd-fg/10" />
-						</ListItem>
-					))}
-				</ListeAnalyses>
+			{/*
+			  ⚠️ LA SILHOUETTE DE L'ÉCRAN QUI ARRIVE (09/10/2026, Mercury et Wise) : le
+			  montant centré en tête, l'en-tête d'un groupe, puis des cartes de la forme
+			  exacte de `CarteRangee`. L'attente dessinait l'ancienne liste serrée.
+			*/}
+			<div aria-busy="true" aria-hidden="true" className="flex flex-col gap-cladd-xs">
+				<div className="flex flex-col items-center gap-2 py-cladd-3xs">
+					<span className="h-2.5 w-1/3 animate-pouls rounded-full bg-cladd-fg/[0.07]" />
+					<span className="h-8 w-1/2 animate-pouls rounded-cladd-md bg-cladd-fg/10" />
+				</div>
+				<div className="flex flex-col gap-cladd-3xs">
+					<span className="ml-1 h-3 w-1/4 animate-pouls rounded-full bg-cladd-fg/[0.07]" />
+					<ListeDeCartes>
+						{Array.from({ length: RANGEES_D_ATTENTE }, (_, rang) => (
+							<CarteFantome key={rang} />
+						))}
+					</ListeDeCartes>
+				</div>
 			</div>
 		</div>
 	);

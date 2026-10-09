@@ -338,3 +338,30 @@ export function LigneDeReleve(
 		</div>
 	);
 }
+
+/**
+ * UNE CARTE EN ATTENTE DE SES DONNÉES — la silhouette exacte de ses voisines.
+ *
+ * ⚠️ LA MÊME FORME QUE LA CARTE QUI ARRIVE (09/10/2026, sur Mercury et Wise) :
+ * un disque de 40 px, le nom et le montant sur une ligne, ce qui se passe et sa
+ * date sur l'autre. L'attente dessinait des rangées serrées d'un disque de 20 px
+ * et d'une barre, la forme des listes d'avant les cartes : à l'arrivée des
+ * données, tout l'écran changeait de forme d'un coup.
+ */
+export function CarteFantome() {
+	return (
+		<div className="verre-carte flex min-h-17 items-center gap-2.5 rounded-cladd-xl px-3.5 py-cladd-3xs">
+			<span className="size-10 shrink-0 animate-pouls rounded-full bg-cladd-fg/10" />
+			<span className="flex min-w-0 flex-1 flex-col gap-2">
+				<span className="flex items-center justify-between gap-2">
+					<span className="h-3 w-2/5 animate-pouls rounded-full bg-cladd-fg/10" />
+					<span className="h-3 w-1/5 animate-pouls rounded-full bg-cladd-fg/10" />
+				</span>
+				<span className="flex items-center justify-between gap-2">
+					<span className="h-2.5 w-1/3 animate-pouls rounded-full bg-cladd-fg/[0.07]" />
+					<span className="h-2.5 w-1/6 animate-pouls rounded-full bg-cladd-fg/[0.07]" />
+				</span>
+			</span>
+		</div>
+	);
+}
