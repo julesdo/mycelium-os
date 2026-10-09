@@ -243,7 +243,7 @@ export function Decompte({
 				{/* Sans la date d'arrêté ni la convention, le chiffre n'est pas
 				    défendable : deux conventions donnent deux totaux différents. */}
 				<p className="px-1 text-cladd-2xs leading-snug text-cladd-fg-soft">
-					Arrêté au {dateCourte(decompte.arreteAu)}, pénalités calculées en{' '}
+					Compté au {dateCourte(decompte.arreteAu)}, pénalités calculées en{' '}
 					{CONVENTION_LISIBLE[decompte.convention]}.
 				</p>
 			</div>

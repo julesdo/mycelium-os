@@ -32,6 +32,7 @@ import {
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
 import { paroleDuDossier, planDuDossier } from './plan';
+import { decompteDuJour } from './decompte';
 import { promesseACiter } from '../../verticales/recouvrement/parole';
 import { dossiersClasses, LIBELLE_MOTIF } from './classement';
 import { professionnelsDe, vCleFaitLitige, vEtatCritere, vSecteurCreance } from './tables';
@@ -588,30 +589,14 @@ export const creanceComplete = authedQuery({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.first();
 
-		/**
-		 * LE DERNIER DÉCOMPTE ARRÊTÉ.
-		 *
-		 * ⚠️ LE NIVEAU 2 DE RELANCE REPREND SES CHIFFRES, IL N'EN RECALCULE
-		 * AUCUN. Le seul montant opposable est celui d'un décompte figé et daté ;
-		 * en recomposer un pour un e-mail ferait une seconde vérité, dans un
-		 * texte qui part chez le débiteur.
-		 */
-		const decomptes = await ctx.db
-			.query('decomptes')
-			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-			.collect();
-		const dernierDecompte =
-			decomptes
-				.filter((d) => d.organizationId === organizationId)
-				.sort((a, b) => (a.arreteAu < b.arreteAu ? 1 : a.arreteAu > b.arreteAu ? -1 : 0))[0] ??
-			null;
-
 		const factures = await ctx.db
 			.query('facturesVente')
 			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
 			.collect();
 
 		const restes = await Promise.all(factures.map((facture) => resteDu(ctx, facture)));
+		const jour = await decompteDuJour(ctx, creance, new Date().toISOString().slice(0, 10));
+		const compteDuJour = jour.date ?? jour.calcul;
 		// Le rappel qui reprend après une promesse non couverte la cite, comme celui du pilote.
 		const parole = await paroleDuDossier(ctx, creanceId, factures);
 		const promesse = promesseACiter({
@@ -830,15 +815,17 @@ export const creanceComplete = authedQuery({
 						dateEcheance: f.dateEcheance
 					})),
 					principalRestantDu: restes.length > 0 ? additionner(...restes) : ZERO,
+					// Le compte du jour, daté s'il l'est déjà : le niveau 2 n'attend plus
+					// qu'un décompte soit « arrêté » (09/10/2026).
 					decompte:
-						dernierDecompte === null
+						compteDuJour === null
 							? undefined
 							: {
-									arreteAu: dernierDecompte.arreteAu,
-									principalRestantDu: depuisCentimes(dernierDecompte.principalRestantDu),
-									interets: depuisCentimes(dernierDecompte.interets),
-									indemniteForfaitaire: depuisCentimes(dernierDecompte.indemniteForfaitaire),
-									total: depuisCentimes(dernierDecompte.total)
+									arreteAu: compteDuJour.arreteAu,
+									principalRestantDu: depuisCentimes(compteDuJour.principalRestantDu),
+									interets: depuisCentimes(compteDuJour.interets),
+									indemniteForfaitaire: depuisCentimes(compteDuJour.indemniteForfaitaire),
+									total: depuisCentimes(compteDuJour.total)
 								},
 					santeDebiteur: debiteur?.santeFinanciere ?? 'INCONNUE',
 					constatRegistre: debiteur?.constatRegistre,

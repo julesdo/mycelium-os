@@ -165,7 +165,7 @@ export type Relance =
  * lève d'un geste, et les autres n'en portent pas — ce qui est une information,
  * pas un oubli.
  */
-export type GesteRelance = 'ARRETER_DECOMPTE';
+export type GesteRelance = 'VOIR_LE_MONTANT';
 
 /** Une date ISO en français lisible. Le débiteur lit « 15/05/2026 ». */
 function enFrancais(iso: string): string {
@@ -320,17 +320,17 @@ function compteArrete(elements: ElementsRelance): Relance {
 				'Le rappel du niveau 1 se compose dès maintenant sur les mêmes factures : il ' +
 				'suppose l’oubli et n’annonce aucun chiffre, donc il n’attend aucun décompte.',
 			constat:
-				'Ce niveau reprend les montants d’un décompte arrêté, et aucun décompte n’a été ' +
-				'produit pour ce dossier. Les chiffres d’une relance ne se recalculent pas à la ' +
-				'volée : seul un décompte figé et daté est opposable. Ce refus se lève par l’arrêt ' +
-				'd’un décompte sur ce dossier, qui fige ses chiffres et les date.',
+				'Ce niveau reprend le décompte du jour, pénalités et frais compris, et ce calcul ne ' +
+				'se fait pas encore sur ce dossier : le détail du montant dit pourquoi. Les chiffres ' +
+				'd’une relance ne s’inventent pas : seul un décompte daté les porte. Ce refus se lève ' +
+				'quand la donnée que ce détail nomme est corrigée.',
 			blocages: [],
 			coutDeLAttente:
-				`Tant qu’aucun décompte n’est arrêté, les ${versEuros(elements.principalRestantDu)} € ` +
+				`Tant que ce calcul ne se fait pas, les ${versEuros(elements.principalRestantDu)} € ` +
 				`de principal restent réclamés sans pénalités de retard ni frais de recouvrement ` +
 				`chiffrés dans un texte daté. Ce que ces pénalités représentent ne se chiffre que ` +
 				`dans le décompte.`,
-			geste: 'ARRETER_DECOMPTE'
+			geste: 'VOIR_LE_MONTANT'
 		};
 	}
 

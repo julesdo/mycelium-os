@@ -18,7 +18,7 @@ automatisés ; le dirigeant ne tranche que ce qu'aucune facture ne dit.
 
 Un abonnement : import de factures (export comptable ou dépôt de fichiers), surveillance des
 échéances et de la prescription, tableau des conditions que le gérant qualifie, courriers préparés
-à son nom, et décompte arrêté au centime,
+à son nom, et décompte au centime, daté quand on le réclame,
 explicable période par période.
 
 ## ⚠️ Les trois lignes rouges
@@ -32,7 +32,7 @@ explicable période par période.
    gérant, **une fois qu'un administrateur l'a activé** (`activerRelances`), après avoir lu ce qui
    partira, et sur les seuls dossiers que le gérant a **démarrés** (`aDemarrer`) ; chaque relance **s'affiche une heure avant de partir et se retient d'un geste**
    (`retenir`, qui retire le client du pilote) ; un paiement arrivé entre-temps l'arrête ; la lettre
-   officielle attend un décompte arrêté par le gérant. Tenu par
+   officielle date elle-même le montant qu'elle réclame (`daterLeDecompte`, 09/10/2026). Tenu par
    `src/lib/convex/__tests__/piloteRelances.test.ts`. Un courrier préparé à la main suit toujours
    l'ancien chemin : le gérant le valide, puis l'envoie. Tout part à son seul nom ; Letikette n'y
    figure pas, n'est pas son mandataire, et ne reçoit ni fonds ni réponse du débiteur : les réponses
@@ -151,6 +151,8 @@ contestation se déclare, facultative, s'inscrit au journal de l'arrêt et ne re
 quatre parties (D0) reste entier, à l'endroit où le produit dit non : « Si l'un de ces points est
 faux » et « Ce décompte ne se calcule pas ». Le détail par facture (`LignesDuDecompte`), les
 valeurs de loi et le dernier décompte arrêté sont des rangées. 2 835 → 1 412 px, 469 → 168 mots.
+**Le 09/10/2026, l'arrêt lui-même a disparu**, écran compris : voir « Le décompte ne s'arrête
+plus », plus bas.
 
 **Et la page où le client paie (`/p/<jeton>`), sur Square, Stripe, OKX et Airwallex**
 (01/10/2026). Les initiales et le nom du créancier centrés, le reste à régler en grand avec sa
@@ -362,8 +364,8 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     la ligne rouge n° 1. Le bloc « Le pilote » de l'accueil porte l'activation (une feuille qui dit
     tout ce qui partira) puis « Part bientôt », chaque relance avec son « Retenir » ; la carte d'un
     courrier programmé dans le dossier aussi. En semaine, de 9 h à 18 h, heure de Paris
-    (`prochainCreneauDEnvoi`). Ce qui manque pour envoyer (l'e-mail du client, le vôtre, un
-    décompte arrêté) arrive une fois dans la boîte de réception (`PILOTE_BLOQUE`). Sans envoi
+    (`prochainCreneauDEnvoi`). Ce qui manque pour envoyer (l'e-mail du client, le vôtre)
+    arrive une fois dans la boîte de réception (`PILOTE_BLOQUE`). Sans envoi
     configuré, la relance redevient un courrier à valider. L'adresse d'envoi est `RELANCES_EMAIL`,
     à défaut celle d'`AUTH_EMAIL`, avec le nom du créancier devant : un domaine neutre reste à
     poser pour qu'aucun e-mail ne nomme le logiciel.
@@ -393,10 +395,10 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     de la suite, ce qui arrive si rien ne bouge, et ce qui est récupéré.
   - **Une contestation ne bloque jamais rien** (le fondateur, le même soir : « Plume doit être
     capable de tout faire et ne jamais bloquer même si le client a contesté »). C'est un FAIT du
-    dossier, montré et noté, jamais un verrou : l'arrêt du décompte ne l'exige plus (`prevol.ts`,
-    `QUESTION_CONTESTATION`), le démarrage ne retire plus le client du pilote, les relances
+    dossier, montré et noté, jamais un verrou : aucun montant ne l'attend, le démarrage ne
+    retire plus le client du pilote, les relances
     continuent, et les écrans disent que le dossier continue. Plume note une contestation (ou sa
-    fin), arrête le décompte, ouvre la page de paiement et note la remise au conseil, toujours
+    fin), ouvre la page de paiement et note la remise au conseil, toujours
     après « Confirmer » ; quand les filtres retiennent sa phrase, ses gestes restent. Ce qui reste
     suspendu l'est par la LOI (procédure collective, radiation), pas par une contestation.
 - **La parole du client fait taire le pilote** (analyse des parcours d'impayés du 08/10/2026,
@@ -413,6 +415,24 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   raisons, `convex/recouvrement/classement.ts`) : rien n'est effacé, il sort des alertes et du
   montant de l'accueil, et se rouvre d'un toucher ; « il a payé » n'est pas une raison, le
   règlement se note sur la fiche. Plume sait aussi convenir d'un échéancier et classer.
+  **Le 09/10**, le rappel qui reprend après une promesse non couverte la rappelle (« vous nous
+  aviez annoncé un règlement pour le 20 », `parole.promesseACiter`), l'accord écrit s'ouvre
+  rempli du calendrier convenu, et un dossier classé sort aussi de ce qu'un client doit.
+- **Le décompte ne s'arrête plus : il se date quand on le réclame** (09/10/2026). Le fondateur :
+  « si on veut un décompte à date, on a juste besoin de le réclamer, pas besoin de l'arrêter ».
+  Les pénalités courent jusqu'au paiement (L441-10 II) ; seul le jugement d'ouverture en arrête le
+  cours (L622-28), et le calcul le fait seul. Il fallait pourtant « arrêter un décompte » (un écran,
+  deux cases, un geste dit irréversible) avant toute lettre officielle, accord, page de paiement
+  ou remise. Désormais chaque document qui réclame un chiffre le **date au jour où il se prépare**
+  (`decompte.daterLeDecompte`) : l'aperçu montre le calcul du jour, la préparation le fige au
+  même centime, un décompte daté resert tant qu'il dit la même chose, un règlement en fait dater
+  un autre. La lettre officielle du pilote n'attend plus le gérant. Ce que le logiciel ne voit pas
+  (un avoir, un règlement non noté) s'affirme en validant le document ou en confirmant le geste
+  de Plume, et la lettre invite le client à signaler un règlement parti depuis. L'écran
+  `/app/arret`, la mutation `arreter` et `prevol.ts` ont disparu ; le geste de Plume
+  « arrêter le décompte » n'est plus proposé. La rangée « Pénalités et frais » liste les
+  **montants réclamés** et télécharge le calcul du jour, daté. Une déclaration ne part pas sans
+  les factures du client restées hors du dossier ; la lettre à l'avocat les nomme.
 - **Une seule barre compacte, collante, sur TOUT le produit — et plus aucun grand titre.**
   (Décision du fondateur, 30/09/2026 : « fais la même barre compacte partout, less is more ».)
   Relevée sur les applications de notre métier (Revolut Business, Splitwise, bunq — voir
@@ -463,16 +483,19 @@ innocent multiplie le coût par document sans qu'aucun autre test ne tombe.
   taux, sur combien de jours, sur quelle base annuelle. Un total qu'on ne peut pas décomposer est
   un chiffre qu'on demande de croire ; décomposé, il se refait à la main — ce que fera le débiteur
   qui le conteste.
-- **Un décompte arrêté est figé, définitivement.** Rejouer produit un NOUVEAU décompte daté. La
+- **Un montant réclamé est figé, définitivement.** Chaque document qui réclame un chiffre le
+  date au jour où il part (`daterLeDecompte`) ; rejouer produit un NOUVEAU décompte daté. La
   question n'est pas « combien réclame-t-on aujourd'hui » mais « qu'a-t-on réclamé le jour où on
-  l'a réclamé ».
+  l'a réclamé ». « Arrêté au » veut dire « compté jusqu'au » : les pénalités courent jusqu'au
+  paiement, et rien ne s'arrête à la main.
 - **Les montants sont des entiers de centimes**, en `bigint` côté logique (`socle/montants.ts`) et
   en `v.int64()` côté Convex. Jamais un flottant, du parseur jusqu'à l'écran. La seule division
   arrondie de toute la chaîne est explicite, une par segment.
 - **Le doute ne profite jamais au produit.** Un critère indéterminé compte comme absent, jamais
   comme acquis. L'absence de contestation CONNUE n'est pas une absence de contestation.
 - **Un acte ne se produit pas sur un décompte incomplet.** `controle.ts` compare la créance à
-  toutes les factures connues du débiteur et CHIFFRE ce qui serait abandonné. C'est le seul endroit
+  toutes les factures connues du débiteur et CHIFFRE ce qui serait abandonné ; une déclaration de
+  créance ne se prépare pas tant qu'une facture du client reste hors du dossier (`envois.composer`). C'est le seul endroit
   du produit où un refus vaut mieux qu'un résultat : le titre exécutoire ne porte que sur les
   sommes qu'il chiffre, et ce qui n'y figure pas est perdu.
 - **Ce que le logiciel ne voit pas s'affiche aussi.** La surveillance déclare ses hypothèses (un

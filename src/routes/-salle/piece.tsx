@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { EcranArret, type ArretDeLaCreance } from '../../screens/arret';
 import { EcranPiece, type PieceArretee } from '../../screens/piece';
 import { depuisCentimes, enCentimes } from '../../lib/socle/montants';
 import { ecartJours } from '../../lib/verticales/recouvrement/calendrier';
 import { controlerDecompte } from '../../lib/verticales/recouvrement/controle';
-import type { ReponsesPrevol } from '../../lib/verticales/recouvrement/prevol';
 import {
 	decompterCreance,
 	type DecompteCreance,
@@ -16,10 +14,6 @@ import {
 	regimePrescription
 } from '../../lib/verticales/recouvrement/pays/france/prescription';
 import { periodesDeTauxParDefaut } from '../../lib/verticales/recouvrement/pays/france/taux';
-import {
-	parametresManquants,
-	tousLesParametres
-} from '../../lib/verticales/recouvrement/parametres';
 import type { DecompteAffiche, SuiviConseilAffiche } from '../../ui';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { CARNET_DEMO, PROFESSIONNELS_DEMO } from './communes';
@@ -149,48 +143,6 @@ const PRESCRIPTION_DEMO = (() => {
 	};
 })();
 
-function arretDemo(avecLesEcartees: boolean): ArretDeLaCreance {
-	const controle = controleDemo(avecLesEcartees);
-	return {
-		debiteur: DEBITEUR_DEMO,
-		arreteAu: AUJOURD_HUI_DEMO,
-		projection: enAffichage(PROJECTION_DEMO),
-		refusDeCalcul: null,
-		abandons: controle.abandons.map((abandon) => ({
-			nature: abandon.nature,
-			reference: abandon.reference,
-			montantEnJeu: abandon.montantEnJeu === null ? null : enCentimes(abandon.montantEnJeu),
-			explication: abandon.explication,
-			// Dans la salle, les deux écartées sont libres de créance : la sortie
-			// « les inclure » doit être visible, c'est la moitié de ce qu'on regarde.
-			rattachable: abandon.nature === 'FACTURE_ECARTEE'
-		})),
-		montantAbandonne: enCentimes(controle.montantAbandonne),
-		nombreNonChiffrables: controle.abandons.filter((abandon) => abandon.montantEnJeu === null)
-			.length,
-		controleDesParametres: {
-			exerce: false,
-			total: tousLesParametres().length,
-			clesNonUtilisables: parametresManquants()
-		},
-		prescription: { ...PRESCRIPTION_DEMO, motifInconnue: null },
-		dernierDecompteId: 'demo-decompte',
-		reponses: {},
-		onRepondre: () => {},
-		onInclure: () => {},
-		inclusionEnCours: false,
-		abandonsAssumes: false,
-		onAssumerAbandons: () => {},
-		onArreter: () => {},
-		enCours: false,
-		erreur: null
-	};
-}
-
-const FORMES_ARRET: Readonly<Record<string, ArretDeLaCreance>> = {
-	'décompte complet': arretDemo(false)
-};
-
 /** L'écart entre le dossier figé et le calcul du jour, décomposé comme le produit le décompose. */
 const ECART_DEMO = (() => {
 	const figees = new Map(FIGE_DEMO.lignes.map((ligne) => [ligne.reference, ligne]));
@@ -290,30 +242,6 @@ const FORMES_PIECE: Readonly<Record<string, PieceArretee>> = {
 };
 
 /**
- * L'ARRÊT, VIVANT. Les cases et le choix sur ce qui est laissé de côté tiennent
- * dans un état local, comme la route les tient : sans ça, la salle montrait un
- * bouton inerte qu'aucun geste ne pouvait réveiller, et rien ne prouvait que
- * les trois cases plus le choix l'activent.
- */
-function ArretDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
-	const [reponses, setReponses] = useState<ReponsesPrevol>({});
-	const [assumes, setAssumes] = useState(false);
-	const forme = formeDemo(variante, arretDemo(true), FORMES_ARRET);
-	return (
-		<EcranArret
-			identifiant="demo-creance"
-			donnees={lectureDemo(etat, {
-				...forme,
-				reponses,
-				onRepondre: (cle, reponse) => setReponses((avant) => ({ ...avant, [cle]: reponse })),
-				abandonsAssumes: assumes,
-				onAssumerAbandons: setAssumes
-			})}
-		/>
-	);
-}
-
-/**
  * LA PIÈCE, VIVANTE : la remise, le retour et la clôture tiennent dans un état
  * local, comme la base les tiendrait. Sans ça, « Je l’ai remis » refermait une
  * feuille sur un écran qui ne changeait pas, et rien ne prouvait que la remise
@@ -356,15 +284,8 @@ function PieceDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 
 export const ECRANS_PIECE: readonly EcranDuProduit[] = [
 	{
-		route: '/app/arret/$id',
-		libelle: 'arrêt du décompte',
-		vide: false,
-		variantes: Object.keys(FORMES_ARRET),
-		Demo: ArretDemo
-	},
-	{
 		route: '/app/decompte/$id',
-		libelle: 'décompte arrêté',
+		libelle: 'montant réclamé',
 		vide: false,
 		variantes: Object.keys(FORMES_PIECE),
 		// La clé remet la remise locale à zéro quand on change de variante.

@@ -185,31 +185,24 @@ export function Relances({
 					{/* Le seul refus du module qui se lève d'un geste porte ce geste,
 					    ici, à côté de sa raison. Les autres n'en ont pas, et une rangée
 					    vide vaut mieux qu'un bouton qui ne lèverait rien. */}
-					{!niveau.disponible && niveau.geste === 'ARRETER_DECOMPTE' ? (
+					{!niveau.disponible && niveau.geste === 'VOIR_LE_MONTANT' ? (
 						<div className="flex flex-wrap gap-cladd-3xs">
 							<BoutonSecondaire
 								as={Lien}
 								/*
-								  ⚠️ L'ARRÊT, ET PLUS L'ANALYSE QUI Y MÈNE. Ce geste pointait
-								  vers `/app/creance/$id/decompte` : un écran d'analyse d'où il
-								  fallait encore trouver le bouton. Le seul geste irréversible
-								  du produit a son écran plein cadre depuis T9, avec son
-								  contrôle de complétude chiffré — le refus se lève là où il se
-								  lève.
+								  LE DÉTAIL DU MONTANT, OÙ SE LIT CE QUI EMPÊCHE LE CALCUL. Ce geste
+								  menait à l'écran d'arrêt d'un décompte, retiré le 09/10/2026 : le
+								  montant se date désormais tout seul quand un document le réclame.
 
-								  ⚠️ L'ASSERTION RESTE, ET LE PLAN SE TROMPAIT EN ANNONÇANT
-								  QU'ELLE PARTIRAIT AVEC LA ROUTE. Elle ne tenait pas à la
-								  destination — qui était déjà déclarée — mais à `as` : passer
-								  `Lien` en élément d'un `Button` efface le générique du
-								  routeur, donc le typage des paramètres avec lui. Changer de
-								  route n'y change rien, et la retirer ne compile pas. La
-								  DESTINATION, elle, reste vérifiée contre l'arbre des routes,
-								  ici et par `__tests__/destinations-existent.test.ts`.
+								  ⚠️ L'ASSERTION RESTE : passer `Lien` en élément d'un `Button`
+								  efface le générique du routeur. La DESTINATION reste vérifiée par
+								  `__tests__/destinations-existent.test.ts`.
 								*/
-								to="/app/arret/$id"
+								to="/app/dossier/$id"
 								params={{ id: identifiant } as never}
+								search={{ ouvrir: 'decompte' } as never}
 							>
-								Arrêter le décompte
+								Voir le détail du montant
 							</BoutonSecondaire>
 						</div>
 					) : null}

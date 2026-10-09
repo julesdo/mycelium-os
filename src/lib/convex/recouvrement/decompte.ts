@@ -1,6 +1,6 @@
 import { v, ConvexError } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
-import { authedQuery } from '../functions';
+import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
@@ -903,5 +903,33 @@ export const lireDecompte = authedQuery({
 			imputation: decompte.imputation,
 			abandons: await abandonsDuDecompte(ctx, organizationId, decompte)
 		};
+	}
+});
+
+/**
+ * LE CALCUL DU JOUR, DATÉ POUR ÊTRE TÉLÉCHARGÉ (09/10/2026).
+ *
+ * Un PDF qu'on télécharge se remet souvent à quelqu'un : il se date comme ce que
+ * réclame un courrier, et ce qui a été remis se relit ensuite tel quel. C'est
+ * l'ancien bouton « Arrêter un décompte », sans son écran.
+ */
+export const daterPourTelecharger = authedMutation({
+	args: { creanceId: v.id('creances') },
+	returns: v.id('decomptes'),
+	handler: async (ctx, { creanceId }): Promise<Id<'decomptes'>> => {
+		const { organizationId, user } = await getUserOrg(ctx);
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null || creance.organizationId !== organizationId) {
+			throw new ConvexError('Dossier introuvable');
+		}
+		const date = await daterLeDecompte(ctx, {
+			creance,
+			aujourdHui: new Date().toISOString().slice(0, 10),
+			pour: 'le calcul téléchargé',
+			auteur: 'GERANT',
+			userId: user._id
+		});
+		if ('refus' in date) throw new ConvexError(date.refus);
+		return date.decompte._id;
 	}
 });

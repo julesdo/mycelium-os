@@ -263,10 +263,25 @@ function ConversationDuDossier() {
 	) {
 		const cle = `${echangeId}-${rang}`;
 		if (genre === 'OUVRIR') {
-			if (ecran === 'ARRET') void navigate({ to: '/app/arret/$id', params: { id } });
-			else if (ecran === 'FICHE_CLIENT' && resume !== undefined && resume !== null) {
+			// Chaque écran s'ouvre à sa rubrique : ce qui dit où, y mène. « ARRET » vient
+			// d'anciens échanges : le montant du jour vit dans « Pénalités et frais ».
+			if (ecran === 'FICHE_CLIENT' && resume !== undefined && resume !== null) {
 				void navigate({ to: '/app/clients/$id', params: { id: resume.debiteurId } });
-			} else void navigate({ to: '/app/dossier/$id', params: { id } });
+			} else {
+				const rubrique =
+					ecran === 'COURRIERS'
+						? 'courriers'
+						: ecran === 'DOCUMENTS'
+							? 'pieces'
+							: ecran === 'PENALITES' || ecran === 'ARRET'
+								? 'decompte'
+								: undefined;
+				void navigate({
+					to: '/app/dossier/$id',
+					params: { id },
+					...(rubrique === undefined ? {} : { search: { ouvrir: rubrique as never } })
+				});
+			}
 			return;
 		}
 		setGesteEnCours(cle);
@@ -298,7 +313,12 @@ function ConversationDuDossier() {
 			} else if (vers.startsWith('decompte:')) {
 				void navigate({ to: '/app/decompte/$id', params: { id: vers.slice('decompte:'.length) } });
 			} else if (vers === 'arret') {
-				void navigate({ to: '/app/arret/$id', params: { id } });
+				// Anciennes lignes : l'écran d'arrêt n'existe plus.
+				void navigate({
+					to: '/app/dossier/$id',
+					params: { id },
+					search: { ouvrir: 'decompte' as never }
+				});
 			} else if (vers === 'fiche' && resume !== undefined && resume !== null) {
 				void navigate({ to: '/app/clients/$id', params: { id: resume.debiteurId } });
 			} else if (vers === 'demarrer' && resume !== undefined && resume !== null) {

@@ -93,10 +93,11 @@ export function EcranPiece({
 					parametres: { id: creanceId },
 					libelle: pret?.debiteur ?? 'Créance'
 				},
-				titre: 'Décompte arrêté',
+				titre: 'Montant réclamé',
 				// Le client est déjà le nom du retour : le sous-titre ne dit que la date,
-				// et tient sur une ligne au lieu de se couper (« …, arrêté au 16 août 2026… »).
-				sousTitre: pret === null ? undefined : `Arrêté au ${dateLisible(pret.decompte.arreteAu)}`
+				// et tient sur une ligne au lieu de se couper. Le montant n'est pas
+				// « arrêté » : il est compté jusqu'à ce jour-là (09/10/2026).
+				sousTitre: pret === null ? undefined : `Au ${dateLisible(pret.decompte.arreteAu)}`
 			}}
 			etat={donnees.etat}
 		>

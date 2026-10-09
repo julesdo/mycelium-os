@@ -132,10 +132,12 @@ export function destinationDeNotification(
 		/^\/app\/debiteurs\?d=([\w-]+)$/.exec(lien)?.[1];
 	if (client !== undefined) return { vers: '/app/clients/$id', parametres: { id: client } };
 
-	// Là où se répare ce qui manque : votre compte, l'arrêt d'un décompte.
+	// Là où se répare ce qui manque : votre compte.
 	if (lien === '/app/compte') return { vers: '/app/compte' };
 	const arret = /^\/app\/arret\/([\w-]+)$/.exec(lien)?.[1];
-	if (arret !== undefined) return { vers: '/app/arret/$id', parametres: { id: arret } };
+	// L'écran d'arrêt d'un décompte n'existe plus (09/10/2026) : ses anciennes
+	// notifications mènent au dossier, où se lit le montant du jour.
+	if (arret !== undefined) return { vers: '/app/dossier/$id', parametres: { id: arret } };
 
 	const ligne = /^(?:\/app)?\?ligne=([\w-]+)$/.exec(lien)?.[1];
 	if (ligne !== undefined) {

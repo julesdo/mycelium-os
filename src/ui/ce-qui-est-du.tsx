@@ -65,7 +65,7 @@ function MetreDuJour({
 
 	return (
 		<p className="flex flex-wrap items-baseline gap-cladd-3xs px-1 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-			<span>Arrêté au {dateCourte(arreteAu)}.</span>
+			<span>Compté au {dateCourte(arreteAu)}.</span>
 			{couru > 0n ? (
 				<span>
 					Depuis hier,{' '}

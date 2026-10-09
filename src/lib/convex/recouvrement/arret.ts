@@ -1,6 +1,5 @@
 import { v, ConvexError } from 'convex/values';
-import { authedMutation, authedQuery } from '../functions';
-import { internal } from '../_generated/api';
+import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx } from '../_generated/server';
@@ -14,46 +13,29 @@ import {
 	regimePrescription,
 	type SecteurCreance
 } from '../../verticales/recouvrement/pays/france/prescription';
-import {
-	declaresQuiRetiennent,
-	prevolAuJournal,
-	type ReponsesPrevol
-} from '../../verticales/recouvrement/prevol';
 import { projeterDecompte, vNatureAbandon } from './decompte';
 import { resteDu, rejouerQualification } from './creances';
 import { vConventionJours, vImputation, vImputationDuDecompte, vTaux } from './tables';
 
 /**
- * L'ARRÊT D'UN DÉCOMPTE : LE SEUL GESTE IRRÉVERSIBLE DU PRODUIT.
+ * LE MONTANT DU JOUR D'UN DOSSIER — et le rattachement de factures.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * CE QUE CE MODULE PROTÈGE, ET POURQUOI IL A SON ÉCRAN PLEIN CADRE
+ * ⚠️ L'ARRÊT D'UN DÉCOMPTE N'EXISTE PLUS (09/10/2026)
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Un décompte arrêté est figé, définitivement. Rejouer produit un NOUVEAU
- * décompte daté. La question n'est jamais « combien réclame-t-on aujourd'hui »
- * mais « qu'a-t-on réclamé le jour où on l'a réclamé ».
+ * Ce module portait « le seul geste irréversible du produit » : un écran plein
+ * cadre, un contrôle de complétude, trois puis deux cases, un bouton qui figeait
+ * le décompte. Or les pénalités courent jusqu'au paiement, et le chiffre qu'un
+ * document réclame se fige désormais tout seul au jour où il part
+ * (`decompte.daterLeDecompte`). Le fondateur : « pas besoin de l'arrêter, on a
+ * juste besoin de le réclamer ».
  *
- * Trois étages avant le geste, et ils ne sont pas décoratifs :
- *
- *   1. LE CONTRÔLE DE COMPLÉTUDE, CHIFFRÉ. `controle.ts` compare le décompte
- *      à toutes les factures connues du débiteur et dit, facture par facture et
- *      en euros, ce qui serait abandonné. C'est le seul endroit du produit où un
- *      refus vaut mieux qu'un résultat : le titre ne porte que sur les sommes
- *      qu'il chiffre, et ce qui n'y figure pas est perdu.
- *   2. LE PRÉ-VOL. Trois faits que le logiciel ne peut pas voir (`prevol.ts`).
- *   3. LE BOUTON, qui porte son montant, sa date et son irréversibilité.
- *
- * ⚠️ L'ÉTAGE `PARAMETRE_MANQUANT` DE `controle.ts` NE S'EXERCE PAS ICI, ET ON LE
- * DIT. `parametresRequis` n'est passé par aucun appelant, donc la boucle tourne
- * sur un tableau vide, donc ce troisième étage ne peut pas se déclencher. Le
- * taire laisserait croire à un verrou qui ne mord pas. La lecture rend donc
- * l'état réel du référentiel, et l'écran l'affiche comme un constat : rien ne
- * bloque à ce titre, et voici pourquoi.
- *
- * ⚠️ AUCUN LOT. Ce geste ne s'applique jamais à plusieurs créances à la fois
- * (D6). Une sélection multiple sur un geste irréversible est une invitation à
- * figer quinze décomptes dont on n'a lu aucun contrôle.
+ * Restent `preparerArret` — le montant du jour que la page d'un dossier montre,
+ * avec ce qu'il laisse de côté et la date limite pour agir — et
+ * `rattacherFactures`, que le démarrage et le pilote emploient. Le contrôle de
+ * complétude vit où il protège encore : une déclaration ne part pas sans les
+ * factures du client restées hors du dossier (`envois.composer`).
  */
 
 const vSegment = v.object({
@@ -345,21 +327,6 @@ export const preparerArret = authedQuery({
 });
 
 /**
- * LA PREMIÈRE DES DEUX SORTIES DU CONTRÔLE : INCLURE, ET REFAIRE.
- *
- * ⚠️ ELLE PÈSE AUTANT QUE L'AUTRE, ET C'EST POUR ÇA QU'ELLE EXISTE VRAIMENT.
- * Afficher « ces deux factures ne sont pas au décompte » sans offrir de les y
- * mettre laisserait le gérant devant un constat sans prise, donc devant le seul
- * bouton restant : arrêter quand même. Un écran qui chiffre une perte et n'offre
- * qu'une façon de la subir la rend inévitable.
- *
- * ⚠️ LES CONDITIONS SE REDÉDUISENT, MAIS PAS TOUTES. `deduireConditions` remet
- * `certaine` à `unknown` par construction : la rejouer en entier effacerait ce
- * que le gérant a tranché sur le litige. Seules `liquide` et `exigible` bougent,
- * parce que seules elles dépendent du montant et de la date, qui viennent de
- * changer.
- */
-/**
  * RATTACHER DES FACTURES À UN DOSSIER — le geste du gérant à l'arrêt, et celui du
  * pilote quand une nouvelle facture du même client passe son échéance.
  *
@@ -479,192 +446,4 @@ export async function rattacherFactures(
 	}
 
 	return aRattacher.length;
-}
-
-export const inclureFactures = authedMutation({
-	args: { creanceId: v.id('creances'), factureIds: v.array(v.id('facturesVente')) },
-	returns: v.number(),
-	handler: async (ctx, { creanceId, factureIds }): Promise<number> => {
-		const { organizationId, user } = await getUserOrg(ctx);
-		return await rattacherFactures(ctx, {
-			organizationId,
-			creanceId,
-			factureIds,
-			par: {
-				auteur: 'GERANT',
-				userId: user._id,
-				source: 'Contrôle de complétude, écran d’arrêt',
-				phrase: 'rejoint cette créance avant l’arrêt du décompte.'
-			}
-		});
-	}
-});
-
-const vReponsePrevol = v.union(v.literal('ECARTE'), v.literal('DECLARE'));
-
-/**
- * L'ARRÊT LUI-MÊME.
- *
- * ⚠️ LES TROIS RÉPONSES DU PRÉ-VOL SONT REQUISES PAR LE TYPE, pas seulement
- * vérifiées dans le corps. Une barrière s'exécute au point d'usage : un appelant
- * qui oublierait une question ne compile pas, et un appelant qui répondrait
- * « DECLARE » se voit refuser ici, côté serveur, même si l'écran l'avait laissé
- * passer.
- *
- * ⚠️ `abandonsAssumes` EST LA SECONDE SORTIE DU CONTRÔLE, et elle laisse une
- * trace. Arrêter un décompte incomplet reste possible — c'est une décision du
- * gérant, pas du logiciel — mais elle s'inscrit au journal, chiffrée, à la date
- * où elle a été prise.
- *
- * ⚠️ LE TYPE DE RETOUR EST ANNOTÉ À LA MAIN. Ce handler appelle
- * `internal.recouvrement.decompte.figerDecompte` ; l'annotation coupe court à
- * tout cycle d'inférence, et son absence dégraderait le type d'`api` tout
- * entier. Voir `CLAUDE.md`.
- */
-export const arreter = authedMutation({
-	args: {
-		creanceId: v.id('creances'),
-		convention: vConventionJours,
-		prevol: v.object({
-			AVOIR_NON_RAPPROCHE: vReponsePrevol,
-			REGLEMENT_NON_IMPORTE: vReponsePrevol,
-			/**
-			 * ⚠️ FACULTATIVE, ET ELLE NE RETIENT RIEN (08/10/2026) : déclarée, elle
-			 * s'inscrit au journal de l'arrêt, et le décompte se fige quand même.
-			 */
-			CONTESTATION_HORS_LOGICIEL: v.optional(vReponsePrevol)
-		}),
-		abandonsAssumes: v.boolean()
-	},
-	returns: v.id('decomptes'),
-	handler: async (
-		ctx,
-		{ creanceId, convention, prevol, abandonsAssumes }
-	): Promise<Id<'decomptes'>> => {
-		const { organizationId, user } = await getUserOrg(ctx);
-		const { decompteId } = await arreterLeDecompte(ctx, {
-			organizationId,
-			userId: user._id,
-			creanceId,
-			convention,
-			prevol,
-			abandonsAssumes
-		});
-		return decompteId;
-	}
-});
-
-/**
- * ARRÊTER LE DÉCOMPTE D'UN DOSSIER — le cœur de `arreter`, que Plume emploie aussi
- * (le geste « Arrêter le décompte » de sa conversation, confirmé par le gérant).
- *
- * ⚠️ SEULS L'AVOIR ET LE RÈGLEMENT OUBLIÉS RETIENNENT L'ARRÊT : ils changent le
- * montant. Une contestation, non (voir `prevol.ts`).
- */
-export async function arreterLeDecompte(
-	ctx: MutationCtx,
-	{
-		organizationId,
-		userId,
-		creanceId,
-		convention,
-		prevol,
-		abandonsAssumes
-	}: {
-		readonly organizationId: Id<'organizations'>;
-		readonly userId: string;
-		readonly creanceId: Id<'creances'>;
-		readonly convention: 'ACT_365' | 'ACT_ACT';
-		readonly prevol: ReponsesPrevol;
-		readonly abandonsAssumes: boolean;
-	}
-): Promise<{ decompteId: Id<'decomptes'>; total: bigint }> {
-	const creance = await ctx.db.get(creanceId);
-	if (creance === null || creance.organizationId !== organizationId) {
-		throw new ConvexError('Créance introuvable');
-	}
-
-	const reponses: ReponsesPrevol = prevol;
-	if (declaresQuiRetiennent(reponses).length > 0) {
-		throw new ConvexError(
-			'Ce décompte se calcule et se lit en entier, et il ne se fige pas. Ce qui manque est ' +
-				'l’élément que vous venez de déclarer : il change le principal ou ce que le logiciel ' +
-				'sait du dossier, et un décompte figé ne se corrige plus. Ce refus se lève quand ' +
-				'l’élément déclaré est entré dans le logiciel, ou quand il cesse d’exister. ' +
-				`L’attente ne coûte rien au décompte : il n’est parti nulle part. Ce qui court est ` +
-				'la prescription, affichée sur cet écran.'
-		);
-	}
-
-	const arreteAu = new Date().toISOString().slice(0, 10);
-
-	// LE CONTRÔLE SE REJOUE ICI, ET PAS SEULEMENT À L'ÉCRAN. Entre la lecture
-	// et le tap, un import a pu ajouter une facture ; un contrôle qui ne
-	// vivrait que dans le rendu laisserait figer un décompte que l'écran
-	// n'avait pas contrôlé.
-	const projection = await projeterDecompte(ctx, creance, arreteAu, convention);
-	if (projection.decompte === null) throw new ConvexError(projection.refus!.detail);
-
-	const facturesDuDebiteur = (
-		await ctx.db
-			.query('facturesVente')
-			.withIndex('by_debiteur', (q) => q.eq('debiteurId', creance.debiteurId))
-			.collect()
-	).filter((facture) => facture.organizationId === organizationId);
-
-	const controle = controlerDecompte({
-		decompte: projection.decompte,
-		facturesConnues: facturesDuDebiteur.map((facture) => ({
-			reference: facture.reference,
-			montantExigible: depuisCentimes(facture.montantTTC)
-		}))
-	});
-
-	if (!controle.complet && !abandonsAssumes) {
-		throw new ConvexError(
-			'Le décompte est calculé et chacun de ses postes se lit : rien n’est perdu à ce ' +
-				'stade. Ce qui manque est votre décision sur ce que ce décompte laisse de côté, ' +
-				`chiffré à ${versEuros(controle.montantAbandonne)} € : le titre ne porte que sur ` +
-				'les sommes qu’il chiffre. Ce refus se lève de deux façons, de même poids : les ' +
-				'factures écartées rejoignent la créance et le décompte se refait, ou l’arrêt se ' +
-				'fait sans elles et la décision s’inscrit au journal. L’attente ne coûte rien au ' +
-				'décompte ; ce qui court est la prescription de la créance.'
-		);
-	}
-
-	const decompteId: Id<'decomptes'> = await ctx.runMutation(
-		internal.recouvrement.decompte.figerDecompte,
-		{ creanceId, arreteAu, convention }
-	);
-
-	await ctx.db.insert('journal', {
-		organizationId,
-		cible: decompteId as string,
-		cle: 'DECOMPTE_ARRETE',
-		apres:
-			`Décompte arrêté au ${arreteAu}, total ${versEuros(projection.decompte.total)} €, ` +
-			`sur ${projection.decompte.lignes.length} facture(s). Il est figé définitivement.`,
-		source: `Pré-vol : ${prevolAuJournal(reponses)}`,
-		auteur: 'GERANT',
-		auteurUserId: userId,
-		consigneLe: Date.now()
-	});
-
-	// UNE ENTRÉE PAR ABANDON, ET PAS UNE LIGNE RÉCAPITULATIVE. Ce qui se
-	// relit six mois plus tard est « quelle facture », pas « combien au
-	// total » : le total se refait, la référence ne se retrouve pas.
-	for (const abandon of controle.abandons) {
-		await ctx.db.insert('journal', {
-			organizationId,
-			cible: decompteId as string,
-			cle: 'ABANDON_ASSUME_A_L_ARRET',
-			apres: abandon.explication,
-			source: 'Contrôle de complétude, au moment de l’arrêt',
-			auteur: 'GERANT',
-			auteurUserId: userId,
-			consigneLe: Date.now()
-		});
-	}
-
-	return { decompteId, total: enCentimes(projection.decompte.total) };
 }

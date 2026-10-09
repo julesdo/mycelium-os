@@ -326,8 +326,8 @@ function FeuilleDActivation({
 						<li>En semaine, entre 9 h et 18 h.</li>
 						<li>Chaque relance s’affiche une heure avant de partir, et se retient d’un geste.</li>
 						<li>
-							La lettre officielle attend un décompte arrêté par vous : trois points que vous seul
-							connaissez.
+							La lettre officielle réclame le montant du jour, pénalités et frais compris. Si un avoir
+							ou un règlement n’est pas noté, retenez-la et notez-le.
 						</li>
 						<li>
 							Un paiement arrête tout. Un client en procédure collective ou radié n’est pas relancé,

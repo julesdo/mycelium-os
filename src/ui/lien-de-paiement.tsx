@@ -9,14 +9,16 @@ import { dateCourte, eurosCentimes } from './format';
  * LE LIEN QUE LE GÉRANT ENVOIE À SON CLIENT POUR QU'IL PAIE.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ IL S'OUVRE SUR UN DÉCOMPTE ARRÊTÉ, ET SUR RIEN D'AUTRE
+ * ⚠️ IL S'OUVRE SUR LE MONTANT DU JOUR, DATÉ À L'OUVERTURE
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Un lien sur un calcul vivant montrerait au client un montant qui augmente
  * pendant qu'il le lit : le virement qu'il lancerait serait déjà faux en
  * arrivant, et le créancier aurait un reliquat à réclamer pour trois euros de
- * pénalités. Ce qui s'oppose à un tiers est figé et daté, et c'est ce qu'on
- * lui montre.
+ * pénalités. Le montant se date donc quand le lien s'ouvre (09/10/2026) : il
+ * fallait auparavant « arrêter un décompte » d'abord, un geste de plus pour le
+ * même chiffre. Un seul lien vivant par dossier ; pour un montant plus récent,
+ * on ferme l'ancien et on en ouvre un autre.
  *
  * ⚠️ LE GÉRANT ENVOIE LE LIEN LUI-MÊME. Ce logiciel ne l'expédie pas : il le
  * compose, et le gérant le colle dans sa lettre ou dans son courriel. C'est la
@@ -37,19 +39,17 @@ export interface LienDePaiementAffiche {
 
 export interface LiensDePaiementAffiches {
 	readonly liens: readonly LienDePaiementAffiche[];
-	/** Le décompte arrêté le plus récent : c'est sur lui qu'un lien s'ouvre. */
-	readonly dernierArrete: { readonly id: string; readonly arreteAu: string } | null;
 	/** L'adresse publique, préfixe compris, telle qu'on la colle dans une lettre. */
 	readonly adresseDe: (jeton: string) => string;
 	readonly enCours: boolean;
 	readonly erreur: string | null;
-	readonly onOuvrir: (decompteId: string) => void;
+	/** Ouvre un lien sur le montant du jour, qui se date à ce moment-là. */
+	readonly onOuvrir: () => void;
 	readonly onFermer: (jeton: string) => void;
 }
 
 export function LiensDePaiement({
 	liens,
-	dernierArrete,
 	adresseDe,
 	enCours,
 	erreur,
@@ -63,8 +63,8 @@ export function LiensDePaiement({
 			<SectionTitle>Le lien où votre client paie</SectionTitle>
 
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-				Une page à votre nom, avec le décompte arrêté, votre IBAN et un code à scanner qui
-				pré-remplit le virement. Votre client paie depuis sa banque : rien ne passe par ce
+				Une page à votre nom, avec le montant du jour et sa date, votre IBAN et un code à
+				scanner qui pré-remplit le virement. Votre client paie depuis sa banque : rien ne passe par ce
 				logiciel. C’est vous qui lui envoyez l’adresse.
 			</p>
 
@@ -78,7 +78,7 @@ export function LiensDePaiement({
 				>
 					<div className="flex flex-wrap items-baseline justify-between gap-cladd-3xs">
 						<span className="text-cladd-sm font-semibold">
-							Arrêté au {dateCourte(lien.arreteAu)}
+							Montant au {dateCourte(lien.arreteAu)}
 						</span>
 						<span className="shrink-0 text-cladd-sm tabular-nums">
 							{eurosCentimes(lien.total)}
@@ -105,25 +105,11 @@ export function LiensDePaiement({
 
 			{erreur === null ? null : <MessageErreur>{erreur}</MessageErreur>}
 
-			{/*
-			  ⚠️ SANS DÉCOMPTE ARRÊTÉ, ON NE PROPOSE PAS LE BOUTON : ON DIT CE QUI
-			  MANQUE. Un bouton qui refuse après coup fait faire le geste pour rien,
-			  et ce refus-là — « arrêtez d'abord un décompte » — est exactement la
-			  marche à suivre.
-			*/}
-			{dernierArrete === null ? (
-				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-					Arrêtez d’abord un décompte : c’est lui que la page montrera, figé et daté. Un
-					montant qui augmenterait pendant que votre client le lit ne se paie pas.
-				</p>
-			) : vivants.some((lien) => lien.arreteAu === dernierArrete.arreteAu) ? null : (
-				<BoutonSecondaire
-					className="self-start"
-					disabled={enCours}
-					onClick={() => onOuvrir(dernierArrete.id)}
-				>
+			{/* Un seul lien vivant : il porte déjà son montant et sa date. */}
+			{vivants.length > 0 ? null : (
+				<BoutonSecondaire className="self-start" disabled={enCours} onClick={onOuvrir}>
 					<LinkIcon />
-					{enCours ? 'Ouverture…' : `Ouvrir un lien sur le décompte du ${dateCourte(dernierArrete.arreteAu)}`}
+					{enCours ? 'Ouverture…' : 'Ouvrir un lien sur le montant du jour'}
 				</BoutonSecondaire>
 			)}
 		</div>

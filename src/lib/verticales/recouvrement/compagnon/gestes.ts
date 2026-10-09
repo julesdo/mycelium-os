@@ -237,7 +237,7 @@ export function jourEnClair(date: string): string {
 }
 
 const TITRE_ECRAN: Readonly<Record<EcranOuvrable, string>> = {
-	ARRET: 'Arrêter le décompte',
+	ARRET: 'Le montant du jour',
 	COURRIERS: 'Ses courriers et e-mails',
 	DOCUMENTS: 'Ses documents',
 	FICHE_CLIENT: 'La fiche du client',

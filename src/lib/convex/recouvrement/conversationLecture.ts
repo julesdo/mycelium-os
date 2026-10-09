@@ -349,8 +349,8 @@ export const contexteDuDossier = internalQuery({
 					]
 				: []),
 			dernierArrete === undefined
-				? 'Aucun décompte n’est arrêté sur ce dossier.'
-				: `Dernier décompte arrêté le ${dernierArrete.arreteAu}.`,
+				? 'Aucun montant n’a encore été réclamé par écrit sur ce dossier. Le montant du jour se date tout seul quand un courrier, la page de paiement ou la remise au conseil le réclame.'
+				: `Dernier montant réclamé, compté jusqu’au ${dernierArrete.arreteAu} ; les pénalités courent depuis.`,
 			ibanConnu
 				? 'L’IBAN du dirigeant est renseigné : la page de paiement peut s’ouvrir.'
 				: 'L’IBAN du dirigeant n’est pas renseigné : la page de paiement ne peut pas s’ouvrir.',
@@ -430,10 +430,11 @@ export const contexteDuDossier = internalQuery({
 			...(contestationDeclaree
 				? [{ texte: 'Il conteste : c’est noté, et le dossier continue.', vers: 'section:litige' }]
 				: []),
+			// Le montant ne s'« arrête » plus (09/10/2026) : il se date quand un document le réclame.
 			dernierArrete === undefined
-				? { texte: 'Aucun décompte n’est encore arrêté.', vers: 'arret' }
+				? { texte: 'Aucun montant n’a encore été réclamé par écrit.', vers: 'section:decompte' }
 				: {
-						texte: `Décompte arrêté le ${JOUR.format(new Date(`${dernierArrete.arreteAu}T00:00:00.000Z`))}.`,
+						texte: `Dernier montant réclamé, au ${JOUR.format(new Date(`${dernierArrete.arreteAu}T00:00:00.000Z`))}.`,
 						vers: `decompte:${dernierArrete._id}`
 					},
 			...(remiseEnCours

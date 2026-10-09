@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useAction, useMutation, useQuery } from 'convex/react';
+import { useAction, useConvex, useMutation, useQuery } from 'convex/react';
+import type { FunctionReturnType } from 'convex/server';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisCentimes, depuisEuros, enCentimes } from '../../lib/socle/montants';
@@ -140,6 +141,8 @@ function PageCreance() {
 	const carnet = useQuery(api.recouvrement.intervenants.monCarnet, {});
 	const decomptes = useQuery(api.recouvrement.decompte.listerDecomptes, {});
 	const dernier = useQuery(api.recouvrement.decompte.dernierDecompte, { creanceId });
+	const convex = useConvex();
+	const daterLeCalcul = useMutation(api.recouvrement.decompte.daterPourTelecharger);
 
 	// ── LES COURRIERS ────────────────────────────────────────────────────────
 	// L'aperçu se recompose côté serveur à chaque choix : l'écran n'écrit rien.
@@ -415,7 +418,8 @@ function PageCreance() {
 	}
 
 	/**
-	 * LA PIÈCE DU DERNIER DÉCOMPTE ARRÊTÉ, TÉLÉCHARGÉE.
+	 * LA PIÈCE D'UN MONTANT DATÉ, TÉLÉCHARGÉE : le calcul du jour, ou l'annexe
+	 * d'un courrier (le montant que CE courrier a réclamé, pas le dernier).
 	 *
 	 * ⚠️ LE MODULE PDF EST IMPORTÉ À LA DEMANDE. `jspdf` et son greffon de
 	 * tableaux pèsent plusieurs centaines de kilo-octets ; les charger avec
@@ -427,9 +431,11 @@ function PageCreance() {
 	 * fichier. Écrire une seule phrase du document ici créerait un second endroit
 	 * où le produit parle de droit.
 	 */
-	async function telechargerLaPiece(annexe = false) {
-		if (dernier === undefined || dernier === null) return;
-
+	async function telechargerLaPiece(
+		source: NonNullable<FunctionReturnType<typeof api.recouvrement.decompte.dernierDecompte>>,
+		annexe: boolean
+	) {
+		const dernier = source;
 		const [{ composerPiece }, { rendrePieceEnPdf, nomFichierPiece }] = await Promise.all([
 			import('../../lib/verticales/recouvrement/piece'),
 			import('../../ui/piece-decompte')
@@ -489,6 +495,25 @@ function PageCreance() {
 		);
 
 		rendrePieceEnPdf(piece).save(nomFichierPiece(piece));
+	}
+
+	/** Le calcul du jour : il se date au téléchargement (`daterPourTelecharger`). */
+	async function telechargerLeCalculDuJour() {
+		await avec(async () => {
+			const decompteId = await daterLeCalcul({ creanceId });
+			const piece = await convex.query(api.recouvrement.decompte.lireDecompte, { decompteId });
+			if (piece !== null) await telechargerLaPiece(piece, false);
+		});
+	}
+
+	/** L'annexe d'un courrier : le montant qu'il a réclamé, daté quand il s'est préparé. */
+	async function telechargerLAnnexe(envoiId: string) {
+		const decompteId = envoisDuDossier?.envois.find((e) => e._id === envoiId)?.decompteId;
+		if (decompteId === undefined) return;
+		await avec(async () => {
+			const piece = await convex.query(api.recouvrement.decompte.lireDecompte, { decompteId });
+			if (piece !== null) await telechargerLaPiece(piece, true);
+		});
 	}
 
 	/*
@@ -820,7 +845,7 @@ function PageCreance() {
 				...(e.empreinte === undefined ? {} : { empreinte: e.empreinte }),
 				...(e.partiLe === undefined ? {} : { partiLe: e.partiLe }),
 				// Le calcul joint se télécharge quand c'est bien celui que le courrier chiffre.
-				annexeDisponible: e.decompteId !== undefined && dernier?._id === e.decompteId
+				annexeDisponible: e.decompteId !== undefined
 			})),
 			peutValider: envoisDuDossier?.peutValider ?? false,
 			intervenants: carnet.map(({ _id, ...fiche }) => ({ id: _id, ...fiche })),
@@ -870,7 +895,7 @@ function PageCreance() {
 				void avec(() => abandonnerCourrier({ envoiId: envoiId as Id<'envois'> })),
 			onRetenir: (envoiId) => void avec(() => retenirRelance({ envoiId: envoiId as Id<'envois'> })),
 			onTelechargerPdf: (envoi) => void telechargerLeCourrier(envoi),
-			onTelechargerAnnexe: () => void telechargerLaPiece(true)
+			onTelechargerAnnexe: (envoi) => void telechargerLAnnexe(envoi.id)
 		},
 
 		// Les deux dates que l'en-tête porte, lues sur les factures du dossier :
@@ -929,7 +954,6 @@ function PageCreance() {
 				creeLe: lien.creeLe,
 				...(lien.revoqueLe === undefined ? {} : { revoqueLe: lien.revoqueLe })
 			})),
-			dernierArrete: arretes[0] ?? null,
 			/*
 			  ⚠️ L'ADRESSE SE COMPOSE AVEC L'ORIGINE DU NAVIGATEUR, jamais avec une
 			  constante. En développement elle vaut `localhost:20173`, en production
@@ -946,7 +970,7 @@ function PageCreance() {
 		},
 		// Le plus récent d'abord : c'est celui qu'on vient relire. Voir `arretes`.
 		decomptesArretes: arretes,
-		onTelechargerLaPiece: dernier === null ? null : () => void telechargerLaPiece(),
+		onTelechargerLaPiece: montantDuJour === null ? null : () => void telechargerLeCalculDuJour(),
 
 		hypotheses,
 		anglesMorts,

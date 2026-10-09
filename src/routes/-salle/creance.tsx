@@ -668,7 +668,6 @@ function creanceDemo({
 					creeLe: Date.UTC(2026, 8, 3, 10, 5)
 				}
 			],
-			dernierArrete: { id: 'demo-decompte', arreteAu: AUJOURD_HUI_DEMO },
 			adresseDe: (jeton: string) => `https://exemple.fr/p/${jeton}`,
 			enCours: false,
 			erreur: null,

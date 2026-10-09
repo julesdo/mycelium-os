@@ -179,7 +179,7 @@ export function ChocRevelation({
 							{pluriel(revelation.nombreFactures)} en retard
 						</span>
 						<span className="text-cladd-2xs text-cladd-fg-softer">
-							Arrêté au {dateCourte(arreteAu)}
+							Compté au {dateCourte(arreteAu)}
 							{couru > 0n ? (
 								<>
 									{' · '}

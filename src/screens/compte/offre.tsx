@@ -182,7 +182,7 @@ export function OuvertureEnCours() {
 				Tout le produit vous est ouvert, sans carte bancaire.
 			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Déposez vos factures, lisez ce qui vous est dû, arrêtez un décompte : rien n&rsquo;est
+				Déposez vos factures, lisez ce qui vous est dû, réclamez-le : rien n&rsquo;est
 				retenu derrière le paiement aujourd&rsquo;hui.
 			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">

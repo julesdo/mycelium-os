@@ -214,7 +214,7 @@ function delaiDeLecture(id: string): number {
  * « les factures choisies font 4 810,00 €, pas 4 820,00 € ». Montrer le cadre du
  * harnais à sa place remplace un chiffre par un numéro de ticket.
  *
- * La même lecture qu'à `arret.$id.tsx`, `decompte.$id.tsx` et `debiteurs.tsx`.
+ * La même lecture qu'à `decompte.$id.tsx` et `debiteurs.tsx`.
  */
 function messageDuRefus(e: unknown): string {
 	if (typeof e === 'object' && e !== null && 'data' in e) {

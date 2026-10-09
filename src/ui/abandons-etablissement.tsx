@@ -167,7 +167,7 @@ function CarteDuDecompte({ groupe }: { groupe: GroupeParDecompte }) {
 			titre={groupe.debiteur}
 			famille="ARGENT"
 			montant={groupe.rienNeSeChiffre ? NON_CHIFFRABLE : eurosCentimes(groupe.montant)}
-			ligne={`Arrêté au ${dateCourte(groupe.arreteAu)}`}
+			ligne={`Réclamé au ${dateCourte(groupe.arreteAu)}`}
 			date={`${points} point${pluriel(points)}`}
 		/>
 	);
@@ -179,8 +179,8 @@ function sujetDesDecomptes(nombre: number): {
 	possessif: string;
 } {
 	return nombre > 1
-		? { sujet: `Vos ${nombre} décomptes arrêtés`, porte: 'portent', possessif: 'leurs clients' }
-		: { sujet: 'Votre décompte arrêté', porte: 'porte', possessif: 'son client' };
+		? { sujet: `Vos ${nombre} montants réclamés`, porte: 'portent', possessif: 'leurs clients' }
+		: { sujet: 'Votre montant réclamé', porte: 'porte', possessif: 'son client' };
 }
 
 /**
@@ -209,8 +209,8 @@ function ConstatDuControle({ valeur }: { valeur: AbandonsAffiches }) {
 	const vises = sujetDesDecomptes(incomplets);
 	const tete =
 		decomptesControles > 1
-			? `${incomplets} de vos ${decomptesControles} décomptes arrêtés ne ${incomplets > 1 ? 'portent' : 'porte'} pas tout ce qui est connu de ${vises.possessif}.`
-			: 'Votre seul décompte arrêté ne porte pas tout ce qui est connu de son client.';
+			? `${incomplets} de vos ${decomptesControles} montants réclamés ne ${incomplets > 1 ? 'portent' : 'porte'} pas tout ce qui est connu de ${vises.possessif}.`
+			: 'Votre seul montant réclamé ne porte pas tout ce qui est connu de son client.';
 
 	return (
 		<>
@@ -287,7 +287,7 @@ export function CeQueLesDecomptesLaissentDeCote({
 			{lecture.etat === 'attente' ? (
 				<div className="flex flex-col gap-cladd-3xs px-1">
 					<p role="status" className="text-cladd-xs text-cladd-fg-soft">
-						Contrôle de vos décomptes arrêtés, contre les factures d’aujourd’hui…
+						Contrôle de vos montants réclamés, contre les factures d’aujourd’hui…
 					</p>
 					<div aria-hidden="true" className="flex flex-col gap-1.5">
 						<span className="h-3 w-3/5 animate-pouls rounded-full bg-cladd-fg/10" />
@@ -305,7 +305,7 @@ export function CeQueLesDecomptesLaissentDeCote({
 					<div className="flex min-w-0 flex-col gap-1.5">
 						<p className="text-cladd-xs font-semibold">Ce contrôle n’a pas pu s’exécuter</p>
 						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Vos décomptes arrêtés n’ont pas été comparés à vos factures. Cet écran ne peut donc
+							Vos montants réclamés n’ont pas été comparés à vos factures. Cet écran ne peut donc
 							rien dire de ce qu’ils laissent de côté — ni qu’il y a quelque chose, ni qu’il n’y a
 							rien.
 						</p>

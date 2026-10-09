@@ -38,7 +38,6 @@ import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AppArretIdRouteImport } from './routes/app/arret.$id'
 import { Route as AppClientsIdRouteImport } from './routes/app/clients.$id'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
 import { Route as AppDebiteursIdRouteImport } from './routes/app/debiteurs.$id'
@@ -196,11 +195,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppArretIdRoute = AppArretIdRouteImport.update({
-  id: '/arret/$id',
-  path: '/arret/$id',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppClientsIdRoute = AppClientsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -282,7 +276,6 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/app/arret/$id': typeof AppArretIdRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
@@ -323,7 +316,6 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/blog': typeof BlogIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/app/arret/$id': typeof AppArretIdRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
@@ -366,7 +358,6 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/app/arret/$id': typeof AppArretIdRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
@@ -410,7 +401,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/blog/'
     | '/api/auth/$'
-    | '/app/arret/$id'
     | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
@@ -451,7 +441,6 @@ export interface FileRouteTypes {
     | '/app'
     | '/blog'
     | '/api/auth/$'
-    | '/app/arret/$id'
     | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
@@ -493,7 +482,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/blog/'
     | '/api/auth/$'
-    | '/app/arret/$id'
     | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
@@ -733,13 +721,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/arret/$id': {
-      id: '/app/arret/$id'
-      path: '/arret/$id'
-      fullPath: '/app/arret/$id'
-      preLoaderRoute: typeof AppArretIdRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/app/clients/$id': {
       id: '/app/clients/$id'
       path: '/$id'
@@ -859,7 +840,6 @@ interface AppRouteRouteChildren {
   AppProceduresRoute: typeof AppProceduresRoute
   AppRevelationRoute: typeof AppRevelationRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppArretIdRoute: typeof AppArretIdRoute
   AppCreanceIdRoute: typeof AppCreanceIdRoute
   AppDecompteIdRoute: typeof AppDecompteIdRoute
   AppDemarrerIdRoute: typeof AppDemarrerIdRoute
@@ -880,7 +860,6 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProceduresRoute: AppProceduresRoute,
   AppRevelationRoute: AppRevelationRoute,
   AppIndexRoute: AppIndexRoute,
-  AppArretIdRoute: AppArretIdRoute,
   AppCreanceIdRoute: AppCreanceIdRoute,
   AppDecompteIdRoute: AppDecompteIdRoute,
   AppDemarrerIdRoute: AppDemarrerIdRoute,

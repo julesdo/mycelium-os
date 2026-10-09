@@ -161,7 +161,7 @@ export interface AngleMortAffiche {
 	readonly montantEnJeu: bigint | null;
 }
 
-/** Un décompte déjà arrêté : figé, daté, et il ne change plus. */
+/** Un montant réclamé : daté quand un document l'a réclamé, et il ne change plus. */
 export interface DecompteArreteAffiche {
 	readonly id: string;
 	readonly arreteAu: string;
@@ -317,9 +317,12 @@ export interface CreanceOuverte {
 	} | null;
 	/** Les valeurs juridiques employées, telles qu'elles vivent dans `parametres.ts`. */
 	readonly fiches: readonly FicheParametre[];
-	/** Ce qui a été ARRÊTÉ sur ce dossier : figé, daté, et il ne bouge plus. */
+/** Ce qui a été RÉCLAMÉ sur ce dossier, daté : chaque montant reste tel qu'il est parti. */
 	readonly decomptesArretes: readonly DecompteArreteAffiche[];
-	/** La pièce PDF du dernier arrêté. `null` quand il n'y en a aucun. */
+	/**
+	 * Le calcul du jour en PDF : le montant se date au téléchargement, comme quand
+	 * un courrier le réclame. `null` quand il ne se calcule pas.
+	 */
 	readonly onTelechargerLaPiece: (() => void) | null;
 
 	// ── 3. Ce qui est supposé, et ce qui n'est pas vu ───────────────────────
@@ -1287,10 +1290,11 @@ function RangeeCourriers({ creance }: { creance: CreanceOuverte }) {
  * un mot, parce que c'est un tableau de référentiel qu'on contrôle et qu'on ne
  * lit pas.
  *
- * ⚠️ UN DÉCOMPTE ARRÊTÉ EST FIGÉ, DÉFINITIVEMENT, ET L'ARRÊT NE SE FAIT PAS
- * D'ICI. Il a son écran, qui porte le contrôle de complétude : `controle.ts`
- * CHIFFRE ce qui serait abandonné, et ce qui ne figure pas dans un titre
- * exécutoire est perdu.
+ * ⚠️ PLUS RIEN NE S'Y « ARRÊTE » (09/10/2026). Les pénalités courent jusqu'au
+ * paiement ; chaque document qui réclame le montant le date au jour où il part,
+ * et ce montant-là reste figé. La rangée liste ce qui a été réclamé, et le calcul
+ * du jour se télécharge daté. Le bouton « Arrêter un décompte » et son écran ont
+ * disparu : un geste de plus pour un chiffre que le logiciel connaît.
  */
 function RangeeDecompte({ creance }: { creance: CreanceOuverte }) {
 	const montant = creance.montantDuJour;
@@ -1326,17 +1330,18 @@ function RangeeDecompte({ creance }: { creance: CreanceOuverte }) {
 					<Decompte decompte={montant} onChoisirImputation={creance.onChoisirImputation} />
 					<p className="flex items-start gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 						<InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-						Ce montant bouge chaque jour tant que la facture n’est pas réglée. Ce qui s’oppose à un
-						tiers est un décompte arrêté : daté, et figé.
+						Ce montant augmente chaque jour : les pénalités courent jusqu’au paiement. Chaque
+						courrier et chaque lien de paiement le datent au jour où ils partent, et ce chiffre-là
+						ne bouge plus.
 					</p>
 				</>
 			)}
 
 			<section className="flex flex-col gap-cladd-3xs">
-				<SectionTitle>Décomptes arrêtés</SectionTitle>
+				<SectionTitle>Montants réclamés</SectionTitle>
 				{creance.decomptesArretes.length === 0 ? (
 					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						Rien n’est encore arrêté sur ce dossier.
+						Aucun courrier ni lien de paiement n’a encore réclamé de montant daté.
 					</p>
 				) : (
 					<ListeAnalyses>
@@ -1347,39 +1352,24 @@ function RangeeDecompte({ creance }: { creance: CreanceOuverte }) {
 								// deviendrait une erreur de compilation au lieu d'un lien mort.
 								vers="/app/decompte/$id"
 								parametres={{ id: arrete.id }}
-								titre={`Arrêté au ${dateCourte(arrete.arreteAu)}`}
+								titre={`Au ${dateCourte(arrete.arreteAu)}`}
 								valeur={eurosCentimes(arrete.total)}
 							/>
 						))}
 					</ListeAnalyses>
 				)}
 
-				<div className="flex flex-wrap gap-cladd-3xs">
-					{/* ⚠️ CE BOUTON NE FIGE RIEN LUI-MÊME. Il mène à l'écran d'arrêt, qui
-					    porte le contrôle chiffré et l'irréversibilité en toutes lettres. */}
-					<BoutonPrincipal
-						as={Lien}
-						to="/app/arret/$id"
-						// ⚠️ UNE ASSERTION : `as` efface le générique du routeur. La
-						// DESTINATION reste vérifiée par `destinations-existent.test.ts`.
-						params={{ id: creance.identifiant } as never}
-					>
-						Arrêter un décompte
-					</BoutonPrincipal>
-
-					{creance.onTelechargerLaPiece === null ? null : (
-						<BoutonSecondaire onClick={creance.onTelechargerLaPiece}>
-							<FileDownIcon />
-							Télécharger le calcul
-						</BoutonSecondaire>
-					)}
-				</div>
+				{creance.onTelechargerLaPiece === null ? null : (
+					<BoutonSecondaire className="self-start" onClick={creance.onTelechargerLaPiece}>
+						<FileDownIcon />
+						Télécharger le calcul du jour
+					</BoutonSecondaire>
+				)}
 			</section>
 
 			{/*
-			  ⚠️ LE LIEN DE PAIEMENT EST ICI, SOUS LE DÉCOMPTE, ET PAS DANS LES
-			  COURRIERS. Il ne s'ouvre que sur un décompte ARRÊTÉ : sa place est
-			  auprès de ce qui l'arrête, pas auprès de ce qui l'envoie.
+			  ⚠️ LE LIEN DE PAIEMENT EST ICI, SOUS LE MONTANT, ET PAS DANS LES
+			  COURRIERS : il montre ce montant, daté à son ouverture.
 			*/}
 			<LiensDePaiement {...creance.liensDePaiement} />
 
