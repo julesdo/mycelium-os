@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useMutation } from 'convex/react';
 import { useToast } from '@cladd-ui/react';
 import { AlarmClockIcon, CalendarCheckIcon, HandshakeIcon, SendIcon } from 'lucide-react';
@@ -48,6 +49,38 @@ export function choixDeRelance(delaiJours: number) {
  */
 export const DELAI_DE_RELANCE_PAR_DEFAUT = 8;
 
+/**
+ * LE TEMPS DE CHANGER D'AVIS : un mot qui porte « Annuler » reste un peu plus
+ * longtemps que les autres (cinq secondes par défaut).
+ */
+const DUREE_POUR_ANNULER_MS = 8000;
+
+/**
+ * « ANNULER », DANS LE MOT QUI CONFIRME (09/10/2026, sur Gmail, Fiverr et
+ * LinkedIn) : un geste fait d'un toucher se défait d'un toucher. Une seule fois :
+ * le mot reste affiché après l'annulation, et un second appui ne referait rien.
+ */
+function avecAnnuler(texte: ReactNode, defaire: () => Promise<void>): ReactNode {
+	let fait = false;
+	return (
+		<>
+			{texte}{' '}
+			{/* Un lien d'action dans la phrase, comme « Voir l'historique » à côté de lui. */}
+			<button
+				type="button"
+				className="font-medium text-cladd-primary underline underline-offset-2"
+				onClick={() => {
+					if (fait) return;
+					fait = true;
+					void defaire();
+				}}
+			>
+				Annuler
+			</button>
+		</>
+	);
+}
+
 export function useGestesDeDossier() {
 	const preparerEnLot = useMutation(api.recouvrement.envois.preparerEnLot);
 	const noter = useMutation(api.recouvrement.suivi.noter);
@@ -55,7 +88,20 @@ export function useGestesDeDossier() {
 	const arreter = useMutation(api.recouvrement.parole.arreterEcheancier);
 	const classerLeDossier = useMutation(api.recouvrement.classement.classer);
 	const rouvrirLeDossier = useMutation(api.recouvrement.classement.rouvrir);
+	const effacer = useMutation(api.recouvrement.suivi.effacer);
 	const toast = useToast();
+
+	/** Défaire une note qu'on vient de poser : elle s'efface vraiment (`suivi.effacer`). */
+	function effacerLaNote(entreeId: Id<'suiviDossier'>, titre: string) {
+		return async () => {
+			try {
+				await effacer({ entreeId });
+				toast({ title: titre, text: 'C’est comme si rien n’avait été noté.' });
+			} catch (e) {
+				toast({ title: 'Pas annulé', text: messageDuRefus(e) });
+			}
+		};
+	}
 
 	/** Composer la lettre de relance d'un dossier et la poser à valider. */
 	async function relancer(creanceId: string, client: string, delaiJours: number) {
@@ -95,7 +141,7 @@ export function useGestesDeDossier() {
 
 	/** Poser un rappel : ce jour-là, le dossier remonte dans « Aujourd'hui ». */
 	async function rappeler(creanceId: string, client: string, rappelLe: string) {
-		await noter({
+		const entreeId = await noter({
 			creanceId: creanceId as Id<'creances'>,
 			genre: 'RAPPEL',
 			texte: 'Revenir sur ce dossier',
@@ -103,7 +149,7 @@ export function useGestesDeDossier() {
 		});
 		toast({
 			title: 'Rappel posé',
-			text: (
+			text: avecAnnuler(
 				<>
 					Le {dateCourte(rappelLe)}, le dossier de {client} remontera dans Aujourd’hui.{' '}
 					<Lien
@@ -114,9 +160,11 @@ export function useGestesDeDossier() {
 					>
 						Voir l’historique
 					</Lien>
-				</>
+				</>,
+				effacerLaNote(entreeId, 'Rappel annulé')
 			),
-			icon: AlarmClockIcon
+			icon: AlarmClockIcon,
+			timeout: DUREE_POUR_ANNULER_MS
 		});
 	}
 
@@ -130,7 +178,7 @@ export function useGestesDeDossier() {
 	async function promettre(creanceId: string, client: string, montantEuros: string, le: string) {
 		try {
 			const montant = enCentimes(depuisEuros(montantEuros));
-			await noter({
+			const entreeId = await noter({
 				creanceId: creanceId as Id<'creances'>,
 				genre: 'PROMESSE',
 				texte: 'Promesse de paiement',
@@ -139,8 +187,12 @@ export function useGestesDeDossier() {
 			});
 			toast({
 				title: 'Promesse notée',
-				text: `${client} paiera ${eurosCentimes(montant)} le ${dateCourte(le)}. Je ne le relance pas d’ici là.`,
-				icon: HandshakeIcon
+				text: avecAnnuler(
+					`${client} paiera ${eurosCentimes(montant)} le ${dateCourte(le)}. Je ne le relance pas d’ici là.`,
+					effacerLaNote(entreeId, 'Promesse annulée')
+				),
+				icon: HandshakeIcon,
+				timeout: DUREE_POUR_ANNULER_MS
 			});
 		} catch (e) {
 			toast({ title: 'Promesse non notée', text: messageDuRefus(e) });
@@ -155,7 +207,7 @@ export function useGestesDeDossier() {
 		premiereLe: string
 	) {
 		try {
-			await convenir({
+			const entreeId = await convenir({
 				creanceId: creanceId as Id<'creances'>,
 				nombre,
 				premiereLe,
@@ -163,8 +215,12 @@ export function useGestesDeDossier() {
 			});
 			toast({
 				title: `Paiement en ${nombre} fois convenu`,
-				text: `Premier versement le ${dateCourte(premiereLe)}. Tant que les versements arrivent, je ne relance pas ${client}.`,
-				icon: CalendarCheckIcon
+				text: avecAnnuler(
+					`Premier versement le ${dateCourte(premiereLe)}. Tant que les versements arrivent, je ne relance pas ${client}.`,
+					effacerLaNote(entreeId, 'Paiement en plusieurs fois annulé')
+				),
+				icon: CalendarCheckIcon,
+				timeout: DUREE_POUR_ANNULER_MS
 			});
 		} catch (e) {
 			toast({ title: 'Échéancier non convenu', text: messageDuRefus(e) });
@@ -198,7 +254,11 @@ export function useGestesDeDossier() {
 			});
 			toast({
 				title: 'Dossier classé',
-				text: 'Les relances s’arrêtent, et il quitte vos alertes. Il se rouvre depuis sa page.'
+				text: avecAnnuler(
+					'Les relances s’arrêtent, et il quitte vos alertes.',
+					() => rouvrir(creanceId)
+				),
+				timeout: DUREE_POUR_ANNULER_MS
 			});
 			return true;
 		} catch (e) {
