@@ -94,6 +94,8 @@ export interface FactureAffichee {
 	readonly exigibiliteDeduite: boolean;
 	readonly datePrescription?: string;
 	readonly dansUneCreance: boolean;
+	/** Dans un dossier que le gérant a classé : lisible, plus comptée dans ce qu'il doit. */
+	readonly dansUnDossierClasse?: boolean;
 }
 
 /** Une créance de ce débiteur, telle que la rangée l'affiche. */
@@ -429,16 +431,26 @@ function CorpsDebiteur({
 	/** La feuille « Un virement reçu », ouverte par son action rapide. */
 	const [virementOuvert, setVirementOuvert] = useState(false);
 
-	const proche = prescriptionLaPlusProche(factures, aujourdHui);
-
 	/**
 	 * ⚠️ DEUX LISTES, PARCE QU'UNE FACTURE RÉGLÉE N'APPELLE PLUS RIEN. Mêlée aux
 	 * autres, elle affichait « 0,00 € » et une date limite pour agir sur une somme
 	 * déjà encaissée. Dérivé au rendu, jamais posé dans un état : `factures`
 	 * change à chaque rapprochement de virement.
+	 *
+	 * Et une troisième : ce qu'un dossier classé porte encore. Le gérant y a
+	 * renoncé ou n'y croit plus ; ça ne compte plus dans ce que le client doit,
+	 * ni dans la date limite pour agir, mais ça reste lisible (`classement.ts`).
 	 */
-	const aRegler = factures.filter((facture) => facture.resteDu > 0n);
+	const aRegler = factures.filter(
+		(facture) => facture.resteDu > 0n && facture.dansUnDossierClasse !== true
+	);
 	const reglees = factures.filter((facture) => facture.resteDu <= 0n);
+	const classees = factures.filter(
+		(facture) => facture.resteDu > 0n && facture.dansUnDossierClasse === true
+	);
+	const dossiersOuverts = creances.filter((creance) => creance.statut !== 'CLOSE');
+
+	const proche = prescriptionLaPlusProche(aRegler, aujourdHui);
 	/** Ce qui peut entrer dans un dossier : dû, et dans aucun autre. */
 	const eligibles = aRegler.filter((facture) => !facture.dansUneCreance);
 
@@ -604,7 +616,12 @@ function CorpsDebiteur({
 					<EnTeteDeGroupe
 						libelle="Ses dossiers"
 						nombre={creances.length}
-						total={creances.reduce((somme, c) => somme + c.principalRestantDu, 0n)}
+						// Le total ne compte que les dossiers ouverts ; tous classés, il se tait.
+						{...(dossiersOuverts.length === 0
+							? {}
+							: {
+									total: dossiersOuverts.reduce((somme, c) => somme + c.principalRestantDu, 0n)
+								})}
 					/>
 					{/*
 					  ⚠️ DES CARTES, PARCE QU'ILS S'OUVRENT — et une vignette de dossier au
@@ -622,7 +639,11 @@ function CorpsDebiteur({
 								titre={`${creance.nombreFactures} facture${pluriel(creance.nombreFactures)}`}
 								// Un brouillon n'est pas encore qualifié : le dire évite d'ouvrir
 								// un dossier en croyant qu'il est prêt.
-								{...(creance.statut === 'BROUILLON' ? { ligne: 'Brouillon' } : {})}
+								{...(creance.statut === 'BROUILLON'
+									? { ligne: 'Brouillon' }
+									: creance.statut === 'CLOSE'
+										? { ligne: 'Classé' }
+										: {})}
 								montant={eurosCentimes(creance.principalRestantDu)}
 							/>
 						))}
@@ -636,7 +657,11 @@ function CorpsDebiteur({
 					Aucune facture de ce client n’a encore été importée.
 				</p>
 			) : aRegler.length === 0 ? (
-				<p className="px-1 text-cladd-xs text-cladd-fg-soft">Toutes ses factures sont réglées.</p>
+				<p className="px-1 text-cladd-xs text-cladd-fg-soft">
+					{classees.length === 0
+						? 'Toutes ses factures sont réglées.'
+						: 'Plus rien à régler hors des dossiers que vous avez classés.'}
+				</p>
 			) : (
 				<section className="flex flex-col gap-cladd-3xs">
 					<EnTeteDeGroupe
@@ -834,6 +859,30 @@ function CorpsDebiteur({
 										? {}
 										: { ligne: `Échue le ${dateCourte(facture.dateEcheance)}` })}
 									montant={eurosCentimes(facture.montantTTC)}
+								/>
+							))}
+						</ListeDeReleve>
+					</RangeeDepliable>
+				)}
+
+				{/*
+				  LES FACTURES D'UN DOSSIER CLASSÉ — rien n'est effacé. Le reste dû
+				  s'affiche, il ne compte plus ; le dossier se rouvre depuis sa page.
+				*/}
+				{classees.length === 0 ? null : (
+					<RangeeDepliable
+						cle="classees"
+						famille="PAPIERS"
+						titre="Factures classées"
+						valeur={`${classees.length}`}
+					>
+						<ListeDeReleve>
+							{classees.map((facture) => (
+								<LigneDeReleve
+									key={facture._id}
+									titre={facture.reference}
+									ligne="Dossier classé"
+									montant={eurosCentimes(facture.resteDu)}
 								/>
 							))}
 						</ListeDeReleve>

@@ -32,7 +32,7 @@ import {
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
 import { planDuDossier } from './plan';
-import { LIBELLE_MOTIF } from './classement';
+import { dossiersClasses, LIBELLE_MOTIF } from './classement';
 import { professionnelsDe, vCleFaitLitige, vEtatCritere, vSecteurCreance } from './tables';
 
 /**
@@ -142,6 +142,11 @@ const vFacture = v.object({
 	datePrescription: v.optional(v.string()),
 	dansUneCreance: v.boolean(),
 	/**
+	 * Dans un dossier que le gérant a classé (`classement.ts`) : la facture reste
+	 * lisible, elle ne compte plus dans ce que le client doit.
+	 */
+	dansUnDossierClasse: v.optional(v.boolean()),
+	/**
 	 * ⚠️ RENDU EN POURCENTAGE SAISISSABLE, pas en fraction. L'écran doit
 	 * pouvoir RELIRE ce qu'il a écrit : sans ça, le champ repartirait vide à
 	 * chaque ouverture et le créancier ressaisirait un taux déjà posé.
@@ -191,11 +196,18 @@ export const listerDebiteurs = authedQuery({
 			.collect();
 
 		const factures = await facturesDe(ctx, organizationId);
+		// Ce que le gérant a classé ne compte plus dans ce qu'un client doit, comme
+		// dans la surveillance et « ce qui vous est dû » (`classement.ts`).
+		const classes = await dossiersClasses(ctx, organizationId);
 
 		const lignes = await Promise.all(
 			debiteurs.map(async (debiteur) => {
 				const siennes = factures.filter((f) => f.debiteurId === debiteur._id);
-				const nonSoldees = siennes.filter((f) => f.statutPaiement !== 'SOLDEE');
+				const nonSoldees = siennes.filter(
+					(f) =>
+						f.statutPaiement !== 'SOLDEE' &&
+						(f.creanceId === undefined || !classes.has(f.creanceId))
+				);
 				const restes = await Promise.all(nonSoldees.map((f) => resteDu(ctx, f)));
 
 				return {
@@ -244,6 +256,7 @@ export const listerFacturesDuDebiteur = authedQuery({
 			.query('facturesVente')
 			.withIndex('by_debiteur', (q) => q.eq('debiteurId', debiteurId))
 			.collect();
+		const classes = await dossiersClasses(ctx, organizationId);
 
 		return await Promise.all(
 			factures
@@ -272,7 +285,10 @@ export const listerFacturesDuDebiteur = authedQuery({
 							[facture.dateExigibilite, facture.dateEcheance],
 							secteur
 						).datePrescription,
-						dansUneCreance: facture.creanceId !== undefined
+						dansUneCreance: facture.creanceId !== undefined,
+						...(facture.creanceId !== undefined && classes.has(facture.creanceId)
+							? { dansUnDossierClasse: true }
+							: {})
 					};
 				})
 		);

@@ -970,8 +970,27 @@ function AvecLaListe({ debiteurId, children }: { debiteurId: string; children: R
  */
 const FORMES_PAGE_DEMO: Readonly<Record<string, string>> = {
 	'payeur lent': PAYEUR_LENT_DEMO._id,
-	'client récent': NOUVEAU_CLIENT_DEMO._id
+	'client récent': NOUVEAU_CLIENT_DEMO._id,
+	// L'imprimerie, son dossier classé : ses factures sortent de ce qu'elle doit.
+	'dossier classé': PRINCIPAL_DEMO._id
 };
+
+/**
+ * Le dossier de l'imprimerie, classé : comme `listerDebiteurs` et
+ * `listerFacturesDuDebiteur` le rendent depuis le 09/10/2026, ses factures ne
+ * comptent plus dans l'encours et se lisent à part.
+ */
+function avecDossierClasse(page: DebiteurComplet): DebiteurComplet {
+	const classees = page.factures.filter((f) => f.dansUneCreance && f.resteDu > 0n);
+	return {
+		...page,
+		encours: page.encours - classees.reduce((somme, f) => somme + f.resteDu, 0n),
+		factures: page.factures.map((f) =>
+			f.dansUneCreance ? { ...f, dansUnDossierClasse: true } : f
+		),
+		creances: page.creances.map((c) => ({ ...c, statut: 'CLOSE' }))
+	};
+}
 
 /**
  * ⚠️ UNE FACTURE EST COCHÉE D'EMBLÉE SUR LE DÉBITEUR PRINCIPAL, et c'est pour
@@ -998,7 +1017,12 @@ function PageDebiteurDemo({ etat, variante }: { etat: EtatDemo; variante?: strin
 		<AvecLaListe debiteurId={debiteurId}>
 			<EcranDebiteur
 				identifiant={debiteurId}
-				donnees={lectureDemo(etat, pageDu(debiteurId, selection, basculer))}
+				donnees={lectureDemo(
+					etat,
+					variante === 'dossier classé'
+						? avecDossierClasse(pageDu(debiteurId, selection, basculer))
+						: pageDu(debiteurId, selection, basculer)
+				)}
 			/>
 		</AvecLaListe>
 	);
