@@ -2,6 +2,8 @@ import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-r
 import { Providers } from '../app/providers';
 import { AMORCE_THEME } from '../app/use-theme';
 import appCss from '../styles/app.css?url';
+// La police du corps, en latin : la même adresse que celle que le CSS déclare.
+import policeDuCorps from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
 
 export const Route = createRootRoute({
 	head: () => ({
@@ -27,6 +29,19 @@ export const Route = createRootRoute({
 		// densité, là où un PNG de 48 px bave. Le PNG suit en repli.
 		links: [
 			{ rel: 'stylesheet', href: appCss },
+			/*
+			  ⚠️ LA POLICE DU CORPS PART AVEC LA PAGE (09/10/2026). Déclarée dans le CSS,
+			  elle n'était découverte qu'après lui (166 ko à télécharger et à lire) : le
+			  texte s'affichait d'abord dans la police du système, puis sautait. Le
+			  latin seul, le seul qu'un lecteur français télécharge.
+			*/
+			{
+				rel: 'preload',
+				href: policeDuCorps,
+				as: 'font',
+				type: 'font/woff2',
+				crossOrigin: 'anonymous'
+			},
 			{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
 			{ rel: 'icon', href: '/favicon.png', sizes: '48x48', type: 'image/png' },
 			{ rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
