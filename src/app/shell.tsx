@@ -3,6 +3,7 @@ import { useRouterState } from '@tanstack/react-router';
 import { Fond } from '../ui/fond';
 import { BarreBranchee } from './barre';
 import { CompagnonBranche } from './compagnon';
+import { useCodeEnAvance } from './code-en-avance';
 
 /**
  * Le cadre de l'application authentifiée.
@@ -59,6 +60,8 @@ export function Shell({
 	 */
 	sessionOuverte?: boolean;
 }) {
+	// Le code des écrans les plus ouverts se charge au repos, une fois la session là.
+	useCodeEnAvance(sessionOuverte);
 	return (
 		<div className="relative flex h-dvh w-full flex-col overflow-hidden">
 			{/* Le drapé, une fois, derrière tous les écrans. C'est lui qui donne au
