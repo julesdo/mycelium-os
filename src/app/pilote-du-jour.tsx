@@ -15,8 +15,34 @@ import { PiloteEnDirect } from '../ui';
  */
 export function PiloteDuJour({ aujourdHui }: { readonly aujourdHui: string }) {
 	const pilote = useQuery(api.recouvrement.pilote.etat, {});
-	const activerRelances = useMutation(api.recouvrement.pilote.activerRelances);
-	const retenirRelance = useMutation(api.recouvrement.pilote.retenir);
+	/*
+	  LES DEUX GESTES DU BLOC SE VOIENT AU TOUCHER (mises à jour optimistes de
+	  Convex) : une relance retenue quitte « Part bientôt », l'activation bascule ;
+	  le serveur confirme derrière, ou défait si le geste est refusé.
+	*/
+	const activerRelances = useMutation(api.recouvrement.pilote.activerRelances).withOptimisticUpdate(
+		(local, { actif }) => {
+			const etat = local.getQuery(api.recouvrement.pilote.etat, {});
+			if (etat !== undefined) {
+				local.setQuery(api.recouvrement.pilote.etat, {}, { ...etat, envoiAutomatique: actif });
+			}
+			local.setQuery(api.recouvrement.pilote.relancesAutomatiques, {}, actif);
+		}
+	);
+	const retenirRelance = useMutation(api.recouvrement.pilote.retenir).withOptimisticUpdate(
+		(local, { envoiId }) => {
+			const etat = local.getQuery(api.recouvrement.pilote.etat, {});
+			if (etat === undefined) return;
+			local.setQuery(
+				api.recouvrement.pilote.etat,
+				{},
+				{
+					...etat,
+					programmes: etat.programmes.filter((p) => p.envoiId !== envoiId)
+				}
+			);
+		}
+	);
 	if (pilote === undefined) return null;
 
 	return (

@@ -39,8 +39,41 @@ function PageNotifications() {
 	const notifications = useQuery(api.notifications.listMyNotifications, {});
 	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
 	const debiteurs = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
-	const marquerLue = useMutation(api.notifications.markAsRead);
-	const toutMarquerLu = useMutation(api.notifications.markAllAsRead);
+	/*
+	  ⚠️ LUE AU TOUCHER, SANS ATTENDRE LE SERVEUR (09/10/2026). La pastille de la
+	  cloche et le point de la rangée tombent tout de suite (mise à jour
+	  optimiste de Convex) ; le serveur confirme derrière, ou défait si la marque
+	  échoue.
+	*/
+	const marquerLue = useMutation(api.notifications.markAsRead).withOptimisticUpdate(
+		(local, { notificationId }) => {
+			const liste = local.getQuery(api.notifications.listMyNotifications, {});
+			if (liste === undefined) return;
+			const etaitNonLue = liste.some((n) => n._id === notificationId && !n.isRead);
+			local.setQuery(
+				api.notifications.listMyNotifications,
+				{},
+				liste.map((n) => (n._id === notificationId ? { ...n, isRead: true } : n))
+			);
+			const compte = local.getQuery(api.notifications.getUnreadCount, {});
+			if (etaitNonLue && compte !== undefined) {
+				local.setQuery(api.notifications.getUnreadCount, {}, Math.max(0, compte - 1));
+			}
+		}
+	);
+	const toutMarquerLu = useMutation(api.notifications.markAllAsRead).withOptimisticUpdate(
+		(local) => {
+			const liste = local.getQuery(api.notifications.listMyNotifications, {});
+			if (liste !== undefined) {
+				local.setQuery(
+					api.notifications.listMyNotifications,
+					{},
+					liste.map((n) => ({ ...n, isRead: true }))
+				);
+			}
+			local.setQuery(api.notifications.getUnreadCount, {}, 0);
+		}
+	);
 
 	if (notifications === undefined || creances === undefined || debiteurs === undefined) {
 		return <EcranNotifications donnees={{ etat: 'attente' }} />;

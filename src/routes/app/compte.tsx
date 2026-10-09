@@ -10,11 +10,7 @@ import { useTheme } from '../../app/use-theme';
 import { messageDeRefus, televerser } from '../../app/televerser';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import { CarteChiftBranchee } from '../../app/connexion-chift';
-import type {
-	EtatDirigeants,
-	EtatImmatriculation,
-	Lecture
-} from '../../ui';
+import type { EtatDirigeants, EtatImmatriculation, Lecture } from '../../ui';
 import { aujourdHuiISO, PileDeConnexions } from '../../ui';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
 import type { OrdreParDefaut, ReglesAffichees } from '../../screens/compte/regles';
@@ -73,7 +69,12 @@ function PageCompte() {
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	/** Le point du matin par e-mail, pour la personne connectée. */
 	const pointDuMatin = useQuery(api.recouvrement.briefing.monPointDuMatin, {});
-	const reglerPointDuMatin = useMutation(api.recouvrement.briefing.reglerPointDuMatin);
+	// Le choix bascule au toucher (mise à jour optimiste) ; le serveur confirme derrière.
+	const reglerPointDuMatin = useMutation(
+		api.recouvrement.briefing.reglerPointDuMatin
+	).withOptimisticUpdate((local, { parCourriel }) => {
+		local.setQuery(api.recouvrement.briefing.monPointDuMatin, {}, parCourriel);
+	});
 	const mesure = useQuery(api.recouvrement.monEtablissement.volumeEmis, {});
 	const mettreAJourOrg = useMutation(api.organizations.updateOrganization);
 	const enregistrerProfil = useMutation(api.recouvrement.profil.enregistrer);
