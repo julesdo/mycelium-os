@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lireEcheancier, lirePromesse, pauseDuPlan } from '../parole';
+import { lireEcheancier, lirePromesse, pauseDuPlan, promesseACiter } from '../parole';
 import { prochaineEtape } from '../plan-relance';
 
 /**
@@ -127,5 +127,34 @@ describe('le plan, suspendu', () => {
 		});
 		expect(prochaine?.le).toBe('2026-10-24');
 		expect(prochaine?.due).toBe(false);
+	});
+});
+
+describe('la promesse que la relance qui reprend rappelle', () => {
+	const promesse = { noteeLe: '2026-10-08', pour: '2026-10-20', montant: 120_000n };
+	const lire = (o: Partial<Parameters<typeof promesseACiter>[0]>) =>
+		promesseACiter({
+			promesses: [promesse],
+			echeanciers: [],
+			reglements: [],
+			aujourdHui: '2026-10-25',
+			resteDu: 300_000n,
+			...o
+		});
+
+	it('se cite une fois son délai de grâce passé sans que rien ne la couvre', () => {
+		expect(lire({})).toEqual({ le: '2026-10-20', montant: 120_000n });
+	});
+
+	it('ne se cite ni pendant son délai, ni quand les règlements la couvrent', () => {
+		expect(lire({ aujourdHui: '2026-10-22' })).toBeNull();
+		expect(lire({ reglements: [{ le: '2026-10-21', montant: 120_000n }] })).toBeNull();
+	});
+
+	it('ne se cite plus quand le gérant l’a dite tenue, ni après un échéancier convenu', () => {
+		expect(lire({ promesses: [{ ...promesse, issue: 'TENUE' }] })).toBeNull();
+		expect(
+			lire({ echeanciers: [{ accordeLe: '2026-10-24', echeances: [{ le: '2026-11-01', montant: 1n }] }] })
+		).toBeNull();
 	});
 });

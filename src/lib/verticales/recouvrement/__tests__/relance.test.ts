@@ -91,6 +91,18 @@ describe('le niveau 1 — le rappel administratif', () => {
 		expect(texteDe(relance)).toContain('15/05/2026');
 	});
 
+	it('rappelle la promesse que les règlements n’ont pas couverte, sans la reprocher', () => {
+		const relance = composerRelance(1, {
+			...BASE,
+			rang: 2,
+			promesseManquee: { le: '2026-08-20', montant: depuisEuros('4000,00') }
+		});
+		const texte = texteDe(relance);
+		expect(texte).toMatch(/Vous nous aviez annoncé un règlement de 4.000,00 € pour le 20\/08\/2026\./);
+		expect(texte).toContain('Sauf erreur de notre part');
+		expect(texte).not.toMatch(/tenu|promesse|intérêts de retard|indemnité|pénalit|procédure/i);
+	});
+
 	it('n’annonce aucune suite, et c’est ce qui le distingue du niveau 2', () => {
 		// Un premier rappel qui menace déjà n'a plus de marche au-dessus de lui.
 		// L'asymétrie est tout l'intérêt du module.

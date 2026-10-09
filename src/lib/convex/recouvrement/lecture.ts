@@ -31,7 +31,8 @@ import {
 	prescriptionDe
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
-import { planDuDossier } from './plan';
+import { paroleDuDossier, planDuDossier } from './plan';
+import { promesseACiter } from '../../verticales/recouvrement/parole';
 import { dossiersClasses, LIBELLE_MOTIF } from './classement';
 import { professionnelsDe, vCleFaitLitige, vEtatCritere, vSecteurCreance } from './tables';
 
@@ -611,6 +612,15 @@ export const creanceComplete = authedQuery({
 			.collect();
 
 		const restes = await Promise.all(factures.map((facture) => resteDu(ctx, facture)));
+		// Le rappel qui reprend après une promesse non couverte la cite, comme celui du pilote.
+		const parole = await paroleDuDossier(ctx, creanceId, factures);
+		const promesse = promesseACiter({
+			promesses: parole.promesses,
+			echeanciers: parole.echeanciers,
+			reglements: parole.reglements,
+			aujourdHui: new Date().toISOString().slice(0, 10),
+			resteDu: parole.resteDu
+		});
 
 		const conditions = {
 			certaine: creance.certaine,
@@ -802,6 +812,16 @@ export const creanceComplete = authedQuery({
 			// tous les niveaux depuis la santé et le constat du registre.
 			relances: NIVEAUX_RELANCE.map((description) => {
 				const relance = composerRelance(description.niveau, {
+					...(promesse === null
+						? {}
+						: {
+								promesseManquee: {
+									le: promesse.le,
+									...(promesse.montant === undefined
+										? {}
+										: { montant: depuisCentimes(promesse.montant) })
+								}
+							}),
 					creancier: profil?.denomination ?? 'Votre entreprise',
 					debiteur: debiteur?.denomination ?? 'Ce client',
 					factures: factures.map((f) => ({

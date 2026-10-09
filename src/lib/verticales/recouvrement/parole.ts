@@ -240,3 +240,51 @@ export function pauseDuPlan({
 	}
 	return pause;
 }
+
+/** Ce qu'une relance qui reprend peut rappeler au client : le jour qu'il avait donné. */
+export interface PromesseACiter {
+	/** Le jour promis. */
+	readonly le: string;
+	/** Ce qu'il avait promis ; absent, il avait promis de tout régler. */
+	readonly montant?: bigint;
+}
+
+/**
+ * LA PROMESSE QUE LA RELANCE QUI REPREND RAPPELLE — ou `null` (09/10/2026).
+ *
+ * Le pilote se taisait jusqu'au jour promis, puis reprenait par un rappel qui
+ * ne disait rien de cette parole : le client recevait « sauf erreur, le
+ * règlement ne nous est pas parvenu » comme si de rien n'était.
+ *
+ * ⚠️ LA PLUS RÉCENTE SEULEMENT, ET UN FAIT, PAS UN VERDICT. Elle se cite quand
+ * son délai de grâce est passé sans que les règlements arrivés depuis la
+ * couvrent, et que le gérant ne l'a pas dite tenue. Le texte dit « vous nous
+ * aviez annoncé… », jamais « vous n'avez pas tenu ». Un échéancier convenu après
+ * elle la remplace : c'est lui qui compte désormais.
+ */
+export function promesseACiter({
+	promesses,
+	echeanciers,
+	reglements,
+	aujourdHui,
+	resteDu
+}: {
+	readonly promesses: readonly PromesseVue[];
+	readonly echeanciers: readonly EcheancierVu[];
+	readonly reglements: readonly ReglementVu[];
+	readonly aujourdHui: string;
+	readonly resteDu: bigint;
+}): PromesseACiter | null {
+	const derniere = [...promesses].sort((a, b) =>
+		a.noteeLe === b.noteeLe ? a.pour.localeCompare(b.pour) : a.noteeLe.localeCompare(b.noteeLe)
+	)[promesses.length - 1];
+	if (derniere === undefined) return null;
+	if (echeanciers.some((e) => e.accordeLe > derniere.noteeLe)) return null;
+	const lue = lirePromesse(derniere, reglements, aujourdHui, resteDu);
+	if (lue.etat !== 'ECHUE' && lue.etat !== 'NON_TENUE') return null;
+	if (lue.couverte) return null;
+	return {
+		le: derniere.pour,
+		...(derniere.montant === undefined ? {} : { montant: derniere.montant })
+	};
+}

@@ -16,7 +16,8 @@ import { resend, assertResendApiKey } from '../emails/resend';
 import { relanceHtml } from '../emails/modeles/relance';
 import { requireEnv } from '../env';
 import { composer, type ChoixCourrier } from './envois';
-import { pauseDuDossier, planDuDossier } from './plan';
+import { paroleDuDossier, pauseDuDossier, planDuDossier } from './plan';
+import { promesseACiter } from '../../verticales/recouvrement/parole';
 import { resteDu } from './lecture';
 import { pluriel } from '../../socle/francais';
 import { ZERO, additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
@@ -733,13 +734,21 @@ async function composerEtape(
 		};
 	}
 
-	const factures = (
-		await ctx.db
-			.query('facturesVente')
-			.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
-			.collect()
-	).filter((f) => f.statutPaiement !== 'SOLDEE');
+	const toutes = await ctx.db
+		.query('facturesVente')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+		.collect();
+	const factures = toutes.filter((f) => f.statutPaiement !== 'SOLDEE');
 	const restes = await Promise.all(factures.map((f) => resteDu(ctx, f)));
+	// Le rappel qui reprend après une promesse non couverte la cite (`parole.ts`).
+	const parole = await paroleDuDossier(ctx, creance._id, toutes);
+	const promesse = promesseACiter({
+		promesses: parole.promesses,
+		echeanciers: parole.echeanciers,
+		reglements: parole.reglements,
+		aujourdHui,
+		resteDu: parole.resteDu
+	});
 	const relance = composerRelance(1, {
 		creancier: profil?.denomination ?? '',
 		debiteur: debiteur.denomination,
@@ -752,7 +761,17 @@ async function composerEtape(
 		santeDebiteur: debiteur.santeFinanciere,
 		constatRegistre: debiteur.constatRegistre,
 		aujourdHui,
-		rang: etape === 'SECOND_RAPPEL' ? 2 : 1
+		rang: etape === 'SECOND_RAPPEL' ? 2 : 1,
+		...(promesse === null
+			? {}
+			: {
+					promesseManquee: {
+						le: promesse.le,
+						...(promesse.montant === undefined
+							? {}
+							: { montant: depuisCentimes(promesse.montant) })
+					}
+				})
 	});
 	if (!relance.disponible) return { ok: false, manques: [...manques, relance.constat] };
 	if (manques.length > 0) return { ok: false, manques };

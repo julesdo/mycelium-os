@@ -123,6 +123,12 @@ export interface ElementsRelance {
 	 * menace. 1 par défaut.
 	 */
 	readonly rang?: 1 | 2;
+	/**
+	 * LE JOUR QUE LE CLIENT AVAIT DONNÉ, quand le rappel reprend après une
+	 * promesse que les règlements n'ont pas couverte (`parole.promesseACiter`) :
+	 * le rappel la cite au lieu de faire comme si de rien n'était.
+	 */
+	readonly promesseManquee?: { readonly le: string; readonly montant?: Montant };
 }
 
 /**
@@ -246,6 +252,31 @@ function rappel(elements: ElementsRelance): Relance {
 	*/
 	const second = elements.rang === 2;
 	const pluriel = elements.factures.length > 1 ? 's' : '';
+	/*
+	  ⚠️ LA PROMESSE SE RAPPELLE, ELLE NE SE REPROCHE PAS (09/10/2026). « Vous nous
+	  aviez annoncé un règlement pour le 20 » est un fait que le client a dit
+	  lui-même ; « sauf erreur de notre part » laisse la place au virement parti
+	  hier. Ni pénalités, ni suite : l'asymétrie du rappel tient.
+	*/
+	const promesse = elements.promesseManquee;
+	const ouverture =
+		promesse !== undefined
+			? [
+					`Vous nous aviez annoncé un règlement${
+						promesse.montant === undefined ? '' : ` de ${versEuros(promesse.montant)} €`
+					} pour le ${enFrancais(promesse.le)}.`,
+					'Sauf erreur de notre part, il ne nous est pas parvenu, et la ou les factures',
+					'suivantes restent à régler :'
+				]
+			: second
+				? [
+						'Nous revenons vers vous : sauf erreur de notre part, le règlement de la ou des',
+						'factures suivantes ne nous est toujours pas parvenu :'
+					]
+				: [
+						'Sauf erreur de notre part, le règlement de la ou des factures suivantes ne nous est',
+						'pas encore parvenu :'
+					];
 	return {
 		disponible: true,
 		niveau: 1,
@@ -255,15 +286,7 @@ function rappel(elements: ElementsRelance): Relance {
 		corps: [
 			'Bonjour,',
 			'',
-			...(second
-				? [
-						'Nous revenons vers vous : sauf erreur de notre part, le règlement de la ou des',
-						'factures suivantes ne nous est toujours pas parvenu :'
-					]
-				: [
-						'Sauf erreur de notre part, le règlement de la ou des factures suivantes ne nous est',
-						'pas encore parvenu :'
-					]),
+			...ouverture,
 			'',
 			...lignes,
 			'',
