@@ -581,6 +581,39 @@ refuse une teinte de seuil dans le registre ET une teinte forcee par un ecran.
 - Pas de `console.log` en production
 - Commits : `git commit --no-verify` (les hooks pre-commit dépassent 2 minutes)
 
+### Aussi fluide qu'une application (09/10/2026)
+
+Le fondateur : « être aussi performant qu'une app mobile, sans chargement intempestif, tout en
+restant réactif et en temps réel avec Convex ». Mesuré, puis tenu par ces règles :
+
+- **Le paquet d'entrée ne porte que le socle** (React, routeur, Convex, authentification) :
+  1,56 Mo → 0,50 Mo. `package.json` déclare `"sideEffects": ["**/*.css"]` pour que le fichier qui
+  ré-exporte toute l'interface (`ui/index.ts`) se trie ; ce qui se charge avec le routeur
+  (`screens/passage.tsx`, la partie non découpée d'une route : `validateSearch`, `loader`)
+  importe des fichiers précis, jamais un écran entier (`screens/sections-creance.ts`). Mesurer
+  avec `ANALYZE=true npx vite build` avant de conclure.
+- **Ce qui est lourd et rare se charge à la demande** : les dessins d'avatars DiceBear
+  (`avatar-dessin.ts`, `use` + `Suspense`, initiales en attendant), le moteur WebGL du fond
+  (`lazy`), le calendrier (`selecteur-date.tsx`), `jspdf` (déjà).
+- **Les requêtes passent par `app/donnees.ts`** : le `useQuery` du cache de convex-helpers garde
+  l'abonnement ouvert cinq minutes après le départ de l'écran — retour instantané, toujours en temps
+  réel. `donnees-vivantes.test.ts` refuse un `useQuery` de `convex/react` ; une requête dont
+  l'argument change à chaque frappe prend `useRequeteEphemere`.
+- **Les données partent au toucher** : une route poussée a un `loader` qui ouvre ses
+  abonnements (`app/prechargement.ts`, mêmes arguments que l'écran), le routeur le lance au
+  toucher (`defaultPreload: 'intent'`) ; le code des écrans les plus ouverts se charge au repos
+  (`app/code-en-avance.ts`).
+- **La coquille se monte une fois**, dès le premier affichage, rendu serveur compris : fond, barre
+  du bas, Plume au repos, un squelette au milieu (`routes/app/route.tsx`).
+- **Une donnée qui bouge souvent s'abonne au plus près de ce qui la montre** : les coches du pilote
+  (toutes les 0,7 s) ne redessinent que `PiloteDuJour` ; un écran qui ne veut qu'un booléen lit une
+  requête étroite (`relancesAutomatiques`, `humeurDePlume`), jamais `pilote.etat` entier.
+- **Un geste fréquent se voit avant le serveur** : mises à jour optimistes de Convex
+  (`withOptimisticUpdate`) sur les notifications, le pilote, le point du matin.
+- **Le fond se fige pendant un défilement** (le flou des cartes en verre se recalcule sinon à chaque
+  image) ; les squelettes ont la forme des cartes (`CarteFantome`) ; la police du corps est
+  préchargée dès le HTML.
+
 ### Le piège Convex qui casse TOUS les écrans d'un coup
 
 Une fonction Convex qui appelle `internal.<son propre module>.<autre fonction>` crée un cycle
