@@ -69,10 +69,21 @@ dossier ne pouvait pas se fermer.
 - Les trois jours de grâce sont une cadence de produit, comme celles du plan de relance, pas une
   valeur juridique.
 
+## Livré le 9 octobre
+
+- `402d3de` : un dossier classé ne compte plus dans ce que le client doit (liste et fiche) ; ses
+  factures se lisent à part, « Factures classées ».
+- `429c1f0` : l'accord écrit s'ouvre rempli du calendrier convenu, depuis la feuille du paiement en
+  plusieurs fois ou depuis la frise d'un échéancier qui court.
+- `58143c7` : le rappel qui reprend après une promesse non couverte la rappelle : « Vous nous aviez
+  annoncé un règlement de 1 200,00 € pour le 20/10/2026. Sauf erreur de notre part, il ne nous est
+  pas parvenu… » (`parole.promesseACiter`). Un fait, jamais un reproche.
+- `0ba5113` et `1d4a34e` : **le décompte ne s'arrête plus, il se date quand on le réclame.** Les
+  pénalités courent jusqu'au paiement ; chaque document qui réclame un chiffre le fige au jour où
+  il part (`decompte.daterLeDecompte`). L'écran d'arrêt et son pré-vol ont disparu, la lettre
+  officielle du pilote n'attend plus le gérant, et la page de paiement s'ouvre d'un geste.
+
 ## Ce qui reste
 
-- Une relance qui reprend après une promesse manquée pourrait la citer (« vous nous aviez annoncé
-  un règlement pour le 20 ») : c'est un gabarit transmis au client, à relire avec le lexique.
-- L'accord écrit se prépare dans Courriers, mais sans reprendre le calendrier convenu.
-- La liste des clients et la fiche d'un client comptent encore les factures d'un dossier classé ;
-  la surveillance et le montant de l'accueil, non.
+- La lettre de relance officielle ne cite pas la promesse manquée : son texte est recopié au mot
+  près d'un modèle, et ne se change qu'à la relecture.
