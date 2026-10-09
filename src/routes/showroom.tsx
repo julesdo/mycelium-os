@@ -1033,16 +1033,15 @@ function Showroom() {
 						{ecran === 'muette' ? <DemoSurveillanceMuette /> : null}
 						{ecran === 'introuvable' ? <EcranIntrouvable /> : null}
 						{ecran === 'erreur' ? <EcranEnErreur /> : null}
-						{/* La feuille de réussite d'un arrêt, telle que la route la pose. */}
+						{/* La feuille de réussite d'un virement noté, telle que la fiche du client la pose. */}
 						{ecran === 'reussite' ? (
 							<FeuilleDeReussite
 								ouverte
-								titre="Décompte arrêté"
+								titre="Virement noté"
 								montant={1_992_897n}
 								pour="Fournitures Durand"
-								detail="Arrêté au 16 août 2026. Ce décompte ne changera plus : le refaire plus tard en produira un nouveau, daté."
-								principale={{ libelle: 'Voir le décompte', onClick: () => undefined }}
-								secondaire={{ libelle: 'Retour au dossier', onClick: () => undefined }}
+								detail="Reçu le 16 août 2026, il règle les factures FA-2026-0142, FA-2026-0177. Ce qui est réglé ne se relance plus."
+								principale={{ libelle: 'Terminé', onClick: () => undefined }}
 							/>
 						) : null}
 						{ecran === 'coquille' ? (

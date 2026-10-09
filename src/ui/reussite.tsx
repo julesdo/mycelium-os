@@ -12,12 +12,12 @@ import { ChiffreHero } from './chiffre';
  *
  * Après un paiement, PayPal, Coinbase, Cash App ou Zopa posent un écran : une
  * coche, le montant, le destinataire, « Terminé » et « Voir le détail ». Notre
- * produit enchaînait sans un mot : on arrêtait un décompte et l'on se
- * retrouvait sur la pièce, sans que rien n'ait dit que c'était fait — ni ce
- * que c'est, une pièce qui ne changera plus.
+ * produit enchaînait sans un mot. Elle marquait l'arrêt d'un décompte, jusqu'à ce
+ * que l'arrêt disparaisse (09/10/2026) ; elle marque désormais le virement noté
+ * sur la fiche d'un client, le moment que tout le produit attend.
  *
  * ⚠️ UNE COCHE À L'ENCRE, JAMAIS VERTE. Le vert ne dit qu'une chose dans ce
- * produit : au-dessus du seuil. Un décompte arrêté n'est pas un verdict sur la
+ * produit : au-dessus du seuil. Un virement noté n'est pas un verdict sur la
  * créance ; c'est un geste de bureau accompli.
  *
  * ⚠️ ELLE NE PROMET RIEN. Elle dit ce qui vient d'être fait, et ce que c'est —
@@ -37,7 +37,7 @@ export function FeuilleDeReussite({
 	secondaire
 }: {
 	readonly ouverte: boolean;
-	/** Ce qui vient d'être fait, au passé : « Décompte arrêté ». */
+	/** Ce qui vient d'être fait, au passé : « Virement noté ». */
 	readonly titre: string;
 	readonly montant?: bigint;
 	/** Le client concerné : la preuve qu'on a agi sur le bon. */

@@ -5,7 +5,9 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import {
+	FeuilleDeReussite,
 	aujourdHuiISO,
+	dateCourte,
 	secteursProposes,
 	type EtatRecherche,
 	type EtablissementPropose
@@ -116,6 +118,17 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const [erreurLettrage, setErreurLettrage] = useState<string | null>(null);
 	const [depotEnCours, setDepotEnCours] = useState(false);
 	const [erreurDepot, setErreurDepot] = useState<string | null>(null);
+	/**
+	 * LE VIREMENT QUI VIENT D'ÊTRE NOTÉ — la coche qui le dit (09/10/2026).
+	 *
+	 * Après un paiement, PayPal, Cash App ou Coinbase posent un écran : la coche,
+	 * le montant, à qui. Ici, noter un virement reçu refermait la feuille sans un
+	 * mot, alors que c'est le moment que tout le produit attend.
+	 */
+	const [reussite, setReussite] = useState<{
+		readonly montant: bigint;
+		readonly detail: string;
+	} | null>(null);
 
 	const proposition = useQuery(
 		api.recouvrement.lettrage.proposer,
@@ -277,6 +290,14 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 		try {
 			await appliquerLettrage({ debiteurId, references: [...references], montant: total, date });
 			setMontantCherche(null);
+			setReussite({
+				montant: total,
+				detail: `Reçu le ${dateCourte(date)}, il règle ${
+					references.length > 1
+						? `les factures ${references.join(', ')}`
+						: `la facture ${references[0] ?? ''}`
+				}. Ce qui est réglé ne se relance plus.`
+			});
 		} catch (e) {
 			const convexe = e as { data?: unknown };
 			setErreurLettrage(
@@ -295,6 +316,10 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 		setErreurLettrage(null);
 		try {
 			await appliquerRepartition({ debiteurId, montant: montantCherche, date });
+			setReussite({
+				montant: montantCherche,
+				detail: `Reçu le ${dateCourte(date)}, réparti sur ses factures dans l’ordre que prévoit la loi. Ce qui est réglé ne se relance plus.`
+			});
 			setMontantCherche(null);
 		} catch (e) {
 			const convexe = e as { data?: unknown };
@@ -400,67 +425,81 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 		comportement !== undefined;
 
 	return (
-		<EcranDebiteur
-			identifiant={debiteurId}
-			donnees={
-				!chargee
-					? { etat: 'attente' }
-					: {
-							etat: 'pret',
-							valeur: {
-								denomination: debiteur.denomination,
-								debiteur,
-								encours: debiteur.encours,
-								aujourdHui: aujourdHuiISO(),
-								factures,
-								// Les seules de ce débiteur. Le filtre est ici plutôt qu'en base
-								// parce que la liste entière tient déjà en mémoire pour l'écran
-								// voisin, et qu'une requête par débiteur la rechargerait.
-								creances: creances.filter((creance) => creance.debiteurId === debiteurId),
-								pieces,
-								habitude: comportement.habitude,
-								ruptures: comportement.ruptures,
-								historique: comportement.historique,
-								enCours: comportement.enCours,
-								optionsSecteur: secteursProposes(),
-								etatRecherche: recherche,
-								erreurSiren,
-								erreurEmail,
-								tauxStipule,
-								constatTaux,
-								propositionLettrage: proposition ?? null,
-								lettrageEnCours: montantCherche !== null && proposition === undefined,
-								erreurLettrage,
-								selection,
-								erreur,
-								depotEnCours,
-								erreurDepot,
-								onChercherAuRegistre: () => void chercherAuRegistrePour(),
-								onRetenirEtablissement: (etablissement) => void retenirEtablissement(etablissement),
-								onEnregistrerSiren: (saisi) => void enregistrerSiren(saisi),
-								onEnregistrerEmail: (saisi) => void enregistrerEmail(saisi),
-								onReglerPilote: (horsPilote) => void reglerPilote({ debiteurId, horsPilote }),
-								onChoisirSecteur: (cle) =>
-									void renseignerSecteur({ debiteurId, secteur: cle as 'GENERAL' }),
-								onEnregistrerTaux: (pourcentage) => void enregistrerTaux(pourcentage),
-								onChercherLettrage: chercherLettrage,
-								onAppliquerLettrage: (references, total, date) =>
-									void soldeLesFactures(references, total, date),
-								onRepartirLettrage: (date) => void repartir(date),
-								onBasculerFacture: basculer,
-								onConstituer: (provenance) => void constituer(provenance),
-								onDemarrer: () =>
-									void navigate({ to: '/app/demarrer/$id', params: { id: debiteurId } }),
-								onDeposerPieces: (fichiers) => void deposerPieces(fichiers),
-								onClasserPiece: (pieceId, type) =>
-									void classerPiece({
-										pieceId: pieceId as Id<'pieces'>,
-										type: type as 'BON_DE_LIVRAISON'
-									}),
-								onRetirerPiece: (pieceId) => void retirerPiece({ pieceId: pieceId as Id<'pieces'> })
+		<>
+			{reussite === null || debiteur === undefined ? null : (
+				<FeuilleDeReussite
+					ouverte
+					titre="Virement noté"
+					montant={reussite.montant}
+					pour={debiteur.denomination}
+					detail={reussite.detail}
+					principale={{ libelle: 'Terminé', onClick: () => setReussite(null) }}
+				/>
+			)}
+			<EcranDebiteur
+				identifiant={debiteurId}
+				donnees={
+					!chargee
+						? { etat: 'attente' }
+						: {
+								etat: 'pret',
+								valeur: {
+									denomination: debiteur.denomination,
+									debiteur,
+									encours: debiteur.encours,
+									aujourdHui: aujourdHuiISO(),
+									factures,
+									// Les seules de ce débiteur. Le filtre est ici plutôt qu'en base
+									// parce que la liste entière tient déjà en mémoire pour l'écran
+									// voisin, et qu'une requête par débiteur la rechargerait.
+									creances: creances.filter((creance) => creance.debiteurId === debiteurId),
+									pieces,
+									habitude: comportement.habitude,
+									ruptures: comportement.ruptures,
+									historique: comportement.historique,
+									enCours: comportement.enCours,
+									optionsSecteur: secteursProposes(),
+									etatRecherche: recherche,
+									erreurSiren,
+									erreurEmail,
+									tauxStipule,
+									constatTaux,
+									propositionLettrage: proposition ?? null,
+									lettrageEnCours: montantCherche !== null && proposition === undefined,
+									erreurLettrage,
+									selection,
+									erreur,
+									depotEnCours,
+									erreurDepot,
+									onChercherAuRegistre: () => void chercherAuRegistrePour(),
+									onRetenirEtablissement: (etablissement) =>
+										void retenirEtablissement(etablissement),
+									onEnregistrerSiren: (saisi) => void enregistrerSiren(saisi),
+									onEnregistrerEmail: (saisi) => void enregistrerEmail(saisi),
+									onReglerPilote: (horsPilote) => void reglerPilote({ debiteurId, horsPilote }),
+									onChoisirSecteur: (cle) =>
+										void renseignerSecteur({ debiteurId, secteur: cle as 'GENERAL' }),
+									onEnregistrerTaux: (pourcentage) => void enregistrerTaux(pourcentage),
+									onChercherLettrage: chercherLettrage,
+									onAppliquerLettrage: (references, total, date) =>
+										void soldeLesFactures(references, total, date),
+									onRepartirLettrage: (date) => void repartir(date),
+									onBasculerFacture: basculer,
+									onConstituer: (provenance) => void constituer(provenance),
+									onDemarrer: () =>
+										void navigate({ to: '/app/demarrer/$id', params: { id: debiteurId } }),
+									onDeposerPieces: (fichiers) => void deposerPieces(fichiers),
+									onClasserPiece: (pieceId, type) =>
+										void classerPiece({
+											pieceId: pieceId as Id<'pieces'>,
+											type: type as 'BON_DE_LIVRAISON'
+										}),
+									onRetirerPiece: (pieceId) =>
+										void retirerPiece({ pieceId: pieceId as Id<'pieces'> })
+								}
 							}
-						}
-			}
-		/>
+				}
+			/>
+		</>
 	);
 }
