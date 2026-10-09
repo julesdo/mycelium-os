@@ -123,6 +123,24 @@ describe('la lettre de relance officielle', () => {
 	it('refuse pour un client en procédure collective', () => {
 		expect(relance({ debiteur: { ...DEBITEUR, sante: 'PROCEDURE_COLLECTIVE' } }).ok).toBe(false);
 	});
+
+	it('rappelle les relances parties et la promesse non couverte, sans rien leur ajouter', () => {
+		const r = relance({
+			relancesAnterieures: ['2026-09-12', '2026-08-30'],
+			promesseManquee: { le: '2026-09-20', montant: 200_000n }
+		});
+		if (!r.ok) throw new Error('attendu');
+		expect(r.corps).toContain('malgré nos relances des 30 août 2026 et 12 septembre 2026 :');
+		expect(r.corps).toMatch(
+			/Vous nous aviez annoncé un règlement de 2.000,00 € pour le 20 septembre 2026 ; il ne nous est pas parvenu à ce jour\./
+		);
+		const une = relance({ relancesAnterieures: ['2026-09-12'] });
+		if (!une.ok) throw new Error('attendu');
+		expect(une.corps).toContain('malgré notre relance du 12 septembre 2026 :');
+		const sans = relance();
+		if (!sans.ok) throw new Error('attendu');
+		expect(sans.corps).not.toMatch(/malgré|annoncé/);
+	});
 });
 
 describe('la déclaration de ce qu’il vous doit', () => {

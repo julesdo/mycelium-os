@@ -52,6 +52,20 @@ export interface EntreesRelance {
 	readonly referenceInterne: string;
 	readonly dateCourrier: string;
 	readonly choix: ChoixRelance;
+	/**
+	 * Les jours où une relance est partie (`AAAA-MM-JJ`) : un e-mail du pilote, ou
+	 * un courrier que le gérant a déclaré parti. Un brouillon n'en est pas une.
+	 */
+	readonly relancesAnterieures?: readonly string[];
+	/** La promesse que les règlements n'ont pas couverte (`parole.promesseACiter`). */
+	readonly promesseManquee?: { readonly le: string; readonly montant?: bigint };
+}
+
+/** « du 12 septembre 2026 », « des 12 septembre 2026 et 22 septembre 2026 ». */
+function relancesEnClair(dates: readonly string[]): string {
+	const lisibles = [...dates].sort().map(date);
+	if (lisibles.length === 1) return `notre relance du ${lisibles[0]}`;
+	return `nos relances des ${lisibles.slice(0, -1).join(', ')} et ${lisibles[lisibles.length - 1]}`;
 }
 
 const SUITES: Record<SuiteRelance, string> = {
@@ -156,12 +170,18 @@ export function composerLettreRelance(e: EntreesRelance): Composition {
 		'',
 		'Madame, Monsieur,',
 		'',
-		`À ce jour, ${plusieurs ? 'les factures suivantes, que nous vous avons adressées, demeurent impayées' : 'la facture suivante, que nous vous avons adressée, demeure impayée'} :`,
+		`À ce jour, ${plusieurs ? 'les factures suivantes, que nous vous avons adressées, demeurent impayées' : 'la facture suivante, que nous vous avons adressée, demeure impayée'}${e.relancesAnterieures === undefined || e.relancesAnterieures.length === 0 ? '' : `, malgré ${relancesEnClair(e.relancesAnterieures)}`} :`,
 		''
 	);
 	for (const f of e.factures) {
 		lignes.push(
 			`– facture n° ${f.reference}${f.dateEmission === undefined ? '' : ` du ${date(f.dateEmission)}`}, échue le ${date(f.dateExigibilite!)} : ${euros(f.montantTTC)} € TTC${f.reglementsRecus > 0n ? `, dont ${euros(f.reglementsRecus)} € déjà réglés` : ''} ; reste dû ${euros(f.resteDu)} €.`
+		);
+	}
+	if (e.promesseManquee !== undefined) {
+		lignes.push(
+			'',
+			`Vous nous aviez annoncé un règlement${e.promesseManquee.montant === undefined ? '' : ` de ${euros(e.promesseManquee.montant)} €`} pour le ${date(e.promesseManquee.le)} ; il ne nous est pas parvenu à ce jour.`
 		);
 	}
 	lignes.push('', `Compte arrêté au ${date(decompte.arreteAu)} :`, '');

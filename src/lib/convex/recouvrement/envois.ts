@@ -33,6 +33,8 @@ import {
 } from '../../verticales/recouvrement/gabarits/professionnels';
 import { resteDu } from './lecture';
 import { daterLeDecompte, decompteDuJour } from './decompte';
+import { paroleDuDossier } from './plan';
+import { promesseACiter } from '../../verticales/recouvrement/parole';
 import { vModeleCourrier } from './tables';
 
 /**
@@ -299,7 +301,34 @@ export async function composer(
 
 	let composition: Composition;
 	switch (choix.modele) {
-		case 'RELANCE_OFFICIELLE':
+		case 'RELANCE_OFFICIELLE': {
+			/*
+			  CE QUE LE MODÈLE PRÉVOYAIT, ENFIN ALIMENTÉ (09/10/2026) : les relances
+			  déjà parties (« malgré nos relances des… ») et la promesse que les
+			  règlements n'ont pas couverte. Seulement ce qui est PARTI : un brouillon
+			  ne prouve aucun envoi.
+			*/
+			const partis = (
+				await ctx.db
+					.query('envois')
+					.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+					.collect()
+			)
+				.filter(
+					(e) =>
+						e.etat === 'PARTI' &&
+						e.partiLe !== undefined &&
+						(e.modele === 'RAPPEL' || e.modele === 'RELANCE_OFFICIELLE')
+				)
+				.map((e) => e.partiLe!);
+			const parole = await paroleDuDossier(ctx, creanceId, facturesBrutes);
+			const promesse = promesseACiter({
+				promesses: parole.promesses,
+				echeanciers: parole.echeanciers,
+				reglements: parole.reglements,
+				aujourdHui,
+				resteDu: parole.resteDu
+			});
 			composition = composerLettreRelance({
 				creancier,
 				debiteur: client,
@@ -307,9 +336,19 @@ export async function composer(
 				decompte,
 				referenceInterne,
 				dateCourrier: aujourdHui,
-				choix
+				choix,
+				...(partis.length === 0 ? {} : { relancesAnterieures: [...new Set(partis)] }),
+				...(promesse === null
+					? {}
+					: {
+							promesseManquee: {
+								le: promesse.le,
+								...(promesse.montant === undefined ? {} : { montant: promesse.montant })
+							}
+						})
 			});
 			break;
+		}
 		case 'ACCORD_ECHEANCIER':
 			composition = composerAccordEcheancier({
 				creancier,

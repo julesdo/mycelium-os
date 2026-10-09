@@ -35,11 +35,13 @@ Objet : mise en demeure de payer – {{#if factures.plusieurs}}{{factures.nombre
 {{/if}}
 Madame, Monsieur,
 
-À ce jour, {{#if factures.plusieurs}}les factures suivantes, que nous vous avons adressées, demeurent impayées{{else}}la facture suivante, que nous vous avons adressée, demeure impayée{{/if}}{{#if relancesAnterieures}}, malgré nos relances des {{relancesAnterieures.dates}}{{/if}} :
+À ce jour, {{#if factures.plusieurs}}les factures suivantes, que nous vous avons adressées, demeurent impayées{{else}}la facture suivante, que nous vous avons adressée, demeure impayée{{/if}}{{#if relancesAnterieures}}, malgré {{#if relancesAnterieures.plusieurs}}nos relances des {{relancesAnterieures.dates}}{{else}}notre relance du {{relancesAnterieures.dates}}{{/if}}{{/if}} :
 
 {{#each factures}}– facture n° {{reference}} du {{dateEmission}}, échue le {{dateExigibilite}} : {{montantTTC}} € TTC{{#if reglementsRecus}}, dont {{reglementsRecus}} € déjà réglés{{/if}} ; reste dû {{resteDu}} €.
 {{/each}}
-Compte arrêté au {{decompte.arreteAu}} :
+{{#if promesse}}Vous nous aviez annoncé un règlement{{#if promesse.montant}} de {{promesse.montant}} €{{/if}} pour le {{promesse.date}} ; il ne nous est pas parvenu à ce jour.
+
+{{/if}}Compte arrêté au {{decompte.arreteAu}} :
 
 {{#each decompte.lignes}}– facture n° {{reference}} : principal restant dû {{principal}} € ; pénalités de retard {{interets}} € ({{fondementTauxLibelle}}) ; indemnité forfaitaire pour frais de recouvrement {{indemnite}} € ; total {{total}} €.
 {{/each}}
@@ -107,7 +109,8 @@ Pièces jointes :
 | `envoi.ville` | texte | Dérivé : ville de creancier.adresse du siège | oui |
 | `envoi.date` | date | Dérivé : date de dépôt chez le prestataire après validation | oui |
 | `creance.referenceInterne` | texte | Dérivé : identifiant du dossier, dans un format qui ne nomme pas le logiciel | non |
-| `relancesAnterieures.dates` | liste de dates | Seulement les envois dont le dossier garde une preuve de dépôt, ou que le créancier confirme avoir envoyés. Un brouillon ouvert dans la messagerie ne prouve aucun envoi. Absent : le bloc est omis | non |
+| `relancesAnterieures.dates` | liste de dates | Seulement les envois dont le dossier garde une preuve de dépôt, ou que le créancier confirme avoir envoyés (`envois` à l'état PARTI : un e-mail du pilote, ou un courrier que le gérant a déclaré parti). Un brouillon ouvert dans la messagerie ne prouve aucun envoi. Absent : le bloc est omis | non |
+| `promesse (date, montant)` | date, montant | La dernière promesse notée au dossier, quand son délai de grâce est passé sans que les règlements arrivés depuis la couvrent, et que le gérant ne l'a pas dite tenue (`parole.promesseACiter`, 09/10/2026). Un fait que le client a dit lui-même, jamais un reproche. Absent : le bloc est omis | non |
 | `factures[] (reference, dateEmission, dateExigibilite, montantTTC, reglementsRecus, resteDu)` | liste (1 à N) | factures (reference, date d'emission, date d'exigibilite, montant TTC, reglements recus, reste du), dans leur état au jour de l'arrêté du décompte | oui |
 | `factures.plusieurs / factures.nombre / factures.premiere / factures.references` | booléen / entier / texte | Dérivé de factures | oui |
 | `decompte.arreteAu` | date | decompte fige.arrete au | oui |
