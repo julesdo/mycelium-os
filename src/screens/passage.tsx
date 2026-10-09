@@ -1,4 +1,7 @@
-import { BoutonPrincipal, BoutonSecondaire, Lien } from '../ui';
+// Les fichiers précis, jamais `../ui` : ces écrans se chargent avec le routeur, donc
+// avec chaque page, et le fichier qui ré-exporte toute l'interface les suivait (09/10/2026).
+import { BoutonPrincipal, BoutonSecondaire } from '../ui/bouton';
+import { Lien } from '../ui/lien';
 
 /**
  * LES ÉCRANS DE PASSAGE : la page introuvable et l'écran d'erreur.

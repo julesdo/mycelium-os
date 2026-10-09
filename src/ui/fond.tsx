@@ -1,6 +1,12 @@
-import { useSyncExternalStore } from 'react';
+import { Suspense, lazy, useSyncExternalStore } from 'react';
 import { cn } from './cn';
-import { MicroSlats } from './micro-slats';
+
+/**
+ * LES LAMELLES, CHARGÉES APRÈS LA PAGE (09/10/2026). Le moteur WebGL (`ogl`) et le
+ * shader pèsent une centaine de kilo-octets pour un décor : ils ne retardent plus
+ * l'affichage des écrans, et l'intro des lamelles les fait apparaître en fondu.
+ */
+const MicroSlats = lazy(() => import('./micro-slats').then((m) => ({ default: m.MicroSlats })));
 
 /**
  * LE THÈME RÉELLEMENT PEINT, LU SUR LA RACINE DU DOCUMENT.
@@ -109,30 +115,32 @@ export function Fond({ className }: { className?: string }) {
 			className={cn('pointer-events-none fixed inset-0 -z-10 overflow-hidden', className)}
 		>
 			<div className="fond-releve absolute inset-0" />
-			<MicroSlats
-				className="fondu-lamelles absolute inset-x-0 top-0 h-lamelles"
-				preset="swell"
-				color={lamelles.color}
-				glintColor={lamelles.glintColor}
-				opacity={lamelles.opacity}
-				backgroundColor="transparent"
-				slatWidth={8}
-				slatHeight={22}
-				gap={3}
-				roundness={0.75}
-				// Le plafond d'opacité est bas (14 et 19 %) : on allume donc PRESQUE toutes
-				// les lamelles près de lui, au lieu de laisser la houle les éteindre à moitié.
-				// La houle se lit alors dans les reflets et la longueur des lamelles.
-				contrast={0.45}
-				glint={0.9}
-				perspective={0.45}
-				fog={0}
-				interactive={pointeurFin}
-				cursorStrength={1}
-				cursorSize={48}
-				trail={1.4}
-				intro
-			/>
+			<Suspense fallback={null}>
+				<MicroSlats
+					className="fondu-lamelles absolute inset-x-0 top-0 h-lamelles"
+					preset="swell"
+					color={lamelles.color}
+					glintColor={lamelles.glintColor}
+					opacity={lamelles.opacity}
+					backgroundColor="transparent"
+					slatWidth={8}
+					slatHeight={22}
+					gap={3}
+					roundness={0.75}
+					// Le plafond d'opacité est bas (14 et 19 %) : on allume donc PRESQUE toutes
+					// les lamelles près de lui, au lieu de laisser la houle les éteindre à moitié.
+					// La houle se lit alors dans les reflets et la longueur des lamelles.
+					contrast={0.45}
+					glint={0.9}
+					perspective={0.45}
+					fog={0}
+					interactive={pointeurFin}
+					cursorStrength={1}
+					cursorSize={48}
+					trail={1.4}
+					intro
+				/>
+			</Suspense>
 			<div className="fond-grain absolute inset-0" />
 		</div>
 	);

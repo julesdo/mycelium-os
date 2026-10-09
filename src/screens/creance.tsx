@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SECTIONS_CREANCE, type SectionCreance } from './sections-creance';
 import { SectionTitle } from '@cladd-ui/react';
 import { FileDownIcon, InfoIcon } from 'lucide-react';
 import type { FicheParametre } from '../lib/verticales/recouvrement/referentiel';
@@ -190,15 +191,7 @@ export interface RisqueAffiche {
  * d'accordéon pour la page, une seule liste d'ouvertes : le bouton de l'état du
  * dossier et la rangée qu'il ouvre ne peuvent pas se désaccorder.
  */
-export const SECTIONS_CREANCE = [
-	'courriers',
-	'decompte',
-	'pieces',
-	'litige',
-	'voies',
-	'suivi'
-] as const;
-export type SectionCreance = (typeof SECTIONS_CREANCE)[number];
+export { SECTIONS_CREANCE, type SectionCreance } from './sections-creance';
 
 /**
  * CE QUE LA PAGE MONTRE, ET CE QU'ELLE DÉCLENCHE.

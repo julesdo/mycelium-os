@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { Suspense, useRef, useState, type ReactNode } from 'react';
 import { Button, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { ImageUpIcon, ShuffleIcon, Trash2Icon } from 'lucide-react';
 import { BoutonSecondaire } from './bouton';
@@ -7,9 +7,9 @@ import {
 	GRAINES_DE_DEPART,
 	LIBELLE_STYLE,
 	STYLES_AVATAR,
-	imageAvatar,
 	type StyleAvatar
 } from './avatar-dicebear';
+import { ImageDessinee } from './avatar';
 
 /**
  * CHOISIR UNE IMAGE : la téléverser, en prendre une dans la bibliothèque, ou
@@ -169,12 +169,11 @@ function Bibliotheque({
 							)}
 							onClick={() => onChoisir(style, graine)}
 						>
-							<img
-								src={imageAvatar(style, graine)}
-								alt=""
-								className="size-full rounded-full"
-								loading="lazy"
-							/>
+							<Suspense
+								fallback={<span className="size-full animate-pouls rounded-full bg-cladd-fg/10" />}
+							>
+								<ImageDessinee style={style} graine={graine} className="size-full rounded-full" />
+							</Suspense>
 						</Button>
 					);
 				})}

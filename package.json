@@ -3,6 +3,9 @@
 	"version": "0.1.0",
 	"license": "UNLICENSED",
 	"type": "module",
+	"sideEffects": [
+		"**/*.css"
+	],
 	"scripts": {
 		"dev": "bun scripts/dev.ts",
 		"dev:frontend": "bun scripts/dev.ts",

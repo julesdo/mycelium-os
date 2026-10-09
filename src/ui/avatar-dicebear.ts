@@ -1,9 +1,3 @@
-import { createAvatar } from '@dicebear/core';
-import * as lorelei from '@dicebear/lorelei';
-import * as notionists from '@dicebear/notionists';
-import * as shapes from '@dicebear/shapes';
-import * as thumbs from '@dicebear/thumbs';
-
 /**
  * LES AVATARS QU'ON PEUT CHOISIR, ET COMMENT ILS SE DESSINENT.
  *
@@ -50,29 +44,22 @@ export const GRAINES_DE_DEPART = [
 	'Mila'
 ] as const;
 
-/** Des fonds doux, les mêmes pour tous les styles : la bibliothèque se lit d'un bloc. */
-const FONDS = ['b6e3f4', 'c0aede', 'd1d4f9', 'ffd5dc', 'ffdfbf'];
+/**
+ * LES DESSINS DÉJÀ PROMIS, un par couple : chaque avatar se dessine une fois, et
+ * le module de dessin ne se charge qu'au premier (`avatar-dessin.ts`).
+ *
+ * ⚠️ UNE PROMESSE STABLE PAR COUPLE, C'EST CE QUE `use()` EXIGE : une nouvelle
+ * promesse à chaque rendu suspendrait l'avatar pour toujours.
+ */
+const promesses = new Map<string, Promise<string>>();
 
-const cache = new Map<string, string>();
-
-export function imageAvatar(style: StyleAvatar, graine: string): string {
+export function promesseImageAvatar(style: StyleAvatar, graine: string): Promise<string> {
 	const cle = `${style}:${graine}`;
-	const deja = cache.get(cle);
+	const deja = promesses.get(cle);
 	if (deja !== undefined) return deja;
-
-	const options = { seed: graine, size: 96, backgroundColor: FONDS };
-	const uri = (() => {
-		switch (style) {
-			case 'notionists':
-				return createAvatar(notionists, options).toDataUri();
-			case 'lorelei':
-				return createAvatar(lorelei, options).toDataUri();
-			case 'thumbs':
-				return createAvatar(thumbs, options).toDataUri();
-			case 'shapes':
-				return createAvatar(shapes, options).toDataUri();
-		}
-	})();
-	cache.set(cle, uri);
-	return uri;
+	const promesse = import('./avatar-dessin').then(({ dessinerAvatar }) =>
+		dessinerAvatar(style, graine)
+	);
+	promesses.set(cle, promesse);
+	return promesse;
 }

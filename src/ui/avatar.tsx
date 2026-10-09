@@ -1,5 +1,6 @@
+import { Suspense, use } from 'react';
 import { cn } from './cn';
-import { imageAvatar, type StyleAvatar } from './avatar-dicebear';
+import { promesseImageAvatar, type StyleAvatar } from './avatar-dicebear';
 
 /**
  * L'AVATAR — qui est connecté, et sur quel établissement.
@@ -59,9 +60,20 @@ export type ImageAvatar =
 	| { readonly url: string }
 	| { readonly style: StyleAvatar; readonly graine: string };
 
-/** L'adresse à poser dans `<img>`, quelle que soit la forme de l'image. */
-export function sourceImageAvatar(image: ImageAvatar): string {
-	return 'url' in image ? image.url : imageAvatar(image.style, image.graine);
+/**
+ * UN AVATAR DESSINÉ, quand son dessin est prêt (`use`). Le module de dessin se
+ * charge au premier ; en attendant, `Avatar` montre les initiales à la même place.
+ */
+export function ImageDessinee({
+	style,
+	graine,
+	className
+}: {
+	readonly style: StyleAvatar;
+	readonly graine: string;
+	readonly className?: string;
+}) {
+	return <img src={use(promesseImageAvatar(style, graine))} alt="" className={className} />;
 }
 
 export function Avatar({
@@ -104,6 +116,18 @@ export function Avatar({
 		: surCarte
 			? 'size-10 text-cladd-2xs'
 			: 'size-cladd-md text-cladd-2xs';
+	const pastilleInitiales = (
+		<span
+			className={cn(
+				'flex items-center justify-center rounded-full font-semibold tracking-wide transition-colors',
+				surCarte ? 'bg-cladd-fg/8 text-cladd-fg' : 'verre verre-actif',
+				disque
+			)}
+		>
+			{initiales(nom)}
+		</span>
+	);
+	const classeImage = cn('rounded-full object-cover ring-1 ring-cladd-outline', disque);
 	return (
 		<span className={cn('relative inline-flex shrink-0', className)}>
 			{/*
@@ -112,21 +136,13 @@ export function Avatar({
 			  au pouce sur une barre dont les autres cibles font 48.
 			*/}
 			{image === null ? (
-				<span
-					className={cn(
-						'flex items-center justify-center rounded-full font-semibold tracking-wide transition-colors',
-						surCarte ? 'bg-cladd-fg/8 text-cladd-fg' : 'verre verre-actif',
-						disque
-					)}
-				>
-					{initiales(nom)}
-				</span>
+				pastilleInitiales
+			) : 'url' in image ? (
+				<img src={image.url} alt="" className={classeImage} />
 			) : (
-				<img
-					src={sourceImageAvatar(image)}
-					alt=""
-					className={cn('rounded-full object-cover ring-1 ring-cladd-outline', disque)}
-				/>
+				<Suspense fallback={pastilleInitiales}>
+					<ImageDessinee style={image.style} graine={image.graine} className={classeImage} />
+				</Suspense>
 			)}
 
 			{/*

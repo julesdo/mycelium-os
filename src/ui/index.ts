@@ -53,12 +53,12 @@ export {
 	type VoletsEcran
 } from './page-ecran';
 export { Fond } from './fond';
-export { Avatar, initiales, sourceImageAvatar, type ImageAvatar } from './avatar';
+export { Avatar, ImageDessinee, initiales, type ImageAvatar } from './avatar';
 export {
 	STYLES_AVATAR,
 	LIBELLE_STYLE,
 	GRAINES_DE_DEPART,
-	imageAvatar,
+	promesseImageAvatar,
 	type StyleAvatar
 } from './avatar-dicebear';
 export { ChoixImage } from './choix-image';

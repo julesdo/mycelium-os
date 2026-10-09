@@ -19,12 +19,9 @@ import {
 	type EtudeAffichee,
 	type FicheASaisir
 } from '../../ui';
-import {
-	EcranCreance,
-	SECTIONS_CREANCE,
-	type CreanceOuverte,
-	type SectionCreance
-} from '../../screens/creance';
+import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
+// Les rubriques seules : la validation de l'adresse se charge avec l'application.
+import { SECTIONS_CREANCE, type SectionCreance } from '../../screens/sections-creance';
 import { useDirigeantsDuClient, useProfessionnelsProposes } from '../../app/use-professionnels';
 import { useGestesDeDossier } from '../../app/gestes-dossier';
 import {

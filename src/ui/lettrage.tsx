@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { BoutonPrincipal } from './bouton';
 import { LigneBouton } from './navigation';
 import { Button, Chip, Input, Select, Surface } from '@cladd-ui/react';
-import { DatePicker } from '@cladd-ui/react/calendar';
-import { fr } from 'react-day-picker/locale';
 import { AlertTriangleIcon, ArrowLeftRightIcon, SearchIcon } from 'lucide-react';
 import { dateCourte, eurosCentimes, pluriel } from './format';
 import { aujourdHuiISO } from './horloge';
+
+/** Le calendrier, chargé quand il s'affiche (`selecteur-date.tsx`). */
+const SelecteurDate = lazy(() => import('./selecteur-date'));
 
 /**
  * LE LETTRAGE D'UN VIREMENT GROUPÉ.
@@ -281,25 +282,31 @@ export function Lettrage({
 						  vraie ferait réclamer plus que dû. La garde serveur reste,
 						  évidemment — celle-ci empêche seulement de la déclencher.
 						*/}
-						<DatePicker
-							size="lg"
-							outline
-							// ⚠️ `min-w-48` ET NON `min-w-40` : depuis que le corps du produit
-							// est passé à celui d'iOS, « Date de valeur » ne tenait plus dans
-							// 160px et se coupait à « Date de valeu ». Un libellé de champ
-							// amputé de sa dernière lettre est un champ qu'on remplit de
-							// travers.
-							className="min-w-48 flex-1"
-							value={date}
-							onChange={setDate}
-							placeholder="Date de valeur"
-							format={(choisie) => dateCourte(enISO(choisie))}
-							calendarProps={{
-								locale: fr,
-								disabled: { after: aujourdHui },
-								endMonth: aujourdHui
-							}}
-						/>
+						<Suspense
+							fallback={
+								<Input
+									size="lg"
+									outline
+									disabled
+									className="min-w-48 flex-1"
+									placeholder="Date de valeur"
+								/>
+							}
+						>
+							<SelecteurDate
+								// ⚠️ `min-w-48` ET NON `min-w-40` : depuis que le corps du produit
+								// est passé à celui d'iOS, « Date de valeur » ne tenait plus dans
+								// 160px et se coupait à « Date de valeu ». Un libellé de champ
+								// amputé de sa dernière lettre est un champ qu'on remplit de
+								// travers.
+								className="min-w-48 flex-1"
+								value={date}
+								onChange={setDate}
+								placeholder="Date de valeur"
+								format={(choisie) => dateCourte(enISO(choisie))}
+								jusquAu={aujourdHui}
+							/>
+						</Suspense>
 						<BoutonPrincipal
 							onClick={() => {
 								if (date === undefined) return;
