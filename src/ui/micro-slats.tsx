@@ -97,6 +97,17 @@ const DPR_MAX = 1.5;
 /** Au repos, une image toutes les 33 ms au plus. */
 const INTERVALLE_REPOS_MS = 1000 / 30;
 
+/**
+ * LE TEMPS DE CALME APRÈS LE DERNIER DÉFILEMENT, avant que la houle reprenne.
+ *
+ * ⚠️ PENDANT QU'ON FAIT DÉFILER, LE FOND SE FIGE (09/10/2026). Chaque carte en
+ * verre floute ce qui passe derrière elle (`backdrop-filter`) : une houle qui
+ * change trente fois par seconde oblige le téléphone à refaire chaque flou à
+ * chaque image, en plus du défilement lui-même. Figé, le fond laisse au
+ * défilement toute la cadence ; il repart dès que la page s'arrête.
+ */
+const CALME_APRES_DEFILEMENT_MS = 180;
+
 type Rgba = readonly [number, number, number, number];
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -705,6 +716,9 @@ export function MicroSlats({
 		let introClock = 0;
 		let visible = true;
 		let alive = true;
+		/** Une page défile : le fond attend qu'elle s'arrête. */
+		let enDefilement = false;
+		let minuteurDefilement: ReturnType<typeof setTimeout> | undefined;
 		let fluid: Fluide | null = null;
 		let fluidUntil = 0;
 		let fluidDirty = false;
@@ -873,7 +887,7 @@ export function MicroSlats({
 
 		const frame = (now: number) => {
 			raf = 0;
-			if (!alive) return;
+			if (!alive || enDefilement) return;
 			const s = settingsRef.current;
 			if (!s) return;
 
@@ -974,7 +988,7 @@ export function MicroSlats({
 		};
 
 		const start = () => {
-			if (raf || !visible || !alive) return;
+			if (raf || !visible || !alive || enDefilement) return;
 			last = performance.now() - INTERVALLE_REPOS_MS;
 			raf = requestAnimationFrame(frame);
 		};
@@ -1044,11 +1058,27 @@ export function MicroSlats({
 			if (!document.hidden) start();
 		};
 
+		// Tout défilement de la page, quel que soit le conteneur qui défile : en
+		// capture, puisque l'événement ne remonte pas.
+		const onDefilement = () => {
+			enDefilement = true;
+			if (raf) {
+				cancelAnimationFrame(raf);
+				raf = 0;
+			}
+			clearTimeout(minuteurDefilement);
+			minuteurDefilement = setTimeout(() => {
+				enDefilement = false;
+				start();
+			}, CALME_APRES_DEFILEMENT_MS);
+		};
+
 		window.addEventListener('pointermove', onPointerMove, { passive: true });
 		window.addEventListener('pointerdown', onPointerDown, { passive: true });
 		window.addEventListener('pointerout', onPointerOut, { passive: true });
 		window.addEventListener('blur', onPointerLeave);
 		document.addEventListener('visibilitychange', onVisibility);
+		window.addEventListener('scroll', onDefilement, { capture: true, passive: true });
 
 		const resizeObserver = new ResizeObserver(resize);
 		resizeObserver.observe(container);
@@ -1072,6 +1102,8 @@ export function MicroSlats({
 			window.removeEventListener('pointerout', onPointerOut);
 			window.removeEventListener('blur', onPointerLeave);
 			document.removeEventListener('visibilitychange', onVisibility);
+			window.removeEventListener('scroll', onDefilement, { capture: true });
+			clearTimeout(minuteurDefilement);
 			wakeRef.current = null;
 			disposeFluid();
 			dispose(fieldTarget);
