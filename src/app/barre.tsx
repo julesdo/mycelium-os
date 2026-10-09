@@ -77,12 +77,19 @@ function estActif(vers: string, chemin: string): boolean {
  * l'interroger dans le même composant qu'elle, et la navigation entière
  * disparaîtrait avec la pastille.
  */
-function RappelDuVeilleur() {
-	const nonLues = useQuery(api.notifications.getUnreadCount, {});
+function RappelDuVeilleur({ auRepos }: { readonly auRepos: boolean }) {
+	const nonLues = useQuery(api.notifications.getUnreadCount, auRepos ? 'skip' : {});
 	return <PastilleDeRappel compte={nonLues ?? 0} />;
 }
 
-export function BarreBranchee({ accessoire }: { readonly accessoire?: ReactNode } = {}) {
+export function BarreBranchee({
+	accessoire,
+	auRepos = false
+}: {
+	readonly accessoire?: ReactNode;
+	/** Tant que la session s'ouvre : la barre est là, la pastille attend. */
+	readonly auRepos?: boolean;
+} = {}) {
 	const chemin = useRouterState({ select: (etat) => etat.location.pathname });
 
 	const destinations: DestinationBarre[] = DESTINATIONS.map((destination) => ({
@@ -101,7 +108,7 @@ export function BarreBranchee({ accessoire }: { readonly accessoire?: ReactNode 
 			? {
 					rappel: (
 						<Facultatif>
-							<RappelDuVeilleur />
+							<RappelDuVeilleur auRepos={auRepos} />
 						</Facultatif>
 					)
 				}

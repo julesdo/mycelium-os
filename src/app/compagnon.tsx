@@ -25,9 +25,15 @@ import { BoutonCompagnon, NOM_DU_PILOTE, type HumeurPlume } from '../ui';
 const ROUTE_DOSSIER = '/app/dossier/$id';
 
 export function CompagnonBranche({
-	children
+	children,
+	auRepos = false
 }: {
 	readonly children: (bouton: ReactNode) => ReactNode;
+	/**
+	 * Tant que la session s'ouvre : Plume au repos, sans lire le pilote. Le même
+	 * composant reste monté quand elle est ouverte — la barre ne se refait pas.
+	 */
+	readonly auRepos?: boolean;
 }) {
 	return (
 		/*
@@ -39,13 +45,19 @@ export function CompagnonBranche({
 			getResetKey={() => 'plume'}
 			errorComponent={() => <Plume humeur="repos">{children}</Plume>}
 		>
-			<PlumeAvecEtat>{children}</PlumeAvecEtat>
+			<PlumeAvecEtat auRepos={auRepos}>{children}</PlumeAvecEtat>
 		</CatchBoundary>
 	);
 }
 
-function PlumeAvecEtat({ children }: { readonly children: (bouton: ReactNode) => ReactNode }) {
-	const pilote = useQuery(api.recouvrement.pilote.etat, {});
+function PlumeAvecEtat({
+	children,
+	auRepos
+}: {
+	readonly children: (bouton: ReactNode) => ReactNode;
+	readonly auRepos: boolean;
+}) {
+	const pilote = useQuery(api.recouvrement.pilote.etat, auRepos ? 'skip' : {});
 	const travaux = pilote?.travaux ?? [];
 	const aDemarrer = pilote?.aDemarrer ?? 0;
 	const humeur: HumeurPlume = travaux.some((t) => t.etat === 'EN_COURS')

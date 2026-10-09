@@ -44,7 +44,21 @@ import { CompagnonBranche } from './compagnon';
  * `h-dvh` et non `h-screen` : sur téléphone, la barre d'adresse mobile fait
  * varier la hauteur visible, et `100vh` fait dépasser le contenu sous la barre.
  */
-export function Shell({ children }: { children: ReactNode }) {
+export function Shell({
+	children,
+	sessionOuverte = true
+}: {
+	children: ReactNode;
+	/**
+	 * ⚠️ LA COQUILLE SE MONTE AVANT LA SESSION, ET NE SE REMONTE PLUS (09/10/2026).
+	 * L'ouverture affichait deux lignes de texte l'une après l'autre (« Ouverture de
+	 * votre espace… », « Chargement de votre établissement… »), puis le fond, la
+	 * barre et l'écran d'un coup. Le fond et la barre sont désormais là dès le
+	 * premier affichage — rendu serveur compris —, un squelette au milieu ; quand la
+	 * session s'ouvre, seul le milieu change.
+	 */
+	sessionOuverte?: boolean;
+}) {
 	return (
 		<div className="relative flex h-dvh w-full flex-col overflow-hidden">
 			{/* Le drapé, une fois, derrière tous les écrans. C'est lui qui donne au
@@ -55,7 +69,7 @@ export function Shell({ children }: { children: ReactNode }) {
 			<main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
 
 			{/* Plume se pose DANS la barre, à droite de la pilule. */}
-			<BarreSaufEnConversation />
+			<BarreSaufEnConversation sessionOuverte={sessionOuverte} />
 		</div>
 	);
 }
@@ -65,12 +79,16 @@ export function Shell({ children }: { children: ReactNode }) {
  * DÉMARRAGE GUIDÉ : le compositeur, ou les réponses, prennent sa place, comme
  * chez Claude et Alan. Le retour rond de l'en-tête ramène d'où l'on vient.
  */
-function BarreSaufEnConversation() {
+function BarreSaufEnConversation({ sessionOuverte }: { readonly sessionOuverte: boolean }) {
 	const enConversation = useRouterState({
 		select: (etat) =>
 			etat.location.pathname.startsWith('/app/pilote') ||
 			etat.location.pathname.startsWith('/app/demarrer')
 	});
 	if (enConversation) return null;
-	return <CompagnonBranche>{(bouton) => <BarreBranchee accessoire={bouton} />}</CompagnonBranche>;
+	return (
+		<CompagnonBranche auRepos={!sessionOuverte}>
+			{(bouton) => <BarreBranchee accessoire={bouton} auRepos={!sessionOuverte} />}
+		</CompagnonBranche>
+	);
 }
