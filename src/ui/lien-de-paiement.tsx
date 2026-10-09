@@ -1,9 +1,10 @@
-import { LinkIcon } from 'lucide-react';
+import { LinkIcon, MailIcon, ShareIcon } from 'lucide-react';
 import { SectionTitle, Surface } from '@cladd-ui/react';
 import { BoutonSecondaire } from './bouton';
 import { ChampCopiable } from './champ-copiable';
 import { MessageErreur } from './cadre-auth';
 import { dateCourte, eurosCentimes } from './format';
+import { LigneBouton, LigneLien, ListeAnalyses } from './navigation';
 
 /**
  * LE LIEN QUE LE GÉRANT ENVOIE À SON CLIENT POUR QU'IL PAIE.
@@ -39,6 +40,11 @@ export interface LienDePaiementAffiche {
 
 export interface LiensDePaiementAffiches {
 	readonly liens: readonly LienDePaiementAffiche[];
+	/**
+	 * À qui l'envoyer, et sous quel nom : l'e-mail s'ouvre dans la messagerie du
+	 * gérant, déjà adressé et rédigé. C'est lui qui l'envoie (ligne rouge n° 1).
+	 */
+	readonly courriel?: { readonly destinataire?: string; readonly signature?: string };
 	/** L'adresse publique, préfixe compris, telle qu'on la colle dans une lettre. */
 	readonly adresseDe: (jeton: string) => string;
 	readonly enCours: boolean;
@@ -48,8 +54,41 @@ export interface LiensDePaiementAffiches {
 	readonly onFermer: (jeton: string) => void;
 }
 
+/**
+ * L'E-MAIL QUI PORTE LE LIEN — rédigé, jamais envoyé d'ici.
+ *
+ * ⚠️ IL PART CHEZ LE CLIENT, DONC IL SUIT LES RÈGLES DES TEXTES QUI PARTENT : il
+ * ne nomme pas ce logiciel, il ne menace d'aucune suite, et il dit ce que la page
+ * contient pour qu'on l'ouvre sans méfiance.
+ */
+function courrielDuLien(
+	lien: LienDePaiementAffiche,
+	adresse: string,
+	signature: string | undefined
+): { readonly objet: string; readonly corps: string } {
+	return {
+		objet: 'Votre règlement',
+		corps: [
+			'Bonjour,',
+			'',
+			`Vous pouvez régler ce que vous nous devez, ${eurosCentimes(lien.total)} au ${dateCourte(lien.arreteAu)}, depuis cette page : elle donne nos coordonnées bancaires et le détail du montant, facture par facture.`,
+			'',
+			adresse,
+			'',
+			'Bien cordialement,',
+			...(signature === undefined || signature === '' ? [] : [signature])
+		].join('\n')
+	};
+}
+
+/** Le partage du téléphone (la feuille d'iOS) : présent sur un téléphone, absent ailleurs. */
+function peutPartager(): boolean {
+	return typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+}
+
 export function LiensDePaiement({
 	liens,
+	courriel,
 	adresseDe,
 	enCours,
 	erreur,
@@ -89,6 +128,39 @@ export function LiensDePaiement({
 						affichage={adresseDe(lien.jeton)}
 						valeur={adresseDe(lien.jeton)}
 					/>
+					{/*
+					  LES SORTIES DU LIEN, COMME CHEZ REVOLUT BUSINESS (« Link ready to
+					  share ») : l'e-mail déjà rédigé, et le partage du téléphone. La
+					  copie est juste au-dessus.
+					*/}
+					<ListeAnalyses>
+						{(() => {
+							const texte = courrielDuLien(lien, adresseDe(lien.jeton), courriel?.signature);
+							return (
+								<LigneLien
+									titre="L’envoyer par e-mail"
+									icone={<MailIcon />}
+									{...(courriel?.destinataire === undefined
+										? {}
+										: { precision: courriel.destinataire })}
+									href={`mailto:${courriel?.destinataire ?? ''}?subject=${encodeURIComponent(texte.objet)}&body=${encodeURIComponent(texte.corps)}`}
+								/>
+							);
+						})()}
+						{peutPartager() ? (
+							<LigneBouton
+								titre="Partager"
+								icone={<ShareIcon />}
+								onClick={() => {
+									const texte = courrielDuLien(lien, adresseDe(lien.jeton), courriel?.signature);
+									// Une feuille refermée sans choix rejette la promesse : ce n'est pas une panne.
+									void navigator
+										.share({ title: texte.objet, text: texte.corps })
+										.catch(() => undefined);
+								}}
+							/>
+						) : null}
+					</ListeAnalyses>
 					<BoutonSecondaire
 						className="self-start"
 						disabled={enCours}

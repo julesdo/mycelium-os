@@ -947,6 +947,13 @@ function PageCreance() {
 		refusDuMontant,
 		fiches: FICHES_DU_REFERENTIEL,
 		liensDePaiement: {
+			// L'e-mail du lien s'ouvre adressé au client et signé du nom de l'entreprise.
+			courriel: {
+				...(creance.debiteurEmail === undefined ? {} : { destinataire: creance.debiteurEmail }),
+				...(profilCreancier?.denomination === undefined
+					? {}
+					: { signature: profilCreancier.denomination })
+			},
 			liens: (liensDePaiement ?? []).map((lien) => ({
 				jeton: lien.jeton,
 				arreteAu: lien.arreteAu,

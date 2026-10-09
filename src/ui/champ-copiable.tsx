@@ -114,7 +114,9 @@ export function ChampCopiable({
 				<p className="text-cladd-2xs text-cladd-fg-softer">{etiquette}</p>
 				<p
 					className={cn(
-						'leading-none font-bold tabular-nums',
+						// Une adresse de page est un seul mot de soixante signes : sans coupure
+						// possible, elle passait sous le bouton de copie (09/10/2026).
+						'leading-tight font-bold tabular-nums [overflow-wrap:anywhere]',
 						majeur ? 'text-letikette-chiffre' : 'text-cladd-md'
 					)}
 				>

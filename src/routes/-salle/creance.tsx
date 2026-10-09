@@ -660,6 +660,7 @@ function creanceDemo({
 		  rend le second.
 		*/
 		liensDePaiement: {
+			courriel: { destinataire: 'comptabilite@exemple.fr', signature: 'Ateliers Martin' },
 			liens: [
 				{
 					jeton: '3f1c4b8a-7d22-4e91-9a10-c5e0b2f7d461',
