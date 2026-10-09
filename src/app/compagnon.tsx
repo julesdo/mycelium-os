@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { CatchBoundary, useNavigate, useRouterState } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { useQuery } from './donnees';
 import { api } from '../lib/convex/_generated/api';
 import { BoutonCompagnon, NOM_DU_PILOTE, type HumeurPlume } from '../ui';
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, Link, useNavigate, useParams } from '@tanstack/react-router';
-import { Authenticated, Unauthenticated, AuthLoading, useQuery, useMutation } from 'convex/react';
+import { Authenticated, Unauthenticated, AuthLoading, useMutation } from 'convex/react';
+import { useQuery } from '../app/donnees';
 import { Button, Chip } from '@cladd-ui/react';
 import { ArrowRightIcon } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';

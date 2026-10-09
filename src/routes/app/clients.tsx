@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, Outlet, redirect, useChildMatches } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { useQuery } from '../../app/donnees';
+import { precharger } from '../../app/prechargement';
 import { api } from '../../lib/convex/_generated/api';
 import { aujourdHuiISO } from '../../ui';
 import { EcranDebiteurs, type CleFiltre, type HabitudeDeLaLigne } from '../../screens/debiteurs';
@@ -37,6 +38,11 @@ import { EcranDebiteurs, type CleFiltre, type HabitudeDeLaLigne } from '../../sc
  * qu'il vient de quitter.
  */
 export const Route = createFileRoute('/app/clients')({
+	// Les données de l'onglet partent au toucher (`app/prechargement.ts`).
+	loader: () => {
+		precharger(api.recouvrement.lecture.listerDebiteurs, {});
+		precharger(api.recouvrement.comportement.lireParEtablissement, { aujourdHui: aujourdHuiISO() });
+	},
 	component: Debiteurs,
 	errorComponent: DebiteursEnErreur,
 	validateSearch: (recherche: Record<string, unknown>): { d?: string } => {

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useAction, useConvex, useMutation, useQuery } from 'convex/react';
+import { useAction, useConvex, useMutation } from 'convex/react';
+import { useQuery } from '../../app/donnees';
+import { precharger } from '../../app/prechargement';
 import type { FunctionReturnType } from 'convex/server';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -44,6 +46,25 @@ export const Route = createFileRoute('/app/dossier/$id')({
 		(SECTIONS_CREANCE as readonly string[]).includes(recherche.ouvrir)
 			? { ouvrir: recherche.ouvrir as SectionCreance }
 			: {},
+	/*
+	  ⚠️ LES DONNÉES PARTENT AU TOUCHER (09/10/2026) : ce que la page attend avant de
+	  s'afficher s'ouvre dès que le doigt se pose sur la carte du dossier
+	  (`app/prechargement.ts`). Mêmes requêtes, mêmes arguments que l'écran.
+	*/
+	loader: ({ params }) => {
+		const creanceId = params.id as Id<'creances'>;
+		precharger(api.recouvrement.lecture.creanceComplete, { creanceId });
+		precharger(api.recouvrement.arret.preparerArret, { creanceId });
+		precharger(api.recouvrement.apresProcedure.suiviDeLaCreance, { creanceId });
+		precharger(api.recouvrement.creances.propositionsLitige, { creanceId });
+		precharger(api.recouvrement.decompte.dernierDecompte, { creanceId });
+		precharger(api.recouvrement.plan.suiteDuDossier, { creanceId });
+		precharger(api.recouvrement.parole.duDossier, { creanceId });
+		precharger(api.recouvrement.envois.lister, { creanceId });
+		precharger(api.recouvrement.suivi.frise, { creanceId });
+		precharger(api.recouvrement.intervenants.monCarnet, {});
+		precharger(api.recouvrement.decompte.listerDecomptes, {});
+	},
 	component: PageCreance,
 	errorComponent: CreanceEnErreur
 });

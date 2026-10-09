@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation } from 'convex/react';
+import { useQuery } from '../../app/donnees';
+import { precharger } from '../../app/prechargement';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { aujourdHuiISO } from '../../ui';
@@ -10,6 +12,12 @@ import {
 } from '../../screens/notifications';
 
 export const Route = createFileRoute('/app/notifications')({
+	// La boîte part au toucher de la cloche (`app/prechargement.ts`).
+	loader: () => {
+		precharger(api.notifications.listMyNotifications, {});
+		precharger(api.recouvrement.lecture.listerCreances, {});
+		precharger(api.recouvrement.lecture.listerDebiteurs, {});
+	},
 	component: PageNotifications,
 	errorComponent: NotificationsEnErreur
 });

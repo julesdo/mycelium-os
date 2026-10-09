@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation } from 'convex/react';
+import { useQuery } from '../../app/donnees';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranDemarrageEnLot } from '../../screens/demarrage-lot';

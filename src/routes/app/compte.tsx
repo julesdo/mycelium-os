@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useMutation, useAction } from 'convex/react';
+import { useQuery } from '../../app/donnees';
 import { depuisCentimes, versEuros } from '../../lib/socle/montants';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';

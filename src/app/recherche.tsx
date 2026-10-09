@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, CatchBoundary } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { useQuery, useRequeteEphemere } from './donnees';
 
 import {
 	DeclencheurRecherche,
@@ -51,7 +51,8 @@ function PaletteBranchee({ ouverte, onFermer }: { ouverte: boolean; onFermer: ()
 	const bouges = bougesDuFlux(flux?.evenements ?? []);
 	const cherche = terme.trim();
 
-	const reponse = useQuery(
+	// Éphémère : le terme change à chaque lettre (`donnees.ts`).
+	const reponse = useRequeteEphemere(
 		api.recouvrement.recherche.recherche,
 		!ouverte
 			? 'skip'

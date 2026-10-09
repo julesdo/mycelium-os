@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { CladdProvider } from '@cladd-ui/react';
 import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
+import { ConvexQueryCacheProvider } from 'convex-helpers/react/cache/provider';
 import { convex } from '../lib/client/convex';
 import { authClient } from '../lib/client/auth';
 import { useTheme } from './use-theme';
@@ -20,6 +21,12 @@ import { useTheme } from './use-theme';
  * juste sans qu'on ait à les contredire.
  */
 
+/**
+ * Combien de temps un abonnement reste ouvert après le départ de l'écran qui le
+ * lit : le temps d'ouvrir un dossier et d'en revenir, plusieurs fois.
+ */
+const DUREE_DU_CACHE_MS = 5 * 60_000;
+
 export function Providers({ children }: { children: ReactNode }) {
 	// LE THÈME RÉSOLU, jamais « auto » : Cladd ne connaît que clair et sombre.
 	const { themeApplique } = useTheme();
@@ -27,7 +34,8 @@ export function Providers({ children }: { children: ReactNode }) {
 	return (
 		<CladdProvider theme={themeApplique} accentColor="brand" overlaysRoot="#root">
 			<ConvexBetterAuthProvider client={convex} authClient={authClient}>
-				{children}
+				{/* Les abonnements survivent cinq minutes à l'écran qui les lit (`app/donnees.ts`). */}
+				<ConvexQueryCacheProvider expiration={DUREE_DU_CACHE_MS}>{children}</ConvexQueryCacheProvider>
 			</ConvexBetterAuthProvider>
 		</CladdProvider>
 	);

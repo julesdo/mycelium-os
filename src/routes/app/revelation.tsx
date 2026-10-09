@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { CatchBoundary, createFileRoute } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { useQuery } from '../../app/donnees';
 import { api } from '../../lib/convex/_generated/api';
 import { EcranRevelation } from '../../screens/revelation';
 import { aujourdHuiISO, type AbandonsAffiches, type Lecture } from '../../ui';

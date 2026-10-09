@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation } from 'convex/react';
+import { useQuery } from '../../app/donnees';
+import { precharger } from '../../app/prechargement';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { choixDeRelance, useGestesDeDossier } from '../../app/gestes-dossier';
@@ -13,6 +15,12 @@ import {
 } from '../../screens/dossiers';
 
 export const Route = createFileRoute('/app/dossiers')({
+	// Les données de l'onglet partent au toucher (`app/prechargement.ts`).
+	loader: () => {
+		precharger(api.recouvrement.lecture.indexDossiers, {});
+		precharger(api.recouvrement.apresProcedure.dossiersEngages, {});
+		precharger(api.recouvrement.profil.monProfil, {});
+	},
 	component: PageDossiers,
 	errorComponent: DossiersEnErreur
 });

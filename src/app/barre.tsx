@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useRouterState } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { useQuery } from './donnees';
 import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import {

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { useQuery } from '../../app/donnees';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranDepot } from '../../screens/import/depot';

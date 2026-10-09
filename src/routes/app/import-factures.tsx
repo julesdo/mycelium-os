@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createFileRoute, Outlet, useChildMatches, useNavigate } from '@tanstack/react-router';
-import { useQuery, useMutation } from 'convex/react';
+import { useMutation } from 'convex/react';
+import { useQuery } from '../../app/donnees';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranImport, modeDuFichier } from '../../screens/import/depots';

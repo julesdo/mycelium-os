@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useAction, useMutation, useQuery } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
+import { useQuery } from '../../app/donnees';
 import { useToast } from '@cladd-ui/react';
 import {
 	AlarmClockIcon,

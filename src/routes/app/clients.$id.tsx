@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, useNavigate, type HistoryState } from '@tanstack/react-router';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useMutation, useAction } from 'convex/react';
+import { useQuery } from '../../app/donnees';
+import { precharger } from '../../app/prechargement';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
@@ -40,6 +42,15 @@ import { EcranDebiteur } from '../../screens/debiteur';
  * on ne pose pas d'état dans un effet.
  */
 export const Route = createFileRoute('/app/clients/$id')({
+	// Les données de la fiche partent au toucher de la carte (`app/prechargement.ts`).
+	loader: ({ params }) => {
+		const debiteurId = params.id as Id<'debiteurs'>;
+		precharger(api.recouvrement.lecture.listerDebiteurs, {});
+		precharger(api.recouvrement.lecture.listerCreances, {});
+		precharger(api.recouvrement.lecture.listerFacturesDuDebiteur, { debiteurId });
+		precharger(api.recouvrement.pieces.listerPiecesDuDebiteur, { debiteurId });
+		precharger(api.recouvrement.comportement.lire, { debiteurId, aujourdHui: aujourdHuiISO() });
+	},
 	component: PageDebiteur,
 	errorComponent: DebiteurEnErreur
 });

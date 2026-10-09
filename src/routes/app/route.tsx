@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute, Link, Navigate } from '@tanstack/react-router';
 import { BoutonPrincipal } from '../../ui';
-import { Authenticated, Unauthenticated, AuthLoading, useQuery } from 'convex/react';
+import { Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
+import { useQuery } from '../../app/donnees';
 import { api } from '../../lib/convex/_generated/api';
 import { Shell } from '../../app/shell';
 

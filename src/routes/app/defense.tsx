@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { useAction, useMutation, useQuery } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
+import { useQuery } from '../../app/donnees';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { messageDeRefus, televerser } from '../../app/televerser';
