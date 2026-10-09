@@ -28,7 +28,7 @@ function depuisLisible(quand: number, minute: number | null): string {
 	return heures < 24 ? `il y a ${heures} h` : `il y a ${Math.floor(heures / 24)} j`;
 }
 
-export function CarteChiftBranchee() {
+export function CarteChiftBranchee({ principale = true }: { readonly principale?: boolean } = {}) {
 	const connexion = useQuery(api.connexions.chiftDonnees.maConnexionChift, {});
 	const demarrer = useAction(api.connexions.chift.demarrerConnexionChift);
 	const synchroniser = useAction(api.connexions.chift.synchroniserMaintenant);
@@ -64,6 +64,7 @@ export function CarteChiftBranchee() {
 
 	return (
 		<CarteConnexion
+			principale={principale}
 			nom={branche ?? 'Votre logiciel'}
 			nomDansLaPhrase={branche ?? 'votre logiciel'}
 			promesse={PROMESSE_CHIFT}

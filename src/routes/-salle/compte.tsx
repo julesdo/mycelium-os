@@ -757,6 +757,7 @@ function compteDe(
 					/>
 					<CarteConnexion
 						nom="Pennylane"
+						principale={false}
 						promesse={PROMESSE_CHIFT}
 						logo={<PictoLogiciel />}
 						couverture={COUVERTURE_QONTO}

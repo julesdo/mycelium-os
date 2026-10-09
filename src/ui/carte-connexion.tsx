@@ -59,7 +59,8 @@ export function CarteConnexion({
 	etat,
 	onConnecter,
 	onSynchroniser,
-	onDeconnecter
+	onDeconnecter,
+	principale = true
 }: {
 	nom: string;
 	/**
@@ -83,13 +84,24 @@ export function CarteConnexion({
 	onConnecter: () => void;
 	onSynchroniser: () => void;
 	onDeconnecter: () => void;
+	/**
+	 * ⚠️ UN SEUL BOUTON PLEIN PAR ÉCRAN, MÊME QUAND DEUX CARTES SE SUIVENT. Qonto
+	 * et « votre logiciel » portaient chacune leur bouton plein, l'un sous l'autre,
+	 * sur l'écran du premier jour (relevé le 09/10/2026) : deux appels de même
+	 * poids, et l'œil ne savait plus lequel venait d'abord. La seconde carte
+	 * passe en bouton secondaire, et sans couverture : deux colonnades empilées
+	 * doublaient la hauteur pour redire la même solidité.
+	 */
+	principale?: boolean;
 }) {
+	const Appel = principale ? BoutonPrincipal : BoutonSecondaire;
+	const image = principale ? couverture : undefined;
 	const occupe = etat.genre === 'REDIRECTION' || etat.genre === 'SYNCHRONISATION';
 	return (
 		<div className="verre-carte flex flex-col overflow-hidden rounded-cladd-xl">
-			{couverture === undefined ? null : (
+			{image === undefined ? null : (
 				<div aria-hidden className="relative h-28 w-full">
-					<img src={couverture} alt="" className="size-full object-cover" loading="lazy" />
+					<img src={image} alt="" className="size-full object-cover" loading="lazy" />
 					{/* Un voile vers le bas : la tuile du logo se pose sur l'image sans
 					    flotter sur la pierre claire, en clair comme en sombre. */}
 					<div className="absolute inset-0 bg-linear-to-t from-black/35 to-transparent" />
@@ -98,20 +110,20 @@ export function CarteConnexion({
 			<div
 				className={cn(
 					'relative flex flex-col gap-cladd-2xs p-cladd-xs',
-					couverture !== undefined && '-mt-9'
+					image !== undefined && '-mt-9'
 				)}
 			>
 				<div
 					className={cn(
 						'flex gap-cladd-2xs',
-						couverture === undefined ? 'items-center' : 'items-end'
+						image === undefined ? 'items-center' : 'items-end'
 					)}
 				>
 					<span
 						aria-hidden
 						className={cn(
 							'flex shrink-0 items-center justify-center overflow-hidden rounded-cladd-2xs bg-white',
-							couverture === undefined ? 'size-cladd-md' : 'size-14 shadow-lg ring-1 ring-black/5'
+							image === undefined ? 'size-cladd-md' : 'size-14 shadow-lg ring-1 ring-black/5'
 						)}
 					>
 						{logo}
@@ -129,9 +141,9 @@ export function CarteConnexion({
 				</div>
 
 				{etat.genre === 'A_CONNECTER' ? (
-					<BoutonPrincipal pleineLargeur onClick={onConnecter}>
+					<Appel pleineLargeur onClick={onConnecter}>
 						Connecter {nomDansLaPhrase ?? nom}
-					</BoutonPrincipal>
+					</Appel>
 				) : etat.genre === 'ECHEC' || etat.genre === 'REVOQUEE' ? (
 					<BoutonPrincipal pleineLargeur onClick={onConnecter}>
 						Reconnecter {nomDansLaPhrase ?? nom}

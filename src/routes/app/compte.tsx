@@ -377,7 +377,7 @@ function PageCompte() {
 				qonto?.disponible || chift?.disponible ? (
 					<PileDeConnexions>
 						{qonto?.disponible ? <CarteQontoBranchee /> : null}
-						{chift?.disponible ? <CarteChiftBranchee /> : null}
+						{chift?.disponible ? <CarteChiftBranchee principale={!qonto?.disponible} /> : null}
 					</PileDeConnexions>
 				) : null
 		},

@@ -1083,7 +1083,8 @@ function File() {
 					) : null}
 					{chift?.disponible ? (
 						<Facultatif>
-							<CarteChiftBranchee />
+							{/* Seconde sous Qonto : son appel ne double pas le bouton plein. */}
+							<CarteChiftBranchee principale={!qonto?.disponible} />
 						</Facultatif>
 					) : null}
 				</PileDeConnexions>

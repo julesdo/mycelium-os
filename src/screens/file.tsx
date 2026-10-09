@@ -1217,8 +1217,10 @@ function FileVide({
 	const Bouton = connexion === undefined ? BoutonPrincipal : BoutonSecondaire;
 	return (
 		<SectionEcran
-			titre="Rien à trancher aujourd’hui"
-			legende="Le logiciel surveille les échéances et les dates limites pour agir en justice dès qu’il a de quoi compter."
+			// Le premier jour, rien n'est à trancher parce que rien n'est encore là : le
+			// titre dit le geste qui manque, pas une file vide (09/10/2026).
+			titre="Commencez par vos factures"
+			legende="Dès qu’il les a, le logiciel compte ce qu’on vous doit, pénalités comprises, et surveille les dates limites pour agir en justice."
 		>
 			{connexion}
 			<ZoneDepot

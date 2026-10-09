@@ -553,6 +553,7 @@ const VIERGE: FileAffichee = {
 			<CarteConnexion
 				nom="Votre logiciel"
 				nomDansLaPhrase="votre logiciel"
+				principale={false}
 				promesse={PROMESSE_CHIFT}
 				logo={<PictoLogiciel />}
 				couverture={COUVERTURE_QONTO}

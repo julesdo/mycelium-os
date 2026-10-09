@@ -34,7 +34,7 @@ function depuisLisible(quand: number, minute: number | null): string {
 	return heures < 24 ? `il y a ${heures} h` : `il y a ${Math.floor(heures / 24)} j`;
 }
 
-export function CarteQontoBranchee() {
+export function CarteQontoBranchee({ principale = true }: { readonly principale?: boolean } = {}) {
 	const connexion = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
 	const demarrer = useAction(api.connexions.qonto.demarrerConnexionQonto);
 	const synchroniser = useAction(api.connexions.qonto.synchroniserMaintenant);
@@ -68,6 +68,7 @@ export function CarteQontoBranchee() {
 
 	return (
 		<CarteConnexion
+			principale={principale}
 			nom="Qonto"
 			promesse={PROMESSE_QONTO}
 			logo={<LogoConnexion src={LOGO_QONTO} />}
