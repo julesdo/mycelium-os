@@ -6,20 +6,37 @@ import { SITE_CANONIQUE } from '../../lib/config/legal';
 /**
  * Un article du blog.
  *
- * ⚠️ LE CHARGEUR NE RENVOIE PAS L'ARTICLE, il vérifie seulement qu'il existe.
- * Le contenu compilé est déjà dans le paquet de la page ; le renvoyer par le
- * chargeur le recopierait une seconde fois dans le HTML. Une adresse inconnue,
- * ou celle d'un brouillon en production, donne la page introuvable.
+ * ⚠️ LE CHARGEUR NE RENVOIE PAS L'ARTICLE, seulement ce que l'en-tête lit (titre,
+ * description, dates, image). Le contenu compilé est déjà dans le paquet de la
+ * page ; le renvoyer par le chargeur le recopierait une seconde fois dans le
+ * HTML. Une adresse inconnue, ou celle d'un brouillon en production, donne la
+ * page introuvable.
+ *
+ * ⚠️ ET LA LISTE DES ARTICLES S'IMPORTE À LA DEMANDE (09/10/2026). Le chargeur et
+ * l'en-tête se chargent avec le routeur, donc avec CHAQUE page : importée en
+ * tête de fichier, la liste compilée de tous les articles (162 ko) partait avec
+ * l'application, jusque sur l'écran d'un dossier.
  */
 export const Route = createFileRoute('/blog/$adresse')({
-	loader: ({ params }) => {
-		if (articleParAdresse(params.adresse) === undefined) throw notFound();
+	loader: async ({ params }) => {
+		const { articleParAdresse: trouver } = await import('../../marketing/blog');
+		const article = trouver(params.adresse);
+		if (article === undefined) throw notFound();
+		return {
+			adresse: article.adresse,
+			titre: article.titre,
+			description: article.description,
+			brouillon: article.brouillon,
+			date: article.date,
+			misAJour: article.misAJour,
+			auteur: article.auteur,
+			couverture: article.couverture?.src
+		};
 	},
-	head: ({ params }) => {
-		const article = articleParAdresse(params.adresse);
+	head: ({ loaderData: article }) => {
 		if (article === undefined) return { meta: [{ title: 'Article introuvable · Letikette' }] };
 		const url = `${SITE_CANONIQUE}/blog/${article.adresse}`;
-		const image = `${SITE_CANONIQUE}${article.couverture?.src ?? '/partage.png'}`;
+		const image = `${SITE_CANONIQUE}${article.couverture ?? '/partage.png'}`;
 		return {
 			meta: [
 				{ title: `${article.titre} · Letikette` },
