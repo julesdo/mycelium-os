@@ -7,6 +7,8 @@ import {
 	ScaleIcon,
 	CreditCardIcon,
 	LogOutIcon,
+	MailIcon,
+	MailXIcon,
 	MonitorIcon,
 	MoonIcon,
 	PlugIcon,
@@ -136,6 +138,14 @@ export interface CompteAffiche {
 	readonly mesures: Lecture<MesuresAffichees>;
 	readonly theme: Theme;
 	readonly onChoisirTheme: (theme: Theme) => void;
+	/**
+	 * Le point du matin par e-mail, pour la personne connectée (09/10/2026) :
+	 * `undefined` tant que la lecture court.
+	 */
+	readonly pointDuMatin?: {
+		readonly parCourriel: boolean | undefined;
+		readonly onRegler: (parCourriel: boolean) => void;
+	};
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -384,6 +394,12 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 						<SectionProfil {...pret.profil} />
 						<SectionTitle>Affichage</SectionTitle>
 						<ContenuAffichage theme={pret.theme} onChoisirTheme={pret.onChoisirTheme} />
+						{pret.pointDuMatin === undefined ? null : (
+							<>
+								<SectionTitle>Notifications</SectionTitle>
+								<ContenuNotifications {...pret.pointDuMatin} />
+							</>
+						)}
 					</RangeeDepliable>
 				</ListeDeRangees>
 
@@ -513,6 +529,49 @@ function ContenuEtablissement({
  * une sortie qu'il faut chercher au fond d'une page de réglages n'en est pas
  * une non plus.
  */
+/**
+ * LE POINT DU MATIN, PAR E-MAIL OU NON (09/10/2026).
+ *
+ * Il partait chaque jour à chaque membre, sans moyen de l'arrêter. Deux choix,
+ * comme l'affichage juste au-dessus, et la phrase dessous dit ce qui ne change
+ * pas : la boîte de réception de l'application garde tout.
+ */
+function ContenuNotifications({
+	parCourriel,
+	onRegler
+}: {
+	readonly parCourriel: boolean | undefined;
+	readonly onRegler: (parCourriel: boolean) => void;
+}) {
+	return (
+		<div className="flex flex-col gap-cladd-3xs">
+			<p className="text-cladd-xs">Le point du matin, par e-mail</p>
+			<Segmented className="w-full" activeColor="neutral" activeVariant="solid">
+				<SegmentedButton
+					active={parCourriel === true}
+					disabled={parCourriel === undefined}
+					onClick={() => onRegler(true)}
+				>
+					<MailIcon />
+					Le recevoir
+				</SegmentedButton>
+				<SegmentedButton
+					active={parCourriel === false}
+					disabled={parCourriel === undefined}
+					onClick={() => onRegler(false)}
+				>
+					<MailXIcon />
+					Ne plus le recevoir
+				</SegmentedButton>
+			</Segmented>
+			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+				Trois lignes au plus, et rien quand il n’y a rien à dire. Tout reste dans la boîte de
+				réception de l’application.
+			</p>
+		</div>
+	);
+}
+
 function ContenuAffichage({
 	theme,
 	onChoisirTheme

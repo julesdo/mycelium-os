@@ -1,6 +1,6 @@
-import { v } from 'convex/values';
+import { v, ConvexError } from 'convex/values';
 import { internal } from '../_generated/api';
-import { authedQuery } from '../functions';
+import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { depuisCentimes, enCentimes } from '../../socle/montants';
 import { composerBriefing } from '../../verticales/recouvrement/briefing';
@@ -118,5 +118,44 @@ export const duJour = authedQuery({
 			montantIdentifie: enCentimes(briefing.montantIdentifie),
 			nombreEvenements: evenements.length
 		};
+	}
+});
+
+/**
+ * LE POINT DU MATIN, PAR E-MAIL OU NON — un réglage de la personne, pas de
+ * l'établissement (09/10/2026). Il partait chaque jour à tous les membres, sans
+ * moyen de l'arrêter ; les Réglages de toutes les applications de référence ont
+ * leur rangée « Notifications ». L'application garde tout dans sa boîte de
+ * réception : couper l'e-mail ne cache rien.
+ */
+export const monPointDuMatin = authedQuery({
+	args: {},
+	returns: v.boolean(),
+	handler: async (ctx): Promise<boolean> => {
+		const { organizationId, user } = await getUserOrg(ctx);
+		const membre = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', organizationId).eq('userId', user._id)
+			)
+			.first();
+		return membre?.pointDuMatinParCourriel !== false;
+	}
+});
+
+export const reglerPointDuMatin = authedMutation({
+	args: { parCourriel: v.boolean() },
+	returns: v.null(),
+	handler: async (ctx, { parCourriel }): Promise<null> => {
+		const { organizationId, user } = await getUserOrg(ctx);
+		const membre = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', organizationId).eq('userId', user._id)
+			)
+			.first();
+		if (membre === null) throw new ConvexError('Vous n’êtes pas membre de cet établissement.');
+		await ctx.db.patch(membre._id, { pointDuMatinParCourriel: parCourriel });
+		return null;
 	}
 });

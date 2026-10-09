@@ -23,6 +23,15 @@ export type BriefingData = {
  * aucun moteur : un chiffre formaté à deux endroits différemment, c'est deux
  * chiffres différents aux yeux du lecteur.
  */
+/**
+ * LE CHEMIN POUR NE PLUS LE RECEVOIR, écrit dans chaque envoi (09/10/2026) : le
+ * réglage vit dans le profil de chaque membre (`briefing.reglerPointDuMatin`).
+ */
+function avecLeChemin(note: string): string {
+	const fin = /[.!?…]$/.test(note.trim()) ? ' ' : '. ';
+	return `${note.trim()}${fin}Pour ne plus le recevoir par e-mail : Votre compte, puis Votre profil.`;
+}
+
 function bloc(d: BriefingData): BlocEmail {
 	return {
 		titre: d.titre,
@@ -61,10 +70,11 @@ function bloc(d: BriefingData): BlocEmail {
 		],
 		corps: d.lignes,
 		bouton: d.action === null ? undefined : { libelle: 'Ouvrir le produit', url: d.url },
-		note:
+		note: avecLeChemin(
 			d.action === null
 				? `Vous recevez ce message parce que ${d.nomEntreprise} est suivie par Letikette. Rien ne réclame votre attention aujourd’hui.`
 				: `À faire aujourd’hui : ${d.action}`
+		)
 	};
 }
 

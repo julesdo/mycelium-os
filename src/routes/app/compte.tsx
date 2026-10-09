@@ -70,6 +70,9 @@ function PageCompte() {
 	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
 	const chift = useQuery(api.connexions.chiftDonnees.maConnexionChift, {});
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
+	/** Le point du matin par e-mail, pour la personne connectée. */
+	const pointDuMatin = useQuery(api.recouvrement.briefing.monPointDuMatin, {});
+	const reglerPointDuMatin = useMutation(api.recouvrement.briefing.reglerPointDuMatin);
 	const mesure = useQuery(api.recouvrement.monEtablissement.volumeEmis, {});
 	const mettreAJourOrg = useMutation(api.organizations.updateOrganization);
 	const enregistrerProfil = useMutation(api.recouvrement.profil.enregistrer);
@@ -552,6 +555,10 @@ function PageCompte() {
 		mesures,
 		theme,
 		onChoisirTheme: setTheme,
+		pointDuMatin: {
+			parCourriel: pointDuMatin,
+			onRegler: (parCourriel) => void reglerPointDuMatin({ parCourriel })
+		},
 		onSeDeconnecter: () => void authClient.signOut().then(() => navigate({ to: '/connexion' }))
 	};
 

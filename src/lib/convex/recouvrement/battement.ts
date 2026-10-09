@@ -87,10 +87,13 @@ async function envoyer(
 	const organisation = await ctx.db.get(organizationId);
 	if (organisation === null) return;
 
-	const membres = await ctx.db
-		.query('organizationMembers')
-		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
-		.collect();
+	// Seulement ceux qui ne l'ont pas coupé depuis leur profil (09/10/2026).
+	const membres = (
+		await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+			.collect()
+	).filter((membre) => membre.pointDuMatinParCourriel !== false);
 	if (membres.length === 0) return;
 
 	// Après le retour anticipé ci-dessus : on ne vérifie une clé qu'au moment où

@@ -158,7 +158,12 @@ export default defineSchema({
 		organizationId: v.id('organizations'),
 		userId: v.string(), // Better Auth string ID
 		role: v.union(v.literal('ORG_ADMIN'), v.literal('ORG_MEMBER')),
-		joinedAt: v.number()
+		joinedAt: v.number(),
+		/**
+		 * Le point du matin par e-mail (`battement.ts`). Absent : il part. `false` :
+		 * ce membre l'a coupé depuis son profil (09/10/2026).
+		 */
+		pointDuMatinParCourriel: v.optional(v.boolean())
 	})
 		.index('by_organization', ['organizationId'])
 		.index('by_user', ['userId'])
