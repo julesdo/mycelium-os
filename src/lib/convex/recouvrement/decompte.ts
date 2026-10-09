@@ -2,9 +2,9 @@ import { v, ConvexError } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
 import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
-import type { QueryCtx } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
-import { depuisCentimes, enCentimes, fraction } from '../../socle/montants';
+import { depuisCentimes, enCentimes, fraction, versEuros } from '../../socle/montants';
 import { controlerDecompte } from '../../verticales/recouvrement/controle';
 import {
 	decompterCreance,
@@ -212,12 +212,7 @@ export async function projeterDecompte(
 			});
 		}
 		return {
-			decompte: decompterCreance(
-				pourDecompte,
-				arretEffectif,
-				convention,
-				ordre
-			),
+			decompte: decompterCreance(pourDecompte, arretEffectif, convention, ordre),
 			refus: null
 		};
 	} catch (erreur) {
@@ -234,6 +229,121 @@ export async function projeterDecompte(
 	}
 }
 
+/**
+ * CE QU'UN DÉCOMPTE ENREGISTRE, EN CENTIMES : la même forme pour celui qu'on
+ * fige et pour celui qu'un aperçu montre avant de le figer. Deux écritures se
+ * seraient séparées au premier champ ajouté, et l'aperçu d'un courrier aurait
+ * annoncé un chiffre que le courrier préparé n'aurait pas porté.
+ *
+ * ⚠️ LA DATE EST CELLE DU CALCUL, PAS CELLE DEMANDÉE. Quand le jugement
+ * d'ouverture d'une procédure collective est connu, le calcul s'arrête à sa
+ * veille (L622-28) : c'est cette date-là que le décompte porte.
+ */
+export function enregistrementDe(decompte: DecompteCreance) {
+	return {
+		arreteAu: decompte.arreteAu,
+		convention: decompte.convention,
+		principalRestantDu: enCentimes(decompte.principalRestantDu),
+		interets: enCentimes(decompte.interets),
+		indemniteForfaitaire: enCentimes(decompte.indemniteForfaitaire),
+		total: enCentimes(decompte.total),
+		imputation: {
+			ordre: decompte.imputation.ordre,
+			confirme: decompte.imputation.confirme,
+			...(decompte.imputation.totalAutreOrdre === null
+				? {}
+				: { totalAutreOrdre: enCentimes(decompte.imputation.totalAutreOrdre) })
+		},
+		lignes: decompte.lignes.map((ligne) => ({
+			reference: ligne.reference,
+			principalRestantDu: enCentimes(ligne.principalRestantDu),
+			interets: enCentimes(ligne.interets),
+			indemniteForfaitaire: enCentimes(ligne.indemniteForfaitaire),
+			total: enCentimes(ligne.total),
+			// Les segments SONT la preuve. Sans eux, le total est un chiffre
+			// qu'on demande de croire ; avec eux, il se refait à la main.
+			segments: ligne.segments.map((segment) => ({
+				debut: segment.debut,
+				fin: segment.fin,
+				jours: segment.jours,
+				principal: enCentimes(segment.principal),
+				taux: {
+					numerateur: segment.taux.numerateur,
+					denominateur: segment.taux.denominateur
+				},
+				baseAnnuelle: segment.baseAnnuelle,
+				interets: enCentimes(segment.interets)
+			})),
+			// Ce que chaque règlement a éteint. Sans cette ligne, la somme des
+			// périodes dépasse les intérêts dus et le total ne se refait plus.
+			imputations: ligne.imputations.map((imputation) => ({
+				date: imputation.date,
+				nature: imputation.nature,
+				montant: enCentimes(imputation.montant),
+				surInterets: enCentimes(imputation.surInterets),
+				surPrincipal: enCentimes(imputation.surPrincipal)
+			}))
+		}))
+	};
+}
+
+/**
+ * FIGER UN DÉCOMPTE — l'écriture, et rien d'autre. Ses appelants disent pourquoi
+ * (`daterLeDecompte`), et elle fait confiance à leur choix de date.
+ */
+export async function figer(
+	ctx: MutationCtx,
+	creance: Doc<'creances'>,
+	arreteAu: string,
+	convention: ConventionJours
+): Promise<Id<'decomptes'>> {
+	// ⚠️ LE MÊME CALCUL QUE LE MONTANT DU JOUR, ET C'EST LE POINT. La projection
+	// rend un motif nommé là où le gel doit lever : une mutation qui échoue
+	// n'écrit rien, et son message remonte tel quel.
+	const projection = await projeterDecompte(ctx, creance, arreteAu, convention);
+	if (projection.decompte === null) {
+		throw new ConvexError(projection.refus!.detail);
+	}
+	const decompte = projection.decompte;
+
+	// LES IDENTITES SE FIGENT AVEC LE CHIFFRE. Un decompte part chez un tiers ;
+	// regenere plus tard, il doit dire la MEME chose — y compris qui reclamait a
+	// qui. Les relire au moment du rendu ferait porter a la piece un nom que le
+	// debiteur n'avait pas le jour de l'arrete.
+	//
+	// Aucun des deux n'est exige : le profil creancier est facultatif, et un
+	// decompte reste un decompte. Refuser de le produire pour un en-tete
+	// manquant transformerait une gene d'affichage en blocage de calcul.
+	const debiteur = await ctx.db.get(creance.debiteurId);
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', creance.organizationId))
+		.first();
+
+	return await ctx.db.insert('decomptes', {
+		organizationId: creance.organizationId,
+		creanceId: creance._id,
+		...enregistrementDe(decompte),
+		creancier:
+			profil === null
+				? undefined
+				: {
+						denomination: profil.denomination,
+						siren: profil.siren,
+						adresse: profil.adresse
+					},
+		debiteur:
+			debiteur === null
+				? undefined
+				: {
+						denomination: debiteur.denomination,
+						siren: debiteur.siren,
+						adresse: debiteur.adresse
+					},
+		produitLe: Date.now()
+	});
+}
+
 export const figerDecompte = internalMutation({
 	args: {
 		creanceId: v.id('creances'),
@@ -241,99 +351,132 @@ export const figerDecompte = internalMutation({
 		convention: vConventionJours
 	},
 	returns: v.id('decomptes'),
-	handler: async (ctx, { creanceId, arreteAu, convention }) => {
+	handler: async (ctx, { creanceId, arreteAu, convention }): Promise<Id<'decomptes'>> => {
 		const creance = await ctx.db.get(creanceId);
 		if (creance === null) throw new ConvexError('Créance introuvable');
-
-		// ⚠️ LE MÊME CALCUL QUE L'ÉCRAN D'ARRÊT, ET C'EST LE POINT. La projection
-		// rend un motif nommé là où le gel doit lever : une mutation qui échoue
-		// n'écrit rien, et son message remonte tel quel.
-		const projection = await projeterDecompte(ctx, creance, arreteAu, convention);
-		if (projection.decompte === null) {
-			throw new ConvexError(projection.refus!.detail);
-		}
-		const decompte = projection.decompte;
-
-		// LES IDENTITES SE FIGENT AVEC LE CHIFFRE. Un decompte part chez un tiers ;
-		// regenere plus tard, il doit dire la MEME chose — y compris qui reclamait a
-		// qui. Les relire au moment du rendu ferait porter a la piece un nom que le
-		// debiteur n'avait pas le jour de l'arrete.
-		//
-		// Aucun des deux n'est exige : le profil creancier est facultatif, et un
-		// decompte reste un decompte. Refuser de le produire pour un en-tete
-		// manquant transformerait une gene d'affichage en blocage de calcul.
-		const debiteur = await ctx.db.get(creance.debiteurId);
-		const profil = await ctx.db
-			.query('profilsCreancier')
-			.withIndex('by_org', (q) => q.eq('organizationId', creance.organizationId))
-			.first();
-
-		return await ctx.db.insert('decomptes', {
-			organizationId: creance.organizationId,
-			creanceId,
-			arreteAu,
-			convention,
-			principalRestantDu: enCentimes(decompte.principalRestantDu),
-			interets: enCentimes(decompte.interets),
-			indemniteForfaitaire: enCentimes(decompte.indemniteForfaitaire),
-			total: enCentimes(decompte.total),
-			imputation: {
-				ordre: decompte.imputation.ordre,
-				confirme: decompte.imputation.confirme,
-				...(decompte.imputation.totalAutreOrdre === null
-					? {}
-					: { totalAutreOrdre: enCentimes(decompte.imputation.totalAutreOrdre) })
-			},
-			lignes: decompte.lignes.map((ligne) => ({
-				reference: ligne.reference,
-				principalRestantDu: enCentimes(ligne.principalRestantDu),
-				interets: enCentimes(ligne.interets),
-				indemniteForfaitaire: enCentimes(ligne.indemniteForfaitaire),
-				total: enCentimes(ligne.total),
-				// Les segments SONT la preuve. Sans eux, le total est un chiffre
-				// qu'on demande de croire ; avec eux, il se refait à la main.
-				segments: ligne.segments.map((segment) => ({
-					debut: segment.debut,
-					fin: segment.fin,
-					jours: segment.jours,
-					principal: enCentimes(segment.principal),
-					taux: {
-						numerateur: segment.taux.numerateur,
-						denominateur: segment.taux.denominateur
-					},
-					baseAnnuelle: segment.baseAnnuelle,
-					interets: enCentimes(segment.interets)
-				})),
-				// Ce que chaque règlement a éteint. Sans cette ligne, la somme des
-				// périodes dépasse les intérêts dus et le total ne se refait plus.
-				imputations: ligne.imputations.map((imputation) => ({
-					date: imputation.date,
-					nature: imputation.nature,
-					montant: enCentimes(imputation.montant),
-					surInterets: enCentimes(imputation.surInterets),
-					surPrincipal: enCentimes(imputation.surPrincipal)
-				}))
-			})),
-			creancier:
-				profil === null
-					? undefined
-					: {
-							denomination: profil.denomination,
-							siren: profil.siren,
-							adresse: profil.adresse
-						},
-			debiteur:
-				debiteur === null
-					? undefined
-					: {
-							denomination: debiteur.denomination,
-							siren: debiteur.siren,
-							adresse: debiteur.adresse
-						},
-			produitLe: Date.now()
-		});
+		return await figer(ctx, creance, arreteAu, convention);
 	}
 });
+
+/**
+ * LE MONTANT QU'UN DOCUMENT RÉCLAME AUJOURD'HUI (09/10/2026).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE DÉCOMPTE NE S'ARRÊTE PLUS : IL SE DATE QUAND ON RÉCLAME
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le fondateur : « si on veut un décompte à date, on a juste besoin de le
+ * réclamer, pas besoin de l'arrêter […] tant que le débiteur n'a pas remboursé,
+ * je ne vois pas pourquoi on devrait arrêter le décompte ». Il a raison : les
+ * pénalités courent jusqu'au paiement (L441-10 II), et seul le jugement
+ * d'ouverture d'une procédure collective en arrête le cours (L622-28), ce que
+ * le calcul fait déjà de lui-même. « Arrêté au 9 octobre » veut dire « compté
+ * jusqu'au 9 octobre » ; la lettre le dit : les pénalités courues après n'y sont
+ * pas comprises.
+ *
+ * Il fallait pourtant « arrêter le décompte » avant toute lettre officielle,
+ * tout accord, toute page de paiement : un écran, deux cases, un geste
+ * « irréversible » qui ne l'était pour personne. Désormais chaque document qui
+ * réclame un chiffre le date au jour où il se prépare (`daterLeDecompte`), et
+ * ce chiffre-là est figé avec lui. La question « qu'a-t-on réclamé le jour où on
+ * l'a réclamé » garde sa réponse ; personne n'a plus à la préparer à la main.
+ *
+ * ⚠️ UN SEUL DÉCOMPTE PAR JOUR ET PAR DOSSIER, TANT QUE RIEN NE BOUGE. Le
+ * dernier décompte daté sert de nouveau s'il dit EXACTEMENT ce que dirait le
+ * calcul du jour : même date, mêmes factures, même total. Un règlement arrivé à
+ * midi en fait dater un second.
+ */
+export interface DecompteDuJour {
+	/** Le dernier décompte daté, quand il dit encore ce que dirait le calcul du jour. */
+	readonly date: Doc<'decomptes'> | null;
+	/** Le calcul du jour, en centimes ; `null` quand il ne se fait pas. */
+	readonly calcul: ReturnType<typeof enregistrementDe> | null;
+	/** Pourquoi il ne se fait pas, nommé. */
+	readonly refus: ProjectionDecompte['refus'];
+}
+
+export async function decompteDuJour(
+	ctx: QueryCtx,
+	creance: Doc<'creances'>,
+	aujourdHui: string
+): Promise<DecompteDuJour> {
+	const projection = await projeterDecompte(ctx, creance, aujourdHui, 'ACT_365');
+	if (projection.decompte === null) return { date: null, calcul: null, refus: projection.refus };
+	const calcul = enregistrementDe(projection.decompte);
+	const dernier = (
+		await ctx.db
+			.query('decomptes')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+			.order('desc')
+			.take(1)
+	)[0];
+	const concorde =
+		dernier !== undefined &&
+		dernier.organizationId === creance.organizationId &&
+		dernier.arreteAu === calcul.arreteAu &&
+		dernier.convention === calcul.convention &&
+		dernier.total === calcul.total &&
+		dernier.principalRestantDu === calcul.principalRestantDu &&
+		dernier.lignes.length === calcul.lignes.length &&
+		dernier.lignes.every(
+			(ligne, i) =>
+				ligne.reference === calcul.lignes[i]!.reference && ligne.total === calcul.lignes[i]!.total
+		);
+	return { date: concorde ? dernier : null, calcul, refus: null };
+}
+
+/**
+ * DATER LE MONTANT QU'UN DOCUMENT RÉCLAME — le figer au jour où il se prépare.
+ *
+ * Appelée par ce qui part chez un tiers avec un chiffre : la lettre officielle
+ * (préparée à la main ou par le pilote), l'accord écrit, la déclaration, la
+ * lettre à l'avocat, la page où le client paie, la remise au conseil.
+ *
+ * ⚠️ CE QUE LE LOGICIEL NE VOIT PAS EST DIT, PAS COCHÉ. Un avoir ou un
+ * règlement qui n'est pas noté changerait ce montant : le gérant l'affirme en
+ * validant le document qui le porte, ou en confirmant le geste de Plume, et le
+ * texte invite le client à signaler un règlement parti depuis.
+ */
+export async function daterLeDecompte(
+	ctx: MutationCtx,
+	{
+		creance,
+		aujourdHui,
+		pour,
+		auteur,
+		userId
+	}: {
+		readonly creance: Doc<'creances'>;
+		readonly aujourdHui: string;
+		/** Ce qui le réclame, dit au journal : « la lettre de relance officielle ». */
+		readonly pour: string;
+		readonly auteur: 'GERANT' | 'MACHINE';
+		readonly userId?: string;
+	}
+): Promise<{ readonly decompte: Doc<'decomptes'> } | { readonly refus: string }> {
+	const jour = await decompteDuJour(ctx, creance, aujourdHui);
+	if (jour.calcul === null) {
+		return { refus: jour.refus?.detail ?? 'Ce que votre client vous doit ne se calcule pas.' };
+	}
+	if (jour.date !== null) return { decompte: jour.date };
+
+	const decompteId = await figer(ctx, creance, aujourdHui, 'ACT_365');
+	const decompte = (await ctx.db.get(decompteId))!;
+	await ctx.db.insert('journal', {
+		organizationId: creance.organizationId,
+		cible: decompteId as string,
+		cle: 'DECOMPTE_DATE',
+		apres:
+			`Montant daté au ${decompte.arreteAu} : ${versEuros(depuisCentimes(decompte.total))} €, ` +
+			`sur ${decompte.lignes.length} facture(s), pour ${pour}. Les pénalités continuent de ` +
+			'courir après cette date, jusqu’au paiement.',
+		source: `Pour ${pour}`,
+		auteur,
+		...(userId === undefined ? {} : { auteurUserId: userId }),
+		consigneLe: Date.now()
+	});
+	return { decompte };
+}
 
 /**
  * ⚠️ `produire` A ÉTÉ RETIRÉE LE 17 SEPTEMBRE 2026, ET C'EST UNE SUPPRESSION DE

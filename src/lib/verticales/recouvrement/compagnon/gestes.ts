@@ -86,13 +86,14 @@ export interface EtatPourGestes {
 	readonly emailConnu: string | null;
 	/** Le gérant a déclaré que le client conteste : c'est noté, et rien ne s'arrête. */
 	readonly contestationDeclaree: boolean;
-	/** Un décompte a déjà été arrêté sur ce dossier : la page de paiement et la remise en ont besoin. */
-	readonly decompteArrete: boolean;
 	/** Votre IBAN est renseigné : la page de paiement dit où payer. */
 	readonly ibanConnu: boolean;
 	/** Une remise au conseil est déjà déclarée et suivie. */
 	readonly remiseEnCours: boolean;
-	/** Le dossier n'est ni classé ni réglé : son décompte peut s'arrêter. */
+	/**
+	 * Le dossier n'est ni classé ni réglé : son montant du jour se calcule, et se
+	 * date quand un document le réclame (la page de paiement, la remise).
+	 */
 	readonly arretable: boolean;
 	/** Un paiement en plusieurs fois court déjà sur ce dossier. */
 	readonly echeancierEnCours?: boolean;
@@ -171,11 +172,13 @@ function relire(brut: GesteBrut, etat: EtatPourGestes): Geste | null {
 			return { genre: 'CONTESTATION', texte: conteste ? 'OUI' : 'NON' };
 		}
 		case 'ARRETER_DECOMPTE':
-			return etat.arretable ? { genre: 'ARRETER_DECOMPTE' } : null;
+			// Plus proposé depuis le 09/10/2026 : le montant se date tout seul quand
+			// un document le réclame. Le genre reste lisible pour les anciens échanges.
+			return null;
 		case 'LIEN_PAIEMENT':
-			return etat.decompteArrete && etat.ibanConnu ? { genre: 'LIEN_PAIEMENT' } : null;
+			return etat.arretable && etat.ibanConnu ? { genre: 'LIEN_PAIEMENT' } : null;
 		case 'REMISE_CONSEIL': {
-			if (!etat.decompteArrete || etat.remiseEnCours) return null;
+			if (!etat.arretable || etat.remiseEnCours) return null;
 			const le = dateDuCalendrier(date) && date <= etat.aujourdHui ? date : etat.aujourdHui;
 			return {
 				genre: 'REMISE_CONSEIL',
@@ -320,22 +323,22 @@ export function decrireGeste(geste: Geste): {
 					};
 		case 'ARRETER_DECOMPTE':
 			return {
-				titre: 'Arrêter le décompte à aujourd’hui',
+				titre: 'Dater le montant à aujourd’hui',
 				detail:
-					'En confirmant, vous affirmez qu’aucun avoir n’est à déduire et que tous ses règlements sont importés. Un décompte arrêté ne se modifie plus.',
-				confirmer: 'Arrêter le décompte'
+					'En confirmant, vous affirmez qu’aucun avoir n’est à déduire et que tous ses règlements sont notés. Les pénalités continuent de courir jusqu’au paiement.',
+				confirmer: 'Dater le montant'
 			};
 		case 'LIEN_PAIEMENT':
 			return {
 				titre: 'Ouvrir sa page de paiement',
 				detail:
-					'Une page à votre nom, avec le dernier décompte arrêté et votre IBAN : il paie depuis sa banque.',
+					'Une page à votre nom, avec le montant du jour et votre IBAN : il paie depuis sa banque. En confirmant, vous affirmez qu’aucun avoir n’est à déduire et que tous ses règlements sont notés.',
 				confirmer: 'Ouvrir la page'
 			};
 		case 'REMISE_CONSEIL':
 			return {
 				titre: `Noter la remise à votre conseil, ${jourEnClair(geste.date ?? '')}`,
-				detail: `Avec le dernier décompte arrêté. Je suis la remise et ses dates.${geste.texte === undefined ? '' : ` Ce que vous attendez : « ${geste.texte} ».`}`,
+				detail: `Avec le montant du jour, daté. Je suis la remise et ses dates.${geste.texte === undefined ? '' : ` Ce que vous attendez : « ${geste.texte} ».`}`,
 				confirmer: 'Noter la remise'
 			};
 		case 'ECHEANCIER': {

@@ -81,7 +81,7 @@ export function composerTransmissionAvocat(e: EntreesAvocat): Composition {
 	const manques = manquesCreancier(e.creancier);
 	if (e.avocat === null)
 		manques.push('l’avocat à qui transmettre : choisissez-le dans votre carnet');
-	if (e.decompte === null) manques.push('un calcul arrêté de ce qu’il vous doit, à joindre');
+	if (e.decompte === null) manques.push('le calcul de ce qu’il vous doit, à joindre');
 	const ville = commune(e.creancier.adresse);
 	if (ville === undefined)
 		manques.push('le code postal et la ville de votre siège, en fin d’adresse');

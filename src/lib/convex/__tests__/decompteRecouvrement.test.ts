@@ -596,3 +596,63 @@ describe('les abandons, rendus avec le décompte', () => {
 		DELAI_CONVEX
 	);
 });
+
+/**
+ * LE DÉCOMPTE NE S'ARRÊTE PLUS : IL SE DATE QUAND UN DOCUMENT LE RÉCLAME
+ * (09/10/2026). Personne n'a plus à « arrêter » quoi que ce soit avant une
+ * lettre, un accord ou une page de paiement ; ce qui est réclamé reste figé.
+ */
+describe('le montant daté quand on réclame', () => {
+	it(
+		'se date une fois par jour, et de nouveau quand un règlement change le montant',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { creanceId } = await poserCreance(t);
+			const { daterLeDecompte } = await import('../recouvrement/decompte');
+
+			const dater = () =>
+				t.run(async (ctx) => {
+					const creance = (await ctx.db.get(creanceId))!;
+					const date = await daterLeDecompte(ctx, {
+						creance,
+						aujourdHui: '2026-09-01',
+						pour: 'la lettre de relance officielle',
+						auteur: 'GERANT'
+					});
+					if ('refus' in date) throw new Error(date.refus);
+					return date.decompte;
+				});
+
+			const premier = await dater();
+			expect(premier.arreteAu).toBe('2026-09-01');
+			expect((await dater())._id).toBe(premier._id);
+
+			await t.run(async (ctx) => {
+				const facture = (
+					await ctx.db
+						.query('facturesVente')
+						.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+						.collect()
+				)[0]!;
+				await ctx.db.insert('reglements', {
+					organizationId: facture.organizationId,
+					factureId: facture._id,
+					date: '2026-08-15',
+					montant: 200_000n,
+					nature: 'PAIEMENT',
+					creeLe: Date.now()
+				});
+			});
+			const second = await dater();
+			expect(second._id).not.toBe(premier._id);
+			expect(second.principalRestantDu).toBe(800_000n);
+
+			const journal = await t.run((ctx) => ctx.db.query('journal').collect());
+			expect(journal.filter((e) => e.cle === 'DECOMPTE_DATE')).toHaveLength(2);
+			// Le premier reste tel qu'il a été réclamé.
+			const relu = await t.run((ctx) => ctx.db.get(premier._id));
+			expect(relu?.principalRestantDu).toBe(1_000_000n);
+		},
+		DELAI_CONVEX
+	);
+});

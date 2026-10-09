@@ -84,7 +84,7 @@ export function composerAccordEcheancier(e: EntreesEcheancier): Composition {
 	if (e.creancier.iban === undefined)
 		manques.push('votre IBAN, où arrivent les versements (Mon compte, vos courriers)');
 	if (e.decompte === null)
-		manques.push('un calcul arrêté de ce qu’il vous doit : l’accord reconnaît ce chiffre-là');
+		manques.push('le calcul de ce qu’il vous doit : l’accord reconnaît ce chiffre-là');
 	const c = e.choix;
 	if (!Number.isInteger(c.nombre) || c.nombre < 2)
 		manques.push('le nombre de versements (au moins deux)');

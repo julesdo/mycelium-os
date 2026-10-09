@@ -7,6 +7,7 @@ import type { Id } from '../_generated/dataModel';
 import { depuisCentimes } from '../../socle/montants';
 import { ibanLisible } from '../../socle/iban';
 import { composerVirementEpc } from '../../socle/virement-epc';
+import { daterLeDecompte } from './decompte';
 
 /**
  * LA PAGE OÙ LE CLIENT VOIT CE QU'IL DOIT, ET COMMENT LE PAYER.
@@ -184,13 +185,63 @@ export const pageDePaiement = query({
  * l'argent, ce qu'il sait déjà.
  */
 export const ouvrirLienDePaiement = authedMutation({
-	args: { decompteId: v.id('decomptes') },
+	args: { creanceId: v.id('creances') },
 	returns: v.string(),
-	handler: async (ctx, { decompteId }): Promise<string> => {
+	handler: async (ctx, { creanceId }): Promise<string> => {
 		const { organizationId, user } = await getUserOrg(ctx);
-		return await ouvrirLaPageDePaiement(ctx, organizationId, user._id, decompteId);
+		return await ouvrirLaPageDuJour(ctx, organizationId, user._id, creanceId);
 	}
 });
+
+/**
+ * OUVRIR LA PAGE OÙ LE CLIENT PAIE, SUR LE MONTANT DU JOUR (09/10/2026).
+ *
+ * Il fallait d'abord « arrêter un décompte », puis ouvrir le lien dessus. Le
+ * montant se date désormais à l'ouverture (`daterLeDecompte`), et la page le
+ * montre avec sa date, comme avant.
+ *
+ * ⚠️ UN SEUL LIEN VIVANT PAR DOSSIER. S'il en existe un, c'est lui qui est rendu,
+ * avec le montant de son jour : il a peut-être déjà été envoyé, et en ouvrir un
+ * second ferait circuler deux montants. Pour un montant plus récent, le gérant
+ * ferme l'ancien, puis en ouvre un nouveau.
+ */
+export async function ouvrirLaPageDuJour(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	userId: string,
+	creanceId: Id<'creances'>
+): Promise<string> {
+	const creance = await ctx.db.get(creanceId);
+	if (creance === null || creance.organizationId !== organizationId) {
+		throw new ConvexError('Dossier introuvable');
+	}
+	const vivant = (
+		await ctx.db
+			.query('liensDePaiement')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
+			.collect()
+	).find((lien) => lien.revoqueLe === undefined);
+	if (vivant !== undefined) return vivant.jeton;
+
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	if (profil?.iban === undefined) {
+		throw new ConvexError(
+			'Renseignez votre IBAN dans « Ce qui s’imprime sur vos courriers » : sans lui, la page ne dit pas où payer.'
+		);
+	}
+	const date = await daterLeDecompte(ctx, {
+		creance,
+		aujourdHui: new Date().toISOString().slice(0, 10),
+		pour: 'la page où votre client paie',
+		auteur: 'GERANT',
+		userId
+	});
+	if ('refus' in date) throw new ConvexError(date.refus);
+	return await ouvrirLaPageDePaiement(ctx, organizationId, userId, date.decompte._id);
+}
 
 /**
  * OUVRIR LA PAGE OÙ LE CLIENT PAIE, sur un décompte arrêté — le cœur de

@@ -1,9 +1,9 @@
 import { v, ConvexError, type Infer } from 'convex/values';
-import type { QueryCtx } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg, requireOrgAdmin } from '../lib/auth';
-import { enCentimes } from '../../socle/montants';
+import { depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
 import { sha256 } from '../../socle/empreinte';
 import { ajouterJours, estDateReelle } from '../../verticales/recouvrement/calendrier';
 import { libelleEvenement } from '../../verticales/recouvrement/apres-procedure';
@@ -32,6 +32,7 @@ import {
 	composerTransmissionAvocat
 } from '../../verticales/recouvrement/gabarits/professionnels';
 import { resteDu } from './lecture';
+import { daterLeDecompte, decompteDuJour } from './decompte';
 import { vModeleCourrier } from './tables';
 
 /**
@@ -154,7 +155,19 @@ function tauxParDefaut(
 	return t.numerateur * taux.denominateur === taux.numerateur * t.denominateur;
 }
 
-function decompteCourrier(d: Doc<'decomptes'>): DecompteCourrier {
+/** Ce qu'un courrier lit d'un décompte : celui qui est daté, ou le calcul du jour en aperçu. */
+type DecompteLu = Pick<
+	Doc<'decomptes'>,
+	| 'arreteAu'
+	| 'convention'
+	| 'principalRestantDu'
+	| 'interets'
+	| 'indemniteForfaitaire'
+	| 'total'
+	| 'lignes'
+>;
+
+function decompteCourrier(d: DecompteLu): DecompteCourrier {
 	return {
 		arreteAu: d.arreteAu,
 		convention: d.convention,
@@ -242,18 +255,40 @@ export async function composer(
 		})
 	);
 
-	const decomptes = await ctx.db
-		.query('decomptes')
-		.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-		.collect();
-	const dernier = decomptes.sort((a, b) => b.produitLe - a.produitLe)[0] ?? null;
-	const decompte = dernier === null ? null : decompteCourrier(dernier);
+	/*
+	  ⚠️ LE MONTANT DU JOUR, DATÉ QUAND LE COURRIER SE PRÉPARE (09/10/2026). Plus
+	  d'arrêt à faire avant : l'aperçu montre le calcul du jour, et la préparation
+	  le fige (`preparerLeMontant`), sous la même date et au même centime. Le
+	  décompte daté sert quand il dit encore exactement la même chose.
+	*/
+	const jour = await decompteDuJour(ctx, creance, aujourdHui);
+	const dernier = jour.date;
+	const decompte =
+		jour.date !== null
+			? decompteCourrier(jour.date)
+			: jour.calcul !== null
+				? decompteCourrier(jour.calcul)
+				: null;
 	const referenceInterne = `D-${(creanceId as string).slice(-6).toUpperCase()}`;
 	// Seules les factures que le décompte chiffre entrent dans un courrier qui le cite.
 	const duDecompte =
 		decompte === null
 			? factures
 			: factures.filter((f) => decompte.lignes.some((l) => l.reference === f.reference));
+
+	const horsDuDossier: { reference: string; resteDu: bigint }[] = [];
+	if (choix.modele === 'DECLARATION_CREANCE' || choix.modele === 'TRANSMISSION_AVOCAT') {
+		const siennes = await ctx.db
+			.query('facturesVente')
+			.withIndex('by_debiteur', (q) => q.eq('debiteurId', creance.debiteurId))
+			.collect();
+		for (const f of siennes) {
+			if (f.organizationId !== organizationId || f.creanceId === creanceId) continue;
+			if (f.statutPaiement === 'SOLDEE') continue;
+			const reste = enCentimes(await resteDu(ctx, f));
+			if (reste > 0n) horsDuDossier.push({ reference: f.reference, resteDu: reste });
+		}
+	}
 
 	const journal = await ctx.db
 		.query('evenementsProcedure')
@@ -343,7 +378,17 @@ export async function composer(
 						: { nom: avocat.nom, adresse: avocat.adresse },
 				factures,
 				decompte,
-				horsDecompte: [],
+				horsDecompte:
+					horsDuDossier.length === 0
+						? []
+						: [
+								'Ne figurent pas dans ce décompte, faute d’être dans ce dossier :',
+								...horsDuDossier.map(
+									(f) =>
+										`- facture ${f.reference} : reste dû ${versEuros(depuisCentimes(f.resteDu))} €`
+								),
+								''
+							],
 				etapesAccomplies: [
 					...envois
 						.filter((e) => e.etat === 'PARTI' && e.partiLe !== undefined)
@@ -431,12 +476,71 @@ export async function composer(
 			break;
 		}
 	}
-	const chiffreUnDecompte =
-		choix.modele === 'RELANCE_OFFICIELLE' ||
-		choix.modele === 'ACCORD_ECHEANCIER' ||
-		choix.modele === 'DECLARATION_CREANCE' ||
-		choix.modele === 'TRANSMISSION_AVOCAT';
-	return { composition, decompteId: chiffreUnDecompte && dernier !== null ? dernier._id : null };
+	const chiffre = chiffreUnDecompte(choix.modele);
+	/*
+	  ⚠️ CE QUI EMPÊCHE LE CALCUL EST DIT AVEC CE QUI MANQUE AU COURRIER. Le
+	  gabarit sait qu'il n'a pas de chiffre ; le calcul sait pourquoi (une facture
+	  sans date d'exigibilité, un semestre de taux absent).
+	*/
+	if (!composition.ok && chiffre && jour.refus !== null) {
+		composition = { ok: false, manques: [...composition.manques, jour.refus.detail] };
+	}
+	// Une facture qu'une déclaration ne porte pas est perdue : elle ne part pas sans elles.
+	if (choix.modele === 'DECLARATION_CREANCE' && horsDuDossier.length > 0) {
+		const manque = `${horsDuDossier.length > 1 ? 'les factures' : 'la facture'} ${horsDuDossier
+			.map((f) => `${f.reference} (${versEuros(depuisCentimes(f.resteDu))} €)`)
+			.join(
+				', '
+			)} de ce client, qui ne ${horsDuDossier.length > 1 ? 'sont' : 'est'} pas dans ce dossier : ce qui n’est pas déclaré est perdu. Ajoutez-${horsDuDossier.length > 1 ? 'les' : 'la'} au dossier (sa fiche)`;
+		composition = composition.ok
+			? { ok: false, manques: [manque] }
+			: { ok: false, manques: [...composition.manques, manque] };
+	}
+	return { composition, decompteId: chiffre && dernier !== null ? dernier._id : null };
+}
+
+/** Ce que le journal dit du document qui a daté le montant. */
+const POUR_LE_MODELE: Partial<Record<ChoixCourrier['modele'], string>> = {
+	RELANCE_OFFICIELLE: 'la lettre de relance officielle',
+	ACCORD_ECHEANCIER: 'l’accord d’échéancier',
+	DECLARATION_CREANCE: 'la déclaration de ce qu’il vous doit',
+	TRANSMISSION_AVOCAT: 'la lettre à votre avocat'
+};
+
+/** Les modèles qui réclament un chiffre : ils le datent quand ils se préparent. */
+function chiffreUnDecompte(modele: ChoixCourrier['modele']): boolean {
+	return (
+		modele === 'RELANCE_OFFICIELLE' ||
+		modele === 'ACCORD_ECHEANCIER' ||
+		modele === 'DECLARATION_CREANCE' ||
+		modele === 'TRANSMISSION_AVOCAT'
+	);
+}
+
+/**
+ * DATER LE MONTANT AVANT DE COMPOSER — pour un courrier qui en réclame un.
+ *
+ * ⚠️ EXPORTÉE POUR LE PILOTE, qui prépare la lettre officielle sur le même
+ * chemin. Un calcul qui ne se fait pas n'écrit rien : la composition qui suit
+ * dira ce qui manque.
+ */
+export async function preparerLeMontant(
+	ctx: MutationCtx,
+	creanceId: Id<'creances'>,
+	choix: ChoixCourrier,
+	aujourdHui: string,
+	par: { readonly auteur: 'GERANT' | 'MACHINE'; readonly userId?: string }
+): Promise<void> {
+	if (!chiffreUnDecompte(choix.modele)) return;
+	const creance = await ctx.db.get(creanceId);
+	if (creance === null) return;
+	await daterLeDecompte(ctx, {
+		creance,
+		aujourdHui,
+		pour: POUR_LE_MODELE[choix.modele] ?? TITRE_MODELE[choix.modele],
+		auteur: par.auteur,
+		...(par.userId === undefined ? {} : { userId: par.userId })
+	});
 }
 
 function aujourdHuiIso(): string {
@@ -462,6 +566,10 @@ export const preparer = authedMutation({
 	returns: v.id('envois'),
 	handler: async (ctx, { creanceId, choix }): Promise<Id<'envois'>> => {
 		const { organizationId, user } = await getUserOrg(ctx);
+		await preparerLeMontant(ctx, creanceId, choix, aujourdHuiIso(), {
+			auteur: 'GERANT',
+			userId: user._id
+		});
 		const { composition, decompteId } = await composer(
 			ctx,
 			organizationId,
@@ -512,7 +620,19 @@ export const valider = authedMutation({
 			throw new ConvexError('Ce courrier n’attend plus de validation.');
 		const choix = JSON.parse(envoi.choix) as ChoixCourrier;
 		const aujourdHui = aujourdHuiIso();
-		const { composition } = await composer(ctx, organizationId, envoi.creanceId, choix, aujourdHui);
+		// Validé un autre jour, ou après un règlement : le montant se date de nouveau,
+		// et le texte changé revient à relire.
+		await preparerLeMontant(ctx, envoi.creanceId, choix, aujourdHui, {
+			auteur: 'GERANT',
+			userId: user._id
+		});
+		const { composition, decompteId } = await composer(
+			ctx,
+			organizationId,
+			envoi.creanceId,
+			choix,
+			aujourdHui
+		);
 		if (!composition.ok) {
 			throw new ConvexError(
 				`Ce courrier ne peut plus partir : ${composition.manques.join(' ; ')}.`
@@ -523,7 +643,8 @@ export const valider = authedMutation({
 				corps: composition.corps,
 				objet: composition.objet,
 				resume: [...composition.resume],
-				destinataire: composition.destinataire
+				destinataire: composition.destinataire,
+				...(decompteId === null ? {} : { decompteId })
 			});
 			return 'A_RELIRE';
 		}
@@ -751,6 +872,10 @@ export const preparerEnLot = authedMutation({
 				continue;
 			}
 
+			await preparerLeMontant(ctx, creanceId, choix, aujourdHui, {
+				auteur: 'GERANT',
+				userId: user._id
+			});
 			const { composition, decompteId } = await composer(
 				ctx,
 				organizationId,

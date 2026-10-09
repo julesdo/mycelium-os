@@ -127,10 +127,10 @@ export function composerDeclaration(e: EntreesDeclaration): Composition {
 	const veille = p?.dateJugement === undefined ? null : ajouterJours(p.dateJugement, -1);
 	const decompte = e.decompte;
 	if (decompte === null) {
-		manques.push('un calcul arrêté de ce qu’il vous doit au jour du jugement');
+		manques.push('le calcul de ce qu’il vous doit à la veille du jugement');
 	} else if (veille !== null && decompte.arreteAu !== veille) {
 		manques.push(
-			`un calcul arrêté à la veille du jugement, le ${date(veille)} : le dernier calcul est arrêté au ${date(decompte.arreteAu)}. Arrêtez un nouveau calcul : il s’arrêtera de lui-même à cette date`
+			`le calcul à la veille du jugement, le ${date(veille)} : celui-ci s’arrête au ${date(decompte.arreteAu)}`
 		);
 	}
 	const ville = commune(e.creancier.adresse);

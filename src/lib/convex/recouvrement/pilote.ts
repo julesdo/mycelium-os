@@ -15,7 +15,7 @@ import {
 import { resend, assertResendApiKey } from '../emails/resend';
 import { relanceHtml } from '../emails/modeles/relance';
 import { requireEnv } from '../env';
-import { composer, type ChoixCourrier } from './envois';
+import { composer, preparerLeMontant, type ChoixCourrier } from './envois';
 import { paroleDuDossier, pauseDuDossier, planDuDossier } from './plan';
 import { promesseACiter } from '../../verticales/recouvrement/parole';
 import { resteDu } from './lecture';
@@ -679,8 +679,9 @@ type Composee =
  * n'écrit aucune phrase à lui.
  *
  * ⚠️ ET CE QUI MANQUE POUR ENVOYER EST COMPTÉ ICI, PAS DÉCOUVERT À L'ENVOI :
- * l'adresse du client, la vôtre pour les réponses, et pour la lettre officielle
- * un décompte arrêté (les trois points que seul le gérant connaît).
+ * l'adresse du client et la vôtre pour les réponses. La lettre officielle date
+ * elle-même le montant qu'elle réclame (`preparerLeMontant`, 09/10/2026) : elle
+ * n'attend plus que le gérant « arrête » un décompte.
  */
 async function composerEtape(
 	ctx: MutationCtx,
@@ -714,6 +715,12 @@ async function composerEtape(
 				profil?.iban !== undefined && profil.iban !== '' ? 'VIREMENT_IBAN' : 'SELON_FACTURES',
 			reserveIndemnisationComplementaire: false
 		};
+		// La lettre date elle-même le montant qu'elle réclame (09/10/2026) : plus
+		// d'arrêt à attendre du gérant. Seulement quand rien d'autre ne manque, pour
+		// ne pas dater un chiffre qu'aucune lettre ne portera.
+		if (manques.length === 0) {
+			await preparerLeMontant(ctx, creance._id, choix, aujourdHui, { auteur: 'MACHINE' });
+		}
 		const { composition, decompteId } = await composer(
 			ctx,
 			organizationId,
@@ -805,17 +812,15 @@ async function signalerCeQuiManque(
 ): Promise<void> {
 	/*
 	  ⚠️ LA NOTIFICATION MÈNE LÀ OÙ ÇA SE RÉPARE (08/10/2026) : la fiche du client
-	  pour son adresse, votre compte pour la vôtre, l'arrêt pour un décompte. Elle
-	  menait au dossier, qui ne permet de réparer aucun des trois.
+	  pour son adresse, votre compte pour la vôtre ; le dossier pour un montant qui
+	  ne se calcule pas, puisque c'est lui qui en dit la raison.
 	*/
 	const lien =
 		debiteurId !== null && manques.some((manque) => manque.includes('(sa fiche)'))
 			? `/app/clients/${debiteurId}`
 			: manques.some((manque) => manque.includes('(Mon compte'))
 				? '/app/compte'
-				: manques.some((manque) => manque.includes('décompte'))
-					? `/app/arret/${creanceId}`
-					: `/app/dossier/${creanceId}`;
+				: `/app/dossier/${creanceId}`;
 	const message = `Pour ${NOM_DE_L_ETAPE[etape]} de ${client}, il manque ${manques.join(', ')}.`;
 	const deja = await ctx.db
 		.query('notifications')

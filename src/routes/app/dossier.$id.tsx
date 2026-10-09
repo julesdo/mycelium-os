@@ -940,8 +940,8 @@ function PageCreance() {
 				`${typeof window === 'undefined' ? '' : window.location.origin}/p/${jeton}`,
 			enCours: lienEnCours,
 			erreur: erreurLien,
-			onOuvrir: (decompteId: string) =>
-				void avecLeLien(() => ouvrirLien({ decompteId: decompteId as Id<'decomptes'> })),
+			// Le montant se date à l'ouverture : plus de décompte à arrêter d'abord.
+			onOuvrir: () => void avecLeLien(() => ouvrirLien({ creanceId })),
 			onFermer: (jeton: string) => void avecLeLien(() => fermerLien({ jeton }))
 		},
 		// Le plus récent d'abord : c'est celui qu'on vient relire. Voir `arretes`.

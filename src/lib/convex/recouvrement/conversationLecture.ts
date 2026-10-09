@@ -146,7 +146,6 @@ const vPourGestes = v.object({
 	relanceProgrammee: v.boolean(),
 	emailConnu: v.union(v.string(), v.null()),
 	contestationDeclaree: v.boolean(),
-	decompteArrete: v.boolean(),
 	ibanConnu: v.boolean(),
 	remiseEnCours: v.boolean(),
 	arretable: v.boolean(),
@@ -165,7 +164,6 @@ interface ContexteLu {
 		relanceProgrammee: boolean;
 		emailConnu: string | null;
 		contestationDeclaree: boolean;
-		decompteArrete: boolean;
 		ibanConnu: boolean;
 		remiseEnCours: boolean;
 		arretable: boolean;
@@ -470,7 +468,6 @@ export const contexteDuDossier = internalQuery({
 				relanceProgrammee: programmee !== undefined,
 				emailConnu: debiteur?.email ?? null,
 				contestationDeclaree,
-				decompteArrete: dernierArrete !== undefined,
 				ibanConnu,
 				remiseEnCours,
 				arretable,

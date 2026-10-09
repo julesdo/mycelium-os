@@ -12,7 +12,6 @@ const ETAT: EtatPourGestes = {
 	relanceProgrammee: false,
 	emailConnu: null,
 	contestationDeclaree: false,
-	decompteArrete: false,
 	ibanConnu: true,
 	remiseEnCours: false,
 	arretable: true
@@ -69,14 +68,15 @@ describe('les gestes de Plume', () => {
 		).toEqual(['RELANCER']);
 	});
 
-	it('n’ouvre la page de paiement et la remise qu’avec un décompte arrêté', () => {
-		expect(lireGestes([brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL')], ETAT)).toEqual([]);
+	it('ouvre la page de paiement et la remise sans décompte à arrêter, et ne propose plus d’arrêter', () => {
 		expect(
-			lireGestes([brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL')], {
-				...ETAT,
-				decompteArrete: true
-			}).map((g) => g.genre)
+			lireGestes([brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL'), brut('ARRETER_DECOMPTE')], ETAT).map(
+				(g) => g.genre
+			)
 		).toEqual(['LIEN_PAIEMENT', 'REMISE_CONSEIL']);
+		expect(
+			lireGestes([brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL')], { ...ETAT, arretable: false })
+		).toEqual([]);
 	});
 
 	it('décrit chaque geste en toutes lettres, sans promettre ce qu’il ne fait pas', () => {

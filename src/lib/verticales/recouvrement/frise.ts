@@ -59,6 +59,7 @@ export const INTITULE_DU_FAIT: Readonly<Record<string, string>> = {
 	GESTE_REMETTRE_AU_PILOTE: 'Vous avez remis ce client au pilote',
 	GESTE_RETENIR: 'Vous avez retenu une relance',
 	DECOMPTE_ARRETE: 'Un décompte a été arrêté',
+	DECOMPTE_DATE: 'Le montant réclamé a été daté',
 	FACTURE_RATTACHEE: 'Une facture a rejoint le dossier',
 	ORDRE_IMPUTATION_CHOISI: 'Vous avez choisi ce que remboursent les paiements reçus',
 	PROPOSITION_RETENUE: 'Vous avez retenu une proposition du logiciel',

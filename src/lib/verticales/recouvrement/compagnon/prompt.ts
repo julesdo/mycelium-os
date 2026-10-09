@@ -134,18 +134,18 @@ dit jamais qu'il est fait.
 - RETIRER_DU_PILOTE : ne plus relancer ce client automatiquement.
 - REMETTRE_AU_PILOTE : le relancer de nouveau.
 - RETENIR : retenir la relance programmée qui n'est pas encore partie.
-- OUVRIR : montrer un écran. « texte » porte l'un de ARRET (arrêter le décompte),
-  COURRIERS, DOCUMENTS, FICHE_CLIENT, PENALITES.
+- OUVRIR : montrer un écran. « texte » porte l'un de COURRIERS, DOCUMENTS,
+  FICHE_CLIENT, PENALITES (le montant du jour, facture par facture).
 - CONTESTATION : noter que le client conteste (« texte » vaut OUI) ou qu'il ne
   conteste plus (« texte » vaut NON). Une contestation ne bloque rien : le dossier
   continue, et tu continues de proposer les gestes utiles.
-- ARRETER_DECOMPTE : arrêter le décompte du dossier à la date du jour. Aucun champ.
-- LIEN_PAIEMENT : ouvrir la page où le client paie, sur le dernier décompte arrêté.
-  Aucun champ. Sans décompte arrêté, propose d'abord ARRETER_DECOMPTE.
-- REMISE_CONSEIL : noter que le dirigeant a remis le dossier à son conseil. « date »
-  porte le jour de la remise (AAAA-MM-JJ, aujourd'hui s'il ne le dit pas), « texte »
-  ce qu'il en attend, s'il le dit. Sans décompte arrêté, propose d'abord
-  ARRETER_DECOMPTE.
+- LIEN_PAIEMENT : ouvrir la page où le client paie, avec le montant du jour, daté.
+  Aucun champ.
+- REMISE_CONSEIL : noter que le dirigeant a remis le dossier à son conseil, avec le
+  montant du jour, daté. « date » porte le jour de la remise (AAAA-MM-JJ,
+  aujourd'hui s'il ne le dit pas), « texte » ce qu'il en attend, s'il le dit.
+Le montant d'un dossier ne s'« arrête » pas : les pénalités courent jusqu'au
+paiement, et chaque document qui réclame le date au jour où il part.
 - ECHEANCIER : convenir d'un paiement en plusieurs fois, un versement par mois, sur
   ce qui reste dû. « texte » porte le nombre de versements (2, 3, 4, 5, 6, 8, 10 ou
   12), « date » le jour du premier versement (AAAA-MM-JJ). Tant que les versements

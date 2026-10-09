@@ -7,26 +7,11 @@ import { getUserOrg } from '../lib/auth';
 import { depuisCentimes, versEuros } from '../../socle/montants';
 import { dateDuCalendrier, jourEnClair } from '../../verticales/recouvrement/compagnon/gestes';
 import { preparerProchaineRelance } from './pilote';
-import { arreterLeDecompte } from './arret';
-import { ouvrirLaPageDePaiement } from './paiement';
+import { daterLeDecompte } from './decompte';
+import { ouvrirLaPageDuJour } from './paiement';
 import { declarerLaRemise } from './conseil';
 import { apresUneParole, convenirLEcheancier } from './parole';
 import { classerLeDossier } from './classement';
-
-/** Le dernier décompte arrêté d'un dossier, ou `null`. */
-async function dernierDecompte(
-	ctx: MutationCtx,
-	organizationId: Id<'organizations'>,
-	creanceId: Id<'creances'>
-): Promise<Doc<'decomptes'> | null> {
-	const decomptes = (
-		await ctx.db
-			.query('decomptes')
-			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-			.collect()
-	).filter((d) => d.organizationId === organizationId);
-	return decomptes.sort((a, b) => b.arreteAu.localeCompare(a.arreteAu))[0] ?? null;
-}
 
 /**
  * LES GESTES DE PLUME, CONFIRMÉS PAR LE GÉRANT (08/10/2026).
@@ -228,32 +213,36 @@ async function faireLeGeste(
 				: 'C’est noté : il ne conteste plus.';
 		}
 		case 'ARRETER_DECOMPTE': {
-			const { total, decompteId } = await arreterLeDecompte(ctx, {
-				organizationId,
-				userId,
-				creanceId: creance._id,
-				convention: 'ACT_365',
-				prevol: { AVOIR_NON_RAPPROCHE: 'ECARTE', REGLEMENT_NON_IMPORTE: 'ECARTE' },
-				abandonsAssumes: false
+			// Un geste proposé avant le 09/10/2026 : le montant se date, il ne s'« arrête » plus.
+			const date = await daterLeDecompte(ctx, {
+				creance,
+				aujourdHui,
+				pour: 'votre demande à Plume',
+				auteur: 'GERANT',
+				userId
 			});
+			if ('refus' in date) throw new ConvexError(date.refus);
 			return {
-				resultat: `Décompte arrêté à ${versEuros(depuisCentimes(total))} €. Il ne se modifie plus.`,
-				cible: decompteId
+				resultat: `Montant daté à ${versEuros(depuisCentimes(date.decompte.total))} €. Les pénalités continuent de courir jusqu’au paiement.`,
+				cible: date.decompte._id
 			};
 		}
 		case 'LIEN_PAIEMENT': {
-			const decompte = await dernierDecompte(ctx, organizationId, creance._id);
-			if (decompte === null) {
-				throw new ConvexError('Aucun décompte n’est arrêté : demandez-moi d’abord de l’arrêter.');
-			}
-			const jeton = await ouvrirLaPageDePaiement(ctx, organizationId, userId, decompte._id);
+			// Le montant se date à l'ouverture : plus de décompte à arrêter d'abord.
+			const jeton = await ouvrirLaPageDuJour(ctx, organizationId, userId, creance._id);
 			return { resultat: 'Sa page de paiement est ouverte.', cible: jeton };
 		}
 		case 'REMISE_CONSEIL': {
-			const decompte = await dernierDecompte(ctx, organizationId, creance._id);
-			if (decompte === null) {
-				throw new ConvexError('Aucun décompte n’est arrêté : demandez-moi d’abord de l’arrêter.');
-			}
+			// Le dossier remis emporte le montant du jour, daté.
+			const date = await daterLeDecompte(ctx, {
+				creance,
+				aujourdHui,
+				pour: 'la remise à votre conseil',
+				auteur: 'GERANT',
+				userId
+			});
+			if ('refus' in date) throw new ConvexError(date.refus);
+			const decompte = date.decompte;
 			const remisLe =
 				geste.date !== undefined && dateDuCalendrier(geste.date) ? geste.date : aujourdHui;
 			await declarerLaRemise(ctx, organizationId, {

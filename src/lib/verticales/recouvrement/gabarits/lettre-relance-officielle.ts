@@ -83,7 +83,7 @@ export function composerLettreRelance(e: EntreesRelance): Composition {
 	const decompte = e.decompte;
 	if (decompte === null) {
 		manques.push(
-			'un calcul arrêté de ce qu’il vous doit : la lettre réclame ce chiffre-là, et aucun autre'
+			'le calcul de ce qu’il vous doit : la lettre réclame ce chiffre-là, et aucun autre'
 		);
 	} else {
 		// Contrôle bloquant : chaque facture est échue à l'arrêté et reste due.
@@ -94,7 +94,7 @@ export function composerLettreRelance(e: EntreesRelance): Composition {
 				f.resteDu <= 0n
 			) {
 				manques.push(
-					`la facture ${f.reference} n’était pas en retard au ${date(decompte.arreteAu)} : retirez-la du dossier ou arrêtez un nouveau calcul`
+					`la facture ${f.reference} n’était pas en retard au ${date(decompte.arreteAu)} : retirez-la du dossier, ou attendez qu’elle le soit`
 				);
 			}
 			if (!f.exigibiliteLueSurLaFacture) {
@@ -107,14 +107,14 @@ export function composerLettreRelance(e: EntreesRelance): Composition {
 		const somme = e.factures.reduce((t, f) => t + f.resteDu, 0n);
 		if (somme !== decompte.principal) {
 			manques.push(
-				`un règlement a changé ce qui reste dû depuis le calcul du ${date(decompte.arreteAu)} : arrêtez un nouveau calcul`
+				`un règlement a changé ce qui reste dû depuis le calcul du ${date(decompte.arreteAu)} : préparez de nouveau le courrier, le montant se recalcule`
 			);
 		}
 		const unitaire = exiger(PARAMETRES.indemniteForfaitaire);
 		for (const l of decompte.lignes) {
 			if (l.indemnite !== 0n && l.indemnite !== unitaire) {
 				manques.push(
-					`les frais de recouvrement de la facture ${l.reference} ne correspondent plus au montant en vigueur : arrêtez un nouveau calcul`
+					`les frais de recouvrement de la facture ${l.reference} ne correspondent plus au montant en vigueur : préparez de nouveau le courrier`
 				);
 			}
 		}
