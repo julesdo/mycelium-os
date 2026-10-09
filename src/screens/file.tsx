@@ -24,7 +24,6 @@ import {
 	Lien,
 	PageEcran,
 	PastilleDeRappel,
-	PiloteEnDirect,
 	PliDeLaFile,
 	SectionEcran,
 	SectionsDepliables,
@@ -42,7 +41,6 @@ import {
 	type FamilleRangee,
 	type LigneDAnciennete,
 	type Lecture,
-	type PiloteAffiche,
 	type PartsDues,
 	type PropositionDeRangee,
 	type TacheVeilleur,
@@ -383,13 +381,12 @@ export interface FileAffichee {
 	readonly nonLues?: number;
 	/**
 	 * LE PILOTE, EN DIRECT : ce qu'il fait maintenant, ou ce qu'il vient de faire.
-	 * Absent tant que la lecture n'est pas arrivée.
+	 *
+	 * ⚠️ UNE FENTE, COMPOSÉE PAR LA ROUTE (`app/pilote-du-jour.tsx`), ET PAS SES
+	 * DONNÉES (09/10/2026) : ses étapes se cochent toutes les 0,7 s, et lues ici
+	 * elles faisaient redessiner tout l'écran à chaque coche.
 	 */
-	readonly pilote?: PiloteAffiche;
-	/** Laisser le pilote relancer seul, ou le couper (un administrateur). */
-	readonly onActiverRelances?: (actif: boolean) => void;
-	/** Retenir une relance programmée. */
-	readonly onRetenirRelance?: (envoiId: string) => void;
+	readonly pilote?: ReactNode;
 	/**
 	 * CE QUE LE LOGICIEL A SUPPOSÉ, faute de donnée — et c'est UNE AUTRE CHOSE
 	 * qu'un angle mort.
@@ -459,7 +456,9 @@ export interface FileAffichee {
  */
 export function EcranFile({ donnees }: { donnees: Lecture<FileAffichee> }) {
 	if (donnees.etat !== 'pret') {
-		return <PageEcran entete={{ genre: 'onglet', titre: TITRE_ECRAN.aujourdhui }} etat={donnees.etat} />;
+		return (
+			<PageEcran entete={{ genre: 'onglet', titre: TITRE_ECRAN.aujourdhui }} etat={donnees.etat} />
+		);
 	}
 
 	return <FilePrete valeur={donnees.valeur} />;
@@ -522,8 +521,6 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		travaux,
 		nonLues,
 		pilote,
-		onActiverRelances,
-		onRetenirRelance,
 		hypotheses,
 		anglesMorts,
 		annonce,
@@ -647,14 +644,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					  passe avant ce qu'on demande au gérant, parce qu'il dit d'abord que le
 					  travail se fait.
 					*/}
-					{pilote === undefined ? null : (
-						<PiloteEnDirect
-							pilote={pilote}
-							aujourdHui={aujourdHui}
-							{...(onActiverRelances === undefined ? {} : { onActiver: onActiverRelances })}
-							{...(onRetenirRelance === undefined ? {} : { onRetenir: onRetenirRelance })}
-						/>
-					)}
+					{pilote}
 
 					{depotOuvert ? (
 						<ZoneDepot

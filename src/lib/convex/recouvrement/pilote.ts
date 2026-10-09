@@ -1492,3 +1492,66 @@ export const etat = authedQuery({
 		};
 	}
 });
+
+/**
+ * LES RELANCES PARTENT-ELLES SEULES ? — lu seul, sans l'état entier du pilote.
+ *
+ * ⚠️ UNE LECTURE ÉTROITE, ET C'EST UNE MESURE (09/10/2026). La page d'un dossier
+ * ne voulait que ce booléen et lisait `etat`, qui change à chaque étape cochée
+ * de chaque travail du pilote (toutes les 0,7 s quand il travaille) : la page
+ * entière se redessinait pour une coche qu'elle n'affiche pas. Celle-ci ne lit
+ * que la fiche du pilote.
+ */
+export const relancesAutomatiques = authedQuery({
+	args: {},
+	returns: v.boolean(),
+	handler: async (ctx): Promise<boolean> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const pilote = await ctx.db
+			.query('pilotes')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+		return pilote?.envoiAutomatique === true;
+	}
+});
+
+/**
+ * L'HUMEUR DE PLUME DANS LA BARRE — et le compte des dossiers à démarrer.
+ *
+ * ⚠️ ÉTROITE, COMME `relancesAutomatiques` (09/10/2026). Le bouton de Plume lisait
+ * `etat`, dont le contenu change à chaque étape cochée : la barre du bas entière
+ * se redessinait toutes les 0,7 s pendant un travail, pour une humeur qui ne
+ * change qu'au début et à la fin. Même règle que l'ancienne lecture : il
+ * travaille si un travail court ; il demande l'attention si le dernier a échoué
+ * ou si des dossiers attendent d'être démarrés.
+ */
+export const humeurDePlume = authedQuery({
+	args: {},
+	returns: v.object({
+		humeur: v.union(v.literal('travaille'), v.literal('attention'), v.literal('repos')),
+		aDemarrer: v.number()
+	}),
+	handler: async (
+		ctx
+	): Promise<{ humeur: 'travaille' | 'attention' | 'repos'; aDemarrer: number }> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const recents = await ctx.db
+			.query('travauxPilote')
+			.withIndex('by_org_and_commence', (q) => q.eq('organizationId', organizationId))
+			.order('desc')
+			.take(8);
+		const prepares = await ctx.db
+			.query('creances')
+			.withIndex('by_org_and_aDemarrer', (q) =>
+				q.eq('organizationId', organizationId).eq('aDemarrer', true)
+			)
+			.take(500);
+		const aDemarrer = prepares.filter((c) => c.statut !== 'CLOSE').length;
+		const humeur = recents.some((t) => t.etat === 'EN_COURS')
+			? 'travaille'
+			: recents.find((t) => t.etat !== 'EN_ATTENTE')?.etat === 'ECHEC' || aDemarrer > 0
+				? 'attention'
+				: 'repos';
+		return { humeur, aDemarrer };
+	}
+});

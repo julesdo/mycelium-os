@@ -57,14 +57,10 @@ function PlumeAvecEtat({
 	readonly children: (bouton: ReactNode) => ReactNode;
 	readonly auRepos: boolean;
 }) {
-	const pilote = useQuery(api.recouvrement.pilote.etat, auRepos ? 'skip' : {});
-	const travaux = pilote?.travaux ?? [];
-	const aDemarrer = pilote?.aDemarrer ?? 0;
-	const humeur: HumeurPlume = travaux.some((t) => t.etat === 'EN_COURS')
-		? 'travaille'
-		: travaux.find((t) => t.etat !== 'EN_ATTENTE')?.etat === 'ECHEC' || aDemarrer > 0
-			? 'attention'
-			: 'repos';
+	// L'humeur seule, pas l'état entier : il change à chaque coche d'un travail.
+	const etat = useQuery(api.recouvrement.pilote.humeurDePlume, auRepos ? 'skip' : {});
+	const aDemarrer = etat?.aDemarrer ?? 0;
+	const humeur: HumeurPlume = etat?.humeur ?? 'repos';
 	return (
 		<Plume humeur={humeur} compte={aDemarrer}>
 			{children}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
 import { useQuery } from '../../app/donnees';
+import { PiloteDuJour } from '../../app/pilote-du-jour';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import {
@@ -246,10 +247,6 @@ function File() {
 	const depots = useQuery(api.recouvrement.depotMutations.listerImports, { limite: 5 });
 	/** Le compte de la cloche : ce que la boîte de réception n'a pas encore montré. */
 	const nonLues = useQuery(api.notifications.getUnreadCount, {});
-	/** Le pilote en direct : ce qu'il fait, étape par étape, et sa dernière veille. */
-	const pilote = useQuery(api.recouvrement.pilote.etat, {});
-	const activerRelances = useMutation(api.recouvrement.pilote.activerRelances);
-	const retenirRelance = useMutation(api.recouvrement.pilote.retenir);
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	/**
 	 * L'ÉTAPE DE CHAQUE DOSSIER, pour savoir à qui l'on peut encore écrire : la
@@ -984,36 +981,8 @@ function File() {
 		// `undefined` est le chargement : la cloche reste sans compte, plutôt que de
 		// dire « rien de nouveau » le temps d'un aller-retour.
 		...(nonLues === undefined ? {} : { nonLues }),
-		...(pilote === undefined
-			? {}
-			: {
-					onActiverRelances: (actif: boolean) => void activerRelances({ actif }),
-					onRetenirRelance: (envoiId: string) =>
-						void retenirRelance({ envoiId: envoiId as Id<'envois'> }),
-					pilote: {
-						envoiAutomatique: pilote.envoiAutomatique,
-						aDemarrer: pilote.aDemarrer,
-						activeLe: pilote.activeLe,
-						activeParVous: pilote.activeParVous,
-						peutActiver: pilote.peutActiver,
-						programmes: pilote.programmes.map((p) => ({
-							envoiId: p.envoiId,
-							creanceId: p.creanceId,
-							client: p.client,
-							etape: p.etape,
-							partiraLe: p.partiraLe
-						})),
-						derniereVeille: pilote.derniereVeille,
-						travaux: pilote.travaux.map((t) => ({
-							id: t.id,
-							titre: t.titre,
-							etapes: t.etapes,
-							etat: t.etat,
-							bilan: t.bilan,
-							termineLe: t.termineLe
-						}))
-					}
-				}),
+		// Le pilote porte son propre abonnement : ses coches ne redessinent que lui.
+		pilote: <PiloteDuJour aujourdHui={aujourdHui} />,
 		/**
 		 * ⚠️ LES DEUX SE RENDENT À PLAT, ET C'EST UNE RÈGLE D'AUDITABILITÉ. Elles
 		 * vivaient derrière une puce de portée qu'il fallait aller chercher :

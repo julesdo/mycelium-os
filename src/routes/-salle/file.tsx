@@ -12,6 +12,7 @@ import {
 	DeclencheurRecherche,
 	LogoConnexion,
 	PictoLogiciel,
+	PiloteEnDirect,
 	PileDeConnexions,
 	travauxDuVeilleur,
 	type TacheVeilleur
@@ -150,7 +151,8 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 		famille: 'ARGENT',
 		debiteur: 'Ateliers Martin',
 		destination: { vers: '/app/dossier/$id', parametres: { id: CREANCE_MARTIN } },
-		obstacle: 'Vos conditions générales prévoient un taux de pénalités : il changerait les 1 240,33 € comptés à ce jour.',
+		obstacle:
+			'Vos conditions générales prévoient un taux de pénalités : il changerait les 1 240,33 € comptés à ce jour.',
 		urgence: 'HAUTE',
 		montant: 1_248_033n,
 		/*
@@ -446,61 +448,68 @@ const GARNIE: FileAffichee = {
 	rangees: RANGEES_DEMO,
 	travaux: TRAVAUX_DEMO,
 	nonLues: 2,
-	onActiverRelances: () => undefined,
-	onRetenirRelance: () => undefined,
 	// Le pilote au milieu d'une relecture : deux étapes cochées, une en cours.
-	pilote: {
-		// Relances activées : deux partent dans l'heure, chacune retenable.
-		envoiAutomatique: true,
-		peutActiver: true,
-		programmes: [
-			{
-				envoiId: 'envoi-demo-durand',
-				client: 'Fournitures Durand',
-				etape: 'Rappel',
-				partiraLe: Date.UTC(2026, 8, 17, 8, 0)
-			},
-			{
-				envoiId: 'envoi-demo-vidal',
-				client: 'Transports Vidal',
-				etape: 'Deuxième rappel',
-				partiraLe: Date.UTC(2026, 8, 17, 8, 15)
-			}
-		],
-		derniereVeille: Date.UTC(2026, 8, 17, 12, 32),
-		travaux: [
-			{
-				id: 'travail-demo',
-				titre: 'Relit votre dépôt',
-				etapes: [
-					{ libelle: 'Lit 198 factures et 40 règlements', faite: true },
-					{ libelle: 'Range par client : 23 clients', faite: true },
-					{ libelle: 'Repère 17 factures en retard', faite: false },
-					{ libelle: 'Met à jour les dates limites pour agir', faite: false }
+	pilote: (
+		<PiloteEnDirect
+			aujourdHui={AUJOURDHUI_DEMO}
+			onActiver={() => undefined}
+			onRetenir={() => undefined}
+			pilote={{
+				// Relances activées : deux partent dans l'heure, chacune retenable.
+				envoiAutomatique: true,
+				peutActiver: true,
+				programmes: [
+					{
+						envoiId: 'envoi-demo-durand',
+						client: 'Fournitures Durand',
+						etape: 'Rappel',
+						partiraLe: Date.UTC(2026, 8, 17, 8, 0)
+					},
+					{
+						envoiId: 'envoi-demo-vidal',
+						client: 'Transports Vidal',
+						etape: 'Deuxième rappel',
+						partiraLe: Date.UTC(2026, 8, 17, 8, 15)
+					}
 				],
-				etat: 'EN_COURS',
-				bilan: '17 factures en retard chez 9 clients.',
-				termineLe: null
-			},
-			// Ce qu'il a fait avant : la liste qu'on lit quand il ne travaille pas.
-			{
-				id: 'travail-demo-dossiers',
-				titre: 'Ouvre les dossiers de vos clients en retard',
-				etapes: [{ libelle: 'Ouvre le dossier de Fournitures Durand : 3 factures', faite: true }],
-				etat: 'FAIT',
-				bilan: '3 dossiers ouverts.',
-				termineLe: Date.UTC(2026, 8, 17, 9, 14)
-			},
-			{
-				id: 'travail-demo-releve',
-				titre: 'Relit votre dépôt',
-				etapes: [{ libelle: 'Lit 42 factures', faite: true }],
-				etat: 'FAIT',
-				bilan: '6 factures en retard chez 3 clients.',
-				termineLe: Date.UTC(2026, 8, 17, 9, 13)
-			}
-		]
-	},
+				derniereVeille: Date.UTC(2026, 8, 17, 12, 32),
+				travaux: [
+					{
+						id: 'travail-demo',
+						titre: 'Relit votre dépôt',
+						etapes: [
+							{ libelle: 'Lit 198 factures et 40 règlements', faite: true },
+							{ libelle: 'Range par client : 23 clients', faite: true },
+							{ libelle: 'Repère 17 factures en retard', faite: false },
+							{ libelle: 'Met à jour les dates limites pour agir', faite: false }
+						],
+						etat: 'EN_COURS',
+						bilan: '17 factures en retard chez 9 clients.',
+						termineLe: null
+					},
+					// Ce qu'il a fait avant : la liste qu'on lit quand il ne travaille pas.
+					{
+						id: 'travail-demo-dossiers',
+						titre: 'Ouvre les dossiers de vos clients en retard',
+						etapes: [
+							{ libelle: 'Ouvre le dossier de Fournitures Durand : 3 factures', faite: true }
+						],
+						etat: 'FAIT',
+						bilan: '3 dossiers ouverts.',
+						termineLe: Date.UTC(2026, 8, 17, 9, 14)
+					},
+					{
+						id: 'travail-demo-releve',
+						titre: 'Relit votre dépôt',
+						etapes: [{ libelle: 'Lit 42 factures', faite: true }],
+						etat: 'FAIT',
+						bilan: '6 factures en retard chez 3 clients.',
+						termineLe: Date.UTC(2026, 8, 17, 9, 13)
+					}
+				]
+			}}
+		/>
+	),
 	hypotheses: HYPOTHESES_DEMO,
 	anglesMorts: ANGLES_MORTS_DEMO,
 	/**

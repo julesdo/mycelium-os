@@ -149,7 +149,8 @@ function PageCreance() {
 	const parole = useQuery(api.recouvrement.parole.duDossier, { creanceId });
 	const gestesParole = useGestesDeDossier();
 	/** Le pilote : s'il relance seul, la suite du plan le dit (« le pilote l'envoie »). */
-	const pilote = useQuery(api.recouvrement.pilote.etat, {});
+	// Le seul booléen que la page lit : l'état entier change à chaque coche du pilote.
+	const relancesAutomatiques = useQuery(api.recouvrement.pilote.relancesAutomatiques, {});
 	const retenirRelance = useMutation(api.recouvrement.pilote.retenir);
 	const preparation = useQuery(api.recouvrement.arret.preparerArret, { creanceId });
 	const suivi = useQuery(api.recouvrement.apresProcedure.suiviDeLaCreance, { creanceId });
@@ -958,7 +959,7 @@ function PageCreance() {
 						onArreterEcheancier: (id) => void gestesParole.arreterEcheancier(id)
 					}
 				}),
-		envoiAutomatique: pilote?.envoiAutomatique === true,
+		envoiAutomatique: relancesAutomatiques === true,
 		prescriptionLaPlusProche: laPlusProche(creance.factures.map((f) => f.datePrescription)),
 
 		montantDuJour,
