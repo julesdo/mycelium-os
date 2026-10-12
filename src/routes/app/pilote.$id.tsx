@@ -21,6 +21,8 @@ import {
 	UserMinusIcon
 } from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
+import { useDepotAuCoffre } from '../../app/use-coffre';
+import { useVisionneuseDuCoffre } from '../../app/coffre-en-place';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { evaluerPlafond } from '../../lib/verticales/recouvrement/compagnon/disponibilite';
 import { relireTour } from '../../lib/verticales/recouvrement/compagnon/tour';
@@ -34,6 +36,9 @@ import {
 	NOM_DU_PILOTE,
 	aujourdHuiISO,
 	dateRelative,
+	documentDepuisFichier,
+	documentDepuisResume,
+	type RefCoffre,
 	eurosCentimes,
 	pluriel,
 	type EtapeDeTravail
@@ -173,6 +178,13 @@ const ICONE_DU_GESTE: Readonly<Record<GenreGeste, ReactNode>> = {
 	CLASSER: <ArchiveIcon />
 };
 
+/** Une référence du coffre, aux identifiants branchés, pour l'action de Plume. */
+function versServeur(ref: RefCoffre) {
+	return ref.genre === 'IMPORT'
+		? { genre: 'IMPORT' as const, id: ref.id as Id<'importsRecouvrement'> }
+		: { genre: 'PIECE' as const, id: ref.id as Id<'pieces'> };
+}
+
 /** Le temps qu'une étape reste affichée avant que la suivante commence. */
 const CADENCE_DES_ETAPES_MS = 1100;
 
@@ -190,38 +202,80 @@ function ConversationDuDossier() {
 	const [gesteEnCours, setGesteEnCours] = useState<string | null>(null);
 
 	const [question, setQuestion] = useState(recherche.question ?? '');
-	const [envoyee, setEnvoyee] = useState<string | null>(null);
+	const [envoyee, setEnvoyee] = useState<{
+		readonly texte: string;
+		readonly avecDocuments: boolean;
+	} | null>(null);
 	const [panne, setPanne] = useState<string | null>(null);
 	const [etape, setEtape] = useState(0);
 	const enCours = envoyee !== null;
 
+	/*
+	  LES DOCUMENTS JOINTS (12/10/2026) : ils passent par le coffre comme tout dépôt,
+	  rangés avec les pièces de ce client et de ses factures, puis Plume attend leur
+	  lecture avant de répondre. Un toucher sur l'un d'eux l'ouvre dans la visionneuse.
+	*/
+	const depot = useDepotAuCoffre({
+		genre: 'PIECES',
+		...(resume === undefined || resume === null ? {} : { debiteurId: resume.debiteurId }),
+		factureIds: resume?.factureIds ?? []
+	});
+	const { ouvrirDocument, visionneuse } = useVisionneuseDuCoffre();
+	const envoyes = depot.fichiers.filter(
+		(f) => f.phase === 'ENVOI' || f.phase === 'COFFRE' || f.phase === 'ECHEC_ENVOI'
+	);
+	const auCoffre = envoyes.every((f) => f.phase !== 'ENVOI');
+	const lectureFinie =
+		envoyee?.avecDocuments !== true ||
+		(auCoffre &&
+			envoyes.every(
+				(f) => f.phase !== 'COFFRE' || (f.suivi !== undefined && f.suivi.etat !== 'EN_COURS')
+			));
+
 	async function demander(texte: string) {
 		const posee = texte.trim();
-		if (posee === '' || envoyee !== null) return;
+		const avecDocuments = depot.fichiers.some((f) => f.phase === 'PRET');
+		if ((posee === '' && !avecDocuments) || envoyee !== null) return;
 		setPanne(null);
 		setEtape(0);
-		setEnvoyee(posee);
+		setEnvoyee({ texte: posee, avecDocuments });
 		setQuestion('');
 		try {
+			const documents = avecDocuments ? await depot.envoyer() : [];
+			if (posee === '' && documents.length === 0) {
+				setPanne('Aucun document n’a pu partir au coffre.');
+				return;
+			}
 			// Un refus s'inscrit au fil, avec les gestes proposés malgré tout : il se lit là.
-			await demanderAPlume({ creanceId, question: posee });
+			await demanderAPlume({
+				creanceId,
+				question: posee,
+				...(documents.length === 0 ? {} : { documents: documents.map(versServeur) })
+			});
 		} catch (e) {
 			// Une panne de transport n'est pas un refus du domaine : elle se dit telle quelle.
 			setPanne(messageDeLaPanne(e));
 		} finally {
 			setEnvoyee(null);
+			// Les documents sont au coffre, et dans le fil : le compositeur se vide.
+			if (avecDocuments) depot.onRecommencer();
 		}
 	}
 
 	/*
-	  LE RYTHME DES ÉTAPES, PENDANT QUE PLUME TRAVAILLE. L'état ne change que dans le
-	  rappel de l'horloge, jamais dans le corps de l'effet.
+	  LE RYTHME DES ÉTAPES, PENDANT QUE PLUME TRAVAILLE — une fois les documents lus,
+	  s'il y en a. L'état ne change que dans le rappel de l'horloge, jamais dans le
+	  corps de l'effet.
 	*/
 	useEffect(() => {
-		if (!enCours) return;
-		const horloge = window.setInterval(() => setEtape((e) => e + 1), CADENCE_DES_ETAPES_MS);
+		if (!enCours || !lectureFinie) return;
+		let rang = 0;
+		const horloge = window.setInterval(() => {
+			rang += 1;
+			setEtape(rang);
+		}, CADENCE_DES_ETAPES_MS);
 		return () => window.clearInterval(horloge);
-	}, [enCours]);
+	}, [enCours, lectureFinie]);
 
 	/*
 	  LA QUESTION DÉJÀ TAPÉE AILLEURS PART D'EMBLÉE, une fois. Différée d'un tour
@@ -330,7 +384,25 @@ function ConversationDuDossier() {
 	}
 
 	const messages: MessageAffiche[] = tours.map((tour): MessageAffiche => {
-		if (tour.role === 'GERANT') return { genre: 'GERANT', id: tour._id, texte: tour.texte ?? '' };
+		if (tour.role === 'GERANT')
+			return {
+				genre: 'GERANT',
+				id: tour._id,
+				texte: tour.texte ?? '',
+				...(tour.documents === undefined
+					? {}
+					: {
+							documents: tour.documents.map((document, rang) => {
+								const lu = document.resume;
+								return documentDepuisResume(
+									`${tour._id}-${rang}`,
+									document.nom,
+									lu,
+									lu === null ? undefined : () => ouvrirDocument(lu.ref)
+								);
+							})
+						})
+			};
 		const phrases = relireTour(tour);
 		const gestes = tour.gestes ?? [];
 		const etat = (tour.etatDuDossier ?? []).map((ligne) => lireLigne(ligne));
@@ -381,7 +453,13 @@ function ConversationDuDossier() {
 					})
 		};
 	});
-	if (envoyee !== null) messages.push({ genre: 'GERANT', id: 'en-cours', texte: envoyee });
+	if (envoyee !== null)
+		messages.push({
+			genre: 'GERANT',
+			id: 'en-cours',
+			texte: envoyee.texte,
+			documents: envoyee.avecDocuments ? envoyes.map(documentDepuisFichier) : []
+		});
 
 	const nombre = resume?.nombreFactures ?? 0;
 	const libellesEtapes = [
@@ -392,68 +470,105 @@ function ConversationDuDossier() {
 		'Je vérifie chaque chiffre à sa source',
 		'Je rédige ma réponse'
 	];
+	/*
+	  AVEC DES DOCUMENTS, DEUX ÉTAPES DE PLUS, ET ELLES SONT VRAIES : l'arrivée au
+	  coffre et la lecture se cochent sur ce que le serveur publie, pas sur l'horloge.
+	*/
+	const nDocuments = envoyes.length;
+	const etapesDesDocuments: EtapeDeTravail[] =
+		envoyee?.avecDocuments === true
+			? [
+					{
+						libelle: `Je mets ${nDocuments > 1 ? `${nDocuments} documents` : 'le document'} au coffre`,
+						etat: auCoffre ? 'faite' : 'courante'
+					},
+					{
+						libelle: nDocuments > 1 ? 'Je les lis' : 'Je le lis',
+						etat: lectureFinie ? 'faite' : auCoffre ? 'courante' : 'avenir'
+					}
+				]
+			: [];
 	const travail: EtapeDeTravail[] | null = enCours
-		? libellesEtapes.map((libelle, i) => ({
-				libelle,
-				etat:
-					i < Math.min(etape, libellesEtapes.length - 1)
-						? 'faite'
-						: i === Math.min(etape, libellesEtapes.length - 1)
-							? 'courante'
-							: 'avenir'
-			}))
+		? [
+				...etapesDesDocuments,
+				...libellesEtapes.map(
+					(libelle, i): EtapeDeTravail => ({
+						libelle,
+						etat: !lectureFinie
+							? 'avenir'
+							: i < Math.min(etape, libellesEtapes.length - 1)
+								? 'faite'
+								: i === Math.min(etape, libellesEtapes.length - 1)
+									? 'courante'
+									: 'avenir'
+					})
+				)
+			]
 		: null;
 
 	const prochaine = resume?.prochaineEtape ?? null;
 
 	return (
-		<EcranConversationPilote
-			fil={{
-				titre: NOM_DU_PILOTE,
-				sousTitre: resume?.client ?? 'Dossier',
-				retour: {
-					vers: '/app/dossier/$id',
-					parametres: { id },
-					libelle: resume?.client ?? 'Dossier'
-				},
-				humeur: enCours ? 'travaille' : 'ecoute',
-				accueil: {
-					titre: `Je m’occupe du dossier de ${client}.`,
-					sousTitre: (
-						<>
-							{resume === undefined || resume === null
-								? null
-								: `${eurosCentimes(resume.restantDu)} à recouvrer`}
-							{prochaine === null
-								? null
-								: ` · ${prochaine.nom.toLowerCase()} ${prochaine.le <= aujourdHui ? 'aujourd’hui' : dateRelative(prochaine.le, aujourdHui)}`}
-							<br />
-							Demandez-moi ce que vous voulez sur ce dossier, ou dites-moi quoi faire : je vous
-							propose le geste, vous confirmez.
-						</>
-					)
-				},
-				messages,
-				travail,
-				refus: refusDuPlafond,
-				panne,
-				avertissement:
-					fil?.compteur.niveau === 'AVERTI'
-						? `La conversation de votre établissement approche de son plafond du mois. Au plafond, elle s’arrête, et rien d’autre : vos dossiers, leurs calculs et leurs relances continuent.`
-						: null,
-				suggestions: [
-					'Relance-le',
-					'Rappelle-moi mardi prochain',
-					'Il a promis de payer à la fin du mois',
-					'Combien me doit-il, pénalités comprises ?'
-				],
-				question,
-				onQuestion: setQuestion,
-				onEnvoyer: () => void demander(question),
-				enCours,
-				placeholder: `Demander à ${NOM_DU_PILOTE}…`,
-				arretee: refusDuPlafond !== null
-			}}
-		/>
+		<>
+			{visionneuse}
+			<EcranConversationPilote
+				fil={{
+					titre: NOM_DU_PILOTE,
+					sousTitre: resume?.client ?? 'Dossier',
+					retour: {
+						vers: '/app/dossier/$id',
+						parametres: { id },
+						libelle: resume?.client ?? 'Dossier'
+					},
+					humeur: enCours ? 'travaille' : 'ecoute',
+					accueil: {
+						titre: `Je m’occupe du dossier de ${client}.`,
+						sousTitre: (
+							<>
+								{resume === undefined || resume === null
+									? null
+									: `${eurosCentimes(resume.restantDu)} à recouvrer`}
+								{prochaine === null
+									? null
+									: ` · ${prochaine.nom.toLowerCase()} ${prochaine.le <= aujourdHui ? 'aujourd’hui' : dateRelative(prochaine.le, aujourdHui)}`}
+								<br />
+								Demandez-moi ce que vous voulez sur ce dossier, ou dites-moi quoi faire : je vous
+								propose le geste, vous confirmez.
+							</>
+						)
+					},
+					messages,
+					travail,
+					refus: refusDuPlafond,
+					panne,
+					avertissement:
+						fil?.compteur.niveau === 'AVERTI'
+							? `La conversation de votre établissement approche de son plafond du mois. Au plafond, elle s’arrête, et rien d’autre : vos dossiers, leurs calculs et leurs relances continuent.`
+							: null,
+					suggestions: [
+						'Relance-le',
+						'Rappelle-moi mardi prochain',
+						'Il a promis de payer à la fin du mois',
+						'Combien me doit-il, pénalités comprises ?'
+					],
+					question,
+					onQuestion: setQuestion,
+					onEnvoyer: () => void demander(question),
+					enCours,
+					placeholder: `Demander à ${NOM_DU_PILOTE}…`,
+					arretee: refusDuPlafond !== null,
+					...(resume === undefined || resume === null
+						? {}
+						: {
+								pieces: {
+									fichiers: depot.fichiers,
+									onJoindre: depot.onAjouter,
+									onRetirer: depot.onRetirer,
+									accept: depot.accept
+								}
+							})
+				}}
+			/>
+		</>
 	);
 }

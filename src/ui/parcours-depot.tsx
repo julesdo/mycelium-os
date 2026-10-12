@@ -244,7 +244,7 @@ function Selecteur({
 }
 
 /** La ligne d'état d'un fichier, à chaque étape du dépôt. */
-function etatDuFichier(fichier: FichierAuDepot, destinationFactures: boolean): string {
+export function etatDuFichier(fichier: FichierAuDepot, destinationFactures: boolean): string {
 	switch (fichier.phase) {
 		case 'VERIFICATION':
 			return 'Vérification…';
@@ -274,7 +274,7 @@ function etatDuFichier(fichier: FichierAuDepot, destinationFactures: boolean): s
 }
 
 /** La part accomplie d'un fichier, de l'envoi à la lecture : une barre qui ne ment pas. */
-function partAccomplie(fichier: FichierAuDepot): number {
+export function partAccomplie(fichier: FichierAuDepot): number {
 	if (fichier.phase === 'ENVOI') return 0.05 + 0.55 * (fichier.avancement ?? 0);
 	if (fichier.phase !== 'COFFRE') return 0;
 	const suivi = fichier.suivi;

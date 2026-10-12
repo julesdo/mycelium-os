@@ -382,6 +382,9 @@ export {
 	ReponseDePlume,
 	SuggestionsAPlume,
 	TravailDePlume,
+	documentDepuisFichier,
+	documentDepuisResume,
+	type DocumentDuFil,
 	type EtapeDeTravail,
 	type LigneDEtatAffichee
 } from './fil-plume';

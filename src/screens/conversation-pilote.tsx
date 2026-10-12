@@ -11,7 +11,9 @@ import {
 	ReponseDePlume,
 	SuggestionsAPlume,
 	TravailDePlume,
+	type DocumentDuFil,
 	type EtapeDeTravail,
+	type FichierAuDepot,
 	type HumeurPlume,
 	type PhraseAffichee,
 	type RefusAffiche
@@ -31,7 +33,13 @@ import {
  */
 
 export type MessageAffiche =
-	| { readonly genre: 'GERANT'; readonly id: string; readonly texte: string }
+	| {
+			readonly genre: 'GERANT';
+			readonly id: string;
+			readonly texte: string;
+			/** Les documents joints à la question, au-dessus de sa bulle. */
+			readonly documents?: readonly DocumentDuFil[];
+	  }
 	| {
 			readonly genre: 'PLUME';
 			readonly id: string;
@@ -78,10 +86,21 @@ export interface ConversationPiloteAffichee {
 	readonly arretee: boolean;
 	/** L'humeur de Plume dans l'accueil. */
 	readonly humeur: HumeurPlume;
+	/**
+	 * JOINDRE DES DOCUMENTS À LA QUESTION (12/10/2026) : le bouton « + », le
+	 * glisser-déposer et le collage. Absent : la conversation n'en prend pas.
+	 */
+	readonly pieces?: {
+		readonly fichiers: readonly FichierAuDepot[];
+		readonly onJoindre: (fichiers: File[]) => void;
+		readonly onRetirer: (cle: string) => void;
+		readonly accept: string;
+	};
 }
 
 function Message({ message }: { readonly message: MessageAffiche }) {
-	if (message.genre === 'GERANT') return <BulleDuGerant texte={message.texte} />;
+	if (message.genre === 'GERANT')
+		return <BulleDuGerant texte={message.texte} documents={message.documents ?? []} />;
 	return (
 		<ReponseDePlume
 			{...(message.phrases === undefined ? {} : { phrases: message.phrases })}
@@ -109,6 +128,9 @@ export function EcranConversationPilote({ fil }: { readonly fil: ConversationPil
 
 	return (
 		<PageConversation
+			{...(fil.pieces === undefined || fil.arretee || fil.enCours
+				? {}
+				: { onDeposer: fil.pieces.onJoindre })}
 			entete={
 				<EnteteDetail
 					retourVers={fil.retour.vers}
@@ -129,13 +151,24 @@ export function EcranConversationPilote({ fil }: { readonly fil: ConversationPil
 						onEnvoyer={fil.onEnvoyer}
 						enCours={fil.enCours}
 						placeholder={fil.placeholder}
+						{...(fil.pieces === undefined
+							? {}
+							: {
+									pieces: fil.enCours ? [] : fil.pieces.fichiers,
+									onJoindre: fil.pieces.onJoindre,
+									onRetirerPiece: fil.pieces.onRetirer,
+									accept: fil.pieces.accept
+								})}
 						dessus={
 							/*
 							  ⚠️ LES QUESTIONS PRÊTES NE S'OFFRENT QU'AU DÉBUT, comme chez Claude :
 							  une fois la conversation lancée, elles flottaient par-dessus les
 							  cartes de gestes et cachaient leurs boutons (relevé du 08/10/2026).
 							*/
-							fil.enCours || fil.question.trim() !== '' || fil.messages.length > 0 ? null : (
+							fil.enCours ||
+							fil.question.trim() !== '' ||
+							fil.messages.length > 0 ||
+							(fil.pieces?.fichiers.length ?? 0) > 0 ? null : (
 								<SuggestionsAPlume suggestions={fil.suggestions} onChoisir={fil.onQuestion} />
 							)
 						}

@@ -208,6 +208,18 @@ function refusDossierIllisible(): Refus {
 	});
 }
 
+/** Ni question ni document lisible : rien à demander à Plume. */
+function refusSansRien(): Refus {
+	return composerRefus({
+		peutFaire: 'Le dossier reste entier : rien n’a été écrit, et rien ne s’est perdu.',
+		constat: 'Aucun des documents joints n’a pu être confié au coffre, et la question est vide.',
+		blocages: [
+			'Ce refus se lève en joignant de nouveau les documents, ou en écrivant la question.'
+		],
+		coutDeLAttente: 'Ce que l’attente coûte est chiffrable, et vaut zéro.'
+	});
+}
+
 /**
  * Combien de tours du fil repartent avec la question.
  *
@@ -231,7 +243,7 @@ async function consignerRefus(
 	question: string,
 	refus: Refus,
 	usage: Consommation | undefined,
-	gestes: readonly ReturnType<typeof enGesteEcrit>[] = []
+	documents: readonly DocumentEcrit[] = []
 ): Promise<void> {
 	await ctx.runMutation(internal.recouvrement.conversationLecture.consignerEchange, {
 		creanceId,
@@ -239,9 +251,62 @@ async function consignerRefus(
 		question,
 		reponse: [refus.peutFaire, refus.constat, ...refus.blocages, refus.coutDeLAttente].join(' '),
 		pastilles: [],
-		...(gestes.length === 0 ? {} : { gestes: [...gestes] }),
+		...(documents.length === 0 ? {} : { documents: [...documents] }),
 		usage
 	});
+}
+
+/**
+ * La référence d'un document du coffre, recopiée ici plutôt qu'importée : un module
+ * `"use node"` n'importe pas les fonctions d'un module de la base.
+ */
+const vRef = v.union(
+	v.object({ genre: v.literal('IMPORT'), id: v.id('importsRecouvrement') }),
+	v.object({ genre: v.literal('PIECE'), id: v.id('pieces') })
+);
+
+/** Un document joint, tel qu'il s'écrit sur le tour du gérant. */
+type DocumentEcrit =
+	| { genre: 'IMPORT'; id: Id<'importsRecouvrement'>; nom: string }
+	| { genre: 'PIECE'; id: Id<'pieces'>; nom: string };
+
+type RefDocument =
+	| { genre: 'IMPORT'; id: Id<'importsRecouvrement'> }
+	| { genre: 'PIECE'; id: Id<'pieces'> };
+
+/** Le temps que Plume laisse à la lecture des documents joints avant de répondre. */
+const ATTENTE_DE_LA_LECTURE_MS = 150_000;
+const PAS_DE_L_ATTENTE_MS = 2_000;
+
+/**
+ * LES DOCUMENTS JOINTS, LUS — ou ce qu'on en sait quand la lecture tarde.
+ *
+ * ⚠️ PLUME ATTEND LA LECTURE, ET L'ATTENTE EST BORNÉE. Répondre avant ferait parler
+ * d'un document que personne n'a lu ; attendre sans fin laisserait le gérant devant
+ * un sablier. Au-delà de deux minutes et demie, Plume répond avec ce qu'il sait, et
+ * le dit : le document se relit ensuite au coffre.
+ */
+async function lireLesJoints(ctx: ActionCtx, documents: readonly RefDocument[]) {
+	if (documents.length === 0) return [];
+	const debut = Date.now();
+	let lus = await ctx.runQuery(internal.recouvrement.conversationLecture.documentsJoints, {
+		documents: [...documents]
+	});
+	while (lus.some((d) => d.etat === 'EN_COURS') && Date.now() - debut < ATTENTE_DE_LA_LECTURE_MS) {
+		await new Promise((fin) => setTimeout(fin, PAS_DE_L_ATTENTE_MS));
+		lus = await ctx.runQuery(internal.recouvrement.conversationLecture.documentsJoints, {
+			documents: [...documents]
+		});
+	}
+	return lus;
+}
+
+function documentsEcrits(lus: readonly { ref: RefDocument; nom: string }[]): DocumentEcrit[] {
+	return lus.map((d) =>
+		d.ref.genre === 'IMPORT'
+			? { genre: 'IMPORT', id: d.ref.id, nom: d.nom }
+			: { genre: 'PIECE', id: d.ref.id, nom: d.nom }
+	);
 }
 
 /**
@@ -302,12 +367,14 @@ async function consignerEchangeDeSecours(
 		texte,
 		resume,
 		gestes,
-		usage
+		usage,
+		documents
 	}: {
 		readonly texte: string;
 		readonly resume: readonly { readonly texte: string; readonly vers?: string }[];
 		readonly gestes: readonly ReturnType<typeof enGesteEcrit>[];
 		readonly usage: Consommation | undefined;
+		readonly documents: readonly DocumentEcrit[];
 	}
 ): Promise<void> {
 	await ctx.runMutation(internal.recouvrement.conversationLecture.consignerEchange, {
@@ -319,6 +386,7 @@ async function consignerEchangeDeSecours(
 		phrases: [{ texte }],
 		...(gestes.length === 0 ? {} : { gestes: [...gestes] }),
 		etatDuDossier: [...resume],
+		...(documents.length === 0 ? {} : { documents: [...documents] }),
 		usage
 	});
 }
@@ -353,9 +421,17 @@ function avertissementDu(compteur: { avertissement: number; arret: number }): st
  * payé une fois.
  */
 export const repondre = authedAction({
-	args: { creanceId: v.id('creances'), question: v.string() },
+	args: {
+		creanceId: v.id('creances'),
+		question: v.string(),
+		/**
+		 * Les documents joints à la question, déjà confiés au coffre par l'écran
+		 * (12/10/2026). Plume attend leur lecture, puis répond en les citant.
+		 */
+		documents: v.optional(v.array(vRef))
+	},
 	returns: vReponse,
-	handler: async (ctx, { creanceId, question }): Promise<ReponseDuCompagnon> => {
+	handler: async (ctx, { creanceId, question, documents = [] }): Promise<ReponseDuCompagnon> => {
 		// ── 1. La clé, avant tout le reste ────────────────────────────────────
 		// `requireEnv` lève un message écrit pour un développeur. Il ne doit pas
 		// atteindre l'écran : le refus le remplace, en quatre parties.
@@ -366,6 +442,14 @@ export const repondre = authedAction({
 		}
 
 		// ── 2. Le dossier, le fil et le compteur, en une lecture cloisonnée ───
+		// ── 1 bis. Les documents joints, lus avant tout le reste ──────────────
+		// La lecture range la pièce au dossier : le contexte lu APRÈS la porte déjà.
+		const joints = await lireLesJoints(ctx, documents);
+		const ecrits = documentsEcrits(joints);
+		if (question.trim() === '' && joints.length === 0) {
+			return enRefus(refusSansRien(), null, null);
+		}
+
 		const lu = await ctx.runQuery(internal.recouvrement.conversationLecture.contexteDuDossier, {
 			creanceId,
 			toursRepris: TOURS_REPRIS
@@ -375,7 +459,7 @@ export const repondre = authedAction({
 		// ── 2 bis. Une question de droit ne part pas au modèle ─────────────────
 		// « Puis-je », « ai-je droit », « est-ce prescrit » : le compagnon montre les
 		// textes du référentiel et passe la main à l'avocat. Aucun appel, aucun coût.
-		if (estQuestionDeDroit(question)) {
+		if (joints.length === 0 && estQuestionDeDroit(question)) {
 			const phrases = reponseAQuestionDeDroit(question);
 			await ctx.runMutation(internal.recouvrement.conversationLecture.consignerEchange, {
 				creanceId,
@@ -402,11 +486,14 @@ export const repondre = authedAction({
 		// les propositions et le décompte continuent de se rendre entièrement.
 		const plafond = evaluerPlafond(lu.compteur.cumul);
 		if (plafond.refus !== null) {
-			await consignerRefus(ctx, creanceId, question, plafond.refus, undefined);
+			await consignerRefus(ctx, creanceId, question, plafond.refus, undefined, ecrits);
 			return enRefus(plafond.refus, null, null);
 		}
 
-		const contexte: ContexteDossier = lu.contexte;
+		const contexte: ContexteDossier = {
+			...lu.contexte,
+			...(joints.length === 0 ? {} : { joints: joints.map((d) => d.ligne) })
+		};
 		const ancres = ancresDuContexte(contexte);
 
 		// ── 4. L'appel, et l'usage facturé qu'il rend ─────────────────────────
@@ -423,7 +510,8 @@ export const repondre = authedAction({
 				texte: 'Je n’ai pas pu formuler de réponse cette fois. Voici où en est le dossier.',
 				resume: lu.resume,
 				gestes: [],
-				usage: undefined
+				usage: undefined,
+				documents: ecrits
 			});
 			return enRefus(refusAppelEchoue(), null, null);
 		}
@@ -483,6 +571,7 @@ export const repondre = authedAction({
 			phrases: phrasesDe(rendues),
 			gestes,
 			...(etatDuDossier ? { etatDuDossier: lu.resume } : {}),
+			...(ecrits.length === 0 ? {} : { documents: ecrits }),
 			usage: consommation
 		});
 

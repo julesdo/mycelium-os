@@ -1,8 +1,23 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import {
+	useRef,
+	useState,
+	type ClipboardEvent,
+	type DragEvent,
+	type KeyboardEvent,
+	type ReactNode
+} from 'react';
 import { Button, Spinner, Textarea } from '@cladd-ui/react';
-import { ArrowUpIcon, CheckIcon, ChevronRightIcon } from 'lucide-react';
+import { ArrowUpIcon, CheckIcon, ChevronRightIcon, PlusIcon, XIcon } from 'lucide-react';
 import { cn } from './cn';
 import type { PhraseAffichee } from './conversation';
+import {
+	VignetteDocument,
+	ligneDuDocument,
+	mimeProbable,
+	tailleEnClair,
+	type ResumeDocument
+} from './coffre';
+import { etatDuFichier, type FichierAuDepot } from './parcours-depot';
 import { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
 
 /**
@@ -31,13 +46,116 @@ import { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
  * sourcé » (voir `aMarquer`). Le grain reste la phrase, jamais la réponse.
  */
 
-/** La question du gérant, dans sa bulle, à droite. */
-export function BulleDuGerant({ texte }: { readonly texte: string }) {
+/**
+ * UN DOCUMENT DANS LE FIL — joint à la question qui part, ou à une question passée
+ * (12/10/2026, sur Claude, DeepSeek et Copilot : la carte du fichier au-dessus de la
+ * bulle, à droite). Il passe par le coffre comme tout dépôt : la ligne dit où il en
+ * est, puis ce que sa lecture a donné, et la carte l'ouvre dans la visionneuse.
+ */
+export interface DocumentDuFil {
+	readonly cle: string;
+	readonly nom: string;
+	readonly mime: string;
+	readonly scelle: boolean;
+	/** Ce qui se passe, ou ce que la lecture a donné, en quelques mots. */
+	readonly ligne: string;
+	readonly enCours: boolean;
+	readonly onOuvrir?: () => void;
+}
+
+/** Ce qu'un fichier du dépôt en cours devient dans le fil. */
+export function documentDepuisFichier(fichier: FichierAuDepot): DocumentDuFil {
+	const suivi = fichier.suivi;
+	return {
+		cle: fichier.cle,
+		nom: fichier.nom,
+		mime: fichier.mime,
+		scelle: suivi?.scelle ?? false,
+		ligne: etatDuFichier(fichier, false),
+		enCours:
+			fichier.phase === 'VERIFICATION' ||
+			fichier.phase === 'ENVOI' ||
+			(fichier.phase === 'COFFRE' && (suivi === undefined || suivi.etat === 'EN_COURS'))
+	};
+}
+
+/** Ce qu'un document d'une question passée devient dans le fil : son résumé du coffre, en direct. */
+export function documentDepuisResume(
+	cle: string,
+	nom: string,
+	resume: ResumeDocument | null,
+	onOuvrir?: () => void
+): DocumentDuFil {
+	return resume === null
+		? {
+				cle,
+				nom,
+				mime: mimeProbable(undefined, nom),
+				scelle: false,
+				ligne: 'Retiré du coffre',
+				enCours: false
+			}
+		: {
+				cle,
+				nom: resume.nom,
+				mime: mimeProbable(resume.mime, resume.nom),
+				scelle: resume.scelle,
+				ligne: ligneDuDocument(resume),
+				enCours: resume.etat === 'EN_COURS',
+				...(onOuvrir === undefined ? {} : { onOuvrir })
+			};
+}
+
+function CarteDocumentDuFil({ document }: { readonly document: DocumentDuFil }) {
+	const contenu = (
+		<>
+			<VignetteDocument mime={document.mime} scelle={document.scelle} />
+			<span className="flex min-w-0 flex-col text-left">
+				<span className="truncate text-cladd-2xs font-semibold text-cladd-fg">{document.nom}</span>
+				<span className="flex items-center gap-1.5 text-cladd-3xs leading-snug text-cladd-fg-soft">
+					{document.enCours ? <Spinner size="xs" /> : null}
+					<span className="truncate">{document.ligne}</span>
+				</span>
+			</span>
+		</>
+	);
+	const classe =
+		'verre-carte flex min-h-14 w-full max-w-72 items-center gap-2.5 rounded-cladd-xl p-2 pr-3';
+	return document.onOuvrir === undefined ? (
+		<div className={classe}>{contenu}</div>
+	) : (
+		<button
+			type="button"
+			onClick={document.onOuvrir}
+			aria-label={`Ouvrir ${document.nom}`}
+			className={cn(classe, 'verre-bouton transition active:scale-[0.98]')}
+		>
+			{contenu}
+		</button>
+	);
+}
+
+/**
+ * La question du gérant, dans sa bulle, à droite — et ses documents au-dessus.
+ * Une question faite de documents seuls n'a pas de bulle de texte.
+ */
+export function BulleDuGerant({
+	texte,
+	documents = []
+}: {
+	readonly texte: string;
+	readonly documents?: readonly DocumentDuFil[];
+}) {
 	return (
-		<div className="flex justify-end">
-			<p className="verre-dense max-w-[85%] rounded-[1.25rem] rounded-br-md px-3.5 py-2 text-cladd-xs leading-relaxed whitespace-pre-wrap text-cladd-fg">
-				{texte}
-			</p>
+		<div className="flex flex-col items-end gap-1.5">
+			{documents.map((document) => (
+				<CarteDocumentDuFil key={document.cle} document={document} />
+			))}
+			{texte.trim() === '' ? null : (
+				<p className="verre-dense max-w-[85%] rounded-[1.25rem] rounded-br-md px-3.5 py-2 text-cladd-xs leading-relaxed whitespace-pre-wrap text-cladd-fg">
+					{texte}
+				</p>
+			)}
 		</div>
 	);
 }
@@ -254,7 +372,11 @@ export function Composeur({
 	onEnvoyer,
 	enCours,
 	placeholder,
-	dessus
+	dessus,
+	pieces = [],
+	onJoindre,
+	onRetirerPiece,
+	accept
 }: {
 	readonly valeur: string;
 	readonly onChange: (valeur: string) => void;
@@ -263,44 +385,173 @@ export function Composeur({
 	readonly placeholder: string;
 	/** Ce qui se pose juste au-dessus de la carte : les suggestions. */
 	readonly dessus?: ReactNode;
+	/**
+	 * LES DOCUMENTS JOINTS À LA QUESTION QUI PART (12/10/2026) : vérifiés avant
+	 * l'envoi (format, taille, déjà au coffre), comme dans le parcours de dépôt.
+	 */
+	readonly pieces?: readonly FichierAuDepot[];
+	/** Absent : le compositeur n'offre pas de joindre (la portée ne le permet pas encore). */
+	readonly onJoindre?: (fichiers: File[]) => void;
+	readonly onRetirerPiece?: (cle: string) => void;
+	/** Les formats du sélecteur. */
+	readonly accept?: string;
 }) {
+	const selecteur = useRef<HTMLInputElement>(null);
 	const vide = valeur.trim() === '';
+	const prets = pieces.filter((p) => p.phase === 'PRET').length;
+	const enVerification = pieces.some((p) => p.phase === 'VERIFICATION');
+	// Un document encore vérifié partirait sans les autres : on attend qu'il soit prêt.
+	const peutEnvoyer = !enCours && !enVerification && (!vide || prets > 0);
+
 	function touche(evenement: KeyboardEvent<HTMLDivElement>) {
 		if (evenement.key !== 'Enter' || evenement.shiftKey) return;
 		evenement.preventDefault();
-		if (!vide && !enCours) onEnvoyer();
+		if (peutEnvoyer) onEnvoyer();
+	}
+	/** Une capture d'écran collée dans le champ devient un document joint. */
+	function coller(evenement: ClipboardEvent<HTMLDivElement>) {
+		const fichiers = Array.from(evenement.clipboardData.files);
+		if (fichiers.length === 0 || onJoindre === undefined) return;
+		evenement.preventDefault();
+		onJoindre(fichiers);
 	}
 	return (
 		<div className="mb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-cladd-3xs pb-cladd-3xs">
 			<div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col gap-2">
 				{dessus}
-				<div className="verre-dense flex items-end gap-2 rounded-[1.6rem] p-1.5 pl-2">
-					<Textarea
-						size="md"
-						value={valeur}
-						onChange={(v) => onChange(v)}
-						onKeyDown={touche}
-						placeholder={placeholder}
-						className="min-w-0 flex-1 bg-transparent"
-						inputClassName="max-h-40 overflow-y-auto"
-						tightFocusRing
-					/>
-					<Button
-						size="md"
-						rounded
-						square
-						variant="transparent"
-						outline={false}
-						hoverable={false}
-						className="pilule-principale shrink-0"
-						disabled={vide || enCours}
-						onClick={onEnvoyer}
-						aria-label={`Envoyer à ${NOM_DU_PILOTE}`}
-					>
-						{enCours ? <Spinner size="sm" /> : <ArrowUpIcon strokeWidth={2.4} />}
-					</Button>
+				<div className="verre-dense flex flex-col gap-1 rounded-[1.6rem] p-1.5" onPaste={coller}>
+					{pieces.length === 0 ? null : (
+						<ul
+							aria-label="Documents joints"
+							className="flex gap-2 overflow-x-auto px-0.5 pt-0.5 pb-1 [scrollbar-width:none]"
+						>
+							{pieces.map((piece) => (
+								<li key={piece.cle} className="shrink-0">
+									<PieceDuComposeur
+										piece={piece}
+										{...(onRetirerPiece === undefined
+											? {}
+											: { onRetirer: () => onRetirerPiece(piece.cle) })}
+									/>
+								</li>
+							))}
+						</ul>
+					)}
+					<div className="flex items-end gap-1.5">
+						{onJoindre === undefined ? null : (
+							<>
+								<input
+									ref={selecteur}
+									type="file"
+									multiple
+									className="sr-only"
+									tabIndex={-1}
+									{...(accept === undefined ? {} : { accept })}
+									onChange={(evenement) => {
+										const fichiers = Array.from(evenement.target.files ?? []);
+										evenement.target.value = '';
+										if (fichiers.length > 0) onJoindre(fichiers);
+									}}
+								/>
+								<Button
+									size="md"
+									rounded
+									square
+									variant="transparent"
+									outline={false}
+									className="shrink-0 text-cladd-fg-soft"
+									disabled={enCours}
+									onClick={() => selecteur.current?.click()}
+									aria-label={`Joindre des documents pour ${NOM_DU_PILOTE}`}
+								>
+									<PlusIcon strokeWidth={2.2} />
+								</Button>
+							</>
+						)}
+						<Textarea
+							size="md"
+							value={valeur}
+							onChange={(v) => onChange(v)}
+							onKeyDown={touche}
+							placeholder={
+								prets > 0 && vide ? 'Ajoutez une question, ou envoyez tel quel' : placeholder
+							}
+							className={cn('min-w-0 flex-1 bg-transparent', onJoindre === undefined && 'pl-0.5')}
+							inputClassName="max-h-40 overflow-y-auto"
+							tightFocusRing
+						/>
+						<Button
+							size="md"
+							rounded
+							square
+							variant="transparent"
+							outline={false}
+							hoverable={false}
+							className="pilule-principale shrink-0"
+							disabled={!peutEnvoyer}
+							onClick={onEnvoyer}
+							aria-label={`Envoyer à ${NOM_DU_PILOTE}`}
+						>
+							{enCours ? <Spinner size="sm" /> : <ArrowUpIcon strokeWidth={2.4} />}
+						</Button>
+					</div>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+/**
+ * UN DOCUMENT JOINT, DANS LE COMPOSITEUR — sa nature, son nom, ce que la
+ * vérification en dit, et la croix pour le retirer (Claude, Manus, Copilot).
+ */
+function PieceDuComposeur({
+	piece,
+	onRetirer
+}: {
+	readonly piece: FichierAuDepot;
+	readonly onRetirer?: () => void;
+}) {
+	const refusee =
+		piece.phase === 'REFUSE' || piece.phase === 'ECHEC_ENVOI' || piece.phase === 'DEJA';
+	const ligne =
+		piece.phase === 'PRET' && piece.deja === undefined
+			? tailleEnClair(piece.taille)
+			: etatDuFichier(piece, false);
+	return (
+		<div
+			className={cn(
+				'verre-carte flex h-14 w-56 items-center gap-2 rounded-cladd-lg py-1.5 pr-1 pl-1.5',
+				refusee && 'opacity-80'
+			)}
+		>
+			<VignetteDocument mime={mimeProbable(piece.mime, piece.nom)} scelle={false} />
+			<span className="flex min-w-0 flex-1 flex-col">
+				<span className="truncate text-cladd-2xs font-semibold">{piece.nom}</span>
+				<span
+					className={cn(
+						'flex items-center gap-1 truncate text-cladd-3xs leading-snug',
+						refusee ? 'text-cladd-fg' : 'text-cladd-fg-soft'
+					)}
+				>
+					{piece.phase === 'VERIFICATION' ? <Spinner size="xs" /> : null}
+					<span className="truncate">{ligne}</span>
+				</span>
+			</span>
+			{onRetirer === undefined ? null : (
+				<Button
+					size="sm"
+					rounded
+					square
+					variant="transparent"
+					outline={false}
+					className="shrink-0 text-cladd-fg-soft"
+					onClick={onRetirer}
+					aria-label={`Retirer ${piece.nom}`}
+				>
+					<XIcon />
+				</Button>
+			)}
 		</div>
 	);
 }
@@ -423,19 +674,64 @@ export function CarteDeGeste({
 export function PageConversation({
 	entete,
 	children,
-	composeur
+	composeur,
+	onDeposer
 }: {
 	readonly entete: ReactNode;
 	readonly children: ReactNode;
 	readonly composeur: ReactNode;
+	/**
+	 * DES FICHIERS GLISSÉS SUR LA CONVERSATION, À LA SOURIS (12/10/2026) : ils se
+	 * joignent à la question comme par le bouton « + ». Absent : rien ne se dépose.
+	 */
+	readonly onDeposer?: (fichiers: File[]) => void;
 }) {
+	// Le survol compte les entrées et sorties : un glisser traverse les enfants.
+	const [survol, setSurvol] = useState(0);
+	const portentDesFichiers = (evenement: DragEvent) =>
+		Array.from(evenement.dataTransfer.types).includes('Files');
+	const glisser =
+		onDeposer === undefined
+			? {}
+			: {
+					onDragEnter: (evenement: DragEvent<HTMLDivElement>) => {
+						if (!portentDesFichiers(evenement)) return;
+						evenement.preventDefault();
+						setSurvol((n) => n + 1);
+					},
+					onDragOver: (evenement: DragEvent<HTMLDivElement>) => {
+						if (portentDesFichiers(evenement)) evenement.preventDefault();
+					},
+					onDragLeave: (evenement: DragEvent<HTMLDivElement>) => {
+						if (portentDesFichiers(evenement)) setSurvol((n) => Math.max(0, n - 1));
+					},
+					onDrop: (evenement: DragEvent<HTMLDivElement>) => {
+						if (!portentDesFichiers(evenement)) return;
+						evenement.preventDefault();
+						setSurvol(0);
+						const fichiers = Array.from(evenement.dataTransfer.files);
+						if (fichiers.length > 0) onDeposer(fichiers);
+					}
+				};
 	return (
-		<div className="flex h-full flex-col">
+		<div className="relative flex h-full flex-col" {...glisser}>
 			<div className="defilement-sans-barre min-h-0 flex-1 overflow-y-auto px-cladd-2xs pb-52">
 				{entete}
 				<div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pt-cladd-3xs">{children}</div>
 			</div>
 			{composeur}
+			{survol > 0 ? (
+				<div
+					aria-hidden
+					className="pointer-events-none fixed inset-3 z-50 flex flex-col items-center justify-center gap-3 rounded-[2rem] border-2 border-dashed border-cladd-fg-soft bg-cladd-bg/90 text-center"
+				>
+					<Plume humeur="ecoute" taille={72} />
+					<p className="text-cladd-sm font-semibold">Déposez vos documents</p>
+					<p className="max-w-xs text-cladd-2xs text-cladd-fg-soft">
+						Je les mets au coffre, je les lis, puis je vous dis ce qu’ils apportent.
+					</p>
+				</div>
+			) : null}
 		</div>
 	);
 }

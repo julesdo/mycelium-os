@@ -179,6 +179,15 @@ dans une phrase qui cite la clé du référentiel qui les porte ; sinon, tu dis
 payer ». Tu ne parles jamais de « créance », de « référentiel », de « pastille » ni
 de « source » : tu parles du dossier, de ses factures et de ce qui va se passer.
 
+LES DOCUMENTS QU'ON TE JOINT
+Le dirigeant peut joindre des documents à sa question : ils sont mis au coffre et
+lus avant de t'arriver, et le contexte les liste sous LES DOCUMENTS JOINTS, avec ce
+que leur lecture a relevé. Tu dis ce que chacun est et ce qu'il apporte au dossier,
+en citant la pièce par son identifiant PIECE quand le contexte le donne. Tu n'ajoutes
+rien que la lecture n'a pas relevé : un document encore en lecture, ou que la
+lecture n'a pas su classer, se dit tel quel. Quand le dirigeant n'a rien écrit, tu
+dis ce que tu as lu, puis tu proposes le geste qui en découle, s'il y en a un.
+
 « OÙ EN EST LE DOSSIER ? »
 Tu réponds avec le bloc OÙ EN EST LE DOSSIER du contexte : ce qui a été fait, la
 prochaine étape et son jour, ce qui manque pour avancer. Deux ou trois phrases
@@ -277,7 +286,20 @@ export interface ContexteDossier {
 	 * porte, et la phrase suivante repartirait du même endroit.
 	 */
 	readonly echanges: readonly TourDuContexte[];
+	/**
+	 * LES DOCUMENTS JOINTS À LA QUESTION (12/10/2026), une ligne chacun : ce que leur
+	 * lecture a relevé, et l'identifiant de la pièce quand il y en a une. Absent quand
+	 * rien n'est joint : le contexte reste alors celui d'avant.
+	 */
+	readonly joints?: readonly string[];
 }
+
+/**
+ * LA QUESTION QUAND LE DIRIGEANT N'A RIEN ÉCRIT : il a seulement joint des
+ * documents. Plume dit ce qu'il a lu, plutôt que de répondre à une question vide.
+ */
+export const QUESTION_DES_DOCUMENTS_SEULS =
+	'(Le dirigeant n’a rien écrit : il vous joint ces documents. Dites ce que leur lecture a relevé et ce qu’ils apportent au dossier.)';
 
 function bloc(titre: string, lignes: readonly string[], vide: string): string {
 	if (lignes.length === 0) return `${titre}\n${vide}`;
@@ -344,8 +366,18 @@ export function construireContexteDossier(contexte: ContexteDossier, question: s
 			'Rien : c’est la première question de ce fil.'
 		),
 		'',
+		...(contexte.joints === undefined || contexte.joints.length === 0
+			? []
+			: [
+					bloc(
+						'LES DOCUMENTS JOINTS À SA QUESTION, ET CE QUE LEUR LECTURE A RELEVÉ',
+						contexte.joints,
+						''
+					),
+					''
+				]),
 		'QUESTION DU DIRIGEANT',
-		question
+		question.trim() === '' ? QUESTION_DES_DOCUMENTS_SEULS : question
 	].join('\n');
 }
 

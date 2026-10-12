@@ -292,6 +292,17 @@ export const vLigneDEtat = v.union(
 	v.object({ texte: v.string(), vers: v.optional(v.string()) })
 );
 
+/**
+ * UN DOCUMENT JOINT À UNE QUESTION POSÉE À PLUME (12/10/2026) : il est passé par le
+ * coffre comme tout dépôt (scellé, lu), et le tour du gérant garde sa référence pour
+ * le montrer dans le fil et l'ouvrir d'un toucher. Le nom suit, pour qu'un document
+ * retiré du coffre se dise encore par son nom.
+ */
+export const vDocumentJoint = v.union(
+	v.object({ genre: v.literal('IMPORT'), id: v.id('importsRecouvrement'), nom: v.string() }),
+	v.object({ genre: v.literal('PIECE'), id: v.id('pieces'), nom: v.string() })
+);
+
 export const recouvrementTables = {
 	/**
 	 * Un fichier déposé, et où en est sa lecture.
@@ -1730,6 +1741,11 @@ export const recouvrementTables = {
 		 * laisse jamais le gérant sans réponse. Ce sont les faits de la base, en clair.
 		 */
 		etatDuDossier: v.optional(v.array(vLigneDEtat)),
+		/**
+		 * LES DOCUMENTS QUE LE GÉRANT A JOINTS À SA QUESTION (12/10/2026), sur son
+		 * tour seulement. Plume attend leur lecture avant de répondre.
+		 */
+		documents: v.optional(v.array(vDocumentJoint)),
 		/**
 		 * Ce que ce tour a consommé. Renseigné sur les tours du compagnon.
 		 *

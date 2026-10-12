@@ -29,6 +29,36 @@ function versServeur(ref: RefCoffre) {
 		: { genre: 'PIECE' as const, id: ref.id as Id<'pieces'> };
 }
 
+/**
+ * LA VISIONNEUSE DU COFFRE, SEULE — pour un écran qui montre des documents sans les
+ * déposer lui-même : la conversation de Plume ouvre ainsi ceux qu'on lui a joints.
+ */
+export function useVisionneuseDuCoffre(): {
+	readonly ouvrirDocument: (ref: RefCoffre) => void;
+	readonly visionneuse: ReactNode;
+} {
+	const [ouverte, setOuverte] = useState<RefCoffre | null>(null);
+	const { ouvrir, telecharger } = useOuvertureCoffre();
+	const retirer = useMutation(api.coffre.coffre.retirerDuCoffre);
+	const detail = useQuery(
+		api.coffre.coffre.documentDuCoffre,
+		ouverte === null ? 'skip' : { ref: versServeur(ouverte) }
+	);
+	return {
+		ouvrirDocument: setOuverte,
+		visionneuse: (
+			<VisionneuseDocument
+				ouverte={ouverte !== null}
+				detail={ouverte === null ? undefined : detail}
+				ouvrir={ouvrir}
+				onTelecharger={telecharger}
+				onRetirer={(cible) => retirer({ ref: versServeur(cible) }).then(() => setOuverte(null))}
+				onFermer={() => setOuverte(null)}
+			/>
+		)
+	};
+}
+
 export function useCoffreEnPlace({
 	destination,
 	titre
@@ -43,28 +73,15 @@ export function useCoffreEnPlace({
 } {
 	const navigate = useNavigate();
 	const [depotOuvert, setDepotOuvert] = useState(false);
-	const [ouverte, setOuverte] = useState<RefCoffre | null>(null);
 	const depot = useDepotAuCoffre({ genre: 'PIECES', ...destination });
-	const { ouvrir, telecharger } = useOuvertureCoffre();
-	const retirer = useMutation(api.coffre.coffre.retirerDuCoffre);
-	const detail = useQuery(
-		api.coffre.coffre.documentDuCoffre,
-		ouverte === null ? 'skip' : { ref: versServeur(ouverte) }
-	);
+	const { ouvrirDocument, visionneuse } = useVisionneuseDuCoffre();
 
 	return {
 		ajouter: () => setDepotOuvert(true),
-		ouvrirPiece: (pieceId) => setOuverte({ genre: 'PIECE', id: pieceId }),
+		ouvrirPiece: (pieceId) => ouvrirDocument({ genre: 'PIECE', id: pieceId }),
 		rendu: (
 			<>
-				<VisionneuseDocument
-					ouverte={ouverte !== null}
-					detail={ouverte === null ? undefined : detail}
-					ouvrir={ouvrir}
-					onTelecharger={telecharger}
-					onRetirer={(cible) => retirer({ ref: versServeur(cible) }).then(() => setOuverte(null))}
-					onFermer={() => setOuverte(null)}
-				/>
+				{visionneuse}
 				<ParcoursDepot
 					ouvert={depotOuvert}
 					onFermer={() => setDepotOuvert(false)}
@@ -73,7 +90,7 @@ export function useCoffreEnPlace({
 					depot={depot}
 					onVoir={(cible) => {
 						setDepotOuvert(false);
-						setOuverte(cible);
+						ouvrirDocument(cible);
 					}}
 					onVoirLeCoffre={() => {
 						setDepotOuvert(false);

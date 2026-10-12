@@ -88,12 +88,30 @@ function destinationPourLeServeur(destination: Destination) {
 			};
 }
 
-export function useDepotAuCoffre(destination: Destination): DepotAuCoffre {
+/**
+ * LE DÉPÔT, ET CE QU'UN ÉCRAN DE CONVERSATION EN ATTEND EN PLUS : envoyer d'un coup
+ * ce qui est prêt et récupérer les références au coffre, une fois chaque fichier
+ * confié (ou tombé). Plume les joint alors à la question.
+ */
+export interface DepotEnvoyable extends DepotAuCoffre {
+	readonly envoyer: () => Promise<readonly RefCoffre[]>;
+}
+
+export function useDepotAuCoffre(destination: Destination): DepotEnvoyable {
 	const convex = useConvex();
 	const genererUrl = useMutation(api.coffre.coffre.genererUrlCoffre);
 	const confier = useMutation(api.coffre.coffre.confierAuCoffre);
 	const [fichiers, setFichiers] = useState<readonly FichierInterne[]>([]);
 	const [lance, setLance] = useState(false);
+	/**
+	 * CE QUE `envoyer` ATTEND, fichier par fichier : la référence au coffre, ou `null`
+	 * quand il est tombé en route. Un objet stable, lu par les écouteurs d'Uppy.
+	 */
+	const [attentes] = useState(() => new Map<string, (ref: RefServeur | null) => void>());
+	const finir = (cle: string, ref: RefServeur | null) => {
+		attentes.get(cle)?.(ref);
+		attentes.delete(cle);
+	};
 
 	const modifier = (cle: string, changement: Partial<FichierInterne>) =>
 		setFichiers((avant) => avant.map((f) => (f.cle === cle ? { ...f, ...changement } : f)));
@@ -158,6 +176,7 @@ export function useDepotAuCoffre(destination: Destination): DepotAuCoffre {
 					phase: 'ECHEC_ENVOI',
 					message: 'La réponse de l’envoi est illisible.'
 				});
+				finir(fichier.id, null);
 				return;
 			}
 			confier({
@@ -165,13 +184,19 @@ export function useDepotAuCoffre(destination: Destination): DepotAuCoffre {
 				nom: nomPropre(fichier.name ?? 'document'),
 				destination: JSON.parse(meta.destination) as ReturnType<typeof destinationPourLeServeur>
 			}).then(
-				(ref) => changer(fichier.id, { phase: 'COFFRE', ref }),
-				(erreur: unknown) =>
-					changer(fichier.id, { phase: 'ECHEC_ENVOI', message: messageDeRefus(erreur) })
+				(ref) => {
+					changer(fichier.id, { phase: 'COFFRE', ref });
+					finir(fichier.id, ref);
+				},
+				(erreur: unknown) => {
+					changer(fichier.id, { phase: 'ECHEC_ENVOI', message: messageDeRefus(erreur) });
+					finir(fichier.id, null);
+				}
 			);
 		});
 		instance.on('upload-error', (fichier, erreur) => {
 			if (fichier === undefined) return;
+			finir(fichier.id, null);
 			changer(fichier.id, {
 				phase: 'ECHEC_ENVOI',
 				message:
@@ -286,9 +311,23 @@ export function useDepotAuCoffre(destination: Destination): DepotAuCoffre {
 		const prepares = await Promise.all(prets.map(preparer));
 		// Ce qui n'a pas reçu d'adresse ne part pas avec les autres.
 		prets.forEach((f, i) => {
-			if (!prepares[i] && f.idUppy !== undefined) uppy.removeFile(f.idUppy);
+			if (!prepares[i] && f.idUppy !== undefined) {
+				uppy.removeFile(f.idUppy);
+				finir(f.cle, null);
+			}
 		});
 		if (prepares.some(Boolean)) void uppy.upload();
+	}
+
+	/** Tout ce qui est prêt part ; la promesse rend les références de ce qui est arrivé au coffre. */
+	async function envoyer(): Promise<readonly RefCoffre[]> {
+		const prets = fichiers.filter((f) => f.phase === 'PRET');
+		const arrivees = prets.map(
+			(f) => new Promise<RefServeur | null>((rendre) => attentes.set(f.cle, rendre))
+		);
+		await lancer();
+		const refs = await Promise.all(arrivees);
+		return refs.flatMap((ref) => (ref === null ? [] : [{ genre: ref.genre, id: ref.id }]));
 	}
 
 	return {
@@ -318,6 +357,7 @@ export function useDepotAuCoffre(destination: Destination): DepotAuCoffre {
 			setFichiers((avant) => avant.filter((f) => f.cle !== cle));
 		},
 		onLancer: () => void lancer(),
+		envoyer,
 		onReessayer: (cle) => {
 			const fichier = fichiers.find((f) => f.cle === cle);
 			if (fichier?.idUppy === undefined) return;

@@ -14,7 +14,8 @@ import {
 	ARRET_MENSUEL,
 	evaluerPlafond
 } from '../../verticales/recouvrement/compagnon/disponibilite';
-import { vGestePropose, vLigneDEtat, vSourceConstat } from './tables';
+import { vDocumentJoint, vGestePropose, vLigneDEtat, vSourceConstat } from './tables';
+import { resumerLeDocument, vRef, vResume, type Resume } from '../coffre/coffre';
 import { jourEnClair } from '../../verticales/recouvrement/compagnon/gestes';
 
 /**
@@ -587,6 +588,8 @@ export const consignerEchange = internalMutation({
 		gestes: v.optional(v.array(vGestePropose)),
 		/** Où en est le dossier, en clair, quand Plume le joint à sa réponse. */
 		etatDuDossier: v.optional(v.array(vLigneDEtat)),
+		/** Les documents que le gérant a joints à sa question, écrits sur SON tour. */
+		documents: v.optional(v.array(vDocumentJoint)),
 		usage: v.optional(
 			v.object({
 				tokensIn: v.number(),
@@ -614,6 +617,9 @@ export const consignerEchange = internalMutation({
 			role: 'GERANT',
 			texte: args.question,
 			pastilles: [],
+			...(args.documents === undefined || args.documents.length === 0
+				? {}
+				: { documents: args.documents }),
 			mois: moisDuTour,
 			diteLe: horodatage
 		});
@@ -677,8 +683,34 @@ const vTourAffiche = v.object({
 	gestes: v.optional(v.array(vGestePropose)),
 	/** Où en est le dossier, en clair, quand Plume l'a joint. */
 	etatDuDossier: v.optional(v.array(vLigneDEtat)),
+	/**
+	 * Les documents joints par le gérant, résumés comme au coffre (leur lecture, en
+	 * direct). Un document retiré du coffre depuis reste nommé, sans résumé.
+	 */
+	documents: v.optional(v.array(v.object({ nom: v.string(), resume: v.union(vResume, v.null()) }))),
 	diteLe: v.number()
 });
+
+/** Les documents d'un tour, résumés tels que le coffre les montre. */
+async function documentsDuTour(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	documents: readonly (typeof vDocumentJoint.type)[] | undefined
+): Promise<{ nom: string; resume: Resume | null }[] | undefined> {
+	if (documents === undefined || documents.length === 0) return undefined;
+	return await Promise.all(
+		documents.map(async (document) => ({
+			nom: document.nom,
+			resume: await resumerLeDocument(
+				ctx,
+				organizationId,
+				document.genre === 'IMPORT'
+					? { genre: 'IMPORT', id: document.id }
+					: { genre: 'PIECE', id: document.id }
+			)
+		}))
+	);
+}
 
 /**
  * Le fil d'un dossier, et où en est le compteur du mois.
@@ -708,6 +740,11 @@ export const filDuDossier = authedQuery({
 			)
 			.collect();
 
+		const documents = await Promise.all(
+			tours.map((tour) => documentsDuTour(ctx, organizationId, tour.documents))
+		);
+		const parTour = new Map(tours.map((tour, i) => [tour._id, documents[i]]));
+
 		return {
 			tours: tours
 				.sort((a, b) => a.diteLe - b.diteLe)
@@ -726,6 +763,7 @@ export const filDuDossier = authedQuery({
 						phrases: portePhrases ? tour.phrases : undefined,
 						gestes: tour.gestes,
 						etatDuDossier: tour.etatDuDossier,
+						documents: parTour.get(tour._id),
 						diteLe: tour.diteLe
 					};
 				}),
@@ -749,6 +787,8 @@ export const resumeDuDossier = authedQuery({
 		v.object({
 			client: v.string(),
 			debiteurId: v.id('debiteurs'),
+			/** Les factures du dossier : une pièce jointe à Plume s'y range. */
+			factureIds: v.array(v.id('facturesVente')),
 			restantDu: v.int64(),
 			nombreFactures: v.number(),
 			prochaineEtape: v.union(
@@ -776,6 +816,7 @@ export const resumeDuDossier = authedQuery({
 		return {
 			client: debiteur?.denomination ?? 'Client',
 			debiteurId: creance.debiteurId,
+			factureIds: factures.map((facture) => facture._id),
 			restantDu: enCentimes(additionner(...restes)),
 			nombreFactures: factures.length,
 			prochaineEtape:
@@ -788,5 +829,92 @@ export const resumeDuDossier = authedQuery({
 						},
 			envoiAutomatique: pilote?.envoiAutomatique === true
 		};
+	}
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LES DOCUMENTS JOINTS À UNE QUESTION (12/10/2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Ce qu'une pièce est, en toutes lettres, pour la phrase qui la présente à Plume. */
+const NATURE_DE_LA_PIECE: Readonly<Record<string, string>> = {
+	FACTURE: 'une facture',
+	BON_DE_COMMANDE: 'un bon de commande',
+	DEVIS_SIGNE: 'un devis signé',
+	BON_DE_LIVRAISON: 'un bon de livraison',
+	CGV: 'des conditions générales de vente',
+	CONTRAT: 'un contrat',
+	MISE_EN_DEMEURE: 'une mise en demeure',
+	ECHANGES: 'des échanges écrits',
+	ORDONNANCE: 'une décision du juge (ordonnance)',
+	INDETERMINE: 'un document que la lecture n’a pas su classer'
+};
+
+const vDocumentLu = v.object({
+	ref: vRef,
+	nom: v.string(),
+	etat: v.union(v.literal('EN_COURS'), v.literal('TERMINE'), v.literal('ECHEC')),
+	/** Ce que la lecture en a tiré, en clair : la ligne qui part dans le contexte de Plume. */
+	ligne: v.string()
+});
+
+type DocumentLu = typeof vDocumentLu.type;
+
+/**
+ * OÙ EN SONT LES DOCUMENTS JOINTS, ET CE QUE LEUR LECTURE A DONNÉ.
+ *
+ * ⚠️ CE QUI N'EST PAS DE CET ÉTABLISSEMENT DISPARAÎT EN SILENCE : connaître une
+ * référence ne suffit pas à la faire lire par Plume.
+ */
+export const documentsJoints = internalQuery({
+	args: { documents: v.array(vRef) },
+	returns: v.array(vDocumentLu),
+	handler: async (ctx, { documents }): Promise<DocumentLu[]> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const lus: DocumentLu[] = [];
+		for (const ref of documents.slice(0, 10)) {
+			if (ref.genre === 'PIECE') {
+				const piece = await ctx.db.get(ref.id);
+				if (piece === null || piece.organizationId !== organizationId) continue;
+				const etat =
+					piece.statut === 'EN_LECTURE'
+						? 'EN_COURS'
+						: piece.statut === 'ECHEC'
+							? 'ECHEC'
+							: 'TERMINE';
+				const ligne =
+					etat === 'EN_COURS'
+						? `« ${piece.filename} » : encore en lecture, rien n’en est relevé pour l’instant.`
+						: etat === 'ECHEC'
+							? `« ${piece.filename} » : la lecture n’a pas abouti${piece.constat === undefined ? '' : ` (${piece.constat})`}.`
+							: `« ${piece.filename} » : ${NATURE_DE_LA_PIECE[piece.type] ?? 'un document'}` +
+								`${piece.reference === undefined ? '' : `, référence ${piece.reference}`}` +
+								`${piece.dateDocument === undefined ? '' : `, daté du ${piece.dateDocument}`}` +
+								`${piece.reserves === undefined ? '' : `, réserve portée : « ${piece.reserves} »`}` +
+								`${piece.constat === undefined ? '' : `. Ce que la lecture a relevé : ${piece.constat}`}` +
+								` — identifiant PIECE : ${piece._id}`;
+				lus.push({ ref, nom: piece.filename, etat, ligne });
+			} else {
+				const depot = await ctx.db.get(ref.id);
+				if (depot === null || depot.organizationId !== organizationId) continue;
+				const etat =
+					depot.statut === 'TERMINE' ? 'TERMINE' : depot.statut === 'ECHOUE' ? 'ECHEC' : 'EN_COURS';
+				const bilan = depot.bilan;
+				const ligne =
+					etat === 'EN_COURS'
+						? `« ${depot.filename} » : encore en lecture (${depot.etape ?? 'mise au coffre'}).`
+						: etat === 'ECHEC'
+							? `« ${depot.filename} » : la lecture n’a pas abouti (${depot.erreur ?? depot.etape ?? 'raison non dite'}).`
+							: bilan === undefined
+								? `« ${depot.filename} » : lu.`
+								: `« ${depot.filename} » : lu, ${bilan.facturesCreees} facture${bilan.facturesCreees > 1 ? 's' : ''} entrée${bilan.facturesCreees > 1 ? 's' : ''}, ` +
+									`${bilan.facturesDejaConnues} déjà connue${bilan.facturesDejaConnues > 1 ? 's' : ''}, ` +
+									`${bilan.debiteursCrees} client${bilan.debiteursCrees > 1 ? 's' : ''} nouveau${bilan.debiteursCrees > 1 ? 'x' : ''}, ` +
+									`${bilan.reglementsCrees} règlement${bilan.reglementsCrees > 1 ? 's' : ''} noté${bilan.reglementsCrees > 1 ? 's' : ''}` +
+									`${bilan.ignoreesTotal === 0 ? '' : `, ${bilan.ignoreesTotal} ligne${bilan.ignoreesTotal > 1 ? 's' : ''} non lue${bilan.ignoreesTotal > 1 ? 's' : ''}`}.`;
+				lus.push({ ref, nom: depot.filename, etat, ligne });
+			}
+		}
+		return lus;
 	}
 });

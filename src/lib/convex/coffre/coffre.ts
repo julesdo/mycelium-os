@@ -30,12 +30,12 @@ import { journaliser } from './coffreInterne';
  * métadonnées.
  */
 
-const vRef = v.union(
+export const vRef = v.union(
 	v.object({ genre: v.literal('IMPORT'), id: v.id('importsRecouvrement') }),
 	v.object({ genre: v.literal('PIECE'), id: v.id('pieces') })
 );
 
-type Ref =
+export type Ref =
 	| { genre: 'IMPORT'; id: Id<'importsRecouvrement'> }
 	| { genre: 'PIECE'; id: Id<'pieces'> };
 
@@ -68,7 +68,7 @@ const vBilanCourt = v.object({
 });
 
 /** Un document tel que le coffre le résume, dans sa liste et dans le suivi d'un dépôt. */
-const vResume = v.object({
+export const vResume = v.object({
 	ref: vRef,
 	nom: v.string(),
 	deposeLe: v.number(),
@@ -85,7 +85,7 @@ const vResume = v.object({
 	client: v.optional(v.object({ id: v.id('debiteurs'), nom: v.string() }))
 });
 
-type Resume = typeof vResume.type;
+export type Resume = typeof vResume.type;
 
 function resumeDuDepot(depot: Doc<'importsRecouvrement'>): Resume {
 	const etat =
@@ -150,6 +150,25 @@ async function clientDe(
 	const debiteur = await ctx.db.get(debiteurId);
 	if (debiteur === null || debiteur.organizationId !== organizationId) return null;
 	return { id: debiteur._id, nom: debiteur.denomination };
+}
+
+/**
+ * UN DOCUMENT RÉSUMÉ PAR SA RÉFÉRENCE, ou `null` s'il n'est pas (ou plus) de cet
+ * établissement. Sert au fil de Plume, qui montre les documents joints à une question.
+ */
+export async function resumerLeDocument(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	ref: Ref
+): Promise<Resume | null> {
+	const document = ref.genre === 'IMPORT' ? await ctx.db.get(ref.id) : await ctx.db.get(ref.id);
+	if (document === null || document.organizationId !== organizationId) return null;
+	return ref.genre === 'IMPORT'
+		? resumeDuDepot(document as Doc<'importsRecouvrement'>)
+		: resumeDeLaPiece(
+				document as Doc<'pieces'>,
+				await clientDe(ctx, organizationId, (document as Doc<'pieces'>).debiteurId)
+			);
 }
 
 /** Le document désigné, s'il appartient à l'établissement — sinon une erreur qui ne dit rien de plus. */

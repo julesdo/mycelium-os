@@ -7,6 +7,8 @@ import {
 	NOM_DU_PILOTE,
 	PageEcran,
 	Plume,
+	type DocumentDuFil,
+	type FichierAuDepot,
 	type HumeurPlume
 } from '../../ui';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
@@ -48,100 +50,186 @@ function DemoPlume() {
 
 const QUESTION_DEMO = 'Combien me doit-il, pénalités comprises ?';
 
+/* Les documents joints, à chaque moment : dans le compositeur, en lecture, lus. */
+const PIECES_DEMO: readonly FichierAuDepot[] = [
+	{ cle: 'p1', nom: 'BL-2026-0771.pdf', taille: 248_000, mime: 'application/pdf', phase: 'PRET' },
+	{
+		cle: 'p2',
+		nom: 'photo-signature.heic',
+		taille: 3_100_000,
+		mime: '',
+		phase: 'REFUSE',
+		message: 'Format non pris : PDF, image JPG ou PNG'
+	}
+];
+
+const DOCUMENTS_EN_LECTURE: readonly DocumentDuFil[] = [
+	{
+		cle: 'd1',
+		nom: 'BL-2026-0771.pdf',
+		mime: 'application/pdf',
+		scelle: true,
+		ligne: 'Scellé · lecture en cours…',
+		enCours: true
+	}
+];
+
+const DOCUMENTS_LUS: readonly DocumentDuFil[] = [
+	{
+		cle: 'd1',
+		nom: 'BL-2026-0771.pdf',
+		mime: 'application/pdf',
+		scelle: true,
+		ligne: 'Bon de livraison · Fournitures Durand',
+		enCours: false,
+		onOuvrir: () => undefined
+	}
+];
+
 function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 	const [question, setQuestion] = useState('');
 	const forme = variante ?? 'vide';
 	const messages: MessageAffiche[] =
-		forme === 'vide'
+		forme === 'vide' || forme === 'joindre'
 			? []
-			: forme === 'geste'
+			: forme === 'lecture'
 				? [
 						{
 							genre: 'GERANT',
 							id: 'q',
-							texte: 'Je l’ai eu au téléphone, il paie 2 000 € le 20 et le reste fin novembre.'
-						},
-						{
-							genre: 'PLUME',
-							id: 'r',
-							phrases: [
-								{
-									texte:
-										'Je vous propose de noter sa promesse, et de poser un rappel le lendemain pour vérifier que le virement est arrivé.',
-									genreSource: 'AUCUNE',
-									libelleSource: ''
-								}
-							],
-							suite: (
-								<div className="flex flex-col gap-2">
-									<CarteDeGeste
-										icone={<HandCoinsIcon />}
-										titre="Promesse de 2 000,00 € pour mardi 20 octobre"
-										detail="Si rien n’arrive ce jour-là, le dossier remonte dans Aujourd’hui."
-										etat="FAITE"
-										resultat="Promesse de 2 000,00 € notée pour mardi 20 octobre."
-									/>
-									<CarteDeGeste
-										icone={<AlarmClockIcon />}
-										titre="Rappel mercredi 21 octobre"
-										detail="Vérifier le virement promis. Ce jour-là, le dossier remonte dans Aujourd’hui."
-										etat="PROPOSEE"
-										principal
-										libelleConfirmer="Poser le rappel"
-										onConfirmer={() => undefined}
-										onEcarter={() => undefined}
-									/>
-								</div>
-							)
+							texte: 'Il dit qu’il n’a jamais été livré.',
+							documents: DOCUMENTS_EN_LECTURE
 						}
 					]
-				: forme === 'travail'
-					? [{ genre: 'GERANT', id: 'q', texte: QUESTION_DEMO }]
-					: [
-							{ genre: 'GERANT', id: 'q', texte: QUESTION_DEMO },
+				: forme === 'documents'
+					? [
+							{
+								genre: 'GERANT',
+								id: 'q',
+								texte: 'Il dit qu’il n’a jamais été livré.',
+								documents: DOCUMENTS_LUS
+							},
 							{
 								genre: 'PLUME',
 								id: 'r',
 								phrases: [
 									{
 										texte:
-											'Fournitures Durand doit 6 373,50 € à ce jour : 6 000,00 € de factures, 253,50 € de pénalités et 120,00 € de frais de recouvrement.',
-										genreSource: 'DECOMPTE',
-										libelleSource: 'calcul du jour'
+											'J’ai lu le bon de livraison BL-2026-0771 : il est daté du 2 septembre et porte la signature du client, sans réserve.',
+										genreSource: 'PIECE',
+										libelleSource: 'bon de livraison BL-2026-0771'
 									},
 									{
-										texte:
-											'Les pénalités courent au taux de la BCE majoré de dix points, depuis l’échéance de chaque facture.',
-										genreSource: 'PARAMETRE',
-										libelleSource: 'taux des pénalités, relevé le 04/01'
-									},
-									{
-										texte:
-											'Le montant bouge chaque jour tant que les factures ne sont pas réglées.',
+										texte: 'Il est rangé au dossier, avec ses factures.',
 										genreSource: 'AUCUNE',
 										libelleSource: ''
 									}
 								],
-								// Ce que la base sait du dossier, joint par le logiciel à « où en est ».
 								suite: (
-									<CarteEtatDuDossier
-										lignes={[
-											{
-												texte: 'Il reste 6 000,00 € à payer sur 3 factures.',
-												onOuvrir: () => undefined
-											},
-											{
-												texte: 'Prochaine étape : deuxième rappel, mardi 13 octobre.',
-												onOuvrir: () => undefined
-											},
-											{ texte: 'Je lui écris à compta@durand.fr.', onOuvrir: () => undefined },
-											{ texte: 'Il conteste : c’est noté, et le dossier continue.' },
-											{ texte: 'Aucun décompte n’est encore arrêté.', onOuvrir: () => undefined }
-										]}
+									<CarteDeGeste
+										icone={<AlarmClockIcon />}
+										titre="Noter au dossier"
+										detail="« Le client dit ne pas avoir été livré ; le bon de livraison signé dit le contraire. »"
+										etat="PROPOSEE"
+										principal
+										libelleConfirmer="Noter"
+										onConfirmer={() => undefined}
+										onEcarter={() => undefined}
 									/>
 								)
 							}
-						];
+						]
+					: forme === 'geste'
+						? [
+								{
+									genre: 'GERANT',
+									id: 'q',
+									texte: 'Je l’ai eu au téléphone, il paie 2 000 € le 20 et le reste fin novembre.'
+								},
+								{
+									genre: 'PLUME',
+									id: 'r',
+									phrases: [
+										{
+											texte:
+												'Je vous propose de noter sa promesse, et de poser un rappel le lendemain pour vérifier que le virement est arrivé.',
+											genreSource: 'AUCUNE',
+											libelleSource: ''
+										}
+									],
+									suite: (
+										<div className="flex flex-col gap-2">
+											<CarteDeGeste
+												icone={<HandCoinsIcon />}
+												titre="Promesse de 2 000,00 € pour mardi 20 octobre"
+												detail="Si rien n’arrive ce jour-là, le dossier remonte dans Aujourd’hui."
+												etat="FAITE"
+												resultat="Promesse de 2 000,00 € notée pour mardi 20 octobre."
+											/>
+											<CarteDeGeste
+												icone={<AlarmClockIcon />}
+												titre="Rappel mercredi 21 octobre"
+												detail="Vérifier le virement promis. Ce jour-là, le dossier remonte dans Aujourd’hui."
+												etat="PROPOSEE"
+												principal
+												libelleConfirmer="Poser le rappel"
+												onConfirmer={() => undefined}
+												onEcarter={() => undefined}
+											/>
+										</div>
+									)
+								}
+							]
+						: forme === 'travail'
+							? [{ genre: 'GERANT', id: 'q', texte: QUESTION_DEMO }]
+							: [
+									{ genre: 'GERANT', id: 'q', texte: QUESTION_DEMO },
+									{
+										genre: 'PLUME',
+										id: 'r',
+										phrases: [
+											{
+												texte:
+													'Fournitures Durand doit 6 373,50 € à ce jour : 6 000,00 € de factures, 253,50 € de pénalités et 120,00 € de frais de recouvrement.',
+												genreSource: 'DECOMPTE',
+												libelleSource: 'calcul du jour'
+											},
+											{
+												texte:
+													'Les pénalités courent au taux de la BCE majoré de dix points, depuis l’échéance de chaque facture.',
+												genreSource: 'PARAMETRE',
+												libelleSource: 'taux des pénalités, relevé le 04/01'
+											},
+											{
+												texte:
+													'Le montant bouge chaque jour tant que les factures ne sont pas réglées.',
+												genreSource: 'AUCUNE',
+												libelleSource: ''
+											}
+										],
+										// Ce que la base sait du dossier, joint par le logiciel à « où en est ».
+										suite: (
+											<CarteEtatDuDossier
+												lignes={[
+													{
+														texte: 'Il reste 6 000,00 € à payer sur 3 factures.',
+														onOuvrir: () => undefined
+													},
+													{
+														texte: 'Prochaine étape : deuxième rappel, mardi 13 octobre.',
+														onOuvrir: () => undefined
+													},
+													{ texte: 'Je lui écris à compta@durand.fr.', onOuvrir: () => undefined },
+													{ texte: 'Il conteste : c’est noté, et le dossier continue.' },
+													{
+														texte: 'Aucun décompte n’est encore arrêté.',
+														onOuvrir: () => undefined
+													}
+												]}
+											/>
+										)
+									}
+								];
 	return (
 		<EcranConversationPilote
 			fil={{
@@ -161,14 +249,21 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 				},
 				messages,
 				travail:
-					forme === 'travail'
+					forme === 'lecture'
 						? [
-								{ libelle: 'Je relis le dossier de Fournitures Durand', etat: 'faite' },
-								{ libelle: 'Je reprends 3 factures et le décompte', etat: 'faite' },
-								{ libelle: 'Je vérifie chaque chiffre à sa source', etat: 'courante' },
+								{ libelle: 'Je mets le document au coffre', etat: 'faite' },
+								{ libelle: 'Je le lis', etat: 'courante' },
+								{ libelle: 'Je relis le dossier de Fournitures Durand', etat: 'avenir' },
 								{ libelle: 'Je rédige ma réponse', etat: 'avenir' }
 							]
-						: null,
+						: forme === 'travail'
+							? [
+									{ libelle: 'Je relis le dossier de Fournitures Durand', etat: 'faite' },
+									{ libelle: 'Je reprends 3 factures et le décompte', etat: 'faite' },
+									{ libelle: 'Je vérifie chaque chiffre à sa source', etat: 'courante' },
+									{ libelle: 'Je rédige ma réponse', etat: 'avenir' }
+								]
+							: null,
 				refus: null,
 				panne: null,
 				avertissement: null,
@@ -180,9 +275,15 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 				question,
 				onQuestion: setQuestion,
 				onEnvoyer: () => setQuestion(''),
-				enCours: forme === 'travail',
+				enCours: forme === 'travail' || forme === 'lecture',
 				placeholder: `Demander à ${NOM_DU_PILOTE}…`,
-				arretee: false
+				arretee: false,
+				pieces: {
+					fichiers: forme === 'joindre' ? PIECES_DEMO : [],
+					onJoindre: () => undefined,
+					onRetirer: () => undefined,
+					accept: '.pdf,image/*'
+				}
 			}}
 		/>
 	);
@@ -304,7 +405,7 @@ export const ECRANS_PLUME: readonly EcranDuProduit[] = [
 		route: '/app/pilote/$id',
 		libelle: 'Parler à Plume',
 		vide: false,
-		variantes: ['vide', 'travail', 'reponse', 'geste'],
+		variantes: ['vide', 'travail', 'reponse', 'geste', 'joindre', 'lecture', 'documents'],
 		Demo: DemoConversation
 	},
 	{
