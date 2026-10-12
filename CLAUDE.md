@@ -202,6 +202,22 @@ Compte y mène. **Aucun visage n'est inventé** : aucune source publique ne publ
 ou d'un commissaire, un portrait se dessine d'après le nom, et la vraie photo s'ajoute depuis la fiche
 d'un membre de l'équipe (`poserPhoto`). Ni note ni avis : rien de vérifiable n'en publie.
 
+**Le choix des professionnels est devenu un parcours le 12/10/2026**
+(`docs/superpowers/specs/2026-10-12-parcours-du-choix.md`, sur la création d'un groupe chez
+Splitwise, Chime, PayPal, Luma et Bluesky, et la recherche d'un praticien chez Alan). Le fondateur :
+« trop complexe, surtout avec des scrolls dans une popup ». La feuille « Qui fait l'acte » et les
+deux recherches (un département, un barreau) sont remplacées par UNE page pleine qu'on ferme d'une
+croix (`ParcoursProfessionnels`) : une profession par étape (« Quel avocat ? », puis « Quel
+commissaire de justice ? »), la recherche et le lieu collés en haut (« Près de Durand », « Toute la
+France »), une liste qui défile sans fin (`avocatsDuSecteur` paginée, index `search_texte` ;
+`etudesParNom`), les choisis en portraits au-dessus du seul bouton plein, puis un RÉSUMÉ et
+« Confirmer » — rien ne s'écrit avant, ni au carnet ni au dossier. Le MÊME parcours sert le dossier,
+la déclaration d'une voie, la remise au conseil, les courriers à un professionnel et « Ajouter à
+mon équipe » sur l'écran Défense (`app/use-annuaire.ts`). La fiche se pousse par-dessus sous
+1024 px et s'ouvre à droite au-delà. L'annuaire des avocats, référentiel sans établissement, est
+exempté NOMMÉMENT par `recherche-cloisonnee.test.ts`, qui vérifie qu'il ne porte aucun
+`organizationId`.
+
 **Le site public a changé de direction artistique le 06/10/2026**
 (`docs/superpowers/specs/2026-10-06-site-direction-artistique.md`, vingt références Mobbin). Le
 fondateur : « des formes, de l'humanité, un feeling, une vraie DA en intégrant notre cible ». La

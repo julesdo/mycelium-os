@@ -196,6 +196,24 @@ interface IndexDeRecherche {
 	filterFields: string[];
 }
 
+/**
+ * LES RÉFÉRENTIELS, ET EUX SEULS, CHERCHENT SANS ÉTABLISSEMENT (12/10/2026).
+ *
+ * Un fichier public n'appartient à aucun client : l'annuaire national des avocats
+ * (Licence Ouverte) n'a pas d'`organizationId`, au même titre que les taux du
+ * référentiel juridique — c'est écrit sur la table. Le parcours du choix y cherche
+ * par nom, dans toute la France.
+ *
+ * ⚠️ L'EXCEPTION SE VÉRIFIE, elle ne se déclare pas : une table nommée ici qui
+ * porterait un `organizationId` fait tomber le dernier test de ce bloc. On ne
+ * peut donc pas y glisser une table de données client pour faire taire la
+ * barrière.
+ */
+const REFERENTIELS: Readonly<Record<string, string>> = {
+	annuaireAvocats:
+		'L’annuaire national des avocats, fichier public sous Licence Ouverte : aucune donnée client.'
+};
+
 /** Les index de recherche qui ne filtrent pas par établissement. */
 function indexNonCloisonnes(tables: Readonly<Record<string, unknown>>): {
 	fautifs: string[];
@@ -217,6 +235,7 @@ function indexNonCloisonnes(tables: Readonly<Record<string, unknown>>): {
 			...(exporte.stagedSearchIndexes ?? [])
 		]) {
 			lus += 1;
+			if (nom in REFERENTIELS) continue;
 			if (!index.filterFields.includes('organizationId')) {
 				fautifs.push(`${nom}.${index.indexDescriptor}`);
 			}
@@ -252,6 +271,14 @@ function appelsNonCloisonnes(source: string): { fautifs: string[]; lus: number }
 			}
 		}
 		const appel = source.slice(ouverture, fin + 1);
+		// La table interrogée, lue juste avant l'appel : `.query('annuaireAvocats')`.
+		const table = /\.query\(\s*['"](\w+)['"]\s*\)\s*\.\s*$/.exec(
+			source.slice(Math.max(0, depart - 120), depart)
+		)?.[1];
+		if (table !== undefined && table in REFERENTIELS) {
+			depart = source.indexOf(motif, fin);
+			continue;
+		}
 		if (!/\.eq\(\s*['"]organizationId['"]/.test(appel)) {
 			fautifs.push(appel.replace(/\s+/g, ' ').slice(0, 100));
 		}
@@ -306,5 +333,24 @@ describe('la frontière de la recherche, dans le schéma et dans le code', () =>
 		expect(appelsNonCloisonnes(oubli).fautifs).toHaveLength(1);
 		expect(appelsNonCloisonnes(tropTard).fautifs).toHaveLength(1);
 		expect(appelsNonCloisonnes(juste)).toEqual({ fautifs: [], lus: 1 });
+	});
+
+	it('un référentiel exempté ne porte aucun établissement', () => {
+		const tables = schema.tables as unknown as Record<
+			string,
+			{ validator: { fields?: Record<string, unknown> } } | undefined
+		>;
+		for (const nom of Object.keys(REFERENTIELS)) {
+			const table = tables[nom];
+			expect(table, `« ${nom} » n’existe pas dans le schéma`).toBeDefined();
+			expect(Object.keys(table?.validator.fields ?? {})).not.toContain('organizationId');
+		}
+		// Et l'exception ne couvre que sa table : la même recherche sur une table client mord.
+		const client =
+			"ctx.db\n\t.query('debiteurs')\n\t.withSearchIndex('x', (q) => q.search('nom', t))";
+		const referentiel =
+			"ctx.db\n\t.query('annuaireAvocats')\n\t.withSearchIndex('x', (q) => q.search('texte', t))";
+		expect(appelsNonCloisonnes(client).fautifs).toHaveLength(1);
+		expect(appelsNonCloisonnes(referentiel)).toEqual({ fautifs: [], lus: 1 });
 	});
 });

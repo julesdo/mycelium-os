@@ -209,8 +209,8 @@ export const chercherMonEtablissementAuRegistre = action({
  * base exprès pour ne pas en accepter. À l'inscription, il n'y a RIEN en base à
  * lire : le nom n'existe que dans le champ de saisie. La garde correcte est donc
  * une session — `authedAction` —, qui exige un compte sans exiger un
- * établissement. C'est déjà le niveau que `annuaires.chercherUnCommissaireDeJustice`
- * pose pour un département libre.
+ * établissement. C'est déjà le niveau que `annuaires.etudesParNom` pose pour un
+ * nom d'étude libre.
  *
  * ⚠️ ET SURTOUT : ON NE CRÉE PAS L'ÉTABLISSEMENT « JUSTE POUR POUVOIR
  * CHERCHER ». `createOrganization` consomme l'essai gratuit ; une inscription

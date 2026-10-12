@@ -5,11 +5,8 @@ import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
 import { NOM_DU_PILOTE } from './plume';
 import { TexteQuiMene } from './texte-qui-mene';
-import {
-	ChoixIntervenant,
-	type FicheIntervenant,
-	type ProfessionnelsProposes
-} from './choix-intervenant';
+import type { FicheIntervenant } from './fiches-professionnels';
+import { ParcoursProfessionnels, type AnnuaireDuParcours } from './parcours-professionnels';
 import { DirigeantsProposes, type EtatDirigeants } from './dirigeants';
 import { LigneBouton, ListeAnalyses } from './navigation';
 
@@ -193,7 +190,7 @@ export interface CourriersDuDossier {
 	 * à l'avocat ou d'une demande au commissaire se choisit dans la même feuille
 	 * que « Qui fait l'acte », au lieu d'exiger qu'il soit d'abord au carnet.
 	 */
-	readonly professionnels: ProfessionnelsProposes;
+	readonly professionnels: AnnuaireDuParcours;
 	/**
 	 * Les dirigeants du client au registre, pour « qui signe pour votre client »
 	 * d'un échéancier (01/10/2026) ; `null` quand son SIREN n'est pas connu.
@@ -440,9 +437,9 @@ function Choix<T extends string | number | boolean | null>({
  * professionnels près du client.
  *
  * ⚠️ PLUS DE « AJOUTEZ-LE D'ABORD À VOTRE CARNET » (01/10/2026). Sans fiche au
- * carnet, le champ restait vide et renvoyait vers un autre écran ; la feuille
- * propose maintenant les avocats (ou les études) près du client, et un toucher
- * les ajoute et les choisit.
+ * carnet, le champ restait vide et renvoyait vers un autre écran ; le parcours du
+ * choix propose les avocats (ou les études) près du client, et les cherche par nom
+ * dans toute la France (12/10/2026). Une seule personne : un toucher remplace.
  */
 function DestinataireDuCourrier({
 	role,
@@ -455,16 +452,11 @@ function DestinataireDuCourrier({
 	intervenants: readonly IntervenantProposable[];
 	valeur: string | null;
 	onChange: (intervenantId: string) => void;
-	professionnels: ProfessionnelsProposes;
+	professionnels: AnnuaireDuParcours;
 }) {
 	const [ouverte, setOuverte] = useState(false);
 	const siens = intervenants.filter((i) => i.role === role);
 	const choisi = siens.find((i) => i.id === valeur);
-	const retenu = (id: string | null) => {
-		if (id === null) return;
-		onChange(id);
-		setOuverte(false);
-	};
 
 	return (
 		<>
@@ -479,21 +471,22 @@ function DestinataireDuCourrier({
 					}}
 				/>
 			</ListeAnalyses>
-			<ChoixIntervenant
+			<ParcoursProfessionnels
+				ouvert={ouverte}
 				titre={role === 'AVOCAT' ? 'À quel avocat' : 'À quel commissaire de justice'}
-				role={role}
+				but="DOSSIER"
+				professions={[role]}
+				unSeul
 				sansPersonne={null}
-				carnet={siens.map(({ id, ...fiche }) => ({ _id: id, ...fiche }))}
-				choisi={valeur ?? undefined}
-				ouverte={ouverte}
-				propositions={professionnels.propositions}
-				enCours={professionnels.enCours}
-				erreur={professionnels.erreur}
+				equipe={intervenants.map(({ id, ...fiche }) => ({ _id: id, ...fiche }))}
+				dejaChoisis={valeur === null ? [] : [valeur]}
+				annuaire={professionnels}
 				onFermer={() => setOuverte(false)}
-				onChoisir={retenu}
-				onRetenirEtude={(etude) => void professionnels.onRetenirEtude(etude).then(retenu)}
-				onRetenirAvocat={(avocat) => void professionnels.onRetenirAvocat(avocat).then(retenu)}
-				onAjouter={(fiche) => void professionnels.onAjouter(fiche).then(retenu)}
+				onConfirmer={(ids) => {
+					const id = ids[0];
+					if (id !== undefined) onChange(id);
+					setOuverte(false);
+				}}
 			/>
 		</>
 	);
@@ -513,7 +506,7 @@ function FormulaireChoix({
 	choix: ChoixCourrierAffiche;
 	onChange: (c: ChoixCourrierAffiche) => void;
 	intervenants: readonly IntervenantProposable[];
-	professionnels: ProfessionnelsProposes;
+	professionnels: AnnuaireDuParcours;
 	dirigeantsDuClient: CourriersDuDossier['dirigeantsDuClient'];
 	citationAnnonce: string | null;
 	personneNommee: PersonneNommeeAffichee | null;

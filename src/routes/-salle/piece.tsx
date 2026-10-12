@@ -16,7 +16,8 @@ import {
 import { periodesDeTauxParDefaut } from '../../lib/verticales/recouvrement/pays/france/taux';
 import type { DecompteAffiche, SuiviConseilAffiche } from '../../ui';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
-import { CARNET_DEMO, PROFESSIONNELS_DEMO } from './communes';
+import { CARNET_DEMO } from './communes';
+import { annuaireFige } from './annuaire-demo';
 
 /**
  * L'ARRÊT ET LA PIÈCE, DANS LA SALLE D'EXPOSITION.
@@ -188,8 +189,7 @@ function suiviDemo(remise: SuiviConseilAffiche['remise']): SuiviConseilAffiche {
 		faitsDeProcedureDepuisLaRemise: 0,
 		remise,
 		carnet: CARNET_DEMO,
-		professionnels: PROFESSIONNELS_DEMO,
-		onAjouterFiche: () => {},
+		professionnels: annuaireFige(),
 		onRemettre: () => {},
 		onRetour: () => {},
 		onClore: () => {},

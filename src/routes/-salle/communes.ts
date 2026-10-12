@@ -1,12 +1,9 @@
 import type {
+	AvocatProposeAffiche,
 	EtapeAffichee,
+	EtudeProposee,
 	EvenementAffiche,
 	FicheIntervenant,
-	ProfessionnelsProposes,
-	PropositionsAffichees,
-	RepertoireAffiche,
-	ResultatAnnuaireAffiche,
-	ResultatAvocatsAffiche,
 	VoieAffichee
 } from '../../ui';
 import { MACHINES, etapesDeLaVoie } from '../../lib/verticales/recouvrement/apres-procedure';
@@ -303,7 +300,13 @@ export const CARNET_DEMO: readonly FicheIntervenant[] = [
  * capitales, parfois doublées d'un sigle, et une adresse de siège qui n'est pas
  * toujours dans le département cherché.
  */
-export const ETUDES_DEMO: ResultatAnnuaireAffiche = {
+export const ETUDES_DEMO: {
+	readonly departement: string;
+	readonly total: number;
+	readonly etudes: readonly EtudeProposee[];
+	readonly source: string;
+	readonly releveeLe: string;
+} = {
 	departement: '44',
 	total: 22,
 	etudes: [
@@ -367,44 +370,6 @@ export const ETUDES_DEMO: ResultatAnnuaireAffiche = {
 };
 
 /**
- * LE RÉPERTOIRE DE LA SALLE — DE VRAIS BARREAUX, EN NOMBRE RÉDUIT.
- *
- * Relevés le 12 septembre 2026 dans la livraison du 17 juillet 2026 de
- * l'annuaire national des avocats. La livraison réelle en porte plus de cent
- * cinquante ; vingt suffisent à mettre la liste déroulante et sa recherche à
- * l'épreuve, et les noms sont écrits comme le fichier les écrit — en capitales,
- * sans accent, et parfois sous le nom du DÉPARTEMENT plutôt que de la ville
- * (« CHARENTE », « VAL DE MARNE »). Les redresser ferait afficher à la salle
- * des libellés que la source ne porte pas.
- */
-export const BARREAUX_DEMO: RepertoireAffiche = {
-	barreaux: [
-		'AGEN',
-		'ALBERTVILLE',
-		'ALES',
-		'ARDENNES',
-		'ARRAS',
-		'AUXERRE',
-		'BEAUVAIS',
-		'BESANCON',
-		'BLOIS',
-		'BORDEAUX',
-		'BOURGES',
-		'BRIEY',
-		'CARPENTRAS',
-		'CHALON-SUR-SAONE',
-		'CHARENTE',
-		'COLMAR',
-		'HAUTE-MARNE',
-		'LOT',
-		'MEUSE',
-		'VAL DE MARNE'
-	],
-	complete: true,
-	releveeLe: '2026-07-17'
-};
-
-/**
  * TROIS AVOCATS DE DÉMONSTRATION — ET CE SONT DE VRAIS.
  *
  * Relevés le 12 septembre 2026 dans la livraison du 17 juillet 2026, au barreau
@@ -428,57 +393,48 @@ export const BARREAUX_DEMO: RepertoireAffiche = {
  * raison : la salle montre une tranche, et la liste de filtres d'une tranche
  * est celle de cette tranche.
  */
-export const AVOCATS_DEMO: ResultatAvocatsAffiche = {
-	barreau: 'BORDEAUX',
-	specialite: null,
-	total: 2214,
-	lectureTronquee: false,
-	specialitesDeclarees: [
-		'Droit de la sécurité sociale et de la protection sociale',
-		'Droit des sociétés',
-		'Droit du travail',
-		'Droit fiscal et droit douanier',
-		'Droit public'
-	],
-	avocats: [
-		{
-			nom: 'ANDREAU',
-			prenom: 'Pierre',
-			raisonSociale: 'FIDUCIAIRE SAINT JOSEPH',
-			adresse: '9 Cours de Gourgues',
-			codePostal: '33000',
-			ville: 'BORDEAUX',
-			specialites: ['Droit des sociétés', 'Droit fiscal et droit douanier']
-		},
-		{
-			nom: 'BALTAZAR',
-			prenom: 'Marie-Christine',
-			raisonSociale: 'BALTAZAR MARIE-CHRISTINE',
-			siren: '502005747',
-			adresse: '12 rue Elisée Reclus, 2ème étage',
-			codePostal: '33000',
-			ville: 'BORDEAUX',
-			specialites: ['Droit public']
-		},
-		{
-			nom: 'BERTRAND',
-			prenom: 'Stéphanie',
-			raisonSociale: 'STEPHANIE BERTRAND AVOCAT',
-			siren: '832397772',
-			adresse: '4 rue de la Maison Daurade',
-			codePostal: '33000',
-			ville: 'BORDEAUX',
-			specialites: ['Droit de la sécurité sociale et de la protection sociale', 'Droit du travail']
-		}
-	],
-	source:
-		'Annuaire national des avocats (Conseil national des barreaux), publié sur data.gouv.fr sous ' +
-		'Licence Ouverte 2.0. C’est une photographie mensuelle : une fiche peut décrire une situation ' +
-		'périmée — un avocat qui a changé de barreau, déménagé, ou cessé d’exercer depuis le relevé. ' +
-		'Les spécialités sont celles que l’avocat a DÉCLARÉES au fichier : leur absence ne dit pas ' +
-		'qu’il n’en a aucune, elle dit qu’aucune n’est inscrite.',
-	releveeLe: '2026-07-17'
-};
+export const AVOCATS_DEMO: readonly AvocatProposeAffiche[] = [
+	{
+		barreau: 'BORDEAUX',
+		nom: 'ANDREAU',
+		prenom: 'Pierre',
+		raisonSociale: 'FIDUCIAIRE SAINT JOSEPH',
+		adresse: '9 Cours de Gourgues',
+		codePostal: '33000',
+		ville: 'BORDEAUX',
+		specialites: ['Droit des sociétés', 'Droit fiscal et droit douanier']
+	},
+	{
+		barreau: 'BORDEAUX',
+		nom: 'BALTAZAR',
+		prenom: 'Marie-Christine',
+		raisonSociale: 'BALTAZAR MARIE-CHRISTINE',
+		siren: '502005747',
+		adresse: '12 rue Elisée Reclus, 2ème étage',
+		codePostal: '33000',
+		ville: 'BORDEAUX',
+		specialites: ['Droit public']
+	},
+	{
+		barreau: 'BORDEAUX',
+		nom: 'BERTRAND',
+		prenom: 'Stéphanie',
+		raisonSociale: 'STEPHANIE BERTRAND AVOCAT',
+		siren: '832397772',
+		adresse: '4 rue de la Maison Daurade',
+		codePostal: '33000',
+		ville: 'BORDEAUX',
+		specialites: ['Droit de la sécurité sociale et de la protection sociale', 'Droit du travail']
+	}
+];
+
+/** La phrase qui part avec une fiche d'avocat retenue : la même qu'en production. */
+export const SOURCE_AVOCATS_DEMO =
+	'Annuaire national des avocats (Conseil national des barreaux), publié sur data.gouv.fr sous ' +
+	'Licence Ouverte 2.0. C’est une photographie mensuelle : une fiche peut décrire une situation ' +
+	'périmée — un avocat qui a changé de barreau, déménagé, ou cessé d’exercer depuis le relevé. ' +
+	'Les spécialités sont celles que l’avocat a DÉCLARÉES au fichier : leur absence ne dit pas ' +
+	'qu’il n’en a aucune, elle dit qu’aucune n’est inscrite.';
 
 /**
  * LES PROFESSIONNELS PRÈS DU CLIENT, TELS QUE LE DOSSIER LES PROPOSE
@@ -489,82 +445,68 @@ export const AVOCATS_DEMO: ResultatAvocatsAffiche = {
  * Loire-Atlantique, 14 déclarent une spécialité proche d'un impayé commercial,
  * et 578 exercent au code postal 44000. La salle en montre une poignée.
  */
-export const PROPOSITIONS_DEMO: PropositionsAffichees = {
-	etat: 'PRET',
-	client: 'Fournitures Durand',
-	// Le siège de démonstration : la place Royale, à Nantes.
-	lieu: { departement: '44', commune: 'NANTES', latitude: 47.2135, longitude: -1.5589 },
-	commissaires: {
-		etat: 'TROUVE',
-		etudes: ETUDES_DEMO.etudes,
-		source: ETUDES_DEMO.source,
-		releveeLe: ETUDES_DEMO.releveeLe
-	},
-	avocats: {
-		specialises: [
-			{
-				barreau: 'NANTES',
-				nom: 'BAILLEUX',
-				prenom: 'Véronique',
-				raisonSociale: 'BAILLEUX VÉRONIQUE',
-				siren: '411007768',
-				adresse: '8 impasse de Lande Bourne, Zone artisanale Pan Loup',
-				codePostal: '44220',
-				ville: 'COUERON',
-				specialites: ['Droit commercial, des affaires et de la concurrence']
-			}
-		],
-		autres: [
-			{
-				barreau: 'NANTES',
-				nom: 'ADAMCZYK',
-				prenom: 'Delphine',
-				raisonSociale: 'AD CONSEIL',
-				siren: '813980893',
-				adresse: '3 place du Bon Pasteur',
-				codePostal: '44000',
-				ville: 'NANTES',
-				specialites: ['Droit de la famille, des personnes et de leur patrimoine']
-			},
-			{
-				barreau: 'NANTES',
-				nom: 'AGOSTINI',
-				prenom: 'Camille',
-				raisonSociale: 'GILLES RENAUD ASSOCIES',
-				siren: '799109863',
-				adresse: '2 rue Jean-Jacques Rousseau',
-				codePostal: '44000',
-				ville: 'NANTES',
-				specialites: []
-			},
-			{
-				barreau: 'NANTES',
-				nom: 'AH-FAH',
-				prenom: 'Philippe',
-				raisonSociale: 'AH-FAH PHILIPPE',
-				siren: '502532989',
-				adresse: '36 rue Russeil',
-				codePostal: '44000',
-				ville: 'NANTES',
-				specialites: [
-					'Droit de la sécurité sociale et de la protection sociale',
-					'Droit du travail'
-				]
-			}
-		],
-		autresEnPlus: true,
-		source: AVOCATS_DEMO.source,
-		releveeLe: '2026-09-23'
-	}
+export const CLIENT_DEMO = 'Fournitures Durand';
+
+/** Le siège de démonstration : la place Royale, à Nantes. */
+export const LIEU_DEMO = {
+	departement: '44',
+	commune: 'NANTES',
+	latitude: 47.2135,
+	longitude: -1.5589
 };
 
-/** Les mêmes, avec des gestes inertes : la salle ne touche à aucune base. */
-export const PROFESSIONNELS_DEMO: ProfessionnelsProposes = {
-	propositions: PROPOSITIONS_DEMO,
-	onDemander: () => undefined,
-	onRetenirEtude: () => Promise.resolve(null),
-	onRetenirAvocat: () => Promise.resolve(null),
-	onAjouter: () => Promise.resolve(null),
-	enCours: false,
-	erreur: null
+export const AVOCATS_PRES_DEMO: {
+	readonly proches: readonly AvocatProposeAffiche[];
+	readonly autres: readonly AvocatProposeAffiche[];
+	readonly releveeLe: string;
+} = {
+	proches: [
+		{
+			barreau: 'NANTES',
+			nom: 'BAILLEUX',
+			prenom: 'Véronique',
+			raisonSociale: 'BAILLEUX VÉRONIQUE',
+			siren: '411007768',
+			adresse: '8 impasse de Lande Bourne, Zone artisanale Pan Loup',
+			codePostal: '44220',
+			ville: 'COUERON',
+			specialites: ['Droit commercial, des affaires et de la concurrence']
+		}
+	],
+	autres: [
+		{
+			barreau: 'NANTES',
+			nom: 'ADAMCZYK',
+			prenom: 'Delphine',
+			raisonSociale: 'AD CONSEIL',
+			siren: '813980893',
+			adresse: '3 place du Bon Pasteur',
+			codePostal: '44000',
+			ville: 'NANTES',
+			specialites: ['Droit de la famille, des personnes et de leur patrimoine']
+		},
+		{
+			barreau: 'NANTES',
+			nom: 'AGOSTINI',
+			prenom: 'Camille',
+			raisonSociale: 'GILLES RENAUD ASSOCIES',
+			siren: '799109863',
+			adresse: '2 rue Jean-Jacques Rousseau',
+			codePostal: '44000',
+			ville: 'NANTES',
+			specialites: []
+		},
+		{
+			barreau: 'NANTES',
+			nom: 'AH-FAH',
+			prenom: 'Philippe',
+			raisonSociale: 'AH-FAH PHILIPPE',
+			siren: '502532989',
+			adresse: '36 rue Russeil',
+			codePostal: '44000',
+			ville: 'NANTES',
+			specialites: ['Droit de la sécurité sociale et de la protection sociale', 'Droit du travail']
+		}
+	],
+	releveeLe: '2026-09-23'
 };

@@ -278,6 +278,41 @@ export function prefixeDuCodePostal(codePostal: string): string | null {
 }
 
 /**
+ * UNE CHAÎNE PRÊTE À ÊTRE CHERCHÉE : minuscules, sans accents, les signes
+ * changés en espaces. La même fonction écrit le champ en base et lit ce que le
+ * gérant tape : « Étienne » et « etienne » se trouvent l'un l'autre.
+ */
+export function normaliserPourRecherche(texte: string): string {
+	return texte
+		.normalize('NFD')
+		.replace(/\p{Diacritic}/gu, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, ' ')
+		.trim();
+}
+
+/**
+ * CE QUE LA BARRE DE RECHERCHE DU CHOIX LIT D'UN AVOCAT (12/10/2026) : son
+ * prénom et son nom, son cabinet, sa ville, son code postal et son barreau.
+ * « dupont nantes » trouve Marie Dupont à Nantes ; « 44000 » trouve ceux du
+ * code postal.
+ */
+export function texteDeRecherche(fiche: {
+	readonly prenom: string;
+	readonly nom: string;
+	readonly raisonSociale?: string;
+	readonly ville?: string;
+	readonly codePostal?: string;
+	readonly barreau: string;
+}): string {
+	return normaliserPourRecherche(
+		[fiche.prenom, fiche.nom, fiche.raisonSociale, fiche.ville, fiche.codePostal, fiche.barreau]
+			.filter((morceau) => morceau !== undefined && morceau !== '')
+			.join(' ')
+	);
+}
+
+/**
  * Le préfixe qui suit, borne EXCLUE d'un intervalle d'index : `44` rend `45`,
  * `09` rend `10`, `971` rend `972`.
  */

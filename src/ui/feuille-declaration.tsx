@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import { Input, Popup, PopupContent, SectionTitle } from '@cladd-ui/react';
 import { BoutonPrincipal } from './bouton';
-import {
-	ChoixIntervenant,
-	type FicheASaisir,
-	type FicheIntervenant,
-	type ProfessionnelsProposes
-} from './choix-intervenant';
+import type { FicheIntervenant } from './fiches-professionnels';
+import { ParcoursProfessionnels, type AnnuaireDuParcours } from './parcours-professionnels';
 import { dateCourte } from './format';
 import { LigneBouton, ListeAnalyses } from './navigation';
 
@@ -14,14 +10,15 @@ import { LigneBouton, ListeAnalyses } from './navigation';
  * CE QUE LE GÉRANT A DIT DE L'INTERVENANT, AU MOMENT DE DÉCLARER.
  *
  * `null` — il n'a rien dit, et « je le dirai plus tard » ne bloque rien.
- * `{ id: null }` — il a dit « moi-même ».
- * `{ id: … }` — il a nommé une fiche de son carnet.
+ * `{ ids: [] }` — il a dit « moi-même ».
+ * `{ ids: [...] }` — il a nommé une ou plusieurs fiches de son carnet (12/10/2026 :
+ *   un avocat ET un commissaire, comme sur le dossier).
  *
  * ⚠️ TROIS ÉTATS, PAS DEUX. Confondre « rien dit » avec « moi-même » ferait
  * porter à un silence la valeur d'une réponse — et ferait apparaître un anneau
  * sur une carte que personne n'a choisie, c'est-à-dire une présélection.
  */
-export type ChoixDeclare = { readonly id: string | null } | null;
+export type ChoixDeclare = { readonly ids: readonly string[] } | null;
 
 /**
  * « JE L'AI ENGAGÉE LE … » — le seul geste de procédure que ce logiciel offre.
@@ -66,21 +63,15 @@ export function FeuilleDeclaration({
 	enCours,
 	aujourdHui,
 	onFermer,
-	onAjouter,
 	professionnels,
-	onChercherUnCommissaire,
-	onChercherUnAvocat,
 	onDeclarer
 }: {
 	carnet: readonly FicheIntervenant[];
 	enCours: boolean;
 	aujourdHui: string;
 	onFermer: () => void;
-	onAjouter: (fiche: FicheASaisir) => void;
-	/** Les professionnels près du client, proposés sans rien saisir (01/10/2026). */
-	professionnels: ProfessionnelsProposes;
-	onChercherUnCommissaire: () => void;
-	onChercherUnAvocat: () => void;
+	/** L'annuaire du parcours du choix (12/10/2026). */
+	professionnels: AnnuaireDuParcours;
 	onDeclarer: (engageeLe: string, choix: ChoixDeclare) => void;
 }) {
 	/*
@@ -99,9 +90,11 @@ export function FeuilleDeclaration({
 	const nomChoisi =
 		choix === null
 			? 'Je le dirai plus tard'
-			: choix.id === null
+			: choix.ids.length === 0
 				? 'Moi-même'
-				: (carnet.find((fiche) => fiche._id === choix.id)?.nom ?? 'Fiche retirée');
+				: choix.ids.length > 1
+					? `${choix.ids.length} personnes`
+					: (carnet.find((fiche) => fiche._id === choix.ids[0])?.nom ?? 'Fiche retirée');
 
 	return (
 		<>
@@ -181,35 +174,20 @@ export function FeuilleDeclaration({
 			  chacune garde son propre piège à focus. Elles sont SŒURS dans l'arbre,
 			  jamais imbriquées — c'est la forme que la documentation du kit montre.
 			*/}
-			<ChoixIntervenant
-				carnet={carnet}
-				choisi={choix === null ? undefined : choix.id}
-				ouverte={carnetOuvert}
+			<ParcoursProfessionnels
+				ouvert={carnetOuvert}
+				titre="Qui a fait l’acte"
+				but="DOSSIER"
+				professions={['AVOCAT', 'COMMISSAIRE_DE_JUSTICE']}
+				sansPersonne={{ titre: 'Moi-même', precision: 'Aucun professionnel' }}
+				equipe={carnet}
+				dejaChoisis={choix === null ? [] : choix.ids}
+				annuaire={professionnels}
 				onFermer={() => setCarnetOuvert(false)}
-				onChoisir={(intervenantId) => {
-					setChoix({ id: intervenantId });
+				onConfirmer={(ids) => {
+					setChoix({ ids });
 					setCarnetOuvert(false);
 				}}
-				propositions={professionnels.propositions}
-				enCours={professionnels.enCours}
-				erreur={professionnels.erreur}
-				onRetenirEtude={(etude) =>
-					void professionnels.onRetenirEtude(etude).then((id) => {
-						if (id === null) return;
-						setChoix({ id });
-						setCarnetOuvert(false);
-					})
-				}
-				onRetenirAvocat={(avocat) =>
-					void professionnels.onRetenirAvocat(avocat).then((id) => {
-						if (id === null) return;
-						setChoix({ id });
-						setCarnetOuvert(false);
-					})
-				}
-				onAjouter={onAjouter}
-				onChercherUnCommissaire={onChercherUnCommissaire}
-				onChercherUnAvocat={onChercherUnAvocat}
 			/>
 		</>
 	);

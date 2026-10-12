@@ -19,7 +19,6 @@ import {
 	BoutonTexte,
 	CeQuiBloque,
 	ChiffreHero,
-	ChoixIntervenant,
 	Courriers,
 	Decompte,
 	EtatDuDossier,
@@ -33,12 +32,11 @@ import {
 	ListeDeRangees,
 	PageEcran,
 	PanneauDuGeste,
+	ParcoursProfessionnels,
 	Pieces,
 	QuestionnaireLitige,
 	RangeeDepliable,
 	RangeeLien,
-	RechercheAvocat,
-	RechercheCommissaire,
 	RefusEnQuatreParties,
 	Relances,
 	SectionsDepliables,
@@ -58,16 +56,11 @@ import {
 	useDeuxVolets,
 	useSectionOuverte,
 	type AlerteDossier,
-	type AvocatAffiche,
 	type ChoixDeclare,
 	type CourriersDuDossier,
 	type DecompteAffiche,
-	type EtatRechercheAvocat,
-	type EtatRechercheCommissaire,
-	type EtudeAffichee,
-	type FicheASaisir,
 	type FicheIntervenant,
-	type ProfessionnelsProposes,
+	type AnnuaireDuParcours,
 	type Lecture,
 	type LectureEtapesAffichee,
 	type LiensDePaiementAffiches,
@@ -78,7 +71,6 @@ import {
 	type PieceAffichee,
 	type QuestionLitige,
 	type ReponseFait,
-	type RepertoireAffiche,
 	type SituationAffichee,
 	type SoliditeAffichee,
 	type SuiviAffiche,
@@ -310,7 +302,7 @@ export interface CreanceOuverte {
 	} | null;
 	/** Les valeurs juridiques employées, telles qu'elles vivent dans `parametres.ts`. */
 	readonly fiches: readonly FicheParametre[];
-/** Ce qui a été RÉCLAMÉ sur ce dossier, daté : chaque montant reste tel qu'il est parti. */
+	/** Ce qui a été RÉCLAMÉ sur ce dossier, daté : chaque montant reste tel qu'il est parti. */
 	readonly decomptesArretes: readonly DecompteArreteAffiche[];
 	/**
 	 * Le calcul du jour en PDF : le montant se date au téléchargement, comme quand
@@ -360,35 +352,17 @@ export interface CreanceOuverte {
 	/** La date du FAIT, jamais celle de la saisie. */
 	readonly onConsigner: (cle: string, survenuLe: string) => void;
 	readonly onDeclarerVoie: (procedure: string, engageeLe: string, choix: ChoixDeclare) => void;
-	/** Ajoute (`true`) ou retire (`false`) UN professionnel du dossier. */
-	readonly onDesigner: (intervenantId: string, designe: boolean) => void;
-	/** « Moi-même » : plus aucun professionnel sur le dossier. */
-	readonly onAucunIntervenant: () => void;
-	readonly onAjouterFiche: (fiche: FicheASaisir) => void;
 	/**
-	 * Les professionnels près du client, proposés dans la feuille « Qui fait
-	 * l'acte » sans rien saisir (01/10/2026). Le carnet du compte n'est plus un
-	 * passage obligé : un toucher ajoute et choisit.
+	 * Les professionnels du dossier, tels que le parcours du choix les confirme :
+	 * ceux qui manquent s'ajoutent, ceux qui n'y sont plus se retirent. Vide :
+	 * « Moi-même ».
 	 */
-	readonly professionnels: ProfessionnelsProposes;
-	// Les deux recherches de répertoire : leur état vit hors de l'écran, parce
-	// que leurs requêtes sont SAUTÉES tant que la feuille est fermée.
-	readonly rechercheCommissaireOuverte: boolean;
-	readonly etatRechercheCommissaire: EtatRechercheCommissaire;
-	readonly onOuvrirRechercheCommissaire: () => void;
-	readonly onFermerRechercheCommissaire: () => void;
-	readonly onChercherCommissaire: (departement: string) => void;
-	readonly onRetenirEtude: (etude: EtudeAffichee) => void;
-	readonly rechercheAvocatOuverte: boolean;
-	readonly repertoire: RepertoireAffiche | null;
-	readonly barreau: string;
-	readonly specialite: string;
-	readonly etatRechercheAvocat: EtatRechercheAvocat;
-	readonly onOuvrirRechercheAvocat: () => void;
-	readonly onFermerRechercheAvocat: () => void;
-	readonly onChoisirBarreau: (barreau: string) => void;
-	readonly onChoisirSpecialite: (specialite: string) => void;
-	readonly onRetenirAvocat: (avocat: AvocatAffiche) => void;
+	readonly onNommer: (intervenantIds: readonly string[]) => void;
+	/**
+	 * L'annuaire du parcours du choix (12/10/2026) : le carnet en tête, puis les
+	 * professionnels près du client ou de toute la France, page après page.
+	 */
+	readonly professionnels: AnnuaireDuParcours;
 
 	// ── 8. Les brouillons de relance ────────────────────────────────────────
 	readonly relances: readonly NiveauAffiche[];
@@ -1560,10 +1534,8 @@ function RangeeLitige({ creance }: { creance: CreanceOuverte }) {
 function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 	/*
 	  ⚠️ LES FEUILLES SONT UN ÉTAT D'ÉCRAN, PAS UN ÉTAT D'ADRESSE. On ne met pas
-	  en signet une feuille ouverte. Les DEUX recherches de répertoire font
-	  exception et vivent en props : leurs requêtes sont sautées tant que la
-	  feuille est fermée, donc l'ouverture doit être visible de la couche qui
-	  interroge la base.
+	  en signet une feuille ouverte. L'annuaire, lui, vit dans la route : ses
+	  lectures ne partent qu'au geste qui ouvre le parcours (`onDemander`).
 	*/
 	const [voieOuverte, setVoieOuverte] = useState<string | null>(null);
 	const [voieDeclaree, setVoieDeclaree] = useState<string | null>(null);
@@ -1660,10 +1632,7 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 					enCours={creance.enCours}
 					aujourdHui={creance.aujourdHui}
 					onFermer={() => setVoieDeclaree(null)}
-					onAjouter={creance.onAjouterFiche}
 					professionnels={creance.professionnels}
-					onChercherUnCommissaire={creance.onOuvrirRechercheCommissaire}
-					onChercherUnAvocat={creance.onOuvrirRechercheAvocat}
 					onDeclarer={(engageeLe, choix) => {
 						creance.onDeclarerVoie(declaree.cle, engageeLe, choix);
 						setVoieDeclaree(null);
@@ -1672,66 +1641,25 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 				/>
 			)}
 
-			<ChoixIntervenant
-				carnet={creance.carnet}
-				ouverte={carnetOuvert}
-				onFermer={() => setCarnetOuvert(false)}
-				// Le mode « plusieurs » ne passe jamais par `onChoisir`.
-				onChoisir={() => undefined}
-				plusieurs={{
-					choisis: creance.intervenantsChoisis,
-					onBasculer: creance.onDesigner,
-					onPersonne: creance.onAucunIntervenant
-				}}
-				propositions={creance.professionnels.propositions}
-				enCours={creance.professionnels.enCours}
-				erreur={creance.professionnels.erreur}
-				// Retenir une proposition l'ajoute au carnet ET au dossier, et la feuille
-				// reste ouverte : on peut en nommer une seconde.
-				onRetenirEtude={(etude) =>
-					void creance.professionnels.onRetenirEtude(etude).then((id) => {
-						if (id !== null) creance.onDesigner(id, true);
-					})
-				}
-				onRetenirAvocat={(avocat) =>
-					void creance.professionnels.onRetenirAvocat(avocat).then((id) => {
-						if (id !== null) creance.onDesigner(id, true);
-					})
-				}
-				onAjouter={creance.onAjouterFiche}
-				onChercherUnCommissaire={creance.onOuvrirRechercheCommissaire}
-				onChercherUnAvocat={creance.onOuvrirRechercheAvocat}
-			/>
-
 			{/*
-			  LES DEUX RECHERCHES DE RÉPERTOIRE, SŒURS DES AUTRES DANS L'ARBRE. Cladd
-			  les empile comme iOS : celle du dessous recule et garde son piège à
-			  focus, et Échap ferme toujours celle du dessus. Elles ne sont JAMAIS
-			  imbriquées.
-
-			  ⚠️ AUCUN DÉPARTEMENT NI AUCUN BARREAU PROPOSÉ, et c'est un constat, pas
-			  un oubli : aucune fiche débiteur ne porte d'adresse aujourd'hui.
-			  Proposer celui du créancier ferait chercher au mauvais endroit un gérant
-			  qui ne relirait pas le champ, et il en conclurait que sa région ne compte
-			  aucune étude.
+			  LE PARCOURS DU CHOIX (12/10/2026) : une page pleine, une profession par
+			  étape, puis le résumé. Rien ne s'écrit avant « Confirmer » — ni le carnet,
+			  ni le dossier.
 			*/}
-			<RechercheCommissaire
-				ouverte={creance.rechercheCommissaireOuverte}
-				etat={creance.etatRechercheCommissaire}
-				onFermer={creance.onFermerRechercheCommissaire}
-				onChercher={creance.onChercherCommissaire}
-				onRetenir={creance.onRetenirEtude}
-			/>
-			<RechercheAvocat
-				ouverte={creance.rechercheAvocatOuverte}
-				repertoire={creance.repertoire}
-				barreau={creance.barreau}
-				specialite={creance.specialite}
-				etat={creance.etatRechercheAvocat}
-				onFermer={creance.onFermerRechercheAvocat}
-				onChoisirBarreau={creance.onChoisirBarreau}
-				onChoisirSpecialite={creance.onChoisirSpecialite}
-				onRetenir={creance.onRetenirAvocat}
+			<ParcoursProfessionnels
+				ouvert={carnetOuvert}
+				titre="Qui fait l’acte"
+				but="DOSSIER"
+				professions={['AVOCAT', 'COMMISSAIRE_DE_JUSTICE']}
+				sansPersonne={{ titre: 'Moi-même', precision: 'Aucun professionnel' }}
+				equipe={creance.carnet}
+				dejaChoisis={creance.intervenantsChoisis}
+				annuaire={creance.professionnels}
+				onFermer={() => setCarnetOuvert(false)}
+				onConfirmer={(ids) => {
+					creance.onNommer(ids);
+					setCarnetOuvert(false);
+				}}
 			/>
 		</RangeeDepliable>
 	);

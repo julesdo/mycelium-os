@@ -71,13 +71,8 @@ import {
 	type SoliditeAffichee,
 	modelesProposables
 } from '../../ui';
-import {
-	BARREAUX_DEMO,
-	CARNET_DEMO,
-	ETABLISSEMENT_DEMO,
-	PROFESSIONNELS_DEMO,
-	voieDeLaCreance
-} from './communes';
+import { CARNET_DEMO, ETABLISSEMENT_DEMO, voieDeLaCreance } from './communes';
+import { annuaireFige } from './annuaire-demo';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
 /**
@@ -723,7 +718,7 @@ function creanceDemo({
 			onEffacer: () => undefined
 		},
 		courriers: {
-			professionnels: PROFESSIONNELS_DEMO,
+			professionnels: annuaireFige(),
 			dirigeantsDuClient: { etat: { phase: 'REPOS' }, onDemander: () => undefined },
 			modeles: modelesProposables(SANTE_DEBITEUR_DEMO, journal !== null),
 			envois: COURRIER_DEMO.ok
@@ -904,26 +899,8 @@ function creanceDemo({
 		nomsIntervenants: journal === null ? [] : CARNET_DEMO.map((fiche) => fiche.nom),
 		onConsigner: () => undefined,
 		onDeclarerVoie: () => undefined,
-		onDesigner: () => undefined,
-		onAucunIntervenant: () => undefined,
-		onAjouterFiche: () => undefined,
-		professionnels: PROFESSIONNELS_DEMO,
-		rechercheCommissaireOuverte: false,
-		etatRechercheCommissaire: { phase: 'REPOS' },
-		onOuvrirRechercheCommissaire: () => undefined,
-		onFermerRechercheCommissaire: () => undefined,
-		onChercherCommissaire: () => undefined,
-		onRetenirEtude: () => undefined,
-		rechercheAvocatOuverte: false,
-		repertoire: BARREAUX_DEMO,
-		barreau: '',
-		specialite: '',
-		etatRechercheAvocat: { phase: 'AUCUN_BARREAU' },
-		onOuvrirRechercheAvocat: () => undefined,
-		onFermerRechercheAvocat: () => undefined,
-		onChoisirBarreau: () => undefined,
-		onChoisirSpecialite: () => undefined,
-		onRetenirAvocat: () => undefined,
+		onNommer: () => undefined,
+		professionnels: annuaireFige(),
 
 		relances,
 

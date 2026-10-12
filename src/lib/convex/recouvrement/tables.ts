@@ -1097,14 +1097,35 @@ export const recouvrementTables = {
 		 * sans ce repère, trouver les spécialistes de Paris obligerait à lire ses
 		 * trente-cinq mille fiches.
 		 */
-		procheDuRecouvrement: v.optional(v.boolean())
+		procheDuRecouvrement: v.optional(v.boolean()),
+		/**
+		 * LE DÉPARTEMENT POSTAL (12/10/2026) — `44`, `971`, `20` pour la Corse —,
+		 * calculé à l'ingestion depuis le code postal. Il range un département PAR
+		 * NOM, ce qu'un intervalle de codes postaux ne sait pas faire : le
+		 * défilement d'une liste alphabétique se lit page après page.
+		 * Absent tant que la fiche n'a pas été complétée (`completerUnLot`).
+		 */
+		departement: v.optional(v.string()),
+		/**
+		 * CE QUE LA BARRE DE RECHERCHE LIT : prénom, nom, cabinet, ville, code postal
+		 * et barreau, en minuscules et sans accents (`texteDeRecherche`). « Dupont
+		 * Nantes » trouve Marie Dupont, à Nantes.
+		 */
+		texte: v.optional(v.string())
 	})
-		.index('by_barreau', ['barreau'])
-		.index('by_barreau_and_nom', ['barreau', 'nom'])
-		// Les avocats PRÈS DU CLIENT (01/10/2026) : un département se lit comme un
-		// intervalle de codes postaux, de « 44 » inclus à « 45 » exclu.
-		.index('by_code_postal', ['codePostal'])
-		.index('by_proche_and_code_postal', ['procheDuRecouvrement', 'codePostal']),
+		// LE PARCOURS DU CHOIX (12/10/2026) : un département, par ordre alphabétique,
+		// page après page — et à part, ceux qui ont déclaré une spécialité proche.
+		.index('by_departement_and_nom_and_prenom', ['departement', 'nom', 'prenom'])
+		.index('by_proche_and_departement_and_nom_and_prenom', [
+			'procheDuRecouvrement',
+			'departement',
+			'nom',
+			'prenom'
+		])
+		.searchIndex('search_texte', {
+			searchField: 'texte',
+			filterFields: ['departement', 'procheDuRecouvrement']
+		}),
 
 	/**
 	 * Un décompte FIGÉ. Il ne se recalcule jamais.

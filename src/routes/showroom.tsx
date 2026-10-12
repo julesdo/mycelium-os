@@ -15,9 +15,7 @@ import {
 	IdentiteDebiteur,
 	RailProcedure,
 	FeuilleVoie,
-	ChoixIntervenant,
-	RechercheCommissaire,
-	RechercheAvocat,
+	ParcoursProfessionnels,
 	ListeAnalyses,
 	LigneBouton,
 	ConstatRegistre,
@@ -36,12 +34,8 @@ import { EcranIntrouvable, EcranEnErreur } from '../screens/passage';
 import { ECRANS_DU_PRODUIT } from './-salle/ecrans';
 import { cleDeLEcran, type EtatDemo } from './-salle/demo';
 import {
-	AVOCATS_DEMO,
-	BARREAUX_DEMO,
 	CARNET_DEMO,
-	ETUDES_DEMO,
 	EVENEMENTS_DEMO,
-	PROPOSITIONS_DEMO,
 	RAIL_DEMO,
 	SECTEURS_DEMO,
 	VOIE_DEMO
@@ -49,6 +43,7 @@ import {
 import { DEPOTS_DEMO } from './-salle/depots';
 import { BILAN_DEMO, BILAN_SURVEILLANCE_INTERROMPUE_DEMO } from './-salle/revelation';
 import { chercherDansLaDemo, RECENTS_DEMO } from './-salle/recherche';
+import { useAnnuaireDemo } from './-salle/annuaire-demo';
 
 /**
  * La salle d'exposition.
@@ -693,129 +688,45 @@ function DemoVoie() {
 }
 
 function DemoIntervenant() {
-	// Comme `DemoVoie` : une `Popup` est contrôlée, donc la salle l'ouvre
-	// d'emblée — c'est ce qu'on vient regarder.
+	// Comme `DemoVoie` : le parcours s'ouvre d'emblée — c'est ce qu'on vient regarder.
 	const [ouverte, setOuverte] = useState(true);
-	// `null` = « Moi-même », le premier rang. Voir `choix-intervenant.tsx` : ce
-	// n'est pas une présélection du logiciel mais l'état réel d'un dossier sans
-	// intervenant rattaché.
-	const [choisi, setChoisi] = useState<string | null>(null);
+	const [choisis, setChoisis] = useState<readonly string[]>([]);
+	const annuaire = useAnnuaireDemo();
 
 	return (
 		<Page>
-			<PageHeader
-				titre="Ateliers Martin"
-				sousTitre="Qui fait l’acte, et pourquoi rien n’est trié"
-			/>
+			<PageHeader titre="Ateliers Martin" sousTitre="Qui fait l’acte : le parcours du choix" />
 			<PageBody>
 				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
-					<SectionTitle>Le carnet</SectionTitle>
+					<SectionTitle>Le dossier</SectionTitle>
 					<ListeAnalyses>
 						<LigneBouton
 							titre="Qui fait l’acte"
-							valeur={CARNET_DEMO.find((f) => f._id === choisi)?.nom ?? 'Moi-même'}
+							valeur={
+								choisis.length === 0
+									? 'Moi-même'
+									: choisis.length === 1
+										? (CARNET_DEMO.find((f) => f._id === choisis[0])?.nom ?? '1 personne')
+										: `${choisis.length} personnes`
+							}
 							onClick={() => setOuverte(true)}
 						/>
 					</ListeAnalyses>
 
-					<ChoixIntervenant
-						carnet={CARNET_DEMO}
-						choisi={choisi}
-						ouverte={ouverte}
+					<ParcoursProfessionnels
+						ouvert={ouverte}
+						titre="Qui fait l’acte"
+						but="DOSSIER"
+						professions={['AVOCAT', 'COMMISSAIRE_DE_JUSTICE']}
+						sansPersonne={{ titre: 'Moi-même', precision: 'Aucun professionnel' }}
+						equipe={CARNET_DEMO}
+						dejaChoisis={choisis}
+						annuaire={annuaire}
 						onFermer={() => setOuverte(false)}
-						onChoisir={setChoisi}
-						propositions={PROPOSITIONS_DEMO}
-						onRetenirEtude={() => setOuverte(false)}
-						onRetenirAvocat={() => setOuverte(false)}
-						onAjouter={() => setOuverte(false)}
-					/>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoCommissaire() {
-	// Comme `DemoIntervenant` : une `Popup` est contrôlée, donc la salle l'ouvre
-	// d'emblée — c'est ce qu'on vient regarder.
-	const [ouverte, setOuverte] = useState(true);
-
-	return (
-		<Page>
-			<PageHeader
-				titre="Chercher un commissaire"
-				sousTitre="Le registre public, et ce qu’il ne dit pas"
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
-					<ListeAnalyses>
-						<LigneBouton
-							titre="Chercher un commissaire de justice"
-							valeur="Département 44"
-							onClick={() => setOuverte(true)}
-						/>
-					</ListeAnalyses>
-
-					{/*
-					  ⚠️ TRONQUÉE VOLONTAIREMENT : trois études affichées, vingt-deux
-					  déclarées. C'est l'état qu'on vient vérifier à l'œil — celui où la
-					  liste doit DIRE qu'elle est incomplète, faute de quoi elle ment par
-					  le silence.
-					*/}
-					<RechercheCommissaire
-						ouverte={ouverte}
-						departementParDefaut="44"
-						etat={{ phase: 'TROUVE', resultat: ETUDES_DEMO }}
-						onFermer={() => setOuverte(false)}
-						onChercher={() => undefined}
-						onRetenir={() => setOuverte(false)}
-					/>
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-function DemoAvocat() {
-	// Comme `DemoCommissaire` : une `Popup` est contrôlée, donc la salle l'ouvre
-	// d'emblée — c'est ce qu'on vient regarder.
-	const [ouverte, setOuverte] = useState(true);
-	// Les deux filtres sont contrôlés : la salle les laisse bouger pour qu'on
-	// voie les deux listes déroulantes et leur recherche, mais la réponse, elle,
-	// est figée. Un écran de démonstration qui recalculerait donnerait à croire
-	// qu'il interroge quelque chose.
-	const [barreau, setBarreau] = useState('BORDEAUX');
-	const [specialite, setSpecialite] = useState('');
-
-	return (
-		<Page>
-			<PageHeader
-				titre="Chercher un avocat"
-				sousTitre="Un fichier ingéré, sa date, et ce qu’il ne déclare pas"
-			/>
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
-					<ListeAnalyses>
-						<LigneBouton
-							titre="Chercher un avocat"
-							valeur={barreau === '' ? 'Aucun barreau' : barreau}
-							onClick={() => setOuverte(true)}
-						/>
-					</ListeAnalyses>
-
-					<RechercheAvocat
-						ouverte={ouverte}
-						repertoire={BARREAUX_DEMO}
-						barreau={barreau}
-						specialite={specialite}
-						etat={{ phase: 'TROUVE', resultat: AVOCATS_DEMO }}
-						onFermer={() => setOuverte(false)}
-						onChoisirBarreau={(choisi) => {
-							setBarreau(choisi);
-							setSpecialite('');
+						onConfirmer={(ids) => {
+							setChoisis(ids);
+							setOuverte(false);
 						}}
-						onChoisirSpecialite={setSpecialite}
-						onRetenir={() => setOuverte(false)}
 					/>
 				</div>
 			</PageBody>
@@ -885,8 +796,6 @@ const ECRANS = [
 	'rail',
 	'voie',
 	'intervenant',
-	'commissaire',
-	'avocat',
 	'bilan',
 	'flux',
 	'vide',
@@ -1025,8 +934,6 @@ function Showroom() {
 						{ecran === 'rail' ? <DemoRail /> : null}
 						{ecran === 'voie' ? <DemoVoie /> : null}
 						{ecran === 'intervenant' ? <DemoIntervenant /> : null}
-						{ecran === 'commissaire' ? <DemoCommissaire /> : null}
-						{ecran === 'avocat' ? <DemoAvocat /> : null}
 						{ecran === 'bilan' ? <DemoBilan /> : null}
 						{ecran === 'flux' ? <DemoFlux /> : null}
 						{ecran === 'vide' ? <DemoVide /> : null}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useAction, useConvex, useMutation } from 'convex/react';
+import { useConvex, useMutation } from 'convex/react';
 import { useQuery } from '../../app/donnees';
 import { precharger } from '../../app/prechargement';
 import type { FunctionReturnType } from 'convex/server';
@@ -11,20 +11,12 @@ import { etatDuReferentiel } from '../../lib/verticales/recouvrement/referentiel
 import { lireEtapes } from '../../lib/verticales/recouvrement/etapes-dossier';
 import { situationsDuDossier } from '../../lib/verticales/recouvrement/situations';
 import { personneNommeeDansLAnnonce } from '../../lib/verticales/recouvrement/pays/france/personne-nommee';
-import {
-	TYPES_PIECE,
-	aujourdHuiISO,
-	pluriel,
-	type AvocatAffiche,
-	type EtatRechercheAvocat,
-	type EtatRechercheCommissaire,
-	type EtudeAffichee,
-	type FicheASaisir
-} from '../../ui';
+import { TYPES_PIECE, aujourdHuiISO, pluriel } from '../../ui';
 import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
 // Les rubriques seules : la validation de l'adresse se charge avec l'application.
 import { SECTIONS_CREANCE, type SectionCreance } from '../../screens/sections-creance';
-import { useDirigeantsDuClient, useProfessionnelsProposes } from '../../app/use-professionnels';
+import { useDirigeantsDuClient } from '../../app/use-professionnels';
+import { useAnnuaire } from '../../app/use-annuaire';
 import { useGestesDeDossier } from '../../app/gestes-dossier';
 import {
 	modelesProposables,
@@ -233,55 +225,13 @@ function PageCreance() {
 	const engagerProcedure = useMutation(api.recouvrement.apresProcedure.engagerProcedure);
 	const designerIntervenant = useMutation(api.recouvrement.apresProcedure.designerIntervenant);
 	const aucunIntervenant = useMutation(api.recouvrement.apresProcedure.aucunIntervenant);
-	const ajouterIntervenant = useMutation(api.recouvrement.intervenants.ajouterIntervenant);
-	const chercherUnCommissaire = useAction(
-		api.recouvrement.annuaires.chercherUnCommissaireDeJustice
-	);
-	// Les professionnels près du client : la feuille « Qui fait l'acte » les propose.
-	const professionnels = useProfessionnelsProposes(creance?.debiteurId, carnet);
+	// L'annuaire du parcours du choix : le carnet, puis les professionnels près du client.
+	const professionnels = useAnnuaire({ debiteurId: creance?.debiteurId, carnet });
 	// « Qui signe pour votre client », proposé d'après le registre.
 	const dirigeantsDuClient = useDirigeantsDuClient(creance?.debiteurId);
 
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
-
-	// Les deux répertoires : leur état vit ici, parce que leurs requêtes sont
-	// SAUTÉES tant que la feuille est fermée.
-	const [rechercheCommissaireOuverte, setRechercheCommissaireOuverte] = useState(false);
-	const [etatRechercheCommissaire, setEtatRechercheCommissaire] =
-		useState<EtatRechercheCommissaire>({ phase: 'REPOS' });
-	const [rechercheAvocatOuverte, setRechercheAvocatOuverte] = useState(false);
-	const [barreau, setBarreau] = useState('');
-	const [specialite, setSpecialite] = useState('');
-
-	/*
-	  ⚠️ LES DEUX REQUÊTES DU RÉPERTOIRE D'AVOCATS DORMENT TANT QUE LA FEUILLE EST
-	  FERMÉE. Le parcours des barreaux lit un document par barreau, et la
-	  recherche jusqu'à quatre mille fiches : les faire tourner à chaque ouverture
-	  de créance ferait payer un répertoire que personne n'a demandé.
-	*/
-	const repertoire = useQuery(
-		api.recouvrement.annuaires.barreauxDuRepertoire,
-		rechercheAvocatOuverte ? {} : 'skip'
-	);
-	const avocats = useQuery(
-		api.recouvrement.annuaires.chercherUnAvocat,
-		rechercheAvocatOuverte && barreau !== ''
-			? { barreau, ...(specialite === '' ? {} : { specialite }) }
-			: 'skip'
-	);
-
-	/*
-	  ⚠️ « PAS ENCORE CHOISI » ET « JE LIS » SONT DEUX ÉTATS, pas un. Les
-	  confondre ferait attendre un résultat que personne n'a demandé — et, à
-	  l'inverse, ferait lire un écran de repos pendant une lecture réelle.
-	*/
-	const etatRechercheAvocat: EtatRechercheAvocat =
-		barreau === ''
-			? { phase: 'AUCUN_BARREAU' }
-			: avocats === undefined
-				? { phase: 'EN_COURS' }
-				: { phase: 'TROUVE', resultat: avocats };
 
 	/**
 	 * ⚠️ LE SUIVI A SON PROPRE VERROU, ET SA PROPRE ERREUR. Partager `avec` ferait
@@ -351,88 +301,6 @@ function PageCreance() {
 					factureIds: []
 				});
 			}
-		});
-	}
-
-	/**
-	 * CHERCHER UNE ÉTUDE AU REGISTRE PUBLIC.
-	 *
-	 * ⚠️ UN ÉCHEC NE DEVIENT JAMAIS UNE LISTE VIDE. « Aucune étude dans ce
-	 * département » et « le registre n'a pas répondu » mènent à deux gestes
-	 * opposés, et les confondre ferait chercher ailleurs un gérant dont la seule
-	 * erreur était d'avoir cliqué une minute trop tôt.
-	 */
-	async function chercherUneEtude(departement: string) {
-		setEtatRechercheCommissaire({ phase: 'EN_COURS' });
-		try {
-			const resultat = await chercherUnCommissaire({ departement });
-			setEtatRechercheCommissaire({ phase: 'TROUVE', resultat });
-		} catch (e) {
-			setEtatRechercheCommissaire({ phase: 'ECHEC', message: messageDuRefus(e) });
-		}
-	}
-
-	/**
-	 * RETENIR UNE ÉTUDE AU CARNET.
-	 *
-	 * ⚠️ LA SOURCE ET SA DATE PARTENT AVEC LA FICHE, et la mutation la REFUSE
-	 * sans elles : une fiche venue d'un répertoire public sans sa provenance
-	 * devient indiscernable d'une donnée officielle et fraîche — or celle-ci
-	 * n'est ni l'un ni l'autre.
-	 */
-	async function retenirUneEtude(etude: EtudeAffichee) {
-		if (etatRechercheCommissaire.phase !== 'TROUVE') return;
-		const { resultat } = etatRechercheCommissaire;
-		await avec(async () => {
-			await ajouterIntervenant({
-				nom: etude.nom,
-				role: 'COMMISSAIRE_DE_JUSTICE',
-				ressort: `${etude.commune} ${etude.codePostal}`.trim(),
-				adresse: etude.adresse,
-				siren: etude.siren,
-				origine: 'RETENU_DEPUIS_UN_REPERTOIRE',
-				sourceRepertoire: resultat.source,
-				sourceReleveeLe: resultat.releveeLe
-			});
-			setRechercheCommissaireOuverte(false);
-		});
-	}
-
-	/**
-	 * RETENIR UN AVOCAT AU CARNET.
-	 *
-	 * ⚠️ SANS DATE DE RELEVÉ, ON NE RETIENT PAS — et on le dit. Dater du jour pour
-	 * faire passer la mutation ferait entrer au carnet une fiche qui se
-	 * présenterait comme relevée aujourd'hui, ce qu'elle n'est pas. Le doute ne
-	 * profite jamais au produit : on refuse, et le refus se lit.
-	 */
-	async function retenirUnAvocat(avocat: AvocatAffiche) {
-		if (etatRechercheAvocat.phase !== 'TROUVE') return;
-		const { resultat } = etatRechercheAvocat;
-		// Capturée AVANT la fermeture : le rétrécissement de type ne franchit pas
-		// un `async () => …`, et sans elle la date pourrait repartir nulle.
-		const releveeLe = resultat.releveeLe;
-		if (releveeLe === null) {
-			setErreur(
-				'Ce répertoire ne porte pas de date de relevé : la fiche ne peut pas être retenue au ' +
-					'carnet, faute de pouvoir dire de quand elle date.'
-			);
-			return;
-		}
-		await avec(async () => {
-			await ajouterIntervenant({
-				nom: `${avocat.nom} ${avocat.prenom}`.trim(),
-				role: 'AVOCAT',
-				// Le ressort est le BARREAU, tel que le fichier l'écrit : c'est lui, pas
-				// la commune, qui dit devant quelle juridiction il plaide.
-				ressort: resultat.barreau,
-				adresse: avocat.adresse,
-				siren: avocat.siren,
-				origine: 'RETENU_DEPUIS_UN_REPERTOIRE',
-				sourceRepertoire: resultat.source,
-				sourceReleveeLe: releveeLe
-			});
-			setRechercheAvocatOuverte(false);
 		});
 	}
 
@@ -1062,67 +930,46 @@ function PageCreance() {
 		onDeclarerVoie: (procedure, engageeLe, choix) =>
 			void avec(async () => {
 				await engagerProcedure({ creanceId, procedure, engageeLe });
-				// « Moi-même » vide la liste ; une fiche s'AJOUTE à ceux déjà nommés.
+				// « Moi-même » vide la liste ; les fiches nommées s'AJOUTENT à celles déjà là.
 				if (choix !== null) {
-					await (choix.id === null
-						? aucunIntervenant({ creanceId })
-						: designerIntervenant({
-								creanceId,
-								intervenantId: choix.id as Id<'intervenants'>,
-								designe: true
-							}));
+					if (choix.ids.length === 0) await aucunIntervenant({ creanceId });
+					for (const id of choix.ids) {
+						await designerIntervenant({
+							creanceId,
+							intervenantId: id as Id<'intervenants'>,
+							designe: true
+						});
+					}
 				}
 			}),
-		onDesigner: (intervenantId, designe) =>
-			void avec(() =>
-				designerIntervenant({
-					creanceId,
-					intervenantId: intervenantId as Id<'intervenants'>,
-					designe
-				})
-			),
-		onAucunIntervenant: () => void avec(() => aucunIntervenant({ creanceId })),
 		/*
-		  ⚠️ `origine` EST ÉCRITE ICI, PAS SAISIE. Une fiche tapée à la main est
-		  `SAISI_A_LA_MAIN` par construction ; une fiche venue d'un répertoire porte
-		  EN PLUS sa source et sa date de relevé, et la mutation refuse sans elles.
+		  LE PARCOURS CONFIRME UNE LISTE ENTIÈRE (12/10/2026) : ceux qui n'y sont plus
+		  se retirent, ceux qui manquent s'ajoutent. Une liste vide, c'est « Moi-même ».
+		  Les fiches venues d'un annuaire sont déjà au carnet, avec leur source et leur
+		  date : le parcours les y a écrites à la confirmation.
 		*/
-		onAjouterFiche: (fiche: FicheASaisir) =>
-			void avec(() =>
-				ajouterIntervenant({
-					nom: fiche.nom,
-					role: fiche.role,
-					ressort: fiche.ressort,
-					origine: 'SAISI_A_LA_MAIN'
-				})
-			),
+		onNommer: (ids) =>
+			void avec(async () => {
+				if (ids.length === 0) {
+					await aucunIntervenant({ creanceId });
+					return;
+				}
+				for (const id of intervenantsChoisis) {
+					if (!ids.includes(id)) {
+						await designerIntervenant({ creanceId, intervenantId: id, designe: false });
+					}
+				}
+				for (const id of ids) {
+					if (!intervenantsChoisis.includes(id as Id<'intervenants'>)) {
+						await designerIntervenant({
+							creanceId,
+							intervenantId: id as Id<'intervenants'>,
+							designe: true
+						});
+					}
+				}
+			}),
 		professionnels,
-
-		rechercheCommissaireOuverte,
-		etatRechercheCommissaire,
-		onOuvrirRechercheCommissaire: () => setRechercheCommissaireOuverte(true),
-		onFermerRechercheCommissaire: () => setRechercheCommissaireOuverte(false),
-		onChercherCommissaire: (departement) => void chercherUneEtude(departement),
-		onRetenirEtude: (etude) => void retenirUneEtude(etude),
-		rechercheAvocatOuverte,
-		repertoire: repertoire ?? null,
-		barreau,
-		specialite,
-		etatRechercheAvocat,
-		onOuvrirRechercheAvocat: () => setRechercheAvocatOuverte(true),
-		onFermerRechercheAvocat: () => setRechercheAvocatOuverte(false),
-		/*
-		  ⚠️ CHANGER DE BARREAU EFFACE LA SPÉCIALITÉ. Garder « Droit du travail » en
-		  passant de Nantes à Rennes ferait rendre zéro fiche sur un filtre que
-		  personne n'a reposé — le gérant lirait « aucun avocat » là où il n'y a
-		  qu'un filtre resté en place.
-		*/
-		onChoisirBarreau: (choisi) => {
-			setBarreau(choisi);
-			setSpecialite('');
-		},
-		onChoisirSpecialite: (choisie) => setSpecialite(choisie),
-		onRetenirAvocat: (avocat) => void retenirUnAvocat(avocat),
 
 		relances: creance.relances,
 

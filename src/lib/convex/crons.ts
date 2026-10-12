@@ -74,4 +74,16 @@ crons.daily(
 	{}
 );
 
+/*
+  LES FICHES SE RENDENT CHERCHABLES (12/10/2026). Le rattrapage complète, lot par
+  lot, le département et le texte de recherche des fiches ingérées avant ; une fois
+  la table complète, chaque passage ne lit qu'une entrée d'index.
+*/
+crons.interval(
+	'annuaireCherchable',
+	{ minutes: 30 },
+	internal.recouvrement.annuaires.completerUnLot,
+	{}
+);
+
 export default crons;

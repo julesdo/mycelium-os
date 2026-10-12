@@ -21,12 +21,8 @@ import {
 import { dateCourte, eurosCentimes, pluriel } from './format';
 import { BoutonPrincipal, BoutonTexte } from './bouton';
 import { ListeAnalyses, LigneBouton, LigneFixe } from './navigation';
-import {
-	ChoixIntervenant,
-	type FicheASaisir,
-	type FicheIntervenant,
-	type ProfessionnelsProposes
-} from './choix-intervenant';
+import type { FicheIntervenant } from './fiches-professionnels';
+import { ParcoursProfessionnels, type AnnuaireDuParcours } from './parcours-professionnels';
 import { aujourdHuiISO } from './horloge';
 
 /**
@@ -104,8 +100,7 @@ export interface SuiviConseilAffiche {
 	 * de nom » —, ce qui obligeait à passer par les réglages pour pouvoir nommer
 	 * un avocat. Le fondateur a demandé la liste ; rien n'y est présélectionné.
 	 */
-	readonly professionnels: ProfessionnelsProposes;
-	readonly onAjouterFiche: (fiche: FicheASaisir) => void;
+	readonly professionnels: AnnuaireDuParcours;
 	/** Déclare la remise d’un geste : le suivi naît là, sans « préparer » d’abord. */
 	readonly onRemettre: (remisLe: string, intervenantId: string | null, attendu: string) => void;
 	readonly onRetour: (revenuLe: string) => void;
@@ -311,12 +306,6 @@ function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 	const [intervenantId, setIntervenantId] = useState<string | null>(null);
 	const [choixOuvert, setChoixOuvert] = useState(false);
 
-	function retenir(id: string | null) {
-		if (id === null) return;
-		setIntervenantId(id);
-		setChoixOuvert(false);
-	}
-
 	return (
 		<>
 			<Popup
@@ -380,28 +369,24 @@ function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 				</PopupContent>
 			</Popup>
 
-			<ChoixIntervenant
+			<ParcoursProfessionnels
+				ouvert={choixOuvert}
 				titre="À qui remettre le dossier"
+				but="DOSSIER"
+				professions={['AVOCAT', 'COMMISSAIRE_DE_JUSTICE']}
+				unSeul
 				sansPersonne={{
 					titre: 'Sans nommer personne',
 					precision: 'Le dossier se remet quand même'
 				}}
-				carnet={suivi.carnet}
-				choisi={intervenantId}
-				ouverte={choixOuvert}
-				propositions={suivi.professionnels.propositions}
-				enCours={suivi.professionnels.enCours}
-				erreur={suivi.professionnels.erreur}
+				equipe={suivi.carnet}
+				dejaChoisis={intervenantId === null ? [] : [intervenantId]}
+				annuaire={suivi.professionnels}
 				onFermer={() => setChoixOuvert(false)}
-				onChoisir={(id) => {
-					setIntervenantId(id);
+				onConfirmer={(ids) => {
+					setIntervenantId(ids[0] ?? null);
 					setChoixOuvert(false);
 				}}
-				onRetenirEtude={(etude) => void suivi.professionnels.onRetenirEtude(etude).then(retenir)}
-				onRetenirAvocat={(avocat) =>
-					void suivi.professionnels.onRetenirAvocat(avocat).then(retenir)
-				}
-				onAjouter={suivi.onAjouterFiche}
 			/>
 		</>
 	);

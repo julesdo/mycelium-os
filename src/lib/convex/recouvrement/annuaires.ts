@@ -1,13 +1,15 @@
 import { v, ConvexError } from 'convex/values';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { action, internalMutation, internalQuery } from '../_generated/server';
-import type { Doc, Id } from '../_generated/dataModel';
+import type { Doc } from '../_generated/dataModel';
 import { api, internal } from '../_generated/api';
 import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import {
+	normaliserPourRecherche,
 	prefixeDuCodePostal,
-	prefixeSuivant,
-	specialiteProche
+	specialiteProche,
+	texteDeRecherche
 } from '../../verticales/recouvrement/annuaire-avocats';
 
 /**
@@ -248,8 +250,8 @@ function lireEtude(brut: unknown): EtudeTrouvee | null {
 /**
  * LA GARDE DE SESSION, ET ELLE N'EXISTE QUE POUR ÇA.
  *
- * `chercherUnCommissaireDeJustice` est une `action` : elle ne touche pas la
- * base, donc rien dans son corps ne vérifierait qui appelle. Sans cette
+ * `etudesParNom` est une `action` : elle ne touche pas la base, donc rien dans
+ * son corps ne vérifierait qui appelle. Sans cette
  * requête, le déploiement serait un RELAIS OUVERT vers une API tierce,
  * utilisable par qui connaît l'URL — le même défaut que
  * `denominationDuDebiteur` ferme du côté du registre BODACC.
@@ -261,40 +263,6 @@ export const sessionRequise = authedQuery({
 	args: {},
 	returns: v.null(),
 	handler: async (): Promise<null> => null
-});
-
-/**
- * LES ÉTUDES D'UN DÉPARTEMENT, PAR ORDRE ALPHABÉTIQUE.
- *
- * ⚠️ ALPHABÉTIQUE, JAMAIS PAR PERTINENCE. L'API rend ses résultats dans son
- * propre ordre de score ; le garder ferait du premier rang une mise en avant,
- * et une mise en avant est une orientation. C'est la même discipline que
- * `monCarnet` et que la liste des voies de procédure : on énumère, on ne classe
- * pas.
- *
- * ⚠️ UNE ERREUR LÈVE, ELLE NE REND PAS UNE LISTE VIDE. « Aucune étude dans ce
- * département » et « le registre n'a pas répondu » mènent à deux gestes
- * opposés : chercher ailleurs, ou réessayer dans une minute. Les confondre
- * serait un repli silencieux, donc un mensonge.
- */
-export const chercherUnCommissaireDeJustice = action({
-	args: { departement: v.string() },
-	returns: v.object({
-		departement: v.string(),
-		etudes: v.array(vEtude),
-		total: v.number(),
-		source: v.string(),
-		releveeLe: v.string()
-	}),
-	handler: async (ctx, { departement }): Promise<ResultatAnnuaire> => {
-		// ⚠️ L'ANNOTATION DE RETOUR CI-DESSUS N'EST PAS DÉCORATIVE. Une action qui
-		// appelle une fonction de son propre module crée un cycle d'inférence :
-		// le type de `api` contient celui du handler, qui dépend de `api`.
-		// TypeScript renonce, retombe sur `any`, et TOUS les écrans du produit
-		// perdent leur inférence — y compris ceux qui n'ont pas été touchés.
-		await ctx.runQuery(api.recouvrement.annuaires.sessionRequise, {});
-		return await etudesDuDepartement(departement);
-	}
 });
 
 /**
@@ -395,35 +363,6 @@ const SOURCE_AVOCATS =
 	'Les spécialités sont celles que l’avocat a DÉCLARÉES au fichier : leur absence ne dit pas ' +
 	'qu’il n’en a aucune, elle dit qu’aucune n’est inscrite.';
 
-/**
- * Le nombre de fiches qu'on accepte de lire pour un barreau.
- *
- * BORNE DURE. Le fichier compte environ soixante-dix mille avocats, dont près
- * de la moitié au seul barreau de Paris : une lecture non bornée dépasserait la
- * limite de documents d'une requête Convex et ferait échouer l'écran entier —
- * pas seulement la recherche.
- *
- * ⚠️ ET CE QU'ELLE COUPE SE DIT. Le retour porte `lectureTronquee` : quand elle
- * vaut vrai, `total` n'est plus un total mais un PLANCHER, et l'écran l'écrit.
- * C'est la leçon du registre des entreprises, où afficher vingt-cinq études sur
- * cent quatorze sans un mot aurait menti par le silence.
- */
-const FICHES_LUES_MAX = 4000;
-
-/** Ce qu'on rend à l'écran. Au-delà, une liste ne se lit plus : elle se filtre. */
-const FICHES_AFFICHEES_MAX = 200;
-
-/**
- * La borne du parcours par sauts qui rend la liste des barreaux.
- *
- * ⚠️ ELLE NE COUPE PAS LA FRANCE EN DEUX, et c'est la différence avec celle
- * du dessus. La France compte cent soixante et quelques barreaux ; quatre cents
- * laisse toute la marge voulue. Elle existe pour qu'une ingestion abîmée — un
- * séparateur mal lu, et chaque fiche porte alors un barreau différent — ne
- * fasse pas boucler la requête sur la table entière.
- */
-const BARREAUX_MAX = 400;
-
 /** Un avocat, tel que l'écran le lit. */
 export interface AvocatTrouve {
 	readonly nom: string;
@@ -436,199 +375,6 @@ export interface AvocatTrouve {
 	/** ⚠️ Mutable, pour la même raison que `etudes` plus haut : Convex l'exige. */
 	readonly specialites: string[];
 }
-
-export interface ResultatAvocats {
-	readonly barreau: string;
-	/** La spécialité sur laquelle on a filtré, telle quelle. `null` = aucune. */
-	readonly specialite: string | null;
-	readonly avocats: AvocatTrouve[];
-	/**
-	 * Combien de fiches CORRESPONDENT au filtre, pas combien sont affichées.
-	 *
-	 * ⚠️ UN PLANCHER QUAND `lectureTronquee` VAUT VRAI, pas un total. Les deux
-	 * champs se lisent ensemble ou pas du tout.
-	 */
-	readonly total: number;
-	readonly lectureTronquee: boolean;
-	/**
-	 * Les spécialités réellement déclarées dans ce barreau, par ordre
-	 * alphabétique.
-	 *
-	 * ⚠️ ELLES VIENNENT DU FICHIER, PAS DE NOUS. Une nomenclature écrite à la
-	 * main ici vieillirait sans que rien ne l'indique, et proposerait des
-	 * filtres qui ne rendent jamais personne.
-	 */
-	readonly specialitesDeclarees: string[];
-	readonly source: string;
-	/** Le jour du relevé, ou `null` quand aucune livraison n'a été ingérée. */
-	readonly releveeLe: string | null;
-}
-
-export interface ListeBarreaux {
-	readonly barreaux: string[];
-	/** Faux si le parcours a buté sur sa borne : la liste est alors partielle. */
-	readonly complete: boolean;
-	readonly releveeLe: string | null;
-}
-
-const vAvocat = v.object({
-	nom: v.string(),
-	prenom: v.string(),
-	raisonSociale: v.optional(v.string()),
-	siren: v.optional(v.string()),
-	adresse: v.optional(v.string()),
-	codePostal: v.optional(v.string()),
-	ville: v.optional(v.string()),
-	specialites: v.array(v.string())
-});
-
-/**
- * LES BARREAUX DISPONIBLES, PAR SAUTS D'INDEX.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ UNE LECTURE BORNÉE ET DÉDOUBLONNÉE AURAIT MENTI
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Lire les deux mille premières fiches et dédoublonner leur barreau ne rend pas
- * les barreaux : ça rend ceux du DÉBUT de l'index, c'est-à-dire le début de
- * l'alphabet. Un gérant de Toulon aurait cherché son barreau dans une liste qui
- * s'arrête à Bordeaux, et conclu qu'il n'y est pas.
- *
- * `by_barreau` est ordonné : on lit la première fiche, puis la première dont le
- * barreau est STRICTEMENT SUPÉRIEUR au précédent, et ainsi de suite. Un
- * document lu par barreau — cent soixante et quelques — donc moins cher qu'une
- * lecture bornée, et EXHAUSTIF, ce qu'elle n'est pas.
- */
-export const barreauxDuRepertoire = authedQuery({
-	args: {},
-	returns: v.object({
-		barreaux: v.array(v.string()),
-		complete: v.boolean(),
-		releveeLe: v.union(v.string(), v.null())
-	}),
-	handler: async (ctx): Promise<ListeBarreaux> => {
-		const barreaux: string[] = [];
-		let releveeLe: string | null = null;
-		let dernier: string | null = null;
-		let epuise = false;
-
-		for (let saut = 0; saut < BARREAUX_MAX; saut++) {
-			// ⚠️ RECOPIÉ DANS UNE CONSTANTE ANNOTÉE, et les deux moitiés comptent.
-			// La constante, parce que la narration d'un `let` capturé par une
-			// fermeture ne survit pas. L'annotation, parce que sans elle `dernier`
-			// se déduit de `fiche`, qui se déduit de `borne`, qui se déduit de
-			// `dernier` : TypeScript renonce et retombe sur `any` (TS7022).
-			const borne: string | null = dernier;
-			const fiche: Doc<'annuaireAvocats'> | null = await (
-				borne === null
-					? ctx.db.query('annuaireAvocats').withIndex('by_barreau')
-					: ctx.db.query('annuaireAvocats').withIndex('by_barreau', (q) => q.gt('barreau', borne))
-			).first();
-
-			if (fiche === null) {
-				epuise = true;
-				break;
-			}
-
-			// La date du relevé est celle de la LIVRAISON : une livraison remplace,
-			// elle ne s'ajoute pas, donc toutes les fiches portent la même.
-			releveeLe ??= fiche.releveeLe;
-			barreaux.push(fiche.barreau);
-			dernier = fiche.barreau;
-		}
-
-		return { barreaux, complete: epuise, releveeLe };
-	}
-});
-
-/**
- * Les avocats d'un barreau, filtrés sur leurs spécialités déclarées.
- *
- * ⚠️ ON FILTRE, ON NE CLASSE PAS. Ordre alphabétique, et les deux filtres ne
- * portent que sur des champs présents dans le fichier du CNB : le barreau, et
- * les trois champs de spécialité. Aucun critère de notre invention, aucune mise
- * en avant.
- */
-export const chercherUnAvocat = authedQuery({
-	args: { barreau: v.string(), specialite: v.optional(v.string()) },
-	returns: v.object({
-		barreau: v.string(),
-		specialite: v.union(v.string(), v.null()),
-		avocats: v.array(vAvocat),
-		total: v.number(),
-		lectureTronquee: v.boolean(),
-		specialitesDeclarees: v.array(v.string()),
-		source: v.string(),
-		releveeLe: v.union(v.string(), v.null())
-	}),
-	handler: async (ctx, { barreau, specialite }): Promise<ResultatAvocats> => {
-		const recherche = barreau.trim();
-		if (recherche === '') {
-			// Nommer la cause ici évite de rendre une liste vide, qui se lirait
-			// « aucun avocat » là où il n'y a qu'un champ non rempli.
-			throw new ConvexError(
-				'Aucun barreau n’a été donné. La recherche porte sur un barreau à la fois.'
-			);
-		}
-
-		// Une fiche de plus que la borne : c'est ce qui permet de DISTINGUER
-		// « le barreau en compte exactement quatre mille » de « la lecture s'est
-		// arrêtée là ». Sans elle, les deux se ressemblent.
-		const lues = await ctx.db
-			.query('annuaireAvocats')
-			.withIndex('by_barreau_and_nom', (q) => q.eq('barreau', recherche))
-			.take(FICHES_LUES_MAX + 1);
-
-		const lectureTronquee = lues.length > FICHES_LUES_MAX;
-		const fiches = lectureTronquee ? lues.slice(0, FICHES_LUES_MAX) : lues;
-
-		const specialitesDeclarees = [...new Set(fiches.flatMap((f) => f.specialites))].sort((a, b) =>
-			a.localeCompare(b, 'fr')
-		);
-
-		const cherchee = specialite?.trim() ?? '';
-		const retenues =
-			cherchee === '' ? fiches : fiches.filter((f) => f.specialites.includes(cherchee));
-
-		/*
-		  ⚠️ RETRIÉ EN COLLATION FRANÇAISE, alors que l'index rend déjà par nom.
-		  L'index ordonne des octets : « ÉTIENNE » y tombe après « ZOLA », et la
-		  liste se lirait comme si les noms accentués avaient été rejetés à la fin.
-		*/
-		const avocats = retenues
-			.sort((a, b) => a.nom.localeCompare(b.nom, 'fr') || a.prenom.localeCompare(b.prenom, 'fr'))
-			.slice(0, FICHES_AFFICHEES_MAX)
-			.map((l) => ({
-				nom: l.nom,
-				prenom: l.prenom,
-				raisonSociale: l.raisonSociale,
-				siren: l.siren,
-				adresse: l.adresse,
-				codePostal: l.codePostal,
-				ville: l.ville,
-				specialites: l.specialites
-			}));
-
-		/*
-		  ⚠️ LA DATE SE RELIT SUR LA TABLE QUAND LE BARREAU EST VIDE. « Ce barreau
-		  est absent du relevé du 17 juillet » et « aucun relevé n'a été ingéré »
-		  mènent à deux gestes opposés — chercher un autre barreau, ou importer le
-		  fichier — et les confondre ferait chercher longtemps.
-		*/
-		const premiere = fiches[0] ?? (await ctx.db.query('annuaireAvocats').first());
-
-		return {
-			barreau: recherche,
-			specialite: cherchee === '' ? null : cherchee,
-			avocats,
-			total: retenues.length,
-			lectureTronquee,
-			specialitesDeclarees,
-			source: SOURCE_AVOCATS,
-			releveeLe: premiere?.releveeLe ?? null
-		};
-	}
-});
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -697,7 +443,8 @@ export const insererUnLot = internalMutation({
 				ville: fiche.ville,
 				specialites: fiche.specialites,
 				releveeLe: releveDeLaLivraison,
-				procheDuRecouvrement: fiche.specialites.some(specialiteProche)
+				procheDuRecouvrement: fiche.specialites.some(specialiteProche),
+				...completude(fiche)
 			});
 		}
 		return fiches.length;
@@ -742,40 +489,6 @@ export interface AvocatPropose extends AvocatTrouve {
 	readonly barreau: string;
 }
 
-const vAvocatPropose = v.object({
-	nom: v.string(),
-	prenom: v.string(),
-	raisonSociale: v.optional(v.string()),
-	siren: v.optional(v.string()),
-	adresse: v.optional(v.string()),
-	codePostal: v.optional(v.string()),
-	ville: v.optional(v.string()),
-	specialites: v.array(v.string()),
-	barreau: v.string()
-});
-
-export interface AvocatsPres {
-	/** Ceux qui ont DÉCLARÉ une spécialité proche d'un impayé commercial. */
-	readonly specialises: AvocatPropose[];
-	/** Les autres, à la commune du client d'abord. */
-	readonly autres: AvocatPropose[];
-	/** Vrai quand il en existe d'autres que ceux montrés. */
-	readonly autresEnPlus: boolean;
-	readonly source: string;
-	readonly releveeLe: string | null;
-}
-
-const vAvocatsPres = v.object({
-	specialises: v.array(vAvocatPropose),
-	autres: v.array(vAvocatPropose),
-	autresEnPlus: v.boolean(),
-	source: v.string(),
-	releveeLe: v.union(v.string(), v.null())
-});
-
-/** Combien d'avocats « autres » se montrent avant « et d'autres ». */
-const AUTRES_MONTRES = 30;
-
 function propose(fiche: Doc<'annuaireAvocats'>): AvocatPropose {
 	return {
 		nom: fiche.nom,
@@ -789,67 +502,6 @@ function propose(fiche: Doc<'annuaireAvocats'>): AvocatPropose {
 		barreau: fiche.barreau
 	};
 }
-
-function parNom(a: AvocatPropose, b: AvocatPropose): number {
-	return a.nom.localeCompare(b.nom, 'fr') || a.prenom.localeCompare(b.prenom, 'fr');
-}
-
-/**
- * LES AVOCATS D'UN DÉPARTEMENT, LUS PAR CODE POSTAL.
- *
- * ⚠️ LES « AUTRES » PARTENT DE LA COMMUNE DU CLIENT. Un département compte en
- * médiane 226 avocats, Paris 35 000 : une liste du département entier ne se lit
- * pas. Ceux du code postal du client d'abord, puis, s'il n'y en a aucun, ceux
- * du département — trente au plus, et « d'autres » le dit.
- */
-export const avocatsPres = internalQuery({
-	args: { prefixe: v.string(), codePostal: v.optional(v.string()) },
-	returns: vAvocatsPres,
-	handler: async (ctx, { prefixe, codePostal }): Promise<AvocatsPres> => {
-		const suivant = prefixeSuivant(prefixe);
-
-		const specialises = (
-			await ctx.db
-				.query('annuaireAvocats')
-				.withIndex('by_proche_and_code_postal', (q) =>
-					q.eq('procheDuRecouvrement', true).gte('codePostal', prefixe).lt('codePostal', suivant)
-				)
-				.take(100)
-		)
-			.map(propose)
-			.sort(parNom);
-
-		const dejaVus = new Set(specialises.map((a) => `${a.nom}|${a.prenom}|${a.barreau}`));
-		const lireAutres = async (exact: boolean) =>
-			(
-				await (
-					exact && codePostal !== undefined
-						? ctx.db
-								.query('annuaireAvocats')
-								.withIndex('by_code_postal', (q) => q.eq('codePostal', codePostal))
-						: ctx.db
-								.query('annuaireAvocats')
-								.withIndex('by_code_postal', (q) =>
-									q.gte('codePostal', prefixe).lt('codePostal', suivant)
-								)
-				).take(AUTRES_MONTRES + 1 + specialises.length)
-			)
-				.map(propose)
-				.filter((a) => !dejaVus.has(`${a.nom}|${a.prenom}|${a.barreau}`));
-
-		let autres = codePostal === undefined ? [] : await lireAutres(true);
-		if (autres.length === 0) autres = await lireAutres(false);
-
-		const premiere = await ctx.db.query('annuaireAvocats').first();
-		return {
-			specialises,
-			autres: autres.slice(0, AUTRES_MONTRES).sort(parNom),
-			autresEnPlus: autres.length > AUTRES_MONTRES,
-			source: SOURCE_AVOCATS,
-			releveeLe: premiere?.releveeLe ?? null
-		};
-	}
-});
 
 /** Ce que le dossier sait du client pour le situer. `null` hors de l'établissement. */
 export const lieuConnuDuClient = authedQuery({
@@ -962,14 +614,246 @@ export type EtatCommissaires =
 	| { readonly etat: 'TROUVE'; readonly resultat: ResultatAnnuaire }
 	| { readonly etat: 'ECHEC'; readonly message: string };
 
-export interface ProfessionnelsPres {
-	readonly client: string;
-	readonly lieu: LieuDuClient | null;
-	readonly commissaires: EtatCommissaires | null;
-	readonly avocats: AvocatsPres | null;
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * LE PARCOURS DU CHOIX — CHERCHER, FAIRE DÉFILER, SANS RIEN SAISIR (12/10/2026)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le fondateur : « trop complexe à manipuler, surtout avec des scrolls dans une
+ * popup ; il faut une barre de recherche, ne pas mélanger avocats et commissaires,
+ * un défilement infini ». La feuille « Qui fait l'acte » montrait trente avocats
+ * au plus, puis renvoyait à une seconde feuille où l'on choisissait un barreau
+ * parmi cent soixante. Désormais le parcours (`ui/parcours-professionnels.tsx`)
+ * lit l'annuaire PAGE APRÈS PAGE, par ordre alphabétique dans le département du
+ * client, ou par nom, cabinet ou ville dans toute la France.
+ *
+ * ⚠️ L'ORDRE RESTE CELUI DES NOMS, sauf quand le gérant tape quelque chose : les
+ * résultats suivent alors ce qu'il a tapé — la correspondance à SA saisie, pas un
+ * classement des professionnels. Rien n'est présélectionné, rien n'est mis en
+ * avant.
+ */
+
+/** Ce que l'ingestion et le rattrapage écrivent sur chaque fiche pour la rendre cherchable. */
+function completude(fiche: {
+	readonly prenom: string;
+	readonly nom: string;
+	readonly raisonSociale?: string;
+	readonly ville?: string;
+	readonly codePostal?: string;
+	readonly barreau: string;
+}): { departement: string; texte: string } {
+	return {
+		// ⚠️ UNE CHAÎNE VIDE, PAS `undefined`, QUAND LE CODE POSTAL NE DIT RIEN. Le
+		// rattrapage cherche les fiches au département ABSENT : une fiche sans lieu
+		// laissée absente serait relue à chaque passage, sans fin.
+		departement:
+			fiche.codePostal === undefined ? '' : (prefixeDuCodePostal(fiche.codePostal) ?? ''),
+		texte: texteDeRecherche(fiche)
+	};
 }
 
-export const professionnelsPresDuClient = action({
+/** Combien de fiches le rattrapage complète par transaction. */
+const LOT_A_COMPLETER = 500;
+
+/**
+ * LE RATTRAPAGE DES FICHES DÉJÀ EN BASE — leur département et leur texte de
+ * recherche, qu'elles n'avaient pas avant le 12/10/2026.
+ *
+ * ⚠️ IL SE RELANCE TANT QU'IL TROUVE UN LOT PLEIN, puis se tait : une fois la table
+ * complète, chaque passage du cron ne lit qu'une entrée d'index. La livraison
+ * suivante arrive complète d'elle-même (`insererUnLot`).
+ */
+export const completerUnLot = internalMutation({
+	args: {},
+	returns: v.number(),
+	// ⚠️ ANNOTATION DE RETOUR OBLIGATOIRE : la mutation se reprogramme elle-même.
+	handler: async (ctx): Promise<number> => {
+		const lot = await ctx.db
+			.query('annuaireAvocats')
+			.withIndex('by_departement_and_nom_and_prenom', (q) => q.eq('departement', undefined))
+			.take(LOT_A_COMPLETER);
+		for (const fiche of lot) {
+			await ctx.db.patch(fiche._id, {
+				...completude(fiche),
+				procheDuRecouvrement: fiche.procheDuRecouvrement ?? fiche.specialites.some(specialiteProche)
+			});
+		}
+		if (lot.length === LOT_A_COMPLETER) {
+			await ctx.scheduler.runAfter(0, internal.recouvrement.annuaires.completerUnLot, {});
+		}
+		return lot.length;
+	}
+});
+
+/** Un avocat de la liste du choix : la fiche lue, son barreau et le jour du relevé. */
+export interface AvocatDuSecteur extends AvocatPropose {
+	readonly releveeLe: string;
+}
+
+const vAvocatDuSecteur = v.object({
+	nom: v.string(),
+	prenom: v.string(),
+	raisonSociale: v.optional(v.string()),
+	siren: v.optional(v.string()),
+	adresse: v.optional(v.string()),
+	codePostal: v.optional(v.string()),
+	ville: v.optional(v.string()),
+	specialites: v.array(v.string()),
+	barreau: v.string(),
+	releveeLe: v.string()
+});
+
+function duSecteur(fiche: Doc<'annuaireAvocats'>): AvocatDuSecteur {
+	return { ...propose(fiche), releveeLe: fiche.releveeLe };
+}
+
+/**
+ * LES AVOCATS, PAGE APRÈS PAGE.
+ *
+ *   · avec un texte : la recherche porte sur le nom, le cabinet, la ville, le
+ *     code postal et le barreau, dans le département donné ou dans toute la
+ *     France ;
+ *   · sans texte : un département, par ordre alphabétique — ceux qui ont DÉCLARÉ
+ *     une spécialité proche à part (`SEULEMENT`), les autres ensuite (`SANS`).
+ *
+ * ⚠️ SANS TEXTE NI DÉPARTEMENT, UNE PAGE VIDE ET TERMINÉE. Dérouler les quatre-
+ * vingt mille fiches de la France entière ne se lit pas : l'écran demande un nom.
+ */
+export const avocatsDuSecteur = authedQuery({
+	args: {
+		paginationOpts: paginationOptsValidator,
+		departement: v.optional(v.string()),
+		recherche: v.optional(v.string()),
+		specialiteProche: v.optional(v.union(v.literal('SEULEMENT'), v.literal('SANS')))
+	},
+	returns: paginationResultValidator(vAvocatDuSecteur),
+	handler: async (ctx, { paginationOpts, departement, recherche, specialiteProche: proche }) => {
+		const cherche = normaliserPourRecherche(recherche ?? '');
+		if (cherche !== '') {
+			const page = await ctx.db
+				.query('annuaireAvocats')
+				.withSearchIndex('search_texte', (q) =>
+					departement === undefined
+						? q.search('texte', cherche)
+						: q.search('texte', cherche).eq('departement', departement)
+				)
+				.paginate(paginationOpts);
+			return { ...page, page: page.page.map(duSecteur) };
+		}
+		if (departement === undefined) {
+			return { page: [], isDone: true, continueCursor: '' };
+		}
+		const page = await (
+			proche === undefined
+				? ctx.db
+						.query('annuaireAvocats')
+						.withIndex('by_departement_and_nom_and_prenom', (q) => q.eq('departement', departement))
+				: ctx.db
+						.query('annuaireAvocats')
+						.withIndex('by_proche_and_departement_and_nom_and_prenom', (q) =>
+							q.eq('procheDuRecouvrement', proche === 'SEULEMENT').eq('departement', departement)
+						)
+		).paginate(paginationOpts);
+		return { ...page, page: page.page.map(duSecteur) };
+	}
+});
+
+/** La source des avocats et le jour de la livraison en base, pour l'écran. */
+export const sourceDesAvocats = authedQuery({
+	args: {},
+	returns: v.object({ source: v.string(), releveeLe: v.union(v.string(), v.null()) }),
+	handler: async (ctx): Promise<{ source: string; releveeLe: string | null }> => {
+		const premiere = await ctx.db.query('annuaireAvocats').first();
+		return { source: SOURCE_AVOCATS, releveeLe: premiere?.releveeLe ?? null };
+	}
+});
+
+/** Les pages qu'on accepte de lire pour une recherche d'études par nom : au-delà, on affine. */
+const PAGES_PAR_NOM_MAX = 20;
+
+export interface EtudesParNom {
+	readonly etudes: EtudeTrouvee[];
+	readonly page: number;
+	/** Combien de pages le registre annonce, bornées à `PAGES_PAR_NOM_MAX`. */
+	readonly pages: number;
+	readonly total: number;
+	readonly source: string;
+	readonly releveeLe: string;
+}
+
+/**
+ * LES ÉTUDES DE TOUTE LA FRANCE, PAR NOM OU PAR VILLE — une page de vingt-cinq à
+ * la fois, pour le défilement du parcours.
+ *
+ * ⚠️ UN ÉCHEC LÈVE, comme la recherche par département : une panne du registre ne
+ * se rend jamais en « aucune étude ».
+ */
+export const etudesParNom = action({
+	args: { recherche: v.string(), page: v.number() },
+	returns: v.object({
+		etudes: v.array(vEtude),
+		page: v.number(),
+		pages: v.number(),
+		total: v.number(),
+		source: v.string(),
+		releveeLe: v.string()
+	}),
+	// ⚠️ ANNOTATION DE RETOUR OBLIGATOIRE : l'action appelle son propre module.
+	handler: async (ctx, { recherche, page }): Promise<EtudesParNom> => {
+		await ctx.runQuery(api.recouvrement.annuaires.sessionRequise, {});
+		const cherche = recherche.trim();
+		if (cherche.length < 2) {
+			throw new ConvexError('Tapez au moins deux lettres d’un nom ou d’une ville.');
+		}
+		const numero = Math.min(Math.max(1, Math.floor(page)), PAGES_PAR_NOM_MAX);
+		const reponse = await fetch(
+			`${BASE_RECHERCHE_ENTREPRISES}?q=${encodeURIComponent(cherche)}` +
+				`&id_convention_collective=${CONVENTION_COLLECTIVE_COMMISSAIRES}` +
+				`&activite_principale=${encodeURIComponent(ACTIVITE_JURIDIQUE)}` +
+				`&per_page=${PAR_PAGE}&page=${numero}`
+		);
+		if (!reponse.ok) {
+			throw new ConvexError(
+				`Le registre des entreprises a répondu ${reponse.status}. ` +
+					'La recherche n’a pas pu aboutir, et la liste n’est donc pas vide : elle est inconnue.'
+			);
+		}
+		const charge = (await reponse.json()) as {
+			results?: unknown;
+			total_results?: unknown;
+			total_pages?: unknown;
+		};
+		const lots = Array.isArray(charge.results) ? charge.results : [];
+		const etudes: EtudeTrouvee[] = [];
+		for (const brut of lots) {
+			const etude = lireEtude(brut);
+			if (etude !== null) etudes.push(etude);
+		}
+		const pages = typeof charge.total_pages === 'number' ? charge.total_pages : numero;
+		return {
+			etudes,
+			page: numero,
+			pages: Math.min(pages, PAGES_PAR_NOM_MAX),
+			total: typeof charge.total_results === 'number' ? charge.total_results : etudes.length,
+			source: SOURCE,
+			releveeLe: new Date().toISOString().slice(0, 10)
+		};
+	}
+});
+
+/** Où est le client, avec le département POSTAL qui range l'annuaire des avocats. */
+export interface SecteurDuClient {
+	readonly client: string;
+	readonly lieu: (LieuDuClient & { readonly prefixePostal: string | null }) | null;
+	readonly commissaires: EtatCommissaires | null;
+}
+
+/**
+ * LE SECTEUR D'UN CLIENT — son lieu, lu au registre par son SIREN, et les études
+ * de son département. Les avocats ne viennent plus avec : ils se lisent page
+ * après page (`avocatsDuSecteur`), d'après `prefixePostal`.
+ */
+export const secteurDuClient = action({
 	args: { debiteurId: v.id('debiteurs') },
 	returns: v.object({
 		client: v.string(),
@@ -977,53 +861,40 @@ export const professionnelsPresDuClient = action({
 			v.null(),
 			v.object({
 				departement: v.string(),
+				prefixePostal: v.union(v.string(), v.null()),
 				codePostal: v.union(v.string(), v.null()),
 				commune: v.union(v.string(), v.null()),
 				latitude: v.optional(v.number()),
 				longitude: v.optional(v.number())
 			})
 		),
-		commissaires: v.union(v.null(), vEtatCommissaires),
-		avocats: v.union(v.null(), vAvocatsPres)
+		commissaires: v.union(v.null(), vEtatCommissaires)
 	}),
 	// ⚠️ ANNOTATION DE RETOUR OBLIGATOIRE : l'action appelle son propre module.
-	handler: async (ctx, { debiteurId }): Promise<ProfessionnelsPres> => {
+	handler: async (ctx, { debiteurId }): Promise<SecteurDuClient> => {
 		const client = await ctx.runQuery(api.recouvrement.annuaires.lieuConnuDuClient, {
-			debiteurId: debiteurId as Id<'debiteurs'>
+			debiteurId
 		});
 		if (client === null) {
 			throw new ConvexError('Ce client n’appartient pas à votre établissement.');
 		}
-
 		const lieu = await lieuDuClient(client);
-		if (lieu === null) {
-			return { client: client.denomination, lieu: null, commissaires: null, avocats: null };
-		}
+		if (lieu === null) return { client: client.denomination, lieu: null, commissaires: null };
 
-		const prefixe =
+		const prefixePostal =
 			(lieu.codePostal === null ? null : prefixeDuCodePostal(lieu.codePostal)) ??
 			(/^\d{2,3}$/.test(lieu.departement) ? lieu.departement : null);
-
-		const [commissaires, avocats] = await Promise.all([
-			etudesDuDepartement(lieu.departement).then(
-				(resultat): EtatCommissaires => ({ etat: 'TROUVE', resultat }),
-				(erreur: unknown): EtatCommissaires => ({
-					etat: 'ECHEC',
-					message:
-						erreur instanceof ConvexError && typeof erreur.data === 'string'
-							? erreur.data
-							: 'Le registre des entreprises n’a pas répondu : la liste des études est inconnue, pas vide.'
-				})
-			),
-			prefixe === null
-				? Promise.resolve(null)
-				: ctx.runQuery(internal.recouvrement.annuaires.avocatsPres, {
-						prefixe,
-						...(lieu.codePostal === null ? {} : { codePostal: lieu.codePostal })
-					})
-		]);
-
-		return { client: client.denomination, lieu, commissaires, avocats };
+		const commissaires = await etudesDuDepartement(lieu.departement).then(
+			(resultat): EtatCommissaires => ({ etat: 'TROUVE', resultat }),
+			(erreur: unknown): EtatCommissaires => ({
+				etat: 'ECHEC',
+				message:
+					erreur instanceof ConvexError && typeof erreur.data === 'string'
+						? erreur.data
+						: 'Le registre des entreprises n’a pas répondu : la liste des études est inconnue, pas vide.'
+			})
+		);
+		return { client: client.denomination, lieu: { ...lieu, prefixePostal }, commissaires };
 	}
 });
 

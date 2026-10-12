@@ -195,9 +195,6 @@ export { Lien, useProvenance } from './lien';
 export { FeuilleVoie, type VoieAffichee } from './feuille-voie';
 export { FeuilleDeclaration, type ChoixDeclare } from './feuille-declaration';
 export {
-	ChoixIntervenant,
-	FeuillePresDuClient,
-	SaisirUneFiche,
 	avocatAuCarnet,
 	etudeAuCarnet,
 	precisionDeLaFiche,
@@ -208,10 +205,21 @@ export {
 	type EtudeProposee,
 	type FicheIntervenant,
 	type FicheASaisir,
-	type ProfessionnelsProposes,
-	type PropositionsAffichees,
 	type RoleIntervenant
-} from './choix-intervenant';
+} from './fiches-professionnels';
+export {
+	ParcoursProfessionnels,
+	type AnnuaireDuParcours,
+	type ButDuParcours,
+	type GroupeDeResultats,
+	type OrigineDuPro,
+	type PorteeAffichee,
+	type ProfessionCherchee,
+	type ProprietesParcours,
+	type ProPropose,
+	type RequeteAffichee,
+	type ResultatsAffiches
+} from './parcours-professionnels';
 export {
 	AvatarProfessionnel,
 	CarteDuLieu,
@@ -246,19 +254,6 @@ export {
 	type EtatRecherche,
 	type EtablissementPropose
 } from './recherche-registre';
-export {
-	RechercheCommissaire,
-	type EtatRechercheCommissaire,
-	type EtudeAffichee,
-	type ResultatAnnuaireAffiche
-} from './recherche-commissaire';
-export {
-	RechercheAvocat,
-	type EtatRechercheAvocat,
-	type AvocatAffiche,
-	type ResultatAvocatsAffiche,
-	type RepertoireAffiche
-} from './recherche-avocat';
 export {
 	PaletteRecherche,
 	DeclencheurRecherche,

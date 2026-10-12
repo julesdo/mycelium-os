@@ -7,7 +7,7 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisCentimes } from '../../lib/socle/montants';
 import type { DecompteFige } from '../../lib/verticales/recouvrement/piece';
 import { EcranPiece } from '../../screens/piece';
-import { useProfessionnelsProposes } from '../../app/use-professionnels';
+import { useAnnuaire } from '../../app/use-annuaire';
 
 export const Route = createFileRoute('/app/decompte/$id')({
 	component: PagePiece,
@@ -42,9 +42,8 @@ function PagePiece() {
 	const remettre = useMutation(api.recouvrement.conseil.declarerRemise);
 	const consignerRetour = useMutation(api.recouvrement.conseil.declarerRetour);
 	const clore = useMutation(api.recouvrement.conseil.cloreRemise);
-	const ajouterIntervenant = useMutation(api.recouvrement.intervenants.ajouterIntervenant);
-	// Les professionnels près du client : la remise au conseil les propose.
-	const professionnels = useProfessionnelsProposes(creance?.debiteurId, carnet);
+	// L'annuaire du parcours du choix : la remise au conseil le propose.
+	const professionnels = useAnnuaire({ debiteurId: creance?.debiteurId, carnet });
 
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -239,15 +238,6 @@ function PagePiece() {
 													},
 										carnet,
 										professionnels,
-										onAjouterFiche: (fiche) =>
-											void ecrire(() =>
-												ajouterIntervenant({
-													nom: fiche.nom,
-													role: fiche.role,
-													ressort: fiche.ressort,
-													origine: 'SAISI_A_LA_MAIN'
-												})
-											),
 										onRemettre: (remisLe, intervenantId, attendu) =>
 											void ecrire(() =>
 												remettre({

@@ -3,10 +3,12 @@ import {
 	ColonnesIntrouvables,
 	derniereLivraison,
 	lireLivraison,
+	normaliserPourRecherche,
 	prefixeDuCodePostal,
 	prefixeSuivant,
 	releveDuFichier,
-	specialiteProche
+	specialiteProche,
+	texteDeRecherche
 } from '../annuaire-avocats';
 
 /**
@@ -100,5 +102,23 @@ describe('l’annuaire des avocats', () => {
 		expect(prefixeSuivant('44')).toBe('45');
 		expect(prefixeSuivant('09')).toBe('10');
 		expect(prefixeSuivant('971')).toBe('972');
+	});
+
+	it('écrit ce que la recherche lit, et lit ce qu’on tape de la même façon', () => {
+		const texte = texteDeRecherche({
+			prenom: 'Étienne',
+			nom: 'LE GOFF',
+			raisonSociale: 'SELARL Le Goff & Associés',
+			ville: 'SAINT-HERBLAIN',
+			codePostal: '44800',
+			barreau: 'NANTES'
+		});
+		expect(texte).toBe('etienne le goff selarl le goff associes saint herblain 44800 nantes');
+		// Le gérant tape avec ses accents et ses majuscules : la même lecture les retire.
+		expect(normaliserPourRecherche('  Étienne  Saint-Herblain ')).toBe('etienne saint herblain');
+		// Une fiche sans cabinet ni ville garde le reste, sans trou.
+		expect(texteDeRecherche({ prenom: 'Marie', nom: 'Dupont', barreau: 'PARIS' })).toBe(
+			'marie dupont paris'
+		);
 	});
 });

@@ -1,32 +1,20 @@
 import { useState } from 'react';
-import { Popup, PopupContent } from '@cladd-ui/react';
-import { PencilLineIcon, ScaleIcon, StampIcon } from 'lucide-react';
+import { MapPinIcon, PlusIcon } from 'lucide-react';
 import {
-	BoutonTexte,
+	BoutonPrincipal,
 	CarteBouton,
 	CarteProfessionnel,
 	EnTeteDeGroupe,
 	FeuilleProfessionnel,
-	FeuillePresDuClient,
 	ListeDeCartes,
 	PageEcran,
+	ParcoursProfessionnels,
 	PortraitsDeLEquipe,
-	RechercheAvocat,
-	RechercheCommissaire,
-	SaisirUneFiche,
 	VignetteIcone,
 	proDuCarnet,
-	type AvocatAffiche,
-	type AvocatProposeAffiche,
-	type EtatRechercheAvocat,
-	type EtatRechercheCommissaire,
-	type EtudeAffichee,
-	type EtudeProposee,
-	type FicheASaisir,
+	type AnnuaireDuParcours,
 	type FicheIntervenant,
-	type Lecture,
-	type PropositionsAffichees,
-	type RepertoireAffiche
+	type Lecture
 } from '../ui';
 import { TITRE_ECRAN } from './titres';
 
@@ -44,11 +32,12 @@ import { TITRE_ECRAN } from './titres';
  * Doctolib (« mes praticiens »), l'équipe a sa page : des visages, ce que chacun
  * est, un toucher pour la fiche et ses gestes (appeler, écrire, l'itinéraire).
  *
- * Trois questions, une réponse chacune, à un seul endroit :
+ * Deux questions, une réponse chacune, à un seul endroit :
  *   · avec qui je travaille — « Votre équipe », une carte par personne ;
- *   · qui exerce près de mes clients — « Près de vos clients », une carte par
- *     client en cours, et sa liste en feuille, lue d'après son SIREN ;
- *   · quelqu'un d'autre — chercher par département ou par barreau, ou le saisir.
+ *   · qui ajouter — UN bouton, « Ajouter à mon équipe », qui ouvre le parcours du
+ *     choix (12/10/2026) : le MÊME que « Qui fait l'acte » dans un dossier, une
+ *     profession par étape, la recherche par nom, le défilement, le résumé. Les
+ *     cartes « Près de vos clients » l'ouvrent déjà placé près du client touché.
  *
  * ⚠️ RIEN N'Y EST RECOMMANDÉ (ligne rouge n° 3). L'équipe est dans l'ordre
  * alphabétique ; les clients aussi ; les professionnels près d'eux dans l'ordre
@@ -68,42 +57,13 @@ export interface DefenseAffichee {
 	readonly equipe: readonly FicheIntervenant[];
 	readonly erreur: string | null;
 	readonly enCours: boolean;
-	readonly onAjouterALaMain: (fiche: FicheASaisir) => void;
 	readonly onOublier: (intervenantId: string) => void;
 	/** La vraie photo ou le logo d'un membre de l'équipe. */
 	readonly onPhoto: (intervenantId: string, fichier: File) => void;
-
 	/** Les clients qui ont un dossier en cours, dans l'ordre alphabétique. */
 	readonly clients: readonly ClientDeLaDefense[];
-	/** Le client dont la feuille est ouverte, et ce qui a été lu près de lui. */
-	readonly presDuClient: {
-		readonly client: string;
-		readonly propositions: PropositionsAffichees;
-	} | null;
-	readonly onOuvrirClient: (clientId: string) => void;
-	readonly onFermerClient: () => void;
-	readonly onAjouterEtude: (etude: EtudeProposee) => void;
-	readonly onAjouterAvocat: (avocat: AvocatProposeAffiche) => void;
-
-	/** La recherche d'études par département, en feuille : une action Convex. */
-	readonly rechercheCommissaireOuverte: boolean;
-	readonly etatRechercheCommissaire: EtatRechercheCommissaire;
-	readonly onOuvrirRechercheCommissaire: () => void;
-	readonly onFermerRechercheCommissaire: () => void;
-	readonly onChercherCommissaire: (departement: string) => void;
-	readonly onRetenirEtude: (etude: EtudeAffichee) => void;
-
-	/** La recherche d'avocats par barreau, sa sœur : elle lit le répertoire ingéré. */
-	readonly rechercheAvocatOuverte: boolean;
-	readonly repertoire: RepertoireAffiche | null;
-	readonly barreau: string;
-	readonly specialite: string;
-	readonly etatAvocats: EtatRechercheAvocat;
-	readonly onOuvrirRechercheAvocat: () => void;
-	readonly onFermerRechercheAvocat: () => void;
-	readonly onChoisirBarreau: (barreau: string) => void;
-	readonly onChoisirSpecialite: (specialite: string) => void;
-	readonly onRetenirAvocat: (avocat: AvocatAffiche) => void;
+	/** L'annuaire du parcours du choix, avec un lieu par client en cours. */
+	readonly annuaire: AnnuaireDuParcours;
 }
 
 function pluriel(n: number): string {
@@ -120,9 +80,7 @@ function legendeDeLEquipe(equipe: readonly FicheIntervenant[]): string {
 	const autres = equipe.length - avocats - commissaires;
 	const morceaux = [
 		avocats === 0 ? null : `${avocats} avocat${pluriel(avocats)}`,
-		commissaires === 0
-			? null
-			: `${commissaires} commissaire${pluriel(commissaires)} de justice`,
+		commissaires === 0 ? null : `${commissaires} commissaire${pluriel(commissaires)} de justice`,
 		autres === 0 ? null : `${autres} autre${pluriel(autres)}`
 	].filter((m) => m !== null);
 	const liste =
@@ -149,15 +107,24 @@ export function EcranDefense({ donnees }: { donnees: Lecture<DefenseAffichee> })
 
 function Defense(d: DefenseAffichee) {
 	const [ouverteSur, setOuverteSur] = useState<string | null>(null);
-	const [saisie, setSaisie] = useState(false);
+	const [parcoursOuvert, setParcoursOuvert] = useState(false);
 	const fiche = d.equipe.find((f) => f._id === ouverteSur) ?? null;
+
+	/** Ouvre le parcours, près d'un client quand on vient de sa carte. */
+	const ajouter = (portee?: string) => {
+		d.annuaire.onDemander(portee);
+		setParcoursOuvert(true);
+	};
 
 	return (
 		<div className="flex flex-col gap-cladd-xs">
-			<PortraitsDeLEquipe
-				equipe={d.equipe.map(proDuCarnet)}
-				legende={legendeDeLEquipe(d.equipe)}
-			/>
+			<PortraitsDeLEquipe equipe={d.equipe.map(proDuCarnet)} legende={legendeDeLEquipe(d.equipe)} />
+
+			{/* LE SEUL BOUTON PLEIN DE L'ÉCRAN : ajouter, c'est le parcours du choix. */}
+			<BoutonPrincipal pleineLargeur onClick={() => ajouter()}>
+				<PlusIcon />
+				Ajouter à mon équipe
+			</BoutonPrincipal>
 
 			{d.erreur === null ? null : (
 				<p role="alert" className="px-1 text-cladd-xs leading-relaxed">
@@ -189,39 +156,17 @@ function Defense(d: DefenseAffichee) {
 								key={client.id}
 								titre={client.nom}
 								ligne={client.ligne}
-								onClick={() => d.onOuvrirClient(client.id)}
+								icone={<VignetteIcone icone={<MapPinIcon />} />}
+								onClick={() => ajouter(`client:${client.id}`)}
 							/>
 						))}
 					</ListeDeCartes>
 				</section>
 			)}
 
-			<section className="flex flex-col gap-cladd-3xs">
-				<EnTeteDeGroupe libelle="Quelqu’un d’autre" />
-				<ListeDeCartes>
-					<CarteBouton
-						titre="Un commissaire de justice"
-						ligne="Les études d’un département"
-						icone={<VignetteIcone icone={<StampIcon />} />}
-						onClick={d.onOuvrirRechercheCommissaire}
-					/>
-					<CarteBouton
-						titre="Un avocat"
-						ligne="Les avocats d’un barreau"
-						icone={<VignetteIcone icone={<ScaleIcon />} />}
-						onClick={d.onOuvrirRechercheAvocat}
-					/>
-				</ListeDeCartes>
-				<BoutonTexte className="self-center" onClick={() => setSaisie(true)}>
-					<PencilLineIcon />
-					Saisir quelqu’un à la main
-				</BoutonTexte>
-			</section>
-
 			<p className="px-1 text-center text-cladd-3xs leading-relaxed text-cladd-fg-softest">
-				Les portraits sont dessinés d’après le nom : aucune source publique ne publie la photo
-				d’un avocat ou d’un commissaire. Ajoutez la vraie depuis sa fiche, une fois dans votre
-				équipe.
+				Les portraits sont dessinés d’après le nom : aucune source publique ne publie la photo d’un
+				avocat ou d’un commissaire. Ajoutez la vraie depuis sa fiche, une fois dans votre équipe.
 			</p>
 
 			<FeuilleProfessionnel
@@ -245,60 +190,17 @@ function Defense(d: DefenseAffichee) {
 				}}
 			/>
 
-			<FeuillePresDuClient
-				client={d.presDuClient?.client ?? ''}
-				ouverte={d.presDuClient !== null}
-				carnet={d.equipe}
-				propositions={d.presDuClient?.propositions ?? { etat: 'CHARGEMENT' }}
-				enCours={d.enCours}
-				erreur={d.erreur}
-				onFermer={d.onFermerClient}
-				onAjouterEtude={d.onAjouterEtude}
-				onAjouterAvocat={d.onAjouterAvocat}
+			<ParcoursProfessionnels
+				ouvert={parcoursOuvert}
+				titre="Ajouter à votre équipe"
+				but="EQUIPE"
+				professions={['AVOCAT', 'COMMISSAIRE_DE_JUSTICE']}
+				sansPersonne={null}
+				equipe={d.equipe}
+				annuaire={d.annuaire}
+				onFermer={() => setParcoursOuvert(false)}
+				onConfirmer={() => setParcoursOuvert(false)}
 			/>
-
-			<RechercheCommissaire
-				ouverte={d.rechercheCommissaireOuverte}
-				etat={d.etatRechercheCommissaire}
-				onFermer={d.onFermerRechercheCommissaire}
-				onChercher={d.onChercherCommissaire}
-				onRetenir={d.onRetenirEtude}
-			/>
-			<RechercheAvocat
-				ouverte={d.rechercheAvocatOuverte}
-				repertoire={d.repertoire}
-				barreau={d.barreau}
-				specialite={d.specialite}
-				etat={d.etatAvocats}
-				onFermer={d.onFermerRechercheAvocat}
-				onChoisirBarreau={d.onChoisirBarreau}
-				onChoisirSpecialite={d.onChoisirSpecialite}
-				onRetenir={d.onRetenirAvocat}
-			/>
-
-			<Popup
-				open={saisie}
-				onOpenChange={(o) => {
-					if (!o) setSaisie(false);
-				}}
-				headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">Saisir à la main</span>}
-				contentClassName="max-w-lg"
-			>
-				<PopupContent>
-					<div className="flex flex-col gap-cladd-3xs">
-						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-							Pour quelqu’un qu’aucune source ne connaît. Les recherches retrouvent d’elles-mêmes son
-							adresse et son SIREN ; ici, vous les donnez.
-						</p>
-						<SaisirUneFiche
-							onAjouter={(nouvelle) => {
-								d.onAjouterALaMain(nouvelle);
-								setSaisie(false);
-							}}
-						/>
-					</div>
-				</PopupContent>
-			</Popup>
 		</div>
 	);
 }
