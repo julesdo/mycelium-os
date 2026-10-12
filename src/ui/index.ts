@@ -383,6 +383,7 @@ export {
 	ReponseDePlume,
 	SuggestionsAPlume,
 	TravailDePlume,
+	ID_DU_SELECTEUR_DE_PLUME,
 	documentDepuisFichier,
 	documentDepuisResume,
 	type DocumentDuFil,

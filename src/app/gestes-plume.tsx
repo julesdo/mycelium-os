@@ -10,6 +10,7 @@ import {
 	CalendarRangeIcon,
 	HandCoinsIcon,
 	HandIcon,
+	LandmarkIcon,
 	LinkIcon,
 	LockIcon,
 	MailIcon,
@@ -56,7 +57,8 @@ const ICONE_DU_GESTE: Readonly<Record<GenreGeste, ReactNode>> = {
 	LIEN_PAIEMENT: <LinkIcon />,
 	REMISE_CONSEIL: <BriefcaseIcon />,
 	ECHEANCIER: <CalendarRangeIcon />,
-	CLASSER: <ArchiveIcon />
+	CLASSER: <ArchiveIcon />,
+	REGLEMENT: <LandmarkIcon />
 };
 
 /** Un geste tel que le fil le rend. */
@@ -142,8 +144,14 @@ export function useGestesDePlume({
 			void navigate({ to: '/app/clients/$id', params: { id: geste.client } });
 			return;
 		}
-		if (ecran === 'DEMARRER' && geste.client !== undefined) {
-			void navigate({ to: '/app/demarrer/$id', params: { id: geste.client } });
+		if (ecran === 'DEMARRER') {
+			// Hors dossier, le client est nommé ; dans un dossier, c'est le sien.
+			const client = geste.client ?? dossier?.debiteurId;
+			if (client !== undefined) void navigate({ to: '/app/demarrer/$id', params: { id: client } });
+			return;
+		}
+		if (ecran === 'JOINDRE') {
+			onJoindre?.();
 			return;
 		}
 		switch (ecran) {
@@ -231,6 +239,7 @@ export function useGestesDePlume({
 			case 'EMAIL':
 			case 'RETIRER_DU_PILOTE':
 			case 'REMETTRE_AU_PILOTE':
+			case 'REGLEMENT':
 				return fiche;
 			case 'ARRETER_DECOMPTE':
 			case 'REMISE_CONSEIL':

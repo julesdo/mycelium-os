@@ -12,6 +12,7 @@ import { ouvrirLaPageDuJour } from './paiement';
 import { declarerLaRemise } from './conseil';
 import { apresUneParole, convenirLEcheancier } from './parole';
 import { classerLeDossier } from './classement';
+import { appliquerLaRepartition, composerProposition } from './lettrage';
 
 /**
  * LES GESTES DE PLUME, CONFIRMÉS PAR LE GÉRANT (08/10/2026).
@@ -287,6 +288,47 @@ async function faireLeGeste(
 			}
 			await classerLeDossier(ctx, organizationId, userId, { creanceId: creance._id, motif });
 			return 'Dossier classé. Les relances s’arrêtent, et il se rouvre depuis sa page.';
+		}
+		case 'REGLEMENT': {
+			/*
+			  UN PAIEMENT REÇU, RAPPROCHÉ COMME SUR LA FICHE (« Virement reçu ») : s'il
+			  solde exactement un jeu de factures, ce sont elles ; s'il n'en solde aucun,
+			  il se répartit dans l'ordre que prévoit la loi. Quand plusieurs jeux de
+			  factures font ce montant, le logiciel ne choisit pas : le gérant le fait sur
+			  la fiche, où les combinaisons s'affichent.
+			*/
+			const montant = geste.montant ?? 0n;
+			const date = geste.date ?? aujourdHui;
+			if (montant <= 0n || !dateDuCalendrier(date) || date > aujourdHui) {
+				throw new ConvexError('Ce paiement est incomplet : redites-moi son montant et son jour.');
+			}
+			const proposition = await composerProposition(
+				ctx,
+				organizationId,
+				creance.debiteurId,
+				montant
+			);
+			const dit = `Paiement de ${versEuros(depuisCentimes(montant))} € noté au ${jourEnClair(date)}`;
+			if (proposition.issue === 'UNIQUE') {
+				const references = proposition.combinaisons[0]?.references ?? [];
+				await ctx.runMutation(internal.recouvrement.lettrage.appliquerInterne, {
+					organizationId,
+					debiteurId: creance.debiteurId,
+					references,
+					montant,
+					date
+				});
+				await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
+				return `${dit} : il solde ${references.join(', ')}. Ce qui est réglé ne se relance plus.`;
+			}
+			if (proposition.issue === 'AUCUNE') {
+				await appliquerLaRepartition(ctx, organizationId, creance.debiteurId, montant, date);
+				await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
+				return `${dit}, réparti sur ses factures dans l’ordre que prévoit la loi. Ce qui est réglé ne se relance plus.`;
+			}
+			throw new ConvexError(
+				'Plusieurs jeux de factures font ce montant : choisissez lesquelles il règle sur sa fiche, sous « Virement reçu ».'
+			);
 		}
 	}
 }

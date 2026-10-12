@@ -42,7 +42,10 @@ export const GENRES_GESTE = [
 	// Analyse des parcours du 08/10/2026 : le paiement en plusieurs fois, et le
 	// dossier qu'on classe. Deux gestes de bureau, qui ne franchissent aucune ligne.
 	'ECHEANCIER',
-	'CLASSER'
+	'CLASSER',
+	// 12/10/2026, « Plume doit être capable de tout faire » : le paiement reçu, que
+	// la fiche du client note sous « Virement reçu ». Un fait, rapproché par le logiciel.
+	'REGLEMENT'
 ] as const;
 export type GenreGeste = (typeof GENRES_GESTE)[number];
 
@@ -152,7 +155,16 @@ export interface EtatPourGestes {
 	readonly echeancierEnCours?: boolean;
 	/** Le gérant a classé ce dossier. */
 	readonly classe?: boolean;
+	/** Plume l'a préparé, et il attend que le gérant le démarre. */
+	readonly aDemarrer?: boolean;
 }
+
+/**
+ * LES ÉCRANS QU'UN GESTE « OUVRIR » MONTRE DEPUIS LA CONVERSATION D'UN DOSSIER, en plus
+ * de ceux du dossier : choisir qui fait l'acte, joindre un document à Plume, démarrer
+ * le dossier quand il attend — et tout écran de l'établissement (12/10/2026).
+ */
+const ECRANS_EN_PLUS_DANS_UN_DOSSIER = ['DOSSIER', 'PROFESSIONNELS', 'JOINDRE'] as const;
 
 /** Les nombres de versements qu'un échéancier admet (le serveur relit la même liste). */
 export const NOMBRES_DE_VERSEMENTS = [2, 3, 4, 5, 6, 8, 10, 12] as const;
@@ -215,9 +227,14 @@ function relire(brut: GesteBrut, etat: EtatPourGestes): Geste | null {
 		case 'RETENIR':
 			return etat.relanceProgrammee ? { genre: 'RETENIR' } : null;
 		case 'OUVRIR':
-			return (ECRANS_OUVRABLES as readonly string[]).includes(texte)
-				? { genre: 'OUVRIR', texte }
-				: null;
+			if (
+				(ECRANS_OUVRABLES as readonly string[]).includes(texte) ||
+				(ECRANS_EN_PLUS_DANS_UN_DOSSIER as readonly string[]).includes(texte) ||
+				(ECRANS_ETABLISSEMENT as readonly string[]).includes(texte)
+			) {
+				return { genre: 'OUVRIR', texte };
+			}
+			return texte === 'DEMARRER' && etat.aDemarrer === true ? { genre: 'OUVRIR', texte } : null;
 		case 'CONTESTATION': {
 			// ⚠️ NOTER UNE CONTESTATION NE BLOQUE RIEN : c'est un fait du dossier, pas un verrou.
 			const conteste = texte.toUpperCase() !== 'NON';
@@ -246,6 +263,20 @@ function relire(brut: GesteBrut, etat: EtatPourGestes): Geste | null {
 			const nombre = Number.parseInt(texte, 10);
 			if (!(NOMBRES_DE_VERSEMENTS as readonly number[]).includes(nombre)) return null;
 			return { genre: 'ECHEANCIER', date, texte: String(nombre), montant: etat.restantDu };
+		}
+		case 'REGLEMENT': {
+			// Un paiement reçu : son montant, et le jour où il est arrivé — jamais demain.
+			if (etat.classe === true || etat.restantDu <= 0n) return null;
+			let montant: bigint;
+			try {
+				montant = enCentimes(depuisEuros(brut.montant));
+			} catch {
+				return null;
+			}
+			if (montant <= 0n) return null;
+			const le = date === '' ? etat.aujourdHui : date;
+			if (!dateDuCalendrier(le) || le > etat.aujourdHui) return null;
+			return { genre: 'REGLEMENT', date: le, montant };
 		}
 		case 'CLASSER': {
 			if (etat.classe === true) return null;
@@ -382,7 +413,12 @@ const TITRE_ECRAN: Readonly<Record<string, { titre: string; detail?: string }>> 
 		titre: 'Les relances automatiques',
 		detail: 'Vous lisez tout ce qui partira avant de décider.'
 	},
-	COMPTE: { titre: 'Votre compte' }
+	COMPTE: { titre: 'Votre compte' },
+	JOINDRE: {
+		titre: 'Me joindre le document',
+		detail:
+			'Le bon de livraison, le contrat, une photo : je le mets au coffre, je le lis, puis je vous dis ce qu’il apporte.'
+	}
 };
 
 /**
@@ -449,9 +485,16 @@ export function decrireGeste(geste: Geste): {
 			return {
 				titre: ecran?.titre ?? 'Ouvrir',
 				...(ecran?.detail === undefined ? {} : { detail: ecran.detail }),
-				confirmer: 'Ouvrir'
+				confirmer: geste.texte === 'JOINDRE' ? 'Choisir le document' : 'Ouvrir'
 			};
 		}
+		case 'REGLEMENT':
+			return {
+				titre: `Paiement de ${versEuros(depuisCentimes(geste.montant ?? 0n))} € reçu ${jourEnClair(geste.date ?? '')}`,
+				detail:
+					'Je le rapproche de ses factures : celles qu’il solde exactement, sinon dans l’ordre que prévoit la loi. Ce qui est réglé ne se relance plus.',
+				confirmer: 'Noter le paiement'
+			};
 		case 'CONTESTATION':
 			return geste.texte === 'NON'
 				? {

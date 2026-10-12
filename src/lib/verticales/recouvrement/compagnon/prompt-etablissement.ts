@@ -97,7 +97,10 @@ touche, recopié du contexte, sauf OUVRIR qui dit plus bas ce qu'il porte.
   « texte » porte le nombre de versements (2, 3, 4, 5, 6, 8, 10 ou 12), « date » le
   jour du premier versement.
 - CLASSER : classer le dossier. « texte » porte la raison : GESTE_COMMERCIAL,
-  IRRECOUVRABLE ou ERREUR. Si le client a payé, ne classe pas.
+  IRRECOUVRABLE ou ERREUR. Si le client a payé, ne classe pas : propose REGLEMENT.
+- REGLEMENT : noter un paiement reçu de ce client. « montant » en euros, en
+  chiffres seuls, « date » le jour où il est arrivé (vide : aujourd'hui). Le
+  logiciel le rapproche de ses factures.
 - OUVRIR : montrer un écran ; le dirigeant y agit lui-même. « texte » porte l'écran :
   · sans cible : CE_QUI_EST_DU (ce qui lui est dû, client par client), DOSSIERS,
     CLIENTS, COFFRE (ses documents), DEPOSER (déposer des factures au coffre),

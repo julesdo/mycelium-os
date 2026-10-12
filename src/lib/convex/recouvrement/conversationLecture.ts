@@ -151,7 +151,8 @@ const vPourGestes = v.object({
 	remiseEnCours: v.boolean(),
 	arretable: v.boolean(),
 	echeancierEnCours: v.optional(v.boolean()),
-	classe: v.optional(v.boolean())
+	classe: v.optional(v.boolean()),
+	aDemarrer: v.optional(v.boolean())
 });
 
 interface ContexteLu {
@@ -170,6 +171,7 @@ interface ContexteLu {
 		arretable: boolean;
 		echeancierEnCours?: boolean;
 		classe?: boolean;
+		aDemarrer?: boolean;
 	};
 	contexte: {
 		debiteur: string;
@@ -259,7 +261,8 @@ export async function lireLEtatDuDossier(
 		remiseEnCours,
 		arretable,
 		echeancierEnCours: plan?.pause?.raison === 'ECHEANCIER',
-		classe: creance.statut === 'CLOSE'
+		classe: creance.statut === 'CLOSE',
+		aDemarrer: creance.aDemarrer === true
 	};
 	return {
 		aujourdHui,

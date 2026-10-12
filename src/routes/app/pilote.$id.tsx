@@ -11,6 +11,7 @@ import { relireTour } from '../../lib/verticales/recouvrement/compagnon/tour';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import {
 	CarteEtatDuDossier,
+	ID_DU_SELECTEUR_DE_PLUME,
 	NOM_DU_PILOTE,
 	aujourdHuiISO,
 	dateRelative,
@@ -83,7 +84,9 @@ function ConversationDuDossier() {
 	const gestes = useGestesDePlume({
 		...(resume === undefined || resume === null
 			? {}
-			: { dossierDuFil: { id, client: resume.client, debiteurId: resume.debiteurId } })
+			: { dossierDuFil: { id, client: resume.client, debiteurId: resume.debiteurId } }),
+		// « Me joindre le document » ouvre le sélecteur du compositeur, au toucher.
+		onJoindre: () => document.getElementById(ID_DU_SELECTEUR_DE_PLUME)?.click()
 	});
 
 	/*

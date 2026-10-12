@@ -263,7 +263,8 @@ export const vGestePropose = v.object({
 		v.literal('LIEN_PAIEMENT'),
 		v.literal('REMISE_CONSEIL'),
 		v.literal('ECHEANCIER'),
-		v.literal('CLASSER')
+		v.literal('CLASSER'),
+		v.literal('REGLEMENT')
 	),
 	/** `AAAA-MM-JJ` : le jour d'un rappel ou d'une promesse. */
 	date: v.optional(v.string()),

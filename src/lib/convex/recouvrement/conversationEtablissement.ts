@@ -312,7 +312,8 @@ const vPourGestes = v.object({
 	remiseEnCours: v.boolean(),
 	arretable: v.boolean(),
 	echeancierEnCours: v.optional(v.boolean()),
-	classe: v.optional(v.boolean())
+	classe: v.optional(v.boolean()),
+	aDemarrer: v.optional(v.boolean())
 });
 
 /**

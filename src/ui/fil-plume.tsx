@@ -442,6 +442,7 @@ export function Composeur({
 							<>
 								<input
 									ref={selecteur}
+									id={ID_DU_SELECTEUR_DE_PLUME}
 									type="file"
 									multiple
 									className="sr-only"
@@ -500,6 +501,12 @@ export function Composeur({
 		</div>
 	);
 }
+
+/**
+ * LE SÉLECTEUR DE FICHIERS DU COMPOSITEUR, nommé pour qu'un geste de Plume
+ * (« Me joindre le document ») l'ouvre au toucher de sa carte (12/10/2026).
+ */
+export const ID_DU_SELECTEUR_DE_PLUME = 'plume-joindre';
 
 /**
  * UN DOCUMENT JOINT, DANS LE COMPOSITEUR — sa nature, son nom, ce que la

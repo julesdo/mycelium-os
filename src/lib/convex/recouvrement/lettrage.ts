@@ -98,7 +98,7 @@ const vProposition = v.object({
 	)
 });
 
-async function composerProposition(
+export async function composerProposition(
 	ctx: QueryCtx,
 	organizationId: Id<'organizations'>,
 	debiteurId: Id<'debiteurs'>,
@@ -311,27 +311,43 @@ export const appliquerRepartition = authedMutation({
 		if (debiteur === null || debiteur.organizationId !== organizationId) {
 			throw new ConvexError('Client introuvable');
 		}
-		const repartition = await repartitionDe(ctx, organizationId, debiteurId, montant);
-		if (repartition.lignes.length === 0) {
-			throw new ConvexError('Aucune facture de ce client n’attend de paiement.');
-		}
-		const candidates = await candidatesDe(ctx, organizationId, debiteurId);
-		const parReference = new Map(candidates.map((c) => [c.facture.reference, c.facture]));
-		for (const ligne of repartition.lignes) {
-			const facture = parReference.get(ligne.reference)!;
-			await ctx.db.insert('reglements', {
-				organizationId,
-				factureId: facture._id,
-				date,
-				montant: ligne.montant,
-				nature: 'PAIEMENT',
-				creeLe: Date.now()
-			});
-			await ctx.db.patch(facture._id, {
-				statutPaiement: ligne.solde ? 'SOLDEE' : 'PARTIELLEMENT_PAYEE'
-			});
-		}
+		await appliquerLaRepartition(ctx, organizationId, debiteurId, montant, date);
 		await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
 		return null;
 	}
 });
+
+/**
+ * LA RÉPARTITION QUE PRÉVOIT LA LOI, ÉCRITE — recalculée ici, jamais reçue de
+ * l'écran. Partagée par « Virement reçu » sur la fiche et par le geste de Plume
+ * (12/10/2026) : un même paiement se répartit pareil, d'où qu'on le note.
+ */
+export async function appliquerLaRepartition(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	debiteurId: Id<'debiteurs'>,
+	montant: bigint,
+	date: string
+): Promise<{ reference: string; montant: bigint; solde: boolean }[]> {
+	const repartition = await repartitionDe(ctx, organizationId, debiteurId, montant);
+	if (repartition.lignes.length === 0) {
+		throw new ConvexError('Aucune facture de ce client n’attend de paiement.');
+	}
+	const candidates = await candidatesDe(ctx, organizationId, debiteurId);
+	const parReference = new Map(candidates.map((c) => [c.facture.reference, c.facture]));
+	for (const ligne of repartition.lignes) {
+		const facture = parReference.get(ligne.reference)!;
+		await ctx.db.insert('reglements', {
+			organizationId,
+			factureId: facture._id,
+			date,
+			montant: ligne.montant,
+			nature: 'PAIEMENT',
+			creeLe: Date.now()
+		});
+		await ctx.db.patch(facture._id, {
+			statutPaiement: ligne.solde ? 'SOLDEE' : 'PARTIELLEMENT_PAYEE'
+		});
+	}
+	return repartition.lignes;
+}

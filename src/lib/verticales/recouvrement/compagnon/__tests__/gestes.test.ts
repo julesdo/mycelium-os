@@ -165,3 +165,31 @@ describe('les gestes de Plume sur tout l’établissement', () => {
 		expect(lireGestesDeLEtablissement([cible('OUVRIR', { texte: 'TRIBUNAL' })], etat)).toEqual([]);
 	});
 });
+
+describe('les gestes ajoutés le 12/10/2026', () => {
+	it('relit un paiement reçu : montant en centimes, jamais daté de demain', () => {
+		expect(lireGestes([brut('REGLEMENT', { montant: '500' })], ETAT)).toEqual([
+			{ genre: 'REGLEMENT', date: '2026-10-08', montant: 500_00n }
+		]);
+		expect(lireGestes([brut('REGLEMENT', { montant: '500', date: '2026-10-09' })], ETAT)).toEqual(
+			[]
+		);
+		expect(lireGestes([brut('REGLEMENT', { montant: 'beaucoup' })], ETAT)).toEqual([]);
+		expect(lireGestes([brut('REGLEMENT', { montant: '500' })], { ...ETAT, classe: true })).toEqual(
+			[]
+		);
+	});
+
+	it('ouvre, depuis un dossier, le choix des professionnels, le document à joindre et l’établissement', () => {
+		for (const texte of ['PROFESSIONNELS', 'JOINDRE', 'COFFRE', 'CE_QUI_EST_DU']) {
+			expect(lireGestes([brut('OUVRIR', { texte })], ETAT)).toEqual([{ genre: 'OUVRIR', texte }]);
+		}
+	});
+
+	it('ne propose de démarrer que le dossier qui attend de l’être', () => {
+		expect(lireGestes([brut('OUVRIR', { texte: 'DEMARRER' })], ETAT)).toEqual([]);
+		expect(
+			lireGestes([brut('OUVRIR', { texte: 'DEMARRER' })], { ...ETAT, aDemarrer: true })
+		).toEqual([{ genre: 'OUVRIR', texte: 'DEMARRER' }]);
+	});
+});

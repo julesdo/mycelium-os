@@ -14,6 +14,7 @@ import {
 	CarteBouton,
 	CarteLien,
 	FeuilleDActivation,
+	ID_DU_SELECTEUR_DE_PLUME,
 	LigneDeReleve,
 	ListeDeCartes,
 	ListeDeReleve,
@@ -100,6 +101,8 @@ function ConversationDePlume() {
 				: { id, client: dossier.debiteur, debiteurId: dossier.debiteurId };
 		},
 		clientParId: (id) => clients?.find((c) => c._id === id)?.denomination,
+		// « Déposer des factures » les joint ici même : le sélecteur du compositeur s'ouvre.
+		onJoindre: () => document.getElementById(ID_DU_SELECTEUR_DE_PLUME)?.click(),
 		onRelances: () => {
 			if (pilote?.envoiAutomatique === true) {
 				toast({
