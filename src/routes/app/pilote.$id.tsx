@@ -219,11 +219,15 @@ function ConversationDuDossier() {
 						fil?.compteur.niveau === 'AVERTI'
 							? `La conversation de votre établissement approche de son plafond du mois. Au plafond, elle s’arrête, et rien d’autre : vos dossiers, leurs calculs et leurs relances continuent.`
 							: null,
+					// Ce qu'on peut lui dire, y compris ce qu'il sait faire depuis le 12/10 :
+					// noter un paiement, recevoir un document, ouvrir le choix d'un avocat.
 					suggestions: [
 						'Relance-le',
-						'Rappelle-moi mardi prochain',
+						'Il a payé 500 € hier',
 						'Il a promis de payer à la fin du mois',
-						'Combien me doit-il, pénalités comprises ?'
+						'Rappelle-moi mardi prochain',
+						'Combien me doit-il, pénalités comprises ?',
+						'Je veux choisir un avocat'
 					],
 					question: echange.question,
 					onQuestion: echange.setQuestion,

@@ -66,6 +66,7 @@ function ConversationDePlume() {
 	const fil = useQuery(api.recouvrement.conversationEtablissement.filDeLEtablissement, {});
 	const dossiers = useQuery(api.recouvrement.lecture.indexDossiers, {});
 	const clients = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
+	const recentes = useQuery(api.recouvrement.conversationEtablissement.conversationsRecentes, {});
 	const retenir = useMutation(api.recouvrement.pilote.retenir);
 	const activerRelances = useMutation(api.recouvrement.pilote.activerRelances);
 	const demanderAPlume = useAction(api.recouvrement.conversation.repondreSurLEtablissement);
@@ -210,6 +211,32 @@ function ConversationDePlume() {
 						</div>
 					))}
 				</ListeDeReleve>
+			)
+		});
+	}
+
+	/*
+	  LES DERNIÈRES CONVERSATIONS SUR UN DOSSIER, à reprendre d'un toucher (Perplexity,
+	  Fireflies) : elles vivaient chacune dans leur dossier, sans chemin pour y revenir.
+	*/
+	if ((recentes ?? []).length > 0) {
+		preambule.push({
+			genre: 'PLUME',
+			id: 'recentes',
+			texte: 'Nos dernières conversations sur un dossier :',
+			suite: (
+				<ListeDeCartes>
+					{(recentes ?? []).map((conversation) => (
+						<CarteLien
+							key={conversation.creanceId}
+							titre={conversation.client}
+							ligne="Reprendre la conversation"
+							date={dateRelative(new Date(conversation.le).toISOString().slice(0, 10), aujourdHui)}
+							vers="/app/pilote/$id"
+							parametres={{ id: conversation.creanceId }}
+						/>
+					))}
+				</ListeDeCartes>
 			)
 		});
 	}

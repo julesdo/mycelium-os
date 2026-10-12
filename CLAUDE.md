@@ -454,6 +454,27 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     fin), ouvre la page de paiement et note la remise au conseil, toujours
     après « Confirmer » ; quand les filtres retiennent sa phrase, ses gestes restent. Ce qui reste
     suspendu l'est par la LOI (procédure collective, radiation), pas par une contestation.
+- **Plume fait tout, et on lui joint des documents** (12/10/2026,
+  `docs/superpowers/specs/2026-10-12-plume-fait-tout.md`, sur Claude, Manus, Copilot,
+  Structured, Me+ et Linear). Le fondateur : « Plume doit être capable de tout faire dans
+  l'application », « qu'on puisse lui upload des fichiers directement ». Livré :
+  - **Les documents joints** : le « + » du compositeur, le glisser-déposer, le collage. Ils
+    passent par le coffre comme tout dépôt (`useEchangeAvecPlume`, `app/echange-plume.tsx`),
+    et Plume attend leur lecture avant de répondre (`lireLesJoints`, deux minutes et demie au
+    plus) ; la carte du document se pose au-dessus de la bulle et l'ouvre dans la visionneuse.
+  - **La conversation de l'établissement répond** (`repondreSurLEtablissement`,
+    `compagnon/prompt-etablissement.ts`) au lieu de renvoyer vers un dossier. **Plume n'y écrit
+    aucun montant** : il cite des dossiers (`dossiersCites`), dessinés en cartes avec les
+    chiffres de l'écran Dossiers (`lignesDesDossiers`). Un geste y nomme son dossier, relu
+    contre l'état de CE dossier (`lireLEtatDuDossier`, une seule fonction pour les deux
+    conversations) ; une cible que le contexte ne porte pas fait tomber le geste.
+  - **Les gestes nouveaux** : le paiement reçu (`REGLEMENT`, rapproché comme « Virement reçu »,
+    `appliquerLaRepartition` partagée), « Me joindre le document », ouvrir tout écran (le coffre,
+    la défense, le choix de qui fait l'acte, le démarrage, l'activation des relances).
+  - **Une carte se corrige avant de confirmer** (« Modifier », relu par `ajuster`), montre ce
+    qu'elle écrira (`ApercuDeGeste` : le calendrier d'un échéancier, les factures qu'un paiement
+    solde), et « Tout confirmer » fait les gestes d'une réponse l'un après l'autre. Les gestes se
+    dessinent à un seul endroit pour les deux conversations (`app/gestes-plume.tsx`).
 - **La parole du client fait taire le pilote** (analyse des parcours d'impayés du 08/10/2026,
   `docs/superpowers/specs/2026-10-08-parcours-impayes.md`). Le pilote relançait un client qui
   venait de promettre de payer, et la somme entière à un client qui payait en trois fois.

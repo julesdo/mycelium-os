@@ -473,3 +473,53 @@ export const filDeLEtablissement = authedQuery({
 		};
 	}
 });
+
+/**
+ * LES DERNIÈRES CONVERSATIONS SUR UN DOSSIER, pour les reprendre depuis la page de
+ * Plume (12/10/2026, sur l'historique de Perplexity et de Fireflies) : le client, la
+ * dernière question posée, et quand.
+ *
+ * ⚠️ LECTURE BORNÉE : les deux cents derniers tours de l'établissement suffisent à
+ * trouver les cinq dernières conversations ; une plus ancienne se rouvre depuis son
+ * dossier.
+ */
+export const conversationsRecentes = authedQuery({
+	args: {},
+	returns: v.array(
+		v.object({
+			creanceId: v.id('creances'),
+			client: v.string(),
+			question: v.string(),
+			le: v.number()
+		})
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const tours = await ctx.db
+			.query('echangesCompagnon')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.order('desc')
+			.take(200);
+		const vues = new Set<string>();
+		const recentes: { creanceId: Id<'creances'>; client: string; question: string; le: number }[] =
+			[];
+		for (const tour of tours) {
+			if (tour.portee !== 'CREANCE' || tour.role !== 'GERANT' || vues.has(tour.cible)) continue;
+			vues.add(tour.cible);
+			const creance = await ctx.db.get(tour.cible as Id<'creances'>);
+			if (creance === null || creance.organizationId !== organizationId) continue;
+			const debiteur = await ctx.db.get(creance.debiteurId);
+			recentes.push({
+				creanceId: creance._id,
+				client: debiteur?.denomination ?? 'Client',
+				question:
+					tour.texte.trim() === ''
+						? `${tour.documents?.length ?? 0} document${(tour.documents?.length ?? 0) > 1 ? 's' : ''} joint${(tour.documents?.length ?? 0) > 1 ? 's' : ''}`
+						: tour.texte,
+				le: tour.diteLe
+			});
+			if (recentes.length >= 5) break;
+		}
+		return recentes;
+	}
+});
