@@ -40,7 +40,11 @@ async function leGeste(
 	organizationId: Id<'organizations'>,
 	echangeId: Id<'echangesCompagnon'>,
 	rang: number
-): Promise<{ echange: Doc<'echangesCompagnon'>; geste: GesteEcrit; creance: Doc<'creances'> }> {
+): Promise<{
+	echange: Doc<'echangesCompagnon'>;
+	geste: GesteEcrit;
+	creance: Doc<'creances'> | null;
+}> {
 	const echange = await ctx.db.get(echangeId);
 	if (
 		echange === null ||
@@ -52,7 +56,14 @@ async function leGeste(
 	const geste = echange.gestes?.[rang];
 	if (geste === undefined) throw new ConvexError('Ce geste est introuvable.');
 	if (geste.etat !== 'PROPOSEE') throw new ConvexError('Ce geste a déjà été tranché.');
-	const creance = await ctx.db.get(echange.cible as Id<'creances'>);
+	/*
+	  LE DOSSIER DU GESTE : celui du fil, ou — dans la conversation de l'établissement
+	  (12/10/2026) — celui que le geste nomme. Un écran à ouvrir n'en a pas toujours.
+	*/
+	const dossier =
+		echange.portee === 'PORTEFEUILLE' ? geste.dossier : (echange.cible as Id<'creances'>);
+	if (dossier === undefined) return { echange, geste, creance: null };
+	const creance = await ctx.db.get(dossier);
 	if (creance === null || creance.organizationId !== organizationId) {
 		throw new ConvexError('Ce dossier est introuvable.');
 	}
@@ -86,8 +97,11 @@ async function faire(
 	organizationId: Id<'organizations'>,
 	userId: string,
 	geste: GesteEcrit,
-	creance: Doc<'creances'>
+	creance: Doc<'creances'> | null
 ): Promise<{ resultat: string; cible?: string }> {
+	// Un écran s'ouvre côté navigateur : rien ne s'écrit, et aucun dossier n'est requis.
+	if (geste.genre === 'OUVRIR') return { resultat: 'Ouvert.' };
+	if (creance === null) throw new ConvexError('Ce geste ne dit pas quel dossier il touche.');
 	const texte = await faireLeGeste(ctx, organizationId, userId, geste, creance);
 	return typeof texte === 'string' ? { resultat: texte } : texte;
 }
@@ -291,7 +305,7 @@ export const confirmer = authedMutation({
 		const { echange, geste, creance } = await leGeste(ctx, organizationId, echangeId, rang);
 		const { resultat, cible } = await faire(ctx, organizationId, user._id, geste, creance);
 		await trancher(ctx, echange, rang, 'FAITE', resultat, cible);
-		if (geste.genre !== 'OUVRIR') {
+		if (geste.genre !== 'OUVRIR' && creance !== null) {
 			await ctx.db.insert('journal', {
 				organizationId,
 				cible: creance._id as string,

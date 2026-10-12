@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { AlarmClockIcon, HandCoinsIcon } from 'lucide-react';
+import { AlarmClockIcon, HandCoinsIcon, SendIcon } from 'lucide-react';
 import {
 	AvatarPlume,
 	CarteDeGeste,
 	CarteEtatDuDossier,
+	CarteLien,
+	ListeDeCartes,
 	NOM_DU_PILOTE,
 	PageEcran,
 	Plume,
@@ -290,6 +292,112 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * PLUME SUR TOUT L'ÉTABLISSEMENT — il répond, cite des dossiers en cartes, et
+ * propose un geste sur l'un d'eux (12/10/2026).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function DemoConversationEtablissement({ variante }: { etat: EtatDemo; variante?: string }) {
+	const [question, setQuestion] = useState('');
+	const forme = variante ?? 'reponse';
+	const messages: MessageAffiche[] =
+		forme === 'vide'
+			? []
+			: [
+					{ genre: 'GERANT', id: 'q', texte: 'Qui me doit le plus ? Relance le premier.' },
+					{
+						genre: 'PLUME',
+						id: 'r',
+						phrases: [
+							{
+								texte:
+									'Vos trois plus gros dossiers sont ceux-ci. Le premier n’a pas encore reçu de deuxième rappel.',
+								genreSource: 'AUCUNE',
+								libelleSource: ''
+							},
+							{
+								texte: 'Je vous propose de préparer sa prochaine relance.',
+								genreSource: 'AUCUNE',
+								libelleSource: ''
+							}
+						],
+						suite: (
+							<div className="flex flex-col gap-2">
+								<ListeDeCartes>
+									<CarteLien
+										titre="Fournitures Durand"
+										montant="6 000,00 €"
+										ligne="Deuxième rappel, dans 2 j"
+										vers="/app/dossiers"
+									/>
+									<CarteLien
+										titre="Transports Vidal"
+										montant="4 320,50 €"
+										ligne="Promesse, dans 6 j"
+										vers="/app/dossiers"
+									/>
+									<CarteLien
+										titre="Atelier Rousseau"
+										montant="2 640,00 €"
+										ligne="Prêt, à démarrer"
+										vers="/app/dossiers"
+									/>
+								</ListeDeCartes>
+								<CarteDeGeste
+									icone={<SendIcon />}
+									contexte="Fournitures Durand"
+									titre="Préparer la prochaine relance"
+									detail="Je la compose avec vos modèles. Vous la relisez avant qu’elle parte."
+									etat="PROPOSEE"
+									principal
+									libelleConfirmer="Préparer"
+									onConfirmer={() => undefined}
+									onEcarter={() => undefined}
+								/>
+							</div>
+						)
+					}
+				];
+	return (
+		<EcranConversationPilote
+			fil={{
+				titre: NOM_DU_PILOTE,
+				sousTitre: 'Votre pilote',
+				retour: { vers: '/app', libelle: 'Aujourd’hui' },
+				humeur: 'ecoute',
+				accueil: {
+					titre: 'Je veille sur 12 dossiers.',
+					sousTitre:
+						'J’ai tout relu à 14:02. Demandez-moi ce que vous voulez sur vos dossiers, dites-moi quoi faire, ou joignez-moi des factures.'
+				},
+				messages,
+				travail: null,
+				refus: null,
+				panne: null,
+				avertissement: null,
+				suggestions: [
+					'Qui me doit le plus ?',
+					'Qu’est-ce qui part cette semaine ?',
+					'Où en est Fournitures Durand ?',
+					'Montre-moi mes documents'
+				],
+				question,
+				onQuestion: setQuestion,
+				onEnvoyer: () => setQuestion(''),
+				enCours: false,
+				placeholder: `Demander à ${NOM_DU_PILOTE}…`,
+				arretee: false,
+				pieces: {
+					fichiers: [],
+					onJoindre: () => undefined,
+					onRetirer: () => undefined,
+					accept: '.pdf,.csv,.xlsx,image/*'
+				}
+			}}
+		/>
+	);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * DÉMARRER UN DOSSIER, GUIDÉ — on peut le parcourir en entier dans la salle.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -407,6 +515,13 @@ export const ECRANS_PLUME: readonly EcranDuProduit[] = [
 		vide: false,
 		variantes: ['vide', 'travail', 'reponse', 'geste', 'joindre', 'lecture', 'documents'],
 		Demo: DemoConversation
+	},
+	{
+		route: '/app/pilote/',
+		libelle: 'Plume, tout l’établissement',
+		vide: false,
+		variantes: ['reponse', 'vide'],
+		Demo: DemoConversationEtablissement
 	},
 	{
 		route: '/app/demarrer/$id',

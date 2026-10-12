@@ -567,6 +567,7 @@ function PieceDuComposeur({
 export function CarteDeGeste({
 	icone,
 	titre,
+	contexte,
 	detail,
 	etat,
 	resultat,
@@ -579,6 +580,11 @@ export function CarteDeGeste({
 }: {
 	readonly icone: ReactNode;
 	readonly titre: string;
+	/**
+	 * CE QUE LE GESTE TOUCHE, au-dessus du titre, quand la conversation ne le dit pas
+	 * d'elle-même : le client d'un dossier, dans celle de l'établissement (12/10/2026).
+	 */
+	readonly contexte?: string;
 	readonly detail?: string;
 	readonly etat: 'PROPOSEE' | 'FAITE' | 'ECARTEE';
 	/** Ce que le geste a produit, une fois fait. */
@@ -608,6 +614,9 @@ export function CarteDeGeste({
 					{etat === 'FAITE' ? <CheckIcon strokeWidth={2.5} /> : icone}
 				</span>
 				<div className="flex min-w-0 flex-col">
+					{contexte === undefined ? null : (
+						<p className="truncate text-cladd-3xs font-medium text-cladd-fg-soft">{contexte}</p>
+					)}
 					<p className="text-cladd-xs leading-snug font-semibold">{titre}</p>
 					{detail === undefined ? null : (
 						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{detail}</p>

@@ -1159,104 +1159,113 @@ export const indexDossiers = authedQuery({
 	),
 	handler: async (ctx) => {
 		const { organizationId } = await getUserOrg(ctx);
-		const aujourdHui = new Date().toISOString().slice(0, 10);
-
-		const creances = await ctx.db
-			.query('creances')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.collect();
-
-		const lignes = await Promise.all(
-			creances.map(async (creance) => {
-				const factures = await ctx.db
-					.query('facturesVente')
-					.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
-					.collect();
-				const restes = await Promise.all(factures.map((f) => resteDu(ctx, f)));
-				const debiteur = await ctx.db.get(creance.debiteurId);
-				const secteur = debiteur?.secteur ?? 'INDETERMINE';
-
-				const restant = enCentimes(restes.length > 0 ? additionner(...restes) : ZERO);
-
-				// La plus PROCHE des dates limites, jamais la plus lointaine : c'est
-				// celle qui décide du jour où le droit s'éteint sur ce dossier.
-				const limites = factures
-					.map((f) => prescriptionDe([f.dateExigibilite, f.dateEcheance], secteur).datePrescription)
-					.filter((d): d is string => d !== undefined)
-					.sort();
-
-				const envois = await ctx.db
-					.query('envois')
-					.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
-					.collect();
-				const auClient = envois.filter(
-					(e) =>
-						e.modele === 'RAPPEL' ||
-						e.modele === 'RELANCE_OFFICIELLE' ||
-						e.modele === 'ACCORD_ECHEANCIER'
-				);
-				const partis = auClient
-					.filter((e) => e.etat === 'VALIDE' || e.etat === 'PARTI')
-					.map((e) => e.partiLe ?? new Date(e.valideLe ?? e.prepareLe).toISOString().slice(0, 10))
-					.sort();
-
-				const etape = etapeDuDossier({
-					nombreFactures: factures.length,
-					resteDuCentimes: restant,
-					lettresValidees: partis,
-					professionnelDesigne: professionnelsDe(creance).length > 0,
-					procedureEngageeLe: creance.engageeLe ?? null,
-					classe: creance.statut === 'CLOSE',
-					dateLimiteAgir: limites[0] ?? null,
-					aujourdHui
-				});
-
-				const plan =
-					(etape === 'PRET' || etape === 'ON_LUI_ECRIT') && restant > 0n
-						? await planDuDossier(ctx, creance, factures, aujourdHui, envois)
-						: null;
-
-				return {
-					_id: creance._id,
-					debiteur: debiteur?.denomination ?? 'Client inconnu',
-					debiteurId: creance.debiteurId,
-					statut: creance.statut,
-					classe: creance.statut === 'CLOSE',
-					etape,
-					...(plan === null
-						? {}
-						: {
-								prochaineEtape: {
-									cle: plan.prochaine.etape.cle,
-									nom: plan.prochaine.etape.nom,
-									le: plan.prochaine.le,
-									automatique: plan.prochaine.etape.automatique,
-									...(plan.pause === null
-										? {}
-										: { pause: { raison: plan.pause.raison, le: plan.pause.le } })
-								}
-							}),
-					principalRestantDu: restant,
-					nombreFactures: factures.length,
-					...(limites[0] === undefined ? {} : { dateLimiteAgir: limites[0] }),
-					...(partis.length === 0 ? {} : { dernierCourrierLe: partis[partis.length - 1]! }),
-					courrierAValider: auClient.some((e) => e.etat === 'A_VALIDER'),
-					aDemarrer: creance.aDemarrer === true,
-					professionnelDesigne: professionnelsDe(creance).length > 0
-				};
-			})
-		);
-
-		// ⚠️ LE PLUS GROS D'ABORD, ET C'EST UN CHOIX DE PRODUIT. L'audit du 29/09
-		// l'a nommé : la file trie par urgence juridique, ce qui est juste, mais
-		// aucun écran ne permettait de commencer par ce qui rapporte. Celui-ci le
-		// fait, et l'ordre se refait à la main sur la colonne affichée.
-		return lignes.sort((a, b) =>
-			a.principalRestantDu > b.principalRestantDu
-				? -1
-				: a.principalRestantDu < b.principalRestantDu
-					? 1
-					: a.debiteur.localeCompare(b.debiteur, 'fr')
-		);
+		return await lignesDesDossiers(ctx, organizationId);
 	}
 });
+
+/**
+ * LES DOSSIERS DE L’ÉTABLISSEMENT, tels que l’écran Dossiers les montre — et tels que
+ * Plume les lit quand on lui parle de tout l’établissement (12/10/2026) : les mêmes
+ * chiffres aux deux endroits, calculés à un seul.
+ */
+export async function lignesDesDossiers(ctx: QueryCtx, organizationId: Id<'organizations'>) {
+	const aujourdHui = new Date().toISOString().slice(0, 10);
+
+	const creances = await ctx.db
+		.query('creances')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.collect();
+
+	const lignes = await Promise.all(
+		creances.map(async (creance) => {
+			const factures = await ctx.db
+				.query('facturesVente')
+				.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+				.collect();
+			const restes = await Promise.all(factures.map((f) => resteDu(ctx, f)));
+			const debiteur = await ctx.db.get(creance.debiteurId);
+			const secteur = debiteur?.secteur ?? 'INDETERMINE';
+
+			const restant = enCentimes(restes.length > 0 ? additionner(...restes) : ZERO);
+
+			// La plus PROCHE des dates limites, jamais la plus lointaine : c'est
+			// celle qui décide du jour où le droit s'éteint sur ce dossier.
+			const limites = factures
+				.map((f) => prescriptionDe([f.dateExigibilite, f.dateEcheance], secteur).datePrescription)
+				.filter((d): d is string => d !== undefined)
+				.sort();
+
+			const envois = await ctx.db
+				.query('envois')
+				.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+				.collect();
+			const auClient = envois.filter(
+				(e) =>
+					e.modele === 'RAPPEL' ||
+					e.modele === 'RELANCE_OFFICIELLE' ||
+					e.modele === 'ACCORD_ECHEANCIER'
+			);
+			const partis = auClient
+				.filter((e) => e.etat === 'VALIDE' || e.etat === 'PARTI')
+				.map((e) => e.partiLe ?? new Date(e.valideLe ?? e.prepareLe).toISOString().slice(0, 10))
+				.sort();
+
+			const etape = etapeDuDossier({
+				nombreFactures: factures.length,
+				resteDuCentimes: restant,
+				lettresValidees: partis,
+				professionnelDesigne: professionnelsDe(creance).length > 0,
+				procedureEngageeLe: creance.engageeLe ?? null,
+				classe: creance.statut === 'CLOSE',
+				dateLimiteAgir: limites[0] ?? null,
+				aujourdHui
+			});
+
+			const plan =
+				(etape === 'PRET' || etape === 'ON_LUI_ECRIT') && restant > 0n
+					? await planDuDossier(ctx, creance, factures, aujourdHui, envois)
+					: null;
+
+			return {
+				_id: creance._id,
+				debiteur: debiteur?.denomination ?? 'Client inconnu',
+				debiteurId: creance.debiteurId,
+				statut: creance.statut,
+				classe: creance.statut === 'CLOSE',
+				etape,
+				...(plan === null
+					? {}
+					: {
+							prochaineEtape: {
+								cle: plan.prochaine.etape.cle,
+								nom: plan.prochaine.etape.nom,
+								le: plan.prochaine.le,
+								automatique: plan.prochaine.etape.automatique,
+								...(plan.pause === null
+									? {}
+									: { pause: { raison: plan.pause.raison, le: plan.pause.le } })
+							}
+						}),
+				principalRestantDu: restant,
+				nombreFactures: factures.length,
+				...(limites[0] === undefined ? {} : { dateLimiteAgir: limites[0] }),
+				...(partis.length === 0 ? {} : { dernierCourrierLe: partis[partis.length - 1]! }),
+				courrierAValider: auClient.some((e) => e.etat === 'A_VALIDER'),
+				aDemarrer: creance.aDemarrer === true,
+				professionnelDesigne: professionnelsDe(creance).length > 0
+			};
+		})
+	);
+
+	// ⚠️ LE PLUS GROS D'ABORD, ET C'EST UN CHOIX DE PRODUIT. L'audit du 29/09
+	// l'a nommé : la file trie par urgence juridique, ce qui est juste, mais
+	// aucun écran ne permettait de commencer par ce qui rapporte. Celui-ci le
+	// fait, et l'ordre se refait à la main sur la colonne affichée.
+	return lignes.sort((a, b) =>
+		a.principalRestantDu > b.principalRestantDu
+			? -1
+			: a.principalRestantDu < b.principalRestantDu
+				? 1
+				: a.debiteur.localeCompare(b.debiteur, 'fr')
+	);
+}

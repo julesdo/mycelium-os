@@ -56,6 +56,37 @@ export const ECRANS_OUVRABLES = [
 ] as const;
 export type EcranOuvrable = (typeof ECRANS_OUVRABLES)[number];
 
+/**
+ * LES ÉCRANS DE L'ÉTABLISSEMENT qu'un geste « Ouvrir » montre depuis la conversation
+ * de Plume hors d'un dossier (12/10/2026) : « on doit pouvoir tout faire par Plume ».
+ * Ouvrir n'écrit rien : c'est le gérant qui agit sur l'écran ouvert.
+ */
+export const ECRANS_ETABLISSEMENT = [
+	'CE_QUI_EST_DU',
+	'DOSSIERS',
+	'CLIENTS',
+	'COFFRE',
+	'DEPOSER',
+	'DEFENSE',
+	'NOTIFICATIONS',
+	'DEMARRER_LOT',
+	'RELANCES',
+	'COMPTE'
+] as const;
+
+/** Les écrans d'un dossier précis : le geste porte son identifiant. */
+export const ECRANS_D_UN_DOSSIER = [
+	'DOSSIER',
+	'COURRIERS',
+	'DOCUMENTS',
+	'FICHE_CLIENT',
+	'PENALITES',
+	'PROFESSIONNELS'
+] as const;
+
+/** Les écrans d'un client précis : le geste porte son identifiant. */
+export const ECRANS_D_UN_CLIENT = ['CLIENT', 'DEMARRER'] as const;
+
 /** Ce que le modèle rend : une forme PLATE, chaque champ inutile laissé vide. */
 export interface GesteBrut {
 	readonly genre: GenreGeste;
@@ -73,6 +104,28 @@ export interface Geste {
 	readonly montant?: bigint;
 	/** Le motif d'un rappel, une note, une adresse, ou l'écran à ouvrir. */
 	readonly texte?: string;
+	/**
+	 * LE DOSSIER QU'IL TOUCHE, quand il est proposé hors d'un dossier (12/10/2026) :
+	 * la conversation de l'établissement nomme sa cible, recopiée du contexte.
+	 */
+	readonly dossier?: string;
+	/** Le client qu'il montre, pour « sa fiche » ou « démarrer son dossier ». */
+	readonly client?: string;
+}
+
+/** Ce que le modèle rend dans la conversation de l'établissement : la cible en plus. */
+export interface GesteBrutDeLEtablissement extends GesteBrut {
+	readonly dossier: string;
+	readonly client: string;
+}
+
+/** Ce qu'il faut savoir de l'établissement pour relire un geste qui y est proposé. */
+export interface EtatPourGestesDeLEtablissement {
+	/** L'état de chaque dossier qu'un geste vise, lu au moment de la question. */
+	readonly dossiers: ReadonlyMap<string, EtatPourGestes>;
+	/** Tous les dossiers du contexte : ceux qu'un écran peut montrer. */
+	readonly dossiersConnus: ReadonlySet<string>;
+	readonly clientsConnus: ReadonlySet<string>;
 }
 
 /** Ce qu'il faut savoir du dossier pour relire un geste. */
@@ -224,6 +277,58 @@ export function lireGestes(bruts: readonly GesteBrut[], etat: EtatPourGestes): G
 	return gestes;
 }
 
+/**
+ * LES GESTES PROPOSÉS DANS LA CONVERSATION DE L'ÉTABLISSEMENT, relus contre l'état du
+ * dossier qu'ils visent (12/10/2026).
+ *
+ * ⚠️ UNE CIBLE QUE LE CONTEXTE NE PORTE PAS FAIT TOMBER LE GESTE, en silence : un
+ * identifiant de dossier inventé relancerait le mauvais client. Le geste d'un dossier
+ * passe ensuite par la MÊME relecture que dans la conversation de ce dossier.
+ *
+ * ⚠️ DEUX GESTES DU MÊME GENRE SUR DEUX DOSSIERS SONT PERMIS (« relance Durand et
+ * Vidal ») ; deux fois le même sur le même, non. Trois au plus, comme ailleurs.
+ */
+export function lireGestesDeLEtablissement(
+	bruts: readonly GesteBrutDeLEtablissement[],
+	etat: EtatPourGestesDeLEtablissement
+): Geste[] {
+	const vus = new Set<string>();
+	const gestes: Geste[] = [];
+	for (const brut of bruts) {
+		if (gestes.length >= GESTES_PAR_REPONSE) break;
+		if (!(GENRES_GESTE as readonly string[]).includes(brut.genre)) continue;
+		const dossier = brut.dossier.trim();
+		const client = brut.client.trim();
+		const texte = brut.texte.trim();
+		let geste: Geste | null = null;
+		if (brut.genre === 'OUVRIR') {
+			if ((ECRANS_ETABLISSEMENT as readonly string[]).includes(texte)) {
+				geste = { genre: 'OUVRIR', texte };
+			} else if (
+				(ECRANS_D_UN_DOSSIER as readonly string[]).includes(texte) &&
+				etat.dossiersConnus.has(dossier)
+			) {
+				geste = { genre: 'OUVRIR', texte, dossier };
+			} else if (
+				(ECRANS_D_UN_CLIENT as readonly string[]).includes(texte) &&
+				etat.clientsConnus.has(client)
+			) {
+				geste = { genre: 'OUVRIR', texte, client };
+			}
+		} else {
+			const etatDuDossier = etat.dossiers.get(dossier);
+			const relu = etatDuDossier === undefined ? null : relire(brut, etatDuDossier);
+			if (relu !== null) geste = { ...relu, dossier };
+		}
+		if (geste === null) continue;
+		const cle = `${geste.genre}:${geste.dossier ?? geste.client ?? geste.texte ?? ''}`;
+		if (vus.has(cle)) continue;
+		vus.add(cle);
+		gestes.push(geste);
+	}
+	return gestes;
+}
+
 const JOUR_LONG = new Intl.DateTimeFormat('fr-FR', {
 	weekday: 'long',
 	day: 'numeric',
@@ -236,12 +341,48 @@ export function jourEnClair(date: string): string {
 	return JOUR_LONG.format(new Date(`${date}T00:00:00.000Z`));
 }
 
-const TITRE_ECRAN: Readonly<Record<EcranOuvrable, string>> = {
-	ARRET: 'Le montant du jour',
-	COURRIERS: 'Ses courriers et e-mails',
-	DOCUMENTS: 'Ses documents',
-	FICHE_CLIENT: 'La fiche du client',
-	PENALITES: 'Pénalités et frais'
+const TITRE_ECRAN: Readonly<Record<string, { titre: string; detail?: string }>> = {
+	ARRET: { titre: 'Le montant du jour' },
+	COURRIERS: { titre: 'Ses courriers et e-mails' },
+	DOCUMENTS: { titre: 'Ses documents' },
+	FICHE_CLIENT: { titre: 'La fiche du client' },
+	PENALITES: { titre: 'Pénalités et frais' },
+	DOSSIER: { titre: 'Le dossier' },
+	PROFESSIONNELS: {
+		titre: 'Choisir qui fait l’acte',
+		detail: 'Un avocat, un commissaire de justice : la liste s’ouvre, et c’est vous qui choisissez.'
+	},
+	CLIENT: { titre: 'La fiche du client' },
+	DEMARRER: {
+		titre: 'Démarrer son dossier',
+		detail: 'Ses factures en retard sont déjà cochées ; deux questions, puis vous démarrez.'
+	},
+	CE_QUI_EST_DU: {
+		titre: 'Ce qui vous est dû',
+		detail: 'Client par client, le plus gros d’abord.'
+	},
+	DOSSIERS: { titre: 'Vos dossiers' },
+	CLIENTS: { titre: 'Vos clients' },
+	COFFRE: { titre: 'Votre coffre-fort', detail: 'Vos documents, chiffrés, et qui les a ouverts.' },
+	DEPOSER: {
+		titre: 'Déposer des factures',
+		detail:
+			'Au coffre, lues dès leur arrivée. Vous pouvez aussi me les joindre ici, avec le bouton +.'
+	},
+	DEFENSE: {
+		titre: 'Votre défense',
+		detail: 'Votre équipe, les avocats et commissaires près de vos clients.'
+	},
+	NOTIFICATIONS: { titre: 'Vos notifications' },
+	DEMARRER_LOT: {
+		titre: 'Les dossiers prêts à démarrer',
+		detail: 'Tout est coché : vous décochez ceux que vous gardez en main.'
+	},
+	RELANCES: {
+		titre: 'Les relances automatiques',
+		detail: 'Vous lisez tout ce qui partira avant de décider.'
+	},
+	COMPTE: { titre: 'Votre compte' }
 };
 
 /**
@@ -303,11 +444,14 @@ export function decrireGeste(geste: Geste): {
 				detail: 'Elle ne partira pas, et ce client sort du pilote.',
 				confirmer: 'Retenir'
 			};
-		case 'OUVRIR':
+		case 'OUVRIR': {
+			const ecran = TITRE_ECRAN[geste.texte ?? ''];
 			return {
-				titre: TITRE_ECRAN[(geste.texte ?? 'FICHE_CLIENT') as EcranOuvrable] ?? 'Ouvrir',
+				titre: ecran?.titre ?? 'Ouvrir',
+				...(ecran?.detail === undefined ? {} : { detail: ecran.detail }),
 				confirmer: 'Ouvrir'
 			};
+		}
 		case 'CONTESTATION':
 			return geste.texte === 'NON'
 				? {

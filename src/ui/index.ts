@@ -364,6 +364,7 @@ export { FeuilleDeReussite } from './reussite';
 export { CarteGlissable, type ActionDeCarte } from './carte-glissable';
 export { FeuilleDeRappel } from './feuille-rappel';
 export {
+	FeuilleDActivation,
 	PiloteEnDirect,
 	type PiloteAffiche,
 	type RelanceProgrammeeAffichee,

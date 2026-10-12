@@ -279,7 +279,14 @@ export const vGestePropose = v.object({
 	 * arrêté, le jeton de la page de paiement. La carte faite porte alors « Voir le
 	 * décompte », « Copier le lien » au lieu de dire où aller le chercher.
 	 */
-	cible: v.optional(v.string())
+	cible: v.optional(v.string()),
+	/**
+	 * LE DOSSIER QUE LE GESTE TOUCHE, quand il est proposé dans la conversation de
+	 * l'établissement (12/10/2026). Sur un dossier, c'est celui du fil.
+	 */
+	dossier: v.optional(v.id('creances')),
+	/** Le client qu'un geste « Ouvrir » montre : sa fiche, ou le démarrage de son dossier. */
+	client: v.optional(v.id('debiteurs'))
 });
 
 /**
@@ -1746,6 +1753,12 @@ export const recouvrementTables = {
 		 * tour seulement. Plume attend leur lecture avant de répondre.
 		 */
 		documents: v.optional(v.array(vDocumentJoint)),
+		/**
+		 * LES DOSSIERS DONT PLUME PARLE, dans la conversation de l'établissement : ils
+		 * s'affichent en cartes sous sa réponse, avec leurs montants calculés par le
+		 * logiciel, jamais écrits par le modèle (12/10/2026).
+		 */
+		dossiersCites: v.optional(v.array(v.id('creances'))),
 		/**
 		 * Ce que ce tour a consommé. Renseigné sur les tours du compagnon.
 		 *

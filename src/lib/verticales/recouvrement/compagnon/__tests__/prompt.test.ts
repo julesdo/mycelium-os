@@ -7,6 +7,7 @@ import {
 	lireReponse,
 	type ContexteDossier
 } from '../prompt';
+import { construirePromptEtablissement } from '../prompt-etablissement';
 
 /**
  * LE VERROU D'EMPREINTE DU PROMPT DU COMPAGNON.
@@ -69,9 +70,7 @@ const CONTEXTE: ContexteDossier = {
 	debiteur: 'Fournitures Durand',
 	faits: ['Trois factures rattachées.'],
 	pieces: [{ id: 'piece_1', libelle: 'bon de livraison BL-77' }],
-	decomptes: [
-		{ id: 'decompte_1', arreteAu: null, total: '12 480,33 €', segments: ['un segment'] }
-	],
+	decomptes: [{ id: 'decompte_1', arreteAu: null, total: '12 480,33 €', segments: ['un segment'] }],
 	valeurs: [
 		{
 			cle: 'indemniteForfaitaire',
@@ -108,7 +107,11 @@ describe('la lecture de la réponse', () => {
 			{
 				phrases: [
 					{ texte: 'J’ai relevé trois factures.', genreSource: 'AUCUNE', reference: '' },
-					{ texte: 'Le total est de 12 480,33 €.', genreSource: 'DECOMPTE', reference: 'decompte_1' }
+					{
+						texte: 'Le total est de 12 480,33 €.',
+						genreSource: 'DECOMPTE',
+						reference: 'decompte_1'
+					}
 				]
 			},
 			ancres
@@ -156,9 +159,29 @@ describe('la lecture de la réponse', () => {
 		// Une phrase sans pastille a le droit d'exister : elle s'affiche dégradée.
 		// Ce sont le MONTANT et l'ÉNONCÉ JURIDIQUE que les filtres lui interdisent.
 		const { phrases } = lireReponse(
-			{ phrases: [{ texte: 'Je n’ai pas pu lire ce document.', genreSource: 'PIECE', reference: '' }] },
+			{
+				phrases: [
+					{ texte: 'Je n’ai pas pu lire ce document.', genreSource: 'PIECE', reference: '' }
+				]
+			},
 			ancres
 		);
 		expect(phrases[0]!.genreSource).toBe('AUCUNE');
+	});
+});
+
+describe('le prompt de Plume sur l’établissement', () => {
+	it('est figé : déterministe, sans date ni interpolation, et cacheable', () => {
+		const prompt = construirePromptEtablissement();
+		expect(prompt).toBe(construirePromptEtablissement());
+		expect(prompt.length).toBeGreaterThan(2000);
+		expect(prompt).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+		expect(prompt).not.toContain('${');
+	});
+
+	it('interdit les montants et le conseil juridique', () => {
+		const prompt = construirePromptEtablissement();
+		expect(prompt).toMatch(/AUCUN MONTANT/);
+		expect(prompt).toMatch(/conseil juridique/i);
 	});
 });

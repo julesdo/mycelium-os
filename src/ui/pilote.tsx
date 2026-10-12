@@ -285,7 +285,7 @@ function delaiEnClair(rang: number, attente: number): string {
  * Le plan tel qu'il est, d'où et quand ça part, ce qui l'arrête, et ce qui ne
  * part jamais seul : tout ce qu'il faut pour ne pas être surpris par un envoi.
  */
-function FeuilleDActivation({
+export function FeuilleDActivation({
 	ouverte,
 	onFermer,
 	onActiver
@@ -298,7 +298,7 @@ function FeuilleDActivation({
 		<FeuillePleinEcran
 			ouverte={ouverte}
 			onFermer={onFermer}
-			titre="Laisser {NOM_DU_PILOTE} relancer"
+			titre={`Laisser ${NOM_DU_PILOTE} relancer`}
 			pied={
 				<BoutonPrincipal pleineLargeur onClick={onActiver}>
 					Activer les relances

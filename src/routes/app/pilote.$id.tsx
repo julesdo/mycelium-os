@@ -1,47 +1,21 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useAction, useMutation } from 'convex/react';
+import { useAction } from 'convex/react';
 import { useQuery } from '../../app/donnees';
-import { useToast } from '@cladd-ui/react';
-import {
-	AlarmClockIcon,
-	ArchiveIcon,
-	ArrowUpRightIcon,
-	BriefcaseIcon,
-	CalendarRangeIcon,
-	LinkIcon,
-	LockIcon,
-	MessageSquareWarningIcon,
-	HandCoinsIcon,
-	HandIcon,
-	MailIcon,
-	SendIcon,
-	StickyNoteIcon,
-	UserCheckIcon,
-	UserMinusIcon
-} from 'lucide-react';
 import { api } from '../../lib/convex/_generated/api';
-import { useDepotAuCoffre } from '../../app/use-coffre';
-import { useVisionneuseDuCoffre } from '../../app/coffre-en-place';
 import type { Id } from '../../lib/convex/_generated/dataModel';
+import { useEchangeAvecPlume } from '../../app/echange-plume';
+import { useGestesDePlume } from '../../app/gestes-plume';
 import { evaluerPlafond } from '../../lib/verticales/recouvrement/compagnon/disponibilite';
 import { relireTour } from '../../lib/verticales/recouvrement/compagnon/tour';
-import { decrireGeste, type GenreGeste } from '../../lib/verticales/recouvrement/compagnon/gestes';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import {
-	BoutonSecondaire,
-	CarteDeGeste,
 	CarteEtatDuDossier,
-	Lien,
 	NOM_DU_PILOTE,
 	aujourdHuiISO,
 	dateRelative,
-	documentDepuisFichier,
-	documentDepuisResume,
-	type RefCoffre,
 	eurosCentimes,
-	pluriel,
-	type EtapeDeTravail
+	pluriel
 } from '../../ui';
 
 /**
@@ -49,7 +23,11 @@ import {
  *
  * `?question=` remplit le compositeur (une question préparée ailleurs, que le
  * gérant relit). `?envoyer=` l'envoie d'emblée : c'est la question qu'il a déjà
- * tapée depuis la conversation de Plume, et qui l'a mené ici.
+ * tapée ailleurs, et qui l'a mené ici.
+ *
+ * Les gestes se dessinent et se confirment par `app/gestes-plume.tsx`, l'envoi et
+ * les documents joints passent par `app/echange-plume.tsx` : les mêmes que dans la
+ * conversation de l'établissement.
  */
 export const Route = createFileRoute('/app/pilote/$id')({
 	validateSearch: (
@@ -61,133 +39,6 @@ export const Route = createFileRoute('/app/pilote/$id')({
 	component: ConversationDuDossier
 });
 
-/**
- * ⚠️ `ConvexError` PORTE SON MESSAGE DANS `.data`, PAS DANS `.message`.
- */
-function messageDeLaPanne(e: unknown): string {
-	const convexe = e as { data?: unknown };
-	if (typeof convexe.data === 'string') return convexe.data;
-	return e instanceof Error ? e.message : 'La demande n’a pas abouti.';
-}
-
-/**
- * CE QUI MÈNE À CE QU'UN GESTE A PRODUIT, une fois fait (08/10/2026).
- *
- * Le fondateur, devant « Son lien se copie dans le dossier, sous « Pénalités et
- * frais » » : « qu'on puisse accéder directement aux éléments, c'est un principe
- * d'UX de base ». Chaque carte faite porte donc l'accès à ce qu'elle a fait : le
- * lien à copier et la page à voir, le courrier à relire, le décompte arrêté,
- * l'historique, la fiche du client.
- */
-function accesDuGeste(
-	geste: { readonly genre: GenreGeste; readonly cible?: string },
-	{
-		id,
-		debiteurId,
-		onCopier
-	}: {
-		readonly id: string;
-		readonly debiteurId: string | null;
-		readonly onCopier: (texte: string) => void;
-	}
-): ReactNode | undefined {
-	const dossier = (ouvrir: string, libelle: string) => (
-		<BoutonSecondaire
-			as={Lien}
-			to="/app/dossier/$id"
-			// ⚠️ UNE ASSERTION : `as` efface le générique du routeur. La destination reste
-			// vérifiée par `destinations-existent.test.ts`.
-			params={{ id } as never}
-			search={{ ouvrir } as never}
-		>
-			{libelle}
-		</BoutonSecondaire>
-	);
-	const fiche =
-		debiteurId === null ? undefined : (
-			<BoutonSecondaire as={Lien} to="/app/clients/$id" params={{ id: debiteurId } as never}>
-				Voir sa fiche
-			</BoutonSecondaire>
-		);
-	switch (geste.genre) {
-		case 'RELANCER':
-		case 'RETENIR':
-			return dossier(
-				'courriers',
-				geste.genre === 'RELANCER' ? 'Relire le courrier' : 'Voir ses courriers'
-			);
-		case 'RAPPEL':
-		case 'PROMESSE':
-		case 'NOTE':
-			return dossier('suivi', 'Voir l’historique');
-		case 'ECHEANCIER':
-			return dossier('suivi', 'Voir le dossier');
-		case 'CLASSER':
-			return dossier('suivi', 'Voir le dossier');
-		case 'CONTESTATION':
-			return dossier('litige', 'Voir vos réponses');
-		case 'EMAIL':
-		case 'RETIRER_DU_PILOTE':
-		case 'REMETTRE_AU_PILOTE':
-			return fiche;
-		case 'ARRETER_DECOMPTE':
-		case 'REMISE_CONSEIL':
-			return geste.cible === undefined ? (
-				dossier('decompte', 'Voir le décompte')
-			) : (
-				<BoutonSecondaire as={Lien} to="/app/decompte/$id" params={{ id: geste.cible } as never}>
-					{geste.genre === 'ARRETER_DECOMPTE' ? 'Voir le décompte' : 'Voir le suivi'}
-				</BoutonSecondaire>
-			);
-		case 'LIEN_PAIEMENT':
-			return geste.cible === undefined ? (
-				dossier('decompte', 'Voir le lien')
-			) : (
-				<>
-					<BoutonSecondaire
-						onClick={() => onCopier(`${window.location.origin}/p/${geste.cible ?? ''}`)}
-					>
-						Copier le lien
-					</BoutonSecondaire>
-					<BoutonSecondaire as="a" href={`/p/${geste.cible}`} target="_blank" rel="noreferrer">
-						Voir la page
-					</BoutonSecondaire>
-				</>
-			);
-		case 'OUVRIR':
-			return undefined;
-	}
-}
-
-/** L'icône de chaque geste : ce qu'il touche, d'un coup d'œil. */
-const ICONE_DU_GESTE: Readonly<Record<GenreGeste, ReactNode>> = {
-	RELANCER: <SendIcon />,
-	RAPPEL: <AlarmClockIcon />,
-	PROMESSE: <HandCoinsIcon />,
-	NOTE: <StickyNoteIcon />,
-	EMAIL: <MailIcon />,
-	RETIRER_DU_PILOTE: <UserMinusIcon />,
-	REMETTRE_AU_PILOTE: <UserCheckIcon />,
-	RETENIR: <HandIcon />,
-	OUVRIR: <ArrowUpRightIcon />,
-	CONTESTATION: <MessageSquareWarningIcon />,
-	ARRETER_DECOMPTE: <LockIcon />,
-	LIEN_PAIEMENT: <LinkIcon />,
-	REMISE_CONSEIL: <BriefcaseIcon />,
-	ECHEANCIER: <CalendarRangeIcon />,
-	CLASSER: <ArchiveIcon />
-};
-
-/** Une référence du coffre, aux identifiants branchés, pour l'action de Plume. */
-function versServeur(ref: RefCoffre) {
-	return ref.genre === 'IMPORT'
-		? { genre: 'IMPORT' as const, id: ref.id as Id<'importsRecouvrement'> }
-		: { genre: 'PIECE' as const, id: ref.id as Id<'pieces'> };
-}
-
-/** Le temps qu'une étape reste affichée avant que la suivante commence. */
-const CADENCE_DES_ETAPES_MS = 1100;
-
 function ConversationDuDossier() {
 	const { id } = Route.useParams();
 	const recherche = Route.useSearch();
@@ -195,87 +46,45 @@ function ConversationDuDossier() {
 	const fil = useQuery(api.recouvrement.conversationLecture.filDuDossier, { creanceId });
 	const resume = useQuery(api.recouvrement.conversationLecture.resumeDuDossier, { creanceId });
 	const demanderAPlume = useAction(api.recouvrement.conversation.repondre);
-	const confirmerGeste = useMutation(api.recouvrement.gestesPlume.confirmer);
-	const ecarterGeste = useMutation(api.recouvrement.gestesPlume.ecarter);
 	const navigate = useNavigate();
-	const toast = useToast();
-	const [gesteEnCours, setGesteEnCours] = useState<string | null>(null);
 
-	const [question, setQuestion] = useState(recherche.question ?? '');
-	const [envoyee, setEnvoyee] = useState<{
-		readonly texte: string;
-		readonly avecDocuments: boolean;
-	} | null>(null);
-	const [panne, setPanne] = useState<string | null>(null);
-	const [etape, setEtape] = useState(0);
-	const enCours = envoyee !== null;
+	const client = resume?.client ?? 'ce client';
+	const nombre = resume?.nombreFactures ?? 0;
 
 	/*
 	  LES DOCUMENTS JOINTS (12/10/2026) : ils passent par le coffre comme tout dépôt,
 	  rangés avec les pièces de ce client et de ses factures, puis Plume attend leur
-	  lecture avant de répondre. Un toucher sur l'un d'eux l'ouvre dans la visionneuse.
+	  lecture avant de répondre.
 	*/
-	const depot = useDepotAuCoffre({
-		genre: 'PIECES',
-		...(resume === undefined || resume === null ? {} : { debiteurId: resume.debiteurId }),
-		factureIds: resume?.factureIds ?? []
-	});
-	const { ouvrirDocument, visionneuse } = useVisionneuseDuCoffre();
-	const envoyes = depot.fichiers.filter(
-		(f) => f.phase === 'ENVOI' || f.phase === 'COFFRE' || f.phase === 'ECHEC_ENVOI'
-	);
-	const auCoffre = envoyes.every((f) => f.phase !== 'ENVOI');
-	const lectureFinie =
-		envoyee?.avecDocuments !== true ||
-		(auCoffre &&
-			envoyes.every(
-				(f) => f.phase !== 'COFFRE' || (f.suivi !== undefined && f.suivi.etat !== 'EN_COURS')
-			));
-
-	async function demander(texte: string) {
-		const posee = texte.trim();
-		const avecDocuments = depot.fichiers.some((f) => f.phase === 'PRET');
-		if ((posee === '' && !avecDocuments) || envoyee !== null) return;
-		setPanne(null);
-		setEtape(0);
-		setEnvoyee({ texte: posee, avecDocuments });
-		setQuestion('');
-		try {
-			const documents = avecDocuments ? await depot.envoyer() : [];
-			if (posee === '' && documents.length === 0) {
-				setPanne('Aucun document n’a pu partir au coffre.');
-				return;
-			}
-			// Un refus s'inscrit au fil, avec les gestes proposés malgré tout : il se lit là.
-			await demanderAPlume({
+	const echange = useEchangeAvecPlume({
+		destination: {
+			genre: 'PIECES',
+			...(resume === undefined || resume === null ? {} : { debiteurId: resume.debiteurId }),
+			factureIds: resume?.factureIds ?? []
+		},
+		joindrePossible: resume !== undefined && resume !== null,
+		demanderAuServeur: (question, documents) =>
+			demanderAPlume({
 				creanceId,
-				question: posee,
-				...(documents.length === 0 ? {} : { documents: documents.map(versServeur) })
-			});
-		} catch (e) {
-			// Une panne de transport n'est pas un refus du domaine : elle se dit telle quelle.
-			setPanne(messageDeLaPanne(e));
-		} finally {
-			setEnvoyee(null);
-			// Les documents sont au coffre, et dans le fil : le compositeur se vide.
-			if (avecDocuments) depot.onRecommencer();
-		}
-	}
+				question,
+				...(documents.length === 0 ? {} : { documents: [...documents] })
+			}),
+		etapes: [
+			`Je relis le dossier de ${client}`,
+			nombre === 0
+				? 'Je reprends le décompte'
+				: `Je reprends ${nombre} facture${pluriel(nombre)} et le décompte`,
+			'Je vérifie chaque chiffre à sa source',
+			'Je rédige ma réponse'
+		],
+		questionDeDepart: recherche.question ?? ''
+	});
 
-	/*
-	  LE RYTHME DES ÉTAPES, PENDANT QUE PLUME TRAVAILLE — une fois les documents lus,
-	  s'il y en a. L'état ne change que dans le rappel de l'horloge, jamais dans le
-	  corps de l'effet.
-	*/
-	useEffect(() => {
-		if (!enCours || !lectureFinie) return;
-		let rang = 0;
-		const horloge = window.setInterval(() => {
-			rang += 1;
-			setEtape(rang);
-		}, CADENCE_DES_ETAPES_MS);
-		return () => window.clearInterval(horloge);
-	}, [enCours, lectureFinie]);
+	const gestes = useGestesDePlume({
+		...(resume === undefined || resume === null
+			? {}
+			: { dossierDuFil: { id, client: resume.client, debiteurId: resume.debiteurId } })
+	});
 
 	/*
 	  LA QUESTION DÉJÀ TAPÉE AILLEURS PART D'EMBLÉE, une fois. Différée d'un tour
@@ -287,67 +96,16 @@ function ConversationDuDossier() {
 		if (recherche.envoyer === undefined || dejaEnvoyee.current) return;
 		dejaEnvoyee.current = true;
 		const texte = recherche.envoyer;
-		const minuteur = window.setTimeout(() => void demander(texte), 0);
+		const minuteur = window.setTimeout(() => void echange.demander(texte), 0);
 		return () => window.clearTimeout(minuteur);
 		// Une seule fois, à l'arrivée : la question vient de l'adresse.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const client = resume?.client ?? 'ce client';
 	const aujourdHui = aujourdHuiISO();
 	const refusDuPlafond = fil === undefined ? null : evaluerPlafond(fil.compteur.cumul).refus;
-
-	/*
-	  LE GESTE EN ATTENTE LE PLUS RÉCENT PORTE LE BOUTON PLEIN — un seul par écran.
-	  Les plus anciens, encore proposés, gardent un bouton de verre.
-	*/
 	const tours = fil?.tours ?? [];
-	const dernierAvecGeste = [...tours]
-		.reverse()
-		.find((t) => (t.gestes ?? []).some((g) => g.etat === 'PROPOSEE'));
-	const principal =
-		dernierAvecGeste === undefined
-			? null
-			: `${dernierAvecGeste._id}-${(dernierAvecGeste.gestes ?? []).findIndex((g) => g.etat === 'PROPOSEE')}`;
-
-	async function confirmer(
-		echangeId: Id<'echangesCompagnon'>,
-		rang: number,
-		genre: GenreGeste,
-		ecran?: string
-	) {
-		const cle = `${echangeId}-${rang}`;
-		if (genre === 'OUVRIR') {
-			// Chaque écran s'ouvre à sa rubrique : ce qui dit où, y mène. « ARRET » vient
-			// d'anciens échanges : le montant du jour vit dans « Pénalités et frais ».
-			if (ecran === 'FICHE_CLIENT' && resume !== undefined && resume !== null) {
-				void navigate({ to: '/app/clients/$id', params: { id: resume.debiteurId } });
-			} else {
-				const rubrique =
-					ecran === 'COURRIERS'
-						? 'courriers'
-						: ecran === 'DOCUMENTS'
-							? 'pieces'
-							: ecran === 'PENALITES' || ecran === 'ARRET'
-								? 'decompte'
-								: undefined;
-				void navigate({
-					to: '/app/dossier/$id',
-					params: { id },
-					...(rubrique === undefined ? {} : { search: { ouvrir: rubrique as never } })
-				});
-			}
-			return;
-		}
-		setGesteEnCours(cle);
-		try {
-			await confirmerGeste({ echangeId, rang });
-		} catch (e) {
-			toast({ title: 'Pas fait', text: messageDeLaPanne(e) });
-		} finally {
-			setGesteEnCours(null);
-		}
-	}
+	const principal = gestes.principalDe(tours);
 
 	/**
 	 * UNE LIGNE DE « OÙ EN EST LE DOSSIER », ET OÙ ELLE MÈNE. Les lignes écrites
@@ -391,126 +149,39 @@ function ConversationDuDossier() {
 				texte: tour.texte ?? '',
 				...(tour.documents === undefined
 					? {}
-					: {
-							documents: tour.documents.map((document, rang) => {
-								const lu = document.resume;
-								return documentDepuisResume(
-									`${tour._id}-${rang}`,
-									document.nom,
-									lu,
-									lu === null ? undefined : () => ouvrirDocument(lu.ref)
-								);
-							})
-						})
+					: { documents: echange.documentsDuTour(tour._id, tour.documents) })
 			};
-		const phrases = relireTour(tour);
-		const gestes = tour.gestes ?? [];
+		const lesGestes = tour.gestes ?? [];
 		const etat = (tour.etatDuDossier ?? []).map((ligne) => lireLigne(ligne));
 		return {
 			genre: 'PLUME',
 			id: tour._id,
-			phrases,
-			...(gestes.length === 0 && etat.length === 0
+			phrases: relireTour(tour),
+			...(lesGestes.length === 0 && etat.length === 0
 				? {}
 				: {
 						suite: (
 							<div className="flex flex-col gap-2">
 								<CarteEtatDuDossier lignes={etat} />
-								{gestes.map((geste, rang) => {
-									const description = decrireGeste(geste);
-									const cle = `${tour._id}-${rang}`;
-									return (
-										<CarteDeGeste
-											key={cle}
-											icone={ICONE_DU_GESTE[geste.genre]}
-											titre={description.titre}
-											{...(description.detail === undefined ? {} : { detail: description.detail })}
-											etat={geste.etat}
-											{...(geste.resultat === undefined ? {} : { resultat: geste.resultat })}
-											principal={cle === principal}
-											libelleConfirmer={description.confirmer}
-											enCours={gesteEnCours === cle}
-											onConfirmer={() => void confirmer(tour._id, rang, geste.genre, geste.texte)}
-											{...(() => {
-												const acces = accesDuGeste(geste, {
-													id,
-													debiteurId: resume?.debiteurId ?? null,
-													onCopier: (texte) =>
-														void navigator.clipboard
-															.writeText(texte)
-															.then(() => toast({ title: 'Lien copié', text: texte }))
-												});
-												return acces === undefined ? {} : { acces };
-											})()}
-											{...(geste.genre === 'OUVRIR'
-												? {}
-												: { onEcarter: () => void ecarterGeste({ echangeId: tour._id, rang }) })}
-										/>
-									);
-								})}
+								{gestes.cartes(tour._id, lesGestes, principal)}
 							</div>
 						)
 					})
 		};
 	});
-	if (envoyee !== null)
+	if (echange.enAttente !== null)
 		messages.push({
 			genre: 'GERANT',
 			id: 'en-cours',
-			texte: envoyee.texte,
-			documents: envoyee.avecDocuments ? envoyes.map(documentDepuisFichier) : []
+			texte: echange.enAttente.texte,
+			documents: echange.enAttente.documents
 		});
-
-	const nombre = resume?.nombreFactures ?? 0;
-	const libellesEtapes = [
-		`Je relis le dossier de ${client}`,
-		nombre === 0
-			? 'Je reprends le décompte'
-			: `Je reprends ${nombre} facture${pluriel(nombre)} et le décompte`,
-		'Je vérifie chaque chiffre à sa source',
-		'Je rédige ma réponse'
-	];
-	/*
-	  AVEC DES DOCUMENTS, DEUX ÉTAPES DE PLUS, ET ELLES SONT VRAIES : l'arrivée au
-	  coffre et la lecture se cochent sur ce que le serveur publie, pas sur l'horloge.
-	*/
-	const nDocuments = envoyes.length;
-	const etapesDesDocuments: EtapeDeTravail[] =
-		envoyee?.avecDocuments === true
-			? [
-					{
-						libelle: `Je mets ${nDocuments > 1 ? `${nDocuments} documents` : 'le document'} au coffre`,
-						etat: auCoffre ? 'faite' : 'courante'
-					},
-					{
-						libelle: nDocuments > 1 ? 'Je les lis' : 'Je le lis',
-						etat: lectureFinie ? 'faite' : auCoffre ? 'courante' : 'avenir'
-					}
-				]
-			: [];
-	const travail: EtapeDeTravail[] | null = enCours
-		? [
-				...etapesDesDocuments,
-				...libellesEtapes.map(
-					(libelle, i): EtapeDeTravail => ({
-						libelle,
-						etat: !lectureFinie
-							? 'avenir'
-							: i < Math.min(etape, libellesEtapes.length - 1)
-								? 'faite'
-								: i === Math.min(etape, libellesEtapes.length - 1)
-									? 'courante'
-									: 'avenir'
-					})
-				)
-			]
-		: null;
 
 	const prochaine = resume?.prochaineEtape ?? null;
 
 	return (
 		<>
-			{visionneuse}
+			{echange.visionneuse}
 			<EcranConversationPilote
 				fil={{
 					titre: NOM_DU_PILOTE,
@@ -520,7 +191,7 @@ function ConversationDuDossier() {
 						parametres: { id },
 						libelle: resume?.client ?? 'Dossier'
 					},
-					humeur: enCours ? 'travaille' : 'ecoute',
+					humeur: echange.enCours ? 'travaille' : 'ecoute',
 					accueil: {
 						titre: `Je m’occupe du dossier de ${client}.`,
 						sousTitre: (
@@ -532,15 +203,15 @@ function ConversationDuDossier() {
 									? null
 									: ` · ${prochaine.nom.toLowerCase()} ${prochaine.le <= aujourdHui ? 'aujourd’hui' : dateRelative(prochaine.le, aujourdHui)}`}
 								<br />
-								Demandez-moi ce que vous voulez sur ce dossier, ou dites-moi quoi faire : je vous
+								Demandez-moi ce que vous voulez sur ce dossier, ou joignez-moi un document : je vous
 								propose le geste, vous confirmez.
 							</>
 						)
 					},
 					messages,
-					travail,
+					travail: echange.travail,
 					refus: refusDuPlafond,
-					panne,
+					panne: echange.panne,
 					avertissement:
 						fil?.compteur.niveau === 'AVERTI'
 							? `La conversation de votre établissement approche de son plafond du mois. Au plafond, elle s’arrête, et rien d’autre : vos dossiers, leurs calculs et leurs relances continuent.`
@@ -551,22 +222,13 @@ function ConversationDuDossier() {
 						'Il a promis de payer à la fin du mois',
 						'Combien me doit-il, pénalités comprises ?'
 					],
-					question,
-					onQuestion: setQuestion,
-					onEnvoyer: () => void demander(question),
-					enCours,
+					question: echange.question,
+					onQuestion: echange.setQuestion,
+					onEnvoyer: () => void echange.demander(echange.question),
+					enCours: echange.enCours,
 					placeholder: `Demander à ${NOM_DU_PILOTE}…`,
 					arretee: refusDuPlafond !== null,
-					...(resume === undefined || resume === null
-						? {}
-						: {
-								pieces: {
-									fichiers: depot.fichiers,
-									onJoindre: depot.onAjouter,
-									onRetirer: depot.onRetirer,
-									accept: depot.accept
-								}
-							})
+					...(echange.pieces === undefined ? {} : { pieces: echange.pieces })
 				}}
 			/>
 		</>

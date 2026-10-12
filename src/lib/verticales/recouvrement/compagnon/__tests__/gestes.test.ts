@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { decrireGeste, lireGestes, type EtatPourGestes, type GesteBrut } from '../gestes';
+import {
+	decrireGeste,
+	lireGestes,
+	lireGestesDeLEtablissement,
+	type EtatPourGestes,
+	type GesteBrut,
+	type GesteBrutDeLEtablissement
+} from '../gestes';
 
 /**
  * CE QUE LE MODÈLE PROPOSE N'EST PAS CRU : chaque geste est relu contre le dossier.
@@ -70,9 +77,10 @@ describe('les gestes de Plume', () => {
 
 	it('ouvre la page de paiement et la remise sans décompte à arrêter, et ne propose plus d’arrêter', () => {
 		expect(
-			lireGestes([brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL'), brut('ARRETER_DECOMPTE')], ETAT).map(
-				(g) => g.genre
-			)
+			lireGestes(
+				[brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL'), brut('ARRETER_DECOMPTE')],
+				ETAT
+			).map((g) => g.genre)
 		).toEqual(['LIEN_PAIEMENT', 'REMISE_CONSEIL']);
 		expect(
 			lireGestes([brut('LIEN_PAIEMENT'), brut('REMISE_CONSEIL')], { ...ETAT, arretable: false })
@@ -84,5 +92,76 @@ describe('les gestes de Plume', () => {
 		expect(decrireGeste({ genre: 'RAPPEL', date: '2026-10-13', texte: 'Le rappeler' }).titre).toBe(
 			'Rappel mardi 13 octobre'
 		);
+	});
+});
+
+/**
+ * HORS DOSSIER (12/10/2026) : un geste nomme sa cible, et une cible que le contexte
+ * ne porte pas fait tomber le geste — un identifiant inventé relancerait le mauvais
+ * client. Le geste d'un dossier passe ensuite par la même relecture.
+ */
+describe('les gestes de Plume sur tout l’établissement', () => {
+	const etat = {
+		dossiers: new Map<string, EtatPourGestes>([
+			['dossier_durand', ETAT],
+			['dossier_vidal', { ...ETAT, relancable: false }]
+		]),
+		dossiersConnus: new Set(['dossier_durand', 'dossier_vidal']),
+		clientsConnus: new Set(['client_martin'])
+	};
+	const cible = (
+		genre: GesteBrut['genre'],
+		champs: Partial<GesteBrutDeLEtablissement> = {}
+	): GesteBrutDeLEtablissement => ({ ...brut(genre), dossier: '', client: '', ...champs });
+
+	it('écarte un dossier que le contexte ne porte pas', () => {
+		expect(lireGestesDeLEtablissement([cible('RELANCER', { dossier: 'invente' })], etat)).toEqual(
+			[]
+		);
+	});
+
+	it('relit le geste contre l’état de SON dossier', () => {
+		const gestes = lireGestesDeLEtablissement(
+			[
+				cible('RELANCER', { dossier: 'dossier_durand' }),
+				cible('RELANCER', { dossier: 'dossier_vidal' })
+			],
+			etat
+		);
+		expect(gestes).toEqual([{ genre: 'RELANCER', dossier: 'dossier_durand' }]);
+	});
+
+	it('permet le même geste sur deux dossiers, jamais deux fois sur le même', () => {
+		const gestes = lireGestesDeLEtablissement(
+			[
+				cible('NOTE', { dossier: 'dossier_durand', texte: 'Appel' }),
+				cible('NOTE', { dossier: 'dossier_durand', texte: 'doublon' }),
+				cible('NOTE', { dossier: 'dossier_vidal', texte: 'Appel aussi' })
+			],
+			etat
+		);
+		expect(gestes.map((g) => g.dossier)).toEqual(['dossier_durand', 'dossier_vidal']);
+	});
+
+	it('ouvre un écran de l’établissement, d’un dossier ou d’un client connus, et rien d’autre', () => {
+		expect(lireGestesDeLEtablissement([cible('OUVRIR', { texte: 'COFFRE' })], etat)).toEqual([
+			{ genre: 'OUVRIR', texte: 'COFFRE' }
+		]);
+		expect(
+			lireGestesDeLEtablissement(
+				[cible('OUVRIR', { texte: 'PROFESSIONNELS', dossier: 'dossier_vidal' })],
+				etat
+			)
+		).toEqual([{ genre: 'OUVRIR', texte: 'PROFESSIONNELS', dossier: 'dossier_vidal' }]);
+		expect(
+			lireGestesDeLEtablissement(
+				[cible('OUVRIR', { texte: 'DEMARRER', client: 'client_martin' })],
+				etat
+			)
+		).toEqual([{ genre: 'OUVRIR', texte: 'DEMARRER', client: 'client_martin' }]);
+		expect(
+			lireGestesDeLEtablissement([cible('OUVRIR', { texte: 'CLIENT', client: 'inconnu' })], etat)
+		).toEqual([]);
+		expect(lireGestesDeLEtablissement([cible('OUVRIR', { texte: 'TRIBUNAL' })], etat)).toEqual([]);
 	});
 });

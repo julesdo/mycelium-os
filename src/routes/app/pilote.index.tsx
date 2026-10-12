@@ -1,19 +1,26 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMutation } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
+import { useToast } from '@cladd-ui/react';
 import { useQuery } from '../../app/donnees';
 import { api } from '../../lib/convex/_generated/api';
-import type { Id } from '../../lib/convex/_generated/dataModel';
+import { useEchangeAvecPlume } from '../../app/echange-plume';
+import { messageDeLaPanne, useGestesDePlume } from '../../app/gestes-plume';
+import { evaluerPlafond } from '../../lib/verticales/recouvrement/compagnon/disponibilite';
+import { relireTour } from '../../lib/verticales/recouvrement/compagnon/tour';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import {
 	BoutonTexte,
 	CarteBouton,
+	CarteLien,
+	FeuilleDActivation,
 	LigneDeReleve,
 	ListeDeCartes,
 	ListeDeReleve,
 	NOM_DU_PILOTE,
 	aujourdHuiISO,
 	dateCourte,
+	dateRelative,
 	eurosCentimes,
 	pluriel,
 	type EtapeDeTravail,
@@ -21,70 +28,28 @@ import {
 } from '../../ui';
 
 /**
- * `/app/pilote` — LA CONVERSATION DE PLUME, hors de tout dossier.
+ * `/app/pilote` — LA CONVERSATION DE PLUME SUR TOUT L'ÉTABLISSEMENT.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * CE QU'ELLE MONTRE AVANT QU'ON PARLE
+ * ⚠️ ELLE RÉPOND, ELLE NE RENVOIE PLUS (12/10/2026)
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Plume dit d'abord ce qu'il fait et ce qu'il a fait : son travail en cours,
- * étape par étape ; ses trois derniers travaux ; les relances qui partent
- * bientôt, chacune avec « Retenir ». C'est le relevé d'un collaborateur qu'on
- * croise : on sait où il en est sans rien lui demander.
+ * Elle cherchait un nom de client dans la question et menait à son dossier, ou
+ * demandait « De quel client parlez-vous ? ». Le fondateur : « Plume doit être
+ * capable de tout faire dans l'application ». Elle répond désormais sur tout
+ * l'établissement (`conversation.repondreSurLEtablissement`) : qui doit le plus, ce
+ * qui part, ce qui attend ; elle cite des dossiers, dessinés ici en cartes avec les
+ * chiffres de l'écran Dossiers ; elle propose des gestes sur n'importe quel dossier,
+ * et ouvre n'importe quel écran. On peut lui joindre des factures : elles partent au
+ * coffre et sont lues avant qu'elle réponde.
  *
- * ⚠️ UNE QUESTION MÈNE AU DOSSIER DONT ELLE PARLE. La conversation est bornée à
- * un dossier côté serveur, pour que chaque phrase porte SA source. Ici, Plume
- * cherche le client nommé dans la question ; s'il le trouve, la question part
- * dans la conversation de ce dossier. Sinon, il demande lequel, en montrant les
- * dossiers ouverts — sans appel au modèle, donc sans coût.
+ * Avant la première question, Plume dit toujours ce qu'il fait et a fait : son
+ * travail en cours, ses derniers travaux, ce qui attend d'être démarré, les relances
+ * qui partent bientôt, chacune avec « Retenir ».
  */
 export const Route = createFileRoute('/app/pilote/')({
 	component: ConversationDePlume
 });
-
-/** Les mots qui ne désignent aucun client : on ne choisit pas un dossier sur « SARL ». */
-const MOTS_VIDES = new Set([
-	'sarl',
-	'sas',
-	'sasu',
-	'eurl',
-	'societe',
-	'entreprise',
-	'entreprises',
-	'groupe',
-	'france',
-	'services',
-	'service',
-	'ets',
-	'etablissements',
-	'cabinet',
-	'atelier',
-	'ateliers'
-]);
-
-function normaliser(texte: string): string {
-	return texte
-		.normalize('NFD')
-		.replace(/\p{Diacritic}/gu, '')
-		.toLowerCase();
-}
-
-function motsDe(texte: string): string[] {
-	return normaliser(texte)
-		.split(/[^a-z0-9]+/)
-		.filter((mot) => mot.length >= 3);
-}
-
-/** Les dossiers dont la question nomme le client. */
-function dossiersNommes<T extends { readonly debiteur: string }>(
-	question: string,
-	dossiers: readonly T[]
-): T[] {
-	const motsDeLaQuestion = new Set(motsDe(question));
-	return dossiers.filter((dossier) =>
-		motsDe(dossier.debiteur).some((mot) => !MOTS_VIDES.has(mot) && motsDeLaQuestion.has(mot))
-	);
-}
 
 const HEURE = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
 const DEPART = new Intl.DateTimeFormat('fr-FR', {
@@ -93,61 +58,64 @@ const DEPART = new Intl.DateTimeFormat('fr-FR', {
 	minute: '2-digit'
 });
 
-type MessageLocal =
-	| { readonly genre: 'GERANT'; readonly id: string; readonly texte: string }
-	| {
-			readonly genre: 'CHOIX';
-			readonly id: string;
-			readonly question: string;
-			readonly plusieurs: boolean;
-			readonly candidats: readonly Id<'creances'>[];
-	  };
-
 function ConversationDePlume() {
 	const navigate = useNavigate();
+	const toast = useToast();
 	const pilote = useQuery(api.recouvrement.pilote.etat, {});
-	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
+	const fil = useQuery(api.recouvrement.conversationEtablissement.filDeLEtablissement, {});
+	const dossiers = useQuery(api.recouvrement.lecture.indexDossiers, {});
+	const clients = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
 	const retenir = useMutation(api.recouvrement.pilote.retenir);
-	const [question, setQuestion] = useState('');
-	const [locaux, setLocaux] = useState<readonly MessageLocal[]>([]);
+	const activerRelances = useMutation(api.recouvrement.pilote.activerRelances);
+	const demanderAPlume = useAction(api.recouvrement.conversation.repondreSurLEtablissement);
+	const [activation, setActivation] = useState(false);
 	const aujourdHui = aujourdHuiISO();
 
-	const ouverts = (creances ?? [])
-		.filter((c) => c.statut !== 'CLOSE')
-		.sort((a, b) => Number(b.principalRestantDu - a.principalRestantDu));
+	const ouverts = (dossiers ?? []).filter(
+		(d) => !d.classe && d.etape !== 'REGLE' && d.principalRestantDu > 0n
+	);
+	const parId = new Map((dossiers ?? []).map((d) => [d._id as string, d]));
 
-	function ouvrirDossier(creanceId: Id<'creances'>, texte: string) {
-		void navigate({ to: '/app/pilote/$id', params: { id: creanceId }, search: { envoyer: texte } });
-	}
+	const echange = useEchangeAvecPlume({
+		// Des factures, comme le bouton rond de l'accueil : lues, puis rangées par client.
+		destination: { genre: 'FACTURES' },
+		joindrePossible: true,
+		demanderAuServeur: (question, documents) =>
+			demanderAPlume({
+				question,
+				...(documents.length === 0 ? {} : { documents: [...documents] })
+			}),
+		etapes: [
+			`Je relis vos ${ouverts.length > 1 ? `${ouverts.length} dossiers` : 'dossiers'}`,
+			'Je regarde ce qui part et ce qui attend',
+			'Je rédige ma réponse'
+		]
+	});
 
-	function envoyer() {
-		const texte = question.trim();
-		if (texte === '') return;
-		setQuestion('');
-		const nommes = dossiersNommes(texte, ouverts);
-		if (nommes.length === 1 && nommes[0] !== undefined) {
-			ouvrirDossier(nommes[0]._id, texte);
-			return;
+	const gestes = useGestesDePlume({
+		dossierParId: (id) => {
+			const dossier = parId.get(id);
+			return dossier === undefined
+				? undefined
+				: { id, client: dossier.debiteur, debiteurId: dossier.debiteurId };
+		},
+		clientParId: (id) => clients?.find((c) => c._id === id)?.denomination,
+		onRelances: () => {
+			if (pilote?.envoiAutomatique === true) {
+				toast({
+					title: 'Déjà activées',
+					text: 'Les relances automatiques partent déjà ; chacune se retient encore d’un geste.'
+				});
+			} else setActivation(true);
 		}
-		const n = locaux.length;
-		setLocaux([
-			...locaux,
-			{ genre: 'GERANT', id: `g-${n}`, texte },
-			{
-				genre: 'CHOIX',
-				id: `c-${n}`,
-				question: texte,
-				plusieurs: nommes.length > 1,
-				candidats: (nommes.length > 1 ? nommes : ouverts).slice(0, 6).map((c) => c._id)
-			}
-		]);
-	}
+	});
 
 	const travaux = pilote?.travaux ?? [];
-	const enCours = travaux.find((t) => t.etat === 'EN_COURS') ?? null;
+	const travailDuPilote = travaux.find((t) => t.etat === 'EN_COURS') ?? null;
 	const faits = travaux.filter((t) => t.etat === 'FAIT' || t.etat === 'ECHEC').slice(0, 3);
-	const humeur: HumeurPlume =
-		enCours !== null
+	const humeur: HumeurPlume = echange.enCours
+		? 'travaille'
+		: travailDuPilote !== null
 			? 'travaille'
 			: faits[0]?.etat === 'ECHEC' || (pilote?.aDemarrer ?? 0) > 0
 				? 'attention'
@@ -155,12 +123,12 @@ function ConversationDePlume() {
 
 	/* ── Le relevé de Plume, avant toute question ─────────────────────────── */
 	const preambule: MessageAffiche[] = [];
-	if (pilote !== undefined && enCours === null && faits.length === 0) {
+	if (pilote !== undefined && travailDuPilote === null && faits.length === 0) {
 		preambule.push({
 			genre: 'PLUME',
 			id: 'rien',
 			texte:
-				'Je n’ai encore rien eu à faire ici. Déposez vos factures depuis l’accueil : je les relis dès qu’elles arrivent, et j’ouvre le dossier de chaque client en retard.'
+				'Je n’ai encore rien eu à faire ici. Joignez-moi vos factures avec le bouton + : je les relis dès qu’elles arrivent, et j’ouvre le dossier de chaque client en retard.'
 		});
 	}
 	if (faits.length > 0) {
@@ -227,7 +195,13 @@ function ConversationDePlume() {
 									ligne={`${relance.etape} · ${DEPART.format(new Date(relance.partiraLe))}`}
 								/>
 							</div>
-							<BoutonTexte onClick={() => void retenir({ envoiId: relance.envoiId })}>
+							<BoutonTexte
+								onClick={() =>
+									void retenir({ envoiId: relance.envoiId }).catch((e: unknown) =>
+										toast({ title: 'Pas retenue', text: messageDeLaPanne(e) })
+									)
+								}
+							>
 								Retenir
 							</BoutonTexte>
 						</div>
@@ -237,88 +211,175 @@ function ConversationDePlume() {
 		});
 	}
 
-	/* ── Ce que le gérant a dit ici, et ce que Plume y répond ─────────────── */
-	const messages: MessageAffiche[] = locaux.map((message): MessageAffiche => {
-		if (message.genre === 'GERANT') return message;
-		const candidats = message.candidats
-			.map((id) => ouverts.find((c) => c._id === id))
-			.filter((c): c is (typeof ouverts)[number] => c !== undefined);
+	/* ── Le fil : les questions, et ce que Plume y répond ────────────────── */
+	const tours = fil?.tours ?? [];
+	const principal = gestes.principalDe(tours);
+	const messages: MessageAffiche[] = tours.map((tour): MessageAffiche => {
+		if (tour.role === 'GERANT')
+			return {
+				genre: 'GERANT',
+				id: tour._id,
+				texte: tour.texte ?? '',
+				...(tour.documents === undefined
+					? {}
+					: { documents: echange.documentsDuTour(tour._id, tour.documents) })
+			};
+		const cites = (tour.dossiersCites ?? [])
+			.map((id) => parId.get(id))
+			.filter((d): d is NonNullable<typeof d> => d !== undefined);
+		const lesGestes = tour.gestes ?? [];
 		return {
 			genre: 'PLUME',
-			id: message.id,
-			humeur: 'ecoute',
-			texte:
-				candidats.length === 0
-					? 'Je n’ai encore aucun dossier ouvert. Dès qu’une facture passe son échéance, j’ouvre le dossier de son client, et nous pourrons en parler.'
-					: message.plusieurs
-						? 'Plusieurs clients correspondent. Duquel parlez-vous ?'
-						: 'De quel client parlez-vous ? Je réponds dossier par dossier, pour que chaque phrase porte sa source.',
-			suite:
-				candidats.length === 0 ? undefined : (
-					<ListeDeCartes>
-						{candidats.map((dossier) => (
-							<CarteBouton
-								key={dossier._id}
-								titre={dossier.debiteur}
-								ligne={`${dossier.nombreFactures} facture${pluriel(dossier.nombreFactures)}`}
-								montant={eurosCentimes(dossier.principalRestantDu)}
-								onClick={() => ouvrirDossier(dossier._id, message.question)}
-							/>
-						))}
-					</ListeDeCartes>
-				)
+			id: tour._id,
+			phrases: relireTour(tour),
+			...(cites.length === 0 && lesGestes.length === 0
+				? {}
+				: {
+						suite: (
+							<div className="flex flex-col gap-2">
+								{cites.length === 0 ? null : (
+									<ListeDeCartes>
+										{cites.map((dossier) => (
+											<CarteLien
+												key={dossier._id}
+												titre={dossier.debiteur}
+												montant={eurosCentimes(dossier.principalRestantDu)}
+												ligne={ligneDuDossier(dossier, aujourdHui)}
+												vers="/app/dossier/$id"
+												parametres={{ id: dossier._id }}
+											/>
+										))}
+									</ListeDeCartes>
+								)}
+								{gestes.cartes(tour._id, lesGestes, principal)}
+							</div>
+						)
+					})
 		};
 	});
+	if (echange.enAttente !== null)
+		messages.push({
+			genre: 'GERANT',
+			id: 'en-cours',
+			texte: echange.enAttente.texte,
+			documents: echange.enAttente.documents
+		});
 
-	const travail: EtapeDeTravail[] | null =
-		enCours === null
+	const etapesDuPilote: EtapeDeTravail[] | null =
+		travailDuPilote === null
 			? null
-			: enCours.etapes.map((etape, i) => {
-					const rang = enCours.etapes.findIndex((e) => !e.faite);
+			: travailDuPilote.etapes.map((etape, i) => {
+					const rang = travailDuPilote.etapes.findIndex((e) => !e.faite);
 					return {
 						libelle: etape.libelle,
 						etat: etape.faite ? 'faite' : i === rang ? 'courante' : 'avenir'
 					};
 				});
 
+	/*
+	  CE QU'ON PEUT LUI DEMANDER, D'APRÈS CE QUI SE PASSE — pas une liste figée : ce
+	  qui attend d'être démarré, ce qui part bientôt, le plus gros dossier.
+	*/
+	const plusGros = ouverts[0];
+	const suggestions = [
+		'Qui me doit le plus ?',
+		...(aDemarrer > 0 ? ['Quels dossiers attendent que je les démarre ?'] : []),
+		...(programmes.length > 0 ? ['Qu’est-ce qui part cette semaine ?'] : []),
+		...(plusGros === undefined ? [] : [`Où en est ${plusGros.debiteur} ?`]),
+		'Montre-moi mes documents'
+	];
+
+	const refusDuPlafond = fil === undefined ? null : evaluerPlafond(fil.compteur.cumul).refus;
+
 	return (
-		<EcranConversationPilote
-			fil={{
-				titre: NOM_DU_PILOTE,
-				sousTitre: enCours !== null ? 'Au travail' : 'Votre pilote',
-				retour: { vers: '/app', libelle: 'Aujourd’hui' },
-				humeur,
-				accueil: {
-					titre:
-						ouverts.length === 0
-							? 'Je veille sur vos factures.'
-							: `Je veille sur ${ouverts.length} dossier${pluriel(ouverts.length)}.`,
-					sousTitre: (
-						<>
-							{enCours !== null
-								? 'Je suis au travail en ce moment. '
-								: pilote?.derniereVeille === null || pilote === undefined
-									? ''
-									: `J’ai tout relu à ${HEURE.format(new Date(pilote.derniereVeille))}. `}
-							Dites-moi de quel client vous voulez parler.
-						</>
-					)
-				},
-				preambule,
-				messages,
-				travail: locaux.length === 0 ? travail : null,
-				...(enCours === null || locaux.length > 0 ? {} : { titreDuTravail: enCours.titre }),
-				refus: null,
-				panne: null,
-				avertissement: null,
-				suggestions: ouverts.slice(0, 3).map((c) => `Où en est ${c.debiteur} ?`),
-				question,
-				onQuestion: setQuestion,
-				onEnvoyer: envoyer,
-				enCours: false,
-				placeholder: `Demander à ${NOM_DU_PILOTE}…`,
-				arretee: false
-			}}
-		/>
+		<>
+			{echange.visionneuse}
+			<FeuilleDActivation
+				ouverte={activation}
+				onFermer={() => setActivation(false)}
+				onActiver={() => {
+					setActivation(false);
+					void activerRelances({ actif: true }).then(
+						() =>
+							toast({
+								title: 'Relances activées',
+								text: 'Chacune s’affiche une heure avant de partir.'
+							}),
+						(e: unknown) => toast({ title: 'Pas activées', text: messageDeLaPanne(e) })
+					);
+				}}
+			/>
+			<EcranConversationPilote
+				fil={{
+					titre: NOM_DU_PILOTE,
+					sousTitre: echange.enCours || travailDuPilote !== null ? 'Au travail' : 'Votre pilote',
+					retour: { vers: '/app', libelle: 'Aujourd’hui' },
+					humeur,
+					accueil: {
+						titre:
+							ouverts.length === 0
+								? 'Je veille sur vos factures.'
+								: `Je veille sur ${ouverts.length} dossier${pluriel(ouverts.length)}.`,
+						sousTitre: (
+							<>
+								{travailDuPilote !== null
+									? 'Je suis au travail en ce moment. '
+									: pilote?.derniereVeille === null || pilote === undefined
+										? ''
+										: `J’ai tout relu à ${HEURE.format(new Date(pilote.derniereVeille))}. `}
+								Demandez-moi ce que vous voulez sur vos dossiers, dites-moi quoi faire, ou
+								joignez-moi des factures.
+							</>
+						)
+					},
+					preambule,
+					messages,
+					travail: echange.travail ?? (tours.length === 0 ? etapesDuPilote : null),
+					...(echange.enCours || travailDuPilote === null || tours.length > 0
+						? {}
+						: { titreDuTravail: travailDuPilote.titre }),
+					refus: refusDuPlafond,
+					panne: echange.panne,
+					avertissement:
+						fil?.compteur.niveau === 'AVERTI'
+							? 'La conversation de votre établissement approche de son plafond du mois. Au plafond, elle s’arrête, et rien d’autre : vos dossiers, leurs calculs et leurs relances continuent.'
+							: null,
+					suggestions,
+					question: echange.question,
+					onQuestion: echange.setQuestion,
+					onEnvoyer: () => void echange.demander(echange.question),
+					enCours: echange.enCours,
+					placeholder: `Demander à ${NOM_DU_PILOTE}…`,
+					arretee: refusDuPlafond !== null,
+					...(echange.pieces === undefined ? {} : { pieces: echange.pieces })
+				}}
+			/>
+		</>
 	);
+}
+
+/** Ce qui se passe sur un dossier cité, en cinq mots : sa prochaine étape, ou son état. */
+function ligneDuDossier(
+	dossier: {
+		readonly aDemarrer: boolean;
+		readonly courrierAValider: boolean;
+		readonly etape: string;
+		readonly prochaineEtape?: {
+			readonly nom: string;
+			readonly le: string;
+			readonly pause?: { readonly raison: 'PROMESSE' | 'ECHEANCIER'; readonly le: string };
+		};
+	},
+	aujourdHui: string
+): string {
+	if (dossier.aDemarrer) return 'Prêt, à démarrer';
+	if (dossier.courrierAValider) return 'Un courrier à relire';
+	if (dossier.etape === 'TRIBUNAL') return 'Chez un professionnel';
+	const suite = dossier.prochaineEtape;
+	if (suite === undefined) return 'Pas d’étape à venir';
+	if (suite.pause !== undefined)
+		return suite.pause.raison === 'PROMESSE'
+			? `Promesse, ${dateRelative(suite.pause.le, aujourdHui)}`
+			: `Échéancier, ${dateRelative(suite.pause.le, aujourdHui)}`;
+	return `${suite.nom}, ${suite.le <= aujourdHui ? 'aujourd’hui' : dateRelative(suite.le, aujourdHui)}`;
 }

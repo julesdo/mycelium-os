@@ -45,7 +45,7 @@ import {
  * mutations), et la destination voyage dans les métadonnées de chaque fichier.
  */
 
-type Destination =
+export type DestinationDuDepot =
 	| { readonly genre: 'FACTURES' }
 	| {
 			readonly genre: 'PIECES';
@@ -78,7 +78,7 @@ async function empreinteDu(contenu: Blob): Promise<string> {
 	return Array.from(condensat, (o) => o.toString(16).padStart(2, '0')).join('');
 }
 
-function destinationPourLeServeur(destination: Destination) {
+function destinationPourLeServeur(destination: DestinationDuDepot) {
 	return destination.genre === 'FACTURES'
 		? { genre: 'FACTURES' as const }
 		: {
@@ -97,7 +97,7 @@ export interface DepotEnvoyable extends DepotAuCoffre {
 	readonly envoyer: () => Promise<readonly RefCoffre[]>;
 }
 
-export function useDepotAuCoffre(destination: Destination): DepotEnvoyable {
+export function useDepotAuCoffre(destination: DestinationDuDepot): DepotEnvoyable {
 	const convex = useConvex();
 	const genererUrl = useMutation(api.coffre.coffre.genererUrlCoffre);
 	const confier = useMutation(api.coffre.coffre.confierAuCoffre);

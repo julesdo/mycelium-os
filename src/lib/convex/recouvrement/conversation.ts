@@ -33,7 +33,20 @@ import {
 	refusSansCle
 } from '../../verticales/recouvrement/compagnon/disponibilite';
 import { composerRefus, type Refus } from '../../verticales/recouvrement/compagnon/refus';
-import { lireGestes, type Geste } from '../../verticales/recouvrement/compagnon/gestes';
+import {
+	lireGestes,
+	lireGestesDeLEtablissement,
+	type EtatPourGestes,
+	type Geste
+} from '../../verticales/recouvrement/compagnon/gestes';
+import {
+	construireContexteEtablissement,
+	construirePromptEtablissement,
+	dossiersCites,
+	lirePhrasesDeLEtablissement,
+	reponseEtablissementSchema,
+	type ContexteEtablissement
+} from '../../verticales/recouvrement/compagnon/prompt-etablissement';
 import { trierLesPhrases } from '../../verticales/recouvrement/compagnon/tri';
 
 /**
@@ -398,6 +411,9 @@ function enGesteEcrit(geste: Geste) {
 		...(geste.date === undefined ? {} : { date: geste.date }),
 		...(geste.montant === undefined ? {} : { montant: geste.montant }),
 		...(geste.texte === undefined ? {} : { texte: geste.texte }),
+		// Les cibles ont été relues contre le contexte : ce sont nos propres identifiants.
+		...(geste.dossier === undefined ? {} : { dossier: geste.dossier as Id<'creances'> }),
+		...(geste.client === undefined ? {} : { client: geste.client as Id<'debiteurs'> }),
 		etat: 'PROPOSEE' as const
 	};
 }
@@ -572,6 +588,216 @@ export const repondre = authedAction({
 			gestes,
 			...(etatDuDossier ? { etatDuDossier: lu.resume } : {}),
 			...(ecrits.length === 0 ? {} : { documents: ecrits }),
+			usage: consommation
+		});
+
+		return {
+			genre: 'REPONSE',
+			phrases: rendues.map((phrase) => ({
+				texte: phrase.texte,
+				genreSource: phrase.genreSource,
+				reference: phrase.reference
+			})),
+			avertissement: plafond.niveau === 'AVERTI' ? avertissementDu(lu.compteur) : null
+		};
+	}
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PLUME SUR TOUT L'ÉTABLISSEMENT (12/10/2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function appelerLeModeleSurLEtablissement(contexte: ContexteEtablissement, question: string) {
+	try {
+		return await extraireAvecClaude({
+			contenu: { type: 'texte', texte: construireContexteEtablissement(contexte, question) },
+			schema: reponseEtablissementSchema,
+			prompt: construirePromptEtablissement()
+		});
+	} catch {
+		return null;
+	}
+}
+
+async function consignerSurLEtablissement(
+	ctx: ActionCtx,
+	tour: {
+		readonly question: string;
+		readonly reponse: string;
+		readonly phrases?: readonly PhraseEcrite[];
+		readonly gestes?: readonly ReturnType<typeof enGesteEcrit>[];
+		readonly documents: readonly DocumentEcrit[];
+		readonly dossiersCites?: readonly Id<'creances'>[];
+		readonly usage: Consommation | undefined;
+	}
+): Promise<void> {
+	await ctx.runMutation(
+		internal.recouvrement.conversationEtablissement.consignerEchangeEtablissement,
+		{
+			question: tour.question,
+			reponse: tour.reponse,
+			...(tour.phrases === undefined ? {} : { phrases: [...tour.phrases] }),
+			...(tour.gestes === undefined || tour.gestes.length === 0
+				? {}
+				: { gestes: [...tour.gestes] }),
+			...(tour.documents.length === 0 ? {} : { documents: [...tour.documents] }),
+			...(tour.dossiersCites === undefined || tour.dossiersCites.length === 0
+				? {}
+				: { dossiersCites: [...tour.dossiersCites] }),
+			usage: tour.usage
+		}
+	);
+}
+
+/**
+ * UNE QUESTION SUR TOUT L'ÉTABLISSEMENT — « qui me doit le plus ? », « relance Durand
+ * et Vidal », « montre-moi le coffre » —, et des documents à lire, éventuellement.
+ *
+ * ⚠️ LES MÊMES CINQ CHEMINS SANS EXCEPTION QUE SUR UN DOSSIER (clé absente, plafond,
+ * filtre, appel tombé, question de droit) : un refus en quatre parties, ou la réponse.
+ * Et Plume n'y écrit aucun montant : il cite des dossiers, que l'écran dessine avec
+ * leurs chiffres (`prompt-etablissement.ts`).
+ */
+export const repondreSurLEtablissement = authedAction({
+	args: { question: v.string(), documents: v.optional(v.array(vRef)) },
+	returns: vReponse,
+	handler: async (ctx, { question, documents = [] }): Promise<ReponseDuCompagnon> => {
+		try {
+			requireEnv('ANTHROPIC_API_KEY', { feature: 'la conversation du compagnon' });
+		} catch {
+			return enRefus(refusSansCle(), null, null);
+		}
+
+		const joints = await lireLesJoints(ctx, documents);
+		const ecrits = documentsEcrits(joints);
+		if (question.trim() === '' && joints.length === 0) {
+			return enRefus(refusSansRien(), null, null);
+		}
+
+		const lu = await ctx.runQuery(
+			internal.recouvrement.conversationEtablissement.contexteDeLEtablissement,
+			{ toursRepris: TOURS_REPRIS }
+		);
+
+		if (joints.length === 0 && estQuestionDeDroit(question)) {
+			const phrases = reponseAQuestionDeDroit(question);
+			await consignerSurLEtablissement(ctx, {
+				question,
+				reponse: phrases.map((p) => p.texte).join(' '),
+				phrases: phrasesDe(phrases),
+				documents: ecrits,
+				usage: { tokensIn: 0, tokensOut: 0, cacheReadTokens: 0, coutEstime: 0 }
+			});
+			return {
+				genre: 'REPONSE',
+				phrases: phrases.map((p) => ({
+					texte: p.texte,
+					genreSource: p.genreSource,
+					reference: p.reference
+				})),
+				avertissement: null
+			};
+		}
+
+		const plafond = evaluerPlafond(lu.compteur.cumul);
+		if (plafond.refus !== null) {
+			const refus = plafond.refus;
+			await consignerSurLEtablissement(ctx, {
+				question,
+				reponse: [refus.peutFaire, refus.constat, ...refus.blocages, refus.coutDeLAttente].join(
+					' '
+				),
+				documents: ecrits,
+				usage: undefined
+			});
+			return enRefus(refus, null, null);
+		}
+
+		const contexte: ContexteEtablissement = {
+			...lu.contexte,
+			...(joints.length === 0 ? {} : { joints: joints.map((d) => d.ligne) })
+		};
+		const appel = await appelerLeModeleSurLEtablissement(contexte, question);
+		if (appel === null) {
+			await consignerSurLEtablissement(ctx, {
+				question,
+				reponse:
+					'Je n’ai pas pu formuler de réponse cette fois. Vos dossiers, eux, n’ont pas changé.',
+				phrases: [
+					{
+						texte:
+							'Je n’ai pas pu formuler de réponse cette fois. Vos dossiers, eux, n’ont pas changé.'
+					}
+				],
+				documents: ecrits,
+				usage: undefined
+			});
+			return enRefus(refusAppelEchoue(), null, null);
+		}
+
+		const consommation: Consommation = {
+			tokensIn: appel.usage.tokensIn,
+			tokensOut: appel.usage.tokensOut,
+			cacheReadTokens: appel.usage.cacheReadTokens,
+			coutEstime: coutDuTour(appel.usage)
+		};
+
+		// ── Les gestes, relus contre l'état du dossier qu'ils visent ───────────
+		const dossiersConnus = new Set(lu.connus.dossiers);
+		const clientsConnus = new Set(lu.connus.clients);
+		const bruts = appel.doc.gestes ?? [];
+		const vises = [
+			...new Set(
+				bruts
+					.filter((brut) => brut.genre !== 'OUVRIR' && dossiersConnus.has(brut.dossier.trim()))
+					.map((brut) => brut.dossier.trim())
+			)
+		];
+		const etats =
+			vises.length === 0
+				? []
+				: await ctx.runQuery(internal.recouvrement.conversationEtablissement.etatsPourGestes, {
+						creanceIds: vises as Id<'creances'>[]
+					});
+		const gestes = lireGestesDeLEtablissement(bruts, {
+			dossiers: new Map<string, EtatPourGestes>(
+				etats.map((etat) => [etat.creanceId as string, etat.pourGestes])
+			),
+			dossiersConnus,
+			clientsConnus
+		}).map(enGesteEcrit);
+
+		// ── Les phrases, puis les filtres phrase par phrase ────────────────────
+		let lues: readonly PhraseSourcee[];
+		try {
+			lues = lirePhrasesDeLEtablissement(appel.doc, lu.contexte.valeurs);
+		} catch (erreur) {
+			if (!(erreur instanceof AncreInconnue)) throw erreur;
+			lues = [];
+		}
+		const { gardees } = trierLesPhrases(lues);
+		const cites = dossiersCites(appel.doc, dossiersConnus) as Id<'creances'>[];
+		const rendues: readonly PhraseSourcee[] =
+			gardees.length > 0
+				? gardees
+				: [
+						{
+							texte:
+								cites.length > 0
+									? 'Voici les dossiers dont il s’agit.'
+									: 'Je préfère ne rien avancer que je ne puisse prouver.',
+							genreSource: 'AUCUNE',
+							reference: ''
+						}
+					];
+
+		await consignerSurLEtablissement(ctx, {
+			question,
+			reponse: rendues.map((phrase) => phrase.texte).join(' '),
+			phrases: phrasesDe(rendues),
+			gestes,
+			documents: ecrits,
+			dossiersCites: cites,
 			usage: consommation
 		});
 

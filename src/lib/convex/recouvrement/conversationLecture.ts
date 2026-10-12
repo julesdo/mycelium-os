@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 import { internalQuery, internalMutation } from '../_generated/server';
 import type { QueryCtx } from '../_generated/server';
-import type { Id } from '../_generated/dataModel';
+import type { Doc, Id } from '../_generated/dataModel';
 import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
@@ -81,7 +81,7 @@ const vContexteDossier = v.object({
 	)
 });
 
-const vCompteur = v.object({
+export const vCompteur = v.object({
 	niveau: v.union(v.literal('OUVERT'), v.literal('AVERTI'), v.literal('ARRETE')),
 	cumul: v.number(),
 	reste: v.number(),
@@ -91,7 +91,7 @@ const vCompteur = v.object({
 });
 
 /** `AAAA-MM`, en UTC comme toutes les dates du produit. */
-function moisCourant(): string {
+export function moisCourant(): string {
 	return new Date().toISOString().slice(0, 7);
 }
 
@@ -103,7 +103,7 @@ function moisCourant(): string {
  * mois passés du barème du jour, et le seuil se serait déplacé sans que
  * personne ne l'ait décidé.
  */
-async function cumulDuMois(
+export async function cumulDuMois(
 	ctx: QueryCtx,
 	organizationId: Id<'organizations'>,
 	mois: string
@@ -118,7 +118,7 @@ async function cumulDuMois(
 	return cumul;
 }
 
-function compteurDepuis(cumul: number, mois: string) {
+export function compteurDepuis(cumul: number, mois: string) {
 	const etat = evaluerPlafond(cumul);
 	return {
 		niveau: etat.niveau,
@@ -195,6 +195,86 @@ interface ContexteLu {
 		avertissement: number;
 		arret: number;
 		mois: string;
+	};
+}
+
+type PourGestes = ContexteLu['pourGestes'];
+
+/**
+ * OÙ EN EST UN DOSSIER, POUR RELIRE UN GESTE — calculé à UN endroit, que la
+ * conversation d'un dossier et celle de l'établissement lisent toutes les deux.
+ * Deux calculs des mêmes drapeaux finiraient par proposer un geste ici qu'on
+ * refuserait là.
+ */
+export async function lireLEtatDuDossier(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	creance: Doc<'creances'>,
+	factures: readonly Doc<'facturesVente'>[],
+	debiteur: Doc<'debiteurs'> | null
+) {
+	const aujourdHui = new Date().toISOString().slice(0, 10);
+	const restes = await Promise.all(factures.map((facture) => resteDu(ctx, facture)));
+	const restantDu = enCentimes(additionner(...restes));
+	const envois = await ctx.db
+		.query('envois')
+		.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+		.collect();
+	const programmee = envois.find((e) => e.etat === 'PROGRAMME');
+	const enAttente = envois.some((e) => e.etat === 'A_VALIDER');
+	const pilote = await ctx.db
+		.query('pilotes')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	const plan = await planDuDossier(ctx, creance, [...factures], aujourdHui, envois);
+	const suspendu =
+		debiteur?.santeFinanciere === 'PROCEDURE_COLLECTIVE' || debiteur?.santeFinanciere === 'RADIEE';
+	const relancable =
+		creance.statut !== 'CLOSE' && creance.engageeLe === undefined && !suspendu && restantDu > 0n;
+	const horsPilote = debiteur?.horsPilote === true;
+	const contestationDeclaree = (creance.faitsLitige ?? []).some(
+		(fait) => fait.cle === 'CONTESTATION_ECRITE' && fait.reponse === 'OUI'
+	);
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	const ibanConnu = profil?.iban !== undefined && profil.iban !== '';
+	const remiseEnCours = (
+		await ctx.db
+			.query('remisesAuConseil')
+			.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
+			.collect()
+	).some((remise) => remise.etat === 'REMIS' || remise.etat === 'REVENU');
+	const arretable = creance.statut !== 'CLOSE' && restantDu > 0n;
+	const pourGestes: PourGestes = {
+		aujourdHui,
+		restantDu,
+		relancable,
+		horsPilote,
+		relanceProgrammee: programmee !== undefined,
+		emailConnu: debiteur?.email ?? null,
+		contestationDeclaree,
+		ibanConnu,
+		remiseEnCours,
+		arretable,
+		echeancierEnCours: plan?.pause?.raison === 'ECHEANCIER',
+		classe: creance.statut === 'CLOSE'
+	};
+	return {
+		aujourdHui,
+		restantDu,
+		programmee,
+		enAttente,
+		pilote,
+		plan,
+		suspendu,
+		relancable,
+		horsPilote,
+		contestationDeclaree,
+		ibanConnu,
+		remiseEnCours,
+		pourGestes
 	};
 }
 
@@ -281,42 +361,22 @@ export const contexteDuDossier = internalQuery({
 		  et seulement celui-là : la date du jour (« mardi » se calcule), ce qui reste
 		  dû, l'adresse du client, le plan, ce qui est programmé ou attend.
 		*/
-		const aujourdHui = new Date().toISOString().slice(0, 10);
-		const restes = await Promise.all(factures.map((facture) => resteDu(ctx, facture)));
-		const restantDu = enCentimes(additionner(...restes));
-		const envois = await ctx.db
-			.query('envois')
-			.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-			.collect();
-		const programmee = envois.find((e) => e.etat === 'PROGRAMME');
-		const enAttente = envois.some((e) => e.etat === 'A_VALIDER');
-		const pilote = await ctx.db
-			.query('pilotes')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.first();
-		const plan = await planDuDossier(ctx, creance, factures, aujourdHui, envois);
-		const suspendu =
-			debiteur?.santeFinanciere === 'PROCEDURE_COLLECTIVE' ||
-			debiteur?.santeFinanciere === 'RADIEE';
-		const relancable =
-			creance.statut !== 'CLOSE' && creance.engageeLe === undefined && !suspendu && restantDu > 0n;
-		const horsPilote = debiteur?.horsPilote === true;
-		const contestationDeclaree = (creance.faitsLitige ?? []).some(
-			(fait) => fait.cle === 'CONTESTATION_ECRITE' && fait.reponse === 'OUI'
-		);
-		const profil = await ctx.db
-			.query('profilsCreancier')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.first();
-		const ibanConnu = profil?.iban !== undefined && profil.iban !== '';
-		const remiseEnCours = (
-			await ctx.db
-				.query('remisesAuConseil')
-				.withIndex('by_creance', (q) => q.eq('creanceId', creanceId))
-				.collect()
-		).some((remise) => remise.etat === 'REMIS' || remise.etat === 'REVENU');
+		const {
+			aujourdHui,
+			restantDu,
+			programmee,
+			enAttente,
+			pilote,
+			plan,
+			suspendu,
+			relancable,
+			horsPilote,
+			contestationDeclaree,
+			ibanConnu,
+			remiseEnCours,
+			pourGestes
+		} = await lireLEtatDuDossier(ctx, organizationId, creance, factures, debiteur);
 		const dernierArrete = [...decomptes].sort((a, b) => b.arreteAu.localeCompare(a.arreteAu))[0];
-		const arretable = creance.statut !== 'CLOSE' && restantDu > 0n;
 		const etat: string[] = [
 			`Aujourd’hui : ${jourEnClair(aujourdHui)} ${aujourdHui.slice(0, 4)} (${aujourdHui}).`,
 			`Reste à payer sur les factures du dossier, hors pénalités : ${versEuros(depuisCentimes(restantDu))} €.`,
@@ -462,20 +522,7 @@ export const contexteDuDossier = internalQuery({
 
 		return {
 			resume,
-			pourGestes: {
-				aujourdHui,
-				restantDu,
-				relancable,
-				horsPilote,
-				relanceProgrammee: programmee !== undefined,
-				emailConnu: debiteur?.email ?? null,
-				contestationDeclaree,
-				ibanConnu,
-				remiseEnCours,
-				arretable,
-				echeancierEnCours: plan?.pause?.raison === 'ECHEANCIER',
-				classe: creance.statut === 'CLOSE'
-			},
+			pourGestes,
 			contexte: {
 				debiteur: debiteur?.denomination ?? 'Débiteur inconnu',
 				etat,
@@ -692,7 +739,7 @@ const vTourAffiche = v.object({
 });
 
 /** Les documents d'un tour, résumés tels que le coffre les montre. */
-async function documentsDuTour(
+export async function documentsDuTour(
 	ctx: QueryCtx,
 	organizationId: Id<'organizations'>,
 	documents: readonly (typeof vDocumentJoint.type)[] | undefined
