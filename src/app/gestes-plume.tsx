@@ -22,8 +22,23 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
-import { decrireGeste, type GenreGeste } from '../lib/verticales/recouvrement/compagnon/gestes';
-import { BoutonSecondaire, CarteDeGeste, Lien } from '../ui';
+import {
+	NOMBRES_DE_VERSEMENTS,
+	decrireGeste,
+	type GenreGeste
+} from '../lib/verticales/recouvrement/compagnon/gestes';
+import { versements } from '../lib/verticales/recouvrement/gabarits/accord-echeancier';
+import { useQuery } from './donnees';
+import {
+	ApercuDeGeste,
+	BoutonSecondaire,
+	CarteDeGeste,
+	Lien,
+	dateCourte,
+	eurosCentimes,
+	type AjustementDeGeste,
+	type ChampDeGeste
+} from '../ui';
 
 /**
  * LES GESTES DE PLUME, À L'ÉCRAN — une seule fois pour les deux conversations
@@ -79,6 +94,117 @@ export interface DossierDesGestes {
 	readonly id: string;
 	readonly client: string;
 	readonly debiteurId: string;
+}
+
+/** « 2000,50 » : un montant tel qu'on le retape, sans espace ni symbole. */
+function enSaisie(centimes: bigint): string {
+	return `${centimes / 100n},${(centimes % 100n).toString().padStart(2, '0')}`;
+}
+
+/**
+ * CE QUI SE CORRIGE SUR LA CARTE, genre par genre — les mêmes champs que le serveur
+ * accepte (`CHAMPS_MODIFIABLES`, dans `gestesPlume.ts`).
+ */
+function champsDu(geste: GesteDuFil): ChampDeGeste[] {
+	const date = (libelle: string): ChampDeGeste => ({
+		cle: 'date',
+		libelle,
+		valeur: geste.date ?? '',
+		genre: 'date'
+	});
+	const montant: ChampDeGeste = {
+		cle: 'montant',
+		libelle: 'Montant, en euros',
+		valeur: enSaisie(geste.montant ?? 0n),
+		genre: 'montant'
+	};
+	const texte = (libelle: string): ChampDeGeste => ({
+		cle: 'texte',
+		libelle,
+		valeur: geste.texte ?? '',
+		genre: 'texte'
+	});
+	switch (geste.genre) {
+		case 'RAPPEL':
+			return [date('Le'), texte('Pour')];
+		case 'PROMESSE':
+			return [montant, date('Pour le')];
+		case 'REGLEMENT':
+			return [montant, date('Reçu le')];
+		case 'ECHEANCIER':
+			return [
+				{
+					cle: 'texte',
+					libelle: 'En combien de fois',
+					valeur: geste.texte ?? '3',
+					genre: 'choix',
+					choix: NOMBRES_DE_VERSEMENTS.map((n) => ({ valeur: String(n), libelle: `${n} fois` }))
+				},
+				date('Premier versement le')
+			];
+		case 'NOTE':
+			return [texte('Ce qui est noté')];
+		case 'EMAIL':
+			return [texte('Son adresse')];
+		case 'REMISE_CONSEIL':
+			return [date('Remis le')];
+		default:
+			return [];
+	}
+}
+
+/**
+ * LES FACTURES QU'UN PAIEMENT RÈGLERA, MONTRÉES AVANT QU'IL S'ÉCRIVE — le même
+ * rapprochement que « Virement reçu » sur la fiche (`lettrage.proposer`).
+ */
+function ApercuDuReglement({
+	debiteurId,
+	montant
+}: {
+	readonly debiteurId: string;
+	readonly montant: bigint;
+}) {
+	const proposition = useQuery(api.recouvrement.lettrage.proposer, {
+		debiteurId: debiteurId as Id<'debiteurs'>,
+		montant
+	});
+	if (proposition === undefined)
+		return <ApercuDeGeste lignes={[]} note="Je regarde ses factures…" />;
+	if (proposition.issue === 'UNIQUE') {
+		return (
+			<ApercuDeGeste
+				lignes={(proposition.combinaisons[0]?.references ?? []).map((reference) => ({
+					titre: reference,
+					valeur: 'soldée'
+				}))}
+				note="Ce montant solde exactement ces factures."
+			/>
+		);
+	}
+	if (proposition.issue === 'AUCUNE' && proposition.repartition !== undefined) {
+		const { lignes, nonAffecte } = proposition.repartition;
+		return (
+			<ApercuDeGeste
+				lignes={lignes.map((ligne) => ({
+					titre: ligne.reference,
+					valeur: `${eurosCentimes(ligne.montant)}${ligne.solde ? ' · soldée' : ''}`
+				}))}
+				note={
+					lignes.length === 0
+						? 'Aucune facture de ce client n’attend de paiement.'
+						: nonAffecte > 0n
+							? `Réparti dans l’ordre que prévoit la loi ; ${eurosCentimes(nonAffecte)} restent sans facture à régler.`
+							: 'Réparti dans l’ordre que prévoit la loi.'
+				}
+			/>
+		);
+	}
+	return (
+		<ApercuDeGeste
+			lignes={[]}
+			note="Plusieurs jeux de factures font ce montant : vous choisirez lesquelles sur sa fiche."
+		/>
+	);
 }
 
 /** Les rubriques de la page d'un dossier qu'un écran à ouvrir désigne. */
@@ -277,20 +403,59 @@ export function useGestesDePlume({
 		}
 	}
 
-	async function confirmer(echangeId: Id<'echangesCompagnon'>, rang: number, geste: GesteDuFil) {
+	async function confirmer(
+		echangeId: Id<'echangesCompagnon'>,
+		rang: number,
+		geste: GesteDuFil,
+		ajustement: AjustementDeGeste | null = null
+	): Promise<boolean> {
 		if (geste.genre === 'OUVRIR') {
 			ouvrirEcran(geste);
-			return;
+			return true;
 		}
 		const cle = `${echangeId}-${rang}`;
 		setGesteEnCours(cle);
 		try {
-			await confirmerGeste({ echangeId, rang });
+			await confirmerGeste({ echangeId, rang, ...(ajustement === null ? {} : { ajustement }) });
+			return true;
 		} catch (e) {
 			toast({ title: 'Pas fait', text: messageDeLaPanne(e) });
+			return false;
 		} finally {
 			setGesteEnCours(null);
 		}
+	}
+
+	/** Ce que le geste écrira, montré sur sa carte tant qu'il est proposé. */
+	function apercuDu(geste: GesteDuFil): ReactNode | undefined {
+		if (geste.etat !== 'PROPOSEE') return undefined;
+		if (geste.genre === 'ECHEANCIER' && geste.date !== undefined && geste.montant !== undefined) {
+			const nombre = Number.parseInt(geste.texte ?? '0', 10);
+			if (nombre < 2) return undefined;
+			const calendrier = versements(geste.montant, nombre, geste.date, 1);
+			const montres = calendrier.slice(0, 3);
+			const dernier = calendrier[calendrier.length - 1];
+			return (
+				<ApercuDeGeste
+					lignes={montres.map((versement) => ({
+						titre: `${versement.numero === 1 ? '1er' : `${versement.numero}e`} versement · ${dateCourte(versement.date)}`,
+						valeur: eurosCentimes(versement.montant)
+					}))}
+					{...(calendrier.length > montres.length && dernier !== undefined
+						? {
+								note: `Puis ${calendrier.length - montres.length} autre${calendrier.length - montres.length > 1 ? 's' : ''}, jusqu’au ${dateCourte(dernier.date)}. Hors pénalités.`
+							}
+						: { note: 'Hors pénalités.' })}
+				/>
+			);
+		}
+		if (geste.genre === 'REGLEMENT' && geste.montant !== undefined) {
+			const dossier = dossierDe(geste);
+			return dossier === undefined ? undefined : (
+				<ApercuDuReglement debiteurId={dossier.debiteurId} montant={geste.montant} />
+			);
+		}
+		return undefined;
 	}
 
 	/** Le surtitre d'une carte hors dossier : le client qu'elle touche. */
@@ -318,13 +483,39 @@ export function useGestesDePlume({
 			: `${dernier._id}-${(dernier.gestes ?? []).findIndex((g) => g.etat === 'PROPOSEE')}`;
 	}
 
-	/** Les cartes des gestes d'un tour. */
+	/** Les cartes des gestes d'un tour — et « Tout confirmer » quand il y en a plusieurs. */
 	function cartes(
 		echangeId: Id<'echangesCompagnon'>,
 		gestes: readonly GesteDuFil[],
 		principal: string | null
 	): ReactNode[] {
-		return gestes.map((geste, rang) => {
+		/*
+		  « TOUT CONFIRMER » (Structured, « Accept all ») : quand Plume propose deux
+		  gestes ou plus dans la même réponse, un toucher les fait tous, l'un après
+		  l'autre, tels qu'ils sont écrits. Un écran à ouvrir n'en fait pas partie : il
+		  quitterait la conversation au milieu.
+		*/
+		const enAttente = gestes
+			.map((geste, rang) => ({ geste, rang }))
+			.filter(({ geste }) => geste.etat === 'PROPOSEE' && geste.genre !== 'OUVRIR');
+		const toutConfirmer =
+			enAttente.length < 2 ? null : (
+				<div key={`${echangeId}-tout`} className="flex justify-end">
+					<BoutonSecondaire
+						disabled={gesteEnCours !== null}
+						onClick={() =>
+							void (async () => {
+								for (const { geste, rang } of enAttente) {
+									if (!(await confirmer(echangeId, rang, geste))) break;
+								}
+							})()
+						}
+					>
+						Tout confirmer ({enAttente.length})
+					</BoutonSecondaire>
+				</div>
+			);
+		const lesCartes = gestes.map((geste, rang) => {
 			const description = decrireGeste(geste);
 			const cle = `${echangeId}-${rang}`;
 			const acces = accesDuGeste(geste);
@@ -341,7 +532,12 @@ export function useGestesDePlume({
 					principal={cle === principal}
 					libelleConfirmer={description.confirmer}
 					enCours={gesteEnCours === cle}
-					onConfirmer={() => void confirmer(echangeId, rang, geste)}
+					onConfirmer={(ajustement) => void confirmer(echangeId, rang, geste, ajustement)}
+					champs={champsDu(geste)}
+					{...(() => {
+						const apercu = apercuDu(geste);
+						return apercu === undefined ? {} : { apercu };
+					})()}
 					{...(acces === undefined ? {} : { acces })}
 					{...(geste.genre === 'OUVRIR'
 						? {}
@@ -349,6 +545,7 @@ export function useGestesDePlume({
 				/>
 			);
 		});
+		return toutConfirmer === null ? lesCartes : [...lesCartes, toutConfirmer];
 	}
 
 	return { cartes, principalDe };

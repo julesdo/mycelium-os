@@ -375,6 +375,7 @@ export { PlumeSurLeDossier } from './plume-dossier';
 export { TexteQuiMene } from './texte-qui-mene';
 export {
 	AccueilDePlume,
+	ApercuDeGeste,
 	BulleDuGerant,
 	CarteDeGeste,
 	CarteEtatDuDossier,
@@ -386,6 +387,8 @@ export {
 	ID_DU_SELECTEUR_DE_PLUME,
 	documentDepuisFichier,
 	documentDepuisResume,
+	type AjustementDeGeste,
+	type ChampDeGeste,
 	type DocumentDuFil,
 	type EtapeDeTravail,
 	type LigneDEtatAffichee

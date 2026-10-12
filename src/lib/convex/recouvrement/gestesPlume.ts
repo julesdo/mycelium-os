@@ -4,8 +4,13 @@ import { internal } from '../_generated/api';
 import type { Doc, Id } from '../_generated/dataModel';
 import { authedMutation } from '../functions';
 import { getUserOrg } from '../lib/auth';
-import { depuisCentimes, versEuros } from '../../socle/montants';
-import { dateDuCalendrier, jourEnClair } from '../../verticales/recouvrement/compagnon/gestes';
+import { depuisCentimes, depuisEuros, enCentimes, versEuros } from '../../socle/montants';
+import {
+	NOMBRES_DE_VERSEMENTS,
+	dateDuCalendrier,
+	jourEnClair,
+	type GenreGeste
+} from '../../verticales/recouvrement/compagnon/gestes';
 import { preparerProchaineRelance } from './pilote';
 import { daterLeDecompte } from './decompte';
 import { ouvrirLaPageDuJour } from './paiement';
@@ -77,12 +82,13 @@ async function trancher(
 	rang: number,
 	etat: 'FAITE' | 'ECARTEE',
 	resultat?: string,
-	cible?: string
+	cible?: string,
+	remplacement?: GesteEcrit
 ): Promise<void> {
 	const gestes = (echange.gestes ?? []).map((g, i) =>
 		i === rang
 			? {
-					...g,
+					...(remplacement ?? g),
 					etat,
 					...(resultat === undefined ? {} : { resultat }),
 					...(cible === undefined ? {} : { cible })
@@ -90,6 +96,61 @@ async function trancher(
 			: g
 	);
 	await ctx.db.patch(echange._id, { gestes });
+}
+
+/**
+ * CE QUI SE CORRIGE SUR LA CARTE AVANT DE CONFIRMER (12/10/2026), genre par genre :
+ * le jour, le montant, le texte. Rien d'autre ne se modifie — le genre d'un geste et
+ * sa cible restent ceux que Plume a proposés et que le gérant a lus.
+ */
+const CHAMPS_MODIFIABLES: Partial<Record<GenreGeste, readonly ('date' | 'montant' | 'texte')[]>> = {
+	RAPPEL: ['date', 'texte'],
+	PROMESSE: ['date', 'montant'],
+	ECHEANCIER: ['date', 'texte'],
+	REGLEMENT: ['date', 'montant'],
+	NOTE: ['texte'],
+	EMAIL: ['texte'],
+	REMISE_CONSEIL: ['date']
+};
+
+/**
+ * LE GESTE, CORRIGÉ PAR LE GÉRANT — et relu : une valeur corrigée passe les mêmes
+ * contrôles que celle que Plume avait proposée, puis ceux du geste lui-même.
+ */
+function ajuster(
+	geste: GesteEcrit,
+	ajustement: { date?: string; montant?: string; texte?: string } | undefined
+): GesteEcrit {
+	if (ajustement === undefined) return geste;
+	const permis = CHAMPS_MODIFIABLES[geste.genre] ?? [];
+	let ajuste: GesteEcrit = geste;
+	if (ajustement.date !== undefined && permis.includes('date')) {
+		const date = ajustement.date.trim();
+		if (!dateDuCalendrier(date)) throw new ConvexError(`« ${date} » n’est pas une date.`);
+		ajuste = { ...ajuste, date };
+	}
+	if (ajustement.montant !== undefined && permis.includes('montant')) {
+		let montant: bigint;
+		try {
+			montant = enCentimes(depuisEuros(ajustement.montant));
+		} catch {
+			throw new ConvexError(`« ${ajustement.montant} » n’est pas un montant en euros.`);
+		}
+		if (montant <= 0n) throw new ConvexError('Le montant doit être supérieur à zéro.');
+		ajuste = { ...ajuste, montant };
+	}
+	if (ajustement.texte !== undefined && permis.includes('texte')) {
+		const texte = ajustement.texte.trim();
+		if (texte === '') throw new ConvexError('Ce champ ne peut pas rester vide.');
+		if (
+			geste.genre === 'ECHEANCIER' &&
+			!(NOMBRES_DE_VERSEMENTS as readonly number[]).includes(Number.parseInt(texte, 10))
+		) {
+			throw new ConvexError('Choisissez un nombre de versements entre 2 et 12.');
+		}
+		ajuste = { ...ajuste, texte: texte.slice(0, 1000) };
+	}
+	return ajuste;
 }
 
 /** Ce que le geste fait, et la phrase qui le dit une fois fait. */
@@ -259,7 +320,9 @@ async function faireLeGeste(
 			if ('refus' in date) throw new ConvexError(date.refus);
 			const decompte = date.decompte;
 			const remisLe =
-				geste.date !== undefined && dateDuCalendrier(geste.date) ? geste.date : aujourdHui;
+				geste.date !== undefined && dateDuCalendrier(geste.date) && geste.date <= aujourdHui
+					? geste.date
+					: aujourdHui;
 			await declarerLaRemise(ctx, organizationId, {
 				decompteId: decompte._id,
 				remisLe,
@@ -340,13 +403,34 @@ async function faireLeGeste(
  * (`ConvexError`), et la carte reste là, avec « Non merci ».
  */
 export const confirmer = authedMutation({
-	args: { echangeId: v.id('echangesCompagnon'), rang: v.number() },
+	args: {
+		echangeId: v.id('echangesCompagnon'),
+		rang: v.number(),
+		/** Ce que le gérant a corrigé sur la carte avant de confirmer (12/10/2026). */
+		ajustement: v.optional(
+			v.object({
+				date: v.optional(v.string()),
+				montant: v.optional(v.string()),
+				texte: v.optional(v.string())
+			})
+		)
+	},
 	returns: v.string(),
-	handler: async (ctx, { echangeId, rang }): Promise<string> => {
+	handler: async (ctx, { echangeId, rang, ajustement }): Promise<string> => {
 		const { organizationId, user } = await getUserOrg(ctx);
-		const { echange, geste, creance } = await leGeste(ctx, organizationId, echangeId, rang);
+		const lu = await leGeste(ctx, organizationId, echangeId, rang);
+		const { echange, creance } = lu;
+		const geste = ajuster(lu.geste, ajustement);
 		const { resultat, cible } = await faire(ctx, organizationId, user._id, geste, creance);
-		await trancher(ctx, echange, rang, 'FAITE', resultat, cible);
+		await trancher(
+			ctx,
+			echange,
+			rang,
+			'FAITE',
+			resultat,
+			cible,
+			geste === lu.geste ? undefined : geste
+		);
 		if (geste.genre !== 'OUVRIR' && creance !== null) {
 			await ctx.db.insert('journal', {
 				organizationId,

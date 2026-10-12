@@ -6,7 +6,7 @@ import {
 	type KeyboardEvent,
 	type ReactNode
 } from 'react';
-import { Button, Spinner, Textarea } from '@cladd-ui/react';
+import { Button, Input, Select, Spinner, Textarea } from '@cladd-ui/react';
 import { ArrowUpIcon, CheckIcon, ChevronRightIcon, PlusIcon, XIcon } from 'lucide-react';
 import { cn } from './cn';
 import type { PhraseAffichee } from './conversation';
@@ -571,6 +571,64 @@ function PieceDuComposeur({
  * la carte le dit, et elle reste dans le fil : c'est la trace de ce qui a été
  * décidé, et par qui.
  */
+/**
+ * UN CHAMP QU'ON CORRIGE AVANT DE CONFIRMER (12/10/2026, sur Structured et Me+ :
+ * la proposition se modifie sur place, sans tout redire à Plume). Le serveur relit
+ * la valeur corrigée exactement comme celle que Plume avait proposée.
+ */
+export interface ChampDeGeste {
+	readonly cle: 'date' | 'montant' | 'texte';
+	readonly libelle: string;
+	readonly valeur: string;
+	readonly genre: 'date' | 'montant' | 'texte' | 'choix';
+	/** Pour un choix : les valeurs permises, et leur libellé. */
+	readonly choix?: readonly { readonly valeur: string; readonly libelle: string }[];
+}
+
+export type AjustementDeGeste = Partial<Record<ChampDeGeste['cle'], string>>;
+
+/**
+ * CE QUE LE GESTE ÉCRIRA, AVANT QU'IL L'ÉCRIVE — quelques lignes dans la carte : les
+ * versements d'un échéancier, les factures qu'un paiement règle.
+ */
+export function ApercuDeGeste({
+	lignes,
+	note
+}: {
+	readonly lignes: readonly { readonly titre: string; readonly valeur?: string }[];
+	readonly note?: string;
+}) {
+	if (lignes.length === 0 && note === undefined) return null;
+	return (
+		<div className="flex flex-col rounded-cladd-lg border border-cladd-outline">
+			{lignes.map((ligne, rang) => (
+				<div
+					key={`${rang}-${ligne.titre}`}
+					className={cn(
+						'flex min-h-9 items-center justify-between gap-3 px-3 py-1.5 text-cladd-2xs',
+						rang > 0 && 'border-t border-cladd-outline'
+					)}
+				>
+					<span className="min-w-0 text-cladd-fg-soft">{ligne.titre}</span>
+					{ligne.valeur === undefined ? null : (
+						<span className="shrink-0 font-medium tabular-nums">{ligne.valeur}</span>
+					)}
+				</div>
+			))}
+			{note === undefined ? null : (
+				<p
+					className={cn(
+						'px-3 py-2 text-cladd-3xs leading-snug text-cladd-fg-soft',
+						lignes.length > 0 && 'border-t border-cladd-outline'
+					)}
+				>
+					{note}
+				</p>
+			)}
+		</div>
+	);
+}
+
 export function CarteDeGeste({
 	icone,
 	titre,
@@ -583,7 +641,9 @@ export function CarteDeGeste({
 	onEcarter,
 	libelleConfirmer = 'Confirmer',
 	enCours = false,
-	acces
+	acces,
+	apercu,
+	champs = []
 }: {
 	readonly icone: ReactNode;
 	readonly titre: string;
@@ -598,7 +658,8 @@ export function CarteDeGeste({
 	readonly resultat?: string;
 	/** La plus récente proposition en attente porte le bouton plein ; les autres, non. */
 	readonly principal?: boolean;
-	readonly onConfirmer?: () => void;
+	/** Confirmer, avec ce que le gérant a corrigé — ou rien, s'il n'a rien touché. */
+	readonly onConfirmer?: (ajustement: AjustementDeGeste | null) => void;
 	readonly onEcarter?: () => void;
 	readonly libelleConfirmer?: string;
 	readonly enCours?: boolean;
@@ -608,7 +669,13 @@ export function CarteDeGeste({
 	 * fait chercher ce qu'elle vient de montrer (08/10/2026).
 	 */
 	readonly acces?: ReactNode;
+	/** Ce que le geste écrira, montré tant qu'il est proposé (`ApercuDeGeste`). */
+	readonly apercu?: ReactNode;
+	/** Ce qui se corrige avant de confirmer. Vide : la carte n'offre pas « Modifier ». */
+	readonly champs?: readonly ChampDeGeste[];
 }) {
+	const [modification, setModification] = useState<AjustementDeGeste | null>(null);
+	const proposee = etat === 'PROPOSEE' && onConfirmer !== undefined;
 	return (
 		<div
 			className={cn(
@@ -620,7 +687,7 @@ export function CarteDeGeste({
 				<span className="verre flex size-9 shrink-0 items-center justify-center rounded-full text-cladd-fg [&>svg]:size-[18px]">
 					{etat === 'FAITE' ? <CheckIcon strokeWidth={2.5} /> : icone}
 				</span>
-				<div className="flex min-w-0 flex-col">
+				<div className="flex min-w-0 flex-1 flex-col">
 					{contexte === undefined ? null : (
 						<p className="truncate text-cladd-3xs font-medium text-cladd-fg-soft">{contexte}</p>
 					)}
@@ -638,11 +705,65 @@ export function CarteDeGeste({
 						</p>
 					) : null}
 				</div>
+				{proposee && champs.length > 0 && modification === null ? (
+					<button
+						type="button"
+						onClick={() =>
+							setModification(Object.fromEntries(champs.map((c) => [c.cle, c.valeur])))
+						}
+						className="-mt-1 -mr-1 min-h-9 shrink-0 rounded-full px-2.5 text-cladd-2xs font-medium text-cladd-primary transition active:scale-[0.97]"
+					>
+						Modifier
+					</button>
+				) : null}
 			</div>
+			{proposee && modification !== null ? (
+				<div className="flex flex-col gap-2">
+					{champs.map((champ) => {
+						const valeur = modification[champ.cle] ?? champ.valeur;
+						// Un libellé relié à son champ ; le menu du kit porte déjà son titre.
+						const Enveloppe = champ.genre === 'choix' ? 'div' : 'label';
+						return (
+							<Enveloppe key={champ.cle} className="flex flex-col gap-1">
+								<span className="text-cladd-3xs font-medium text-cladd-fg-soft">
+									{champ.libelle}
+								</span>
+								{champ.genre === 'choix' ? (
+									<Select
+										className="w-full"
+										surface="cut"
+										size="md"
+										title={champ.libelle}
+										options={[...(champ.choix ?? [])]}
+										value={valeur}
+										getOptionValue={(option) => option.valeur}
+										onChange={(choisi) =>
+											setModification({ ...modification, [champ.cle]: choisi as string })
+										}
+										renderOption={({ value }) => value.libelle}
+										keyboardHints={false}
+									>
+										{champ.choix?.find((option) => option.valeur === valeur)?.libelle ?? valeur}
+									</Select>
+								) : (
+									<Input
+										size="md"
+										type={champ.genre === 'date' ? 'date' : 'text'}
+										{...(champ.genre === 'montant' ? { inputMode: 'decimal' as const } : {})}
+										value={valeur}
+										onChange={(saisie) => setModification({ ...modification, [champ.cle]: saisie })}
+									/>
+								)}
+							</Enveloppe>
+						);
+					})}
+				</div>
+			) : null}
+			{proposee && apercu !== undefined ? apercu : null}
 			{etat === 'FAITE' && acces !== undefined ? (
 				<div className="flex flex-wrap items-center gap-2 pl-12">{acces}</div>
 			) : null}
-			{etat === 'PROPOSEE' && onConfirmer !== undefined ? (
+			{proposee ? (
 				<div className="flex items-center gap-2">
 					<Button
 						size="md"
@@ -655,11 +776,23 @@ export function CarteDeGeste({
 							principal ? 'pilule-principale' : 'pilule-secondaire'
 						)}
 						loading={enCours}
-						onClick={onConfirmer}
+						onClick={() => onConfirmer(modification)}
 					>
 						{libelleConfirmer}
 					</Button>
-					{onEcarter === undefined ? null : (
+					{modification !== null ? (
+						<Button
+							size="md"
+							rounded
+							variant="transparent"
+							outline={false}
+							hoverable={false}
+							className="px-3 font-medium text-cladd-fg-soft"
+							onClick={() => setModification(null)}
+						>
+							Annuler
+						</Button>
+					) : onEcarter === undefined ? null : (
 						<Button
 							size="md"
 							rounded

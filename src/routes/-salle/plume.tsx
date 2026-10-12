@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { AlarmClockIcon, HandCoinsIcon, SendIcon } from 'lucide-react';
+import { AlarmClockIcon, CalendarRangeIcon, HandCoinsIcon, SendIcon } from 'lucide-react';
 import {
+	ApercuDeGeste,
 	AvatarPlume,
+	BoutonSecondaire,
 	CarteDeGeste,
 	CarteEtatDuDossier,
 	CarteLien,
@@ -173,11 +175,62 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 												titre="Rappel mercredi 21 octobre"
 												detail="Vérifier le virement promis. Ce jour-là, le dossier remonte dans Aujourd’hui."
 												etat="PROPOSEE"
-												principal
 												libelleConfirmer="Poser le rappel"
 												onConfirmer={() => undefined}
 												onEcarter={() => undefined}
+												champs={[
+													{ cle: 'date', libelle: 'Le', valeur: '2026-10-21', genre: 'date' },
+													{
+														cle: 'texte',
+														libelle: 'Pour',
+														valeur: 'Vérifier le virement promis',
+														genre: 'texte'
+													}
+												]}
 											/>
+											<CarteDeGeste
+												icone={<CalendarRangeIcon />}
+												titre="Paiement en 3 fois, à partir du mardi 20 octobre"
+												detail="3 versements mensuels d’environ 2 000,00 €, hors pénalités. Tant qu’ils arrivent, je ne le relance pas."
+												etat="PROPOSEE"
+												principal
+												libelleConfirmer="Convenir"
+												onConfirmer={() => undefined}
+												onEcarter={() => undefined}
+												champs={[
+													{
+														cle: 'texte',
+														libelle: 'En combien de fois',
+														valeur: '3',
+														genre: 'choix',
+														choix: [2, 3, 4, 6].map((n) => ({
+															valeur: String(n),
+															libelle: `${n} fois`
+														}))
+													},
+													{
+														cle: 'date',
+														libelle: 'Premier versement le',
+														valeur: '2026-10-20',
+														genre: 'date'
+													}
+												]}
+												apercu={
+													<ApercuDeGeste
+														lignes={[
+															{ titre: '1er versement · 20 oct.', valeur: '2 000,00 €' },
+															{ titre: '2e versement · 20 nov.', valeur: '2 000,00 €' },
+															{ titre: '3e versement · 20 déc.', valeur: '2 000,00 €' }
+														]}
+														note="Hors pénalités."
+													/>
+												}
+											/>
+											<div className="flex justify-end">
+												<BoutonSecondaire onClick={() => undefined}>
+													Tout confirmer (2)
+												</BoutonSecondaire>
+											</div>
 										</div>
 									)
 								}
