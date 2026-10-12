@@ -53,6 +53,7 @@ export interface Verrou {
 	/** Ce que lever ce verrou rend possible. Un constat, jamais une consigne. */
 	readonly debloque: string;
 	readonly vers: LinkProps['to'];
+	readonly recherche?: LinkProps['search'];
 }
 
 /**
@@ -96,10 +97,11 @@ export function ceQuiManque({
 			 * `/app` : un verrou qui mène à la page qu'on regarde est un bouton
 			 * mort, et il se lit comme une panne.
 			 *
-			 * ⚠️ T16 SUPPRIME `/app/import-factures`. Ce lien doit être devenu un
-			 * geste CE JOUR-LÀ, pas repointé ailleurs.
+			 * ⚠️ C'EST DEVENU UN GESTE LE 12/10/2026 : le lien ouvre le parcours de
+			 * dépôt, en plein écran, au coffre (`?deposer=1`).
 			 */
-			vers: '/app/import-factures'
+			vers: '/app/coffre',
+			recherche: { deposer: 1 }
 		});
 	}
 
@@ -258,6 +260,7 @@ export function CeQuiManque({
 						key={verrou.cle}
 						as={Lien}
 						to={verrou.vers}
+						search={verrou.recherche as never}
 						icon={
 							/* Un rond VIDE : l'étape n'est pas franchie. Le rond plein et le
 							   `CheckIcon` sont réservés à ce qui est fait — et ce qui est fait

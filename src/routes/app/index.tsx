@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
 import { useQuery } from '../../app/donnees';
 import { PiloteDuJour } from '../../app/pilote-du-jour';
+import { useDepotAuCoffre } from '../../app/use-coffre';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import {
 	Facultatif,
+	ParcoursDepot,
 	aujourdHuiISO,
+	cleDeRef,
 	PileDeConnexions,
 	ceQuiManque,
 	travauxDuVeilleur,
@@ -240,11 +243,10 @@ function File() {
 	const revelation = useQuery(api.recouvrement.revelation.revelation, { arreteAu: aujourdHui });
 	const battement = useQuery(api.recouvrement.battement.dernierBattement, {});
 	/**
-	 * ⚠️ `limite: 5` BORNE LA LECTURE, et c'est la même que celle du veilleur, donc
-	 * Convex la sert une fois. Au-delà de cinq dépôts simultanément en machine, la
-	 * sixième rangée n'apprend plus rien.
+	 * LE COFFRE, EN UNE LECTURE ÉTROITE : combien de documents, et ceux qui sont
+	 * encore en lecture (le veilleur les montre). Jamais le coffre entier.
 	 */
-	const depots = useQuery(api.recouvrement.depotMutations.listerImports, { limite: 5 });
+	const coffre = useQuery(api.coffre.coffre.apercuDuCoffre, {});
 	/** Le compte de la cloche : ce que la boîte de réception n'a pas encore montré. */
 	const nonLues = useQuery(api.notifications.getUnreadCount, {});
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
@@ -336,8 +338,14 @@ function File() {
 	);
 	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
 
-	const genererUrl = useMutation(api.recouvrement.depotMutations.genererUrlDepot);
-	const enregistrer = useMutation(api.recouvrement.depotMutations.enregistrerFichier);
+	/**
+	 * LE PARCOURS DE DÉPÔT, le même que dans un dossier ou au coffre. Il vit ici
+	 * parce que cet écran est la porte d'entrée des factures ; il s'ouvre en plein
+	 * écran et ce qu'il a donné se relit dans le coffre, jamais en carte ici.
+	 */
+	const depot = useDepotAuCoffre({ genre: 'FACTURES' });
+	const [depotOuvert, setDepotOuvert] = useState(false);
+	const navigate = useNavigate();
 
 	// ── LES PROPOSITIONS, ET LE DÉLAI DE LECTURE QU'ELLES EXIGENT ────────────
 
@@ -560,51 +568,6 @@ function File() {
 			pli: {
 				libelle: PLI_PAR_TYPE[evenement.type] ?? { un: 'rangée', plusieurs: 'rangées' },
 				rienATrancher: false
-			}
-		};
-	});
-
-	/**
-	 * LES DÉPÔTS, EN RANGÉES DATÉES — jamais un bandeau refermable.
-	 *
-	 * ⚠️ `ui/bilan-import.tsx` PORTE LA RÈGLE MOT POUR MOT : « un import qui
-	 * annonce 198 factures sans mentionner les deux lignes écartées ment par
-	 * omission, et l'omission porte sur l'argent qu'on ne réclamera pas ». Le pli
-	 * ne les mange que le jour où RIEN n'a été écarté.
-	 */
-	const rangeesDeDepot: RangeeDeLaFile[] = (depots ?? []).map((depot) => {
-		const ecartees =
-			depot.bilan === undefined
-				? 0
-				: depot.bilan.ignoreesTotal + depot.bilan.horsPerimetre + depot.bilan.reglementsOrphelins;
-		const termine = depot.statut === 'TERMINE';
-
-		return {
-			genre: 'DEPOT' as const,
-			id: depot._id as string,
-			debiteur: depot.filename,
-			depot: {
-				id: depot._id as string,
-				filename: depot.filename,
-				statut:
-					depot.statut === 'TERMINE'
-						? 'TERMINE'
-						: depot.statut === 'ECHOUE'
-							? 'ECHOUE'
-							: 'EN_COURS',
-				...(depot.etape === undefined ? {} : { etape: depot.etape }),
-				...(depot.erreur === undefined ? {} : { erreur: depot.erreur }),
-				...(depot.bilan === undefined ? {} : { bilan: depot.bilan }),
-				deposeLe: depot.deposeLe
-			},
-			pli: {
-				libelle: termine
-					? { un: 'dépôt terminé', plusieurs: 'dépôts terminés' }
-					: { un: 'dépôt en cours de lecture', plusieurs: 'dépôts en cours de lecture' },
-				// Un dépôt qui travaille se REGARDE : il change sous les yeux, et le
-				// replier reviendrait à cacher le seul traitement visible du produit.
-				rienATrancher: termine,
-				lignesEcartees: ecartees
 			}
 		};
 	});
@@ -903,7 +866,7 @@ function File() {
 					}
 				];
 
-	const rangees = [...rangeesAvecLitige, ...rangeesDeLettrage, ...rangeesDeDepot];
+	const rangees = [...rangeesAvecLitige, ...rangeesDeLettrage];
 
 	// ── LA TÊTE, ET LE SECOND NOMBRE ─────────────────────────────────────────
 
@@ -913,48 +876,13 @@ function File() {
 		battement,
 		// `undefined` est le CHARGEMENT, pas le vide. Traiter l'un pour l'autre
 		// ferait clignoter une rangée « en attente de lecture » à chaque ouverture.
-		depotsEnCours: (depots ?? [])
-			.filter((depot) => depot.statut === 'EN_ATTENTE' || depot.statut === 'LECTURE')
-			.map((depot) => ({
-				id: depot._id,
-				filename: depot.filename,
-				...(depot.etape === undefined ? {} : { etape: depot.etape })
-			})),
+		depotsEnCours: (coffre?.enCours ?? []).map((enCours) => ({
+			id: enCours.id,
+			filename: enCours.nom,
+			...(enCours.etape === undefined ? {} : { etape: enCours.etape })
+		})),
 		aujourdHui
 	});
-
-	// ── LE DÉPÔT DE FICHIERS ─────────────────────────────────────────────────
-
-	/**
-	 * ⚠️ LE DÉPÔT VIT ICI PARCE QUE CET ÉCRAN EST LA PORTE D'ENTRÉE DES FACTURES.
-	 * Sans factures, le produit ne mesure rien : tout l'écran attend ce geste.
-	 *
-	 * ⚠️ ET ON NE NAVIGUE PAS VERS LE SUIVI. La rangée datée du dépôt apparaît
-	 * dès que la lecture commence et change d'étape sous les yeux (règle d'écran
-	 * n° 2) : quitter l'écran pour la regarder serait revenir au défaut qu'on
-	 * vient de supprimer.
-	 */
-	async function deposer(fichiers: File[]) {
-		for (const fichier of fichiers) {
-			const url = await genererUrl({});
-			const reponse = await fetch(url, {
-				method: 'POST',
-				headers: { 'Content-Type': fichier.type || 'application/octet-stream' },
-				body: fichier
-			});
-			if (!reponse.ok) throw new Error(`L’envoi de ${fichier.name} a échoué.`);
-
-			const { storageId } = (await reponse.json()) as { storageId: Id<'_storage'> };
-			await enregistrer({
-				storageId,
-				filename: fichier.name,
-				mimeType: fichier.type || 'application/octet-stream',
-				// Un export comptable se reconnaît à son extension ; le reste est une
-				// facture déposée. Plus rien à choisir avant l'envoi.
-				mode: /\.(csv|txt|tsv|xml)$/i.test(fichier.name) ? 'EXPORT_COMPTABLE' : 'FACTURE_DEPOSEE'
-			});
-		}
-	}
 
 	const valeur: FileAffichee = {
 		aujourdHui,
@@ -1022,8 +950,16 @@ function File() {
 						nombreFactures: revelation.nombreFactures,
 						debiteursSansSiren: debiteurs.filter((d) => d.siren === undefined).length
 					}),
-		onFichiers: (fichiers) => void deposer(fichiers),
-		accepteFichiers: '.csv,.txt,.pdf,image/*',
+		onDeposer: () => setDepotOuvert(true),
+		...(coffre === undefined
+			? {}
+			: {
+					coffre: {
+						total: coffre.total,
+						auMoins: coffre.auMoins,
+						enLecture: coffre.enCours.length
+					}
+				}),
 		/*
 		  LES QUATRE SURFACES DE LA RANGÉE DU HAUT. Chacune est isolée : sans
 		  session — au chargement, après une expiration, dans la salle d'exposition
@@ -1061,5 +997,24 @@ function File() {
 			) : undefined
 	};
 
-	return <EcranFile donnees={{ etat: 'pret', valeur }} />;
+	return (
+		<>
+			<EcranFile donnees={{ etat: 'pret', valeur }} />
+			<ParcoursDepot
+				ouvert={depotOuvert}
+				onFermer={() => setDepotOuvert(false)}
+				destination={{ titre: 'vos factures', precision: 'lues dès leur arrivée' }}
+				genre="FACTURES"
+				depot={depot}
+				onVoir={(cible) => {
+					setDepotOuvert(false);
+					void navigate({ to: '/app/coffre', search: { document: cleDeRef(cible) } });
+				}}
+				onVoirLeCoffre={() => {
+					setDepotOuvert(false);
+					void navigate({ to: '/app/coffre' });
+				}}
+			/>
+		</>
+	);
 }

@@ -1,13 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
-import { Button, Input, Popup, SearchField, Spinner } from '@cladd-ui/react';
-import {
-	ChevronLeftIcon,
-	GlobeIcon,
-	MapPinIcon,
-	PencilLineIcon,
-	UserRoundIcon,
-	XIcon
-} from 'lucide-react';
+import { Button, Input, SearchField, Spinner } from '@cladd-ui/react';
+import { GlobeIcon, MapPinIcon, PencilLineIcon, UserRoundIcon, XIcon } from 'lucide-react';
 import { BoutonPrincipal, BoutonSecondaire, BoutonTexte } from './bouton';
 import { cn } from './cn';
 import { EnTeteDeGroupe } from './en-tete-groupe';
@@ -19,6 +12,13 @@ import {
 	type FicheIntervenant
 } from './fiches-professionnels';
 import { useDeuxVolets } from './maitre-detail';
+import {
+	JaugeDEtapes,
+	BarreDePleinEcran,
+	ColonneDePleinEcran,
+	PiedDePleinEcran,
+	PleinEcran
+} from './plein-ecran';
 import {
 	AvatarProfessionnel,
 	CarteProfessionnel,
@@ -234,49 +234,6 @@ function resumeDesChoisis(choisis: readonly ProPropose[]): string {
  * LES PIÈCES DE L'ÉCRAN
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/** Le rond de l'en-tête : la croix, ou le retour. */
-function BoutonRond({
-	libelle,
-	onClick,
-	children
-}: {
-	readonly libelle: string;
-	readonly onClick: () => void;
-	readonly children: ReactNode;
-}) {
-	return (
-		<Button
-			variant="transparent"
-			outline={false}
-			rounded
-			square
-			size="md"
-			aria-label={libelle}
-			className="verre-carte verre-bouton shrink-0"
-			onClick={onClick}
-		>
-			{children}
-		</Button>
-	);
-}
-
-/** La barre des étapes : un trait par étape, plein pour celles qu'on a passées. */
-function BarreDEtapes({ total, courante }: { readonly total: number; readonly courante: number }) {
-	return (
-		<div className="flex gap-1" aria-hidden>
-			{Array.from({ length: total }, (_, i) => (
-				<span
-					key={i}
-					className={cn(
-						'h-1 flex-1 rounded-full transition-colors duration-300',
-						i <= courante ? 'bg-cladd-primary' : 'bg-cladd-fg/10'
-					)}
-				/>
-			))}
-		</div>
-	);
-}
-
 /** Le lieu de la recherche : une pastille par endroit, une seule allumée. */
 function Portees({
 	portees,
@@ -305,9 +262,7 @@ function Portees({
 						onClick={() => onChoisir(portee.cle)}
 						className={cn(
 							'flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-cladd-2xs font-medium whitespace-nowrap transition-colors',
-							allumee
-								? 'bg-cladd-fg text-cladd-bg'
-								: 'verre-carte verre-bouton text-cladd-fg-soft'
+							allumee ? 'bg-cladd-fg text-cladd-bg' : 'verre-carte verre-bouton text-cladd-fg-soft'
 						)}
 					>
 						{portee.cle === 'FRANCE' ? (
@@ -498,23 +453,9 @@ export function ParcoursProfessionnels(props: ProprietesParcours) {
 		setVu({ ouvert: props.ouvert, ouvertures: vu.ouvertures + (props.ouvert ? 1 : 0) });
 	}
 	return (
-		<Popup
-			open={props.ouvert}
-			onOpenChange={(o) => {
-				if (!o) props.onFermer();
-			}}
-			aria-label={props.titre}
-			header={false}
-			closeButton={false}
-			// ⚠️ TIRÉE SUR TOUT L'ÉCRAN : une page qu'on ferme, pas une carte centrée
-			// dont la liste défile dans un cadre. Le fond est celui de l'application, et
-			// les marges de défilement gardent ce qu'on amène à l'écran (au clavier, au
-			// toucher) hors des deux barres collantes.
-			wrapClassName="parcours-plein-ecran h-full max-h-none scroll-pt-48 scroll-pb-40 pt-0! pb-0! bg-cladd-bg"
-			contentClassName="max-w-none min-h-full justify-start gap-0"
-		>
+		<PleinEcran ouvert={props.ouvert} onFermer={props.onFermer} libelle={props.titre}>
 			{vu.ouvertures === 0 ? null : <Parcours key={vu.ouvertures} {...props} />}
-		</Popup>
+		</PleinEcran>
 	);
 }
 
@@ -611,28 +552,15 @@ function Parcours({
 	};
 
 	const enTete = (
-		<div className="verre-barre-haute sticky top-0 z-20 -mx-cladd-2xs flex flex-col gap-cladd-3xs px-cladd-2xs pt-barre-app pb-cladd-3xs">
-			<div className="flex items-center gap-cladd-3xs">
-				{etape > 0 ? (
-					<BoutonRond libelle="Étape précédente" onClick={() => allerA(etape - 1)}>
-						<ChevronLeftIcon />
-					</BoutonRond>
-				) : (
-					<span className="size-9 shrink-0" aria-hidden />
-				)}
-				<div className="flex min-w-0 flex-1 flex-col items-center text-center">
-					<span className="max-w-full truncate text-cladd-xs leading-tight font-semibold">
-						{titre}
-					</span>
-					<span className="text-cladd-3xs text-cladd-fg-soft">
-						Étape {etape + 1} sur {total} · {surLeResume ? 'Résumé' : NOM_PROFESSION[profession]}
-					</span>
-				</div>
-				<BoutonRond libelle="Fermer" onClick={onFermer}>
-					<XIcon />
-				</BoutonRond>
-			</div>
-			<BarreDEtapes total={total} courante={etape} />
+		<BarreDePleinEcran
+			titre={titre}
+			sousTitre={`Étape ${etape + 1} sur ${total} · ${surLeResume ? 'Résumé' : NOM_PROFESSION[profession]}`}
+			{...(etape > 0
+				? { onRetour: () => allerA(etape - 1), libelleRetour: 'Étape précédente' }
+				: {})}
+			onFermer={onFermer}
+		>
+			<JaugeDEtapes total={total} courante={etape} />
 			{profession === undefined ? null : (
 				<>
 					<SearchField
@@ -657,15 +585,12 @@ function Parcours({
 					/>
 				</>
 			)}
-		</div>
+		</BarreDePleinEcran>
 	);
 
 	/** Le bas collant : les choisis, et le seul bouton plein de l'écran. */
 	const pied = (
-		<div
-			className="verre-dense sticky bottom-0 z-20 -mx-cladd-2xs mt-auto flex flex-col gap-cladd-3xs px-cladd-2xs pt-cladd-3xs"
-			style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
-		>
+		<PiedDePleinEcran>
 			{annuaire.erreur === null ? null : (
 				<p role="alert" className="text-cladd-2xs leading-relaxed">
 					{annuaire.erreur}
@@ -711,7 +636,7 @@ function Parcours({
 					Continuer
 				</BoutonPrincipal>
 			)}
-		</div>
+		</PiedDePleinEcran>
 	);
 
 	const fiche =
@@ -729,10 +654,7 @@ function Parcours({
 		);
 
 	return (
-		<div
-			ref={page}
-			className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-cladd-2xs lg:max-w-5xl"
-		>
+		<ColonneDePleinEcran large refPage={page}>
 			{enTete}
 			<div className="flex flex-1 gap-cladd-sm pt-cladd-2xs">
 				<div className="flex min-w-0 flex-1 flex-col gap-cladd-xs pb-cladd-sm">
@@ -798,32 +720,22 @@ function Parcours({
 			{pied}
 
 			{deuxVolets ? null : (
-				<Popup
-					open={ouverteSur !== null}
-					onOpenChange={(o) => {
-						if (!o) setOuverteSur(null);
-					}}
-					aria-label={ouverteSur?.pro.nom ?? 'Fiche'}
-					header={false}
-					closeButton={false}
-					wrapClassName="parcours-plein-ecran h-full max-h-none scroll-pt-48 scroll-pb-40 pt-0! pb-0! bg-cladd-bg"
-					contentClassName="max-w-none min-h-full justify-start gap-0"
+				<PleinEcran
+					ouvert={ouverteSur !== null}
+					onFermer={() => setOuverteSur(null)}
+					libelle={ouverteSur?.pro.nom ?? 'Fiche'}
 				>
-					<div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-cladd-2xs">
-						<div className="verre-barre-haute sticky top-0 z-20 -mx-cladd-2xs flex items-center gap-cladd-3xs px-cladd-2xs pt-barre-app pb-cladd-3xs">
-							<BoutonRond libelle="Revenir à la liste" onClick={() => setOuverteSur(null)}>
-								<ChevronLeftIcon />
-							</BoutonRond>
-							<span className="min-w-0 flex-1 truncate text-center text-cladd-xs font-semibold">
-								{ouverteSur?.pro.nom}
-							</span>
-							<span className="size-9 shrink-0" aria-hidden />
-						</div>
+					<ColonneDePleinEcran>
+						<BarreDePleinEcran
+							titre={ouverteSur?.pro.nom ?? ''}
+							onRetour={() => setOuverteSur(null)}
+							libelleRetour="Revenir à la liste"
+						/>
 						<div className="flex-1 pt-cladd-2xs pb-cladd-sm">{fiche}</div>
-					</div>
-				</Popup>
+					</ColonneDePleinEcran>
+				</PleinEcran>
 			)}
-		</div>
+		</ColonneDePleinEcran>
 	);
 }
 

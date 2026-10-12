@@ -5,6 +5,7 @@ import { resend } from './emails/resend';
 import { webhookHandler as paddleWebhookHandler } from './paddle';
 import { retourQonto, webhookQonto } from './connexions/qonto';
 import { webhookChift } from './connexions/chift';
+import { ouvrirDocument } from './coffre/ouverture';
 
 const http = httpRouter();
 
@@ -35,5 +36,9 @@ http.route({ path: '/qonto/webhook', method: 'POST', handler: webhookQonto });
 // Webhooks Chift (logiciel branché, modifié, retiré), signés en HMAC-SHA256 avec
 // CHIFT_SECRET_WEBHOOK. Déclarés une fois : `npx convex run connexions/chift:declarerWebhooks`.
 http.route({ path: '/chift/webhook', method: 'POST', handler: webhookChift });
+
+// Le coffre : un document ne sort que par ici, contre un jeton d'une minute
+// émis par `coffre/coffre.ts:ouvrirAuCoffre`. Voir `coffre/ouverture.ts`.
+http.route({ path: '/coffre/ouvrir', method: 'POST', handler: ouvrirDocument });
 
 export default http;

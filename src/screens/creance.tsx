@@ -334,9 +334,11 @@ export interface CreanceOuverte {
 	// ── 6. Les pièces ───────────────────────────────────────────────────────
 	readonly pieces: readonly PieceAffichee[];
 	readonly optionsTypePiece: readonly OptionTypePiece[];
-	readonly onDeposer: (fichiers: File[]) => void;
+	/** Ouvre le parcours de dépôt au coffre, le même partout. */
+	readonly onAjouterPieces: () => void;
+	/** Ouvre une pièce en plein écran dans la visionneuse du coffre. */
+	readonly onOuvrirPiece: (pieceId: string) => void;
 	readonly onClasser: (pieceId: string, type: string) => void;
-	readonly onRetirer: (pieceId: string) => void;
 
 	// ── 7. Les faits consignés et la voie ───────────────────────────────────
 	/** Ce qui court depuis l'engagement, ou `null`. Vient de `suiviDeLaCreance`. */
@@ -1419,7 +1421,8 @@ function ChiffresDeLaLoi({ fiches }: { fiches: readonly FicheParametre[] }) {
 }
 
 /**
- * DOCUMENTS — le dépôt, le classement, le retrait, et ce qu'ils établissent.
+ * DOCUMENTS — le dépôt au coffre, le classement, la relecture, et ce qu'ils
+ * établissent.
  *
  * ⚠️ « SOLIDITÉ » EST ENTRÉE ICI. C'était une rangée sœur, « 1 sur 4 », qui
  * comptait… les documents. Deux rangées pour la même matière, dont l'une portait
@@ -1433,16 +1436,16 @@ function RangeePieces({ creance }: { creance: CreanceOuverte }) {
 			cle="pieces"
 			famille="PAPIERS"
 			titre="Documents"
-			glose="Déposés ici, lus et classés tout seuls."
+			glose="Chiffrés au coffre, lus et classés tout seuls."
 			valeur={`${creance.pieces.length}`}
 		>
 			<Pieces
 				pieces={creance.pieces}
 				optionsType={creance.optionsTypePiece}
 				enCours={creance.enCours}
-				onDeposer={creance.onDeposer}
+				onAjouter={creance.onAjouterPieces}
+				onOuvrir={creance.onOuvrirPiece}
 				onClasser={creance.onClasser}
-				onRetirer={creance.onRetirer}
 			/>
 			<Solidite solidite={creance.solidite} />
 		</RangeeDepliable>

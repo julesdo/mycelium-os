@@ -182,8 +182,8 @@ export function OuvertureEnCours() {
 				Tout le produit vous est ouvert, sans carte bancaire.
 			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Déposez vos factures, lisez ce qui vous est dû, réclamez-le : rien n&rsquo;est
-				retenu derrière le paiement aujourd&rsquo;hui.
+				Déposez vos factures, lisez ce qui vous est dû, réclamez-le : rien n&rsquo;est retenu
+				derrière le paiement aujourd&rsquo;hui.
 			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 				Ce qui manque : notre compte marchand n&rsquo;est pas ouvert, donc aucun paiement en ligne
@@ -198,7 +198,7 @@ export function OuvertureEnCours() {
 				paiement n&rsquo;est pas ouvert, et nous revenons vers vous avant toute facturation.
 			</span>
 			<span className="flex flex-wrap gap-cladd-3xs pt-cladd-3xs">
-				<BoutonPrincipal as={Lien} to="/app/import-factures">
+				<BoutonPrincipal as={Lien} to="/app/coffre" search={{ deposer: 1 } as never}>
 					Déposer mes factures
 				</BoutonPrincipal>
 			</span>

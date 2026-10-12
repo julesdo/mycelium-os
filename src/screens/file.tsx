@@ -4,7 +4,6 @@ import { BellIcon, SendIcon, UploadIcon } from 'lucide-react';
 import {
 	NOM_DU_PILOTE,
 	BandeDAnciennete,
-	BilanImport,
 	BoutonPrincipal,
 	BoutonSecondaire,
 	CarteBouton,
@@ -31,11 +30,9 @@ import {
 	TravailEnCours,
 	Veilleur,
 	VignetteRangee,
-	ZoneDepot,
 	eurosCentimes,
 	pluriel,
 	trierSelonLePli,
-	type DepotAffiche,
 	type DestinationRangee,
 	type FaitsDuPli,
 	type FamilleRangee,
@@ -295,26 +292,7 @@ export interface RangeeLettrage extends CommunDeRangee {
 	readonly lettrage: React.ComponentProps<typeof Lettrage>;
 }
 
-/**
- * UN DÉPÔT, EN COURS OU TERMINÉ — et il reste une rangée DATÉE, jamais un
- * bandeau refermable.
- *
- * ⚠️ IL N'EST PAS DANS LES GROUPES NON PLUS, et pour une autre raison : c'est un
- * TRAITEMENT, et la règle d'écran n° 2 veut qu'il se voie sans qu'on le demande.
- * Rangé sous « à venir » et replié, un dépôt en cours de lecture disparaîtrait
- * exactement pendant les secondes où il change sous les yeux.
- *
- * ⚠️ `ui/bilan-import.tsx` porte la règle mot pour mot : « un import qui annonce
- * 198 factures sans mentionner les deux lignes écartées ment par omission, et
- * l'omission porte sur l'argent qu'on ne réclamera pas ». La rangée se replie le
- * jour où RIEN n'a été écarté ; dès qu'une ligne l'a été, elle reste pleine (B9).
- */
-export interface RangeeDepot extends CommunDeRangee {
-	readonly genre: 'DEPOT';
-	readonly depot: DepotAffiche;
-}
-
-export type RangeeDeLaFile = RangeeObstacle | RangeeLitige | RangeeLettrage | RangeeDepot;
+export type RangeeDeLaFile = RangeeObstacle | RangeeLitige | RangeeLettrage;
 
 /** Les deux genres que la règle d'urgence sait ranger. Les deux autres vivent hors des groupes. */
 type RangeeGroupee = RangeeObstacle | RangeeLitige;
@@ -412,10 +390,9 @@ export interface FileAffichee {
 	 *
 	 * ⚠️ IL ANNONCE, IL NE PORTE PAS. Il est refermable, donc RIEN DE CHIFFRÉ ne
 	 * peut vivre là et nulle part ailleurs : le bilan d'un dépôt — doublons, hors
-	 * périmètre, orphelins, illisibles — vit dans sa rangée permanente et datée.
-	 * Un bandeau qui serait le seul support d'un chiffre écarté ferait exactement
-	 * ce que `ui/bilan-import.tsx` interdit : mentir par omission, d'un geste de
-	 * fermeture.
+	 * périmètre, orphelins, illisibles — vit dans le coffre, sur la fiche du
+	 * document, permanente et datée. Un bandeau qui serait le seul support d'un
+	 * chiffre écarté mentirait par omission, d'un geste de fermeture.
 	 */
 	readonly annonce?: string;
 	/**
@@ -431,9 +408,24 @@ export interface FileAffichee {
 	 */
 	readonly resumeDuPlafond: string | null;
 	readonly verrous: readonly Verrou[];
-	/** Le dépôt de fichiers. Il vit ici : cet écran est la porte d'entrée des factures. */
-	readonly onFichiers: (fichiers: File[]) => void;
-	readonly accepteFichiers: string;
+	/**
+	 * OUVRE LE PARCOURS DE DÉPÔT, le même partout (`ParcoursDepot`, 12/10/2026).
+	 *
+	 * ⚠️ RIEN NE SE DÉPOSE PLUS AU MILIEU DE L'ACCUEIL. La zone dépliée sous le
+	 * montant et les cartes de bilan qui restaient ensuite dans la file sont
+	 * parties : verdict du fondateur, « ça n'a rien à faire là ». Le dépôt se fait
+	 * en plein écran, et ce qu'il a donné se lit dans le coffre.
+	 */
+	readonly onDeposer: () => void;
+	/**
+	 * Le coffre, en une rangée qui y mène : combien de documents, et ceux qui
+	 * sont encore en lecture. Absent tant que la lecture n'est pas arrivée.
+	 */
+	readonly coffre?: {
+		readonly total: number;
+		readonly auMoins: boolean;
+		readonly enLecture: number;
+	};
 	/** Le sélecteur d'établissement, monté par l'application. Permanent. */
 	readonly selecteur?: ReactNode;
 	/** La palette de recherche (D16). */
@@ -508,7 +500,8 @@ function totalDe(rangees: readonly RangeeGroupee[]): bigint | null {
  *      comme l'écran des dossiers. Ce qui attend une réponse porte un point et
  *      s'ouvre dans une feuille ; le reste mène à son dossier.
  *   3. Ce que fait le logiciel → en bas, en silence, sauf ce qui TRAVAILLE : un
- *      dépôt qui lit, un veilleur qui tourne restent sous les yeux (règle n° 2).
+ *      veilleur qui tourne reste sous les yeux (règle n° 2) ; un dépôt se suit
+ *      dans son parcours plein écran, puis dans le coffre.
  *
  * C'est le code de Remote et de Wise sur une file d'approbations, relevé sur
  * Mobbin le même jour : aucune rangée n'y porte de bouton.
@@ -526,15 +519,13 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		annonce,
 		resumeDuPlafond,
 		verrous,
-		onFichiers,
-		accepteFichiers,
+		onDeposer,
+		coffre,
 		selecteur,
 		palette,
 		connexion
 	} = valeur;
 
-	/** La zone de dépôt, dépliée par le bouton rond de l'en-tête. */
-	const [depotOuvert, setDepotOuvert] = useState(false);
 	/**
 	 * LES RANGÉES DÉPLIÉES — le travail de fond et les rapprochements.
 	 *
@@ -555,11 +546,9 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	  règles de tri qui divergeraient au premier changement du domaine.
 	*/
 	const parGroupe = new Map<GroupeFile, RangeeGroupee[]>();
-	const depots: RangeeDepot[] = [];
 	const lettrages: RangeeLettrage[] = [];
 	for (const rangee of pleines) {
-		if (rangee.genre === 'DEPOT') depots.push(rangee);
-		else if (rangee.genre === 'LETTRAGE') lettrages.push(rangee);
+		if (rangee.genre === 'LETTRAGE') lettrages.push(rangee);
 		else {
 			const cle = groupeDe(rangee, aujourdHui);
 			const deja = parGroupe.get(cle);
@@ -574,14 +563,6 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	const decision =
 		[...parGroupe.values()].flat().find((rangee) => rangee.id === enDecision) ?? null;
 
-	/*
-	  ⚠️ CE QUI TRAVAILLE RESTE À L'ÉCRAN ; CE QUI A FINI DEVIENT UNE RANGÉE.
-	  C'est la règle d'écran n° 2 — « tout traitement se voit sans qu'on le
-	  demande ». Un dépôt qui lit encore, ou qui a échoué, ne se replie pas : le
-	  premier change sous les yeux, le second demande un geste.
-	*/
-	const depotsVivants = depots.filter((rangee) => rangee.depot.statut !== 'TERMINE');
-	const depotsFinis = depots.filter((rangee) => rangee.depot.statut === 'TERMINE');
 	const veilleurTravaille = travaux.some((tache) => tache.etat === 'EN_COURS');
 
 	/**
@@ -621,19 +602,18 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					<RangeeDuHaut
 						selecteur={selecteur}
 						palette={palette}
-						depotOuvert={depotOuvert}
-						onDepot={() => setDepotOuvert(!depotOuvert)}
+						onDepot={onDeposer}
 						{...(nonLues === undefined ? {} : { nonLues })}
-						/* Le premier jour, la zone de dépôt est déjà en grand au milieu de
-						   l'écran : un second bouton qui ouvre ce qui est déjà ouvert se lit
-						   comme une panne. */
+						/* Le premier jour, le dépôt est déjà le geste en grand au milieu de
+						   l'écran : un second bouton pour le même geste se lit comme une
+						   hésitation. */
 						avecDepot={!debute}
 					/>
 				)
 			}}
 		>
 			{debute ? (
-				<FileVide onFichiers={onFichiers} accepteFichiers={accepteFichiers} connexion={connexion} />
+				<FileVide onDeposer={onDeposer} connexion={connexion} />
 			) : (
 				<SectionsDepliables ouvertes={depliees} onOuvertesChange={setDepliees}>
 					<Tete tete={tete} aujourdHui={aujourdHui} />
@@ -646,29 +626,6 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					*/}
 					{pilote}
 
-					{depotOuvert ? (
-						<ZoneDepot
-							accept={accepteFichiers}
-							onFichiers={onFichiers}
-							libellePhoto="Photographier une facture"
-						>
-							<p className="text-cladd-xs text-cladd-fg-soft">
-								Un export comptable est le plus complet : il porte vos factures, vos règlements et
-								vos clients d’un coup.
-							</p>
-						</ZoneDepot>
-					) : null}
-
-					{/* CE QUI TRAVAILLE, OU CE QUI A ÉCHOUÉ. Jamais replié. */}
-					{depotsVivants.length === 0 ? null : (
-						<SourceDeRangees nom="Vos dépôts">
-							<div className="flex flex-col gap-cladd-3xs">
-								{depotsVivants.map((rangee) => (
-									<BilanImport key={rangee.id} depot={rangee.depot} />
-								))}
-							</div>
-						</SourceDeRangees>
-					)}
 					{veilleurTravaille ? (
 						<SourceDeRangees nom="Le travail de fond">
 							<TravailEnCours travaux={travaux} />
@@ -753,17 +710,21 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					{/* ── LE TRAVAIL DE FOND ─────────────────────────────────────────── */}
 					<ListeDeRangees titre="Le travail de fond">
 						{/*
-						  ⚠️ ELLE MÈNE À L'ÉCRAN DES DÉPÔTS, ELLE NE LE REDIT PLUS (01/10/2026).
-						  Elle ouvrait une feuille où chaque dépôt lu reprenait sa carte de
-						  bilan : la même réponse qu'à l'écran « Vos dépôts », à deux endroits.
-						  Chaque question a sa réponse à un seul endroit.
+						  LE COFFRE-FORT, EN UNE RANGÉE QUI Y MÈNE (12/10/2026). Elle remplace
+						  « Vos dépôts » : chaque document déposé, facture ou pièce, s'y relit en
+						  entier. Ce qui est encore en lecture se dit dans sa valeur, jamais en
+						  carte au milieu de l'accueil.
 						*/}
-						{depotsFinis.length === 0 ? null : (
+						{coffre === undefined || (coffre.total === 0 && coffre.enLecture === 0) ? null : (
 							<RangeeLien
-								vers="/app/import-factures"
+								vers="/app/coffre"
 								famille="PAPIERS"
-								titre="Vos dépôts"
-								valeur={`${depotsFinis.length} lu${pluriel(depotsFinis.length)}`}
+								titre="Coffre-fort"
+								valeur={
+									coffre.enLecture > 0
+										? `${coffre.enLecture} en lecture`
+										: `${coffre.auMoins ? 'plus de ' : ''}${coffre.total} document${pluriel(coffre.total)}`
+								}
 							/>
 						)}
 
@@ -801,7 +762,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					  l'écran du matin, en tête, avec sa croix : une cible de plus et trois
 					  lignes pour dire ce que la machine a fait pendant que le gérant dormait.
 					  Elle ne porte rien de chiffré qui ne vive ailleurs (le bilan daté du
-					  dépôt) : sa place est avec ce qui n'appelle aucune décision.
+					  document, dans le coffre) : sa place est avec ce qui n'appelle aucune décision.
 					*/}
 					{annonce === undefined ? null : (
 						<p className="px-1 text-cladd-2xs text-cladd-fg-softer">{annonce}</p>
@@ -855,14 +816,12 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 function RangeeDuHaut({
 	selecteur,
 	palette,
-	depotOuvert,
 	onDepot,
 	avecDepot,
 	nonLues
 }: {
 	selecteur?: ReactNode;
 	palette?: ReactNode;
-	depotOuvert: boolean;
 	onDepot: () => void;
 	avecDepot: boolean;
 	nonLues?: number;
@@ -906,20 +865,19 @@ function RangeeDuHaut({
 				</Button>
 				{avecDepot ? (
 					/*
-					  LE DÉPÔT, EN BOUTON ROND. Il OUVRE la zone, il ne la remplace pas :
-					  `ZoneDepot` porte les quatre gestes qu'un gérant fait selon d'où il
-					  vient — photographier, parcourir, glisser, coller. `square` : sans
-					  lui, la largeur suit l'icône et la cible tombe sous le doigt.
+					  LE DÉPÔT, EN BOUTON ROND. Il ouvre le parcours de dépôt en plein
+					  écran, le même que dans un dossier ou sur la fiche d'un client.
+					  `square` : sans lui, la largeur suit l'icône et la cible tombe sous
+					  le doigt.
 					*/
 					<Button
 						size="md"
 						square
 						rounded
-						variant={depotOuvert ? 'solid' : 'transparent'}
+						variant="transparent"
 						outline={false}
 						hoverable={false}
-						aria-pressed={depotOuvert}
-						aria-label="Déposer des factures"
+						aria-label="Mettre des factures au coffre"
 						className="verre-bouton shrink-0"
 						onClick={onDepot}
 					>
@@ -1190,15 +1148,7 @@ function LimitesDuCalcul({
  * mesurer : tout l'écran attend ce geste, donc il est le seul à avoir le droit
  * d'être en grand.
  */
-function FileVide({
-	onFichiers,
-	accepteFichiers,
-	connexion
-}: {
-	onFichiers: (fichiers: File[]) => void;
-	accepteFichiers: string;
-	connexion?: ReactNode;
-}) {
+function FileVide({ onDeposer, connexion }: { onDeposer: () => void; connexion?: ReactNode }) {
 	/*
 	  ⚠️ CONNECTER D'ABORD, IMPORTER ENSUITE — l'ordre de Shop. Une connexion
 	  alimente le produit pour toujours ; un fichier, une fois. Quand aucune
@@ -1213,17 +1163,10 @@ function FileVide({
 			legende="Dès qu’il les a, le logiciel compte ce qu’on vous doit, pénalités comprises, et surveille les dates limites pour agir en justice."
 		>
 			{connexion}
-			<ZoneDepot
-				accept={accepteFichiers}
-				onFichiers={onFichiers}
-				libellePhoto="Photographier une facture"
-				discret={connexion !== undefined}
-			>
-				<Bouton pleineLargeur>
-					<UploadIcon />
-					Importer des fichiers
-				</Bouton>
-			</ZoneDepot>
+			<Bouton pleineLargeur onClick={onDeposer}>
+				<UploadIcon />
+				Importer des fichiers
+			</Bouton>
 			{/* Aucun choix à faire : le dépôt reconnaît seul un FEC, un export CSV, un
 			    PDF ou une photo. Le dire évite qu'on se demande lequel déposer. */}
 			<p className="text-cladd-2xs text-cladd-fg-soft">

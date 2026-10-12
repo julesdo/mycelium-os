@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.0** — 23 septembre 2026. Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -286,6 +286,8 @@ rectification ou son effacement à bonjour@letikette.com.
 | Invitations | jusqu'à leur acceptation ou leur révocation ; le lien expire au bout de 7 jours |
 | Compte utilisateur, établissement, et toutes les données du client | **jusqu'à la suppression de l'établissement**, qui les efface intégralement |
 | Pièces comptables et factures d'abonnement | **10 ans** (art. L123-22 c. com.), détenues par le prestataire de facturation |
+| Journal des accès aux documents (dépôt, ouverture, téléchargement, retrait) | **jusqu'à la suppression de l'établissement** |
+| Jetons d'ouverture d'un document | **une minute**, à usage unique ; les jetons expirés sont effacés chaque nuit |
 
 **Ce que la suppression d'un établissement efface** : la totalité des données cloisonnées par
 établissement, **fichiers de stockage compris** — pièces déposées, documents importés, logo, photo
@@ -327,11 +329,29 @@ Les mesures suivantes sont **effectivement en place** et vérifiables :
 - cloisonnement strict des données par établissement, appliqué à chaque requête serveur et vérifié
   par des tests automatisés ;
 - jetons des connexions bancaires **chiffrés en base** (AES-256-GCM) ;
+- **documents déposés chiffrés au repos dès leur arrivée** — factures importées et pièces des
+  dossiers — en AES-256-GCM, sous une clé propre à chaque établissement, elle-même chiffrée par
+  une clé maîtresse conservée hors de la base de données ; le fichier d'origine, en clair, est
+  effacé une fois le document scellé ;
+- format de chaque document vérifié dans son contenu à l'arrivée (un fichier dont le contenu ne
+  correspond pas à son extension est refusé), et empreinte SHA-256 relevée au dépôt puis
+  revérifiée à chaque ouverture ;
+- **aucun lien public durable vers un document** : il s'ouvre par la session de l'utilisateur,
+  au moyen d'un jeton à usage unique valable une minute ; chaque dépôt, ouverture, téléchargement
+  et retrait est inscrit dans un journal que l'établissement consulte depuis l'application ;
+- à la suppression de l'établissement, sa clé de chiffrement est effacée **en premier** : ses
+  documents deviennent illisibles avant même que leurs fichiers soient effacés ;
 - accès nominatifs, sans compte partagé ;
 - en-têtes de sécurité : `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
   `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` fermant caméra,
   microphone et géolocalisation ;
 - secrets d'exploitation conservés hors du code source et hors du dépôt.
+
+**Ce que ce chiffrement ne fait pas, dit en clair.** Les clés sont détenues par les serveurs du
+Service : le chiffrement protège les fichiers stockés (une copie du stockage, une adresse de
+fichier qui fuiterait), il ne met pas les documents hors de portée de l'exploitant du Service. Ce
+n'est pas un chiffrement « de bout en bout ». Pour être lu, un document est déchiffré en mémoire,
+le temps de sa lecture, et son contenu peut être transmis au prestataire de lecture (section 6.1).
 
 Aucun système n'étant infaillible, l'Éditeur s'engage à notifier toute violation de données dans les
 conditions des articles 33 et 34 du RGPD, soit à la CNIL dans les soixante-douze heures et aux

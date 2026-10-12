@@ -10,6 +10,11 @@
 
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
+import type * as coffre_anciens from "../coffre/anciens.js";
+import type * as coffre_coffre from "../coffre/coffre.js";
+import type * as coffre_coffreInterne from "../coffre/coffreInterne.js";
+import type * as coffre_ouverture from "../coffre/ouverture.js";
+import type * as coffre_serrure from "../coffre/serrure.js";
 import type * as connexions_chift from "../connexions/chift.js";
 import type * as connexions_chiftConfig from "../connexions/chiftConfig.js";
 import type * as connexions_chiftDonnees from "../connexions/chiftDonnees.js";
@@ -106,6 +111,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   billing: typeof billing;
+  "coffre/anciens": typeof coffre_anciens;
+  "coffre/coffre": typeof coffre_coffre;
+  "coffre/coffreInterne": typeof coffre_coffreInterne;
+  "coffre/ouverture": typeof coffre_ouverture;
+  "coffre/serrure": typeof coffre_serrure;
   "connexions/chift": typeof connexions_chift;
   "connexions/chiftConfig": typeof connexions_chiftConfig;
   "connexions/chiftDonnees": typeof connexions_chiftDonnees;

@@ -2,10 +2,9 @@ import { v, ConvexError } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
-import { internal } from '../_generated/api';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
-import { vTypePiece } from './tables';
+import { vChiffrementDocument, vTypePiece } from './tables';
 import { rejouerQualification } from './creances';
 
 /**
@@ -104,7 +103,11 @@ async function rejouerApresPiece(
 	await rejouerQualification(ctx, organizationId, creanceIds, aujourdHui);
 }
 
-async function enregistrer(
+/**
+ * Enregistre une pièce, en lecture. Exportée pour le coffre (`coffre/coffre.ts`),
+ * qui est désormais la seule porte d'entrée d'un fichier.
+ */
+export async function enregistrerPiece(
 	ctx: MutationCtx,
 	args: {
 		organizationId: Id<'organizations'>;
@@ -113,6 +116,7 @@ async function enregistrer(
 		mimeType: string;
 		debiteurId?: Id<'debiteurs'>;
 		factureIds: Id<'facturesVente'>[];
+		deposePar?: string;
 	}
 ): Promise<Id<'pieces'>> {
 	// ⚠️ LE CLOISONNEMENT AVANT L'ÉCRITURE, sur CHAQUE facture. Connaître un
@@ -139,7 +143,8 @@ async function enregistrer(
 		filename: args.filename,
 		mimeType: args.mimeType,
 		debiteurId: args.debiteurId,
-		ajouteeLe: Date.now()
+		ajouteeLe: Date.now(),
+		...(args.deposePar === undefined ? {} : { deposePar: args.deposePar })
 	});
 
 	for (const factureId of args.factureIds) {
@@ -163,7 +168,7 @@ export const enregistrerInterne = internalMutation({
 		factureIds: v.array(v.id('facturesVente'))
 	},
 	returns: v.id('pieces'),
-	handler: async (ctx, args) => enregistrer(ctx, args)
+	handler: async (ctx, args) => enregistrerPiece(ctx, args)
 });
 
 /**
@@ -285,60 +290,32 @@ export const obtenirInterne = internalQuery({
 	args: { pieceId: v.id('pieces') },
 	returns: v.union(
 		v.object({
+			organizationId: v.id('organizations'),
 			storageId: v.id('_storage'),
 			mimeType: v.optional(v.string()),
-			filename: v.string()
+			filename: v.string(),
+			chiffrement: v.optional(vChiffrementDocument),
+			empreinte: v.optional(v.string())
 		}),
 		v.null()
 	),
 	handler: async (ctx, { pieceId }) => {
 		const piece = await ctx.db.get(pieceId);
 		if (piece === null) return null;
-		return { storageId: piece.storageId, mimeType: piece.mimeType, filename: piece.filename };
+		return {
+			organizationId: piece.organizationId,
+			storageId: piece.storageId,
+			mimeType: piece.mimeType,
+			filename: piece.filename,
+			chiffrement: piece.chiffrement,
+			empreinte: piece.empreinte
+		};
 	}
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Les entrées authentifiées.
 // ═══════════════════════════════════════════════════════════════════════════
-
-/** L'URL d'envoi. Le fichier n'appartient à personne tant qu'il n'est pas enregistré. */
-export const genererUrlPiece = authedMutation({
-	args: {},
-	returns: v.string(),
-	handler: async (ctx) => {
-		await getUserOrg(ctx);
-		return await ctx.storage.generateUploadUrl();
-	}
-});
-
-/**
- * Enregistre une pièce déposée et lance sa lecture.
- *
- * Le type de retour est annoté à la main : ce handler appelle
- * `internal.recouvrement.pieces.*`, c'est-à-dire son propre module, et sans
- * annotation le cycle d'inférence ferait retomber `api` tout entier sur `any`.
- */
-export const deposerPiece = authedMutation({
-	args: {
-		storageId: v.id('_storage'),
-		filename: v.string(),
-		mimeType: v.string(),
-		debiteurId: v.optional(v.id('debiteurs')),
-		factureIds: v.array(v.id('facturesVente'))
-	},
-	returns: v.id('pieces'),
-	handler: async (ctx, args): Promise<Id<'pieces'>> => {
-		const { organizationId } = await getUserOrg(ctx);
-		const pieceId = await enregistrer(ctx, { ...args, organizationId });
-
-		// La lecture part en tâche planifiée : un appel modèle dépasse le temps
-		// d'une mutation, et l'écran doit montrer la pièce déposée immédiatement
-		// plutôt que de faire attendre devant un bouton figé.
-		await ctx.scheduler.runAfter(0, internal.recouvrement.preuve.lireLaPiece, { pieceId });
-		return pieceId;
-	}
-});
 
 export const classerPiece = authedMutation({
 	args: { pieceId: v.id('pieces'), type: vTypePiece },
@@ -351,44 +328,52 @@ export const classerPiece = authedMutation({
 	}
 });
 
-export const retirerPiece = authedMutation({
-	args: { pieceId: v.id('pieces') },
-	returns: v.null(),
-	handler: async (ctx, { pieceId }) => {
-		const { organizationId } = await getUserOrg(ctx);
-		const piece = await ctx.db.get(pieceId);
-		if (piece === null || piece.organizationId !== organizationId) {
-			throw new ConvexError('Pièce introuvable');
-		}
-
-		// ⚠️ LES CRÉANCES CONCERNÉES SE RELÈVENT AVANT LA SUPPRESSION. Après, la
-		// pièce et ses liaisons n'existent plus : on ne saurait plus quelles
-		// créances viennent de perdre une preuve, et leur maturité stockée
-		// resterait celle d'un dossier mieux documenté qu'il ne l'est.
-		const concernees = await creancesSoutenuesPar(ctx, organizationId, pieceId, piece.debiteurId);
-
-		// Les liaisons partent AVANT la pièce, et le fichier AVANT sa ligne :
-		// l'inverse laisserait un objet orphelin dans le stockage, que plus rien
-		// ne désigne et que personne ne saurait retrouver pour l'effacer. Même
-		// ordre que la purge RGPD.
-		const liaisons = await ctx.db
-			.query('piecesFactures')
-			.withIndex('by_piece', (q) => q.eq('pieceId', pieceId))
-			.collect();
-		for (const liaison of liaisons) await ctx.db.delete(liaison._id);
-
-		await ctx.storage.delete(piece.storageId);
-		await ctx.db.delete(pieceId);
-
-		await rejouerQualification(
-			ctx,
-			organizationId,
-			concernees,
-			new Date().toISOString().slice(0, 10)
-		);
-		return null;
+/**
+ * RETIRER UNE PIÈCE — appelée par le coffre (`retirerDuCoffre`). Rend son nom,
+ * pour le journal.
+ */
+export async function retirerLaPiece(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	pieceId: Id<'pieces'>
+): Promise<string> {
+	const piece = await ctx.db.get(pieceId);
+	if (piece === null || piece.organizationId !== organizationId) {
+		throw new ConvexError('Pièce introuvable');
 	}
-});
+
+	// ⚠️ LES CRÉANCES CONCERNÉES SE RELÈVENT AVANT LA SUPPRESSION. Après, la
+	// pièce et ses liaisons n'existent plus : on ne saurait plus quelles
+	// créances viennent de perdre une preuve, et leur maturité stockée
+	// resterait celle d'un dossier mieux documenté qu'il ne l'est.
+	const concernees = await creancesSoutenuesPar(ctx, organizationId, pieceId, piece.debiteurId);
+
+	// Les liaisons partent AVANT la pièce, et le fichier AVANT sa ligne :
+	// l'inverse laisserait un objet orphelin dans le stockage, que plus rien
+	// ne désigne et que personne ne saurait retrouver pour l'effacer. Même
+	// ordre que la purge RGPD.
+	const liaisons = await ctx.db
+		.query('piecesFactures')
+		.withIndex('by_piece', (q) => q.eq('pieceId', pieceId))
+		.collect();
+	for (const liaison of liaisons) await ctx.db.delete(liaison._id);
+
+	// Un fichier refusé au scellement a déjà été effacé : son absence n'empêche pas le retrait.
+	try {
+		await ctx.storage.delete(piece.storageId);
+	} catch {
+		// Déjà parti.
+	}
+	await ctx.db.delete(pieceId);
+
+	await rejouerQualification(
+		ctx,
+		organizationId,
+		concernees,
+		new Date().toISOString().slice(0, 10)
+	);
+	return piece.filename;
+}
 
 /** Les pièces d'un débiteur, celles de portée débiteur comme celles des factures. */
 export const listerPiecesDuDebiteur = authedQuery({
@@ -407,7 +392,11 @@ export const listerPiecesDuDebiteur = authedQuery({
 			/** Sur une ordonnance : le tribunal, que la demande de signification recopie. */
 			juridiction: v.optional(v.string()),
 			constat: v.optional(v.string()),
-			ajouteeLe: v.number()
+			ajouteeLe: v.number(),
+			/** Le type du fichier, pour sa vignette. */
+			mimeType: v.string(),
+			/** Chiffrée au coffre (`coffre/serrure.ts`) : le cadenas de sa carte le dit. */
+			scelle: v.boolean()
 		})
 	),
 	handler: async (ctx, { debiteurId }) => {
@@ -454,7 +443,9 @@ export const listerPiecesDuDebiteur = authedQuery({
 				tauxRetardStipule: piece.tauxRetardStipule,
 				juridiction: piece.juridiction,
 				constat: piece.constat,
-				ajouteeLe: piece.ajouteeLe
+				ajouteeLe: piece.ajouteeLe,
+				mimeType: piece.mimeType ?? 'application/octet-stream',
+				scelle: piece.chiffrement !== undefined
 			});
 		}
 

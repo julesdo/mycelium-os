@@ -200,6 +200,8 @@ const PIECES_DEMO: readonly PieceAffichee[] = [
 		type: 'FACTURE',
 		statut: 'LUE',
 		filename: 'FA-2026-118.pdf',
+		mimeType: 'application/pdf',
+		scelle: true,
 		reference: 'FA-2026-118',
 		dateDocument: '2026-04-01',
 		constat: 'La facture du dossier, lue et rapprochée.'
@@ -209,6 +211,8 @@ const PIECES_DEMO: readonly PieceAffichee[] = [
 		type: 'BON_DE_COMMANDE',
 		statut: 'LUE',
 		filename: 'BC-2026-118.pdf',
+		mimeType: 'application/pdf',
+		scelle: true,
 		reference: 'BC-2026-118',
 		dateDocument: '2026-03-18',
 		constat: 'Commande signée par le client.'
@@ -218,6 +222,8 @@ const PIECES_DEMO: readonly PieceAffichee[] = [
 		type: 'INDETERMINE',
 		statut: 'A_CLASSER',
 		filename: 'scan_20260612.jpg',
+		mimeType: 'image/jpeg',
+		scelle: true,
 		constat: 'La lecture n’a rien conclu : ce document attend son classement.'
 	}
 ];
@@ -886,9 +892,9 @@ function creanceDemo({
 
 		pieces,
 		optionsTypePiece: TYPES_PIECE,
-		onDeposer: () => undefined,
+		onAjouterPieces: () => undefined,
+		onOuvrirPiece: () => undefined,
 		onClasser: () => undefined,
-		onRetirer: () => undefined,
 
 		suivi: journal === null ? null : suiviDepuisJournal(journal),
 		voies: Object.values(PROCEDURES).map((procedure) => voieDeLaCreance(procedure)),

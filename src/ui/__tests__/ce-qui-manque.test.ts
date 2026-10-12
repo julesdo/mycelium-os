@@ -99,7 +99,8 @@ describe('ce qui manque', () => {
 			debiteursSansSiren: 3
 		});
 
-		expect(verrous[0]?.vers).toBe('/app/import-factures');
+		expect(verrous[0]?.vers).toBe('/app/coffre');
+		expect(verrous[0]?.recherche).toEqual({ deposer: 1 });
 	});
 
 	it('ne réclame pas de débiteurs quand il n’y a aucune facture', () => {
@@ -116,7 +117,7 @@ describe('ce qui manque', () => {
 		});
 
 		expect(verrous).toHaveLength(1);
-		expect(verrous[0]?.vers).toBe('/app/import-factures');
+		expect(verrous[0]?.vers).toBe('/app/coffre');
 	});
 
 	it('ne recommande jamais une procédure', () => {

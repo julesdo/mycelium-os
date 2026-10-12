@@ -93,6 +93,30 @@ export const vSecteurCreance = v.union(
  * C'est exactement ce qu'on veut : classer au hasard ferait franchir le seuil
  * de qualification sur un document que personne n'a lu.
  */
+/**
+ * LE SCEAU D'UN DOCUMENT AU COFFRE (12/10/2026) — ce qu'il faut pour le rouvrir.
+ * Absent : un document déposé avant le coffre, encore en clair, que
+ * `coffre/sceau.ts:scellerLesAnciens` scelle à son tour.
+ */
+export const vChiffrementDocument = v.object({
+	algorithme: v.literal('AES-256-GCM'),
+	/** La version du schéma de chiffrement (`socle/coffre/chiffrement.ts`). */
+	version: v.number(),
+	/** Le vecteur d'initialisation, en base64. Unique, pas secret. */
+	iv: v.string()
+});
+
+/** Ce que le coffre ajoute à chaque document déposé : son sceau, son empreinte, son auteur. */
+const champsDuCoffre = {
+	chiffrement: v.optional(vChiffrementDocument),
+	/** L'empreinte SHA-256 du fichier tel que déposé, en hexadécimal. */
+	empreinte: v.optional(v.string()),
+	/** La taille du fichier tel que déposé, en octets. */
+	taille: v.optional(v.number()),
+	/** Qui l'a déposé : l'identifiant de l'utilisateur. Absent sur les dépôts d'avant le coffre. */
+	deposePar: v.optional(v.string())
+};
+
 export const vTypePiece = v.union(
 	v.literal('INDETERMINE'),
 	v.literal('FACTURE'),
@@ -319,10 +343,13 @@ export const recouvrementTables = {
 			})
 		),
 		deposeLe: v.number(),
-		termineLe: v.optional(v.number())
+		termineLe: v.optional(v.number()),
+		...champsDuCoffre
 	})
 		.index('by_org', ['organizationId'])
-		.index('by_org_and_statut', ['organizationId', 'statut']),
+		.index('by_org_and_statut', ['organizationId', 'statut'])
+		// Le même fichier, reconnu avant l'envoi (« déjà dans votre coffre »).
+		.index('by_org_and_empreinte', ['organizationId', 'empreinte']),
 
 	/**
 	 * Le créancier : l'organisation, sous l'angle du recouvrement.
@@ -751,11 +778,69 @@ export const recouvrementTables = {
 		 */
 		debiteurId: v.optional(v.id('debiteurs')),
 		note: v.optional(v.string()),
-		ajouteeLe: v.number()
+		ajouteeLe: v.number(),
+		...champsDuCoffre
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_debiteur', ['debiteurId'])
-		.index('by_org_and_type', ['organizationId', 'type']),
+		.index('by_org_and_type', ['organizationId', 'type'])
+		.index('by_org_and_empreinte', ['organizationId', 'empreinte']),
+
+	/**
+	 * LA CLÉ D'UN ÉTABLISSEMENT (12/10/2026) — UNE par établissement, tirée au
+	 * premier dépôt, et ENVELOPPÉE : `cleEnveloppee` ne s'ouvre qu'avec la clé
+	 * maîtresse, qui ne vit pas dans la base. La purge l'efface en premier : sans
+	 * elle, même une copie ancienne du stockage reste illisible.
+	 */
+	coffresCles: defineTable({
+		organizationId: v.id('organizations'),
+		cleEnveloppee: v.string(),
+		version: v.number(),
+		creeeLe: v.number()
+	}).index('by_org', ['organizationId']),
+
+	/**
+	 * LE JOURNAL DU COFFRE — chaque dépôt, ouverture, téléchargement et retrait,
+	 * avec qui et quand. Il s'affiche sous le document : « Ouvert par vous le
+	 * 12 oct. à 14 h 02 ». Un seul des deux identifiants est posé.
+	 */
+	accesDocuments: defineTable({
+		organizationId: v.id('organizations'),
+		importId: v.optional(v.id('importsRecouvrement')),
+		pieceId: v.optional(v.id('pieces')),
+		/** Le nom du document au moment du geste : il reste lisible après un retrait. */
+		nomDocument: v.string(),
+		geste: v.union(
+			v.literal('DEPOT'),
+			v.literal('CONSULTATION'),
+			v.literal('TELECHARGEMENT'),
+			v.literal('RETRAIT')
+		),
+		userId: v.string(),
+		le: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_le', ['organizationId', 'le'])
+		.index('by_import', ['importId'])
+		.index('by_piece', ['pieceId']),
+
+	/**
+	 * LES JETONS D'OUVERTURE — 32 octets aléatoires, une minute, un seul usage.
+	 * Un document ne s'ouvre JAMAIS par une adresse durable : la mutation qui
+	 * vérifie la session émet le jeton, l'action HTTP qui déchiffre le consomme.
+	 */
+	ticketsCoffre: defineTable({
+		organizationId: v.id('organizations'),
+		jeton: v.string(),
+		importId: v.optional(v.id('importsRecouvrement')),
+		pieceId: v.optional(v.id('pieces')),
+		geste: v.union(v.literal('CONSULTATION'), v.literal('TELECHARGEMENT')),
+		userId: v.string(),
+		expireLe: v.number()
+	})
+		.index('by_jeton', ['jeton'])
+		.index('by_org', ['organizationId'])
+		.index('by_expire', ['expireLe']),
 
 	/** La liaison n-n entre une pièce et les factures précises qu'elle soutient. */
 	piecesFactures: defineTable({

@@ -126,7 +126,7 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 							'Le chiffre apparaît dès le premier dépôt, décomposé facture par facture.'
 						],
 						action: (
-							<BoutonPrincipal as={Lien} to="/app/import-factures">
+							<BoutonPrincipal as={Lien} to="/app/coffre" search={{ deposer: 1 } as never}>
 								<UploadIcon />
 								Importer mes factures
 							</BoutonPrincipal>

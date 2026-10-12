@@ -738,7 +738,13 @@ type PieceListee = PieceAffichee & { readonly ajouteeLe: number };
  * et son statut changent (`classer`, lignes 159 à 162).
  */
 function pieceEnBase(piece: PieceDemo): PieceListee {
-	const deposee = { _id: piece._id, filename: piece.filename, ajouteeLe: piece.ajouteeLe };
+	// Au coffre, toute pièce est scellée dès son arrivée, avant même d'être lue.
+	const deposee = {
+		_id: piece._id,
+		filename: piece.filename,
+		ajouteeLe: piece.ajouteeLe,
+		scelle: true
+	};
 	if (piece.lecture === null) return { ...deposee, type: 'INDETERMINE', statut: 'EN_LECTURE' };
 
 	const lue = lirePreuve(piece.lecture);
@@ -824,8 +830,6 @@ function pageDu(
 		erreurLettrage: null,
 		selection,
 		erreur: null,
-		depotEnCours: false,
-		erreurDepot: null,
 		onChercherAuRegistre: () => undefined,
 		onRetenirEtablissement: () => undefined,
 		onEnregistrerSiren: () => undefined,
@@ -838,9 +842,9 @@ function pageDu(
 		onAppliquerLettrage: () => undefined,
 		onBasculerFacture,
 		onConstituer: () => undefined,
-		onDeposerPieces: () => undefined,
-		onClasserPiece: () => undefined,
-		onRetirerPiece: () => undefined
+		onAjouterPieces: () => undefined,
+		onOuvrirPiece: () => undefined,
+		onClasserPiece: () => undefined
 	};
 }
 

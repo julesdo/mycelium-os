@@ -173,8 +173,8 @@ export function travauxDuVeilleur({
 			dit: depot.etape ?? 'en attente de lecture',
 			quand: null,
 			etat: 'EN_COURS',
-			vers: '/app/import-factures/$id',
-			parametres: { id: depot.id }
+			vers: '/app/coffre',
+			recherche: { document: `IMPORT:${depot.id}` }
 		});
 	}
 

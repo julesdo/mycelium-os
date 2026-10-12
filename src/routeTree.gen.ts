@@ -24,6 +24,7 @@ import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppClientsRouteImport } from './routes/app/clients'
+import { Route as AppCoffreRouteImport } from './routes/app/coffre'
 import { Route as AppCompteRouteImport } from './routes/app/compte'
 import { Route as AppDebiteursRouteImport } from './routes/app/debiteurs'
 import { Route as AppDefenseRouteImport } from './routes/app/defense'
@@ -123,6 +124,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppClientsRoute = AppClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCoffreRoute = AppCoffreRouteImport.update({
+  id: '/coffre',
+  path: '/coffre',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCompteRoute = AppCompteRouteImport.update({
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
+  '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/defense': typeof AppDefenseRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
+  '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/defense': typeof AppDefenseRoute
@@ -343,6 +351,7 @@ export interface FileRoutesById {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
+  '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
   '/app/debiteurs': typeof AppDebiteursRouteWithChildren
   '/app/defense': typeof AppDefenseRoute
@@ -386,6 +395,7 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/app/clients'
+    | '/app/coffre'
     | '/app/compte'
     | '/app/debiteurs'
     | '/app/defense'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/app/clients'
+    | '/app/coffre'
     | '/app/compte'
     | '/app/debiteurs'
     | '/app/defense'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/app/clients'
+    | '/app/coffre'
     | '/app/compte'
     | '/app/debiteurs'
     | '/app/defense'
@@ -621,6 +633,13 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/app/clients'
       preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/coffre': {
+      id: '/app/coffre'
+      path: '/coffre'
+      fullPath: '/app/coffre'
+      preLoaderRoute: typeof AppCoffreRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/compte': {
@@ -831,6 +850,7 @@ const AppImportFacturesRouteWithChildren =
 
 interface AppRouteRouteChildren {
   AppClientsRoute: typeof AppClientsRouteWithChildren
+  AppCoffreRoute: typeof AppCoffreRoute
   AppCompteRoute: typeof AppCompteRoute
   AppDebiteursRoute: typeof AppDebiteursRouteWithChildren
   AppDefenseRoute: typeof AppDefenseRoute
@@ -851,6 +871,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppClientsRoute: AppClientsRouteWithChildren,
+  AppCoffreRoute: AppCoffreRoute,
   AppCompteRoute: AppCompteRoute,
   AppDebiteursRoute: AppDebiteursRouteWithChildren,
   AppDefenseRoute: AppDefenseRoute,

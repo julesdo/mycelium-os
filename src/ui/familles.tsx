@@ -127,12 +127,21 @@ export const FAMILLES: Readonly<Record<FamilleRangee, Famille>> = {
  */
 export function VignetteRangee({
 	famille,
-	className
+	className,
+	picto,
+	classePicto
 }: {
 	readonly famille: FamilleRangee;
 	readonly className?: string;
+	/**
+	 * Un pictogramme plus précis que celui de la famille — le type d'un fichier
+	 * au coffre. La TEINTE reste celle de la famille : elle dit de quoi il s'agit.
+	 */
+	readonly picto?: (props: { className?: string }) => ReactNode;
+	readonly classePicto?: string;
 }) {
-	const { teinte, Picto } = FAMILLES[famille];
+	const { teinte, Picto: PictoDeLaFamille } = FAMILLES[famille];
+	const Picto = picto ?? PictoDeLaFamille;
 	return (
 		<Surface
 			variant="solid"
@@ -141,7 +150,7 @@ export function VignetteRangee({
 			className={cn(`cladd-color-${teinte} size-8 shrink-0 rounded-cladd-sm`, className)}
 			contentClassName="flex size-full items-center justify-center"
 		>
-			<Picto className="size-5 text-cladd-primary" />
+			<Picto className={cn('size-5 text-cladd-primary', classePicto)} />
 		</Surface>
 	);
 }

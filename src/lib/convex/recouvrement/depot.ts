@@ -18,6 +18,7 @@ import { lireFacturXDuPdf, lireFacturXDuXml } from '../../socle/documents/factur
 import { resultatDepuisFacturX } from '../../verticales/recouvrement/import/factureFacturX';
 import { extraireAvecClaude, type ContenuDocument } from '../../socle/documents/extracteur';
 import { pluriel } from '../../socle/francais';
+import { lireAuCoffre } from '../coffre/serrure';
 
 /** Ce que Claude sait lire directement, sans conversion préalable. */
 const TYPES_IMAGE = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -198,16 +199,42 @@ export const traiterImport = internalAction({
 		await ctx.runMutation(internal.recouvrement.depotMutations.marquerEtape, {
 			importId,
 			statut: 'LECTURE',
-			etape: 'Lecture du fichier…'
+			etape: suivi.chiffrement === undefined ? 'Mise au coffre…' : 'Lecture du fichier…'
 		});
 
+		/*
+		  ⚠️ LE FICHIER SE SCELLE AVANT D'ÊTRE LU (12/10/2026). `lireAuCoffre` le vérifie
+		  dans ses octets, l'empreint, le chiffre sous la clé de l'établissement, range
+		  le chiffré et efface l'original ; la lecture reçoit les octets en mémoire. Un
+		  dépôt déjà scellé (rejoué) se rouvre au lieu de se resceller.
+		*/
 		let octets: Buffer;
+		let mimeVerifie: string;
+		let documentId: Id<'_storage'>;
 		try {
-			const blob = await ctx.storage.get(suivi.storageId as Id<'_storage'>);
-			if (blob === null) {
-				throw new Error('Le fichier déposé est introuvable dans le stockage.');
+			const fichier = await lireAuCoffre(ctx, {
+				organizationId: suivi.organizationId,
+				cible: { importId },
+				storageId: suivi.storageId,
+				nom: suivi.filename,
+				...(suivi.chiffrement === undefined ? {} : { chiffrement: suivi.chiffrement }),
+				...(suivi.empreinte === undefined ? {} : { empreinte: suivi.empreinte })
+			});
+			if ('refus' in fichier) {
+				await ctx.runMutation(internal.recouvrement.depotMutations.marquerEchec, {
+					importId,
+					erreur: fichier.refus
+				});
+				return null;
 			}
-			octets = Buffer.from(await blob.arrayBuffer());
+			octets = Buffer.from(fichier.octets);
+			mimeVerifie = fichier.mime;
+			documentId = fichier.storageId;
+			await ctx.runMutation(internal.recouvrement.depotMutations.marquerEtape, {
+				importId,
+				statut: 'LECTURE',
+				etape: 'Lecture du fichier…'
+			});
 		} catch (erreur) {
 			await ctx.runMutation(internal.recouvrement.depotMutations.marquerEchec, {
 				importId,
@@ -245,7 +272,7 @@ export const traiterImport = internalAction({
 				suivi.mode === 'FACTURE_DEPOSEE'
 					? await lireFactureDeposee(
 							octets,
-							suivi.mimeType,
+							mimeVerifie,
 							suivi.filename,
 							profil?.siren ?? undefined
 						)
@@ -274,8 +301,8 @@ export const traiterImport = internalAction({
 			// Le jour se lit ici, une fois : l'enregistrement rejoue la qualification
 			// des clients que le lot touche, et cette date-là est un argument.
 			aujourdHui: new Date().toISOString().slice(0, 10),
-			// Le fichier depose, porte jusqu'a chaque facture qu'il a produite.
-			documentId: suivi.storageId as Id<'_storage'>,
+			// Le fichier deposé — désormais le chiffré du coffre —, porté jusqu'à chaque facture qu'il a produite.
+			documentId,
 			factures: resultat.factures.map((facture) => ({
 				reference: facture.reference,
 				debiteur: facture.debiteur,

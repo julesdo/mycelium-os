@@ -171,8 +171,6 @@ export interface DebiteurComplet {
 	readonly erreurLettrage: string | null;
 	readonly selection: ReadonlySet<string>;
 	readonly erreur: string | null;
-	readonly depotEnCours: boolean;
-	readonly erreurDepot: string | null;
 	readonly onChercherAuRegistre: () => void;
 	readonly onRetenirEtablissement: (etablissement: EtablissementPropose) => void;
 	readonly onEnregistrerSiren: (saisi: string) => void;
@@ -198,9 +196,11 @@ export interface DebiteurComplet {
 	 * deviner, le plan. Absent (la salle), la feuille de choix des factures reste.
 	 */
 	readonly onDemarrer?: () => void;
-	readonly onDeposerPieces: (fichiers: File[]) => void;
+	/** Ouvre le parcours de dépôt au coffre, le même partout. */
+	readonly onAjouterPieces: () => void;
+	/** Ouvre une pièce en plein écran dans la visionneuse du coffre. */
+	readonly onOuvrirPiece: (pieceId: string) => void;
 	readonly onClasserPiece: (pieceId: string, type: string) => void;
-	readonly onRetirerPiece: (pieceId: string) => void;
 }
 
 /** La facture dont la prescription tombe le plus tôt, et dans combien de jours. */
@@ -404,8 +404,6 @@ function CorpsDebiteur({
 	erreurLettrage,
 	selection,
 	erreur,
-	depotEnCours,
-	erreurDepot,
 	onChercherAuRegistre,
 	onRetenirEtablissement,
 	onEnregistrerSiren,
@@ -419,9 +417,9 @@ function CorpsDebiteur({
 	onBasculerFacture,
 	onConstituer,
 	onDemarrer,
-	onDeposerPieces,
-	onClasserPiece,
-	onRetirerPiece
+	onAjouterPieces,
+	onOuvrirPiece,
+	onClasserPiece
 }: DebiteurComplet) {
 	const provenance = useProvenance();
 	/** Les rangées ouvertes. Aucune à l'arrivée : leur valeur se lit fermée. */
@@ -825,18 +823,16 @@ function CorpsDebiteur({
 					cle="documents"
 					famille="PAPIERS"
 					titre="Documents"
-					glose="Déposés ici, lus et classés tout seuls."
+					glose="Chiffrés au coffre, lus et classés tout seuls."
 					valeur={pieces.length === 0 ? 'aucun' : `${pieces.length}`}
 				>
 					<Pieces
 						pieces={pieces}
 						optionsType={TYPES_PIECE}
-						enCours={depotEnCours}
-						onDeposer={onDeposerPieces}
+						onAjouter={onAjouterPieces}
+						onOuvrir={onOuvrirPiece}
 						onClasser={onClasserPiece}
-						onRetirer={onRetirerPiece}
 					/>
-					{erreurDepot ? <p className="text-cladd-xs text-cladd-fg">{erreurDepot}</p> : null}
 				</RangeeDepliable>
 
 				{/*

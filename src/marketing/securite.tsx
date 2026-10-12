@@ -31,7 +31,8 @@ const GARDE_FOUS = [
 	{
 		Icone: LockIcon,
 		titre: 'Données chiffrées et cloisonnées',
-		texte: 'Échanges en HTTPS, données séparées par entreprise, accès bancaires chiffrés (AES-256).'
+		texte:
+			'Échanges en HTTPS, données séparées par entreprise, documents et accès bancaires chiffrés (AES-256).'
 	},
 	{
 		Icone: Trash2Icon,

@@ -1,8 +1,6 @@
-import { v, ConvexError } from 'convex/values';
+import { v } from 'convex/values';
 import { internalQuery, internalMutation } from '../_generated/server';
-import { authedMutation, authedQuery } from '../functions';
-import { internal } from '../_generated/api';
-import { getUserOrg } from '../lib/auth';
+import { vChiffrementDocument } from './tables';
 
 /**
  * Les lectures et écritures du dépôt.
@@ -34,51 +32,12 @@ const vBilan = v.object({
 	ignoreesTotal: v.number()
 });
 
-/** L'URL d'envoi. Le fichier n'appartient à personne tant qu'il n'est pas enregistré. */
-export const genererUrlDepot = authedMutation({
-	args: {},
-	returns: v.string(),
-	handler: async (ctx) => {
-		// L'appartenance s'établit à `enregistrerFichier`, qui vérifie
-		// l'organisation. Une URL d'envoi seule ne donne accès à rien.
-		await getUserOrg(ctx);
-		return await ctx.storage.generateUploadUrl();
-	}
-});
-
-/**
- * Enregistre un fichier déposé et lance sa lecture.
- *
- * La lecture part en tâche planifiée plutôt qu'en ligne : un export de deux
- * cents factures dépasserait le temps d'une mutation, et surtout l'écran doit
- * pouvoir montrer la progression au lieu d'attendre.
- */
-export const enregistrerFichier = authedMutation({
-	args: {
-		storageId: v.id('_storage'),
-		filename: v.string(),
-		mimeType: v.string(),
-		mode: vMode
-	},
-	returns: v.id('importsRecouvrement'),
-	handler: async (ctx, args) => {
-		const { organizationId } = await getUserOrg(ctx);
-
-		const importId = await ctx.db.insert('importsRecouvrement', {
-			organizationId,
-			storageId: args.storageId,
-			filename: args.filename,
-			mimeType: args.mimeType,
-			mode: args.mode,
-			statut: 'EN_ATTENTE',
-			etape: 'En attente de lecture…',
-			deposeLe: Date.now()
-		});
-
-		await ctx.scheduler.runAfter(0, internal.recouvrement.depot.traiterImport, { importId });
-		return importId;
-	}
-});
+/*
+  ⚠️ L'ENVOI ET L'ENREGISTREMENT ONT DÉMÉNAGÉ AU COFFRE (12/10/2026). Un fichier
+  n'entre plus que par `coffre/coffre.ts` (`genererUrlCoffre`, `confierAuCoffre`),
+  qui le fait sceller avant toute lecture. Le suivi d'un dépôt se lit là-bas aussi
+  (`suivreLeDepot`, `listerLeCoffre`).
+*/
 
 export const obtenirImport = internalQuery({
 	args: { importId: v.id('importsRecouvrement') },
@@ -91,7 +50,9 @@ export const obtenirImport = internalQuery({
 			/** Le type MIME et le nom : la lecture d’une facture déposée en dépend. */
 			mimeType: v.string(),
 			filename: v.string(),
-			statut: vStatut
+			statut: vStatut,
+			chiffrement: v.optional(vChiffrementDocument),
+			empreinte: v.optional(v.string())
 		})
 	),
 	handler: async (ctx, { importId }) => {
@@ -103,7 +64,9 @@ export const obtenirImport = internalQuery({
 			mode: suivi.mode,
 			mimeType: suivi.mimeType,
 			filename: suivi.filename,
-			statut: suivi.statut
+			statut: suivi.statut,
+			chiffrement: suivi.chiffrement,
+			empreinte: suivi.empreinte
 		};
 	}
 });
@@ -143,72 +106,5 @@ export const marquerEchec = internalMutation({
 			termineLe: Date.now()
 		});
 		return null;
-	}
-});
-
-/** Les dépôts récents de l'établissement, du plus récent au plus ancien. */
-export const listerImports = authedQuery({
-	args: { limite: v.optional(v.number()) },
-	returns: v.array(
-		v.object({
-			_id: v.id('importsRecouvrement'),
-			filename: v.string(),
-			mode: vMode,
-			statut: vStatut,
-			etape: v.optional(v.string()),
-			erreur: v.optional(v.string()),
-			bilan: v.optional(vBilan),
-			deposeLe: v.number()
-		})
-	),
-	handler: async (ctx, { limite }) => {
-		const { organizationId } = await getUserOrg(ctx);
-
-		const imports = await ctx.db
-			.query('importsRecouvrement')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.order('desc')
-			.take(limite ?? 20);
-
-		return imports.map((suivi) => ({
-			_id: suivi._id,
-			filename: suivi.filename,
-			mode: suivi.mode,
-			statut: suivi.statut,
-			etape: suivi.etape,
-			erreur: suivi.erreur,
-			bilan: suivi.bilan,
-			deposeLe: suivi.deposeLe
-		}));
-	}
-});
-
-/** Le suivi d'un dépôt précis, pour l'écran qui le regarde travailler. */
-export const suivreImport = authedQuery({
-	args: { importId: v.id('importsRecouvrement') },
-	returns: v.object({
-		filename: v.string(),
-		statut: vStatut,
-		etape: v.optional(v.string()),
-		erreur: v.optional(v.string()),
-		bilan: v.optional(vBilan)
-	}),
-	handler: async (ctx, { importId }) => {
-		const { organizationId } = await getUserOrg(ctx);
-		const suivi = await ctx.db.get(importId);
-
-		// Le cloisonnement vient AVANT tout : connaître un identifiant ne doit
-		// pas suffire à lire le dépôt d'un autre établissement.
-		if (suivi === null || suivi.organizationId !== organizationId) {
-			throw new ConvexError('Dépôt introuvable');
-		}
-
-		return {
-			filename: suivi.filename,
-			statut: suivi.statut,
-			etape: suivi.etape,
-			erreur: suivi.erreur,
-			bilan: suivi.bilan
-		};
 	}
 });

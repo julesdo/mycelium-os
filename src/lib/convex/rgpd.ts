@@ -563,6 +563,14 @@ export const purgerEtablissement = internalMutation({
 			});
 		};
 
+		// 0. LA CLÉ DU COFFRE, AVANT TOUT (12/10/2026). Sans elle, les documents
+		//    chiffrés de l'établissement sont illisibles — y compris dans une copie
+		//    ancienne du stockage que la purge ne peut pas atteindre. Les jetons
+		//    d'ouverture et le journal du coffre partent avec elle.
+		budget = await viderParIndexOrg(ctx, 'coffresCles', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'ticketsCoffre', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'accesDocuments', organizationId, budget);
+
 		// 1. Ce que le compagnon a posé, et le suivi d'une remise. ELLES PARTENT
 		//    EN PREMIER parce qu'elles sont le feuillage le plus extérieur : une
 		//    proposition cite une pièce, une remise cite une créance, un décompte
@@ -920,7 +928,10 @@ async function viderParIndexOrg(
 		| 'propositions'
 		| 'echangesCompagnon'
 		| 'remisesAuConseil'
-		| 'connexionsQonto',
+		| 'connexionsQonto'
+		| 'coffresCles'
+		| 'ticketsCoffre'
+		| 'accesDocuments',
 	organizationId: Id<'organizations'>,
 	budget: number
 ): Promise<number> {

@@ -218,6 +218,36 @@ mon équipe » sur l'écran Défense (`app/use-annuaire.ts`). La fiche se pousse
 exempté NOMMÉMENT par `recherche-cloisonnee.test.ts`, qui vérifie qu'il ne porte aucun
 `organizationId`.
 
+**Les documents vivent dans un coffre-fort depuis le 12/10/2026**
+(`docs/superpowers/specs/2026-10-12-coffre-fort.md`). Le fondateur : un dépôt « très dégueux au
+beau milieu de l'accueil », « aucune sensation de sécurisation », et « il s'agit de données
+extrêmement sensibles ». Trois choses ont changé :
+- **Le chiffrement est réel.** Chaque fichier est SCELLÉ à son arrivée, avant toute lecture
+  (`convex/coffre/serrure.ts`, logique pure dans `socle/coffre/`) : format vérifié dans ses octets,
+  empreinte SHA-256, AES-256-GCM sous une clé PAR ÉTABLISSEMENT (`coffresCles`), elle-même
+  enveloppée par `COFFRE_CLE_MAITRESSE` (variable Convex, posée en dev et en prod) ; l'original en
+  clair est effacé. **Perdre la clé maîtresse rend tous les documents illisibles** : elle se
+  sauvegarde hors de Convex. Un document ne sort jamais par une adresse durable : `ouvrirAuCoffre`
+  vérifie la session, note le geste et rend un jeton d'une minute, que `/coffre/ouvrir` consomme
+  une fois et déchiffre ; l'écran montre le contenu depuis la mémoire (PDF dessiné par `unpdf`,
+  jamais d'`<iframe>`). Chaque dépôt, ouverture, téléchargement et retrait s'inscrit dans
+  `accesDocuments`. La purge RGPD efface la clé EN PREMIER. Ce qu'on n'écrit jamais : « de bout en
+  bout », « personne d'autre que vous » — nos serveurs détiennent les clés, et un document part
+  au prestataire de lecture.
+- **Un seul parcours de dépôt, partout** (`ParcoursDepot`, sur `PleinEcran` comme le choix des
+  professionnels) : « Vos documents » (fichiers ou photo, vérifiés AVANT l'envoi — format, taille,
+  doublon par empreinte calculée dans le navigateur), « Mise au coffre » (l'avancement réel de
+  l'envoi, puis de la lecture), « Résumé ». L'accueil, le coffre, le dossier et la fiche client
+  l'ouvrent (`useDepotAuCoffre`, `app/coffre-en-place.tsx`). **L'accueil ne porte plus aucune
+  carte de dépôt** : son bouton rond ouvre le parcours, et une rangée « Coffre-fort » y mène.
+- **Tout document se relit** : `/app/coffre` (remplace « Vos dépôts » ; `/app/import-factures`
+  redirige), groupé par mois, filtré en pastilles, avec les derniers accès ; un toucher ouvre la
+  visionneuse (`VisionneuseDocument`) — l'aperçu, ce que la lecture a donné, le sceau et
+  l'empreinte, le journal du document, le retrait derrière une confirmation. Deux volets au-delà
+  de 1024 px. `?deposer=1` ouvre le dépôt : c'est là que mènent tous les « Importer ». Une
+  lecture sans nouvelle depuis quinze minutes le dit, et son document se retire.
+  Les documents antérieurs se scellent par `npx convex run --prod coffre/anciens:scellerLesAnciens`.
+
 **Le site public a changé de direction artistique le 06/10/2026**
 (`docs/superpowers/specs/2026-10-06-site-direction-artistique.md`, vingt références Mobbin). Le
 fondateur : « des formes, de l'humanité, un feeling, une vraie DA en intégrant notre cible ». La

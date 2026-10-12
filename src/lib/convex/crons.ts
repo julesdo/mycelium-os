@@ -74,6 +74,14 @@ crons.daily(
 	{}
 );
 
+// LES JETONS D'OUVERTURE DU COFFRE EXPIRÉS : une minute de vie, effacés chaque nuit.
+crons.daily(
+	'ticketsCoffre',
+	{ hourUTC: 3, minuteUTC: 30 },
+	internal.coffre.coffreInterne.purgerTicketsExpires,
+	{}
+);
+
 /*
   LES FICHES SE RENDENT CHERCHABLES (12/10/2026). Le rattrapage complète, lot par
   lot, le département et le texte de recherche des fiches ingérées avant ; une fois

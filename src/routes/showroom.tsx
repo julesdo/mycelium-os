@@ -9,7 +9,6 @@ import {
 	PageBody,
 	EmptyState,
 	Bandeau,
-	BilanImport,
 	FluxEvenements,
 	BilanPertes,
 	IdentiteDebiteur,
@@ -40,7 +39,6 @@ import {
 	SECTEURS_DEMO,
 	VOIE_DEMO
 } from './-salle/communes';
-import { DEPOTS_DEMO } from './-salle/depots';
 import { BILAN_DEMO, BILAN_SURVEILLANCE_INTERROMPUE_DEMO } from './-salle/revelation';
 import { chercherDansLaDemo, RECENTS_DEMO } from './-salle/recherche';
 import { useAnnuaireDemo } from './-salle/annuaire-demo';
@@ -536,25 +534,6 @@ function DemoSurveillanceMuette() {
 }
 
 /**
- * LES QUATRE ÉTATS D'UN DÉPÔT, CÔTE À CÔTE : ceux de `-salle/depots.ts`, que les
- * pages de l'import montrent l'un après l'autre.
- */
-function DemoBilanImport() {
-	return (
-		<Page>
-			<PageHeader titre="Vos dépôts" sousTitre="Les quatre états d’un import" />
-			<PageBody>
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-cladd-3xs">
-					{DEPOTS_DEMO.map((depot) => (
-						<BilanImport key={depot.id} depot={depot} />
-					))}
-				</div>
-			</PageBody>
-		</Page>
-	);
-}
-
-/**
  * LE VEILLEUR EN PERSONNE, dans ses trois etats.
  *
  * ⚠️ IL N'APPARAIT PAS DANS LA COQUILLE DE CETTE SALLE, et c'est correct :
@@ -790,7 +769,6 @@ const ECRANS = [
 	'recherche',
 	'recherche-vide',
 	'veilleur',
-	'bilan-import',
 	'lettrage',
 	'identite',
 	'rail',
@@ -927,7 +905,6 @@ function Showroom() {
 					<>
 						{ecran === 'recherche' ? <DemoRecherche vide={false} /> : null}
 						{ecran === 'recherche-vide' ? <DemoRecherche vide /> : null}
-						{ecran === 'bilan-import' ? <DemoBilanImport /> : null}
 						{ecran === 'veilleur' ? <DemoVeilleurAvatar /> : null}
 						{ecran === 'lettrage' ? <DemoLettrage /> : null}
 						{ecran === 'identite' ? <DemoIdentite /> : null}

@@ -9,7 +9,7 @@ import { ECRANS_DEFENSE } from './defense';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
 import { ECRANS_FILE } from './file';
-import { ECRANS_IMPORT } from './import';
+import { ECRANS_COFFRE } from './coffre';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
 
@@ -79,7 +79,7 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	  le décompte qui les fondent.
 	*/
 	...ECRANS_DEBITEURS,
-	...ECRANS_IMPORT,
+	...ECRANS_COFFRE,
 	...ECRANS_COMPTE,
 	...ECRANS_DEFENSE,
 	/*

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, useNavigate, type HistoryState } from '@tanstack/react-router';
 import { useMutation, useAction } from 'convex/react';
+import { useCoffreEnPlace } from '../../app/coffre-en-place';
 import { useQuery } from '../../app/donnees';
 import { precharger } from '../../app/prechargement';
 import { api } from '../../lib/convex/_generated/api';
@@ -107,10 +108,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const poserTaux = useMutation(api.recouvrement.tauxContractuel.renseigner);
 	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
 	const appliquerRepartition = useMutation(api.recouvrement.lettrage.appliquerRepartition);
-	const genererUrlPiece = useMutation(api.recouvrement.pieces.genererUrlPiece);
-	const deposerPiece = useMutation(api.recouvrement.pieces.deposerPiece);
 	const classerPiece = useMutation(api.recouvrement.pieces.classerPiece);
-	const retirerPiece = useMutation(api.recouvrement.pieces.retirerPiece);
 
 	const [selection, setSelection] = useState<ReadonlySet<string>>(() => new Set());
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -127,8 +125,6 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const [constatTaux, setConstatTaux] = useState<string | null>(null);
 	const [montantCherche, setMontantCherche] = useState<bigint | null>(null);
 	const [erreurLettrage, setErreurLettrage] = useState<string | null>(null);
-	const [depotEnCours, setDepotEnCours] = useState(false);
-	const [erreurDepot, setErreurDepot] = useState<string | null>(null);
 	/**
 	 * LE VIREMENT QUI VIENT D'ÊTRE NOTÉ — la coche qui le dit (09/10/2026).
 	 *
@@ -147,6 +143,16 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	);
 
 	const debiteur = debiteurs?.find((ligne) => ligne._id === debiteurId);
+
+	/**
+	 * SES DOCUMENTS, AU COFFRE : le même parcours de dépôt et la même visionneuse
+	 * que partout. Une pièce déposée ici n'impose aucun type : elle entre « à
+	 * classer », la lecture part en tâche de fond, le gérant corrige si besoin.
+	 */
+	const coffre = useCoffreEnPlace({
+		destination: { debiteurId, factureIds: [] },
+		titre: debiteur === undefined ? 'la fiche de ce client' : `la fiche de ${debiteur.denomination}`
+	});
 
 	/**
 	 * CE QUE LE PRODUIT SAIT DU NUMÉRO : `null` tant que la liste n'a pas répondu,
@@ -378,39 +384,6 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	}
 
 	/**
-	 * ⚠️ LE DÉPÔT N'IMPOSE AUCUN TYPE. La pièce entre « à classer », la lecture
-	 * part en tâche de fond, et le gérant ne corrige que si elle s'est trompée.
-	 */
-	async function deposerPieces(fichiers: File[]) {
-		setErreurDepot(null);
-		setDepotEnCours(true);
-		try {
-			for (const fichier of fichiers) {
-				const url = await genererUrlPiece();
-				const reponse = await fetch(url, {
-					method: 'POST',
-					headers: { 'Content-Type': fichier.type },
-					body: fichier
-				});
-				if (!reponse.ok) throw new Error(`L'envoi de « ${fichier.name} » a échoué.`);
-				const { storageId } = (await reponse.json()) as { storageId: Id<'_storage'> };
-
-				await deposerPiece({
-					storageId,
-					filename: fichier.name,
-					mimeType: fichier.type,
-					debiteurId,
-					factureIds: []
-				});
-			}
-		} catch (e) {
-			setErreurDepot(e instanceof Error ? e.message : 'Dépôt refusé.');
-		} finally {
-			setDepotEnCours(false);
-		}
-	}
-
-	/**
 	 * LE TAUX STIPULÉ EN VIGUEUR, RELU DEPUIS LES FACTURES.
 	 *
 	 * Il se pose par relation mais vit sur la facture — toutes les non soldées du
@@ -437,6 +410,7 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 
 	return (
 		<>
+			{coffre.rendu}
 			{reussite === null || debiteur === undefined ? null : (
 				<FeuilleDeReussite
 					ouverte
@@ -480,8 +454,6 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 									erreurLettrage,
 									selection,
 									erreur,
-									depotEnCours,
-									erreurDepot,
 									onChercherAuRegistre: () => void chercherAuRegistrePour(),
 									onRetenirEtablissement: (etablissement) =>
 										void retenirEtablissement(etablissement),
@@ -499,14 +471,13 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 									onConstituer: (provenance) => void constituer(provenance),
 									onDemarrer: () =>
 										void navigate({ to: '/app/demarrer/$id', params: { id: debiteurId } }),
-									onDeposerPieces: (fichiers) => void deposerPieces(fichiers),
+									onAjouterPieces: coffre.ajouter,
+									onOuvrirPiece: coffre.ouvrirPiece,
 									onClasserPiece: (pieceId, type) =>
 										void classerPiece({
 											pieceId: pieceId as Id<'pieces'>,
 											type: type as 'BON_DE_LIVRAISON'
-										}),
-									onRetirerPiece: (pieceId) =>
-										void retirerPiece({ pieceId: pieceId as Id<'pieces'> })
+										})
 								}
 							}
 				}

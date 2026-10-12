@@ -94,14 +94,12 @@ export {
 	type LiensDePaiementAffiches
 } from './lien-de-paiement';
 export { ConfirmationParSaisie } from './confirmation-par-saisie';
-export { AjoutDeFichiers, ZoneDepot } from './zone-depot';
 export { DirigeantsProposes, type DirigeantPropose, type EtatDirigeants } from './dirigeants';
 export {
 	ImmatriculationProposeeAuRegistre,
 	type EtatImmatriculation,
 	type ImmatriculationProposee
 } from './immatriculation';
-export { BilanImport, type DepotAffiche, type BilanDepotAffiche } from './bilan-import';
 export {
 	Tableau,
 	TableauEntete,
@@ -207,6 +205,45 @@ export {
 	type FicheASaisir,
 	type RoleIntervenant
 } from './fiches-professionnels';
+export {
+	PleinEcran,
+	ColonneDePleinEcran,
+	BarreDePleinEcran,
+	JaugeDEtapes,
+	BoutonRond,
+	PiedDePleinEcran
+} from './plein-ecran';
+export { MINUTES_SANS_NOUVELLE, delaiLisible, minutesDepuis, useMinute } from './minute';
+export {
+	PastillesDeFiltre,
+	ProtectionsDuCoffre,
+	TeteDuCoffre,
+	VignetteDocument,
+	VisionneuseDocument,
+	JournalDuCoffre,
+	type EntreeDuJournal,
+	cleDeRef,
+	libelleDeLaPiece,
+	ligneDuDocument,
+	natureDuMime,
+	refDepuisCle,
+	tailleEnClair,
+	type BilanCourt,
+	type ContenuOuvert,
+	type DetailDocument,
+	type GenreDocument,
+	type GesteDuJournal,
+	type PersonneAffichee,
+	type RefCoffre,
+	type ResumeDocument
+} from './coffre';
+export {
+	ParcoursDepot,
+	type DepotAuCoffre,
+	type FichierAuDepot,
+	type PhaseDuFichier,
+	type ProprietesParcoursDepot
+} from './parcours-depot';
 export {
 	ParcoursProfessionnels,
 	type AnnuaireDuParcours,

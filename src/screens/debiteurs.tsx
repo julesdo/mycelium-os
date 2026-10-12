@@ -331,7 +331,10 @@ function familleDuClient(
 	debiteur: LigneDebiteur,
 	habitude: HabitudeDeLaLigne | undefined
 ): FamilleRangee | undefined {
-	if (debiteur.santeFinanciere === 'RADIEE' || debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE') {
+	if (
+		debiteur.santeFinanciere === 'RADIEE' ||
+		debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE'
+	) {
 		return 'MACHINE';
 	}
 	return habitude?.rompu === true ? 'TEMPS' : undefined;
@@ -442,7 +445,7 @@ export function EcranDebiteurs({
 							'Ouvrez un client pour voir tout ce qu’il doit, facture par facture.'
 						],
 						action: (
-							<BoutonPrincipal as={Lien} to="/app/import-factures">
+							<BoutonPrincipal as={Lien} to="/app/coffre" search={{ deposer: 1 } as never}>
 								<UploadIcon />
 								Importer mes factures
 							</BoutonPrincipal>
@@ -777,9 +780,7 @@ export function EcranDebiteurs({
 								titre={debiteur.denomination}
 								montant={eurosCentimes(debiteur.encours)}
 								{...(ligne === undefined ? {} : { ligne })}
-								{...(habitude === undefined
-									? {}
-									: { date: delaiCourt(habitude.delaiMedianJours) })}
+								{...(habitude === undefined ? {} : { date: delaiCourt(habitude.delaiMedianJours) })}
 								{...(famille === undefined ? {} : { famille })}
 							/>
 						);

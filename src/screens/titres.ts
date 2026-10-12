@@ -20,5 +20,6 @@ export const TITRE_ECRAN = {
 	  fichier vert.
 	*/
 	compte: 'Votre compte',
-	imports: 'Vos dépôts'
+	imports: 'Vos dépôts',
+	coffre: 'Coffre-fort'
 } as const;

@@ -79,9 +79,16 @@ describe('schéma du recouvrement', () => {
 		// `remisesAuConseil`. Elles sont posées AVANT le code qui les écrira, et
 		// c'est une décision de livraison : la bascule vers la file ne doit
 		// porter aucun schéma, pour qu'un `git revert` la rende en entier.
+		//
+		// ⚠️ ET TROIS DE PLUS LE 12 OCTOBRE 2026, avec le coffre-fort des documents
+		// (`convex/coffre/`) : la clé chiffrée de chaque établissement
+		// (`coffresCles`), le journal des accès (`accesDocuments`) et les jetons
+		// d'ouverture d'une minute (`ticketsCoffre`).
 		expect(TABLES.map(([nom]) => nom).sort()).toEqual([
+			'accesDocuments',
 			'annuaireAvocats',
 			'battements',
+			'coffresCles',
 			'creances',
 			'debiteurs',
 			'decomptes',
@@ -101,6 +108,7 @@ describe('schéma du recouvrement', () => {
 			'reglements',
 			'remisesAuConseil',
 			'suiviDossier',
+			'ticketsCoffre',
 			// Le pilote, qui vit en permanence, et le journal de ce qu'il fait (08/10/2026).
 			'travauxPilote'
 		]);

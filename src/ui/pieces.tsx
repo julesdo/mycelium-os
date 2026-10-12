@@ -1,6 +1,7 @@
-import { Button, Chip, Select, Surface } from '@cladd-ui/react';
-import { AlertTriangleIcon, FileTextIcon, Trash2Icon } from 'lucide-react';
-import { ZoneDepot } from './zone-depot';
+import { Chip, Select, Surface } from '@cladd-ui/react';
+import { AlertTriangleIcon, ChevronRightIcon, LockIcon, PlusIcon } from 'lucide-react';
+import { BoutonSecondaire } from './bouton';
+import { VignetteDocument, mimeProbable } from './coffre';
 import { dateCourte } from './format';
 
 /**
@@ -48,6 +49,10 @@ export interface PieceAffichee {
 	 */
 	readonly tauxRetardStipule?: string;
 	readonly constat?: string;
+	/** Le type du fichier, pour sa vignette. */
+	readonly mimeType?: string;
+	/** Chiffrée au coffre : le cadenas de sa carte le dit. */
+	readonly scelle?: boolean;
 }
 
 export interface OptionTypePiece {
@@ -105,33 +110,43 @@ export const TYPES_PIECE: readonly OptionTypePiece[] = [
 	{ cle: 'FACTURE', libelle: 'Facture', apport: 'La facture elle-même' }
 ];
 
+/**
+ * ⚠️ LE DÉPÔT N'EST PLUS ICI (12/10/2026) : UN bouton ouvre le parcours de dépôt,
+ * le même qu'à l'accueil et au coffre (`ParcoursDepot`). La zone qui se dépliait
+ * dans la rangée faisait déposer des pièces sensibles « au beau milieu » d'un
+ * dossier, sans rien dire de ce qu'elles devenaient.
+ *
+ * ⚠️ ET UNE PIÈCE SE RELIT. Sa carte s'ouvre en plein écran dans la visionneuse
+ * du coffre : l'aperçu, ce que la lecture a trouvé, son sceau et qui l'a ouverte.
+ * Le retrait vit là-bas, derrière une confirmation, et s'inscrit au journal :
+ * une poubelle au bout de chaque carte retirait une preuve d'un toucher.
+ */
 export function Pieces({
 	pieces,
 	optionsType,
-	onDeposer,
+	onAjouter,
+	onOuvrir,
 	onClasser,
-	onRetirer,
 	enCours = false
 }: {
 	pieces: readonly PieceAffichee[];
 	optionsType: readonly OptionTypePiece[];
-	onDeposer: (fichiers: File[]) => void;
+	onAjouter: () => void;
+	onOuvrir: (pieceId: string) => void;
 	onClasser: (pieceId: string, type: string) => void;
-	onRetirer: (pieceId: string) => void;
 	enCours?: boolean;
 }) {
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
-			<ZoneDepot
-				accept="application/pdf,image/*,text/plain,message/rfc822"
-				onFichiers={onDeposer}
-				desactive={enCours}
-			>
-				<p className="text-cladd-sm font-medium">Bon de livraison, commande, CGV, contrat…</p>
-				<p className="text-cladd-2xs text-cladd-fg-softer">
-					Le document est lu et classé tout seul. Vous corrigez si besoin.
-				</p>
-			</ZoneDepot>
+			<BoutonSecondaire pleineLargeur onClick={onAjouter} disabled={enCours}>
+				<PlusIcon />
+				Ajouter des documents
+			</BoutonSecondaire>
+			<p className="flex items-start gap-1.5 px-1 text-cladd-2xs text-cladd-fg-soft">
+				<LockIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+				Bon de livraison, commande, CGV, contrat : chiffrés au coffre dès leur arrivée, lus et
+				classés tout seuls.
+			</p>
 
 			{pieces.map((piece) => (
 				<Surface
@@ -141,13 +156,29 @@ export function Pieces({
 					className="verre-carte rounded-cladd-xl"
 					contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 				>
-					<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
-						<span className="flex min-w-0 items-center gap-1.5">
-							<FileTextIcon className="size-3.5 shrink-0 text-cladd-fg-softer" aria-hidden />
+					{/* LA CARTE S'OUVRE : l'aperçu en plein écran, comme au coffre. */}
+					<button
+						type="button"
+						onClick={() => onOuvrir(piece._id)}
+						aria-label={`Ouvrir ${piece.filename}`}
+						className="-m-1 flex min-h-11 items-center gap-cladd-3xs rounded-cladd-lg p-1 text-left transition-transform duration-150 active:scale-[0.99]"
+					>
+						<VignetteDocument
+							mime={mimeProbable(piece.mimeType, piece.filename)}
+							scelle={piece.scelle ?? false}
+						/>
+						<span className="flex min-w-0 flex-1 flex-col">
 							<span className="truncate text-cladd-xs font-medium">{piece.filename}</span>
+							{/* Ne dit « scellée » que ce qui l'est, et « en route » que ce qui l'est. */}
+							{piece.scelle ? (
+								<span className="text-cladd-2xs text-cladd-fg-soft">Chiffrée au coffre</span>
+							) : piece.statut === 'EN_LECTURE' ? (
+								<span className="text-cladd-2xs text-cladd-fg-soft">Mise au coffre…</span>
+							) : null}
 						</span>
 						<EtatLecture statut={piece.statut} />
-					</div>
+						<ChevronRightIcon className="size-4 shrink-0 text-cladd-fg-softer" aria-hidden />
+					</button>
 
 					{/* Le constat de la lecture, MOT POUR MOT. Le reformuler ici ferait
 					    un second endroit où le produit dit ce qu'il a lu. */}
@@ -169,48 +200,29 @@ export function Pieces({
 					{piece.dateDocument ? (
 						<p className="text-cladd-2xs text-cladd-fg-softest">
 							Daté du {dateCourte(piece.dateDocument)}
-							{piece.reference ? ` — n° ${piece.reference}` : ''}
+							{piece.reference ? `, n° ${piece.reference}` : ''}
 						</p>
 					) : null}
 
-					<div className="flex flex-wrap items-center gap-cladd-3xs">
-						{/* Le sélecteur est TOUJOURS là, pas seulement quand la lecture a
-						    échoué : le modèle peut se tromper avec assurance, et une
-						    correction qu'il faut chercher ne se fait pas. */}
-						<Select
-							className="min-w-0 flex-1"
-							surface="cut"
-							size="lg"
-							title="Nature du document"
-							options={[...optionsType]}
-							value={piece.type}
-							getOptionValue={(option) => option.cle}
-							onChange={(cle) => onClasser(piece._id, cle as string)}
-							renderOption={({ value }) => value.libelle}
-							renderOptionInfo={({ value }) => value.apport}
-							keyboardHints={false}
-							placeholder="À classer"
-						>
-							{optionsType.find((o) => o.cle === piece.type)?.libelle ?? 'À classer'}
-						</Select>
-
-						<Button
-							variant="transparent"
-							outline={false}
-							hoverable={false}
-							rounded
-							size="lg"
-							disabled={enCours}
-							onClick={() => onRetirer(piece._id)}
-							aria-label={`Retirer ${piece.filename}`}
-							// ⚠️ `min-w-12` — 48 px. Sans lui le bouton ne fait que 36 px de
-							// large : il se dimensionne sur son icône, et le plancher tactile
-							// du projet tombe. Mesuré à l'écran, invisible partout ailleurs.
-							className="verre verre-bouton min-w-12 shrink-0 justify-center transition-transform duration-150 active:scale-[0.97]"
-						>
-							<Trash2Icon className="size-4" aria-hidden />
-						</Button>
-					</div>
+					{/* Le sélecteur est TOUJOURS là, pas seulement quand la lecture a
+					    échoué : le modèle peut se tromper avec assurance, et une
+					    correction qu'il faut chercher ne se fait pas. */}
+					<Select
+						className="min-w-0"
+						surface="cut"
+						size="lg"
+						title="Nature du document"
+						options={[...optionsType]}
+						value={piece.type}
+						getOptionValue={(option) => option.cle}
+						onChange={(cle) => onClasser(piece._id, cle as string)}
+						renderOption={({ value }) => value.libelle}
+						renderOptionInfo={({ value }) => value.apport}
+						keyboardHints={false}
+						placeholder="À classer"
+					>
+						{optionsType.find((o) => o.cle === piece.type)?.libelle ?? 'À classer'}
+					</Select>
 				</Surface>
 			))}
 		</div>

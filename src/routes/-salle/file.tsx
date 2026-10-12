@@ -1,7 +1,6 @@
 import { Button } from '@cladd-ui/react';
 import { BuildingIcon, ChevronDownIcon } from 'lucide-react';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
-import { DEPOT_A_ECARTS_DEMO, DEPOT_PARFAIT_DEMO } from './depots';
 import { ANCIENNETE_DEMO, REVELATION_DEMO } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
@@ -283,33 +282,6 @@ const RANGEES_DEMO: readonly RangeeDeLaFile[] = [
 			rienATrancher: false
 		}
 	},
-	{
-		genre: 'DEPOT',
-		id: 'r-depot-ecarts',
-		debiteur: 'Dépôt du 09/09',
-		depot: DEPOT_A_ECARTS_DEMO,
-		pli: {
-			libelle: { un: 'dépôt terminé', plusieurs: 'dépôts terminés' },
-			// Rien à trancher, et pourtant il reste PLEIN : deux lignes écartées.
-			rienATrancher: true,
-			lignesEcartees: 2
-		}
-	},
-	{
-		genre: 'DEPOT',
-		id: 'r-depot-parfait',
-		debiteur: 'Dépôt du 08/09',
-		depot: DEPOT_PARFAIT_DEMO,
-		// Rien d'écarté : c'est le SEUL dépôt qui a le droit de se replier.
-		pli: {
-			libelle: {
-				un: 'dépôt terminé sans rien d’écarté',
-				plusieurs: 'dépôts terminés sans rien d’écarté'
-			},
-			rienATrancher: true,
-			lignesEcartees: 0
-		}
-	},
 	...Array.from({ length: 142 }, (_, rang): RangeeDeLaFile => {
 		const numero = `${rang + 1}`.padStart(3, '0');
 		return {
@@ -527,8 +499,8 @@ const GARNIE: FileAffichee = {
 	*/
 	resumeDuPlafond: resumeDuPlafond(7, 12),
 	verrous: [],
-	onFichiers: () => {},
-	accepteFichiers: '.csv,.txt,.pdf,image/*',
+	onDeposer: () => {},
+	coffre: { total: 24, auMoins: false, enLecture: 0 },
 	...RANGEE_DU_HAUT_DEMO
 };
 
@@ -586,7 +558,7 @@ const VIERGE: FileAffichee = {
  */
 const RIEN_A_TRANCHER: FileAffichee = {
 	...GARNIE,
-	rangees: RANGEES_DEMO.filter((r) => r.genre === 'DEPOT' || r.genre === 'LETTRAGE'),
+	rangees: RANGEES_DEMO.filter((r) => r.genre === 'LETTRAGE'),
 	annonce: undefined,
 	resumeDuPlafond: null
 };

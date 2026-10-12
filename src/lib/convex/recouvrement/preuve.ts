@@ -3,6 +3,7 @@
 import { v } from 'convex/values';
 import { internalAction } from '../_generated/server';
 import { internal } from '../_generated/api';
+import { lireAuCoffre } from '../coffre/serrure';
 import { extraireAvecClaude, type ContenuDocument } from '../../socle/documents/extracteur';
 import {
 	construirePromptPreuve,
@@ -48,11 +49,26 @@ export const lireLaPiece = internalAction({
 
 		let contenu: ContenuDocument;
 		try {
-			const blob = await ctx.storage.get(piece.storageId);
-			if (blob === null) throw new Error('Le fichier déposé est introuvable dans le stockage.');
+			// ⚠️ SCELLÉE AVANT D'ÊTRE LUE (12/10/2026) : voir `coffre/serrure.ts`. Les
+			// octets en clair ne vivent qu'en mémoire, le temps de cette lecture.
+			const fichier = await lireAuCoffre(ctx, {
+				organizationId: piece.organizationId,
+				cible: { pieceId },
+				storageId: piece.storageId,
+				nom: piece.filename,
+				...(piece.chiffrement === undefined ? {} : { chiffrement: piece.chiffrement }),
+				...(piece.empreinte === undefined ? {} : { empreinte: piece.empreinte })
+			});
+			if ('refus' in fichier) {
+				await ctx.runMutation(internal.recouvrement.pieces.marquerEchecInterne, {
+					pieceId,
+					constat: fichier.refus
+				});
+				return null;
+			}
 
-			const octets = Buffer.from(await blob.arrayBuffer());
-			const mime = piece.mimeType ?? '';
+			const octets = Buffer.from(fichier.octets);
+			const mime = fichier.mime;
 
 			if (mime === 'application/pdf') {
 				// ⚠️ LE PDF PART TEL QUEL. Le convertir en images détruirait sa couche

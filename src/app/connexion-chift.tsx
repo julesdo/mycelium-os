@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAction } from 'convex/react';
 import { useQuery } from './donnees';
 import { api } from '../lib/convex/_generated/api';
-import { minutesDepuis, useMinute } from '../screens/import/horloge';
+import { minutesDepuis, useMinute } from '../ui/minute';
 import { CarteConnexion, PictoLogiciel, type EtatConnexion } from '../ui';
 import { COUVERTURE_QONTO } from './connexion-qonto';
 

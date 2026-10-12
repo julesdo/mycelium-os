@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useConvex, useMutation } from 'convex/react';
+import { useCoffreEnPlace } from '../../app/coffre-en-place';
 import { useQuery } from '../../app/donnees';
 import { precharger } from '../../app/prechargement';
 import type { FunctionReturnType } from 'convex/server';
@@ -217,10 +218,7 @@ function PageCreance() {
 	const declarerFait = useMutation(api.recouvrement.creances.declarerFait);
 	const repondre = useMutation(api.recouvrement.creances.repondre);
 	const choisirOrdreImputation = useMutation(api.recouvrement.creances.choisirOrdreImputation);
-	const genererUrlPiece = useMutation(api.recouvrement.pieces.genererUrlPiece);
-	const deposerPiece = useMutation(api.recouvrement.pieces.deposerPiece);
 	const classerPiece = useMutation(api.recouvrement.pieces.classerPiece);
-	const retirerPiece = useMutation(api.recouvrement.pieces.retirerPiece);
 	const consignerEvenement = useMutation(api.recouvrement.apresProcedure.consignerEvenement);
 	const engagerProcedure = useMutation(api.recouvrement.apresProcedure.engagerProcedure);
 	const designerIntervenant = useMutation(api.recouvrement.apresProcedure.designerIntervenant);
@@ -229,6 +227,20 @@ function PageCreance() {
 	const professionnels = useAnnuaire({ debiteurId: creance?.debiteurId, carnet });
 	// « Qui signe pour votre client », proposé d'après le registre.
 	const dirigeantsDuClient = useDirigeantsDuClient(creance?.debiteurId);
+	/**
+	 * LES PIÈCES, AU COFFRE : le même parcours de dépôt et la même visionneuse que
+	 * partout. ⚠️ LE DÉPÔT N'IMPOSE AUCUN TYPE : la pièce entre « à classer », la
+	 * lecture part en tâche de fond, et le gérant ne corrige que si elle s'est
+	 * trompée — demander la nature d'un PDF qui porte « BON DE LIVRAISON » en
+	 * en-tête est le champ vide que la première règle d'écran interdit.
+	 */
+	const coffre = useCoffreEnPlace({
+		destination: {
+			...(creance === undefined ? {} : { debiteurId: creance.debiteurId }),
+			factureIds: []
+		},
+		titre: creance === undefined ? 'ce dossier' : `le dossier de ${creance.debiteur}`
+	});
 
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -274,34 +286,6 @@ function PageCreance() {
 		} finally {
 			setEnCours(false);
 		}
-	}
-
-	/**
-	 * ⚠️ LE DÉPÔT N'IMPOSE AUCUN TYPE. La pièce entre « à classer », la lecture
-	 * part en tâche de fond, et le gérant ne corrige que si elle s'est trompée.
-	 * Demander la nature d'un PDF qui porte « BON DE LIVRAISON » en en-tête est
-	 * exactement le champ vide que la première règle d'écran interdit.
-	 */
-	async function deposerDesPieces(fichiers: File[], debiteurId: Id<'debiteurs'>) {
-		await avec(async () => {
-			for (const fichier of fichiers) {
-				const url = await genererUrlPiece();
-				const reponse = await fetch(url, {
-					method: 'POST',
-					headers: { 'Content-Type': fichier.type },
-					body: fichier
-				});
-				if (!reponse.ok) throw new Error(`L’envoi de « ${fichier.name} » a échoué.`);
-				const { storageId } = (await reponse.json()) as { storageId: Id<'_storage'> };
-				await deposerPiece({
-					storageId,
-					filename: fichier.name,
-					mimeType: fichier.type,
-					debiteurId,
-					factureIds: []
-				});
-			}
-		});
 	}
 
 	/**
@@ -902,12 +886,12 @@ function PageCreance() {
 
 		pieces,
 		optionsTypePiece: TYPES_PIECE,
-		onDeposer: (fichiers) => void deposerDesPieces(fichiers, debiteurId),
+		onAjouterPieces: coffre.ajouter,
+		onOuvrirPiece: coffre.ouvrirPiece,
 		onClasser: (pieceId, type) =>
 			void avec(() =>
 				classerPiece({ pieceId: pieceId as Id<'pieces'>, type: type as 'BON_DE_LIVRAISON' })
 			),
-		onRetirer: (pieceId) => void avec(() => retirerPiece({ pieceId: pieceId as Id<'pieces'> })),
 
 		suivi,
 		voies: creance.procedures,
@@ -979,10 +963,13 @@ function PageCreance() {
 	};
 
 	return (
-		<EcranCreance
-			donnees={{ etat: 'pret', valeur }}
-			{...(recherche.ouvrir === undefined ? {} : { ouvrirAuDepart: recherche.ouvrir })}
-		/>
+		<>
+			<EcranCreance
+				donnees={{ etat: 'pret', valeur }}
+				{...(recherche.ouvrir === undefined ? {} : { ouvrirAuDepart: recherche.ouvrir })}
+			/>
+			{coffre.rendu}
+		</>
 	);
 }
 

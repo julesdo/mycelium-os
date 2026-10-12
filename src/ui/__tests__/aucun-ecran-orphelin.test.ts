@@ -66,6 +66,16 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 	 * dossier. Mais c'est une CHAÎNE copiée, pas un lien de routeur — et ce test
 	 * ne compte que les seconds, à juste titre.
 	 */
+	/**
+	 * ⚠️ DEUX REDIRECTIONS, PAS DEUX ÉCRANS (12/10/2026). « Vos dépôts » est devenu
+	 * le coffre-fort (`/app/coffre`) : plus aucun écran n'y mène, et c'est voulu.
+	 * Les adresses restent parce qu'une notification ancienne ou un favori les
+	 * porte encore ; elles mènent au coffre, ou au document dans le coffre.
+	 */
+	'/app/import-factures':
+		'Redirection vers le coffre-fort. On y arrive par un lien ancien (notification, favori), jamais depuis un écran.',
+	'/app/import-factures/$id':
+		'Redirection vers le document dans le coffre-fort. On y arrive par un lien ancien, jamais depuis un écran.',
 	'/p/$jeton':
 		'La page où le client du créancier paie. On y arrive par le lien que le gérant lui envoie, jamais depuis un écran.',
 	/**
