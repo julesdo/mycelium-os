@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Button, Popup, PopupContent, Surface } from '@cladd-ui/react';
+import { Button, Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from './cn';
 import { dateCourte } from './format';
 import { useDeuxVolets } from './maitre-detail';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * CE QUI BLOQUE — en tête de page, ou nulle part.
@@ -255,17 +256,15 @@ export function CeQuiBloque({ alertes }: { readonly alertes: readonly AlerteDoss
 			  hors du cadre — qui passent toutes par `onOpenChange`.
 			*/}
 			{deuxVolets ? null : (
-				<Popup
-					open={lue !== null}
-					onOpenChange={(o) => {
-						if (!o) setOuverte(null);
-					}}
-					headerLeft={
-						<span className="px-2 pb-1 text-cladd-xs font-semibold">{lue?.titre ?? ''}</span>
-					}
+				<FeuillePleinEcran
+					ouverte={lue !== null}
+					onFermer={() => setOuverte(null)}
+					titre={lue?.titre ?? ''}
 				>
-					<PopupContent>{lue === null ? null : <DetailDeLAlerte alerte={lue} />}</PopupContent>
-				</Popup>
+					<SectionDeFeuille>
+						{lue === null ? null : <DetailDeLAlerte alerte={lue} />}
+					</SectionDeFeuille>
+				</FeuillePleinEcran>
 			)}
 		</Surface>
 	);

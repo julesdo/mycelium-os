@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Input, Popup, PopupContent, Segmented, SegmentedButton } from '@cladd-ui/react';
+import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { versements } from '../lib/verticales/recouvrement/gabarits/accord-echeancier';
 import { BoutonPrincipal, BoutonTexte } from './bouton';
 import { MessageErreur } from './cadre-auth';
 import { ChiffreHero } from './chiffre';
 import { cn } from './cn';
 import { dateCourte, eurosCentimes, jourDecale } from './format';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * L'ÉCHÉANCIER — le client paie en plusieurs fois (analyse des parcours du 08/10/2026).
@@ -118,17 +119,21 @@ export function FeuilleEcheancier({
 	const calendrier = valide && resteDu > 0n ? versements(resteDu, nombre, premiereLe, 1) : [];
 
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) onFermer();
-			}}
-			headerLeft={
-				<span className="px-2 pb-1 text-cladd-xs font-semibold">Payer en plusieurs fois</span>
+		<FeuillePleinEcran
+			ouverte={ouverte}
+			onFermer={onFermer}
+			titre="Payer en plusieurs fois"
+			pied={
+				<BoutonPrincipal
+					pleineLargeur
+					disabled={enCours || calendrier.length === 0}
+					onClick={() => onConvenir({ nombre, premiereLe })}
+				>
+					{enCours ? 'Enregistrement…' : `Convenir du paiement en ${nombre} fois`}
+				</BoutonPrincipal>
 			}
-			contentClassName="max-w-lg"
 		>
-			<PopupContent>
+			<SectionDeFeuille>
 				<div className="flex flex-col gap-cladd-xs">
 					<ChiffreHero
 						centimes={resteDu}
@@ -194,14 +199,6 @@ export function FeuilleEcheancier({
 
 					{erreur === null ? null : <MessageErreur>{erreur}</MessageErreur>}
 
-					<BoutonPrincipal
-						pleineLargeur
-						disabled={enCours || calendrier.length === 0}
-						onClick={() => onConvenir({ nombre, premiereLe })}
-					>
-						{enCours ? 'Enregistrement…' : `Convenir du paiement en ${nombre} fois`}
-					</BoutonPrincipal>
-
 					<p className="px-1 text-center text-cladd-3xs leading-relaxed text-cladd-fg-softer">
 						Tant que les versements arrivent, je ne relance pas {client}. Si l’un d’eux manque de
 						plus de trois jours, les relances reprennent.
@@ -215,8 +212,8 @@ export function FeuilleEcheancier({
 						</BoutonTexte>
 					)}
 				</div>
-			</PopupContent>
-		</Popup>
+			</SectionDeFeuille>
+		</FeuillePleinEcran>
 	);
 }
 

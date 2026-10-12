@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Button, Popup, PopupContent } from '@cladd-ui/react';
+import { Button } from '@cladd-ui/react';
 import { LigneBouton, ListeAnalyses } from './navigation';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * LA CARTE QU'ON BALAIE — les gestes d'une carte, sous elle, à portée de pouce.
@@ -278,15 +279,8 @@ export function CarteGlissable({
 			  chaque toucher du menu remonterait jusqu'aux gestionnaires de la carte et
 			  relancerait un appui long sous le doigt.
 			*/}
-			<Popup
-				open={menu}
-				onOpenChange={(o) => {
-					if (!o) setMenu(false);
-				}}
-				headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
-				contentClassName="max-w-lg"
-			>
-				<PopupContent>
+			<FeuillePleinEcran ouverte={menu} onFermer={() => setMenu(false)} titre={titre}>
+				<SectionDeFeuille>
 					<ListeAnalyses>
 						{actions.map((action) => (
 							<LigneBouton
@@ -301,8 +295,8 @@ export function CarteGlissable({
 							/>
 						))}
 					</ListeAnalyses>
-				</PopupContent>
-			</Popup>
+				</SectionDeFeuille>
+			</FeuillePleinEcran>
 		</>
 	);
 }

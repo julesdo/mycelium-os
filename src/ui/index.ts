@@ -211,7 +211,9 @@ export {
 	BarreDePleinEcran,
 	JaugeDEtapes,
 	BoutonRond,
-	PiedDePleinEcran
+	PiedDePleinEcran,
+	FeuillePleinEcran,
+	SectionDeFeuille
 } from './plein-ecran';
 export { MINUTES_SANS_NOUVELLE, delaiLisible, minutesDepuis, useMinute } from './minute';
 export {

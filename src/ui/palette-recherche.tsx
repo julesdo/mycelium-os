@@ -5,16 +5,14 @@ import {
 	List,
 	ListButton,
 	ListTitle,
-	Popup,
-	PopupContent,
 	SearchField,
 	SectionTitle,
-	Spinner,
-	Surface
+	Spinner
 } from '@cladd-ui/react';
 import { FileTextIcon, GavelIcon, SearchIcon, UploadIcon, UsersIcon } from 'lucide-react';
 import { dateCourte, eurosCentimes } from './format';
 import { sirenLisible } from './recherche-registre';
+import { ColonneDePleinEcran, PleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * LE DÉCLENCHEUR : une pilule, pas un champ.
@@ -358,149 +356,143 @@ export function PaletteRecherche({
 	};
 
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) onFermer();
-			}}
-			aria-label="Rechercher un client, une facture ou un dossier"
-			closeButton={false}
-			header={false}
-			// Ancrée en haut plutôt que centrée : sa hauteur suit les résultats, et
-			// une colonne centrée sauterait à chaque lettre. Pleine largeur sous
-			// 1024 px, où le clavier mange déjà la moitié de l'écran.
-			wrapClassName="self-start"
-			contentClassName="justify-start max-lg:max-w-none"
+		// EN PAGE PLEINE (12/10/2026), comme la recherche d'iOS et toutes les
+		// feuilles du produit : le champ en haut, les résultats qui défilent avec la
+		// page, et rien qui saute à chaque lettre.
+		<PleinEcran
+			ouvert={ouverte}
+			onFermer={onFermer}
+			libelle="Rechercher un client, une facture ou un dossier"
 		>
-			{/*
+			<ColonneDePleinEcran>
+				{/*
 			  L'EN-TÊTE COLLE EN HAUT : quand « Voir tout » déplie cinquante rangées,
 			  le champ et « Annuler » restent à portée de pouce.
 			*/}
-			<Surface
-				variant="transparent"
-				outline={false}
-				className="verre-dense sticky top-0 z-20 rounded-full"
-				contentClassName="flex items-center gap-cladd-3xs p-1"
-			>
-				<SearchField
-					size="md"
-					// Monté dans le même toucher que l'ouverture : Safari iOS n'ouvre le
-					// clavier que pendant le geste, jamais après une transition.
-					autoFocus
-					enterKeyHint="search"
-					value={terme}
-					onChange={(valeur) => onTerme(valeur)}
-					onKeyDown={auClavier}
-					placeholder="Durand, FA-2026-0311…"
-					aria-label="Nom, numéro de facture ou SIREN"
-					className="min-w-0 flex-1"
-					suffix={aJour ? null : <Spinner size="xs" className="mr-2" />}
-				/>
-				<Button size="md" variant="transparent" outline={false} rounded onClick={onFermer}>
-					Annuler
-				</Button>
-			</Surface>
-
-			{cherche === '' ? (
-				etablissementVide ? (
-					<PopupContent>
-						<List>
-							<ListButton
-								icon={<UploadIcon size={18} />}
-								className="verre-bouton"
-								hoverable={false}
-								onClick={() => onOuvrir({ genre: 'IMPORT' })}
-							>
-								Importer des factures
-							</ListButton>
-						</List>
-					</PopupContent>
-				) : recents.length > 0 ? (
-					<PopupContent>
-						<List>
-							<ListTitle>Ce qui a bougé</ListTitle>
-							{recents.map((recent) => (
-								<LigneTrouvee
-									key={recent.id}
-									rangee={{
-										cle: recent.id,
-										icone: <UsersIcon size={18} />,
-										titre: recent.denomination,
-										pied: recent.motif,
-										destination: { genre: 'DEBITEUR', debiteurId: recent.id }
-									}}
-									onOuvrir={onOuvrir}
-								/>
-							))}
-						</List>
-					</PopupContent>
-				) : null
-			) : rendues.length === 0 ? (
-				aJour && resultat !== null ? (
-					<PopupContent>
-						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							Rien pour « {cherche} » dans les clients, les factures et les dossiers.
-						</p>
-					</PopupContent>
-				) : null
-			) : (
-				rendues.map((famille) => {
-					const repliee = deplie !== null && deplie !== famille.famille;
-					const depliee = deplie === famille.famille;
-					const deborde = famille.total > PREMIERS_PAR_FAMILLE;
-					return (
-						<PopupContent key={famille.famille}>
-							<SectionTitle>
-								<span>{famille.titre}</span>
-								<Chip size="md">{famille.borne ? `${famille.total} et plus` : famille.total}</Chip>
-								{repliee ? (
-									<Button
-										size="md"
-										variant="transparent"
-										outline={false}
-										rounded
-										className="ml-auto normal-case"
-										onClick={() => onDeplier(deborde ? famille.famille : null)}
-									>
-										Afficher
-									</Button>
-								) : depliee ? (
-									<Button
-										size="md"
-										variant="transparent"
-										outline={false}
-										rounded
-										className="ml-auto normal-case"
-										onClick={() => onDeplier(null)}
-									>
-										Réduire
-									</Button>
-								) : deborde ? (
-									<Button
-										size="md"
-										variant="transparent"
-										outline={false}
-										rounded
-										className="ml-auto normal-case"
-										onClick={() => onDeplier(famille.famille)}
-									>
-										Voir tout
-									</Button>
-								) : null}
-							</SectionTitle>
-							{repliee ? null : (
+				<div className="verre-barre-haute sticky top-0 z-20 -mx-cladd-2xs flex items-center gap-cladd-3xs px-cladd-2xs pt-barre-app pb-cladd-3xs">
+					<SearchField
+						size="md"
+						// Monté dans le même toucher que l'ouverture : Safari iOS n'ouvre le
+						// clavier que pendant le geste, jamais après une transition.
+						autoFocus
+						enterKeyHint="search"
+						value={terme}
+						onChange={(valeur) => onTerme(valeur)}
+						onKeyDown={auClavier}
+						placeholder="Durand, FA-2026-0311…"
+						aria-label="Nom, numéro de facture ou SIREN"
+						className="min-w-0 flex-1"
+						suffix={aJour ? null : <Spinner size="xs" className="mr-2" />}
+					/>
+					<Button size="md" variant="transparent" outline={false} rounded onClick={onFermer}>
+						Annuler
+					</Button>
+				</div>
+				<div className="flex flex-col gap-cladd-xs pt-cladd-2xs pb-cladd-sm">
+					{cherche === '' ? (
+						etablissementVide ? (
+							<SectionDeFeuille>
 								<List>
-									{famille.rangees
-										.slice(0, depliee ? undefined : PREMIERS_PAR_FAMILLE)
-										.map((rangee) => (
-											<LigneTrouvee key={rangee.cle} rangee={rangee} onOuvrir={onOuvrir} />
-										))}
+									<ListButton
+										icon={<UploadIcon size={18} />}
+										className="verre-bouton"
+										hoverable={false}
+										onClick={() => onOuvrir({ genre: 'IMPORT' })}
+									>
+										Importer des factures
+									</ListButton>
 								</List>
-							)}
-						</PopupContent>
-					);
-				})
-			)}
-		</Popup>
+							</SectionDeFeuille>
+						) : recents.length > 0 ? (
+							<SectionDeFeuille>
+								<List>
+									<ListTitle>Ce qui a bougé</ListTitle>
+									{recents.map((recent) => (
+										<LigneTrouvee
+											key={recent.id}
+											rangee={{
+												cle: recent.id,
+												icone: <UsersIcon size={18} />,
+												titre: recent.denomination,
+												pied: recent.motif,
+												destination: { genre: 'DEBITEUR', debiteurId: recent.id }
+											}}
+											onOuvrir={onOuvrir}
+										/>
+									))}
+								</List>
+							</SectionDeFeuille>
+						) : null
+					) : rendues.length === 0 ? (
+						aJour && resultat !== null ? (
+							<SectionDeFeuille>
+								<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+									Rien pour « {cherche} » dans les clients, les factures et les dossiers.
+								</p>
+							</SectionDeFeuille>
+						) : null
+					) : (
+						rendues.map((famille) => {
+							const repliee = deplie !== null && deplie !== famille.famille;
+							const depliee = deplie === famille.famille;
+							const deborde = famille.total > PREMIERS_PAR_FAMILLE;
+							return (
+								<SectionDeFeuille key={famille.famille}>
+									<SectionTitle>
+										<span>{famille.titre}</span>
+										<Chip size="md">
+											{famille.borne ? `${famille.total} et plus` : famille.total}
+										</Chip>
+										{repliee ? (
+											<Button
+												size="md"
+												variant="transparent"
+												outline={false}
+												rounded
+												className="ml-auto normal-case"
+												onClick={() => onDeplier(deborde ? famille.famille : null)}
+											>
+												Afficher
+											</Button>
+										) : depliee ? (
+											<Button
+												size="md"
+												variant="transparent"
+												outline={false}
+												rounded
+												className="ml-auto normal-case"
+												onClick={() => onDeplier(null)}
+											>
+												Réduire
+											</Button>
+										) : deborde ? (
+											<Button
+												size="md"
+												variant="transparent"
+												outline={false}
+												rounded
+												className="ml-auto normal-case"
+												onClick={() => onDeplier(famille.famille)}
+											>
+												Voir tout
+											</Button>
+										) : null}
+									</SectionTitle>
+									{repliee ? null : (
+										<List>
+											{famille.rangees
+												.slice(0, depliee ? undefined : PREMIERS_PAR_FAMILLE)
+												.map((rangee) => (
+													<LigneTrouvee key={rangee.cle} rangee={rangee} onOuvrir={onOuvrir} />
+												))}
+										</List>
+									)}
+								</SectionDeFeuille>
+							);
+						})
+					)}
+				</div>
+			</ColonneDePleinEcran>
+		</PleinEcran>
 	);
 }

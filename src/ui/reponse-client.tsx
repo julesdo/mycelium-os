@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { Input, Popup, PopupContent } from '@cladd-ui/react';
-import { ChevronLeftIcon } from 'lucide-react';
-import { BoutonPrincipal, BoutonTexte } from './bouton';
+import { Input } from '@cladd-ui/react';
+import { BoutonPrincipal } from './bouton';
 import { Champ, MessageErreur } from './cadre-auth';
 import { CarteBouton, CarteLien, ListeDeCartes } from './carte-rangee';
 import { VignetteRangee } from './familles';
 import { eurosCentimes, jourDecale } from './format';
+import {
+	BarreDePleinEcran,
+	ColonneDePleinEcran,
+	PiedDePleinEcran,
+	PleinEcran
+} from './plein-ecran';
 
 /**
  * « IL VOUS A RÉPONDU ? » — UNE QUESTION, CINQ ISSUES (analyse des parcours du 08/10/2026).
@@ -69,91 +74,87 @@ export function FeuilleReponseClient({
 	};
 
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) fermer();
-			}}
-			headerLeft={
-				etape === 'CHOIX' ? (
-					<span className="px-2 pb-1 text-cladd-xs font-semibold">Il vous a répondu ?</span>
-				) : (
-					<BoutonTexte className="pb-1" onClick={() => setEtape('CHOIX')}>
-						<ChevronLeftIcon />
-						Il vous a répondu ?
-					</BoutonTexte>
-				)
-			}
-			contentClassName="max-w-lg"
-		>
-			<PopupContent>
-				{etape === 'CHOIX' ? (
-					<div className="flex flex-col gap-cladd-3xs">
-						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-							Ce que {client} vous a dit, au téléphone ou par écrit.
-						</p>
-						<ListeDeCartes>
-							<CarteBouton
-								titre="Il va payer"
-								ligne="Un jour, et le montant"
-								icone={<VignetteRangee famille="ARGENT" className="size-10" />}
-								onClick={() => setEtape('PROMESSE')}
-							/>
-							{onEcheancier === undefined ? null : (
+		<PleinEcran ouvert={ouverte} onFermer={fermer} libelle="Il vous a répondu ?">
+			<ColonneDePleinEcran>
+				<BarreDePleinEcran
+					titre={etape === 'CHOIX' ? 'Il vous a répondu ?' : 'Il va payer'}
+					sousTitre={client}
+					{...(etape === 'CHOIX' ? {} : { onRetour: () => setEtape('CHOIX') })}
+					onFermer={fermer}
+				/>
+				<div className="flex flex-1 flex-col gap-cladd-xs pt-cladd-2xs pb-cladd-sm">
+					{etape === 'CHOIX' ? (
+						<div className="flex flex-col gap-cladd-3xs">
+							<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+								Ce que {client} vous a dit, au téléphone ou par écrit.
+							</p>
+							<ListeDeCartes>
 								<CarteBouton
-									titre="Il veut payer en plusieurs fois"
-									ligne="Un échéancier, suivi versement par versement"
-									icone={<VignetteRangee famille="TEMPS" className="size-10" />}
+									titre="Il va payer"
+									ligne="Un jour, et le montant"
+									icone={<VignetteRangee famille="ARGENT" className="size-10" />}
+									onClick={() => setEtape('PROMESSE')}
+								/>
+								{onEcheancier === undefined ? null : (
+									<CarteBouton
+										titre="Il veut payer en plusieurs fois"
+										ligne="Un échéancier, suivi versement par versement"
+										icone={<VignetteRangee famille="TEMPS" className="size-10" />}
+										onClick={() => {
+											fermer();
+											onEcheancier();
+										}}
+									/>
+								)}
+								<CarteBouton
+									titre="Il conteste"
+									ligne="Notez ce qu’il dit : le dossier continue"
+									icone={<VignetteRangee famille="QUESTION" className="size-10" />}
 									onClick={() => {
 										fermer();
-										onEcheancier();
+										onContestation();
 									}}
 								/>
-							)}
-							<CarteBouton
-								titre="Il conteste"
-								ligne="Notez ce qu’il dit : le dossier continue"
-								icone={<VignetteRangee famille="QUESTION" className="size-10" />}
-								onClick={() => {
-									fermer();
-									onContestation();
-								}}
-							/>
-							<CarteLien
-								vers="/app/clients/$id"
-								parametres={{ id: debiteurId }}
-								titre="Il dit avoir déjà payé"
-								ligne="Notez le règlement sur sa fiche"
-								icone={<VignetteRangee famille="PAPIERS" className="size-10" />}
-							/>
-							<CarteBouton
-								titre="Autre chose"
-								ligne="Une note dans l’historique du dossier"
-								icone={<VignetteRangee famille="MACHINE" className="size-10" />}
-								onClick={() => {
-									fermer();
-									onAutre();
-								}}
-							/>
-						</ListeDeCartes>
-					</div>
-				) : (
-					<div className="flex flex-col gap-cladd-3xs">
-						<Champ etiquette="Combien, en euros">
-							<Input
-								inputMode="decimal"
-								value={montant}
-								onChange={setMontant}
-								placeholder="1 200,00"
-							/>
-						</Champ>
-						<Champ
-							etiquette="Pour quel jour"
-							aide="Je ne le relance pas avant ce jour, plus trois jours pour que le virement arrive."
-						>
-							<Input type="date" value={le} onChange={setLe} />
-						</Champ>
-						{erreur === null ? null : <MessageErreur>{erreur}</MessageErreur>}
+								<CarteLien
+									vers="/app/clients/$id"
+									parametres={{ id: debiteurId }}
+									titre="Il dit avoir déjà payé"
+									ligne="Notez le règlement sur sa fiche"
+									icone={<VignetteRangee famille="PAPIERS" className="size-10" />}
+								/>
+								<CarteBouton
+									titre="Autre chose"
+									ligne="Une note dans l’historique du dossier"
+									icone={<VignetteRangee famille="MACHINE" className="size-10" />}
+									onClick={() => {
+										fermer();
+										onAutre();
+									}}
+								/>
+							</ListeDeCartes>
+						</div>
+					) : (
+						<div className="flex flex-col gap-cladd-3xs">
+							<Champ etiquette="Combien, en euros">
+								<Input
+									inputMode="decimal"
+									value={montant}
+									onChange={setMontant}
+									placeholder="1 200,00"
+								/>
+							</Champ>
+							<Champ
+								etiquette="Pour quel jour"
+								aide="Je ne le relance pas avant ce jour, plus trois jours pour que le virement arrive."
+							>
+								<Input type="date" value={le} onChange={setLe} />
+							</Champ>
+							{erreur === null ? null : <MessageErreur>{erreur}</MessageErreur>}
+						</div>
+					)}
+				</div>
+				{etape === 'PROMESSE' ? (
+					<PiedDePleinEcran>
 						<BoutonPrincipal
 							pleineLargeur
 							disabled={enCours || montant.trim() === '' || le < aujourdHui}
@@ -164,9 +165,9 @@ export function FeuilleReponseClient({
 						>
 							{enCours ? 'Enregistrement…' : 'Noter sa promesse'}
 						</BoutonPrincipal>
-					</div>
-				)}
-			</PopupContent>
-		</Popup>
+					</PiedDePleinEcran>
+				) : null}
+			</ColonneDePleinEcran>
+		</PleinEcran>
 	);
 }

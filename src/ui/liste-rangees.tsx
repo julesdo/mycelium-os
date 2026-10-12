@@ -7,8 +7,6 @@ import {
 	AccordionPanel,
 	AccordionTrigger,
 	Button,
-	Popup,
-	PopupContent,
 	Surface
 } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
@@ -17,6 +15,7 @@ import { cn } from './cn';
 import { useDeuxVolets } from './maitre-detail';
 import { VignetteIcone, VignetteRangee, type FamilleRangee } from './familles';
 import { useSectionOuverte } from './section-depliable';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * DES RANGÉES QUI PORTENT LEUR RÉPONSE, ET S'OUVRENT EN PLACE.
@@ -290,17 +289,11 @@ export function RangeeDepliable({
 				  l'un des trois laisserait la rangée allumée sur une feuille
 				  fermée, et le prochain appui ne ferait rien du tout.
 				*/
-				<Popup
-					open={ouverte}
-					onOpenChange={(o) => {
-						if (!o) fermer();
-					}}
-					headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
-				>
-					<PopupContent>
+				<FeuillePleinEcran ouverte={ouverte} onFermer={() => fermer()} titre={titre}>
+					<SectionDeFeuille>
 						<div className="flex flex-col gap-cladd-2xs">{contenu}</div>
-					</PopupContent>
-				</Popup>
+					</SectionDeFeuille>
+				</FeuillePleinEcran>
 			)}
 		</AccordionItem>
 	);

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
-import { Input, Popup, PopupContent, Surface } from '@cladd-ui/react';
+import { Input, Surface } from '@cladd-ui/react';
 import { FileTextIcon } from 'lucide-react';
 import { BoutonPrincipal, BoutonSecondaire, BoutonTexte } from './bouton';
 import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { EnTeteDeGroupe } from './en-tete-groupe';
 import { dateCourte, eurosCentimes } from './format';
 import { Lien } from './lien';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * LA FILE D'« AUJOURD'HUI » — CE QUI RESTE DE SA RANGÉE, ET LA FEUILLE OÙ L'ON
@@ -321,14 +322,8 @@ export function FeuilleDeDecision({
 				};
 
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) onFermer();
-			}}
-			headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
-		>
-			<PopupContent>
+		<FeuillePleinEcran ouverte={ouverte} onFermer={onFermer} titre={titre}>
+			<SectionDeFeuille>
 				<div className="flex flex-col gap-cladd-2xs">
 					<div className="flex flex-col gap-1">
 						{montant === null ? null : (
@@ -404,8 +399,8 @@ export function FeuilleDeDecision({
 						</BoutonTexte>
 					)}
 				</div>
-			</PopupContent>
-		</Popup>
+			</SectionDeFeuille>
+		</FeuillePleinEcran>
 	);
 }
 

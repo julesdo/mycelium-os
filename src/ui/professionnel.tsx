@@ -1,5 +1,5 @@
 import { Suspense, use, type ReactNode } from 'react';
-import { Button, Popup, PopupContent } from '@cladd-ui/react';
+import { Button } from '@cladd-ui/react';
 import {
 	BriefcaseIcon,
 	CameraIcon,
@@ -20,6 +20,7 @@ import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { cn } from './cn';
 import { dateCourte } from './format';
 import { coordonneesDe, type Coordonnees } from './lieu';
+import { FeuillePleinEcran } from './plein-ecran';
 
 /**
  * LA DÉFENSE — LES PROFESSIONNELS, MONTRÉS COMME DES PERSONNES (08/10/2026).
@@ -265,7 +266,9 @@ export function distanceDepuis(
 	if (depuis === undefined || lieu?.latitude === undefined || lieu.longitude === undefined) {
 		return undefined;
 	}
-	return distanceEnClair(distanceKm(depuis, { latitude: lieu.latitude, longitude: lieu.longitude }));
+	return distanceEnClair(
+		distanceKm(depuis, { latitude: lieu.latitude, longitude: lieu.longitude })
+	);
 }
 
 /** Le lien d'itinéraire : il ouvre l'application de cartes du téléphone. */
@@ -316,8 +319,16 @@ export function CarteDuLieu({
 	const demiLargeur = LARGEUR_MAX / 2 / TUILE;
 	const demiHauteur = HAUTEUR_CARTE / 2 / TUILE;
 	const tuiles: { cle: string; colonne: number; rangee: number }[] = [];
-	for (let colonne = Math.floor(x - demiLargeur); colonne <= Math.floor(x + demiLargeur); colonne++) {
-		for (let rangee = Math.floor(y - demiHauteur); rangee <= Math.floor(y + demiHauteur); rangee++) {
+	for (
+		let colonne = Math.floor(x - demiLargeur);
+		colonne <= Math.floor(x + demiLargeur);
+		colonne++
+	) {
+		for (
+			let rangee = Math.floor(y - demiHauteur);
+			rangee <= Math.floor(y + demiHauteur);
+			rangee++
+		) {
 			tuiles.push({ cle: `${colonne}-${rangee}`, colonne, rangee });
 		}
 	}
@@ -456,7 +467,9 @@ export function cabinetDistinct(pro: ProfessionnelAffiche): string | undefined {
 /** La seconde ligne d'une carte : la profession, et le cabinet s'il dit quelque chose. */
 function ligneDeCarte(pro: ProfessionnelAffiche): string {
 	const cabinet = cabinetDistinct(pro);
-	return cabinet === undefined ? qualiteDe(pro) : `${LIBELLE_ROLE[pro.role]} · ${capitaliser(cabinet)}`;
+	return cabinet === undefined
+		? qualiteDe(pro)
+		: `${LIBELLE_ROLE[pro.role]} · ${capitaliser(cabinet)}`;
 }
 
 /** Une spécialité déclarée, raccourcie pour tenir dans une pastille. */
@@ -659,10 +672,14 @@ export function FicheProfessionnel({
 	const actions: ActionRapide[] = [
 		...(pro.telephone === undefined
 			? []
-			: [{ cle: 'appeler', libelle: 'Appeler', icone: <PhoneIcon />, href: `tel:${pro.telephone}` }]),
+			: [
+					{ cle: 'appeler', libelle: 'Appeler', icone: <PhoneIcon />, href: `tel:${pro.telephone}` }
+				]),
 		...(pro.courriel === undefined
 			? []
-			: [{ cle: 'ecrire', libelle: 'Écrire', icone: <MailIcon />, href: `mailto:${pro.courriel}` }]),
+			: [
+					{ cle: 'ecrire', libelle: 'Écrire', icone: <MailIcon />, href: `mailto:${pro.courriel}` }
+				]),
 		...(adresse === ''
 			? []
 			: [
@@ -763,11 +780,7 @@ export function FicheProfessionnel({
 			)}
 
 			{gestes.principal === undefined ? null : (
-				<BoutonPrincipal
-					pleineLargeur
-					disabled={gestes.enCours}
-					onClick={gestes.principal.onClick}
-				>
+				<BoutonPrincipal pleineLargeur disabled={gestes.enCours} onClick={gestes.principal.onClick}>
 					{gestes.principal.libelle}
 				</BoutonPrincipal>
 			)}
@@ -789,7 +802,7 @@ export function FicheProfessionnel({
 	);
 }
 
-/** La fiche, en feuille : pour l'écran « Défense ». */
+/** La fiche, en page pleine : pour l'écran « Défense ». */
 export function FeuilleProfessionnel({
 	pro,
 	onFermer,
@@ -802,17 +815,14 @@ export function FeuilleProfessionnel({
 	readonly gestes: GestesDeLaFiche;
 }) {
 	return (
-		<Popup
-			open={pro !== null}
-			onOpenChange={(ouverte) => {
-				if (!ouverte) onFermer();
-			}}
-			contentClassName="max-w-lg"
+		<FeuillePleinEcran
+			ouverte={pro !== null}
+			onFermer={onFermer}
+			titre={pro?.nom ?? 'Professionnel'}
+			retour
 		>
-			<PopupContent>
-				{pro === null ? null : <FicheProfessionnel pro={pro} {...fiche} />}
-			</PopupContent>
-		</Popup>
+			{pro === null ? null : <FicheProfessionnel pro={pro} {...fiche} />}
+		</FeuillePleinEcran>
 	);
 }
 
@@ -855,7 +865,9 @@ export function PortraitsDeLEquipe({
 					))
 				)}
 			</div>
-			<p className="max-w-xs text-cladd-xs leading-snug text-balance text-cladd-fg-soft">{legende}</p>
+			<p className="max-w-xs text-cladd-xs leading-snug text-balance text-cladd-fg-soft">
+				{legende}
+			</p>
 		</div>
 	);
 }

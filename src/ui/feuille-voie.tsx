@@ -1,5 +1,6 @@
-import { Popup, PopupContent, Chip, SectionTitle } from '@cladd-ui/react';
+import { Chip, SectionTitle } from '@cladd-ui/react';
 import { BoutonPrincipal } from './bouton';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * UNE VOIE, AVANT DE S'Y ENGAGER.
@@ -48,15 +49,24 @@ export function FeuilleVoie({
 	if (voie === null) return null;
 
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) onFermer();
-			}}
-			headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">{voie.nom}</span>}
-			contentClassName="max-w-lg"
+		<FeuillePleinEcran
+			ouverte={ouverte}
+			onFermer={onFermer}
+			titre={voie.nom}
+			pied={
+				// ⚠️ « JE L'AI ENGAGÉE », AU PASSÉ. « Engager cette procédure » ferait du
+				// logiciel l'auteur de l'acte et du bouton une recommandation : troisième
+				// ligne rouge du projet. Et c'est `BoutonPrincipal`, pas un `Button
+				// color="brand"`, qui rendrait un fond transparent lu comme un lien
+				// (`bouton.tsx` dit pourquoi l'action principale est une pilule).
+				voie.etapes.length === 0 ? null : (
+					<BoutonPrincipal pleineLargeur onClick={onDeclarer}>
+						Je l’ai engagée
+					</BoutonPrincipal>
+				)
+			}
 		>
-			<PopupContent>
+			<SectionDeFeuille>
 				<div className="flex items-center justify-between gap-cladd-3xs">
 					<span className="text-cladd-sm font-bold tracking-tight">{voie.nom}</span>
 					<Chip size="md" color={voie.disponible ? 'green' : 'neutral'}>
@@ -68,10 +78,10 @@ export function FeuilleVoie({
 						{blocage}
 					</p>
 				))}
-			</PopupContent>
+			</SectionDeFeuille>
 
 			{voie.etapes.length === 0 ? null : (
-				<PopupContent>
+				<SectionDeFeuille>
 					<SectionTitle>Comment elle se déroule</SectionTitle>
 					<ol className="mt-cladd-3xs flex flex-col gap-cladd-2xs">
 						{voie.etapes.map((etape, rang) => (
@@ -88,11 +98,11 @@ export function FeuilleVoie({
 							</li>
 						))}
 					</ol>
-				</PopupContent>
+				</SectionDeFeuille>
 			)}
 
 			{voie.conditionsEchec.length === 0 ? null : (
-				<PopupContent>
+				<SectionDeFeuille>
 					<SectionTitle>Ce qui la fait échouer</SectionTitle>
 					<ul className="mt-cladd-3xs flex flex-col gap-cladd-3xs">
 						{voie.conditionsEchec.map((condition) => (
@@ -101,34 +111,8 @@ export function FeuilleVoie({
 							</li>
 						))}
 					</ul>
-				</PopupContent>
+				</SectionDeFeuille>
 			)}
-
-			{voie.etapes.length === 0 ? null : (
-				<PopupContent>
-					{/*
-					  ⚠️ « JE L'AI ENGAGÉE », AU PASSÉ. « Engager cette procédure »
-					  ferait du logiciel l'auteur de l'acte et du bouton une
-					  recommandation. Troisième ligne rouge du projet.
-					*/}
-					{/*
-					  ⚠️ ET C'EST `BoutonPrincipal`, PAS UN `Button color="brand"`.
-					  Mesuré au navigateur : `color="brand"` sur le variant par défaut
-					  rend un bouton au fond TRANSPARENT avec du texte bleu, c'est-à-dire
-					  quelque chose qui se lit comme un lien. L'action la plus lourde de
-					  tout le produit — celle qui met des délais à courir — ne peut pas
-					  être le seul élément de la feuille qu'on ne voit pas.
-
-					  `bouton.tsx` documente pourquoi l'action principale de ce produit
-					  est une pilule blanche : le bleu de marque se fond dans le shader
-					  du fond. La feuille a beau avoir sa propre surface, une deuxième
-					  grammaire d'action principale dans le même produit en ferait deux.
-					*/}
-					<BoutonPrincipal pleineLargeur onClick={onDeclarer}>
-						Je l’ai engagée
-					</BoutonPrincipal>
-				</PopupContent>
-			)}
-		</Popup>
+		</FeuillePleinEcran>
 	);
 }

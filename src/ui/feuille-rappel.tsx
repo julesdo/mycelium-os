@@ -1,6 +1,6 @@
-import { Popup, PopupContent } from '@cladd-ui/react';
 import { dateCourte, jourDecale } from './format';
 import { LigneBouton, ListeAnalyses } from './navigation';
+import { FeuillePleinEcran } from './plein-ecran';
 
 /**
  * « ME LE RAPPELER » — trois dates à toucher, et le dossier remonte ce jour-là.
@@ -38,38 +38,29 @@ export function FeuilleDeRappel({
 	readonly onFermer: () => void;
 }) {
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) onFermer();
-			}}
-			headerLeft={
-				<span className="flex min-w-0 flex-col px-2 pb-1">
-					<span className="text-cladd-xs font-semibold">Me le rappeler</span>
-					<span className="truncate text-cladd-2xs text-cladd-fg-soft">{pour}</span>
-				</span>
-			}
-			contentClassName="max-w-lg"
+		<FeuillePleinEcran
+			ouverte={ouverte}
+			onFermer={onFermer}
+			titre="Me le rappeler"
+			sousTitre={pour}
 		>
-			<PopupContent>
-				<ListeAnalyses>
-					{CHOIX.map((choix) => {
-						const jour = jourDecale(aujourdHui, choix.jours);
-						return (
-							<LigneBouton
-								key={choix.cle}
-								genre="contenu"
-								titre={choix.libelle}
-								valeur={dateCourte(jour)}
-								onClick={() => onChoisir(jour)}
-							/>
-						);
-					})}
-				</ListeAnalyses>
-				<p className="mt-cladd-3xs text-cladd-2xs leading-snug text-cladd-fg-soft">
-					Ce jour-là, le dossier remonte dans Aujourd’hui, avec « Votre rappel ».
-				</p>
-			</PopupContent>
-		</Popup>
+			<ListeAnalyses>
+				{CHOIX.map((choix) => {
+					const jour = jourDecale(aujourdHui, choix.jours);
+					return (
+						<LigneBouton
+							key={choix.cle}
+							genre="contenu"
+							titre={choix.libelle}
+							valeur={dateCourte(jour)}
+							onClick={() => onChoisir(jour)}
+						/>
+					);
+				})}
+			</ListeAnalyses>
+			<p className="mt-cladd-3xs text-cladd-2xs leading-snug text-cladd-fg-soft">
+				Ce jour-là, le dossier remonte dans Aujourd’hui, avec « Votre rappel ».
+			</p>
+		</FeuillePleinEcran>
 	);
 }

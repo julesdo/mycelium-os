@@ -3,8 +3,6 @@ import {
 	Button,
 	Checkbox,
 	Chip,
-	Popup,
-	PopupContent,
 	SearchField,
 	SectionTitle,
 	Segmented,
@@ -15,6 +13,8 @@ import { AlarmClockIcon, CheckIcon, SendIcon, SlidersHorizontalIcon, XIcon } fro
 import { type EtapeDossier } from '../lib/verticales/recouvrement/etapes-dossier';
 import {
 	BoutonPrincipal,
+	FeuillePleinEcran,
+	SectionDeFeuille,
 	BoutonTexte,
 	CarteBouton,
 	CarteGlissable,
@@ -616,51 +616,42 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 			  et la feuille se referme sur la rangée touchée. Un appui de moins, et
 			  aucun état intermédiaire où la coche ne correspond pas à la liste.
 			*/}
-			<Popup
-				open={filtreOuvert}
-				onOpenChange={(o) => {
-					if (!o) setFiltreOuvert(false);
-				}}
-				headerLeft={
-					<span className="px-2 pb-1 text-cladd-xs font-semibold">Filtrer par étape</span>
-				}
-				contentClassName="max-w-lg"
+			<FeuillePleinEcran
+				ouverte={filtreOuvert}
+				onFermer={() => setFiltreOuvert(false)}
+				titre="Filtrer par étape"
 			>
-				<PopupContent>
-					<ListeAnalyses>
-						<LigneBouton
-							genre="contenu"
-							titre="Toutes les étapes"
-							valeur={`${dossiers.length}`}
-							icone={
-								etape === null ? <CheckIcon className="size-5" /> : <span className="size-5" />
-							}
-							onClick={() => {
-								setEtape(null);
-								setFiltreOuvert(false);
-							}}
-						/>
-						{ORDRE.map((cle) => {
-							const nombre = dossiers.filter((d) => d.etape === cle).length;
-							return (
-								<LigneBouton
-									key={cle}
-									genre="contenu"
-									titre={LIBELLE_GROUPE[cle]}
-									valeur={`${nombre}`}
-									icone={
-										etape === cle ? <CheckIcon className="size-5" /> : <span className="size-5" />
-									}
-									onClick={() => {
-										setEtape(cle);
-										setFiltreOuvert(false);
-									}}
-								/>
-							);
-						})}
-					</ListeAnalyses>
-				</PopupContent>
-			</Popup>
+				<ListeAnalyses>
+					<LigneBouton
+						genre="contenu"
+						titre="Toutes les étapes"
+						valeur={`${dossiers.length}`}
+						icone={etape === null ? <CheckIcon className="size-5" /> : <span className="size-5" />}
+						onClick={() => {
+							setEtape(null);
+							setFiltreOuvert(false);
+						}}
+					/>
+					{ORDRE.map((cle) => {
+						const nombre = dossiers.filter((d) => d.etape === cle).length;
+						return (
+							<LigneBouton
+								key={cle}
+								genre="contenu"
+								titre={LIBELLE_GROUPE[cle]}
+								valeur={`${nombre}`}
+								icone={
+									etape === cle ? <CheckIcon className="size-5" /> : <span className="size-5" />
+								}
+								onClick={() => {
+									setEtape(cle);
+									setFiltreOuvert(false);
+								}}
+							/>
+						);
+					})}
+				</ListeAnalyses>
+			</FeuillePleinEcran>
 
 			{rappelPour === null || onRappeler === undefined ? null : (
 				<FeuilleDeRappel
@@ -676,59 +667,12 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 			)}
 
 			{/* LA FEUILLE DU LOT : un seul réglage, celui qui change la lettre. */}
-			<Popup
-				open={feuilleOuverte}
-				onOpenChange={(o) => {
-					if (!o) setFeuilleOuverte(false);
-				}}
-				headerLeft={
-					<span className="px-2 pb-1 text-cladd-xs font-semibold">
-						Préparer {choisis.length} lettre{pluriel(choisis.length)}
-					</span>
-				}
-				contentClassName="max-w-lg"
-			>
-				<PopupContent>
-					<SectionTitle>Le délai que vous lui laissez</SectionTitle>
-					<Segmented
-						className="mt-cladd-3xs"
-						activeColor="neutral"
-						activeVariant="solid"
-						aria-label="Délai laissé au client"
-					>
-						{DELAIS.map((j) => (
-							<SegmentedButton key={j} active={j === delai} onClick={() => setDelaiTouche(j)}>
-								{j} jours
-							</SegmentedButton>
-						))}
-					</Segmented>
-					<p className="mt-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						Chaque lettre est composée sur les chiffres de son dossier, à votre nom, et posée dans «
-						Courriers » à valider. Rien ne part : vous relisez et vous validez chacune, comme pour
-						un dossier seul.
-					</p>
-				</PopupContent>
-
-				{lot !== 'AUCUN' && lot !== 'EN_COURS' ? (
-					<PopupContent>
-						<SectionTitle>Ce que le lot a fait</SectionTitle>
-						<p className="mt-cladd-3xs text-cladd-xs">
-							{lot.fait.prepares} lettre{pluriel(lot.fait.prepares)} préparée
-							{pluriel(lot.fait.prepares)}.
-						</p>
-						{lot.fait.refus.map((refus) => (
-							<p
-								key={refus.debiteur}
-								className="mt-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-soft"
-							>
-								<span className="font-semibold">{refus.debiteur}</span> — {refus.raison}
-							</p>
-						))}
-					</PopupContent>
-				) : null}
-
-				<PopupContent>
-					{lot !== 'AUCUN' && lot !== 'EN_COURS' ? (
+			<FeuillePleinEcran
+				ouverte={feuilleOuverte}
+				onFermer={() => setFeuilleOuverte(false)}
+				titre={`Préparer ${choisis.length} lettre${pluriel(choisis.length)}`}
+				pied={
+					lot !== 'AUCUN' && lot !== 'EN_COURS' ? (
 						<BoutonPrincipal
 							pleineLargeur
 							onClick={() => {
@@ -749,9 +693,48 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 								? 'Composition en cours…'
 								: `Préparer ${choisis.length} lettre${pluriel(choisis.length)}`}
 						</BoutonPrincipal>
-					)}
-				</PopupContent>
-			</Popup>
+					)
+				}
+			>
+				<SectionDeFeuille>
+					<SectionTitle>Le délai que vous lui laissez</SectionTitle>
+					<Segmented
+						className="mt-cladd-3xs"
+						activeColor="neutral"
+						activeVariant="solid"
+						aria-label="Délai laissé au client"
+					>
+						{DELAIS.map((j) => (
+							<SegmentedButton key={j} active={j === delai} onClick={() => setDelaiTouche(j)}>
+								{j} jours
+							</SegmentedButton>
+						))}
+					</Segmented>
+					<p className="mt-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						Chaque lettre est composée sur les chiffres de son dossier, à votre nom, et posée dans «
+						Courriers » à valider. Rien ne part : vous relisez et vous validez chacune, comme pour
+						un dossier seul.
+					</p>
+				</SectionDeFeuille>
+
+				{lot !== 'AUCUN' && lot !== 'EN_COURS' ? (
+					<SectionDeFeuille>
+						<SectionTitle>Ce que le lot a fait</SectionTitle>
+						<p className="mt-cladd-3xs text-cladd-xs">
+							{lot.fait.prepares} lettre{pluriel(lot.fait.prepares)} préparée
+							{pluriel(lot.fait.prepares)}.
+						</p>
+						{lot.fait.refus.map((refus) => (
+							<p
+								key={refus.debiteur}
+								className="mt-cladd-3xs text-cladd-2xs leading-relaxed text-cladd-fg-soft"
+							>
+								<span className="font-semibold">{refus.debiteur}</span> — {refus.raison}
+							</p>
+						))}
+					</SectionDeFeuille>
+				) : null}
+			</FeuillePleinEcran>
 		</PageEcran>
 	);
 }

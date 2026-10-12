@@ -6,13 +6,12 @@ import {
 	AccordionRoot,
 	AccordionTrigger,
 	Button,
-	Popup,
-	PopupContent,
 	Surface
 } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
 import { VignetteIcone } from './familles';
 import { useDeuxVolets } from './maitre-detail';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * UNE SECTION QUI SE DÉPLIE, DANS UN FLUX QUI RESTE UN SEUL FLUX.
@@ -243,22 +242,16 @@ export function SectionDepliable({
 					  rangée allumée sur une feuille fermée, et le prochain appui ne ferait
 					  plus rien.
 					*/
-					<Popup
-						open={ouverte}
-						onOpenChange={(o) => {
-							if (!o) fermer();
-						}}
-						headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
-					>
-						<PopupContent>
+					<FeuillePleinEcran ouverte={ouverte} onFermer={() => fermer()} titre={titre}>
+						<SectionDeFeuille>
 							<div className="flex flex-col gap-cladd-2xs">
 								{legende === undefined ? null : (
 									<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">{legende}</p>
 								)}
 								{children}
 							</div>
-						</PopupContent>
-					</Popup>
+						</SectionDeFeuille>
+					</FeuillePleinEcran>
 				)}
 			</Surface>
 		</AccordionItem>
@@ -307,16 +300,10 @@ export function PanneauDuGeste({
 	}
 
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) fermer();
-			}}
-			headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">{titre}</span>}
-		>
-			<PopupContent>
+		<FeuillePleinEcran ouverte={ouverte} onFermer={() => fermer()} titre={titre}>
+			<SectionDeFeuille>
 				<div className="flex flex-col gap-cladd-2xs">{children}</div>
-			</PopupContent>
-		</Popup>
+			</SectionDeFeuille>
+		</FeuillePleinEcran>
 	);
 }

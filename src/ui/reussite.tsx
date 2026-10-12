@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { Popup, PopupContent } from '@cladd-ui/react';
 import { BoutonPrincipal, BoutonTexte } from './bouton';
 import { ChiffreHero } from './chiffre';
+import { ColonneDePleinEcran, PiedDePleinEcran, PleinEcran } from './plein-ecran';
 
 /**
  * LA FEUILLE DE RÉUSSITE — ce qui marque la fin d'un geste qui compte.
@@ -48,15 +48,11 @@ export function FeuilleDeReussite({
 	readonly secondaire?: { readonly libelle: string; readonly onClick: () => void };
 }) {
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) principale.onClick();
-			}}
-			contentClassName="max-w-lg"
-		>
-			<PopupContent>
-				<div className="flex flex-col items-center gap-cladd-2xs pt-2 pb-1 text-center">
+		// EN PAGE PLEINE, comme après un paiement chez Cash App ou PayPal : la coche
+		// et le montant au milieu de l'écran, le geste suivant sous le pouce.
+		<PleinEcran ouvert={ouverte} onFermer={principale.onClick} libelle={titre}>
+			<ColonneDePleinEcran>
+				<div className="flex flex-1 flex-col items-center justify-center gap-cladd-2xs pt-barre-app pb-cladd-sm text-center">
 					{/*
 					  LA COCHE SE TRACE : le disque monte, puis le trait se dessine, comme
 					  après un paiement chez Apple. C'est le dessin de lucide (`CheckIcon`),
@@ -87,18 +83,20 @@ export function FeuilleDeReussite({
 					</div>
 					{montant === undefined ? null : <ChiffreHero centimes={montant} defile />}
 					{detail === undefined ? null : (
-						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{detail}</p>
+						<p className="max-w-sm text-cladd-2xs leading-snug text-cladd-fg-soft">{detail}</p>
 					)}
-					<div className="flex w-full flex-col items-center gap-1 pt-1">
-						<BoutonPrincipal pleineLargeur onClick={principale.onClick}>
-							{principale.libelle}
-						</BoutonPrincipal>
-						{secondaire === undefined ? null : (
-							<BoutonTexte onClick={secondaire.onClick}>{secondaire.libelle}</BoutonTexte>
-						)}
-					</div>
 				</div>
-			</PopupContent>
-		</Popup>
+				<PiedDePleinEcran>
+					<BoutonPrincipal pleineLargeur onClick={principale.onClick}>
+						{principale.libelle}
+					</BoutonPrincipal>
+					{secondaire === undefined ? null : (
+						<BoutonTexte className="self-center" onClick={secondaire.onClick}>
+							{secondaire.libelle}
+						</BoutonTexte>
+					)}
+				</PiedDePleinEcran>
+			</ColonneDePleinEcran>
+		</PleinEcran>
 	);
 }

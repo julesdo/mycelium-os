@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { Button, Chip, Popup, PopupContent, SearchField } from '@cladd-ui/react';
+import { Button, Chip, SearchField } from '@cladd-ui/react';
 import { CheckIcon, SlidersHorizontalIcon, UploadIcon, XIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
+	FeuillePleinEcran,
 	CarteLien,
 	Lien,
 	BoutonTexte,
@@ -669,36 +670,38 @@ export function EcranDebiteurs({
 	  porte sa coche. Sa précision dit ce que le filtre retient, en toutes lettres.
 	*/
 	const feuilleDeFiltre = (
-		<Popup
-			open={filtreOuvert}
-			onOpenChange={(o) => {
-				if (!o) setFiltreOuvert(false);
-			}}
-			headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">Filtrer</span>}
-			contentClassName="max-w-lg"
+		// EN PAGE PLEINE, comme les filtres d'Airbnb : on coche, puis le bouton du
+		// bas dit combien de clients restent, et y mène.
+		<FeuillePleinEcran
+			ouverte={filtreOuvert}
+			onFermer={() => setFiltreOuvert(false)}
+			titre="Filtrer"
+			pied={
+				<BoutonPrincipal pleineLargeur onClick={() => setFiltreOuvert(false)}>
+					{`Voir ${retenus.length} client${pluriel(retenus.length)}`}
+				</BoutonPrincipal>
+			}
 		>
-			<PopupContent>
-				<ListeAnalyses>
-					{proposes.map((filtre) => (
-						<LigneBouton
-							key={filtre.cle}
-							genre="contenu"
-							titre={filtre.libelle}
-							precision={filtre.precision}
-							valeur={`${comptes.get(filtre.cle) ?? 0}`}
-							icone={
-								filtres.has(filtre.cle) ? (
-									<CheckIcon className="size-5" />
-								) : (
-									<span className="size-5" />
-								)
-							}
-							onClick={() => onBasculerFiltre(filtre.cle)}
-						/>
-					))}
-				</ListeAnalyses>
-			</PopupContent>
-		</Popup>
+			<ListeAnalyses>
+				{proposes.map((filtre) => (
+					<LigneBouton
+						key={filtre.cle}
+						genre="contenu"
+						titre={filtre.libelle}
+						precision={filtre.precision}
+						valeur={`${comptes.get(filtre.cle) ?? 0}`}
+						icone={
+							filtres.has(filtre.cle) ? (
+								<CheckIcon className="size-5" />
+							) : (
+								<span className="size-5" />
+							)
+						}
+						onClick={() => onBasculerFiltre(filtre.cle)}
+					/>
+				))}
+			</ListeAnalyses>
+		</FeuillePleinEcran>
 	);
 
 	/*

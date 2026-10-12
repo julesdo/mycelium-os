@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Popup, PopupContent, Spinner, Surface } from '@cladd-ui/react';
+import { Spinner, Surface } from '@cladd-ui/react';
 import { AlertTriangleIcon, CheckIcon } from 'lucide-react';
 import { PLAN_PAR_DEFAUT } from '../lib/verticales/recouvrement/plan-relance';
 import { BoutonPrincipal, BoutonSecondaire, BoutonTexte } from './bouton';
@@ -9,6 +9,7 @@ import { LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { cn } from './cn';
 import { dateCourte } from './format';
 import { NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * LE PILOTE, EN DIRECT — ce que l'agent fait, sous les yeux du gérant.
@@ -294,19 +295,17 @@ function FeuilleDActivation({
 	readonly onActiver: () => void;
 }) {
 	return (
-		<Popup
-			open={ouverte}
-			onOpenChange={(o) => {
-				if (!o) onFermer();
-			}}
-			headerLeft={
-				<span className="px-2 pb-1 text-cladd-xs font-semibold">
-					Laisser {NOM_DU_PILOTE} relancer
-				</span>
+		<FeuillePleinEcran
+			ouverte={ouverte}
+			onFermer={onFermer}
+			titre="Laisser {NOM_DU_PILOTE} relancer"
+			pied={
+				<BoutonPrincipal pleineLargeur onClick={onActiver}>
+					Activer les relances
+				</BoutonPrincipal>
 			}
-			contentClassName="max-w-lg"
 		>
-			<PopupContent>
+			<SectionDeFeuille>
 				<div className="flex flex-col gap-cladd-3xs">
 					<ListeDeReleve>
 						{PLAN_PAR_DEFAUT.map((etape, rang) => (
@@ -326,20 +325,17 @@ function FeuilleDActivation({
 						<li>En semaine, entre 9 h et 18 h.</li>
 						<li>Chaque relance s’affiche une heure avant de partir, et se retient d’un geste.</li>
 						<li>
-							La lettre officielle réclame le montant du jour, pénalités et frais compris. Si un avoir
-							ou un règlement n’est pas noté, retenez-la et notez-le.
+							La lettre officielle réclame le montant du jour, pénalités et frais compris. Si un
+							avoir ou un règlement n’est pas noté, retenez-la et notez-le.
 						</li>
 						<li>
 							Un paiement arrête tout. Un client en procédure collective ou radié n’est pas relancé,
 							et un client se retire du pilote depuis sa fiche.
 						</li>
 					</ul>
-					<BoutonPrincipal pleineLargeur onClick={onActiver}>
-						Activer les relances
-					</BoutonPrincipal>
 				</div>
-			</PopupContent>
-		</Popup>
+			</SectionDeFeuille>
+		</FeuillePleinEcran>
 	);
 }
 

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import type { HistoryState } from '@tanstack/react-router';
-import { Checkbox, Popup, PopupContent, Switch } from '@cladd-ui/react';
+import { Checkbox, Switch } from '@cladd-ui/react';
 import { ArrowDownLeftIcon, FolderPlusIcon, MailIcon } from 'lucide-react';
 import {
 	NOM_DU_PILOTE,
+	FeuillePleinEcran,
 	BoutonPrincipal,
 	CeQuiBloque,
 	ChiffreHero,
@@ -893,33 +894,29 @@ function CorpsDebiteur({
 			  ⚠️ LA DATE ARRIVE AVEC LE GESTE : la date d'un règlement est le point
 			  d'arrêt des pénalités, et la relire ailleurs enregistrait un montant faux.
 			*/}
-			<Popup
-				open={virementOuvert}
-				onOpenChange={(o) => {
-					if (!o) setVirementOuvert(false);
-				}}
-				headerLeft={<span className="px-2 pb-1 text-cladd-xs font-semibold">Un virement reçu</span>}
-				contentClassName="max-w-lg"
+			<FeuillePleinEcran
+				ouverte={virementOuvert}
+				onFermer={() => setVirementOuvert(false)}
+				titre="Un virement reçu"
+				sousTitre={denomination}
 			>
-				<PopupContent>
-					<div className="flex flex-col gap-cladd-2xs">
-						<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">
-							Dites-le ici : le logiciel solde les bonnes factures, et personne n’est relancé pour
-							ce qu’il a déjà payé.
-						</p>
-						<ListeAnalyses>
-							<Lettrage
-								proposition={propositionLettrage}
-								enCours={lettrageEnCours}
-								erreur={erreurLettrage}
-								onChercher={onChercherLettrage}
-								onAppliquer={onAppliquerLettrage}
-								{...(onRepartirLettrage === undefined ? {} : { onRepartir: onRepartirLettrage })}
-							/>
-						</ListeAnalyses>
-					</div>
-				</PopupContent>
-			</Popup>
+				<div className="flex flex-col gap-cladd-2xs">
+					<p className="text-cladd-2xs leading-snug text-cladd-fg-softer">
+						Dites-le ici : le logiciel solde les bonnes factures, et personne n’est relancé pour ce
+						qu’il a déjà payé.
+					</p>
+					<ListeAnalyses>
+						<Lettrage
+							proposition={propositionLettrage}
+							enCours={lettrageEnCours}
+							erreur={erreurLettrage}
+							onChercher={onChercherLettrage}
+							onAppliquer={onAppliquerLettrage}
+							{...(onRepartirLettrage === undefined ? {} : { onRepartir: onRepartirLettrage })}
+						/>
+					</ListeAnalyses>
+				</div>
+			</FeuillePleinEcran>
 
 			{/*
 			  LA FEUILLE « LANCER UN DOSSIER » — le choix des factures, puis le geste.
@@ -930,61 +927,57 @@ function CorpsDebiteur({
 			  chiffre le nom de ce qu'on réclame en ferait une promesse que la page
 			  suivante dément.
 			*/}
-			<Popup
-				open={feuilleOuverte}
-				onOpenChange={(o) => {
-					if (!o) setFeuilleOuverte(false);
-				}}
-				headerLeft={
-					<span className="px-2 pb-1 text-cladd-xs font-semibold">Lancer un dossier</span>
-				}
-				contentClassName="max-w-lg"
-			>
-				<PopupContent>
-					<div className="flex flex-col gap-cladd-2xs">
-						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
-							Les factures échues sont cochées. Le dossier calculera ce qu’il vous doit, pénalités
-							et frais compris.
+			<FeuillePleinEcran
+				ouverte={feuilleOuverte}
+				onFermer={() => setFeuilleOuverte(false)}
+				titre="Lancer un dossier"
+				sousTitre={denomination}
+				pied={
+					<>
+						<p className="text-center text-cladd-2xs text-cladd-fg-soft tabular-nums">
+							{selection.size} facture{pluriel(selection.size)} · restes dus{' '}
+							{eurosCentimes(restesDusSelectionnes)}
 						</p>
-						<ListeAnalyses>
-							{eligibles.map((facture) => (
-								<LigneBouton
-									key={facture._id}
-									genre="contenu"
-									titre={facture.reference}
-									{...(echeanceDe(facture) === undefined ? {} : { precision: echeanceDe(facture) })}
-									valeur={eurosCentimes(facture.resteDu)}
-									icone={
-										<Checkbox
-											as="span"
-											size="md"
-											checked={selection.has(facture._id)}
-											aria-label={`Sélectionner ${facture.reference}`}
-										/>
-									}
-									onClick={() => onBasculerFacture(facture._id)}
-								/>
-							))}
-						</ListeAnalyses>
-						<div className="flex flex-col gap-cladd-3xs">
-							<p className="text-center text-cladd-2xs text-cladd-fg-soft tabular-nums">
-								{selection.size} facture{pluriel(selection.size)} · restes dus{' '}
-								{eurosCentimes(restesDusSelectionnes)}
-							</p>
-							<BoutonPrincipal
-								pleineLargeur
-								disabled={selection.size === 0}
-								onClick={() => {
-									setFeuilleOuverte(false);
-									onConstituer(provenance);
-								}}
-							>
-								Lancer le dossier
-							</BoutonPrincipal>
-						</div>
-					</div>
-				</PopupContent>
-			</Popup>
+						<BoutonPrincipal
+							pleineLargeur
+							disabled={selection.size === 0}
+							onClick={() => {
+								setFeuilleOuverte(false);
+								onConstituer(provenance);
+							}}
+						>
+							Lancer le dossier
+						</BoutonPrincipal>
+					</>
+				}
+			>
+				<div className="flex flex-col gap-cladd-2xs">
+					<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+						Les factures échues sont cochées. Le dossier calculera ce qu’il vous doit, pénalités et
+						frais compris.
+					</p>
+					<ListeAnalyses>
+						{eligibles.map((facture) => (
+							<LigneBouton
+								key={facture._id}
+								genre="contenu"
+								titre={facture.reference}
+								{...(echeanceDe(facture) === undefined ? {} : { precision: echeanceDe(facture) })}
+								valeur={eurosCentimes(facture.resteDu)}
+								icone={
+									<Checkbox
+										as="span"
+										size="md"
+										checked={selection.has(facture._id)}
+										aria-label={`Sélectionner ${facture.reference}`}
+									/>
+								}
+								onClick={() => onBasculerFacture(facture._id)}
+							/>
+						))}
+					</ListeAnalyses>
+				</div>
+			</FeuillePleinEcran>
 		</SectionsDepliables>
 	);
 }

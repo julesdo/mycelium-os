@@ -6,8 +6,6 @@ import {
 	CollapsibleRoot,
 	CollapsibleTrigger,
 	Input,
-	Popup,
-	PopupContent,
 	SectionTitle,
 	Surface
 } from '@cladd-ui/react';
@@ -24,6 +22,7 @@ import { ListeAnalyses, LigneBouton, LigneFixe } from './navigation';
 import type { FicheIntervenant } from './fiches-professionnels';
 import { ParcoursProfessionnels, type AnnuaireDuParcours } from './parcours-professionnels';
 import { aujourdHuiISO } from './horloge';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * LE SUIVI D'UN DOSSIER REMIS AU CONSEIL (décision D12).
@@ -260,7 +259,7 @@ function ChampDuFait({
 	consequence: string;
 }) {
 	return (
-		<PopupContent>
+		<SectionDeFeuille>
 			<SectionTitle>Quel jour</SectionTitle>
 			{/* ⚠️ LA DATE EST DEMANDÉE, PAS SUPPOSÉE. C'est la date du FAIT : un
 			    gérant qui enregistre le 20 mars une remise du 3 doit voir le
@@ -278,7 +277,7 @@ function ChampDuFait({
 					{quand === '' ? 'Sans date, rien ne peut être compté.' : consequence}
 				</p>
 			</div>
-		</PopupContent>
+		</SectionDeFeuille>
 	);
 }
 
@@ -308,17 +307,25 @@ function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 
 	return (
 		<>
-			<Popup
-				open
-				onOpenChange={(ouvert) => {
-					if (!ouvert) onFermer();
-				}}
-				headerLeft={
-					<span className="px-2 pb-1 text-cladd-sm font-semibold">Je l’ai remis à mon conseil</span>
+			<FeuillePleinEcran
+				ouverte={true}
+				onFermer={onFermer}
+				titre="Je l’ai remis à mon conseil"
+				pied={
+					<>
+						<RefusDansLaFeuille erreur={suivi.erreur} />
+						<BoutonPrincipal
+							pleineLargeur
+							loading={suivi.enCours}
+							readOnly={suivi.enCours || quand === ''}
+							onClick={() => suivi.onRemettre(quand, intervenantId, attendu)}
+						>
+							Je l’ai remis
+						</BoutonPrincipal>
+					</>
 				}
-				contentClassName="max-w-lg"
 			>
-				<PopupContent>
+				<SectionDeFeuille>
 					<ListeAnalyses>
 						<LigneBouton
 							titre="À qui"
@@ -334,7 +341,7 @@ function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 							}}
 						/>
 					</ListeAnalyses>
-				</PopupContent>
+				</SectionDeFeuille>
 
 				<ChampDuFait
 					quand={quand}
@@ -342,7 +349,7 @@ function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 					consequence={`Le temps passé chez votre conseil se comptera depuis le ${dateCourte(quand)}.`}
 				/>
 
-				<PopupContent>
+				<SectionDeFeuille>
 					<SectionTitle>Ce que vous attendez</SectionTitle>
 					<div className="mt-cladd-3xs">
 						<Input
@@ -352,22 +359,8 @@ function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 							placeholder="Facultatif, par exemple son avis"
 						/>
 					</div>
-				</PopupContent>
-
-				<PopupContent>
-					<div className="flex flex-col gap-cladd-3xs">
-						<RefusDansLaFeuille erreur={suivi.erreur} />
-						<BoutonPrincipal
-							pleineLargeur
-							loading={suivi.enCours}
-							readOnly={suivi.enCours || quand === ''}
-							onClick={() => suivi.onRemettre(quand, intervenantId, attendu)}
-						>
-							Je l’ai remis
-						</BoutonPrincipal>
-					</div>
-				</PopupContent>
-			</Popup>
+				</SectionDeFeuille>
+			</FeuillePleinEcran>
 
 			<ParcoursProfessionnels
 				ouvert={choixOuvert}
@@ -396,23 +389,12 @@ function FeuilleRemise({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 function FeuilleRetour({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFermer: () => void }) {
 	const [quand, setQuand] = useState(aujourdHuiISO);
 	return (
-		<Popup
-			open
-			onOpenChange={(ouvert) => {
-				if (!ouvert) onFermer();
-			}}
-			headerLeft={
-				<span className="px-2 pb-1 text-cladd-sm font-semibold">Mon conseil a répondu</span>
-			}
-			contentClassName="max-w-lg"
-		>
-			<ChampDuFait
-				quand={quand}
-				onQuand={setQuand}
-				consequence={`Le retour sera consigné au ${dateCourte(quand)}.`}
-			/>
-			<PopupContent>
-				<div className="flex flex-col gap-cladd-3xs">
+		<FeuillePleinEcran
+			ouverte={true}
+			onFermer={onFermer}
+			titre="Mon conseil a répondu"
+			pied={
+				<>
 					<RefusDansLaFeuille erreur={suivi.erreur} />
 					<BoutonPrincipal
 						pleineLargeur
@@ -422,9 +404,15 @@ function FeuilleRetour({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFerm
 					>
 						Consigner le retour
 					</BoutonPrincipal>
-				</div>
-			</PopupContent>
-		</Popup>
+				</>
+			}
+		>
+			<ChampDuFait
+				quand={quand}
+				onQuand={setQuand}
+				consequence={`Le retour sera consigné au ${dateCourte(quand)}.`}
+			/>
+		</FeuillePleinEcran>
 	);
 }
 
@@ -437,22 +425,30 @@ function FeuilleCloture({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFer
 	const [quand, setQuand] = useState(aujourdHuiISO);
 	const [motif, setMotif] = useState('');
 	return (
-		<Popup
-			open
-			onOpenChange={(ouvert) => {
-				if (!ouvert) onFermer();
-			}}
-			headerLeft={
-				<span className="px-2 pb-1 text-cladd-sm font-semibold">Mettre fin au suivi</span>
+		<FeuillePleinEcran
+			ouverte={true}
+			onFermer={onFermer}
+			titre="Mettre fin au suivi"
+			pied={
+				<>
+					<RefusDansLaFeuille erreur={suivi.erreur} />
+					<BoutonPrincipal
+						pleineLargeur
+						loading={suivi.enCours}
+						readOnly={suivi.enCours || quand === '' || motif.trim() === ''}
+						onClick={() => suivi.onClore(quand, motif)}
+					>
+						Clore le suivi
+					</BoutonPrincipal>
+				</>
 			}
-			contentClassName="max-w-lg"
 		>
 			<ChampDuFait
 				quand={quand}
 				onQuand={setQuand}
 				consequence={`Le suivi sera clos au ${dateCourte(quand)}.`}
 			/>
-			<PopupContent>
+			<SectionDeFeuille>
 				<SectionTitle>Pourquoi</SectionTitle>
 				<div className="mt-cladd-3xs">
 					<Input
@@ -463,21 +459,8 @@ function FeuilleCloture({ suivi, onFermer }: { suivi: SuiviConseilAffiche; onFer
 						infoMessage="En toutes lettres : c’est cette phrase qui se relira dans un an."
 					/>
 				</div>
-			</PopupContent>
-			<PopupContent>
-				<div className="flex flex-col gap-cladd-3xs">
-					<RefusDansLaFeuille erreur={suivi.erreur} />
-					<BoutonPrincipal
-						pleineLargeur
-						loading={suivi.enCours}
-						readOnly={suivi.enCours || quand === '' || motif.trim() === ''}
-						onClick={() => suivi.onClore(quand, motif)}
-					>
-						Clore le suivi
-					</BoutonPrincipal>
-				</div>
-			</PopupContent>
-		</Popup>
+			</SectionDeFeuille>
+		</FeuillePleinEcran>
 	);
 }
 

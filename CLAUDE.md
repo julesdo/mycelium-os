@@ -497,9 +497,16 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   l'horloge (`safe-area-inset-top`). Le montant principal d'un écran est centré dessous.
 - **Sous 1024 px, un panneau se PRÉSENTE ; au-dessus, il se déplie.** Déplier deux mille pixels au
   milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
-  application iOS ne le fait. `SectionDepliable` et `RangeeDepliable` rendent donc une **feuille**
-  (`Popup`) en dessous de 1024 px et un panneau au-dessus, sur le MÊME état — `useSectionOuverte`.
+  application iOS ne le fait. `SectionDepliable` et `RangeeDepliable` rendent donc une **page
+  pleine** en dessous de 1024 px et un panneau au-dessus, sur le MÊME état — `useSectionOuverte`.
   C'est la règle d'Apple elle-même (_Layout_) : même fonction, présentation adaptée à la place.
+- **Toute modale est une page pleine** (12/10/2026, le fondateur : « toutes les modales de l'app
+  doivent être comme le système d'upload ou le choix de la défense, en plein écran »). Une seule
+  forme, `FeuillePleinEcran` (`ui/plein-ecran.tsx`) : la barre du haut porte le titre et la croix
+  (le retour quand c'est une étape), le contenu défile avec la page, et le pied collant porte le
+  SEUL bouton plein, sous le pouce. Les filtres finissent par « Voir N clients » (Airbnb) ; une
+  réussite centre sa coche et son montant (Cash App) ; la recherche colle son champ en haut (iOS).
+  Plus aucun `Popup` hors de la coquille `PleinEcran` : un nouveau panneau part de `FeuillePleinEcran`.
 - **Le langage de tout le monde** : « votre client », « pénalités de retard », « date limite pour
   agir en justice » ; le mot du droit en second, entre parenthèses ou entre guillemets
   (`lexique.ts`). Le balayage couvre depuis le 29/09/2026 `src/ui`, `src/screens`,

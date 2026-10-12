@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Input, Popup, PopupContent, SectionTitle } from '@cladd-ui/react';
+import { Input, SectionTitle } from '@cladd-ui/react';
 import { BoutonPrincipal } from './bouton';
 import type { FicheIntervenant } from './fiches-professionnels';
 import { ParcoursProfessionnels, type AnnuaireDuParcours } from './parcours-professionnels';
 import { dateCourte } from './format';
 import { LigneBouton, ListeAnalyses } from './navigation';
+import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * CE QUE LE GÉRANT A DIT DE L'INTERVENANT, AU MOMENT DE DÉCLARER.
@@ -98,15 +99,26 @@ export function FeuilleDeclaration({
 
 	return (
 		<>
-			<Popup
-				open
-				onOpenChange={(ouvert) => {
-					if (!ouvert) onFermer();
-				}}
-				headerLeft={<span className="px-2 pb-1 text-cladd-sm font-semibold">Je l’ai engagée</span>}
-				contentClassName="max-w-lg"
+			<FeuillePleinEcran
+				ouverte={true}
+				onFermer={onFermer}
+				titre="Je l’ai engagée"
+				pied={
+					// ⚠️ `BoutonPrincipal`, PAS UN `Button color="brand"`. Mesuré au
+					// navigateur : `color="brand"` sur le variant par défaut rend un fond
+					// transparent avec du texte bleu, qui se lit comme un lien. L'action qui
+					// met des délais à courir ne peut pas être le seul élément qu'on ne voit pas.
+					<BoutonPrincipal
+						pleineLargeur
+						loading={enCours}
+						readOnly={enCours || quand === ''}
+						onClick={() => onDeclarer(quand, choix)}
+					>
+						Je l’ai engagée
+					</BoutonPrincipal>
+				}
 			>
-				<PopupContent>
+				<SectionDeFeuille>
 					<SectionTitle>Quel jour</SectionTitle>
 					{/*
 					  ⚠️ LA DATE VIENT DU CHAMP, JAMAIS DE L'HORLOGE. Les délais courent
@@ -128,9 +140,9 @@ export function FeuilleDeclaration({
 								: `Les délais de cette procédure courront depuis le ${dateCourte(quand)}.`}
 						</p>
 					</div>
-				</PopupContent>
+				</SectionDeFeuille>
 
-				<PopupContent>
+				<SectionDeFeuille>
 					<SectionTitle>Qui a fait l’acte</SectionTitle>
 					<div className="mt-cladd-3xs flex flex-col gap-cladd-3xs">
 						<ListeAnalyses>
@@ -148,26 +160,8 @@ export function FeuilleDeclaration({
 							écran.
 						</p>
 					</div>
-				</PopupContent>
-
-				<PopupContent>
-					{/*
-					  ⚠️ `BoutonPrincipal`, PAS UN `Button color="brand"`. Mesuré au
-					  navigateur : `color="brand"` sur le variant par défaut rend un fond
-					  transparent avec du texte bleu, c'est-à-dire quelque chose qui se lit
-					  comme un lien. L'action qui met des délais à courir ne peut pas être
-					  le seul élément de la feuille qu'on ne voit pas.
-					*/}
-					<BoutonPrincipal
-						pleineLargeur
-						loading={enCours}
-						readOnly={enCours || quand === ''}
-						onClick={() => onDeclarer(quand, choix)}
-					>
-						Je l’ai engagée
-					</BoutonPrincipal>
-				</PopupContent>
-			</Popup>
+				</SectionDeFeuille>
+			</FeuillePleinEcran>
 
 			{/*
 			  Une feuille par-dessus la feuille : Cladd les empile comme iOS, et

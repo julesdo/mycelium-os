@@ -186,3 +186,63 @@ export function PiedDePleinEcran({ children }: { readonly children: ReactNode })
 		</div>
 	);
 }
+
+/**
+ * UNE MODALE, EN PAGE PLEINE — la forme de TOUTES les feuilles du produit
+ * (12/10/2026). Le fondateur : « toutes les modales de l'app doivent être comme
+ * le système d'upload ou le choix de la défense, en plein écran, pour rester
+ * cohérent ».
+ *
+ * La barre du haut porte le titre et la croix (ou le retour, quand la feuille
+ * est une étape d'un autre parcours) ; le contenu défile avec la page ; le pied
+ * collant porte le SEUL bouton plein, toujours sous le pouce. Une feuille qui
+ * n'a pas de geste principal n'a pas de pied.
+ */
+export function FeuillePleinEcran({
+	ouverte,
+	onFermer,
+	titre,
+	sousTitre,
+	libelle,
+	retour = false,
+	droite,
+	pied,
+	large = false,
+	children
+}: {
+	readonly ouverte: boolean;
+	readonly onFermer: () => void;
+	readonly titre: string;
+	readonly sousTitre?: string;
+	/** Ce que le lecteur d'écran annonce, quand le titre ne suffit pas. */
+	readonly libelle?: string;
+	/** Un chevron de retour à gauche au lieu de la croix à droite. */
+	readonly retour?: boolean;
+	/** À droite de la barre, à la place de la croix. */
+	readonly droite?: ReactNode;
+	/** Le bas collant : le seul bouton plein, et ce qui l'accompagne. */
+	readonly pied?: ReactNode;
+	/** La colonne s'élargit au-delà de 1024 px (deux volets). */
+	readonly large?: boolean;
+	readonly children: ReactNode;
+}) {
+	return (
+		<PleinEcran ouvert={ouverte} onFermer={onFermer} libelle={libelle ?? titre}>
+			<ColonneDePleinEcran large={large}>
+				<BarreDePleinEcran
+					titre={titre}
+					{...(sousTitre === undefined ? {} : { sousTitre })}
+					{...(retour ? { onRetour: onFermer, libelleRetour: 'Fermer' } : { onFermer })}
+					{...(droite === undefined ? {} : { droite })}
+				/>
+				<div className="flex flex-1 flex-col gap-cladd-xs pt-cladd-2xs pb-cladd-sm">{children}</div>
+				{pied === undefined || pied === null ? null : <PiedDePleinEcran>{pied}</PiedDePleinEcran>}
+			</ColonneDePleinEcran>
+		</PleinEcran>
+	);
+}
+
+/** Un bloc d'une feuille pleine : ce que `PopupContent` regroupait dans une feuille centrée. */
+export function SectionDeFeuille({ children }: { readonly children: ReactNode }) {
+	return <div className="flex flex-col gap-cladd-3xs">{children}</div>;
+}
