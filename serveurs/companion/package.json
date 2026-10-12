@@ -1,0 +1,17 @@
+{
+	"name": "letikette-companion",
+	"private": true,
+	"type": "module",
+	"description": "Le serveur de transfert du coffre-fort : relie Google Drive, Dropbox, OneDrive et Box au dépôt.",
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"start": "node index.mjs"
+	},
+	"dependencies": {
+		"@uppy/companion": "7.1.1",
+		"express": "5.3.0",
+		"express-session": "1.19.0"
+	}
+}

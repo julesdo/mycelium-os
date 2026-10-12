@@ -84,6 +84,8 @@ export interface FichierAuDepot {
 	readonly deja?: { readonly nom: string; readonly deposeLe: number };
 	/** Une fois confié : ce que le serveur publie de lui, en direct. */
 	readonly suivi?: ResumeDocument;
+	/** Le service en ligne d'où il vient : « Dropbox ». Absent pour l'appareil. */
+	readonly source?: string;
 }
 
 export interface DepotAuCoffre {
@@ -98,6 +100,11 @@ export interface DepotAuCoffre {
 	/** Les formats du sélecteur. */
 	readonly accept: string;
 	readonly formats: string;
+	/**
+	 * Les services en ligne (Google Drive, Dropbox…), sous les deux tuiles. Absent
+	 * tant que le serveur de transfert n'est pas configuré.
+	 */
+	readonly sources?: ReactNode;
 }
 
 /** Ce qui sera envoyé : prêt, ou déjà au coffre quand la destination l'accepte. */
@@ -243,7 +250,7 @@ function etatDuFichier(fichier: FichierAuDepot, destinationFactures: boolean): s
 			return 'Vérification…';
 		case 'PRET':
 			return fichier.deja === undefined
-				? `Prêt · ${tailleEnClair(fichier.taille)}`
+				? `Prêt · ${tailleEnClair(fichier.taille)}${fichier.source === undefined ? '' : ` · depuis ${fichier.source}`}`
 				: `Déjà au coffre depuis le ${dateLisible(fichier.deja.deposeLe)} · sera rangé ici aussi`;
 		case 'DEJA':
 			return destinationFactures
@@ -398,6 +405,7 @@ export function ParcoursDepot({
 }: ProprietesParcoursDepot) {
 	const { fichiers } = depot;
 	const envoyables = fichiers.filter(aEnvoyer);
+	const enVerification = fichiers.some((f) => f.phase === 'VERIFICATION');
 	const confies = fichiers.filter(
 		(f) => f.phase === 'ENVOI' || f.phase === 'COFFRE' || f.phase === 'ECHEC_ENVOI'
 	);
@@ -450,6 +458,7 @@ export function ParcoursDepot({
 							<p className="px-1 text-center text-cladd-3xs text-cladd-fg-soft">
 								{depot.formats} · 20 Mo par fichier
 							</p>
+							{depot.sources}
 
 							{fichiers.length === 0 ? null : (
 								<section className="flex flex-col gap-cladd-3xs">
@@ -587,13 +596,16 @@ export function ParcoursDepot({
 					{etape === 0 ? (
 						<BoutonPrincipal
 							pleineLargeur
-							readOnly={envoyables.length === 0}
+							// Rien ne part tant qu'un fichier se vérifie : il pourrait être un doublon.
+							readOnly={envoyables.length === 0 || enVerification}
 							onClick={depot.onLancer}
 						>
 							<LockIcon />
-							{envoyables.length === 0
-								? 'Mettre au coffre'
-								: `Mettre au coffre (${envoyables.length})`}
+							{enVerification
+								? 'Vérification…'
+								: envoyables.length === 0
+									? 'Mettre au coffre'
+									: `Mettre au coffre (${envoyables.length})`}
 						</BoutonPrincipal>
 					) : etape === 1 ? (
 						<BoutonPrincipal pleineLargeur onClick={fermer}>

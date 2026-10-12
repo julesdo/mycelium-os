@@ -247,6 +247,13 @@ extrêmement sensibles ». Trois choses ont changé :
   de 1024 px. `?deposer=1` ouvre le dépôt : c'est là que mènent tous les « Importer ». Une
   lecture sans nouvelle depuis quinze minutes le dit, et son document se retire.
   Les documents antérieurs se scellent par `npx convex run --prod coffre/anciens:scellerLesAnciens`.
+- **Uppy envoie tout, et ouvre les services en ligne** (même jour, à la demande du fondateur) :
+  chaque fichier reçoit son adresse d'envoi à usage unique juste avant de partir
+  (`app/uppy-coffre.ts`). Google Drive (sélecteur de Google), Dropbox, OneDrive et Box passent par
+  Companion (`serveurs/companion/`, Fly.io), qui voit le fichier en clair le temps du transfert —
+  c'est écrit à l'écran. Aucun écran d'Uppy : notre navigateur (`NavigateurDeSource`) et ses
+  logos. Aucun jeton en `localStorage`. **Dormant** sans `VITE_COMPANION_URL` ; les comptes à créer
+  sont dans `serveurs/companion/LISEZMOI.md`.
 
 **Le site public a changé de direction artistique le 06/10/2026**
 (`docs/superpowers/specs/2026-10-06-site-direction-artistique.md`, vingt références Mobbin). Le

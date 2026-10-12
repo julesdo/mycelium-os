@@ -82,3 +82,31 @@ journal des accès, « Télécharger » et « Retirer du coffre ».
 La zone de dépôt au milieu d'Aujourd'hui et les cartes de bilan de la file. La rangée « Vos dépôts »
 devient « Coffre-fort ». Les quatre mutations d'envoi (`genererUrlDepot`, `enregistrerFichier`,
 `genererUrlPiece`, `deposerPiece`) sont remplacées par celles du coffre.
+
+## Déposer depuis un service en ligne : Uppy (ajout du 12/10/2026)
+
+Le fondateur, le même jour : « ajouter Uppy à ce système d'upload sécurisé, afin que les
+utilisateurs puissent aussi déposer depuis leur Drive et d'autres apps ».
+
+**Uppy devient le moteur d'envoi de tous les dépôts** (`app/uppy-coffre.ts`), ceux de l'appareil
+comme ceux d'un service. Chaque fichier reçoit, juste avant son envoi, l'adresse à usage unique
+que Convex donne (`file.xhrUpload.endpoint`) ; le corps part brut, son type vérifié en en-tête ;
+la réponse `{ storageId }` est confiée au coffre, qui scelle. Vérifié au navigateur contre un
+serveur d'écho : une requête, à la bonne adresse, corps brut, bon type, avancement, réponse relue.
+
+**Les services passent par Companion**, le serveur de transfert d'Uppy (`serveurs/companion/`). Ce
+qu'on en dit, et qui est vrai : il voit le fichier en clair le temps du transfert, en flux, sans
+l'écrire ; il n'envoie que vers l'adresse d'envoi de nos deux déploiements Convex ; l'import
+« depuis une URL » est coupé (un relais vers n'importe quelle adresse) ; 20 Mo au plus. Il exige un
+processus allumé (websockets) : ni Vercel ni Convex, mais Fly.io, région de Paris.
+
+- **Google Drive** passe par le sélecteur de Google (portée `drive.file` : l'accès ne porte que sur
+  les fichiers choisis, sans la vérification annuelle imposée à qui lit tout un Drive).
+- **Dropbox, OneDrive, Box** se parcourent dans NOTRE écran (`NavigateurDeSource`, sur les crochets
+  sans interface de `@uppy/react`) : aucun écran d'Uppy n'est montré. Les logos sont ceux d'Uppy.
+- **Aucun jeton ne s'écrit dans le navigateur** : Uppy les garde par défaut dans `localStorage` ;
+  ici, en mémoire (`MEMOIRE_DES_JETONS`). Fermer l'application les oublie.
+- **Dormant tant que Companion n'est pas déployé** : sans `VITE_COMPANION_URL`, aucune carte.
+  Ce qui reste à faire (comptes chez Fly.io, Dropbox, Microsoft, Box, Google Cloud) est dans
+  `serveurs/companion/LISEZMOI.md`, avec la mise à jour de la politique de confidentialité à faire
+  AVANT l'ouverture.

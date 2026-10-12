@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import {
+	CartesDesSources,
+	NavigateurDeSource,
 	ParcoursDepot,
 	VisionneuseDocument,
 	cleDeRef,
@@ -7,6 +9,7 @@ import {
 	type DepotAuCoffre,
 	type DetailDocument,
 	type EntreeDuJournal,
+	type EtatDeSource,
 	type FichierAuDepot,
 	type RefCoffre,
 	type ResumeDocument
@@ -257,8 +260,95 @@ const FICHIERS_LUS: readonly FichierAuDepot[] = [
 	}
 ];
 
-function depotFige(fichiers: readonly FichierAuDepot[], lance: boolean): DepotAuCoffre {
+/* ── Les services en ligne (Uppy) : un Dropbox de démonstration ───────────── */
+
+const SOURCES_DEMO = [
+	{ cle: 'GoogleDrivePicker', nom: 'Google Drive' },
+	{ cle: 'Dropbox', nom: 'Dropbox' },
+	{ cle: 'OneDrive', nom: 'OneDrive' },
+	{ cle: 'Box', nom: 'Box' }
+];
+
+function etatDemo(
+	connecte: boolean,
+	coches: ReadonlySet<string>,
+	cocher: (id: string) => void
+): EtatDeSource {
 	return {
+		connecte,
+		chargement: false,
+		compte: 'compta@atelier-durand.example',
+		chemin: [
+			{ id: null, nom: 'Dropbox' },
+			{ id: 'factures', nom: 'Factures 2026' }
+		],
+		elements: [
+			{ id: 'septembre', nom: 'Septembre', dossier: true, coche: 'non' },
+			{
+				id: 'f-0412',
+				nom: 'F-2026-0412.pdf',
+				dossier: false,
+				coche: coches.has('f-0412') ? 'oui' : 'non',
+				taille: 186_000,
+				mime: 'application/pdf'
+			},
+			{
+				id: 'export',
+				nom: 'Export-ventes-T3.csv',
+				dossier: false,
+				coche: coches.has('export') ? 'oui' : 'non',
+				taille: 412_000,
+				mime: 'text/csv'
+			},
+			{
+				id: 'video',
+				nom: 'Visite-chantier.mov',
+				dossier: false,
+				coche: 'non',
+				taille: 84_000_000,
+				refus: 'Format ou taille que le coffre n’accepte pas'
+			}
+		],
+		choisis: coches.size,
+		onConnecter: () => undefined,
+		onDeconnecter: () => undefined,
+		onOuvrir: () => undefined,
+		onCocher: cocher,
+		onAjouter: () => undefined
+	};
+}
+
+function SourcesDemo({ connecte }: { readonly connecte: boolean }) {
+	const [ouverte, setOuverte] = useState<string | null>(null);
+	const [coches, setCoches] = useState<ReadonlySet<string>>(() => new Set(['f-0412']));
+	const cocher = (id: string) =>
+		setCoches((avant) => {
+			const apres = new Set(avant);
+			if (apres.has(id)) apres.delete(id);
+			else apres.add(id);
+			return apres;
+		});
+	return (
+		<>
+			<CartesDesSources sources={SOURCES_DEMO} onChoisir={setOuverte} />
+			<NavigateurDeSource
+				ouvert={ouverte === 'Dropbox'}
+				cle="Dropbox"
+				nom="Dropbox"
+				etat={etatDemo(connecte, coches, cocher)}
+				onFermer={() => setOuverte(null)}
+			/>
+		</>
+	);
+}
+
+function depotFige(
+	fichiers: readonly FichierAuDepot[],
+	lance: boolean,
+	sources?: DepotAuCoffre['sources']
+): DepotAuCoffre {
+	return {
+		...(sources === undefined ? {} : { sources }),
 		fichiers,
 		onAjouter: () => undefined,
 		onRetirer: () => undefined,
@@ -275,7 +365,9 @@ const PARCOURS: Readonly<Record<string, DepotAuCoffre>> = {
 	'dépôt : le choix': depotFige(FICHIERS_CHOISIS, false),
 	'dépôt : la mise au coffre': depotFige(FICHIERS_EN_ROUTE, true),
 	'dépôt : le résumé': depotFige(FICHIERS_LUS, true),
-	'dépôt : vide': depotFige([], false)
+	'dépôt : vide': depotFige([], false),
+	'dépôt : services en ligne': depotFige([], false, <SourcesDemo connecte />),
+	'dépôt : relier Dropbox': depotFige([], false, <SourcesDemo connecte={false} />)
 };
 
 const VARIANTES = ['document ouvert', ...Object.keys(PARCOURS)];

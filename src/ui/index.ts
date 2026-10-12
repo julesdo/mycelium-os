@@ -245,6 +245,13 @@ export {
 	type ProprietesParcoursDepot
 } from './parcours-depot';
 export {
+	CartesDesSources,
+	NavigateurDeSource,
+	type ElementDeSource,
+	type EtatDeSource,
+	type SourceAffichee
+} from './source-distante';
+export {
 	ParcoursProfessionnels,
 	type AnnuaireDuParcours,
 	type ButDuParcours,

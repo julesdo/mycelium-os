@@ -1,0 +1,31 @@
+# Fly.io, région de Paris. Le nom de l'application se choisit à la création
+# (`fly launch --no-deploy --copy-config`), puis se reporte ici.
+app = "letikette-companion"
+primary_region = "cdg"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3020"
+  COMPANION_CORS_ORIGIN = "https://www.letikette.com"
+
+[http_service]
+  internal_port = 3020
+  force_https = true
+  # Les websockets d'avancement exigent un processus qui reste allumé pendant
+  # un transfert : une machine au moins, toujours.
+  auto_stop_machines = "off"
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/sante"
+    timeout = "5s"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
