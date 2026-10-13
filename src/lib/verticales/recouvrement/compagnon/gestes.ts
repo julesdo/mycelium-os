@@ -74,7 +74,9 @@ export const ECRANS_ETABLISSEMENT = [
 	'NOTIFICATIONS',
 	'DEMARRER_LOT',
 	'RELANCES',
-	'COMPTE'
+	'COMPTE',
+	// 13/10/2026 : la santé de tous les clients, l'analyse du risque.
+	'SANTE_CLIENTS'
 ] as const;
 
 /** Les écrans d'un dossier précis : le geste porte son identifiant. */
@@ -88,7 +90,7 @@ export const ECRANS_D_UN_DOSSIER = [
 ] as const;
 
 /** Les écrans d'un client précis : le geste porte son identifiant. */
-export const ECRANS_D_UN_CLIENT = ['CLIENT', 'DEMARRER'] as const;
+export const ECRANS_D_UN_CLIENT = ['CLIENT', 'DEMARRER', 'SANTE'] as const;
 
 /** Ce que le modèle rend : une forme PLATE, chaque champ inutile laissé vide. */
 export interface GesteBrut {
@@ -164,7 +166,7 @@ export interface EtatPourGestes {
  * de ceux du dossier : choisir qui fait l'acte, joindre un document à Plume, démarrer
  * le dossier quand il attend — et tout écran de l'établissement (12/10/2026).
  */
-const ECRANS_EN_PLUS_DANS_UN_DOSSIER = ['DOSSIER', 'PROFESSIONNELS', 'JOINDRE'] as const;
+const ECRANS_EN_PLUS_DANS_UN_DOSSIER = ['DOSSIER', 'PROFESSIONNELS', 'JOINDRE', 'SANTE'] as const;
 
 /** Les nombres de versements qu'un échéancier admet (le serveur relit la même liste). */
 export const NOMBRES_DE_VERSEMENTS = [2, 3, 4, 5, 6, 8, 10, 12] as const;
@@ -414,6 +416,14 @@ const TITRE_ECRAN: Readonly<Record<string, { titre: string; detail?: string }>> 
 		detail: 'Vous lisez tout ce qui partira avant de décider.'
 	},
 	COMPTE: { titre: 'Votre compte' },
+	SANTE_CLIENTS: {
+		titre: 'La santé de vos clients',
+		detail: 'Ceux qui méritent un regard, ce qui pèse, et jusqu’où votre portefeuille est couvert.'
+	},
+	SANTE: {
+		titre: 'Sa santé',
+		detail: 'Son niveau, ce qui pèse, ses dirigeants et ses comptes, chaque fait avec sa source.'
+	},
 	JOINDRE: {
 		titre: 'Me joindre le document',
 		detail:

@@ -86,6 +86,8 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
 	const factures = useQuery(api.recouvrement.lecture.listerFacturesDuDebiteur, { debiteurId });
 	const pieces = useQuery(api.recouvrement.pieces.listerPiecesDuDebiteur, { debiteurId });
+	// Sa santé : la rangée qui mène à son analyse, quand l'analyse est activée.
+	const risque = useQuery(api.risque.donnees.risqueDuClient, { debiteurId });
 	/**
 	 * L'HABITUDE DE PAIEMENT.
 	 *
@@ -477,7 +479,16 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 										void classerPiece({
 											pieceId: pieceId as Id<'pieces'>,
 											type: type as 'BON_DE_LIVRAISON'
-										})
+										}),
+									...(risque?.disponible === true
+										? {
+												sante: {
+													debiteurId,
+													indice: risque.analyse?.indice ?? null,
+													niveau: risque.analyse?.niveau ?? null
+												}
+											}
+										: {})
 								}
 							}
 				}

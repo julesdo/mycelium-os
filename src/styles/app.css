@@ -2574,3 +2574,22 @@ select:not(:disabled),
 .light .plan-ign {
 	filter: saturate(0.4) contrast(0.96) brightness(1.03);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LA JAUGE DE SANTÉ SE REMPLIT — une fois, à l'arrivée (13/10/2026).
+ * L'arc part de vide et monte jusqu'à l'indice ; rien ne bouge sous
+ * `prefers-reduced-motion`, où l'arc est là, entier.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.jauge-remplie {
+	animation: jauge-remplie 900ms cubic-bezier(0.2, 0.8, 0.2, 1) 150ms both;
+}
+@keyframes jauge-remplie {
+	from {
+		stroke-dashoffset: 100;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.jauge-remplie {
+		animation: none;
+	}
+}

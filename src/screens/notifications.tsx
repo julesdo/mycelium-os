@@ -46,7 +46,8 @@ export type GenreNotification =
 	| 'PRESCRIPTION_PROCHE'
 	| 'DEBITEUR_DEGRADE'
 	| 'HUMAN_ASSIST_REPLY'
-	| 'PILOTE_BLOQUE';
+	| 'PILOTE_BLOQUE'
+	| 'RISQUE_EN_BAISSE';
 
 /** La teinte dit DE QUOI il s'agit, jamais si c'est grave (`familles.tsx`). */
 const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
@@ -57,7 +58,9 @@ const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
 	HUMAN_ASSIST_REPLY: 'QUESTION',
 	CREANCE_MURE: 'ARGENT',
 	// Ce que le pilote ne peut pas faire sans le gérant : une question, rose.
-	PILOTE_BLOQUE: 'QUESTION'
+	PILOTE_BLOQUE: 'QUESTION',
+	// La relecture de la santé d'un client : le travail de la machine.
+	RISQUE_EN_BAISSE: 'MACHINE'
 };
 
 /**
@@ -76,7 +79,8 @@ const TITRE: Readonly<Record<GenreNotification, string>> = {
 	DEBITEUR_DEGRADE: 'Situation dégradée au registre',
 	HUMAN_ASSIST_REPLY: 'Nouvelle réponse',
 	CREANCE_MURE: 'Un dossier à regarder',
-	PILOTE_BLOQUE: `${NOM_DU_PILOTE} a besoin de vous`
+	PILOTE_BLOQUE: `${NOM_DU_PILOTE} a besoin de vous`,
+	RISQUE_EN_BAISSE: 'La santé d’un client baisse'
 };
 
 export interface NotificationAffichee {

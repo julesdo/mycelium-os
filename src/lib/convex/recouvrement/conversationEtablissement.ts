@@ -1,3 +1,4 @@
+import { clientsARegarderPourPlume } from '../risque/donnees';
 import { v } from 'convex/values';
 import { internalMutation, internalQuery } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
@@ -256,7 +257,8 @@ export const contexteDeLEtablissement = internalQuery({
 				: []),
 			...(enLecture > 0
 				? [`${enLecture} dépôt${pluriel(enLecture)} de factures en cours de lecture au coffre.`]
-				: [])
+				: []),
+			...(await clientsARegarderPourPlume(ctx, organizationId))
 		];
 
 		const echanges = (

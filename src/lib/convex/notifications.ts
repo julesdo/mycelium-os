@@ -13,7 +13,8 @@ const notificationTypeValidator = v.union(
 	v.literal('PRESCRIPTION_PROCHE'),
 	v.literal('DEBITEUR_DEGRADE'),
 	v.literal('HUMAN_ASSIST_REPLY'),
-	v.literal('PILOTE_BLOQUE')
+	v.literal('PILOTE_BLOQUE'),
+	v.literal('RISQUE_EN_BAISSE')
 );
 
 export type NotificationType =
@@ -23,7 +24,8 @@ export type NotificationType =
 	| 'PRESCRIPTION_PROCHE'
 	| 'DEBITEUR_DEGRADE'
 	| 'HUMAN_ASSIST_REPLY'
-	| 'PILOTE_BLOQUE';
+	| 'PILOTE_BLOQUE'
+	| 'RISQUE_EN_BAISSE';
 
 export function buildNotificationContent(
 	type: NotificationType,
@@ -59,6 +61,11 @@ export function buildNotificationContent(
 			return {
 				title: 'Un débiteur se dégrade',
 				message: `La situation de ${data.debiteur} a changé. Revoir l'encours avant d'engager des frais.`
+			};
+		case 'RISQUE_EN_BAISSE':
+			return {
+				title: 'La santé d’un client baisse',
+				message: `${data.client} passe de ${data.avant} à ${data.apres}.`
 			};
 		case 'PILOTE_BLOQUE':
 			return {

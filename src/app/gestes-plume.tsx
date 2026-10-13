@@ -276,6 +276,12 @@ export function useGestesDePlume({
 			if (client !== undefined) void navigate({ to: '/app/demarrer/$id', params: { id: client } });
 			return;
 		}
+		if (ecran === 'SANTE') {
+			// Hors dossier, le client est nommé ; dans un dossier, c'est le sien.
+			const client = geste.client ?? dossier?.debiteurId;
+			if (client !== undefined) void navigate({ to: '/app/risque/$id', params: { id: client } });
+			return;
+		}
 		if (ecran === 'JOINDRE') {
 			onJoindre?.();
 			return;
@@ -312,6 +318,9 @@ export function useGestesDePlume({
 				return;
 			case 'COMPTE':
 				void navigate({ to: '/app/compte' });
+				return;
+			case 'SANTE_CLIENTS':
+				void navigate({ to: '/app/risque' });
 				return;
 		}
 	}

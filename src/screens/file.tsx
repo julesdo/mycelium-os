@@ -426,6 +426,16 @@ export interface FileAffichee {
 		readonly auMoins: boolean;
 		readonly enLecture: number;
 	};
+	/**
+	 * LA SANTÉ DES CLIENTS (13/10/2026), en une rangée qui y mène : combien méritent
+	 * un regard, sinon la couverture du portefeuille. Absente tant que l'analyse du
+	 * risque n'est pas activée.
+	 */
+	readonly sante?: {
+		readonly aRegarder: number;
+		readonly couverture: number;
+		readonly analyses: number;
+	};
 	/** Le sélecteur d'établissement, monté par l'application. Permanent. */
 	readonly selecteur?: ReactNode;
 	/** La palette de recherche (D16). */
@@ -521,6 +531,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 		verrous,
 		onDeposer,
 		coffre,
+		sante,
 		selecteur,
 		palette,
 		connexion
@@ -724,6 +735,25 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 									coffre.enLecture > 0
 										? `${coffre.enLecture} en lecture`
 										: `${coffre.auMoins ? 'plus de ' : ''}${coffre.total} document${pluriel(coffre.total)}`
+								}
+							/>
+						)}
+
+						{/*
+						  LA SANTÉ DE VOS CLIENTS (13/10/2026) : ce qui mérite un regard d'abord,
+						  sinon jusqu'où le portefeuille est couvert. Le détail vit sur sa page.
+						*/}
+						{sante === undefined ? null : (
+							<RangeeLien
+								vers="/app/risque"
+								famille="MACHINE"
+								titre="La santé de vos clients"
+								valeur={
+									sante.analyses === 0
+										? 'à découvrir'
+										: sante.aRegarder > 0
+											? `${sante.aRegarder} à regarder`
+											: `couverte à ${sante.couverture} %`
 								}
 							/>
 						)}

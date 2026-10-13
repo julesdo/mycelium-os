@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { vEmailEvent } from '@convex-dev/resend';
 import { recouvrementTables } from './recouvrement/tables';
+import { risqueTables } from './risque/tables';
 import { vStatutConnexion, vStatutConnexionQonto } from './connexions/validateurs';
 
 export default defineSchema({
@@ -249,7 +250,9 @@ export default defineSchema({
 			v.literal('DEBITEUR_DEGRADE'),
 			v.literal('HUMAN_ASSIST_REPLY'),
 			/** Le pilote ne peut pas faire une étape sans le gérant : il dit quoi. */
-			v.literal('PILOTE_BLOQUE')
+			v.literal('PILOTE_BLOQUE'),
+			/** La santé d'un client a baissé franchement à sa relecture (`risque/analyse.ts`). */
+			v.literal('RISQUE_EN_BAISSE')
 		),
 		title: v.string(),
 		message: v.string(),
@@ -270,5 +273,6 @@ export default defineSchema({
 
 	// ── Domaine recouvrement de créances B2B ────────────────────────────────────
 	// Voir src/lib/convex/recouvrement/tables.ts.
-	...recouvrementTables
+	...recouvrementTables,
+	...risqueTables
 });

@@ -145,6 +145,9 @@ const LE_23 = '2026-09-23';
  */
 const LE_25 = '2026-09-25';
 
+/** Le relevé de l'analyse du risque, article par article sur Légifrance. */
+const LE_13_10 = '2026-10-13';
+
 const AVOCAT_ATTENDU =
 	'Relevé sur source publique par le logiciel, PAS validé par un avocat : utilisable pour ' +
 	'calculer et surveiller, insuffisant pour produire un acte.';
@@ -999,7 +1002,65 @@ export const PARAMETRES = {
 			'Présélectionner sur une correspondance devinée enverrait un gérant chez un ' +
 			'professionnel qui ne peut pas faire l’acte, et lui ferait perdre le temps que la ' +
 			'caducité compte.'
-	} satisfies ParametreLegal<readonly string[]>
+	} satisfies ParametreLegal<readonly string[]>,
+
+	// ── L'analyse du risque (13/10/2026), relevé sur Légifrance le jour même ─
+
+	confidentialiteDesComptes: {
+		cle: 'confidentialiteDesComptes',
+		nature: 'CONSTANTE',
+		// Ce que l'écran dit, en clair, à côté de comptes confidentiels.
+		valeur:
+			'Un choix que la loi permet aux petites entreprises : il ne baisse pas l’indice, mais ses chiffres ne se lisent pas.',
+		unite: 'sans',
+		source: 'Article L232-25 du code de commerce',
+		verifieLe: LE_13_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Version en vigueur depuis le 24/05/2019 (loi n° 2019-486 du 22 mai 2019, art. 47). Les ' +
+			'micro-entreprises peuvent déclarer que leurs comptes annuels ne seront pas rendus ' +
+			'publics ; les petites entreprises, que leur compte de résultat ne le sera pas (sauf ' +
+			'appartenance à un groupe). Des comptes confidentiels ne sont donc jamais un signal ' +
+			`négatif dans l'analyse du risque : ils réduisent sa lisibilité. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<string>,
+
+	capitauxPropresEntames: {
+		cle: 'capitauxPropresEntames',
+		nature: 'CONSTANTE',
+		valeur:
+			'La loi impose alors à ses associés de décider s’il y a lieu de dissoudre la société, puis de reconstituer ses capitaux propres au plus tard à la clôture du deuxième exercice suivant.',
+		unite: 'sans',
+		source: 'Articles L223-42 et L225-248 du code de commerce',
+		verifieLe: LE_13_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Versions en vigueur depuis le 11/03/2023 (loi n° 2023-171 du 9 mars 2023, art. 14) : ' +
+			'L223-42 pour la SARL, L225-248 pour la société anonyme. « Si, du fait de pertes ' +
+			'constatées dans les documents comptables, les capitaux propres de la société deviennent ' +
+			'inférieurs à la moitié du capital social », les associés décident dans les quatre mois ' +
+			'qui suivent l’approbation des comptes s’il y a lieu à dissolution anticipée ; sinon, la ' +
+			'société reconstitue ses capitaux propres au plus tard à la clôture du deuxième exercice ' +
+			`suivant. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<string>,
+
+	donneesDeCondamnation: {
+		cle: 'donneesDeCondamnation',
+		nature: 'CONSTANTE',
+		valeur: 'Aucune condamnation, aucune infraction, aucune sanction personnelle n’est lue.',
+		unite: 'sans',
+		source: 'Article 46 de la loi n° 78-17 du 6 janvier 1978',
+		verifieLe: LE_13_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Version en vigueur depuis le 01/06/2019 (ordonnance n° 2018-1125, art. 1). Les ' +
+			'traitements de données relatives aux condamnations pénales, aux infractions ou aux ' +
+			'mesures de sûreté connexes ne peuvent être effectués que par les personnes que l’article ' +
+			'énumère. L’analyse du risque ne lit donc ni sanction, ni faillite personnelle, ni ' +
+			`interdiction de gérer : les antécédents d'un dirigeant se lisent dans les sociétés qu'il a dirigées. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<string>
 } as const;
 
 /** Utilisable pour CALCULER : une constante sourcée, ou une série résolue par un module. */

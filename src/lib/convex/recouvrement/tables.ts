@@ -569,6 +569,12 @@ export const recouvrementTables = {
 		 * dossier et ne le relance pas ; tout reste possible à la main.
 		 */
 		horsPilote: v.optional(v.boolean()),
+		/**
+		 * LE PLAFOND D'ENCOURS QUE LE GÉRANT ACCEPTE POUR CE CLIENT, en centimes. Rien
+		 * ne le propose : aucune formule publique ne le justifie. Au-delà, le client
+		 * remonte dans « La santé de vos clients » (`risque/donnees.ts`).
+		 */
+		plafondEncours: v.optional(v.int64()),
 		creeLe: v.number()
 	})
 		.index('by_org', ['organizationId'])

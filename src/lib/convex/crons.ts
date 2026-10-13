@@ -94,4 +94,16 @@ crons.interval(
 	{}
 );
 
+/*
+  LA SANTÉ DES CLIENTS SE RELIT CHAQUE MOIS (13/10/2026). Chaque nuit, les analyses
+  de plus d'un mois des clients qui doivent encore de l'argent sont refaites ; une
+  baisse franche arrive dans la boîte de réception. Dormant sans PAPPERS_API_KEY.
+*/
+crons.daily(
+	'relectureRisque',
+	{ hourUTC: 3, minuteUTC: 40 },
+	internal.risque.relecture.relireLesAnalyses,
+	{}
+);
+
 export default crons;

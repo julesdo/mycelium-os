@@ -10,6 +10,7 @@ import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
 import { ECRANS_FILE } from './file';
 import { ECRANS_COFFRE } from './coffre';
+import { ECRANS_SANTE } from './sante';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
 
@@ -80,6 +81,7 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	*/
 	...ECRANS_DEBITEURS,
 	...ECRANS_COFFRE,
+	...ECRANS_SANTE,
 	...ECRANS_COMPTE,
 	...ECRANS_DEFENSE,
 	/*

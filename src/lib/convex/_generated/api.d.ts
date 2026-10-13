@@ -99,6 +99,12 @@ import type * as recouvrement_surveillance from "../recouvrement/surveillance.js
 import type * as recouvrement_tables from "../recouvrement/tables.js";
 import type * as recouvrement_tauxContractuel from "../recouvrement/tauxContractuel.js";
 import type * as rgpd from "../rgpd.js";
+import type * as risque_analyse from "../risque/analyse.js";
+import type * as risque_donnees from "../risque/donnees.js";
+import type * as risque_pappersConfig from "../risque/pappersConfig.js";
+import type * as risque_relecture from "../risque/relecture.js";
+import type * as risque_tables from "../risque/tables.js";
+import type * as risque_validateurs from "../risque/validateurs.js";
 import type * as tests from "../tests.js";
 import type * as users from "../users.js";
 import type * as utils_anonymousUser from "../utils/anonymousUser.js";
@@ -201,6 +207,12 @@ declare const fullApi: ApiFromModules<{
   "recouvrement/tables": typeof recouvrement_tables;
   "recouvrement/tauxContractuel": typeof recouvrement_tauxContractuel;
   rgpd: typeof rgpd;
+  "risque/analyse": typeof risque_analyse;
+  "risque/donnees": typeof risque_donnees;
+  "risque/pappersConfig": typeof risque_pappersConfig;
+  "risque/relecture": typeof risque_relecture;
+  "risque/tables": typeof risque_tables;
+  "risque/validateurs": typeof risque_validateurs;
   tests: typeof tests;
   users: typeof users;
   "utils/anonymousUser": typeof utils_anonymousUser;

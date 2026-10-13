@@ -1,3 +1,4 @@
+import { santePourPlume } from '../risque/donnees';
 import { v } from 'convex/values';
 import { internalQuery, internalMutation } from '../_generated/server';
 import type { QueryCtx } from '../_generated/server';
@@ -386,6 +387,7 @@ export const contexteDuDossier = internalQuery({
 			debiteur?.email === undefined || debiteur.email === ''
 				? 'Adresse électronique du client : inconnue.'
 				: `Adresse électronique du client : ${debiteur.email}.`,
+			...(await santePourPlume(ctx, organizationId, debiteur?._id)),
 			horsPilote
 				? 'Le dirigeant a retiré ce client du pilote : Plume ne le relance pas.'
 				: pilote?.envoiAutomatique === true

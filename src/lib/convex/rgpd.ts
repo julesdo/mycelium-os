@@ -589,6 +589,10 @@ export const purgerEtablissement = internalMutation({
 		// Les jetons Qonto d'un établissement effacé partent avec lui : un jeton
 		// orphelin ouvrirait encore ses factures.
 		budget = await viderParIndexOrg(ctx, 'connexionsQonto', organizationId, budget);
+		// Les analyses de risque (13/10/2026) : ce que Pappers a dit de ses clients,
+		// et le compte de ce que l'établissement a demandé.
+		budget = await viderParIndexOrg(ctx, 'analysesRisque', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'consommationRisque', organizationId, budget);
 		// Les logiciels reliés par Nango aussi, et leurs accès CHEZ Nango avec
 		// eux : la ligne d'ici ne porte aucun jeton, mais Nango garde l'accès au
 		// logiciel du gérant tant qu'on ne supprime pas la connexion.
@@ -929,6 +933,8 @@ async function viderParIndexOrg(
 		| 'echangesCompagnon'
 		| 'remisesAuConseil'
 		| 'connexionsQonto'
+		| 'analysesRisque'
+		| 'consommationRisque'
 		| 'coffresCles'
 		| 'ticketsCoffre'
 		| 'accesDocuments',

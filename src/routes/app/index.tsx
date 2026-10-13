@@ -236,6 +236,8 @@ function File() {
 	// L'état de la connexion Qonto : la carte ne se passe à l'écran que si elle
 	// est activée, pour ne jamais rétrograder l'import sous une carte absente.
 	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
+	// La santé des clients : une requête étroite, pour ne pas redessiner l'accueil à chaque analyse.
+	const sante = useQuery(api.risque.donnees.resumeDuRisque, {});
 	// Même règle pour les logiciels branchés par Nango : dormants sans clé.
 	const logiciels = useLogicielsVisibles();
 	// La date d'arrêté vient de la SEULE horloge de l'interface : deux lectures
@@ -956,6 +958,7 @@ function File() {
 						debiteursSansSiren: debiteurs.filter((d) => d.siren === undefined).length
 					}),
 		onDeposer: () => setDepotOuvert(true),
+		...(sante === undefined || sante === null ? {} : { sante }),
 		...(coffre === undefined
 			? {}
 			: {

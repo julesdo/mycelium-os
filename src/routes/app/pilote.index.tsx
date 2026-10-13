@@ -49,6 +49,9 @@ import {
  * qui partent bientôt, chacune avec « Retenir ».
  */
 export const Route = createFileRoute('/app/pilote/')({
+	/** `?question=` remplit le compositeur : une question préparée ailleurs (la santé d'un client), que le gérant relit. */
+	validateSearch: (recherche: Record<string, unknown>): { question?: string } =>
+		typeof recherche.question === 'string' ? { question: recherche.question } : {},
 	component: ConversationDePlume
 });
 
@@ -78,7 +81,9 @@ function ConversationDePlume() {
 	);
 	const parId = new Map((dossiers ?? []).map((d) => [d._id as string, d]));
 
+	const { question: questionDeDepart } = Route.useSearch();
 	const echange = useEchangeAvecPlume({
+		questionDeDepart: questionDeDepart ?? '',
 		// Des factures, comme le bouton rond de l'accueil : lues, puis rangées par client.
 		destination: { genre: 'FACTURES' },
 		joindrePossible: true,

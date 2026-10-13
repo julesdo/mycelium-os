@@ -454,6 +454,31 @@ export {
 	type ModeDeBranchement,
 	type SaisieDeBranchement
 } from './parcours-logiciels';
+export {
+	AnneauDeCouverture,
+	BarreDExposition,
+	BulletinDeSante,
+	CarteDeFait,
+	CarteDirigeant,
+	ComptesEnBarres,
+	EcartDeSante,
+	HistoriqueDeSante,
+	JaugeDeSante,
+	ListeDeMissions,
+	MOT_DE_SANTE,
+	RepartitionDeSante,
+	TraitsDePilier,
+	dateCourteDeSante,
+	meriteUnRegard,
+	type DirigeantDeSante,
+	type EtatDuPilierAffiche,
+	type ExerciceDeSante,
+	type FaitDeSante,
+	type MissionAffichee,
+	type NiveauDeSante,
+	type PilierDeSante,
+	type TrancheDeSante
+} from './sante';
 /* ── LA NUIT (la page publique refaite en noir et blanc) ───────────────────── */
 export {
 	PictoEcheance,

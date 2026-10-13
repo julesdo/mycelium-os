@@ -49,6 +49,9 @@ import { Route as AppDossierIdRouteImport } from './routes/app/dossier.$id'
 import { Route as AppImportFacturesIdRouteImport } from './routes/app/import-factures.$id'
 import { Route as AppPiloteIndexRouteImport } from './routes/app/pilote.index'
 import { Route as AppPiloteIdRouteImport } from './routes/app/pilote.$id'
+import { Route as AppRisqueIndexRouteImport } from './routes/app/risque.index'
+import { Route as AppRisqueIdRouteImport } from './routes/app/risque.$id'
+import { Route as AppRisqueVerifierRouteImport } from './routes/app/risque.verifier'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -251,6 +254,21 @@ const AppPiloteIdRoute = AppPiloteIdRouteImport.update({
   path: '/pilote/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppRisqueIndexRoute = AppRisqueIndexRouteImport.update({
+  id: '/risque/',
+  path: '/risque/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppRisqueIdRoute = AppRisqueIdRouteImport.update({
+  id: '/risque/$id',
+  path: '/risque/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppRisqueVerifierRoute = AppRisqueVerifierRouteImport.update({
+  id: '/risque/verifier',
+  path: '/risque/verifier',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -291,8 +309,11 @@ export interface FileRoutesByFullPath {
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/risque/$id': typeof AppRisqueIdRoute
+  '/app/risque/verifier': typeof AppRisqueVerifierRoute
   '/app/demarrer/': typeof AppDemarrerIndexRoute
   '/app/pilote/': typeof AppPiloteIndexRoute
+  '/app/risque/': typeof AppRisqueIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -332,8 +353,11 @@ export interface FileRoutesByTo {
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/risque/$id': typeof AppRisqueIdRoute
+  '/app/risque/verifier': typeof AppRisqueVerifierRoute
   '/app/demarrer': typeof AppDemarrerIndexRoute
   '/app/pilote': typeof AppPiloteIndexRoute
+  '/app/risque': typeof AppRisqueIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -375,8 +399,11 @@ export interface FileRoutesById {
   '/app/dossier/$id': typeof AppDossierIdRoute
   '/app/import-factures/$id': typeof AppImportFacturesIdRoute
   '/app/pilote/$id': typeof AppPiloteIdRoute
+  '/app/risque/$id': typeof AppRisqueIdRoute
+  '/app/risque/verifier': typeof AppRisqueVerifierRoute
   '/app/demarrer/': typeof AppDemarrerIndexRoute
   '/app/pilote/': typeof AppPiloteIndexRoute
+  '/app/risque/': typeof AppRisqueIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -419,8 +446,11 @@ export interface FileRouteTypes {
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
     | '/app/pilote/$id'
+    | '/app/risque/$id'
+    | '/app/risque/verifier'
     | '/app/demarrer/'
     | '/app/pilote/'
+    | '/app/risque/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -460,8 +490,11 @@ export interface FileRouteTypes {
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
     | '/app/pilote/$id'
+    | '/app/risque/$id'
+    | '/app/risque/verifier'
     | '/app/demarrer'
     | '/app/pilote'
+    | '/app/risque'
   id:
     | '__root__'
     | '/'
@@ -502,8 +535,11 @@ export interface FileRouteTypes {
     | '/app/dossier/$id'
     | '/app/import-factures/$id'
     | '/app/pilote/$id'
+    | '/app/risque/$id'
+    | '/app/risque/verifier'
     | '/app/demarrer/'
     | '/app/pilote/'
+    | '/app/risque/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -810,6 +846,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPiloteIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/risque/': {
+      id: '/app/risque/'
+      path: '/risque'
+      fullPath: '/app/risque/'
+      preLoaderRoute: typeof AppRisqueIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/risque/$id': {
+      id: '/app/risque/$id'
+      path: '/risque/$id'
+      fullPath: '/app/risque/$id'
+      preLoaderRoute: typeof AppRisqueIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/risque/verifier': {
+      id: '/app/risque/verifier'
+      path: '/risque/verifier'
+      fullPath: '/app/risque/verifier'
+      preLoaderRoute: typeof AppRisqueVerifierRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -865,8 +922,11 @@ interface AppRouteRouteChildren {
   AppDemarrerIdRoute: typeof AppDemarrerIdRoute
   AppDossierIdRoute: typeof AppDossierIdRoute
   AppPiloteIdRoute: typeof AppPiloteIdRoute
+  AppRisqueIdRoute: typeof AppRisqueIdRoute
+  AppRisqueVerifierRoute: typeof AppRisqueVerifierRoute
   AppDemarrerIndexRoute: typeof AppDemarrerIndexRoute
   AppPiloteIndexRoute: typeof AppPiloteIndexRoute
+  AppRisqueIndexRoute: typeof AppRisqueIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -886,8 +946,11 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDemarrerIdRoute: AppDemarrerIdRoute,
   AppDossierIdRoute: AppDossierIdRoute,
   AppPiloteIdRoute: AppPiloteIdRoute,
+  AppRisqueIdRoute: AppRisqueIdRoute,
+  AppRisqueVerifierRoute: AppRisqueVerifierRoute,
   AppDemarrerIndexRoute: AppDemarrerIndexRoute,
   AppPiloteIndexRoute: AppPiloteIndexRoute,
+  AppRisqueIndexRoute: AppRisqueIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

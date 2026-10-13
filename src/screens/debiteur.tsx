@@ -24,7 +24,10 @@ import {
 	PageEcran,
 	Pieces,
 	RythmeDePaiement,
+	JaugeDeSante,
+	MOT_DE_SANTE,
 	RangeeDepliable,
+	RangeeLien,
 	SectionsDepliables,
 	TYPES_PIECE,
 	VignetteRangee,
@@ -38,6 +41,7 @@ import {
 	type EtatRecherche,
 	type HabitudeAffichee,
 	type Lecture,
+	type NiveauDeSante,
 	type OptionSecteur,
 	type PaiementAffiche,
 	type PieceAffichee,
@@ -202,6 +206,16 @@ export interface DebiteurComplet {
 	/** Ouvre une pièce en plein écran dans la visionneuse du coffre. */
 	readonly onOuvrirPiece: (pieceId: string) => void;
 	readonly onClasserPiece: (pieceId: string, type: string) => void;
+	/**
+	 * SA SANTÉ (13/10/2026) : l'indice et son niveau, quand l'analyse du risque est
+	 * activée. Présente, la rangée « Sa santé » MÈNE à son analyse ; absente (Pappers
+	 * non branché, ou la salle), la rangée « Solvabilité » du registre reste.
+	 */
+	readonly sante?: {
+		readonly debiteurId: string;
+		readonly indice: number | null;
+		readonly niveau: NiveauDeSante | null;
+	};
 }
 
 /** La facture dont la prescription tombe le plus tôt, et dans combien de jours. */
@@ -420,7 +434,8 @@ function CorpsDebiteur({
 	onDemarrer,
 	onAjouterPieces,
 	onOuvrirPiece,
-	onClasserPiece
+	onClasserPiece,
+	sante
 }: DebiteurComplet) {
 	const provenance = useProvenance();
 	/** Les rangées ouvertes. Aucune à l'arrivée : leur valeur se lit fermée. */
@@ -790,30 +805,49 @@ function CorpsDebiteur({
 				  CONSTAT N'EST PAS UNE BONNE NOUVELLE, et la valeur le dit : sans SIREN,
 				  « non surveillée », jamais « rien au registre ».
 				*/}
-				<RangeeDepliable
-					cle="solvabilite"
-					famille="MACHINE"
-					titre="Solvabilité"
-					valeur={
-						debiteur.santeFinanciere === 'RADIEE'
-							? 'radié'
-							: debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE'
-								? 'procédure collective'
-								: debiteur.siren === undefined || debiteur.siren === ''
-									? 'non surveillée'
-									: 'rien au registre'
-					}
-				>
-					{debiteur.constatRegistre === undefined ? (
-						<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-							{debiteur.siren === undefined || debiteur.siren === ''
-								? 'Sans SIREN, sa solvabilité n’est pas surveillée : aucun registre n’est interrogé à son nom.'
-								: 'Aucune annonce de greffe relevée à son nom au dernier passage du radar.'}
-						</p>
-					) : (
-						<ConstatRegistre constat={debiteur.constatRegistre} sante={debiteur.santeFinanciere} />
-					)}
-				</RangeeDepliable>
+				{sante !== undefined ? (
+					<RangeeLien
+						vers="/app/risque/$id"
+						parametres={{ id: sante.debiteurId }}
+						icone={<JaugeDeSante petite indice={sante.indice} niveau={sante.niveau} />}
+						titre="Sa santé"
+						valeur={
+							sante.niveau === null
+								? debiteur.siren === undefined || debiteur.siren === ''
+									? 'SIREN à trouver'
+									: 'à analyser'
+								: MOT_DE_SANTE[sante.niveau].toLowerCase()
+						}
+					/>
+				) : (
+					<RangeeDepliable
+						cle="solvabilite"
+						famille="MACHINE"
+						titre="Solvabilité"
+						valeur={
+							debiteur.santeFinanciere === 'RADIEE'
+								? 'radié'
+								: debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE'
+									? 'procédure collective'
+									: debiteur.siren === undefined || debiteur.siren === ''
+										? 'non surveillée'
+										: 'rien au registre'
+						}
+					>
+						{debiteur.constatRegistre === undefined ? (
+							<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+								{debiteur.siren === undefined || debiteur.siren === ''
+									? 'Sans SIREN, sa solvabilité n’est pas surveillée : aucun registre n’est interrogé à son nom.'
+									: 'Aucune annonce de greffe relevée à son nom au dernier passage du radar.'}
+							</p>
+						) : (
+							<ConstatRegistre
+								constat={debiteur.constatRegistre}
+								sante={debiteur.santeFinanciere}
+							/>
+						)}
+					</RangeeDepliable>
+				)}
 
 				{/*
 				  SES DOCUMENTS. ⚠️ LE DÉPÔT N'IMPOSE AUCUN TYPE : la pièce entre « à
