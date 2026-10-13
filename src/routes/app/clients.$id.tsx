@@ -448,7 +448,8 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 						horsPilote: debiteur.horsPilote,
 						facturesEchues: debiteur.facturesEchues,
 						dossierOuvert:
-							creances.find((c) => c.debiteurId === debiteurId && c.statut !== 'CLOSE')?._id ?? null,
+							creances.find((c) => c.debiteurId === debiteurId && c.statut !== 'CLOSE')?._id ??
+							null,
 						rupture:
 							rupture === undefined
 								? null
@@ -487,7 +488,8 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 			return false;
 		}
 	);
-	const rubriqueDemandee = demande ?? (ouvrir === undefined ? undefined : { rubrique: ouvrir, jeton: 0 });
+	const rubriqueDemandee =
+		demande ?? (ouvrir === undefined ? undefined : { rubrique: ouvrir, jeton: 0 });
 
 	return (
 		<>

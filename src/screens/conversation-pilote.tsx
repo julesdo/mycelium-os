@@ -9,6 +9,7 @@ import {
 	PageConversation,
 	RefusEnQuatreParties,
 	ReponseDePlume,
+	PastilleDuRegard,
 	SuggestionsAPlume,
 	TravailDePlume,
 	type DocumentDuFil,
@@ -77,6 +78,16 @@ export interface ConversationPiloteAffichee {
 	readonly panne: string | null;
 	readonly avertissement: string | null;
 	readonly suggestions: readonly string[];
+	/**
+	 * D'OÙ L'ON PARLE À PLUME (13/10/2026) : la pastille au-dessus du compositeur. Ses
+	 * questions prêtes s'offrent même quand le fil a déjà servi, tant qu'aucune
+	 * question n'est partie de cette visite.
+	 */
+	readonly regard?: {
+		readonly libelle: string;
+		readonly onRetirer: () => void;
+		readonly questionsOffertes: boolean;
+	};
 	readonly question: string;
 	readonly onQuestion: (question: string) => void;
 	readonly onEnvoyer: () => void;
@@ -164,13 +175,20 @@ export function EcranConversationPilote({ fil }: { readonly fil: ConversationPil
 							  ⚠️ LES QUESTIONS PRÊTES NE S'OFFRENT QU'AU DÉBUT, comme chez Claude :
 							  une fois la conversation lancée, elles flottaient par-dessus les
 							  cartes de gestes et cachaient leurs boutons (relevé du 08/10/2026).
+							  Ouvert depuis un écran, Plume offre les siennes jusqu'à la première
+							  question de la visite : on vient de toucher Plume pour ça.
 							*/
-							fil.enCours ||
-							fil.question.trim() !== '' ||
-							fil.messages.length > 0 ||
-							(fil.pieces?.fichiers.length ?? 0) > 0 ? null : (
-								<SuggestionsAPlume suggestions={fil.suggestions} onChoisir={fil.onQuestion} />
-							)
+							<>
+								{fil.regard === undefined ? null : (
+									<PastilleDuRegard libelle={fil.regard.libelle} onRetirer={fil.regard.onRetirer} />
+								)}
+								{fil.enCours ||
+								fil.question.trim() !== '' ||
+								(fil.messages.length > 0 && fil.regard?.questionsOffertes !== true) ||
+								(fil.pieces?.fichiers.length ?? 0) > 0 ? null : (
+									<SuggestionsAPlume suggestions={fil.suggestions} onChoisir={fil.onQuestion} />
+								)}
+							</>
 						}
 					/>
 				)

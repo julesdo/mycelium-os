@@ -97,7 +97,10 @@ function PageSanteDuClient() {
 					},
 					onDemanderAPlume: () =>
 						void (dossier === undefined
-							? navigate({ to: '/app/pilote', search: { question } })
+							? navigate({
+									to: '/app/pilote',
+									search: { question, depuis: 'SANTE_CLIENT', client: id }
+								})
 							: navigate({
 									to: '/app/pilote/$id',
 									params: { id: dossier._id },

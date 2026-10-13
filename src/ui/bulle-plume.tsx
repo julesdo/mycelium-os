@@ -51,7 +51,7 @@ export function BullePlume({
 			{/* La pointe, sous Plume. Derrière la bulle : seule sa moitié basse dépasse. */}
 			<span
 				aria-hidden
-				className="bulle-plume-queue absolute -bottom-1.5 right-6 -z-10 size-4 rotate-45 rounded-xs md:right-[59px]"
+				className="bulle-plume-queue absolute right-6 -bottom-1.5 -z-10 size-4 rotate-45 rounded-xs md:right-[59px]"
 			/>
 			<div className="flex items-start gap-1">
 				{onOuvrir === undefined ? (

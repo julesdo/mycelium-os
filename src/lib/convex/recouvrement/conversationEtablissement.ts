@@ -8,6 +8,7 @@ import { ZERO, additionner, depuisCentimes, enCentimes, versEuros } from '../../
 import { pluriel } from '../../socle/francais';
 import { etatDuReferentiel } from '../../verticales/recouvrement/referentiel';
 import { jourEnClair } from '../../verticales/recouvrement/compagnon/gestes';
+import { ECRANS_DE_PLUME, ligneDuRegard } from '../../verticales/recouvrement/compagnon/presence';
 import { PLAN_PAR_DEFAUT, type CleEtapePlan } from '../../verticales/recouvrement/plan-relance';
 import { lignesDesDossiers, resteDu } from './lecture';
 import {
@@ -44,7 +45,17 @@ const JOUR = new Intl.DateTimeFormat('fr-FR', {
 const jour = (iso: string) => JOUR.format(new Date(`${iso}T00:00:00.000Z`));
 const euros = (centimes: bigint) => `${versEuros(depuisCentimes(centimes))} €`;
 
+/**
+ * D'OÙ LE DIRIGEANT PARLE À PLUME (13/10/2026) : l'écran qu'il regardait en le
+ * touchant, et le client qu'il montrait. Voir `compagnon/presence.ts`.
+ */
+export const vRegard = v.object({
+	ecran: v.string(),
+	client: v.optional(v.id('debiteurs'))
+});
+
 const vContexte = v.object({
+	regard: v.optional(v.string()),
 	etablissement: v.string(),
 	aujourdHui: v.string(),
 	enBref: v.array(v.string()),
@@ -83,13 +94,13 @@ const vContexte = v.object({
  * dossiers dont on parle : Plume n'en écrit aucun (`prompt-etablissement.ts`).
  */
 export const contexteDeLEtablissement = internalQuery({
-	args: { toursRepris: v.number() },
+	args: { toursRepris: v.number(), regard: v.optional(vRegard) },
 	returns: v.object({
 		contexte: vContexte,
 		compteur: vCompteur,
 		connus: v.object({ dossiers: v.array(v.string()), clients: v.array(v.string()) })
 	}),
-	handler: async (ctx, { toursRepris }) => {
+	handler: async (ctx, { toursRepris, regard }) => {
 		const { organizationId } = await getUserOrg(ctx);
 		const mois = moisCourant();
 		const aujourdHui = new Date().toISOString().slice(0, 10);
@@ -273,8 +284,34 @@ export const contexteDeLEtablissement = internalQuery({
 			.slice(-toursRepris)
 			.map((tour) => ({ role: tour.role, texte: tour.texte }));
 
+		/*
+		  D'OÙ IL PARLE. Un écran que le produit ne connaît pas, ou un client d'un autre
+		  établissement, et la ligne se tait : jamais un nom lu hors de son cloisonnement.
+		*/
+		const ecranDuRegard = ECRANS_DE_PLUME.find((e) => e === regard?.ecran);
+		const clientDuRegard = regard?.client === undefined ? null : await ctx.db.get(regard.client);
+		const clientRegarde =
+			clientDuRegard !== null && clientDuRegard.organizationId === organizationId
+				? {
+						id: clientDuRegard._id as string,
+						nom: clientDuRegard.denomination,
+						dossier:
+							(ouverts.find((ligne) => ligne.debiteurId === clientDuRegard._id)?._id as
+								| string
+								| undefined) ?? null
+					}
+				: null;
+		const ligneRegard =
+			ecranDuRegard === undefined
+				? undefined
+				: ligneDuRegard({
+						ecran: ecranDuRegard,
+						...(clientRegarde === null ? {} : { client: clientRegarde })
+					});
+
 		return {
 			contexte: {
+				...(ligneRegard === undefined ? {} : { regard: ligneRegard }),
 				etablissement: profil?.denomination ?? organisation?.name ?? 'Votre établissement',
 				aujourdHui: `Aujourd’hui : ${jourEnClair(aujourdHui)} ${aujourdHui.slice(0, 4)} (${aujourdHui}).`,
 				enBref,
@@ -293,9 +330,19 @@ export const contexteDeLEtablissement = internalQuery({
 			},
 			compteur: compteurDepuis(await cumulDuMois(ctx, organizationId, mois), mois),
 			connus: {
-				dossiers: [...new Set([...dossiers.map((d) => d.id), ...dossiersQuiPartent])],
+				dossiers: [
+					...new Set([
+						...dossiers.map((d) => d.id),
+						...dossiersQuiPartent,
+						...(clientRegarde?.dossier == null ? [] : [clientRegarde.dossier])
+					])
+				],
 				clients: [
-					...new Set([...dossiers.map((d) => d.clientId), ...clientsSansDossier.map((c) => c.id)])
+					...new Set([
+						...dossiers.map((d) => d.clientId),
+						...clientsSansDossier.map((c) => c.id),
+						...(clientRegarde === null ? [] : [clientRegarde.id])
+					])
 				]
 			}
 		};

@@ -59,6 +59,11 @@ du référentiel, qui ne figure pas mot pour mot dans le contexte est écarté, 
 geste qui le porte ne s'affiche pas. Un dossier que le contexte ne liste pas se dit
 « je ne le vois pas dans vos dossiers ouverts ».
 
+D'OÙ IL TE PARLE
+Le bloc « D'OÙ LE DIRIGEANT TE PARLE », quand il est là, dit l'écran qu'il regardait
+en t'ouvrant. « Il », « ce client », « ici » désignent ce qu'il regarde : tu réponds
+d'abord sur lui, et un geste sur ce client porte l'identifiant CLIENT recopié du bloc.
+
 CE QUE TU N'ÉCRIS JAMAIS
 - Une voie d'action à emprunter, son nom, son classement, son ordre de préférence,
   ni ce qui serait le plus court ou le plus efficace. Nommer une voie ou la classer
@@ -183,6 +188,8 @@ export interface ContexteEtablissement {
 	readonly valeurs: readonly ValeurDuContexte[];
 	readonly echanges: readonly TourDuContexte[];
 	readonly joints?: readonly string[];
+	/** D'où le dirigeant parle : l'écran qu'il regardait, et le client qu'il montrait. */
+	readonly regard?: string;
 }
 
 function bloc(titre: string, lignes: readonly string[], vide: string): string {
@@ -198,6 +205,9 @@ export function construireContexteEtablissement(
 		`ÉTABLISSEMENT : ${contexte.etablissement}`,
 		contexte.aujourdHui,
 		'',
+		...(contexte.regard === undefined
+			? []
+			: [bloc('D’OÙ LE DIRIGEANT TE PARLE', [contexte.regard], ''), '']),
 		bloc('EN BREF', contexte.enBref, 'Rien à signaler.'),
 		'',
 		bloc(

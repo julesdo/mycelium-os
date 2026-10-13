@@ -7,7 +7,7 @@ import {
 	type ReactNode
 } from 'react';
 import { Button, Input, Select, Spinner, Textarea } from '@cladd-ui/react';
-import { ArrowUpIcon, CheckIcon, ChevronRightIcon, PlusIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, CheckIcon, ChevronRightIcon, EyeIcon, PlusIcon, XIcon } from 'lucide-react';
 import { cn } from './cn';
 import type { PhraseAffichee } from './conversation';
 import {
@@ -353,6 +353,43 @@ export function SuggestionsAPlume({
 					{suggestion}
 				</button>
 			))}
+		</div>
+	);
+}
+
+/**
+ * D'OÙ L'ON PARLE À PLUME — une pastille au-dessus du compositeur (13/10/2026).
+ *
+ * Relevé chez Fabric (« 1 item »), ClickUp (« Ask about ») et monday (Mobbin,
+ * 13/10/2026) : l'assistant ouvert depuis un élément le dit, et un ✕ l'oublie.
+ * Plume sait ainsi de qui l'on parle quand on dit « il » ; le ✕ le ramène à tout
+ * l'établissement.
+ */
+export function PastilleDuRegard({
+	libelle,
+	onRetirer
+}: {
+	readonly libelle: string;
+	readonly onRetirer: () => void;
+}) {
+	return (
+		<div className="flex">
+			<span className="verre-carte inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-full py-0.5 pr-0.5 pl-3 text-cladd-2xs text-cladd-fg-soft">
+				<EyeIcon size={14} aria-hidden className="shrink-0" />
+				<span className="truncate">{libelle}</span>
+				<Button
+					size="sm"
+					rounded
+					square
+					variant="transparent"
+					outline={false}
+					className="shrink-0"
+					aria-label="Parler de tout l’établissement"
+					onClick={onRetirer}
+				>
+					<XIcon size={14} aria-hidden />
+				</Button>
+			</span>
 		</div>
 	);
 }

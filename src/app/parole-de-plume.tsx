@@ -76,8 +76,10 @@ const ditesDansLaSession = new Set<string>();
 /** Les visites (une inscription) qui ont déjà parlé. */
 const visitesQuiOntParle = new Set<string>();
 let silences: ReadonlySet<string> | null = null;
-let instantanee: { readonly parole: ParoleAffichee; readonly minuterie: ReturnType<typeof setTimeout> } | null =
-	null;
+let instantanee: {
+	readonly parole: ParoleAffichee;
+	readonly minuterie: ReturnType<typeof setTimeout>;
+} | null = null;
 let remarque: {
 	readonly visite: string;
 	readonly parole: ParoleAffichee;
@@ -128,7 +130,12 @@ function choisir() {
 			remarque = null;
 		}
 	}
-	if (remarque === null && visite !== undefined && silences !== null && !visitesQuiOntParle.has(visite.id)) {
+	if (
+		remarque === null &&
+		visite !== undefined &&
+		silences !== null &&
+		!visitesQuiOntParle.has(visite.id)
+	) {
 		const r = visite.remarques.find((x) => !silences?.has(x.cle) && !ditesDansLaSession.has(x.cle));
 		if (r !== undefined) {
 			visitesQuiOntParle.add(visite.id);
@@ -239,7 +246,10 @@ export const paroleDePlume = {
 		travailVuJusquA = premier.termineLe;
 		// Sur Aujourd'hui, le bloc du pilote coche déjà ce travail sous les yeux.
 		if (inscriptions.at(-1)?.ecran === 'AUJOURDHUI') return;
-		direInstantane(paroleDUneRemarque(paroleDUnTravail(premier, nouveaux.length - 1), 'TRAVAIL'), DUREE_TRAVAIL_MS);
+		direInstantane(
+			paroleDUneRemarque(paroleDUnTravail(premier, nouveaux.length - 1), 'TRAVAIL'),
+			DUREE_TRAVAIL_MS
+		);
 	}
 };
 

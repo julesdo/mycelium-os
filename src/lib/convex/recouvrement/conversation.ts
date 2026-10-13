@@ -48,6 +48,7 @@ import {
 	type ContexteEtablissement
 } from '../../verticales/recouvrement/compagnon/prompt-etablissement';
 import { trierLesPhrases } from '../../verticales/recouvrement/compagnon/tri';
+import { vRegard } from './conversationEtablissement';
 
 /**
  * LA CONVERSATION — le seul endroit du produit où une question part au modèle.
@@ -659,9 +660,14 @@ async function consignerSurLEtablissement(
  * leurs chiffres (`prompt-etablissement.ts`).
  */
 export const repondreSurLEtablissement = authedAction({
-	args: { question: v.string(), documents: v.optional(v.array(vRef)) },
+	args: {
+		question: v.string(),
+		documents: v.optional(v.array(vRef)),
+		/** D'où le dirigeant parle : l'écran qu'il regardait en touchant Plume (13/10/2026). */
+		regard: v.optional(vRegard)
+	},
 	returns: vReponse,
-	handler: async (ctx, { question, documents = [] }): Promise<ReponseDuCompagnon> => {
+	handler: async (ctx, { question, documents = [], regard }): Promise<ReponseDuCompagnon> => {
 		try {
 			requireEnv('ANTHROPIC_API_KEY', { feature: 'la conversation du compagnon' });
 		} catch {
@@ -676,7 +682,7 @@ export const repondreSurLEtablissement = authedAction({
 
 		const lu = await ctx.runQuery(
 			internal.recouvrement.conversationEtablissement.contexteDeLEtablissement,
-			{ toursRepris: TOURS_REPRIS }
+			{ toursRepris: TOURS_REPRIS, ...(regard === undefined ? {} : { regard }) }
 		);
 
 		if (joints.length === 0 && estQuestionDeDroit(question)) {

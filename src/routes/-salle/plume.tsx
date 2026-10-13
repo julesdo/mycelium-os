@@ -352,6 +352,8 @@ function DemoConversation({ variante }: { etat: EtatDemo; variante?: string }) {
 function DemoConversationEtablissement({ variante }: { etat: EtatDemo; variante?: string }) {
 	const [question, setQuestion] = useState('');
 	const forme = variante ?? 'reponse';
+	// Ouvert depuis la fiche d'un client (13/10/2026) : sa pastille et ses questions.
+	const regard = forme === 'regard';
 	const messages: MessageAffiche[] =
 		forme === 'vide'
 			? []
@@ -415,8 +417,19 @@ function DemoConversationEtablissement({ variante }: { etat: EtatDemo; variante?
 			fil={{
 				titre: NOM_DU_PILOTE,
 				sousTitre: 'Votre pilote',
-				retour: { vers: '/app', libelle: 'Aujourd’hui' },
+				retour: regard
+					? { vers: '/app/clients', libelle: 'Fournitures Durand' }
+					: { vers: '/app', libelle: 'Aujourd’hui' },
 				humeur: 'ecoute',
+				...(regard
+					? {
+							regard: {
+								libelle: 'Sur la fiche de Fournitures Durand',
+								questionsOffertes: true,
+								onRetirer: () => undefined
+							}
+						}
+					: {}),
 				accueil: {
 					titre: 'Je veille sur 12 dossiers.',
 					sousTitre:
@@ -427,12 +440,19 @@ function DemoConversationEtablissement({ variante }: { etat: EtatDemo; variante?
 				refus: null,
 				panne: null,
 				avertissement: null,
-				suggestions: [
-					'Qui me doit le plus ?',
-					'Qu’est-ce qui part cette semaine ?',
-					'Où en est Fournitures Durand ?',
-					'Montre-moi mes documents'
-				],
+				suggestions: regard
+					? [
+							'Où en est Fournitures Durand ?',
+							'Prépare la prochaine relance de Fournitures Durand',
+							'Comment Fournitures Durand paie-t-il d’habitude ?',
+							'Note que Fournitures Durand m’a appelé'
+						]
+					: [
+							'Qui me doit le plus ?',
+							'Qu’est-ce qui part cette semaine ?',
+							'Où en est Fournitures Durand ?',
+							'Montre-moi mes documents'
+						],
 				question,
 				onQuestion: setQuestion,
 				onEnvoyer: () => setQuestion(''),
@@ -573,7 +593,7 @@ export const ECRANS_PLUME: readonly EcranDuProduit[] = [
 		route: '/app/pilote/',
 		libelle: 'Plume, tout l’établissement',
 		vide: false,
-		variantes: ['reponse', 'vide'],
+		variantes: ['reponse', 'vide', 'regard'],
 		Demo: DemoConversationEtablissement
 	},
 	{

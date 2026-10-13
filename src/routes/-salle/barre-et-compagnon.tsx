@@ -143,8 +143,7 @@ const BULLES: readonly {
 	{
 		titre: 'Une remarque d’écran, avec son geste',
 		humeur: 'attention',
-		texte:
-			'J’ai préparé 3 dossiers de clients en retard. Je ne relance rien avant votre feu vert.',
+		texte: 'J’ai préparé 3 dossiers de clients en retard. Je ne relance rien avant votre feu vert.',
 		geste: 'Les voir',
 		pourDeBon: true
 	},

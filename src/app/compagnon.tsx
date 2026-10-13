@@ -32,6 +32,8 @@ import { paroleDePlume, useParoleDePlume, type ParoleAffichee } from './parole-d
  */
 
 const ROUTE_DOSSIER = '/app/dossier/$id';
+/** Les pages d'un client : Plume s'ouvre en sachant duquel on parle. */
+const ROUTES_D_UN_CLIENT: readonly string[] = ['/app/clients/$id', '/app/risque/$id'];
 
 export function CompagnonBranche({
 	children,
@@ -151,12 +153,40 @@ function Plume({
 		}
 	});
 
+	const clientRegarde = useRouterState({
+		select: (etat) => {
+			const match = etat.matches.find((m) => ROUTES_D_UN_CLIENT.includes(m.routeId));
+			const id = (match?.params as Record<string, string | undefined> | undefined)?.id;
+			return id === undefined || id === '' ? null : id;
+		}
+	});
 	const parole = useParoleDePlume();
 	const dite = parle ? parole : null;
 
+	/**
+	 * ⚠️ PLUME S'OUVRE EN SACHANT D'OÙ L'ON VIENT (13/10/2026). Sur un dossier, sa
+	 * conversation à lui ; ailleurs, celle de l'établissement, avec l'écran qu'on
+	 * regardait (`?depuis=`) et le client qu'il montrait (`?client=`) : la pastille
+	 * du regard, ses questions prêtes, et une ligne de plus pour le modèle.
+	 */
 	function ouvrirLaConversation() {
-		if (dossier === null) void navigate({ to: '/app/pilote' });
-		else void navigate({ to: '/app/pilote/$id', params: { id: dossier } });
+		if (dossier !== null) {
+			void navigate({ to: '/app/pilote/$id', params: { id: dossier } });
+			return;
+		}
+		const ecran = paroleDePlume.ecranCourant();
+		if (ecran === null || ecran === 'AUJOURDHUI') {
+			void navigate({ to: '/app/pilote' });
+			return;
+		}
+		const surUnClient = ecran === 'CLIENT' || ecran === 'SANTE_CLIENT';
+		void navigate({
+			to: '/app/pilote',
+			search: {
+				depuis: ecran,
+				...(surUnClient && clientRegarde !== null ? { client: clientRegarde } : {})
+			}
+		});
 	}
 
 	/** Où mène le bouton d'une remarque, quand l'écran ne le fait pas lui-même. */
@@ -201,7 +231,11 @@ function Plume({
 			humeur={dite?.humeur ?? humeur}
 			compte={compte}
 			description={
-				dossier === null ? `Parler à ${NOM_DU_PILOTE}` : `Parler à ${NOM_DU_PILOTE}, sur ce dossier`
+				dossier !== null
+					? `Parler à ${NOM_DU_PILOTE}, sur ce dossier`
+					: clientRegarde !== null
+						? `Parler à ${NOM_DU_PILOTE}, sur ce client`
+						: `Parler à ${NOM_DU_PILOTE}`
 			}
 			onOuvrir={ouvrirLaConversation}
 			{...(dite === null

@@ -8,6 +8,14 @@ import { useEchangeAvecPlume } from '../../app/echange-plume';
 import { messageDeLaPanne, useGestesDePlume } from '../../app/gestes-plume';
 import { evaluerPlafond } from '../../lib/verticales/recouvrement/compagnon/disponibilite';
 import { relireTour } from '../../lib/verticales/recouvrement/compagnon/tour';
+import {
+	ECRANS_DE_PLUME,
+	libelleDuRegard,
+	questionsDuRegard,
+	type EcranDePlume,
+	type RegardDePlume
+} from '../../lib/verticales/recouvrement/compagnon/presence';
+import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
 import {
 	BoutonTexte,
@@ -49,9 +57,23 @@ import {
  * qui partent bientôt, chacune avec « Retenir ».
  */
 export const Route = createFileRoute('/app/pilote/')({
-	/** `?question=` remplit le compositeur : une question préparée ailleurs (la santé d'un client), que le gérant relit. */
-	validateSearch: (recherche: Record<string, unknown>): { question?: string } =>
-		typeof recherche.question === 'string' ? { question: recherche.question } : {},
+	/**
+	 * `?question=` remplit le compositeur : une question préparée ailleurs (la santé d'un
+	 * client), que le gérant relit. `?depuis=` et `?client=` disent d'où l'on a touché
+	 * Plume (13/10/2026) : la pastille du regard, ses questions, et ce que lit le modèle.
+	 */
+	validateSearch: (
+		recherche: Record<string, unknown>
+	): { question?: string; depuis?: EcranDePlume; client?: string } => {
+		const depuis = ECRANS_DE_PLUME.find((e) => e === recherche.depuis);
+		return {
+			...(typeof recherche.question === 'string' ? { question: recherche.question } : {}),
+			...(depuis === undefined ? {} : { depuis }),
+			...(typeof recherche.client === 'string' && recherche.client !== ''
+				? { client: recherche.client }
+				: {})
+		};
+	},
 	component: ConversationDePlume
 });
 
@@ -81,7 +103,29 @@ function ConversationDePlume() {
 	);
 	const parId = new Map((dossiers ?? []).map((d) => [d._id as string, d]));
 
-	const { question: questionDeDepart } = Route.useSearch();
+	const { question: questionDeDepart, depuis, client: clientDuRegard } = Route.useSearch();
+
+	/*
+	  D'OÙ L'ON PARLE (13/10/2026) — l'écran qu'on regardait en touchant Plume, et le
+	  client qu'il montrait. Le ✕ de la pastille ramène à tout l'établissement.
+	*/
+	const nomDuClient =
+		clientDuRegard === undefined
+			? undefined
+			: clients?.find((c) => c._id === clientDuRegard)?.denomination;
+	const regard: RegardDePlume | null =
+		depuis === undefined
+			? null
+			: {
+					ecran: depuis,
+					...(clientDuRegard === undefined || nomDuClient === undefined
+						? {}
+						: { client: { id: clientDuRegard, nom: nomDuClient } })
+				};
+	const libelleRegard = regard === null ? null : libelleDuRegard(regard);
+	/** Une question est partie de cette visite : les questions du regard se retirent. */
+	const [questionPartie, setQuestionPartie] = useState(false);
+
 	const echange = useEchangeAvecPlume({
 		questionDeDepart: questionDeDepart ?? '',
 		// Des factures, comme le bouton rond de l'accueil : lues, puis rangées par client.
@@ -90,7 +134,17 @@ function ConversationDePlume() {
 		demanderAuServeur: (question, documents) =>
 			demanderAPlume({
 				question,
-				...(documents.length === 0 ? {} : { documents: [...documents] })
+				...(documents.length === 0 ? {} : { documents: [...documents] }),
+				...(depuis === undefined
+					? {}
+					: {
+							regard: {
+								ecran: depuis,
+								...(clientDuRegard === undefined
+									? {}
+									: { client: clientDuRegard as Id<'debiteurs'> })
+							}
+						})
 			}),
 		etapes: [
 			`Je relis vos ${ouverts.length > 1 ? `${ouverts.length} dossiers` : 'dossiers'}`,
@@ -316,13 +370,17 @@ function ConversationDePlume() {
 	  qui attend d'être démarré, ce qui part bientôt, le plus gros dossier.
 	*/
 	const plusGros = ouverts[0];
-	const suggestions = [
-		'Qui me doit le plus ?',
-		...(aDemarrer > 0 ? ['Quels dossiers attendent que je les démarre ?'] : []),
-		...(programmes.length > 0 ? ['Qu’est-ce qui part cette semaine ?'] : []),
-		...(plusGros === undefined ? [] : [`Où en est ${plusGros.debiteur} ?`]),
-		'Montre-moi mes documents'
-	];
+	const questionsDeLEcran = regard === null ? [] : questionsDuRegard(regard);
+	const suggestions =
+		questionsDeLEcran.length > 0
+			? questionsDeLEcran
+			: [
+					'Qui me doit le plus ?',
+					...(aDemarrer > 0 ? ['Quels dossiers attendent que je les démarre ?'] : []),
+					...(programmes.length > 0 ? ['Qu’est-ce qui part cette semaine ?'] : []),
+					...(plusGros === undefined ? [] : [`Où en est ${plusGros.debiteur} ?`]),
+					'Montre-moi mes documents'
+				];
 
 	const refusDuPlafond = fil === undefined ? null : evaluerPlafond(fil.compteur.cumul).refus;
 
@@ -348,7 +406,16 @@ function ConversationDePlume() {
 				fil={{
 					titre: NOM_DU_PILOTE,
 					sousTitre: echange.enCours || travailDuPilote !== null ? 'Au travail' : 'Votre pilote',
-					retour: { vers: '/app', libelle: 'Aujourd’hui' },
+					retour: retourDuRegard(depuis, clientDuRegard, nomDuClient),
+					...(libelleRegard === null
+						? {}
+						: {
+								regard: {
+									libelle: libelleRegard,
+									questionsOffertes: !questionPartie,
+									onRetirer: () => void navigate({ to: '/app/pilote', search: {}, replace: true })
+								}
+							}),
 					humeur,
 					accueil: {
 						titre:
@@ -382,7 +449,10 @@ function ConversationDePlume() {
 					suggestions,
 					question: echange.question,
 					onQuestion: echange.setQuestion,
-					onEnvoyer: () => void echange.demander(echange.question),
+					onEnvoyer: () => {
+						setQuestionPartie(true);
+						void echange.demander(echange.question);
+					},
 					enCours: echange.enCours,
 					placeholder: `Demander à ${NOM_DU_PILOTE}…`,
 					arretee: refusDuPlafond !== null,
@@ -391,6 +461,40 @@ function ConversationDePlume() {
 			/>
 		</>
 	);
+}
+
+/** Le retour rond ramène d'où l'on a touché Plume, et à l'accueil sinon. */
+function retourDuRegard(
+	depuis: EcranDePlume | undefined,
+	client: string | undefined,
+	nom: string | undefined
+) {
+	if (client !== undefined && depuis === 'CLIENT')
+		return {
+			vers: '/app/clients/$id',
+			parametres: { id: client },
+			libelle: nom ?? 'Ce client'
+		} as const;
+	if (client !== undefined && depuis === 'SANTE_CLIENT')
+		return {
+			vers: '/app/risque/$id',
+			parametres: { id: client },
+			libelle: nom ?? 'Sa santé'
+		} as const;
+	switch (depuis) {
+		case 'DOSSIERS':
+			return { vers: '/app/dossiers', libelle: 'Dossiers' } as const;
+		case 'CLIENTS':
+			return { vers: '/app/clients', libelle: 'Clients' } as const;
+		case 'COFFRE':
+			return { vers: '/app/coffre', libelle: 'Coffre-fort' } as const;
+		case 'SANTE':
+			return { vers: '/app/risque', libelle: 'La santé de vos clients' } as const;
+		case 'DEFENSE':
+			return { vers: '/app/defense', libelle: 'Défense' } as const;
+		default:
+			return { vers: '/app', libelle: 'Aujourd’hui' } as const;
+	}
 }
 
 /** Ce qui se passe sur un dossier cité, en cinq mots : sa prochaine étape, ou son état. */

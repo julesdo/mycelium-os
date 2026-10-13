@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+	libelleDuRegard,
+	ligneDuRegard,
 	paroleDUnTravail,
+	questionsDuRegard,
 	remarquesDAujourdhui,
 	remarquesDesClients,
 	remarquesDesDossiers,
@@ -59,7 +62,11 @@ describe('Plume sur chaque écran', () => {
 			'Plume'
 		);
 		const lettre = remarques.find((r) => r.cle.startsWith('lettres:'));
-		expect(lettre?.action?.cible).toEqual({ genre: 'DOSSIER', dossier: 'd9', rubrique: 'courriers' });
+		expect(lettre?.action?.cible).toEqual({
+			genre: 'DOSSIER',
+			dossier: 'd9',
+			rubrique: 'courriers'
+		});
 	});
 
 	it('nomme l’adresse qui manque à un client en retard, pas à un client à jour ou retiré', () => {
@@ -106,9 +113,10 @@ describe('Plume sur chaque écran', () => {
 
 	it('ne propose la santé que si elle est branchée, pas faite, et le SIREN connu', () => {
 		const propose = (sante: DonneesDUnClient['sante'], siren?: string) =>
-			remarquesDUnClient({ ...CLIENT, sante, ...(siren === undefined ? { siren: '' } : { siren }) }, 'Plume').some(
-				(r) => r.cle === 'sante:c1'
-			);
+			remarquesDUnClient(
+				{ ...CLIENT, sante, ...(siren === undefined ? { siren: '' } : { siren }) },
+				'Plume'
+			).some((r) => r.cle === 'sante:c1');
 		expect(propose({ disponible: true, analysee: false }, '123456789')).toBe(true);
 		expect(propose({ disponible: false, analysee: false }, '123456789')).toBe(false);
 		expect(propose({ disponible: true, analysee: true }, '123456789')).toBe(false);
@@ -117,7 +125,12 @@ describe('Plume sur chaque écran', () => {
 
 	it('dit plusieurs travaux finis en une bulle', () => {
 		const parole = paroleDUnTravail(
-			{ id: 't1', titre: 'Envoie le rappel à Durand', bilan: 'Le rappel est parti chez Durand.', etat: 'FAIT' },
+			{
+				id: 't1',
+				titre: 'Envoie le rappel à Durand',
+				bilan: 'Le rappel est parti chez Durand.',
+				etat: 'FAIT'
+			},
 			2
 		);
 		expect(parole.texte).toBe('Le rappel est parti chez Durand. J’ai aussi fini 2 autres travaux.');
@@ -131,8 +144,14 @@ describe('Plume sur chaque écran', () => {
 
 	it('n’écrit jamais de tiret long ni de mot de verdict', () => {
 		const tout = [
-			...remarquesDAujourdhui({ aujourdHui: '2026-10-13', prenom: 'Camille', aDemarrer: 2, dossiersSuivis: 4 }, 'Plume'),
-			...remarquesDesDossiers({ aDemarrer: 2, lettresARelire: [{ dossier: 'd', client: 'X' }] }, 'Plume'),
+			...remarquesDAujourdhui(
+				{ aujourdHui: '2026-10-13', prenom: 'Camille', aDemarrer: 2, dossiersSuivis: 4 },
+				'Plume'
+			),
+			...remarquesDesDossiers(
+				{ aDemarrer: 2, lettresARelire: [{ dossier: 'd', client: 'X' }] },
+				'Plume'
+			),
 			...remarquesDUnClient(
 				{
 					...CLIENT,
@@ -144,7 +163,39 @@ describe('Plume sur chaque écran', () => {
 			)
 		];
 		for (const remarque of tout) {
-			expect(remarque.texte).not.toMatch(/—|suspect|garanti|il faut engager|condition est remplie/i);
+			expect(remarque.texte).not.toMatch(
+				/—|suspect|garanti|il faut engager|condition est remplie/i
+			);
+		}
+	});
+
+	it('s’ouvre en sachant d’où l’on vient, et nomme le client regardé', () => {
+		const regard = { ecran: 'CLIENT' as const, client: { id: 'c1', nom: 'Durand SARL' } };
+		expect(libelleDuRegard(regard)).toBe('Sur la fiche de Durand SARL');
+		expect(questionsDuRegard(regard)[0]).toBe('Où en est Durand SARL ?');
+		expect(libelleDuRegard({ ecran: 'AUJOURDHUI' })).toBeNull();
+		expect(questionsDuRegard({ ecran: 'AUJOURDHUI' })).toEqual([]);
+	});
+
+	it('dit au modèle les identifiants à recopier, et l’absence de dossier', () => {
+		expect(
+			ligneDuRegard({ ecran: 'CLIENT', client: { id: 'c1', nom: 'Durand SARL', dossier: 'd1' } })
+		).toContain('identifiant CLIENT : c1 ; son dossier ouvert — identifiant DOSSIER : d1');
+		expect(
+			ligneDuRegard({ ecran: 'CLIENT', client: { id: 'c1', nom: 'Durand SARL', dossier: null } })
+		).toContain('n’a pas de dossier ouvert');
+		expect(ligneDuRegard({ ecran: 'COFFRE' })).toBe('Il regardait le coffre de ses documents.');
+	});
+
+	it('ne propose aucune question qui nomme une voie de droit', () => {
+		const ecrans = ['DOSSIERS', 'CLIENTS', 'COFFRE', 'SANTE', 'DEFENSE'] as const;
+		const toutes = [
+			...ecrans.flatMap((ecran) => questionsDuRegard({ ecran })),
+			...questionsDuRegard({ ecran: 'CLIENT', client: { id: 'c', nom: 'X' } }),
+			...questionsDuRegard({ ecran: 'SANTE_CLIENT', client: { id: 'c', nom: 'X' } })
+		];
+		for (const question of toutes) {
+			expect(question).not.toMatch(/injonction|tribunal|assigner|commissaire|huissier|avocat/i);
 		}
 	});
 });

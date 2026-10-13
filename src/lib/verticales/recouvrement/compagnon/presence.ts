@@ -173,7 +173,11 @@ export function remarquesDAujourdhui(
 		humeur: 'content',
 		silence: 'UNE_FOIS'
 	};
-	return garder([presentation('AUJOURDHUI', nomDuPilote), dossiersADemarrer(donnees.aDemarrer), bonjour]);
+	return garder([
+		presentation('AUJOURDHUI', nomDuPilote),
+		dossiersADemarrer(donnees.aDemarrer),
+		bonjour
+	]);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -228,9 +232,7 @@ export interface ClientPourPlume {
 
 /** Un client en retard que Plume relance, et à qui rien ne peut partir. */
 function sansEmail(client: ClientPourPlume): boolean {
-	return (
-		client.facturesEchues > 0 && !client.horsPilote && (client.email ?? '').trim() === ''
-	);
+	return client.facturesEchues > 0 && !client.horsPilote && (client.email ?? '').trim() === '';
 }
 
 /**
@@ -243,9 +245,7 @@ export function remarquesDesClients(
 ): RemarqueDePlume[] {
 	const muets = clients.filter(sansEmail);
 	const premierMuet = muets[0];
-	const anonymes = clients.filter(
-		(c) => c.facturesEchues > 0 && (c.siren ?? '').trim() === ''
-	);
+	const anonymes = clients.filter((c) => c.facturesEchues > 0 && (c.siren ?? '').trim() === '');
 	const premierAnonyme = anonymes[0];
 	return garder([
 		presentation('CLIENTS', nomDuPilote),
@@ -314,7 +314,10 @@ export function remarquesDUnClient(
 					texte: `Je ne m’occupe plus de ${client.nom} : vous l’avez retiré de mon plan. Je le reprends quand vous voulez.`,
 					humeur: 'content',
 					silence: 'AU_REFUS',
-					action: { libelle: 'Le reprendre', cible: { genre: 'REMETTRE_AU_PILOTE', client: client.id } }
+					action: {
+						libelle: 'Le reprendre',
+						cible: { genre: 'REMETTRE_AU_PILOTE', client: client.id }
+					}
 				}
 			: null,
 		sansEmail(client)
@@ -386,7 +389,9 @@ export interface TravailTermine {
  */
 export function paroleDUnTravail(travail: TravailTermine, autres: number): RemarqueDePlume {
 	const encore =
-		autres <= 0 ? '' : ` J’ai aussi fini ${autres === 1 ? 'un autre travail' : `${autres} autres travaux`}.`;
+		autres <= 0
+			? ''
+			: ` J’ai aussi fini ${autres === 1 ? 'un autre travail' : `${autres} autres travaux`}.`;
 	if (travail.etat === 'ECHEC') {
 		return {
 			cle: `travail:${travail.id}`,
@@ -404,6 +409,129 @@ export function paroleDUnTravail(travail: TravailTermine, autres: number): Remar
 		action: { libelle: 'Voir', cible: { genre: 'CONVERSATION' } }
 	};
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Le regard : Plume s'ouvre en sachant d'où on lui parle.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/**
+ * D'OÙ L'ON PARLE À PLUME — l'écran qu'on regardait en le touchant, et le client
+ * qu'il montrait. Relevé chez Fabric, monday et ClickUp (Mobbin, 13/10/2026) :
+ * l'assistant s'ouvre sur « Ask about : cet élément », une pastille qu'un ✕
+ * retire, et des questions faites pour lui.
+ */
+export interface RegardDePlume {
+	readonly ecran: EcranDePlume;
+	readonly client?: { readonly id: string; readonly nom: string };
+}
+
+/** La pastille au-dessus du compositeur : d'où l'on parle, en deux ou trois mots. */
+export function libelleDuRegard(regard: RegardDePlume): string | null {
+	const nom = regard.client?.nom;
+	switch (regard.ecran) {
+		case 'AUJOURDHUI':
+			return null;
+		case 'DOSSIERS':
+			return 'Depuis vos dossiers';
+		case 'CLIENTS':
+			return 'Depuis vos clients';
+		case 'CLIENT':
+			return nom === undefined ? 'Depuis la fiche d’un client' : `Sur la fiche de ${nom}`;
+		case 'COFFRE':
+			return 'Depuis vos documents';
+		case 'SANTE':
+			return 'Depuis la santé de vos clients';
+		case 'SANTE_CLIENT':
+			return nom === undefined ? 'Depuis la santé d’un client' : `Sur la santé de ${nom}`;
+		case 'DEFENSE':
+			return 'Depuis votre équipe';
+	}
+}
+
+/**
+ * LES QUESTIONS PRÊTES, FAITES POUR L'ÉCRAN D'OÙ L'ON VIENT. Un toucher remplit le
+ * champ sans l'envoyer, comme partout. Elles ne nomment aucune voie de droit.
+ */
+export function questionsDuRegard(regard: RegardDePlume): readonly string[] {
+	const nom = regard.client?.nom;
+	switch (regard.ecran) {
+		case 'CLIENT':
+			return nom === undefined
+				? []
+				: [
+						`Où en est ${nom} ?`,
+						`Prépare la prochaine relance de ${nom}`,
+						`Comment ${nom} paie-t-il d’habitude ?`,
+						`Note que ${nom} m’a appelé`
+					];
+		case 'SANTE_CLIENT':
+			return nom === undefined
+				? []
+				: [`Qu’est-ce qui pèse sur ${nom} ?`, `Où en est ${nom} ?`, `Combien ${nom} me doit-il ?`];
+		case 'DOSSIERS':
+			return [
+				'Quels dossiers attendent que je les démarre ?',
+				'Qu’est-ce qui part cette semaine ?',
+				'Quel est mon plus vieux dossier ?'
+			];
+		case 'CLIENTS':
+			return ['Qui me doit le plus ?', 'Quels clients en retard n’ont pas d’e-mail ?'];
+		case 'COFFRE':
+			return ['Quels documents n’ont pas encore été lus ?', 'Montre-moi mes derniers dépôts'];
+		case 'SANTE':
+			return [
+				'Lesquels de mes clients méritent un regard ?',
+				'Qu’est-ce qui a changé ce mois-ci ?'
+			];
+		case 'DEFENSE':
+			return ['Qui fait partie de mon équipe ?'];
+		case 'AUJOURDHUI':
+			return [];
+	}
+}
+
+/** L'écran, dit au modèle à la troisième personne. */
+const ECRAN_POUR_LE_MODELE: Readonly<Record<EcranDePlume, string>> = {
+	AUJOURDHUI: 'l’accueil (Aujourd’hui)',
+	DOSSIERS: 'la liste de ses dossiers',
+	CLIENTS: 'la liste de ses clients',
+	CLIENT: 'la fiche d’un client',
+	COFFRE: 'le coffre de ses documents',
+	SANTE: 'la santé de ses clients',
+	SANTE_CLIENT: 'la santé d’un client',
+	DEFENSE: 'son équipe et les professionnels près de ses clients'
+};
+
+/**
+ * LA LIGNE QUE LE MODÈLE LIT : d'où le dirigeant lui parle, avec les identifiants à
+ * recopier. Un client nommé porte son dossier ouvert, ou le fait qu'il n'en a pas.
+ */
+export function ligneDuRegard(regard: {
+	readonly ecran: EcranDePlume;
+	readonly client?: { readonly id: string; readonly nom: string; readonly dossier: string | null };
+}): string {
+	const ecran = ECRAN_POUR_LE_MODELE[regard.ecran];
+	const client = regard.client;
+	if (client === undefined) return `Il regardait ${ecran}.`;
+	return (
+		`Il regardait ${ecran} : ${client.nom} — identifiant CLIENT : ${client.id}` +
+		(client.dossier === null
+			? ' ; ce client n’a pas de dossier ouvert.'
+			: ` ; son dossier ouvert — identifiant DOSSIER : ${client.dossier}.`)
+	);
+}
+
+/** Les écrans d'où l'on peut parler à Plume, pour relire ce qui arrive d'une adresse. */
+export const ECRANS_DE_PLUME: readonly EcranDePlume[] = [
+	'AUJOURDHUI',
+	'DOSSIERS',
+	'CLIENTS',
+	'CLIENT',
+	'COFFRE',
+	'SANTE',
+	'SANTE_CLIENT',
+	'DEFENSE'
+];
 
 /* ───────────────────────────────────────────────────────────────────────── */
 

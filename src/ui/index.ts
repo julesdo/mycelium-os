@@ -392,6 +392,7 @@ export {
 	Composeur,
 	PageConversation,
 	ReponseDePlume,
+	PastilleDuRegard,
 	SuggestionsAPlume,
 	TravailDePlume,
 	ID_DU_SELECTEUR_DE_PLUME,
