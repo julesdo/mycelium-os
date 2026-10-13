@@ -521,6 +521,15 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   (`compagnon/journee.ts`, table `journeesPlume`) : trois défis (démarrer, relire, répondre), un
   anneau autour de Plume, une série que le week-end ne casse pas, et deux fêtes (journée bouclée,
   argent rentré). Ni points ni récompenses : le jeu est le travail lui-même.
+  **Puis le 14/10, « fiable, pas cheap »** (`docs/superpowers/specs/2026-10-14-plume-fiable.md`,
+  sur Apple Music, Flighty, Monzo, Chime et Wealthfront) : une **capsule en direct** au-dessus de
+  la barre (`ui/capsule-plume.tsx`, `compagnon/en-direct.ts`) dit ce qu'il fait, ou la relance
+  qui part dans l'heure avec « Retenir » ; à chaque retour, son **point** (`compagnon/retour.ts`,
+  `journee.ouvrirLaVisite`) compte ce qui est parti et rentré depuis votre passage ; sa page
+  s'ouvre sur sa **maison** (`ui/maison-plume.tsx`, `compagnon/veille.ts`) : son état, trois
+  faits, sa journée, et ses engagements, **chacun lu sur la constante qui le tient**
+  (`HEURES_D_ENVOI`, `DELAI_POUR_RETENIR_MS`, `JOURS_DE_GRACE`). La bulle n'a plus de jauge en
+  tête ; Plume a du relief.
 - **La santé de vos clients : l'analyse du risque** (13/10/2026,
   `docs/superpowers/specs/2026-10-13-risque-client.md`). Pour chaque client (et toute entreprise
   qu'on s'apprête à servir) : un indice de 0 à 100 qui PART DE 50 et que chaque fait ajoute ou

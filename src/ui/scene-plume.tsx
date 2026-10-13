@@ -25,8 +25,13 @@ import { VignetteRangee, type FamilleRangee } from './familles';
  *   · il RÉFLÉCHIT d'abord — trois points dans la bulle —, puis il parle ;
  *   · RIEN NE SE FERME TOUT SEUL : « Suivant » passe à ce qu'il a encore à dire,
  *     le ✕ le renvoie dans la barre, le défilement aussi ;
- *   · la bulle porte toujours du CONTEXTE : en tête, la journée (ses défis et la
- *     série) ; en pied, ce qu'il fait ensuite.
+ *   · la bulle porte toujours du CONTEXTE : en pied, ce qu'il fait ensuite.
+ *
+ * ⚠️ PLUS DE JAUGE EN TÊTE (14/10/2026). La journée (ses défis, sa série) coiffait
+ * chaque bulle ; au-dessus de chaque phrase, elle faisait d'un collaborateur un jeu
+ * (« pas cheap », a dit le fondateur). Elle ne coiffe plus que la journée bouclée,
+ * avec sa semaine en coches ; ailleurs, elle vit sur la page de Plume et dans
+ * l'anneau du bouton. Le point du retour pose ses faits en lignes (`releve`).
  *
  * ⚠️ UN SEUL BOUTON À FOND CLAIR, AUCUN PLEIN. L'écran a déjà son bouton plein ; ici,
  * le geste est secondaire et « Suivant » est du texte.
