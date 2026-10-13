@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import { CheckIcon, ChevronLeftIcon } from 'lucide-react';
 import { cn } from './cn';
+import { BoutonRond } from './plein-ecran';
 import { Fond } from './fond';
 import { LogoLetikette, MotLetikette } from './logo';
 
@@ -38,10 +40,23 @@ export function CadreAuth({
 	explication,
 	children,
 	pied,
-	large = false
+	large = false,
+	onRetour,
+	levees
 }: {
 	titre: string;
 	explication?: string;
+	/**
+	 * Le retour rond, en tête : l'étape d'avant dans le même écran (le mot de passe
+	 * revient à l'adresse). Sans lui, la marque seule.
+	 */
+	onRetour?: () => void;
+	/**
+	 * CE QUI LÈVE UN DOUTE, coché sous l'explication : « 30 jours d'essai »,
+	 * « Sans carte bancaire ». Des faits vrais du produit, jamais une promesse
+	 * (Mercury, QuickBooks et Revolut les posent au même endroit).
+	 */
+	levees?: readonly string[];
 	children: ReactNode;
 	/** Les liens secondaires, sous le contenu. */
 	pied?: ReactNode;
@@ -62,6 +77,11 @@ export function CadreAuth({
 			  garde » ; posé en tête de colonne, il lit « application ».
 			*/}
 			<div className="flex shrink-0 items-center gap-cladd-3xs px-cladd-3xs pt-cladd-2xs">
+				{onRetour === undefined ? null : (
+					<BoutonRond libelle="Revenir à l’étape précédente" onClick={onRetour}>
+						<ChevronLeftIcon />
+					</BoutonRond>
+				)}
 				<LogoLetikette className="size-11 shrink-0" />
 				<MotLetikette />
 			</div>
@@ -87,6 +107,17 @@ export function CadreAuth({
 						{explication ? (
 							<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">{explication}</p>
 						) : null}
+						{levees === undefined || levees.length === 0 ? null : (
+							<ul className="flex flex-wrap gap-x-cladd-2xs gap-y-1 pt-1 text-cladd-2xs text-cladd-fg-soft">
+								{levees.map((levee) => (
+									<li key={levee} className="flex items-center gap-1">
+										{/* L'encre, jamais le vert : le vert ne dit que « au-dessus du seuil ». */}
+										<CheckIcon size={14} strokeWidth={2.5} className="shrink-0" aria-hidden />
+										{levee}
+									</li>
+								))}
+							</ul>
+						)}
 					</div>
 
 					{children}
