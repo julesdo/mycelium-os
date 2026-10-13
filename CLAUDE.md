@@ -514,6 +514,13 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   défilement. Toucher Plume l'ouvre **en sachant d'où l'on vient** (`?depuis=`, `?client=`) :
   une pastille, les questions de l'écran, une ligne de plus pour le modèle. Un écran nouveau se
   branche par `useRemarquesDePlume` ; une cible nouvelle, par `CibleDePlume` et `mener`.
+  **Le soir même, sur Duolingo** : Plume est GRAND dans son bouton, sans son nom, et y change de
+  tête (cinq de plus : il réfléchit avec trois points, écrit, fait la fête, salue, dort) ; sa bulle
+  (`ui/scene-plume.tsx`) réfléchit avant de parler, empile ce qu'il a à dire (« Suivant »), ne se
+  ferme jamais seule, et porte la journée en tête et la suite en pied. **La journée**
+  (`compagnon/journee.ts`, table `journeesPlume`) : trois défis (démarrer, relire, répondre), un
+  anneau autour de Plume, une série que le week-end ne casse pas, et deux fêtes (journée bouclée,
+  argent rentré). Ni points ni récompenses : le jeu est le travail lui-même.
 - **La santé de vos clients : l'analyse du risque** (13/10/2026,
   `docs/superpowers/specs/2026-10-13-risque-client.md`). Pour chaque client (et toute entreprise
   qu'on s'apprête à servir) : un indice de 0 à 100 qui PART DE 50 et que chaque fait ajoute ou

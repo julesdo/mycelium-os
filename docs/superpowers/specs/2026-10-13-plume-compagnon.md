@@ -101,3 +101,42 @@ trop.
   regard à l'ouverture.
 - `ui/bulle-plume.tsx`, `ui/fil-plume.tsx` (`PastilleDuRegard`) ; les routes qui donnent leurs
   remarques (`index`, `dossiers`, `clients`, `clients.$id`, `coffre`, `risque.*`, `defense`).
+
+## Le soir même : Plume grand dans la barre, et la journée à la Duolingo
+
+Le fondateur, sur cette première version : « il manque la figure de Plume animé qui fait plusieurs
+têtes, gestes selon ce qu'il fait, comme réfléchir avec une bulle et trois petits points », « les
+bulles se ferment très vite et ne sont pas assez utiles […] va voir sur Duolingo », puis « au lieu
+d'avoir un gros Plume en plus du bouton […] mettre Plume en grand dans le bouton, et enlever le nom
+en dessous ».
+
+Relevé sur Duolingo (Mobbin) : Duo grand à côté de sa bulle, une tête par moment, rien ne part
+avant « Continuer » ; trois défis du jour avec leur barre ; la série de jours et sa semaine en
+coches ; une fête à chaque victoire.
+
+**Cinq têtes de plus** (`ui/plume.tsx`) : il réfléchit (main à la joue, bulle de pensée et trois
+points), il écrit (une feuille dont les lignes se tracent), il fait la fête (il bondit, bras levés,
+confettis d'encre, aucune teinte de seuil), il salue, il dort (la nuit, des « z »). Elles suivent
+l'état réel : il écrit quand le pilote prépare une relance, dort de 22 h à 7 h quand rien ne tourne,
+réfléchit dans la conversation pendant qu'il répond (`PointsDeSuspension`).
+
+**Plume dans la barre, grand, sans son nom** (`BoutonCompagnon`) : c'est là qu'il change de tête.
+⚠️ Le bouton du kit ramène tout `svg` enfant à 16 px : Plume est dans une enveloppe.
+
+**Sa bulle reste** (`ui/scene-plume.tsx`, magasin `app/parole-de-plume.tsx`) :
+- il réfléchit avant chaque parole (trois points, sa tête qui réfléchit), puis la phrase, puis les
+  gestes ;
+- une pile, la plus pressante d'abord (geste, fête, nouvelle, défis, remarque d'écran), « 2 sur 4 »,
+  « Suivant », puis « Lui parler » ;
+- aucune minuterie : le ✕ et le défilement le renvoient dans la barre ; ce qu'il n'a pas dit se compte
+  sur sa pastille, et toucher Plume le lui fait dire ;
+- en tête, la journée ; en pied, ce qu'il fait en ce moment ou ensuite.
+
+**La journée** (`compagnon/journee.ts`, `convex/recouvrement/journee.ts`, table `journeesPlume`) :
+trois défis (démarrer les dossiers préparés, relire les lettres, répondre aux questions), le plus
+haut relevé du jour gardé, la journée tenue quand plus rien n'attend, la série des jours tenus (le
+week-end ne la casse pas, une série qui retombe ne se reproche pas), l'anneau de la journée autour
+de Plume, et deux fêtes : la journée bouclée (sa semaine en coches) et l'argent qui rentre.
+
+**Écarté exprès** : des points, des gemmes ou des récompenses. Le jeu est le travail lui-même ; la
+barre dit ce qui est fait, rien de plus. Et Duo culpabilise quand la série casse : Plume, non.
