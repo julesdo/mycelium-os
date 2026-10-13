@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -131,6 +131,34 @@ Les messages affichés dans l'application portent le nom du débiteur et le mont
 situation de X a changé », « X, Y € restant dû ». Ce sont des données de tiers, conservées dans une
 table rattachée à l'utilisateur destinataire, et effacées avec son compte.
 
+### 4.6 L'analyse de la santé des clients, et leurs dirigeants
+
+À la demande du client, puis chaque mois tant qu'un débiteur lui doit de l'argent, le Service
+analyse la santé de ce débiteur, ou d'une entreprise que le client s'apprête à servir.
+
+- **Ce qui est lu** : des données publiques, relevées par **Pappers** (INSEE, registre du commerce,
+  comptes déposés) et par le journal officiel des entreprises (BODACC) : l'état de l'entreprise,
+  ses procédures collectives, ses comptes et leur confidentialité, ses dirigeants et les sociétés
+  qu'ils dirigent ou ont dirigées, avec leurs jugements d'ouverture de procédure collective ; et
+  l'historique de paiement du débiteur chez le client.
+- **Les dirigeants sont des personnes** : leur nom, leur qualité, leur date de prise de poste et
+  les sociétés qu'ils dirigent s'affichent. Leur **date de naissance** sert seulement à les
+  rapprocher de leurs autres sociétés ; elle n'est pas conservée. Un rapprochement incertain
+  (homonymes, date de naissance absente) n'attribue rien.
+- **Ce qui n'est jamais lu** : aucune donnée relative aux condamnations, aux infractions ou aux
+  sanctions personnelles (faillite personnelle, interdiction de gérer, listes de sanctions), dont
+  l'article 46 de la loi Informatique et Libertés réserve le traitement à d'autres ; aucune liste
+  tenue par d'autres créanciers. Rien n'est mutualisé : l'analyse d'un débiteur vit dans
+  l'établissement qui l'a demandée.
+- **Aucune décision automatique** (article 22 du RGPD) : l'indice résume des faits ; le client
+  décide seul de livrer, de demander un acompte ou de fixer un plafond.
+- **Base légale** : l'intérêt légitime du créancier à évaluer le risque de crédit qu'il prend (art.
+  6.1.f). **Durée** : l'analyse est remplacée à chaque relecture (l'historique garde vingt-quatre
+  indices au plus) et s'efface avec le compte du client.
+- **Droit d'opposition** : comme pour toute donnée de ses débiteurs, Letikette agit ici pour le
+  compte du créancier (section 1). Un dirigeant ou un débiteur adresse sa demande au créancier
+  (section 11) ; Letikette l'aide à y répondre et efface l'analyse sur sa demande.
+
 ---
 
 ## 5. Finalités et bases légales
@@ -142,6 +170,7 @@ table rattachée à l'utilisateur destinataire, et effacées avec son compte.
 | Facturer et encaisser | **Obligation légale** et exécution du contrat | art. 6.1.c et 6.1.b |
 | Conserver les pièces comptables | **Obligation légale** | art. 6.1.c, art. L123-22 c. com. |
 | Surveiller les échéances, la prescription et la solvabilité des débiteurs | **Intérêt légitime** du créancier | art. 6.1.f |
+| Analyser la santé des débiteurs et le parcours de leurs dirigeants (section 4.6) | **Intérêt légitime** du créancier à évaluer son risque de crédit | art. 6.1.f |
 | Assurer la sécurité et prévenir la fraude | **Intérêt légitime** | art. 6.1.f |
 
 **Aucune donnée n'est traitée à des fins de prospection commerciale, de profilage publicitaire ou
@@ -238,6 +267,7 @@ indéterminé compte comme absent, jamais comme acquis. **Toute décision appart
 | **Paddle.com Market Ltd** | Facturation, vendeur de registre | Identité et moyens de paiement | Royaume-Uni |
 | **Opendatasoft / DILA** | Publication du BODACC, interrogé à la demande | Dénomination recherchée (section 4.4) | France |
 | **Qonto** | Connexion comptable, à l'initiative du client | Factures de vente et identité de leurs destinataires | France |
+| **Pappers** | Lecture des données publiques d'une entreprise pour l'analyse de sa santé (section 4.6) | SIREN interrogé ; nom, prénom et mois de naissance d'un dirigeant pour retrouver ses autres sociétés | France |
 | **Nango Inc** | Connexion aux logiciels de facturation et de comptabilité (Pennylane, QuickBooks, Xero, Sellsy, Stripe, Zoho), à l'initiative du client | Accès au logiciel, conservés chiffrés ; factures de vente et identité de leurs destinataires, en transit seulement | **États-Unis** (société de droit américain, hébergement AWS) |
 
 **Nango ne conserve pas les factures.** Il garde l'accès que le client lui a confié (un jeton

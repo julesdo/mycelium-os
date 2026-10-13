@@ -502,6 +502,20 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   choix du logiciel : la fenêtre d'autorisation doit s'ouvrir dans le clic. Un nouveau logiciel,
   c'est un traducteur et un lecteur dans `socle/connecteurs/nango/`, puis son intégration dans le
   tableau de bord (`serveurs/nango/LISEZMOI.md`). Dormant sans `NANGO_SECRET_KEY`.
+- **La santé de vos clients : l'analyse du risque** (13/10/2026,
+  `docs/superpowers/specs/2026-10-13-risque-client.md`). Pour chaque client (et toute entreprise
+  qu'on s'apprête à servir) : un indice de 0 à 100 qui PART DE 50 et que chaque fait ajoute ou
+  retire, chiffre sur sa carte (`verticales/recouvrement/risque/`, règles nommées dans
+  `regles.ts`) ; cinq piliers en bulletin ; les dirigeants et les procédures collectives de leurs
+  autres sociétés, chacune à sa source ; ses comptes ; votre plafond (rien ne le propose). Données :
+  Pappers (`pays/france/pappers.ts`) et le journal officiel (`antecedents.ts`, gratuit). Règles
+  dures : **à l'encre, jamais aux couleurs de seuil** ; **un dirigeant n'est rapproché que si sa
+  présence à la tête de CETTE société le confirme** ; **aucune donnée de condamnation ni sanction
+  personnelle** (article 46 de la loi 78-17, `PARAMETRES.donneesDeCondamnation`) ; **des comptes
+  confidentiels ne baissent pas l'indice** (L232-25), ils réduisent la lisibilité ; jamais
+  « suspect » ; Plume cite le niveau et les faits, jamais le chiffre ni un conseil de cesser de
+  servir. Relecture mensuelle (`risque/relecture.ts`, seul fichier qui nomme l'index `by_date`),
+  300 analyses par mois et par établissement. Dormant sans `PAPPERS_API_KEY`.
 - **La parole du client fait taire le pilote** (analyse des parcours d'impayés du 08/10/2026,
   `docs/superpowers/specs/2026-10-08-parcours-impayes.md`). Le pilote relançait un client qui
   venait de promettre de payer, et la somme entière à un client qui payait en trois fois.
