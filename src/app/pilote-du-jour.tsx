@@ -3,6 +3,8 @@ import { useQuery } from './donnees';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
 import { PiloteEnDirect } from '../ui';
+import { HEURES_D_ENVOI } from '../lib/verticales/recouvrement/plan-relance';
+import { usePlumeDit } from './parole-de-plume';
 
 /**
  * LE BLOC DU PILOTE SUR « AUJOURD'HUI », ABONNÉ SEUL À L'ÉTAT DU PILOTE.
@@ -15,6 +17,7 @@ import { PiloteEnDirect } from '../ui';
  */
 export function PiloteDuJour({ aujourdHui }: { readonly aujourdHui: string }) {
 	const pilote = useQuery(api.recouvrement.pilote.etat, {});
+	const dire = usePlumeDit();
 	/*
 	  LES DEUX GESTES DU BLOC SE VOIENT AU TOUCHER (mises à jour optimistes de
 	  Convex) : une relance retenue quitte « Part bientôt », l'activation bascule ;
@@ -48,7 +51,37 @@ export function PiloteDuJour({ aujourdHui }: { readonly aujourdHui: string }) {
 	return (
 		<PiloteEnDirect
 			aujourdHui={aujourdHui}
-			onActiver={(actif) => void activerRelances({ actif })}
+			onActiver={(actif) =>
+				/*
+				  ⚠️ PLUME DIT CE QUI VA SE PASSER (14/10/2026). Activer les relances, c'est
+				  laisser partir des e-mails à son nom : le moment où l'on s'inquiète le plus.
+				  Le mot dit quand, comment on le voit, et comment on l'arrête.
+				*/
+				void activerRelances({ actif }).then(
+					() =>
+						dire(
+							actif
+								? {
+										titre: 'Relances activées',
+										texte: `C’est activé. Je relance vos dossiers démarrés en semaine, de ${HEURES_D_ENVOI.de} h à ${HEURES_D_ENVOI.a} h. Chaque relance s’affiche au-dessus de la barre une heure avant de partir : vous la retenez d’un geste.`,
+										humeur: 'content'
+									}
+								: {
+										titre: 'Relances coupées',
+										texte:
+											'C’est coupé : plus rien ne part seul. Je continue de préparer vos lettres ; c’est vous qui les envoyez.',
+										humeur: 'content'
+									}
+						),
+					() =>
+						dire({
+							titre: 'Rien n’a changé',
+							texte:
+								'Je n’ai pas pu changer les relances automatiques. Seul un administrateur de l’établissement peut le faire.',
+							humeur: 'attention'
+						})
+				)
+			}
 			onRetenir={(envoiId) => void retenirRelance({ envoiId: envoiId as Id<'envois'> })}
 			pilote={{
 				envoiAutomatique: pilote.envoiAutomatique,

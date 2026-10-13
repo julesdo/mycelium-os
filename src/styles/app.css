@@ -2550,6 +2550,17 @@ html:has(.coquille-app) body {
 .plume-corps {
 	fill: var(--plume-corps);
 }
+/* Le relief du corps (14/10/2026) : la lumière en haut à gauche, l'ombre au pied,
+ * tirées de sa couleur. */
+.plume-corps-clair {
+	stop-color: color-mix(in oklch, var(--plume-corps), white 30%);
+}
+.plume-corps-milieu {
+	stop-color: var(--plume-corps);
+}
+.plume-corps-sombre {
+	stop-color: color-mix(in oklch, var(--plume-corps), black 26%);
+}
 .plume-bras {
 	fill: var(--plume-bras);
 }

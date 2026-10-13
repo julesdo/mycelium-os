@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { cn } from './cn';
 
 /**
@@ -45,6 +46,12 @@ import { cn } from './cn';
  * ⚠️ AUCUNE COULEUR DE SEUIL. Le vert, le rouge et l'ambre ne disent qu'une
  * chose dans ce produit. Plume est d'encre, ses joues d'un rose pâle qui n'est
  * aucune des trois.
+ *
+ * ⚠️ DU RELIEF, PAS UN APLAT (14/10/2026). Le fondateur : « il ne faut pas que ce
+ * soit cheap ». Peint d'une seule couleur, Plume avait l'air d'une icône de
+ * pictogramme ; Mo chez Alan est modelé. Son corps prend un dégradé rayonnant —
+ * plus clair en haut à gauche, où tombe la lumière, plus sombre au pied —, tiré de
+ * SA couleur (`color-mix`), donc juste dans les deux thèmes sans une teinte de plus.
  */
 
 /** Le nom du pilote, à UN seul endroit : le changer ici le change partout. */
@@ -142,7 +149,7 @@ function Bouche({ humeur }: { humeur: HumeurPlume }) {
 	}
 }
 
-function Oeil({ cx, humeur }: { cx: number; humeur: HumeurPlume }) {
+function Oeil({ cx, humeur, relief }: { cx: number; humeur: HumeurPlume; relief: string }) {
 	if (humeur === 'dort') {
 		// Fermés, la courbe vers le bas : il dort paisiblement.
 		return (
@@ -185,6 +192,7 @@ function Oeil({ cx, humeur }: { cx: number; humeur: HumeurPlume }) {
 				<path
 					d={`M${cx - 6.4} ${Y_OEIL - 2.6} Q${cx} ${Y_OEIL - 5.2} ${cx + 6.4} ${Y_OEIL - 2.6} L${cx + 6.4} ${Y_OEIL - 8} L${cx - 6.4} ${Y_OEIL - 8} Z`}
 					className="plume-corps"
+					style={{ fill: `url(#${relief})` }}
 				/>
 			) : null}
 		</g>
@@ -344,6 +352,8 @@ export function Plume({
 	readonly decoratif?: boolean;
 	readonly className?: string;
 }) {
+	// Un identifiant par exemplaire : plusieurs Plume vivent sur la même page.
+	const relief = `plume-relief-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
 	const droitDevant =
 		humeur === 'salue' || humeur === 'fete' || humeur === 'reflechit' || humeur === 'ecrit';
 	const gaucheDevant = humeur === 'fete';
@@ -357,6 +367,13 @@ export function Plume({
 				? { 'aria-hidden': true }
 				: { role: 'img', 'aria-label': `${NOM_DU_PILOTE}, ${HUMEUR_EN_MOTS[humeur]}` })}
 		>
+			<defs>
+				<radialGradient id={relief} gradientUnits="userSpaceOnUse" cx="23" cy="21" r="42">
+					<stop offset="0" className="plume-corps-clair" />
+					<stop offset="0.55" className="plume-corps-milieu" />
+					<stop offset="1" className="plume-corps-sombre" />
+				</radialGradient>
+			</defs>
 			{sol ? <ellipse cx="32" cy="60.5" rx="15" ry="2.6" className="plume-ombre" /> : null}
 			{humeur === 'fete' ? <Confettis /> : null}
 			{humeur === 'dort' ? <Sommeil /> : null}
@@ -389,6 +406,7 @@ export function Plume({
 				<path
 					d="M31.2 6.4 C33.6 5.2 37 5.6 38.6 7.6 C36.4 7.2 34.8 8 34.2 9.4 C37.2 15.2 46 20.6 51.4 28 C54.8 32.6 56.4 37.4 56.4 42.6 C56.4 52.4 46.2 58.4 32 58.4 C17.8 58.4 7.6 52.4 7.6 42.6 C7.6 37.4 9.2 32.6 12.6 28 C18.6 19.8 28.4 13.8 31.2 6.4 Z"
 					className="plume-corps"
+					style={{ fill: `url(#${relief})` }}
 				/>
 				<ellipse cx="32" cy="50" rx="14.5" ry="7.4" className="plume-ventre" />
 				<ellipse
@@ -401,8 +419,8 @@ export function Plume({
 				/>
 				<ellipse cx="17.4" cy="45.4" rx="3.6" ry="2.2" className="plume-joue" />
 				<ellipse cx="46.6" cy="45.4" rx="3.6" ry="2.2" className="plume-joue" />
-				<Oeil cx={24} humeur={humeur} />
-				<Oeil cx={40} humeur={humeur} />
+				<Oeil cx={24} humeur={humeur} relief={relief} />
+				<Oeil cx={40} humeur={humeur} relief={relief} />
 				<Bouche humeur={humeur} />
 				{humeur === 'ecrit' ? <Feuille /> : null}
 				{/* Un bras qui salue, qui fête ou qui tient la joue passe DEVANT lui : derrière,
