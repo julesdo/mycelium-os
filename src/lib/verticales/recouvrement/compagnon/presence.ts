@@ -1,0 +1,412 @@
+import { pluriel } from '../../../socle/francais';
+
+/**
+ * PLUME SUR CHAQUE ÉCRAN — ce qu'il dit, et quand il se tait (13/10/2026).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ POURQUOI CE MODULE : « UN VRAI COMPAGNON, PAS UN CHAT »
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le fondateur, après un retour du terrain : « Plume doit être un vrai agent qui
+ * assiste l'utilisateur partout dans l'App […] au lieu de simplement être dans un
+ * chat ». Plume vivait dans la barre, et il ne parlait que si on l'ouvrait. Chez
+ * Alan, Mo parle depuis la barre du bas, dans une bulle (relevé sur Mobbin le
+ * 13/10) ; chez Rocket Money et Credit Karma, la recommandation se pose sur
+ * l'écran qui la concerne, avec un geste et un « Plus tard ».
+ *
+ * Plume dit donc, sur chaque écran, UNE chose, dans une bulle au-dessus de lui.
+ * Ce module décide laquelle. Il ne connaît ni React ni Convex : l'écran lui
+ * donne ce qu'il a déjà lu, et il rend les remarques possibles, la plus utile
+ * d'abord.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LES QUATRE RÈGLES DE CE QU'IL DIT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ *   1. IL NE REDIT PAS L'ÉCRAN. Il dit ce que l'écran ne dit pas : ce qui lui
+ *      manque pour travailler, un lien entre deux faits, ce qu'il peut faire
+ *      ensuite. La page d'un dossier porte déjà ce que fait Plume en tête : il
+ *      s'y tait.
+ *   2. CE QU'IL PROPOSE, IL SAIT LE FAIRE. Chaque remarque qui appelle un geste
+ *      le porte (`action`), et ce geste ne fait rien de plus que l'écran : il
+ *      prépare, il ouvre, il reprend. Rien ne part sans le gérant.
+ *   3. IL SE TAIT QUAND ON LE LUI DIT. Le ✕ fait taire une remarque pour de bon
+ *      (`AU_REFUS`) ; une présentation ne se dit qu'une fois (`UNE_FOIS`). La clé
+ *      porte la situation : un fait NOUVEAU fait une clé nouvelle, et Plume peut
+ *      en reparler.
+ *   4. LIGNE ROUGE N° 3. Il ne dit jamais qu'une condition est remplie, ni qu'il
+ *      faudrait agir en justice ; la santé d'un client se dit par des faits, et
+ *      le choix de livrer reste au gérant.
+ */
+
+/** Les écrans où Plume peut parler. La page d'un dossier n'en est pas : voir la règle 1. */
+export type EcranDePlume =
+	| 'AUJOURDHUI'
+	| 'DOSSIERS'
+	| 'CLIENTS'
+	| 'CLIENT'
+	| 'COFFRE'
+	| 'SANTE'
+	| 'SANTE_CLIENT'
+	| 'DEFENSE';
+
+/**
+ * OÙ MÈNE CE QUE PLUME PROPOSE — dit en intention ; l'application en fait une route
+ * ou un geste. Ce module ne connaît pas le routeur.
+ */
+export type CibleDePlume =
+	| { readonly genre: 'CONVERSATION' }
+	| { readonly genre: 'DEMARRER_LOT' }
+	| { readonly genre: 'DEPOSER' }
+	| { readonly genre: 'DOSSIER'; readonly dossier: string; readonly rubrique?: 'courriers' }
+	| { readonly genre: 'CLIENT'; readonly client: string; readonly rubrique?: 'identite' }
+	| { readonly genre: 'SANTE'; readonly client: string }
+	| { readonly genre: 'REMETTRE_AU_PILOTE'; readonly client: string }
+	| { readonly genre: 'PREPARER_RELANCE'; readonly dossier: string; readonly client: string };
+
+/** Quand Plume cesse d'en parler. */
+export type Silence =
+	/** Au ✕ seulement : tant qu'on ne l'a pas fait taire, il peut le redire à une autre visite. */
+	| 'AU_REFUS'
+	/** Dès qu'il l'a dit : une présentation, un bonjour. */
+	| 'UNE_FOIS';
+
+export interface RemarqueDePlume {
+	/** Stable, et porteuse de la situation : `sans-email:<client>`, `a-demarrer:3`. */
+	readonly cle: string;
+	/** À la première personne, en une ou deux phrases. Jamais de tiret long. */
+	readonly texte: string;
+	/** `attention` quand quelque chose attend le gérant, `content` sinon. */
+	readonly humeur: 'content' | 'attention';
+	readonly silence: Silence;
+	readonly action?: { readonly libelle: string; readonly cible: CibleDePlume };
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Les présentations : ce que Plume fait ici, dit une fois, à la première visite.
+   ───────────────────────────────────────────────────────────────────────── */
+
+const PRESENTATIONS: Readonly<Record<EcranDePlume, string>> = {
+	AUJOURDHUI:
+		'Je relis vos factures, j’ouvre le dossier de chaque client en retard et je prépare ses relances. Touchez-moi pour me demander n’importe quoi.',
+	DOSSIERS:
+		'Ici, un dossier par client en retard. Je les prépare ; dès que vous en démarrez un, je suis son plan de relance.',
+	CLIENTS:
+		'Tous vos clients, celui qui vous doit le plus en tête. Sur chaque fiche, je vous dis ce qui me manque pour bien le suivre.',
+	CLIENT:
+		'Ici, tout ce que ce client vous doit et tout ce que je sais de lui. Touchez-moi pour me parler de lui.',
+	COFFRE:
+		'Chaque document est scellé à son arrivée. Déposez une facture : je la lis et je la range chez son client.',
+	SANTE:
+		'Je lis les comptes publics de vos clients pour vous montrer lesquels méritent un regard. Je ne décide rien : c’est vous qui choisissez de livrer.',
+	SANTE_CLIENT:
+		'L’indice part de 50, et chaque fait l’ajoute ou le retire. Touchez un fait pour voir sa source.',
+	DEFENSE:
+		'Votre équipe, et les professionnels près de chez vos clients. Je ne choisis personne à votre place.'
+};
+
+/** La présentation de l'écran, avec le nom du pilote au premier écran. */
+export function presentation(ecran: EcranDePlume, nomDuPilote: string): RemarqueDePlume {
+	return {
+		cle: `presentation:${ecran}`,
+		texte:
+			ecran === 'AUJOURDHUI'
+				? `Bonjour, je suis ${nomDuPilote}. ${PRESENTATIONS[ecran]}`
+				: PRESENTATIONS[ecran],
+		humeur: 'content',
+		silence: 'UNE_FOIS'
+	};
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Les remarques partagées par plusieurs écrans.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/**
+ * LES DOSSIERS QUE PLUME A PRÉPARÉS ET QUI ATTENDENT LE FEU VERT. La pastille de
+ * Plume les compte ; la bulle dit ce que le nombre veut dire.
+ */
+export function dossiersADemarrer(nombre: number): RemarqueDePlume | null {
+	if (nombre <= 0) return null;
+	return {
+		cle: `a-demarrer:${nombre}`,
+		texte:
+			nombre === 1
+				? 'J’ai préparé le dossier d’un client en retard. Je ne le relance pas avant votre feu vert.'
+				: `J’ai préparé ${nombre} dossiers de clients en retard. Je ne relance rien avant votre feu vert.`,
+		humeur: 'attention',
+		silence: 'AU_REFUS',
+		action: { libelle: nombre === 1 ? 'Le voir' : 'Les voir', cible: { genre: 'DEMARRER_LOT' } }
+	};
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Aujourd'hui.
+   ───────────────────────────────────────────────────────────────────────── */
+
+export interface DonneesDAujourdhui {
+	/** `AAAA-MM-JJ`. */
+	readonly aujourdHui: string;
+	/** Le premier mot du nom du compte, s'il en a un. */
+	readonly prenom: string | null;
+	readonly aDemarrer: number;
+	readonly dossiersSuivis: number;
+}
+
+/**
+ * ⚠️ LE BONJOUR NE DIT QUE CE QUI EST VRAI. « Je vous dis ici chaque chose que je
+ * fais » : la bulle annonce ses travaux finis (`paroleDUnTravail`), sur tous les
+ * écrans sauf celui-ci, où son bloc les montre déjà.
+ */
+export function remarquesDAujourdhui(
+	donnees: DonneesDAujourdhui,
+	nomDuPilote: string
+): RemarqueDePlume[] {
+	const suivis = donnees.dossiersSuivis;
+	const bonjour: RemarqueDePlume = {
+		cle: `bonjour:${donnees.aujourdHui}`,
+		texte:
+			`Bonjour${donnees.prenom === null ? '' : ` ${donnees.prenom}`}. ` +
+			(suivis === 0
+				? 'Je veille sur vos factures : je vous dis ici chaque chose que je fais.'
+				: `Je veille sur ${suivis} dossier${pluriel(suivis)}, et je vous dis ici chaque chose que je fais.`),
+		humeur: 'content',
+		silence: 'UNE_FOIS'
+	};
+	return garder([presentation('AUJOURDHUI', nomDuPilote), dossiersADemarrer(donnees.aDemarrer), bonjour]);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Dossiers.
+   ───────────────────────────────────────────────────────────────────────── */
+
+export interface DonneesDesDossiers {
+	readonly aDemarrer: number;
+	/** Les dossiers dont une lettre attend la relecture, le plus gros d'abord. */
+	readonly lettresARelire: readonly { readonly dossier: string; readonly client: string }[];
+}
+
+export function remarquesDesDossiers(
+	donnees: DonneesDesDossiers,
+	nomDuPilote: string
+): RemarqueDePlume[] {
+	const lettres = donnees.lettresARelire;
+	const premiere = lettres[0];
+	return garder([
+		presentation('DOSSIERS', nomDuPilote),
+		dossiersADemarrer(donnees.aDemarrer),
+		premiere === undefined
+			? null
+			: {
+					cle: `lettres:${lettres.length}:${premiere.dossier}`,
+					texte:
+						lettres.length === 1
+							? `La lettre de ${premiere.client} attend votre relecture. Je ne l’envoie pas avant.`
+							: `${lettres.length} lettres attendent votre relecture, dont celle de ${premiere.client}. Je n’en envoie aucune avant.`,
+					humeur: 'attention',
+					silence: 'AU_REFUS',
+					action: {
+						libelle: 'La relire',
+						cible: { genre: 'DOSSIER', dossier: premiere.dossier, rubrique: 'courriers' }
+					}
+				}
+	]);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Clients.
+   ───────────────────────────────────────────────────────────────────────── */
+
+export interface ClientPourPlume {
+	readonly id: string;
+	readonly nom: string;
+	readonly email?: string;
+	readonly siren?: string;
+	readonly horsPilote: boolean;
+	readonly facturesEchues: number;
+}
+
+/** Un client en retard que Plume relance, et à qui rien ne peut partir. */
+function sansEmail(client: ClientPourPlume): boolean {
+	return (
+		client.facturesEchues > 0 && !client.horsPilote && (client.email ?? '').trim() === ''
+	);
+}
+
+/**
+ * La liste porte déjà l'habitude rompue de chaque client : Plume parle de ce
+ * qu'elle ne montre pas, l'adresse et le numéro qui lui manquent.
+ */
+export function remarquesDesClients(
+	clients: readonly ClientPourPlume[],
+	nomDuPilote: string
+): RemarqueDePlume[] {
+	const muets = clients.filter(sansEmail);
+	const premierMuet = muets[0];
+	const anonymes = clients.filter(
+		(c) => c.facturesEchues > 0 && (c.siren ?? '').trim() === ''
+	);
+	const premierAnonyme = anonymes[0];
+	return garder([
+		presentation('CLIENTS', nomDuPilote),
+		premierMuet === undefined
+			? null
+			: {
+					cle: `sans-email:${muets.length}:${premierMuet.id}`,
+					texte:
+						muets.length === 1
+							? `Il me manque l’e-mail de ${premierMuet.nom}, en retard : ses relances ne peuvent pas lui partir.`
+							: `Il me manque l’e-mail de ${muets.length} clients en retard, dont ${premierMuet.nom} : leurs relances ne peuvent pas leur partir.`,
+					humeur: 'attention',
+					silence: 'AU_REFUS',
+					action: {
+						libelle: 'Compléter sa fiche',
+						cible: { genre: 'CLIENT', client: premierMuet.id, rubrique: 'identite' }
+					}
+				},
+		premierAnonyme === undefined
+			? null
+			: {
+					cle: `sans-siren:${anonymes.length}:${premierAnonyme.id}`,
+					texte:
+						anonymes.length === 1
+							? `Il me manque le SIREN de ${premierAnonyme.nom} : sans lui, je ne vois pas ce que le registre publie sur son entreprise.`
+							: `Il me manque le SIREN de ${anonymes.length} clients en retard, dont ${premierAnonyme.nom} : sans lui, je ne vois pas ce que le registre publie sur eux.`,
+					humeur: 'attention',
+					silence: 'AU_REFUS',
+					action: {
+						libelle: 'Le trouver',
+						cible: { genre: 'CLIENT', client: premierAnonyme.id }
+					}
+				}
+	]);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   La fiche d'un client.
+   ───────────────────────────────────────────────────────────────────────── */
+
+export interface DonneesDUnClient extends ClientPourPlume {
+	/** Son dossier ouvert, s'il en a un. */
+	readonly dossierOuvert: string | null;
+	/** Une facture due dont le retard sort de son habitude, la plus forte. */
+	readonly rupture: {
+		readonly reference: string;
+		readonly habituelJours: number;
+		readonly ecartJours: number;
+	} | null;
+	/** L'analyse de santé : branchée ou non, et faite ou non. */
+	readonly sante: { readonly disponible: boolean; readonly analysee: boolean };
+	/** Il vous doit quelque chose. */
+	readonly doitDeLArgent: boolean;
+}
+
+export function remarquesDUnClient(
+	client: DonneesDUnClient,
+	nomDuPilote: string
+): RemarqueDePlume[] {
+	const rupture = client.rupture;
+	return garder([
+		presentation('CLIENT', nomDuPilote),
+		client.horsPilote
+			? {
+					cle: `hors-pilote:${client.id}`,
+					texte: `Je ne m’occupe plus de ${client.nom} : vous l’avez retiré de mon plan. Je le reprends quand vous voulez.`,
+					humeur: 'content',
+					silence: 'AU_REFUS',
+					action: { libelle: 'Le reprendre', cible: { genre: 'REMETTRE_AU_PILOTE', client: client.id } }
+				}
+			: null,
+		sansEmail(client)
+			? {
+					cle: `sans-email:${client.id}`,
+					texte: 'Il me manque son e-mail : ses relances ne peuvent pas lui partir.',
+					humeur: 'attention',
+					silence: 'AU_REFUS',
+					action: {
+						libelle: 'L’ajouter',
+						cible: { genre: 'CLIENT', client: client.id, rubrique: 'identite' }
+					}
+				}
+			: null,
+		rupture !== null && client.dossierOuvert !== null && !client.horsPilote
+			? {
+					cle: `rupture:${client.id}:${rupture.reference}`,
+					texte: `Il paie d’habitude à ${rupture.habituelJours} jours ; sa facture ${rupture.reference} les dépasse de ${rupture.ecartJours} jours.`,
+					humeur: 'attention',
+					silence: 'AU_REFUS',
+					action: {
+						libelle: 'Préparer une relance',
+						cible: { genre: 'PREPARER_RELANCE', dossier: client.dossierOuvert, client: client.nom }
+					}
+				}
+			: null,
+		client.sante.disponible &&
+		!client.sante.analysee &&
+		client.doitDeLArgent &&
+		(client.siren ?? '').trim() !== ''
+			? {
+					cle: `sante:${client.id}`,
+					texte: 'Je peux lire la santé de son entreprise dans ses comptes publics.',
+					humeur: 'content',
+					silence: 'AU_REFUS',
+					action: { libelle: 'La lire', cible: { genre: 'SANTE', client: client.id } }
+				}
+			: null
+	]);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Les écrans où Plume ne fait que se présenter.
+   ───────────────────────────────────────────────────────────────────────── */
+
+export function remarquesDeLEcran(
+	ecran: 'COFFRE' | 'SANTE' | 'SANTE_CLIENT' | 'DEFENSE',
+	nomDuPilote: string
+): RemarqueDePlume[] {
+	return [presentation(ecran, nomDuPilote)];
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Ce que Plume vient de faire, dit sur l'écran où l'on est.
+   ───────────────────────────────────────────────────────────────────────── */
+
+export interface TravailTermine {
+	readonly id: string;
+	/** Au présent, à la troisième personne : « Envoie le rappel à Durand ». */
+	readonly titre: string;
+	readonly bilan: string | null;
+	readonly etat: 'FAIT' | 'ECHEC';
+}
+
+/**
+ * LA PHRASE D'UN TRAVAIL FINI. `autres` compte les travaux finis en même temps,
+ * dits en un mot plutôt qu'en cinq bulles : un collaborateur qui a envoyé cinq
+ * rappels à neuf heures ne frappe pas cinq fois à la porte.
+ */
+export function paroleDUnTravail(travail: TravailTermine, autres: number): RemarqueDePlume {
+	const encore =
+		autres <= 0 ? '' : ` J’ai aussi fini ${autres === 1 ? 'un autre travail' : `${autres} autres travaux`}.`;
+	if (travail.etat === 'ECHEC') {
+		return {
+			cle: `travail:${travail.id}`,
+			texte: `Je n’ai pas pu finir « ${travail.titre} ». Je reprendrai à ma prochaine relecture.${encore}`,
+			humeur: 'attention',
+			silence: 'UNE_FOIS',
+			action: { libelle: 'Voir', cible: { genre: 'CONVERSATION' } }
+		};
+	}
+	return {
+		cle: `travail:${travail.id}`,
+		texte: `${travail.bilan ?? `C’est fait : « ${travail.titre} ».`}${encore}`,
+		humeur: 'content',
+		silence: 'UNE_FOIS',
+		action: { libelle: 'Voir', cible: { genre: 'CONVERSATION' } }
+	};
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+
+function garder(remarques: readonly (RemarqueDePlume | null)[]): RemarqueDePlume[] {
+	return remarques.filter((r): r is RemarqueDePlume => r !== null);
+}

@@ -5,8 +5,10 @@ import { useQuery } from '../../app/donnees';
 import { precharger } from '../../app/prechargement';
 import { messageDeRefus } from '../../app/televerser';
 import { api } from '../../lib/convex/_generated/api';
-import type { MissionAffichee } from '../../ui';
+import { NOM_DU_PILOTE, type MissionAffichee } from '../../ui';
 import { EcranSanteClients } from '../../screens/sante';
+import { useRemarquesDePlume } from '../../app/parole-de-plume';
+import { remarquesDeLEcran } from '../../lib/verticales/recouvrement/compagnon/presence';
 
 /**
  * `/app/risque` — LA SANTÉ DE VOS CLIENTS : le portefeuille, ses missions, ce qui
@@ -25,6 +27,8 @@ function SanteEnErreur() {
 }
 
 function PageSanteDesClients() {
+	// Plume se présente ici, la première fois (13/10/2026).
+	useRemarquesDePlume('SANTE', remarquesDeLEcran('SANTE', NOM_DU_PILOTE));
 	const navigate = useNavigate();
 	const donnees = useQuery(api.risque.donnees.santeDesClients, {});
 	const role = useQuery(api.organizations.getMyOrgMembership, {});

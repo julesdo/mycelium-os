@@ -6,6 +6,7 @@ import { useDepotAuCoffre, useOuvertureCoffre } from '../../app/use-coffre';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import {
+	NOM_DU_PILOTE,
 	ParcoursDepot,
 	VisionneuseDocument,
 	cleDeRef,
@@ -13,6 +14,8 @@ import {
 	type RefCoffre
 } from '../../ui';
 import { EcranCoffre } from '../../screens/coffre';
+import { useRemarquesDePlume } from '../../app/parole-de-plume';
+import { remarquesDeLEcran } from '../../lib/verticales/recouvrement/compagnon/presence';
 
 /**
  * `/app/coffre` — le coffre-fort des documents. Voir `screens/coffre.tsx` et
@@ -46,6 +49,8 @@ function versServeur(ref: RefCoffre) {
 }
 
 function PageCoffre() {
+	// Plume se présente ici, la première fois (13/10/2026).
+	useRemarquesDePlume('COFFRE', remarquesDeLEcran('COFFRE', NOM_DU_PILOTE));
 	const { document, deposer } = Route.useSearch();
 	const navigate = useNavigate();
 	const ref = refDepuisCle(document);

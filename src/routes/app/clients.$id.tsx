@@ -7,8 +7,15 @@ import { precharger } from '../../app/prechargement';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
+import { DELAI_DE_RELANCE_PAR_DEFAUT, useGestesDeDossier } from '../../app/gestes-dossier';
+import { usePlumeDit, useRemarquesDePlume } from '../../app/parole-de-plume';
+import {
+	remarquesDUnClient,
+	type CibleDePlume
+} from '../../lib/verticales/recouvrement/compagnon/presence';
 import {
 	FeuilleDeReussite,
+	NOM_DU_PILOTE,
 	aujourdHuiISO,
 	dateCourte,
 	secteursProposes,
@@ -43,6 +50,9 @@ import { EcranDebiteur } from '../../screens/debiteur';
  * on ne pose pas d'état dans un effet.
  */
 export const Route = createFileRoute('/app/clients/$id')({
+	/** `?ouvrir=identite` ouvre l'identité à l'arrivée : la bulle de Plume y mène, pour l'e-mail qui manque. */
+	validateSearch: (recherche: Record<string, unknown>): { ouvrir?: 'identite' } =>
+		recherche.ouvrir === 'identite' ? { ouvrir: 'identite' } : {},
 	// Les données de la fiche partent au toucher de la carte (`app/prechargement.ts`).
 	loader: ({ params }) => {
 		const debiteurId = params.id as Id<'debiteurs'>;
@@ -81,6 +91,11 @@ const DEJA_INTERROGES = new Set<string>();
  */
 function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const navigate = useNavigate();
+	const { ouvrir } = Route.useSearch();
+	/** La rangée que la bulle de Plume demande d'ouvrir, sur cette page même. */
+	const [demande, setDemande] = useState<{ rubrique: string; jeton: number } | null>(null);
+	const gestes = useGestesDeDossier();
+	const plumeDit = usePlumeDit();
 
 	const debiteurs = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
 	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
@@ -410,6 +425,70 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 		pieces !== undefined &&
 		comportement !== undefined;
 
+	/*
+	  CE QUE PLUME DIT DE CE CLIENT (13/10/2026) : ce qui lui manque pour le suivre,
+	  un retard qui sort de son habitude, sa santé à lire. Ce qu'il propose se fait
+	  ici même : la relance se prépare à relire, le client se reprend, la rangée
+	  s'ouvre.
+	*/
+	const rupture =
+		comportement === undefined
+			? undefined
+			: [...comportement.ruptures].sort((a, b) => b.ecartJours - a.ecartJours)[0];
+	useRemarquesDePlume(
+		'CLIENT',
+		!chargee
+			? undefined
+			: remarquesDUnClient(
+					{
+						id: debiteurId,
+						nom: debiteur.denomination,
+						...(debiteur.email === undefined ? {} : { email: debiteur.email }),
+						...(debiteur.siren === undefined ? {} : { siren: debiteur.siren }),
+						horsPilote: debiteur.horsPilote,
+						facturesEchues: debiteur.facturesEchues,
+						dossierOuvert:
+							creances.find((c) => c.debiteurId === debiteurId && c.statut !== 'CLOSE')?._id ?? null,
+						rupture:
+							rupture === undefined
+								? null
+								: {
+										reference: rupture.reference,
+										habituelJours: rupture.habituelJours,
+										ecartJours: rupture.ecartJours
+									},
+						sante: {
+							disponible: risque?.disponible === true,
+							analysee: risque?.analyse !== null && risque?.analyse !== undefined
+						},
+						doitDeLArgent: debiteur.encours > 0n
+					},
+					NOM_DU_PILOTE
+				),
+		(cible: CibleDePlume) => {
+			if (cible.genre === 'CLIENT' && cible.client === debiteurId && cible.rubrique !== undefined) {
+				setDemande({ rubrique: cible.rubrique, jeton: Date.now() });
+				return true;
+			}
+			if (cible.genre === 'REMETTRE_AU_PILOTE') {
+				const nom = debiteur?.denomination ?? 'ce client';
+				void reglerPilote({ debiteurId, horsPilote: false }).then(() =>
+					plumeDit({
+						titre: 'Client repris',
+						texte: `C’est noté : je reprends ${nom}, et je suis son plan de relance.`
+					})
+				);
+				return true;
+			}
+			if (cible.genre === 'PREPARER_RELANCE') {
+				void gestes.relancer(cible.dossier, cible.client, DELAI_DE_RELANCE_PAR_DEFAUT);
+				return true;
+			}
+			return false;
+		}
+	);
+	const rubriqueDemandee = demande ?? (ouvrir === undefined ? undefined : { rubrique: ouvrir, jeton: 0 });
+
 	return (
 		<>
 			{coffre.rendu}
@@ -488,7 +567,8 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 													niveau: risque.analyse?.niveau ?? null
 												}
 											}
-										: {})
+										: {}),
+									...(rubriqueDemandee === undefined ? {} : { rubriqueDemandee })
 								}
 							}
 				}

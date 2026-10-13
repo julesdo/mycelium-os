@@ -216,6 +216,12 @@ export interface DebiteurComplet {
 		readonly indice: number | null;
 		readonly niveau: NiveauDeSante | null;
 	};
+	/**
+	 * UNE RANGÉE À OUVRIR, DEMANDÉE D'AILLEURS (13/10/2026) — le bouton de la bulle
+	 * de Plume (« L'ajouter », pour l'e-mail qui manque) ou `?ouvrir=identite`. Le
+	 * jeton change à chaque demande : la même rangée se rouvre si on l'a refermée.
+	 */
+	readonly rubriqueDemandee?: { readonly rubrique: string; readonly jeton: number };
 }
 
 /** La facture dont la prescription tombe le plus tôt, et dans combien de jours. */
@@ -435,11 +441,24 @@ function CorpsDebiteur({
 	onAjouterPieces,
 	onOuvrirPiece,
 	onClasserPiece,
-	sante
+	sante,
+	rubriqueDemandee
 }: DebiteurComplet) {
 	const provenance = useProvenance();
 	/** Les rangées ouvertes. Aucune à l'arrivée : leur valeur se lit fermée. */
-	const [ouvertes, setOuvertes] = useState<readonly string[]>([]);
+	const [ouvertes, setOuvertes] = useState<readonly string[]>(() =>
+		rubriqueDemandee === undefined ? [] : [rubriqueDemandee.rubrique]
+	);
+	/*
+	  UNE DEMANDE NOUVELLE OUVRE SA RANGÉE — ajusté pendant le rendu, comme le veut
+	  React quand une propriété change (pas dans un effet).
+	*/
+	const [demandeVue, setDemandeVue] = useState(rubriqueDemandee?.jeton);
+	if (rubriqueDemandee !== undefined && rubriqueDemandee.jeton !== demandeVue) {
+		setDemandeVue(rubriqueDemandee.jeton);
+		const rubrique = rubriqueDemandee.rubrique;
+		setOuvertes((avant) => (avant.includes(rubrique) ? avant : [...avant, rubrique]));
+	}
 	/** La feuille « Lancer un dossier ». */
 	const [feuilleOuverte, setFeuilleOuverte] = useState(false);
 	/** La feuille « Un virement reçu », ouverte par son action rapide. */

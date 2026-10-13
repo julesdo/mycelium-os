@@ -4,6 +4,7 @@ import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import {
 	BarreDuBas,
 	BoutonCompagnon,
+	BullePlume,
 	IconeLetikette,
 	PastilleDeRappel,
 	PageEcran,
@@ -131,6 +132,38 @@ const ETATS_COMPAGNON: readonly {
 	}
 ];
 
+/** Les bulles de la salle : les phrases que `compagnon/presence.ts` compose vraiment. */
+const BULLES: readonly {
+	readonly titre: string;
+	readonly humeur: HumeurPlume;
+	readonly texte: string;
+	readonly geste?: string;
+	readonly pourDeBon: boolean;
+}[] = [
+	{
+		titre: 'Une remarque d’écran, avec son geste',
+		humeur: 'attention',
+		texte:
+			'J’ai préparé 3 dossiers de clients en retard. Je ne relance rien avant votre feu vert.',
+		geste: 'Les voir',
+		pourDeBon: true
+	},
+	{
+		titre: 'Sa présentation, la première fois',
+		humeur: 'content',
+		texte:
+			'Bonjour, je suis Plume. Je relis vos factures, j’ouvre le dossier de chaque client en retard et je prépare ses relances. Touchez-moi pour me demander n’importe quoi.',
+		pourDeBon: false
+	},
+	{
+		titre: 'Un travail fini, annoncé là où l’on est',
+		humeur: 'content',
+		texte: 'Le rappel est parti chez Boulangerie Martin. J’ai aussi fini 2 autres travaux.',
+		geste: 'Voir',
+		pourDeBon: false
+	}
+];
+
 function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 	const lecture = lectureDemo(etat, true);
 
@@ -182,6 +215,36 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 								compte={compte}
 								description="Parler à Plume"
 								onOuvrir={() => undefined}
+							/>
+						}
+					/>
+				</Scene>
+			))}
+
+			<SectionTitle>Plume parle, depuis la barre</SectionTitle>
+			{/* La bulle sort de lui : sa pointe le désigne. Trois voix, une forme
+			    (13/10/2026) : ce qu'il a à dire de l'écran, ce qu'il vient de finir, le
+			    mot après un geste. */}
+			{BULLES.map(({ titre, humeur, texte, geste, pourDeBon }) => (
+				<Scene key={titre} titre={titre} hauteur="h-80">
+					<BarreDuBas
+						destinations={destinations('aujourdhui', null)}
+						accessoire={
+							<BoutonCompagnon
+								humeur={humeur}
+								description="Parler à Plume"
+								onOuvrir={() => undefined}
+								bulle={
+									<BullePlume
+										texte={texte}
+										{...(geste === undefined
+											? {}
+											: { libelleDuGeste: geste, onGeste: () => undefined })}
+										onOuvrir={() => undefined}
+										onFermer={() => undefined}
+										fermerPourDeBon={pourDeBon}
+									/>
+								}
 							/>
 						}
 					/>

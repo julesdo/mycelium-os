@@ -7,6 +7,9 @@ import { messageDeRefus } from '../../app/televerser';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranSanteClient, messageDeLIssue } from '../../screens/sante';
+import { useRemarquesDePlume } from '../../app/parole-de-plume';
+import { remarquesDeLEcran } from '../../lib/verticales/recouvrement/compagnon/presence';
+import { NOM_DU_PILOTE } from '../../ui';
 
 /**
  * `/app/risque/$id` — LA SANTÉ D'UN CLIENT : sa jauge, son bulletin, les faits,
@@ -31,6 +34,8 @@ function SanteDuClientEnErreur() {
 }
 
 function PageSanteDuClient() {
+	// Plume se présente ici, la première fois (13/10/2026).
+	useRemarquesDePlume('SANTE_CLIENT', remarquesDeLEcran('SANTE_CLIENT', NOM_DU_PILOTE));
 	const { id } = Route.useParams();
 	const debiteurId = id as Id<'debiteurs'>;
 	const navigate = useNavigate();

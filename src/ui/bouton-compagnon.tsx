@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
 import { cn } from './cn';
 import { PastilleDeRappel } from './barre-du-bas';
@@ -20,12 +21,17 @@ import { NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
  * Il garde ce que le bouton avait appris (07/10/2026) : il est DANS la rangée de
  * la barre, jamais au-dessus du contenu, où il cachait les montants ; il a la
  * hauteur de la pilule et l'anatomie d'un onglet.
+ *
+ * ⚠️ ET IL PARLE D'ICI (13/10/2026). Sa bulle (`BullePlume`) se pose au-dessus de
+ * lui, la pointe sous lui : c'est d'ici qu'il dit ce qu'il vient de faire et ce
+ * qu'il a à dire de l'écran. Voir `app/parole-de-plume.tsx`.
  */
 export function BoutonCompagnon({
 	humeur,
 	compte = 0,
 	description,
-	onOuvrir
+	onOuvrir,
+	bulle
 }: {
 	readonly humeur: HumeurPlume;
 	/** Ce qui attend le gérant : la pastille, au-dessus de zéro seulement. */
@@ -33,9 +39,12 @@ export function BoutonCompagnon({
 	/** Ce que le toucher ouvre, pour un lecteur d'écran : « Parler à Plume, sur ce dossier. » */
 	readonly description: string;
 	readonly onOuvrir: () => void;
+	/** Ce que Plume dit en ce moment, posé au-dessus de lui. */
+	readonly bulle?: ReactNode;
 }) {
 	return (
 		<span className="relative flex shrink-0">
+			{bulle}
 			<span aria-hidden className={cn('halo-compagnon', compte > 0 && 'halo-compagnon-vif')} />
 			<Button
 				size="md"

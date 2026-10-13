@@ -3,7 +3,9 @@ import { createFileRoute, Outlet, redirect, useChildMatches } from '@tanstack/re
 import { useQuery } from '../../app/donnees';
 import { precharger } from '../../app/prechargement';
 import { api } from '../../lib/convex/_generated/api';
-import { aujourdHuiISO } from '../../ui';
+import { NOM_DU_PILOTE, aujourdHuiISO } from '../../ui';
+import { useRemarquesDePlume } from '../../app/parole-de-plume';
+import { remarquesDesClients } from '../../lib/verticales/recouvrement/compagnon/presence';
 import { EcranDebiteurs, type CleFiltre, type HabitudeDeLaLigne } from '../../screens/debiteurs';
 
 /**
@@ -194,6 +196,25 @@ function Debiteurs() {
 		select: (enfants) => (enfants.at(-1)?.params as { id?: string } | undefined)?.id ?? null
 	});
 	const lecture = useLectureDeLaListe();
+
+	// Ce que Plume dit de la liste : l'adresse ou le numéro qui lui manquent. La fiche
+	// ouverte a la parole à sa place.
+	useRemarquesDePlume(
+		'CLIENTS',
+		debiteurs === undefined || pageOuverte
+			? undefined
+			: remarquesDesClients(
+					debiteurs.map((d) => ({
+						id: d._id,
+						nom: d.denomination,
+						...(d.email === undefined ? {} : { email: d.email }),
+						...(d.siren === undefined ? {} : { siren: d.siren }),
+						horsPilote: d.horsPilote,
+						facturesEchues: d.facturesEchues
+					})),
+					NOM_DU_PILOTE
+				)
+	);
 
 	return (
 		<EcranDebiteurs

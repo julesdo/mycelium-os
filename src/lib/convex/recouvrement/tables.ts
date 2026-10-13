@@ -1983,7 +1983,26 @@ export const recouvrementTables = {
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_commence', ['organizationId', 'commenceLe'])
-		.index('by_org_and_etat', ['organizationId', 'etat'])
+		.index('by_org_and_etat', ['organizationId', 'etat']),
+
+	/**
+	 * CE QUE PLUME NE REDIRA PAS À CE COMPTE (13/10/2026) — le ✕ de sa bulle, et ses
+	 * présentations déjà faites. Par compte et non par établissement : un associé
+	 * qui n'a pas encore vu la présentation d'un écran la verra.
+	 *
+	 * La clé porte la situation (`sans-email:<client>`, `a-demarrer:3`) : un fait
+	 * nouveau fait une clé nouvelle, et Plume peut en reparler. Voir
+	 * `verticales/recouvrement/compagnon/presence.ts`.
+	 */
+	silencesPlume: defineTable({
+		organizationId: v.id('organizations'),
+		userId: v.string(),
+		cle: v.string(),
+		le: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_user_and_le', ['organizationId', 'userId', 'le'])
+		.index('by_org_and_user_and_cle', ['organizationId', 'userId', 'cle'])
 };
 
 /**

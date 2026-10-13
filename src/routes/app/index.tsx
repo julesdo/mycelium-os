@@ -8,6 +8,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import {
 	Facultatif,
+	NOM_DU_PILOTE,
 	ParcoursDepot,
 	aujourdHuiISO,
 	cleDeRef,
@@ -28,6 +29,8 @@ import { DELAI_DE_RELANCE_PAR_DEFAUT, useGestesDeDossier } from '../../app/geste
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
+import { prenomDe, useRemarquesDePlume } from '../../app/parole-de-plume';
+import { remarquesDAujourdhui } from '../../lib/verticales/recouvrement/compagnon/presence';
 
 /**
  * `/app` — « AUJOURD'HUI », le premier onglet de la barre du bas.
@@ -289,6 +292,30 @@ function File() {
 	 */
 	const questionsDeLitige = useQuery(api.recouvrement.lecture.questionsDeLitige, {});
 	const declarerFait = useMutation(api.recouvrement.creances.declarerFait);
+
+	/*
+	  CE QUE PLUME DIT EN ARRIVANT (13/10/2026) : sa présentation la première fois,
+	  les dossiers qu'il a préparés, puis son bonjour, une fois par jour. Deux
+	  lectures étroites : l'humeur (qui porte le compte) et le nom du compte.
+	*/
+	const plume = useQuery(api.recouvrement.pilote.humeurDePlume, {});
+	const compte = useQuery(api.users.viewer, {});
+	useRemarquesDePlume(
+		'AUJOURDHUI',
+		plume === undefined || indexDossiers === undefined || compte === undefined
+			? undefined
+			: remarquesDAujourdhui(
+					{
+						aujourdHui,
+						prenom: prenomDe(compte?.name),
+						aDemarrer: plume.aDemarrer,
+						dossiersSuivis: indexDossiers.filter(
+							(d) => !d.classe && d.etape !== 'REGLE' && d.principalRestantDu > 0n
+						).length
+					},
+					NOM_DU_PILOTE
+				)
+	);
 
 	/**
 	 * LA RÉPONSE EN COURS D'ÉCRITURE, PAR CRÉANCE.

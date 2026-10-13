@@ -107,6 +107,8 @@ describe('schéma du recouvrement', () => {
 			'propositions',
 			'reglements',
 			'remisesAuConseil',
+			// Ce que Plume ne redira pas à un compte, le ✕ de sa bulle (13/10/2026).
+			'silencesPlume',
 			'suiviDossier',
 			'ticketsCoffre',
 			// Le pilote, qui vit en permanence, et le journal de ce qu'il fait (08/10/2026).

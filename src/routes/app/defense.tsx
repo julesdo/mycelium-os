@@ -7,6 +7,9 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { messageDeRefus, televerser } from '../../app/televerser';
 import { useAnnuaire } from '../../app/use-annuaire';
 import { EcranDefense, type ClientDeLaDefense } from '../../screens/defense';
+import { useRemarquesDePlume } from '../../app/parole-de-plume';
+import { remarquesDeLEcran } from '../../lib/verticales/recouvrement/compagnon/presence';
+import { NOM_DU_PILOTE } from '../../ui';
 
 export const Route = createFileRoute('/app/defense')({
 	component: PageDefense,
@@ -29,6 +32,8 @@ function DefenseEnErreur() {
  * construction.
  */
 function PageDefense() {
+	// Plume se présente ici, la première fois (13/10/2026).
+	useRemarquesDePlume('DEFENSE', remarquesDeLEcran('DEFENSE', NOM_DU_PILOTE));
 	const carnet = useQuery(api.recouvrement.intervenants.monCarnet, {});
 	const dossiers = useQuery(api.recouvrement.lecture.indexDossiers, {});
 	const oublierIntervenant = useMutation(api.recouvrement.intervenants.oublierIntervenant);
