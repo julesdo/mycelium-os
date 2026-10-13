@@ -475,6 +475,24 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     qu'elle écrira (`ApercuDeGeste` : le calendrier d'un échéancier, les factures qu'un paiement
     solde), et « Tout confirmer » fait les gestes d'une réponse l'un après l'autre. Les gestes se
     dessinent à un seul endroit pour les deux conversations (`app/gestes-plume.tsx`).
+- **Les premiers pas** (13/10/2026, `docs/superpowers/specs/2026-10-13-premiers-pas.md`, sur
+  Revolut Business, Monzo, Claude, Copilot, Cleo, Rocket Money, Acctual, QuickBooks, Mercury
+  et Stoic). Le fondateur : « l'UX la plus incroyable du marché […] qu'on ressente la
+  fiabilité, l'aboutissement du produit ». L'inscription se fait en deux écrans (l'adresse,
+  puis le mot de passe). `/bienvenue` devient six étapes, chacune à son adresse (`?etape=`) :
+  - **Plume se présente** et demande le nom ;
+  - **l'entreprise** au registre ;
+  - **les factures** : ce que deviennent les documents est dit AVANT le dépôt, puis le montant
+    dû défile, celui de l'accueil ;
+  - **les lettres** : qui signe, l'adresse et l'IBAN, avec l'aperçu de ce que verra le client
+    (`ApercuDeLettre`, `enregistrerEnTete`) ;
+  - **les relances** : le plan entier (`CeQuiPartira`), deux réponses, rien de coché ;
+  - **« C'est prêt »**.
+
+  Coquille : `ui/premiers-pas.tsx` (jauge en traits, « Plus tard » après l'entreprise, le
+  seul bouton plein en pied). **Un bouton du kit n'a pas de `type`** : posé dans un
+  `<form>`, il l'envoie. Un formulaire ne porte que ses champs, son bouton le vise par
+  `form=`, et tout autre bouton qui y reste prend `type="button"`.
 - **La parole du client fait taire le pilote** (analyse des parcours d'impayés du 08/10/2026,
   `docs/superpowers/specs/2026-10-08-parcours-impayes.md`). Le pilote relançait un client qui
   venait de promettre de payer, et la somme entière à un client qui payait en trois fois.
