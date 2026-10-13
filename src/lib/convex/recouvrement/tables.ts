@@ -2015,7 +2015,12 @@ export const recouvrementTables = {
 		/** `AAAA-MM-JJ`, à Paris. */
 		jour: v.string(),
 		max: v.object({ demarrer: v.number(), relire: v.number(), repondre: v.number() }),
-		tenue: v.boolean()
+		tenue: v.boolean(),
+		/**
+		 * LA DERNIÈRE VISITE DE CE JOUR (14/10/2026) — le point de Plume à votre retour
+		 * compte ce qui s'est passé depuis la précédente (`ouvrirLaVisite`).
+		 */
+		vueLe: v.optional(v.number())
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_user_and_jour', ['organizationId', 'userId', 'jour'])

@@ -339,7 +339,13 @@ export { type GenreSourcePhrase, type PhraseAffichee, type RefusAffiche } from '
 export { BarreDuBas, PastilleDeRappel, type DestinationBarre } from './barre-du-bas';
 export { BoutonCompagnon } from './bouton-compagnon';
 export { CapsulePlume } from './capsule-plume';
-export { ScenePlume, useReflexion, type JourDeLaScene, type JourneeDeLaScene } from './scene-plume';
+export {
+	ScenePlume,
+	useReflexion,
+	type JourDeLaScene,
+	type JourneeDeLaScene,
+	type LigneDeLaScene
+} from './scene-plume';
 
 /* ── LE SOMMAIRE D'UNE LISTE (ecran/clients) ──────────────────────────────
  *

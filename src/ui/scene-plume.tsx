@@ -4,6 +4,7 @@ import { CheckIcon, FeatherIcon, XIcon } from 'lucide-react';
 import { BoutonSecondaire, BoutonTexte } from './bouton';
 import { cn } from './cn';
 import { PointsDeSuspension } from './fil-plume';
+import { VignetteRangee, type FamilleRangee } from './familles';
 
 /**
  * LA SCÈNE DE PLUME — sa bulle, au-dessus de lui (13/10/2026, au soir).
@@ -50,6 +51,21 @@ export interface JourDeLaScene {
 	readonly etat: 'TENUE' | 'MANQUEE' | 'AUJOURDHUI' | 'AVENIR' | 'REPOS';
 }
 
+/** Une ligne du point du retour : un fait compté, et la famille de ce qu'il compte. */
+export interface LigneDeLaScene {
+	readonly icone: 'ENVOI' | 'PAIEMENT' | 'DOSSIER' | 'A_LIRE' | 'CALME';
+	readonly texte: string;
+}
+
+/** La teinte dit DE QUOI il s'agit : ce qui part, l'argent, les papiers, ce qu'on vous demande. */
+const FAMILLE_DE_LA_LIGNE: Readonly<Record<LigneDeLaScene['icone'], FamilleRangee>> = {
+	ENVOI: 'ENVOI',
+	PAIEMENT: 'ARGENT',
+	DOSSIER: 'PAPIERS',
+	A_LIRE: 'QUESTION',
+	CALME: 'MACHINE'
+};
+
 /** Le temps qu'il réfléchit avant de parler : assez pour se voir, pas assez pour attendre. */
 const REFLEXION_MS = 700;
 
@@ -75,6 +91,7 @@ export function ScenePlume({
 	texte,
 	journee,
 	semaine,
+	releve,
 	libelleDuGeste,
 	onGeste,
 	rang,
@@ -89,6 +106,8 @@ export function ScenePlume({
 	readonly texte: ReactNode;
 	readonly journee?: JourneeDeLaScene;
 	readonly semaine?: readonly JourDeLaScene[];
+	/** Les faits comptés, une ligne chacun : le point de votre retour. */
+	readonly releve?: readonly LigneDeLaScene[];
 	readonly libelleDuGeste?: string;
 	readonly onGeste?: () => void;
 	/** « 2 sur 4 » : ce qu'il a encore à dire. */
@@ -118,7 +137,7 @@ export function ScenePlume({
 					<div className="flex min-w-0 flex-1 flex-col gap-2.5 pt-0.5">
 						{journee === undefined ? null : <TeteDeJournee journee={journee} />}
 						{/* La clé remonte la parole : il réfléchit avant chaque nouvelle chose. */}
-						<Parole reflechit={reflechit} texte={texte} semaine={semaine} />
+						<Parole reflechit={reflechit} texte={texte} semaine={semaine} releve={releve} />
 					</div>
 					<Button
 						size="sm"
@@ -174,16 +193,32 @@ export function ScenePlume({
 function Parole({
 	reflechit,
 	texte,
-	semaine
+	semaine,
+	releve
 }: {
 	readonly reflechit: boolean;
 	readonly texte: ReactNode;
 	readonly semaine: readonly JourDeLaScene[] | undefined;
+	readonly releve: readonly LigneDeLaScene[] | undefined;
 }) {
 	if (reflechit) return <PointsDeSuspension className="text-cladd-fg-soft" />;
 	return (
 		<div className="scene-plume-texte flex flex-col gap-2.5" aria-live="polite">
 			<p className="text-cladd-xs leading-snug text-cladd-fg">{texte}</p>
+			{releve === undefined ? null : (
+				<ul className="flex flex-col gap-2">
+					{releve.map((ligne) => (
+						<li key={ligne.texte} className="flex items-center gap-2.5">
+							<VignetteRangee
+								famille={FAMILLE_DE_LA_LIGNE[ligne.icone]}
+								className="size-7"
+								classePicto="size-4"
+							/>
+							<span className="text-cladd-xs leading-snug text-cladd-fg">{ligne.texte}</span>
+						</li>
+					))}
+				</ul>
+			)}
 			{semaine === undefined ? null : <RangeeDeLaSemaine semaine={semaine} />}
 		</div>
 	);

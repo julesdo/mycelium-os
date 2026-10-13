@@ -14,7 +14,8 @@ import {
 	type DestinationBarre,
 	type HumeurPlume,
 	type JourDeLaScene,
-	type JourneeDeLaScene
+	type JourneeDeLaScene,
+	type LigneDeLaScene
 } from '../../ui';
 import { lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
@@ -164,9 +165,37 @@ const SCENES: readonly {
 	readonly rang: { readonly position: number; readonly total: number };
 	readonly taire?: boolean;
 	readonly semaine?: readonly JourDeLaScene[];
+	readonly releve?: readonly LigneDeLaScene[];
 	readonly journee: JourneeDeLaScene;
 	readonly suite?: string;
 }[] = [
+	{
+		titre: 'À votre retour : son point, fait par fait (14/10)',
+		humeur: 'salue',
+		texte: 'Bonjour Jules. Depuis hier, 18 h 40 :',
+		releve: [
+			{ icone: 'ENVOI', texte: '3 relances parties à votre nom' },
+			{ icone: 'PAIEMENT', texte: '1 paiement reçu de Boulangerie Martin : 1 240,00 €' },
+			{ icone: 'DOSSIER', texte: '2 dossiers ouverts pour des factures échues' }
+		],
+		geste: 'Tout voir',
+		rang: { position: 1, total: 2 },
+		journee: JOURNEE_DEMO,
+		suite:
+			'Ensuite : 2 relances, la première aujourd’hui à 9 h. Chacune s’affichera au-dessus de la barre une heure avant.'
+	},
+	{
+		titre: 'Une nuit calme se dit aussi',
+		humeur: 'salue',
+		texte: 'Bonjour Jules. Depuis hier, 18 h 40 :',
+		releve: [
+			{ icone: 'CALME', texte: 'Rien n’a bougé : aucune relance partie, aucun paiement reçu' }
+		],
+		geste: 'Tout voir',
+		rang: { position: 1, total: 1 },
+		journee: JOURNEE_DEMO,
+		suite: 'Je relis vos comptes toutes les quinze minutes, et je vous dis ici ce que je fais.'
+	},
 	{
 		titre: 'Ce qui vous attend : un défi du jour, avec son geste',
 		humeur: 'attention',
@@ -255,7 +284,7 @@ const CAPSULES: readonly {
 
 /** Une scène : Plume réfléchit dans le bouton (trois points dans la bulle), puis prend sa tête. */
 function SceneDeLaSalle({ scene }: { readonly scene: (typeof SCENES)[number] }) {
-	const { titre, humeur, texte, geste, rang, taire, semaine, journee, suite } = scene;
+	const { titre, humeur, texte, geste, rang, taire, semaine, releve, journee, suite } = scene;
 	const reflechit = useReflexion(titre);
 	return (
 		<BarreDuBas
@@ -274,6 +303,7 @@ function SceneDeLaSalle({ scene }: { readonly scene: (typeof SCENES)[number] }) 
 							texte={texte}
 							journee={journee}
 							{...(semaine === undefined ? {} : { semaine })}
+							{...(releve === undefined ? {} : { releve })}
 							{...(geste === undefined ? {} : { libelleDuGeste: geste, onGeste: () => undefined })}
 							rang={rang}
 							{...(rang.position < rang.total
@@ -382,7 +412,11 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 			{/* Plume, grand dans le bouton, réfléchit (trois points dans la bulle), puis prend la
 			    tête de ce qu'il dit ; l'anneau de la journée entoure le bouton (13/10/2026, au soir). */}
 			{SCENES.map((scene) => (
-				<Scene key={scene.titre} titre={scene.titre} hauteur="h-96">
+				<Scene
+					key={scene.titre}
+					titre={scene.titre}
+					hauteur={scene.releve === undefined ? 'h-96' : 'h-120'}
+				>
 					<SceneDeLaSalle scene={scene} />
 				</Scene>
 			))}

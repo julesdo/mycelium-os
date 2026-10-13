@@ -147,13 +147,21 @@ export interface DonneesDAujourdhui {
  * fais » : la bulle annonce ses travaux finis (`paroleDUnTravail`), sur tous les
  * écrans sauf celui-ci, où son bloc les montre déjà.
  */
+/**
+ * LA CLÉ DU BONJOUR D'UN JOUR — partagée avec le point du retour (`retour.ts`) : quand
+ * le point dit déjà bonjour, celui d'Aujourd'hui se tait.
+ */
+export function cleDuBonjour(aujourdHui: string): string {
+	return `bonjour:${aujourdHui}`;
+}
+
 export function remarquesDAujourdhui(
 	donnees: DonneesDAujourdhui,
 	nomDuPilote: string
 ): RemarqueDePlume[] {
 	const suivis = donnees.dossiersSuivis;
 	const bonjour: RemarqueDePlume = {
-		cle: `bonjour:${donnees.aujourdHui}`,
+		cle: cleDuBonjour(donnees.aujourdHui),
 		texte:
 			`Bonjour${donnees.prenom === null ? '' : ` ${donnees.prenom}`}. ` +
 			(suivis === 0

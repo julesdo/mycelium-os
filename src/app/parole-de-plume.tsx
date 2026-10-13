@@ -15,6 +15,7 @@ import {
 	paroleDeLaJourneeBouclee,
 	type JourDeLaSemaine
 } from '../lib/verticales/recouvrement/compagnon/journee';
+import type { PointDuRetour } from '../lib/verticales/recouvrement/compagnon/retour';
 import type { HumeurPlume } from '../ui';
 
 /**
@@ -42,6 +43,12 @@ import type { HumeurPlume } from '../ui';
  * une nouvelle) et pour la première remarque de chaque écran visité ; jamais pour un
  * défi seul : la pastille et l'anneau le disent sans interrompre.
  *
+ * ⚠️ ET À VOTRE RETOUR, SON POINT D'ABORD (14/10/2026). Ce qui s'est passé pendant
+ * votre absence (relances parties à votre nom, paiements reçus, dossiers ouverts)
+ * ne s'annonçait jamais : seul ce qui arrivait sous vos yeux se disait. La voix du
+ * RETOUR (`compagnon/retour.ts`) passe en premier, s'ouvre seule, et fait taire le
+ * bonjour d'Aujourd'hui quand elle le dit déjà.
+ *
  * ⚠️ UN MAGASIN HORS DE REACT, ET C'EST CE QUI TIENT LA RÈGLE DES EFFETS. Les écrans
  * annoncent leurs remarques depuis un effet : posées dans un état React, ce serait
  * un `setState` dans un effet. Le magasin est un système extérieur que l'effet
@@ -55,7 +62,7 @@ export interface GesteDeBulle {
 }
 
 /** Qui parle par la bouche de Plume, du plus pressant au moins pressant. */
-export type VoixDePlume = 'GESTE' | 'FETE' | 'NOUVELLE' | 'BESOIN' | 'ECRAN';
+export type VoixDePlume = 'GESTE' | 'RETOUR' | 'FETE' | 'NOUVELLE' | 'BESOIN' | 'ECRAN';
 
 export interface ParoleAffichee {
 	readonly cle: string;
@@ -71,6 +78,10 @@ export interface ParoleAffichee {
 	readonly silencieuse: boolean;
 	/** La semaine en coches, pour une journée bouclée. */
 	readonly semaine?: readonly JourDeLaSemaine[];
+	/** Les faits comptés du point du retour, une ligne chacun. */
+	readonly releve?: PointDuRetour['lignes'];
+	/** Le pied propre à cette parole (ce qui part ensuite), à la place de celui de la scène. */
+	readonly pied?: string;
 }
 
 /** Ce que la scène lit : la parole ouverte, sa place dans la pile, et ce qui reste à dire. */
@@ -193,7 +204,7 @@ function verifier() {
 	if (ouverte === null && hotes > 0) {
 		const pile = aDire();
 		const pressante = pile.findIndex(
-			(p) => p.voix === 'GESTE' || p.voix === 'FETE' || p.voix === 'NOUVELLE'
+			(p) => p.voix === 'GESTE' || p.voix === 'RETOUR' || p.voix === 'FETE' || p.voix === 'NOUVELLE'
 		);
 		if (pressante !== -1) ouvrirSur(pile, pressante);
 		else {
@@ -331,6 +342,27 @@ export const paroleDePlume = {
 		// Sur Aujourd'hui, le bloc du pilote coche déjà ce travail sous les yeux.
 		if (inscriptions.at(-1)?.ecran === 'AUJOURDHUI') return;
 		annoncer(paroleDUneRemarque(paroleDUnTravail(premier, nouveaux.length - 1), 'NOUVELLE'));
+	},
+	/**
+	 * LE POINT DU RETOUR — dit une fois, en premier. Quand il dit bonjour, le bonjour
+	 * d'Aujourd'hui (une fois par jour) est tenu pour dit.
+	 */
+	annoncerRetour(point: PointDuRetour, cleDuBonjour: string) {
+		if (point.ditBonjour) {
+			entendues.add(cleDuBonjour);
+			taireAuServeur?.(cleDuBonjour);
+		}
+		annoncer({
+			cle: point.cle,
+			voix: 'RETOUR',
+			texte: point.texte,
+			humeur: point.humeur,
+			cible: { genre: point.cible },
+			libelleDuGeste: point.libelleDuGeste,
+			silencieuse: false,
+			releve: point.lignes,
+			pied: point.pied
+		});
 	},
 	/** UNE NOTIFICATION ARRIVÉE — sauf sur la boîte de réception, qui la montre déjà. */
 	annoncerNotification(

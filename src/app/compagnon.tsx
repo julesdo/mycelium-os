@@ -6,7 +6,9 @@ import { useQuery } from './donnees';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
 import { enDirect } from '../lib/verticales/recouvrement/compagnon/en-direct';
+import { pointDuRetour } from '../lib/verticales/recouvrement/compagnon/retour';
 import {
+	cleDuBonjour,
 	ligneDeLaSuite,
 	type CibleDePlume
 } from '../lib/verticales/recouvrement/compagnon/presence';
@@ -25,9 +27,10 @@ import {
 	useReflexion,
 	type HumeurPlume
 } from '../ui';
-import { heureDeParis } from '../ui/horloge';
+import { aujourdHuiISO, heureDeParis } from '../ui/horloge';
 import {
 	paroleDePlume,
+	prenomDe,
 	useParoleDePlume,
 	usePlumeDit,
 	type ParoleAffichee
@@ -72,6 +75,13 @@ const ROUTES_D_UN_CLIENT: readonly string[] = ['/app/clients/$id', '/app/risque/
 const SEUIL_DE_DEFILEMENT = 120;
 
 type Journee = FunctionReturnType<typeof api.recouvrement.journee.etat>;
+
+/**
+ * LA VISITE S'OUVRE UNE FOIS PAR CHARGEMENT DE L'APPLICATION — pas à chaque montage :
+ * en développement, React monte deux fois, et la seconde visite verrait la première
+ * comme « votre passage d'il y a une seconde ».
+ */
+let visiteOuverte = false;
 
 /** Le bouton de Plume, et sa capsule en direct quand il se passe quelque chose. */
 type RenduDeLaBarre = (bouton: ReactNode, capsule: ReactNode) => ReactNode;
@@ -145,6 +155,9 @@ function VoixDePlume({ journee }: { readonly journee: Journee | undefined }) {
 	});
 	const taire = useMutation(api.recouvrement.presence.taire);
 	const relever = useMutation(api.recouvrement.journee.relever);
+	const ouvrirLaVisite = useMutation(api.recouvrement.journee.ouvrirLaVisite);
+	const compte = useQuery(api.users.viewer, {});
+	const prenom = compte === undefined ? undefined : prenomDe(compte?.name);
 	const ouverte = useParoleDePlume().ouverte !== null;
 
 	useEffect(
@@ -157,6 +170,33 @@ function VoixDePlume({ journee }: { readonly journee: Journee | undefined }) {
 	useEffect(() => {
 		if (silences !== undefined) paroleDePlume.poserSilences(silences);
 	}, [silences]);
+
+	/*
+	  À VOTRE RETOUR, SON POINT (14/10/2026) : la visite s'ouvre, la base compte ce qui
+	  s'est passé depuis la précédente, et Plume le dit en premier. Rien à la toute
+	  première visite, ni après une simple recharge de page.
+	*/
+	useEffect(() => {
+		if (prenom === undefined || visiteOuverte) return;
+		visiteOuverte = true;
+		void ouvrirLaVisite({}).then(
+			(faits) => {
+				if (faits === null) return;
+				const point = pointDuRetour(faits, {
+					prenom,
+					heure: heureEnMots,
+					jourDe: jourDuRetour,
+					quand: quandEnMots,
+					totalDesPaiements:
+						faits.paiements.nombre > 0 ? eurosCentimes(faits.paiements.total) : null
+				});
+				if (point !== null) paroleDePlume.annoncerRetour(point, cleDuBonjour(aujourdHuiISO()));
+			},
+			() => {
+				visiteOuverte = false;
+			}
+		);
+	}, [prenom, ouvrirLaVisite]);
 	useEffect(() => {
 		if (travaux !== undefined) paroleDePlume.annoncerTravaux(travaux);
 	}, [travaux]);
@@ -505,21 +545,24 @@ function SceneBranchee({
 				: null;
 
 	const suite =
-		travail !== undefined && travail !== null
-			? `En ce moment : ${minusculeInitiale(travail.titre)}, ${travail.faites} sur ${travail.total}.`
-			: prochaine !== undefined && prochaine !== null
-				? ligneDeLaSuite({
-						etape: prochaine.etape,
-						client: prochaine.client,
-						quand: quandEnMots(prochaine.partiraLe)
-					})
-				: undefined;
+		parole.pied !== undefined
+			? parole.pied
+			: travail !== undefined && travail !== null
+				? `En ce moment : ${minusculeInitiale(travail.titre)}, ${travail.faites} sur ${travail.total}.`
+				: prochaine !== undefined && prochaine !== null
+					? ligneDeLaSuite({
+							etape: prochaine.etape,
+							client: prochaine.client,
+							quand: quandEnMots(prochaine.partiraLe)
+						})
+					: undefined;
 
 	return (
 		<ScenePlume
 			reflechit={reflechit}
 			texte={parole.texte}
 			{...(parole.semaine === undefined ? {} : { semaine: parole.semaine })}
+			{...(parole.releve === undefined ? {} : { releve: parole.releve })}
 			{...(journee === undefined
 				? {}
 				: {
@@ -576,6 +619,25 @@ const JOUR_DE_PARIS = new Intl.DateTimeFormat('fr-FR', {
 function heureEnMots(instant: number): string {
 	const [heures, minutes] = HEURE_DE_PARIS.format(new Date(instant)).split(':');
 	return minutes === undefined || minutes === '00' ? `${heures} h` : `${heures} h ${minutes}`;
+}
+
+const JOUR_ET_MOIS_DE_PARIS = new Intl.DateTimeFormat('fr-FR', {
+	timeZone: 'Europe/Paris',
+	day: 'numeric',
+	month: 'long'
+});
+
+/**
+ * « hier, 18 h 40 », « lundi », « le 9 octobre » : depuis quand Plume fait son point.
+ * `null` le jour même : il parle alors de « votre passage de 14 h 02 ».
+ */
+function jourDuRetour(instant: number): string | null {
+	const jour = jourDeParis(instant);
+	const maintenant = Date.now();
+	if (jour === jourDeParis(maintenant)) return null;
+	if (jour === jourDeParis(maintenant - 86_400_000)) return `hier, ${heureEnMots(instant)}`;
+	if (maintenant - instant < 6 * 86_400_000) return JOUR_DE_PARIS.format(new Date(instant));
+	return `le ${JOUR_ET_MOIS_DE_PARIS.format(new Date(instant))}`;
 }
 
 /** « aujourd'hui à 14 h 30 », « demain à 9 h », « lundi à 9 h » : quand part la suite. */
