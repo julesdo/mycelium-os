@@ -5,6 +5,7 @@ import { ANCIENNETE_DEMO, REVELATION_DEMO } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
+import { DemoLogiciels, VARIANTES_LOGICIELS } from './logiciels';
 import {
 	CarteConnexion,
 	DeclencheurRecherche,
@@ -515,9 +516,14 @@ const VIERGE: FileAffichee = {
 	rangees: [],
 	hypotheses: [],
 	anglesMorts: [],
-	// Le premier jour, la connexion d'abord : la carte telle qu'un gérant la voit
-	// avant d'avoir rien branché.
-	connexion: (
+	// Le premier jour, les connexions d'abord : les cartes telles qu'un gérant les
+	// voit avant d'avoir rien branché (Qonto, puis ses logiciels par Nango).
+	connexion: connexionsDemo()
+};
+
+/** Qonto, puis la carte des logiciels dans l'état que nomme la variante. */
+function connexionsDemo(variante?: string) {
+	return (
 		<PileDeConnexions>
 			<CarteConnexion
 				nom="Qonto"
@@ -529,9 +535,10 @@ const VIERGE: FileAffichee = {
 				onSynchroniser={() => undefined}
 				onDeconnecter={() => undefined}
 			/>
+			<DemoLogiciels {...(variante === undefined ? {} : { variante })} />
 		</PileDeConnexions>
-	)
-};
+	);
+}
 
 /**
  * « rien à trancher » : des factures, un total, et aucune rangée.
@@ -550,7 +557,14 @@ const RIEN_A_TRANCHER: FileAffichee = {
 };
 
 const FORMES_FILE: Readonly<Record<string, FileAffichee>> = {
-	'rien à trancher': RIEN_A_TRANCHER
+	'rien à trancher': RIEN_A_TRANCHER,
+	// Le branchement d'un logiciel par Nango, étape par étape, sur l'écran du premier jour.
+	...Object.fromEntries(
+		VARIANTES_LOGICIELS.map((variante) => [
+			variante,
+			{ ...VIERGE, connexion: connexionsDemo(variante) }
+		])
+	)
 };
 
 function FileDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {

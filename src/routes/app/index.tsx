@@ -23,6 +23,7 @@ import type { TypeEvenement } from '../../lib/verticales/recouvrement/surveillan
 import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { QUESTIONS_LITIGE } from '../../lib/verticales/recouvrement/litige';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
+import { CartesLogiciels, useLogicielsVisibles } from '../../app/connexion-nango';
 import { DELAI_DE_RELANCE_PAR_DEFAUT, useGestesDeDossier } from '../../app/gestes-dossier';
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
@@ -235,6 +236,8 @@ function File() {
 	// L'état de la connexion Qonto : la carte ne se passe à l'écran que si elle
 	// est activée, pour ne jamais rétrograder l'import sous une carte absente.
 	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
+	// Même règle pour les logiciels branchés par Nango : dormants sans clé.
+	const logiciels = useLogicielsVisibles();
 	// La date d'arrêté vient de la SEULE horloge de l'interface : deux lectures
 	// différentes feraient diverger les totaux autour de minuit. Voir `ui/horloge.ts`.
 	const revelation = useQuery(api.recouvrement.revelation.revelation, { arreteAu: aujourdHui });
@@ -981,13 +984,22 @@ function File() {
 		// Les cartes ne sont passées que si leur connexion est activée : sinon
 		// l'import reste le geste principal, au lieu d'être rétrogradé sous une
 		// carte absente.
-		connexion: qonto?.disponible ? (
-			<PileDeConnexions>
-				<Facultatif>
-					<CarteQontoBranchee />
-				</Facultatif>
-			</PileDeConnexions>
-		) : undefined
+		connexion:
+			qonto?.disponible || logiciels ? (
+				<PileDeConnexions>
+					{qonto?.disponible ? (
+						<Facultatif>
+							<CarteQontoBranchee />
+						</Facultatif>
+					) : null}
+					{logiciels ? (
+						<Facultatif>
+							{/* Seconde sous Qonto : son appel ne double pas le bouton plein. */}
+							<CartesLogiciels principale={!qonto?.disponible} />
+						</Facultatif>
+					) : null}
+				</PileDeConnexions>
+			) : undefined
 	};
 
 	return (

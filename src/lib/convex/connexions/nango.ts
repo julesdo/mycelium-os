@@ -344,11 +344,25 @@ export const ouvrirSessionNango = authedAction({
 	}
 });
 
-/** LE RETOUR DU NAVIGATEUR après une autorisation réussie : on rattache, puis on lit. */
+/**
+ * LE RETOUR DU NAVIGATEUR après une autorisation réussie : on rattache, puis on lit.
+ *
+ * `remplace` : la connexion en panne que « Reconnecter » remplace. Une nouvelle
+ * autorisation crée une nouvelle connexion chez Nango ; l'ancienne ligne part, et
+ * l'accès qu'elle gardait encore chez Nango aussi. Sans cela, la carte en panne
+ * resterait à côté de la nouvelle, et Nango garderait un accès que plus rien ne lit.
+ */
 export const confirmerConnexionNango = authedAction({
-	args: { connectionId: v.string(), integrationId: v.string() },
+	args: {
+		connectionId: v.string(),
+		integrationId: v.string(),
+		remplace: v.optional(v.id('connexionsNango'))
+	},
 	returns: v.id('connexionsNango'),
-	handler: async (ctx, { connectionId, integrationId }): Promise<Id<'connexionsNango'>> => {
+	handler: async (
+		ctx,
+		{ connectionId, integrationId, remplace }
+	): Promise<Id<'connexionsNango'>> => {
 		const config = configNango();
 		if (config === null)
 			throw new ConvexError('La connexion des logiciels n’est pas encore activée.');
@@ -356,8 +370,9 @@ export const confirmerConnexionNango = authedAction({
 			internal.connexions.nangoDonnees.organisationAdministree,
 			{ userId: ctx.user._id }
 		);
+		let id: Id<'connexionsNango'>;
 		try {
-			return await rattacher(ctx, config, {
+			id = await rattacher(ctx, config, {
 				organizationId,
 				connectionId,
 				integrationId,
@@ -367,6 +382,24 @@ export const confirmerConnexionNango = authedAction({
 			if (e instanceof ConvexError) throw e;
 			throw new ConvexError('La connexion n’a pas pu être vérifiée. Réessayez dans un instant.');
 		}
+		if (remplace !== undefined && remplace !== id) {
+			const ancienne = await ctx.runQuery(internal.connexions.nangoDonnees.connexion, {
+				id: remplace
+			});
+			// Une ligne d'un autre établissement ne se touche pas, même nommée ici.
+			if (ancienne !== null && ancienne.organizationId === organizationId) {
+				await ctx.runMutation(internal.connexions.nangoDonnees.retirerConnexion, {
+					id: remplace
+				});
+				if (ancienne.connectionId !== connectionId) {
+					await ctx.scheduler.runAfter(0, internal.connexions.nango.oublierConnexion, {
+						connectionId: ancienne.connectionId,
+						integrationId: ancienne.integrationId
+					});
+				}
+			}
+		}
+		return id;
 	}
 });
 

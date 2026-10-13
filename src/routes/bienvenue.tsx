@@ -8,6 +8,7 @@ import { authClient } from '../lib/client/auth';
 import { useQuery } from '../app/donnees';
 import { useDepotAuCoffre } from '../app/use-coffre';
 import { CarteQontoBranchee } from '../app/connexion-qonto';
+import { CartesLogiciels, useLogicielsVisibles } from '../app/connexion-nango';
 import {
 	BoutonPrincipal,
 	CadrePremiersPas,
@@ -395,6 +396,7 @@ function EtapeFactures({
 	const revelation = useQuery(api.recouvrement.revelation.revelation, { arreteAu: aujourdHui });
 	const coffre = useQuery(api.coffre.coffre.apercuDuCoffre, {});
 	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
+	const logiciels = useLogicielsVisibles();
 	const depot = useDepotAuCoffre({ genre: 'FACTURES' });
 	const [depotOuvert, setDepotOuvert] = useState(false);
 
@@ -440,13 +442,22 @@ function EtapeFactures({
 					: { phase: 'A_DEPOSER' };
 
 	// Les cartes ne se passent que si leur connexion est activée (dormantes sans clé).
-	const connexions = qonto?.disponible ? (
-		<PileDeConnexions>
-			<Facultatif>
-				<CarteQontoBranchee />
-			</Facultatif>
-		</PileDeConnexions>
-	) : undefined;
+	const connexions =
+		qonto?.disponible || logiciels ? (
+			<PileDeConnexions>
+				{qonto?.disponible ? (
+					<Facultatif>
+						<CarteQontoBranchee />
+					</Facultatif>
+				) : null}
+				{logiciels ? (
+					<Facultatif>
+						{/* Le dépôt est déjà sur cet écran : le parcours ne le repropose pas. */}
+						<CartesLogiciels principale={!qonto?.disponible} avecExport={false} />
+					</Facultatif>
+				) : null}
+			</PileDeConnexions>
+		) : undefined;
 
 	return (
 		<>

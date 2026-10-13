@@ -24,6 +24,8 @@ const vConnexionAffichee = v.object({
 	id: v.id('connexionsNango'),
 	nom: v.string(),
 	fournisseur: v.string(),
+	/** La clé de l'intégration dans le tableau de bord : « Reconnecter » la rouvre. */
+	integrationId: v.string(),
 	statut: vStatutConnexion,
 	derniereSynchro: v.union(v.null(), v.number()),
 	facturesLues: v.number(),
@@ -53,6 +55,7 @@ export const mesConnexionsNango = authedQuery({
 				id: ligne._id,
 				nom: ligne.nom,
 				fournisseur: ligne.fournisseur,
+				integrationId: ligne.integrationId,
 				statut: ligne.statut,
 				derniereSynchro: ligne.derniereSynchro ?? null,
 				facturesLues: ligne.facturesLues ?? 0,

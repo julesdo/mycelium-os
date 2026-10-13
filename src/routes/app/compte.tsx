@@ -9,6 +9,11 @@ import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
 import { messageDeRefus, televerser } from '../../app/televerser';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
+import {
+	CartesLogiciels,
+	resumeDesConnexions,
+	useLogicielsVisibles
+} from '../../app/connexion-nango';
 import type { EtatDirigeants, EtatImmatriculation, Lecture } from '../../ui';
 import { aujourdHuiISO, PileDeConnexions } from '../../ui';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
@@ -64,6 +69,8 @@ function PageCompte() {
 	// ── L'établissement et l'identité du créancier ───────────────────────────
 	const org = useQuery(api.organizations.getMyOrg, {});
 	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
+	const nango = useQuery(api.connexions.nangoDonnees.mesConnexionsNango, {});
+	const logiciels = useLogicielsVisibles();
 	const profil = useQuery(api.recouvrement.profil.monProfil, {});
 	/** Le point du matin par e-mail, pour la personne connectée. */
 	const pointDuMatin = useQuery(api.recouvrement.briefing.monPointDuMatin, {});
@@ -365,17 +372,19 @@ function PageCompte() {
 		},
 		identite,
 		/*
-		  Sans Qonto activé, la rangée repliée dit « Aucune » et ne s'ouvre sur rien :
+		  Sans connexion activée (Qonto, Nango), la rangée repliée dit « Aucune » et ne s’ouvre sur rien :
 		  pas de phrase qui promettrait une connexion qu'on ne peut pas encore faire.
 		*/
 		connexions: {
-			statut: qonto?.statut ?? null,
-			nom: 'Qonto',
-			contenu: qonto?.disponible ? (
-				<PileDeConnexions>
-					<CarteQontoBranchee />
-				</PileDeConnexions>
-			) : null
+			// Le plus pressant d'abord (à rebrancher, en lecture), et tout ce qui est branché.
+			...resumeDesConnexions(qonto, nango),
+			contenu:
+				qonto?.disponible || logiciels ? (
+					<PileDeConnexions>
+						{qonto?.disponible ? <CarteQontoBranchee /> : null}
+						{logiciels ? <CartesLogiciels principale={!qonto?.disponible} /> : null}
+					</PileDeConnexions>
+				) : null
 		},
 		/*
 		  Une liste encore en lecture est une liste VIDE ici, jamais une liste à

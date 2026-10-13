@@ -27,7 +27,8 @@ export const COUVERTURE_QONTO = '/connecteurs/couverture-colonnade.webp';
 export const PROMESSE_QONTO =
 	'Vos factures Qonto arrivent seules, et passent payées quand elles le sont.';
 
-function depuisLisible(quand: number, minute: number | null): string {
+/** « il y a 3 h » : la dernière lecture, dite comme une distance. Partagée avec les cartes Nango. */
+export function depuisLisible(quand: number, minute: number | null): string {
 	const minutes = minutesDepuis(quand, minute);
 	if (minutes === null || minutes < 1) return 'à l’instant';
 	if (minutes < 60) return `il y a ${minutes} min`;

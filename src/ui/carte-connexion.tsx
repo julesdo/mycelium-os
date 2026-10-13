@@ -56,6 +56,7 @@ export function CarteConnexion({
 	promesse,
 	logo,
 	couverture,
+	logos,
 	etat,
 	onConnecter,
 	onSynchroniser,
@@ -80,10 +81,19 @@ export function CarteConnexion({
 	 * contraire.
 	 */
 	couverture?: string;
+	/**
+	 * Les logos de ce qu'on peut brancher, en rangée sous la promesse, tant que
+	 * rien ne l'est : le gérant y reconnaît le sien avant d'avoir lu un nom.
+	 */
+	logos?: readonly { readonly nom: string; readonly src: string }[];
 	etat: EtatConnexion;
-	onConnecter: () => void;
-	onSynchroniser: () => void;
-	onDeconnecter: () => void;
+	/**
+	 * Absents, leurs boutons ne s'affichent pas : un membre qui n'administre pas
+	 * l'établissement voit l'état de la connexion, et n'a rien à y toucher.
+	 */
+	onConnecter?: () => void;
+	onSynchroniser?: () => void;
+	onDeconnecter?: () => void;
 	/**
 	 * ⚠️ UN SEUL BOUTON PLEIN PAR ÉCRAN, MÊME QUAND DEUX CARTES SE SUIVENT. Qonto
 	 * et « votre logiciel » portaient chacune leur bouton plein, l'un sous l'autre,
@@ -137,22 +147,52 @@ export function CarteConnexion({
 					) : null}
 				</div>
 
-				{etat.genre === 'A_CONNECTER' ? (
+				{etat.genre === 'A_CONNECTER' && logos !== undefined && logos.length > 0 ? (
+					<RangeeDeLogos logos={logos} />
+				) : null}
+
+				{etat.genre === 'A_CONNECTER' && onConnecter !== undefined ? (
 					<Appel pleineLargeur onClick={onConnecter}>
 						Connecter {nomDansLaPhrase ?? nom}
 					</Appel>
-				) : etat.genre === 'ECHEC' || etat.genre === 'REVOQUEE' ? (
-					<BoutonPrincipal pleineLargeur onClick={onConnecter}>
+				) : (etat.genre === 'ECHEC' || etat.genre === 'REVOQUEE') && onConnecter !== undefined ? (
+					// Le même poids que l'appel : une carte seconde ne pose pas un second bouton plein.
+					<Appel pleineLargeur onClick={onConnecter}>
 						Reconnecter {nomDansLaPhrase ?? nom}
-					</BoutonPrincipal>
-				) : etat.genre === 'A_JOUR' ? (
+					</Appel>
+				) : etat.genre === 'A_JOUR' &&
+				  (onSynchroniser !== undefined || onDeconnecter !== undefined) ? (
 					<div className="flex flex-wrap gap-2">
-						<BoutonSecondaire onClick={onSynchroniser}>Synchroniser</BoutonSecondaire>
-						<BoutonSecondaire onClick={onDeconnecter}>Déconnecter</BoutonSecondaire>
+						{onSynchroniser === undefined ? null : (
+							<BoutonSecondaire onClick={onSynchroniser}>Synchroniser</BoutonSecondaire>
+						)}
+						{onDeconnecter === undefined ? null : (
+							<BoutonSecondaire onClick={onDeconnecter}>Déconnecter</BoutonSecondaire>
+						)}
 					</div>
 				) : null}
 			</div>
 		</div>
+	);
+}
+
+/** Les logos de ce qui se branche, côte à côte, chacun dans sa pastille blanche. */
+function RangeeDeLogos({
+	logos
+}: {
+	readonly logos: readonly { readonly nom: string; readonly src: string }[];
+}) {
+	return (
+		<ul className="flex flex-wrap items-center gap-1.5" aria-label="Logiciels qu’on peut brancher">
+			{logos.map((logo) => (
+				<li
+					key={logo.src}
+					className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-black/5"
+				>
+					<img src={logo.src} alt={logo.nom} className="size-full object-contain" loading="lazy" />
+				</li>
+			))}
+		</ul>
 	);
 }
 

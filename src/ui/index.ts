@@ -440,6 +440,20 @@ export {
 	PileDeConnexions,
 	type EtatConnexion
 } from './carte-connexion';
+export {
+	AnnuleesALaSource,
+	BrancherUnAutreLogiciel,
+	ConfirmationDebranchement,
+	ParcoursLogiciels,
+	ProtectionsDesConnexions,
+	TuileLogiciel,
+	refusDeLaCle,
+	type EtatDuBranchement,
+	type EtatDuCatalogue,
+	type LogicielABrancher,
+	type ModeDeBranchement,
+	type SaisieDeBranchement
+} from './parcours-logiciels';
 /* ── LA NUIT (la page publique refaite en noir et blanc) ───────────────────── */
 export {
 	PictoEcheance,
