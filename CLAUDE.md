@@ -502,6 +502,18 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   choix du logiciel : la fenêtre d'autorisation doit s'ouvrir dans le clic. Un nouveau logiciel,
   c'est un traducteur et un lecteur dans `socle/connecteurs/nango/`, puis son intégration dans le
   tableau de bord (`serveurs/nango/LISEZMOI.md`). Dormant sans `NANGO_SECRET_KEY`.
+- **Plume parle sur chaque écran** (13/10/2026, `docs/superpowers/specs/2026-10-13-plume-compagnon.md`,
+  sur Alan, Rocket Money, Credit Karma, Fabric et ClickUp). Le fondateur : « un vrai agent qui
+  assiste partout […] au lieu de simplement être dans un chat ». Une **bulle** sort de Plume,
+  au-dessus de la barre (`ui/bulle-plume.tsx`, magasin `app/parole-de-plume.tsx`) : le mot
+  après un geste (`usePlumeDit`, à la place du toast), ce qu'il vient de finir (travaux,
+  notifications), et UNE remarque par écran, composée par du code
+  (`compagnon/presence.ts`) : ce qui lui manque, un lien entre deux faits, ce qu'il peut faire.
+  Il ne redit jamais l'écran (sur la page d'un dossier, il se tait) ; le ✕ le fait taire pour de
+  bon (`silencesPlume`) ; une remarque par visite, jamais deux fois dans la session, rangée au
+  défilement. Toucher Plume l'ouvre **en sachant d'où l'on vient** (`?depuis=`, `?client=`) :
+  une pastille, les questions de l'écran, une ligne de plus pour le modèle. Un écran nouveau se
+  branche par `useRemarquesDePlume` ; une cible nouvelle, par `CibleDePlume` et `mener`.
 - **La santé de vos clients : l'analyse du risque** (13/10/2026,
   `docs/superpowers/specs/2026-10-13-risque-client.md`). Pour chaque client (et toute entreprise
   qu'on s'apprête à servir) : un indice de 0 à 100 qui PART DE 50 et que chaque fait ajoute ou
