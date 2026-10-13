@@ -10,7 +10,7 @@ import type { FactureDepuisConnecteur } from '../facture-connecteur';
  * adresse, quelle pagination, `lecteurs.ts`) et la TRADUCTION d'une facture
  * dans la forme que l'import connaît déjà (`FactureDepuisConnecteur`).
  *
- * Pur, sans réseau ni base, comme le traducteur de Chift : c'est la seule
+ * Pur, sans réseau ni base, comme le traducteur de Qonto : c'est la seule
  * partie qui porte des montants, des dates et des SIREN, donc la seule qu'il
  * faut tester au centime.
  */

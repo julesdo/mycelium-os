@@ -5,12 +5,10 @@ import { ANCIENNETE_DEMO, REVELATION_DEMO } from './revelation';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
-import { PROMESSE_CHIFT } from '../../app/connexion-chift';
 import {
 	CarteConnexion,
 	DeclencheurRecherche,
 	LogoConnexion,
-	PictoLogiciel,
 	PiloteEnDirect,
 	PileDeConnexions,
 	travauxDuVeilleur,
@@ -525,18 +523,6 @@ const VIERGE: FileAffichee = {
 				nom="Qonto"
 				promesse={PROMESSE_QONTO}
 				logo={<LogoConnexion src={LOGO_QONTO} />}
-				couverture={COUVERTURE_QONTO}
-				etat={{ genre: 'A_CONNECTER' }}
-				onConnecter={() => undefined}
-				onSynchroniser={() => undefined}
-				onDeconnecter={() => undefined}
-			/>
-			<CarteConnexion
-				nom="Votre logiciel"
-				nomDansLaPhrase="votre logiciel"
-				principale={false}
-				promesse={PROMESSE_CHIFT}
-				logo={<PictoLogiciel />}
 				couverture={COUVERTURE_QONTO}
 				etat={{ genre: 'A_CONNECTER' }}
 				onConnecter={() => undefined}

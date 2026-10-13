@@ -400,7 +400,7 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   et les autres, on s'autorise à relancer automatiquement », et « stop cette histoire d'agent qui
   ne fonctionne que le soir ». Livré le 08/10 :
   - **Le pilote vit en permanence** (`recouvrement/pilote.ts`) : il se réveille à chaque import
-    (dépôt, Qonto, Chift), à chaque virement rapproché, et toutes les quinze minutes. Les
+    (dépôt, Qonto, Nango), à chaque virement rapproché, et toutes les quinze minutes. Les
     propositions se posent dès qu'elles existent ; le relevé du jour se joue à la première veille.
   - **Son travail se voit** (`travauxPilote`, `ui/pilote.tsx`) : chaque tâche porte ses étapes,
     qui se cochent une à une (0,7 s), et l'EFFET d'une étape n'a lieu qu'au moment où elle se

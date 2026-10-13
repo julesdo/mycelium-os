@@ -117,43 +117,6 @@ export default defineSchema({
 		.index('by_qonto_organization', ['qontoOrganizationId']),
 
 	/**
-	 * LES LOGICIELS RELIÉS PAR CHIFT — une ligne par établissement.
-	 *
-	 * Chift est une API unifiée : une seule intégration ouvre une quarantaine de
-	 * logiciels comptables et de facturation français (Pennylane, Sage, Cegid,
-	 * Tiime, MyUnisoft, Sellsy, Axonaut…). L'établissement y est un
-	 * « consommateur », et chaque logiciel qu'il branche une « connexion », que
-	 * Chift garde lui-même.
-	 *
-	 * ⚠️ AUCUN JETON ICI, ET C'EST VOULU. Les accès aux logiciels du gérant vivent
-	 * chez Chift ; nous n'en détenons que l'identifiant de consommateur, qui
-	 * n'ouvre rien sans la clé de notre compte, gardée dans l'environnement.
-	 *
-	 * ⚠️ LECTURE SEULE. Seuls des points d'accès de lecture sont appelés : aucune
-	 * écriture dans le logiciel du gérant, aucun mouvement d'argent (ligne rouge 2).
-	 */
-	connexionsChift: defineTable({
-		organizationId: v.id('organizations'),
-		/** Le consommateur Chift de l'établissement : c'est par lui qu'un webhook retrouve sa ligne. */
-		consommateurId: v.string(),
-		statut: vStatutConnexion,
-		/** Les logiciels branchés, sous le nom que Chift leur donne (« Pennylane »). */
-		logiciels: v.optional(v.array(v.string())),
-		/** Horodatage ISO depuis lequel relire : le début de la dernière lecture réussie. */
-		curseur: v.optional(v.string()),
-		/** Posé au début d'une lecture : deux lectures ne se chevauchent pas. */
-		synchroDebuteeLe: v.optional(v.number()),
-		derniereSynchro: v.optional(v.number()),
-		facturesLues: v.optional(v.number()),
-		/** Les créances vues mais pas lues (devise, numéro ou client manquant) : l'écran les compte. */
-		facturesNonLues: v.optional(v.number()),
-		erreur: v.optional(v.string()),
-		creeLe: v.number()
-	})
-		.index('by_org', ['organizationId'])
-		.index('by_consommateur', ['consommateurId']),
-
-	/**
 	 * LES LOGICIELS RELIÉS PAR NANGO — une ligne par logiciel branché (13/10/2026).
 	 *
 	 * Nango tient l'accès au logiciel du gérant (OAuth ou clé, rafraîchissement) ;

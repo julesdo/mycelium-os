@@ -4,7 +4,6 @@ import { authComponent, createAuth } from './auth';
 import { resend } from './emails/resend';
 import { webhookHandler as paddleWebhookHandler } from './paddle';
 import { retourQonto, webhookQonto } from './connexions/qonto';
-import { webhookChift } from './connexions/chift';
 import { webhookNango } from './connexions/nango';
 import { ouvrirDocument } from './coffre/ouverture';
 
@@ -33,10 +32,6 @@ http.route({ path: '/qonto/retour', method: 'GET', handler: retourQonto });
 
 // Webhooks Qonto (factures clients, retrait d'accès), signés en HMAC-SHA256.
 http.route({ path: '/qonto/webhook', method: 'POST', handler: webhookQonto });
-
-// Webhooks Chift (logiciel branché, modifié, retiré), signés en HMAC-SHA256 avec
-// CHIFT_SECRET_WEBHOOK. Déclarés une fois : `npx convex run connexions/chift:declarerWebhooks`.
-http.route({ path: '/chift/webhook', method: 'POST', handler: webhookChift });
 
 // Webhooks Nango (logiciel branché, accès renouvelé ou perdu), signés en HMAC-SHA256
 // avec NANGO_WEBHOOK_SIGNING_KEY. À déclarer dans le tableau de bord de Nango

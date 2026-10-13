@@ -408,7 +408,7 @@ export const enregistrerImport = internalMutation({
 
 		/*
 		  ⚠️ LE PILOTE SE RÉVEILLE ICI, PAS LE LENDEMAIN (08/10/2026). C'est le point
-		  d'entrée de TOUS les imports — dépôt, Qonto, Chift — et le seul endroit où
+		  d'entrée de TOUS les imports — dépôt, Qonto, Nango — et le seul endroit où
 		  ce qui vient d'entrer est connu. La relecture se montre étape par étape,
 		  puis la veille pose les propositions et la suite.
 		*/

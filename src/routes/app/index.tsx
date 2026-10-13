@@ -24,7 +24,6 @@ import { depuisEuros, enCentimes } from '../../lib/socle/montants';
 import { QUESTIONS_LITIGE } from '../../lib/verticales/recouvrement/litige';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import { DELAI_DE_RELANCE_PAR_DEFAUT, useGestesDeDossier } from '../../app/gestes-dossier';
-import { CarteChiftBranchee } from '../../app/connexion-chift';
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
@@ -236,8 +235,6 @@ function File() {
 	// L'état de la connexion Qonto : la carte ne se passe à l'écran que si elle
 	// est activée, pour ne jamais rétrograder l'import sous une carte absente.
 	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
-	// Même règle pour « votre logiciel », relié par Chift : dormante sans clé.
-	const chift = useQuery(api.connexions.chiftDonnees.maConnexionChift, {});
 	// La date d'arrêté vient de la SEULE horloge de l'interface : deux lectures
 	// différentes feraient diverger les totaux autour de minuit. Voir `ui/horloge.ts`.
 	const revelation = useQuery(api.recouvrement.revelation.revelation, { arreteAu: aujourdHui });
@@ -984,22 +981,13 @@ function File() {
 		// Les cartes ne sont passées que si leur connexion est activée : sinon
 		// l'import reste le geste principal, au lieu d'être rétrogradé sous une
 		// carte absente.
-		connexion:
-			qonto?.disponible || chift?.disponible ? (
-				<PileDeConnexions>
-					{qonto?.disponible ? (
-						<Facultatif>
-							<CarteQontoBranchee />
-						</Facultatif>
-					) : null}
-					{chift?.disponible ? (
-						<Facultatif>
-							{/* Seconde sous Qonto : son appel ne double pas le bouton plein. */}
-							<CarteChiftBranchee principale={!qonto?.disponible} />
-						</Facultatif>
-					) : null}
-				</PileDeConnexions>
-			) : undefined
+		connexion: qonto?.disponible ? (
+			<PileDeConnexions>
+				<Facultatif>
+					<CarteQontoBranchee />
+				</Facultatif>
+			</PileDeConnexions>
+		) : undefined
 	};
 
 	return (

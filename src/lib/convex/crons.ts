@@ -57,11 +57,6 @@ crons.daily(
 // (90 jours), qui ne s'éteignent donc jamais sur une connexion vivante.
 crons.interval('synchroQonto', { hours: 6 }, internal.connexions.qonto.synchroniserToutes, {});
 
-// LE RATTRAPAGE CHIFT. Sans couche de données, Chift ne prévient pas qu'une facture
-// a changé dans le logiciel du gérant : cette lecture, depuis le curseur, est ce
-// qui fait arriver les nouvelles factures et les paiements. Dormante sans clé.
-crons.interval('synchroChift', { hours: 6 }, internal.connexions.chift.synchroniserToutes, {});
-
 // LE RATTRAPAGE NANGO. Les logiciels que Nango relie ne nous préviennent pas
 // qu'une facture a changé : cette relecture, par le proxy, fait arriver les
 // nouvelles factures et les paiements. Dormante sans NANGO_SECRET_KEY.

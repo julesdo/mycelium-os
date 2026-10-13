@@ -1,7 +1,7 @@
 /**
  * UNE FACTURE LUE DANS UN LOGICIEL TIERS, dans la forme que l'import connaît
  * déjà — quelle que soit la source : Qonto en direct, ou l'un des logiciels que
- * Chift relie (Pennylane, Sage, Cegid, Tiime, MyUnisoft…).
+ * Nango relie (Pennylane, QuickBooks, Xero, Zoho, Stripe, Sellsy…).
  *
  * Une seule forme pour toutes les sources : c'est ce qui permet à chaque
  * connecteur de n'être qu'un traducteur, et à l'écriture de rester un seul

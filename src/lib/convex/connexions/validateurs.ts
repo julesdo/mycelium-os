@@ -20,7 +20,7 @@ export type StatutConnexionQonto = Infer<typeof vStatutConnexionQonto>;
 
 /**
  * Les mêmes cinq états, pour toute connexion à un logiciel tiers : Qonto en
- * direct comme les logiciels que relie Chift. L'écran les dit de la même façon.
+ * direct comme les logiciels que relie Nango. L'écran les dit de la même façon.
  */
 export const vStatutConnexion = vStatutConnexionQonto;
 export type StatutConnexion = StatutConnexionQonto;

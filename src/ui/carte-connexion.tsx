@@ -114,10 +114,7 @@ export function CarteConnexion({
 				)}
 			>
 				<div
-					className={cn(
-						'flex gap-cladd-2xs',
-						image === undefined ? 'items-center' : 'items-end'
-					)}
+					className={cn('flex gap-cladd-2xs', image === undefined ? 'items-center' : 'items-end')}
 				>
 					<span
 						aria-hidden
@@ -179,8 +176,8 @@ export function PictoLogiciel() {
 }
 
 /**
- * PLUSIEURS CONNEXIONS L'UNE SOUS L'AUTRE — Qonto en direct, et « votre
- * logiciel » par Chift. L'écart courant entre deux cartes, rien de plus.
+ * PLUSIEURS CONNEXIONS L'UNE SOUS L'AUTRE — Qonto en direct, et les logiciels
+ * branchés par Nango. L'écart courant entre deux cartes, rien de plus.
  */
 export function PileDeConnexions({ children }: { children: ReactNode }) {
 	return <div className="flex flex-col gap-cladd-2xs">{children}</div>;
