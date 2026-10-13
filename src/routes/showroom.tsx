@@ -888,7 +888,7 @@ function Showroom() {
 
 			<div className="min-h-0 flex-1">
 				{choisi !== null ? (
-					<Shell>
+					<Shell dansLaSalle>
 						{/*
 						  ⚠️ LA CLÉ PORTE LA ROUTE, L'ÉTAT ET LA VARIANTE, PAS LA ROUTE SEULE.
 						  Une feuille ouverte dans « sans données » restait ouverte en passant
@@ -929,7 +929,7 @@ function Showroom() {
 							/>
 						) : null}
 						{ecran === 'coquille' ? (
-							<Shell>
+							<Shell dansLaSalle>
 								<DemoFlux />
 							</Shell>
 						) : null}

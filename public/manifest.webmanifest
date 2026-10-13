@@ -1,14 +1,14 @@
 {
 	"name": "Letikette",
 	"short_name": "Letikette",
-	"description": "Vos trois taux EGalim, mesurés dans vos factures.",
+	"description": "Le recouvrement de vos factures impayées : relances, pénalités et suivi, au nom de votre entreprise.",
 	"lang": "fr",
 	"dir": "ltr",
 	"start_url": "/app",
 	"scope": "/",
 	"display": "standalone",
 	"orientation": "any",
-	"background_color": "#f7f0e5",
+	"background_color": "#070c19",
 	"theme_color": "#17223b",
 	"icons": [
 		{

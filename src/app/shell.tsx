@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { Fond } from '../ui/fond';
+import { cn } from '../ui/cn';
 import { BarreBranchee } from './barre';
 import { CompagnonBranche } from './compagnon';
 import { useCodeEnAvance } from './code-en-avance';
@@ -42,14 +43,27 @@ import { useCodeEnAvance } from './code-en-avance';
  * derrière, le flou n'aurait plus rien à flouter et il ne resterait qu'une bande
  * noire morte. Le défaut a existé, et il ne se voyait qu'à l'écran.
  *
- * `h-dvh` et non `h-screen` : sur téléphone, la barre d'adresse mobile fait
- * varier la hauteur visible, et `100vh` fait dépasser le contenu sous la barre.
+ * ⚠️ FIXÉE SUR L'ÉCRAN, PAS HAUTE DE `100dvh` (13/10/2026). Elle était `h-dvh`
+ * dans une page haute de `100%`. Sur un téléphone Android, application installée,
+ * les deux ne tombent pas toujours sur la même hauteur : la coquille dépassait de
+ * la page, la page devenait défilable, et arrivé en bas d'un écran le doigt
+ * faisait défiler LA PAGE ENTIÈRE — la barre du haut partait avec elle, et il
+ * fallait remonter pour la retrouver (relevé par le fondateur sur son téléphone).
+ * `fixed inset-0` épouse l'écran quelle que soit la façon dont le navigateur le
+ * mesure, et ne donne aucune hauteur à la page ; `coquille-app` lui interdit en plus
+ * de défiler (`app.css`).
  */
 export function Shell({
 	children,
-	sessionOuverte = true
+	sessionOuverte = true,
+	dansLaSalle = false
 }: {
 	children: ReactNode;
+	/**
+	 * La salle d'exposition pose sa rangée de boutons AU-DESSUS de la coquille : elle
+	 * la veut dans le flux, sous cette rangée, et pas fixée sur tout l'écran.
+	 */
+	dansLaSalle?: boolean;
 	/**
 	 * ⚠️ LA COQUILLE SE MONTE AVANT LA SESSION, ET NE SE REMONTE PLUS (09/10/2026).
 	 * L'ouverture affichait deux lignes de texte l'une après l'autre (« Ouverture de
@@ -63,7 +77,12 @@ export function Shell({
 	// Le code des écrans les plus ouverts se charge au repos, une fois la session là.
 	useCodeEnAvance(sessionOuverte);
 	return (
-		<div className="relative flex h-dvh w-full flex-col overflow-hidden">
+		<div
+			className={cn(
+				'flex flex-col overflow-hidden',
+				dansLaSalle ? 'relative h-full w-full' : 'coquille-app fixed inset-0'
+			)}
+		>
 			{/* Le drapé, une fois, derrière tous les écrans. C'est lui qui donne au
 			    verre des cartes et des barres quelque chose à réfracter — sans lui,
 			    chaque translucidité retombe sur un aplat un peu plus clair. */}

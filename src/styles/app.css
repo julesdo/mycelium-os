@@ -219,6 +219,26 @@ select:not(:disabled),
 .defilement-sans-barre {
 	scrollbar-width: none;
 }
+
+/* SOUS L'APPLICATION, LA PAGE NE DÉFILE JAMAIS (13/10/2026).
+ *
+ * ⚠️ RELEVÉ SUR UN TÉLÉPHONE ANDROID, APPLICATION INSTALLÉE : arrivé en bas d'un
+ * écran, le doigt continuait sur la page elle-même, qui défilait de quelques
+ * dizaines de pixels — et la barre du haut, collée dans le conteneur qui défile,
+ * partait avec la page. La coquille est désormais fixée sur l'écran (`app/shell.tsx`),
+ * la page qui la porte ne défile plus, et le conteneur qui défile garde son élan
+ * pour lui (`overscroll-behavior: contain`) : ni défilement de la page, ni
+ * rebond, ni « tirer pour rafraîchir » qui recharge l'application en plein geste.
+ * Les pages pleines (`FeuillePleinEcran`) défilent dans leur propre calque : elles
+ * n'en dépendent pas. */
+html:has(.coquille-app),
+html:has(.coquille-app) body {
+	overflow: hidden;
+	overscroll-behavior: none;
+}
+.coquille-app .defilement-sans-barre {
+	overscroll-behavior-y: contain;
+}
 .defilement-sans-barre::-webkit-scrollbar {
 	display: none;
 }
