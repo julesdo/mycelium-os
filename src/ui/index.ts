@@ -364,6 +364,7 @@ export { FeuilleDeReussite } from './reussite';
 export { CarteGlissable, type ActionDeCarte } from './carte-glissable';
 export { FeuilleDeRappel } from './feuille-rappel';
 export {
+	CeQuiPartira,
 	FeuilleDActivation,
 	PiloteEnDirect,
 	type PiloteAffiche,
@@ -371,6 +372,14 @@ export {
 	type TravailPiloteAffiche
 } from './pilote';
 export { AvatarPlume, NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
+export {
+	ApercuDeLettre,
+	CadrePremiersPas,
+	EnTeteDEtape,
+	ListeDePromesses,
+	ResumeDesPremiersPas,
+	type ProgressionPremiersPas
+} from './premiers-pas';
 export { PlumeSurLeDossier } from './plume-dossier';
 export { TexteQuiMene } from './texte-qui-mene';
 export {

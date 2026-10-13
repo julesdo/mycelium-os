@@ -1,32 +1,86 @@
 import { useEffect, useRef, useState } from 'react';
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, Navigate, useNavigate } from '@tanstack/react-router';
 import { useAction, useMutation, Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
+import { Spinner } from '@cladd-ui/react';
+import type { FunctionReturnType } from 'convex/server';
 import { api } from '../lib/convex/_generated/api';
-import { BoutonPrincipal, type EtablissementPropose, type EtatRecherche } from '../ui';
-import { EcranBienvenue } from '../screens/inscription/entreprise';
+import { authClient } from '../lib/client/auth';
+import { useQuery } from '../app/donnees';
+import { useDepotAuCoffre } from '../app/use-coffre';
+import { CarteQontoBranchee } from '../app/connexion-qonto';
+import { CarteChiftBranchee } from '../app/connexion-chift';
+import {
+	BoutonPrincipal,
+	CadrePremiersPas,
+	Facultatif,
+	ParcoursDepot,
+	PileDeConnexions,
+	aujourdHuiISO,
+	eurosCentimes,
+	pluriel,
+	sirenLisible,
+	type DirigeantPropose,
+	type EtablissementPropose,
+	type EtatDirigeants,
+	type EtatRecherche,
+	type ProgressionPremiersPas
+} from '../ui';
 import { qualiteCommercantDeLaForme } from '../lib/verticales/recouvrement/pays/france/commercialite';
-
-export const Route = createFileRoute('/bienvenue')({ component: PageBienvenue });
+import { EcranPlumeSePresente } from '../screens/premiers-pas/plume';
+import { EcranEntreprise } from '../screens/premiers-pas/entreprise';
+import { EcranFactures, type EtatDesFactures } from '../screens/premiers-pas/factures';
+import { EcranLettres, type EnTeteSaisi } from '../screens/premiers-pas/lettres';
+import { EcranRelances } from '../screens/premiers-pas/relances';
+import { EcranPret, type LigneDuResume } from '../screens/premiers-pas/pret';
 
 /**
- * La garde, avant le formulaire.
+ * LES PREMIERS PAS (13/10/2026, `docs/superpowers/specs/2026-10-13-premiers-pas.md`).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * SIX ÉTAPES, CHACUNE À SON ADRESSE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Plume se présente, l'entreprise, les factures, les lettres, les relances,
+ * puis « C'est prêt ». Chaque étape a son adresse (`?etape=`) : le retour du
+ * navigateur revient d'une étape, un rechargement ne perd rien, et l'accueil
+ * peut ramener à une étape restée en plan.
+ *
+ * ⚠️ L'ENTREPRISE COUPE LE PARCOURS EN DEUX. Avant elle, rien n'existe pour ce
+ * compte : seules les deux premières étapes s'ouvrent. Après elle, revenir en
+ * arrière n'a plus de sens (l'établissement est créé, l'essai ouvert) : elles se
+ * ferment, et un compte qui revient reprend aux factures.
+ *
+ * ⚠️ RIEN N'EST OBLIGATOIRE APRÈS L'ENTREPRISE. Chaque étape a son « Plus tard »
+ * (ou « Pas maintenant »), et ce qui reste se rappelle sur l'accueil
+ * (`CeQuiManque`, le bloc du pilote) : on n'est jamais coincé dans un parcours.
+ */
+const ETAPES = ['plume', 'entreprise', 'factures', 'lettres', 'relances', 'pret'] as const;
+type Etape = (typeof ETAPES)[number];
+
+function estUneEtape(valeur: unknown): valeur is Etape {
+	return typeof valeur === 'string' && (ETAPES as readonly string[]).includes(valeur);
+}
+
+export const Route = createFileRoute('/bienvenue')({
+	validateSearch: (search: Record<string, unknown>): { etape?: Etape } => ({
+		etape: estUneEtape(search.etape) ? search.etape : undefined
+	}),
+	component: PageBienvenue
+});
+
+/**
+ * La garde, avant le parcours.
  *
  * Cet écran a un jour affiché ses champs à quelqu'un qui n'avait pas de
- * session : la création d'entreprise se faisait renvoyer `Unauthenticated`,
- * et le seul retour était un message rouge, après la saisie. Un formulaire qui
- * ne peut pas partir ne doit pas s'ouvrir.
- *
- * Même mécanique que `/app` : les composants de `convex/react` plutôt qu'une
- * redirection dans `beforeLoad`, parce que l'état d'authentification n'est
- * connu qu'une fois le jeton vérifié.
+ * session : la création d'entreprise se faisait renvoyer `Unauthenticated`, et
+ * le seul retour était un message rouge, après la saisie. Un formulaire qui ne
+ * peut pas partir ne doit pas s'ouvrir.
  */
 function PageBienvenue() {
 	return (
 		<>
 			<AuthLoading>
-				<div className="flex h-dvh items-center justify-center">
-					<p className="text-cladd-xs text-cladd-fg-soft">Ouverture de votre espace…</p>
-				</div>
+				<Ouverture />
 			</AuthLoading>
 
 			<Unauthenticated>
@@ -42,47 +96,177 @@ function PageBienvenue() {
 			</Unauthenticated>
 
 			<Authenticated>
-				<Bienvenue />
+				<PremiersPas />
 			</Authenticated>
 		</>
 	);
 }
 
+function Ouverture() {
+	return (
+		<div className="flex h-dvh items-center justify-center">
+			<Spinner size="md" />
+			<span className="sr-only">Ouverture de votre espace…</span>
+		</div>
+	);
+}
+
+/** Le compte, tel que Better Auth le rend : son nom vaut son adresse tant qu'il n'en a pas donné. */
+interface Compte {
+	readonly name: string;
+	readonly email: string;
+}
+
+/** Le nom que le gérant a donné, ou `null` s'il n'a encore donné que son adresse. */
+function nomDonne(compte: Compte): string | null {
+	const nom = compte.name.trim();
+	return nom === '' || nom === compte.email.trim() ? null : nom;
+}
+
+function PremiersPas() {
+	const navigate = useNavigate();
+	const { etape: demandee } = Route.useSearch();
+	const organisation = useQuery(api.organizations.getMyOrg, {});
+	const compte = useQuery(api.auth.getCurrentUser, {}) as Compte | null | undefined;
+
+	if (organisation === undefined || compte === undefined) return <Ouverture />;
+	if (compte === null) return <Navigate to="/connexion" replace />;
+
+	const etape: Etape =
+		organisation === null
+			? demandee === 'entreprise'
+				? 'entreprise'
+				: 'plume'
+			: demandee === undefined || demandee === 'plume' || demandee === 'entreprise'
+				? 'factures'
+				: demandee;
+	const rang = ETAPES.indexOf(etape);
+	const aller = (cible: Etape) => void navigate({ to: '/bienvenue', search: { etape: cible } });
+	const progression = (gestes: Omit<ProgressionPremiersPas, 'rang' | 'total'>) => ({
+		rang,
+		total: ETAPES.length,
+		...gestes
+	});
+
+	switch (etape) {
+		case 'plume':
+			return (
+				<EtapePlume
+					progression={progression({})}
+					compte={compte}
+					onSuite={() => aller('entreprise')}
+				/>
+			);
+		case 'entreprise':
+			return (
+				<EtapeEntreprise
+					progression={progression({ onRetour: () => aller('plume') })}
+					onSuite={() => aller('factures')}
+				/>
+			);
+		case 'factures':
+			return (
+				<EtapeFactures
+					progression={progression({ onPlusTard: () => aller('lettres') })}
+					onSuite={() => aller('lettres')}
+				/>
+			);
+		case 'lettres':
+			return (
+				<EtapeLettres
+					progression={progression({
+						onRetour: () => aller('factures'),
+						onPlusTard: () => aller('relances')
+					})}
+					compte={compte}
+					denominationParDefaut={organisation?.name ?? ''}
+					onSuite={() => aller('relances')}
+				/>
+			);
+		case 'relances':
+			return (
+				<EtapeRelances
+					progression={progression({ onRetour: () => aller('lettres') })}
+					onSuite={() => aller('pret')}
+				/>
+			);
+		case 'pret':
+			return (
+				<EtapePret
+					// Pas de retour sur le dernier écran : les relances activées y renverraient
+					// aussitôt, et le bouton paraîtrait mort.
+					progression={progression({})}
+					compte={compte}
+					onEntrer={() => void navigate({ to: '/app' })}
+				/>
+			);
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 1. PLUME SE PRÉSENTE
+// ─────────────────────────────────────────────────────────────────────────
+
+function EtapePlume({
+	progression,
+	compte,
+	onSuite
+}: {
+	readonly progression: ProgressionPremiersPas;
+	readonly compte: Compte;
+	readonly onSuite: () => void;
+}) {
+	const [nom, setNom] = useState(nomDonne(compte) ?? '');
+	const [enCours, setEnCours] = useState(false);
+
+	async function continuer() {
+		const saisi = nom.trim();
+		if (saisi === '') return;
+		if (saisi !== compte.name.trim()) {
+			setEnCours(true);
+			/*
+			  ⚠️ LE NOM N'ARRÊTE PAS LE PARCOURS. Il sert à saluer et à proposer qui
+			  signe ; s'il ne s'écrit pas (réseau coupé), le compte garde son adresse
+			  pour nom, comme avant, et le gérant le change depuis son compte.
+			*/
+			await authClient.updateUser({ name: saisi }).catch(() => undefined);
+			setEnCours(false);
+		}
+		onSuite();
+	}
+
+	return (
+		<EcranPlumeSePresente
+			progression={progression}
+			nom={nom}
+			onNom={setNom}
+			enCours={enCours}
+			onContinuer={() => void continuer()}
+		/>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 2. L'ENTREPRISE
+// ─────────────────────────────────────────────────────────────────────────
+
 /**
  * La création de l'entreprise, et le câblage de la recherche au registre.
  *
- * CE QUI A ÉTÉ RETIRÉ ET N'EST PAS REVENU. Cet écran demandait un type
- * d'établissement — restaurant inter-entreprises, EHPAD, crèche — et un nombre
- * de couverts par jour, puis les JETAIT : ni l'un ni l'autre n'était envoyé à
- * la mutation. Un champ qu'on remplit pour rien est pire qu'un champ absent, il
- * apprend au lecteur que ses réponses ne servent à rien. Même sort pour
- * « Factures émises par an » : à cet instant précis, il n'y a encore AUCUNE
- * facture, et le produit les compte une fois importées.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ CE QUI RAMÈNE LE NUMÉRO ICI : LE REGISTRE, PAS LA SAISIE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Le SIRET avait quitté cet écran parce qu'il s'y tapait TROIS fois, dans deux
- * champs différents, pour n'être lu qu'une seule — sur `profilsCreancier.siren`,
- * que le décompte et le verrou de l'accueil lisent. Celui d'ici écrivait
- * `organizations.siret`, qu'aucune règle du domaine ne consulte.
- *
- * Il ne se tape plus nulle part. Le gérant écrit le nom de son entreprise, le
- * registre public la propose, il la touche, et le numéro, la forme juridique et
- * l'adresse partent avec elle — vers la table qui les lit, dans la MÊME
- * mutation que la création de l'établissement.
- *
- * ⚠️ L'ÉTAT DE LA RECHERCHE VIT ICI, PAS DANS L'ÉCRAN, et c'est ce qui permet à
- * la salle d'exposition de montrer les cinq phases sans rien cliquer.
+ * ⚠️ L'ÉTAT DE LA RECHERCHE VIT ICI, PAS DANS L'ÉCRAN : c'est ce qui permet à
+ * la salle d'exposition de montrer chaque phase sans rien cliquer.
  *
  * ⚠️ UNE PANNE N'EST PAS UNE ABSENCE. `AUCUN` et `ECHEC` sont deux états
- * distincts jusque dans ce `catch` : rendre une liste vide sur une panne ferait
- * croire que le registre ne connaît pas l'entreprise, ce qui est une réponse, et
- * c'en est une fausse.
+ * distincts jusque dans le `catch` : rendre une liste vide sur une panne ferait
+ * croire que le registre ne connaît pas l'entreprise.
  */
-function Bienvenue() {
-	const navigate = useNavigate();
+function EtapeEntreprise({
+	progression,
+	onSuite
+}: {
+	readonly progression: ProgressionPremiersPas;
+	readonly onSuite: () => void;
+}) {
 	const creer = useMutation(api.organizations.createOrganization);
 	const chercher = useAction(api.recouvrement.monEtablissement.chercherAuRegistreALInscription);
 
@@ -100,11 +284,8 @@ function Bienvenue() {
 		setRecherche({ phase: 'EN_COURS' });
 		try {
 			const { candidats } = await chercher({ nom: cherche });
-			// ⚠️ UNE RÉPONSE PÉRIMÉE NE S'AFFICHE PAS. La recherche part au fil de la
-			// frappe : deux appels peuvent être en vol, et le premier peut revenir en
-			// dernier. Sans ce contrôle, « BOULANGERIE MAR » écraserait les candidats
-			// de « BOULANGERIE MARTIN », et le gérant toucherait une autre entreprise
-			// que celle qu'il lit dans son champ.
+			// ⚠️ UNE RÉPONSE PÉRIMÉE NE S'AFFICHE PAS : deux appels peuvent être en vol,
+			// et le premier revenir en dernier.
 			if (dernierTerme.current !== cherche) return;
 			setRecherche(candidats.length === 0 ? { phase: 'AUCUN' } : { phase: 'TROUVE', candidats });
 		} catch (e) {
@@ -122,19 +303,9 @@ function Bienvenue() {
 	/**
 	 * LA RECHERCHE PART TOUTE SEULE, UNE FOIS LA FRAPPE POSÉE.
 	 *
-	 * ⚠️ C'EST UN EFFET PARCE QUE C'EN EST UN. La règle du projet interdit de
-	 * poser un ÉTAT dans un effet — ça se dérive au rendu. Interroger un registre
-	 * public n'est pas un état dérivé : c'est un appel réseau, déclenché par le
-	 * temps, et il n'a nulle part ailleurs où vivre.
-	 *
-	 * ⚠️ TROIS CARACTÈRES AU MOINS, ET UN SILENCE DE 600 ms. Le BODACC est un
-	 * service public gratuit et sans clé : partir à chaque touche en ferait
-	 * quinze appels pour un nom, et « BO » rendrait de toute façon des milliers
-	 * d'annonces dont aucune n'est la bonne.
-	 *
-	 * ⚠️ ET ON NE REFAIT PAS LA MÊME RECHERCHE. Sans cette garde, un retour à un
-	 * terme déjà cherché — une correction défaite, un « Changer » — relancerait
-	 * l'appel, et un échec se rejouerait en boucle.
+	 * ⚠️ C'EST UN EFFET PARCE QUE C'EN EST UN : un appel réseau déclenché par le
+	 * temps, pas un état dérivé. Trois caractères au moins et 600 ms de silence (le
+	 * BODACC est un service public gratuit) ; jamais deux fois le même terme.
 	 */
 	useEffect(() => {
 		const cherche = nom.trim();
@@ -153,8 +324,7 @@ function Bienvenue() {
 		try {
 			await creer({
 				name: (retenu?.denomination ?? saisi).trim(),
-				// L'identité ne part que si le gérant a touché un candidat. Sans elle,
-				// l'établissement se crée comme avant, avec son seul nom.
+				// L'identité ne part que si le gérant a touché un candidat.
 				...(retenu === null
 					? {}
 					: {
@@ -169,16 +339,15 @@ function Bienvenue() {
 							}
 						})
 			});
-			await navigate({ to: '/app' });
+			onSuite();
 		} catch (e) {
-			// ⚠️ LE REFUS DU SERVEUR, MOT POUR MOT. La clé de contrôle du numéro se
-			// vérifie à l'écriture, et son message NOMME le numéro reçu : le
-			// remplacer par une phrase générique laisserait le gérant devant une
-			// erreur qu'il ne peut pas corriger.
+			// ⚠️ LE REFUS DU SERVEUR, MOT POUR MOT : la clé du numéro se vérifie à
+			// l'écriture, et son message NOMME le numéro reçu.
 			setErreur(
-				e instanceof Error && e.message
-					? e.message
-					: "Votre entreprise n'a pas pu être créée. Réessayez ; si le problème persiste, écrivez-nous."
+				messageDuRefus(
+					e,
+					'Votre entreprise n’a pas pu être créée. Réessayez ; si le problème persiste, écrivez-nous.'
+				)
 			);
 		} finally {
 			setEnCours(false);
@@ -186,12 +355,12 @@ function Bienvenue() {
 	}
 
 	return (
-		<EcranBienvenue
+		<EcranEntreprise
+			progression={progression}
 			nom={nom}
 			onNom={(valeur) => {
 				setNom(valeur);
-				// Changer le nom périme la recherche : garder des candidats trouvés sur
-				// l'ancien ferait toucher une entreprise qui n'est plus celle du champ.
+				// Changer le nom périme la recherche.
 				setRecherche({ phase: 'REPOS' });
 			}}
 			recherche={recherche}
@@ -208,4 +377,426 @@ function Bienvenue() {
 			onCreer={() => void soumettre()}
 		/>
 	);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 3. LES FACTURES
+// ─────────────────────────────────────────────────────────────────────────
+
+function EtapeFactures({
+	progression,
+	onSuite
+}: {
+	readonly progression: ProgressionPremiersPas;
+	readonly onSuite: () => void;
+}) {
+	// Le jour vient de la SEULE horloge de l'interface, comme l'accueil : le montant
+	// montré ici est celui que le gérant retrouvera en entrant.
+	const aujourdHui = aujourdHuiISO();
+	const revelation = useQuery(api.recouvrement.revelation.revelation, { arreteAu: aujourdHui });
+	const coffre = useQuery(api.coffre.coffre.apercuDuCoffre, {});
+	const qonto = useQuery(api.connexions.qontoDonnees.maConnexionQonto, {});
+	const chift = useQuery(api.connexions.chiftDonnees.maConnexionChift, {});
+	const depot = useDepotAuCoffre({ genre: 'FACTURES' });
+	const [depotOuvert, setDepotOuvert] = useState(false);
+
+	if (revelation === undefined || coffre === undefined) {
+		return (
+			<CadrePremiersPas progression={progression} cle="factures-attente">
+				<div className="flex flex-1 items-center justify-center">
+					<Spinner size="md" />
+				</div>
+			</CadrePremiersPas>
+		);
+	}
+
+	/*
+	  ⚠️ CE QUI EST PARTI DU NAVIGATEUR COMPTE AUSSI. Entre la fin de l'envoi et
+	  l'arrivée au coffre, un fichier n'est encore dans aucune lecture : sans lui,
+	  l'écran repasserait une seconde sur « Montrez-moi vos factures ».
+	*/
+	const enRoute = depot.fichiers.filter(
+		(f) => f.phase === 'ENVOI' || (f.phase === 'COFFRE' && f.suivi?.etat !== 'TERMINE')
+	).length;
+	const enLecture = Math.max(coffre.enCours.length, enRoute);
+
+	const etat: EtatDesFactures =
+		revelation.nombreFactures > 0
+			? {
+					phase: 'COMPTE',
+					arreteAu: aujourdHui,
+					total: revelation.total,
+					principal: revelation.principal,
+					interets: revelation.interets,
+					indemnites: revelation.indemnites,
+					nombreFactures: revelation.nombreFactures,
+					nombreClients: new Set(
+						revelation.lignes.map((ligne) => ligne.debiteurId ?? ligne.debiteur ?? ligne.reference)
+					).size,
+					enLecture
+				}
+			: enLecture > 0
+				? { phase: 'EN_LECTURE', documents: enLecture }
+				: coffre.total > 0
+					? { phase: 'RIEN_D_ECHU', documents: coffre.total }
+					: { phase: 'A_DEPOSER' };
+
+	// Les cartes ne se passent que si leur connexion est activée (dormantes sans clé).
+	const connexions =
+		qonto?.disponible || chift?.disponible ? (
+			<PileDeConnexions>
+				{qonto?.disponible ? (
+					<Facultatif>
+						<CarteQontoBranchee />
+					</Facultatif>
+				) : null}
+				{chift?.disponible ? (
+					<Facultatif>
+						<CarteChiftBranchee principale={!qonto?.disponible} />
+					</Facultatif>
+				) : null}
+			</PileDeConnexions>
+		) : undefined;
+
+	return (
+		<>
+			<EcranFactures
+				progression={progression}
+				etat={etat}
+				{...(connexions === undefined ? {} : { connexions })}
+				onImporter={() => setDepotOuvert(true)}
+				onContinuer={onSuite}
+			/>
+			<ParcoursDepot
+				ouvert={depotOuvert}
+				onFermer={() => setDepotOuvert(false)}
+				destination={{ titre: 'vos factures', precision: 'lues dès leur arrivée' }}
+				genre="FACTURES"
+				depot={depot}
+			/>
+		</>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 4. LES LETTRES
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Deux noms se reconnaissent sans casse ni accents : « Olivier ROUX » est « olivier roux ». */
+function memeNom(a: string, b: string): boolean {
+	const plier = (s: string) =>
+		s
+			.normalize('NFD')
+			.replace(/\p{M}/gu, '')
+			.toLowerCase()
+			.split(/\s+/u)
+			.filter((mot) => mot !== '')
+			.sort()
+			.join(' ');
+	return plier(a) !== '' && plier(a) === plier(b);
+}
+
+function EtapeLettres(proprietes: {
+	readonly progression: ProgressionPremiersPas;
+	readonly compte: Compte;
+	readonly denominationParDefaut: string;
+	readonly onSuite: () => void;
+}) {
+	const profil = useQuery(api.recouvrement.profil.monProfil, {});
+	if (profil === undefined) {
+		return (
+			<CadrePremiersPas progression={proprietes.progression} cle="lettres-attente">
+				<div className="flex flex-1 items-center justify-center">
+					<Spinner size="md" />
+				</div>
+			</CadrePremiersPas>
+		);
+	}
+	return <EtapeLettresChargee {...proprietes} profil={profil} />;
+}
+
+/** Le profil tel que la requête le rend, sans le réécrire à la main. */
+type ProfilLu = NonNullable<FunctionReturnType<typeof api.recouvrement.profil.monProfil>>;
+
+function EtapeLettresChargee({
+	progression,
+	compte,
+	denominationParDefaut,
+	onSuite,
+	profil
+}: {
+	readonly progression: ProgressionPremiersPas;
+	readonly compte: Compte;
+	readonly denominationParDefaut: string;
+	readonly onSuite: () => void;
+	readonly profil: ProfilLu | null;
+}) {
+	const enregistrer = useMutation(api.recouvrement.profil.enregistrerEnTete);
+	const lireDirigeants = useAction(api.recouvrement.annuaires.dirigeantsAuRegistre);
+	const siren = profil?.siren;
+	const dejaSigne = profil?.signataireNom !== undefined;
+
+	/*
+	  LE LOGICIEL PROPOSE, LE GÉRANT CONFIRME. Ce qui est déjà au profil reprend sa
+	  place ; sinon, qui signe est la personne qui installe (son nom de compte), et
+	  l'adresse est celle du compte. Tout reste modifiable.
+	*/
+	const [saisie, setSaisie] = useState<EnTeteSaisi>(() => ({
+		signataireNom: profil?.signataireNom ?? nomDonne(compte) ?? '',
+		signataireQualite: profil?.signataireQualite ?? '',
+		email: profil?.email ?? compte.email,
+		iban: profil?.iban ?? ''
+	}));
+	const [dirigeants, setDirigeants] = useState<EtatDirigeants>(
+		siren !== undefined && !dejaSigne ? { phase: 'EN_COURS' } : { phase: 'REPOS' }
+	);
+	const [enCours, setEnCours] = useState(false);
+	const [erreur, setErreur] = useState<string | null>(null);
+
+	function demanderDirigeants() {
+		if (siren === undefined) return;
+		setDirigeants({ phase: 'EN_COURS' });
+		lireDirigeants({ siren })
+			.then(({ dirigeants: lus, releveeLe }) => {
+				setDirigeants({ phase: 'TROUVE', dirigeants: lus, releveeLe });
+				completerLaFonction(lus);
+			})
+			.catch((e: unknown) =>
+				setDirigeants({
+					phase: 'ECHEC',
+					message: messageDuRefus(e, 'Le registre n’a pas répondu.')
+				})
+			);
+	}
+
+	/** Quand celui qui signe est un dirigeant publié, sa fonction est celle du registre. */
+	function completerLaFonction(lus: readonly DirigeantPropose[]) {
+		setSaisie((avant) => {
+			if (avant.signataireQualite.trim() !== '') return avant;
+			const trouve = lus.find((d) => memeNom(d.nom, avant.signataireNom));
+			return trouve === undefined ? avant : { ...avant, signataireQualite: trouve.fonction };
+		});
+	}
+
+	/*
+	  ⚠️ LA LECTURE DU REGISTRE PART À L'ARRIVÉE, ICI SEULEMENT. Ailleurs (le
+	  compte), elle attend qu'on la demande, parce que les champs y sont souvent
+	  déjà remplis ; ici, ils sont vides, et c'est la lecture qui les remplit.
+	  Un appel réseau, pas un état dérivé : l'état ne change qu'à sa réponse.
+	*/
+	useEffect(() => {
+		if (siren === undefined || dejaSigne) return;
+		let actif = true;
+		lireDirigeants({ siren })
+			.then(({ dirigeants: lus, releveeLe }) => {
+				if (!actif) return;
+				setDirigeants({ phase: 'TROUVE', dirigeants: lus, releveeLe });
+				completerLaFonction(lus);
+			})
+			.catch((e: unknown) => {
+				if (actif) {
+					setDirigeants({
+						phase: 'ECHEC',
+						message: messageDuRefus(e, 'Le registre n’a pas répondu.')
+					});
+				}
+			});
+		return () => {
+			actif = false;
+		};
+		// Une fois, à l'arrivée sur l'étape.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	async function soumettre() {
+		setErreur(null);
+		setEnCours(true);
+		try {
+			await enregistrer(saisie);
+			onSuite();
+		} catch (e) {
+			setErreur(messageDuRefus(e, 'Ces informations n’ont pas pu être enregistrées. Réessayez.'));
+		} finally {
+			setEnCours(false);
+		}
+	}
+
+	return (
+		<EcranLettres
+			progression={progression}
+			denomination={profil?.denomination ?? denominationParDefaut}
+			{...(profil?.adresse === undefined ? {} : { adresse: profil.adresse })}
+			saisie={saisie}
+			onSaisie={(changement) => setSaisie((avant) => ({ ...avant, ...changement }))}
+			{...(siren === undefined ? {} : { dirigeants })}
+			onDemanderDirigeants={demanderDirigeants}
+			enCours={enCours}
+			erreur={erreur}
+			onEnregistrer={() => void soumettre()}
+		/>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 5. LES RELANCES
+// ─────────────────────────────────────────────────────────────────────────
+
+function EtapeRelances({
+	progression,
+	onSuite
+}: {
+	readonly progression: ProgressionPremiersPas;
+	readonly onSuite: () => void;
+}) {
+	const actives = useQuery(api.recouvrement.pilote.relancesAutomatiques, {});
+	const membre = useQuery(api.organizations.getMyOrgMembership, {});
+	const profil = useQuery(api.recouvrement.profil.monProfil, {});
+	const activer = useMutation(api.recouvrement.pilote.activerRelances);
+	const [enCours, setEnCours] = useState(false);
+	const [erreur, setErreur] = useState<string | null>(null);
+
+	if (actives === undefined || membre === undefined || profil === undefined) {
+		return (
+			<CadrePremiersPas progression={progression} cle="relances-attente">
+				<div className="flex flex-1 items-center justify-center">
+					<Spinner size="md" />
+				</div>
+			</CadrePremiersPas>
+		);
+	}
+	// Déjà décidé : il n'y a rien à redemander.
+	if (actives) return <Navigate to="/bienvenue" search={{ etape: 'pret' }} replace />;
+
+	async function oui() {
+		setErreur(null);
+		setEnCours(true);
+		try {
+			await activer({ actif: true });
+			onSuite();
+		} catch (e) {
+			setErreur(messageDuRefus(e, 'Les relances n’ont pas pu être activées. Réessayez.'));
+		} finally {
+			setEnCours(false);
+		}
+	}
+
+	return (
+		<EcranRelances
+			progression={progression}
+			administrateur={membre?.role === 'ORG_ADMIN'}
+			enTeteIncomplet={
+				profil === null ||
+				profil.signataireNom === undefined ||
+				profil.signataireQualite === undefined ||
+				profil.email === undefined
+			}
+			enCours={enCours}
+			erreur={erreur}
+			onActiver={() => void oui()}
+			onPasMaintenant={onSuite}
+		/>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 6. C'EST PRÊT
+// ─────────────────────────────────────────────────────────────────────────
+
+function EtapePret({
+	progression,
+	compte,
+	onEntrer
+}: {
+	readonly progression: ProgressionPremiersPas;
+	readonly compte: Compte;
+	readonly onEntrer: () => void;
+}) {
+	const aujourdHui = aujourdHuiISO();
+	const profil = useQuery(api.recouvrement.profil.monProfil, {});
+	const revelation = useQuery(api.recouvrement.revelation.revelation, { arreteAu: aujourdHui });
+	const coffre = useQuery(api.coffre.coffre.apercuDuCoffre, {});
+	const actives = useQuery(api.recouvrement.pilote.relancesAutomatiques, {});
+
+	if (
+		profil === undefined ||
+		revelation === undefined ||
+		coffre === undefined ||
+		actives === undefined
+	) {
+		return (
+			<CadrePremiersPas progression={progression} cle="pret-attente">
+				<div className="flex flex-1 items-center justify-center">
+					<Spinner size="md" />
+				</div>
+			</CadrePremiersPas>
+		);
+	}
+
+	const lettresPretes =
+		profil !== null &&
+		profil.signataireNom !== undefined &&
+		profil.signataireQualite !== undefined &&
+		profil.email !== undefined;
+
+	const lignes: LigneDuResume[] = [
+		{
+			cle: 'entreprise',
+			titre: 'Votre entreprise',
+			fait: profil?.siren !== undefined,
+			ligne:
+				profil?.siren === undefined
+					? 'Son numéro se renseignera depuis votre compte'
+					: `SIREN ${sirenLisible(profil.siren)}`
+		},
+		{
+			cle: 'factures',
+			titre: 'Vos factures',
+			fait: revelation.nombreFactures > 0 || coffre.total > 0,
+			ligne:
+				revelation.nombreFactures > 0
+					? `${eurosCentimes(revelation.total)} dus sur ${revelation.nombreFactures} facture${pluriel(revelation.nombreFactures)}`
+					: coffre.enCours.length > 0
+						? 'En lecture : je compte dès que c’est fini'
+						: coffre.total > 0
+							? 'Rien d’échu pour l’instant'
+							: 'Quand vous voudrez, depuis l’accueil'
+		},
+		{
+			cle: 'lettres',
+			titre: 'Vos lettres',
+			fait: lettresPretes,
+			ligne: lettresPretes ? `Signées ${profil.signataireNom}` : 'Qui signe, à compléter'
+		},
+		{
+			cle: 'relances',
+			titre: 'Les relances',
+			fait: actives,
+			ligne: actives ? 'Activées : je relance à votre nom' : 'Pas encore : vous déciderez'
+		}
+	];
+
+	const nom = nomDonne(compte);
+	return (
+		<EcranPret
+			progression={progression}
+			prenom={nom === null ? null : (nom.split(/\s+/u)[0] ?? null)}
+			lignes={lignes}
+			libelleEntree={
+				revelation.nombreFactures > 0 ? 'Voir ce qu’on vous doit' : 'Ouvrir mon espace'
+			}
+			onEntrer={onEntrer}
+		/>
+	);
+}
+
+/**
+ * LE REFUS DU SERVEUR, MOT POUR MOT : `ConvexError` porte sa phrase dans `.data`,
+ * pas dans `.message` (qui rend le cadre du client et l'identifiant de requête).
+ */
+function messageDuRefus(e: unknown, repli: string): string {
+	if (typeof e === 'object' && e !== null && 'data' in e) {
+		const data = (e as { data: unknown }).data;
+		if (typeof data === 'string') return data;
+	}
+	return e instanceof Error && e.message !== '' ? e.message : repli;
 }

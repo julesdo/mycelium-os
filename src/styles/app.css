@@ -2261,6 +2261,18 @@ select:not(:disabled),
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * LES PREMIERS PAS — chaque étape entre par la droite (`ui/premiers-pas.tsx`).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le même glissement court qu'une page poussée (`page-entre-droite`) : le
+ * contenu avance avec le doigt, le fond reste. */
+@media (prefers-reduced-motion: no-preference) {
+	.premiers-pas-etape {
+		animation: page-entre-droite 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * LE PILOTE AU TRAVAIL — chaque étape apparaît, puis se coche (`ui/pilote.tsx`).
  * ═══════════════════════════════════════════════════════════════════════════ */
 .pilote-etape {

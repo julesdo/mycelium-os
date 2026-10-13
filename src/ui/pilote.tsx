@@ -306,36 +306,50 @@ export function FeuilleDActivation({
 			}
 		>
 			<SectionDeFeuille>
-				<div className="flex flex-col gap-cladd-3xs">
-					<ListeDeReleve>
-						{PLAN_PAR_DEFAUT.map((etape, rang) => (
-							<LigneDeReleve
-								key={etape.cle}
-								titre={etape.nom}
-								ligne={
-									etape.automatique
-										? delaiEnClair(rang, etape.attente)
-										: `${delaiEnClair(rang, etape.attente)}, vous décidez`
-								}
-							/>
-						))}
-					</ListeDeReleve>
-					<ul className="flex flex-col gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						<li>Par e-mail, à votre nom. Les réponses arrivent à votre adresse.</li>
-						<li>En semaine, entre 9 h et 18 h.</li>
-						<li>Chaque relance s’affiche une heure avant de partir, et se retient d’un geste.</li>
-						<li>
-							La lettre officielle réclame le montant du jour, pénalités et frais compris. Si un
-							avoir ou un règlement n’est pas noté, retenez-la et notez-le.
-						</li>
-						<li>
-							Un paiement arrête tout. Un client en procédure collective ou radié n’est pas relancé,
-							et un client se retire du pilote depuis sa fiche.
-						</li>
-					</ul>
-				</div>
+				<CeQuiPartira />
 			</SectionDeFeuille>
 		</FeuillePleinEcran>
+	);
+}
+
+/**
+ * CE QUI PARTIRA, ET COMMENT — le plan, puis ses règles.
+ *
+ * ⚠️ UN SEUL TEXTE POUR LES DEUX ENDROITS OÙ L'ON ACTIVE : la feuille de
+ * l'accueil et l'étape des premiers pas. La ligne rouge n° 1 veut que le gérant
+ * ait LU ce qui partira avant d'activer ; deux textes finiraient par dire deux
+ * choses.
+ */
+export function CeQuiPartira() {
+	return (
+		<div className="flex flex-col gap-cladd-3xs">
+			<ListeDeReleve>
+				{PLAN_PAR_DEFAUT.map((etape, rang) => (
+					<LigneDeReleve
+						key={etape.cle}
+						titre={etape.nom}
+						ligne={
+							etape.automatique
+								? delaiEnClair(rang, etape.attente)
+								: `${delaiEnClair(rang, etape.attente)}, vous décidez`
+						}
+					/>
+				))}
+			</ListeDeReleve>
+			<ul className="flex flex-col gap-1.5 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+				<li>Par e-mail, à votre nom. Les réponses arrivent à votre adresse.</li>
+				<li>En semaine, entre 9 h et 18 h.</li>
+				<li>Chaque relance s’affiche une heure avant de partir, et se retient d’un geste.</li>
+				<li>
+					La lettre officielle réclame le montant du jour, pénalités et frais compris. Si un avoir
+					ou un règlement n’est pas noté, retenez-la et notez-le.
+				</li>
+				<li>
+					Un paiement arrête tout. Un client en procédure collective ou radié n’est pas relancé, et
+					un client se retire du pilote depuis sa fiche.
+				</li>
+			</ul>
+		</div>
 	);
 }
 

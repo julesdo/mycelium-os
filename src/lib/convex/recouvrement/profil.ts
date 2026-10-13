@@ -289,6 +289,87 @@ export const enregistrerCourriers = authedMutation({
 });
 
 /**
+ * L'EN-TÊTE DES LETTRES, POSÉ AUX PREMIERS PAS (13/10/2026) : qui signe, où l'on
+ * vous répond, où l'on vous paie.
+ *
+ * ⚠️ UN CHAMP VIDE NE TOUCHE À RIEN, à l'inverse d'`enregistrerCourriers`. Les
+ * premiers pas ne demandent que ces quatre valeurs ; passer par la mutation du
+ * compte obligerait à renvoyer le capital, le greffe et le téléphone, et un
+ * oubli les effacerait. Ici, rien de ce qu'on ne demande pas ne s'écrit.
+ *
+ * Les deux contrôles sont ceux du compte, mot pour mot : une adresse qui n'en
+ * est pas une, un IBAN dont la clé ne tombe pas, se refusent en NOMMANT la
+ * valeur reçue.
+ */
+export const enregistrerEnTete = authedMutation({
+	args: {
+		signataireNom: v.string(),
+		signataireQualite: v.string(),
+		email: v.string(),
+		iban: v.string()
+	},
+	returns: v.null(),
+	handler: async (ctx, args): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		const existant = await ctx.db
+			.query('profilsCreancier')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+		/*
+		  ⚠️ UNE ENTREPRISE QUE LE REGISTRE NE CONNAÎT PAS N'A PAS ENCORE DE PROFIL :
+		  elle s'est créée avec son seul nom. Le refuser ici bloquerait les premiers
+		  pas sur une question que le gérant ne peut pas résoudre ; le profil naît
+		  donc du nom qu'il a écrit, sans numéro — le verrou « Votre identité de
+		  créancier » de l'accueil reste levé tant que le SIREN manque, et rien ne
+		  qualifie le gérant de commerçant (`unknown`).
+		*/
+		let profilId = existant?._id;
+		if (profilId === undefined) {
+			const organisation = await ctx.db.get(organizationId);
+			const denomination = organisation?.name.trim() ?? '';
+			if (denomination === '') {
+				throw new ConvexError(
+					'Renseignez d’abord votre entreprise : sa dénomination s’imprime en tête des courriers.'
+				);
+			}
+			profilId = await ctx.db.insert('profilsCreancier', {
+				organizationId,
+				denomination,
+				estCommercant: 'unknown',
+				majLe: Date.now()
+			});
+		}
+		const email = args.email.trim();
+		if (email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+			throw new ConvexError(`« ${email} » n’est pas une adresse électronique.`);
+		}
+		const ibanSaisi = args.iban.trim();
+		let iban: string | undefined;
+		if (ibanSaisi !== '') {
+			const lu = lireIban(ibanSaisi);
+			if (!lu.ok) {
+				throw new ConvexError(
+					lu.motif === 'FORME'
+						? `« ${ibanSaisi} » n’a pas la forme d’un IBAN : deux lettres de pays, deux chiffres de clé, puis le numéro de compte.`
+						: `« ${ibanSaisi} » a la forme d’un IBAN, mais sa clé de contrôle ne tombe pas : un chiffre est faux.`
+				);
+			}
+			iban = lu.iban;
+		}
+		const signataireNom = args.signataireNom.trim();
+		const signataireQualite = args.signataireQualite.trim();
+		await ctx.db.patch(profilId, {
+			...(signataireNom === '' ? {} : { signataireNom }),
+			...(signataireQualite === '' ? {} : { signataireQualite }),
+			...(email === '' ? {} : { email }),
+			...(iban === undefined ? {} : { iban }),
+			majLe: Date.now()
+		});
+		return null;
+	}
+});
+
+/**
  * LES RÈGLES DE L'ÉTABLISSEMENT, POSÉES UNE FOIS POUR TOUS LES DOSSIERS.
  *
  * ═══════════════════════════════════════════════════════════════════════════
@@ -323,9 +404,7 @@ export const enregistrerReglesDeCalcul = authedMutation({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.first();
 		if (profil === null) {
-			throw new ConvexError(
-				'Renseignez d’abord votre entreprise : ces règles s’attachent à elle.'
-			);
+			throw new ConvexError('Renseignez d’abord votre entreprise : ces règles s’attachent à elle.');
 		}
 		// ⚠️ LES DÉLAIS PROPOSÉS SONT LES TROIS DE L'ÉCRAN, et un quatrième saisi
 		// à la main ne se pose pas en silence : il se refuse en le disant.
