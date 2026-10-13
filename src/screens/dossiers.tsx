@@ -25,7 +25,9 @@ import {
 	Lien,
 	ListeAnalyses,
 	ListeDeCartes,
+	NOM_DU_PILOTE,
 	PageEcran,
+	Plume,
 	dateRelative,
 	eurosCentimes,
 	jourDecale,
@@ -150,6 +152,8 @@ export interface DossiersAffiches {
 	readonly onRelancer?: (creanceId: string, delaiJours: number) => void | Promise<void>;
 	/** Poser un rappel sur un dossier : ce jour-là, il remonte dans « Aujourd'hui ». */
 	readonly onRappeler?: (creanceId: string, rappelLe: string) => void | Promise<void>;
+	/** Parler de ce dossier à Plume : sa conversation, depuis le menu de l'appui long. */
+	readonly onDemanderAPlume?: (creanceId: string) => void;
 }
 
 /** L'ordre des groupes : celui du fil d'un dossier. Ce qui est clos vient en dernier. */
@@ -298,7 +302,8 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 		onPreparerRelances,
 		onFermerLeLot,
 		onRelancer,
-		onRappeler
+		onRappeler,
+		onDemanderAPlume
 	} = donnees.valeur;
 	const delai = delaiTouche ?? delaiParDefaut ?? DELAIS[0];
 
@@ -379,6 +384,20 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 	 * l'on peut encore écrire, et qui n'a pas déjà une lettre qui attend. Une
 	 * seconde lettre identique à valider ferait envoyer deux fois la même.
 	 */
+	/** Au menu de l'appui long, sur chaque carte : parler de CE dossier à Plume (13/10/2026). */
+	function menuDe(dossier: DossierDeLIndex): ActionDeCarte[] {
+		if (onDemanderAPlume === undefined) return [];
+		return [
+			{
+				cle: 'plume',
+				libelle: NOM_DU_PILOTE,
+				nomComplet: `Demander à ${NOM_DU_PILOTE}`,
+				icone: <Plume taille={22} decoratif />,
+				onClick: () => onDemanderAPlume(dossier._id)
+			}
+		];
+	}
+
 	function gestesDe(dossier: DossierDeLIndex): ActionDeCarte[] {
 		return [
 			...(onRelancer !== undefined && relancable(dossier) && !dossier.courrierAValider
@@ -567,6 +586,7 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 												key={dossier._id}
 												titre={dossier.debiteur}
 												actions={gestesDe(dossier)}
+												menuEnPlus={menuDe(dossier)}
 											>
 												<CarteLien
 													vers="/app/dossier/$id"

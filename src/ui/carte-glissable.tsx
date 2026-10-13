@@ -89,11 +89,18 @@ interface Geste {
 
 export function CarteGlissable({
 	actions,
+	menuEnPlus = [],
 	titre,
 	children
 }: {
-	/** Un ou deux gestes. Vide, la carte se rend telle quelle. */
+	/** Un ou deux gestes. Vide (et sans `menuEnPlus`), la carte se rend telle quelle. */
 	readonly actions: readonly ActionDeCarte[];
+	/**
+	 * CE QUE LE MENU DE L'APPUI LONG AJOUTE, sans geste balayé : « Demander à Plume »
+	 * (13/10/2026). Un geste de plus sous le doigt ferait trois disques ; au menu, il
+	 * est une rangée de plus, comme « Partager » dans le menu de Mail.
+	 */
+	readonly menuEnPlus?: readonly ActionDeCarte[];
 	/** Le nom de la carte : le titre du menu de l'appui long. */
 	readonly titre: string;
 	readonly children: ReactNode;
@@ -130,7 +137,7 @@ export function CarteGlissable({
 		[]
 	);
 
-	if (actions.length === 0) return <>{children}</>;
+	if (actions.length === 0 && menuEnPlus.length === 0) return <>{children}</>;
 
 	function fermer() {
 		poser(devant.current, dessous.current, largeur, 0, true);
@@ -179,6 +186,12 @@ export function CarteGlissable({
 					const dy = evenement.clientY - g.y0;
 					if (g.sens === null) {
 						if (Math.abs(dx) > SEUIL_SENS && Math.abs(dx) > Math.abs(dy)) {
+							// Rien à découvrir sous la carte : le doigt qui glisse n'est pas un appui long.
+							if (actions.length === 0) {
+								annulerAppuiLong();
+								geste.current = null;
+								return;
+							}
 							g.sens = 'horizontal';
 							annulerAppuiLong();
 							// Le doigt peut sortir de la carte sans lâcher le geste. Un pointeur
@@ -282,7 +295,7 @@ export function CarteGlissable({
 			<FeuillePleinEcran ouverte={menu} onFermer={() => setMenu(false)} titre={titre}>
 				<SectionDeFeuille>
 					<ListeAnalyses>
-						{actions.map((action) => (
+						{[...actions, ...menuEnPlus].map((action) => (
 							<LigneBouton
 								key={action.cle}
 								genre="contenu"

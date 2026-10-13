@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
 import { useQuery } from '../../app/donnees';
 import { precharger } from '../../app/prechargement';
@@ -55,6 +55,7 @@ function PageDossiers() {
 	const profilCreancier = useQuery(api.recouvrement.profil.monProfil, {});
 	const preparerEnLot = useMutation(api.recouvrement.envois.preparerEnLot);
 	const gestes = useGestesDeDossier();
+	const navigate = useNavigate();
 
 	/**
 	 * ⚠️ TROIS ÉTATS, PAS UN BOOLÉEN. « En cours » et « fait » ne se déduisent pas
@@ -149,7 +150,9 @@ function PageDossiers() {
 		onPreparerRelances: lancer,
 		onFermerLeLot: () => setLot('AUCUN'),
 		onRelancer: (creanceId, delaiJours) => gestes.relancer(creanceId, nomDe(creanceId), delaiJours),
-		onRappeler: (creanceId, rappelLe) => gestes.rappeler(creanceId, nomDe(creanceId), rappelLe)
+		onRappeler: (creanceId, rappelLe) => gestes.rappeler(creanceId, nomDe(creanceId), rappelLe),
+		onDemanderAPlume: (creanceId) =>
+			void navigate({ to: '/app/pilote/$id', params: { id: creanceId } })
 	};
 
 	return <EcranDossiers donnees={{ etat: 'pret', valeur }} />;
