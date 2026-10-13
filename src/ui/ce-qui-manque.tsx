@@ -72,8 +72,8 @@ export function ceQuiManque({
 }: {
 	readonly profilCreancierComplet: boolean;
 	/**
-	 * Ce qui s'imprime en tête d'une lettre : le signataire, son adresse
-	 * électronique, l'IBAN. Sans eux, AUCUN courrier ne se compose.
+	 * Ce qui s'imprime sous une lettre : qui signe, sa fonction, l'adresse des
+	 * réponses. Sans eux, AUCUN courrier ne se compose.
 	 */
 	readonly enTeteDeCourrierComplet: boolean;
 	readonly nombreFactures: number;
@@ -147,8 +147,14 @@ export function ceQuiManque({
 		verrous.push({
 			cle: 'courriers',
 			titre: 'Ce qui s’imprime sur vos courriers',
-			debloque: 'Sans le signataire et l’IBAN, aucune lettre ne se compose',
-			vers: '/app/compte'
+			debloque: 'Sans qui signe et votre adresse, aucune lettre ne se compose',
+			/*
+			  ⚠️ VERS L'ÉTAPE DES PREMIERS PAS (13/10/2026), pas vers le compte :
+			  l'étape montre l'aperçu de ce que verra le client et propose les
+			  dirigeants du registre ; le formulaire du compte demandait tout à froid.
+			*/
+			vers: '/bienvenue',
+			recherche: { etape: 'lettres' }
 		});
 	}
 

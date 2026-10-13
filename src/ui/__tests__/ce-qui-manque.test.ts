@@ -69,10 +69,13 @@ describe('ce qui manque', () => {
 
 		const [verrou] = ceQuiManque({ ...TOUT_VA_BIEN, enTeteDeCourrierComplet: false });
 		expect(verrou?.titre).toBe('Ce qui s’imprime sur vos courriers');
-		// Le POURQUOI, et il est exact : `composer()` refuse sans le signataire ni
-		// l'IBAN, et c'est ce refus qu'on découvrait le jour où l'on voulait écrire.
+		// Le POURQUOI, et il est exact : `composer()` refuse sans qui signe ni
+		// l'adresse des réponses, et c'est ce refus qu'on découvrait le jour où
+		// l'on voulait écrire.
 		expect(verrou?.debloque).toContain('aucune lettre ne se compose');
-		expect(verrou?.vers).toBe('/app/compte');
+		// L'étape des lettres des premiers pas, avec son aperçu (13/10/2026).
+		expect(verrou?.vers).toBe('/bienvenue');
+		expect(verrou?.recherche).toEqual({ etape: 'lettres' });
 	});
 
 	it('compte les débiteurs que le radar ne peut pas suivre', () => {

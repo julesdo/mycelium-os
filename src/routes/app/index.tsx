@@ -937,16 +937,21 @@ function File() {
 						profilCreancierComplet: profil !== null && profil.siren !== undefined,
 						/*
 						  LES TROIS CHAMPS SANS LESQUELS UNE LETTRE REFUSE DE SE COMPOSER,
-						  et rien qu'eux : le signataire, son adresse électronique, l'IBAN.
-						  Le capital et la ville du greffe s'impriment quand ils sont là et
-						  ne bloquent rien — les exiger ferait clignoter un verrou qu'on ne
-						  peut pas lever.
+						  et rien qu'eux : qui signe, sa fonction, l'adresse des réponses
+						  (`gabarits/commun.ts`, `manquesCreancier`). Le capital et la ville
+						  du greffe s'impriment quand ils sont là et ne bloquent rien.
+
+						  ⚠️ L'IBAN N'EN FAIT PLUS PARTIE (13/10/2026) : sans lui, la lettre
+						  officielle renvoie aux modalités des factures (`SELON_FACTURES`,
+						  `pilote.ts`). Le réclamer ici disait « aucune lettre ne se compose »
+						  à un gérant dont les lettres se composaient, et contredisait les
+						  premiers pas, où il se donne « plus tard ».
 						*/
 						enTeteDeCourrierComplet:
 							profil !== null &&
 							profil.signataireNom !== undefined &&
-							profil.email !== undefined &&
-							profil.iban !== undefined,
+							profil.signataireQualite !== undefined &&
+							profil.email !== undefined,
 						nombreFactures: revelation.nombreFactures,
 						debiteursSansSiren: debiteurs.filter((d) => d.siren === undefined).length
 					}),
