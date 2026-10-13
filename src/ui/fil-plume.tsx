@@ -260,8 +260,11 @@ export function TravailDePlume({
 	const courante = etapes.find((e) => e.etat === 'courante');
 	return (
 		<div className="flex items-start gap-2.5">
-			<AvatarPlume humeur="travaille" taille={30} className="mt-0.5" />
+			<AvatarPlume humeur="reflechit" taille={30} className="mt-0.5" />
 			<div className="flex min-w-0 flex-1 flex-col gap-1.5 pt-1">
+				{/* Il réfléchit : la bulle et ses trois points, comme chez Duolingo et
+				    dans toute messagerie (13/10/2026). Les étapes disent à quoi. */}
+				<PointsDeSuspension />
 				{titre === undefined ? null : <p className="text-cladd-2xs font-medium">{titre}</p>}
 				<ol className="flex flex-col gap-1.5 border-l border-cladd-outline pl-3">
 					{etapes.map((etape, i) => (
@@ -354,6 +357,27 @@ export function SuggestionsAPlume({
 				</button>
 			))}
 		</div>
+	);
+}
+
+/**
+ * TROIS POINTS DANS UNE BULLE — Plume réfléchit, ou va parler (13/10/2026).
+ * Immobiles sous `prefers-reduced-motion`, et dits au lecteur d'écran.
+ */
+export function PointsDeSuspension({ className }: { readonly className?: string }) {
+	return (
+		<span
+			role="status"
+			aria-label={`${NOM_DU_PILOTE} réfléchit`}
+			className={cn(
+				'points-plume inline-flex h-7 w-fit items-center gap-1 rounded-full px-3',
+				className
+			)}
+		>
+			<span />
+			<span />
+			<span />
+		</span>
 	);
 }
 

@@ -26,6 +26,19 @@ import { cn } from './cn';
  *   · `attention` — quelque chose attend le gérant ;
  *   · `ecoute`    — le gérant lui parle.
  *
+ * ⚠️ ET CINQ DE PLUS LE 13/10/2026, SUR DUOLINGO. Le fondateur : « il manque la
+ * figure de Plume animé qui fait plusieurs têtes, gestes selon ce qu'il fait, comme
+ * réfléchir avec une bulle et trois petits points ». Duo change de tête et de geste
+ * à chaque moment d'une leçon (Mobbin, 13/10) ; Plume aussi :
+ *
+ *   · `reflechit` — la main à la joue, les yeux en l'air, et une bulle de pensée où
+ *                   trois points se suivent (`pensee`, aux grandes tailles) ;
+ *   · `ecrit`     — il écrit une relance : une feuille dont les lignes se tracent ;
+ *   · `fete`      — de l'argent est rentré, la journée est bouclée : il saute, les
+ *                   deux bras levés, et des confettis d'encre partent ;
+ *   · `salue`     — il dit bonjour, la main haute ;
+ *   · `dort`      — la nuit, rien ne tourne : les yeux fermés, et des « z ».
+ *
  * Un personnage qui sourit pendant qu'un envoi échoue mentirait : l'appelant
  * choisit l'humeur d'après l'état réel, jamais pour faire joli.
  *
@@ -37,7 +50,17 @@ import { cn } from './cn';
 /** Le nom du pilote, à UN seul endroit : le changer ici le change partout. */
 export const NOM_DU_PILOTE = 'Plume';
 
-export type HumeurPlume = 'repos' | 'travaille' | 'content' | 'attention' | 'ecoute';
+export type HumeurPlume =
+	| 'repos'
+	| 'travaille'
+	| 'content'
+	| 'attention'
+	| 'ecoute'
+	| 'reflechit'
+	| 'ecrit'
+	| 'fete'
+	| 'salue'
+	| 'dort';
 
 /** Ce que l'humeur dit à un lecteur d'écran. */
 const HUMEUR_EN_MOTS: Readonly<Record<HumeurPlume, string>> = {
@@ -45,7 +68,12 @@ const HUMEUR_EN_MOTS: Readonly<Record<HumeurPlume, string>> = {
 	travaille: 'au travail',
 	content: 'content',
 	attention: 'a besoin de vous',
-	ecoute: 'vous écoute'
+	ecoute: 'vous écoute',
+	reflechit: 'réfléchit',
+	ecrit: 'écrit',
+	fete: 'fait la fête',
+	salue: 'vous salue',
+	dort: 'dort'
 };
 
 /** Le décalage des pupilles : où il regarde. */
@@ -54,7 +82,12 @@ const REGARD: Readonly<Record<HumeurPlume, { readonly x: number; readonly y: num
 	travaille: { x: 0, y: 1.7 },
 	content: { x: 0, y: 0 },
 	attention: { x: 0, y: -1.3 },
-	ecoute: { x: -1.1, y: -1.1 }
+	ecoute: { x: -1.1, y: -1.1 },
+	reflechit: { x: 1.5, y: -2 },
+	ecrit: { x: 1.4, y: 1.9 },
+	fete: { x: 0, y: 0 },
+	salue: { x: 0, y: -0.6 },
+	dort: { x: 0, y: 0 }
 };
 
 /** La ligne des yeux : la goutte est lourde du bas, le visage aussi. */
@@ -63,7 +96,29 @@ const Y_OEIL = 37;
 function Bouche({ humeur }: { humeur: HumeurPlume }) {
 	switch (humeur) {
 		case 'content':
+		case 'salue':
 			return <path d="M26.5 46 Q32 53.5 37.5 46 Z" className="plume-encre" />;
+		case 'fete':
+			// Grande ouverte, la langue rose : il crie de joie.
+			return (
+				<g>
+					<path d="M25.4 45.2 Q32 57 38.6 45.2 Z" className="plume-encre" />
+					<ellipse cx="32" cy="51.6" rx="3.6" ry="2" className="plume-langue" />
+				</g>
+			);
+		case 'reflechit':
+			// Un petit « o » de côté : il pèse le pour et le contre.
+			return <ellipse cx="34.4" cy="48.4" rx="1.7" ry="1.5" className="plume-encre" />;
+		case 'dort':
+			return <ellipse cx="32" cy="48.6" rx="1.6" ry="1.9" className="plume-encre" />;
+		case 'ecrit':
+			// Concentré : la bouche pincée, le bout de la langue au coin.
+			return (
+				<g>
+					<path d="M29.6 48 Q32 49 34.2 47.8" className="plume-trait" strokeWidth={2} fill="none" />
+					<ellipse cx="35.4" cy="48.9" rx="1.4" ry="1.1" className="plume-langue" />
+				</g>
+			);
 		case 'travaille':
 			return (
 				<path
@@ -88,7 +143,18 @@ function Bouche({ humeur }: { humeur: HumeurPlume }) {
 }
 
 function Oeil({ cx, humeur }: { cx: number; humeur: HumeurPlume }) {
-	if (humeur === 'content') {
+	if (humeur === 'dort') {
+		// Fermés, la courbe vers le bas : il dort paisiblement.
+		return (
+			<path
+				d={`M${cx - 5} ${Y_OEIL} Q${cx} ${Y_OEIL + 3.6} ${cx + 5} ${Y_OEIL}`}
+				className="plume-trait"
+				strokeWidth={2.4}
+				fill="none"
+			/>
+		);
+	}
+	if (humeur === 'content' || humeur === 'fete') {
 		// Les yeux qui sourient : deux arcs, comme ^ ^.
 		return (
 			<path
@@ -104,17 +170,149 @@ function Oeil({ cx, humeur }: { cx: number; humeur: HumeurPlume }) {
 	return (
 		<g className="plume-oeil">
 			<ellipse cx={cx} cy={Y_OEIL} rx={grand ? 6.4 : 6} ry={grand ? 7.6 : 7} fill="#fff" />
-			<g className={cn('plume-pupille', humeur === 'travaille' && 'plume-pupille-lit')}>
+			<g
+				className={cn(
+					'plume-pupille',
+					humeur === 'travaille' && 'plume-pupille-lit',
+					humeur === 'ecrit' && 'plume-pupille-ecrit'
+				)}
+			>
 				<circle cx={cx + regard.x} cy={Y_OEIL + regard.y} r="3.4" className="plume-encre" />
 				<circle cx={cx + regard.x + 1.2} cy={Y_OEIL + regard.y - 1.4} r="1.1" fill="#fff" />
 			</g>
-			{humeur === 'travaille' ? (
+			{humeur === 'travaille' || humeur === 'ecrit' ? (
 				// La paupière mi-close : il lit, concentré.
 				<path
 					d={`M${cx - 6.4} ${Y_OEIL - 2.6} Q${cx} ${Y_OEIL - 5.2} ${cx + 6.4} ${Y_OEIL - 2.6} L${cx + 6.4} ${Y_OEIL - 8} L${cx - 6.4} ${Y_OEIL - 8} Z`}
 					className="plume-corps"
 				/>
 			) : null}
+		</g>
+	);
+}
+
+function BrasGauche() {
+	return (
+		<g className="plume-bras-gauche">
+			<ellipse
+				cx="9.6"
+				cy="45"
+				rx="3.5"
+				ry="5.6"
+				className="plume-bras"
+				transform="rotate(16 9.6 45)"
+			/>
+		</g>
+	);
+}
+
+function BrasDroit() {
+	return (
+		<g className="plume-bras-droit">
+			<ellipse
+				cx="54.4"
+				cy="45"
+				rx="3.5"
+				ry="5.6"
+				className="plume-bras"
+				transform="rotate(-16 54.4 45)"
+			/>
+		</g>
+	);
+}
+
+/**
+ * LA BULLE DE PENSÉE ET SES TROIS POINTS — elle sort de sa tête, en haut à droite.
+ * Elle déborde du cadre : le SVG est en `overflow-visible`.
+ */
+function Pensee() {
+	return (
+		<g className="plume-pensee" aria-hidden>
+			<circle cx="51.5" cy="15" r="1.6" className="plume-nuage" />
+			<circle cx="55.8" cy="9.4" r="2.5" className="plume-nuage" />
+			<rect x="57" y="-10" width="25" height="14" rx="7" className="plume-nuage" />
+			<circle cx="63.4" cy="-3" r="1.8" className="plume-point plume-point-1" />
+			<circle cx="69.5" cy="-3" r="1.8" className="plume-point plume-point-2" />
+			<circle cx="75.6" cy="-3" r="1.8" className="plume-point plume-point-3" />
+		</g>
+	);
+}
+
+/** LA FEUILLE QU'IL ÉCRIT : ses lignes se tracent l'une après l'autre, la plume suit. */
+function Feuille() {
+	return (
+		<g className="plume-feuille" aria-hidden>
+			<rect x="40.5" y="46" width="21" height="15.5" rx="2.2" className="plume-papier" />
+			<path d="M43.5 50.6 H58" className="plume-ligne plume-ligne-1" />
+			<path d="M43.5 54 H58" className="plume-ligne plume-ligne-2" />
+			<path d="M43.5 57.4 H53" className="plume-ligne plume-ligne-3" />
+			<g className="plume-stylet">
+				<path
+					d="M58.6 40.2 C61.6 37.2 64.6 36.6 66 37 C65.4 39.6 62.6 42.2 59.6 43.2 Z"
+					className="plume-barbe"
+				/>
+				<path d="M59.4 42.6 L55.4 50.2" className="plume-trait" strokeWidth={1.3} fill="none" />
+			</g>
+		</g>
+	);
+}
+
+/** LES CONFETTIS D'ENCRE — aucune teinte de seuil : crème, rose, bleu et lavande. */
+function Confettis() {
+	return (
+		<g className="plume-confettis" aria-hidden>
+			<rect
+				x="8"
+				y="6"
+				width="3.4"
+				height="2"
+				rx="0.6"
+				className="plume-confetti plume-confetti-1"
+			/>
+			<circle cx="20" cy="1" r="1.5" className="plume-confetti plume-confetti-2" />
+			<rect
+				x="31"
+				y="-4"
+				width="3.4"
+				height="2"
+				rx="0.6"
+				className="plume-confetti plume-confetti-3"
+			/>
+			<circle cx="44" cy="0" r="1.5" className="plume-confetti plume-confetti-4" />
+			<rect
+				x="54"
+				y="6"
+				width="3.4"
+				height="2"
+				rx="0.6"
+				className="plume-confetti plume-confetti-5"
+			/>
+			<circle cx="3" cy="18" r="1.3" className="plume-confetti plume-confetti-6" />
+			<rect
+				x="60"
+				y="18"
+				width="3"
+				height="1.8"
+				rx="0.6"
+				className="plume-confetti plume-confetti-7"
+			/>
+		</g>
+	);
+}
+
+/** LE SOMMEIL : trois « z » qui montent et s'effacent. */
+function Sommeil() {
+	return (
+		<g className="plume-sommeil" aria-hidden>
+			<text x="47" y="14" className="plume-z plume-z-1">
+				z
+			</text>
+			<text x="53" y="6" className="plume-z plume-z-2">
+				z
+			</text>
+			<text x="59" y="-3" className="plume-z plume-z-3">
+				Z
+			</text>
 		</g>
 	);
 }
@@ -130,15 +328,25 @@ export function Plume({
 	taille = 32,
 	sol = false,
 	decoratif = false,
+	pensee,
 	className
 }: {
 	readonly humeur?: HumeurPlume;
 	readonly taille?: number;
 	readonly sol?: boolean;
+	/**
+	 * La bulle de pensée quand il réfléchit. Par défaut, dès 40 px : dans la barre, il
+	 * n'en a pas la place ; à côté d'une bulle qui écrit déjà ses trois points, on la
+	 * retire (`false`).
+	 */
+	readonly pensee?: boolean;
 	/** Vrai quand un texte voisin le nomme déjà : il se tait pour le lecteur d'écran. */
 	readonly decoratif?: boolean;
 	readonly className?: string;
 }) {
+	const droitDevant =
+		humeur === 'salue' || humeur === 'fete' || humeur === 'reflechit' || humeur === 'ecrit';
+	const gaucheDevant = humeur === 'fete';
 	return (
 		<svg
 			viewBox="0 0 64 64"
@@ -150,6 +358,9 @@ export function Plume({
 				: { role: 'img', 'aria-label': `${NOM_DU_PILOTE}, ${HUMEUR_EN_MOTS[humeur]}` })}
 		>
 			{sol ? <ellipse cx="32" cy="60.5" rx="15" ry="2.6" className="plume-ombre" /> : null}
+			{humeur === 'fete' ? <Confettis /> : null}
+			{humeur === 'dort' ? <Sommeil /> : null}
+			{humeur === 'reflechit' && (pensee ?? taille >= 40) ? <Pensee /> : null}
 			<g className="plume-tout">
 				{/* La plume d'écriture, plantée derrière la tête : il écrit vos relances. Elle se balance. */}
 				<g className="plume-aigrette">
@@ -171,25 +382,9 @@ export function Plume({
 						strokeLinecap="round"
 					/>
 				</g>
-				{/* Les bras : deux petites nageoires, la droite salue quand il est content. */}
-				<ellipse
-					cx="9.6"
-					cy="45"
-					rx="3.5"
-					ry="5.6"
-					className="plume-bras"
-					transform="rotate(16 9.6 45)"
-				/>
-				<g className="plume-bras-droit">
-					<ellipse
-						cx="54.4"
-						cy="45"
-						rx="3.5"
-						ry="5.6"
-						className="plume-bras"
-						transform="rotate(-16 54.4 45)"
-					/>
-				</g>
+				{/* Les bras : deux petites nageoires, derrière lui au repos. */}
+				{gaucheDevant ? null : <BrasGauche />}
+				{droitDevant ? null : <BrasDroit />}
 				{/* Le corps : une goutte d'encre posée, sa pointe recourbée comme un coup de plume. */}
 				<path
 					d="M31.2 6.4 C33.6 5.2 37 5.6 38.6 7.6 C36.4 7.2 34.8 8 34.2 9.4 C37.2 15.2 46 20.6 51.4 28 C54.8 32.6 56.4 37.4 56.4 42.6 C56.4 52.4 46.2 58.4 32 58.4 C17.8 58.4 7.6 52.4 7.6 42.6 C7.6 37.4 9.2 32.6 12.6 28 C18.6 19.8 28.4 13.8 31.2 6.4 Z"
@@ -209,6 +404,11 @@ export function Plume({
 				<Oeil cx={24} humeur={humeur} />
 				<Oeil cx={40} humeur={humeur} />
 				<Bouche humeur={humeur} />
+				{humeur === 'ecrit' ? <Feuille /> : null}
+				{/* Un bras qui salue, qui fête ou qui tient la joue passe DEVANT lui : derrière,
+				    le corps le cachait presque entier. */}
+				{gaucheDevant ? <BrasGauche /> : null}
+				{droitDevant ? <BrasDroit /> : null}
 			</g>
 		</svg>
 	);

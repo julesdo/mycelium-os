@@ -31,3 +31,17 @@
 export function aujourdHuiISO(): string {
 	return new Date().toISOString().slice(0, 10);
 }
+
+/**
+ * L'HEURE QU'IL EST À PARIS, de 0 à 23 — pour l'humeur de Plume seulement (il dort
+ * la nuit). Rien de ce qui se calcule ne la lit : un décompte prend sa date en
+ * argument.
+ */
+export function heureDeParis(): number {
+	const heure = new Intl.DateTimeFormat('fr-FR', {
+		timeZone: 'Europe/Paris',
+		hour: '2-digit',
+		hourCycle: 'h23'
+	}).format(new Date());
+	return Number(heure);
+}

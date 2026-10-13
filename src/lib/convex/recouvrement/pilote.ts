@@ -774,9 +774,7 @@ async function composerEtape(
 			: {
 					promesseManquee: {
 						le: promesse.le,
-						...(promesse.montant === undefined
-							? {}
-							: { montant: depuisCentimes(promesse.montant) })
+						...(promesse.montant === undefined ? {} : { montant: depuisCentimes(promesse.montant) })
 					}
 				})
 	});
@@ -1528,12 +1526,17 @@ export const relancesAutomatiques = authedQuery({
 export const humeurDePlume = authedQuery({
 	args: {},
 	returns: v.object({
-		humeur: v.union(v.literal('travaille'), v.literal('attention'), v.literal('repos')),
+		humeur: v.union(
+			v.literal('travaille'),
+			v.literal('ecrit'),
+			v.literal('attention'),
+			v.literal('repos')
+		),
 		aDemarrer: v.number()
 	}),
 	handler: async (
 		ctx
-	): Promise<{ humeur: 'travaille' | 'attention' | 'repos'; aDemarrer: number }> => {
+	): Promise<{ humeur: 'travaille' | 'ecrit' | 'attention' | 'repos'; aDemarrer: number }> => {
 		const { organizationId } = await getUserOrg(ctx);
 		const recents = await ctx.db
 			.query('travauxPilote')
@@ -1547,11 +1550,17 @@ export const humeurDePlume = authedQuery({
 			)
 			.take(500);
 		const aDemarrer = prepares.filter((c) => c.statut !== 'CLOSE').length;
-		const humeur = recents.some((t) => t.etat === 'EN_COURS')
-			? 'travaille'
-			: recents.find((t) => t.etat !== 'EN_ATTENTE')?.etat === 'ECHEC' || aDemarrer > 0
-				? 'attention'
-				: 'repos';
+		// Il ÉCRIT quand le travail en cours est une relance (13/10/2026) : la feuille et
+		// la plume disent ce qu'il fait mieux que des yeux qui lisent.
+		const enCours = recents.find((t) => t.etat === 'EN_COURS');
+		const humeur =
+			enCours !== undefined
+				? enCours.genre === 'RELANCES'
+					? 'ecrit'
+					: 'travaille'
+				: recents.find((t) => t.etat !== 'EN_ATTENTE')?.etat === 'ECHEC' || aDemarrer > 0
+					? 'attention'
+					: 'repos';
 		return { humeur, aDemarrer };
 	}
 });

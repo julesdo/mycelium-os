@@ -67,6 +67,7 @@ export function PiloteDuJour({ aujourdHui }: { readonly aujourdHui: string }) {
 				travaux: pilote.travaux.map((t) => ({
 					id: t.id,
 					titre: t.titre,
+					genre: t.genre,
 					etapes: t.etapes,
 					etat: t.etat,
 					bilan: t.bilan,

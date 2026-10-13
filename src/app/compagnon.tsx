@@ -5,6 +5,7 @@ import { useQuery } from './donnees';
 import { api } from '../lib/convex/_generated/api';
 import type { CibleDePlume } from '../lib/verticales/recouvrement/compagnon/presence';
 import { BoutonCompagnon, BullePlume, NOM_DU_PILOTE, type HumeurPlume } from '../ui';
+import { heureDeParis } from '../ui/horloge';
 import {
 	annoncerNotification,
 	paroleDePlume,
@@ -77,7 +78,10 @@ function PlumeAvecEtat({
 	// L'humeur seule, pas l'état entier : il change à chaque coche d'un travail.
 	const etat = useQuery(api.recouvrement.pilote.humeurDePlume, auRepos ? 'skip' : {});
 	const aDemarrer = etat?.aDemarrer ?? 0;
-	const humeur: HumeurPlume = etat?.humeur ?? 'repos';
+	const lue: HumeurPlume = etat?.humeur ?? 'repos';
+	// La nuit, rien ne tourne et rien n'attend : il dort (Duo aussi, à minuit).
+	const heure = heureDeParis();
+	const humeur: HumeurPlume = lue === 'repos' && (heure >= 22 || heure < 7) ? 'dort' : lue;
 	return (
 		<>
 			{auRepos ? null : <VoixDePlume />}

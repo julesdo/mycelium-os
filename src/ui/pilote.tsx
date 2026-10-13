@@ -34,6 +34,8 @@ export interface TravailPiloteAffiche {
 	readonly id: string;
 	/** Ce que fait le pilote, au présent : « Relit votre dépôt ». */
 	readonly titre: string;
+	/** Ce qu'il fait : une relance s'écrit (Plume tient sa plume), le reste se lit. */
+	readonly genre?: 'RELECTURE' | 'DOSSIERS' | 'RELANCES' | 'PAIEMENTS';
 	readonly etapes: readonly { readonly libelle: string; readonly faite: boolean }[];
 	readonly etat: 'EN_ATTENTE' | 'EN_COURS' | 'FAIT' | 'ECHEC';
 	/** Ce que le travail a produit, une fois fini. */
@@ -104,7 +106,9 @@ export function PiloteEnDirect({
 	const aDemarrer = pilote.aDemarrer ?? 0;
 	const humeur: HumeurPlume =
 		enCours !== null
-			? 'travaille'
+			? enCours.genre === 'RELANCES'
+				? 'ecrit'
+				: 'travaille'
 			: faits[0]?.etat === 'ECHEC' || aDemarrer > 0
 				? 'attention'
 				: 'repos';

@@ -26,7 +26,18 @@ import type { EcranDuProduit, EtatDemo } from './demo';
  * La salle seule les montre côte à côte : en production, une humeur suit l'état
  * réel du pilote, et on n'en voit qu'une à la fois.
  */
-const HUMEURS: readonly HumeurPlume[] = ['repos', 'travaille', 'content', 'attention', 'ecoute'];
+const HUMEURS: readonly HumeurPlume[] = [
+	'repos',
+	'travaille',
+	'content',
+	'attention',
+	'ecoute',
+	'reflechit',
+	'ecrit',
+	'fete',
+	'salue',
+	'dort'
+];
 
 function DemoPlume() {
 	return (
@@ -35,10 +46,10 @@ function DemoPlume() {
 				<Plume humeur="repos" taille={112} sol />
 				<p className="text-cladd-xs font-semibold">{NOM_DU_PILOTE}</p>
 			</div>
-			<div className="grid grid-cols-5 gap-cladd-3xs">
+			<div className="grid grid-cols-3 gap-x-cladd-3xs gap-y-cladd-xs pt-cladd-xs sm:grid-cols-5">
 				{HUMEURS.map((humeur) => (
 					<div key={humeur} className="flex flex-col items-center gap-2">
-						<Plume humeur={humeur} taille={56} sol />
+						<Plume humeur={humeur} taille={64} sol />
 						<AvatarPlume humeur={humeur} taille={32} />
 						<span className="text-cladd-3xs text-cladd-fg-soft">{humeur}</span>
 					</div>

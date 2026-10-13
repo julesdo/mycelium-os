@@ -393,6 +393,7 @@ export {
 	PageConversation,
 	ReponseDePlume,
 	PastilleDuRegard,
+	PointsDeSuspension,
 	SuggestionsAPlume,
 	TravailDePlume,
 	ID_DU_SELECTEUR_DE_PLUME,
