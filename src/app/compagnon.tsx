@@ -14,7 +14,6 @@ import {
 } from '../lib/verticales/recouvrement/compagnon/presence';
 import {
 	besoinsDuJour,
-	jourDeParis,
 	serieEnMots,
 	titreDeLaJournee
 } from '../lib/verticales/recouvrement/compagnon/journee';
@@ -28,6 +27,7 @@ import {
 	type HumeurPlume
 } from '../ui';
 import { aujourdHuiISO, heureDeParis } from '../ui/horloge';
+import { heureEnMots, jourDuRetour, quandEnMots } from './heures';
 import {
 	paroleDePlume,
 	prenomDe,
@@ -557,13 +557,19 @@ function SceneBranchee({
 						})
 					: undefined;
 
+	/*
+	  ⚠️ LA JOURNÉE N'EST PLUS EN TÊTE DE CHAQUE BULLE (14/10/2026). Une jauge et une
+	  série au-dessus de chaque phrase faisaient d'un collaborateur un jeu : « pas
+	  cheap », a dit le fondateur. Elle vit sur sa page et dans l'anneau du bouton ;
+	  elle ne revient ici que pour la journée bouclée, avec sa semaine en coches.
+	*/
 	return (
 		<ScenePlume
 			reflechit={reflechit}
 			texte={parole.texte}
 			{...(parole.semaine === undefined ? {} : { semaine: parole.semaine })}
 			{...(parole.releve === undefined ? {} : { releve: parole.releve })}
-			{...(journee === undefined
+			{...(journee === undefined || parole.semaine === undefined
 				? {}
 				: {
 						journee: {
@@ -603,49 +609,4 @@ function SceneBranchee({
 
 function minusculeInitiale(texte: string): string {
 	return texte.charAt(0).toLowerCase() + texte.slice(1);
-}
-
-const HEURE_DE_PARIS = new Intl.DateTimeFormat('fr-FR', {
-	timeZone: 'Europe/Paris',
-	hour: 'numeric',
-	minute: '2-digit'
-});
-const JOUR_DE_PARIS = new Intl.DateTimeFormat('fr-FR', {
-	timeZone: 'Europe/Paris',
-	weekday: 'long'
-});
-
-/** « 9 h », « 14 h 30 » : l'heure de Paris, comme on la dit. */
-function heureEnMots(instant: number): string {
-	const [heures, minutes] = HEURE_DE_PARIS.format(new Date(instant)).split(':');
-	return minutes === undefined || minutes === '00' ? `${heures} h` : `${heures} h ${minutes}`;
-}
-
-const JOUR_ET_MOIS_DE_PARIS = new Intl.DateTimeFormat('fr-FR', {
-	timeZone: 'Europe/Paris',
-	day: 'numeric',
-	month: 'long'
-});
-
-/**
- * « hier, 18 h 40 », « lundi », « le 9 octobre » : depuis quand Plume fait son point.
- * `null` le jour même : il parle alors de « votre passage de 14 h 02 ».
- */
-function jourDuRetour(instant: number): string | null {
-	const jour = jourDeParis(instant);
-	const maintenant = Date.now();
-	if (jour === jourDeParis(maintenant)) return null;
-	if (jour === jourDeParis(maintenant - 86_400_000)) return `hier, ${heureEnMots(instant)}`;
-	if (maintenant - instant < 6 * 86_400_000) return JOUR_DE_PARIS.format(new Date(instant));
-	return `le ${JOUR_ET_MOIS_DE_PARIS.format(new Date(instant))}`;
-}
-
-/** « aujourd'hui à 14 h 30 », « demain à 9 h », « lundi à 9 h » : quand part la suite. */
-function quandEnMots(instant: number): string {
-	const heure = heureEnMots(instant);
-	const jour = jourDeParis(instant);
-	const maintenant = Date.now();
-	if (jour === jourDeParis(maintenant)) return `aujourd’hui à ${heure}`;
-	if (jour === jourDeParis(maintenant + 86_400_000)) return `demain à ${heure}`;
-	return `${JOUR_DE_PARIS.format(new Date(instant))} à ${heure}`;
 }

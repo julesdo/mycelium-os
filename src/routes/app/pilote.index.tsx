@@ -7,6 +7,16 @@ import { api } from '../../lib/convex/_generated/api';
 import { useEchangeAvecPlume } from '../../app/echange-plume';
 import { messageDeLaPanne, useGestesDePlume } from '../../app/gestes-plume';
 import { evaluerPlafond } from '../../lib/verticales/recouvrement/compagnon/disponibilite';
+import {
+	serieEnMots,
+	somme,
+	titreDeLaJournee
+} from '../../lib/verticales/recouvrement/compagnon/journee';
+import {
+	engagementsDePlume,
+	etatDeLaVeille
+} from '../../lib/verticales/recouvrement/compagnon/veille';
+import { heureOuJour, quandEnMots } from '../../app/heures';
 import { relireTour } from '../../lib/verticales/recouvrement/compagnon/tour';
 import {
 	ECRANS_DE_PLUME,
@@ -22,7 +32,9 @@ import {
 	CarteBouton,
 	CarteLien,
 	FeuilleDActivation,
+	FeuilleDesEngagements,
 	ID_DU_SELECTEUR_DE_PLUME,
+	MaisonDePlume,
 	LigneDeReleve,
 	ListeDeCartes,
 	ListeDeReleve,
@@ -55,6 +67,11 @@ import {
  * Avant la première question, Plume dit toujours ce qu'il fait et a fait : son
  * travail en cours, ses derniers travaux, ce qui attend d'être démarré, les relances
  * qui partent bientôt, chacune avec « Retenir ».
+ *
+ * ⚠️ ET ELLE S'OUVRE SUR SA MAISON (14/10/2026) : où il en est en une phrase, trois
+ * faits vérifiables, sa journée, et ses engagements (`ui/maison-plume.tsx`,
+ * `compagnon/veille.ts`). C'est là que mène la capsule en direct, et le point du
+ * retour : la page où tout ce qu'il fait se vérifie.
  */
 export const Route = createFileRoute('/app/pilote/')({
 	/**
@@ -92,6 +109,8 @@ function ConversationDePlume() {
 	const dossiers = useQuery(api.recouvrement.lecture.indexDossiers, {});
 	const clients = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
 	const recentes = useQuery(api.recouvrement.conversationEtablissement.conversationsRecentes, {});
+	const journee = useQuery(api.recouvrement.journee.etat, {});
+	const [engagements, setEngagements] = useState(false);
 	const retenir = useMutation(api.recouvrement.pilote.retenir);
 	const activerRelances = useMutation(api.recouvrement.pilote.activerRelances);
 	const demanderAPlume = useAction(api.recouvrement.conversation.repondreSurLEtablissement);
@@ -384,9 +403,70 @@ function ConversationDePlume() {
 
 	const refusDuPlafond = fil === undefined ? null : evaluerPlafond(fil.compteur.cumul).refus;
 
+	/* ── Sa maison : où il en est, ses faits, sa journée, ses engagements ── */
+	const relancesAutomatiques = pilote?.envoiAutomatique === true;
+	const prochaine = [...programmes].sort((a, b) => a.partiraLe - b.partiraLe)[0];
+	const veille = etatDeLaVeille({
+		travail: travailDuPilote?.titre ?? null,
+		enAttente: journee === undefined ? aDemarrer : somme(journee.restants),
+		dossiersSuivis: ouverts.length,
+		relancesAutomatiques,
+		prochaine: prochaine === undefined ? null : quandEnMots(prochaine.partiraLe)
+	});
+	const maison =
+		pilote === undefined ? undefined : (
+			<MaisonDePlume
+				humeur={echange.enCours ? 'travaille' : veille.humeur}
+				titre={veille.titre}
+				ligne={veille.ligne}
+				faits={[
+					{
+						valeur: pilote.derniereVeille === null ? 'À venir' : heureOuJour(pilote.derniereVeille),
+						libelle: 'dernière relecture'
+					},
+					{
+						valeur: String(ouverts.length),
+						libelle: ouverts.length > 1 ? 'dossiers suivis' : 'dossier suivi'
+					},
+					{
+						valeur: relancesAutomatiques ? 'Activées' : 'Coupées',
+						libelle: 'relances automatiques'
+					}
+				]}
+				{...(journee === undefined
+					? {}
+					: {
+							journee: {
+								titre: titreDeLaJournee(
+									{ faits: journee.faits, total: journee.total, defis: journee.defis },
+									journee.tenue
+								),
+								serie: serieEnMots(journee.serie),
+								defis: journee.defis.map((defi) => ({
+									nom: defi.nom,
+									fait: defi.fait,
+									total: defi.total
+								}))
+							}
+						})}
+				onEngagements={() => setEngagements(true)}
+				{...(tours.length === 0
+					? {
+							invitation:
+								'Demandez-moi ce que vous voulez sur vos dossiers, dites-moi quoi faire, ou joignez-moi des factures.'
+						}
+					: {})}
+			/>
+		);
+
 	return (
 		<>
 			{echange.visionneuse}
+			<FeuilleDesEngagements
+				ouverte={engagements}
+				onFermer={() => setEngagements(false)}
+				engagements={engagementsDePlume(relancesAutomatiques)}
+			/>
 			<FeuilleDActivation
 				ouverte={activation}
 				onFermer={() => setActivation(false)}
@@ -417,6 +497,7 @@ function ConversationDePlume() {
 								}
 							}),
 					humeur,
+					...(maison === undefined ? {} : { maison }),
 					accueil: {
 						titre:
 							ouverts.length === 0

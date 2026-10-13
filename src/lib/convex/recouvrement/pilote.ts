@@ -8,6 +8,7 @@ import { getUserOrg, requireOrgAdmin } from '../lib/auth';
 import { sha256 } from '../../socle/empreinte';
 import { composerRelance } from '../../verticales/recouvrement/relance';
 import {
+	DELAI_POUR_RETENIR_MS,
 	PLAN_PAR_DEFAUT,
 	prochainCreneauDEnvoi,
 	type CleEtapePlan
@@ -68,12 +69,6 @@ const VEILLE_PERDUE_MS = 60_000;
  * par lots, un lot par veille, plutôt qu'en une liste de deux cents étapes.
  */
 const CLIENTS_PAR_TRAVAIL = 25;
-/**
- * LE TEMPS POUR RETENIR UNE RELANCE. Elle est composée, programmée, visible sur
- * l'accueil et dans son dossier ; pendant une heure, le gérant peut l'arrêter
- * d'un geste. C'est le « Annuler l'envoi » de Gmail, à l'échelle d'un courrier.
- */
-const DELAI_POUR_RETENIR_MS = 60 * 60 * 1000;
 /**
  * Le délai laissé au client par la lettre officielle, quand le gérant n'en a pas
  * choisi : le même que celui que propose l'écran (`DELAI_DE_RELANCE_PAR_DEFAUT`,

@@ -301,7 +301,7 @@ function SceneDeLaSalle({ scene }: { readonly scene: (typeof SCENES)[number] }) 
 						<ScenePlume
 							reflechit={reflechit}
 							texte={texte}
-							journee={journee}
+							{...(semaine === undefined ? {} : { journee })}
 							{...(semaine === undefined ? {} : { semaine })}
 							{...(releve === undefined ? {} : { releve })}
 							{...(geste === undefined ? {} : { libelleDuGeste: geste, onGeste: () => undefined })}

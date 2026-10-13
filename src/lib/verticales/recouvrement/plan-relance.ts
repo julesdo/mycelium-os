@@ -148,8 +148,23 @@ export function suiteDuPlan(args: {
 }
 
 /**
+ * LES HEURES OÙ UNE RELANCE PEUT PARTIR, heure de Paris, en semaine. Plume les dit
+ * dans ses engagements (`compagnon/veille.ts`) : ce qu'il promet est ce que le
+ * code fait, à un seul endroit.
+ */
+export const HEURES_D_ENVOI = { de: 9, a: 18 } as const;
+
+/**
+ * LE TEMPS POUR RETENIR UNE RELANCE. Elle est composée, programmée, visible sur
+ * l'accueil, dans son dossier et au-dessus de la barre ; pendant une heure, le
+ * gérant peut l'arrêter d'un geste. C'est le « Annuler l'envoi » de Gmail, à
+ * l'échelle d'un courrier.
+ */
+export const DELAI_POUR_RETENIR_MS = 60 * 60 * 1000;
+
+/**
  * LE PROCHAIN MOMENT OÙ UNE RELANCE PEUT PARTIR : un jour de semaine, entre 9 h
- * et 18 h, heure de Paris.
+ * et 18 h, heure de Paris (`HEURES_D_ENVOI`).
  *
  * ⚠️ UN RAPPEL REÇU LE DIMANCHE À 23 H SE LIT COMME UN ROBOT. Chaser et Upflow
  * n'envoient qu'aux heures de bureau ; le pilote aussi. Ce n'est pas une valeur
@@ -168,7 +183,9 @@ export function prochainCreneauDEnvoi(depuis: number): number {
 		const parts = paris.formatToParts(new Date(t));
 		const jour = parts.find((p) => p.type === 'weekday')?.value;
 		const heure = Number(parts.find((p) => p.type === 'hour')?.value);
-		return jour !== 'Sat' && jour !== 'Sun' && heure >= 9 && heure < 18;
+		return (
+			jour !== 'Sat' && jour !== 'Sun' && heure >= HEURES_D_ENVOI.de && heure < HEURES_D_ENVOI.a
+		);
 	};
 	let t = depuis;
 	// Quatre jours de quarts d'heure : un vendredi soir de pont trouve son lundi.

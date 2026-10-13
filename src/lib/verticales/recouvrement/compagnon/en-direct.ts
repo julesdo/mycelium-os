@@ -1,3 +1,5 @@
+import { DELAI_POUR_RETENIR_MS } from '../plan-relance';
+
 /**
  * PLUME EN DIRECT — ce qu'il fait EN CE MOMENT, dit au-dessus de la barre (14/10/2026).
  *
@@ -78,7 +80,7 @@ export type EnDirect =
  * la programme (`DELAI_POUR_RETENIR_MS`). Plus tôt, elle attend dans « Part bientôt »
  * sur la page de Plume.
  */
-export const FENETRE_DU_DEPART_MS = 60 * 60_000;
+export const FENETRE_DU_DEPART_MS = DELAI_POUR_RETENIR_MS;
 
 /** Une relance encore programmée après son heure part dans l'instant : on la montre encore. */
 const RETARD_TOLERE_MS = 5 * 60_000;

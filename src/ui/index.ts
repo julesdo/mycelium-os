@@ -340,6 +340,12 @@ export { BarreDuBas, PastilleDeRappel, type DestinationBarre } from './barre-du-
 export { BoutonCompagnon } from './bouton-compagnon';
 export { CapsulePlume } from './capsule-plume';
 export {
+	FeuilleDesEngagements,
+	MaisonDePlume,
+	type FaitDeLaMaison,
+	type JourneeDeLaMaison
+} from './maison-plume';
+export {
 	ScenePlume,
 	useReflexion,
 	type JourDeLaScene,

@@ -59,6 +59,11 @@ export interface ConversationPiloteAffichee {
 		readonly parametres?: LinkProps['params'];
 		readonly libelle: string;
 	};
+	/**
+	 * LA MAISON DE PLUME (14/10/2026) : son état, ses faits, sa journée, ses
+	 * engagements. Toujours en tête du fil, et elle remplace l'accueil.
+	 */
+	readonly maison?: ReactNode;
 	/** Ce qui s'affiche tant que rien n'a été dit, sous Plume en grand. */
 	readonly accueil: {
 		readonly titre: string;
@@ -194,7 +199,9 @@ export function EcranConversationPilote({ fil }: { readonly fil: ConversationPil
 				)
 			}
 		>
-			{rien ? (
+			{fil.maison !== undefined ? (
+				fil.maison
+			) : rien ? (
 				<AccueilDePlume
 					humeur={fil.humeur}
 					titre={fil.accueil.titre}

@@ -7,7 +7,9 @@ import {
 	CarteDeGeste,
 	CarteEtatDuDossier,
 	CarteLien,
+	FeuilleDesEngagements,
 	ListeDeCartes,
+	MaisonDePlume,
 	NOM_DU_PILOTE,
 	PageEcran,
 	Plume,
@@ -19,6 +21,7 @@ import { EcranConversationPilote, type MessageAffiche } from '../../screens/conv
 import { EcranDemarrage } from '../../screens/demarrage';
 import { EcranDemarrageEnLot, type DossierADemarrer } from '../../screens/demarrage-lot';
 import type { EcranDuProduit, EtatDemo } from './demo';
+import { engagementsDePlume } from '../../lib/verticales/recouvrement/compagnon/veille';
 
 /**
  * PLUME, DANS SES CINQ HUMEURS ET À SES TROIS TAILLES.
@@ -365,119 +368,156 @@ function DemoConversationEtablissement({ variante }: { etat: EtatDemo; variante?
 	const forme = variante ?? 'reponse';
 	// Ouvert depuis la fiche d'un client (13/10/2026) : sa pastille et ses questions.
 	const regard = forme === 'regard';
-	const messages: MessageAffiche[] =
-		forme === 'vide'
-			? []
-			: [
-					{ genre: 'GERANT', id: 'q', texte: 'Qui me doit le plus ? Relance le premier.' },
-					{
-						genre: 'PLUME',
-						id: 'r',
-						phrases: [
-							{
-								texte:
-									'Vos trois plus gros dossiers sont ceux-ci. Le premier n’a pas encore reçu de deuxième rappel.',
-								genreSource: 'AUCUNE',
-								libelleSource: ''
-							},
-							{
-								texte: 'Je vous propose de préparer sa prochaine relance.',
-								genreSource: 'AUCUNE',
-								libelleSource: ''
-							}
-						],
-						suite: (
-							<div className="flex flex-col gap-2">
-								<ListeDeCartes>
-									<CarteLien
-										titre="Fournitures Durand"
-										montant="6 000,00 €"
-										ligne="Deuxième rappel, dans 2 j"
-										vers="/app/dossiers"
-									/>
-									<CarteLien
-										titre="Transports Vidal"
-										montant="4 320,50 €"
-										ligne="Promesse, dans 6 j"
-										vers="/app/dossiers"
-									/>
-									<CarteLien
-										titre="Atelier Rousseau"
-										montant="2 640,00 €"
-										ligne="Prêt, à démarrer"
-										vers="/app/dossiers"
-									/>
-								</ListeDeCartes>
-								<CarteDeGeste
-									icone={<SendIcon />}
-									contexte="Fournitures Durand"
-									titre="Préparer la prochaine relance"
-									detail="Je la compose avec vos modèles. Vous la relisez avant qu’elle parte."
-									etat="PROPOSEE"
-									principal
-									libelleConfirmer="Préparer"
-									onConfirmer={() => undefined}
-									onEcarter={() => undefined}
-								/>
-							</div>
-						)
-					}
-				];
-	return (
-		<EcranConversationPilote
-			fil={{
-				titre: NOM_DU_PILOTE,
-				sousTitre: 'Votre pilote',
-				retour: regard
-					? { vers: '/app/clients', libelle: 'Fournitures Durand' }
-					: { vers: '/app', libelle: 'Aujourd’hui' },
-				humeur: 'ecoute',
-				...(regard
-					? {
-							regard: {
-								libelle: 'Sur la fiche de Fournitures Durand',
-								questionsOffertes: true,
-								onRetirer: () => undefined
-							}
+	// Sa maison (14/10/2026), et la page de ses engagements, ouverte d'emblée dans sa variante.
+	const [engagements, setEngagements] = useState(forme === 'engagements');
+	const sansQuestion = forme === 'vide' || forme === 'engagements';
+	const messages: MessageAffiche[] = sansQuestion
+		? []
+		: [
+				{ genre: 'GERANT', id: 'q', texte: 'Qui me doit le plus ? Relance le premier.' },
+				{
+					genre: 'PLUME',
+					id: 'r',
+					phrases: [
+						{
+							texte:
+								'Vos trois plus gros dossiers sont ceux-ci. Le premier n’a pas encore reçu de deuxième rappel.',
+							genreSource: 'AUCUNE',
+							libelleSource: ''
+						},
+						{
+							texte: 'Je vous propose de préparer sa prochaine relance.',
+							genreSource: 'AUCUNE',
+							libelleSource: ''
 						}
-					: {}),
-				accueil: {
-					titre: 'Je veille sur 12 dossiers.',
-					sousTitre:
-						'J’ai tout relu à 14:02. Demandez-moi ce que vous voulez sur vos dossiers, dites-moi quoi faire, ou joignez-moi des factures.'
-				},
-				messages,
-				travail: null,
-				refus: null,
-				panne: null,
-				avertissement: null,
-				suggestions: regard
-					? [
-							'Où en est Fournitures Durand ?',
-							'Prépare la prochaine relance de Fournitures Durand',
-							'Comment Fournitures Durand paie-t-il d’habitude ?',
-							'Note que Fournitures Durand m’a appelé'
-						]
-					: [
-							'Qui me doit le plus ?',
-							'Qu’est-ce qui part cette semaine ?',
-							'Où en est Fournitures Durand ?',
-							'Montre-moi mes documents'
-						],
-				question,
-				onQuestion: setQuestion,
-				onEnvoyer: () => setQuestion(''),
-				enCours: false,
-				placeholder: `Demander à ${NOM_DU_PILOTE}…`,
-				arretee: false,
-				pieces: {
-					fichiers: [],
-					onJoindre: () => undefined,
-					onRetirer: () => undefined,
-					accept: '.pdf,.csv,.xlsx,image/*'
+					],
+					suite: (
+						<div className="flex flex-col gap-2">
+							<ListeDeCartes>
+								<CarteLien
+									titre="Fournitures Durand"
+									montant="6 000,00 €"
+									ligne="Deuxième rappel, dans 2 j"
+									vers="/app/dossiers"
+								/>
+								<CarteLien
+									titre="Transports Vidal"
+									montant="4 320,50 €"
+									ligne="Promesse, dans 6 j"
+									vers="/app/dossiers"
+								/>
+								<CarteLien
+									titre="Atelier Rousseau"
+									montant="2 640,00 €"
+									ligne="Prêt, à démarrer"
+									vers="/app/dossiers"
+								/>
+							</ListeDeCartes>
+							<CarteDeGeste
+								icone={<SendIcon />}
+								contexte="Fournitures Durand"
+								titre="Préparer la prochaine relance"
+								detail="Je la compose avec vos modèles. Vous la relisez avant qu’elle parte."
+								etat="PROPOSEE"
+								principal
+								libelleConfirmer="Préparer"
+								onConfirmer={() => undefined}
+								onEcarter={() => undefined}
+							/>
+						</div>
+					)
 				}
-			}}
-		/>
+			];
+	return (
+		<>
+			<FeuilleDesEngagements
+				ouverte={engagements}
+				onFermer={() => setEngagements(false)}
+				engagements={engagementsDePlume(true)}
+			/>
+			<EcranConversationPilote
+				fil={{
+					titre: NOM_DU_PILOTE,
+					sousTitre: 'Votre pilote',
+					maison: (
+						<MaisonDePlume
+							humeur="content"
+							titre="Tout est en ordre"
+							ligne="Prochaine relance demain à 9 h."
+							faits={[
+								{ valeur: '14 h 02', libelle: 'dernière relecture' },
+								{ valeur: '12', libelle: 'dossiers suivis' },
+								{ valeur: 'Activées', libelle: 'relances automatiques' }
+							]}
+							journee={{
+								titre: '2 sur 5 aujourd’hui',
+								serie: '4 jours d’affilée',
+								defis: [
+									{ nom: 'Démarrer les dossiers préparés', fait: 1, total: 3 },
+									{ nom: 'Relire les lettres', fait: 1, total: 1 },
+									{ nom: 'Répondre aux questions', fait: 0, total: 1 }
+								]
+							}}
+							onEngagements={() => setEngagements(true)}
+							{...(sansQuestion
+								? {
+										invitation:
+											'Demandez-moi ce que vous voulez sur vos dossiers, dites-moi quoi faire, ou joignez-moi des factures.'
+									}
+								: {})}
+						/>
+					),
+					retour: regard
+						? { vers: '/app/clients', libelle: 'Fournitures Durand' }
+						: { vers: '/app', libelle: 'Aujourd’hui' },
+					humeur: 'ecoute',
+					...(regard
+						? {
+								regard: {
+									libelle: 'Sur la fiche de Fournitures Durand',
+									questionsOffertes: true,
+									onRetirer: () => undefined
+								}
+							}
+						: {}),
+					accueil: {
+						titre: 'Je veille sur 12 dossiers.',
+						sousTitre:
+							'J’ai tout relu à 14:02. Demandez-moi ce que vous voulez sur vos dossiers, dites-moi quoi faire, ou joignez-moi des factures.'
+					},
+					messages,
+					travail: null,
+					refus: null,
+					panne: null,
+					avertissement: null,
+					suggestions: regard
+						? [
+								'Où en est Fournitures Durand ?',
+								'Prépare la prochaine relance de Fournitures Durand',
+								'Comment Fournitures Durand paie-t-il d’habitude ?',
+								'Note que Fournitures Durand m’a appelé'
+							]
+						: [
+								'Qui me doit le plus ?',
+								'Qu’est-ce qui part cette semaine ?',
+								'Où en est Fournitures Durand ?',
+								'Montre-moi mes documents'
+							],
+					question,
+					onQuestion: setQuestion,
+					onEnvoyer: () => setQuestion(''),
+					enCours: false,
+					placeholder: `Demander à ${NOM_DU_PILOTE}…`,
+					arretee: false,
+					pieces: {
+						fichiers: [],
+						onJoindre: () => undefined,
+						onRetirer: () => undefined,
+						accept: '.pdf,.csv,.xlsx,image/*'
+					}
+				}}
+			/>
+		</>
 	);
 }
 
@@ -604,7 +644,7 @@ export const ECRANS_PLUME: readonly EcranDuProduit[] = [
 		route: '/app/pilote/',
 		libelle: 'Plume, tout l’établissement',
 		vide: false,
-		variantes: ['reponse', 'vide', 'regard'],
+		variantes: ['reponse', 'vide', 'regard', 'engagements'],
 		Demo: DemoConversationEtablissement
 	},
 	{
