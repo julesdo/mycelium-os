@@ -153,6 +153,62 @@ export default defineSchema({
 		.index('by_org', ['organizationId'])
 		.index('by_consommateur', ['consommateurId']),
 
+	/**
+	 * LES LOGICIELS RELIÉS PAR NANGO — une ligne par logiciel branché (13/10/2026).
+	 *
+	 * Nango tient l'accès au logiciel du gérant (OAuth ou clé, rafraîchissement) ;
+	 * nous lisons par son proxy, qui ajoute lui-même les identifiants. Un
+	 * établissement peut brancher plusieurs logiciels : sa comptabilité ET son
+	 * outil de facturation, par exemple.
+	 *
+	 * ⚠️ AUCUN JETON ICI, ET AUCUN NE PEUT Y ARRIVER : la clé d'API de Nango posée
+	 * dans l'environnement n'a pas le droit de lire les identifiants
+	 * (`connections:read`, jamais `read_credentials`). Nous ne détenons que
+	 * l'identifiant de la connexion, qui n'ouvre rien sans notre clé.
+	 *
+	 * ⚠️ LECTURE SEULE : seuls des GET partent vers le logiciel du gérant.
+	 */
+	connexionsNango: defineTable({
+		organizationId: v.id('organizations'),
+		/** L'identifiant de la connexion chez Nango : un UUID qu'il choisit. */
+		connectionId: v.string(),
+		/** L'identifiant de l'intégration dans le tableau de bord de Nango (`provider_config_key`). */
+		integrationId: v.string(),
+		/** Le fournisseur Nango (`providers.yaml`) : c'est lui qui choisit le lecteur. */
+		fournisseur: v.string(),
+		/** Le nom du logiciel tel que Nango le donne (« Pennylane »). */
+		nom: v.string(),
+		statut: vStatutConnexion,
+		/**
+		 * Ce qui désigne le compte du gérant chez le logiciel : `realmId`,
+		 * `tenant_id`, `organization_id`. Des identifiants de compte, pas des secrets.
+		 */
+		configLecture: v.optional(v.record(v.string(), v.string())),
+		/** La page où reprendre une lecture interrompue (opaque, propre au lecteur). */
+		suite: v.optional(v.string()),
+		/** Le début de la lecture en cours (elle peut s'étendre sur plusieurs passes). */
+		lectureDebuteeLe: v.optional(v.number()),
+		/** Tant qu'il est dans le futur, une passe tourne : deux passes ne se chevauchent pas. */
+		verrouJusquA: v.optional(v.number()),
+		/** Le début de la dernière lecture complète : la suivante ne relit que ce qui a changé. */
+		derniereLectureComplete: v.optional(v.number()),
+		derniereSynchro: v.optional(v.number()),
+		/** Ce que la lecture en cours (ou la dernière) a fait entrer. */
+		facturesLues: v.optional(v.number()),
+		/** Les créances vues mais pas lues (devise, numéro, client manquant) : l'écran les compte. */
+		facturesNonLues: v.optional(v.number()),
+		/**
+		 * Les factures annulées à la source alors qu'elles sont chez nous, ouvertes :
+		 * une facture annulée ne se relance pas, l'écran demande de vérifier.
+		 */
+		annuleesALaSource: v.optional(v.array(v.string())),
+		erreur: v.optional(v.string()),
+		creePar: v.string(),
+		creeLe: v.number()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_connection', ['connectionId']),
+
 	// Organization members - liaison utilisateur ↔ organisation avec rôle
 	organizationMembers: defineTable({
 		organizationId: v.id('organizations'),

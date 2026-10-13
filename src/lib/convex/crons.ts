@@ -62,6 +62,11 @@ crons.interval('synchroQonto', { hours: 6 }, internal.connexions.qonto.synchroni
 // qui fait arriver les nouvelles factures et les paiements. Dormante sans clé.
 crons.interval('synchroChift', { hours: 6 }, internal.connexions.chift.synchroniserToutes, {});
 
+// LE RATTRAPAGE NANGO. Les logiciels que Nango relie ne nous préviennent pas
+// qu'une facture a changé : cette relecture, par le proxy, fait arriver les
+// nouvelles factures et les paiements. Dormante sans NANGO_SECRET_KEY.
+crons.interval('lectureNango', { hours: 6 }, internal.connexions.nango.lireToutes, {});
+
 /*
   L'ANNUAIRE DES AVOCATS SE NOURRIT SEUL (01/10/2026). Un appel de métadonnées par
   nuit à data.gouv.fr ; le fichier ne se télécharge que quand une livraison plus

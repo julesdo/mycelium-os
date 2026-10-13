@@ -5,6 +5,7 @@ import { resend } from './emails/resend';
 import { webhookHandler as paddleWebhookHandler } from './paddle';
 import { retourQonto, webhookQonto } from './connexions/qonto';
 import { webhookChift } from './connexions/chift';
+import { webhookNango } from './connexions/nango';
 import { ouvrirDocument } from './coffre/ouverture';
 
 const http = httpRouter();
@@ -36,6 +37,11 @@ http.route({ path: '/qonto/webhook', method: 'POST', handler: webhookQonto });
 // Webhooks Chift (logiciel branché, modifié, retiré), signés en HMAC-SHA256 avec
 // CHIFT_SECRET_WEBHOOK. Déclarés une fois : `npx convex run connexions/chift:declarerWebhooks`.
 http.route({ path: '/chift/webhook', method: 'POST', handler: webhookChift });
+
+// Webhooks Nango (logiciel branché, accès renouvelé ou perdu), signés en HMAC-SHA256
+// avec NANGO_WEBHOOK_SIGNING_KEY. À déclarer dans le tableau de bord de Nango
+// (Environment Settings > Webhook URLs) : https://<deployment>.convex.site/nango/webhook
+http.route({ path: '/nango/webhook', method: 'POST', handler: webhookNango });
 
 // Le coffre : un document ne sort que par ici, contre un jeton d'une minute
 // émis par `coffre/coffre.ts:ouvrirAuCoffre`. Voir `coffre/ouverture.ts`.

@@ -589,6 +589,23 @@ export const purgerEtablissement = internalMutation({
 		// Les jetons Qonto d'un établissement effacé partent avec lui : un jeton
 		// orphelin ouvrirait encore ses factures.
 		budget = await viderParIndexOrg(ctx, 'connexionsQonto', organizationId, budget);
+		// Les logiciels reliés par Nango aussi, et leurs accès CHEZ Nango avec
+		// eux : la ligne d'ici ne porte aucun jeton, mais Nango garde l'accès au
+		// logiciel du gérant tant qu'on ne supprime pas la connexion.
+		if (budget > 0) {
+			const branchees = await ctx.db
+				.query('connexionsNango')
+				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+				.take(budget);
+			for (const branchee of branchees) {
+				await ctx.scheduler.runAfter(0, internal.connexions.nango.oublierConnexion, {
+					connectionId: branchee.connectionId,
+					integrationId: branchee.integrationId
+				});
+				await ctx.db.delete(branchee._id);
+			}
+			budget -= branchees.length;
+		}
 		// Les logiciels reliés par Chift aussi, et leurs accès CHEZ Chift avec
 		// eux : la ligne d'ici ne porte aucun jeton, mais le consommateur distant
 		// garde l'accès au logiciel du gérant tant qu'on ne le supprime pas.
