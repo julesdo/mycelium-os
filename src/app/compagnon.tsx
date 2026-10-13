@@ -1,37 +1,50 @@
 import { useEffect, type ReactNode } from 'react';
 import { CatchBoundary, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
+import type { FunctionReturnType } from 'convex/server';
 import { useQuery } from './donnees';
 import { api } from '../lib/convex/_generated/api';
-import type { CibleDePlume } from '../lib/verticales/recouvrement/compagnon/presence';
-import { BoutonCompagnon, BullePlume, NOM_DU_PILOTE, type HumeurPlume } from '../ui';
-import { heureDeParis } from '../ui/horloge';
 import {
-	annoncerNotification,
-	paroleDePlume,
-	useParoleDePlume,
-	type ParoleAffichee
-} from './parole-de-plume';
+	ligneDeLaSuite,
+	type CibleDePlume
+} from '../lib/verticales/recouvrement/compagnon/presence';
+import {
+	besoinsDuJour,
+	jourDeParis,
+	serieEnMots,
+	titreDeLaJournee
+} from '../lib/verticales/recouvrement/compagnon/journee';
+import {
+	BoutonCompagnon,
+	NOM_DU_PILOTE,
+	ScenePlume,
+	eurosCentimes,
+	useReflexion,
+	type HumeurPlume
+} from '../ui';
+import { heureDeParis } from '../ui/horloge';
+import { paroleDePlume, useParoleDePlume, type ParoleAffichee } from './parole-de-plume';
 import { TITRE_DE_NOTIFICATION, type GenreNotification } from '../screens/titres';
 
 /**
- * PLUME, BRANCHÉ DANS LA BARRE — son humeur lue sur le pilote, et où il mène.
+ * PLUME, BRANCHÉ DANS LA BARRE — son humeur lue sur le pilote, ce qu'il dit, et où il
+ * mène.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ LA FEUILLE DE DISCUSSION A DISPARU (08/10/2026)
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Ce fichier ouvrait une `Popup` : le fil d'un dossier, ou une liste pour en
- * choisir un, ou le refus du plafond. Jugée « horrible » par le fondateur, elle
- * est remplacée par une conversation PLEIN ÉCRAN, sur les codes de Claude
- * (`/app/pilote/$id` pour un dossier, `/app/pilote` partout ailleurs). Le bouton
- * ne fait plus que deux choses : montrer Plume tel qu'il est, et y mener.
+ * Ce fichier ouvrait une `Popup`. Jugée « horrible » par le fondateur, elle est
+ * remplacée par une conversation PLEIN ÉCRAN (`/app/pilote/$id` pour un dossier,
+ * `/app/pilote` partout ailleurs).
  *
- * ⚠️ ET DEPUIS LE 13/10/2026, IL PARLE. Le fondateur : « un vrai compagnon, pas
- * un chat ». Sa bulle sort de lui (`BullePlume`) : le mot après un geste, le
- * travail qu'il vient de finir, et ce qu'il a à dire de l'écran. Ce fichier la
- * branche : les silences du compte, les travaux finis, le défilement qui la range,
- * et où mène son bouton. Ce qu'il dit se décide ailleurs (`app/parole-de-plume.tsx`).
+ * ⚠️ PUIS IL A PARLÉ (13/10/2026), ET LE SOIR MÊME IL EST SORTI DE LA BARRE. Le
+ * fondateur, sur la première bulle : « elles se ferment très vite et ne sont pas
+ * assez utiles […] va voir sur Duolingo ». Plume sort désormais du bouton et se
+ * tient au-dessus de la barre, grand, à côté de sa bulle (`ScenePlume`) ; il dit ce
+ * qu'il a à dire, une chose après l'autre, et rien ne se ferme seul. Autour de lui,
+ * l'anneau de la journée se remplit à mesure que ses défis tombent. Ce fichier
+ * branche tout cela ; ce qu'il dit se décide dans `app/parole-de-plume.tsx`.
  *
  * ⚠️ L'IDENTIFIANT SE LIT SUR LES PARAMÈTRES DE LA ROUTE, PAS SUR L'ADRESSE :
  * `matches` porte l'`id` résolu de `/app/dossier/$id`. (Une version d'avant lisait
@@ -41,6 +54,10 @@ import { TITRE_DE_NOTIFICATION, type GenreNotification } from '../screens/titres
 const ROUTE_DOSSIER = '/app/dossier/$id';
 /** Les pages d'un client : Plume s'ouvre en sachant duquel on parle. */
 const ROUTES_D_UN_CLIENT: readonly string[] = ['/app/clients/$id', '/app/risque/$id'];
+/** Au-delà de ces pixels défilés, on lit autre chose : Plume rentre dans la barre. */
+const SEUIL_DE_DEFILEMENT = 120;
+
+type Journee = FunctionReturnType<typeof api.recouvrement.journee.etat>;
 
 export function CompagnonBranche({
 	children,
@@ -77,15 +94,15 @@ function PlumeAvecEtat({
 }) {
 	// L'humeur seule, pas l'état entier : il change à chaque coche d'un travail.
 	const etat = useQuery(api.recouvrement.pilote.humeurDePlume, auRepos ? 'skip' : {});
-	const aDemarrer = etat?.aDemarrer ?? 0;
+	const journee = useQuery(api.recouvrement.journee.etat, auRepos ? 'skip' : {});
 	const lue: HumeurPlume = etat?.humeur ?? 'repos';
 	// La nuit, rien ne tourne et rien n'attend : il dort (Duo aussi, à minuit).
 	const heure = heureDeParis();
 	const humeur: HumeurPlume = lue === 'repos' && (heure >= 22 || heure < 7) ? 'dort' : lue;
 	return (
 		<>
-			{auRepos ? null : <VoixDePlume />}
-			<Plume humeur={humeur} compte={aDemarrer} parle={!auRepos}>
+			{auRepos ? null : <VoixDePlume journee={journee} />}
+			<Plume humeur={humeur} parle={!auRepos} journee={journee}>
 				{children}
 			</Plume>
 		</>
@@ -93,23 +110,25 @@ function PlumeAvecEtat({
 }
 
 /**
- * CE QUI NOURRIT LA BULLE — rien à l'écran : les silences du compte et les travaux
- * finis du pilote, versés dans le magasin de la parole.
+ * CE QUI NOURRIT SA PAROLE — rien à l'écran : les silences du compte, les travaux
+ * finis, les notifications, l'argent qui rentre, et la journée, versés dans le
+ * magasin de la parole.
  *
- * ⚠️ LE DÉFILEMENT RANGE UNE REMARQUE, IL NE LA FAIT PAS TAIRE. La bulle couvre le
- * bas de l'écran ; dès qu'on fait défiler de quelques lignes, c'est qu'on lit
- * autre chose. Elle se range, et ne revient pas dans la visite.
+ * ⚠️ LE DÉFILEMENT LE RENVOIE DANS LA BARRE, IL NE LE FAIT PAS TAIRE. La scène couvre
+ * le bas de l'écran ; dès qu'on fait défiler, c'est qu'on lit autre chose. Ce qu'il
+ * n'a pas dit reste compté sur la pastille.
  */
-function VoixDePlume() {
+function VoixDePlume({ journee }: { readonly journee: Journee | undefined }) {
 	const silences = useQuery(api.recouvrement.presence.silences, {});
 	const travaux = useQuery(api.recouvrement.presence.travauxTermines, {});
 	const notification = useQuery(api.recouvrement.presence.derniereNotification, {});
+	const paiement = useQuery(api.recouvrement.presence.dernierPaiement, {});
 	const surLaBoite = useRouterState({
 		select: (etat) => etat.location.pathname.startsWith('/app/notifications')
 	});
 	const taire = useMutation(api.recouvrement.presence.taire);
-	const parole = useParoleDePlume();
-	const cleDeLaRemarque = parole?.voix === 'ECRAN' ? parole.cle : null;
+	const relever = useMutation(api.recouvrement.journee.relever);
+	const ouverte = useParoleDePlume().ouverte !== null;
 
 	useEffect(
 		() =>
@@ -130,10 +149,39 @@ function VoixDePlume() {
 			notification === null
 				? null
 				: (TITRE_DE_NOTIFICATION[notification.genre as GenreNotification] ?? null);
-		annoncerNotification(notification, titre, surLaBoite);
+		paroleDePlume.annoncerNotification(notification, titre, surLaBoite);
 	}, [notification, surLaBoite]);
 	useEffect(() => {
-		if (cleDeLaRemarque === null) return;
+		if (paiement === undefined) return;
+		paroleDePlume.annoncerPaiement(
+			paiement,
+			paiement === null ? null : eurosCentimes(paiement.montant)
+		);
+	}, [paiement]);
+
+	/*
+	  LA JOURNÉE : ses défis deviennent des paroles (comptées sur la pastille), elle se
+	  garde en base quand ce qui reste change, et sa fin se fête.
+	*/
+	const cleDesBesoins =
+		journee === undefined
+			? null
+			: JSON.stringify([journee.restants, journee.lettre, journee.question]);
+	useEffect(() => {
+		if (journee === undefined) return;
+		paroleDePlume.poserBesoins(
+			besoinsDuJour(journee.restants, { lettre: journee.lettre, question: journee.question })
+		);
+		void relever({}).catch(() => undefined);
+		// `journee` change d'identité à chaque lecture ; seule sa matière compte.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [cleDesBesoins, relever]);
+	useEffect(() => {
+		if (journee !== undefined) paroleDePlume.suivreLaJournee(journee);
+	}, [journee]);
+
+	useEffect(() => {
+		if (!ouverte) return;
 		const departs = new Map<EventTarget, number>();
 		function surDefilement(evenement: Event) {
 			const cible = evenement.target;
@@ -146,24 +194,20 @@ function VoixDePlume() {
 		}
 		document.addEventListener('scroll', surDefilement, { capture: true, passive: true });
 		return () => document.removeEventListener('scroll', surDefilement, { capture: true });
-	}, [cleDeLaRemarque]);
+	}, [ouverte]);
 	return null;
 }
 
-/** Au-delà de ces pixels défilés, on lit autre chose : la bulle se range. */
-const SEUIL_DE_DEFILEMENT = 72;
-
 function Plume({
 	humeur,
-	compte = 0,
 	parle = false,
+	journee,
 	children
 }: {
 	readonly humeur: HumeurPlume;
-	/** Les dossiers préparés qui attendent d'être démarrés. */
-	readonly compte?: number;
-	/** Faux tant que la session s'ouvre : pas de bulle. */
+	/** Faux tant que la session s'ouvre, ou quand l'état a levé : pas de scène. */
 	readonly parle?: boolean;
+	readonly journee?: Journee | undefined;
 	readonly children: (bouton: ReactNode) => ReactNode;
 }) {
 	const navigate = useNavigate();
@@ -174,7 +218,6 @@ function Plume({
 			return id === undefined || id === '' ? null : id;
 		}
 	});
-
 	const clientRegarde = useRouterState({
 		select: (etat) => {
 			const match = etat.matches.find((m) => ROUTES_D_UN_CLIENT.includes(m.routeId));
@@ -183,13 +226,14 @@ function Plume({
 		}
 	});
 	const parole = useParoleDePlume();
-	const dite = parle ? parole : null;
+	const ouverte = parle ? parole.ouverte : null;
+	// Il réfléchit à chaque parole nouvelle : la tête dans le bouton, les points dans la bulle.
+	const reflechit = useReflexion(ouverte?.parole.cle ?? null);
 
 	/**
 	 * ⚠️ PLUME S'OUVRE EN SACHANT D'OÙ L'ON VIENT (13/10/2026). Sur un dossier, sa
 	 * conversation à lui ; ailleurs, celle de l'établissement, avec l'écran qu'on
-	 * regardait (`?depuis=`) et le client qu'il montrait (`?client=`) : la pastille
-	 * du regard, ses questions prêtes, et une ligne de plus pour le modèle.
+	 * regardait (`?depuis=`) et le client qu'il montrait (`?client=`).
 	 */
 	function ouvrirLaConversation() {
 		if (dossier !== null) {
@@ -211,7 +255,7 @@ function Plume({
 		});
 	}
 
-	/** Où mène le bouton d'une remarque, quand l'écran ne le fait pas lui-même. */
+	/** Où mène le geste d'une parole, quand l'écran ne le fait pas lui-même. */
 	function mener(cible: CibleDePlume) {
 		if (paroleDePlume.executer(cible)) return;
 		switch (cible.genre) {
@@ -220,6 +264,9 @@ function Plume({
 				return;
 			case 'NOTIFICATIONS':
 				void navigate({ to: '/app/notifications' });
+				return;
+			case 'AUJOURDHUI':
+				void navigate({ to: '/app' });
 				return;
 			case 'DEMARRER_LOT':
 				void navigate({ to: '/app/demarrer' });
@@ -251,27 +298,42 @@ function Plume({
 		}
 	}
 
+	/** TOUCHER PLUME : il dit ce qu'il n'a pas encore dit ; sinon, sa conversation. */
+	function toucher() {
+		if (parle && paroleDePlume.ouvrir()) return;
+		ouvrirLaConversation();
+	}
+
 	return children(
 		<BoutonCompagnon
-			humeur={dite?.humeur ?? humeur}
-			compte={compte}
+			humeur={reflechit ? 'reflechit' : (ouverte?.parole.humeur ?? humeur)}
+			pensee={ouverte === null}
+			compte={parle ? parole.aDire : 0}
 			description={
-				dossier !== null
-					? `Parler à ${NOM_DU_PILOTE}, sur ce dossier`
-					: clientRegarde !== null
-						? `Parler à ${NOM_DU_PILOTE}, sur ce client`
-						: `Parler à ${NOM_DU_PILOTE}`
+				parle && parole.aDire > 0
+					? `${NOM_DU_PILOTE} a ${parole.aDire === 1 ? 'une chose' : `${parole.aDire} choses`} à vous dire`
+					: dossier !== null
+						? `Parler à ${NOM_DU_PILOTE}, sur ce dossier`
+						: clientRegarde !== null
+							? `Parler à ${NOM_DU_PILOTE}, sur ce client`
+							: `Parler à ${NOM_DU_PILOTE}`
 			}
-			onOuvrir={ouvrirLaConversation}
-			{...(dite === null
+			onOuvrir={toucher}
+			{...(journee !== undefined && journee.total > 0
+				? { progression: journee.faits / journee.total }
+				: {})}
+			{...(ouverte === null
 				? {}
 				: {
 						bulle: (
-							<BulleBranchee
-								key={dite.cle}
-								parole={dite}
+							<SceneBranchee
+								reflechit={reflechit}
+								parole={ouverte.parole}
+								position={ouverte.position}
+								total={ouverte.total}
+								journee={journee}
 								mener={mener}
-								ouvrir={ouvrirLaConversation}
+								parler={ouvrirLaConversation}
 							/>
 						)
 					})}
@@ -279,16 +341,31 @@ function Plume({
 	);
 }
 
-/** La bulle d'une parole : son bouton mène, son ✕ ferme, sa phrase ouvre la conversation. */
-function BulleBranchee({
+/**
+ * LA SCÈNE D'UNE PAROLE — son geste mène, « Suivant » passe à la suite, le ✕ le renvoie
+ * dans la barre. En pied, ce qu'il fait en ce moment ou ensuite : la bulle porte
+ * toujours du contexte. Lues seulement la scène ouverte.
+ */
+function SceneBranchee({
+	reflechit,
 	parole,
+	position,
+	total,
+	journee,
 	mener,
-	ouvrir
+	parler
 }: {
+	readonly reflechit: boolean;
 	readonly parole: ParoleAffichee;
+	readonly position: number;
+	readonly total: number;
+	readonly journee: Journee | undefined;
 	readonly mener: (cible: CibleDePlume) => void;
-	readonly ouvrir: () => void;
+	readonly parler: () => void;
 }) {
+	const travail = useQuery(api.recouvrement.presence.travailEnCours, {});
+	const prochaine = useQuery(api.recouvrement.presence.prochaineRelance, {});
+
 	const geste = parole.geste;
 	const cible = parole.cible;
 	const action =
@@ -297,29 +374,83 @@ function BulleBranchee({
 			: cible !== undefined && parole.libelleDuGeste !== undefined
 				? { libelle: parole.libelleDuGeste, faire: () => mener(cible) }
 				: null;
+
+	const suite =
+		travail !== undefined && travail !== null
+			? `En ce moment : ${minusculeInitiale(travail.titre)}, ${travail.faites} sur ${travail.total}.`
+			: prochaine !== undefined && prochaine !== null
+				? ligneDeLaSuite({
+						etape: prochaine.etape,
+						client: prochaine.client,
+						quand: quandEnMots(prochaine.partiraLe)
+					})
+				: undefined;
+
 	return (
-		<BullePlume
+		<ScenePlume
+			reflechit={reflechit}
 			texte={parole.texte}
+			{...(parole.semaine === undefined ? {} : { semaine: parole.semaine })}
+			{...(journee === undefined
+				? {}
+				: {
+						journee: {
+							titre: titreDeLaJournee(
+								{ faits: journee.faits, total: journee.total, defis: journee.defis },
+								journee.tenue
+							),
+							faits: journee.faits,
+							total: journee.total,
+							serie: serieEnMots(journee.serie)
+						}
+					})}
 			{...(action === null
 				? {}
 				: {
 						libelleDuGeste: action.libelle,
 						onGeste: () => {
-							paroleDePlume.fermer({ ...parole, silencieuse: false });
+							paroleDePlume.fermer();
 							action.faire();
 						}
 					})}
-			// Une remarque ou un travail s'ouvrent sur la conversation ; le mot d'un geste porte ses liens.
-			{...(parole.voix === 'GESTE'
-				? {}
+			rang={{ position, total }}
+			{...(position < total
+				? { onSuivant: () => paroleDePlume.suivant() }
 				: {
-						onOuvrir: () => {
-							paroleDePlume.fermer({ ...parole, silencieuse: false });
-							ouvrir();
+						onParler: () => {
+							paroleDePlume.fermer();
+							parler();
 						}
 					})}
-			onFermer={() => paroleDePlume.fermer(parole)}
-			fermerPourDeBon={parole.silencieuse}
+			onFermer={() => paroleDePlume.fermer()}
+			{...(parole.silencieuse ? { onTaire: () => paroleDePlume.taire(parole) } : {})}
+			{...(suite === undefined ? {} : { suite })}
 		/>
 	);
+}
+
+function minusculeInitiale(texte: string): string {
+	return texte.charAt(0).toLowerCase() + texte.slice(1);
+}
+
+const HEURE_DE_PARIS = new Intl.DateTimeFormat('fr-FR', {
+	timeZone: 'Europe/Paris',
+	hour: 'numeric',
+	minute: '2-digit'
+});
+const JOUR_DE_PARIS = new Intl.DateTimeFormat('fr-FR', {
+	timeZone: 'Europe/Paris',
+	weekday: 'long'
+});
+
+/** « aujourd'hui à 14 h 30 », « demain à 9 h », « lundi à 9 h » : quand part la suite. */
+function quandEnMots(instant: number): string {
+	const [heures, minutes] = HEURE_DE_PARIS.format(new Date(instant)).split(':');
+	const heure =
+		minutes === undefined || minutes === '00' ? `${heures} h` : `${heures} h ${minutes}`;
+	const jour = jourDeParis(instant);
+	const maintenant = Date.now();
+	if (jour === jourDeParis(maintenant)) return `aujourd’hui à ${heure}`;
+	if (jour === jourDeParis(maintenant + 86_400_000)) return `demain à ${heure}`;
+	return `${JOUR_DE_PARIS.format(new Date(instant))} à ${heure}`;
 }

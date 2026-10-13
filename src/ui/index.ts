@@ -338,7 +338,7 @@ export { type GenreSourcePhrase, type PhraseAffichee, type RefusAffiche } from '
  * `app/barre.tsx` et `app/compagnon.tsx` — eux ne dessinent rien. */
 export { BarreDuBas, PastilleDeRappel, type DestinationBarre } from './barre-du-bas';
 export { BoutonCompagnon } from './bouton-compagnon';
-export { BullePlume } from './bulle-plume';
+export { ScenePlume, useReflexion, type JourDeLaScene, type JourneeDeLaScene } from './scene-plume';
 
 /* ── LE SOMMAIRE D'UNE LISTE (ecran/clients) ──────────────────────────────
  *

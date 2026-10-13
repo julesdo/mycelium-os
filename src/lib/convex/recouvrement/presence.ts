@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
+import { PLAN_PAR_DEFAUT, type CleEtapePlan } from '../../verticales/recouvrement/plan-relance';
 
 /**
  * PLUME SUR CHAQUE ÉCRAN, CÔTÉ BASE (13/10/2026) — ce qu'il ne redira pas, et ce
@@ -134,5 +135,109 @@ export const travauxTermines = authedQuery({
 			}))
 			.sort((a, b) => b.termineLe - a.termineLe)
 			.slice(0, 6);
+	}
+});
+
+/**
+ * LE DERNIER PAIEMENT ARRIVÉ — la bulle le fête s'il arrive pendant qu'on travaille.
+ * Un avoir n'est pas de l'argent qui rentre : seuls un paiement et un acompte se
+ * fêtent.
+ */
+export const dernierPaiement = authedQuery({
+	args: {},
+	returns: v.union(
+		v.null(),
+		v.object({
+			id: v.id('reglements'),
+			montant: v.int64(),
+			client: v.string(),
+			creeLe: v.number()
+		})
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const derniers = await ctx.db
+			.query('reglements')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.order('desc')
+			.take(5);
+		const paiement = derniers.find((r) => r.nature === 'PAIEMENT' || r.nature === 'ACOMPTE');
+		if (paiement === undefined) return null;
+		const facture = await ctx.db.get(paiement.factureId);
+		const debiteur = facture === null ? null : await ctx.db.get(facture.debiteurId);
+		return {
+			id: paiement._id,
+			montant: paiement.montant,
+			client: debiteur?.denomination ?? 'Un client',
+			creeLe: paiement.creeLe
+		};
+	}
+});
+
+/**
+ * CE QUE PLUME FAIT ENSUITE — la prochaine relance programmée, pour la ligne du bas
+ * de sa bulle. Rien quand les relances ne partent pas seules.
+ */
+export const prochaineRelance = authedQuery({
+	args: {},
+	returns: v.union(
+		v.null(),
+		v.object({
+			creanceId: v.id('creances'),
+			client: v.string(),
+			etape: v.string(),
+			partiraLe: v.number()
+		})
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const programmes = await ctx.db
+			.query('envois')
+			.withIndex('by_org_and_etat', (q) =>
+				q.eq('organizationId', organizationId).eq('etat', 'PROGRAMME')
+			)
+			.take(50);
+		const premier = [...programmes].sort(
+			(a, b) => (a.partiraLe ?? a.prepareLe) - (b.partiraLe ?? b.prepareLe)
+		)[0];
+		if (premier === undefined) return null;
+		const creance = await ctx.db.get(premier.creanceId);
+		const debiteur = creance === null ? null : await ctx.db.get(creance.debiteurId);
+		return {
+			creanceId: premier.creanceId,
+			client: debiteur?.denomination ?? 'Client',
+			etape:
+				PLAN_PAR_DEFAUT.find((e) => e.cle === (premier.etapePlan as CleEtapePlan | undefined))
+					?.nom ?? 'Relance',
+			partiraLe: premier.partiraLe ?? premier.prepareLe
+		};
+	}
+});
+
+/**
+ * LE TRAVAIL EN COURS, ÉTROIT — son titre et son avancement, pour la bulle ouverte.
+ * Elle change à chaque coche : on ne la lit que la bulle ouverte.
+ */
+export const travailEnCours = authedQuery({
+	args: {},
+	returns: v.union(
+		v.null(),
+		v.object({ titre: v.string(), faites: v.number(), total: v.number(), genre: v.string() })
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const travail = await ctx.db
+			.query('travauxPilote')
+			.withIndex('by_org_and_etat', (q) =>
+				q.eq('organizationId', organizationId).eq('etat', 'EN_COURS')
+			)
+			.first();
+		if (travail === null) return null;
+		return {
+			titre: travail.titre,
+			faites: travail.etapes.filter((e) => e.faiteLe !== undefined).length,
+			total: travail.etapes.length,
+			genre: travail.genre
+		};
 	}
 });

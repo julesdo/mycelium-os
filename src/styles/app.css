@@ -1579,6 +1579,55 @@ select:not(:disabled),
 	}
 }
 
+/* LA SCÈNE DE PLUME (13/10/2026, au soir) — sa phrase arrive après ses trois
+ * points. Sans mouvement, tout est là d'un coup. */
+.scene-plume-texte {
+	animation: scene-plume-texte 260ms ease-out both;
+}
+@keyframes scene-plume-texte {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.scene-plume-texte {
+		animation: none;
+	}
+}
+
+/* L'ANNEAU DE LA JOURNÉE autour de Plume, dans la barre : il se remplit à mesure que
+ * les défis du jour tombent (Duolingo pose les siens autour des leçons). À l'encre,
+ * jamais aux couleurs de seuil. */
+@property --part-du-jour {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 0;
+}
+.anneau-journee {
+	position: absolute;
+	inset: -3px;
+	border-radius: 9999px;
+	padding: 2.5px;
+	pointer-events: none;
+	background: conic-gradient(
+		var(--color-veille) calc(var(--part-du-jour) * 1turn),
+		oklch(1 0 0 / 0.12) 0
+	);
+	-webkit-mask:
+		linear-gradient(#000 0 0) content-box,
+		linear-gradient(#000 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	transition: --part-du-jour 700ms ease-out;
+}
+.light .anneau-journee {
+	background: conic-gradient(
+		var(--color-veille) calc(var(--part-du-jour) * 1turn),
+		oklch(0.3 0.02 264 / 0.12) 0
+	);
+}
+
 /* LA BULLE DE PLUME (13/10/2026) — il parle depuis la barre, comme Mo chez Alan.
  *
  * ⚠️ OPAQUE, PAS EN VERRE : une phrase se lit, elle ne se devine pas sous ce qui

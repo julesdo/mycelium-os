@@ -99,6 +99,8 @@ describe('schéma du recouvrement', () => {
 			'importsRecouvrement',
 			'intervenants',
 			'journal',
+			// La journée de Plume, ses défis et sa série (13/10/2026).
+			'journeesPlume',
 			'liensDePaiement',
 			'pieces',
 			'piecesFactures',

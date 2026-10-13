@@ -2002,7 +2002,23 @@ export const recouvrementTables = {
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_user_and_le', ['organizationId', 'userId', 'le'])
-		.index('by_org_and_user_and_cle', ['organizationId', 'userId', 'cle'])
+		.index('by_org_and_user_and_cle', ['organizationId', 'userId', 'cle']),
+
+	/**
+	 * LA JOURNÉE DE PLUME, PAR COMPTE ET PAR JOUR DE PARIS (13/10/2026) — le plus haut
+	 * relevé de ce qui attendait (les trois défis), et si la journée a été tenue. La
+	 * série se compte sur ces lignes. Voir `verticales/recouvrement/compagnon/journee.ts`.
+	 */
+	journeesPlume: defineTable({
+		organizationId: v.id('organizations'),
+		userId: v.string(),
+		/** `AAAA-MM-JJ`, à Paris. */
+		jour: v.string(),
+		max: v.object({ demarrer: v.number(), relire: v.number(), repondre: v.number() }),
+		tenue: v.boolean()
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_user_and_jour', ['organizationId', 'userId', 'jour'])
 };
 
 /**

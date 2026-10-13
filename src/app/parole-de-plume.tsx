@@ -8,54 +8,80 @@ import type {
 } from '../lib/verticales/recouvrement/compagnon/presence';
 import {
 	paroleDUneNotification,
+	paroleDUnPaiement,
 	paroleDUnTravail
 } from '../lib/verticales/recouvrement/compagnon/presence';
+import {
+	paroleDeLaJourneeBouclee,
+	type JourDeLaSemaine
+} from '../lib/verticales/recouvrement/compagnon/journee';
 import type { HumeurPlume } from '../ui';
 
 /**
- * LA PAROLE DE PLUME — ce que sa bulle dit maintenant (13/10/2026).
+ * LA PAROLE DE PLUME — ce qu'il a à vous dire, et ce qu'il dit maintenant.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ UNE BOUCHE, TROIS VOIX
+ * ⚠️ REFAITE LE SOIR DU 13/10/2026 : « LES BULLES SE FERMENT TRÈS VITE »
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * La bulle au-dessus de Plume (`ui/bulle-plume.tsx`) est le seul endroit où il
- * parle hors de sa conversation. Trois choses y passent, dans cet ordre :
+ * La première version disait UNE chose par écran, et la reprenait au bout de six à
+ * vingt secondes. Le fondateur : « pas assez utiles […] il faut que ce soit utile
+ * tout le temps ». Sur Duolingo, Duo dit ce qu'il a à dire, une chose après l'autre,
+ * et rien ne part avant « Continuer ». Désormais :
  *
- *   1. CE QUE VOUS VENEZ DE FAIRE (`usePlumeDit`) — le mot après un geste : « C'est
- *      noté : le 20, je vous remets Durand sous les yeux. » Il passe devant tout.
- *   2. CE QU'IL VIENT DE FINIR — un travail du pilote, annoncé là où l'on est.
- *   3. CE QU'IL A À DIRE DE L'ÉCRAN — une remarque, une seule par visite.
+ *   · Plume a une PILE de choses à dire, la plus pressante d'abord : le mot après
+ *     votre geste, une fête (de l'argent rentré, la journée bouclée), une nouvelle
+ *     (un travail fini, une notification), ce qui vous attend (les défis du jour), et
+ *     ce qu'il a à dire de l'écran ;
+ *   · il ne se tait que si on le lui dit : « Suivant », le ✕, ou le défilement, qui le
+ *     renvoie dans la barre. Aucune minuterie ;
+ *   · ce qu'il n'a pas encore dit se COMPTE sur la pastille du bouton ; toucher Plume
+ *     le fait dire. Quand il n'a plus rien à dire, le toucher ouvre sa conversation.
  *
- * ⚠️ UN MAGASIN HORS DE REACT, ET C'EST CE QUI TIENT LA RÈGLE DES EFFETS. Un écran
- * annonce ses remarques depuis un effet ; posées dans un état React, ce serait un
- * `setState` dans un effet, que le projet refuse. Le magasin est un système
- * extérieur que l'effet synchronise, comme une connexion : il ne prévient ses
- * abonnés que quand ce qui se dit CHANGE.
+ * Il s'ouvre seul pour ce qui ne peut pas attendre (le mot après un geste, une fête,
+ * une nouvelle) et pour la première remarque de chaque écran visité ; jamais pour un
+ * défi seul : la pastille et l'anneau le disent sans interrompre.
  *
- * ⚠️ UNE REMARQUE PAR VISITE, ET JAMAIS DEUX FOIS LA MÊME DANS LA SESSION. Un
- * collaborateur qui répète la même chose à chaque passage dans le couloir se fait
- * ignorer en deux jours. Le ✕ la fait taire pour de bon (`presence.taire`).
+ * ⚠️ UN MAGASIN HORS DE REACT, ET C'EST CE QUI TIENT LA RÈGLE DES EFFETS. Les écrans
+ * annoncent leurs remarques depuis un effet : posées dans un état React, ce serait
+ * un `setState` dans un effet. Le magasin est un système extérieur que l'effet
+ * synchronise ; il ne prévient la scène que quand ce qui se dit change.
  */
 
-/** Le geste d'une bulle : un mot, et ce qu'il fait. */
+/** Le geste d'un mot : son libellé, et ce qu'il fait. */
 export interface GesteDeBulle {
 	readonly libelle: string;
 	readonly faire: () => void;
 }
 
+/** Qui parle par la bouche de Plume, du plus pressant au moins pressant. */
+export type VoixDePlume = 'GESTE' | 'FETE' | 'NOUVELLE' | 'BESOIN' | 'ECRAN';
+
 export interface ParoleAffichee {
 	readonly cle: string;
-	readonly voix: 'GESTE' | 'TRAVAIL' | 'ECRAN';
+	readonly voix: VoixDePlume;
 	readonly texte: ReactNode;
 	readonly humeur: HumeurPlume;
-	/** Pour une remarque ou un travail : la cible, que la bulle traduit en route. */
+	/** Pour une remarque : la cible, que la scène traduit en route ou en geste. */
 	readonly cible?: CibleDePlume;
 	readonly libelleDuGeste?: string;
-	/** Pour un mot après un geste : ce que fait son bouton (« Annuler », « Relire »). */
+	/** Pour un mot après un geste : ce que fait son bouton (« Annuler », « La relire »). */
 	readonly geste?: GesteDeBulle;
-	/** Le ✕ fait-il taire pour de bon ? Une remarque d'écran seulement. */
+	/** « Ne plus me le dire » : ce qui peut se taire pour de bon. */
 	readonly silencieuse: boolean;
+	/** La semaine en coches, pour une journée bouclée. */
+	readonly semaine?: readonly JourDeLaSemaine[];
+}
+
+/** Ce que la scène lit : la parole ouverte, sa place dans la pile, et ce qui reste à dire. */
+export interface EtatDeLaParole {
+	readonly ouverte: {
+		readonly parole: ParoleAffichee;
+		readonly position: number;
+		readonly total: number;
+	} | null;
+	/** Ce que Plume n'a pas encore dit : la pastille du bouton. */
+	readonly aDire: number;
 }
 
 interface Inscription {
@@ -66,118 +92,142 @@ interface Inscription {
 	executer: ((cible: CibleDePlume) => boolean) | undefined;
 }
 
-/** Combien de temps chaque voix reste, sans geste du gérant. */
-const DUREE_GESTE_MS = 6000;
-const DUREE_TRAVAIL_MS = 8000;
-const DUREE_REMARQUE_MS = 20_000;
-
 /* ── L'état, hors de React ────────────────────────────────────────────────── */
 
 const inscriptions: Inscription[] = [];
+/** Ce qui ne peut pas attendre, dans l'ordre d'arrivée. */
+let instantanees: ParoleAffichee[] = [];
+/** Les défis du jour, dits par Plume (`journee.ts`). */
+let besoins: ParoleAffichee[] = [];
 /** Les clés déjà dites pendant cette session : jamais deux fois. */
-const ditesDansLaSession = new Set<string>();
-/** Les visites (une inscription) qui ont déjà parlé. */
-const visitesQuiOntParle = new Set<string>();
+const entendues = new Set<string>();
+/** Les visites (une inscription) dont la première remarque a ouvert la scène. */
+const visitesOuvertes = new Set<string>();
 let silences: ReadonlySet<string> | null = null;
-let instantanee: {
-	readonly parole: ParoleAffichee;
-	readonly minuterie: ReturnType<typeof setTimeout>;
-} | null = null;
-let remarque: {
-	readonly visite: string;
-	readonly parole: ParoleAffichee;
-	readonly minuterie: ReturnType<typeof setTimeout>;
-} | null = null;
-/** La dernière notification déjà vue : ce qui est plus vieux ne s'annonce pas. */
-let notificationVueJusquA: number | null = null;
-/** Le dernier travail fini déjà vu : ce qui est plus vieux ne s'annonce pas. */
-let travailVuJusquA: number | null = null;
+let ouverte: { pile: ParoleAffichee[]; index: number } | null = null;
 let taireAuServeur: ((cle: string) => void) | null = null;
-/** Les bulles montées : sans aucune (une conversation), un mot part en toast. */
+/** Les scènes montées : sans aucune (une conversation), un mot part en toast. */
 let hotes = 0;
 
+/** Ce qui est déjà vu des flux annoncés : ce qui est plus vieux ne s'annonce pas. */
+let travailVuJusquA: number | null = null;
+let notificationVueJusquA: number | null = null;
+let paiementVuJusquA: number | null = null;
+let journeeVue: { readonly jour: string; readonly tenue: boolean } | null = null;
+
 const abonnes = new Set<() => void>();
-let courante: ParoleAffichee | null = null;
+let instantane: EtatDeLaParole = { ouverte: null, aDire: 0 };
 
-function prevenir() {
-	const suivante = instantanee?.parole ?? remarque?.parole ?? null;
-	if (suivante === courante) return;
-	courante = suivante;
-	for (const abonne of abonnes) abonne();
-}
-
-function paroleDUneRemarque(r: RemarqueDePlume, voix: 'ECRAN' | 'TRAVAIL'): ParoleAffichee {
+function paroleDUneRemarque(r: RemarqueDePlume, voix: VoixDePlume): ParoleAffichee {
 	return {
 		cle: r.cle,
 		voix,
 		texte: r.texte,
 		humeur: r.humeur,
-		silencieuse: voix === 'ECRAN' && r.silence === 'AU_REFUS',
+		silencieuse: (voix === 'ECRAN' || voix === 'BESOIN') && r.silence === 'AU_REFUS',
 		...(r.action === undefined ? {} : { cible: r.action.cible, libelleDuGeste: r.action.libelle })
 	};
 }
 
-/**
- * CHOISIR CE QUE L'ÉCRAN FAIT DIRE — à chaque changement d'écran, de remarques ou
- * de silences. L'écran courant est la DERNIÈRE inscription : pendant une
- * transition, le nouvel écran s'inscrit avant que l'ancien ne se retire.
- */
-function choisir() {
-	const visite = inscriptions.at(-1);
-	if (remarque !== null) {
-		const encore =
-			visite !== undefined &&
-			remarque.visite === visite.id &&
-			visite.remarques.some((r) => r.cle === remarque?.parole.cle) &&
-			!(silences?.has(remarque.parole.cle) ?? false);
-		if (!encore) {
-			clearTimeout(remarque.minuterie);
-			remarque = null;
-		}
-	}
-	if (
-		remarque === null &&
-		visite !== undefined &&
-		silences !== null &&
-		!visitesQuiOntParle.has(visite.id)
-	) {
-		const r = visite.remarques.find((x) => !silences?.has(x.cle) && !ditesDansLaSession.has(x.cle));
-		if (r !== undefined) {
-			visitesQuiOntParle.add(visite.id);
-			ditesDansLaSession.add(r.cle);
-			if (r.silence === 'UNE_FOIS') taireAuServeur?.(r.cle);
-			const cle = r.cle;
-			remarque = {
-				visite: visite.id,
-				parole: paroleDUneRemarque(r, 'ECRAN'),
-				minuterie: setTimeout(() => {
-					if (remarque?.parole.cle === cle) {
-						remarque = null;
-						prevenir();
-					}
-				}, DUREE_REMARQUE_MS)
-			};
-		}
-	}
-	prevenir();
+function tueOuEntendue(p: ParoleAffichee): boolean {
+	return entendues.has(p.cle) || (silences?.has(p.cle) ?? false);
 }
 
-function direInstantane(parole: ParoleAffichee, dureeMs: number) {
-	if (instantanee !== null) clearTimeout(instantanee.minuterie);
-	const cle = parole.cle;
-	instantanee = {
-		parole,
-		minuterie: setTimeout(() => {
-			if (instantanee?.parole.cle === cle) {
-				instantanee = null;
-				prevenir();
-			}
-		}, dureeMs)
+/** Ce que l'écran courant fait dire. L'écran courant est la DERNIÈRE inscription. */
+function remarquesDeLEcran(): ParoleAffichee[] {
+	return (inscriptions.at(-1)?.remarques ?? []).map((r) => paroleDUneRemarque(r, 'ECRAN'));
+}
+
+/** TOUT CE QUE PLUME A ENCORE À DIRE, le plus pressant d'abord, sans doublon. */
+function aDire(): ParoleAffichee[] {
+	if (silences === null) return instantanees.filter((p) => !tueOuEntendue(p));
+	const vues = new Set<string>();
+	return [...instantanees, ...besoins, ...remarquesDeLEcran()].filter((p) => {
+		if (vues.has(p.cle) || tueOuEntendue(p)) return false;
+		vues.add(p.cle);
+		return true;
+	});
+}
+
+/** Plume le dit : entendu pour la session ; une présentation ne se redira plus. */
+function dire(p: ParoleAffichee) {
+	entendues.add(p.cle);
+	if (p.voix === 'ECRAN' && !p.silencieuse) taireAuServeur?.(p.cle);
+}
+
+function prevenir() {
+	const courante = ouverte === null ? null : (ouverte.pile[ouverte.index] ?? null);
+	const suivant: EtatDeLaParole = {
+		ouverte:
+			ouverte === null || courante === null
+				? null
+				: { parole: courante, position: ouverte.index + 1, total: ouverte.pile.length },
+		aDire: aDire().length
 	};
+	const avant = instantane;
+	if (
+		avant.aDire === suivant.aDire &&
+		avant.ouverte?.parole === suivant.ouverte?.parole &&
+		avant.ouverte?.position === suivant.ouverte?.position &&
+		avant.ouverte?.total === suivant.ouverte?.total
+	)
+		return;
+	instantane = suivant;
+	for (const abonne of abonnes) abonne();
+}
+
+/** OUVRIR LA SCÈNE sur une pile, à partir d'une parole. */
+function ouvrirSur(pile: ParoleAffichee[], depart: number): boolean {
+	const premiere = pile[depart];
+	if (premiere === undefined) return false;
+	ouverte = { pile, index: depart };
+	dire(premiere);
+	return true;
+}
+
+/**
+ * CE QUI OUVRE LA SCÈNE SEULE — après chaque changement, scène fermée : ce qui ne peut
+ * pas attendre, puis la première remarque d'un écran qu'on vient d'ouvrir.
+ */
+function verifier() {
+	if (ouverte === null && hotes > 0) {
+		const pile = aDire();
+		const pressante = pile.findIndex(
+			(p) => p.voix === 'GESTE' || p.voix === 'FETE' || p.voix === 'NOUVELLE'
+		);
+		if (pressante !== -1) ouvrirSur(pile, pressante);
+		else {
+			const visite = inscriptions.at(-1);
+			if (visite !== undefined && silences !== null && !visitesOuvertes.has(visite.id)) {
+				const rang = pile.findIndex((p) => p.voix === 'ECRAN');
+				if (rang !== -1) {
+					visitesOuvertes.add(visite.id);
+					// La remarque de l'écran d'abord, puis le reste de ce qu'il a à dire.
+					const [remarque] = pile.splice(rang, 1);
+					if (remarque !== undefined) ouvrirSur([remarque, ...pile], 0);
+				}
+			}
+		}
+	}
 	prevenir();
 }
 
-/* ── Ce que la bulle lit et fait ──────────────────────────────────────────── */
+function annoncer(p: ParoleAffichee) {
+	if (tueOuEntendue(p) || instantanees.some((q) => q.cle === p.cle)) return;
+	instantanees = [...instantanees.filter((q) => !entendues.has(q.cle)), p];
+	if (ouverte !== null) {
+		// Scène ouverte : le mot après un geste passe tout de suite, le reste attend son tour.
+		const pile = ouverte.pile.filter((q) => q.cle !== p.cle);
+		if (p.voix === 'GESTE') {
+			pile.splice(ouverte.index + 1, 0, p);
+			ouverte = { pile, index: ouverte.index + 1 };
+			dire(p);
+		} else ouverte = { pile: [...pile, p], index: ouverte.index };
+	}
+	verifier();
+}
+
+/* ── Ce que la scène lit et fait ──────────────────────────────────────────── */
 
 export const paroleDePlume = {
 	abonner(abonne: () => void) {
@@ -186,53 +236,82 @@ export const paroleDePlume = {
 			abonnes.delete(abonne);
 		};
 	},
-	lire(): ParoleAffichee | null {
-		return courante;
+	lire(): EtatDeLaParole {
+		return instantane;
 	},
-	/** L'écran courant, pour la bulle : Aujourd'hui montre déjà les travaux du pilote. */
+	/** L'écran courant : le regard de la conversation, et Aujourd'hui qui montre déjà le pilote. */
 	ecranCourant(): EcranDePlume | null {
 		return inscriptions.at(-1)?.ecran ?? null;
 	},
-	/** La bulle se monte : les silences lus, et la façon de les écrire. */
+	/** La scène se monte : la façon d'écrire les silences. */
 	monter(taire: (cle: string) => void) {
 		hotes += 1;
 		taireAuServeur = taire;
+		verifier();
 		return () => {
 			hotes -= 1;
-			if (hotes === 0) taireAuServeur = null;
+			if (hotes === 0) {
+				taireAuServeur = null;
+				ouverte = null;
+				prevenir();
+			}
 		};
 	},
 	poserSilences(cles: readonly string[]) {
 		silences = new Set(cles);
-		choisir();
+		verifier();
 	},
-	/** Ce que l'écran courant fait lui-même d'une cible ; `false` laisse la bulle y mener. */
+	/** Les défis du jour, en paroles : ils se comptent sur la pastille, sans interrompre. */
+	poserBesoins(remarques: readonly RemarqueDePlume[]) {
+		besoins = remarques.map((r) => paroleDUneRemarque(r, 'BESOIN'));
+		verifier();
+	},
+	/** Ce que l'écran courant fait lui-même d'une cible ; `false` laisse la scène y mener. */
 	executer(cible: CibleDePlume): boolean {
 		return inscriptions.at(-1)?.executer?.(cible) ?? false;
 	},
-	/** Le ✕ : la parole s'efface ; une remarque d'écran se tait pour de bon. */
-	fermer(parole: ParoleAffichee) {
-		if (instantanee?.parole.cle === parole.cle) {
-			clearTimeout(instantanee.minuterie);
-			instantanee = null;
-		}
-		if (remarque?.parole.cle === parole.cle) {
-			clearTimeout(remarque.minuterie);
-			remarque = null;
-			if (parole.silencieuse) {
-				silences = new Set([...(silences ?? []), parole.cle]);
-				taireAuServeur?.(parole.cle);
-			}
+	/** TOUCHER PLUME : il dit ce qu'il a à dire. `false` s'il n'a rien : la conversation s'ouvre. */
+	ouvrir(): boolean {
+		if (ouverte !== null) return true;
+		const fait = ouvrirSur(aDire(), 0);
+		prevenir();
+		return fait;
+	},
+	/** « Suivant » : la parole d'après. */
+	suivant() {
+		if (ouverte === null) return;
+		const index = ouverte.index + 1;
+		const prochaine = ouverte.pile[index];
+		if (prochaine === undefined) ouverte = null;
+		else {
+			ouverte = { pile: ouverte.pile, index };
+			dire(prochaine);
 		}
 		prevenir();
 	},
-	/** Le défilement : la bulle se range sans rien faire taire (elle ne revient pas dans la visite). */
+	/** Le ✕, ou un geste fait : Plume rentre dans la barre ; ce qu'il n'a pas dit l'attend. */
+	fermer() {
+		ouverte = null;
+		prevenir();
+	},
+	/** Le défilement : comme le ✕, sans rien faire taire. */
 	ranger() {
-		if (remarque !== null) {
-			clearTimeout(remarque.minuterie);
-			remarque = null;
-			prevenir();
+		if (ouverte === null) return;
+		ouverte = null;
+		prevenir();
+	},
+	/** « Ne plus me le dire » : tu pour de bon, puis la parole d'après. */
+	taire(parole: ParoleAffichee) {
+		silences = new Set([...(silences ?? []), parole.cle]);
+		taireAuServeur?.(parole.cle);
+		if (ouverte !== null) {
+			const pile = ouverte.pile.filter((p) => p.cle !== parole.cle);
+			const index = Math.min(ouverte.index, pile.length - 1);
+			const prochaine = pile[index];
+			ouverte = prochaine === undefined ? null : { pile, index };
+			if (prochaine !== undefined) dire(prochaine);
 		}
+		prevenir();
 	},
 	/**
 	 * LES TRAVAUX FINIS DU PILOTE. La première lecture ne fait que marquer où l'on en
@@ -251,34 +330,61 @@ export const paroleDePlume = {
 		travailVuJusquA = premier.termineLe;
 		// Sur Aujourd'hui, le bloc du pilote coche déjà ce travail sous les yeux.
 		if (inscriptions.at(-1)?.ecran === 'AUJOURDHUI') return;
-		direInstantane(
-			paroleDUneRemarque(paroleDUnTravail(premier, nouveaux.length - 1), 'TRAVAIL'),
-			DUREE_TRAVAIL_MS
-		);
+		annoncer(paroleDUneRemarque(paroleDUnTravail(premier, nouveaux.length - 1), 'NOUVELLE'));
+	},
+	/** UNE NOTIFICATION ARRIVÉE — sauf sur la boîte de réception, qui la montre déjà. */
+	annoncerNotification(
+		derniere: { readonly id: string; readonly creeeLe: number; readonly lue: boolean } | null,
+		titre: string | null,
+		surLaBoite: boolean
+	) {
+		if (notificationVueJusquA === null) {
+			notificationVueJusquA = derniere?.creeeLe ?? 0;
+			return;
+		}
+		if (derniere === null || derniere.creeeLe <= notificationVueJusquA) return;
+		notificationVueJusquA = derniere.creeeLe;
+		if (derniere.lue || surLaBoite || titre === null) return;
+		annoncer(paroleDUneRemarque(paroleDUneNotification(derniere.id, titre), 'NOUVELLE'));
+	},
+	/**
+	 * DE L'ARGENT EST RENTRÉ — fêté, sauf sur la fiche du client, où « Virement noté »
+	 * vient de poser sa coche.
+	 */
+	annoncerPaiement(
+		dernier: { readonly id: string; readonly client: string; readonly creeLe: number } | null,
+		montant: string | null
+	) {
+		if (paiementVuJusquA === null) {
+			paiementVuJusquA = dernier?.creeLe ?? 0;
+			return;
+		}
+		if (dernier === null || montant === null || dernier.creeLe <= paiementVuJusquA) return;
+		paiementVuJusquA = dernier.creeLe;
+		if (inscriptions.at(-1)?.ecran === 'CLIENT') return;
+		annoncer(paroleDUneRemarque(paroleDUnPaiement(dernier.id, dernier.client, montant), 'FETE'));
+	},
+	/**
+	 * LA JOURNÉE BOUCLÉE — fêtée quand le dernier défi tombe SOUS LES YEUX du gérant :
+	 * une journée déjà tenue à l'ouverture, ou qui n'avait rien à faire, ne se fête pas.
+	 */
+	suivreLaJournee(journee: {
+		readonly jour: string;
+		readonly tenue: boolean;
+		readonly total: number;
+		readonly serie: number;
+		readonly semaine: readonly JourDeLaSemaine[];
+	}) {
+		const avant = journeeVue;
+		journeeVue = { jour: journee.jour, tenue: journee.tenue };
+		if (avant === null || avant.jour !== journee.jour) return;
+		if (avant.tenue || !journee.tenue || journee.total === 0) return;
+		annoncer({
+			...paroleDUneRemarque(paroleDeLaJourneeBouclee(journee.jour, journee.serie), 'FETE'),
+			semaine: journee.semaine
+		});
 	}
 };
-
-/**
- * UNE NOTIFICATION ARRIVÉE — dite par Plume, sauf sur la boîte de réception qui la
- * montre déjà. La première lecture ne fait que marquer où l'on en est.
- */
-export function annoncerNotification(
-	derniere: { readonly id: string; readonly creeeLe: number; readonly lue: boolean } | null,
-	titre: string | null,
-	surLaBoite: boolean
-) {
-	if (notificationVueJusquA === null) {
-		notificationVueJusquA = derniere?.creeeLe ?? 0;
-		return;
-	}
-	if (derniere === null || derniere.creeeLe <= notificationVueJusquA) return;
-	notificationVueJusquA = derniere.creeeLe;
-	if (derniere.lue || surLaBoite || titre === null) return;
-	direInstantane(
-		paroleDUneRemarque(paroleDUneNotification(derniere.id, titre), 'TRAVAIL'),
-		DUREE_TRAVAIL_MS
-	);
-}
 
 /* ── Les crochets des écrans ──────────────────────────────────────────────── */
 
@@ -294,7 +400,7 @@ export function annoncerNotification(
  *
  * ⚠️ L'EFFET TOURNE À CHAQUE RENDU, ET C'EST VOULU : il recopie la dernière liste et
  * le dernier exécutant (une fermeture qui change à chaque rendu) dans le magasin,
- * qui ne prévient la bulle que si les CLÉS ont changé.
+ * qui ne prévient la scène que si les CLÉS ont changé.
  */
 export function useRemarquesDePlume(
 	ecran: EcranDePlume,
@@ -308,25 +414,27 @@ export function useRemarquesDePlume(
 		if (remarques === undefined) {
 			if (existante !== undefined) {
 				inscriptions.splice(inscriptions.indexOf(existante), 1);
-				choisir();
+				verifier();
 			}
 			return;
 		}
 		if (existante === undefined) {
 			inscriptions.push({ id, ecran, remarques, executer });
-			choisir();
+			verifier();
 			return;
 		}
 		const avant = existante.remarques.map((r) => r.cle).join('|');
 		existante.remarques = remarques;
 		existante.executer = executer;
-		if (avant !== remarques.map((r) => r.cle).join('|')) choisir();
+		if (avant !== remarques.map((r) => r.cle).join('|')) verifier();
 	});
 	useEffect(
 		() => () => {
 			const rang = inscriptions.findIndex((i) => i.id === id);
 			if (rang !== -1) inscriptions.splice(rang, 1);
-			choisir();
+			// La remarque d'un écran quitté ne reste pas ouverte sur le suivant.
+			if (ouverte?.pile[ouverte.index]?.voix === 'ECRAN') ouverte = null;
+			verifier();
 		},
 		[id]
 	);
@@ -342,26 +450,30 @@ export function prenomDe(nom: string | null | undefined): string | null {
 	return premier;
 }
 
-/** La parole courante, pour la bulle. */
-export function useParoleDePlume(): ParoleAffichee | null {
-	return useSyncExternalStore(paroleDePlume.abonner, paroleDePlume.lire, () => null);
+const INITIAL: EtatDeLaParole = { ouverte: null, aDire: 0 };
+
+/** Ce que Plume dit en ce moment, pour la scène et le bouton. */
+export function useParoleDePlume(): EtatDeLaParole {
+	return useSyncExternalStore(paroleDePlume.abonner, paroleDePlume.lire, () => INITIAL);
 }
 
 /**
- * PLUME DIT CE QUE VOUS VENEZ DE FAIRE — à la place du toast, depuis sa bulle.
+ * PLUME DIT CE QUE VOUS VENEZ DE FAIRE — à la place du toast, depuis sa scène, qui
+ * s'ouvre sur ce mot. Il reste jusqu'à ce qu'on le renvoie.
  *
- * ⚠️ SANS BULLE, LE MOT PART QUAND MÊME. Dans une conversation ou un démarrage
+ * ⚠️ SANS SCÈNE, LE MOT PART QUAND MÊME. Dans une conversation ou un démarrage
  * guidé, la barre (et Plume avec elle) laisse la place au compositeur : le mot
  * redevient un toast, avec son titre.
  */
 export function usePlumeDit() {
 	const toast = useToast();
-	return function dire(mot: {
-		/** Le titre du toast, quand il n'y a pas de bulle. */
+	return function direLeMot(mot: {
+		/** Le titre du toast, quand il n'y a pas de scène. */
 		readonly titre: string;
 		readonly texte: ReactNode;
 		readonly geste?: GesteDeBulle;
-		readonly humeur?: 'content' | 'attention';
+		readonly humeur?: 'content' | 'attention' | 'ecrit' | 'fete';
+		/** Le temps du toast, sans scène. La scène, elle, ne se ferme pas seule. */
 		readonly dureeMs?: number;
 	}) {
 		if (hotes === 0) {
@@ -387,16 +499,13 @@ export function usePlumeDit() {
 			});
 			return;
 		}
-		direInstantane(
-			{
-				cle: `geste:${Math.random().toString(36).slice(2)}`,
-				voix: 'GESTE',
-				texte: mot.texte,
-				humeur: mot.humeur ?? 'content',
-				silencieuse: false,
-				...(mot.geste === undefined ? {} : { geste: mot.geste })
-			},
-			mot.dureeMs ?? DUREE_GESTE_MS
-		);
+		annoncer({
+			cle: `geste:${Math.random().toString(36).slice(2)}`,
+			voix: 'GESTE',
+			texte: mot.texte,
+			humeur: mot.humeur ?? 'content',
+			silencieuse: false,
+			...(mot.geste === undefined ? {} : { geste: mot.geste })
+		});
 	};
 }

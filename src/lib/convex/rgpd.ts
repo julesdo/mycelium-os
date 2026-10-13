@@ -696,6 +696,7 @@ export const purgerEtablissement = internalMutation({
 		budget = await viderParIndexOrg(ctx, 'pilotes', organizationId, budget);
 		// Ce que Plume ne redira pas : des clés qui nomment des clients.
 		budget = await viderParIndexOrg(ctx, 'silencesPlume', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'journeesPlume', organizationId, budget);
 		// Les courriers référencent la créance et le décompte : ils partent avant eux.
 		budget = await viderParIndexOrg(ctx, 'envois', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
@@ -930,6 +931,7 @@ async function viderParIndexOrg(
 		| 'pilotes'
 		| 'travauxPilote'
 		| 'silencesPlume'
+		| 'journeesPlume'
 		| 'intervenants'
 		| 'journal'
 		| 'propositions'

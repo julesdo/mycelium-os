@@ -57,6 +57,7 @@ export type EcranDePlume =
 export type CibleDePlume =
 	| { readonly genre: 'CONVERSATION' }
 	| { readonly genre: 'NOTIFICATIONS' }
+	| { readonly genre: 'AUJOURDHUI' }
 	| { readonly genre: 'DEMARRER_LOT' }
 	| { readonly genre: 'DEPOSER' }
 	| { readonly genre: 'DOSSIER'; readonly dossier: string; readonly rubrique?: 'courriers' }
@@ -72,13 +73,19 @@ export type Silence =
 	/** Dès qu'il l'a dit : une présentation, un bonjour. */
 	| 'UNE_FOIS';
 
+export type HumeurDeRemarque = 'content' | 'attention' | 'salue' | 'fete' | 'ecrit';
+
 export interface RemarqueDePlume {
 	/** Stable, et porteuse de la situation : `sans-email:<client>`, `a-demarrer:3`. */
 	readonly cle: string;
 	/** À la première personne, en une ou deux phrases. Jamais de tiret long. */
 	readonly texte: string;
-	/** `attention` quand quelque chose attend le gérant, `content` sinon. */
-	readonly humeur: 'content' | 'attention';
+	/**
+	 * La tête qu'il fait en le disant : `attention` quand quelque chose attend le
+	 * gérant, `salue` pour un bonjour, `fete` pour de l'argent rentré ou une journée
+	 * bouclée, `ecrit` pour une lettre, `content` sinon.
+	 */
+	readonly humeur: HumeurDeRemarque;
 	readonly silence: Silence;
 	readonly action?: { readonly libelle: string; readonly cible: CibleDePlume };
 }
@@ -89,7 +96,7 @@ export interface RemarqueDePlume {
 
 const PRESENTATIONS: Readonly<Record<EcranDePlume, string>> = {
 	AUJOURDHUI:
-		'Je relis vos factures, j’ouvre le dossier de chaque client en retard et je prépare ses relances. Touchez-moi pour me demander n’importe quoi.',
+		'Je relis vos factures, j’ouvre le dossier de chaque client en retard et je prépare ses relances. Quand j’ai quelque chose à vous dire, je sors vous le dire ici.',
 	DOSSIERS:
 		'Ici, un dossier par client en retard. Je les prépare ; dès que vous en démarrez un, je suis son plan de relance.',
 	CLIENTS:
@@ -114,30 +121,8 @@ export function presentation(ecran: EcranDePlume, nomDuPilote: string): Remarque
 			ecran === 'AUJOURDHUI'
 				? `Bonjour, je suis ${nomDuPilote}. ${PRESENTATIONS[ecran]}`
 				: PRESENTATIONS[ecran],
-		humeur: 'content',
+		humeur: ecran === 'AUJOURDHUI' ? 'salue' : 'content',
 		silence: 'UNE_FOIS'
-	};
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
-   Les remarques partagées par plusieurs écrans.
-   ───────────────────────────────────────────────────────────────────────── */
-
-/**
- * LES DOSSIERS QUE PLUME A PRÉPARÉS ET QUI ATTENDENT LE FEU VERT. La pastille de
- * Plume les compte ; la bulle dit ce que le nombre veut dire.
- */
-export function dossiersADemarrer(nombre: number): RemarqueDePlume | null {
-	if (nombre <= 0) return null;
-	return {
-		cle: `a-demarrer:${nombre}`,
-		texte:
-			nombre === 1
-				? 'J’ai préparé le dossier d’un client en retard. Je ne le relance pas avant votre feu vert.'
-				: `J’ai préparé ${nombre} dossiers de clients en retard. Je ne relance rien avant votre feu vert.`,
-		humeur: 'attention',
-		silence: 'AU_REFUS',
-		action: { libelle: nombre === 1 ? 'Le voir' : 'Les voir', cible: { genre: 'DEMARRER_LOT' } }
 	};
 }
 
@@ -150,11 +135,14 @@ export interface DonneesDAujourdhui {
 	readonly aujourdHui: string;
 	/** Le premier mot du nom du compte, s'il en a un. */
 	readonly prenom: string | null;
-	readonly aDemarrer: number;
 	readonly dossiersSuivis: number;
 }
 
 /**
+ * ⚠️ CE QUI ATTEND LE GÉRANT N'EST PLUS ICI (13/10/2026, au soir) : les dossiers
+ * préparés, les lettres et les questions sont les défis de la JOURNÉE
+ * (`journee.ts`), dits sur tous les écrans, et plus seulement sur celui-ci.
+ *
  * ⚠️ LE BONJOUR NE DIT QUE CE QUI EST VRAI. « Je vous dis ici chaque chose que je
  * fais » : la bulle annonce ses travaux finis (`paroleDUnTravail`), sur tous les
  * écrans sauf celui-ci, où son bloc les montre déjà.
@@ -171,51 +159,10 @@ export function remarquesDAujourdhui(
 			(suivis === 0
 				? 'Je veille sur vos factures : je vous dis ici chaque chose que je fais.'
 				: `Je veille sur ${suivis} dossier${pluriel(suivis)}, et je vous dis ici chaque chose que je fais.`),
-		humeur: 'content',
+		humeur: 'salue',
 		silence: 'UNE_FOIS'
 	};
-	return garder([
-		presentation('AUJOURDHUI', nomDuPilote),
-		dossiersADemarrer(donnees.aDemarrer),
-		bonjour
-	]);
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
-   Dossiers.
-   ───────────────────────────────────────────────────────────────────────── */
-
-export interface DonneesDesDossiers {
-	readonly aDemarrer: number;
-	/** Les dossiers dont une lettre attend la relecture, le plus gros d'abord. */
-	readonly lettresARelire: readonly { readonly dossier: string; readonly client: string }[];
-}
-
-export function remarquesDesDossiers(
-	donnees: DonneesDesDossiers,
-	nomDuPilote: string
-): RemarqueDePlume[] {
-	const lettres = donnees.lettresARelire;
-	const premiere = lettres[0];
-	return garder([
-		presentation('DOSSIERS', nomDuPilote),
-		dossiersADemarrer(donnees.aDemarrer),
-		premiere === undefined
-			? null
-			: {
-					cle: `lettres:${lettres.length}:${premiere.dossier}`,
-					texte:
-						lettres.length === 1
-							? `La lettre de ${premiere.client} attend votre relecture. Je ne l’envoie pas avant.`
-							: `${lettres.length} lettres attendent votre relecture, dont celle de ${premiere.client}. Je n’en envoie aucune avant.`,
-					humeur: 'attention',
-					silence: 'AU_REFUS',
-					action: {
-						libelle: 'La relire',
-						cible: { genre: 'DOSSIER', dossier: premiere.dossier, rubrique: 'courriers' }
-					}
-				}
-	]);
+	return [presentation('AUJOURDHUI', nomDuPilote), bonjour];
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -365,7 +312,7 @@ export function remarquesDUnClient(
    ───────────────────────────────────────────────────────────────────────── */
 
 export function remarquesDeLEcran(
-	ecran: 'COFFRE' | 'SANTE' | 'SANTE_CLIENT' | 'DEFENSE',
+	ecran: 'DOSSIERS' | 'COFFRE' | 'SANTE' | 'SANTE_CLIENT' | 'DEFENSE',
 	nomDuPilote: string
 ): RemarqueDePlume[] {
 	return [presentation(ecran, nomDuPilote)];
@@ -409,6 +356,31 @@ export function paroleDUnTravail(travail: TravailTermine, autres: number): Remar
 		silence: 'UNE_FOIS',
 		action: { libelle: 'Voir', cible: { genre: 'CONVERSATION' } }
 	};
+}
+
+/**
+ * DE L'ARGENT EST RENTRÉ — le moment que tout le produit attend, fêté. Le montant est
+ * mis en forme par l'appelant, depuis les centimes.
+ */
+export function paroleDUnPaiement(id: string, client: string, montant: string): RemarqueDePlume {
+	return {
+		cle: `paiement:${id}`,
+		texte: `${client} vient de vous payer ${montant}. Ses relances s’arrêtent sur ce qui est réglé.`,
+		humeur: 'fete',
+		silence: 'UNE_FOIS'
+	};
+}
+
+/**
+ * CE QU'IL FAIT ENSUITE — la ligne du bas de sa bulle, toujours vraie : la prochaine
+ * relance programmée, et quand elle part. `quand` est mis en mots par l'appelant.
+ */
+export function ligneDeLaSuite(suite: {
+	readonly etape: string;
+	readonly client: string;
+	readonly quand: string;
+}): string {
+	return `Ensuite : ${suite.etape.toLowerCase()} pour ${suite.client}, ${suite.quand}.`;
 }
 
 /**

@@ -4,13 +4,16 @@ import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import {
 	BarreDuBas,
 	BoutonCompagnon,
-	BullePlume,
+	ScenePlume,
+	useReflexion,
 	IconeLetikette,
 	PastilleDeRappel,
 	PageEcran,
 	cn,
 	type DestinationBarre,
-	type HumeurPlume
+	type HumeurPlume,
+	type JourDeLaScene,
+	type JourneeDeLaScene
 } from '../../ui';
 import { lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
@@ -132,36 +135,120 @@ const ETATS_COMPAGNON: readonly {
 	}
 ];
 
-/** Les bulles de la salle : les phrases que `compagnon/presence.ts` compose vraiment. */
-const BULLES: readonly {
+/**
+ * LES SCÈNES DE LA SALLE (13/10/2026, au soir) : les phrases que `compagnon/presence.ts`
+ * et `compagnon/journee.ts` composent vraiment, avec la tête qu'il fait en les disant.
+ * Chaque scène réfléchit d'abord (trois points), puis parle.
+ */
+const JOURNEE_DEMO: JourneeDeLaScene = {
+	titre: '2 sur 5 aujourd’hui',
+	faits: 2,
+	total: 5,
+	serie: '4 jours d’affilée'
+};
+const SEMAINE_DEMO: readonly JourDeLaScene[] = [
+	{ jour: '2026-10-12', lettre: 'L', etat: 'TENUE' },
+	{ jour: '2026-10-13', lettre: 'M', etat: 'TENUE' },
+	{ jour: '2026-10-14', lettre: 'M', etat: 'AVENIR' },
+	{ jour: '2026-10-15', lettre: 'J', etat: 'AVENIR' },
+	{ jour: '2026-10-16', lettre: 'V', etat: 'AVENIR' },
+	{ jour: '2026-10-17', lettre: 'S', etat: 'AVENIR' },
+	{ jour: '2026-10-18', lettre: 'D', etat: 'AVENIR' }
+];
+const SCENES: readonly {
 	readonly titre: string;
 	readonly humeur: HumeurPlume;
 	readonly texte: string;
 	readonly geste?: string;
-	readonly pourDeBon: boolean;
+	readonly rang: { readonly position: number; readonly total: number };
+	readonly taire?: boolean;
+	readonly semaine?: readonly JourDeLaScene[];
+	readonly journee: JourneeDeLaScene;
+	readonly suite?: string;
 }[] = [
 	{
-		titre: 'Une remarque d’écran, avec son geste',
+		titre: 'Ce qui vous attend : un défi du jour, avec son geste',
 		humeur: 'attention',
 		texte: 'J’ai préparé 3 dossiers de clients en retard. Je ne relance rien avant votre feu vert.',
 		geste: 'Les voir',
-		pourDeBon: true
+		rang: { position: 1, total: 3 },
+		taire: true,
+		journee: JOURNEE_DEMO,
+		suite: 'Ensuite : deuxième rappel pour Fournitures Durand, demain à 9 h.'
 	},
 	{
-		titre: 'Sa présentation, la première fois',
-		humeur: 'content',
+		titre: 'De l’argent est rentré : il fait la fête',
+		humeur: 'fete',
 		texte:
-			'Bonjour, je suis Plume. Je relis vos factures, j’ouvre le dossier de chaque client en retard et je prépare ses relances. Touchez-moi pour me demander n’importe quoi.',
-		pourDeBon: false
+			'Boulangerie Martin vient de vous payer 1 240,00 €. Ses relances s’arrêtent sur ce qui est réglé.',
+		rang: { position: 1, total: 1 },
+		journee: JOURNEE_DEMO,
+		suite: 'En ce moment : envoie le rappel à Transports Vidal, 2 sur 3.'
 	},
 	{
-		titre: 'Un travail fini, annoncé là où l’on est',
-		humeur: 'content',
-		texte: 'Le rappel est parti chez Boulangerie Martin. J’ai aussi fini 2 autres travaux.',
-		geste: 'Voir',
-		pourDeBon: false
+		titre: 'La journée bouclée, et la semaine en coches',
+		humeur: 'fete',
+		texte:
+			'Tout ce qui vous attendait aujourd’hui est fait : 5 jours d’affilée sans rien laisser traîner.',
+		rang: { position: 1, total: 1 },
+		semaine: SEMAINE_DEMO,
+		journee: { titre: 'Journée bouclée', faits: 5, total: 5, serie: '5 jours d’affilée' }
+	},
+	{
+		titre: 'Sa présentation, la première fois : il salue',
+		humeur: 'salue',
+		texte:
+			'Bonjour, je suis Plume. Je relis vos factures, j’ouvre le dossier de chaque client en retard et je prépare ses relances. Quand j’ai quelque chose à vous dire, je sors vous le dire ici.',
+		rang: { position: 1, total: 2 },
+		journee: { titre: 'Rien ne vous attend aujourd’hui', faits: 0, total: 0, serie: null }
+	},
+	{
+		titre: 'Le mot après un geste : il écrit',
+		humeur: 'ecrit',
+		texte:
+			'J’ai préparé la lettre de Fournitures Durand. Elle attend votre relecture : rien n’est parti.',
+		geste: 'La relire',
+		rang: { position: 1, total: 1 },
+		journee: JOURNEE_DEMO
 	}
 ];
+
+/** Une scène : Plume réfléchit dans le bouton (trois points dans la bulle), puis prend sa tête. */
+function SceneDeLaSalle({ scene }: { readonly scene: (typeof SCENES)[number] }) {
+	const { titre, humeur, texte, geste, rang, taire, semaine, journee, suite } = scene;
+	const reflechit = useReflexion(titre);
+	return (
+		<BarreDuBas
+			destinations={destinations('aujourdhui', null)}
+			accessoire={
+				<BoutonCompagnon
+					humeur={reflechit ? 'reflechit' : humeur}
+					compte={rang.total - rang.position}
+					description="Parler à Plume"
+					onOuvrir={() => undefined}
+					pensee={false}
+					progression={journee.total === 0 ? 1 : journee.faits / journee.total}
+					bulle={
+						<ScenePlume
+							reflechit={reflechit}
+							texte={texte}
+							journee={journee}
+							{...(semaine === undefined ? {} : { semaine })}
+							{...(geste === undefined ? {} : { libelleDuGeste: geste, onGeste: () => undefined })}
+							rang={rang}
+							{...(rang.position < rang.total
+								? { onSuivant: () => undefined }
+								: { onParler: () => undefined })}
+							onFermer={() => undefined}
+							{...(taire === true ? { onTaire: () => undefined } : {})}
+							{...(suite === undefined ? {} : { suite })}
+						/>
+					}
+				/>
+			}
+		/>
+	);
+}
 
 function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 	const lecture = lectureDemo(etat, true);
@@ -220,33 +307,12 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 				</Scene>
 			))}
 
-			<SectionTitle>Plume parle, depuis la barre</SectionTitle>
-			{/* La bulle sort de lui : sa pointe le désigne. Trois voix, une forme
-			    (13/10/2026) : ce qu'il a à dire de l'écran, ce qu'il vient de finir, le
-			    mot après un geste. */}
-			{BULLES.map(({ titre, humeur, texte, geste, pourDeBon }) => (
-				<Scene key={titre} titre={titre} hauteur="h-80">
-					<BarreDuBas
-						destinations={destinations('aujourdhui', null)}
-						accessoire={
-							<BoutonCompagnon
-								humeur={humeur}
-								description="Parler à Plume"
-								onOuvrir={() => undefined}
-								bulle={
-									<BullePlume
-										texte={texte}
-										{...(geste === undefined
-											? {}
-											: { libelleDuGeste: geste, onGeste: () => undefined })}
-										onOuvrir={() => undefined}
-										onFermer={() => undefined}
-										fermerPourDeBon={pourDeBon}
-									/>
-								}
-							/>
-						}
-					/>
+			<SectionTitle>Plume vous parle, depuis la barre</SectionTitle>
+			{/* Plume, grand dans le bouton, réfléchit (trois points dans la bulle), puis prend la
+			    tête de ce qu'il dit ; l'anneau de la journée entoure le bouton (13/10/2026, au soir). */}
+			{SCENES.map((scene) => (
+				<Scene key={scene.titre} titre={scene.titre} hauteur="h-96">
+					<SceneDeLaSalle scene={scene} />
 				</Scene>
 			))}
 

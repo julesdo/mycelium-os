@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { besoinsDuJour } from '../journee';
 import {
 	libelleDuRegard,
 	ligneDuRegard,
@@ -7,7 +8,6 @@ import {
 	questionsDuRegard,
 	remarquesDAujourdhui,
 	remarquesDesClients,
-	remarquesDesDossiers,
 	remarquesDUnClient,
 	type DonneesDUnClient
 } from '../presence';
@@ -28,7 +28,7 @@ const CLIENT: DonneesDUnClient = {
 describe('Plume sur chaque écran', () => {
 	it('se présente d’abord, une seule fois', () => {
 		const [premiere] = remarquesDAujourdhui(
-			{ aujourdHui: '2026-10-13', prenom: 'Camille', aDemarrer: 0, dossiersSuivis: 3 },
+			{ aujourdHui: '2026-10-13', prenom: 'Camille', dossiersSuivis: 3 },
 			'Plume'
 		);
 		expect(premiere?.cle).toBe('presentation:AUJOURDHUI');
@@ -36,19 +36,19 @@ describe('Plume sur chaque écran', () => {
 		expect(premiere?.texte).toContain('je suis Plume');
 	});
 
-	it('explique la pastille des dossiers préparés, avec le geste qui y mène', () => {
-		const remarques = remarquesDAujourdhui(
-			{ aujourdHui: '2026-10-13', prenom: null, aDemarrer: 3, dossiersSuivis: 3 },
-			'Plume'
+	it('dit les dossiers préparés, avec le geste qui y mène', () => {
+		const besoins = besoinsDuJour(
+			{ demarrer: 3, relire: 0, repondre: 0 },
+			{ lettre: null, question: null }
 		);
-		const aDemarrer = remarques.find((r) => r.cle === 'a-demarrer:3');
+		const aDemarrer = besoins.find((r) => r.cle === 'a-demarrer:3');
 		expect(aDemarrer?.action?.cible).toEqual({ genre: 'DEMARRER_LOT' });
 		expect(aDemarrer?.texte).toContain('avant votre feu vert');
 	});
 
 	it('dit bonjour une fois par jour : la clé porte la date', () => {
 		const remarques = remarquesDAujourdhui(
-			{ aujourdHui: '2026-10-13', prenom: null, aDemarrer: 0, dossiersSuivis: 1 },
+			{ aujourdHui: '2026-10-13', prenom: null, dossiersSuivis: 1 },
 			'Plume'
 		);
 		expect(remarques.at(-1)?.cle).toBe('bonjour:2026-10-13');
@@ -58,11 +58,11 @@ describe('Plume sur chaque écran', () => {
 	});
 
 	it('montre la lettre qui attend la relecture, et mène à elle', () => {
-		const remarques = remarquesDesDossiers(
-			{ aDemarrer: 0, lettresARelire: [{ dossier: 'd9', client: 'Martin' }] },
-			'Plume'
+		const besoins = besoinsDuJour(
+			{ demarrer: 0, relire: 1, repondre: 0 },
+			{ lettre: { dossier: 'd9', client: 'Martin' }, question: null }
 		);
-		const lettre = remarques.find((r) => r.cle.startsWith('lettres:'));
+		const lettre = besoins.find((r) => r.cle.startsWith('lettres:'));
 		expect(lettre?.action?.cible).toEqual({
 			genre: 'DOSSIER',
 			dossier: 'd9',
@@ -146,12 +146,12 @@ describe('Plume sur chaque écran', () => {
 	it('n’écrit jamais de tiret long ni de mot de verdict', () => {
 		const tout = [
 			...remarquesDAujourdhui(
-				{ aujourdHui: '2026-10-13', prenom: 'Camille', aDemarrer: 2, dossiersSuivis: 4 },
+				{ aujourdHui: '2026-10-13', prenom: 'Camille', dossiersSuivis: 4 },
 				'Plume'
 			),
-			...remarquesDesDossiers(
-				{ aDemarrer: 2, lettresARelire: [{ dossier: 'd', client: 'X' }] },
-				'Plume'
+			...besoinsDuJour(
+				{ demarrer: 2, relire: 2, repondre: 1 },
+				{ lettre: { dossier: 'd', client: 'X' }, question: { dossier: 'q', client: 'Y' } }
 			),
 			...remarquesDUnClient(
 				{

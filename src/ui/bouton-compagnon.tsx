@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Button } from '@cladd-ui/react';
 import { cn } from './cn';
 import { PastilleDeRappel } from './barre-du-bas';
@@ -22,16 +22,26 @@ import { NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
  * la barre, jamais au-dessus du contenu, où il cachait les montants ; il a la
  * hauteur de la pilule et l'anatomie d'un onglet.
  *
- * ⚠️ ET IL PARLE D'ICI (13/10/2026). Sa bulle (`BullePlume`) se pose au-dessus de
- * lui, la pointe sous lui : c'est d'ici qu'il dit ce qu'il vient de faire et ce
- * qu'il a à dire de l'écran. Voir `app/parole-de-plume.tsx`.
+ * ⚠️ ET IL PARLE D'ICI (13/10/2026) : c'est au-dessus de ce bouton qu'il dit ce
+ * qu'il vient de faire et ce qu'il a à dire de l'écran (`app/parole-de-plume.tsx`).
+ *
+ * ⚠️ ET IL Y EST GRAND, SANS SON NOM (13/10/2026, au soir). Le fondateur : « au lieu
+ * d'avoir un gros Plume en plus du bouton, qui prend énormément de place, pourquoi
+ * ne pas mettre Plume en grand dans le bouton, et enlever le nom en dessous, pour
+ * voir toutes les expressions et les animations ». Plume remplit donc le bouton
+ * rond ; c'est là qu'il réfléchit, écrit, fait la fête ou dort, et sa bulle
+ * (`ScenePlume`) le désigne de sa pointe. Le nom reste dit au lecteur d'écran.
+ * Autour, l'ANNEAU de la journée se remplit à mesure que ses défis tombent
+ * (`progression`), comme ceux des leçons de Duolingo.
  */
 export function BoutonCompagnon({
 	humeur,
 	compte = 0,
 	description,
 	onOuvrir,
-	bulle
+	bulle,
+	pensee = true,
+	progression
 }: {
 	readonly humeur: HumeurPlume;
 	/** Ce qui attend le gérant : la pastille, au-dessus de zéro seulement. */
@@ -41,25 +51,43 @@ export function BoutonCompagnon({
 	readonly onOuvrir: () => void;
 	/** Ce que Plume dit en ce moment, posé au-dessus de lui. */
 	readonly bulle?: ReactNode;
+	/** Sa bulle de pensée, quand il réfléchit : retirée quand sa bulle écrit déjà les trois points. */
+	readonly pensee?: boolean;
+	/** La part de la journée faite, de 0 à 1 ; absente quand rien n'attendait. */
+	readonly progression?: number;
 }) {
 	return (
 		<span className="relative flex shrink-0">
 			{bulle}
 			<span aria-hidden className={cn('halo-compagnon', compte > 0 && 'halo-compagnon-vif')} />
+			{progression === undefined ? null : (
+				<span
+					aria-hidden
+					className="anneau-journee"
+					style={{ '--part-du-jour': Math.min(1, Math.max(0, progression)) } as CSSProperties}
+				/>
+			)}
 			<Button
 				size="md"
 				rounded
 				variant="transparent"
 				outline={false}
 				hoverable={false}
-				className="verre-dense verre-bouton h-auto min-h-cladd-md w-16 md:w-auto"
-				contentClassName="flex-col gap-0.5 px-1 md:flex-row md:gap-2 md:px-3"
+				className="verre-dense verre-bouton h-auto min-h-cladd-md w-16"
+				contentClassName="items-center justify-center overflow-visible p-0"
 				aria-label={description}
+				title={NOM_DU_PILOTE}
 				onClick={onOuvrir}
 			>
-				<Plume humeur={humeur} taille={30} decoratif />
-				<span className="text-cladd-4xs leading-none font-medium md:text-cladd-2xs">
-					{NOM_DU_PILOTE}
+				{/*
+				  Grand, et il déborde un peu : la plume sur sa tête, ses confettis, ses « z »
+				  et sa bulle de pensée sortent du bouton (`overflow-visible`).
+
+				  ⚠️ DANS UNE ENVELOPPE, PAS EN ENFANT DIRECT : le bouton du kit ramène tout
+				  `svg` enfant à 16 px (`[&>svg]:size-4`). Plume y était tout petit, même à 30.
+				*/}
+				<span className="-mt-1 flex">
+					<Plume humeur={humeur} taille={46} decoratif pensee={pensee} />
 				</span>
 			</Button>
 			{compte > 0 ? (

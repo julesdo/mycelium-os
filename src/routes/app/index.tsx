@@ -295,20 +295,19 @@ function File() {
 
 	/*
 	  CE QUE PLUME DIT EN ARRIVANT (13/10/2026) : sa présentation la première fois,
-	  les dossiers qu'il a préparés, puis son bonjour, une fois par jour. Deux
-	  lectures étroites : l'humeur (qui porte le compte) et le nom du compte.
+	  puis son bonjour, une fois par jour. Ce qui attend le gérant (les dossiers
+	  préparés, les lettres, les questions) suit dans sa pile : ce sont ses défis du
+	  jour, dits sur tous les écrans.
 	*/
-	const plume = useQuery(api.recouvrement.pilote.humeurDePlume, {});
 	const compte = useQuery(api.users.viewer, {});
 	useRemarquesDePlume(
 		'AUJOURDHUI',
-		plume === undefined || indexDossiers === undefined || compte === undefined
+		indexDossiers === undefined || compte === undefined
 			? undefined
 			: remarquesDAujourdhui(
 					{
 						aujourdHui,
 						prenom: prenomDe(compte?.name),
-						aDemarrer: plume.aDemarrer,
 						dossiersSuivis: indexDossiers.filter(
 							(d) => !d.classe && d.etape !== 'REGLE' && d.principalRestantDu > 0n
 						).length

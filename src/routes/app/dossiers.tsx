@@ -8,7 +8,7 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { choixDeRelance, useGestesDeDossier } from '../../app/gestes-dossier';
 import { NOM_DU_PILOTE, aujourdHuiISO } from '../../ui';
 import { useRemarquesDePlume } from '../../app/parole-de-plume';
-import { remarquesDesDossiers } from '../../lib/verticales/recouvrement/compagnon/presence';
+import { remarquesDeLEcran } from '../../lib/verticales/recouvrement/compagnon/presence';
 import {
 	EcranDossiers,
 	type DossierDeLIndex,
@@ -65,20 +65,10 @@ function PageDossiers() {
 	 */
 	const [lot, setLot] = useState<DossiersAffiches['lot']>('AUCUN');
 
-	// Ce que Plume dit ici : les dossiers qu'il a préparés, les lettres qui attendent.
+	// Plume se présente ici ; les dossiers préparés et les lettres sont ses défis du jour.
 	useRemarquesDePlume(
 		'DOSSIERS',
-		dossiers === undefined
-			? undefined
-			: remarquesDesDossiers(
-					{
-						aDemarrer: dossiers.filter((d) => d.aDemarrer && !d.classe).length,
-						lettresARelire: dossiers
-							.filter((d) => d.courrierAValider && !d.classe)
-							.map((d) => ({ dossier: d._id, client: d.debiteur }))
-					},
-					NOM_DU_PILOTE
-				)
+		dossiers === undefined ? undefined : remarquesDeLEcran('DOSSIERS', NOM_DU_PILOTE)
 	);
 
 	// On attend LES DEUX : composer dès l'index laisserait les dossiers au

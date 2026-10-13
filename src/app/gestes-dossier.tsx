@@ -117,6 +117,7 @@ export function useGestesDeDossier() {
 			dire({
 				titre: 'Lettre préparée',
 				texte: `J’ai préparé la lettre de ${client}. Elle attend votre relecture : rien n’est parti.`,
+				humeur: 'ecrit',
 				geste: {
 					libelle: 'La relire',
 					faire: () =>

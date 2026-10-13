@@ -1047,43 +1047,51 @@ export const questionsDeLitige = authedQuery({
 	),
 	handler: async (ctx) => {
 		const { organizationId } = await getUserOrg(ctx);
-
-		const parStatut = await Promise.all(
-			STATUTS_A_INTERROGER.map((statut) =>
-				ctx.db
-					.query('creances')
-					.withIndex('by_org_and_statut', (q) =>
-						q.eq('organizationId', organizationId).eq('statut', statut)
-					)
-					.collect()
-			)
-		);
-
-		const lignes = [];
-		for (const creance of parStatut.flat()) {
-			const reponses: Reponses = {};
-			for (const fait of creance.faitsLitige ?? []) reponses[fait.cle] = fait.reponse;
-
-			// `questionsRestantes` s'arrête d'elle-même dès qu'un fait vaut « oui » :
-			// une contestation connue rend les suivantes sans effet, et les poser
-			// dépenserait la seule ressource rare, l'attention du gérant.
-			const jamaisPosees = questionsRestantes(reponses).filter(
-				(question) => reponses[question.cle] === undefined
-			);
-			const premiere = jamaisPosees[0];
-			if (premiere === undefined) continue;
-
-			lignes.push({
-				creanceId: creance._id,
-				debiteurId: creance.debiteurId,
-				cle: premiere.cle,
-				question: premiere.question
-			});
-		}
-
-		return lignes;
+		return questionsEnAttente(ctx, organizationId);
 	}
 });
+
+/**
+ * LES QUESTIONS QUI ATTENDENT LE GÉRANT, une par dossier : la première jamais posée.
+ * Lue par la file du matin et par la journée de Plume (`journee.ts`), qui en fait un
+ * défi : une seule règle pour les deux.
+ */
+export async function questionsEnAttente(ctx: QueryCtx, organizationId: Id<'organizations'>) {
+	const parStatut = await Promise.all(
+		STATUTS_A_INTERROGER.map((statut) =>
+			ctx.db
+				.query('creances')
+				.withIndex('by_org_and_statut', (q) =>
+					q.eq('organizationId', organizationId).eq('statut', statut)
+				)
+				.collect()
+		)
+	);
+
+	const lignes = [];
+	for (const creance of parStatut.flat()) {
+		const reponses: Reponses = {};
+		for (const fait of creance.faitsLitige ?? []) reponses[fait.cle] = fait.reponse;
+
+		// `questionsRestantes` s'arrête d'elle-même dès qu'un fait vaut « oui » :
+		// une contestation connue rend les suivantes sans effet, et les poser
+		// dépenserait la seule ressource rare, l'attention du gérant.
+		const jamaisPosees = questionsRestantes(reponses).filter(
+			(question) => reponses[question.cle] === undefined
+		);
+		const premiere = jamaisPosees[0];
+		if (premiere === undefined) continue;
+
+		lignes.push({
+			creanceId: creance._id,
+			debiteurId: creance.debiteurId,
+			cle: premiere.cle,
+			question: premiere.question
+		});
+	}
+
+	return lignes;
+}
 
 /**
  * L'INDEX DES DOSSIERS — tous, pas seulement ceux qui sont au tribunal.
