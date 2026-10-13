@@ -140,7 +140,7 @@ export function BarreDuBas({
 	*/
 	const nav = useRef<HTMLElement>(null);
 	const lentille = useRef<HTMLSpanElement>(null);
-	const { survole, gestes } = useLentilleLiquide({
+	const { survole, arrivee, gestes } = useLentilleLiquide({
 		nav,
 		lentille,
 		rang,
@@ -248,11 +248,15 @@ export function BarreDuBas({
 								index === survole && 'scale-110'
 							)}
 						>
-							{/* L'icône de l'onglet où la lentille se pose rebondit à son arrivée :
-							    la clé la remonte, et son animation se rejoue. */}
+							{/* L'icône de l'onglet où la lentille se POSE rebondit, au moment où elle
+							    s'y pose (un toucher ou un lâcher) : la clé la remonte, et son
+							    animation se rejoue. */}
 							<span
-								key={actif ? 'actif' : 'repos'}
-								className={cn('relative inline-flex shrink-0', actif && 'onglet-arrive')}
+								key={arrivee?.rang === index ? `arrivee-${arrivee.fois}` : 'calme'}
+								className={cn(
+									'relative inline-flex shrink-0',
+									arrivee?.rang === index && 'onglet-arrive'
+								)}
 							>
 								{/*
 							  LE FAISCEAU, SUR L'ONGLET ACTIF SEUL.

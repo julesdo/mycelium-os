@@ -21,9 +21,12 @@ import {
  * Apple Fitness, Waymo, Substack, Quizlet ou eBay, et celle de Telegram. Leur
  * sélection se comporte comme une goutte :
  *
- *   · AU TOUCHER, elle s'étire vers l'onglet visé — le bord de devant part vite, le
- *     bord de derrière suit plus lentement —, s'amincit en s'étirant, puis se
- *     ramasse sur l'onglet avec un léger rebond ;
+ *   · AU TOUCHER, elle fait LE MÊME VOYAGE qu'au glisser (le fondateur, le
+ *     14/10 : « je veux la même animation quand on clique juste sur un lien […]
+ *     que les transitions soient les mêmes ») : elle se soulève en loupe, s'étire
+ *     vers l'onglet visé — le bord de devant part vite, celui de derrière traîne —,
+ *     éclaire et grossit les onglets qu'elle survole, puis se pose avec un léger
+ *     rebond, et l'icône de l'onglet d'arrivée rebondit À SON ARRIVÉE ;
  *   · TENUE, elle se soulève d'un rien sous le doigt ;
  *   · GLISSÉE, elle devient une lentille plus grande que la barre, suit le doigt en
  *     s'étirant selon sa vitesse, éclaire l'onglet qu'elle survole (un petit coup
@@ -101,14 +104,27 @@ const RESSORT_LEVEE = { raideur: 520, amortissement: 26 } as const;
 const LEVEE_TENUE = 1.06;
 /** Glissée : une lentille plus grande que la barre, comme la bulle d'iOS 26. */
 const LEVEE_GLISSEE = 1.18;
+/**
+ * UN VOYAGE GARDE LA LENTILLE SOULEVÉE au moins ce temps : sur un saut d'un seul
+ * onglet, elle arriverait avant qu'on l'ait vue se soulever. Et jamais plus que le
+ * second : un voyage qui ne finirait pas laisserait une loupe sur la barre.
+ */
+const LEVEE_MINIMALE_MS = 200;
+const VOYAGE_MAXIMAL_MS = 1000;
+/** Une navigation qui n'est pas arrivée dans ce délai : la lentille revient sur l'onglet actif. */
+const ATTENTE_DE_LA_NAVIGATION_MS = 1500;
 /** Ce que le doigt doit parcourir, de côté, avant que la lentille le suive. */
 const SEUIL_DE_GLISSE = 8;
 /** Le rembourrage de la pilule (`p-1.5`) : la piste commence là. */
 const REMBOURRAGE = 6;
 
 interface Moteur {
-	/** Viser un onglet ; `instantane` pose la lentille sans mouvement. */
-	viser(rang: number, instantane: boolean): void;
+	/**
+	 * Viser un onglet ; `instantane` pose la lentille sans mouvement. Par défaut, elle
+	 * y VOYAGE : soulevée, puis posée. `voyager: false` la ramène sans se soulever
+	 * (un geste annulé).
+	 */
+	viser(rang: number, instantane: boolean, voyager?: boolean): void;
 	/** Le doigt la tient, ou la glisse : le centre visé, en pixels dans la piste. */
 	suivre(centre: number): number;
 	lever(niveau: number): void;
@@ -120,7 +136,20 @@ interface Moteur {
 	detruire(): void;
 }
 
-function creerMoteur(nav: HTMLElement, lentille: HTMLElement, nombre: number): Moteur {
+/** Ce que le moteur dit à la barre pendant un voyage. */
+interface RappelsDuMoteur {
+	/** L'onglet que la lentille survole en voyage, ou `null` quand elle s'est posée. */
+	onSurvol(rang: number | null): void;
+	/** Elle s'est posée sur cet onglet : son icône rebondit. */
+	onArrivee(rang: number): void;
+}
+
+function creerMoteur(
+	nav: HTMLElement,
+	lentille: HTMLElement,
+	nombre: number,
+	rappels: RappelsDuMoteur
+): Moteur {
 	const reduit =
 		typeof window.matchMedia === 'function' &&
 		window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -138,6 +167,9 @@ function creerMoteur(nav: HTMLElement, lentille: HTMLElement, nombre: number): M
 	let image = 0;
 	let derniere = 0;
 	let rangVise = 0;
+	/** Le voyage en cours : vers quel onglet, depuis quand. */
+	let voyage: { readonly rang: number; readonly depuis: number } | null = null;
+	let survol: number | null = null;
 
 	function mesurer(): boolean {
 		const largeur = nav.clientWidth;
@@ -163,8 +195,39 @@ function creerMoteur(nav: HTMLElement, lentille: HTMLElement, nombre: number): M
 		dessiner();
 	}
 
+	function rangDuCentre(): number {
+		return Math.min(nombre - 1, Math.max(0, Math.floor((gauche + droite) / 2 / base)));
+	}
+
+	function survoler(rang: number | null) {
+		if (rang === survol) return;
+		survol = rang;
+		rappels.onSurvol(rang);
+	}
+
+	/** Partir en voyage : la lentille se soulève en loupe, comme sous le doigt. */
+	function commencerVoyage(rang: number) {
+		if (reduit) return;
+		if (voyage !== null && voyage.rang === rang) return;
+		voyage = { rang, depuis: performance.now() };
+		cibleLevee = LEVEE_GLISSEE;
+		lentille.classList.add('lentille-levee');
+	}
+
+	/** Le voyage s'achève : elle se repose, et dit où (`arrivee`), sauf s'il est interrompu. */
+	function finirVoyage(arrivee: boolean) {
+		if (voyage === null) return;
+		const rang = voyage.rang;
+		voyage = null;
+		cibleLevee = 1;
+		lentille.classList.remove('lentille-levee');
+		survoler(null);
+		if (arrivee) rappels.onArrivee(rang);
+	}
+
 	function auRepos(): boolean {
 		return (
+			voyage === null &&
 			Math.abs(gauche - cibleGauche) < 0.3 &&
 			Math.abs(droite - cibleDroite) < 0.3 &&
 			Math.abs(vGauche) < 4 &&
@@ -201,6 +264,16 @@ function creerMoteur(nav: HTMLElement, lentille: HTMLElement, nombre: number): M
 				vDroite = Math.min(vDroite, vGauche * 0.9);
 			}
 		}
+		// En voyage : elle éclaire ce qu'elle survole, et se pose une fois arrivée.
+		if (voyage !== null) {
+			survoler(rangDuCentre());
+			const ecoule = t - voyage.depuis;
+			const centreVise = (cibleGauche + cibleDroite) / 2;
+			const proche = Math.abs((gauche + droite) / 2 - centreVise) < base * 0.2;
+			if ((proche && ecoule >= LEVEE_MINIMALE_MS) || ecoule >= VOYAGE_MAXIMAL_MS) {
+				finirVoyage(true);
+			}
+		}
 		if (auRepos()) {
 			poser();
 			image = 0;
@@ -230,15 +303,25 @@ function creerMoteur(nav: HTMLElement, lentille: HTMLElement, nombre: number): M
 	}
 
 	return {
-		viser(rang, instantane) {
+		viser(rang, instantane, voyager = true) {
 			rangVise = rang;
 			if (!mesurer()) return;
 			fente(rang);
-			if (instantane || !posee) poser();
-			else lancer();
+			if (instantane || !posee) {
+				finirVoyage(false);
+				poser();
+				return;
+			}
+			if (voyager) commencerVoyage(rang);
+			lancer();
 		},
 		suivre(centre) {
 			if (base <= 0 && !mesurer()) return rangVise;
+			// Le doigt reprend la lentille en plein voyage : c'est lui qui la porte désormais.
+			if (voyage !== null) {
+				voyage = null;
+				survoler(null);
+			}
 			const borne = Math.min(nombre * base - base / 2, Math.max(base / 2, centre));
 			cibleGauche = borne - base / 2;
 			cibleDroite = borne + base / 2;
@@ -266,6 +349,8 @@ function creerMoteur(nav: HTMLElement, lentille: HTMLElement, nombre: number): M
 		detruire() {
 			if (image !== 0) cancelAnimationFrame(image);
 			image = 0;
+			voyage = null;
+			lentille.classList.remove('lentille-levee');
 			lentille.style.removeProperty('width');
 			lentille.style.removeProperty('transform');
 		}
@@ -285,7 +370,8 @@ function vibrer(duree: number) {
 
 /**
  * LA LENTILLE, BRANCHÉE SUR LA BARRE : les gestes du pointeur à poser sur la pilule,
- * et l'onglet survolé pendant un glisser (pour l'éclairer).
+ * l'onglet survolé (pendant un glisser ou un voyage, pour l'éclairer), et l'onglet
+ * où elle vient de se poser (pour faire rebondir son icône).
  *
  * `onChoisir` reçoit l'onglet sur lequel on a lâché la lentille : l'appelant
  * l'ouvre (en activant son vrai lien, pour que la navigation reste celle d'un
@@ -305,6 +391,10 @@ export function useLentilleLiquide({
 	readonly onChoisir: (rang: number) => void;
 }) {
 	const [survole, setSurvole] = useState<number | null>(null);
+	/** Où elle s'est posée, et combien de fois : la clé qui rejoue le rebond de l'icône. */
+	const [arrivee, setArrivee] = useState<{ readonly rang: number; readonly fois: number } | null>(
+		null
+	);
 	const moteur = useRef<Moteur | null>(null);
 	const survoleCourant = useRef<number | null>(null);
 	const geste = useRef<{
@@ -313,6 +403,7 @@ export function useLentilleLiquide({
 		readonly y0: number;
 		glisse: boolean;
 	} | null>(null);
+	const attente = useRef<number | null>(null);
 	const avalerLeClic = useRef(false);
 	const rangPrecedent = useRef(rang);
 
@@ -321,7 +412,10 @@ export function useLentilleLiquide({
 		const elementNav = nav.current;
 		const elementLentille = lentille.current;
 		if (elementNav === null || elementLentille === null) return;
-		const m = creerMoteur(elementNav, elementLentille, nombre);
+		const m = creerMoteur(elementNav, elementLentille, nombre, {
+			onSurvol: setSurvole,
+			onArrivee: (rang) => setArrivee((avant) => ({ rang, fois: (avant?.fois ?? 0) + 1 }))
+		});
 		moteur.current = m;
 		m.viser(Math.max(0, rangPrecedent.current), true);
 		const observateur =
@@ -331,6 +425,7 @@ export function useLentilleLiquide({
 			observateur?.disconnect();
 			m.detruire();
 			moteur.current = null;
+			if (attente.current !== null) window.clearTimeout(attente.current);
 		};
 	}, [nav, lentille, nombre]);
 
@@ -339,7 +434,9 @@ export function useLentilleLiquide({
 		const m = moteur.current;
 		const avant = rangPrecedent.current;
 		rangPrecedent.current = rang;
-		if (m === null || rang < 0 || geste.current?.glisse === true) return;
+		// ⚠️ PAS AU MONTAGE : le rang n'a pas changé, et un voyage sur place soulèverait la
+		// lentille et ferait rebondir l'icône active à chaque chargement de page.
+		if (m === null || rang < 0 || rang === avant || geste.current?.glisse === true) return;
 		// Revenue d'une page sans onglet : elle réapparaît en place, sans traverser la barre.
 		m.viser(rang, avant < 0);
 	}, [rang]);
@@ -351,8 +448,27 @@ export function useLentilleLiquide({
 		m?.marquerLevee(false);
 	}
 
+	/**
+	 * LE VOYAGE PART AU LÂCHER DU DOIGT, PAS À L'ARRIVÉE DE LA NAVIGATION : il ne doit
+	 * pas attendre le routeur. Si la navigation n'a pas eu lieu après un moment (un
+	 * clic intercepté, une page qui ne s'ouvre pas), la lentille revient sur l'onglet
+	 * actif.
+	 */
+	function partirVers(choisi: number) {
+		const m = moteur.current;
+		if (m === null) return;
+		m.viser(choisi, false);
+		if (attente.current !== null) window.clearTimeout(attente.current);
+		attente.current = window.setTimeout(() => {
+			attente.current = null;
+			const actuel = rangPrecedent.current;
+			if (actuel >= 0 && actuel !== choisi) moteur.current?.viser(actuel, false);
+		}, ATTENTE_DE_LA_NAVIGATION_MS);
+	}
+
 	return {
 		survole,
+		arrivee,
 		gestes: {
 			onPointerDown(evenement: EvenementPointeur<HTMLElement>) {
 				if (evenement.button !== 0 || !evenement.isPrimary) return;
@@ -398,13 +514,21 @@ export function useLentilleLiquide({
 			onPointerUp(evenement: EvenementPointeur<HTMLElement>) {
 				const enCours = geste.current;
 				if (enCours === null || enCours.id !== evenement.pointerId) return;
-				const glissait = enCours.glisse;
-				relacher();
-				if (!glissait) return; // Un toucher : le lien de l'onglet fait le reste.
+				if (!enCours.glisse) {
+					// UN TOUCHER : le même voyage qu'un glisser, tout de suite. Le lien de
+					// l'onglet fait la navigation, comme avant.
+					relacher();
+					const touche = moteur.current?.rangSous(evenement.clientX) ?? -1;
+					if (touche >= 0 && touche !== rang) partirVers(touche);
+					return;
+				}
+				// UN LÂCHER : elle reste soulevée le temps de se poser, puis se repose — le
+				// voyage s'en charge, comme après un toucher.
+				geste.current = null;
 				const choisi = survoleCourant.current ?? rang;
 				survoleCourant.current = null;
 				setSurvole(null);
-				if (choisi >= 0) moteur.current?.viser(choisi, false);
+				if (choisi >= 0) partirVers(choisi);
 				if (choisi >= 0 && choisi !== rang) {
 					vibrer(10);
 					onChoisir(choisi);
@@ -420,7 +544,8 @@ export function useLentilleLiquide({
 				relacher();
 				survoleCourant.current = null;
 				setSurvole(null);
-				if (rang >= 0) moteur.current?.viser(rang, false);
+				// Un geste annulé ne voyage pas : elle revient à sa place sans se soulever.
+				if (rang >= 0) moteur.current?.viser(rang, false, false);
 			},
 			onClickCapture(evenement: EvenementSouris<HTMLElement>) {
 				if (!avalerLeClic.current) return;

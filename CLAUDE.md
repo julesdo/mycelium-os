@@ -400,7 +400,10 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   quelques pixels à l'arrivée, réglages simulés avant d'être posés). Tenue, elle se soulève ;
   glissée, elle devient une loupe plus grande que la barre, suit le doigt, grossit l'onglet survolé
   et vibre à chaque cran (Android), puis ouvre au lâcher le VRAI lien de l'onglet : la barre ne
-  connaît toujours pas le routeur. Tout s'écrit sur l'élément image par image, hors de React ; le
+  connaît toujours pas le routeur. **Un toucher fait le MÊME voyage** (le fondateur, même jour :
+  « que les transitions soient les mêmes ») : soulevée en loupe au moins 0,2 s, elle traverse en
+  éclairant ce qu'elle survole et se pose ; l'icône d'arrivée rebondit à l'instant de la pose. Le
+  voyage part au lâcher du doigt, sans attendre le routeur. Tout s'écrit sur l'élément image par image, hors de React ; le
   CSS (`lentille-barre`) place le bloc par le rang avant que le JavaScript ne mesure. Elle se
   manipule dans la salle (« Barre + compagnon »).
 - **Le parcours compagnon** (`docs/superpowers/specs/2026-10-08-parcours-compagnon.md`, analyse
