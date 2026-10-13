@@ -572,11 +572,25 @@ export function FormulaireInvitation({
 
 			<div className="flex flex-col gap-cladd-3xs">
 				<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Son rôle</span>
+				{/*
+				  ⚠️ `type="button"` : un bouton du kit n'a pas de type, et posé dans un
+				  `<form>` il l'ENVOIE. Toucher « Administrateur » après avoir tapé
+				  l'adresse envoyait l'invitation sur-le-champ, avec le rôle d'avant
+				  (relevé le 13/10/2026).
+				*/}
 				<Segmented className="self-start" activeColor="brand" activeVariant="solid">
-					<SegmentedButton active={role === 'ORG_MEMBER'} onClick={() => setRole('ORG_MEMBER')}>
+					<SegmentedButton
+						type="button"
+						active={role === 'ORG_MEMBER'}
+						onClick={() => setRole('ORG_MEMBER')}
+					>
 						Membre
 					</SegmentedButton>
-					<SegmentedButton active={role === 'ORG_ADMIN'} onClick={() => setRole('ORG_ADMIN')}>
+					<SegmentedButton
+						type="button"
+						active={role === 'ORG_ADMIN'}
+						onClick={() => setRole('ORG_ADMIN')}
+					>
 						Administrateur
 					</SegmentedButton>
 				</Segmented>
