@@ -5,7 +5,13 @@ import { useQuery } from './donnees';
 import { api } from '../lib/convex/_generated/api';
 import type { CibleDePlume } from '../lib/verticales/recouvrement/compagnon/presence';
 import { BoutonCompagnon, BullePlume, NOM_DU_PILOTE, type HumeurPlume } from '../ui';
-import { paroleDePlume, useParoleDePlume, type ParoleAffichee } from './parole-de-plume';
+import {
+	annoncerNotification,
+	paroleDePlume,
+	useParoleDePlume,
+	type ParoleAffichee
+} from './parole-de-plume';
+import { TITRE_DE_NOTIFICATION, type GenreNotification } from '../screens/titres';
 
 /**
  * PLUME, BRANCHÉ DANS LA BARRE — son humeur lue sur le pilote, et où il mène.
@@ -93,6 +99,10 @@ function PlumeAvecEtat({
 function VoixDePlume() {
 	const silences = useQuery(api.recouvrement.presence.silences, {});
 	const travaux = useQuery(api.recouvrement.presence.travauxTermines, {});
+	const notification = useQuery(api.recouvrement.presence.derniereNotification, {});
+	const surLaBoite = useRouterState({
+		select: (etat) => etat.location.pathname.startsWith('/app/notifications')
+	});
 	const taire = useMutation(api.recouvrement.presence.taire);
 	const parole = useParoleDePlume();
 	const cleDeLaRemarque = parole?.voix === 'ECRAN' ? parole.cle : null;
@@ -110,6 +120,14 @@ function VoixDePlume() {
 	useEffect(() => {
 		if (travaux !== undefined) paroleDePlume.annoncerTravaux(travaux);
 	}, [travaux]);
+	useEffect(() => {
+		if (notification === undefined) return;
+		const titre =
+			notification === null
+				? null
+				: (TITRE_DE_NOTIFICATION[notification.genre as GenreNotification] ?? null);
+		annoncerNotification(notification, titre, surLaBoite);
+	}, [notification, surLaBoite]);
 	useEffect(() => {
 		if (cleDeLaRemarque === null) return;
 		const departs = new Map<EventTarget, number>();
@@ -195,6 +213,9 @@ function Plume({
 		switch (cible.genre) {
 			case 'CONVERSATION':
 				void navigate({ to: '/app/pilote' });
+				return;
+			case 'NOTIFICATIONS':
+				void navigate({ to: '/app/notifications' });
 				return;
 			case 'DEMARRER_LOT':
 				void navigate({ to: '/app/demarrer' });

@@ -6,7 +6,10 @@ import type {
 	RemarqueDePlume,
 	TravailTermine
 } from '../lib/verticales/recouvrement/compagnon/presence';
-import { paroleDUnTravail } from '../lib/verticales/recouvrement/compagnon/presence';
+import {
+	paroleDUneNotification,
+	paroleDUnTravail
+} from '../lib/verticales/recouvrement/compagnon/presence';
 import type { HumeurPlume } from '../ui';
 
 /**
@@ -85,6 +88,8 @@ let remarque: {
 	readonly parole: ParoleAffichee;
 	readonly minuterie: ReturnType<typeof setTimeout>;
 } | null = null;
+/** La dernière notification déjà vue : ce qui est plus vieux ne s'annonce pas. */
+let notificationVueJusquA: number | null = null;
 /** Le dernier travail fini déjà vu : ce qui est plus vieux ne s'annonce pas. */
 let travailVuJusquA: number | null = null;
 let taireAuServeur: ((cle: string) => void) | null = null;
@@ -252,6 +257,28 @@ export const paroleDePlume = {
 		);
 	}
 };
+
+/**
+ * UNE NOTIFICATION ARRIVÉE — dite par Plume, sauf sur la boîte de réception qui la
+ * montre déjà. La première lecture ne fait que marquer où l'on en est.
+ */
+export function annoncerNotification(
+	derniere: { readonly id: string; readonly creeeLe: number; readonly lue: boolean } | null,
+	titre: string | null,
+	surLaBoite: boolean
+) {
+	if (notificationVueJusquA === null) {
+		notificationVueJusquA = derniere?.creeeLe ?? 0;
+		return;
+	}
+	if (derniere === null || derniere.creeeLe <= notificationVueJusquA) return;
+	notificationVueJusquA = derniere.creeeLe;
+	if (derniere.lue || surLaBoite || titre === null) return;
+	direInstantane(
+		paroleDUneRemarque(paroleDUneNotification(derniere.id, titre), 'TRAVAIL'),
+		DUREE_TRAVAIL_MS
+	);
+}
 
 /* ── Les crochets des écrans ──────────────────────────────────────────────── */
 

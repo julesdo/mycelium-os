@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	libelleDuRegard,
 	ligneDuRegard,
+	paroleDUneNotification,
 	paroleDUnTravail,
 	questionsDuRegard,
 	remarquesDAujourdhui,
@@ -197,5 +198,14 @@ describe('Plume sur chaque écran', () => {
 		for (const question of toutes) {
 			expect(question).not.toMatch(/injonction|tribunal|assigner|commissaire|huissier|avocat/i);
 		}
+	});
+
+	it('porte une notification arrivée, et mène à la boîte de réception', () => {
+		const parole = paroleDUneNotification('n1', 'Plume a besoin de vous');
+		expect(parole.texte).toBe(
+			'Du nouveau dans votre boîte de réception : « Plume a besoin de vous ».'
+		);
+		expect(parole.action?.cible).toEqual({ genre: 'NOTIFICATIONS' });
+		expect(parole.cle).toBe('notification:n1');
 	});
 });

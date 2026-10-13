@@ -56,6 +56,7 @@ export type EcranDePlume =
  */
 export type CibleDePlume =
 	| { readonly genre: 'CONVERSATION' }
+	| { readonly genre: 'NOTIFICATIONS' }
 	| { readonly genre: 'DEMARRER_LOT' }
 	| { readonly genre: 'DEPOSER' }
 	| { readonly genre: 'DOSSIER'; readonly dossier: string; readonly rubrique?: 'courriers' }
@@ -407,6 +408,20 @@ export function paroleDUnTravail(travail: TravailTermine, autres: number): Remar
 		humeur: 'content',
 		silence: 'UNE_FOIS',
 		action: { libelle: 'Voir', cible: { genre: 'CONVERSATION' } }
+	};
+}
+
+/**
+ * UNE NOTIFICATION ARRIVÉE PENDANT QU'ON TRAVAILLE — Plume la porte, plutôt qu'une
+ * cloche qui change de chiffre en haut d'un autre écran.
+ */
+export function paroleDUneNotification(id: string, titre: string): RemarqueDePlume {
+	return {
+		cle: `notification:${id}`,
+		texte: `Du nouveau dans votre boîte de réception : « ${titre} ».`,
+		humeur: 'attention',
+		silence: 'UNE_FOIS',
+		action: { libelle: 'Voir', cible: { genre: 'NOTIFICATIONS' } }
 	};
 }
 

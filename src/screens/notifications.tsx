@@ -1,5 +1,4 @@
 import {
-	NOM_DU_PILOTE,
 	BoutonTexte,
 	CarteFixe,
 	CarteLien,
@@ -13,7 +12,7 @@ import {
 	type FamilleRangee,
 	type Lecture
 } from '../ui';
-import { TITRE_ECRAN } from './titres';
+import { TITRE_DE_NOTIFICATION as TITRE, TITRE_ECRAN, type GenreNotification } from './titres';
 
 /**
  * LA BOÎTE DE RÉCEPTION — ce que le logiciel vous a écrit, au même endroit.
@@ -39,15 +38,7 @@ import { TITRE_ECRAN } from './titres';
  * du gérant. Le jour, en en-tête, suffit à ce qu'on vient y lire.
  */
 
-export type GenreNotification =
-	| 'IMPORT_TERMINE'
-	| 'CREANCE_MURE'
-	| 'ECHEANCE_PROCHE'
-	| 'PRESCRIPTION_PROCHE'
-	| 'DEBITEUR_DEGRADE'
-	| 'HUMAN_ASSIST_REPLY'
-	| 'PILOTE_BLOQUE'
-	| 'RISQUE_EN_BAISSE';
+export type { GenreNotification } from './titres';
 
 /** La teinte dit DE QUOI il s'agit, jamais si c'est grave (`familles.tsx`). */
 const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
@@ -61,26 +52,6 @@ const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
 	PILOTE_BLOQUE: 'QUESTION',
 	// La relecture de la santé d'un client : le travail de la machine.
 	RISQUE_EN_BAISSE: 'MACHINE'
-};
-
-/**
- * LE TITRE D'UNE NOTIFICATION VIENT DE SON GENRE, PAS DE LA BASE.
- *
- * ⚠️ LA NUIT ÉCRIVAIT « PRESCRIPTION PROCHE », le mot du droit, dans le titre
- * qu'elle stockait. Lu à l'écran, il passait sous le nez du lexique (qui ne
- * balaie pas la base) ; et une notification ne se réécrit pas. Le titre se
- * déduit donc du genre, dans les mots de tout le monde — ceux des cartes du
- * matin (`RESUME_PAR_TYPE`) —, et le titre stocké n'est plus lu.
- */
-const TITRE: Readonly<Record<GenreNotification, string>> = {
-	PRESCRIPTION_PROCHE: 'Date limite pour agir',
-	ECHEANCE_PROCHE: 'Échéance de procédure',
-	IMPORT_TERMINE: 'Import terminé',
-	DEBITEUR_DEGRADE: 'Situation dégradée au registre',
-	HUMAN_ASSIST_REPLY: 'Nouvelle réponse',
-	CREANCE_MURE: 'Un dossier à regarder',
-	PILOTE_BLOQUE: `${NOM_DU_PILOTE} a besoin de vous`,
-	RISQUE_EN_BAISSE: 'La santé d’un client baisse'
 };
 
 export interface NotificationAffichee {

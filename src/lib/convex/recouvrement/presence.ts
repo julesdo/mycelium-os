@@ -61,6 +61,40 @@ export const taire = authedMutation({
 });
 
 /**
+ * LA DERNIÈRE NOTIFICATION DE CE COMPTE — la bulle l'annonce si elle arrive pendant
+ * qu'on travaille. Une lecture d'une ligne : elle ne bouge qu'à l'arrivée d'une
+ * nouvelle, ou quand celle-ci est lue.
+ */
+export const derniereNotification = authedQuery({
+	args: {},
+	returns: v.union(
+		v.null(),
+		v.object({
+			id: v.id('notifications'),
+			genre: v.string(),
+			creeeLe: v.number(),
+			lue: v.boolean()
+		})
+	),
+	handler: async (ctx) => {
+		const { user } = await getUserOrg(ctx);
+		const derniere = await ctx.db
+			.query('notifications')
+			.withIndex('by_user_and_created', (q) => q.eq('userId', user._id))
+			.order('desc')
+			.first();
+		return derniere === null
+			? null
+			: {
+					id: derniere._id,
+					genre: derniere.type,
+					creeeLe: derniere.createdAt,
+					lue: derniere.isRead
+				};
+	}
+});
+
+/**
  * LES DERNIERS TRAVAUX FINIS DU PILOTE — ce que la bulle annonce.
  *
  * ⚠️ PAR L'INDEX DE L'ÉTAT, PAS PAR CELUI DU COMMENCEMENT. Un travail en cours

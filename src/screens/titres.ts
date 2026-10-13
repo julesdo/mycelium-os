@@ -1,3 +1,5 @@
+import { NOM_DU_PILOTE } from '../ui/plume';
+
 /**
  * LE NOM DES ÉCRANS QU'UNE PAGE POUSSÉE NOMME EN REPLI.
  *
@@ -23,3 +25,38 @@ export const TITRE_ECRAN = {
 	imports: 'Vos dépôts',
 	coffre: 'Coffre-fort'
 } as const;
+
+/** Les genres d'une notification, tels que la base les écrit. */
+export type GenreNotification =
+	| 'IMPORT_TERMINE'
+	| 'CREANCE_MURE'
+	| 'ECHEANCE_PROCHE'
+	| 'PRESCRIPTION_PROCHE'
+	| 'DEBITEUR_DEGRADE'
+	| 'HUMAN_ASSIST_REPLY'
+	| 'PILOTE_BLOQUE'
+	| 'RISQUE_EN_BAISSE';
+
+/**
+ * LE TITRE D'UNE NOTIFICATION VIENT DE SON GENRE, PAS DE LA BASE.
+ *
+ * ⚠️ LA NUIT ÉCRIVAIT « PRESCRIPTION PROCHE », le mot du droit, dans le titre
+ * qu'elle stockait. Lu à l'écran, il passait sous le nez du lexique (qui ne
+ * balaie pas la base) ; et une notification ne se réécrit pas. Le titre se
+ * déduit donc du genre, dans les mots de tout le monde — ceux des cartes du
+ * matin (`RESUME_PAR_TYPE`) —, et le titre stocké n'est plus lu.
+ *
+ * Ici et non dans l'écran des notifications (13/10/2026) : la bulle de Plume, montée
+ * avec la coquille, annonce une notification par son titre, et la coquille ne
+ * charge aucun écran entier.
+ */
+export const TITRE_DE_NOTIFICATION: Readonly<Record<GenreNotification, string>> = {
+	PRESCRIPTION_PROCHE: 'Date limite pour agir',
+	ECHEANCE_PROCHE: 'Échéance de procédure',
+	IMPORT_TERMINE: 'Import terminé',
+	DEBITEUR_DEGRADE: 'Situation dégradée au registre',
+	HUMAN_ASSIST_REPLY: 'Nouvelle réponse',
+	CREANCE_MURE: 'Un dossier à regarder',
+	PILOTE_BLOQUE: `${NOM_DU_PILOTE} a besoin de vous`,
+	RISQUE_EN_BAISSE: 'La santé d’un client baisse'
+};
