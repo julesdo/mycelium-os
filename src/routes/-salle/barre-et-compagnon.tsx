@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { SectionTitle } from '@cladd-ui/react';
 import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import {
@@ -91,6 +91,40 @@ function destinations(actif: keyof typeof ICONES, rappel: ReactNode): Destinatio
 			actif: actif === 'compte'
 		}
 	];
+}
+
+const CLES_DES_ONGLETS = ['aujourdhui', 'clients', 'creances', 'compte'] as const;
+
+/**
+ * LA BARRE QU'ON PEUT MANIPULER DANS LA SALLE — son onglet actif est un état local.
+ *
+ * ⚠️ LES LIENS NE NAVIGUENT PAS ICI : un clic sur un onglet (le vôtre, ou celui que
+ * la lentille active quand on la lâche) est intercepté avant le lien, et ne fait que
+ * changer l'onglet actif. C'est le seul moyen de voir la goutte s'étirer sans
+ * quitter la salle.
+ */
+function LentilleAManipuler() {
+	const [actif, setActif] = useState(0);
+	const cadre = useRef<HTMLDivElement>(null);
+	return (
+		<div
+			ref={cadre}
+			onClickCapture={(evenement) => {
+				const lien = (evenement.target as Element).closest('a[data-onglet]');
+				if (lien === null || cadre.current === null) return;
+				evenement.preventDefault();
+				evenement.stopPropagation();
+				setActif([...cadre.current.querySelectorAll('a[data-onglet]')].indexOf(lien));
+			}}
+		>
+			<BarreDuBas
+				destinations={destinations(CLES_DES_ONGLETS[actif] ?? 'aujourdhui', null)}
+				accessoire={
+					<BoutonCompagnon humeur="repos" description="Parler à Plume" onOuvrir={() => undefined} />
+				}
+			/>
+		</div>
+	);
 }
 
 /**
@@ -333,6 +367,13 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 			}}
 			etat={lecture.etat}
 		>
+			<SectionTitle>La lentille, à manipuler</SectionTitle>
+			{/* Touchez un onglet : la goutte s'étire jusqu'à lui. Tenez-la et glissez :
+			    elle se soulève, suit le doigt, et se pose où on la lâche (14/10/2026). */}
+			<Scene titre="Touchez, ou tenez et glissez la lentille" hauteur="h-32">
+				<LentilleAManipuler />
+			</Scene>
+
 			<SectionTitle>La barre, un onglet à la fois</SectionTitle>
 			{/* Le bloc de verre doit se poser sous CHACUN des quatre, et le faisceau
 			    lent tourner sur celui-là seul. C'est ce qu'aucune navigation ne

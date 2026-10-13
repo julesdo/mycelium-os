@@ -394,6 +394,15 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   le montant DÉFILE jusqu'à sa valeur (React écrit toujours la valeur exacte), les pages GLISSENT
   (View Transitions, sens lu dans l'historique) et la coche de réussite se TRACE. La poignée des
   feuilles est écartée : les feuilles du kit sont centrées, une poignée qu'on ne tire pas mentirait.
+  **Puis le 14/10, la lentille liquide** (`ui/lentille-liquide.ts`, sur la barre d'iOS 26 et de
+  Telegram) : le bloc de verre de la barre du bas a DEUX bords tirés chacun par un ressort, raide
+  devant, souple derrière ; l'écart entre eux EST l'étirement (plafonné à 1,8 fois, un rebond de
+  quelques pixels à l'arrivée, réglages simulés avant d'être posés). Tenue, elle se soulève ;
+  glissée, elle devient une loupe plus grande que la barre, suit le doigt, grossit l'onglet survolé
+  et vibre à chaque cran (Android), puis ouvre au lâcher le VRAI lien de l'onglet : la barre ne
+  connaît toujours pas le routeur. Tout s'écrit sur l'élément image par image, hors de React ; le
+  CSS (`lentille-barre`) place le bloc par le rang avant que le JavaScript ne mesure. Elle se
+  manipule dans la salle (« Barre + compagnon »).
 - **Le parcours compagnon** (`docs/superpowers/specs/2026-10-08-parcours-compagnon.md`, analyse
   du 08/10/2026) : l'application était un établi, pas un clerc — environ trente gestes par
   dossier jusqu'à la mise en demeure. Le fondateur a tranché le soir même : « on fait comme Qonto

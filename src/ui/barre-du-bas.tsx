@@ -1,7 +1,8 @@
-import type { ComponentType, ReactNode } from 'react';
+import { useRef, type ComponentType, type CSSProperties, type ReactNode } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
 import { cn } from './cn';
 import { Lien } from './lien';
+import { useLentilleLiquide } from './lentille-liquide';
 
 /**
  * LA BARRE DE NAVIGATION DU BAS.
@@ -89,14 +90,12 @@ export function PastilleDeRappel({ compte }: { compte: number }) {
 }
 
 /**
- * ⚠️ LA PILULE DOIT ÊTRE EXACTEMENT PAVÉE PAR SES ONGLETS. Le bloc de verre
- * dérive sa position du RANG et non d'une mesure dans le DOM : sa largeur vaut
- * la piste moins le rembourrage, divisée par le nombre d'onglets, et il se
- * translate de cent pour cent de sa propre largeur par rang.
- *
- * C'est ce qui permet de respecter la règle du projet — aucun `setState` dans un
- * effet —, de suivre tout seul quand un onglet s'ajoute, et de n'avoir rien à
- * resynchroniser au redimensionnement.
+ * ⚠️ LA PILULE DOIT ÊTRE EXACTEMENT PAVÉE PAR SES ONGLETS. Le bloc de verre se
+ * place par le RANG : sa largeur vaut la piste moins le rembourrage, divisée par
+ * le nombre d'onglets. Au premier affichage, c'est le CSS qui le fait
+ * (`lentille-barre`) ; ensuite la lentille liquide (`lentille-liquide.ts`,
+ * 14/10/2026) mesure la même part et la fait glisser sur ses ressorts — sans
+ * jamais mesurer un onglet un par un.
  *
  * La contrepartie : un `gap` entre les onglets, ou un onglet plus large que les
  * autres, et le bloc se désaligne progressivement vers la droite. Les onglets
@@ -133,6 +132,25 @@ export function BarreDuBas({
 	*/
 	const rang = destinations.findIndex((destination) => destination.actif);
 
+	/*
+	  LA LENTILLE LIQUIDE (14/10/2026) : le bloc s'étire d'un onglet à l'autre, et se
+	  tient et se glisse du doigt. Lâchée sur un onglet, elle ouvre son vrai lien :
+	  la barre ne connaît toujours pas le routeur, et la navigation reste celle d'un
+	  toucher.
+	*/
+	const nav = useRef<HTMLElement>(null);
+	const lentille = useRef<HTMLSpanElement>(null);
+	const { survole, gestes } = useLentilleLiquide({
+		nav,
+		lentille,
+		rang,
+		nombre: destinations.length,
+		onChoisir: (choisi) =>
+			nav.current?.querySelectorAll<HTMLAnchorElement>('a[data-onglet]')[choisi]?.click()
+	});
+	/** L'onglet éclairé : celui que la lentille survole pendant un glisser, sinon l'actif. */
+	const eclaire = survole ?? rang;
+
 	return (
 		/*
 		  `mb-safe` vient de Cladd : il reporte `env(safe-area-inset-bottom)`,
@@ -159,8 +177,10 @@ export function BarreDuBas({
 			    pilule, et c'est ce qui la fait lire comme un objet POSÉ sur l'écran
 			    plutôt que comme un bandeau accroché au bord. */}
 				<nav
+					ref={nav}
 					aria-label="Navigation principale"
-					className="verre-dense relative flex min-w-0 flex-1 items-stretch rounded-full p-1.5 md:flex-none"
+					className="verre-dense relative flex min-w-0 flex-1 touch-none items-stretch rounded-full p-1.5 select-none md:flex-none"
+					{...gestes}
 				>
 					{/*
 				  LE BLOC DE VERRE QUI SE DÉPLACE.
@@ -177,20 +197,29 @@ export function BarreDuBas({
 				  décoratif qui se déplace.
 				*/}
 					<span
+						ref={lentille}
 						aria-hidden
-						className="verre absolute inset-y-1.5 left-1.5 rounded-full transition duration-500 ease-glisse"
-						style={{
-							width: `calc((100% - ${REMBOURRAGE_PILULE}) / ${destinations.length})`,
-							transform: `translateX(${Math.max(rang, 0) * 100}%)`,
-							opacity: rang === -1 ? 0 : 1
-						}}
+						className="verre lentille-barre absolute inset-y-1.5 left-1.5 rounded-full"
+						style={
+							{
+								'--onglets': destinations.length,
+								'--rang': Math.max(rang, 0),
+								'--rembourrage-pilule': REMBOURRAGE_PILULE,
+								// Sans onglet actif, elle s'efface ; elle revient le temps d'un glisser.
+								opacity: rang === -1 && survole === null ? 0 : 1
+							} as CSSProperties
+						}
 					/>
 
-					{destinations.map(({ cle, libelle, Icone, vers, actif, rappel }) => (
+					{destinations.map(({ cle, libelle, Icone, vers, actif, rappel }, index) => (
 						<Lien
 							key={cle}
 							to={vers}
 							aria-current={actif ? 'page' : undefined}
+							// Le lien que la lentille ouvre quand on la lâche dessus ; jamais traîné
+							// comme une adresse (un lien glissé à la souris annulerait le geste).
+							data-onglet=""
+							draggable={false}
 							/*
 						  `min-h-cladd-md` — 48 px, le plancher tactile du projet. Il vaut
 						  aussi au-delà de 768 px : la cible PREMIÈRE de ce produit est une
@@ -214,10 +243,17 @@ export function BarreDuBas({
 								'relative z-10 flex min-h-cladd-md min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full px-0.5 py-1.5',
 								'md:min-w-28 md:flex-row md:gap-2',
 								'transition duration-150 ease-out active:scale-95',
-								actif ? 'text-cladd-fg' : 'text-cladd-fg-softer'
+								index === eclaire ? 'text-cladd-fg' : 'text-cladd-fg-softer',
+								// Sous la lentille glissée, l'onglet grossit d'un rien : elle est une loupe.
+								index === survole && 'scale-110'
 							)}
 						>
-							<span className="relative inline-flex shrink-0">
+							{/* L'icône de l'onglet où la lentille se pose rebondit à son arrivée :
+							    la clé la remonte, et son animation se rejoue. */}
+							<span
+								key={actif ? 'actif' : 'repos'}
+								className={cn('relative inline-flex shrink-0', actif && 'onglet-arrive')}
+							>
 								{/*
 							  LE FAISCEAU, SUR L'ONGLET ACTIF SEUL.
 
