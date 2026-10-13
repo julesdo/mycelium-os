@@ -4,6 +4,7 @@ import { CircleUserIcon, GavelIcon, UsersIcon } from 'lucide-react';
 import {
 	BarreDuBas,
 	BoutonCompagnon,
+	CapsulePlume,
 	ScenePlume,
 	useReflexion,
 	IconeLetikette,
@@ -213,6 +214,45 @@ const SCENES: readonly {
 	}
 ];
 
+/** La capsule en direct, dans ses deux états (`compagnon/en-direct.ts`). */
+const CAPSULES: readonly {
+	readonly titreDeScene: string;
+	readonly genre: 'TRAVAIL' | 'DEPART';
+	readonly titre: string;
+	readonly ligne: string;
+	readonly part: number;
+	readonly humeur: HumeurPlume;
+	/** « Retenir » pour un départ, « Voir » quand plusieurs partent. */
+	readonly geste?: string;
+}[] = [
+	{
+		titreDeScene: 'Il travaille : l’anneau se remplit, étape après étape',
+		genre: 'TRAVAIL',
+		titre: 'Prépare vos relances',
+		ligne: 'Écrit à Transports Vidal · 2 sur 3',
+		part: 1 / 3,
+		humeur: 'ecrit'
+	},
+	{
+		titreDeScene: 'Une relance part dans l’heure : l’anneau se vide, « Retenir » sous le pouce',
+		genre: 'DEPART',
+		titre: 'Relance dans 23 min',
+		ligne: 'Fournitures Durand · deuxième rappel à 14 h 30',
+		part: 23 / 60,
+		humeur: 'repos',
+		geste: 'Retenir'
+	},
+	{
+		titreDeScene: 'Plusieurs départs : la première, et les suivantes comptées',
+		genre: 'DEPART',
+		titre: '3 relances d’ici 14 h 45',
+		ligne: 'Boulangerie Martin la première, dans 8 min',
+		part: 8 / 60,
+		humeur: 'repos',
+		geste: 'Voir'
+	}
+];
+
 /** Une scène : Plume réfléchit dans le bouton (trois points dans la bulle), puis prend sa tête. */
 function SceneDeLaSalle({ scene }: { readonly scene: (typeof SCENES)[number] }) {
 	const { titre, humeur, texte, geste, rang, taire, semaine, journee, suite } = scene;
@@ -301,6 +341,37 @@ function DemoBarreEtCompagnon({ etat }: { etat: EtatDemo }) {
 								compte={compte}
 								description="Parler à Plume"
 								onOuvrir={() => undefined}
+							/>
+						}
+					/>
+				</Scene>
+			))}
+
+			<SectionTitle>Plume en direct, au-dessus de la barre</SectionTitle>
+			{/* La capsule (14/10/2026) : ce qu'il fait en ce moment, ou la relance qui part dans
+			    l'heure. Les phrases sont celles que `compagnon/en-direct.ts` compose. */}
+			{CAPSULES.map((capsule) => (
+				<Scene key={capsule.titreDeScene} titre={capsule.titreDeScene} hauteur="h-44">
+					<BarreDuBas
+						destinations={destinations('clients', null)}
+						auDessus={
+							<CapsulePlume
+								genre={capsule.genre}
+								titre={capsule.titre}
+								ligne={capsule.ligne}
+								part={capsule.part}
+								{...(capsule.geste !== undefined
+									? { libelleDuGeste: capsule.geste, onGeste: () => undefined }
+									: {})}
+								onOuvrir={() => undefined}
+							/>
+						}
+						accessoire={
+							<BoutonCompagnon
+								humeur={capsule.humeur}
+								description="Parler à Plume"
+								onOuvrir={() => undefined}
+								progression={0.4}
 							/>
 						}
 					/>

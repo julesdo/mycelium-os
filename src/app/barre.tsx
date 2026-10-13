@@ -84,9 +84,12 @@ function RappelDuVeilleur({ auRepos }: { readonly auRepos: boolean }) {
 
 export function BarreBranchee({
 	accessoire,
+	auDessus,
 	auRepos = false
 }: {
 	readonly accessoire?: ReactNode;
+	/** La capsule de Plume en direct, posée au-dessus de la rangée. */
+	readonly auDessus?: ReactNode;
 	/** Tant que la session s'ouvre : la barre est là, la pastille attend. */
 	readonly auRepos?: boolean;
 } = {}) {
@@ -115,5 +118,5 @@ export function BarreBranchee({
 			: {})
 	}));
 
-	return <BarreDuBas destinations={destinations} accessoire={accessoire} />;
+	return <BarreDuBas destinations={destinations} accessoire={accessoire} auDessus={auDessus} />;
 }

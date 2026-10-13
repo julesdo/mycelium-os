@@ -222,7 +222,14 @@ export const travailEnCours = authedQuery({
 	args: {},
 	returns: v.union(
 		v.null(),
-		v.object({ titre: v.string(), faites: v.number(), total: v.number(), genre: v.string() })
+		v.object({
+			titre: v.string(),
+			/** L'étape qui se fait : la capsule en direct la dit. */
+			etape: v.union(v.string(), v.null()),
+			faites: v.number(),
+			total: v.number(),
+			genre: v.string()
+		})
 	),
 	handler: async (ctx) => {
 		const { organizationId } = await getUserOrg(ctx);
@@ -233,11 +240,64 @@ export const travailEnCours = authedQuery({
 			)
 			.first();
 		if (travail === null) return null;
+		const enCours = travail.etapes.find((e) => e.faiteLe === undefined);
 		return {
 			titre: travail.titre,
+			etape: enCours?.libelle ?? null,
 			faites: travail.etapes.filter((e) => e.faiteLe !== undefined).length,
 			total: travail.etapes.length,
 			genre: travail.genre
 		};
+	}
+});
+
+/**
+ * LES RELANCES QUE PLUME A PROGRAMMÉES — la capsule en direct (14/10/2026) montre
+ * celle qui part dans l'heure, avec « Retenir ».
+ *
+ * ⚠️ TOUTES, SANS FILTRE DE TEMPS. Une requête ne se recalcule pas quand l'heure
+ * passe : c'est le composant, qui avance chaque minute, qui choisit ce qui part
+ * dans l'heure (`compagnon/en-direct.ts`). La liste ne bouge qu'à une
+ * programmation, un départ ou une relance retenue.
+ */
+export const relancesProgrammees = authedQuery({
+	args: {},
+	returns: v.array(
+		v.object({
+			envoiId: v.id('envois'),
+			client: v.string(),
+			clientId: v.id('debiteurs'),
+			etape: v.string(),
+			partiraLe: v.number()
+		})
+	),
+	handler: async (ctx) => {
+		const { organizationId } = await getUserOrg(ctx);
+		const programmes = await ctx.db
+			.query('envois')
+			.withIndex('by_org_and_etat', (q) =>
+				q.eq('organizationId', organizationId).eq('etat', 'PROGRAMME')
+			)
+			.take(50);
+		const premiers = [...programmes]
+			.sort((a, b) => (a.partiraLe ?? a.prepareLe) - (b.partiraLe ?? b.prepareLe))
+			.slice(0, 20);
+		const lignes = await Promise.all(
+			premiers.map(async (envoi) => {
+				const creance = await ctx.db.get(envoi.creanceId);
+				if (creance === null) return null;
+				const debiteur = await ctx.db.get(creance.debiteurId);
+				return {
+					envoiId: envoi._id,
+					client: debiteur?.denomination ?? 'Client',
+					clientId: creance.debiteurId,
+					etape:
+						PLAN_PAR_DEFAUT.find((e) => e.cle === (envoi.etapePlan as CleEtapePlan | undefined))
+							?.nom ?? 'Relance',
+					partiraLe: envoi.partiraLe ?? envoi.prepareLe
+				};
+			})
+		);
+		return lignes.filter((ligne) => ligne !== null);
 	}
 });

@@ -1,9 +1,11 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { CatchBoundary, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
 import { useQuery } from './donnees';
 import { api } from '../lib/convex/_generated/api';
+import type { Id } from '../lib/convex/_generated/dataModel';
+import { enDirect } from '../lib/verticales/recouvrement/compagnon/en-direct';
 import {
 	ligneDeLaSuite,
 	type CibleDePlume
@@ -16,6 +18,7 @@ import {
 } from '../lib/verticales/recouvrement/compagnon/journee';
 import {
 	BoutonCompagnon,
+	CapsulePlume,
 	NOM_DU_PILOTE,
 	ScenePlume,
 	eurosCentimes,
@@ -23,7 +26,12 @@ import {
 	type HumeurPlume
 } from '../ui';
 import { heureDeParis } from '../ui/horloge';
-import { paroleDePlume, useParoleDePlume, type ParoleAffichee } from './parole-de-plume';
+import {
+	paroleDePlume,
+	useParoleDePlume,
+	usePlumeDit,
+	type ParoleAffichee
+} from './parole-de-plume';
 import { TITRE_DE_NOTIFICATION, type GenreNotification } from '../screens/titres';
 
 /**
@@ -46,6 +54,12 @@ import { TITRE_DE_NOTIFICATION, type GenreNotification } from '../screens/titres
  * l'anneau de la journée se remplit à mesure que ses défis tombent. Ce fichier
  * branche tout cela ; ce qu'il dit se décide dans `app/parole-de-plume.tsx`.
  *
+ * ⚠️ ET IL SE VOIT TRAVAILLER, PARTOUT (14/10/2026). Le fondateur : « qu'on sente le
+ * côté fiable du compagnon […] qu'il accompagne tout le temps, en automatique ».
+ * Au-dessus de la barre, une capsule dit ce qu'il fait en ce moment, ou la relance
+ * qui part dans l'heure, avec « Retenir » (`CapsuleBranchee`). Elle se tait quand
+ * sa bulle parle, et sur Aujourd'hui, dont le bloc du pilote montre déjà tout cela.
+ *
  * ⚠️ L'IDENTIFIANT SE LIT SUR LES PARAMÈTRES DE LA ROUTE, PAS SUR L'ADRESSE :
  * `matches` porte l'`id` résolu de `/app/dossier/$id`. (Une version d'avant lisait
  * un `?ligne=` disparu, et le compagnon était devenu injoignable.)
@@ -59,11 +73,14 @@ const SEUIL_DE_DEFILEMENT = 120;
 
 type Journee = FunctionReturnType<typeof api.recouvrement.journee.etat>;
 
+/** Le bouton de Plume, et sa capsule en direct quand il se passe quelque chose. */
+type RenduDeLaBarre = (bouton: ReactNode, capsule: ReactNode) => ReactNode;
+
 export function CompagnonBranche({
 	children,
 	auRepos = false
 }: {
-	readonly children: (bouton: ReactNode) => ReactNode;
+	readonly children: RenduDeLaBarre;
 	/**
 	 * Tant que la session s'ouvre : Plume au repos, sans lire le pilote. Le même
 	 * composant reste monté quand elle est ouverte — la barre ne se refait pas.
@@ -89,7 +106,7 @@ function PlumeAvecEtat({
 	children,
 	auRepos
 }: {
-	readonly children: (bouton: ReactNode) => ReactNode;
+	readonly children: RenduDeLaBarre;
 	readonly auRepos: boolean;
 }) {
 	// L'humeur seule, pas l'état entier : il change à chaque coche d'un travail.
@@ -208,9 +225,12 @@ function Plume({
 	/** Faux tant que la session s'ouvre, ou quand l'état a levé : pas de scène. */
 	readonly parle?: boolean;
 	readonly journee?: Journee | undefined;
-	readonly children: (bouton: ReactNode) => ReactNode;
+	readonly children: RenduDeLaBarre;
 }) {
 	const navigate = useNavigate();
+	const surLAccueil = useRouterState({
+		select: (etat) => etat.location.pathname.replace(/\/$/, '') === '/app'
+	});
 	const dossier = useRouterState({
 		select: (etat) => {
 			const match = etat.matches.find((m) => m.routeId === ROUTE_DOSSIER);
@@ -304,6 +324,16 @@ function Plume({
 		ouvrirLaConversation();
 	}
 
+	/*
+	  LA CAPSULE EN DIRECT : pas pendant que sa bulle parle (elle occupe la même
+	  place, et dit déjà ce qu'il fait en pied), ni sur Aujourd'hui, dont le bloc du
+	  pilote coche son travail et liste ce qui part.
+	*/
+	const capsule =
+		parle && ouverte === null && !surLAccueil ? (
+			<CapsuleBranchee onOuvrir={() => void navigate({ to: '/app/pilote' })} />
+		) : null;
+
 	return children(
 		<BoutonCompagnon
 			humeur={reflechit ? 'reflechit' : (ouverte?.parole.humeur ?? humeur)}
@@ -337,6 +367,105 @@ function Plume({
 							/>
 						)
 					})}
+		/>,
+		capsule
+	);
+}
+
+/** L'heure qui avance, à la demi-minute : les « dans 23 min » de la capsule. */
+function useMaintenant(): number {
+	const [maintenant, setMaintenant] = useState(() => Date.now());
+	useEffect(() => {
+		const minuterie = setInterval(() => setMaintenant(Date.now()), 30_000);
+		return () => clearInterval(minuterie);
+	}, []);
+	return maintenant;
+}
+
+/**
+ * LA CAPSULE, BRANCHÉE — le travail en cours et les relances programmées, lus
+ * étroitement (le travail change à chaque coche : seule la capsule se redessine).
+ *
+ * ⚠️ « RETENIR » SE VOIT AU TOUCHER : la relance quitte la liste avant la réponse
+ * du serveur, et Plume dit ce que le geste a fait — le client lui est retiré, il
+ * le rend depuis sa fiche.
+ */
+function CapsuleBranchee({ onOuvrir }: { readonly onOuvrir: () => void }) {
+	const navigate = useNavigate();
+	const dire = usePlumeDit();
+	const travail = useQuery(api.recouvrement.presence.travailEnCours, {});
+	const programmees = useQuery(api.recouvrement.presence.relancesProgrammees, {});
+	const retenir = useMutation(api.recouvrement.pilote.retenir).withOptimisticUpdate(
+		(local, { envoiId }) => {
+			const liste = local.getQuery(api.recouvrement.presence.relancesProgrammees, {});
+			if (liste === undefined) return;
+			local.setQuery(
+				api.recouvrement.presence.relancesProgrammees,
+				{},
+				liste.filter((p) => p.envoiId !== envoiId)
+			);
+		}
+	);
+	const maintenant = useMaintenant();
+	if (travail === undefined || programmees === undefined) return null;
+	const direct = enDirect({ maintenant, travail, programmees, heure: heureEnMots });
+	if (direct === null) return null;
+
+	if (direct.genre === 'TRAVAIL') {
+		return (
+			<CapsulePlume
+				genre="TRAVAIL"
+				titre={direct.titre}
+				ligne={direct.ligne}
+				part={direct.part}
+				onOuvrir={onOuvrir}
+			/>
+		);
+	}
+	if (direct.plusieurs) {
+		// Plusieurs départs : « Retenir » ne dirait pas lequel ; chacun a le sien chez Plume.
+		return (
+			<CapsulePlume
+				genre="DEPART"
+				titre={direct.titre}
+				ligne={direct.ligne}
+				part={direct.part}
+				libelleDuGeste="Voir"
+				onGeste={onOuvrir}
+				onOuvrir={onOuvrir}
+			/>
+		);
+	}
+	return (
+		<CapsulePlume
+			genre="DEPART"
+			titre={direct.titre}
+			ligne={direct.ligne}
+			part={direct.part}
+			libelleDuGeste="Retenir"
+			onGeste={() => {
+				void retenir({ envoiId: direct.envoiId as Id<'envois'> }).then(
+					() =>
+						dire({
+							titre: 'Relance retenue',
+							texte: `Rien ne part à ${direct.client}. Je vous le laisse en main : vous me le rendez depuis sa fiche.`,
+							humeur: 'content',
+							geste: {
+								libelle: 'Sa fiche',
+								faire: () =>
+									void navigate({ to: '/app/clients/$id', params: { id: direct.clientId } })
+							}
+						}),
+					() =>
+						dire({
+							titre: 'Trop tard pour la retenir',
+							texte:
+								'Cette relance n’est plus programmée : elle vient de partir, ou elle était déjà retenue.',
+							humeur: 'attention'
+						})
+				);
+			}}
+			onOuvrir={onOuvrir}
 		/>
 	);
 }
@@ -443,11 +572,15 @@ const JOUR_DE_PARIS = new Intl.DateTimeFormat('fr-FR', {
 	weekday: 'long'
 });
 
+/** « 9 h », « 14 h 30 » : l'heure de Paris, comme on la dit. */
+function heureEnMots(instant: number): string {
+	const [heures, minutes] = HEURE_DE_PARIS.format(new Date(instant)).split(':');
+	return minutes === undefined || minutes === '00' ? `${heures} h` : `${heures} h ${minutes}`;
+}
+
 /** « aujourd'hui à 14 h 30 », « demain à 9 h », « lundi à 9 h » : quand part la suite. */
 function quandEnMots(instant: number): string {
-	const [heures, minutes] = HEURE_DE_PARIS.format(new Date(instant)).split(':');
-	const heure =
-		minutes === undefined || minutes === '00' ? `${heures} h` : `${heures} h ${minutes}`;
+	const heure = heureEnMots(instant);
 	const jour = jourDeParis(instant);
 	const maintenant = Date.now();
 	if (jour === jourDeParis(maintenant)) return `aujourd’hui à ${heure}`;

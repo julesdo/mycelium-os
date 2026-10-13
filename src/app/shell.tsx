@@ -110,7 +110,9 @@ function BarreSaufEnConversation({ sessionOuverte }: { readonly sessionOuverte: 
 	if (enConversation) return null;
 	return (
 		<CompagnonBranche auRepos={!sessionOuverte}>
-			{(bouton) => <BarreBranchee accessoire={bouton} auRepos={!sessionOuverte} />}
+			{(bouton, capsule) => (
+				<BarreBranchee accessoire={bouton} auDessus={capsule} auRepos={!sessionOuverte} />
+			)}
 		</CompagnonBranche>
 	);
 }

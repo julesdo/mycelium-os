@@ -107,7 +107,8 @@ const REMBOURRAGE_PILULE = '0.75rem';
 
 export function BarreDuBas({
 	destinations,
-	accessoire
+	accessoire,
+	auDessus
 }: {
 	destinations: readonly DestinationBarre[];
 	/**
@@ -117,6 +118,13 @@ export function BarreDuBas({
 	 * contenu qui défile, où il cachait les montants (07/10/2026).
 	 */
 	accessoire?: ReactNode;
+	/**
+	 * Ce qui se pose AU-DESSUS de la rangée, collé à elle : la capsule de Plume en
+	 * direct (`CapsulePlume`, 14/10/2026), comme le mini-lecteur d'Apple Music
+	 * au-dessus de sa barre. Elle suit la barre (le `safe-area`, le centrage au-delà
+	 * de 768 px) parce qu'elle vit dans le même bloc fixe.
+	 */
+	auDessus?: ReactNode;
 }) {
 	/*
 	  −1 quand on est ailleurs que sur les quatre onglets (une page poussée, un
@@ -139,7 +147,8 @@ export function BarreDuBas({
 		  posée, centrée, étiquetée à côté de l'icône. C'est le même objet, pas un
 		  second composant : un second se serait mis à diverger au premier ajustement.
 		*/
-		<div className="barre-fixe mb-safe fixed inset-x-0 bottom-0 z-40 flex justify-center px-cladd-3xs pb-cladd-3xs">
+		<div className="barre-fixe mb-safe fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-2 px-cladd-3xs pb-cladd-3xs">
+			{auDessus}
 			{/*
 			  LA RANGÉE : la pilule des onglets, puis l'accessoire à sa droite.
 			  `items-stretch` donne à l'accessoire la hauteur exacte de la pilule.
