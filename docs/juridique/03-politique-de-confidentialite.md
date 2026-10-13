@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -238,6 +238,14 @@ indéterminé compte comme absent, jamais comme acquis. **Toute décision appart
 | **Paddle.com Market Ltd** | Facturation, vendeur de registre | Identité et moyens de paiement | Royaume-Uni |
 | **Opendatasoft / DILA** | Publication du BODACC, interrogé à la demande | Dénomination recherchée (section 4.4) | France |
 | **Qonto** | Connexion comptable, à l'initiative du client | Factures de vente et identité de leurs destinataires | France |
+| **Nango Inc** | Connexion aux logiciels de facturation et de comptabilité (Pennylane, QuickBooks, Xero, Sellsy, Stripe, Zoho), à l'initiative du client | Accès au logiciel, conservés chiffrés ; factures de vente et identité de leurs destinataires, en transit seulement | **États-Unis** (société de droit américain, hébergement AWS) |
+
+**Nango ne conserve pas les factures.** Il garde l'accès que le client lui a confié (un jeton
+d'autorisation ou une clé en lecture seule, chiffrés en AES-256-GCM) et relaie nos lectures ; son
+relais note l'adresse, la méthode et le statut de chaque requête, jamais leur contenu, et efface ces
+journaux après quinze jours. Les factures lues ne sont enregistrées que chez Letikette. La clé dont
+Letikette dispose chez Nango ne permet pas de lire l'accès du client. Débrancher un logiciel, ou
+supprimer le compte, supprime cet accès chez Nango.
 
 **Resend ne voit jamais un débiteur.** Les seuls courriels acheminés sont ceux qui s'adressent à un
 titulaire de compte : vérification d'adresse, réinitialisation de mot de passe, invitation d'un

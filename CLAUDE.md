@@ -493,6 +493,15 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   seul bouton plein en pied). **Un bouton du kit n'a pas de `type`** : posé dans un
   `<form>`, il l'envoie. Un formulaire ne porte que ses champs, son bouton le vise par
   `form=`, et tout autre bouton qui y reste prend `type="button"`.
+- **Les logiciels du gérant se branchent par Nango** (13/10/2026,
+  `docs/superpowers/specs/2026-10-13-nango.md` ; Chift est retiré, trop cher). Pennylane,
+  QuickBooks, Xero, Sellsy, Stripe et Zoho, par le PROXY de Nango seul : ni ses synchronisations
+  ni son cache, les factures ne sont stockées que chez nous. Notre clé n'a pas `read_credentials`,
+  une clé collée part du navigateur chez Nango, et une connexion ne s'enregistre qu'après avoir
+  relu son étiquette chez Nango. Le parcours (`ParcoursLogiciels`) prépare SDK et session au
+  choix du logiciel : la fenêtre d'autorisation doit s'ouvrir dans le clic. Un nouveau logiciel,
+  c'est un traducteur et un lecteur dans `socle/connecteurs/nango/`, puis son intégration dans le
+  tableau de bord (`serveurs/nango/LISEZMOI.md`). Dormant sans `NANGO_SECRET_KEY`.
 - **La parole du client fait taire le pilote** (analyse des parcours d'impayés du 08/10/2026,
   `docs/superpowers/specs/2026-10-08-parcours-impayes.md`). Le pilote relançait un client qui
   venait de promettre de payer, et la somme entière à un client qui payait en trois fois.
