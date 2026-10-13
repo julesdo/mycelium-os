@@ -67,6 +67,8 @@ const ZONES_JURIDIQUES: Readonly<Record<string, string>> = {
 		'Elle cite les sources du référentiel mot pour mot, et rien d’autre.',
 	[join('src', 'lib', 'verticales', 'recouvrement', 'compagnon', 'prompt.ts')]:
 		'Le prompt système : lu par le modèle, jamais par le gérant — et figé à l’octet par le verrou d’empreinte, qu’une reformulation ferait sauter.',
+	[join('src', 'lib', 'verticales', 'recouvrement', 'compagnon', 'prompt-etablissement.ts')]:
+		'Le prompt système de la conversation de l’établissement (12/10/2026) : même raison que le prompt du dossier, lu par le modèle et figé pour le cache.',
 	[join('src', 'lib', 'verticales', 'recouvrement', 'compagnon', 'filtres.ts')]:
 		'Les motifs de refus : ils doivent NOMMER les mots qu’ils interdisent.',
 	[join('src', 'lib', 'verticales', 'recouvrement', 'piece.ts')]:
