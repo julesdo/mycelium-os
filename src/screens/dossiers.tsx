@@ -19,6 +19,7 @@ import {
 	CarteBouton,
 	CarteGlissable,
 	CarteLien,
+	EnTableauSurBureau,
 	EnTeteDeGroupe,
 	FeuilleDeRappel,
 	LigneBouton,
@@ -427,6 +428,7 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 
 	return (
 		<PageEcran
+			largeur="large"
 			entete={{
 				...entete,
 				/*
@@ -450,7 +452,8 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 						<SearchField
 							size="md"
 							tightFocusRing
-							className="min-w-0 flex-1"
+							// Au bureau, la rangée fait toute la largeur : le champ garde la sienne.
+							className="min-w-0 flex-1 lg:max-w-sm"
 							value={terme}
 							onChange={(valeur) => setTerme(valeur)}
 							inputMode="search"
@@ -516,93 +519,96 @@ export function EcranDossiers({ donnees }: { donnees: Lecture<DossiersAffiches> 
 					</div>
 				)}
 
-				{groupes.length === 0 ? (
-					<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
-						{cherche === ''
-							? 'Aucun dossier à cette étape.'
-							: `Aucun dossier ne correspond à « ${terme.trim()} ».`}
-					</p>
-				) : (
-					/*
+				{/* Au bureau, chaque dossier se lit sur une ligne, en colonnes. */}
+				<EnTableauSurBureau>
+					{groupes.length === 0 ? (
+						<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
+							{cherche === ''
+								? 'Aucun dossier à cette étape.'
+								: `Aucun dossier ne correspond à « ${terme.trim()} ».`}
+						</p>
+					) : (
+						/*
 					  ⚠️ VINGT PIXELS ENTRE DEUX GROUPES, DOUZE DANS UN GROUPE. Au même écart,
 					  l'en-tête « On lui a écrit » collait à la carte du groupe PRÉCÉDENT et
 					  se lisait comme son pied. Chez Revolut, l'en-tête d'un groupe est plus
 					  près de SES rangées que de celles d'au-dessus : c'est ce qui fait qu'on
 					  sait à qui il appartient sans y penser.
 					*/
-					<div className="flex flex-col gap-cladd-xs">
-						{groupes.map((groupe) => (
-							<section key={groupe.cle} className="flex flex-col gap-cladd-3xs">
-								<EnTeteDeGroupe
-									libelle={groupe.cle === 'CLASSE' ? 'Classés' : LIBELLE_GROUPE[groupe.cle]}
-									nombre={groupe.dossiers.length}
-									// Un total de dossiers réglés vaut zéro par construction : un
-									// cadran à zéro, que la règle d'écran n° 4 interdit. Celui des
-									// classés ne se compte pas : il ne viendra pas.
-									total={
-										groupe.cle === 'REGLE' || groupe.cle === 'CLASSE'
-											? null
-											: groupe.dossiers.reduce((s, d) => s + d.principalRestantDu, 0n)
-									}
-								/>
-								<ListeDeCartes>
-									{groupe.dossiers.map((dossier) => {
-										const resume = resumeDe(dossier, aujourdHui);
-										const contenu = {
-											titre: dossier.debiteur,
-											ligne: resume.ligne,
-											...(resume.date === undefined ? {} : { date: resume.date }),
-											// Un total de dossier réglé vaut zéro : un cadran à zéro.
-											...(dossier.etape === 'REGLE'
-												? {}
-												: { montant: eurosCentimes(dossier.principalRestantDu) })
-										};
-										return enSelection ? (
-											/*
+						<div className="flex flex-col gap-cladd-xs">
+							{groupes.map((groupe) => (
+								<section key={groupe.cle} className="flex flex-col gap-cladd-3xs">
+									<EnTeteDeGroupe
+										libelle={groupe.cle === 'CLASSE' ? 'Classés' : LIBELLE_GROUPE[groupe.cle]}
+										nombre={groupe.dossiers.length}
+										// Un total de dossiers réglés vaut zéro par construction : un
+										// cadran à zéro, que la règle d'écran n° 4 interdit. Celui des
+										// classés ne se compte pas : il ne viendra pas.
+										total={
+											groupe.cle === 'REGLE' || groupe.cle === 'CLASSE'
+												? null
+												: groupe.dossiers.reduce((s, d) => s + d.principalRestantDu, 0n)
+										}
+									/>
+									<ListeDeCartes>
+										{groupe.dossiers.map((dossier) => {
+											const resume = resumeDe(dossier, aujourdHui);
+											const contenu = {
+												titre: dossier.debiteur,
+												ligne: resume.ligne,
+												...(resume.date === undefined ? {} : { date: resume.date }),
+												// Un total de dossier réglé vaut zéro : un cadran à zéro.
+												...(dossier.etape === 'REGLE'
+													? {}
+													: { montant: eurosCentimes(dossier.principalRestantDu) })
+											};
+											return enSelection ? (
+												/*
 											  EN SÉLECTION, LA CASE PREND LA PLACE DE L'AVATAR — Mail.
 											  La carte entière est la cible : une case de 20 px posée
 											  sur une carte qui est AUSSI un lien ouvre le dossier une
 											  fois sur trois, au pouce. Et pas de chevron : cocher ne
 											  mène nulle part.
 											*/
-											<CarteBouton
-												key={dossier._id}
-												{...contenu}
-												chevron={false}
-												icone={
-													<span className="flex size-10 items-center justify-center">
-														<Checkbox
-															as="span"
-															size="md"
-															checked={selection.has(dossier._id)}
-															aria-label={`Sélectionner le dossier de ${dossier.debiteur}`}
-														/>
-													</span>
-												}
-												onClick={() => basculer(dossier._id)}
-											/>
-										) : (
-											<CarteGlissable
-												key={dossier._id}
-												titre={dossier.debiteur}
-												actions={gestesDe(dossier)}
-												menuEnPlus={menuDe(dossier)}
-											>
-												<CarteLien
-													vers="/app/dossier/$id"
-													parametres={{ id: dossier._id }}
+												<CarteBouton
+													key={dossier._id}
 													{...contenu}
-													attention={dossier.courrierAValider}
-													{...(resume.famille === undefined ? {} : { famille: resume.famille })}
+													chevron={false}
+													icone={
+														<span className="flex size-10 items-center justify-center">
+															<Checkbox
+																as="span"
+																size="md"
+																checked={selection.has(dossier._id)}
+																aria-label={`Sélectionner le dossier de ${dossier.debiteur}`}
+															/>
+														</span>
+													}
+													onClick={() => basculer(dossier._id)}
 												/>
-											</CarteGlissable>
-										);
-									})}
-								</ListeDeCartes>
-							</section>
-						))}
-					</div>
-				)}
+											) : (
+												<CarteGlissable
+													key={dossier._id}
+													titre={dossier.debiteur}
+													actions={gestesDe(dossier)}
+													menuEnPlus={menuDe(dossier)}
+												>
+													<CarteLien
+														vers="/app/dossier/$id"
+														parametres={{ id: dossier._id }}
+														{...contenu}
+														attention={dossier.courrierAValider}
+														{...(resume.famille === undefined ? {} : { famille: resume.famille })}
+													/>
+												</CarteGlissable>
+											);
+										})}
+									</ListeDeCartes>
+								</section>
+							))}
+						</div>
+					)}
+				</EnTableauSurBureau>
 
 				{/*
 				  LA BARRE D'ACTION DU LOT — le seul bouton plein de l'écran.

@@ -3165,3 +3165,92 @@ html:has(.coquille-app) body {
 		animation: none;
 	}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LA COQUILLE DU BUREAU — la barre latérale et la barre du haut, au-delà de
+ * 1024 px (14/10/2026, `ui/coquille-bureau.tsx`).
+ *
+ * ⚠️ DU VERRE POSÉ, PAS FLOTTANT. La barre latérale est le bord gauche de
+ * l'écran, comme la barre du haut en est le bord supérieur : un voile léger, un
+ * filet d'un pixel du côté du contenu, et aucune ombre portée. Ce qui flotte au
+ * bureau, c'est Plume dans son coin, avec le verre dense de la barre du bas.
+ *
+ * ⚠️ ELLES NE GLISSENT PAS AVEC LA PAGE. Chacune a son instantané de transition,
+ * comme la barre du bas (`.barre-fixe`) : quand une page pousse la suivante, seul
+ * le contenu part et arrive. Sous 1024 px, elles ne s'affichent pas, et un élément
+ * qui ne s'affiche pas ne prend part à aucune transition.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.chrome-laterale {
+	view-transition-name: barre-laterale;
+	background-color: oklch(0.17 0.026 266 / 0.55);
+	-webkit-backdrop-filter: blur(24px) saturate(1.4);
+	backdrop-filter: blur(24px) saturate(1.4);
+	box-shadow: inset -1px 0 0 0 oklch(1 0 0 / 0.07);
+}
+.light .chrome-laterale {
+	background-color: oklch(0.972 0.01 85 / 0.7);
+	box-shadow: inset -1px 0 0 0 oklch(0.3 0.02 264 / 0.09);
+}
+
+.chrome-haute {
+	view-transition-name: barre-haute-bureau;
+	box-shadow: inset 0 -1px 0 0 oklch(1 0 0 / 0.07);
+}
+.light .chrome-haute {
+	box-shadow: inset 0 -1px 0 0 oklch(0.3 0.02 264 / 0.09);
+}
+
+/* L'ENTRÉE DE LA BARRE : le survol éclaire, l'entrée active est une pastille
+ * claire — la même lecture que l'onglet actif de la pilule, en plus calme. */
+.entree-laterale:hover,
+.retour-fil:hover {
+	background-color: oklch(1 0 0 / 0.06);
+}
+.light .entree-laterale:hover,
+.light .retour-fil:hover {
+	background-color: oklch(0.3 0.02 264 / 0.05);
+}
+.entree-laterale-active,
+.entree-laterale-active:hover {
+	background-color: oklch(1 0 0 / 0.1);
+	box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.06);
+}
+.light .entree-laterale-active,
+.light .entree-laterale-active:hover {
+	background-color: oklch(1 0 0 / 0.92);
+	box-shadow:
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.08),
+		0 1px 2px oklch(0.3 0.02 264 / 0.07);
+}
+.entree-laterale:focus-visible,
+.retour-fil:focus-visible,
+.champ-bureau:focus-visible {
+	outline: 2px solid var(--color-cladd-primary);
+	outline-offset: 2px;
+}
+
+/* LE DÉCLENCHEUR DE LA RECHERCHE : un champ qu'on vise à la souris, qui n'en est
+ * pas un (la palette porte le seul champ). */
+.champ-bureau {
+	background-color: oklch(1 0 0 / 0.05);
+	box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.08);
+	transition: background-color 150ms ease-out;
+}
+.champ-bureau:hover {
+	background-color: oklch(1 0 0 / 0.09);
+}
+.light .champ-bureau {
+	background-color: oklch(1 0 0 / 0.7);
+	box-shadow:
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.1),
+		0 1px 2px oklch(0.3 0.02 264 / 0.05);
+}
+.light .champ-bureau:hover {
+	background-color: oklch(1 0 0 / 0.95);
+}
+.touche-clavier {
+	box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.12);
+}
+.light .touche-clavier {
+	box-shadow: inset 0 0 0 1px oklch(0.3 0.02 264 / 0.14);
+}

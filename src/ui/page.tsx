@@ -52,13 +52,22 @@ export function PageHeader({
 	titre,
 	sousTitre,
 	actions,
-	colonne = 'pleine'
+	colonne = 'pleine',
+	surBureau = actions ? 'outils' : 'masque'
 }: {
 	titre?: string;
 	sousTitre?: string;
 	actions?: ReactNode;
 	/** La colonne du corps, sur laquelle le titre s'aligne. Voir `GOUTTIERE_ENTETE`. */
 	colonne?: ColonneEntete;
+	/**
+	 * CE QUE LA BARRE DEVIENT AU-DELÀ DE 1024 PX (14/10/2026). Le titre y monte dans
+	 * la barre du haut du bureau (`TitreBureau`, posé par `PageEcran`). `outils` :
+	 * les actions restent, en rangée au-dessus de la liste qu'elles filtrent, et le
+	 * titre caché s'efface (il est déjà en haut). `masque` : la barre entière
+	 * s'efface — ses actions ont leur place dans la coquille du bureau.
+	 */
+	surBureau?: 'outils' | 'masque';
 }) {
 	/*
 	  ═══════════════════════════════════════════════════════════════════════════
@@ -102,12 +111,13 @@ export function PageHeader({
 				  plus rien à flouter. Voir `page-ecran.tsx`.
 				*/
 				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs flex shrink-0 items-center pt-barre-app pb-cladd-3xs',
-				GOUTTIERE_ENTETE[colonne]
+				GOUTTIERE_ENTETE[colonne],
+				surBureau === 'masque' && 'lg:hidden'
 			)}
 		>
 			{actions ? (
 				<div className="flex min-h-9 w-full min-w-0 items-center gap-cladd-3xs">
-					{sansTitre ? null : <h1 className="sr-only">{titre}</h1>}
+					{sansTitre ? null : <h1 className="sr-only lg:hidden">{titre}</h1>}
 					{actions}
 				</div>
 			) : sansTitre ? null : (

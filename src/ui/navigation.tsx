@@ -18,6 +18,7 @@ import { cn } from './cn';
 import { VignetteRangee, type FamilleRangee } from './familles';
 import { Lien } from './lien';
 import { GOUTTIERE_ENTETE, type ColonneEntete } from './page';
+import { CLASSE_RETOUR_FIL, FilDAriane, TitreBureau } from './coquille-bureau';
 
 /** Voir `EnteteDetail` : la valeur est déjà réactive, rien à écouter de plus. */
 function abonnementSansEffet() {
@@ -542,40 +543,75 @@ export function EnteteDetail({
 	*/
 	const classeRetour = cn(PASTILLE_RETOUR.className, retourMasqueEnVolets && 'lg:invisible');
 
-	return (
-		<header
-			className={cn(
-				'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs grid shrink-0 grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-cladd-3xs pt-barre-app pb-cladd-3xs',
-				GOUTTIERE_ENTETE[colonne]
-			)}
+	/*
+	  ⚠️ AU-DELÀ DE 1024 PX, LE RETOUR ROND DEVIENT UN FIL D'ARIANE (14/10/2026), dans la
+	  barre du haut du bureau : « Aujourd'hui / Fournitures Durand ». À la souris, on
+	  vise un mot. Les deux mêmes chemins que le retour rond : l'historique quand on
+	  sait d'où l'on vient, le parent de l'adresse sinon. Cette barre-ci s'efface.
+	*/
+	const retourDuFil = retourMasqueEnVolets ? null : parHistorique ? (
+		<button type="button" className={CLASSE_RETOUR_FIL} onClick={() => router.history.back()}>
+			{titreDeProvenance}
+		</button>
+	) : (
+		<Link
+			className={CLASSE_RETOUR_FIL}
+			to={retourVers}
+			params={retourParametres as never}
+			search={retourRecherche as never}
 		>
-			{parHistorique ? (
-				<Button {...PASTILLE_RETOUR} className={classeRetour} onClick={() => router.history.back()}>
-					<ChevronLeftIcon aria-hidden />
-					<span className="sr-only">{titreDeProvenance}</span>
-				</Button>
-			) : (
-				<Button
-					{...PASTILLE_RETOUR}
-					className={classeRetour}
-					as={Link}
-					to={retourVers}
-					// Même assertion que `LigneAnalyse` : le `as` polymorphe efface le
-					// générique du routeur, les props de CE composant restent typées par lui.
-					params={retourParametres as never}
-					search={retourRecherche as never}
-				>
-					<ChevronLeftIcon aria-hidden />
-					<span className="sr-only">{retourLibelle}</span>
-				</Button>
-			)}
-			<div className="flex min-w-0 flex-col items-center text-center">
-				<h1 className="max-w-full truncate text-cladd-xs leading-tight font-semibold">{titre}</h1>
-				{sousTitre ? (
-					<p className="max-w-full truncate text-cladd-3xs text-cladd-fg-soft">{sousTitre}</p>
-				) : null}
-			</div>
-			<span aria-hidden />
-		</header>
+			{retourLibelle}
+		</Link>
+	);
+
+	return (
+		<>
+			<TitreBureau>
+				<FilDAriane
+					dansUnVolet={retourMasqueEnVolets}
+					retour={retourDuFil}
+					titre={titre}
+					{...(sousTitre === undefined ? {} : { sousTitre })}
+				/>
+			</TitreBureau>
+			<header
+				className={cn(
+					'verre-barre-haute sticky top-0 z-30 -mx-cladd-2xs grid shrink-0 grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-cladd-3xs pt-barre-app pb-cladd-3xs lg:hidden',
+					GOUTTIERE_ENTETE[colonne]
+				)}
+			>
+				{parHistorique ? (
+					<Button
+						{...PASTILLE_RETOUR}
+						className={classeRetour}
+						onClick={() => router.history.back()}
+					>
+						<ChevronLeftIcon aria-hidden />
+						<span className="sr-only">{titreDeProvenance}</span>
+					</Button>
+				) : (
+					<Button
+						{...PASTILLE_RETOUR}
+						className={classeRetour}
+						as={Link}
+						to={retourVers}
+						// Même assertion que `LigneAnalyse` : le `as` polymorphe efface le
+						// générique du routeur, les props de CE composant restent typées par lui.
+						params={retourParametres as never}
+						search={retourRecherche as never}
+					>
+						<ChevronLeftIcon aria-hidden />
+						<span className="sr-only">{retourLibelle}</span>
+					</Button>
+				)}
+				<div className="flex min-w-0 flex-col items-center text-center">
+					<h1 className="max-w-full truncate text-cladd-xs leading-tight font-semibold">{titre}</h1>
+					{sousTitre ? (
+						<p className="max-w-full truncate text-cladd-3xs text-cladd-fg-soft">{sousTitre}</p>
+					) : null}
+				</div>
+				<span aria-hidden />
+			</header>
+		</>
 	);
 }

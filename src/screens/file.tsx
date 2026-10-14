@@ -27,6 +27,8 @@ import {
 	SectionEcran,
 	SectionsDepliables,
 	SourceDeRangees,
+	TableauDeBord,
+	ZoneDuTableau,
 	TravailEnCours,
 	Veilleur,
 	VignetteRangee,
@@ -587,6 +589,7 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 
 	return (
 		<PageEcran
+			largeur="large"
 			entete={{
 				genre: 'onglet',
 				/*
@@ -596,6 +599,8 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 				  alors vers « Vos clients » au lieu d'« Aujourd'hui ».
 				*/
 				titre: TITRE_ECRAN.aujourdhui,
+				// Au bureau, la coquille porte déjà l’établissement, la recherche, la cloche et le dépôt.
+				actionsSurBureau: false,
 				/*
 				  ⚠️ PAS DE GRAND TITRE, ET PAS DE DATE EN SOUS-TITRE. Verdict du
 				  fondateur, le 30/09/2026 au soir : « enlève-moi le Aujourd'hui et la
@@ -627,156 +632,167 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 				<FileVide onDeposer={onDeposer} connexion={connexion} />
 			) : (
 				<SectionsDepliables ouvertes={depliees} onOuvertesChange={setDepliees}>
-					<Tete tete={tete} aujourdHui={aujourdHui} />
-
 					{/*
+					  ⚠️ AU BUREAU, DEUX COLONNES (14/10/2026) : le chiffre et la file à
+					  gauche, Plume et le travail de fond à droite. Au téléphone, ces
+					  enveloppes n'existent pas (`display: contents`) : l'ordre ci-dessous
+					  reste celui de l'écran.
+					*/}
+					<TableauDeBord>
+						<ZoneDuTableau place="tete">
+							<Tete tete={tete} aujourdHui={aujourdHui} />
+						</ZoneDuTableau>
+						<ZoneDuTableau place="cote-haut">
+							{/*
 					  LE PILOTE, SOUS LE CHIFFRE ET AVANT LA FILE. C'est la voix du produit :
 					  ce qu'il fait pendant qu'on regarde, puis ce qu'il vient de faire. Il
 					  passe avant ce qu'on demande au gérant, parce qu'il dit d'abord que le
 					  travail se fait.
 					*/}
-					{pilote}
+							{pilote}
 
-					{veilleurTravaille ? (
-						<SourceDeRangees nom="Le travail de fond">
-							<TravailEnCours travaux={travaux} />
-						</SourceDeRangees>
-					) : null}
-
-					{/* CE QUI VOUS MANQUE MONTE AVANT LA FILE : c'est ce qui empêche, et ce
+							{veilleurTravaille ? (
+								<SourceDeRangees nom="Le travail de fond">
+									<TravailEnCours travaux={travaux} />
+								</SourceDeRangees>
+							) : null}
+						</ZoneDuTableau>
+						<ZoneDuTableau place="principal">
+							{/* CE QUI VOUS MANQUE MONTE AVANT LA FILE : c'est ce qui empêche, et ce
 					    qui empêche ne se cherche pas. */}
-					<SourceDeRangees nom="Ce qui vous manque">
-						<CeQuiManque verrous={verrous} />
-					</SourceDeRangees>
+							<SourceDeRangees nom="Ce qui vous manque">
+								<CeQuiManque verrous={verrous} />
+							</SourceDeRangees>
 
-					{/* ── LA FILE ───────────────────────────────────────────────────── */}
-					<SourceDeRangees nom="Les rangées de la surveillance">
-						{groupes.length === 0 ? (
-							<p className="px-1 text-cladd-xs text-cladd-fg-soft">
-								Rien à trancher aujourd’hui. La surveillance continue sur vos échéances et sur les
-								dates limites pour agir en justice.
-							</p>
-						) : (
-							groupes.map(({ cle, rangees: siennes }) => (
-								<section key={cle} className="flex flex-col gap-cladd-3xs">
-									<EnTeteDeGroupe
-										libelle={LIBELLE_GROUPE[cle]}
-										nombre={siennes.length}
-										total={totalDe(siennes)}
-									/>
-									<ListeDeCartes>
-										{siennes.map((rangee) => (
-											<LigneDeFile
-												key={rangee.id}
-												rangee={rangee}
-												aujourdHui={aujourdHui}
-												onTrancher={() => setEnDecision(rangee.id)}
+							{/* ── LA FILE ───────────────────────────────────────────────────── */}
+							<SourceDeRangees nom="Les rangées de la surveillance">
+								{groupes.length === 0 ? (
+									<p className="px-1 text-cladd-xs text-cladd-fg-soft">
+										Rien à trancher aujourd’hui. La surveillance continue sur vos échéances et sur
+										les dates limites pour agir en justice.
+									</p>
+								) : (
+									groupes.map(({ cle, rangees: siennes }) => (
+										<section key={cle} className="flex flex-col gap-cladd-3xs">
+											<EnTeteDeGroupe
+												libelle={LIBELLE_GROUPE[cle]}
+												nombre={siennes.length}
+												total={totalDe(siennes)}
 											/>
-										))}
-									</ListeDeCartes>
-								</section>
-							))
-						)}
+											<ListeDeCartes>
+												{siennes.map((rangee) => (
+													<LigneDeFile
+														key={rangee.id}
+														rangee={rangee}
+														aujourdHui={aujourdHui}
+														onTrancher={() => setEnDecision(rangee.id)}
+													/>
+												))}
+											</ListeDeCartes>
+										</section>
+									))
+								)}
 
-						{/*
+								{/*
 						  ⚠️ CE QUE LE PLAFOND A DIFFÉRÉ SE DIT, SOUS LA FILE (D13). Sept
 						  propositions par jour, et ce qui dépasse est COMPTÉ : un rangement
 						  qui tairait ce qu'il n'a pas montré serait un repli silencieux.
 						*/}
-						{resumeDuPlafond === null ? null : (
-							<p className="px-1 text-cladd-2xs text-cladd-fg-softer">{resumeDuPlafond}</p>
-						)}
-					</SourceDeRangees>
+								{resumeDuPlafond === null ? null : (
+									<p className="px-1 text-cladd-2xs text-cladd-fg-softer">{resumeDuPlafond}</p>
+								)}
+							</SourceDeRangees>
 
-					{/*
+							{/*
 					  ⚠️ LE RAPPROCHEMENT EST UNE TÂCHE, PAS DU TRAVAIL DE FOND. Il vivait
 					  parmi les rangées de la machine, alors que c'est un geste du gérant —
 					  celui qui empêche de relancer un client qui a déjà payé, la pire erreur
 					  d'un logiciel de recouvrement. Il a son groupe, sans urgence inventée :
 					  ce n'est pas une alerte, c'est un outil disponible tous les jours.
 					*/}
-					{lettrages.length === 0 ? null : (
-						<section className="flex flex-col gap-cladd-3xs">
-							<EnTeteDeGroupe libelle="À rapprocher" nombre={lettrages.length} total={null} />
-							<ListeDeRangees>
-								{lettrages.map((rangee) => (
-									<RangeeDepliable
-										key={rangee.id}
-										cle={`lettrage-${rangee.id}`}
-										famille="ARGENT"
-										titre="Un virement reçu"
-										glose="Dites de qui il vient : le logiciel solde les bonnes factures, et personne n’est relancé pour ce qu’il a déjà payé."
-										// Pas « à rapprocher » : l'en-tête du groupe le dit déjà, et le
-										// doublon revenait à la ligne à 375 px. La valeur dit ce qu'on
-										// vous demande en ouvrant.
-										valeur="De qui ?"
-									>
-										<Lettrage {...rangee.lettrage} />
-									</RangeeDepliable>
-								))}
-							</ListeDeRangees>
-						</section>
-					)}
-
-					{/* ── LE TRAVAIL DE FOND ─────────────────────────────────────────── */}
-					<ListeDeRangees titre="Le travail de fond">
-						{/*
+							{lettrages.length === 0 ? null : (
+								<section className="flex flex-col gap-cladd-3xs">
+									<EnTeteDeGroupe libelle="À rapprocher" nombre={lettrages.length} total={null} />
+									<ListeDeRangees>
+										{lettrages.map((rangee) => (
+											<RangeeDepliable
+												key={rangee.id}
+												cle={`lettrage-${rangee.id}`}
+												famille="ARGENT"
+												titre="Un virement reçu"
+												glose="Dites de qui il vient : le logiciel solde les bonnes factures, et personne n’est relancé pour ce qu’il a déjà payé."
+												// Pas « à rapprocher » : l'en-tête du groupe le dit déjà, et le
+												// doublon revenait à la ligne à 375 px. La valeur dit ce qu'on
+												// vous demande en ouvrant.
+												valeur="De qui ?"
+											>
+												<Lettrage {...rangee.lettrage} />
+											</RangeeDepliable>
+										))}
+									</ListeDeRangees>
+								</section>
+							)}
+						</ZoneDuTableau>
+						<ZoneDuTableau place="cote">
+							{/* ── LE TRAVAIL DE FOND ─────────────────────────────────────────── */}
+							<ListeDeRangees titre="Le travail de fond">
+								{/*
 						  LE COFFRE-FORT, EN UNE RANGÉE QUI Y MÈNE (12/10/2026). Elle remplace
 						  « Vos dépôts » : chaque document déposé, facture ou pièce, s'y relit en
 						  entier. Ce qui est encore en lecture se dit dans sa valeur, jamais en
 						  carte au milieu de l'accueil.
 						*/}
-						{coffre === undefined || (coffre.total === 0 && coffre.enLecture === 0) ? null : (
-							<RangeeLien
-								vers="/app/coffre"
-								famille="PAPIERS"
-								titre="Coffre-fort"
-								valeur={
-									coffre.enLecture > 0
-										? `${coffre.enLecture} en lecture`
-										: `${coffre.auMoins ? 'plus de ' : ''}${coffre.total} document${pluriel(coffre.total)}`
-								}
-							/>
-						)}
+								{coffre === undefined || (coffre.total === 0 && coffre.enLecture === 0) ? null : (
+									<RangeeLien
+										vers="/app/coffre"
+										famille="PAPIERS"
+										titre="Coffre-fort"
+										valeur={
+											coffre.enLecture > 0
+												? `${coffre.enLecture} en lecture`
+												: `${coffre.auMoins ? 'plus de ' : ''}${coffre.total} document${pluriel(coffre.total)}`
+										}
+									/>
+								)}
 
-						{/*
+								{/*
 						  LA SANTÉ DE VOS CLIENTS (13/10/2026) : ce qui mérite un regard d'abord,
 						  sinon jusqu'où le portefeuille est couvert. Le détail vit sur sa page.
 						*/}
-						{sante === undefined ? null : (
-							<RangeeLien
-								vers="/app/risque"
-								famille="MACHINE"
-								titre="La santé de vos clients"
-								valeur={
-									sante.analyses === 0
-										? 'à découvrir'
-										: sante.aRegarder > 0
-											? `${sante.aRegarder} à regarder`
-											: `couverte à ${sante.couverture} %`
-								}
-							/>
-						)}
+								{sante === undefined ? null : (
+									<RangeeLien
+										vers="/app/risque"
+										famille="MACHINE"
+										titre="La santé de vos clients"
+										valeur={
+											sante.analyses === 0
+												? 'à découvrir'
+												: sante.aRegarder > 0
+													? `${sante.aRegarder} à regarder`
+													: `couverte à ${sante.couverture} %`
+										}
+									/>
+								)}
 
-						{/* LE VEILLEUR NE DISPARAÎT JAMAIS : un bloc qui n'apparaît que les
+								{/* LE VEILLEUR NE DISPARAÎT JAMAIS : un bloc qui n'apparaît que les
 						    jours où il s'est passé quelque chose apprend que son absence est
 						    normale, et le jour où il manque parce que la machine est tombée,
 						    plus rien ne le distingue d'un jour calme. */}
-						{travaux.length === 0 ? null : (
-							<RangeeDepliable
-								cle="veilleur"
-								famille="MACHINE"
-								titre="Surveillance"
-								glose={`Ce que ${NOM_DU_PILOTE} a relu aujourd’hui, et ce qu’il relit en ce moment.`}
-								valeur={`${travaux.length} passage${pluriel(travaux.length)}`}
-							>
-								<Veilleur travaux={travaux} />
-							</RangeeDepliable>
-						)}
+								{travaux.length === 0 ? null : (
+									<RangeeDepliable
+										cle="veilleur"
+										famille="MACHINE"
+										titre="Surveillance"
+										glose={`Ce que ${NOM_DU_PILOTE} a relu aujourd’hui, et ce qu’il relit en ce moment.`}
+										valeur={`${travaux.length} passage${pluriel(travaux.length)}`}
+									>
+										<Veilleur travaux={travaux} />
+									</RangeeDepliable>
+								)}
 
-						<LimitesDuCalcul hypotheses={hypotheses} anglesMorts={anglesMorts} />
+								<LimitesDuCalcul hypotheses={hypotheses} anglesMorts={anglesMorts} />
 
-						{/*
+								{/*
 						  ⚠️ « LES ÉCRANS DE L'ANCIENNE VERSION » SONT PARTIS LE 30/09/2026, avant
 						  leur date de fermeture du 17 octobre. Verdict du fondateur : « on s'en
 						  fout aussi ». Ses quatre liens menaient à des écrans que le produit
@@ -785,19 +801,21 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 						  ce qui est dû. `/app/procedures` n'était plus qu'une redirection ; il
 						  rejoint les anciennes adresses d'`aucun-ecran-orphelin.test.ts`.
 						*/}
-					</ListeDeRangees>
+							</ListeDeRangees>
 
-					{/*
+							{/*
 					  ⚠️ L'ANNONCE DE LA NUIT EST UNE LIGNE, PLUS UN BANDEAU. Elle ouvrait
 					  l'écran du matin, en tête, avec sa croix : une cible de plus et trois
 					  lignes pour dire ce que la machine a fait pendant que le gérant dormait.
 					  Elle ne porte rien de chiffré qui ne vive ailleurs (le bilan daté du
 					  document, dans le coffre) : sa place est avec ce qui n'appelle aucune décision.
 					*/}
-					{annonce === undefined ? null : (
-						<p className="px-1 text-cladd-2xs text-cladd-fg-softer">{annonce}</p>
-					)}
-					<PliDeLaFile faits={repliees.map((r) => r.pli)} />
+							{annonce === undefined ? null : (
+								<p className="px-1 text-cladd-2xs text-cladd-fg-softer">{annonce}</p>
+							)}
+							<PliDeLaFile faits={repliees.map((r) => r.pli)} />
+						</ZoneDuTableau>
+					</TableauDeBord>
 
 					{decision === null ? null : (
 						<FeuilleDeDecision

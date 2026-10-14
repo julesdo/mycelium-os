@@ -633,6 +633,21 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   (`PageHeader`, `EnteteDetail`). 64 px au lieu de 162. **Le titre reste publié** même quand il ne
   s'affiche pas : il nomme le retour de la page suivante. Le dégagement du haut suit la zone de
   l'horloge (`safe-area-inset-top`). Le montant principal d'un écran est centré dessous.
+- **Au-delà de 1024 px, une coquille de bureau ; en dessous, rien ne change** (14/10/2026, sur
+  Mercury, Revolut Business, Midday, Square, QuickBooks et Quicken). Le fondateur : « l'expérience
+  desktop n'est pas du tout adaptée à la souris […] une sidebar et une top bar », et « rien toucher à
+  la partie mobile ». Une BARRE LATÉRALE (l'établissement, Aujourd'hui, Dossiers, Clients, puis
+  Plume, Coffre-fort, Santé des clients, Défense, le compte en pied) et une BARRE DU HAUT (le titre
+  de la page ou son fil d'Ariane, la recherche qui s'ouvre aussi par Ctrl K / ⌘ K, la cloche,
+  « Ajouter des factures »), montées une fois par la coquille (`ui/coquille-bureau.tsx`, branchées
+  dans `app/coquille-bureau.tsx`). Chaque page pose son titre dans la barre par un portail
+  (`TitreBureau`, depuis `PageEcran` et `EnteteDetail`) ; sa barre compacte s'efface au bureau,
+  sauf les outils d'une liste (`PageHeader surBureau`). La pilule d'onglets s'efface, Plume reste
+  dans le coin bas droit avec sa bulle et sa capsule. « Aujourd'hui » passe en deux colonnes au-delà
+  de 1280 px (`TableauDeBord`, des enveloppes en `display: contents` au téléphone : l'ordre du DOM
+  reste celui de l'écran) ; une liste qui le demande se lit en tableau, une carte par ligne et des
+  colonnes alignées (`EnTableauSurBureau`). **Tout ce qui est bureau est `lg:` ou `xl:`** : un
+  changement de la coquille se vérifie à 375 px par une empreinte des positions, avant et après.
 - **Sous 1024 px, un panneau se PRÉSENTE ; au-dessus, il se déplie.** Déplier deux mille pixels au
   milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
   application iOS ne le fait. `SectionDepliable` et `RangeeDepliable` rendent donc une **page

@@ -1,10 +1,12 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { Fond } from '../ui/fond';
 import { cn } from '../ui/cn';
 import { BarreBranchee } from './barre';
 import { CompagnonBranche } from './compagnon';
 import { useCodeEnAvance } from './code-en-avance';
+import { HauteBranchee, LateraleBranchee } from './coquille-bureau';
+import { FournisseurDuTitreBureau } from '../ui/coquille-bureau';
 
 /**
  * Le cadre de l'application authentifiée.
@@ -52,6 +54,13 @@ import { useCodeEnAvance } from './code-en-avance';
  * `fixed inset-0` épouse l'écran quelle que soit la façon dont le navigateur le
  * mesure, et ne donne aucune hauteur à la page ; `coquille-app` lui interdit en plus
  * de défiler (`app.css`).
+ *
+ * ⚠️ AU-DELÀ DE 1024 PX, UNE COQUILLE DE BUREAU (14/10/2026). Le fondateur :
+ * « l'expérience desktop n'est pas du tout adaptée à la souris […] une sidebar et
+ * une top bar ». La barre latérale et la barre du haut (`coquille-bureau.tsx`) sont
+ * montées ici, une fois, comme la barre du bas ; elles sont `hidden lg:flex`, et le
+ * téléphone ne voit ni elles ni l'enveloppe qui les range. Au bureau, la pilule
+ * d'onglets s'efface et Plume reste dans le coin bas droit.
  */
 export function Shell({
 	children,
@@ -76,23 +85,35 @@ export function Shell({
 }) {
 	// Le code des écrans les plus ouverts se charge au repos, une fois la session là.
 	useCodeEnAvance(sessionOuverte);
+	// L'emplacement du titre dans la barre du haut du bureau : posé par une référence,
+	// jamais dans un effet ; les pages y écrivent par un portail (`TitreBureau`).
+	const [emplacementDuTitre, setEmplacementDuTitre] = useState<HTMLElement | null>(null);
 	return (
-		<div
-			className={cn(
-				'flex flex-col overflow-hidden',
-				dansLaSalle ? 'relative h-full w-full' : 'coquille-app fixed inset-0'
-			)}
-		>
-			{/* Le drapé, une fois, derrière tous les écrans. C'est lui qui donne au
+		<FournisseurDuTitreBureau value={emplacementDuTitre}>
+			<div
+				className={cn(
+					'flex flex-col overflow-hidden lg:flex-row',
+					dansLaSalle ? 'relative h-full w-full' : 'coquille-app fixed inset-0'
+				)}
+			>
+				{/* Le drapé, une fois, derrière tous les écrans. C'est lui qui donne au
 			    verre des cartes et des barres quelque chose à réfracter — sans lui,
 			    chaque translucidité retombe sur un aplat un peu plus clair. */}
-			<Fond />
+				<Fond />
 
-			<main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
+				<LateraleBranchee auRepos={!sessionOuverte} />
 
-			{/* Plume se pose DANS la barre, à droite de la pilule. */}
-			<BarreSaufEnConversation sessionOuverte={sessionOuverte} />
-		</div>
+				{/* Sous 1024 px, cette enveloppe ne porte que `main` : la barre du haut ne
+			    s'affiche pas, et `main` y prend toute la hauteur comme avant. */}
+				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+					<HauteBranchee auRepos={!sessionOuverte} refTitre={setEmplacementDuTitre} />
+					<main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
+				</div>
+
+				{/* Plume se pose DANS la barre, à droite de la pilule ; au bureau, dans le coin. */}
+				<BarreSaufEnConversation sessionOuverte={sessionOuverte} />
+			</div>
+		</FournisseurDuTitreBureau>
 	);
 }
 

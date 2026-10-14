@@ -6,6 +6,7 @@ import { cn } from './cn';
 import { EmptyState } from './empty-state';
 import { Lien, TitreEcran } from './lien';
 import { EnteteDetail } from './navigation';
+import { TitreBureau, TitreDeBarre } from './coquille-bureau';
 import { Page, PageBody, PageHeader, type ColonneEntete } from './page';
 import { TwoPane } from './two-pane';
 
@@ -80,6 +81,12 @@ export type EnteteEcran =
 			readonly titre?: string;
 			readonly sousTitre?: string;
 			readonly actions?: ReactNode;
+			/**
+			 * Faux quand les actions ne servent qu'au téléphone : au-delà de 1024 px, la
+			 * coquille du bureau les porte déjà (l'établissement, la recherche, la
+			 * cloche et le dépôt d'« Aujourd'hui »), et la barre de l'écran s'efface.
+			 */
+			readonly actionsSurBureau?: boolean;
 	  }
 	| {
 			readonly genre: 'poussee';
@@ -184,6 +191,14 @@ function CorpsPageEcran({
 	children
 }: ProprietesEcran) {
 	const sansEntete = entete.genre === 'aucun';
+	/*
+	  AU-DELÀ DE 1024 PX, LA BARRE DE L'ÉCRAN S'EFFACE quand elle n'a que son titre (il
+	  est monté dans la barre du haut du bureau). Le contenu reçoit alors l'air qu'elle
+	  lui donnait, sans quoi la première carte collerait au filet de la barre du haut.
+	*/
+	const barreMasqueeSurBureau =
+		entete.genre === 'poussee' ||
+		(entete.genre === 'onglet' && (!entete.actions || entete.actionsSurBureau === false));
 
 	if (etat === 'pret' && volets !== undefined) {
 		return (
@@ -232,6 +247,9 @@ function CorpsPageEcran({
 		<Page>
 			<PageBody>
 				<Entete entete={entete} donneesPretes={etat === 'pret'} colonne={largeur} />
+				{barreMasqueeSurBureau ? (
+					<div aria-hidden className="hidden h-cladd-xs shrink-0 lg:block" />
+				) : null}
 				{etat === 'pret' ? (
 					<div
 						className={cn(
@@ -272,12 +290,23 @@ function Entete({
 	if (entete.genre === 'aucun') return null;
 	if (entete.genre === 'onglet') {
 		return (
-			<PageHeader
-				titre={entete.titre}
-				sousTitre={entete.sousTitre}
-				actions={entete.actions}
-				colonne={colonne}
-			/>
+			<>
+				<PageHeader
+					titre={entete.titre}
+					sousTitre={entete.sousTitre}
+					actions={entete.actions}
+					colonne={colonne}
+					surBureau={entete.actions && entete.actionsSurBureau !== false ? 'outils' : 'masque'}
+				/>
+				{entete.titre === undefined ? null : (
+					<TitreBureau>
+						<TitreDeBarre
+							titre={entete.titre}
+							{...(entete.sousTitre === undefined ? {} : { sousTitre: entete.sousTitre })}
+						/>
+					</TitreBureau>
+				)}
+			</>
 		);
 	}
 	return (

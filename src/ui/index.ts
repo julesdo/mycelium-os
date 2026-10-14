@@ -36,6 +36,7 @@ export {
 	CarteBouton,
 	CarteFixe,
 	CarteLien,
+	EnTableauSurBureau,
 	LigneDeReleve,
 	ListeDeCartes,
 	ListeDeReleve
@@ -517,3 +518,12 @@ export {
 	FeuilleDeResiliation,
 	type ApercuDeChangement
 } from './gestion-formule';
+export { TableauDeBord, ZoneDuTableau } from './tableau-de-bord';
+export {
+	BarreHauteBureau,
+	BarreLaterale,
+	FilDAriane,
+	TitreBureau,
+	type DestinationLaterale,
+	type GroupeLateral
+} from './coquille-bureau';

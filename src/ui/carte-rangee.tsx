@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
 import { Button, Surface } from '@cladd-ui/react';
 import { ChevronRightIcon } from 'lucide-react';
@@ -97,14 +97,84 @@ interface ContenuCarte {
  * se passe et sa date. Écrites une fois : une copie divergerait au premier
  * ajustement de largeur, et c'est la largeur qui fait tout ici.
  */
-function DeuxLignes({
+/**
+ * AU BUREAU, UNE CARTE SE LIT SUR UNE LIGNE, EN COLONNES (14/10/2026).
+ *
+ * Le fondateur : l'expérience de bureau « pas du tout adaptée à la souris ». Une
+ * liste de 1 000 px faite de cartes à deux lignes jette le montant à l'autre bout
+ * de l'écran, sous un nom qu'on lit à gauche. Chez Mercury, Midday ou QuickBooks,
+ * une liste de factures est un TABLEAU : chaque rangée sur une ligne, et les
+ * colonnes alignées d'une rangée à l'autre — le nom, ce qui se passe, la date, le
+ * montant.
+ *
+ * ⚠️ SEULEMENT DANS UNE ZONE QUI LE DEMANDE (`EnTableauSurBureau`), ET SEULEMENT
+ * AU-DELÀ DE 1024 PX. Une carte ne sait pas la largeur de sa liste : celle d'une
+ * colonne de côté resterait trop étroite pour quatre colonnes. Au téléphone, rien
+ * ne change — la version en deux lignes est la même, et la ligne unique ne s'y
+ * affiche pas.
+ */
+const ContexteTableau = createContext(false);
+
+/** En tableau, au bureau, la rangée d'une seule ligne : 56 px, la rangée de Mercury. */
+const CLASSE_EN_TABLEAU = 'lg:min-h-14';
+
+export function EnTableauSurBureau({ children }: { readonly children: ReactNode }) {
+	return <ContexteTableau.Provider value>{children}</ContexteTableau.Provider>;
+}
+
+function UneLigne({
+	titre,
+	ligne,
+	montant,
+	date,
+	attention = false
+}: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention'>) {
+	return (
+		<span className="hidden min-w-0 flex-1 items-center gap-cladd-2xs text-left lg:flex">
+			<span className="w-1/3 min-w-0 truncate text-cladd-xs font-semibold">{titre}</span>
+			<span
+				className={cn(
+					'min-w-0 flex-1 truncate text-cladd-2xs',
+					attention ? 'font-medium text-cladd-fg' : 'text-cladd-fg-soft'
+				)}
+			>
+				{ligne}
+				{attention ? <span className="sr-only">, demande une réponse</span> : null}
+			</span>
+			<span className="w-24 shrink-0 text-right text-cladd-2xs text-cladd-fg-soft tabular-nums">
+				{date}
+			</span>
+			<span className="w-32 shrink-0 text-right text-cladd-xs font-semibold tabular-nums">
+				{montant}
+			</span>
+		</span>
+	);
+}
+
+function DeuxLignes(
+	proprietes: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention' | 'retour'>
+) {
+	const enTableau = useContext(ContexteTableau);
+	if (!enTableau) return <DeuxLignesSeules {...proprietes} />;
+	return (
+		<>
+			<DeuxLignesSeules {...proprietes} masqueSurBureau />
+			<UneLigne {...proprietes} />
+		</>
+	);
+}
+
+function DeuxLignesSeules({
 	titre,
 	ligne,
 	montant,
 	date,
 	attention = false,
-	retour = false
-}: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention' | 'retour'>) {
+	retour = false,
+	masqueSurBureau = false
+}: Pick<ContenuCarte, 'titre' | 'ligne' | 'montant' | 'date' | 'attention' | 'retour'> & {
+	readonly masqueSurBureau?: boolean;
+}) {
 	/*
 	  ⚠️ UNE LIGNE QUI REVIENT À LA LIGNE LAISSE SA DATE MONTER, quand la première
 	  ligne a la place. Restée à sa droite, la date réservait sa colonne sur toute
@@ -113,7 +183,12 @@ function DeuxLignes({
 	*/
 	const dateEnHaut = retour && montant === undefined && date !== undefined;
 	return (
-		<span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
+		<span
+			className={cn(
+				'flex min-w-0 flex-1 flex-col gap-0.5 text-left',
+				masqueSurBureau && 'lg:hidden'
+			)}
+		>
 			<span className="flex items-baseline justify-between gap-2">
 				<span className="min-w-0 truncate text-cladd-xs font-semibold">{titre}</span>
 				{montant === undefined ? null : (
@@ -225,6 +300,7 @@ export function CarteLien({
 	 */
 	readonly selectionnee?: boolean;
 }) {
+	const enTableau = useContext(ContexteTableau);
 	return (
 		<Button
 			as={Lien}
@@ -237,7 +313,11 @@ export function CarteLien({
 			{...CARTE}
 			// Le contour et non l'anneau : `.verre-carte` porte déjà son ombre en
 			// `box-shadow`, qu'un `ring-` remplacerait au lieu de s'y ajouter.
-			className={cn(CLASSES_CARTE, selectionnee === true && 'outline-2 outline-cladd-primary')}
+			className={cn(
+				CLASSES_CARTE,
+				enTableau && CLASSE_EN_TABLEAU,
+				selectionnee === true && 'outline-2 outline-cladd-primary'
+			)}
 			contentClassName={CONTENU_CARTE}
 		>
 			<Interieur {...contenu} {...(selectionnee === undefined ? {} : { sansChevron: 'large' })} />
@@ -256,8 +336,14 @@ export function CarteBouton({
 	chevron = true,
 	...contenu
 }: ContenuCarte & { readonly onClick: () => void; readonly chevron?: boolean }) {
+	const enTableau = useContext(ContexteTableau);
 	return (
-		<Button {...CARTE} onClick={onClick} className={CLASSES_CARTE} contentClassName={CONTENU_CARTE}>
+		<Button
+			{...CARTE}
+			onClick={onClick}
+			className={cn(CLASSES_CARTE, enTableau && CLASSE_EN_TABLEAU)}
+			contentClassName={CONTENU_CARTE}
+		>
 			<Interieur {...contenu} {...(chevron ? {} : { sansChevron: 'toujours' })} />
 		</Button>
 	);

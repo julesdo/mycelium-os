@@ -10,7 +10,8 @@ import {
 	ListTitle,
 	ListButton
 } from '@cladd-ui/react';
-import { BuildingIcon, CheckIcon, ChevronDownIcon } from 'lucide-react';
+import { BuildingIcon, CheckIcon, ChevronDownIcon, ChevronsUpDownIcon } from 'lucide-react';
+import { CLASSE_IDENTITE_LATERALE, IdentiteLaterale } from '../ui/coquille-bureau';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
 
@@ -34,7 +35,16 @@ import type { Id } from '../lib/convex/_generated/dataModel';
  * des conteneurs à `overflow: hidden`, le piège de focus. Sur une barre haute,
  * le premier de ces oublis suffit : le menu s'ouvrait sous le pli.
  */
-export function SelecteurEtablissement() {
+export function SelecteurEtablissement({
+	variante = 'pastille'
+}: {
+	/**
+	 * `laterale` : en tête de la barre latérale du bureau (14/10/2026), le nom
+	 * s'écrit en entier à côté de la pastille — la barre a la place que la rangée
+	 * d'« Aujourd'hui » n'avait pas.
+	 */
+	readonly variante?: 'pastille' | 'laterale';
+} = {}) {
 	const orgs = useQuery(api.organizations.listMyOrganizations, {});
 	const courante = useQuery(api.organizations.getMyOrg, {});
 	const basculer = useMutation(api.organizations.switchOrganization);
@@ -84,6 +94,44 @@ export function SelecteurEtablissement() {
 	 * L'établissement reste lisible sans un clic : ses initiales sont dessinées,
 	 * son nom entier est dans le libellé accessible et dans la liste qui s'ouvre.
 	 */
+	if (variante === 'laterale') {
+		const identite = (
+			<IdentiteLaterale
+				vignette={pastille}
+				nom={courante.name ?? 'Votre établissement'}
+				ligne={plusieurs ? `${orgs?.length ?? 0} établissements` : 'Votre établissement'}
+				{...(plusieurs ? { apres: <ChevronsUpDownIcon aria-hidden className="size-4" /> } : {})}
+			/>
+		);
+		if (!plusieurs) {
+			return (
+				<div aria-label={`Établissement : ${courante.name}`} className="flex w-full px-2">
+					{identite}
+				</div>
+			);
+		}
+		return (
+			<PopoverRoot>
+				<PopoverTrigger>
+					<button
+						type="button"
+						aria-label={`Établissement : ${courante.name}. Changer d'établissement`}
+						className={CLASSE_IDENTITE_LATERALE}
+					>
+						{identite}
+					</button>
+				</PopoverTrigger>
+				<Popover className="w-60" offset={6} position="bottom-start">
+					<ListeDesEtablissements
+						orgs={orgs ?? []}
+						courante={courante._id}
+						onChoisir={(id) => void basculer({ organizationId: id as Id<'organizations'> })}
+					/>
+				</Popover>
+			</PopoverRoot>
+		);
+	}
+
 	if (!plusieurs) {
 		return (
 			<div
@@ -110,27 +158,44 @@ export function SelecteurEtablissement() {
 			</PopoverTrigger>
 
 			<Popover className="w-72" offset={8} position="bottom-end">
-				<List>
-					<ListTitle>Vos établissements</ListTitle>
-					{(orgs ?? []).map((o) => (
-						<PopoverClose key={o._id}>
-							<ListButton
-								size="md"
-								icon={<BuildingIcon />}
-								selected={o._id === courante._id}
-								after={o._id === courante._id ? <CheckIcon /> : undefined}
-								onClick={() => {
-									if (o._id !== courante._id) {
-										void basculer({ organizationId: o._id as Id<'organizations'> });
-									}
-								}}
-							>
-								{o.name}
-							</ListButton>
-						</PopoverClose>
-					))}
-				</List>
+				<ListeDesEtablissements
+					orgs={orgs ?? []}
+					courante={courante._id}
+					onChoisir={(id) => void basculer({ organizationId: id as Id<'organizations'> })}
+				/>
 			</Popover>
 		</PopoverRoot>
+	);
+}
+
+/** La liste des établissements, dans le menu qui s'ouvre : celui où l'on est, coché. */
+function ListeDesEtablissements({
+	orgs,
+	courante,
+	onChoisir
+}: {
+	readonly orgs: readonly { readonly _id: string; readonly name?: string | undefined }[];
+	readonly courante: string;
+	readonly onChoisir: (id: string) => void;
+}) {
+	return (
+		<List>
+			<ListTitle>Vos établissements</ListTitle>
+			{orgs.map((o) => (
+				<PopoverClose key={o._id}>
+					<ListButton
+						size="md"
+						icon={<BuildingIcon />}
+						selected={o._id === courante}
+						after={o._id === courante ? <CheckIcon /> : undefined}
+						onClick={() => {
+							if (o._id !== courante) onChoisir(o._id);
+						}}
+					>
+						{o.name}
+					</ListButton>
+				</PopoverClose>
+			))}
+		</List>
 	);
 }

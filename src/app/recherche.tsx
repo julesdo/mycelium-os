@@ -42,7 +42,7 @@ import { api } from '../lib/convex/_generated/api';
  * chaque lettre. La réponse précédente est gardée au rendu (sans effet), et
  * `aJour` dit si celle qu'on montre répond au terme courant.
  */
-function PaletteBranchee({ ouverte, onFermer }: { ouverte: boolean; onFermer: () => void }) {
+export function PaletteBranchee({ ouverte, onFermer }: { ouverte: boolean; onFermer: () => void }) {
 	const navigate = useNavigate();
 	const [terme, setTerme] = useState(String());
 	const [deplie, setDeplie] = useState<FamilleRecherche | null>(null);

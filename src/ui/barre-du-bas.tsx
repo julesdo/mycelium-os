@@ -164,8 +164,14 @@ export function BarreDuBas({
 		  pleine largeur redevient la CAPSULE de verre de l'ancienne version —
 		  posée, centrée, étiquetée à côté de l'icône. C'est le même objet, pas un
 		  second composant : un second se serait mis à diverger au premier ajustement.
+
+		  ⚠️ AU-DELÀ DE 1024 PX, LA PILULE S'EFFACE ET PLUME RESTE DANS LE COIN BAS
+		  DROIT (14/10/2026). La barre latérale du bureau porte les destinations
+		  (`coquille-bureau.tsx`) ; Plume, sa bulle et sa capsule restent ici, calés à
+		  droite, comme l'assistant de Quicken ou l'aide de Mercury. Sous 1024 px, rien
+		  ne change.
 		*/
-		<div className="barre-fixe mb-safe fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-2 px-cladd-3xs pb-cladd-3xs">
+		<div className="barre-fixe mb-safe fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-2 px-cladd-3xs pb-cladd-3xs lg:left-auto lg:items-end lg:px-cladd-xs lg:pb-cladd-xs">
 			{auDessus}
 			{/*
 			  LA RANGÉE : la pilule des onglets, puis l'accessoire à sa droite.
@@ -179,7 +185,7 @@ export function BarreDuBas({
 				<nav
 					ref={nav}
 					aria-label="Navigation principale"
-					className="verre-dense relative flex min-w-0 flex-1 touch-none items-stretch rounded-full p-1.5 select-none md:flex-none"
+					className="verre-dense relative flex min-w-0 flex-1 touch-none items-stretch rounded-full p-1.5 select-none md:flex-none lg:hidden"
 					{...gestes}
 				>
 					{/*

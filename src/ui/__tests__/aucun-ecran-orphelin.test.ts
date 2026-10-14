@@ -78,6 +78,8 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 		'Redirection vers le document dans le coffre-fort. On y arrive par un lien ancien, jamais depuis un écran.',
 	'/p/$jeton':
 		'La page où le client du créancier paie. On y arrive par le lien que le gérant lui envoie, jamais depuis un écran.',
+	'/paiement':
+		'Le lien de paiement par défaut du compte Paddle (14/10/2026). On y arrive par les liens que Paddle envoie lui-même, avec ?_ptxn=, jamais depuis un écran.',
 	/**
 	 * ⚠️ CE N'EST PLUS UNE COQUILLE DE MISE EN PAGE, C'EST L'ÉCRAN DE TRAVAIL.
 	 *
