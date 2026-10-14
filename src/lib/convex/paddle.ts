@@ -311,6 +311,80 @@ export const upsertSubscription = internalMutation({
 	}
 });
 
+/**
+ * UN PAIEMENT CONFIRMÉ (`transaction.completed`) RATTACHE, IL NE RÉÉCRIT PAS
+ * (14/10/2026).
+ *
+ * ⚠️ LE DÉFAUT QU'ELLE CORRIGE, vu au premier paiement du bac à sable : le
+ * paiement arrive juste APRÈS `subscription.created` et `subscription.activated`,
+ * et passait par `upsertSubscription` avec ce qu'il connaît seulement. Ses champs
+ * vides effaçaient la date du prochain prélèvement ; et son statut, forcé à
+ * `active`, aurait fait sortir de l'essai un établissement qui y entrait (le
+ * paiement à 0 € du premier jour), date de fin d'essai et rappels J-7, J-2 avec.
+ *
+ * Il ne sert donc qu'à une chose : rattacher l'abonnement à l'établissement
+ * quand aucun rappel d'abonnement ne l'a encore fait (un rappel perdu, ou
+ * arrivé dans le désordre). Dès que l'établissement porte CET abonnement, il ne
+ * touche plus à rien : l'abonnement dit son état complet, le paiement non. Il
+ * n'avance pas non plus `paddleEvenementLe`, qui ne range que les rappels
+ * d'abonnement entre eux.
+ */
+export const rattacherLePaiement = internalMutation({
+	args: {
+		paddleSubscriptionId: v.string(),
+		paddleCustomerId: v.string(),
+		priceId: v.optional(v.string()),
+		currentPeriodEnd: v.optional(v.number()),
+		/** Déjà vérifié par son sceau. */
+		organizationId: v.optional(v.string())
+	},
+	returns: v.object({ action: v.string() }),
+	handler: async (ctx, args): Promise<{ action: string }> => {
+		const dejaLa = await ctx.db
+			.query('organizations')
+			.withIndex('by_paddle_subscription', (q) =>
+				q.eq('paddleSubscriptionId', args.paddleSubscriptionId)
+			)
+			.unique();
+		if (dejaLa !== null) return { action: 'deja-inscrit' };
+
+		const org =
+			(await orgDeLId(ctx, args.organizationId)) ??
+			(await ctx.db
+				.query('organizations')
+				.withIndex('by_paddle_customer', (q) => q.eq('paddleCustomerId', args.paddleCustomerId))
+				.first());
+		if (!org) return { action: 'noop' };
+
+		const prix =
+			args.priceId === undefined
+				? null
+				: await ctx.db
+						.query('prixPaddle')
+						.withIndex('by_prix', (q) => q.eq('prixId', args.priceId!))
+						.first();
+		await ctx.db.patch(org._id, {
+			paddleSubscriptionId: args.paddleSubscriptionId,
+			paddleCustomerId: args.paddleCustomerId,
+			// Un paiement confirmé sans rappel d'abonnement : actif, en attendant
+			// que l'abonnement dise son état exact (essai compris).
+			paddleStatus: 'active',
+			...(prix === null
+				? {}
+				: {
+						paddlePlanTier: prix.formule,
+						paddleRythme: prix.rythme,
+						paddlePrixId: prix.prixId,
+						seatsIncluded: limitesDe(prix.formule).utilisateurs
+					}),
+			...(args.currentPeriodEnd === undefined
+				? {}
+				: { paddleCurrentPeriodEnd: args.currentPeriodEnd })
+		});
+		return { action: 'rattache' };
+	}
+});
+
 async function orgDeLId(
 	ctx: {
 		db: {
@@ -372,14 +446,14 @@ export const webhookHandler = httpAction(async (ctx, req): Promise<Response> => 
 		evenement.abonnementId !== null &&
 		evenement.clientId !== null
 	) {
-		await ctx.runMutation(internal.paddle.upsertSubscription, {
+		// Rattacher seulement : un paiement ne connaît ni le prochain prélèvement ni
+		// la fin de l'essai, et ne doit pas effacer ce que l'abonnement a dit.
+		await ctx.runMutation(internal.paddle.rattacherLePaiement, {
 			paddleSubscriptionId: evenement.abonnementId,
 			paddleCustomerId: evenement.clientId,
-			paddleStatus: 'active',
 			priceId: evenement.prixIds[0],
 			currentPeriodEnd: evenement.finDePeriode ?? undefined,
-			organizationId: await organisationScellee(secret, evenement.lien),
-			survenuLe: evenement.survenuLe
+			organizationId: await organisationScellee(secret, evenement.lien)
 		});
 	}
 
