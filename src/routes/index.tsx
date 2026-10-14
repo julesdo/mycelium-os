@@ -5,6 +5,7 @@ import {
 	BandeLogiciels,
 	Situations,
 	Calcul,
+	SectionPlume,
 	Etapes,
 	Securite,
 	Tarifs,
@@ -101,6 +102,8 @@ function Accueil() {
 			{/* LE CALCULATEUR remplace la loi et la frise (14/10/2026) : le visiteur fait
 			    lui-même, sur SA facture, ce que les deux sections énonçaient. */}
 			<Calcul />
+			{/* PLUME, juste après ce qu'on vous doit : celui qui va le réclamer. */}
+			<SectionPlume />
 			<Etapes />
 			{/* LA CIBLE, après le produit : les métiers, en photos, sans prénom. */}
 			<Situations />

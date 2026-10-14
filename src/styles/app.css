@@ -2225,6 +2225,43 @@ html:has(.coquille-app) body {
 	border-radius: 11px;
 }
 
+/* LA SECTION PLUME (14/10/2026) : la scène de la rangée ouverte entre en fondu,
+   et la barre de la rangée avance jusqu'à ce que la suivante s'ouvre seule (sa
+   durée est posée par le composant). Rien ne bouge sous le mouvement réduit. */
+.apparition-scene {
+	animation: apparition-scene 0.5s var(--ease-sortie-longue) both;
+}
+@keyframes apparition-scene {
+	from {
+		opacity: 0;
+		transform: translateY(12px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.barre-de-rangee {
+	transform-origin: left center;
+	animation-name: barre-de-rangee;
+	animation-timing-function: linear;
+	animation-fill-mode: both;
+}
+@keyframes barre-de-rangee {
+	from {
+		transform: scaleX(0);
+	}
+	to {
+		transform: scaleX(1);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.apparition-scene,
+	.barre-de-rangee {
+		animation: none;
+	}
+}
+
 /* UNE ÉTAPE DE « COMMENT ÇA MARCHE », au-delà de 1024 px : assez haute pour que
    le téléphone collé à côté ait le temps de montrer son écran pendant qu'on la lit. */
 @media (min-width: 1024px) {
