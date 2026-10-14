@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '../ui';
-import {
-	DELAI_POUR_RETENIR_MS,
-	HEURES_D_ENVOI,
-	PLAN_PAR_DEFAUT
-} from '../lib/verticales/recouvrement/plan-relance';
-import { FORMATS_LUS } from './fonctionnalites';
+import { HEURES_D_ENVOI, PLAN_PAR_DEFAUT } from '../lib/verticales/recouvrement/plan-relance';
+import { FORMATS_LUS, delaiPourRetenir } from './fonctionnalites';
 import {
 	EcranProduit,
 	SectionMarketing,
@@ -48,14 +44,6 @@ interface Etape {
 
 function jours(n: number): string {
 	return `${n} jour${n > 1 ? 's' : ''}`;
-}
-
-/** « l’heure », « les deux heures » : le délai pour retenir, en mots. */
-function delaiPourRetenir(): string {
-	const heures = DELAI_POUR_RETENIR_MS / 3_600_000;
-	if (heures === 1) return 'l’heure';
-	if (Number.isInteger(heures)) return `les ${heures} heures`;
-	return `les ${Math.round(DELAI_POUR_RETENIR_MS / 60_000)} minutes`;
 }
 
 function texteDuPlan(): string {

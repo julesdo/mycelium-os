@@ -19,6 +19,7 @@ export { Situations } from './situations';
 export { LaLoi } from './la-loi';
 export { Frise } from './frise';
 export { Etapes } from './etapes';
+export { BandeLogiciels } from './logiciels';
 export { Securite } from './securite';
 export { Tarifs } from './tarifs';
 export { Faq } from './faq';

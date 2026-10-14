@@ -2329,7 +2329,7 @@ html:has(.coquille-app) body {
 		0 2px 6px oklch(0.27 0.05 266 / 0.18),
 		0 28px 56px -32px oklch(0.27 0.05 266 / 0.5);
 }
-.ecran-telephone > img {
+.ecran-telephone img {
 	display: block;
 	width: 100%;
 	height: auto;

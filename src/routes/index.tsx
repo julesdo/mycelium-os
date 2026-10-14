@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import {
 	Navbar,
 	Hero,
+	BandeLogiciels,
 	Situations,
 	LaLoi,
 	Frise,
@@ -45,9 +46,9 @@ import { SITE_CANONIQUE } from '../lib/config/legal';
  * vignette carrée de cent-vingt pixels, où il ne reste rien de lisible.
  */
 const APERCU = `${SITE_CANONIQUE}/partage.png`;
-const TITRE = 'Letikette · Logiciel de recouvrement des factures impayées pour PME';
+const TITRE = 'Letikette · Vos factures impayées, relancées pour vous';
 const RESUME =
-	'Letikette calcule les pénalités et les frais dus sur chaque facture en retard, surveille les délais et prépare vos relances. Rien ne part sans votre accord.';
+	'Plume, l’assistant de Letikette, calcule ce qu’on vous doit au centime et relance vos clients à votre nom. Chaque relance vous est montrée avant de partir.';
 
 export const Route = createFileRoute('/')({
 	head: () => ({
@@ -97,6 +98,7 @@ function Accueil() {
 		<main className="flex w-full flex-col bg-creme">
 			<Navbar />
 			<Hero />
+			<BandeLogiciels />
 			{/* LA CIBLE, JUSTE APRÈS L'ACCROCHE : les métiers, avant la loi et le
 			    logiciel. On parle d'abord de celui qui a les impayés. */}
 			<Situations />

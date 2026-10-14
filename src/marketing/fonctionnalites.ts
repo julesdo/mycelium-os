@@ -1,4 +1,5 @@
 import type { FamilleRangee } from '../ui/familles';
+import { DELAI_POUR_RETENIR_MS } from '../lib/verticales/recouvrement/plan-relance';
 import type { CaptureProduit } from './section';
 
 /**
@@ -190,7 +191,7 @@ export const LOGICIELS_BRANCHES: readonly LogicielBranche[] = [
 		logo: { fichier: '/connecteurs/logo-zoho-books.svg' }
 	},
 	{ nom: 'Stripe', genre: 'comptabilite', logo: { fichier: '/connecteurs/logo-stripe.svg' } },
-	{ nom: 'Qonto', genre: 'banque', logo: { fichier: '/connecteurs/qonto-symbole-noir.png' } },
+	{ nom: 'Qonto', genre: 'banque', logo: { fichier: '/connecteurs/qonto-symbole-128.webp' } },
 	{ nom: 'Google Drive', genre: 'fichiers', logo: { dessin: 'GoogleDrivePicker' } },
 	{ nom: 'Dropbox', genre: 'fichiers', logo: { dessin: 'Dropbox' } },
 	{ nom: 'OneDrive', genre: 'fichiers', logo: { dessin: 'OneDrive' } },
@@ -199,3 +200,22 @@ export const LOGICIELS_BRANCHES: readonly LogicielBranche[] = [
 
 /** Les formats qu'un dépôt lit, sans logiciel. */
 export const FORMATS_LUS = ['FEC', 'Factur-X', 'PDF', 'photo'] as const;
+
+/**
+ * « l’heure », « les deux heures » : le délai pendant lequel une relance se
+ * retient, en mots, lu sur la constante que le pilote applique.
+ */
+export function delaiPourRetenir(): string {
+	const heures = DELAI_POUR_RETENIR_MS / 3_600_000;
+	if (heures === 1) return 'l’heure';
+	if (Number.isInteger(heures)) return `les ${heures} heures`;
+	return `les ${Math.round(DELAI_POUR_RETENIR_MS / 60_000)} minutes`;
+}
+
+/** « une heure », « deux heures » : le même délai, compté. */
+export function dureePourRetenir(): string {
+	const heures = DELAI_POUR_RETENIR_MS / 3_600_000;
+	if (heures === 1) return 'une heure';
+	if (Number.isInteger(heures)) return `${heures} heures`;
+	return `${Math.round(DELAI_POUR_RETENIR_MS / 60_000)} minutes`;
+}

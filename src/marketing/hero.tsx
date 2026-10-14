@@ -1,67 +1,122 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowRightIcon, CheckIcon } from 'lucide-react';
-import { BoutonAffiche, FAMILLES, LienAffiche } from '../ui';
-import { eurosCentimesCourts } from '../ui/format';
-import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
+import { ArrowRightIcon, CheckIcon, SendIcon } from 'lucide-react';
+import { BoutonAffiche, LienAffiche, Plume, cn } from '../ui';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
-import { EcranProduit, Photo } from './section';
+import { dureePourRetenir } from './fonctionnalites';
+import { EcranBureau, EcranProduit } from './section';
 
 /**
- * L'ENTRÉE (06/10/2026, réécrite le soir même).
+ * L'ENTRÉE (06/10/2026, refaite le 14/10 avec Plume).
  *
- * ⚠️ LE TON DES LOGICIELS FINANCIERS, PAS CELUI D'UN CARNET. Le fondateur : « ce
- * n'est pas du tout le ton employé par une entreprise comme la nôtre, et ça ne
- * rassure pas ». Relevé sur Acctual, Wise, Mercury, Quicken et Midday : la
- * catégorie au-dessus, un titre qui dit ce que fait le produit, UNE phrase
- * factuelle, un bouton, et les trois levées de risque cochées dessous. Plus
- * d'annotations manuscrites, plus de formules.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LE TITRE DIT CE QUE FAIT LE PRODUIT AUJOURD'HUI : IL RELANCE
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * ⚠️ LE CHIFFRE DE LA CARTE EST LU SUR LES PARAMÈTRES, et il disparaît plutôt
- * que d'être faux : `estUtilisable` exige une valeur relevée sur une source
- * citable.
+ * Le 06/10, le héros disait « relancez vos factures » : le logiciel calculait
+ * et préparait, le gérant envoyait. Depuis le 08/10, Plume relance seul quand
+ * le gérant l'a décidé, et chaque relance se retient avant de partir. Titre
+ * validé par le fondateur le 14/10 : « Vos factures impayées, relancées pour
+ * vous. » Voir `docs/superpowers/specs/2026-10-14-site-refonte.md`, § 6.2.
  *
- * ⚠️ AUCUNE PROMESSE DE RÉSULTAT. Le logiciel calcule, surveille et prépare ;
- * le gérant décide de ce qui part.
+ * ⚠️ LE TON DES LOGICIELS FINANCIERS, PAS CELUI D'UN CARNET (06/10) : un titre
+ * qui dit ce que fait le produit, UNE phrase factuelle, un bouton, et les trois
+ * levées de risque cochées dessous. Aucune promesse de résultat.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * LA SCÈNE : LE PRODUIT, ET CELUI QUI LE FAIT TOURNER
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Sur un aplat abricot, comme Jeton : l'ordinateur derrière et le téléphone
+ * devant (Cosmos), parce que le produit existe aux deux tailles ; Plume au
+ * pied, qui salue ; et la capsule en direct, posée à côté, telle que le produit
+ * l'affiche au-dessus de sa barre : une relance qui part bientôt, et « Retenir ».
+ * Sur téléphone, le téléphone seul, Plume et la capsule. La photo de l'artisan
+ * est descendue dans « Pour qui » : le héros montre le produit.
+ *
+ * Les montants des écrans sont ceux de la salle d'exposition : des données de
+ * démonstration, et la page le dit sous « Comment ça marche ».
  */
 
-function indemniteLisible(): string | null {
-	const indemnite = PARAMETRES.indemniteForfaitaire;
-	if (!estUtilisable(indemnite) || indemnite.valeur === null) return null;
-	return eurosCentimesCourts(indemnite.valeur);
+const LEVEES = [
+	'Découverte gratuite',
+	`${DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui`,
+	'Sans engagement'
+];
+
+/**
+ * LA CAPSULE, TELLE QUE LE PRODUIT L'AFFICHE — mais inerte. Sur le site, elle ne
+ * retient rien : un vrai bouton « Retenir » qui ne ferait rien mentirait. Le mot
+ * est donc du texte, à la place où le produit pose son bouton.
+ */
+function CapsuleExemple({ className }: { className?: string }) {
+	return (
+		<div
+			aria-hidden
+			className={cn(
+				'flex items-center gap-2.5 rounded-full border border-filet-creme bg-papier py-1.5 pr-4 pl-1.5 shadow-carte-chaude',
+				className
+			)}
+		>
+			<span className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-creme text-encre-site">
+				<svg viewBox="0 0 40 40" className="absolute inset-0 size-10 -rotate-90">
+					<circle
+						cx="20"
+						cy="20"
+						r="17.5"
+						className="fill-none stroke-filet-creme"
+						strokeWidth={2.5}
+					/>
+					<circle
+						cx="20"
+						cy="20"
+						r="17.5"
+						pathLength={1}
+						strokeDasharray="1"
+						strokeDashoffset={0.3}
+						strokeLinecap="round"
+						className="fill-none stroke-encre-site"
+						strokeWidth={2.5}
+					/>
+				</svg>
+				<SendIcon size={15} strokeWidth={2.2} />
+			</span>
+			<span className="flex min-w-0 flex-col text-left">
+				<span className="text-cladd-2xs leading-tight font-semibold whitespace-nowrap md:text-cladd-xs">
+					Relance dans 42 min
+				</span>
+				<span className="text-cladd-3xs leading-tight whitespace-nowrap text-encre-site-douce md:text-cladd-2xs">
+					Fournitures Durand · deuxième rappel
+				</span>
+			</span>
+			<span className="ml-1 text-cladd-xs font-semibold whitespace-nowrap md:text-cladd-sm">
+				Retenir
+			</span>
+		</div>
+	);
 }
 
-/** La date limite que montre la carte : celle de l'écran d'accueil de démonstration. */
-const DATE_LIMITE_DEMO = '1 mai 2031';
-
-const LEVEES = ['Votre bilan offert', `${DUREE_ESSAI_JOURS} jours d’essai`, 'Sans engagement'];
-
 export function Hero() {
-	const indemnite = indemniteLisible();
-	const { Picto: PictoTemps } = FAMILLES.TEMPS;
-	const { Picto: PictoArgent } = FAMILLES.ARGENT;
-
 	return (
 		// LE RETRAIT SUPÉRIEUR EST CELUI DE LA BARRE : elle est en `fixed` et ne
 		// réserve aucune place. Voir `--spacing-barre-publique`.
 		<header className="relative isolate w-full overflow-clip bg-creme pt-barre-publique text-encre-site">
-			{/* LA BANDE ABRICOT DU BAS : la photo et le téléphone passent du papier à la
-			    couleur, comme la page « Our story » de Mailchimp. Une bande droite à la
-			    place des deux galets. */}
+			{/* L'APLAT ABRICOT DU BAS : la scène passe du papier à la couleur. */}
 			<div
 				aria-hidden
-				className="absolute inset-x-0 bottom-0 -z-10 h-72 bg-teinte-abricot md:h-96"
+				className="absolute inset-x-0 bottom-0 -z-10 h-72 bg-teinte-abricot md:h-96 lg:h-120"
 			/>
 
 			<div className="mx-auto flex w-full max-w-6xl flex-col items-center px-cladd-2xs pt-cladd-xl md:px-cladd-sm md:pt-cladd-2xl">
 				<div className="leve-suite flex flex-col items-center gap-cladd-2xs text-center">
 					<h1 className="leve max-w-4xl font-serif text-affiche-colonne leading-tight font-medium tracking-titre-section text-balance">
-						Relancez vos factures impayées au bon montant, et{' '}
-						<span className="souligne-main whitespace-nowrap">à temps</span>.
+						Vos factures impayées,{' '}
+						<span className="souligne-main whitespace-nowrap">relancées pour vous</span>.
 					</h1>
 
 					<p className="leve max-w-2xl text-chapeau leading-relaxed text-encre-site-douce">
-						Letikette calcule les pénalités et les frais dus sur chaque facture en retard, surveille
-						les délais et prépare vos relances. Rien ne part sans votre accord.
+						Plume, l’assistant de Letikette, calcule ce qu’on vous doit au centime et relance vos
+						clients à votre nom. Chaque relance vous est montrée {dureePourRetenir()} avant de
+						partir.
 					</p>
 
 					{/* ⚠️ UNE SEULE PILULE, ET UN LIEN. Deux boutons pleins côte à côte
@@ -87,63 +142,32 @@ export function Hero() {
 					</ul>
 				</div>
 
-				{/*
-				  LA SCÈNE : un gérant au travail, et son téléphone posé dessus. La photo
-				  nomme un métier, pas une personne : aucun prénom à côté.
-				*/}
-				<div className="leve leve-tard relative mt-cladd-xl mb-24 w-full max-w-sm md:mt-cladd-2xl md:mb-32 md:max-w-md">
-					<div className="overflow-hidden rounded-carte-site shadow-carte-chaude">
-						<Photo
-							photo="artisan"
-							prioritaire
-							sizes="(min-width: 768px) 448px, 90vw"
-							description="Un artisan souriant à son établi, dans son atelier de menuiserie."
-							className="aspect-4/5 object-right"
+				{/* LA SCÈNE. ⚠️ Les positions vont sur des ENVELOPPES : `.ecran-telephone`
+				    et `.ecran-bureau` posent `position: relative` hors couche. */}
+				<div className="leve leve-tard relative mt-cladd-xl mb-cladd-xl w-full max-w-sm md:mt-cladd-2xl md:mb-cladd-2xl md:max-w-4xl">
+					<div className="hidden md:mr-24 md:block lg:mr-16">
+						<EcranBureau
+							capture="aujourdhui-bureau"
+							description="Letikette sur un ordinateur : 66 704,82 € dus au 17 septembre 2026, l’ancienneté des retards, 18 443,92 € de pénalités et de frais jamais réclamés, et Plume qui relit un dépôt, avec les deux relances qui partent bientôt."
 						/>
 					</div>
 
-					{/* Le téléphone, posé sur la photo : le vrai écran d'accueil.
-					    ⚠️ La position va sur l'ENVELOPPE : `.ecran-telephone` pose
-					    `position: relative` hors couche, et l'emporte sur `absolute`. */}
-					<div className="absolute -right-3 -bottom-16 w-36 md:-right-24 md:-bottom-20 md:w-52">
+					<div className="relative mx-auto w-60 md:absolute md:-right-2 md:-bottom-cladd-lg md:w-56 lg:-right-8 lg:w-64">
 						<EcranProduit
 							capture="aujourdhui"
+							auDela="plume-maison"
 							prioritaire
-							description="L’écran d’accueil de Letikette sur téléphone : 66 704,82 € dus au 17 septembre 2026 sur 4 factures en retard, dont 18 443,92 € de pénalités et de frais jamais réclamés, puis la liste des clients à traiter aujourd’hui."
+							description="Letikette sur un téléphone : ce qu’on vous doit, Plume au travail, et les relances qui partent bientôt, chacune avec « Retenir »."
 						/>
 					</div>
 
-					{indemnite === null ? null : (
-						<div className="absolute -bottom-10 -left-3 flex w-44 flex-col gap-1 rounded-cladd-xl border border-filet-creme bg-papier p-cladd-3xs text-left shadow-carte-chaude md:-bottom-8 md:-left-24 md:w-52">
-							<span className="flex items-center gap-cladd-3xs">
-								<span className="flex size-8 shrink-0 items-center justify-center rounded-cladd-sm bg-teinte-argent">
-									<PictoArgent className="size-5 text-encre-site" />
-								</span>
-								<span className="font-serif text-titre-section leading-none font-medium tabular-nums">
-									{indemnite}
-								</span>
-							</span>
-							<span className="text-cladd-xs leading-snug text-encre-site-douce">
-								de frais dus sur chaque facture en retard
-							</span>
-						</div>
-					)}
+					{/* PLUME, AU PIED DE LA SCÈNE : il salue. `light` pour ses couleurs de jour. */}
+					<div className="light absolute -bottom-cladd-sm -left-2 md:-bottom-cladd-lg md:-left-2 lg:-left-cladd-xl">
+						<Plume humeur="salue" taille={96} sol className="size-24 md:size-36" />
+					</div>
 
-					{/* La date limite, en grand écran seulement : sur téléphone, la photo,
-					    le téléphone et une carte suffisent à remplir l'écran. */}
-					<div className="absolute top-24 -left-32 hidden w-52 flex-col gap-1 rounded-cladd-xl border border-filet-creme bg-papier p-cladd-3xs text-left shadow-carte-chaude md:flex lg:-left-40">
-						<span className="flex items-center gap-cladd-3xs">
-							<span className="flex size-8 shrink-0 items-center justify-center rounded-cladd-sm bg-teinte-temps">
-								<PictoTemps className="size-5 text-encre-site" />
-							</span>
-							<span className="text-cladd-xs font-semibold">Date limite pour agir</span>
-						</span>
-						<span className="font-serif text-intertitre leading-tight font-medium tabular-nums">
-							{DATE_LIMITE_DEMO}
-						</span>
-						<span className="text-cladd-xs leading-snug text-encre-site-douce">
-							Vérifiée chaque nuit.
-						</span>
+					<div className="absolute right-0 bottom-32 md:right-auto md:bottom-44 md:left-0 lg:-left-cladd-2xl">
+						<CapsuleExemple />
 					</div>
 				</div>
 			</div>

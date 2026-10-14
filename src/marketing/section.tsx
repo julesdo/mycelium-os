@@ -151,30 +151,51 @@ export type CaptureProduit =
 
 export function EcranProduit({
 	capture,
+	auDela,
 	description,
 	prioritaire = false,
 	className
 }: {
 	capture: CaptureProduit;
+	/**
+	 * Un autre écran à partir de 768 px, par `<picture>` : une seule image se
+	 * charge, celle de la largeur. Le héros montre l'accueil sur téléphone et la
+	 * conversation de Plume devant l'ordinateur.
+	 */
+	auDela?: CaptureProduit;
 	/** Ce que l'écran montre, pour qui ne le voit pas. */
 	description: string;
 	/** Le héros se charge tout de suite ; le reste, quand on s'en approche. */
 	prioritaire?: boolean;
 	className?: string;
 }) {
+	const image = (
+		<img
+			src={`/ecrans/${capture}-393.png`}
+			srcSet={`/ecrans/${capture}-393.png 393w, /ecrans/${capture}-786.png 786w`}
+			sizes="(min-width: 768px) 320px, 70vw"
+			width={393}
+			height={852}
+			alt={description}
+			loading={prioritaire ? 'eager' : 'lazy'}
+			decoding="async"
+			{...(prioritaire ? { fetchPriority: 'high' as const } : {})}
+		/>
+	);
 	return (
 		<div className={cn('ecran-telephone', className)}>
-			<img
-				src={`/ecrans/${capture}-393.png`}
-				srcSet={`/ecrans/${capture}-393.png 393w, /ecrans/${capture}-786.png 786w`}
-				sizes="(min-width: 768px) 320px, 70vw"
-				width={393}
-				height={852}
-				alt={description}
-				loading={prioritaire ? 'eager' : 'lazy'}
-				decoding="async"
-				{...(prioritaire ? { fetchPriority: 'high' as const } : {})}
-			/>
+			{auDela === undefined ? (
+				image
+			) : (
+				<picture>
+					<source
+						media="(min-width: 768px)"
+						srcSet={`/ecrans/${auDela}-393.png 393w, /ecrans/${auDela}-786.png 786w`}
+						sizes="320px"
+					/>
+					{image}
+				</picture>
+			)}
 		</div>
 	);
 }

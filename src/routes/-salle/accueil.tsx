@@ -1,5 +1,6 @@
 import {
 	Hero,
+	BandeLogiciels,
 	Situations,
 	LaLoi,
 	Frise as FriseSection,
@@ -41,6 +42,7 @@ import { formeDemo, type EcranDuProduit } from './demo';
 
 const SECTIONS = {
 	'héros et téléphone': () => <Hero />,
+	'les logiciels': () => <BandeLogiciels />,
 	'pour qui': () => <Situations />,
 	'les chiffres de la loi': () => <LaLoi />,
 	'la vie d’une facture': () => <FriseSection />,
