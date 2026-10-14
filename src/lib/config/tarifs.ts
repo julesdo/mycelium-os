@@ -74,10 +74,12 @@ export function moisOfferts(formule: Formule): number {
 	return Math.round((mensuel * 12 - annuel) / mensuel);
 }
 
-/** Le prix annuel ramené au mois, en centimes (32,50 € → 3250). */
-export function mensualiteDeLAnnee(formule: Formule): number {
-	return Math.round((GRILLE[formule].annuel * 100) / 12);
-}
+/*
+ * ⚠️ PAS DE PRIX ANNUEL RAMENÉ AU MOIS (le fondateur, 14/10/2026 : « je ne veux pas
+ * de chiffre à virgule pour le pricing annuel »). L'année à dix mois tombait sur
+ * des centimes une fois divisée par douze (32,50 €, 99,17 €). À l'année, on montre
+ * le prix de l'année, rond, et ses mois offerts.
+ */
 
 /** Le montant prélevé à chaque échéance, en euros HT. */
 export function montantDuRythme(formule: Formule, rythme: Rythme): number {

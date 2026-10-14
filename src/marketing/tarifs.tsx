@@ -11,7 +11,6 @@ import {
 	GRILLE,
 	JOURS_DE_REMBOURSEMENT,
 	RAPPELS_AVANT_PRELEVEMENT_JOURS,
-	mensualiteDeLAnnee,
 	moisOfferts,
 	type Formule,
 	type Rythme
@@ -182,7 +181,8 @@ function CarteDeFormule({
 }) {
 	const grille = GRILLE[formule];
 	const avant = formule === FORMULE_RECOMMANDEE;
-	const parMois = rythme === 'annuel' ? mensualiteDeLAnnee(formule) : grille.mensuel * 100;
+	// À l'année, le prix de l'année : rond. Ramené au mois, il tombait sur des centimes.
+	const prix = rythme === 'annuel' ? grille.annuel * 100 : grille.mensuel * 100;
 
 	return (
 		<div
@@ -213,12 +213,12 @@ function CarteDeFormule({
 
 			<div className="flex flex-col">
 				<span className="flex flex-wrap items-baseline gap-cladd-3xs border-b border-dashed border-filet-creme pb-cladd-3xs">
-					<span className="font-serif text-seuil-colonne leading-none font-medium tracking-titre-section whitespace-nowrap tabular-nums">
-						{prixAffiche(parMois)}
+					<span className="font-serif text-prix-formule leading-none font-medium tracking-titre-section whitespace-nowrap tabular-nums">
+						{prixAffiche(prix)}
 					</span>
 					<span className="text-cladd-sm text-encre-site-claire">
 						{rythme === 'annuel'
-							? `HT par mois, soit ${prixAffiche(grille.annuel * 100)} par an`
+							? `HT par an, soit ${moisOfferts(formule)} mois offerts`
 							: 'HT par mois, sans engagement'}
 					</span>
 				</span>

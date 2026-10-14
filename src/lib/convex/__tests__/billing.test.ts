@@ -7,8 +7,7 @@ import {
 	LIMITES,
 	formuleRecommandee,
 	limitesDe,
-	moisOfferts,
-	mensualiteDeLAnnee
+	moisOfferts
 } from '../../config/tarifs';
 
 describe('la grille', () => {
@@ -17,7 +16,8 @@ describe('la grille', () => {
 			expect(GRILLE[f].annuel).toBe(GRILLE[f].mensuel * 10);
 			expect(moisOfferts(f)).toBe(2);
 		}
-		expect(mensualiteDeLAnnee('equipe')).toBe(3250);
+		// Le prix de l'année s'affiche tel quel : un nombre rond d'euros, sans virgule.
+		for (const f of FORMULES) expect(Number.isInteger(GRILLE[f].annuel)).toBe(true);
 	});
 
 	it('monte de formule en formule, en prix comme en limites', () => {
