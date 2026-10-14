@@ -78,9 +78,32 @@ export interface ResumeDeSection {
 const EN_LECTURE: ResumeDeSection = { valeur: 'Lecture…' };
 const INDISPONIBLE: ResumeDeSection = { valeur: 'Indisponible' };
 
-/** Un jour entamé compte : « dans 1 jour » vaut mieux que « dans 0 ». */
+const JOUR_A_PARIS = new Intl.DateTimeFormat('en-CA', {
+	timeZone: 'Europe/Paris',
+	year: 'numeric',
+	month: '2-digit',
+	day: '2-digit'
+});
+
+/** Le jour du calendrier de Paris, compté depuis 1970 : « 2026-10-14 » → 20 740. */
+function jourAParis(ms: number): number {
+	const [annee, mois, jour] = JOUR_A_PARIS.format(ms).split('-').map(Number);
+	return Date.UTC(annee ?? 1970, (mois ?? 1) - 1, jour ?? 1) / 86_400_000;
+}
+
+/**
+ * Les jours qui restent, AU CALENDRIER : un essai de trente jours commencé le
+ * 14 octobre et qui finit le 13 novembre dit « encore 30 jours », pas 31.
+ *
+ * ⚠️ PAS L'ARRONDI SUPÉRIEUR DES HEURES (corrigé le 14/10/2026) : l'écran fige
+ * l'heure à son ouverture, et un essai souscrit un quart d'heure plus tard
+ * finissait trente jours et quinze minutes après : « 31 » (vu au premier essai
+ * du bac à sable). Un jour entamé compte quand même : la veille de l'échéance,
+ * « 1 jour », jamais « 0 » tant qu'elle n'est pas passée.
+ */
 function joursJusqua(echeance: number, maintenant: number): number {
-	return Math.max(0, Math.ceil((echeance - maintenant) / 86_400_000));
+	if (echeance <= maintenant) return 0;
+	return Math.max(1, jourAParis(echeance) - jourAParis(maintenant));
 }
 
 const NOMBRE = new Intl.NumberFormat('fr-FR');
