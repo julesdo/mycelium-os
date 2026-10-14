@@ -209,12 +209,15 @@ function corpsDuPrix(produitId: string, attendu: PrixAttendu): Record<string, un
 		billing_cycle: attendu.cycle,
 		// L'essai porté par le prix : la carte s'enregistre, rien n'est prélevé
 		// avant la fin des trente jours.
+		//
+		// ⚠️ PAS DE `requires_payment_method` (14/10/2026) : le bac à sable l'a refusé
+		// (« Additional property requires_payment_method is not allowed »), alors que la
+		// documentation le décrit à la racine du prix. Il ne sert qu'à l'essai SANS
+		// carte, une fonction que le compte n'a pas ; sa valeur par défaut, `true`, est
+		// celle qu'on veut : la carte est demandée au début de l'essai.
 		...(attendu.essaiJours === null
 			? {}
-			: {
-					trial_period: { interval: 'day', frequency: attendu.essaiJours },
-					requires_payment_method: true
-				}),
+			: { trial_period: { interval: 'day', frequency: attendu.essaiJours } }),
 		// La grille affiche des prix hors taxes : Paddle ajoute la TVA du pays.
 		tax_mode: 'external',
 		quantity: { minimum: 1, maximum: 1 },
@@ -245,11 +248,19 @@ function clientPaddle(base: string, cle: string) {
 	async function lire(reponse: Response): Promise<unknown> {
 		const corps = (await reponse.json().catch(() => null)) as {
 			data?: unknown;
-			error?: { detail?: string; code?: string };
+			error?: {
+				detail?: string;
+				code?: string;
+				errors?: readonly { field?: string; message?: string }[];
+			};
 		} | null;
 		if (!reponse.ok) {
+			// « Invalid request » seul ne dit rien : Paddle nomme le champ refusé dans `errors`.
+			const champs = (corps?.error?.errors ?? [])
+				.map((e) => `${e.field ?? '?'} : ${e.message ?? ''}`)
+				.join(' ; ');
 			throw new Error(
-				`Paddle a répondu ${reponse.status}${corps?.error?.code ? ` (${corps.error.code})` : ''} : ${corps?.error?.detail ?? 'sans détail'}`
+				`Paddle a répondu ${reponse.status}${corps?.error?.code ? ` (${corps.error.code})` : ''} : ${corps?.error?.detail ?? 'sans détail'}${champs ? ` (${champs})` : ''}`
 			);
 		}
 		return corps;
