@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as abonnementRappels from "../abonnementRappels.js";
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
 import type * as coffre_anciens from "../coffre/anciens.js";
@@ -25,6 +26,7 @@ import type * as connexions_validateurs from "../connexions/validateurs.js";
 import type * as crons from "../crons.js";
 import type * as emails_events from "../emails/events.js";
 import type * as emails_helpers from "../emails/helpers.js";
+import type * as emails_modeles_abonnement from "../emails/modeles/abonnement.js";
 import type * as emails_modeles_adminReplyNotification from "../emails/modeles/adminReplyNotification.js";
 import type * as emails_modeles_briefing from "../emails/modeles/briefing.js";
 import type * as emails_modeles_disposition from "../emails/modeles/disposition.js";
@@ -119,6 +121,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  abonnementRappels: typeof abonnementRappels;
   auth: typeof auth;
   billing: typeof billing;
   "coffre/anciens": typeof coffre_anciens;
@@ -136,6 +139,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   "emails/events": typeof emails_events;
   "emails/helpers": typeof emails_helpers;
+  "emails/modeles/abonnement": typeof emails_modeles_abonnement;
   "emails/modeles/adminReplyNotification": typeof emails_modeles_adminReplyNotification;
   "emails/modeles/briefing": typeof emails_modeles_briefing;
   "emails/modeles/disposition": typeof emails_modeles_disposition;

@@ -18,3 +18,4 @@ export * from './newTicketAdminNotification';
 export * from './newUserSignupNotification';
 export * from './invitation';
 export * from './briefing';
+export * from './abonnement';

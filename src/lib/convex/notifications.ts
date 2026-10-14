@@ -14,7 +14,8 @@ const notificationTypeValidator = v.union(
 	v.literal('DEBITEUR_DEGRADE'),
 	v.literal('HUMAN_ASSIST_REPLY'),
 	v.literal('PILOTE_BLOQUE'),
-	v.literal('RISQUE_EN_BAISSE')
+	v.literal('RISQUE_EN_BAISSE'),
+	v.literal('ABONNEMENT')
 );
 
 export type NotificationType =
@@ -25,7 +26,8 @@ export type NotificationType =
 	| 'DEBITEUR_DEGRADE'
 	| 'HUMAN_ASSIST_REPLY'
 	| 'PILOTE_BLOQUE'
-	| 'RISQUE_EN_BAISSE';
+	| 'RISQUE_EN_BAISSE'
+	| 'ABONNEMENT';
 
 export function buildNotificationContent(
 	type: NotificationType,
@@ -71,6 +73,11 @@ export function buildNotificationContent(
 			return {
 				title: 'Le pilote a besoin de vous',
 				message: `${data.client} : ${data.manque}`
+			};
+		case 'ABONNEMENT':
+			return {
+				title: String(data.titre ?? 'Votre abonnement'),
+				message: String(data.message ?? '')
 			};
 		case 'HUMAN_ASSIST_REPLY':
 			return {

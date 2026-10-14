@@ -107,3 +107,15 @@ crons.daily(
 );
 
 export default crons;
+
+/*
+  LES RAPPELS D'ABONNEMENT (14/10/2026). Sept heures UTC, neuf heures à Paris en
+  été : la fin d'un essai et un renouvellement annuel se disent avant qu'ils
+  arrivent. Dormant tant que la facturation n'est pas ouverte.
+*/
+crons.daily(
+	'rappelsAbonnement',
+	{ hourUTC: 7, minuteUTC: 0 },
+	internal.abonnementRappels.rappelerTous,
+	{}
+);

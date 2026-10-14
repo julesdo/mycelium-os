@@ -51,7 +51,9 @@ const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
 	// Ce que le pilote ne peut pas faire sans le gérant : une question, rose.
 	PILOTE_BLOQUE: 'QUESTION',
 	// La relecture de la santé d'un client : le travail de la machine.
-	RISQUE_EN_BAISSE: 'MACHINE'
+	RISQUE_EN_BAISSE: 'MACHINE',
+	// Un prélèvement qui approche : de l'argent.
+	ABONNEMENT: 'ARGENT'
 };
 
 export interface NotificationAffichee {

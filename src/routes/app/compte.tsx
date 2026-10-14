@@ -55,6 +55,10 @@ import type { CarnetResume, IdentiteDuCreancier } from '../../screens/compte/pre
  * reste arrive quand il arrive, et sa section le dit.
  */
 export const Route = createFileRoute('/app/compte')({
+	// `?ouvrir=facturation` : la rangée s'ouvre à l'arrivée. C'est là que mènent
+	// les rappels d'abonnement (fin d'essai, renouvellement).
+	validateSearch: (recherche: Record<string, unknown>): { ouvrir?: string } =>
+		typeof recherche.ouvrir === 'string' ? { ouvrir: recherche.ouvrir } : {},
 	component: PageCompte,
 	errorComponent: CompteEnErreur
 });
@@ -65,6 +69,7 @@ function CompteEnErreur() {
 
 function PageCompte() {
 	const navigate = useNavigate();
+	const { ouvrir } = Route.useSearch();
 	const { theme, setTheme } = useTheme();
 
 	// ── L'établissement et l'identité du créancier ───────────────────────────
@@ -254,7 +259,7 @@ function PageCompte() {
 	}
 
 	if (org === undefined || profil === undefined) {
-		return <EcranCompte donnees={{ etat: 'attente' }} />;
+		return <EcranCompte donnees={{ etat: 'attente' }} ouvrir={ouvrir} />;
 	}
 
 	/*
@@ -574,7 +579,7 @@ function PageCompte() {
 		onSeDeconnecter: () => void authClient.signOut().then(() => navigate({ to: '/connexion' }))
 	};
 
-	return <EcranCompte donnees={{ etat: 'pret', valeur: compteAffiche }} />;
+	return <EcranCompte donnees={{ etat: 'pret', valeur: compteAffiche }} ouvrir={ouvrir} />;
 }
 
 /** L'origine réellement servie, jamais celle d'une variable d'environnement. */

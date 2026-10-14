@@ -35,7 +35,8 @@ export type GenreNotification =
 	| 'DEBITEUR_DEGRADE'
 	| 'HUMAN_ASSIST_REPLY'
 	| 'PILOTE_BLOQUE'
-	| 'RISQUE_EN_BAISSE';
+	| 'RISQUE_EN_BAISSE'
+	| 'ABONNEMENT';
 
 /**
  * LE TITRE D'UNE NOTIFICATION VIENT DE SON GENRE, PAS DE LA BASE.
@@ -58,5 +59,6 @@ export const TITRE_DE_NOTIFICATION: Readonly<Record<GenreNotification, string>> 
 	HUMAN_ASSIST_REPLY: 'Nouvelle réponse',
 	CREANCE_MURE: 'Un dossier à regarder',
 	PILOTE_BLOQUE: `${NOM_DU_PILOTE} a besoin de vous`,
-	RISQUE_EN_BAISSE: 'La santé d’un client baisse'
+	RISQUE_EN_BAISSE: 'La santé d’un client baisse',
+	ABONNEMENT: 'Votre abonnement'
 };

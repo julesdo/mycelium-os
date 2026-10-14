@@ -104,7 +104,9 @@ export default defineSchema({
 	})
 		.index('by_name', ['name'])
 		.index('by_paddle_subscription', ['paddleSubscriptionId'])
-		.index('by_paddle_customer', ['paddleCustomerId']),
+		.index('by_paddle_customer', ['paddleCustomerId'])
+		// Les rappels d'abonnement du matin lisent les essais et les abonnements actifs.
+		.index('by_paddle_status', ['paddleStatus']),
 
 	/**
 	 * LES PRIX PADDLE DE CE DÉPLOIEMENT, rangés par le catalogue
@@ -298,7 +300,9 @@ export default defineSchema({
 			/** Le pilote ne peut pas faire une étape sans le gérant : il dit quoi. */
 			v.literal('PILOTE_BLOQUE'),
 			/** La santé d'un client a baissé franchement à sa relecture (`risque/analyse.ts`). */
-			v.literal('RISQUE_EN_BAISSE')
+			v.literal('RISQUE_EN_BAISSE'),
+			/** Un rappel d'abonnement : fin d'essai, renouvellement (`abonnementRappels.ts`). */
+			v.literal('ABONNEMENT')
 		),
 		title: v.string(),
 		message: v.string(),

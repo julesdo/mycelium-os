@@ -164,13 +164,22 @@ function valeurUrgente(fait: string): string | null {
 	return court.length <= 26 ? court : null;
 }
 
-export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
+export function EcranCompte({
+	donnees,
+	ouvrir
+}: {
+	donnees: Lecture<CompteAffiche>;
+	/** Une rangée ouverte à l'arrivée (`?ouvrir=`), là où mène un rappel. */
+	ouvrir?: string | undefined;
+}) {
 	/**
 	 * ⚠️ TOUT PART REPLIÉ, ET C'EST LA DÉCISION. Une rangée qui attend quelque
 	 * chose porte un point et une valeur qui dit quoi : un geste, pas zéro, mais
 	 * rien n'est caché.
 	 */
-	const [ouvertes, setOuvertes] = useState<readonly string[]>([]);
+	const [ouvertes, setOuvertes] = useState<readonly string[]>(() =>
+		ouvrir === undefined ? [] : [ouvrir]
+	);
 
 	/*
 	  ⚠️ L'HEURE EST LUE UNE FOIS, AU MONTAGE. Un `Date.now()` dans le corps du
