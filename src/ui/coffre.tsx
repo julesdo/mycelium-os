@@ -433,7 +433,12 @@ export function VisionneuseDocument({
 }) {
 	const cle = detail === null || detail === undefined ? null : cleDeRef(detail.resume.ref);
 	return (
-		<PleinEcran ouvert={ouverte} onFermer={onFermer} libelle={detail?.resume.nom ?? 'Document'}>
+		<PleinEcran
+			large
+			ouvert={ouverte}
+			onFermer={onFermer}
+			libelle={detail?.resume.nom ?? 'Document'}
+		>
 			<ColonneDePleinEcran large>
 				<BarreDePleinEcran
 					titre={detail?.resume.nom ?? 'Document'}

@@ -3254,3 +3254,33 @@ html:has(.coquille-app) body {
 .light .touche-clavier {
 	box-shadow: inset 0 0 0 1px oklch(0.3 0.02 264 / 0.14);
 }
+
+/* LA FENÊTRE DU BUREAU (14/10/2026, `ui/plein-ecran.tsx`) : au-delà de 1024 px, une
+ * page pleine devient une fenêtre posée sur l'application assombrie. Une ombre
+ * longue et un liseré d'un pixel la détachent ; sous 1024 px, cette règle ne
+ * s'applique pas et la page reste pleine. */
+@media (min-width: 1024px) {
+	.fenetre-bureau {
+		box-shadow:
+			inset 0 0 0 1px oklch(1 0 0 / 0.08),
+			0 24px 80px -16px oklch(0 0 0 / 0.6);
+	}
+	.light .fenetre-bureau {
+		box-shadow:
+			inset 0 0 0 1px oklch(0.3 0.02 264 / 0.1),
+			0 2px 6px oklch(0.3 0.02 264 / 0.06),
+			0 28px 80px -20px oklch(0.3 0.02 264 / 0.35);
+	}
+}
+/* Le voile sous la fenêtre : l'application reste lisible derrière, on sait d'où
+ * l'on vient. Celui du kit (90 %) la recouvrait presque entière. */
+@media (min-width: 1024px) {
+	.voile-bureau {
+		background-color: oklch(0.12 0.02 266 / 0.55) !important;
+		-webkit-backdrop-filter: blur(2px);
+		backdrop-filter: blur(2px);
+	}
+	.light .voile-bureau {
+		background-color: oklch(0.3 0.03 266 / 0.28) !important;
+	}
+}

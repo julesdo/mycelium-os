@@ -16,17 +16,31 @@ import { cn } from './cn';
  *
  * Les marges de défilement gardent ce qu'on amène à l'écran (au clavier, au
  * toucher) hors des deux barres collantes.
+ *
+ * ⚠️ AU-DELÀ DE 1024 PX, UNE FENÊTRE POSÉE SUR L'APPLICATION (14/10/2026). Au
+ * bureau, une page pleine effaçait la barre latérale, la barre du haut et tout
+ * ce qu'on regardait, pour une question de trois lignes. Elle devient une fenêtre
+ * à bords ronds sur l'application assombrie — la palette de Linear, les fenêtres
+ * de Mercury — et un clic à côté la ferme. La même page, la même barre, le même
+ * pied collant, le même seul bouton plein : seul le cadre change. Elle est ANCRÉE
+ * EN HAUT, pas centrée : sa hauteur suit son contenu (les résultats d'une
+ * recherche, les étapes d'un dépôt), et centrée elle sauterait à chaque frappe.
+ * `large` (la visionneuse, le choix des professionnels) en fait une grande
+ * fenêtre de hauteur fixe. Sous 1024 px, rien ne change.
  */
 export function PleinEcran({
 	ouvert,
 	onFermer,
 	libelle,
+	large = false,
 	children
 }: {
 	readonly ouvert: boolean;
 	readonly onFermer: () => void;
 	/** Ce que le lecteur d'écran annonce à l'ouverture. */
 	readonly libelle: string;
+	/** Au bureau, la grande fenêtre : un document, une liste à côté de sa fiche. */
+	readonly large?: boolean;
 	readonly children: ReactNode;
 }) {
 	return (
@@ -38,7 +52,14 @@ export function PleinEcran({
 			aria-label={libelle}
 			header={false}
 			closeButton={false}
-			wrapClassName="parcours-plein-ecran h-full max-h-none scroll-pt-48 scroll-pb-40 pt-0! pb-0! bg-cladd-bg"
+			backdropClassName="voile-bureau"
+			wrapClassName={cn(
+				'parcours-plein-ecran h-full max-h-none scroll-pt-48 scroll-pb-40 pt-0! pb-0! bg-cladd-bg',
+				'fenetre-bureau lg:inset-x-0 lg:mx-auto lg:w-[calc(100%-4rem)] lg:rounded-[1.75rem]',
+				large
+					? 'lg:my-auto lg:h-[92dvh] lg:max-h-[92dvh] lg:max-w-6xl'
+					: 'lg:mt-[8dvh] lg:mb-auto lg:h-fit lg:max-h-[84dvh] lg:max-w-xl'
+			)}
 			contentClassName="max-w-none min-h-full justify-start gap-0"
 		>
 			{children}
@@ -60,7 +81,7 @@ export function ColonneDePleinEcran({
 		<div
 			ref={refPage}
 			className={cn(
-				'mx-auto flex min-h-dvh w-full max-w-xl flex-col px-cladd-2xs',
+				'mx-auto flex min-h-dvh w-full max-w-xl flex-col px-cladd-2xs lg:min-h-0 lg:px-cladd-xs',
 				large && 'lg:max-w-5xl'
 			)}
 		>
@@ -119,7 +140,7 @@ export function BarreDePleinEcran({
 	readonly children?: ReactNode;
 }) {
 	return (
-		<div className="verre-barre-haute sticky top-0 z-20 -mx-cladd-2xs flex flex-col gap-cladd-3xs px-cladd-2xs pt-barre-app pb-cladd-3xs">
+		<div className="verre-barre-haute sticky top-0 z-20 -mx-cladd-2xs flex flex-col gap-cladd-3xs px-cladd-2xs pt-barre-app pb-cladd-3xs lg:-mx-cladd-xs lg:px-cladd-xs">
 			<div className="flex items-center gap-cladd-3xs">
 				{onRetour === undefined ? (
 					<span className="size-9 shrink-0" aria-hidden />
@@ -179,7 +200,7 @@ export function JaugeDEtapes({
 export function PiedDePleinEcran({ children }: { readonly children: ReactNode }) {
 	return (
 		<div
-			className="verre-dense sticky bottom-0 z-20 -mx-cladd-2xs mt-auto flex flex-col gap-cladd-3xs px-cladd-2xs pt-cladd-3xs"
+			className="verre-dense sticky bottom-0 z-20 -mx-cladd-2xs mt-auto flex flex-col gap-cladd-3xs px-cladd-2xs pt-cladd-3xs lg:-mx-cladd-xs lg:px-cladd-xs"
 			style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
 		>
 			{children}
@@ -227,7 +248,7 @@ export function FeuillePleinEcran({
 	readonly children: ReactNode;
 }) {
 	return (
-		<PleinEcran ouvert={ouverte} onFermer={onFermer} libelle={libelle ?? titre}>
+		<PleinEcran ouvert={ouverte} onFermer={onFermer} libelle={libelle ?? titre} large={large}>
 			<ColonneDePleinEcran large={large}>
 				<BarreDePleinEcran
 					titre={titre}

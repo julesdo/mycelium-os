@@ -453,7 +453,7 @@ export function ParcoursProfessionnels(props: ProprietesParcours) {
 		setVu({ ouvert: props.ouvert, ouvertures: vu.ouvertures + (props.ouvert ? 1 : 0) });
 	}
 	return (
-		<PleinEcran ouvert={props.ouvert} onFermer={props.onFermer} libelle={props.titre}>
+		<PleinEcran large ouvert={props.ouvert} onFermer={props.onFermer} libelle={props.titre}>
 			{vu.ouvertures === 0 ? null : <Parcours key={vu.ouvertures} {...props} />}
 		</PleinEcran>
 	);
