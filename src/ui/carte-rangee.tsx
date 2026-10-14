@@ -144,7 +144,8 @@ function UneLigne({
 			<span className="w-24 shrink-0 text-right text-cladd-2xs text-cladd-fg-soft tabular-nums">
 				{date}
 			</span>
-			<span className="w-32 shrink-0 text-right text-cladd-xs font-semibold tabular-nums">
+			{/* `pr-2` : le « ⋯ » du survol (`CarteGlissable`) se pose à droite sans mordre le montant. */}
+			<span className="w-32 shrink-0 pr-2 text-right text-cladd-xs font-semibold tabular-nums">
 				{montant}
 			</span>
 		</span>

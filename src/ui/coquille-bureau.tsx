@@ -246,6 +246,15 @@ export interface GroupeLateral {
 	readonly destinations: readonly DestinationLaterale[];
 }
 
+/**
+ * CE QUE LA BARRE LATÉRALE PREND À GAUCHE, pour ce qui est fixé sur l'écran.
+ *
+ * ⚠️ UN ÉLÉMENT FIXÉ SE CENTRE SUR LA FENÊTRE, PAS SUR LE CONTENU. Le compositeur de
+ * Plume et le pied du démarrage se centraient à 128 px de la conversation qu'ils
+ * servent, au bureau. Ils partent donc de la barre latérale, dont c'est la largeur.
+ */
+export const DEGAGEMENT_LATERAL = 'lg:left-64';
+
 export function BarreLaterale({
 	tete,
 	groupes,
@@ -257,6 +266,7 @@ export function BarreLaterale({
 	/** Le compte, en pied. */
 	readonly pied?: ReactNode;
 }) {
+	// `w-64` : la largeur que `DEGAGEMENT_LATERAL` rend aux éléments fixés.
 	return (
 		<aside className="chrome-laterale hidden h-full w-64 shrink-0 flex-col lg:flex">
 			<div className="flex h-14 shrink-0 items-center px-3">{tete}</div>

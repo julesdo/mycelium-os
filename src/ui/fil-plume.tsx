@@ -9,6 +9,7 @@ import {
 import { Button, Input, Select, Spinner, Textarea } from '@cladd-ui/react';
 import { ArrowUpIcon, CheckIcon, ChevronRightIcon, EyeIcon, PlusIcon, XIcon } from 'lucide-react';
 import { cn } from './cn';
+import { DEGAGEMENT_LATERAL } from './coquille-bureau';
 import type { PhraseAffichee } from './conversation';
 import {
 	VignetteDocument,
@@ -477,7 +478,13 @@ export function Composeur({
 		onJoindre(fichiers);
 	}
 	return (
-		<div className="mb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-cladd-3xs pb-cladd-3xs">
+		<div
+			className={cn(
+				'mb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-cladd-3xs pb-cladd-3xs',
+				// Au bureau, il se centre sur la conversation, à droite de la barre latérale.
+				DEGAGEMENT_LATERAL
+			)}
+		>
 			<div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col gap-2">
 				{dessus}
 				<div className="verre-dense flex flex-col gap-1 rounded-[1.6rem] p-1.5" onPaste={coller}>

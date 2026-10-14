@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Button } from '@cladd-ui/react';
+import {
+	Button,
+	List,
+	ListButton,
+	Popover,
+	PopoverClose,
+	PopoverRoot,
+	PopoverTrigger
+} from '@cladd-ui/react';
+import { EllipsisIcon } from 'lucide-react';
 import { LigneBouton, ListeAnalyses } from './navigation';
 import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
@@ -157,7 +166,7 @@ export function CarteGlissable({
 				// l'horizontal. Sans lui, il prendrait le geste pour un retour arrière.
 				// Pas de bulle de lien ni de sélection de texte à l'appui long : c'est le
 				// menu des gestes qui s'ouvre.
-				className="relative touch-pan-y select-none [-webkit-touch-callout:none]"
+				className="group/carte relative touch-pan-y select-none [-webkit-touch-callout:none]"
 				onPointerDown={(evenement) => {
 					avaler.current = false;
 					if (evenement.pointerType === 'mouse') return;
@@ -281,6 +290,48 @@ export function CarteGlissable({
 
 				<div ref={devant} className="relative will-change-transform">
 					{children}
+				</div>
+
+				{/*
+				  AU BUREAU, À LA SOURIS : LES GESTES DANS UN MENU, AU SURVOL (14/10/2026).
+				  Une souris ne balaie pas, et le clic droit ne se devine pas. Comme chez
+				  Midday et Linear, un « ⋯ » paraît sur la carte survolée, à la place du
+				  chevron, et déroule les mêmes gestes que le menu de l'appui long.
+
+				  ⚠️ INVISIBLE ET INERTE SANS SURVOL : `hover:` ne vaut que sur un écran qui
+				  survole (Tailwind 4), et le bouton ne prend aucun toucher tant qu'il ne se
+				  voit pas — une tablette en paysage ouvre la carte, pas le menu. Le clavier
+				  l'atteint, et il paraît dès qu'il a le focus.
+				*/}
+				<div className="pointer-events-none absolute top-1/2 right-1.5 z-10 hidden -translate-y-1/2 opacity-0 transition-opacity duration-150 group-hover/carte:pointer-events-auto group-hover/carte:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100 lg:block">
+					<PopoverRoot>
+						<PopoverTrigger>
+							<Button
+								size="sm"
+								square
+								rounded
+								variant="transparent"
+								outline={false}
+								hoverable={false}
+								className="verre-carte verre-bouton"
+								aria-label={`Les gestes pour ${titre}`}
+								title="Gestes"
+							>
+								<EllipsisIcon />
+							</Button>
+						</PopoverTrigger>
+						<Popover className="w-64" offset={6} position="bottom-end">
+							<List>
+								{[...actions, ...menuEnPlus].map((action) => (
+									<PopoverClose key={action.cle}>
+										<ListButton size="md" icon={action.icone} onClick={action.onClick}>
+											{action.nomComplet ?? action.libelle}
+										</ListButton>
+									</PopoverClose>
+								))}
+							</List>
+						</Popover>
+					</PopoverRoot>
 				</div>
 			</div>
 

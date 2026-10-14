@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Button, Input } from '@cladd-ui/react';
 import { CheckIcon, PencilIcon } from 'lucide-react';
 import { cn } from './cn';
+import { DEGAGEMENT_LATERAL } from './coquille-bureau';
 import { dateCourte, eurosCentimes } from './format';
 
 /**
@@ -99,7 +100,13 @@ export function BulleDeReponse({
  */
 export function ZoneDeReponse({ children }: { readonly children: ReactNode }) {
 	return (
-		<div className="mb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-cladd-3xs pb-cladd-3xs">
+		<div
+			className={cn(
+				'mb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-cladd-3xs pb-cladd-3xs',
+				// Au bureau, il se centre sur la conversation, à droite de la barre latérale.
+				DEGAGEMENT_LATERAL
+			)}
+		>
 			<div className="verre-dense pointer-events-auto mx-auto flex w-full max-w-2xl flex-col gap-2 rounded-[1.6rem] p-2">
 				{children}
 			</div>
