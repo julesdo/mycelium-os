@@ -4,8 +4,7 @@ import {
 	Hero,
 	BandeLogiciels,
 	Situations,
-	LaLoi,
-	Frise,
+	Calcul,
 	Etapes,
 	Securite,
 	Tarifs,
@@ -99,19 +98,12 @@ function Accueil() {
 			<Navbar />
 			<Hero />
 			<BandeLogiciels />
-			{/* LA CIBLE, JUSTE APRÈS L'ACCROCHE : les métiers, avant la loi et le
-			    logiciel. On parle d'abord de celui qui a les impayés. */}
-			<Situations />
-			<LaLoi />
-			{/*
-			  ⚠️ LA FRISE VIENT JUSTE APRÈS LA LOI, ET C'EST SA DÉMONSTRATION. La
-			  section précédente énonce trois chiffres — un taux, une indemnité, un
-			  délai. Celle-ci les fait TOURNER sur une facture : le montant grandit
-			  des deux premiers, puis le troisième le ramène à zéro. Séparer l'énoncé
-			  de sa démonstration obligerait à répéter les trois chiffres.
-			*/}
-			<Frise />
+			{/* LE CALCULATEUR remplace la loi et la frise (14/10/2026) : le visiteur fait
+			    lui-même, sur SA facture, ce que les deux sections énonçaient. */}
+			<Calcul />
 			<Etapes />
+			{/* LA CIBLE, après le produit : les métiers, en photos, sans prénom. */}
+			<Situations />
 			{/*
 			  LA SÉCURITÉ AVANT LE PRIX (réécriture du 06/10 au soir) : ce qui rassure
 			  — rien ne part sans vous, aucun fonds touché — se lit avant qu'on
