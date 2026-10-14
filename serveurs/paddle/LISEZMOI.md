@@ -1,0 +1,126 @@
+# Le paiement, par Paddle
+
+Paddle encaisse les abonnements de Letikette en vendeur de registre : il émet la facture, collecte
+la TVA du pays du client et garde la carte. Nos serveurs ne voient jamais un moyen de paiement.
+
+**Rien ne s'ouvre tant que deux choses ne sont pas réunies sur un déploiement Convex** : les
+variables Paddle, et `PADDLE_FACTURATION_OUVERTE=oui`. Sans elles, tout le produit reste ouvert
+et l'écran Compte › Abonnement dit qu'aucun paiement n'est encore encaissé.
+
+Le code :
+
+- `src/lib/paiement/paddle.ts` : la logique pure (environnement lu sur la clé, signature des
+  rappels, sceau de l'établissement, lecture des événements, catalogue attendu), testée.
+- `src/lib/convex/paddle.ts` : la caisse (`caisse`), les rappels (`/paddle-webhook`), le portail
+  client (`getPortalUrl`).
+- `src/lib/convex/paddleCatalogue.ts` : crée le catalogue d'après la grille.
+- `src/lib/convex/billing.ts` : `paiementOuvert` et le plan effectif.
+- `src/app/caisse-paddle.ts` et `src/screens/compte/facturation.tsx` : l'écran.
+
+## Comment ça marche
+
+1. Un administrateur ouvre Compte › Abonnement et touche « Choisir l'abonnement » ou « Régler le
+   bilan ».
+2. Le serveur rend le prix du palier de l'établissement (calculé chez nous, jamais dans le
+   navigateur) et l'identifiant de l'établissement **scellé** par un HMAC sous
+   `PADDLE_WEBHOOK_SECRET`.
+3. Paddle.js se charge à ce moment-là et ouvre le paiement en surimpression, chez Paddle.
+4. Paddle rappelle `/paddle-webhook`. Le rappel vérifie la signature, puis le sceau, et inscrit
+   l'abonnement (ou le bilan réglé) sur l'établissement. L'écran se met à jour seul.
+5. « Gérer mon abonnement chez Paddle » ouvre le portail client : carte, factures, résiliation.
+
+Le jeton côté client est public par nature : n'importe qui peut ouvrir un paiement avec nos prix.
+Le sceau empêche qu'un tel paiement se pose sur un établissement qui n'est pas le sien.
+
+## 1. Le bac à sable, sur le déploiement de dev
+
+Le déploiement Convex de développement (`knowing-bee-911`) parle au bac à sable, la production
+(`insightful-crow-128`) au compte live. Un déploiement, un environnement.
+
+Dans [sandbox-vendors.paddle.com](https://sandbox-vendors.paddle.com) :
+
+1. **Developer Tools › Authentication › API keys** : une clé avec la lecture et l'écriture des
+   produits et des prix, la lecture des clients et des abonnements, et la création de sessions du
+   portail client. Elle commence par `pdl_sdbx_`.
+2. **Developer Tools › Authentication › Client-side tokens** : un jeton. Il commence par `test_`.
+3. **Developer Tools › Notifications › New destination** :
+   - adresse : `https://knowing-bee-911.convex.site/paddle-webhook` ;
+   - événements : `subscription.created`, `subscription.activated`, `subscription.updated`,
+     `subscription.past_due`, `subscription.paused`, `subscription.resumed`,
+     `subscription.canceled`, `transaction.completed` ;
+   - recopier le **secret** affiché : il ne se relit pas.
+4. **Checkout › Checkout configuration › Default payment link** : l'adresse où le paiement
+   s'ouvre, par exemple `http://localhost:20173/app/compte` (le bac à sable accepte localhost).
+5. Si Paddle refuse la catégorie fiscale « saas » à l'étape 7, l'activer sur le compte (ou la
+   demander au support de Paddle).
+
+Puis, dans un terminal, sans jamais coller ces valeurs ailleurs :
+
+```bash
+npx convex env set PADDLE_API_KEY pdl_sdbx_…
+npx convex env set PADDLE_CLIENT_TOKEN test_…
+npx convex env set PADDLE_WEBHOOK_SECRET pdl_ntfset_…
+```
+
+6. **Lire** ce que le compte contient déjà :
+
+```bash
+npx convex run paddleCatalogue:catalogue
+```
+
+7. **Créer** les deux produits et les six prix d'après la grille (`src/lib/config/tarifs.ts`, hors
+   taxes, en euros), puis lancer les commandes `env set` que le rapport rend :
+
+```bash
+npx convex run paddleCatalogue:catalogue '{"creer":true}'
+```
+
+8. **Ouvrir** la facturation sur le déploiement de dev :
+
+```bash
+npx convex env set PADDLE_FACTURATION_OUVERTE oui
+```
+
+9. **Essayer** : Compte › Abonnement, « Choisir l'abonnement », la carte de test de Paddle
+   `4242 4242 4242 4242` (date future, CVC `100`). L'abonnement doit passer « Actif » en quelques
+   secondes ; « Gérer mon abonnement chez Paddle » ouvre le portail ; une résiliation depuis le
+   portail doit faire passer l'écran sur « Résilié ». Les rappels se relisent dans
+   Developer Tools › Notifications › la destination › Logs.
+
+## 2. Le compte live, sur la production
+
+Mêmes étapes dans [vendors.paddle.com](https://vendors.paddle.com), avec `--prod` sur chaque
+commande et l'adresse `https://insightful-crow-128.convex.site/paddle-webhook`. Les clés
+commencent par `pdl_live_` et `live_`.
+
+**Ne pas poser `PADDLE_FACTURATION_OUVERTE` en production avant** que Paddle ait vérifié le compte
+et approuvé le domaine : tant qu'elle manque, les clés live peuvent être posées sans rien changer
+pour personne. La poser, c'est appliquer la fin d'essai à tous les établissements (aujourd'hui,
+cela ferme les invitations à ceux qui n'ont pas d'abonnement).
+
+À faire dans le tableau de bord live, que l'API ne fait pas :
+
+- **Checkout › Checkout configuration › Payment methods** : les moyens de paiement proposés.
+- **Checkout › Checkout configuration › Default payment link** : `https://www.letikette.com/app/compte`.
+  Un domaine approuvé, jamais localhost, sinon les paiements live échouent.
+- **My account › Settings › Website approval** : soumettre `www.letikette.com`.
+- **Business account › Payouts › Payout settings** : les coordonnées bancaires.
+
+## Garde-fous
+
+- `paddleCatalogue:catalogue` **n'ajoute que ce qui manque**. Il ne modifie, n'archive et ne
+  supprime rien. Un prix étiqueté qui s'écarte de la grille est nommé dans le rapport : on crée
+  alors un prix neuf dans le tableau de bord et on y pointe la variable, on ne touche jamais à
+  l'ancien (des abonnements en dépendent).
+- **Ne jamais recréer une destination de notification qui existe** : la recréer change son
+  secret, et chaque rappel suivant serait refusé jusqu'à ce que `PADDLE_WEBHOOK_SECRET` suive.
+- La production porte encore trois variables vides d'avant, que le code ne lit plus :
+  `PADDLE_PRICE_BUSINESS`, `PADDLE_PRICE_ESSENTIAL`, `PADDLE_PRICE_PROFESSIONAL`.
+
+## Ce que le code ne fait pas
+
+- **Pas de liste d'adresses IP sur le rappel.** Paddle publie les siennes (`api.paddle.com/ips`),
+  mais une `httpAction` Convex ne reçoit pas l'adresse d'origine de façon sûre. La signature HMAC,
+  vérifiée sur le corps brut avec cinq secondes de tolérance, est la barrière.
+- **Paddle Retain** reçoit `pwCustomer` (l'identifiant client Paddle, `ctm_…`) dès que
+  l'établissement en a un ; rien d'autre n'est branché.

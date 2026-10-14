@@ -53,7 +53,7 @@ export const DEV_FEATURES = [
 	{
 		name: 'Billing (Paddle)',
 		scope: 'convex',
-		missing: ['PADDLE_API_KEY', 'PADDLE_WEBHOOK_SECRET'],
+		missing: ['PADDLE_API_KEY', 'PADDLE_CLIENT_TOKEN', 'PADDLE_WEBHOOK_SECRET'],
 		docs: '.env.convex.example'
 	},
 	{

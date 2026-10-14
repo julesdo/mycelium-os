@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { BoutonPrincipal, Lien } from '../../ui';
 import { Surface, Chip } from '@cladd-ui/react';
 import { CheckIcon, MinusIcon } from 'lucide-react';
@@ -34,7 +34,8 @@ export function Offre({
 	description,
 	colonne,
 	actif = false,
-	recommande = false
+	recommande = false,
+	pied
 }: {
 	titre: string;
 	prix: string;
@@ -43,6 +44,8 @@ export function Offre({
 	colonne: ColonneOffre;
 	actif?: boolean;
 	recommande?: boolean;
+	/** Sous la liste : le geste qui souscrit, ou ce qui est déjà réglé. */
+	pied?: ReactNode;
 }) {
 	return (
 		<Surface
@@ -101,6 +104,8 @@ export function Offre({
 					);
 				})}
 			</ul>
+
+			{pied ? <span className="flex flex-col pt-cladd-3xs">{pied}</span> : null}
 		</Surface>
 	);
 }
@@ -190,8 +195,8 @@ export function OuvertureEnCours() {
 				ne peut être encaissé.
 			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Ce verrou se lève à l&rsquo;ouverture du compte marchand chez Paddle, qui attend nos
-				conditions générales.
+				Ce verrou se lève à l&rsquo;ouverture du compte marchand chez Paddle, une fois notre compte
+				vérifié.
 			</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 				Ce que l&rsquo;attente coûte : rien qui se chiffre. Aucune somme n&rsquo;est due tant que le

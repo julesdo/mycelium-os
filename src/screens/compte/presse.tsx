@@ -185,6 +185,7 @@ function urgenceEtablissement(identite: IdentiteDuCreancier | null): UrgenceDuCo
  * « actif » serait inventer une réponse là où il n'y en a pas.
  */
 export type EtatFacturation =
+	| { readonly genre: 'ouverture' }
 	| { readonly genre: 'developpement' }
 	| { readonly genre: 'abonne' }
 	| { readonly genre: 'essai'; readonly jours: number }
@@ -204,15 +205,18 @@ export function etatDeLaFacturation(
 	abonnement: AbonnementAffiche,
 	maintenant: number
 ): EtatFacturation {
-	// `isDev` : aucune clé Paddle sur le déploiement. `tier === 'dev'` : un plan
-	// posé à la main quand il n'y en avait pas (`org.devPlan`). Les deux ouvrent
-	// tout, et les confondre avec un abonnement payé ferait annoncer un paiement
-	// qui n'existe pas.
-	if (abonnement.isDev || abonnement.tier === 'dev') return { genre: 'developpement' };
-
 	if (abonnement.paddleStatus === 'active' || abonnement.paddleStatus === 'trialing') {
 		return { genre: 'abonne' };
 	}
+
+	// La facturation n'est pas ouverte sur ce déploiement (`paiementOuvert`) :
+	// tout est ouvert, rien n'est encaissé, et c'est ce que l'écran dit.
+	if (!abonnement.paiementOuvert) return { genre: 'ouverture' };
+
+	// `tier === 'dev'` : un plan posé à la main quand il n'y avait pas de clé
+	// (`org.devPlan`). Il ouvre tout, et le confondre avec un abonnement payé
+	// ferait annoncer un paiement qui n'existe pas.
+	if (abonnement.isDev || abonnement.tier === 'dev') return { genre: 'developpement' };
 
 	if (abonnement.tier === 'none') {
 		return { genre: 'ferme', cause: causeDeLaFermeture(abonnement.paddleStatus) };
@@ -276,10 +280,12 @@ export function resumeFacturation(
 	const abonnement = lecture.valeur;
 	if (abonnement === null) return { valeur: 'Aucun établissement' };
 
-	const legende = `Palier ${abonnement.palier} — ${abonnement.bornesPalier}`;
+	const legende = `Palier ${abonnement.palier}, ${abonnement.bornesPalier}`;
 	const etat = etatDeLaFacturation(abonnement, maintenant);
 
 	switch (etat.genre) {
+		case 'ouverture':
+			return { valeur: 'Sans carte bancaire', legende };
 		case 'developpement':
 			return { valeur: 'Développement', legende };
 		case 'abonne':

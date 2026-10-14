@@ -119,11 +119,10 @@ const APPELEES_AUTREMENT: Readonly<Record<string, string>> = {
 	// proposition vise. La pose n'y a jamais figuré — `battement.ts` l'appelle
 	// chaque nuit — et `mesures` non plus, `/app/compte` la lisant déjà.
 
-	// LA GESTION D'ABONNEMENT. Un client qui paie ne peut ni voir son
-	// abonnement ni ouvrir le portail Paddle pour changer de carte ou résilier.
-	// Sur un produit vendu par abonnement, c'est un manque de livrable.
-	getMySubscription: 'DETTE — aucun écran ne montre l’abonnement en cours.',
-	getPortalUrl: 'DETTE — le portail Paddle (carte, résiliation) est injoignable.',
+	// LA GESTION D'ABONNEMENT. `getPortalUrl` a quitté cette liste le 14/10/2026 :
+	// « Gérer mon abonnement chez Paddle » l'ouvre depuis l'écran Compte.
+	// `etatAbonnement` y montre l'abonnement ; cette lecture-ci en double une partie.
+	getMySubscription: 'DETTE — doublon d’`etatAbonnement`, qu’aucun écran ne lit.',
 
 	// INVITATIONS ET AUTHENTIFICATION, héritées de Fleet. L'écran d'équipe
 	// invite UNE personne à la fois et accepte par jeton ; ces variantes-là

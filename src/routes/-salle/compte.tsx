@@ -7,7 +7,7 @@ import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexio
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
 import type { EtablissementAuRegistre, EtatCritere } from '../../screens/compte/creancier';
 import type { EtablissementAffiche } from '../../screens/compte/etablissement';
-import type { AbonnementAffiche } from '../../screens/compte/facturation';
+import type { AbonnementAffiche, CaisseAffichee } from '../../screens/compte/facturation';
 import type {
 	EquipeAffichee,
 	InvitationEnAttente,
@@ -157,8 +157,10 @@ const ETABLISSEMENT_AFFICHE_DEMO: EtablissementAffiche = {
 interface FacturationDemo {
 	/** `organizations.facturesParAn`. Absent tant qu'il ne l'a pas déclaré : le champ est facultatif à `/bienvenue`. */
 	readonly facturesParAn?: number;
-	/** Une clé `PADDLE_API_KEY` posée sur le déploiement. */
-	readonly clePaddle: boolean;
+	/** La facturation ouverte sur le déploiement (`paiementOuvert`, `billing.ts`). */
+	readonly ouvert: boolean;
+	/** `organizations.bilanRegleLe` : le premier bilan payé. */
+	readonly bilanRegleLe?: number;
 	/** `organizations.freeTrialEndsAt`, posé à la création de l'établissement. */
 	readonly essaiJusquAu: number;
 	/**
@@ -182,7 +184,7 @@ interface FacturationDemo {
  */
 const FACTURATION_DEMO: FacturationDemo = {
 	facturesParAn: ETABLISSEMENT_DEMO.facturesParAn,
-	clePaddle: false,
+	ouvert: false,
 	essaiJusquAu: Date.now() + 12 * 24 * 60 * 60 * 1000
 };
 
@@ -194,7 +196,7 @@ const FACTURATION_DEMO: FacturationDemo = {
  * plutôt que de montrer un plan qu'aucune forme ne fait regarder.
  */
 function planEffectif(facturation: FacturationDemo) {
-	if (!facturation.clePaddle) return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
+	if (!facturation.ouvert) return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
 
 	// `active` et `trialing` seuls ouvrent le palier souscrit. Les trois autres
 	// tombent plus bas, exactement comme `resolveEffectivePlan` les fait tomber.
@@ -228,7 +230,9 @@ function abonnementDe(facturation: FacturationDemo): AbonnementAffiche {
 		tarifs: TARIFS[palier],
 		seatsAllowed,
 		paddleStatus: facturation.statutPaddle ?? null,
-		paddleConfigure: facturation.clePaddle,
+		paiementOuvert: facturation.ouvert,
+		bilanRegleLe: facturation.bilanRegleLe ?? null,
+		clientPaddle: facturation.statutPaddle !== undefined || facturation.bilanRegleLe !== undefined,
 		essaiFiniLe: facturation.essaiJusquAu > Date.now() ? facturation.essaiJusquAu : null
 	};
 }
@@ -500,7 +504,16 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 	'vu par un membre': { ...COMPTE_DEMO, membres: MEMBRES_VUS_PAR_UN_MEMBRE },
 	'paiement ouvert': {
 		...COMPTE_DEMO,
-		facturation: { ...FACTURATION_DEMO, clePaddle: true }
+		facturation: { ...FACTURATION_DEMO, ouvert: true }
+	},
+	'bilan réglé': {
+		...COMPTE_DEMO,
+		facturation: {
+			...FACTURATION_DEMO,
+			ouvert: true,
+			essaiJusquAu: Date.now() - 40 * 24 * 60 * 60 * 1000,
+			bilanRegleLe: Date.now() - 3 * 24 * 60 * 60 * 1000
+		}
 	},
 	'volume non renseigné': {
 		...COMPTE_DEMO,
@@ -525,7 +538,7 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 		profil: PROFIL_ENREGISTRE_DEMO,
 		facturation: {
 			...FACTURATION_DEMO,
-			clePaddle: true,
+			ouvert: true,
 			// L'essai est terminé : sans ça, il couvrirait le palier et la
 			// fermeture ne se verrait pas.
 			essaiJusquAu: Date.now() - 40 * 24 * 60 * 60 * 1000,
@@ -539,7 +552,7 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 		profil: PROFIL_ENREGISTRE_DEMO,
 		facturation: {
 			...FACTURATION_DEMO,
-			clePaddle: true,
+			ouvert: true,
 			essaiJusquAu: Date.now() + 2 * 24 * 60 * 60 * 1000
 		}
 	},
@@ -564,7 +577,7 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 		profil: PROFIL_ENREGISTRE_DEMO,
 		membres: MEMBRES.map((membre) => ({ ...membre, adresseVerifiee: true })),
 		invitations: [],
-		facturation: { ...FACTURATION_DEMO, clePaddle: true, statutPaddle: 'active' }
+		facturation: { ...FACTURATION_DEMO, ouvert: true, statutPaddle: 'active' }
 	}
 };
 
@@ -628,6 +641,17 @@ const MESURES_DEMO: MesuresAffichees = {
 	]
 };
 
+/** Le paiement Paddle, inerte dans la salle : les boutons se regardent, rien ne s'ouvre. */
+const CAISSE_DEMO: CaisseAffichee = {
+	offres: { bilan: true, abonnement: true },
+	onChoisir: () => undefined,
+	onGerer: () => undefined,
+	enCours: null,
+	recu: false,
+	indisponible: false,
+	erreur: null
+};
+
 /** La page, composée comme sa route la compose. */
 function compteDe(
 	forme: FormeCompte,
@@ -638,6 +662,9 @@ function compteDe(
 	const abonnement: Lecture<AbonnementAffiche | null> = forme.enLecture
 		? attente
 		: { etat: 'pret', valeur: abonnementDe(forme.facturation) };
+	// La caisse n'existe que la facturation ouverte, et pour un administrateur.
+	const administre = forme.membres.some((m) => m.estMoi && m.role === 'ORG_ADMIN');
+	const caisse = forme.facturation.ouvert && administre ? CAISSE_DEMO : undefined;
 
 	return {
 		etablissement: ETABLISSEMENT_AFFICHE_DEMO,
@@ -721,6 +748,7 @@ function compteDe(
 			}
 		},
 		abonnement,
+		caisse,
 		equipe: forme.enLecture
 			? attente
 			: ({

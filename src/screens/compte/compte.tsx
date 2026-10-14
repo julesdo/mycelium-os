@@ -37,7 +37,7 @@ import { FormulaireCourriers, FormulaireCreancier, type CreancierAffiche } from 
 import { FormulaireEtablissement, type EtablissementAffiche } from './etablissement';
 import { SectionRegles, resumeRegles, type ReglesAffichees } from './regles';
 import { ChoixDuLogo, SectionProfil, type ProfilAffiche } from './profil';
-import { SectionFacturation, type AbonnementAffiche } from './facturation';
+import { SectionFacturation, type AbonnementAffiche, type CaisseAffichee } from './facturation';
 import { SectionEquipe, type EquipeAffichee } from './equipe';
 import { SectionDonnees, type DonneesAffichees } from './donnees';
 import { SectionMesures, type MesuresAffichees } from './mesures';
@@ -123,6 +123,8 @@ export interface CompteAffiche {
 	readonly courantId: string | null;
 	readonly onBasculer: (id: string) => void;
 	readonly abonnement: Lecture<AbonnementAffiche | null>;
+	/** Le paiement et le portail Paddle, quand ce compte peut les ouvrir. */
+	readonly caisse?: CaisseAffichee;
 	readonly equipe: Lecture<EquipeAffichee>;
 	readonly donnees: Lecture<DonneesAffichees>;
 	/** Combien de professionnels dans l'équipe : la rangée « Votre défense » le porte. */
@@ -327,7 +329,11 @@ export function EcranCompte({ donnees }: { donnees: Lecture<CompteAffiche> }) {
 					>
 						<AvecLaLecture lecture={pret.abonnement}>
 							{(abonnement) => (
-								<SectionFacturation abonnement={abonnement} maintenant={maintenant} />
+								<SectionFacturation
+									abonnement={abonnement}
+									maintenant={maintenant}
+									caisse={pret.caisse}
+								/>
 							)}
 						</AvecLaLecture>
 					</RangeeDepliable>

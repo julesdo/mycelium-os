@@ -91,14 +91,15 @@ describe('le palier de taille', () => {
 });
 
 describe("l'essai", () => {
-	// CES TESTS SIMULENT LE JOUR OÙ PADDLE OUVRE, et c'est tout leur intérêt.
-	// Sans clé, `resolveEffectivePlan` renvoie `dev` et tout est ouvert à tout le
-	// monde : rien de ce qui suit ne serait exercé. La clé posée, la même fonction
-	// bascule TOUS les établissements existants sur `none` — plus d'invitation,
-	// plus de dépôt — et l'essai est la seule chose qui rende cette bascule
-	// survivable. On la pose donc ici, plutôt que d'attendre de le découvrir en
-	// production.
-	beforeEach(() => vi.stubEnv('PADDLE_API_KEY', 'pdl_test'));
+	// CES TESTS SIMULENT LE JOUR OÙ LA FACTURATION OUVRE, et c'est tout leur
+	// intérêt. Fermée, `resolveEffectivePlan` renvoie `dev` et tout est ouvert à
+	// tout le monde : rien de ce qui suit ne serait exercé. Ouverte, la même
+	// fonction bascule les établissements sans essai sur `none`, et l'essai est
+	// la seule chose qui rende cette bascule survivable.
+	beforeEach(() => {
+		vi.stubEnv('PADDLE_API_KEY', 'pdl_test');
+		vi.stubEnv('PADDLE_FACTURATION_OUVERTE', 'oui');
+	});
 	afterEach(() => vi.unstubAllEnvs());
 
 	const org = (freeTrialEndsAt?: number) =>
@@ -131,6 +132,14 @@ describe("l'essai", () => {
 
 	it("laisse sur 'none' un établissement qui n'a jamais eu d'essai", () => {
 		expect(resolveEffectivePlan(org(undefined)).tier).toBe('none');
+	});
+
+	it('ne ferme rien tant que la facturation n’est pas ouverte, même clé posée', () => {
+		// La clé live se pose à la migration, avant que Paddle ait vérifié le
+		// compte : personne ne doit être fermé sans pouvoir payer.
+		vi.stubEnv('PADDLE_FACTURATION_OUVERTE', '');
+		expect(resolveEffectivePlan(org(Date.now() - 60_000)).tier).toBe('dev');
+		expect(resolveEffectivePlan(org(undefined)).tier).toBe('dev');
 	});
 });
 

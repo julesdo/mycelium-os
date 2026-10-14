@@ -91,11 +91,31 @@ export type { PalierTaille };
 
 // ── Core resolver ─────────────────────────────────────────────────────────────
 
+/**
+ * LA FACTURATION EST-ELLE OUVERTE SUR CE DÉPLOIEMENT ?
+ *
+ * ⚠️ POSER LA CLÉ N'OUVRE PLUS LA FACTURATION. Jusqu'au 14/10/2026, la clé
+ * Paddle suffisait : le jour où elle arrivait, chaque établissement dont l'essai
+ * était fini passait sur `none` d'un coup, avant même qu'un paiement soit
+ * possible. Or la clé live se pose à la migration, AVANT que Paddle ait
+ * vérifié le compte et approuvé le domaine : pendant des jours, des gérants
+ * auraient été fermés sans aucun moyen de payer.
+ *
+ * L'ouverture est donc un geste à part : `PADDLE_FACTURATION_OUVERTE=oui`, posé
+ * quand le paiement fonctionne vraiment. Avant, tout reste ouvert, comme
+ * aujourd'hui, et l'écran le dit (`OuvertureEnCours`).
+ */
+export function paiementOuvert(): boolean {
+	return Boolean(process.env.PADDLE_API_KEY) && process.env.PADDLE_FACTURATION_OUVERTE === 'oui';
+}
+
 // Returns the effective plan for an org, considering:
 // 1. Dev bypass (PADDLE_API_KEY absent) → 'dev'
 // 2. devPlan flag → 'dev'
 // 3. Active Paddle subscription → paddlePlanTier
-// 4. Nothing → 'free' (open core, permanent, limited features)
+// 4. Facturation pas encore ouverte → 'dev' (tout reste ouvert)
+// 5. Essai qui court → 'procedures'
+// 6. Nothing → 'none'
 export function resolveEffectivePlan(org: Doc<'organizations'>): {
 	tier: PlanTier;
 	isDev: boolean;
@@ -128,6 +148,12 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
 		};
 	}
 
+	// La clé est posée, la facturation pas encore ouverte : rien ne se ferme.
+	// Voir `paiementOuvert`.
+	if (!paiementOuvert()) {
+		return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
+	}
+
 	// L'ESSAI. Voir `DUREE_ESSAI_JOURS` pour la règle et ce qu'elle évite.
 	if (org.freeTrialEndsAt && org.freeTrialEndsAt > Date.now()) {
 		return { tier: 'procedures', isDev: false, seatsAllowed: PLAN_SEATS.procedures };
@@ -139,11 +165,11 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
 /**
  * L'ESSAI, ET POURQUOI IL EXISTE AVANT MÊME QUE LE PAIEMENT SOIT OUVERT.
  *
- * Aujourd'hui, aucune clé Paddle n'est posée : `resolveEffectivePlan` renvoie
- * `dev` et tout est ouvert à tout le monde. Le jour où la clé arrive, la même
- * fonction bascule chaque établissement existant sur `none` — plus d'invitation,
- * plus de dépôt, plus rien — sans qu'aucun code ne change. Ce n'est pas une
- * hypothèse : c'est le comportement écrit au-dessus.
+ * Tant que la facturation n'est pas ouverte (`paiementOuvert`),
+ * `resolveEffectivePlan` renvoie `dev` et tout est ouvert à tout le monde. Le
+ * jour où elle s'ouvre, chaque établissement dont l'essai est fini passe sur
+ * `none` (aujourd'hui, cela ferme les invitations : c'est le seul verrou
+ * appliqué, voir `presse.tsx`).
  *
  * L'essai est ce qui rend cette bascule survivable. Il est ouvert à la CRÉATION
  * de l'établissement, pas à la première tentative d'usage : un gérant qui
@@ -205,10 +231,10 @@ export const getBillingStatus = authedQuery({
  * LE PALIER EST CALCULÉ ICI, jamais côté client. Il décide du prix : le laisser
  * au navigateur, c'est laisser à l'utilisateur le soin de choisir son tarif.
  *
- * `paddleConfigure` dit à l'écran s'il peut proposer un paiement. Tant que le
- * compte marchand n'est pas ouvert — il attend les conditions générales — il
- * vaut `false`, et l'écran montre l'offre sans promettre un bouton qui ne
- * fonctionnerait pas.
+ * `paiementOuvert` dit à l'écran si la facturation est ouverte (voir
+ * `paiementOuvert`). Tant qu'elle ne l'est pas, l'écran montre l'offre sans
+ * promettre un bouton qui ne fonctionnerait pas ; ce que le bouton ouvre vient
+ * de `paddle.caisse`.
  */
 export const etatAbonnement = authedQuery({
 	args: {},
@@ -232,7 +258,11 @@ export const etatAbonnement = authedQuery({
 			seatsAllowed,
 			paddleStatus: org.paddleStatus ?? null,
 			paddleCurrentPeriodEnd: org.paddleCurrentPeriodEnd ?? null,
-			paddleConfigure: Boolean(process.env.PADDLE_API_KEY),
+			paiementOuvert: paiementOuvert(),
+			bilanRegleLe: org.bilanRegleLe ?? null,
+			// Le portail Paddle (carte, factures, résiliation) n'a de sens que pour
+			// un établissement que Paddle connaît déjà.
+			clientPaddle: Boolean(org.paddleCustomerId),
 			// L'essai n'est renvoyé que s'il court ENCORE. Un essai terminé
 			// n'apprend rien au gérant et ferait afficher « il reste -12 jours ».
 			essaiFiniLe:

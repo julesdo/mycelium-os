@@ -7,6 +7,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
+import { useCaissePaddle } from '../../app/caisse-paddle';
 import { messageDeRefus, televerser } from '../../app/televerser';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import {
@@ -109,6 +110,14 @@ function PageCompte() {
 
 	// ── La facturation ───────────────────────────────────────────────────────
 	const abonnement = useQuery(api.billing.etatAbonnement, {});
+	// Le paiement et le portail Paddle (14/10/2026) : `null` tant que la
+	// facturation n'est pas ouverte, ou pour qui n'administre pas.
+	const caisseServeur = useQuery(api.paddle.caisse, {});
+	const ouvrirLePortail = useAction(api.paddle.getPortalUrl);
+	const caisse = useCaissePaddle({
+		caisse: caisseServeur,
+		ouvrirLePortail: () => ouvrirLePortail({})
+	});
 
 	// ── L'équipe ─────────────────────────────────────────────────────────────
 	const membres = useQuery(api.organizations.listOrganizationMembers, {});
@@ -551,6 +560,7 @@ function PageCompte() {
 		},
 		abonnement:
 			abonnement === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: abonnement },
+		caisse,
 		equipe,
 		donnees: vosDonnees,
 		intervenants,

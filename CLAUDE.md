@@ -514,6 +514,17 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   choix du logiciel : la fenêtre d'autorisation doit s'ouvrir dans le clic. Un nouveau logiciel,
   c'est un traducteur et un lecteur dans `socle/connecteurs/nango/`, puis son intégration dans le
   tableau de bord (`serveurs/nango/LISEZMOI.md`). Dormant sans `NANGO_SECRET_KEY`.
+- **L'abonnement se paie par Paddle** (14/10/2026, `serveurs/paddle/LISEZMOI.md`). Compte ›
+  Abonnement ouvre Paddle.js, chargé au toucher, avec le prix du palier calculé au serveur
+  (`paddle.caisse`) et l'établissement **scellé** (HMAC sous `PADDLE_WEBHOOK_SECRET`) : le jeton
+  côté client est public, le sceau empêche qu'un paiement se pose sur le compte d'un autre. Le
+  rappel vérifie la signature puis le sceau, ignore un événement plus ancien que le dernier
+  inscrit (`paddleEvenementLe`) et note le bilan réglé (`bilanRegleLe`). L'environnement se lit
+  sur la clé (`pdl_sdbx_` / `pdl_live_`), un déploiement par environnement.
+  **Poser la clé n'ouvre plus la facturation** : `PADDLE_FACTURATION_OUVERTE=oui` le fait
+  (`paiementOuvert`), parce que la clé live se pose avant que Paddle ait vérifié le compte. Le
+  catalogue se crée d'après `TARIFS` (`paddleCatalogue:catalogue`), qui n'ajoute que ce qui manque
+  et ne modifie ni n'archive rien.
 - **Plume parle sur chaque écran** (13/10/2026, `docs/superpowers/specs/2026-10-13-plume-compagnon.md`,
   sur Alan, Rocket Money, Credit Karma, Fabric et ClickUp). Le fondateur : « un vrai agent qui
   assiste partout […] au lieu de simplement être dans un chat ». Une **bulle** sort de Plume,

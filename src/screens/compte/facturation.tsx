@@ -1,7 +1,13 @@
 import type { ReactNode } from 'react';
 import { Surface } from '@cladd-ui/react';
 import type { PalierTaille } from '../../lib/config/tarifs';
-import { RefusEnQuatreParties, euros } from '../../ui';
+import {
+	BoutonPrincipal,
+	BoutonSecondaire,
+	BoutonTexte,
+	RefusEnQuatreParties,
+	euros
+} from '../../ui';
 import { Offre, OuvertureEnCours, EssaiEnCours } from './offre';
 import { etatDeLaFacturation, type CauseDeFermeture, type EtatFacturation } from './presse';
 
@@ -19,7 +25,12 @@ export interface AbonnementAffiche {
 	readonly tarifs: { readonly bilan: number; readonly abonnementMensuel: number };
 	readonly seatsAllowed: number;
 	readonly paddleStatus: string | null;
-	readonly paddleConfigure: boolean;
+	/** La facturation est ouverte sur ce déploiement (`paiementOuvert`, `billing.ts`). */
+	readonly paiementOuvert: boolean;
+	/** Le premier bilan, payé une fois : le jour où Paddle l'a encaissé. */
+	readonly bilanRegleLe: number | null;
+	/** Paddle connaît déjà l'établissement : le portail (carte, factures, résiliation) s'ouvre. */
+	readonly clientPaddle: boolean;
 	readonly essaiFiniLe: number | null;
 	/*
 	  ⚠️ `paddleCurrentPeriodEnd` N'EST PAS ICI, ET C'EST DÉLIBÉRÉ.
@@ -72,13 +83,36 @@ export interface AbonnementAffiche {
  * de ce produit, et le dire vaut mieux que réimplémenter un tunnel qu'on ne
  * contrôle pas.
  */
+/**
+ * Ce que l'écran peut faire avec Paddle, branché par la route.
+ *
+ * Absente : rien à ouvrir pour ce compte (la facturation n'est pas ouverte, ou
+ * il n'administre pas l'établissement). Le paiement et le portail
+ * appartiennent à Paddle et s'ouvrent chez lui.
+ */
+export interface CaisseAffichee {
+	/** Les offres dont le prix est posé pour le palier de l'établissement. */
+	readonly offres: { readonly bilan: boolean; readonly abonnement: boolean };
+	readonly onChoisir: (offre: 'bilan' | 'abonnement') => void;
+	readonly onGerer: () => void;
+	/** Ce qui est en train de s'ouvrir. */
+	readonly enCours: 'bilan' | 'abonnement' | 'portail' | null;
+	/** Paddle a dit « payé », le rappel n'est pas encore arrivé. */
+	readonly recu: boolean;
+	/** Le paiement ne peut pas s'ouvrir sur ce déploiement (réglage incomplet). */
+	readonly indisponible: boolean;
+	readonly erreur: string | null;
+}
+
 export function SectionFacturation({
 	abonnement,
-	maintenant
+	maintenant,
+	caisse
 }: {
 	abonnement: AbonnementAffiche | null;
 	/** L'heure lue une fois par l'écran : deux horloges donneraient deux comptes de jours. */
 	maintenant: number;
+	caisse?: CaisseAffichee;
 }) {
 	if (abonnement === null) {
 		return (
@@ -91,13 +125,25 @@ export function SectionFacturation({
 	const etat = etatDeLaFacturation(abonnement, maintenant);
 	const abonne = etat.genre === 'abonne';
 
+	/*
+	  ⚠️ ON NE SOUSCRIT PAS PAR-DESSUS UN ABONNEMENT QUI EXISTE. En pause ou en
+	  échec de paiement, l'abonnement se reprend au portail : en ouvrir un
+	  second ferait payer deux fois.
+	*/
+	const peutSouscrire =
+		caisse !== undefined &&
+		!caisse.indisponible &&
+		!abonne &&
+		!(etat.genre === 'ferme' && (etat.cause === 'past_due' || etat.cause === 'paused'));
+	const bilanRegle = abonnement.bilanRegleLe === null ? null : dateEnClair(abonnement.bilanRegleLe);
+
 	return (
 		<>
-			<EtatCourant etat={etat} abonnement={abonnement} maintenant={maintenant} />
+			<EtatCourant etat={etat} abonnement={abonnement} maintenant={maintenant} caisse={caisse} />
 
 			{/*
 			  ⚠️ LE PALIER NE SE RÉPÈTE PAS EN PUCE. La rangée repliée porte déjà
-			  « Palier S — ses bornes » en légende, et elle reste visible dépliée :
+			  « Palier S, ses bornes » en légende, et elle reste visible dépliée :
 			  une puce qui redit le titre juste dessous est du texte inutile.
 			*/}
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
@@ -122,6 +168,20 @@ export function SectionFacturation({
 					description="Douze mois de factures lus en une fois. Vous saurez où vous en êtes, et ce qu’il manque, en euros."
 					colonne="bilan"
 					actif={abonne && abonnement.tier === 'suivi'}
+					pied={
+						bilanRegle !== null ? (
+							<span className="text-cladd-xs text-cladd-fg-soft">Réglé le {bilanRegle}.</span>
+						) : peutSouscrire && caisse.offres.bilan ? (
+							<BoutonSecondaire
+								pleineLargeur
+								loading={caisse.enCours === 'bilan'}
+								disabled={caisse.enCours !== null}
+								onClick={() => caisse.onChoisir('bilan')}
+							>
+								Régler le bilan
+							</BoutonSecondaire>
+						) : null
+					}
 				/>
 				<Offre
 					titre="L’abonnement"
@@ -131,10 +191,36 @@ export function SectionFacturation({
 					colonne="abonnement"
 					actif={abonne && abonnement.tier === 'procedures'}
 					recommande
+					pied={
+						peutSouscrire && caisse.offres.abonnement ? (
+							<BoutonPrincipal
+								pleineLargeur
+								loading={caisse.enCours === 'abonnement'}
+								disabled={caisse.enCours !== null}
+								onClick={() => caisse.onChoisir('abonnement')}
+							>
+								Choisir l’abonnement
+							</BoutonPrincipal>
+						) : null
+					}
 				/>
 			</div>
 
-			{abonnement.paddleConfigure ? null : <OuvertureEnCours />}
+			{caisse?.recu && !abonne ? (
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Paiement reçu. Il s’inscrit ici dès que Paddle le confirme, en général en quelques
+					secondes.
+				</p>
+			) : null}
+			{caisse?.indisponible ? (
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Le paiement en ligne ne s’ouvre pas pour le moment. Écrivez-nous à bonjour@letikette.com :
+					nous réglons cela avec vous.
+				</p>
+			) : null}
+			{caisse?.erreur ? (
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">{caisse.erreur}</p>
+			) : null}
 
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
 				Prix hors taxes. La facturation est opérée par Paddle, qui émet la facture et collecte la
@@ -157,12 +243,32 @@ export function SectionFacturation({
 function EtatCourant({
 	etat,
 	abonnement,
-	maintenant
+	maintenant,
+	caisse
 }: {
 	etat: EtatFacturation;
 	abonnement: AbonnementAffiche;
 	maintenant: number;
+	caisse?: CaisseAffichee;
 }) {
+	if (etat.genre === 'ouverture') return <OuvertureEnCours />;
+
+	/*
+	  Le portail de Paddle : changer de carte, relire ses factures, résilier.
+	  Seulement pour un établissement que Paddle connaît déjà.
+	*/
+	const gerer =
+		caisse !== undefined && abonnement.clientPaddle ? (
+			<BoutonTexte
+				className="self-start"
+				loading={caisse.enCours === 'portail'}
+				disabled={caisse.enCours !== null}
+				onClick={caisse.onGerer}
+			>
+				Gérer mon abonnement chez Paddle
+			</BoutonTexte>
+		) : null;
+
 	if (etat.genre === 'developpement') {
 		return (
 			<CarteEtat titre="Accès de développement">
@@ -174,7 +280,7 @@ function EtatCourant({
 
 	if (etat.genre === 'abonne') {
 		return (
-			<CarteEtat titre="Votre abonnement est actif.">
+			<CarteEtat titre="Votre abonnement est actif." geste={gerer}>
 				Jusqu’à {abonnement.seatsAllowed} personnes peuvent accéder à votre établissement.
 			</CarteEtat>
 		);
@@ -186,22 +292,25 @@ function EtatCourant({
 
 	if (etat.genre === 'ferme') {
 		return (
-			<RefusEnQuatreParties
-				peutFaire="Tout ce qui est enregistré reste en place : vos factures, vos clients et vos calculs déjà arrêtés ne bougent pas, et un décompte arrêté ne se recalcule jamais."
-				constat={CONSTAT_DE_LA_FERMETURE[etat.cause]}
-				/*
+			<>
+				<RefusEnQuatreParties
+					peutFaire="Tout ce qui est enregistré reste en place : vos factures, vos clients et vos calculs déjà arrêtés ne bougent pas, et un décompte arrêté ne se recalcule jamais."
+					constat={CONSTAT_DE_LA_FERMETURE[etat.cause]}
+					/*
 				  ⚠️ CE QUI LÈVE LE VERROU EST UN CONSTAT, ET IL NOMME LE SEUL EFFET
 				  RÉELLEMENT APPLIQUÉ. Voir `CONSEQUENCE_DE_LA_FERMETURE` dans
 				  `presse.tsx` : la table `PLAN_FEATURES` en déclare trois autres que
 				  rien n'applique, et les écrire ici serait annoncer une restriction
 				  qui n'existe pas.
 				*/
-				blocages={[
-					'Tant que ce palier reste fermé, aucune invitation ne peut plus être envoyée : le serveur les refuse toutes.',
-					'Ce verrou se lève par la reprise de l’abonnement, qui se fait chez Paddle et non ici.'
-				]}
-				coutDeLAttente="Ce que l’attente coûte : rien qui se chiffre. Aucune donnée ne se perd et aucune somme ne court ; seules les invitations restent fermées."
-			/>
+					blocages={[
+						'Tant que ce palier reste fermé, aucune invitation ne peut plus être envoyée : le serveur les refuse toutes.',
+						LEVEE_DE_LA_FERMETURE[etat.cause]
+					]}
+					coutDeLAttente="Ce que l’attente coûte : rien qui se chiffre. Aucune donnée ne se perd et aucune somme ne court ; seules les invitations restent fermées."
+				/>
+				{gerer}
+			</>
 		);
 	}
 
@@ -224,6 +333,16 @@ function EtatCourant({
 	return null;
 }
 
+/** Ce qui lève le verrou, selon sa cause : le portail pour reprendre, une offre pour souscrire. */
+const LEVEE_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
+	past_due:
+		'Ce verrou se lève dès que le paiement passe : la carte se change chez Paddle, par « Gérer mon abonnement chez Paddle ».',
+	paused:
+		'Ce verrou se lève à la reprise de l’abonnement, chez Paddle, par « Gérer mon abonnement chez Paddle ».',
+	canceled: 'Ce verrou se lève en choisissant une offre, plus bas.',
+	jamais: 'Ce verrou se lève en choisissant une offre, plus bas.'
+};
+
 const CONSTAT_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 	past_due: 'Ce qui manque : le dernier paiement de votre abonnement a échoué chez Paddle.',
 	paused: 'Ce qui manque : votre abonnement est en pause chez Paddle.',
@@ -232,7 +351,15 @@ const CONSTAT_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 };
 
 /** La carte d'état, au même verre que le reste de la page. */
-function CarteEtat({ titre, children }: { titre: string; children: ReactNode }) {
+function CarteEtat({
+	titre,
+	children,
+	geste
+}: {
+	titre: string;
+	children: ReactNode;
+	geste?: ReactNode;
+}) {
 	return (
 		<Surface
 			variant="transparent"
@@ -242,6 +369,15 @@ function CarteEtat({ titre, children }: { titre: string; children: ReactNode }) 
 		>
 			<span className="text-cladd-sm font-bold">{titre}</span>
 			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">{children}</span>
+			{geste}
 		</Surface>
 	);
+}
+
+function dateEnClair(ms: number): string {
+	return new Date(ms).toLocaleDateString('fr-FR', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric'
+	});
 }

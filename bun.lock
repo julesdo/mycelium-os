@@ -26,6 +26,7 @@
         "@jsquash/webp": "^1.5.0",
         "@nangohq/frontend": "0.71.10",
         "@openrouter/ai-sdk-provider": "^2.9.0",
+        "@paddle/paddle-js": "^1.6.5",
         "@tanstack/react-router": "^1.170.41",
         "@tanstack/react-start": "^1.168.60",
         "@types/papaparse": "^5.5.2",
@@ -693,6 +694,8 @@
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.62.0", "", { "os": "win32", "cpu": "x64" }, "sha512-6hMpyDWQ2zGA1OXFKBrdYMUveUCO8UJhkO6JdwZPd78xIdHZNhjx+pib+4fC2Cljuhjyl0QwA2F3df/bs4Bp6A=="],
 
     "@oxlint/plugins": ["@oxlint/plugins@1.62.0", "", {}, "sha512-BgKRw631mImmxuGuRoWaRT8AvNSJCfJvR7lDzP1jR3sBAa7q8P/Ii+lcEOEFZsfcfpkXLyUKGEQLYXWqb60wvw=="],
+
+    "@paddle/paddle-js": ["@paddle/paddle-js@1.6.5", "", {}, "sha512-uFRvptUzYRqRlqTU5XmfcZWC9BGVYpZNdANd3giJjZbJlHesnE4gn8PyjtYpesU1ar2ZGPuJxHvrrSIV9jjdVw=="],
 
     "@peculiar/asn1-android": ["@peculiar/asn1-android@2.6.0", "", { "dependencies": { "@peculiar/asn1-schema": "^2.6.0", "asn1js": "^3.0.6", "tslib": "^2.8.1" } }, "sha512-cBRCKtYPF7vJGN76/yG8VbxRcHLPF3HnkoHhKOZeHpoVtbMYfY9ROKtH3DtYUY9m8uI1Mh47PRhHf2hSK3xcSQ=="],
 

@@ -71,6 +71,10 @@ export default defineSchema({
 			)
 		),
 		paddleCurrentPeriodEnd: v.optional(v.number()),
+		/** L'heure du dernier rappel Paddle inscrit : un rappel plus ancien est ignoré. */
+		paddleEvenementLe: v.optional(v.number()),
+		/** Le premier bilan, payé une fois : le jour où Paddle l'a encaissé. */
+		bilanRegleLe: v.optional(v.number()),
 		seatsIncluded: v.optional(v.number()),
 		freeTrialEndsAt: v.optional(v.number()),
 		devPlan: v.optional(v.boolean()),
