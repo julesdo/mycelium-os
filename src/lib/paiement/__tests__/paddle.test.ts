@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { TARIFS } from '../../config/tarifs';
+import { DUREE_ESSAI_JOURS, GRILLE } from '../../config/tarifs';
 import {
 	CLE_ORGANISATION,
 	CLE_SCEAU,
 	catalogueAttendu,
 	ecartsDuPrix,
+	etiquetteDuPrix,
 	environnementDuJeton,
 	environnementPaddle,
 	lireEvenement,
@@ -126,8 +127,32 @@ describe('la lecture d’un événement', () => {
 			statut: 'active',
 			prixId: 'pri_1',
 			finDePeriode: Date.parse('2026-11-14T09:00:00Z'),
+			prochainPrelevementLe: null,
+			essaiFinLe: null,
+			resiliationLe: null,
 			lien: { organisationId: 'org_a', sceau: 'abc' },
 			survenuLe: Date.parse('2026-10-14T09:00:00Z')
+		});
+	});
+
+	it('lit la fin de l’essai, le premier prélèvement et une résiliation programmée', () => {
+		const lu = lireEvenement({
+			event_type: 'subscription.updated',
+			occurred_at: '2026-10-14T09:00:00Z',
+			data: {
+				id: 'sub_1',
+				customer_id: 'ctm_1',
+				status: 'trialing',
+				next_billed_at: '2026-11-13T09:00:00Z',
+				items: [{ price: { id: 'pri_1' }, trial_dates: { ends_at: '2026-11-13T09:00:00Z' } }],
+				scheduled_change: { action: 'cancel', effective_at: '2026-11-13T09:00:00Z' }
+			}
+		});
+		expect(lu).toMatchObject({
+			genre: 'abonnement',
+			essaiFinLe: Date.parse('2026-11-13T09:00:00Z'),
+			prochainPrelevementLe: Date.parse('2026-11-13T09:00:00Z'),
+			resiliationLe: Date.parse('2026-11-13T09:00:00Z')
 		});
 	});
 
@@ -182,30 +207,37 @@ describe('la lecture d’un événement', () => {
 });
 
 describe('le catalogue attendu', () => {
+	const tous = catalogueAttendu().flatMap((p) => p.prix);
+
 	it('tire chaque montant de la grille affichée', () => {
-		const [bilan, abonnement] = catalogueAttendu();
-		expect(bilan.prix.map((p) => p.montant)).toEqual(
-			(['S', 'M', 'L'] as const).map((p) => String(TARIFS[p].bilan * 100))
-		);
-		expect(abonnement.prix.map((p) => p.montant)).toEqual(
-			(['S', 'M', 'L'] as const).map((p) => String(TARIFS[p].abonnementMensuel * 100))
-		);
-		expect(bilan.prix.every((p) => p.cycle === null)).toBe(true);
-		expect(abonnement.prix.every((p) => p.cycle?.interval === 'month')).toBe(true);
-		expect(abonnement.prix.find((p) => p.palier === 'L')?.variable).toBe(
-			'PADDLE_PRICE_CONFORMITE_L'
-		);
+		for (const prix of tous) {
+			const attendu =
+				prix.rythme === 'annuel' ? GRILLE[prix.formule].annuel : GRILLE[prix.formule].mensuel;
+			expect(prix.montant).toBe(String(attendu * 100));
+		}
+	});
+
+	it('porte douze prix : trois formules, deux rythmes, avec ou sans essai', () => {
+		expect(tous).toHaveLength(12);
+		expect(new Set(tous.map((p) => p.etiquette)).size).toBe(12);
+		expect(tous.filter((p) => p.essai).every((p) => p.essaiJours === DUREE_ESSAI_JOURS)).toBe(true);
+		expect(tous.filter((p) => !p.essai).every((p) => p.essaiJours === null)).toBe(true);
+		expect(
+			tous.filter((p) => p.rythme === 'annuel').every((p) => p.cycle.interval === 'year')
+		).toBe(true);
+		expect(etiquetteDuPrix('equipe', 'annuel', true)).toBe('equipe-annuel-essai');
 	});
 
 	it('nomme chaque écart sans rien corriger', () => {
-		const attendu = catalogueAttendu()[1].prix.find((p) => p.palier === 'S');
-		if (attendu === undefined) throw new Error('palier S absent');
+		const attendu = tous.find((p) => p.etiquette === 'solo-mensuel-essai');
+		if (attendu === undefined) throw new Error('prix absent');
 		expect(
 			ecartsDuPrix(attendu, {
 				id: 'pri_1',
 				montant: attendu.montant,
 				devise: 'EUR',
 				cycle: { interval: 'month', frequency: 1 },
+				essai: { interval: 'day', frequency: DUREE_ESSAI_JOURS },
 				modeDeTaxe: 'external'
 			})
 		).toEqual([]);
@@ -214,9 +246,10 @@ describe('le catalogue attendu', () => {
 				id: 'pri_1',
 				montant: '9900',
 				devise: 'EUR',
-				cycle: null,
+				cycle: { interval: 'year', frequency: 1 },
+				essai: null,
 				modeDeTaxe: 'internal'
 			})
-		).toHaveLength(3);
+		).toHaveLength(4);
 	});
 });

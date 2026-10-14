@@ -7,23 +7,17 @@
  * tests sans harnais. Les fonctions Convex vivent dans `convex/paddle.ts` et
  * `convex/paddleCatalogue.ts`.
  */
-import { BORNES_PALIER, PALIERS, TARIFS, type PalierTaille } from '../config/tarifs';
+import {
+	DUREE_ESSAI_JOURS,
+	FORMULES,
+	GRILLE,
+	RYTHMES,
+	montantDuRythme,
+	type Formule,
+	type Rythme
+} from '../config/tarifs';
 
 export type EnvironnementPaddle = 'sandbox' | 'production';
-
-/** Les deux offres de la grille, dans le vocabulaire de l'écran. */
-export type OffrePaddle = 'bilan' | 'abonnement';
-
-/**
- * Le nom de la variable qui porte un identifiant de prix.
- *
- * Les noms d'origine (`DIAGNOSTIC`, `CONFORMITE`) sont gardés : ils sont déjà
- * déclarés dans `.env-convex.schema`, et les renommer obligerait à reposer six
- * variables sur chaque déploiement pour rien.
- */
-export function variableDePrix(offre: OffrePaddle, palier: PalierTaille): string {
-	return `PADDLE_PRICE_${offre === 'bilan' ? 'DIAGNOSTIC' : 'CONFORMITE'}_${palier}`;
-}
 
 // ── L'environnement ─────────────────────────────────────────────────────────
 
@@ -188,6 +182,12 @@ export type EvenementPaddle =
 			readonly statut: string;
 			readonly prixId: string | null;
 			readonly finDePeriode: number | null;
+			/** Le prochain prélèvement ; pendant l'essai, c'est le premier. */
+			readonly prochainPrelevementLe: number | null;
+			/** La fin de l'essai, tant qu'il court. */
+			readonly essaiFinLe: number | null;
+			/** Une résiliation programmée : le jour où elle prend effet. */
+			readonly resiliationLe: number | null;
 			readonly lien: LienDOrganisation | null;
 			readonly survenuLe: number;
 	  }
@@ -232,6 +232,16 @@ export function lireEvenement(brut: unknown): EvenementPaddle {
 			statut,
 			prixId: prixDes(data.items)[0] ?? null,
 			finDePeriode: date(objet(data.current_billing_period)?.ends_at),
+			prochainPrelevementLe: date(data.next_billed_at),
+			essaiFinLe:
+				statut === 'trialing'
+					? (date(objet(objet(premier(data.items))?.trial_dates)?.ends_at) ??
+						date(data.next_billed_at))
+					: null,
+			resiliationLe:
+				texte(objet(data.scheduled_change)?.action) === 'cancel'
+					? date(objet(data.scheduled_change)?.effective_at)
+					: null,
 			lien,
 			survenuLe
 		};
@@ -278,6 +288,10 @@ function lienDe(donnees: Record<string, unknown> | null): LienDOrganisation | nu
 	return organisationId === null || sceau === null ? null : { organisationId, sceau };
 }
 
+function premier(items: unknown): unknown {
+	return Array.isArray(items) ? items[0] : undefined;
+}
+
 function prixDes(items: unknown): string[] {
 	if (!Array.isArray(items)) return [];
 	return items
@@ -305,71 +319,70 @@ function date(valeur: unknown): number | null {
 // ── Le catalogue attendu ────────────────────────────────────────────────────
 
 /**
- * Le catalogue Paddle tel que la grille l'exige : deux produits, trois prix
- * chacun, tirés de `TARIFS`. C'est la seule façon d'être sûr que le montant
+ * Le catalogue Paddle tel que la grille l'exige : un produit par formule, et
+ * quatre prix chacun (au mois ou à l'année, avec ou sans les trente jours
+ * d'essai), tirés de `GRILLE`. C'est la seule façon d'être sûr que le montant
  * prélevé est celui que la page publique affiche.
+ *
+ * ⚠️ POURQUOI DES PRIX SANS ESSAI. Chez Paddle, l'essai est porté par le PRIX,
+ * pas par le paiement : un établissement qui a déjà eu son essai doit souscrire
+ * un prix qui n'en a pas, sinon chaque résiliation suivie d'une nouvelle
+ * souscription rouvrirait trente jours offerts.
  *
  * Chaque produit et chaque prix porte une ÉTIQUETTE dans ses données libres
  * (`custom_data.letikette`) : c'est ainsi qu'on les retrouve sans dépendre d'un
- * nom qu'on peut modifier dans le tableau de bord.
+ * nom modifiable dans le tableau de bord. L'action du catalogue range ensuite
+ * chaque identifiant dans la table `prixPaddle` : aucune variable à poser.
  */
 export const CLE_ETIQUETTE = 'letikette';
 
+export function etiquetteDuPrix(formule: Formule, rythme: Rythme, essai: boolean): string {
+	return `${formule}-${rythme}${essai ? '-essai' : ''}`;
+}
+
 export interface PrixAttendu {
 	readonly etiquette: string;
-	readonly offre: OffrePaddle;
-	readonly palier: PalierTaille;
-	readonly variable: string;
+	readonly formule: Formule;
+	readonly rythme: Rythme;
+	readonly essai: boolean;
+	/** Ce que le client lit au paiement et sur sa facture. */
 	readonly nom: string;
 	/** En centimes, en texte, comme l'API de Paddle les attend. */
 	readonly montant: string;
 	readonly devise: 'EUR';
-	/** `null` : un paiement unique. */
-	readonly cycle: { readonly interval: 'month'; readonly frequency: 1 } | null;
+	readonly cycle: { readonly interval: 'month' | 'year'; readonly frequency: 1 };
+	/** Les jours d'essai, ou `null`. */
+	readonly essaiJours: number | null;
 }
 
 export interface ProduitAttendu {
-	readonly etiquette: OffrePaddle;
+	readonly etiquette: Formule;
 	readonly nom: string;
 	readonly description: string;
 	readonly prix: readonly PrixAttendu[];
 }
 
-export function catalogueAttendu(): readonly [ProduitAttendu, ProduitAttendu] {
-	return [
-		{
-			etiquette: 'bilan',
-			nom: 'Letikette, premier bilan',
-			description:
-				'Douze mois de factures lus en une fois : ce qui vous est dû, ce qui manque, en euros.',
-			prix: PALIERS.map((palier) => ({
-				etiquette: `bilan-${palier}`,
-				offre: 'bilan',
-				palier,
-				variable: variableDePrix('bilan', palier),
-				nom: `Premier bilan, ${BORNES_PALIER[palier]}`,
-				montant: String(TARIFS[palier].bilan * 100),
-				devise: 'EUR',
-				cycle: null
-			}))
-		},
-		{
-			etiquette: 'abonnement',
-			nom: 'Letikette, abonnement',
-			description:
-				'Vos factures suivies toute l’année : les échéances, les dates limites pour agir, les relances.',
-			prix: PALIERS.map((palier) => ({
-				etiquette: `abonnement-${palier}`,
-				offre: 'abonnement',
-				palier,
-				variable: variableDePrix('abonnement', palier),
-				nom: `Abonnement mensuel, ${BORNES_PALIER[palier]}`,
-				montant: String(TARIFS[palier].abonnementMensuel * 100),
-				devise: 'EUR',
-				cycle: { interval: 'month', frequency: 1 }
-			}))
-		}
-	];
+export function catalogueAttendu(): readonly ProduitAttendu[] {
+	return FORMULES.map((formule) => ({
+		etiquette: formule,
+		nom: `Letikette ${GRILLE[formule].nom}`,
+		description: `${GRILLE[formule].pour} : vos factures lues, vos relances envoyées à votre nom, ce qu’on vous doit calculé au centime.`,
+		prix: RYTHMES.flatMap((rythme) =>
+			[true, false].map(
+				(essai): PrixAttendu => ({
+					etiquette: etiquetteDuPrix(formule, rythme, essai),
+					formule,
+					rythme,
+					essai,
+					nom: `${GRILLE[formule].nom}, ${rythme === 'annuel' ? 'à l’année' : 'au mois'}`,
+					montant: String(montantDuRythme(formule, rythme) * 100),
+					devise: 'EUR',
+					cycle: { interval: rythme === 'annuel' ? 'year' : 'month', frequency: 1 },
+					essaiJours: essai ? DUREE_ESSAI_JOURS : null
+				})
+			)
+		)
+	}));
 }
 
 /** Ce qu'un prix existant dit, lu dans la réponse de l'API. */
@@ -378,13 +391,14 @@ export interface PrixExistant {
 	readonly montant: string | null;
 	readonly devise: string | null;
 	readonly cycle: { readonly interval: string; readonly frequency: number } | null;
+	readonly essai: { readonly interval: string; readonly frequency: number } | null;
 	readonly modeDeTaxe: string | null;
 }
 
 /**
  * Les écarts entre un prix existant et ce que la grille attend, en phrases.
  * Un prix Paddle ne se corrige pas une fois utilisé : un écart se règle en
- * créant un prix neuf et en y pointant la variable, jamais en éditant l'ancien.
+ * créant un prix neuf, jamais en éditant l'ancien.
  */
 export function ecartsDuPrix(attendu: PrixAttendu, existant: PrixExistant): string[] {
 	const ecarts: string[] = [];
@@ -393,14 +407,27 @@ export function ecartsDuPrix(attendu: PrixAttendu, existant: PrixExistant): stri
 			`montant ${existant.montant ?? '?'} ${existant.devise ?? '?'} au lieu de ${attendu.montant} ${attendu.devise} (en centimes)`
 		);
 	}
-	const cycleAttendu = attendu.cycle === null ? 'paiement unique' : 'mensuel';
-	const cycleExistant =
-		existant.cycle === null
-			? 'paiement unique'
-			: existant.cycle.interval === 'month' && existant.cycle.frequency === 1
-				? 'mensuel'
-				: `${existant.cycle.frequency} ${existant.cycle.interval}`;
-	if (cycleAttendu !== cycleExistant) ecarts.push(`${cycleExistant} au lieu de ${cycleAttendu}`);
+	const cycle = existant.cycle;
+	if (
+		cycle === null ||
+		cycle.interval !== attendu.cycle.interval ||
+		cycle.frequency !== attendu.cycle.frequency
+	) {
+		ecarts.push(
+			`cycle ${cycle === null ? 'paiement unique' : `${cycle.frequency} ${cycle.interval}`} au lieu de 1 ${attendu.cycle.interval}`
+		);
+	}
+	const jours =
+		existant.essai === null
+			? null
+			: existant.essai.interval === 'day'
+				? existant.essai.frequency
+				: Number.NaN;
+	if (jours !== attendu.essaiJours) {
+		ecarts.push(
+			`essai ${existant.essai === null ? 'absent' : `${existant.essai.frequency} ${existant.essai.interval}`} au lieu de ${attendu.essaiJours === null ? 'aucun' : `${attendu.essaiJours} jours`}`
+		);
+	}
 	if (existant.modeDeTaxe !== 'external') {
 		ecarts.push(
 			`mode de taxe « ${existant.modeDeTaxe ?? '?'} » : la grille affiche des prix hors taxes (« external »)`

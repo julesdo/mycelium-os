@@ -1,5 +1,6 @@
 import type { Lecture } from '../../ui';
 import { pluriel } from '../../ui';
+import { GRILLE } from '../../lib/config/tarifs';
 import type { Theme } from '../../app/use-theme';
 import type { AbonnementAffiche } from './facturation';
 import type { EquipeAffichee } from './equipe';
@@ -169,106 +170,83 @@ function urgenceEtablissement(identite: IdentiteDuCreancier | null): UrgenceDuCo
 // ── La facturation ─────────────────────────────────────────────────────────
 
 /**
- * L'ÉTAT DE LA FACTURATION, DÉDUIT EXACTEMENT COMME LE SERVEUR LE DÉDUIT.
+ * L'ÉTAT DE L'ABONNEMENT, DÉDUIT COMME LE SERVEUR LE DÉDUIT (`resolveEffectivePlan`).
  *
- * ⚠️ C'EST `tier` QUI DIT CE QUI EST OUVERT, PAS `paddleStatus`.
- * `resolveEffectivePlan` fait tomber un abonnement résilié, en pause ou impayé
- * sur l'essai s'il court encore, et sur `none` sinon. Lire le statut Paddle
- * seul ferait annoncer « résilié » à un établissement dont l'essai couvre
- * encore tout, et — bien pire — ne dirait RIEN d'un établissement retombé sur
- * `none`, où le dépôt, la surveillance et le décompte sont fermés
- * (`PLAN_FEATURES.none`, quatre `false`).
+ * Refait le 14/10/2026 avec la grille Découverte, Solo, Équipe, Pro :
  *
- * ⚠️ ET UNE COMBINAISON IMPOSSIBLE SE NOMME AU LIEU DE SE REPLIER. Un palier
- * ouvert sans abonnement, sans essai et sans plan de développement ne se
- * produit par aucune branche connue de `resolveEffectivePlan` : l'annoncer
- * « actif » serait inventer une réponse là où il n'y en a pas.
+ *   `ouverture`     la facturation n'est pas ouverte sur ce déploiement : tout
+ *                   est ouvert, rien n'est encaissé ;
+ *   `essai`         les trente jours de l'essai Paddle courent, la carte est
+ *                   enregistrée, le premier prélèvement a une date ;
+ *   `abonne`        une formule payée ;
+ *   `offert`        un accès offert court (l'essai d'avant le 14/10/2026, ou le
+ *                   préavis donné à l'ouverture) ;
+ *   `decouverte`    rien de souscrit : on mesure, rien ne part ;
+ *   `ferme`         un paiement échoué ou un abonnement en pause ;
+ *   `developpement` un plan posé à la main ;
+ *   `indetermine`   aucune branche connue : on le NOMME au lieu de deviner.
  */
 export type EtatFacturation =
 	| { readonly genre: 'ouverture' }
 	| { readonly genre: 'developpement' }
+	| { readonly genre: 'essai'; readonly jours: number; readonly finLe: number | null }
 	| { readonly genre: 'abonne' }
-	| { readonly genre: 'essai'; readonly jours: number }
+	| { readonly genre: 'offert'; readonly jours: number }
+	| { readonly genre: 'decouverte'; readonly resilie: boolean }
 	| { readonly genre: 'ferme'; readonly cause: CauseDeFermeture }
 	| { readonly genre: 'indetermine' };
 
-/**
- * ⚠️ « ESSAI TERMINÉ » N'EST PAS UNE CAUSE, PARCE QUE L'ÉCRAN NE PEUT PAS LA
- * DISTINGUER. `etatAbonnement` ne rend `essaiFiniLe` que tant que l'essai
- * COURT : arrivé sur un palier fermé sans statut Paddle, l'écran ne sait pas si
- * un essai s'est terminé ou s'il n'y en a jamais eu. « Aucun abonnement »
- * couvre les deux sans rien affirmer de plus.
- */
-export type CauseDeFermeture = 'past_due' | 'paused' | 'canceled' | 'jamais';
+export type CauseDeFermeture = 'past_due' | 'paused';
 
 export function etatDeLaFacturation(
 	abonnement: AbonnementAffiche,
 	maintenant: number
 ): EtatFacturation {
-	if (abonnement.paddleStatus === 'active' || abonnement.paddleStatus === 'trialing') {
-		return { genre: 'abonne' };
+	if (abonnement.statut === 'trialing') {
+		const finLe = abonnement.essaiFinLe ?? abonnement.prochainPrelevementLe;
+		return { genre: 'essai', jours: finLe === null ? 0 : joursJusqua(finLe, maintenant), finLe };
 	}
+	if (abonnement.statut === 'active') return { genre: 'abonne' };
 
 	// La facturation n'est pas ouverte sur ce déploiement (`paiementOuvert`) :
 	// tout est ouvert, rien n'est encaissé, et c'est ce que l'écran dit.
 	if (!abonnement.paiementOuvert) return { genre: 'ouverture' };
 
-	// `tier === 'dev'` : un plan posé à la main quand il n'y avait pas de clé
-	// (`org.devPlan`). Il ouvre tout, et le confondre avec un abonnement payé
-	// ferait annoncer un paiement qui n'existe pas.
-	if (abonnement.isDev || abonnement.tier === 'dev') return { genre: 'developpement' };
+	// Un plan posé à la main quand il n'y avait pas de clé (`org.devPlan`).
+	if (abonnement.tier === 'dev') return { genre: 'developpement' };
 
-	if (abonnement.tier === 'none') {
-		return { genre: 'ferme', cause: causeDeLaFermeture(abonnement.paddleStatus) };
+	if (abonnement.statut === 'past_due' || abonnement.statut === 'paused') {
+		return { genre: 'ferme', cause: abonnement.statut };
 	}
 
-	if (abonnement.essaiFiniLe !== null) {
-		return { genre: 'essai', jours: joursJusqua(abonnement.essaiFiniLe, maintenant) };
+	if (abonnement.offertJusquAu !== null) {
+		return { genre: 'offert', jours: joursJusqua(abonnement.offertJusquAu, maintenant) };
+	}
+
+	if (abonnement.tier === 'none') {
+		return { genre: 'decouverte', resilie: abonnement.statut === 'canceled' };
 	}
 
 	return { genre: 'indetermine' };
 }
 
-function causeDeLaFermeture(statut: string | null): CauseDeFermeture {
-	if (statut === 'past_due' || statut === 'paused' || statut === 'canceled') return statut;
-	return 'jamais';
-}
-
 const FAIT_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 	past_due: 'Le dernier paiement de votre abonnement a échoué.',
-	paused: 'Votre abonnement est en pause.',
-	canceled: 'Votre abonnement est résilié.',
-	jamais: 'Aucun abonnement n’est actif sur cet établissement.'
+	paused: 'Votre abonnement est en pause.'
 };
 
 /**
- * CE QUE `none` FERME VRAIMENT — RELEVÉ AUX POINTS D'USAGE, PAS DANS LA TABLE.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ `PLAN_FEATURES` DÉCLARE QUATRE VERROUS QUE RIEN N'APPLIQUE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * La table pose `importFactures`, `surveillance`, `procedures` et `decompte` à
- * `false` pour `none`, et `assertFeatureAccess` sait les faire respecter — mais
- * cette fonction n'est appelée par AUCUNE mutation du produit (vérifié : ses
- * seuls lecteurs sont `billing.ts` lui-même et son test). Écrire ici « le dépôt
- * et le décompte sont fermés » serait annoncer une restriction qui n'existe
- * pas, sur l'écran même dont on exige qu'il ne mente pas.
- *
- * Le SEUL effet réellement appliqué de `tier === 'none'` est l'invitation :
- * `inviteOrganizationMember` et `assertSeatAvailable` lèvent tous deux
- * « Aucun abonnement actif ». C'est donc tout ce que cette phrase affirme.
- *
- * ⚠️ LE JOUR OÙ `assertFeatureAccess` EST BRANCHÉE, CETTE PHRASE CHANGE. Elle
- * est ici, seule, pour que ce soit un remplacement et pas une chasse.
+ * CE QUE DÉCOUVERTE FERME VRAIMENT, relevé aux points d'usage : les
+ * invitations (une formule compte ses utilisateurs, Découverte un seul). Le
+ * jour où un autre verrou s'applique, cette phrase change, et elle est ici,
+ * seule, pour que ce soit un remplacement et pas une chasse.
  */
-const CONSEQUENCE_DE_LA_FERMETURE = 'Plus personne ne peut être invité dans cet établissement.';
+export const CONSEQUENCE_DE_LA_FERMETURE =
+	'Plus personne ne peut être invité dans cet établissement.';
 
 const VALEUR_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 	past_due: 'Paiement échoué',
-	paused: 'En pause',
-	canceled: 'Résilié',
-	jamais: 'Aucun abonnement'
+	paused: 'En pause'
 };
 
 export function resumeFacturation(
@@ -280,22 +258,42 @@ export function resumeFacturation(
 	const abonnement = lecture.valeur;
 	if (abonnement === null) return { valeur: 'Aucun établissement' };
 
-	const legende = `Palier ${abonnement.palier}, ${abonnement.bornesPalier}`;
 	const etat = etatDeLaFacturation(abonnement, maintenant);
+	const formule =
+		abonnement.formule === null
+			? null
+			: `${GRILLE[abonnement.formule].nom}${abonnement.rythme === null ? '' : abonnement.rythme === 'annuel' ? ', à l’année' : ', au mois'}`;
 
 	switch (etat.genre) {
 		case 'ouverture':
-			return { valeur: 'Sans carte bancaire', legende };
+			return { valeur: 'Sans carte bancaire' };
 		case 'developpement':
-			return { valeur: 'Développement', legende };
-		case 'abonne':
-			return { valeur: 'Actif', legende };
+			return { valeur: 'Développement' };
 		case 'essai':
-			return { valeur: `Essai, ${etat.jours} j`, legende };
+			return {
+				valeur: `Essai, ${etat.jours} j`,
+				...(formule === null ? {} : { legende: formule })
+			};
+		case 'abonne':
+			// La carte du panneau porte « Pro, à l'année » : la rangée dit le nom,
+			// sa légende le rythme, sans redire la carte.
+			return {
+				valeur: abonnement.formule === null ? 'Actif' : GRILLE[abonnement.formule].nom,
+				...(abonnement.rythme === null
+					? {}
+					: { legende: abonnement.rythme === 'annuel' ? 'À l’année' : 'Au mois' })
+			};
+		case 'offert':
+			return { valeur: `Offert, ${etat.jours} j` };
+		case 'decouverte':
+			return { valeur: 'Découverte' };
 		case 'ferme':
-			return { valeur: VALEUR_DE_LA_FERMETURE[etat.cause], legende };
+			return {
+				valeur: VALEUR_DE_LA_FERMETURE[etat.cause],
+				...(formule === null ? {} : { legende: formule })
+			};
 		case 'indetermine':
-			return { valeur: 'Indéterminé', legende };
+			return { valeur: 'Indéterminé' };
 	}
 }
 
@@ -304,7 +302,8 @@ function urgenceFacturation(
 	maintenant: number
 ): UrgenceDuCompte | null {
 	if (lecture.etat !== 'pret' || lecture.valeur === null) return null;
-	const etat = etatDeLaFacturation(lecture.valeur, maintenant);
+	const abonnement = lecture.valeur;
+	const etat = etatDeLaFacturation(abonnement, maintenant);
 
 	if (etat.genre === 'ferme') {
 		return {
@@ -314,17 +313,24 @@ function urgenceFacturation(
 		};
 	}
 
-	if (etat.genre === 'essai' && etat.jours <= JOURS_AVANT_FIN_D_ESSAI) {
+	// L'essai qui se termine : un CONSTAT, la date et ce qui se passera.
+	if (
+		etat.genre === 'essai' &&
+		etat.jours <= JOURS_AVANT_FIN_D_ESSAI &&
+		abonnement.resiliationLe === null
+	) {
 		return {
 			cle: 'facturation',
 			fait: `Votre essai se termine dans ${etat.jours} jour${pluriel(etat.jours)}.`,
-			/*
-			  Un CONSTAT sur ce que le produit fera, jamais « abonnez-vous ». Et il
-			  ne porte que le verrou réellement appliqué — voir
-			  `CONSEQUENCE_DE_LA_FERMETURE`, qui explique pourquoi les trois autres
-			  ne s'écrivent pas ici.
-			*/
-			consequence: `À son terme, sans abonnement, ${CONSEQUENCE_DE_LA_FERMETURE.charAt(0).toLowerCase()}${CONSEQUENCE_DE_LA_FERMETURE.slice(1)}`
+			consequence: 'Le premier prélèvement suivra, au montant de votre formule.'
+		};
+	}
+
+	if (etat.genre === 'offert' && etat.jours <= JOURS_AVANT_FIN_D_ESSAI) {
+		return {
+			cle: 'facturation',
+			fait: `Votre accès offert se termine dans ${etat.jours} jour${pluriel(etat.jours)}.`,
+			consequence: `À son terme, sans formule, ${CONSEQUENCE_DE_LA_FERMETURE.charAt(0).toLowerCase()}${CONSEQUENCE_DE_LA_FERMETURE.slice(1)}`
 		};
 	}
 

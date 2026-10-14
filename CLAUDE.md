@@ -514,9 +514,14 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   choix du logiciel : la fenêtre d'autorisation doit s'ouvrir dans le clic. Un nouveau logiciel,
   c'est un traducteur et un lecteur dans `socle/connecteurs/nango/`, puis son intégration dans le
   tableau de bord (`serveurs/nango/LISEZMOI.md`). Dormant sans `NANGO_SECRET_KEY`.
-- **L'abonnement se paie par Paddle** (14/10/2026, `serveurs/paddle/LISEZMOI.md`). Compte ›
-  Abonnement ouvre Paddle.js, chargé au toucher, avec le prix du palier calculé au serveur
-  (`paddle.caisse`) et l'établissement **scellé** (HMAC sous `PADDLE_WEBHOOK_SECRET`) : le jeton
+- **L'abonnement se paie par Paddle** (14/10/2026, `serveurs/paddle/LISEZMOI.md`, grille dans
+  `docs/superpowers/specs/2026-10-14-pricing-abonnements.md`). **Découverte** est gratuite (on
+  voit ce qu'on vous doit, rien ne part) ; **Solo, Équipe, Pro** (12, 39, 119 € HT par mois,
+  l'année à dix mois) se choisissent sur UNE page (`ChoixDeFormule`) : la frise de l'essai, le
+  rythme, trois cartes, « Commencer l'essai, 0 € aujourd'hui ». Trente jours d'essai, la carte
+  enregistrée chez Paddle, une fois par établissement et par compte (`essaiUtilise`). La grille
+  vit dans `config/tarifs.ts` et nulle part ailleurs ; les douze prix Paddle se rangent dans
+  `prixPaddle`. Paddle.js se charge au toucher, l'établissement part **scellé** (HMAC sous `PADDLE_WEBHOOK_SECRET`) : le jeton
   côté client est public, le sceau empêche qu'un paiement se pose sur le compte d'un autre. Le
   rappel vérifie la signature puis le sceau, ignore un événement plus ancien que le dernier
   inscrit (`paddleEvenementLe`) et note le bilan réglé (`bilanRegleLe`). L'environnement se lit

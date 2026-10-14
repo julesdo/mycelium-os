@@ -113,7 +113,7 @@ function Inscription() {
 			<CadreAuth
 				titre="Créer votre compte"
 				explication="Votre adresse e-mail professionnelle : c’est elle qui vous connecte, et là que vous recevez ce qui compte."
-				levees={[`${DUREE_ESSAI_JOURS} jours d’essai`, 'Sans carte bancaire', 'Sans engagement']}
+				levees={['Votre bilan offert', `${DUREE_ESSAI_JOURS} jours d’essai`, 'Sans engagement']}
 				pied={pied}
 			>
 				<form onSubmit={continuer} className="flex flex-col gap-cladd-2xs" noValidate>

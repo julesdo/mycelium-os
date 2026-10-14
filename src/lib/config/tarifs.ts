@@ -1,118 +1,247 @@
 /**
- * La grille tarifaire, et ce qu'elle recouvre. Source unique.
+ * LA GRILLE TARIFAIRE, ET CE QU'ELLE RECOUVRE. Source unique.
  *
- * POURQUOI ELLE VIT ICI, ET PLUS DANS `billing.ts`. Elle y était, et elle y
- * était juste — mais elle avait trois lecteurs, et deux d'entre eux la
- * recopiaient à la main :
+ * Trois lecteurs, et aucun ne recopie un montant : le serveur (`billing.ts`,
+ * qui applique les limites, et `paiement/paddle.ts`, qui crée le catalogue
+ * Paddle d'après ces montants), l'écran Compte › Abonnement, et la section
+ * Tarifs du site. Une grille recopiée à la main finit par annoncer un montant
+ * que Paddle ne prélève pas : ça ne casse rien, et ça se découvre par un client
+ * qui a raison de râler.
  *
- *   `src/lib/convex/billing.ts`  le serveur, qui choisit l'identifiant de prix
- *                                Paddle. Le seul qui l'importait vraiment.
- *   `src/routes/showroom.tsx`    la salle d'exposition, qui réécrivait les six
- *                                montants en clair dans une liste littérale.
- *   la page d'accueil            qui allait faire la même chose.
+ * ⚠️ REFAITE LE 14/10/2026 (`docs/superpowers/specs/2026-10-14-pricing-abonnements.md`).
+ * L'ancienne grille venait d'EGalim : trois paliers par volume de factures
+ * DÉCLARÉ (S, M, L), 190 à 390 € par mois et un premier bilan à 690 €. Elle
+ * coûtait plus qu'un outil de PME pour un produit qui vise d'abord les TPE,
+ * n'avait rien pour les micro-entreprises, et faisait déclarer un volume qu'on
+ * pouvait corriger pour payer moins. Désormais :
  *
- * Trois copies d'une grille de prix, c'est trois occasions d'annoncer publiquement
- * un montant que le serveur ne facture pas. Sur un produit vendu par abonnement,
- * c'est le défaut le plus coûteux de tous : il ne casse rien, il ne lève aucune
- * exception, et il se découvre par un client qui a raison de râler.
+ *   · DÉCOUVERTE, gratuite : on voit ce qu'on vous doit, rien ne part ;
+ *   · trois FORMULES qu'on choisit (Solo, Équipe, Pro), au mois ou à l'année ;
+ *   · l'année payée en une fois vaut DIX mois ;
+ *   · trente jours d'essai, la carte enregistrée chez Paddle, 0 € le premier jour.
  *
- * Ce module est PUR — pas d'import Convex, pas de React. C'est ce qui lui permet
- * d'être lu à la fois par les fonctions serveur et par le bundle du navigateur,
- * exactement comme `src/lib/egalim/referentiel.ts` l'est déjà des deux côtés.
+ * Module PUR : ni Convex ni React. Il se lit des deux côtés du réseau.
  *
- * ELLE PASSE EN REVUE DE CODE, comme le barème EGalim, et pour la même raison :
- * une grille tarifaire modifiable depuis une page d'administration finit par
- * diverger de ce que le vendeur facture. Source des montants : document 03 du
- * business plan.
+ * LES MONTANTS SONT HORS TAXES. Paddle, vendeur de registre, ajoute la TVA du
+ * pays du client (`tax_mode: external`).
  */
+
+export const FORMULES = ['solo', 'equipe', 'pro'] as const;
+export type Formule = (typeof FORMULES)[number];
+
+/** L'annuel d'abord : c'est le rythme que la bascule montre par défaut. */
+export const RYTHMES = ['annuel', 'mensuel'] as const;
+export type Rythme = (typeof RYTHMES)[number];
+
+/** Ce que la grille sait de chaque formule. */
+export interface FormuleDeLaGrille {
+	readonly nom: string;
+	/** Pour qui, en cinq mots au plus : c'est ce qui fait choisir. */
+	readonly pour: string;
+	/** En euros hors taxes. */
+	readonly mensuel: number;
+	/** En euros hors taxes, payé en une fois : dix mois. */
+	readonly annuel: number;
+}
+
+export const GRILLE: Readonly<Record<Formule, FormuleDeLaGrille>> = {
+	solo: {
+		nom: 'Solo',
+		pour: 'Indépendants et micro-entreprises',
+		mensuel: 12,
+		annuel: 120
+	},
+	equipe: {
+		nom: 'Équipe',
+		pour: 'TPE, jusqu’à dix personnes',
+		mensuel: 39,
+		annuel: 390
+	},
+	pro: {
+		nom: 'Pro',
+		pour: 'PME',
+		mensuel: 119,
+		annuel: 1190
+	}
+};
+
+/** La formule mise en avant sur le site et proposée par défaut. */
+export const FORMULE_RECOMMANDEE: Formule = 'equipe';
+
+/** Ce que l'année fait gagner, en mois : « 2 mois offerts ». */
+export function moisOfferts(formule: Formule): number {
+	const { mensuel, annuel } = GRILLE[formule];
+	return Math.round((mensuel * 12 - annuel) / mensuel);
+}
+
+/** Le prix annuel ramené au mois, en centimes (32,50 € → 3250). */
+export function mensualiteDeLAnnee(formule: Formule): number {
+	return Math.round((GRILLE[formule].annuel * 100) / 12);
+}
+
+/** Le montant prélevé à chaque échéance, en euros HT. */
+export function montantDuRythme(formule: Formule, rythme: Rythme): number {
+	return rythme === 'annuel' ? GRILLE[formule].annuel : GRILLE[formule].mensuel;
+}
+
+// ── Les limites ────────────────────────────────────────────────────────────
+
+/** Ce qui s'applique : Découverte (rien de souscrit) ou une formule. */
+export type Palier = 'decouverte' | Formule;
+
+export interface Limites {
+	/**
+	 * Les relances, les courriers et la lettre officielle partent. Découverte
+	 * mesure, elle n'agit pas.
+	 */
+	readonly agir: boolean;
+	/**
+	 * Les clients en retard que le pilote relance en même temps. `null` :
+	 * sans limite. Au-delà, le client suivant est MESURÉ et ses relances
+	 * attendent : rien ne se perd, rien ne bloque la lecture.
+	 */
+	readonly clientsSuivis: number | null;
+	/** Les personnes qui ont accès à l'établissement, le gérant compris. */
+	readonly utilisateurs: number;
+	/** Les analyses de santé client par mois, relecture mensuelle comprise. */
+	readonly analysesParMois: number;
+	/** Les logiciels qui se branchent : Qonto seul, ou tous. */
+	readonly logiciels: 'qonto' | 'tous';
+}
+
+export const LIMITES: Readonly<Record<Palier, Limites>> = {
+	decouverte: {
+		agir: false,
+		clientsSuivis: 0,
+		utilisateurs: 1,
+		analysesParMois: 1,
+		logiciels: 'qonto'
+	},
+	solo: { agir: true, clientsSuivis: 10, utilisateurs: 1, analysesParMois: 10, logiciels: 'qonto' },
+	equipe: {
+		agir: true,
+		clientsSuivis: 50,
+		utilisateurs: 3,
+		analysesParMois: 50,
+		logiciels: 'tous'
+	},
+	pro: {
+		agir: true,
+		clientsSuivis: null,
+		utilisateurs: 10,
+		analysesParMois: 300,
+		logiciels: 'tous'
+	}
+};
 
 /**
- * Le palier de taille, qui décide du PRIX et jamais des fonctionnalités.
- *
- * Une entreprise qui émet trois mille factures par an reçoit exactement le même
- * produit qu'une qui en émet trois cents ; elle le paie plus cher parce que la
- * valeur diffère, pas la prestation.
- *
- * ⚠️ LES BORNES ONT ÉTÉ TRANSPOSÉES, PAS RECALCULÉES. Elles reprenaient le
- * nombre de factures par an d'une cantine ; elles portent maintenant un
- * volume de factures annuel, avec les mêmes seuils numériques. Les montants,
- * eux, n'ont pas bougé d'un euro. Les uns comme les autres relèvent d'une
- * décision commerciale et attendent Jules.
+ * Le palier EFFECTIF d'un établissement (`resolveEffectivePlan`, `billing.ts`) :
+ * `none` pour Découverte, une formule, ou `dev` quand tout est ouvert (pas de
+ * clé, facturation fermée, plan posé à la main).
  */
-export const PALIERS = ['S', 'M', 'L'] as const;
-export type PalierTaille = (typeof PALIERS)[number];
+export type PlanTier = 'none' | Formule | 'dev';
 
-export function palierDeTaille(facturesParAn: number | undefined): PalierTaille {
-	// Sans information, on retient le palier le plus bas : facturer trop cher une
-	// entreprise qui n'a pas rempli son profil serait le pire des défauts.
-	if (!facturesParAn || facturesParAn <= 0) return 'S';
-	if (facturesParAn < 250) return 'S';
-	if (facturesParAn <= 800) return 'M';
-	return 'L';
+/** Les limites d'un palier effectif. `dev` n'en a aucune. */
+export function limitesDe(tier: PlanTier): Limites {
+	if (tier === 'dev') {
+		return {
+			agir: true,
+			clientsSuivis: null,
+			utilisateurs: 9999,
+			analysesParMois: 300,
+			logiciels: 'tous'
+		};
+	}
+	return LIMITES[tier === 'none' ? 'decouverte' : tier];
 }
 
 /**
- * Les montants, en euros HORS TAXES.
+ * Ce que chaque formule recouvre, ligne à ligne, pour l'afficher sans faire
+ * deviner. Une valeur par formule : `true` (inclus), `false` (absent) ou le
+ * texte de la limite. Écrite UNE fois : le site et l'écran d'abonnement la
+ * traversent tous deux.
  *
- * Ce sont des montants d'AFFICHAGE. Le montant réellement prélevé est celui du
- * prix Paddle correspondant : c'est Paddle qui facture, en qualité de vendeur de
- * registre. Un écart entre les deux serait un défaut à corriger chez Paddle, pas
- * ici.
+ * AUCUNE LIGNE NE PROMET UN RÉSULTAT. Le mot « garantie » est proscrit dans
+ * tout le produit, et un test balaie l'interface pour le vérifier.
  */
-export const TARIFS: Record<PalierTaille, { bilan: number; abonnementMensuel: number }> = {
-	S: { bilan: 690, abonnementMensuel: 190 },
-	M: { bilan: 1190, abonnementMensuel: 290 },
-	L: { bilan: 1900, abonnementMensuel: 390 }
-};
+export const CE_QUI_EST_INCLUS: readonly {
+	readonly libelle: string;
+	readonly valeurs: Readonly<Record<Palier, boolean | string>>;
+}[] = [
+	{
+		libelle: 'Vos factures lues, ce qu’on vous doit, pénalités et frais de recouvrement compris',
+		valeurs: { decouverte: true, solo: true, equipe: true, pro: true }
+	},
+	{
+		libelle: 'Relances automatiques et lettre officielle, à votre nom',
+		valeurs: { decouverte: false, solo: true, equipe: true, pro: true }
+	},
+	{
+		libelle: 'Clients en retard suivis en même temps',
+		valeurs: {
+			decouverte: false,
+			solo: libelleDeLimite(LIMITES.solo.clientsSuivis),
+			equipe: libelleDeLimite(LIMITES.equipe.clientsSuivis),
+			pro: libelleDeLimite(LIMITES.pro.clientsSuivis)
+		}
+	},
+	{
+		libelle: 'Utilisateurs',
+		valeurs: {
+			decouverte: '1',
+			solo: String(LIMITES.solo.utilisateurs),
+			equipe: String(LIMITES.equipe.utilisateurs),
+			pro: String(LIMITES.pro.utilisateurs)
+		}
+	},
+	{
+		libelle: 'Santé de vos clients, analyses par mois',
+		valeurs: {
+			decouverte: String(LIMITES.decouverte.analysesParMois),
+			solo: String(LIMITES.solo.analysesParMois),
+			equipe: String(LIMITES.equipe.analysesParMois),
+			pro: String(LIMITES.pro.analysesParMois)
+		}
+	},
+	{
+		libelle: 'Vos logiciels branchés (Pennylane, QuickBooks…)',
+		valeurs: { decouverte: 'Qonto', solo: 'Qonto', equipe: true, pro: true }
+	}
+];
 
-/** Ce que chaque palier recouvre, pour l'afficher sans faire deviner. */
-export const BORNES_PALIER: Record<PalierTaille, string> = {
-	S: 'moins de 250 factures par an',
-	M: 'de 250 à 800 factures par an',
-	L: 'plus de 800 factures par an'
-};
-
-/** La même borne, en trois mots, pour un sélecteur qui doit tenir sur 375 px. */
-export const BORNES_COURTES: Record<PalierTaille, string> = {
-	S: '< 250 factures',
-	M: '250 à 800',
-	L: '> 800 factures'
-};
-
-export type ColonneOffre = 'bilan' | 'abonnement';
+function libelleDeLimite(limite: number | null): string {
+	return limite === null ? 'Sans limite' : String(limite);
+}
 
 /**
- * Ce que chaque offre contient.
- *
- * La liste est ÉCRITE UNE FOIS et les deux colonnes la traversent : deux listes
- * parallèles auraient fini par annoncer une fonctionnalité d'un côté et pas de
- * l'autre. Elle doit rester alignée sur `PLAN_FEATURES` dans `billing.ts`, qui
- * décide de ce qui est réellement ouvert — c'est le serveur qui tranche, cette
- * liste ne fait que le dire.
- *
- * AUCUNE LIGNE NE PROMET UN RÉSULTAT. Le mot « garantie » est proscrit dans tout
- * le produit, et un test balaie l'interface pour le vérifier ; la règle vaut
- * aussi pour les tournures qui reviendraient au même par un détour.
+ * La formule à proposer d'abord, d'après ce que le registre dit de
+ * l'entreprise. Une entreprise individuelle se voit proposer Solo ; toute
+ * autre, Équipe. C'est une RECOMMANDATION qui se change d'un toucher : rien
+ * n'est souscrit sans que le gérant l'ait choisi.
  */
-export const CE_QUI_EST_INCLUS = [
-	{ libelle: 'Import de factures, sans limite', bilan: true, abonnement: true },
-	{ libelle: 'Export comptable ou dépôt de PDF', bilan: true, abonnement: true },
-	{ libelle: 'Décompte au centime, période par période', bilan: true, abonnement: true },
-	{ libelle: 'Intérêts au taux légal et indemnité forfaitaire', bilan: true, abonnement: true },
-	{ libelle: 'Surveillance des échéances et de la prescription', bilan: false, abonnement: true },
-	{ libelle: 'Les conditions prévues par les textes, face aux pièces de votre dossier', bilan: false, abonnement: true },
-	{ libelle: 'Alertes et suivi mensuel', bilan: false, abonnement: true }
-] as const;
+export function formuleRecommandee(formeJuridique: string | undefined): Formule {
+	if (
+		formeJuridique !== undefined &&
+		/individuel|\bEI\b|micro|auto-?entrepr/i.test(formeJuridique)
+	) {
+		return 'solo';
+	}
+	return FORMULE_RECOMMANDEE;
+}
+
+// ── L'essai et les rappels ─────────────────────────────────────────────────
 
 /**
- * L'essai, en jours.
- *
- * TRENTE, parce que la boucle métier complète — réunir douze mois de factures,
- * les déposer, vider la file de confirmation, lire le bilan — se mesure en
- * semaines. Quatorze jours obligeraient à décider pendant qu'on cherche encore
- * les factures de mars.
- *
- * La règle qui l'accompagne — une seule fois par compte, jamais par
- * établissement — vit dans `billing.ts`, avec le drapeau qui la porte.
+ * L'essai, en jours. TRENTE, parce que le plan de relance met vingt-trois jours
+ * à aller du premier rappel à la lettre officielle (`plan-relance.ts`) : un
+ * essai plus court se terminerait avant que le gérant ait vu un virement
+ * rentrer. La carte est enregistrée chez Paddle au premier jour, rien n'est
+ * prélevé avant la fin.
  */
 export const DUREE_ESSAI_JOURS = 30;
+
+/** Les jours avant le premier prélèvement où le gérant est prévenu. */
+export const RAPPELS_AVANT_PRELEVEMENT_JOURS = [7, 2] as const;
+
+/** Les jours avant un renouvellement annuel où le gérant est prévenu. */
+export const RAPPEL_RENOUVELLEMENT_JOURS = 30;

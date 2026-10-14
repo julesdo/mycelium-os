@@ -1,109 +1,101 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Surface } from '@cladd-ui/react';
-import type { PalierTaille } from '../../lib/config/tarifs';
+import {
+	DUREE_ESSAI_JOURS,
+	GRILLE,
+	montantDuRythme,
+	type Formule,
+	type Limites,
+	type Rythme
+} from '../../lib/config/tarifs';
 import {
 	BoutonPrincipal,
-	BoutonSecondaire,
 	BoutonTexte,
+	ChoixDeFormule,
+	EnTeteDeGroupe,
+	FeuilleDeReussite,
+	ListeDeReleve,
+	LigneDeReleve,
 	RefusEnQuatreParties,
-	euros
+	prixAffiche
 } from '../../ui';
-import { Offre, OuvertureEnCours, EssaiEnCours } from './offre';
+import { OuvertureEnCours } from './offre';
 import { etatDeLaFacturation, type CauseDeFermeture, type EtatFacturation } from './presse';
 
-/** Ce que la section affiche : l'état d'abonnement tel que `etatAbonnement` le rend, palier et tarifs résolus par le serveur. */
+/** Ce que l'écran affiche : l'état d'abonnement tel que `billing.etatAbonnement` le rend. */
 export interface AbonnementAffiche {
-	/**
-	 * Le palier EFFECTIF, celui que `resolveEffectivePlan` rend — pas le plan
-	 * souscrit. Il dit ce qui est ouvert ; `paddleStatus` dit pourquoi.
-	 */
+	/** Le palier EFFECTIF (`resolveEffectivePlan`) : ce qui est ouvert. */
 	readonly tier: string;
 	readonly isDev: boolean;
-	readonly palier: PalierTaille;
-	readonly bornesPalier: string;
-	readonly facturesParAn: number | null;
-	readonly tarifs: { readonly bilan: number; readonly abonnementMensuel: number };
-	readonly seatsAllowed: number;
-	readonly paddleStatus: string | null;
 	/** La facturation est ouverte sur ce déploiement (`paiementOuvert`, `billing.ts`). */
 	readonly paiementOuvert: boolean;
-	/** Le premier bilan, payé une fois : le jour où Paddle l'a encaissé. */
-	readonly bilanRegleLe: number | null;
+	/** Le statut Paddle, tel que les rappels l'écrivent. */
+	readonly statut: string | null;
+	/** La formule souscrite, à l'essai ou payée. */
+	readonly formule: Formule | null;
+	readonly rythme: Rythme | null;
+	readonly essaiFinLe: number | null;
+	readonly prochainPrelevementLe: number | null;
+	/** Une résiliation programmée : le jour où elle prend effet. */
+	readonly resiliationLe: number | null;
+	/** Un accès offert qui court encore. */
+	readonly offertJusquAu: number | null;
 	/** Paddle connaît déjà l'établissement : le portail (carte, factures, résiliation) s'ouvre. */
 	readonly clientPaddle: boolean;
-	readonly essaiFiniLe: number | null;
-	/*
-	  ⚠️ `paddleCurrentPeriodEnd` N'EST PAS ICI, ET C'EST DÉLIBÉRÉ.
-	  `etatAbonnement` le renvoie, et il est tentant de l'afficher sur un
-	  abonnement résilié — « votre accès se ferme le … ». Ce serait FAUX :
-	  `resolveEffectivePlan` ne le lit pas. Dès que `paddleStatus` quitte
-	  `active`/`trialing`, le palier tombe TOUT DE SUITE sur l'essai s'il court,
-	  sur `none` sinon. La fin de période ne protège rien, et l'écrire
-	  promettrait un sursis qui n'existe pas.
-	*/
+	/** Trente jours offerts à la souscription, ou un prélèvement tout de suite. */
+	readonly essaiDisponible: boolean;
+	/** La formule cochée à l'ouverture du choix, d'après le registre. */
+	readonly recommandee: Formule;
+	readonly limites: Limites;
+	/** Les personnes qui ont accès à l'établissement. */
+	readonly utilisateurs: number;
+}
+
+/** Ce qui vient d'être souscrit, pour la coche de réussite. */
+export interface Souscription {
+	readonly formule: Formule;
+	readonly rythme: Rythme;
+	readonly essai: boolean;
 }
 
 /**
- * LA FACTURATION — l'état d'abonnement et les deux offres.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ TROIS ÉTATS N'AVAIENT AUCUN AFFICHAGE, ET C'ÉTAIT LE DÉFAUT LE PLUS GRAVE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * L'ancienne carte d'état ne connaissait que deux cas : « accès de
- * développement » et « abonnement actif ». Un abonnement `past_due`, `paused`
- * ou `canceled` — les trois que les rappels Paddle écrivent réellement
- * (`paddle.ts`) — rendait `null` : la section affichait les deux offres comme à
- * un visiteur qui n'aurait jamais rien souscrit, et RIEN ne disait que le
- * dernier paiement avait échoué. Un abonnement qui se ferme est exactement ce
- * qu'une page de réglages doit montrer sans qu'on la fouille.
- *
- * L'état se déduit maintenant de `tier` ET de `paddleStatus`, au même endroit
- * que le bandeau « Ce qui presse » et que la valeur de la rangée repliée
- * (`presse.tsx`) : les trois ne peuvent plus se contredire.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ « EN COURS » NE SE POSE PLUS SUR UN ESSAI GRATUIT
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Les puces disaient `actif={tier === 'suivi'}` et `actif={tier === 'procedures'}`.
- * Or `resolveEffectivePlan` rend `procedures` PENDANT L'ESSAI GRATUIT : la carte
- * de l'abonnement mensuel s'affichait « En cours » à quelqu'un qui n'avait donné
- * aucune carte bancaire, juste au-dessus d'un encart annonçant son essai. Deux
- * affirmations contraires sur le même écran.
- *
- * « En cours » exige désormais un abonnement RÉELLEMENT souscrit.
- *
- * LE PALIER VIENT DU SERVEUR. Le prix dépend du nombre de factures émises par
- * an (`palierDeTaille(facturesParAn)`), et un palier calculé dans le navigateur
- * se falsifie pour payer le tarif d'en dessous.
- *
- * ⚠️ ET LA FRONTIÈRE PADDLE EST ÉCRITE À L'ÉCRAN, PAS SEULEMENT DANS LA SPEC.
- * Le parcours de paiement appartient au prestataire : il sort de la grammaire
- * de ce produit, et le dire vaut mieux que réimplémenter un tunnel qu'on ne
- * contrôle pas.
- */
-/**
- * Ce que l'écran peut faire avec Paddle, branché par la route.
+ * Ce que l'écran peut faire avec Paddle, branché par la route (`useCaissePaddle`).
  *
  * Absente : rien à ouvrir pour ce compte (la facturation n'est pas ouverte, ou
- * il n'administre pas l'établissement). Le paiement et le portail
- * appartiennent à Paddle et s'ouvrent chez lui.
+ * il n'administre pas l'établissement).
  */
 export interface CaisseAffichee {
-	/** Les offres dont le prix est posé pour le palier de l'établissement. */
-	readonly offres: { readonly bilan: boolean; readonly abonnement: boolean };
-	readonly onChoisir: (offre: 'bilan' | 'abonnement') => void;
+	/** Le paiement peut s'ouvrir sur ce déploiement. */
+	readonly disponible: boolean;
+	/** Les prix proposés portent les trente jours d'essai. */
+	readonly essai: boolean;
+	readonly onChoisir: (formule: Formule, rythme: Rythme) => void;
 	readonly onGerer: () => void;
-	/** Ce qui est en train de s'ouvrir. */
-	readonly enCours: 'bilan' | 'abonnement' | 'portail' | null;
-	/** Paddle a dit « payé », le rappel n'est pas encore arrivé. */
-	readonly recu: boolean;
-	/** Le paiement ne peut pas s'ouvrir sur ce déploiement (réglage incomplet). */
-	readonly indisponible: boolean;
+	readonly enCours: 'formule' | 'portail' | null;
+	/** Paddle a confirmé le paiement : la coche s'affiche jusqu'à ce qu'on la ferme. */
+	readonly souscrite: Souscription | null;
+	readonly onFermerLaReussite: () => void;
 	readonly erreur: string | null;
 }
 
+/**
+ * VOTRE FORMULE — l'état de l'abonnement, ce qu'il comprend, et le geste qui
+ * le change.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ REFAITE LE 14/10/2026, SUR LA NOUVELLE GRILLE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Deux cartes d'offre (le bilan, l'abonnement) par palier de volume déclaré
+ * ont laissé la place à UN état et UN bouton : « Choisir ma formule », qui
+ * ouvre la même page partout (`ChoixDeFormule`). L'état dit toujours ce qui se
+ * passera et quand : la fin de l'essai, la date et le montant du prochain
+ * prélèvement, la fin d'un accès résilié. Le prélèvement ne surprend jamais.
+ *
+ * Ce que comprend la formule se LIT en relevé (clients suivis, utilisateurs,
+ * analyses), jamais en tableau de comparaison : la comparaison vit dans la page
+ * de choix, au moment où elle sert.
+ */
 export function SectionFacturation({
 	abonnement,
 	maintenant,
@@ -114,105 +106,38 @@ export function SectionFacturation({
 	maintenant: number;
 	caisse?: CaisseAffichee;
 }) {
+	const [choixOuvert, setChoixOuvert] = useState(false);
+
 	if (abonnement === null) {
 		return (
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-				Aucun établissement actif : il n’y a pas d’offre à calculer.
+				Aucun établissement actif : il n’y a pas de formule à afficher.
 			</p>
 		);
 	}
 
 	const etat = etatDeLaFacturation(abonnement, maintenant);
-	const abonne = etat.genre === 'abonne';
-
-	/*
-	  ⚠️ ON NE SOUSCRIT PAS PAR-DESSUS UN ABONNEMENT QUI EXISTE. En pause ou en
-	  échec de paiement, l'abonnement se reprend au portail : en ouvrir un
-	  second ferait payer deux fois.
-	*/
-	const peutSouscrire =
-		caisse !== undefined &&
-		!caisse.indisponible &&
-		!abonne &&
-		!(etat.genre === 'ferme' && (etat.cause === 'past_due' || etat.cause === 'paused'));
-	const bilanRegle = abonnement.bilanRegleLe === null ? null : dateEnClair(abonnement.bilanRegleLe);
+	const peutChoisir =
+		caisse?.disponible === true && (etat.genre === 'decouverte' || etat.genre === 'offert');
+	const choisir = peutChoisir ? () => setChoixOuvert(true) : undefined;
+	const souscrite = caisse?.souscrite ?? null;
 
 	return (
 		<>
-			<EtatCourant etat={etat} abonnement={abonnement} maintenant={maintenant} caisse={caisse} />
+			<EtatCourant
+				etat={etat}
+				abonnement={abonnement}
+				caisse={caisse}
+				{...(choisir === undefined ? {} : { onChoisir: choisir })}
+			/>
 
-			{/*
-			  ⚠️ LE PALIER NE SE RÉPÈTE PAS EN PUCE. La rangée repliée porte déjà
-			  « Palier S, ses bornes » en légende, et elle reste visible dépliée :
-			  une puce qui redit le titre juste dessous est du texte inutile.
-			*/}
-			<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
-				{abonnement.facturesParAn
-					? `Palier déterminé à partir des ${abonnement.facturesParAn} factures par an déclarées pour votre établissement.`
-					: 'Votre volume de factures n’est pas renseigné : le palier le plus bas est retenu par défaut.'}{' '}
-				Le produit est le même à tous les paliers ; seul le prix change. Le volume déclaré se
-				corrige dans la section « Votre établissement », plus haut sur cette page.
-			</p>
+			{etat.genre === 'ouverture' || etat.genre === 'developpement' ? null : (
+				<CeQueComprend abonnement={abonnement} />
+			)}
 
-			{/*
-			  ⚠️ DEUX CARTES CÔTE À CÔTE, ET PAS DEUX RANGÉES QUI POUSSENT. C'est le
-			  seul endroit du produit où deux choses se COMPARENT ligne à ligne : la
-			  grille de ce qui est inclus est identique d'une carte à l'autre, et
-			  c'est sa colonne qui change.
-			*/}
-			<div className="grid grid-cols-1 gap-cladd-2xs md:grid-cols-2">
-				<Offre
-					titre="Le premier bilan"
-					prix={euros(abonnement.tarifs.bilan)}
-					cadence="une fois"
-					description="Douze mois de factures lus en une fois. Vous saurez où vous en êtes, et ce qu’il manque, en euros."
-					colonne="bilan"
-					actif={abonne && abonnement.tier === 'suivi'}
-					pied={
-						bilanRegle !== null ? (
-							<span className="text-cladd-xs text-cladd-fg-soft">Réglé le {bilanRegle}.</span>
-						) : peutSouscrire && caisse.offres.bilan ? (
-							<BoutonSecondaire
-								pleineLargeur
-								loading={caisse.enCours === 'bilan'}
-								disabled={caisse.enCours !== null}
-								onClick={() => caisse.onChoisir('bilan')}
-							>
-								Régler le bilan
-							</BoutonSecondaire>
-						) : null
-					}
-				/>
-				<Offre
-					titre="L’abonnement"
-					prix={euros(abonnement.tarifs.abonnementMensuel)}
-					cadence="par mois"
-					description="Vos échéances surveillées toute l’année : ce qui arrive à terme, et les dates limites pour agir en justice qui approchent."
-					colonne="abonnement"
-					actif={abonne && abonnement.tier === 'procedures'}
-					recommande
-					pied={
-						peutSouscrire && caisse.offres.abonnement ? (
-							<BoutonPrincipal
-								pleineLargeur
-								loading={caisse.enCours === 'abonnement'}
-								disabled={caisse.enCours !== null}
-								onClick={() => caisse.onChoisir('abonnement')}
-							>
-								Choisir l’abonnement
-							</BoutonPrincipal>
-						) : null
-					}
-				/>
-			</div>
-
-			{caisse?.recu && !abonne ? (
-				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-					Paiement reçu. Il s’inscrit ici dès que Paddle le confirme, en général en quelques
-					secondes.
-				</p>
-			) : null}
-			{caisse?.indisponible ? (
+			{caisse !== undefined &&
+			!caisse.disponible &&
+			(etat.genre === 'decouverte' || etat.genre === 'offert') ? (
 				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 					Le paiement en ligne ne s’ouvre pas pour le moment. Écrivez-nous à bonjour@letikette.com :
 					nous réglons cela avec vous.
@@ -223,39 +148,73 @@ export function SectionFacturation({
 			) : null}
 
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
-				Prix hors taxes. La facturation est opérée par Paddle, qui émet la facture et collecte la
-				TVA applicable à votre pays. Le parcours de paiement, la carte et la résiliation
-				appartiennent à Paddle : ils s’ouvrent chez lui, dans sa langue et sa mise en page, parce
-				que ce qui appartient au prestataire sort de la grammaire de ce produit.
+				Prix hors taxes. Paddle, notre revendeur, encaisse le paiement, émet la facture et ajoute la
+				TVA de votre pays : votre carte ne passe jamais par nos serveurs. Un paiement se rembourse
+				sur demande dans les quatorze jours.
 			</p>
+
+			{caisse !== undefined ? (
+				<ChoixDeFormule
+					ouverte={choixOuvert && souscrite === null}
+					onFermer={() => setChoixOuvert(false)}
+					recommandee={abonnement.formule ?? abonnement.recommandee}
+					essaiDisponible={caisse.essai}
+					enCours={caisse.enCours === 'formule'}
+					maintenant={maintenant}
+					utilisateurs={abonnement.utilisateurs}
+					onChoisir={caisse.onChoisir}
+				/>
+			) : null}
+
+			{souscrite !== null ? (
+				<FeuilleDeReussite
+					ouverte
+					titre={souscrite.essai ? 'Votre essai commence' : 'Vous êtes abonné'}
+					pour={`${GRILLE[souscrite.formule].nom}, ${souscrite.rythme === 'annuel' ? 'à l’année' : 'au mois'}`}
+					detail={
+						souscrite.essai
+							? `Rien n’est prélevé avant le ${dateEnClair(maintenant + DUREE_ESSAI_JOURS * JOUR)}. On vous prévient deux jours avant.`
+							: `${prixAffiche(montantDuRythme(souscrite.formule, souscrite.rythme) * 100)} HT, ${souscrite.rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. La facture de Paddle arrive par e-mail.`
+					}
+					principale={{
+						libelle: 'Terminé',
+						onClick: () => {
+							setChoixOuvert(false);
+							caisse?.onFermerLaReussite();
+						}
+					}}
+				/>
+			) : null}
 		</>
 	);
 }
 
+const JOUR = 24 * 60 * 60 * 1000;
+
 /**
- * OÙ EN EST L'ABONNEMENT — LES CINQ ÉTATS, ET AUCUN SILENCE.
+ * OÙ EN EST L'ABONNEMENT — un état, sa date, et au plus un geste.
  *
  * ⚠️ UNE FERMETURE SE DIT EN QUATRE PARTIES (D0), COMME TOUS LES REFUS DU
  * PRODUIT : ce qu'on peut encore faire, ce qui manque, ce qui le lève au
- * CONSTAT, ce que l'attente coûte. Un état qui commence par ce qui ne marche
- * plus est un mur même quand la sortie est écrite dessous.
+ * CONSTAT, ce que l'attente coûte.
  */
 function EtatCourant({
 	etat,
 	abonnement,
-	maintenant,
-	caisse
+	caisse,
+	onChoisir
 }: {
 	etat: EtatFacturation;
 	abonnement: AbonnementAffiche;
-	maintenant: number;
-	caisse?: CaisseAffichee;
+	caisse?: CaisseAffichee | undefined;
+	/** Présent quand une formule peut être choisie ici. */
+	onChoisir?: () => void;
 }) {
 	if (etat.genre === 'ouverture') return <OuvertureEnCours />;
 
 	/*
-	  Le portail de Paddle : changer de carte, relire ses factures, résilier.
-	  Seulement pour un établissement que Paddle connaît déjà.
+	  Le portail de Paddle : changer de carte, relire ses factures. Seulement pour
+	  un établissement que Paddle connaît déjà.
 	*/
 	const gerer =
 		caisse !== undefined && abonnement.clientPaddle ? (
@@ -265,89 +224,186 @@ function EtatCourant({
 				disabled={caisse.enCours !== null}
 				onClick={caisse.onGerer}
 			>
-				Gérer mon abonnement chez Paddle
+				Carte et factures, chez Paddle
 			</BoutonTexte>
 		) : null;
+	const choisir =
+		onChoisir === undefined ? null : (
+			<BoutonPrincipal pleineLargeur onClick={onChoisir}>
+				Choisir ma formule
+			</BoutonPrincipal>
+		);
+	const nom = abonnement.formule === null ? null : GRILLE[abonnement.formule].nom;
+	const montant =
+		abonnement.formule === null || abonnement.rythme === null
+			? null
+			: prixAffiche(montantDuRythme(abonnement.formule, abonnement.rythme) * 100);
+	const rythme = abonnement.rythme === 'annuel' ? 'à l’année' : 'au mois';
 
-	if (etat.genre === 'developpement') {
+	if (etat.genre === 'essai') {
+		const ecoules = Math.min(DUREE_ESSAI_JOURS, Math.max(0, DUREE_ESSAI_JOURS - etat.jours));
 		return (
-			<CarteEtat titre="Accès de développement">
-				Aucune clé Paddle n’est configurée sur ce déploiement : toutes les fonctionnalités sont
-				ouvertes, et rien n’est encaissé.
+			<CarteEtat
+				titre={`Essai${nom === null ? '' : ` ${nom}`}, encore ${etat.jours} jour${etat.jours > 1 ? 's' : ''}`}
+				geste={gerer}
+			>
+				<span
+					className="flex h-1.5 w-full overflow-hidden rounded-full bg-cladd-fg/10"
+					role="progressbar"
+					aria-valuemin={0}
+					aria-valuemax={DUREE_ESSAI_JOURS}
+					aria-valuenow={ecoules}
+					aria-label="Jours d’essai écoulés"
+				>
+					<span
+						className="h-full rounded-full bg-cladd-primary"
+						style={{ width: `${(ecoules / DUREE_ESSAI_JOURS) * 100}%` }}
+					/>
+				</span>
+				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					{abonnement.resiliationLe !== null
+						? `Résilié : rien ne sera prélevé. Tout reste ouvert jusqu’au ${dateEnClair(abonnement.resiliationLe)}.`
+						: etat.finLe !== null && montant !== null
+							? `Premier prélèvement le ${dateEnClair(etat.finLe)} : ${montant} HT, ${rythme}. Annulable jusqu’à la veille.`
+							: 'Votre carte est enregistrée chez Paddle ; rien n’est prélevé pendant l’essai.'}
+				</span>
 			</CarteEtat>
 		);
 	}
 
 	if (etat.genre === 'abonne') {
 		return (
-			<CarteEtat titre="Votre abonnement est actif." geste={gerer}>
-				Jusqu’à {abonnement.seatsAllowed} personnes peuvent accéder à votre établissement.
+			<CarteEtat
+				titre={nom === null ? 'Votre abonnement est actif.' : `${nom}, ${rythme}`}
+				geste={gerer}
+			>
+				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					{abonnement.resiliationLe !== null
+						? `Résilié : l’accès se termine le ${dateEnClair(abonnement.resiliationLe)}, rien ne sera plus prélevé.`
+						: abonnement.prochainPrelevementLe !== null && montant !== null
+							? `Prochain prélèvement le ${dateEnClair(abonnement.prochainPrelevementLe)} : ${montant} HT.`
+							: 'Votre abonnement est actif.'}
+				</span>
 			</CarteEtat>
 		);
 	}
 
-	if (etat.genre === 'essai' && abonnement.essaiFiniLe !== null) {
-		return <EssaiEnCours finLe={abonnement.essaiFiniLe} maintenant={maintenant} />;
+	if (etat.genre === 'offert' && abonnement.offertJusquAu !== null) {
+		return (
+			<CarteEtat
+				titre={`Accès offert, encore ${etat.jours} jour${etat.jours > 1 ? 's' : ''}`}
+				geste={choisir}
+			>
+				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Jusqu’au {dateEnClair(abonnement.offertJusquAu)}, tout vous est ouvert, comme avec la
+					formule Équipe. Choisissez la vôtre pour que rien ne s’arrête ensuite.
+				</span>
+			</CarteEtat>
+		);
+	}
+
+	if (etat.genre === 'decouverte') {
+		return (
+			<CarteEtat titre="Découverte" geste={choisir}>
+				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					{etat.resilie
+						? 'Votre abonnement est terminé. Vos factures, vos clients et vos calculs restent là, et vous voyez toujours ce qu’on vous doit.'
+						: 'Vous voyez ce qu’on vous doit, pénalités et frais de recouvrement compris.'}{' '}
+					{abonnement.essaiDisponible && caisse?.essai !== false
+						? 'Pour que les relances partent à votre nom, choisissez une formule : trente jours d’essai, 0 € aujourd’hui.'
+						: 'Pour que les relances partent à votre nom, choisissez une formule.'}
+				</span>
+			</CarteEtat>
+		);
 	}
 
 	if (etat.genre === 'ferme') {
 		return (
 			<>
 				<RefusEnQuatreParties
-					peutFaire="Tout ce qui est enregistré reste en place : vos factures, vos clients et vos calculs déjà arrêtés ne bougent pas, et un décompte arrêté ne se recalcule jamais."
+					peutFaire="Tout ce qui est enregistré reste en place : vos factures, vos clients et vos calculs ne bougent pas."
 					constat={CONSTAT_DE_LA_FERMETURE[etat.cause]}
-					/*
-				  ⚠️ CE QUI LÈVE LE VERROU EST UN CONSTAT, ET IL NOMME LE SEUL EFFET
-				  RÉELLEMENT APPLIQUÉ. Voir `CONSEQUENCE_DE_LA_FERMETURE` dans
-				  `presse.tsx` : la table `PLAN_FEATURES` en déclare trois autres que
-				  rien n'applique, et les écrire ici serait annoncer une restriction
-				  qui n'existe pas.
-				*/
 					blocages={[
-						'Tant que ce palier reste fermé, aucune invitation ne peut plus être envoyée : le serveur les refuse toutes.',
+						'Tant que le paiement n’est pas repris, votre établissement revient à Découverte : on mesure, rien ne part.',
 						LEVEE_DE_LA_FERMETURE[etat.cause]
 					]}
-					coutDeLAttente="Ce que l’attente coûte : rien qui se chiffre. Aucune donnée ne se perd et aucune somme ne court ; seules les invitations restent fermées."
+					coutDeLAttente="Ce que l’attente coûte : rien qui se chiffre. Aucune donnée ne se perd et aucune somme ne court ; les relances attendent."
 				/>
 				{gerer}
 			</>
 		);
 	}
 
-	if (etat.genre === 'indetermine') {
-		/*
-		  ⚠️ ON NOMME, ON NE REPLIE PAS. Un palier ouvert sans abonnement, sans
-		  essai et sans plan de développement ne se produit par aucune branche
-		  connue de `resolveEffectivePlan` : afficher « actif » serait inventer une
-		  réponse, et c'est exactement ce qu'un écran de réglages ne doit pas faire.
-		*/
+	if (etat.genre === 'developpement') {
 		return (
-			<CarteEtat titre="L’état de votre abonnement est indéterminé.">
-				Le palier rendu par le serveur ne correspond à aucun abonnement, à aucun essai en cours et à
-				aucun accès de développement. Ce que le produit vous ouvre ne peut donc pas être annoncé
-				ici, et rien n’est deviné à la place.
+			<CarteEtat titre="Accès de développement">
+				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Un plan de développement est posé sur cet établissement : tout est ouvert, rien n’est
+					encaissé.
+				</span>
 			</CarteEtat>
 		);
 	}
 
-	return null;
+	/*
+	  ⚠️ ON NOMME, ON NE REPLIE PAS. Un palier qui ne correspond à aucune
+	  branche connue de `resolveEffectivePlan` ne s'annonce pas « actif ».
+	*/
+	return (
+		<CarteEtat titre="L’état de votre abonnement est indéterminé.">
+			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+				Le palier rendu par le serveur ne correspond à aucun abonnement, à aucun essai et à aucun
+				accès offert. Ce que le produit vous ouvre ne peut donc pas être annoncé ici, et rien n’est
+				deviné à la place.
+			</span>
+		</CarteEtat>
+	);
 }
 
-/** Ce qui lève le verrou, selon sa cause : le portail pour reprendre, une offre pour souscrire. */
+/** Ce que la formule en cours ouvre, en relevé. */
+function CeQueComprend({ abonnement }: { abonnement: AbonnementAffiche }) {
+	const { limites } = abonnement;
+	return (
+		<div className="flex flex-col gap-cladd-3xs">
+			<EnTeteDeGroupe libelle="Ce que comprend votre formule" />
+			<ListeDeReleve>
+				<LigneDeReleve
+					titre="Relances et lettre officielle"
+					montant={limites.agir ? 'À votre nom' : 'Avec une formule'}
+				/>
+				<LigneDeReleve
+					titre="Clients en retard suivis"
+					montant={
+						limites.clientsSuivis === null
+							? 'Sans limite'
+							: limites.clientsSuivis === 0
+								? 'Avec une formule'
+								: `Jusqu’à ${limites.clientsSuivis}`
+					}
+				/>
+				<LigneDeReleve
+					titre="Utilisateurs"
+					montant={`${abonnement.utilisateurs} sur ${limites.utilisateurs}`}
+				/>
+				<LigneDeReleve
+					titre="Analyses de santé client"
+					montant={`${limites.analysesParMois} par mois`}
+				/>
+			</ListeDeReleve>
+		</div>
+	);
+}
+
+/** Ce qui lève le verrou, selon sa cause : le portail de Paddle. */
 const LEVEE_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 	past_due:
-		'Ce verrou se lève dès que le paiement passe : la carte se change chez Paddle, par « Gérer mon abonnement chez Paddle ».',
-	paused:
-		'Ce verrou se lève à la reprise de l’abonnement, chez Paddle, par « Gérer mon abonnement chez Paddle ».',
-	canceled: 'Ce verrou se lève en choisissant une offre, plus bas.',
-	jamais: 'Ce verrou se lève en choisissant une offre, plus bas.'
+		'Ce verrou se lève dès que le paiement passe : la carte se change chez Paddle, par « Carte et factures, chez Paddle ».',
+	paused: 'Ce verrou se lève à la reprise de l’abonnement, chez Paddle.'
 };
 
 const CONSTAT_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 	past_due: 'Ce qui manque : le dernier paiement de votre abonnement a échoué chez Paddle.',
-	paused: 'Ce qui manque : votre abonnement est en pause chez Paddle.',
-	canceled: 'Ce qui manque : votre abonnement est résilié.',
-	jamais: 'Ce qui manque : aucun abonnement n’est actif sur cet établissement.'
+	paused: 'Ce qui manque : votre abonnement est en pause chez Paddle.'
 };
 
 /** La carte d'état, au même verre que le reste de la page. */
@@ -368,7 +424,7 @@ function CarteEtat({
 			contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
 		>
 			<span className="text-cladd-sm font-bold">{titre}</span>
-			<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">{children}</span>
+			{children}
 			{geste}
 		</Surface>
 	);

@@ -60,7 +60,30 @@ export default defineSchema({
 		// Paddle billing — paliers d’abonnement
 		paddleSubscriptionId: v.optional(v.string()),
 		paddleCustomerId: v.optional(v.string()),
-		paddlePlanTier: v.optional(v.union(v.literal('suivi'), v.literal('procedures'))),
+		/**
+		 * La formule souscrite (`config/tarifs.ts`). `suivi` et `procedures`
+		 * sont les étages d'avant le 14/10/2026, relus comme Solo et Équipe.
+		 */
+		paddlePlanTier: v.optional(
+			v.union(
+				v.literal('solo'),
+				v.literal('equipe'),
+				v.literal('pro'),
+				v.literal('suivi'),
+				v.literal('procedures')
+			)
+		),
+		paddleRythme: v.optional(v.union(v.literal('mensuel'), v.literal('annuel'))),
+		/** Le prochain prélèvement ; pendant l'essai, le premier. */
+		paddleProchainPrelevementLe: v.optional(v.number()),
+		/** La fin de l'essai Paddle, tant qu'il court. */
+		paddleEssaiFinLe: v.optional(v.number()),
+		/** Une résiliation programmée : le jour où elle prend effet. */
+		paddleResiliationLe: v.optional(v.number()),
+		/** L'établissement a déjà eu ses trente jours d'essai : plus de second. */
+		essaiUtilise: v.optional(v.boolean()),
+		/** Les rappels d'abonnement déjà envoyés (« essai-7:2026-11-13 ») : jamais deux fois. */
+		rappelsAbonnement: v.optional(v.array(v.string())),
 		paddleStatus: v.optional(
 			v.union(
 				v.literal('active'),
@@ -73,8 +96,6 @@ export default defineSchema({
 		paddleCurrentPeriodEnd: v.optional(v.number()),
 		/** L'heure du dernier rappel Paddle inscrit : un rappel plus ancien est ignoré. */
 		paddleEvenementLe: v.optional(v.number()),
-		/** Le premier bilan, payé une fois : le jour où Paddle l'a encaissé. */
-		bilanRegleLe: v.optional(v.number()),
 		seatsIncluded: v.optional(v.number()),
 		freeTrialEndsAt: v.optional(v.number()),
 		devPlan: v.optional(v.boolean()),
@@ -84,6 +105,27 @@ export default defineSchema({
 		.index('by_name', ['name'])
 		.index('by_paddle_subscription', ['paddleSubscriptionId'])
 		.index('by_paddle_customer', ['paddleCustomerId']),
+
+	/**
+	 * LES PRIX PADDLE DE CE DÉPLOIEMENT, rangés par le catalogue
+	 * (`paddleCatalogue:catalogue`) : une étiquette (« equipe-annuel-essai »)
+	 * pour un identifiant. Un déploiement parle à un seul environnement Paddle.
+	 *
+	 * ⚠️ AUCUN ÉTABLISSEMENT ICI, ET C'EST VOULU : c'est un référentiel du
+	 * produit, comme les taux du référentiel juridique, pas une donnée client.
+	 */
+	prixPaddle: defineTable({
+		etiquette: v.string(),
+		prixId: v.string(),
+		formule: v.union(v.literal('solo'), v.literal('equipe'), v.literal('pro')),
+		rythme: v.union(v.literal('mensuel'), v.literal('annuel')),
+		essai: v.boolean(),
+		/** En centimes, tel que Paddle le prélève. */
+		montant: v.string(),
+		enregistreLe: v.number()
+	})
+		.index('by_etiquette', ['etiquette'])
+		.index('by_prix', ['prixId']),
 
 	/**
 	 * LA CONNEXION D'UN ÉTABLISSEMENT À SON COMPTE QONTO.

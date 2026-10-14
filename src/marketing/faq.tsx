@@ -57,7 +57,7 @@ function questions(): readonly { question: string; reponse: string }[] {
 		},
 		{
 			question: 'Puis-je arrêter quand je veux ?',
-			reponse: `Oui, sans engagement. L’essai dure ${DUREE_ESSAI_JOURS} jours et ne demande pas de carte bancaire.`
+			reponse: `Oui, sans engagement. L’essai dure ${DUREE_ESSAI_JOURS} jours : votre carte est enregistrée chez Paddle, rien n’est prélevé avant la fin, et on vous prévient deux jours avant. Vous annulez en deux gestes depuis Compte › Abonnement. Sans carte, Découverte vous montre déjà ce qu’on vous doit.`
 		}
 	];
 }

@@ -1,161 +1,119 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { finDeLEssai, resolveEffectivePlan } from '../billing';
 import {
-	PLAN_FEATURES,
-	PLAN_SEATS,
-	PALIERS,
 	DUREE_ESSAI_JOURS,
-	planHasFeature,
-	palierDeTaille,
-	finDeLEssai,
-	resolveEffectivePlan
-} from '../billing';
+	FORMULES,
+	GRILLE,
+	LIMITES,
+	formuleRecommandee,
+	limitesDe,
+	moisOfferts,
+	mensualiteDeLAnnee
+} from '../../config/tarifs';
 
-describe('les étages', () => {
-	it('donne la surveillance aux deux étages payants', () => {
-		expect(planHasFeature('suivi', 'surveillance')).toBe(true);
-		expect(planHasFeature('procedures', 'surveillance')).toBe(true);
-	});
-
-	it("réserve les procédures à l'étage supérieur", () => {
-		// C'est la SEULE différence entre les deux offres, et c'est elle qui
-		// justifie de payer tous les mois. Chiffrer une créance est ouvert dès le
-		// premier étage : sans décompte, la surveillance ne dit que « il se passe
-		// quelque chose » sans jamais dire combien.
-		expect(planHasFeature('suivi', 'procedures')).toBe(false);
-		expect(planHasFeature('suivi', 'decompte')).toBe(true);
-		expect(planHasFeature('procedures', 'procedures')).toBe(true);
-		expect(planHasFeature('procedures', 'decompte')).toBe(true);
-	});
-
-	it("n'ouvre rien sans abonnement", () => {
-		for (const f of Object.keys(PLAN_FEATURES.none) as (keyof typeof PLAN_FEATURES.none)[]) {
-			expect(planHasFeature('none', f)).toBe(false);
+describe('la grille', () => {
+	it('fait payer dix mois à qui paie l’année', () => {
+		for (const f of FORMULES) {
+			expect(GRILLE[f].annuel).toBe(GRILLE[f].mensuel * 10);
+			expect(moisOfferts(f)).toBe(2);
 		}
+		expect(mensualiteDeLAnnee('equipe')).toBe(3250);
 	});
 
-	it('ouvre tout en développement', () => {
-		for (const f of Object.keys(PLAN_FEATURES.none) as (keyof typeof PLAN_FEATURES.none)[]) {
-			expect(planHasFeature('dev', f)).toBe(true);
-		}
+	it('monte de formule en formule, en prix comme en limites', () => {
+		expect(GRILLE.solo.mensuel).toBeLessThan(GRILLE.equipe.mensuel);
+		expect(GRILLE.equipe.mensuel).toBeLessThan(GRILLE.pro.mensuel);
+		expect(LIMITES.solo.utilisateurs).toBeLessThan(LIMITES.equipe.utilisateurs);
+		expect(LIMITES.equipe.utilisateurs).toBeLessThan(LIMITES.pro.utilisateurs);
+		expect(LIMITES.pro.clientsSuivis).toBeNull();
 	});
 
-	it('définit un quota de sièges pour chaque étage payant', () => {
-		expect(PLAN_SEATS.suivi).toBeGreaterThan(0);
-		expect(PLAN_SEATS.procedures).toBeGreaterThan(PLAN_SEATS.suivi);
+	it('laisse Découverte mesurer sans rien faire partir', () => {
+		expect(LIMITES.decouverte.agir).toBe(false);
+		expect(LIMITES.decouverte.clientsSuivis).toBe(0);
+		for (const f of FORMULES) expect(LIMITES[f].agir).toBe(true);
 	});
 
-	it("n'expose que des fonctionnalités qui existent vraiment", () => {
-		// Ce test est le garde contre la rechute : des fonctionnalités ont déjà
-		// figuré dans cette grille sans avoir jamais été construites. Une grille
-		// tarifaire bâtie dessus vendrait du vide.
-		expect(Object.keys(PLAN_FEATURES.procedures).sort()).toEqual([
-			'decompte',
-			'importFactures',
-			'procedures',
-			'surveillance'
-		]);
-		expect(Object.keys(PLAN_FEATURES).sort()).toEqual(['dev', 'none', 'procedures', 'suivi']);
+	it('ne borne rien en développement', () => {
+		expect(limitesDe('dev').clientsSuivis).toBeNull();
+		expect(limitesDe('none')).toBe(LIMITES.decouverte);
+	});
+
+	it('propose Solo à une entreprise individuelle, Équipe sinon', () => {
+		expect(formuleRecommandee('Entrepreneur individuel')).toBe('solo');
+		expect(formuleRecommandee('SAS, société par actions simplifiée')).toBe('equipe');
+		expect(formuleRecommandee(undefined)).toBe('equipe');
 	});
 });
 
-describe('le palier de taille', () => {
-	// Les bornes viennent du document 03 du business plan. Elles décident du
-	// PRIX, jamais des fonctionnalités.
-	it('range sous 250 factures par an en S', () => {
-		expect(palierDeTaille(80)).toBe('S');
-		expect(palierDeTaille(249)).toBe('S');
-	});
-
-	it('range de 250 à 800 en M', () => {
-		expect(palierDeTaille(250)).toBe('M');
-		expect(palierDeTaille(300)).toBe('M');
-		expect(palierDeTaille(800)).toBe('M');
-	});
-
-	it('range au-delà de 800 en L', () => {
-		expect(palierDeTaille(801)).toBe('L');
-		expect(palierDeTaille(2400)).toBe('L');
-	});
-
-	it('retient le palier le plus bas quand le profil est vide', () => {
-		// Surfacturer un établissement qui n'a pas rempli son nombre de couverts
-		// serait le pire des défauts : il découvrirait l'erreur sur sa facture.
-		expect(palierDeTaille(undefined)).toBe('S');
-		expect(palierDeTaille(0)).toBe('S');
-		expect(palierDeTaille(-5)).toBe('S');
-	});
-
-	it('ne connaît que trois paliers', () => {
-		expect([...PALIERS]).toEqual(['S', 'M', 'L']);
-	});
-});
-
-describe("l'essai", () => {
-	// CES TESTS SIMULENT LE JOUR OÙ LA FACTURATION OUVRE, et c'est tout leur
-	// intérêt. Fermée, `resolveEffectivePlan` renvoie `dev` et tout est ouvert à
-	// tout le monde : rien de ce qui suit ne serait exercé. Ouverte, la même
-	// fonction bascule les établissements sans essai sur `none`, et l'essai est
-	// la seule chose qui rende cette bascule survivable.
+describe('le palier effectif', () => {
 	beforeEach(() => {
 		vi.stubEnv('PADDLE_API_KEY', 'pdl_test');
 		vi.stubEnv('PADDLE_FACTURATION_OUVERTE', 'oui');
 	});
 	afterEach(() => vi.unstubAllEnvs());
 
-	const org = (freeTrialEndsAt?: number) =>
+	const org = (champs: Record<string, unknown> = {}) =>
 		({
 			_id: 'org_1',
 			_creationTime: 0,
 			name: 'Clinique des Ormes',
 			createdAt: 0,
-			freeTrialEndsAt
+			...champs
 		}) as unknown as Parameters<typeof resolveEffectivePlan>[0];
 
-	it('dure trente jours', () => {
-		const depuis = Date.parse('2026-03-01T00:00:00Z');
-		expect(finDeLEssai(depuis)).toBe(depuis + 30 * 24 * 60 * 60 * 1000);
-		expect(DUREE_ESSAI_JOURS).toBe(30);
+	it('ouvre la formule souscrite, à l’essai comme payée', () => {
+		expect(
+			resolveEffectivePlan(org({ paddleStatus: 'trialing', paddlePlanTier: 'solo' })).tier
+		).toBe('solo');
+		const pro = resolveEffectivePlan(org({ paddleStatus: 'active', paddlePlanTier: 'pro' }));
+		expect(pro.tier).toBe('pro');
+		expect(pro.seatsAllowed).toBe(LIMITES.pro.utilisateurs);
 	});
 
-	it("ouvre l'abonnement complet tant qu'il court", () => {
-		// L'essai donne le PLUS HAUT étage, pas le plus bas : un essai qui cache la
-		// moitié du produit ne fait pas essayer le produit.
-		const { tier, seatsAllowed } = resolveEffectivePlan(org(Date.now() + 60_000));
-		expect(tier).toBe('procedures');
-		expect(seatsAllowed).toBe(PLAN_SEATS.procedures);
-		expect(planHasFeature(tier, 'procedures')).toBe(true);
+	it('relit les étages d’avant dans la grille d’aujourd’hui', () => {
+		expect(
+			resolveEffectivePlan(org({ paddleStatus: 'active', paddlePlanTier: 'procedures' })).tier
+		).toBe('equipe');
+		expect(
+			resolveEffectivePlan(org({ paddleStatus: 'active', paddlePlanTier: 'suivi' })).tier
+		).toBe('solo');
 	});
 
-	it('ne rouvre rien une fois expiré', () => {
-		expect(resolveEffectivePlan(org(Date.now() - 60_000)).tier).toBe('none');
+	it('ouvre Équipe tant qu’un accès offert court, puis Découverte', () => {
+		expect(resolveEffectivePlan(org({ freeTrialEndsAt: Date.now() + 60_000 })).tier).toBe('equipe');
+		expect(resolveEffectivePlan(org({ freeTrialEndsAt: Date.now() - 60_000 })).tier).toBe('none');
+		expect(resolveEffectivePlan(org()).tier).toBe('none');
 	});
 
-	it("laisse sur 'none' un établissement qui n'a jamais eu d'essai", () => {
-		expect(resolveEffectivePlan(org(undefined)).tier).toBe('none');
+	it('fait retomber un paiement échoué sur Découverte', () => {
+		expect(
+			resolveEffectivePlan(org({ paddleStatus: 'past_due', paddlePlanTier: 'pro' })).tier
+		).toBe('none');
 	});
 
 	it('ne ferme rien tant que la facturation n’est pas ouverte, même clé posée', () => {
 		// La clé live se pose à la migration, avant que Paddle ait vérifié le
 		// compte : personne ne doit être fermé sans pouvoir payer.
 		vi.stubEnv('PADDLE_FACTURATION_OUVERTE', '');
-		expect(resolveEffectivePlan(org(Date.now() - 60_000)).tier).toBe('dev');
-		expect(resolveEffectivePlan(org(undefined)).tier).toBe('dev');
+		expect(resolveEffectivePlan(org()).tier).toBe('dev');
+	});
+
+	it('compte trente jours pour un accès offert', () => {
+		const depuis = Date.parse('2026-03-01T00:00:00Z');
+		expect(finDeLEssai(depuis)).toBe(depuis + DUREE_ESSAI_JOURS * 24 * 60 * 60 * 1000);
+		expect(DUREE_ESSAI_JOURS).toBe(30);
 	});
 });
 
 /**
  * LES DEUX PORTES DE DÉVELOPPEMENT, ET CELLE QUI ÉTAIT RESTÉE OUVERTE.
  *
- * `setSimulatedTier` refuse de tourner dès qu'une clé Paddle est posée — donc
- * en production. `activateDevPlan`, qui accorde le plan complet et NEUF MILLE
- * NEUF CENT QUATRE-VINGT-DIX-NEUF sièges, n'avait aucun garde équivalent : une
- * simple mutation authentifiée. N'importe quel compte pouvait se donner
- * l'abonnement le plus cher du produit, gratuitement et sans laisser de trace.
- *
- * ⚠️ CE N'EST PAS UNE FUITE DE DONNÉES, C'EST UNE FUITE DE REVENU — et c'est le
- * genre de défaut qu'on ne découvre qu'en lisant le chiffre d'affaires.
- *
- * Les deux portent désormais le MÊME garde, et il est déclaré une fois.
+ * `setSimulatedTier` refuse de tourner dès qu'une clé Paddle est posée, donc en
+ * production. `activateDevPlan`, qui accorde le plan complet et 9 999 sièges,
+ * n'avait aucun garde équivalent : n'importe quel compte pouvait se donner
+ * l'abonnement le plus cher du produit. Les deux portent désormais le MÊME
+ * garde, déclaré une fois.
  */
 describe('les portes de développement', () => {
 	it('refusent de s’ouvrir dès qu’une clé Paddle est posée', async () => {

@@ -3,195 +3,109 @@ import { internalQuery } from './_generated/server';
 import { authedMutation, authedQuery } from './functions';
 import type { Doc } from './_generated/dataModel';
 import {
-	BORNES_PALIER,
 	DUREE_ESSAI_JOURS,
-	PALIERS,
-	TARIFS,
-	palierDeTaille,
-	type PalierTaille
+	formuleRecommandee,
+	limitesDe,
+	type Formule,
+	type PlanTier,
+	type Rythme
 } from '../config/tarifs';
 import { organisationCouranteOuNull, requireAdminDeLOrgCourante } from './lib/auth';
 
-// ── Plan feature matrix — échelle de valeur EGalim ─────────────────────────────
-
 /**
- * CE QUE CHAQUE ÉTAGE OUVRE.
+ * L'ABONNEMENT, CÔTÉ SERVEUR : ce qui est ouvert à un établissement, et ce que
+ * l'écran Compte › Abonnement en montre.
  *
- * DEUX ÉTAGES PAYANTS, ET PAS TROIS. L'étage `operateur` a été retiré : il
- * ouvrait une fonctionnalité de `sourcing` qui n'a jamais été construite, et
- * `CLAUDE.md` acte qu'il n'a plus de porteur commercial depuis la suppression du
- * modèle opérateur. Il en allait de même pour `veilleReglementaire`, qui
- * n'existe nulle part dans le produit. Les laisser, c'était s'exposer à les voir
- * apparaître un jour sur une grille tarifaire, c'est-à-dire à vendre du vide.
- *
- * Les deux étages restants correspondent exactement aux deux offres du business
- * plan, document 03 :
- *
- *   `diagnostic`  le premier bilan. On dépose, on mesure, on obtient un bilan.
- *   `conformite`  l'abonnement. En plus : le fichier de télédéclaration et le
- *                 suivi mensuel, c'est-à-dire les e-mails qui ramènent le gérant
- *                 tous les mois au lieu d'une fois en mars.
- *
- * LA TAILLE DE LA CANTINE N'EST PAS UN ÉTAGE, c'est un AXE DE PRIX. Un
- * établissement de mille couverts reçoit exactement le même produit qu'un
- * établissement de deux cents ; il le paie plus cher parce que la valeur diffère,
- * pas la prestation. Voir `PALIER_TAILLE` plus bas.
+ * La grille (formules, prix, limites) vit dans `src/lib/config/tarifs.ts`, lue
+ * aussi par le site et par le catalogue Paddle. Refaite le 14/10/2026 :
+ * Découverte (gratuite, rien ne part), Solo, Équipe et Pro
+ * (`docs/superpowers/specs/2026-10-14-pricing-abonnements.md`).
  */
-export const PLAN_FEATURES = {
-	none: {
-		importFactures: false,
-		surveillance: false,
-		procedures: false,
-		decompte: false
-	},
-	suivi: {
-		importFactures: true,
-		surveillance: true,
-		procedures: false,
-		decompte: true
-	},
-	procedures: {
-		importFactures: true,
-		surveillance: true,
-		procedures: true,
-		decompte: true
-	},
-	dev: {
-		importFactures: true,
-		surveillance: true,
-		procedures: true,
-		decompte: true
+
+// Le palier effectif et ses limites vivent avec la grille (`config/tarifs.ts`),
+// pour que l'écran et la salle les lisent sans importer le serveur.
+export { limitesDe, type PlanTier };
+
+/** Les étages d'avant le 14/10/2026, relus dans la grille d'aujourd'hui. */
+function formuleSouscrite(org: Doc<'organizations'>): Formule | null {
+	switch (org.paddlePlanTier) {
+		case 'solo':
+		case 'equipe':
+		case 'pro':
+			return org.paddlePlanTier;
+		case 'suivi':
+			return 'solo';
+		case 'procedures':
+			return 'equipe';
+		default:
+			return null;
 	}
-} as const;
-
-export type PlanFeature = keyof (typeof PLAN_FEATURES)['procedures'];
-export type PlanTier = 'none' | 'suivi' | 'procedures' | 'dev';
-
-// Nombre d'utilisateurs autorisés par étage
-export const PLAN_SEATS: Record<PlanTier, number> = {
-	none: 0,
-	suivi: 2,
-	procedures: 3,
-	dev: 9999
-};
-
-/**
- * LA GRILLE TARIFAIRE A DÉMÉNAGÉ dans `src/lib/config/tarifs.ts`, et elle est
- * réexportée ici pour que rien de ce qui l'importait déjà n'ait à changer.
- *
- * Elle a trois lecteurs : ce module, qui choisit l'identifiant de prix Paddle ;
- * la salle d'exposition ; et la section de tarifs de la page d'accueil. Deux des
- * trois la recopiaient à la main. Un module pur, sans import Convex ni React, se
- * lit des deux côtés du réseau — c'est le même montage que
- * `src/lib/egalim/referentiel.ts`, et pour la même raison : ce qui engage
- * commercialement ne doit exister qu'à un seul endroit.
- */
-export { PALIERS, palierDeTaille, TARIFS, BORNES_PALIER, DUREE_ESSAI_JOURS };
-export type { PalierTaille };
-
-// ── Core resolver ─────────────────────────────────────────────────────────────
+}
 
 /**
  * LA FACTURATION EST-ELLE OUVERTE SUR CE DÉPLOIEMENT ?
  *
- * ⚠️ POSER LA CLÉ N'OUVRE PLUS LA FACTURATION. Jusqu'au 14/10/2026, la clé
- * Paddle suffisait : le jour où elle arrivait, chaque établissement dont l'essai
- * était fini passait sur `none` d'un coup, avant même qu'un paiement soit
- * possible. Or la clé live se pose à la migration, AVANT que Paddle ait
- * vérifié le compte et approuvé le domaine : pendant des jours, des gérants
- * auraient été fermés sans aucun moyen de payer.
- *
- * L'ouverture est donc un geste à part : `PADDLE_FACTURATION_OUVERTE=oui`, posé
- * quand le paiement fonctionne vraiment. Avant, tout reste ouvert, comme
- * aujourd'hui, et l'écran le dit (`OuvertureEnCours`).
+ * ⚠️ POSER LA CLÉ N'OUVRE PAS LA FACTURATION. La clé live se pose à la
+ * migration, AVANT que Paddle ait vérifié le compte et approuvé le domaine :
+ * si elle suffisait, des gérants seraient fermés pendant des jours sans aucun
+ * moyen de payer. L'ouverture est un geste à part, `PADDLE_FACTURATION_OUVERTE=oui`,
+ * posé quand le paiement fonctionne vraiment. Avant, tout reste ouvert et
+ * l'écran le dit (`OuvertureEnCours`).
  */
 export function paiementOuvert(): boolean {
 	return Boolean(process.env.PADDLE_API_KEY) && process.env.PADDLE_FACTURATION_OUVERTE === 'oui';
 }
 
-// Returns the effective plan for an org, considering:
-// 1. Dev bypass (PADDLE_API_KEY absent) → 'dev'
-// 2. devPlan flag → 'dev'
-// 3. Active Paddle subscription → paddlePlanTier
-// 4. Facturation pas encore ouverte → 'dev' (tout reste ouvert)
-// 5. Essai qui court → 'procedures'
-// 6. Nothing → 'none'
+/**
+ * Ce qui est ouvert à un établissement, dans cet ordre :
+ *
+ *   1. aucune clé Paddle sur le déploiement → `dev` ;
+ *   2. un plan posé à la main en développement → `dev` ;
+ *   3. un abonnement Paddle actif ou à l'essai → sa formule ;
+ *   4. la facturation pas encore ouverte → `dev` (rien ne se ferme) ;
+ *   5. un accès offert qui court (`freeTrialEndsAt`, l'essai d'avant le
+ *      14/10/2026 et le préavis donné à l'ouverture) → Équipe ;
+ *   6. sinon → Découverte.
+ *
+ * Un abonnement impayé, en pause ou résilié retombe donc sur l'accès offert
+ * s'il court, sur Découverte sinon : rien n'est effacé, les relances attendent.
+ */
 export function resolveEffectivePlan(org: Doc<'organizations'>): {
 	tier: PlanTier;
 	isDev: boolean;
 	seatsAllowed: number;
 } {
-	const isDev = !process.env.PADDLE_API_KEY;
+	const avec = (tier: PlanTier, isDev: boolean) => ({
+		tier,
+		isDev,
+		seatsAllowed: limitesDe(tier).utilisateurs
+	});
 
-	// Dev bypass: no Paddle key configured at all
-	if (isDev) {
-		// Allow simulating a specific plan tier for feature-gating tests
-		if (org.simulatedTier) {
-			const tier = org.simulatedTier as PlanTier;
-			return { tier, isDev: true, seatsAllowed: PLAN_SEATS[tier] ?? 50 };
+	if (!process.env.PADDLE_API_KEY) {
+		// Simuler un palier, pour regarder les limites sans payer.
+		const simule = org.simulatedTier as PlanTier | undefined;
+		if (simule !== undefined && ['none', 'solo', 'equipe', 'pro'].includes(simule)) {
+			return avec(simule, true);
 		}
-		return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
+		return avec('dev', true);
 	}
 
-	// Explicit dev plan (only settable when PADDLE_API_KEY was absent at the time)
-	if (org.devPlan) {
-		return { tier: 'dev', isDev: false, seatsAllowed: 9999 };
-	}
+	if (org.devPlan) return avec('dev', false);
 
-	// Active Paddle subscription
 	if (org.paddleStatus === 'active' || org.paddleStatus === 'trialing') {
-		const tier = (org.paddlePlanTier ?? 'procedures') as PlanTier;
-		return {
-			tier,
-			isDev: false,
-			seatsAllowed: org.seatsIncluded ?? PLAN_SEATS[tier] ?? PLAN_SEATS.suivi
-		};
+		return avec(formuleSouscrite(org) ?? 'equipe', false);
 	}
 
-	// La clé est posée, la facturation pas encore ouverte : rien ne se ferme.
-	// Voir `paiementOuvert`.
-	if (!paiementOuvert()) {
-		return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
-	}
+	if (!paiementOuvert()) return avec('dev', true);
 
-	// L'ESSAI. Voir `DUREE_ESSAI_JOURS` pour la règle et ce qu'elle évite.
-	if (org.freeTrialEndsAt && org.freeTrialEndsAt > Date.now()) {
-		return { tier: 'procedures', isDev: false, seatsAllowed: PLAN_SEATS.procedures };
-	}
+	if (org.freeTrialEndsAt && org.freeTrialEndsAt > Date.now()) return avec('equipe', false);
 
-	return { tier: 'none', isDev: false, seatsAllowed: PLAN_SEATS.none };
+	return avec('none', false);
 }
 
-/**
- * L'ESSAI, ET POURQUOI IL EXISTE AVANT MÊME QUE LE PAIEMENT SOIT OUVERT.
- *
- * Tant que la facturation n'est pas ouverte (`paiementOuvert`),
- * `resolveEffectivePlan` renvoie `dev` et tout est ouvert à tout le monde. Le
- * jour où elle s'ouvre, chaque établissement dont l'essai est fini passe sur
- * `none` (aujourd'hui, cela ferme les invitations : c'est le seul verrou
- * appliqué, voir `presse.tsx`).
- *
- * L'essai est ce qui rend cette bascule survivable. Il est ouvert à la CRÉATION
- * de l'établissement, pas à la première tentative d'usage : un gérant qui
- * découvre qu'il doit payer AVANT d'avoir vu son premier taux ne reviendra pas,
- * et le produit n'a rien à montrer tant que rien n'a été déposé.
- *
- * TRENTE JOURS : la valeur et sa justification vivent avec la grille tarifaire,
- * dans `src/lib/config/tarifs.ts`, parce que la page d'accueil l'annonce.
- *
- * UNE FOIS PAR COMPTE, jamais par établissement : sans ça, il suffit de créer un
- * nouvel établissement pour recommencer l'essai. Le drapeau vit sur
- * `userProfiles.hasUsedFreeTrial`, qui existe au schéma depuis le début à cette
- * fin exacte.
- */
+/** Le dernier jour d'un accès offert de trente jours, à compter de `depuis`. */
 export function finDeLEssai(depuis: number = Date.now()): number {
 	return depuis + DUREE_ESSAI_JOURS * 24 * 60 * 60 * 1000;
-}
-
-export function planHasFeature(tier: PlanTier, feature: PlanFeature): boolean {
-	if (tier === 'dev') return true;
-	if (tier === 'none') return PLAN_FEATURES.none[feature];
-	return PLAN_FEATURES[tier]?.[feature] ?? false;
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -219,7 +133,7 @@ export const getBillingStatus = authedQuery({
 			seatsUsed: memberCount,
 			seatsAllowed,
 			paddleStatus: org.paddleStatus ?? null,
-			paddlePlanTier: org.paddlePlanTier ?? null,
+			paddlePlanTier: formuleSouscrite(org),
 			paddleCurrentPeriodEnd: org.paddleCurrentPeriodEnd ?? null
 		};
 	}
@@ -228,13 +142,10 @@ export const getBillingStatus = authedQuery({
 /**
  * Tout ce dont l'écran d'abonnement a besoin, en une lecture.
  *
- * LE PALIER EST CALCULÉ ICI, jamais côté client. Il décide du prix : le laisser
- * au navigateur, c'est laisser à l'utilisateur le soin de choisir son tarif.
- *
- * `paiementOuvert` dit à l'écran si la facturation est ouverte (voir
- * `paiementOuvert`). Tant qu'elle ne l'est pas, l'écran montre l'offre sans
- * promettre un bouton qui ne fonctionnerait pas ; ce que le bouton ouvre vient
- * de `paddle.caisse`.
+ * Ce qu'on peut souscrire et à quel prix vient de `paddle.caisse` ; ici, ce qui
+ * EST : le palier, la formule souscrite, ses dates, l'accès offert, et ce que
+ * le gérant se verra proposer d'abord (`recommandee`, d'après la forme
+ * juridique au registre).
  */
 export const etatAbonnement = authedQuery({
 	args: {},
@@ -245,31 +156,61 @@ export const etatAbonnement = authedQuery({
 		const org = await ctx.db.get(orgId);
 		if (!org) return null;
 
-		const { tier, isDev, seatsAllowed } = resolveEffectivePlan(org);
-		const palier = palierDeTaille(org.facturesParAn);
+		const { tier, isDev } = resolveEffectivePlan(org);
+		const maintenant = Date.now();
+		const souscrite = org.paddleStatus === undefined ? null : formuleSouscrite(org);
+		const [profil, creancier, membres] = await Promise.all([
+			ctx.db
+				.query('userProfiles')
+				.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
+				.unique(),
+			ctx.db
+				.query('profilsCreancier')
+				.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+				.first(),
+			ctx.db
+				.query('organizationMembers')
+				.withIndex('by_organization', (q) => q.eq('organizationId', orgId))
+				.collect()
+		]);
 
 		return {
 			tier,
 			isDev,
-			palier,
-			bornesPalier: BORNES_PALIER[palier],
-			facturesParAn: org.facturesParAn ?? null,
-			tarifs: TARIFS[palier],
-			seatsAllowed,
-			paddleStatus: org.paddleStatus ?? null,
-			paddleCurrentPeriodEnd: org.paddleCurrentPeriodEnd ?? null,
 			paiementOuvert: paiementOuvert(),
-			bilanRegleLe: org.bilanRegleLe ?? null,
+			statut: org.paddleStatus ?? null,
+			formule: souscrite,
+			rythme: (org.paddleRythme ?? null) as Rythme | null,
+			essaiFinLe: org.paddleStatus === 'trialing' ? (org.paddleEssaiFinLe ?? null) : null,
+			prochainPrelevementLe: org.paddleProchainPrelevementLe ?? null,
+			resiliationLe: org.paddleResiliationLe ?? null,
+			// L'accès offert n'est renvoyé que s'il court ENCORE : un accès terminé
+			// ferait afficher « il reste -12 jours ».
+			offertJusquAu:
+				org.freeTrialEndsAt && org.freeTrialEndsAt > maintenant ? org.freeTrialEndsAt : null,
 			// Le portail Paddle (carte, factures, résiliation) n'a de sens que pour
 			// un établissement que Paddle connaît déjà.
 			clientPaddle: Boolean(org.paddleCustomerId),
-			// L'essai n'est renvoyé que s'il court ENCORE. Un essai terminé
-			// n'apprend rien au gérant et ferait afficher « il reste -12 jours ».
-			essaiFiniLe:
-				org.freeTrialEndsAt && org.freeTrialEndsAt > Date.now() ? org.freeTrialEndsAt : null
+			essaiDisponible: essaiDisponible(org, profil),
+			recommandee: formuleRecommandee(creancier?.formeJuridique),
+			limites: limitesDe(tier),
+			utilisateurs: membres.length
 		};
 	}
 });
+
+/**
+ * Trente jours offerts, une fois. Ni l'établissement ni le compte qui souscrit
+ * ne doivent les avoir déjà eus : sinon une résiliation suivie d'une nouvelle
+ * souscription, ou un second établissement, rouvrirait l'essai. L'accès offert
+ * d'avant le 14/10/2026 compte comme un essai (`hasUsedFreeTrial`).
+ */
+export function essaiDisponible(
+	org: Doc<'organizations'>,
+	profil: Doc<'userProfiles'> | null
+): boolean {
+	return org.essaiUtilise !== true && profil?.hasUsedFreeTrial !== true;
+}
 
 // Internal version for use by other Convex functions
 export const _getOrgBillingStatus = internalQuery({
@@ -296,10 +237,9 @@ export const _getOrgBillingStatus = internalQuery({
  *
  * ⚠️ DÉCLARÉ UNE FOIS, PARCE QUE L'AUTRE PORTE L'AVAIT OUBLIÉ. `setSimulatedTier`
  * portait ce garde à la main ; `activateDevPlan`, qui accorde le plan complet et
- * 9 999 sièges, n'en avait AUCUN — une simple mutation authentifiée suffisait à
+ * 9 999 sièges, n'en avait AUCUN : une simple mutation authentifiée suffisait à
  * s'offrir l'abonnement le plus cher du produit. Ce n'est pas une fuite de
- * données, c'est une fuite de revenu, et on ne la découvre qu'en lisant le
- * chiffre d'affaires.
+ * données, c'est une fuite de revenu.
  *
  * La clé Paddle est le bon signal : elle n'existe que là où l'on facture pour de
  * vrai.
@@ -319,7 +259,7 @@ export const setSimulatedTier = authedMutation({
 	args: { tier: v.optional(v.string()) },
 	handler: async (ctx, { tier }) => {
 		exigerEnvironnementDeDeveloppement('setSimulatedTier');
-		// Changer d'étage, c'est changer de facture : réservé à l'administrateur,
+		// Changer de palier, c'est changer de facture : réservé à l'administrateur,
 		// comme tout ce qui touche à l'abonnement.
 		const organizationId = await requireAdminDeLOrgCourante(ctx, ctx.user._id);
 
@@ -347,25 +287,6 @@ export const activateDevPlan = authedMutation({
 
 // ── Backend guard helper (use in other Convex mutations/queries) ──────────────
 
-// Call this at the top of any gated mutation to enforce plan access.
-// Usage: await assertFeatureAccess(ctx, orgId, 'declaration')
-export async function assertFeatureAccess(
-	ctx: { db: { get: (id: any) => Promise<any>; query: any } },
-	organizationId: string,
-	feature: PlanFeature
-): Promise<void> {
-	const org = await ctx.db.get(organizationId as any);
-	if (!org) throw new ConvexError('Organisation introuvable');
-
-	const { tier } = resolveEffectivePlan(org);
-	if (!planHasFeature(tier, feature)) {
-		throw new ConvexError(
-			`Cette fonctionnalité nécessite un plan supérieur. Plan actuel : ${tier}. ` +
-				`Mettez à niveau votre abonnement pour continuer.`
-		);
-	}
-}
-
 // Call this before inserting a new member to enforce seat quota.
 export async function assertSeatAvailable(
 	ctx: { db: { get: (id: any) => Promise<any>; query: any } },
@@ -375,9 +296,6 @@ export async function assertSeatAvailable(
 	if (!org) throw new ConvexError('Organisation introuvable');
 
 	const { tier, seatsAllowed } = resolveEffectivePlan(org);
-	if (tier === 'none') {
-		throw new ConvexError('Aucun abonnement actif. Souscrivez un plan pour continuer.');
-	}
 
 	const memberCount = await ctx.db
 		.query('organizationMembers')
@@ -387,8 +305,9 @@ export async function assertSeatAvailable(
 
 	if (memberCount >= seatsAllowed) {
 		throw new ConvexError(
-			`Quota d'utilisateurs atteint (${memberCount}/${seatsAllowed}). ` +
-				`Mettez à niveau votre plan pour ajouter des membres supplémentaires.`
+			tier === 'none'
+				? 'Les invitations s’ouvrent avec une formule : Compte › Abonnement, trente jours d’essai.'
+				: `Votre formule compte ${seatsAllowed} utilisateur${seatsAllowed > 1 ? 's' : ''}, et ${memberCount} y ont déjà accès. La formule du dessus en ouvre davantage : Compte › Abonnement.`
 		);
 	}
 }

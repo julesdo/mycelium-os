@@ -33,7 +33,7 @@ function indemniteLisible(): string | null {
 /** La date limite que montre la carte : celle de l'écran d'accueil de démonstration. */
 const DATE_LIMITE_DEMO = '1 mai 2031';
 
-const LEVEES = [`${DUREE_ESSAI_JOURS} jours d’essai`, 'Sans carte bancaire', 'Sans engagement'];
+const LEVEES = ['Votre bilan offert', `${DUREE_ESSAI_JOURS} jours d’essai`, 'Sans engagement'];
 
 export function Hero() {
 	const indemnite = indemniteLisible();

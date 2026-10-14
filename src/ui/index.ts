@@ -110,6 +110,7 @@ export {
 } from './tableau';
 export {
 	euros,
+	prixAffiche,
 	eurosCentimes,
 	partsEurosCentimes,
 	dateCourte,
@@ -510,3 +511,4 @@ export {
 	PictoInterdit
 } from './pictogrammes';
 export { BoutonAffiche, LienAffiche, type FondBouton } from './bouton-affiche';
+export { ChoixDeFormule } from './choix-formule';

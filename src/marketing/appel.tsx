@@ -34,7 +34,8 @@ export function Appel() {
 					</LienAffiche>
 				</div>
 				<p className="text-cladd-sm text-encre-site-douce">
-					{DUREE_ESSAI_JOURS} jours d’essai, sans carte bancaire, sans engagement.
+					Votre bilan offert, sans carte. Puis {DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui,
+					sans engagement.
 				</p>
 			</div>
 		</SectionMarketing>

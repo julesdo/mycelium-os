@@ -19,15 +19,23 @@ Le code :
 
 ## Comment ça marche
 
-1. Un administrateur ouvre Compte › Abonnement et touche « Choisir l'abonnement » ou « Régler le
-   bilan ».
-2. Le serveur rend le prix du palier de l'établissement (calculé chez nous, jamais dans le
-   navigateur) et l'identifiant de l'établissement **scellé** par un HMAC sous
-   `PADDLE_WEBHOOK_SECRET`.
+La grille (`src/lib/config/tarifs.ts`) : **Découverte** gratuite (on voit ce qu'on vous doit,
+rien ne part), puis **Solo**, **Équipe** et **Pro**, au mois ou à l'année (dix mois). Trente jours
+d'essai, la carte enregistrée, 0 € le premier jour. Voir
+`docs/superpowers/specs/2026-10-14-pricing-abonnements.md`.
+
+1. Un administrateur touche « Choisir ma formule » (Compte › Abonnement, ou l'étape « Les
+   relances » des premiers pas) : la page de choix montre la frise de l'essai, le rythme et les
+   trois formules (`ChoixDeFormule`).
+2. Le serveur rend les prix rangés dans `prixPaddle`, ceux **avec** essai si l'établissement et
+   le compte n'en ont jamais eu (`essaiDisponible`), et l'identifiant de l'établissement
+   **scellé** par un HMAC sous `PADDLE_WEBHOOK_SECRET`.
 3. Paddle.js se charge à ce moment-là et ouvre le paiement en surimpression, chez Paddle.
 4. Paddle rappelle `/paddle-webhook`. Le rappel vérifie la signature, puis le sceau, et inscrit
-   l'abonnement (ou le bilan réglé) sur l'établissement. L'écran se met à jour seul.
-5. « Gérer mon abonnement chez Paddle » ouvre le portail client : carte, factures, résiliation.
+   la formule, le rythme, la fin de l'essai, le prochain prélèvement et une résiliation
+   programmée. L'écran se met à jour seul ; la surimpression de Paddle se ferme et notre coche
+   de réussite prend la suite.
+5. « Carte et factures, chez Paddle » ouvre le portail client.
 
 Le jeton côté client est public par nature : n'importe qui peut ouvrir un paiement avec nos prix.
 Le sceau empêche qu'un tel paiement se pose sur un établissement qui n'est pas le sien.
@@ -68,8 +76,9 @@ npx convex env set PADDLE_WEBHOOK_SECRET pdl_ntfset_…
 npx convex run paddleCatalogue:catalogue
 ```
 
-7. **Créer** les deux produits et les six prix d'après la grille (`src/lib/config/tarifs.ts`, hors
-   taxes, en euros), puis lancer les commandes `env set` que le rapport rend :
+7. **Créer** les trois produits et les douze prix d'après la grille (`src/lib/config/tarifs.ts`,
+   hors taxes, en euros, l'essai de trente jours porté par six d'entre eux). Les identifiants
+   se rangent seuls dans la table `prixPaddle` : aucune variable à poser.
 
 ```bash
 npx convex run paddleCatalogue:catalogue '{"creer":true}'
@@ -81,11 +90,14 @@ npx convex run paddleCatalogue:catalogue '{"creer":true}'
 npx convex env set PADDLE_FACTURATION_OUVERTE oui
 ```
 
-9. **Essayer** : Compte › Abonnement, « Choisir l'abonnement », la carte de test de Paddle
-   `4242 4242 4242 4242` (date future, CVC `100`). L'abonnement doit passer « Actif » en quelques
-   secondes ; « Gérer mon abonnement chez Paddle » ouvre le portail ; une résiliation depuis le
-   portail doit faire passer l'écran sur « Résilié ». Les rappels se relisent dans
+9. **Essayer** : Compte › Abonnement, « Choisir ma formule », la carte de test de Paddle
+   `4242 4242 4242 4242` (date future, CVC `100`). L'écran doit passer « Essai, 30 j » en
+   quelques secondes, avec la date du premier prélèvement. Les rappels se relisent dans
    Developer Tools › Notifications › la destination › Logs.
+
+   ⚠️ **Un compte qui a eu l'essai d'avant le 14/10/2026 ne revoit pas d'essai** : son
+   `hasUsedFreeTrial` est vrai, la caisse lui propose les prix sans essai (prélevés tout de
+   suite, en bac à sable). Pour voir le parcours d'essai, créer un nouveau compte.
 
 ## 2. Le compte live, sur la production
 

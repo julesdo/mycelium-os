@@ -5,7 +5,7 @@ import { verifierImageStockee } from './images';
 import { components, internal } from './_generated/api';
 import { resend, assertResendApiKey } from './emails/resend';
 import { invitationHtml, invitationTexte } from './emails/modeles';
-import { assertSeatAvailable, resolveEffectivePlan, finDeLEssai } from './billing';
+import { assertSeatAvailable, resolveEffectivePlan } from './billing';
 import { requireEnv } from './env';
 import { shouldSkipTestEmail } from './emails/helpers';
 import { MS_VALIDITE_INVITATION } from '../config/invitations';
@@ -55,11 +55,15 @@ export const getMyOrgMembership = authedQuery({
  * LA CRÉATION DE L'ÉTABLISSEMENT, ET L'IDENTITÉ AVEC LUI.
  *
  * ⚠️ LES DEUX ÉCRITURES TIENNENT DANS LA MÊME MUTATION, et c'est une question
- * de transaction, pas de confort. Cette mutation pose `hasUsedFreeTrial` et
- * `freeTrialEndsAt` : si un second appel échouait après elle, l'essai serait
- * consommé, l'établissement existerait, `/app` ne redirigerait plus vers
- * `/bienvenue`, et le gérant retomberait exactement sur le verrou « Votre
- * identité de créancier » qu'on voulait lui épargner.
+ * de transaction, pas de confort : si un second appel échouait après elle,
+ * l'établissement existerait, `/app` ne redirigerait plus vers `/bienvenue`,
+ * et le gérant retomberait exactement sur le verrou « Votre identité de
+ * créancier » qu'on voulait lui épargner.
+ *
+ * ⚠️ AUCUN ESSAI NE S'OUVRE PLUS ICI (14/10/2026). Un établissement naît sur
+ * Découverte : il voit ce qu'on lui doit, rien ne part. Les trente jours
+ * d'essai s'ouvrent quand le gérant choisit sa formule, la carte enregistrée
+ * chez Paddle (`ChoixDeFormule`, `paddle.caisse`).
  *
  * ⚠️ `siret` ET `facturesParAn` NE S'ÉCRIVENT PLUS ICI. Le premier se saisissait
  * trois fois pour n'être lu qu'une, sur `profilsCreancier.siren` ; le second se
@@ -97,19 +101,12 @@ export const createOrganization = authedMutation({
 			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
 			.unique();
 
-		// L'ESSAI S'OUVRE ICI, ET UNE SEULE FOIS PAR COMPTE. Le lire avant
-		// d'insérer l'établissement est ce qui empêche de recommencer un essai en
-		// créant un second établissement. Voir `DUREE_ESSAI_JOURS` dans
-		// `billing.ts` pour la règle et ce qu'elle évite.
-		const premierEssai = !profile?.hasUsedFreeTrial;
-
 		const orgId = await ctx.db.insert('organizations', {
 			name: args.name.trim(),
 			country: 'FR',
 			currency: 'EUR',
 			timezone: 'Europe/Paris',
 			locale: 'fr-FR',
-			freeTrialEndsAt: premierEssai ? finDeLEssai() : undefined,
 			createdAt: Date.now()
 		});
 
@@ -133,15 +130,11 @@ export const createOrganization = authedMutation({
 		}
 
 		if (profile) {
-			await ctx.db.patch(profile._id, {
-				currentOrganizationId: orgId,
-				hasUsedFreeTrial: true
-			});
+			await ctx.db.patch(profile._id, { currentOrganizationId: orgId });
 		} else {
 			await ctx.db.insert('userProfiles', {
 				userId: ctx.user._id,
-				currentOrganizationId: orgId,
-				hasUsedFreeTrial: true
+				currentOrganizationId: orgId
 			});
 		}
 

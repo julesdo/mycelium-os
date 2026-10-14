@@ -1,18 +1,24 @@
 import { useEffect, useState } from 'react';
 import type { Paddle, PaddleEventData } from '@paddle/paddle-js';
 import type { CaisseServeur } from '../lib/convex/paddle';
-import type { CaisseAffichee } from '../screens/compte/facturation';
+import type { CaisseAffichee, Souscription } from '../screens/compte/facturation';
 
 /**
- * LE PAIEMENT PADDLE, BRANCHÉ SUR L'ÉCRAN D'ABONNEMENT.
+ * LE PAIEMENT PADDLE, BRANCHÉ SUR L'ÉCRAN.
  *
  * Paddle.js se charge AU PREMIER TOUCHER, jamais avec l'application : c'est un
- * script de Paddle (cdn.paddle.com) dont seul l'écran d'abonnement a besoin, et
- * le paquet d'entrée ne porte que le socle. Le paiement s'ouvre en surimpression,
- * chez Paddle, dans sa mise en page : la carte ne passe jamais par nos serveurs.
+ * script de Paddle (cdn.paddle.com) dont seul le choix de formule a besoin, et
+ * le paquet d'entrée ne porte que le socle. Le paiement s'ouvre en
+ * surimpression, chez Paddle : la carte ne passe jamais par nos serveurs.
  *
- * Ce que le paiement emporte (le prix du palier, l'établissement scellé) vient
- * du serveur (`paddle.caisse`). Le navigateur ne choisit rien.
+ * Ce que le paiement emporte (le prix, l'essai, l'établissement scellé) vient du
+ * serveur (`paddle.caisse`). Le navigateur ne choisit que la formule et le
+ * rythme, parmi les prix que le serveur lui a donnés.
+ *
+ * ⚠️ À LA FIN, C'EST NOTRE COCHE, PAS LA SIENNE. Paddle termine sur son propre
+ * écran de réussite, en anglais par défaut et sans rien dire de la suite. Dès
+ * que le paiement est confirmé, sa surimpression se ferme et l'écran pose
+ * `FeuilleDeReussite` : ce qui vient de commencer, et sa date.
  */
 
 let chargement: { jeton: string; paddle: Promise<Paddle | undefined> } | null = null;
@@ -47,7 +53,8 @@ export function useCaissePaddle({
 	ouvrirLePortail: () => Promise<string | null>;
 }): CaisseAffichee | undefined {
 	const [enCours, setEnCours] = useState<CaisseAffichee['enCours']>(null);
-	const [recu, setRecu] = useState(false);
+	const [choix, setChoix] = useState<Souscription | null>(null);
+	const [souscrite, setSouscrite] = useState<Souscription | null>(null);
 	const [erreur, setErreur] = useState<string | null>(null);
 
 	// Paddle parle par son rappel d'événements, un système extérieur : on s'y
@@ -57,7 +64,10 @@ export function useCaissePaddle({
 			if (evenement.name === 'checkout.loaded' || evenement.name === 'checkout.closed') {
 				setEnCours(null);
 			}
-			if (evenement.name === 'checkout.completed') setRecu(true);
+			if (evenement.name === 'checkout.completed') {
+				setSouscrite((dejaLa) => dejaLa ?? choix);
+				void chargement?.paddle.then((paddle) => paddle?.Checkout.close());
+			}
 			if (evenement.name === 'checkout.error') {
 				setEnCours(null);
 				setErreur('Paddle n’a pas pu ouvrir le paiement. Réessayez dans un instant.');
@@ -67,26 +77,28 @@ export function useCaissePaddle({
 		return () => {
 			ecouteurs.delete(ecouter);
 		};
-	}, []);
+	}, [choix]);
 
 	if (caisse === undefined || caisse === null) return undefined;
 
 	const pret = caisse.pret ? caisse : null;
 
 	return {
-		offres: {
-			bilan: pret?.prix.bilan != null,
-			abonnement: pret?.prix.abonnement != null
-		},
-		indisponible: pret === null,
+		disponible: pret !== null,
+		essai: pret?.essai ?? false,
 		enCours,
-		recu,
+		souscrite,
+		onFermerLaReussite: () => setSouscrite(null),
 		erreur,
-		onChoisir: (offre) => {
-			const prix = pret?.prix[offre];
-			if (!pret || !prix) return;
+		onChoisir: (formule, rythme) => {
+			const prix = pret?.prix[`${formule}-${rythme}`];
+			if (!pret || !prix) {
+				setErreur('Cette formule ne peut pas être souscrite pour le moment.');
+				return;
+			}
 			setErreur(null);
-			setEnCours(offre);
+			setEnCours('formule');
+			setChoix({ formule, rythme, essai: pret.essai });
 			paddlePour(pret)
 				.then((paddle) => {
 					if (!paddle) throw new Error('Paddle.js absent');

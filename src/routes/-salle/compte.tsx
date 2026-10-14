@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Theme } from '../../app/use-theme';
-import { BORNES_PALIER, TARIFS, palierDeTaille } from '../../lib/config/tarifs';
+import { limitesDe, type Formule, type PlanTier, type Rythme } from '../../lib/config/tarifs';
 import type { FicheIntervenant, Lecture } from '../../ui';
 import { CarteConnexion, LogoConnexion, PileDeConnexions } from '../../ui';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
@@ -155,85 +155,66 @@ const ETABLISSEMENT_AFFICHE_DEMO: EtablissementAffiche = {
 
 /** Ce que la base et le déploiement portent pour l'abonnement de l'établissement. */
 interface FacturationDemo {
-	/** `organizations.facturesParAn`. Absent tant qu'il ne l'a pas déclaré : le champ est facultatif à `/bienvenue`. */
-	readonly facturesParAn?: number;
 	/** La facturation ouverte sur le déploiement (`paiementOuvert`, `billing.ts`). */
 	readonly ouvert: boolean;
-	/** `organizations.bilanRegleLe` : le premier bilan payé. */
-	readonly bilanRegleLe?: number;
-	/** `organizations.freeTrialEndsAt`, posé à la création de l'établissement. */
-	readonly essaiJusquAu: number;
-	/**
-	 * `organizations.paddleStatus`, tel que les rappels Paddle l'écrivent
-	 * (`paddle.ts`). Les trois qui ferment le palier — `past_due`, `paused`,
-	 * `canceled` — n'avaient AUCUN affichage avant cette tranche : la section
-	 * rendait `null` et montrait les offres comme à un visiteur. La salle les
-	 * porte maintenant, parce que c'est là qu'on les regarde.
-	 */
-	readonly statutPaddle?: 'active' | 'trialing' | 'past_due' | 'paused' | 'canceled';
+	/** `organizations.paddleStatus`, tel que les rappels Paddle l'écrivent. */
+	readonly statut?: 'active' | 'trialing' | 'past_due' | 'paused' | 'canceled';
+	readonly formule?: Formule;
+	readonly rythme?: Rythme;
+	/** En jours depuis aujourd'hui : la fin de l'essai, le prochain prélèvement, la résiliation. */
+	readonly essaiDans?: number;
+	readonly prelevementDans?: number;
+	readonly resilieDans?: number;
+	/** Un accès offert qui court, en jours. */
+	readonly offertDans?: number;
+	readonly essaiDisponible: boolean;
 }
 
 /**
- * ⚠️ AUCUNE CLÉ PADDLE : le compte marchand n'est pas ouvert, comme la section
- * de facturation le dit. Aucun abonnement souscrit, et l'essai court encore
- * douze jours.
- *
- * La fin de l'essai se lit sur l'horloge, et non sur un jour figé :
- * `EssaiEnCours` compte ses jours depuis `Date.now()`. Figée, elle ferait perdre
- * un jour à la démonstration chaque matin.
+ * ⚠️ LA FACTURATION N'EST PAS OUVERTE : c'est l'état de la production tant que
+ * Paddle n'a pas vérifié le compte. Tout est ouvert, rien n'est encaissé.
  */
 const FACTURATION_DEMO: FacturationDemo = {
-	facturesParAn: ETABLISSEMENT_DEMO.facturesParAn,
 	ouvert: false,
-	essaiJusquAu: Date.now() + 12 * 24 * 60 * 60 * 1000
+	essaiDisponible: true
 };
 
+const JOUR_DEMO = 24 * 60 * 60 * 1000;
+
 /**
- * Le plan effectif, par les seules branches de `resolveEffectivePlan` que ces
- * entrées atteignent (`src/lib/convex/billing.ts`) : sans clé, le plan de
- * développement ; avec une clé, l'essai qui court, et ses sièges dans
- * `PLAN_SEATS`. Aucune forme ne pose une clé sur un essai terminé : ce cas lève,
- * plutôt que de montrer un plan qu'aucune forme ne fait regarder.
+ * Le palier effectif, par les seules branches de `resolveEffectivePlan` que ces
+ * formes atteignent (`src/lib/convex/billing.ts`).
  */
-function planEffectif(facturation: FacturationDemo) {
-	if (!facturation.ouvert) return { tier: 'dev', isDev: true, seatsAllowed: 9999 };
-
-	// `active` et `trialing` seuls ouvrent le palier souscrit. Les trois autres
-	// tombent plus bas, exactement comme `resolveEffectivePlan` les fait tomber.
-	if (facturation.statutPaddle === 'active' || facturation.statutPaddle === 'trialing') {
-		return { tier: 'procedures', isDev: false, seatsAllowed: 3 };
+function planEffectif(facturation: FacturationDemo): { tier: PlanTier; isDev: boolean } {
+	if (facturation.statut === 'active' || facturation.statut === 'trialing') {
+		return { tier: facturation.formule ?? 'equipe', isDev: false };
 	}
-
-	if (facturation.essaiJusquAu > Date.now()) {
-		return { tier: 'procedures', isDev: false, seatsAllowed: 3 };
-	}
-
-	// `PLAN_SEATS.none` vaut zéro : plus une seule invitation possible, et c'est
-	// le seul verrou du palier fermé qui soit réellement appliqué aujourd'hui.
-	return { tier: 'none', isDev: false, seatsAllowed: 0 };
+	if (!facturation.ouvert) return { tier: 'dev', isDev: true };
+	if (facturation.offertDans !== undefined) return { tier: 'equipe', isDev: false };
+	return { tier: 'none', isDev: false };
 }
 
-/**
- * L'état d'abonnement, composé comme `etatAbonnement` le rend : le palier par
- * `palierDeTaille`, ses bornes et ses tarifs lus dans la grille, jamais écrits.
- */
+/** L'état d'abonnement, composé comme `etatAbonnement` le rend. */
 function abonnementDe(facturation: FacturationDemo): AbonnementAffiche {
-	const { tier, isDev, seatsAllowed } = planEffectif(facturation);
-	const palier = palierDeTaille(facturation.facturesParAn);
-
+	const { tier, isDev } = planEffectif(facturation);
+	const dans = (jours: number | undefined) =>
+		jours === undefined ? null : Date.now() + jours * JOUR_DEMO;
 	return {
 		tier,
 		isDev,
-		palier,
-		bornesPalier: BORNES_PALIER[palier],
-		facturesParAn: facturation.facturesParAn ?? null,
-		tarifs: TARIFS[palier],
-		seatsAllowed,
-		paddleStatus: facturation.statutPaddle ?? null,
 		paiementOuvert: facturation.ouvert,
-		bilanRegleLe: facturation.bilanRegleLe ?? null,
-		clientPaddle: facturation.statutPaddle !== undefined || facturation.bilanRegleLe !== undefined,
-		essaiFiniLe: facturation.essaiJusquAu > Date.now() ? facturation.essaiJusquAu : null
+		statut: facturation.statut ?? null,
+		formule: facturation.formule ?? null,
+		rythme: facturation.rythme ?? null,
+		essaiFinLe: facturation.statut === 'trialing' ? dans(facturation.essaiDans) : null,
+		prochainPrelevementLe: dans(facturation.prelevementDans ?? facturation.essaiDans),
+		resiliationLe: dans(facturation.resilieDans),
+		offertJusquAu: dans(facturation.offertDans),
+		clientPaddle: facturation.statut !== undefined,
+		essaiDisponible: facturation.essaiDisponible,
+		recommandee: 'equipe',
+		limites: limitesDe(tier),
+		utilisateurs: 3
 	};
 }
 
@@ -330,7 +311,7 @@ function equipeDe(
 		invitations: estAdmin ? invitations : [],
 		estAdmin,
 		siegesUtilises: membres.length,
-		siegesAutorises: planEffectif(facturation).seatsAllowed,
+		siegesAutorises: limitesDe(planEffectif(facturation).tier).utilisateurs,
 		onChangerRole: () => Promise.resolve(),
 		onRetirer: () => Promise.resolve(),
 		onAnnulerInvitation: () => Promise.resolve(),
@@ -502,22 +483,50 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 	'profil enregistré': { ...COMPTE_DEMO, profil: PROFIL_ENREGISTRE_DEMO },
 	'forme qui ne déduit rien': { ...COMPTE_DEMO, profil: PROFIL_SANS_DEDUCTION_DEMO },
 	'vu par un membre': { ...COMPTE_DEMO, membres: MEMBRES_VUS_PAR_UN_MEMBRE },
+	/** La facturation ouverte, rien de souscrit : Découverte, et le bouton qui ouvre le choix. */
 	'paiement ouvert': {
 		...COMPTE_DEMO,
 		facturation: { ...FACTURATION_DEMO, ouvert: true }
 	},
-	'bilan réglé': {
+	'accès offert': {
+		...COMPTE_DEMO,
+		facturation: { ...FACTURATION_DEMO, ouvert: true, offertDans: 12, essaiDisponible: false }
+	},
+	'essai en cours': {
 		...COMPTE_DEMO,
 		facturation: {
 			...FACTURATION_DEMO,
 			ouvert: true,
-			essaiJusquAu: Date.now() - 40 * 24 * 60 * 60 * 1000,
-			bilanRegleLe: Date.now() - 3 * 24 * 60 * 60 * 1000
+			statut: 'trialing',
+			formule: 'equipe',
+			rythme: 'annuel',
+			essaiDans: 23,
+			essaiDisponible: false
 		}
 	},
-	'volume non renseigné': {
+	'essai résilié': {
 		...COMPTE_DEMO,
-		facturation: { ...FACTURATION_DEMO, facturesParAn: undefined }
+		facturation: {
+			...FACTURATION_DEMO,
+			ouvert: true,
+			statut: 'trialing',
+			formule: 'solo',
+			rythme: 'mensuel',
+			essaiDans: 9,
+			resilieDans: 9,
+			essaiDisponible: false
+		}
+	},
+	'abonnement résilié': {
+		...COMPTE_DEMO,
+		facturation: {
+			...FACTURATION_DEMO,
+			ouvert: true,
+			statut: 'canceled',
+			formule: 'equipe',
+			rythme: 'mensuel',
+			essaiDisponible: false
+		}
 	},
 	'nouveau client': { ...COMPTE_DEMO, contenu: CONTENU_NOUVEAU_CLIENT_DEMO },
 	'export prêt': { ...COMPTE_DEMO, fichier: FICHIER_DEMO },
@@ -539,21 +548,25 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 		facturation: {
 			...FACTURATION_DEMO,
 			ouvert: true,
-			// L'essai est terminé : sans ça, il couvrirait le palier et la
-			// fermeture ne se verrait pas.
-			essaiJusquAu: Date.now() - 40 * 24 * 60 * 60 * 1000,
-			statutPaddle: 'past_due'
+			statut: 'past_due',
+			formule: 'equipe',
+			rythme: 'mensuel',
+			essaiDisponible: false
 		}
 	},
 
-	/** Un essai qui se termine dans deux jours : le bandeau doit le nommer, et la rangée repliée le porter. */
+	/** Un essai qui se termine dans deux jours : le point de la rangée le dit, avec le prélèvement qui suit. */
 	'essai qui se termine': {
 		...COMPTE_DEMO,
 		profil: PROFIL_ENREGISTRE_DEMO,
 		facturation: {
 			...FACTURATION_DEMO,
 			ouvert: true,
-			essaiJusquAu: Date.now() + 2 * 24 * 60 * 60 * 1000
+			statut: 'trialing',
+			formule: 'equipe',
+			rythme: 'annuel',
+			essaiDans: 2,
+			essaiDisponible: false
 		}
 	},
 
@@ -577,7 +590,15 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 		profil: PROFIL_ENREGISTRE_DEMO,
 		membres: MEMBRES.map((membre) => ({ ...membre, adresseVerifiee: true })),
 		invitations: [],
-		facturation: { ...FACTURATION_DEMO, ouvert: true, statutPaddle: 'active' }
+		facturation: {
+			...FACTURATION_DEMO,
+			ouvert: true,
+			statut: 'active',
+			formule: 'pro',
+			rythme: 'annuel',
+			prelevementDans: 214,
+			essaiDisponible: false
+		}
 	}
 };
 
@@ -643,12 +664,13 @@ const MESURES_DEMO: MesuresAffichees = {
 
 /** Le paiement Paddle, inerte dans la salle : les boutons se regardent, rien ne s'ouvre. */
 const CAISSE_DEMO: CaisseAffichee = {
-	offres: { bilan: true, abonnement: true },
+	disponible: true,
+	essai: true,
 	onChoisir: () => undefined,
 	onGerer: () => undefined,
 	enCours: null,
-	recu: false,
-	indisponible: false,
+	souscrite: null,
+	onFermerLaReussite: () => undefined,
 	erreur: null
 };
 
@@ -664,7 +686,10 @@ function compteDe(
 		: { etat: 'pret', valeur: abonnementDe(forme.facturation) };
 	// La caisse n'existe que la facturation ouverte, et pour un administrateur.
 	const administre = forme.membres.some((m) => m.estMoi && m.role === 'ORG_ADMIN');
-	const caisse = forme.facturation.ouvert && administre ? CAISSE_DEMO : undefined;
+	const caisse =
+		forme.facturation.ouvert && administre
+			? { ...CAISSE_DEMO, essai: forme.facturation.essaiDisponible }
+			: undefined;
 
 	return {
 		etablissement: ETABLISSEMENT_AFFICHE_DEMO,

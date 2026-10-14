@@ -20,6 +20,14 @@ const POURCENT = new Intl.NumberFormat('fr-FR', {
 /** Un montant en euros, arrondi à l'unité. Les centimes n'aident personne ici. */
 export const euros = (montant: number): string => EUROS.format(montant);
 
+/**
+ * Un prix de la grille, porté en centimes : « 39 € », mais « 32,50 € ».
+ * Les centimes ne s'écrivent que quand il y en a.
+ */
+export function prixAffiche(centimes: number): string {
+	return centimes % 100 === 0 ? euros(centimes / 100) : eurosCentimes(BigInt(centimes));
+}
+
 /** Une fraction (0 à 1) en pourcentage entier. */
 export const pourcent = (fraction: number): string => POURCENT.format(fraction);
 
