@@ -589,7 +589,8 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 
 	return (
 		<PageEcran
-			largeur="large"
+			// Le premier jour, une seule chose à faire : elle tient dans la colonne de lecture.
+			largeur={debute ? 'normale' : 'large'}
 			entete={{
 				genre: 'onglet',
 				/*

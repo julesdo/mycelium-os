@@ -21,7 +21,12 @@ import { cn } from './cn';
  */
 export function TableauDeBord({ children }: { readonly children: ReactNode }) {
 	return (
-		<div className="contents xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start xl:gap-x-cladd-sm xl:gap-y-cladd-xs 2xl:grid-cols-[minmax(0,1fr)_24rem]">
+		/*
+		  ⚠️ LA SECONDE RANGÉE EST FLEXIBLE (`1fr`) : une colonne de côté qui couvre les
+		  deux rangées (`cote-collant`) y verse sa hauteur, au lieu de grandir la
+		  première et d'ouvrir un trou sous la tête.
+		*/
+		<div className="contents xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:grid-rows-[auto_1fr] xl:items-start xl:gap-x-cladd-sm xl:gap-y-cladd-xs 2xl:grid-cols-[minmax(0,1fr)_24rem]">
 			{children}
 		</div>
 	);
@@ -38,7 +43,13 @@ const PLACES = {
 	/** En haut à droite : ce que fait Plume. */
 	'cote-haut': 'xl:col-start-2 xl:row-start-1',
 	/** Dessous, à droite : ce qui tourne sans vous. */
-	cote: 'xl:col-start-2 xl:row-start-2'
+	cote: 'xl:col-start-2 xl:row-start-2',
+	/**
+	 * Toute la hauteur à droite, et qui reste à l'écran quand la gauche défile : Plume
+	 * sur un dossier, comme l'assistant de Xero ou de Deel à côté de ce qu'il commente.
+	 */
+	'cote-collant':
+		'xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:sticky xl:top-cladd-xs xl:self-start'
 } as const;
 
 export function ZoneDuTableau({

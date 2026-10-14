@@ -40,6 +40,8 @@ import {
 	RefusEnQuatreParties,
 	Relances,
 	SectionsDepliables,
+	TableauDeBord,
+	ZoneDuTableau,
 	Solidite,
 	SuiviDuDossier,
 	SuiviProcedure,
@@ -441,6 +443,7 @@ export function EcranCreance({
 
 	return (
 		<PageEcran
+			largeur="large"
 			entete={{
 				genre: 'poussee',
 				/*
@@ -463,124 +466,135 @@ export function EcranCreance({
 		>
 			{pret === null ? null : (
 				<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={changer}>
-					{pret.erreur === null ? null : (
-						<p className="text-cladd-xs text-cladd-fg">{pret.erreur}</p>
-					)}
-
-					<EnTeteCreance creance={pret} />
-
-					{pret.classement === undefined ? null : (
-						<BandeauDossierClasse
-							libelle={pret.classement.libelle}
-							le={pret.classement.le}
-							{...(pret.classement.note === undefined ? {} : { note: pret.classement.note })}
-							{...(pret.onRouvrirLeDossier === undefined
-								? {}
-								: { onRouvrir: pret.onRouvrirLeDossier })}
-						/>
-					)}
-
 					{/*
+					  ⚠️ AU BUREAU, DEUX COLONNES (14/10/2026) : le dossier à gauche, Plume à
+					  droite, collé pendant que la gauche défile. Au téléphone, ces
+					  enveloppes n'existent pas : l'ordre ci-dessous reste celui de l'écran.
+					*/}
+					<TableauDeBord>
+						<ZoneDuTableau place="tete">
+							{pret.erreur === null ? null : (
+								<p className="text-cladd-xs text-cladd-fg">{pret.erreur}</p>
+							)}
+
+							<EnTeteCreance creance={pret} />
+
+							{pret.classement === undefined ? null : (
+								<BandeauDossierClasse
+									libelle={pret.classement.libelle}
+									le={pret.classement.le}
+									{...(pret.classement.note === undefined ? {} : { note: pret.classement.note })}
+									{...(pret.onRouvrirLeDossier === undefined
+										? {}
+										: { onRouvrir: pret.onRouvrirLeDossier })}
+								/>
+							)}
+
+							{/*
 					  ⚠️ CE QUI CHANGE LA DONNE PASSE AVANT L'ÉTAT. Une procédure
 					  collective suspend les relances : lire « Relancer » avant de lire
 					  qu'on ne peut plus relancer, c'est appuyer pour rien.
 					*/}
-					<CeQuiBloque alertes={alertesDuDossier(pret)} />
+							<CeQuiBloque alertes={alertesDuDossier(pret)} />
+						</ZoneDuTableau>
+						<ZoneDuTableau place="cote-collant">
+							{pret.aDemarrer === true && pret.onDemarrer !== undefined ? (
+								<PlumeADemarrer client={pret.debiteur} onDemarrer={pret.onDemarrer} />
+							) : pret.onDemanderAPlume === undefined ? null : (
+								<PlumeSurLeDossier
+									{...(() => {
+										const { mene, ...reste } = ceQueFaitPlume(pret);
+										if (mene === undefined) return reste;
+										return {
+											...reste,
+											action:
+												mene.vers === 'FICHE' ? (
+													<BoutonSecondaire
+														as={Lien}
+														to="/app/clients/$id"
+														params={{ id: pret.debiteurId } as never}
+													>
+														{mene.libelle}
+													</BoutonSecondaire>
+												) : (
+													<BoutonSecondaire onClick={() => ouvrir(mene.vers as SectionCreance)}>
+														{mene.libelle}
+													</BoutonSecondaire>
+												)
+										};
+									})()}
+									recupere={pret.dejaRecupere ?? 0n}
+									total={pret.totalFactures ?? 0n}
+									suggestions={SUGGESTIONS_SUR_LE_DOSSIER}
+									onDemander={pret.onDemanderAPlume}
+								/>
+							)}
+						</ZoneDuTableau>
+						<ZoneDuTableau place="principal">
+							{/* L'ÉCHÉANCIER QUI COURT : c'est l'état du dossier tant qu'il court. */}
+							{pret.reponse?.echeancier === null ||
+							pret.reponse?.echeancier === undefined ||
+							pret.reponse.echeancier.etat === 'ARRETE' ? null : (
+								<SuiviEcheancier
+									echeancier={pret.reponse.echeancier}
+									onArreter={() => {
+										const id = pret.reponse?.echeancier?.id;
+										if (id !== undefined) pret.reponse?.onArreterEcheancier(id);
+									}}
+									{...(accordPossible(pret)
+										? {
+												onAccordEcrit: () => {
+													pret.courriers.onChoisir(choixDeLAccord(pret.courriers));
+													ouvrir('courriers');
+												}
+											}
+										: {})}
+								/>
+							)}
 
-					{pret.aDemarrer === true && pret.onDemarrer !== undefined ? (
-						<PlumeADemarrer client={pret.debiteur} onDemarrer={pret.onDemarrer} />
-					) : pret.onDemanderAPlume === undefined ? null : (
-						<PlumeSurLeDossier
-							{...(() => {
-								const { mene, ...reste } = ceQueFaitPlume(pret);
-								if (mene === undefined) return reste;
-								return {
-									...reste,
-									action:
-										mene.vers === 'FICHE' ? (
-											<BoutonSecondaire
-												as={Lien}
-												to="/app/clients/$id"
-												params={{ id: pret.debiteurId } as never}
-											>
-												{mene.libelle}
-											</BoutonSecondaire>
-										) : (
-											<BoutonSecondaire onClick={() => ouvrir(mene.vers as SectionCreance)}>
-												{mene.libelle}
-											</BoutonSecondaire>
-										)
-								};
-							})()}
-							recupere={pret.dejaRecupere ?? 0n}
-							total={pret.totalFactures ?? 0n}
-							suggestions={SUGGESTIONS_SUR_LE_DOSSIER}
-							onDemander={pret.onDemanderAPlume}
-						/>
-					)}
+							<CarteDeLEtat
+								creance={pret}
+								onOuvrir={ouvrir}
+								{...(pret.reponse === undefined ||
+								pret.etapes.etape === 'REGLE' ||
+								pret.classement !== undefined
+									? {}
+									: { onReponse: () => setReponseOuverte(true) })}
+							/>
 
-					{/* L'ÉCHÉANCIER QUI COURT : c'est l'état du dossier tant qu'il court. */}
-					{pret.reponse?.echeancier === null ||
-					pret.reponse?.echeancier === undefined ||
-					pret.reponse.echeancier.etat === 'ARRETE' ? null : (
-						<SuiviEcheancier
-							echeancier={pret.reponse.echeancier}
-							onArreter={() => {
-								const id = pret.reponse?.echeancier?.id;
-								if (id !== undefined) pret.reponse?.onArreterEcheancier(id);
-							}}
-							{...(accordPossible(pret)
-								? {
-										onAccordEcrit: () => {
-											pret.courriers.onChoisir(choixDeLAccord(pret.courriers));
-											ouvrir('courriers');
-										}
-									}
-								: {})}
-						/>
-					)}
+							{/* CE QUI VIENT, SOUS CE QUI EST : la frise continue après aujourd’hui. */}
+							{pret.planAVenir === undefined ? null : (
+								<SuiteDuPlan
+									etapes={pret.planAVenir}
+									aujourdHui={pret.aujourdHui}
+									envoiAutomatique={pret.envoiAutomatique === true}
+								/>
+							)}
 
-					<CarteDeLEtat
-						creance={pret}
-						onOuvrir={ouvrir}
-						{...(pret.reponse === undefined ||
-						pret.etapes.etape === 'REGLE' ||
-						pret.classement !== undefined
-							? {}
-							: { onReponse: () => setReponseOuverte(true) })}
-					/>
+							<CarteDuSuivi creance={pret} />
 
-					{/* CE QUI VIENT, SOUS CE QUI EST : la frise continue après aujourd’hui. */}
-					{pret.planAVenir === undefined ? null : (
-						<SuiteDuPlan
-							etapes={pret.planAVenir}
-							aujourdHui={pret.aujourdHui}
-							envoiAutomatique={pret.envoiAutomatique === true}
-						/>
-					)}
+							<ListeDeRangees>
+								<RangeeCourriers creance={pret} />
+								<RangeeDecompte creance={pret} />
+								<RangeePieces creance={pret} />
+								<RangeeLitige creance={pret} />
+								<RangeeVoies creance={pret} />
+								<RangeeLien
+									vers="/app/clients/$id"
+									parametres={{ id: pret.debiteurId }}
+									titre="Fiche du client"
+									avatar={<Avatar nom={pret.debiteur} className="size-8" />}
+								/>
+							</ListeDeRangees>
 
-					<CarteDuSuivi creance={pret} />
-
-					<ListeDeRangees>
-						<RangeeCourriers creance={pret} />
-						<RangeeDecompte creance={pret} />
-						<RangeePieces creance={pret} />
-						<RangeeLitige creance={pret} />
-						<RangeeVoies creance={pret} />
-						<RangeeLien
-							vers="/app/clients/$id"
-							parametres={{ id: pret.debiteurId }}
-							titre="Fiche du client"
-							avatar={<Avatar nom={pret.debiteur} className="size-8" />}
-						/>
-					</ListeDeRangees>
-
-					{/* CLASSER, EN DERNIER ET EN TEXTE : une décision rare, jamais le geste du jour. */}
-					{pret.onClasserLeDossier === undefined || pret.classement !== undefined ? null : (
-						<BoutonTexte className="self-center" onClick={() => setClassementOuvert(true)}>
-							Classer ce dossier
-						</BoutonTexte>
-					)}
+							{/* CLASSER, EN DERNIER ET EN TEXTE : une décision rare, jamais le geste du jour. */}
+							{pret.onClasserLeDossier === undefined || pret.classement !== undefined ? null : (
+								<BoutonTexte className="self-center" onClick={() => setClassementOuvert(true)}>
+									Classer ce dossier
+								</BoutonTexte>
+							)}
+						</ZoneDuTableau>
+					</TableauDeBord>
 				</SectionsDepliables>
 			)}
 

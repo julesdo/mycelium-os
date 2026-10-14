@@ -35,6 +35,9 @@ import {
 	RangeeDepliable,
 	RepartitionDeSante,
 	SectionsDepliables,
+	EnTableauSurBureau,
+	TableauDeBord,
+	ZoneDuTableau,
 	VignetteIcone,
 	dateCourteDeSante,
 	eurosCentimes,
@@ -194,7 +197,7 @@ export function EcranSanteClient({
 }) {
 	if (donnees.etat !== 'pret') return <PageEcran entete={entete} etat={donnees.etat} />;
 	return (
-		<PageEcran entete={entete}>
+		<PageEcran entete={entete} largeur={donnees.valeur.analyse === null ? 'normale' : 'large'}>
 			<SanteClient {...donnees.valeur} />
 		</PageEcran>
 	);
@@ -347,195 +350,209 @@ function SanteClient(d: SanteClientAffichee) {
 	return (
 		<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={setOuvertes}>
 			<div className="flex flex-col gap-cladd-xs">
-				{/* LA JAUGE ET SON MOT, puis ce qui a changé et la date. */}
-				<JaugeDeSante
-					indice={a.indice}
-					niveau={a.niveau}
-					sousTitre={
-						<span className="flex flex-col items-center gap-1.5">
-							<span>Analysée le {dateCourteDeSante(new Date(a.analyseLe).toISOString())}</span>
-							{a.indicePrecedent === undefined ? null : (
-								<EcartDeSante
-									avant={a.indicePrecedent}
-									apres={a.indice}
-									{...(precedente === undefined
-										? {}
-										: { depuis: new Date(precedente.le).toISOString() })}
-								/>
-							)}
-						</span>
-					}
-				/>
-				{a.lisibiliteRaison === undefined ? null : (
-					<p className="px-1 text-center text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						Lisibilité {MOT_DE_LISIBILITE[a.lisibilite]} :{' '}
-						{a.lisibiliteRaison.charAt(0).toLowerCase()}
-						{a.lisibiliteRaison.slice(1)}
-					</p>
-				)}
-
-				<ActionsRapides
-					actions={[
-						{
-							cle: 'actualiser',
-							libelle: d.enCours ? 'En cours…' : 'Actualiser',
-							icone: d.enCours ? <Spinner size="xs" /> : <RefreshCwIcon />,
-							nomComplet: 'Refaire l’analyse',
-							onClick: d.onAnalyser
-						},
-						...(d.onDemanderAPlume === undefined
-							? []
-							: [
-									{
-										cle: 'plume',
-										libelle: 'Demander',
-										icone: <MessageCircleIcon />,
-										nomComplet: 'Demander à Plume ce que dit cette analyse',
-										onClick: d.onDemanderAPlume
-									}
-								]),
-						...(d.onFixerPlafond === undefined
-							? []
-							: [
-									{
-										cle: 'plafond',
-										libelle: 'Plafond',
-										icone: <TargetIcon />,
-										nomComplet: 'Fixer le plafond d’encours de ce client',
-										onClick: () => setPlafondOuvert(true)
-									}
-								])
-					]}
-				/>
-				{d.message === null ? null : (
-					<p role="status" className="px-1 text-center text-cladd-2xs leading-relaxed">
-						{d.message}
-					</p>
-				)}
-
-				{d.client === undefined ? null : (
-					<CarteLien
-						vers="/app/clients/$id"
-						parametres={{ id: d.client.id }}
-						titre={d.client.denomination}
-						ligne="Déjà votre client : sa fiche"
-					/>
-				)}
-
-				{/* LE BULLETIN */}
-				<section className="flex flex-col gap-cladd-3xs">
-					<EnTeteDeGroupe libelle="Son bulletin" />
-					<BulletinDeSante piliers={a.piliers} />
-				</section>
-
-				{/* LES FAITS */}
-				{lourds.length === 0 ? null : (
-					<section className="flex flex-col gap-cladd-3xs">
-						<EnTeteDeGroupe libelle="Ce qui pèse" nombre={lourds.length} />
-						<div className="flex flex-col gap-2">
-							{(tousLesFaits ? lourds : lourds.slice(0, FAITS_D_ABORD)).map((f) => (
-								<CarteDeFait key={f.cle} fait={f} />
-							))}
-						</div>
-						{tousLesFaits || lourds.length <= FAITS_D_ABORD ? null : (
-							<div className="flex justify-center">
-								<BoutonTexte onClick={() => setTousLesFaits(true)}>
-									{lourds.length - FAITS_D_ABORD === 1
-										? 'Voir le dernier'
-										: `Voir les ${lourds.length - FAITS_D_ABORD} autres`}
-								</BoutonTexte>
-							</div>
+				{/*
+				  ⚠️ AU BUREAU, DEUX COLONNES (14/10/2026) : la jauge et son bulletin en
+				  haut, les faits à gauche, ses dirigeants et ses comptes à droite. Au
+				  téléphone, ces enveloppes n'existent pas.
+				*/}
+				<TableauDeBord>
+					<ZoneDuTableau place="tete">
+						{/* LA JAUGE ET SON MOT, puis ce qui a changé et la date. */}
+						<JaugeDeSante
+							indice={a.indice}
+							niveau={a.niveau}
+							sousTitre={
+								<span className="flex flex-col items-center gap-1.5">
+									<span>Analysée le {dateCourteDeSante(new Date(a.analyseLe).toISOString())}</span>
+									{a.indicePrecedent === undefined ? null : (
+										<EcartDeSante
+											avant={a.indicePrecedent}
+											apres={a.indice}
+											{...(precedente === undefined
+												? {}
+												: { depuis: new Date(precedente.le).toISOString() })}
+										/>
+									)}
+								</span>
+							}
+						/>
+						{a.lisibiliteRaison === undefined ? null : (
+							<p className="px-1 text-center text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+								Lisibilité {MOT_DE_LISIBILITE[a.lisibilite]} :{' '}
+								{a.lisibiliteRaison.charAt(0).toLowerCase()}
+								{a.lisibiliteRaison.slice(1)}
+							</p>
 						)}
-					</section>
-				)}
-				{rassurants.length === 0 ? null : (
-					<section className="flex flex-col gap-cladd-3xs">
-						<EnTeteDeGroupe libelle="Ce qui rassure" nombre={rassurants.length} />
-						<div className="flex flex-col gap-2">
-							{rassurants.map((f) => (
-								<CarteDeFait key={f.cle} fait={f} />
-							))}
-						</div>
-					</section>
-				)}
-				{informatifs.length === 0 ? null : (
-					<section className="flex flex-col gap-cladd-3xs">
-						<EnTeteDeGroupe libelle="Bon à savoir" nombre={informatifs.length} />
-						<div className="flex flex-col gap-2">
-							{informatifs.map((f) => (
-								<CarteDeFait key={f.cle} fait={f} />
-							))}
-						</div>
-					</section>
-				)}
 
-				{/* SES DIRIGEANTS */}
-				{a.dirigeants.length === 0 ? null : (
-					<section className="flex flex-col gap-cladd-3xs">
-						<EnTeteDeGroupe libelle="Ses dirigeants" nombre={a.dirigeants.length} />
-						<div className="flex flex-col gap-2">
-							{physiques.map((dir) => (
-								<CarteDirigeant key={dir.nomComplet} dirigeant={dir} />
-							))}
-							{morales.map((dir) => (
-								<CarteDirigeant key={dir.nomComplet} dirigeant={dir} />
-							))}
-						</div>
-					</section>
-				)}
+						<ActionsRapides
+							actions={[
+								{
+									cle: 'actualiser',
+									libelle: d.enCours ? 'En cours…' : 'Actualiser',
+									icone: d.enCours ? <Spinner size="xs" /> : <RefreshCwIcon />,
+									nomComplet: 'Refaire l’analyse',
+									onClick: d.onAnalyser
+								},
+								...(d.onDemanderAPlume === undefined
+									? []
+									: [
+											{
+												cle: 'plume',
+												libelle: 'Demander',
+												icone: <MessageCircleIcon />,
+												nomComplet: 'Demander à Plume ce que dit cette analyse',
+												onClick: d.onDemanderAPlume
+											}
+										]),
+								...(d.onFixerPlafond === undefined
+									? []
+									: [
+											{
+												cle: 'plafond',
+												libelle: 'Plafond',
+												icone: <TargetIcon />,
+												nomComplet: 'Fixer le plafond d’encours de ce client',
+												onClick: () => setPlafondOuvert(true)
+											}
+										])
+							]}
+						/>
+						{d.message === null ? null : (
+							<p role="status" className="px-1 text-center text-cladd-2xs leading-relaxed">
+								{d.message}
+							</p>
+						)}
 
-				{/* SES COMPTES */}
-				<section className="flex flex-col gap-cladd-3xs">
-					<EnTeteDeGroupe libelle="Ses comptes" />
-					{a.exercices.some((e) => e.chiffreAffaires !== undefined || e.resultat !== undefined) ? (
-						<ComptesEnBarres exercices={a.exercices} />
-					) : (
-						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-							{a.comptesConfidentiels
-								? 'Ses comptes sont confidentiels : un choix que la loi permet aux petites entreprises. Ses chiffres ne se lisent pas.'
-								: 'Aucun compte chiffré n’est publié pour les derniers exercices.'}
-						</p>
-					)}
-				</section>
-
-				{/* VOTRE EXPOSITION */}
-				{!estClient || d.encours === undefined ? null : (
-					<section className="flex flex-col gap-cladd-3xs">
-						<EnTeteDeGroupe libelle="Votre exposition" />
-						<div className="verre-carte flex flex-col gap-2 rounded-cladd-xl p-3.5">
-							<BarreDExposition encours={d.encours} plafond={d.plafond ?? null} />
-							{d.onFixerPlafond === undefined ? null : (
-								<div>
-									<BoutonTexte onClick={() => setPlafondOuvert(true)}>
-										{d.plafond === null || d.plafond === undefined
-											? 'Fixer un plafond'
-											: 'Modifier le plafond'}
-									</BoutonTexte>
+						{d.client === undefined ? null : (
+							<CarteLien
+								vers="/app/clients/$id"
+								parametres={{ id: d.client.id }}
+								titre={d.client.denomination}
+								ligne="Déjà votre client : sa fiche"
+							/>
+						)}
+					</ZoneDuTableau>
+					<ZoneDuTableau place="cote-haut">
+						{/* LE BULLETIN */}
+						<section className="flex flex-col gap-cladd-3xs">
+							<EnTeteDeGroupe libelle="Son bulletin" />
+							<BulletinDeSante piliers={a.piliers} />
+						</section>
+					</ZoneDuTableau>
+					<ZoneDuTableau place="principal">
+						{/* LES FAITS */}
+						{lourds.length === 0 ? null : (
+							<section className="flex flex-col gap-cladd-3xs">
+								<EnTeteDeGroupe libelle="Ce qui pèse" nombre={lourds.length} />
+								<div className="flex flex-col gap-2">
+									{(tousLesFaits ? lourds : lourds.slice(0, FAITS_D_ABORD)).map((f) => (
+										<CarteDeFait key={f.cle} fait={f} />
+									))}
 								</div>
+								{tousLesFaits || lourds.length <= FAITS_D_ABORD ? null : (
+									<div className="flex justify-center">
+										<BoutonTexte onClick={() => setTousLesFaits(true)}>
+											{lourds.length - FAITS_D_ABORD === 1
+												? 'Voir le dernier'
+												: `Voir les ${lourds.length - FAITS_D_ABORD} autres`}
+										</BoutonTexte>
+									</div>
+								)}
+							</section>
+						)}
+						{rassurants.length === 0 ? null : (
+							<section className="flex flex-col gap-cladd-3xs">
+								<EnTeteDeGroupe libelle="Ce qui rassure" nombre={rassurants.length} />
+								<div className="flex flex-col gap-2">
+									{rassurants.map((f) => (
+										<CarteDeFait key={f.cle} fait={f} />
+									))}
+								</div>
+							</section>
+						)}
+						{informatifs.length === 0 ? null : (
+							<section className="flex flex-col gap-cladd-3xs">
+								<EnTeteDeGroupe libelle="Bon à savoir" nombre={informatifs.length} />
+								<div className="flex flex-col gap-2">
+									{informatifs.map((f) => (
+										<CarteDeFait key={f.cle} fait={f} />
+									))}
+								</div>
+							</section>
+						)}
+					</ZoneDuTableau>
+					<ZoneDuTableau place="cote">
+						{/* SES DIRIGEANTS */}
+						{a.dirigeants.length === 0 ? null : (
+							<section className="flex flex-col gap-cladd-3xs">
+								<EnTeteDeGroupe libelle="Ses dirigeants" nombre={a.dirigeants.length} />
+								<div className="flex flex-col gap-2">
+									{physiques.map((dir) => (
+										<CarteDirigeant key={dir.nomComplet} dirigeant={dir} />
+									))}
+									{morales.map((dir) => (
+										<CarteDirigeant key={dir.nomComplet} dirigeant={dir} />
+									))}
+								</div>
+							</section>
+						)}
+
+						{/* SES COMPTES */}
+						<section className="flex flex-col gap-cladd-3xs">
+							<EnTeteDeGroupe libelle="Ses comptes" />
+							{a.exercices.some(
+								(e) => e.chiffreAffaires !== undefined || e.resultat !== undefined
+							) ? (
+								<ComptesEnBarres exercices={a.exercices} />
+							) : (
+								<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+									{a.comptesConfidentiels
+										? 'Ses comptes sont confidentiels : un choix que la loi permet aux petites entreprises. Ses chiffres ne se lisent pas.'
+										: 'Aucun compte chiffré n’est publié pour les derniers exercices.'}
+								</p>
 							)}
-						</div>
-					</section>
-				)}
+						</section>
 
-				{a.historique.length < 2 ? null : (
-					<section className="flex flex-col gap-cladd-3xs">
-						<EnTeteDeGroupe libelle="Au fil des analyses" />
-						<div className="verre-carte rounded-cladd-xl p-3.5">
-							<HistoriqueDeSante historique={a.historique} />
-						</div>
-					</section>
-				)}
+						{/* VOTRE EXPOSITION */}
+						{!estClient || d.encours === undefined ? null : (
+							<section className="flex flex-col gap-cladd-3xs">
+								<EnTeteDeGroupe libelle="Votre exposition" />
+								<div className="verre-carte flex flex-col gap-2 rounded-cladd-xl p-3.5">
+									<BarreDExposition encours={d.encours} plafond={d.plafond ?? null} />
+									{d.onFixerPlafond === undefined ? null : (
+										<div>
+											<BoutonTexte onClick={() => setPlafondOuvert(true)}>
+												{d.plafond === null || d.plafond === undefined
+													? 'Fixer un plafond'
+													: 'Modifier le plafond'}
+											</BoutonTexte>
+										</div>
+									)}
+								</div>
+							</section>
+						)}
 
-				<ListeDeRangees>
-					<RangeeDepliable
-						cle="methode"
-						famille="MACHINE"
-						titre="Comment c’est calculé"
-						valeur="la méthode"
-					>
-						<CommentCestCalcule version={a.versionDesRegles} />
-					</RangeeDepliable>
-				</ListeDeRangees>
+						{a.historique.length < 2 ? null : (
+							<section className="flex flex-col gap-cladd-3xs">
+								<EnTeteDeGroupe libelle="Au fil des analyses" />
+								<div className="verre-carte rounded-cladd-xl p-3.5">
+									<HistoriqueDeSante historique={a.historique} />
+								</div>
+							</section>
+						)}
+
+						<ListeDeRangees>
+							<RangeeDepliable
+								cle="methode"
+								famille="MACHINE"
+								titre="Comment c’est calculé"
+								valeur="la méthode"
+							>
+								<CommentCestCalcule version={a.versionDesRegles} />
+							</RangeeDepliable>
+						</ListeDeRangees>
+					</ZoneDuTableau>
+				</TableauDeBord>
 
 				{d.onFixerPlafond === undefined ? null : (
 					<FeuilleDuPlafond
@@ -592,7 +609,7 @@ export function EcranSanteClients({
 	} as const;
 	if (donnees.etat !== 'pret') return <PageEcran entete={entete} etat={donnees.etat} />;
 	return (
-		<PageEcran entete={entete}>
+		<PageEcran entete={entete} largeur={donnees.valeur.disponible ? 'large' : 'normale'}>
 			<SanteClients {...donnees.valeur} />
 		</PageEcran>
 	);
@@ -637,97 +654,111 @@ function SanteClients(d: SanteClientsAffichee) {
 	}
 	return (
 		<div className="flex flex-col gap-cladd-xs">
-			<JaugeDeSante
-				indice={d.indice}
-				niveau={d.niveau}
-				sousTitre={
-					d.indice === null
-						? 'Aucun client analysé pour l’instant'
-						: d.encoursAnalyse === d.encoursTotal
-							? 'Pondérée par ce qu’on vous doit'
-							: `Pondérée par ce qu’on vous doit, sur ${eurosCentimes(d.encoursAnalyse)} analysés`
-				}
-			/>
+			{/*
+			  ⚠️ AU BUREAU, DEUX COLONNES (14/10/2026) : la jauge et la répartition en tête,
+			  les missions collées à droite, les clients en tableau dessous. Au téléphone,
+			  ces enveloppes n'existent pas.
+			*/}
+			<TableauDeBord>
+				<ZoneDuTableau place="tete">
+					<JaugeDeSante
+						indice={d.indice}
+						niveau={d.niveau}
+						sousTitre={
+							d.indice === null
+								? 'Aucun client analysé pour l’instant'
+								: d.encoursAnalyse === d.encoursTotal
+									? 'Pondérée par ce qu’on vous doit'
+									: `Pondérée par ce qu’on vous doit, sur ${eurosCentimes(d.encoursAnalyse)} analysés`
+						}
+					/>
 
-			{d.repartition.length === 0 ? null : (
-				<section className="verre-carte flex flex-col gap-2 rounded-cladd-xl p-3.5">
-					<p className="text-cladd-xs font-semibold">Où est l’argent qu’on vous doit</p>
-					<RepartitionDeSante parts={d.repartition} />
-				</section>
-			)}
+					{d.repartition.length === 0 ? null : (
+						<section className="verre-carte flex flex-col gap-2 rounded-cladd-xl p-3.5">
+							<p className="text-cladd-xs font-semibold">Où est l’argent qu’on vous doit</p>
+							<RepartitionDeSante parts={d.repartition} />
+						</section>
+					)}
+				</ZoneDuTableau>
+				<ZoneDuTableau place="cote-collant">
+					{/* LES MISSIONS : l'anneau mesure ce que le logiciel voit vraiment. */}
+					<section className="verre-carte flex flex-col gap-3 rounded-cladd-xl p-3.5">
+						<div className="flex items-center gap-3">
+							<AnneauDeCouverture pourcentage={d.couverture} />
+							<div className="flex min-w-0 flex-col gap-0.5">
+								<p className="text-cladd-xs font-semibold">
+									{d.couverture >= 100
+										? 'Votre portefeuille est couvert'
+										: 'Couvrir votre portefeuille'}
+								</p>
+								<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
+									Chaque mission agrandit ce que Letikette surveille pour vous.
+								</p>
+							</div>
+						</div>
+						<ListeDeMissions missions={d.missions} />
+					</section>
+				</ZoneDuTableau>
+				<ZoneDuTableau place="principal">
+					<EnTableauSurBureau>
+						{d.message === null ? null : (
+							<p role="status" className="px-1 text-center text-cladd-2xs leading-relaxed">
+								{d.message}
+							</p>
+						)}
 
-			{/* LES MISSIONS : l'anneau mesure ce que le logiciel voit vraiment. */}
-			<section className="verre-carte flex flex-col gap-3 rounded-cladd-xl p-3.5">
-				<div className="flex items-center gap-3">
-					<AnneauDeCouverture pourcentage={d.couverture} />
-					<div className="flex min-w-0 flex-col gap-0.5">
-						<p className="text-cladd-xs font-semibold">
-							{d.couverture >= 100
-								? 'Votre portefeuille est couvert'
-								: 'Couvrir votre portefeuille'}
-						</p>
-						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">
-							Chaque mission agrandit ce que Letikette surveille pour vous.
-						</p>
-					</div>
-				</div>
-				<ListeDeMissions missions={d.missions} />
-			</section>
-			{d.message === null ? null : (
-				<p role="status" className="px-1 text-center text-cladd-2xs leading-relaxed">
-					{d.message}
-				</p>
-			)}
+						{d.changements.length === 0 ? null : (
+							<section className="flex flex-col gap-cladd-3xs">
+								<EnTeteDeGroupe libelle="Ce qui a changé" nombre={d.changements.length} />
+								<ListeDeCartes>
+									{d.changements.map(({ client, raison }) => (
+										<CarteDeClient
+											key={client.id}
+											client={client}
+											ligne={`${client.analyse === null ? '' : `${MOT_DE_SANTE[client.analyse.niveau]} · `}${raison}`}
+										/>
+									))}
+								</ListeDeCartes>
+							</section>
+						)}
 
-			{d.changements.length === 0 ? null : (
-				<section className="flex flex-col gap-cladd-3xs">
-					<EnTeteDeGroupe libelle="Ce qui a changé" nombre={d.changements.length} />
-					<ListeDeCartes>
-						{d.changements.map(({ client, raison }) => (
-							<CarteDeClient
-								key={client.id}
-								client={client}
-								ligne={`${client.analyse === null ? '' : `${MOT_DE_SANTE[client.analyse.niveau]} · `}${raison}`}
+						<section className="flex flex-col gap-cladd-3xs">
+							<EnTeteDeGroupe libelle="À regarder" nombre={d.aRegarder.length} />
+							{d.aRegarder.length === 0 ? (
+								<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+									Aucun client analysé ne mérite de regard particulier aujourd’hui.
+								</p>
+							) : (
+								<ListeDeCartes>
+									{d.aRegarder.map(({ client, raison }) => (
+										<CarteDeClient
+											key={client.id}
+											client={client}
+											ligne={
+												client.analyse === null
+													? raison
+													: raison === '' || raison === MOT_DE_SANTE[client.analyse.niveau]
+														? MOT_DE_SANTE[client.analyse.niveau]
+														: `${MOT_DE_SANTE[client.analyse.niveau]} · ${raison}`
+											}
+										/>
+									))}
+								</ListeDeCartes>
+							)}
+						</section>
+
+						<section className="flex flex-col gap-cladd-3xs">
+							<EnTeteDeGroupe libelle="Avant de servir un nouveau client" />
+							<CarteLien
+								vers="/app/risque/verifier"
+								icone={<VignetteIcone className="size-10" icone={<SearchIcon />} />}
+								titre="Vérifier une entreprise"
+								ligne="Son nom ou son SIREN suffit"
 							/>
-						))}
-					</ListeDeCartes>
-				</section>
-			)}
-
-			<section className="flex flex-col gap-cladd-3xs">
-				<EnTeteDeGroupe libelle="À regarder" nombre={d.aRegarder.length} />
-				{d.aRegarder.length === 0 ? (
-					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						Aucun client analysé ne mérite de regard particulier aujourd’hui.
-					</p>
-				) : (
-					<ListeDeCartes>
-						{d.aRegarder.map(({ client, raison }) => (
-							<CarteDeClient
-								key={client.id}
-								client={client}
-								ligne={
-									client.analyse === null
-										? raison
-										: raison === '' || raison === MOT_DE_SANTE[client.analyse.niveau]
-											? MOT_DE_SANTE[client.analyse.niveau]
-											: `${MOT_DE_SANTE[client.analyse.niveau]} · ${raison}`
-								}
-							/>
-						))}
-					</ListeDeCartes>
-				)}
-			</section>
-
-			<section className="flex flex-col gap-cladd-3xs">
-				<EnTeteDeGroupe libelle="Avant de servir un nouveau client" />
-				<CarteLien
-					vers="/app/risque/verifier"
-					icone={<VignetteIcone className="size-10" icone={<SearchIcon />} />}
-					titre="Vérifier une entreprise"
-					ligne="Son nom ou son SIREN suffit"
-				/>
-			</section>
+						</section>
+					</EnTableauSurBureau>
+				</ZoneDuTableau>
+			</TableauDeBord>
 		</div>
 	);
 }

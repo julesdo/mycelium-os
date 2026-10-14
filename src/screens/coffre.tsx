@@ -3,6 +3,7 @@ import { PlusIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
 	CarteBouton,
+	EnTableauSurBureau,
 	EnTeteDeGroupe,
 	ListeDeCartes,
 	PageEcran,
@@ -71,7 +72,10 @@ export function EcranCoffre({ donnees }: { readonly donnees: Lecture<CoffreAffic
 	} as const;
 	if (donnees.etat !== 'pret') return <PageEcran entete={entete} etat={donnees.etat} />;
 	return (
-		<PageEcran entete={entete}>
+		<PageEcran
+			entete={entete}
+			largeur={donnees.valeur.documents.length === 0 ? 'normale' : 'large'}
+		>
 			<Coffre {...donnees.valeur} />
 		</PageEcran>
 	);
@@ -108,7 +112,8 @@ function Coffre({ documents, journal, onAjouter, onOuvrir }: CoffreAffiche) {
 			<TeteDuCoffre total={documents.length} scelles={scelles} />
 
 			{/* LE SEUL BOUTON PLEIN DE L'ÉCRAN : le parcours de dépôt. */}
-			<BoutonPrincipal pleineLargeur onClick={onAjouter}>
+			{/* Au bureau, la colonne est large : le bouton garde sa taille, au centre. */}
+			<BoutonPrincipal pleineLargeur className="lg:w-auto lg:self-center" onClick={onAjouter}>
 				<PlusIcon />
 				Ajouter des documents
 			</BoutonPrincipal>
@@ -122,29 +127,32 @@ function Coffre({ documents, journal, onAjouter, onOuvrir }: CoffreAffiche) {
 				/>
 			)}
 
-			{groupes.map((groupe) => (
-				<section key={groupe.mois} className="flex flex-col gap-cladd-3xs">
-					<EnTeteDeGroupe libelle={groupe.mois} nombre={groupe.documents.length} />
-					<ListeDeCartes>
-						{groupe.documents.map((document) => (
-							<CarteBouton
-								key={cleDeRef(document.ref)}
-								titre={document.nom}
-								ligne={(() => {
-									const age = sansNouvelle(document);
-									return age === null
-										? ligneDuDocument(document)
-										: `Sans nouvelle depuis ${delaiLisible(age)}`;
-								})()}
-								date={jourDe(document.deposeLe)}
-								icone={<VignetteDocument mime={document.mime} scelle={document.scelle} />}
-								attention={document.etat === 'ECHEC' || sansNouvelle(document) !== null}
-								onClick={() => onOuvrir(document.ref)}
-							/>
-						))}
-					</ListeDeCartes>
-				</section>
-			))}
+			{/* Au bureau, chaque document se lit sur une ligne, en colonnes. */}
+			<EnTableauSurBureau>
+				{groupes.map((groupe) => (
+					<section key={groupe.mois} className="flex flex-col gap-cladd-3xs">
+						<EnTeteDeGroupe libelle={groupe.mois} nombre={groupe.documents.length} />
+						<ListeDeCartes>
+							{groupe.documents.map((document) => (
+								<CarteBouton
+									key={cleDeRef(document.ref)}
+									titre={document.nom}
+									ligne={(() => {
+										const age = sansNouvelle(document);
+										return age === null
+											? ligneDuDocument(document)
+											: `Sans nouvelle depuis ${delaiLisible(age)}`;
+									})()}
+									date={jourDe(document.deposeLe)}
+									icone={<VignetteDocument mime={document.mime} scelle={document.scelle} />}
+									attention={document.etat === 'ECHEC' || sansNouvelle(document) !== null}
+									onClick={() => onOuvrir(document.ref)}
+								/>
+							))}
+						</ListeDeCartes>
+					</section>
+				))}
+			</EnTableauSurBureau>
 
 			{montres.length === 0 && documents.length > 0 ? (
 				<p className="px-1 text-center text-cladd-2xs text-cladd-fg-soft">
