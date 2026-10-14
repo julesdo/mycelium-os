@@ -8,6 +8,8 @@ import { useCodeEnAvance } from './code-en-avance';
 import { HauteBranchee, LateraleBranchee } from './coquille-bureau';
 import { FournisseurDuTitreBureau, LARGEUR_LATERALE } from '../ui/coquille-bureau';
 import { usePreference } from './use-preference';
+import { useInvitationInstallation } from './installation';
+import { InvitationInstallation } from '../ui/invitation-installation';
 
 /**
  * Le cadre de l'application authentifiée.
@@ -124,9 +126,18 @@ export function Shell({
 
 				{/* Plume se pose DANS la barre, à droite de la pilule ; au bureau, dans le coin. */}
 				<BarreSaufEnConversation sessionOuverte={sessionOuverte} />
+
+				{/* Sur Android, l'invitation à installer l'application, quand elle ne l'est pas. */}
+				<InvitationBranchee actif={sessionOuverte} />
 			</div>
 		</FournisseurDuTitreBureau>
 	);
+}
+
+/** L'invitation à installer, quand Chrome en fait l'offre et qu'on ne l'a pas écartée. */
+function InvitationBranchee({ actif }: { readonly actif: boolean }) {
+	const { montrer, installer, plusTard } = useInvitationInstallation(actif);
+	return montrer ? <InvitationInstallation onInstaller={installer} onPlusTard={plusTard} /> : null;
 }
 
 /**

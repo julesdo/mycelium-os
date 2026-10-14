@@ -1,6 +1,7 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
 import { Providers } from '../app/providers';
 import { AMORCE_THEME } from '../app/use-theme';
+import { AMORCE_INSTALLATION } from '../app/installation';
 import appCss from '../styles/app.css?url';
 // La police du corps, en latin : la même adresse que celle que le CSS déclare.
 import policeDuCorps from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
@@ -68,6 +69,12 @@ function Document() {
 				  `app/use-theme.ts`, avec la clé et la requête média qu'elle lit.
 				*/}
 				<script dangerouslySetInnerHTML={{ __html: AMORCE_THEME }} />
+				{/*
+				  L'OFFRE D'INSTALLATION DE CHROME, RETENUE DÈS LA PREMIÈRE LIGNE : elle part
+				  parfois avant que l'application ne soit chargée, et ne revient pas. Voir
+				  `app/installation.ts`.
+				*/}
+				<script dangerouslySetInnerHTML={{ __html: AMORCE_INSTALLATION }} />
 				<HeadContent />
 			</head>
 			<body>
