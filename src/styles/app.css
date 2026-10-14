@@ -1055,14 +1055,14 @@ html:has(.coquille-app) body {
  * et assombrit les sombres, ce que fait un vrai grain argentique. En opacité
  * simple il voilerait uniformément l'image d'un gris. */
 
-/* LE FONDU DES LAMELLES (07/10/2026) : la mer est pleine en haut de l'écran et
-   s'éteint vers le bas, comme le champ de couleur de Revolut, avant la file des
-   cartes. Un masque plutôt qu'un dégradé peint par-dessus : il ne cache rien du
-   papier, il retire seulement les lamelles. ⚠️ LE PRÉFIXE `-webkit-` EN PREMIER :
-   dans l'autre ordre, le minifieur ne garde que lui (voir `.barre-publique`). */
-.fondu-lamelles {
-	-webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 28%, transparent 100%);
-	mask-image: linear-gradient(to bottom, #000 0%, #000 28%, transparent 100%);
+/* LE FONDU DU DÉGRADÉ (15/10/2026) : plein en haut de l'écran, comme le champ de
+   couleur de Revolut, puis adouci à 40 % vers le bas, où passent les listes. Un
+   masque plutôt qu'un voile peint par-dessus : il ne cache rien du papier. ⚠️ LE
+   PRÉFIXE `-webkit-` EN PREMIER : dans l'autre ordre, le minifieur ne garde que
+   lui (voir `.barre-publique`). */
+.fondu-degrade {
+	-webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 30%, rgb(0 0 0 / 0.4) 100%);
+	mask-image: linear-gradient(to bottom, #000 0%, #000 30%, rgb(0 0 0 / 0.4) 100%);
 }
 
 .fond-grain {

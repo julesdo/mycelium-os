@@ -2,11 +2,11 @@ import { Suspense, lazy, useSyncExternalStore } from 'react';
 import { cn } from './cn';
 
 /**
- * LES LAMELLES, CHARGÉES APRÈS LA PAGE (09/10/2026). Le moteur WebGL (`ogl`) et le
- * shader pèsent une centaine de kilo-octets pour un décor : ils ne retardent plus
- * l'affichage des écrans, et l'intro des lamelles les fait apparaître en fondu.
+ * LE DÉGRADÉ, CHARGÉ APRÈS LA PAGE (09/10/2026, repris le 15/10). Son shader est un
+ * décor : il ne retarde pas l'affichage des écrans, et son intro le fait paraître
+ * en fondu depuis le papier.
  */
-const MicroSlats = lazy(() => import('./micro-slats').then((m) => ({ default: m.MicroSlats })));
+const Grainient = lazy(() => import('./grainient').then((m) => ({ default: m.Grainient })));
 
 /**
  * LE THÈME RÉELLEMENT PEINT, LU SUR LA RACINE DU DOCUMENT.
@@ -37,40 +37,38 @@ function themePeint(): 'light' | 'dark' {
 	return document.documentElement.classList.contains('light') ? 'light' : 'dark';
 }
 
-/** Un pointeur fin (souris, trackpad) : seul lui remue l'eau. Un doigt fait défiler. */
-const POINTEUR_FIN = '(pointer: fine)';
-
-function souscrireAuPointeur(prevenir: () => void) {
-	const requete = window.matchMedia(POINTEUR_FIN);
-	requete.addEventListener('change', prevenir);
-	return () => requete.removeEventListener('change', prevenir);
-}
-
 /**
- * LES LAMELLES : DE L'ENCRE SUR LE CRÈME, DU CRÈME SUR L'ENCRE (07/10/2026).
+ * LE DÉGRADÉ : UNE AUBE SUR LE PAPIER (15/10/2026).
  *
- * Choix du fondateur : MicroSlats (React Bits), « recoloré en encre sur crème, en
- * fondu dégradé d'opacité vers le bas de l'écran, pour avoir l'animation qu'en
- * haut comme sur Revolut ».
+ * Les lamelles (MicroSlats, 07/10) ont été jugées « carrelage de grand-mère ou
+ * salle de bain » par le fondateur, qui voulait « plus moderne, plus travaillé, et
+ * qui perturbe moins l'UX ». Une première version près du papier (sable, brume
+ * d'encre) était trop sage : « un truc qui donne envie d'utiliser l'application
+ * plutôt qu'un truc plan-plan, et qui rassure aussi. Les impayés, c'est pas fun et
+ * stressant. » D'où une AUBE : l'abricot, le rose poudré et la lavande d'un ciel
+ * qui se lève, sur le papier — la couleur d'un jour qui commence bien, pas celle
+ * d'une alerte. Grainient (React Bits) la fait couler lentement, avec une lumière
+ * de soie et du grain ; aucun motif, aucun reflet qui scintille, aucune réaction
+ * au curseur. En sombre, la nuit passe à l'indigo, au violet, puis à une braise
+ * rosée.
  *
- * ⚠️ L'OPACITÉ EST UN PLAFOND CALCULÉ CONTRE LE TEXTE, AU PIRE. En haut de l'écran
- * — la barre, le montant, sa légende —, les tons posés directement sur le fond
- * sont `fg`, `fg-soft` et parfois `fg-softer` (mesuré écran par écran dans la
- * salle d'exposition). Une lamelle à son plafond y laisse chacun à 4,5:1 au moins :
+ * ⚠️ AUCUNE TEINTE DE SEUIL (vert, ambre, rouge) : elles ne disent qu'une chose dans
+ * ce produit. L'abricot est un pastel clair (L 0,925), pas l'ambre d'une alerte ;
+ * et pas de bleu décoratif en clair — la lavande tire au violet.
  *
- *   · clair — encre #1b253f (oklch 0,27 0,05 266) à 14 % au plus, reflet blanc :
- *     au pire le papier tombe à #d8d4cd, `fg-softer` 4,53:1 ;
- *   · sombre — crème #f1eadc à 19 % au plus, reflet crème chaud #fee3c5 : au pire
- *     l'encre monte à #33363e, `fg-softer` 4,52:1.
+ * ⚠️ UN PLAFOND MESURÉ. La première couleur est la page elle-même (`--cladd-bg`).
+ * Contraste de `fg-softer` sur la couleur la plus marquée :
  *
- * `fg-softest` n'est pas tenu au plafond : il ne se trouve pas dans le haut de
- * l'écran, et le fondu a éteint les lamelles avant les écrans où il apparaît
- * (le bilan d'un dépôt, plus bas). NE PAS MONTER UNE OPACITÉ SANS REFAIRE CE
- * CALCUL.
+ *   · clair — lavande #e0d6fa (oklch 0,895 0,05 298) : 4,83:1 ;
+ *   · sombre — violet #2e1a46 (oklch 0,27 0,08 302) : 5,79:1.
+ *
+ * La soie peut écarter un pli de 3 % au plus de la base. NE PAS FONCER UNE COULEUR
+ * SANS REFAIRE CE CALCUL. L'ordre compte : la base en bas de l'écran, la couleur la
+ * plus marquée en haut (`angle` 340).
  */
-const LAMELLES = {
-	clair: { color: '#1b253f', glintColor: '#ffffff', opacity: 0.14 },
-	sombre: { color: '#f1eadc', glintColor: '#fee3c5', opacity: 0.19 }
+const DEGRADES = {
+	clair: ['#f7f0e5', '#ffe0c5', '#fbd3d2', '#e0d6fa'],
+	sombre: ['#070c19', '#111e3b', '#17143a', '#2e1a46', '#391917']
 } as const;
 
 /**
@@ -87,22 +85,15 @@ const LAMELLES = {
  * LES TROIS COUCHES, DANS CET ORDRE :
  *
  * 1. LE RELÈVEMENT (`.fond-releve`) : le lavis immobile de la page.
- * 2. LES LAMELLES (`micro-slats.tsx`, porté de React Bits), en haut de l'écran
- *    seulement (`h-lamelles`) et éteintes vers le bas par un masque
- *    (`.fondu-lamelles`). Elles remplacent les ondes du sombre et le voile qui les
- *    rendait lisibles : leur opacité est plafonnée au pire cas, il n'y a plus rien
- *    à voiler. Le curseur remue l'eau sous une souris ; un doigt fait défiler, et
- *    ne déclenche rien.
+ * 2. LE DÉGRADÉ (`grainient.tsx`, porté de React Bits), sur tout l'écran, plein en
+ *    haut et adouci vers le bas par un masque (`.fondu-degrade`) : le haut porte
+ *    la couleur, comme le champ de Revolut, et les cartes de verre ont partout
+ *    quelque chose à flouter.
  * 3. LE GRAIN (`.fond-grain`), en dernier : la matière du papier.
  */
 export function Fond({ className }: { className?: string }) {
 	const theme = useSyncExternalStore(souscrireAuTheme, themePeint, (): 'light' | 'dark' => 'dark');
-	const pointeurFin = useSyncExternalStore(
-		souscrireAuPointeur,
-		() => window.matchMedia(POINTEUR_FIN).matches,
-		() => false
-	);
-	const lamelles = LAMELLES[theme === 'dark' ? 'sombre' : 'clair'];
+	const couleurs = DEGRADES[theme === 'dark' ? 'sombre' : 'clair'];
 
 	return (
 		<div
@@ -116,28 +107,21 @@ export function Fond({ className }: { className?: string }) {
 		>
 			<div className="fond-releve absolute inset-0" />
 			<Suspense fallback={null}>
-				<MicroSlats
-					className="fondu-lamelles absolute inset-x-0 top-0 h-lamelles"
-					preset="swell"
-					color={lamelles.color}
-					glintColor={lamelles.glintColor}
-					opacity={lamelles.opacity}
-					backgroundColor="transparent"
-					slatWidth={8}
-					slatHeight={22}
-					gap={3}
-					roundness={0.75}
-					// Le plafond d'opacité est bas (14 et 19 %) : on allume donc PRESQUE toutes
-					// les lamelles près de lui, au lieu de laisser la houle les éteindre à moitié.
-					// La houle se lit alors dans les reflets et la longueur des lamelles.
-					contrast={0.45}
-					glint={0.9}
-					perspective={0.45}
-					fog={0}
-					interactive={pointeurFin}
-					cursorStrength={1}
-					cursorSize={48}
-					trail={1.4}
+				<Grainient
+					// La clé suit le thème : le dégradé repart de son papier, sans traverser
+					// une palette mêlée de l'un et de l'autre.
+					key={theme}
+					className="fondu-degrade absolute inset-0"
+					colors={couleurs}
+					angle={340}
+					// Lent : on ne le voit bouger qu'en le regardant.
+					speed={0.5}
+					flow={1.1}
+					scale={1.3}
+					softness={1}
+					silk={0.5}
+					grainAmount={0.04}
+					grainSize={1.2}
 					intro
 				/>
 			</Suspense>
