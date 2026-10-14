@@ -1,5 +1,11 @@
-import { CheckIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '../ui';
+import {
+	DELAI_POUR_RETENIR_MS,
+	HEURES_D_ENVOI,
+	PLAN_PAR_DEFAUT
+} from '../lib/verticales/recouvrement/plan-relance';
+import { FORMATS_LUS } from './fonctionnalites';
 import {
 	EcranProduit,
 	SectionMarketing,
@@ -10,189 +16,208 @@ import {
 } from './section';
 
 /**
- * COMMENT ÇA MARCHE — cinq gestes, cinq vrais écrans (06/10/2026).
+ * COMMENT ÇA MARCHE — quatre étapes, quatre vrais écrans (06/10/2026, refait le
+ * 14/10 avec le produit d'aujourd'hui).
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ DES CAPTURES, PLUS DES DÉMONSTRATIONS EN COMPOSANTS
+ * ⚠️ LE TÉLÉPHONE RESTE, L'ÉCRAN CHANGE (Midday, « How it works »)
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * La section rendait quatre composants du produit en direct — le bilan d'un
- * import, la file des événements, une question jouable, un décompte complet —
- * chacun dans un cadre. C'était exact et lourd : des centaines de nœuds et
- * d'icônes sur la page qu'un prospect ouvre sur son téléphone, pour des écrans
- * réduits au tiers de leur taille. Les captures PNG montrent les MÊMES écrans,
- * pris dans la salle d'exposition (`scripts/capturer-ecrans.ts`), pour le prix
- * d'une image chacun.
+ * Au-delà de 1024 px, les étapes défilent à gauche et le téléphone reste collé
+ * à droite : il montre l'écran de l'étape qu'on lit. Sur téléphone, le
+ * carrousel du 06/10 : un écran par carte, d'un geste du pouce.
  *
- * Chaque étape porte la teinte de sa famille dans le produit, et l'écran est
- * coupé dans une grande carte de couleur — Airtasker et Braintrust.
+ * Le 06/10, cinq étapes disaient « chaque nuit » et « validez chaque dossier ».
+ * Le pilote vit en permanence depuis le 08/10, et Plume prépare : le gérant
+ * démarre. Les étapes suivent le produit : brancher, Plume prépare, les
+ * relances partent, le client paie.
  *
- * ⚠️ DES TITRES D'ACTION, UNE PHRASE CHACUN (réécriture du 06/10 au soir, sur
- * Stripe et Sequence : « Create a link », « Share the link », « Get paid »).
- * Plus de note manuscrite collée sur l'écran.
+ * ⚠️ LE PLAN EST LU, PAS ÉCRIT : `PLAN_PAR_DEFAUT`, `HEURES_D_ENVOI` et
+ * `DELAI_POUR_RETENIR_MS` sont les constantes que le pilote applique. Changer
+ * le plan change cette phrase.
  */
 
 interface Etape {
 	readonly numero: string;
 	readonly titre: string;
 	readonly texte: string;
-	readonly capacites: readonly string[];
 	readonly capture: CaptureProduit;
 	readonly description: string;
 	readonly teinte: TeinteSite;
 }
 
+function jours(n: number): string {
+	return `${n} jour${n > 1 ? 's' : ''}`;
+}
+
+/** « l’heure », « les deux heures » : le délai pour retenir, en mots. */
+function delaiPourRetenir(): string {
+	const heures = DELAI_POUR_RETENIR_MS / 3_600_000;
+	if (heures === 1) return 'l’heure';
+	if (Number.isInteger(heures)) return `les ${heures} heures`;
+	return `les ${Math.round(DELAI_POUR_RETENIR_MS / 60_000)} minutes`;
+}
+
+function texteDuPlan(): string {
+	const [rappel, second, lettre] = PLAN_PAR_DEFAUT;
+	const plan =
+		rappel && second && lettre
+			? `Un rappel ${jours(rappel.attente)} après l’échéance, un deuxième ${jours(second.attente)} plus tard, puis la lettre officielle.`
+			: 'Les rappels, puis la lettre officielle.';
+	return `${plan} En semaine, de ${HEURES_D_ENVOI.de} h à ${HEURES_D_ENVOI.a} h. Chacune se retient pendant ${delaiPourRetenir()} qui précède son départ.`;
+}
+
 const ETAPES: readonly Etape[] = [
 	{
 		numero: '01',
-		titre: 'Importez vos factures',
-		texte: 'Depuis votre logiciel comptable, en Factur-X ou en PDF. Aucune ressaisie.',
-		capacites: [
-			'Export comptable (FEC) lu tel quel.',
-			'Factures électroniques Factur-X et PDF.',
-			'Doublons détectés et écartés.'
-		],
-		capture: 'depots',
+		titre: 'Branchez vos factures',
+		texte: `Votre logiciel comptable, votre banque, ou un simple dépôt : ${FORMATS_LUS.join(', ')}. Aucune ressaisie.`,
+		capture: 'depot',
 		description:
-			'Le bilan d’un dépôt dans Letikette : 198 factures entrées depuis un export comptable, 142 règlements rapprochés, 37 clients créés, et les lignes qui ne sont pas entrées, avec la raison.',
+			'Le dépôt au coffre dans Letikette : choisir des fichiers ou prendre une photo, puis la liste des documents prêts à partir, chacun vérifié avant l’envoi.',
 		teinte: 'papiers'
 	},
 	{
 		numero: '02',
-		titre: 'Suivez vos échéances',
+		titre: 'Plume prépare tout',
 		texte:
-			'Chaque nuit, Letikette vérifie les délais de chaque facture et la situation de vos clients.',
-		capacites: [
-			'Date limite suivie facture par facture, selon le secteur.',
-			'Procédures collectives relevées au journal officiel des entreprises (BODACC).',
-			'Paiements rapprochés : pas de relance pour une facture réglée.'
-		],
-		capture: 'file',
+			'Chaque facture échue entre dans le dossier de son client, avec ce qu’on vous doit et la date limite pour agir. Vous démarrez le dossier d’un geste.',
+		capture: 'aujourdhui',
 		description:
-			'La file du matin dans Letikette : les clients à traiter aujourd’hui, chacun avec son montant, sa date et ce qui se passe.',
+			'L’écran d’accueil de Letikette : 66 704,82 € dus, l’ancienneté des retards, 18 443,92 € de pénalités jamais réclamées, et Plume au travail qui relit un dépôt.',
 		teinte: 'temps'
 	},
 	{
 		numero: '03',
-		titre: 'Validez chaque dossier',
-		texte:
-			'Vous confirmez ce que les factures ne disent pas, comme une contestation de votre client.',
-		capacites: [
-			'Un bouton par dossier, l’état écrit en clair.',
-			'Les points à vérifier, une ligne chacun.',
-			'Les sommes oubliées signalées avant tout courrier.'
-		],
-		capture: 'dossier',
+		titre: 'Les relances partent à votre nom',
+		texte: texteDuPlan(),
+		capture: 'part-bientot',
 		description:
-			'Un dossier dans Letikette : 6 373,50 € dus aujourd’hui, pénalités comprises, la date limite pour agir, deux situations à lire, et un seul bouton, « Relire le courrier ».',
-		teinte: 'question'
-	},
-	{
-		numero: '04',
-		titre: 'Envoyez une relance chiffrée',
-		texte:
-			'Le décompte détaille montant, pénalités et frais. La relance part à votre nom, quand vous l’avez décidé.',
-		capacites: [
-			'Pénalités détaillées période par période.',
-			'Le montant daté et figé quand il est réclamé.',
-			'Dossier prêt à transmettre à votre avocat ou commissaire de justice.'
-		],
-		capture: 'decompte',
-		description:
-			'Un montant réclamé dans Letikette : 19 928,97 € au 16 août 2026, décomposés en principal, pénalités de retard et frais de recouvrement, facture par facture.',
+			'Le bloc de Plume dans Letikette : ce qu’il fait en ce moment, puis « Part bientôt », un rappel et un deuxième rappel, chacun avec son bouton « Retenir ».',
 		teinte: 'argent'
 	},
 	{
-		numero: '05',
+		numero: '04',
 		titre: 'Votre client paie directement',
-		texte: 'Par virement sur votre compte, depuis une page à votre nom. Aucune commission.',
-		capacites: [
-			'Détail facture par facture.',
-			'Code QR de virement reconnu par les banques.',
-			'Aucun encaissement par Letikette.'
-		],
+		texte:
+			'Par virement sur votre compte, depuis une page à votre nom. Aucune commission. Un paiement arrête les relances.',
 		capture: 'paiement',
 		description:
-			'La page de paiement que reçoit votre client : votre nom, le reste à régler, 6 373,50 €, et les coordonnées du virement, chacune avec un bouton pour la copier.',
+			'La page que reçoit votre client : votre nom, le reste à régler, 6 373,50 €, et les coordonnées du virement, chacune avec un bouton pour la copier.',
 		teinte: 'abricot'
 	}
 ];
 
 export function Etapes() {
+	const [active, setActive] = useState(0);
+	const etapes = useRef<(HTMLElement | null)[]>([]);
+
+	// L'étape lue est celle qui traverse le milieu de l'écran. Au-dessous de
+	// 1024 px, le téléphone collé n'existe pas et ce rang ne sert à rien.
+	useEffect(() => {
+		const observateur = new IntersectionObserver(
+			(entrees) => {
+				for (const entree of entrees) {
+					if (!entree.isIntersecting) continue;
+					const rang = Number((entree.target as HTMLElement).dataset['rang']);
+					if (Number.isInteger(rang)) setActive(rang);
+				}
+			},
+			{ rootMargin: '-45% 0px -45% 0px' }
+		);
+		for (const etape of etapes.current) if (etape !== null) observateur.observe(etape);
+		return () => observateur.disconnect();
+	}, []);
+
+	const teinteEnCours = ETAPES[active]?.teinte ?? 'papiers';
+
 	return (
-		<SectionMarketing id="comment" ton="profond" className="gap-cladd-lg md:gap-cladd-2xl">
+		<SectionMarketing id="comment" ton="profond" className="gap-cladd-lg lg:gap-0">
 			<div className="flex flex-col gap-cladd-2xs">
-				<TitreSection suite="en cinq étapes.">De l’import au paiement,</TitreSection>
+				<TitreSection suite="en quatre étapes.">De vos factures au virement,</TitreSection>
 				<p className="text-cladd-sm text-encre-site-claire">
 					Captures du logiciel, avec des données de démonstration.
 				</p>
 			</div>
 
-			{/*
-			  ⚠️ UN CARROUSEL SUR TÉLÉPHONE, DES RANGÉES AU-DELÀ. La section faisait
-			  5 200 px sur téléphone : cinq cartes de 384 px, chacune suivie de son
-			  titre, d'une phrase et de trois puces. Sur téléphone, les cinq écrans
-			  défilent d'un geste, comme les captures d'une fiche d'application, avec
-			  un titre et une phrase chacun ; les puces n'apparaissent qu'à partir de
-			  la tablette, où elles ont la place d'être lues.
-			*/}
-			<div className="carrousel -mx-cladd-2xs flex snap-x snap-mandatory gap-cladd-2xs overflow-x-auto px-cladd-2xs pb-cladd-3xs md:mx-0 md:flex-col md:gap-cladd-2xl md:overflow-visible md:px-0">
-				{ETAPES.map((etape, rang) => (
-					<article
-						key={etape.numero}
-						className="flex w-4/5 shrink-0 snap-center flex-col gap-cladd-2xs md:grid md:w-auto md:grid-cols-2 md:items-center md:gap-cladd-xl"
-					>
-						{/* L'ÉCRAN, COUPÉ DANS SA CARTE : le bas du téléphone sort par le bord. */}
-						<div
+			<div className="lg:grid lg:grid-cols-2 lg:gap-cladd-xl">
+				{/* LES ÉTAPES : un carrousel sur téléphone, une colonne qui défile au-delà. */}
+				<div className="carrousel -mx-cladd-2xs flex snap-x snap-mandatory gap-cladd-2xs overflow-x-auto px-cladd-2xs pb-cladd-3xs lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0 lg:pb-0">
+					{ETAPES.map((etape, rang) => (
+						<article
+							key={etape.numero}
+							ref={(element) => {
+								etapes.current[rang] = element;
+							}}
+							data-rang={rang}
 							className={cn(
-								'relative isolate flex h-80 justify-center overflow-clip rounded-carte-site px-cladd-xs pt-cladd-xs md:h-120 md:px-cladd-sm md:pt-cladd-sm',
-								fondDeTeinte(etape.teinte),
-								rang % 2 === 1 && 'md:order-2'
+								'etape-defilee flex w-4/5 shrink-0 snap-center flex-col gap-cladd-2xs sm:w-3/5 lg:w-auto lg:justify-center lg:transition-opacity lg:duration-500',
+								rang !== active && 'lg:opacity-35'
 							)}
 						>
-							<EcranProduit
-								capture={etape.capture}
-								description={etape.description}
-								className="w-52 self-start md:w-72"
-							/>
-						</div>
+							{/* Sur téléphone, l'écran est dans la carte. */}
+							<div
+								className={cn(
+									'relative isolate flex h-80 justify-center overflow-clip rounded-carte-site px-cladd-xs pt-cladd-xs lg:hidden',
+									fondDeTeinte(etape.teinte)
+								)}
+							>
+								<EcranProduit
+									capture={etape.capture}
+									description={etape.description}
+									className="w-52 self-start"
+								/>
+							</div>
 
-						<div className="flex flex-col gap-cladd-3xs md:gap-cladd-2xs">
-							<span className="flex items-center gap-cladd-3xs">
-								<span
-									className={cn(
-										'flex size-9 shrink-0 items-center justify-center rounded-full font-serif text-cladd-md font-medium md:size-12 md:text-intertitre',
-										fondDeTeinte(etape.teinte)
-									)}
-								>
-									{etape.numero}
+							<div className="flex flex-col gap-cladd-3xs lg:gap-cladd-2xs">
+								<span className="flex items-center gap-cladd-3xs">
+									<span
+										className={cn(
+											'flex size-9 shrink-0 items-center justify-center rounded-full font-serif text-cladd-md font-medium lg:size-12 lg:text-intertitre',
+											fondDeTeinte(etape.teinte)
+										)}
+									>
+										{etape.numero}
+									</span>
+									<h3 className="font-serif text-intertitre leading-tight font-medium text-balance lg:text-titre-section lg:tracking-titre-section">
+										{etape.titre}
+									</h3>
 								</span>
-								<h3 className="font-serif text-intertitre leading-tight font-medium text-balance md:text-titre-section md:tracking-titre-section">
-									{etape.titre}
-								</h3>
-							</span>
-							<p className="text-cladd-md leading-relaxed text-encre-site-douce md:text-chapeau">
-								{etape.texte}
-							</p>
-							<ul className="hidden flex-col gap-cladd-3xs pt-cladd-3xs md:flex">
-								{etape.capacites.map((capacite) => (
-									<li key={capacite} className="flex items-start gap-cladd-3xs">
-										<span
-											aria-hidden
-											className={cn(
-												'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full',
-												fondDeTeinte(etape.teinte)
-											)}
-										>
-											<CheckIcon size={14} />
-										</span>
-										<span className="text-cladd-md leading-relaxed">{capacite}</span>
-									</li>
-								))}
-							</ul>
-						</div>
-					</article>
-				))}
+								<p className="text-cladd-md leading-relaxed text-encre-site-douce lg:max-w-md lg:text-chapeau">
+									{etape.texte}
+								</p>
+							</div>
+						</article>
+					))}
+				</div>
+
+				{/* LE TÉLÉPHONE COLLÉ, au-delà de 1024 px : les quatre écrans empilés, celui
+				    de l'étape lue au premier plan. La carte prend la teinte de l'étape. */}
+				<div className="hidden lg:sticky lg:top-0 lg:flex lg:h-svh lg:items-center">
+					<div
+						className={cn(
+							'relative isolate flex h-cadre-etapes w-full justify-center overflow-clip rounded-carte-site px-cladd-sm pt-cladd-sm transition-colors duration-500',
+							fondDeTeinte(teinteEnCours)
+						)}
+					>
+						{/* ⚠️ LA POSITION VA SUR UNE ENVELOPPE : `.ecran-telephone` pose
+						    `position: relative` hors couche, et l'emporte sur `absolute`. */}
+						{ETAPES.map((etape, rang) => (
+							<div
+								key={etape.numero}
+								className={cn(
+									'absolute top-cladd-sm w-72 transition-opacity duration-500',
+									rang === active ? 'opacity-100' : 'opacity-0'
+								)}
+							>
+								<EcranProduit
+									capture={etape.capture}
+									description={rang === active ? etape.description : ''}
+								/>
+							</div>
+						))}
+					</div>
+				</div>
 			</div>
 		</SectionMarketing>
 	);

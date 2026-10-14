@@ -1,5 +1,5 @@
 /**
- * LES ÉCRANS DE L'APPLICATION, EN PNG, POUR LA PAGE D'ACCUEIL (06/10/2026).
+ * LES ÉCRANS DE L'APPLICATION, EN PNG, POUR LE SITE (06/10/2026, refait le 14/10).
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ POURQUOI DES IMAGES, ET PLUS UN TÉLÉPHONE DESSINÉ EN COMPOSANTS
@@ -12,22 +12,30 @@
  * ce que montre le produit : elle est prise dans la salle d'exposition, sur les
  * vrais écrans, avec leurs données de démonstration.
  *
- * Pré-requis : un serveur de développement sur le port 20173 (`bun run dev`).
+ * Pré-requis : un serveur de développement sur le port 20173 (`bun run dev:cloud`).
+ * Playwright se bloque sous Bun sur Windows : passer par Node.
  *
- *     bun scripts/capturer-ecrans.ts
+ *     node --experimental-strip-types scripts/capturer-ecrans.ts
+ *     node --experimental-strip-types scripts/capturer-ecrans.ts coffre sante
  *
- * Chaque écran sort en deux largeurs — 393 px et 786 px — dans
- * `public/ecrans/`, en PNG quantifié : la page les sert par `srcset`.
+ * Un écran de téléphone sort en 393 et 786 px de large, un écran d'ordinateur
+ * en 800 et 1600 px, dans `public/ecrans/`, en PNG quantifié : le site les sert
+ * par `srcset` (`EcranProduit`, `EcranBureau`).
+ *
+ * ⚠️ LA LISTE SUIT LE SITE (`docs/superpowers/specs/2026-10-14-site-refonte.md`).
+ * Une capture que plus aucune page ne lit est un fichier mort : la retirer d'ici
+ * ET de `public/ecrans/`.
  */
-import { chromium } from 'playwright';
+import { chromium, type Page } from 'playwright';
 import sharp from 'sharp';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BASE = 'http://localhost:20173/showroom';
 const SORTIE = join(import.meta.dirname, '..', 'public', 'ecrans');
-const LARGEUR = 393;
-const HAUTEUR = 852;
+
+const TELEPHONE = { width: 393, height: 852 } as const;
+const BUREAU = { width: 1280, height: 800 } as const;
 
 interface Capture {
 	/** Le nom du fichier, sans extension. */
@@ -43,75 +51,100 @@ interface Capture {
 	 * mais la page où le client paie ne la porte pas — un débiteur n'a pas d'onglets.
 	 */
 	readonly sansBarre?: boolean;
+	/** Pris à la largeur d'un ordinateur, en deux volets. */
+	readonly bureau?: boolean;
 }
 
 const CAPTURES: readonly Capture[] = [
-	{ nom: 'aujourdhui', ecran: 'aujourd’hui' },
-	// La file du matin : le même écran, descendu jusqu'aux clients à traiter.
-	{ nom: 'file', ecran: 'aujourd’hui', defilement: 330 },
-	{ nom: 'dossier', ecran: 'créance' },
-	// Le montant réclamé, daté : l'écran d'arrêt n'existe plus depuis le 09/10/2026.
-	{ nom: 'decompte', ecran: 'montant réclamé' },
-	{ nom: 'paiement', ecran: 'le client paie', sansBarre: true },
-	{ nom: 'depots', ecran: 'dépôt' }
+	// Le héros : l'accueil, le montant, Plume dans la barre.
+	{ nom: 'aujourdhui', ecran: 'aujourd’hui', variante: 'principale' },
+	// Le même écran, descendu jusqu'au bloc de Plume : « Part bientôt », « Retenir ».
+	{ nom: 'part-bientot', ecran: 'aujourd’hui', variante: 'principale', defilement: 300 },
+	{ nom: 'aujourdhui-bureau', ecran: 'aujourd’hui', variante: 'principale', bureau: true },
+	// Plume : sa maison, une réponse qui propose un geste, un travail qui se coche.
+	// Sa conversation est plein écran dans le produit : sans la barre, le
+	// compositeur se lit au lieu de passer sous les onglets.
+	{
+		nom: 'plume-maison',
+		ecran: 'Plume, tout l’établissement',
+		variante: 'principale',
+		sansBarre: true
+	},
+	{
+		nom: 'plume-maison-bureau',
+		ecran: 'Plume, tout l’établissement',
+		variante: 'principale',
+		sansBarre: true,
+		bureau: true
+	},
+	{ nom: 'plume-geste', ecran: 'Parler à Plume', variante: 'geste', sansBarre: true },
+	{ nom: 'plume-travail', ecran: 'Parler à Plume', variante: 'travail', sansBarre: true },
+	// Le paiement en plusieurs fois, descendu jusqu'à son calendrier.
+	{ nom: 'echeancier', ecran: 'créance', variante: 'échéancier en cours', defilement: 560 },
+	// Brancher ses factures : les logiciels, et le dépôt.
+	{ nom: 'logiciels', ecran: 'aujourd’hui', variante: 'brancher : le choix', sansBarre: true },
+	{ nom: 'depot', ecran: 'le coffre-fort', variante: 'dépôt : le choix', sansBarre: true },
+	// Tout ce qui va avec.
+	{ nom: 'coffre', ecran: 'le coffre-fort', variante: 'principale' },
+	{ nom: 'sante', ecran: 'sa santé', variante: 'principale' },
+	{ nom: 'defense', ecran: 'votre défense', variante: 'avec une équipe' },
+	{ nom: 'paiement', ecran: 'le client paie', variante: 'principale', sansBarre: true }
 ];
+
+async function prendre(page: Page, capture: Capture): Promise<Buffer> {
+	await page.goto(BASE, { waitUntil: 'networkidle' });
+	await page.getByRole('button', { name: capture.ecran, exact: true }).first().click();
+	if (capture.variante !== undefined) {
+		// La variante déjà affichée est un bouton désactivé : on ne la touche pas.
+		const variante = page.getByRole('button', { name: capture.variante, exact: true }).first();
+		if (await variante.isEnabled()) await variante.click();
+	}
+	// La rangée de la salle d'exposition n'appartient pas au produit.
+	await page.evaluate(() => {
+		const rangee = document.querySelector('.shrink-0.overflow-x-auto');
+		if (rangee instanceof HTMLElement) rangee.style.display = 'none';
+	});
+	await page.waitForTimeout(1200);
+	if (capture.sansBarre === true) {
+		await page.evaluate(() => {
+			// La barre est le seul bloc FIXE qui porte l'onglet « Dossiers ».
+			for (const bloc of document.querySelectorAll('body *')) {
+				if (!(bloc instanceof HTMLElement)) continue;
+				if (getComputedStyle(bloc).position !== 'fixed') continue;
+				if (bloc.textContent?.includes('Dossiers')) bloc.style.display = 'none';
+			}
+		});
+	}
+	if (capture.defilement !== undefined) {
+		const { width, height } = page.viewportSize() ?? TELEPHONE;
+		await page.mouse.move(width / 2, height / 2);
+		await page.mouse.wheel(0, capture.defilement);
+		await page.waitForTimeout(500);
+	}
+	// Le pointeur quitte l'écran : sinon la rangée qu'il survole reste en surbrillance.
+	await page.mouse.move(1, 1);
+	await page.waitForTimeout(300);
+	return page.screenshot({ type: 'png' });
+}
 
 async function main(): Promise<void> {
 	mkdirSync(SORTIE, { recursive: true });
 	const navigateur = await chromium.launch();
-	const page = await navigateur.newPage({
-		viewport: { width: LARGEUR, height: HAUTEUR },
-		deviceScaleFactor: 2,
-		colorScheme: 'light',
-		locale: 'fr-FR'
-	});
+	const options = { deviceScaleFactor: 2, colorScheme: 'light', locale: 'fr-FR' } as const;
+	const telephone = await navigateur.newPage({ ...options, viewport: TELEPHONE });
+	const bureau = await navigateur.newPage({ ...options, viewport: BUREAU });
 
-	// `node … capturer-ecrans.ts decompte` ne refait que cette capture-là.
+	// `node … capturer-ecrans.ts coffre` ne refait que cette capture-là.
 	const seulement = process.argv.slice(2);
 	const aPrendre =
-		seulement.length === 0 ? CAPTURES : CAPTURES.filter((capture) => seulement.includes(capture.nom));
+		seulement.length === 0
+			? CAPTURES
+			: CAPTURES.filter((capture) => seulement.includes(capture.nom));
 	for (const capture of aPrendre) {
-		await page.goto(BASE, { waitUntil: 'networkidle' });
-		await page.getByRole('button', { name: capture.ecran, exact: true }).first().click();
-		if (capture.variante !== undefined) {
-			await page.getByRole('button', { name: capture.variante, exact: true }).first().click();
-		}
-		// La rangée de la salle d'exposition n'appartient pas au produit. Le bouton
-		// flottant du compagnon, si : mais posé sur une image fixe, il masque la
-		// ligne qu'on montre sans rien pouvoir ouvrir.
-		await page.evaluate(() => {
-			const rangee = document.querySelector('.shrink-0.overflow-x-auto');
-			if (rangee instanceof HTMLElement) rangee.style.display = 'none';
-			for (const bouton of document.querySelectorAll('button')) {
-				if (bouton.textContent?.trim() === 'Demander') bouton.style.visibility = 'hidden';
-			}
-			// Sa lueur est une sœur du bouton, pas un enfant : masquer le bouton seul
-			// laissait une tache bleue sans objet en bas de chaque capture.
-			for (const halo of document.querySelectorAll('.halo-compagnon')) {
-				if (halo instanceof HTMLElement) halo.style.visibility = 'hidden';
-			}
-		});
-		await page.waitForTimeout(900);
-		if (capture.sansBarre === true) {
-			await page.evaluate(() => {
-				// La barre est le seul bloc FIXE qui porte l'onglet « Dossiers ».
-				for (const bloc of document.querySelectorAll('body *')) {
-					if (!(bloc instanceof HTMLElement)) continue;
-					if (getComputedStyle(bloc).position !== 'fixed') continue;
-					if (bloc.textContent?.includes('Dossiers')) bloc.style.display = 'none';
-				}
-			});
-		}
-		if (capture.defilement !== undefined) {
-			await page.mouse.move(LARGEUR / 2, HAUTEUR / 2);
-			await page.mouse.wheel(0, capture.defilement);
-			// Le pointeur quitte l'écran : sinon la rangée qu'il survole reste en surbrillance.
-			await page.mouse.move(1, 1);
-			await page.waitForTimeout(500);
-		}
-		const brute = await page.screenshot({ type: 'png' });
-
-		for (const largeur of [LARGEUR, LARGEUR * 2]) {
+		const page = capture.bureau === true ? bureau : telephone;
+		const brute = await prendre(page, capture);
+		const largeurs = capture.bureau === true ? [800, 1600] : [TELEPHONE.width, TELEPHONE.width * 2];
+		for (const largeur of largeurs) {
 			const fichier = join(SORTIE, `${capture.nom}-${largeur}.png`);
 			const info = await sharp(brute)
 				.resize({ width: largeur })

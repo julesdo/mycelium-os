@@ -2336,6 +2336,44 @@ html:has(.coquille-app) body {
 	border-radius: 37px;
 }
 
+/* L'ÉCRAN D'ORDINATEUR (14/10/2026) : le même cadre d'encre que le téléphone,
+   plus fin et moins arrondi, avec la barre de l'écran en haut. */
+.ecran-bureau {
+	position: relative;
+	border-radius: 18px;
+	padding: 22px 7px 7px;
+	background-color: var(--color-encre-site);
+	box-shadow:
+		inset 0 0 0 1px oklch(1 0 0 / 0.12),
+		0 2px 6px oklch(0.27 0.05 266 / 0.18),
+		0 36px 72px -36px oklch(0.27 0.05 266 / 0.5);
+}
+.ecran-bureau::before {
+	content: '';
+	position: absolute;
+	top: 8px;
+	left: 12px;
+	width: 34px;
+	height: 6px;
+	border-radius: 3px;
+	background: radial-gradient(circle at 3px 3px, oklch(1 0 0 / 0.28) 3px, transparent 3.5px) 0 0 /
+		12px 6px repeat-x;
+}
+.ecran-bureau > img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 11px;
+}
+
+/* UNE ÉTAPE DE « COMMENT ÇA MARCHE », au-delà de 1024 px : assez haute pour que
+   le téléphone collé à côté ait le temps de montrer son écran pendant qu'on la lit. */
+@media (min-width: 1024px) {
+	.etape-defilee {
+		min-height: 70svh;
+	}
+}
+
 /* LA FAQ : `<details>` natif, sans le triangle du navigateur (Safari garde le
    sien tant que le pseudo-élément n'est pas masqué). */
 .faq summary {

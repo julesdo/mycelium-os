@@ -135,7 +135,19 @@ export function Chapeau({ children, className }: { children: ReactNode; classNam
  * de `scripts/capturer-ecrans.ts`, sur les vrais écrans de la salle
  * d'exposition.
  */
-export type CaptureProduit = 'aujourdhui' | 'file' | 'dossier' | 'decompte' | 'paiement' | 'depots';
+export type CaptureProduit =
+	| 'aujourdhui'
+	| 'part-bientot'
+	| 'plume-maison'
+	| 'plume-geste'
+	| 'plume-travail'
+	| 'echeancier'
+	| 'logiciels'
+	| 'depot'
+	| 'coffre'
+	| 'sante'
+	| 'defense'
+	| 'paiement';
 
 export function EcranProduit({
 	capture,
@@ -162,6 +174,41 @@ export function EcranProduit({
 				loading={prioritaire ? 'eager' : 'lazy'}
 				decoding="async"
 				{...(prioritaire ? { fetchPriority: 'high' as const } : {})}
+			/>
+		</div>
+	);
+}
+
+/**
+ * UN ÉCRAN DU PRODUIT À LA LARGEUR D'UN ORDINATEUR (14/10/2026) — le produit
+ * existe aux deux tailles, et le héros le montre comme Cosmos : l'écran
+ * d'ordinateur derrière, le téléphone devant. Pris à 1280 × 800, servi en 800 et
+ * 1600 px de large.
+ */
+export type CaptureBureau = 'aujourdhui-bureau' | 'plume-maison-bureau';
+
+export function EcranBureau({
+	capture,
+	description,
+	prioritaire = false,
+	className
+}: {
+	capture: CaptureBureau;
+	description: string;
+	prioritaire?: boolean;
+	className?: string;
+}) {
+	return (
+		<div className={cn('ecran-bureau', className)}>
+			<img
+				src={`/ecrans/${capture}-800.png`}
+				srcSet={`/ecrans/${capture}-800.png 800w, /ecrans/${capture}-1600.png 1600w`}
+				sizes="(min-width: 1024px) 720px, 90vw"
+				width={800}
+				height={500}
+				alt={description}
+				loading={prioritaire ? 'eager' : 'lazy'}
+				decoding="async"
 			/>
 		</div>
 	);

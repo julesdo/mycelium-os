@@ -3,6 +3,7 @@ import {
 	Situations,
 	LaLoi,
 	Frise as FriseSection,
+	Etapes,
 	Securite,
 	Faq,
 	Pied
@@ -43,6 +44,7 @@ const SECTIONS = {
 	'pour qui': () => <Situations />,
 	'les chiffres de la loi': () => <LaLoi />,
 	'la vie d’une facture': () => <FriseSection />,
+	'comment ça marche': () => <Etapes />,
 	'la sécurité': () => <Securite />,
 	'les questions fréquentes': () => <Faq />,
 	'le pied et ses liens légaux': () => <Pied />

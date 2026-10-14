@@ -711,6 +711,11 @@
 	 * qui suit est autre chose ». */
 	--spacing-respiration: 112px;
 
+	/* LA CARTE OÙ LE TÉLÉPHONE DE « COMMENT ÇA MARCHE » RESTE COLLÉ (14/10/2026) :
+	 * assez haute pour le téléphone jusqu'à sa barre d'onglets, assez basse pour
+	 * tenir, avec la barre publique, dans un écran d'ordinateur portable. */
+	--spacing-cadre-etapes: 34rem;
+
 	/* L'apparition d'une décision dans le fil de traitement.
 	 *
 	 * Ce n'est pas un ornement : c'est le mouvement qui fait la différence entre

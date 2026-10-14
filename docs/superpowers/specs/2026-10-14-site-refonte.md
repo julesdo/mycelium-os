@@ -1,7 +1,9 @@
 # Le site Letikette, à la hauteur du produit (14/10/2026)
 
-> **Statut : proposition, rien n'est construit.** Trois choix reviennent au fondateur
-> (section 9). Rien ne se code avant sa réponse.
+> **Statut : validée par le fondateur le 14/10/2026** (« A, ok pour le héros et le titre, vas-y »),
+> en construction par lots. Il a tranché une question de plus le même jour : « affiche toutes les
+> intégrations, elles vont être mises en place ». Le site montre donc les logiciels comptables,
+> Qonto et les services de fichiers, bien qu'aucun ne soit encore configuré en production (section 3).
 
 ## 1. Ce que j'ai compris
 
