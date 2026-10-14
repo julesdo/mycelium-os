@@ -47,6 +47,7 @@ import {
 	type EtapeDeTravail,
 	type HumeurPlume
 } from '../../ui';
+import { suivre } from '../../app/analytique';
 
 /**
  * `/app/pilote` — LA CONVERSATION DE PLUME SUR TOUT L'ÉTABLISSEMENT.
@@ -473,11 +474,13 @@ function ConversationDePlume() {
 				onActiver={() => {
 					setActivation(false);
 					void activerRelances({ actif: true }).then(
-						() =>
+						() => {
+							suivre('relances-activees', { depuis: 'plume' });
 							toast({
 								title: 'Relances activées',
 								text: 'Chacune s’affiche une heure avant de partir.'
-							}),
+							});
+						},
 						(e: unknown) => toast({ title: 'Pas activées', text: messageDeLaPanne(e) })
 					);
 				}}
@@ -532,6 +535,7 @@ function ConversationDePlume() {
 					onQuestion: echange.setQuestion,
 					onEnvoyer: () => {
 						setQuestionPartie(true);
+						suivre('plume-question', { lieu: 'etablissement' });
 						void echange.demander(echange.question);
 					},
 					enCours: echange.enCours,

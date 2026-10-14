@@ -19,6 +19,7 @@ import type {
 	ResumeDocument
 } from '../ui';
 import { SOURCES_CONFIGUREES, SourcesDistantes, nomDeLaSource } from './sources-distantes';
+import { suivre } from './analytique';
 import {
 	creerUppyDuCoffre,
 	type CorpsCoffre,
@@ -316,7 +317,12 @@ export function useDepotAuCoffre(destination: DestinationDuDepot): DepotEnvoyabl
 				finir(f.cle, null);
 			}
 		});
-		if (prepares.some(Boolean)) void uppy.upload();
+		const partis = prepares.filter(Boolean).length;
+		if (partis > 0) {
+			// Combien, et vers où (factures, pièces d'un dossier) : jamais quels fichiers.
+			suivre('documents-deposes', { nombre: partis, genre: destination.genre });
+			void uppy.upload();
+		}
 	}
 
 	/** Tout ce qui est prêt part ; la promesse rend les références de ce qui est arrivé au coffre. */

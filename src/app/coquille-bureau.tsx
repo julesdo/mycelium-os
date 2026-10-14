@@ -25,6 +25,7 @@ import {
 import { cn } from '../ui/cn';
 import { NOM_DU_PILOTE } from '../ui/plume';
 import { SelecteurEtablissement } from './selecteur-etablissement';
+import { suivre } from './analytique';
 
 /**
  * LA COQUILLE DU BUREAU, BRANCHÉE — les destinations lues sur l'adresse, ce que la
@@ -226,6 +227,7 @@ export function HauteBranchee({
 	const [ouvertures, setOuvertures] = useState(0);
 	const [ouverte, setOuverte] = useState(false);
 	const ouvrir = () => {
+		suivre('recherche-ouverte', { depuis: 'bureau' });
 		setOuvertures((n) => n + 1);
 		setOuverte(true);
 	};

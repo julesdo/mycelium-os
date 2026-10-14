@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Paddle, PaddleEventData } from '@paddle/paddle-js';
 import type { CaisseServeur } from '../lib/convex/paddle';
 import type { CaisseAffichee, Souscription } from '../screens/compte/facturation';
+import { suivre } from './analytique';
 
 /**
  * LE PAIEMENT PADDLE, BRANCHÉ SUR L'ÉCRAN.
@@ -75,6 +76,7 @@ export function useCaissePaddle({
 				setEnCours(null);
 			}
 			if (evenement.name === 'checkout.completed') {
+				if (choix !== null) suivre('abonnement-souscrit', { ...choix });
 				setSouscrite((dejaLa) => dejaLa ?? choix);
 				if (choix !== null) rappel.current?.(choix);
 				void chargement?.paddle.then((paddle) => paddle?.Checkout.close());
@@ -110,6 +112,7 @@ export function useCaissePaddle({
 			setErreur(null);
 			setEnCours('formule');
 			setChoix({ formule, rythme, essai: pret.essai });
+			suivre('paiement-ouvert', { formule, rythme, essai: pret.essai });
 			paddlePour(pret)
 				.then((paddle) => {
 					if (!paddle) throw new Error('Paddle.js absent');

@@ -1,7 +1,14 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
+import {
+	HeadContent,
+	Outlet,
+	Scripts,
+	createRootRoute,
+	useRouterState
+} from '@tanstack/react-router';
 import { Providers } from '../app/providers';
 import { AMORCE_THEME } from '../app/use-theme';
 import { AMORCE_INSTALLATION } from '../app/installation';
+import { AMORCE_ANALYTIQUE, ATTRIBUTS_UMAMI, SCRIPT_UMAMI } from '../app/analytique';
 import appCss from '../styles/app.css?url';
 // La police du corps, en latin : la même adresse que celle que le CSS déclare.
 import policeDuCorps from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
@@ -53,6 +60,14 @@ export const Route = createRootRoute({
 });
 
 function Document() {
+	/*
+	  ⚠️ PAS DE MESURE SUR LA PAGE OÙ LE CLIENT PAIE. Celui qui l'ouvre est le débiteur
+	  de nos clients : rien de lui ne part chez un tiers, pas même la demande du script
+	  (voir `app/analytique.ts`).
+	*/
+	const pageDuClient = useRouterState({
+		select: (etat) => etat.location.pathname.startsWith('/p/')
+	});
 	return (
 		// `lang="fr"` en dur : l'interface est en français uniquement, EGalim est
 		// une loi française. Il n'y a ni préfixe de route, ni couche i18n.
@@ -75,6 +90,17 @@ function Document() {
 				  `app/installation.ts`.
 				*/}
 				<script dangerouslySetInnerHTML={{ __html: AMORCE_INSTALLATION }} />
+				{/*
+				  LA MESURE D'AUDIENCE (Umami, sans cookie). Le garde passe avant le traceur :
+				  il retire les identifiants des adresses et coupe tout envoi sur les pages à
+				  secret. Voir `app/analytique.ts`.
+				*/}
+				{pageDuClient ? null : (
+					<>
+						<script dangerouslySetInnerHTML={{ __html: AMORCE_ANALYTIQUE }} />
+						<script defer src={SCRIPT_UMAMI} {...ATTRIBUTS_UMAMI} />
+					</>
+				)}
 				<HeadContent />
 			</head>
 			<body>

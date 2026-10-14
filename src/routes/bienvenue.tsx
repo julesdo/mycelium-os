@@ -36,6 +36,7 @@ import { EcranFactures, type EtatDesFactures } from '../screens/premiers-pas/fac
 import { EcranLettres, type EnTeteSaisi } from '../screens/premiers-pas/lettres';
 import { EcranRelances } from '../screens/premiers-pas/relances';
 import { EcranPret, type LigneDuResume } from '../screens/premiers-pas/pret';
+import { suivre } from '../app/analytique';
 
 /**
  * LES PREMIERS PAS (13/10/2026, `docs/superpowers/specs/2026-10-13-premiers-pas.md`).
@@ -201,7 +202,10 @@ function PremiersPas() {
 					// aussitôt, et le bouton paraîtrait mort.
 					progression={progression({})}
 					compte={compte}
-					onEntrer={() => void navigate({ to: '/app' })}
+					onEntrer={() => {
+						suivre('premiers-pas-termines');
+						void navigate({ to: '/app' });
+					}}
 				/>
 			);
 	}
@@ -716,6 +720,7 @@ function EtapeRelances({
 		setEnCours(true);
 		try {
 			await activer({ actif: true });
+			suivre('relances-activees', { depuis: 'premiers-pas' });
 			onSuite();
 		} catch (e) {
 			setErreur(messageDuRefus(e, 'Les relances n’ont pas pu être activées. Réessayez.'));

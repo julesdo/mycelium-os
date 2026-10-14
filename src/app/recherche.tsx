@@ -12,6 +12,7 @@ import {
 	type ResultatRechercheAffiche
 } from '../ui/palette-recherche';
 import { api } from '../lib/convex/_generated/api';
+import { suivre } from './analytique';
 
 /**
  * LA RECHERCHE, ET SA PALETTE (D16).
@@ -178,6 +179,7 @@ export function Recherche() {
 		<>
 			<DeclencheurRecherche
 				onOuvrir={() => {
+					suivre('recherche-ouverte', { depuis: 'telephone' });
 					setOuvertures((n) => n + 1);
 					setOuverte(true);
 				}}

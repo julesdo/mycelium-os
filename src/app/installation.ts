@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { suivre } from './analytique';
 
 /**
  * L'INVITATION À INSTALLER L'APPLICATION, SUR ANDROID (15/10/2026).
@@ -126,8 +127,14 @@ export function useInvitationInstallation(actif: boolean): {
 		return () => clearTimeout(minuterie);
 	}, [actif]);
 
+	const montrer = actif && offre && delaiPasse;
+	// Une fois par affichage : la mesure dit combien d'invitations mènent à une installation.
+	useEffect(() => {
+		if (montrer) suivre('installation-proposee');
+	}, [montrer]);
+
 	return {
-		montrer: actif && offre && delaiPasse,
+		montrer,
 		installer: () => {
 			const evenement = window.__invitationInstallation;
 			if (!evenement) return;
@@ -138,11 +145,15 @@ export function useInvitationInstallation(actif: boolean): {
 				.prompt()
 				.then(() => evenement.userChoice)
 				.then(
-					({ outcome }) => memoriser(outcome === 'accepted' ? 'installee' : 'plus-tard'),
+					({ outcome }) => {
+						suivre(outcome === 'accepted' ? 'installation-acceptee' : 'installation-refusee');
+						memoriser(outcome === 'accepted' ? 'installee' : 'plus-tard');
+					},
 					() => memoriser('plus-tard')
 				);
 		},
 		plusTard: () => {
+			suivre('installation-refusee', { depuis: 'croix' });
 			memoriser('plus-tard');
 			prevenir();
 		}

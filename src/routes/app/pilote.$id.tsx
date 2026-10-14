@@ -18,6 +18,7 @@ import {
 	eurosCentimes,
 	pluriel
 } from '../../ui';
+import { suivre } from '../../app/analytique';
 
 /**
  * `/app/pilote/$id` — PARLER À PLUME D'UN DOSSIER, plein écran.
@@ -231,7 +232,10 @@ function ConversationDuDossier() {
 					],
 					question: echange.question,
 					onQuestion: echange.setQuestion,
-					onEnvoyer: () => void echange.demander(echange.question),
+					onEnvoyer: () => {
+						suivre('plume-question', { lieu: 'dossier' });
+						void echange.demander(echange.question);
+					},
 					enCours: echange.enCours,
 					placeholder: `Demander à ${NOM_DU_PILOTE}…`,
 					arretee: refusDuPlafond !== null,

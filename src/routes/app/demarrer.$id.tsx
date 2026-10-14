@@ -5,6 +5,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranDemarrage } from '../../screens/demarrage';
 import { aujourdHuiISO, PageEcran } from '../../ui';
+import { suivre } from '../../app/analytique';
 
 /**
  * `/app/demarrer/$id` — DÉMARRER LE DOSSIER D'UN CLIENT, AVEC PLUME.
@@ -73,6 +74,7 @@ function DemarrerUnDossier() {
 						avoir: reponses.avoir,
 						...(reponses.promesse === undefined ? {} : { promesse: reponses.promesse })
 					});
+					suivre('dossier-demarre');
 					return { creanceId: resultat.creanceId, prochaine: resultat.prochaine };
 				},
 				onVoirDossier: (creanceId) =>

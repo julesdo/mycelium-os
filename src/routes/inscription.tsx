@@ -5,6 +5,7 @@ import { CheckIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { authClient } from '../lib/client/auth';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
 import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
+import { suivre } from '../app/analytique';
 
 /**
  * `invitation` porte le jeton d'une invitation en cours.
@@ -88,6 +89,7 @@ function Inscription() {
 			);
 			return;
 		}
+		suivre('inscription', { invitation: Boolean(invitation) });
 		if (invitation) {
 			await navigate({ to: '/rejoindre/$token', params: { token: invitation } });
 			return;

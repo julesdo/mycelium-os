@@ -36,6 +36,7 @@ import {
 	type ParoleAffichee
 } from './parole-de-plume';
 import { TITRE_DE_NOTIFICATION, type GenreNotification } from '../screens/titres';
+import { suivre } from './analytique';
 
 /**
  * PLUME, BRANCHÉ DANS LA BARRE — son humeur lue sur le pilote, ce qu'il dit, et où il
@@ -485,7 +486,8 @@ function CapsuleBranchee({ onOuvrir }: { readonly onOuvrir: () => void }) {
 			libelleDuGeste="Retenir"
 			onGeste={() => {
 				void retenir({ envoiId: direct.envoiId as Id<'envois'> }).then(
-					() =>
+					() => {
+						suivre('relance-retenue');
 						dire({
 							titre: 'Relance retenue',
 							texte: `Rien ne part à ${direct.client}. Je vous le laisse en main : vous me le rendez depuis sa fiche.`,
@@ -495,7 +497,8 @@ function CapsuleBranchee({ onOuvrir }: { readonly onOuvrir: () => void }) {
 								faire: () =>
 									void navigate({ to: '/app/clients/$id', params: { id: direct.clientId } })
 							}
-						}),
+						});
+					},
 					() =>
 						dire({
 							titre: 'Trop tard pour la retenir',

@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.4** du 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.5** du 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -172,14 +172,23 @@ analyse la santé de ce débiteur, ou d'une entreprise que le client s'apprête 
 | Surveiller les échéances, la prescription et la solvabilité des débiteurs | **Intérêt légitime** du créancier | art. 6.1.f |
 | Analyser la santé des débiteurs et le parcours de leurs dirigeants (section 4.6) | **Intérêt légitime** du créancier à évaluer son risque de crédit | art. 6.1.f |
 | Assurer la sécurité et prévenir la fraude | **Intérêt légitime** | art. 6.1.f |
+| Mesurer l'audience du site et l'usage du Service, en statistiques agrégées | **Intérêt légitime** à améliorer le Service | art. 6.1.f |
 
-**Aucune donnée n'est traitée à des fins de prospection commerciale, de profilage publicitaire ou
-de mesure d'audience.**
+**Aucune donnée n'est traitée à des fins de prospection commerciale ou de profilage publicitaire.**
+
+**Mesure d'audience.** Le site et le Service comptent leurs pages vues et quelques gestes d'usage
+(une inscription, un dépôt de documents, l'activation des relances, une question posée à Plume, une
+souscription) avec **Umami**, sans cookie ni identifiant de visiteur. Avant chaque envoi, les
+identifiants de la base sont retirés de l'adresse de la page, les paramètres et le fragment de
+l'adresse ne partent pas, et aucun événement ne porte de nom, de montant ni d'adresse. **La page où
+un débiteur consulte ce qu'il doit et les coordonnées de virement n'est jamais mesurée** : le script
+ne s'y charge pas. Le réglage « Ne pas me pister » du navigateur est respecté.
 
 **Cookies.** Le Service dépose un **cookie de session d'authentification**, strictement nécessaire à
 son fonctionnement et exempté de consentement au titre de l'article 82 de la loi Informatique et
 Libertés. Aucun cookie de mesure d'audience, de publicité ou de réseau social. Des préférences
-d'affichage peuvent être conservées dans le navigateur ; elles ne quittent pas l'appareil.
+d'affichage peuvent être conservées dans le navigateur ; elles ne quittent pas l'appareil. La mesure
+d'audience (ci-dessus) ne dépose aucun cookie.
 
 ---
 
@@ -265,6 +274,7 @@ indéterminé compte comme absent, jamais comme acquis. **Toute décision appart
 | **Anthropic PBC** | Lecture des documents non structurés | Contenu intégral des documents transmis (section 6) | **États-Unis** |
 | **Resend, Inc.** | Acheminement des courriels de service | Adresse et contenu des courriels de service **uniquement** | **États-Unis** |
 | **Paddle.com Market Ltd** | Facturation, vendeur de registre | Identité et moyens de paiement | Royaume-Uni |
+| **Umami** (Umami Cloud) | Mesure d'audience, sans cookie (section 5) | Adresse de la page sans identifiant, page précédente, type d'appareil et de navigateur, langue, taille d'écran, adresse IP de la requête, gestes d'usage sans donnée de dossier ; jamais la page de paiement d'un débiteur | **États-Unis et Union européenne**, selon ses sous-traitants (ClickHouse, Hetzner, AWS) |
 | **Opendatasoft / DILA** | Publication du BODACC, interrogé à la demande | Dénomination recherchée (section 4.4) | France |
 | **Qonto** | Connexion comptable, à l'initiative du client | Factures de vente et identité de leurs destinataires | France |
 | **Pappers** | Lecture des données publiques d'une entreprise pour l'analyse de sa santé (section 4.6) | SIREN interrogé ; nom, prénom et mois de naissance d'un dirigeant pour retrouver ses autres sociétés | France |

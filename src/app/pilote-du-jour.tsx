@@ -5,6 +5,7 @@ import type { Id } from '../lib/convex/_generated/dataModel';
 import { PiloteEnDirect } from '../ui';
 import { HEURES_D_ENVOI } from '../lib/verticales/recouvrement/plan-relance';
 import { usePlumeDit } from './parole-de-plume';
+import { suivre } from './analytique';
 
 /**
  * LE BLOC DU PILOTE SUR « AUJOURD'HUI », ABONNÉ SEUL À L'ÉTAT DU PILOTE.
@@ -58,7 +59,8 @@ export function PiloteDuJour({ aujourdHui }: { readonly aujourdHui: string }) {
 				  Le mot dit quand, comment on le voit, et comment on l'arrête.
 				*/
 				void activerRelances({ actif }).then(
-					() =>
+					() => {
+						suivre(actif ? 'relances-activees' : 'relances-coupees', { depuis: 'accueil' });
 						dire(
 							actif
 								? {
@@ -72,7 +74,8 @@ export function PiloteDuJour({ aujourdHui }: { readonly aujourdHui: string }) {
 											'C’est coupé : plus rien ne part seul. Je continue de préparer vos lettres ; c’est vous qui les envoyez.',
 										humeur: 'content'
 									}
-						),
+						);
+					},
 					() =>
 						dire({
 							titre: 'Rien n’a changé',

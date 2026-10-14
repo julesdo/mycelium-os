@@ -5,6 +5,7 @@ import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranDemarrageEnLot } from '../../screens/demarrage-lot';
 import { PageEcran, type EtapeDeTravail } from '../../ui';
+import { suivre } from '../../app/analytique';
 
 /**
  * `/app/demarrer` — LES DOSSIERS QUE PLUME A PRÉPARÉS, À DÉMARRER EN LOT.
@@ -57,8 +58,10 @@ function DemarrerEnLot() {
 									})
 								)
 							},
-				onDemarrer: (creanceIds) =>
-					demarrer({ creanceIds: creanceIds.map((id) => id as Id<'creances'>) }),
+				onDemarrer: (creanceIds) => {
+					suivre('dossiers-demarres', { nombre: creanceIds.length });
+					return demarrer({ creanceIds: creanceIds.map((id) => id as Id<'creances'>) });
+				},
 				onCompleter: (debiteurId) =>
 					void navigate({ to: '/app/demarrer/$id', params: { id: debiteurId } })
 			}}
