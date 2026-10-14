@@ -1,6 +1,6 @@
 import { PlusIcon } from 'lucide-react';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
-import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
+import { DUREE_ESSAI_JOURS, LIMITES } from '../lib/config/tarifs';
 import { eurosCentimesCourts } from '../ui/format';
 import { SectionMarketing, TitreSection } from './section';
 
@@ -54,6 +54,11 @@ function questions(): readonly { question: string; reponse: string }[] {
 			question: 'Où sont mes données ?',
 			reponse:
 				'Chez nos prestataires d’hébergement, listés avec leur pays dans la politique de confidentialité. Les échanges sont chiffrés et vos données séparées de celles des autres entreprises.'
+		},
+		{
+			question: 'Quelle formule choisir ?',
+			// Les limites viennent de la grille : la réponse ne peut pas contredire la carte.
+			reponse: `Solo pour un indépendant ou une micro-entreprise : ${LIMITES.solo.clientsSuivis} clients en retard suivis, un utilisateur. Équipe pour une TPE : ${LIMITES.equipe.clientsSuivis} clients, ${LIMITES.equipe.utilisateurs} utilisateurs. Pro pour une PME : sans limite de clients, ${LIMITES.pro.utilisateurs} utilisateurs. Vous en changez quand vous voulez, au prorata.`
 		},
 		{
 			question: 'Puis-je arrêter quand je veux ?',

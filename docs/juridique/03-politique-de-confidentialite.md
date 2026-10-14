@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.4** du 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -54,7 +54,7 @@ au regard de l'article 37 du RGPD.
 | Profil | établissement courant, photo téléversée **ou** avatar décrit par un style et une graine | fournies par l'utilisateur |
 | Établissement | raison sociale, SIRET facultatif, volume de factures émises par an, logo, pays, devise, fuseau | fournies par le client |
 | Invitations | adresse électronique de la personne invitée, rôle proposé, jeton de lien | fournies par le client |
-| Abonnement | identifiants client et abonnement, palier, statut, fin de période | via Paddle |
+| Abonnement | identifiants client et abonnement, formule et rythme, statut, dates de l'essai et du prochain prélèvement, raison facultative d'une résiliation | via Paddle |
 | Acheminement des courriels | identifiant d'envoi, type d'événement, horodatage | générées par Resend |
 
 **L'adresse IP n'est stockée qu'à un seul endroit du Service** : la table des sessions ouvertes.

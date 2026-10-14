@@ -1,6 +1,7 @@
 # Politique de remboursement
 
-> **Version 1.0** du 14 octobre 2026. Elle complète l'article 8 des
+> **Version 1.1** du 14 octobre 2026 (l'essai avec carte, l'abonnement annuel). Version 1.0 du
+> même jour. Elle complète l'article 8 des
 > [conditions générales](./02-conditions-generales.md).
 
 ---
@@ -9,21 +10,21 @@
 
 Les commandes de Letikette sont traitées par **Paddle.com Market Ltd**, notre revendeur en ligne.
 **Paddle.com est le vendeur de registre (« Merchant of Record ») de toutes nos commandes** : il
-vend l'abonnement et le premier bilan, émet la facture, encaisse le paiement, et effectue les
-remboursements. Letikette ne détient aucun moyen de paiement.
+vend l'abonnement, émet la facture, encaisse le paiement, et effectue les remboursements. Letikette ne détient aucun moyen de paiement.
 
 ## 2. Ce qui se rembourse
 
 - **Dans les quatorze jours qui suivent un paiement**, vous pouvez en demander le remboursement
-  intégral, sans avoir à vous justifier. Cela vaut pour le premier bilan, pour le premier mois
-  d'abonnement et pour chaque renouvellement mensuel.
+  intégral, sans avoir à vous justifier. Cela vaut pour le premier prélèvement après l'essai et
+  pour chaque renouvellement, au mois comme à l'année.
 - **Passé ce délai**, le paiement reste acquis. Vous pouvez toujours résilier : la résiliation
-  prend effet à la fin du mois en cours, et aucun mois suivant n'est prélevé.
+  prend effet à la fin de la période en cours (le mois ou l'année), et rien n'est plus prélevé.
 
 ## 3. Avant tout paiement
 
-L'essai de trente jours ne demande aucune carte bancaire. Rien n'est prélevé pendant l'essai, et
-rien ne l'est à son terme tant que vous n'avez pas choisi une offre.
+Pendant l'essai de trente jours, votre carte est enregistrée chez Paddle et **rien n'est prélevé**.
+Nous vous prévenons deux jours avant le premier prélèvement, et vous pouvez annuler jusqu'à la
+veille, sans frais. Découverte, gratuite, ne demande aucune carte.
 
 ## 4. Demander un remboursement
 
@@ -36,8 +37,8 @@ votre banque.
 
 ## 5. Résilier
 
-Depuis votre espace, dans Compte › Abonnement, par « Gérer mon abonnement chez Paddle », ou en
-écrivant à bonjour@letikette.com. La résiliation prend effet à la fin de la période en cours. Vos
+Depuis votre espace, dans Compte › Abonnement, par « Résilier », ou en écrivant à
+bonjour@letikette.com. La résiliation prend effet à la fin de la période en cours. Vos
 données restent ensuite exportables pendant trente jours, comme le prévoit l'article 8.5 des
 [conditions générales](./02-conditions-generales.md).
 

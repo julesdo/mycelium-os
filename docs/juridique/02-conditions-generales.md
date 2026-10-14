@@ -1,7 +1,8 @@
 # Conditions générales d'utilisation et de vente
 
-> **Version 2.2** du 14 octobre 2026 : Paddle, vendeur de registre (article 7.2), et la politique
-> de remboursement (article 8.2). Version 2.1 du 25 septembre 2026. Entrée en vigueur à la date de
+> **Version 2.3** du 14 octobre 2026 : les formules, l'essai et l'abonnement annuel (articles 7.1
+> et 8.1). Version 2.2 du même jour : Paddle, vendeur de registre (article 7.2), et la politique de
+> remboursement (article 8.2). Version 2.1 du 25 septembre 2026. Entrée en vigueur à la date de
 > sa mise en ligne.
 
 ---
@@ -190,13 +191,21 @@ compris lorsqu'il s'appuie sur les mesures fournies par le Service.
 Les prix applicables sont ceux affichés sur la page publique des tarifs au jour de la
 souscription. Ils s'entendent **hors taxes**.
 
-Le prix dépend d'un **palier de volume**, déterminé par le nombre de factures émises par an que le
-Client déclare. Le palier commande **le prix et jamais les fonctionnalités** : un établissement qui
-émet trois mille factures reçoit exactement le même Service qu'un établissement qui en émet trois
-cents.
+Le Client choisit une **formule** (Solo, Équipe ou Pro), payée **au mois ou à l'année** ; l'année
+se paie en une fois. Chaque formule ouvre les limites décrites sur la page des tarifs : le nombre
+de clients en retard suivis en même temps, d'utilisateurs et d'analyses de santé client par mois.
+Le Client en change à tout moment depuis son espace ; Paddle facture ou crédite la différence au
+prorata.
 
-**Un essai gratuit de trente jours** est ouvert à la création du premier établissement. Il est
-accordé **une seule fois par compte**, et non par établissement.
+**Découverte**, gratuite, permet de déposer et de lire ses factures et de voir ce qui est dû. Elle
+ne fait partir aucune relance ni aucun courrier.
+
+**Un essai gratuit de trente jours** accompagne la première souscription. Le moyen de paiement est
+enregistré par Paddle au début de l'essai, et **rien n'est prélevé avant son terme** ; le Client
+en est prévenu deux jours avant, et peut l'annuler jusqu'à la veille depuis son espace. L'essai
+est accordé **une seule fois par établissement et par compte**.
+
+Un abonnement annuel se renouvelle chaque année ; le Client en est prévenu trente jours avant.
 
 Aucun montant n'est reproduit aux présentes : les prix évoluent, et un chiffre recopié dans un
 contrat finit par contredire celui qui est affiché. La page publique des tarifs fait foi au jour
@@ -205,8 +214,8 @@ de la souscription.
 ### 7.2 Vendeur de registre
 
 **Les commandes sont traitées par Paddle.com Market Ltd, notre revendeur en ligne. Paddle.com est
-le vendeur de registre (« Merchant of Record ») de toutes nos commandes** : il vend l'abonnement et
-le premier bilan, émet la facture, encaisse le paiement, et traite les questions de facturation et
+le vendeur de registre (« Merchant of Record ») de toutes nos commandes** : il vend l'abonnement,
+émet la facture, encaisse le paiement, et traite les questions de facturation et
 les remboursements. En conséquence :
 
 - les moyens de paiement du Client sont traités par Paddle, jamais par l'Éditeur, qui n'y a pas
@@ -235,8 +244,8 @@ qu'une indemnité forfaitaire de recouvrement de quarante euros.
 
 ### 8.1 Durée
 
-L'abonnement est souscrit pour une durée d'**un mois**, renouvelable par tacite reconduction, sauf
-résiliation dans les conditions de l'article 8.2.
+L'abonnement est souscrit pour **un mois ou un an**, selon le rythme choisi, renouvelable par
+tacite reconduction, sauf résiliation dans les conditions de l'article 8.2.
 
 ### 8.2 Résiliation par le Client
 
