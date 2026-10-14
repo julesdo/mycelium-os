@@ -20,6 +20,7 @@ import {
 	prixAffiche
 } from '../../ui';
 import { OuvertureEnCours } from './offre';
+import { GestionDeLaFormule, type GestionAffichee } from './gestion-formule';
 import { etatDeLaFacturation, type CauseDeFermeture, type EtatFacturation } from './presse';
 
 /** Ce que l'écran affiche : l'état d'abonnement tel que `billing.etatAbonnement` le rend. */
@@ -99,12 +100,15 @@ export interface CaisseAffichee {
 export function SectionFacturation({
 	abonnement,
 	maintenant,
-	caisse
+	caisse,
+	gestion
 }: {
 	abonnement: AbonnementAffiche | null;
 	/** L'heure lue une fois par l'écran : deux horloges donneraient deux comptes de jours. */
 	maintenant: number;
 	caisse?: CaisseAffichee;
+	/** Changer, résilier, reprendre : présent pour l'administrateur d'un abonnement souscrit. */
+	gestion?: GestionAffichee;
 }) {
 	const [choixOuvert, setChoixOuvert] = useState(false);
 
@@ -128,12 +132,17 @@ export function SectionFacturation({
 				etat={etat}
 				abonnement={abonnement}
 				caisse={caisse}
+				gestionPresente={gestion !== undefined}
 				{...(choisir === undefined ? {} : { onChoisir: choisir })}
 			/>
 
 			{etat.genre === 'ouverture' || etat.genre === 'developpement' ? null : (
 				<CeQueComprend abonnement={abonnement} />
 			)}
+
+			{gestion !== undefined && (etat.genre === 'essai' || etat.genre === 'abonne') ? (
+				<GestionDeLaFormule abonnement={abonnement} gestion={gestion} maintenant={maintenant} />
+			) : null}
 
 			{caisse !== undefined &&
 			!caisse.disponible &&
@@ -202,11 +211,14 @@ function EtatCourant({
 	etat,
 	abonnement,
 	caisse,
+	gestionPresente,
 	onChoisir
 }: {
 	etat: EtatFacturation;
 	abonnement: AbonnementAffiche;
 	caisse?: CaisseAffichee | undefined;
+	/** Les rangées « Gérer votre formule » portent le portail : la carte ne le redit pas. */
+	gestionPresente: boolean;
 	/** Présent quand une formule peut être choisie ici. */
 	onChoisir?: () => void;
 }) {
@@ -245,7 +257,7 @@ function EtatCourant({
 		return (
 			<CarteEtat
 				titre={`Essai${nom === null ? '' : ` ${nom}`}, encore ${etat.jours} jour${etat.jours > 1 ? 's' : ''}`}
-				geste={gerer}
+				geste={gestionPresente ? null : gerer}
 			>
 				<span
 					className="flex h-1.5 w-full overflow-hidden rounded-full bg-cladd-fg/10"
@@ -275,7 +287,7 @@ function EtatCourant({
 		return (
 			<CarteEtat
 				titre={nom === null ? 'Votre abonnement est actif.' : `${nom}, ${rythme}`}
-				geste={gerer}
+				geste={gestionPresente ? null : gerer}
 			>
 				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 					{abonnement.resiliationLe !== null

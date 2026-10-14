@@ -512,3 +512,8 @@ export {
 } from './pictogrammes';
 export { BoutonAffiche, LienAffiche, type FondBouton } from './bouton-affiche';
 export { ChoixDeFormule } from './choix-formule';
+export {
+	ConfirmationDeChangement,
+	FeuilleDeResiliation,
+	type ApercuDeChangement
+} from './gestion-formule';

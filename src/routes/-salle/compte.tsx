@@ -8,6 +8,7 @@ import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
 import type { EtablissementAuRegistre, EtatCritere } from '../../screens/compte/creancier';
 import type { EtablissementAffiche } from '../../screens/compte/etablissement';
 import type { AbonnementAffiche, CaisseAffichee } from '../../screens/compte/facturation';
+import type { GestionAffichee } from '../../screens/compte/gestion-formule';
 import type {
 	EquipeAffichee,
 	InvitationEnAttente,
@@ -674,6 +675,26 @@ const CAISSE_DEMO: CaisseAffichee = {
 	erreur: null
 };
 
+/**
+ * Changer, résilier, reprendre, dans la salle : l'aperçu répond après un temps
+ * de réseau, avec un prorata plausible ; rien ne part chez Paddle.
+ */
+const GESTION_DEMO: GestionAffichee = {
+	apercu: () =>
+		new Promise((resoudre) =>
+			setTimeout(
+				() =>
+					resoudre({ aujourdhui: 5423, ensuite: 11900, prochainLe: Date.now() + 23 * JOUR_DEMO }),
+				600
+			)
+		),
+	changer: () => new Promise((resoudre) => setTimeout(resoudre, 500)),
+	resilier: () => new Promise((resoudre) => setTimeout(resoudre, 500)),
+	reprendre: () => new Promise((resoudre) => setTimeout(resoudre, 500)),
+	onGererLaCarte: () => undefined,
+	portailEnCours: false
+};
+
 /** La page, composée comme sa route la compose. */
 function compteDe(
 	forme: FormeCompte,
@@ -690,6 +711,8 @@ function compteDe(
 		forme.facturation.ouvert && administre
 			? { ...CAISSE_DEMO, essai: forme.facturation.essaiDisponible }
 			: undefined;
+	const souscrit = forme.facturation.statut === 'active' || forme.facturation.statut === 'trialing';
+	const gestion = caisse !== undefined && souscrit ? GESTION_DEMO : undefined;
 
 	return {
 		etablissement: ETABLISSEMENT_AFFICHE_DEMO,
@@ -774,6 +797,7 @@ function compteDe(
 		},
 		abonnement,
 		caisse,
+		gestion,
 		equipe: forme.enLecture
 			? attente
 			: ({

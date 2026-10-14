@@ -55,7 +55,8 @@ export function ChoixDeFormule({
 	onChoisir,
 	plusTard,
 	retour = false,
-	utilisateurs = 1
+	utilisateurs = 1,
+	actuelle
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -74,9 +75,16 @@ export function ChoixDeFormule({
 	readonly retour?: boolean;
 	/** Les personnes qui ont déjà accès : une formule qui en compte moins le dit. */
 	readonly utilisateurs?: number;
+	/**
+	 * La formule souscrite : la page sert à en CHANGER. Pas de frise, la formule
+	 * actuelle est marquée, et le bouton mène à la confirmation chiffrée.
+	 */
+	readonly actuelle?: { readonly formule: Formule; readonly rythme: Rythme };
 }) {
-	const [formule, setFormule] = useState<Formule>(recommandee);
-	const [rythme, setRythme] = useState<Rythme>('annuel');
+	const [formule, setFormule] = useState<Formule>(actuelle?.formule ?? recommandee);
+	const [rythme, setRythme] = useState<Rythme>(actuelle?.rythme ?? 'annuel');
+	const inchangee =
+		actuelle !== undefined && actuelle.formule === formule && actuelle.rythme === rythme;
 
 	const montant = montantDuRythme(formule, rythme);
 	const premierPrelevement = maintenant + DUREE_ESSAI_JOURS * JOUR;
@@ -87,23 +95,29 @@ export function ChoixDeFormule({
 			ouverte={ouverte}
 			onFermer={onFermer}
 			retour={retour}
-			titre="Choisir votre formule"
+			titre={actuelle === undefined ? 'Choisir votre formule' : 'Changer de formule'}
 			pied={
 				<>
 					<BoutonPrincipal
 						pleineLargeur
 						loading={enCours}
-						disabled={enCours}
+						disabled={enCours || inchangee}
 						onClick={() => onChoisir(formule, rythme)}
 					>
-						{essaiDisponible
-							? 'Commencer l’essai, 0 € aujourd’hui'
-							: `M’abonner, ${prixAffiche(montant * 100)} HT`}
+						{actuelle !== undefined
+							? inchangee
+								? 'C’est votre formule'
+								: 'Continuer'
+							: essaiDisponible
+								? 'Commencer l’essai, 0 € aujourd’hui'
+								: `M’abonner, ${prixAffiche(montant * 100)} HT`}
 					</BoutonPrincipal>
 					<p className="text-center text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						{essaiDisponible
-							? `Premier prélèvement le ${dateEnLettres(premierPrelevement)} : ${prixAffiche(montant * 100)} HT, puis ${rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. Annulable jusqu’à la veille.`
-							: `Puis ${rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. Résiliable à tout moment depuis Compte › Abonnement.`}
+						{actuelle !== undefined
+							? 'Vous voyez ce que le changement coûte avant de le confirmer.'
+							: essaiDisponible
+								? `Premier prélèvement le ${dateEnLettres(premierPrelevement)} : ${prixAffiche(montant * 100)} HT, puis ${rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. Annulable jusqu’à la veille.`
+								: `Puis ${rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. Résiliable à tout moment depuis Compte › Abonnement.`}
 					</p>
 					{plusTard ? (
 						<BoutonTexte className="self-center" onClick={plusTard.onClick}>
@@ -113,7 +127,9 @@ export function ChoixDeFormule({
 				</>
 			}
 		>
-			{essaiDisponible ? <FriseDeLEssai maintenant={maintenant} montant={montant} /> : null}
+			{essaiDisponible && actuelle === undefined ? (
+				<FriseDeLEssai maintenant={maintenant} montant={montant} />
+			) : null}
 
 			<SurfaceCut
 				outline
@@ -137,7 +153,8 @@ export function ChoixDeFormule({
 						formule={f}
 						rythme={rythme}
 						choisie={f === formule}
-						recommandee={f === recommandee}
+						recommandee={actuelle === undefined && f === recommandee}
+						actuelle={actuelle?.formule === f}
 						utilisateurs={utilisateurs}
 						onChoisir={() => setFormule(f)}
 					/>
@@ -165,6 +182,7 @@ function CarteDeFormule({
 	rythme,
 	choisie,
 	recommandee,
+	actuelle,
 	utilisateurs,
 	onChoisir
 }: {
@@ -172,6 +190,7 @@ function CarteDeFormule({
 	readonly rythme: Rythme;
 	readonly choisie: boolean;
 	readonly recommandee: boolean;
+	readonly actuelle: boolean;
 	readonly utilisateurs: number;
 	readonly onChoisir: () => void;
 }) {
@@ -196,6 +215,11 @@ function CarteDeFormule({
 					{recommandee ? (
 						<Chip color="brand" size="sm">
 							Recommandée
+						</Chip>
+					) : null}
+					{actuelle ? (
+						<Chip color="neutral" size="sm">
+							Votre formule
 						</Chip>
 					) : null}
 				</span>

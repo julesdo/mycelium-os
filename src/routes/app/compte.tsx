@@ -8,6 +8,7 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
 import { useCaissePaddle } from '../../app/caisse-paddle';
+import { useGestionAbonnement } from '../../app/gestion-abonnement';
 import { messageDeRefus, televerser } from '../../app/televerser';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
 import {
@@ -123,6 +124,7 @@ function PageCompte() {
 		caisse: caisseServeur,
 		ouvrirLePortail: () => ouvrirLePortail({})
 	});
+	const gestion = useGestionAbonnement(caisse);
 
 	// ── L'équipe ─────────────────────────────────────────────────────────────
 	const membres = useQuery(api.organizations.listOrganizationMembers, {});
@@ -566,6 +568,7 @@ function PageCompte() {
 		abonnement:
 			abonnement === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: abonnement },
 		caisse,
+		gestion,
 		equipe,
 		donnees: vosDonnees,
 		intervenants,

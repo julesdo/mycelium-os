@@ -38,6 +38,7 @@ import { FormulaireEtablissement, type EtablissementAffiche } from './etablissem
 import { SectionRegles, resumeRegles, type ReglesAffichees } from './regles';
 import { ChoixDuLogo, SectionProfil, type ProfilAffiche } from './profil';
 import { SectionFacturation, type AbonnementAffiche, type CaisseAffichee } from './facturation';
+import type { GestionAffichee } from './gestion-formule';
 import { SectionEquipe, type EquipeAffichee } from './equipe';
 import { SectionDonnees, type DonneesAffichees } from './donnees';
 import { SectionMesures, type MesuresAffichees } from './mesures';
@@ -125,6 +126,8 @@ export interface CompteAffiche {
 	readonly abonnement: Lecture<AbonnementAffiche | null>;
 	/** Le paiement et le portail Paddle, quand ce compte peut les ouvrir. */
 	readonly caisse?: CaisseAffichee;
+	/** Changer de formule, résilier, reprendre. */
+	readonly gestion?: GestionAffichee;
 	readonly equipe: Lecture<EquipeAffichee>;
 	readonly donnees: Lecture<DonneesAffichees>;
 	/** Combien de professionnels dans l'équipe : la rangée « Votre défense » le porte. */
@@ -342,6 +345,7 @@ export function EcranCompte({
 									abonnement={abonnement}
 									maintenant={maintenant}
 									caisse={pret.caisse}
+									gestion={pret.gestion}
 								/>
 							)}
 						</AvecLaLecture>

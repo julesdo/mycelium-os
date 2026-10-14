@@ -74,6 +74,10 @@ export default defineSchema({
 			)
 		),
 		paddleRythme: v.optional(v.union(v.literal('mensuel'), v.literal('annuel'))),
+		/** Le prix Paddle souscrit : il dit si l'abonnement porte encore l'essai. */
+		paddlePrixId: v.optional(v.string()),
+		/** La raison donnée à la dernière résiliation, facultative. */
+		raisonResiliation: v.optional(v.string()),
 		/** Le prochain prélèvement ; pendant l'essai, le premier. */
 		paddleProchainPrelevementLe: v.optional(v.number()),
 		/** La fin de l'essai Paddle, tant qu'il court. */

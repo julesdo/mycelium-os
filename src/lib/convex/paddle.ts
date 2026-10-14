@@ -1,5 +1,11 @@
 import { v, ConvexError } from 'convex/values';
-import { httpAction, internalMutation, internalQuery, query } from './_generated/server';
+import {
+	httpAction,
+	internalMutation,
+	internalQuery,
+	query,
+	type ActionCtx
+} from './_generated/server';
 import { internal } from './_generated/api';
 import { authComponent } from './auth';
 import { authedAction, authedQuery } from './functions';
@@ -21,6 +27,7 @@ import {
 	signatureValide,
 	statutInterne,
 	type EnvironnementPaddle,
+	type EvenementPaddle,
 	type LienDOrganisation
 } from '../paiement/paddle';
 
@@ -272,7 +279,9 @@ export const upsertSubscription = internalMutation({
 		await ctx.db.patch(org._id, {
 			paddleSubscriptionId: args.paddleSubscriptionId,
 			paddleCustomerId: args.paddleCustomerId,
-			...(formule === null ? {} : { paddlePlanTier: formule, paddleRythme: prix!.rythme }),
+			...(formule === null
+				? {}
+				: { paddlePlanTier: formule, paddleRythme: prix!.rythme, paddlePrixId: prix!.prixId }),
 			paddleStatus: statut,
 			paddleCurrentPeriodEnd: args.currentPeriodEnd,
 			paddleProchainPrelevementLe: args.prochainPrelevementLe,
@@ -355,16 +364,8 @@ export const webhookHandler = httpAction(async (ctx, req): Promise<Response> => 
 	const evenement = lireEvenement(brut);
 	if (evenement.genre === 'abonnement') {
 		await ctx.runMutation(internal.paddle.upsertSubscription, {
-			paddleSubscriptionId: evenement.abonnementId,
-			paddleCustomerId: evenement.clientId,
-			paddleStatus: evenement.statut,
-			priceId: evenement.prixId ?? undefined,
-			currentPeriodEnd: evenement.finDePeriode ?? undefined,
-			prochainPrelevementLe: evenement.prochainPrelevementLe ?? undefined,
-			essaiFinLe: evenement.essaiFinLe ?? undefined,
-			resiliationLe: evenement.resiliationLe ?? undefined,
-			organizationId: await organisationScellee(secret, evenement.lien),
-			survenuLe: evenement.survenuLe
+			...inscriptionDe(evenement),
+			organizationId: await organisationScellee(secret, evenement.lien)
 		});
 	} else if (
 		evenement.genre === 'paiement' &&
@@ -388,6 +389,21 @@ export const webhookHandler = httpAction(async (ctx, req): Promise<Response> => 
 	});
 });
 
+/** Ce qu'un événement d'abonnement inscrit, le même pour le rappel et pour nos actions. */
+function inscriptionDe(evenement: Extract<EvenementPaddle, { genre: 'abonnement' }>) {
+	return {
+		paddleSubscriptionId: evenement.abonnementId,
+		paddleCustomerId: evenement.clientId,
+		paddleStatus: evenement.statut,
+		priceId: evenement.prixId ?? undefined,
+		currentPeriodEnd: evenement.finDePeriode ?? undefined,
+		prochainPrelevementLe: evenement.prochainPrelevementLe ?? undefined,
+		essaiFinLe: evenement.essaiFinLe ?? undefined,
+		resiliationLe: evenement.resiliationLe ?? undefined,
+		survenuLe: evenement.survenuLe
+	};
+}
+
 /** L'établissement que le paiement désigne, si et seulement si son sceau tient. */
 async function organisationScellee(
 	secret: string,
@@ -398,6 +414,197 @@ async function organisationScellee(
 		? lien.organisationId
 		: undefined;
 }
+
+// ── Changer, résilier, reprendre ────────────────────────────────────────────
+
+/*
+  GÉRER SA FORMULE SANS QUITTER LE PRODUIT (14/10/2026), sur Oportun et Natural AI :
+  passer à l'année, changer de formule en voyant AVANT ce que cela coûte
+  aujourd'hui, résilier en deux gestes, reprendre d'un geste. Chaque action
+  appelle l'API de Paddle et inscrit aussitôt l'abonnement qu'elle rend : l'écran
+  n'attend pas le rappel, qui confirmera la même chose.
+*/
+
+const vFormule = v.union(v.literal('solo'), v.literal('equipe'), v.literal('pro'));
+const vRythme = v.union(v.literal('mensuel'), v.literal('annuel'));
+
+export const _prixDe = internalQuery({
+	args: { etiquette: v.string() },
+	handler: async (ctx, { etiquette }): Promise<string | null> =>
+		(
+			await ctx.db
+				.query('prixPaddle')
+				.withIndex('by_etiquette', (q) => q.eq('etiquette', etiquette))
+				.first()
+		)?.prixId ?? null
+});
+
+export const _noterLaRaison = internalMutation({
+	args: { organizationId: v.id('organizations'), raison: v.optional(v.string()) },
+	handler: async (ctx, { organizationId, raison }): Promise<null> => {
+		await ctx.db.patch(organizationId, { raisonResiliation: raison });
+		return null;
+	}
+});
+
+type CtxAction = ActionCtx & { readonly user: { readonly _id: string } };
+
+async function abonnementAGerer(ctx: CtxAction) {
+	const courant = await ctx.runQuery(internal.paddle._abonnementCourant, { userId: ctx.user._id });
+	if (courant === null || courant.abonnementId === null) {
+		throw new ConvexError('Aucun abonnement à gérer sur cet établissement.');
+	}
+	return { ...courant, abonnementId: courant.abonnementId };
+}
+
+/** Un appel à l'API de Paddle ; l'erreur de Paddle est dite telle quelle. */
+async function appelerPaddle(
+	methode: 'GET' | 'POST' | 'PATCH',
+	chemin: string,
+	corps?: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+	const cle = process.env.PADDLE_API_KEY;
+	if (!cle) throw new ConvexError('Le paiement n’est pas configuré sur ce déploiement.');
+	const reponse = await fetch(`${baseDeLApi(environnementPaddle(process.env))}${chemin}`, {
+		method: methode,
+		headers: { Authorization: `Bearer ${cle}`, 'Content-Type': 'application/json' },
+		...(corps === undefined ? {} : { body: JSON.stringify(corps) })
+	});
+	const json = (await reponse.json().catch(() => null)) as {
+		data?: Record<string, unknown>;
+		error?: { detail?: string };
+	} | null;
+	if (!reponse.ok) {
+		throw new ConvexError(
+			`Paddle n’a pas accepté le changement : ${json?.error?.detail ?? `erreur ${reponse.status}`}.`
+		);
+	}
+	return json?.data ?? {};
+}
+
+/** Inscrit l'abonnement que Paddle vient de rendre, comme le ferait son rappel. */
+async function inscrireLaReponse(
+	ctx: CtxAction,
+	data: Record<string, unknown>,
+	organizationId: Id<'organizations'>
+): Promise<void> {
+	const evenement = lireEvenement({
+		event_type: 'subscription.updated',
+		occurred_at: typeof data.updated_at === 'string' ? data.updated_at : new Date().toISOString(),
+		data
+	});
+	if (evenement.genre !== 'abonnement') return;
+	await ctx.runMutation(internal.paddle.upsertSubscription, {
+		...inscriptionDe(evenement),
+		organizationId
+	});
+}
+
+/** Pendant l'essai, rien n'est facturé ; ensuite, la différence au prorata, tout de suite. */
+function corpsDuChangement(prixId: string, statut: string | null): Record<string, unknown> {
+	return {
+		items: [{ price_id: prixId, quantity: 1 }],
+		proration_billing_mode: statut === 'trialing' ? 'do_not_bill' : 'prorated_immediately'
+	};
+}
+
+async function prixCible(
+	ctx: CtxAction,
+	formule: Formule,
+	rythme: Rythme,
+	courant: { statut: string | null; prixAvecEssai: boolean }
+): Promise<string> {
+	// À l'essai, la nouvelle formule garde l'essai ; payée, elle n'en a plus.
+	const essai = courant.statut === 'trialing' && courant.prixAvecEssai;
+	const prixId = await ctx.runQuery(internal.paddle._prixDe, {
+		etiquette: etiquetteDuPrix(formule, rythme, essai)
+	});
+	if (prixId === null)
+		throw new ConvexError('Cette formule ne peut pas être souscrite pour le moment.');
+	return prixId;
+}
+
+function sousTotal(transaction: unknown): number | null {
+	if (typeof transaction !== 'object' || transaction === null) return null;
+	const details = (transaction as { details?: { totals?: { subtotal?: unknown } } }).details;
+	const valeur = details?.totals?.subtotal;
+	return typeof valeur === 'string' && /^-?\d+$/.test(valeur) ? Number(valeur) : null;
+}
+
+/**
+ * Ce que coûterait le changement, AVANT de le faire : ce qui serait prélevé
+ * aujourd'hui (au prorata, hors taxes), le prochain prélèvement et sa date.
+ */
+export const apercuDuChangement = authedAction({
+	args: { formule: vFormule, rythme: vRythme },
+	handler: async (
+		ctx,
+		{ formule, rythme }
+	): Promise<{ aujourdhui: number; ensuite: number | null; prochainLe: number | null }> => {
+		const courant = await abonnementAGerer(ctx);
+		const prixId = await prixCible(ctx, formule, rythme, courant);
+		const data = await appelerPaddle(
+			'PATCH',
+			`/subscriptions/${courant.abonnementId}/preview`,
+			corpsDuChangement(prixId, courant.statut)
+		);
+		const prochain =
+			typeof data.next_billed_at === 'string' ? Date.parse(data.next_billed_at) : NaN;
+		return {
+			aujourdhui: sousTotal(data.immediate_transaction) ?? 0,
+			ensuite: sousTotal(data.next_transaction),
+			prochainLe: Number.isNaN(prochain) ? null : prochain
+		};
+	}
+});
+
+export const changerDeFormule = authedAction({
+	args: { formule: vFormule, rythme: vRythme },
+	handler: async (ctx, { formule, rythme }): Promise<null> => {
+		const courant = await abonnementAGerer(ctx);
+		const prixId = await prixCible(ctx, formule, rythme, courant);
+		const data = await appelerPaddle(
+			'PATCH',
+			`/subscriptions/${courant.abonnementId}`,
+			corpsDuChangement(prixId, courant.statut)
+		);
+		await inscrireLaReponse(ctx, data, courant.organizationId);
+		return null;
+	}
+});
+
+/**
+ * Résilier : rien n'est plus prélevé, l'accès court jusqu'à la fin de la
+ * période payée (ou de l'essai). La raison est facultative et ne retient rien.
+ */
+export const resilier = authedAction({
+	args: { raison: v.optional(v.string()) },
+	handler: async (ctx, { raison }): Promise<null> => {
+		const courant = await abonnementAGerer(ctx);
+		const data = await appelerPaddle('POST', `/subscriptions/${courant.abonnementId}/cancel`, {
+			effective_from: 'next_billing_period'
+		});
+		await inscrireLaReponse(ctx, data, courant.organizationId);
+		await ctx.runMutation(internal.paddle._noterLaRaison, {
+			organizationId: courant.organizationId,
+			...(raison === undefined ? {} : { raison })
+		});
+		return null;
+	}
+});
+
+/** Reprendre un abonnement résilié avant qu'il ne s'arrête. */
+export const reprendre = authedAction({
+	args: {},
+	handler: async (ctx): Promise<null> => {
+		const courant = await abonnementAGerer(ctx);
+		const data = await appelerPaddle('PATCH', `/subscriptions/${courant.abonnementId}`, {
+			scheduled_change: null
+		});
+		await inscrireLaReponse(ctx, data, courant.organizationId);
+		return null;
+	}
+});
 
 // ── Le portail ──────────────────────────────────────────────────────────────
 
@@ -437,7 +644,14 @@ export const _abonnementCourant = internalQuery({
 	handler: async (
 		ctx,
 		{ userId }
-	): Promise<{ clientId: string | null; abonnementId: string | null } | null> => {
+	): Promise<{
+		clientId: string | null;
+		abonnementId: string | null;
+		statut: string | null;
+		/** Le prix souscrit porte les trente jours d'essai. */
+		prixAvecEssai: boolean;
+		organizationId: Id<'organizations'>;
+	} | null> => {
 		const orgId = await organisationCouranteOuNull(ctx, userId);
 		if (orgId === null) return null;
 		const membre = await ctx.db
@@ -447,9 +661,19 @@ export const _abonnementCourant = internalQuery({
 		if (membre?.role !== 'ORG_ADMIN') return null;
 		const org = await ctx.db.get(orgId);
 		if (org === null) return null;
+		const prix =
+			org.paddlePrixId === undefined
+				? null
+				: await ctx.db
+						.query('prixPaddle')
+						.withIndex('by_prix', (q) => q.eq('prixId', org.paddlePrixId!))
+						.first();
 		return {
 			clientId: org.paddleCustomerId ?? null,
-			abonnementId: org.paddleSubscriptionId ?? null
+			abonnementId: org.paddleSubscriptionId ?? null,
+			statut: org.paddleStatus ?? null,
+			prixAvecEssai: prix?.essai === true,
+			organizationId: org._id
 		};
 	}
 });
