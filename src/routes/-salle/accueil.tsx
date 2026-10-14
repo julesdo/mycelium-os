@@ -4,6 +4,7 @@ import {
 	Situations,
 	Calcul,
 	SectionPlume,
+	ToutCeQuiVaAvec,
 	Etapes,
 	Securite,
 	Faq,
@@ -47,6 +48,7 @@ const SECTIONS = {
 	'le calculateur': () => <Calcul />,
 	plume: () => <SectionPlume />,
 	'comment ça marche': () => <Etapes />,
+	'tout ce qui va avec': () => <ToutCeQuiVaAvec />,
 	'la sécurité': () => <Securite />,
 	'les questions fréquentes': () => <Faq />,
 	'le pied et ses liens légaux': () => <Pied />

@@ -18,6 +18,7 @@ export { Hero } from './hero';
 export { Situations } from './situations';
 export { Calcul } from './calcul';
 export { SectionPlume } from './plume';
+export { ToutCeQuiVaAvec } from './tout';
 export { Etapes } from './etapes';
 export { BandeLogiciels } from './logiciels';
 export { Securite } from './securite';

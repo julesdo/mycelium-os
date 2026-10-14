@@ -6,6 +6,7 @@ import {
 	Situations,
 	Calcul,
 	SectionPlume,
+	ToutCeQuiVaAvec,
 	Etapes,
 	Securite,
 	Tarifs,
@@ -105,6 +106,7 @@ function Accueil() {
 			{/* PLUME, juste après ce qu'on vous doit : celui qui va le réclamer. */}
 			<SectionPlume />
 			<Etapes />
+			<ToutCeQuiVaAvec />
 			{/* LA CIBLE, après le produit : les métiers, en photos, sans prénom. */}
 			<Situations />
 			{/*

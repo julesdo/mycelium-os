@@ -127,7 +127,8 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		cle: 'defense',
 		nom: 'Votre défense',
 		resume: 'Avocats et commissaires de justice',
-		phrase: 'Les avocats et commissaires de justice près de votre client, le jour où il le faut.',
+		phrase:
+			'Les avocats et commissaires de justice qui exercent près de votre client, et leurs coordonnées.',
 		famille: 'ENVOI',
 		ancre: '/#defense',
 		capture: 'defense',
