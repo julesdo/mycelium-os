@@ -1,6 +1,8 @@
 # Conditions générales d'utilisation et de vente
 
-> **Version 2.1** — 25 septembre 2026. Entrée en vigueur à la date de sa mise en ligne.
+> **Version 2.2** du 14 octobre 2026 : Paddle, vendeur de registre (article 7.2), et la politique
+> de remboursement (article 8.2). Version 2.1 du 25 septembre 2026. Entrée en vigueur à la date de
+> sa mise en ligne.
 
 ---
 
@@ -202,19 +204,21 @@ de la souscription.
 
 ### 7.2 Vendeur de registre
 
-**L'abonnement est facturé par l'Éditeur**, dont l'identité figure aux
-[mentions légales](./01-mentions-legales.md). Le contrat de fourniture du Service est conclu entre
-le Client et l'Éditeur.
-
-**L'encaissement est opéré par Paddle.com Market Ltd**, qui intervient comme prestataire de
-paiement et de facturation. En conséquence :
+**Les commandes sont traitées par Paddle.com Market Ltd, notre revendeur en ligne. Paddle.com est
+le vendeur de registre (« Merchant of Record ») de toutes nos commandes** : il vend l'abonnement et
+le premier bilan, émet la facture, encaisse le paiement, et traite les questions de facturation et
+les remboursements. En conséquence :
 
 - les moyens de paiement du Client sont traités par Paddle, jamais par l'Éditeur, qui n'y a pas
   accès ;
-- la taxe sur la valeur ajoutée applicable est déterminée et reversée selon le pays du Client ;
-- les conditions de Paddle s'appliquent à l'opération de paiement, en complément des présentes.
+- la taxe sur la valeur ajoutée applicable est déterminée et reversée par Paddle selon le pays du
+  Client ;
+- les [conditions d'achat de Paddle](https://www.paddle.com/legal/buyer-terms) s'appliquent à
+  l'achat, en complément des présentes ;
+- les remboursements suivent la [politique de remboursement](./05-remboursement.md).
 
-Les présentes conditions régissent l'accès au Service et son utilisation.
+L'accès au Service et son utilisation sont fournis par l'Éditeur, dont l'identité figure aux
+[mentions légales](./01-mentions-legales.md), et régis par les présentes conditions.
 
 ### 7.3 Défaut de paiement
 
@@ -237,7 +241,9 @@ résiliation dans les conditions de l'article 8.2.
 ### 8.2 Résiliation par le Client
 
 Le Client peut résilier à tout moment depuis son espace ou par courriel, avec effet à l'échéance
-de la période en cours. Les sommes versées au titre de la période entamée restent acquises.
+de la période en cours. Les sommes versées au titre de la période entamée restent acquises, sous
+réserve de la [politique de remboursement](./05-remboursement.md) : un paiement peut
+être remboursé sur demande dans les quatorze jours qui le suivent.
 
 ### 8.3 Résiliation par l'Éditeur
 
@@ -339,10 +345,10 @@ précédant le fait générateur**.
 Ce plafond ne s'applique ni en cas de dol, ni en cas de faute lourde, ni dans les cas où la loi
 l'interdit.
 
-*Note à l'attention du relecteur : la jurisprudence issue des arrêts Chronopost et Faurecia écarte
+_Note à l'attention du relecteur : la jurisprudence issue des arrêts Chronopost et Faurecia écarte
 la clause limitative qui viderait de sa substance l'obligation essentielle du débiteur. La mesure
 étant précisément l'obligation essentielle du présent contrat, la rédaction mérite un examen
-attentif.*
+attentif._
 
 ### 11.3 Exclusions propres au Service
 

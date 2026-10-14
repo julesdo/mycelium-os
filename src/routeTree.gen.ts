@@ -20,6 +20,7 @@ import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
+import { Route as RemboursementRouteImport } from './routes/remboursement'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AppIndexRouteImport } from './routes/app/index'
@@ -109,6 +110,11 @@ const PolitiqueDeConfidentialiteRoute =
     path: '/politique-de-confidentialite',
     getParentRoute: () => rootRouteImport,
   } as any)
+const RemboursementRoute = RemboursementRouteImport.update({
+  id: '/remboursement',
+  path: '/remboursement',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShowroomRoute = ShowroomRouteImport.update({
   id: '/showroom',
   path: '/showroom',
@@ -282,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
+  '/remboursement': typeof RemboursementRoute
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
+  '/remboursement': typeof RemboursementRoute
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
+  '/remboursement': typeof RemboursementRoute
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/clients': typeof AppClientsRouteWithChildren
@@ -419,6 +428,7 @@ export interface FileRouteTypes {
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
+    | '/remboursement'
     | '/showroom'
     | '/sitemap.xml'
     | '/app/clients'
@@ -463,6 +473,7 @@ export interface FileRouteTypes {
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
+    | '/remboursement'
     | '/showroom'
     | '/sitemap.xml'
     | '/app/clients'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
+    | '/remboursement'
     | '/showroom'
     | '/sitemap.xml'
     | '/app/clients'
@@ -554,6 +566,7 @@ export interface RootRouteChildren {
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
   PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
+  RemboursementRoute: typeof RemboursementRoute
   ShowroomRoute: typeof ShowroomRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   BlogAdresseRoute: typeof BlogAdresseRoute
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/politique-de-confidentialite'
       fullPath: '/politique-de-confidentialite'
       preLoaderRoute: typeof PolitiqueDeConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/remboursement': {
+      id: '/remboursement'
+      path: '/remboursement'
+      fullPath: '/remboursement'
+      preLoaderRoute: typeof RemboursementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/showroom': {
@@ -969,6 +989,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
   PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
+  RemboursementRoute: RemboursementRoute,
   ShowroomRoute: ShowroomRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   BlogAdresseRoute: BlogAdresseRoute,

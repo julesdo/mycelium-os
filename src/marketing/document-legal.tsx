@@ -64,6 +64,19 @@ const TYPOGRAPHIE = [
 	'[&_code]:font-mono [&_code]:text-cladd-sm'
 ].join(' ');
 
+/**
+ * Les renvois d'un document à l'autre, vers leur PAGE.
+ *
+ * ⚠️ ILS MENAIENT À UNE 404 DEPUIS LEUR PUBLICATION (relevé le 14/10/2026).
+ * Le Markdown renvoie à `./01-mentions-legales.md`, qui se lit sur le dépôt ;
+ * rendu tel quel, le lien ouvrait `/01-mentions-legales.md`, une adresse que
+ * le site ne sert pas. Quinze renvois, dont « mentions légales » dans les
+ * conditions générales, celui qu'une vérification de Paddle suit en premier.
+ */
+export function versLesPages(html: string): string {
+	return html.replace(/href="\.\/0\d-([a-z-]+)\.md"/g, 'href="/$1"');
+}
+
 export function DocumentLegal({ titre, markdown }: { titre: string; markdown: string }) {
 	/*
 	  `marked` est synchrone dans cette configuration, mais son type autorise une
@@ -82,7 +95,7 @@ export function DocumentLegal({ titre, markdown }: { titre: string; markdown: st
 	  colonnes dans certains navigateurs. L'envelopper à la main est laid et
 	  fiable, et sur un tableau de durées de conservation la fiabilité gagne.
 	*/
-	const html = brut
+	const html = versLesPages(brut)
 		.replace(/<table>/g, '<div class="w-full overflow-x-auto"><table>')
 		.replace(/<\/table>/g, '</table></div>');
 

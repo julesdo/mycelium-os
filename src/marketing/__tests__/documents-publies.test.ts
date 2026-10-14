@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { versLesPages } from '../document-legal';
 
 /**
  * CE QU'UNE PAGE LÉGALE PUBLIÉE N'A PAS LE DROIT DE PORTER.
@@ -72,7 +73,8 @@ describe('les documents légaux publiés', () => {
 			'/accord-de-sous-traitance',
 			'/conditions-generales',
 			'/mentions-legales',
-			'/politique-de-confidentialite'
+			'/politique-de-confidentialite',
+			'/remboursement'
 		]);
 	});
 
@@ -83,7 +85,8 @@ describe('les documents légaux publiés', () => {
 			lire(chemin)
 				.split('\n')
 				.forEach((ligne, index) => {
-					if (ligne.includes('⚠')) fautifs.push(`${chemin}:${index + 1} (${route}) — ${ligne.trim()}`);
+					if (ligne.includes('⚠'))
+						fautifs.push(`${chemin}:${index + 1} (${route}) — ${ligne.trim()}`);
 				});
 		}
 
@@ -114,9 +117,10 @@ describe('les documents légaux publiés', () => {
 			.filter(([, chemin]) => interdits.test(lire(chemin)))
 			.map(([route]) => route);
 
-		expect(fautifs, 'Ces documents publiés décrivent encore le produit retiré le 3/09/2026.').toEqual(
-			[]
-		);
+		expect(
+			fautifs,
+			'Ces documents publiés décrivent encore le produit retiré le 3/09/2026.'
+		).toEqual([]);
 	});
 
 	/**
@@ -164,5 +168,35 @@ describe('les documents légaux publiés', () => {
 		expect(cgv).toMatch(/recouvrement pour compte de tiers/i);
 		expect(cgv).toMatch(/ne manipule aucun fonds/i);
 		expect(cgv).toMatch(/ne recommande aucune procédure/i);
+	});
+
+	/**
+	 * Un renvoi d'un document à l'autre mène à une page qui existe. Le rendu
+	 * traduit `./0N-nom.md` en `/nom` (`versLesPages`) ; sans cette
+	 * traduction, les quinze renvois menaient à une 404 (relevé le 14/10/2026).
+	 */
+	it('renvoient d’un document à l’autre vers une page qui existe', () => {
+		const fautifs: string[] = [];
+		for (const [route, chemin] of Object.entries(SOURCES)) {
+			for (const [, nom] of lire(chemin).matchAll(/\]\(\.\/0\d-([a-z-]+)\.md\)/g)) {
+				if (SOURCES[`/${nom}`] === undefined) fautifs.push(`${route} → /${nom}`);
+			}
+		}
+		expect(fautifs).toEqual([]);
+		expect(versLesPages('<a href="./01-mentions-legales.md">x</a>')).toBe(
+			'<a href="/mentions-legales">x</a>'
+		);
+	});
+
+	/**
+	 * Paddle encaisse en vendeur de registre : les conditions doivent le dire,
+	 * et une politique de remboursement doit être publiée. C'est ce que la
+	 * vérification du compte marchand relit.
+	 */
+	it('disent que Paddle est le vendeur de registre, et publient le remboursement', () => {
+		const cgv = lire(SOURCES['/conditions-generales']!);
+		expect(cgv).toMatch(/Paddle\.com[^.]*vendeur de registre/);
+		expect(cgv).not.toMatch(/facturé par l'Éditeur/);
+		expect(SOURCES['/remboursement']).toBeDefined();
 	});
 });

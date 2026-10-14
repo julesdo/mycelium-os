@@ -47,6 +47,19 @@ manquement et non une imprécision.
    `aws-eu-west-1` existe. Héberger dans l'Union se défend plus simplement devant un dirigeant
    français que des clauses contractuelles types.
 
+### Le paiement par Paddle (14 octobre 2026)
+
+7. **Quatorze jours de remboursement, à ratifier.** La politique de remboursement
+   (`05-remboursement.md`) et l'article 8.2 accordent le remboursement intégral d'un
+   paiement demandé dans les quatorze jours. C'est le délai que les conditions de Paddle lui
+   permettent déjà d'appliquer seul : en écrire moins aurait contredit le vendeur de registre.
+   Paddle **recommande** trente jours dans son guide du vendeur. Le chiffre est écrit à deux
+   endroits seulement (la politique et l'article 8.2) : le changer, c'est changer les deux.
+8. **La version 2.2 des conditions générales** (Paddle vendeur de registre, remboursement) est une
+   modification au sens de l'article 16. Aucun client ne paie encore ; si des comptes existants
+   doivent être prévenus par courriel trente jours avant, c'est à décider avant d'ouvrir la
+   facturation (`PADDLE_FACTURATION_OUVERTE`).
+
 ---
 
 ## Ce que ces documents sont, et ce qu'ils ne sont pas

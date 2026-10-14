@@ -61,6 +61,9 @@ export function Pied() {
 					<Link to="/politique-de-confidentialite" className={LIEN}>
 						Politique de confidentialité
 					</Link>
+					<Link to="/remboursement" className={LIEN}>
+						Remboursement
+					</Link>
 					<Link to="/accord-de-sous-traitance" className={LIEN}>
 						Accord de sous-traitance
 					</Link>

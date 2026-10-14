@@ -16,6 +16,7 @@ const PAGES_FIXES = [
 	'/mentions-legales',
 	'/conditions-generales',
 	'/politique-de-confidentialite',
+	'/remboursement',
 	'/accord-de-sous-traitance'
 ];
 
