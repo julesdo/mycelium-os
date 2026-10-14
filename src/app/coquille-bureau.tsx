@@ -119,7 +119,15 @@ function estActive(destination: Destination, chemin: string): boolean {
 	return destination.prefixes.some((prefixe) => nu.startsWith(prefixe));
 }
 
-export function LateraleBranchee({ auRepos }: { readonly auRepos: boolean }) {
+export function LateraleBranchee({
+	auRepos,
+	reduite,
+	onBasculer
+}: {
+	readonly auRepos: boolean;
+	readonly reduite: boolean;
+	readonly onBasculer: () => void;
+}) {
 	const chemin = useRouterState({ select: (etat) => etat.location.pathname });
 	const groupes: GroupeLateral[] = GROUPES.map((groupe) => ({
 		...groupe,
@@ -132,6 +140,8 @@ export function LateraleBranchee({ auRepos }: { readonly auRepos: boolean }) {
 
 	return (
 		<BarreLaterale
+			reduite={reduite}
+			onBasculer={onBasculer}
 			tete={
 				auRepos ? null : (
 					<Facultatif>

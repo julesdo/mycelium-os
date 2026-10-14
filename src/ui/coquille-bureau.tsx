@@ -2,7 +2,7 @@ import { createContext, useContext, type ComponentType, type ReactNode, type Ref
 import { createPortal } from 'react-dom';
 import type { LinkProps } from '@tanstack/react-router';
 import { Button } from '@cladd-ui/react';
-import { BellIcon, SearchIcon } from 'lucide-react';
+import { BellIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, SearchIcon } from 'lucide-react';
 import { cn } from './cn';
 import { Lien } from './lien';
 import { PastilleDeRappel } from './barre-du-bas';
@@ -253,22 +253,41 @@ export interface GroupeLateral {
  * Plume et le pied du démarrage se centraient à 128 px de la conversation qu'ils
  * servent, au bureau. Ils partent donc de la barre latérale, dont c'est la largeur.
  */
-export const DEGAGEMENT_LATERAL = 'lg:left-64';
+export const DEGAGEMENT_LATERAL = 'lg:left-[var(--largeur-laterale,16rem)]';
+
+/**
+ * LA LARGEUR DE LA BARRE, OUVERTE OU EN RAIL D'ICÔNES, posée par la coquille en
+ * variable (`--largeur-laterale`) : la barre et ce qui est fixé la lisent ensemble.
+ */
+export const LARGEUR_LATERALE = { ouverte: '16rem', reduite: '4.5rem' } as const;
 
 export function BarreLaterale({
 	tete,
 	groupes,
-	pied
+	pied,
+	reduite = false,
+	onBasculer
 }: {
 	/** L'établissement, en tête. */
 	readonly tete?: ReactNode;
 	readonly groupes: readonly GroupeLateral[];
 	/** Le compte, en pied. */
 	readonly pied?: ReactNode;
+	/**
+	 * EN RAIL D'ICÔNES (14/10/2026), comme chez Midday ou Quicken : entre 1024 et
+	 * 1280 px, la barre ouverte prenait un quart de l'écran. Repliée, elle ne garde
+	 * que les icônes, et chaque nom passe en bulle au survol. Le choix se garde.
+	 */
+	readonly reduite?: boolean;
+	readonly onBasculer?: () => void;
 }) {
-	// `w-64` : la largeur que `DEGAGEMENT_LATERAL` rend aux éléments fixés.
+	// La largeur vient de `--largeur-laterale`, celle que `DEGAGEMENT_LATERAL` rend
+	// aux éléments fixés.
 	return (
-		<aside className="chrome-laterale hidden h-full w-64 shrink-0 flex-col lg:flex">
+		<aside
+			data-reduite={reduite}
+			className="group/laterale chrome-laterale hidden h-full w-[var(--largeur-laterale,16rem)] shrink-0 flex-col transition-[width] duration-200 ease-out lg:flex"
+		>
 			<div className="flex h-14 shrink-0 items-center px-3">{tete}</div>
 			<nav
 				aria-label="Navigation principale"
@@ -277,29 +296,55 @@ export function BarreLaterale({
 				{groupes.map((groupe) => (
 					<div key={groupe.cle} className="flex flex-col gap-0.5">
 						{groupe.titre === undefined ? null : (
-							<p className="px-2.5 pb-1 text-cladd-3xs font-medium text-cladd-fg-softer">
+							<p className="truncate px-2.5 pb-1 text-cladd-3xs font-medium text-cladd-fg-softer group-data-[reduite=true]/laterale:sr-only">
 								{groupe.titre}
 							</p>
 						)}
 						{groupe.destinations.map((destination) => (
-							<EntreeLaterale key={destination.cle} destination={destination} />
+							<EntreeLaterale key={destination.cle} destination={destination} reduite={reduite} />
 						))}
 					</div>
 				))}
+				{onBasculer === undefined ? null : (
+					<button
+						type="button"
+						onClick={onBasculer}
+						aria-label={reduite ? 'Déplier la barre' : 'Replier la barre'}
+						title={reduite ? 'Déplier la barre' : 'Replier la barre'}
+						className="entree-laterale mt-auto flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-cladd-2xs font-medium text-cladd-fg-softer transition-colors duration-150 group-data-[reduite=true]/laterale:justify-center group-data-[reduite=true]/laterale:px-0 hover:text-cladd-fg"
+					>
+						{reduite ? (
+							<PanelLeftOpenIcon aria-hidden className="size-4.5 shrink-0" />
+						) : (
+							<PanelLeftCloseIcon aria-hidden className="size-4.5 shrink-0" />
+						)}
+						<span className="min-w-0 truncate group-data-[reduite=true]/laterale:sr-only">
+							Replier la barre
+						</span>
+					</button>
+				)}
 			</nav>
 			{pied === undefined ? null : <div className="shrink-0 px-3 pt-1.5 pb-3">{pied}</div>}
 		</aside>
 	);
 }
 
-function EntreeLaterale({ destination }: { readonly destination: DestinationLaterale }) {
+function EntreeLaterale({
+	destination,
+	reduite
+}: {
+	readonly destination: DestinationLaterale;
+	readonly reduite: boolean;
+}) {
 	const { libelle, Icone, vers, actif, rappel } = destination;
 	return (
 		<Lien
 			to={vers}
 			aria-current={actif ? 'page' : undefined}
+			// En rail, le nom ne se lit plus : il passe en bulle au survol.
+			{...(reduite ? { title: libelle } : {})}
 			className={cn(
-				'entree-laterale flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-cladd-2xs font-medium transition-colors duration-150',
+				'entree-laterale flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-cladd-2xs font-medium transition-colors duration-150 group-data-[reduite=true]/laterale:justify-center group-data-[reduite=true]/laterale:px-0',
 				actif ? 'entree-laterale-active text-cladd-fg' : 'text-cladd-fg-soft hover:text-cladd-fg'
 			)}
 		>
@@ -307,7 +352,7 @@ function EntreeLaterale({ destination }: { readonly destination: DestinationLate
 				<Icone size={18} aria-hidden />
 				{rappel === undefined ? null : <span className="absolute -top-1.5 -right-2">{rappel}</span>}
 			</span>
-			<span className="min-w-0 truncate">{libelle}</span>
+			<span className="min-w-0 truncate group-data-[reduite=true]/laterale:sr-only">{libelle}</span>
 		</Lien>
 	);
 }
@@ -328,9 +373,9 @@ export function IdentiteLaterale({
 	readonly apres?: ReactNode;
 }) {
 	return (
-		<span className="flex w-full min-w-0 items-center gap-2.5 text-left">
+		<span className="flex w-full min-w-0 items-center gap-2.5 text-left group-data-[reduite=true]/laterale:justify-center">
 			<span className="flex shrink-0">{vignette}</span>
-			<span className="flex min-w-0 flex-1 flex-col">
+			<span className="flex min-w-0 flex-1 flex-col group-data-[reduite=true]/laterale:hidden">
 				<span className="truncate text-cladd-2xs leading-tight font-semibold text-cladd-fg">
 					{nom}
 				</span>
@@ -339,12 +384,17 @@ export function IdentiteLaterale({
 				)}
 			</span>
 			{apres === undefined ? null : (
-				<span className="flex shrink-0 text-cladd-fg-softer">{apres}</span>
+				<span className="flex shrink-0 text-cladd-fg-softer group-data-[reduite=true]/laterale:hidden">
+					{apres}
+				</span>
 			)}
 		</span>
 	);
 }
 
+/** Une identité qui ne se touche pas (un seul établissement) : centrée en rail. */
+export const CLASSE_IDENTITE_FIXE = 'flex w-full px-2 group-data-[reduite=true]/laterale:px-0';
+
 /** La classe d'une rangée d'identité qui se touche : celle d'une entrée de la barre. */
 export const CLASSE_IDENTITE_LATERALE =
-	'entree-laterale flex w-full min-h-11 items-center rounded-lg px-2 py-1.5 transition-colors duration-150';
+	'entree-laterale flex w-full min-h-11 items-center rounded-lg px-2 py-1.5 transition-colors duration-150 group-data-[reduite=true]/laterale:justify-center group-data-[reduite=true]/laterale:px-0';

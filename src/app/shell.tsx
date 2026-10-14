@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { Fond } from '../ui/fond';
 import { cn } from '../ui/cn';
@@ -6,7 +6,8 @@ import { BarreBranchee } from './barre';
 import { CompagnonBranche } from './compagnon';
 import { useCodeEnAvance } from './code-en-avance';
 import { HauteBranchee, LateraleBranchee } from './coquille-bureau';
-import { FournisseurDuTitreBureau } from '../ui/coquille-bureau';
+import { FournisseurDuTitreBureau, LARGEUR_LATERALE } from '../ui/coquille-bureau';
+import { usePreference } from './use-preference';
 
 /**
  * Le cadre de l'application authentifiée.
@@ -88,6 +89,11 @@ export function Shell({
 	// L'emplacement du titre dans la barre du haut du bureau : posé par une référence,
 	// jamais dans un effet ; les pages y écrivent par un portail (`TitreBureau`).
 	const [emplacementDuTitre, setEmplacementDuTitre] = useState<HTMLElement | null>(null);
+	// La barre latérale du bureau, ouverte ou en rail ; le choix se garde d'une visite à l'autre.
+	const [laterale, setLaterale] = usePreference('letikette:barre-laterale', 'ouverte', [
+		'ouverte',
+		'reduite'
+	] as const);
 	return (
 		<FournisseurDuTitreBureau value={emplacementDuTitre}>
 			<div
@@ -95,13 +101,19 @@ export function Shell({
 					'flex flex-col overflow-hidden lg:flex-row',
 					dansLaSalle ? 'relative h-full w-full' : 'coquille-app fixed inset-0'
 				)}
+				// La largeur de la barre latérale, lue par elle et par ce qui est fixé sur l'écran.
+				style={{ '--largeur-laterale': LARGEUR_LATERALE[laterale] } as CSSProperties}
 			>
 				{/* Le drapé, une fois, derrière tous les écrans. C'est lui qui donne au
 			    verre des cartes et des barres quelque chose à réfracter — sans lui,
 			    chaque translucidité retombe sur un aplat un peu plus clair. */}
 				<Fond />
 
-				<LateraleBranchee auRepos={!sessionOuverte} />
+				<LateraleBranchee
+					auRepos={!sessionOuverte}
+					reduite={laterale === 'reduite'}
+					onBasculer={() => setLaterale(laterale === 'reduite' ? 'ouverte' : 'reduite')}
+				/>
 
 				{/* Sous 1024 px, cette enveloppe ne porte que `main` : la barre du haut ne
 			    s'affiche pas, et `main` y prend toute la hauteur comme avant. */}

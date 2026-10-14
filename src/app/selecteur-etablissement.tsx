@@ -11,7 +11,11 @@ import {
 	ListButton
 } from '@cladd-ui/react';
 import { BuildingIcon, CheckIcon, ChevronDownIcon, ChevronsUpDownIcon } from 'lucide-react';
-import { CLASSE_IDENTITE_LATERALE, IdentiteLaterale } from '../ui/coquille-bureau';
+import {
+	CLASSE_IDENTITE_FIXE,
+	CLASSE_IDENTITE_LATERALE,
+	IdentiteLaterale
+} from '../ui/coquille-bureau';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
 
@@ -105,7 +109,7 @@ export function SelecteurEtablissement({
 		);
 		if (!plusieurs) {
 			return (
-				<div aria-label={`Établissement : ${courante.name}`} className="flex w-full px-2">
+				<div aria-label={`Établissement : ${courante.name}`} className={CLASSE_IDENTITE_FIXE}>
 					{identite}
 				</div>
 			);

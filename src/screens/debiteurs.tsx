@@ -5,6 +5,7 @@ import {
 	BoutonPrincipal,
 	FeuillePleinEcran,
 	CarteLien,
+	EnTableauSurBureau,
 	Lien,
 	BoutonTexte,
 	EnTeteDeGroupe,
@@ -609,7 +610,8 @@ export function EcranDebiteurs({
 			<SearchField
 				size="md"
 				tightFocusRing
-				className="min-w-0 flex-1"
+				// Au bureau, la rangée fait toute la largeur : le champ garde la sienne.
+				className="min-w-0 flex-1 lg:max-w-sm"
 				value={terme}
 				onChange={(valeur) => onTerme(valeur)}
 				inputMode="search"
@@ -793,9 +795,14 @@ export function EcranDebiteurs({
 		);
 
 	return avecLaPage(
-		<PageEcran entete={{ ...entete, actions: barre }}>
+		<PageEcran
+			entete={{ ...entete, actions: barre }}
+			// Seule, au bureau, la liste prend la largeur et se lit en tableau ; à côté d'une
+			// fiche, elle redevient le maître étroit de `MaitreDetail`.
+			largeur={enfant === null ? 'large' : 'normale'}
+		>
 			{filtresActifs}
-			{liste}
+			{enfant === null ? <EnTableauSurBureau>{liste}</EnTableauSurBureau> : liste}
 			{angleMort}
 			{feuilleDeFiltre}
 		</PageEcran>
