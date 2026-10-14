@@ -1,9 +1,12 @@
 /// <reference types="vite/client" />
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { convexTest } from 'convex-test';
 import schema from '../schema';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
+import { REFUS_SANS_FORMULE } from '../limites';
+import { preparerProchaineRelance } from '../recouvrement/pilote';
+import { LIMITES } from '../../config/tarifs';
 
 /**
  * LES RELANCES QUI PARTENT SEULES — leurs garde-fous, vérifiés sur la base.
@@ -251,6 +254,98 @@ describe('les relances du pilote', () => {
 			});
 
 			expect(await dernierTravail(t, organizationId)).toBeNull();
+		},
+		DELAI_CONVEX
+	);
+});
+
+/**
+ * LA FORMULE DÉCIDE CE QUI PART (14/10/2026). Facturation ouverte, Découverte
+ * mesure et ne programme rien ; une formule relance ses N premiers clients
+ * suivis, et le gérant apprend une fois que les suivants attendent.
+ */
+describe('les limites de la formule', () => {
+	afterEach(() => vi.unstubAllEnvs());
+
+	function ouvrirLaFacturation() {
+		vi.stubEnv('PADDLE_API_KEY', 'pdl_sdbx_apikey_test');
+		vi.stubEnv('PADDLE_FACTURATION_OUVERTE', 'oui');
+	}
+
+	it(
+		'Découverte : ne programme rien, ne prépare aucun courrier, et le dit',
+		async () => {
+			ouvrirLaFacturation();
+			const t = convexTest(schema, modules);
+			const { organizationId, factureId } = await dossierEnRetard(t);
+			const creanceId = await ouvrirLeDossier(t, organizationId, factureId);
+			await activer(t, organizationId);
+
+			await t.mutation(internal.recouvrement.pilote.programmerLesRelances, {
+				organizationId,
+				jour: JOUR
+			});
+			expect(await dernierTravail(t, organizationId)).toBeNull();
+
+			const notes = await t.run(async (ctx) => ctx.db.query('notifications').collect());
+			expect(
+				notes.some((n) => n.type === 'PILOTE_BLOQUE' && n.message === REFUS_SANS_FORMULE)
+			).toBe(true);
+			const prepare = await t.run((ctx) =>
+				preparerProchaineRelance(ctx, organizationId, creanceId, 'user_test_1')
+			);
+			expect(prepare).toEqual({ ok: false, raison: REFUS_SANS_FORMULE });
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'Solo : relance ses dix premiers clients suivis, pas le onzième',
+		async () => {
+			ouvrirLaFacturation();
+			const t = convexTest(schema, modules);
+			const { organizationId } = await dossierEnRetard(t);
+			await t.run(async (ctx) => {
+				await ctx.db.patch(organizationId, { paddleStatus: 'active', paddlePlanTier: 'solo' });
+			});
+			for (let i = 1; i <= 11; i++) {
+				const factureId = await t.run(async (ctx) => {
+					const debiteurId = await ctx.db.insert('debiteurs', {
+						organizationId,
+						denomination: `Client ${i}`,
+						denominationNormalisee: `CLIENT ${i}`,
+						denominationsBrutes: [`Client ${i}`],
+						estCommercant: 'ok',
+						santeFinanciere: 'SAINE',
+						email: `compta@client${i}.fr`,
+						creeLe: Date.now()
+					});
+					return ctx.db.insert('facturesVente', {
+						organizationId,
+						debiteurId,
+						reference: `FA-2026-${100 + i}`,
+						montantHT: 0n,
+						montantTTC: 500_00n,
+						dateEmission: '2026-01-01',
+						dateEcheance: '2026-02-01',
+						statutPaiement: 'IMPAYEE',
+						creeLe: Date.now()
+					});
+				});
+				await ouvrirLeDossier(t, organizationId, factureId);
+			}
+			await activer(t, organizationId);
+
+			await t.mutation(internal.recouvrement.pilote.programmerLesRelances, {
+				organizationId,
+				jour: JOUR
+			});
+			const travail = await dernierTravail(t, organizationId);
+			// Le client du premier dossier (dossierEnRetard) n'a pas de dossier ouvert :
+			// les dix premiers suivis sont relancés, le onzième attend.
+			expect(travail?.etapes).toHaveLength(LIMITES.solo.clientsSuivis ?? 0);
+			const notes = await t.run(async (ctx) => ctx.db.query('notifications').collect());
+			expect(notes.some((n) => n.message.includes('le maximum de Solo'))).toBe(true);
 		},
 		DELAI_CONVEX
 	);

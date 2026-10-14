@@ -50,6 +50,8 @@ export interface AbonnementAffiche {
 	readonly limites: Limites;
 	/** Les personnes qui ont accès à l'établissement. */
 	readonly utilisateurs: number;
+	/** Les clients en retard que le pilote suit. */
+	readonly clientsSuivis: number;
 }
 
 /** Ce qui vient d'être souscrit, pour la coche de réussite. */
@@ -390,7 +392,7 @@ function CeQueComprend({ abonnement }: { abonnement: AbonnementAffiche }) {
 							? 'Sans limite'
 							: limites.clientsSuivis === 0
 								? 'Avec une formule'
-								: `Jusqu’à ${limites.clientsSuivis}`
+								: `${abonnement.clientsSuivis} sur ${limites.clientsSuivis}`
 					}
 				/>
 				<LigneDeReleve

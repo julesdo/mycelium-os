@@ -215,7 +215,8 @@ function abonnementDe(facturation: FacturationDemo): AbonnementAffiche {
 		essaiDisponible: facturation.essaiDisponible,
 		recommandee: 'equipe',
 		limites: limitesDe(tier),
-		utilisateurs: 3
+		utilisateurs: 3,
+		clientsSuivis: 7
 	};
 }
 

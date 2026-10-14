@@ -155,7 +155,6 @@ export const RETARD_EN_COURS = { longDes: 90, long: -8, installeDes: 60, install
 export const INTERVALLE_MINIMAL_MS = 60 * 60 * 1000;
 /** La relecture mensuelle des clients qui vous doivent de l'argent. */
 export const AGE_AVANT_RELECTURE_MS = 30 * 24 * 60 * 60 * 1000;
-/** Au plus tant d'analyses par établissement et par mois. */
-export const ANALYSES_PAR_MOIS = 300;
+
 /** Une baisse qui mérite d'être dite, en points d'indice. */
 export const BAISSE_SIGNALEE = 10;

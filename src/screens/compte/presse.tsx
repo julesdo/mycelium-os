@@ -236,13 +236,13 @@ const FAIT_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 };
 
 /**
- * CE QUE DÉCOUVERTE FERME VRAIMENT, relevé aux points d'usage : les
- * invitations (une formule compte ses utilisateurs, Découverte un seul). Le
- * jour où un autre verrou s'applique, cette phrase change, et elle est ici,
- * seule, pour que ce soit un remplacement et pas une chasse.
+ * CE QUE DÉCOUVERTE FERME VRAIMENT, relevé aux points d'usage (`limites.ts`) :
+ * rien ne part (le pilote ne programme rien, un courrier ne se prépare pas) et
+ * personne ne s'invite. La lecture reste entière. La phrase est ici, seule,
+ * pour qu'un verrou de plus soit un remplacement et pas une chasse.
  */
 export const CONSEQUENCE_DE_LA_FERMETURE =
-	'Plus personne ne peut être invité dans cet établissement.';
+	'Les relances et les courriers attendent une formule ; vos factures et vos calculs restent là.';
 
 const VALEUR_DE_LA_FERMETURE: Record<CauseDeFermeture, string> = {
 	past_due: 'Paiement échoué',

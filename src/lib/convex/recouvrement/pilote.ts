@@ -23,6 +23,12 @@ import { resteDu } from './lecture';
 import { pluriel } from '../../socle/francais';
 import { ZERO, additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
 import { rattacherFactures } from './arret';
+import {
+	REFUS_SANS_FORMULE,
+	debiteursSuivis,
+	limitesDeLOrganisation,
+	messageDeLimiteAtteinte
+} from '../limites';
 
 /**
  * LE PILOTE — l'agent qui vit en permanence (08/10/2026).
@@ -789,6 +795,36 @@ async function composerEtape(
 }
 
 /**
+ * DIRE AU GÉRANT CE QUE LA FORMULE RETIENT — une fois, comme ce qui manque.
+ */
+async function direAuGerant(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	lien: string,
+	message: string
+): Promise<void> {
+	const deja = await ctx.db
+		.query('notifications')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.collect();
+	if (deja.some((n) => n.type === 'PILOTE_BLOQUE' && n.message === message && !n.isRead)) return;
+	const membres = await ctx.db
+		.query('organizationMembers')
+		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+		.collect();
+	for (const membre of membres.filter((m) => m.role === 'ORG_ADMIN')) {
+		await ctx.runMutation(internal.notifications.createNotification, {
+			organizationId,
+			userId: membre.userId,
+			type: 'PILOTE_BLOQUE',
+			title: 'Plume a besoin de vous',
+			message,
+			link: lien
+		});
+	}
+}
+
+/**
  * DIRE AU GÉRANT CE QUI MANQUE — une fois, dans sa boîte de réception.
  *
  * ⚠️ PAS DEUX FOIS LA MÊME. Une notification non lue sur le même dossier, avec
@@ -859,6 +895,20 @@ export const programmerLesRelances = internalMutation({
 		const pilote = await piloteDe(ctx, organizationId);
 		if (pilote.envoiAutomatique !== true) return null;
 
+		// LA FORMULE DÉCIDE CE QUI PART (14/10/2026). Découverte mesure, rien ne
+		// part ; une formule relance ses N premiers clients suivis, et les suivants
+		// sont mesurés. Le gérant l'apprend une fois, là où ça se règle.
+		const limites = await limitesDeLOrganisation(ctx, organizationId);
+		if (!limites.agir) {
+			await direAuGerant(ctx, organizationId, '/app/compte?ouvrir=facturation', REFUS_SANS_FORMULE);
+			return null;
+		}
+		const permis =
+			limites.clientsSuivis === null
+				? null
+				: new Set((await debiteursSuivis(ctx, organizationId)).slice(0, limites.clientsSuivis));
+		let audela = false;
+
 		const occupes = new Set<string>();
 		for (const etat of ['EN_COURS', 'EN_ATTENTE'] as const) {
 			const travaux = await ctx.db
@@ -893,6 +943,10 @@ export const programmerLesRelances = internalMutation({
 				debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE' ||
 				debiteur.santeFinanciere === 'RADIEE'
 			) {
+				continue;
+			}
+			if (permis !== null && !permis.has(creance.debiteurId)) {
+				audela = true;
 				continue;
 			}
 
@@ -930,6 +984,14 @@ export const programmerLesRelances = internalMutation({
 				libelle: `Prépare ${NOM_DE_L_ETAPE[cle]} de ${debiteur.denomination}`,
 				effet: { genre: 'PROGRAMMER_RELANCE', creanceId: creance._id, etape: cle }
 			});
+		}
+		if (audela && limites.clientsSuivis !== null) {
+			await direAuGerant(
+				ctx,
+				organizationId,
+				'/app/compte?ouvrir=facturation',
+				messageDeLimiteAtteinte(limites.tier, limites.clientsSuivis)
+			);
 		}
 		if (etapes.length === 0) return null;
 
@@ -1040,6 +1102,10 @@ export async function preparerProchaineRelance(
 	const creance = await ctx.db.get(creanceId);
 	if (creance === null || creance.organizationId !== organizationId) {
 		return { ok: false, raison: 'Ce dossier est introuvable.' };
+	}
+	// Découverte mesure, rien ne part : Plume le dit au lieu de préparer.
+	if (!(await limitesDeLOrganisation(ctx, organizationId)).agir) {
+		return { ok: false, raison: REFUS_SANS_FORMULE };
 	}
 	const debiteur = await ctx.db.get(creance.debiteurId);
 	if (debiteur === null) return { ok: false, raison: 'Ce client est introuvable.' };

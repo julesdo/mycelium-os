@@ -10,15 +10,13 @@ import {
 import { resteDu } from '../recouvrement/lecture';
 import { dossiersClasses } from '../recouvrement/classement';
 import { configPappers } from './pappersConfig';
+import { limitesDeLOrganisation } from '../limites';
 import { vCorpsDAnalyse, vNiveau } from './validateurs';
 import {
 	santeDuPortefeuille,
 	type ClientDuPortefeuille
 } from '../../verticales/recouvrement/risque/portefeuille';
-import {
-	AGE_AVANT_RELECTURE_MS,
-	ANALYSES_PAR_MOIS
-} from '../../verticales/recouvrement/risque/regles';
+import { AGE_AVANT_RELECTURE_MS } from '../../verticales/recouvrement/risque/regles';
 
 /**
  * LES LECTURES ET ÉCRITURES DE L'ANALYSE DU RISQUE. Les appels à Pappers et au
@@ -369,9 +367,10 @@ export const santeDesClients = authedQuery({
 			.query('consommationRisque')
 			.withIndex('by_org_and_mois', (q) => q.eq('organizationId', organizationId).eq('mois', mois))
 			.first();
+		const { analysesParMois } = await limitesDeLOrganisation(ctx, organizationId);
 		return {
 			disponible: configPappers() !== null,
-			budgetRestant: Math.max(0, ANALYSES_PAR_MOIS - (consommation?.analyses ?? 0)),
+			budgetRestant: Math.max(0, analysesParMois - (consommation?.analyses ?? 0)),
 			sante: santeMutable(santeDuPortefeuille(clients, Date.now()))
 		};
 	}
@@ -516,11 +515,14 @@ export const reserverUneAnalyse = internalMutation({
 			.query('consommationRisque')
 			.withIndex('by_org_and_mois', (q) => q.eq('organizationId', organizationId).eq('mois', mois))
 			.first();
+		// Le plafond de la formule (`limites.ts`), relecture mensuelle comprise.
+		const { analysesParMois } = await limitesDeLOrganisation(ctx, organizationId);
+		if (analysesParMois <= 0) return false;
 		if (ligne === null) {
 			await ctx.db.insert('consommationRisque', { organizationId, mois, analyses: 1 });
 			return true;
 		}
-		if (ligne.analyses >= ANALYSES_PAR_MOIS) return false;
+		if (ligne.analyses >= analysesParMois) return false;
 		await ctx.db.patch(ligne._id, { analyses: ligne.analyses + 1 });
 		return true;
 	}

@@ -42,7 +42,7 @@ export const risqueTables = {
 
 	/**
 	 * LES ANALYSES LANCÉES PAR MOIS, pour tenir le budget de crédits Pappers d'un
-	 * établissement (`ANALYSES_PAR_MOIS`).
+	 * établissement (`LIMITES.analysesParMois`, selon la formule).
 	 */
 	consommationRisque: defineTable({
 		organizationId: v.id('organizations'),

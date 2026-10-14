@@ -11,6 +11,7 @@ import {
 	type Rythme
 } from '../config/tarifs';
 import { organisationCouranteOuNull, requireAdminDeLOrgCourante } from './lib/auth';
+import { debiteursSuivis } from './suivis';
 
 /**
  * L'ABONNEMENT, CÔTÉ SERVEUR : ce qui est ouvert à un établissement, et ce que
@@ -159,7 +160,7 @@ export const etatAbonnement = authedQuery({
 		const { tier, isDev } = resolveEffectivePlan(org);
 		const maintenant = Date.now();
 		const souscrite = org.paddleStatus === undefined ? null : formuleSouscrite(org);
-		const [profil, creancier, membres] = await Promise.all([
+		const [profil, creancier, membres, suivis] = await Promise.all([
 			ctx.db
 				.query('userProfiles')
 				.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
@@ -171,7 +172,8 @@ export const etatAbonnement = authedQuery({
 			ctx.db
 				.query('organizationMembers')
 				.withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-				.collect()
+				.collect(),
+			debiteursSuivis(ctx, orgId)
 		]);
 
 		return {
@@ -194,7 +196,9 @@ export const etatAbonnement = authedQuery({
 			essaiDisponible: essaiDisponible(org, profil),
 			recommandee: formuleRecommandee(creancier?.formeJuridique),
 			limites: limitesDe(tier),
-			utilisateurs: membres.length
+			utilisateurs: membres.length,
+			// Les clients en retard que le pilote suit : la limite qui compte.
+			clientsSuivis: suivis.length
 		};
 	}
 });

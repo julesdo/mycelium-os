@@ -37,7 +37,7 @@ import { estSirenValide } from '../../verticales/recouvrement/pays/france/siren'
  * interroge, assemble et écrit.
  *
  *   1. LE BUDGET : une analyse par heure et par entreprise au plus, et un plafond
- *      mensuel par établissement (`ANALYSES_PAR_MOIS`).
+ *      mensuel par établissement, celui de sa formule (`LIMITES.analysesParMois`, `limites.ts`).
  *   2. LA FICHE PAPPERS (1 crédit, + 1 pour l'actif net).
  *   3. LES DIRIGEANTS PERSONNES PHYSIQUES, quatre au plus : une recherche chacun
  *      (0,1 crédit par résultat, cinq résultats au plus), le rapprochement par la

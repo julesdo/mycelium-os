@@ -325,6 +325,13 @@ export const ouvrirSessionNango = authedAction({
 			internal.connexions.nangoDonnees.organisationAdministree,
 			{ userId: ctx.user._id }
 		);
+		// Solo et Découverte branchent Qonto ; les autres logiciels, Équipe et Pro.
+		const limites = await ctx.runQuery(internal.limites._limitesInterne, { organizationId });
+		if (limites.logiciels === 'qonto') {
+			throw new ConvexError(
+				'Pennylane, QuickBooks et les autres logiciels se branchent avec Équipe ou Pro : Compte, puis Abonnement.'
+			);
+		}
 		try {
 			const { data } = await appelNango<{ data: { token: string } }>(
 				config,

@@ -1,4 +1,5 @@
 import { v, ConvexError, type Infer } from 'convex/values';
+import { exigerDeQuoiAgir } from '../limites';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import { authedMutation, authedQuery } from '../functions';
@@ -605,6 +606,8 @@ export const preparer = authedMutation({
 	returns: v.id('envois'),
 	handler: async (ctx, { creanceId, choix }): Promise<Id<'envois'>> => {
 		const { organizationId, user } = await getUserOrg(ctx);
+		// Découverte mesure, rien ne part (`limites.ts`).
+		await exigerDeQuoiAgir(ctx, organizationId);
 		await preparerLeMontant(ctx, creanceId, choix, aujourdHuiIso(), {
 			auteur: 'GERANT',
 			userId: user._id
@@ -892,6 +895,7 @@ export const preparerEnLot = authedMutation({
 		{ creanceIds, choix }
 	): Promise<{ creanceId: Id<'creances'>; envoiId?: Id<'envois'>; refus?: string }[]> => {
 		const { organizationId, user } = await getUserOrg(ctx);
+		await exigerDeQuoiAgir(ctx, organizationId);
 		const aujourdHui = aujourdHuiIso();
 		const resultats: { creanceId: Id<'creances'>; envoiId?: Id<'envois'>; refus?: string }[] = [];
 
