@@ -11,6 +11,7 @@ import {
 	DUREE_ESSAI_JOURS,
 	FORMULES,
 	GRILLE,
+	JOURS_DE_REMBOURSEMENT,
 	LIMITES,
 	RAPPELS_AVANT_PRELEVEMENT_JOURS,
 	mensualiteDeLAnnee,
@@ -164,7 +165,7 @@ export function ChoixDeFormule({
 			<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
 				Prix hors taxes. Paddle, notre revendeur, encaisse le paiement, émet la facture et ajoute la
 				TVA de votre pays. Votre carte ne passe jamais par nos serveurs. Un paiement se rembourse
-				sur demande dans les quatorze jours.
+				sur demande dans les {JOURS_DE_REMBOURSEMENT} jours.
 			</p>
 		</FeuillePleinEcran>
 	);

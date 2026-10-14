@@ -150,8 +150,8 @@ serait une promesse de résultat, et le mot « garantie » reste interdit.
 - **Le premier prélèvement à J+30**, au montant affiché depuis le premier jour.
 - **Annulable en deux gestes jusqu'à la veille**, depuis Compte › Abonnement.
 - **Et la politique de remboursement s'ajoute** : un paiement se rembourse sur demande dans les
-  quatorze jours (`/remboursement`). Le client peut donc changer d'avis jusqu'à 44 jours après son
-  inscription.
+  trente jours (`/remboursement`, ratifiés le 14/10/2026). Le client peut donc changer d'avis
+  jusqu'à 60 jours après son inscription.
 
 **Pourquoi la carte au début.** Les relevés d'éditeurs convergent : un essai qui demande la carte
 convertit à 18 à 35 % des essais en abonnés, contre 3 à 15 % sans carte, au prix de 3 à 5 fois
@@ -286,7 +286,7 @@ client, l'état « paiement échoué », `paiementOuvert`, le catalogue additif.
 
 - inscriptions → bilan vu (Découverte) ; bilan vu → essai démarré ; essai → premier prélèvement ;
 - part annuelle des souscriptions (cible : la moitié) ;
-- remboursements demandés dans les 14 jours, et résiliations pendant l'essai, avec leur raison ;
+- remboursements demandés dans les 30 jours, et résiliations pendant l'essai, avec leur raison ;
 - clients en retard suivis par compte, pour revoir les limites au bout de trois mois.
 
 ## 9. Les décisions du fondateur
@@ -296,7 +296,7 @@ client, l'état « paiement échoué », `paiementOuvert`, le catalogue additif.
 2. **La carte au début de l'essai**, et l'essai de **30 jours**.
 3. **Découverte gratuite** à la place du premier bilan à 690 €.
 4. **La limite par clients en retard suivis** (10, 50, illimité) plutôt que par volume de factures.
-5. **Le remboursement** reste à 14 jours, ou passe aux 30 jours que Paddle recommande.
+5. **Le remboursement** : 30 jours, ratifiés le 14/10/2026.
 6. **Les comptes existants** : trente jours de préavis par e-mail avant l'ouverture.
 
 ## Sources

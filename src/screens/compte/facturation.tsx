@@ -3,6 +3,7 @@ import { Surface } from '@cladd-ui/react';
 import {
 	DUREE_ESSAI_JOURS,
 	GRILLE,
+	JOURS_DE_REMBOURSEMENT,
 	montantDuRythme,
 	type Formule,
 	type Limites,
@@ -161,7 +162,7 @@ export function SectionFacturation({
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
 				Prix hors taxes. Paddle, notre revendeur, encaisse le paiement, émet la facture et ajoute la
 				TVA de votre pays : votre carte ne passe jamais par nos serveurs. Un paiement se rembourse
-				sur demande dans les quatorze jours.
+				sur demande dans les {JOURS_DE_REMBOURSEMENT} jours.
 			</p>
 
 			{caisse !== undefined ? (

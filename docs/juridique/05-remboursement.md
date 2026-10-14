@@ -1,7 +1,7 @@
 # Politique de remboursement
 
-> **Version 1.1** du 14 octobre 2026 (l'essai avec carte, l'abonnement annuel). Version 1.0 du
-> même jour. Elle complète l'article 8 des
+> **Version 1.2** du 14 octobre 2026 (trente jours pour demander un remboursement). Version 1.1
+> du même jour (l'essai avec carte, l'abonnement annuel), version 1.0 du même jour. Elle complète l'article 8 des
 > [conditions générales](./02-conditions-generales.md).
 
 ---
@@ -14,7 +14,7 @@ vend l'abonnement, émet la facture, encaisse le paiement, et effectue les rembo
 
 ## 2. Ce qui se rembourse
 
-- **Dans les quatorze jours qui suivent un paiement**, vous pouvez en demander le remboursement
+- **Dans les trente jours qui suivent un paiement**, vous pouvez en demander le remboursement
   intégral, sans avoir à vous justifier. Cela vaut pour le premier prélèvement après l'essai et
   pour chaque renouvellement, au mois comme à l'année.
 - **Passé ce délai**, le paiement reste acquis. Vous pouvez toujours résilier : la résiliation

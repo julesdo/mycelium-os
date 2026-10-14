@@ -245,3 +245,12 @@ export const RAPPELS_AVANT_PRELEVEMENT_JOURS = [7, 2] as const;
 
 /** Les jours avant un renouvellement annuel où le gérant est prévenu. */
 export const RAPPEL_RENOUVELLEMENT_JOURS = 30;
+
+/**
+ * Le remboursement intégral d'un paiement, sur demande, dans les jours qui le
+ * suivent. TRENTE, ratifiés par le fondateur le 14/10/2026 : ce que Paddle
+ * recommande, et plus que les quatorze que ses conditions lui permettent
+ * d'appliquer seul. Écrit aussi dans deux textes publiés (`05-remboursement.md`
+ * et l'article 8.2 des conditions générales) : le changer, c'est changer les trois.
+ */
+export const JOURS_DE_REMBOURSEMENT = 30;

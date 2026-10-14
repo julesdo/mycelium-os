@@ -49,12 +49,12 @@ manquement et non une imprécision.
 
 ### Le paiement par Paddle (14 octobre 2026)
 
-7. **Quatorze jours de remboursement, à ratifier.** La politique de remboursement
-   (`05-remboursement.md`) et l'article 8.2 accordent le remboursement intégral d'un
-   paiement demandé dans les quatorze jours. C'est le délai que les conditions de Paddle lui
-   permettent déjà d'appliquer seul : en écrire moins aurait contredit le vendeur de registre.
-   Paddle **recommande** trente jours dans son guide du vendeur. Le chiffre est écrit à deux
-   endroits seulement (la politique et l'article 8.2) : le changer, c'est changer les deux.
+7. **Trente jours de remboursement, ratifiés par Jules le 14 octobre 2026.** La politique de
+   remboursement (`05-remboursement.md`) et l'article 8.2 accordent le remboursement intégral d'un
+   paiement demandé dans les trente jours, ce que Paddle recommande (ses conditions lui
+   permettent d'en appliquer quatorze seul). Le chiffre vit dans `JOURS_DE_REMBOURSEMENT`
+   (`config/tarifs.ts`) pour l'écran et le site, et dans ces deux textes : le changer, c'est
+   changer les trois.
 8. **La version 2.2 des conditions générales** (Paddle vendeur de registre, remboursement) est une
    modification au sens de l'article 16. Aucun client ne paie encore ; si des comptes existants
    doivent être prévenus par courriel trente jours avant, c'est à décider avant d'ouvrir la
@@ -169,7 +169,8 @@ Chacun est un choix, pas une évidence, et chacun a une conséquence chiffrable.
 6. **La limitation de responsabilité.** Le plafond proposé est de douze mois d'abonnement. La
    jurisprudence *Chronopost* et *Faurecia* invalide une clause qui viderait l'obligation
    essentielle de sa substance. Le plafond tient-il face à un client qui invoquerait une
-   déclaration erronée ?
+   déclaration erronée ? _(Une note au relecteur le disait à l'article 11.2 des conditions
+   publiées ; elle en est retirée le 14/10/2026 à la demande de Jules : la question vit ici.)_
 
 7. **L'obligation de moyens.** Elle est le cœur du produit et figure partout dans l'interface. La
    rédaction proposée est-elle suffisamment ferme pour écarter toute obligation de résultat sur la

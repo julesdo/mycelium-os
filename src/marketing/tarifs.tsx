@@ -9,6 +9,7 @@ import {
 	FORMULES,
 	FORMULE_RECOMMANDEE,
 	GRILLE,
+	JOURS_DE_REMBOURSEMENT,
 	RAPPELS_AVANT_PRELEVEMENT_JOURS,
 	mensualiteDeLAnnee,
 	moisOfferts,
@@ -127,7 +128,8 @@ export function Tarifs() {
 
 			<p className="max-w-3xl text-cladd-sm leading-relaxed text-encre-site-douce md:text-cladd-md">
 				Prix hors taxes. Paddle, notre revendeur, encaisse le paiement, émet la facture et ajoute la
-				TVA de votre pays. Un paiement se rembourse sur demande dans les quatorze jours.
+				TVA de votre pays. Un paiement se rembourse sur demande dans les {JOURS_DE_REMBOURSEMENT}{' '}
+				jours.
 			</p>
 		</SectionMarketing>
 	);

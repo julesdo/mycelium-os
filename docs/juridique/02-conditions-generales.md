@@ -1,7 +1,7 @@
 # Conditions générales d'utilisation et de vente
 
-> **Version 2.3** du 14 octobre 2026 : les formules, l'essai et l'abonnement annuel (articles 7.1
-> et 8.1). Version 2.2 du même jour : Paddle, vendeur de registre (article 7.2), et la politique de
+> **Version 2.4** du 14 octobre 2026 : trente jours pour demander un remboursement (article 8.2).
+> Version 2.3 du même jour : les formules, l'essai et l'abonnement annuel (articles 7.1 et 8.1). Version 2.2 du même jour : Paddle, vendeur de registre (article 7.2), et la politique de
 > remboursement (article 8.2). Version 2.1 du 25 septembre 2026. Entrée en vigueur à la date de
 > sa mise en ligne.
 
@@ -252,7 +252,7 @@ tacite reconduction, sauf résiliation dans les conditions de l'article 8.2.
 Le Client peut résilier à tout moment depuis son espace ou par courriel, avec effet à l'échéance
 de la période en cours. Les sommes versées au titre de la période entamée restent acquises, sous
 réserve de la [politique de remboursement](./05-remboursement.md) : un paiement peut
-être remboursé sur demande dans les quatorze jours qui le suivent.
+être remboursé sur demande dans les trente jours qui le suivent.
 
 ### 8.3 Résiliation par l'Éditeur
 
@@ -353,11 +353,6 @@ précédant le fait générateur**.
 
 Ce plafond ne s'applique ni en cas de dol, ni en cas de faute lourde, ni dans les cas où la loi
 l'interdit.
-
-_Note à l'attention du relecteur : la jurisprudence issue des arrêts Chronopost et Faurecia écarte
-la clause limitative qui viderait de sa substance l'obligation essentielle du débiteur. La mesure
-étant précisément l'obligation essentielle du présent contrat, la rédaction mérite un examen
-attentif._
 
 ### 11.3 Exclusions propres au Service
 
