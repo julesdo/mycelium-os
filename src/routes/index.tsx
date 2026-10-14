@@ -11,7 +11,6 @@ import {
 	Securite,
 	Tarifs,
 	Faq,
-	BlogAccueil,
 	Appel,
 	Pied
 } from '../marketing';
@@ -49,7 +48,7 @@ import { SITE_CANONIQUE } from '../lib/config/legal';
 const APERCU = `${SITE_CANONIQUE}/partage.png`;
 const TITRE = 'Letikette · Vos factures impayées, relancées pour vous';
 const RESUME =
-	'Plume, l’assistant de Letikette, calcule ce qu’on vous doit au centime et relance vos clients à votre nom. Chaque relance vous est montrée avant de partir.';
+	'Letikette lit vos factures, calcule ce que chaque client vous doit, pénalités comprises, et le relance à votre nom. Du premier rappel au virement, vous gardez la main.';
 
 export const Route = createFileRoute('/')({
 	head: () => ({
@@ -118,7 +117,6 @@ function Accueil() {
 			<Securite />
 			<Tarifs />
 			<Faq />
-			<BlogAccueil />
 			<Appel />
 			<Pied />
 		</main>

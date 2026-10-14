@@ -11,6 +11,8 @@ import { SITE_CANONIQUE } from '../lib/config/legal';
  */
 const PAGES_FIXES = [
 	'/',
+	'/tarifs',
+	'/securite',
 	'/blog',
 	'/inscription',
 	'/mentions-legales',

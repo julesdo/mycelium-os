@@ -1,9 +1,12 @@
 # Le site Letikette, à la hauteur du produit (14/10/2026)
 
 > **Statut : validée par le fondateur le 14/10/2026** (« A, ok pour le héros et le titre, vas-y »),
-> en construction par lots. Il a tranché une question de plus le même jour : « affiche toutes les
+> construite le jour même en sept lots (`9afe545` à la page `/securite`). Il a tranché une question de plus le même jour : « affiche toutes les
 > intégrations, elles vont être mises en place ». Le site montre donc les logiciels comptables,
 > Qonto et les services de fichiers, bien qu'aucun ne soit encore configuré en production (section 3).
+> Et un troisième : le sous-titre du héros décrit le produit entier, pas seulement Plume (« Letikette
+> lit vos factures, calcule ce que chaque client vous doit, pénalités comprises, et le relance à
+> votre nom. Du premier rappel au virement, vous gardez la main. »).
 
 ## 1. Ce que j'ai compris
 

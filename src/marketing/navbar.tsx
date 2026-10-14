@@ -29,8 +29,8 @@ import { fondDeTeinte } from './section';
  * légales, où `#tarifs` seul ne mènerait nulle part.
  */
 const PAGES = [
-	{ vers: '/#securite', label: 'Sécurité' },
-	{ vers: '/#tarifs', label: 'Tarifs' },
+	{ vers: '/securite', label: 'Sécurité' },
+	{ vers: '/tarifs', label: 'Tarifs' },
 	{ vers: '/#faq', label: 'Questions' }
 ] as const;
 

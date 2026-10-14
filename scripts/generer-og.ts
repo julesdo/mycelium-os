@@ -148,7 +148,7 @@ function articles(): string {
 }
 
 /** L'accroche, coupée à la main : SVG ne sait pas faire de retour à la ligne. */
-const ACCROCHE = { eteint: 'Relancez vos factures impayées', vif: 'au bon montant, et à temps.' };
+const ACCROCHE = { eteint: 'Vos factures impayées,', vif: 'relancées pour vous.' };
 
 /**
  * Décompresse un woff2 et le dépose en TTF, puis rend son chemin.
@@ -210,12 +210,12 @@ function composition(): string {
 <text x="${marge}" y="270" font-family="${SERIF}" font-size="68" font-weight="500" fill="${ENCRE}">${ACCROCHE.eteint}</text>
 <text x="${marge}" y="346" font-family="${SERIF}" font-size="68" font-weight="500" fill="${ENCRE}">${ACCROCHE.vif}</text>
 
-<text x="${marge}" y="406" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">Letikette calcule les pénalités et les frais dus sur chaque facture,</text>
-<text x="${marge}" y="432" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">surveille les délais et prépare vos relances.</text>
+<text x="${marge}" y="406" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">Letikette lit vos factures, calcule ce que chaque client vous doit,</text>
+<text x="${marge}" y="432" font-family="${SANS}" font-size="20" fill="${ENCRE_DOUCE}">pénalités comprises, et le relance à votre nom.</text>
 
 ${seuils}
 <text x="${marge}" y="606" font-family="${SANS}" font-size="17" fill="${ENCRE_CLAIRE}">letikette.com · ${articles()}</text>
-<text x="${LARGEUR - marge}" y="606" text-anchor="end" font-family="${SANS}" font-size="17" font-weight="600" fill="${ENCRE_DOUCE}">30 jours d’essai, sans carte bancaire</text>
+<text x="${LARGEUR - marge}" y="606" text-anchor="end" font-family="${SANS}" font-size="17" font-weight="600" fill="${ENCRE_DOUCE}">Découverte gratuite, sans carte bancaire</text>
 </svg>`;
 }
 

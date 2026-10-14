@@ -111,10 +111,10 @@ export function Securite() {
 			</dl>
 
 			<Link
-				to="/politique-de-confidentialite"
+				to="/securite"
 				className="text-cladd-sm text-creme-sur-encre-douce underline underline-offset-4 transition-colors hover:text-creme-sur-encre"
 			>
-				Le détail dans notre politique de confidentialité
+				Comment nous protégeons vos données
 			</Link>
 		</SectionMarketing>
 	);

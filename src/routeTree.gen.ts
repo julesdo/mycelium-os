@@ -21,8 +21,10 @@ import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oubl
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
 import { Route as RemboursementRouteImport } from './routes/remboursement'
+import { Route as SecuriteRouteImport } from './routes/securite'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppClientsRouteImport } from './routes/app/clients'
 import { Route as AppCoffreRouteImport } from './routes/app/coffre'
@@ -115,6 +117,11 @@ const RemboursementRoute = RemboursementRouteImport.update({
   path: '/remboursement',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SecuriteRoute = SecuriteRouteImport.update({
+  id: '/securite',
+  path: '/securite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShowroomRoute = ShowroomRouteImport.update({
   id: '/showroom',
   path: '/showroom',
@@ -123,6 +130,11 @@ const ShowroomRoute = ShowroomRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TarifsRoute = TarifsRouteImport.update({
+  id: '/tarifs',
+  path: '/tarifs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -289,8 +301,10 @@ export interface FileRoutesByFullPath {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/remboursement': typeof RemboursementRoute
+  '/securite': typeof SecuriteRoute
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tarifs': typeof TarifsRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -334,8 +348,10 @@ export interface FileRoutesByTo {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/remboursement': typeof RemboursementRoute
+  '/securite': typeof SecuriteRoute
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tarifs': typeof TarifsRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -381,8 +397,10 @@ export interface FileRoutesById {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/remboursement': typeof RemboursementRoute
+  '/securite': typeof SecuriteRoute
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tarifs': typeof TarifsRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -429,8 +447,10 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/remboursement'
+    | '/securite'
     | '/showroom'
     | '/sitemap.xml'
+    | '/tarifs'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -474,8 +494,10 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/remboursement'
+    | '/securite'
     | '/showroom'
     | '/sitemap.xml'
+    | '/tarifs'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -520,8 +542,10 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/politique-de-confidentialite'
     | '/remboursement'
+    | '/securite'
     | '/showroom'
     | '/sitemap.xml'
+    | '/tarifs'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -567,8 +591,10 @@ export interface RootRouteChildren {
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
   PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
   RemboursementRoute: typeof RemboursementRoute
+  SecuriteRoute: typeof SecuriteRoute
   ShowroomRoute: typeof ShowroomRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TarifsRoute: typeof TarifsRoute
   BlogAdresseRoute: typeof BlogAdresseRoute
   BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   PJetonRoute: typeof PJetonRoute
@@ -663,6 +689,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RemboursementRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/securite': {
+      id: '/securite'
+      path: '/securite'
+      fullPath: '/securite'
+      preLoaderRoute: typeof SecuriteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/showroom': {
       id: '/showroom'
       path: '/showroom'
@@ -675,6 +708,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tarifs': {
+      id: '/tarifs'
+      path: '/tarifs'
+      fullPath: '/tarifs'
+      preLoaderRoute: typeof TarifsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -990,8 +1030,10 @@ const rootRouteChildren: RootRouteChildren = {
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
   PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
   RemboursementRoute: RemboursementRoute,
+  SecuriteRoute: SecuriteRoute,
   ShowroomRoute: ShowroomRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TarifsRoute: TarifsRoute,
   BlogAdresseRoute: BlogAdresseRoute,
   BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   PJetonRoute: PJetonRoute,

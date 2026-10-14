@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router';
 import { ArrowRightIcon, CheckIcon, SendIcon } from 'lucide-react';
 import { BoutonAffiche, LienAffiche, Plume, cn } from '../ui';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
-import { dureePourRetenir } from './fonctionnalites';
 import { EcranBureau, EcranProduit } from './section';
 
 /**
@@ -16,7 +15,7 @@ import { EcranBureau, EcranProduit } from './section';
  * et préparait, le gérant envoyait. Depuis le 08/10, Plume relance seul quand
  * le gérant l'a décidé, et chaque relance se retient avant de partir. Titre
  * validé par le fondateur le 14/10 : « Vos factures impayées, relancées pour
- * vous. » Voir `docs/superpowers/specs/2026-10-14-site-refonte.md`, § 6.2.
+ * vous. » La phrase dessous décrit le produit entier, pas seulement Plume. Voir `docs/superpowers/specs/2026-10-14-site-refonte.md`, § 6.2.
  *
  * ⚠️ LE TON DES LOGICIELS FINANCIERS, PAS CELUI D'UN CARNET (06/10) : un titre
  * qui dit ce que fait le produit, UNE phrase factuelle, un bouton, et les trois
@@ -113,10 +112,12 @@ export function Hero() {
 						<span className="souligne-main whitespace-nowrap">relancées pour vous</span>.
 					</h1>
 
+					{/* ⚠️ LE PRODUIT ENTIER, PAS SEULEMENT PLUME (le fondateur, 14/10 : « décrit
+					    ce que fait Plume mais pas toute l'app, et la phrase n'est pas claire »).
+					    Les trois gestes dans l'ordre où ils arrivent, puis le contrôle. */}
 					<p className="leve max-w-2xl text-chapeau leading-relaxed text-encre-site-douce">
-						Plume, l’assistant de Letikette, calcule ce qu’on vous doit au centime et relance vos
-						clients à votre nom. Chaque relance vous est montrée {dureePourRetenir()} avant de
-						partir.
+						Letikette lit vos factures, calcule ce que chaque client vous doit, pénalités comprises,
+						et le relance à votre nom. Du premier rappel au virement, vous gardez la main.
 					</p>
 
 					{/* ⚠️ UNE SEULE PILULE, ET UN LIEN. Deux boutons pleins côte à côte

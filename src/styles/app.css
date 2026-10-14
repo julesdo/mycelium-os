@@ -2279,8 +2279,9 @@ html:has(.coquille-app) body {
 	display: none;
 }
 
-/* LE TRAIT TIRÉ À LA MAIN sous « à temps », dans le titre du héros, et nulle part
-   ailleurs : revenu à la demande du fondateur (06/10/2026), en jaune moutarde.
+/* LE TRAIT TIRÉ À LA MAIN sous la fin du titre du héros (« relancées pour vous »
+   depuis le 14/10/2026), et nulle part ailleurs : revenu à la demande du
+   fondateur (06/10/2026), en jaune moutarde.
    L'image est un seul tracé de quelques centaines d'octets. */
 .souligne-main {
 	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 20' preserveAspectRatio='none'%3E%3Cpath d='M3 14 C 60 6, 120 4, 180 8 S 270 13, 297 7' fill='none' stroke='%23D9A21E' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E");

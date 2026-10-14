@@ -222,6 +222,7 @@ exempté NOMMÉMENT par `recherche-cloisonnee.test.ts`, qui vérifie qu'il ne po
 (`docs/superpowers/specs/2026-10-12-coffre-fort.md`). Le fondateur : un dépôt « très dégueux au
 beau milieu de l'accueil », « aucune sensation de sécurisation », et « il s'agit de données
 extrêmement sensibles ». Trois choses ont changé :
+
 - **Le chiffrement est réel.** Chaque fichier est SCELLÉ à son arrivée, avant toute lecture
   (`convex/coffre/serrure.ts`, logique pure dans `socle/coffre/`) : format vérifié dans ses octets,
   empreinte SHA-256, AES-256-GCM sous une clé PAR ÉTABLISSEMENT (`coffresCles`), elle-même
@@ -274,7 +275,19 @@ que des mesures en place — la base est chez Convex aux États-Unis, donc jamai
 **Puis la DA a été épurée** (le fondateur : les sur-titres en pastille « font très AI slop ») : plus
 aucun sur-titre, plus de galets ni d'autocollants, une barre pleine largeur translucide, et des
 cartes voisines alignées ligne à ligne par sous-grilles (`md:grid-rows-subgrid`) — un décalage de
-ligne entre deux cartes est un défaut. Un seul trait manuscrit reste : la moutarde sous « à temps ».
+ligne entre deux cartes est un défaut. Un seul trait manuscrit reste : la moutarde sous le titre.
+
+**Le site a rattrapé le produit le 14/10/2026** (`docs/superpowers/specs/2026-10-14-site-refonte.md`,
+sur Calendly, Midday, Wise, Maze, Superpower et Ramp). Le fondateur : « pas du tout à jour et à
+l'image de toutes les features de l'app ». Le titre : « Vos factures impayées, relancées pour
+vous. », une phrase qui décrit le produit ENTIER, pas seulement Plume. Puis un **calculateur** qui
+remplace la loi et la frise (le moteur du produit sur la facture du visiteur), **Plume** (quatre
+capacités qui s'ouvrent seules, lues sur les constantes du pilote), « Comment ça marche » (le
+téléphone collé change d'écran au défilement), « Tout ce qui va avec » (six tuiles), la sécurité en
+six mesures, et deux pages, `/tarifs` et `/securite`. **Ce que fait le produit vit dans un
+registre** (`marketing/fonctionnalites.ts`) que lisent le menu « Logiciel », les tuiles et le pied ;
+`fonctionnalites.test.ts` vérifie que chaque entrée mène à une section. Toutes les intégrations y
+sont affichées, à la demande du fondateur, avant leur mise en service.
 
 **Le blog est en ligne depuis le 06/10/2026**, sans CMS : des fichiers `content/blog/*.mdx`
 compilés par content-collections (`content-collections.ts`, schéma validé au build), lus par
@@ -283,8 +296,8 @@ couverture dessinée dans la DA, teintée par catégorie (`blog-couvertures.tsx`
 juridique n'est tapée dans un article** : `<Source de>`, `<Valeur de>`, `<Indemnite />` lisent le
 registre, et les exemples chiffrés passent par les moteurs du produit (`blog-illustrations.tsx`).
 Le balayage du lexique couvre ces composants, pas `content/` : un article se relit à la main. Le
-fil d'Ariane suit la section lue (`lecture.ts`), et l'accueil porte une section « Le blog », seul
-accès au téléphone (la barre n'a pas de liens sous 1024 px).
+fil d'Ariane suit la section lue (`lecture.ts`). Le menu (une page pleine sous 1024 px) et le pied
+y mènent ; la section « Le blog » a quitté l'accueil le 14/10/2026.
 
 ## ⚠️ Aucune valeur juridique n'est écrite en dur
 
@@ -505,6 +518,7 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   seul bouton plein en pied). **Un bouton du kit n'a pas de `type`** : posé dans un
   `<form>`, il l'envoie. Un formulaire ne porte que ses champs, son bouton le vise par
   `form=`, et tout autre bouton qui y reste prend `type="button"`.
+
 - **Les logiciels du gérant se branchent par Nango** (13/10/2026,
   `docs/superpowers/specs/2026-10-13-nango.md` ; Chift est retiré, trop cher). Pennylane,
   QuickBooks, Xero, Sellsy, Stripe et Zoho, par le PROXY de Nango seul : ni ses synchronisations
