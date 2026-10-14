@@ -26,6 +26,12 @@ import {
  * ⚠️ UN MEMBRE NE PEUT PAS ACTIVER (`requireOrgAdmin`) : il lit le plan, et
  * l'écran le lui dit au lieu de lui tendre un bouton qui refuserait.
  *
+ * ⚠️ LES RELANCES PARTENT AVEC UNE FORMULE (14/10/2026). Quand la facturation
+ * est ouverte et que rien n'est souscrit, « Activer les relances » ouvre
+ * d'abord le choix de formule (`ChoixDeFormule`) : c'est le moment où le
+ * gérant vient de voir ce qu'on lui doit et décide d'agir. L'écran le dit
+ * avant le toucher : trente jours d'essai, 0 € aujourd'hui.
+ *
  * ⚠️ ET RIEN NE PART AUJOURD'HUI. Un dossier que Plume ouvre seul attend que le
  * gérant le DÉMARRE (`aDemarrer`) : l'activation ne relance personne tant
  * qu'aucun dossier n'est démarré. L'écran le dit, parce que c'est ce qui permet
@@ -38,7 +44,8 @@ export function EcranRelances({
 	enCours,
 	erreur,
 	onActiver,
-	onPasMaintenant
+	onPasMaintenant,
+	formuleRequise
 }: {
 	readonly progression: ProgressionPremiersPas;
 	readonly administrateur: boolean;
@@ -48,6 +55,8 @@ export function EcranRelances({
 	readonly erreur: string | null;
 	readonly onActiver: () => void;
 	readonly onPasMaintenant: () => void;
+	/** Rien n'est souscrit : le toucher ouvre d'abord le choix de formule. */
+	readonly formuleRequise?: { readonly essai: boolean };
 }) {
 	return (
 		<CadrePremiersPas
@@ -78,6 +87,14 @@ export function EcranRelances({
 			/>
 
 			<CeQuiPartira />
+
+			{formuleRequise === undefined || !administrateur ? null : (
+				<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					{formuleRequise.essai
+						? 'Elles partent avec une formule : vous la choisissez en activant, trente jours d’essai, 0 € aujourd’hui, annulable à tout moment.'
+						: 'Elles partent avec une formule : vous la choisissez en activant, et la résiliez quand vous voulez.'}
+				</p>
+			)}
 
 			{enTeteIncomplet ? (
 				<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">

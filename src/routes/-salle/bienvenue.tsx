@@ -215,6 +215,18 @@ const FORMES: Readonly<Record<string, () => ReactNode>> = {
 			onPasMaintenant={rien}
 		/>
 	),
+	'relances · formule à choisir': () => (
+		<EcranRelances
+			progression={progression(4, { onRetour: rien })}
+			administrateur
+			enTeteIncomplet={false}
+			enCours={false}
+			erreur={null}
+			onActiver={rien}
+			onPasMaintenant={rien}
+			formuleRequise={{ essai: true }}
+		/>
+	),
 	'relances · membre, en-tête incomplet': () => (
 		<EcranRelances
 			progression={progression(4, { onRetour: rien })}

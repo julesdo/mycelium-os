@@ -7,12 +7,16 @@ import { api } from '../lib/convex/_generated/api';
 import { authClient } from '../lib/client/auth';
 import { useQuery } from '../app/donnees';
 import { useDepotAuCoffre } from '../app/use-coffre';
+import { useCaissePaddle } from '../app/caisse-paddle';
+import { DUREE_ESSAI_JOURS, GRILLE } from '../lib/config/tarifs';
 import { CarteQontoBranchee } from '../app/connexion-qonto';
 import { CartesLogiciels, useLogicielsVisibles } from '../app/connexion-nango';
 import {
 	BoutonPrincipal,
 	CadrePremiersPas,
+	ChoixDeFormule,
 	Facultatif,
+	FeuilleDeReussite,
 	ParcoursDepot,
 	PileDeConnexions,
 	aujourdHuiISO,
@@ -656,6 +660,38 @@ function EtapeRelances({
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
 
+	/*
+	  LES RELANCES PARTENT AVEC UNE FORMULE (14/10/2026). Quand la facturation est
+	  ouverte et que rien n'est souscrit, le toucher ouvre d'abord le choix ; dès
+	  que Paddle confirme, les relances s'activent, et la coche de réussite dit
+	  quand le premier prélèvement aura lieu.
+	*/
+	const abonnement = useQuery(api.billing.etatAbonnement, {});
+	const caisseServeur = useQuery(api.paddle.caisse, {});
+	const ouvrirLePortail = useAction(api.paddle.getPortalUrl);
+	const [choixOuvert, setChoixOuvert] = useState(false);
+	const [maintenant] = useState(() => Date.now());
+	const caisse = useCaissePaddle({
+		caisse: caisseServeur,
+		ouvrirLePortail: () => ouvrirLePortail({}),
+		onSouscrit: () => {
+			setChoixOuvert(false);
+			activer({ actif: true }).catch((e: unknown) =>
+				setErreur(
+					messageDuRefus(
+						e,
+						'Votre formule est souscrite, mais les relances n’ont pas pu être activées. Réessayez.'
+					)
+				)
+			);
+		}
+	});
+	const formuleRequise =
+		abonnement?.paiementOuvert === true &&
+		abonnement.statut !== 'active' &&
+		abonnement.statut !== 'trialing' &&
+		caisse?.disponible === true;
+
 	if (actives === undefined || membre === undefined || profil === undefined) {
 		return (
 			<CadrePremiersPas progression={progression} cle="relances-attente">
@@ -665,10 +701,17 @@ function EtapeRelances({
 			</CadrePremiersPas>
 		);
 	}
-	// Déjà décidé : il n'y a rien à redemander.
-	if (actives) return <Navigate to="/bienvenue" search={{ etape: 'pret' }} replace />;
+	// Déjà décidé : il n'y a rien à redemander, sauf la coche d'une souscription
+	// qui vient d'avoir lieu.
+	if (actives && caisse?.souscrite == null) {
+		return <Navigate to="/bienvenue" search={{ etape: 'pret' }} replace />;
+	}
 
 	async function oui() {
+		if (formuleRequise) {
+			setChoixOuvert(true);
+			return;
+		}
 		setErreur(null);
 		setEnCours(true);
 		try {
@@ -682,20 +725,58 @@ function EtapeRelances({
 	}
 
 	return (
-		<EcranRelances
-			progression={progression}
-			administrateur={membre?.role === 'ORG_ADMIN'}
-			enTeteIncomplet={
-				profil === null ||
-				profil.signataireNom === undefined ||
-				profil.signataireQualite === undefined ||
-				profil.email === undefined
-			}
-			enCours={enCours}
-			erreur={erreur}
-			onActiver={() => void oui()}
-			onPasMaintenant={onSuite}
-		/>
+		<>
+			<EcranRelances
+				progression={progression}
+				administrateur={membre?.role === 'ORG_ADMIN'}
+				enTeteIncomplet={
+					profil === null ||
+					profil.signataireNom === undefined ||
+					profil.signataireQualite === undefined ||
+					profil.email === undefined
+				}
+				enCours={enCours}
+				erreur={erreur}
+				onActiver={() => void oui()}
+				onPasMaintenant={onSuite}
+				{...(formuleRequise && caisse !== undefined
+					? { formuleRequise: { essai: caisse.essai } }
+					: {})}
+			/>
+			{caisse !== undefined && abonnement ? (
+				<ChoixDeFormule
+					ouverte={choixOuvert && caisse.souscrite === null}
+					onFermer={() => setChoixOuvert(false)}
+					retour
+					recommandee={abonnement.recommandee}
+					essaiDisponible={caisse.essai}
+					enCours={caisse.enCours === 'formule'}
+					maintenant={maintenant}
+					utilisateurs={abonnement.utilisateurs}
+					onChoisir={caisse.onChoisir}
+					plusTard={{ libelle: 'Plus tard : rien ne part', onClick: () => setChoixOuvert(false) }}
+				/>
+			) : null}
+			{caisse?.souscrite ? (
+				<FeuilleDeReussite
+					ouverte
+					titre={caisse.souscrite.essai ? 'Votre essai commence' : 'Vous êtes abonné'}
+					pour={`${GRILLE[caisse.souscrite.formule].nom}, ${caisse.souscrite.rythme === 'annuel' ? 'à l’année' : 'au mois'}`}
+					detail={
+						caisse.souscrite.essai
+							? `Les relances sont activées. Rien n’est prélevé avant le ${new Date(maintenant + DUREE_ESSAI_JOURS * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} ; on vous prévient deux jours avant.`
+							: 'Les relances sont activées. La facture de Paddle arrive par e-mail.'
+					}
+					principale={{
+						libelle: 'Continuer',
+						onClick: () => {
+							caisse.onFermerLaReussite();
+							onSuite();
+						}
+					}}
+				/>
+			) : null}
+		</>
 	);
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Paddle, PaddleEventData } from '@paddle/paddle-js';
 import type { CaisseServeur } from '../lib/convex/paddle';
 import type { CaisseAffichee, Souscription } from '../screens/compte/facturation';
@@ -46,16 +46,26 @@ function themeDeLaPage(): 'light' | 'dark' {
 
 export function useCaissePaddle({
 	caisse,
-	ouvrirLePortail
+	ouvrirLePortail,
+	onSouscrit
 }: {
 	/** `undefined` pendant la lecture, `null` : rien à ouvrir pour ce compte. */
 	caisse: CaisseServeur | null | undefined;
 	ouvrirLePortail: () => Promise<string | null>;
+	/**
+	 * Appelé une fois, quand Paddle confirme le paiement : les premiers pas y
+	 * activent les relances, puisque c'est pour elles qu'on vient de souscrire.
+	 */
+	onSouscrit?: (souscription: Souscription) => void;
 }): CaisseAffichee | undefined {
 	const [enCours, setEnCours] = useState<CaisseAffichee['enCours']>(null);
 	const [choix, setChoix] = useState<Souscription | null>(null);
 	const [souscrite, setSouscrite] = useState<Souscription | null>(null);
 	const [erreur, setErreur] = useState<string | null>(null);
+	const rappel = useRef(onSouscrit);
+	useEffect(() => {
+		rappel.current = onSouscrit;
+	});
 
 	// Paddle parle par son rappel d'événements, un système extérieur : on s'y
 	// abonne le temps que l'écran est monté.
@@ -66,6 +76,7 @@ export function useCaissePaddle({
 			}
 			if (evenement.name === 'checkout.completed') {
 				setSouscrite((dejaLa) => dejaLa ?? choix);
+				if (choix !== null) rappel.current?.(choix);
 				void chargement?.paddle.then((paddle) => paddle?.Checkout.close());
 			}
 			if (evenement.name === 'checkout.error') {
