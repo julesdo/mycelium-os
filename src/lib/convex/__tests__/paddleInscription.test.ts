@@ -89,3 +89,63 @@ describe('les rappels de Paddle, dans l’ordre où ils arrivent', () => {
 		expect(org?.paddleRythme).toBe('annuel');
 	}, 120_000);
 });
+
+describe('un établissement, un abonnement vivant', () => {
+	it('les rappels d’un second abonnement ne remplacent pas celui que l’on suit', async () => {
+		const { t, organizationId } = await preparer();
+		const maintenant = Date.now();
+		await t.mutation(internal.paddle.upsertSubscription, {
+			paddleSubscriptionId: 'sub_suivi',
+			paddleCustomerId: 'ctm_1',
+			paddleStatus: 'active',
+			priceId: 'pri_equipe_annuel_essai',
+			organizationId,
+			survenuLe: maintenant
+		});
+
+		// Le doublon, annulé depuis le portail de Paddle, porte le même sceau.
+		const doublon = await t.mutation(internal.paddle.upsertSubscription, {
+			paddleSubscriptionId: 'sub_doublon',
+			paddleCustomerId: 'ctm_1',
+			paddleStatus: 'active',
+			resiliationLe: maintenant + 365 * JOUR,
+			organizationId,
+			survenuLe: maintenant + 1000
+		});
+		const paiementDuDoublon = await t.mutation(internal.paddle.rattacherLePaiement, {
+			paddleSubscriptionId: 'sub_doublon',
+			paddleCustomerId: 'ctm_1',
+			organizationId
+		});
+
+		expect(doublon.action).toBe('autre-abonnement');
+		expect(paiementDuDoublon.action).toBe('autre-abonnement');
+		const org = await t.run((ctx) => ctx.db.get(organizationId));
+		expect(org?.paddleSubscriptionId).toBe('sub_suivi');
+		expect(org?.paddleResiliationLe).toBeUndefined();
+	}, 120_000);
+
+	it('un nouvel abonnement prend la place d’un abonnement terminé', async () => {
+		const { t, organizationId } = await preparer();
+		const maintenant = Date.now();
+		await t.mutation(internal.paddle.upsertSubscription, {
+			paddleSubscriptionId: 'sub_ancien',
+			paddleCustomerId: 'ctm_1',
+			paddleStatus: 'canceled',
+			organizationId,
+			survenuLe: maintenant
+		});
+		const nouveau = await t.mutation(internal.paddle.upsertSubscription, {
+			paddleSubscriptionId: 'sub_nouveau',
+			paddleCustomerId: 'ctm_1',
+			paddleStatus: 'active',
+			priceId: 'pri_equipe_annuel_essai',
+			organizationId,
+			survenuLe: maintenant + 1000
+		});
+		expect(nouveau.action).toBe('inscrit');
+		const org = await t.run((ctx) => ctx.db.get(organizationId));
+		expect(org?.paddleSubscriptionId).toBe('sub_nouveau');
+		expect(org?.paddleStatus).toBe('active');
+	}, 120_000);
+});

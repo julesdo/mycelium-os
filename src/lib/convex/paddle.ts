@@ -138,6 +138,14 @@ export const caisse = authedQuery({
 
 		const reglages = reglagesDeLaCaisse();
 		if (!reglages.pret) return reglages;
+		// Un abonnement vivant se GÈRE (changer, résilier), il ne se double pas :
+		// deux abonnements sous le même sceau se disputeraient l'établissement.
+		if (porteUnAutreAbonnementVivant(org, '')) {
+			return {
+				pret: false,
+				manque: ['Cet établissement a déjà un abonnement : il se gère depuis Compte › Abonnement.']
+			};
+		}
 
 		const profil = await ctx.db
 			.query('userProfiles')
@@ -261,6 +269,9 @@ export const upsertSubscription = internalMutation({
 				.first());
 
 		if (!org) return { action: 'noop', organizationId: null };
+		if (porteUnAutreAbonnementVivant(org, args.paddleSubscriptionId)) {
+			return { action: 'autre-abonnement', organizationId: org._id };
+		}
 		if (org.paddleEvenementLe !== undefined && args.survenuLe < org.paddleEvenementLe) {
 			return { action: 'ancien', organizationId: org._id };
 		}
@@ -355,6 +366,9 @@ export const rattacherLePaiement = internalMutation({
 				.withIndex('by_paddle_customer', (q) => q.eq('paddleCustomerId', args.paddleCustomerId))
 				.first());
 		if (!org) return { action: 'noop' };
+		if (porteUnAutreAbonnementVivant(org, args.paddleSubscriptionId)) {
+			return { action: 'autre-abonnement' };
+		}
 
 		const prix =
 			args.priceId === undefined
@@ -384,6 +398,34 @@ export const rattacherLePaiement = internalMutation({
 		return { action: 'rattache' };
 	}
 });
+
+/**
+ * UN ÉTABLISSEMENT, UN ABONNEMENT VIVANT (14/10/2026).
+ *
+ * ⚠️ LE DÉFAUT, vu dans le bac à sable : un premier paiement dont Paddle n'a
+ * jamais envoyé les rappels, puis un second. Deux abonnements portaient le sceau
+ * du même établissement. Le premier, annulé depuis le portail de Paddle, a
+ * envoyé son rappel ; trouvé par son sceau, il a REMPLACÉ l'abonnement que
+ * l'application suivait, et « Reprendre » a ensuite agi sur le mauvais.
+ *
+ * Tant que l'établissement suit un abonnement vivant (actif, en essai, en pause
+ * ou en impayé), les rappels d'un AUTRE abonnement ne le touchent pas. Un nouvel
+ * abonnement ne prend la place que d'un abonnement terminé, ou d'aucun.
+ */
+function porteUnAutreAbonnementVivant(
+	org: Doc<'organizations'>,
+	paddleSubscriptionId: string
+): boolean {
+	if (org.paddleSubscriptionId === undefined || org.paddleSubscriptionId === paddleSubscriptionId) {
+		return false;
+	}
+	return (
+		org.paddleStatus === 'active' ||
+		org.paddleStatus === 'trialing' ||
+		org.paddleStatus === 'paused' ||
+		org.paddleStatus === 'past_due'
+	);
+}
 
 async function orgDeLId(
 	ctx: {
