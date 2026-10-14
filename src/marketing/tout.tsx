@@ -1,13 +1,6 @@
 import { cn } from '../ui';
-import type { FamilleRangee } from '../ui/familles';
-import { FONCTIONNALITES, type Fonctionnalite } from './fonctionnalites';
-import {
-	EcranProduit,
-	SectionMarketing,
-	TitreSection,
-	fondDeTeinte,
-	type TeinteSite
-} from './section';
+import { FONCTIONNALITES, TEINTE_DE_LA_FAMILLE, type Fonctionnalite } from './fonctionnalites';
+import { EcranProduit, SectionMarketing, TitreSection, fondDeTeinte } from './section';
 
 /**
  * TOUT CE QUI VA AVEC — six tuiles, une par fonction (14/10/2026).
@@ -24,16 +17,6 @@ import {
  * Un carrousel sur téléphone (six tuiles empilées y faisaient trois mille
  * pixels), une grille de trois au-delà.
  */
-
-/** La teinte du site d'une famille du produit : « la teinte dit de quoi il s'agit ». */
-const TEINTE_DE_LA_FAMILLE: Readonly<Record<FamilleRangee, TeinteSite>> = {
-	ARGENT: 'argent',
-	TEMPS: 'temps',
-	PAPIERS: 'papiers',
-	ENVOI: 'argent',
-	QUESTION: 'question',
-	MACHINE: 'abricot'
-};
 
 const DESCRIPTIONS: Readonly<Partial<Record<Fonctionnalite['cle'], string>>> = {
 	coffre:

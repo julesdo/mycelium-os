@@ -1,6 +1,6 @@
 import type { FamilleRangee } from '../ui/familles';
 import { DELAI_POUR_RETENIR_MS } from '../lib/verticales/recouvrement/plan-relance';
-import type { CaptureProduit } from './section';
+import type { CaptureProduit, TeinteSite } from './section';
 
 /**
  * CE QUE FAIT LETIKETTE, À UN SEUL ENDROIT (14/10/2026).
@@ -220,3 +220,13 @@ export function dureePourRetenir(): string {
 	if (Number.isInteger(heures)) return `${heures} heures`;
 	return `${Math.round(DELAI_POUR_RETENIR_MS / 60_000)} minutes`;
 }
+
+/** La teinte du site d'une famille du produit : « la teinte dit de quoi il s'agit ». */
+export const TEINTE_DE_LA_FAMILLE: Readonly<Record<FamilleRangee, TeinteSite>> = {
+	ARGENT: 'argent',
+	TEMPS: 'temps',
+	PAPIERS: 'papiers',
+	ENVOI: 'argent',
+	QUESTION: 'question',
+	MACHINE: 'abricot'
+};
