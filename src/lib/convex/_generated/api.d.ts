@@ -58,6 +58,7 @@ import type * as limites from "../limites.js";
 import type * as localDev from "../localDev.js";
 import type * as notifications from "../notifications.js";
 import type * as organizations from "../organizations.js";
+import type * as ouvertureFacturation from "../ouvertureFacturation.js";
 import type * as paddle from "../paddle.js";
 import type * as paddleCatalogue from "../paddleCatalogue.js";
 import type * as previewDev from "../previewDev.js";
@@ -173,6 +174,7 @@ declare const fullApi: ApiFromModules<{
   localDev: typeof localDev;
   notifications: typeof notifications;
   organizations: typeof organizations;
+  ouvertureFacturation: typeof ouvertureFacturation;
   paddle: typeof paddle;
   paddleCatalogue: typeof paddleCatalogue;
   previewDev: typeof previewDev;

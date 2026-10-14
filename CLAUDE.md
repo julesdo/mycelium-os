@@ -528,8 +528,14 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   sur la clé (`pdl_sdbx_` / `pdl_live_`), un déploiement par environnement.
   **Poser la clé n'ouvre plus la facturation** : `PADDLE_FACTURATION_OUVERTE=oui` le fait
   (`paiementOuvert`), parce que la clé live se pose avant que Paddle ait vérifié le compte. Le
-  catalogue se crée d'après `TARIFS` (`paddleCatalogue:catalogue`), qui n'ajoute que ce qui manque
-  et ne modifie ni n'archive rien.
+  catalogue se crée d'après la grille (`paddleCatalogue:catalogue`), qui n'ajoute que ce qui
+  manque et ne modifie ni n'archive rien. Le prélèvement ne surprend jamais : Plume fait le point
+  à J-7, l'e-mail part à J-2, l'annuel est prévenu trente jours avant (`abonnementRappels.ts`).
+  On change de formule en voyant AVANT le prorata, on résilie en deux gestes, sans compte à
+  rebours (`GestionDeLaFormule`). Les limites s'appliquent au point d'usage (`limites.ts`) :
+  Découverte ne fait rien partir, une formule relance ses N premiers clients suivis. À
+  l'ouverture, les comptes existants reçoivent trente jours d'accès offert et un préavis
+  (`ouvertureFacturation:prevenir`).
 - **Plume parle sur chaque écran** (13/10/2026, `docs/superpowers/specs/2026-10-13-plume-compagnon.md`,
   sur Alan, Rocket Money, Credit Karma, Fabric et ClickUp). Le fondateur : « un vrai agent qui
   assiste partout […] au lieu de simplement être dans un chat ». Une **bulle** sort de Plume,

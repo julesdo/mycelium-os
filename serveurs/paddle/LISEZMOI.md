@@ -107,8 +107,8 @@ commencent par `pdl_live_` et `live_`.
 
 **Ne pas poser `PADDLE_FACTURATION_OUVERTE` en production avant** que Paddle ait vérifié le compte
 et approuvé le domaine : tant qu'elle manque, les clés live peuvent être posées sans rien changer
-pour personne. La poser, c'est appliquer la fin d'essai à tous les établissements (aujourd'hui,
-cela ferme les invitations à ceux qui n'ont pas d'abonnement).
+pour personne. La poser, c'est faire entrer en vigueur la grille : Découverte pour qui n'a rien
+choisi (rien ne part, personne ne s'invite), les limites de chaque formule pour les autres.
 
 À faire dans le tableau de bord live, que l'API ne fait pas :
 
@@ -117,6 +117,32 @@ cela ferme les invitations à ceux qui n'ont pas d'abonnement).
   Un domaine approuvé, jamais localhost, sinon les paiements live échouent.
 - **My account › Settings › Website approval** : soumettre `www.letikette.com`.
 - **Business account › Payouts › Payout settings** : les coordonnées bancaires.
+
+## 3. L'ouverture, dans cet ordre
+
+1. Le compte live vérifié, le domaine approuvé, le catalogue créé en production, un paiement de
+   test passé de bout en bout sur la production avec une vraie carte, puis remboursé.
+2. **Prévenir les comptes qui existent** : l'écran leur a promis « nous revenons vers vous avant
+   toute facturation », et l'article 16 des conditions annonce une modification trente jours
+   avant. D'abord la lecture seule, qui dit combien d'établissements seront prévenus et jusqu'à
+   quelle date :
+
+   ```bash
+   npx convex run --prod ouvertureFacturation:prevenir
+   ```
+
+   puis l'envoi. Chaque établissement sans abonnement reçoit **trente jours d'accès offert**
+   (relu comme Équipe), une notification et un e-mail : la date, les formules, et que rien ne
+   sera prélevé sans qu'il l'ait choisie. Tant que le rapport rend une `suite`, relancer avec
+   `"curseur"`.
+
+   ```bash
+   npx convex run --prod ouvertureFacturation:prevenir '{"envoyer":true}'
+   ```
+
+3. **Ouvrir** : `npx convex env set PADDLE_FACTURATION_OUVERTE oui --prod`. Les comptes prévenus
+   gardent tout pendant trente jours ; un nouveau compte commence sur Découverte et souscrit son
+   essai à l'étape « Les relances » des premiers pas.
 
 ## Garde-fous
 

@@ -5,9 +5,14 @@
 > un vrai essai gratuit avec engagement à la fin, des plans payables en one shot avec réduction. Il
 > faut que la customer expérience soit la plus optimale et simple possible. »
 >
-> **Statut : proposition, rien n'est construit.** Les montants, la durée d'essai et la carte demandée
-> à l'essai sont des décisions commerciales du fondateur (section 9). Rien ne se code avant sa
-> réponse.
+> **Statut : validée par le fondateur le 14/10/2026 (« ça me paraît bien, je veux la meilleure UX
+> et CX, vas-y »), construite le jour même** en sept lots : la grille et la page de choix
+> (`1007a40`), le choix au moment d'agir (`08318a2`), les rappels de l'essai (`d77ee07`), gérer et
+> résilier (`e84b646`), les limites (`6e619a2`), les textes (`5a50cd6`), l'ouverture. Un écart avec
+> la proposition : les analyses de santé client par mois sont de 10, 50 et 300 (et non 3, 20 et
+> 100), parce que la relecture mensuelle des clients suivis les consomme aussi. Dormant tant que
+> `PADDLE_FACTURATION_OUVERTE` n'est pas posée ; la marche à suivre est dans
+> `serveurs/paddle/LISEZMOI.md`.
 
 ---
 
@@ -97,7 +102,7 @@ Montants hors taxes ; Paddle ajoute la TVA du pays du client (`tax_mode: externa
 | Relances automatiques, lettre officielle, décompte daté           | –                       | ✓                                                             | ✓                         | ✓                          | ✓                                 |
 | Clients en retard suivis en même temps                            | –                       | 10                                                            | 50                        | illimité                   | illimité                          |
 | Utilisateurs                                                      | 1                       | 1                                                             | 3                         | 10                         | sur mesure                        |
-| Analyses de santé client par mois                                 | 1                       | 3                                                             | 20                        | 100                        | sur mesure                        |
+| Analyses de santé client par mois                                 | 1                       | 10                                                            | 50                        | 300                        | sur mesure                        |
 | Plume, coffre-fort, défense                                       | lecture                 | ✓                                                             | ✓                         | ✓                          | ✓                                 |
 | Connexion des logiciels (Pennylane, QuickBooks…)                  | –                       | Qonto                                                         | ✓                         | ✓                          | ✓                                 |
 | Support                                                           | –                       | e-mail                                                        | e-mail                    | prioritaire                | dédié                             |
