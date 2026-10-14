@@ -19,6 +19,7 @@ import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
+import { Route as PaiementRouteImport } from './routes/paiement'
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
 import { Route as RemboursementRouteImport } from './routes/remboursement'
 import { Route as SecuriteRouteImport } from './routes/securite'
@@ -104,6 +105,11 @@ const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
 const NouveauMotDePasseRoute = NouveauMotDePasseRouteImport.update({
   id: '/nouveau-mot-de-passe',
   path: '/nouveau-mot-de-passe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaiementRoute = PaiementRouteImport.update({
+  id: '/paiement',
+  path: '/paiement',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PolitiqueDeConfidentialiteRoute =
@@ -299,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/remboursement': typeof RemboursementRoute
   '/securite': typeof SecuriteRoute
@@ -346,6 +353,7 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/remboursement': typeof RemboursementRoute
   '/securite': typeof SecuriteRoute
@@ -395,6 +403,7 @@ export interface FileRoutesById {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/remboursement': typeof RemboursementRoute
   '/securite': typeof SecuriteRoute
@@ -445,6 +454,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/paiement'
     | '/politique-de-confidentialite'
     | '/remboursement'
     | '/securite'
@@ -492,6 +502,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/paiement'
     | '/politique-de-confidentialite'
     | '/remboursement'
     | '/securite'
@@ -540,6 +551,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/paiement'
     | '/politique-de-confidentialite'
     | '/remboursement'
     | '/securite'
@@ -589,6 +601,7 @@ export interface RootRouteChildren {
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
+  PaiementRoute: typeof PaiementRoute
   PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
   RemboursementRoute: typeof RemboursementRoute
   SecuriteRoute: typeof SecuriteRoute
@@ -673,6 +686,13 @@ declare module '@tanstack/react-router' {
       path: '/nouveau-mot-de-passe'
       fullPath: '/nouveau-mot-de-passe'
       preLoaderRoute: typeof NouveauMotDePasseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/paiement': {
+      id: '/paiement'
+      path: '/paiement'
+      fullPath: '/paiement'
+      preLoaderRoute: typeof PaiementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politique-de-confidentialite': {
@@ -1028,6 +1048,7 @@ const rootRouteChildren: RootRouteChildren = {
   MentionsLegalesRoute: MentionsLegalesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
+  PaiementRoute: PaiementRoute,
   PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
   RemboursementRoute: RemboursementRoute,
   SecuriteRoute: SecuriteRoute,

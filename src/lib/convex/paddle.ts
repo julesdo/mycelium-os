@@ -188,6 +188,32 @@ export const caisse = authedQuery({
 	}
 });
 
+/**
+ * CE QU'IL FAUT À LA PAGE `/paiement` POUR OUVRIR UN LIEN DE PAIEMENT DE PADDLE
+ * (14/10/2026) : l'environnement et le jeton côté client.
+ *
+ * Paddle envoie lui-même des liens de paiement (une facture à régler, une carte
+ * à remplacer) vers le « lien de paiement par défaut » du compte, avec
+ * `?_ptxn=<transaction>`. Paddle.js, initialisé sur cette page, ouvre seul le
+ * paiement de cette transaction. Pas de session : celui qui paie n'est pas
+ * forcément connecté, et le jeton côté client est public par nature (il ne
+ * permet que d'ouvrir un paiement chez Paddle).
+ */
+export const lienDePaiement = query({
+	args: {},
+	returns: v.union(
+		v.null(),
+		v.object({
+			environnement: v.union(v.literal('sandbox'), v.literal('production')),
+			jeton: v.string()
+		})
+	),
+	handler: async (): Promise<{ environnement: EnvironnementPaddle; jeton: string } | null> => {
+		const reglages = reglagesDeLaCaisse();
+		return reglages.pret ? { environnement: reglages.environnement, jeton: reglages.jeton } : null;
+	}
+});
+
 /** Range les identifiants que le catalogue vient de lire ou de créer. */
 export const rangerLesPrix = internalMutation({
 	args: {
