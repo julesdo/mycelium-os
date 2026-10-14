@@ -59,8 +59,10 @@ Dans [sandbox-vendors.paddle.com](https://sandbox-vendors.paddle.com) :
    - recopier la **clé secrète** de la destination (« Secret key », elle commence par
      `pdl_ntfset_`). ⚠️ Pas son identifiant, qui commence par `ntfset_` et fait 33 caractères :
      avec lui, chaque rappel est refusé (401). Elle se relit en ouvrant la destination.
-4. **Checkout › Checkout configuration › Default payment link** : l'adresse où le paiement
-   s'ouvre, par exemple `http://localhost:20173/app/compte` (le bac à sable accepte localhost).
+4. **Checkout › Checkout settings › Default payment link** : `https://www.letikette.com/app/compte`.
+   ⚠️ Le tableau de bord refuse localhost (« Enter a valid link »), même en bac à sable ; le bac à
+   sable ne vérifie pas le domaine, et le paiement s'ouvre quand même depuis localhost. Ce lien ne
+   sert qu'aux liens de paiement que Paddle envoie lui-même (`?_ptxn=…`).
 5. Si Paddle refuse la catégorie fiscale « saas » à l'étape 7, l'activer sur le compte (ou la
    demander au support de Paddle).
 
