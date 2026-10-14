@@ -54,7 +54,7 @@ export function CapsulePlume({
 		<div
 			role="group"
 			aria-label={`${titre}. ${ligne}`}
-			className="capsule-plume verre-dense flex w-full items-center gap-1 rounded-full py-1.5 pr-2 pl-1.5 md:w-auto md:max-w-md md:min-w-80"
+			className="capsule-plume verre-barre flex w-full items-center gap-1 rounded-full py-1.5 pr-2 pl-1.5 md:w-auto md:max-w-md md:min-w-80"
 		>
 			<button
 				type="button"

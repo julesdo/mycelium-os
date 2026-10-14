@@ -172,6 +172,19 @@ export function BarreDuBas({
 		  ne change.
 		*/
 		<div className="barre-fixe mb-safe fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-2 px-cladd-3xs pb-cladd-3xs lg:left-auto lg:items-end lg:px-cladd-xs lg:pb-cladd-xs">
+			{/*
+			  ⚠️ LE BORD DE L'ÉCRAN S'EFFACE SOUS LA BARRE (15/10/2026). Le fondateur : la
+			  barre se confondait avec le contenu qui défilait derrière elle. Comme le bord
+			  de défilement d'iOS 26, une nappe de papier légèrement floutée monte du bas
+			  de l'écran jusqu'au-dessus de la barre : une carte s'estompe avant de passer
+			  dessous, et la barre se détache toujours sur un fond calme. Elle descend sous
+			  le trait d'accueil (`safe-area`), qui portait sinon du contenu net. Au
+			  téléphone seulement : au bureau, Plume seul reste dans le coin.
+			*/}
+			<span
+				aria-hidden
+				className="voile-barre-bas pointer-events-none absolute inset-x-0 -top-10 -bottom-[env(safe-area-inset-bottom)] -z-10 lg:hidden"
+			/>
 			{auDessus}
 			{/*
 			  LA RANGÉE : la pilule des onglets, puis l'accessoire à sa droite.
@@ -185,7 +198,7 @@ export function BarreDuBas({
 				<nav
 					ref={nav}
 					aria-label="Navigation principale"
-					className="verre-dense relative flex min-w-0 flex-1 touch-none items-stretch rounded-full p-1.5 select-none md:flex-none lg:hidden"
+					className="verre-barre relative flex min-w-0 flex-1 touch-none items-stretch rounded-full p-1.5 select-none md:flex-none lg:hidden"
 					{...gestes}
 				>
 					{/*
@@ -249,7 +262,8 @@ export function BarreDuBas({
 								'relative z-10 flex min-h-cladd-md min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full px-0.5 py-1.5',
 								'md:min-w-28 md:flex-row md:gap-2',
 								'transition duration-150 ease-out active:scale-95',
-								index === eclaire ? 'text-cladd-fg' : 'text-cladd-fg-softer',
+								// Sur un verre plus dense, les onglets au repos se lisent mieux d'un cran.
+								index === eclaire ? 'text-cladd-fg' : 'text-cladd-fg-soft',
 								// Sous la lentille glissée, l'onglet grossit d'un rien : elle est une loupe.
 								index === survole && 'scale-110'
 							)}

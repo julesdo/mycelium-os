@@ -73,7 +73,7 @@ export function BoutonCompagnon({
 				variant="transparent"
 				outline={false}
 				hoverable={false}
-				className="verre-dense verre-bouton h-auto min-h-cladd-md w-16"
+				className="verre-barre verre-bouton h-auto min-h-cladd-md w-16"
 				contentClassName="items-center justify-center overflow-visible p-0"
 				aria-label={description}
 				title={NOM_DU_PILOTE}

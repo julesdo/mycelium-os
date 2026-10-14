@@ -3284,3 +3284,65 @@ html:has(.coquille-app) body {
 		background-color: oklch(0.3 0.03 266 / 0.28) !important;
 	}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LE VERRE DE LA BARRE DU BAS, PLUS DENSE (15/10/2026).
+ *
+ * Le fondateur : « plus opaque, pour éviter de confondre avec le contenu derrière
+ * qui défile ». À 0,82, le verre laissait lire les cartes qui passaient dessous ;
+ * le fond animé y ajoutait sa couleur, et la pilule se perdait dans la page. Il
+ * monte à 0,93 en clair et 0,9 en sombre, avec un flou plus court (au-delà, il ne
+ * reste rien à flouter) et un liseré net : c'est un objet POSÉ sur la page, pas
+ * une vitre. Pilule, bouton de Plume et capsule portent le même verre, sinon ils
+ * se lisent comme trois matières. `verre-dense` garde ses autres usages (le pied
+ * d'une page pleine, le compositeur de Plume).
+ *
+ * La lentille de l'onglet actif était presque du même blanc que la pilule : sur
+ * ce verre crème, elle devient une pastille blanche franche, cerclée d'un filet.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.verre-barre {
+	background-color: oklch(0.21 0.028 266 / 0.9);
+	-webkit-backdrop-filter: blur(28px) saturate(1.5);
+	backdrop-filter: blur(28px) saturate(1.5);
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.14),
+		inset 0 0 0 1px oklch(1 0 0 / 0.1),
+		0 10px 30px -8px oklch(0 0 0 / 0.6);
+}
+.light .verre-barre {
+	background-color: oklch(0.955 0.012 85 / 0.93);
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.75),
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.12),
+		0 1px 3px oklch(0.3 0.02 264 / 0.1),
+		0 12px 32px -10px oklch(0.3 0.02 264 / 0.3);
+}
+.verre-barre .lentille-barre:not(.lentille-levee) {
+	background-color: oklch(1 0 0 / 0.13);
+	box-shadow:
+		inset 0 1px 0 0 oklch(1 0 0 / 0.2),
+		inset 0 0 0 1px oklch(1 0 0 / 0.08);
+}
+.light .verre-barre .lentille-barre:not(.lentille-levee) {
+	background-color: oklch(1 0 0 / 0.97);
+	box-shadow:
+		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.08),
+		0 1px 2px oklch(0.3 0.02 264 / 0.12),
+		0 4px 12px -4px oklch(0.3 0.02 264 / 0.18);
+}
+
+/* LE BORD QUI S'EFFACE SOUS LA BARRE : du papier qui monte du bas, et un flou léger
+ * qui s'éteint avec lui (le masque porte aussi le flou). Le contenu y passe en
+ * s'estompant, jamais net contre la pilule. */
+.voile-barre-bas {
+	background: linear-gradient(
+		to top,
+		var(--cladd-bg) 0%,
+		color-mix(in oklch, var(--cladd-bg) 85%, transparent) 40%,
+		color-mix(in oklch, var(--cladd-bg) 0%, transparent) 100%
+	);
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	-webkit-mask-image: linear-gradient(to top, #000 55%, transparent 100%);
+	mask-image: linear-gradient(to top, #000 55%, transparent 100%);
+}
