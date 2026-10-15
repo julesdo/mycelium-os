@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Paddle, PaddleEventData } from '@paddle/paddle-js';
 import type { CaisseServeur } from '../lib/convex/paddle';
 import type { CaisseAffichee, Souscription } from '../screens/compte/facturation';
+import { useMutation } from 'convex/react';
+import { api } from '../lib/convex/_generated/api';
 import { suivre } from './analytique';
 
 /**
@@ -63,6 +65,9 @@ export function useCaissePaddle({
 	const [choix, setChoix] = useState<Souscription | null>(null);
 	const [souscrite, setSouscrite] = useState<Souscription | null>(null);
 	const [erreur, setErreur] = useState<string | null>(null);
+	// L'intérêt pour une formule nourrit le score du compte (`croissance/`) ; il
+	// part sans attendre et n'arrête jamais le paiement.
+	const noterInteret = useMutation(api.croissance.interet.noterInteretFormule);
 	const rappel = useRef(onSouscrit);
 	useEffect(() => {
 		rappel.current = onSouscrit;
@@ -113,6 +118,7 @@ export function useCaissePaddle({
 			setEnCours('formule');
 			setChoix({ formule, rythme, essai: pret.essai });
 			suivre('paiement-ouvert', { formule, rythme, essai: pret.essai });
+			noterInteret({}).catch(() => undefined);
 			paddlePour(pret)
 				.then((paddle) => {
 					if (!paddle) throw new Error('Paddle.js absent');

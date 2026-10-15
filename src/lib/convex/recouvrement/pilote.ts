@@ -1343,6 +1343,9 @@ export const activerRelances = authedMutation({
 		if (actif) {
 			await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
 		}
+		await ctx.scheduler.runAfter(0, internal.croissance.releve.releverLesEtapes, {
+			organizationId
+		});
 		return null;
 	}
 });

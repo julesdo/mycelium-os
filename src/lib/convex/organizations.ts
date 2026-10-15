@@ -160,6 +160,9 @@ export const createOrganization = authedMutation({
 			etapes: { INSCRIT: maintenant },
 			prochainConseilLe: maintenant
 		});
+		await ctx.scheduler.runAfter(0, internal.croissance.releve.releverLesEtapes, {
+			organizationId: orgId
+		});
 
 		return orgId;
 	}

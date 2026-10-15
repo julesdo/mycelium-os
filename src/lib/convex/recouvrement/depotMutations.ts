@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { internalQuery, internalMutation } from '../_generated/server';
+import { internal } from '../_generated/api';
 import { vChiffrementDocument } from './tables';
 
 /**
@@ -83,13 +84,20 @@ export const marquerEtape = internalMutation({
 export const marquerBilan = internalMutation({
 	args: { importId: v.id('importsRecouvrement'), etape: v.string(), bilan: vBilan },
 	returns: v.null(),
-	handler: async (ctx, { importId, etape, bilan }) => {
+	handler: async (ctx, { importId, etape, bilan }): Promise<null> => {
 		await ctx.db.patch(importId, {
 			statut: 'TERMINE',
 			etape,
 			bilan,
 			termineLe: Date.now()
 		});
+		// Un dépôt lu est une étape du parcours (`croissance/releve.ts`).
+		const depot = await ctx.db.get(importId);
+		if (depot !== null) {
+			await ctx.scheduler.runAfter(0, internal.croissance.releve.releverLesEtapes, {
+				organizationId: depot.organizationId
+			});
+		}
 		return null;
 	}
 });

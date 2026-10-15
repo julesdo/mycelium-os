@@ -35,6 +35,15 @@ crons.daily(
 */
 crons.interval('pilote', { minutes: 15 }, internal.recouvrement.pilote.reveillerTous, {});
 
+// Le parcours de chaque établissement (`croissance/releve.ts`) : ce qu'aucun geste
+// n'a signalé (une connexion, l'abonnement, une absence) se relève chaque nuit.
+crons.daily(
+	'releveCroissance',
+	{ hourUTC: 2, minuteUTC: 30 },
+	internal.croissance.releve.releverTous,
+	{}
+);
+
 crons.daily(
 	'battementQuotidien',
 	{ hourUTC: 6, minuteUTC: 0 },
