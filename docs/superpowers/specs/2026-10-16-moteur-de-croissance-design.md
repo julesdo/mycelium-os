@@ -6,58 +6,29 @@
 >
 > **Décisions du fondateur, le même jour :** l'interface est **Twenty** (en ligne) ; la machine agit
 > **seule dans un cadre** (il valide chaque variante, elle promeut seule la gagnante) ; la conception
-> ci-dessous est validée (« Oui, écris la spec »).
+> ci-dessous est validée (« Oui, écris la spec »), puis la stratégie complète qui l'englobe
+> (« Oui, écris-la »).
 
 ---
 
-## 1. Ce que la recherche a établi
+## 1. Sa place dans la stratégie
 
-Relevé le 16/10/2026 ; les sources sont citées dans la conversation du jour et résumées ici.
+La stratégie entière (la recherche, les sept étages, les outils, le budget, les cinq sous-projets)
+vit dans `2026-10-16-strategie-de-croissance.md`. Ce document est le **sous-projet 1** : le cerveau
+dans Convex, le cockpit dans Twenty, et l'activation.
 
-1. **À 12-119 € par mois, un commercial ne se rembourse pas.** Sous environ 3 000 € de panier
-   annuel, ce qui marche est l'essai qui convertit, le référencement, et la recommandation. Le taux
-   d'activation (la part des inscrits qui franchissent le geste clé) est la métrique qui prédit le
-   mieux la conversion, et seule une minorité d'éditeurs la suit.
-2. **Les cabinets comptables sont le canal des TPE.** 80 à 90 % des petites entreprises clientes de
-   Pennylane y sont venues par leur cabinet ; Qonto offre un an au cabinet et trois mois à ses
-   clients, plus un annuaire. **Mais** l'Ordre a resserré en septembre 2026 la rémunération des
-   cabinets par un tiers : pas d'apport d'affaires sans prestation réelle, information préalable du
-   client. On les rétribue en outil, pas en commission.
-3. **Personne ne propose un générateur de relance qui calcule.** Sur « mise en demeure facture
-   impayée », la première page est faite de modèles Word (Legalstart, Indy, independant.io).
-   Google sanctionne les pages produites en série sans donnée propre (mise à jour de mars 2026) :
-   chaque page de Letikette porterait un vrai calcul.
-4. **La facture électronique est le sujet de l'année.** Réception obligatoire pour toutes les
-   entreprises depuis le 1er septembre 2026, émission pour les PME et TPE au 1er septembre 2027.
-   Les catalogues d'applications des plateformes (Pennylane vise 500 applications en 2026) sont un
-   canal.
-5. **Aucune boucle virale ne passe par le débiteur** : nos courriers ne nomment pas Letikette (ligne
-   rouge n° 1, surfaces vers un tiers). Les boucles viennent du gérant (parrainage), du cabinet (un
-   cabinet → N clients) et du contenu.
+**Pourquoi il passe en premier :** chaque étage se mesure avec lui, et l'activation rend rentable
+tout le trafic, existant comme à venir. Le préchauffage des boîtes d'envoi (sous-projet 2) tourne
+pendant qu'on le construit.
 
-Contraintes qui en découlent : Resend interdit les envois de prospection en masse (domaine séparé
-et outil d'envoi dédié pour le sous-projet 4) ; en B2B, la prospection par e-mail se fait sans
-consentement préalable mais avec information et lien de désinscription ; le produit est cloisonné
-par établissement et n'a aucun rôle « équipe Letikette », donc **le CRM vit dehors et ne reçoit que
-des données de compte, jamais un débiteur ni un montant**.
+**Les contraintes qu'il tient :** le produit est cloisonné par établissement et n'a aucun rôle
+« équipe Letikette », donc **le cockpit vit dehors et ne reçoit que des données de compte, jamais un
+débiteur ni un montant** ; aucune prospection ne part par ce moteur (Resend l'interdit, et c'est le
+sous-projet 2).
 
-## 2. La machine entière, en quatre sous-projets
+## 2. Le moteur et l'activation
 
-Chacun aura sa spec et son plan. Celui-ci ne porte que le premier.
-
-| # | Sous-projet | Ce qu'il apporte |
-|---|---|---|
-| 1 | **Le moteur et l'activation** (ce document) | la mesure de chaque étape par source, les e-mails de Plume, le score, Twenty, les expériences, le point du lundi |
-| 2 | Les outils gratuits et les pages sourcées | générateur de relance et de mise en demeure chiffrée, taux des pénalités du semestre, délai pour agir par secteur, pages par métier |
-| 3 | Les cabinets, le parrainage, les catalogues | espace cabinet gratuit, un mois offert de chaque côté, Pennylane / Qonto / Xero / QuickBooks |
-| 4 | La prospection documentée | cibles par code d'activité et taille (API Recherche d'entreprises), estimation de ce qu'elles laissent filer, domaine séparé |
-
-**Pourquoi le moteur d'abord :** chaque levier suivant se mesure avec lui, et l'activation rend
-rentable tout le trafic, existant comme à venir.
-
-## 3. Le moteur et l'activation
-
-### 3.1 Où ça vit
+### 2.1 Où ça vit
 
 - **`src/lib/croissance/`** — la logique pure : les étapes, le score, la règle de décision des
   expériences, l'éligibilité des messages, la lecture de la source. Il n'importe ni `verticales/`
@@ -68,7 +39,7 @@ rentable tout le trafic, existant comme à venir.
   Les fonctions sont `internal*`, sauf deux, liées au gérant lui-même : enregistrer la source de son
   inscription, et régler « Les conseils de Plume » dans son profil.
 
-### 3.2 Les tables
+### 2.2 Les tables
 
 Toutes portent `organizationId` et entrent dans le test de cloisonnement et dans la purge RGPD.
 
@@ -83,7 +54,7 @@ Toutes portent `organizationId` et entrent dans le test de cloisonnement et dans
 - **`revuesHebdo`** — chaque point du lundi : la semaine, les chiffres fournis au modèle, le texte,
   les trois propositions.
 
-### 3.3 La mesure
+### 2.3 La mesure
 
 **La source.** Sur le site public, la provenance de la visite (paramètres `utm_*`, site d'origine,
 page d'entrée) est gardée le temps de la visite dans `sessionStorage` (aucun cookie, lecture et
@@ -99,6 +70,9 @@ page d'entrée) est gardée le temps de la visite dans `sessionStorage` (aucun c
 | `MONTANT_REVELE` | au moins une facture échue non réglée : **l'activation**, le choc du premier dépôt |
 | `RELANCES_ACTIVEES` | l'activation des relances automatiques (`activerRelances`) |
 | `ESSAI` / `ABONNE` / `RESILIE` | `paddleStatus` de l'établissement (`trialing`, `active`, résiliation) |
+| `MONTEE_EN_GAMME` | une formule supérieure ou le passage à l'année (`paddlePlanTier`, `paddleRythme`) |
+| `A_RISQUE` | le score de santé sous son seuil (dernière connexion, relances en pause) ; se lève quand il remonte |
+| `RECONQUIS` | un abonnement repris après `RESILIE` |
 
 **Les étapes se DÉDUISENT de l'état, elles ne s'écrivent pas à la main.** Une seule fonction,
 `releverLesEtapes(organizationId)`, lit l'état courant et note la date de chaque étape nouvellement
@@ -109,7 +83,14 @@ l'établissement.
 
 Umami continue de mesurer le trafic anonyme ; la croissance ne lui envoie rien de plus.
 
-### 3.4 Les e-mails de Plume
+**Les étages hors du produit** se mesurent là où ils vivent, et le moteur les lit par des
+**sources de chiffres** branchables, une par fichier : Umami pour la notoriété et le trafic (ici),
+Instantly pour la prospection (sous-projet 2), la Search Console pour le contenu (sous-projet 3).
+Une source absente se dit dans le point du lundi, elle ne fait pas échouer le reste. La source
+d'un compte venu d'un e-mail froid se lit par ses paramètres `utm_*` (`utm_source=froid`,
+`utm_campaign=<campagne>`), comme toute autre.
+
+### 2.4 Les e-mails de Plume
 
 Cinq messages, sur la coquille commune (`emails/modeles/disposition.ts`), signés « Plume de
 Letikette » :
@@ -136,7 +117,7 @@ Letikette » :
   du registre ;
 - les textes vivent dans le code et passent sous les balayages du lexique et du mot interdit.
 
-### 3.5 Le score
+### 2.5 Le score
 
 Un indice de 0 à 100, calculé par une fonction pure aux règles nommées (comme
 `risque/regles.ts`) :
@@ -150,7 +131,7 @@ Un indice de 0 à 100, calculé par une fonction pure aux règles nommées (comm
 Le score se recalcule avec les étapes. Il n'est montré qu'au fondateur, dans Twenty et dans le
 point du lundi.
 
-### 3.6 Twenty
+### 2.6 Twenty
 
 - **Un seul sens : du produit vers Twenty**, par l'API REST de Twenty.
 - **Ce qui part :** la société (nom de l'établissement, SIREN, ville, code d'activité quand il est connu, formule,
@@ -165,7 +146,7 @@ point du lundi.
 - **Une panne de Twenty ne bloque jamais le produit** : l'envoi reste en file, l'erreur est notée.
 - **Dormant sans `TWENTY_API_KEY`** (et `TWENTY_API_URL`), comme Nango et Pappers.
 
-### 3.7 Les expériences
+### 2.7 Les expériences
 
 - **Déclarées dans le code** (`src/lib/croissance/experiences.ts`) : la clé, la surface (l'objet ou
   l'introduction d'un e-mail de conseil, un titre de page du site), les variantes avec leur texte,
@@ -180,7 +161,7 @@ point du lundi.
 - **Ce que la machine fait seule :** répartir, compter, décider, promouvoir la gagnante, couper la
   perdante. **Ce qu'elle ne fait jamais seule :** écrire une variante, lancer une expérience.
 
-### 3.8 Le point du lundi
+### 2.8 Le point du lundi
 
 - **Une tâche Convex chaque lundi à 7 h**, heure de Paris.
 - **Ce qu'elle rassemble :** les étapes par source sur 7 et 28 jours, les expériences et leurs
@@ -194,7 +175,7 @@ point du lundi.
 - **Où il arrive :** par e-mail à l'adresse `FONDATEUR_EMAIL`, sur la coquille commune, et en note
   dans Twenty. Il est gardé dans `revuesHebdo`. Rien ne se lance à partir de lui sans le fondateur.
 
-### 3.9 Le cadre légal
+### 2.9 Le cadre légal
 
 - **La politique de confidentialité** passe à une nouvelle version : l'accompagnement à
   l'utilisation (étapes, score) et les conseils par e-mail comme finalités, Twenty comme
@@ -204,7 +185,7 @@ point du lundi.
   simple ; aucune prospection ne part par ce moteur.
 - **La purge RGPD** efface `parcoursComptes`, `envoisCroissance` et la société dans Twenty.
 
-### 3.10 Les erreurs
+### 2.10 Les erreurs
 
 - Twenty absent ou en panne : file d'attente, aucune erreur visible du gérant.
 - Resend absent : les conseils ne partent pas et rien n'est noté envoyé (ils partiront au créneau
@@ -213,7 +194,7 @@ point du lundi.
 - Une étape mal déduite se corrige d'elle-même au relevé suivant ; une date déjà notée ne se
   réécrit pas.
 
-### 3.11 Les tests
+### 2.11 Les tests
 
 - Fonctions pures : la lecture de la source, la déduction des étapes, l'éligibilité de chaque
   message (créneau, cadence, étape franchie, réglage coupé), le score, la règle de décision.
@@ -221,7 +202,7 @@ point du lundi.
   lexique et le mot interdit sur les textes des messages et des variantes, et un test qui vérifie
   que la charge envoyée à Twenty ne porte aucun champ de montant ni de débiteur.
 
-### 3.12 Ce que le fondateur aura à faire
+### 2.12 Ce que le fondateur aura à faire
 
 1. Créer le compte Twenty, puis une clé d'API : `npx convex env set TWENTY_API_KEY …` et
    `TWENTY_API_URL` (en production comme en développement).
@@ -230,9 +211,10 @@ point du lundi.
 4. Demander à Twenty la région d'hébergement de son offre en ligne (non publiée), pour la
    politique de confidentialité.
 
-## 4. Ce qui n'est pas dans ce sous-projet
+## 3. Ce qui n'est pas dans ce sous-projet
 
 - Aucun écran de tableau de bord dans le produit.
-- Aucune prospection (sous-projet 4), aucun outil gratuit (sous-projet 2), aucun parrainage ni
-  espace cabinet (sous-projet 3).
-- La Search Console arrive avec le sous-projet 2, avec les pages qu'elle mesure.
+- Aucune prospection (sous-projet 2), aucun outil gratuit ni page sourcée (sous-projet 3), aucune
+  montée en gamme, reconquête ni parrainage en action (sous-projet 4 : ce moteur les mesure
+  seulement), aucun espace cabinet (sous-projet 5).
+- La Search Console arrive avec le sous-projet 3, avec les pages qu'elle mesure.
