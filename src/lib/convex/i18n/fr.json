@@ -1516,11 +1516,11 @@
 			"ticket_started": "{userName} a démarré une nouvelle conversation de support"
 		},
 		"subject": {
-			"reset_password": "Réinitialisez votre mot de passe",
+			"reset_password": "Choisissez un nouveau mot de passe",
 			"support_reply": "Nouvelle réponse à votre demande de support",
 			"ticket_new": "Nouveau ticket de support de {userName}",
 			"ticket_reopened": "Ticket de support rouvert par {userName}",
-			"verify": "Vérifiez votre email"
+			"verify": "Confirmez votre adresse e-mail"
 		}
 	},
 	"error_page": {

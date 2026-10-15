@@ -1280,7 +1280,7 @@ async function envoyerMaintenant(ctx: MutationCtx, envoiId: Id<'envois'>): Promi
 		to: envoi.destinataire,
 		subject: envoi.objet,
 		text: envoi.corps,
-		html: relanceHtml(envoi.corps),
+		html: relanceHtml(envoi.corps, profil.denomination),
 		replyTo: [profil.email]
 	});
 	await ctx.db.patch(envoiId, {

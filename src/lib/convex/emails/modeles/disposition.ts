@@ -1,75 +1,90 @@
-// La coquille commune aux e-mails produit.
+// LA COQUILLE COMMUNE DES E-MAILS DE LETIKETTE (refaite le 15/10/2026).
 //
-// POURQUOI ELLE N'EST PAS FAITE COMME LES AUTRES MODÈLES. Les six modèles
-// historiques sont des blocs de HTML générés depuis des composants Svelte, en
-// anglais, dans la police et le gris de l'ancienne marque. Ce sont des sources
-// figées qu'on ne régénère plus. Les recopier pour les e-mails produit aurait
-// multiplié un artefact au lieu de l'éteindre.
+// Le fondateur : « hyper moches et pas du tout pros, pas du tout dans la DA de
+// l'application ni UX friendly ». Relevé chez Mercury, Linear, Stripe et Qonto : un
+// fond calme, une carte blanche, la marque en tête, un titre qui dit l'essentiel,
+// UN bouton, et le reste en petit. C'est la même matière que l'application — le
+// papier chaud, l'encre, le titre en serif — pour qu'un e-mail se reconnaisse au
+// premier coup d'œil, et que ce qu'on ouvre ensuite lui ressemble.
 //
-// Ici le HTML est écrit à la main, en français, à l'identité Letikette, et
-// UNE SEULE FOIS. Les trois e-mails produit ne décrivent que leur contenu.
+// LES CONTRAINTES DU COURRIEL, qui expliquent tout ce qui suit :
 //
-// LES CONTRAINTES DU COURRIEL, qui expliquent tout ce qui suit et qui n'ont pas
-// bougé depuis vingt ans :
+//   - Tableaux pour la mise en page : Outlook rend le HTML avec le moteur de Word,
+//     qui ignore `flex`, `grid` et la moitié des marges.
+//   - Styles en ligne. Une feuille dans le `<head>` ne sert qu'aux téléphones (le
+//     rembourrage plus court), que Gmail et Apple Mail lisent.
+//   - Les polices du produit (Newsreader, Plus Jakarta Sans) se chargent chez Apple
+//     Mail et sur iOS ; ailleurs, Georgia et la police du système prennent le
+//     relais, à la même place.
+//   - Les images sont hébergées (`EMAIL_ASSET_URL`, `public/emails/`, régénérées par
+//     `scripts/generer-images-emails.tsx`), et rien ne repose sur elles : bloquées,
+//     la marque se lit encore en texte.
+//   - 560 pixels de large : la colonne se lit d'un coup d'œil, sur un téléphone comme
+//     sur un écran.
+//   - En clair seulement (`color-scheme: light`) : un client qui inverse les couleurs
+//     d'un e-mail sombre le rend illisible.
 //
-//   - Tableaux pour la mise en page. Outlook rend le HTML avec le moteur de
-//     Word, qui ignore `flex`, `grid` et la moitié des marges.
-//   - Styles en ligne uniquement. Gmail retire les feuilles de style.
-//   - Aucune police distante. On déclare une pile système ; Caveat Brush et
-//     Plus Jakarta Sans ne se chargeront jamais dans une boîte aux lettres, et
-//     un logotype en image est bloqué par défaut chez la plupart des clients.
-//     La marque s'écrit donc en texte, en gras, dans le bleu d'encre.
-//   - 600 pixels de large, c'est le dernier standard que tout le monde respecte.
+// LES COULEURS SONT ÉCRITES EN CLAIR, et c'est obligé : un courriel n'a pas accès
+// aux variables CSS du produit. Elles sont celles du thème clair de l'app
+// (`tokens.css`, converties depuis oklch) ; si la palette bouge, ce bloc bouge.
 //
-// LES COULEURS SONT ÉCRITES EN CLAIR, et c'est obligé : un courriel n'a pas
-// accès aux variables CSS du produit. Elles reprennent `src/ui/couleurs-
-// impression.ts`, qui fait la même conversion pour le PDF. Si la palette bouge,
-// ces deux fichiers bougent ensemble.
+// ⚠️ PAS DE COULEUR DE SEUIL ICI. Le vert, l'ambre et le rouge ne disent qu'une
+// chose dans ce produit ; un montant dû n'est ni l'un ni l'autre.
 
-const ENCRE = '#1d3fa0';
-const TEXTE = '#1e2431';
-const DOUX = '#595e67';
-const TRES_DOUX = '#757980';
-const FOND = '#f6efec';
-const CARTE = '#fdfaf9';
-const FILET = '#e5dedc';
+import { LEGAL_CONFIG, SITE_CANONIQUE, getLegalEmailAddress } from '../../../config/legal';
 
-/** Les trois états de seuil. Ils ne signifient QUE ça, ici comme ailleurs. */
-const SEUIL = {
-	atteint: '#05893e',
-	proche: '#de9300',
-	manque: '#c92f33'
-} as const;
+const ENCRE = '#1b253f';
+const TEXTE = '#3f485b';
+const DOUX = '#555c6c';
+const DISCRET = '#6b7180';
+const MARQUE = '#2f4fd8';
+const PAPIER = '#f7f0e5';
+const CARTE = '#ffffff';
+const PANNEAU = '#faf6ee';
+const FILET = '#e8e1d5';
+const FILET_DOUX = '#efe8dc';
 
-export type EtatSeuil = keyof typeof SEUIL;
+const POLICE =
+	"'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+const POLICE_TITRE = "'Newsreader', Georgia, 'Times New Roman', serif";
 
-export type ChiffreEmail = {
-	libelle: string;
-	valeur: string;
-	etat: EtatSeuil;
-	precision?: string;
-};
+export type RangeeEmail = { readonly libelle: string; readonly valeur: string };
 
 export type BlocEmail = {
+	/** Ce que la boîte de réception affiche sous l'objet, avant qu'on ouvre. */
+	readonly apercu: string;
+	/** Plume en tête, quand c'est lui qui parle : le point du matin, la bienvenue. */
+	readonly plume?: boolean;
 	/** Le titre affiché en tête. Jamais l'objet du message, qui vit ailleurs. */
-	titre: string;
-	/** Le premier paragraphe. C'est lui qu'on lit dans l'aperçu. */
-	intro: string;
-	/** Les trois taux, quand l'e-mail en porte. */
-	chiffres?: readonly ChiffreEmail[];
+	readonly titre: string;
+	/** Le premier paragraphe. */
+	readonly intro: string;
+	/** Le chiffre en vedette, dans un panneau : son libellé, sa valeur, une précision. */
+	readonly montant?: {
+		readonly libelle: string;
+		readonly valeur: string;
+		readonly precision?: string;
+	};
+	/** Des faits en rangées, le libellé à gauche et la valeur à droite. */
+	readonly rangees?: readonly RangeeEmail[];
+	/** Une liste courte : ce qui s'est passé, ce qui attend. */
+	readonly points?: readonly string[];
 	/** Les paragraphes qui suivent. */
-	corps?: readonly string[];
-	bouton?: { libelle: string; url: string };
+	readonly corps?: readonly string[];
+	/** Le seul bouton. `secours` écrit l'adresse en clair dessous, pour les liens qui expirent. */
+	readonly bouton?: { readonly libelle: string; readonly url: string; readonly secours?: boolean };
+	/** Une précision sous le bouton : « Ce lien expire dans 20 minutes. » */
+	readonly apresBouton?: string;
 	/** La ligne discrète du bas, qui dit pourquoi ce message arrive. */
-	note?: string;
+	readonly note?: string;
 };
 
 /**
  * Échappe ce qui part dans du HTML.
  *
- * Tout ce qui traverse cette coquille vient de la base : un nom
- * d'établissement, un libellé de produit sorti d'une facture. Un `&` ou un `<`
- * dans un nom casserait le rendu, et un `<script>` dans un libellé serait pire.
+ * Tout ce qui traverse cette coquille vient de la base : un nom d'établissement, un
+ * libellé sorti d'une facture. Un `&` ou un `<` dans un nom casserait le rendu, et
+ * un `<script>` dans un libellé serait pire.
  */
 function echapper(valeur: string): string {
 	return valeur
@@ -80,8 +95,15 @@ function echapper(valeur: string): string {
 		.replaceAll("'", '&#39;');
 }
 
-const PILE_POLICES =
-	"-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+/** L'adresse des images : celle du déploiement, à défaut le site public. */
+function images(): string {
+	return (process.env.EMAIL_ASSET_URL ?? SITE_CANONIQUE).replace(/\/$/, '');
+}
+
+/** L'adresse du site, pour les liens du pied. */
+function site(): string {
+	return (process.env.SITE_URL ?? SITE_CANONIQUE).replace(/\/$/, '');
+}
 
 /**
  * Les séparateurs de milliers, écrits à la main plutôt que par `Intl`.
@@ -89,88 +111,147 @@ const PILE_POLICES =
  * Ces fonctions tournent dans le moteur de Convex, dont le support d'`Intl` est
  * partiel et dépend de la version. Un `toLocaleString('fr-FR')` qui retomberait
  * silencieusement sur le format anglais donnerait « 1,842 lignes » à un gérant
- * français, c'est-à-dire un nombre à virgule. Vingt lignes de code valent mieux
- * que ce risque-là.
+ * français, c'est-à-dire un nombre à virgule.
  *
  * L'espace est insécable : un montant coupé en fin de ligne se lit mal, et un
  * client de messagerie coupe où il veut.
  */
+/** Écrite par son code : tapée, elle est invisible, et un éditeur la remplace en silence. */
+const INSECABLE = String.fromCharCode(0x00a0);
+
 export function formaterEntier(n: number): string {
 	const signe = n < 0 ? '-' : '';
 	const chiffres = Math.abs(Math.round(n)).toString();
 	let sortie = '';
 	for (let i = 0; i < chiffres.length; i++) {
-		if (i > 0 && (chiffres.length - i) % 3 === 0) sortie += ' ';
+		if (i > 0 && (chiffres.length - i) % 3 === 0) sortie += INSECABLE;
 		sortie += chiffres[i];
 	}
 	return signe + sortie;
 }
 
 export function formaterEuros(n: number): string {
-	return `${formaterEntier(n)} €`;
+	return `${formaterEntier(n)}${INSECABLE}€`;
 }
 
-function ligneChiffre(c: ChiffreEmail): string {
-	return `<tr>
-<td style="padding:10px 0;border-bottom:1px solid ${FILET};font-family:${PILE_POLICES};font-size:15px;color:${TEXTE}">${echapper(c.libelle)}${
-		c.precision
-			? `<br><span style="font-size:13px;color:${TRES_DOUX}">${echapper(c.precision)}</span>`
-			: ''
-	}</td>
-<td align="right" style="padding:10px 0;border-bottom:1px solid ${FILET};font-family:${PILE_POLICES};font-size:22px;font-weight:700;color:${SEUIL[c.etat]};white-space:nowrap">${echapper(c.valeur)}</td>
-</tr>`;
+function paragraphe(texte: string, taille = 15): string {
+	return `<p style="margin:0 0 14px;font-family:${POLICE};font-size:${taille}px;line-height:1.65;color:${TEXTE}">${echapper(texte)}</p>`;
+}
+
+function blocMontant(m: NonNullable<BlocEmail['montant']>): string {
+	return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;margin:6px 0 22px">
+<tr><td bgcolor="${PANNEAU}" style="background-color:${PANNEAU};border:1px solid ${FILET_DOUX};border-radius:16px;padding:20px 22px">
+<p style="margin:0 0 6px;font-family:${POLICE};font-size:13px;font-weight:600;color:${DOUX}">${echapper(m.libelle)}</p>
+<p style="margin:0;font-family:${POLICE_TITRE};font-size:36px;line-height:1.1;font-weight:500;color:${ENCRE};white-space:nowrap">${echapper(m.valeur)}</p>
+${m.precision ? `<p style="margin:8px 0 0;font-family:${POLICE};font-size:13px;line-height:1.5;color:${DOUX}">${echapper(m.precision)}</p>` : ''}
+</td></tr></table>`;
+}
+
+function blocRangees(rangees: readonly RangeeEmail[]): string {
+	const lignes = rangees
+		.map(
+			(r, i) => `<tr>
+<td style="padding:12px 0;${i === 0 ? '' : `border-top:1px solid ${FILET_DOUX};`}font-family:${POLICE};font-size:14px;color:${DOUX}">${echapper(r.libelle)}</td>
+<td align="right" style="padding:12px 0 12px 16px;${i === 0 ? '' : `border-top:1px solid ${FILET_DOUX};`}font-family:${POLICE};font-size:14px;font-weight:600;color:${ENCRE};text-align:right">${echapper(r.valeur)}</td>
+</tr>`
+		)
+		.join('');
+	return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;margin:4px 0 22px;border-top:1px solid ${FILET};border-bottom:1px solid ${FILET}">${lignes}</table>`;
+}
+
+function blocPoints(points: readonly string[]): string {
+	const lignes = points
+		.map(
+			(p) => `<tr>
+<td valign="top" width="18" style="padding:3px 0 9px;font-family:${POLICE};font-size:15px;line-height:1.55;color:${MARQUE}">&#9679;</td>
+<td style="padding:3px 0 9px;font-family:${POLICE};font-size:15px;line-height:1.55;color:${TEXTE}">${echapper(p)}</td>
+</tr>`
+		)
+		.join('');
+	return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;margin:0 0 16px">${lignes}</table>`;
+}
+
+/**
+ * LE BOUTON : une cellule de tableau colorée, pas un `<a>` stylé seul. C'est la
+ * forme qu'Outlook rend avec sa hauteur et son fond. Il a la couleur du bouton
+ * principal de l'application : l'encre, le papier écrit dessus.
+ */
+function blocBouton(b: NonNullable<BlocEmail['bouton']>): string {
+	return `<table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;margin:10px 0 6px">
+<tr><td align="center" bgcolor="${ENCRE}" style="background-color:${ENCRE};border-radius:999px">
+<a href="${echapper(b.url)}" style="display:inline-block;padding:15px 30px;font-family:${POLICE};font-size:15px;font-weight:700;line-height:1;color:${PAPIER};text-decoration:none;border-radius:999px">${echapper(b.libelle)}</a>
+</td></tr></table>`;
+}
+
+function blocSecours(url: string): string {
+	return `<p style="margin:18px 0 0;font-family:${POLICE};font-size:12px;line-height:1.6;color:${DISCRET}">Le bouton ne s’ouvre pas&nbsp;? Copiez cette adresse dans votre navigateur&nbsp;:<br><a href="${echapper(url)}" style="color:${MARQUE};text-decoration:underline;word-break:break-all">${echapper(url)}</a></p>`;
 }
 
 export function coquilleHtml(bloc: BlocEmail): string {
-	const chiffres = bloc.chiffres?.length
-		? `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;margin:8px 0 20px">
-<tbody>${bloc.chiffres.map(ligneChiffre).join('')}</tbody>
-</table>`
+	const base = images();
+	const accueil = site();
+	const aide = getLegalEmailAddress();
+
+	const plume = bloc.plume
+		? `<img src="${base}/emails/plume.png" width="88" height="88" alt="" style="display:block;width:88px;height:88px;margin:0 0 14px;border:0">`
 		: '';
 
-	const corps = (bloc.corps ?? [])
-		.map(
-			(p) =>
-				`<p style="margin:0 0 14px;font-family:${PILE_POLICES};font-size:15px;line-height:1.65;color:${DOUX}">${echapper(p)}</p>`
-		)
-		.join('');
-
-	// Le bouton est une cellule de tableau colorée, pas un <a> stylé : c'est la
-	// seule forme qu'Outlook rend avec sa hauteur et son fond.
-	const bouton = bloc.bouton
-		? `<table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;margin:6px 0 4px">
-<tbody><tr><td align="center" bgcolor="${ENCRE}" style="border-radius:10px">
-<a href="${echapper(bloc.bouton.url)}" style="display:inline-block;padding:14px 26px;font-family:${PILE_POLICES};font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px">${echapper(bloc.bouton.libelle)}</a>
-</td></tr></tbody></table>`
-		: '';
-
-	const note = bloc.note
-		? `<p style="margin:22px 0 0;font-family:${PILE_POLICES};font-size:12px;line-height:1.6;color:${TRES_DOUX}">${echapper(bloc.note)}</p>`
-		: '';
+	const contenu = [
+		plume,
+		`<h1 class="titre" style="margin:0 0 12px;font-family:${POLICE_TITRE};font-size:28px;line-height:1.22;font-weight:500;letter-spacing:-0.01em;color:${ENCRE}">${echapper(bloc.titre)}</h1>`,
+		paragraphe(bloc.intro, 16),
+		bloc.montant ? blocMontant(bloc.montant) : '',
+		bloc.rangees?.length ? blocRangees(bloc.rangees) : '',
+		bloc.points?.length ? blocPoints(bloc.points) : '',
+		(bloc.corps ?? []).map((p) => paragraphe(p)).join(''),
+		bloc.bouton ? blocBouton(bloc.bouton) : '',
+		bloc.apresBouton
+			? `<p style="margin:10px 0 0;font-family:${POLICE};font-size:13px;line-height:1.55;color:${DOUX}">${echapper(bloc.apresBouton)}</p>`
+			: '',
+		bloc.bouton?.secours ? blocSecours(bloc.bouton.url) : '',
+		bloc.note
+			? `<p style="margin:28px 0 0;padding-top:18px;border-top:1px solid ${FILET_DOUX};font-family:${POLICE};font-size:13px;line-height:1.6;color:${DISCRET}">${echapper(bloc.note)}</p>`
+			: ''
+	].join('\n');
 
 	return `<!DOCTYPE html>
 <html lang="fr"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>${echapper(bloc.titre)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+:root { color-scheme: light; }
+@media (max-width: 600px) {
+  .cadre { padding: 20px 12px 32px !important; }
+  .carte { padding: 28px 22px 26px !important; border-radius: 18px !important; }
+  .titre { font-size: 25px !important; }
+}
+</style>
 </head>
-<body style="margin:0;padding:0;background-color:${FOND}">
-<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;background-color:${FOND}">
-<tbody><tr><td align="center" style="padding:28px 12px">
-<table width="600" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;max-width:600px;width:100%">
-<tbody>
-<tr><td style="padding:0 0 18px;font-family:${PILE_POLICES};font-size:19px;font-weight:700;letter-spacing:1px;color:${ENCRE}">LETIKETTE</td></tr>
-<tr><td bgcolor="${CARTE}" style="border:1px solid ${FILET};border-radius:16px;padding:28px">
-<h1 style="margin:0 0 12px;font-family:${PILE_POLICES};font-size:22px;line-height:1.3;font-weight:800;color:${TEXTE}">${echapper(bloc.titre)}</h1>
-<p style="margin:0 0 16px;font-family:${PILE_POLICES};font-size:16px;line-height:1.65;color:${TEXTE}">${echapper(bloc.intro)}</p>
-${chiffres}${corps}${bouton}${note}
+<body style="margin:0;padding:0;background-color:${PAPIER};-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:${PAPIER}">${echapper(bloc.apercu)}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;background-color:${PAPIER}">
+<tr><td align="center" class="cadre" style="padding:36px 16px 44px">
+<table width="560" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;max-width:560px;width:100%">
+<tr><td style="padding:0 6px 20px">
+<table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse"><tr>
+<td style="padding:0 10px 0 0" valign="middle"><img src="${base}/emails/marque.png" width="32" height="32" alt="" style="display:block;width:32px;height:32px;border:0"></td>
+<td valign="middle" style="font-family:${POLICE_TITRE};font-size:21px;font-weight:500;color:${ENCRE};letter-spacing:-0.01em">Letikette</td>
+</tr></table>
 </td></tr>
-<tr><td style="padding:18px 4px 0;font-family:${PILE_POLICES};font-size:12px;line-height:1.6;color:${TRES_DOUX}">
-Letikette mesure vos cr&eacute;ances impay&eacute;es &agrave; partir de vos factures, en surveille les &eacute;ch&eacute;ances et en produit le d&eacute;compte. Les relances, les proc&eacute;dures et les encaissements restent conduits par votre entreprise ou par le professionnel qu&rsquo;elle mandate.
+<tr><td class="carte" bgcolor="${CARTE}" style="background-color:${CARTE};border:1px solid ${FILET};border-radius:20px;padding:36px 36px 32px">
+${contenu}
 </td></tr>
-</tbody></table>
-</td></tr></tbody></table>
+<tr><td align="center" style="padding:24px 12px 0;font-family:${POLICE};font-size:12px;line-height:1.7;color:${DISCRET}">
+<a href="${accueil}/app" style="color:${DOUX};text-decoration:none;font-weight:600">Ouvrir Letikette</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="mailto:${aide}" style="color:${DOUX};text-decoration:none;font-weight:600">Nous écrire</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="${accueil}/politique-de-confidentialite" style="color:${DOUX};text-decoration:none;font-weight:600">Confidentialité</a><br>
+${echapper(LEGAL_CONFIG.brandName)}, ${echapper(LEGAL_CONFIG.address)}
+</td></tr>
+</table>
+</td></tr></table>
 </body></html>`;
 }
 
@@ -182,26 +263,38 @@ Letikette mesure vos cr&eacute;ances impay&eacute;es &agrave; partir de vos fact
  * versions ne peuvent pas raconter deux choses différentes.
  */
 export function coquilleTexte(bloc: BlocEmail): string {
-	const morceaux: string[] = ['LETIKETTE', '', bloc.titre, '', bloc.intro];
+	const morceaux: string[] = [bloc.titre, '', bloc.intro];
 
-	if (bloc.chiffres?.length) {
-		morceaux.push('');
-		for (const c of bloc.chiffres) {
-			morceaux.push(`  ${c.libelle} : ${c.valeur}${c.precision ? ` (${c.precision})` : ''}`);
-		}
+	if (bloc.montant) {
+		morceaux.push(
+			'',
+			`${bloc.montant.libelle} : ${bloc.montant.valeur}`,
+			...(bloc.montant.precision ? [bloc.montant.precision] : [])
+		);
+	}
+	if (bloc.rangees?.length) {
+		morceaux.push('', ...bloc.rangees.map((r) => `${r.libelle} : ${r.valeur}`));
+	}
+	if (bloc.points?.length) {
+		morceaux.push('', ...bloc.points.map((p) => `- ${p}`));
 	}
 	if (bloc.corps?.length) {
-		morceaux.push('', ...bloc.corps.flatMap((p) => [p, '']));
+		morceaux.push('', ...bloc.corps.flatMap((p, i) => (i === 0 ? [p] : ['', p])));
 	}
 	if (bloc.bouton) {
 		morceaux.push('', `${bloc.bouton.libelle} : ${bloc.bouton.url}`);
+	}
+	if (bloc.apresBouton) {
+		morceaux.push(bloc.apresBouton);
 	}
 	if (bloc.note) {
 		morceaux.push('', bloc.note);
 	}
 	morceaux.push(
 		'',
-		"Letikette mesure vos creances impayees a partir de vos factures, en surveille les echeances et en produit le decompte. Les relances, les procedures et les encaissements restent conduits par votre entreprise ou par le professionnel qu'elle mandate."
+		'--',
+		`${LEGAL_CONFIG.brandName}, ${LEGAL_CONFIG.address}`,
+		`Nous écrire : ${getLegalEmailAddress()}`
 	);
 
 	return morceaux.join('\n');

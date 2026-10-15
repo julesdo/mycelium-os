@@ -5,7 +5,7 @@ import { briefingHtml, briefingTexte, type BriefingData } from '../modeles/brief
  * Le briefing du matin.
  *
  * Ce module ne fait qu'assembler un `BlocEmail` : la coquille elle-même
- * (échappement, mise en forme, couleurs de seuil) est déjà vérifiée par
+ * (échappement, mise en forme, aucune couleur de seuil) est déjà vérifiée par
  * `produit.test.ts`. Ce qui reste à vérifier ici est propre au briefing :
  * `nomEntreprise` et `lignes` viennent de la base — un nom d'entreprise n'est
  * pas un champ contrôlé — et la branche « rien à faire » ne doit fuiter ni
@@ -18,7 +18,7 @@ const BASE: BriefingData = {
 	intro: '1 point critique sur 1 au total.',
 	lignes: [
 		'1 point critique sur 1 au total.',
-		'Le détail de chaque montant est décomposable dans le produit.'
+		'Le détail de chaque montant, facture par facture, se lit dans Letikette.'
 	],
 	action: 'Relancer la facture F-2024-118 avant le 12 septembre.',
 	montantLisible: '1 842 €',
@@ -28,11 +28,11 @@ const BASE: BriefingData = {
 describe('le briefing quand il y a une action', () => {
 	it('affiche le bouton vers le produit', () => {
 		const html = briefingHtml(BASE);
-		expect(html).toContain('Ouvrir le produit');
+		expect(html).toContain('Ouvrir Letikette');
 		expect(html).toContain(BASE.url);
 	});
 
-	it("porte l'action du jour dans la note, en HTML comme en texte", () => {
+	it("porte l'action du jour, en HTML comme en texte", () => {
 		const html = briefingHtml(BASE);
 		const texte = briefingTexte(BASE);
 		expect(html).toContain('À faire aujourd');
@@ -50,19 +50,15 @@ describe('le briefing quand il y a une action', () => {
 describe('le briefing quand il n’y a rien à faire', () => {
 	const calme: BriefingData = { ...BASE, action: null };
 
-	it('ne pose aucun bouton', () => {
+	it('ne pose aucun bouton vers le dossier', () => {
 		const html = briefingHtml(calme);
-		expect(html).not.toContain('Ouvrir le produit');
-		expect(html).not.toContain('<a href');
+		expect(html).not.toContain(BASE.url);
+		expect(briefingTexte(calme)).not.toContain(BASE.url);
 	});
 
-	it('dit que rien ne réclame d’attention, jamais « à faire aujourd’hui »', () => {
-		const html = briefingHtml(calme);
-		const texte = briefingTexte(calme);
-		expect(html).toContain('Rien ne réclame votre attention');
-		expect(html).not.toContain('À faire aujourd');
-		expect(texte).toContain('Rien ne réclame votre attention');
-		expect(texte).not.toContain('À faire aujourd');
+	it('ne dit jamais « à faire aujourd’hui »', () => {
+		expect(briefingHtml(calme)).not.toContain('À faire aujourd');
+		expect(briefingTexte(calme)).not.toContain('À faire aujourd');
 	});
 
 	it('nomme l’entreprise suivie dans la note', () => {
@@ -82,7 +78,7 @@ describe('les données venues de la base', () => {
 		expect(html).toContain('&lt;script&gt;');
 	});
 
-	it('échappe une ligne de briefing injectée dans le corps', () => {
+	it('échappe une ligne de briefing injectée dans la liste', () => {
 		const html = briefingHtml({ ...BASE, lignes: [PIEGE] });
 		expect(html).not.toContain('<script>');
 	});
@@ -101,9 +97,15 @@ describe('le montant identifié', () => {
 		expect(briefingTexte(d)).toContain('12 480,50 €');
 	});
 
-	it('porte l’étiquette « Identifié à ce jour », en vert : un fait constaté, pas un seuil raté', () => {
+	it('dit ce qu’il compte : le TTC, hors pénalités et frais', () => {
 		const html = briefingHtml(BASE);
-		expect(html).toContain('Identifié à ce jour');
-		expect(html).toContain('#05893e');
+		expect(html).toContain('hors pénalités de retard et frais de recouvrement');
+		expect(html).not.toMatch(/pénalités comprises/);
+	});
+
+	it('ne s’affiche pas quand rien n’est dû', () => {
+		const d: BriefingData = { ...BASE, action: null, montantLisible: null };
+		expect(briefingHtml(d)).not.toContain('Factures échues');
+		expect(briefingTexte(d)).not.toContain('Factures échues');
 	});
 });

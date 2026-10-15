@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-	coquilleHtml,
-	coquilleTexte,
-	formaterEntier,
-	formaterEuros
-} from '../modeles/disposition';
+import { coquilleHtml, coquilleTexte, formaterEntier, formaterEuros } from '../modeles/disposition';
 
 /**
  * Les e-mails produit.
@@ -57,59 +52,90 @@ describe("l'échappement", () => {
 	// Les libellés viennent de factures passées à l'OCR. Un « & » y est banal,
 	// et rien n'interdit à un fournisseur d'écrire ce qu'il veut sur une ligne.
 	const PIEGE = `<script>alert("x")</script> & 'co'`;
+	const BASE = { apercu: 'Aperçu', titre: 'Bilan', intro: 'Bonjour.' };
 
 	it('neutralise le HTML injecté dans un titre', () => {
-		const html = coquilleHtml({ titre: PIEGE, intro: 'peu importe' });
+		const html = coquilleHtml({ ...BASE, titre: PIEGE });
 		expect(html).not.toContain('<script>');
 		expect(html).toContain('&lt;script&gt;');
 		expect(html).toContain('&amp;');
 	});
 
-	it('neutralise le HTML injecté dans un chiffre', () => {
+	it('neutralise le HTML injecté dans un montant, une rangée et un point', () => {
 		const html = coquilleHtml({
-			titre: 'Bilan',
-			intro: 'Voici vos taux.',
-			chiffres: [{ libelle: PIEGE, valeur: '39 %', etat: 'manque' }]
+			...BASE,
+			montant: { libelle: PIEGE, valeur: PIEGE, precision: PIEGE },
+			rangees: [{ libelle: PIEGE, valeur: PIEGE }],
+			points: [PIEGE]
 		});
 		expect(html).not.toContain('<script>');
 	});
 
-	it("neutralise le HTML injecté dans l'adresse d'un bouton", () => {
+	it("neutralise le HTML injecté dans l'aperçu et dans l'adresse d'un bouton", () => {
 		const html = coquilleHtml({
-			titre: 'Bilan',
-			intro: 'Voici vos taux.',
-			bouton: { libelle: 'Ouvrir', url: 'https://x.test/"><script>alert(1)</script>' }
+			...BASE,
+			apercu: PIEGE,
+			bouton: {
+				libelle: 'Ouvrir',
+				url: 'https://x.test/"><script>alert(1)</script>',
+				secours: true
+			}
 		});
 		expect(html).not.toContain('<script>');
 	});
 
 	it('laisse la version texte lisible, sans entités HTML', () => {
-		const texte = coquilleTexte({ titre: 'Carotte & compagnie', intro: 'Bonjour.' });
+		const texte = coquilleTexte({ ...BASE, titre: 'Carotte & compagnie' });
 		expect(texte).toContain('Carotte & compagnie');
 		expect(texte).not.toContain('&amp;');
 	});
 });
 
+describe('les deux versions disent la même chose', () => {
+	const bloc = {
+		apercu: 'Aperçu',
+		titre: 'Votre point du matin',
+		intro: 'Une facture attend.',
+		montant: { libelle: 'Factures échues', valeur: '1 842,00 €' },
+		rangees: [{ libelle: 'Formule', valeur: 'Équipe' }],
+		points: ['Une relance est partie.'],
+		bouton: { libelle: 'Ouvrir Letikette', url: 'https://www.letikette.com/app' },
+		apresBouton: 'Ce lien est valable 20 minutes.',
+		note: 'Vous recevez ce message parce que…'
+	};
+
+	it('porte chaque morceau du bloc dans le HTML et dans le texte', () => {
+		const html = coquilleHtml(bloc);
+		const texte = coquilleTexte(bloc);
+		for (const morceau of [
+			'1 842,00 €',
+			'Équipe',
+			'Une relance est partie.',
+			bloc.bouton.url,
+			bloc.apresBouton
+		]) {
+			expect(html).toContain(morceau);
+			expect(texte).toContain(morceau);
+		}
+	});
+});
+
 describe('les couleurs de seuil', () => {
 	// Le vert, l'ambre et le rouge ne veulent dire qu'une chose dans tout le
-	// produit : au-dessus du seuil, tout près, en dessous. Un e-mail qui les
-	// emploierait autrement mentirait sur une conformité.
-	const html = (etat: 'atteint' | 'proche' | 'manque') =>
-		coquilleHtml({
+	// produit : au-dessus du seuil, tout près, en dessous. Un montant dû n'est
+	// ni l'un ni l'autre, et un e-mail ne les emploie pour rien d'autre.
+	it("n'apparaissent nulle part dans la coquille", () => {
+		const html = coquilleHtml({
+			apercu: 'Aperçu',
 			titre: 'Bilan',
-			intro: 'Voici vos taux.',
-			chiffres: [{ libelle: 'Durable', valeur: '39 %', etat }]
-		});
-
-	it('emploie le vert pour un seuil atteint', () => {
-		expect(html('atteint')).toContain('#05893e');
-	});
-
-	it("emploie l'ambre quand le seuil est proche", () => {
-		expect(html('proche')).toContain('#de9300');
-	});
-
-	it('emploie le rouge quand le seuil manque', () => {
-		expect(html('manque')).toContain('#c92f33');
+			intro: 'Bonjour.',
+			montant: { libelle: 'Dû', valeur: '12 €', precision: 'TTC' },
+			rangees: [{ libelle: 'A', valeur: 'B' }],
+			points: ['Un point'],
+			bouton: { libelle: 'Ouvrir', url: 'https://x.test' }
+		}).toLowerCase();
+		for (const seuil of ['#05893e', '#de9300', '#c92f33']) {
+			expect(html).not.toContain(seuil);
+		}
 	});
 });

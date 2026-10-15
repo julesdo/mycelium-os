@@ -7,13 +7,13 @@ export type BriefingData = {
 	lignes: readonly string[];
 	/** L'action du jour, ou `null` quand il n'y a rien à faire. */
 	action: string | null;
-	/** Déjà formaté par l'appelant — ce module ne calcule rien. */
-	montantLisible: string;
+	/** Déjà formaté par l'appelant : ce module ne calcule rien. `null` quand rien n'est dû. */
+	montantLisible: string | null;
 	url: string;
 };
 
 /**
- * LE BRIEFING DU MATIN.
+ * LE POINT DU MATIN, SIGNÉ PLUME (refait le 15/10/2026).
  *
  * ⚠️ IL PART VERS LE CLIENT, JAMAIS VERS LE DÉBITEUR. C'est la ligne rouge n° 1
  * du produit, et elle se tient ici comme ailleurs : rien dans ce gabarit ne
@@ -22,59 +22,49 @@ export type BriefingData = {
  * LE MONTANT ARRIVE DÉJÀ FORMATÉ. Ce module ne fait aucun calcul et n'importe
  * aucun moteur : un chiffre formaté à deux endroits différemment, c'est deux
  * chiffres différents aux yeux du lecteur.
+ *
+ * ⚠️ NE JAMAIS ÉCRIRE « pénalités comprises » NI RIEN D'ÉQUIVALENT SOUS LE MONTANT.
+ * `montantLisible` vient de `flux.montantIdentifie`, qui additionne UNIQUEMENT le
+ * TTC des factures échues ou proches de leur date limite, dédupliquées par facture
+ * (`verticales/recouvrement/surveillance.ts`) : le principal, sans un centime
+ * d'intérêt ni d'indemnité. Sur un produit dont l'argument entier est
+ * l'exactitude, un chiffre juste sous une étiquette fausse est pire qu'un chiffre
+ * absent.
  */
+
 /**
  * LE CHEMIN POUR NE PLUS LE RECEVOIR, écrit dans chaque envoi (09/10/2026) : le
  * réglage vit dans le profil de chaque membre (`briefing.reglerPointDuMatin`).
  */
-function avecLeChemin(note: string): string {
-	const fin = /[.!?…]$/.test(note.trim()) ? ' ' : '. ';
-	return `${note.trim()}${fin}Pour ne plus le recevoir par e-mail : Votre compte, puis Votre profil.`;
-}
+const CHEMIN = 'Pour ne plus le recevoir par e-mail : Votre compte, puis Votre profil.';
 
 function bloc(d: BriefingData): BlocEmail {
 	return {
+		apercu: d.intro,
+		plume: true,
 		titre: d.titre,
 		intro: d.intro,
-		chiffres: [
-			{
-				libelle: 'Identifié à ce jour',
-				valeur: d.montantLisible,
-				etat: 'atteint',
-				// ⚠️ NE JAMAIS ÉCRIRE « intérêts inclus » NI RIEN D'ÉQUIVALENT ICI.
-				// `montantLisible` vient de `flux.montantIdentifie`, qui ADDITIONNE
-				// UNIQUEMENT le `montant` des événements FACTURE_ECHUE et
-				// PRESCRIPTION_PROCHE, dédupliqués par facture — le TTC de chaque
-				// facture (`montantExigible = depuisCentimes(facture.montantTTC)`,
-				// sans un centime d'intérêt), jamais deux fois la même.
-				//
-				// LES AUTRES ÉVÉNEMENTS DU JOUR N'Y ENTRENT PAS, ET C'EST VOULU. Le
-				// total d'une créance qualifiée, le montant en jeu d'une échéance de
-				// procédure, l'encours d'un débiteur dégradé sont des VUES AGRÉGÉES
-				// de la MÊME monnaie que les factures qui les composent : les
-				// additionner à leurs propres composants serait un double compte —
-				// une facture échue, proche de sa prescription, portée par une
-				// créance mûre chez un débiteur qui se dégrade produirait quatre
-				// événements sur une seule somme. `montantIdentifie` (voir
-				// `verticales/recouvrement/surveillance.ts`) l'évite en ne retenant
-				// que la facture, l'unité atomique de ce qui est dû.
-				//
-				// C'est donc le principal TTC des factures identifiées ci-dessous,
-				// et RIEN D'AUTRE : aucun intérêt de retard ni indemnité forfaitaire
-				// n'y entre. Sur un produit dont l'argument entier est l'exactitude,
-				// un chiffre juste sous une étiquette fausse est pire qu'un chiffre
-				// absent.
-				precision:
-					'principal TTC de vos factures identifiées ci-dessous, hors intérêts et indemnité forfaitaire'
-			}
-		],
-		corps: d.lignes,
-		bouton: d.action === null ? undefined : { libelle: 'Ouvrir le produit', url: d.url },
-		note: avecLeChemin(
-			d.action === null
-				? `Vous recevez ce message parce que ${d.nomEntreprise} est suivie par Letikette. Rien ne réclame votre attention aujourd’hui.`
-				: `À faire aujourd’hui : ${d.action}`
-		)
+		...(d.montantLisible === null
+			? {}
+			: {
+					montant: {
+						libelle: 'Factures échues, à ce jour',
+						valeur: d.montantLisible,
+						precision:
+							'Le montant TTC de vos factures identifiées, hors pénalités de retard et frais de recouvrement.'
+					}
+				}),
+		// ⚠️ UN JOUR CALME N'A NI ACTION NI BOUTON : rien ne pousse à ouvrir
+		// l'application quand rien ne l'attend. Son introduction le dit déjà ; ses
+		// lignes (« Aucun point d'attention ») le rediraient.
+		...(d.action === null
+			? {}
+			: {
+					points: d.lignes,
+					corps: [`À faire aujourd’hui : ${d.action}`],
+					bouton: { libelle: 'Ouvrir Letikette', url: d.url }
+				}),
+		note: `Vous recevez ce point parce que ${d.nomEntreprise} est suivie par Letikette. ${CHEMIN}`
 	};
 }
 

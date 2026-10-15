@@ -171,7 +171,8 @@ export interface Briefing {
 	readonly montantIdentifie: Montant;
 }
 
-const LIGNE_DECOMPOSABILITE = 'Le détail de chaque montant est décomposable dans le produit.';
+const LIGNE_DECOMPOSABILITE =
+	'Le détail de chaque montant, facture par facture, se lit dans Letikette.';
 
 /**
  * Le briefing du matin : trois lignes et UNE action.
@@ -216,7 +217,7 @@ export function composerBriefing(
 ): Briefing {
 	if (evenements.length === 0) {
 		return {
-			titre: 'Rien ne meurt cette semaine',
+			titre: 'Rien d’urgent cette semaine',
 			intro: 'Aucune échéance ne réclame votre attention. Vos délais sont surveillés.',
 			lignes: ['Aucun point d’attention.'],
 			action: null,

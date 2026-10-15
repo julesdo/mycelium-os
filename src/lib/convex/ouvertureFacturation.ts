@@ -5,6 +5,7 @@ import { resend, assertResendApiKey } from './emails/resend';
 import { rappelAbonnementHtml, rappelAbonnementTexte } from './emails/modeles/abonnement';
 import { requireEnv } from './env';
 import { DUREE_ESSAI_JOURS, FORMULES, GRILLE } from '../config/tarifs';
+import { expediteurNomme } from './emails/helpers';
 
 /**
  * L'OUVERTURE DE LA FACTURATION — le préavis aux comptes qui existent déjà
@@ -83,7 +84,7 @@ export const prevenir = internalMutation({
 		try {
 			assertResendApiKey();
 			email = {
-				expediteur: requireEnv('AUTH_EMAIL', { feature: 'ouverture de la facturation' }),
+				expediteur: expediteurNomme(requireEnv('AUTH_EMAIL', { feature: 'ouverture de la facturation' })),
 				url: `${requireEnv('SITE_URL', { feature: 'ouverture de la facturation' })}/app/compte?ouvrir=facturation`
 			};
 		} catch {

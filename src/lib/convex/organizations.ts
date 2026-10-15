@@ -7,7 +7,7 @@ import { resend, assertResendApiKey } from './emails/resend';
 import { invitationHtml, invitationTexte } from './emails/modeles';
 import { assertSeatAvailable, resolveEffectivePlan } from './billing';
 import { requireEnv } from './env';
-import { shouldSkipTestEmail } from './emails/helpers';
+import { expediteurNomme, shouldSkipTestEmail } from './emails/helpers';
 import { MS_VALIDITE_INVITATION } from '../config/invitations';
 import { vEtatCritere } from './recouvrement/tables';
 import type { Id } from './_generated/dataModel';
@@ -759,7 +759,7 @@ export const sendOrgInvitationEmail = internalAction({
 		};
 
 		await resend.sendEmail(ctx, {
-			from: requireEnv('AUTH_EMAIL', { feature: 'invitation email' }),
+			from: expediteurNomme(requireEnv('AUTH_EMAIL', { feature: 'invitation email' })),
 			to: args.email,
 			subject: `Rejoindre ${args.orgName} sur Letikette`,
 			html: invitationHtml(donnees),

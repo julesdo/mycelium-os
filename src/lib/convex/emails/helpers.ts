@@ -49,3 +49,12 @@ Reply anytime. I read every response.
 {{founderName}}
 {{founderTitle}}`
 } as const;
+
+/**
+ * L'EXPÉDITEUR, AVEC UN NOM (15/10/2026). `AUTH_EMAIL` est une adresse nue : la
+ * boîte de réception affichait « bonjour » à la place d'une marque. Un nom devant
+ * l'adresse, sauf si la variable en porte déjà un.
+ */
+export function expediteurNomme(adresse: string, nom = 'Letikette'): string {
+	return adresse.includes('<') ? adresse : `${nom} <${adresse.trim()}>`;
+}

@@ -13,6 +13,7 @@ import {
 	type EtatPourRappels,
 	type RappelDu
 } from '../paiement/rappels';
+import { expediteurNomme } from './emails/helpers';
 
 /**
  * LES RAPPELS D'ABONNEMENT, CHAQUE MATIN (14/10/2026).
@@ -153,7 +154,7 @@ async function envoyerLesEmails(
 	let url: string;
 	try {
 		assertResendApiKey();
-		expediteur = requireEnv('AUTH_EMAIL', { feature: 'rappels d’abonnement' });
+		expediteur = expediteurNomme(requireEnv('AUTH_EMAIL', { feature: 'rappels d’abonnement' }));
 		url = `${requireEnv('SITE_URL', { feature: 'rappels d’abonnement' })}/app/compte?ouvrir=facturation`;
 	} catch {
 		return;

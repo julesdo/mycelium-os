@@ -16,13 +16,18 @@ export type RappelAbonnementData = {
  *
  * Le texte vient de `texteDuRappel` : le même que la notification, mot pour
  * mot, pour que l'e-mail et l'écran ne disent jamais deux choses.
+ *
+ * LE PRÉLÈVEMENT NE SURPREND JAMAIS : le titre porte la date, le message le
+ * montant, et le bouton mène à l'endroit où l'on change ou résilie. Rien ici ne
+ * pousse à rester.
  */
 function bloc(d: RappelAbonnementData): BlocEmail {
 	return {
+		apercu: d.message,
 		titre: d.titre,
 		intro: d.message,
-		bouton: { libelle: 'Ouvrir mon abonnement', url: d.url },
-		note: `Vous recevez ce message parce que vous administrez ${d.nomEntreprise} sur Letikette. Paddle, notre revendeur, encaisse et envoie la facture.`
+		bouton: { libelle: 'Voir mon abonnement', url: d.url },
+		note: `Vous recevez ce message parce que vous administrez ${d.nomEntreprise} sur Letikette. Le paiement est encaissé par Paddle, notre revendeur, qui vous envoie la facture.`
 	};
 }
 

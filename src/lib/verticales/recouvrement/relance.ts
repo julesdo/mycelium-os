@@ -265,17 +265,14 @@ function rappel(elements: ElementsRelance): Relance {
 					`Vous nous aviez annoncé un règlement${
 						promesse.montant === undefined ? '' : ` de ${versEuros(promesse.montant)} €`
 					} pour le ${enFrancais(promesse.le)}.`,
-					'Sauf erreur de notre part, il ne nous est pas parvenu, et la ou les factures',
-					'suivantes restent à régler :'
+					'Sauf erreur de notre part, il ne nous est pas parvenu, et la ou les factures suivantes restent à régler :'
 				]
 			: second
 				? [
-						'Nous revenons vers vous : sauf erreur de notre part, le règlement de la ou des',
-						'factures suivantes ne nous est toujours pas parvenu :'
+						'Nous revenons vers vous : sauf erreur de notre part, le règlement de la ou des factures suivantes ne nous est toujours pas parvenu :'
 					]
 				: [
-						'Sauf erreur de notre part, le règlement de la ou des factures suivantes ne nous est',
-						'pas encore parvenu :'
+						'Sauf erreur de notre part, le règlement de la ou des factures suivantes ne nous est pas encore parvenu :'
 					];
 	return {
 		disponible: true,

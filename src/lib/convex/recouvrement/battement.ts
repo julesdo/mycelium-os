@@ -17,6 +17,7 @@ import { briefingHtml, briefingTexte } from '../emails/modeles/briefing';
 import { requireEnv } from '../env';
 import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
+import { expediteurNomme } from '../emails/helpers';
 
 /**
  * LE BATTEMENT QUOTIDIEN — la plomberie, et rien d'autre.
@@ -99,7 +100,11 @@ async function envoyer(
 	// Après le retour anticipé ci-dessus : on ne vérifie une clé qu'au moment où
 	// on va effectivement s'en servir.
 	assertResendApiKey();
-	const expediteur = requireEnv('AUTH_EMAIL', { feature: 'briefing quotidien' });
+	// Le point du matin, c'est Plume qui le fait : il le signe.
+	const expediteur = expediteurNomme(
+		requireEnv('AUTH_EMAIL', { feature: 'briefing quotidien' }),
+		'Plume de Letikette'
+	);
 	const url = requireEnv('SITE_URL', { feature: 'briefing quotidien' }) + '/app';
 
 	for (const membre of membres) {
@@ -117,7 +122,9 @@ async function envoyer(
 			intro: briefing.intro,
 			lignes: briefing.lignes,
 			action: briefing.action,
-			montantLisible: versEuros(briefing.montantIdentifie),
+			// Rien de dû, rien d'affiché : le vide ne se montre pas en cadran à zéro.
+			montantLisible:
+				briefing.montantIdentifie > 0n ? `${versEuros(briefing.montantIdentifie)} €` : null,
 			url
 		};
 

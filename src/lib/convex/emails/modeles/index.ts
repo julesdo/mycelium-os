@@ -1,21 +1,9 @@
-// Le baril des modeles d'e-mail.
+// Le baril des modèles d'e-mail, tous sur la coquille commune (`disposition.ts`).
 //
-// Les extensions .js sont retirees : elles pointaient vers des fichiers .js qui
-// n'existent pas, et esbuild — le bundler de Convex — les resout litteralement
-// la ou TypeScript les remappe silencieusement vers .ts. Le deploiement echouait
-// donc sur un import que le typage declarait valide.
-
-// Les e-mails produit, ecrits a la main, en francais, sur une coquille
-// commune. Ils ne suivent pas la forme des six modeles historiques, qui sont
-// des artefacts generes depuis Svelte : voir l'en-tete de `disposition.ts`.
+// Les extensions .js sont absentes exprès : esbuild — le bundler de Convex — les
+// résout littéralement, là où TypeScript les remappe vers .ts.
 export * from './disposition';
-
-export * from './verification';
-export * from './verificationCode';
-export * from './passwordReset';
-export * from './adminReplyNotification';
-export * from './newTicketAdminNotification';
-export * from './newUserSignupNotification';
+export * from './compte';
 export * from './invitation';
 export * from './briefing';
 export * from './abonnement';
