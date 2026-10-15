@@ -120,10 +120,17 @@ comparateurs tiers ; ils sont à reconfirmer chez l'éditeur au moment de souscr
 Smartlead (équivalent, moins d'intégrations), Apollo, Lusha et Kaspr (pensés pour LinkedIn et les
 grandes entreprises), l'automatisation de LinkedIn (conditions d'utilisation).
 
-**L'infrastructure :** trois domaines secondaires (jamais `letikette.com`), deux boîtes chacun,
-SPF, DKIM et DMARC alignés, environ 30 envois par boîte et par jour une fois préchauffées : **3 500
-à 4 000 e-mails par mois**. Le préchauffage prend trois semaines : les domaines s'achètent le
-premier jour.
+**L'infrastructure :** les **boîtes « clés en main » d'Instantly** (5 $ par boîte Google et par
+mois, 15 $ par domaine et par an) : Instantly achète les domaines, règle SPF, DKIM et DMARC, et les
+boîtes vivent dans un compte Google séparé de celui de Letikette. **Jamais le Google Workspace de
+`bonjour@letikette.com` ni un alias** (le fondateur, 16/10/2026 : « J'en ai déjà un avec
+bonjour@letikette.com ») : un alias envoie par le même compte, Instantly le déconseille, et une
+suspension emporterait la boîte principale ; une prospection depuis `letikette.com` abîmerait aussi
+la réputation du domaine qui envoie les e-mails du produit. **On commence à 2 domaines × 2 boîtes**
+(environ 30 envois par boîte et par jour une fois préchauffées : ~2 400 e-mails par mois), et l'on
+passe à 6 boîtes quand les premières semaines tiennent leurs chiffres. Écarté : Google Workspace
+en propre (6,80 € par boîte et par mois), Mailforge (2-3 $, serveurs partagés, préchauffage en sus).
+Le préchauffage prend trois semaines : les boîtes s'ouvrent le premier jour.
 
 **Le cadre :** l'émetteur est Letikette, identifié avec ses mentions ; chaque e-mail porte un lien
 de désinscription en un clic ; une liste d'opposition commune à tous les outils, tenue dans
@@ -161,18 +168,18 @@ connu.
 |---|---|
 | Twenty, 2 sièges à l'année | ~18 € |
 | Instantly, offre avec API, à l'année | ~72 € |
-| 6 boîtes d'envoi et 3 domaines | ~45 € |
+| 4 boîtes clés en main et 2 domaines (Instantly) | ~20 € |
 | Icypeas ou FullEnrich | ~35-50 € |
 | MillionVerifier | ~15 € |
 | Claude (point du lundi, brouillons) | ~20 € |
-| **Total de base** | **~200-220 €** |
+| **Total de base** | **~175-195 €** |
 | Societeinfo, si le site manque | +99 € |
 | Publicité, en test | +300-500 € |
 
 ## 5. L'économie, en hypothèse à mesurer
 
-3 700 e-mails par mois, 1 à 2 % de clics, 20 % d'inscription parmi eux, 20 à 25 % de passage au
-payant : 2 à 4 abonnés par mois, un coût d'acquisition de 60 à 110 €, remboursé en deux à trois
+2 400 e-mails par mois au départ (3 700 à six boîtes), 1 à 2 % de clics, 20 % d'inscription parmi eux, 20 à 25 % de passage au
+payant : 1 à 3 abonnés par mois au départ, 2 à 4 à six boîtes, un coût d'acquisition de 60 à 110 €, remboursé en deux à trois
 mois sur Équipe. **Ce n'est pas une promesse** : le moteur mesure chaque taux dès la première
 semaine, et si la prospection ne tient pas ces chiffres en six semaines, le point du lundi le dit et
 le budget va au contenu.
@@ -193,12 +200,11 @@ le budget va au contenu.
 
 **Tout de suite (le préchauffage prend trois semaines) :**
 
-1. Acheter trois domaines secondaires proches de la marque (par exemple sur OVH ou Gandi), aucun
-   n'étant `letikette.com`.
-2. Ouvrir deux boîtes par domaine (Google Workspace, au prénom du fondateur), avec SPF, DKIM et
-   DMARC ; chaque domaine redirige son site vers `www.letikette.com`.
-3. Ouvrir un compte Instantly (offre avec API), y brancher les six boîtes et lancer le
-   préchauffage.
+1. Ouvrir un compte Instantly (offre avec API).
+2. Y commander deux domaines secondaires proches de la marque (jamais `letikette.com`) et deux
+   boîtes « clés en main » par domaine, au prénom du fondateur ; Instantly règle SPF, DKIM et
+   DMARC. Chaque domaine redirige son site vers `www.letikette.com`.
+3. Lancer le préchauffage des quatre boîtes.
 
 **Pour le sous-projet 1 :** le compte Twenty et sa clé d'API ; une clé de lecture Umami ; l'adresse
 du point du lundi (`FONDATEUR_EMAIL`).
