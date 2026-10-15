@@ -29,6 +29,18 @@ import { expediteurNomme } from './emails/helpers';
  * `null`, relancer avec `{"envoyer":true,"curseur":"<suite>"}`.
  */
 const CLE = 'preavis-ouverture';
+
+/** Le texte du préavis, le même dans la notification et dans l'e-mail (et dans `emails/essai.ts`). */
+export function texteDuPreavis(date: string): { titre: string; message: string } {
+	const formules = FORMULES.map((f) => `${GRILLE[f].nom} ${GRILLE[f].mensuel} €`).join(', ');
+	return {
+		titre: 'Le paiement en ligne ouvre sur Letikette',
+		message:
+			`Jusqu’ici, tout vous était ouvert sans rien payer. Le paiement en ligne ouvre : votre accès reste entier jusqu’au ${date}. ` +
+			`D’ici là, choisissez votre formule dans Compte, puis Abonnement (${formules} HT par mois, l’année à dix mois) : rien ne sera prélevé sans que vous l’ayez choisie. ` +
+			`Les conditions générales évoluent avec elle (version 2.3) ; si vous les refusez, vous pouvez résilier sans frais jusqu’au ${date}.`
+	};
+}
 const LOT = 500;
 
 export const prevenir = internalMutation({
@@ -73,18 +85,15 @@ export const prevenir = internalMutation({
 			return { etablissements: aPrevenir.length, deja, jusquAu: date, envoye: false, suite };
 		}
 
-		const titre = 'Le paiement en ligne ouvre sur Letikette';
-		const formules = FORMULES.map((f) => `${GRILLE[f].nom} ${GRILLE[f].mensuel} €`).join(', ');
-		const message =
-			`Jusqu’ici, tout vous était ouvert sans rien payer. Le paiement en ligne ouvre : votre accès reste entier jusqu’au ${date}. ` +
-			`D’ici là, choisissez votre formule dans Compte, puis Abonnement (${formules} HT par mois, l’année à dix mois) : rien ne sera prélevé sans que vous l’ayez choisie. ` +
-			`Les conditions générales évoluent avec elle (version 2.3) ; si vous les refusez, vous pouvez résilier sans frais jusqu’au ${date}.`;
+		const { titre, message } = texteDuPreavis(date);
 
 		let email: { expediteur: string; url: string } | null;
 		try {
 			assertResendApiKey();
 			email = {
-				expediteur: expediteurNomme(requireEnv('AUTH_EMAIL', { feature: 'ouverture de la facturation' })),
+				expediteur: expediteurNomme(
+					requireEnv('AUTH_EMAIL', { feature: 'ouverture de la facturation' })
+				),
 				url: `${requireEnv('SITE_URL', { feature: 'ouverture de la facturation' })}/app/compte?ouvrir=facturation`
 			};
 		} catch {

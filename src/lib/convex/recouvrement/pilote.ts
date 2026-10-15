@@ -1161,7 +1161,7 @@ export async function preparerProchaineRelance(
 }
 
 /** L'adresse d'où partent les relances, et le nom du créancier devant. */
-function expediteurPour(denomination: string): string {
+export function expediteurPour(denomination: string): string {
 	const brute =
 		process.env.RELANCES_EMAIL ?? requireEnv('AUTH_EMAIL', { feature: 'relances du pilote' });
 	const adresse = /<([^>]+)>/.exec(brute)?.[1] ?? brute.trim();

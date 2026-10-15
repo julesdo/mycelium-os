@@ -24,6 +24,7 @@ import type * as connexions_qontoConfig from "../connexions/qontoConfig.js";
 import type * as connexions_qontoDonnees from "../connexions/qontoDonnees.js";
 import type * as connexions_validateurs from "../connexions/validateurs.js";
 import type * as crons from "../crons.js";
+import type * as emails_essai from "../emails/essai.js";
 import type * as emails_events from "../emails/events.js";
 import type * as emails_helpers from "../emails/helpers.js";
 import type * as emails_modeles_abonnement from "../emails/modeles/abonnement.js";
@@ -135,6 +136,7 @@ declare const fullApi: ApiFromModules<{
   "connexions/qontoDonnees": typeof connexions_qontoDonnees;
   "connexions/validateurs": typeof connexions_validateurs;
   crons: typeof crons;
+  "emails/essai": typeof emails_essai;
   "emails/events": typeof emails_events;
   "emails/helpers": typeof emails_helpers;
   "emails/modeles/abonnement": typeof emails_modeles_abonnement;
