@@ -40,7 +40,12 @@ function lire(chemin: string): string {
 
 /** Le nom de chaque table, avec la source de sa définition. */
 function tablesDeclarees(): { nom: string; bloc: string }[] {
-	const sources = [lire('recouvrement/tables.ts'), lire('schema.ts')].join('\n');
+	const sources = [
+		lire('recouvrement/tables.ts'),
+		lire('risque/tables.ts'),
+		lire('croissance/tables.ts'),
+		lire('schema.ts')
+	].join('\n');
 	const tables: { nom: string; bloc: string }[] = [];
 
 	const motif = /(\w+):\s*defineTable\(/g;

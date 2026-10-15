@@ -3,6 +3,7 @@ import { v } from 'convex/values';
 import { vEmailEvent } from '@convex-dev/resend';
 import { recouvrementTables } from './recouvrement/tables';
 import { risqueTables } from './risque/tables';
+import { croissanceTables } from './croissance/tables';
 import { vStatutConnexion, vStatutConnexionQonto } from './connexions/validateurs';
 
 export default defineSchema({
@@ -235,9 +236,14 @@ export default defineSchema({
 		 * Le point du matin par e-mail (`battement.ts`). Absent : il part. `false` :
 		 * ce membre l'a coupé depuis son profil (09/10/2026).
 		 */
-		pointDuMatinParCourriel: v.optional(v.boolean())
+		pointDuMatinParCourriel: v.optional(v.boolean()),
+		/** Les conseils de Plume par e-mail (`croissance/conseils.ts`). Absent : ils partent. */
+		conseilsParCourriel: v.optional(v.boolean()),
+		/** Le jeton du lien de désinscription des conseils, tiré au premier envoi. */
+		jetonConseils: v.optional(v.string())
 	})
 		.index('by_organization', ['organizationId'])
+		.index('by_jeton_conseils', ['jetonConseils'])
 		.index('by_user', ['userId'])
 		.index('by_org_and_user', ['organizationId', 'userId'])
 		.index('by_user_and_role', ['userId', 'role']),
@@ -328,5 +334,6 @@ export default defineSchema({
 	// ── Domaine recouvrement de créances B2B ────────────────────────────────────
 	// Voir src/lib/convex/recouvrement/tables.ts.
 	...recouvrementTables,
-	...risqueTables
+	...risqueTables,
+	...croissanceTables
 });

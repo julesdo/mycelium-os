@@ -8,6 +8,7 @@ import {
 import { Providers } from '../app/providers';
 import { AMORCE_THEME } from '../app/use-theme';
 import { AMORCE_INSTALLATION } from '../app/installation';
+import { AMORCE_SOURCE } from '../app/source-visite';
 import { AMORCE_ANALYTIQUE, ATTRIBUTS_UMAMI, SCRIPT_UMAMI } from '../app/analytique';
 import appCss from '../styles/app.css?url';
 // La police du corps, en latin : la même adresse que celle que le CSS déclare.
@@ -90,6 +91,11 @@ function Document() {
 				  `app/installation.ts`.
 				*/}
 				<script dangerouslySetInnerHTML={{ __html: AMORCE_INSTALLATION }} />
+				{/*
+				  LA SOURCE DE LA VISITE, gardée le temps de l'onglet pour la joindre à
+				  l'inscription (`app/source-visite.ts`). Ni cookie ni identifiant.
+				*/}
+				<script dangerouslySetInnerHTML={{ __html: AMORCE_SOURCE }} />
 				{/*
 				  LA MESURE D'AUDIENCE (Umami, sans cookie). Le garde passe avant le traceur :
 				  il retire les identifiants des adresses et coupe tout envoi sur les pages à

@@ -10,6 +10,7 @@ import { requireEnv } from './env';
 import { expediteurNomme, shouldSkipTestEmail } from './emails/helpers';
 import { MS_VALIDITE_INVITATION } from '../config/invitations';
 import { vEtatCritere } from './recouvrement/tables';
+import { lireSource } from '../croissance/source';
 import type { Id } from './_generated/dataModel';
 import {
 	requireOrgMember,
@@ -90,7 +91,13 @@ export const createOrganization = authedMutation({
 				adresse: v.optional(v.string()),
 				estCommercant: vEtatCritere
 			})
-		)
+		),
+		/**
+		 * La source de la visite qui a mené à l'inscription, telle que l'amorce du
+		 * `<head>` l'a notée (`app/source-visite.ts`). Lue et bornée ici, côté
+		 * serveur : une adresse se fabrique.
+		 */
+		source: v.optional(v.object({ url: v.string(), referent: v.string() }))
 	},
 	returns: v.id('organizations'),
 	handler: async (ctx, args): Promise<Id<'organizations'>> => {
@@ -137,6 +144,22 @@ export const createOrganization = authedMutation({
 				currentOrganizationId: orgId
 			});
 		}
+
+		// Le parcours de ce compte (`croissance/`) : sa source et sa première étape.
+		const maintenant = Date.now();
+		await ctx.db.insert('parcoursComptes', {
+			organizationId: orgId,
+			...(args.source === undefined
+				? {}
+				: {
+						source: lireSource({
+							url: args.source.url.slice(0, 2000),
+							referent: args.source.referent.slice(0, 2000)
+						})
+					}),
+			etapes: { INSCRIT: maintenant },
+			prochainConseilLe: maintenant
+		});
 
 		return orgId;
 	}

@@ -37,6 +37,7 @@ import { EcranLettres, type EnTeteSaisi } from '../screens/premiers-pas/lettres'
 import { EcranRelances } from '../screens/premiers-pas/relances';
 import { EcranPret, type LigneDuResume } from '../screens/premiers-pas/pret';
 import { suivre } from '../app/analytique';
+import { lireSourceDeLaVisite } from '../app/source-visite';
 
 /**
  * LES PREMIERS PAS (13/10/2026, `docs/superpowers/specs/2026-10-13-premiers-pas.md`).
@@ -330,8 +331,10 @@ function EtapeEntreprise({
 		setErreur(null);
 		setEnCours(true);
 		try {
+			const source = lireSourceDeLaVisite();
 			await creer({
 				name: (retenu?.denomination ?? saisi).trim(),
+				...(source === undefined ? {} : { source }),
 				// L'identité ne part que si le gérant a touché un candidat.
 				...(retenu === null
 					? {}
