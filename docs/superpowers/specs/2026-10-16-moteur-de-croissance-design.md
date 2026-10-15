@@ -26,6 +26,31 @@ pendant qu'on le construit.
 débiteur ni un montant** ; aucune prospection ne part par ce moteur (Resend l'interdit, et c'est le
 sous-projet 2).
 
+## 1 bis. Ce qui se construit maintenant, et ce qui attend son seuil
+
+Décision du fondateur, le 16/10/2026 : **commencer à la main** (stratégie, § 0). Ce sous-projet se
+construit en deux temps.
+
+**Maintenant, à 0 € de plus :**
+
+- la source de chaque inscription (§ 2.3) ;
+- les étapes du gérant, déduites de l'état (§ 2.3) ;
+- les e-mails de Plume (§ 2.4) ;
+- le score (§ 2.5) ;
+- **un point chiffré du lundi, sans IA** : les étapes de la semaine et des 28 derniers jours par
+  source, les nouveaux inscrits, les dix meilleurs scores et le trafic Umami, envoyé à
+  `FONDATEUR_EMAIL` sur la coquille commune ; il remplace provisoirement le point écrit par Claude
+  (§ 2.8) et sert au fondateur pour ses relances manuelles.
+
+**Plus tard, chacun à son seuil (stratégie, § 0) :**
+
+- l'envoi vers Twenty (§ 2.6) : plus de 50 prospects actifs ;
+- les expériences automatiques (§ 2.7) et le point écrit par Claude (§ 2.8) : environ 100 inscrits
+  par mois.
+
+Les tables `experiences` et `revuesHebdo`, et les champs Twenty de `parcoursComptes`, ne se
+créent qu'avec leur partie.
+
 ## 2. Le moteur et l'activation
 
 ### 2.1 Où ça vit
@@ -179,7 +204,7 @@ point du lundi.
 
 - **La politique de confidentialité** passe à une nouvelle version : l'accompagnement à
   l'utilisation (étapes, score) et les conseils par e-mail comme finalités, Twenty comme
-  prestataire, la durée de conservation (celle du compte), le droit d'opposition (le réglage du
+  prestataire quand il arrive, la durée de conservation (celle du compte), le droit d'opposition (le réglage du
   profil et le lien de chaque e-mail).
 - **Les conseils sont des communications relationnelles** sur le service souscrit, avec opposition
   simple ; aucune prospection ne part par ce moteur.
@@ -204,10 +229,16 @@ point du lundi.
 
 ### 2.12 Ce que le fondateur aura à faire
 
-1. Créer le compte Twenty, puis une clé d'API : `npx convex env set TWENTY_API_KEY …` et
-   `TWENTY_API_URL` (en production comme en développement).
-2. Créer une clé de lecture Umami : `npx convex env set UMAMI_API_KEY …`.
-3. Donner l'adresse du point du lundi : `npx convex env set FONDATEUR_EMAIL …`.
+**Maintenant :**
+
+1. Donner l'adresse du point du lundi : `npx convex env set FONDATEUR_EMAIL …` (en production).
+2. Créer une clé de lecture Umami : `npx convex env set UMAMI_API_KEY …` (facultatif : sans elle,
+   le point du lundi le dit et s'en passe).
+
+**Au seuil de Twenty :**
+
+3. Créer le compte Twenty, puis une clé d'API : `npx convex env set TWENTY_API_KEY …` et
+   `TWENTY_API_URL`.
 4. Demander à Twenty la région d'hébergement de son offre en ligne (non publiée), pour la
    politique de confidentialité.
 

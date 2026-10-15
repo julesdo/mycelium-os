@@ -10,9 +10,47 @@
 > dans un cadre** (il valide chaque texte, elle promeut seule la variante gagnante) ; cette
 > stratégie et son découpage en cinq sous-projets sont validés (« Oui, écris-la »).
 >
+> **Puis, le même jour, la décision qui ordonne tout le reste :** commencer **à la main** (« est-ce
+> qu'il faut pas que je commence à la main au lieu d'exploser un budget que je n'ai pas dans une
+> growth machine ? »). Une machine automatise un processus qui marche ; il n'existe pas encore. La
+> phase manuelle vient d'abord (`docs/croissance/phase-manuelle.md`), avec seulement ce qui ne
+> coûte rien parce que c'est du code ; chaque dépense se débloque par un seuil mesuré (§ 0).
+>
 > Le premier sous-projet a sa spec : `2026-10-16-moteur-de-croissance-design.md`.
 
 ---
+
+## 0. D'abord à la main
+
+**Pourquoi :** une expérience demande au moins 100 personnes par variante et un point du lundi a
+besoin de chiffres ; avec quelques inscrits par semaine, la machine tournerait à vide. Le message
+n'est pas validé : 2 400 e-mails par mois sur un message non testé brûlent des domaines et des
+contacts, quand 50 e-mails écrits à la main disent en deux semaines quelle phrase fait répondre.
+Les dix premiers clients viennent de conversations, et chaque objection entendue devient un texte
+de la machine.
+
+**Ce qui se fait tout de suite, à 0 € de plus :**
+
+- **À la main (le fondateur)** : la routine de `docs/croissance/phase-manuelle.md` (30 cibles le
+  lundi, 10 e-mails, 5 messages LinkedIn et 2 appels à des cabinets chaque jour, un tableur, un
+  journal des objections). Objectif : 10 abonnés payants et une phrase qui fait répondre.
+- **En code (gratuit : Resend est déjà payé)** : la source de chaque inscription et les étapes du
+  gérant, les e-mails de Plume pour l'activation, le score, un point chiffré du lundi sans IA
+  (sous-projet 1 réduit) ; puis les outils gratuits et les pages par secteur (sous-projet 3), qui
+  travaillent seuls pendant qu'on prospecte.
+
+**Ce qui attend son seuil :**
+
+| Dépense | On l'engage quand… |
+|---|---|
+| Instantly, domaines, boîtes (~100 € par mois) | 50 e-mails écrits à la main obtiennent au moins 10 % de réponses positives, **et** le fondateur n'arrive plus à suivre à la main |
+| Icypeas ou FullEnrich, MillionVerifier | en même temps qu'Instantly |
+| Twenty (~18 € par mois) | plus de 50 prospects actifs dans le tableur |
+| Expériences automatiques, point du lundi écrit par Claude | environ 100 inscrits par mois |
+| Publicité | le coût d'acquisition des autres canaux est connu |
+
+Le reste de ce document décrit la machine **à son régime de croisière** : c'est la cible, atteinte
+étage par étage, chacun débloqué par son seuil.
 
 ## 1. Ce que la recherche a établi
 
@@ -194,11 +232,13 @@ le budget va au contenu.
 | 4 | **La conversion et l'expansion** | fin d'essai, montée en gamme, passage à l'année, santé, reconquête, avis, parrainage | à écrire |
 | 5 | **Les partenaires** | espace cabinet, catalogues d'applications (Pennylane, Qonto, Xero, QuickBooks), fédérations ; puis la prospection des cabinets | à écrire |
 
-**L'ordre** : 1, puis 2 (le préchauffage tourne pendant qu'on construit 1), puis 3, 4 et 5.
+**L'ordre** : 1 réduit au gratuit (source, étapes, e-mails de Plume, score, point chiffré du lundi), puis 3 (outils gratuits, pages par secteur), puis 4 ; 2 et la part payante de 1 (Twenty, expériences, point écrit par Claude) attendent leur seuil (§ 0) ; 5 commence par les cabinets rencontrés à la main.
 
 ## 7. Ce que le fondateur fait, et quand
 
-**Tout de suite (le préchauffage prend trois semaines) :**
+**Tout de suite :** la phase manuelle (`docs/croissance/phase-manuelle.md`). Rien à acheter.
+
+**Quand le seuil d'Instantly est franchi (le préchauffage prend alors trois semaines) :**
 
 1. Ouvrir un compte Instantly (offre avec API).
 2. Y commander deux domaines secondaires proches de la marque (jamais `letikette.com`) et deux
