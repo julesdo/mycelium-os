@@ -702,6 +702,17 @@ export const purgerEtablissement = internalMutation({
 		budget = await viderParIndexOrg(ctx, 'parcoursComptes', organizationId, budget);
 		// Ce que l'équipe de Letikette a fait sur ce compte : la ligne nomme l'établissement.
 		budget = await viderParIndexOrg(ctx, 'journalEquipe', organizationId, budget);
+		// Les notes, appels et tâches de l'équipe sur ce compte partent avec lui.
+		budget = await viderParIndexOrg(ctx, 'evenementsCrm', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'tachesCrm', organizationId, budget);
+		// Un prospect rapproché de ce compte lui survit (il appartient à Letikette),
+		// mais perd son lien vers lui.
+		for (const prospect of await ctx.db
+			.query('prospects')
+			.withIndex('by_compte', (q) => q.eq('compteId', organizationId))
+			.take(50)) {
+			await ctx.db.patch(prospect._id, { compteId: undefined });
+		}
 		// Les courriers référencent la créance et le décompte : ils partent avant eux.
 		budget = await viderParIndexOrg(ctx, 'envois', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
@@ -845,7 +856,13 @@ export const purgerNotifications = internalMutation({
  * tout modèle de `betterAuth/schema.ts` portant un champ `userId` doit y
  * figurer. Le prochain greffon fera tomber le test avant la mise en production.
  */
-export const MODELES_BETTER_AUTH_PAR_UTILISATEUR = ['session', 'account', 'passkey'] as const;
+export const MODELES_BETTER_AUTH_PAR_UTILISATEUR = [
+	'session',
+	'account',
+	'passkey',
+	// Le secret et les codes de secours de la double authentification (16/10/2026).
+	'twoFactor'
+] as const;
 
 /**
  * L'identité, retirée de Better Auth.
@@ -940,6 +957,8 @@ async function viderParIndexOrg(
 		| 'envoisCroissance'
 		| 'parcoursComptes'
 		| 'journalEquipe'
+		| 'evenementsCrm'
+		| 'tachesCrm'
 		| 'intervenants'
 		| 'journal'
 		| 'propositions'

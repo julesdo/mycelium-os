@@ -10,9 +10,17 @@
 
 import type * as abonnementRappels from "../abonnementRappels.js";
 import type * as admin_acces from "../admin/acces.js";
+import type * as admin_aujourdhui from "../admin/aujourdhui.js";
+import type * as admin_comptes from "../admin/comptes.js";
+import type * as admin_entretien from "../admin/entretien.js";
 import type * as admin_enveloppe from "../admin/enveloppe.js";
 import type * as admin_equipe from "../admin/equipe.js";
+import type * as admin_historique from "../admin/historique.js";
+import type * as admin_importer from "../admin/importer.js";
+import type * as admin_prospects from "../admin/prospects.js";
+import type * as admin_recherche from "../admin/recherche.js";
 import type * as admin_tables from "../admin/tables.js";
+import type * as admin_taches from "../admin/taches.js";
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
 import type * as coffre_anciens from "../coffre/anciens.js";
@@ -136,9 +144,17 @@ import type {
 declare const fullApi: ApiFromModules<{
   abonnementRappels: typeof abonnementRappels;
   "admin/acces": typeof admin_acces;
+  "admin/aujourdhui": typeof admin_aujourdhui;
+  "admin/comptes": typeof admin_comptes;
+  "admin/entretien": typeof admin_entretien;
   "admin/enveloppe": typeof admin_enveloppe;
   "admin/equipe": typeof admin_equipe;
+  "admin/historique": typeof admin_historique;
+  "admin/importer": typeof admin_importer;
+  "admin/prospects": typeof admin_prospects;
+  "admin/recherche": typeof admin_recherche;
   "admin/tables": typeof admin_tables;
+  "admin/taches": typeof admin_taches;
   auth: typeof auth;
   billing: typeof billing;
   "coffre/anciens": typeof coffre_anciens;

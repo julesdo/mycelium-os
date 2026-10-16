@@ -4,7 +4,7 @@ import { vEmailEvent } from '@convex-dev/resend';
 import { recouvrementTables } from './recouvrement/tables';
 import { risqueTables } from './risque/tables';
 import { croissanceTables } from './croissance/tables';
-import { adminTables } from './admin/tables';
+import { adminTables, crmTables } from './admin/tables';
 import { vStatutConnexion, vStatutConnexionQonto } from './connexions/validateurs';
 
 export default defineSchema({
@@ -337,5 +337,6 @@ export default defineSchema({
 	...recouvrementTables,
 	...risqueTables,
 	...croissanceTables,
-	...adminTables
+	...adminTables,
+	...crmTables
 });

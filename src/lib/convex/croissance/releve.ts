@@ -1,9 +1,9 @@
 import { v } from 'convex/values';
 import { internalMutation, type MutationCtx } from '../_generated/server';
-import { internal } from '../_generated/api';
+import { components, internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { deduireEtapes, type EtatDuCompte, type FormuleVue } from '../../croissance/etapes';
-import { calculerScore } from '../../croissance/score';
+import { SEUIL_APPELER, calculerScore } from '../../croissance/score';
 import { prochainConseil } from '../../croissance/conseils';
 
 /**
@@ -109,6 +109,58 @@ async function etatDuCompte(
 	};
 }
 
+/**
+ * LE RAPPROCHEMENT D'UN PROSPECT AVEC LE COMPTE QUI S'INSCRIT : par le SIREN de
+ * l'établissement, sinon par l'adresse d'un de ses membres. Trouvé, le prospect
+ * passe « Inscrit » et pointe vers le compte.
+ */
+async function rapprocher(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>
+): Promise<Id<'prospects'> | undefined> {
+	// Sans aucun prospect, rien à rapprocher : on n'interroge personne.
+	if ((await ctx.db.query('prospects').first()) === null) return undefined;
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	let prospect =
+		profil?.siren === undefined || profil.siren === ''
+			? null
+			: await ctx.db
+					.query('prospects')
+					.withIndex('by_siren', (q) => q.eq('siren', profil.siren))
+					.first();
+	if (prospect === null) {
+		for (const membre of await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+			.take(20)) {
+			const utilisateur = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+				model: 'user',
+				where: [{ field: '_id', operator: 'eq', value: membre.userId }]
+			})) as { email?: string } | null;
+			const email = utilisateur?.email?.trim().toLowerCase();
+			if (!email) continue;
+			prospect = await ctx.db
+				.query('prospects')
+				.withIndex('by_email', (q) => q.eq('email', email))
+				.first();
+			if (prospect !== null) break;
+		}
+	}
+	if (prospect === null || prospect.compteId !== undefined) return undefined;
+	await ctx.db.patch(prospect._id, { statut: 'INSCRIT', compteId: organizationId });
+	await ctx.db.insert('evenementsCrm', {
+		prospectId: prospect._id,
+		type: 'STATUT',
+		texte: 'INSCRIT',
+		auteur: 'machine',
+		le: Date.now()
+	});
+	return prospect._id;
+}
+
 export const releverLesEtapes = internalMutation({
 	args: { organizationId: v.id('organizations') },
 	returns: v.null(),
@@ -161,8 +213,27 @@ export const releverLesEtapes = internalMutation({
 			prochainConseilLe: prochain?.des,
 			releveLe: maintenant
 		};
-		if (parcours === null) await ctx.db.insert('parcoursComptes', { organizationId, ...champs });
-		else await ctx.db.patch(parcours._id, champs);
+		// Le CRM (`admin/`) : le prospect qui s'inscrit, une fois ; et la tâche
+		// « Appeler » quand le score franchit son seuil, une fois par compte.
+		const prospectId = parcours?.prospectId ?? (await rapprocher(ctx, organizationId));
+		const appeler = score >= SEUIL_APPELER && parcours?.tacheScoreLe === undefined;
+		if (appeler) {
+			await ctx.db.insert('tachesCrm', {
+				organizationId,
+				titre: 'Appeler',
+				pour: maintenant,
+				origine: 'SCORE',
+				creePar: 'machine',
+				creeLe: maintenant
+			});
+		}
+		const suite = {
+			...champs,
+			...(prospectId === undefined ? {} : { prospectId }),
+			...(appeler ? { tacheScoreLe: maintenant } : {})
+		};
+		if (parcours === null) await ctx.db.insert('parcoursComptes', { organizationId, ...suite });
+		else await ctx.db.patch(parcours._id, suite);
 		return null;
 	}
 });

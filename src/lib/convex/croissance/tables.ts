@@ -60,7 +60,11 @@ export const croissanceTables = {
 		interetFormuleLe: v.optional(v.number()),
 		/** Quand regarder de nouveau s'il y a un conseil à envoyer ; absent : rien en vue. */
 		prochainConseilLe: v.optional(v.number()),
-		releveLe: v.optional(v.number())
+		releveLe: v.optional(v.number()),
+		/** Le prospect du CRM rapproché de ce compte à son inscription (`admin/`). */
+		prospectId: v.optional(v.id('prospects')),
+		/** La tâche « Appeler » créée au franchissement du score de 60, une fois. */
+		tacheScoreLe: v.optional(v.number())
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_prochain_conseil', ['prochainConseilLe']),

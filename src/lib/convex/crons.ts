@@ -54,6 +54,14 @@ crons.interval(
 
 // Le point chiffré du lundi pour le fondateur (`croissance/point.ts`) : 7 h à Paris
 // l'été, 6 h l'hiver.
+// Les prospects sans contact depuis trois ans s'effacent (`admin/entretien.ts`).
+crons.daily(
+	'effacementProspects',
+	{ hourUTC: 3, minuteUTC: 30 },
+	internal.admin.entretien.effacerLesAnciens,
+	{}
+);
+
 crons.weekly(
 	'pointDuLundi',
 	{ dayOfWeek: 'monday', hourUTC: 5, minuteUTC: 0 },
