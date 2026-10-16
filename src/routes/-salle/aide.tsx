@@ -10,6 +10,13 @@ import {
 	type ElementDuFilAide
 } from '../../screens/aide';
 import { CartesArreterLesEnvois } from '../../ui/aide';
+import {
+	EcranConversationSupport,
+	EcranFileSupport,
+	EcranReponsesEnregistrees,
+	type ConversationVueParLEquipe,
+	type LigneDeFileAffichee
+} from '../../screens/admin/support';
 import { ARTICLES } from '../../lib/support/articles';
 import { LIBELLES_DES_SUJETS, SUJETS } from '../../lib/support/sujets';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
@@ -301,4 +308,168 @@ export const ECRANS_AIDE: readonly EcranDuProduit[] = [
 	},
 	{ route: '/app/aide/question/$cle', libelle: 'aide · une réponse', vide: false, Demo: DemoQuestion },
 	{ route: '/app/aide/questions', libelle: 'aide · toutes les questions', vide: false, Demo: DemoQuestions }
+];
+
+// ─────────────────────────────────────────────────────────────────────────
+// LA BOÎTE DE L'ÉQUIPE
+// ─────────────────────────────────────────────────────────────────────────
+
+const FILE_EQUIPE: LigneDeFileAffichee[] = [
+	{
+		id: 'c2',
+		etablissement: 'Garnier Bâtiment',
+		ligne: 'Demande d’acte · Adresse ou titulaire du compte · Je veux changer l’adresse e-mail du compte',
+		date: 'attend depuis 2 h',
+		attention: true
+	},
+	{
+		id: 'c7',
+		etablissement: 'Atelier Morel',
+		ligne: 'Prioritaire · Plume ne savait pas · Puis-je relier deux comptes Qonto ?',
+		date: 'en retard de 20 min',
+		attention: true
+	},
+	{
+		id: 'c8',
+		etablissement: 'Expéditeur non vérifié',
+		ligne: 'Non vérifié · Par e-mail · Reçu par e-mail · Bonjour, je n’arrive pas à me connecter',
+		date: 'attend depuis 40 min',
+		attention: false
+	}
+];
+
+function DemoFileEquipe({ etat }: { etat: EtatDemo }) {
+	return (
+		<EcranFileSupport
+			titre="À vous"
+			vide="Rien ne vous attend. Plume répond, l’équipe est à jour."
+			lecture={lectureDemo(etat, FILE_EQUIPE, [])}
+			absence={{ jusquAu: null, onAnnoncer: RIEN, onLever: RIEN }}
+		/>
+	);
+}
+
+const CONVERSATION_EQUIPE: ConversationVueParLEquipe = {
+	etablissement: 'Garnier Bâtiment',
+	titre: 'Je veux changer l’adresse e-mail du compte',
+	etat: 'Chez l’équipe · attend depuis 2 h',
+	etiquettes: ['Prioritaire'],
+	ceQuePlumeACompris: {
+		pourquoi: 'Demande d’acte : Adresse ou titulaire du compte',
+		question: 'Je veux changer l’adresse e-mail du compte, mon IBAN est [IBAN masqué].',
+		depuis: 'Compte › Sécurité'
+	},
+	elements: [
+		{
+			id: 'm1',
+			voix: 'GERANT',
+			nom: 'Jules Garnier',
+			texte: 'Je veux changer l’adresse e-mail du compte, mon IBAN est [IBAN masqué].',
+			heure: '10 h 12',
+			parEmail: false,
+			sources: [],
+			onRetirer: RIEN
+		},
+		{ id: 'm2', voix: 'EVENEMENT', nom: '', texte: 'Transmis à l’équipe', heure: '10 h 12', parEmail: false, sources: [] },
+		{
+			id: 'm3',
+			voix: 'NOTE',
+			nom: 'Camille',
+			texte: 'Vérifier que la demande vient bien de l’administrateur avant de changer quoi que ce soit.',
+			heure: '10 h 30',
+			parEmail: false,
+			sources: []
+		}
+	],
+	contexte: [
+		{ libelle: 'Rôle', valeur: 'Administrateur' },
+		{ libelle: 'Formule', valeur: 'Équipe · actif' },
+		{ libelle: 'Membres', valeur: '3' },
+		{ libelle: 'Relances automatiques', valeur: 'Activées' },
+		{ libelle: 'Dossiers à démarrer', valeur: '2' },
+		{ libelle: 'Relances programmées', valeur: '1, la prochaine le 2026-10-17 à 10:00' },
+		{ libelle: 'Pennylane', valeur: 'a jour, lu 2026-10-15' },
+		{ libelle: 'Documents en échec', valeur: '0' }
+	],
+	precedentes: [{ id: 'c3', titre: 'Comment inviter un collègue ?', ligne: 'Terminée · lun. 12 oct.' }],
+	gestes: {
+		assignee: null,
+		onMePrendre: RIEN,
+		prioritaire: true,
+		onPrioritaire: RIEN,
+		terminee: false,
+		onTerminer: RIEN,
+		onRouvrir: RIEN,
+		onSuspendre: RIEN
+	},
+	composeur: {
+		mode: 'REPONSE',
+		onMode: RIEN,
+		valeur: '',
+		onChange: RIEN,
+		onEnvoyer: RIEN,
+		reponses: [{ id: 'r1', titre: 'Rebrancher Pennylane' }],
+		onInserer: RIEN,
+		enCours: false,
+		brouillon: { onDemander: RIEN, enCours: false }
+	}
+};
+
+function DemoConversationEquipe({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+	const [mode, setMode] = useState<'REPONSE' | 'NOTE'>(variante === 'note' ? 'NOTE' : 'REPONSE');
+	const [valeur, setValeur] = useState(variante === 'avertissement' ? 'Nous ne saisissons pas le tribunal pour vous.' : '');
+	return (
+		<EcranConversationSupport
+			lecture={lectureDemo(etat, {
+				...CONVERSATION_EQUIPE,
+				composeur: {
+					...CONVERSATION_EQUIPE.composeur,
+					mode,
+					onMode: setMode,
+					valeur,
+					onChange: setValeur,
+					...(variante === 'avertissement'
+						? { avertissement: 'Ce message conseille, ou parle d’une voie de justice : relisez-le, puis confirmez l’envoi.' }
+						: {})
+				}
+			})}
+		/>
+	);
+}
+
+function DemoReponsesEnregistrees({ etat }: { etat: EtatDemo }) {
+	return (
+		<EcranReponsesEnregistrees
+			lecture={lectureDemo(
+				etat,
+				[
+					{
+						id: 'r1',
+						titre: 'Rebrancher Pennylane',
+						texte: 'Bonjour {prenom}, dans Compte puis Connexions, touchez Pennylane et « Rebrancher ». La lecture repart dans l’heure.'
+					}
+				],
+				[]
+			)}
+			onEnregistrer={async () => undefined}
+			onSupprimer={RIEN}
+		/>
+	);
+}
+
+export const ECRANS_SUPPORT_EQUIPE: readonly EcranDuProduit[] = [
+	{ route: '/admin/support/', libelle: 'admin · support, la file', vide: true, Demo: DemoFileEquipe },
+	{
+		route: '/admin/support/$id',
+		libelle: 'admin · support, une conversation',
+		vide: false,
+		variantes: ['note', 'avertissement'],
+		Demo: DemoConversationEquipe
+	},
+	{
+		route: '/admin/support/reponses',
+		libelle: 'admin · réponses enregistrées',
+		vide: true,
+		Demo: DemoReponsesEnregistrees
+	}
 ];

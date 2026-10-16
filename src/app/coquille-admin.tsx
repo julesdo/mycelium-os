@@ -25,7 +25,12 @@ import {
 	StarIcon,
 	TargetIcon,
 	UserPlusIcon,
-	UsersRoundIcon
+	UsersRoundIcon,
+	InboxIcon,
+	LifeBuoyIcon,
+	FeatherIcon,
+	CircleCheckIcon,
+	MessageSquareReplyIcon
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import type { RoleEquipe } from '../lib/admin/acces';
@@ -123,8 +128,25 @@ const TACHES: Destination = {
 	compte: 'tachesDues'
 };
 
-/** Les quatre onglets du téléphone. */
-const ONGLETS: readonly Destination[] = [AUJOURDHUI, COMPTES, PROSPECTS, TACHES];
+/**
+ * LE SUPPORT (16/10/2026, spec du service client § 6). « À vous » mène à la boîte ;
+ * les autres entrées sont des vues de la même liste (`?vue=`).
+ */
+const SUPPORT: Destination = {
+	cle: 'support',
+	libelle: 'À vous',
+	vers: '/admin/support',
+	Icone: InboxIcon,
+	prefixes: ['/admin/support'],
+	compte: 'supportAVous'
+};
+const SUPPORT_ONGLET: Destination = { ...SUPPORT, cle: 'support-onglet', libelle: 'Support', Icone: LifeBuoyIcon };
+
+/**
+ * Les quatre onglets du téléphone. Le support y remplace les tâches (16/10/2026) : elles
+ * restent dans « Aujourd'hui ».
+ */
+const ONGLETS: readonly Destination[] = [AUJOURDHUI, COMPTES, PROSPECTS, SUPPORT_ONGLET];
 
 const GROUPES: readonly {
 	readonly cle: string;
@@ -134,6 +156,55 @@ const GROUPES: readonly {
 }[] = [
 	{ cle: 'travail', destinations: [AUJOURDHUI, TACHES] },
 	{ cle: 'fiches', titre: 'Fiches', destinations: [COMPTES, PROSPECTS] },
+	{
+		cle: 'support',
+		titre: 'Support',
+		destinations: [
+			SUPPORT,
+			{
+				cle: 'support-ouvertes',
+				libelle: 'Chez l’équipe',
+				vers: '/admin/support',
+				Icone: CircleDashedIcon,
+				prefixes: ['/admin/support'],
+				recherche: { vue: 'OUVERTES' },
+				compte: 'supportOuvertes'
+			},
+			{
+				cle: 'support-en-attente',
+				libelle: 'En attente du client',
+				vers: '/admin/support',
+				Icone: HourglassIcon,
+				prefixes: ['/admin/support'],
+				recherche: { vue: 'EN_ATTENTE' },
+				compte: 'supportEnAttente'
+			},
+			{
+				cle: 'support-plume',
+				libelle: 'Chez Plume',
+				vers: '/admin/support',
+				Icone: FeatherIcon,
+				prefixes: ['/admin/support'],
+				recherche: { vue: 'PLUME' },
+				compte: 'supportPlume'
+			},
+			{
+				cle: 'support-terminees',
+				libelle: 'Terminées',
+				vers: '/admin/support',
+				Icone: CircleCheckIcon,
+				prefixes: ['/admin/support'],
+				recherche: { vue: 'TERMINEES' }
+			},
+			{
+				cle: 'support-reponses',
+				libelle: 'Réponses enregistrées',
+				vers: '/admin/support/reponses',
+				Icone: MessageSquareReplyIcon,
+				prefixes: ['/admin/support/reponses']
+			}
+		]
+	},
 	{
 		cle: 'vues',
 		titre: 'Vues',
@@ -286,7 +357,10 @@ function allumee(
 
 /** Les pages d'une fiche : le composeur y prend la place de la barre d'onglets. */
 function surUneFiche(chemin: string): boolean {
-	return /^\/admin\/(comptes|prospects)\/(?!importer)[^/]+\/?$/.test(chemin);
+	return (
+		/^\/admin\/(comptes|prospects)\/(?!importer)[^/]+\/?$/.test(chemin) ||
+		/^\/admin\/support\/(?!reponses)[^/]+\/?$/.test(chemin)
+	);
 }
 
 const ContexteRole = createContext<RoleEquipe>('LECTURE');

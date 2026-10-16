@@ -20,7 +20,12 @@ export const compteurs = equipeQuery('LECTURE')({
 		prospects: v.number(),
 		sansAction: v.number(),
 		aRelancer: v.number(),
-		interesses: v.number()
+		interesses: v.number(),
+		// Le support (16/10/2026) : à vous, chez l'équipe, en attente du client, chez Plume.
+		supportAVous: v.number(),
+		supportOuvertes: v.number(),
+		supportEnAttente: v.number(),
+		supportPlume: v.number()
 	}),
 	handler: async (ctx) => {
 		const maintenant = Date.now();
@@ -34,6 +39,15 @@ export const compteurs = equipeQuery('LECTURE')({
 		const organisations = await ctx.db.query('organizations').take(2000);
 		const parcours = await ctx.db.query('parcoursComptes').take(2000);
 		const prospects = await ctx.db.query('prospects').take(3000);
+		// Une conversation réservée au fondateur ne se compte que pour lui.
+		const conversations = async (etat: 'A_NOUS' | 'EN_ATTENTE_CLIENT' | 'PLUME') =>
+			(
+				await ctx.db
+					.query('conversationsSupport')
+					.withIndex('by_etat_and_dernier', (q) => q.eq('etat', etat))
+					.take(500)
+			).filter((c) => c.reserveeAuFondateur !== true || ctx.equipier.role === 'FONDATEUR');
+		const chezLEquipe = await conversations('A_NOUS');
 
 		return {
 			tachesDues: ouvertes.length,
@@ -51,7 +65,13 @@ export const compteurs = equipeQuery('LECTURE')({
 					p.prochaineActionLe <= maintenant
 			).length,
 			interesses: prospects.filter((p) => p.statut === 'INTERESSE' || p.statut === 'A_REPONDU')
-				.length
+				.length,
+			supportAVous: chezLEquipe.filter(
+				(c) => c.assigneA === undefined || c.assigneA === ctx.equipier.email
+			).length,
+			supportOuvertes: chezLEquipe.length,
+			supportEnAttente: (await conversations('EN_ATTENTE_CLIENT')).length,
+			supportPlume: (await conversations('PLUME')).length
 		};
 	}
 });

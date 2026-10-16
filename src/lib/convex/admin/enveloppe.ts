@@ -99,7 +99,10 @@ export async function noterAuJournal(
 			| 'ROLE_CHANGE'
 			| 'MEMBRE_RETIRE'
 			| 'IMPORT'
-			| 'PROSPECT_EFFACE';
+			| 'PROSPECT_EFFACE'
+			| 'CONVERSATION_OUVERTE'
+			| 'CONTENU_RETIRE'
+			| 'RELANCES_SUSPENDUES';
 		readonly cible: Infer<typeof vCibleJournal>;
 		readonly organizationId?: Id<'organizations'>;
 	}

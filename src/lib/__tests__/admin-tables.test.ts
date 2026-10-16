@@ -31,7 +31,13 @@ const TABLES_AUTORISEES = new Set([
 	'oppositions',
 	'evenementsCrm',
 	'tachesCrm',
-	'importsProspects'
+	'importsProspects',
+	// Le support (16/10/2026) : ce que le gérant écrit À l'équipe, pas ses dossiers. Le
+	// contexte du compte passe par `support/contexte.ts`, qui ne rend que des scalaires.
+	'conversationsSupport',
+	'messagesSupport',
+	'reponsesEnregistrees',
+	'reglagesSupport'
 ]);
 
 function fichiers(dossier: string): string[] {

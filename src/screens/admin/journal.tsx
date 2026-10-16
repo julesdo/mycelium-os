@@ -6,7 +6,9 @@ import {
 	UserMinusIcon,
 	UserPlusIcon,
 	UserRoundCogIcon,
-	EraserIcon
+	EraserIcon,
+	MessageSquareIcon,
+	BellOffIcon
 } from 'lucide-react';
 import { PageEcran, type Lecture } from '../../ui';
 import { HistoriqueParJour } from '../../ui/admin';
@@ -33,7 +35,10 @@ const PHRASES: Readonly<Record<string, { icone: ReactNode; phrase: (libelle: str
 		ROLE_CHANGE: { icone: <UserRoundCogIcon />, phrase: (l) => `a changé le rôle de ${l}` },
 		MEMBRE_RETIRE: { icone: <UserMinusIcon />, phrase: (l) => `a retiré ${l} de l’équipe` },
 		IMPORT: { icone: <FileUpIcon />, phrase: (l) => `a importé ${l}` },
-		PROSPECT_EFFACE: { icone: <EraserIcon />, phrase: (l) => `a effacé les coordonnées de ${l}` }
+		PROSPECT_EFFACE: { icone: <EraserIcon />, phrase: (l) => `a effacé les coordonnées de ${l}` },
+		CONVERSATION_OUVERTE: { icone: <MessageSquareIcon />, phrase: (l) => `a ouvert la conversation de ${l}` },
+		CONTENU_RETIRE: { icone: <EraserIcon />, phrase: (l) => `a retiré un contenu de la conversation de ${l}` },
+		RELANCES_SUSPENDUES: { icone: <BellOffIcon />, phrase: (l) => `a suspendu les relances automatiques de ${l}` }
 	};
 
 export function EcranJournal({

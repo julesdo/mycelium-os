@@ -59,3 +59,45 @@ export function filtrerReponseSupport(phrases: readonly PhraseSupport[]): {
 export function texteAdmis(texte: string): boolean {
 	return !INTERDITS.some((motif) => motif.test(texte));
 }
+
+/**
+ * CE QUE L'ÉQUIPE ÉCRIT AU GÉRANT (spec § 2.4) : les mêmes lignes rouges, en deux
+ * crans. Le mot interdit et les verdicts ne partent JAMAIS ; un conseil ou une voie de
+ * justice partent après confirmation, parce que l'équipe peut avoir à écrire qu'elle ne
+ * le fait pas (« nous ne saisissons pas le tribunal pour vous »). Un geste commercial,
+ * lui, est sa décision : il passe.
+ */
+const REFUS_DE_L_EQUIPE: readonly RegExp[] = [
+	/garanti/i,
+	/éligible/i,
+	/\bvous (?:avez|aurez) droit\b/i,
+	/\b(?:est|sont) (?:recevable|prescrite?s?|exigibles?)\b/i,
+	/\bvous pouvez réclamer\b/i
+];
+
+const AVERTIS_DE_L_EQUIPE: readonly RegExp[] = [
+	/\bvous devriez\b/i,
+	/\bje vous (?:conseille|recommande)\b/i,
+	/\bnous vous (?:conseillons|recommandons)\b/i,
+	/\bil (?:faut|faudrait) (?:engager|lancer|saisir)\b/i,
+	/\b(?:tribunal|injonction|assignation|saisir le juge|mise en demeure)\b/i
+];
+
+export function relireLeMessageDeLEquipe(texte: string): {
+	refus: string | null;
+	avertissement: string | null;
+} {
+	if (REFUS_DE_L_EQUIPE.some((motif) => motif.test(texte))) {
+		return {
+			refus:
+				'Ce message dit « garantie » ou rend un verdict (« vous avez droit », « éligible », « prescrite ») : il ne part pas. Reformulez.',
+			avertissement: null
+		};
+	}
+	return {
+		refus: null,
+		avertissement: AVERTIS_DE_L_EQUIPE.some((motif) => motif.test(texte))
+			? 'Ce message conseille, ou parle d’une voie de justice : relisez-le, puis confirmez l’envoi.'
+			: null
+	};
+}

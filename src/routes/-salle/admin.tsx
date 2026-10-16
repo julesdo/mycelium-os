@@ -522,7 +522,11 @@ function DemoBarreLaterale({ variante }: { etat: EtatDemo; variante?: string }) 
 					prospects: 128,
 					sansAction: 14,
 					aRelancer: 6,
-					interesses: 9
+					interesses: 9,
+					supportAVous: 2,
+					supportOuvertes: 3,
+					supportEnAttente: 4,
+					supportPlume: 1
 				}}
 				reduite={reduite}
 				onBasculer={() => setReduite(!reduite)}

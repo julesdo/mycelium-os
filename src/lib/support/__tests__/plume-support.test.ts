@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filtrerReponseSupport } from '../filtres';
+import { filtrerReponseSupport, relireLeMessageDeLEquipe } from '../filtres';
 import {
 	construireMessageSupport,
 	construirePromptSupport,
@@ -131,5 +131,25 @@ describe('construireMessageSupport', () => {
 		const encore = construireMessageSupport({ contexte, historique: [], question: 'Comment résilier ?', reformuler: true });
 		expect(normal).not.toMatch(/reformule/i);
 		expect(encore).toMatch(/reformule/i);
+	});
+});
+
+describe('relireLeMessageDeLEquipe', () => {
+	it('refuse le mot interdit et les verdicts, net', () => {
+		expect(relireLeMessageDeLEquipe('Nous vous garantissons le résultat.').refus).not.toBeNull();
+		expect(relireLeMessageDeLEquipe('Votre créance est prescrite.').refus).not.toBeNull();
+	});
+
+	it('demande de confirmer un conseil ou une voie de justice', () => {
+		const r = relireLeMessageDeLEquipe('Vous devriez voir un avocat avant le tribunal.');
+		expect(r.refus).toBeNull();
+		expect(r.avertissement).not.toBeNull();
+	});
+
+	it('laisse passer une réponse ordinaire, geste commercial compris (l’équipe en décide)', () => {
+		expect(relireLeMessageDeLEquipe('C’est fait : je vous rembourse le mois d’octobre.')).toEqual({
+			refus: null,
+			avertissement: null
+		});
 	});
 });

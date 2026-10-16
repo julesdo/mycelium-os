@@ -39,6 +39,15 @@ export function delaiAnnonce(
 	};
 }
 
+/** « 20 min », « 2 h », « 3 j » : une durée, en mots courts. */
+export function dureeEnMots(ms: number): string {
+	const minutes = Math.max(1, Math.round(ms / 60_000));
+	if (minutes < 60) return `${minutes} min`;
+	const heures = Math.round(minutes / 60);
+	if (heures < 24) return `${heures} h`;
+	return `${Math.round(heures / 24)} j`;
+}
+
 export function carteDeConversation(
 	carte: Carte,
 	maintenant: number,

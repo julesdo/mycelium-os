@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import { internal } from '../_generated/api';
 import { internalMutation } from '../_generated/server';
 import { ajouterEvenement, passerALEquipe } from './commun';
 
@@ -75,6 +76,9 @@ export const entretenir = internalMutation({
 				);
 			} else if (conversation.rappelLe === undefined) {
 				await ctx.db.patch(conversation._id, { rappelLe: maintenant });
+				await ctx.scheduler.runAfter(0, internal.support.emails.rappelerLeGerant, {
+					conversationId: conversation._id
+				});
 			}
 		}
 		return null;

@@ -20,7 +20,8 @@ export const vCibleJournal = v.object({
 		v.literal('COMPTE'),
 		v.literal('PROSPECT'),
 		v.literal('MEMBRE'),
-		v.literal('IMPORT')
+		v.literal('IMPORT'),
+		v.literal('CONVERSATION')
 	),
 	id: v.optional(v.string()),
 	libelle: v.string()
@@ -50,7 +51,12 @@ export const adminTables = {
 			v.literal('ROLE_CHANGE'),
 			v.literal('MEMBRE_RETIRE'),
 			v.literal('IMPORT'),
-			v.literal('PROSPECT_EFFACE')
+			v.literal('PROSPECT_EFFACE'),
+			// Le support (16/10/2026) : chaque conversation ouverte, chaque contenu retiré,
+			// chaque coupure des relances demandée au support.
+			v.literal('CONVERSATION_OUVERTE'),
+			v.literal('CONTENU_RETIRE'),
+			v.literal('RELANCES_SUSPENDUES')
 		),
 		cible: vCibleJournal,
 		organizationId: v.optional(v.id('organizations')),

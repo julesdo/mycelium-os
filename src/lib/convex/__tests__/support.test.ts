@@ -1,12 +1,13 @@
 /// <reference types="vite/client" />
 import { afterEach, describe, expect, it } from 'vitest';
-import { convexTest } from 'convex-test';
+import { convexTest, type TestConvex } from 'convex-test';
 import schema from '../schema';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { ecrireAuSupport } from '../support/fil';
 import { conversationDuGerant } from '../support/commun';
 import { lireContexteDuCompte } from '../support/contexte';
+import { repondreCommeEquipe } from '../admin/support';
 
 /**
  * LE SERVICE CLIENT, VÉRIFIÉ SUR LA BASE (16/10/2026,
@@ -27,7 +28,7 @@ const modules = Object.fromEntries(
 const DELAI_CONVEX = 30_000;
 const USAGE = { tokensIn: 100, tokensOut: 50, cacheReadTokens: 0, coutEstime: 0.001 };
 
-async function etablissement(t: ReturnType<typeof convexTest>) {
+async function etablissement(t: TestConvex<typeof schema>) {
 	return t.run(async (ctx) => {
 		const organizationId = await ctx.db.insert('organizations', {
 			name: 'Garnier Bâtiment',
@@ -44,7 +45,7 @@ async function etablissement(t: ReturnType<typeof convexTest>) {
 }
 
 function ecrire(
-	t: ReturnType<typeof convexTest>,
+	t: TestConvex<typeof schema>,
 	organizationId: Id<'organizations'>,
 	args: Parameters<typeof ecrireAuSupport>[2]
 ) {
@@ -57,7 +58,7 @@ function ecrire(
 	);
 }
 
-async function etat(t: ReturnType<typeof convexTest>, conversationId: Id<'conversationsSupport'>) {
+async function etat(t: TestConvex<typeof schema>, conversationId: Id<'conversationsSupport'>) {
 	return t.run(async (ctx) => ({
 		conversation: await ctx.db.get(conversationId),
 		messages: await ctx.db
@@ -349,6 +350,96 @@ describe('le contexte que lit Plume', () => {
 
 			expect(serialise).not.toMatch(/DURAND|SENTINELLE|9876|98 765|FA-/);
 			expect(contexte.relancesBloquees.emailClient).toBe(1);
+		},
+		DELAI_CONVEX
+	);
+});
+
+describe('la réponse de l’équipe', () => {
+	const camille = {
+		email: 'camille@letikette.com',
+		role: 'SUPPORT' as const,
+		userId: 'user_camille',
+		nom: 'Camille Dupont'
+	};
+
+	async function equipe(t: TestConvex<typeof schema>, prenom?: string) {
+		await t.run(async (ctx) => {
+			await ctx.db.insert('equipe', {
+				email: camille.email,
+				role: 'SUPPORT',
+				invitePar: 'amorçage',
+				inviteLe: Date.now(),
+				rejointLe: Date.now(),
+				...(prenom === undefined ? {} : { prenomAffiche: prenom })
+			});
+		});
+	}
+
+	it(
+		'arrive dans le fil, annonce l’humain une fois, notifie le gérant et programme l’e-mail',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await etablissement(t);
+			await equipe(t, 'Camille');
+			const id = await ecrire(t, organizationId, { texte: 'Je veux un remboursement' });
+
+			await t.run((ctx) =>
+				repondreCommeEquipe(ctx, camille, { conversationId: id, texte: 'C’est fait.', terminer: false, confirme: false })
+			);
+			await t.run((ctx) =>
+				repondreCommeEquipe(ctx, camille, { conversationId: id, texte: 'Autre chose ?', terminer: false, confirme: false })
+			);
+
+			const { conversation, messages, planifiees } = await etat(t, id);
+			expect(conversation?.etat).toBe('EN_ATTENTE_CLIENT');
+			expect(conversation?.repondantNom).toBe('Camille');
+			expect(conversation?.premiereReponseOuvreeMin).toBeDefined();
+			expect(messages.filter((m) => m.evenement === 'REJOINT')).toHaveLength(1);
+			expect(messages.filter((m) => m.auteur === 'EQUIPE').map((m) => m.auteurNom)).toEqual(['Camille', 'Camille']);
+			expect(planifiees.filter((f) => f.name.includes('envoyerLaReponse'))).toHaveLength(2);
+			const notifications = await t.run((ctx) => ctx.db.query('notifications').collect());
+			expect(notifications[0]?.link).toBe(`/app/aide/${id}`);
+			expect(notifications[0]?.title).toBe('Camille vous a répondu');
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'refuse le mot interdit, et demande de confirmer une voie de justice',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await etablissement(t);
+			await equipe(t, 'Camille');
+			const id = await ecrire(t, organizationId, { texte: 'Je veux un remboursement' });
+
+			await expect(
+				t.run((ctx) =>
+					repondreCommeEquipe(ctx, camille, { conversationId: id, texte: 'Nous vous garantissons tout.', terminer: false, confirme: true })
+				)
+			).rejects.toThrow(/garantie/);
+			await expect(
+				t.run((ctx) =>
+					repondreCommeEquipe(ctx, camille, { conversationId: id, texte: 'Il faudrait saisir le tribunal.', terminer: false, confirme: false })
+				)
+			).rejects.toThrow(/confirmez/);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne répond pas sans le prénom que verront les clients',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await etablissement(t);
+			await equipe(t);
+			const id = await ecrire(t, organizationId, { texte: 'Je veux un remboursement' });
+
+			await expect(
+				t.run((ctx) =>
+					repondreCommeEquipe(ctx, camille, { conversationId: id, texte: 'Bonjour.', terminer: false, confirme: false })
+				)
+			).rejects.toThrow(/prénom/);
 		},
 		DELAI_CONVEX
 	);

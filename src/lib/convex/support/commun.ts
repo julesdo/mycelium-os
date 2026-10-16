@@ -1,4 +1,5 @@
 import { ConvexError } from 'convex/values';
+import { internal } from '../_generated/api';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import {
@@ -152,6 +153,10 @@ export async function passerALEquipe(
 		issue: undefined
 	});
 	await ajouterEvenement(ctx, conversation, 'PASSE', 'Transmis à l’équipe');
+	// L'équipe l'apprend par un lien, jamais par le contenu.
+	await ctx.scheduler.runAfter(0, internal.support.emails.alerterLEquipe, {
+		conversationId: conversation._id
+	});
 }
 
 async function compteur(
