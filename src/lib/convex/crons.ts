@@ -52,6 +52,15 @@ crons.interval(
 	{}
 );
 
+// Le point chiffré du lundi pour le fondateur (`croissance/point.ts`) : 7 h à Paris
+// l'été, 6 h l'hiver.
+crons.weekly(
+	'pointDuLundi',
+	{ dayOfWeek: 'monday', hourUTC: 5, minuteUTC: 0 },
+	internal.croissance.point.envoyerLePoint,
+	{}
+);
+
 crons.daily(
 	'battementQuotidien',
 	{ hourUTC: 6, minuteUTC: 0 },

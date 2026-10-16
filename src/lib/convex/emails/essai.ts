@@ -27,6 +27,7 @@ import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/fran
 import { composerLettreRelance } from '../../verticales/recouvrement/gabarits/lettre-relance-officielle';
 import type { Evenement } from '../../verticales/recouvrement/surveillance';
 import { conseilHtml, conseilTexte, objetDuConseil } from './modeles/conseils';
+import { pointDuLundiHtml, pointDuLundiTexte } from './modeles/pointDuLundi';
 import { CLES_CONSEILS } from '../../croissance/conseils';
 import { lignesDuPlan } from '../croissance/conseils';
 import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
@@ -196,6 +197,26 @@ export function lesEssais(
 			texte: conseilTexte(donnees)
 		});
 	}
+
+	// Le point chiffré du lundi, pour le fondateur.
+	const point = {
+		periode: `du ${dateLisible(ajouterJours(aujourdHui, -7))} au ${dateLisible(ajouterJours(aujourdHui, -1))}`,
+		visiteurs: { visiteurs: 214, pagesVues: 631 },
+		totaux: [
+			{ libelle: 'Inscrits', semaine: 3, mois: 9 },
+			{ libelle: 'Factures déposées', semaine: 2, mois: 6 },
+			{ libelle: 'Relances activées', semaine: 1, mois: 3 },
+			{ libelle: 'Abonnés', semaine: 1, mois: 2 }
+		],
+		sources: ['manuel · transport : inscrits 2 · factures déposées 1', 'Recherche : inscrits 1'],
+		aAppeler: ['Garnier Bâtiment, 72, relances activées', `${CREANCIER}, 45, factures déposées`]
+	};
+	essais.push({
+		objet: 'Le point du lundi',
+		de: plume,
+		html: pointDuLundiHtml(point),
+		texte: pointDuLundiTexte(point)
+	});
 
 	// Les relances au client du gérant : premier rappel, second rappel, rappel
 	// après une promesse non tenue, puis la lettre officielle.

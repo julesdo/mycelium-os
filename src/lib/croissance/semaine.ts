@@ -33,3 +33,18 @@ export function compterParSource(
 		.sort((a, b) => (b.compte.INSCRIT ?? 0) - (a.compte.INSCRIT ?? 0));
 	return { lignes, total };
 }
+
+/** Le nom de chaque étape dans le point du lundi. */
+export const LIBELLES_DES_ETAPES: Record<Etape, string> = {
+	INSCRIT: 'Inscrits',
+	ENTREPRISE: 'Entreprise renseignée',
+	FACTURES_DEPOSEES: 'Factures déposées',
+	MONTANT_REVELE: 'Factures échues trouvées',
+	RELANCES_ACTIVEES: 'Relances activées',
+	ESSAI: 'Essais',
+	ABONNE: 'Abonnés',
+	MONTEE_EN_GAMME: 'Montées en gamme',
+	A_RISQUE: 'À risque',
+	RESILIE: 'Résiliés',
+	RECONQUIS: 'Reconquis'
+};
