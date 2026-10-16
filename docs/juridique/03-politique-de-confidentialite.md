@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.7** du 16 octobre 2026 (la prospection de Letikette, l'équipe de Letikette et la double authentification, sections 5, 8 bis, 9, 10 et 11). **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.8** du 16 octobre 2026 (le service client : l'Aide, Plume support, l'équipe et la réception des e-mails ; et les relances que Resend achemine depuis le 8 octobre, sections 3, 5, 6.1, 7, 9 et 10). **Version 2.7** du 16 octobre 2026 (la prospection de Letikette, l'équipe de Letikette et la double authentification, sections 5, 8 bis, 9, 10 et 11). **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -56,9 +56,16 @@ au regard de l'article 37 du RGPD.
 | Invitations | adresse électronique de la personne invitée, rôle proposé, jeton de lien | fournies par le client |
 | Abonnement | identifiants client et abonnement, formule et rythme, statut, dates de l'essai et du prochain prélèvement, raison facultative d'une résiliation | via Paddle |
 | Acheminement des courriels | identifiant d'envoi, type d'événement, horodatage | générées par Resend |
+| Service client | ce que vous écrivez dans l'Aide ou par e-mail au support, les réponses de Plume et de l'équipe, les notes internes de l'équipe, le sujet, les dates, votre avis facultatif ; pour un e-mail : l'adresse de l'expéditeur, l'objet, les résultats de vérification de l'expéditeur (SPF, DKIM, DMARC) et les seuls en-têtes utiles au tri | fournies par vous ; vérifications calculées par Resend |
 
 **L'adresse IP n'est stockée qu'à un seul endroit du Service** : la table des sessions ouvertes.
 Elle n'alimente aucune mesure d'audience et n'est jamais recoupée.
+
+**Ce que vous écrivez au support, l'équipe de Letikette le lit.** C'est dit avant d'écrire. Un IBAN,
+un numéro de carte ou une clé d'accès collés par mégarde sont **masqués avant tout enregistrement**
+et ne sont jamais transmis ; un nom ou un montant ne se reconnaissent pas sans erreur et restent tels
+que vous les écrivez : n'y mettez pas les données de vos clients. Le texte d'un e-mail est gardé, son
+HTML jamais.
 
 **L'avatar ne sort jamais du navigateur.** Il est redessiné localement par une bibliothèque
 embarquée dans l'application ; aucune requête n'est faite à un tiers pour l'afficher.
@@ -177,6 +184,10 @@ analyse la santé de ce débiteur, ou d'une entreprise que le client s'apprête 
 | Vous envoyer les conseils de Plume dans vos premières semaines (quatre au plus) | **Intérêt légitime**, avec opposition en un clic | art. 6.1.f |
 | Permettre à l'équipe de Letikette d'accompagner les comptes, et journaliser ses accès | **Intérêt légitime** à assister les clients et à sécuriser l'administration du Service | art. 6.1.f |
 | Prospecter des entreprises qui ne sont pas clientes, par leurs contacts professionnels (section 8 bis) | **Intérêt légitime** à présenter le Service, avec opposition à tout moment | art. 6.1.f |
+| Répondre à vos questions au support, par Plume support puis par l'équipe | **Exécution du contrat** | art. 6.1.b |
+| Répondre à une personne qui n'est pas cliente et écrit au support | **Intérêt légitime** à répondre à qui nous écrit | art. 6.1.f |
+| Traiter une demande d'exercice de vos droits reçue au support | **Obligation légale** | art. 6.1.c |
+| Mesurer la qualité du support (délais, résolutions, avis), en statistiques | **Intérêt légitime** à améliorer le Service | art. 6.1.f |
 
 **Les données des clients ne servent à aucune prospection commerciale ni à aucun profilage
 publicitaire.** Letikette prospecte des entreprises qui ne sont pas encore clientes (section 8 bis) ;
@@ -201,6 +212,21 @@ concerne juridiquement. La provenance de la visite est gardée dans l'onglet du 
 de la visite, sans cookie, puis jointe à l'inscription ; elle n'est pas notée sur la page où un
 débiteur consulte ce qu'il doit. Les conseils de Plume se coupent dans Votre compte, puis Votre
 profil, ou par le lien présent en bas de chacun d'eux.
+
+**Le service client.** Dans l'Aide, **Plume support**, un assistant automatique, répond d'abord. Il
+lit la base d'aide du produit et un résumé de votre compte fait **de nombres et de codes** : la
+formule, l'état de l'abonnement (à un administrateur seulement), le nombre de membres, si les
+relances sont activées, combien de dossiers attendent d'être démarrés, combien de relances sont
+programmées ou bloquées, l'état de vos logiciels branchés, le nombre de documents en échec. **Il ne lit
+jamais un dossier** : ni débiteur, ni facture, ni montant. Une question de droit, une demande d'acte
+(remboursement, prélèvement contesté, changement d'adresse ou de titulaire, accès perdu) ou votre
+demande passent à l'équipe, dans le même fil. Une conversation n'est lisible que par son auteur
+et par l'équipe de Letikette ; un collègue de votre établissement ne la lit pas. Plume support
+n'est ouvert qu'après le préavis de la présente version (section 13) ; d'ici là, toute question va à
+l'équipe. **Par e-mail**, un message n'entre dans votre fil que si son expéditeur est prouvé (votre
+adresse vérifiée, et une vérification DMARC réussie) ; sinon il n'est lu que par l'équipe, marqué
+comme tel. Un message d'une personne inconnue n'est lu que par le fondateur, sans réponse
+automatique, et effacé au bout de trente jours.
 
 **Cookies.** Le Service dépose un **cookie de session d'authentification**, strictement nécessaire à
 son fonctionnement et exempté de consentement au titre de l'article 82 de la loi Informatique et
@@ -243,8 +269,11 @@ fichier part tel quel, sans rognage ni conversion en images : l'intégralité de
 transmise — raison sociale et adresse, numéro de facture, libellés, quantités, montants, et le cas
 échéant le nom d'un contact ou toute autre mention.
 
-**Trois traitements empruntent ce chemin**, et aucun autre : la lecture d'un document déposé, la
-lecture d'une pièce justificative rattachée à un dossier, et les échanges avec l'assistant intégré.
+**Cinq traitements empruntent ce chemin**, et aucun autre : la lecture d'un document déposé, la
+lecture d'une pièce justificative rattachée à un dossier, les échanges avec l'assistant intégré, les
+réponses de **Plume support** (votre question, l'historique de la conversation et le résumé chiffré
+de votre compte, section 5) et le **brouillon** que Plume prépare à l'équipe pour vous répondre (la
+conversation, sans rien de vos dossiers ; jamais pour un message dont l'expéditeur n'est pas prouvé).
 
 ### 6.2 L'exception, et elle est récente
 
@@ -290,7 +319,8 @@ indéterminé compte comme absent, jamais comme acquis. **Toute décision appart
 | **Convex, Inc.** | Base de données, stockage des fichiers, exécution des fonctions | **Toutes** | **États-Unis**, région `aws-us-east-1` (section 6.0) |
 | **Vercel Inc.** | Hébergement de l'application | Trafic, journaux | Exécution en région `fra1`, Paris |
 | **Anthropic PBC** | Lecture des documents non structurés | Contenu intégral des documents transmis (section 6) | **États-Unis** |
-| **Resend, Inc.** | Acheminement des courriels de service | Adresse et contenu des courriels de service **uniquement** | **États-Unis** |
+| **Resend, Inc.** | Acheminement des courriels de service et des relances parties au nom du créancier ; réception des e-mails écrits au support | Adresse et contenu de ces courriels ; pour un e-mail reçu, son contenu et les résultats de vérification de l'expéditeur | **États-Unis** |
+| **Google LLC** (Google Workspace) | Messagerie de l'équipe : l'adresse publique du support y arrive, puis est transférée au Service | Adresse de l'expéditeur, objet et contenu des e-mails écrits au support | **États-Unis et Union européenne** |
 | **Paddle.com Market Ltd** | Facturation, vendeur de registre | Identité et moyens de paiement | Royaume-Uni |
 | **Umami** (Umami Cloud) | Mesure d'audience, sans cookie (section 5) | Adresse de la page sans identifiant, page précédente, type d'appareil et de navigateur, langue, taille d'écran, adresse IP de la requête, gestes d'usage sans donnée de dossier ; jamais la page de paiement d'un débiteur | **États-Unis et Union européenne**, selon ses sous-traitants (ClickHouse, Hetzner, AWS) |
 | **Opendatasoft / DILA** | Publication du BODACC, interrogé à la demande | Dénomination recherchée (section 4.4) | France |
@@ -305,10 +335,14 @@ journaux après quinze jours. Les factures lues ne sont enregistrées que chez L
 Letikette dispose chez Nango ne permet pas de lire l'accès du client. Débrancher un logiciel, ou
 supprimer le compte, supprime cet accès chez Nango.
 
-**Resend ne voit jamais un débiteur.** Les seuls courriels acheminés sont ceux qui s'adressent à un
-titulaire de compte : vérification d'adresse, réinitialisation de mot de passe, invitation d'un
-collègue, point quotidien. Aucune relance ne transite par ce prestataire, puisque aucune relance
-n'est envoyée par Letikette.
+**Resend achemine les relances que le créancier laisse partir seules.** Depuis le 8 octobre 2026,
+une relance que le créancier a autorisée part par Resend, à son nom, vers l'adresse de son client ;
+les réponses arrivent à l'adresse du créancier, jamais à Letikette. Les autres courriels s'adressent à
+un titulaire de compte : vérification d'adresse, réinitialisation de mot de passe, invitation d'un
+collègue, point quotidien, réponse du support. **Resend reçoit aussi les e-mails écrits au support**,
+une fois la réception ouverte ; elle ne l'est pas tant que les relances partent du même domaine que
+Letikette, pour qu'aucune réponse d'un débiteur n'arrive à l'équipe. Resend conserve un e-mail reçu
+trente jours.
 
 **Better Auth** n'est pas un destinataire : l'authentification s'exécute dans notre propre
 infrastructure, à partir d'une bibliothèque installée dans le dépôt.
@@ -391,12 +425,16 @@ s'exécute chaque nuit.
 | Parcours du compte (provenance, étapes, indice d'activité) et journal des conseils envoyés | **jusqu'à la suppression de l'établissement**, qui les efface |
 | Notes, tâches et journal de l'équipe de Letikette portant sur un établissement | **jusqu'à la suppression de l'établissement**, qui les efface |
 | Prospects (section 8 bis) | **trois ans après le dernier contact**, effacés automatiquement ; la liste d'opposition ne garde que des empreintes |
+| Conversations du support d'un établissement, et leurs messages | **jusqu'à la suppression de l'établissement**, qui les efface ; un compte supprimé y perd son nom |
+| E-mails reçus d'une personne inconnue, ou dont la vérification a entièrement échoué | **30 jours**, effacés automatiquement |
+| Journal des e-mails reçus (expéditeur, objet, résultat du tri) | **90 jours**, effacé automatiquement |
+| La mesure du support | recalculée chaque heure ; elle ne garde **aucun texte**, seulement des nombres et des identifiants |
 
 **Ce que la suppression d'un établissement efface** : la totalité des données cloisonnées par
 établissement, **fichiers de stockage compris** — pièces déposées, documents importés, logo, photo
 de profil. C'est vérifié par un test automatisé qui échoue si une table nouvelle échappe à la purge.
 
-**SIX ÉCARTS, ÉNONCÉS PLUTÔT QUE MASQUÉS.** Les corriger relève du produit ; les taire serait
+**HUIT ÉCARTS, ÉNONCÉS PLUTÔT QUE MASQUÉS.** Les corriger relève du produit ; les taire serait
 promettre ce qui n'est pas fait.
 
 > 1. **Aucune durée de conservation automatique ne s'applique au contenu du client.** Factures,
@@ -414,6 +452,10 @@ promettre ce qui n'est pas fait.
 >    s'efface sur demande.
 > 6. **Les entrées du journal de l'équipe qui ne portent sur aucun établissement** (une invitation,
 >    un import de prospects) n'ont pas de durée automatique.
+> 7. **Resend garde trente jours une copie de chaque e-mail reçu**, que la suppression d'un
+>    établissement n'atteint pas.
+> 8. **La messagerie de l'équipe peut garder une copie** des e-mails écrits à l'adresse publique du
+>    support, si la règle de transfert ne la supprime pas.
 
 ### Pourquoi la durée est courte sur les documents du client, quand elle s'applique
 
@@ -468,6 +510,14 @@ Service : le chiffrement protège les fichiers stockés (une copie du stockage, 
 fichier qui fuiterait), il ne met pas les documents hors de portée de l'exploitant du Service. Ce
 n'est pas un chiffrement « de bout en bout ». Pour être lu, un document est déchiffré en mémoire,
 le temps de sa lecture, et son contenu peut être transmis au prestataire de lecture (section 6.1).
+
+**Le support, et ce que l'équipe n'y voit pas.** L'équipe de Letikette lit ce que vous lui écrivez,
+rôle par rôle : un membre en lecture seule voit la file des conversations et la mesure, jamais un
+message ; une demande sur vos données personnelles ou un compte compromis ne va qu'au fondateur.
+Chaque ouverture d'une conversation et chaque contenu retiré s'inscrivent au journal de l'équipe. À
+côté d'une conversation, l'équipe ne voit qu'un résumé chiffré de votre compte, jamais un dossier.
+L'expéditeur d'un e-mail n'est pas cru sur parole : sans adresse vérifiée et sans vérification DMARC
+réussie, son message n'entre pas dans votre fil.
 
 Aucun système n'étant infaillible, l'Éditeur s'engage à notifier toute violation de données dans les
 conditions des articles 33 et 34 du RGPD, soit à la CNIL dans les soixante-douze heures et aux

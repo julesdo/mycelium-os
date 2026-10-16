@@ -362,3 +362,29 @@ trente jours** avant d'ouvrir Plume support et la réception : c'est le fondateu
 6. L'entrant, fermé tant que les conditions du § 5.2 ne sont pas réunies.
 7. Le pont entre les deux Plume.
 8. Les pièces jointes, avec la serrure du coffre.
+
+## 14. Ce que la construction a tranché (16/10/2026)
+
+- **« Parler à l'équipe » est au-dessus du compositeur**, pas dans l'en-tête : la troisième colonne
+  de la barre compacte fait 36 px. Sous le pouce, toujours visible tant que la conversation est
+  chez Plume.
+- **Le fil est une page pleine à toutes les largeurs**, comme la conversation de Plume : pas de
+  deux volets au bureau. Le retour et la barre latérale mènent à l'accueil.
+- **Une question tapée à l'accueil s'ouvre dans un fil neuf** (`/app/aide/nouvelle`), sous la
+  présentation qui dit qui lit ; le gérant l'envoie. La question passe par l'état de la
+  navigation, jamais par l'adresse.
+- **Le geste du Plume de l'espace est `OUVRIR` vers `AIDE`** (une destination de plus, plutôt
+  qu'un genre nouveau) et **ne recopie pas la question** : posée sur un dossier, elle nomme
+  presque toujours un client. Le fil rappelle de relire.
+- **Le budget de Plume se compte dans `compteursSupport`** (une ligne par établissement et par
+  mois, une ligne pour tous) plutôt qu'en balayant les messages à chaque envoi.
+- **La mesure ne garde aucun texte** : les lacunes y sont des identifiants, dont les titres se
+  relisent en direct ; une conversation purgée en sort au calcul suivant.
+- **La rangée « Aide » du Compte dit « N réponses à lire »**, sans point : la rangée-lien du kit
+  n'en porte pas.
+- **« À vous », côté équipe, ce sont les conversations chez l'équipe attribuées à soi ou à
+  personne.** Le groupe « À vous » en tête d'Aujourd'hui (admin) reste à faire.
+- **L'authentification d'un e-mail se lit sous toutes ses formes** (`"pass"`, `{ result }`) ; un
+  annuaire de comptes injoignable vaut « pas un titulaire ». Un prospect qui répond passe à « a
+  répondu ».
+- **Les pièces jointes (lot 8) restent à faire**, avec la serrure du coffre.

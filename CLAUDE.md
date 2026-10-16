@@ -691,6 +691,34 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   « Importer » ; « Stop » efface les coordonnées et met l'empreinte de l'adresse sur la liste des
   adresses à ne plus contacter. Le premier fondateur s'amorce en ligne de commande
   (`npx convex run --prod admin/equipe:amorcer '{"email":"…"}'`), les autres s'invitent.
+- **Le service client : Plume d'abord, l'équipe dans le même fil** (16/10/2026,
+  `docs/superpowers/specs/2026-10-16-service-client.md`, sur Intercom Fin, Plain, Front, Monzo, Alan
+  et Linktree). Le fondateur : « un module de service client humain avec tout un système automatisé
+  de chat bot qui utilise Plume puis ensuite qui renvoie vers un humain ». Côté gérant, `/app/aide`
+  (la rangée « Aide » du Compte, le pied de la barre latérale au bureau) : la base d'aide en
+  recherche, puis un fil où **Plume support** répond — un assistant automatique qui ne lit que le
+  produit et un résumé CHIFFRÉ du compte (`support/contexte.ts`, seul fichier du support qui lit au-delà
+  de ses tables, tenu par `support-tables.test.ts` et un client sentinelle). **Le passage à
+  l'équipe se décide par le code, avant le modèle** (`lib/support/passage.ts`) : une demande
+  d'humain, une DEMANDE D'ACTE (rembourser, prélèvement contesté, titulaire, accès perdu, compte
+  compromis, droits sur les données), le budget, deux « Pas vraiment », trois redites ; une question
+  d'information reste chez Plume. L'arrêt des envois et la question de droit se répondent sans
+  modèle. Le passage a lieu À L'INSTANT, Plume se tait, la carte « Transmis » dit le délai en un
+  chiffre (heures ouvrées, ou la médiane mesurée si elle est plus longue). Le texte est **masqué
+  avant tout stockage** (IBAN, carte à préfixe d'émetteur, clés). Une conversation est privée à son
+  auteur. Côté équipe, `/admin/support` : la file, un fil à quatre voix (note interne comprise),
+  « Ce que Plume a compris », le brouillon de Plume (`equipeAction`), les réponses enregistrées, le
+  coupe-circuit des relances (`suspendreLesRelances`, qui retient aussi ce qui était programmé), la
+  mesure matérialisée d'heure en heure sans aucun texte. **Les mêmes lignes rouges tiennent pour
+  l'équipe** : le mot interdit et les verdicts ne partent jamais, un conseil ou une voie de justice
+  après confirmation. La réponse part par e-mail dix minutes après si elle n'est pas lue, vers une
+  adresse vérifiée seulement. **Dormant deux fois** : Plume support sans `PLUME_SUPPORT_OUVERT=oui`
+  (préavis de la politique 2.8), et la réception des e-mails (`/resend/reception`) tant que
+  `RELANCES_EMAIL` partage le domaine d'`AUTH_EMAIL` — un débiteur écrirait sinon à l'équipe. Un
+  e-mail n'entre dans le fil que si l'expéditeur est le titulaire vérifié ET que DMARC passe ;
+  un inconnu va « à trier », au fondateur seul, sans réponse. Les pièces jointes attendent la
+  serrure du coffre. Les tests Convex appellent des cœurs extraits (`ecrireAuSupport`,
+  `repondreCommeEquipe`) : Better Auth ne se monte pas dans `convex-test`.
 - **Sous 1024 px, un panneau se PRÉSENTE ; au-dessus, il se déplie.** Déplier deux mille pixels au
   milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
   application iOS ne le fait. `SectionDepliable` et `RangeeDepliable` rendent donc une **page
