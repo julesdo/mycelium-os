@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccordDeSousTraitanceRouteImport } from './routes/accord-de-sous-traitance'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConditionsGeneralesRouteImport } from './routes/conditions-generales'
@@ -26,6 +27,10 @@ import { Route as SecuriteRouteImport } from './routes/securite'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TarifsRouteImport } from './routes/tarifs'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminEquipeRouteImport } from './routes/admin/equipe'
+import { Route as AdminJournalRouteImport } from './routes/admin/journal'
+import { Route as AdminTachesRouteImport } from './routes/admin/taches'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppClientsRouteImport } from './routes/app/clients'
 import { Route as AppCoffreRouteImport } from './routes/app/coffre'
@@ -43,6 +48,11 @@ import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as ConnexionVerificationRouteImport } from './routes/connexion_.verification'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
+import { Route as AdminComptesIndexRouteImport } from './routes/admin/comptes.index'
+import { Route as AdminComptesIdRouteImport } from './routes/admin/comptes.$id'
+import { Route as AdminProspectsIndexRouteImport } from './routes/admin/prospects.index'
+import { Route as AdminProspectsIdRouteImport } from './routes/admin/prospects.$id'
+import { Route as AdminProspectsImporterRouteImport } from './routes/admin/prospects.importer'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppClientsIdRouteImport } from './routes/app/clients.$id'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
@@ -66,6 +76,11 @@ const IndexRoute = IndexRouteImport.update({
 const AccordDeSousTraitanceRoute = AccordDeSousTraitanceRouteImport.update({
   id: '/accord-de-sous-traitance',
   path: '/accord-de-sous-traitance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRouteRoute = AppRouteRouteImport.update({
@@ -143,6 +158,26 @@ const TarifsRoute = TarifsRouteImport.update({
   id: '/tarifs',
   path: '/tarifs',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEquipeRoute = AdminEquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminJournalRoute = AdminJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminTachesRoute = AdminTachesRouteImport.update({
+  id: '/taches',
+  path: '/taches',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
@@ -229,6 +264,31 @@ const RejoindreTokenRoute = RejoindreTokenRouteImport.update({
   path: '/rejoindre/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminComptesIndexRoute = AdminComptesIndexRouteImport.update({
+  id: '/comptes/',
+  path: '/comptes/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminComptesIdRoute = AdminComptesIdRouteImport.update({
+  id: '/comptes/$id',
+  path: '/comptes/$id',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProspectsIndexRoute = AdminProspectsIndexRouteImport.update({
+  id: '/prospects/',
+  path: '/prospects/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProspectsIdRoute = AdminProspectsIdRouteImport.update({
+  id: '/prospects/$id',
+  path: '/prospects/$id',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProspectsImporterRoute = AdminProspectsImporterRouteImport.update({
+  id: '/prospects/importer',
+  path: '/prospects/importer',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -302,6 +362,7 @@ const AppRisqueVerifierRoute = AppRisqueVerifierRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/accord-de-sous-traitance': typeof AccordDeSousTraitanceRoute
   '/bienvenue': typeof BienvenueRoute
@@ -318,6 +379,9 @@ export interface FileRoutesByFullPath {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
+  '/admin/equipe': typeof AdminEquipeRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/taches': typeof AdminTachesRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -333,8 +397,12 @@ export interface FileRoutesByFullPath {
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/admin/comptes/$id': typeof AdminComptesIdRoute
+  '/admin/prospects/$id': typeof AdminProspectsIdRoute
+  '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
@@ -346,6 +414,8 @@ export interface FileRoutesByFullPath {
   '/app/pilote/$id': typeof AppPiloteIdRoute
   '/app/risque/$id': typeof AppRisqueIdRoute
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
+  '/admin/comptes/': typeof AdminComptesIndexRoute
+  '/admin/prospects/': typeof AdminProspectsIndexRoute
   '/app/demarrer/': typeof AppDemarrerIndexRoute
   '/app/pilote/': typeof AppPiloteIndexRoute
   '/app/risque/': typeof AppRisqueIndexRoute
@@ -367,6 +437,9 @@ export interface FileRoutesByTo {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
+  '/admin/equipe': typeof AdminEquipeRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/taches': typeof AdminTachesRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -382,8 +455,12 @@ export interface FileRoutesByTo {
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
+  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/blog': typeof BlogIndexRoute
+  '/admin/comptes/$id': typeof AdminComptesIdRoute
+  '/admin/prospects/$id': typeof AdminProspectsIdRoute
+  '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
@@ -395,6 +472,8 @@ export interface FileRoutesByTo {
   '/app/pilote/$id': typeof AppPiloteIdRoute
   '/app/risque/$id': typeof AppRisqueIdRoute
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
+  '/admin/comptes': typeof AdminComptesIndexRoute
+  '/admin/prospects': typeof AdminProspectsIndexRoute
   '/app/demarrer': typeof AppDemarrerIndexRoute
   '/app/pilote': typeof AppPiloteIndexRoute
   '/app/risque': typeof AppRisqueIndexRoute
@@ -402,6 +481,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/accord-de-sous-traitance': typeof AccordDeSousTraitanceRoute
   '/bienvenue': typeof BienvenueRoute
@@ -418,6 +498,9 @@ export interface FileRoutesById {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
+  '/admin/equipe': typeof AdminEquipeRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/taches': typeof AdminTachesRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -433,8 +516,12 @@ export interface FileRoutesById {
   '/connexion_/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/admin/comptes/$id': typeof AdminComptesIdRoute
+  '/admin/prospects/$id': typeof AdminProspectsIdRoute
+  '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
@@ -446,6 +533,8 @@ export interface FileRoutesById {
   '/app/pilote/$id': typeof AppPiloteIdRoute
   '/app/risque/$id': typeof AppRisqueIdRoute
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
+  '/admin/comptes/': typeof AdminComptesIndexRoute
+  '/admin/prospects/': typeof AdminProspectsIndexRoute
   '/app/demarrer/': typeof AppDemarrerIndexRoute
   '/app/pilote/': typeof AppPiloteIndexRoute
   '/app/risque/': typeof AppRisqueIndexRoute
@@ -454,6 +543,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/app'
     | '/accord-de-sous-traitance'
     | '/bienvenue'
@@ -470,6 +560,9 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/tarifs'
+    | '/admin/equipe'
+    | '/admin/journal'
+    | '/admin/taches'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -485,8 +578,12 @@ export interface FileRouteTypes {
     | '/connexion/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
+    | '/admin/'
     | '/app/'
     | '/blog/'
+    | '/admin/comptes/$id'
+    | '/admin/prospects/$id'
+    | '/admin/prospects/importer'
     | '/api/auth/$'
     | '/app/clients/$id'
     | '/app/creance/$id'
@@ -498,6 +595,8 @@ export interface FileRouteTypes {
     | '/app/pilote/$id'
     | '/app/risque/$id'
     | '/app/risque/verifier'
+    | '/admin/comptes/'
+    | '/admin/prospects/'
     | '/app/demarrer/'
     | '/app/pilote/'
     | '/app/risque/'
@@ -519,6 +618,9 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/tarifs'
+    | '/admin/equipe'
+    | '/admin/journal'
+    | '/admin/taches'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -534,8 +636,12 @@ export interface FileRouteTypes {
     | '/connexion/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
+    | '/admin'
     | '/app'
     | '/blog'
+    | '/admin/comptes/$id'
+    | '/admin/prospects/$id'
+    | '/admin/prospects/importer'
     | '/api/auth/$'
     | '/app/clients/$id'
     | '/app/creance/$id'
@@ -547,12 +653,15 @@ export interface FileRouteTypes {
     | '/app/pilote/$id'
     | '/app/risque/$id'
     | '/app/risque/verifier'
+    | '/admin/comptes'
+    | '/admin/prospects'
     | '/app/demarrer'
     | '/app/pilote'
     | '/app/risque'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/app'
     | '/accord-de-sous-traitance'
     | '/bienvenue'
@@ -569,6 +678,9 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/tarifs'
+    | '/admin/equipe'
+    | '/admin/journal'
+    | '/admin/taches'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -584,8 +696,12 @@ export interface FileRouteTypes {
     | '/connexion_/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
+    | '/admin/'
     | '/app/'
     | '/blog/'
+    | '/admin/comptes/$id'
+    | '/admin/prospects/$id'
+    | '/admin/prospects/importer'
     | '/api/auth/$'
     | '/app/clients/$id'
     | '/app/creance/$id'
@@ -597,6 +713,8 @@ export interface FileRouteTypes {
     | '/app/pilote/$id'
     | '/app/risque/$id'
     | '/app/risque/verifier'
+    | '/admin/comptes/'
+    | '/admin/prospects/'
     | '/app/demarrer/'
     | '/app/pilote/'
     | '/app/risque/'
@@ -604,6 +722,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AccordDeSousTraitanceRoute: typeof AccordDeSousTraitanceRoute
   BienvenueRoute: typeof BienvenueRoute
@@ -643,6 +762,13 @@ declare module '@tanstack/react-router' {
       path: '/accord-de-sous-traitance'
       fullPath: '/accord-de-sous-traitance'
       preLoaderRoute: typeof AccordDeSousTraitanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -749,6 +875,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/tarifs'
       preLoaderRoute: typeof TarifsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/equipe': {
+      id: '/admin/equipe'
+      path: '/equipe'
+      fullPath: '/admin/equipe'
+      preLoaderRoute: typeof AdminEquipeRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/journal': {
+      id: '/admin/journal'
+      path: '/journal'
+      fullPath: '/admin/journal'
+      preLoaderRoute: typeof AdminJournalRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/taches': {
+      id: '/admin/taches'
+      path: '/taches'
+      fullPath: '/admin/taches'
+      preLoaderRoute: typeof AdminTachesRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/app/': {
       id: '/app/'
@@ -869,6 +1023,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RejoindreTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/comptes/': {
+      id: '/admin/comptes/'
+      path: '/comptes'
+      fullPath: '/admin/comptes/'
+      preLoaderRoute: typeof AdminComptesIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/comptes/$id': {
+      id: '/admin/comptes/$id'
+      path: '/comptes/$id'
+      fullPath: '/admin/comptes/$id'
+      preLoaderRoute: typeof AdminComptesIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/prospects/': {
+      id: '/admin/prospects/'
+      path: '/prospects'
+      fullPath: '/admin/prospects/'
+      preLoaderRoute: typeof AdminProspectsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/prospects/$id': {
+      id: '/admin/prospects/$id'
+      path: '/prospects/$id'
+      fullPath: '/admin/prospects/$id'
+      preLoaderRoute: typeof AdminProspectsIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/prospects/importer': {
+      id: '/admin/prospects/importer'
+      path: '/prospects/importer'
+      fullPath: '/admin/prospects/importer'
+      preLoaderRoute: typeof AdminProspectsImporterRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -970,6 +1159,34 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminEquipeRoute: typeof AdminEquipeRoute
+  AdminJournalRoute: typeof AdminJournalRoute
+  AdminTachesRoute: typeof AdminTachesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminComptesIdRoute: typeof AdminComptesIdRoute
+  AdminProspectsIdRoute: typeof AdminProspectsIdRoute
+  AdminProspectsImporterRoute: typeof AdminProspectsImporterRoute
+  AdminComptesIndexRoute: typeof AdminComptesIndexRoute
+  AdminProspectsIndexRoute: typeof AdminProspectsIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminEquipeRoute: AdminEquipeRoute,
+  AdminJournalRoute: AdminJournalRoute,
+  AdminTachesRoute: AdminTachesRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminComptesIdRoute: AdminComptesIdRoute,
+  AdminProspectsIdRoute: AdminProspectsIdRoute,
+  AdminProspectsImporterRoute: AdminProspectsImporterRoute,
+  AdminComptesIndexRoute: AdminComptesIndexRoute,
+  AdminProspectsIndexRoute: AdminProspectsIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 interface AppClientsRouteChildren {
   AppClientsIdRoute: typeof AppClientsIdRoute
 }
@@ -1059,6 +1276,7 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AppRouteRoute: AppRouteRouteWithChildren,
   AccordDeSousTraitanceRoute: AccordDeSousTraitanceRoute,
   BienvenueRoute: BienvenueRoute,

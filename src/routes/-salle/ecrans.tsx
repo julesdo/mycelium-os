@@ -13,6 +13,7 @@ import { ECRANS_COFFRE } from './coffre';
 import { ECRANS_SANTE } from './sante';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
+import { ECRANS_ADMIN } from './admin';
 
 /**
  * LES ÉCRANS DU PRODUIT, TELS QU'IL LES AFFICHE.
@@ -101,5 +102,10 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	 * actif. Cette entrée montre les sept états que la navigation réelle ne
 	 * produit pas d'un coup, chacun dans son cadre. */
 	...ECRANS_BARRE_ET_COMPAGNON,
-	...ECRANS_PLUME
+	...ECRANS_PLUME,
+
+	/* ── L'ADMIN DE L'ÉQUIPE (16/10/2026) ─────────────────────────────────────
+	 * Rendu dans la coquille de l'application, et non dans la sienne : c'est
+	 * l'écran qu'on regarde ici, pas sa barre latérale. */
+	...ECRANS_ADMIN
 ];

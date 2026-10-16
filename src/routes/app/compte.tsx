@@ -92,6 +92,8 @@ function PageCompte() {
 		| { twoFactorEnabled?: boolean | null }
 		| null
 		| undefined;
+	// Un membre de l'équipe de Letikette voit la rangée « Admin » ; personne d'autre.
+	const accesAdmin = useQuery(api.admin.acces.monAcces, {});
 	/** Les conseils de Plume par e-mail, pour la personne connectée. */
 	const conseils = useQuery(api.croissance.reglage.mesConseils, {});
 	const reglerConseils = useMutation(api.croissance.reglage.reglerMesConseils).withOptimisticUpdate(
@@ -591,6 +593,7 @@ function PageCompte() {
 			parCourriel: pointDuMatin,
 			onRegler: (parCourriel) => void reglerPointDuMatin({ parCourriel })
 		},
+		admin: accesAdmin?.etat === 'OK' || accesAdmin?.etat === 'DOUBLE_AUTH_REQUISE',
 		doubleAuth: {
 			active:
 				utilisateurAuth === undefined ? undefined : utilisateurAuth?.twoFactorEnabled === true,

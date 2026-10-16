@@ -5,6 +5,7 @@ import {
 	Building2Icon,
 	CheckIcon,
 	KeyRoundIcon,
+	LayoutDashboardIcon,
 	ScaleIcon,
 	CreditCardIcon,
 	LogOutIcon,
@@ -161,6 +162,8 @@ export interface CompteAffiche {
 	};
 	/** La double authentification de la personne connectée (16/10/2026). */
 	readonly doubleAuth?: GestesDoubleAuth;
+	/** Vrai pour un membre de l'équipe de Letikette : la rangée « Admin » y mène (16/10/2026). */
+	readonly admin?: boolean;
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -455,6 +458,16 @@ export function EcranCompte({
 							<DoubleAuthentification {...pret.doubleAuth} />
 						</RangeeDepliable>
 					)}
+
+					{/* L'admin, pour la seule équipe de Letikette : il ne s'annonce à personne d'autre. */}
+					{pret.admin === true ? (
+						<RangeeLien
+							vers="/admin"
+							icone={<LayoutDashboardIcon />}
+							titre="Admin"
+							valeur="L’équipe de Letikette"
+						/>
+					) : null}
 				</ListeDeRangees>
 
 				{/*

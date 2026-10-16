@@ -23,6 +23,24 @@ export const ETAPES = [
 ] as const;
 
 export type Etape = (typeof ETAPES)[number];
+
+/**
+ * Le nom d'une étape pour UN compte, sur sa fiche (« Abonné ») ; le point du lundi
+ * compte des comptes et garde le pluriel (`LIBELLES_DES_ETAPES`).
+ */
+export const LIBELLES_D_UNE_ETAPE: Record<Etape, string> = {
+	INSCRIT: 'Inscrit',
+	ENTREPRISE: 'Entreprise renseignée',
+	FACTURES_DEPOSEES: 'Factures déposées',
+	MONTANT_REVELE: 'Factures échues trouvées',
+	RELANCES_ACTIVEES: 'Relances activées',
+	ESSAI: 'Essai commencé',
+	ABONNE: 'Abonné',
+	MONTEE_EN_GAMME: 'Montée en gamme',
+	A_RISQUE: 'À risque',
+	RESILIE: 'Résilié',
+	RECONQUIS: 'Reconquis'
+};
 export type DatesDesEtapes = Partial<Record<Etape, number>>;
 export type FormuleVue = 'solo' | 'equipe' | 'pro';
 export type RythmeVu = 'mensuel' | 'annuel';

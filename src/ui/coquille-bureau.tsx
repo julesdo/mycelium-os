@@ -164,9 +164,12 @@ export function BarreHauteBureau({
  */
 export function DeclencheurRechercheBureau({
 	onOuvrir,
-	raccourci
+	raccourci,
+	texte = 'Rechercher un client, une facture'
 }: {
 	readonly onOuvrir: () => void;
+	/** Ce que la recherche trouve : l'admin cherche des comptes et des prospects. */
+	readonly texte?: string;
 	/** « Ctrl K » ou « ⌘ K », selon le clavier. */
 	readonly raccourci: string;
 }) {
@@ -179,9 +182,7 @@ export function DeclencheurRechercheBureau({
 			className="champ-bureau flex h-9 w-56 items-center gap-2 rounded-full pr-1.5 pl-3 text-left xl:w-72 2xl:w-80"
 		>
 			<SearchIcon aria-hidden className="size-4 shrink-0 text-cladd-fg-softer" />
-			<span className="min-w-0 flex-1 truncate text-cladd-2xs text-cladd-fg-softer">
-				Rechercher un client, une facture
-			</span>
+			<span className="min-w-0 flex-1 truncate text-cladd-2xs text-cladd-fg-softer">{texte}</span>
 			<kbd className="touche-clavier shrink-0 rounded-md px-1.5 py-0.5 font-sans text-cladd-4xs text-cladd-fg-softer">
 				{raccourci}
 			</kbd>

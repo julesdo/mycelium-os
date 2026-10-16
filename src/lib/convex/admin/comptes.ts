@@ -2,8 +2,7 @@ import { v, ConvexError } from 'convex/values';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { QueryCtx } from '../_generated/server';
 import { components } from '../_generated/api';
-import { ETAPES, type Etape } from '../../croissance/etapes';
-import { LIBELLES_DES_ETAPES } from '../../croissance/semaine';
+import { ETAPES, LIBELLES_D_UNE_ETAPE, type Etape } from '../../croissance/etapes';
 import { libelleDeSource } from '../../croissance/source';
 import { SEUIL_APPELER } from '../../croissance/score';
 import { equipeMutation, equipeQuery, noterAuJournal } from './enveloppe';
@@ -52,6 +51,7 @@ function derniereEtape(etapes: Doc<'parcoursComptes'>['etapes']): Etape | undefi
 const vLigneCompte = v.object({
 	id: v.id('organizations'),
 	nom: v.string(),
+	siren: v.optional(v.string()),
 	formule: v.string(),
 	etape: v.string(),
 	etapeLe: v.optional(v.number()),
@@ -69,13 +69,18 @@ async function lignes(ctx: QueryCtx) {
 			.query('parcoursComptes')
 			.withIndex('by_org', (q) => q.eq('organizationId', org._id))
 			.first();
+		const profil = await ctx.db
+			.query('profilsCreancier')
+			.withIndex('by_org', (q) => q.eq('organizationId', org._id))
+			.first();
 		const etapes = parcours?.etapes ?? {};
 		const etape = derniereEtape(etapes);
 		resultat.push({
 			id: org._id,
 			nom: org.name,
+			...(profil?.siren ? { siren: profil.siren } : {}),
 			formule: formuleDe(org),
-			etape: etape === undefined ? 'Inscrit' : LIBELLES_DES_ETAPES[etape],
+			etape: etape === undefined ? 'Inscrit' : LIBELLES_D_UNE_ETAPE[etape],
 			...(etape === undefined || etapes[etape] === undefined ? {} : { etapeLe: etapes[etape] }),
 			score: parcours?.score ?? 0,
 			source: libelleDeSource(parcours?.source ?? null),
@@ -219,7 +224,7 @@ export const fiche = equipeQuery('LECTURE')({
 			raisonsDuScore: parcours?.raisonsDuScore ?? [],
 			etapes: ETAPES.filter((e) => e !== 'A_RISQUE' || etapes.A_RISQUE !== undefined).map((e) => ({
 				etape: e,
-				libelle: LIBELLES_DES_ETAPES[e],
+				libelle: LIBELLES_D_UNE_ETAPE[e],
 				...(etapes[e] === undefined ? {} : { le: etapes[e] })
 			})),
 			membres,

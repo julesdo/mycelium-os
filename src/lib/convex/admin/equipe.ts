@@ -205,3 +205,20 @@ export const journal = equipeQuery('FONDATEUR')({
 			.map((l) => ({ auteur: l.auteur, action: l.action, cible: l.cible, le: l.le }));
 	}
 });
+
+/**
+ * Les adresses des membres actifs : ce que les écrans proposent comme responsable
+ * d'un prospect ou d'une tâche, à tous les rôles (la liste complète, avec les rôles
+ * et la double authentification, reste au fondateur).
+ */
+export const adresses = equipeQuery('LECTURE')({
+	args: {},
+	returns: v.array(v.string()),
+	handler: async (ctx) => {
+		const membres = await ctx.db.query('equipe').take(200);
+		return membres
+			.filter((m) => m.retireLe === undefined)
+			.map((m) => m.email)
+			.sort();
+	}
+});

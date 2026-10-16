@@ -36,7 +36,11 @@ export interface EcranDuProduit {
 		  secondes, il ne paie pas. C'est l'écran qu'il faut le plus regarder aux
 		  quatre largeurs, et c'était le seul que la borne de typage excluait.
 		*/
-		`/app/${string}` | '/bienvenue' | '/' | '/p/$jeton'
+		/*
+		  ⚠️ ET L'ADMIN DEPUIS LE 16 OCTOBRE 2026 : les écrans de l'équipe se regardent
+		  aux quatre largeurs comme les autres.
+		*/
+		`/app/${string}` | `/admin/${string}` | '/bienvenue' | '/' | '/p/$jeton'
 	>;
 	/**
 	 * L'IDENTITÉ DE L'ENTRÉE DANS LA SALLE, quand la route ne suffit pas.

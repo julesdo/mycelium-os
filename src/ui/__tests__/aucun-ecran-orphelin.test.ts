@@ -201,9 +201,16 @@ function destinationsEcrites(): ReadonlySet<string> {
 	  compter rendrait ce test complaisant — exactement ce que la règle sur
 	  `retourVers`, plus haut, interdit.
 	*/
-	const barre = readFileSync(join(RACINE, 'app', 'barre.tsx'), 'utf8');
-	for (const [, destination] of barre.matchAll(/\bvers:\s*["'](\/[^"']*)["']/g)) {
-		if (destination !== undefined) vues.add(destination);
+	/*
+	  ET LES ONGLETS DE L'ADMIN (16/10/2026) : sa barre latérale et sa barre du bas
+	  lisent les mêmes destinations, écrites en clés d'objet dans sa coquille. Ce
+	  fichier ne porte aucun retour.
+	*/
+	for (const coquille of [join('app', 'barre.tsx'), join('app', 'coquille-admin.tsx')]) {
+		const barre = readFileSync(join(RACINE, coquille), 'utf8');
+		for (const [, destination] of barre.matchAll(/\bvers:\s*["'](\/[^"']*)["']/g)) {
+			if (destination !== undefined) vues.add(destination);
+		}
 	}
 	return vues;
 }

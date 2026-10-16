@@ -30,6 +30,8 @@ const SURFACES = [
 	join('src', 'ui'),
 	join('src', 'app'),
 	join('src', 'routes'),
+	// Les écrans de l'admin (16/10/2026) : l'équipe lit les mêmes mots que le gérant.
+	join('src', 'screens', 'admin'),
 	join('src', 'marketing'),
 	join('src', 'lib', 'config'),
 	join('src', 'lib', 'convex', 'emails'),

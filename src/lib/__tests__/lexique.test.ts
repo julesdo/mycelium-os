@@ -20,6 +20,8 @@ const PERIMETRE = [
 	join('src', 'ui'),
 	join('src', 'screens'),
 	join('src', 'routes', 'app'),
+	// L'admin de l'équipe (16/10/2026) : ses écrans vivent sous `src/screens`, ses routes ici.
+	join('src', 'routes', 'admin'),
 	join('src', 'app'),
 	/*
 	  ⚠️ ET LE MÉTIER, DEPUIS LE 29 SEPTEMBRE 2026.
