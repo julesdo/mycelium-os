@@ -257,6 +257,67 @@ describe('les relances du pilote', () => {
 		},
 		DELAI_CONVEX
 	);
+
+	it(
+		'couper les relances retient aussi celles déjà programmées',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, factureId } = await dossierEnRetard(t);
+			await ouvrirLeDossier(t, organizationId, factureId);
+			await activer(t, organizationId);
+			await t.mutation(internal.recouvrement.pilote.programmerLesRelances, {
+				organizationId,
+				jour: JOUR
+			});
+			await tout(t, (await dernierTravail(t, organizationId))!._id);
+			const envoiId = (await t.run(async (ctx) => ctx.db.query('envois').first()))!._id;
+
+			const retenues = await t.mutation(internal.recouvrement.pilote.suspendreLePilote, {
+				organizationId
+			});
+
+			expect(retenues).toBe(1);
+			const { envoi, pilote } = await t.run(async (ctx) => ({
+				envoi: await ctx.db.get(envoiId),
+				pilote: await ctx.db.query('pilotes').first()
+			}));
+			expect(envoi?.etat).toBe('ABANDONNE');
+			expect(envoi?.envoiProgramme).toBeUndefined();
+			expect(pilote?.envoiAutomatique).toBe(false);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'n’envoie pas une relance du pilote dont le départ a commencé après la coupure',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, factureId } = await dossierEnRetard(t);
+			await ouvrirLeDossier(t, organizationId, factureId);
+			await activer(t, organizationId);
+			await t.mutation(internal.recouvrement.pilote.programmerLesRelances, {
+				organizationId,
+				jour: JOUR
+			});
+			await tout(t, (await dernierTravail(t, organizationId))!._id);
+			const envoiId = (await t.run(async (ctx) => ctx.db.query('envois').first()))!._id;
+
+			Reflect.deleteProperty(process.env, 'AUTH_E2E_TEST_SECRET');
+			process.env.RESEND_API_KEY = 're_test';
+			process.env.RELANCES_EMAIL = 'relances@example.com';
+			await t.mutation(internal.recouvrement.pilote.lancerEnvoi, { envoiId });
+			// La coupure arrive pendant que le pilote coche ses étapes.
+			await t.run(async (ctx) => {
+				const pilote = await ctx.db.query('pilotes').first();
+				await ctx.db.patch(pilote!._id, { envoiAutomatique: false });
+			});
+			await tout(t, (await dernierTravail(t, organizationId))!._id);
+
+			const envoi = await t.run(async (ctx) => ctx.db.get(envoiId));
+			expect(envoi?.etat).toBe('ABANDONNE');
+		},
+		DELAI_CONVEX
+	);
 });
 
 /**

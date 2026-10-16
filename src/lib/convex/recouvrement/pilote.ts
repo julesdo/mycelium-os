@@ -1182,6 +1182,10 @@ export const lancerEnvoi = internalMutation({
 	handler: async (ctx, { envoiId }): Promise<null> => {
 		const envoi = await ctx.db.get(envoiId);
 		if (envoi === null || envoi.etat !== 'PROGRAMME') return null;
+		if (await relancesCoupees(ctx, envoi)) {
+			await ctx.db.patch(envoiId, { etat: 'ABANDONNE', envoiProgramme: undefined });
+			return null;
+		}
 		const creance = await ctx.db.get(envoi.creanceId);
 		const debiteur = creance === null ? null : await ctx.db.get(creance.debiteurId);
 		const client = debiteur?.denomination ?? 'ce client';
@@ -1234,6 +1238,10 @@ export const lancerEnvoi = internalMutation({
 async function envoyerMaintenant(ctx: MutationCtx, envoiId: Id<'envois'>): Promise<void> {
 	const envoi = await ctx.db.get(envoiId);
 	if (envoi === null || envoi.etat !== 'PROGRAMME') return;
+	if (await relancesCoupees(ctx, envoi)) {
+		await ctx.db.patch(envoiId, { etat: 'ABANDONNE', envoiProgramme: undefined });
+		return;
+	}
 	const creance = await ctx.db.get(envoi.creanceId);
 	const debiteur = creance === null ? null : await ctx.db.get(creance.debiteurId);
 	if (
@@ -1335,19 +1343,80 @@ export const activerRelances = authedMutation({
 	handler: async (ctx, { actif }): Promise<null> => {
 		const { organizationId, user } = await getUserOrg(ctx);
 		await requireOrgAdmin(ctx, organizationId, user._id);
-		const pilote = await piloteDe(ctx, organizationId);
-		await ctx.db.patch(pilote._id, {
-			envoiAutomatique: actif,
-			...(actif ? { activeLe: Date.now(), activePar: user._id } : {})
-		});
 		if (actif) {
+			const pilote = await piloteDe(ctx, organizationId);
+			await ctx.db.patch(pilote._id, {
+				envoiAutomatique: true,
+				activeLe: Date.now(),
+				activePar: user._id
+			});
 			await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
+		} else {
+			await suspendreLesRelances(ctx, organizationId);
 		}
 		await ctx.scheduler.runAfter(0, internal.croissance.releve.releverLesEtapes, {
 			organizationId
 		});
 		return null;
 	}
+});
+
+/**
+ * LES RELANCES AUTOMATIQUES SONT-ELLES COUPÉES POUR CET ENVOI ? Seul ce que le
+ * pilote a préparé en dépend : un courrier validé par le gérant part quand même.
+ */
+async function relancesCoupees(ctx: MutationCtx, envoi: Doc<'envois'>): Promise<boolean> {
+	if (envoi.preparePar !== 'pilote') return false;
+	const pilote = await ctx.db
+		.query('pilotes')
+		.withIndex('by_org', (q) => q.eq('organizationId', envoi.organizationId))
+		.first();
+	return pilote?.envoiAutomatique !== true;
+}
+
+/**
+ * COUPER LES RELANCES AUTOMATIQUES — et retenir celles déjà programmées.
+ *
+ * ⚠️ BAISSER L'INTERRUPTEUR NE SUFFISAIT PAS (relevé le 16/10/2026) : les
+ * relances déjà programmées gardaient leur départ, et partaient dans l'heure
+ * alors que l'écran disait les relances coupées. Elles sont désormais retenues
+ * ici, leur départ annulé, et l'envoi revérifie l'interrupteur au moment même.
+ * Le client n'est PAS retiré du pilote (ce que fait « Retenir ») : la coupure
+ * vaut pour tout l'établissement, et se lève d'un geste.
+ */
+export async function suspendreLesRelances(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>
+): Promise<number> {
+	const pilote = await ctx.db
+		.query('pilotes')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	if (pilote !== null && pilote.envoiAutomatique !== false) {
+		await ctx.db.patch(pilote._id, { envoiAutomatique: false });
+	}
+	const programmes = await ctx.db
+		.query('envois')
+		.withIndex('by_org_and_etat', (q) =>
+			q.eq('organizationId', organizationId).eq('etat', 'PROGRAMME')
+		)
+		.take(1000);
+	let retenues = 0;
+	for (const envoi of programmes) {
+		if (envoi.preparePar !== 'pilote') continue;
+		if (envoi.envoiProgramme !== undefined) await ctx.scheduler.cancel(envoi.envoiProgramme);
+		await ctx.db.patch(envoi._id, { etat: 'ABANDONNE', envoiProgramme: undefined });
+		retenues += 1;
+	}
+	return retenues;
+}
+
+/** La coupure demandée à l'équipe, par écrit, par un administrateur (le support). */
+export const suspendreLePilote = internalMutation({
+	args: { organizationId: v.id('organizations') },
+	returns: v.number(),
+	handler: async (ctx, { organizationId }): Promise<number> =>
+		suspendreLesRelances(ctx, organizationId)
 });
 
 // ─────────────────────────────────────────────────────────────────────────
