@@ -553,8 +553,8 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
 - **Le moteur de croissance** (16/10/2026, stratégie `docs/superpowers/specs/2026-10-16-strategie-de-croissance.md`,
   moteur `2026-10-16-moteur-de-croissance-design.md`). Le fondateur : « commencer à la main au lieu
   d'exploser un budget ». La prospection se fait d'abord à la main (`docs/croissance/phase-manuelle.md`,
-  son tableur et ses e-mails types), et chaque dépense (Instantly, Twenty, le point écrit par Claude)
-  attend son seuil mesuré. Le code, gratuit : la **source** de chaque inscription (amorce du `<head>`,
+  son tableur et ses e-mails types), et chaque dépense (Instantly, le point écrit par Claude) attend son
+  seuil mesuré ; Twenty est abandonné : le CRM sera le premier module de l'interface admin. Le code, gratuit : la **source** de chaque inscription (amorce du `<head>`,
   `app/source-visite.ts`, gardée le temps de l'onglet, jamais sur `/p/`, bornée par `lireSource`) ;
   les **étapes** déduites de l'état réel, jamais réécrites (`croissance/releve.ts`, logique pure dans
   `src/lib/croissance/`, frontière testée comme le socle), relevées après la création, un dépôt lu,

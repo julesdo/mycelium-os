@@ -183,6 +183,6 @@ Chaque dépense se débloque par un seuil mesuré ici, pas par une date.
 |---|---|
 | Instantly, domaines, boîtes (~100 € par mois) | 50 e-mails écrits à la main obtiennent au moins 10 % de réponses positives, **et** vous n'arrivez plus à suivre à la main |
 | Icypeas ou FullEnrich, MillionVerifier | en même temps qu'Instantly |
-| Twenty (~18 € par mois) | plus de 50 prospects actifs dans le tableur |
+| Le CRM de l'interface admin (du code, 0 €) | plus de 50 prospects actifs dans le tableur |
 | Expériences automatiques, point du lundi écrit par Claude | environ 100 inscrits par mois |
 | Publicité | le coût d'acquisition des autres canaux est connu |

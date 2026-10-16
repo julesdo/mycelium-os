@@ -156,7 +156,11 @@ Un indice de 0 à 100, calculé par une fonction pure aux règles nommées (comm
 Le score se recalcule avec les étapes. Il n'est montré qu'au fondateur, dans Twenty et dans le
 point du lundi.
 
-### 2.6 Twenty
+### 2.6 Twenty — abandonné le 16/10/2026
+
+> Le cockpit est l'interface admin (stratégie, sous-projet 6) : les données restent dans Convex, et
+> rien de ce paragraphe ne se construit. Il reste pour mémoire.
+
 
 - **Un seul sens : du produit vers Twenty**, par l'API REST de Twenty.
 - **Ce qui part :** la société (nom de l'établissement, SIREN, ville, code d'activité quand il est connu, formule,

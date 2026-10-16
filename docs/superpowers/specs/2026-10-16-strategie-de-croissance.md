@@ -10,6 +10,12 @@
 > dans un cadre** (il valide chaque texte, elle promeut seule la variante gagnante) ; cette
 > stratégie et son découpage en cinq sous-projets sont validés (« Oui, écris-la »).
 >
+> **Puis, le même jour, Twenty est abandonné** (le fondateur : « Je pense qu'on va juste développer
+> l'admin »). Raccorder Twenty à l'application, à Umami et à Instantly demandait d'écrire tous les
+> connecteurs nous-mêmes, pour une donnée tenue en double ; Umami ne mesurant personne, il n'y aurait
+> apporté que des totaux. **Le cockpit est l'interface admin**, dont le CRM est le premier module
+> (sous-projet 6, spec à écrire). Ce qui suit dit « l'admin » là où il disait Twenty.
+>
 > **Puis, le même jour, la décision qui ordonne tout le reste :** commencer **à la main** (« est-ce
 > qu'il faut pas que je commence à la main au lieu d'exploser un budget que je n'ai pas dans une
 > growth machine ? »). Une machine automatise un processus qui marche ; il n'existe pas encore. La
@@ -45,7 +51,7 @@ de la machine.
 |---|---|
 | Instantly, domaines, boîtes (~100 € par mois) | 50 e-mails écrits à la main obtiennent au moins 10 % de réponses positives, **et** le fondateur n'arrive plus à suivre à la main |
 | Icypeas ou FullEnrich, MillionVerifier | en même temps qu'Instantly |
-| Twenty (~18 € par mois) | plus de 50 prospects actifs dans le tableur |
+| Le CRM de l'admin (0 €, du code) | quand le tableur ne suffit plus (plus de 50 prospects actifs), avec l'interface admin |
 | Expériences automatiques, point du lundi écrit par Claude | environ 100 inscrits par mois |
 | Publicité | le coût d'acquisition des autres canaux est connu |
 
@@ -95,7 +101,7 @@ comparateurs tiers ; ils sont à reconfirmer chez l'éditeur au moment de souscr
 - **Le cerveau, c'est Convex.** Tout ce qui touche aux données du produit et aux décisions vit
   dans notre code : les étapes, le score, les expériences, les listes de prospection, la
   répartition des contacts entre outils, le point du lundi.
-- **Le cockpit, c'est Twenty.** On y lit les sociétés, les personnes, les tâches, les notes et les
+- **Le cockpit, c'est l'interface admin** (`/admin`, réservée à l'équipe de Letikette). On y lit les sociétés, les personnes, les tâches, les notes et les
   points du lundi. Il ne reçoit que des données de compte et de prospection, jamais un débiteur ni
   un montant d'un client.
 - **Les bras sont loués** quand ils sont un métier à part : l'envoi à froid, la recherche d'e-mails,
@@ -109,9 +115,9 @@ comparateurs tiers ; ils sont à reconfirmer chez l'éditeur au moment de souscr
 |---|---|---|---|
 | **Notoriété** | outils gratuits qui calculent ; une page par secteur ; « le taux des pénalités du semestre » ; un **baromètre mensuel des procédures collectives par secteur** tiré du BODACC ; un `llms.txt` ; des brouillons de posts LinkedIn du fondateur | le site, la Search Console | 3 |
 | **Acquisition par le contenu** | chaque lundi, des sujets d'articles sur les recherches où l'on est en page 2 | la Search Console, Claude | 3 |
-| **Acquisition à froid** | listes construites seules, e-mails trouvés et vérifiés, séquences, réponses rapatriées dans Twenty | API Recherche d'entreprises, Icypeas ou FullEnrich, MillionVerifier, Instantly | 2 |
+| **Acquisition à froid** | listes construites seules, e-mails trouvés et vérifiés, séquences, réponses rapatriées dans l'admin | API Recherche d'entreprises, Icypeas ou FullEnrich, MillionVerifier, Instantly | 2 |
 | **Activation** | les e-mails de Plume selon les étapes du gérant | Resend (en place) | 1 |
-| **Conversion** | une fin d'essai qui dit ce qui a été fait ; une tâche « Appeler » quand le score est haut | Resend, Twenty | 1 puis 4 |
+| **Conversion** | une fin d'essai qui dit ce qui a été fait ; une tâche « Appeler » quand le score est haut | Resend, l'admin | 1 puis 4 |
 | **Expansion** | la formule supérieure proposée à 80 % d'une limite ; le passage à l'année après trois mois payés ; l'équipe | `limites.ts`, Paddle | 4 |
 | **Fidélisation et parrainage** | un score de santé des abonnés ; la reconquête trente jours après une résiliation ; une demande d'avis quand de l'argent rentre ; un mois offert de chaque côté pour un parrainage | Resend, Paddle, Capterra / Appvizer | 4 |
 
@@ -179,7 +185,7 @@ Resend ; les textes passent sous le lexique et le mot interdit.
 
 - **Activation** : les cinq e-mails de Plume du sous-projet 1.
 - **Conversion** : la fin d'essai (déjà prévenue à J-7 et J-2) dit ce que le pilote a fait et ce
-  qui est rentré ; au-delà d'un score de 60, une tâche « Appeler » dans Twenty.
+  qui est rentré ; au-delà d'un score de 60, une tâche « Appeler » dans l'admin.
 - **Expansion** : à 80 % d'une limite de formule, Plume le dit dans l'application et par un e-mail,
   une fois ; après trois mois payés au mois, le passage à l'année (dix mois payés) proposé une fois ;
   un membre invité sur Solo propose Équipe. Jamais pendant l'activation, jamais deux fois.
@@ -204,13 +210,12 @@ connu.
 
 | Poste | Prix mensuel relevé |
 |---|---|
-| Twenty, 2 sièges à l'année | ~18 € |
 | Instantly, offre avec API, à l'année | ~72 € |
 | 4 boîtes clés en main et 2 domaines (Instantly) | ~20 € |
 | Icypeas ou FullEnrich | ~35-50 € |
 | MillionVerifier | ~15 € |
 | Claude (point du lundi, brouillons) | ~20 € |
-| **Total de base** | **~175-195 €** |
+| **Total de base** | **~160-175 €** |
 | Societeinfo, si le site manque | +99 € |
 | Publicité, en test | +300-500 € |
 
@@ -226,13 +231,14 @@ le budget va au contenu.
 
 | # | Sous-projet | Contenu | Spec |
 |---|---|---|---|
-| 1 | **Le moteur et l'activation** | mesure des sept étages par source, e-mails de Plume, score, Twenty, expériences, point du lundi | `2026-10-16-moteur-de-croissance-design.md` |
-| 2 | **La prospection automatisée** | listes, enrichissement, vérification, Instantly, opposition commune, réponses dans Twenty | à écrire |
+| 1 | **Le moteur et l'activation** | mesure des sept étages par source, e-mails de Plume, score, expériences, point du lundi | `2026-10-16-moteur-de-croissance-design.md` |
+| 2 | **La prospection automatisée** | listes, enrichissement, vérification, Instantly, opposition commune, réponses dans l'admin | à écrire |
 | 3 | **La notoriété et le contenu** | outils gratuits, pages sourcées, taux semestriel, baromètre BODACC, `llms.txt`, brouillons LinkedIn, Search Console | à écrire |
 | 4 | **La conversion et l'expansion** | fin d'essai, montée en gamme, passage à l'année, santé, reconquête, avis, parrainage | à écrire |
 | 5 | **Les partenaires** | espace cabinet, catalogues d'applications (Pennylane, Qonto, Xero, QuickBooks), fédérations ; puis la prospection des cabinets | à écrire |
+| 6 | **L'interface admin** | le cockpit de l'équipe : le CRM (comptes, prospects, historique, tâches) en premier module, puis ce que l'admin doit porter d'autre | à écrire |
 
-**L'ordre** : 1 réduit au gratuit (source, étapes, e-mails de Plume, score, point chiffré du lundi), puis 3 (outils gratuits, pages par secteur), puis 4 ; 2 et la part payante de 1 (Twenty, expériences, point écrit par Claude) attendent leur seuil (§ 0) ; 5 commence par les cabinets rencontrés à la main.
+**L'ordre** : 1 réduit au gratuit (source, étapes, e-mails de Plume, score, point chiffré du lundi), puis 3 (outils gratuits, pages par secteur), puis 4 ; 2 et la part payante de 1 (expériences, point écrit par Claude) attendent leur seuil (§ 0) ; 5 commence par les cabinets rencontrés à la main.
 
 ## 7. Ce que le fondateur fait, et quand
 
@@ -246,7 +252,7 @@ le budget va au contenu.
    DMARC. Chaque domaine redirige son site vers `www.letikette.com`.
 3. Lancer le préchauffage des quatre boîtes.
 
-**Pour le sous-projet 1 :** le compte Twenty et sa clé d'API ; une clé de lecture Umami ; l'adresse
+**Pour le sous-projet 1 :** une clé de lecture Umami ; l'adresse
 du point du lundi (`FONDATEUR_EMAIL`).
 
 **Pour le sous-projet 2 :** les clés Instantly, Icypeas ou FullEnrich, et MillionVerifier.
