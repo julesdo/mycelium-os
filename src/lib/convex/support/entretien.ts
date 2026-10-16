@@ -81,6 +81,43 @@ export const entretenir = internalMutation({
 				});
 			}
 		}
+		// Les e-mails entrants dont la lecture a échoué : ils se reprennent à leur heure.
+		const aReprendre = (
+			await ctx.db
+				.query('emailsEntrants')
+				.withIndex('by_etat', (q) => q.eq('etat', 'A_LIRE'))
+				.take(50)
+		).filter((l) => l.prochainEssaiLe !== undefined && l.prochainEssaiLe <= maintenant);
+		for (const ligne of aReprendre.slice(0, 10)) {
+			await ctx.db.patch(ligne._id, { prochainEssaiLe: undefined });
+			await ctx.scheduler.runAfter(0, internal.support.entrantLecture.lire, { id: ligne._id });
+		}
+
+		// Les durées de conservation (spec § 8) : « à trier » et indésirables trente jours, le
+		// journal des e-mails entrants quatre-vingt-dix.
+		const vieux = await ctx.db
+			.query('emailsEntrants')
+			.withIndex('by_recu', (q) => q.lt('recuLe', maintenant - 30 * JOUR))
+			.take(100);
+		for (const ligne of vieux) {
+			if (ligne.etat === 'INDESIRABLE' || ligne.etat === 'IGNORE' || ligne.recuLe < maintenant - 90 * JOUR) {
+				await ctx.db.delete(ligne._id);
+			}
+		}
+		const aTrier = (
+			await ctx.db
+				.query('conversationsSupport')
+				.withIndex('by_org', (q) => q.eq('organizationId', undefined))
+				.take(100)
+		).filter((c) => c.creeeLe < maintenant - 30 * JOUR);
+		for (const conversation of aTrier.slice(0, 20)) {
+			const messages = await ctx.db
+				.query('messagesSupport')
+				.withIndex('by_conversation', (q) => q.eq('conversationId', conversation._id))
+				.take(500);
+			for (const message of messages) await ctx.db.delete(message._id);
+			await ctx.db.delete(conversation._id);
+		}
 		return null;
 	}
 });

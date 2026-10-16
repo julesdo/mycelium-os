@@ -25,7 +25,9 @@ const TABLES_DU_SUPPORT = new Set([
 	'mesuresSupport',
 	// L'appartenance de l'auteur, revérifiée à chaque lecture ; les prénoms de l'équipe.
 	'organizationMembers',
-	'equipe'
+	'equipe',
+	// Un e-mail entrant d'un prospect se range sur sa fiche (données de Letikette).
+	'prospects'
 ]);
 
 /** Ce que `contexte.ts` compte, et seulement lui. */

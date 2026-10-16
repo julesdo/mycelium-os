@@ -210,6 +210,35 @@ export const supportTables = {
 		.index('by_auteur_and_mois', ['auteur', 'mois'])
 		.index('by_auteur_user_and_le', ['auteurUserId', 'le']),
 
+	/**
+	 * LES E-MAILS ENTRANTS (spec § 5.2), une ligne par `email_id` de Resend : la
+	 * réception est idempotente, une lecture qui échoue se reprend (cinq essais), et rien
+	 * n'est jeté. Ni corps ni HTML ici : le texte va dans le message, s'il entre quelque part.
+	 */
+	emailsEntrants: defineTable({
+		emailId: v.string(),
+		organizationId: v.optional(v.id('organizations')),
+		etat: v.union(
+			v.literal('A_LIRE'),
+			v.literal('LU'),
+			v.literal('ECHEC'),
+			v.literal('IGNORE'),
+			v.literal('INDESIRABLE')
+		),
+		essais: v.number(),
+		prochainEssaiLe: v.optional(v.number()),
+		classement: v.optional(v.string()),
+		conversationId: v.optional(v.id('conversationsSupport')),
+		de: v.optional(v.string()),
+		objet: v.optional(v.string()),
+		authentification: v.optional(v.string()),
+		recuLe: v.number()
+	})
+		.index('by_email_id', ['emailId'])
+		.index('by_etat', ['etat', 'recuLe'])
+		.index('by_org', ['organizationId'])
+		.index('by_recu', ['recuLe']),
+
 	reponsesEnregistrees: defineTable({
 		titre: v.string(),
 		texte: v.string(),

@@ -11,7 +11,7 @@ import {
 	reponseDuSupportHtml,
 	reponseDuSupportTexte
 } from '../emails/modeles/support';
-import { receptionOuverte } from '../../support/conversation';
+import { laReceptionEstOuverte } from './commun';
 
 /**
  * LES E-MAILS DU SUPPORT (16/10/2026, spec § 5.1).
@@ -20,7 +20,7 @@ import { receptionOuverte } from '../../support/conversation';
  * sans adresse d'envoi ou sans site, la fonction se tait. Le fil, lui, porte tout.
  */
 
-function envoiPossible(): { expediteur: string; site: string } | null {
+export function envoiPossible(): { expediteur: string; site: string } | null {
 	const site = (process.env.SITE_URL ?? '').replace(/\/$/, '');
 	if (
 		process.env.AUTH_E2E_TEST_SECRET !== undefined ||
@@ -31,15 +31,6 @@ function envoiPossible(): { expediteur: string; site: string } | null {
 		return null;
 	}
 	return { expediteur: expediteurNomme(process.env.AUTH_EMAIL), site };
-}
-
-function laReceptionEstOuverte(): boolean {
-	return receptionOuverte({
-		secret: process.env.RESEND_RECEPTION_WEBHOOK_SECRET,
-		domaine: process.env.SUPPORT_RECEPTION_DOMAINE,
-		relancesEmail: process.env.RELANCES_EMAIL,
-		authEmail: process.env.AUTH_EMAIL
-	});
 }
 
 /** L'adresse VÉRIFIÉE d'un compte, ou `null` : une réponse ne part jamais vers une adresse non prouvée. */

@@ -744,6 +744,7 @@ export const purgerEtablissement = internalMutation({
 		budget = await viderParIndexOrg(ctx, 'messagesSupport', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'conversationsSupport', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'compteursSupport', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'emailsEntrants', organizationId, budget);
 		// Un prospect rapproché de ce compte lui survit (il appartient à Letikette),
 		// mais perd son lien vers lui.
 		for (const prospect of await ctx.db
@@ -1003,6 +1004,7 @@ async function viderParIndexOrg(
 		| 'messagesSupport'
 		| 'conversationsSupport'
 		| 'compteursSupport'
+		| 'emailsEntrants'
 		| 'intervenants'
 		| 'journal'
 		| 'propositions'

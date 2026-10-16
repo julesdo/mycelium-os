@@ -7,6 +7,7 @@ import { retourQonto, webhookQonto } from './connexions/qonto';
 import { webhookNango } from './connexions/nango';
 import { ouvrirDocument } from './coffre/ouverture';
 import { desinscriptionConseils } from './croissance/conseils';
+import { recevoir as receptionSupport } from './support/reception';
 
 const http = httpRouter();
 
@@ -47,5 +48,11 @@ http.route({ path: '/coffre/ouvrir', method: 'POST', handler: ouvrirDocument });
 // désinscrit (les antivirus ouvrent les liens). Voir `croissance/conseils.ts`.
 http.route({ path: '/conseils/desinscription', method: 'GET', handler: desinscriptionConseils });
 http.route({ path: '/conseils/desinscription', method: 'POST', handler: desinscriptionConseils });
+
+// Les e-mails écrits au support (16/10/2026), signés par Svix avec
+// RESEND_RECEPTION_WEBHOOK_SECRET. Fermée par le code tant que les relances partent du
+// domaine de Letikette (`support/reception.ts`). Webhook `email.received` de Resend vers
+// https://<deployment>.convex.site/resend/reception
+http.route({ path: '/resend/reception', method: 'POST', handler: receptionSupport });
 
 export default http;

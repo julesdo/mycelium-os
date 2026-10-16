@@ -22,16 +22,19 @@ export function plumeSupportOuvert(): boolean {
 	return process.env.PLUME_SUPPORT_OUVERT === 'oui';
 }
 
-/** L'adresse où écrire au support, seulement quand la réception est ouverte (spec § 5.2). */
-export function adresseDuSupport(): string | null {
+/** La réception des e-mails est-elle ouverte (secret, domaine, relances sur un autre domaine) ? */
+export function laReceptionEstOuverte(): boolean {
 	return receptionOuverte({
 		secret: process.env.RESEND_RECEPTION_WEBHOOK_SECRET,
 		domaine: process.env.SUPPORT_RECEPTION_DOMAINE,
 		relancesEmail: process.env.RELANCES_EMAIL,
 		authEmail: process.env.AUTH_EMAIL
-	})
-		? getLegalEmailAddress()
-		: null;
+	});
+}
+
+/** L'adresse où écrire au support, seulement quand la réception est ouverte (spec § 5.2). */
+export function adresseDuSupport(): string | null {
+	return laReceptionEstOuverte() ? getLegalEmailAddress() : null;
 }
 
 /**

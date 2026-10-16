@@ -46,3 +46,39 @@ export function retirerCitation(texte: string): { visible: string; coupe: boolea
 	if (visible === '') return { visible: entier.trim(), coupe: false };
 	return { visible, coupe };
 }
+
+const ENTITES: Readonly<Record<string, string>> = {
+	amp: '&',
+	lt: '<',
+	gt: '>',
+	quot: '"',
+	apos: "'",
+	nbsp: ' ',
+	rsquo: '’',
+	lsquo: '‘',
+	laquo: '«',
+	raquo: '»',
+	eacute: 'é',
+	egrave: 'è',
+	agrave: 'à',
+	ccedil: 'ç'
+};
+
+/**
+ * UN E-MAIL HTML EN TEXTE, SANS DOM (le moteur de Convex n'en a pas). Le HTML n'est
+ * JAMAIS stocké : seul ce texte l'est. Les scripts et les styles partent avec leur
+ * contenu, les blocs deviennent des paragraphes, les entités se décodent.
+ */
+export function htmlEnTexte(html: string): string {
+	return html
+		.replace(/<(script|style|head)[^>]*>[\s\S]*?<\/\1>/gi, '')
+		.replace(/<br\s*\/?>/gi, '\n')
+		.replace(/<\/(p|div|h[1-6]|li|tr|blockquote)>/gi, '\n\n')
+		.replace(/<[^>]+>/g, '')
+		.replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
+		.replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCodePoint(parseInt(code, 16)))
+		.replace(/&([a-z]+);/gi, (entite, nom: string) => ENTITES[nom.toLowerCase()] ?? entite)
+		.replace(/[ \t]+\n/g, '\n')
+		.replace(/\n{3,}/g, '\n\n')
+		.trim();
+}
