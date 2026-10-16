@@ -155,12 +155,14 @@ describe('le lexique', () => {
 		expect(LEXIQUE.some((e) => e.motif?.test(horsParentheses(second!.texte)))).toBe(false);
 	});
 
+	// Vingt secondes : le balayage lit toute l'interface ; 3,5 s seul, 5,2 s dans la suite
+	// complète sous la charge, une fois l'admin ajouté au périmètre (16/10/2026).
 	it('aucun écran n’emploie le mot du droit là où le mot de tous les jours est attendu', () => {
 		expect(
 			ecarts(),
 			'Reprendre ces textes avec le mot de l’interface (src/lib/verticales/recouvrement/lexique.ts).'
 		).toEqual([]);
-	});
+	}, 20_000);
 
 	it('n’exclut que des fichiers qui existent', () => {
 		const tous = new Set(
