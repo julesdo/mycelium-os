@@ -77,6 +77,8 @@ export type BlocEmail = {
 	readonly apresBouton?: string;
 	/** La ligne discrète du bas, qui dit pourquoi ce message arrive. */
 	readonly note?: string;
+	/** Le lien qui coupe ce genre de message en un clic (les conseils de Plume). */
+	readonly desinscription?: string;
 };
 
 /**
@@ -211,6 +213,9 @@ export function coquilleHtml(bloc: BlocEmail): string {
 		bloc.bouton?.secours ? blocSecours(bloc.bouton.url) : '',
 		bloc.note
 			? `<p style="margin:28px 0 0;padding-top:18px;border-top:1px solid ${FILET_DOUX};font-family:${POLICE};font-size:13px;line-height:1.6;color:${DISCRET}">${echapper(bloc.note)}</p>`
+			: '',
+		bloc.desinscription
+			? `<p style="margin:10px 0 0;font-family:${POLICE};font-size:12px;line-height:1.6;color:${DISCRET}"><a href="${echapper(bloc.desinscription)}" style="color:${DOUX};text-decoration:underline">Ne plus recevoir les conseils de Plume</a></p>`
 			: ''
 	].join('\n');
 
@@ -289,6 +294,9 @@ export function coquilleTexte(bloc: BlocEmail): string {
 	}
 	if (bloc.note) {
 		morceaux.push('', bloc.note);
+	}
+	if (bloc.desinscription) {
+		morceaux.push(`Ne plus recevoir les conseils de Plume : ${bloc.desinscription}`);
 	}
 	morceaux.push(
 		'',

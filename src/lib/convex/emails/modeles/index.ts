@@ -7,3 +7,4 @@ export * from './compte';
 export * from './invitation';
 export * from './briefing';
 export * from './abonnement';
+export * from './conseils';

@@ -33,6 +33,7 @@ import type * as emails_helpers from "../emails/helpers.js";
 import type * as emails_modeles_abonnement from "../emails/modeles/abonnement.js";
 import type * as emails_modeles_briefing from "../emails/modeles/briefing.js";
 import type * as emails_modeles_compte from "../emails/modeles/compte.js";
+import type * as emails_modeles_conseils from "../emails/modeles/conseils.js";
 import type * as emails_modeles_disposition from "../emails/modeles/disposition.js";
 import type * as emails_modeles_index from "../emails/modeles/index.js";
 import type * as emails_modeles_invitation from "../emails/modeles/invitation.js";
@@ -148,6 +149,7 @@ declare const fullApi: ApiFromModules<{
   "emails/modeles/abonnement": typeof emails_modeles_abonnement;
   "emails/modeles/briefing": typeof emails_modeles_briefing;
   "emails/modeles/compte": typeof emails_modeles_compte;
+  "emails/modeles/conseils": typeof emails_modeles_conseils;
   "emails/modeles/disposition": typeof emails_modeles_disposition;
   "emails/modeles/index": typeof emails_modeles_index;
   "emails/modeles/invitation": typeof emails_modeles_invitation;

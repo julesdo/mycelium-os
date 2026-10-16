@@ -18,6 +18,8 @@ process.env.EMAIL_ASSET_URL = 'https://apercu.invalid';
 const { briefingHtml, invitationHtml, motDePasseHtml, rappelAbonnementHtml, verificationHtml } =
 	await import('../src/lib/convex/emails/modeles');
 const { relanceHtml } = await import('../src/lib/convex/emails/modeles/relance');
+const { conseilHtml, objetDuConseil } = await import('../src/lib/convex/emails/modeles/conseils');
+const { CLES_CONSEILS } = await import('../src/lib/croissance/conseils');
 const { composerRelance } = await import('../src/lib/verticales/recouvrement/relance');
 
 function enDonnee(chemin: string): string {
@@ -119,6 +121,25 @@ const EMAILS: readonly { nom: string; objet: string; de: string; html: string }[
 			url: 'https://www.letikette.com/app/compte?ouvrir=facturation'
 		})
 	},
+	...CLES_CONSEILS.map((cle) => ({
+		nom: `Conseil de Plume : ${cle}`,
+		objet: objetDuConseil(cle),
+		de: 'Plume de Letikette',
+		html: conseilHtml({
+			cle,
+			prenom: 'Camille',
+			nomEtablissement: 'Menuiserie Dupont',
+			site: 'https://www.letikette.com',
+			desinscription: 'https://www.letikette.com/conseils',
+			du: { montant: '2 462,40 €', factures: 2, indemnite: '40,00 €', indemniteTotale: '80,00 €' },
+			plan: [
+				'Un rappel, 3 jours après l’échéance',
+				'Un deuxième rappel, 10 jours plus tard',
+				'Une lettre officielle, 10 jours plus tard',
+				'La remise à votre conseil, seulement si vous la décidez'
+			]
+		})
+	})),
 	{
 		nom: 'Relance au client du gérant (sans Letikette)',
 		objet: rappel.objet,
