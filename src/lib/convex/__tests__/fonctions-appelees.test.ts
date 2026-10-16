@@ -174,7 +174,7 @@ function fonctionsPubliques(): readonly { nom: string; fichier: string }[] {
 		if (relatif.startsWith('__tests__/')) continue;
 		const source = readFileSync(chemin, 'utf8');
 		for (const [, nom] of source.matchAll(
-			/^export const (\w+) = (?:authedMutation|authedQuery|authedAction|mutation|query|action)\(/gm
+			/^export const (\w+) = (?:authedMutation|authedQuery|authedAction|mutation|query|action|equipeQuery\('\w+'\)|equipeMutation\('\w+'\))\(/gm
 		)) {
 			if (nom !== undefined) trouvees.push({ nom, fichier: relatif });
 		}

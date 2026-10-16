@@ -9,6 +9,10 @@
  */
 
 import type * as abonnementRappels from "../abonnementRappels.js";
+import type * as admin_acces from "../admin/acces.js";
+import type * as admin_enveloppe from "../admin/enveloppe.js";
+import type * as admin_equipe from "../admin/equipe.js";
+import type * as admin_tables from "../admin/tables.js";
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
 import type * as coffre_anciens from "../coffre/anciens.js";
@@ -39,6 +43,7 @@ import type * as emails_modeles_briefing from "../emails/modeles/briefing.js";
 import type * as emails_modeles_compte from "../emails/modeles/compte.js";
 import type * as emails_modeles_conseils from "../emails/modeles/conseils.js";
 import type * as emails_modeles_disposition from "../emails/modeles/disposition.js";
+import type * as emails_modeles_equipe from "../emails/modeles/equipe.js";
 import type * as emails_modeles_index from "../emails/modeles/index.js";
 import type * as emails_modeles_invitation from "../emails/modeles/invitation.js";
 import type * as emails_modeles_pointDuLundi from "../emails/modeles/pointDuLundi.js";
@@ -130,6 +135,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   abonnementRappels: typeof abonnementRappels;
+  "admin/acces": typeof admin_acces;
+  "admin/enveloppe": typeof admin_enveloppe;
+  "admin/equipe": typeof admin_equipe;
+  "admin/tables": typeof admin_tables;
   auth: typeof auth;
   billing: typeof billing;
   "coffre/anciens": typeof coffre_anciens;
@@ -160,6 +169,7 @@ declare const fullApi: ApiFromModules<{
   "emails/modeles/compte": typeof emails_modeles_compte;
   "emails/modeles/conseils": typeof emails_modeles_conseils;
   "emails/modeles/disposition": typeof emails_modeles_disposition;
+  "emails/modeles/equipe": typeof emails_modeles_equipe;
   "emails/modeles/index": typeof emails_modeles_index;
   "emails/modeles/invitation": typeof emails_modeles_invitation;
   "emails/modeles/pointDuLundi": typeof emails_modeles_pointDuLundi;

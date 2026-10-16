@@ -44,6 +44,7 @@ function tablesDeclarees(): { nom: string; bloc: string }[] {
 		lire('recouvrement/tables.ts'),
 		lire('risque/tables.ts'),
 		lire('croissance/tables.ts'),
+		lire('admin/tables.ts'),
 		lire('schema.ts')
 	].join('\n');
 	const tables: { nom: string; bloc: string }[] = [];
