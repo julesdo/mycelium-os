@@ -282,5 +282,7 @@ describe('ce qui est grave', () => {
 		// l'autre bloc qui compte ce qui n'appelle rien, et qui doit se taire à zéro.
 		expect(renderToStaticMarkup(createElement(CeQuiBloque, { alertes: [] }))).toBe('');
 		expect(renderToStaticMarkup(createElement(PliDeLaFile, { faits: [] }))).toBe('');
-	});
+		// Vingt secondes : seul, ce test prend 1,3 s ; dans la suite complète, ses quatre
+		// imports dynamiques ont dépassé 5 s deux fois sous la charge (16/10/2026).
+	}, 20_000);
 });

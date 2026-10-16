@@ -12,6 +12,7 @@ import type * as abonnementRappels from "../abonnementRappels.js";
 import type * as admin_acces from "../admin/acces.js";
 import type * as admin_aujourdhui from "../admin/aujourdhui.js";
 import type * as admin_comptes from "../admin/comptes.js";
+import type * as admin_compteurs from "../admin/compteurs.js";
 import type * as admin_entretien from "../admin/entretien.js";
 import type * as admin_enveloppe from "../admin/enveloppe.js";
 import type * as admin_equipe from "../admin/equipe.js";
@@ -146,6 +147,7 @@ declare const fullApi: ApiFromModules<{
   "admin/acces": typeof admin_acces;
   "admin/aujourdhui": typeof admin_aujourdhui;
   "admin/comptes": typeof admin_comptes;
+  "admin/compteurs": typeof admin_compteurs;
   "admin/entretien": typeof admin_entretien;
   "admin/enveloppe": typeof admin_enveloppe;
   "admin/equipe": typeof admin_equipe;

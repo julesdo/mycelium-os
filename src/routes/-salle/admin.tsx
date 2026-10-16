@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { EcranAujourdhuiAdmin, type ResumeDuJour } from '../../screens/admin/aujourdhui';
-import { EcranComptes, type LigneCompte, type VueComptes } from '../../screens/admin/comptes';
+import {
+	EcranComptes,
+	type AffichageComptes,
+	type LigneCompte,
+	type VueComptes
+} from '../../screens/admin/comptes';
 import { EcranFicheCompte, type DonneesFicheCompte } from '../../screens/admin/fiche-compte';
 import {
 	EcranProspects,
 	type LigneProspect,
-	type Presentation,
+	type AffichageProspects,
 	type VueProspects
 } from '../../screens/admin/prospects';
 import { EcranFicheProspect, type DonneesFicheProspect } from '../../screens/admin/fiche-prospect';
@@ -15,6 +20,7 @@ import { EcranEquipe, type MembreDeLEquipe } from '../../screens/admin/equipe';
 import { EcranJournal, type EntreeDuJournal } from '../../screens/admin/journal';
 import type { TacheAffichee } from '../../screens/admin/commun';
 import { bornesDuJourDeParis } from '../../lib/admin/dates';
+import { BarreLateraleAdmin } from '../../app/coquille-admin';
 import { lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
 
 /**
@@ -103,6 +109,7 @@ const COMPTES: LigneCompte[] = [
 		siren: '123456789',
 		formule: 'Équipe',
 		etape: 'Relances activées',
+		etapes: ['INSCRIT', 'ENTREPRISE', 'FACTURES_DEPOSEES', 'MONTANT_REVELE', 'RELANCES_ACTIVEES'],
 		score: 78,
 		source: 'Recherche Google',
 		inscritLe: MAINTENANT - 20 * JOUR
@@ -112,6 +119,7 @@ const COMPTES: LigneCompte[] = [
 		nom: 'Atelier Brunet',
 		formule: 'Solo · essai',
 		etape: 'Essai commencé',
+		etapes: ['INSCRIT', 'ENTREPRISE', 'FACTURES_DEPOSEES', 'ESSAI'],
 		score: 64,
 		source: 'Article du blog',
 		inscritLe: MAINTENANT - 6 * JOUR
@@ -121,6 +129,7 @@ const COMPTES: LigneCompte[] = [
 		nom: 'Menuiserie Caron',
 		formule: 'Découverte',
 		etape: 'Entreprise renseignée',
+		etapes: ['INSCRIT', 'ENTREPRISE'],
 		score: 22,
 		source: 'Recherche Google',
 		inscritLe: MAINTENANT - 2 * HEURE
@@ -130,20 +139,36 @@ const COMPTES: LigneCompte[] = [
 		nom: 'Imprimerie Delorme',
 		formule: 'Pro',
 		etape: 'Abonné',
+		etapes: [
+			'INSCRIT',
+			'ENTREPRISE',
+			'FACTURES_DEPOSEES',
+			'MONTANT_REVELE',
+			'RELANCES_ACTIVEES',
+			'ESSAI',
+			'ABONNE'
+		],
 		score: 91,
 		source: 'Recommandation',
 		inscritLe: MAINTENANT - 120 * JOUR
 	}
 ];
 
-function DemoComptes({ etat }: { etat: EtatDemo }) {
+function DemoComptes({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	const [vue, setVue] = useState<VueComptes>('TOUS');
 	const [terme, setTerme] = useState('');
+	const [affichage, setAffichage] = useState<AffichageComptes>(
+		variante === 'kanban' || variante === 'entonnoir' || variante === 'cartes'
+			? variante
+			: 'tableau'
+	);
 	return (
 		<EcranComptes
 			lecture={lectureDemo(etat, COMPTES, [])}
 			vue={vue}
 			onVue={setVue}
+			affichage={affichage}
+			onAffichage={setAffichage}
 			terme={terme}
 			onTerme={setTerme}
 			maintenant={MAINTENANT}
@@ -275,27 +300,34 @@ const EQUIPE_DEMO = ['camille@letikette.com', 'jules@letikette.com'];
 
 function DemoProspects({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	const [vue, setVue] = useState<VueProspects>('TOUS');
-	const [presentation, setPresentation] = useState<Presentation>(
-		variante === 'pipeline' ? 'pipeline' : 'liste'
+	const [affichage, setAffichage] = useState<AffichageProspects>(
+		variante === 'kanban' || variante === 'entonnoir' || variante === 'liste' ? variante : 'tableau'
 	);
 	const [terme, setTerme] = useState('');
+	// Les statuts tenus en mémoire : une carte glissée reste où on l'a posée.
+	const [prospects, setProspects] = useState(PROSPECTS);
 	const [selection, setSelection] = useState<ReadonlySet<string>>(
 		new Set(variante === 'sélection' ? ['p3', 'p4'] : [])
 	);
 	return (
 		<EcranProspects
-			lecture={lectureDemo(etat, PROSPECTS, [])}
+			lecture={lectureDemo(etat, prospects, [])}
 			vue={vue}
 			onVue={setVue}
-			presentation={presentation}
-			onPresentation={setPresentation}
+			affichage={affichage}
+			onAffichage={setAffichage}
 			terme={terme}
 			onTerme={setTerme}
 			selection={selection}
 			onSelection={setSelection}
 			equipe={EQUIPE_DEMO}
 			maintenant={MAINTENANT}
-			gestes={{ onChangerStatut: RIEN, onAssigner: RIEN, onAjouter: RIEN }}
+			gestes={{
+				onChangerStatut: (ids, statut) =>
+					setProspects((liste) => liste.map((p) => (ids.includes(p.id) ? { ...p, statut } : p))),
+				onAssigner: RIEN,
+				onAjouter: RIEN
+			}}
 		/>
 	);
 }
@@ -473,9 +505,52 @@ function DemoJournal({ etat }: { etat: EtatDemo }) {
 	);
 }
 
+/** La barre latérale du CRM, seule : la salle rend ses écrans dans la coquille de l'application. */
+function DemoBarreLaterale({ variante }: { etat: EtatDemo; variante?: string }) {
+	const [reduite, setReduite] = useState(variante === 'repliée');
+	return (
+		<div className="flex h-160 overflow-hidden">
+			<BarreLateraleAdmin
+				role="FONDATEUR"
+				chemin="/admin/prospects"
+				recherche={variante === 'vue allumée' ? { vue: 'A_RELANCER' } : {}}
+				compteurs={{
+					tachesDues: 3,
+					comptes: 42,
+					aAppeler: 5,
+					enEssai: 7,
+					prospects: 128,
+					sansAction: 14,
+					aRelancer: 6,
+					interesses: 9
+				}}
+				reduite={reduite}
+				onBasculer={() => setReduite(!reduite)}
+			/>
+			<p className="p-cladd-xs text-cladd-xs text-cladd-fg-soft lg:hidden">
+				La barre latérale ne paraît qu’au-delà de 1024 px.
+			</p>
+		</div>
+	);
+}
+
 export const ECRANS_ADMIN: readonly EcranDuProduit[] = [
+	{
+		route: '/admin/',
+		cle: 'admin-barre-laterale',
+		libelle: 'admin · barre latérale',
+		vide: false,
+		variantes: ['vue allumée', 'repliée'],
+		Demo: DemoBarreLaterale
+	},
 	{ route: '/admin/', libelle: 'admin · aujourd’hui', vide: true, Demo: DemoAujourdhui },
-	{ route: '/admin/comptes/', libelle: 'admin · comptes', vide: true, Demo: DemoComptes },
+	{
+		route: '/admin/comptes/',
+		libelle: 'admin · comptes',
+		vide: true,
+		variantes: ['kanban', 'cartes', 'entonnoir'],
+		Demo: DemoComptes
+	},
 	{
 		route: '/admin/comptes/$id',
 		libelle: 'admin · fiche d’un compte',
@@ -486,7 +561,7 @@ export const ECRANS_ADMIN: readonly EcranDuProduit[] = [
 		route: '/admin/prospects/',
 		libelle: 'admin · prospects',
 		vide: true,
-		variantes: ['pipeline', 'sélection'],
+		variantes: ['kanban', 'liste', 'entonnoir', 'sélection'],
 		Demo: DemoProspects
 	},
 	{

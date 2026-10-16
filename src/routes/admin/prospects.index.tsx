@@ -7,7 +7,13 @@ import { useQuery } from '../../app/donnees';
 import { usePreference } from '../../app/use-preference';
 import { usePlumeDit } from '../../app/parole-de-plume';
 import { permis, useGesteAdmin, useHorlogeAdmin, useRoleAdmin } from '../../app/coquille-admin';
-import { EcranProspects, VUES_PROSPECTS, type VueProspects } from '../../screens/admin/prospects';
+import {
+	AFFICHAGES_PROSPECTS,
+	EcranProspects,
+	VUES_PROSPECTS,
+	type AffichageProspects,
+	type VueProspects
+} from '../../screens/admin/prospects';
 import { FeuilleProspect } from '../../screens/admin/formulaire-prospect';
 import { LIBELLES_DES_STATUTS } from '../../lib/crm/statuts';
 
@@ -16,8 +22,15 @@ import { LIBELLES_DES_STATUTS } from '../../lib/crm/statuts';
  * pipeline) d'une visite à l'autre ; `?ajouter=1` ouvre l'ajout, d'où que l'on vienne
  * (« Ajouter un prospect » de la barre du haut).
  */
+const CLES_AFFICHAGE = AFFICHAGES_PROSPECTS.map((a) => a.cle);
+
 export const Route = createFileRoute('/admin/prospects/')({
-	validateSearch: (recherche: Record<string, unknown>): { vue?: VueProspects; ajouter?: 1 } => ({
+	validateSearch: (
+		recherche: Record<string, unknown>
+	): { vue?: VueProspects; affichage?: AffichageProspects; ajouter?: 1 } => ({
+		...(CLES_AFFICHAGE.includes(recherche.affichage as AffichageProspects)
+			? { affichage: recherche.affichage as AffichageProspects }
+			: {}),
 		...(VUES_PROSPECTS.some((v) => v.cle === recherche.vue)
 			? { vue: recherche.vue as VueProspects }
 			: {}),
@@ -27,20 +40,50 @@ export const Route = createFileRoute('/admin/prospects/')({
 });
 
 function ProspectsAdmin() {
-	const { vue = 'TOUS', ajouter } = Route.useSearch();
+	const { vue = 'TOUS', ajouter, affichage: affichageDeLAdresse } = Route.useSearch();
 	const navigate = useNavigate({ from: '/admin/prospects/' });
 	const role = useRoleAdmin();
 	const horloge = useHorlogeAdmin();
 	const [terme, setTerme] = useState('');
 	const [selection, setSelection] = useState<ReadonlySet<string>>(new Set());
-	const [presentation, setPresentation] = usePreference('letikette:admin-prospects', 'liste', [
-		'liste',
-		'pipeline'
-	] as const);
+	const [prefere, setPrefere] = usePreference(
+		'letikette:admin-prospects',
+		'tableau',
+		CLES_AFFICHAGE
+	);
+	const affichage = affichageDeLAdresse ?? prefere;
 	const prospects = useQuery(api.admin.prospects.liste, { vue });
 	const equipe = useQuery(api.admin.equipe.adresses, {});
-	const changerStatut = useMutation(api.admin.prospects.changerStatut);
-	const remettreStatuts = useMutation(api.admin.prospects.remettreStatuts);
+	// Optimiste : la carte reste où on l'a posée, sans revenir le temps que le serveur réponde.
+	const changerStatut = useMutation(api.admin.prospects.changerStatut).withOptimisticUpdate(
+		(local, { prospectIds, statut }) => {
+			for (const { args, value } of local.getAllQueries(api.admin.prospects.liste)) {
+				if (value === undefined) continue;
+				local.setQuery(
+					api.admin.prospects.liste,
+					args,
+					value.map((p) =>
+						prospectIds.includes(p.id) && p.statut !== 'STOP' ? { ...p, statut } : p
+					)
+				);
+			}
+		}
+	);
+	const remettreStatuts = useMutation(api.admin.prospects.remettreStatuts).withOptimisticUpdate(
+		(local, { changements }) => {
+			for (const { args, value } of local.getAllQueries(api.admin.prospects.liste)) {
+				if (value === undefined) continue;
+				local.setQuery(
+					api.admin.prospects.liste,
+					args,
+					value.map((p) => {
+						const avant = changements.find((c) => c.id === p.id);
+						return avant === undefined ? p : { ...p, statut: avant.avant };
+					})
+				);
+			}
+		}
+	);
 	const assigner = useMutation(api.admin.prospects.assigner);
 	const creer = useMutation(api.admin.prospects.creer);
 	const chercherAuRegistre = useAction(
@@ -63,10 +106,17 @@ function ProspectsAdmin() {
 			vue={vue}
 			onVue={(v) => {
 				setSelection(new Set());
-				void navigate({ search: v === 'TOUS' ? {} : { vue: v }, replace: true });
+				void navigate({
+					search: (s) => ({ ...s, vue: v === 'TOUS' ? undefined : v }),
+					replace: true
+				});
 			}}
-			presentation={presentation}
-			onPresentation={setPresentation}
+			affichage={affichage}
+			onAffichage={(a) => {
+				setSelection(new Set());
+				setPrefere(a);
+				void navigate({ search: (s) => ({ ...s, affichage: a }), replace: true });
+			}}
 			terme={terme}
 			onTerme={setTerme}
 			selection={selection}

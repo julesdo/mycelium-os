@@ -238,6 +238,10 @@ export interface DestinationLaterale {
 	readonly actif: boolean;
 	/** La pastille d'un compte, déjà isolée par l'appelant. */
 	readonly rappel?: ReactNode;
+	/** La recherche d'URL d'une vue enregistrée (`?vue=`), dans l'admin. */
+	readonly recherche?: LinkProps['search'];
+	/** Ce que l'entrée compte, à droite (Attio, Lightfield) ; masqué en rail. */
+	readonly valeur?: string;
 }
 
 export interface GroupeLateral {
@@ -337,10 +341,11 @@ function EntreeLaterale({
 	readonly destination: DestinationLaterale;
 	readonly reduite: boolean;
 }) {
-	const { libelle, Icone, vers, actif, rappel } = destination;
+	const { libelle, Icone, vers, actif, rappel, recherche, valeur } = destination;
 	return (
 		<Lien
 			to={vers}
+			search={recherche as never}
 			aria-current={actif ? 'page' : undefined}
 			// En rail, le nom ne se lit plus : il passe en bulle au survol.
 			{...(reduite ? { title: libelle } : {})}
@@ -353,7 +358,14 @@ function EntreeLaterale({
 				<Icone size={18} aria-hidden />
 				{rappel === undefined ? null : <span className="absolute -top-1.5 -right-2">{rappel}</span>}
 			</span>
-			<span className="min-w-0 truncate group-data-[reduite=true]/laterale:sr-only">{libelle}</span>
+			<span className="min-w-0 flex-1 truncate group-data-[reduite=true]/laterale:sr-only">
+				{libelle}
+			</span>
+			{valeur === undefined ? null : (
+				<span className="shrink-0 text-cladd-3xs text-cladd-fg-softer tabular-nums group-data-[reduite=true]/laterale:hidden">
+					{valeur}
+				</span>
+			)}
 		</Lien>
 	);
 }

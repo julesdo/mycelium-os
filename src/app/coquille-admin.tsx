@@ -8,13 +8,21 @@ import {
 	type ReactNode
 } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
+import type { FunctionReturnType } from 'convex/server';
 import { Button, SearchField } from '@cladd-ui/react';
 import {
 	ArrowLeftIcon,
+	BellRingIcon,
 	BuildingIcon,
+	ChartColumnDecreasingIcon,
+	CircleDashedIcon,
 	EllipsisIcon,
+	FilterIcon,
+	HourglassIcon,
 	ListChecksIcon,
+	PhoneIcon,
 	ScrollTextIcon,
+	StarIcon,
 	TargetIcon,
 	UserPlusIcon,
 	UsersRoundIcon
@@ -50,22 +58,26 @@ import { useMutation } from 'convex/react';
 import type { Id } from '../lib/convex/_generated/dataModel';
 import { bornesDuJourDeParis } from '../lib/admin/dates';
 import { useMinute } from '../ui/minute';
-import { useRequeteEphemere } from './donnees';
+import { useQuery, useRequeteEphemere } from './donnees';
 import { usePlumeDit } from './parole-de-plume';
 import { usePreference } from './use-preference';
 
 /**
  * LA COQUILLE DE L'ADMIN (16/10/2026, `docs/superpowers/specs/2026-10-16-admin-socle-crm.md`).
  *
- * La même charpente que l'application, pour que l'équipe passe de l'une à l'autre
- * sans réapprendre : au bureau, la barre latérale (Aujourd'hui, Comptes, Prospects,
- * Tâches ; puis Équipe et Journal pour le fondateur) et la barre du haut (le titre,
- * la recherche ⌘ K, « Ajouter un prospect ») ; au téléphone, une barre du bas à
- * quatre onglets, Équipe et Journal dans le menu de l'en-tête d'Aujourd'hui.
+ * Au bureau, une barre latérale de CRM, sur Attio, Twenty et Lightfield : le
+ * travail du jour (Aujourd'hui, Tâches), les fiches (Comptes, Prospects), les vues
+ * enregistrées (À appeler, En essai, Sans prochaine action, À relancer,
+ * Intéressés), l'analyse (les deux entonnoirs) et, pour le fondateur, l'équipe.
+ * Chaque entrée dit combien de fiches l'attendent (`admin.compteurs`). La barre du
+ * haut porte le titre, la recherche ⌘ K et « Ajouter un prospect ». Au téléphone,
+ * une barre du bas à quatre onglets ; les vues sont les pastilles des listes.
  *
  * ⚠️ RIEN DE L'APPLICATION N'Y EST MONTÉ : ni Plume, ni le sélecteur
  * d'établissement, ni la cloche. L'admin regarde des comptes ; il n'en habite aucun.
  */
+
+export type Compteurs = FunctionReturnType<typeof api.admin.compteurs.compteurs>;
 
 type Destination = {
 	readonly cle: string;
@@ -73,70 +85,202 @@ type Destination = {
 	readonly Icone: DestinationBarre['Icone'];
 	readonly vers: DestinationBarre['vers'];
 	readonly prefixes: readonly string[];
+	/** Une vue enregistrée : la recherche d'URL qu'elle pose (`?vue=`, `?affichage=`). */
+	readonly recherche?: Readonly<Record<string, string>>;
+	/** Le compte affiché à droite de l'entrée. */
+	readonly compte?: keyof Compteurs;
 };
 
-const TRAVAIL: readonly Destination[] = [
-	{
-		cle: 'aujourdhui',
-		libelle: 'Aujourd’hui',
-		vers: '/admin',
-		Icone: IconeLetikette,
-		prefixes: []
-	},
-	{
-		cle: 'comptes',
-		libelle: 'Comptes',
-		vers: '/admin/comptes',
-		Icone: BuildingIcon,
-		prefixes: ['/admin/comptes']
-	},
-	{
-		cle: 'prospects',
-		libelle: 'Prospects',
-		vers: '/admin/prospects',
-		Icone: TargetIcon,
-		prefixes: ['/admin/prospects']
-	},
-	{
-		cle: 'taches',
-		libelle: 'Tâches',
-		vers: '/admin/taches',
-		Icone: ListChecksIcon,
-		prefixes: ['/admin/taches']
-	}
-];
+const AUJOURDHUI: Destination = {
+	cle: 'aujourdhui',
+	libelle: 'Aujourd’hui',
+	vers: '/admin',
+	Icone: IconeLetikette,
+	prefixes: []
+};
+const COMPTES: Destination = {
+	cle: 'comptes',
+	libelle: 'Comptes',
+	vers: '/admin/comptes',
+	Icone: BuildingIcon,
+	prefixes: ['/admin/comptes'],
+	compte: 'comptes'
+};
+const PROSPECTS: Destination = {
+	cle: 'prospects',
+	libelle: 'Prospects',
+	vers: '/admin/prospects',
+	Icone: TargetIcon,
+	prefixes: ['/admin/prospects'],
+	compte: 'prospects'
+};
+const TACHES: Destination = {
+	cle: 'taches',
+	libelle: 'Tâches',
+	vers: '/admin/taches',
+	Icone: ListChecksIcon,
+	prefixes: ['/admin/taches'],
+	compte: 'tachesDues'
+};
 
-const EQUIPE: readonly Destination[] = [
+/** Les quatre onglets du téléphone. */
+const ONGLETS: readonly Destination[] = [AUJOURDHUI, COMPTES, PROSPECTS, TACHES];
+
+const GROUPES: readonly {
+	readonly cle: string;
+	readonly titre?: string;
+	readonly fondateur?: boolean;
+	readonly destinations: readonly Destination[];
+}[] = [
+	{ cle: 'travail', destinations: [AUJOURDHUI, TACHES] },
+	{ cle: 'fiches', titre: 'Fiches', destinations: [COMPTES, PROSPECTS] },
+	{
+		cle: 'vues',
+		titre: 'Vues',
+		destinations: [
+			{
+				cle: 'a-appeler',
+				libelle: 'À appeler',
+				vers: '/admin/comptes',
+				Icone: PhoneIcon,
+				prefixes: ['/admin/comptes'],
+				recherche: { vue: 'A_APPELER' },
+				compte: 'aAppeler'
+			},
+			{
+				cle: 'en-essai',
+				libelle: 'En essai',
+				vers: '/admin/comptes',
+				Icone: HourglassIcon,
+				prefixes: ['/admin/comptes'],
+				recherche: { vue: 'ESSAI' },
+				compte: 'enEssai'
+			},
+			{
+				cle: 'sans-action',
+				libelle: 'Sans prochaine action',
+				vers: '/admin/prospects',
+				Icone: CircleDashedIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { vue: 'SANS_ACTION' },
+				compte: 'sansAction'
+			},
+			{
+				cle: 'a-relancer',
+				libelle: 'À relancer',
+				vers: '/admin/prospects',
+				Icone: BellRingIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { vue: 'A_RELANCER' },
+				compte: 'aRelancer'
+			},
+			{
+				cle: 'interesses',
+				libelle: 'Intéressés',
+				vers: '/admin/prospects',
+				Icone: StarIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { vue: 'INTERESSES' },
+				compte: 'interesses'
+			}
+		]
+	},
+	{
+		cle: 'analyse',
+		titre: 'Analyse',
+		destinations: [
+			{
+				cle: 'entonnoir-comptes',
+				libelle: 'Parcours des comptes',
+				vers: '/admin/comptes',
+				Icone: FilterIcon,
+				prefixes: ['/admin/comptes'],
+				recherche: { affichage: 'entonnoir' }
+			},
+			{
+				cle: 'entonnoir-prospection',
+				libelle: 'Prospection',
+				vers: '/admin/prospects',
+				Icone: ChartColumnDecreasingIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { affichage: 'entonnoir' }
+			}
+		]
+	},
 	{
 		cle: 'equipe',
-		libelle: 'Équipe',
-		vers: '/admin/equipe',
-		Icone: UsersRoundIcon,
-		prefixes: ['/admin/equipe']
-	},
-	{
-		cle: 'journal',
-		libelle: 'Journal',
-		vers: '/admin/journal',
-		Icone: ScrollTextIcon,
-		prefixes: ['/admin/journal']
+		titre: 'L’équipe',
+		fondateur: true,
+		destinations: [
+			{
+				cle: 'equipe',
+				libelle: 'Équipe',
+				vers: '/admin/equipe',
+				Icone: UsersRoundIcon,
+				prefixes: ['/admin/equipe']
+			},
+			{
+				cle: 'journal',
+				libelle: 'Journal',
+				vers: '/admin/journal',
+				Icone: ScrollTextIcon,
+				prefixes: ['/admin/journal']
+			}
+		]
 	}
 ];
 
-function estActive(d: Destination, chemin: string): boolean {
+/** Toutes les entrées de la barre, pour savoir laquelle est la plus précise. */
+const TOUTES = GROUPES.flatMap((g) => g.destinations);
+
+function surLeChemin(d: Destination, chemin: string): boolean {
 	const nu = chemin.replace(/\/$/, '');
 	if (d.vers === '/admin') return nu === '/admin';
 	return d.prefixes.some((p) => nu.startsWith(p));
 }
 
-/** Une destination, allumée ou non selon l'adresse. */
-function allumee(d: Destination, chemin: string) {
+/** Une vue est allumée quand l'adresse porte sa recherche, sur la liste elle-même. */
+function vueAllumee(
+	d: Destination,
+	chemin: string,
+	recherche: Readonly<Record<string, unknown>>
+): boolean {
+	if (d.recherche === undefined) return false;
+	if (chemin.replace(/\/$/, '') !== d.vers) return false;
+	return Object.entries(d.recherche).every(([cle, valeur]) => recherche[cle] === valeur);
+}
+
+/**
+ * ⚠️ L'ENTRÉE LA PLUS PRÉCISE GAGNE : sur `/admin/prospects?vue=A_RELANCER`, « À
+ * relancer » s'allume et « Prospects » s'éteint ; sur une fiche de prospect,
+ * « Prospects » s'allume.
+ */
+function estActive(
+	d: Destination,
+	chemin: string,
+	recherche: Readonly<Record<string, unknown>>
+): boolean {
+	if (d.recherche !== undefined) return vueAllumee(d, chemin, recherche);
+	return surLeChemin(d, chemin) && !TOUTES.some((autre) => vueAllumee(autre, chemin, recherche));
+}
+
+/** Une destination, allumée ou non selon l'adresse, avec son compte. */
+function allumee(
+	d: Destination,
+	chemin: string,
+	recherche: Readonly<Record<string, unknown>>,
+	compteurs?: Compteurs
+) {
+	const compte =
+		d.compte === undefined || compteurs === undefined ? undefined : compteurs[d.compte];
 	return {
 		cle: d.cle,
 		libelle: d.libelle,
 		Icone: d.Icone,
 		vers: d.vers,
-		actif: estActive(d, chemin)
+		actif: estActive(d, chemin, recherche),
+		...(d.recherche === undefined ? {} : { recherche: d.recherche }),
+		...(compte === undefined ? {} : { valeur: String(compte) })
 	};
 }
 
@@ -213,6 +357,68 @@ export function permis(role: RoleEquipe, roleMin: RoleEquipe | undefined): boole
 	return roleMin === undefined || rangDuRole(role) >= rangDuRole(roleMin);
 }
 
+/**
+ * LA BARRE LATÉRALE DU CRM, sans lecture : la coquille lui passe l'adresse et les
+ * compteurs, la salle des données de démonstration.
+ */
+export function BarreLateraleAdmin({
+	role,
+	chemin,
+	recherche,
+	compteurs,
+	reduite,
+	onBasculer
+}: {
+	readonly role: RoleEquipe | null;
+	readonly chemin: string;
+	readonly recherche: Readonly<Record<string, unknown>>;
+	readonly compteurs?: Compteurs;
+	readonly reduite: boolean;
+	readonly onBasculer: () => void;
+}) {
+	const groupes: GroupeLateral[] =
+		role === null
+			? []
+			: GROUPES.filter((g) => g.fondateur !== true || permis(role, 'FONDATEUR')).map((g) => ({
+					cle: g.cle,
+					...(g.titre === undefined ? {} : { titre: g.titre }),
+					destinations: g.destinations.map((d) => allumee(d, chemin, recherche, compteurs))
+				}));
+	return (
+		<BarreLaterale
+			reduite={reduite}
+			onBasculer={onBasculer}
+			tete={
+				<span className={CLASSE_IDENTITE_FIXE}>
+					<IdentiteLaterale
+						vignette={
+							<span className="flex size-9 items-center justify-center rounded-full bg-cladd-fg text-cladd-bg">
+								<IconeLetikette size={18} aria-hidden />
+							</span>
+						}
+						nom="Letikette"
+						ligne="Admin"
+					/>
+				</span>
+			}
+			groupes={groupes}
+			pied={
+				<Lien to="/app" className={CLASSE_IDENTITE_LATERALE}>
+					<IdentiteLaterale
+						vignette={
+							<span className="flex size-9 items-center justify-center rounded-full bg-cladd-fg/[0.06]">
+								<ArrowLeftIcon aria-hidden className="size-4" />
+							</span>
+						}
+						nom="L’application"
+						ligne="Revenir à votre établissement"
+					/>
+				</Lien>
+			}
+		/>
+	);
+}
+
 export function CoquilleAdmin({
 	role,
 	children
@@ -227,24 +433,10 @@ export function CoquilleAdmin({
 		'reduite'
 	] as const);
 
-	const groupes: GroupeLateral[] =
-		role === null
-			? []
-			: [
-					{
-						cle: 'travail',
-						destinations: TRAVAIL.map((d) => allumee(d, chemin))
-					},
-					...(permis(role, 'FONDATEUR')
-						? [
-								{
-									cle: 'equipe',
-									titre: 'L’équipe',
-									destinations: EQUIPE.map((d) => allumee(d, chemin))
-								}
-							]
-						: [])
-				];
+	const recherche = useRouterState({ select: (etat) => etat.location.search }) as Readonly<
+		Record<string, unknown>
+	>;
+	const compteurs = useQuery(api.admin.compteurs.compteurs, role === null ? 'skip' : {});
 
 	return (
 		<FournisseurDuTitreBureau value={emplacementDuTitre}>
@@ -253,36 +445,13 @@ export function CoquilleAdmin({
 				style={{ '--largeur-laterale': LARGEUR_LATERALE[laterale] } as CSSProperties}
 			>
 				<Fond />
-				<BarreLaterale
+				<BarreLateraleAdmin
+					role={role}
+					chemin={chemin}
+					recherche={recherche}
+					{...(compteurs === undefined ? {} : { compteurs })}
 					reduite={laterale === 'reduite'}
 					onBasculer={() => setLaterale(laterale === 'reduite' ? 'ouverte' : 'reduite')}
-					tete={
-						<span className={CLASSE_IDENTITE_FIXE}>
-							<IdentiteLaterale
-								vignette={
-									<span className="flex size-9 items-center justify-center rounded-full bg-cladd-fg text-cladd-bg">
-										<IconeLetikette size={18} aria-hidden />
-									</span>
-								}
-								nom="Letikette"
-								ligne="Admin"
-							/>
-						</span>
-					}
-					groupes={groupes}
-					pied={
-						<Lien to="/app" className={CLASSE_IDENTITE_LATERALE}>
-							<IdentiteLaterale
-								vignette={
-									<span className="flex size-9 items-center justify-center rounded-full bg-cladd-fg/[0.06]">
-										<ArrowLeftIcon aria-hidden className="size-4" />
-									</span>
-								}
-								nom="L’application"
-								ligne="Revenir à votre établissement"
-							/>
-						</Lien>
-					}
 				/>
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 					{role === null ? null : <HauteAdmin role={role} refTitre={setEmplacementDuTitre} />}
@@ -290,7 +459,16 @@ export function CoquilleAdmin({
 				</div>
 				{role === null || surUneFiche(chemin) ? null : (
 					<div className="lg:hidden">
-						<BarreDuBas destinations={TRAVAIL.map((d) => allumee(d, chemin))} />
+						<BarreDuBas
+							// Au téléphone, l'onglet d'une liste reste allumé sur toutes ses vues.
+							destinations={ONGLETS.map((d) => ({
+								cle: d.cle,
+								libelle: d.libelle,
+								Icone: d.Icone,
+								vers: d.vers,
+								actif: surLeChemin(d, chemin)
+							}))}
+						/>
 					</div>
 				)}
 			</div>

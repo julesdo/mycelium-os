@@ -55,6 +55,8 @@ const vLigneCompte = v.object({
 	formule: v.string(),
 	etape: v.string(),
 	etapeLe: v.optional(v.number()),
+	/** Les étapes atteintes : le kanban et l'entonnoir des comptes les lisent. */
+	etapes: v.array(v.string()),
 	score: v.number(),
 	source: v.string(),
 	inscritLe: v.number(),
@@ -82,6 +84,7 @@ async function lignes(ctx: QueryCtx) {
 			formule: formuleDe(org),
 			etape: etape === undefined ? 'Inscrit' : LIBELLES_D_UNE_ETAPE[etape],
 			...(etape === undefined || etapes[etape] === undefined ? {} : { etapeLe: etapes[etape] }),
+			etapes: ETAPES.filter((e) => etapes[e] !== undefined),
 			score: parcours?.score ?? 0,
 			source: libelleDeSource(parcours?.source ?? null),
 			inscritLe: org.createdAt,

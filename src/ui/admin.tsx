@@ -1,4 +1,4 @@
-import { useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
 import { Button, Checkbox, Chip, Segmented, SegmentedButton, Textarea } from '@cladd-ui/react';
 import { ArrowUpIcon, CheckIcon, XIcon } from 'lucide-react';
@@ -482,7 +482,7 @@ export function LigneDeTache({
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// LES PROSPECTS : LA LIGNE, LE PIPELINE, LA BARRE D'ACTIONS GROUPÉES
+// LES PROSPECTS : LA LIGNE ET LA BARRE D'ACTIONS GROUPÉES (le kanban vit dans `admin-vues.tsx`)
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
@@ -555,105 +555,6 @@ export function LigneDeProspect({
 			</Lien>
 			<span className="shrink-0">{statut}</span>
 		</div>
-	);
-}
-
-/** Le type de données qu'une carte du pipeline transporte quand on la glisse. */
-const TYPE_GLISSE = 'application/x-letikette-prospect';
-
-/**
- * LE PIPELINE EN COLONNES (Attio, HubSpot, Pipedrive) : une colonne par statut avec
- * son compte ; on glisse une carte d'une colonne à l'autre pour changer son statut.
- * Au bureau seulement : au téléphone, la liste se groupe par statut.
- */
-export function Pipeline<C extends string>({
-	colonnes,
-	onDeposer
-}: {
-	readonly colonnes: readonly {
-		readonly cle: C;
-		readonly libelle: string;
-		readonly nombre: number;
-		readonly children: ReactNode;
-	}[];
-	readonly onDeposer: (id: string, colonne: C) => void;
-}) {
-	const [survolee, setSurvolee] = useState<C | null>(null);
-	return (
-		<div className="defilement-sans-barre -mx-cladd-2xs flex min-h-[60vh] gap-3 overflow-x-auto px-cladd-2xs pb-2">
-			{colonnes.map((colonne) => (
-				<section
-					key={colonne.cle}
-					aria-label={`${colonne.libelle}, ${colonne.nombre}`}
-					onDragOver={(e: DragEvent) => {
-						if (!e.dataTransfer.types.includes(TYPE_GLISSE)) return;
-						e.preventDefault();
-						setSurvolee(colonne.cle);
-					}}
-					onDragLeave={() => setSurvolee((s) => (s === colonne.cle ? null : s))}
-					onDrop={(e: DragEvent) => {
-						const id = e.dataTransfer.getData(TYPE_GLISSE);
-						setSurvolee(null);
-						if (id !== '') onDeposer(id, colonne.cle);
-					}}
-					className={cn(
-						'flex w-72 shrink-0 flex-col gap-2 rounded-cladd-xl bg-cladd-fg/[0.03] p-2 transition-colors',
-						survolee === colonne.cle && 'bg-cladd-fg/[0.08]'
-					)}
-				>
-					<div className="flex items-baseline justify-between gap-2 px-1.5 pt-1">
-						<h2 className="text-cladd-2xs font-semibold">{colonne.libelle}</h2>
-						<span className="text-cladd-2xs text-cladd-fg-soft tabular-nums">{colonne.nombre}</span>
-					</div>
-					{colonne.children}
-				</section>
-			))}
-		</div>
-	);
-}
-
-/** Une carte du pipeline : elle mène à la fiche, et se glisse vers une autre colonne. */
-export function CarteDePipeline({
-	id,
-	titre,
-	ligne,
-	action,
-	sansAction = false,
-	vers,
-	parametres
-}: {
-	readonly id: string;
-	readonly titre: string;
-	readonly ligne?: string;
-	readonly action: string;
-	readonly sansAction?: boolean;
-	readonly vers: NonNullable<LinkProps['to']>;
-	readonly parametres: LinkProps['params'];
-}) {
-	return (
-		<Lien
-			to={vers}
-			params={parametres as never}
-			draggable
-			onDragStart={(e: DragEvent) => {
-				e.dataTransfer.setData(TYPE_GLISSE, id);
-				e.dataTransfer.effectAllowed = 'move';
-			}}
-			className="verre-carte verre-bouton flex cursor-grab flex-col gap-1 rounded-cladd-lg px-3 py-2.5 active:cursor-grabbing"
-		>
-			<span className="truncate text-cladd-2xs font-semibold">{titre}</span>
-			{ligne === undefined ? null : (
-				<span className="truncate text-cladd-3xs text-cladd-fg-soft">{ligne}</span>
-			)}
-			<span
-				className={cn(
-					'truncate text-cladd-3xs',
-					sansAction ? 'font-semibold text-cladd-fg' : 'text-cladd-fg-soft'
-				)}
-			>
-				{action}
-			</span>
-		</Lien>
 	);
 }
 

@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
-import { Button, SearchField, Segmented, SegmentedButton, Select } from '@cladd-ui/react';
-import { PlusIcon, UploadIcon } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { Button, SearchField, Select } from '@cladd-ui/react';
+import { FilterIcon, KanbanIcon, ListIcon, PlusIcon, Table2Icon, UploadIcon } from 'lucide-react';
 import {
 	BoutonTexte,
+	CarteLien,
 	EnTeteDeGroupe,
 	Lien,
 	ListeDeCartes,
@@ -12,12 +13,19 @@ import {
 } from '../../ui';
 import {
 	BarreDeSelection,
-	CarteDePipeline,
 	LigneDeProspect,
 	PastillesDeVue,
-	Pipeline,
 	type VueEnPastille
 } from '../../ui/admin';
+import {
+	Entonnoir,
+	Kanban,
+	SelecteurDAffichage,
+	TableauCrm,
+	type ColonneTableau,
+	type OptionDAffichage
+} from '../../ui/admin-vues';
+import { atteintEtapeDeProspection, entonnoirDeProspection } from '../../lib/admin/entonnoirs';
 import { echeanceDeTache } from '../../lib/admin/dates';
 import {
 	LIBELLES_DES_STATUTS,
@@ -26,13 +34,15 @@ import {
 	type Cible,
 	type StatutProspect
 } from '../../lib/crm/statuts';
+import { quandInscrit } from './aujourdhui';
 import { nomCourt } from './commun';
 
 /**
- * LES PROSPECTS (16/10/2026) : deux présentations sur le même état — la liste,
- * groupée par statut, et au bureau le pipeline en colonnes, où l'on glisse une
- * carte pour changer son statut (Attio, HubSpot, Pipedrive). Le statut se change
- * aussi dans la ligne ; des lignes cochées font paraître la barre d'actions
+ * LES PROSPECTS (16/10/2026) : quatre vues sur le même état, comme chez folk et
+ * Salesforce — le tableau triable (au bureau), le kanban où l'on glisse une carte
+ * pour changer son statut (Pipedrive, HubSpot, Attio ; au doigt aussi), la liste
+ * groupée par statut, et l'entonnoir de la prospection (Pipedrive). Le statut se
+ * change aussi dans la ligne ; des lignes cochées font paraître la barre d'actions
  * groupées (Attio, ClickUp).
  *
  * ⚠️ « STOP » NE SE CHOISIT PAS ICI : il efface les coordonnées et ajoute l'adresse
@@ -46,7 +56,7 @@ export type VueProspects =
 	| 'INTERESSES'
 	| 'PME'
 	| 'CABINETS';
-export type Presentation = 'liste' | 'pipeline';
+export type AffichageProspects = 'tableau' | 'kanban' | 'liste' | 'entonnoir';
 
 export const VUES_PROSPECTS: readonly VueEnPastille<VueProspects>[] = [
 	{ cle: 'TOUS', libelle: 'Tous' },
@@ -154,12 +164,19 @@ export function SelecteurDeStatut({
 	);
 }
 
+export const AFFICHAGES_PROSPECTS: readonly OptionDAffichage<AffichageProspects>[] = [
+	{ cle: 'tableau', libelle: 'Tableau', Icone: Table2Icon, seulementBureau: true },
+	{ cle: 'kanban', libelle: 'Kanban', Icone: KanbanIcon },
+	{ cle: 'liste', libelle: 'Liste', Icone: ListIcon },
+	{ cle: 'entonnoir', libelle: 'Entonnoir', Icone: FilterIcon }
+];
+
 export function EcranProspects({
 	lecture,
 	vue,
 	onVue,
-	presentation,
-	onPresentation,
+	affichage,
+	onAffichage,
 	terme,
 	onTerme,
 	selection,
@@ -172,8 +189,8 @@ export function EcranProspects({
 	readonly lecture: Lecture<readonly LigneProspect[]>;
 	readonly vue: VueProspects;
 	readonly onVue: (vue: VueProspects) => void;
-	readonly presentation: Presentation;
-	readonly onPresentation: (presentation: Presentation) => void;
+	readonly affichage: AffichageProspects;
+	readonly onAffichage: (affichage: AffichageProspects) => void;
 	readonly terme: string;
 	readonly onTerme: (terme: string) => void;
 	readonly selection: ReadonlySet<string>;
@@ -186,6 +203,7 @@ export function EcranProspects({
 	/** La page pleine d'ajout, posée par la route. */
 	readonly feuilles?: ReactNode;
 }) {
+	const [etapeChoisie, setEtapeChoisie] = useState<string | null>(null);
 	const entete = {
 		genre: 'onglet' as const,
 		titre: 'Prospects',
@@ -194,7 +212,7 @@ export function EcranProspects({
 				<SearchField
 					size="md"
 					tightFocusRing
-					className="min-w-0 flex-1 lg:max-w-sm"
+					className="min-w-0 flex-1 lg:max-w-xs"
 					value={terme}
 					onChange={(valeur) => onTerme(valeur)}
 					inputMode="search"
@@ -204,21 +222,12 @@ export function EcranProspects({
 						enterKeyHint: 'search'
 					}}
 				/>
-				<span className="hidden shrink-0 lg:inline-flex">
-					<Segmented activeColor="brand" activeVariant="solid-fill">
-						<SegmentedButton
-							active={presentation === 'liste'}
-							onClick={() => onPresentation('liste')}
-						>
-							Liste
-						</SegmentedButton>
-						<SegmentedButton
-							active={presentation === 'pipeline'}
-							onClick={() => onPresentation('pipeline')}
-						>
-							Pipeline
-						</SegmentedButton>
-					</Segmented>
+				<span className="shrink-0">
+					<SelecteurDAffichage
+						options={AFFICHAGES_PROSPECTS}
+						actif={affichage}
+						onChoisir={onAffichage}
+					/>
 				</span>
 				{gestes === undefined ? null : (
 					<>
@@ -230,7 +239,7 @@ export function EcranProspects({
 							square
 							variant="solid"
 							outline={false}
-							className="shrink-0"
+							className="hidden shrink-0 sm:inline-flex"
 							aria-label="Importer le tableur"
 							title="Importer le tableur"
 						>
@@ -263,11 +272,7 @@ export function EcranProspects({
 	);
 
 	if (lecture.etat !== 'pret') {
-		return (
-			<PageEcran entete={entete} etat={lecture.etat} largeur="large">
-				{pastilles}
-			</PageEcran>
-		);
+		return <PageEcran entete={entete} etat={lecture.etat} largeur="large" />;
 	}
 
 	const retenus = filtrerProspects(lecture.valeur, terme);
@@ -278,6 +283,7 @@ export function EcranProspects({
 		onSelection(suivante);
 	};
 	const ids = [...selection];
+	const changer = (id: string, s: StatutProspect) => gestes?.onChangerStatut([id], s);
 
 	const vide =
 		retenus.length === 0 ? (
@@ -333,7 +339,7 @@ export function EcranProspects({
 											<SelecteurDeStatut
 												statut={p.statut}
 												lectureSeule={gestes === undefined}
-												onChanger={(s) => gestes?.onChangerStatut([p.id], s)}
+												onChanger={(s) => changer(p.id, s)}
 											/>
 										}
 									/>
@@ -346,39 +352,152 @@ export function EcranProspects({
 		</div>
 	);
 
-	/* Au bureau seulement : au téléphone, la liste groupée par statut en tient lieu. */
-	const pipeline = (
-		<div className="hidden lg:block">
-			<Pipeline
-				colonnes={STATUTS_CHOISISSABLES.map((statut) => {
-					const duStatut = retenus.filter((p) => p.statut === statut);
-					return {
-						cle: statut,
-						libelle: LIBELLES_DES_STATUTS[statut],
-						nombre: duStatut.length,
-						children: duStatut.map((p) => {
-							const action = prochaineActionDe(p, maintenant);
-							const ligne = ligneDe(p);
-							return (
-								<CarteDePipeline
-									key={p.id}
-									id={p.id}
-									titre={p.entreprise}
-									{...(ligne === undefined ? {} : { ligne })}
-									action={action.texte}
-									sansAction={action.manquante}
-									vers="/admin/prospects/$id"
-									parametres={{ id: p.id }}
-								/>
-							);
-						})
-					};
-				})}
-				onDeposer={(id, statut) => {
-					const p = retenus.find((x) => x.id === id);
-					if (p !== undefined && p.statut !== statut) gestes?.onChangerStatut([id], statut);
-				}}
-			/>
+	const colonnesDuTableau: ColonneTableau<LigneProspect>[] = [
+		{
+			cle: 'entreprise',
+			libelle: 'Entreprise',
+			rendu: (p) => p.entreprise,
+			tri: (a, b) => a.entreprise.localeCompare(b.entreprise, 'fr')
+		},
+		{
+			cle: 'statut',
+			libelle: 'Statut',
+			largeur: 'w-44',
+			interactive: true,
+			rendu: (p) => (
+				<SelecteurDeStatut
+					statut={p.statut}
+					lectureSeule={gestes === undefined}
+					onChanger={(s) => changer(p.id, s)}
+				/>
+			),
+			tri: (a, b) => STATUTS_PROSPECT.indexOf(a.statut) - STATUTS_PROSPECT.indexOf(b.statut)
+		},
+		{
+			cle: 'ville',
+			libelle: 'Ville',
+			largeur: 'w-32',
+			rendu: (p) => <span className="text-cladd-fg-soft">{p.ville ?? ''}</span>,
+			tri: (a, b) => (a.ville ?? '').localeCompare(b.ville ?? '', 'fr')
+		},
+		{
+			cle: 'action',
+			libelle: 'Prochaine action',
+			largeur: 'min-w-48',
+			rendu: (p) => {
+				const action = prochaineActionDe(p, maintenant);
+				return (
+					<span className={action.manquante ? 'font-semibold' : 'text-cladd-fg-soft'}>
+						{action.texte}
+					</span>
+				);
+			},
+			tri: (a, b) => (a.prochaineActionLe ?? Infinity) - (b.prochaineActionLe ?? Infinity)
+		},
+		{
+			cle: 'contact',
+			libelle: 'Dernier contact',
+			largeur: 'w-36',
+			rendu: (p) => (
+				<span className="text-cladd-fg-soft">
+					{p.dernierContactLe === undefined
+						? 'Jamais'
+						: quandInscrit(p.dernierContactLe, maintenant)}
+				</span>
+			),
+			tri: (a, b) => (a.dernierContactLe ?? 0) - (b.dernierContactLe ?? 0)
+		},
+		{
+			cle: 'responsable',
+			libelle: 'Responsable',
+			largeur: 'w-28',
+			rendu: (p) => (
+				<span className="text-cladd-fg-soft">
+					{p.responsable === undefined ? '' : nomCourt(p.responsable)}
+				</span>
+			),
+			tri: (a, b) => (a.responsable ?? '').localeCompare(b.responsable ?? '')
+		}
+	];
+
+	const tableau = (
+		<TableauCrm
+			colonnes={colonnesDuTableau}
+			lignes={retenus}
+			lien={(p) => ({ vers: '/admin/prospects/$id', parametres: { id: p.id } })}
+			libelle="Les prospects"
+			{...(gestes === undefined
+				? {}
+				: { selection: { choisis: selection, onChoisir: onSelection } })}
+		/>
+	);
+
+	const kanban = (
+		<Kanban
+			libelleDeLaCarte="le prospect"
+			colonnes={STATUTS_CHOISISSABLES.map((statut) => {
+				const duStatut = retenus.filter((p) => p.statut === statut);
+				const sansAction = duStatut.filter(
+					(p) => prochaineActionDe(p, maintenant).manquante
+				).length;
+				return {
+					cle: statut,
+					libelle: LIBELLES_DES_STATUTS[statut],
+					...(sansAction === 0 ? {} : { precision: `${sansAction} sans prochaine action` }),
+					cartes: duStatut.map((p) => {
+						const action = prochaineActionDe(p, maintenant);
+						const ligne = ligneDe(p);
+						return {
+							id: p.id,
+							titre: p.entreprise,
+							...(ligne === undefined ? {} : { ligne }),
+							action: action.texte,
+							alerte: action.manquante,
+							vers: '/admin/prospects/$id' as const,
+							parametres: { id: p.id }
+						};
+					})
+				};
+			})}
+			{...(gestes === undefined
+				? {}
+				: {
+						onDeposer: (id: string, statut: StatutProspect) => gestes.onChangerStatut([id], statut)
+					})}
+		/>
+	);
+
+	const etapes = entonnoirDeProspection(retenus.map((p) => p.statut));
+	const choisie = etapes.find((e) => e.cle === etapeChoisie);
+	const aLEtape =
+		choisie === undefined
+			? []
+			: retenus.filter((p) => atteintEtapeDeProspection(p.statut, choisie.cle));
+	const entonnoir = (
+		<div className="flex flex-col gap-cladd-xs">
+			<Entonnoir etapes={etapes} choisie={etapeChoisie} onChoisir={setEtapeChoisie} />
+			{choisie === undefined ? (
+				<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
+					Touchez une étape pour voir les prospects qui l’ont atteinte. Un prospect perdu ou en «
+					Stop » a répondu : il compte jusqu’à « Ont répondu ».
+				</p>
+			) : (
+				<section className="flex flex-col gap-cladd-3xs">
+					<EnTeteDeGroupe libelle={`Ont atteint « ${choisie.libelle} »`} nombre={aLEtape.length} />
+					<ListeDeCartes>
+						{aLEtape.map((p) => (
+							<CarteLien
+								key={p.id}
+								vers="/admin/prospects/$id"
+								parametres={{ id: p.id }}
+								titre={p.entreprise}
+								ligne={[LIBELLES_DES_STATUTS[p.statut], p.ville].filter(Boolean).join(' · ')}
+								date={prochaineActionDe(p, maintenant).texte}
+							/>
+						))}
+					</ListeDeCartes>
+				</section>
+			)}
 		</div>
 	);
 
@@ -387,16 +506,20 @@ export function EcranProspects({
 			<div className="flex flex-col gap-cladd-xs">
 				{pastilles}
 				{vide ??
-					(presentation === 'pipeline' ? (
+					(affichage === 'tableau' ? (
 						<>
-							{pipeline}
+							<div className="hidden lg:block">{tableau}</div>
 							<div className="lg:hidden">{liste}</div>
 						</>
+					) : affichage === 'kanban' ? (
+						kanban
+					) : affichage === 'entonnoir' ? (
+						entonnoir
 					) : (
 						liste
 					))}
 			</div>
-			{gestes === undefined ? null : (
+			{gestes === undefined || affichage === 'entonnoir' || affichage === 'kanban' ? null : (
 				<BarreDeSelection
 					nombre={selection.size}
 					libelle={`prospect${pluriel(selection.size)}`}

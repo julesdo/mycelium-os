@@ -248,3 +248,26 @@ compte atteint le score de 60 (`SEUIL_APPELER`), une fois par compte.
 1. Après la livraison : `npx convex run --prod admin/equipe:amorcer '{"email":"julescamilledore@gmail.com"}'`.
 2. Activer la double authentification dans Votre compte, puis Votre profil.
 3. Ouvrir `/admin`.
+
+## 10. Un vrai CRM : la barre latérale, les vues, le glisser-déposer, les entonnoirs (16/10/2026, le soir)
+
+Le fondateur, sur le premier jet : « un vrai CRM avec la sidebar spécifique du CRM […] du drag &
+drop, des funnels, plusieurs types de vue […] le plus pratique », puis « utilise la meilleure
+bibliothèque la plus UX pour le D&D ». Second relevé Mobbin :
+
+| Motif | Référence | Ce qu'on en garde |
+|---|---|---|
+| Une barre latérale de CRM : les fiches avec leur compte, des vues enregistrées en favoris | [Attio](https://mobbin.com/screens/8415dcfb-b1f0-46b2-adf3-278d1aa56b3f), [Twenty](https://mobbin.com/screens/68c2f8c3-60b2-4294-9e73-b674998b0713), [Lightfield](https://mobbin.com/screens/f980c294-2702-4919-b6c1-502ab6f66e75) | Travail (Aujourd'hui, Tâches et ce qui est dû), Fiches (Comptes, Prospects), Vues (À appeler, En essai, Sans prochaine action, À relancer, Intéressés), Analyse (les deux entonnoirs), L'équipe |
+| Le type de vue se choisit au-dessus de la liste : Tableau, Kanban | [folk](https://mobbin.com/screens/52fc6a41-6623-4e5f-9df0-86fe982abf0f), [Salesforce](https://mobbin.com/screens/cba24f64-2916-451d-af96-27b50f63ced6), [Lightfield](https://mobbin.com/screens/286453a7-c2c7-49cc-903c-37b80361b351) | Tableau (colonnes triables), Kanban, Liste, Entonnoir ; le choix se garde et se partage par l'adresse (`?affichage=`) |
+| Le kanban : une colonne par étape avec son compte, des cartes qu'on glisse | [Pipedrive](https://mobbin.com/screens/2ff3c977-7902-48b5-8361-0c89710e5c2e), [HubSpot](https://mobbin.com/screens/fedd9c09-b271-46a7-819c-956f51723a30), [Attio](https://mobbin.com/screens/a2b97705-be0b-44a3-84ec-522316c873bf), [Attio iOS](https://mobbin.com/screens/a84efb46-b3c6-45c2-a707-edfdf6654ab7) | prospects : on glisse pour changer le statut, à la souris, au doigt (appui long) et au clavier ; comptes : en lecture, leurs étapes se déduisent |
+| L'entonnoir : des barres, le taux de passage entre deux étapes, la liste de l'étape choisie | [Pipedrive](https://mobbin.com/screens/4da10f16-370a-44ad-9c53-ccaff0346bc9), [Squarespace](https://mobbin.com/screens/1fb0830e-e657-4cba-bcdd-6c8bf12b51d7), [Zoho](https://mobbin.com/screens/1e4a6562-64ce-4fd3-b084-dbca596cc589) | prospection (ajoutés → contactés → ont répondu → intéressés → inscrits) et parcours des comptes (inscrits → … → abonnés), sur la vue en pastilles choisie |
+
+- **Le glisser-déposer passe par dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, versions
+  épinglées) : capteurs souris, doigt (appui long, pour ne pas voler le défilement) et clavier,
+  défilement automatique au bord, copie de la carte qui suit le pointeur, animation à la pose.
+  Changer de statut reste possible sans glisser (le menu de la carte, celui de la ligne).
+- **Un entonnoir compte ce qui a ATTEINT AU MOINS une étape** (`lib/admin/entonnoirs.ts`) : un
+  compte abonné sans avoir activé ses relances a passé l'étape des relances, un prospect perdu a
+  répondu. Aucune couleur de seuil : les barres sont à l'encre.
+- **Au téléphone** : Liste, Kanban (colonnes qui défilent, comme Attio iOS) et Entonnoir ; le
+  tableau est réservé au bureau.

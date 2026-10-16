@@ -127,7 +127,7 @@ export function grouperParJour<T extends { readonly le: number }>(
 	const groupes: { cle: string; jour: string; elements: T[] }[] = [];
 	for (const element of elements) {
 		const cle = jourDeParis(element.le);
-		const dernier = groupes.at(-1);
+		const dernier = groupes[groupes.length - 1];
 		if (dernier !== undefined && dernier.cle === cle) dernier.elements.push(element);
 		else groupes.push({ cle, jour: libelleDuJour(element.le, maintenant), elements: [element] });
 	}
